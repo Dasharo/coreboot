@@ -1,0 +1,19 @@
+if VENDOR_PCENGINES
+
+choice
+	prompt "Mainboard model"
+	default	BOARD_PCENGINES_APU2
+
+config BOARD_PCENGINES_APU2
+	bool "APU2"
+
+
+endchoice
+
+source "src/mainboard/pcengines/apu2/Kconfig"
+
+config MAINBOARD_VENDOR
+	string
+	default "PC Engines"
+
+endif # VENDOR_PCENGINES

@@ -1,0 +1,643 @@
+#!/bin/sh
+#
+# Copyright (C) 2008-2010 by coresystems GmbH
+# written by Patrick Georgi <patrick.georgi@coresystems.de> and
+#            Stefan Reinauer <stefan.reinauer@coresystems.de>
+#
+# Copyright (C) 2011 by Sage Electronic Engineering
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA
+#
+
+CROSSGCC_DATE="February 23th, 2015"
+CROSSGCC_VERSION="1.26"
+
+# default settings
+TARGETDIR=`pwd`/xgcc
+TARGETARCH=i386-elf
+DESTDIR=
+
+# version numbers
+GMP_VERSION=5.1.2
+MPFR_VERSION=3.1.2
+MPC_VERSION=1.0.3
+LIBELF_VERSION=0.8.13
+GCC_VERSION=4.8.3
+GCC_AUTOCONF_VERSION=2.69
+BINUTILS_VERSION=2.23.2
+GDB_VERSION=7.6
+IASL_VERSION=20140114
+PYTHON_VERSION=3.3.2
+EXPAT_VERSION=2.1.0
+
+# archive locations
+GMP_ARCHIVE="http://ftpmirror.gnu.org/gmp/gmp-${GMP_VERSION}.tar.bz2"
+MPFR_ARCHIVE="http://ftpmirror.gnu.org/mpfr/mpfr-${MPFR_VERSION}.tar.bz2"
+MPC_ARCHIVE="http://ftpmirror.gnu.org/mpc/mpc-${MPC_VERSION}.tar.gz"
+LIBELF_ARCHIVE="http://www.mr511.de/software/libelf-${LIBELF_VERSION}.tar.gz"
+GCC_ARCHIVE="http://ftpmirror.gnu.org/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.bz2"
+BINUTILS_ARCHIVE="http://ftpmirror.gnu.org/binutils/binutils-${BINUTILS_VERSION}.tar.bz2"
+GDB_ARCHIVE="http://ftpmirror.gnu.org/gdb/gdb-${GDB_VERSION}.tar.bz2"
+IASL_ARCHIVE="http://www.acpica.org/sites/acpica/files/acpica-unix-${IASL_VERSION}.tar.gz"
+PYTHON_ARCHIVE="http://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.bz2"
+EXPAT_ARCHIVE="http://downloads.sourceforge.net/sourceforge/expat/expat-${EXPAT_VERSION}.tar.gz"
+
+GMP_DIR="gmp-${GMP_VERSION}"
+MPFR_DIR="mpfr-${MPFR_VERSION}"
+MPC_DIR="mpc-${MPC_VERSION}"
+LIBELF_DIR="libelf-${LIBELF_VERSION}"
+GCC_DIR="gcc-${GCC_VERSION}"
+BINUTILS_DIR="binutils-${BINUTILS_VERSION}"
+GDB_DIR="gdb-${GDB_VERSION}"
+IASL_DIR="acpica-unix-${IASL_VERSION}"
+PYTHON_DIR="Python-${PYTHON_VERSION}"
+EXPAT_DIR="expat-${EXPAT_VERSION}"
+
+SAVETEMPS=0
+SKIPGDB=1
+SKIPPYTHON=1
+
+red='\033[0;31m'
+RED='\033[1;31m'
+green='\033[0;32m'
+GREEN='\033[1;32m'
+blue='\033[0;34m'
+BLUE='\033[1;34m'
+cyan='\033[0;36m'
+CYAN='\033[1;36m'
+NC='\033[0m' # No Color
+
+UNAME=`uname`
+
+normalize_dirs()
+{
+	mkdir -p $DESTDIR$TARGETDIR/lib
+	test -d $DESTDIR$TARGETDIR/lib32 && mv $DESTDIR$TARGETDIR/lib32/* $DESTDIR$TARGETDIR/lib
+	test -d $DESTDIR$TARGETDIR/lib64 && mv $DESTDIR$TARGETDIR/lib64/* $DESTDIR$TARGETDIR/lib
+	rmdir -p $DESTDIR$TARGETDIR/lib32 $DESTDIR$TARGETDIR/lib64
+
+	perl -pi -e "s,/lib32,/lib," $DESTDIR$TARGETDIR/lib/*.la
+	perl -pi -e "s,/lib64,/lib," $DESTDIR$TARGETDIR/lib/*.la
+}
+
+searchgnu()
+{
+	# $1 short name
+	# result: GNU version of that tool on stdout
+	#         or no output if no GNU version was found
+	for i in "$1" "g$1" "gnu$1"; do
+		if test -x "`which $i 2>/dev/null`"; then
+			if test `$i --version 2>/dev/null |grep -c GNU` \
+			    -gt 0; then
+				echo $i
+				return
+			fi
+		fi
+	done
+	# A workaround for OSX 10.9 and some BSDs, whose nongnu
+	# patch and tar also work.
+	if [ $UNAME = "Darwin" -o $UNAME = "FreeBSD" -o $UNAME = "NetBSD" ]; then
+		if [ $1 != "make" ]; then
+			if test -x "`which $1 2>/dev/null`"; then
+				echo $1
+				return
+			fi
+		fi
+	fi
+	printf "${RED}ERROR:${red} Missing toolchain: $1${NC}\n" >&2
+	exit 1
+}
+
+TAR=`searchgnu tar` || exit $?
+PATCH=`searchgnu patch` || exit $?
+MAKE=`searchgnu make` || exit $?
+
+searchgnu m4 > /dev/null
+searchgnu bison > /dev/null
+
+if ! flex --version > /dev/null 2> /dev/null; then
+	printf "${RED}ERROR:${red} Missing toolchain: flex${NC}\n" >&2
+	exit 1
+fi
+
+cleanup()
+{
+	printf "Cleaning up temporary files... "
+	rm -rf ${BUILDDIRPREFIX}-* combined gcc-* gmp-* mpfr-* mpc-* libelf-* binutils-*
+	rm -rf gdb-* acpica-* python-* expat-*
+	printf "${green}ok${NC}\n"
+}
+
+myhelp()
+{
+	printf "Usage: $0 [-V] [-c] [-p <platform>] [-d <target directory>] [-D <dest dir>] [-G] [-S]\n"
+	printf "       $0 [-V|--version]\n"
+	printf "       $0 [-h|--help]\n\n"
+
+	printf "Options:\n"
+	printf "    [-V|--version]                print version number and exit\n"
+	printf "    [-h|--help]                   print this help and exit\n"
+	printf "    [-c|--clean]                  remove temporary files before build\n"
+	printf "    [-t|--savetemps]              don't remove temporary files after build\n"
+	printf "    [-y|--ccache]                 Use ccache when building cross compiler\n"
+	printf "    [-j|--jobs <num>]             run <num> jobs in parallel in make\n"
+	printf "    [-p|--platform <platform>]    target platform to build cross compiler for\n"
+	printf "                                  (defaults to $TARGETARCH)\n"
+	printf "    [-d|--directory <target dir>] target directory to install cross compiler to\n"
+	printf "                                  (defaults to $TARGETDIR)\n\n"
+	printf "    [-D|--destdir <dest dir>]     destination directory to install cross compiler to\n"
+	printf "                                  (for RPM builds, default unset)\n"
+	printf "    [-G|--gdb]                    build GNU debugger\n"
+	printf "    [-S|--scripting]              build scripting support for GDB\n\n"
+}
+
+myversion()
+{
+	# version tag is always printed, so just print the license here
+
+	cat << EOF
+Copyright (C) 2008-2010 by coresystems GmbH
+Copyright (C) 2011 by Sage Electronic Engineering
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; version 2 of the License.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+EOF
+}
+
+printf "${blue}Welcome to the ${red}coreboot${blue} cross toolchain builder v$CROSSGCC_VERSION ($CROSSGCC_DATE)${NC}\n\n"
+
+# Look if we have getopt. If not, build it.
+export PATH=$PATH:.
+getopt - > /dev/null 2>/dev/null || gcc -o getopt getopt.c
+
+# parse parameters.. try to find out whether we're running GNU getopt
+getoptbrand="`getopt -V | sed -e '1!d' -e 's,^\(......\).*,\1,'`"
+if [ "${getoptbrand}" = "getopt" ]; then
+	# Detected GNU getopt that supports long options.
+	args=`getopt -l version,help,clean,directory:,platform:,jobs:,destdir:,savetemps,skip-gdb,ccache Vhcd:p:j:D:tGy -- "$@"`
+	eval set "$args"
+else
+	# Detected non-GNU getopt
+	args=`getopt Vhcd:p:j:D:tGy $*`
+	set -- $args
+fi
+
+if [ $? != 0 ]; then
+	myhelp
+	exit 1
+fi
+
+while true ; do
+        case "$1" in
+		-V|--version)	shift; myversion; exit 0;;
+		-h|--help)	shift; myhelp; exit 0;;
+		-c|--clean)	shift; clean=1;;
+		-t|--savetemps)	shift; SAVETEMPS=1;;
+		-d|--directory)	shift; TARGETDIR="$1"; shift;;
+		-p|--platform)	shift; TARGETARCH="$1"; shift;;
+		-D|--destdir)	shift; DESTDIR="$1"; shift;;
+		-j|--jobs)	shift; JOBS="-j $1"; shift;;
+		-G|--gdb)	shift; SKIPGDB=0;;
+		-S|--scripting) shift; SKIPPYTHON=0;;
+		-y|--ccache)	shift; USECCACHE=1;;
+		--)		shift; break;;
+		-*)		printf "Invalid option\n\n"; myhelp; exit 1;;
+		*)		break;;
+	esac
+done
+
+case "$TARGETARCH" in
+	i386-elf)	;;
+	i386-mingw32)	;;
+	i386*)		TARGETARCH=i386-elf;;
+	arm*)		TARGETARCH=armv7-a-eabi;;
+	aarch64*)	TARGETARCH=aarch64-elf;;
+	*)		printf "${red}WARNING: Unsupported architecture $TARGETARCH.${NC}\n\n"; ;;
+esac
+
+echo "Target arch is now $TARGETARCH"
+BUILDDIRPREFIX=build-${TARGETARCH}
+
+if [ "$clean" = "1" ]; then
+	cleanup
+fi
+
+GDB_PACKAGE="GDB"
+PYTHON_PACKAGE="PYTHON"
+EXPAT_PACKAGE="EXPAT"
+if [ $SKIPGDB -eq 1 ]; then
+	printf "Will skip GDB ... ${green}ok${NC}\n"
+	GDB_ARCHIVE=""
+	GDB_PACKAGE=""
+	if [ $SKIPPYTHON -eq 0 ]; then
+		printf "Python scripting needs GDB ... disabling ... ${green}ok${NC}\n"
+		SKIPPYTHON=1
+	fi
+fi
+if [ $SKIPPYTHON -eq 1 ]; then
+	PYTHON_ARCHIVE=""
+	PYTHON_PACKAGE=""
+	EXPAT_ARCHIVE=""
+	EXPAT_PACKAGE=""
+fi
+
+# coreboot does not like the GOLD linker
+# USE_GOLD="--enable-gold"
+USE_GOLD=""
+GCC_OPTIONS="--enable-lto"
+
+printf "Downloading tar balls ... \n"
+mkdir -p tarballs
+for ARCHIVE in $GMP_ARCHIVE $MPFR_ARCHIVE $MPC_ARCHIVE $LIBELF_ARCHIVE  \
+	    $GCC_ARCHIVE $BINUTILS_ARCHIVE $GDB_ARCHIVE \
+	    $IASL_ARCHIVE $PYTHON_ARCHIVE $EXPAT_ARCHIVE; do
+	FILE=`basename $ARCHIVE`
+	printf " * $FILE "
+	test -f tarballs/$FILE && printf "(cached)" || (
+		printf "(downloading)"
+		cd tarballs
+		wget --no-check-certificate -q $ARCHIVE
+	)
+	test -f tarballs/$FILE || \
+		printf "\n${RED}Failed to download $FILE.${NC}\n"
+	test -f tarballs/$FILE || exit 1
+	printf "\n"
+done
+printf "Downloaded tar balls ... "
+printf "${green}ok${NC}\n"
+
+printf "Unpacking and patching ... \n"
+for PACKAGE in GMP MPFR MPC LIBELF GCC BINUTILS $PYTHON_PACKAGE \
+	    $EXPAT_PACKAGE $GDB_PACKAGE IASL; do
+	archive=$PACKAGE"_ARCHIVE"
+	archive="`eval echo '$'$archive`"
+	dir=$PACKAGE"_DIR"
+	dir="`eval echo '$'${dir}`"
+	test -d ${dir} && test -f ${dir}/.unpack_success || (
+		printf " * `basename $archive`\n"
+		FLAGS=zxf
+		suffix=`echo $archive | sed 's,.*\.,,'`
+		test "$suffix" = "gz" && FLAGS=zxf
+		test "$suffix" = "bz2" && FLAGS=jxf
+		test "$suffix" = "lzma" && FLAGS="--lzma -xf"
+		$TAR $FLAGS tarballs/`basename $archive`
+		for patch in patches/${dir}_*.patch; do
+			test -r $patch || continue
+			printf "   o `basename $patch`\n"
+			$PATCH -s -N -p0 < `echo $patch` || \
+				printf "\n${RED}Failed $patch.${NC}\n"
+		done
+		touch ${dir}/.unpack_success
+	)
+done
+printf "Unpacked and patched ... "
+printf "${green}ok${NC}\n"
+
+CC=cc
+if [ $UNAME = "Darwin" ]; then
+	#GCC_OPTIONS="$GCC_OPTIONS --enable-threads=posix"
+
+	# generally the OS X compiler can create x64 binaries.
+	# Per default it generated i386 binaries in 10.5 and x64
+	# binaries in 10.6 (even if the kernel is 32bit)
+	# For some weird reason, 10.5 autodetects an ABI=64 though
+	# so we're setting the ABI explicitly here.
+	if [ `sysctl -n hw.optional.x86_64 2>/dev/null` -eq 1 ] 2>/dev/null; then
+		OPTIONS="ABI=64"
+	else
+		OPTIONS="ABI=32"
+	fi
+
+	# In Xcode 4.5.2 the default compiler is clang.
+	# However, this compiler fails to compile gcc 4.7.x. As a
+	# workaround it's possible to compile gcc with llvm-gcc.
+	if $CC -v 2>&1 | grep -q LLVM; then
+		CC=llvm-gcc
+	fi
+fi
+
+if [ "$USECCACHE" = 1 ]; then
+	CC="ccache $CC"
+fi
+
+mkdir -p ${BUILDDIRPREFIX}-gmp ${BUILDDIRPREFIX}-mpfr ${BUILDDIRPREFIX}-mpc ${BUILDDIRPREFIX}-libelf ${BUILDDIRPREFIX}-binutils \
+		${BUILDDIRPREFIX}-gcc ${BUILDDIRPREFIX}-python ${BUILDDIRPREFIX}-expat
+
+mkdir -p $DESTDIR$TARGETDIR/bin
+export PATH=$DESTDIR$TARGETDIR/bin:$PATH
+
+if [ $SKIPGDB -eq 0 ]; then
+	mkdir -p ${BUILDDIRPREFIX}-gdb
+fi
+if [ -f ${BUILDDIRPREFIX}-gmp/.success ]; then
+	printf "Skipping GMP as it is already built\n"
+else
+printf "Building GMP ${GMP_VERSION} ... "
+(
+	cd ${BUILDDIRPREFIX}-gmp
+	rm -f .failed
+	CC="$CC" ../${GMP_DIR}/configure --disable-shared --prefix=$TARGETDIR $OPTIONS \
+		|| touch .failed
+	$MAKE $JOBS || touch .failed
+	$MAKE install DESTDIR=$DESTDIR || touch .failed
+
+	normalize_dirs
+
+	if [ ! -f .failed ]; then touch .success; fi
+) > ${BUILDDIRPREFIX}-gmp/crossgcc-build.log 2>&1
+test -r ${BUILDDIRPREFIX}-gmp/.failed && printf "${RED}failed${NC}\n" || \
+	printf "${green}ok${NC}\n"
+test -r ${BUILDDIRPREFIX}-gmp/.failed && exit 1
+fi
+
+# Now set CFLAGS to match GMP CFLAGS but strip out -pedantic
+# as GCC 4.6.x fails if it's there.
+HOSTCFLAGS=`grep __GMP_CFLAGS $DESTDIR$TARGETDIR/include/gmp.h |cut -d\" -f2 |\
+	    sed s,-pedantic,,`
+
+if [ -f ${BUILDDIRPREFIX}-mpfr/.success ]; then
+	printf "Skipping MPFR as it is already built\n"
+else
+printf "Building MPFR ${MPFR_VERSION} ... "
+(
+	test $UNAME = "Darwin" && CFLAGS="$CFLAGS -force_cpusubtype_ALL"
+	cd ${BUILDDIRPREFIX}-mpfr
+	rm -f .failed
+	CC="$CC" ../${MPFR_DIR}/configure --disable-shared --prefix=$TARGETDIR \
+		--infodir=$TARGETDIR/info \
+		--with-gmp=$DESTDIR$TARGETDIR CFLAGS="$HOSTCFLAGS" || \
+		touch .failed
+	$MAKE $JOBS || touch .failed
+	$MAKE install DESTDIR=$DESTDIR || touch .failed
+
+	normalize_dirs
+
+	# work around build problem of libgmp.la
+	if [ "$DESTDIR" != "" ]; then
+	    perl -pi -e "s,$DESTDIR,," $DESTDIR$TARGETDIR/libgmp.la
+	fi
+
+	if [ ! -f .failed ]; then touch .success; fi
+) > ${BUILDDIRPREFIX}-mpfr/crossgcc-build.log 2>&1
+test -r ${BUILDDIRPREFIX}-mpfr/.failed && printf "${RED}failed${NC}\n" || \
+	     printf "${green}ok${NC}\n"
+test -r ${BUILDDIRPREFIX}-mpfr/.failed && exit 1
+fi
+
+if [ -f ${BUILDDIRPREFIX}-mpc/.success ]; then
+	printf "Skipping MPC as it is already built\n"
+else
+printf "Building MPC ${MPC_VERSION} ... "
+(
+	cd ${BUILDDIRPREFIX}-mpc
+	rm -f .failed
+	CC="$CC" ../${MPC_DIR}/configure --disable-shared --prefix=$TARGETDIR \
+		--infodir=$TARGETDIR/info --with-mpfr=$DESTDIR$TARGETDIR \
+		--with-gmp=$DESTDIR$TARGETDIR CFLAGS="$HOSTCFLAGS" || \
+		touch .failed
+	$MAKE $JOBS || touch .failed
+	$MAKE install DESTDIR=$DESTDIR || touch .failed
+
+	normalize_dirs
+
+	if [ ! -f .failed ]; then touch .success; fi
+) > ${BUILDDIRPREFIX}-mpc/crossgcc-build.log 2>&1
+test -r ${BUILDDIRPREFIX}-mpc/.failed && printf "${RED}failed${NC}\n" || \
+	     printf "${green}ok${NC}\n"
+test -r ${BUILDDIRPREFIX}-mpc/.failed && exit 1
+fi
+
+if [ -f ${BUILDDIRPREFIX}-libelf/.success ]; then
+	printf "Skipping libelf as it is already built\n"
+else
+printf "Building libelf ${LIBELF_VERSION} ... "
+(
+	cd ${BUILDDIRPREFIX}-libelf
+	rm -f .failed
+	echo "$HOSTCFLAGS"
+	CC="$CC" CFLAGS="$HOSTCFLAGS" libelf_cv_elf_h_works=no \
+	../${LIBELF_DIR}/configure --disable-shared --prefix=$TARGETDIR \
+		--infodir=$TARGETDIR/info CFLAGS="$HOSTCFLAGS" || touch .failed
+	$MAKE $JOBS || touch .failed
+	$MAKE install prefix=$DESTDIR$TARGETDIR || touch .failed
+
+	normalize_dirs
+
+	if [ ! -f .failed ]; then touch .success; fi
+) > ${BUILDDIRPREFIX}-libelf/crossgcc-build.log 2>&1
+test -r ${BUILDDIRPREFIX}-libelf/.failed && printf "${RED}failed${NC}\n" || \
+	     printf "${green}ok${NC}\n"
+test -r ${BUILDDIRPREFIX}-libelf/.failed && exit 1
+fi
+
+if [ -f ${BUILDDIRPREFIX}-binutils/.success ]; then
+	printf "Skipping binutils as it is already built\n"
+else
+printf "Building binutils ${BINUTILS_VERSION} ... "
+(
+	# What a pain: binutils don't come with configure
+	# script anymore. Create it:
+	cd binutils-${BINUTILS_VERSION}/
+	autoconf
+	cd ..
+	# Now build binutils
+	cd ${BUILDDIRPREFIX}-binutils
+	rm -f .failed
+	CC="$CC" ../binutils-${BINUTILS_VERSION}/configure --prefix=$TARGETDIR \
+		--target=${TARGETARCH} --disable-werror --disable-nls \
+		$USE_GOLD CFLAGS="$HOSTCFLAGS" || touch .failed
+	$MAKE $JOBS || touch .failed
+	$MAKE install DESTDIR=$DESTDIR || touch .failed
+	if [ ! -f .failed ]; then touch .success; fi
+) > ${BUILDDIRPREFIX}-binutils/crossgcc-build.log 2>&1
+test -r ${BUILDDIRPREFIX}-binutils/.failed && printf "${RED}failed${NC}\n" || \
+	     printf "${green}ok${NC}\n"
+test -r ${BUILDDIRPREFIX}-binutils/.failed && exit 1
+fi
+
+if [ -f ${BUILDDIRPREFIX}-gcc/.success ]; then
+	printf "Skipping GCC as it is already built\n"
+else
+printf "Building GCC ${GCC_VERSION} ... "
+(
+	# Even worse than binutils: GCC does not come with configure
+	# script anymore, but also enforces an obsolete autoconf version
+	# to create it. This is a poster child of how autotools help make
+	# software portable.
+	cd gcc-${GCC_VERSION}
+	sed '/dnl Ensure exactly this Autoconf version is used/d' \
+		config/override.m4 > config/override.m4.new
+	autoconf_version=`autoconf -V | grep "autoconf" | tr ' ' '\n' | tail -1`
+	sed "s/${GCC_AUTOCONF_VERSION}/${autoconf_version}/g" \
+		config/override.m4.new > config/override.m4
+	autoconf
+	cd ..
+	# Now, finally, we can build gcc:
+	cd ${BUILDDIRPREFIX}-gcc
+	rm -f .failed
+	# GCC does not honour HOSTCFLAGS at all. CFLAGS are used for
+	# both target and host object files. This is pretty misdesigned.
+	# There's a work-around called CFLAGS_FOR_BUILD and CFLAGS_FOR_TARGET
+	# but it does not seem to work properly. At least the host library
+	# libiberty is not compiled with CFLAGS_FOR_BUILD.
+	CC="$CC" CFLAGS_FOR_TARGET="-O2" CFLAGS="$HOSTCFLAGS" \
+		CFLAGS_FOR_BUILD="$HOSTCFLAGS" ../gcc-${GCC_VERSION}/configure \
+		--prefix=$TARGETDIR --libexecdir=$TARGETDIR/lib \
+		--target=${TARGETARCH} --disable-werror --disable-shared \
+		--disable-libssp --disable-bootstrap --disable-nls \
+		--disable-libquadmath --without-headers \
+		$GCC_OPTIONS --enable-languages="c" $USE_GOLD \
+		--with-gmp=$DESTDIR$TARGETDIR --with-mpfr=$DESTDIR$TARGETDIR \
+		--with-mpc=$DESTDIR$TARGETDIR --with-libelf=$DESTDIR$TARGETDIR \
+		--with-pkgversion="coreboot toolchain v$CROSSGCC_VERSION $CROSSGCC_DATE" \
+		|| touch .failed
+	$MAKE $JOBS CFLAGS_FOR_BUILD="$HOSTCFLAGS" all-gcc || touch .failed
+	$MAKE install-gcc DESTDIR=$DESTDIR || touch .failed
+
+	if [ "`echo $TARGETARCH | grep -c -- -mingw32`" -eq 0 ]; then
+		$MAKE $JOBS CFLAGS_FOR_BUILD="$HOSTCFLAGS" all-target-libgcc || touch .failed
+		$MAKE install-target-libgcc DESTDIR=$DESTDIR || touch .failed
+	fi
+
+	if [ ! -f .failed ]; then touch .success; fi
+) > ${BUILDDIRPREFIX}-gcc/crossgcc-build.log 2>&1
+test -r ${BUILDDIRPREFIX}-gcc/.failed && printf "${RED}failed${NC}\n" || \
+	     printf "${green}ok${NC}\n"
+test -r ${BUILDDIRPREFIX}-gcc/.failed && exit 1
+fi
+
+if [ -f ${BUILDDIRPREFIX}-expat/.success ]; then
+	printf "Skipping Expat as it is already built\n"
+elif [ $SKIPPYTHON -eq 1 ]; then
+	printf "Skipping Expat (Python scripting not enabled)\n"
+else
+printf "Building Expat ${EXPAT_VERSION} ... "
+(
+	cd ${BUILDDIRPREFIX}-expat
+	rm -f .failed
+	CC="$CC" CFLAGS="$HOSTCFLAGS" ../${EXPAT_DIR}/configure --disable-shared \
+		--prefix=$TARGETDIR --target=${TARGETARCH} || touch .failed
+	$MAKE || touch .failed
+	$MAKE install DESTDIR=$DESTDIR || touch .failed
+
+	normalize_dirs
+
+	if [ ! -f .failed ]; then touch .success; fi
+) > ${BUILDDIRPREFIX}-expat/crossgcc-build.log 2>&1
+test -r ${BUILDDIRPREFIX}-expat/.failed && printf "${RED}failed${NC}\n" || \
+	     printf "${green}ok${NC}\n"
+test -r ${BUILDDIRPREFIX}-expat/.failed && exit 1
+fi
+
+
+if [ -f ${BUILDDIRPREFIX}-python/.success ]; then
+	printf "Skipping Python as it is already built\n"
+elif [ $SKIPPYTHON -eq 1 ]; then
+	printf "Skipping Python (Python scripting not enabled)\n"
+else
+printf "Building Python ${PYTHON_VERSION} ... "
+(
+	cd ${BUILDDIRPREFIX}-python
+	rm -f .failed
+	CC="$CC" CFLAGS="$HOSTCFLAGS" ../${PYTHON_DIR}/configure --prefix=$TARGETDIR \
+		--target=${TARGETARCH} || touch .failed
+	$MAKE $JOBS || touch .failed
+	$MAKE install DESTDIR=$DESTDIR || touch .failed
+
+	normalize_dirs
+
+	if [ ! -f .failed ]; then touch .success; fi
+) > ${BUILDDIRPREFIX}-python/crossgcc-build.log 2>&1
+test -r ${BUILDDIRPREFIX}-python/.failed && printf "${RED}failed${NC}\n" || \
+	     printf "${green}ok${NC}\n"
+test -r ${BUILDDIRPREFIX}-python/.failed && exit 1
+fi
+
+
+if [ -f ${BUILDDIRPREFIX}-gdb/.success ]; then
+	printf "Skipping GDB as it is already built\n"
+elif [ $SKIPGDB -eq 1 ]; then
+	printf "Skipping GDB (GDB support not enabled)\n"
+else
+printf "Building GDB ${GDB_VERSION} ... "
+(
+	cd ${BUILDDIRPREFIX}-gdb
+	export PYTHONHOME=$DESTDIR$TARGETDIR
+	rm -f .failed
+	LDFLAGS="-Wl,-rpath,\$\$ORIGIN/../lib/ -L$DESTDIR$TARGETDIR/lib \
+		 -lpthread -ldl -lutil" \
+	CC="$CC" CFLAGS="$HOSTCFLAGS -I$DESTDIR$TARGETDIR/include" \
+	../gdb-${GDB_VERSION}/configure --prefix=$TARGETDIR \
+		--target=${TARGETARCH} --disable-werror --disable-nls
+	$MAKE $JOBS || touch .failed
+	$MAKE install DESTDIR=$DESTDIR || touch .failed
+	if [ ! -f .failed ]; then touch .success; fi
+) > ${BUILDDIRPREFIX}-gdb/crossgcc-build.log 2>&1
+test -r ${BUILDDIRPREFIX}-gdb/.failed && printf "${RED}failed${NC}\n" || \
+	     printf "${green}ok${NC}\n"
+test -r ${BUILDDIRPREFIX}-gdb/.failed && exit 1
+fi
+
+if [ -f $IASL_DIR/source/compiler/.success ]; then
+	printf "Skipping IASL as it is already built\n"
+else
+printf "Building IASL ${IASL_VERSION} ... "
+(
+	cd $IASL_DIR/generate/unix
+	rm -f .failed
+	CFLAGS="$HOSTCFLAGS"
+	HOST="_LINUX"
+	test $UNAME = "Darwin" && HOST="_APPLE"
+	test $UNAME = "FreeBSD" && HOST="_FreeBSD"
+	test $UNAME = "Cygwin" && HOST="_CYGWIN"
+	HOST="$HOST" OPT_CFLAGS="-O -D_FORTIFY_SOURCE=2" CFLAGS="$CFLAGS" $MAKE CC="$CC" iasl || touch .failed
+	rm -f $DESTDIR$TARGETDIR/bin/iasl || touch .failed
+	cp bin/iasl $DESTDIR$TARGETDIR/bin || touch .failed
+	if [ ! -f .failed ]; then touch .success; fi
+) > $IASL_DIR/source/compiler/crossgcc-build.log 2>&1
+test -r $IASL_DIR/generate/unix/.failed && printf "${RED}failed${NC}\n" || \
+	     printf "${green}ok${NC}\n"
+test -r $IASL_DIR/generate/unix/.failed && exit 1
+fi
+
+rm -f $DESTDIR$TARGETDIR/$0.commit.*
+cp $0 $DESTDIR$TARGETDIR/"$0.commit.`git describe`"
+
+if [ $SAVETEMPS -eq 0 ]; then
+	printf "Cleaning up... "
+	rm -rf ${GMP_DIR} ${BUILDDIRPREFIX}-gmp
+	rm -rf ${MPFR_DIR} ${BUILDDIRPREFIX}-mpfr
+	rm -rf ${MPC_DIR} ${BUILDDIRPREFIX}-mpc
+	rm -rf ${LIBELF_DIR} ${BUILDDIRPREFIX}-libelf
+	rm -rf ${BINUTILS_DIR} ${BUILDDIRPREFIX}-binutils
+	rm -rf ${GCC_DIR} ${BUILDDIRPREFIX}-gcc
+	rm -rf ${GDB_DIR} ${BUILDDIRPREFIX}-gdb
+	rm -rf ${EXPAT_DIR} ${BUILDDIRPREFIX}-expat
+	rm -rf ${PYTHON_DIR} ${BUILDDIRPREFIX}-python
+	rm -rf ${IASL_DIR}
+	printf "${green}ok${NC}\n"
+else
+	printf "Leaving temporary files around... ${green}ok${NC}\n"
+fi
+
+printf "\n${green}You can now run your $TARGETARCH cross toolchain from $TARGETDIR.${NC}\n"
+
+

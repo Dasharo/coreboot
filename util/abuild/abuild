@@ -1,0 +1,630 @@
+#!/bin/bash
+#
+#  coreboot autobuild
+#
+#  This script builds coreboot images for all available targets.
+#
+#  (C) 2004 by Stefan Reinauer <stepan@openbios.org>
+#  (C) 2006-2010 by coresystems GmbH <info@coresystems.de>
+#  (C) 2013-2014 Sage Electronic Engineering, LLC
+#  (C) 2014 Patrick Georgi <patrick@georgi-clan.de>
+#
+#  This file is subject to the terms and conditions of the GNU General
+#  Public License. See the file COPYING in the main directory of this
+#  archive for more details.
+#
+
+#set -x # Turn echo on....
+
+ABUILD_DATE="May 21, 2014"
+ABUILD_VERSION="0.9.3"
+
+TOP=$PWD
+
+# Where shall we place all the build trees?
+TARGET=${COREBOOT_BUILD_DIR:-coreboot-builds}
+XMLFILE=$TOP/abuild.xml
+REAL_XMLFILE=$XMLFILE
+
+export KCONFIG_OVERWRITECONFIG=1
+
+# path to payload. Should be more generic
+PAYLOAD=/dev/null
+
+# path to coreboot XGCC
+XGCCPATH="`pwd`/util/crossgcc/xgcc/bin/"
+
+# Add XGCC to the path.
+if [ -d "$XGCCPATH" ] && [[ ":$PATH:" != *":$XGCCPATH:"* ]]; then
+	PATH="$XGCCPATH:$PATH"
+fi
+
+# Lines of error context to be printed in FAILURE case
+CONTEXT=6
+
+TESTSUBMISSION="http://qa.coreboot.org/deployment/send.php"
+
+# Configure-only mode
+configureonly=0
+
+# Did any board fail to build?
+failed=0
+
+# default: single CPU build
+cpus=1
+
+# One might want to adjust these in case of cross compiling
+for i in make gmake gnumake nonexistant_make; do
+	$i --version 2>/dev/null |grep "GNU Make" >/dev/null && break
+done
+if [ "$i" = "nonexistant_make" ]; then
+	echo No GNU Make found.
+	exit 1
+fi
+MAKE=$i
+
+# this can be changed to junit by -J
+mode=text
+
+# silent mode.. no compiler calls, only warnings in the log files.
+# this is disabled per default but can be enabled with -s
+silent=
+
+# quiet mode: only print pass, failure, and 'skipped' messages
+quiet=false
+
+# clang mode enabled by -sb option.
+scanbuild=false
+
+ARCH=`uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
+	-e s/i86pc/i386/ \
+	-e s/arm.*/arm/ -e s/sa110/arm/ -e s/x86_64/amd64/ \
+	-e "s/Power Macintosh/ppc/"`
+
+trap interrupt INT
+
+function interrupt
+{
+	printf "\n$0: execution interrupted manually.\n"
+	if [ "$mode" == "junit" ]; then
+		printf "$0: deleting incomplete xml output file.\n"
+	fi
+	exit 1
+}
+
+function debug
+{
+	test "$verbose" == "true" && printf "$*\n"
+}
+
+function junit
+{
+	test "$mode" == "junit" && printf "$*\n" >> $XMLFILE
+	return 0
+}
+
+function junitfile
+{
+	test "$mode" == "junit" && {
+		printf '<![CDATA[\n'
+		cat $1
+		printf ']]>\n'
+	} >> $XMLFILE
+}
+
+
+function vendors
+{
+	# make this a function so we can easily select
+	# without breaking readability
+	ls -1 $ROOT/src/mainboard/*/Kconfig 2>/dev/null | sed "s:^$ROOT/src/mainboard/\(.*\)/Kconfig$:\1:"
+}
+
+function mainboards
+{
+	# make this a function so we can easily select
+	# without breaking readability
+
+	VENDOR=$1
+
+	ls -1 $ROOT/src/mainboard/$VENDOR/*/Kconfig 2>/dev/null | sed "s:^$ROOT/src/mainboard/$VENDOR/\(.*\)/Kconfig$:\1:"
+}
+
+function create_config
+{
+	VENDOR=$1
+	MAINBOARD=$2
+	CONFIG=$3
+
+	build_dir=$TARGET/${VENDOR}_${MAINBOARD}
+
+        # get a working payload for the board if we have one.
+        # the --payload option expects a directory containing
+	# a shell script payload.sh
+	#   Usage: payload.sh [VENDOR] [DEVICE]
+	# the script returns an absolute path to the payload binary.
+
+	if [ -f $payloads/payload.sh ]; then
+		PAYLOAD=`sh $payloads/payload.sh $VENDOR $MAINBOARD`
+		if [ $? -gt 0 ]; then
+			echo "problem with payload"
+			exit 1
+		fi
+		if [ "$quiet" == "false" ]; then printf "Using payload $PAYLOAD\n"; fi
+	elif [ "$payloads" = "none" ]; then
+		PAYLOAD=none
+	fi
+
+	mkdir -p ${build_dir}
+	mkdir -p $TARGET/sharedutils
+
+	if [ "$CONFIG" != "" ]; then
+		printf "  Using existing configuration $CONFIG ... "
+		cp src/mainboard/$VENDOR/$MAINBOARD/$CONFIG ${build_dir}/config.build
+	else
+		if [ "$quiet" == "false" ]; then printf "  Creating config file for $VENDOR/$MAINBOARD... \n"; fi
+		grep "if[\t ]*VENDOR" src/mainboard/$VENDOR/$MAINBOARD/../Kconfig | \
+			sed "s,^.*\(VENDOR_.*\)[^A-Z0-9_]*,CONFIG_\1=y," > ${build_dir}/config.build
+		grep "if[\t ]*BOARD" src/mainboard/$VENDOR/$MAINBOARD/Kconfig | \
+			sed "s,^.*\(BOARD_.*\)[^A-Z0-9_]*,CONFIG_\1=y," >> ${build_dir}/config.build
+		grep "select[\t ]*ARCH" src/mainboard/$VENDOR/$MAINBOARD/Kconfig | \
+			sed "s,^.*\(ARCH_.*\)[^A-Z0-9_]*,CONFIG_\1=y," >> ${build_dir}/config.build
+		echo "CONFIG_MAINBOARD_DIR=\"$VENDOR/$MAINBOARD\"" >> ${build_dir}/config.build
+		if [ "$PAYLOAD" = "none" ]; then
+			echo "CONFIG_PAYLOAD_NONE=y" >> ${build_dir}/config.build
+		elif [ "$PAYLOAD" != "/dev/null" ]; then
+			echo "# CONFIG_PAYLOAD_NONE is not set" >> ${build_dir}/config.build
+			echo "# CONFIG_PAYLOAD_SEABIOS is not set" >> ${build_dir}/config.build
+			echo "CONFIG_PAYLOAD_ELF=y" >> ${build_dir}/config.build
+			echo "CONFIG_PAYLOAD_FILE=\"$PAYLOAD\"" >> ${build_dir}/config.build
+		fi
+
+		if [ "$quiet" == "false" ]; then printf "    $VENDOR/$MAINBOARD ($customizing)\n"; fi
+		printf "$configoptions" >> ${build_dir}/config.build
+	fi
+
+	yes "" 2>/dev/null | $MAKE oldconfig $silent DOTCONFIG=${build_dir}/config.build obj=${build_dir} objutil=$TARGET/sharedutils &> ${build_dir}/config.log
+	ret=$?
+	if [ $ret -eq 0 ]; then
+		if [ "$quiet" == "false" ]; then printf "  $VENDOR/$MAINBOARD config created.\n"; fi
+		return 0
+	else
+		# Does this ever happen?
+		if [ "$quiet" == "false" ]; then printf "$VENDOR/$MAINBOARD config creation FAILED!\nLog excerpt:\n"; fi
+		tail -n $CONTEXT $build_dir/config.log 2> /dev/null || tail -$CONTEXT $build_dir/config.log
+		return 1
+	fi
+}
+
+function create_buildenv
+{
+	VENDOR=$1
+	MAINBOARD=$2
+	CONFIG=$3
+
+	create_config $VENDOR $MAINBOARD $CONFIG
+	ret=$?
+
+	# Allow simple "make" in the target directory
+	MAKEFILE=$TARGET/${VENDOR}_${MAINBOARD}/Makefile
+	echo "# autogenerated" > $MAKEFILE
+	echo "TOP=$ROOT" >> $MAKEFILE
+	echo "BUILD=$TARGET" >> $MAKEFILE
+	echo "OBJ=\$(BUILD)/${VENDOR}_${MAINBOARD}" >> $MAKEFILE
+	echo "OBJUTIL=\$(BUILD)/sharedutils" >> $MAKEFILE
+	echo "all:" >> $MAKEFILE
+	echo "	@cp -a config.h config.h.bak" >> $MAKEFILE
+	echo "	@cd \$(TOP); \$(MAKE) oldconfig DOTCONFIG=\$(OBJ)/config.build objutil=\$(OBJUTIL) obj=\$(OBJ)" >> $MAKEFILE
+	echo "	@tail -n+6 config.h > config.new; tail -n+6 config.h.bak > config.old" >> $MAKEFILE
+	echo "	@cmp -s config.new config.old && cp -a config.h.bak config.h || echo \"Config file changed\"" >> $MAKEFILE
+	echo "	@rm config.h.bak config.new config.old" >> $MAKEFILE
+	echo "	@cd \$(TOP); \$(MAKE) DOTCONFIG=\$(OBJ)/config.build objutil=\$(OBJUTIL) obj=\$(OBJ)" >> $MAKEFILE
+
+	return $ret
+}
+
+function compile_target
+{
+	VENDOR=$1
+	MAINBOARD=$2
+
+	if [ "$quiet" == "false" ]; then printf "  Compiling $VENDOR/$MAINBOARD image$cpuconfig...\n"; fi
+
+	CURR=$( pwd )
+	#stime=`perl -e 'print time();' 2>/dev/null || date +%s`
+	build_dir=$TARGET/${VENDOR}_${MAINBOARD}
+	eval $BUILDPREFIX $MAKE $silent DOTCONFIG=${build_dir}/config.build obj=${build_dir} objutil=$TARGET/sharedutils \
+		&> ${build_dir}/make.log
+	ret=$?
+	cp .xcompile ${build_dir}/xcompile.build
+	cd $TARGET/${VENDOR}_${MAINBOARD}
+
+	etime=`perl -e 'print time();' 2>/dev/null || date +%s`
+	duration=$(( $etime - $stime ))
+	junit " <testcase classname='board' name='$VENDOR/$MAINBOARD' time='$duration' >"
+
+	if [ $ret -eq 0 ]; then
+		junit "<system-out>"
+		junitfile make.log
+		junit "</system-out>"
+		printf "ok\n" > compile.status
+		printf "$VENDOR/$MAINBOARD built successfully. (took ${duration}s)\n"
+	else
+		ret=1
+		junit "<failure type='BuildFailed'>"
+		junitfile make.log
+		junit "</failure>"
+		printf "$VENDOR/$MAINBOARD build FAILED after ${duration}s!\nLog excerpt:\n"
+		tail -n $CONTEXT make.log 2> /dev/null || tail -$CONTEXT make.log
+		failed=1
+	fi
+	cd $CURR
+	if [ $clean_work = "true" ]; then
+		rm -rf $TARGET/${VENDOR}_${MAINBOARD}
+	fi
+	return $ret
+}
+
+function build_target
+{
+	VENDOR=$1
+	MAINBOARD=$2
+	CONFIG=$3
+
+	if [ "`cat $TARGET/${VENDOR}_${MAINBOARD}/compile.status 2>/dev/null`" = "ok" -a \
+		"$buildall" = "false" ]; then
+		printf "Skipping $VENDOR/$MAINBOARD; (already successful)\n"
+		return
+	fi
+
+ 	HOSTCC='gcc'
+
+	if [ "$quiet" == "false" ]; then printf "Building $VENDOR/$MAINBOARD\n"; fi
+	mkdir -p $TARGET/${VENDOR}_${MAINBOARD} $TARGET/abuild
+	ABSPATH=`cd $TARGET/abuild; pwd`
+	XMLFILE=$ABSPATH/${VENDOR}_${MAINBOARD}.xml
+
+
+	stime=`perl -e 'print time();' 2>/dev/null || date +%s`
+	create_buildenv $VENDOR $MAINBOARD $CONFIG
+
+	required_arches=`egrep "^CONFIG_ARCH_(BOOTBLOCK|R.MSTAGE)" $TARGET/${VENDOR}_${MAINBOARD}/config.build | \
+			sed "s,^CONFIG_ARCH_[^_]*_\([^=]*\)=.*$,\1," |sort -u |tr 'A-Z\n\r' 'a-z  '`
+	missing_arches=`printf 'include .xcompile\nall: ; @echo $(foreach arch,'"$required_arches"',$(if $(filter $(arch),$(SUBARCH_SUPPORTED)),,$(arch)))' | make --no-print-directory -f -`
+	if [ -n "$missing_arches" ]; then
+		printf "skipping $VENDOR/$MAINBOARD because we're missing compilers for ($missing_arches)\n"
+		return
+	fi
+
+	if [ $? -eq 0  -a  $configureonly -eq 0 ]; then
+		BUILDPREFIX=
+		if [ "$scanbuild" = "true" ]; then
+			scanbuild_out=$TARGET/${VENDOR}_${MAINBOARD}-scanbuild
+			rm -rf ${scanbuild_out}
+			BUILDPREFIX="scan-build -o ${scanbuild_out}tmp"
+		fi
+		compile_target $VENDOR $MAINBOARD
+		if [ "$scanbuild" = "true" ]; then
+			mv ${scanbuild_out}tmp/* ${scanbuild_out}
+			rmdir ${scanbuild_out}tmp
+		fi
+	fi
+	# Not calculated here because we still print it in compile_target
+	#etime=`perl -e 'print time();' 2>/dev/null || date +%s`
+	#duration=$(( $etime - $stime ))
+
+	junit "</testcase>"
+}
+
+function test_target
+{
+	VENDOR=$1
+	MAINBOARD=$2
+
+	if [ "$hwtest" != "true" ]; then
+		return 0
+	fi
+
+	# image does not exist. we silently skip the patch.
+	if [ ! -r "$TARGET/${VENDOR}_${MAINBOARD}/coreboot.rom" ]; then
+		return 0
+	fi
+
+	which curl &> /dev/null
+	if [ $? != 0 ]; then
+		printf "curl is not installed but required for test submission.  skipping test.\n\n"
+		return 0
+	fi
+
+	CURR=`pwd`
+	if [ -r "$TARGET/${VENDOR}_${MAINBOARD}/tested" ]; then
+		printf "Testing image for board $VENDOR $MAINBOARD skipped (previously submitted).\n\n"
+		return 0
+	fi
+	# touch $TARGET/${VENDOR}_${MAINBOARD}/tested
+
+	printf "Submitting image for board $VENDOR $MAINBOARD to test system...\n"
+
+	curl -f -F "romfile=@$TARGET/${VENDOR}_${MAINBOARD}/coreboot.rom" \
+		-F "mode=abuild" -F "mainboard=${VENDOR}_${MAINBOARD}" -F "submit=Upload" \
+        	"http://qa.coreboot.org/deployment/send.php"
+
+	printf "\n"
+	return 0
+}
+
+function remove_target
+{
+	if [ "$remove" != "true" ]; then
+		return 0
+	fi
+
+	VENDOR=$1
+	MAINBOARD=$2
+
+	# Save the generated coreboot.rom file of each board.
+	if [ -r "$TARGET/${VENDOR}_${MAINBOARD}/coreboot.rom" ]; then
+		cp $TARGET/${VENDOR}_${MAINBOARD}/coreboot.rom \
+		   ${VENDOR}_${MAINBOARD}_coreboot.rom
+	fi
+
+	printf "Removing build dir for board $VENDOR $MAINBOARD...\n"
+	rm -rf $TARGET/${VENDOR}_${MAINBOARD}
+
+	return 0
+}
+
+function myhelp
+{
+	printf "Usage: $0 [-v] [-a] [-b] [-r] [-t <vendor/board>] [-p <dir>] [lbroot]\n"
+	printf "       $0 [-V|--version]\n"
+	printf "       $0 [-h|--help]\n\n"
+
+	printf "Options:\n"
+	printf "    [-v|--verbose]		  print more messages\n"
+	printf "    [-q|--quiet]		  print fewer messages\n"
+	printf "    [-a|--all]			  build previously succeeded ports as well\n"
+	printf "    [-r|--remove]                 remove output dir after build\n"
+	printf "    [-t|--target <vendor/board>]  attempt to build target vendor/board only\n"
+	printf "    [-p|--payloads <dir>]         use payloads in <dir> to build images\n"
+	printf "    [-V|--version]		  print version number and exit\n"
+	printf "    [-h|--help]			  print this help and exit\n"
+	printf "    [-J|--junit]		  write JUnit formatted xml log file \n"
+	printf "                                  (defaults to $XMLFILE)\n"
+	printf "    [-T|--test]			  submit image(s) to automated test system\n"
+	printf "    [-c|--cpus <numcpus>]         build on <numcpus> at the same time\n"
+	printf "    [-s|--silent]                 omit compiler calls in logs\n"
+	printf "    [-y|--ccache]                 use ccache\n"
+	printf "    [-C|--config]                 configure-only mode\n"
+	printf "    [-l|--loglevel <num>]         set loglevel\n"
+	printf "    [-u|--update]                 update existing image\n"
+	printf "    [-P|--prefix <name>]          file name prefix in CBFS\n"
+	printf "    [-B|--blobs]                  Allow using binary files\n"
+	printf "    [-z|--clean]                  Remove build results when finished\n"
+	printf "    [-o|--outdir <path>]          store build results in path\n"
+	printf "				  (defaults to $TARGET)\n"
+	printf "    [-L|--clang]                  Use clang\n"
+	printf "    [--scan-build]                use clang's static analyzer\n"
+	printf "    [cbroot]			  absolute path to coreboot sources\n"
+	printf "				  (defaults to $ROOT)\n\n"
+}
+
+function myversion
+{
+	cat << EOF
+
+coreboot autobuild v$ABUILD_VERSION ($ABUILD_DATE)
+
+Copyright (C) 2004 by Stefan Reinauer <stepan@openbios.org>
+Copyright (C) 2006-2010 by coresystems GmbH <info@coresystems.de>
+
+This program is free software; you may redistribute it under the terms
+of the GNU General Public License. This program has absolutely no
+warranty.
+
+EOF
+}
+
+# default options
+target=""
+buildall=false
+verbose=false
+
+test -f util/sconfig/sconfig.l && ROOT=$( pwd )
+test -f ../util/sconfig/sconfig.l && ROOT=$( cd ..; pwd )
+test "$ROOT" = "" && ROOT=$( cd ../..; pwd )
+
+# Look if we have getopt. If not, build it.
+export PATH=$PATH:util/abuild
+getopt - > /dev/null 2>/dev/null || gcc -o util/abuild/getopt util/abuild/getopt.c
+
+# command line for xargs parallelization. Thus overwrite -c X
+cmdline="$* -c 1"
+
+# parse parameters.. try to find out whether we're running GNU getopt
+getoptbrand="`getopt -V`"
+if [ "${getoptbrand:0:6}" == "getopt" ]; then
+	# Detected GNU getopt that supports long options.
+	args=`getopt -l version,verbose,quiet,help,all,target:,payloads:,test,cpus:,silent,junit,config,loglevel:,remove,prefix:,update,scan-build,ccache,blobs,clang,clean,outdir: -o Vvqhat:p:Tc:sJCl:rP:uyBLzo: -- "$@"` || exit 1
+	eval set -- $args
+else
+	# Detected non-GNU getopt
+	args=`getopt Vvqhat:bp:Tc:sJxCl:rP:uy $*`
+	set -- $args
+fi
+
+if [ $? != 0 ]; then
+	myhelp
+	exit 1
+fi
+
+clean_work=false
+customizing=""
+configoptions=""
+while true ; do
+	case "$1" in
+		-J|--junit)     shift; mode=junit; rm -f $XMLFILE ;;
+		-t|--target)	shift; target="$1"; shift;;
+		-a|--all)	shift; buildall=true;;
+		-r|--remove)	shift; remove=true;;
+		-v|--verbose)	shift; verbose=true; silent='V=1';;
+		-q|--quiet)	shift; quiet=true;;
+		-V|--version)	shift; myversion; exit 0;;
+		-h|--help)	shift; myversion; myhelp; exit 0;;
+		-p|--payloads)  shift; payloads="$1"; shift;;
+		-T|--test)      shift; hwtest=true;;
+		-c|--cpus)	shift
+			export MAKEFLAGS="-j $1"
+			cpus=$1
+			test "$MAKEFLAGS" == "-j max" && export MAKEFLAGS="-j" && cpuconfig=" in parallel"
+			test "$1" == "1" && cpuconfig=" on 1 cpu"
+			expr "$1" : '-\?[0-9]\+$' > /dev/null && test 0$1 -gt 1 && cpuconfig=" on $1 cpus in parallel"
+			shift;;
+		-s|--silent)    shift; silent="-s";;
+		--scan-build)   shift
+			scanbuild=true
+			customizing="${customizing}, scan-build"
+			;;
+		-y|--ccache)    shift
+			customizing="${customizing}, ccache"
+			configoptions="${configoptions}CONFIG_CCACHE=y\n"
+			;;
+		-C|--config)    shift; configureonly=1;;
+		-l|--loglevel)  shift
+			customizing="${customizing}, loglevel $1"
+			configoptions="${configoptions}CONFIG_DEFAULT_CONSOLE_LOGLEVEL_$1=y\n"
+			configoptions="${configoptions}CONFIG_DEFAULT_CONSOLE_LOGLEVEL=$1\n"
+			shift;;
+		-u|--update)    shift
+			customizing="${customizing}, update"
+			configoptions="${configoptions}CONFIG_UPDATE_IMAGE=y\n"
+			;;
+		-P|--prefix)    shift
+			customizing="${customizing}, cbfs prefix $1"
+			configoptions="${configoptions}CONFIG_CBFS_PREFIX=\"$1\""
+			shift;;
+		-B|--blobs)	shift
+			customizing="${customizing}, blobs"
+			configoptions="${configoptions}CONFIG_USE_BLOBS=y\n"
+			;;
+		-L|--clang)	shift
+			customizing="${customizing}, clang"
+			configoptions="${configoptions}CONFIG_COMPILER_LLVM_CLANG=y\n# CONFIG_COMPILER_GCC is not set\n"
+			;;
+		-z|--clean)	shift
+			customizing="${customizing}, clean"
+			clean_work=true
+			;;
+		-o|--outdir)	shift
+			TARGET=$1; shift
+			;;
+		--)		shift; break;;
+		-*)		printf "Invalid option\n\n"; myhelp; exit 1;;
+		*)		break;;
+	esac
+done
+
+if [ -z "$TARGET" -o "$TARGET" = "/" ]; then
+	echo "Please specify a valid, non-root build directory."
+	exit 1
+fi
+
+customizing=`echo $customizing |cut -c3-`
+if [ "$customizing" = "" ]; then
+	customizing="default configuration"
+fi
+
+USE_XARGS=0
+if [ "$cpus" != "1" ]; then
+	# Limit to 32 parallel builds for now.
+	# Thrashing all caches because we run
+	# 160 abuilds in parallel is no fun.
+	if [ "$cpus" = "max" ]; then
+		cpus=32
+	fi
+	if [ "$target" = "" ]; then
+		# Test if xargs supports the non-standard -P flag
+		# FIXME: disabled until we managed to eliminate all the make(1) quirks
+		echo | xargs -P ${cpus:-0} -n 1 echo 2>/dev/null >/dev/null && USE_XARGS=1
+	fi
+fi
+
+if [ "$USE_XARGS" = "0" ]; then
+test "$MAKEFLAGS" == "" && test "$cpus" != "" && export MAKEFLAGS="-j $cpus"
+build_all_targets()
+{
+	for VENDOR in $( vendors ); do
+		for MAINBOARD in $( mainboards $VENDOR ); do
+			build_target $VENDOR $MAINBOARD
+			test_target $VENDOR $MAINBOARD
+			remove_target $VENDOR $MAINBOARD
+		done
+	done
+}
+else
+build_all_targets()
+{
+	# seed shared utils
+	TMPCFG=`mktemp`
+	printf "$configoptions" > $TMPCFG
+	$MAKE -j $cpus DOTCONFIG=$TMPCFG obj=$TARGET/temp objutil=$TARGET/sharedutils allnoconfig
+	printf "$configoptions" >> $TMPCFG
+	$MAKE -j $cpus DOTCONFIG=$TMPCFG obj=$TARGET/temp objutil=$TARGET/sharedutils oldconfig 2>/dev/null |head > /dev/null
+	BUILDPREFIX=
+	if [ "$scanbuild" = "true" ]; then
+		scanbuild_out=$TARGET/sharedutils-scanbuild
+		rm -rf ${scanbuild_out}
+		BUILDPREFIX="scan-build -o ${scanbuild_out}tmp"
+	fi
+	$BUILDPREFIX $MAKE -j $cpus DOTCONFIG=$TMPCFG obj=$TARGET/temp objutil=$TARGET/sharedutils tools || exit 1
+	if [ "$scanbuild" = "true" ]; then
+		mv ${scanbuild_out}tmp/* ${scanbuild_out}
+		rmdir ${scanbuild_out}tmp
+	fi
+	rm -rf $TARGET/temp $TMPCFG
+	for VENDOR in $( vendors ); do
+		for MAINBOARD in $( mainboards $VENDOR ); do
+			echo $VENDOR/$MAINBOARD
+		done
+	done | xargs -P ${cpus:-0} -n 1 $0 $cmdline -t
+}
+fi
+
+test -z "$1" || ROOT=$1
+
+debug "ROOT=$ROOT"
+
+junit '<?xml version="1.0" encoding="utf-8"?>'
+junit '<testsuite>'
+
+if [ "$target" != "" ]; then
+	# build a single board
+	VENDOR=`printf $target|cut -f1 -d/`
+	MAINBOARD=`printf $target|cut -f2 -d/`
+	CONFIG=`printf $target|cut -f3 -d/`
+	if [ ! -r $ROOT/src/mainboard/$target ]; then
+		printf "No such target: $target\n"
+		failed=1
+	else
+		build_target $VENDOR $MAINBOARD $CONFIG
+		test_target $VENDOR $MAINBOARD
+		remove_target $VENDOR $MAINBOARD
+		test "$mode" != "text" && cat $TARGET/abuild/${VENDOR}_${MAINBOARD}.xml >> $REAL_XMLFILE
+		XMLFILE=$REAL_XMLFILE
+	fi
+else
+	build_all_targets
+	rm -f $REAL_XMLFILE
+	XMLFILE=$REAL_XMLFILE
+	junit '<?xml version="1.0" encoding="utf-8"?>'
+	junit '<testsuite>'
+	if [ "$mode" != "text" ]; then
+		for xmlfile in $TARGET/abuild/*_*.xml; do
+			cat $xmlfile >> $REAL_XMLFILE
+		done
+	fi
+	XMLFILE=$REAL_XMLFILE
+fi
+junit '</testsuite>'
+
+exit $failed

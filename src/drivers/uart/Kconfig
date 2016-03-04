@@ -1,0 +1,38 @@
+config DRIVERS_UART
+	bool
+	default y if CONSOLE_SERIAL
+	default n
+
+config DRIVERS_UART_8250IO
+	bool "Serial port on SuperIO"
+	depends on !ARCH_ARM
+	default n if NO_UART_ON_SUPERIO
+	default y if ARCH_X86
+
+# Select this for mainboard without SuperIO serial port.
+config NO_UART_ON_SUPERIO
+	def_bool n
+
+config DRIVERS_UART_8250MEM
+	bool
+	default n
+
+config HAVE_UART_SPECIAL
+	bool
+	default n
+
+config DRIVERS_UART_OXPCIE
+	bool "Oxford OXPCIe952"
+	default n
+	depends on PCI
+	select DRIVERS_UART_8250MEM
+	select EARLY_PCI_BRIDGE
+	help
+	  Support for Oxford OXPCIe952 serial port PCIe cards.
+	  Currently only devices with the vendor ID 0x1415 and device ID
+	  0xc158 or 0xc11b will work.
+
+config DRIVERS_UART_PL011
+	bool
+	default n
+	select HAVE_UART_SPECIAL

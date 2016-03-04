@@ -1,0 +1,19 @@
+diff -ur gdb-7.6/gdb/python/python.c gdb-7.6.patched/gdb/python/python.c
+--- gdb-7.6/gdb/python/python.c	2012-06-25 18:53:20.000000000 +0200
++++ gdb-7.6.patched/gdb/python/python.c	2012-10-24 15:28:37.422047.69 +0200
+@@ -1227,6 +1227,15 @@
+ 			     SLASH_STRING, "python", NULL));
+ #endif
+ 
++  char readlinkbuffer[BUFSIZ];
++  int readlinks = readlink("/proc/self/exe", readlinkbuffer, BUFSIZ - 1);
++  readlinkbuffer[readlinks] = 0;
++  char *executeablepath = dirname(readlinkbuffer);
++  char *pythonhome = malloc(strlen(executeablepath) + strlen("/../") + 2);
++  strcpy(pythonhome, executeablepath);
++  strcat(pythonhome, "/../");
++  setenv("PYTHONHOME", pythonhome, 1);
++
+   Py_Initialize ();
+   PyEval_InitThreads ();
+ 

@@ -1,0 +1,146 @@
+config PARALLEL_CPU_INIT
+	bool
+	default n
+
+config UDELAY_IO
+	bool
+	default y if !UDELAY_LAPIC && !UDELAY_TSC && !UDELAY_TIMER2
+	default n
+
+config UDELAY_LAPIC
+	bool
+	default n
+
+config LAPIC_MONOTONIC_TIMER
+	def_bool n
+	depends on UDELAY_LAPIC
+	select HAVE_MONOTONIC_TIMER
+	help
+	  Expose monotonic time using the local apic.
+
+config UDELAY_LAPIC_FIXED_FSB
+	int
+
+config UDELAY_TSC
+	bool
+	default n
+
+config TSC_CONSTANT_RATE
+	def_bool n
+	depends on UDELAY_TSC
+	help
+	  This option asserts that the TSC ticks at a known constant rate.
+	  Therefore, no TSC calibration is required.
+
+config TSC_MONOTONIC_TIMER
+	def_bool n
+	depends on UDELAY_TSC
+	select HAVE_MONOTONIC_TIMER
+	help
+	  Expose monotonic time using the TSC.
+
+config UDELAY_TIMER2
+	bool
+	default n
+
+config TSC_CALIBRATE_WITH_IO
+	bool
+	default n
+
+config TSC_SYNC_LFENCE
+	bool
+	default n
+	help
+	  The CPU driver should select this if the CPU needs
+	  to execute an lfence instruction in order to synchronize
+	  rdtsc. This is true for all modern AMD CPUs.
+
+config TSC_SYNC_MFENCE
+	bool
+	default n
+	help
+	  The CPU driver should select this if the CPU needs
+	  to execute an mfence instruction in order to synchronize
+	  rdtsc. This is true for all modern Intel CPUs.
+
+config XIP_ROM_SIZE
+	hex
+	default ROM_SIZE if ROMCC
+	default 0x10000
+
+config CPU_ADDR_BITS
+	int
+	default 36
+
+config LOGICAL_CPUS
+	bool
+	default y
+
+config SMM_TSEG
+	bool
+	default n
+
+config SMM_TSEG_SIZE
+	hex
+	default 0
+
+config SMM_MODULES
+	bool
+	default n
+	depends on HAVE_SMI_HANDLER
+	select RELOCATABLE_MODULES
+	help
+	 If SMM_MODULES is selected then SMM handlers are built as modules.
+	 A SMM stub along with a SMM loader/relocator. All the handlers are
+	 written in C with stub being the only assembly.
+
+config SMM_MODULE_HEAP_SIZE
+	hex
+	default 0x4000
+	depends on SMM_MODULES
+	help
+	  This option determines the size of the heap within the SMM handler
+	  modules.
+
+config X86_AMD_FIXED_MTRRS
+	bool
+	default n
+	help
+	  This option informs the MTRR code to use the RdMem and WrMem fields
+	  in the fixed MTRR MSRs.
+
+config PLATFORM_USES_FSP
+	bool
+	default n
+	help
+	  Selected for Intel processors/platform combinations that use the
+	  Intel Firmware Support Package (FSP) for initialization.
+
+config PARALLEL_MP
+	def_bool n
+	help
+	 This option uses common MP infrastructure for bringing up APs
+	 in parallel. It additionally provides a more flexible mechanism
+	 for sequencing the steps of bringing up the APs.
+
+config BACKUP_DEFAULT_SMM_REGION
+	def_bool n
+	help
+	 The CPU support will select this option if the default SMM region
+	 needs to be backed up for suspend/resume purposes.
+
+config MIRROR_PAYLOAD_TO_RAM_BEFORE_LOADING
+	def_bool n
+	help
+	  On certain platforms a boot speed gain can be realized if mirroring
+	  the payload data stored in non-volatile storage. On x86 systems the
+	  payload would typically live in a memory-mapped SPI part. Copying
+	  the SPI contents to RAM before performing the load can speed up
+	  the boot process.
+
+config BOOT_MEDIA_SPI_BUS
+	int
+	default 0
+	depends on SPI_FLASH
+	help
+	 Most x86 systems which boot from SPI flash boot using bus 0.

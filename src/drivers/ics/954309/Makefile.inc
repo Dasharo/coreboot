@@ -1,0 +1,1 @@
+ramstage-$(CONFIG_DRIVERS_ICS_954309) += ics954309.c

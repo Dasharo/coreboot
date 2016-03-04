@@ -1,0 +1,4 @@
+source src/vendorcode/amd/Kconfig
+#source src/vendorcode/google/Kconfig
+#source src/vendorcode/intel/Kconfig
+source src/vendorcode/eltan/Kconfig

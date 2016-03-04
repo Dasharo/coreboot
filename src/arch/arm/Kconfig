@@ -1,0 +1,37 @@
+config ARCH_BOOTBLOCK_ARM
+	bool
+	default n
+	select ARCH_ARM
+
+config ARCH_VERSTAGE_ARM
+	bool
+	default n
+
+config ARCH_ROMSTAGE_ARM
+	bool
+	default n
+
+config ARCH_RAMSTAGE_ARM
+	bool
+	default n
+
+source src/arch/arm/armv4/Kconfig
+source src/arch/arm/armv7/Kconfig
+
+# If a custom bootblock is necessary, this option should be "select"-ed by
+# the thing that needs it, probably the CPU.
+config ARM_BOOTBLOCK_CUSTOM
+	bool
+	default n
+
+config CPU_HAS_BOOTBLOCK_INIT
+	bool
+	default n
+
+config MAINBOARD_HAS_BOOTBLOCK_INIT
+	bool
+	default n
+
+config ARM_LPAE
+	bool
+	default n

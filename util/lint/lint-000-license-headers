@@ -1,0 +1,24 @@
+#!/bin/sh
+# This file is part of the coreboot project.
+#
+# Copyright (C) 2010 coresystems GmbH
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+#
+# DESCR: Check that all files in src/ and util/ have valid license headers
+
+LC_ALL=C export LC_ALL
+grep -L "51 Franklin St, Fifth Floor, Boston" `git ls-files src util |egrep -v "(^3rdparty|^src/vendorcode/|^util/kconfig/|^util/romcc/tests|\<COPYING\>|\<LICENSE\>|\<README\>|_shipped$|\.patch$|/microcode-[^/]*.h$)"` | \
+	sed -e "s,^.*$,File & has no valid GPL header.,"

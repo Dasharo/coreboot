@@ -1,0 +1,1164 @@
+##
+## This file is part of the coreboot project.
+##
+## Copyright (C) 2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
+## Copyright (C) 2009-2010 coresystems GmbH
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; version 2 of the License.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+##
+
+mainmenu "coreboot configuration"
+
+menu "General setup"
+
+config EXPERT
+	bool "Expert mode"
+	help
+	  This allows you to select certain advanced configuration options.
+
+	  Warning: Only enable this option if you really know what you are
+	  doing! You have been warned!
+
+config LOCALVERSION
+	string "Local version string"
+	help
+	  Append an extra string to the end of the coreboot version.
+
+	  This can be useful if, for instance, you want to append the
+	  respective board's hostname or some other identifying string to
+	  the coreboot version number, so that you can easily distinguish
+	  boot logs of different boards from each other.
+
+config CBFS_PREFIX
+	string "CBFS prefix to use"
+	default "fallback"
+	help
+	  Select the prefix to all files put into the image. It's "fallback"
+	  by default, "normal" is a common alternative.
+
+config COMMON_CBFS_SPI_WRAPPER
+	bool
+	default n
+	depends on SPI_FLASH
+	depends on !ARCH_X86
+	help
+	 Use common wrapper to interface CBFS to SPI bootrom.
+
+choice
+	prompt "Compiler to use"
+	default COMPILER_GCC
+	help
+	  This option allows you to select the compiler used for building
+	  coreboot.
+
+config COMPILER_GCC
+	bool "GCC"
+	help
+	  Use the GNU Compiler Collection (GCC) to build coreboot.
+
+	  For details see http://gcc.gnu.org.
+
+config COMPILER_LLVM_CLANG
+	bool "LLVM/clang"
+	help
+	  Use LLVM/clang to build coreboot.
+
+	  For details see http://clang.llvm.org.
+
+endchoice
+
+config ANY_TOOLCHAIN
+	bool "Allow building with any toolchain"
+	default n
+	depends on COMPILER_GCC
+	help
+	  Many toolchains break when building coreboot since it uses quite
+	  unusual linker features. Unless developers explicitely request it,
+	  we'll have to assume that they use their distro compiler by mistake.
+	  Make sure that using patched compilers is a conscious decision.
+
+config CCACHE
+	bool "Use ccache to speed up (re)compilation"
+	default n
+	help
+	  Enables the use of ccache for faster builds.
+
+	  Requires the ccache utility in your system $PATH.
+
+	  For details see https://ccache.samba.org.
+
+config SCONFIG_GENPARSER
+	bool "Generate SCONFIG parser using flex and bison"
+	default n
+	depends on EXPERT
+	help
+	  Enable this option if you are working on the sconfig device tree
+	  parser and made changes to sconfig.l and sconfig.y.
+
+	  Otherwise, say N.
+
+config USE_OPTION_TABLE
+	bool "Use CMOS for configuration values"
+	default n
+	depends on HAVE_OPTION_TABLE
+	help
+	  Enable this option if coreboot shall read options from the "CMOS"
+	  NVRAM instead of using hard-coded values.
+
+config STATIC_OPTION_TABLE
+	bool "Load default configuration values into CMOS on each boot"
+	default n
+	depends on USE_OPTION_TABLE
+	help
+	  Enable this option to reset "CMOS" NVRAM values to default on
+	  every boot.  Use this if you want the NVRAM configuration to
+	  never be modified from its default values.
+
+config COMPRESS_RAMSTAGE
+	bool "Compress ramstage with LZMA"
+	default y
+	help
+	  Compress ramstage to save memory in the flash image. Note
+	  that decompression might slow down booting if the boot flash
+	  is connected through a slow link (i.e. SPI).
+
+config INCLUDE_CONFIG_FILE
+	bool "Include the coreboot .config file into the ROM image"
+	default y
+	help
+	  Include the .config file that was used to compile coreboot
+	  in the (CBFS) ROM image. This is useful if you want to know which
+	  options were used to build a specific coreboot.rom image.
+
+	  Saying Y here will increase the image size by 2-3KB.
+
+	  You can use the following command to easily list the options:
+
+	    grep -a CONFIG_ coreboot.rom
+
+	  Alternatively, you can also use cbfstool to print the image
+	  contents (including the raw 'config' item we're looking for).
+
+	  Example:
+
+	    $ cbfstool coreboot.rom print
+	    coreboot.rom: 4096 kB, bootblocksize 1008, romsize 4194304,
+	                                               offset 0x0
+	    Alignment: 64 bytes
+
+	    Name                           Offset     Type         Size
+	    cmos_layout.bin                0x0        cmos layout  1159
+	    fallback/romstage              0x4c0      stage        339756
+	    fallback/ramstage              0x53440    stage        186664
+	    fallback/payload               0x80dc0    payload      51526
+	    config                         0x8d740    raw          3324
+	    (empty)                        0x8e480    null         3610440
+
+config EARLY_CBMEM_INIT
+	def_bool !LATE_CBMEM_INIT
+
+config COLLECT_TIMESTAMPS
+	bool "Create a table of timestamps collected during boot"
+	default n
+	help
+	  Make coreboot create a table of timer-ID/timer-value pairs to
+	  allow measuring time spent at different phases of the boot process.
+
+config USE_BLOBS
+	bool "Allow use of binary-only repository"
+	default n
+	help
+	  This draws in the blobs repository, which contains binary files that
+	  might be required for some chipsets or boards.
+	  This flag ensures that a "Free" option remains available for users.
+
+config COVERAGE
+	bool "Code coverage support"
+	depends on COMPILER_GCC
+	default n
+	help
+	  Add code coverage support for coreboot. This will store code
+	  coverage information in CBMEM for extraction from user space.
+	  If unsure, say N.
+
+config RELOCATABLE_MODULES
+	bool "Relocatable Modules"
+	default n
+	help
+	 If RELOCATABLE_MODULES is selected then support is enabled for
+	 building relocatable modules in the RAM stage. Those modules can be
+	 loaded anywhere and all the relocations are handled automatically.
+
+config RELOCATABLE_RAMSTAGE
+	depends on (RELOCATABLE_MODULES && EARLY_CBMEM_INIT)
+	bool "Build the ramstage to be relocatable in 32-bit address space."
+	default n
+	help
+	 The reloctable ramstage support allows for the ramstage to be built
+	 as a relocatable module. The stage loader can identify a place
+	 out of the OS way so that copying memory is unnecessary during an S3
+	 wake. When selecting this option the romstage is responsible for
+	 determing a stack location to use for loading the ramstage.
+
+config CACHE_RELOCATED_RAMSTAGE_OUTSIDE_CBMEM
+	depends on RELOCATABLE_RAMSTAGE
+	bool "Cache the relocated ramstage outside of cbmem."
+	default n
+	help
+	 The relocated ramstage is saved in an area specified by the
+	 by the board and/or chipset.
+
+choice
+	prompt "Bootblock behaviour"
+	default BOOTBLOCK_SIMPLE
+
+config BOOTBLOCK_SIMPLE
+	bool "Always load fallback"
+
+config BOOTBLOCK_NORMAL
+	bool "Switch to normal if CMOS says so"
+
+endchoice
+
+config BOOTBLOCK_SOURCE
+	string
+	default "bootblock_simple.c" if BOOTBLOCK_SIMPLE
+	default "bootblock_normal.c" if BOOTBLOCK_NORMAL
+
+config UPDATE_IMAGE
+	bool "Update existing coreboot.rom image"
+	default n
+	help
+	  If this option is enabled, no new coreboot.rom file
+	  is created. Instead it is expected that there already
+	  is a suitable file for further processing.
+	  The bootblock will not be modified.
+
+endmenu
+
+source src/mainboard/Kconfig
+
+# This option is used to set the architecture of a mainboard to X86.
+# It is usually set in mainboard/*/Kconfig.
+config ARCH_X86
+	bool
+	default n
+	select PCI
+
+config ARCH_ARM
+	bool
+	default n
+
+config ARCH_ARM64
+	bool
+	default n
+
+config ARCH_RISCV
+	bool
+	default n
+	select ANY_TOOLCHAIN
+
+source src/arch/x86/Kconfig
+source src/arch/arm/Kconfig
+source src/arch/arm64/Kconfig
+source src/arch/riscv/Kconfig
+
+source src/vendorcode/Kconfig
+
+config SYSTEM_TYPE_LAPTOP
+       default n
+       bool
+
+menu "Chipset"
+
+comment "CPU"
+source src/cpu/Kconfig
+comment "Northbridge"
+source src/northbridge/Kconfig
+comment "Southbridge"
+source src/southbridge/Kconfig
+comment "Super I/O"
+source src/superio/Kconfig
+comment "Embedded Controllers"
+source src/ec/Kconfig
+comment "SoC"
+source src/soc/Kconfig
+source src/drivers/intel/fsp/Kconfig
+
+endmenu
+
+source src/device/Kconfig
+
+menu "Generic Drivers"
+source src/drivers/Kconfig
+endmenu
+
+config TPM
+	bool
+	default n
+	select LPC_TPM if ARCH_X86
+	select I2C_TPM if ARCH_ARM
+	select I2C_TPM if ARCH_ARM64
+	help
+	  Enable this option to enable TPM support in coreboot.
+
+	  If unsure, say N.
+
+config RAMTOP
+	hex
+	default 0x200000
+	depends on ARCH_X86
+
+config HEAP_SIZE
+	hex
+	default 0x4000
+
+config MAX_CPUS
+	int
+	default 1
+
+config MMCONF_SUPPORT_DEFAULT
+	bool
+	default n
+
+config MMCONF_SUPPORT
+	bool
+	default n
+
+config BOOTMODE_STRAPS
+	bool
+	default n
+
+source src/console/Kconfig
+
+config HAVE_ACPI_RESUME
+	bool
+	default n
+
+config HAVE_ACPI_SLIC
+	bool
+	default n
+
+config HAVE_HARD_RESET
+	bool
+	default n
+	help
+	  This variable specifies whether a given board has a hard_reset
+	  function, no matter if it's provided by board code or chipset code.
+
+config HAVE_MONOTONIC_TIMER
+	def_bool n
+	help
+	 The board/chipset provides a monotonic timer.
+
+config TIMER_QUEUE
+	def_bool n
+	depends on HAVE_MONOTONIC_TIMER
+	help
+	  Provide a timer queue for performing time-based callbacks.
+
+config COOP_MULTITASKING
+	def_bool n
+	depends on TIMER_QUEUE && ARCH_X86
+	help
+	  Cooperative multitasking allows callbacks to be multiplexed on the
+	  main thread of ramstage. With this enabled it allows for multiple
+	  execution paths to take place when they have udelay() calls within
+	  their code.
+
+config NUM_THREADS
+	int
+	default 4
+	depends on COOP_MULTITASKING
+	help
+	  How many execution threads to cooperatively multitask with.
+
+config HAVE_OPTION_TABLE
+	bool
+	default n
+	help
+	  This variable specifies whether a given board has a cmos.layout
+	  file containing NVRAM/CMOS bit definitions.
+	  It defaults to 'n' but can be selected in mainboard/*/Kconfig.
+
+config PIRQ_ROUTE
+	bool
+	default n
+
+config HAVE_SMI_HANDLER
+	bool
+	default n
+
+config PCI_IO_CFG_EXT
+	bool
+	default n
+
+config IOAPIC
+	bool
+	default n
+
+config CBFS_SIZE
+	hex
+	default ROM_SIZE
+
+config CACHE_ROM_SIZE_OVERRIDE
+	hex
+	default 0
+
+# TODO: Can probably be removed once all chipsets have kconfig options for it.
+config VIDEO_MB
+	int
+	default 0
+
+config USE_WATCHDOG_ON_BOOT
+	bool
+	default n
+
+config VGA
+	bool
+	default n
+	help
+	  Build board-specific VGA code.
+
+config GFXUMA
+	bool
+	default n
+	help
+	  Enable Unified Memory Architecture for graphics.
+
+config HAVE_ACPI_TABLES
+	bool
+	help
+	  This variable specifies whether a given board has ACPI table support.
+	  It is usually set in mainboard/*/Kconfig.
+
+config HAVE_MP_TABLE
+	bool
+	help
+	  This variable specifies whether a given board has MP table support.
+	  It is usually set in mainboard/*/Kconfig.
+	  Whether or not the MP table is actually generated by coreboot
+	  is configurable by the user via GENERATE_MP_TABLE.
+
+config HAVE_PIRQ_TABLE
+	bool
+	help
+	  This variable specifies whether a given board has PIRQ table support.
+	  It is usually set in mainboard/*/Kconfig.
+	  Whether or not the PIRQ table is actually generated by coreboot
+	  is configurable by the user via GENERATE_PIRQ_TABLE.
+
+config MAX_PIRQ_LINKS
+	int
+	default 4
+	help
+	  This variable specifies the number of PIRQ interrupt links which are
+	  routable. On most chipsets, this is 4, INTA through INTD. Some
+	  chipsets offer more than four links, commonly up to INTH. They may
+	  also have a separate link for ATA or IOAPIC interrupts. When the PIRQ
+	  table specifies links greater than 4, pirq_route_irqs will not
+	  function properly, unless this variable is correctly set.
+
+config PER_DEVICE_ACPI_TABLES
+	bool
+	default n
+
+config COMMON_FADT
+	bool
+	default n
+
+#These Options are here to avoid "undefined" warnings.
+#The actual selection and help texts are in the following menu.
+
+menu "System tables"
+
+config GENERATE_MP_TABLE
+	prompt "Generate an MP table" if HAVE_MP_TABLE || DRIVERS_GENERIC_IOAPIC
+	bool
+	default HAVE_MP_TABLE || DRIVERS_GENERIC_IOAPIC
+	help
+	  Generate an MP table (conforming to the Intel MultiProcessor
+	  specification 1.4) for this board.
+
+	  If unsure, say Y.
+
+config GENERATE_PIRQ_TABLE
+	prompt "Generate a PIRQ table" if HAVE_PIRQ_TABLE
+	bool
+	default HAVE_PIRQ_TABLE
+	help
+	  Generate a PIRQ table for this board.
+
+	  If unsure, say Y.
+
+config GENERATE_SMBIOS_TABLES
+	depends on ARCH_X86
+	bool "Generate SMBIOS tables"
+	default y
+	help
+	  Generate SMBIOS tables for this board.
+
+	  If unsure, say Y.
+
+config MAINBOARD_SERIAL_NUMBER
+	string "SMBIOS Serial Number"
+	depends on GENERATE_SMBIOS_TABLES
+	default "123456789"
+        help
+	  The Serial Number to store in SMBIOS structures.
+
+config MAINBOARD_VERSION
+	string "SMBIOS Version Number"
+	depends on GENERATE_SMBIOS_TABLES
+	default "1.0"
+	help
+	  The Version Number to store in SMBIOS structures.
+
+config MAINBOARD_SMBIOS_MANUFACTURER
+	string "SMBIOS Manufacturer"
+	depends on GENERATE_SMBIOS_TABLES
+	default MAINBOARD_VENDOR
+	help
+	  Override the default Manufacturer stored in SMBIOS structures.
+
+config MAINBOARD_SMBIOS_PRODUCT_NAME
+	string "SMBIOS Product name"
+	depends on GENERATE_SMBIOS_TABLES
+	default MAINBOARD_PART_NUMBER
+	help
+	  Override the default Product name stored in SMBIOS structures.
+
+endmenu
+
+menu "Payload"
+
+choice
+	prompt "Add a payload"
+	default PAYLOAD_NONE if !ARCH_X86
+	default PAYLOAD_SEABIOS if ARCH_X86
+
+config PAYLOAD_NONE
+	bool "None"
+	help
+	  Select this option if you want to create an "empty" coreboot
+	  ROM image for a certain mainboard, i.e. a coreboot ROM image
+	  which does not yet contain a payload.
+
+	  For such an image to be useful, you have to use 'cbfstool'
+	  to add a payload to the ROM image later.
+
+config PAYLOAD_ELF
+	bool "An ELF executable payload"
+	help
+	  Select this option if you have a payload image (an ELF file)
+	  which coreboot should run as soon as the basic hardware
+	  initialization is completed.
+
+	  You will be able to specify the location and file name of the
+	  payload image later.
+
+config PAYLOAD_LINUX
+	bool "A Linux payload"
+	help
+	  Select this option if you have a Linux bzImage which coreboot
+	  should run as soon as the basic hardware initialization
+	  is completed.
+
+	  You will be able to specify the location and file name of the
+	  payload image later.
+
+config PAYLOAD_SEABIOS
+	bool "SeaBIOS"
+	depends on ARCH_X86
+	help
+	  Select this option if you want to build a coreboot image
+	  with a SeaBIOS payload. If you don't know what this is
+	  about, just leave it enabled.
+
+	  See http://coreboot.org/Payloads for more information.
+
+config PAYLOAD_FILO
+	bool "FILO"
+	help
+	  Select this option if you want to build a coreboot image
+	  with a FILO payload. If you don't know what this is
+	  about, just leave it enabled.
+
+	  See http://coreboot.org/Payloads for more information.
+
+config PAYLOAD_GRUB2
+	bool "GRUB2"
+	help
+	  Select this option if you want to build a coreboot image
+	  with a GRUB2 payload. If you don't know what this is
+	  about, just leave it enabled.
+
+	  See http://coreboot.org/Payloads for more information.
+
+config PAYLOAD_TIANOCORE
+	bool "Tiano Core"
+	help
+	  Select this option if you want to build a coreboot image
+	  with a Tiano Core payload. If you don't know what this is
+	  about, just leave it enabled.
+
+	  See http://coreboot.org/Payloads for more information.
+
+endchoice
+
+source "payloads/external/SeaBIOS/Kconfig"
+
+choice
+	prompt "GRUB2 version"
+	default GRUB2_MASTER
+	depends on PAYLOAD_GRUB2
+
+config GRUB2_MASTER
+	bool "HEAD"
+	help
+	  Newest GRUB2 version
+
+endchoice
+
+choice
+	prompt "FILO repo"
+	default FILO_GENERIC
+	depends on PAYLOAD_FILO
+
+config FILO_GENERIC
+	bool "FILO generic repository"
+	help
+	  Get FILO from the master GIT repo
+config FILO_ELTAN
+	bool "Eltan Repository"
+	help
+	  Get FILO from the Eltan repo
+
+endchoice
+
+choice
+	prompt "FILO version"
+	default FILO_MASTER
+	depends on PAYLOAD_FILO
+
+config FILO_STABLE
+	bool "FILO STABLE 0.6.0 for generic"
+	help
+	  Stable FILO version
+
+config FILO_MASTER
+	bool "HEAD"
+	help
+	  Newest FILO version
+	  
+endchoice
+
+config ELTAN_FILO_TAG
+	depends on PAYLOAD_FILO
+	depends on FILO_ELTAN
+	depends on FILO_STABLE
+	string  "FILO TAG"
+	default "c315cb219587cde2143c3c6e7471b1214a532ed6"
+	help
+		Specify the FILO tag to check out	  
+
+config MENULST_FILE
+	depends on PAYLOAD_FILO
+	string "menulst path and filename"
+	default "hda3:/boot/filo/menu.lst"
+	help
+	  The path and filename of the menu.lst file, use uda1: instead of hda3: for usb disk. Use mem:
+	  to use the cbfs file system. Required eltan libpayload.
+
+config MENULST_TIMEOUT
+	depends on PAYLOAD_FILO
+	prompt "menu timeout in seconds"
+	default 0
+	int
+	help
+	  menu timeout in seconds
+
+config PAYLOAD_FILE
+	string "Payload path and filename"
+	depends on PAYLOAD_ELF
+	default "payload.elf"
+	help
+	  The path and filename of the ELF executable file to use as payload.
+
+config PAYLOAD_FILE
+	string "Linux path and filename"
+	depends on PAYLOAD_LINUX
+	default "bzImage"
+	help
+	  The path and filename of the bzImage kernel to use as payload.
+
+#config PAYLOAD_FILE
+#	depends on PAYLOAD_SEABIOS
+#	default "payloads/external/SeaBIOS/seabios/out/bios.bin.elf"
+#
+#config PAYLOAD_VGABIOS_FILE
+#	string
+#	depends on PAYLOAD_SEABIOS && SEABIOS_VGA_COREBOOT
+#	default "payloads/external/SeaBIOS/seabios/out/vgabios.bin"
+
+config PAYLOAD_FILE
+	depends on PAYLOAD_FILO
+	default "payloads/external/FILO/filo/build/filo.elf"
+
+config PAYLOAD_FILE
+	depends on PAYLOAD_GRUB2
+	default "payloads/external/GRUB2/grub2/build/default_payload.elf"
+
+config PAYLOAD_FILE
+	string "Tianocore firmware volume"
+	depends on PAYLOAD_TIANOCORE
+	default "COREBOOT.fd"
+	help
+	  The result of a corebootPkg build
+
+# TODO: Defined if no payload? Breaks build?
+config COMPRESSED_PAYLOAD_LZMA
+	bool "Use LZMA compression for payloads"
+	default y
+	depends on PAYLOAD_ELF || PAYLOAD_SEABIOS || PAYLOAD_FILO || PAYLOAD_TIANOCORE || PAYLOAD_GRUB2
+	help
+	  In order to reduce the size payloads take up in the ROM chip
+	  coreboot can compress them using the LZMA algorithm.
+
+config LINUX_COMMAND_LINE
+	string "Linux command line"
+	depends on PAYLOAD_LINUX
+	default ""
+	help
+	  A command line to add to the Linux kernel.
+
+config LINUX_INITRD
+	string "Linux initrd"
+	depends on PAYLOAD_LINUX
+	default ""
+	help
+	  An initrd image to add to the Linux kernel.
+
+endmenu
+
+menu "Debugging"
+
+# TODO: Better help text and detailed instructions.
+config GDB_STUB
+	bool "GDB debugging support"
+	default n
+	help
+	  If enabled, you will be able to set breakpoints for gdb debugging.
+	  See src/arch/x86/lib/c_start.S for details.
+
+config GDB_WAIT
+	bool "Wait for a GDB connection"
+	default n
+	depends on GDB_STUB
+	help
+	  If enabled, coreboot will wait for a GDB connection.
+
+config DEBUG_CBFS
+	bool "Output verbose CBFS debug messages"
+	default n
+	help
+	  This option enables additional CBFS related debug messages.
+
+config HAVE_DEBUG_RAM_SETUP
+	def_bool n
+
+config DEBUG_RAM_SETUP
+	bool "Output verbose RAM init debug messages"
+	default n
+	depends on HAVE_DEBUG_RAM_SETUP
+	help
+	  This option enables additional RAM init related debug messages.
+	  It is recommended to enable this when debugging issues on your
+	  board which might be RAM init related.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config HAVE_DEBUG_CAR
+	def_bool n
+
+config DEBUG_CAR
+	def_bool n
+	depends on HAVE_DEBUG_CAR
+
+if DEFAULT_CONSOLE_LOGLEVEL_7 || DEFAULT_CONSOLE_LOGLEVEL_8
+# Only visible if debug level is DEBUG (7) or SPEW (8) as it does additional
+# printk(BIOS_DEBUG, ...) calls.
+config DEBUG_CAR
+	bool "Output verbose Cache-as-RAM debug messages"
+	default n
+	depends on HAVE_DEBUG_CAR
+	help
+	  This option enables additional CAR related debug messages.
+endif
+
+config DEBUG_PIRQ
+	bool "Check PIRQ table consistency"
+	default n
+	depends on GENERATE_PIRQ_TABLE
+	help
+	  If unsure, say N.
+
+config HAVE_DEBUG_SMBUS
+	def_bool n
+
+config DEBUG_SMBUS
+	bool "Output verbose SMBus debug messages"
+	default n
+	depends on HAVE_DEBUG_SMBUS
+	help
+	  This option enables additional SMBus (and SPD) debug messages.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config DEBUG_SMI
+	bool "Output verbose SMI debug messages"
+	default n
+	depends on HAVE_SMI_HANDLER
+	help
+	  This option enables additional SMI related debug messages.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config DEBUG_SMM_RELOCATION
+	bool "Debug SMM relocation code"
+	default n
+	depends on HAVE_SMI_HANDLER
+	help
+	  This option enables additional SMM handler relocation related
+	  debug messages.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+# Only visible if debug level is DEBUG (7) or SPEW (8) as it does additional
+# printk(BIOS_DEBUG, ...) calls.
+config DEBUG_MALLOC
+	prompt "Output verbose malloc debug messages" if DEFAULT_CONSOLE_LOGLEVEL_7 || DEFAULT_CONSOLE_LOGLEVEL_8
+	bool
+	default n
+	help
+	  This option enables additional malloc related debug messages.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+# Only visible if debug level is DEBUG (7) or SPEW (8) as it does additional
+# printk(BIOS_DEBUG, ...) calls.
+config DEBUG_ACPI
+	prompt "Output verbose ACPI debug messages" if DEFAULT_CONSOLE_LOGLEVEL_7 || DEFAULT_CONSOLE_LOGLEVEL_8
+	bool
+	default n
+	help
+	  This option enables additional ACPI related debug messages.
+
+	  Note: This option will slightly increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+# Only visible if debug level is DEBUG (7) or SPEW (8) as it does additional
+# printk(BIOS_DEBUG, ...) calls.
+config REALMODE_DEBUG
+	prompt "Enable debug messages for option ROM execution" if DEFAULT_CONSOLE_LOGLEVEL_7 || DEFAULT_CONSOLE_LOGLEVEL_8
+	bool
+	default n
+	depends on PCI_OPTION_ROM_RUN_REALMODE
+	help
+	  This option enables additional x86emu related debug messages.
+
+	  Note: This option will increase the time to emulate a ROM.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG
+	bool "Output verbose x86emu debug messages"
+	default n
+	depends on PCI_OPTION_ROM_RUN_YABEL
+	help
+	  This option enables additional x86emu related debug messages.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_JMP
+	bool "Trace JMP/RETF"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print information about JMP and RETF opcodes from x86emu.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_TRACE
+	bool "Trace all opcodes"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print _all_ opcodes that are executed by x86emu.
+
+	  WARNING: This will produce a LOT of output and take a long time.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_PNP
+	bool "Log Plug&Play accesses"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print Plug And Play accesses made by option ROMs.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_DISK
+	bool "Log Disk I/O"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print Disk I/O related messages.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_PMM
+	bool "Log PMM"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print messages related to POST Memory Manager (PMM).
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+
+config X86EMU_DEBUG_VBE
+	bool "Debug VESA BIOS Extensions"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print messages related to VESA BIOS Extension (VBE) functions.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_INT10
+	bool "Redirect INT10 output to console"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Let INT10 (i.e. character output) calls print messages to debug output.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_INTERRUPTS
+	bool "Log intXX calls"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print messages related to interrupt handling.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_CHECK_VMEM_ACCESS
+	bool "Log special memory accesses"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print messages related to accesses to certain areas of the virtual
+	  memory (e.g. BDA (BIOS Data Area) or interrupt vectors)
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_MEM
+	bool "Log all memory accesses"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print memory accesses made by option ROM.
+	  Note: This also includes accesses to fetch instructions.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_IO
+	bool "Log IO accesses"
+	default n
+	depends on X86EMU_DEBUG
+	help
+	  Print I/O accesses made by option ROM.
+
+	  Note: This option will increase the size of the coreboot image.
+
+	  If unsure, say N.
+
+config X86EMU_DEBUG_TIMINGS
+	bool "Output timing information"
+	default n
+	depends on X86EMU_DEBUG && UDELAY_LAPIC && HAVE_MONOTONIC_TIMER
+	help
+	  Print timing information needed by i915tool.
+
+	  If unsure, say N.
+
+config DEBUG_TPM
+	bool "Output verbose TPM debug messages"
+	default n
+	depends on TPM
+	help
+	  This option enables additional TPM related debug messages.
+
+config DEBUG_SPI_FLASH
+	bool "Output verbose SPI flash debug messages"
+	default n
+	depends on SPI_FLASH
+	help
+	  This option enables additional SPI flash related debug messages.
+
+config DEBUG_USBDEBUG
+	bool "Output verbose USB 2.0 EHCI debug dongle messages"
+	default n
+	depends on USBDEBUG
+	help
+	  This option enables additional USB 2.0 debug dongle related messages.
+
+	  Select this to debug the connection of usbdebug dongle. Note that
+	  you need some other working console to receive the messages.
+
+if SOUTHBRIDGE_INTEL_BD82X6X && DEFAULT_CONSOLE_LOGLEVEL_8
+# Only visible with the right southbridge and loglevel.
+config DEBUG_INTEL_ME
+	bool "Verbose logging for Intel Management Engine"
+	default n
+	help
+	  Enable verbose logging for Intel Management Engine driver that
+	  is present on Intel 6-series chipsets.
+endif
+
+config TRACE
+	bool "Trace function calls"
+	default n
+	help
+	  If enabled, every function will print information to console once
+	  the function is entered. The syntax is ~0xaaaabbbb(0xccccdddd)
+	  the 0xaaaabbbb is the actual function and 0xccccdddd is EIP
+	  of calling function. Please note some printk releated functions
+	  are omitted from trace to have good looking console dumps.
+
+config DEBUG_COVERAGE
+	bool "Debug code coverage"
+	default n
+	depends on COVERAGE
+	help
+	  If enabled, the code coverage hooks in coreboot will output some
+	  information about the coverage data that is dumped.
+
+endmenu
+
+# These probably belong somewhere else, but they are needed somewhere.
+config ENABLE_APIC_EXT_ID
+	bool
+	default n
+
+config WARNINGS_ARE_ERRORS
+	bool
+	default y
+
+# The four POWER_BUTTON_DEFAULT_ENABLE, POWER_BUTTON_DEFAULT_DISABLE,
+# POWER_BUTTON_FORCE_ENABLE and POWER_BUTTON_FORCE_DISABLE options are
+# mutually exclusive. One of these options must be selected in the
+# mainboard Kconfig if the chipset supports enabling and disabling of
+# the power button. Chipset code uses the ENABLE_POWER_BUTTON option set
+# in mainboard/Kconfig to know if the button should be enabled or not.
+
+config POWER_BUTTON_DEFAULT_ENABLE
+	def_bool n
+	help
+	  Select when the board has a power button which can optionally be
+	  disabled by the user.
+
+config POWER_BUTTON_DEFAULT_DISABLE
+	def_bool n
+	help
+	  Select when the board has a power button which can optionally be
+	  enabled by the user, e.g. when the board ships with a jumper over
+	  the power switch contacts.
+
+config POWER_BUTTON_FORCE_ENABLE
+	def_bool n
+	help
+	  Select when the board requires that the power button is always
+	  enabled.
+
+config POWER_BUTTON_FORCE_DISABLE
+	def_bool n
+	help
+	  Select when the board requires that the power button is always
+	  disabled, e.g. when it has been hardwired to ground.
+
+config POWER_BUTTON_IS_OPTIONAL
+	bool
+	default y if POWER_BUTTON_DEFAULT_ENABLE || POWER_BUTTON_DEFAULT_DISABLE
+	default n if !(POWER_BUTTON_DEFAULT_ENABLE || POWER_BUTTON_DEFAULT_DISABLE)
+	help
+	  Internal option that controls ENABLE_POWER_BUTTON visibility.
+
+config REG_SCRIPT
+	bool
+	default n
+	help
+	  Internal option that controls whether we compile in register scripts.
+
+# Maximum reboot count
+# TODO: Improve description.
+config MAX_REBOOT_CNT
+	int
+	default 3
+	
+#
+# used but not defined
+#
+config VBOOT_VERIFY_FIRMWARE
+	bool 
+	
+config CHROMEOS
+	bool 
+

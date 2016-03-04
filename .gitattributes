@@ -1,0 +1,5 @@
+* text=auto
+makefile eol=lf
+*.sh eol=lf
+Kconfig eol=lf
+*.hex eol=lf

@@ -1,0 +1,266 @@
+#!/bin/bash
+#
+# This file is part of the coreboot project.
+#
+# Copyright (C) 2007-2010 coresystems GmbH
+# Copyright (C) 2012 Google Inc
+# Copyright (C) 2015-2016 Eltan B.V.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+
+TMPFILE=""
+XGCCPATH=${1:-"/cygdrive/c/EltanCorebootStudio/crossgcc/126/xgcc/bin/"}
+if [ "$(${XGCCPATH}/iasl 2>/dev/null | grep -c ACPI)" -gt 0 ]; then
+	echo "#using EltanCorebootStudio 126"
+	EXGCCVER=126 
+else
+	echo "#using default coreboot cross"
+	XGCCPATH=${1:-"`pwd`/util/crossgcc/xgcc/bin/"}
+	EXGCCVER=0 
+fi
+
+die() {
+	echo "ERROR: $*" >&2
+	exit 1
+}
+
+clean_up() {
+	if [ -n "$TMPFILE" ]; then
+		rm -f "$TMPFILE" "$TMPFILE.c" "$TMPFILE.o"
+	fi
+}
+
+# Create temporary file(s).
+TMPFILE="$(mktemp /tmp/temp.XXXX 2>/dev/null || echo /tmp/temp.78gOIUGz)"
+touch "$TMPFILE"
+trap clean_up EXIT
+
+
+program_exists() {
+	type "$1" >/dev/null 2>&1
+}
+
+
+if [ "$(${XGCCPATH}/iasl 2>/dev/null | grep -c ACPI)" -gt 0 ]; then
+	IASL=${XGCCPATH}iasl
+elif [ "$(iasl 2>/dev/null | grep -c ACPI)" -gt 0 ]; then
+	IASL=iasl
+else
+	die "no iasl found"
+fi
+
+if program_exists gcc; then
+	HOSTCC=gcc
+elif program_exists cc; then
+	HOSTCC=cc
+else
+	die "no host compiler found"
+fi
+
+cat <<EOF
+# platform agnostic and host tools
+IASL:=${IASL}
+HOSTCC:=${HOSTCC}
+
+EOF
+
+testcc() {
+	local tmp_c="$TMPFILE.c"
+	local tmp_o="$TMPFILE.o"
+	rm -f "$tmp_c" "$tmp_o"
+	echo "void _start(void) {}" >"$tmp_c"
+	"$1" -nostdlib -Werror $2 "$tmp_c" -o "$tmp_o" >/dev/null 2>&1
+}
+
+testas() {
+	local gccprefixes="$1"
+	local twidth="$2"
+	local arch="$3"
+	local use_dash_twidth="$4"
+	local obj_file="$TMPFILE.o"
+	local full_arch="elf$twidth-$arch"
+
+	rm -f "$obj_file"
+	[ -n "$use_dash_twidth" ] && use_dash_twidth="--$twidth"
+	${gccprefixes}as $use_dash_twidth -o "$obj_file" $TMPFILE 2>/dev/null ||
+		return 1
+
+	# Check output content type.
+	local obj_type="$(${gccprefixes}objdump -p $obj_file)"
+	local obj_arch="$(expr "$obj_type" : '.*format \(.[a-z0-9-]*\)')"
+	[ "$obj_arch" = "$full_arch" ] || return 1
+
+	# Architecture matched.
+	GCCPREFIX="$gccprefixes"
+
+	if [ -z "$use_dash_twidth" ]; then
+		ASFLAGS=""
+		CFLAGS=""
+		LDFLAGS=""
+	else
+		ASFLAGS="--$twidth"
+		CFLAGS="-m$twidth"
+		LDFLAGS="-b $full_arch"
+
+	fi
+
+	# Special parameters only available in dash_twidth mode.
+	[ -n "$use_dash_twidth" ] && case "$full_arch" in
+		"elf32-i386" )
+			LDFLAGS="$LDFLAGS -melf_i386"
+			CFLAGS="$CFLAGS -Wl,-b,elf32-i386 -Wl,-melf_i386"
+			;;
+	esac
+
+	return 0
+}
+
+detect_special_flags() {
+	local architecture="$1"
+	# GCC 4.6 is much more picky about unused variables.
+	# Turn off it's warnings for now:
+	testcc "$CC"   "$CFLAGS -Wno-unused-but-set-variable " &&
+		CFLAGS="$CFLAGS -Wno-unused-but-set-variable "
+
+	# Use bfd linker instead of gold if available:
+	testcc "$CC"   "$CFLAGS -fuse-ld=bfd" &&
+		CFLAGS="$CFLAGS -fuse-ld=bfd" && LINKER_SUFFIX='.bfd'
+
+	testcc "$CC"   "$CFLAGS -fno-stack-protector"&&
+		CFLAGS="$CFLAGS -fno-stack-protector"
+	testcc "$CC"   "$CFLAGS -Wl,--build-id=none" &&
+		CFLAGS="$CFLAGS -Wl,--build-id=none"
+
+	case "$architecture" in
+	x86)
+		testcc "$CC"   "$CFLAGS -Wa,--divide" &&
+			CFLAGS="$CFLAGS -Wa,--divide"
+		# Always build for i686 -- no sse/mmx instructions since SMM
+		# modules are compiled using these flags. Note that this
+		# doesn't prevent a project using xcompile to explicitly
+		# specify -mmsse, etc flags.
+		CFLAGS="$CFLAGS  -march=i686"
+		;;
+	esac
+}
+
+report_arch_toolchain() {
+	cat <<EOF
+# elf${TWIDTH}-${TBFDARCH} toolchain (${GCCPREFIX}gcc)
+ARCH_SUPPORTED+=${TARCH}
+SUBARCH_SUPPORTED+=${TSUPP-${TARCH}}
+CC_${TARCH}:=${GCCPREFIX}gcc
+CFLAGS_${TARCH}:=${CFLAGS}
+CPP_${TARCH}:=${GCCPREFIX}cpp
+AS_${TARCH}:=${GCCPREFIX}as ${ASFLAGS}
+LD_${TARCH}:=${GCCPREFIX}ld${LINKER_SUFFIX} ${LDFLAGS}
+NM_${TARCH}:=${GCCPREFIX}nm
+OBJCOPY_${TARCH}:=${GCCPREFIX}objcopy
+OBJDUMP_${TARCH}:=${GCCPREFIX}objdump
+READELF_${TARCH}:=${GCCPREFIX}readelf
+STRIP_${TARCH}:=${GCCPREFIX}strip
+AR_${TARCH}:=${GCCPREFIX}ar
+
+EOF
+}
+
+ # Architecture definition
+if [ "$EXGCCVER" = "126" ]; then
+ SUPPORTED_ARCHITECTURE="x86"
+else 
+SUPPORTED_ARCHITECTURE="x86 arm arm64 riscv"
+fi
+
+arch_config_arm() {
+	TARCH="arm"
+	TBFDARCH="littlearm"
+	TCLIST="armv7a armv7-a"
+	TWIDTH="32"
+	TSUPP="arm armv4 armv7"
+	TABI="eabi"
+}
+
+arch_config_arm64() {
+	TARCH="arm64"
+	TBFDARCH="littleaarch64"
+	TCLIST="aarch64"
+	TWIDTH="64"
+	TSUPP="arm64 armv8_64"
+	TABI="elf"
+}
+
+arch_config_riscv() {
+	TARCH="riscv"
+	TBFDARCH="littleriscv"
+	TCLIST="riscv"
+	TWIDTH="64"
+	TABI="elf"
+}
+
+arch_config_x86() {
+	TARCH="x86_32"
+	TBFDARCH="i386"
+	TCLIST="i386 x86_64"
+	TWIDTH="32"
+	TABI="elf"
+}
+
+test_architecture() {
+	architecture=$1
+
+	GCCPREFIX="invalid"
+	unset TARCH TBFDARCH TCLIST TWIDTH TSUPP TABI
+	if type arch_config_$architecture > /dev/null; then
+		arch_config_$architecture
+	else
+		die "no architecture definition for $architecture"
+	fi
+
+	# To override toolchain, define CROSS_COMPILE_$arch or CROSS_COMPILE as
+	# environment variable.
+	# Ex: CROSS_COMPILE_arm="armv7a-cros-linux-gnueabi-"
+	#     CROSS_COMPILE_x86="i686-pc-linux-gnu-"
+	search="$(eval echo \$CROSS_COMPILE_$architecture 2>/dev/null)"
+	search="$search $CROSS_COMPILE"
+	for toolchain in $TCLIST; do
+		search="$search $XGCCPATH$toolchain-$TABI-"
+		search="$search $toolchain-$TABI-"
+		search="$search $toolchain-linux-gnu-"
+		search="$search $toolchain-"
+	done
+	echo "# $architecture TARCH_SEARCH=$search"
+
+	# Search toolchain by checking assembler capability.
+	for gccprefixes in $search ""; do
+		program_exists "${gccprefixes}as" || continue
+		testas "$gccprefixes" "$TWIDTH" "$TBFDARCH" "" && break
+		testas "$gccprefixes" "$TWIDTH" "$TBFDARCH" "TRUE" && break
+	done
+
+	if [ "$GCCPREFIX" = "invalid" ]; then
+		echo "Warning: no suitable GCC for $architecture." >&2
+		continue
+	fi
+	CC="${GCCPREFIX}"gcc
+
+	detect_special_flags "$architecture"
+	report_arch_toolchain
+}
+
+# This loops over all supported architectures.
+for architecture in $SUPPORTED_ARCHITECTURE; do
+	test_architecture $architecture
+done
+

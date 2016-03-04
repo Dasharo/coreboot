@@ -1,0 +1,75 @@
+#
+# This file is part of the coreboot project.
+#
+# Copyright (C) 2013-2014 Sage Electronic Engineering, LLC
+# Copyright (C) 2015-2016 Eltan B.V.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+
+if CPU_AMD_PI
+
+menu "AMD Platform Initialization"
+
+source src/vendorcode/amd/pi/Kconfig
+
+config CPU_AMD_AGESA_BINARY_PI
+	bool 
+	select HUDSON_DISABLE_IMC
+	default y
+	help
+	  Use a binary PI package.  Generally, these will be stored in the
+	  "3rdparty" directory.  For some processors, these must be obtained
+	  directly from AMD Embedded Processors Group
+	  (http://www.amdcom/embedded).
+
+if CPU_AMD_AGESA_BINARY_PI
+
+config AGESA_BINARY_PI_PATH_DEFAULT_SELECTED
+	bool
+	default n
+
+config AGESA_BINARY_PI_PATH
+	string "AGESA PI directory path"
+	default AGESA_BINARY_PI_PATH_DEFAULT if AGESA_BINARY_PI_PATH_DEFAULT_SELECTED
+	help
+	  Specify where to find the AGESA headers and binary file
+	  for AMD platform initialization.
+
+config AGESA_BINARY_PI_FILE_DEFAULT_SELECTED
+	bool
+	default n
+
+config AGESA_BINARY_PI_FILE
+	string "AGESA PI binary file name"
+	default AGESA_BINARY_PI_FILE_DEFAULT if AGESA_BINARY_PI_FILE_DEFAULT_SELECTED
+	help
+	  Specify the binary file to use for AMD platform initialization.
+
+config AGESA_BINARY_PI_LOCATION_DEFAULT_SELECTED
+	bool
+	default n
+
+config AGESA_BINARY_PI_LOCATION
+	string "AGESA PI binary address in ROM"
+	default AGESA_BINARY_PI_LOCATION_DEFAULT if AGESA_BINARY_PI_FILE_DEFAULT_SELECTED
+	help
+	  Specify the ROM address at which to store the binary Platform
+	  Initialization code.
+
+endif
+
+endmenu
+
+endif
