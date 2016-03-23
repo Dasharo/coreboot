@@ -227,3 +227,23 @@ int cbfs_decompress(int algo, void *src, void *dst, int len)
 	}
 }
 
+/*
+ * This will search for 'string' in the null terminated CBFS file 'filename'.
+ * If the string is found its address is returned.
+ */
+char *cbfs_find_string(const char *string, const char *filename)
+{
+	char *data = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, filename, CBFS_TYPE_RAW, NULL );
+	if (!data)
+		return NULL;
+	u8 length = strlen(string);
+
+	for ( ; ; ) {
+		if (*data == 0) // Check for end of file
+			break;
+		if (!strncmp(string, data, length)) // Check for string match
+			return data;
+		data++;
+	}
+	return NULL;
+}

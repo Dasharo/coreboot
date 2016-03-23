@@ -214,6 +214,9 @@ struct cbfs_media {
 /* returns pointer to a file entry inside CBFS or NULL */
 struct cbfs_file *cbfs_get_file(struct cbfs_media *media, const char *name);
 
+/* returns value with a given tag inside CBFS */
+char *cbfs_find_string(const char *string, const char *filename);
+
 /* returns pointer to file content inside CBFS after if type is correct */
 void *cbfs_get_file_content(struct cbfs_media *media, const char *name,
 			    int type, size_t *sz);
