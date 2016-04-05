@@ -1,12 +1,12 @@
 SEABIOSGIT-$(CONFIG_SEABIOS_GENERIC)=http://review.coreboot.org/p/seabios.git
-SEABIOSGIT-$(CONFIG_SEABIOS_ELTAN)=http://vcs.eltan.com/eltan/seabios.git
+SEABIOSGIT-$(CONFIG_SEABIOS_ELTAN)=https://github.com/pcengines/seabios.git
 
 ifeq ($(CONFIG_SEABIOS_GENERIC),y)
 #
 # Using the generic seabios
 #
-TAG-$(CONFIG_SEABIOS_MASTER)=origin/master
-TAG-$(CONFIG_SEABIOS_STABLE)=33fbe13a3e2a01e0ba1087a8feed801a0451db21
+TAG-$(CONFIG_SEABIOS_MASTER)=origin/apu2b-20160304
+TAG-$(CONFIG_SEABIOS_STABLE)=b110c797151a5d51e929a5aac8c42d91193442b4
 endif
 
 ifeq ($(CONFIG_SEABIOS_ELTAN),y)
