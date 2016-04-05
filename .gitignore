@@ -35,6 +35,7 @@ site-local
 
 *.\#
 *.bin
+!3rdparty/southbridge/amd/avalon/PSP/AmdPubKey.bin
 *.debug
 *.elf
 *.o
