@@ -38,6 +38,7 @@ site-local
 !3rdparty/southbridge/amd/avalon/PSP/AmdPubKey.bin
 !3rdparty/southbridge/amd/avalon/PSP/PspNvram.bin
 !3rdparty/southbridge/amd/avalon/xhci.bin
+!3rdparty/pi/amd/00730F01/FT3b/AGESA.bin
 *.debug
 *.elf
 *.o
