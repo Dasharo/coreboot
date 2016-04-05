@@ -39,6 +39,7 @@ site-local
 !3rdparty/southbridge/amd/avalon/PSP/PspNvram.bin
 !3rdparty/southbridge/amd/avalon/xhci.bin
 !3rdparty/pi/amd/00730F01/FT3b/AGESA.bin
+!3rdparty/southbridge/amd/avalon/PSP/SmuScs.bin
 *.debug
 *.elf
 *.o
