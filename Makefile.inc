@@ -308,13 +308,18 @@ $(obj)/build.h: .xcompile
 	printf "#ifndef __BUILD_H\n" >> $(obj)/build.ht
 	printf "#define __BUILD_H\n\n" >> $(obj)/build.ht
 	printf "#define COREBOOT_VERSION \"$(KERNELVERSION)\"\n" >> $(obj)/build.ht
-	if git update-index -q --refresh >/dev/null; ! git diff-index --quiet HEAD; then \
-	   printf "/* `LANG= TZ=UTC git log --date=local --pretty=format:%cd -1` UTC */\n" >> $(obj)/build.ht; \
-	   printf "#define COREBOOT_VERSION_TIMESTAMP `LANG= git log --pretty=format:%ct -1`\n" >> $(obj)/build.ht; \
+	if [ -e "${top}/.git" -a -x "$(command -v git)" ]; then \
+	    if git update-index -q --refresh >/dev/null; ! git diff-index --quiet HEAD; then \
+	       printf "/* `LANG= TZ=UTC git log --date=local --pretty=format:%cd -1` UTC */\n" >> $(obj)/build.ht; \
+	       printf "#define COREBOOT_VERSION_TIMESTAMP `LANG= git log --pretty=format:%ct -1`\n" >> $(obj)/build.ht; \
+	    else \
+	       printf "/* `LANG= TZ=UTC date` */\n" >> $(obj)/build.ht; \
+	       printf "#define COREBOOT_VERSION_TIMESTAMP `LANG= date +%s`\n" >> $(obj)/build.ht; \
+	    fi \
 	else \
-	   printf "/* `LANG= TZ=UTC date` */\n" >> $(obj)/build.ht; \
-	   printf "#define COREBOOT_VERSION_TIMESTAMP `LANG= date +%s`\n" >> $(obj)/build.ht; \
-    fi
+	    printf "/* `LANG= TZ=UTC date` */\n" >> $(obj)/build.ht; \
+	    printf "#define COREBOOT_VERSION_TIMESTAMP `LANG= date +%s`\n" >> $(obj)/build.ht; \
+	fi
 	printf "#define COREBOOT_ORIGIN_GIT_REVISION \"`LANG= git log remotes/origin/master -1 --format=format:%h`\"\n" >> $(obj)/build.ht
 	printf "#define COREBOOT_EXTRA_VERSION \"$(COREBOOT_EXTRA_VERSION)\"\n" >> $(obj)/build.ht
 	printf "#define COREBOOT_BUILD \"`LANG= date`\"\n" >> $(obj)/build.ht
