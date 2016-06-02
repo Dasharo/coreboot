@@ -21,15 +21,9 @@
 #include "nct5104d.h"
 #include "chip.h"
 
-static void nct5104d_init(struct device *dev)
+static void set_irq_trigger_type(struct device *dev, bool trig_level)
 {
-	struct superio_nuvoton_nct5104d_config *conf = dev->chip_info;
-	u8 reg10, reg11, reg26, i;
-
-	if (!dev->enabled)
-		return;
-
-	pnp_enter_conf_mode(dev);
+	u8 reg10, reg11, reg26;
 
 	//Before accessing CR10 OR CR11 Bit 4 in CR26 must be set to 1
 	reg26 = pnp_read_config(dev, GLOBAL_OPTION_CR26);
@@ -40,7 +34,7 @@ static void nct5104d_init(struct device *dev)
 	//SP1 (UARTA) IRQ type selection (1:level,0:edge) is controlled by CR 10, bit 5
 	case NCT5104D_SP1:
 		reg10 = pnp_read_config(dev, IRQ_TYPE_SEL_CR10);
-		if (conf->irq_trigger_type)
+		if (trig_level)
 			reg10 |= (1 << 5);
 		else
 			reg10 &= ~(1 << 5);
@@ -49,7 +43,7 @@ static void nct5104d_init(struct device *dev)
 	//SP2 (UARTB) IRQ type selection (1:level,0:edge) is controlled by CR 10, bit 4
 	case NCT5104D_SP2:
 		reg10 = pnp_read_config(dev, IRQ_TYPE_SEL_CR10);
-		if (conf->irq_trigger_type)
+		if (trig_level)
 			reg10 |= (1 << 4);
 		else
 			reg10 &= ~(1 << 4);
@@ -57,13 +51,8 @@ static void nct5104d_init(struct device *dev)
 		break;
 	//SP3 (UARTC) IRQ type selection (1:level,0:edge) is controlled by CR 11, bit 5
 	case NCT5104D_SP3:
-		// Route pins to UARTC
-		i = pnp_read_config(dev, CR1C_MULTI_FUNCTION_SELECT);
-		i &= CR1C_UARTC;
-		pnp_write_config(dev, CR1C_MULTI_FUNCTION_SELECT, i);
-
 		reg11 = pnp_read_config(dev,IRQ_TYPE_SEL_CR11);
-		if (conf->irq_trigger_type)
+		if (trig_level)
 			reg11 |= (1 << 5);
 		else
 			reg11 &= ~(1 << 5);
@@ -71,33 +60,13 @@ static void nct5104d_init(struct device *dev)
 		break;
 	//SP4 (UARTD) IRQ type selection (1:level,0:edge) is controlled by CR 11, bit 4
 	case NCT5104D_SP4:
-		// Route pins to UARTD
-		i = pnp_read_config(dev, CR1C_MULTI_FUNCTION_SELECT);
-		i &= CR1C_UARTD;
-		pnp_write_config(dev, CR1C_MULTI_FUNCTION_SELECT, i);
-
 		reg11 = pnp_read_config(dev,IRQ_TYPE_SEL_CR11);
-		if (conf->irq_trigger_type)
+		if (trig_level)
 			reg11 |= (1 << 4);
 		else
 			reg11 &= ~(1 << 4);
 		pnp_write_config(dev, IRQ_TYPE_SEL_CR11, reg11);
 		break;
-
-	case NCT5104D_GPIO0:
-		// Enable the GPIO, disables UARTC mapping
-		i = pnp_read_config(dev, CR1C_MULTI_FUNCTION_SELECT);
-		i &= ~CR1C_UARTC;
-		pnp_write_config(dev, CR1C_MULTI_FUNCTION_SELECT, i);
-		break;
-
-	case NCT5104D_GPIO1:
-		// Enable the GPIO, disables UARTD mapping
-		i = pnp_read_config(dev, CR1C_MULTI_FUNCTION_SELECT);
-		i &= ~CR1C_UARTD;
-		pnp_write_config(dev, CR1C_MULTI_FUNCTION_SELECT, i);
-		break;
-
 	default:
 		break;
 	}
@@ -106,6 +75,65 @@ static void nct5104d_init(struct device *dev)
 	reg26 = pnp_read_config(dev, GLOBAL_OPTION_CR26);
 	reg26 &= ~CR26_LOCK_REG;
 	pnp_write_config(dev, GLOBAL_OPTION_CR26, reg26);
+}
+
+static void route_pins_to_uart(struct device *dev, bool to_uart)
+{
+	u8 reg;
+
+	reg = pnp_read_config(dev, 0x1c);
+
+	switch (dev->path.pnp.device) {
+	case NCT5104D_SP3:
+	case NCT5104D_GPIO0:
+		/* Route pins 33 - 40. */
+		if (to_uart)
+			reg |= (1 << 3);
+		else
+			reg &= ~(1 << 3);
+		break;
+	case NCT5104D_SP4:
+	case NCT5104D_GPIO1:
+		/* Route pins 41 - 48. */
+		if (to_uart)
+			reg |= (1 << 2);
+		else
+			reg &= ~(1 << 2);
+		break;
+	default:
+		break;
+	}
+
+	pnp_write_config(dev, 0x1c, reg);
+}
+
+static void nct5104d_init(struct device *dev)
+{
+	struct superio_nuvoton_nct5104d_config *conf = dev->chip_info;
+
+	if (!dev->enabled)
+		return;
+
+	pnp_enter_conf_mode(dev);
+
+	switch(dev->path.pnp.device) {
+	case NCT5104D_SP1:
+	case NCT5104D_SP2:
+		set_irq_trigger_type(dev, conf->irq_trigger_type != 0);
+		break;
+	case NCT5104D_SP3:
+	case NCT5104D_SP4:
+		route_pins_to_uart(dev, true);
+		set_irq_trigger_type(dev, conf->irq_trigger_type != 0);
+		break;
+	case NCT5104D_GPIO0:
+	case NCT5104D_GPIO1:
+		route_pins_to_uart(dev, false);
+		break;
+	default:
+		break;
+	}
+
 	pnp_exit_conf_mode(dev);
 }
 
@@ -138,6 +166,6 @@ static void enable_dev(struct device *dev)
 }
 
 struct chip_operations superio_nuvoton_nct5104d_ops = {
-	CHIP_NAME("NUVOTON NCT5104D Super I/O")
+	CHIP_NAME("Nuvoton NCT5104D Super I/O")
 	.enable_dev = enable_dev,
 };
