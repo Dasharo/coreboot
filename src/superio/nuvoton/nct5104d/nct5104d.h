@@ -23,11 +23,11 @@
 #define IRQ_TYPE_SEL_CR11   0x11     /* SMI,UARTC,UARTD,WDTO */
 #define GLOBAL_OPTION_CR26  0x26
 #define CR26_LOCK_REG       (1 << 4) /* required to access CR10/CR11/CR12/CR13 */
-#define CR1C_MULTI_FUNCTION_SELECT	0x1C	// Select UART or GPIO operation
-#define CR1C_UARTC			(1 < 3)			// set is UART clear is GPIO operation
-#define CR1C_UARTD			(1 < 2)			// set is UART clear is GPIO operation
-#define CR2F_STRAPPING		0x2F			// Enable disable port 80
-#define SOUTC_P80_SEL		(1 < 3)			// set is UART clear is GPIO operation
+#define CR1C_MULTI_FUNCTION_SELECT  0x1C    /* Select UART or GPIO operation */
+#define CR1C_UARTC                  (1 < 3) /* set is UART clear is GPIO operation */
+#define CR1C_UARTD                  (1 < 2) /* set is UART clear is GPIO operation */
+#define CR2F_STRAPPING              0x2F    /* Enable disable port 80 */
+#define SOUTC_P80_SEL               (1 < 3) /* set is UART clear is GPIO operation */
 
 /* Logical Device Numbers (LDN). */
 #define NCT5104D_FDC        0x00 /* FDC - not pinned out */
