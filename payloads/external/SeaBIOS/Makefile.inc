@@ -13,7 +13,7 @@ ifeq ($(CONFIG_SEABIOS_ELTAN),y)
 #
 # Using the eltan seabios
 #
-TAG-$(CONFIG_SEABIOS_MASTER)=origin/apu2b-20160304
+TAG-$(CONFIG_SEABIOS_MASTER)=origin/apu2-support
 TAG-$(CONFIG_SEABIOS_STABLE)=$(CONFIG_ELTAN_SEABIOS_TAG)
 endif
 
