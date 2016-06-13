@@ -590,12 +590,14 @@ static unsigned long agesa_write_acpi_tables(const struct device *device,
 	current += ((acpi_header_t *)current)->length;
 
 	/* IVRS */
-	current = ALIGN_UP(current, 8);
-	printk(BIOS_DEBUG, "ACPI:   * IVRS at %lx\n", current);
-	ivrs = (acpi_ivrs_t *)current;
-	acpi_create_ivrs(ivrs, acpi_fill_ivrs);
-	current += ivrs->header.length;
-	acpi_add_table(rsdp, ivrs);
+	if (check_iommu()) {
+		current = ALIGN(current, 8);
+		printk(BIOS_DEBUG, "ACPI:   * IVRS at %lx\n", current);
+		ivrs = (acpi_ivrs_t *)current;
+		acpi_create_ivrs(ivrs, acpi_fill_ivrs);
+		current += ivrs->header.length;
+		acpi_add_table(rsdp, ivrs);
+	}
 
 	/* SRAT */
 	current = ALIGN_UP(current, 8);
@@ -643,7 +645,8 @@ static unsigned long agesa_write_acpi_tables(const struct device *device,
 	printk(BIOS_DEBUG, "ACPI:    * SSDT at %lx\n", current);
 	ssdt = (acpi_header_t *)agesawrapper_getlateinitptr(PICK_PSTATE);
 	if (ssdt != NULL) {
-		patch_ssdt_processor_scope(ssdt);
+		if (0)
+			patch_ssdt_processor_scope(ssdt);
 		memcpy((void *)current, ssdt, ssdt->length);
 		ssdt = (acpi_header_t *)current;
 		current += ssdt->length;
