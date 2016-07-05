@@ -249,7 +249,7 @@ static void mainboard_final(void *chip_info) {
 		//
 		// The console should be disabled
 		//
-		unsigned char data = 1;
+		unsigned char data = 0;
 
 		//
 		// Indicated to SeaBIOS it should display console output itself
