@@ -46,6 +46,8 @@
 #include <cbfs_core.h>
 #include <spd_cache.h>
 
+static bool check_console(void);
+
 /**********************************************
  * enable the dedicated function in mainboard.
  **********************************************/
@@ -54,10 +56,14 @@ static void mainboard_enable(device_t dev)
 {
 	struct device *sio_dev;
 
+	bool scon = check_console();
 	setup_bsp_ramtop();
 	u32 TOM1 = bsp_topmem() / (1024 *1024);	// Tom1 in Mbyte
 	u32 TOM2 = ( bsp_topmem2() / (1024 *1024)) - 4 * 1024;	// Tom2 in Mbyte
-	printk(BIOS_ERR, "%d MB", TOM1+TOM2);
+	if (scon) {
+		printk(BIOS_ALERT, CONFIG_MAINBOARD_PART_NUMBER "\n");
+		printk(BIOS_ALERT, "%d MB", TOM1+TOM2);
+	}
 
 	u8 spd_buffer[SPD_SIZE];
 	int	index = 0;
@@ -66,13 +72,15 @@ static void mainboard_enable(device_t dev)
 
 	if ( ReadFchGpio(APU2_SPD_STRAP0_GPIO) ) index |= BIT0;
 	if ( ReadFchGpio(APU2_SPD_STRAP1_GPIO) ) index |= BIT1;
-	
+
 	printk(BIOS_SPEW, "Reading SPD index %d to get ECC info \n", index);
 	if (read_spd_from_cbfs(spd_buffer, index) < 0)
 		spd_buffer[3]=3;	// Indicate no ECC
 
-	if ( spd_buffer[3] == 8 ) 	printk(BIOS_ERR, " ECC");
-	printk(BIOS_ERR, " DRAM\n\n");
+	if (scon) {
+		if ( spd_buffer[3] == 8 ) 	printk(BIOS_ALERT, " ECC");
+		printk(BIOS_ALERT, " DRAM\n\n");
+	}
 
 	//
 	// Enable the RTC output
