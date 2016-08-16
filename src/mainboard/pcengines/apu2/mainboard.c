@@ -325,3 +325,16 @@ const char *smbios_mainboard_serial_number(void)
 
     return serial;
 }
+
+const char *smbios_mainboard_sku(void)
+{
+	static char sku[5];
+	if (sku[0] != 0)
+		return sku;
+
+	if (!ReadFchGpio(APU2_SPD_STRAP0_GPIO))
+		snprintf(sku, sizeof(sku), "2 GB");
+	else
+		snprintf(sku, sizeof(sku), "4 GB");
+	return sku;
+}
