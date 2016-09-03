@@ -47,10 +47,8 @@
 #include <spd_cache.h>
 #include <smbios.h>
 #include <string.h>
-
-#define NB_CFG_MSR (0xC001001f)
-// 46th bit of NB_CFG_MSR register
-#define ENABLE_CF8_EXT_CFG (1<<(46-32))
+#include <cpu/amd/amdfam16.h>
+#include <cpuRegisters.h>
 
 static bool check_console(void);
 
