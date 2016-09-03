@@ -306,9 +306,10 @@ const char *smbios_mainboard_serial_number(void)
     if ((serial[0] != 0) || !nic_dev)
         return serial;
 
-    // Read three LSB of MAC address
+    // Read 4 bytes starting from 0x144 offset
     mac_addr = pci_read_config32(nic_dev, 0x144);
-    // Discard unnecessary MSB so only MAC bits are left
+    // MSB here is always 0xff
+    // Discard it so only bottom 3b of mac address are left
     mac_addr &= 0x00ffffff;
 
     // Set bit EnableCf8ExtCfg back to 0
