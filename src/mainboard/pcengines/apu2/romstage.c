@@ -120,7 +120,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		data |= (0 + 1) << (0 * 4);	// CLKREQ 0 to CLK0
 		data |= (1 + 1) << (1 * 4);	// CLKREQ 1 to CLK1
 		data |= (2 + 1) << (2 * 4);	// CLKREQ 2 to CLK2
-		data |= (3 + 1) << (3 * 4);	// CLKREQ 3 to CLK3
+		// make CLK3 to ignore CLKREQ# input
+		// force it to be always on
+		data |= ( 0xf ) << (3 * 4);	// CLKREQ 3 to CLK3
 
 		*((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG00)) = data;
 
