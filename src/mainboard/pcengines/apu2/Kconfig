@@ -29,6 +29,7 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	select SPD_CACHE
 	select HUDSON_DISABLE_IMC
 	select USE_BLOBS
+	select PXE
 
 config MAINBOARD_DIR
 	string
