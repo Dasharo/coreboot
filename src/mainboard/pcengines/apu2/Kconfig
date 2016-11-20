@@ -20,6 +20,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select PCIEXP_CLK_PM
 	select PCIEXP_COMMON_CLOCK
 	select PCIEXP_L1_SUB_STATE
+	select HUDSON_DISABLE_IMC
+	select USE_BLOBS
+	select PXE
 
 config MAINBOARD_DIR
 	default "pcengines/apu2"
