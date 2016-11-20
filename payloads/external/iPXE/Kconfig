@@ -110,5 +110,11 @@ config PXE_HAS_HTTPS
 	  Enable HTTPS protocol, which allows you to encrypt all communication
 	  with a web server and to verify the server's identity
 
+config CONFIG_PXE_CUSTOM_GENERAL_H
+	string "iPXE custom general.h file"
+	default ""
+	help
+	  This option allows user to customize feature set built-in into iPXE ROM.
+
 endmenu
 endif

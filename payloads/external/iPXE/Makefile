@@ -56,6 +56,14 @@ ifeq ($(CONFIG_PXE_HAS_HTTPS),y)
 	sed 's|.*DOWNLOAD_PROTO_HTTPS|#define DOWNLOAD_PROTO_HTTPS|g' "$(project_dir)/src/config/general.h" > "$(project_dir)/src/config/general.h.tmp"
 	mv "$(project_dir)/src/config/general.h.tmp" "$(project_dir)/src/config/general.h"
 endif
+ifneq ($(CONFIG_PXE_CUSTOM_GENERAL_H),)
+ifneq ("$(wildcard $(CONFIG_PXE_CUSTOM_GENERAL_H))","")
+	cat $(CONFIG_PXE_CUSTOM_GENERAL_H) > ipxe/src/config/local/general.h
+else
+	echo "Error: File $(CONFIG_CUSTOM_GENERAL_H) does not exist"
+	false
+endif
+endif
 
 build: config $(CONFIG_SCRIPT)
 ifeq ($(CONFIG_HAS_SCRIPT),y)
