@@ -20,6 +20,7 @@ payloads/external/SeaBIOS/seabios/
 payloads/external/U-Boot/u-boot/
 payloads/external/Memtest86Plus/memtest86plus/
 payloads/external/iPXE/ipxe/
+payloads/external/sortbootorder/sortbootorder
 util/crossgcc/acpica-unix-*/
 util/crossgcc/binutils-*/
 util/crossgcc/build-*BINUTILS/
