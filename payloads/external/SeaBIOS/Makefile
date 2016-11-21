@@ -42,6 +42,7 @@ config: checkout
 ifeq ($(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO),yy)
 	echo "CONFIG_DEBUG_SERIAL=y" >> seabios/.config
 	echo "CONFIG_DEBUG_SERIAL_PORT=$(CONFIG_TTYS0_BASE)" >> seabios/.config
+	echo "CONFIG_DEBUG_LEVEL=1" >> seabios/.config
 else
 	echo "# CONFIG_DEBUG_SERIAL is not set" >> seabios/.config
 endif
