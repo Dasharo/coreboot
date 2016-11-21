@@ -1,5 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#pragma pack(push)
+#include <AGESA.h>
+#pragma pack(pop)
+
 #include <amdblocks/acpimmio.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
@@ -16,12 +20,26 @@
 #include <superio/nuvoton/nct5104d/nct5104d.h>
 #include <smbios.h>
 #include <string.h>
-#include <AGESA.h>
+
+#include <cbfs.h>
+#include <fmap.h>
+#include <commonlib/region.h>
+#include <security/tpm/tspi.h>
+#include <security/tpm/tspi/crtm.h>
+#include <southbridge/amd/pi/hudson/chip.h>
+#include <cpu/amd/mtrr.h>
+#include <spd_bin.h>
+#include <spi_flash.h>
+
 #include "gpio_ftns.h"
+#include "bios_knobs.h"
+#include "s1_button.h"
 
 #define SPD_SIZE  128
 #define PM_RTC_CONTROL	    0x56
 #define PM_S_STATE_CONTROL  0xBA
+#define SEC_REG_SERIAL_ADDR	0x1000
+#define MAX_SERIAL_LEN		10
 
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
@@ -260,23 +278,21 @@ static void mainboard_final(void *chip_info)
  * We will stuff a modified version of the first NICs (BDF 1:0.0) MAC address
  * into the smbios serial number location.
  */
-const char *smbios_mainboard_serial_number(void)
+static int read_serial_from_nic(char *serial, size_t len)
 {
-	static char serial[10];
 	struct device *dev;
 	uintptr_t bar10;
 	u32 mac_addr = 0;
 	int i;
+	if (check_pciereverse())
+		dev = pcidev_on_root(2, 3);
+	else
+		dev = pcidev_on_root(2, 2);
 
-	/* Already initialized. */
-	if (serial[0] != 0)
-		return serial;
-
-	dev = pcidev_on_root(2, 2);
 	if (dev)
 		dev = pcidev_path_behind(dev->link_list, PCI_DEVFN(0, 0));
 	if (!dev)
-		return serial;
+		return -1;
 
 	/* Read in the last 3 bytes of NIC's MAC address. */
 	bar10 = pci_read_config32(dev, PCI_BASE_ADDRESS_0);
@@ -290,7 +306,45 @@ const char *smbios_mainboard_serial_number(void)
 	mac_addr /= 4;
 	mac_addr -= 64;
 
-	snprintf(serial, sizeof(serial), "%d", mac_addr);
+	snprintf(serial, len, "%d", mac_addr);
+	return 0;
+}
+
+static int read_serial_from_flash(char *serial, size_t len)
+{
+	const struct spi_flash *flash = NULL;
+	int ret;
+
+	flash = boot_device_spi_flash();
+	if (flash == NULL) {
+		printk(BIOS_WARNING, "Can't get boot flash device\n");
+		return -1;
+	}
+
+	ret = spi_flash_read_sec(flash, SEC_REG_SERIAL_ADDR, len, serial);
+	if (ret) {
+		printk(BIOS_WARNING, "Can't read security registers\n");
+		return ret;
+	}
+
+	return ret;
+}
+
+const char *smbios_mainboard_serial_number(void)
+{
+	static char serial[MAX_SERIAL_LEN + 1] = { 0 }; /* extra slot for \0 */
+	int ret;
+
+	ret = read_serial_from_flash(serial, sizeof(serial)-1);
+
+	if (ret || ((serial[0] & 0xff) == 0x00) || ((serial[0] & 0xff) == 0xff)) {
+		ret = read_serial_from_nic(serial, sizeof(serial)-1);
+		if (ret) {
+			serial[0] = '0';
+			serial[1] = '\0';
+		}
+	}
+
 	return serial;
 }
 
