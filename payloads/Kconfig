@@ -163,6 +163,14 @@ config TINT_SECONDARY_PAYLOAD
 	  tint can be loaded as a secondary payload under SeaBIOS, GRUB,
 	  or any other payload that can load additional payloads.
 
+config SORTBOOTORDER_SECONDARY_PAYLOAD
+	bool "Load sortbootorder as a secondary payload"
+	default n
+	depends on ARCH_X86
+	help
+	  sortbootorder can be loaded as a secondary payload under SeaBIOS
+	  or any other payload that can load additional payloads.
+
 config COREDOOM_SECONDARY_PAYLOAD
 	bool "Load coreDOOM as a secondary payload"
 	default n
