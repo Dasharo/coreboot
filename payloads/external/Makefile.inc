@@ -103,8 +103,42 @@ ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_FILE)),)
 cbfs-files-y += bootorder
 bootorder-file := $(strip $(CONFIG_SEABIOS_BOOTORDER_FILE))
 bootorder-type := raw
+bootorder-align := 0x1000
 endif
 
+# add a SeaBIOS bootorder_map file
+ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_MAP_FILE)),)
+cbfs-files-y += bootorder_map
+bootorder_map-file := $(strip $(CONFIG_SEABIOS_BOOTORDER_MAP_FILE))
+bootorder_map-type := raw
+endif
+
+# add a SeaBIOS bootorder_def file
+ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_DEF_FILE)),)
+cbfs-files-y += bootorder_def
+bootorder_def-file := $(strip $(CONFIG_SEABIOS_BOOTORDER_DEF_FILE))
+bootorder_def-type := raw
+endif
+
+# add a SeaBIOS boot-menu-key file
+ifneq ($(strip $(CONFIG_SEABIOS_BOOTMENU_KEY_FILE)),)
+cbfs-files-y += etc/boot-menu-key
+etc/boot-menu-key-file := $(strip $(CONFIG_SEABIOS_BOOTMENU_KEY_FILE))
+etc/boot-menu-key-type := raw
+endif
+
+# add a SeaBIOS boot-menu-wait file
+ifneq ($(strip $(CONFIG_SEABIOS_BOOTMENU_WAIT_FILE)),)
+cbfs-files-y += etc/boot-menu-wait
+etc/boot-menu-wait-file := $(strip $(CONFIG_SEABIOS_BOOTMENU_WAIT_FILE))
+etc/boot-menu-wait-type := raw
+endif
+
+# add a SeaBIOS boot-menu-message file
+ifneq ($(strip $(CONFIG_SEABIOS_BOOTMENU_MESSAGE_FILE)),)
+cbfs-files-y += etc/boot-menu-message
+etc/boot-menu-message-file := $(strip $(CONFIG_SEABIOS_BOOTMENU_MESSAGE_FILE))
+etc/boot-menu-message-type := raw
 ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),)
 ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),0)
 $(call add_intermediate, seabios_ps2_timeout, $(CBFSTOOL))
@@ -127,7 +161,6 @@ $(call add_intermediate, seabios_thread_optionroms, $(CBFSTOOL))
 	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< remove -n etc/threads 2>/dev/null)
 	$(CBFSTOOL) $< add-int -i 2 -n etc/threads
 endif
-
 ifeq ($(CONFIG_PAYLOAD_SEAGRUB),y)
 ifneq ($(CONFIG_SEAGRUB_ALLOW_SEABIOS_BOOTMENU),y)
 $(call add_intermediate, seabios_bootmenu, $(CBFSTOOL))
