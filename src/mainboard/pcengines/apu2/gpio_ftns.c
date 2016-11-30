@@ -32,3 +32,9 @@ void configure_gpio(uintptr_t base_addr, u32 iomux_gpio, u8 iomux_ftn, u32 gpio,
 	bdata |= setting; /* set direction and data value */
 	*memptr = bdata;
 }
+
+u8 read_gpio(uintptr_t base_addr, u32 gpio)
+{
+	u8 *memptr = (u8 *)(base_addr + GPIO_OFFSET + gpio);
+	return (*memptr & GPIO_DATA_IN) ? 1 : 0;
+}
