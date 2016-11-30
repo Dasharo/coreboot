@@ -245,8 +245,33 @@ static void mainboard_enable(struct device *dev)
 {
 	/* Maintain this text unchanged for manufacture process. */
 	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
+	bool scon = check_console();
 
 	config_gpio_mux();
+
+	u32 total_mem = amd_topmem() / (1024 * 1024);
+	if (amd_topmem2() > 0)
+		total_mem += (amd_topmem2() / (1024 * 1024)) - 4 * 1024;
+
+	if(scon) {
+		printk(BIOS_ALERT, "%d MB", total_mem);
+	}
+
+	//
+	// Read memory configuration from GPIO 49 and 50
+	//
+	u8 spd_index = get_spd_offset();
+	u8 spd_buffer[CONFIG_DIMM_SPD_SIZE];
+
+	if (read_ddr3_spd_from_cbfs(spd_buffer, spd_index) < 0)
+		die("No SPD data\n");
+
+	if (scon) {
+		if (spd_buffer[3] == 8)
+			printk(BIOS_ALERT, " ECC");
+
+		printk(BIOS_ALERT, " DRAM\n\n");
+	}
 
 	//
 	// Enable the RTC output
@@ -257,6 +282,10 @@ static void mainboard_enable(struct device *dev)
 	// Enable power on from WAKE#
 	//
 	pm_write16(PM_S_STATE_CONTROL, pm_read16(PM_S_STATE_CONTROL) | (1 << 14));
+
+
+
+
 
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
