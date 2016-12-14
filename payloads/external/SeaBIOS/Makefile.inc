@@ -1,5 +1,5 @@
 SEABIOSGIT-$(CONFIG_SEABIOS_GENERIC)=http://review.coreboot.org/p/seabios.git
-SEABIOSGIT-$(CONFIG_SEABIOS_ELTAN)=https://github.com/pcengines/seabios.git
+SEABIOSGIT-$(CONFIG_SEABIOS_ELTAN)=git@81.95.197.197:pcengines/seabios.git
 
 ifeq ($(CONFIG_SEABIOS_GENERIC),y)
 #
