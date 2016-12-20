@@ -39,3 +39,10 @@ Releases 4.5.x are based on mainline support submitted in
 - improved SD card performance
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
+
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.4...coreboot-4.0.x
+[v4.0.4]: https://github.com/pcengines/coreboot/compare/v4.0.3...v4.0.4
+[v4.0.3]: https://github.com/pcengines/coreboot/compare/v4.0.2...v4.0.3
+[v4.0.2]: https://github.com/pcengines/coreboot/compare/v4.0.1.1...v4.0.2
+[v4.0.1.1]: https://github.com/pcengines/coreboot/compare/v4.0.1....v4.0.1.1
+[v4.0.1]: https://github.com/pcengines/coreboot/compare/88a4f96110fbd3f55ee727bd01f53875f1c6c398...v4.0.1
