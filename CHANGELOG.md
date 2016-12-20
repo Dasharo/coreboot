@@ -6,6 +6,10 @@ Releases 4.5.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.4] - 2016-12-20
+### Changed
+- sgabios output disabled
+
 ## [v4.0.3] - 2016-12-14
 ### Added
 - info about coreboot build date in initial sign of life message
