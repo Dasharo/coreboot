@@ -393,6 +393,13 @@ const char *smbios_system_sku(void)
 	return sku;
 }
 
+static void mainboard_final(void *chip_info)
+{
+	/* Turn off LED D4 and D5 */
+	write_gpio(ACPI_MMIO_BASE, IOMUX_GPIO_58, 1);
+	write_gpio(ACPI_MMIO_BASE, IOMUX_GPIO_59, 1);
+}
+
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.final = mainboard_final,
