@@ -22,6 +22,7 @@
 
 #define SPD_SIZE  128
 #define PM_RTC_CONTROL	    0x56
+#define PM_RTC_SHADOW	    0x5B
 #define PM_S_STATE_CONTROL  0xBA
 
 /***********************************************************
@@ -263,6 +264,11 @@ static void mainboard_enable(struct device *dev)
 	// Enable power on from WAKE#
 	//
 	pm_write16(PM_S_STATE_CONTROL, pm_read16(PM_S_STATE_CONTROL) | (1 << 14));
+
+	//
+	// Enable power on after power fail
+	//
+	pm_write8(PM_RTC_SHADOW, pm_read8(PM_RTC_SHADOW) | (1 << 0));
 
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
