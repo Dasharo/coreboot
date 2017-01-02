@@ -49,6 +49,7 @@
 #include <string.h>
 #include <cpu/amd/amdfam16.h>
 #include <cpuRegisters.h>
+#include <build.h>
 
 static bool check_console(void);
 
@@ -66,6 +67,7 @@ static void mainboard_enable(device_t dev)
 	u32 TOM2 = ( bsp_topmem2() / (1024 *1024)) - 4 * 1024;	// Tom2 in Mbyte
 	if (scon) {
 		printk(BIOS_ALERT, CONFIG_MAINBOARD_PART_NUMBER "\n");
+		printk(BIOS_ALERT, "coreboot build %s\n", COREBOOT_YYYYMMDD_DATE);
 		printk(BIOS_ALERT, "%d MB", TOM1+TOM2);
 	}
 
