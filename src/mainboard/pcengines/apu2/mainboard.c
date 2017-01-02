@@ -51,7 +51,126 @@
 #include <cpuRegisters.h>
 #include <build.h>
 
-static bool check_console(void);
+#define BOOTORDER_FILE "bootorder"
+
+//
+// Helper functions
+//
+
+static char * findstr(const char *s, const char *pattern)
+{
+	char *result = (char *) s;
+	char *lpattern = (char *) pattern;
+
+	while (*result && *pattern ) {
+
+		if ( *lpattern == 0)	return result;		// the pattern matches return the pointer
+		if ( *result == 0) 		return NULL;		// We're at the end of the file content but don't have a patter match yet
+		if (*result == *lpattern ) {
+			result++;								// The string matches, simply advance
+			lpattern++;
+		} else {
+			result++;								// The string doesn't match restart the pattern
+			lpattern = (char *) pattern;
+		}
+	}
+
+	return NULL;
+}
+
+static u8 check_knob_value(const char *s)
+{
+	const char *boot_file = NULL;
+	size_t boot_file_len = 0;
+	char * token = NULL;
+
+	boot_file = cbfs_get_file_content(
+		CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, &boot_file_len);
+	if (boot_file == NULL)
+		printk(BIOS_EMERG, "file [%s] not found in CBFS\n", BOOTORDER_FILE);
+	if (boot_file_len < 4096)
+		printk(BIOS_EMERG, "Missing bootorder data.\n");
+	if (boot_file == NULL || boot_file_len < 4096)
+		return -1;
+
+	token = findstr( boot_file, s );
+
+	if (token) {
+		if (*token == '0') return 0;
+		if (*token == '1') return 1;
+	}
+
+	return -1;
+}
+
+#if CONFIG_FORCE_CONSOLE
+#else //CONFIG_FORCE_CONSOLE
+
+static bool check_console(void)
+{
+	u8 scon;
+
+	//
+	// Find the serial console item
+	//
+	scon = check_knob_value("scon");
+
+	switch (scon) {
+	case 0:
+		return FALSE;
+		break;
+	case 1:
+		return TRUE;
+		break;
+	default:
+		printk(BIOS_EMERG, "Missing or invalid scon knob, enable console.\n");
+		break;
+	}
+
+	return TRUE;
+}
+#endif //CONFIG_FORCE_CONSOLE
+
+static bool check_uart(char uart_letter)
+{
+	u8 uarten;
+
+	switch (uart_letter) {
+	case 'c':
+		uarten = check_knob_value("uartc");
+		break;
+	case 'd':
+		uarten = check_knob_value("uartd");
+		break;
+	default:
+		uarten = -1;
+		break;
+	}
+
+	switch (uarten) {
+	case 0:
+		return FALSE;
+		break;
+	case 1:
+		return TRUE;
+		break;
+	default:
+		printk(BIOS_EMERG, "Missing or invalid uart knob, disable port.\n");
+		break;
+	}
+
+	return FALSE;
+}
+
+static inline bool check_uartc( void )
+{
+	return check_uart('c');
+}
+
+static inline bool check_uartd( void )
+{
+	return check_uart('d');
+}
 
 /**********************************************
  * enable the dedicated function in mainboard.
@@ -101,106 +220,41 @@ static void mainboard_enable(device_t dev)
 	if (acpi_is_wakeup_s3())
 		agesawrapper_fchs3earlyrestore();
 
-//
-// SIO CONFIG, enable and disable UARTC and UARTD depending on the selection
-//
-#if CONFIG_SUPERIO_NUVOTON_NCT5104D_UARTC_ENABLE
-	printk(BIOS_INFO, "UARTC enabled\n");
-
-	sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_SP3);
-	if ( sio_dev ) sio_dev->enabled = 1;
-	sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO0);
-	if ( sio_dev ) sio_dev->enabled = 0;
-
-#else //CONFIG_SUPERIO_NUVOTON_NCT5104D_UARTC_ENABLE
-	printk(BIOS_INFO, "UARTC disabled\n");
-
-	sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_SP3);
-	if ( sio_dev ) sio_dev->enabled = 0;
-	sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO0);
-	if ( sio_dev ) sio_dev->enabled = 1;
-#endif //CONFIG_SUPERIO_NUVOTON_NCT5104D_UARTC_ENABLE
-
-
-#if CONFIG_SUPERIO_NUVOTON_NCT5104D_UARTD_ENABLE
-	printk(BIOS_INFO, "UARTD enabled\n");
-
-	sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_SP4);
-	if ( sio_dev ) sio_dev->enabled = 1;
-	sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO1);
-	if ( sio_dev ) sio_dev->enabled = 0;
-
-#else //CONFIG_SUPERIO_NUVOTON_NCT5104D_UARTD_ENABLE
-	printk(BIOS_INFO, "UARTD disabled\n");
-
-	sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_SP4);
-	if ( sio_dev ) sio_dev->enabled = 0;
-	sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO1);
-	if ( sio_dev ) sio_dev->enabled = 1;
-
-#endif //CONFIG_SUPERIO_NUVOTON_NCT5104D_UARTD_ENABLE
-}
-#if CONFIG_FORCE_CONSOLE
-#else //CONFIG_FORCE_CONSOLE
-
-static char * findstr(const char *s, const char *pattern)
-{
-	char *result = (char *) s;
-	char *lpattern = (char *) pattern;
-
-	while (*result && *pattern ) {
-
-		if ( *lpattern == 0)	return result;		// the pattern matches return the pointer
-		if ( *result == 0) 		return NULL;		// We're at the end of the file content but don't have a patter match yet
-		if (*result == *lpattern ) {
-			result++;								// The string matches, simply advance
-			lpattern++;
-		} else {
-			result++;								// The string doesn't match restart the pattern
-			lpattern = (char *) pattern;
-		}
-	}
-
-	return NULL;
-}
-
-static bool
-check_console( void )
-{
-	const char *boot_file;
-	size_t boot_file_len = 0;
-	char * scon;
-
-	printk(BIOS_INFO, "read bootorder\n");
-	boot_file = cbfs_get_file_content(CBFS_DEFAULT_MEDIA, "bootorder", CBFS_TYPE_RAW, &boot_file_len);
-	if (!boot_file)
-		printk(BIOS_EMERG, "file [bootorder] not found in CBFS\n");
-	if (boot_file_len < 4096)
-		printk(BIOS_EMERG, "Missing bootorder data.\n");
-	if (!boot_file || boot_file_len < 4096)
-		return TRUE;
-
 	//
-	// Find the serial console item
+	// SIO CONFIG, enable and disable UARTC and UARTD depending on the configuration
 	//
-	scon = findstr( boot_file, "scon");
+	if (check_uartc()) {
+		printk(BIOS_INFO, "UARTC enabled\n");
 
-	if ( scon ) {
-
-		if ( *scon == '0') return FALSE;
-		if ( *scon == '1') return TRUE;
-
-		printk(BIOS_EMERG, "invalid scon item, enable terminal.\n");
-		return TRUE;
-
+		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_SP3);
+		if ( sio_dev ) sio_dev->enabled = 1;
+		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO0);
+		if ( sio_dev ) sio_dev->enabled = 0;
 	} else {
+		printk(BIOS_INFO, "UARTC disabled\n");
 
-		printk(BIOS_EMERG, "Missing scon item, enable terminal.\n");
-		return TRUE;
+		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_SP3);
+		if ( sio_dev ) sio_dev->enabled = 0;
+		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO0);
+		if ( sio_dev ) sio_dev->enabled = 1;
 	}
-	return TRUE;
+
+	if (check_uartd()) {
+		printk(BIOS_INFO, "UARTD enabled\n");
+
+		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_SP4);
+		if ( sio_dev ) sio_dev->enabled = 1;
+		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO1);
+		if ( sio_dev ) sio_dev->enabled = 0;
+	} else {
+		printk(BIOS_INFO, "UARTD disabled\n");
+
+		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_SP4);
+		if ( sio_dev ) sio_dev->enabled = 0;
+		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO1);
+		if ( sio_dev ) sio_dev->enabled = 1;
+	}
 }
-#endif //CONFIG_FORCE_CONSOLE
 
 static void mainboard_final(void *chip_info) {
 
