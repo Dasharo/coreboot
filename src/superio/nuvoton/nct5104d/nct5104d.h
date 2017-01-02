@@ -19,6 +19,7 @@
 #define SUPERIO_NUVOTON_NCT5104D_H
 
 /* SIO global configuration */
+#define LDN_SELECT_CR07     0x07
 #define IRQ_TYPE_SEL_CR10   0x10     /* UARTA,UARTB */
 #define IRQ_TYPE_SEL_CR11   0x11     /* SMI,UARTC,UARTD,WDTO */
 #define GLOBAL_OPTION_CR26  0x26
@@ -28,6 +29,10 @@
 #define CR1C_UARTD                  (1 < 2) /* set is UART clear is GPIO operation */
 #define CR2F_STRAPPING              0x2F    /* Enable disable port 80 */
 #define SOUTC_P80_SEL               (1 < 3) /* set is UART clear is GPIO operation */
+
+/* LDN 0x07 specific registers */
+#define NCT5104D_GPIO0_IO   0xE0
+#define NCT5104D_GPIO1_IO   0xE4
 
 /* Logical Device Numbers (LDN). */
 #define NCT5104D_FDC        0x00 /* FDC - not pinned out */

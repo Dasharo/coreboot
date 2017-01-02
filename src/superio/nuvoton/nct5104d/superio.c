@@ -109,9 +109,9 @@ static void route_pins_to_uart(struct device *dev, bool to_uart)
 
 static void reset_gpio(struct device *dev)
 {
-	pnp_write_config(dev, 0x07, 0x07);
-	pnp_write_config(dev, 0xe0, 0xff);
-	pnp_write_config(dev, 0xe4, 0xff);
+	pnp_write_config(dev, LDN_SELECT_CR07, NCT5104D_GPIO_V);
+	pnp_write_config(dev, NCT5104D_GPIO0_IO, 0xff);
+	pnp_write_config(dev, NCT5104D_GPIO1_IO, 0xff);
 }
 
 static void nct5104d_init(struct device *dev)
