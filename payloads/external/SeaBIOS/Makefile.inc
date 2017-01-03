@@ -1,5 +1,5 @@
 SEABIOSGIT-$(CONFIG_SEABIOS_GENERIC)=http://review.coreboot.org/p/seabios.git
-SEABIOSGIT-$(CONFIG_SEABIOS_ELTAN)=git@81.95.197.197:pcengines/seabios.git
+SEABIOSGIT-$(CONFIG_SEABIOS_ELTAN)=https://github.com/pcengines/seabios.git
 
 ifeq ($(CONFIG_SEABIOS_GENERIC),y)
 #
@@ -70,7 +70,7 @@ ifeq ($(CONFIG_SEABIOS_VGA_COREBOOT),y)
 	echo "CONFIG_BUILD_VGABIOS=y" >> seabios/.config
 endif
 
-	echo "CONFIG_DEBUG_LEVEL=0" >> seabios/.config
+	echo "CONFIG_DEBUG_LEVEL=1" >> seabios/.config
 
 ifeq ($(CONFIG_SEABIOS_SERIAL_CONSOLE),y)
 	echo "CONFIG_SEABIOS_SERIAL_CONSOLE=y" >> seabios/.config
