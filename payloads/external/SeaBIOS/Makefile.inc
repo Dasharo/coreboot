@@ -70,7 +70,7 @@ ifeq ($(CONFIG_SEABIOS_VGA_COREBOOT),y)
 	echo "CONFIG_BUILD_VGABIOS=y" >> seabios/.config
 endif
 
-	echo "CONFIG_DEBUG_LEVEL=0" >> seabios/.config
+	echo "CONFIG_DEBUG_LEVEL=1" >> seabios/.config
 
 ifeq ($(CONFIG_SEABIOS_SERIAL_CONSOLE),y)
 	echo "CONFIG_SEABIOS_SERIAL_CONSOLE=y" >> seabios/.config

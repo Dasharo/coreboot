@@ -22,7 +22,7 @@ choice
 	depends on PAYLOAD_SEABIOS
 
 config SEABIOS_STABLE
-	bool "Stable version (1.8.2 for std)"
+	bool "Stable version (1.9.2.2 for std)"
 	help
 	  Stable SeaBIOS version
 config SEABIOS_MASTER
