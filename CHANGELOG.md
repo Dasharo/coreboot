@@ -2,10 +2,16 @@ Change log for PC Engines fork of coreboot
 ==========================================
 
 Releases 4.0.x are based on PC Engines 20160304 release.
-Releases 4.5.x are based on mainline support submitted in 
+Releases 4.5.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.5] - 2017-01-03
+### Changed
+- update sortbootorder to v4.0.3 (UART C/D toggling)
+- reset J17 GPIO's (`NCT5104D`) during boot to inputs
+- update to SeaBIOS rel-1.9.2.3
+
 ## [v4.0.4] - 2016-12-20
 ### Changed
 - sgabios output disabled
@@ -15,7 +21,7 @@ Releases 4.5.x are based on mainline support submitted in
 - info about coreboot build date in initial sign of life message
 
 ### Changed
-- update to SeaBIOS v4.0.2
+- update to SeaBIOS rel-1.9.2.2
 
 ## [v4.0.2] - 2016-12-09
 ### Changed
@@ -40,7 +46,8 @@ Releases 4.5.x are based on mainline support submitted in
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.4...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.5...coreboot-4.0.x
+[v4.0.5]: https://github.com/pcengines/coreboot/compare/v4.0.4...v4.0.5
 [v4.0.4]: https://github.com/pcengines/coreboot/compare/v4.0.3...v4.0.4
 [v4.0.3]: https://github.com/pcengines/coreboot/compare/v4.0.2...v4.0.3
 [v4.0.2]: https://github.com/pcengines/coreboot/compare/v4.0.1.1...v4.0.2

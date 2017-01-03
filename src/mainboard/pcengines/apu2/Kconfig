@@ -46,20 +46,20 @@ config MAINBOARD_DIR
 config MAINBOARD_PART_NUMBER
 	string
 	default "PCEngines apu2"
-	
+
 config SVI2_SLOW_SPEED
 	bool	"SVI2 slow speed"
 	default n
 	help
-		Used when there are problems switching the VRM speed. By default 
+		Used when there are problems switching the VRM speed. By default
 		speed is 20 Mhz
-		
+
 config SVI_WAIT_COMP_DIS
 	bool	"Disable SVI2 controller waits for command completion"
 	default y
 	help
 		SVI2 controller will not wait for command completion from VRM
-		
+
 config HW_MEM_HOLE_SIZEK
 	hex
 	default 0x200000
@@ -101,19 +101,19 @@ config HUDSON_LEGACY_FREE
 	default y
 
 config HUDSON_XHCI_ENABLE
-	bool 
+	bool
 	default y
-	
+
 config DRIVERS_PS2_KEYBOARD
-	bool 
+	bool
 	default n
-	
+
 config AGESA_HEAP_MEMTEST
-	bool 
-	default y 	
-	
+	bool
+	default y
+
 config VGA_ROM_RUN
-	bool 
+	bool
 	default n
 
 config DUMP_GPIO_CONFIGURATION
@@ -131,19 +131,11 @@ config DUMP_LINK_CONFIGURATION
 config INCLUDE_SGABIOS
 	bool "Include the SGABIOS for serial console"
 	default y
-	
-config SUPERIO_NUVOTON_NCT5104D_UARTC_ENABLE
-	bool "enable uartc"
-	default n
-	
-config SUPERIO_NUVOTON_NCT5104D_UARTD_ENABLE
-	bool "enable uartd"
-	default n
-	
+
 config FORCE_CONSOLE
 	bool "always enable serial console"
 	default n
-	help 
+	help
 		by default serial console is only enabled when pressing S1
-		
+
 endif # BOARD_PCENGINES_APU2

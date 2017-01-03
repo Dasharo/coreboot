@@ -107,6 +107,13 @@ static void route_pins_to_uart(struct device *dev, bool to_uart)
 	pnp_write_config(dev, 0x1c, reg);
 }
 
+static void reset_gpio(struct device *dev)
+{
+	pnp_write_config(dev, LDN_SELECT_CR07, NCT5104D_GPIO_V);
+	pnp_write_config(dev, NCT5104D_GPIO0_IO, 0xff);
+	pnp_write_config(dev, NCT5104D_GPIO1_IO, 0xff);
+}
+
 static void nct5104d_init(struct device *dev)
 {
 	struct superio_nuvoton_nct5104d_config *conf = dev->chip_info;
@@ -128,6 +135,7 @@ static void nct5104d_init(struct device *dev)
 		break;
 	case NCT5104D_GPIO0:
 	case NCT5104D_GPIO1:
+		reset_gpio(dev);
 		route_pins_to_uart(dev, false);
 		break;
 	default:
