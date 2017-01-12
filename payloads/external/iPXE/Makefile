@@ -11,6 +11,13 @@ project_name=iPXE
 project_dir=ipxe
 project_git_repo=https://git.ipxe.org/ipxe.git
 
+unexport KCONFIG_AUTOHEADER
+unexport KCONFIG_AUTOCONFIG
+unexport KCONFIG_DEPENDENCIES
+unexport KCONFIG_SPLITCONFIG
+unexport KCONFIG_TRISTATE
+unexport KCONFIG_NEGATIVES
+
 all: build
 
 $(project_dir):
@@ -63,6 +70,9 @@ ifeq ($(CONFIG_HAS_SCRIPT),y)
 	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom EMBED=$(CONFIG_SCRIPT)
 else
 	echo "    MAKE       $(project_name) $(TAG-y)"
+ifneq ($(CONFIG_PXE_CUSTOM_BOOTMENU_FILE),)
+	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom EMBED=./menu.ipxe
+else
 	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom
 endif
 	cp $(project_dir)/src/bin/$(PXE_ROM_PCI_ID).rom $(project_dir)/ipxe.rom
