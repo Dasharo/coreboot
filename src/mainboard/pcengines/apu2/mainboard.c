@@ -36,10 +36,12 @@
 #include <cpu/amd/amdfam16.h>
 #include <cpuRegisters.h>
 #include <Fch/Fch.h>
+#include <spd_cache.h>
 #include "gpio_ftns.h"
 
 #define SPD_SIZE  128
 #define PM_RTC_CONTROL	    0x56
+#define PM_RTC_SHADOW	    0x5B
 #define PM_S_STATE_CONTROL  0xBA
 
 
@@ -173,19 +175,40 @@ static void config_gpio_mux(void)
 
 static void mainboard_enable(device_t dev)
 {
-	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
 
 	config_gpio_mux();
 
-	//
-	// Enable the RTC output
-	//
+	setup_bsp_ramtop();
+	u32 top_mem = bsp_topmem() / (1024 * 1024);
+	u32 top_mem2 = (bsp_topmem2() / (1024 * 1024)) - 4 * 1024;
+
+	printk(BIOS_ALERT, CONFIG_MAINBOARD_PART_NUMBER "\n");
+	printk(BIOS_ALERT, "%d MB", top_mem+top_mem2);
+
+	/* Read memory configuration from GPIO 49 and 50 */
+	u8 spd_index = read_gpio(ACPI_MMIO_BASE, IOMUX_GPIO_49);
+	spd_index |= (read_gpio(ACPI_MMIO_BASE, IOMUX_GPIO_50) << 1);
+
+	u8 spd_buffer[SPD_SIZE];
+
+	if (read_spd_from_cbfs(spd_buffer, spd_index) < 0) {
+		/* Indicate no ECC */
+		spd_buffer[3] = 3;
+	}
+
+	if (spd_buffer[3] == 8) {
+		printk(BIOS_ALERT, " ECC");
+	}
+	printk(BIOS_ALERT, " DRAM\n\n");
+
+	/* Enable the RTC output */
 	pm_write16 ( PM_RTC_CONTROL, pm_read16( PM_RTC_CONTROL ) | (1 << 11));
 
-	//
-	// Enable power on from WAKE#
-	//
+	/* Enable power on from WAKE# */
 	pm_write16 ( PM_S_STATE_CONTROL, pm_read16( PM_S_STATE_CONTROL ) | (1 << 14));
+
+	/* Enable power on after power fail */
+	pm_write8 ( PM_RTC_SHADOW, pm_read8( PM_RTC_SHADOW ) | (1 << 0));
 
 	if (acpi_is_wakeup_s3())
 		agesawrapper_fchs3earlyrestore();
@@ -194,8 +217,16 @@ static void mainboard_enable(device_t dev)
 	pirq_setup();
 }
 
+static void mainboard_final(void *chip_info)
+{
+	/* Turn off LED D4 and D5 */
+	write_gpio(ACPI_MMIO_BASE, IOMUX_GPIO_58, 1);
+	write_gpio(ACPI_MMIO_BASE, IOMUX_GPIO_59, 1);
+}
+
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
+	.final = mainboard_final,
 };
 
 
@@ -243,7 +274,7 @@ const char *smbios_mainboard_sku(void)
 	if (sku[0] != 0)
 		return sku;
 
-	memptr = (u8 *)(ACPI_MMIO_BASE + GPIO_OFFSET + GPIO_49);
+	memptr = (u8 *)(ACPI_MMIO_BASE + GPIO_OFFSET + (IOMUX_GPIO_49 << 2) + 2);
 	if (!(*memptr & BIT0))
 		snprintf(sku, sizeof(sku), "2 GB");
 	else

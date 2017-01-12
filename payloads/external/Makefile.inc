@@ -92,6 +92,7 @@ ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_FILE)),)
 cbfs-files-y += bootorder
 bootorder-file := $(strip $(CONFIG_SEABIOS_BOOTORDER_FILE))
 bootorder-type := raw
+bootorder-align := 0x1000
 endif
 
 # add a SeaBIOS bootorder_map file
@@ -239,4 +240,6 @@ payloads/external/iPXE/ipxe/ipxe.rom ipxe: $(DOTCONFIG)
 	CONSOLE_SERIAL=$(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO) \
 	IPXE_UART=$(IPXE_UART) \
 	CONFIG_TTYS0_BAUD=$(CONFIG_TTYS0_BAUD) \
+	CONFIG_PXE_CUSTOM_GENERAL_H=$(CONFIG_PXE_CUSTOM_GENERAL_H) \
+	CONFIG_PXE_CUSTOM_BOOTMENU_FILE=$(CONFIG_PXE_CUSTOM_BOOTMENU_FILE) \
 	MFLAGS= MAKEFLAGS=
