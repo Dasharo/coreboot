@@ -67,6 +67,12 @@ config PXE_ROM_ID
 
 	  Under GNU/Linux you can run `lspci -nn` to list the IDs of your PCI devices.
 
+config PXE_CUSTOM_GENERAL_H
+	string "iPXE custom general.h file"
+	default "general.h"
+	help
+	  This option allows user to customize feature set built-in into iPXE ROM.
+
 config PXE_SERIAL_CONSOLE
 	bool "Enable iPXE serial console"
 	def_bool y
@@ -109,12 +115,6 @@ config PXE_HAS_HTTPS
 	help
 	  Enable HTTPS protocol, which allows you to encrypt all communication
 	  with a web server and to verify the server's identity
-
-config CONFIG_PXE_CUSTOM_GENERAL_H
-	string "iPXE custom general.h file"
-	default "../../../../apu2-documentation/ipxe/general.h"
-	help
-	  This option allows user to customize feature set built-in into iPXE ROM.
 
 endmenu
 endif
