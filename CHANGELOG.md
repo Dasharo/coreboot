@@ -6,6 +6,10 @@ Releases 4.5.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.6] - 2017-01-12
+### Changed
+- enable EHCI0 controller
+
 ## [v4.0.5] - 2017-01-03
 ### Changed
 - update sortbootorder to v4.0.3 (UART C/D toggling)
@@ -46,7 +50,8 @@ Releases 4.5.x are based on mainline support submitted in
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.5...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.6...coreboot-4.0.x
+[v4.0.6]: https://github.com/pcengines/coreboot/compare/v4.0.5...v4.0.6
 [v4.0.5]: https://github.com/pcengines/coreboot/compare/v4.0.4...v4.0.5
 [v4.0.4]: https://github.com/pcengines/coreboot/compare/v4.0.3...v4.0.4
 [v4.0.3]: https://github.com/pcengines/coreboot/compare/v4.0.2...v4.0.3
