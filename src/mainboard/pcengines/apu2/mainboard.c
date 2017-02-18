@@ -28,17 +28,17 @@
 #include <northbridge/amd/pi/00730F01/pci_devs.h>
 #include <southbridge/amd/common/amd_pci_util.h>
 #include <superio/nuvoton/nct5104d/nct5104d.h>
-
+#include <smbios.h>
+#include <string.h>
 #include <build.h>
 #include <cpu/x86/msr.h>
 #include <cpu/amd/mtrr.h>
-#include <smbios.h>
-#include <string.h>
+#include "gpio_ftns.h"
 #include <cpu/amd/amdfam16.h>
 #include <cpuRegisters.h>
 #include <Fch/Fch.h>
 #include <spd_cache.h>
-#include "gpio_ftns.h"
+
 
 #define SPD_SIZE  128
 #define PM_RTC_CONTROL	    0x56
@@ -203,13 +203,19 @@ static void mainboard_enable(device_t dev)
 	}
 	printk(BIOS_ALERT, " DRAM\n\n");
 
-	/* Enable the RTC output */
+	//
+	// Enable the RTC output
+	//
 	pm_write16 ( PM_RTC_CONTROL, pm_read16( PM_RTC_CONTROL ) | (1 << 11));
 
-	/* Enable power on from WAKE# */
+	//
+	// Enable power on from WAKE#
+	//
 	pm_write16 ( PM_S_STATE_CONTROL, pm_read16( PM_S_STATE_CONTROL ) | (1 << 14));
 
-	/* Enable power on after power fail */
+	//
+	// Enable power on after power fail
+	//
 	pm_write8 ( PM_RTC_SHADOW, pm_read8( PM_RTC_SHADOW ) | (1 << 0));
 
 	if (acpi_is_wakeup_s3())
@@ -226,60 +232,57 @@ static void mainboard_final(void *chip_info)
 	write_gpio(ACPI_MMIO_BASE, IOMUX_GPIO_59, 1);
 }
 
-struct chip_operations mainboard_ops = {
-	.enable_dev = mainboard_enable,
-	.final = mainboard_final,
-};
-
-
+/*
+ * We will stuff a modified version of the first NICs (BDF 1:0.0) MAC address
+ * into the smbios serial number location.
+ */
 const char *smbios_mainboard_serial_number(void)
 {
-    static char serial[10];
-    msr_t msr;
-    u32 mac_addr = 0;
-    device_t nic_dev;
+	static char serial[10];
+	device_t nic_dev;
+	uintptr_t bar10;
+	u32 mac_addr = 0;
+	int i;
 
-    // Allows the IO configuration space access method, IOCF8 and IOCFC, to be
-    // used to generate extended configuration cycles
-    msr = rdmsr(NB_CFG_MSR);
-    msr.hi |= (ENABLE_CF8_EXT_CFG);
-    wrmsr(NB_CFG_MSR, msr);
+	nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
+	if ((serial[0] != 0) || !nic_dev)
+		return serial;
 
-    nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
+	/* Read in the last 3 bytes of NIC's MAC address. */
+	bar10 = pci_read_config32(nic_dev, 0x10);
+	bar10 &= 0xFFFE0000;
+	bar10 += 0x5400;
+	for (i = 3; i < 6; i++) {
+		mac_addr <<= 8;
+		mac_addr |= read8((u8 *)bar10 + i);
+	}
+	mac_addr &= 0x00FFFFFF;
+	mac_addr /= 4;
+	mac_addr -= 64;
 
-    if ((serial[0] != 0) || !nic_dev)
-        return serial;
-
-    // Read 4 bytes starting from 0x144 offset
-    mac_addr = pci_read_config32(nic_dev, 0x144);
-    // MSB here is always 0xff
-    // Discard it so only bottom 3b of mac address are left
-    mac_addr &= 0x00ffffff;
-
-    // Set bit EnableCf8ExtCfg back to 0
-    msr.hi &= ~(ENABLE_CF8_EXT_CFG);
-    wrmsr(NB_CFG_MSR, msr);
-
-    // Calculate serial value
-    mac_addr /= 4;
-    mac_addr -= 64;
-
-    snprintf(serial, sizeof(serial), "%d", mac_addr);
-
-    return serial;
+	snprintf(serial, sizeof(serial), "%d", mac_addr);
+	return serial;
 }
 
+/*
+ * We will stuff the memory size into the smbios sku location.
+ */
 const char *smbios_mainboard_sku(void)
 {
-	u8 *memptr;
 	static char sku[5];
 	if (sku[0] != 0)
 		return sku;
 
-	memptr = (u8 *)(ACPI_MMIO_BASE + GPIO_OFFSET + (IOMUX_GPIO_49 << 2) + 2);
-	if (!(*memptr & BIT0))
+	if (!get_spd_offset())
 		snprintf(sku, sizeof(sku), "2 GB");
 	else
 		snprintf(sku, sizeof(sku), "4 GB");
 	return sku;
 }
+
+struct chip_operations mainboard_ops = {
+	.enable_dev = mainboard_enable,
+	.final = mainboard_final
+};
+
+

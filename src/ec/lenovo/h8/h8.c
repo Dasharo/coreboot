@@ -19,7 +19,6 @@
 #include <device/device.h>
 #include <device/pnp.h>
 #include <ec/acpi/ec.h>
-#include <kconfig.h>
 #include <stdlib.h>
 #include <string.h>
 #include <smbios.h>
@@ -77,6 +76,24 @@ static void h8_fn_ctrl_swap(int on)
 		ec_set_bit(0xce, 4);
 	else
 		ec_clr_bit(0xce, 4);
+}
+
+enum battery {
+	SECONDARY_BATTERY = 0,
+	PRIMARY_BATTERY = 1,
+};
+
+/* h8 charge priority. Defines if primary or secondary
+ * battery is charged first.
+ * Because NVRAM is complete the otherway around as this register,
+ * it's inverted by if
+ */
+static void h8_charge_priority(enum battery battery)
+{
+	if (battery == PRIMARY_BATTERY)
+		ec_clr_bit(0x0, 4);
+	else
+		ec_set_bit(0x0, 4);
 }
 
 static void h8_sticky_fn(int on)
@@ -187,7 +204,7 @@ struct device_operations h8_dev_ops = {
 static void h8_enable(struct device *dev)
 {
 	struct ec_lenovo_h8_config *conf = dev->chip_info;
-	u8 val, tmp;
+	u8 val;
 	u8 beepmask0, beepmask1, config1;
 
 	dev->ops = &h8_dev_ops;
@@ -228,9 +245,8 @@ static void h8_enable(struct device *dev)
 	ec_write(H8_SOUND_ENABLE0, beepmask0);
 	ec_write(H8_SOUND_ENABLE1, beepmask1);
 
-	ec_write(H8_SOUND_REPEAT, 0x00);
-
 	/* silence sounds in queue */
+	ec_write(H8_SOUND_REPEAT, 0x00);
 	ec_write(H8_SOUND_REG, 0x00);
 
 	ec_write(0x10, conf->event0_enable);
@@ -251,6 +267,8 @@ static void h8_enable(struct device *dev)
 	ec_write(0x1f, conf->eventf_enable);
 
 	ec_write(H8_FAN_CONTROL, H8_FAN_CONTROL_AUTO);
+	ec_write(H8_USB_ALWAYS_ON, ec_read(H8_USB_ALWAYS_ON) &
+			~H8_USB_ALWAYS_ON_ENABLE);
 
 	if (get_option(&val, "wlan") != CB_SUCCESS)
 		val = 1;
@@ -287,12 +305,9 @@ static void h8_enable(struct device *dev)
 	h8_sticky_fn(val);
 
 	if (get_option(&val, "first_battery") != CB_SUCCESS)
-		val = 1;
+		val = PRIMARY_BATTERY;
+	h8_charge_priority(val);
 
-	tmp = ec_read(H8_CONFIG3);
-	tmp &= ~(1 << 4);
-	tmp |= (val & 1) << 4;
-	ec_write(H8_CONFIG3, tmp);
 	h8_set_audio_mute(0);
 
 #if !IS_ENABLED(CONFIG_H8_DOCK_EARLY_INIT)

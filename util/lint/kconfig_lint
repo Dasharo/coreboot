@@ -45,9 +45,10 @@ my $root_dir       = "src";           # Directory of the top level Kconfig file
 my $errors_found   = 0;               # count of errors
 my $warnings_found = 0;
 my $exclude_dirs_and_files =
-  '^build/\|^coreboot-builds/\|^payloads/libpayload\|^payloads/coreinfo\|^configs/\|^util/\|^\.git/'
+  '^build/\|^coreboot-builds/\|^configs/\|^util/\|^\.git/\|^payloads\|^Documentation\|^3rdparty'
   . '\|' .                            # directories to exclude when searching for used symbols
-  '\.txt$\|\.tex$\|\.tags';           #files to exclude when looking for symbols
+  '\.config\|\.txt$\|\.tex$\|\.tags'; #files to exclude when looking for symbols
+my $payload_files_to_check='payloads/Makefile.inc payloads/external/Makefile.inc';
 my $config_file = "";                 # name of config file to load symbol values from.
 my @wholeconfig;                      # document the entire kconfig structure
 my %loaded_files;                     # list of each Kconfig file loaded
@@ -84,6 +85,7 @@ sub Main {
 
     load_config($config_file) if ($config_file);
 
+    check_type();
     check_defaults();
     check_referenced_symbols();
 
@@ -272,6 +274,31 @@ sub check_for_def {
 }
 
 #-------------------------------------------------------------------------------
+# check_type - Make sure that all symbols have a type defined.
+#
+# Conflicting types are found when parsing the Kconfig tree.
+#-------------------------------------------------------------------------------
+sub check_type {
+
+    # loop through each defined symbol
+    foreach my $sym ( sort ( keys %symbols ) ) {
+
+        # Make sure there's a type set for the symbol
+        if (!defined $symbols{$sym}{type}) {
+
+            #loop through each instance of that symbol
+            for ( my $sym_num = 0 ; $sym_num <= $symbols{$sym}{count} ; $sym_num++ ) {
+
+                my $filename = $symbols{$sym}{$sym_num}{file};
+                my $line_no  = $symbols{$sym}{$sym_num}{line_no};
+
+                show_error("No type defined for symbol $sym defined at $filename:$line_no.");
+            }
+        }
+    }
+}
+
+#-------------------------------------------------------------------------------
 # check_is_enabled - The IS_ENABLED() macro is only valid for symbols of type
 # bool. It would probably work on type hex or int if the value was 0 or 1, but
 # this seems like a bad plan.  Using it on strings is dead out.
@@ -331,6 +358,9 @@ sub check_defaults {
 
                 my $filename = $symbols{$sym}{$sym_num}{file};
                 my $line_no  = $symbols{$sym}{$sym_num}{default}{$def_num}{default_line_no};
+
+                # Make sure there's a type set for the symbol
+                next if (!defined $symbols{$sym}{type});
 
                 # skip good defaults
                 if (! ((($symbols{$sym}{type} eq "hex") && ($symbols{$sym}{$sym_num}{default}{$def_num}{default} =~ /^0x/)) ||
@@ -410,10 +440,10 @@ sub collect_used_symbols {
     # find all references to CONFIG_ statements in the tree
 
     if ($dont_use_git_grep) {
-        @collected_symbols = `grep -Irn -- "CONFIG_" | grep -v '$exclude_dirs_and_files'`;
+        @collected_symbols = `grep -Irn -- "CONFIG_" | grep -v '$exclude_dirs_and_files'; grep -In -- "CONFIG_" $payload_files_to_check`;
     }
     else {
-        @collected_symbols = `git grep -In -- "CONFIG_" | grep -v '$exclude_dirs_and_files'`;
+        @collected_symbols = `git grep -In -- "CONFIG_" | grep -v '$exclude_dirs_and_files'; git grep -In -- "CONFIG_" $payload_files_to_check`;
     }
 
     my @used_symbols = @collected_symbols;

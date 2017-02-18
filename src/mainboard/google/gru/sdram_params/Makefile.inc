@@ -14,10 +14,11 @@
 ##
 
 sdram-params :=
-
-sdram-params += sdram-lpddr3-hynix-4GB-666
-sdram-params += sdram-lpddr3-hynix-4GB-800
-sdram-params += sdram-lpddr3-hynix-4GB-933
+sdram-params += sdram-lpddr3-hynix-4GB
+sdram-params += sdram-lpddr3-samsung-2GB-24EB
+sdram-params += sdram-lpddr3-micron-2GB
+sdram-params += sdram-lpddr3-samsung-4GB-04EB
+sdram-params += sdram-lpddr3-micron-4GB
 
 $(foreach params,$(sdram-params), \
 	$(eval cbfs-files-y += $(params)) \

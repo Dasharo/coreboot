@@ -25,12 +25,7 @@
 #ifndef __ASM_ACPI_H
 #define __ASM_ACPI_H
 
-#if IS_ENABLED(CONFIG_HAVE_ACPI_RESUME) && \
-	! IS_ENABLED(CONFIG_RELOCATABLE_RAMSTAGE)
 #define HIGH_MEMORY_SAVE	(CONFIG_RAMTOP - CONFIG_RAMBASE)
-#else
-#define HIGH_MEMORY_SAVE	0
-#endif
 
 #if IS_ENABLED(CONFIG_ACPI_INTEL_HARDWARE_SLEEP_VALUES)
 /*
@@ -224,6 +219,30 @@ typedef struct acpi_madt {
 	u32 lapic_addr;			/* Local APIC address */
 	u32 flags;			/* Multiple APIC flags */
 } __attribute__ ((packed)) acpi_madt_t;
+
+/* VFCT image header */
+struct acpi_vfct_image_hdr {
+	u32 PCIBus;
+	u32 PCIDevice;
+	u32 PCIFunction;
+	u16 VendorID;
+	u16 DeviceID;
+	u16 SSVID;
+	u16 SSID;
+	u32 Revision;
+	u32 ImageLength;
+	u8  VbiosContent;	// dummy - copy VBIOS here
+} __attribute__ ((packed));
+
+/* VFCT (VBIOS Fetch Table) */
+struct acpi_vfct {
+	struct acpi_table_header header;
+	u8  TableUUID[16];
+	u32 VBIOSImageOffset;
+	u32 Lib1ImageOffset;
+	u32 Reserved[4];
+	struct acpi_vfct_image_hdr image_hdr;
+} __attribute__ ((packed));
 
 typedef struct acpi_ivrs_info {
 } __attribute__ ((packed)) acpi_ivrs_info_t;
@@ -606,6 +625,11 @@ void acpi_create_srat(acpi_srat_t *srat,
 void acpi_create_slit(acpi_slit_t *slit,
 		      unsigned long (*acpi_fill_slit)(unsigned long current));
 
+void acpi_create_vfct(struct device *device,
+		      struct acpi_vfct *vfct,
+		      unsigned long (*acpi_fill_vfct)(struct device *device,
+		          struct acpi_vfct *vfct_struct, unsigned long current));
+
 void acpi_create_ivrs(acpi_ivrs_t *ivrs,
 		      unsigned long (*acpi_fill_ivrs)(acpi_ivrs_t* ivrs_struct, unsigned long current));
 
@@ -688,8 +712,14 @@ static inline int acpi_s3_resume_allowed(void)
 	return IS_ENABLED(CONFIG_HAVE_ACPI_RESUME);
 }
 
+/* Return address in reserved memory where to backup low memory
+ * while platform resumes from S3 suspend. Caller is responsible of
+ * making a complete copy of the region base..base+size, with
+ * parameteres base and size that meet page alignment requirement.
+ */
+void *acpi_backup_container(uintptr_t base, size_t size);
+
 #if IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)
-extern int acpi_slp_type;
 
 #ifdef __PRE_RAM__
 static inline int acpi_is_wakeup_s3(void)
@@ -704,7 +734,6 @@ int acpi_is_wakeup_s4(void);
 void acpi_prepare_for_resume(void);
 
 #else
-#define acpi_slp_type ACPI_S0
 static inline int acpi_is_wakeup(void) { return 0; }
 static inline int acpi_is_wakeup_s3(void) { return 0; }
 static inline int acpi_is_wakeup_s4(void) { return 0; }

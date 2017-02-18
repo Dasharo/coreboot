@@ -19,6 +19,7 @@
 #include <arch/exception.h>
 #include <arch/mmu.h>
 #include <cbfs.h>
+#include <cbmem.h>
 #include <console/console.h>
 #include <program_loading.h>
 #include <romstage_handoff.h>
@@ -28,11 +29,9 @@
 #include <soc/sdram.h>
 #include <symbols.h>
 #include <soc/usb.h>
+#include <stdlib.h>
 
 #include "pwm_regulator.h"
-
-static const uint64_t dram_size =
-	(uint64_t)min((uint64_t)CONFIG_DRAM_SIZE_MB * MiB, MAX_DRAM_ADDRESS);
 
 static void init_dvs_outputs(void)
 {
@@ -64,7 +63,8 @@ void main(void)
 
 	sdram_init(get_sdram_config());
 
-	mmu_config_range((void *)0, (uintptr_t)dram_size, CACHED_MEM);
+	mmu_config_range((void *)0, (uintptr_t)sdram_size_mb() * MiB,
+			 CACHED_MEM);
 	mmu_config_range(_dma_coherent, _dma_coherent_size, UNCACHED_MEM);
 	cbmem_initialize_empty();
 	run_ramstage();

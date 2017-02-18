@@ -24,6 +24,7 @@
 #include <lib.h>
 #include <arch/acpi.h>
 #include <cbmem.h>
+#include <timestamp.h>
 #include <superio/smsc/lpc47m15x/lpc47m15x.h>
 #include <pc80/mc146818rtc.h>
 #include <console/console.h>
@@ -35,23 +36,6 @@
 
 #define SERIAL_DEV PNP_DEV(0x2e, LPC47M15X_SP1)
 #define PME_DEV PNP_DEV(0x2e, LPC47M15X_PME)
-
-void setup_ich7_gpios(void)
-{
-	/* TODO: This is highly board specific and should be moved */
-	printk(BIOS_DEBUG, " GPIOS...");
-	/* General Registers */
-	outl(0x3f3df7c1, DEFAULT_GPIOBASE + 0x00);	/* GPIO_USE_SEL */
-	outl(0xc6fcbfc3, DEFAULT_GPIOBASE + 0x04);	/* GP_IO_SEL */
-	outl(0xecfefdff, DEFAULT_GPIOBASE + 0x0c);	/* GP_LVL */
-	/* Output Control Registers */
-	outl(0x00040000, DEFAULT_GPIOBASE + 0x18);	/* GPO_BLINK */
-	/* Input Control Registers */
-	outl(0x0000a000, DEFAULT_GPIOBASE + 0x2c);	/* GPI_INV */
-	outl(0x000000ff, DEFAULT_GPIOBASE + 0x30);	/* GPIO_USE_SEL2 */
-	outl(0x000000bf, DEFAULT_GPIOBASE + 0x34);	/* GP_IO_SEL2 */
-	outl(0x000300fd, DEFAULT_GPIOBASE + 0x38);	/* GP_LVL */
-}
 
 static void ich7_enable_lpc(void)
 {
@@ -154,6 +138,10 @@ void mainboard_romstage_entry(unsigned long bist)
 {
 	int s3resume = 0, boot_mode = 0;
 
+
+	timestamp_init(get_initial_timestamp());
+	timestamp_add_now(TS_START_ROMSTAGE);
+
 	if (bist == 0)
 		enable_lapic();
 
@@ -187,7 +175,9 @@ void mainboard_romstage_entry(unsigned long bist)
 	dump_spd_registers();
 #endif
 
+	timestamp_add_now(TS_BEFORE_INITRAM);
 	sdram_initialize(s3resume ? 2 : boot_mode, NULL);
+	timestamp_add_now(TS_AFTER_INITRAM);
 
 	/* Perform some initialization that must run before stage2 */
 	early_ich7_init();

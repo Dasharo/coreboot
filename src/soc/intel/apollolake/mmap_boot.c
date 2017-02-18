@@ -22,9 +22,8 @@
 #include <commonlib/region.h>
 #include <console/console.h>
 #include <fmap.h>
-#include <soc/intel/common/nvm.h>
+#include <soc/flash_ctrlr.h>
 #include <soc/mmap_boot.h>
-#include <soc/spi.h>
 
 /*
  * BIOS region on the flash is mapped right below 4GiB in the address
@@ -81,7 +80,7 @@ static void bios_mmap_init(void)
 	 * Base and Limit.
 	 * Base and Limit fields are in units of 4KiB.
 	 */
-	uint32_t val = spi_ctrlr_reg_read(SPIBAR_BIOS_BFPREG);
+	uint32_t val = spi_flash_ctrlr_reg_read(SPIBAR_BIOS_BFPREG);
 
 	start = (val & SPIBAR_BFPREG_PRB_MASK) * 4 * KiB;
 	bios_end = (((val & SPIBAR_BFPREG_PRL_MASK) >>
@@ -147,22 +146,6 @@ const struct cbfs_locator cbfs_master_header_locator = {
 	.name = "IAFW Locator",
 	.locate = iafw_boot_region_properties,
 };
-
-uint32_t nvm_mmio_to_flash_offset(void *p)
-{
-	bios_mmap_init();
-
-	size_t start, size;
-	start = car_get_var(bios_start);
-	size = car_get_var(bios_size);
-
-	/*
-	 * Returns :
-	 * addr - base of mmaped region in addr space + offset of mmaped region
-	 * start on flash
-	 */
-	return (uintptr_t)p - (4ULL * GiB - size) + start;
-}
 
 size_t get_bios_size(void)
 {

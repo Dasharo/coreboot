@@ -19,6 +19,7 @@
 #include <reset.h>
 #include <arch/acpi.h>
 #include <arch/cpu.h>
+#include <southbridge/amd/common/amd_defs.h>
 #include <cbmem.h>
 #include "sb800.h"
 #include "smbus.c"
@@ -107,8 +108,8 @@ void sb800_clk_output_48Mhz(void)
 	reg8 &= ~(1 << 1);
 	pmio_write(0x24, reg8);
 
-	*(volatile u32 *)(0xFED80000+0xE00+0x40) &= ~((1 << 0) | (1 << 2)); /* 48Mhz */
-	*(volatile u32 *)(0xFED80000+0xE00+0x40) |= 1 << 1; /* 48Mhz */
+	*(volatile u32 *)(AMD_SB_ACPI_MMIO_ADDR+0xE00+0x40) &= ~((1 << 0) | (1 << 2)); /* 48Mhz */
+	*(volatile u32 *)(AMD_SB_ACPI_MMIO_ADDR+0xE00+0x40) |= 1 << 1; /* 48Mhz */
 }
 /***************************************
 * Legacy devices are mapped to LPC space.
@@ -164,7 +165,7 @@ static void sb800_lpc_init(void)
 }
 
 /* what is its usage? */
-static u32 get_sbdn(u32 bus)
+u32 get_sbdn(u32 bus)
 {
 	pci_devfn_t dev;
 
@@ -625,11 +626,6 @@ static void sb800_early_setup(void)
 	printk(BIOS_INFO, "sb800_early_setup()\n");
 	sb800_por_init();
 	sb800_acpi_init();
-}
-
-static int smbus_read_byte(u32 device, u32 address)
-{
-	return do_smbus_read_byte(SMBUS_IO_BASE, device, address);
 }
 
 int s3_save_nvram_early(u32 dword, int size, int  nvram_pos)

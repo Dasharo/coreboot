@@ -15,7 +15,6 @@
 
 config SOC_INTEL_SCH
 	bool
-	select MMCONF_SUPPORT
 	select LATE_CBMEM_INIT
 	select INTEL_GMA_ACPI
 	select SOUTHBRIDGE_INTEL_COMMON
@@ -24,6 +23,10 @@ config SOC_INTEL_SCH
 	select HAVE_SMI_HANDLER
 
 if SOC_INTEL_SCH
+
+config BOOTBLOCK_NORTHBRIDGE_INIT
+	string
+	default "soc/intel/sch/bootblock.c"
 
 config VGA_BIOS_ID
 	string

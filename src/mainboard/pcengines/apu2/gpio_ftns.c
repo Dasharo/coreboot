@@ -19,35 +19,30 @@
 #include "FchPlatform.h"
 #include "gpio_ftns.h"
 
-void configure_gpio(uintptr_t base_addr, u32 iomux_gpio, u8 iomux_ftn, u32 setting)
+void configure_gpio(uintptr_t base_addr, u32 iomux_gpio, u8 iomux_ftn, u32 gpio, u32 setting)
 {
 	u8 bdata;
 	u8 *memptr;
-	/* we are interested in bits 16:23 of GPIO configuration space */
-	memptr = (u8 *)(base_addr + GPIO_OFFSET + (iomux_gpio << 2) + 2);
-	bdata = *memptr;
-	/* out the data value to prevent glitches */
-	bdata |= (setting & GPIO_OUTPUT_ENABLE);
-	*memptr = bdata;
-
-	/* set direction and data value */
-	bdata |= (setting & (GPIO_OUTPUT_ENABLE | GPIO_OUTPUT_VALUE | GPIO_PULL_UP_ENABLE | GPIO_PULL_DOWN_ENABLE));
-	*memptr = bdata;
 
 	memptr = (u8 *)(base_addr + IOMUX_OFFSET + iomux_gpio);
 	*memptr = iomux_ftn;
 
+	memptr = (u8 *)(base_addr + GPIO_OFFSET + gpio);
+	bdata = *memptr;
+	bdata &= 0x07;
+	bdata |= setting; /* set direction and data value */
+	*memptr = bdata;
 }
 
-u8 read_gpio(uintptr_t base_addr, u32 iomux_gpio)
+int get_spd_offset(void)
 {
-	u8 *memptr = (u8 *)(base_addr + GPIO_OFFSET + (iomux_gpio << 2) + 2);
-	return (*memptr & GPIO_OUTPUT_VALUE) ? 1 : 0;
-}
+	u8 index = 0;
+	/* One SPD file contains all 4 options, determine which index to
+	 * read here, then call into the standard routines.
+	 */
+	u8 *gpio_bank0_ptr = (u8 *)(ACPI_MMIO_BASE + GPIO_BANK0_BASE);
+	if (*(gpio_bank0_ptr + (0x40 << 2) + 2) & BIT0) index |= BIT0;
+	if (*(gpio_bank0_ptr + (0x41 << 2) + 2) & BIT0) index |= BIT1;
 
-void write_gpio(uintptr_t base_addr, u32 iomux_gpio, u8 value)
-{
-	u8 *memptr = (u8 *)(base_addr + GPIO_OFFSET + (iomux_gpio << 2) + 2);
-
-	*memptr |= (value > 0) ? GPIO_OUTPUT_VALUE : 0;
+	return index;
 }

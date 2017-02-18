@@ -19,23 +19,25 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Wrapper object to save MRC information. */
-struct mrc_saved_data {
-	uint32_t signature;
-	uint32_t size;
-	uint32_t checksum;
-	uint32_t version;
-	uint8_t  data[0];
-} __attribute__((packed));
+enum {
+	MRC_TRAINING_DATA,
+	MRC_VARIABLE_DATA,
+};
 
-/* Locate the most recently saved MRC data. */
-int mrc_cache_get_current(const struct mrc_saved_data **cache);
-int mrc_cache_get_current_with_version(const struct mrc_saved_data **cache,
-					uint32_t version);
+/*
+ * It's up to the caller to decide when to retrieve and stash data. There is
+ * differentiation on recovery mode CONFIG_HAS_RECOVERY_MRC_CACHE, but that's
+ * only for locating where to retrieve and save the data. If a platform doesn't
+ * want to update the data then it shouldn't stash the data for saving.
+ * Similarly, if the platform doesn't need the data for booting because of a
+ * policy don't request the data.
+ */
 
-/* Stash the resulting MRC data to be saved in non-volatile storage later. */
-int mrc_cache_stash_data(const void *data, size_t size);
-int mrc_cache_stash_data_with_version(const void *data, size_t size,
-					uint32_t version);
+/* Get and stash data for saving provided the type passed in. The functions
+ * return < 0 on error, 0 on success. */
+int mrc_cache_get_current(int type, uint32_t version,
+				struct region_device *rdev);
+int mrc_cache_stash_data(int type, uint32_t version, const void *data,
+			size_t size);
 
 #endif /* _COMMON_MRC_CACHE_H_ */

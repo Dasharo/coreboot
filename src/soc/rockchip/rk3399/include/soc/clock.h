@@ -74,10 +74,10 @@ static struct rk3399_cru_reg * const cru_ptr = (void *)CRU_BASE;
 
 #define OSC_HZ		(24*MHz)
 #define GPLL_HZ		(594*MHz)
-#define CPLL_HZ		(384*MHz)
-#define PPLL_HZ		(594*MHz)
+#define CPLL_HZ		(800*MHz)
+#define PPLL_HZ		(676*MHz)
 
-#define PMU_PCLK_HZ	(99*MHz)
+#define PMU_PCLK_HZ	96571428
 
 #define ACLKM_CORE_HZ	(300*MHz)
 #define ATCLK_CORE_HZ	(300*MHz)
@@ -119,5 +119,6 @@ void rkclk_configure_vop_aclk(u32 vop_id, u32 aclk_hz);
 void rkclk_ddr_reset(u32 ch, u32 ctl, u32 phy);
 int rkclk_was_watchdog_reset(void);
 uint32_t rkclk_i2c_clock_for_bus(unsigned bus);
+void rkclk_configure_edp(unsigned int hz);
 
 #endif	/* __SOC_ROCKCHIP_RK3399_CLOCK_H__ */

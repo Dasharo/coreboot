@@ -17,11 +17,13 @@
  * GNU General Public License for more details.
  */
 #include <string.h>
+#include <console/console.h>
 #include <arch/stages.h>
 #include <arch/early_variables.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/amd/mtrr.h>
 #include <cpu/amd/car.h>
+#include <cpu/amd/msr.h>
 #include <arch/acpi.h>
 #include <romstage_handoff.h>
 #include "cbmem.h"
@@ -69,7 +71,7 @@ static void prepare_romstage_ramstack(int s3resume)
 	print_car_debug("Prepare CAR migration and stack regions...");
 
 	if (s3resume) {
-		void *resume_backup_memory = cbmem_find(CBMEM_ID_RESUME);
+		void *resume_backup_memory = acpi_backup_container(CONFIG_RAMBASE, HIGH_MEMORY_SAVE);
 		if (resume_backup_memory)
 			memcpy_(resume_backup_memory + HIGH_MEMORY_SAVE - backup_top,
 				(void *)(CONFIG_RAMTOP - backup_top), backup_top);
@@ -85,7 +87,7 @@ static void prepare_ramstage_region(int s3resume)
 	print_car_debug("Prepare ramstage memory region...");
 
 	if (s3resume) {
-		void *resume_backup_memory = cbmem_find(CBMEM_ID_RESUME);
+		void *resume_backup_memory = acpi_backup_container(CONFIG_RAMBASE, HIGH_MEMORY_SAVE);
 		if (resume_backup_memory)
 			memcpy_(resume_backup_memory, (void *) CONFIG_RAMBASE,
 				HIGH_MEMORY_SAVE - backup_top);
@@ -129,14 +131,7 @@ void post_cache_as_ram(void)
 
 	prepare_romstage_ramstack(s3resume);
 
-	if (IS_ENABLED(CONFIG_EARLY_CBMEM_INIT)) {
-		struct romstage_handoff *handoff;
-		handoff = romstage_handoff_find_or_add();
-		if (handoff != NULL)
-			handoff->s3_resume = s3resume;
-		else
-			printk(BIOS_DEBUG, "Romstage handoff structure not added!\n");
-	}
+	romstage_handoff_init(s3resume);
 
 	/* from here don't store more data in CAR */
 	if (family >= 0x1f && family <= 0x3f) {

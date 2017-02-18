@@ -22,6 +22,7 @@
 #include <console/console.h>
 #include <device/pci_ids.h>
 #include <spi_flash.h>
+#include <spi-generic.h>
 
 #include <soc/lpc.h>
 #include <soc/pci_devs.h>
@@ -259,22 +260,6 @@ static void ich_set_bbar(uint32_t minaddr)
 	writel_(ichspi_bbar, cntlr.bbar);
 }
 
-struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs)
-{
-	ich_spi_slave *slave = malloc(sizeof(*slave));
-
-	if (!slave) {
-		printk(BIOS_DEBUG, "ICH SPI: Bad allocation\n");
-		return NULL;
-	}
-
-	memset(slave, 0, sizeof(*slave));
-
-	slave->bus = bus;
-	slave->cs = cs;
-	return slave;
-}
-
 static ich9_spi_regs *spi_regs(void)
 {
 	device_t dev;
@@ -315,17 +300,6 @@ static void spi_init_cb(void *unused)
 }
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_ENTRY, spi_init_cb, NULL);
-
-int spi_claim_bus(struct spi_slave *slave)
-{
-	/* Handled by ICH automatically. */
-	return 0;
-}
-
-void spi_release_bus(struct spi_slave *slave)
-{
-	/* Handled by ICH automatically. */
-}
 
 typedef struct spi_transaction {
 	const uint8_t *out;
@@ -488,8 +462,8 @@ unsigned int spi_crop_chunk(unsigned int cmd_len, unsigned int buf_len)
 	return min(cntlr.databytes, buf_len);
 }
 
-int spi_xfer(struct spi_slave *slave, const void *dout,
-		unsigned int bytesout, void *din, unsigned int bytesin)
+static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
+		    size_t bytesout, void *din, size_t bytesin)
 {
 	uint16_t control;
 	int16_t opcode_index;
@@ -633,5 +607,18 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	/* Clear atomic preop now that xfer is done */
 	writew_(0, cntlr.preop);
 
+	return 0;
+}
+
+static const struct spi_ctrlr spi_ctrlr = {
+	.xfer = spi_ctrlr_xfer,
+	.xfer_vector = spi_xfer_two_vectors,
+};
+
+int spi_setup_slave(unsigned int bus, unsigned int cs, struct spi_slave *slave)
+{
+	slave->bus = bus;
+	slave->cs = cs;
+	slave->ctrlr = &spi_ctrlr;
 	return 0;
 }

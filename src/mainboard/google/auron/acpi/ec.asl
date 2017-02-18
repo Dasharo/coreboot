@@ -16,5 +16,8 @@
 /* mainboard configuration */
 #include "ec.h"
 
+/* variant configuration */
+#include <variant/acpi/ec.asl>
+
 /* ACPI code for EC functions */
 #include <ec/google/chromeec/acpi/ec.asl>

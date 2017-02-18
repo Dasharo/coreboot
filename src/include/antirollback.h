@@ -19,6 +19,10 @@ enum vb2_pcr_digest;
 #define KERNEL_NV_INDEX                 0x1008
 /* 0x1009 used to be used as a backup space. Think of conflicts if you
  * want to use 0x1009 for something else. */
+#define BACKUP_NV_INDEX                 0x1009
+#define FWMP_NV_INDEX                   0x100a
+#define REC_HASH_NV_INDEX               0x100b
+#define REC_HASH_NV_SIZE                VB2_SHA256_DIGEST_SIZE
 
 /* Structure definitions for TPM spaces */
 
@@ -44,6 +48,13 @@ uint32_t antirollback_write_space_firmware(struct vb2_context *ctx);
  */
 uint32_t antirollback_lock_space_firmware(void);
 
+/* Read recovery hash data from TPM. */
+uint32_t antirollback_read_space_rec_hash(uint8_t *data, uint32_t size);
+/* Write new hash data to recovery space in TPM. */
+uint32_t antirollback_write_space_rec_hash(const uint8_t *data, uint32_t size);
+/* Lock down recovery hash space in TPM. */
+uint32_t antirollback_lock_space_rec_hash(void);
+
 /****************************************************************************/
 
 /*
@@ -61,15 +72,6 @@ uint32_t tpm_extend_pcr(struct vb2_context *ctx, int pcr,
  * Issue a TPM_Clear and reenable/reactivate the TPM.
  */
 uint32_t tpm_clear_and_reenable(void);
-
-/**
- * Perform one-time initializations.
- *
- * Create the NVRAM spaces, and set their initial values as needed.  Sets the
- * nvLocked bit and ensures the physical presence command is enabled and
- * locked.
- */
-uint32_t factory_initialize_tpm(struct vb2_context *ctx);
 
 /**
  * Start the TPM and establish the root of trust for the antirollback mechanism.

@@ -17,17 +17,14 @@
 #include <string.h>
 #include <arch/io.h>
 #include <console/console.h>
+#include <spi_flash.h>
 #include <spi-generic.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
 
-#if IS_ENABLED (CONFIG_SB800_IMC_FWM)
 #include "SBPLATFORM.h"
 #include <vendorcode/amd/cimx/sb800/ECfan.h>
-
-static int bus_claimed = 0;
-#endif
 
 #define AMD_SB_SPI_TX_LEN	8
 
@@ -62,14 +59,14 @@ unsigned int spi_crop_chunk(unsigned int cmd_len, unsigned int buf_len)
 	return min(AMD_SB_SPI_TX_LEN - cmd_len, buf_len);
 }
 
-int spi_xfer(struct spi_slave *slave, const void *dout,
-		unsigned int bytesout, void *din, unsigned int bytesin)
+static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
+		size_t bytesout, void *din, size_t bytesin)
 {
 	/* First byte is cmd which can not being sent through FIFO. */
 	u8 cmd = *(u8 *)dout++;
 	u8 readoffby1;
 	u8 readwrite;
-	u8 count;
+	size_t count;
 
 	bytesout--;
 
@@ -114,8 +111,6 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	return 0;
 }
 
-#if IS_ENABLED (CONFIG_SB800_IMC_FWM)
-
 static void ImcSleep(void)
 {
 	u8	cmd_val = 0x96;		/* Kick off IMC Mailbox command 96 */
@@ -142,45 +137,34 @@ static void ImcWakeup(void)
 
 	WaitForEcLDN9MailboxCmdAck();
 }
-#endif
 
-int spi_claim_bus(struct spi_slave *slave)
+int chipset_volatile_group_begin(const struct spi_flash *flash)
 {
-#if IS_ENABLED (CONFIG_SB800_IMC_FWM)
+	if (!IS_ENABLED(CONFIG_SB800_IMC_FWM))
+		return 0;
 
-	if (slave->rw == SPI_WRITE_FLAG) {
-		bus_claimed++;
-		if (bus_claimed == 1)
-			ImcSleep();
-	}
-#endif
-
+	ImcSleep();
 	return 0;
 }
 
-void spi_release_bus(struct spi_slave *slave)
+int chipset_volatile_group_end(const struct spi_flash *flash)
 {
-#if IS_ENABLED (CONFIG_SB800_IMC_FWM)
+	if (!IS_ENABLED(CONFIG_SB800_IMC_FWM))
+		return 0;
 
-	if (slave->rw == SPI_WRITE_FLAG)  {
-		bus_claimed--;
-		if (bus_claimed <= 0) {
-			bus_claimed = 0;
-			ImcWakeup();
-		}
-	}
-#endif
+	ImcWakeup();
+	return 0;
 }
 
-struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs)
+static const struct spi_ctrlr spi_ctrlr = {
+	.xfer = spi_ctrlr_xfer,
+	.xfer_vector = spi_xfer_two_vectors,
+};
+
+int spi_setup_slave(unsigned int bus, unsigned int cs, struct spi_slave *slave)
 {
-	struct spi_slave *slave = malloc(sizeof(*slave));
-
-	if (!slave) {
-		return NULL;
-	}
-
-	memset(slave, 0, sizeof(*slave));
-
-	return slave;
+	slave->bus = bus;
+	slave->cs = cs;
+	slave->ctrlr = &spi_ctrlr;
+	return 0;
 }

@@ -2,7 +2,7 @@
  * This file is part of the coreboot project.
  *
  * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2015 Intel Corporation.
+ * Copyright (C) 2015-2017 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ static struct device_operations pci_domain_ops = {
 };
 
 static struct device_operations cpu_bus_ops = {
-	.init             = &soc_init_cpus,
+	.init             = DEVICE_NOOP,
 #if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
 	.acpi_fill_ssdt_generator = generate_cpu_entries,
 #endif
@@ -90,6 +90,8 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
 		params->PortUsb20Enable[i] =
 			config->usb2_ports[i].enable;
+		params->Usb2OverCurrentPin[i] =
+			config->usb2_ports[i].ocpin;
 		params->Usb2AfePetxiset[i] =
 			config->usb2_ports[i].pre_emp_bias;
 		params->Usb2AfeTxiset[i] =
@@ -102,6 +104,7 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 
 	for (i = 0; i < ARRAY_SIZE(config->usb3_ports); i++) {
 		params->PortUsb30Enable[i] = config->usb3_ports[i].enable;
+		params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
 		if (config->usb3_ports[i].tx_de_emp) {
 			params->Usb3HsioTxDeEmphEnable[i] = 1;
 			params->Usb3HsioTxDeEmph[i] =
@@ -163,7 +166,7 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 	params->SkipMpInit = config->FspSkipMpInit;
 
 	for (i = 0; i < ARRAY_SIZE(config->i2c); i++)
-		params->SerialIoI2cVoltage[i] = config->i2c[i].voltage;
+		params->SerialIoI2cVoltage[i] = config->i2c_voltage[i];
 
 	/*
 	 * To disable Heci, the Psf needs to be left unlocked

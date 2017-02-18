@@ -28,7 +28,6 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	select BOARD_ROMSIZE_KB_4096
 	select GFXUMA
 	select SUPERIO_FINTEK_F81866D
-	select SPD_CACHE
 
 config MAINBOARD_DIR
 	string
@@ -79,5 +78,9 @@ config BAP_E20_DDR3_1066
 	bool "Select DDR3-1066"
 
 endchoice
+
+config DIMM_SPD_SIZE
+	int
+	default 128
 
 endif # BOARD_ODE_E20XX

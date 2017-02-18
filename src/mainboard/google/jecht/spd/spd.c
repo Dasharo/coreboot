@@ -13,13 +13,7 @@
  * GNU General Public License for more details.
  */
 
-#include <cbfs.h>
-#include <console/console.h>
-#include <endian.h>
-#include <string.h>
-#include <soc/gpio.h>
 #include <soc/pei_data.h>
-#include <soc/romstage.h>
 #include <mainboard/google/jecht/spd/spd.h>
 
 /* Copy SPD data for on-board memory */

@@ -30,16 +30,6 @@
 ## SUCH DAMAGE.
 ##
 
-# in addition to the dependency below, create the file if it doesn't exist
-# to silence stupid warnings about a file that would be generated anyway.
-$(if $(wildcard .xcompile),,$(eval $(shell util/xcompile/xcompile $(XGCCPATH) > .xcompile || rm -f .xcompile)))
-
-.xcompile: util/xcompile/xcompile
-	rm -f $@
-	$< $(XGCCPATH) > $@.tmp
-	\mv -f $@.tmp $@ 2> /dev/null
-	rm -f $@.tmp
-
 export top := $(CURDIR)
 export src := src
 export srck := $(top)/util/kconfig
@@ -133,11 +123,24 @@ endif
 ifeq ($(NOCOMPILE),1)
 include $(TOPLEVEL)/Makefile.inc
 include $(TOPLEVEL)/payloads/Makefile.inc
-real-all: config
-
+real-all:
+	@echo "Error: Expected config file ($(DOTCONFIG)) not present." >&2
+	@echo "Please specify a config file or run 'make menuconfig' to" >&2
+	@echo "generate a new config file." >&2
+	@exit 1
 else
 
 include $(DOTCONFIG)
+
+# in addition to the dependency below, create the file if it doesn't exist
+# to silence stupid warnings about a file that would be generated anyway.
+$(if $(wildcard .xcompile)$(NOCOMPILE),,$(eval $(shell util/xcompile/xcompile $(XGCCPATH) > .xcompile || rm -f .xcompile)))
+
+.xcompile: util/xcompile/xcompile
+	rm -f $@
+	$< $(XGCCPATH) > $@.tmp
+	\mv -f $@.tmp $@ 2> /dev/null
+	rm -f $@.tmp
 
 -include .xcompile
 
@@ -165,7 +168,7 @@ real-all: real-target
 .SECONDEXPANSION:
 
 $(KCONFIG_AUTOHEADER): $(KCONFIG_CONFIG)
-	$(MAKE) oldconfig
+	+$(MAKE) oldconfig
 
 # Add a new class of source/object files to the build system
 add-class= \

@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015 Timothy Pearson <tpearson@raptorengineeringinc.com>, Raptor Engineering
+ * Copyright (C) 2015-2017 Timothy Pearson <tpearson@raptorengineeringinc.com>, Raptor Engineering
  * Copyright (C) 2007-2008 Advanced Micro Devices, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,10 @@
  * supported.
  */
 
+#include "mct_d.h"
+
+#include <string.h>
+
 static u8 ReconfigureDIMMspare_D(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstatA);
 static void DQSTiming_D(struct MCTStatStruc *pMCTstat,
@@ -41,15 +45,8 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstatA);
 static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstatA);
-static void MCTMemClr_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA);
-static void DCTMemClr_Init_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
 static void DCTMemClr_Sync_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat);
-static void MCTMemClrSync_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA);
-static u8 NodePresent_D(u8 Node);
 static void SyncDCTsReady_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstatA);
 static void StartupDCT_D(struct MCTStatStruc *pMCTstat,
@@ -66,6 +63,8 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat, u8 dct);
 static u8 PlatformSpec_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat, u8 dct);
+static u8 mct_PlatformSpec(struct MCTStatStruc *pMCTstat,
+					struct DCTStatStruc *pDCTstat, u8 dct);
 static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat, u8 dct);
 static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
@@ -81,8 +80,6 @@ static void mct_initDCT(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat);
 static void mct_DramInit(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat, u8 dct);
-static u8 mct_PlatformSpec(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
 static void mct_SyncDCTsReady(struct DCTStatStruc *pDCTstat);
 static void Get_Trdrd(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstat, u8 dct);
@@ -162,7 +159,6 @@ static const u8 Table_T_k[]	= {0x00,0x50,0x3D,0x30,0x25, 0x18 };
 static const u8 Table_CL2_j[]	= {0x04,0x08,0x10,0x20,0x40, 0x80 };
 static const u8 Tab_defTrc_k[]	= {0x0,0x41,0x3C,0x3C,0x3A, 0x3A };
 static const u16 Tab_40T_k[]	= {00,200,150,120,100,75 };
-static const u8 Tab_TrefT_k[]	= {00,0,1,1,2,2,3,4,5,6,0,0};
 static const u8 Tab_BankAddr[]	= {0x0,0x08,0x09,0x10,0x0C,0x0D,0x11,0x0E,0x15,0x16,0x0F,0x17};
 static const u8 Tab_tCL_j[]	= {0,2,3,4,5};
 static const u8 Tab_1KTfawT_k[] = {00,8,10,13,14,20};
@@ -175,7 +171,9 @@ static const u8 Table_Comp_Rise_Slew_15x[] = {7, 7, 3, 2, 0xFF};
 static const u8 Table_Comp_Fall_Slew_20x[] = {7, 5, 3, 2, 0xFF};
 static const u8 Table_Comp_Fall_Slew_15x[] = {7, 7, 5, 3, 0xFF};
 
-static void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat,
+const u8 Table_DQSRcvEn_Offset[] = {0x00,0x01,0x10,0x11,0x2};
+
+void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstatA)
 {
 	/*
@@ -462,7 +460,7 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 						}
 					}
 					for (Dir = 0; Dir < 2; Dir++) {//RD/WR
-						p = pDCTstat->CH_D_DIR_B_DQS[Channel][DIMM][Dir];
+						p = pDCTstat->persistentData.CH_D_DIR_B_DQS[Channel][DIMM][Dir];
 						val = stream_to_int(p); /* CHA Read Data Timing High */
 						Set_NB32_index_wait(dev, index_reg, index+1, val);
 						val = stream_to_int(p+4); /* CHA Write Data Timing High */
@@ -661,7 +659,7 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 }
 
 
-static void MCTMemClr_D(struct MCTStatStruc *pMCTstat,
+void MCTMemClr_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstatA)
 {
 
@@ -693,7 +691,7 @@ static void MCTMemClr_D(struct MCTStatStruc *pMCTstat,
 }
 
 
-static void DCTMemClr_Init_D(struct MCTStatStruc *pMCTstat,
+void DCTMemClr_Init_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat)
 {
 	u32 val;
@@ -716,7 +714,7 @@ static void DCTMemClr_Init_D(struct MCTStatStruc *pMCTstat,
 }
 
 
-static void MCTMemClrSync_D(struct MCTStatStruc *pMCTstat,
+void MCTMemClrSync_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstatA)
 {
 	/* Ensures that memory clear has completed on all node.*/
@@ -768,7 +766,7 @@ static void DCTMemClr_Sync_D(struct MCTStatStruc *pMCTstat,
 }
 
 
-static u8 NodePresent_D(u8 Node)
+u8 NodePresent_D(u8 Node)
 {
 	/*
 	 * Determine if a single Hammer Node exists within the network.
@@ -1356,7 +1354,6 @@ static u8 AutoCycTiming_D(struct MCTStatStruc *pMCTstat,
 		val |= dword;
 		Set_NB32(dev, reg, val);
 	}
-//	dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->Node_ID, 2));
 
 	print_tx("AutoCycTiming: Status ", pDCTstat->Status);
 	print_tx("AutoCycTiming: ErrStatus ", pDCTstat->ErrStatus);
@@ -1723,8 +1720,6 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	mct_EarlyArbEn_D(pMCTstat, pDCTstat);
 	mctHookAfterAutoCfg();
 
-//	dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->Node_ID, 2));
-
 	print_tx("AutoConfig: Status ", pDCTstat->Status);
 	print_tx("AutoConfig: ErrStatus ", pDCTstat->ErrStatus);
 	print_tx("AutoConfig: ErrCode ", pDCTstat->ErrCode);
@@ -1857,8 +1852,6 @@ static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
 
 	reg = 0x80 + reg_off;		/* Bank Addressing Register */
 	Set_NB32(dev, reg, BankAddrReg);
-
-//	dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->Node_ID, 2));
 
 	print_tx("SPDSetBanks: Status ", pDCTstat->Status);
 	print_tx("SPDSetBanks: ErrStatus ", pDCTstat->ErrStatus);
@@ -2034,8 +2027,6 @@ static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
 		pDCTstat->DCTSysLimit = nxtcsBase - 1;
 		mct_AfterStitchMemory(pMCTstat, pDCTstat, dct);
 	}
-
-//	dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->Node_ID, 2));
 
 	print_tx("StitchMemory: Status ", pDCTstat->Status);
 	print_tx("StitchMemory: ErrStatus ", pDCTstat->ErrStatus);
@@ -2399,7 +2390,6 @@ static u8 Get_DIMMAddress_D(struct DCTStatStruc *pDCTstat, u8 i)
 	u8 *p;
 
 	p = pDCTstat->DIMMAddr;
-	//mct_BeforeGetDIMMAddress();
 	return p[i];
 }
 
@@ -3609,37 +3599,16 @@ static void mct_ResetDataStruct_D(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstatA)
 {
 	u8 Node;
-	u32 i;
 	struct DCTStatStruc *pDCTstat;
-	u32 start, stop;
-	u8 *p;
-	u16 host_serv1, host_serv2;
 
 	/* Initialize Data structures by clearing all entries to 0 */
-	p = (u8 *) pMCTstat;
-	for (i = 0; i < sizeof(struct MCTStatStruc); i++) {
-		p[i] = 0;
-	}
+	memset(pMCTstat, 0x00, sizeof(*pMCTstat));
 
 	for (Node = 0; Node < 8; Node++) {
 		pDCTstat = pDCTstatA + Node;
-		host_serv1 = pDCTstat->HostBiosSrvc1;
-		host_serv2 = pDCTstat->HostBiosSrvc2;
 
-		p = (u8 *) pDCTstat;
-		start = 0;
-		stop = (u32)(&((struct DCTStatStruc *)0)->CH_MaxRdLat[2]);
-		for (i = start; i < stop; i++) {
-			p[i] = 0;
-		}
-
-		start = (u32)(&((struct DCTStatStruc *)0)->CH_D_BC_RCVRDLY[2][4]);
-		stop = sizeof(struct DCTStatStruc);
-		for (i = start; i < stop; i++) {
-			p[i] = 0;
-		}
-		pDCTstat->HostBiosSrvc1 = host_serv1;
-		pDCTstat->HostBiosSrvc2 = host_serv2;
+		/* Clear all entries except persistentData */
+		memset(pDCTstat, 0x00, sizeof(*pDCTstat) - sizeof(pDCTstat->persistentData));
 	}
 }
 
@@ -3663,7 +3632,7 @@ static void mct_BeforeDramInit_Prod_D(struct MCTStatStruc *pMCTstat,
 }
 
 
-static void mct_AdjustDelayRange_D(struct MCTStatStruc *pMCTstat,
+void mct_AdjustDelayRange_D(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstat, u8 *dqs_pos)
 {
 	// FIXME: Skip for Ax
@@ -3915,7 +3884,7 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 }
 
 
-static void mct_EnableDatIntlv_D(struct MCTStatStruc *pMCTstat,
+void mct_EnableDatIntlv_D(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstat)
 {
 	u32 dev = pDCTstat->dev_dct;

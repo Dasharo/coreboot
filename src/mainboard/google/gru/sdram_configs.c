@@ -23,41 +23,23 @@
 #include <types.h>
 
 static const char *sdram_configs[] = {
-	"sdram-lpddr3-hynix-4GB-666",
-	"sdram-lpddr3-hynix-4GB-800",
-	"sdram-lpddr3-hynix-4GB-933",
+    [0] = "sdram-lpddr3-hynix-4GB",
+    [3] = "sdram-lpddr3-samsung-2GB-24EB",
+    [4] = "sdram-lpddr3-micron-2GB",
+    [5] = "sdram-lpddr3-samsung-4GB-04EB",
+    [6] = "sdram-lpddr3-micron-4GB",
 };
 
 static struct rk3399_sdram_params params;
 
-enum dram_speeds {
-	dram_666MHz = 0,
-	dram_800MHz = 1,
-	dram_933MHz = 2,
-};
-
-static enum dram_speeds get_sdram_index(void)
-{
-	uint32_t id;
-
-	id = board_id();
-
-	if (IS_ENABLED(CONFIG_BOARD_GOOGLE_KEVIN))
-		switch (id) {
-		case 4:
-			return dram_800MHz;
-		default:
-			return dram_933MHz;
-		}
-
-	if (IS_ENABLED(CONFIG_BOARD_GOOGLE_GRU))
-			return dram_800MHz;
-}
-
 const struct rk3399_sdram_params *get_sdram_config()
 {
-	if (cbfs_boot_load_struct(sdram_configs[get_sdram_index()],
-				  &params, sizeof(params)) != sizeof(params))
+	uint32_t ramcode;
+
+	ramcode = ram_code();
+	if (ramcode >= ARRAY_SIZE(sdram_configs) || !sdram_configs[ramcode] ||
+	    (cbfs_boot_load_struct(sdram_configs[ramcode],
+				   &params, sizeof(params)) != sizeof(params)))
 		die("Cannot load SDRAM parameter file!");
 	return &params;
 }

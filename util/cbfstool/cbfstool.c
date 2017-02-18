@@ -30,6 +30,7 @@
 #include "fit.h"
 #include "partitioned_file.h"
 #include <commonlib/fsp.h>
+#include <commonlib/endian.h>
 
 #define SECTION_WITH_FIT_TABLE	"BOOTBLOCK"
 
@@ -70,6 +71,7 @@ static struct param {
 	uint32_t cbfsoffset;
 	uint32_t cbfsoffset_assigned;
 	uint32_t arch;
+	bool u64val_assigned;
 	bool fill_partial_upward;
 	bool fill_partial_downward;
 	bool show_immutable;
@@ -78,6 +80,7 @@ static struct param {
 	bool machine_parseable;
 	int fit_empty_entries;
 	enum comp_algo compression;
+	int precompression;
 	enum vb2_hash_algorithm hash;
 	/* for linux payloads */
 	char *initrd;
@@ -90,6 +93,7 @@ static struct param {
 	.hash = VB2_HASH_INVALID,
 	.headeroffset = ~0,
 	.region_name = SECTION_NAME_PRIMARY_CBFS,
+	.u64val = -1,
 };
 
 static bool region_is_flashmap(const char *region)
@@ -437,33 +441,51 @@ static int cbfstool_convert_raw(struct buffer *buffer,
 	unused uint32_t *offset, struct cbfs_file *header)
 {
 	char *compressed;
-	int compressed_size;
+	int decompressed_size, compressed_size;
+	comp_func_ptr compress;
 
-	comp_func_ptr compress = compression_function(param.compression);
-	if (!compress)
-		return -1;
-	compressed = calloc(buffer->size, 1);
-
-	if (compress(buffer->data, buffer->size,
-		     compressed, &compressed_size)) {
-		WARN("Compression failed - disabled\n");
-	} else {
-		struct cbfs_file_attr_compression *attrs =
-			(struct cbfs_file_attr_compression *)
-			cbfs_add_file_attr(header,
-				CBFS_FILE_ATTR_TAG_COMPRESSION,
-				sizeof(struct cbfs_file_attr_compression));
-		if (attrs == NULL)
+	decompressed_size = buffer->size;
+	if (param.precompression) {
+		param.compression = read_le32(buffer->data);
+		decompressed_size = read_le32(buffer->data + sizeof(uint32_t));
+		compressed_size = buffer->size - 8;
+		compressed = malloc(compressed_size);
+		if (!compressed)
 			return -1;
-		attrs->compression = htonl(param.compression);
-		attrs->decompressed_size = htonl(buffer->size);
+		memcpy(compressed, buffer->data + 8, compressed_size);
+	} else {
+		compress = compression_function(param.compression);
+		if (!compress)
+			return -1;
+		compressed = calloc(buffer->size, 1);
+		if (!compressed)
+			return -1;
 
-		free(buffer->data);
-		buffer->data = compressed;
-		buffer->size = compressed_size;
-
-		header->len = htonl(buffer->size);
+		if (compress(buffer->data, buffer->size,
+			     compressed, &compressed_size)) {
+			WARN("Compression failed - disabled\n");
+			free(compressed);
+			return 0;
+		}
 	}
+
+	struct cbfs_file_attr_compression *attrs =
+		(struct cbfs_file_attr_compression *)
+		cbfs_add_file_attr(header,
+			CBFS_FILE_ATTR_TAG_COMPRESSION,
+			sizeof(struct cbfs_file_attr_compression));
+	if (attrs == NULL) {
+		free(compressed);
+		return -1;
+	}
+	attrs->compression = htonl(param.compression);
+	attrs->decompressed_size = htonl(decompressed_size);
+
+	free(buffer->data);
+	buffer->data = compressed;
+	buffer->size = compressed_size;
+
+	header->len = htonl(buffer->size);
 	return 0;
 }
 
@@ -716,6 +738,10 @@ static int cbfs_add_flat_binary(void)
 
 static int cbfs_add_integer(void)
 {
+	if (!param.u64val_assigned) {
+		ERROR("You need to specify a value to write.\n");
+		return 1;
+	}
 	return cbfs_add_integer_component(param.name,
 				  param.u64val,
 				  param.baseaddress,
@@ -770,7 +796,8 @@ static int cbfs_create(void)
 	struct buffer bootblock;
 	if (!param.bootblock) {
 		DEBUG("-B not given, creating image without bootblock.\n");
-		buffer_create(&bootblock, 0, "(dummy)");
+		if (buffer_create(&bootblock, 0, "(dummy)") != 0)
+			return 1;
 	} else if (buffer_from_file(&bootblock, param.bootblock)) {
 		return 1;
 	}
@@ -980,8 +1007,18 @@ static int cbfs_write(void)
 			buffer_delete(&new_content);
 			return 1;
 		}
-		WARN("Written area will abut %s of target region: any unused space will keep its current contents\n",
-				param.fill_partial_upward ? "bottom" : "top");
+		if (param.u64val == (uint64_t)-1) {
+			WARN("Written area will abut %s of target region: any unused space will keep its current contents\n",
+					param.fill_partial_upward ? "bottom" : "top");
+		} else if (param.u64val > 0xff) {
+			ERROR("given fill value (%x) is larger than a byte\n", (unsigned)(param.u64val & 0xff));
+			buffer_delete(&new_content);
+			return 1;
+		} else {
+			memset(buffer_get(param.image_region),
+				param.u64val & 0xff,
+				buffer_size(param.image_region));
+		}
 		if (param.fill_partial_downward)
 			offset = param.image_region->size - new_content.size;
 	}
@@ -1089,7 +1126,7 @@ static const struct command commands[] = {
 	{"read", "r:f:vh?", cbfs_read, true, false},
 	{"remove", "H:r:n:vh?", cbfs_remove, true, true},
 	{"update-fit", "H:r:n:x:vh?", cbfs_update_fit, true, true},
-	{"write", "r:f:Fudvh?", cbfs_write, true, true},
+	{"write", "r:f:i:Fudvh?", cbfs_write, true, true},
 };
 
 static struct option long_options[] = {
@@ -1135,7 +1172,7 @@ static int dispatch_command(struct command command)
 		assert(param.image_file);
 
 		if (partitioned_file_is_partitioned(param.image_file)) {
-			LOG("Performing operation on '%s' region...\n",
+			INFO("Performing operation on '%s' region...\n",
 					param.region_name);
 		}
 		if (!partitioned_file_read_region(param.image_region,
@@ -1235,7 +1272,7 @@ static void usage(char *name)
 			"Show the contents of the ROM\n"
 	     " extract [-r image,regions] [-m ARCH] -n NAME -f FILE        "
 			"Extracts a raw payload from ROM\n"
-	     " write [-F] -r image,regions -f file [-u | -d]               "
+	     " write [-F] -r image,regions -f file [-u | -d] [-i int]      "
 			"Write file into same-size [or larger] raw region\n"
 	     " read [-r fmap-region] -f file                               "
 			"Extract raw region contents into binary file\n"
@@ -1330,6 +1367,10 @@ int main(int argc, char **argv)
 							optarg);
 				break;
 			case 'c': {
+				if (strcmp(optarg, "precompression") == 0) {
+					param.precompression = 1;
+					break;
+				}
 				int algo = cbfs_parse_comp_algo(optarg);
 				if (algo >= 0)
 					param.compression = algo;
@@ -1452,6 +1493,7 @@ int main(int argc, char **argv)
 				break;
 			case 'i':
 				param.u64val = strtoull(optarg, &suffix, 0);
+				param.u64val_assigned = 1;
 				if (!*optarg || (suffix && *suffix)) {
 					ERROR("Invalid int parameter '%s'.\n",
 						optarg);

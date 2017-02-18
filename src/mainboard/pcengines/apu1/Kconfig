@@ -29,7 +29,6 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	select HAVE_OPTION_TABLE
 	select HAVE_CMOS_DEFAULT
 	select BOARD_ROMSIZE_KB_2048
-	select SPD_CACHE
 
 config MAINBOARD_DIR
 	string
@@ -115,5 +114,9 @@ endchoice
 
 config UART_D_RS485
 	bool "UART D drives RTS# in RS485 mode" if APU1_PINMUX_UART_D
+
+config DIMM_SPD_SIZE
+	int
+	default 128
 
 endif # BOARD_PCENGINES_APU1

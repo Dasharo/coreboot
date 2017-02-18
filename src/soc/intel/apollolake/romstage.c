@@ -31,17 +31,30 @@
 #include <fsp/api.h>
 #include <fsp/memmap.h>
 #include <fsp/util.h>
+#include <soc/cpu.h>
+#include <soc/flash_ctrlr.h>
+#include <soc/intel/common/mrc_cache.h>
 #include <soc/iomap.h>
 #include <soc/northbridge.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/romstage.h>
-#include <soc/spi.h>
 #include <soc/uart.h>
+#include <spi_flash.h>
 #include <string.h>
 #include <timestamp.h>
+#include <timer.h>
+#include <delay.h>
+#include "chip.h"
 
 static struct chipset_power_state power_state CAR_GLOBAL;
+
+static const uint8_t hob_variable_guid[16] = {
+	0x7d, 0x14, 0x34, 0xa0, 0x0c, 0x69, 0x54, 0x41,
+	0x8d, 0xe6, 0xc0, 0x44, 0x64, 0x1d, 0xe9, 0x42,
+};
+
+static uint32_t fsp_version CAR_GLOBAL;
 
 /* High Performance Event Timer Configuration */
 #define P2SB_HPTC				0x60
@@ -100,6 +113,65 @@ static void migrate_power_state(int is_recovery)
 }
 ROMSTAGE_CBMEM_INIT_HOOK(migrate_power_state);
 
+/*
+ * Punit Initialization code. This all isn't documented, but
+ * this is the recipe.
+ */
+static bool punit_init(void)
+{
+	uint32_t reg;
+	uint32_t data;
+	struct stopwatch sw;
+
+	/*
+	 * Software Core Disable Mask (P_CR_CORE_DISABLE_MASK_0_0_0_MCHBAR).
+	 * Enable all cores here.
+	 */
+	write32((void *)(MCH_BASE_ADDR + P_CR_CORE_DISABLE_MASK_0_0_0_MCHBAR),
+		0x0);
+
+	void *bios_rest_cpl = (void *)(MCH_BASE_ADDR +
+				       P_CR_BIOS_RESET_CPL_0_0_0_MCHBAR);
+	/* P-Unit bring up */
+	reg = read32(bios_rest_cpl);
+	if (reg == 0xffffffff) {
+		/* P-unit not found */
+		printk(BIOS_DEBUG, "Punit MMIO not available \n");
+		return false;
+	} else {
+		/* Set Punit interrupt pin IPIN offset 3D */
+		pci_write_config8(PUNIT_DEVFN, PCI_INTERRUPT_PIN, 0x2);
+
+		/* Set PUINT IRQ to 24 and INTPIN LOCK */
+		write32((void *)(MCH_BASE_ADDR + PUNIT_THERMAL_DEVICE_IRQ),
+			PUINT_THERMAL_DEVICE_IRQ_VEC_NUMBER |
+			PUINT_THERMAL_DEVICE_IRQ_LOCK);
+
+		data = read32((void *)(MCH_BASE_ADDR + 0x7818));
+		data &= 0xFFFFE01F;
+		data |= 0x20 | 0x200;
+		write32((void *)(MCH_BASE_ADDR + 0x7818), data);
+
+		/* Stage0 BIOS Reset Complete (RST_CPL) */
+		write32(bios_rest_cpl, 0x1);
+
+		/*
+		 * Poll for bit 8 in same reg (RST_CPL).
+		 * We wait here till 1 ms for the bit to get set.
+		 */
+		stopwatch_init_msecs_expire(&sw, 1);
+		while (!(read32(bios_rest_cpl) & 0x100)) {
+			if (stopwatch_expired(&sw)) {
+				printk(BIOS_DEBUG,
+				       "Failed to set RST_CPL bit\n");
+				return false;
+			}
+			udelay(100);
+		}
+	}
+	return true;
+}
+
 asmlinkage void car_stage_entry(void)
 {
 	struct postcar_frame pcf;
@@ -107,7 +179,8 @@ asmlinkage void car_stage_entry(void)
 	bool s3wake;
 	struct chipset_power_state *ps = car_get_var_ptr(&power_state);
 	void *smm_base;
-	size_t smm_size;
+	size_t smm_size, var_size;
+	const void *new_var_data;
 	uintptr_t tseg_base;
 
 	timestamp_add_now(TS_START_ROMSTAGE);
@@ -119,6 +192,22 @@ asmlinkage void car_stage_entry(void)
 
 	s3wake = fill_power_state(ps) == ACPI_S3;
 	fsp_memory_init(s3wake);
+
+	if (punit_init())
+		set_max_freq();
+	else
+		printk(BIOS_DEBUG, "Punit failed to initialize properly\n");
+
+	/* Stash variable MRC data and let cache system update it later */
+	new_var_data = fsp_find_extension_hob_by_guid(hob_variable_guid,
+							&var_size);
+	if (new_var_data)
+		mrc_cache_stash_data(MRC_VARIABLE_DATA,
+				car_get_var(fsp_version), new_var_data,
+				var_size);
+	else
+		printk(BIOS_ERR, "Failed to determine variable data\n");
+
 	if (postcar_frame_init(&pcf, 1*KiB))
 		die("Unable to initialize postcar frame.\n");
 
@@ -168,8 +257,10 @@ static void fill_console_params(FSPM_UPD *mupd)
 	}
 }
 
-void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd)
+void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 {
+	struct region_device rdev;
+
 	fill_console_params(mupd);
 	mainboard_memory_init_params(mupd);
 
@@ -193,6 +284,23 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd)
 	 * skip HECI2 reset.
 	 */
 	mupd->FspmConfig.EnableS3Heci2 = 0;
+
+	/*
+	 * Apollolake splits MRC cache into two parts: constant and variable.
+	 * The constant part is not expected to change often and variable is.
+	 * Currently variable part consists of parameters that change on cold
+	 * boots such as scrambler seed and some memory controller registers.
+	 * Scrambler seed is vital for S3 resume case because attempt to use
+	 * wrong/missing key renders DRAM contents useless.
+	 */
+
+	if (mrc_cache_get_current(MRC_VARIABLE_DATA, version, &rdev) == 0) {
+		/* Assume leaking is ok. */
+		assert(IS_ENABLED(CONFIG_BOOT_DEVICE_MEMORY_MAPPED));
+		mupd->FspmConfig.VariableNvsBufferPtr = rdev_mmap_full(&rdev);
+	}
+
+	car_set_var(fsp_version, version);
 }
 
 __attribute__ ((weak))
@@ -210,7 +318,12 @@ void mainboard_save_dimm_info(void)
 int get_sw_write_protect_state(void)
 {
 	uint8_t status;
+	const struct spi_flash *flash;
+
+	flash = boot_device_spi_flash();
+	if (!flash)
+		return 0;
 
 	/* Return unprotected status if status read fails. */
-	return spi_read_status(&status) ? 0 : !!(status & 0x80);
+	return spi_flash_status(flash, &status) ? 0 : !!(status & 0x80);
 }

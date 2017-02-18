@@ -161,7 +161,10 @@ static inline unsigned int cpuid_edx(unsigned int op)
 
 int cpu_cpuid_extended_level(void);
 int cpu_have_cpuid(void);
-int cpu_phys_address_size(void);
+
+void smm_init(void);
+void smm_lock(void);
+void smm_setup_structures(void *gnvs, void *tcg, void *smi1);
 
 #ifndef __SIMPLE_DEVICE__
 
@@ -266,6 +269,11 @@ struct postcar_frame {
  * with the provided size. Returns 0 on success, < 0 on error.
  */
 int postcar_frame_init(struct postcar_frame *pcf, size_t stack_size);
+
+/*
+ * Initialize postcar_frame object with a fixed stacktop in low memory.
+ */
+void postcar_frame_init_lowmem(struct postcar_frame *pcf);
 
 /*
  * Add variable MTRR covering the provided range with MTRR type.

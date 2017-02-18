@@ -14,8 +14,8 @@
  * GNU General Public License for more details.
  */
 
-#define DPTF_CPU_PASSIVE	95
-#define DPTF_CPU_CRITICAL	99
+#define DPTF_CPU_PASSIVE	100
+#define DPTF_CPU_CRITICAL	105
 #define DPTF_CPU_ACTIVE_AC0	90
 #define DPTF_CPU_ACTIVE_AC1	80
 #define DPTF_CPU_ACTIVE_AC2	70
@@ -29,13 +29,13 @@
 
 #define DPTF_TSR1_SENSOR_ID	1
 #define DPTF_TSR1_SENSOR_NAME	"Ambient"
-#define DPTF_TSR1_PASSIVE	60
-#define DPTF_TSR1_CRITICAL	70
+#define DPTF_TSR1_PASSIVE	53
+#define DPTF_TSR1_CRITICAL	80
 
 #define DPTF_TSR2_SENSOR_ID	2
 #define DPTF_TSR2_SENSOR_NAME	"Charger"
-#define DPTF_TSR2_PASSIVE	55
-#define DPTF_TSR2_CRITICAL	100
+#define DPTF_TSR2_PASSIVE	70
+#define DPTF_TSR2_CRITICAL	90
 
 #define DPTF_ENABLE_CHARGER
 
@@ -57,14 +57,14 @@ Name (DTRT, Package () {
 
 #ifdef DPTF_ENABLE_CHARGER
 	/* Charger Effect on Temp Sensor 1 */
-	Package () { \_SB.DPTF.TCHG, \_SB.DPTF.TSR1, 200, 600, 0, 0, 0, 0 },
+	Package () { \_SB.DPTF.TCHG, \_SB.DPTF.TSR2, 100, 1200, 0, 0, 0, 0 },
 #endif
 
 	/* CPU Effect on Temp Sensor 1 */
-	Package () { \_SB.PCI0.TCPU, \_SB.DPTF.TSR1, 100, 600, 0, 0, 0, 0 },
+	Package () { \_SB.PCI0.TCPU, \_SB.DPTF.TSR1, 200, 80, 0, 0, 0, 0 },
 
 	/* CPU Effect on Temp Sensor 2 */
-	Package () { \_SB.PCI0.TCPU, \_SB.DPTF.TSR2, 100, 600, 0, 0, 0, 0 },
+	Package () { \_SB.PCI0.TCPU, \_SB.DPTF.TSR2, 100, 150, 0, 0, 0, 0 },
 })
 
 Name (MPPC, Package ()
@@ -72,7 +72,7 @@ Name (MPPC, Package ()
 	0x2,		/* Revision */
 	Package () {	/* Power Limit 1 */
 		0,	/* PowerLimitIndex, 0 for Power Limit 1 */
-		1600,	/* PowerLimitMinimum */
+		4000,	/* PowerLimitMinimum */
 		12000,	/* PowerLimitMaximum */
 		1000,	/* TimeWindowMinimum */
 		1000,	/* TimeWindowMaximum */
@@ -80,8 +80,8 @@ Name (MPPC, Package ()
 	},
 	Package () {	/* Power Limit 2 */
 		1,	/* PowerLimitIndex, 1 for Power Limit 2 */
-		6000,	/* PowerLimitMinimum */
-		8000,	/* PowerLimitMaximum */
+		8000,	/* PowerLimitMinimum */
+		15000,	/* PowerLimitMaximum */
 		1000,	/* TimeWindowMinimum */
 		1000,	/* TimeWindowMaximum */
 		1000	/* StepSize */

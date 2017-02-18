@@ -19,7 +19,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <device/hypertransport.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cbmem.h>
@@ -27,13 +26,12 @@
 #include <arch/acpi.h>
 #include "i945.h"
 
-static int get_pcie_bar(u32 *base, u32 *len)
+static int get_pcie_bar(u32 *base)
 {
 	device_t dev;
 	u32 pciexbar_reg;
 
 	*base = 0;
-	*len = 0;
 
 	dev = dev_find_slot(0, PCI_DEVFN(0, 0));
 	if (!dev)
@@ -47,34 +45,16 @@ static int get_pcie_bar(u32 *base, u32 *len)
 	switch ((pciexbar_reg >> 1) & 3) {
 	case 0: // 256MB
 		*base = pciexbar_reg & ((1 << 31)|(1 << 30)|(1 << 29)|(1 << 28));
-		*len = 256 * 1024 * 1024;
-		return 1;
+		return 256;
 	case 1: // 128M
 		*base = pciexbar_reg & ((1 << 31)|(1 << 30)|(1 << 29)|(1 << 28)|(1 << 27));
-		*len = 128 * 1024 * 1024;
-		return 1;
+		return 128;
 	case 2: // 64M
 		*base = pciexbar_reg & ((1 << 31)|(1 << 30)|(1 << 29)|(1 << 28)|(1 << 27)|(1 << 26));
-		*len = 64 * 1024 * 1024;
-		return 1;
+		return 64;
 	}
 
 	return 0;
-}
-
-static void add_fixed_resources(struct device *dev, int index)
-{
-	struct resource *resource;
-	u32 pcie_config_base, pcie_config_size;
-
-	if (get_pcie_bar(&pcie_config_base, &pcie_config_size)) {
-		printk(BIOS_DEBUG, "Adding PCIe config bar\n");
-		resource = new_resource(dev, index++);
-		resource->base = (resource_t) pcie_config_base;
-		resource->size = (resource_t) pcie_config_size;
-		resource->flags = IORESOURCE_MEM | IORESOURCE_RESERVE |
-		    IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_ASSIGNED;
-	}
 }
 
 static void pci_domain_set_resources(device_t dev)
@@ -153,8 +133,6 @@ static void pci_domain_set_resources(device_t dev)
 	uma_resource(dev, 5, uma_memory_base >> 10, uma_memory_size >> 10);
 	mmio_resource(dev, 6, tseg_memory_base >> 10, tseg_memory_size >> 10);
 
-	add_fixed_resources(dev, 7);
-
 	assign_resources(dev->link_list);
 }
 
@@ -173,33 +151,16 @@ static struct device_operations pci_domain_ops = {
 
 static void mc_read_resources(device_t dev)
 {
-	struct resource *resource;
+	u32 pcie_config_base;
+	int buses;
 
 	pci_dev_read_resources(dev);
 
-	/* We use 0xcf as an unused index for our PCIe bar so that we find it again */
-	resource = new_resource(dev, 0xcf);
-	resource->base = DEFAULT_PCIEXBAR;
-	resource->size = 64 * 1024 * 1024;	/* 64MB hard coded PCIe config space */
-	resource->flags =
-	    IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_STORED |
-	    IORESOURCE_ASSIGNED;
-	printk(BIOS_DEBUG, "Adding PCIe enhanced config space BAR 0x%08lx-0x%08lx.\n",
-		     (unsigned long)(resource->base), (unsigned long)(resource->base + resource->size));
-}
-
-static void mc_set_resources(device_t dev)
-{
-	struct resource *resource;
-
-	/* Report the PCIe BAR */
-	resource = find_resource(dev, 0xcf);
-	if (resource) {
-		report_resource_stored(dev, resource, "<mmconfig>");
+	buses = get_pcie_bar(&pcie_config_base);
+	if (buses) {
+		struct resource *resource = new_resource(dev, PCIEXBAR);
+		mmconf_resource_init(resource, pcie_config_base, buses);
 	}
-
-	/* And call the normal set_resources */
-	pci_dev_set_resources(dev);
 }
 
 static void intel_set_subsystem(device_t dev, unsigned vendor, unsigned device)
@@ -213,38 +174,15 @@ static void intel_set_subsystem(device_t dev, unsigned vendor, unsigned device)
 	}
 }
 
-#if CONFIG_HAVE_ACPI_RESUME
-static void northbridge_init(struct device *dev)
-{
-	switch (pci_read_config32(dev, SKPAD)) {
-	case SKPAD_NORMAL_BOOT_MAGIC:
-		printk(BIOS_DEBUG, "Normal boot.\n");
-		acpi_slp_type = 0;
-		break;
-	case SKPAD_ACPI_S3_MAGIC:
-		printk(BIOS_DEBUG, "S3 Resume.\n");
-		acpi_slp_type = 3;
-		break;
-	default:
-		printk(BIOS_DEBUG, "Unknown boot method, assuming normal.\n");
-		acpi_slp_type = 0;
-		break;
-	}
-}
-#endif
-
 static struct pci_operations intel_pci_ops = {
 	.set_subsystem    = intel_set_subsystem,
 };
 
 static struct device_operations mc_ops = {
 	.read_resources   = mc_read_resources,
-	.set_resources    = mc_set_resources,
+	.set_resources    = pci_dev_set_resources,
 	.enable_resources = pci_dev_enable_resources,
 	.acpi_fill_ssdt_generator = generate_cpu_entries,
-#if CONFIG_HAVE_ACPI_RESUME
-	.init             = northbridge_init,
-#endif
 	.scan_bus         = 0,
 	.ops_pci          = &intel_pci_ops,
 };

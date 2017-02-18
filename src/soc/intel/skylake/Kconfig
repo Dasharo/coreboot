@@ -13,6 +13,7 @@ config CPU_SPECIFIC_OPTIONS
 	select ARCH_ROMSTAGE_X86_32
 	select ARCH_VERSTAGE_X86_32
 	select ACPI_NHLT
+	select BOOTBLOCK_CONSOLE
 	select BOOT_DEVICE_SPI_FLASH_RW_NOMMAP_EARLY if BOOT_DEVICE_SPI_FLASH
 	select BOOT_DEVICE_SUPPORTS_WRITES
 	select CACHE_MRC_SETTINGS
@@ -27,8 +28,6 @@ config CPU_SPECIFIC_OPTIONS
 	select HAVE_MONOTONIC_TIMER
 	select HAVE_SMI_HANDLER
 	select IOAPIC
-	select MMCONF_SUPPORT
-	select MMCONF_SUPPORT_DEFAULT
 	select NO_FIXED_XIP_ROM_SIZE
 	select MRC_SETTINGS_PROTECT
 	select PARALLEL_MP
@@ -45,7 +44,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_LPSS_I2C
 	select SOC_INTEL_COMMON_NHLT
 	select SOC_INTEL_COMMON_RESET
-	select SOC_INTEL_COMMON_SPI_PROTECT
+	select SOC_INTEL_COMMON_SPI_FLASH_PROTECT
 	select SMM_TSEG
 	select SMP
 	select SSE2
@@ -183,7 +182,6 @@ config VGA_BIOS_ID
 config UART_DEBUG
 	bool "Enable UART debug port."
 	default n
-	select BOOTBLOCK_CONSOLE
 	select CONSOLE_SERIAL
 	select DRIVERS_UART
 	select DRIVERS_UART_8250MEM_32
@@ -238,5 +236,16 @@ config SKIP_FSP_CAR
 config SPI_FLASH_INCLUDE_ALL_DRIVERS
 	bool
 	default n
+
+config MAX_ROOT_PORTS
+	int
+	default 24 if PLATFORM_USES_FSP2_0
+	default 20 if PLATFORM_USES_FSP1_1
+
+config NO_FADT_8042
+	bool
+	default n
+	help
+	  Choose this option if you want to disable 8042 Keyboard
 
 endif

@@ -17,9 +17,13 @@
 #include <arch/exception.h>
 #include <arch/sbi.h>
 #include <console/console.h>
-#include <spike_util.h>
+#include <mcall.h>
 #include <string.h>
 #include <vm.h>
+#include <commonlib/configstring.h>
+
+static uint64_t *time;
+static uint64_t *timecmp;
 
 void handle_supervisor_call(trapframe *tf) {
 	uintptr_t call = tf->gpr[17]; /* a7 */
@@ -27,50 +31,39 @@ void handle_supervisor_call(trapframe *tf) {
 	uintptr_t arg1 = tf->gpr[11]; /* a1 */
 	uintptr_t returnValue;
 	switch(call) {
-		case SBI_ECALL_HART_ID:
+		case MCALL_HART_ID:
 			printk(BIOS_DEBUG, "Getting hart id...\n");
-			returnValue = read_csr(mhartid);
+			returnValue = read_csr(0xf14);//mhartid);
 			break;
-		case SBI_ECALL_NUM_HARTS:
+		case MCALL_NUM_HARTS:
 			/* TODO: parse the hardware-supplied config string and
 			   return the correct value */
 			returnValue = 1;
 			break;
-		case SBI_ECALL_CONSOLE_PUT:
+		case MCALL_CONSOLE_PUTCHAR:
 			returnValue = mcall_console_putchar(arg0);
 			break;
-		case SBI_ECALL_SEND_DEVICE_REQUEST:
-			printk(BIOS_DEBUG, "Sending device request...\n");
-			returnValue = mcall_dev_req((sbi_device_message*) arg0);
-			break;
-		case SBI_ECALL_RECEIVE_DEVICE_RESPONSE:
-			printk(BIOS_DEBUG, "Getting device response...\n");
-			returnValue = mcall_dev_resp();
-			break;
-		case SBI_ECALL_SEND_IPI:
+		case MCALL_SEND_IPI:
 			printk(BIOS_DEBUG, "Sending IPI...\n");
 			returnValue = mcall_send_ipi(arg0);
 			break;
-		case SBI_ECALL_CLEAR_IPI:
+		case MCALL_CLEAR_IPI:
 			printk(BIOS_DEBUG, "Clearing IPI...\n");
 			returnValue = mcall_clear_ipi();
 			break;
-		case SBI_ECALL_SHUTDOWN:
+		case MCALL_SHUTDOWN:
 			printk(BIOS_DEBUG, "Shutting down...\n");
 			returnValue = mcall_shutdown();
 			break;
-		case SBI_ECALL_SET_TIMER:
-			printk(BIOS_DEBUG,
-			       "Setting timer to %p (current time is %p)...\n",
-			       (void *)arg0, (void *)rdtime());
+		case MCALL_SET_TIMER:
 			returnValue = mcall_set_timer(arg0);
 			break;
-		case SBI_ECALL_QUERY_MEMORY:
+		case MCALL_QUERY_MEMORY:
 			printk(BIOS_DEBUG, "Querying memory, CPU #%lld...\n", arg0);
 			returnValue = mcall_query_memory(arg0, (memory_block_info*) arg1);
 			break;
 		default:
-			printk(BIOS_DEBUG, "ERROR! Unrecognized system call\n");
+			printk(BIOS_DEBUG, "ERROR! Unrecognized SBI call\n");
 			returnValue = 0;
 			break; // note: system call we do not know how to handle
 	}
@@ -130,8 +123,77 @@ static void print_trap_information(const trapframe *tf)
 	printk(BIOS_DEBUG, "Stored sp:          %p\n", (void*) tf->gpr[2]);
 }
 
-void trap_handler(trapframe *tf) {
+static void gettimer(void)
+{
+	query_result res;
+	const char *config;
+
+	config = configstring();
+	query_rtc(config, (uintptr_t *)&time);
+	if (!time)
+		die("Got timer interrupt but found no timer.");
+	res = query_config_string(config, "core{0{0{timecmp");
+	timecmp = (void *)get_uint(res);
+	if (!timecmp)
+		die("Got a timer interrupt but found no timecmp.");
+}
+
+static void interrupt_handler(trapframe *tf)
+{
+	uint64_t cause = tf->cause & ~0x8000000000000000ULL;
+	uint32_t msip, ssie;
+
+	switch (cause) {
+	case IRQ_M_TIMER:
+		// The only way to reset the timer interrupt is to
+		// write mtimecmp. But we also have to ensure the
+		// comparison fails, for a long time, to let
+		// supervisor interrupt handler compute a new value
+		// and set it. Finally, it fires if mtimecmp is <=
+		// mtime, not =, so setting mtimecmp to 0 won't work
+		// to clear the interrupt and disable a new one. We
+		// have to set the mtimecmp far into the future.
+		// Akward!
+		//
+		// Further, maybe the platform doesn't have the
+		// hardware or the payload never uses it. We hold off
+		// querying some things until we are sure we need
+		// them. What to do if we can not find them? There are
+		// no good options.
+
+		// This hart may have disabled timer interrupts.  If
+		// so, just return. Kernels should only enable timer
+		// interrupts on one hart, and that should be hart 0
+		// at present, as we only search for
+		// "core{0{0{timecmp" above.
+		ssie = read_csr(sie);
+		if (!(ssie & SIE_STIE))
+			break;
+
+		if (!timecmp)
+			gettimer();
+		//printk(BIOS_SPEW, "timer interrupt\n");
+		*timecmp = (uint64_t) -1;
+		msip = read_csr(mip);
+		msip |= SIP_STIP;
+		write_csr(mip, msip);
+		break;
+	default:
+		printk(BIOS_EMERG, "======================================\n");
+		printk(BIOS_EMERG, "Coreboot: Unknown machine interrupt: 0x%llx\n",
+		       cause);
+		printk(BIOS_EMERG, "======================================\n");
+		print_trap_information(tf);
+		break;
+	}
+}
+void trap_handler(trapframe *tf)
+{
 	write_csr(mscratch, tf);
+	if (tf->cause & 0x8000000000000000ULL) {
+		interrupt_handler(tf);
+		return;
+	}
 
 	switch(tf->cause) {
 		case CAUSE_MISALIGNED_FETCH:
@@ -159,6 +221,9 @@ void trap_handler(trapframe *tf) {
 			handle_supervisor_call(tf);
 			break;
 		default:
+			printk(BIOS_EMERG, "================================\n");
+			printk(BIOS_EMERG, "Coreboot: can not handle a trap:\n");
+			printk(BIOS_EMERG, "================================\n");
 			print_trap_information(tf);
 			break;
 	}

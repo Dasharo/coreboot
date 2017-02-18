@@ -22,11 +22,10 @@
 
 const struct pci_bus_operations *pci_bus_default_ops(device_t dev)
 {
-#if CONFIG_MMCONF_SUPPORT_DEFAULT
+	if (IS_ENABLED(CONFIG_NO_MMCONF_SUPPORT))
+		return &pci_cf8_conf1;
+
 	return &pci_ops_mmconf;
-#else
-	return &pci_cf8_conf1;
-#endif
 }
 
 static const struct pci_bus_operations *pci_bus_ops(struct bus *bus, struct device *dev)
@@ -118,48 +117,3 @@ void pci_write_config32(struct device *dev, unsigned int where, u32 val)
 	pci_bus_ops(pbus, dev)->write32(pbus, dev->bus->secondary,
 				   dev->path.pci.devfn, where, val);
 }
-
-#if CONFIG_MMCONF_SUPPORT
-u8 pci_mmio_read_config8(struct device *dev, unsigned int where)
-{
-	struct bus *pbus = get_pbus(dev);
-	return pci_ops_mmconf.read8(pbus, dev->bus->secondary,
-				    dev->path.pci.devfn, where);
-}
-
-u16 pci_mmio_read_config16(struct device *dev, unsigned int where)
-{
-	struct bus *pbus = get_pbus(dev);
-	return pci_ops_mmconf.read16(pbus, dev->bus->secondary,
-				     dev->path.pci.devfn, where);
-}
-
-u32 pci_mmio_read_config32(struct device *dev, unsigned int where)
-{
-	struct bus *pbus = get_pbus(dev);
-	return pci_ops_mmconf.read32(pbus, dev->bus->secondary,
-				     dev->path.pci.devfn, where);
-}
-
-void pci_mmio_write_config8(struct device *dev, unsigned int where, u8 val)
-{
-	struct bus *pbus = get_pbus(dev);
-	pci_ops_mmconf.write8(pbus, dev->bus->secondary, dev->path.pci.devfn,
-			      where, val);
-}
-
-void pci_mmio_write_config16(struct device *dev, unsigned int where, u16 val)
-{
-	struct bus *pbus = get_pbus(dev);
-	pci_ops_mmconf.write16(pbus, dev->bus->secondary, dev->path.pci.devfn,
-			       where, val);
-}
-
-void pci_mmio_write_config32(struct device *dev, unsigned int where, u32 val)
-{
-	struct bus *pbus = get_pbus(dev);
-	pci_ops_mmconf.write32(pbus, dev->bus->secondary, dev->path.pci.devfn,
-			       where, val);
-}
-
-#endif

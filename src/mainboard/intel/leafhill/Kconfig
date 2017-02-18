@@ -1,0 +1,24 @@
+if BOARD_INTEL_LEAFHILL
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select SOC_INTEL_APOLLOLAKE
+	select BOARD_ROMSIZE_KB_16384
+	select HAVE_ACPI_TABLES
+#	select HAVE_INTEL_FIRMWARE
+#	select HAVE_ME_BIN
+#	select LOCK_MANAGEMENT_ENGINE
+
+config MAINBOARD_DIR
+	string
+	default intel/leafhill
+
+config DEVICETREE
+	string
+	default "devicetree.cb"
+
+config MAINBOARD_PART_NUMBER
+	string
+	default "Leafhill"
+
+endif # BOARD_INTEL_LEAFHILL

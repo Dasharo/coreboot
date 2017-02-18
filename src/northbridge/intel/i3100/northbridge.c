@@ -22,7 +22,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <device/hypertransport.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cbmem.h>
@@ -30,9 +29,6 @@
 #include "chip.h"
 #include "i3100.h"
 #include <arch/acpi.h>
-
-
-static u32 max_bus;
 
 
 static void pci_domain_set_resources(device_t dev)
@@ -93,7 +89,7 @@ static void pci_domain_set_resources(device_t dev)
 			/* Find the offset of the remap window from tolm */
 			remapoffsetk = remapbasek - tolmk;
 		}
-		/* Write the RAM configruation registers,
+		/* Write the RAM configuration registers,
 		 * preserving the reserved bits.
 		 */
 		tolm_r = pci_read_config16(mc_dev, 0xc4);
@@ -139,25 +135,9 @@ static struct device_operations pci_domain_ops = {
 
 static void mc_read_resources(device_t dev)
 {
-	struct resource *resource;
-
 	pci_dev_read_resources(dev);
 
-	resource = new_resource(dev, 0xcf);
-	resource->base = 0xe0000000;
-	resource->size = max_bus * 4096*256;
-	resource->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_STORED |  IORESOURCE_ASSIGNED;
-}
-
-static void mc_set_resources(device_t dev)
-{
-	struct resource *resource;
-
-	resource = find_resource(dev, 0xcf);
-	if (resource) {
-		report_resource_stored(dev, resource, "<mmconfig>");
-	}
-	pci_dev_set_resources(dev);
+	mmconf_resource(dev, EXPECBASE);
 }
 
 static void intel_set_subsystem(device_t dev, unsigned vendor, unsigned device)
@@ -196,7 +176,7 @@ static struct pci_operations intel_pci_ops = {
 
 static struct device_operations mc_ops = {
 	.read_resources   = mc_read_resources,
-	.set_resources    = mc_set_resources,
+	.set_resources    = pci_dev_set_resources,
 	.enable_resources = pci_dev_enable_resources,
 	.init             = 0,
 	.scan_bus         = 0,

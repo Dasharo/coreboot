@@ -21,12 +21,15 @@
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
+#include <cpu/x86/mp.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <fsp/api.h>
 #include <fsp/util.h>
+#include <romstage_handoff.h>
 #include <soc/iomap.h>
 #include <soc/cpu.h>
+#include <soc/flash_ctrlr.h>
 #include <soc/intel/common/vbt.h>
 #include <soc/itss.h>
 #include <soc/nvs.h>
@@ -201,6 +204,7 @@ static void set_power_limits(void)
 	msr_t rapl_msr_reg, limit;
 	uint32_t power_unit;
 	uint32_t tdp, min_power, max_power;
+	uint32_t pl2_val;
 	uint32_t *rapl_mmio_reg;
 
 	if (!dev || !dev->chip_info) {
@@ -217,6 +221,7 @@ static void set_power_limits(void)
 	/* Get power defaults for this SKU */
 	rapl_msr_reg = rdmsr(MSR_PKG_POWER_SKU);
 	tdp = rapl_msr_reg.lo & PKG_POWER_LIMIT_MASK;
+	pl2_val = rapl_msr_reg.hi & PKG_POWER_LIMIT_MASK;
 	min_power = (rapl_msr_reg.lo >> 16) & PKG_POWER_LIMIT_MASK;
 	max_power = rapl_msr_reg.hi & PKG_POWER_LIMIT_MASK;
 
@@ -229,12 +234,12 @@ static void set_power_limits(void)
 	/* Set PL1 override value */
 	tdp = (cfg->tdp_pl1_override_mw == 0) ?
 		tdp : (cfg->tdp_pl1_override_mw * power_unit) / 1000;
+	/* Set PL2 override value */
+	pl2_val = (cfg->tdp_pl2_override_mw == 0) ?
+		pl2_val : (cfg->tdp_pl2_override_mw * power_unit) / 1000;
 
 	/* Set long term power limit to TDP */
 	limit.lo = tdp & PKG_POWER_LIMIT_MASK;
-	/* PL2 is invalid for small core */
-	limit.hi = 0x0;
-
 	/* Set PL1 Pkg Power clamp bit */
 	limit.lo |= PKG_POWER_LIMIT_CLAMP;
 
@@ -242,18 +247,25 @@ static void set_power_limits(void)
 	limit.lo |= (MB_POWER_LIMIT1_TIME_DEFAULT &
 		PKG_POWER_LIMIT_TIME_MASK) << PKG_POWER_LIMIT_TIME_SHIFT;
 
+	/* Set short term power limit PL2 */
+	limit.hi = pl2_val & PKG_POWER_LIMIT_MASK;
+	limit.hi |= PKG_POWER_LIMIT_EN;
+
 	/* Program package power limits in RAPL MSR */
 	wrmsr(MSR_PKG_POWER_LIMIT, limit);
 	printk(BIOS_INFO, "RAPL PL1 %d.%dW\n", tdp / power_unit,
 				100 * (tdp % power_unit) / power_unit);
+	printk(BIOS_INFO, "RAPL PL2 %d.%dW\n", pl2_val / power_unit,
+				100 * (pl2_val % power_unit) / power_unit);
 
 	/* Get the MMIO address */
 	rapl_mmio_reg = (void *)(uintptr_t) (MCH_BASE_ADDR + MCHBAR_RAPL_PPL);
-	/*
-	 * Disable RAPL MMIO PL1 Power limits because RAPL uses MSR value.
-	 * PL2 (limit.hi) is invalid for small cores
-	 */
+
+	/* Setting RAPL MMIO register for Power limits.
+	* RAPL driver is using MSR instead of MMIO.
+	* So, disabled LIMIT_EN bit for MMIO. */
 	write32(rapl_mmio_reg, limit.lo & ~(PKG_POWER_LIMIT_EN));
+	write32(rapl_mmio_reg + 1, limit.hi & ~(PKG_POWER_LIMIT_EN));
 }
 
 static void soc_init(void *data)
@@ -267,7 +279,7 @@ static void soc_init(void *data)
 	 * default policy that doesn't honor boards' requirements. */
 	itss_snapshot_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
 
-	fsp_silicon_init();
+	fsp_silicon_init(romstage_handoff_is_resume());
 
 	/* Restore GPIO IRQ polarities back to previous settings. */
 	itss_restore_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
@@ -424,6 +436,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 {
         FSP_S_CONFIG *silconfig = &silupd->FspsConfig;
 	static struct soc_intel_apollolake_config *cfg;
+	uint8_t port;
 
 	/* Load VBT before devicetree-specific config. */
 	silconfig->GraphicsConfigPtr = (uintptr_t)vbt;
@@ -465,6 +478,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	/* Disable monitor mwait since it is broken due to a hardware bug without a fix */
 	silconfig->MonitorMwaitEnable = 0;
 
+	silconfig->SkipMpInit = 1;
+
 	/* Disable setting of EISS bit in FSP. */
 	silconfig->SpiEiss = 0;
 
@@ -477,6 +492,37 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	/* Bios config lockdown Audio clk and power gate */
 	silconfig->BiosCfgLockDown = cfg->hdaudio_bios_config_lockdown;
 
+	/* USB2 eye diagram settings per port */
+	for (port = 0; port < APOLLOLAKE_USB2_PORT_MAX; port++) {
+		if (cfg->usb2eye[port].Usb20PerPortTxPeHalf != 0)
+			silconfig->PortUsb20PerPortTxPeHalf[port] =
+				cfg->usb2eye[port].Usb20PerPortTxPeHalf;
+
+		if (cfg->usb2eye[port].Usb20PerPortPeTxiSet != 0)
+			silconfig->PortUsb20PerPortPeTxiSet[port] =
+				cfg->usb2eye[port].Usb20PerPortPeTxiSet;
+
+		if (cfg->usb2eye[port].Usb20PerPortTxiSet != 0)
+			silconfig->PortUsb20PerPortTxiSet[port] =
+				cfg->usb2eye[port].Usb20PerPortTxiSet;
+
+		if (cfg->usb2eye[port].Usb20HsSkewSel != 0)
+			silconfig->PortUsb20HsSkewSel[port] =
+				cfg->usb2eye[port].Usb20HsSkewSel;
+
+		if (cfg->usb2eye[port].Usb20IUsbTxEmphasisEn != 0)
+			silconfig->PortUsb20IUsbTxEmphasisEn[port] =
+				cfg->usb2eye[port].Usb20IUsbTxEmphasisEn;
+
+		if (cfg->usb2eye[port].Usb20PerPortRXISet != 0)
+			silconfig->PortUsb20PerPortRXISet[port] =
+				cfg->usb2eye[port].Usb20PerPortRXISet;
+
+		if (cfg->usb2eye[port].Usb20HsNpreDrvSel != 0)
+			silconfig->PortUsb20HsNpreDrvSel[port] =
+				cfg->usb2eye[port].Usb20HsNpreDrvSel;
+	}
+
 }
 
 struct chip_operations soc_intel_apollolake_ops = {
@@ -486,22 +532,37 @@ struct chip_operations soc_intel_apollolake_ops = {
 	.final = &soc_final
 };
 
+static void drop_privilege_all(void)
+{
+	/* Drop privilege level on all the CPUs */
+	if (mp_run_on_all_cpus(&enable_untrusted_mode, 1000) < 0)
+		printk(BIOS_ERR, "failed to enable untrusted mode\n");
+}
+
 void platform_fsp_notify_status(enum fsp_notify_phase phase)
 {
-	/* Hide the P2SB device to align with previous behavior. */
-	if (phase == END_OF_FIRMWARE)
+	if (phase == END_OF_FIRMWARE) {
+		/* Hide the P2SB device to align with previous behavior. */
 		p2sb_hide();
+		/*
+		 * As per guidelines BIOS is recommended to drop CPU privilege
+		 * level to IA_UNTRUSTED. After that certain device registers
+		 * and MSRs become inaccessible supposedly increasing system
+		 * security.
+		 */
+		drop_privilege_all();
+	}
 }
 
 /*
- * spi_init() needs to run unconditionally on every boot (including resume) to
- * allow write protect to be disabled for eventlog and nvram updates. This needs
- * to be done as early as possible in ramstage. Thus, add a callback for entry
- * into BS_PRE_DEVICE.
+ * spi_flash init() needs to run unconditionally on every boot (including
+ * resume) to allow write protect to be disabled for eventlog and nvram
+ * updates. This needs to be done as early as possible in ramstage. Thus, add a
+ * callback for entry into BS_PRE_DEVICE.
  */
-static void spi_init_cb(void *unused)
+static void spi_flash_init_cb(void *unused)
 {
-	spi_init();
+	spi_flash_init();
 }
 
-BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, spi_init_cb, NULL);
+BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, spi_flash_init_cb, NULL);

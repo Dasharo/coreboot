@@ -108,7 +108,8 @@ void rk_display_init(device_t dev, u32 lcdbase,
 		conf->framebuffer_bits_per_pixel, 0);
 	rkvop_mode_set(conf->vop_id, &edid, detected_mode);
 
-	rkvop_enable(conf->vop_id, lcdbase, &edid);
+	rkvop_prepare(conf->vop_id, &edid);
+	rkvop_enable(conf->vop_id, lcdbase);
 
 	switch (detected_mode) {
 	case VOP_MODE_HDMI:
@@ -127,6 +128,10 @@ void rk_display_init(device_t dev, u32 lcdbase,
 
 	case VOP_MODE_EDP:
 	default:
+		if (rk_edp_prepare()) {
+			printk(BIOS_WARNING, "edp prepare err\n");
+			return;
+		}
 		if (rk_edp_enable()) {
 			printk(BIOS_WARNING, "edp enable err\n");
 			return;

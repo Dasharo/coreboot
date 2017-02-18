@@ -20,6 +20,7 @@
 #include <lib.h>
 #include <arch/acpi.h>
 #include <cbmem.h>
+#include <timestamp.h>
 #include <arch/io.h>
 #include <device/pci_def.h>
 #include <device/pnp_def.h>
@@ -36,22 +37,6 @@
 #include <southbridge/intel/i82801gx/i82801gx.h>
 
 #define SERIAL_DEV PNP_DEV(0x2e, W83627THG_SP1)
-
-void setup_ich7_gpios(void)
-{
-	printk(BIOS_DEBUG, " GPIOS...");
-	/* General Registers */
-	outl(0x1f1ff7c0, DEFAULT_GPIOBASE + 0x00);	/* GPIO_USE_SEL */
-	outl(0xe0e8efc3, DEFAULT_GPIOBASE + 0x04);	/* GP_IO_SEL */
-	outl(0xebffeeff, DEFAULT_GPIOBASE + 0x0c);	/* GP_LVL */
-	/* Output Control Registers */
-	outl(0x00000000, DEFAULT_GPIOBASE + 0x18);	/* GPO_BLINK */
-	/* Input Control Registers */
-	outl(0x00002180, DEFAULT_GPIOBASE + 0x2c);	/* GPI_INV */
-	outl(0x000100ff, DEFAULT_GPIOBASE + 0x30);	/* GPIO_USE_SEL2 */
-	outl(0x00000030, DEFAULT_GPIOBASE + 0x34);	/* GP_IO_SEL2 */
-	outl(0x00010035, DEFAULT_GPIOBASE + 0x38);	/* GP_LVL */
-}
 
 static void ich7_enable_lpc(void)
 {
@@ -76,14 +61,14 @@ static void ich7_enable_lpc(void)
 }
 
 /* TODO: superio code should really not be in mainboard */
-static void pnp_enter_func_mode(device_t dev)
+static void pnp_enter_func_mode(pnp_devfn_t dev)
 {
 	u16 port = dev >> 8;
 	outb(0x87, port);
 	outb(0x87, port);
 }
 
-static void pnp_exit_func_mode(device_t dev)
+static void pnp_exit_func_mode(pnp_devfn_t dev)
 {
 	u16 port = dev >> 8;
 	outb(0xaa, port);
@@ -96,7 +81,7 @@ static void pnp_exit_func_mode(device_t dev)
  */
 static void early_superio_config_w83627thg(void)
 {
-	device_t dev;
+	pnp_devfn_t dev;
 
 	dev = PNP_DEV(0x2e, W83627THG_SP1);
 	pnp_enter_func_mode(dev);
@@ -324,6 +309,10 @@ void mainboard_romstage_entry(unsigned long bist)
 {
 	int s3resume = 0;
 
+
+	timestamp_init(get_initial_timestamp());
+	timestamp_add_now(TS_START_ROMSTAGE);
+
 	if (bist == 0)
 		enable_lapic();
 
@@ -361,7 +350,9 @@ void mainboard_romstage_entry(unsigned long bist)
 	dump_spd_registers();
 #endif
 
+	timestamp_add_now(TS_BEFORE_INITRAM);
 	sdram_initialize(s3resume ? 2 : 0, NULL);
+	timestamp_add_now(TS_AFTER_INITRAM);
 
 	/* Perform some initialization that must run before stage2 */
 	early_ich7_init();

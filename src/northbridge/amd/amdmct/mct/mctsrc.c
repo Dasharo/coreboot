@@ -14,6 +14,9 @@
  * GNU General Public License for more details.
  */
 
+#include "mct_d.h"
+#include <cpu/x86/cr.h>
+
 /******************************************************************************
  Description: Receiver En and DQS Timing Training feature for DDR 2 MCT
 ******************************************************************************/
@@ -43,22 +46,21 @@ static void fenceDynTraining_D(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstat, u8 dct);
 static void mct_DisableDQSRcvEn_D(struct DCTStatStruc *pDCTstat);
 
-
 /* Warning:  These must be located so they do not cross a logical 16-bit
    segment boundary! */
-static const u32 TestPattern0_D[] = {
+const u32 TestPattern0_D[] = {
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,
 };
-static const u32 TestPattern1_D[] = {
+const u32 TestPattern1_D[] = {
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,
 };
-static const u32 TestPattern2_D[] = {
+const u32 TestPattern2_D[] = {
 	0x12345678, 0x87654321, 0x23456789, 0x98765432,
 	0x59385824, 0x30496724, 0x24490795, 0x99938733,
 	0x40385642, 0x38465245, 0x29432163, 0x05067894,
@@ -474,7 +476,7 @@ static void dqsTrainRcvrEn_SW(struct MCTStatStruc *pMCTstat,
 			printk(BIOS_DEBUG, "Channel: %02x\n", Channel);
 			for (Receiver = 0; Receiver < 8; Receiver+=2) {
 				printk(BIOS_DEBUG, "\t\tReceiver: %02x: ", Receiver);
-				p = pDCTstat->CH_D_B_RCVRDLY[Channel][Receiver>>1];
+				p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver>>1];
 				for (i = 0; i < 8; i++) {
 					val  = p[i];
 					printk(BIOS_DEBUG, "%02x ", val);
@@ -565,7 +567,7 @@ void mct_SetRcvrEnDly_D(struct DCTStatStruc *pDCTstat, u8 RcvrEnDly,
 	for (i = 0; i < 8; i++) {
 		if (FinalValue) {
 			/*calculate dimm offset */
-			p = pDCTstat->CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+			p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
 			RcvrEnDly = p[i];
 		}
 
@@ -717,11 +719,11 @@ static u8 mct_SavePassRcvEnDly_D(struct DCTStatStruc *pDCTstat,
 
 		/* find desired stack offset according to channel/dimm/byte */
 		if (Pass == SecondPass) {
-			// FIXME: SecondPass is never used for Barcelona p = pDCTstat->CH_D_B_RCVRDLY_1[Channel][receiver>>1];
+			// FIXME: SecondPass is never used for Barcelona p = pDCTstat->persistentData.CH_D_B_RCVRDLY_1[Channel][receiver>>1];
 			p = 0; // Keep the compiler happy.
 		} else {
 			mask_Saved &= mask_Pass;
-			p = pDCTstat->CH_D_B_RCVRDLY[Channel][receiver>>1];
+			p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][receiver>>1];
 		}
 		for (i = 0; i < 8; i++) {
 			/* cmp per byte lane */
@@ -901,7 +903,7 @@ void SetEccDQSRcvrEn_D(struct DCTStatStruc *pDCTstat, u8 Channel)
 	dev = pDCTstat->dev_dct;
 	index_reg = 0x98 + Channel * 0x100;
 	index = 0x12;
-	p = pDCTstat->CH_D_BC_RCVRDLY[Channel];
+	p = pDCTstat->persistentData.CH_D_BC_RCVRDLY[Channel];
 	print_debug_dqs("\t\tSetEccDQSRcvrPos: Channel ", Channel,  2);
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 		val = p[ChipSel>>1];
@@ -927,7 +929,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 		if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, ChipSel)) {
 			u8 *p;
-			p = pDCTstat->CH_D_B_RCVRDLY[Channel][ChipSel>>1];
+			p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][ChipSel>>1];
 
 			/* DQS Delay Value of Data Bytelane
 			 * most like ECC byte lane */
@@ -951,7 +953,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 				val += val0;
 			}
 
-			pDCTstat->CH_D_BC_RCVRDLY[Channel][ChipSel>>1] = val;
+			pDCTstat->persistentData.CH_D_BC_RCVRDLY[Channel][ChipSel>>1] = val;
 		}
 	}
 	SetEccDQSRcvrEn_D(pDCTstat, Channel);

@@ -16,10 +16,13 @@
 #include <arch/cpu.h>
 #include <cbmem.h>
 #include <console/console.h>
+#include <cpu/cpu.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
 #include <program_loading.h>
 #include <rmodule.h>
+#include <romstage_handoff.h>
+#include <stage_cache.h>
 
 static inline void stack_push(struct postcar_frame *pcf, uint32_t val)
 {
@@ -30,12 +33,19 @@ static inline void stack_push(struct postcar_frame *pcf, uint32_t val)
 	*ptr = val;
 }
 
+static void postcar_frame_prepare(struct postcar_frame *pcf)
+{
+	msr_t msr;
+	msr = rdmsr(MTRR_CAP_MSR);
+
+	pcf->upper_mask = (1 << (cpu_phys_address_size() - 32)) - 1;
+	pcf->max_var_mttrs = msr.lo & MTRR_CAP_VCNT;
+	pcf->num_var_mttrs = 0;
+}
+
 int postcar_frame_init(struct postcar_frame *pcf, size_t stack_size)
 {
 	void *stack;
-	msr_t msr;
-
-	msr = rdmsr(MTRR_CAP_MSR);
 
 	stack = cbmem_add(CBMEM_ID_ROMSTAGE_RAM_STACK, stack_size);
 	if (stack == NULL) {
@@ -44,16 +54,20 @@ int postcar_frame_init(struct postcar_frame *pcf, size_t stack_size)
 		return -1;
 	}
 
+	postcar_frame_prepare(pcf);
 	pcf->stack = (uintptr_t)stack;
 	pcf->stack += stack_size;
-
-	pcf->upper_mask = (1 << (cpu_phys_address_size() - 32)) - 1;
-
-	pcf->max_var_mttrs = msr.lo & MTRR_CAP_VCNT;
-
-	pcf->num_var_mttrs = 0;
-
 	return 0;
+}
+
+/*
+ * For use with LATE_CBMEM_INIT boards only, with a fixed stacktop in
+ * low memory.
+ */
+void postcar_frame_init_lowmem(struct postcar_frame *pcf)
+{
+	postcar_frame_prepare(pcf);
+	pcf->stack = CONFIG_RAMTOP;
 }
 
 void postcar_frame_add_mtrr(struct postcar_frame *pcf,
@@ -110,18 +124,14 @@ void *postcar_commit_mtrrs(struct postcar_frame *pcf)
 	return (void *) pcf->stack;
 }
 
-void run_postcar_phase(struct postcar_frame *pcf)
+static void load_postcar_cbfs(struct prog *prog, struct postcar_frame *pcf)
 {
-	struct prog prog =
-		PROG_INIT(PROG_UNKNOWN, CONFIG_CBFS_PREFIX "/postcar");
 	struct rmod_stage_load rsl = {
 		.cbmem_id = CBMEM_ID_AFTER_CAR,
-		.prog = &prog,
+		.prog = prog,
 	};
 
-	postcar_commit_mtrrs(pcf);
-
-	if (prog_locate(&prog))
+	if (prog_locate(prog))
 		die("Failed to locate after CAR program.\n");
 	if (rmodule_stage_load(&rsl))
 		die("Failed to load after CAR program.\n");
@@ -138,6 +148,22 @@ void run_postcar_phase(struct postcar_frame *pcf)
 	 */
 	prog_segment_loaded((uintptr_t)rsl.params, sizeof(uintptr_t),
 		SEG_FINAL);
+
+	if (!IS_ENABLED(CONFIG_NO_STAGE_CACHE))
+		stage_cache_add(STAGE_POSTCAR, prog);
+}
+
+void run_postcar_phase(struct postcar_frame *pcf)
+{
+	struct prog prog =
+		PROG_INIT(PROG_UNKNOWN, CONFIG_CBFS_PREFIX "/postcar");
+
+	postcar_commit_mtrrs(pcf);
+
+	if (!IS_ENABLED(CONFIG_NO_STAGE_CACHE) && romstage_handoff_is_resume())
+		stage_cache_load_stage(STAGE_POSTCAR, &prog);
+	else
+		load_postcar_cbfs(&prog, pcf);
 
 	prog_run(&prog);
 }

@@ -1,3 +1,0 @@
-config DRIVERS_I2C_WACOM_TS
-	bool
-	select DRIVERS_I2C_GENERIC

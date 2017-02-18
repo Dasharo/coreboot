@@ -17,9 +17,11 @@
  * GNU General Public License for more details.
  */
 
-
+#include <console/console.h>
 #include <stdlib.h>
 #include <spi_flash.h>
+#include <spi-generic.h>
+#include <string.h>
 
 #include "spi_flash_internal.h"
 
@@ -54,7 +56,7 @@ struct gigadevice_spi_flash {
 };
 
 static inline struct gigadevice_spi_flash *
-to_gigadevice_spi_flash(struct spi_flash *flash)
+to_gigadevice_spi_flash(const struct spi_flash *flash)
 {
 	return container_of(flash, struct gigadevice_spi_flash, flash);
 }
@@ -118,8 +120,8 @@ static const struct gigadevice_spi_flash_params gigadevice_spi_flash_table[] = {
 	},
 };
 
-static int gigadevice_write(struct spi_flash *flash, u32 offset,
-			    size_t len, const void *buf)
+static int gigadevice_write(const struct spi_flash *flash, u32 offset,
+			size_t len, const void *buf)
 {
 	struct gigadevice_spi_flash *stm = to_gigadevice_spi_flash(flash);
 	unsigned long byte_addr;
@@ -130,15 +132,13 @@ static int gigadevice_write(struct spi_flash *flash, u32 offset,
 	u8 cmd[4];
 
 	page_size = 1 << stm->params->l2_page_size;
-	byte_addr = offset % page_size;
-
-	flash->spi->rw = SPI_WRITE_FLAG;
 
 	for (actual = 0; actual < len; actual += chunk_len) {
+		byte_addr = offset % page_size;
 		chunk_len = min(len - actual, page_size - byte_addr);
 		chunk_len = spi_crop_chunk(sizeof(cmd), chunk_len);
 
-		ret = spi_flash_cmd(flash->spi, CMD_GD25_WREN, NULL, 0);
+		ret = spi_flash_cmd(&flash->spi, CMD_GD25_WREN, NULL, 0);
 		if (ret < 0) {
 			printk(BIOS_WARNING,
 			       "SF gigadevice.c: Enabling Write failed\n");
@@ -156,7 +156,7 @@ static int gigadevice_write(struct spi_flash *flash, u32 offset,
 		       cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
 #endif
 
-		ret = spi_flash_cmd_write(flash->spi, cmd, sizeof(cmd),
+		ret = spi_flash_cmd_write(&flash->spi, cmd, sizeof(cmd),
 					  buf + actual, chunk_len);
 		if (ret < 0) {
 			printk(BIOS_WARNING,
@@ -169,7 +169,6 @@ static int gigadevice_write(struct spi_flash *flash, u32 offset,
 			goto out;
 
 		offset += chunk_len;
-		byte_addr = 0;
 	}
 
 #if CONFIG_DEBUG_SPI_FLASH
@@ -206,19 +205,19 @@ struct spi_flash *spi_flash_probe_gigadevice(struct spi_slave *spi, u8 *idcode)
 	}
 
 	stm.params = params;
-	stm.flash.spi = spi;
+	memcpy(&stm.flash.spi, spi, sizeof(*spi));
 	stm.flash.name = params->name;
 
 	/* Assuming power-of-two page size initially. */
 	page_size = 1 << params->l2_page_size;
 
-	stm.flash.write = gigadevice_write;
-	stm.flash.erase = spi_flash_cmd_erase;
-	stm.flash.status = spi_flash_cmd_status;
+	stm.flash.internal_write = gigadevice_write;
+	stm.flash.internal_erase = spi_flash_cmd_erase;
+	stm.flash.internal_status = spi_flash_cmd_status;
 #if CONFIG_SPI_FLASH_NO_FAST_READ
-	stm.flash.read = spi_flash_cmd_read_slow;
+	stm.flash.internal_read = spi_flash_cmd_read_slow;
 #else
-	stm.flash.read = spi_flash_cmd_read_fast;
+	stm.flash.internal_read = spi_flash_cmd_read_fast;
 #endif
 	stm.flash.sector_size = (1 << stm.params->l2_page_size) *
 		stm.params->pages_per_sector;

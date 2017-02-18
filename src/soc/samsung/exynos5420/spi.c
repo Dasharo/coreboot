@@ -19,7 +19,7 @@
 #include <console/console.h>
 #include <soc/cpu.h>
 #include <soc/spi.h>
-#include <spi_flash.h>
+#include <spi-generic.h>
 #include <stdlib.h>
 #include <string.h>
 #include <symbols.h>
@@ -48,20 +48,19 @@ static struct exynos_spi_slave exynos_spi_slaves[3] = {
 	},
 	// SPI 1
 	{
-		.slave = { .bus = 1, .rw = SPI_READ_FLAG, },
+		.slave = { .bus = 1, },
 		.regs = (void *)EXYNOS5_SPI1_BASE,
 	},
 	// SPI 2
 	{
-		.slave = { .bus = 2,
-			   .rw = SPI_READ_FLAG | SPI_WRITE_FLAG, },
+		.slave = { .bus = 2, },
 		.regs = (void *)EXYNOS5_SPI2_BASE,
 	},
 };
 
-static inline struct exynos_spi_slave *to_exynos_spi(struct spi_slave *slave)
+static inline struct exynos_spi_slave *to_exynos_spi(const struct spi_slave *slave)
 {
-	return container_of(slave, struct exynos_spi_slave, slave);
+	return &exynos_spi_slaves[slave->bus];
 }
 
 static void spi_sw_reset(struct exynos_spi *regs, int word)
@@ -118,18 +117,7 @@ static void exynos_spi_init(struct exynos_spi *regs)
 	spi_sw_reset(regs, 1);
 }
 
-struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs)
-{
-	ASSERT(bus >= 0 && bus < 3);
-	struct exynos_spi_slave *eslave = &exynos_spi_slaves[bus];
-	if (!eslave->initialized) {
-		exynos_spi_init(eslave->regs);
-		eslave->initialized = 1;
-	}
-	return &eslave->slave;
-}
-
-int spi_claim_bus(struct spi_slave *slave)
+static int spi_ctrlr_claim_bus(const struct spi_slave *slave)
 {
 	struct exynos_spi *regs = to_exynos_spi(slave)->regs;
 	// TODO(hungte) Add some delay if too many transactions happen at once.
@@ -138,19 +126,19 @@ int spi_claim_bus(struct spi_slave *slave)
 }
 
 static void spi_transfer(struct exynos_spi *regs, void *in, const void *out,
-			 u32 size)
+			 size_t size)
 {
 	u8 *inb = in;
 	const u8 *outb = out;
 
-	int width = (size % 4) ? 1 : 4;
+	size_t width = (size % 4) ? 1 : 4;
 
 	while (size) {
-		int packets = size / width;
+		size_t packets = size / width;
 		// The packet count field is 16 bits wide.
 		packets = MIN(packets, (1 << 16) - 1);
 
-		int out_bytes, in_bytes;
+		size_t out_bytes, in_bytes;
 		out_bytes = in_bytes = packets * width;
 
 		spi_sw_reset(regs, width == 4);
@@ -189,13 +177,13 @@ static void spi_transfer(struct exynos_spi *regs, void *in, const void *out,
 	}
 }
 
-int spi_xfer(struct spi_slave *slave, const void *dout, unsigned int bytes_out,
-	     void *din, unsigned int bytes_in)
+static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout, size_t bytes_out,
+	     void *din, size_t bytes_in)
 {
 	struct exynos_spi *regs = to_exynos_spi(slave)->regs;
 
 	if (bytes_out && bytes_in) {
-		u32 min_size = MIN(bytes_out, bytes_in);
+		size_t min_size = MIN(bytes_out, bytes_in);
 
 		spi_transfer(regs, din, dout, min_size);
 
@@ -214,10 +202,33 @@ int spi_xfer(struct spi_slave *slave, const void *dout, unsigned int bytes_out,
 	return 0;
 }
 
-void spi_release_bus(struct spi_slave *slave)
+static void spi_ctrlr_release_bus(const struct spi_slave *slave)
 {
 	struct exynos_spi *regs = to_exynos_spi(slave)->regs;
 	setbits_le32(&regs->cs_reg, SPI_SLAVE_SIG_INACT);
+}
+
+static const struct spi_ctrlr spi_ctrlr = {
+	.claim_bus = spi_ctrlr_claim_bus,
+	.release_bus = spi_ctrlr_release_bus,
+	.xfer = spi_ctrlr_xfer,
+};
+
+int spi_setup_slave(unsigned int bus, unsigned int cs, struct spi_slave *slave)
+{
+	ASSERT(bus >= 0 && bus < 3);
+	struct exynos_spi_slave *eslave;
+
+	slave->bus = bus;
+	slave->cs = cs;
+	slave->ctrlr = &spi_ctrlr;
+
+	eslave = to_exynos_spi(slave);
+	if (!eslave->initialized) {
+		exynos_spi_init(eslave->regs);
+		eslave->initialized = 1;
+	}
+	return 0;
 }
 
 static int exynos_spi_read(struct spi_slave *slave, void *dest, uint32_t len,

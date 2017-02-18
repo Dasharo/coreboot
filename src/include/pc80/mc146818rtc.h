@@ -112,6 +112,16 @@ static inline unsigned char cmos_read(unsigned char addr)
 	return inb(RTC_BASE_PORT + offs + 1);
 }
 
+/* Upon return the caller is guaranteed 244 microseconds to complete any
+ * RTC operations.  wait_uip may be called a single time prior to multiple
+ * accesses, but sequences requiring more time should call wait_uip again.
+ */
+static inline void wait_uip(void)
+{
+	while (cmos_read(RTC_REG_A) & RTC_UIP)
+		;
+}
+
 static inline void cmos_write_inner(unsigned char val, unsigned char addr)
 {
 	int offs = 0;
@@ -211,10 +221,39 @@ unsigned read_option_lowlevel(unsigned start, unsigned size, unsigned def);
 #define CMOS_POST_EXTRA_DEV_PATH  0x01
 
 void cmos_post_log(void);
+
+/* cmos_post_init() is exposed in this manner because it also needs to be called
+ * by bootblock code compiled by romcc. */
+static inline void cmos_post_init(void)
+{
+	u8 magic = CMOS_POST_BANK_0_MAGIC;
+
+	/* Switch to the other bank */
+	switch (cmos_read(CMOS_POST_BANK_OFFSET)) {
+	case CMOS_POST_BANK_1_MAGIC:
+		break;
+	case CMOS_POST_BANK_0_MAGIC:
+		magic = CMOS_POST_BANK_1_MAGIC;
+		break;
+	default:
+		/* Initialize to zero */
+		cmos_write(0, CMOS_POST_BANK_0_OFFSET);
+		cmos_write(0, CMOS_POST_BANK_1_OFFSET);
+#if CONFIG_CMOS_POST_EXTRA
+		cmos_write32(CMOS_POST_BANK_0_EXTRA, 0);
+		cmos_write32(CMOS_POST_BANK_1_EXTRA, 0);
+#endif
+	}
+
+	cmos_write(magic, CMOS_POST_BANK_OFFSET);
+}
 #else
 static inline void cmos_post_log(void) {}
+static inline void cmos_post_init(void) {}
 #endif /* CONFIG_CMOS_POST */
 
+#else /* !CONFIG_ARCH_X86 */
+static inline void cmos_post_init(void) {}
 #endif /* CONFIG_ARCH_X86 */
 
 #endif /*  PC80_MC146818RTC_H */

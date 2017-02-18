@@ -1,28 +1,44 @@
-if BOARD_INTEL_KBLRVP3
+if BOARD_INTEL_KBLRVP3 || BOARD_INTEL_KBLRVP7
 
 config BOARD_SPECIFIC_OPTIONS # dummy
 	def_bool y
 	select BOARD_ROMSIZE_KB_16384
+	select EC_ACPI
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
 	select HAVE_OPTION_TABLE
 	select HAVE_SMI_HANDLER
-	select MMCONF_SUPPORT
 	select MONOTONIC_TIMER_MSR
 	select SOC_INTEL_SKYLAKE
 	select MAINBOARD_USES_FSP2_0
+	select MAINBOARD_HAS_CHROMEOS
+	select GENERIC_SPD_BIN
 
 config CHROMEOS
 	select LID_SWITCH
 
-config DRIVERS_GENERIC_MAX98357A
-	default y
+choice
+	prompt "TPM to USE"
+	default KBLRVP_TPM1_2
+	help
+	  This option allows you to select the TPM to use.
+	  Select whether the board does not have TPM, TPM 1.1 or TPM 2.0
 
-config DRIVERS_I2C_GENERIC
-	default y
+config KBLRVP_NO_TPM
+	bool "No TPM"
+	select VBOOT_MOCK_SECDATA if VBOOT
 
-config DRIVERS_I2C_NAU8825
-	default y
+config KBLRVP_TPM1_2
+	bool "TPM 1.1"
+	select MAINBOARD_HAS_LPC_TPM
+
+config KBLRVP_TPM2_0
+	bool "TPM 2.0"
+	select TPM2
+	select MAINBOARD_HAS_TPM2
+	select MAINBOARD_HAS_LPC_TPM
+
+endchoice
 
 config IRQ_SLOT_COUNT
 	int
@@ -31,6 +47,11 @@ config IRQ_SLOT_COUNT
 config MAINBOARD_DIR
 	string
 	default "intel/kblrvp"
+
+config VARIANT_DIR
+	string
+	default "rvp3" if BOARD_INTEL_KBLRVP3
+	default "rvp7" if BOARD_INTEL_KBLRVP7
 
 config MAINBOARD_PART_NUMBER
 	string
@@ -48,16 +69,29 @@ config TPM_PIRQ
 	hex
 	default 0x18  # GPP_E0_IRQ
 
-config INCLUDE_NHLT_BLOBS
-	bool "Include blobs for audio."
-	select NHLT_DMIC_2CH
-	select NHLT_DMIC_4CH
-	select NHLT_MAX98357
-	select NHLT_NAU88L25
-	select NHLT_SSM4567
-
 config GBB_HWID
 	string
 	depends on CHROMEOS
 	default "KBLRVP TEST 8819"
+
+config DEVICETREE
+	string
+	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
+
+config IFD_BIN_PATH
+	string
+	depends on HAVE_IFD_BIN
+	default "3rdparty/blobs/mainboard/$(CONFIG_MAINBOARD_DIR)/descriptor.rvp3.bin" if BOARD_INTEL_KBLRVP3
+	default "3rdparty/blobs/mainboard/$(CONFIG_MAINBOARD_DIR)/descriptor.rvp7.bin" if BOARD_INTEL_KBLRVP7
+
+config ME_BIN_PATH
+	string
+	depends on HAVE_ME_BIN
+	default "3rdparty/blobs/mainboard/$(CONFIG_MAINBOARD_DIR)/me.rvp3.bin" if BOARD_INTEL_KBLRVP3
+	default "3rdparty/blobs/mainboard/$(CONFIG_MAINBOARD_DIR)/me.rvp7.bin" if BOARD_INTEL_KBLRVP7
+
+config PRERAM_CBMEM_CONSOLE_SIZE
+	hex
+	default 0xd00
+
 endif

@@ -23,6 +23,7 @@ struct pci_bus_operations;
 struct i2c_bus_operations;
 struct smbus_bus_operations;
 struct pnp_mode_ops;
+struct spi_bus_operations;
 
 /* Chip operations */
 struct chip_operations {
@@ -64,6 +65,7 @@ struct device_operations {
 #endif
 	const struct pci_operations *ops_pci;
 	const struct i2c_bus_operations *ops_i2c_bus;
+	const struct spi_bus_operations *ops_spi_bus;
 	const struct smbus_bus_operations *ops_smbus_bus;
 	const struct pci_bus_operations * (*ops_pci_bus)(device_t dev);
 	const struct pnp_mode_ops *ops_pnp_mode;
@@ -195,6 +197,7 @@ device_t find_dev_path(struct bus *parent, struct device_path *path);
 device_t alloc_find_dev(struct bus *parent, struct device_path *path);
 device_t dev_find_device (u16 vendor, u16 device, device_t from);
 device_t dev_find_class (unsigned int class, device_t from);
+device_t dev_find_path(device_t prev_match, enum device_path_type path_type);
 device_t dev_find_slot (unsigned int bus, unsigned int devfn);
 device_t dev_find_slot_on_smbus (unsigned int bus, unsigned int addr);
 device_t dev_find_slot_pnp(u16 port, u16 device);
@@ -213,7 +216,7 @@ void set_cpu_topology(device_t cpu, unsigned node, unsigned package, unsigned co
 /* Debug functions */
 void print_resource_tree(struct device * root, int debug_level,
 			 const char *msg);
-void show_devs_tree(struct device *dev, int debug_level, int depth, int linknum);
+void show_devs_tree(struct device *dev, int debug_level, int depth);
 void show_devs_subtree(struct device *root, int debug_level, const char *msg);
 void show_all_devs(int debug_level, const char *msg);
 void show_all_devs_tree(int debug_level, const char *msg);
@@ -234,7 +237,11 @@ void pci_domain_scan_bus(struct device *dev);
 void fixed_mem_resource(device_t dev, unsigned long index,
 		  unsigned long basek, unsigned long sizek, unsigned long type);
 
+void mmconf_resource_init(struct resource *res, resource_t base, int buses);
+void mmconf_resource(struct device *dev, unsigned long index);
+
 void scan_smbus(device_t bus);
+void scan_generic_bus(device_t bus);
 void scan_static_bus(device_t bus);
 void scan_lpc_bus(device_t bus);
 

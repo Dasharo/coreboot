@@ -17,7 +17,6 @@ ifeq ($(CONFIG_NORTHBRIDGE_INTEL_GM45),y)
 
 romstage-y += early_init.c
 romstage-y += early_reset.c
-romstage-y += delay.c
 romstage-y += raminit.c
 romstage-y += raminit_rcomp_calibration.c
 romstage-y += raminit_receive_enable_calibration.c
@@ -35,6 +34,6 @@ ramstage-y += ram_calc.c
 ramstage-y += northbridge.c
 ramstage-y += gma.c
 
-smm-$(CONFIG_HAVE_SMI_HANDLER) += delay.c
+smm-$(CONFIG_HAVE_SMI_HANDLER) += ../../../cpu/x86/lapic/apic_timer.c
 
 endif

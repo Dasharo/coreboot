@@ -52,10 +52,18 @@ verstage-$(CONFIG_CONSOLE_CBMEM) += cbmem_console.c
 
 ifeq ($(MOCK_TPM),1)
 libverstage-y += mocked_tlcl.c
+romstage-$(CONFIG_SEPARATE_VERSTAGE) += mocked_tlcl.c
 else
 libverstage-$(CONFIG_TPM) += tlcl.c
 libverstage-$(CONFIG_TPM2) += tpm2_marshaling.c
 libverstage-$(CONFIG_TPM2) += tpm2_tlcl.c
+
+ifeq ($(CONFIG_SEPARATE_VERSTAGE),y)
+romstage-$(CONFIG_TPM) += tlcl.c
+romstage-$(CONFIG_TPM2) += tpm2_marshaling.c
+romstage-$(CONFIG_TPM2) += tpm2_tlcl.c
+endif # CONFIG_SEPARATE_VERSTAGE
+
 endif
 
 verstage-$(CONFIG_GENERIC_UDELAY) += timer.c
@@ -79,6 +87,10 @@ romstage-$(CONFIG_PRIMITIVE_MEMTEST) += primitive_memtest.c
 ramstage-$(CONFIG_PRIMITIVE_MEMTEST) += primitive_memtest.c
 romstage-$(CONFIG_CACHE_AS_RAM) += ramtest.c
 romstage-$(CONFIG_GENERIC_GPIO_LIB) += gpio.c
+ramstage-y += region_file.c
+romstage-y += region_file.c
+ramstage-y += romstage_handoff.c
+romstage-y += romstage_handoff.c
 romstage-y += romstage_stack.c
 ramstage-y += romstage_stack.c
 romstage-y += stack.c
@@ -132,6 +144,8 @@ ramstage-$(CONFIG_GENERIC_GPIO_LIB) += gpio.c
 ramstage-$(CONFIG_GENERIC_UDELAY) += timer.c
 ramstage-y += b64_decode.c
 ramstage-$(CONFIG_ACPI_NHLT) += nhlt.c
+ramstage-$(CONFIG_TPM2) += tpm2_marshaling.c
+ramstage-$(CONFIG_TPM2) += tpm2_tlcl.c
 
 romstage-y += cbmem_common.c
 romstage-y += imd_cbmem.c
@@ -145,6 +159,7 @@ postcar-y += cbmem_common.c
 postcar-$(CONFIG_CONSOLE_CBMEM) += cbmem_console.c
 postcar-y += imd_cbmem.c
 postcar-y += imd.c
+postcar-y += romstage_handoff.c
 
 bootblock-y += hexdump.c
 ramstage-y += hexdump.c
@@ -261,3 +276,33 @@ $(objcbfs)/%.debug.rmod: $(objcbfs)/%.debug | $(RMODTOOL)
 
 $(obj)/%.elf.rmod: $(obj)/%.elf | $(RMODTOOL)
 	$(RMODTOOL) -i $< -o $@
+
+ifeq ($(CONFIG_RAMSTAGE_LIBHWBASE),y)
+
+$(call add-special-class,hw)
+hw-handler = $(eval ramstage-srcs += $$(addprefix $(1),$(2)))
+subdirs-y += ../../3rdparty/libhwbase
+
+ramstage-$(CONFIG_HAVE_MONOTONIC_TIMER) += hw-time-timer.adb
+
+endif # CONFIG_RAMSTAGE_LIBHWBASE
+
+romstage-y += spd_bin.c
+
+ifeq ($(CONFIG_GENERIC_SPD_BIN),y)
+LIB_SPD_BIN = $(obj)/spd.bin
+
+LIB_SPD_DEPS = $(foreach f, $(SPD_SOURCES), src/mainboard/$(MAINBOARDDIR)/spd/$(f).spd.hex)
+
+# Include spd ROM data
+$(LIB_SPD_BIN): $(LIB_SPD_DEPS)
+	for f in $(LIB_SPD_DEPS); \
+	 do for c in $$(cat $$f | grep -v ^#); \
+	  do printf $$(printf '\%o' 0x$$c); \
+	 done; \
+	done > $@
+
+cbfs-files-$(CONFIG_GENERIC_SPD_BIN) += spd.bin
+spd.bin-file := $(LIB_SPD_BIN)
+spd.bin-type := spd
+endif

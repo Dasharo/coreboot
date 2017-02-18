@@ -6,7 +6,7 @@
 #ifndef _IPQ806X_SPI_H_
 #define _IPQ806X_SPI_H_
 
-#include <spi_flash.h>
+#include <spi-generic.h>
 #include <soc/iomap.h>
 
 #define QUP5_BASE	((uint32_t)GSBI_QUP5_BASE)
@@ -270,10 +270,5 @@ struct ipq_spi_slave {
 	unsigned long freq;
 	int allocated;
 };
-
-static inline struct ipq_spi_slave *to_ipq_spi(struct spi_slave *slave)
-{
-	return container_of(slave, struct ipq_spi_slave, slave);
-}
 
 #endif /* _IPQ806X_SPI_H_ */

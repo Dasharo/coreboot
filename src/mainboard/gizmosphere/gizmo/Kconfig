@@ -28,7 +28,6 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	select HAVE_ACPI_TABLES
 	select BOARD_ROMSIZE_KB_2048
 	select GFXUMA
-	select SPD_CACHE
 
 config MAINBOARD_DIR
 	string
@@ -69,5 +68,9 @@ config VGA_BIOS_ID
 config SB800_AHCI_ROM
 	bool
 	default n
+
+config DIMM_SPD_SIZE
+	int
+	default 128
 
 endif # BOARD_GIZMOSPHERE_GIZMO

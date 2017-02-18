@@ -36,10 +36,22 @@
 #include <cpu/x86/bist.h>
 #include "northbridge/amd/amdk8/debug.c"
 #include "northbridge/amd/amdk8/setup_resource_map.c"
-#include "southbridge/nvidia/mcp55/early_ctrl.c"
 
 #define SERIAL_DEV PNP_DEV(0x2e, IT8716F_SP1)
 #define CLKIN_DEV PNP_DEV(0x2e, IT8716F_GPIO)
+
+unsigned get_sbdn(unsigned bus);
+
+unsigned get_sbdn(unsigned bus)
+{
+	pci_devfn_t dev;
+
+	/* Find the device. */
+	dev = pci_locate_device_on_bus(PCI_ID(PCI_VENDOR_ID_NVIDIA,
+				       PCI_DEVICE_ID_NVIDIA_MCP55_HT), bus);
+
+	return (dev >> 15) & 0x1f;
+}
 
 static void memreset(int controllers, const struct mem_controller *ctrl) { }
 static void activate_spd_rom(const struct mem_controller *ctrl) { }
@@ -57,6 +69,7 @@ static inline int spd_read_byte(unsigned device, unsigned address)
         RES_PORT_IO_8, SYSCTRL_IO_BASE + 0xc0+59, 0x00, 0x60,/* GPIP60 FANCTL0 */ \
         RES_PORT_IO_8, SYSCTRL_IO_BASE + 0xc0+60, 0x00, 0x60,/* GPIO61 FANCTL1 */
 
+#include "southbridge/nvidia/mcp55/early_ctrl.c"
 #include <southbridge/nvidia/mcp55/early_setup_ss.h>
 #include "southbridge/nvidia/mcp55/early_setup_car.c"
 #include <northbridge/amd/amdk8/f.h>
@@ -130,7 +143,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
  	it8716f_enable_dev(SERIAL_DEV, CONFIG_TTYS0_BASE);
 	pnp_exit_ext_func_mode(SERIAL_DEV);
 #endif
-	ite_conf_clkin(CLKIN_DEV, ITE_UART_CLK_PREDIVIDE_48);
+	ite_conf_clkin(CLKIN_DEV, ITE_UART_CLK_PREDIVIDE_24);
 	ite_enable_serial(SERIAL_DEV, CONFIG_TTYS0_BASE);
 
 	setup_mb_resource_map();

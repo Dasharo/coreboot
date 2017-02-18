@@ -17,8 +17,6 @@
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/post_code.h>
-#include <arch/acpi.h>
-#include "northbridge/intel/sandybridge/sandybridge.h"
 
 /* The full cache-as-ram size includes the cache-as-ram portion from coreboot
  * and the space used by the reference code. These 2 values combined should
@@ -176,11 +174,10 @@ before_romstage:
 	post_code(0x29)
 	/* Call romstage.c main function. */
 	call	romstage_main
-
 	/* Save return value from romstage_main. It contains the stack to use
-	 * after cache-as-ram is torn down.
-	 */
-	movl	%eax, %ebx
+	 * after cache-as-ram is torn down. It also contains the information
+	 * for setting up MTRRs. */
+	movl	%eax, %esp
 
 	post_code(0x30)
 
@@ -212,14 +209,6 @@ before_romstage:
 	andl    $~1, %eax
 	wrmsr
 
-	/* Clear MTRR that was used to cache MRC */
-	xorl	%eax, %eax
-	xorl	%edx, %edx
-	movl	$MTRR_PHYS_BASE(2), %ecx
-	wrmsr
-	movl	$MTRR_PHYS_MASK(2), %ecx
-	wrmsr
-
 	post_code(0x33)
 
 	/* Enable cache. */
@@ -236,31 +225,48 @@ before_romstage:
 
 	post_code(0x38)
 
-	/* Enable Write Back and Speculative Reads for the first MB
-	 * and ramstage.
-	 */
+	/* Clear all of the variable MTRRs. */
+	popl	%ebx
 	movl	$MTRR_PHYS_BASE(0), %ecx
-	movl	$(0x00000000 | MTRR_TYPE_WRBACK), %eax
-	xorl	%edx, %edx
-	wrmsr
-	movl	$MTRR_PHYS_MASK(0), %ecx
-	movl	$(~(CACHE_TMP_RAMTOP - 1) | MTRR_PHYS_MASK_VALID), %eax
-	movl	$CPU_PHYSMASK_HI, %edx	// 36bit address space
-	wrmsr
+	clr	%eax
+	clr	%edx
 
-#if CACHE_ROM_SIZE
-	/* Enable Caching and speculative Reads for the
-	 * complete ROM now that we actually have RAM.
-	 */
-	movl	$MTRR_PHYS_BASE(1), %ecx
-	movl	$(CACHE_ROM_BASE | MTRR_TYPE_WRPROT), %eax
-	xorl	%edx, %edx
+1:
+	testl	%ebx, %ebx
+	jz	1f
+	wrmsr			/* Write MTRR base. */
+	inc	%ecx
+	wrmsr			/* Write MTRR mask. */
+	inc	%ecx
+	dec	%ebx
+	jmp	1b
+
+1:
+	/* Get number of MTRRs. */
+	popl	%ebx
+	movl	$MTRR_PHYS_BASE(0), %ecx
+2:
+	testl	%ebx, %ebx
+	jz	2f
+
+	/* Low 32 bits of MTRR base. */
+	popl	%eax
+	/* Upper 32 bits of MTRR base. */
+	popl	%edx
+	/* Write MTRR base. */
 	wrmsr
-	movl	$MTRR_PHYS_MASK(1), %ecx
-	movl	$(~(CACHE_ROM_SIZE - 1) | MTRR_PHYS_MASK_VALID), %eax
-	movl	$CPU_PHYSMASK_HI, %edx
+	inc	%ecx
+	/* Low 32 bits of MTRR mask. */
+	popl	%eax
+	/* Upper 32 bits of MTRR mask. */
+	popl	%edx
+	/* Write MTRR mask. */
 	wrmsr
-#endif
+	inc	%ecx
+
+	dec	%ebx
+	jmp	2b
+2:
 
 	post_code(0x39)
 
@@ -284,35 +290,10 @@ before_romstage:
 
 	post_code(0x3c)
 
-#if CONFIG_HAVE_ACPI_RESUME
-	movl	CBMEM_BOOT_MODE, %eax
-	cmpl	$0x2, %eax // Resume?
-	jne	__acpi_resume_backup_done
-
-	/* copy 1MB - 64K to high tables ram_base to prevent memory corruption
-	 * through stage 2. We could keep stuff like stack and heap in high
-	 * tables memory completely, but that's a wonderful clean up task for
-	 * another day.
-	 */
-	cld
-	movl	$CONFIG_RAMBASE, %esi
-	movl	CBMEM_RESUME_BACKUP, %edi
-	movl	$HIGH_MEMORY_SAVE >> 2, %ecx
-	rep	movsl
-
-__acpi_resume_backup_done:
-#endif
-
-	post_code(0x3d)
-
 __main:
 	post_code(POST_PREPARE_RAMSTAGE)
 	cld			/* Clear direction flag. */
-
-	/* Setup stack as indicated by return value from romstage_main(). */
-	movl	%ebx, %esp
-	movl	%esp, %ebp
-	call	copy_and_run
+	call	romstage_after_car
 
 .Lhlt:
 	post_code(POST_DEAD_CODE)

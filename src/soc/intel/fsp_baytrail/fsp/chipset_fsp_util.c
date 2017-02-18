@@ -116,9 +116,10 @@ static void ConfigureDefaultUpdData(FSP_INFO_HEADER *FspInfo, UPD_DATA_REGION *U
 	UPD_DEFAULT_CHECK(AutoSelfRefreshEnable);
 	UPD_DEFAULT_CHECK(APTaskTimeoutCnt);
 
-	if ((config->PcdeMMCBootMode != EMMC_USE_DEFAULT) ||
-			(config->PcdeMMCBootMode != EMMC_FOLLOWS_DEVICETREE))
-		UpdData->PcdeMMCBootMode = config->PcdeMMCBootMode;
+	if (config->PcdeMMCBootMode == EMMC_FOLLOWS_DEVICETREE)
+		UpdData->PcdeMMCBootMode = 0;
+	else if ((config->PcdeMMCBootMode != EMMC_USE_DEFAULT))
+		UpdData->PcdeMMCBootMode = config->PcdeMMCBootMode - EMMC_DISABLED;
 
 	UpdData->PcdMrcInitTsegSize = smm_region_size() >> 20;
 
@@ -209,10 +210,17 @@ static void ConfigureDefaultUpdData(FSP_INFO_HEADER *FspInfo, UPD_DATA_REGION *U
 	if (UpdData->PcdEnableLpe < sizeof(acpi_pci_mode_strings) / sizeof (char *))
 		printk(FSP_INFO_LEVEL, "Lpe:\t\t\t%s\n",
 			acpi_pci_mode_strings[UpdData->PcdEnableLpe]);
+	else
+		printk(FSP_INFO_LEVEL, "Lpe:\t\t\tUnknown (0x%02x)\n",
+			UpdData->PcdEnableLpe);
 
 	if (UpdData->PcdeMMCBootMode < sizeof(emmc_mode_strings) / sizeof (char *))
 		printk(FSP_INFO_LEVEL, "eMMC Mode:\t\t%s\n",
 			emmc_mode_strings[UpdData->PcdeMMCBootMode]);
+	else
+		printk(FSP_INFO_LEVEL, "eMMC Mode:\t\tUnknown (0x%02x)\n",
+			UpdData->PcdeMMCBootMode);
+
 
 	if (UpdData->PcdEnableSata)
 		printk(FSP_INFO_LEVEL, "SATA Mode:\t\t%s\n",

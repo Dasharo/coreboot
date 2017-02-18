@@ -119,7 +119,7 @@ typedef struct {
 	unsigned int	page_size; /* of whole DIMM in Bytes (4096 or 8192) */
 	unsigned int	banks;
 	unsigned int	ranks;
-	unsigned int	rank_capacity_mb; /* per rank in Mega Bytes */
+	unsigned int	rank_capacity_mb; /* per rank in Megabytes */
 } dimminfo_t;
 
 /* The setup is one DIMM per channel, so there's no need to find a
@@ -221,10 +221,6 @@ enum {
 #define D0F0_GTT_BASE 0xa8
 #define D0F0_TOLUD 0xb0
 #define D0F0_SKPD 0xdc /* Scratchpad Data */
-
-#define SKPAD_ACPI_S3_MAGIC	0xcafed00d
-#define SKPAD_NORMAL_BOOT_MAGIC	0xcafebabe
-
 
 #define D0F0_CAPID0 0xe0
 

@@ -9,9 +9,9 @@ subdirs-y += ../../../cpu/x86/tsc
 subdirs-y += ../../../cpu/x86/cache
 
 bootblock-y += bootblock/bootblock.c
-bootblock-y += bootblock/cache_as_ram.S
 bootblock-y += bootblock/bootblock.c
 bootblock-y += car.c
+bootblock-y += flash_ctrlr.c
 bootblock-y += gpio.c
 bootblock-y += heci.c
 bootblock-y += itss.c
@@ -22,8 +22,15 @@ bootblock-y += spi.c
 bootblock-y += tsc_freq.c
 bootblock-$(CONFIG_SOC_UART_DEBUG) += uart_early.c
 
+ifeq ($(CONFIG_FSP_CAR),y)
+bootblock-y += bootblock/cache_as_ram_fsp.S
+else
+bootblock-y += bootblock/cache_as_ram.S
+endif
+
 romstage-y += car.c
 romstage-$(CONFIG_PLATFORM_USES_FSP2_0) += romstage.c
+romstage-y += flash_ctrlr.c
 romstage-y += gpio.c
 romstage-y += heci.c
 romstage-y += i2c_early.c
@@ -38,6 +45,7 @@ romstage-y += pmutil.c
 romstage-y += reset.c
 romstage-y += spi.c
 
+smm-y += flash_ctrlr.c
 smm-y += mmap_boot.c
 smm-y += pmutil.c
 smm-y += gpio.c
@@ -49,7 +57,9 @@ smm-y += uart_early.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
 ramstage-y += cpu.c
 ramstage-y += chip.c
+ramstage-y += cse.c
 ramstage-y += elog.c
+ramstage-y += flash_ctrlr.c
 ramstage-y += dsp.c
 ramstage-y += gpio.c
 ramstage-y += graphics.c
@@ -75,14 +85,21 @@ ramstage-y += sram.c
 ramstage-y += spi.c
 ramstage-y += xhci.c
 
-postcar-y += exit_car.S
+postcar-y += flash_ctrlr.c
 postcar-y += memmap.c
 postcar-y += mmap_boot.c
 postcar-y += spi.c
 postcar-$(CONFIG_SOC_UART_DEBUG) += uart_early.c
 postcar-y += tsc_freq.c
 
+ifeq ($(CONFIG_FSP_CAR),y)
+postcar-y += exit_car_fsp.S
+else
+postcar-y += exit_car.S
+endif
+
 verstage-y += car.c
+verstage-y += flash_ctrlr.c
 verstage-y += i2c_early.c
 verstage-y += heci.c
 verstage-y += memmap.c
@@ -124,13 +141,23 @@ endif
 
 # DSP firmware settings files.
 NHLT_BLOB_PATH = 3rdparty/blobs/soc/intel/apollolake/nhlt-blobs
+DMIC_1CH_48KHZ_16B = dmic-1ch-48khz-16b.bin
 DMIC_2CH_48KHZ_16B = dmic-2ch-48khz-16b.bin
+DMIC_4CH_48KHZ_16B = dmic-4ch-48khz-16b.bin
 MAX98357_RENDER = max98357-render-2ch-48khz-24b.bin
 DA7219_RENDER_CAPTURE = dialog-2ch-48khz-24b.bin
+
+cbfs-files-$(CONFIG_NHLT_DMIC_1CH_16B) += $(DMIC_1CH_48KHZ_16B)
+$(DMIC_1CH_48KHZ_16B)-file := $(NHLT_BLOB_PATH)/$(DMIC_1CH_48KHZ_16B)
+$(DMIC_1CH_48KHZ_16B)-type := raw
 
 cbfs-files-$(CONFIG_NHLT_DMIC_2CH_16B) += $(DMIC_2CH_48KHZ_16B)
 $(DMIC_2CH_48KHZ_16B)-file := $(NHLT_BLOB_PATH)/$(DMIC_2CH_48KHZ_16B)
 $(DMIC_2CH_48KHZ_16B)-type := raw
+
+cbfs-files-$(CONFIG_NHLT_DMIC_4CH_16B) += $(DMIC_4CH_48KHZ_16B)
+$(DMIC_4CH_48KHZ_16B)-file := $(NHLT_BLOB_PATH)/$(DMIC_4CH_48KHZ_16B)
+$(DMIC_4CH_48KHZ_16B)-type := raw
 
 cbfs-files-$(CONFIG_NHLT_MAX98357) += $(MAX98357_RENDER)
 $(MAX98357_RENDER)-file := $(NHLT_BLOB_PATH)/$(MAX98357_RENDER)

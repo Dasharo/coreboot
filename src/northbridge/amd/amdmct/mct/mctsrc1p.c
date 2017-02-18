@@ -13,6 +13,7 @@
  * GNU General Public License for more details.
  */
 
+#include "mct_d.h"
 
 u8 mct_checkNumberOfDqsRcvEn_1Pass(u8 pass)
 {
@@ -48,7 +49,7 @@ static u8 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel,
 	u8 val;
 
 	MaxValue = 0;
-	p = pDCTstat->CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+	p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
 
 	for (i = 0; i < 8; i++) {
 		/* get left value from DCTStatStruc.CHA_D0_B0_RCVRDLY*/
@@ -61,7 +62,6 @@ static u8 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel,
 
 		p[i] = val;
 	}
-//	pDCTstat->DimmTrainFail &= ~(1<<Receiver+Channel);
 
 	return MaxValue;
 }

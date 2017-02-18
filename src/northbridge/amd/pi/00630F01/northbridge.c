@@ -309,15 +309,6 @@ static void amdfam15_link_read_bases(device_t dev, u32 nodeid, u32 link)
 
 }
 
-static void enable_mmconf_resource(device_t dev)
-{
-	struct resource *resource = new_resource(dev, 0xc0010058);
-	resource->base = CONFIG_MMCONF_BASE_ADDRESS;
-	resource->size = CONFIG_MMCONF_BUS_NUMBER * 4096 * 256;
-	resource->flags = IORESOURCE_MEM | IORESOURCE_RESERVE |
-		IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_ASSIGNED;
-}
-
 static void read_resources(device_t dev)
 {
 	u32 nodeid;
@@ -335,8 +326,7 @@ static void read_resources(device_t dev)
 	 * It is not honored by the coreboot resource allocator if it is in
 	 * the CPU_CLUSTER.
 	 */
-	if (IS_ENABLED(CONFIG_MMCONF_SUPPORT))
-		enable_mmconf_resource(dev);
+	mmconf_resource(dev, 0xc0010058);
 }
 
 static void set_resource(device_t dev, struct resource *resource, u32 nodeid)
@@ -440,12 +430,6 @@ static void set_resources(device_t dev)
 		if (bus->children) {
 			assign_resources(bus);
 		}
-	}
-
-	/* Print the MMCONF region if it has been reserved. */
-	res = find_resource(dev, 0xc0010058);
-	if (res) {
-		report_resource_stored(dev, res, " <mmconfig>");
 	}
 }
 

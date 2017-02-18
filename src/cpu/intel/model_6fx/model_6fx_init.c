@@ -26,38 +26,7 @@
 #include <cpu/intel/hyperthreading.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/name.h>
-
-#define IA32_FEATURE_CONTROL 0x003a
-
-#define CPUID_VMX (1 << 5)
-#define CPUID_SMX (1 << 6)
-static void enable_vmx(void)
-{
-	struct cpuid_result regs;
-	msr_t msr;
-
-	msr = rdmsr(IA32_FEATURE_CONTROL);
-
-	if (msr.lo & (1 << 0)) {
-		/* VMX locked. If we set it again we get an illegal
-		 * instruction
-		 */
-		return;
-	}
-
-	regs = cpuid(1);
-	if (regs.ecx & CPUID_VMX) {
-		msr.lo |= (1 << 2);
-		if (regs.ecx & CPUID_SMX)
-			msr.lo |= (1 << 1);
-	}
-
-	wrmsr(IA32_FEATURE_CONTROL, msr);
-
-	msr.lo |= (1 << 0); /* Set lock bit */
-
-	wrmsr(IA32_FEATURE_CONTROL, msr);
-}
+#include <cpu/intel/common/common.h>
 
 #define HIGHEST_CLEVEL		3
 static void configure_c_states(void)
@@ -180,8 +149,8 @@ static void model_6fx_init(struct device *cpu)
 	/* Enable the local CPU APICs */
 	setup_lapic();
 
-	/* Enable virtualization */
-	enable_vmx();
+	/* Set virtualization based on Kconfig option */
+	set_vmx();
 
 	/* Configure C States */
 	configure_c_states();
@@ -208,6 +177,7 @@ static struct cpu_device_id cpu_table[] = {
 	{ X86_VENDOR_INTEL, 0x06fa }, /* Intel Core 2 Solo/Core Duo */
 	{ X86_VENDOR_INTEL, 0x06fb }, /* Intel Core 2 Solo/Core Duo */
 	{ X86_VENDOR_INTEL, 0x06fd }, /* Intel Core 2 Solo/Core Duo */
+	{ X86_VENDOR_INTEL, 0x10661 }, /* Intel Core 2 Celeron Conroe-L */
 	{ X86_VENDOR_INTEL, 0x10676 }, /* Core2 Duo E8200 */
 	{ 0, 0 },
 };

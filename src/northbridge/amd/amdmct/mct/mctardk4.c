@@ -13,6 +13,8 @@
  * GNU General Public License for more details.
  */
 
+#include <inttypes.h>
+#include "mct_d.h"
 
 static void Get_ChannelPS_Cfg0_D(u8 MAAdimms, u8 Speed, u8 MAAload,
 				u8 DATAAload, u32 *AddrTmgCTL, u32 *ODC_CTL,
@@ -29,9 +31,6 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *pMCTstat,
 				pDCTstat->MAload[dct], pDCTstat->DATAload[dct],
 				&(pDCTstat->CH_ADDR_TMG[dct]), &(pDCTstat->CH_ODC_CTL[dct]),
 				&pDCTstat->_2Tmode);
-
-//	print_tx("1 CH_ODC_CTL: ", pDCTstat->CH_ODC_CTL[dct]);
-//	print_tx("1 CH_ADDR_TMG: ", pDCTstat->CH_ADDR_TMG[dct]);
 
 	if (pDCTstat->MAdimms[dct] == 1)
 		pDCTstat->CH_ODC_CTL[dct] |= 0x20000000;	/* 75ohms */

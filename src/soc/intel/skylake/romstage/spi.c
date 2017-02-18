@@ -16,6 +16,7 @@
 
 #include <soc/flash_controller.h>
 #include <soc/romstage.h>
+#include <spi-generic.h>
 
 /*
  * Minimal set of commands to read WPSR from SPI.
@@ -26,7 +27,7 @@ int early_spi_read_wpsr(u8 *sr)
 	uint8_t rdsr;
 	int ret = 0;
 
-	spi_init();
+	spi_flash_init();
 
 	/* sending NULL for spiflash struct parameter since we are not
 	 * calling HWSEQ read_status() call via Probe.

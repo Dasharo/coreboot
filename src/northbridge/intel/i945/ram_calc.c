@@ -17,9 +17,13 @@
 #define __SIMPLE_DEVICE__
 
 #include <arch/io.h>
+#include <arch/cpu.h>
 #include <cbmem.h>
 #include "i945.h"
 #include <console/console.h>
+#include <cpu/intel/romstage.h>
+#include <cpu/x86/mtrr.h>
+#include <program_loading.h>
 
 static uintptr_t smm_region_start(void)
 {
@@ -53,9 +57,14 @@ static uintptr_t smm_region_start(void)
 	return tom;
 }
 
+/* Depending of UMA and TSEG configuration, TSEG might start at any
+ * 1 MiB aligment. As this may cause very greedy MTRR setup, push
+ * CBMEM top downwards to 4 MiB boundary.
+ */
 void *cbmem_top(void)
 {
-	return (void *) smm_region_start();
+	uintptr_t top_of_ram = ALIGN_DOWN(smm_region_start(), 4*MiB);
+	return (void *) top_of_ram;
 }
 
 /** Decodes used Graphics Mode Select (GMS) to kilobytes. */
@@ -68,4 +77,38 @@ u32 decode_igd_memory_size(const u32 gms)
 		die("Bad Graphics Mode Select (GMS) setting.\n");
 
 	return ggc2uma[gms] << 10;
+}
+
+#define ROMSTAGE_RAM_STACK_SIZE 0x5000
+
+/* setup_stack_and_mtrrs() determines the stack to use after
+ * cache-as-ram is torn down as well as the MTRR settings to use. */
+void *setup_stack_and_mtrrs(void)
+{
+	struct postcar_frame pcf;
+	uintptr_t top_of_ram;
+
+	if (postcar_frame_init(&pcf, ROMSTAGE_RAM_STACK_SIZE))
+		die("Unable to initialize postcar frame.\n");
+
+	/* Cache the ROM as WP just below 4GiB. */
+	postcar_frame_add_mtrr(&pcf, -CACHE_ROM_SIZE, CACHE_ROM_SIZE,
+		MTRR_TYPE_WRPROT);
+
+	/* Cache RAM as WB from 0 -> CACHE_TMP_RAMTOP. */
+	postcar_frame_add_mtrr(&pcf, 0, CACHE_TMP_RAMTOP, MTRR_TYPE_WRBACK);
+
+	/* Cache two separate 4 MiB regions below the top of ram, this
+	 * satisfies MTRR alignment requirements. If you modify this to
+	 * cover TSEG, make sure UMA region is not set with WRBACK as it
+	 * causes hard-to-recover boot failures.
+	 */
+	top_of_ram = (uintptr_t)cbmem_top();
+	postcar_frame_add_mtrr(&pcf, top_of_ram - 4*MiB, 4*MiB, MTRR_TYPE_WRBACK);
+	postcar_frame_add_mtrr(&pcf, top_of_ram - 8*MiB, 4*MiB, MTRR_TYPE_WRBACK);
+
+	/* Save the number of MTRRs to setup. Return the stack location
+	 * pointing to the number of MTRRs.
+	 */
+	return postcar_commit_mtrrs(&pcf);
 }

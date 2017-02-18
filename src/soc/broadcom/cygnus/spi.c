@@ -76,9 +76,6 @@
 
 /* QSPI private data */
 struct qspi_priv {
-	/* Slave entry */
-	struct spi_slave slave;
-
 	/* Specified SPI parameters */
 	unsigned int max_hz;
 	unsigned int spi_mode;
@@ -94,42 +91,9 @@ struct qspi_priv {
 
 static struct qspi_priv qspi_slave;
 
-/* Macro to get the private data */
-#define to_qspi_slave(s) container_of(s, struct qspi_priv, slave)
-
-struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs)
+static struct qspi_priv *to_qspi_slave(const struct spi_slave *slave)
 {
-	struct qspi_priv *priv = &qspi_slave;
-	unsigned int spbr;
-
-	priv->slave.bus = bus;
-	priv->slave.cs = cs;
-	priv->max_hz = QSPI_MAX_HZ;
-	priv->spi_mode = QSPI_MODE;
-	priv->reg = (void *)(IPROC_QSPI_BASE);
-	priv->mspi_enabled = 0;
-	priv->bus_claimed = 0;
-
-	/* MSPI: Basic hardware initialization */
-	REG_WR(priv->reg + MSPI_SPCR1_LSB_REG, 0);
-	REG_WR(priv->reg + MSPI_SPCR1_MSB_REG, 0);
-	REG_WR(priv->reg + MSPI_NEWQP_REG, 0);
-	REG_WR(priv->reg + MSPI_ENDQP_REG, 0);
-	REG_WR(priv->reg + MSPI_SPCR2_REG, 0);
-
-	/* MSPI: SCK configuration */
-	spbr = (IPROC_QSPI_CLK - 1) / (2 * priv->max_hz) + 1;
-	REG_WR(priv->reg + MSPI_SPCR0_LSB_REG,
-	       MAX(MIN(spbr, SPBR_MAX), SPBR_MIN));
-
-	/* MSPI: Mode configuration (8 bits by default) */
-	priv->mspi_16bit = 0;
-	REG_WR(priv->reg + MSPI_SPCR0_MSB_REG,
-	       0x80 |			/* Master */
-	       (8 << 2) |		/* 8 bits per word */
-	       (priv->spi_mode & 3));	/* mode: CPOL / CPHA */
-
-	return &priv->slave;
+	return &qspi_slave;
 }
 
 static int mspi_enable(struct qspi_priv *priv)
@@ -156,7 +120,7 @@ static int mspi_enable(struct qspi_priv *priv)
 	return 0;
 }
 
-int spi_claim_bus(struct spi_slave *slave)
+static int spi_ctrlr_claim_bus(const struct spi_slave *slave)
 {
 	struct qspi_priv *priv = to_qspi_slave(slave);
 
@@ -175,7 +139,7 @@ int spi_claim_bus(struct spi_slave *slave)
 	return 0;
 }
 
-void spi_release_bus(struct spi_slave *slave)
+static void spi_ctrlr_release_bus(const struct spi_slave *slave)
 {
 	struct qspi_priv *priv = to_qspi_slave(slave);
 
@@ -189,8 +153,8 @@ void spi_release_bus(struct spi_slave *slave)
 #define RXRAM_8B(p, i)	(REG_RD((p)->reg + MSPI_RXRAM_REG + \
 				((((i) << 1) + 1) << 2)) & 0xff)
 
-int spi_xfer(struct spi_slave *slave, const void *dout, unsigned int bytesout,
-	     void *din, unsigned int bytesin)
+static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
+			   size_t bytesout, void *din, size_t bytesin)
 {
 	struct qspi_priv *priv = to_qspi_slave(slave);
 	const u8 *tx = (const u8 *)dout;
@@ -307,6 +271,50 @@ int spi_xfer(struct spi_slave *slave, const void *dout, unsigned int bytesout,
 			}
 		}
 	}
+
+	return 0;
+}
+
+static const struct spi_ctrlr spi_ctrlr = {
+	.claim_bus = spi_ctrlr_claim_bus,
+	.release_bus = spi_ctrlr_release_bus,
+	.xfer = spi_ctrlr_xfer,
+	.xfer_vector = spi_xfer_two_vectors,
+};
+
+int spi_setup_slave(unsigned int bus, unsigned int cs, struct spi_slave *slave)
+{
+	struct qspi_priv *priv = &qspi_slave;
+	unsigned int spbr;
+
+	slave->bus = bus;
+	slave->cs = cs;
+	slave->ctrlr = &spi_ctrlr;
+
+	priv->max_hz = QSPI_MAX_HZ;
+	priv->spi_mode = QSPI_MODE;
+	priv->reg = (void *)(IPROC_QSPI_BASE);
+	priv->mspi_enabled = 0;
+	priv->bus_claimed = 0;
+
+	/* MSPI: Basic hardware initialization */
+	REG_WR(priv->reg + MSPI_SPCR1_LSB_REG, 0);
+	REG_WR(priv->reg + MSPI_SPCR1_MSB_REG, 0);
+	REG_WR(priv->reg + MSPI_NEWQP_REG, 0);
+	REG_WR(priv->reg + MSPI_ENDQP_REG, 0);
+	REG_WR(priv->reg + MSPI_SPCR2_REG, 0);
+
+	/* MSPI: SCK configuration */
+	spbr = (IPROC_QSPI_CLK - 1) / (2 * priv->max_hz) + 1;
+	REG_WR(priv->reg + MSPI_SPCR0_LSB_REG,
+	       MAX(MIN(spbr, SPBR_MAX), SPBR_MIN));
+
+	/* MSPI: Mode configuration (8 bits by default) */
+	priv->mspi_16bit = 0;
+	REG_WR(priv->reg + MSPI_SPCR0_MSB_REG,
+	       0x80 |			/* Master */
+	       (8 << 2) |		/* 8 bits per word */
+	       (priv->spi_mode & 3));	/* mode: CPOL / CPHA */
 
 	return 0;
 }

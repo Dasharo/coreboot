@@ -13,7 +13,11 @@
 ## GNU General Public License for more details.
 ##
 
+ifneq ($(NOCOMPILE),1)
 GIT:=$(shell [ -e "$(top)/.git" ] && command -v git)
+else
+GIT:=
+endif
 
 #######################################################################
 # normalize Kconfig variables in a central place
@@ -38,7 +42,9 @@ endif
 #######################################################################
 # Basic component discovery
 MAINBOARDDIR=$(call strip_quotes,$(CONFIG_MAINBOARD_DIR))
+VARIANT_DIR:=$(call strip_quotes,$(CONFIG_VARIANT_DIR))
 export MAINBOARDDIR
+export VARIANT_DIR
 
 ## Final build results, which CBFSTOOL uses to create the final
 ## rom image file, are placed under $(objcbfs).
@@ -268,7 +274,7 @@ cbfs-files-processor-vsa= \
 # arg2: output
 cbfs-files-processor-defconfig= \
 	$(eval $(2): $(1) $(obj)/build.h; \
-		printf "    CREATE     $(2) (from $(1))\n"; \
+		+printf "    CREATE     $(2) (from $(1))\n"; \
 		printf "\# This image was built using coreboot " > $(2).tmp && \
 		grep "\<COREBOOT_VERSION\>" $(obj)/build.h |cut -d\" -f2 >> $(2).tmp && \
 		$(MAKE) DOTCONFIG=$(1) DEFCONFIG=$(2).tmp2 savedefconfig && \
@@ -351,7 +357,7 @@ CPPFLAGS_common += -I$(VBOOT_SOURCE)/firmware/include
 CPPFLAGS_common += -include $(src)/include/kconfig.h
 CPPFLAGS_common += -I3rdparty
 
-CFLAGS_common += -pipe -g -nostdinc
+CFLAGS_common += -pipe -g -nostdinc -std=gnu11
 CFLAGS_common += -nostdlib -Wall -Wundef -Wstrict-prototypes -Wmissing-prototypes
 CFLAGS_common += -Wwrite-strings -Wredundant-decls -Wno-trigraphs
 CFLAGS_common += -Wstrict-aliasing -Wshadow -Wdate-time
@@ -425,7 +431,7 @@ ADAFLAGS_common += -gnata
 endif
 
 additional-dirs := $(objutil)/cbfstool $(objutil)/romcc $(objutil)/ifdtool \
-		   $(objutil)/ifdfake $(objutil)/options $(obj)/amdfwtool \
+		   $(objutil)/ifdfake $(objutil)/options $(objutil)/amdfwtool \
 		   $(objutil)/cbootimage $(objutil)/bimgtool
 
 #######################################################################
@@ -480,7 +486,7 @@ $(ROMCC_BIN): $(top)/util/romcc/romcc.c
 IFDTOOL:=$(objutil)/ifdtool/ifdtool
 $(IFDTOOL):
 	@printf "    Compile IFDTOOL\n"
-	$(MAKE) -C $(top)/util/ifdtool
+	+$(MAKE) -C $(top)/util/ifdtool
 	cp -a $(top)/util/ifdtool/ifdtool $@
 
 IFDFAKE:=$(objutil)/ifdfake/ifdfake
@@ -488,8 +494,7 @@ $(IFDFAKE): $(top)/util/ifdfake/ifdfake.c
 	@printf "    HOSTCC     $(subst $(obj)/,,$(@))\n"
 	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
 
-#TODO: update amdfwtool to pass in size of rom
-AMDFWTOOL:=$(obj)/amdfwtool/amdfwtool
+AMDFWTOOL:=$(objutil)/amdfwtool/amdfwtool
 $(AMDFWTOOL): $(top)/util/amdfwtool/amdfwtool.c
 	@printf "    HOSTCC     $(subst $(obj)/,,$(@))\n"
 	$(HOSTCC) $(HOSTCFLAGS) -DCONFIG_ROM_SIZE=$(CONFIG_ROM_SIZE) -o $@ $<
@@ -590,7 +595,7 @@ gitconfig:
 include util/crossgcc/Makefile.inc
 
 .PHONY: tools
-tools: $(objutil)/kconfig/conf $(CBFSTOOL) $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(ROMCC_BIN) $(objutil)/sconfig/sconfig $(IFDTOOL) $(IFDFAKE) $(CBOOTIMAGE) $(AMDFWTOOL) $(FUTILITY)
+tools: $(objutil)/kconfig/conf $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(ROMCC_BIN) $(objutil)/sconfig/sconfig $(IFDTOOL) $(IFDFAKE) $(CBOOTIMAGE) $(AMDFWTOOL) $(FUTILITY)
 
 ###########################################################################
 # Common recipes for all stages
@@ -885,8 +890,10 @@ $(obj)/coreboot.rom: $(obj)/coreboot.pre $(objcbfs)/ramstage.elf $(CBFSTOOL) $$(
 	dd if=$(obj)/coreboot.pre of=$@.tmp bs=8192 conv=notrunc 2> /dev/null
 ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),)
 ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),0)
+ifneq ($(CONFIG_UPDATE_IMAGE),y)
 	@printf "    SeaBIOS    Wait up to $(CONFIG_SEABIOS_PS2_TIMEOUT) ms for PS/2 keyboard controller initialization\n"
 	$(CBFSTOOL) $@.tmp add-int -i $(CONFIG_SEABIOS_PS2_TIMEOUT) -n etc/ps2-keyboard-spinup
+endif
 endif
 endif
 ifeq ($(CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE),y)
@@ -1018,18 +1025,18 @@ PHONY+=check-ramstage-overlaps
 endif
 
 junit.xml:
-	echo "Building $(UTIL)"
+	echo "Building $(BLD)"
 	echo '<?xml version="1.0" encoding="utf-8"?><testsuite>' > $@.tmp
-	echo "<testcase classname='$(UTIL)' name='$(UTIL)'>" >> $@.tmp
-	-$(MAKE) -j $(CPUS) -C "util/$(UTIL)" clean distclean > $@.tmp.2 2>&1
-	$(MAKE) -j $(CPUS) -C "util/$(UTIL)" $(MAKETARGET) >> $@.tmp.2 2>&1 && type="system-out" || type="failure"; \
+	echo "<testcase classname='$(BLD)' name='$(BLD)'>" >> $@.tmp
+	-$(MAKE) -j $(CPUS) -C "$(BLD_DIR)$(BLD)" clean distclean > $@.tmp.2 2>&1
+	$(MAKE) -j $(CPUS) -C "$(BLD_DIR)$(BLD)" $(MAKETARGET) >> $@.tmp.2 2>&1 && type="system-out" || type="failure"; \
 	cat $@.tmp.2; \
 	if [ "$$type" = "failure" ]; then \
 		echo "<failure type='buildFailed'>" >> $@.tmp; \
-		echo "Building $(UTIL) Failed"; \
+		echo "Building $(BLD) Failed"; \
 	else \
 		echo "<$$type>" >> $@.tmp; \
-		echo "Building $(UTIL) Succeeded"; \
+		echo "Building $(BLD) Succeeded"; \
 	fi; \
 	echo '<![CDATA[' >> $@.tmp; \
 	cat $@.tmp.2 >> $@.tmp; \
@@ -1037,7 +1044,7 @@ junit.xml:
 	rm -f $@.tmp.2
 	echo "</testcase>" >> $@.tmp
 	echo "</testsuite>" >> $@.tmp
-	mv $@.tmp "util/$(UTIL)/$@"
+	mv $@.tmp "$(BLD_DIR)$(BLD)/$@"
 	echo
 
 TOOLLIST= \
@@ -1056,5 +1063,7 @@ what-jenkins-does:
 	util/abuild/abuild -B -J $(if $(JENKINS_NOCCACHE),,-y) -c $(CPUS) -z -p $(JENKINS_PAYLOAD) -x -X $(top)/abuild-chromeos.xml
 	util/abuild/abuild -B -J $(if $(JENKINS_NOCCACHE),,-y) -c $(CPUS) -z -p $(JENKINS_PAYLOAD)
 	(cd payloads/libpayload; unset COREBOOT_BUILD_DIR; $(MAKE) $(if $(JENKINS_NOCCACHE),,CONFIG_LP_CCACHE=y) V=$(V) Q=$(Q) junit.xml)
-	$(foreach tool, $(TOOLLIST), $(MAKE) CPUS=$(CPUS) V=$(V) Q=$(Q) UTIL="$(tool)" MFLAGS= MAKEFLAGS= MAKETARGET= junit.xml; )
-	$(MAKE) CPUS=$(CPUS) V=$(V) Q=$(Q) UTIL="romcc" MFLAGS= MAKEFLAGS= MAKETARGET=test junit.xml
+	$(foreach tool, $(TOOLLIST), $(MAKE) CPUS=$(CPUS) V=$(V) Q=$(Q) BLD_DIR=util/ BLD="$(tool)" MFLAGS= MAKEFLAGS= MAKETARGET= junit.xml; )
+	$(MAKE) CPUS=$(CPUS) V=$(V) Q=$(Q) BLD_DIR=payloads/ BLD=nvramcui MFLAGS= MAKEFLAGS= MAKETARGET=all junit.xml
+	$(MAKE) CPUS=$(CPUS) V=$(V) Q=$(Q) BLD_DIR=payloads/ BLD=coreinfo MFLAGS= MAKEFLAGS= MAKETARGET=defaultbuild junit.xml
+	$(MAKE) CPUS=$(CPUS) V=$(V) Q=$(Q) BLD_DIR=util/ BLD=romcc MFLAGS= MAKEFLAGS= MAKETARGET=test junit.xml

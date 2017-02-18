@@ -32,6 +32,7 @@ DESTDIR=
 SAVETEMPS=0
 SKIPPYTHON=1
 BOOTSTRAP=0
+THREADS=1
 
 # GCC toolchain version numbers
 GMP_VERSION=6.1.0
@@ -129,9 +130,9 @@ please_install()
 	*) solution="using your OS packaging system" ;;
 	esac
 
-	printf "${RED}ERROR:${red} Missing tool: Please install \'$1\'. (eg $solution)${NC}\n" >&2
+	printf "${RED}ERROR:${red} Missing tool: Please install '$1'. (eg $solution)${NC}\n" >&2
 	if [ -n "$2" ]; then
-		printf "${RED}ERROR:${red}               or install \'$2\'.${NC}\n" >&2
+		printf "${RED}ERROR:${red}               or install '$2'.${NC}\n" >&2
 	fi
 }
 
@@ -210,6 +211,10 @@ buildcc_major() {
 	echo "${GCC_VERSION}" | cut -d. -f1
 }
 
+buildcc_minor() {
+	echo "${GCC_VERSION}" | cut -d. -f2
+}
+
 buildcc_version() {
 	echo "${GCC_VERSION}" | cut -d. -f1-2
 }
@@ -236,9 +241,14 @@ ada_requested() {
 
 check_gnat() {
 	if hostcc_has_gnat1; then
-		if [ "$(hostcc_version)" != "$(buildcc_version)" -a "${BOOTSTRAP}" != "1" ]; then
+		if [ \( "$(hostcc_major)" -lt "$(buildcc_major)" -o \
+			\( "$(hostcc_major)" -eq "$(buildcc_major)" -a \
+			   "$(hostcc_minor)" -lt "$(buildcc_minor)" \) \) \
+			-a \
+			"${BOOTSTRAP}" != "1" ]; \
+		then
 			printf "\n${RED}ERROR:${red} Building the Ada compiler (gnat $(buildcc_version)) "
-			printf "with a different host compiler\n       version ($(hostcc_version)) "
+			printf "with an older host compiler\n       version ($(hostcc_version)) "
 			printf "requires bootstrapping (-b).${NC}\n\n"
 			HALT_FOR_TOOLS=1
 		fi
@@ -272,15 +282,6 @@ compute_sum() {
 	printf "(checksum created. ${RED}Note. Please upload sum/$1.cksum if the corresponding archive is upgraded.)${NC}"
 }
 
-download_showing_percentage() {
-	url=$1
-	printf " ..${red}  0%%"
-	wget --no-check-certificate $url 2>&1 | while read line; do
-		echo $line | grep -o "[0-9]\+%" | awk '{printf("\b\b\b\b%4s", $1)}'
-	done
-	printf "${NC}"
-}
-
 download() {
 	package=$1
 	archive="$(eval echo \$$package"_ARCHIVE")"
@@ -289,7 +290,7 @@ download() {
 	printf " * $FILE "
 
 	if test -f tarballs/$FILE && check_sum $FILE ; then
-		printf "(cached)"
+		echo "(cached)"
 	else
 		printf "(downloading from $archive)"
 		rm -f tarballs/$FILE
@@ -300,10 +301,9 @@ download() {
 	fi
 
 	if [ ! -f tarballs/$FILE ]; then
-		printf "\n${RED}Failed to download $FILE.${NC}\n"
+		printf "${RED}Failed to download $FILE.${NC}\n"
 		exit 1
 	fi
-	printf "\n"
 }
 
 unpack_and_patch() {
@@ -359,17 +359,16 @@ generic_build()
 	host_target=$2
 	builddir=$3
 	success=$4
+	version=$5
 
 	fn_exists build_$package || return
-
-	version="$(eval echo \$$package"_VERSION")"
 
 	mkdir -p "$builddir"
 
 	if [ -f "$success" ]; then
-		printf "Skipping $package as it is already built\n"
+		printf "Skipping $package v$version for $host_target as it is already built\n"
 	else
-		printf "Building $package $version ... "
+		printf "Building $package v$version for $host_target ... "
 		DIR="$PWD"
 		cd "$builddir"
 		rm -f .failed
@@ -387,18 +386,22 @@ generic_build()
 
 build_for_host()
 {
-	generic_build $1 host build-$1 "${TARGETDIR}/.$1.success"
+	package="$1"
+	version="$(eval echo \$$package"_VERSION")"
+	generic_build "$package" host "build-$package" "${DESTDIR}${TARGETDIR}/.${package}.${version}.success" "$version"
 }
 
 build_for_target()
 {
-	generic_build $1 target build-${TARGETARCH}-$1 "${TARGETDIR}/.${TARGETARCH}-$1.success"
+	package="$1"
+	version="$(eval echo \$$package"_VERSION")"
+	generic_build "$package" target "build-${TARGETARCH}-$package" "${DESTDIR}${TARGETDIR}/.${TARGETARCH}-${package}.${version}.success" "$version"
 }
 
 build()
 {
 	if package_uses_targetarch $1; then
-		if [ $BOOTSTRAP -eq 1 -a ! -f "${TARGETDIR}/.GCC.success" ]; then
+		if [ $BOOTSTRAP -eq 1 -a ! -f "${DESTDIR}${TARGETDIR}/.GCC.success" ]; then
 			build_for_host GCC
 		fi
 		build_for_target $1
@@ -502,6 +505,13 @@ set_hostcflags_from_gmp() {
 }
 
 build_GMP() {
+	# Check if GCC enables `-pie` by default (possible since GCC 6).
+	# We need PIC in all static libraries then.
+	if $CC -dumpspecs 2>/dev/null | grep -q '[{;][[:space:]]*:-pie\>'
+	then
+		OPTIONS="$OPTIONS --with-pic"
+	fi
+
 	CC="$CC" ../${GMP_DIR}/configure --disable-shared --enable-fat \
 		--prefix=$TARGETDIR $OPTIONS \
 		|| touch .failed
@@ -552,14 +562,17 @@ build_LIBELF() {
 }
 
 build_BINUTILS() {
-	if [ $TARGETARCH == "x86_64-elf" ]; then
+	if [ $TARGETARCH = "x86_64-elf" ]; then
 		ADDITIONALTARGET=",i386-elf"
 	fi
 	CC="$CC" ../binutils-${BINUTILS_VERSION}/configure --prefix=$TARGETDIR \
 		--target=${TARGETARCH} --enable-targets=${TARGETARCH}${ADDITIONALTARGET} \
 		--disable-werror --disable-nls --enable-lto --enable-gold \
 		--enable-interwork --enable-multilib \
-		--enable-plugins --enable-multilibs CFLAGS="$HOSTCFLAGS" || touch .failed
+		--enable-plugins --enable-multilibs
+		CFLAGS="$HOSTCFLAGS" \
+		CXXFLAGS="$HOSTCFLAGS" \
+		|| touch .failed
 	$MAKE $JOBS || touch .failed
 	$MAKE install DESTDIR=$DESTDIR || touch .failed
 }
@@ -771,7 +784,7 @@ while true ; do
 		-p|--platform)	shift; TARGETARCH="$1"; shift;;
 		-l|--languages)	shift; LANGUAGES="$1"; shift;;
 		-D|--destdir)	shift; DESTDIR="$1"; shift;;
-		-j|--jobs)	shift; JOBS="-j $1"; shift;;
+		-j|--jobs)	shift; THREADS="$1"; JOBS="-j $1"; shift;;
 		-P|--package)   shift; PACKAGE="$1"; shift;;
 		-S|--scripting) shift; SKIPPYTHON=0;;
 		-y|--ccache)	shift; USECCACHE=1;;
@@ -797,6 +810,8 @@ fi
 
 #print toolchain builder version string as the header
 printversion
+
+printf "Building toolchain using %d thread(s).\n\n" "$THREADS"
 
 case "$TARGETARCH" in
 	x86_64-elf)		;;
@@ -866,8 +881,24 @@ searchtool flex flex > /dev/null
 searchtool g++ "Free Software Foundation" nofail > /dev/null || \
 searchtool clang "clang version" nofail > /dev/null || \
 searchtool clang "LLVM" "" "g++" > /dev/null
-searchtool wget > /dev/null
 searchtool bzip2 "bzip2," > /dev/null
+
+if searchtool wget "GNU" nofail > /dev/null; then
+	download_showing_percentage() {
+		url=$1
+		printf " ..${red}  0%%"
+		wget $url 2>&1 | while read line; do
+			echo $line | grep -o "[0-9]\+%" | awk '{printf("\b\b\b\b%4s", $1)}'
+		done
+		echo "${NC}"
+	}
+elif searchtool curl "^curl " > /dev/null; then
+	download_showing_percentage() {
+		url=$1
+		echo
+		curl -#OL $url
+	}
+fi
 
 check_for_library "-lz" "zlib (zlib1g-dev or zlib-devel)"
 

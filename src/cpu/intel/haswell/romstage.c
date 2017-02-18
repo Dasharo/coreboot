@@ -18,6 +18,7 @@
 #include <cbfs.h>
 #include <console/console.h>
 #include <arch/cpu.h>
+#include <cpu/cpu.h>
 #include <cpu/x86/bist.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
@@ -69,15 +70,13 @@ static inline u32 *stack_push(u32 *stack, u32 value)
  * cache-as-ram is torn down as well as the MTRR settings to use. */
 static void *setup_romstage_stack_after_car(void)
 {
-	uintptr_t top_of_stack;
 	int num_mtrrs;
 	u32 *slot;
 	u32 mtrr_mask_upper;
 	u32 top_of_ram;
 
 	/* Top of stack needs to be aligned to a 4-byte boundary. */
-	top_of_stack = romstage_ram_stack_top() & ~3;
-	slot = (void *)top_of_stack;
+	slot = (void *)romstage_ram_stack_top();
 	num_mtrrs = 0;
 
 	/* The upper bits of the MTRR mask need to set according to the number
@@ -174,7 +173,6 @@ void romstage_common(const struct romstage_params *params)
 {
 	int boot_mode;
 	int wake_from_s3;
-	struct romstage_handoff *handoff;
 
 	timestamp_init(get_initial_timestamp());
 	timestamp_add_now(TS_START_ROMSTAGE);
@@ -247,11 +245,7 @@ void romstage_common(const struct romstage_params *params)
 	#endif
 	}
 
-	handoff = romstage_handoff_find_or_add();
-	if (handoff != NULL)
-		handoff->s3_resume = wake_from_s3;
-	else
-		printk(BIOS_DEBUG, "Romstage handoff structure not added!\n");
+	romstage_handoff_init(wake_from_s3);
 
 	post_code(0x3f);
 	if (IS_ENABLED(CONFIG_LPC_TPM)) {
@@ -264,13 +258,3 @@ void asmlinkage romstage_after_car(void)
 	/* Load the ramstage. */
 	run_ramstage();
 }
-
-
-#if IS_ENABLED(CONFIG_CACHE_RELOCATED_RAMSTAGE_OUTSIDE_CBMEM)
-void ramstage_cache_invalid(void)
-{
-#if CONFIG_RESET_ON_INVALID_RAMSTAGE_CACHE
-	reset_system();
-#endif
-}
-#endif

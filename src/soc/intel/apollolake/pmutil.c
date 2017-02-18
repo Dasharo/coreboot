@@ -21,14 +21,17 @@
 #include <arch/io.h>
 #include <console/console.h>
 #include <cbmem.h>
+#include <cpu/x86/msr.h>
 #include <rules.h>
 #include <device/pci_def.h>
 #include <halt.h>
 #include <soc/iomap.h>
+#include <soc/cpu.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <device/device.h>
 #include <device/pci.h>
+#include <timer.h>
 #include <vboot/vboot_common.h>
 #include "chip.h"
 
@@ -306,6 +309,8 @@ int acpi_get_gpe(int gpe)
 {
 	int bank;
 	uint32_t mask, sts;
+	struct stopwatch sw;
+	int rc = 0;
 
 	if (gpe < 0 || gpe > GPE0_DW3_31)
 		return -1;
@@ -313,12 +318,20 @@ int acpi_get_gpe(int gpe)
 	bank = gpe / 32;
 	mask = 1 << (gpe % 32);
 
-	sts = inl(ACPI_PMIO_BASE + GPE0_STS(bank));
-	if (sts & mask) {
-		outl(mask, ACPI_PMIO_BASE + GPE0_STS(bank));
-		return 1;
-	}
-	return 0;
+	/* Wait up to 1ms for GPE status to clear */
+	stopwatch_init_msecs_expire(&sw, 1);
+	do {
+		if (stopwatch_expired(&sw))
+			return rc;
+
+		sts = inl(ACPI_PMIO_BASE + GPE0_STS(bank));
+		if (sts & mask) {
+			outl(mask, ACPI_PMIO_BASE + GPE0_STS(bank));
+			rc = 1;
+		}
+	} while (sts & mask);
+
+	return rc;
 }
 
 void clear_pmc_status(void)
@@ -539,4 +552,20 @@ void pmc_gpe_init(void)
 
 	/* Set the routes in the GPIO communities as well. */
 	gpio_route_gpe(dw1, dw2, dw3);
+}
+
+void enable_pm_timer_emulation(void)
+{
+	/* ACPI PM timer emulation */
+	msr_t msr;
+	/*
+	 * The derived frequency is calculated as follows:
+	 *    (CTC_FREQ * msr[63:32]) >> 32 = target frequency.
+	 * Back solve the multiplier so the 3.579545MHz ACPI timer
+	 * frequency is used.
+	 */
+	msr.hi = (3579545ULL << 32) / CTC_FREQ;
+	/* Set PM1 timer IO port and enable*/
+	msr.lo = EMULATE_PM_TMR_EN | (ACPI_PMIO_BASE + R_ACPI_PM1_TMR);
+	wrmsr(MSR_EMULATE_PM_TMR, msr);
 }

@@ -26,6 +26,10 @@ config NORTHBRIDGE_INTEL_FSP_IVYBRIDGE
 
 if NORTHBRIDGE_INTEL_FSP_IVYBRIDGE || NORTHBRIDGE_INTEL_FSP_SANDYBRIDGE
 
+config BOOTBLOCK_NORTHBRIDGE_INIT
+	string
+	default "northbridge/intel/fsp_sandybridge/bootblock.c"
+
 config VGA_BIOS_ID
 	string
 	default "8086,0106"

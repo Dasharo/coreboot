@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015-2016 Intel Corporation
+ * Copyright 2015 Google Inc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -11,121 +11,30 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
  */
 
-#include <rules.h>
-#include <cpu/x86/mtrr.h>
-#include <cpu/x86/cache.h>
-#include <cpu/x86/post_code.h>
+/* I/O delay between post codes on failure */
+#define LHLT_DELAY	0x50000
 
-.section ".text"
+.text
 .global car_stage_entry
-
 car_stage_entry:
+	call	romstage_c_entry
+	#include "src/drivers/intel/fsp1_1/after_raminit.S"
 
-	/* Enter the C code */
-	call	car_stage_c_entry
 
-/*
- * Car teardown
- */
-	/*
-	 * eax:  New stack address
-	 */
+	movb	$0x69, %ah
+	jmp	.Lhlt
 
-	/* Switch to the stack in RAM */
-	movl	%eax, %esp
-
-	#include <soc/car_teardown.S>
-
-	/* Display the MTRRs */
-	call	soc_display_mtrrs
-
-	/*
-	 * The stack contents are initialized in src/soc/intel/common/stack.c
-	 * to be the following:
-	 *
-	 *		*
-	 *		*
-	 *		*
-	 *  +36: MTRR mask 1 63:32
-	 *  +32: MTRR mask 1 31:0
-	 *  +28: MTRR base 1 63:32
-	 *  +24: MTRR base 1 31:0
-	 *  +20: MTRR mask 0 63:32
-	 *  +16: MTRR mask 0 31:0
-	 *  +12: MTRR base 0 63:32
-	 *   +8: MTRR base 0 31:0
-	 *   +4: Number of MTRRs to setup (described above)
-	 *   +0: Number of variable MTRRs to clear
-	 */
-
-	/* Clear all of the variable MTRRs. */
-	popl	%ebx
-	movl	$MTRR_PHYS_BASE(0), %ecx
-	clr	%eax
-	clr	%edx
-
-1:
-	testl	%ebx, %ebx
-	jz	1f
-	wrmsr			/* Write MTRR base. */
-	inc	%ecx
-	wrmsr			/* Write MTRR mask. */
-	inc	%ecx
-	dec	%ebx
-	jmp	1b
-
-1:
-	/* Get number of MTRRs. */
-	popl	%ebx
-	movl	$MTRR_PHYS_BASE(0), %ecx
-2:
-	testl	%ebx, %ebx
-	jz	2f
-
-	/* Low 32 bits of MTRR base. */
-	popl	%eax
-	/* Upper 32 bits of MTRR base. */
-	popl	%edx
-	/* Write MTRR base. */
-	wrmsr
-	inc	%ecx
-	/* Low 32 bits of MTRR mask. */
-	popl	%eax
-	/* Upper 32 bits of MTRR mask. */
-	popl	%edx
-	/* Write MTRR mask. */
-	wrmsr
-	inc	%ecx
-
-	dec	%ebx
-	jmp	2b
-2:
-
-	post_code(0x39)
-
-	/* And enable cache again after setting MTRRs. */
-	movl	%cr0, %eax
-	andl	$~(CR0_CacheDisable | CR0_NoWriteThrough), %eax
-	movl	%eax, %cr0
-
-	post_code(0x3a)
-
-	/* Enable MTRR. */
-	movl	$MTRR_DEF_TYPE_MSR, %ecx
-	rdmsr
-	orl	$MTRR_DEF_TYPE_EN, %eax
-	wrmsr
-
-	post_code(0x3b)
-
-	/* Invalidate the cache again. */
-	invd
-
-__main:
-	post_code(POST_PREPARE_RAMSTAGE)
-	cld			/* Clear direction flag. */
-
-	call	copy_and_run
+.Lhlt:
+	xchg	%al, %ah
+#if IS_ENABLED(CONFIG_POST_IO)
+	outb	%al, $CONFIG_POST_IO_PORT
+#else
+	post_code(POST_DEAD_CODE)
+#endif
+	movl	$LHLT_DELAY, %ecx
+.Lhlt_Delay:
+	outb	%al, $0xED
+	loop	.Lhlt_Delay
+	jmp	.Lhlt

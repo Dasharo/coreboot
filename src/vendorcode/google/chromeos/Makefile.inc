@@ -24,7 +24,9 @@ ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
 ramstage-$(CONFIG_CHROMEOS_RAMOOPS) += ramoops.c
 romstage-y += vpd_decode.c
 ramstage-y += vpd_decode.c cros_vpd.c vpd_mac.c vpd_serialno.c vpd_calibration.c
+ramstage-$(CONFIG_CHROMEOS_DISABLE_PLATFORM_HIERARCHY_ON_RESUME) += tpm2.c
 ramstage-$(CONFIG_HAVE_REGULATORY_DOMAIN) += wrdd.c
+ramstage-$(CONFIG_USE_SAR) += sar.c
 ifeq ($(CONFIG_ARCH_MIPS),)
 bootblock-y += watchdog.c
 ramstage-y += watchdog.c
@@ -41,6 +43,8 @@ CONFIG_GBB_BMPFV_FILE := $(call strip_quotes,$(CONFIG_GBB_BMPFV_FILE))
 CONFIG_VBOOT_KEYBLOCK := $(call strip_quotes,$(CONFIG_VBOOT_KEYBLOCK))
 CONFIG_VBOOT_FIRMWARE_PRIVKEY := $(call strip_quotes,$(CONFIG_VBOOT_FIRMWARE_PRIVKEY))
 CONFIG_VBOOT_KERNEL_KEY := $(call strip_quotes,$(CONFIG_VBOOT_KERNEL_KEY))
+CONFIG_CHROMEOS_FWID_MODEL := $(call strip_quotes,$(CONFIG_CHROMEOS_FWID_MODEL))
+CONFIG_CHROMEOS_FWID_VERSION := $(call strip_quotes,$(CONFIG_CHROMEOS_FWID_VERSION))
 
 # bool-to-mask(var, value)
 # return "value" if var is "y", 0 otherwise
@@ -95,9 +99,21 @@ ifneq ($(CONFIG_GBB_BMPFV_FILE),)
 endif
 	mv $@.tmp $@
 
-build_complete:: $(obj)/gbb.region
+$(obj)/fwid.region:
+	printf "$(CONFIG_CHROMEOS_FWID_MODEL)$(CONFIG_CHROMEOS_FWID_VERSION)\0" > $@
+
+build_complete:: $(obj)/gbb.region $(obj)/fwid.region
 	@printf "    WRITE GBB\n"
-	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r GBB -f $<
+	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r GBB -i 0 -f $(obj)/gbb.region
+	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r RO_FRID -i 0 -f $(obj)/fwid.region
+	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r RW_FWID_A -i 0 -f $(obj)/fwid.region
+	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r RW_FWID_B -i 0 -f $(obj)/fwid.region
+
+ifneq ($(shell grep "SHARED_DATA" "$(CONFIG_FMDFILE)"),)
+build_complete::
+	printf "\0" > $(obj)/shared_data.region
+	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r SHARED_DATA -i 0 -f $(obj)/shared_data.region
+endif
 
 # Extract FW_MAIN_? region and minimize it if the last file is empty, so it
 # doesn't contain this empty file (that can have a significant size),
@@ -129,19 +145,6 @@ $(obj)/VBLOCK_%.bin: $(obj)/FW_MAIN_%.bin $(FUTILITY)
 		--kernelkey "$(CONFIG_VBOOT_KERNEL_KEY)" \
 		--flags $(CONFIG_VBOOT_KEYBLOCK_PREAMBLE_FLAGS)
 
-$(obj)/RO_FRID.bin: $(obj)/coreboot.rom
-	$(CBFSTOOL) $(obj)/coreboot.rom read -r $(basename $(notdir $@)) -f $@
-	printf $(KERNELVERSION) > $@.tmp
-	objcopy -I binary -O binary --pad-to=$$( stat --printf="%s" $@ ) --gap-fill=0 $@.tmp $@
-
-$(obj)/RW_FWID_%.bin: $(obj)/coreboot.rom
-	$(CBFSTOOL) $(obj)/coreboot.rom read -r $(basename $(notdir $@)) -f $@
-	printf $(KERNELVERSION) > $@.tmp
-	objcopy -I binary -O binary --pad-to=$$( stat --printf="%s" $@ ) --gap-fill=0 $@.tmp $@
-
-files_added:: $(obj)/VBLOCK_A.bin $(obj)/VBLOCK_B.bin $(obj)/RO_FRID.bin $(obj)/RW_FWID_A.bin $(obj)/RW_FWID_B.bin
+files_added:: $(obj)/VBLOCK_A.bin $(obj)/VBLOCK_B.bin
 	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r VBLOCK_A -f $(obj)/VBLOCK_A.bin
 	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r VBLOCK_B -f $(obj)/VBLOCK_B.bin
-	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r RO_FRID -f $(obj)/RO_FRID.bin
-	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r RW_FWID_A -f $(obj)/RW_FWID_A.bin
-	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r RW_FWID_B -f $(obj)/RW_FWID_B.bin

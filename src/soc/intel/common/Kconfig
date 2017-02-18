@@ -9,7 +9,7 @@ config CACHE_MRC_SETTINGS
 	bool "Save cached MRC settings"
 	default n
 
-config SOC_INTEL_COMMON_SPI_PROTECT
+config SOC_INTEL_COMMON_SPI_FLASH_PROTECT
 	bool
 	default n
 
@@ -25,6 +25,18 @@ config MRC_SETTINGS_CACHE_SIZE
 
 config MRC_SETTINGS_PROTECT
 	bool "Enable protection on MRC settings"
+	default n
+
+config HAS_RECOVERY_MRC_CACHE
+	bool
+	default n
+
+config MRC_CLEAR_NORMAL_CACHE_ON_RECOVERY_RETRAIN
+	bool
+	default n
+
+config MRC_SETTINGS_VARIABLE_DATA
+	bool
 	default n
 
 endif # CACHE_MRC_SETTINGS
@@ -75,10 +87,11 @@ config SOC_INTEL_COMMON_LPSS_I2C_DEBUG
 	  when debugging I2C drivers.
 
 config MMA
-	bool "enable MMA (Memory Margin Analysis) support"
+	bool "Enable MMA (Memory Margin Analysis) support for Intel Core"
 	default n
+	depends on PLATFORM_USES_FSP2_0 || PLATFORM_USES_FSP1_1
 	help
-	  Set this option to y to enable MMA (Memory Margin Analysis) support
+	 Set this option to y to enable MMA (Memory Margin Analysis) support
 
 config MMA_BLOBS_PATH
 	string "Path to MMA blobs"

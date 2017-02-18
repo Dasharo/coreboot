@@ -37,33 +37,11 @@
 #include <cpu/amd/mtrr.h>
 #include <cpu/amd/agesa/s3_resume.h>
 
-#define MSR_MTRR_VARIABLE_BASE6   0x020C
-#define MSR_MTRR_VARIABLE_MASK6   0x020D
-#define MSR_PSTATE_CONTROL        0xC0010062
-
-
 void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 {
 	u32 val;
-	msr_t msr;
 
-	/*
-	 * All cores: allow caching of flash chip code and data
-	 * (there are no cache-as-ram reliability concerns with family 14h)
-	 */
-	msr.lo = ((0x0100000000ull - CACHE_ROM_SIZE) | 5) & 0xFFFFFFFF;
-	msr.hi = ((0x0100000000ull - CACHE_ROM_SIZE) | 5) >> 32;
-	wrmsr (MSR_MTRR_VARIABLE_BASE6, msr);
-
-	msr.lo = ((0x1000000000ull - CACHE_ROM_SIZE) | 0x800) & 0xFFFFFFFF;
-	msr.hi = ((0x1000000000ull - CACHE_ROM_SIZE) | 0x800) >> 32;
-	wrmsr (MSR_MTRR_VARIABLE_MASK6, msr);
-
-	/* All cores: set pstate 0 (1600 MHz) early to save a few ms of boot time */
-	msr.lo = 0;
-	msr.hi = 0;
-	wrmsr (MSR_PSTATE_CONTROL, msr);
-
+	/* Must come first to enable PCI MMCONF. */
 	amd_initmmio();
 
 	if (!cpu_init_detectedx && boot_cpu()) {
