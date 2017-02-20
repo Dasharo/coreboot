@@ -16,7 +16,9 @@
 #ifndef GPIO_FTNS_H
 #define GPIO_FTNS_H
 
-void configure_gpio(uintptr_t base_addr, u32 iomux_gpio, u8 iomux_ftn, u32 gpio, u32 setting);
+void configure_gpio(u32 iomux_gpio, u8 iomux_ftn, u32 gpio, u32 setting);
+u8 read_gpio(u32 gpio);
+void write_gpio(u32 gpio, u8 value);
 int get_spd_offset(void);
 
 #define IOMUX_OFFSET    0xD00
@@ -52,9 +54,10 @@ int get_spd_offset(void);
 #define GPIO_68   0x120    // PE4_WDIS
 #define GPIO_71   0x134    // PROCHOT
 
-#define GPIO_OUTPUT_ENABLE      23
-#define GPIO_OUTPUT_VALUE       22
-#define GPIO_PULL_DOWN_ENABLE   21
-#define GPIO_PULL_UP_ENABLE     20
+#define GPIO_OUTPUT_ENABLE      BIT23
+#define GPIO_OUTPUT_VALUE       BIT22
+#define GPIO_PULL_DOWN_ENABLE   BIT21
+#define GPIO_PULL_UP_ENABLE     BIT20
+#define GPIO_PIN_STS            BIT16
 
 #endif /* GPIO_FTNS_H */
