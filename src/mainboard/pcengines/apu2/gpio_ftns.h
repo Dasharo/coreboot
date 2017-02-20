@@ -40,6 +40,4 @@ int get_spd_offset(void);
 #define GPIO_68_IOMUX_GPIOxx	0
 #define GPIO_71_IOMUX_GPIOxx	0
 
-#define GPIO_DATA_IN 0x80
-
 #endif /* GPIO_FTNS_H */
