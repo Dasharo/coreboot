@@ -24,7 +24,8 @@ payloads/external/U-Boot \
 payloads/external/Memtest86Plus \
 payloads/external/iPXE \
 payloads/external/tint \
-payloads/external/sortbootorder
+payloads/external/sortbootorder \
+payloads/external/tianocore \
 payloads/external/edk2 \
 payloads/external/GRUB2 \
 payloads/external/LinuxBoot \
