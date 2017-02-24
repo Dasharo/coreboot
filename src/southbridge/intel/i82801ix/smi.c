@@ -20,14 +20,12 @@
 #include <device/pci.h>
 #include <console/console.h>
 #include <arch/io.h>
+#include <arch/acpi.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/smm.h>
 #include <string.h>
 #include "i82801ix.h"
-
-extern unsigned char _binary_smm_start;
-extern unsigned char _binary_smm_size;
 
 /* I945/GM45 */
 #define SMRAM		0x9d
@@ -256,6 +254,7 @@ static void smm_relocate(void)
 	/* copy the SMM relocation code */
 	memcpy((void *)0x38000, &smm_relocation_start,
 			&smm_relocation_end - &smm_relocation_start);
+	wbinvd();
 
 	printk(BIOS_DEBUG, "\n");
 	dump_smi_status(reset_smi_status());
@@ -314,16 +313,6 @@ static void smm_relocate(void)
 
 static int smm_handler_copied = 0;
 
-static int is_wakeup(void)
-{
-	device_t dev0 = dev_find_slot(0, PCI_DEVFN(0,0));
-
-	if (!dev0)
-		return 0;
-
-	return pci_read_config32(dev0, 0xdc) == SKPAD_ACPI_S3_MAGIC;
-}
-
 static void smm_install(void)
 {
 	/* The first CPU running this gets to copy the SMM handler. But not all
@@ -337,13 +326,14 @@ static void smm_install(void)
 	/* if we're resuming from S3, the SMM code is already in place,
 	 * so don't copy it again to keep the current SMM state */
 
-	if (!is_wakeup()) {
+	if (!acpi_is_wakeup_s3()) {
 		/* enable the SMM memory window */
 		pci_write_config8(dev_find_slot(0, PCI_DEVFN(0, 0)), SMRAM,
 					D_OPEN | G_SMRAME | C_BASE_SEG);
 
 		/* copy the real SMM handler */
-		memcpy((void *)0xa0000, &_binary_smm_start, (size_t)&_binary_smm_size);
+		memcpy((void *)0xa0000, _binary_smm_start,
+			_binary_smm_end - _binary_smm_start);
 		wbinvd();
 	}
 

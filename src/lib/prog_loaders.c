@@ -22,6 +22,7 @@
 #include <halt.h>
 #include <lib.h>
 #include <program_loading.h>
+#include <reset.h>
 #include <romstage_handoff.h>
 #include <rmodule.h>
 #include <rules.h>
@@ -74,21 +75,29 @@ void __attribute__((weak)) stage_cache_add(int stage_id,
 						const struct prog *stage) {}
 void __attribute__((weak)) stage_cache_load_stage(int stage_id,
 							struct prog *stage) {}
-void __attribute__((weak)) ramstage_cache_invalid(void) {}
 
-static void run_ramstage_from_resume(struct romstage_handoff *handoff,
-					struct prog *ramstage)
+static void ramstage_cache_invalid(void)
 {
-	if (handoff != NULL && handoff->s3_resume) {
-		/* Load the cached ramstage to runtime location. */
-		stage_cache_load_stage(STAGE_RAMSTAGE, ramstage);
-
-		if (prog_entry(ramstage) != NULL) {
-			printk(BIOS_DEBUG, "Jumping to image.\n");
-			prog_run(ramstage);
-		}
-		ramstage_cache_invalid();
+	printk(BIOS_ERR, "ramstage cache invalid.\n");
+	if (IS_ENABLED(CONFIG_RESET_ON_INVALID_RAMSTAGE_CACHE)) {
+		hard_reset();
+		halt();
 	}
+}
+
+static void run_ramstage_from_resume(struct prog *ramstage)
+{
+	if (!romstage_handoff_is_resume())
+		return;
+
+	/* Load the cached ramstage to runtime location. */
+	stage_cache_load_stage(STAGE_RAMSTAGE, ramstage);
+
+	if (prog_entry(ramstage) != NULL) {
+		printk(BIOS_DEBUG, "Jumping to image.\n");
+		prog_run(ramstage);
+	}
+	ramstage_cache_invalid();
 }
 
 static int load_relocatable_ramstage(struct prog *ramstage)
@@ -99,6 +108,18 @@ static int load_relocatable_ramstage(struct prog *ramstage)
 	};
 
 	return rmodule_stage_load(&rmod_ram);
+}
+
+static int load_nonrelocatable_ramstage(struct prog *ramstage)
+{
+	if (IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)) {
+		uintptr_t base = 0;
+		size_t size = cbfs_prog_stage_section(ramstage, &base);
+		if (size)
+			backup_ramstage_section(base, size);
+	}
+
+	return cbfs_prog_stage_load(ramstage);
 }
 
 void run_ramstage(void)
@@ -115,8 +136,7 @@ void run_ramstage(void)
 	if (IS_ENABLED(CONFIG_ARCH_X86) &&
 	    !IS_ENABLED(CONFIG_NO_STAGE_CACHE) &&
 	    IS_ENABLED(CONFIG_EARLY_CBMEM_INIT))
-		run_ramstage_from_resume(romstage_handoff_find_or_add(),
-						&ramstage);
+		run_ramstage_from_resume(&ramstage);
 
 	if (prog_locate(&ramstage))
 		goto fail;
@@ -126,7 +146,7 @@ void run_ramstage(void)
 	if (IS_ENABLED(CONFIG_RELOCATABLE_RAMSTAGE)) {
 		if (load_relocatable_ramstage(&ramstage))
 			goto fail;
-	} else if (cbfs_prog_stage_load(&ramstage))
+	} else if (load_nonrelocatable_ramstage(&ramstage))
 		goto fail;
 
 	stage_cache_add(STAGE_RAMSTAGE, &ramstage);

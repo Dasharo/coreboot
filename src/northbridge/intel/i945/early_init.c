@@ -21,9 +21,11 @@
 #include <device/pci_def.h>
 #include <cbmem.h>
 #include <halt.h>
+#include <romstage_handoff.h>
 #include <string.h>
 #include "i945.h"
 #include <pc80/mc146818rtc.h>
+#include <southbridge/intel/common/gpio.h>
 
 int i945_silicon_revision(void)
 {
@@ -90,9 +92,9 @@ static void i945m_detect_chipset(void)
 		printk(BIOS_INFO, "unknown max. RAM clock (%02x).", reg8);	/* Others reserved. */
 	}
 	printk(BIOS_DEBUG, "\n");
-#if CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GC
-	printk(BIOS_ERR, "coreboot is compiled for the wrong chipset.\n");
-#endif
+
+	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GC))
+		printk(BIOS_ERR, "coreboot is compiled for the wrong chipset.\n");
 }
 
 static void i945_detect_chipset(void)
@@ -130,6 +132,7 @@ static void i945_detect_chipset(void)
 	reg8 = (pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe4) & 0x07);
 	switch (reg8) {
 	case 0:
+	case 2:
 		printk(BIOS_DEBUG, "up to DDR2-667");
 		break;
 	case 3:
@@ -139,9 +142,9 @@ static void i945_detect_chipset(void)
 		printk(BIOS_INFO, "unknown max. RAM clock (%02x).", reg8);	/* Others reserved. */
 	}
 	printk(BIOS_DEBUG, "\n");
-#if CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GM
-	printk(BIOS_ERR, "coreboot is compiled for the wrong chipset.\n");
-#endif
+
+	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GM))
+		printk(BIOS_ERR, "coreboot is compiled for the wrong chipset.\n");
 }
 
 static void i945_setup_bars(void)
@@ -161,7 +164,7 @@ static void i945_setup_bars(void)
 
 	pci_write_config32(PCI_DEV(0, 0x1f, 0), GPIOBASE, DEFAULT_GPIOBASE | 1);
 	pci_write_config8(PCI_DEV(0, 0x1f, 0), 0x4c /* GC */ , 0x10);	/* Enable GPIOs */
-	setup_ich7_gpios();
+	setup_pch_gpios(&mainboard_gpio_map);
 	printk(BIOS_DEBUG, " done.\n");
 
 	printk(BIOS_DEBUG, "Disabling Watchdog reboot...");
@@ -196,7 +199,6 @@ static void i945_setup_bars(void)
 	pci_write_config8(PCI_DEV(0, 0x00, 0), PAM5, 0x33);
 	pci_write_config8(PCI_DEV(0, 0x00, 0), PAM6, 0x33);
 
-	pci_write_config32(PCI_DEV(0, 0x00, 0), SKPAD, SKPAD_NORMAL_BOOT_MAGIC);
 	printk(BIOS_DEBUG, " done.\n");
 
 	/* Wait for MCH BAR to come up */
@@ -231,8 +233,14 @@ static void i945_setup_egress_port(void)
 	/* Egress Port Virtual Channel 1 Configuration */
 	reg32 = EPBAR32(0x2c);
 	reg32 &= 0xffffff00;
+	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GC)) {
+		if ((MCHBAR32(CLKCFG) & 7) == 0)
+			reg32 |= 0x1a;	/* 1067MHz */
+	}
 	if ((MCHBAR32(CLKCFG) & 7) == 1)
 		reg32 |= 0x0d;	/* 533MHz */
+	if ((MCHBAR32(CLKCFG) & 7) == 2)
+		reg32 |= 0x14;	/* 800MHz */
 	if ((MCHBAR32(CLKCFG) & 7) == 3)
 		reg32 |= 0x10;	/* 667MHz */
 	EPBAR32(0x2c) = reg32;
@@ -244,9 +252,21 @@ static void i945_setup_egress_port(void)
 	reg32 |= (0x0a << 16);
 	EPBAR32(EPVC1RCAP) = reg32;
 
+	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GC)) {
+		if ((MCHBAR32(CLKCFG) & 7) == 0){	/* 1067MHz */
+			EPBAR32(EPVC1IST + 0) = 0x01380138;
+			EPBAR32(EPVC1IST + 4) = 0x01380138;
+		}
+	}
+
 	if ((MCHBAR32(CLKCFG) & 7) == 1) {	/* 533MHz */
 		EPBAR32(EPVC1IST + 0) = 0x009c009c;
 		EPBAR32(EPVC1IST + 4) = 0x009c009c;
+	}
+
+	if ((MCHBAR32(CLKCFG) & 7) == 2) {	/* 800MHz */
+		EPBAR32(EPVC1IST + 0) = 0x00f000f0;
+		EPBAR32(EPVC1IST + 4) = 0x00f000f0;
 	}
 
 	if ((MCHBAR32(CLKCFG) & 7) == 3) {	/* 667MHz */
@@ -573,7 +593,7 @@ static void i945_setup_pci_express_x16(void)
 
 	MCHBAR16(UPMC1) &= ~( (1 << 5) | (1 << 0) );
 
-	/* Initialze PEG_CAP */
+	/* Initialize PEG_CAP */
 	reg16 = pci_read_config16(PCI_DEV(0, 0x01, 0), 0xa2);
 	reg16 |= (1 << 8);
 	pci_write_config16(PCI_DEV(0, 0x01, 0), 0xa2, reg16);
@@ -900,16 +920,7 @@ static void i945_prepare_resume(int s3resume)
 
 	cbmem_was_initted = !cbmem_recovery(s3resume);
 
-	/* If there is no high memory area, we didn't boot before, so
-	 * this is not a resume. In that case we just create the cbmem toc.
-	 */
-	if (s3resume && cbmem_was_initted) {
-		acpi_prepare_for_resume();
-
-		/* Magic for S3 resume */
-		pci_write_config32(PCI_DEV(0, 0x00, 0), SKPAD,
-				   SKPAD_ACPI_S3_MAGIC);
-	}
+	romstage_handoff_init(cbmem_was_initted && s3resume);
 }
 
 void i945_late_initialization(int s3resume)

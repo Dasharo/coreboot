@@ -13,6 +13,7 @@
  * GNU General Public License for more details.
  */
 
+#include "mct_d.h"
 
 /* Low swap bit vs bank size encoding (physical, not logical address bit)
  * ;To calculate the number by hand, add the number of Bank address bits
@@ -131,8 +132,6 @@ void InterleaveBanks_D(struct MCTStatStruc *pMCTstat,
 		}
 		print_t("InterleaveBanks_D: Banks Interleaved ");
 	}	/* DoIntlv */
-
-//	dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->Node_ID, 2));
 
 	print_tx("InterleaveBanks_D: Status ", pDCTstat->Status);
 	print_tx("InterleaveBanks_D: ErrStatus ", pDCTstat->ErrStatus);

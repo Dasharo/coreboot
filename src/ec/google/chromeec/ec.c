@@ -15,9 +15,13 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <cbmem.h>
 #include <console/console.h>
 #include <arch/io.h>
+#include <bootmode.h>
+#include <bootstate.h>
 #include <delay.h>
+#include <elog.h>
 #include <halt.h>
 #include <reset.h>
 #include <elog.h>
@@ -28,6 +32,41 @@
 #include "chip.h"
 #include "ec.h"
 #include "ec_commands.h"
+
+void log_recovery_mode_switch(void)
+{
+	uint32_t *events;
+
+	if (cbmem_find(CBMEM_ID_EC_HOSTEVENT))
+		return;
+
+	events = cbmem_add(CBMEM_ID_EC_HOSTEVENT, sizeof(*events));
+	if (!events)
+		return;
+
+	*events = google_chromeec_get_events_b();
+}
+
+static void google_chromeec_elog_add_recovery_event(void *unused)
+{
+	uint32_t *events = cbmem_find(CBMEM_ID_EC_HOSTEVENT);
+	uint8_t event_byte = EC_EVENT_KEYBOARD_RECOVERY;
+
+	if (!events)
+		return;
+
+	if (!(*events & EC_HOST_EVENT_MASK(EC_HOST_EVENT_KEYBOARD_RECOVERY)))
+		return;
+
+	if (*events &
+	    EC_HOST_EVENT_MASK(EC_HOST_EVENT_KEYBOARD_RECOVERY_HW_REINIT))
+		event_byte = EC_EVENT_KEYBOARD_RECOVERY_HWREINIT;
+
+	elog_add_event_byte(ELOG_TYPE_EC_EVENT, event_byte);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_WRITE_TABLES, BS_ON_ENTRY,
+		      google_chromeec_elog_add_recovery_event, NULL);
 
 uint8_t google_chromeec_calc_checksum(const uint8_t *data, int size)
 {
@@ -191,6 +230,9 @@ void google_chromeec_check_ec_image(int expected_type)
 		cec_cmd.cmd_dev_index = 0;
 		printk(BIOS_DEBUG, "Rebooting with EC in RO mode:\n");
 		post_code(0); /* clear current post code */
+		/* Let the platform prepare for the EC taking out the system power. */
+		if (IS_ENABLED(CONFIG_VBOOT))
+			vboot_platform_prepare_reboot();
 		google_chromeec_command(&cec_cmd);
 		udelay(1000);
 		hard_reset();
@@ -454,6 +496,28 @@ int google_chromeec_set_usb_charge_mode(u8 port_id, enum usb_charge_mode mode)
 	cmd.cmd_size_out = 0;
 	cmd.cmd_data_out = NULL;
 	cmd.cmd_dev_index = 0;
+
+	return google_chromeec_command(&cmd);
+}
+
+int google_chromeec_set_usb_pd_role(u8 port, enum usb_pd_control_role role)
+{
+	struct ec_params_usb_pd_control req = {
+		.port = port,
+		.role = role,
+		.mux = USB_PD_CTRL_MUX_NO_CHANGE,
+		.swap = USB_PD_CTRL_SWAP_NONE,
+	};
+	struct ec_response_usb_pd_control rsp;
+	struct chromeec_command cmd = {
+		.cmd_code = EC_CMD_USB_PD_CONTROL,
+		.cmd_version = 0,
+		.cmd_data_in = &req,
+		.cmd_size_in = sizeof(req),
+		.cmd_data_out = &rsp,
+		.cmd_size_out = sizeof(rsp),
+		.cmd_dev_index = 0,
+	};
 
 	return google_chromeec_command(&cmd);
 }

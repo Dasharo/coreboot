@@ -67,8 +67,10 @@ verstage-y += common.c
 verstage-y += verstage.c
 ifeq (${CONFIG_VBOOT_MOCK_SECDATA},y)
 libverstage-y += secdata_mock.c
+romstage-$(CONFIG_SEPARATE_VERSTAGE) += secdata_mock.c
 else
 libverstage-y += secdata_tpm.c
+romstage-$(CONFIG_SEPARATE_VERSTAGE) += secdata_tpm.c
 endif
 romstage-y += vboot_handoff.c common.c
 
@@ -93,8 +95,8 @@ VBOOT_CFLAGS += -I$(abspath $(obj)) -include $(top)/src/include/kconfig.h -Wno-m
 VBOOT_CFLAGS += -DVBOOT_DEBUG
 
 $(VB2_LIB): $(obj)/config.h
-	@printf "    MAKE       $(subst $(obj)/,,$(@))\n"
-	$(Q)FIRMWARE_ARCH=$(VB_FIRMWARE_ARCH) \
+	printf "    MAKE       $(subst $(obj)/,,$(@))\n"
+	+FIRMWARE_ARCH=$(VB_FIRMWARE_ARCH) \
 	CC="$(CC_verstage)" \
 	CFLAGS="$(VBOOT_CFLAGS)" VBOOT2="y" \
 	$(MAKE) -C $(VBOOT_SOURCE) \
@@ -105,6 +107,14 @@ $(VB2_LIB): $(obj)/config.h
 libverstage-srcs += $(VB2_LIB)
 
 ifeq ($(CONFIG_SEPARATE_VERSTAGE),y)
+
+# This works under the assumption that romstage and verstage use the same
+# architecture and thus CC_verstage is the same as CC_romstage. If this is not
+# true, VB2_LIB needs to ensure that correct CC is being used.
+ifeq ($(CONFIG_VBOOT_HAS_REC_HASH_SPACE),y)
+romstage-srcs += $(VB2_LIB)
+endif
+
 cbfs-files-$(CONFIG_SEPARATE_VERSTAGE) += $(CONFIG_CBFS_PREFIX)/verstage
 $(CONFIG_CBFS_PREFIX)/verstage-file := $(objcbfs)/verstage.elf
 $(CONFIG_CBFS_PREFIX)/verstage-type := stage
@@ -142,6 +152,7 @@ regions-for-file = $(subst $(spc),$(comma),$(sort \
 		locale_%.bin \
 		font.bin \
 		vbgfx.bin \
+		rmu.bin \
 		,$(1)),COREBOOT,COREBOOT FW_MAIN_A FW_MAIN_B)))
 
 endif # CONFIG_VBOOT

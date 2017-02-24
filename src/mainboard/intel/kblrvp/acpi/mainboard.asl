@@ -14,8 +14,9 @@
  * GNU General Public License for more details.
  */
 
-#include "../gpio.h"
+#include <variant/gpio.h>
 
+#if IS_ENABLED(CONFIG_EC_GOOGLE_CHROMEEC)
 Scope (\_SB)
 {
 	Device (LID0)
@@ -34,6 +35,7 @@ Scope (\_SB)
 		Name (_HID, EisaId ("PNP0C0C"))
 	}
 }
+#endif
 
 /*
  * LPC Trusted Platform Module

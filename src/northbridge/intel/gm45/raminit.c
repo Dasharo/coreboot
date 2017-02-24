@@ -24,7 +24,7 @@
 #include <spd.h>
 #include <console/console.h>
 #include <lib.h>
-#include "delay.h"
+#include <delay.h>
 #include "gm45.h"
 #include "chip.h"
 
@@ -198,7 +198,7 @@ void get_gmch_info(sysinfo_t *sysinfo)
 /*
  * Detect if the system went through an interrupted RAM init or is incon-
  * sistent. If so, initiate a cold reboot. Otherwise mark the system to be
- * in RAM init, so this function would detect it on an erreneous reboot.
+ * in RAM init, so this function would detect it on an erroneous reboot.
  */
 void enter_raminit_or_reset(void)
 {
@@ -749,7 +749,7 @@ static void set_system_memory_frequency(const timings_t *const timings)
 
 int raminit_read_vco_index(void)
 {
-	switch (MCHBAR8(0x0c0f) & 0x7) {
+	switch (MCHBAR8(HPLLVCO_MCHBAR) & 0x7) {
 	case VCO_2666:
 		return 0;
 	case VCO_3200:
@@ -916,15 +916,15 @@ static void rcomp_initialization(const stepping_t stepping, const int sff)
 
 static void dram_powerup(const int resume)
 {
-	udelay_from_reset(200);
+	udelay(200);
 	MCHBAR32(CLKCFG_MCHBAR) = (MCHBAR32(CLKCFG_MCHBAR) & ~(1 << 3)) | (3 << 21);
 	if (!resume) {
 		MCHBAR32(0x1434) |= (1 << 10);
-		ns100delay(2);
+		udelay(1);
 	}
 	MCHBAR32(0x1434) |= (1 << 6);
 	if (!resume) {
-		ns100delay(1);
+		udelay(1);
 		MCHBAR32(0x1434) |= (1 << 9);
 		MCHBAR32(0x1434) &= ~(1 << 10);
 		udelay(500);

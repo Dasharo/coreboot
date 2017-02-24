@@ -16,15 +16,18 @@
 config NORTHBRIDGE_INTEL_NEHALEM
 	bool
 	select CPU_INTEL_MODEL_2065X
-	select MMCONF_SUPPORT
-	select MMCONF_SUPPORT_DEFAULT
 	select VGA
 	select INTEL_EDID
 	select TSC_MONOTONIC_TIMER
 	select INTEL_GMA_ACPI
 	select NORTHBRIDGE_INTEL_COMMON_MRC_CACHE
+	select ACPI_HUGE_LOWMEM_BACKUP
 
 if NORTHBRIDGE_INTEL_NEHALEM
+
+config MMCONF_BUS_NUMBER
+	int
+	default 256
 
 config CBFS_SIZE
 	hex
@@ -36,7 +39,7 @@ config VGA_BIOS_ID
 
 config DCACHE_RAM_BASE
 	hex
-	default 0xff7f0000
+	default 0xfefc0000
 
 config DCACHE_RAM_SIZE
 	hex

@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2016 Intel Corporation.
+ * Copyright (C) 2016-2017 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
  */
 
 #include <chip.h>
+#include <bootmode.h>
 #include <bootstate.h>
 #include <device/pci.h>
 #include <fsp/api.h>
@@ -25,6 +26,7 @@
 #include <device/pci.h>
 #include <fsp/api.h>
 #include <fsp/util.h>
+#include <romstage_handoff.h>
 #include <soc/acpi.h>
 #include <soc/interrupt.h>
 #include <soc/irq.h>
@@ -35,7 +37,7 @@
 void soc_init_pre_device(void *chip_info)
 {
 	/* Perform silicon specific init. */
-	fsp_silicon_init();
+	fsp_silicon_init(romstage_handoff_is_resume());
 }
 
 static void pci_domain_set_resources(device_t dev)
@@ -57,7 +59,7 @@ static struct device_operations cpu_bus_ops = {
 	.read_resources   = DEVICE_NOOP,
 	.set_resources    = DEVICE_NOOP,
 	.enable_resources = DEVICE_NOOP,
-	.init             = &soc_init_cpus,
+	.init             = DEVICE_NOOP,
 #if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
 	.acpi_fill_ssdt_generator = generate_cpu_entries,
 #endif
@@ -107,14 +109,25 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	mainboard_silicon_init_params(params);
 
 	/* Load VBT */
-	if (!is_s3_wakeup)
+	if (is_s3_wakeup) {
+		printk(BIOS_DEBUG, "S3 resume do not pass VBT to GOP\n");
+	} else if (display_init_required()) {
+		/* Get VBT data */
 		vbt_data = fsp_load_vbt();
-
+		if (vbt_data)
+			printk(BIOS_DEBUG, "Passing VBT to GOP\n");
+		else
+			printk(BIOS_DEBUG, "VBT not found!\n");
+	} else {
+		printk(BIOS_DEBUG, "Not passing VBT to GOP\n");
+	}
 	params->GraphicsConfigPtr = (u32) vbt_data;
 
 	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
 		params->PortUsb20Enable[i] =
 				config->usb2_ports[i].enable;
+		params->Usb2OverCurrentPin[i] =
+				config->usb2_ports[i].ocpin;
 		params->Usb2AfePetxiset[i] =
 				config->usb2_ports[i].pre_emp_bias;
 		params->Usb2AfeTxiset[i] =
@@ -127,6 +140,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	for (i = 0; i < ARRAY_SIZE(config->usb3_ports); i++) {
 		params->PortUsb30Enable[i] = config->usb3_ports[i].enable;
+		params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
 		if (config->usb3_ports[i].tx_de_emp) {
 			params->Usb3HsioTxDeEmphEnable[i] = 1;
 			params->Usb3HsioTxDeEmph[i] =
@@ -147,6 +161,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	       sizeof(params->PcieRpClkReqSupport));
 	memcpy(params->PcieRpClkReqNumber, config->PcieRpClkReqNumber,
 	       sizeof(params->PcieRpClkReqNumber));
+
+	/* disable Legacy PME */
+	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
 	memcpy(params->SerialIoDevMode, config->SerialIoDevMode,
 	       sizeof(params->SerialIoDevMode));
@@ -203,7 +220,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->CpuConfig.Bits.SkipMpInit = config->FspSkipMpInit;
 
 	for (i = 0; i < ARRAY_SIZE(config->i2c); i++)
-		params->SerialIoI2cVoltage[i] = config->i2c[i].voltage;
+		params->SerialIoI2cVoltage[i] = config->i2c_voltage[i];
 
 	for (i = 0; i < ARRAY_SIZE(config->domain_vr_config); i++)
 		fill_vr_domain_config(params, i, &config->domain_vr_config[i]);
@@ -212,7 +229,15 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	dev = dev_find_slot(0, PCH_DEVFN_SPI);
 	params->ShowSpiController = dev->enabled;
 
-	params->SendVrMbxCmd = config->SendVrMbxCmd;
+	/*
+	 * Send VR specific mailbox commands:
+	 * 000b - no VR specific command sent
+	 * 001b - VR mailbox command specifically for the MPS IMPV8 VR
+	 * 	  will be sent
+	 * 010b - VR specific command sent for PS4 exit issue
+	 * 100b - VR specific command sent for MPS VR decay issue
+	 */
+	params->SendVrMbxCmd1 = config->SendVrMbxCmd;
 
 	soc_irq_settings(params);
 }

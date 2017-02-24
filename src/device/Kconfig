@@ -24,7 +24,7 @@ config MAINBOARD_HAS_NATIVE_VGA_INIT
 # FIXME Ugly hack to allow Z9s driver native framebuffer configuration
 config NATIVE_VGA_INIT_USE_EDID
 	bool
-	default n if DRIVERS_XGI_Z9S
+	default n if DRIVERS_XGI_Z9S || MAINBOARD_USE_LIBGFXINIT
 	default y if !DRIVERS_XGI_Z9S
 
 config MAINBOARD_HAS_NATIVE_VGA_INIT_TEXTMODECFG
@@ -41,6 +41,24 @@ config MAINBOARD_DO_NATIVE_VGA_INIT
 	  faster, but also lacks flexibility in setting modes.
 
 	  If unsure, say N.
+
+config MAINBOARD_HAS_LIBGFXINIT
+	def_bool n
+	select MAINBOARD_HAS_NATIVE_VGA_INIT
+	help
+	  Selected by mainboards that implement support for `libgfxinit`.
+	  Usually this requires a list of ports to be probed for displays.
+
+config MAINBOARD_USE_LIBGFXINIT
+	bool "Use libgfxinit for native graphics initialization"
+	depends on MAINBOARD_DO_NATIVE_VGA_INIT
+	depends on MAINBOARD_HAS_LIBGFXINIT
+	select MAINBOARD_HAS_NATIVE_VGA_INIT_TEXTMODECFG
+	select RAMSTAGE_LIBHWBASE
+	default n
+	help
+	  Use the SPARK library `libgfxinit` for the native graphics
+	  initialization. This requires an Ada toolchain.
 
 # TODO: Explain differences (if any) for onboard cards.
 config VGA_ROM_RUN
@@ -192,43 +210,47 @@ config SMBUS_HAS_AUX_CHANNELS
 	bool
 	default n
 
-config SPD_CACHE
-	bool
-	default n
-
 config PCI
 	bool
 	default n
 
+if PCI
+
+config NO_MMCONF_SUPPORT
+	bool
+	default n
+
+config MMCONF_SUPPORT
+	bool
+	default !NO_MMCONF_SUPPORT
+
 config HYPERTRANSPORT_PLUGIN_SUPPORT
 	bool
-	depends on PCI
 	default n
 
 config PCIX_PLUGIN_SUPPORT
 	bool
-	depends on PCI
-	default y
-
-config PCIEXP_PLUGIN_SUPPORT
-	bool
-	depends on PCI
 	default y
 
 config CARDBUS_PLUGIN_SUPPORT
 	bool
-	depends on PCI
 	default y
 
 config AZALIA_PLUGIN_SUPPORT
 	bool
-	depends on PCI
 	default n
+
+config PCIEXP_PLUGIN_SUPPORT
+	bool
+	default y
+
+endif # PCI
+
+if PCIEXP_PLUGIN_SUPPORT
 
 config PCIEXP_COMMON_CLOCK
 	prompt "Enable PCIe Common Clock"
 	bool
-	depends on PCIEXP_PLUGIN_SUPPORT
 	default n
 	help
 	  Detect and enable Common Clock on PCIe links.
@@ -236,18 +258,26 @@ config PCIEXP_COMMON_CLOCK
 config PCIEXP_ASPM
 	prompt "Enable PCIe ASPM"
 	bool
-	depends on PCIEXP_PLUGIN_SUPPORT
 	default n
 	help
-	  Detect and enable ASPM on PCIe links.
+	  Detect and enable ASPM (Active State Power Management) on PCIe links.
 
 config PCIEXP_CLK_PM
 	prompt "Enable PCIe Clock Power Management"
 	bool
-	depends on PCIEXP_PLUGIN_SUPPORT
 	default n
 	help
 	  Detect and enable Clock Power Management on PCIe.
+
+config PCIEXP_L1_SUB_STATE
+	prompt "Enable PCIe ASPM L1 SubState"
+	bool
+	depends on (MMCONF_SUPPORT || PCI_IO_CFG_EXT)
+	default n
+	help
+	  Detect and enable ASPM on PCIe links.
+
+endif # PCIEXP_PLUGIN_SUPPORT
 
 config EARLY_PCI_BRIDGE
 	bool "Early PCI bridge"
@@ -260,14 +290,6 @@ config EARLY_PCI_BRIDGE
 
 	  This option enables static configuration for a single pre-defined
 	  PCI bridge function on bus 0.
-
-config PCIEXP_L1_SUB_STATE
-	prompt "Enable PCIe ASPM L1 SubState"
-	bool
-	depends on PCIEXP_PLUGIN_SUPPORT && MMCONF_SUPPORT
-	default n
-	help
-	  Detect and enable ASPM on PCIe links.
 
 if EARLY_PCI_BRIDGE
 

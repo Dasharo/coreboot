@@ -38,11 +38,16 @@
 /* Write Protect and indication if EC is in RW code. */
 #define GPIO_PCH_WP	GPIO_75
 #define GPIO_EC_IN_RW	GPIO_41
+/* Determine if board is in final shipping mode. */
+#define GPIO_SHIP_MODE	GPIO_10
 
 /*  Memory SKU GPIOs. */
 #define MEM_CONFIG3	GPIO_45
 #define MEM_CONFIG2	GPIO_38
 #define MEM_CONFIG1	GPIO_102
 #define MEM_CONFIG0	GPIO_101
+
+/* DMIC_CONFIG_PIN: High for 1-DMIC and low for 4-DMIC's */
+#define DMIC_CONFIG_PIN	GPIO_17
 
 #endif /* BASEBOARD_GPIO_H */

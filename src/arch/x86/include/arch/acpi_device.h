@@ -18,11 +18,24 @@
 
 #include <device/i2c.h>
 #include <stdint.h>
+#include <spi-generic.h>
 
 #define ACPI_DESCRIPTOR_LARGE		(1 << 7)
 #define ACPI_DESCRIPTOR_INTERRUPT	(ACPI_DESCRIPTOR_LARGE | 9)
 #define ACPI_DESCRIPTOR_GPIO		(ACPI_DESCRIPTOR_LARGE | 12)
 #define ACPI_DESCRIPTOR_SERIAL_BUS	(ACPI_DESCRIPTOR_LARGE | 14)
+
+/*
+ * PRP0001 is a special DT namespace link device ID. It provides a means to use
+ * existing DT-compatible device identification in ACPI. When this _HID is used
+ * by an ACPI device, the ACPI subsystem in OS looks up "compatible" property in
+ * device object's _DSD and will use the value of that property to identify the
+ * corresponding device in analogy with the original DT device identification
+ * algorithm.
+ * More details can be found in Linux kernel documentation:
+ * Documentation/acpi/enumeration.txt
+ */
+#define ACPI_DT_NAMESPACE_HID		"PRP0001"
 
 struct device;
 const char *acpi_device_name(struct device *dev);
@@ -203,23 +216,6 @@ void acpi_device_write_i2c(const struct acpi_i2c *i2c);
 /*
  * ACPI SPI Bus
  */
-
-enum spi_clock_phase {
-	SPI_CLOCK_PHASE_FIRST,
-	SPI_CLOCK_PHASE_SECOND
-};
-
-/* SPI Flags bit 0 */
-enum spi_wire_mode {
-	SPI_4_WIRE_MODE,
-	SPI_3_WIRE_MODE
-};
-
-/* SPI Flags bit 1 */
-enum spi_polarity {
-	SPI_POLARITY_LOW,
-	SPI_POLARITY_HIGH
-};
 
 struct acpi_spi {
 	/* Device selection */

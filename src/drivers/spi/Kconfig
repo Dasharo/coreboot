@@ -61,16 +61,6 @@ config SPI_FLASH_INCLUDE_ALL_DRIVERS
 	default n if COMMON_CBFS_SPI_WRAPPER
 	default y
 
-config SPI_ATOMIC_SEQUENCING
-	bool
-	default y if ARCH_X86
-	default n if !ARCH_X86
-	help
-	  Select this option if the SPI controller uses "atomic sequencing."
-	  Atomic sequencing is when the sequence of commands is pre-programmed
-	  in the SPI controller. Hardware manages the transaction instead of
-	  software. This is common on x86 platforms.
-
 config SPI_FLASH_SMM
 	bool "SPI flash driver support in SMM"
 	default n
@@ -163,6 +153,13 @@ config SPI_FLASH_FAST_READ_DUAL_OUTPUT_3B
 	  Select this option if your SPI flash supports the fast read dual-
 	  output command (opcode 0x3b) where the opcode and address are sent
 	  to the chip on MOSI and data is received on both MOSI and MISO.
+
+config SPI_FLASH_HAS_VOLATILE_GROUP
+	bool
+	default n
+	help
+	  Allows chipset to group write/erase operations under a single volatile
+	  group.
 
 endif # SPI_FLASH
 

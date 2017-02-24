@@ -131,6 +131,31 @@ device_t dev_find_lapic(unsigned apic_id)
 }
 
 /**
+ * Given a Device Path Type, find the device structure.
+ *
+ * @param prev_match The previously matched device instance.
+ * @param path_type The Device Path Type.
+ * @return Pointer to the device structure (if found), 0 otherwise.
+ */
+device_t dev_find_path(device_t prev_match, enum device_path_type path_type)
+{
+	device_t dev, result = NULL;
+
+	if (prev_match == NULL)
+		prev_match = all_devices;
+	else
+		prev_match = prev_match->next;
+
+	for (dev = prev_match; dev; dev = dev->next) {
+		if (dev->path.type == path_type) {
+			result = dev;
+			break;
+		}
+	}
+	return result;
+}
+
+/**
  * Find a device of a given vendor and type.
  *
  * @param vendor A PCI vendor ID (e.g. 0x8086 for Intel).
@@ -225,6 +250,9 @@ u32 dev_path_encode(device_t dev)
 	case DEVICE_PATH_GENERIC:
 		ret |= dev->path.generic.subid << 8 | dev->path.generic.id;
 		break;
+	case DEVICE_PATH_SPI:
+		ret |= dev->path.spi.cs;
+		break;
 	case DEVICE_PATH_NONE:
 	default:
 		break;
@@ -293,6 +321,10 @@ const char *dev_path(device_t dev)
 			snprintf(buffer, sizeof (buffer),
 				 "GENERIC: %d.%d", dev->path.generic.id,
 				 dev->path.generic.subid);
+			break;
+		case DEVICE_PATH_SPI:
+			snprintf(buffer, sizeof (buffer), "SPI: %02x",
+				 dev->path.spi.cs);
 			break;
 		default:
 			printk(BIOS_ERR, "Unknown device path type: %d\n",
@@ -364,6 +396,9 @@ int path_eq(struct device_path *path1, struct device_path *path2)
 	case DEVICE_PATH_GENERIC:
 		equal = (path1->generic.id == path2->generic.id) &&
 			(path1->generic.subid == path2->generic.subid);
+		break;
+	case DEVICE_PATH_SPI:
+		equal = (path1->spi.cs == path2->spi.cs);
 		break;
 	default:
 		printk(BIOS_ERR, "Unknown device type: %d\n", path1->type);
@@ -788,7 +823,7 @@ void print_resource_tree(struct device *root, int debug_level, const char *msg)
 	resource_tree(root, debug_level, 0);
 }
 
-void show_devs_tree(struct device *dev, int debug_level, int depth, int linknum)
+void show_devs_tree(struct device *dev, int debug_level, int depth)
 {
 	char depth_str[20];
 	int i;
@@ -805,7 +840,7 @@ void show_devs_tree(struct device *dev, int debug_level, int depth, int linknum)
 	for (link = dev->link_list; link; link = link->next) {
 		for (sibling = link->children; sibling;
 		     sibling = sibling->sibling)
-			show_devs_tree(sibling, debug_level, depth + 1, i);
+			show_devs_tree(sibling, debug_level, depth + 1);
 	}
 }
 
@@ -814,7 +849,7 @@ void show_all_devs_tree(int debug_level, const char *msg)
 	/* Bail if not printing to screen. */
 	if (!do_printk(debug_level, "Show all devs in tree form... %s\n", msg))
 		return;
-	show_devs_tree(all_devices, debug_level, 0, -1);
+	show_devs_tree(all_devices, debug_level, 0);
 }
 
 void show_devs_subtree(struct device *root, int debug_level, const char *msg)
@@ -824,7 +859,7 @@ void show_devs_subtree(struct device *root, int debug_level, const char *msg)
 		       dev_path(root), msg))
 		return;
 	do_printk(debug_level, "%s\n", msg);
-	show_devs_tree(root, debug_level, 0, -1);
+	show_devs_tree(root, debug_level, 0);
 }
 
 void show_all_devs(int debug_level, const char *msg)
@@ -886,6 +921,26 @@ void fixed_mem_resource(device_t dev, unsigned long index,
 		 IORESOURCE_STORED | IORESOURCE_ASSIGNED;
 
 	resource->flags |= type;
+}
+
+void mmconf_resource_init(struct resource *resource, resource_t base,
+	int buses)
+{
+	resource->base = base;
+	resource->size = buses * MiB;
+	resource->flags = IORESOURCE_MEM | IORESOURCE_RESERVE |
+		IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_ASSIGNED;
+
+	printk(BIOS_DEBUG, "Adding PCIe enhanced config space BAR "
+			"0x%08lx-0x%08lx.\n", (unsigned long)(resource->base),
+			(unsigned long)(resource->base + resource->size));
+}
+
+void mmconf_resource(struct device *dev, unsigned long index)
+{
+	struct resource *resource = new_resource(dev, index);
+	mmconf_resource_init(resource, CONFIG_MMCONF_BASE_ADDRESS,
+		CONFIG_MMCONF_BUS_NUMBER);
 }
 
 void tolm_test(void *gp, struct device *dev, struct resource *new)

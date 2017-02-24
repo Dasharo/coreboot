@@ -50,15 +50,6 @@
  * (old) cbfstool. */
 #define CBFS_FILENAME_ALIGN	(16)
 
-/* Type and format */
-
-static const struct typedesc_t types_cbfs_compression[] = {
-	{CBFS_COMPRESS_NONE, "none"},
-	{CBFS_COMPRESS_LZMA, "LZMA"},
-	{CBFS_COMPRESS_LZ4, "LZ4"},
-	{0, NULL},
-};
-
 static const char *lookup_name_by_type(const struct typedesc_t *desc, uint32_t type,
 				const char *default_value)
 {
@@ -175,7 +166,8 @@ static int cbfs_file_get_compression_info(struct cbfs_file *entry,
 	uint32_t *decompressed_size)
 {
 	unsigned int compression = CBFS_COMPRESS_NONE;
-	*decompressed_size = ntohl(entry->len);
+	if (decompressed_size)
+		*decompressed_size = ntohl(entry->len);
 	for (struct cbfs_file_attribute *attr = cbfs_file_first_attr(entry);
 	     attr != NULL;
 	     attr = cbfs_file_next_attr(entry, attr)) {
@@ -1399,7 +1391,7 @@ int cbfs_print_entry_info(struct cbfs_image *image, struct cbfs_file *entry,
 	struct cbfs_file_attr_hash *hash = NULL;
 	while ((hash = cbfs_file_get_next_hash(entry, hash)) != NULL) {
 		unsigned int hash_type = ntohl(hash->hash_type);
-		if (hash_type > CBFS_NUM_SUPPORTED_HASHES) {
+		if (hash_type >= CBFS_NUM_SUPPORTED_HASHES) {
 			fprintf(fp, "invalid hash type %d\n", hash_type);
 			break;
 		}
@@ -1410,6 +1402,7 @@ int cbfs_print_entry_info(struct cbfs_image *image, struct cbfs_file *entry,
 			ntohl(entry->len), hash_type, local_hash,
 			hash_len) != VB2_SUCCESS) {
 			fprintf(fp, "failed to hash '%s'\n", name);
+			free(hash_str);
 			break;
 		}
 		int valid = memcmp(local_hash, hash->hash_data, hash_len) == 0;

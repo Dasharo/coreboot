@@ -30,6 +30,7 @@
 #include <northbridge/amd/agesa/agesawrapper.h>
 #include <cpu/x86/bist.h>
 #include <cpu/x86/lapic.h>
+#include <southbridge/amd/common/amd_defs.h>
 #include <southbridge/amd/agesa/hudson/hudson.h>
 #include <cpu/amd/agesa/s3_resume.h>
 #include "cbmem.h"
@@ -44,8 +45,7 @@
 
 #define MMIO_NON_POSTED_START	0xfed00000
 #define MMIO_NON_POSTED_END	0xfedfffff
-#define SB_MMIO	0xFED80000
-#define SB_MMIO_MISC32(x)	*(volatile u32 *)(SB_MMIO + 0xE00 + (x))
+#define SB_MMIO_MISC32(x)	*(volatile u32 *)(AMD_SB_ACPI_MMIO_ADDR + 0xE00 + (x))
 
 
 static void it_sio_write(pnp_devfn_t dev, u8 reg, u8 value)
@@ -113,6 +113,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	pci_devfn_t dev;
 	u32 *addr32;
 
+	/* Must come first to enable PCI MMCONF. */
+	amd_initmmio();
+
 	/* In Hudson RRG, PMIOxD2[5:4] is "Drive strength control for
 	 * LpcClk[1:0]".  To be consistent with Parmer, setting to 4mA
 	 * even though the register is not documented in the Kabini BKDG.
@@ -121,7 +124,6 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	outb(0xD2, 0xcd6);
 	outb(0x00, 0xcd7);
 
-	amd_initmmio();
 	/* Set LPC decode enables. */
 	pci_devfn_t dev2 = PCI_DEV(0, 0x14, 3);
 	pci_write_config32(dev2, 0x44, 0xff03ffd5);

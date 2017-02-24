@@ -93,7 +93,7 @@ static const struct gt_reg haswell_gt_lock[] = {
 
 /* some vga option roms are used for several chipsets but they only have one
  * PCI ID in their header. If we encounter such an option rom, we need to do
- * the mapping ourselfes
+ * the mapping ourselves
  */
 
 u32 map_oprom_vendev(u32 vendev)
@@ -459,8 +459,14 @@ static void gma_func0_init(struct device *dev)
 #if IS_ENABLED(CONFIG_CHROMEOS)
 	init_fb = display_init_required();
 #endif
-	lightup_ok = panel_lightup(&dp, init_fb);
-		gfx_set_init_done(1);
+	if (IS_ENABLED(CONFIG_MAINBOARD_USE_LIBGFXINIT)) {
+		gma_gfxinit(gtt_res->base, (u32)dp.graphics,
+			dp.physbase, &lightup_ok);
+	} else {
+		lightup_ok = panel_lightup(&dp, init_fb);
+	}
+
+	gfx_set_init_done(1);
 #endif
 	if (! lightup_ok) {
 		printk(BIOS_SPEW, "FUI did not run; using VBIOS\n");

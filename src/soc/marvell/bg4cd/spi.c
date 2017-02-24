@@ -15,22 +15,12 @@
 #include <stddef.h>
 #include <spi-generic.h>
 
-struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs)
+int spi_setup_slave(unsigned int bus, unsigned int cs, struct spi_slave *slave)
 {
-	return NULL;
+	return -1;
 }
 
-int spi_claim_bus(struct spi_slave *slave)
+unsigned int spi_crop_chunk(unsigned int cmd_len, unsigned int buf_len)
 {
-	return 0;
-}
-
-void spi_release_bus(struct spi_slave *slave)
-{
-}
-
-int spi_xfer(struct spi_slave *slave, const void *dout,
-	     unsigned out_bytes, void *din, unsigned in_bytes)
-{
-	return 0;
+	return buf_len;
 }

@@ -351,6 +351,122 @@ void acpigen_write_processor(u8 cpuindex, u32 pblock_addr, u8 pblock_len)
 	acpigen_emit_byte(pblock_len);
 }
 
+/*
+ * Generate ACPI AML code for OperationRegion
+ * Arg0: Pointer to struct opregion opreg = OPREGION(rname, space, offset, len)
+ * where rname is region name, space is region space, offset is region offset &
+ * len is region length.
+ * OperationRegion(regionname, regionspace, regionoffset, regionlength)
+ */
+void acpigen_write_opregion(struct opregion *opreg)
+{
+	/* OpregionOp */
+	acpigen_emit_ext_op(OPREGION_OP);
+	/* NameString 4 chars only */
+	acpigen_emit_simple_namestring(opreg->name);
+	/* RegionSpace */
+	acpigen_emit_byte(opreg->regionspace);
+	/* RegionOffset & RegionLen, it can be byte word or double word */
+	acpigen_write_integer(opreg->regionoffset);
+	acpigen_write_integer(opreg->regionlen);
+}
+
+static void acpigen_write_field_offset(uint32_t offset,
+				       uint32_t current_bit_pos)
+{
+	uint32_t diff_bits;
+	uint8_t i, j;
+	uint8_t emit[4];
+
+	if (offset < current_bit_pos) {
+		printk(BIOS_WARNING, "%s: Cannot move offset backward",
+			__func__);
+		return;
+	}
+
+	diff_bits = offset - current_bit_pos;
+	/* Upper limit */
+	if (diff_bits > 0xFFFFFFF) {
+		printk(BIOS_WARNING, "%s: Offset very large to encode",
+			__func__);
+		return;
+	}
+
+	i = 1;
+	if (diff_bits < 0x40) {
+		emit[0] = diff_bits & 0x3F;
+	} else {
+		emit[0] = diff_bits & 0xF;
+		diff_bits >>= 4;
+		while (diff_bits) {
+			emit[i] = diff_bits & 0xFF;
+			i++;
+			diff_bits >>= 8;
+		}
+	}
+	/* Update bit 7:6 : Number of bytes followed by emit[0] */
+	emit[0] |= (i - 1) << 6;
+
+	acpigen_emit_byte(0);
+	for (j = 0; j < i; j++)
+		acpigen_emit_byte(emit[j]);
+}
+
+/*
+ * Generate ACPI AML code for Field
+ * Arg0: region name
+ * Arg1: Pointer to struct fieldlist.
+ * Arg2: no. of entries in Arg1
+ * Arg3: flags which indicate filed access type, lock rule  & update rule.
+ * Example with fieldlist
+ * struct fieldlist l[] = {
+ *	FIELDLIST_OFFSET(0x84),
+ *	FIELDLIST_NAMESTR("PMCS", 2),
+ *	};
+ * acpigen_write_field("UART", l ,ARRAY_SIZE(l), FIELD_ANYACC | FIELD_NOLOCK |
+ *								FIELD_PRESERVE);
+ * Output:
+ * Field (UART, AnyAcc, NoLock, Preserve)
+ *	{
+ *		Offset (0x84),
+ *		PMCS,   2
+ *	}
+ */
+void acpigen_write_field(const char *name, struct fieldlist *l, size_t count,
+			 uint8_t flags)
+{
+	uint16_t i;
+	uint32_t current_bit_pos = 0;
+
+	/* FieldOp */
+	acpigen_emit_ext_op(FIELD_OP);
+	/* Package Length */
+	acpigen_write_len_f();
+	/* NameString 4 chars only */
+	acpigen_emit_simple_namestring(name);
+	/* Field Flag */
+	acpigen_emit_byte(flags);
+
+	for (i = 0; i < count; i++) {
+		switch (l[i].type) {
+		case NAME_STRING:
+			acpigen_emit_simple_namestring(l[i].name);
+			acpigen_emit_byte(l[i].bits);
+			current_bit_pos += l[i].bits;
+			break;
+		case OFFSET:
+			acpigen_write_field_offset(l[i].bits, current_bit_pos);
+			current_bit_pos = l[i].bits;
+			break;
+		default:
+			printk(BIOS_ERR, "%s: Invalid field type 0x%X\n"
+				, __func__, l[i].type);
+			break;
+		}
+	}
+	acpigen_pop_len();
+}
+
 void acpigen_write_empty_PCT(void)
 {
 /*
@@ -987,12 +1103,18 @@ void acpigen_write_if_and(uint8_t arg1, uint8_t arg2)
 	acpigen_emit_byte(arg2);
 }
 
-void acpigen_write_if_lequal(uint8_t arg1, uint8_t arg2)
+/*
+ * Generates ACPI code for checking if operand1 and operand2 are equal, where,
+ * operand1 is ACPI op and operand2 is an integer.
+ *
+ * If (Lequal (op, val))
+ */
+void acpigen_write_if_lequal_op_int(uint8_t op, uint64_t val)
 {
 	acpigen_write_if();
 	acpigen_emit_byte(LEQUAL_OP);
-	acpigen_emit_byte(arg1);
-	acpigen_emit_byte(arg2);
+	acpigen_emit_byte(op);
+	acpigen_write_integer(val);
 }
 
 void acpigen_write_else(void)
@@ -1021,7 +1143,7 @@ void acpigen_write_byte_buffer(uint8_t *arr, uint8_t size)
 
 	acpigen_emit_byte(BUFFER_OP);
 	acpigen_write_len_f();
-	acpigen_emit_byte(size);
+	acpigen_write_byte(size);
 
 	for (i = 0; i < size; i++)
 		acpigen_emit_byte(arr[i]);
@@ -1046,11 +1168,62 @@ void acpigen_write_return_byte(uint8_t arg)
 	acpigen_write_byte(arg);
 }
 
+void acpigen_write_return_integer(uint64_t arg)
+{
+	acpigen_emit_byte(RETURN_OP);
+	acpigen_write_integer(arg);
+}
+
+void acpigen_write_return_string(const char *arg)
+{
+	acpigen_emit_byte(RETURN_OP);
+	acpigen_write_string(arg);
+}
+
+void acpigen_write_dsm(const char *uuid, void (**callbacks)(void *),
+		       size_t count, void *arg)
+{
+	struct dsm_uuid id = DSM_UUID(uuid, callbacks, count, arg);
+	acpigen_write_dsm_uuid_arr(&id, 1);
+}
+
+static void acpigen_write_dsm_uuid(struct dsm_uuid *id)
+{
+	size_t i;
+
+	/* If (LEqual (Local0, ToUUID(uuid))) */
+	acpigen_write_if();
+	acpigen_emit_byte(LEQUAL_OP);
+	acpigen_emit_byte(LOCAL0_OP);
+	acpigen_write_uuid(id->uuid);
+
+	/* ToInteger (Arg2, Local1) */
+	acpigen_write_to_integer(ARG2_OP, LOCAL1_OP);
+
+	for (i = 0; i < id->count; i++) {
+		/* If (LEqual (Local1, i)) */
+		acpigen_write_if_lequal_op_int(LOCAL1_OP, i);
+
+		/* Callback to write if handler. */
+		if (id->callbacks[i])
+			id->callbacks[i](id->arg);
+
+		acpigen_pop_len();	/* If */
+	}
+
+	/* Default case: Return (Buffer (One) { 0x0 }) */
+	acpigen_write_return_singleton_buffer(0x0);
+
+	acpigen_pop_len();	/* If (LEqual (Local0, ToUUID(uuid))) */
+
+}
+
 /*
  * Generate ACPI AML code for _DSM method.
- * This function takes as input uuid for the device, set of callbacks and
- * argument to pass into the callbacks. Callbacks should ensure that Local0 and
- * Local1 are left untouched. Use of Local2-Local7 is permitted in callbacks.
+ * This function takes as input array of uuid for the device, set of callbacks
+ * and argument to pass into the callbacks. Callbacks should ensure that Local0
+ * and Local1 are left untouched. Use of Local2-Local7 is permitted in
+ * callbacks.
  *
  * Arguments passed into _DSM method:
  * Arg0 = UUID
@@ -1060,26 +1233,26 @@ void acpigen_write_return_byte(uint8_t arg)
  *
  * AML code generated would look like:
  * Method (_DSM, 4, Serialized) {
- * 	ToBuffer (Arg0, Local0)
- * 	If (LEqual (Local0, ToUUID(uuid))) {
- * 		ToInteger (Arg2, Local1)
- * 		If (LEqual (Local1, 0)) {
- * 			<acpigen by callback[0]>
- * 		} Else {
- * 			...
- * 			If (LEqual (Local1, n)) {
- * 				<acpigen by callback[n]>
- * 			} Else {
- * 				Return (Buffer (One) { 0x0 })
- * 			}
- * 		}
- * 	} Else {
- * 		Return (Buffer (One) { 0x0 })
- * 	}
+ *	ToBuffer (Arg0, Local0)
+ *	If (LEqual (Local0, ToUUID(uuid))) {
+ *		ToInteger (Arg2, Local1)
+ *		If (LEqual (Local1, 0)) {
+ *			<acpigen by callback[0]>
+ *		}
+ *		...
+ *		If (LEqual (Local1, n)) {
+ *			<acpigen by callback[n]>
+ *		}
+ *		Return (Buffer (One) { 0x0 })
+ *	}
+ *	...
+ *	If (LEqual (Local0, ToUUID(uuidn))) {
+ *	...
+ *	}
+ *	Return (Buffer (One) { 0x0 })
  * }
  */
-void acpigen_write_dsm(const char *uuid, void (*callbacks[])(void *),
-		       size_t count, void *arg)
+void acpigen_write_dsm_uuid_arr(struct dsm_uuid *ids, size_t count)
 {
 	size_t i;
 
@@ -1089,46 +1262,12 @@ void acpigen_write_dsm(const char *uuid, void (*callbacks[])(void *),
 	/* ToBuffer (Arg0, Local0) */
 	acpigen_write_to_buffer(ARG0_OP, LOCAL0_OP);
 
-	/* If (LEqual (Local0, ToUUID(uuid))) */
-	acpigen_write_if();
-	acpigen_emit_byte(LEQUAL_OP);
-	acpigen_emit_byte(LOCAL0_OP);
-	acpigen_write_uuid(uuid);
-
-	/*   ToInteger (Arg2, Local1) */
-	acpigen_write_to_integer(ARG2_OP, LOCAL1_OP);
-	acpigen_write_debug_op(LOCAL1_OP);
-
-	for (i = 0; i < count; i++) {
-		/*   If (Lequal (Local1, i)) */
-		acpigen_write_if_lequal(LOCAL1_OP, i);
-
-		/*     Callback to write if handler. */
-		if (callbacks[i])
-			callbacks[i](arg);
-
-		acpigen_pop_len();	/* If */
-
-		/*   Else */
-		acpigen_write_else();
-	}
-
-	/*   Default case: Return (Buffer (One) { 0x0 }) */
-	acpigen_write_return_singleton_buffer(0x0);
-
-	/*   Pop lengths for all the else clauses. */
 	for (i = 0; i < count; i++)
-		acpigen_pop_len();
+		acpigen_write_dsm_uuid(&ids[i]);
 
-	acpigen_pop_len();	/* If (LEqual (Local0, ToUUID(uuid))) */
-
-	/* Else */
-	acpigen_write_else();
-
-	/*   Return (Buffer (One) { 0x0 }) */
+	/* Return (Buffer (One) { 0x0 }) */
 	acpigen_write_return_singleton_buffer(0x0);
 
-	acpigen_pop_len();	/* Else */
 	acpigen_pop_len();	/* Method _DSM */
 }
 

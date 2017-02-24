@@ -21,6 +21,7 @@
 #include <lib.h>
 #include <soc/iomap.h>
 #include <soc/cpu.h>
+#include <soc/flash_ctrlr.h>
 #include <soc/gpio.h>
 #include <soc/iosf.h>
 #include <soc/mmap_boot.h>
@@ -39,22 +40,6 @@ static void tpm_enable(void)
 {
 	/* Configure gpios */
 	gpio_configure_pads(tpm_spi_configs, ARRAY_SIZE(tpm_spi_configs));
-}
-
-static void enable_pm_timer(void)
-{
-	/* ACPI PM timer emulation */
-	msr_t msr;
-	/*
-	 * The derived frequency is calculated as follows:
-	 *    (CTC_FREQ * msr[63:32]) >> 32 = target frequency.
-	 * Back solve the multiplier so the 3.579545MHz ACPI timer
-	 * frequency is used.
-	 */
-	msr.hi = (3579545ULL << 32) / CTC_FREQ;
-	/* Set PM1 timer IO port and enable*/
-	msr.lo = EMULATE_PM_TMR_EN | (ACPI_PMIO_BASE + R_ACPI_PM1_TMR);
-	wrmsr(MSR_EMULATE_PM_TMR, msr);
 }
 
 static void enable_cmos_upper_bank(void)
@@ -145,7 +130,7 @@ static void enable_spibar(void)
 	pci_write_config8(dev, PCI_COMMAND, val);
 
 	/* Initialize SPI to allow BIOS to write/erase on flash. */
-	spi_init();
+	spi_flash_init();
 }
 
 static void enable_pmcbar(void)
@@ -177,7 +162,7 @@ void bootblock_soc_early_init(void)
 	if (IS_ENABLED(CONFIG_TPM_ON_FAST_SPI))
 		tpm_enable();
 
-	enable_pm_timer();
+	enable_pm_timer_emulation();
 
 	enable_spibar();
 

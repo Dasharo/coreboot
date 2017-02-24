@@ -35,7 +35,7 @@
 
 
 #ifdef __SMM__
-#include <arch/pci_mmio_cfg.h>
+#include <arch/io.h>
 #define pci_read_config_byte(dev, reg, targ)\
 	*(targ) = pci_read_config8(dev, reg)
 #define pci_read_config_word(dev, reg, targ)\
@@ -66,7 +66,6 @@
 #endif /* !__SMM__ */
 
 static int spi_is_multichip(void);
-static struct spi_flash *spi_flash_hwseq(struct spi_slave *spi);
 
 typedef struct spi_slave ich_spi_slave;
 
@@ -286,24 +285,6 @@ static void ich_set_bbar(uint32_t minaddr)
 	writel_(ichspi_bbar, cntlr.bbar);
 }
 
-struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs)
-{
-	ich_spi_slave *slave = malloc(sizeof(*slave));
-
-	if (!slave) {
-		printk(BIOS_DEBUG, "ICH SPI: Bad allocation\n");
-		return NULL;
-	}
-
-	memset(slave, 0, sizeof(*slave));
-
-	slave->bus = bus;
-	slave->cs = cs;
-	slave->force_programmer_specific = spi_is_multichip ();
-	slave->programmer_specific_probe = spi_flash_hwseq;
-	return slave;
-}
-
 void spi_init(void)
 {
 	uint8_t *rcrb; /* Root Complex Register Block */
@@ -359,17 +340,6 @@ static void spi_init_cb(void *unused)
 }
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_ENTRY, spi_init_cb, NULL);
-
-int spi_claim_bus(struct spi_slave *slave)
-{
-	/* Handled by ICH automatically. */
-	return 0;
-}
-
-void spi_release_bus(struct spi_slave *slave)
-{
-	/* Handled by ICH automatically. */
-}
 
 typedef struct spi_transaction {
 	const uint8_t *out;
@@ -539,8 +509,8 @@ unsigned int spi_crop_chunk(unsigned int cmd_len, unsigned int buf_len)
 	return min(cntlr.databytes, buf_len);
 }
 
-int spi_xfer(struct spi_slave *slave, const void *dout,
-		unsigned int bytesout, void *din, unsigned int bytesin)
+static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
+		size_t bytesout, void *din, size_t bytesin)
 {
 	uint16_t control;
 	int16_t opcode_index;
@@ -687,6 +657,19 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	return 0;
 }
 
+static const struct spi_ctrlr spi_ctrlr = {
+	.xfer = spi_ctrlr_xfer,
+	.xfer_vector = spi_xfer_two_vectors,
+};
+
+int spi_setup_slave(unsigned int bus, unsigned int cs, struct spi_slave *slave)
+{
+	slave->bus = bus;
+	slave->cs = cs;
+	slave->ctrlr = &spi_ctrlr;
+	return 0;
+}
+
 /* Sets FLA in FADDR to (addr & 0x01FFFFFF) without touching other bits. */
 static void ich_hwseq_set_addr(uint32_t addr)
 {
@@ -737,7 +720,8 @@ static int ich_hwseq_wait_for_cycle_complete(unsigned int timeout,
 }
 
 
-static int ich_hwseq_erase(struct spi_flash *flash, u32 offset, size_t len)
+static int ich_hwseq_erase(const struct spi_flash *flash, u32 offset,
+			size_t len)
 {
 	u32 start, end, erase_size;
 	int ret;
@@ -750,8 +734,7 @@ static int ich_hwseq_erase(struct spi_flash *flash, u32 offset, size_t len)
 		return -1;
 	}
 
-	flash->spi->rw = SPI_WRITE_FLAG;
-	ret = spi_claim_bus(flash->spi);
+	ret = spi_claim_bus(&flash->spi);
 	if (ret) {
 		printk(BIOS_ERR, "SF: Unable to claim SPI bus\n");
 		return ret;
@@ -784,7 +767,7 @@ static int ich_hwseq_erase(struct spi_flash *flash, u32 offset, size_t len)
 	printk(BIOS_DEBUG, "SF: Successfully erased %zu bytes @ %#x\n", len, start);
 
 out:
-	spi_release_bus(flash->spi);
+	spi_release_bus(&flash->spi);
 	return ret;
 }
 
@@ -801,8 +784,8 @@ static void ich_read_data(uint8_t *data, int len)
 	}
 }
 
-static int ich_hwseq_read(struct spi_flash *flash,
-			  u32 addr, size_t len, void *buf)
+static int ich_hwseq_read(const struct spi_flash *flash, u32 addr, size_t len,
+			void *buf)
 {
 	uint16_t hsfc;
 	uint16_t timeout = 100 * 60;
@@ -869,8 +852,8 @@ static void ich_fill_data(const uint8_t *data, int len)
 		writel_(temp32, cntlr.data + (i - (i % 4)));
 }
 
-static int ich_hwseq_write(struct spi_flash *flash,
-			   u32 addr, size_t len, const void *buf)
+static int ich_hwseq_write(const struct spi_flash *flash, u32 addr, size_t len,
+			const void *buf)
 {
 	uint16_t hsfc;
 	uint16_t timeout = 100 * 60;
@@ -920,10 +903,18 @@ static int ich_hwseq_write(struct spi_flash *flash,
 }
 
 
-static struct spi_flash *spi_flash_hwseq(struct spi_slave *spi)
+struct spi_flash *spi_flash_programmer_probe(struct spi_slave *spi, int force)
 {
 	struct spi_flash *flash = NULL;
 	uint32_t flcomp;
+
+	/*
+	 * Perform SPI flash probing only if:
+	 * 1. spi_is_multichip returns 1 or
+	 * 2. Specialized probing is forced by SPI flash driver.
+	 */
+	if (!spi_is_multichip() && !force)
+		return NULL;
 
 	flash = malloc(sizeof(*flash));
 	if (!flash) {
@@ -931,12 +922,12 @@ static struct spi_flash *spi_flash_hwseq(struct spi_slave *spi)
 		return NULL;
 	}
 
-	flash->spi = spi;
+	memcpy(&flash->spi, spi, sizeof(*spi));
 	flash->name = "Opaque HW-sequencing";
 
-	flash->write = ich_hwseq_write;
-	flash->erase = ich_hwseq_erase;
-	flash->read = ich_hwseq_read;
+	flash->internal_write = ich_hwseq_write;
+	flash->internal_erase = ich_hwseq_erase;
+	flash->internal_read = ich_hwseq_read;
 	ich_hwseq_set_addr (0);
 	switch ((cntlr.hsfs >> 3) & 3)
 	{

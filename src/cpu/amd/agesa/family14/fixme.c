@@ -78,13 +78,6 @@ void amd_initmmio(void)
 	MsrReg = CONFIG_MMCONF_BASE_ADDRESS | (LibAmdBitScanReverse(CONFIG_MMCONF_BUS_NUMBER) << 2) | 1;
 	LibAmdMsrWrite(0xC0010058, &MsrReg, &StdHeader);
 
-	/*
-	   Set the NB_CFG MSR register. Enable CF8 extended configuration cycles.
-	 */
-	LibAmdMsrRead(0xC001001F, &MsrReg, &StdHeader);
-	MsrReg = MsrReg | 0x0000400000000000ull;
-	LibAmdMsrWrite(0xC001001F, &MsrReg, &StdHeader);
-
 	/* Set Ontario Link Data */
 	PciAddress.AddressValue = MAKE_SBDFO(0, 0, 0, 0, 0xE0);
 	PciData = 0x01308002;
@@ -92,6 +85,16 @@ void amd_initmmio(void)
 	PciAddress.AddressValue = MAKE_SBDFO(0, 0, 0, 0, 0xE4);
 	PciData = (AMD_APU_SSID << 0x10) | AMD_APU_SVID;
 	LibAmdPciWrite(AccessWidth32, PciAddress, &PciData, &StdHeader);
+
+	/* Set ROM cache onto WP to decrease post time */
+	MsrReg = (0x0100000000ull - CACHE_ROM_SIZE) | MTRR_TYPE_WRPROT;
+	LibAmdMsrWrite (0x20C, &MsrReg, &StdHeader);
+	MsrReg = ((1ULL << CONFIG_CPU_ADDR_BITS) - CACHE_ROM_SIZE) | MTRR_PHYS_MASK_VALID;
+	LibAmdMsrWrite (0x20D, &MsrReg, &StdHeader);
+
+	/* Set P-state 0 (1600 MHz) early to save a few ms of boot time */
+	MsrReg = 0;
+	LibAmdMsrWrite (0xC0010062, &MsrReg, &StdHeader);
 }
 
 void amd_initenv(void)

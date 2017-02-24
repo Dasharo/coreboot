@@ -21,14 +21,14 @@
 #include <console/console.h>
 #include <spi_flash.h>
 
-int pch_hwseq_erase(struct spi_flash *flash, u32 offset, size_t len);
-int pch_hwseq_write(struct spi_flash *flash,
-			   u32 addr, size_t len, const void *buf);
+int pch_hwseq_erase(const struct spi_flash *flash, u32 offset, size_t len);
+int pch_hwseq_write(const struct spi_flash *flash, u32 addr, size_t len,
+		const void *buf);
+int pch_hwseq_read(const struct spi_flash *flash, u32 addr, size_t len,
+		void *buf);
+int pch_hwseq_read_status(const struct spi_flash *flash, u8 *reg);
 
-int pch_hwseq_read(struct spi_flash *flash,
-			  u32 addr, size_t len, void *buf);
-int pch_hwseq_read_status(struct spi_flash *flash, u8 *reg);
-
+void spi_flash_init(void);
 
 #if IS_ENABLED(CONFIG_DEBUG_SPI_FLASH)
 static u8 readb_(const void *addr)
@@ -135,7 +135,7 @@ static void writel_(u32 b, void *addr)
 #define SPI_FDATA_REGS 16
 #define SPI_FDATA_BYTES (SPI_FDATA_REGS * sizeof(uint32_t))
 
-typedef struct pch_spi_regs {
+typedef struct pch_spi_flash_regs {
 	uint32_t bfpr;
 	uint16_t hsfs;
 	uint16_t hsfc;
@@ -165,7 +165,7 @@ typedef struct pch_spi_regs {
 	uint32_t srdl;
 	uint32_t srdc;
 	uint32_t srd;
-} __attribute__((packed)) pch_spi_regs;
+} __attribute__((packed)) pch_spi_flash_regs;
 
 enum {
 	HSFS_FDONE =		0x0001,

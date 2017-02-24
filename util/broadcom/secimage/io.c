@@ -73,6 +73,11 @@ int DataRead(char *filename, uint8_t *buf, int *length)
 		return -1;
 	}
 	len = FileSizeGet(file);
+	if (len < 0) {
+		printf("Unable to seek in file: %s\n", filename);
+		fclose(file);
+		return -1;
+	}
 	if (len < *length)
 		*length = len;
 	else
@@ -81,6 +86,7 @@ int DataRead(char *filename, uint8_t *buf, int *length)
 	if (fread((uint8_t *)buf, 1, len, file) != len) {
 		printf("Error reading data (%d bytes) from file: %s\n",
 		       len, filename);
+		fclose(file);
 		return -1;
 	}
 	fclose(file);

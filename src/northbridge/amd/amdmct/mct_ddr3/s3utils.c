@@ -26,13 +26,17 @@
 #include <spi-generic.h>
 #include <spi_flash.h>
 #include <pc80/mc146818rtc.h>
+#include <inttypes.h>
+#include <console/console.h>
+#include <string.h>
+#include "mct_d.h"
+#include "mct_d_gcc.h"
 
 #include "s3utils.h"
 
 #define S3NV_FILE_NAME "s3nv"
 
-#ifdef __RAMSTAGE__
-static inline uint8_t is_fam15h(void)
+static uint8_t is_fam15h(void)
 {
 	uint8_t fam15h = 0;
 	uint32_t family;
@@ -46,7 +50,6 @@ static inline uint8_t is_fam15h(void)
 
 	return fam15h;
 }
-#endif
 
 static ssize_t get_s3nv_file_offset(void);
 
@@ -1120,13 +1123,16 @@ int8_t save_mct_information_to_nvram(void)
 		set_option("allow_spd_nvram_cache_restore", &nvram);
 
 		printk(BIOS_DEBUG, "Hardware configuration unchanged since last boot; skipping write\n");
+		free(persistent_data);
 		return 0;
 	}
 
 	/* Obtain CBFS file offset */
 	s3nv_offset = get_s3nv_file_offset();
-	if (s3nv_offset == -1)
+	if (s3nv_offset == -1) {
+		free(persistent_data);
 		return -1;
+	}
 
 	/* Align flash pointer to nearest boundary */
 	s3nv_offset &= ~(CONFIG_S3_DATA_SIZE-1);
@@ -1140,20 +1146,17 @@ int8_t save_mct_information_to_nvram(void)
 		return -1;
 	}
 
-	/* Set up SPI flash access */
-	flash->spi->rw = SPI_WRITE_FLAG;
-	spi_claim_bus(flash->spi);
+	spi_flash_volatile_group_begin(flash);
 
 	/* Erase and write data structure */
-	flash->erase(flash, s3nv_offset, CONFIG_S3_DATA_SIZE);
-	flash->write(flash, s3nv_offset, sizeof(struct amd_s3_persistent_data), persistent_data);
+	spi_flash_erase(flash, s3nv_offset, CONFIG_S3_DATA_SIZE);
+	spi_flash_write(flash, s3nv_offset,
+			sizeof(struct amd_s3_persistent_data), persistent_data);
 
 	/* Deallocate temporary data structures */
 	free(persistent_data);
 
-	/* Tear down SPI flash access */
-	flash->spi->rw = SPI_WRITE_FLAG;
-	spi_release_bus(flash->spi);
+	spi_flash_volatile_group_end(flash);
 
 	/* Allow training bypass if DIMM configuration is unchanged on next boot */
 	nvram = 1;
@@ -1174,4 +1177,26 @@ int8_t restore_mct_information_from_nvram(uint8_t training_only)
 	restore_mct_data_from_save_variable(persistent_data, training_only);
 
 	return 0;
+}
+
+void calculate_and_store_spd_hashes(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstat)
+{
+	uint8_t dimm;
+
+	for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
+		calculate_spd_hash(pDCTstat->spd_data.spd_bytes[dimm], &pDCTstat->spd_data.spd_hash[dimm]);
+	}
+}
+
+void compare_nvram_spd_hashes(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstat)
+{
+	uint8_t dimm;
+
+	pDCTstat->spd_data.nvram_spd_match = 1;
+	for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
+		if (pDCTstat->spd_data.spd_hash[dimm] != pDCTstat->spd_data.nvram_spd_hash[dimm])
+			pDCTstat->spd_data.nvram_spd_match = 0;
+	}
 }

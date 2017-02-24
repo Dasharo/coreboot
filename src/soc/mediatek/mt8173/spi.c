@@ -47,17 +47,15 @@ enum {
 
 static struct mtk_spi_bus spi_bus[1] = {
 	{
-		.slave = {
-			.bus = 0,
-		},
 		.regs = (void *)SPI_BASE,
 		.state = MTK_SPI_IDLE,
 	}
 };
 
-static inline struct mtk_spi_bus *to_mtk_spi(struct spi_slave *slave)
+static inline struct mtk_spi_bus *to_mtk_spi(const struct spi_slave *slave)
 {
-	return container_of(slave, struct mtk_spi_bus, slave);
+	assert(slave->bus < ARRAY_SIZE(spi_bus));
+	return &spi_bus[slave->bus];
 }
 
 static void spi_sw_reset(struct mtk_spi_regs *regs)
@@ -80,8 +78,11 @@ void mtk_spi_init(unsigned int bus, unsigned int pad_select,
 		  unsigned int speed_hz)
 {
 	u32 div, sck_ticks, cs_ticks, reg_val;
-	/* mtk spi HW just support bus 0 */
-	assert(bus == 0);
+
+	/* mtk spi HW just supports bus 0 */
+	if (bus != 0)
+		die("Error: Only SPI bus 0 is supported.\n");
+
 	struct mtk_spi_bus *slave = &spi_bus[bus];
 	struct mtk_spi_regs *regs = slave->regs;
 
@@ -159,29 +160,7 @@ static void mtk_spi_dump_data(const char *name, const uint8_t *data,
 #endif
 }
 
-struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs)
-{
-	struct mtk_spi_bus *eslave;
-	static struct spi_slave slave;
-
-	switch (bus) {
-	case CONFIG_EC_GOOGLE_CHROMEEC_SPI_BUS:
-		eslave = &spi_bus[bus];
-		assert(read32(&eslave->regs->spi_cfg0_reg) != 0);
-		spi_sw_reset(eslave->regs);
-		return &eslave->slave;
-	case CONFIG_BOOT_DEVICE_SPI_FLASH_BUS:
-		slave.bus = bus;
-		slave.cs = cs;
-		slave.force_programmer_specific = 1;
-		slave.programmer_specific_probe = &mt8173_nor_flash_probe;
-		return &slave;
-	default:
-		die ("wrong bus number.\n");
-	};
-}
-
-int spi_claim_bus(struct spi_slave *slave)
+static int spi_ctrlr_claim_bus(const struct spi_slave *slave)
 {
 	struct mtk_spi_bus *mtk_slave = to_mtk_spi(slave);
 	struct mtk_spi_regs *regs = mtk_slave->regs;
@@ -192,8 +171,8 @@ int spi_claim_bus(struct spi_slave *slave)
 	return 0;
 }
 
-static int mtk_spi_fifo_transfer(struct spi_slave *slave, void *in,
-				 const void *out, u32 size)
+static int mtk_spi_fifo_transfer(const struct spi_slave *slave, void *in,
+				 const void *out, size_t size)
 {
 	struct mtk_spi_bus *mtk_slave = to_mtk_spi(slave);
 	struct mtk_spi_regs *regs = mtk_slave->regs;
@@ -268,10 +247,10 @@ error:
 	return -1;
 }
 
-int spi_xfer(struct spi_slave *slave, const void *dout, unsigned int bytes_out,
-	     void *din, unsigned int bytes_in)
+static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
+			size_t bytes_out, void *din, size_t bytes_in)
 {
-	uint32_t min_size = 0;
+	size_t min_size = 0;
 	int ret;
 
 	while (bytes_out || bytes_in) {
@@ -300,7 +279,7 @@ int spi_xfer(struct spi_slave *slave, const void *dout, unsigned int bytes_out,
 	return 0;
 }
 
-void spi_release_bus(struct spi_slave *slave)
+static void spi_ctrlr_release_bus(const struct spi_slave *slave)
 {
 	struct mtk_spi_bus *mtk_slave = to_mtk_spi(slave);
 	struct mtk_spi_regs *regs = mtk_slave->regs;
@@ -308,4 +287,35 @@ void spi_release_bus(struct spi_slave *slave)
 	clrbits_le32(&regs->spi_cmd_reg, SPI_CMD_PAUSE_EN);
 	spi_sw_reset(regs);
 	mtk_slave->state = MTK_SPI_IDLE;
+}
+
+static const struct spi_ctrlr spi_ctrlr = {
+	.claim_bus = spi_ctrlr_claim_bus,
+	.release_bus = spi_ctrlr_release_bus,
+	.xfer = spi_ctrlr_xfer,
+	.xfer_vector = spi_xfer_two_vectors,
+};
+
+int spi_setup_slave(unsigned int bus, unsigned int cs, struct spi_slave *slave)
+{
+	struct mtk_spi_bus *eslave;
+
+	slave->ctrlr = &spi_ctrlr;
+
+	switch (bus) {
+	case CONFIG_EC_GOOGLE_CHROMEEC_SPI_BUS:
+		slave->bus = bus;
+		slave->cs = cs;
+		eslave = to_mtk_spi(slave);
+		assert(read32(&eslave->regs->spi_cfg0_reg) != 0);
+		spi_sw_reset(eslave->regs);
+		return 0;
+	case CONFIG_BOOT_DEVICE_SPI_FLASH_BUS:
+		slave->bus = bus;
+		slave->cs = cs;
+		return 0;
+	default:
+		die ("wrong bus number.\n");
+	};
+	return -1;
 }

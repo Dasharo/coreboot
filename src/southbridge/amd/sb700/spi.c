@@ -65,38 +65,14 @@ static void execute_command(void)
 		(read8((void *)(spibar+3)) & 0x80));
 }
 
-int spi_claim_bus(struct spi_slave *slave)
-{
-	/* Handled internally by the SB700 */
-	return 0;
-}
-
-void spi_release_bus(struct spi_slave *slave)
-{
-	/* Handled internally by the SB700 */
-}
-
-struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs)
-{
-	struct spi_slave *slave = malloc(sizeof(*slave));
-
-	if (!slave) {
-		return NULL;
-	}
-
-	memset(slave, 0, sizeof(*slave));
-
-	return slave;
-}
-
-int spi_xfer(struct spi_slave *slave, const void *dout,
-		unsigned int bytesout, void *din, unsigned int bytesin)
+static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
+		size_t bytesout, void *din, size_t bytesin)
 {
 	/* First byte is cmd which cannot be sent through the FIFO. */
 	u8 cmd = *(u8 *)dout++;
 	u8 readoffby1;
 	u8 readwrite;
-	u8 count;
+	size_t count;
 
 	uint32_t spibar = get_spi_bar();
 
@@ -139,5 +115,18 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 		*(u8 *)din = read8((void *)(spibar + 0x0C));
 	}
 
+	return 0;
+}
+
+static const struct spi_ctrlr spi_ctrlr = {
+	.xfer = spi_ctrlr_xfer,
+	.xfer_vector = spi_xfer_two_vectors,
+};
+
+int spi_setup_slave(unsigned int bus, unsigned int cs, struct spi_slave *slave)
+{
+	slave->bus = bus;
+	slave->cs = cs;
+	slave->ctrlr = &spi_ctrlr;
 	return 0;
 }

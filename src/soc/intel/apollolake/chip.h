@@ -24,18 +24,10 @@
 #include <soc/intel/common/lpss_i2c.h>
 #include <device/i2c.h>
 #include <soc/pm.h>
+#include <soc/usb.h>
 
 #define CLKREQ_DISABLED		0xf
 #define APOLLOLAKE_I2C_DEV_MAX	8
-
-struct apollolake_i2c_config {
-	/* Bus should be enabled prior to ramstage with temporary base */
-	int early_init;
-	/* Bus speed in Hz, default is I2C_SPEED_FAST (400 KHz) */
-	enum i2c_speed speed;
-	/* Specific bus speed configuration */
-	struct lpss_i2c_speed_config speed_config[LPSS_I2C_SPEED_CONFIG_COUNT];
-};
 
 /* Serial IRQ control. SERIRQ_QUIET is the default (0). */
 enum serirq_mode {
@@ -95,7 +87,7 @@ struct soc_intel_apollolake_config {
 	enum serirq_mode serirq_mode;
 
 	/* I2C bus configuration */
-	struct apollolake_i2c_config i2c[APOLLOLAKE_I2C_DEV_MAX];
+	struct lpss_i2c_bus_config i2c[APOLLOLAKE_I2C_DEV_MAX];
 
 	uint8_t gpe0_dw1; /* GPE0_63_32 STS/EN */
 	uint8_t gpe0_dw2; /* GPE0_95_64 STS/EN */
@@ -109,6 +101,8 @@ struct soc_intel_apollolake_config {
 
 	/* PL1 override value in mW for APL */
 	uint16_t tdp_pl1_override_mw;
+	/* PL2 override value in mW for APL */
+	uint16_t tdp_pl2_override_mw;
 
 	/* Configure Audio clk gate and power gate
 	 * IOSF-SB port ID 92 offset 0x530 [5] and [3]
@@ -122,6 +116,10 @@ struct soc_intel_apollolake_config {
 
 	/* GPIO pin for PERST_0 */
 	uint16_t prt0_gpio;
+
+	/* USB2 eye diagram settings per port */
+	struct usb2_eye_per_port usb2eye[APOLLOLAKE_USB2_PORT_MAX];
+
 };
 
 #endif	/* _SOC_APOLLOLAKE_CHIP_H_ */

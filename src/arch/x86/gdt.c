@@ -38,6 +38,10 @@ static void move_gdt(int is_recovery)
 	u16 num_gdt_bytes = (uintptr_t)&gdt_end - (uintptr_t)&gdt;
 	struct gdtarg gdtarg;
 
+	/* ramstage is already in high memory. No need to use a new gdt. */
+	if (IS_ENABLED(CONFIG_RELOCATABLE_RAMSTAGE))
+		return;
+
 	newgdt = cbmem_find(CBMEM_ID_GDT);
 	if (!newgdt) {
 		newgdt = cbmem_add(CBMEM_ID_GDT, ALIGN(num_gdt_bytes, 512));
@@ -45,9 +49,9 @@ static void move_gdt(int is_recovery)
 			printk(BIOS_ERR, "Error: Could not relocate GDT.\n");
 			return;
 		}
-		printk(BIOS_DEBUG, "Moving GDT to %p...", newgdt);
 		memcpy((void*)newgdt, &gdt, num_gdt_bytes);
 	}
+	printk(BIOS_DEBUG, "Moving GDT to %p...", newgdt);
 
 	gdtarg.base = (uintptr_t)newgdt;
 	gdtarg.limit = num_gdt_bytes - 1;

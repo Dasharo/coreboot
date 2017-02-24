@@ -42,12 +42,18 @@ struct drivers_i2c_generic_config {
 	unsigned device_present_gpio;
 	unsigned device_present_gpio_invert;
 
+	/* Disable reset and enable GPIO export in _CRS */
+	bool disable_gpio_export_in_crs;
+
+	/* Does the device have a power resource? */
+	bool has_power_resource;
+
 	/* GPIO used to take device out of reset or to put it into reset. */
-        unsigned reset_gpio;
+	struct acpi_gpio reset_gpio;
 	/* Delay to be inserted after device is taken out of reset. */
 	unsigned reset_delay_ms;
 	/* GPIO used to enable device. */
-	unsigned enable_gpio;
+	struct acpi_gpio enable_gpio;
 	/* Delay to be inserted after device is enabled. */
 	unsigned enable_delay_ms;
 };
@@ -57,11 +63,13 @@ struct drivers_i2c_generic_config {
  * properties. Callback can be provided to fill in any
  * device-specific information in SSDT.
  *
- * Drivers calling into this function to generate should place
- * drivers_i2c_generic_config structure at the beginning of their device config
- * structure.
+ * Parameters:
+ * dev: Device requesting i2c generic information to be filled
+ * callback: Callback to fill in device-specific information
+ * config: Pointer to drivers_i2c_generic_config structure
  */
 void i2c_generic_fill_ssdt(struct device *dev,
-			   void (*callback)(struct device *dev));
+			void (*callback)(struct device *dev),
+			struct drivers_i2c_generic_config *config);
 
 #endif /* __I2C_GENERIC_CHIP_H__ */

@@ -26,8 +26,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <cpu/cpu.h>
-#include <cpu/x86/msr.h>
 #include <soc/acpi.h>
 #include <soc/nvs.h>
 #include <soc/iomap.h>

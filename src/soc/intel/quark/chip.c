@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <console/console.h>
 #include <device/device.h>
+#include <romstage_handoff.h>
 #include <soc/ramstage.h>
 #include <soc/reg_access.h>
 
@@ -117,7 +118,7 @@ static void chip_init(void *chip_info)
 			| TS_LOCK_AUX_TRIP_PT_REGS_ENABLE));
 
 	/* Perform silicon specific init. */
-	fsp_silicon_init();
+	fsp_silicon_init(romstage_handoff_is_resume());
 }
 
 static void pci_domain_set_resources(device_t dev)

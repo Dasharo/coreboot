@@ -28,6 +28,7 @@
 #include <program_loading.h>
 #include <romstage_handoff.h>
 #include <stage_cache.h>
+#include <string.h>
 #include <timestamp.h>
 #include <tpm.h>
 #include <vendorcode/google/chromeos/chromeos.h>
@@ -210,7 +211,6 @@ static int chipset_prev_sleep_state(struct chipset_power_state *ps)
 /* Entry from the mainboard. */
 void romstage_common(struct romstage_params *params)
 {
-	struct romstage_handoff *handoff;
 	struct chipset_power_state *ps;
 	int prev_sleep_state;
 
@@ -232,11 +232,7 @@ void romstage_common(struct romstage_params *params)
 
 	timestamp_add_now(TS_AFTER_INITRAM);
 
-	handoff = romstage_handoff_find_or_add();
-	if (handoff != NULL)
-		handoff->s3_resume = (prev_sleep_state == ACPI_S3);
-	else
-		printk(BIOS_DEBUG, "Romstage handoff structure not added!\n");
+	romstage_handoff_init(prev_sleep_state == ACPI_S3);
 
 	if (IS_ENABLED(CONFIG_LPC_TPM)) {
 		init_tpm(prev_sleep_state == ACPI_S3);
@@ -261,15 +257,13 @@ static inline uint32_t *stack_push(u32 *stack, u32 value)
  * cache-as-ram is torn down as well as the MTRR settings to use. */
 static void *setup_stack_and_mttrs(void)
 {
-	unsigned long top_of_stack;
 	int num_mtrrs;
 	uint32_t *slot;
 	uint32_t mtrr_mask_upper;
 	uint32_t top_of_ram;
 
 	/* Top of stack needs to be aligned to a 4-byte boundary. */
-	top_of_stack = romstage_ram_stack_top() & ~3;
-	slot = (void *)top_of_stack;
+	slot = (void *)romstage_ram_stack_top();
 	num_mtrrs = 0;
 
 	/* The upper bits of the MTRR mask need to set according to the number
@@ -331,14 +325,6 @@ static void *setup_stack_and_mttrs(void)
 	slot = stack_push(slot, num_mtrrs);
 
 	return slot;
-}
-
-void ramstage_cache_invalid(void)
-{
-#if CONFIG_RESET_ON_INVALID_RAMSTAGE_CACHE
-	/* Perform cold reset on invalid ramstage cache. */
-	cold_reset();
-#endif
 }
 
 int get_sw_write_protect_state(void)

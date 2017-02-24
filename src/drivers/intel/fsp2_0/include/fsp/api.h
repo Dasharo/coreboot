@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <fsp/soc_binding.h>
+#include <soc/intel/common/mma.h>
 
 #define FSP_SUCCESS	EFI_SUCCESS
 
@@ -38,14 +39,21 @@ enum fsp_notify_phase {
 
 /* Main FSP stages */
 void fsp_memory_init(bool s3wake);
-void fsp_silicon_init(void);
+void fsp_silicon_init(bool s3wake);
+void fsp_temp_ram_exit(void);
 
 /* Callbacks for updating stage-specific parameters */
-void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd);
+void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version);
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd);
 
 /* Callback after processing FSP notify */
 void platform_fsp_notify_status(enum fsp_notify_phase phase);
+
+/* Initialize memory margin analysis settings. */
+void setup_mma(FSP_M_CONFIG *memory_cfg);
+/* Update the SOC specific memory config param for mma. */
+void soc_update_memory_params_for_mma(FSP_M_CONFIG *memory_cfg,
+	struct mma_config_param *mma_cfg);
 
 /*
  * # DOCUMENTATION:

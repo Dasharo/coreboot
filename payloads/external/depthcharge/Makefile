@@ -13,6 +13,12 @@ VBOOT_SOURCE ?= $(abspath $(CURDIR)/../../../3rdparty/vboot)
 
 TAG-$(DEPTHCHARGE_MASTER)=origin/master
 TAG-$(DEPTHCHARGE_STABLE)=$(STABLE_COMMIT_ID)
+TAG-$(DEPTHCHARGE_REVISION)=$(DEPTHCHARGE_REVISION_ID)
+
+# todo: consider reverting this once stable moves past the commit below
+payload_target=depthcharge
+payload_target_old=$(payload_target)_unified
+payload_namechange=74a07395eb9976747055b4ac7a0ae7dcb603a6f4
 
 unexport KCONFIG_AUTOHEADER
 unexport KCONFIG_AUTOCONFIG
@@ -23,6 +29,13 @@ unexport KCONFIG_NEGATIVES
 unexport src srck obj objk
 
 BOARD:=$(notdir $(CONFIG_MAINBOARD_DIR))
+
+ifeq ($(OVERRIDE_DEFCONFIG),y)
+$(info Depthcharge: Using default defconfig for libpayload)
+libpayload_config=$(libpayload_dir)/configs/defconfig
+else
+libpayload_config=$(libpayload_dir)/configs/config.$(BOARD)
+endif
 
 all: build
 
@@ -41,10 +54,10 @@ checkout: fetch
 	cd $(project_dir) ; git checkout master; git branch -D coreboot 2>/dev/null; git checkout -b coreboot $(TAG-y)
 
 $(libpayload_install_dir): $(project_dir)
-	test -f $(libpayload_dir)/configs/config.$(BOARD) || \
-		(echo "Error: $(libpayload_dir)/configs/config.$(BOARD) is not present" && \
+	test -f $(libpayload_config)|| \
+		(echo "Error: $(libpayload_config) is not present" && \
 		false)
-	cp $(libpayload_dir)/configs/config.$(BOARD) $(libpayload_dir)/.config
+	cp $(libpayload_config) $(libpayload_dir)/.config
 	$(MAKE) -C $(libpayload_dir) olddefconfig
 	$(MAKE) -C $(libpayload_dir)
 	$(MAKE) -C $(libpayload_dir) install DESTDIR=$(libpayload_install_dir)
@@ -60,8 +73,12 @@ config: $(libpayload_install_dir) checkout
 
 build: config
 	echo "    MAKE       $(project_name) $(TAG-y)"
-	cd $(project_dir) && $(MAKE) BOARD=$(BOARD) LIBPAYLOAD_DIR=$(libpayload_install_dir)/libpayload \
-		VB_SOURCE=$(VBOOT_SOURCE) PATH="$(abspath ../../../build/util/cbfstool):$$PATH" depthcharge_unified
+	cd $(project_dir) && \
+		git merge-base --is-ancestor $(payload_namechange) $(TAG-y) >/dev/null 2>&1 && \
+			$(MAKE) BOARD=$(BOARD) LIBPAYLOAD_DIR=$(libpayload_install_dir)/libpayload \
+				VB_SOURCE=$(VBOOT_SOURCE) PATH="$(abspath ../../../build/util/cbfstool):$$PATH" $(payload_target) || \
+			$(MAKE) BOARD=$(BOARD) LIBPAYLOAD_DIR=$(libpayload_install_dir)/libpayload \
+				VB_SOURCE=$(VBOOT_SOURCE) PATH="$(abspath ../../../build/util/cbfstool):$$PATH" $(payload_target_old)
 
 clean:
 	test -d $(output_dir) && rm -rf $(output_dir) || exit 0

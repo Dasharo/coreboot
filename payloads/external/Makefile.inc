@@ -60,6 +60,11 @@ cbfs-files-$(CONFIG_INCLUDE_CONFIG_FILE) += payload_revision
 payload_revision-file := $(PAYLOAD_VERSION)
 payload_revision-type := raw
 
+cbfs-files-$(CONFIG_GRUB2_INCLUDE_RUNTIME_CONFIG_FILE) += etc/grub.cfg
+etc/grub.cfg-file := $(CONFIG_GRUB2_RUNTIME_CONFIG_FILE)
+etc/grub.cfg-type := raw
+etc/grub.cfg-required := the GRUB runtime configuration file ($(CONFIG_GRUB2_RUNTIME_CONFIG_FILE))
+
 # SeaBIOS
 
 SEABIOS_CC_OFFSET=$(if $(filter %ccache,$(HOSTCC)),2,1)
@@ -81,7 +86,8 @@ payloads/external/SeaBIOS/seabios/out/bios.bin.elf seabios: $(DOTCONFIG)
 			CONFIG_SEABIOS_VGA_COREBOOT=$(CONFIG_SEABIOS_VGA_COREBOOT) \
 			CONFIG_DRIVERS_UART_8250IO=$(CONFIG_DRIVERS_UART_8250IO) \
 			CONFIG_CONSOLE_SERIAL=$(CONFIG_CONSOLE_SERIAL) \
-			CONFIG_TTYS0_BASE=$(CONFIG_TTYS0_BASE)
+			CONFIG_TTYS0_BASE=$(CONFIG_TTYS0_BASE) \
+			CONFIG_SEABIOS_DEBUG_LEVEL=$(CONFIG_SEABIOS_DEBUG_LEVEL)
 
 payloads/external/SeaBIOS/seabios/out/vgabios.bin: seabios
 payloads/external/SeaBIOS/seabios/.config: payloads/external/SeaBIOS/seabios/out/bios.bin.elf
@@ -133,10 +139,14 @@ endif
 # Depthcharge
 
 payloads/external/depthcharge/depthcharge/build/depthcharge.elf depthcharge: $(DOTCONFIG) $(CBFSTOOL)
-
 	$(MAKE) -C payloads/external/depthcharge \
 		BOARD=$(call ws_to_under,$(call strip_quotes,$(call tolower,$(CONFIG_MAINBOARD_PART_NUMBER)))) \
-		MFLAGS= MAKEFLAGS=
+		MFLAGS= MAKEFLAGS= \
+		DEPTHCHARGE_MASTER=$(CONFIG_DEPTHCHARGE_MASTER) \
+		DEPTHCHARGE_STABLE=$(CONFIG_DEPTHCHARGE_STABLE) \
+		DEPTHCHARGE_REVISION=$(CONFIG_DEPTHCHARGE_REVISION) \
+		DEPTHCHARGE_REVISION_ID=$(CONFIG_DEPTHCHARGE_REVISION_ID) \
+		OVERRIDE_DEFCONFIG=$(CONFIG_LP_DEFCONFIG_OVERRIDE)
 
 # FILO
 
@@ -211,6 +221,15 @@ payloads/external/sortbootorder/sortbootorder/sortbootorder.elf sortbootorder:
 cbfs-files-$(CONFIG_SORTBOOTORDER_SECONDARY_PAYLOAD) += img/setup
 img/setup-file := payloads/external/sortbootorder/sortbootorder/sortbootorder.elf
 img/setup-type := payload
+
+# sgabios
+
+payloads/external/sgabios/sgabios.bin sgabios:
+	$(MAKE) -C payloads/external/sgabios
+
+cbfs-files-y += vgaroms/sgabios.bin
+vgaroms/sgabios.bin-file := payloads/external/sgabios/sgabios.bin
+vgaroms/sgabios.bin-type := raw
 
 # iPXE
 

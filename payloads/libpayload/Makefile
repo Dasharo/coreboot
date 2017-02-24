@@ -81,14 +81,6 @@ DOXYGEN_OUTPUT_DIR := doxygen
 
 all: real-all
 
-# in addition to the dependency below, create the file if it doesn't exist
-# to silence stupid warnings about a file that would be generated anyway.
-$(if $(wildcard .xcompile),,$(eval $(shell $(top)/../../util/xcompile/xcompile $(XGCCPATH) > .xcompile)))
-
-.xcompile: $(top)/../../util/xcompile/xcompile
-	$< $(XGCCPATH) > $@.tmp
-	\mv -f $@.tmp $@ 2> /dev/null
-
 ifeq ($(INNER_SCANBUILD),y)
 CC:=$(CC_real)
 HOSTCC:=$(CC_real) --hostcc
@@ -100,8 +92,6 @@ endif
 include $(srck)/Makefile
 
 include $(HAVE_DOTCONFIG)
-
-include .xcompile
 
 ARCHDIR-$(CONFIG_LP_ARCH_ARM)     := arm
 ARCHDIR-$(CONFIG_LP_ARCH_ARM64)   := arm64
@@ -117,6 +107,36 @@ ARCH-$(CONFIG_LP_ARCH_ARM64)   := arm64
 ARCH-$(CONFIG_LP_ARCH_X86)     := x86_32
 ARCH-$(CONFIG_LP_ARCH_MIPS)    := mips
 
+# Three cases where we don't need fully populated $(obj) lists:
+# 1. when no .config exists
+# 2. when make config (in any flavour) is run
+# 3. when make distclean is run
+# Don't waste time on reading all Makefile.incs in these cases
+ifeq ($(strip $(HAVE_DOTCONFIG)),)
+NOCOMPILE:=1
+endif
+ifneq ($(MAKECMDGOALS),)
+ifneq ($(filter %config %clean,$(MAKECMDGOALS)),)
+NOCOMPILE:=1
+endif
+endif
+
+ifeq ($(NOCOMPILE),1)
+include $(TOPLEVEL)/Makefile.inc
+real-all: config
+
+else
+
+# in addition to the dependency below, create the file if it doesn't exist
+# to silence stupid warnings about a file that would be generated anyway.
+$(if $(wildcard .xcompile)$(NOCOMPILE),,$(eval $(shell $(top)/../../util/xcompile/xcompile $(XGCCPATH) > .xcompile)))
+
+.xcompile: $(top)/../../util/xcompile/xcompile
+	$< $(XGCCPATH) > $@.tmp
+	\mv -f $@.tmp $@ 2> /dev/null
+
+-include .xcompile
+
 CC := $(CC_$(ARCH-y))
 AS := $(AS_$(ARCH-y))
 LD := $(LD_$(ARCH-y))
@@ -128,26 +148,6 @@ STRIP := $(STRIP_$(ARCH-y))
 AR := $(AR_$(ARCH-y))
 
 CFLAGS += $(CFLAGS_$(ARCH-y))
-
-# Three cases where we don't need fully populated $(obj) lists:
-# 1. when no .config exists
-# 2. when make config (in any flavour) is run
-# 3. when make distclean is run
-# Don't waste time on reading all Makefile.incs in these cases
-ifeq ($(strip $(HAVE_DOTCONFIG)),)
-NOCOMPILE:=1
-endif
-ifneq ($(MAKECMDGOALS),)
-ifneq ($(filter %config distclean,$(MAKECMDGOALS)),)
-NOCOMPILE:=1
-endif
-endif
-
-ifeq ($(NOCOMPILE),1)
-include $(TOPLEVEL)/Makefile.inc
-real-all: config
-
-else
 
 ifneq ($(INNER_SCANBUILD),y)
 ifeq ($(CONFIG_LP_COMPILER_LLVM_CLANG),y)
@@ -304,12 +304,12 @@ clean-for-update: doxygen-clean clean-for-update-target
 
 clean: clean-for-update clean-target
 	rm -f .ccwrap junit_config junit_config.old
+	rm -rf $(obj)
 
 clean-cscope:
 	rm -f cscope.out
 
-distclean: clean-cscope
-	rm -rf $(obj)
+distclean: clean-cscope clean
 	rm -f .config .config.old ..config.tmp .kconfig.d .tmpconfig* .ccwrap .xcompile junit.xml
 
 .PHONY: $(PHONY) clean clean-cscope cscope distclean doxygen doxy

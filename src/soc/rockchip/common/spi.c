@@ -27,7 +27,6 @@
 #include <timer.h>
 
 struct rockchip_spi_slave {
-	struct spi_slave slave;
 	struct rockchip_spi *regs;
 };
 
@@ -37,45 +36,24 @@ struct rockchip_spi_slave {
 
 static struct rockchip_spi_slave rockchip_spi_slaves[] = {
 	{
-	 .slave = {
-		   .bus = 0,
-		   .rw = SPI_READ_FLAG | SPI_WRITE_FLAG,
-		   },
 	 .regs = (void *)SPI0_BASE,
 	},
 	{
-	 .slave = {.bus = 1, .rw = SPI_READ_FLAG,},
 	 .regs = (void *)SPI1_BASE,
 	},
 	{
-	 .slave = {
-		   .bus = 2,
-		   .rw = SPI_READ_FLAG | SPI_WRITE_FLAG,
-		   },
 	 .regs = (void *)SPI2_BASE,
 	},
 #ifdef SPI3_BASE
 	{
-	 .slave = {
-		   .bus = 3,
-		   .rw = SPI_READ_FLAG | SPI_WRITE_FLAG,
-		   },
 	 .regs = (void *)SPI3_BASE,
 	},
 #ifdef SPI4_BASE
 	{
-	 .slave = {
-		   .bus = 4,
-		   .rw = SPI_READ_FLAG | SPI_WRITE_FLAG,
-		   },
 	 .regs = (void *)SPI4_BASE,
 	},
 #ifdef SPI5_BASE
 	{
-	 .slave = {
-		   .bus = 5,
-		   .rw = SPI_READ_FLAG | SPI_WRITE_FLAG,
-		   },
 	 .regs = (void *)SPI5_BASE,
 	},
 #endif
@@ -83,24 +61,19 @@ static struct rockchip_spi_slave rockchip_spi_slaves[] = {
 #endif
 };
 
-static struct rockchip_spi_slave *to_rockchip_spi(struct spi_slave *slave)
+static struct rockchip_spi_slave *to_rockchip_spi(const struct spi_slave *slave)
 {
-	return container_of(slave, struct rockchip_spi_slave, slave);
+	assert(slave->bus < ARRAY_SIZE(rockchip_spi_slaves));
+	return &rockchip_spi_slaves[slave->bus];
 }
 
-struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs)
-{
-	assert(bus >= 0 && bus < ARRAY_SIZE(rockchip_spi_slaves));
-	return &(rockchip_spi_slaves[bus].slave);
-}
-
-static void spi_cs_activate(struct spi_slave *slave)
+static void spi_cs_activate(const struct spi_slave *slave)
 {
 	struct rockchip_spi *regs = to_rockchip_spi(slave)->regs;
 	setbits_le32(&regs->ser, 1);
 }
 
-static void spi_cs_deactivate(struct spi_slave *slave)
+static void spi_cs_deactivate(const struct spi_slave *slave)
 {
 	struct rockchip_spi *regs = to_rockchip_spi(slave)->regs;
 	clrbits_le32(&regs->ser, 1);
@@ -172,13 +145,13 @@ void rockchip_spi_set_sample_delay(unsigned int bus, unsigned int delay_ns)
 			rsd << SPI_RXDSD_OFFSET);
 }
 
-int spi_claim_bus(struct spi_slave *slave)
+static int spi_ctrlr_claim_bus(const struct spi_slave *slave)
 {
 	spi_cs_activate(slave);
 	return 0;
 }
 
-void spi_release_bus(struct spi_slave *slave)
+static void spi_ctrlr_release_bus(const struct spi_slave *slave)
 {
 	spi_cs_deactivate(slave);
 }
@@ -218,11 +191,11 @@ static void set_transfer_mode(struct rockchip_spi *regs,
 
 /* returns 0 to indicate success, <0 otherwise */
 static int do_xfer(struct rockchip_spi *regs, bool use_16bit, const void *dout,
-		   unsigned int *bytes_out, void *din, unsigned int *bytes_in)
+		   size_t *bytes_out, void *din, size_t *bytes_in)
 {
 	uint8_t *in_buf = din;
 	uint8_t *out_buf = (uint8_t *)dout;
-	unsigned int min_xfer;
+	size_t min_xfer;
 
 	if (*bytes_out == 0)
 		min_xfer = *bytes_in;
@@ -283,8 +256,8 @@ unsigned int spi_crop_chunk(unsigned int cmd_len, unsigned int buf_len)
 	return min(65535, buf_len);
 }
 
-int spi_xfer(struct spi_slave *slave, const void *dout,
-		unsigned int bytes_out, void *din, unsigned int bytes_in)
+static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
+			  size_t bytes_out, void *din, size_t bytes_in)
 {
 	struct rockchip_spi *regs = to_rockchip_spi(slave)->regs;
 	int ret = 0;
@@ -298,10 +271,10 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	 * seems to work fine.
 	 */
 	while (bytes_out || bytes_in) {
-		unsigned int in_now = MIN(bytes_in, 0xfffe);
-		unsigned int out_now = MIN(bytes_out, 0xfffe);
-		unsigned int in_rem, out_rem;
-		unsigned int mask;
+		size_t in_now = MIN(bytes_in, 0xfffe);
+		size_t out_now = MIN(bytes_out, 0xfffe);
+		size_t in_rem, out_rem;
+		size_t mask;
 		bool use_16bit;
 
 		rockchip_spi_enable_chip(regs, 0);
@@ -339,13 +312,13 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 			break;
 
 		if (bytes_out) {
-			unsigned int sent = out_now - out_rem;
+			size_t sent = out_now - out_rem;
 			bytes_out -= sent;
 			dout += sent;
 		}
 
 		if (bytes_in) {
-			unsigned int received = in_now - in_rem;
+			size_t received = in_now - in_rem;
 			bytes_in -= received;
 			din += received;
 		}
@@ -353,4 +326,21 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 
 	rockchip_spi_enable_chip(regs, 0);
 	return ret < 0 ? ret : 0;
+}
+
+static const struct spi_ctrlr spi_ctrlr = {
+	.claim_bus = spi_ctrlr_claim_bus,
+	.release_bus = spi_ctrlr_release_bus,
+	.xfer = spi_ctrlr_xfer,
+};
+
+int spi_setup_slave(unsigned int bus, unsigned int cs, struct spi_slave *slave)
+{
+	assert(bus < ARRAY_SIZE(rockchip_spi_slaves));
+
+	slave->bus = bus;
+	slave->cs = cs;
+	slave->ctrlr = &spi_ctrlr;
+
+	return 0;
 }

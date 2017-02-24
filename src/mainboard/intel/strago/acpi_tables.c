@@ -20,8 +20,6 @@
 #include <arch/smp/mpspec.h>
 #include <cbmem.h>
 #include <console/console.h>
-#include <cpu/cpu.h>
-#include <cpu/x86/msr.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>

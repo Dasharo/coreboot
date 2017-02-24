@@ -34,6 +34,9 @@ int cbfs_boot_locate(struct cbfsf *fh, const char *name, uint32_t *type);
  * leaking mappings are a no-op. Returns NULL on error, else returns
  * the mapping and sets the size of the file. */
 void *cbfs_boot_map_with_leak(const char *name, uint32_t type, size_t *size);
+/* Locate file in a specific region of fmap. Return 0 on success. < 0 on error*/
+int cbfs_locate_file_in_region(struct cbfsf *fh, const char *region_name,
+		const char *name, uint32_t *type);
 /* Load a struct file from CBFS into a buffer. Returns amount of loaded
  * bytes on success or 0 on error. File will get decompressed as necessary.
  * Same decompression requirements as cbfs_load_and_decompress(). */
@@ -46,6 +49,9 @@ size_t cbfs_boot_load_struct(const char *name, void *buf, size_t buf_size);
  * in-place with the buffer size requirements outlined in compression.h. */
 size_t cbfs_load_and_decompress(const struct region_device *rdev, size_t offset,
 	size_t in_size, void *buffer, size_t buffer_size, uint32_t compression);
+
+/* Return the size and fill base of the memory pstage will occupy after loaded. */
+size_t cbfs_prog_stage_section(struct prog *pstage, uintptr_t *base);
 
 /* Load stage into memory filling in prog. Return 0 on success. < 0 on error. */
 int cbfs_prog_stage_load(struct prog *prog);

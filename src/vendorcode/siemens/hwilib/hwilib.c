@@ -107,6 +107,10 @@ static const struct param_info params[] = {
 	[SIB_HwRev] = {
 		.pos[0] = {.blk_type = BLK_SIB, .offset = 0xc8, .len = 2},
 		.get_field = hwilib_read_bytes },
+	[HWID] = {
+		.pos[0] = {.blk_type = BLK_HIB, .offset = 0x1a8, .len = 4},
+		.pos[1] = {.blk_type = BLK_SIB, .offset = 0xd0, .len = 4},
+		.get_field = hwilib_read_bytes },
 	[UniqueNum] = {
 		.pos[0] = {.blk_type = BLK_HIB, .offset = 0xa2, .len = 10},
 		.pos[1] = {.blk_type = BLK_SIB, .offset = 0xa2, .len = 10},
@@ -392,7 +396,8 @@ static uint32_t hwilib_read_bytes (const struct param_info *param, uint8_t *dst,
 		return 0;
 	/* Take the first valid block to get the parameter from */
 	do {
-		if ((param->pos[i].len) && (param->pos[i].offset)) {
+		if ((param->pos[i].len) && (param->pos[i].offset) &&
+		     (blk_ptr[param->pos[i].blk_type])) {
 			blk =  blk_ptr[param->pos[i].blk_type];
 			break;
 		}

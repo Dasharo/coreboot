@@ -18,6 +18,7 @@
  * C Bootstrap code for the coreboot
  */
 
+#include <adainit.h>
 #include <arch/exception.h>
 #include <bootstate.h>
 #include <console/console.h>
@@ -114,6 +115,8 @@ static struct boot_state boot_states[] = {
 	BS_INIT_ENTRY(BS_PAYLOAD_BOOT, bs_payload_boot),
 };
 
+void __attribute__((weak)) arch_bootstate_coreboot_exit(void) { }
+
 static boot_state_t bs_pre_device(void *arg)
 {
 	return BS_DEV_INIT_CHIPS;
@@ -197,6 +200,7 @@ static boot_state_t bs_os_resume_check(void *arg)
 static boot_state_t bs_os_resume(void *wake_vector)
 {
 #if CONFIG_HAVE_ACPI_RESUME
+	arch_bootstate_coreboot_exit();
 	acpi_resume(wake_vector);
 #endif
 	return BS_WRITE_TABLES;
@@ -211,6 +215,7 @@ static boot_state_t bs_write_tables(void *arg)
 	 */
 	write_tables();
 
+	timestamp_add_now(TS_FINALIZE_CHIPS);
 	dev_finalize_chips();
 
 	return BS_PAYLOAD_LOAD;
@@ -225,6 +230,7 @@ static boot_state_t bs_payload_load(void *arg)
 
 static boot_state_t bs_payload_boot(void *arg)
 {
+	arch_bootstate_coreboot_exit();
 	payload_run();
 
 	printk(BIOS_EMERG, "Boot failed\n");
@@ -429,6 +435,18 @@ static void boot_state_schedule_static_entries(void)
 
 void main(void)
 {
+	/*
+	 * We can generally jump between C and Ada code back and forth
+	 * without trouble. But since we don't have an Ada main() we
+	 * have to do some Ada package initializations that GNAT would
+	 * do there. This has to be done before calling any Ada code.
+	 *
+	 * The package initializations should not have any dependen-
+	 * cies on C code. So we can call them here early, and don't
+	 * have to worry at which point we can start to use Ada.
+	 */
+	ramstage_adainit();
+
 	/* TODO: Understand why this is here and move to arch/platform code. */
 	/* For MMIO UART this needs to be called before any other printk. */
 	if (IS_ENABLED(CONFIG_ARCH_X86))

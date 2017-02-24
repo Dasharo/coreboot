@@ -15,7 +15,7 @@
  */
 
 #include <cbfs.h>
-#include <spd_cache.h>
+#include <spd_bin.h>
 
 #include "AGESA.h"
 #include "amdlib.h"
@@ -132,7 +132,7 @@ AGESA_STATUS agesa_ReadSpd_from_cbfs(UINT32 Func, UINT32 Data, VOID *ConfigPtr)
 		return AGESA_UNSUPPORTED;
 
 	/* Read index 0, first SPD_SIZE bytes of spd.bin file. */
-	if (read_spd_from_cbfs((u8*)info->Buffer, 0) < 0)
+	if (read_ddr3_spd_from_cbfs((u8*)info->Buffer, 0) < 0)
 		die("No SPD data\n");
 
 	Status = AGESA_SUCCESS;

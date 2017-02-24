@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015 Timothy Pearson <tpearson@raptorengineeringinc.com>, Raptor Engineering
+ * Copyright (C) 2015-2017 Timothy Pearson <tpearson@raptorengineeringinc.com>, Raptor Engineering
  * Copyright (C) 2007-2008 Advanced Micro Devices, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,18 @@
 #ifndef MCT_D_H
 #define MCT_D_H
 
+#define DQS_TRAIN_DEBUG 0
 
+#include <inttypes.h>
+#include "mct_d_gcc.h"
+#include <console/console.h>
+#include <northbridge/amd/amdfam10/debug.h>
+#include <northbridge/amd/amdfam10/raminit.h>
+
+extern const u8 Table_DQSRcvEn_Offset[];
+extern const u32 TestPattern0_D[];
+extern const u32 TestPattern1_D[];
+extern const u32 TestPattern2_D[];
 
 /*===========================================================================
 	CPU - K8/FAM10
@@ -285,6 +296,34 @@ struct MCTStatStruc {
 	Local DCT Status structure (a structure for each DCT)
 ===============================================================================*/
 
+struct DCTPersistentStatStruc {
+	u8 CH_D_DIR_B_DQS[2][4][2][9];	/* [A/B] [DIMM1-4] [R/W] [DQS] */
+		/* CHA DIMM0 Byte 0 - 7 and Check Write DQS Delay*/
+		/* CHA DIMM0 Byte 0 - 7 and Check Read DQS Delay*/
+		/* CHA DIMM1 Byte 0 - 7 and Check Write DQS Delay*/
+		/* CHA DIMM1 Byte 0 - 7 and Check Read DQS Delay*/
+		/* CHB DIMM0 Byte 0 - 7 and Check Write DQS Delay*/
+		/* CHB DIMM0 Byte 0 - 7 and Check Read DQS Delay*/
+		/* CHB DIMM1 Byte 0 - 7 and Check Write DQS Delay*/
+		/* CHB DIMM1 Byte 0 - 7 and Check  Read DQS Delay*/
+	u8 CH_D_B_RCVRDLY[2][4][8];	/* [A/B] [DIMM0-3] [DQS] */
+		/* CHA DIMM 0 Receiver Enable Delay*/
+		/* CHA DIMM 1 Receiver Enable Delay*/
+		/* CHA DIMM 2 Receiver Enable Delay*/
+		/* CHA DIMM 3 Receiver Enable Delay*/
+
+		/* CHB DIMM 0 Receiver Enable Delay*/
+		/* CHB DIMM 1 Receiver Enable Delay*/
+		/* CHB DIMM 2 Receiver Enable Delay*/
+		/* CHB DIMM 3 Receiver Enable Delay*/
+	u8 CH_D_BC_RCVRDLY[2][4];
+		/* CHA DIMM 0 - 4 Check Byte Receiver Enable Delay*/
+		/* CHB DIMM 0 - 4 Check Byte Receiver Enable Delay*/
+	u16 HostBiosSrvc1;	/* Word sized general purpose field for use by host BIOS.  Scratch space.*/
+	u32 HostBiosSrvc2;	/* Dword sized general purpose field for use by host BIOS.  Scratch space.*/
+} __attribute__((packed));
+
+
 struct DCTStatStruc {		/* A per Node structure*/
 /* DCTStatStruct_F -  start */
 	u8 Node_ID;			/* Node ID of current controller*/
@@ -434,8 +473,6 @@ struct DCTStatStruc {		/* A per Node structure*/
 		/* CH B byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
 		/* CH B byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
 	uint64_t LogicalCPUID;	/* The logical CPUID of the node*/
-	u16 HostBiosSrvc1;	/* Word sized general purpose field for use by host BIOS.  Scratch space.*/
-	u32 HostBiosSrvc2;	/* Dword sized general purpose field for use by host BIOS.  Scratch space.*/
 	u16 DimmQRPresent;	/* QuadRank DIMM present?*/
 	u16 DimmTrainFail;	/* Bitmap showing which dimms failed training*/
 	u16 CSTrainFail;	/* Bitmap showing which chipselects failed training*/
@@ -451,28 +488,6 @@ struct DCTStatStruc {		/* A per Node structure*/
 
 	u16 CH_MaxRdLat[2];	/* Max Read Latency (ns) for DCT 0*/
 		/* Max Read Latency (ns) for DCT 1*/
-	u8 CH_D_DIR_B_DQS[2][4][2][9];	/* [A/B] [DIMM1-4] [R/W] [DQS] */
-		/* CHA DIMM0 Byte 0 - 7 and Check Write DQS Delay*/
-		/* CHA DIMM0 Byte 0 - 7 and Check Read DQS Delay*/
-		/* CHA DIMM1 Byte 0 - 7 and Check Write DQS Delay*/
-		/* CHA DIMM1 Byte 0 - 7 and Check Read DQS Delay*/
-		/* CHB DIMM0 Byte 0 - 7 and Check Write DQS Delay*/
-		/* CHB DIMM0 Byte 0 - 7 and Check Read DQS Delay*/
-		/* CHB DIMM1 Byte 0 - 7 and Check Write DQS Delay*/
-		/* CHB DIMM1 Byte 0 - 7 and Check  Read DQS Delay*/
-	u8 CH_D_B_RCVRDLY[2][4][8];	/* [A/B] [DIMM0-3] [DQS] */
-		/* CHA DIMM 0 Receiver Enable Delay*/
-		/* CHA DIMM 1 Receiver Enable Delay*/
-		/* CHA DIMM 2 Receiver Enable Delay*/
-		/* CHA DIMM 3 Receiver Enable Delay*/
-
-		/* CHB DIMM 0 Receiver Enable Delay*/
-		/* CHB DIMM 1 Receiver Enable Delay*/
-		/* CHB DIMM 2 Receiver Enable Delay*/
-		/* CHB DIMM 3 Receiver Enable Delay*/
-	u8 CH_D_BC_RCVRDLY[2][4];
-		/* CHA DIMM 0 - 4 Check Byte Receiver Enable Delay*/
-		/* CHB DIMM 0 - 4 Check Byte Receiver Enable Delay*/
 	u8 DIMMValidDCT[2];	/* DIMM# in DCT0*/
 				/* DIMM# in DCT1*/
 	u8 MaxDCTs;		/* Max number of DCTs in system*/
@@ -531,6 +546,9 @@ struct DCTStatStruc {		/* A per Node structure*/
 	char DimmPartNumber[MAX_DIMMS_SUPPORTED][SPD_PARTN_LENGTH+1];
 	uint16_t DimmRevisionNumber[MAX_DIMMS_SUPPORTED];
 	uint32_t DimmSerialNumber[MAX_DIMMS_SUPPORTED];
+
+	/* NOTE: This must remain the last entry in this structure */
+	struct DCTPersistentStatStruc persistentData;
 } __attribute__((packed));
 
 /*===============================================================================
@@ -689,6 +707,8 @@ struct DCTStatStruc {		/* A per Node structure*/
 
 #define NV_MAX_DIMMS_PER_CH	64	/* Maximum number of DIMMs per channel */
 
+#include <northbridge/amd/amdfam10/amdfam10.h>
+
 /*===============================================================================
 	CBMEM storage
 ===============================================================================*/
@@ -735,9 +755,6 @@ void mct_TrainRcvrEn_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTs
 void mct_EnableDimmEccEn_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 _DisableDramECC);
 u32 procOdtWorkaround(struct DCTStatStruc *pDCTstat, u32 dct, u32 val);
 void mct_BeforeDramInit_D(struct DCTStatStruc *pDCTstat, u32 dct);
-void mctGet_DIMMAddr(struct DCTStatStruc *pDCTstat, u32 node);
-void mctSMBhub_Init(u32 node);
-int mctRead_SPD(u32 smaddr, u32 reg);
 void InterleaveNodes_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
 void InterleaveChannels_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
 void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
@@ -753,4 +770,35 @@ u8 mct_RcvrRankEnabled_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDC
 u32 mct_GetRcvrSysAddr_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 channel, u8 receiver, u8 *valid);
 void mct_Read1LTestPattern_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u32 addr);
 void EarlySampleSupport_D(void);
+
+void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
+void mct_AdjustDelayRange_D(struct MCTStatStruc *pMCTstat,
+			struct DCTStatStruc *pDCTstat, u8 *dqs_pos);
+void mct_EnableDatIntlv_D(struct MCTStatStruc *pMCTstat,
+					struct DCTStatStruc *pDCTstat);
+void MCTMemClrSync_D(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstatA);
+void beforeInterleaveChannels_D(struct DCTStatStruc *pDCTstatA, u8 *enabled);
+u8 mct_checkFenceHoleAdjust_D(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstat, u8 DQSDelay,
+				u8 ChipSel,  u8 *result);
+void proc_IOCLFLUSH_D(u32 addr_hi);
+void mct_Write1LTestPattern_D(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstat,
+				u32 TestAddr, u8 pattern);
+u8 NodePresent_D(u8 Node);
+void DCTMemClr_Init_D(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstat);
+void MCTMemClr_D(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstatA);
+void print_debug_dqs(const char *str, u32 val, u8 level);
+void print_debug_dqs_pair(const char *str, u32 val, const char *str2, u32 val2, u8 level);
+u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstat);
+void ResetDCTWrPtr_D(u32 dev, u32 index_reg, u32 index);
+void SetTargetWTIO_D(u32 TestAddr);
+void ResetTargetWTIO_D(void);
+u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstat, u8 Channel,
+				u8 receiver, u8 *valid);
 #endif

@@ -304,15 +304,6 @@ static void amdfam15_link_read_bases(device_t dev, u32 nodeid, u32 link)
 
 }
 
-static void enable_mmconf_resource(device_t dev)
-{
-	struct resource *resource = new_resource(dev, 0xc0010058);
-	resource->base = CONFIG_MMCONF_BASE_ADDRESS;
-	resource->size = CONFIG_MMCONF_BUS_NUMBER * 4096 * 256;
-	resource->flags = IORESOURCE_MEM | IORESOURCE_RESERVE |
-		IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_ASSIGNED;
-}
-
 static void read_resources(device_t dev)
 {
 	u32 nodeid;
@@ -330,8 +321,7 @@ static void read_resources(device_t dev)
 	 * It is not honored by the coreboot resource allocator if it is in
 	 * the CPU_CLUSTER.
 	 */
-	if (IS_ENABLED(CONFIG_MMCONF_SUPPORT))
-		enable_mmconf_resource(dev);
+	mmconf_resource(dev, 0xc0010058);
 }
 
 static void set_resource(device_t dev, struct resource *resource, u32 nodeid)
@@ -581,7 +571,7 @@ static struct device_operations northbridge_operations = {
 static const struct pci_driver family15_northbridge __pci_driver = {
 	.ops	= &northbridge_operations,
 	.vendor = PCI_VENDOR_ID_AMD,
-	.device = PCI_DEVICE_ID_AMD_15H_MODEL_006F_NB_HT,
+	.device = PCI_DEVICE_ID_AMD_15H_MODEL_606F_NB_HT,
 };
 
 static void fam15_finalize(void *chip_info)
@@ -1098,22 +1088,9 @@ static void cpu_bus_init(device_t dev)
 	initialize_cpus(dev->link_list);
 }
 
-static void cpu_bus_read_resources(device_t dev)
-{
-}
-
-static void cpu_bus_set_resources(device_t dev)
-{
-	struct resource *resource = find_resource(dev, 0xc0010058);
-	if (resource) {
-		report_resource_stored(dev, resource, " <mmconfig>");
-	}
-	pci_dev_set_resources(dev);
-}
-
 static struct device_operations cpu_bus_ops = {
-	.read_resources	  = cpu_bus_read_resources,
-	.set_resources	  = cpu_bus_set_resources,
+	.read_resources	  = DEVICE_NOOP,
+	.set_resources	  = DEVICE_NOOP,
 	.enable_resources = DEVICE_NOOP,
 	.init		  = cpu_bus_init,
 	.scan_bus	  = cpu_bus_scan,

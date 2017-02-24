@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2007-2009 coresystems GmbH
  * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2015 Intel Corporation.
+ * Copyright (C) 2015-2017 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
  * GNU General Public License for more details.
  */
 
+#include <assert.h>
+#include <bootstate.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -197,7 +199,7 @@ static void configure_thermal_target(void)
 	config_t *conf = dev->chip_info;
 	msr_t msr;
 
-	/* Set TCC activaiton offset if supported */
+	/* Set TCC activation offset if supported */
 	msr = rdmsr(MSR_PLATFORM_INFO);
 	if ((msr.lo & (1 << 30)) && conf->tcc_offset) {
 		msr = rdmsr(MSR_TEMPERATURE_TARGET);
@@ -205,6 +207,10 @@ static void configure_thermal_target(void)
 		msr.lo |= (conf->tcc_offset & 0xf) << 24;
 		wrmsr(MSR_TEMPERATURE_TARGET, msr);
 	}
+	msr = rdmsr(MSR_TEMPERATURE_TARGET);
+	msr.lo &= ~0x7f; /* Bits 6:0 */
+	msr.lo |= 0xe6; /* setting 100ms thermal time window */
+	wrmsr(MSR_TEMPERATURE_TARGET, msr);
 }
 
 static void configure_isst(void)
@@ -362,9 +368,6 @@ static void cpu_core_init(device_t cpu)
 	/* Configure Intel Speed Shift */
 	configure_isst();
 
-	/* Thermal throttle activation offset */
-	configure_thermal_target();
-
 	/* Enable Direct Cache Access */
 	configure_dca_cap();
 
@@ -382,8 +385,12 @@ static struct device_operations cpu_dev_ops = {
 static struct cpu_device_id cpu_table[] = {
 	{ X86_VENDOR_INTEL, CPUID_SKYLAKE_C0 },
 	{ X86_VENDOR_INTEL, CPUID_SKYLAKE_D0 },
+	{ X86_VENDOR_INTEL, CPUID_SKYLAKE_HQ0 },
+	{ X86_VENDOR_INTEL, CPUID_SKYLAKE_HR0 },
 	{ X86_VENDOR_INTEL, CPUID_KABYLAKE_G0 },
 	{ X86_VENDOR_INTEL, CPUID_KABYLAKE_H0 },
+	{ X86_VENDOR_INTEL, CPUID_KABYLAKE_HA0 },
+	{ X86_VENDOR_INTEL, CPUID_KABYLAKE_HB0 },
 	{ 0, 0 },
 };
 
@@ -395,13 +402,6 @@ static const struct cpu_driver driver __cpu_driver = {
 /* MP initialization support. */
 static const void *microcode_patch;
 static int ht_disabled;
-
-static void pre_mp_init(void)
-{
-	/* Setup MTRRs based on physical address size. */
-	x86_setup_mtrrs_with_detect();
-	x86_mtrr_check();
-}
 
 static int get_cpu_count(void)
 {
@@ -462,7 +462,12 @@ static void post_mp_init(void)
 }
 
 static const struct mp_ops mp_ops = {
-	.pre_mp_init = pre_mp_init,
+	/*
+	 * Skip Pre MP init MTRR programming as MTRRs are mirrored from BSP,
+	 * that are set prior to ramstage.
+	 * Real MTRRs programming are being done after resource allocation.
+	 */
+	.pre_mp_init = NULL,
 	.get_cpu_count = get_cpu_count,
 	.get_smm_info = smm_info,
 	.get_microcode_info = get_microcode_info,
@@ -473,13 +478,25 @@ static const struct mp_ops mp_ops = {
 	.post_mp_init = post_mp_init,
 };
 
-void soc_init_cpus(device_t dev)
+static void soc_init_cpus(void *unused)
 {
+	device_t dev = dev_find_path(NULL, DEVICE_PATH_CPU_CLUSTER);
+	assert(dev != NULL);
 	struct bus *cpu_bus = dev->link_list;
 
 	if (mp_init_with_smm(cpu_bus, &mp_ops)) {
 		printk(BIOS_ERR, "MP initialization failure.\n");
 	}
+
+	/* Thermal throttle activation offset */
+	configure_thermal_target();
+}
+
+/* Ensure to re-program all MTRRs based on DRAM resource settings */
+static void soc_post_cpus_init(void *unused)
+{
+	if (mp_run_on_all_cpus(&x86_setup_mtrrs_with_detect, 1000) < 0)
+		printk(BIOS_ERR, "MTRR programming failure\n");
 }
 
 int soc_skip_ucode_update(u32 current_patch_id, u32 new_patch_id)
@@ -494,3 +511,9 @@ int soc_skip_ucode_update(u32 current_patch_id, u32 new_patch_id)
 	msr = rdmsr(MTRR_CAP_MSR);
 	return (msr.lo & PRMRR_SUPPORTED) && (current_patch_id == new_patch_id - 1);
 }
+
+/*
+ * Do CPU MP Init before FSP Silicon Init
+ */
+BOOT_STATE_INIT_ENTRY(BS_DEV_INIT_CHIPS, BS_ON_ENTRY, soc_init_cpus, NULL);
+BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT, soc_post_cpus_init, NULL);

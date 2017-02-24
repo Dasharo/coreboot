@@ -77,12 +77,12 @@ int AddImagePayload(char *h, char *filename, unsigned int filesize)
  *---------------------------------------------------------------------*/
 int CreateSecureBootImage(int ac, char **av)
 {
-	char *outfile, *configfile, *arg, *privkey = NULL, *bl = NULL;
+	char *configfile = NULL, *arg, *privkey = NULL, *bl = NULL;
 	int status = 0;
 	uint32_t sbiLen;
 	struct stat file_stat;
 	uint32_t add_header = 1;
-	outfile = *av;
+	char *outfile = *av;
 	unsigned int filesize;
 	char *buf;
 	--ac; ++av;
@@ -109,7 +109,20 @@ int CreateSecureBootImage(int ac, char **av)
 		--ac, ++av;
 	}
 
-	stat(bl, &file_stat);
+	if (!bl) {
+		puts("-bl not set");
+		return -1;
+	}
+
+	if (!privkey) {
+		puts("-hmac not set");
+		return -1;
+	}
+
+	if (stat(bl, &file_stat) == -1) {
+		puts("Can't stat bl");
+		return -1;
+	}
 	filesize = file_stat.st_size + MIN_SIZE;
 	buf = calloc(sizeof(uint8_t), filesize);
 

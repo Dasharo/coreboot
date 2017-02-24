@@ -42,7 +42,9 @@ void vb2ex_printf(const char *func, const char *fmt, ...)
 {
 	va_list args;
 
-	printk(BIOS_INFO, "VB2:%s() ", func);
+	if (func)
+		printk(BIOS_INFO, "VB2:%s() ", func);
+
 	va_start(args, fmt);
 	do_printk_va_list(BIOS_INFO, fmt, args);
 	va_end(args);
@@ -117,6 +119,13 @@ int vb2ex_hwcrypto_digest_finalize(uint8_t *digest, uint32_t digest_size)
 static int handle_digest_result(void *slot_hash, size_t slot_hash_sz)
 {
 	int is_resume;
+
+	/*
+	 * Chrome EC is the only support for vboot_save_hash() &
+	 * vboot_retrieve_hash(), if Chrome EC is not enabled then return.
+	 */
+	if (!IS_ENABLED(CONFIG_EC_GOOGLE_CHROMEEC))
+		return 0;
 
 	/*
 	 * Nothing to do since resuming on the platform doesn't require
@@ -407,6 +416,19 @@ void verstage_main(void)
 		vb2api_fail(&ctx, VB2_RECOVERY_RO_TPM_L_ERROR, 0);
 		save_if_needed(&ctx);
 		vboot_reboot();
+	}
+
+	/* Lock rec hash space if available. */
+	if (IS_ENABLED(CONFIG_VBOOT_HAS_REC_HASH_SPACE)) {
+		rv = antirollback_lock_space_rec_hash();
+		if (rv) {
+			printk(BIOS_INFO, "Failed to lock rec hash space(%x)\n",
+			       rv);
+			vb2api_fail(&ctx, VB2_RECOVERY_RO_TPM_REC_HASH_L_ERROR,
+				    0);
+			save_if_needed(&ctx);
+			vboot_reboot();
+		}
 	}
 
 	printk(BIOS_INFO, "Slot %c is selected\n", is_slot_a(&ctx) ? 'A' : 'B');

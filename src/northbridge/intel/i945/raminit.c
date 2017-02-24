@@ -16,15 +16,17 @@
 #include <console/console.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/cache.h>
+#include <device/pci_def.h>
+#include <device/device.h>
 #include <lib.h>
 #include <pc80/mc146818rtc.h>
 #include <spd.h>
 #include <string.h>
-#include <arch/io.h>
 #include <halt.h>
 #include <lib.h>
 #include "raminit.h"
 #include "i945.h"
+#include "chip.h"
 #include <cbmem.h>
 
 /* Debugging macros. */
@@ -48,6 +50,7 @@
 #define RAM_EMRS_2			(0x1 << 21)
 #define RAM_EMRS_3			(0x2 << 21)
 
+#define DEFAULT_PCI_MMIO_SIZE		768
 static int get_dimm_spd_address(struct sys_info *sysinfo, int device)
 {
 	if (sysinfo->spd_addresses)
@@ -1432,7 +1435,7 @@ static struct dimm_size sdram_get_dimm_size(struct sys_info *sysinfo, u16 dimmno
 	/* Don't die here, I have not come across any of these to test what
 	 * actually happens.
 	 */
-	printk(BIOS_ERR, "Assymetric DIMMs are not supported by this chipset\n");
+	printk(BIOS_ERR, "Asymmetric DIMMs are not supported by this chipset\n");
 
 	sz.side2 -= (rows & 0x0f);		/* Subtract out rows on side 1 */
 	sz.side2 += ((rows >> 4) & 0x0f);	/* Add in rows on side 2 */
@@ -1495,7 +1498,9 @@ static void sdram_detect_dimm_size(struct sys_info * sysinfo)
 static int sdram_program_row_boundaries(struct sys_info *sysinfo)
 {
 	int i;
-	int cum0, cum1, tolud, tom;
+	int cum0, cum1, tolud, tom, pci_mmio_size;
+	const struct device *dev;
+	const struct northbridge_intel_i945_config *cfg = NULL;
 
 	printk(BIOS_DEBUG, "Setting RAM size...\n");
 
@@ -1534,8 +1539,17 @@ static int sdram_program_row_boundaries(struct sys_info *sysinfo)
 	tom = tolud >> 3;
 
 	/* Limit the value of TOLUD to leave some space for PCI memory. */
-	if (tolud > 0xd0)
-		tolud = 0xd0;	/* 3.25GB : 0.75GB */
+	dev = dev_find_slot(0, PCI_DEVFN(0, 0));
+	if (dev)
+		cfg = dev->chip_info;
+
+	/* Don't use pci mmio sizes smaller than 768M */
+	if (!cfg || cfg->pci_mmio_size <= DEFAULT_PCI_MMIO_SIZE)
+		pci_mmio_size = DEFAULT_PCI_MMIO_SIZE;
+	else
+		pci_mmio_size = cfg->pci_mmio_size;
+
+	tolud = MIN(((4096 - pci_mmio_size) / 128) << 3, tolud);
 
 	pci_write_config8(PCI_DEV(0,0,0), TOLUD, tolud);
 
@@ -1931,8 +1945,8 @@ static void sdram_set_channel_mode(struct sys_info *sysinfo)
 		reg32 |= (1 << 2);
 	} else if (sdram_capabilities_dual_channel() && sysinfo->dimm[2] !=
 			SYSINFO_DIMM_NOT_POPULATED) {
-		/* Dual Channel Assymetric */
-		printk(BIOS_DEBUG, "Dual Channel Assymetric.\n");
+		/* Dual Channel Asymmetric */
+		printk(BIOS_DEBUG, "Dual Channel Asymmetric.\n");
 		reg32 |= (1 << 0);
 	} else {
 		/* All bits 0 means Single Channel 0 operation */
@@ -2365,7 +2379,7 @@ static void sdram_enhanced_addressing_mode(struct sys_info *sysinfo)
 
 	if (sdram_capabilities_enhanced_addressing_xor()) {
 		if (!sysinfo->interleaved) {
-			/* Single Channel & Dual Channel Assymetric */
+			/* Single Channel & Dual Channel Asymmetric */
 			if (chan0_populated) {
 				if (chan0_dualsided) {
 					chan0 = EA_SINGLECHANNEL_XOR_BANK_RANK_MODE;
@@ -2396,7 +2410,7 @@ static void sdram_enhanced_addressing_mode(struct sys_info *sysinfo)
 		}
 	} else {
 		if (!sysinfo->interleaved) {
-			/* Single Channel & Dual Channel Assymetric */
+			/* Single Channel & Dual Channel Asymmetric */
 			if (chan0_populated) {
 				if (chan0_dualsided) {
 					chan0 = EA_SINGLECHANNEL_BANK_RANK_MODE;
@@ -2727,8 +2741,6 @@ static void sdram_recover_receive_enable(void)
 	reg32 |= (u32)(values[3] & 0xf0) << (24 - 4);
 	MCHBAR32(C1DRT1) = reg32;
 }
-
-#include "rcven.c"
 
 static void sdram_program_receive_enable(struct sys_info *sysinfo)
 {
@@ -3101,8 +3113,14 @@ void sdram_initialize(int boot_path, const u8 *spd_addresses)
 	/* Program PLL settings */
 	sdram_program_pll_settings(&sysinfo);
 
-	/* Program Graphics Frequency */
-	sdram_program_graphics_frequency(&sysinfo);
+	/*
+	 * Program Graphics Frequency
+	 * Set core display and render clock on 945GC to the max
+	 */
+	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GM))
+		sdram_program_graphics_frequency(&sysinfo);
+	else
+		pci_write_config16(PCI_DEV(0, 2, 0), GCFC, 0x0534);
 
 	/* Program System Memory Frequency */
 	sdram_program_memory_frequency(&sysinfo);

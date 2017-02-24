@@ -15,7 +15,9 @@
  */
 
 #include <arch/acpi.h>
+#include <arch/io.h>
 #include <bcd.h>
+#include <fallback.h>
 #include <stdint.h>
 #include <version.h>
 #include <console/console.h>
@@ -95,7 +97,7 @@ static void cmos_set_checksum(int range_start, int range_end, int cks_loc)
 #ifndef __SMM__
 void cmos_init(bool invalid)
 {
-	bool cmos_invalid = invalid;
+	bool cmos_invalid;
 	bool checksum_invalid = false;
 	bool clear_cmos;
 	size_t i;
@@ -114,11 +116,11 @@ void cmos_init(bool invalid)
 
 	printk(BIOS_DEBUG, "RTC Init\n");
 
-	if (IS_ENABLED(CONFIG_USE_OPTION_TABLE)) {
-		/* See if there has been a CMOS power problem. */
-		x = cmos_read(RTC_VALID);
-		cmos_invalid = !(x & RTC_VRT);
+	/* See if there has been a CMOS power problem. */
+	x = cmos_read(RTC_VALID);
+	cmos_invalid = !(x & RTC_VRT);
 
+	if (IS_ENABLED(CONFIG_USE_OPTION_TABLE)) {
 		/* See if there is a CMOS checksum error */
 		checksum_invalid = !cmos_checksum_valid(PC_CKS_RANGE_START,
 						PC_CKS_RANGE_END, PC_CKS_LOC);
@@ -127,6 +129,9 @@ void cmos_init(bool invalid)
 	} else {
 		clear_cmos = true;
 	}
+
+	if (cmos_invalid || invalid)
+		cmos_write(cmos_read(RTC_CONTROL) | RTC_SET, RTC_CONTROL);
 
 	if (invalid || cmos_invalid || checksum_invalid) {
 		if (clear_cmos) {
@@ -246,13 +251,13 @@ enum cb_err get_option(void *dest, const char *name)
 		return CB_CMOS_OPTION_NOT_FOUND;
 	}
 
-	if (get_cmos_value(ce->bit, ce->length, dest) != CB_SUCCESS) {
-		UNLOCK_NVRAM_CBFS_SPINLOCK();
-		return CB_CMOS_ACCESS_ERROR;
-	}
 	if (!cmos_checksum_valid(LB_CKS_RANGE_START, LB_CKS_RANGE_END, LB_CKS_LOC)) {
 		UNLOCK_NVRAM_CBFS_SPINLOCK();
 		return CB_CMOS_CHECKSUM_INVALID;
+	}
+	if (get_cmos_value(ce->bit, ce->length, dest) != CB_SUCCESS) {
+		UNLOCK_NVRAM_CBFS_SPINLOCK();
+		return CB_CMOS_ACCESS_ERROR;
 	}
 	UNLOCK_NVRAM_CBFS_SPINLOCK();
 	return CB_SUCCESS;
@@ -360,6 +365,7 @@ void cmos_check_update_date(void)
 	u8 year, century;
 
 	/* Assume hardware always supports RTC_CLK_ALTCENTURY. */
+	wait_uip();
 	century = cmos_read(RTC_CLK_ALTCENTURY);
 	year = cmos_read(RTC_CLK_YEAR);
 
@@ -388,6 +394,7 @@ int rtc_set(const struct rtc_time *time)
 
 int rtc_get(struct rtc_time *time)
 {
+	wait_uip();
 	time->sec = bcd2bin(cmos_read(RTC_CLK_SECOND));
 	time->min = bcd2bin(cmos_read(RTC_CLK_MINUTE));
 	time->hour = bcd2bin(cmos_read(RTC_CLK_HOUR));
@@ -398,4 +405,36 @@ int rtc_get(struct rtc_time *time)
 	time->year += bcd2bin(cmos_read(RTC_CLK_ALTCENTURY)) * 100;
 	time->wday = bcd2bin(cmos_read(RTC_CLK_DAYOFWEEK)) - 1;
 	return 0;
+}
+
+/*
+ * Signal coreboot proper completed -- just before running payload
+ * or jumping to ACPI S3 wakeup vector.
+ */
+void set_boot_successful(void)
+{
+	uint8_t index, byte;
+
+	index = inb(RTC_PORT(0)) & 0x80;
+	index |= RTC_BOOT_BYTE;
+	outb(index, RTC_PORT(0));
+
+	byte = inb(RTC_PORT(1));
+
+	if (IS_ENABLED(CONFIG_SKIP_MAX_REBOOT_CNT_CLEAR)) {
+		/*
+		 * Set the fallback boot bit to allow for recovery if
+		 * the payload fails to boot.
+		 * It is the responsibility of the payload to reset
+		 * the normal boot bit to 1 if desired
+		 */
+		byte &= ~RTC_BOOT_NORMAL;
+	} else {
+		/* If we are in normal mode set the boot count to 0 */
+		if (byte & RTC_BOOT_NORMAL)
+			byte &= 0x0f;
+
+	}
+
+	outb(byte, RTC_PORT(1));
 }

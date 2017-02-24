@@ -23,6 +23,8 @@
 #include <device/device.h>
 
 void apollolake_init_cpus(struct device *dev);
+void set_max_freq(void);
+void enable_untrusted_mode(void);
 #endif
 
 #define CPUID_APOLLOLAKE_A0	0x506c8
@@ -30,6 +32,8 @@ void apollolake_init_cpus(struct device *dev);
 
 #define MSR_PLATFORM_INFO	0xce
 #define MSR_POWER_MISC		0x120
+#define   ENABLE_IA_UNTRUSTED	(1 << 6)
+#define   FLUSH_DL1_L2		(1 << 8)
 #define MSR_CORE_THREAD_COUNT	0x35
 #define MSR_EVICT_CTL		0x2e0
 #define MSR_EMULATE_PM_TMR	0x121
@@ -54,6 +58,22 @@ void apollolake_init_cpus(struct device *dev);
  */
 #define MB_POWER_LIMIT1_TIME_DEFAULT	0x6e
 
+/* Set MSR_PMG_CST_CONFIG_CONTROL[3:0] for Package C-State limit */
+#define PKG_C_STATE_LIMIT_C2_MASK	0x2
+/* Set MSR_PMG_CST_CONFIG_CONTROL[7:4] for Core C-State limit*/
+#define CORE_C_STATE_LIMIT_C10_MASK	0x70
+/* Set MSR_PMG_CST_CONFIG_CONTROL[10] to IO redirect to MWAIT */
+#define IO_MWAIT_REDIRECT_MASK	0x400
+/* Set MSR_PMG_CST_CONFIG_CONTROL[15] to lock CST_CFG [0-15] bits */
+#define CST_CFG_LOCK_MASK	0x8000
+
+#define MSR_PMG_CST_CONFIG_CONTROL	0xe2
+#define MSR_PMG_IO_CAPTURE_BASE	0xe4
+#define MSR_FEATURE_CONFIG	0x13c
+#define FEATURE_CONFIG_RESERVED_MASK	0x3ULL
+#define FEATURE_CONFIG_LOCK	(1 << 0)
+#define MSR_POWER_CTL	0x1fc
+
 #define MSR_L2_QOS_MASK(reg)		(0xd10 + reg)
 #define MSR_IA32_PQR_ASSOC		0xc8f
 /* MSR bits 33:32 encode slot number 0-3 */
@@ -74,5 +94,8 @@ void apollolake_init_cpus(struct device *dev);
 
 /* Common Timer Copy (CTC) frequency - 19.2MHz. */
 #define CTC_FREQ 19200000
+
+/* This is burst mode BIT 38 in MSR_IA32_MISC_ENABLES MSR at offset 1A0h */
+#define APL_BURST_MODE_DISABLE		0x40
 
 #endif /* _SOC_APOLLOLAKE_CPU_H_ */

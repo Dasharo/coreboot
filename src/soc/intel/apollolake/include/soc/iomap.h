@@ -25,9 +25,20 @@
 #define MCH_BASE_ADDR			0xfed10000
 #define MCH_BASE_SIZE			(32 * KiB)
 
+#define P_CR_CORE_DISABLE_MASK_0_0_0_MCHBAR	0x7168
+#define P_CR_BIOS_RESET_CPL_0_0_0_MCHBAR	0x7078
+#define PUNIT_THERMAL_DEVICE_IRQ		0x700C
+#define PUINT_THERMAL_DEVICE_IRQ_VEC_NUMBER	0x18
+#define PUINT_THERMAL_DEVICE_IRQ_LOCK		0x80000000
+
 #define ACPI_PMIO_BASE			0x400
 #define ACPI_PMIO_SIZE			0x100
-#define  R_ACPI_PM1_TMR			0x8
+#define R_ACPI_PM1_TMR			0x8
+
+/* CST Range (R/W) IO port block size */
+#define PMG_IO_BASE_CST_RNG_BLK_SIZE	0x5
+/* ACPI PMIO Offset to C-state register*/
+#define ACPI_PMIO_CST_REG	(ACPI_PMIO_BASE + 0x14)
 
 /* Accesses to these BARs are hardcoded in FSP */
 #define PMC_BAR0			0xfe042000

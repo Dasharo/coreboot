@@ -119,7 +119,7 @@ typedef struct {
 	unsigned int	page_size; /* of whole DIMM in Bytes (4096 or 8192) */
 	unsigned int	banks;
 	unsigned int	ranks;
-	unsigned int	rank_capacity_mb; /* per rank in Mega Bytes */
+	unsigned int	rank_capacity_mb; /* per rank in Megabytes */
 } dimminfo_t;
 
 /* The setup is one DIMM per channel, so there's no need to find a
@@ -259,6 +259,8 @@ enum {
 #define MCHBAR8(x) *((volatile u8 *)(DEFAULT_MCHBAR + x))
 #define MCHBAR16(x) *((volatile u16 *)(DEFAULT_MCHBAR + x))
 #define MCHBAR32(x) *((volatile u32 *)(DEFAULT_MCHBAR + x))
+
+#define HPLLVCO_MCHBAR		0x0c0f
 
 #define PMSTS_MCHBAR		0x0f14	/* Self refresh channel status */
 #define PMSTS_WARM_RESET	(1 << 1)

@@ -25,11 +25,55 @@
 #include <cpu/x86/mtrr.h>
 #include <device/device.h>
 #include <device/pci.h>
+#include <reg_script.h>
 #include <soc/cpu.h>
+#include <soc/iomap.h>
+#include <soc/pm.h>
 #include <soc/smm.h>
+#include <cpu/intel/turbo.h>
+
+static const struct reg_script core_msr_script[] = {
+	/* Enable C-state and IO/MWAIT redirect */
+	REG_MSR_WRITE(MSR_PMG_CST_CONFIG_CONTROL,
+		(PKG_C_STATE_LIMIT_C2_MASK | CORE_C_STATE_LIMIT_C10_MASK
+		| IO_MWAIT_REDIRECT_MASK | CST_CFG_LOCK_MASK)),
+	/* Power Management I/O base address for I/O trapping to C-states */
+	REG_MSR_WRITE(MSR_PMG_IO_CAPTURE_BASE,
+		(ACPI_PMIO_CST_REG | (PMG_IO_BASE_CST_RNG_BLK_SIZE << 16))),
+	/* Disable C1E */
+	REG_MSR_RMW(MSR_POWER_CTL, ~0x2, 0),
+	/* Disable support for MONITOR and MWAIT instructions */
+	REG_MSR_RMW(MSR_IA32_MISC_ENABLES, ~MONITOR_MWAIT_DIS_MASK, 0),
+	/*
+	 * Enable and Lock the Advanced Encryption Standard (AES-NI)
+	 * feature register
+	 */
+	REG_MSR_RMW(MSR_FEATURE_CONFIG, ~FEATURE_CONFIG_RESERVED_MASK,
+		FEATURE_CONFIG_LOCK),
+	REG_SCRIPT_END
+};
+
+void enable_untrusted_mode(void)
+{
+	msr_t msr = rdmsr(MSR_POWER_MISC);
+	msr.lo |= ENABLE_IA_UNTRUSTED;
+	wrmsr(MSR_POWER_MISC, msr);
+}
+
+static void soc_core_init(device_t cpu)
+{
+	/* Set core MSRs */
+	reg_script_run(core_msr_script);
+	/*
+	 * Enable ACPI PM timer emulation, which also lets microcode know
+	 * location of ACPI_PMIO_BASE. This also enables other features
+	 * implemented in microcode.
+	*/
+	enable_pm_timer_emulation();
+}
 
 static struct device_operations cpu_dev_ops = {
-	.init = DEVICE_NOOP,
+	.init = soc_core_init,
 };
 
 static struct cpu_device_id cpu_table[] = {
@@ -159,4 +203,9 @@ void apollolake_init_cpus(device_t dev)
 	/* Clear for take-off */
 	if (mp_init_with_smm(dev->link_list, &mp_ops) < 0)
 		printk(BIOS_ERR, "MP initialization failure.\n");
+
+	/* Temporarily cache the memory-mapped boot media. */
+	if (IS_ENABLED(CONFIG_BOOT_DEVICE_MEMORY_MAPPED))
+		mtrr_use_temp_range(-CONFIG_ROM_SIZE, CONFIG_ROM_SIZE,
+					MTRR_TYPE_WRPROT);
 }

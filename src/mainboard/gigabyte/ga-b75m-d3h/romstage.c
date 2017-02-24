@@ -95,7 +95,7 @@ void rcba_config(void)
 	RCBA32(0x35a0) = 0xc0300c03;
 	RCBA32(0x35a4) = 0x00241803;
 
-	pcie_write_config32 (PCI_DEV (0, 0x14, 0), 0xe4, 0x00000000);
+	pci_write_config32 (PCI_DEV (0, 0x14, 0), 0xe4, 0x00000000);
 
 	outw (0x0000, DEFAULT_PMBASE | 0x003c);
 
@@ -177,11 +177,11 @@ const struct southbridge_usb_port mainboard_usb_ports[] = {
 	{ 1, 5, 6 },
 };
 
-void mainboard_get_spd(spd_raw_data *spd) {
-	read_spd (&spd[0], 0x50);
-	read_spd (&spd[1], 0x51);
-	read_spd (&spd[2], 0x52);
-	read_spd (&spd[3], 0x53);
+void mainboard_get_spd(spd_raw_data *spd, bool id_only) {
+	read_spd (&spd[0], 0x50, id_only);
+	read_spd (&spd[1], 0x51, id_only);
+	read_spd (&spd[2], 0x52, id_only);
+	read_spd (&spd[3], 0x53, id_only);
 }
 
 #if 0

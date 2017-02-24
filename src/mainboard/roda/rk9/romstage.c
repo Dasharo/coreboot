@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  */
 
-// __PRE_RAM__ means: use "unsigned" for device, not a struct.
+/* __PRE_RAM__ means: use "unsigned" for device, not a struct. */
 
 #include <stdint.h>
 #include <string.h>
@@ -27,6 +27,7 @@
 #include <cbmem.h>
 #include <lib.h>
 #include <pc80/mc146818rtc.h>
+#include <romstage_handoff.h>
 #include <console/console.h>
 #include <southbridge/intel/i82801ix/i82801ix.h>
 #include <northbridge/intel/gm45/gm45.h>
@@ -84,7 +85,7 @@ static void default_superio_gpio_setup(void)
 	   GP1 GP2 GP3 GP4
 	    fd  17  88  14
 	*/
-	const device_t sio = PNP_DEV(0x2e, 0);
+	const pnp_devfn_t sio = PNP_DEV(0x2e, 0);
 
 	/* Enter super-io's configuration state. */
 	pnp_enter_conf_state(sio);
@@ -187,19 +188,8 @@ void mainboard_romstage_entry(unsigned long bist)
 	init_iommu();
 
 	cbmem_initted = !cbmem_recovery(s3resume);
-#if CONFIG_HAVE_ACPI_RESUME
-	/* If there is no high memory area, we didn't boot before, so
-	 * this is not a resume. In that case we just create the cbmem toc.
-	 */
-	if (s3resume && cbmem_initted) {
-		acpi_prepare_for_resume();
 
-		/* Magic for S3 resume */
-		pci_write_config32(PCI_DEV(0, 0, 0), D0F0_SKPD, SKPAD_ACPI_S3_MAGIC);
-	} else {
-		/* Magic for S3 resume */
-		pci_write_config32(PCI_DEV(0, 0, 0), D0F0_SKPD, SKPAD_NORMAL_BOOT_MAGIC);
-	}
-#endif
+	romstage_handoff_init(cbmem_initted && s3resume);
+
 	printk(BIOS_SPEW, "exit main()\n");
 }

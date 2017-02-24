@@ -15,9 +15,11 @@
  */
 
 #include <boardid.h>
+#include <console/console.h>
 #include <delay.h>
 #include <device/device.h>
 #include <device/i2c.h>
+#include <ec/google/chromeec/ec.h>
 #include <gpio.h>
 #include <soc/bl31_plat_params.h>
 #include <soc/clock.h>
@@ -230,27 +232,88 @@ static void configure_display(void)
 	gpio_output(GPIO(4, D, 3), 1); /* CPU3_EDP_VDDEN for P3.3V_DISP */
 }
 
+static void usb_power_cycle(int port)
+{
+	if (google_chromeec_set_usb_pd_role(port, USB_PD_CTRL_ROLE_FORCE_SINK))
+		printk(BIOS_ERR, "ERROR: Cannot force USB%d PD sink\n", port);
+
+	mdelay(10);	/* Make sure USB stick is fully depowered. */
+
+	if (google_chromeec_set_usb_pd_role(port, USB_PD_CTRL_ROLE_TOGGLE_ON))
+		printk(BIOS_ERR, "ERROR: Cannot restore USB%d PD mode\n", port);
+}
+
 static void setup_usb(void)
 {
-	/* A few magic PHY tuning values that improve eye diagram amplitude
-	 * and make it extra sure we get reliable communication in firmware. */
-	/* Set max ODT compensation voltage and current tuning reference. */
-	write32(&rk3399_grf->usbphy0_ctrl[3], 0x0fff02e3);
-	write32(&rk3399_grf->usbphy1_ctrl[3], 0x0fff02e3);
-	/* Set max pre-emphasis level, only on Kevin PHY0 and PHY1,
-	 * and disable the pre-emphasize in eop state to avoid
-	 * mis-trigger the disconnect detection. */
+	/*
+	 * A few magic PHY tuning values that improve eye diagram amplitude
+	 * and make it extra sure we get reliable communication in firmware
+	 * Set max ODT compensation voltage and current tuning reference.
+	 */
+	write32(&rk3399_grf->usbphy0_ctrl[3], RK_CLRSETBITS(0xfff, 0x2e3));
+	write32(&rk3399_grf->usbphy1_ctrl[3], RK_CLRSETBITS(0xfff, 0x2e3));
+
 	if (IS_ENABLED(CONFIG_BOARD_GOOGLE_KEVIN)) {
-		write32(&rk3399_grf->usbphy0_ctrl[12], 0xffff00a7);
-		write32(&rk3399_grf->usbphy1_ctrl[12], 0xffff00a7);
-		write32(&rk3399_grf->usbphy0_ctrl[0], 0x00010000);
-		write32(&rk3399_grf->usbphy1_ctrl[0], 0x00010000);
-		write32(&rk3399_grf->usbphy0_ctrl[13], 0x00010000);
-		write32(&rk3399_grf->usbphy1_ctrl[13], 0x00010000);
+		/* Set max pre-emphasis level, only on Kevin PHY0 and PHY1. */
+		write32(&rk3399_grf->usbphy0_ctrl[12],
+			RK_CLRSETBITS(0xffff, 0xa7));
+		write32(&rk3399_grf->usbphy1_ctrl[12],
+			RK_CLRSETBITS(0xffff, 0xa7));
+
+		/*
+		 * Disable the pre-emphasize in eop state and chirp
+		 * state to avoid mis-trigger the disconnect detection
+		 * and also avoid high-speed handshake fail for PHY0
+		 * and PHY1 consist of otg-port and host-port.
+		 */
+		write32(&rk3399_grf->usbphy0_ctrl[0], RK_CLRBITS(0x3));
+		write32(&rk3399_grf->usbphy1_ctrl[0], RK_CLRBITS(0x3));
+		write32(&rk3399_grf->usbphy0_ctrl[13], RK_CLRBITS(0x3));
+		write32(&rk3399_grf->usbphy1_ctrl[13], RK_CLRBITS(0x3));
+
+		/*
+		 * ODT auto compensation bypass, and set max driver
+		 * strength only for PHY0 and PHY1 otg-port.
+		 */
+		write32(&rk3399_grf->usbphy0_ctrl[2],
+			RK_CLRSETBITS(0x7e << 4, 0x60 << 4));
+		write32(&rk3399_grf->usbphy1_ctrl[2],
+			RK_CLRSETBITS(0x7e << 4, 0x60 << 4));
+
+		/*
+		 * ODT auto refresh bypass, and set the max bias current
+		 * tuning reference only for PHY0 and PHY1 otg-port.
+		 */
+		write32(&rk3399_grf->usbphy0_ctrl[3],
+			RK_CLRSETBITS(0x21c, 1 << 4));
+		write32(&rk3399_grf->usbphy1_ctrl[3],
+			RK_CLRSETBITS(0x21c, 1 << 4));
+
+		/*
+		 * ODT auto compensation bypass, and set default driver
+		 * strength only for PHY0 and PHY1 host-port.
+		 */
+		write32(&rk3399_grf->usbphy0_ctrl[15], RK_SETBITS(1 << 10));
+		write32(&rk3399_grf->usbphy1_ctrl[15], RK_SETBITS(1 << 10));
+
+		/* ODT auto refresh bypass only for PHY0 and PHY1 host-port. */
+		write32(&rk3399_grf->usbphy0_ctrl[16], RK_CLRBITS(1 << 9));
+		write32(&rk3399_grf->usbphy1_ctrl[16], RK_CLRBITS(1 << 9));
 	}
 
 	setup_usb_otg0();
 	setup_usb_otg1();
+
+	/*
+	 * Need to power-cycle USB ports for use in firmware, since some devices
+	 * can't fall back to USB 2.0 after they saw SuperSpeed terminations.
+	 * This takes about a dozen milliseconds, so only do it in boot modes
+	 * that have firmware UI (which one could select USB boot from).
+	 */
+	if (display_init_required()) {
+		usb_power_cycle(0);
+		usb_power_cycle(1);
+	}
 }
 
 static void mainboard_init(device_t dev)
@@ -308,7 +371,7 @@ static void enable_backlight_booster(void)
 
 void mainboard_power_on_backlight(void)
 {
-	gpio_output(GPIO(1, C, 1), 1);  /* BL_EN */
+	gpio_output(GPIO_BACKLIGHT, 1);  /* BL_EN */
 
 	if (IS_ENABLED(CONFIG_BOARD_GOOGLE_GRU) && board_id() == 0)
 		enable_backlight_booster();

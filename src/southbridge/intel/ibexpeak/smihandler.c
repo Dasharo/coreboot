@@ -33,7 +33,7 @@
  */
 #include "northbridge/intel/nehalem/nehalem.h"
 #include <southbridge/intel/common/gpio.h>
-#include <arch/pci_mmio_cfg.h>
+#include <arch/io.h>
 
 /* While we read PMBASE dynamically in case it changed, let's
  * initialize it with a sane value
@@ -709,7 +709,7 @@ static void southbridge_smi_tco(void)
 	} else if (tco_sts & (1 << 3)) { /* TIMEOUT */
 		/* Handle TCO timeout */
 		printk(BIOS_DEBUG, "TCO Timeout.\n");
-	} else if (!tco_sts) {
+	} else {
 		dump_tco_status(tco_sts);
 	}
 }

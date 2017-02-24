@@ -26,7 +26,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <device/hypertransport.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cpu/cpu.h>
@@ -69,11 +68,6 @@ static void add_fixed_resources(struct device *dev, int index)
 	   0xfed1c000-0xfed20000 RCBA
 	   0xfed90000-0xfed94000 IOMMU
 	   0xff800000-0xffffffff ROM. */
-	resource = new_resource(dev, index++);
-	resource->base = (resource_t) 0xe0000000;
-	resource->size = (resource_t) 0x10000000;
-	resource->flags = IORESOURCE_MEM | IORESOURCE_RESERVE |
-	  IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_ASSIGNED;
 
 	resource = new_resource(dev, index++);
 	resource->base = (resource_t) 0xfed00000;
@@ -98,10 +92,6 @@ static void pci_domain_set_resources(device_t dev)
 	assign_resources(dev->link_list);
 }
 
-	/* TODO We could determine how many PCIe busses we need in
-	 * the bar. For now that number is hardcoded to a max of 64.
-	 * See e7525/northbridge.c for an example.
-	 */
 static struct device_operations pci_domain_ops = {
 	.read_resources = pci_domain_read_resources,
 	.set_resources = pci_domain_set_resources,
@@ -118,6 +108,8 @@ static void mc_read_resources(device_t dev)
 	uint16_t reg16;
 
 	pci_dev_read_resources(dev);
+
+	mmconf_resource(dev, 0x50);
 
 	tseg_base = pci_read_config32(dev_find_slot(0, PCI_DEVFN(0, 0)), TSEG);
 	TOUUD = pci_read_config16(dev_find_slot(0, PCI_DEVFN(0, 0)),
@@ -287,26 +279,6 @@ static void northbridge_init(struct device *dev)
 	MCHBAR32(0x5500) = 0x00100001;
 }
 
-static void northbridge_enable(device_t dev)
-{
-#if CONFIG_HAVE_ACPI_RESUME
-	switch (pci_read_config32(dev, SKPAD)) {
-	case 0xcafebabe:
-		printk(BIOS_DEBUG, "Normal boot.\n");
-		acpi_slp_type = 0;
-		break;
-	case 0xcafed00d:
-		printk(BIOS_DEBUG, "S3 Resume.\n");
-		acpi_slp_type = 3;
-		break;
-	default:
-		printk(BIOS_DEBUG, "Unknown boot method, assuming normal.\n");
-		acpi_slp_type = 0;
-		break;
-	}
-#endif
-}
-
 static struct pci_operations intel_pci_ops = {
 	.set_subsystem = intel_set_subsystem,
 };
@@ -316,7 +288,6 @@ static struct device_operations mc_ops = {
 	.set_resources = mc_set_resources,
 	.enable_resources = pci_dev_enable_resources,
 	.init = northbridge_init,
-	.enable = northbridge_enable,
 	.acpi_fill_ssdt_generator = generate_cpu_entries,
 	.scan_bus = 0,
 	.ops_pci = &intel_pci_ops,

@@ -81,21 +81,6 @@ device_t get_node_pci(u32 nodeid, u32 fn)
 #endif
 }
 
-static inline uint8_t is_fam15h(void)
-{
-	uint8_t fam15h = 0;
-	uint32_t family;
-
-	family = cpuid_eax(0x80000001);
-	family = ((family & 0xf00000) >> 16) | ((family & 0xf00) >> 8);
-
-	if (family >= 0x6f)
-		/* Family 15h or later */
-		fam15h = 1;
-
-	return fam15h;
-}
-
 static void get_fx_devs(void)
 {
 	int i;
@@ -740,19 +725,11 @@ static void amdfam10_domain_read_resources(device_t dev)
 
 	pci_domain_read_resources(dev);
 
-	if (IS_ENABLED(CONFIG_MMCONF_SUPPORT)) {
-		struct resource *res = new_resource(dev, 0xc0010058);
-		res->base = CONFIG_MMCONF_BASE_ADDRESS;
-		res->size = CONFIG_MMCONF_BUS_NUMBER * 1024 * 1024;	/* Each bus needs 1M */
-		res->align = log2(res->size);
-		res->gran = log2(res->size);
-		res->limit = 0xffffffffffffffffULL;			/* 64-bit location allowed */
-		res->flags = IORESOURCE_MEM | IORESOURCE_RESERVE |
-			IORESOURCE_FIXED | IORESOURCE_STORED |  IORESOURCE_ASSIGNED;
+	/* We have MMCONF_SUPPORT, create the resource window. */
+	mmconf_resource(dev, 0xc0010058);
 
-		/* Reserve lower DRAM region to force PCI MMIO region to correct location above 0xefffffff */
-		ram_resource(dev, 7, 0, rdmsr(TOP_MEM).lo >> 10);
-	}
+	/* Reserve lower DRAM region to force PCI MMIO region to correct location above 0xefffffff */
+	ram_resource(dev, 7, 0, rdmsr(TOP_MEM).lo >> 10);
 
 	if (is_fam15h()) {
 		enable_cc6 = 0;
@@ -1963,18 +1940,9 @@ static void cpu_bus_init(device_t dev)
 #endif
 }
 
-static void cpu_bus_set_resources(struct device *dev)
-{
-	struct resource *resource = find_resource(dev, 0xc0010058);
-	if (resource) {
-		report_resource_stored(dev, resource, " <mmconfig>");
-	}
-	pci_dev_set_resources(dev);
-}
-
 static struct device_operations cpu_bus_ops = {
 	.read_resources	  = DEVICE_NOOP,
-	.set_resources	  = cpu_bus_set_resources,
+	.set_resources	  = DEVICE_NOOP,
 	.enable_resources = DEVICE_NOOP,
 	.init		  = cpu_bus_init,
 	.scan_bus	  = cpu_bus_scan,

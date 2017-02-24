@@ -19,12 +19,14 @@
 #include <arch/symbols.h>
 #include <assert.h>
 #include <cpu/x86/mtrr.h>
+#include <cpu/x86/msr.h>
 #include <cbmem.h>
 #include <chip.h>
 #include <console/console.h>
 #include <device/pci_def.h>
 #include <fsp/util.h>
 #include <fsp/memmap.h>
+#include <soc/msr.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/romstage.h>
@@ -94,6 +96,18 @@ asmlinkage void *car_stage_c_entry(void)
 	return postcar_commit_mtrrs(&pcf);
 }
 
+static void cpu_flex_override(FSP_M_CONFIG *m_cfg)
+{
+	msr_t flex_ratio;
+	m_cfg->CpuRatioOverride = 1;
+	/*
+	 * Set cpuratio to that value set in bootblock, This will ensure FSPM
+	 * knows the intended flex ratio.
+	 */
+	flex_ratio = rdmsr(MSR_FLEX_RATIO);
+	m_cfg->CpuRatio = (flex_ratio.lo >> 8) & 0xff;
+}
+
 static void soc_memory_init_params(FSP_M_CONFIG *m_cfg)
 {
 	const struct device *dev;
@@ -130,9 +144,11 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg)
 			mask |= (1<<i);
 	}
 	m_cfg->PcieRpEnableMask = mask;
+
+	cpu_flex_override(m_cfg);
 }
 
-void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd)
+void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 {
 	FSP_M_CONFIG *m_cfg = &mupd->FspmConfig;
 	FSP_M_TEST_CONFIG *m_t_cfg = &mupd->FspmTestConfig;
@@ -147,10 +163,24 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd)
 	m_t_cfg->DidInitStat = 0x01;
 
 	mainboard_memory_init_params(mupd);
+}
 
-	/* Reserve enough memory under TOLUD to save CBMEM header */
-	mupd->FspmArchUpd.BootLoaderTolumSize = cbmem_overhead_size();
+void soc_update_memory_params_for_mma(FSP_M_CONFIG *memory_cfg,
+		struct mma_config_param *mma_cfg)
+{
+	/* Boot media is memory mapped for Skylake and Kabylake (SPI). */
+	assert(IS_ENABLED(CONFIG_BOOT_DEVICE_MEMORY_MAPPED));
 
+	memory_cfg->MmaTestContentPtr =
+			(uintptr_t) rdev_mmap_full(&mma_cfg->test_content);
+	memory_cfg->MmaTestContentSize =
+			region_device_sz(&mma_cfg->test_content);
+	memory_cfg->MmaTestConfigPtr =
+			(uintptr_t) rdev_mmap_full(&mma_cfg->test_param);
+	memory_cfg->MmaTestConfigSize =
+			region_device_sz(&mma_cfg->test_param);
+	memory_cfg->MrcFastBoot = 0x00;
+	memory_cfg->SaGv = 0x02;
 }
 
 __attribute__((weak)) void mainboard_memory_init_params(FSPM_UPD *mupd)

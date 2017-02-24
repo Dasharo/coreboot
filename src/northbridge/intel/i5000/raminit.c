@@ -353,8 +353,7 @@ static int i5000_amb_smbus_write(struct i5000_fbdimm *d,  int byte1, int byte2)
 
 	printk(BIOS_ERR, "SMBus write failed: %d/%d/%d, byte1 %02x, byte2 %02x status %04x\n",
 	       d->branch->num, d->channel->num, d->num, byte1, byte2, status);
-	for (;;);
-	return -1;
+	die("Error: SMBus write failed");
 }
 
 static int i5000_amb_smbus_read(struct i5000_fbdimm *d, int byte1, u8 *out)
@@ -1318,7 +1317,7 @@ static int i5000_dram_timing_init(struct i5000_fbd_setup *setup)
 		((setup->ddr_speed == DDR_667MHZ ? 1 : 0) << 18) |
 		(1 << 8) | /* enhanced scrub mode */
 		(1 << 7) | /* enable patrol scrub */
-		(1 << 6) | /* enable demand scrubing */
+		(1 << 6) | /* enable demand scrubbing */
 		(1 << 5); /* enable northbound error detection */
 
 	printk(BIOS_DEBUG, "DRTA: 0x%08x DRTB: 0x%08x MC: 0x%08x\n", drta, drtb, mc);
@@ -1393,7 +1392,7 @@ static void i5000_init_setup(struct i5000_fbd_setup *setup)
 
 static void i5000_reserved_register_init(struct i5000_fbd_setup *setup)
 {
-	/* register write captured from vendor BIOS, but undocument by Intel */
+	/* register write captured from vendor BIOS, but undocumented by Intel */
 	pci_write_config32(PCI_ADDR(0, 16, 0, 0), I5000_PROCENABLE, 0x487f7c);
 
 	pci_write_config32(PCI_ADDR(0, 16, 0, 0), 0xf4, 0x1588106);
