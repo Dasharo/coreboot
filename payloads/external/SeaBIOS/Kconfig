@@ -12,7 +12,7 @@ if PAYLOAD_BUILD_SEABIOS
 
 choice
 	prompt "SeaBIOS version"
-	default SEABIOS_REVISION
+	default SEABIOS_STABLE
 
 config SEABIOS_STABLE
 	bool "1.16.1"
@@ -37,7 +37,7 @@ endchoice
 config SEABIOS_REVISION_ID
 	string "Insert a commit's SHA-1 or a branch name"
 	depends on SEABIOS_REVISION
-	default "origin/coreboot-4.0.x"
+	default "origin/master"
 	help
 	   The commit's SHA-1 or branch name of the revision to use.
 
