@@ -1,5 +1,5 @@
 TAG-$(CONFIG_SEABIOS_MASTER)=origin/master
-TAG-$(CONFIG_SEABIOS_STABLE)=e2fc41e24ee0ada60fc511d60b15a41b294538be
+TAG-$(CONFIG_SEABIOS_STABLE)=rel-1.10.0.1
 TAG-$(CONFIG_SEABIOS_REVISION)=$(CONFIG_SEABIOS_REVISION_ID)
 
 project_git_repo=https://github.com/pcengines/seabios.git
@@ -40,9 +40,10 @@ config: checkout
 	echo "    CONFIG     SeaBIOS $(TAG-y)"
 	echo "CONFIG_COREBOOT=y" > seabios/.config
 ifeq ($(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO),yy)
+	echo "CONFIG_SEABIOS_SERIAL_CONSOLE=y" >> seabios/.config
 	echo "CONFIG_DEBUG_SERIAL=y" >> seabios/.config
 	echo "CONFIG_DEBUG_SERIAL_PORT=$(CONFIG_TTYS0_BASE)" >> seabios/.config
-	echo "CONFIG_DEBUG_LEVEL=1" >> seabios/.config
+	echo "CONFIG_DEBUG_LEVEL=-1" >> seabios/.config
 else
 	echo "# CONFIG_DEBUG_SERIAL is not set" >> seabios/.config
 endif
