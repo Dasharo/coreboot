@@ -7,10 +7,14 @@ choice
 config BOARD_PCENGINES_APU2
 	bool "APU2"
 
+config BOARD_PCENGINES_APU3
+	bool "APU3"
 
 endchoice
 
 source "src/mainboard/pcengines/apu2/Kconfig"
+
+source "src/mainboard/pcengines/apu3/Kconfig"
 
 config MAINBOARD_VENDOR
 	string
