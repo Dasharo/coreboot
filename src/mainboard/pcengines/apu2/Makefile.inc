@@ -53,10 +53,10 @@ bootorder_def-type := raw
 # WIV20150205 add ipxe
 
 # WIV20150126 add boot order
-cbfs-fixed-y += bootorder
+cbfs-files-y += bootorder
 bootorder-file := src/mainboard/$(MAINBOARDDIR)/bootorder
 bootorder-type := raw
-bootorder-position := 0xFFF90000
+bootorder-align := 0x1000
 
 cbfs-files-y += etc/boot-menu-message
 etc/boot-menu-message-file := src/mainboard/$(MAINBOARDDIR)/boot-menu-message
@@ -76,8 +76,8 @@ etc/boot-menu-wait-type := raw
 SPD_BIN = $(obj)/spd.bin
 
 # Order of names in SPD_SOURCES is important!
-SPD_SOURCES  = HYNIX-2G-1333 HYNIX-4G-1333-ECC 
-#SPD_SOURCES  = HYNIX-2G-1333  HYNIX-4G-1333-NOECC 
+SPD_SOURCES  = HYNIX-2G-1333 HYNIX-4G-1333-ECC
+#SPD_SOURCES  = HYNIX-2G-1333  HYNIX-4G-1333-NOECC
 
 SPD_DEPS := $(foreach f, $(SPD_SOURCES), src/mainboard/$(MAINBOARDDIR)/$(f).spd.hex)
 
