@@ -70,12 +70,11 @@ ifeq ($(CONFIG_SEABIOS_VGA_COREBOOT),y)
 	echo "CONFIG_BUILD_VGABIOS=y" >> seabios/.config
 endif
 
-	echo "CONFIG_DEBUG_LEVEL=1" >> seabios/.config
+	echo "CONFIG_DEBUG_LEVEL=-1" >> seabios/.config
 
 ifeq ($(CONFIG_SEABIOS_SERIAL_CONSOLE),y)
 	echo "CONFIG_SEABIOS_SERIAL_CONSOLE=y" >> seabios/.config
-	echo "CONFIG_DEBUG_LEVEL=0" >> seabios/.config
-ifneq ($(CONFIG_CONSOLE_SERIAL),y)	
+ifeq ($(CONFIG_CONSOLE_SERIAL),y)
 	echo "CONFIG_DEBUG_SERIAL=y" >> seabios/.config
 	echo "CONFIG_DEBUG_SERIAL_PORT=$(CONFIG_TTYS0_BASE)" >> seabios/.config
 endif
@@ -95,7 +94,7 @@ endif
 
 	# This shows how to force a previously set .config option *off*
 	#echo "# CONFIG_SMBIOS is not set" >> seabios/.config
-		
+
 	$(MAKE) -C seabios olddefconfig OUT=out/
 
 build: config

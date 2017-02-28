@@ -8,11 +8,12 @@ choice
 config SEABIOS_GENERIC
 	bool "SeaBiosRepo"
 	help
-	  Get SeaBIOS from the master GIT repo
+		Get SeaBIOS from the master GIT repo
+
 config SEABIOS_ELTAN
 	bool "EltanRepo"
 	help
-	  Get SeaBIOS from the Eltan Repo
+		Get SeaBIOS from the Eltan Repo
 
 endchoice
 
@@ -22,13 +23,14 @@ choice
 	depends on PAYLOAD_SEABIOS
 
 config SEABIOS_STABLE
-	bool "Stable version (1.9.2.3 for std)"
+	bool "Stable version (1.10.0.1 for std)"
 	help
-	  Stable SeaBIOS version
+		Stable SeaBIOS version
+
 config SEABIOS_MASTER
 	bool "master"
 	help
-	  Newest SeaBIOS version
+		Newest SeaBIOS version
 
 endchoice
 
@@ -37,7 +39,7 @@ config ELTAN_SEABIOS_TAG
 	depends on SEABIOS_ELTAN
 	depends on SEABIOS_STABLE
 	string  "SeaBIOS TAG"
-	default "323030af70cd42b65940eb53b138c2d9d2ce429e"
+	default "rel-1.10.0.1"
 	help
 		Specify the SeaBIOS tag to check out
 
@@ -45,62 +47,62 @@ config SEABIOS_SERIAL_CONSOLE
 	bool "SeaBIOS Serial Console"
 	depends on SEABIOS_ELTAN
 	default y
-	
+
 config SKIP_PXE_LOAD
-  	bool	"Allow disable of PXE ROM"
+	bool	"Allow disable of PXE ROM"
 	depends on SEABIOS_ELTAN
-   	default n
-   	help	
-   		Uses CMOS location to make skipping of the PXE ROM
-   		user configurable. Requires SETUP to manipulate
-    		
+	default n
+	help
+		Uses CMOS location to make skipping of the PXE ROM
+		user configurable. Requires SETUP to manipulate
+
 config CMOS_SKIP_PXE_LOC
-   	hex		"CMOS location"
-   	depends on SKIP_PXE_LOAD
-   	default	0x32
-   	help
-   		Should match the network_boot entry in the CMOS layout
+	hex		"CMOS location"
+	depends on SKIP_PXE_LOAD
+	default	0x32
+	help
+		Should match the network_boot entry in the CMOS layout
 
 config CMOS_SKIP_PXE_MASK
-   	hex		"CMOS mask"
-   	depends on SKIP_PXE_LOAD
-   	default	0x02
-   	help
-   		Should match the network_boot entry in the CMOS layout
-   		if the bit is set, the pxe boot rom will be disabled	
-	
+	hex		"CMOS mask"
+	depends on SKIP_PXE_LOAD
+	default	0x02
+	help
+		Should match the network_boot entry in the CMOS layout
+		if the bit is set, the pxe boot rom will be disabled
+
 config SEABIOS_PS2_TIMEOUT
 	prompt "PS/2 keyboard controller initialization timeout (milliseconds)"
 	default 0
 	depends on EXPERT
 	int
 	help
-	  Some PS/2 keyboard controllers don't respond to commands immediately
-	  after powering on. This specifies how long SeaBIOS will wait for the
-	  keyboard controller to become ready before giving up.
+		Some PS/2 keyboard controllers don't respond to commands immediately
+		after powering on. This specifies how long SeaBIOS will wait for the
+		keyboard controller to become ready before giving up.
 
 config SEABIOS_THREAD_OPTIONROMS
 	prompt "Hardware init during option ROM execution"
 	default n
 	bool
 	help
-	  Allow hardware init to run in parallel with optionrom execution.
+		Allow hardware init to run in parallel with optionrom execution.
 
-	  This can reduce boot time, but can cause some timing
-	  variations during option ROM code execution. It is not
-	  known if all option ROMs will behave properly with this option.
+		This can reduce boot time, but can cause some timing
+		variations during option ROM code execution. It is not
+		known if all option ROMs will behave properly with this option.
 
 config SEABIOS_MALLOC_UPPERMEMORY
 	bool
 	default y
 	help
-	  Use the "Upper Memory Block" area (0xc0000-0xf0000) for internal
-	  "low memory" allocations.  If this is not selected, the memory is
-	  instead allocated from the "9-segment" (0x90000-0xa0000).
-	  This is not typically needed, but may be required on some platforms
-	  to allow USB and SATA buffers to be written correctly by the
-	  hardware.  In general, if this is desired, the option will be
-	  set to 'N' by the chipset Kconfig.
+		Use the "Upper Memory Block" area (0xc0000-0xf0000) for internal
+		"low memory" allocations.  If this is not selected, the memory is
+		instead allocated from the "9-segment" (0x90000-0xa0000).
+		This is not typically needed, but may be required on some platforms
+		to allow USB and SATA buffers to be written correctly by the
+		hardware.  In general, if this is desired, the option will be
+		set to 'N' by the chipset Kconfig.
 
 config SEABIOS_VGA_COREBOOT
 	prompt "Include generated option rom that implements legacy VGA BIOS compatibility"
@@ -108,10 +110,10 @@ config SEABIOS_VGA_COREBOOT
 	depends on !VGA_BIOS && (MAINBOARD_DO_NATIVE_VGA_INIT || MAINBOARD_HAS_NATIVE_VGA_INIT_TEXTMODECFG || FSP_GRAPHICS_INIT)
 	bool
 	help
-	  Coreboot can initialize the GPU of some mainboards.
-	  
-	  After initializing the GPU, the information about it can be passed to the payload.
-	  Provide an option rom that implements this legacy VGA BIOS compatibility requirement.
+		Coreboot can initialize the GPU of some mainboards.
+
+		After initializing the GPU, the information about it can be passed to the payload.
+		Provide an option rom that implements this legacy VGA BIOS compatibility requirement.
 
 config PAYLOAD_FILE
 	default "payloads/external/SeaBIOS/seabios/out/bios.bin.elf"
@@ -122,5 +124,5 @@ config PAYLOAD_VGABIOS_FILE
 	default "payloads/external/SeaBIOS/seabios/out/vgabios.bin"
 
 
-	
+
 endif
