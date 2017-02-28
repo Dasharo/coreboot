@@ -6,6 +6,20 @@ Releases 4.5.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.7] - 2017-02-28
+### Added
+- APU3 target with EHCI0 enabled
+
+### Changed
+- update to SeaBIOS rel-1.10.0.1
+- update sortbootorder to v4.0.4
+- disabled EHCI0 in APU2
+- fixed RAM size displaying during the boot (for 2GB sku's)
+
+### Fixed
+- mPCIe1 working with ASM1061 based sata controllers
+- USB drive stability improvements
+
 ## [v4.0.6] - 2017-01-12
 ### Changed
 - enable EHCI0 controller
@@ -50,7 +64,8 @@ Releases 4.5.x are based on mainline support submitted in
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.6...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.7...coreboot-4.0.x
+[v4.0.7]: https://github.com/pcengines/coreboot/compare/v4.0.6...v4.0.7
 [v4.0.6]: https://github.com/pcengines/coreboot/compare/v4.0.5...v4.0.6
 [v4.0.5]: https://github.com/pcengines/coreboot/compare/v4.0.4...v4.0.5
 [v4.0.4]: https://github.com/pcengines/coreboot/compare/v4.0.3...v4.0.4
