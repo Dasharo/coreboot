@@ -182,12 +182,13 @@ static void mainboard_enable(device_t dev)
 
 	bool scon = check_console();
 	setup_bsp_ramtop();
-	u32 TOM1 = bsp_topmem() / (1024 *1024);	// Tom1 in Mbyte
-	u32 TOM2 = ( bsp_topmem2() / (1024 *1024)) - 4 * 1024;	// Tom2 in Mbyte
+	u32 total_mem = bsp_topmem() / (1024 * 1024);
+	if (bsp_topmem2() > 0)
+		total_mem += (bsp_topmem2() / (1024 * 1024)) - 4 * 1024;
 	if (scon) {
 		printk(BIOS_ALERT, CONFIG_MAINBOARD_PART_NUMBER "\n");
 		printk(BIOS_ALERT, "coreboot build %s\n", COREBOOT_YYYYMMDD_DATE);
-		printk(BIOS_ALERT, "%d MB", TOM1+TOM2);
+		printk(BIOS_ALERT, "%d MB", total_mem);
 	}
 
 	u8 spd_buffer[SPD_SIZE];
