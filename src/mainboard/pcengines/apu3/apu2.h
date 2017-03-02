@@ -44,6 +44,8 @@
 #define APU2_PROCHOT_FUNC		Function0
 #define APU2_BIOS_CONSOLE_GPIO	0x59				// GENINT1_L/GPIO32
 #define APU2_BIOS_CONSOLE_FUNC	Function0
+#define APU2_SIMSWAP_GPIO		0x5A				// GENINT2_L/GPIO33
+#define APU2_SIMSWAP_FUNC		Function0
 
 
 

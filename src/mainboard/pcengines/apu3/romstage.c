@@ -45,7 +45,7 @@
 //
 // GPIO Init Table
 //
-//		GPIO_DEFINITION(gpio, 	function, outputenable, output, pullup, pulldown)
+//		GPIO_DEFINITION(gpio, function, outputenable, output, pullup, pulldown)
 static const GPIO_CONTROL gGpioInitTable[] = {
 		GPIO_DEFINITION (APU2_SPD_STRAP0_GPIO,	APU2_SPD_STRAP0_FUNC,	0, 0, 0, 0),
 		GPIO_DEFINITION (APU2_SPD_STRAP1_GPIO,	APU2_SPD_STRAP1_FUNC,	0, 0, 0, 0),
@@ -59,6 +59,7 @@ static const GPIO_CONTROL gGpioInitTable[] = {
 // SPKR doesn't require init, left at default
 		GPIO_DEFINITION (APU2_PROCHOT_GPIO,		APU2_PROCHOT_FUNC,		0, 0, 0, 0),
 		GPIO_DEFINITION (APU2_BIOS_CONSOLE_GPIO, APU2_BIOS_CONSOLE_FUNC,	0, 0, 0, 0),
+		GPIO_DEFINITION (APU2_SIMSWAP_GPIO,		APU2_SIMSWAP_FUNC,	1, 1, 0, 0),
 		{0xFF, 0xFF, 0xFF}									// Terminator
 	};
 
