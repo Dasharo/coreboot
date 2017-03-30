@@ -120,7 +120,11 @@ static int smbios_processor_name(char *start)
 
 const char *__attribute__((weak)) smbios_mainboard_bios_version(void)
 {
-	if (strlen(CONFIG_LOCALVERSION))
+	if (strlen(coreboot_tag))
+		return coreboot_tag;
+	/* CONFIG__LOCALVERSION is not empty */
+	/* reduce it's priority */
+	else if (strlen(CONFIG_LOCALVERSION))
 		return CONFIG_LOCALVERSION;
 	else
 		return coreboot_version;
