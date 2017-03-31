@@ -21,10 +21,12 @@
 romstage-y += agesawrapper.c
 romstage-y += BiosCallOuts.c
 romstage-y += PlatformGnbPcie.c
+romstage-y += bios_knobs.c
 
 ramstage-y += agesawrapper.c
 ramstage-y += BiosCallOuts.c
 ramstage-y += PlatformGnbPcie.c
+ramstage-y += bios_knobs.c
 
 # WIV20150202 add ramtest
 cbfs-files-y += img/memtest

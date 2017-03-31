@@ -33,6 +33,7 @@
 #include <fchgpio.h>
 #include "apu2.h"
 #include <spd_cache.h>			// for the apu2_ReadSpd_from_cbfs function
+#include "bios_knobs.h"
 
 static AGESA_STATUS Fch_Oem_config(UINT32 Func, UINT32 FchData, VOID *ConfigPtr);
 AGESA_STATUS apu2_ReadSpd_from_cbfs(UINT32 Func, UINT32 Data, VOID *ConfigPtr);
@@ -109,8 +110,8 @@ static AGESA_STATUS Fch_Oem_config(UINT32 Func, UINT32 FchData, VOID *ConfigPtr)
 
 		/* EHCI configuration */
 		FchParams->Usb.Ehci3Enable = !IS_ENABLED(CONFIG_HUDSON_XHCI_ENABLE);
-		FchParams->Usb.Ehci1Enable = TRUE;	// Enable EHCI 0 (port 0 to 3)
-		FchParams->Usb.Ehci2Enable = TRUE;	// Enable EHCI 1 (port 4 to 7) port 4 and 5 to EHCI header port 6 and 7 to PCIe slot.
+		FchParams->Usb.Ehci1Enable = check_ehci0();
+		FchParams->Usb.Ehci2Enable = TRUE;	// Enable EHCI 1 ( port 4 to 7) port 4 and 5 to EHCI header port 6 and 7 to PCIe slot.
 
 		/* sata configuration */
 		FchParams->Sata.SataDevSlpPort0 = 0;			// Disable DEVSLP0 and 1 to make sure GPIO55 and 59 are not used by DEVSLP

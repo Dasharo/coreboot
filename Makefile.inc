@@ -320,6 +320,7 @@ $(obj)/build.h: .xcompile
 	    printf "/* `LANG= TZ=UTC date` */\n" >> $(obj)/build.ht; \
 	    printf "#define COREBOOT_VERSION_TIMESTAMP `LANG= date +%s`\n" >> $(obj)/build.ht; \
 	fi
+	printf "#define COREBOOT_ORIGIN_GIT_TAG \"`LANG= git describe --tags --exact-match HEAD`\"\n" >> $(obj)/build.ht
 	printf "#define COREBOOT_ORIGIN_GIT_REVISION \"`LANG= git log remotes/origin/master -1 --format=format:%h`\"\n" >> $(obj)/build.ht
 	printf "#define COREBOOT_EXTRA_VERSION \"$(COREBOOT_EXTRA_VERSION)\"\n" >> $(obj)/build.ht
 	printf "#define COREBOOT_BUILD \"`LANG= date`\"\n" >> $(obj)/build.ht
