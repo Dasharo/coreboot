@@ -10,7 +10,7 @@ Releases 4.5.x are based on mainline support submitted in
 ## [v4.0.8] - 2017-03-31
 ### Changed
 - update SeaBIOS to rel-1.10.2.1
-- update sortbootorder to v4.0.5
+- update sortbootorder to v4.0.5.1
 - add option to enable/disable EHCI0 controller. By default disabled in APU2,
   enabled in APU3
 - UART C and D are enabled by default
