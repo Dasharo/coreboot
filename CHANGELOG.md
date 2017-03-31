@@ -6,6 +6,15 @@ Releases 4.5.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+
+## [v4.0.8] - 2017-03-31
+### Changed
+- update SeaBIOS to rel-1.10.2.1
+- update sortbootorder to v4.0.5
+- add option to enable/disable EHCI0 controller. By default disabled in APU2,
+  enabled in APU3
+- UART C and D are enabled by default
+
 ## [v4.0.7.2] - 2017-03-03
 ### Changed
 - (APU3 only) set GPIO33 (SIMSWAP) to output/low by default
@@ -72,7 +81,8 @@ Releases 4.5.x are based on mainline support submitted in
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.7.2...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.8...coreboot-4.0.x
+[v4.0.8]: https://github.com/pcengines/coreboot/compare/v4.0.7.2...v4.0.8
 [v4.0.7.2]: https://github.com/pcengines/coreboot/compare/v4.0.7.1...v4.0.7.2
 [v4.0.7.1]: https://github.com/pcengines/coreboot/compare/v4.0.7...v4.0.7.1
 [v4.0.7]: https://github.com/pcengines/coreboot/compare/v4.0.6...v4.0.7
