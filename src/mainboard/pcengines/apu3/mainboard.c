@@ -67,6 +67,7 @@ static void mainboard_enable(device_t dev)
 	if (scon) {
 		printk(BIOS_ALERT, CONFIG_MAINBOARD_PART_NUMBER "\n");
 		printk(BIOS_ALERT, "coreboot build %s\n", COREBOOT_YYYYMMDD_DATE);
+		printk(BIOS_ALERT, "BIOS version %s\n", COREBOOT_ORIGIN_GIT_TAG);
 		printk(BIOS_ALERT, "%d MB", total_mem);
 	}
 
