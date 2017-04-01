@@ -2,18 +2,28 @@ Change log for PC Engines fork of coreboot
 ==========================================
 
 Releases 4.0.x are based on PC Engines 20160304 release.
+
 Releases 4.5.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
 
 ## [v4.0.8] - 2017-03-31
+### Added
+- added BIOS version in boot welcome string
+
 ### Changed
-- update SeaBIOS to rel-1.10.2.1
-- update sortbootorder to v4.0.5.1
-- add option to enable/disable EHCI0 controller. By default disabled in APU2,
-  enabled in APU3
+- updated SeaBIOS to rel-1.10.2.1
+- updated sortbootorder to v4.0.5.1
+- added option to enable/disable EHCI0 controller. By default disabled in APU2
+  and enabled in APU3
 - UART C and D are enabled by default
+- changed 'PCEngines' to 'PC Engines' in smbios tables and welcome string
+- changed 'APU' to 'apu' in smbios tables and welcome string
+
+### Fixed
+- fixed serial number in smbios tables for some apu boards (routine backported
+  from mainline)
 
 ## [v4.0.7.2] - 2017-03-03
 ### Changed
