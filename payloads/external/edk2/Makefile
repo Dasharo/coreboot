@@ -76,6 +76,10 @@ endif
 ifneq ($(CONFIG_EDK2_SD_MMC_TIMEOUT),)
 BUILD_STR += -D SD_MMC_TIMEOUT=$(shell echo $$(( $(CONFIG_EDK2_SD_MMC_TIMEOUT) * 1000)) )
 endif
+# EDK2_GOP_DRIVER		= FALSE
+ifeq ($(CONFIG_EDK2_GOP_DRIVER), y)
+BUILD_STR += -D USE_PLATFORM_GOP=TRUE
+endif
 
 #
 # EDKII has the below PCDs that are relevant to coreboot:
@@ -168,6 +172,11 @@ print:
 
 build: update print logo checktools
 	unset CC; $(MAKE) -C $(project_dir)/BaseTools 2>&1
+	if [ -n "$(CONFIG_EDK2_GOP_DRIVER)" ]; then \
+		echo "Using GOP driver $(CONFIG_EDK2_GOP_FILE)"; \
+		cp $(top)/$(CONFIG_EDK2_GOP_FILE) $(project_dir)/UefiPayloadPkg/IntelGopDriver.efi; \
+		cp $(top)/$(CONFIG_EDK2_VBT_FILE) $(project_dir)/UefiPayloadPkg/vbt.bin; \
+	fi; \
 	cd $(project_dir); \
 		export EDK_TOOLS_PATH=$(project_dir)/BaseTools; \
 		export WORKSPACE=$(project_dir); \
