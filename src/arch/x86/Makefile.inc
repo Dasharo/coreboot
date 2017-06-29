@@ -360,3 +360,6 @@ grub2:
 			CC="$(CC_x86_32)" LD="$(LD_x86_32)" OBJDUMP="$(OBJDUMP_x86_32)" \
 			OBJCOPY="$(OBJCOPY_x86_32)" STRIP="$(STRIP_x86_32)" \
 			CONFIG_GRUB2_MASTER=$(CONFIG_GRUB2_MASTER)
+
+sortbootorder:
+	$(MAKE) -C payloads/external/sortbootorder -f Makefile.inc

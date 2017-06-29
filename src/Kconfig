@@ -750,6 +750,13 @@ config LINUX_INITRD
 	help
 	  An initrd image to add to the Linux kernel.
 
+config SORTBOOTORDER
+	bool "sortbootorder"
+	depends on BOARD_PCENGINES_APU2 || BOARD_PCENGINES_APU3
+	default y
+	help
+	  APU2/3 setup utility
+
 endmenu
 
 menu "Debugging"
