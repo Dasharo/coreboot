@@ -560,6 +560,9 @@ endif
 ifeq ($(CONFIG_PAYLOAD_GRUB2),y)
 COREBOOT_ROM_DEPENDENCIES+=grub2
 endif
+ifeq ($(CONFIG_SORTBOOTORDER),y)
+COREBOOT_ROM_DEPENDENCIES+=sortbootorder
+endif
 
 extract_nth=$(patsubst -%-,%,$(word $(1), $(subst |,- -,-$(2)-)))
 
@@ -657,6 +660,9 @@ ifeq ($(CONFIG_HAVE_REFCODE_BLOB),y)
 endif
 ifeq ($(CONFIG_PXE_ROM),y)
 	$(CBFSTOOL) $@.tmp add -f $(CONFIG_PXE_ROM_FILE) -n pci$(CONFIG_PXE_ROM_ID).rom -t raw
+endif
+ifeq ($(CONFIG_SORTBOOTORDER),y)
+	$(CBFSTOOL) $@.tmp add-payload -f payloads/external/sortbootorder/sortbootorder/sortbootorder.elf -n img/setup -c $(CBFS_PAYLOAD_COMPRESS_FLAG)
 endif
 ifeq ($(CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE),y)
 ifeq ($(CONFIG_CPU_MICROCODE_ADDED_DURING_BUILD),y)

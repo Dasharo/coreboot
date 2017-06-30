@@ -8,6 +8,13 @@ Releases 4.5.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.0.10] - 2017-06-30
+### Added
+- added sortbootorder to option menu
+
+### Changed
+- updated sortbootorder to v4.5.6
+
 ## [v4.0.9] - 2017-05-30
 ### Changed
 - updated sortbootorder to v4.0.6
@@ -95,7 +102,8 @@ Releases 4.5.x are based on mainline support submitted in
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.9...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.10...coreboot-4.0.x
+[v4.0.10]: https://github.com/pcengines/coreboot/compare/v4.0.9...v4.0.10
 [v4.0.9]: https://github.com/pcengines/coreboot/compare/v4.0.8...v4.0.9
 [v4.0.8]: https://github.com/pcengines/coreboot/compare/v4.0.7.2...v4.0.8
 [v4.0.7.2]: https://github.com/pcengines/coreboot/compare/v4.0.7.1...v4.0.7.2

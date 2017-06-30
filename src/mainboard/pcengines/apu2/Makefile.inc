@@ -35,11 +35,6 @@ img/memtest-position := 0xcd900
 img/memtest-type := payload
 # WIV20150202 add ramtest
 
-# setup payload
-cbfs-files-y += img/setup
-img/setup-file := payloads/pcengines/sortbootorder.elf-payload
-img/setup-type := payload
-
 cbfs-files-y += bootorder_map
 bootorder_map-file := bootorder_map
 bootorder_map-type := raw
