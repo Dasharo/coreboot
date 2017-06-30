@@ -8,7 +8,7 @@ Releases 4.5.x are based on mainline support submitted in
 
 ## [Unreleased]
 
-## [v4.0.10] -
+## [v4.0.10] - 2017-06-30
 ### Added
 - added sortbootorder to option menu
 
