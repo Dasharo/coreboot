@@ -14,6 +14,18 @@ Releases 4.5.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.5.8] - 2017-06-30
+### Changed
+- Moved sign of life strings (except for memory information) from `mainboard.c`
+  to `romstage.c`. They are printed ~0.3s after power on, instead of over 2s.
+- Update sortbootorder to v4.5.6
+- Use the same sortbootorder for both mainline and legacy
+- Enabled sortbootorder payload compression
+- Update SeaBIOS to rel-1.10.2.1
+
+### Fixed
+- Fixed SeaBIOS debug level option in Kconfig
+
 ## [v4.5.7] - 2017-06-08
 ### Added
 - print BIOS version on startup
@@ -75,7 +87,8 @@ Releases 4.5.x are based on mainline support submitted in
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.5.7...coreboot-4.5.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.5.8...coreboot-4.5.x
+[v4.5.8]: https://github.com/pcengines/coreboot/compare/v4.5.7...v4.5.8
 [v4.5.7]: https://github.com/pcengines/coreboot/compare/v4.5.6...v4.5.7
 [v4.5.6]: https://github.com/pcengines/coreboot/compare/v4.5.5.2...v4.5.6
 [v4.5.5.2]: https://github.com/pcengines/coreboot/compare/v4.5.5.1...v4.5.5.2
