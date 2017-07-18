@@ -35,9 +35,12 @@
 #include "bios_knobs.h"
 #include "s1_button.h"
 
-#define PM_RTC_CONTROL	    0x56
-#define PM_RTC_SHADOW	    0x5B
-#define PM_S_STATE_CONTROL  0xBA
+#define SPD_SIZE  128
+#define PM_RTC_CONTROL		0x56
+#define PM_RTC_SHADOW		0x5B
+#define PM_S_STATE_CONTROL	0xBA
+#define PM_PCI_CONFIG		0xEA
+
 #define SEC_REG_SERIAL_ADDR	0x1000
 #define MAX_SERIAL_LEN		10
 
@@ -273,25 +276,17 @@ static void mainboard_enable(struct device *dev)
 		printk(BIOS_ALERT, " DRAM\n\n");
 	}
 
-	//
-	// Enable the RTC output
-	//
+	/* Enable the RTC output */
 	pm_write16(PM_RTC_CONTROL, pm_read16(PM_RTC_CONTROL) | (1 << 11));
 
-	//
-	// Enable power on from WAKE#
-	//
+	/* Enable power on from WAKE# */
 	pm_write16(PM_S_STATE_CONTROL, pm_read16(PM_S_STATE_CONTROL) | (1 << 14));
 
-
-
-
-
 	/* Enable power on after power fail */
-	pm_write8 ( PM_RTC_SHADOW, pm_read8( PM_RTC_SHADOW ) | (1 << 0));
+	pm_write8(PM_RTC_SHADOW, pm_read8(PM_RTC_SHADOW) | (1 << 0));
 
-	if (acpi_is_wakeup_s3())
-		agesawrapper_fchs3earlyrestore();
+	/* Enable GENINTx as GPIO */
+	pm_write8(PM_PCI_CONFIG, 1);
 
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
@@ -422,5 +417,5 @@ const char *smbios_system_sku(void)
 
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
-	.final = mainboard_final,
+	.final = mainboard_final
 };
