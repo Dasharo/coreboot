@@ -16,7 +16,6 @@
 #include <arch/acpi.h>
 #include <arch/io.h>
 #include <console/console.h>
-#include <cpu/amd/pi/s3_resume.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_def.h>
@@ -209,9 +208,6 @@ static void mainboard_enable(device_t dev)
 	// Enable power on after power fail
 	//
 	pm_write8 ( PM_RTC_SHADOW, pm_read8( PM_RTC_SHADOW ) | (1 << 0));
-
-	if (acpi_is_wakeup_s3())
-		agesawrapper_fchs3earlyrestore();
 
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
