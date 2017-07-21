@@ -98,6 +98,12 @@ endchoice
 config DIMM_SPD_SIZE
 	default 128
 
+config FORCE_MPCIE2_CLK
+	bool "Force clock of mPCIe slot2 (GPP3 PCIe clock)  to be always on"
+	default n
+	help
+	  If no card is attached to mPCIe2 slot, say N.
+
 config AGESA_USE_1_0_0_4_HEADER
 	bool
 	default y
