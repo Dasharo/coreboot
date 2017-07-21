@@ -41,6 +41,7 @@
 #include <northbridge/amd/pi/00730F01/eltannorthbridge.h>
 #include <eltanhudson.h>
 #include <build.h>
+#include "bios_knobs.h"
 
 //
 // GPIO Init Table
@@ -90,6 +91,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	if (!cpu_init_detectedx && boot_cpu()) {
 
 		u32 data, *memptr;
+		bool mpcie2_clk;
 
 		hudson_lpc_port80();
 		//
@@ -130,7 +132,16 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		data = *((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG04));
 
 		data &= 0xFFFFFF0F;
-		data |= 0xA << (1 * 4);	// CLKREQ GFX to GFXCLK
+
+		mpcie2_clk = check_mpcie2_clk();
+		if (mpcie2_clk) {
+			// make GFXCLK to ignore CLKREQ# input
+			// force it to be always on
+			data |= 0xF << (1 * 4); // CLKREQ GFX to GFXCLK
+		}
+		else {
+			data |= 0xA << (1 * 4); // CLKREQ GFX to GFXCLK
+		}
 
 		*((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG04)) = data;
 

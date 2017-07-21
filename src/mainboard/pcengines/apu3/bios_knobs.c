@@ -168,3 +168,27 @@ bool check_ehci0(void)
 
 	return true;
 }
+
+bool check_mpcie2_clk(void)
+{
+       u8 mpcie2_clk;
+
+       //
+       // Find the serial console item
+       //
+       mpcie2_clk = check_knob_value("mpcie2_clk");
+
+       switch (mpcie2_clk) {
+       case 0:
+               return false;
+               break;
+       case 1:
+               return true;
+               break;
+       default:
+               printk(BIOS_EMERG, "Missing or invalid mpcie2_clk knob, forcing CLK of mPCIe2 slot is not enabled .\n");
+               break;
+       }
+
+       return false;
+}
