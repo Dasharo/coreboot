@@ -37,7 +37,7 @@
 #include <eltanhudson.h>
 #include <timestamp.h>
 #include <fchgpio.h>
-#include "apu2.h"
+#include "apu5.h"
 #include <superio/nuvoton/nct5104d/nct5104d.h>
 #include <northbridge/amd/pi/00730F01/eltannorthbridge.h>
 #if CONFIG_USE_CBMEM_FILE_OVERRIDE
@@ -76,8 +76,8 @@ static void mainboard_enable(device_t dev)
 
 	/* One SPD file contains all 4 options, determine which index to read here, then call into the standard routines*/
 
-	if ( ReadFchGpio(APU2_SPD_STRAP0_GPIO) ) index |= BIT0;
-	if ( ReadFchGpio(APU2_SPD_STRAP1_GPIO) ) index |= BIT1;
+	if ( ReadFchGpio(APU5_SPD_STRAP0_GPIO) ) index |= BIT0;
+	if ( ReadFchGpio(APU5_SPD_STRAP1_GPIO) ) index |= BIT1;
 
 	printk(BIOS_SPEW, "Reading SPD index %d to get ECC info \n", index);
 	if (read_spd_from_cbfs(spd_buffer, index) < 0)
@@ -162,8 +162,8 @@ static void mainboard_final(void *chip_info) {
 	// Turn off LED 2 and 3
 	//
 	printk(BIOS_INFO, "Turn off LED 2 and 3\n");
-	WriteFchGpio( APU2_LED2_L_GPIO, 1);
-	WriteFchGpio( APU2_LED3_L_GPIO, 1);
+	WriteFchGpio( APU5_LED2_L_GPIO, 1);
+	WriteFchGpio( APU5_LED3_L_GPIO, 1);
 
 	printk(BIOS_INFO, "USB PORT ROUTING = 0x%08x\n", *((u8 *)(ACPI_MMIO_BASE + PMIO_BASE + FCH_PMIOA_REGEF )));
 	if ( *((u8 *)(ACPI_MMIO_BASE + PMIO_BASE + FCH_PMIOA_REGEF )) & (1<<7) ) {
@@ -173,51 +173,6 @@ static void mainboard_final(void *chip_info) {
 
 		printk(BIOS_INFO, "USB PORT ROUTING = EHCI PORTS ENABLED\n");
 	}
-#if CONFIG_USE_CBMEM_FILE_OVERRIDE
-
-#if CONFIG_FORCE_CONSOLE
-	bool console_enabled = TRUE;
-#else //CONFIG_FORCE_CONSOLE
-	bool console_enabled = check_console( );	// Get console setting from bootorder file.
-#endif //CONFIG_FORCE_CONSOLE
-
-	if ( !console_enabled ) {
-
-		//
-		// The console is disabled, check if S1 is pressed and enable if so
-		//
-		if ( !ReadFchGpio(APU2_BIOS_CONSOLE_GPIO) ) {
-
-			printk(BIOS_INFO, "S1 PRESSED\n");
-			console_enabled = TRUE;
-		}
-	}
-
-	if ( !console_enabled ) {
-
-		//
-		// The console should be disabled
-		//
-		unsigned char data = 0;
-
-		//
-		// Indicated to SeaBIOS it should display console output itself
-		//
-		add_cbmem_file(
-				"etc/screen-and-debug",
-				1,
-				&data );
-
-		//
-		// Hide the sgabios to disable SeaBIOS console
-		//
-		hide_cbmem_file(
-				"vgaroms/sgabios.bin" );
-
-	}
-
-#endif //CONFIG_USE_CBMEM_FILE_OVERRIDE
-
 }
 
 struct chip_operations mainboard_ops = {
@@ -268,7 +223,7 @@ const char *smbios_mainboard_sku(void)
 	if (sku[0] != 0)
 		return sku;
 
-	if (!ReadFchGpio(APU2_SPD_STRAP0_GPIO))
+	if (!ReadFchGpio(APU5_SPD_STRAP0_GPIO))
 		snprintf(sku, sizeof(sku), "2 GB");
 	else
 		snprintf(sku, sizeof(sku), "4 GB");

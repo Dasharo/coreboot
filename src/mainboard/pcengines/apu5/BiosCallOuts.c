@@ -31,7 +31,7 @@
 #include "hudson.h"
 #include <stdlib.h>
 #include <fchgpio.h>
-#include "apu2.h"
+#include "apu5.h"
 #include <spd_cache.h>			// for the apu2_ReadSpd_from_cbfs function
 #include "bios_knobs.h"
 
@@ -154,8 +154,8 @@ AGESA_STATUS apu2_ReadSpd_from_cbfs(UINT32 Func, UINT32 Data, VOID *ConfigPtr)
 
 	/* One SPD file contains all 4 options, determine which index to read here, then call into the standard routines*/
 
-	if ( ReadFchGpio(APU2_SPD_STRAP0_GPIO) ) index |= BIT0;
-	if ( ReadFchGpio(APU2_SPD_STRAP1_GPIO) ) index |= BIT1;
+	if ( ReadFchGpio(APU5_SPD_STRAP0_GPIO) ) index |= BIT0;
+	if ( ReadFchGpio(APU5_SPD_STRAP1_GPIO) ) index |= BIT1;
 
 	printk(BIOS_INFO, "Reading SPD index %d\n", index);
 
