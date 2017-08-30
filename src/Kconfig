@@ -661,7 +661,7 @@ config FILO_MASTER
 	bool "HEAD"
 	help
 	  Newest FILO version
-	  
+
 endchoice
 
 config ELTAN_FILO_TAG
@@ -671,7 +671,7 @@ config ELTAN_FILO_TAG
 	string  "FILO TAG"
 	default "c315cb219587cde2143c3c6e7471b1214a532ed6"
 	help
-		Specify the FILO tag to check out	  
+		Specify the FILO tag to check out
 
 config MENULST_FILE
 	depends on PAYLOAD_FILO
@@ -752,10 +752,10 @@ config LINUX_INITRD
 
 config SORTBOOTORDER
 	bool "sortbootorder"
-	depends on BOARD_PCENGINES_APU2 || BOARD_PCENGINES_APU3
+	depends on BOARD_PCENGINES_APU2 || BOARD_PCENGINES_APU3 || BOARD_PCENGINES_APU5
 	default y
 	help
-	  APU2/3 setup utility
+	  APU series setup utility
 
 endmenu
 
@@ -1159,13 +1159,13 @@ config REG_SCRIPT
 config MAX_REBOOT_CNT
 	int
 	default 3
-	
+
 #
 # used but not defined
 #
 config VBOOT_VERIFY_FIRMWARE
-	bool 
-	
+	bool
+
 config CHROMEOS
-	bool 
+	bool
 
