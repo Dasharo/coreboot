@@ -8,6 +8,17 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.0.13] - 2017-09-29
+### Changed
+- Generating build info header file `build.h` is now handled by shell script
+  `util/genbuild_h/genbuild_h.sh`
+- Removed duplicated sign of life strings in `mainboard.c` and `romstage.c`
+- Moved sign of life strings (except for memory information) from mainboard.c
+  to romstage.c. They are printed ~0.3s after power on, instead of over 2s.
+
+### Fixed
+- Date format in sign of life string
+
 ## [v4.0.12] - 2017-08-30
 ### Added
 - APU5 target

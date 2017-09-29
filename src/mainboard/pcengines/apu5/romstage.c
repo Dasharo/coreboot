@@ -92,6 +92,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 
 		u32 data, *memptr;
 		bool mpcie2_clk;
+		bool scon = check_console();
 
 		hudson_lpc_port80();
 		//
@@ -191,10 +192,11 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	// Moved here to prevent double signon message
 	// amdinitreset AGESA code might issue a reset when the hardware is in a wrong state.
 	*/
-
-	printk(BIOS_ERR, CONFIG_MAINBOARD_PART_NUMBER "\n");
-	printk(BIOS_ERR, "coreboot build " COREBOOT_YYYYMMDD_DATE "\n");
-
+	if(scon){
+		printk(BIOS_ALERT, CONFIG_MAINBOARD_PART_NUMBER "\n");
+		printk(BIOS_ALERT, "coreboot build %s\n", COREBOOT_DMI_DATE);
+		printk(BIOS_ALERT, "BIOS version %s\n", COREBOOT_ORIGIN_GIT_TAG);
+	}
 #if CONFIG_SVI2_SLOW_SPEED
 	/* Force SVI2 to slow speed for APU5 */
 	val = pci_read_config32( d18f3_dev, 0xA0);
