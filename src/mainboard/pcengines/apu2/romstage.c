@@ -185,6 +185,11 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 
 	post_code(0x39);
 	AGESAWRAPPER(amdinitearly);
+
+	/*
+	// Moved here to prevent double signon message
+	// amdinitreset AGESA code might issue a reset when the hardware is in a wrong state.
+	*/
 	bool scon = check_console();
 
 	if(scon){
