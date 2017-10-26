@@ -6,7 +6,6 @@
 #include <northbridge/amd/agesa/BiosCallOuts.h>
 #include <northbridge/amd/agesa/state_machine.h>
 #include <FchPlatform.h>
-
 #include "gpio_ftns.h"
 #include "imc.h"
 #include "hudson.h"
@@ -74,7 +73,7 @@ void board_FCH_InitEnv(struct sysinfo *cb_NA, FCH_DATA_BLOCK *FchParams)
 		FchParams->Usb.Ehci1Enable = FALSE;
 	} else {
 		// Enable EHCI 0 (port 0 to 3)
-		FchParams->Usb.Ehci1Enable = TRUE;
+		FchParams->Usb.Ehci1Enable = check_ehci0();
 	}
 
 	// Enable EHCI 1 (port 4 to 7)
