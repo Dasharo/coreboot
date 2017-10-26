@@ -143,25 +143,55 @@ static void pirq_setup(void)
 /* Wrapper to enable GPIO/UART devices under menuconfig. Revisit
  * once configuration file format for SPI flash storage is complete.
  */
-#define SIO_PORT 0x2e
+#define SIO_PORT 0x2E
 
 static void config_gpio_mux(void)
 {
 	struct device *uart, *gpio;
 
-	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP3);
-	gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO0);
-	if (uart)
-		uart->enabled = CONFIG(APU2_PINMUX_UART_C);
-	if (gpio)
-		gpio->enabled = CONFIG(APU2_PINMUX_GPIO0);
+	if (check_uartc()) {
+		printk(BIOS_INFO, "UARTC enabled\n");
 
-	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
-	gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO1);
-	if (uart)
-		uart->enabled = CONFIG(APU2_PINMUX_UART_D);
-	if (gpio)
-		gpio->enabled = CONFIG(APU2_PINMUX_GPIO1);
+		uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP3);
+		if (uart)
+			uart->enabled = 1;
+
+		gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO0);
+		if (gpio)
+			gpio->enabled = 0;
+	} else {
+		printk(BIOS_INFO, "UARTC disabled\n");
+
+		uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP3);
+		if (uart)
+			uart->enabled = 0;
+
+		gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO0);
+		if (gpio)
+			gpio->enabled = 1;
+	}
+
+	if (check_uartd()) {
+		printk(BIOS_INFO, "UARTD enabled\n");
+
+		uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
+		if (uart)
+			uart->enabled = 1;
+
+		gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO1);
+		if (gpio)
+			gpio->enabled = 0;
+	} else {
+		printk(BIOS_INFO, "UARTD disabled\n");
+
+		uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
+		if (uart)
+			uart->enabled = 0;
+
+		gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO1);
+		if (gpio)
+			gpio->enabled = 1;
+	}
 }
 
 /**********************************************
@@ -259,7 +289,6 @@ static void mainboard_enable(struct device *dev)
 	if(scon) {
 		printk(BIOS_ALERT, "%d MB", total_mem);
 	}
-
 	//
 	// Read memory configuration from GPIO 49 and 50
 	//
