@@ -2,10 +2,12 @@
 
 bootblock-y += bootblock.c
 
+romstage-y += bios_knobs.c
 romstage-y += BiosCallOuts.c
 romstage-y += OemCustomize.c
 romstage-y += gpio_ftns.c
 
+ramstage-y += bios_knobs.c
 ramstage-y += BiosCallOuts.c
 ramstage-y += OemCustomize.c
 ramstage-y += gpio_ftns.c
