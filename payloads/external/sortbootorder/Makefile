@@ -1,4 +1,4 @@
-version=4.5.7
+version=4.6.5
 branch_name=v$(version)
 project_url=https://github.com/pcengines/sortbootorder/archive/$(branch_name).tar.gz
 archive_name=$(branch_name).tar.gz
@@ -14,7 +14,7 @@ all: sortbootorder
 
 sortbootorder: download
 	echo "    MAKE       sortbootorder     "
-	$(MAKE) -C sortbootorder
+	$(MAKE) -C sortbootorder VERSION=$(branch_name)
 
 download:
 	test -d sortbootorder || { wget $(project_url); \
