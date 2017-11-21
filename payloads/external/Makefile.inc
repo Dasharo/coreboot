@@ -174,6 +174,14 @@ $(call add_intermediate, seabios_bootmenu, $(CBFSTOOL))
 endif
 endif
 
+
+# add a SeaBIOS sercon-port file
+ifneq ($(strip $(CONFIG_SEABIOS_SERCON_PORT_FILE)),)
+cbfs-files-y += etc/sercon-port
+etc/sercon-port-file := $(strip $(CONFIG_SEABIOS_SERCON_PORT_FILE))
+etc/sercon-port-type := raw
+endif
+
 # Depthcharge
 
 payloads/external/depthcharge/depthcharge/build/depthcharge.elf depthcharge: $(DOTCONFIG) $(CBFSTOOL)
