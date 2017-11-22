@@ -29,6 +29,8 @@
 
 /* Send a single-byte command to the device and read the response */
 int spi_flash_cmd(const struct spi_slave *spi, u8 cmd, void *response, size_t len);
+int spi_flash_cmd_read(const struct spi_slave *spi, const u8 *cmd,
+		size_t cmd_len, void *data, size_t data_len);
 
 /*
  * Send a multi-byte command to the device followed by (optional)
