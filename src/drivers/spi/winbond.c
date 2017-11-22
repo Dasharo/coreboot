@@ -240,6 +240,66 @@ static const struct spi_flash_part_id flash_table[] = {
 	},
 };
 
+static int do_spi_flash_cmd_read(const struct spi_slave *spi, const void *dout,
+			    size_t bytes_out, void *din, size_t bytes_in)
+{
+	int ret;
+	/*
+	 * SPI flash requires command-response kind of behavior. Thus, two
+	 * separate SPI vectors are required -- first to transmit dout and other
+	 * to receive in din. If some specialized SPI flash controllers
+	 * (e.g. x86) can perform both command and response together, it should
+	 * be handled at SPI flash controller driver level.
+	 */
+	struct spi_op vectors[] = {
+		[0] = { .dout = dout, .bytesout = bytes_out,
+			.din = NULL, .bytesin = 0, },
+		[1] = { .dout = NULL, .bytesout = 0,
+			.din = din, .bytesin = bytes_in },
+	};
+	size_t count = ARRAY_SIZE(vectors);
+	if (!bytes_in)
+		count = 1;
+
+	ret = spi_claim_bus(spi);
+	if (ret)
+		return ret;
+
+	ret = spi_xfer_vector(spi, vectors, count);
+
+	spi_release_bus(spi);
+	return ret;
+}
+
+static int winbond_sec_read(const struct spi_flash *flash, u32 offset,
+				size_t len, void *buf)
+{
+	int ret = 1;
+	u8 cmd[5];
+	u8 reg = (offset >> 8) & 0xFF;
+	u8 addr = offset & 0xFF;
+
+	if (reg != ADDR_W25_SEC1 && reg != ADDR_W25_SEC2 &&
+			reg != ADDR_W25_SEC3) {
+		printk(BIOS_WARNING, "SF: Wrong security register\n");
+		return 1;
+	}
+
+	cmd[0] = CMD_W25_RD_SEC;
+	cmd[1] = 0x0;
+	cmd[2] = reg;
+	cmd[3] = addr;
+	cmd[4] = 0x0; // dummy
+
+	ret = do_spi_flash_cmd_read(&flash->spi, cmd, sizeof(cmd), buf, len);
+	if (ret) {
+		printk(BIOS_WARNING, "SF: Can't read sec register %d\n",
+			reg >> 4);
+	}
+
+	return ret;
+}
+
 /*
  * Convert BPx, TB and CMP to a region.
  * SEC (if available) must be zero.
@@ -563,6 +623,20 @@ static const struct spi_flash_protection_ops spi_flash_protection_ops = {
 	.set_write = winbond_set_write_protection,
 };
 
+const struct spi_flash_ops_descriptor spi_flash_winbond_desc = {
+	.erase_cmd = 0x20, /* Sector Erase */
+	.status_cmd = 0x05, /* Read Status */
+	.pp_cmd = 0x02, /* Page Program */
+	.wren_cmd = 0x06, /* Write Enable */
+	.ops = {
+		.read = spi_flash_cmd_read,
+		.write = spi_flash_cmd_write_page_program,
+		.erase = spi_flash_cmd_erase,
+		.status = spi_flash_cmd_status,
+		.read_sec = winbond_sec_read,
+	},
+};
+
 const struct spi_flash_vendor_info spi_flash_winbond_vi = {
 	.id = VENDOR_ID_WINBOND,
 	.page_size_shift = 8,
@@ -570,6 +644,6 @@ const struct spi_flash_vendor_info spi_flash_winbond_vi = {
 	.match_id_mask[0] = 0xffff,
 	.ids = flash_table,
 	.nr_part_ids = ARRAY_SIZE(flash_table),
-	.desc = &spi_flash_pp_0x20_sector_desc,
+	.desc = &spi_flash_winbond_desc,
 	.prot_ops = &spi_flash_protection_ops,
 };
