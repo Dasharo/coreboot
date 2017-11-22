@@ -573,6 +573,12 @@ int spi_flash_status(const struct spi_flash *flash, u8 *reg)
 	return -1;
 }
 
+int spi_flash_read_sec(const struct spi_flash *flash, u32 offset, size_t len,
+		void *buf)
+{
+	return flash->ops->read_sec(flash, offset, len, buf);
+}
+
 int spi_flash_is_write_protected(const struct spi_flash *flash,
 				 const struct region *region)
 {
