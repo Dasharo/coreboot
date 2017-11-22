@@ -47,6 +47,8 @@ struct spi_flash_ops {
 			const void *buf);
 	int (*erase)(const struct spi_flash *flash, u32 offset, size_t len);
 	int (*status)(const struct spi_flash *flash, u8 *reg);
+	int (*read_sec)(const struct spi_flash *flash, u32 offset, size_t len,
+			void *buf);
 };
 
 /* Current code assumes all callbacks are supplied in this object. */
@@ -145,6 +147,8 @@ int spi_flash_write(const struct spi_flash *flash, u32 offset, size_t len,
 		    const void *buf);
 int spi_flash_erase(const struct spi_flash *flash, u32 offset, size_t len);
 int spi_flash_status(const struct spi_flash *flash, u8 *reg);
+int spi_flash_read_sec(const struct spi_flash * flash, u32 offset, size_t len,
+		       void *buf);
 
 /*
  * Return the vendor dependent SPI flash write protection state.
