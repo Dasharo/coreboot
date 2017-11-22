@@ -18,6 +18,11 @@
 #define CMD_W25_DP		0xb9 /* Deep Power-down */
 #define CMD_W25_RES		0xab /* Release from DP and Read Signature */
 #define CMD_VOLATILE_SREG_WREN	0x50 /* Write Enable for Volatile SREG */
+#define CMD_W25_RD_SEC		0x48	/* Read security registers */
+
+#define ADDR_W25_SEC1      0x10
+#define ADDR_W25_SEC2      0x20
+#define ADDR_W25_SEC3      0x30
 
 /* tw: Maximum time to write a flash cell in milliseconds */
 #define WINBOND_FLASH_TIMEOUT 30
