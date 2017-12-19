@@ -68,6 +68,11 @@ etc/boot-menu-wait-file := src/mainboard/$(MAINBOARDDIR)/boot-menu-wait
 etc/boot-menu-wait-type := raw
 # WIV20150126 end add boot order
 
+# add a SeaBIOS sercon-port file
+cbfs-files-y += etc/sercon-port
+etc/sercon-port-file := src/mainboard/$(MAINBOARDDIR)/sercon-port
+etc/sercon-port-type := raw
+
 # WIV20141001 START ADD SPD FROM FILE
 ## DIMM SPD for on-board memory
 SPD_BIN = $(obj)/spd.bin
@@ -91,12 +96,4 @@ cbfs-files-y += spd.bin
 spd.bin-file := $(SPD_BIN)
 spd.bin-type := 0xab
 # WIV20141001 END ADD SPD FROM FILE
-
-cbfs-files-$(CONFIG_INCLUDE_SGABIOS) += vgaroms/sgabios.bin
-vgaroms/sgabios.bin-file := payloads/eltan/sgabios/sgabios.rom
-vgaroms/sgabios.bin-type := raw
-
-cbfs-files-$(CONFIG_INCLUDE_SGABIOS) += etc/screen-and-debug
-etc/screen-and-debug-file := payloads/eltan/sgabios/screen-and-debug
-etc/screen-and-debug-type := raw
 
