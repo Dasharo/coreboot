@@ -68,6 +68,11 @@ etc/boot-menu-wait-file := src/mainboard/$(MAINBOARDDIR)/boot-menu-wait
 etc/boot-menu-wait-type := raw
 # WIV20150126 end add boot order
 
+# add a SeaBIOS sercon-port file
+cbfs-files-y += etc/sercon-port
+etc/sercon-port-file := src/mainboard/$(MAINBOARDDIR)/sercon-port
+etc/sercon-port-type := raw
+
 # WIV20141001 START ADD SPD FROM FILE
 ## DIMM SPD for on-board memory
 SPD_BIN = $(obj)/spd.bin
