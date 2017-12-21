@@ -8,6 +8,12 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.0.14] - 2017-12-22
+### Changed
+- upgraded SeaBIOS to 1.11.0.2
+- removed sgabios
+- iPXE is now built from mainline during coreboot compilation
+
 ## [v4.0.13] - 2017-09-29
 ### Changed
 - Generating build info header file `build.h` is now handled by shell script
@@ -125,7 +131,8 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.13...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.14...coreboot-4.0.x
+[v4.0.14]: https://github.com/pcengines/coreboot/compare/v4.0.13...v4.0.14
 [v4.0.13]: https://github.com/pcengines/coreboot/compare/v4.0.12...v4.0.13
 [v4.0.12]: https://github.com/pcengines/coreboot/compare/v4.0.11...v4.0.12
 [v4.0.11]: https://github.com/pcengines/coreboot/compare/v4.0.10...v4.0.11
