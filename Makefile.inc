@@ -100,6 +100,7 @@ spc :=
 spc +=
 $(spc) :=
 $(spc) +=
+comma := ,
 
 # files-in-dir-recursive,dir,files
 files-in-dir-recursive=$(filter $(1)%,$(2))
@@ -407,6 +408,7 @@ clean-for-update-target:
 	rm -f $(obj)/mainboard/$(MAINBOARDDIR)/romstage.inc
 	rm -f $(obj)/mainboard/$(MAINBOARDDIR)/bootblock.* $(obj)/mainboard/$(MAINBOARDDIR)/dsdt.*
 	rm -f $(obj)/cpu/x86/smm/smm_bin.c $(obj)/cpu/x86/smm/smm.* $(obj)/cpu/x86/smm/smm
+	$(MAKE) -C payloads/external/iPXE -f Makefile.inc clean
 	$(MAKE) -C payloads/external/SeaBIOS -f Makefile.inc clean OUT=$(abspath $(obj)) HOSTCC="$(HOSTCC)" CC="$(CC_x86_32)" LD="$(LD_x86_32)"
 
 clean-target:
