@@ -43,12 +43,6 @@ cbfs-files-y += bootorder_def
 bootorder_def-file := bootorder_def
 bootorder_def-type := raw
 
-# WIV20150205 add ipxe
-#cbfs-files-y += genroms/pxe.rom
-#genroms/pxe.rom-file := payloads/eltan/ipxe/10ec8168.rom
-#genroms/pxe.rom-type := raw
-# WIV20150205 add ipxe
-
 # WIV20150126 add boot order
 cbfs-files-y += bootorder
 bootorder-file := src/mainboard/$(MAINBOARDDIR)/bootorder
@@ -67,6 +61,11 @@ cbfs-files-y += etc/boot-menu-wait
 etc/boot-menu-wait-file := src/mainboard/$(MAINBOARDDIR)/boot-menu-wait
 etc/boot-menu-wait-type := raw
 # WIV20150126 end add boot order
+
+# add a SeaBIOS sercon-port file
+cbfs-files-y += etc/sercon-port
+etc/sercon-port-file := src/mainboard/$(MAINBOARDDIR)/sercon-port
+etc/sercon-port-type := raw
 
 # WIV20141001 START ADD SPD FROM FILE
 ## DIMM SPD for on-board memory
@@ -92,11 +91,38 @@ spd.bin-file := $(SPD_BIN)
 spd.bin-type := 0xab
 # WIV20141001 END ADD SPD FROM FILE
 
-cbfs-files-$(CONFIG_INCLUDE_SGABIOS) += vgaroms/sgabios.bin
-vgaroms/sgabios.bin-file := payloads/eltan/sgabios/sgabios.rom
-vgaroms/sgabios.bin-type := raw
+# iPXE
 
-cbfs-files-$(CONFIG_INCLUDE_SGABIOS) += etc/screen-and-debug
-etc/screen-and-debug-file := payloads/eltan/sgabios/screen-and-debug
-etc/screen-and-debug-type := raw
+ifeq ($(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO),yy)
+IPXE_UART=COM$(call int-add,$(CONFIG_UART_FOR_CONSOLE) 1)
+endif
+
+ifeq ($(CONFIG_PXE_SERIAL_CONSOLE),y)
+IPXE_SERIAL_CONSOLE = $(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO)
+else
+IPXE_SERIAL_CONSOLE = n
+endif
+
+ifeq ($(CONFIG_PXE_ROM),y)
+PXE_ROM_FILE:=$(CONFIG_PXE_ROM_FILE)
+endif
+ifeq ($(CONFIG_BUILD_IPXE),y)
+PXE_ROM_FILE:=payloads/external/iPXE/ipxe/ipxe.rom
+endif
+
+cbfs-files-$(CONFIG_PXE_ROM)$(CONFIG_BUILD_IPXE) += genroms/pxe.rom
+genroms/pxe.rom-file := $(PXE_ROM_FILE)
+genroms/pxe.rom-type := raw
+
+payloads/external/iPXE/ipxe/ipxe.rom ipxe: $(DOTCONFIG)
+	$(MAKE) -C payloads/external/iPXE -f Makefile.inc all \
+	CROSS_COMPILE="$(CROSS_COMPILE_$(ARCH-ramstage-y))" \
+	PXE_ROM_PCI_ID=$(subst $(comma),,$(CONFIG_PXE_ROM_ID)) \
+	CONFIG_IPXE_MASTER=$(CONFIG_IPXE_MASTER) \
+	CONFIG_IPXE_STABLE=$(CONFIG_IPXE_STABLE) \
+	CONSOLE_SERIAL=$(IPXE_SERIAL_CONSOLE) \
+	IPXE_UART=$(IPXE_UART) \
+	CONFIG_TTYS0_BAUD=$(CONFIG_TTYS0_BAUD) \
+	CONFIG_PXE_CUSTOM_GENERAL_H=$(CONFIG_PXE_CUSTOM_GENERAL_H) \
+	CONFIG_PXE_CUSTOM_BOOTMENU_FILE=$(CONFIG_PXE_CUSTOM_BOOTMENU_FILE)
 

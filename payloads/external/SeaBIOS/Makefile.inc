@@ -72,15 +72,6 @@ endif
 
 	echo "CONFIG_DEBUG_LEVEL=-1" >> seabios/.config
 
-ifeq ($(CONFIG_SEABIOS_SERIAL_CONSOLE),y)
-	echo "CONFIG_SEABIOS_SERIAL_CONSOLE=y" >> seabios/.config
-ifeq ($(CONFIG_CONSOLE_SERIAL),y)
-	echo "CONFIG_DEBUG_SERIAL=y" >> seabios/.config
-	echo "CONFIG_DEBUG_SERIAL_PORT=$(CONFIG_TTYS0_BASE)" >> seabios/.config
-endif
-else
-	echo "# CONFIG_SEABIOS_SERIAL_CONSOLE is not set" >> seabios/.config
-endif
 #
 # Project specific configuration for optimized SeaBIOS
 #

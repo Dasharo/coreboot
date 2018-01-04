@@ -23,7 +23,7 @@ choice
 	depends on PAYLOAD_SEABIOS
 
 config SEABIOS_STABLE
-	bool "Stable version (1.10.0.1 for std)"
+	bool "Stable version (1.11.0.2 for std)"
 	help
 		Stable SeaBIOS version
 
@@ -39,7 +39,7 @@ config ELTAN_SEABIOS_TAG
 	depends on SEABIOS_ELTAN
 	depends on SEABIOS_STABLE
 	string  "SeaBIOS TAG"
-	default "rel-1.10.0.1"
+	default "rel-1.11.0.2"
 	help
 		Specify the SeaBIOS tag to check out
 
@@ -47,29 +47,6 @@ config SEABIOS_SERIAL_CONSOLE
 	bool "SeaBIOS Serial Console"
 	depends on SEABIOS_ELTAN
 	default y
-
-config SKIP_PXE_LOAD
-	bool	"Allow disable of PXE ROM"
-	depends on SEABIOS_ELTAN
-	default n
-	help
-		Uses CMOS location to make skipping of the PXE ROM
-		user configurable. Requires SETUP to manipulate
-
-config CMOS_SKIP_PXE_LOC
-	hex		"CMOS location"
-	depends on SKIP_PXE_LOAD
-	default	0x32
-	help
-		Should match the network_boot entry in the CMOS layout
-
-config CMOS_SKIP_PXE_MASK
-	hex		"CMOS mask"
-	depends on SKIP_PXE_LOAD
-	default	0x02
-	help
-		Should match the network_boot entry in the CMOS layout
-		if the bit is set, the pxe boot rom will be disabled
 
 config SEABIOS_PS2_TIMEOUT
 	prompt "PS/2 keyboard controller initialization timeout (milliseconds)"

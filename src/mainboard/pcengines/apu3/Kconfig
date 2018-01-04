@@ -128,10 +128,6 @@ config DUMP_LINK_CONFIGURATION
 	bool "Dump PCIe LINK configuration in board finalize"
 	default n
 
-config INCLUDE_SGABIOS
-	bool "Include the SGABIOS for serial console"
-	default y
-
 config FORCE_CONSOLE
 	bool "always enable serial console"
 	default n
