@@ -2,7 +2,7 @@ if PAYLOAD_SEABIOS
 
 choice
 	prompt "SeaBIOS repo"
-	default SEABIOS_GENERIC
+	default SEABIOS_ELTAN
 	depends on PAYLOAD_SEABIOS
 
 config SEABIOS_GENERIC
