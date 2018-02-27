@@ -38,7 +38,7 @@ endchoice
 
 choice
 	prompt "iPXE version"
-	default IPXE_STABLE
+	default IPXE_MASTER
 	depends on BUILD_IPXE
 
 config IPXE_STABLE
