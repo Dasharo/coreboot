@@ -45,7 +45,7 @@ config MAINBOARD_DIR
 
 config MAINBOARD_PART_NUMBER
 	string
-	default "PC Engines apu3"
+	default "apu3"
 
 config SVI2_SLOW_SPEED
 	bool	"SVI2 slow speed"

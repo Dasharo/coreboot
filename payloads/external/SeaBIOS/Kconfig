@@ -2,7 +2,7 @@ if PAYLOAD_SEABIOS
 
 choice
 	prompt "SeaBIOS repo"
-	default SEABIOS_GENERIC
+	default SEABIOS_ELTAN
 	depends on PAYLOAD_SEABIOS
 
 config SEABIOS_GENERIC
@@ -23,7 +23,7 @@ choice
 	depends on PAYLOAD_SEABIOS
 
 config SEABIOS_STABLE
-	bool "Stable version (1.11.0.2 for std)"
+	bool "Stable version (1.11.0.3 for std)"
 	help
 		Stable SeaBIOS version
 
@@ -39,7 +39,7 @@ config ELTAN_SEABIOS_TAG
 	depends on SEABIOS_ELTAN
 	depends on SEABIOS_STABLE
 	string  "SeaBIOS TAG"
-	default "rel-1.11.0.2"
+	default "rel-1.11.0.3"
 	help
 		Specify the SeaBIOS tag to check out
 
