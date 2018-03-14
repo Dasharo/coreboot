@@ -1,0 +1,204 @@
+;----------------------------------------------------------------------------
+;	Copyright (c) 2015-2016 Eltan B.V.
+;
+;	This program contains proprietary and confidential information. All
+;	rights reserved except as may be permitted by prior written consent.
+;
+;	Contents: Coreboot Release Document
+;
+;----------------------------------------------------------------------------
+
+		*************************************************
+			     PCENGINES APU2 Release Notes
+		*************************************************
+
+==============================================================================
+System:		APU2 (AMD Crowned Eagle)
+Customer:	PCENGINES
+
+========================================================================
+===	       R E L E A S E   N O T E S			     ===
+========================================================================
+
+4 MARCH 2016
+
+Status:
+* Final
+
+Notes:
+  
+New features:
+* Added sdcard support
+* Several items related to the serial output during boot
+
+Solved Issues:
+* Includes a fix for the P state switching issue that caused the system to run at 600 Mhz.
+* System hang during reboot from Linux when the speed was stuck at 600 Mhz 
+ 
+Known Issues:
+* PXE boot not available yet, waiting for PC engines
+* The Setup payload is included as a binary into this tree, this is provided by PC Engines
+* The Eltan Memtest payload is included as a binary into this tree, PC Engines should replace
+  this with their payload
+* The SGABIOS is included as a binary into this tree. Source is provided seperately and should
+  be built seperately.
+* As USB3 SS and HS items have seperated devices two entries per USB slot are needed
+  now these are listed seperately. This is working but is not customer friendly. This
+  can be solved by changing the setup payload or by changing SeaBIOS. It is suggested
+  to change the setup payload.
+* Larger USB3 disks using 4K sectors will not be supported as SeaBIOS doesn't support that block 
+  size. 
+* At this point in time the boost states are not working with the 412TC
+* The sdcard performance is still subpar, more work needs to be put in SeaBIOS to improve this.
+
+Remarks:
+* The USB3 issue has be solved by providing more time for the USB enumeration. 
+  Boot time might be longer because of that (depending on the situation). If this
+  is a problem a setup option to set this timeout should ve added. It was required
+  to change this timeout from 100 ms to 500 ms.
+
+==============================================================================
+
+9 NOVEMBER 2015
+
+Status:
+* Alpha 4
+
+Notes:
+  
+New features:
+* None
+
+Solved Issues:
+* The issue with USB3 when the SS device was plugged in the top slot has been
+  solved. This has been tested with ADATA and SanDisk USB sticks.
+
+Known Issues:
+* PXE boot not available yet, waiting for PC engines
+* As USB3 SS and HS items have seperated devices two entries per USB slot are needed
+  now these are listed seperately. This is working but is not customer friendly. This
+  can be solved by changing the setup payload or by changing SeaBIOS. It is suggested
+  to change the setup payload.
+* Larger USB3 disks using 4K sectors will not be supported as SeaBIOS doesn't support that block 
+  size. 
+
+Remarks:
+* The USB3 issue has be solved by providing more time for the USB enumeration. 
+  Boot time might be longer because of that (depending on the situation). If this
+  is a problem a setup option to set this timeout should ve added. It was required
+  to change this timeout from 100 ms to 500 ms.
+
+==============================================================================
+
+6 NOVEMBER 2015
+
+Status:
+* Alpha 3
+
+Notes:
+  
+New features:
+* Enable and disable of console functionality in SeaBIOS using setup payload
+  if disabled it can be turned on again by pressing the button.
+* Added XHCI ports to the bootorder list for APU2B
+* Memory now at 1333 Mhz
+* 4G memory configuration now with enabled ECC
+
+Solved Issues:
+* Changed to AGESA 1.0.0.4.0121 and spd based on the Hynix information
+* APU2B partially solves the USB2 / USB3 issue.
+* The setup payload is now saving the settings
+
+Known Issues:
+* When USB3 stick is in the top slot and there is another device plugged in as
+  well it will not be recognised by SeaBIOS. A single USB3 is working and USB3 in
+  bottom combined with USB2 in the top slot is working as well.
+* PXE boot not available yet waiting for PC engines
+* As USB3 SS and HS items have seperated devices two entries per USB slot are needed
+  now these are listed seperately. This is working but is not customer friendly. This
+  can be solved by changing the setup payload or by changing SeaBIOS. It is suggested
+  to change the setup payload.
+* Larger USB3 disks using 4K sectors will not be supported as SeaBIOS doesn't support that block 
+  size. 
+
+Remarks:
+* None
+==============================================================================
+
+28 SEPTEMBER 2015
+
+Status:
+* Alpha 2
+
+Notes:
+  
+New features:
+* Added Setup payload provided by PC Engines
+* Created boot order list added USB1, USB2, mSATA and SATA to the list of boot items
+
+Solved Issues:
+* Enabled USB2 ports connected to USB header and mini PCIe slots
+* Changed the name to PC Engines apu2
+
+Known Issues:
+* Memory not full speed
+* USB3 is working but not when a USB2 device is plugged in as well. This is
+  caused by the hw that swapped the USB2 and USB3 lines on the connector.
+  Will be addressed in a next release of the board.
+* PXE boot not available yet waiting for PC engines
+* The Setup payload provided is not working properly. It returns "Could not find SPI device"
+  when configuration changes are saved.
+
+Remarks:
+* None
+==============================================================================
+
+24 SEPTEMBER 2015
+
+Status:
+* Alpha 1
+
+Notes:
+  
+New features:
+* Now using CLK_REQ instead of keeping all clocks turned on
+
+Solved Issues:
+* PCIe slot 2 is now working
+Known Issues:
+* Memory not full speed
+* USB3 is working but not when a USB2 device is plugged in as well. This is
+  caused by the hw that swapped the USB2 and USB3 lines on the connector.
+  Will be addressed in a next release of the board.
+
+Remarks:
+* None
+==============================================================================
+
+10 SEPTEMBER 2015
+
+Status:
+* Pre Alpha
+
+Notes:
+* Initial version booting all boards
+  
+New features:
+* None
+
+Solved Issues:
+* Memory issues causing the system not to work properly on some 4 GB boards. 
+  Solved by using 1066 timing and adapted memory configuration.
+
+Known Issues:
+* Gfx lane not working
+* Memory not full speed
+* USB3 is working but not when a USB2 device is plugged in as well. This is
+  caused by the hw that swapped the USB2 and USB3 lines on the connector.
+  Will be addressed in a next release.
+
+Remarks:
+* None
+==============================================================================
+
+

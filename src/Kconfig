@@ -752,7 +752,7 @@ config LINUX_INITRD
 
 config SORTBOOTORDER
 	bool "sortbootorder"
-	depends on BOARD_PCENGINES_APU2 || BOARD_PCENGINES_APU3 || BOARD_PCENGINES_APU5
+	depends on BOARD_PCENGINES_APU2 || BOARD_PCENGINES_APU3 || BOARD_PCENGINES_APU4 || BOARD_PCENGINES_APU5
 	default y
 	help
 	  APU series setup utility
