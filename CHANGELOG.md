@@ -8,18 +8,25 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.0.16] - 2018-03-22
+### Added
+- APU4 target
+
+### Fixed
+- `make distclean` affects payloads too
+
 ## [v4.0.15] - 2018-03-01
-## Fixed
+### Fixed
 - SeaBIOS default repository URL
 - coreboot default console loglevel
 - SMBIOS part number format
 
-## Changed
+### Changed
 - upgraded SeaBIOS to rel-1.11.0.3
 - upgraded sortbootorder to v4.6.5
 - iPXE is built from master branch
 
-## Added
+### Added
 - network card PCI ID is set properly according to target board
 - apu features can be now restored to deafults by pressing `R` in sortbootorder
 
@@ -146,7 +153,8 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.15...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.16...coreboot-4.0.x
+[v4.0.16]: https://github.com/pcengines/coreboot/compare/v4.0.15...v4.0.16
 [v4.0.15]: https://github.com/pcengines/coreboot/compare/v4.0.14...v4.0.15
 [v4.0.14]: https://github.com/pcengines/coreboot/compare/v4.0.13...v4.0.14
 [v4.0.13]: https://github.com/pcengines/coreboot/compare/v4.0.12...v4.0.13
