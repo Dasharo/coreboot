@@ -32,6 +32,11 @@ static void sata_init(struct device *dev)
 	/* set the SATA AHCI mode to allow port expanders */
 	*(ahci_ptr + BYTE_TO_DWORD_OFFSET(SATA_CAPABILITIES_REG)) |= CFG_CAP_SPM;
 
+	/* enable AHCI mode */
+	temp = pci_read_config32(dev, SATA_REV_SUBCLASS_REG);
+	temp = (temp & 0xFF0070FF) | SUBCLASS_AHCI_MODE | SATA_PROGRAMIF_AHCI;
+	pci_write_config32(dev, SATA_REV_SUBCLASS_REG, temp);
+
 	/* lock the write-protect */
 	temp = pci_read_config32(dev, MISC_CONTROL_REG);
 	temp &= ~UNLOCK_BIT;
