@@ -44,6 +44,8 @@
 #define SEC_REG_SERIAL_ADDR	0x1000
 #define MAX_SERIAL_LEN		10
 
+#define BOOTORDER_FILE "bootorder"
+
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
  * This table is responsible for physically routing the PIC and
