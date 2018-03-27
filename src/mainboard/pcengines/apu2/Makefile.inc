@@ -6,6 +6,7 @@ romstage-y += bios_knobs.c
 romstage-y += BiosCallOuts.c
 romstage-y += OemCustomize.c
 romstage-y += gpio_ftns.c
+romstage-y += s1_button.c
 
 postcar-y += bios_knobs.c
 romstage-y += s1_button.c
