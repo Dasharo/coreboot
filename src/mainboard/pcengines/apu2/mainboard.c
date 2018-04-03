@@ -44,8 +44,6 @@
 #define SEC_REG_SERIAL_ADDR	0x1000
 #define MAX_SERIAL_LEN		10
 
-#define BOOTORDER_FILE "bootorder"
-
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
  * This table is responsible for physically routing the PIC and
@@ -77,7 +75,7 @@ static const u8 mainboard_picr_data[FCH_INT_TABLE_SIZE] = {
 	[0x48] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x50] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x58] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	[0x60] = 0x00,0x00,0x1F
+	[0x60] = 0x00,0x00,0x07
 };
 
 static const u8 mainboard_intr_data[FCH_INT_TABLE_SIZE] = {
@@ -100,7 +98,7 @@ static const u8 mainboard_intr_data[FCH_INT_TABLE_SIZE] = {
 	[0x48] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x50] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x58] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	[0x60] = 0x00,0x00,0x1F
+	[0x60] = 0x00,0x00,0x07
 };
 
 /*
@@ -115,22 +113,24 @@ static const u8 mainboard_intr_data[FCH_INT_TABLE_SIZE] = {
  */
 static const struct pirq_struct mainboard_pirq_data[] = {
 	/* {PCI_devfn,	{PIN A, PIN B, PIN C, PIN D}}, */
-	{GFX_DEVFN,	{PIRQ_A, PIRQ_NC, PIRQ_NC, PIRQ_NC}},			/* VGA:		01.0 */
-	{ACTL_DEVFN,{PIRQ_NC, PIRQ_B, PIRQ_NC, PIRQ_NC}},			/* Audio:	01.1 */
-	{NB_PCIE_PORT1_DEVFN,	{PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D}},	/* x4 PCIe:	02.1 */
-	{NB_PCIE_PORT2_DEVFN,	{PIRQ_B, PIRQ_C, PIRQ_D, PIRQ_A}},	/* mPCIe:	02.2 */
-	{NB_PCIE_PORT3_DEVFN,	{PIRQ_C, PIRQ_D, PIRQ_A, PIRQ_B}},	/* NIC:		02.3 */
-	{XHCI_DEVFN,	{PIRQ_C, PIRQ_NC, PIRQ_NC, PIRQ_NC}},		/* XHCI:	10.0 */
-	{SATA_DEVFN,	{PIRQ_SATA, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* SATA:	11.0 */
-	{OHCI1_DEVFN,	{PIRQ_OHCI1, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* OHCI1:	12.0 */
-	{EHCI1_DEVFN,	{PIRQ_NC, PIRQ_EHCI1, PIRQ_NC, PIRQ_NC}},	/* EHCI1:	12.2 */
-	{OHCI2_DEVFN,	{PIRQ_OHCI2, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* OHCI2:	13.0 */
-	{EHCI2_DEVFN,	{PIRQ_NC, PIRQ_EHCI2, PIRQ_NC, PIRQ_NC}},	/* EHCI2:	13.2 */
-	{SMBUS_DEVFN,	{PIRQ_SMBUS, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* SMBUS:	14.0 */
+	{GFX_DEVFN,		{PIRQ_A, PIRQ_NC, PIRQ_NC, PIRQ_NC}},		/* VGA:		01.0 */
+	{ACTL_DEVFN,		{PIRQ_NC, PIRQ_B, PIRQ_NC, PIRQ_NC}},		/* Audio:	01.1 */
+	{NB_PCIE_PORT1_DEVFN,	{PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D}},		/* x4 PCIe:	02.1 */
+	{NB_PCIE_PORT2_DEVFN,	{PIRQ_B, PIRQ_C, PIRQ_D, PIRQ_A}},		/* NIC:		02.2 */
+	{NB_PCIE_PORT3_DEVFN,	{PIRQ_C, PIRQ_D, PIRQ_A, PIRQ_B}},		/* NIC:		02.3 */
+	{NB_PCIE_PORT4_DEVFN,	{PIRQ_D, PIRQ_A, PIRQ_B, PIRQ_C}},		/* NIC		02.4 */
+	{NB_PCIE_PORT5_DEVFN,	{PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D}},		/* mPCIe1	02.5 */
+	{XHCI_DEVFN,		{PIRQ_C, PIRQ_NC, PIRQ_NC, PIRQ_NC}},		/* XHCI:	10.0 */
+	{SATA_DEVFN,		{PIRQ_SATA, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* SATA:	11.0 */
+	{OHCI1_DEVFN,		{PIRQ_OHCI1, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* OHCI1:	12.0 */
+	{EHCI1_DEVFN,		{PIRQ_NC, PIRQ_EHCI1, PIRQ_NC, PIRQ_NC}},	/* EHCI1:	12.2 */
+	{OHCI2_DEVFN,		{PIRQ_OHCI2, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* OHCI2:	13.0 */
+	{EHCI2_DEVFN,		{PIRQ_NC, PIRQ_EHCI2, PIRQ_NC, PIRQ_NC}},	/* EHCI2:	13.2 */
+	{SMBUS_DEVFN,		{PIRQ_SMBUS, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* SMBUS:	14.0 */
 	{HDA_DEVFN,		{PIRQ_HDA, PIRQ_NC, PIRQ_NC, PIRQ_NC}},		/* HDA:		14.2 */
 	{SD_DEVFN,		{PIRQ_SD, PIRQ_NC, PIRQ_NC, PIRQ_NC}},		/* SD:		14.7 */
-	{OHCI3_DEVFN,	{PIRQ_OHCI3, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* OHCI3:	16.0 (same device as xHCI 10.0) */
-	{EHCI3_DEVFN,	{PIRQ_NC, PIRQ_EHCI3, PIRQ_NC, PIRQ_NC}},	/* EHCI3:	16.2 (same device as xHCI 10.1) */
+	{OHCI3_DEVFN,		{PIRQ_OHCI3, PIRQ_NC, PIRQ_NC, PIRQ_NC}},	/* OHCI3:	16.0 (same device as xHCI 10.0) */
+	{EHCI3_DEVFN,		{PIRQ_NC, PIRQ_EHCI3, PIRQ_NC, PIRQ_NC}},	/* EHCI3:	16.2 (same device as xHCI 10.1) */
 };
 
 /* PIRQ Setup */
@@ -196,6 +196,19 @@ static void config_gpio_mux(void)
 	}
 }
 
+static void measure_amd_blobs(void)
+{
+	struct region_device rdev;
+
+	printk(BIOS_DEBUG, "Measuring AMD blobs.\n");
+
+	if(fmap_locate_area_as_rdev("PSPDIR", &rdev)) {
+		printk(BIOS_ERR, "Error: Couldn't find PSPDIR region.");
+		return;
+	}
+	tpm_measure_region(&rdev, TPM_RUNTIME_DATA_PCR,"PSPDIR");
+}
+
 /**********************************************
  * enable the dedicated function in mainboard.
  **********************************************/
@@ -220,6 +233,24 @@ static int mainboard_smbios_type16(DMI_INFO *agesa_dmi, int *handle,
 	return len;
 }
 
+static int ddr_speed_from_bus_speed(int bus)
+{
+	switch(bus)
+	{
+		case 166:
+		case 216:
+		case 266:
+		case 333:
+		case 1066:
+		case 1666: return bus*2+1;
+		case 556:
+		case 667:
+		case 688:
+		case 813:  return bus*2-1;
+		default:   return bus*2;
+	}
+}
+
 static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 				 unsigned long *current)
 {
@@ -239,7 +270,7 @@ static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 				agesa_dmi->T17[0][0][0].BankLocator);
 	t->memory_type = agesa_dmi->T17[0][0][0].MemoryType;
 	t->type_detail = *(u16 *)&agesa_dmi->T17[0][0][0].TypeDetail;
-	t->speed = agesa_dmi->T17[0][0][0].Speed;
+	t->speed = ddr_speed_from_bus_speed(agesa_dmi->T17[0][0][0].Speed);
 	t->manufacturer = agesa_dmi->T17[0][0][0].ManufacturerIdCode;
 	t->serial_number = smbios_add_string(t->eos,
 				agesa_dmi->T17[0][0][0].SerialNumber);
@@ -247,7 +278,8 @@ static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 				agesa_dmi->T17[0][0][0].PartNumber);
 	t->attributes = agesa_dmi->T17[0][0][0].Attributes;
 	t->extended_size = agesa_dmi->T17[0][0][0].ExtSize;
-	t->clock_speed = agesa_dmi->T17[0][0][0].ConfigSpeed;
+	t->clock_speed = ddr_speed_from_bus_speed(
+				agesa_dmi->T17[0][0][0].ConfigSpeed);
 	t->minimum_voltage = 1500; /* From SPD: 1.5V */
 	t->maximum_voltage = 1500;
 
@@ -307,6 +339,12 @@ static void mainboard_enable(struct device *dev)
 		printk(BIOS_ALERT, " DRAM\n\n");
 	}
 
+	if (CONFIG(VBOOT_MEASURED_BOOT)) {
+		/* Measure AGESA and PSPDIR */
+		measure_amd_blobs();
+	}
+
+
 	//
 	// Enable the RTC output
 	//
@@ -325,6 +363,17 @@ static void mainboard_enable(struct device *dev)
 
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
+
+	/* Enable IOMMU if activated in config file */
+	struct device* iommu_dev;
+	iommu_dev = pcidev_on_root(0, 2);
+
+	if (iommu_dev) {
+		if (check_iommu())
+			iommu_dev->enabled = 1;
+		else
+			iommu_dev->enabled = 0;
+	}
 #if CONFIG(GENERATE_SMBIOS_TABLES)
 	dev->ops->get_smbios_data = mainboard_smbios_data;
 #endif
