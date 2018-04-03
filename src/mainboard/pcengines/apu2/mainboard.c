@@ -220,8 +220,6 @@ static size_t get_bootorder_cbfs_offset(const char *name, uint32_t type)
 		return 0;
 	}
 
-	/* locate bootorder file and calculate its offset */
-
 	if (cbfs_locate(&fh, &rdev, name, &type)) {
 		printk(BIOS_WARNING, "Can't locate file in CBFS\n");
 		return 0;
