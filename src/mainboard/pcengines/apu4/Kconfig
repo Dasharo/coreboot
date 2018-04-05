@@ -38,7 +38,9 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 #	select USE_OPTION_TABLE				# order can be fixed now.
 #	select HAVE_CMOS_DEFAULT
 	select USE_CBMEM_FILE_OVERRIDE
-
+	select SPI_FLASH
+	select SPI_FLASH_WINBOND
+	
 config MAINBOARD_DIR
 	string
 	default pcengines/apu4
