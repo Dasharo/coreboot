@@ -342,6 +342,29 @@ config BOOTMODE_STRAPS
 
 source src/console/Kconfig
 
+config BOOT_DEVICE_NOT_SPI_FLASH
+	bool
+	default n
+
+config BOOT_DEVICE_SPI_FLASH
+	bool
+	default y if !BOOT_DEVICE_NOT_SPI_FLASH
+	default n
+
+config BOOT_DEVICE_MEMORY_MAPPED
+	bool
+	default y if ARCH_X86 && BOOT_DEVICE_SPI_FLASH
+	default n
+	help
+	  Inform system if SPI is memory-mapped or not.
+
+config BOOT_DEVICE_SUPPORTS_WRITES
+	bool
+	default n
+	help
+	  Indicate that the platform has writable boot device
+	  support.
+
 config HAVE_ACPI_RESUME
 	bool
 	default n
@@ -1170,4 +1193,3 @@ config VBOOT_VERIFY_FIRMWARE
 
 config CHROMEOS
 	bool
-

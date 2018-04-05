@@ -42,6 +42,7 @@ ramstage-y += hda.c
 ramstage-$(CONFIG_SOUTHBRIDGE_AMD_PI_BOLTON) += pci.c
 ramstage-$(CONFIG_SOUTHBRIDGE_AMD_PI_BOLTON) += pcie.c
 ramstage-y += sd.c
+ramstage-$(CONFIG_SPI_FLASH) += spi.c
 
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += fadt.c
 ramstage-y += reset.c
@@ -112,7 +113,7 @@ ifeq ($(CONFIG_HUDSON_PSP_CUSTOM), y)
 HUDSON_PSP_DIRECTORY_POSITION=$(shell printf %u $(CONFIG_HUDSON_PSP_POSITION))
 HUDSON_PSP_DIRECTORY_SIZE=256
 
-else 
+else
 
 HUDSON_PSP_DIRECTORY_POSITION=$(call int-align,\
 	$(call int-add,\
