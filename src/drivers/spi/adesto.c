@@ -10,8 +10,11 @@
  * Licensed under the GPL-2 or later.
  */
 
+#include <console/console.h>
 #include <stdlib.h>
+#include <string.h>
 #include <spi_flash.h>
+#include <spi-generic.h>
 
 #include "spi_flash_internal.h"
 
@@ -46,7 +49,7 @@ struct adesto_spi_flash {
 };
 
 static inline struct adesto_spi_flash *
-to_adesto_spi_flash(struct spi_flash *flash)
+to_adesto_spi_flash(const struct spi_flash *flash)
 {
 	return container_of(flash, struct adesto_spi_flash, flash);
 }
@@ -78,8 +81,8 @@ static const struct adesto_spi_flash_params adesto_spi_flash_table[] = {
 	},
 };
 
-static int adesto_write(struct spi_flash *flash,
-		u32 offset, size_t len, const void *buf)
+static int adesto_write(const struct spi_flash *flash, u32 offset, size_t len,
+			const void *buf)
 {
 	struct adesto_spi_flash *stm = to_adesto_spi_flash(flash);
 	unsigned long byte_addr;
@@ -90,16 +93,9 @@ static int adesto_write(struct spi_flash *flash,
 	u8 cmd[4];
 
 	page_size = 1 << stm->params->l2_page_size;
-	byte_addr = offset % page_size;
-
-	flash->spi->rw = SPI_WRITE_FLAG;
-	ret = spi_claim_bus(flash->spi);
-	if (ret) {
-		printk(BIOS_WARNING, "SF: Unable to claim SPI bus\n");
-		return ret;
-	}
 
 	for (actual = 0; actual < len; actual += chunk_len) {
+		byte_addr = offset % page_size;
 		chunk_len = min(len - actual, page_size - byte_addr);
 		chunk_len = spi_crop_chunk(sizeof(cmd), chunk_len);
 
@@ -113,13 +109,13 @@ static int adesto_write(struct spi_flash *flash,
 			cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
 #endif
 
-		ret = spi_flash_cmd(flash->spi, CMD_AT25DF_WREN, NULL, 0);
+		ret = spi_flash_cmd(&flash->spi, CMD_AT25DF_WREN, NULL, 0);
 		if (ret < 0) {
 			printk(BIOS_WARNING, "SF: Enabling Write failed\n");
 			goto out;
 		}
 
-		ret = spi_flash_cmd_write(flash->spi, cmd, sizeof(cmd),
+		ret = spi_flash_cmd_write(&flash->spi, cmd, sizeof(cmd),
 				buf + actual, chunk_len);
 		if (ret < 0) {
 			printk(BIOS_WARNING, "SF: adesto Page Program failed\n");
@@ -131,7 +127,6 @@ static int adesto_write(struct spi_flash *flash,
 			goto out;
 
 		offset += chunk_len;
-		byte_addr = 0;
 	}
 
 #if CONFIG_DEBUG_SPI_FLASH
@@ -141,13 +136,7 @@ static int adesto_write(struct spi_flash *flash,
 	ret = 0;
 
 out:
-	spi_release_bus(flash->spi);
 	return ret;
-}
-
-static int adesto_erase(struct spi_flash *flash, u32 offset, size_t len)
-{
-	return spi_flash_cmd_erase(flash, CMD_AT25DF_SE, offset, len);
 }
 
 struct spi_flash *spi_flash_probe_adesto(struct spi_slave *spi, u8 *idcode)
@@ -176,24 +165,25 @@ struct spi_flash *spi_flash_probe_adesto(struct spi_slave *spi, u8 *idcode)
 	}
 
 	stm->params = params;
-	stm->flash.spi = spi;
+	memcpy(&stm->flash.spi, spi, sizeof(*spi));
 	stm->flash.name = params->name;
 
 	/* Assuming power-of-two page size initially. */
 	page_size = 1 << params->l2_page_size;
 
-	stm->flash.write = adesto_write;
-	stm->flash.erase = adesto_erase;
+	stm->flash.internal_write = adesto_write;
+	stm->flash.internal_erase = spi_flash_cmd_erase;
 #if CONFIG_SPI_FLASH_NO_FAST_READ
-	stm->flash.read = spi_flash_cmd_read_slow;
+	stm->flash.internal_read = spi_flash_cmd_read_slow;
 #else
-	stm->flash.read = spi_flash_cmd_read_fast;
+	stm->flash.internal_read = spi_flash_cmd_read_fast;
 #endif
 	stm->flash.sector_size = (1 << stm->params->l2_page_size) *
 		stm->params->pages_per_sector;
 	stm->flash.size = page_size * params->pages_per_sector
 				* params->sectors_per_block
 				* params->nr_blocks;
+	stm->flash.erase_cmd = CMD_AT25DF_SE;
 
 	return &stm->flash;
 }
