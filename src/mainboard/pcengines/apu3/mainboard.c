@@ -50,6 +50,37 @@
 #include <cpuRegisters.h>
 #include <build.h>
 #include "bios_knobs.h"
+#include <spi-generic.h>
+#include <spi_flash.h>
+#include <cbfs_core.h>
+
+static int find_knob_index(const char *s, const char *pattern)
+{
+
+	int pattern_index = 0;
+	char *result = (char *) s;
+	char *lpattern = (char *) pattern;
+
+	while (*result && *pattern ) {
+		if ( *lpattern == 0)  // the pattern matches return the pointer
+			return pattern_index;
+		if ( *result == 0)  // We're at the end of the file content but don't have a patter match yet
+			return -1;
+		if (*result == *lpattern ) {
+			// The string matches, simply advance
+			result++;
+			pattern_index++;
+			lpattern++;
+		} else {
+			// The string doesn't match restart the pattern
+			result++;
+			pattern_index++;
+			lpattern = (char *) pattern;
+		}
+	}
+
+	return -1;
+}
 
 /**********************************************
  * enable the dedicated function in mainboard.
@@ -170,13 +201,8 @@ static void mainboard_final(void *chip_info) {
 
 		printk(BIOS_INFO, "USB PORT ROUTING = EHCI PORTS ENABLED\n");
 	}
-#if CONFIG_USE_CBMEM_FILE_OVERRIDE
 
-#if CONFIG_FORCE_CONSOLE
-	bool console_enabled = TRUE;
-#else //CONFIG_FORCE_CONSOLE
 	bool console_enabled = check_console( );	// Get console setting from bootorder file.
-#endif //CONFIG_FORCE_CONSOLE
 
 	if ( !console_enabled ) {
 
@@ -186,34 +212,86 @@ static void mainboard_final(void *chip_info) {
 		if ( !ReadFchGpio(APU2_BIOS_CONSOLE_GPIO) ) {
 
 			printk(BIOS_INFO, "S1 PRESSED\n");
-			console_enabled = TRUE;
+
+			const struct spi_flash *flash;
+			const char *file_name = "bootorder";
+			size_t boot_file_len = 0;
+			size_t offset;
+			struct cbfs_file *bootorder_cbfs_file = NULL;
+			char* bootorder_copy;
+			int knob_index;
+
+			char *boot_file = cbfs_get_file_content(
+				CBFS_DEFAULT_MEDIA, file_name, CBFS_TYPE_RAW, &boot_file_len);
+
+			if (boot_file == NULL) {
+				printk(BIOS_EMERG, "file [%s] not found in CBFS\n", file_name);
+				return;
+			}
+
+			if (boot_file_len < 4096) {
+				printk(BIOS_EMERG, "Missing bootorder data.\n");
+				return;
+			}
+
+			boot_file_len--; // cbfs_get_file_content returns size+1
+
+			offset = cbfs_locate_file(CBFS_DEFAULT_MEDIA, bootorder_cbfs_file, file_name);
+
+			if(offset ==-1) {
+				printk(BIOS_WARNING,"Failed to retrieve bootorder file offset\n");
+				return;
+			}
+
+			bootorder_copy = (char *) malloc(boot_file_len);
+
+			if(bootorder_copy == NULL) {
+				printk(BIOS_WARNING,"Failed to allocate memory for bootorder\n");
+				return;
+			}
+
+			if(memcpy(bootorder_copy, boot_file, boot_file_len) == NULL) {
+				printk(BIOS_WARNING,"Copying bootorder failed\n");
+				free(bootorder_copy);
+				return;
+			}
+
+			knob_index = find_knob_index(bootorder_copy, "scon");
+
+			if(knob_index == -1){
+				printk(BIOS_WARNING,"scon knob not found in bootorder\n");
+				free(bootorder_copy);
+				return;
+			}
+
+			*(bootorder_copy + knob_index) = '1';
+
+			spi_init();
+
+			flash = spi_flash_probe(0, 0);
+
+			if (flash == NULL) {
+				printk(BIOS_DEBUG, "Could not find SPI device\n");
+				return;
+			}
+
+			if (spi_flash_erase(flash, (u32) offset, boot_file_len)) {
+				printk(BIOS_WARNING, "SPI erase failed\n");
+				free(bootorder_copy);
+				return;
+			}
+
+			if (spi_flash_write(flash, (u32) offset, boot_file_len, bootorder_copy)) {
+				printk(BIOS_WARNING, "SPI write failed\n");
+				free(bootorder_copy);
+				return;
+			} else {
+				printk(BIOS_INFO, "Bootorder write successed\n");
+			}
+
+			free(bootorder_copy);
 		}
 	}
-
-	if ( !console_enabled ) {
-
-		//
-		// The console should be disabled
-		//
-		unsigned char data = 0;
-
-		//
-		// Indicated to SeaBIOS it should display console output itself
-		//
-		add_cbmem_file(
-				"etc/screen-and-debug",
-				1,
-				&data );
-
-		//
-		// Hide the sgabios to disable SeaBIOS console
-		//
-		hide_cbmem_file(
-				"vgaroms/sgabios.bin" );
-
-	}
-
-#endif //CONFIG_USE_CBMEM_FILE_OVERRIDE
 
 }
 
