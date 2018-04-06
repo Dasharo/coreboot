@@ -8,9 +8,13 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
-## [v4.0.16] - 2018-03-22
+## [v4.0.16] - 2018-04-06
 ### Added
 - APU4 target
+- Enable serial console with S1 button feature
+
+### Changed
+- Updated SeaBIOS to rel-1.11.0.4
 
 ### Fixed
 - `make distclean` affects payloads too
