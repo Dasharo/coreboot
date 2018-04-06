@@ -6,8 +6,11 @@
  * Licensed under the GPL-2 or later.
  */
 
+#include <console/console.h>
 #include <stdlib.h>
 #include <spi_flash.h>
+#include <spi-generic.h>
+#include <string.h>
 
 #include "spi_flash_internal.h"
 
@@ -43,7 +46,8 @@ struct eon_spi_flash {
 	const struct eon_spi_flash_params *params;
 };
 
-static inline struct eon_spi_flash *to_eon_spi_flash(struct spi_flash *flash)
+static inline
+struct eon_spi_flash *to_eon_spi_flash(const struct spi_flash *flash)
 {
 	return container_of(flash, struct eon_spi_flash, flash);
 }
@@ -75,7 +79,7 @@ static const struct eon_spi_flash_params eon_spi_flash_table[] = {
 	},
 };
 
-static int eon_write(struct spi_flash *flash,
+static int eon_write(const struct spi_flash *flash,
 		     u32 offset, size_t len, const void *buf)
 {
 	struct eon_spi_flash *eon = to_eon_spi_flash(flash);
@@ -87,15 +91,13 @@ static int eon_write(struct spi_flash *flash,
 	u8 cmd[4];
 
 	page_size = 1 << eon->params->page_size;
-	byte_addr = offset % page_size;
-
-	flash->spi->rw = SPI_WRITE_FLAG;
 
 	for (actual = 0; actual < len; actual += chunk_len) {
+		byte_addr = offset % page_size;
 		chunk_len = min(len - actual, page_size - byte_addr);
 		chunk_len = spi_crop_chunk(sizeof(cmd), chunk_len);
 
-		ret = spi_flash_cmd(flash->spi, CMD_EN25_WREN, NULL, 0);
+		ret = spi_flash_cmd(&flash->spi, CMD_EN25_WREN, NULL, 0);
 		if (ret < 0) {
 			printk(BIOS_WARNING, "SF: Enabling Write failed\n");
 			goto out;
@@ -112,7 +114,7 @@ static int eon_write(struct spi_flash *flash,
 		     buf + actual, cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
 #endif
 
-		ret = spi_flash_cmd_write(flash->spi, cmd, sizeof(cmd),
+		ret = spi_flash_cmd_write(&flash->spi, cmd, sizeof(cmd),
 					  buf + actual, chunk_len);
 		if (ret < 0) {
 			printk(BIOS_WARNING, "SF: EON Page Program failed\n");
@@ -126,7 +128,6 @@ static int eon_write(struct spi_flash *flash,
 		}
 
 		offset += chunk_len;
-		byte_addr = 0;
 	}
 
 #if CONFIG_DEBUG_SPI_FLASH
@@ -136,11 +137,6 @@ static int eon_write(struct spi_flash *flash,
 
 out:
 	return ret;
-}
-
-static int eon_erase(struct spi_flash *flash, u32 offset, size_t len)
-{
-	return spi_flash_cmd_erase(flash, CMD_EN25_SE, offset, len);
 }
 
 struct spi_flash *spi_flash_probe_eon(struct spi_slave *spi, u8 *idcode)
@@ -168,15 +164,18 @@ struct spi_flash *spi_flash_probe_eon(struct spi_slave *spi, u8 *idcode)
 	}
 
 	eon->params = params;
-	eon->flash.spi = spi;
+	memcpy(&eon->flash.spi, spi, sizeof(*spi));
 	eon->flash.name = params->name;
 
-	eon->flash.write = eon_write;
-	eon->flash.erase = eon_erase;
-	eon->flash.read = spi_flash_cmd_read_fast;
+	eon->flash.internal_write = eon_write;
+	eon->flash.internal_erase = spi_flash_cmd_erase;
+	eon->flash.internal_status = spi_flash_cmd_status;
+	eon->flash.internal_read = spi_flash_cmd_read_fast;
 	eon->flash.sector_size = params->page_size * params->pages_per_sector;
 	eon->flash.size = params->page_size * params->pages_per_sector
 	    * params->nr_sectors;
+	eon->flash.erase_cmd = CMD_EN25_SE;
+	eon->flash.status_cmd = CMD_EN25_RDSR;
 
 	return &eon->flash;
 }

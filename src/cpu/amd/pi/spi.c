@@ -25,7 +25,7 @@
 
 void spi_SaveS3info(u32 pos, u32 size, u8 *buf, u32 len)
 {
-	struct spi_flash *flash;
+	const struct spi_flash *flash;
 
 	spi_init();
 	flash = spi_flash_probe(0, 0);
@@ -35,15 +35,13 @@ void spi_SaveS3info(u32 pos, u32 size, u8 *buf, u32 len)
 		return;
 	}
 
-	flash->spi->rw = SPI_WRITE_FLAG;
-	spi_claim_bus(flash->spi);
+	spi_claim_bus(&(flash->spi));
 
-	flash->erase(flash, pos, size);
-	flash->write(flash, pos, sizeof(len), &len);
-	flash->write(flash, pos + sizeof(len), len, buf);
+	flash->internal_erase(flash, pos, size);
+	flash->internal_write(flash, pos, sizeof(len), &len);
+	flash->internal_write(flash, pos + sizeof(len), len, buf);
 
-	flash->spi->rw = SPI_WRITE_FLAG;
-	spi_release_bus(flash->spi);
+	spi_release_bus(&(flash->spi));
 
 	return;
 }

@@ -12,13 +12,10 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
 ##
-## You should have received a copy of the GNU General Public License
-## along with this program; if not, write to the Free Software
-## Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-##
 
 config SPI_FLASH
 	bool
+	default y if BOOT_DEVICE_SPI_FLASH && BOOT_DEVICE_SUPPORTS_WRITES
 	default n
 	help
 	  Select this option if your chipset driver needs to store certain
@@ -26,22 +23,34 @@ config SPI_FLASH
 
 if SPI_FLASH
 
-config SPI_ATOMIC_SEQUENCING
-	bool
-	default y if ARCH_X86
-	default n if !ARCH_X86
+# Keep at 0 because lots of boards assume this default.
+config BOOT_DEVICE_SPI_FLASH_BUS
+	int
+	default 0
 	help
-	  Select this option if the SPI controller uses "atomic sequencing."
-	  Atomic sequencing is when the sequence of commands is pre-programmed
-	  in the SPI controller. Hardware manages the transaction instead of
-	  software. This is common on x86 platforms.
+	  Which SPI bus the boot device is connected to.
 
-config SPI_FLASH_MEMORY_MAPPED
+config BOOT_DEVICE_SPI_FLASH_RW_NOMMAP
 	bool
-	default y if ARCH_X86
-	default n if !ARCH_X86
+	default y if !COMMON_CBFS_SPI_WRAPPER
+	default n
+	depends on BOOT_DEVICE_SPI_FLASH
 	help
-	  Inform system if SPI is memory-mapped or not.
+	  Provide common implementation of the RW boot device that
+	  doesn't provide mmap() operations.
+
+config BOOT_DEVICE_SPI_FLASH_RW_NOMMAP_EARLY
+	bool
+	default n
+	depends on BOOT_DEVICE_SPI_FLASH_RW_NOMMAP
+	help
+	  Include the common implementation in all stages, including the
+	  early ones.
+
+config SPI_FLASH_INCLUDE_ALL_DRIVERS
+	bool
+	default n if COMMON_CBFS_SPI_WRAPPER
+	default y
 
 config SPI_FLASH_SMM
 	bool "SPI flash driver support in SMM"
@@ -59,70 +68,70 @@ config SPI_FLASH_NO_FAST_READ
 
 config SPI_FLASH_ADESTO
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by Adesto Technologies.
 
 config SPI_FLASH_AMIC
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by AMIC.
 
 config SPI_FLASH_ATMEL
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by Atmel.
 
 config SPI_FLASH_EON
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by EON.
 
 config SPI_FLASH_GIGADEVICE
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by Gigadevice.
 
 config SPI_FLASH_MACRONIX
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by Macronix.
 
 config SPI_FLASH_SPANSION
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by Spansion.
 
 config SPI_FLASH_SST
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by SST.
 
 config SPI_FLASH_STMICRO
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by ST MICRO.
 
 config SPI_FLASH_WINBOND
 	bool
-	default y if !COMMON_CBFS_SPI_WRAPPER
+	default y if SPI_FLASH_INCLUDE_ALL_DRIVERS
 	help
 	  Select this option if your chipset driver needs to store certain
 	  data in the SPI flash and your SPI flash is made by Winbond.
@@ -136,4 +145,14 @@ config SPI_FLASH_FAST_READ_DUAL_OUTPUT_3B
 	  output command (opcode 0x3b) where the opcode and address are sent
 	  to the chip on MOSI and data is received on both MOSI and MISO.
 
+config SPI_FLASH_HAS_VOLATILE_GROUP
+	bool
+	default n
+	help
+	  Allows chipset to group write/erase operations under a single volatile
+	  group.
+
 endif # SPI_FLASH
+
+config HAVE_SPI_CONSOLE_SUPPORT
+	def_bool n

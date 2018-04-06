@@ -4,8 +4,11 @@
  * Licensed under the GPL-2 or later.
  */
 
+#include <console/console.h>
 #include <stdlib.h>
 #include <spi_flash.h>
+#include <spi-generic.h>
+#include <string.h>
 
 #include "spi_flash_internal.h"
 
@@ -22,6 +25,12 @@
 #define CMD_W25_CE		0xc7	/* Chip Erase */
 #define CMD_W25_DP		0xb9	/* Deep Power-down */
 #define CMD_W25_RES		0xab	/* Release from DP, and Read Signature */
+#define CMD_W25_RD_SEC		0x48	/* Read security registers */
+
+#define ADDR_W25_SEC1		0x10	/* Address offset for sec register 1 */
+#define ADDR_W25_SEC2		0x20	/* Address offset for sec register 2 */
+#define ADDR_W25_SEC3		0x30	/* Address offset for sec register 3 */
+#define ADDR_W25_SEC_SHIFT	8	/* Address shift for sec registers */
 
 struct winbond_spi_flash_params {
 	uint16_t	id;
@@ -40,7 +49,7 @@ struct winbond_spi_flash {
 };
 
 static inline struct winbond_spi_flash *
-to_winbond_spi_flash(struct spi_flash *flash)
+to_winbond_spi_flash(const struct spi_flash *flash)
 {
 	return container_of(flash, struct winbond_spi_flash, flash);
 }
@@ -126,10 +135,18 @@ static const struct winbond_spi_flash_params winbond_spi_flash_table[] = {
 		.nr_blocks		= 256,
 		.name			= "W25Q128FW",
 	},
+	{
+		.id			= 0x4019,
+		.l2_page_size		= 8,
+		.pages_per_sector	= 16,
+		.sectors_per_block	= 16,
+		.nr_blocks		= 512,
+		.name			= "W25Q256",
+	},
 };
 
-static int winbond_write(struct spi_flash *flash,
-		u32 offset, size_t len, const void *buf)
+static int winbond_write(const struct spi_flash *flash, u32 offset, size_t len,
+			const void *buf)
 {
 	struct winbond_spi_flash *stm = to_winbond_spi_flash(flash);
 	unsigned long byte_addr;
@@ -140,11 +157,9 @@ static int winbond_write(struct spi_flash *flash,
 	u8 cmd[4];
 
 	page_size = 1 << stm->params->l2_page_size;
-	byte_addr = offset % page_size;
-
-	flash->spi->rw = SPI_WRITE_FLAG;
 
 	for (actual = 0; actual < len; actual += chunk_len) {
+		byte_addr = offset % page_size;
 		chunk_len = min(len - actual, page_size - byte_addr);
 		chunk_len = spi_crop_chunk(sizeof(cmd), chunk_len);
 
@@ -158,13 +173,13 @@ static int winbond_write(struct spi_flash *flash,
 			cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
 #endif
 
-		ret = spi_flash_cmd(flash->spi, CMD_W25_WREN, NULL, 0);
+		ret = spi_flash_cmd(&flash->spi, CMD_W25_WREN, NULL, 0);
 		if (ret < 0) {
 			printk(BIOS_WARNING, "SF: Enabling Write failed\n");
 			goto out;
 		}
 
-		ret = spi_flash_cmd_write(flash->spi, cmd, sizeof(cmd),
+		ret = spi_flash_cmd_write(&flash->spi, cmd, sizeof(cmd),
 				buf + actual, chunk_len);
 		if (ret < 0) {
 			printk(BIOS_WARNING, "SF: Winbond Page Program failed\n");
@@ -176,7 +191,6 @@ static int winbond_write(struct spi_flash *flash,
 			goto out;
 
 		offset += chunk_len;
-		byte_addr = 0;
 	}
 
 #if CONFIG_DEBUG_SPI_FLASH
@@ -189,16 +203,44 @@ out:
 	return ret;
 }
 
-static int winbond_erase(struct spi_flash *flash, u32 offset, size_t len)
+static int winbond_sec_read(const struct spi_flash *flash, u32 offset,
+			    size_t len, void *buf)
 {
-	return spi_flash_cmd_erase(flash, CMD_W25_SE, offset, len);
+	int ret;
+	u8 cmd[5];
+	u8 reg = (offset >> ADDR_W25_SEC_SHIFT) & 0xFF;
+	u8 addr = offset & 0xFF;
+
+	if ((reg != ADDR_W25_SEC1) &&
+	    (reg != ADDR_W25_SEC2) &&
+	    (reg != ADDR_W25_SEC3)) {
+		printk(BIOS_WARNING, "SF: Wrong security register\n");
+		return 1;
+	}
+
+	cmd[0] = CMD_W25_RD_SEC;
+	cmd[1] = 0x0;
+	cmd[2] = reg;
+	cmd[3] = addr;
+	cmd[4] = 0x0; /* dummy byte */
+
+	ret = spi_flash_cmd_read(&flash->spi, cmd, sizeof(cmd), buf, len);
+	if (ret) {
+		printk(BIOS_WARNING, "SF: Can't read sec register %d\n",
+		       reg >> 4);
+	}
+
+	return ret;
 }
+
+
+
+static struct winbond_spi_flash stm;
 
 struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 {
 	const struct winbond_spi_flash_params *params;
 	unsigned page_size;
-	struct winbond_spi_flash *stm;
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(winbond_spi_flash_table); i++) {
@@ -213,31 +255,29 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 		return NULL;
 	}
 
-	stm = malloc(sizeof(struct winbond_spi_flash));
-	if (!stm) {
-		printk(BIOS_WARNING, "SF: Failed to allocate memory\n");
-		return NULL;
-	}
-
-	stm->params = params;
-	stm->flash.spi = spi;
-	stm->flash.name = params->name;
+	stm.params = params;
+	memcpy(&stm.flash.spi, spi, sizeof(*spi));
+	stm.flash.name = params->name;
 
 	/* Assuming power-of-two page size initially. */
 	page_size = 1 << params->l2_page_size;
 
-	stm->flash.write = winbond_write;
-	stm->flash.erase = winbond_erase;
+	stm.flash.internal_write = winbond_write;
+	stm.flash.internal_erase = spi_flash_cmd_erase;
+	stm.flash.internal_status = spi_flash_cmd_status;
+	stm.flash.internal_read_sec = winbond_sec_read;
 #if CONFIG_SPI_FLASH_NO_FAST_READ
-	stm->flash.read = spi_flash_cmd_read_slow;
+	stm.flash.internal_read = spi_flash_cmd_read_slow;
 #else
-	stm->flash.read = spi_flash_cmd_read_fast;
+	stm.flash.internal_read = spi_flash_cmd_read_fast;
 #endif
-	stm->flash.sector_size = (1 << stm->params->l2_page_size) *
-		stm->params->pages_per_sector;
-	stm->flash.size = page_size * params->pages_per_sector
+	stm.flash.sector_size = (1 << stm.params->l2_page_size) *
+		stm.params->pages_per_sector;
+	stm.flash.size = page_size * params->pages_per_sector
 				* params->sectors_per_block
 				* params->nr_blocks;
+	stm.flash.erase_cmd = CMD_W25_SE;
+	stm.flash.status_cmd = CMD_W25_RDSR;
 
-	return &stm->flash;
+	return &stm.flash;
 }
