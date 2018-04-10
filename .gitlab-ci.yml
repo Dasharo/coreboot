@@ -28,7 +28,7 @@ build_crosscompiler:
   script:
     - test -e ${CI_PROJECT_DIR}/apu2_fw_rel/apu2/coreboot/util/crossgcc/xgcc || { make crossgcc-i386 CPUS=$(nproc) &&  mkdir -p ${CI_PROJECT_DIR}/apu2_fw_rel/apu2/coreboot/util/crossgcc/ && mv -f ${CI_PROJECT_DIR}/util/crossgcc/xgcc ${CI_PROJECT_DIR}/apu2_fw_rel/apu2/coreboot/util/crossgcc/ ; }
   cache:
-    key: apu
+    key: apu_legacy
     paths:
       - ${CI_PROJECT_DIR}/apu2_fw_rel/apu2/coreboot/util/crossgcc/xgcc
   only:
@@ -54,7 +54,7 @@ build_crosscompiler:
     - ${RELEASE_DIR}/apu2/apu2-documentation/scripts/build_release_img.sh build
   cache:
     policy: pull
-    key: apu
+    key: apu_legacy
     paths:
       - ${RELEASE_DIR}/apu2/coreboot/util/crossgcc/xgcc
   artifacts:
