@@ -41,7 +41,11 @@ endif
 #######################################################################
 # Basic component discovery
 MAINBOARDDIR=$(call strip_quotes,$(CONFIG_MAINBOARD_DIR))
+VARIANT_DIR:=$(call strip_quotes,$(CONFIG_VARIANT_DIR))
+CONFIG_DEVICETREE:=$(call strip_quotes,$(CONFIG_DEVICETREE))
 export MAINBOARDDIR
+export VARIANT_DIR
+
 
 ## Final build results, which CBFSTOOL uses to create the final
 ## rom image file, are placed under $(objcbfs).
@@ -366,13 +370,16 @@ subdirs-y += util/nvidia
 #######################################################################
 # needed objects that every mainboard uses
 # Creation of these is architecture and mainboard independent
-$(obj)/mainboard/$(MAINBOARDDIR)/static.c: $(src)/mainboard/$(MAINBOARDDIR)/devicetree.cb  $(objutil)/sconfig/sconfig
-	@printf "    SCONFIG    $(subst $(src)/,,$(<))\n"
-	mkdir -p $(obj)/mainboard/$(MAINBOARDDIR)
-	$(objutil)/sconfig/sconfig $(MAINBOARDDIR) $(obj)/mainboard/$(MAINBOARDDIR)
+DEVICETREE_FILE := $(src)/mainboard/$(MAINBOARDDIR)/$(CONFIG_DEVICETREE)
+DEVICETREE_STATIC_C := $(obj)/mainboard/$(MAINBOARDDIR)/static.c
 
-ramstage-y+=$(obj)/mainboard/$(MAINBOARDDIR)/static.c
-romstage-y+=$(obj)/mainboard/$(MAINBOARDDIR)/static.c
+$(DEVICETREE_STATIC_C): $(DEVICETREE_FILE) $(objutil)/sconfig/sconfig
+	@printf "    SCONFIG    $(subst $(src)/,,$(<))\n"
+	mkdir -p $(dir $(DEVICETREE_STATIC_C))
+	$(objutil)/sconfig/sconfig $(MAINBOARDDIR)/variants/$(CONFIG_VARIANT_DIR) $(obj)/mainboard/$(MAINBOARDDIR)
+
+ramstage-y+=$(DEVICETREE_STATIC_C)
+romstage-y+=$(DEVICETREE_STATIC_C)
 
 $(objutil)/%.o: $(objutil)/%.c
 	@printf "    HOSTCC     $(subst $(objutil)/,,$(@))\n"
