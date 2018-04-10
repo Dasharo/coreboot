@@ -65,16 +65,20 @@ static char* locate_and_map_bootorder(size_t *offset, size_t *length)
                 CBFS_DEFAULT_MEDIA, file_name, CBFS_TYPE_RAW, &boot_file_len);
 
         if (boot_file == NULL) {
-                printk(BIOS_EMERG, "file [%s] not found in CBFS\n", file_name);
+                printk(BIOS_WARNING, "file [%s] not found in CBFS\n", file_name);
                 return NULL;
         }
 
         if (boot_file_len < 4096) {
-                printk(BIOS_EMERG, "Missing bootorder data.\n");
+                printk(BIOS_WARNING, "Missing bootorder data.\n");
                 return NULL;
         }
+	
+	if(boot_file_len & 0xFFF) {
+		printk(BIOS_WARNING,"Bootorder file not multiple size of 4k\n");
+		return NULL;
+	}
 
-        boot_file_len--; // cbfs_get_file_content returns size+1
 
         file_offset = cbfs_locate_file(CBFS_DEFAULT_MEDIA, bootorder_cbfs_file, file_name);
 
