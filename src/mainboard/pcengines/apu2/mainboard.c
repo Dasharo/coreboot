@@ -197,39 +197,39 @@ struct chip_operations mainboard_ops = {
 
 const char *smbios_mainboard_serial_number(void)
 {
-    static char serial[10];
-    msr_t msr;
-    u32 mac_addr = 0;
-    device_t nic_dev;
+	static char serial[10];
+	msr_t msr;
+	u32 mac_addr = 0;
+	device_t nic_dev;
 
-    // Allows the IO configuration space access method, IOCF8 and IOCFC, to be
-    // used to generate extended configuration cycles
-    msr = rdmsr(NB_CFG_MSR);
-    msr.hi |= (ENABLE_CF8_EXT_CFG);
-    wrmsr(NB_CFG_MSR, msr);
+	// Allows the IO configuration space access method, IOCF8 and IOCFC, to be
+	// used to generate extended configuration cycles
+	msr = rdmsr(NB_CFG_MSR);
+	msr.hi |= (ENABLE_CF8_EXT_CFG);
+	wrmsr(NB_CFG_MSR, msr);
 
-    nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
+	nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
 
-    if ((serial[0] != 0) || !nic_dev)
-        return serial;
+	if ((serial[0] != 0) || !nic_dev)
+	return serial;
 
-    // Read 4 bytes starting from 0x144 offset
-    mac_addr = pci_read_config32(nic_dev, 0x144);
-    // MSB here is always 0xff
-    // Discard it so only bottom 3b of mac address are left
-    mac_addr &= 0x00ffffff;
+	// Read 4 bytes starting from 0x144 offset
+	mac_addr = pci_read_config32(nic_dev, 0x144);
+	// MSB here is always 0xff
+	// Discard it so only bottom 3b of mac address are left
+	mac_addr &= 0x00ffffff;
 
-    // Set bit EnableCf8ExtCfg back to 0
-    msr.hi &= ~(ENABLE_CF8_EXT_CFG);
-    wrmsr(NB_CFG_MSR, msr);
+	// Set bit EnableCf8ExtCfg back to 0
+	msr.hi &= ~(ENABLE_CF8_EXT_CFG);
+	wrmsr(NB_CFG_MSR, msr);
 
-    // Calculate serial value
-    mac_addr /= 4;
-    mac_addr -= 64;
+	// Calculate serial value
+	mac_addr /= 4;
+	mac_addr -= 64;
 
-    snprintf(serial, sizeof(serial), "%d", mac_addr);
+	snprintf(serial, sizeof(serial), "%d", mac_addr);
 
-    return serial;
+	return serial;
 }
 
 const char *smbios_mainboard_sku(void)
