@@ -202,8 +202,7 @@ static void mainboard_final(void *chip_info) {
 		printk(BIOS_INFO, "USB PORT ROUTING = EHCI PORTS ENABLED\n");
 	}
 
-
-
+#if CONFIG_BOARD_PCENGINES_APU2 || CONFIG_BOARD_PCENGINES_APU3 || CONFIG_BOARD_PCENGINES_APU4
 	bool console_enabled = check_console( );	// Get console setting from bootorder file.
 
 	if ( !console_enabled ) {
@@ -294,6 +293,7 @@ static void mainboard_final(void *chip_info) {
 			free(bootorder_copy);
 		}
 	}
+#endif // CONFIG_BOARD_PCENGINES_APU2/3/4
 }
 
 struct chip_operations mainboard_ops = {
@@ -303,30 +303,39 @@ struct chip_operations mainboard_ops = {
 
 const char *smbios_mainboard_serial_number(void)
 {
-	static char serial[10];
-	device_t nic_dev;
-	uintptr_t bar10;
-	u32 mac_addr = 0;
-	int i;
+    static char serial[10];
+    msr_t msr;
+    u32 mac_addr = 0;
+    device_t nic_dev;
 
-	nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
-	if ((serial[0] != 0) || !nic_dev)
-		return serial;
+    // Allows the IO configuration space access method, IOCF8 and IOCFC, to be
+    // used to generate extended configuration cycles
+    msr = rdmsr(NB_CFG_MSR);
+    msr.hi |= (ENABLE_CF8_EXT_CFG);
+    wrmsr(NB_CFG_MSR, msr);
 
-	/* Read in the last 3 bytes of NIC's MAC address. */
-	bar10 = pci_read_config32(nic_dev, 0x10);
-	bar10 &= 0xFFFE0000;
-	bar10 += 0x5400;
-	for (i = 3; i < 6; i++) {
-		mac_addr <<= 8;
-		mac_addr |= read8((u8 *)bar10 + i);
-	}
-	mac_addr &= 0x00FFFFFF;
-	mac_addr /= 4;
-	mac_addr -= 64;
+    nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
 
-	snprintf(serial, sizeof(serial), "%d", mac_addr);
-	return serial;
+    if ((serial[0] != 0) || !nic_dev)
+        return serial;
+
+    // Read 4 bytes starting from 0x144 offset
+    mac_addr = pci_read_config32(nic_dev, 0x144);
+    // MSB here is always 0xff
+    // Discard it so only bottom 3b of mac address are left
+    mac_addr &= 0x00ffffff;
+
+    // Set bit EnableCf8ExtCfg back to 0
+    msr.hi &= ~(ENABLE_CF8_EXT_CFG);
+    wrmsr(NB_CFG_MSR, msr);
+
+    // Calculate serial value
+    mac_addr /= 4;
+    mac_addr -= 64;
+
+    snprintf(serial, sizeof(serial), "%d", mac_addr);
+
+    return serial;
 }
 
 const char *smbios_mainboard_sku(void)
