@@ -41,11 +41,11 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	select SPI_FLASH
 	select SPI_FLASH_WINBOND
 
-+config VARIANT_DIR
+config VARIANT_DIR
 	string
 	default apu2 if BOARD_PCENGINES_APU2
 	default apu3 if BOARD_PCENGINES_APU3
-	default apu4 if BOARD_PCENGINES_APU3
+	default apu4 if BOARD_PCENGINES_APU4
 	default apu5 if BOARD_PCENGINES_APU5
 
 config DEVICETREE
