@@ -29,13 +29,6 @@ ramstage-y += PlatformGnbPcie.c
 ramstage-y += bios_knobs.c
 ramstage-y += s1_button.c
 
-# WIV20150202 add ramtest
-cbfs-files-y += img/memtest
-img/memtest-file := payloads/eltan/memtest86+/memtest501.serial.com1.nospd.eltan-elf
-img/memtest-position := 0xcd900
-img/memtest-type := payload
-# WIV20150202 add ramtest
-
 cbfs-files-y += bootorder_map
 bootorder_map-file := bootorder_map
 bootorder_map-type := raw
