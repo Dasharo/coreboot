@@ -341,6 +341,26 @@ seabios:
 			CONFIG_ELTAN_SEABIOS_TAG=$(CONFIG_ELTAN_SEABIOS_TAG) \
 			OUT=$(abspath $(obj)) IASL="$(IASL)"
 
+ifeq ($(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO),yy)
+	MEMTEST_SERIAL_OPTIONS=SERIAL_CONSOLE_DEFAULT=1 \
+		SERIAL_TTY=$(CONFIG_UART_FOR_CONSOLE) \
+		SERIAL_BAUD_RATE=$(CONFIG_TTYS0_BAUD)
+endif
+
+memtest: $(DOTCONFIG)
+	$(MAKE) -C payloads/external/Memtest86Plus -f Makefile.inc all \
+		CC="$(CC_x86_32)" \
+		LD="$(LD_x86_32)" \
+		OBJCOPY="$(OBJCOPY_x86_32)" \
+		AS="$(AS_x86_32)" \
+		CONFIG_MEMTEST_MASTER=$(CONFIG_MEMTEST_MASTER) \
+		CONFIG_MEMTEST_STABLE=$(CONFIG_MEMTEST_STABLE) \
+		$(MEMTEST_SERIAL_OPTIONS) \
+		MFLAGS= MAKEFLAGS=
+
+sortbootorder:
+	$(MAKE) -C payloads/external/sortbootorder -f Makefile.inc
+
 filo:
 	$(MAKE) -C payloads/external/FILO -f Makefile.inc \
 			HOSTCC="$(HOSTCC)" \
@@ -352,7 +372,7 @@ filo:
 			CONFIG_MENULST_TIMEOUT=$(CONFIG_MENULST_TIMEOUT) \
 			CONFIG_FILO_GENERIC=$(CONFIG_FILO_GENERIC) \
 			CONFIG_FILO_ELTAN=$(CONFIG_FILO_ELTAN) \
-			CONFIG_ELTAN_FILO_TAG=$(CONFIG_ELTAN_FILO_TAG) 
+			CONFIG_ELTAN_FILO_TAG=$(CONFIG_ELTAN_FILO_TAG)
 
 grub2:
 	$(MAKE) -C payloads/external/GRUB2 -f Makefile.inc \
@@ -360,6 +380,3 @@ grub2:
 			CC="$(CC_x86_32)" LD="$(LD_x86_32)" OBJDUMP="$(OBJDUMP_x86_32)" \
 			OBJCOPY="$(OBJCOPY_x86_32)" STRIP="$(STRIP_x86_32)" \
 			CONFIG_GRUB2_MASTER=$(CONFIG_GRUB2_MASTER)
-
-sortbootorder:
-	$(MAKE) -C payloads/external/sortbootorder -f Makefile.inc
