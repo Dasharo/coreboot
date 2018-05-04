@@ -281,6 +281,6 @@ clean-cscope:
 
 distclean: clean
 	rm -f .config .config.old ..config.tmp .kconfig.d .tmpconfig* .ccwrap .xcompile
-	rm -rf payloads/external/SeaBIOS/seabios payloads/external/iPXE/ipxe payloads/external/sortbootorder/sortbootorder
+	rm -rf payloads/external/SeaBIOS/seabios payloads/external/iPXE/ipxe payloads/external/sortbootorder/sortbootorder payloads/external/Memtest86plus/memtest86plus
 
 .PHONY: $(PHONY) clean clean-for-update clean-cscope cscope distclean doxygen doxy doxygen_simple
