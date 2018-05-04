@@ -50,37 +50,7 @@
 #include <cpuRegisters.h>
 #include <build.h>
 #include "bios_knobs.h"
-#include <spi-generic.h>
-#include <spi_flash.h>
-#include <cbfs_core.h>
-
-static int find_knob_index(const char *s, const char *pattern)
-{
-
-	int pattern_index = 0;
-	char *result = (char *) s;
-	char *lpattern = (char *) pattern;
-
-	while (*result && *pattern ) {
-		if ( *lpattern == 0)  // the pattern matches return the pointer
-			return pattern_index;
-		if ( *result == 0)  // We're at the end of the file content but don't have a patter match yet
-			return -1;
-		if (*result == *lpattern ) {
-			// The string matches, simply advance
-			result++;
-			pattern_index++;
-			lpattern++;
-		} else {
-			// The string doesn't match restart the pattern
-			result++;
-			pattern_index++;
-			lpattern = (char *) pattern;
-		}
-	}
-
-	return -1;
-}
+#include "s1_button.h"
 
 /**********************************************
  * enable the dedicated function in mainboard.
@@ -202,8 +172,7 @@ static void mainboard_final(void *chip_info) {
 		printk(BIOS_INFO, "USB PORT ROUTING = EHCI PORTS ENABLED\n");
 	}
 
-
-
+#if CONFIG_BOARD_PCENGINES_APU2 || CONFIG_BOARD_PCENGINES_APU3 || CONFIG_BOARD_PCENGINES_APU4
 	bool console_enabled = check_console( );	// Get console setting from bootorder file.
 
 	if ( !console_enabled ) {
@@ -215,85 +184,10 @@ static void mainboard_final(void *chip_info) {
 
 			printk(BIOS_INFO, "S1 PRESSED\n");
 
-			const struct spi_flash *flash;
-			const char *file_name = "bootorder";
-			size_t boot_file_len = 0;
-			size_t offset;
-			struct cbfs_file *bootorder_cbfs_file = NULL;
-			char* bootorder_copy;
-			int knob_index;
-
-			char *boot_file = cbfs_get_file_content(
-				CBFS_DEFAULT_MEDIA, file_name, CBFS_TYPE_RAW, &boot_file_len);
-
-			if (boot_file == NULL) {
-				printk(BIOS_EMERG, "file [%s] not found in CBFS\n", file_name);
-				return;
-			}
-
-			if (boot_file_len < 4096) {
-				printk(BIOS_EMERG, "Missing bootorder data.\n");
-				return;
-			}
-
-			boot_file_len--; // cbfs_get_file_content returns size+1
-
-			offset = cbfs_locate_file(CBFS_DEFAULT_MEDIA, bootorder_cbfs_file, file_name);
-
-			if(offset ==-1) {
-				printk(BIOS_WARNING,"Failed to retrieve bootorder file offset\n");
-				return;
-			}
-
-			bootorder_copy = (char *) malloc(boot_file_len);
-
-			if(bootorder_copy == NULL) {
-				printk(BIOS_WARNING,"Failed to allocate memory for bootorder\n");
-				return;
-			}
-
-			if(memcpy(bootorder_copy, boot_file, boot_file_len) == NULL) {
-				printk(BIOS_WARNING,"Copying bootorder failed\n");
-				free(bootorder_copy);
-				return;
-			}
-
-			knob_index = find_knob_index(bootorder_copy, "scon");
-
-			if(knob_index == -1){
-				printk(BIOS_WARNING,"scon knob not found in bootorder\n");
-				free(bootorder_copy);
-				return;
-			}
-
-			*(bootorder_copy + knob_index) = '1';
-
-			spi_init();
-
-			flash = spi_flash_probe(0, 0);
-
-			if (flash == NULL) {
-				printk(BIOS_DEBUG, "Could not find SPI device\n");
-				return;
-			}
-
-			if (spi_flash_erase(flash, (u32) offset, boot_file_len)) {
-				printk(BIOS_WARNING, "SPI erase failed\n");
-				free(bootorder_copy);
-				return;
-			}
-
-			if (spi_flash_write(flash, (u32) offset, boot_file_len, bootorder_copy)) {
-				printk(BIOS_WARNING, "SPI write failed\n");
-				free(bootorder_copy);
-				return;
-			} else {
-				printk(BIOS_INFO, "Bootorder write successed\n");
-			}
-
-			free(bootorder_copy);
+			enable_console();
 		}
 	}
+#endif // CONFIG_BOARD_PCENGINES_APU2/3/4
 }
 
 struct chip_operations mainboard_ops = {
@@ -304,28 +198,37 @@ struct chip_operations mainboard_ops = {
 const char *smbios_mainboard_serial_number(void)
 {
 	static char serial[10];
-	device_t nic_dev;
-	uintptr_t bar10;
+	msr_t msr;
 	u32 mac_addr = 0;
-	int i;
+	device_t nic_dev;
+
+	// Allows the IO configuration space access method, IOCF8 and IOCFC, to be
+	// used to generate extended configuration cycles
+	msr = rdmsr(NB_CFG_MSR);
+	msr.hi |= (ENABLE_CF8_EXT_CFG);
+	wrmsr(NB_CFG_MSR, msr);
 
 	nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
-	if ((serial[0] != 0) || !nic_dev)
-		return serial;
 
-	/* Read in the last 3 bytes of NIC's MAC address. */
-	bar10 = pci_read_config32(nic_dev, 0x10);
-	bar10 &= 0xFFFE0000;
-	bar10 += 0x5400;
-	for (i = 3; i < 6; i++) {
-		mac_addr <<= 8;
-		mac_addr |= read8((u8 *)bar10 + i);
-	}
-	mac_addr &= 0x00FFFFFF;
+	if ((serial[0] != 0) || !nic_dev)
+	return serial;
+
+	// Read 4 bytes starting from 0x144 offset
+	mac_addr = pci_read_config32(nic_dev, 0x144);
+	// MSB here is always 0xff
+	// Discard it so only bottom 3b of mac address are left
+	mac_addr &= 0x00ffffff;
+
+	// Set bit EnableCf8ExtCfg back to 0
+	msr.hi &= ~(ENABLE_CF8_EXT_CFG);
+	wrmsr(NB_CFG_MSR, msr);
+
+	// Calculate serial value
 	mac_addr /= 4;
 	mac_addr -= 64;
 
 	snprintf(serial, sizeof(serial), "%d", mac_addr);
+
 	return serial;
 }
 

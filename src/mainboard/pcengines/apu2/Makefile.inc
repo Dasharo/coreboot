@@ -27,6 +27,7 @@ ramstage-y += agesawrapper.c
 ramstage-y += BiosCallOuts.c
 ramstage-y += PlatformGnbPcie.c
 ramstage-y += bios_knobs.c
+ramstage-y += s1_button.c
 
 # WIV20150202 add ramtest
 cbfs-files-y += img/memtest
@@ -126,3 +127,4 @@ payloads/external/iPXE/ipxe/ipxe.rom ipxe: $(DOTCONFIG)
 	CONFIG_PXE_CUSTOM_GENERAL_H=$(CONFIG_PXE_CUSTOM_GENERAL_H) \
 	CONFIG_PXE_CUSTOM_BOOTMENU_FILE=$(CONFIG_PXE_CUSTOM_BOOTMENU_FILE)
 
+subdirs-y += variants/$(VARIANT_DIR)
