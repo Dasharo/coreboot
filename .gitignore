@@ -9,6 +9,7 @@ payloads/external/GRUB2/grub2/
 payloads/external/SeaBIOS/seabios/
 payloads/external/sortbootorder/sortbootorder/
 payloads/external/iPXE/ipxe
+payloads/external/Memtest86Plus/memtest86plus
 payloads/libpayload/install/
 util/crossgcc/acpica-unix-*/
 util/crossgcc/binutils-*/

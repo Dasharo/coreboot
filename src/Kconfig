@@ -782,6 +782,35 @@ config SORTBOOTORDER
 
 source "payloads/external/iPXE/Kconfig"
 
+config MEMTEST
+	bool "Load Memtest86+ as a secondary payload"
+	default y
+	depends on ARCH_X86
+	help
+	  Memtest86+ can be loaded as a secondary payload under SeaBIOS, GRUB,
+	  or any other payload that can load additional payloads.
+
+choice
+	prompt "Memtest86+ version"
+	default MEMTEST_STABLE
+	depends on MEMTEST
+
+config MEMTEST_STABLE
+	bool "Stable"
+	help
+	  Stable Memtest86+ version.
+
+	  For reproducible builds, this option must be selected.
+config MEMTEST_MASTER
+	bool "Master"
+	help
+	  Newest Memtest86+ version.
+
+	  This option will fetch the newest version of the Memtest86+ code,
+	  updating as new changes are committed.  This makes the build
+	  non-reproducible, as it can fetch different code each time.
+endchoice
+
 endmenu
 
 menu "Debugging"

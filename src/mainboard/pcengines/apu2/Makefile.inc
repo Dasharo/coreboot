@@ -29,13 +29,6 @@ ramstage-y += PlatformGnbPcie.c
 ramstage-y += bios_knobs.c
 ramstage-y += s1_button.c
 
-# WIV20150202 add ramtest
-cbfs-files-y += img/memtest
-img/memtest-file := payloads/eltan/memtest86+/memtest501.serial.com1.nospd.eltan-elf
-img/memtest-position := 0xcd900
-img/memtest-type := payload
-# WIV20150202 add ramtest
-
 cbfs-files-y += bootorder_map
 bootorder_map-file := bootorder_map
 bootorder_map-type := raw
@@ -92,6 +85,25 @@ spd.bin-file := $(SPD_BIN)
 spd.bin-type := 0xab
 # WIV20141001 END ADD SPD FROM FILE
 
+# memtest86+
+
+ifeq ($(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO),yy)
+	MEMTEST_SERIAL_OPTIONS=SERIAL_CONSOLE_DEFAULT=1 \
+		SERIAL_TTY=$(CONFIG_UART_FOR_CONSOLE) \
+		SERIAL_BAUD_RATE=$(CONFIG_TTYS0_BAUD)
+endif
+
+memtest: $(DOTCONFIG)
+	$(MAKE) -C payloads/external/Memtest86Plus -f Makefile.inc all \
+			CC="$(CC_x86_32)" \
+			LD="$(LD_x86_32)" \
+			OBJCOPY="$(OBJCOPY_x86_32)" \
+			AS="$(AS_x86_32)" \
+			CONFIG_MEMTEST_MASTER=$(CONFIG_MEMTEST_MASTER) \
+			CONFIG_MEMTEST_STABLE=$(CONFIG_MEMTEST_STABLE) \
+			$(MEMTEST_SERIAL_OPTIONS) \
+			MFLAGS= MAKEFLAGS=
+
 # iPXE
 
 ifeq ($(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO),yy)
@@ -111,20 +123,16 @@ ifeq ($(CONFIG_BUILD_IPXE),y)
 PXE_ROM_FILE:=payloads/external/iPXE/ipxe/ipxe.rom
 endif
 
-cbfs-files-$(CONFIG_PXE_ROM)$(CONFIG_BUILD_IPXE) += genroms/pxe.rom
-genroms/pxe.rom-file := $(PXE_ROM_FILE)
-genroms/pxe.rom-type := raw
-
-payloads/external/iPXE/ipxe/ipxe.rom ipxe: $(DOTCONFIG)
+ipxe: $(DOTCONFIG)
 	$(MAKE) -C payloads/external/iPXE -f Makefile.inc all \
-	CROSS_COMPILE="$(CROSS_COMPILE_$(ARCH-ramstage-y))" \
-	PXE_ROM_PCI_ID=$(subst $(comma),,$(CONFIG_PXE_ROM_ID)) \
-	CONFIG_IPXE_MASTER=$(CONFIG_IPXE_MASTER) \
-	CONFIG_IPXE_STABLE=$(CONFIG_IPXE_STABLE) \
-	CONSOLE_SERIAL=$(IPXE_SERIAL_CONSOLE) \
-	IPXE_UART=$(IPXE_UART) \
-	CONFIG_TTYS0_BAUD=$(CONFIG_TTYS0_BAUD) \
-	CONFIG_PXE_CUSTOM_GENERAL_H=$(CONFIG_PXE_CUSTOM_GENERAL_H) \
-	CONFIG_PXE_CUSTOM_BOOTMENU_FILE=$(CONFIG_PXE_CUSTOM_BOOTMENU_FILE)
+			CROSS_COMPILE="$(CROSS_COMPILE_$(ARCH-ramstage-y))" \
+			PXE_ROM_PCI_ID=$(subst $(comma),,$(CONFIG_PXE_ROM_ID)) \
+			CONFIG_IPXE_MASTER=$(CONFIG_IPXE_MASTER) \
+			CONFIG_IPXE_STABLE=$(CONFIG_IPXE_STABLE) \
+			CONSOLE_SERIAL=$(IPXE_SERIAL_CONSOLE) \
+			IPXE_UART=$(IPXE_UART) \
+			CONFIG_TTYS0_BAUD=$(CONFIG_TTYS0_BAUD) \
+			CONFIG_PXE_CUSTOM_GENERAL_H=$(CONFIG_PXE_CUSTOM_GENERAL_H) \
+			CONFIG_PXE_CUSTOM_BOOTMENU_FILE=$(CONFIG_PXE_CUSTOM_BOOTMENU_FILE)
 
 subdirs-y += variants/$(VARIANT_DIR)

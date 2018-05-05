@@ -2,7 +2,7 @@ image: registry.gitlab.com/pcengines/apu2-documentation:latest
 
 services:
   - docker:dind
-  
+
 variables:
   RELEASE_DIR: ${CI_PROJECT_DIR}/apu2_fw_rel
 
@@ -20,10 +20,10 @@ check_dependencies:
     - git ls-remote https://github.com/pcengines/release_manifests.git | grep ${CI_COMMIT_REF_NAME}
   only:
     - tags
-    
+
 build_crosscompiler:
   stage: build_crosscompiler
-  tags: 
+  tags:
     - docker
   script:
     - test -e ${CI_PROJECT_DIR}/apu2_fw_rel/apu2/coreboot/util/crossgcc/xgcc || { make crossgcc-i386 CPUS=$(nproc) &&  mkdir -p ${CI_PROJECT_DIR}/apu2_fw_rel/apu2/coreboot/util/crossgcc/ && mv -f ${CI_PROJECT_DIR}/util/crossgcc/xgcc ${CI_PROJECT_DIR}/apu2_fw_rel/apu2/coreboot/util/crossgcc/ ; }
@@ -33,14 +33,14 @@ build_crosscompiler:
       - ${CI_PROJECT_DIR}/apu2_fw_rel/apu2/coreboot/util/crossgcc/xgcc
   only:
     - tags
-    - web    
-      
+    - web
+
 .build_rom_apu: &build_rom_apu
   variables:
     PLATFORM: apux
     MANIFEST_FALLBACK_BRANCH: coreboot-xxxx
   stage: build_rom
-  tags: 
+  tags:
     - docker
   dependencies:
     - build_crosscompiler
@@ -51,7 +51,7 @@ build_crosscompiler:
     - repo init -u https://github.com/pcengines/release_manifests.git -b ${REPO_REVISION}
     - repo sync --force-sync
     - cp ${CI_PROJECT_DIR}/configs/pcengines_${PLATFORM}.config ${CI_PROJECT_DIR}/apu2_fw_rel/apu2/coreboot/.config
-    - ${RELEASE_DIR}/apu2/apu2-documentation/scripts/build_release_img.sh build
+    - ${RELEASE_DIR}/apu2/apu2-documentation/scripts/build_release_img.sh build-ml
   cache:
     policy: pull
     key: apu_legacy
@@ -63,11 +63,11 @@ build_crosscompiler:
       - ${RELEASE_DIR}/${PLATFORM}_*
   only:
     - tags
-    - web     
-      
+    - web
+
 .test_rom: &test_rom
   variables:
-    PLATFORM: 
+    PLATFORM:
   stage: test_rom
   tags:
     - docker
@@ -79,7 +79,7 @@ build_crosscompiler:
 
 .sign_rom: &sign_rom
   variables:
-    PLATFORM: 
+    PLATFORM:
   stage: sign_rom
   tags:
     - docker
@@ -89,13 +89,13 @@ build_crosscompiler:
   artifacts:
     name: ${PLATFORM}
     paths:
-      - ${RELEASE_DIR}/${PLATFORM}_* 
+      - ${RELEASE_DIR}/${PLATFORM}_*
   only:
     - tags
 
 .publish_rom: &publish_rom
   variables:
-    PLATFORM: 
+    PLATFORM:
   stage: publish_rom
   tags:
     - docker
@@ -104,7 +104,7 @@ build_crosscompiler:
     - for file in ${RELEASE_DIR}/${PLATFORM}_*.tar.gz; do curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${file} "${UPLOADER_URL}/${PLATFORM}/releases/"; done
   only:
     - tags
-    
+
 
 build:apu2:
   <<: *build_rom_apu
@@ -116,18 +116,18 @@ build:apu2:
   <<: *test_rom
   variables:
     PLATFORM: apu2
-    
+
 .sign:apu2:
   <<: *sign_rom
   variables:
     PLATFORM: apu2
-    
+
 publish:apu2:
   <<: *publish_rom
   variables:
-    PLATFORM: apu2    
-    
-    
+    PLATFORM: apu2
+
+
 build:apu3:
   <<: *build_rom_apu
   variables:
@@ -138,18 +138,18 @@ build:apu3:
   <<: *test_rom
   variables:
     PLATFORM: apu3
-    
+
 .sign:apu3:
   <<: *sign_rom
   variables:
     PLATFORM: apu3
-    
+
 publish:apu3:
   <<: *publish_rom
   variables:
     PLATFORM: apu3
 
-   
+
 build:apu4:
   <<: *build_rom_apu
   variables:
@@ -160,18 +160,18 @@ build:apu4:
   <<: *test_rom
   variables:
     PLATFORM: apu4
-    
+
 .sign:apu4:
   <<: *sign_rom
   variables:
     PLATFORM: apu4
-    
+
 publish:apu4:
   <<: *publish_rom
   variables:
-    PLATFORM: apu4 
+    PLATFORM: apu4
 
-    
+
 build:apu5:
   <<: *build_rom_apu
   variables:
@@ -182,13 +182,13 @@ build:apu5:
   <<: *test_rom
   variables:
     PLATFORM: apu5
-    
+
 .sign:apu5:
   <<: *sign_rom
   variables:
     PLATFORM: apu5
-    
+
 publish:apu5:
   <<: *publish_rom
   variables:
-    PLATFORM: apu5    
+    PLATFORM: apu5
