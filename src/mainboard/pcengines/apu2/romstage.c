@@ -8,7 +8,11 @@
 #include <device/pci_ops.h>
 #include <gpio.h>
 #include <northbridge/amd/agesa/state_machine.h>
+#include <southbridge/amd/pi/hudson/hudson.h>
+#include <Fch/Fch.h>
+#include <smp/node.h>
 
+#include "bios_knobs.h"
 #include "gpio_ftns.h"
 
 static void early_lpc_init(void);
