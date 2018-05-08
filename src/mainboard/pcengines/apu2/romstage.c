@@ -34,6 +34,7 @@
 #include <northbridge/amd/pi/agesawrapper_call.h>
 #include <cpu/x86/bist.h>
 #include <cpu/x86/lapic.h>
+#include <cpu/amd/microcode.h>
 #include <hudson.h>
 #include <cpu/amd/pi/s3_resume.h>
 #include <fchgpio.h>
@@ -179,6 +180,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	printk(BIOS_DEBUG, "BSP Family_Model: %08x \n", val);
 	printk(BIOS_DEBUG, "cpu_init_detectedx = %08lx \n", cpu_init_detectedx);
 
+#if CONFIG_CPU_AMD_FAM16H_MICROCODE
+	update_microcode(val);
+#endif
 	/*
 	 * This refers to LpcClkDrvSth settling time.  Without this setting, processor
 	 * initialization is slow or incorrect, so this wait has been replicated from
