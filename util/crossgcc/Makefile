@@ -1,7 +1,7 @@
 all: build-i386 build-armv7a build-aarch64
 
 build-i386:
-	bash ./buildgcc -G -p i386-elf
+	bash ./buildgcc -d /opt/xgcc -G -p i386-elf
 
 build-armv7a:
 	bash ./buildgcc -G -p armv7a-eabi
