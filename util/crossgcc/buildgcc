@@ -24,7 +24,7 @@ CROSSGCC_DATE="February 23th, 2015"
 CROSSGCC_VERSION="1.26"
 
 # default settings
-TARGETDIR=`pwd`/xgcc
+TARGETDIR=/opt/xgcc
 TARGETARCH=i386-elf
 DESTDIR=
 
