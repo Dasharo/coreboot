@@ -1,11 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <stdint.h>
+#include <string.h>
+#include <delay.h>
+#include <device/pci_def.h>
+#include <arch/io.h>
+#include <arch/mmio.h>
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/gpio.h>
 #include <amdblocks/gpio_defs.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
+#include <console/console.h>
+#include <console/uart.h>
 #include <gpio.h>
 #include <northbridge/amd/agesa/state_machine.h>
 
