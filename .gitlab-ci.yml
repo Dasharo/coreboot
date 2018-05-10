@@ -19,6 +19,7 @@ check_dependencies:
     - git ls-remote https://github.com/pcengines/coreboot.git | grep ${CI_COMMIT_REF_NAME}
   only:
     - tags 
+    - web
       
 .build_rom_apu: &build_rom_apu
   variables:
@@ -38,6 +39,7 @@ check_dependencies:
       - ${RELEASE_DIR}/${PLATFORM}_*
   only:
     - tags   
+    - web
       
 .test_rom: &test_rom
   variables:
