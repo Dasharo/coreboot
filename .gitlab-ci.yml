@@ -81,28 +81,6 @@ check_dependencies:
   only:
     - tags
 
-    
-build:apu1:
-  <<: *build_rom_apu
-  variables:
-    PLATFORM: apu1
-
-.test:apu1:
-  <<: *test_rom
-  variables:
-    PLATFORM: apu1
-    
-.sign:apu1:
-  <<: *sign_rom
-  variables:
-    PLATFORM: apu1
-    
-publish:apu1:
-  <<: *publish_rom
-  variables:
-    PLATFORM: apu1  
-
-
 build:apu2:
   <<: *build_rom_apu
   variables:
