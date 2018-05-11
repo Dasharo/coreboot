@@ -17,8 +17,12 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+romstage-y += update_microcode.c
+
 ramstage-y += chip_name.c
 ramstage-y += model_16_init.c
+ramstage-y += update_microcode.c
+
 
 subdirs-y += ../../mtrr
 subdirs-y += ../../../x86/tsc
