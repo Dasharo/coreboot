@@ -27,7 +27,8 @@ static u16 get_equivalent_processor_rev_id(u32 orig_id) {
 		/* Family 16h */
 
 /* TODO This equivalent processor revisions ID needs verification */
-                { 0x730f01, 0x7301 },
+
+		{ 0x730f01, 0x7301 },
 
 		/* Array terminator */
 		{ 0xffffff, 0x0000 },
