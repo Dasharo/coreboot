@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-if BOARD_PCENGINES_APU2
+if BOARD_PCENGINES_APU2 || BOARD_PCENGINES_APU3 || BOARD_PCENGINES_APU4 || BOARD_PCENGINES_APU5
 
 config BOARD_SPECIFIC_OPTIONS # dummy
 	def_bool y
@@ -41,13 +41,28 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	select SPI_FLASH
 	select SPI_FLASH_WINBOND
 
+config VARIANT_DIR
+	string
+	default apu2 if BOARD_PCENGINES_APU2
+	default apu3 if BOARD_PCENGINES_APU3
+	default apu4 if BOARD_PCENGINES_APU4
+	default apu5 if BOARD_PCENGINES_APU5
+
+config DEVICETREE
+	string
+	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
+
+
 config MAINBOARD_DIR
 	string
 	default pcengines/apu2
 
 config MAINBOARD_PART_NUMBER
 	string
-	default "apu2"
+	default "apu2" if BOARD_PCENGINES_APU2
+	default "apu3" if BOARD_PCENGINES_APU3
+	default "apu4" if BOARD_PCENGINES_APU4
+	default "apu5" if BOARD_PCENGINES_APU5
 
 config SVI2_SLOW_SPEED
 	bool	"SVI2 slow speed"

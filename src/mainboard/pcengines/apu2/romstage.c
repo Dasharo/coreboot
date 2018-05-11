@@ -34,6 +34,7 @@
 #include <northbridge/amd/pi/agesawrapper_call.h>
 #include <cpu/x86/bist.h>
 #include <cpu/x86/lapic.h>
+#include <cpu/amd/microcode.h>
 #include <hudson.h>
 #include <cpu/amd/pi/s3_resume.h>
 #include <fchgpio.h>
@@ -52,14 +53,23 @@ static const GPIO_CONTROL gGpioInitTable[] = {
 		GPIO_DEFINITION (APU2_SPD_STRAP1_GPIO,	APU2_SPD_STRAP1_FUNC,	0, 0, 0, 0),
 		GPIO_DEFINITION (APU2_PE3_RST_L_GPIO,	APU2_PE3_RST_L_FUNC,	1, 1, 0, 0),
 		GPIO_DEFINITION (APU2_PE4_RST_L_GPIO,	APU2_PE4_RST_L_FUNC,	1, 1, 0, 0),
-		GPIO_DEFINITION (APU2_LED1_L_GPIO,		APU2_LED1_L_FUNC,		1, 0, 0, 0),	// Turn on the LEDs by default
-		GPIO_DEFINITION (APU2_LED2_L_GPIO,		APU2_LED2_L_FUNC,		1, 0, 0, 0),
-		GPIO_DEFINITION (APU2_LED3_L_GPIO,		APU2_LED3_L_FUNC,		1, 0, 0, 0),
+		GPIO_DEFINITION (APU2_LED1_L_GPIO,	APU2_LED1_L_FUNC,	1, 0, 0, 0),	// Turn on the LEDs by default
+		GPIO_DEFINITION (APU2_LED2_L_GPIO,	APU2_LED2_L_FUNC,	1, 0, 0, 0),
+		GPIO_DEFINITION (APU2_LED3_L_GPIO,	APU2_LED3_L_FUNC,	1, 0, 0, 0),
 		GPIO_DEFINITION (APU2_PE3_WDIS_L_GPIO,	APU2_PE3_WDIS_L_FUNC,	1, 1, 0, 0),
 		GPIO_DEFINITION (APU2_PE4_WDIS_L_GPIO,	APU2_PE4_WDIS_L_FUNC,	1, 1, 0, 0),
 // SPKR doesn't require init, left at default
-		GPIO_DEFINITION (APU2_PROCHOT_GPIO,		APU2_PROCHOT_FUNC,		0, 0, 0, 0),
-		GPIO_DEFINITION (APU2_BIOS_CONSOLE_GPIO, APU2_BIOS_CONSOLE_FUNC,	0, 0, 0, 0),
+		GPIO_DEFINITION (APU2_PROCHOT_GPIO,	APU2_PROCHOT_FUNC,	0, 0, 0, 0),
+#if CONFIG_BOARD_PCENGINES_APU2 || CONFIG_BOARD_PCENGINES_APU3 || CONFIG_BOARD_PCENGINES_APU4
+		GPIO_DEFINITION (APU2_BIOS_CONSOLE_GPIO, APU2_BIOS_CONSOLE_FUNC, 0, 0, 0, 0),
+#endif
+#if CONFIG_BOARD_PCENGINES_APU3 || CONFIG_BOARD_PCENGINES_APU4
+		GPIO_DEFINITION (APU3_SIMSWAP_GPIO, 	APU3_SIMSWAP_FUNC,	1, 0, 0, 0),
+#endif
+#if CONFIG_BOARD_PCENGINES_APU5
+		GPIO_DEFINITION (APU5_SIMSWAP2_GPIO,   APU5_SIMSWAP2_FUNC,   1, 1, 0, 0),
+		GPIO_DEFINITION (APU5_SIMSWAP3_GPIO,   APU5_SIMSWAP3_FUNC,   1, 1, 0, 0),
+#endif
 		{0xFF, 0xFF, 0xFF}									// Terminator
 	};
 
@@ -121,7 +131,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		data &= 0xFFFF0000;
 		data |= (0 + 1) << (0 * 4);	// CLKREQ 0 to CLK0
 		data |= (1 + 1) << (1 * 4);	// CLKREQ 1 to CLK1
-		data |= (2 + 1) << (2 * 4);	// CLKREQ 2 to CLK2
+#if CONFIG_BOARD_PCENGINES_APU2 || CONFIG_BOARD_PCENGINES_APU3 || CONFIG_BOARD_PCENGINES_APU4
+		data |= (2 + 1) << (2 * 4);	// CLKREQ 2 to CLK2 disabled on APU5
+#endif
 		// make CLK3 to ignore CLKREQ# input
 		// force it to be always on
 		data |= ( 0xf ) << (3 * 4);	// CLKREQ 3 to CLK3
@@ -167,6 +179,8 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	val = cpuid_eax(1);
 	printk(BIOS_DEBUG, "BSP Family_Model: %08x \n", val);
 	printk(BIOS_DEBUG, "cpu_init_detectedx = %08lx \n", cpu_init_detectedx);
+
+	update_microcode(val);
 
 	/*
 	 * This refers to LpcClkDrvSth settling time.  Without this setting, processor

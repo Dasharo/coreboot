@@ -341,6 +341,9 @@ seabios:
 			CONFIG_ELTAN_SEABIOS_TAG=$(CONFIG_ELTAN_SEABIOS_TAG) \
 			OUT=$(abspath $(obj)) IASL="$(IASL)"
 
+sortbootorder:
+	$(MAKE) -C payloads/external/sortbootorder -f Makefile.inc
+
 filo:
 	$(MAKE) -C payloads/external/FILO -f Makefile.inc \
 			HOSTCC="$(HOSTCC)" \
@@ -352,7 +355,7 @@ filo:
 			CONFIG_MENULST_TIMEOUT=$(CONFIG_MENULST_TIMEOUT) \
 			CONFIG_FILO_GENERIC=$(CONFIG_FILO_GENERIC) \
 			CONFIG_FILO_ELTAN=$(CONFIG_FILO_ELTAN) \
-			CONFIG_ELTAN_FILO_TAG=$(CONFIG_ELTAN_FILO_TAG) 
+			CONFIG_ELTAN_FILO_TAG=$(CONFIG_ELTAN_FILO_TAG)
 
 grub2:
 	$(MAKE) -C payloads/external/GRUB2 -f Makefile.inc \
@@ -360,6 +363,3 @@ grub2:
 			CC="$(CC_x86_32)" LD="$(LD_x86_32)" OBJDUMP="$(OBJDUMP_x86_32)" \
 			OBJCOPY="$(OBJCOPY_x86_32)" STRIP="$(STRIP_x86_32)" \
 			CONFIG_GRUB2_MASTER=$(CONFIG_GRUB2_MASTER)
-
-sortbootorder:
-	$(MAKE) -C payloads/external/sortbootorder -f Makefile.inc

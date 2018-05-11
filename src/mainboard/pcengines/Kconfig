@@ -20,12 +20,6 @@ endchoice
 
 source "src/mainboard/pcengines/apu2/Kconfig"
 
-source "src/mainboard/pcengines/apu3/Kconfig"
-
-source "src/mainboard/pcengines/apu4/Kconfig"
-
-source "src/mainboard/pcengines/apu5/Kconfig"
-
 config MAINBOARD_VENDOR
 	string
 	default "PC Engines"

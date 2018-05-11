@@ -41,7 +41,11 @@ endif
 #######################################################################
 # Basic component discovery
 MAINBOARDDIR=$(call strip_quotes,$(CONFIG_MAINBOARD_DIR))
+VARIANT_DIR:=$(call strip_quotes,$(CONFIG_VARIANT_DIR))
+CONFIG_DEVICETREE:=$(call strip_quotes,$(CONFIG_DEVICETREE))
 export MAINBOARDDIR
+export VARIANT_DIR
+
 
 ## Final build results, which CBFSTOOL uses to create the final
 ## rom image file, are placed under $(objcbfs).
@@ -366,13 +370,16 @@ subdirs-y += util/nvidia
 #######################################################################
 # needed objects that every mainboard uses
 # Creation of these is architecture and mainboard independent
-$(obj)/mainboard/$(MAINBOARDDIR)/static.c: $(src)/mainboard/$(MAINBOARDDIR)/devicetree.cb  $(objutil)/sconfig/sconfig
-	@printf "    SCONFIG    $(subst $(src)/,,$(<))\n"
-	mkdir -p $(obj)/mainboard/$(MAINBOARDDIR)
-	$(objutil)/sconfig/sconfig $(MAINBOARDDIR) $(obj)/mainboard/$(MAINBOARDDIR)
+DEVICETREE_FILE := $(src)/mainboard/$(MAINBOARDDIR)/$(CONFIG_DEVICETREE)
+DEVICETREE_STATIC_C := $(obj)/mainboard/$(MAINBOARDDIR)/static.c
 
-ramstage-y+=$(obj)/mainboard/$(MAINBOARDDIR)/static.c
-romstage-y+=$(obj)/mainboard/$(MAINBOARDDIR)/static.c
+$(DEVICETREE_STATIC_C): $(DEVICETREE_FILE) $(objutil)/sconfig/sconfig
+	@printf "    SCONFIG    $(subst $(src)/,,$(<))\n"
+	mkdir -p $(dir $(DEVICETREE_STATIC_C))
+	$(objutil)/sconfig/sconfig $(MAINBOARDDIR)/variants/$(CONFIG_VARIANT_DIR) $(obj)/mainboard/$(MAINBOARDDIR)
+
+ramstage-y+=$(DEVICETREE_STATIC_C)
+romstage-y+=$(DEVICETREE_STATIC_C)
 
 $(objutil)/%.o: $(objutil)/%.c
 	@printf "    HOSTCC     $(subst $(objutil)/,,$(@))\n"
@@ -525,15 +532,22 @@ endif
 ifeq ($(CONFIG_PAYLOAD_SEABIOS),y)
 COREBOOT_ROM_DEPENDENCIES+=seabios
 endif
+ifeq ($(CONFIG_SORTBOOTORDER),y)
+COREBOOT_ROM_DEPENDENCIES+=sortbootorder
+endif
+ifeq ($(CONFIG_MEMTEST),y)
+COREBOOT_ROM_DEPENDENCIES+=memtest
+endif
+ifeq ($(CONFIG_BUILD_IPXE),y)
+COREBOOT_ROM_DEPENDENCIES+=ipxe
+endif
 ifeq ($(CONFIG_PAYLOAD_FILO),y)
 COREBOOT_ROM_DEPENDENCIES+=filo
 endif
 ifeq ($(CONFIG_PAYLOAD_GRUB2),y)
 COREBOOT_ROM_DEPENDENCIES+=grub2
 endif
-ifeq ($(CONFIG_SORTBOOTORDER),y)
-COREBOOT_ROM_DEPENDENCIES+=sortbootorder
-endif
+
 
 extract_nth=$(patsubst -%-,%,$(word $(1), $(subst |,- -,-$(2)-)))
 
@@ -549,7 +563,7 @@ prebuild-files = \
 	       $(if $(call extract_nth,6,$(file)),$(CBFSTOOL) $@.tmp locate -f $(call extract_nth,1,$(file)) -n $(call extract_nth,2,$(file)) -a $(call extract_nth,6,$(file))|xargs -i \
 	       $(cbfs-add-cmd) -b {} &&,\
 	       $(cbfs-add-cmd) $(if $(call extract_nth,5,$(file)),-b $(call extract_nth,5,$(file))) &&))
-prebuilt-files = $(foreach file,$(cbfs-files), $(call extract_nth,1,$(file))) 
+prebuilt-files = $(foreach file,$(cbfs-files), $(call extract_nth,1,$(file)))
 
 prebuild-fixed = \
 	       $(foreach file,$(cbfs-fixed), \
@@ -557,8 +571,8 @@ prebuild-fixed = \
 	       add$(if $(filter stage,$(call extract_nth,3,$(file))),-stage)$(if $(filter payload,$(call extract_nth,3,$(file))),-payload) \
 	       -f $(call extract_nth,1,$(file)) \
 	       -n $(call extract_nth,2,$(file)) $(if $(filter-out stage,$(call extract_nth,3,$(file))),-t $(call extract_nth,3,$(file))) \
-	       $(if $(call extract_nth,5,$(file)),-b $(call extract_nth,5,$(file))) &&) 
-prebuilt-fixed = $(foreach file,$(cbfs-fixed), $(call extract_nth,1,$(file))) 
+	       $(if $(call extract_nth,5,$(file)),-b $(call extract_nth,5,$(file))) &&)
+prebuilt-fixed = $(foreach file,$(cbfs-fixed), $(call extract_nth,1,$(file)))
 
 
 $(obj)/coreboot.pre1: $(objcbfs)/bootblock.bin $$(prebuilt-files) $$(prebuilt-fixed) $(CBFSTOOL) $$(cpu_ucode_cbfs_file)
@@ -629,12 +643,17 @@ endif
 ifeq ($(CONFIG_HAVE_REFCODE_BLOB),y)
 	$(CBFSTOOL) $@.tmp add-stage -f $(REFCODE_BLOB) -n $(CONFIG_CBFS_PREFIX)/refcode -c $(CBFS_COMPRESS_FLAG)
 endif
-ifeq ($(CONFIG_PXE_ROM),y)
-	$(CBFSTOOL) $@.tmp add -f $(CONFIG_PXE_ROM_FILE) -n pci$(CONFIG_PXE_ROM_ID).rom -t raw
-endif
 ifeq ($(CONFIG_SORTBOOTORDER),y)
-	$(CBFSTOOL) $@.tmp add-payload -f payloads/external/sortbootorder/sortbootorder/sortbootorder.elf -n img/setup -c $(CBFS_PAYLOAD_COMPRESS_FLAG)
+	$(CBFSTOOL) $@.tmp add-payload -f payloads/external/sortbootorder/sortbootorder/sortbootorder.elf -n img/setup
 endif
+ifeq ($(CONFIG_MEMTEST),y)
+	$(CBFSTOOL) $@.tmp add-payload -f payloads/external/Memtest86Plus/memtest86plus/memtest -n img/memtest
+endif
+
+ifeq ($(CONFIG_PXE_ROM)$(CONFIG_BUILD_IPXE),y)
+	$(CBFSTOOL) $@.tmp add -f $(PXE_ROM_FILE) -n genroms/pxe.rom -t raw
+endif
+
 ifeq ($(CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE),y)
 ifeq ($(CONFIG_CPU_MICROCODE_ADDED_DURING_BUILD),y)
 	@printf "    UPDATE-FIT \n"
