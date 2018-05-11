@@ -8,6 +8,15 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.0.17] - 2018-05-11
+### Added
+- Infrastructure to include microcode update
+- Support for new building system pce-fw-builder
+
+### Fixed
+- Memtest86+ is now a part of coreboot build system and does not have to be
+built externally
+
 ## [v4.0.16] - 2018-04-06
 ### Added
 - APU4 target
@@ -157,7 +166,8 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.16...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.17...coreboot-4.0.x
+[v4.0.17]: https://github.com/pcengines/coreboot/compare/v4.0.16...v4.0.17
 [v4.0.16]: https://github.com/pcengines/coreboot/compare/v4.0.15...v4.0.16
 [v4.0.15]: https://github.com/pcengines/coreboot/compare/v4.0.14...v4.0.15
 [v4.0.14]: https://github.com/pcengines/coreboot/compare/v4.0.13...v4.0.14
