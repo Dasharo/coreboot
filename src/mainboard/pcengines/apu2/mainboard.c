@@ -172,22 +172,24 @@ static void mainboard_final(void *chip_info) {
 		printk(BIOS_INFO, "USB PORT ROUTING = EHCI PORTS ENABLED\n");
 	}
 
-#if CONFIG_BOARD_PCENGINES_APU2 || CONFIG_BOARD_PCENGINES_APU3 || CONFIG_BOARD_PCENGINES_APU4
-	bool console_enabled = check_console( );	// Get console setting from bootorder file.
+	bool console_enabled = check_console();	// Get console setting from bootorder file.
 
 	if ( !console_enabled ) {
 
 		//
 		// The console is disabled, check if S1 is pressed and enable if so
 		//
+# if CONFIG_BOARD_PCENGINES_APU5
+		if ( !ReadFchGpio(APU5_BIOS_CONSOLE_GPIO) ) {
+#else
 		if ( !ReadFchGpio(APU2_BIOS_CONSOLE_GPIO) ) {
+#endif
 
 			printk(BIOS_INFO, "S1 PRESSED\n");
 
 			enable_console();
 		}
 	}
-#endif // CONFIG_BOARD_PCENGINES_APU2/3/4
 }
 
 struct chip_operations mainboard_ops = {
