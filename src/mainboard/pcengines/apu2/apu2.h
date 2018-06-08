@@ -50,3 +50,5 @@
 #define APU5_SIMSWAP2_FUNC		Function0
 #define APU5_SIMSWAP3_GPIO		0x5A				// GENINT2_L/GPIO33
 #define APU5_SIMSWAP3_FUNC		Function0
+#define APU5_BIOS_CONSOLE_GPIO          0x09                            // GEVT22#
+#define APU5_BIOS_CONSOLE_FUNC          Function0                       

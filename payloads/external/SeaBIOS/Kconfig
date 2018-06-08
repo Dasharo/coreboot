@@ -23,7 +23,7 @@ choice
 	depends on PAYLOAD_SEABIOS
 
 config SEABIOS_STABLE
-	bool "Stable version (1.11.0.4 for std)"
+	bool "Stable version (1.11.0.5 for std)"
 	help
 		Stable SeaBIOS version
 
@@ -39,7 +39,7 @@ config ELTAN_SEABIOS_TAG
 	depends on SEABIOS_ELTAN
 	depends on SEABIOS_STABLE
 	string  "SeaBIOS TAG"
-	default "rel-1.11.0.4"
+	default "rel-1.11.0.5"
 	help
 		Specify the SeaBIOS tag to check out
 
