@@ -33,6 +33,9 @@ if [ "${BUILD_TIMELESS}" = "1" ]; then
 elif [ -e "${top}/.git" -a -x "$(command -v git)" ]; then
 	GITREV=$(LANG= git log -1 --format=format:%h)
 	GITTAG=$(LANG= git describe --tags --exact-match $GITREV)
+	if [ -z $GITTAG ]; then
+		GITTAG=$KERNELVERSION
+	fi
 	TIMESOURCE=git
 	DATE=$(git log --pretty=format:%ct -1)
 else
