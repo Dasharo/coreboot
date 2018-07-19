@@ -24,7 +24,7 @@
 #include "gpio_ftns.h"
 
 static void early_lpc_init(void);
-void print_sign_of_life(void);
+static void print_sign_of_life(void);
 extern char coreboot_dmi_date[];
 
 void board_BeforeAgesa(struct sysinfo *cb)
@@ -86,13 +86,13 @@ static void early_lpc_init(void)
 		gpio_configure_pads(gpio_apu5, ARRAY_SIZE(gpio_apu5));
 }
 
-void print_sign_of_life()
+static void print_sign_of_life()
 {
 	char tmp[9];
 	strncpy(tmp,   coreboot_dmi_date+6, 4);
 	strncpy(tmp+4, coreboot_dmi_date+3, 2);
 	strncpy(tmp+6, coreboot_dmi_date,   2);
-	tmp[8] = 0;
+	tmp[8] = '\0';
 	printk(BIOS_ALERT, CONFIG_MAINBOARD_VENDOR " "
 	                   CONFIG_MAINBOARD_PART_NUMBER "\n");
 	printk(BIOS_ALERT, "coreboot build %s\n", tmp);
