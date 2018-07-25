@@ -76,6 +76,7 @@ static void early_lpc_init(void)
 {
 	gpio_configure_pads(gpio_common, ARRAY_SIZE(gpio_common));
 
+<<<<<<< HEAD
 	if (CONFIG(BOARD_PCENGINES_APU2))
 		gpio_configure_pads(gpio_apu2, ARRAY_SIZE(gpio_apu2));
 
@@ -97,4 +98,41 @@ static void print_sign_of_life(void)
 	                   CONFIG_MAINBOARD_PART_NUMBER "\n");
 	printk(BIOS_ALERT, "coreboot build %s\n", tmp);
 	printk(BIOS_ALERT, "BIOS version %s\n", COREBOOT_ORIGIN_GIT_TAG);
+=======
+	//
+	// Configure output disabled, value low, pull up/down disabled
+	//
+#if iS_ENABLED(CONFIG_BOARD_PCENGINES_APU5)
+	configure_gpio(IOMUX_GPIO_22, Function0, GPIO_22, setting);
+#endif
+
+#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU2) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)
+	configure_gpio(IOMUX_GPIO_32, Function0, GPIO_32, setting);
+#endif
+	configure_gpio(IOMUX_GPIO_49, Function2, GPIO_49, setting);
+	configure_gpio(IOMUX_GPIO_50, Function2, GPIO_50, setting);
+	configure_gpio(IOMUX_GPIO_71, Function0, GPIO_71, setting);
+	//
+	// Configure output enabled, value low, pull up/down disabled
+	//
+	setting = GPIO_OUTPUT_ENABLE;
+#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)
+	configure_gpio(IOMUX_GPIO_33, Function0, GPIO_33, setting);
+#endif
+	configure_gpio(IOMUX_GPIO_57, Function1, GPIO_57, setting);
+	configure_gpio(IOMUX_GPIO_58, Function1, GPIO_58, setting);
+	configure_gpio(IOMUX_GPIO_59, Function3, GPIO_59, setting);
+	//
+	// Configure output enabled, value high, pull up/down disabled
+	//
+	setting = GPIO_OUTPUT_ENABLE | GPIO_OUTPUT_VALUE;
+#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5)
+	configure_gpio(IOMUX_GPIO_32, Function0, GPIO_32, setting);
+	configure_gpio(IOMUX_GPIO_33, Function0, GPIO_33, setting);
+#endif
+	configure_gpio(IOMUX_GPIO_51, Function2, GPIO_51, setting);
+	configure_gpio(IOMUX_GPIO_55, Function3, GPIO_55, setting);
+	configure_gpio(IOMUX_GPIO_64, Function2, GPIO_64, setting);
+	configure_gpio(IOMUX_GPIO_68, Function0, GPIO_68, setting);
+>>>>>>> ae68834b3346 (fix errors during test-lint)
 }
