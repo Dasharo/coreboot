@@ -25,6 +25,7 @@
 static void early_lpc_init(void);
 static void print_sign_of_life(void);
 extern char coreboot_dmi_date[];
+extern char coreboot_version[];
 
 void board_BeforeAgesa(struct sysinfo *cb)
 {
@@ -85,6 +86,14 @@ static void early_lpc_init(void)
 		gpio_configure_pads(gpio_apu5, ARRAY_SIZE(gpio_apu5));
 }
 
+static const char *mainboard_bios_version(void)
+{
+	if (strlen(CONFIG_LOCALVERSION))
+		return CONFIG_LOCALVERSION;
+	else
+		return coreboot_version;
+}
+
 static void print_sign_of_life(void)
 {
 	char tmp[9];
@@ -95,5 +104,5 @@ static void print_sign_of_life(void)
 	printk(BIOS_ALERT, CONFIG_MAINBOARD_VENDOR " "
 	                   CONFIG_MAINBOARD_PART_NUMBER "\n");
 	printk(BIOS_ALERT, "coreboot build %s\n", tmp);
-	printk(BIOS_ALERT, "BIOS version %s\n", COREBOOT_ORIGIN_GIT_TAG);
+	printk(BIOS_ALERT, "BIOS version %s\n", mainboard_bios_version());
 }
