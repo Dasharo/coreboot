@@ -16,8 +16,15 @@ Releases 4.8.0.x are based on continuous synchronization with official
 3. `make`
 
 ## [Unreleased]
+
+## [v4.8.0.3] - 2018-08-03
 ### Fixed
 - Change of date format in sign of life string now applies only to PC Engines
+- Use CONFIG_LOCALVERSION as a coreboot version string
+- Double sign-of-life during power on
+
+# Added
+- Enabled IOMMU
 
 ## [v4.8.0.2] - 2018-07-08
 ### Changed
@@ -198,7 +205,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.2...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.3...develop
+[v4.8.0.3]: https://github.com/pcengines/coreboot/compare/v4.8.0.2...v4.8.0.3
 [v4.8.0.2]: https://github.com/pcengines/coreboot/compare/v4.8.0.1...v4.8.0.2
 [v4.8.0.1]: https://github.com/pcengines/coreboot/compare/v4.6.9...v4.8.0.1
 [v4.6.10]: https://github.com/pcengines/coreboot/compare/v4.6.9...v4.6.10
