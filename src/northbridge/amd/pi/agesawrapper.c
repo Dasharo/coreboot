@@ -199,7 +199,6 @@ AGESA_STATUS agesawrapper_amdinitenv(void)
 	EnvParam->FchInterface.SataEnable = !((CONFIG_HUDSON_SATA_MODE == 0) || (CONFIG_HUDSON_SATA_MODE == 3));
 	EnvParam->FchInterface.IdeEnable = (CONFIG_HUDSON_SATA_MODE == 0) || (CONFIG_HUDSON_SATA_MODE == 3);
 	EnvParam->FchInterface.SataIdeMode = (CONFIG_HUDSON_SATA_MODE == 3);
-	EnvParam->GnbEnvConfiguration.IommuSupport = FALSE;
 
 	status = AmdInitEnv (EnvParam);
 	if (status != AGESA_SUCCESS) agesawrapper_amdreadeventlog(EnvParam->StdHeader.HeapStatus);
@@ -274,6 +273,8 @@ AGESA_STATUS agesawrapper_amdinitlate(void)
 	/* NOTE: if not call amdcreatestruct, the initializer(AmdInitLateInitializer) would not be called */
 	AmdCreateStruct(&AmdParamStruct);
 	AmdLateParams = (AMD_LATE_PARAMS *)AmdParamStruct.NewStructPtr;
+	AmdLateParams->GnbLateConfiguration.GnbIoapicId = CONFIG_MAX_CPUS + 1;
+	AmdLateParams->GnbLateConfiguration.FchIoapicId = CONFIG_MAX_CPUS;
 	Status = AmdInitLate(AmdLateParams);
 	if (Status != AGESA_SUCCESS) {
 		agesawrapper_amdreadeventlog(AmdLateParams->StdHeader.HeapStatus);
@@ -289,7 +290,7 @@ AGESA_STATUS agesawrapper_amdinitlate(void)
 
 const void *agesawrapper_locate_module (const CHAR8 name[8])
 {
-	const void* agesa;
+	const void *agesa;
 	const AMD_IMAGE_HEADER* image;
 	const AMD_MODULE_HEADER* module;
 	size_t file_size;

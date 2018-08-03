@@ -41,6 +41,9 @@
 #include "bios_knobs.h"
 
 static void early_lpc_init(void);
+static void print_sign_of_life(void);
+extern char coreboot_dmi_date[];
+extern char coreboot_version[];
 
 void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 {
@@ -85,11 +88,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		bool scon = check_console();
 
 		if(scon) {
-			// sign of life strings
-			printk(BIOS_ALERT, CONFIG_MAINBOARD_VENDOR " "
-			                   CONFIG_MAINBOARD_PART_NUMBER "\n");
-			printk(BIOS_ALERT, "coreboot build %s\n", COREBOOT_DMI_DATE);
-			printk(BIOS_ALERT, "BIOS version %s\n", COREBOOT_ORIGIN_GIT_TAG);
+			print_sign_of_life();
 		}
 		//
 		// Configure clock request
@@ -99,7 +98,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		data &= 0xFFFF0000;
 		data |= (0 + 1) << (0 * 4);	// CLKREQ 0 to CLK0
 		data |= (1 + 1) << (1 * 4);	// CLKREQ 1 to CLK1
-#if CONFIG_BOARD_PCENGINES_APU2 || CONFIG_BOARD_PCENGINES_APU3 || CONFIG_BOARD_PCENGINES_APU4
+#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU2) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)
 		data |= (2 + 1) << (2 * 4);	// CLKREQ 2 to CLK2 disabled on APU5
 #endif
 		// make CLK3 to ignore CLKREQ# input
@@ -183,11 +182,11 @@ static void early_lpc_init(void)
 	//
 	// Configure output disabled, value low, pull up/down disabled
 	//
-#if CONFIG_BOARD_PCENGINES_APU5
+#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5)
 	configure_gpio(IOMUX_GPIO_22, Function0, GPIO_22, setting);
 #endif
 
-#if CONFIG_BOARD_PCENGINES_APU2 || CONFIG_BOARD_PCENGINES_APU3 || CONFIG_BOARD_PCENGINES_APU4
+#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU2) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)
 	configure_gpio(IOMUX_GPIO_32, Function0, GPIO_32, setting);
 #endif
 	configure_gpio(IOMUX_GPIO_49, Function2, GPIO_49, setting);
@@ -197,7 +196,7 @@ static void early_lpc_init(void)
 	// Configure output enabled, value low, pull up/down disabled
 	//
 	setting = GPIO_OUTPUT_ENABLE;
-#if CONFIG_BOARD_PCENGINES_APU3 || CONFIG_BOARD_PCENGINES_APU4
+#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)
 	configure_gpio(IOMUX_GPIO_33, Function0, GPIO_33, setting);
 #endif
 	configure_gpio(IOMUX_GPIO_57, Function1, GPIO_57, setting);
@@ -207,7 +206,7 @@ static void early_lpc_init(void)
 	// Configure output enabled, value high, pull up/down disabled
 	//
 	setting = GPIO_OUTPUT_ENABLE | GPIO_OUTPUT_VALUE;
-#if CONFIG_BOARD_PCENGINES_APU5
+#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5)
 	configure_gpio(IOMUX_GPIO_32, Function0, GPIO_32, setting);
 	configure_gpio(IOMUX_GPIO_33, Function0, GPIO_33, setting);
 #endif
@@ -215,4 +214,25 @@ static void early_lpc_init(void)
 	configure_gpio(IOMUX_GPIO_55, Function3, GPIO_55, setting);
 	configure_gpio(IOMUX_GPIO_64, Function2, GPIO_64, setting);
 	configure_gpio(IOMUX_GPIO_68, Function0, GPIO_68, setting);
+}
+
+static const char *mainboard_bios_version(void)
+{
+	if (strlen(CONFIG_LOCALVERSION))
+		return CONFIG_LOCALVERSION;
+	else
+		return coreboot_version;
+}
+
+static void print_sign_of_life()
+{
+	char tmp[9];
+	strncpy(tmp,   coreboot_dmi_date+6, 4);
+	strncpy(tmp+4, coreboot_dmi_date+3, 2);
+	strncpy(tmp+6, coreboot_dmi_date,   2);
+	tmp[8] = '\0';
+	printk(BIOS_ALERT, CONFIG_MAINBOARD_VENDOR " "
+	                   CONFIG_MAINBOARD_PART_NUMBER "\n");
+	printk(BIOS_ALERT, "coreboot build %s\n", tmp);
+	printk(BIOS_ALERT, "BIOS version %s\n", mainboard_bios_version());
 }

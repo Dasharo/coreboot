@@ -2,6 +2,8 @@
  * This file is part of the coreboot project.
  *
  * Copyright (C) 2012 Advanced Micro Devices, Inc.
+ * Copyright (C) 2016 Raptor Engineering, LLC
+ * Copyright (C) 2018 3mdeb Embedded Systems Consulting
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,7 +45,7 @@
 #include <arch/acpi.h>
 #include <arch/acpigen.h>
 
-#define MAX_NODE_NUMS (MAX_NODES * MAX_DIES)
+#define MAX_NODE_NUMS MAX_NODES
 
 typedef struct dram_base_mask {
 	u32 base; //[47:27] at [28:8]
@@ -105,15 +107,7 @@ static void set_mmio_addr_reg(u32 nodeid, u32 linkn, u32 reg, u32 index, u32 mmi
 
 static struct device *get_node_pci(u32 nodeid, u32 fn)
 {
-#if MAX_NODE_NUMS + CONFIG_CDB >= 32
-	if ((CONFIG_CDB + nodeid) < 32) {
-		return dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB + nodeid, fn));
-	} else {
-		return dev_find_slot(CONFIG_CBB-1, PCI_DEVFN(CONFIG_CDB + nodeid - 32, fn));
-	}
-#else
 	return dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB + nodeid, fn));
-#endif
 }
 
 static void get_fx_devs(void)
@@ -156,18 +150,7 @@ static void f1_write_config32(unsigned reg, u32 value)
 
 static u32 amdfam16_nodeid(struct device *dev)
 {
-#if MAX_NODE_NUMS == 64
-	unsigned busn;
-	busn = dev->bus->secondary;
-	if (busn != CONFIG_CBB) {
-		return (dev->path.pci.devfn >> 3) - CONFIG_CDB + 32;
-	} else {
-		return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
-	}
-
-#else
 	return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
-#endif
 }
 
 static void set_vga_enable_reg(u32 nodeid, u32 linkn)
@@ -456,6 +439,254 @@ static unsigned long acpi_fill_hest(acpi_hest_t *hest)
 	return (unsigned long)current;
 }
 
+static void add_ivrs_device_entries(struct device *parent, struct device *dev,
+				    int depth, int linknum, int8_t *root_level,
+				    unsigned long *current, uint16_t *length)
+{
+	uint8_t *p;
+	struct device *sibling;
+	struct bus *link;
+	unsigned int header_type;
+	unsigned int is_pcie;
+
+	if (!root_level) {
+		root_level = malloc(sizeof(int8_t));
+		*root_level = -1;
+	}
+
+	if (dev->path.type == DEVICE_PATH_PCI) {
+
+		if ((dev->bus->secondary == 0x0) &&
+		    (dev->path.pci.devfn == 0x0))
+			*root_level = depth;
+
+		if ((*root_level != -1) && (dev->enabled)) {
+			if (depth == *root_level) {
+				if (dev->path.pci.devfn == (0x14 << 3)) {
+					/* SMBUS controller */
+					p = (uint8_t *) *current;
+					/* Entry type */
+					p[0] = 0x2;
+					/* Device */
+					p[1] = dev->path.pci.devfn;
+					/* Bus */
+					p[2] = dev->bus->secondary;
+					/* Data */
+					p[3] = 0x97;
+					/* [4:7] Padding */
+					p[4] = 0x0;
+					p[5] = 0x0;
+					p[6] = 0x0;
+					p[7] = 0x0;
+					*length += 8;
+					*current += 8;
+				} else if (dev->path.pci.devfn != 0x2 &&
+					   dev->path.pci.devfn < (0x2 << 3)) {
+					/* FCH control device */
+				} else {
+					/* Other devices */
+					p = (uint8_t *) *current;
+					/* Entry type */
+					p[0] = 0x2;
+					/* Device */
+					p[1] = dev->path.pci.devfn;
+					/* Bus */
+					p[2] = dev->bus->secondary;
+					/* Data */
+					p[3] = 0x0;
+					/* [4:7] Padding */
+					p[4] = 0x0;
+					p[5] = 0x0;
+					p[6] = 0x0;
+					p[7] = 0x0;
+					*length += 8;
+					*current += 8;
+				}
+			} else {
+				header_type = dev->hdr_type & 0x7f;
+				is_pcie = pci_find_capability(dev, PCI_CAP_ID_PCIE);
+				if (((header_type == PCI_HEADER_TYPE_NORMAL) ||
+				     (header_type == PCI_HEADER_TYPE_BRIDGE))
+				    && is_pcie) {
+					/* Device or Bridge is PCIe */
+					p = (uint8_t *) *current;
+					/* Entry type */
+					p[0] = 0x2;
+					/* Device */
+					p[1] = dev->path.pci.devfn;
+					/* Bus */
+					p[2] = dev->bus->secondary;
+					/* Data */
+					p[3] = 0x0;
+					/* [4:7] Padding */
+					p[4] = 0x0;
+					p[5] = 0x0;
+					p[6] = 0x0;
+					p[7] = 0x0;
+					*length += 8;
+					*current += 8;
+				} else if ((header_type == PCI_HEADER_TYPE_NORMAL) &&
+					   !is_pcie) {
+					/* Device is legacy PCI or PCI-X */
+					p = (uint8_t *) *current;
+					/* Entry type */
+					p[0] = 0x42;
+					/* Device */
+					p[1] = dev->path.pci.devfn;
+					/* Bus */
+					p[2] = dev->bus->secondary;
+					/* Data */
+					p[3] = 0x0;
+					/* Reserved */
+					p[4] = 0x0;
+					/* Device */
+					p[5] = parent->path.pci.devfn;
+					/* Bus */
+					p[6] = parent->bus->secondary;
+					/* Reserved */
+					p[7] = 0x0;
+					*length += 8;
+					*current += 8;
+				}
+			}
+		}
+	}
+
+	for (link = dev->link_list; link; link = link->next)
+		for (sibling = link->children; sibling; sibling =
+		     sibling->sibling)
+			add_ivrs_device_entries(dev, sibling, depth + 1, depth,
+						root_level, current, length);
+
+	free(root_level);
+}
+
+unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long current)
+{
+	uint8_t *p;
+
+	uint32_t apicid_sb800;
+	uint32_t apicid_northbridge;
+
+	apicid_sb800 = CONFIG_MAX_CPUS;
+	apicid_northbridge = CONFIG_MAX_CPUS + 1;
+
+	/* Describe NB IOAPIC */
+	p = (uint8_t *)current;
+	p[0] = 0x48;                    /* Entry type */
+	p[1] = 0;                       /* Device */
+	p[2] = 0;                       /* Bus */
+	p[3] = 0x0;                     /* Data */
+	p[4] = apicid_northbridge;      /* IOAPIC ID */
+	p[5] = 0x0;                     /* Device 0 Function 0 */
+	p[6] = 0x0;                     /* Northbridge bus */
+	p[7] = 0x1;                     /* Variety */
+	current += 8;
+
+	/* Describe SB IOAPIC */
+	p = (uint8_t *)current;
+	p[0] = 0x48;                    /* Entry type */
+	p[1] = 0;                       /* Device */
+	p[2] = 0;                       /* Bus */
+	p[3] = 0xd7;                    /* Data */
+	p[4] = apicid_sb800;            /* IOAPIC ID */
+	p[5] = 0x14 << 3;               /* Device 0x14 Function 0 */
+	p[6] = 0x0;                     /* Southbridge bus */
+	p[7] = 0x1;                     /* Variety */
+	current += 8;
+
+	return current;
+}
+
+static unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current)
+{
+	uint8_t *p;
+	acpi_ivrs_t *ivrs_agesa;
+
+	device_t nb_dev = dev_find_slot(0, PCI_DEVFN(0, 0));
+	if (!nb_dev) {
+
+		printk(BIOS_WARNING, "%s: G-series northbridge device not present!\n", __func__);
+		printk(BIOS_WARNING, "%s: IVRS table not generated...\n", __func__);
+
+		return (unsigned long)ivrs;
+	}
+
+	ivrs->iv_info = 0x0;
+	/* Maximum supported virtual address size */
+	ivrs->iv_info |= (0x40 << 15);
+	/* Maximum supported physical address size */
+	ivrs->iv_info |= (0x30 << 8);
+	/* Guest virtual address width */
+	ivrs->iv_info |= (0x2 << 5);
+
+	/* obtain IOMMU base address */
+	ivrs_agesa = agesawrapper_getlateinitptr(PICK_IVRS);
+	if (ivrs_agesa != NULL) {
+		ivrs->ivhd.type = 0x10;
+		ivrs->ivhd.flags = 0x0e;
+		/* Enable ATS support */
+		ivrs->ivhd.flags |= 0x10;
+		ivrs->ivhd.length = sizeof(struct acpi_ivrs_ivhd);
+		/* BDF <bus>:00.2 */
+		ivrs->ivhd.device_id = 0x2 | (nb_dev->bus->secondary << 8);
+		/* Capability block 0x40 (type 0xf, "Secure device") */
+		ivrs->ivhd.capability_offset = 0x40;
+		ivrs->ivhd.iommu_base_low = ivrs_agesa->ivhd.iommu_base_low;
+		ivrs->ivhd.iommu_base_high = ivrs_agesa->ivhd.iommu_base_high;
+		ivrs->ivhd.pci_segment_group = 0x0;
+		ivrs->ivhd.iommu_info = 0x0;
+		ivrs->ivhd.iommu_info |= (0x13 << 8);
+		/* puse only performance counters related bits:
+		 * PNCounters[16:13] and
+		 * PNBanks[22:17],
+		 * otherwise 0 */
+		ivrs->ivhd.iommu_feature_info =
+			ivrs_agesa->ivhd.iommu_feature_info & 0x7fe000;
+	} else {
+		/* TODO: what we can do here? */
+		ivrs->ivhd.type = 0x10;
+		ivrs->ivhd.flags = 0x0e;
+		/* Enable ATS support */
+		ivrs->ivhd.flags |= 0x10;
+		ivrs->ivhd.length = sizeof(struct acpi_ivrs_ivhd);
+		/* BDF <bus>:00.2 */
+		ivrs->ivhd.device_id = 0x2 | (nb_dev->bus->secondary << 8);
+		/* Capability block 0x40 (type 0xf, "Secure device") */
+		ivrs->ivhd.capability_offset = 0x40;
+		ivrs->ivhd.iommu_base_low = 0xfeb00000;
+		ivrs->ivhd.iommu_base_high = 0x0;
+		ivrs->ivhd.pci_segment_group = 0x0;
+		ivrs->ivhd.iommu_info = 0x0;
+		ivrs->ivhd.iommu_info |= (0x13 << 8);
+		ivrs->ivhd.iommu_feature_info = 0x0;
+	}
+
+	/* Describe HPET */
+	p = (uint8_t *)current;
+	p[0] = 0x48;			/* Entry type */
+	p[1] = 0;			/* Device */
+	p[2] = 0;			/* Bus */
+	p[3] = 0xd7;			/* Data */
+	p[4] = 0x0;			/* HPET number */
+	p[5] = 0x14 << 3;		/* HPET device */
+	p[6] = nb_dev->bus->secondary;	/* HPET bus */
+	p[7] = 0x2;			/* Variety */
+	ivrs->ivhd.length += 8;
+	current += 8;
+
+	/* Describe PCI devices */
+	add_ivrs_device_entries(NULL, all_devices, 0, -1, NULL, &current,
+				&ivrs->ivhd.length);
+
+	/* Describe IOAPICs */
+	unsigned long prev_current = current;
+	current = acpi_fill_ivrs_ioapic(ivrs, current);
+	ivrs->ivhd.length += (current - prev_current);
+
+	return current;
+}
+
 static void northbridge_fill_ssdt_generator(struct device *device)
 {
 	msr_t msr;
@@ -485,7 +716,7 @@ static unsigned long agesa_write_acpi_tables(struct device *device,
 	acpi_slit_t *slit;
 	acpi_header_t *ssdt;
 	acpi_header_t *alib;
-	acpi_header_t *ivrs;
+	acpi_ivrs_t *ivrs;
 	acpi_hest_t *hest;
 
 	/* HEST */
@@ -495,17 +726,13 @@ static unsigned long agesa_write_acpi_tables(struct device *device,
 	acpi_add_table(rsdp, (void *)current);
 	current += ((acpi_header_t *)current)->length;
 
-	current   = ALIGN(current, 8);
-	printk(BIOS_DEBUG, "ACPI:    * IVRS at %lx\n", current);
-	ivrs = agesawrapper_getlateinitptr(PICK_IVRS);
-	if (ivrs != NULL) {
-		memcpy((void *)current, ivrs, ivrs->length);
-		ivrs = (acpi_header_t *) current;
-		current += ivrs->length;
-		acpi_add_table(rsdp, ivrs);
-	} else {
-		printk(BIOS_DEBUG, "  AGESA IVRS table NULL. Skipping.\n");
-	}
+	/* IVRS */
+	current = ALIGN(current, 8);
+	printk(BIOS_DEBUG, "ACPI:   * IVRS at %lx\n", current);
+	ivrs = (acpi_ivrs_t *) current;
+	acpi_create_ivrs(ivrs, acpi_fill_ivrs);
+	current += ivrs->header.length;
+	acpi_add_table(rsdp, ivrs);
 
 	/* SRAT */
 	current = ALIGN(current, 8);
@@ -873,9 +1100,6 @@ static void cpu_bus_scan(struct device *dev)
 {
 	struct bus *cpu_bus;
 	struct device *dev_mc;
-#if CONFIG_CBB
-	struct device *pci_domain;
-#endif
 	int i,j;
 	int coreid_bits;
 	int core_max = 0;
@@ -900,61 +1124,12 @@ static void cpu_bus_scan(struct device *dev)
 	printk(BIOS_SPEW, "MullinsPI Debug: AMD Topology Number of Modules (@0x%p) is %d\n", modules_ptr, modules);
 	printk(BIOS_SPEW, "MullinsPI Debug: AMD Topology Number of IOAPICs (@0x%p) is %d\n", options, (int)options->CfgPlatNumIoApics);
 
-#if CONFIG_CBB
-	dev_mc = dev_find_slot(0, PCI_DEVFN(CONFIG_CDB, 0)); //0x00
-	if (dev_mc && dev_mc->bus) {
-		printk(BIOS_DEBUG, "%s found", dev_path(dev_mc));
-		pci_domain = dev_mc->bus->dev;
-		if (pci_domain && (pci_domain->path.type == DEVICE_PATH_DOMAIN)) {
-			printk(BIOS_DEBUG, "\n%s move to ",dev_path(dev_mc));
-			dev_mc->bus->secondary = CONFIG_CBB; // move to 0xff
-			printk(BIOS_DEBUG, "%s",dev_path(dev_mc));
-		} else {
-			printk(BIOS_DEBUG, " but it is not under pci_domain directly ");
-		}
-		printk(BIOS_DEBUG, "\n");
-	}
-	dev_mc = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
-	if (!dev_mc) {
-		dev_mc = dev_find_slot(0, PCI_DEVFN(0x18, 0));
-		if (dev_mc && dev_mc->bus) {
-			printk(BIOS_DEBUG, "%s found\n", dev_path(dev_mc));
-			pci_domain = dev_mc->bus->dev;
-			if (pci_domain && (pci_domain->path.type == DEVICE_PATH_DOMAIN)) {
-				if ((pci_domain->link_list) && (pci_domain->link_list->children == dev_mc)) {
-					printk(BIOS_DEBUG, "%s move to ",dev_path(dev_mc));
-					dev_mc->bus->secondary = CONFIG_CBB; // move to 0xff
-					printk(BIOS_DEBUG, "%s\n",dev_path(dev_mc));
-					while (dev_mc) {
-						printk(BIOS_DEBUG, "%s move to ",dev_path(dev_mc));
-						dev_mc->path.pci.devfn -= PCI_DEVFN(0x18,0);
-						printk(BIOS_DEBUG, "%s\n",dev_path(dev_mc));
-						dev_mc = dev_mc->sibling;
-					}
-				}
-			}
-		}
-	}
-#endif
 	dev_mc = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
 	if (!dev_mc) {
 		printk(BIOS_ERR, "%02x:%02x.0 not found", CONFIG_CBB, CONFIG_CDB);
 		die("");
 	}
 	sysconf_init(dev_mc);
-#if CONFIG_CBB && (MAX_NODE_NUMS > 32)
-	if (node_nums > 32) { // need to put node 32 to node 63 to bus 0xfe
-		if (pci_domain->link_list && !pci_domain->link_list->next) {
-			struct bus *new_link = new_link(pci_domain);
-			pci_domain->link_list->next = new_link;
-			new_link->link_num = 1;
-			new_link->dev = pci_domain;
-			new_link->children = 0;
-			printk(BIOS_DEBUG, "%s links now 2\n", dev_path(pci_domain));
-		}
-		pci_domain->link_list->next->secondary = CONFIG_CBB - 1;
-	}
-#endif
 
 	/* Get Max Number of cores(MNC) */
 	coreid_bits = (cpuid_ecx(0x80000008) & 0x0000F000) >> 12;
@@ -971,22 +1146,14 @@ static void cpu_bus_scan(struct device *dev)
 	cpu_bus = dev->link_list;
 	for (i = 0; i < node_nums; i++) {
 		struct device *cdb_dev;
-		unsigned busn, devn;
+		unsigned devn;
 		struct bus *pbus;
 
-		busn = CONFIG_CBB;
 		devn = CONFIG_CDB + i;
 		pbus = dev_mc->bus;
-#if CONFIG_CBB && (MAX_NODE_NUMS > 32)
-		if (i >= 32) {
-			busn--;
-			devn -= 32;
-			pbus = pci_domain->link_list->next;
-		}
-#endif
 
 		/* Find the cpu's pci device */
-		cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 0));
+		cdb_dev = dev_find_slot(CONFIG_CBB, PCI_DEVFN(devn, 0));
 		if (!cdb_dev) {
 			/* If I am probing things in a weird order
 			 * ensure all of the cpu's pci devices are found.
@@ -996,7 +1163,7 @@ static void cpu_bus_scan(struct device *dev)
 				cdb_dev = pci_probe_dev(NULL, pbus,
 							PCI_DEVFN(devn, fn));
 			}
-			cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 0));
+			cdb_dev = dev_find_slot(CONFIG_CBB, PCI_DEVFN(devn, 0));
 		} else {
 			/* Ok, We need to set the links for that device.
 			 * otherwise the device under it will not be scanned
@@ -1009,11 +1176,11 @@ static void cpu_bus_scan(struct device *dev)
 		family = (family >> 20) & 0xFF;
 		if (family == 1) { //f10
 			u32 dword;
-			cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 3));
+			cdb_dev = dev_find_slot(CONFIG_CBB, PCI_DEVFN(devn, 3));
 			dword = pci_read_config32(cdb_dev, 0xe8);
 			siblings = ((dword & BIT15) >> 13) | ((dword & (BIT13 | BIT12)) >> 12);
 		} else if (family == 7) {//f16
-			cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 5));
+			cdb_dev = dev_find_slot(CONFIG_CBB, PCI_DEVFN(devn, 5));
 			if (cdb_dev && cdb_dev->enabled) {
 				siblings = pci_read_config32(cdb_dev, 0x84);
 				siblings &= 0xFF;
