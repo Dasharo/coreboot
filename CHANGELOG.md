@@ -17,7 +17,10 @@ Releases 4.8.0.x are based on continuous synchronization with official
 
 ## [Unreleased]
 
-## [v4.8.0.3] - 2018-08-03
+## [v4.8.0.3] - 2018-08-07
+### Changed
+- Synced and rebased with coreboot official repo commit c8e974f
+
 ### Fixed
 - Change of date format in sign of life string now applies only to PC Engines
 - Use CONFIG_LOCALVERSION as a coreboot version string
@@ -28,7 +31,7 @@ Releases 4.8.0.x are based on continuous synchronization with official
 
 ## [v4.8.0.2] - 2018-07-08
 ### Changed
-- synced and rebased with coreboot official repo commit afc74ca
+- Synced and rebased with coreboot official repo commit afc74ca
 
 ## [v4.8.0.1] - 2018-06-08
 ### Changed
