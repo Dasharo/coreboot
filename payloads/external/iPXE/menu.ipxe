@@ -1,0 +1,17 @@
+#!ipxe
+:MENU
+menu
+item --gap -- ---------------- iPXE boot menu ----------------
+item shell          ipxe shell
+item boot           autoboot
+choose --default boot --timeout 3000 target && goto ${target}
+
+:boot
+autoboot
+goto MENU
+
+:shell
+shell ||
+goto MENU
+
+autoboot
