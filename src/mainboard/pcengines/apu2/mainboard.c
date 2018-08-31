@@ -361,11 +361,7 @@ const char *smbios_mainboard_sku(void)
 
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
-<<<<<<< HEAD
-	.final = mainboard_final
-=======
 	.final = mainboard_final,
->>>>>>> master
 };
 
 static void change_build_date_format()
