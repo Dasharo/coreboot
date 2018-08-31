@@ -1,4 +1,7 @@
+bootblock-y += bootblock.c
+bootblock-y += chromeos.c
 bootblock-y += memlayout.ld
+decompressor-y += memlayout.ld
 
 verstage-y += chromeos.c
 verstage-y += memlayout.ld

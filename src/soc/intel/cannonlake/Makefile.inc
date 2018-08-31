@@ -22,7 +22,7 @@ bootblock-y += lpc.c
 bootblock-y += p2sb.c
 bootblock-$(CONFIG_UART_DEBUG) += uart.c
 
-romstage-$(CONFIG_SOC_INTEL_CANNONLAKE_LPDDR4_INIT) += cnl_lpddr4_init.c
+romstage-$(CONFIG_SOC_INTEL_CANNONLAKE_MEMCFG_INIT) += cnl_memcfg_init.c
 romstage-y += gpio.c
 romstage-y += gspi.c
 romstage-y += i2c.c
@@ -65,6 +65,9 @@ smm-$(CONFIG_UART_DEBUG) += uart.c
 
 postcar-y += memmap.c
 postcar-y += pmutil.c
+postcar-y += i2c.c
+postcar-y += gspi.c
+postcar-y += spi.c
 postcar-$(CONFIG_UART_DEBUG) += uart.c
 
 verstage-y += gspi.c
@@ -73,8 +76,11 @@ verstage-y += pmutil.c
 verstage-y += spi.c
 verstage-$(CONFIG_UART_DEBUG) += uart.c
 
-CPPFLAGS_common += -I$(src)/soc/intel/cannonlake/include/fsp20
+ifeq ($(CONFIG_SOC_INTEL_COFFEELAKE),y)
+CPPFLAGS_common += -I$(src)/vendorcode/intel/fsp/fsp2_0/coffeelake
+else
 CPPFLAGS_common += -I$(src)/vendorcode/intel/fsp/fsp2_0/cannonlake
+endif
 
 CPPFLAGS_common += -I$(src)/soc/intel/cannonlake
 CPPFLAGS_common += -I$(src)/soc/intel/cannonlake/include

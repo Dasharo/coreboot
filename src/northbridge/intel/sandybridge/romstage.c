@@ -28,7 +28,6 @@
 #include <device/pci_def.h>
 #include <device/device.h>
 #include <halt.h>
-#include <security/tpm/tspi.h>
 #include <northbridge/intel/sandybridge/chip.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
@@ -86,7 +85,7 @@ void mainboard_romstage_entry(unsigned long bist)
 	/* Perform some early chipset initialization required
 	 * before RAM initialization can work
 	 */
-	sandybridge_early_initialization(SANDYBRIDGE_MOBILE);
+	sandybridge_early_initialization();
 	printk(BIOS_DEBUG, "Back from sandybridge_early_initialization()\n");
 
 	s3resume = southbridge_detect_s3_resume();
@@ -116,9 +115,6 @@ void mainboard_romstage_entry(unsigned long bist)
 	post_code(0x3d);
 
 	northbridge_romstage_finalize(s3resume);
-
-	if (IS_ENABLED(CONFIG_TPM1) || IS_ENABLED(CONFIG_TPM2))
-		tpm_setup(s3resume);
 
 	post_code(0x3f);
 }

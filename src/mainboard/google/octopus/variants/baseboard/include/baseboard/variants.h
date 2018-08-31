@@ -21,12 +21,10 @@
 #include <stdint.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 
-/* Return the board id for the current variant board. */
-uint8_t variant_board_id(void);
-
 /* The next set of functions return the gpio table and fill in the number of
  * entries for each table. */
-const struct pad_config *variant_gpio_table(size_t *num);
+const struct pad_config *variant_base_gpio_table(size_t *num);
+const struct pad_config *variant_override_gpio_table(size_t *num);
 const struct pad_config *variant_early_gpio_table(size_t *num);
 const struct pad_config *variant_sleep_gpio_table(size_t *num, int slp_typ);
 
@@ -43,5 +41,9 @@ const struct cros_gpio *variant_cros_gpios(size_t *num);
 /* Seed the NHLT tables with the board specific information. */
 struct nhlt;
 void variant_nhlt_init(struct nhlt *nhlt);
+
+/* Modify devictree settings during ramstage. */
+struct device;
+void variant_update_devtree(struct device *dev);
 
 #endif /* BASEBOARD_VARIANTS_H */

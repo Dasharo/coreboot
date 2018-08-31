@@ -25,9 +25,22 @@ bootblock-y += timer.c
 bootblock-y += spi.c
 bootblock-y += uart.c
 bootblock-y += cpu.c
+bootblock-y += reset.c
 ifeq ($(CONFIG_BOOTBLOCK_CONSOLE),y)
 bootblock-$(CONFIG_DRIVERS_UART) += uart.c
 endif
+
+################################################################################
+# verstage
+
+verstage-y += twsi.c
+verstage-y += clock.c
+verstage-y += gpio.c
+verstage-y += timer.c
+verstage-y += spi.c
+verstage-$(CONFIG_DRIVERS_UART) += uart.c
+verstage-y += cbmem.c
+verstage-y += reset.c
 
 ################################################################################
 # romstage
@@ -39,15 +52,11 @@ romstage-y += timer.c
 romstage-y += spi.c
 romstage-y += uart.c
 romstage-$(CONFIG_DRIVERS_UART) += uart.c
-romstage-< += cpu.c
+romstage-y += cbmem.c
+romstage-y += reset.c
 
 romstage-y += sdram.c
 romstage-y += mmu.c
-
-romstage-y += ../common/cbmem.c
-# BDK coreboot interface
-romstage-y += ../common/bdk-coreboot.c
-
 
 ################################################################################
 # ramstage
@@ -64,10 +73,12 @@ ramstage-y += soc.c
 ramstage-y += cpu.c
 ramstage-y += cpu_secondary.S
 ramstage-y += ecam0.c
+ramstage-y += cbmem.c
+ramstage-y += reset.c
 
-# BDK coreboot interface
-ramstage-y += ../common/bdk-coreboot.c
+ramstage-$(CONFIG_ARM64_USE_ARM_TRUSTED_FIRMWARE) += bl31_plat_params.c
 
+BL31_MAKEARGS += PLAT=t81 M0_CROSS_COMPILE="$(CROSS_COMPILE_arm)" ENABLE_SPE_FOR_LOWER_ELS=0
 
 CPPFLAGS_common += -Isrc/soc/cavium/cn81xx/include
 

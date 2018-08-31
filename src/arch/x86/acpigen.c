@@ -578,14 +578,10 @@ void acpigen_write_empty_PTC(void)
 	acpigen_write_package(2);
 
 	/* ControlRegister */
-	acpigen_write_resourcetemplate_header();
-	acpigen_write_register(&addr);
-	acpigen_write_resourcetemplate_footer();
+	acpigen_write_register_resource(&addr);
 
 	/* StatusRegister */
-	acpigen_write_resourcetemplate_header();
-	acpigen_write_register(&addr);
-	acpigen_write_resourcetemplate_footer();
+	acpigen_write_register_resource(&addr);
 
 	acpigen_pop_len();
 }
@@ -725,9 +721,7 @@ void acpigen_write_PSD_package(u32 domain, u32 numprocs, PSD_coord coordtype)
 void acpigen_write_CST_package_entry(acpi_cstate_t *cstate)
 {
 	acpigen_write_package(4);
-	acpigen_write_resourcetemplate_header();
-	acpigen_write_register(&cstate->resource);
-	acpigen_write_resourcetemplate_footer();
+	acpigen_write_register_resource(&cstate->resource);
 	acpigen_write_dword(cstate->ctype);
 	acpigen_write_dword(cstate->latency);
 	acpigen_write_dword(cstate->power);
@@ -827,7 +821,7 @@ void acpigen_write_mem32fixed(int readwrite, u32 base, u32 size)
 	acpigen_emit_dword(size);
 }
 
-void acpigen_write_register(acpi_addr_t *addr)
+static void acpigen_write_register(const acpi_addr_t *addr)
 {
 	acpigen_emit_byte(0x82);		/* Register Descriptor */
 	acpigen_emit_byte(0x0c);		/* Register Length 7:0 */
@@ -838,6 +832,13 @@ void acpigen_write_register(acpi_addr_t *addr)
 	acpigen_emit_byte(addr->resv);		/* Register Access Size */
 	acpigen_emit_dword(addr->addrl);	/* Register Address Low */
 	acpigen_emit_dword(addr->addrh);	/* Register Address High */
+}
+
+void acpigen_write_register_resource(const acpi_addr_t *addr)
+{
+	acpigen_write_resourcetemplate_header();
+	acpigen_write_register(addr);
+	acpigen_write_resourcetemplate_footer();
 }
 
 void acpigen_write_irq(u16 mask)
@@ -1338,6 +1339,55 @@ void acpigen_write_dsm_uuid_arr(struct dsm_uuid *ids, size_t count)
 	acpigen_pop_len();	/* Method _DSM */
 }
 
+#define CPPC_PACKAGE_NAME "\\GCPC"
+
+void acpigen_write_CPPC_package(const struct cppc_config *config)
+{
+	u32 i;
+	u32 max;
+	switch (config->version) {
+	case 1:
+		max = CPPC_MAX_FIELDS_VER_1;
+		break;
+	case 2:
+		max = CPPC_MAX_FIELDS_VER_2;
+		break;
+	case 3:
+		max = CPPC_MAX_FIELDS_VER_3;
+		break;
+	default:
+		printk(BIOS_ERR, "ERROR: CPPC version %u is not implemented\n",
+		       config->version);
+		return;
+	}
+	acpigen_write_name(CPPC_PACKAGE_NAME);
+
+	/* Adding 2 to account for length and version fields */
+	acpigen_write_package(max + 2);
+	acpigen_write_dword(max + 2);
+
+	acpigen_write_byte(config->version);
+
+	for (i = 0; i < max; ++i) {
+		const acpi_addr_t *reg = &(config->regs[i]);
+		if (reg->space_id == ACPI_ADDRESS_SPACE_MEMORY &&
+		    reg->bit_width == 32 && reg->access_size == 0) {
+			acpigen_write_dword(reg->addrl);
+		} else {
+			acpigen_write_register_resource(reg);
+		}
+	}
+	acpigen_pop_len();
+}
+
+void acpigen_write_CPPC_method(void)
+{
+	acpigen_write_method("_CPC", 0);
+	acpigen_emit_byte(RETURN_OP);
+	acpigen_emit_namestring(CPPC_PACKAGE_NAME);
+	acpigen_pop_len();
+}
+
 /*
  * Generate ACPI AML code for _ROM method.
  * This function takes as input ROM data and ROM length.
@@ -1404,7 +1454,7 @@ void acpigen_write_rom(void *bios, const size_t length)
 	ASSERT(length)
 
 	/* Method (_ROM, 2, NotSerialized) */
-	acpigen_write_method("_ROM", 2);
+	acpigen_write_method_serialized("_ROM", 2);
 
 	/* OperationRegion("ROMS", SYSTEMMEMORY, current, length) */
 	struct opregion opreg = OPREGION("ROMS", SYSTEMMEMORY,

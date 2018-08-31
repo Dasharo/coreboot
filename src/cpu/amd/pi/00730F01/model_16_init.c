@@ -34,6 +34,7 @@ static void model_16_init(struct device *dev)
 
 	u8 i;
 	msr_t msr;
+	int num_banks;
 	int msrno;
 #if IS_ENABLED(CONFIG_LOGICAL_CPUS)
 	u32 siblings;
@@ -66,11 +67,12 @@ static void model_16_init(struct device *dev)
 	x86_enable_cache();
 
 	/* zero the machine check error status registers */
+	msr = rdmsr(MCG_CAP);
+	num_banks = msr.lo & MCA_BANKS_MASK;
 	msr.lo = 0;
 	msr.hi = 0;
-	for (i = 0; i < 6; i++)
-		wrmsr(MCI_STATUS + (i * 4), msr);
-
+	for (i = 0; i < num_banks; i++)
+		wrmsr(MC0_STATUS + (i * 4), msr);
 
 	/* Enable the local CPU APICs */
 	setup_lapic();
@@ -94,7 +96,6 @@ static void model_16_init(struct device *dev)
 	msr = rdmsr(NB_CFG_MSR);
 	msr.hi &= ~(1 << (46 - 32));
 	wrmsr(NB_CFG_MSR, msr);
-
 
 	/* Write protect SMM space with SMMLOCK. */
 	msr = rdmsr(HWCR_MSR);

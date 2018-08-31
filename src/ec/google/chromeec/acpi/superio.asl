@@ -39,7 +39,7 @@ Device (SIO) {
 #ifdef SIO_EC_MEMMAP_ENABLE
 	Device (ECMM) {
 		Name (_HID, EISAID ("PNP0C02"))
-		Name (_UID, 1)
+		Name (_UID, 4)
 		Name (_ADR, 0)
 
 		Method (_STA, 0, NotSerialized) {
@@ -137,8 +137,8 @@ Device (SIO) {
 	{
 		Name (_UID, 0)
 		Name (_ADR, 0)
-		Name (_HID, EISAID("PNP0303"))
-		Name (_CID, EISAID("PNP030B"))
+		Name (_HID, "GOOG000A")
+		Name (_CID, Package() { EISAID("PNP0303"), EISAID("PNP030B") } )
 
 		Method (_STA, 0, NotSerialized) {
 			Return (0x0F)

@@ -25,6 +25,11 @@ ramstage-$(CONFIG_SANDYBRIDGE_IVYBRIDGE_LVDS) += gma_ivybridge_lvds.c
 ramstage-y += acpi.c
 
 romstage-y += ram_calc.c
+
+ramstage-y += common.c
+romstage-y += common.c
+smm-$(CONFIG_HAVE_SMI_HANDLER) += common.c
+
 ifeq ($(CONFIG_USE_NATIVE_RAMINIT),y)
 romstage-y += raminit.c
 romstage-y += raminit_common.c
@@ -41,7 +46,6 @@ endif
 romstage-y += romstage.c
 romstage-y += iommu.c
 romstage-y += early_init.c
-romstage-y += report_platform.c
 romstage-y += ../../../arch/x86/walkcbfs.S
 
 smm-$(CONFIG_HAVE_SMI_HANDLER) += finalize.c

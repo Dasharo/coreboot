@@ -25,6 +25,7 @@
 #include <boot/tables.h>
 #include <arch/acpi.h>
 #include <cbmem.h>
+#include <cpu/intel/smm/gen1/smi.h>
 #include "chip.h"
 #include "gm45.h"
 #include "arch/acpi.h"
@@ -95,16 +96,18 @@ static void mch_domain_read_resources(struct device *dev)
 
 	pci_domain_read_resources(dev);
 
+	struct device *mch = dev_find_slot(0, PCI_DEVFN(0, 0));
+
 	/* Top of Upper Usable DRAM, including remap */
-	touud = pci_read_config16(dev, D0F0_TOUUD);
+	touud = pci_read_config16(mch, D0F0_TOUUD);
 	touud <<= 20;
 
 	/* Top of Lower Usable DRAM */
-	tolud = pci_read_config16(dev, D0F0_TOLUD) & 0xfff0;
+	tolud = pci_read_config16(mch, D0F0_TOLUD) & 0xfff0;
 	tolud <<= 16;
 
 	/* Top of Memory - does not account for any UMA */
-	tom = pci_read_config16(dev, D0F0_TOM) & 0x1ff;
+	tom = pci_read_config16(mch, D0F0_TOM) & 0x1ff;
 	tom <<= 27;
 
 	printk(BIOS_DEBUG, "TOUUD 0x%llx TOLUD 0x%08x TOM 0x%llx\n",
@@ -113,7 +116,7 @@ static void mch_domain_read_resources(struct device *dev)
 	tomk = tolud >> 10;
 
 	/* Graphics memory comes next */
-	const u16 ggc = pci_read_config16(dev, D0F0_GGC);
+	const u16 ggc = pci_read_config16(mch, D0F0_GGC);
 	if (!(ggc & 2)) {
 		printk(BIOS_DEBUG, "IGD decoded, subtracting ");
 
@@ -129,7 +132,7 @@ static void mch_domain_read_resources(struct device *dev)
 
 		uma_sizek = gms_sizek + gsm_sizek;
 	}
-	const u8 esmramc = pci_read_config8(dev, D0F0_ESMRAMC);
+	const u8 esmramc = pci_read_config8(mch, D0F0_ESMRAMC);
 	const u32 tseg_sizek = decode_tseg_size(esmramc);
 	printk(BIOS_DEBUG, " and %uM TSEG\n", tseg_sizek >> 10);
 	tomk -= tseg_sizek;
@@ -185,10 +188,12 @@ static void mch_domain_init(struct device *dev)
 {
 	u32 reg32;
 
+	struct device *mch = dev_find_slot(0, PCI_DEVFN(0, 0));
+
 	/* Enable SERR */
-	reg32 = pci_read_config32(dev, PCI_COMMAND);
+	reg32 = pci_read_config32(mch, PCI_COMMAND);
 	reg32 |= PCI_COMMAND_SERR;
-	pci_write_config32(dev, PCI_COMMAND, reg32);
+	pci_write_config32(mch, PCI_COMMAND, reg32);
 }
 
 static const char *northbridge_acpi_name(const struct device *dev)
@@ -205,6 +210,43 @@ static const char *northbridge_acpi_name(const struct device *dev)
 	}
 
 	return NULL;
+}
+
+u32 northbridge_get_tseg_base(void)
+{
+	return (u32)smm_region_start();
+}
+
+u32 northbridge_get_tseg_size(void)
+{
+	const u8 esmramc = pci_read_config8(dev_find_slot(0, PCI_DEVFN(0, 0)),
+					D0F0_ESMRAMC);
+	return decode_tseg_size(esmramc) << 10;
+}
+
+void northbridge_write_smram(u8 smram)
+{
+	pci_write_config8(dev_find_slot(0, PCI_DEVFN(0, 0)), D0F0_SMRAM, smram);
+}
+
+/*
+ * Really doesn't belong here but will go away with parallel mp init,
+ * so let it be here for a while...
+ */
+int cpu_get_apic_id_map(int *apic_id_map)
+{
+	unsigned int i;
+
+	/* Logical processors (threads) per core */
+	const struct cpuid_result cpuid1 = cpuid(1);
+	/* Read number of cores. */
+	const char cores = (cpuid1.ebx >> 16) & 0xf;
+
+	/* TODO in parallel MP cpuid(1).ebx */
+	for (i = 0; i < cores; i++)
+		apic_id_map[i] = i;
+
+	return cores;
 }
 
 static struct device_operations pci_domain_ops = {

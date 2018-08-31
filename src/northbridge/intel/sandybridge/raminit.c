@@ -16,7 +16,6 @@
  */
 
 #include <console/console.h>
-#include <console/usb.h>
 #include <commonlib/region.h>
 #include <bootmode.h>
 #include <string.h>
@@ -29,14 +28,12 @@
 #include <southbridge/intel/common/smbus.h>
 #include <cpu/x86/msr.h>
 #include <delay.h>
-#include <smbios.h>
-#include <memory_info.h>
 #include <lib.h>
 #include "raminit_native.h"
 #include "raminit_common.h"
 #include "sandybridge.h"
 
-#define MRC_CACHE_VERSION 0
+#define MRC_CACHE_VERSION 1
 
 /* FIXME: no ECC support.  */
 /* FIXME: no support for 3-channel chipsets.  */
@@ -81,41 +78,14 @@ static void disable_channel(ramctr_timing *ctrl, int channel) {
  */
 static void fill_smbios17(ramctr_timing *ctrl)
 {
-	struct memory_info *mem_info;
 	int channel, slot;
-	struct dimm_info *dimm;
-	uint16_t ddr_freq;
-	dimm_info *info = &ctrl->info;
-
-	ddr_freq = (1000 << 8) / ctrl->tCK;
-
-	/*
-	 * Allocate CBMEM area for DIMM information used to populate SMBIOS
-	 * table 17
-	 */
-	mem_info = cbmem_add(CBMEM_ID_MEMINFO, sizeof(*mem_info));
-	printk(BIOS_DEBUG, "CBMEM entry for DIMM info: 0x%p\n", mem_info);
-	if (!mem_info)
-		return;
-
-	memset(mem_info, 0, sizeof(*mem_info));
+	const u16 ddr_freq = (1000 << 8) / ctrl->tCK;
 
 	FOR_ALL_CHANNELS for (slot = 0; slot < NUM_SLOTS; slot++) {
-		dimm = &mem_info->dimm[mem_info->dimm_cnt];
-		if (info->dimm[channel][slot].size_mb) {
-			dimm->ddr_type = MEMORY_TYPE_DDR3;
-			dimm->ddr_frequency = ddr_freq;
-			dimm->dimm_size = info->dimm[channel][slot].size_mb;
-			dimm->channel_num = channel;
-			dimm->rank_per_dimm = info->dimm[channel][slot].ranks;
-			dimm->dimm_num = slot;
-			memcpy(dimm->module_part_number,
-				   info->dimm[channel][slot].part_number, 16);
-			dimm->mod_id = info->dimm[channel][slot].manufacturer_id;
-			dimm->mod_type = info->dimm[channel][slot].dimm_type;
-			dimm->bus_width = info->dimm[channel][slot].width;
-			mem_info->dimm_cnt++;
-		}
+		enum cb_err ret = spd_add_smbios17(channel, slot, ddr_freq,
+					&ctrl->info.dimm[channel][slot]);
+		if (ret != CB_SUCCESS)
+			printk(BIOS_ERR, "RAMINIT: Failed to add SMBIOS17\n");
 	}
 }
 
@@ -308,7 +278,7 @@ static int try_init_dram_ddr3(ramctr_timing *ctrl, int fast_boot,
 		return try_init_dram_ddr3_ivy(ctrl, fast_boot, s3_resume, me_uma_size);
 }
 
-static void init_dram_ddr3(int mobile, int min_tck, int s3resume)
+static void init_dram_ddr3(int min_tck, int s3resume)
 {
 	int me_uma_size;
 	int cbmem_was_inited;
@@ -323,8 +293,6 @@ static void init_dram_ddr3(int mobile, int min_tck, int s3resume)
 
 	MCHBAR32(0x5f00) |= 1;
 
-	report_platform_info();
-
 	/* Wait for ME to be ready */
 	intel_early_me_init();
 	me_uma_size = intel_early_me_uma_size();
@@ -337,10 +305,10 @@ static void init_dram_ddr3(int mobile, int min_tck, int s3resume)
 
 	wrmsr(0x000002e6, (msr_t) { .lo = 0, .hi = 0 });
 
-	reg_5d10 = read32(DEFAULT_MCHBAR + 0x5d10);	// !!! = 0x00000000
+	reg_5d10 = MCHBAR32(0x5d10);	// !!! = 0x00000000
 	if ((pci_read_config16(SOUTHBRIDGE, 0xa2) & 0xa0) == 0x20	/* 0x0004 */
 	    && reg_5d10 && !s3resume) {
-		write32(DEFAULT_MCHBAR + 0x5d10, 0);
+		MCHBAR32(0x5d10) = 0;
 		/* Need reset.  */
 		outb(0x6, 0xcf9);
 
@@ -398,7 +366,6 @@ static void init_dram_ddr3(int mobile, int min_tck, int s3resume)
 	if (!fast_boot) {
 		/* Reset internal state */
 		memset(&ctrl, 0, sizeof(ctrl));
-		ctrl.mobile = mobile;
 		ctrl.tCK = min_tck;
 
 		/* Get architecture */
@@ -421,7 +388,6 @@ static void init_dram_ddr3(int mobile, int min_tck, int s3resume)
 
 		/* Reset internal state */
 		memset(&ctrl, 0, sizeof(ctrl));
-		ctrl.mobile = mobile;
 		ctrl.tCK = min_tck;
 
 		/* Get architecture */
@@ -442,7 +408,7 @@ static void init_dram_ddr3(int mobile, int min_tck, int s3resume)
 		die("raminit failed");
 
 	/* FIXME: should be hardware revision-dependent.  */
-	write32(DEFAULT_MCHBAR + 0x5024, 0x00a030ce);
+	MCHBAR32(0x5024) = 0x00a030ce;
 
 	set_scrambling_seed(&ctrl);
 
@@ -480,5 +446,5 @@ void perform_raminit(int s3resume)
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
-	init_dram_ddr3(1, get_mem_min_tck(), s3resume);
+	init_dram_ddr3(get_mem_min_tck(), s3resume);
 }

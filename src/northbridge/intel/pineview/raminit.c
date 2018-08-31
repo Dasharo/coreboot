@@ -271,20 +271,13 @@ static void find_ramconfig(struct sysinfo *s, u32 chan)
 
 static void sdram_read_spds(struct sysinfo *s)
 {
-	u8 i, j, chan;
-	int status = 0;
+	u8 i, chan;
 	s->dt0mode = 0;
 	FOR_EACH_DIMM(i) {
-		for (j = 0; j < 64; j++) {
-			status = spd_read_byte(s->spd_map[i], j);
-			if (status < 0) {
-				s->dimms[i].card_type = 0;
-				break;
-			}
-			s->dimms[i].spd_data[j] = (u8) status;
-			if (j == 62)
-				s->dimms[i].card_type = ((u8) status) & 0x1f;
-		}
+		if (i2c_block_read(s->spd_map[i], 0, 64, s->dimms[i].spd_data) != 64)
+			s->dimms[i].card_type = 0;
+
+		s->dimms[i].card_type = s->dimms[i].spd_data[62] & 0x1f;
 		hexdump(s->dimms[i].spd_data, 64);
 	}
 
@@ -1882,7 +1875,9 @@ static void sdram_rcven(struct sysinfo *s)
 	u8 minbytelanecoarse = 0xff;
 	u8 bytelaneoffset;
 	u8 maxbytelane = 8;
-	u32 strobeaddr = (rank_is_populated(s->dimms, 0, 0)) ? 0 : 2*128*1024*1024;
+	/* Since dra/drb is already set up we know that at address 0x00000000
+	   we will always find the first available rank */
+	u32 strobeaddr = 0;
 	u32 dqshighaddr;
 
 	MCHBAR8(0x5d8) = MCHBAR8(0x5d8) & ~0xc;
@@ -1972,7 +1967,7 @@ static void sdram_rcven(struct sysinfo *s)
 			MCHBAR32(0x248) = (MCHBAR32(0x248) & ~0xf0000)
 						| (curcoarse << 16);
 			if (curcoarse == 0) {
-				PRINTK_DEBUG("Error: DQS didnt hit 0\n");
+				PRINTK_DEBUG("Error: DQS did not hit 0\n");
 				break;
 			}
 		}

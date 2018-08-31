@@ -29,6 +29,7 @@
 #include <cpu/x86/smm.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/tsc.h>
+#include <cpu/intel/common/common.h>
 #include <cpu/intel/turbo.h>
 #include <ec/google/chromeec/ec.h>
 #include <intelblocks/cpulib.h>
@@ -240,7 +241,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	const uint16_t pmbase = ACPI_BASE_ADDRESS;
 
 	/* Use ACPI 3.0 revision */
-	fadt->header.revision = ACPI_FADT_REV_ACPI_3_0;
+	fadt->header.revision = get_acpi_table_revision(FADT);
 
 	fadt->sci_int = acpi_sci_irq();
 	fadt->smi_cmd = APM_CNT;
@@ -520,6 +521,12 @@ void generate_cpu_entries(struct device *device)
 	printk(BIOS_DEBUG, "Found %d CPU(s) with %d core(s) each.\n",
 	       numcpus, cores_per_package);
 
+	if (config->eist_enable && config->speed_shift_enable) {
+		struct cppc_config cppc_config;
+		cpu_init_cppc_config(&cppc_config, 2 /* version 2 */);
+		acpigen_write_CPPC_package(&cppc_config);
+	}
+
 	for (cpu_id = 0; cpu_id < numcpus; cpu_id++) {
 		for (core_id = 0; core_id < cores_per_package; core_id++) {
 			if (core_id > 0) {
@@ -535,11 +542,13 @@ void generate_cpu_entries(struct device *device)
 			generate_c_state_entries(is_s0ix_enable,
 				max_c_state);
 
-			if (config->eist_enable)
+			if (config->eist_enable) {
 				/* Generate P-state tables */
 				generate_p_state_entries(core_id,
 						cores_per_package);
-
+				if (config->speed_shift_enable)
+					acpigen_write_CPPC_method();
+			}
 			acpigen_pop_len();
 		}
 	}
@@ -648,7 +657,7 @@ unsigned long southbridge_write_acpi_tables(struct device *device,
 					     struct acpi_rsdp *rsdp)
 {
 	current = acpi_write_dbg2_pci_uart(rsdp, current,
-					   pch_uart_get_debug_controller(),
+					   uart_get_device(),
 					   ACPI_ACCESS_SIZE_DWORD_ACCESS);
 	current = acpi_write_hpet(device, current, rsdp);
 	return acpi_align_current(current);
@@ -668,7 +677,6 @@ void southbridge_inject_dsdt(struct device *device)
 	if (gnvs) {
 		acpi_create_gnvs(gnvs);
 		acpi_mainboard_gnvs(gnvs);
-		acpi_save_gnvs((unsigned long)gnvs);
 		/* And tell SMI about it */
 		smm_setup_structures(gnvs, NULL, NULL);
 

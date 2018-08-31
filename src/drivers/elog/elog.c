@@ -670,7 +670,7 @@ static int elog_find_flash(void)
 	}
 
 	if (region_device_sz(rdev) < 4*KiB) {
-		printk(BIOS_WARNING, "ELOG: Needs a minium size of 4KiB: %zu\n",
+		printk(BIOS_WARNING, "ELOG: Needs a minimum size of 4KiB: %zu\n",
 			region_device_sz(rdev));
 		return -1;
 	}
@@ -931,6 +931,17 @@ int elog_add_event_wake(u8 source, u32 instance)
 		.instance = instance
 	};
 	return elog_add_event_raw(ELOG_TYPE_WAKE_SOURCE, &wake, sizeof(wake));
+}
+
+int elog_add_extended_event(u8 type, u32 complement)
+{
+	struct elog_event_extended_event event = {
+		.event_type = type,
+		.event_complement = complement
+	};
+	return elog_add_event_raw(ELOG_TYPE_EXTENDED_EVENT,
+				  &event,
+				  sizeof(event));
 }
 
 /* Make sure elog_init() runs at least once to log System Boot event. */

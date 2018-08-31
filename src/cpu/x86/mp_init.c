@@ -297,6 +297,9 @@ static int save_bsp_msrs(char *start, int size)
 
 	fixed_mtrrs_hide_amd_rwdram();
 
+	/* Tell static analysis we know value is left unused. */
+	(void)msr_entry;
+
 	return msr_count;
 }
 
@@ -404,6 +407,7 @@ static int allocate_cpu_devices(struct bus *cpu_bus, struct mp_params *p)
 		if (new == NULL) {
 			printk(BIOS_CRIT, "Could not allocate CPU device\n");
 			max_cpus--;
+			continue;
 		}
 		new->name = processor_name;
 		cpus[i].dev = new;
@@ -944,7 +948,7 @@ static void ap_wait_for_instruction(void)
 			continue;
 		}
 
-		/* Copy to local variable before signalling consumption. */
+		/* Copy to local variable before signaling consumption. */
 		memcpy(&lcb, cb, sizeof(lcb));
 		mfence();
 		store_callback(per_cpu_slot, NULL);

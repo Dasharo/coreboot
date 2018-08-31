@@ -37,7 +37,10 @@
 #include <libbdk-hal/bdk-qlm.h>
 #include <libbdk-hal/bdk-config.h>
 #include <libbdk-arch/bdk-csrs-bgx.h>
-
+#include <bootmem.h>
+#include <soc/bl31_plat_params.h>
+#include <cbfs.h>
+#include <cbmem.h>
 #include <fit.h>
 
 static const char *QLM_BGX_MODE_MAP[BDK_QLM_MODE_LAST] = {
@@ -61,9 +64,9 @@ static const char *QLM_BGX_MODE_MAP[BDK_QLM_MODE_LAST] = {
 static void dt_platform_fixup_phy(struct device_tree_node *node, char *path,
 				  int64_t phy_address, bdk_qlm_modes_t qlm_mode)
 {
-	char *data = NULL;
+	const char *data = NULL;
 	size_t size = 0;
-	dt_find_bin_prop(node, "qlm-mode", (void **)&data, &size);
+	dt_find_bin_prop(node, "qlm-mode", (const void **)&data, &size);
 
 	if (!data || strncmp(data, path, 6) != 0)
 		return; /* No key prefix match. */
@@ -124,10 +127,10 @@ static void dt_iterate_phy(struct device_tree_node *parent,
 static void dt_platform_fixup_mac(struct device_tree_node *node)
 {
 	const char *name = "local-mac-address";
-	u64 *localmac = NULL;
+	const u64 *localmac = NULL;
 	size_t size = 0;
 
-	dt_find_bin_prop(node, name, (void **)&localmac, &size);
+	dt_find_bin_prop(node, name, (const void **)&localmac, &size);
 
 	if (!localmac)
 		return;
@@ -147,8 +150,8 @@ static void dt_platform_fixup_mac(struct device_tree_node *node)
 		if (*localmac)
 			return;
 		if (used_mac < num_free_mac_addresses) {
-			*localmac = next_free_mac_address + used_mac;
-			dt_add_bin_prop(node, name, (void *)&localmac, 6);
+			const u64 genmac = next_free_mac_address + used_mac;
+			dt_add_bin_prop(node, name, &genmac, 6);
 			used_mac++;
 			return;
 		}
@@ -229,20 +232,33 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 			       __func__);
 			continue;
 		}
-		u32 *data = NULL;
+		const u32 *data = NULL;
 		size_t size = 0;
-		dt_find_bin_prop(dt_node, "mmu-masters", (void **)&data, &size);
+		dt_find_bin_prop(dt_node, "mmu-masters", (const void **)&data,
+				 &size);
 		if (!size) {
 			printk(BIOS_ERR, "%s: mmu-masters entry not found\n",
 			       __func__);
 			continue;
 		}
+
+		u32 *data_cleaned = malloc(size);
+		if (!data_cleaned)
+			continue;
+
+		size_t n = 0;
+		/* Remove phandle from mmu-masters list */
 		for (size_t j = 0; j < size / (sizeof(u32) * 2); j++)
-			if (be32_to_cpu(data[j * 2]) == phandle) {
-				data[j * 2] = 0;
-				data[j * 2 + 1] = 0;
-				break;
+			if (be32_to_cpu(data[j * 2]) != phandle) {
+				data_cleaned[n * 2] = data[j * 2];
+				data_cleaned[n * 2 + 1] = data[j * 2 + 1];
+				n++;
 			}
+
+		dt_add_bin_prop(dt_node, "mmu-masters", data_cleaned,
+				n * sizeof(u32) * 2);
+
+		free(data_cleaned);
 	}
 
 	/* Remove QLM mode entries */
@@ -289,17 +305,63 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 	return 0;
 }
 
+extern u8 _bl31[];
+extern u8 _ebl31[];
+extern u8 _sff8104[];
+extern u8 _esff8104[];
+
+void bootmem_platform_add_ranges(void)
+{
+	/* ATF reserved */
+	bootmem_add_range((uintptr_t)_bl31,
+			  ((uintptr_t)_ebl31 - (uintptr_t)_bl31),
+			  BM_MEM_RESERVED);
+
+	bootmem_add_range((uintptr_t)_sff8104,
+			  ((uintptr_t)_esff8104 - (uintptr_t)_sff8104),
+			  BM_MEM_RESERVED);
+
+	/* Scratchpad for ATF SATA quirks */
+	bootmem_add_range((sdram_size_mb() - 1) * MiB, 1 * MiB,
+			  BM_MEM_RESERVED);
+}
+
 static void soc_read_resources(device_t dev)
 {
-	ram_resource(dev, 0, (uintptr_t)_dram / KiB, sdram_size_mb() * KiB);
+	// HACK: Don't advertise bootblock romstage CAR region, it's broken...
+	ram_resource(dev, 0, 2 * KiB, sdram_size_mb() * KiB - 2 * KiB);
+}
+
+static void soc_init_atf(void)
+{
+	static struct bl31_fdt_param fdt_param = {
+		.h = { .type = PARAM_FDT, },
+	};
+
+	size_t size = 0;
+
+	void *ptr = cbfs_boot_map_with_leak("sff8104-linux.dtb",
+					    CBFS_TYPE_RAW, &size);
+	if (ptr)
+		memcpy(_sff8104, ptr, size);
+	/* Point to devicetree in secure memory */
+	fdt_param.fdt_ptr = (uintptr_t)_sff8104;
+
+	register_bl31_param(&fdt_param.h);
+
+	static struct bl31_u64_param cbtable_param = {
+		.h = { .type = PARAM_COREBOOT_TABLE, },
+	};
+	/* Point to coreboot tables */
+	cbtable_param.value = (uint64_t)cbmem_find(CBMEM_ID_CBTABLE);
+	if (cbtable_param.value)
+		register_bl31_param(&cbtable_param.h);
 }
 
 static void soc_init(device_t dev)
 {
 	/* Init ECAM, MDIO, PEM, PHY, QLM ... */
 	bdk_boot();
-
-	/* TODO: additional trustzone init */
 
 	if (IS_ENABLED(CONFIG_PAYLOAD_FIT_SUPPORT)) {
 		struct device_tree_fixup *dt_fixup;
@@ -311,6 +373,9 @@ static void soc_init(device_t dev)
 					  &device_tree_fixups);
 		}
 	}
+
+	if (IS_ENABLED(CONFIG_ARM64_USE_ARM_TRUSTED_FIRMWARE))
+		soc_init_atf();
 }
 
 static void soc_final(device_t dev)

@@ -385,11 +385,13 @@ CFLAGS_common += -Wstrict-aliasing -Wshadow -Wdate-time
 CFLAGS_common += -fno-common -ffreestanding -fno-builtin -fomit-frame-pointer
 CFLAGS_common += -ffunction-sections -fdata-sections -fno-pie
 ifeq ($(CONFIG_COMPILER_GCC),y)
-CFLAGS_common += -Wno-packed-not-aligned
 CFLAGS_common += -fno-delete-null-pointer-checks
 # Don't add these GCC specific flags when running scan-build
 ifeq ($(CCC_ANALYZER_OUTPUT_FORMAT),)
+CFLAGS_common += -Wno-packed-not-aligned
 CFLAGS_common += -fconserve-stack
+# cf. commit f69a99db (coreboot: x86: enable gc-sections)
+CFLAGS_common += -Wno-unused-but-set-variable
 endif
 endif
 
@@ -439,11 +441,6 @@ ADAFLAGS_common += -gnatyN
 
 LDFLAGS_common := --gc-sections -nostdlib -nostartfiles -static --emit-relocs
 
-ifeq ($(CONFIG_COMPILER_GCC),y)
-# cf. commit f69a99db (coreboot: x86: enable gc-sections)
-CFLAGS_common += -Wno-unused-but-set-variable
-endif
-
 ifeq ($(CONFIG_WARNINGS_ARE_ERRORS),y)
 CFLAGS_common += -Werror
 endif
@@ -460,18 +457,31 @@ ADAFLAGS_common += -gnata
 endif
 
 additional-dirs := $(objutil)/cbfstool $(objutil)/romcc $(objutil)/ifdtool \
-		   $(objutil)/ifdfake $(objutil)/options $(objutil)/amdfwtool \
+		   $(objutil)/options $(objutil)/amdfwtool \
 		   $(objutil)/cbootimage $(objutil)/bimgtool
 
 export $(COREBOOT_EXPORTS)
 
 #######################################################################
 # generate build support files
-$(obj)/build.h: .xcompile
+
+build_h := $(obj)/build.h
+
+# We have to manually export variables that `genbuild_h.sh` uses
+# when we call it through the `$(shell)` function. This is fragile
+# but as variables newly added to `genbuild_h.sh` would just not
+# work, we'd notice that instantly at least.
+build_h_exports := BUILD_TIMELESS KERNELVERSION COREBOOT_EXTRA_VERSION
+
+# Report new `build.ht` as dependency if `build.h` differs.
+build_h_check := \
+	export $(foreach exp,$(build_h_exports),$(exp)="$($(exp))"); \
+	util/genbuild_h/genbuild_h.sh >$(build_h)t 2>/dev/null; \
+	cmp -s $(build_h)t $(build_h) >/dev/null 2>&1 || echo $(build_h)t
+
+$(build_h): $$(shell $$(build_h_check))
 	@printf "    GEN        build.h\n"
-	rm -f $(obj)/build.h
-	util/genbuild_h/genbuild_h.sh > $(obj)/build.ht
-	mv $(obj)/build.ht $(obj)/build.h
+	mv $< $@
 
 build-dirs:
 	mkdir -p $(objcbfs) $(objgenerated)
@@ -521,11 +531,6 @@ $(IFDTOOL):
 	@printf "    Compile IFDTOOL\n"
 	+$(MAKE) -C $(top)/util/ifdtool
 	cp -a $(top)/util/ifdtool/ifdtool $@
-
-IFDFAKE:=$(objutil)/ifdfake/ifdfake
-$(IFDFAKE): $(top)/util/ifdfake/ifdfake.c
-	@printf "    HOSTCC     $(subst $(obj)/,,$(@))\n"
-	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
 
 AMDFWTOOL:=$(objutil)/amdfwtool/amdfwtool
 $(AMDFWTOOL): $(top)/util/amdfwtool/amdfwtool.c
@@ -600,10 +605,13 @@ update:
 gitconfig:
 	util/gitconfig/gitconfig.sh "$(MAKE)"
 
+install-git-commit-clangfmt:
+	cp util/scripts/prepare-commit-msg.clang-format .git/hooks/prepare-commit-msg
+
 include util/crossgcc/Makefile.inc
 
 .PHONY: tools
-tools: $(objutil)/kconfig/conf $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(ROMCC_BIN) $(objutil)/sconfig/sconfig $(IFDTOOL) $(IFDFAKE) $(CBOOTIMAGE) $(AMDFWTOOL) $(FUTILITY) $(BINCFG)
+tools: $(objutil)/kconfig/conf $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(ROMCC_BIN) $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(FUTILITY) $(BINCFG)
 
 ###########################################################################
 # Common recipes for all stages
@@ -1022,6 +1030,10 @@ ifneq ($(CONFIG_UPDATE_IMAGE),y)
 	$(CBFSTOOL) $@.tmp add-int -i $(CONFIG_SEABIOS_PS2_TIMEOUT) -n etc/ps2-keyboard-spinup
 endif
 endif
+endif
+ifeq ($(CONFIG_SEABIOS_ADD_SERCON_PORT_FILE),y)
+	@printf "    SeaBIOS    Add sercon-port file\n"
+	$(CBFSTOOL) $@.tmp add-int -i $(CONFIG_SEABIOS_SERCON_PORT_ADDR) -n etc/sercon-port
 endif
 ifeq ($(CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE),y)
 ifeq ($(CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_HEADER),y)

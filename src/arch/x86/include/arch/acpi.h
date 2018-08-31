@@ -76,6 +76,18 @@ enum coreboot_acpi_ids {
 	COREBOOT_ACPI_ID_MAX		= 0xFFFF, /* BOOTFFFF */
 };
 
+/* Table 5-30 DESCRIPTION_HEADER Signatures for tables defined by ACPI 6.2a
+ *  Additional tables mssing in 5-30:  MADT, RSDP, VFCT, NHLT
+ */
+enum acpi_tables {
+	APIC, BERT, BGRT, CPEP, DSDT, ECDT, EINJ, ERST, FACP, FADT, FACS,
+	FPDT, GTDT, HEST, MSCT, MPST, NFIT, OEMX, PCCT, PMTT, PSDT, RASF,
+	RSDT, SBST, SDEV, SLIT, SRAT, SSDT, XSDT, BOOT, CSRT, DBG2, DBGP,
+	DMAR, DPPT, DRTM, ETDT, HPET, IBFT, IORT, IVRS, LPIT, MCFG, MCHI,
+	MSDM, SDEI, SLIC, SPCR, SPMI, STAO, TCPA, TPM2, WAET, WDAT, WDRT,
+	WPBT, WSMT, XENV, MADT, RSDP, VFCT, NHLT
+};
+
 /* RSDP (Root System Description Pointer) */
 typedef struct acpi_rsdp {
 	char  signature[8];	/* RSDP signature */
@@ -771,8 +783,6 @@ void acpi_write_hest(acpi_hest_t *hest,
 unsigned long acpi_create_hest_error_source(acpi_hest_t *hest,
 	acpi_hest_esd_t *esd, u16 type, void *data, u16 len);
 
-void acpi_save_gnvs(u32 gnvs_address);
-
 /* For ACPI S3 support. */
 void acpi_fail_wakeup(void);
 void acpi_resume(void *wake_vec);
@@ -846,6 +856,12 @@ static inline uintptr_t acpi_align_current(uintptr_t current)
 {
 	return ALIGN(current, 16);
 }
+
+/* ACPI table revisions should match the revision of the ACPI spec
+ * supported. This function keeps the table versions synced. This could
+ * be made into a weak function if there is ever a need to override the
+ * coreboot default ACPI spec version supported. */
+int get_acpi_table_revision(enum acpi_tables table);
 
 #endif  // !defined(__ASSEMBLER__) && !defined(__ACPI__) && !defined(__ROMC__)
 

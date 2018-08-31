@@ -136,9 +136,11 @@ static const struct soc_gpio_map  gpsw_gpio_map[] = {
 	Native_M1, /* 90 PCIE_CLKREQ0B */
 	GPIO_INPUT_PU_20K, /* 91 GPI PCIE_CLKREQ1B/LTE_WAKE# */
 	Native_M1, /* 92 GP_SSP_2_CLK */
-	NATIVE_PU20K(1), /* 93 PCIE_CLKREQ2B/PCIE_CLKREQ_WLAN# */
+	/* Workaround for issue b/35648315: Program this as GPIO and always
+	   assert it low. */
+	GPIO_OUT_LOW, /* 93 PCIE_CLKREQ2B/PCIE_CLKREQ_WLAN# */
 	Native_M1, /* 94 GP_SSP_2_RXD */
-	GPI(trig_edge_both, L1, P_5K_H, non_maskable, en_edge_detect, NA, NA),
+	GPI(trig_edge_both, L1, P_5K_H, 0, en_edge_detect, NA, NA),
 		/* 95 PCIE_CLKREQ3B/AUDIO_CODEC_IRQ */
 	Native_M1, /* 96 GP_SSP_2_FS */
 	NATIVE_FUNC(1, 0, inv_tx_enable), /* 97 GP_SSP_2f_TXD */
@@ -162,9 +164,9 @@ static const struct soc_gpio_map  gpn_gpio_map[] = {
 	GPO_FUNC(NA, NA), /* 16 SEC_GPIO_SUS10 */
 	GPI(trig_edge_low, L0, P_1K_H, non_maskable, NA, NA, NA),
 	/* 17 GPIO_SUS3 */
-	GPI(trig_edge_low, L1, P_1K_H, non_maskable, NA, UNMASK_WAKE, NA),
+	GPI(trig_level_low, L1, P_1K_H, 0, NA, UNMASK_WAKE, NA),
 	/* 18 GPIO_SUS7 */
-	GPI(trig_edge_low, L3, P_1K_H, non_maskable, NA, UNMASK_WAKE, NA),
+	GPI(trig_level_low, L1, P_1K_H, 0, NA, UNMASK_WAKE, NA),
 	/* 19 GPIO_SUS1 */
 	GPIO_NC, /* 20 GPIO_SUS5 */
 	GPIO_NC, /* 21 SEC_GPIO_SUS11 */

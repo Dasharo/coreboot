@@ -37,14 +37,6 @@
 #include <arch/lib_helpers.h>
 #include <program_loading.h>
 
-void tlb_invalidate_all(void)
-{
-	 /* TLBIALL includes dTLB and iTLB on systems that have them. */
-	tlbiall_current();
-	dsb();
-	isb();
-}
-
 unsigned int dcache_line_bytes(void)
 {
 	uint32_t ctr_el0;
@@ -118,23 +110,13 @@ void dcache_invalidate_by_mva(void const *addr, size_t len)
 	dcache_op_va(addr, len, OP_DCIVAC);
 }
 
-void cache_sync_instructions(void)
-{
-	uint32_t sctlr = raw_read_sctlr_current();
-	if (sctlr & SCTLR_C)
-		dcache_clean_all();	/* includes trailing DSB (assembly) */
-	else if (sctlr & SCTLR_I)
-		dcache_clean_invalidate_all();
-	icache_invalidate_all(); /* includdes leading DSB and trailing ISB. */
-}
-
 /*
  * For each segment of a program loaded this function is called
  * to invalidate caches for the addresses of the loaded segment
  */
 void arch_segment_loaded(uintptr_t start, size_t size, int flags)
 {
-	uint32_t sctlr = raw_read_sctlr_current();
+	uint32_t sctlr = raw_read_sctlr_el3();
 	if (sctlr & SCTLR_C)
 		dcache_clean_by_mva((void *)start, size);
 	else if (sctlr & SCTLR_I)

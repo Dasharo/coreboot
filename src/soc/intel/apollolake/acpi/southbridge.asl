@@ -18,15 +18,6 @@
 #include <intelblocks/pcr.h>
 #include <soc/gpe.h>
 
-/* Power button. */
-Scope (\_SB)
-{
-	Device (PWRB)
-	{
-		Name (_HID, EisaId ("PNP0C0C"))
-	}
-}
-
 /* PCIE device */
 #include "pcie.asl"
 
@@ -56,10 +47,4 @@ Scope (\_SB)
 /* SGX */
 #if IS_ENABLED(CONFIG_SOC_INTEL_COMMON_BLOCK_SGX)
 #include <soc/intel/common/acpi/sgx.asl>
-
-/* CNVi */
-#if IS_ENABLED(CONFIG_SOC_INTEL_GLK)
-#include "cnvi.asl"
-#endif
-
 #endif

@@ -24,7 +24,7 @@
 #include <cpu/x86/pae.h>
 #include <pc80/mc146818rtc.h>
 #include <cpu/x86/lapic.h>
-#include "northbridge/amd/amdfam10/amdfam10.h"
+#include <northbridge/amd/amdfam10/amdfam10.h>
 #include <cpu/amd/model_10xxx_rev.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/cache.h>
@@ -32,7 +32,7 @@
 #include <cpu/amd/multicore.h>
 #include <cpu/amd/msr.h>
 
-#define MCI_STATUS 0x401
+#define MC0_STATUS 0x401
 
 static inline uint8_t is_gt_rev_d(void)
 {
@@ -62,6 +62,7 @@ static void model_10xxx_init(struct device *dev)
 {
 	u8 i;
 	msr_t msr;
+	int num_banks;
 	struct node_core_id id;
 #if IS_ENABLED(CONFIG_LOGICAL_CPUS)
 	u32 siblings;
@@ -109,11 +110,12 @@ static void model_10xxx_init(struct device *dev)
 	disable_cache();
 
 	/* zero the machine check error status registers */
+	msr = rdmsr(MCG_CAP);
+	num_banks = msr.lo & MCA_BANKS_MASK;
 	msr.lo = 0;
 	msr.hi = 0;
-	for (i = 0; i < 5; i++) {
-		wrmsr(MCI_STATUS + (i * 4), msr);
-	}
+	for (i = 0; i < num_banks; i++)
+		wrmsr(MC0_STATUS + (i * 4), msr);
 
 	enable_cache();
 

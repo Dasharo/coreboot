@@ -97,8 +97,6 @@ struct sysinfo_t {
 
 	void	*vboot_handoff;
 	u32	vboot_handoff_size;
-	void	*vdat_addr;
-	u32	vdat_size;
 
 #if IS_ENABLED(CONFIG_LP_ARCH_X86)
 	int x86_rom_var_mtrr_index;

@@ -3,6 +3,19 @@ config SOC_INTEL_CANNONLAKE
 	help
 	  Intel Cannonlake support
 
+config SOC_INTEL_COFFEELAKE
+	bool
+	default n
+	select SOC_INTEL_CANNONLAKE
+	help
+	  Intel Coffeelake support
+
+config CANNONLAKE_SOC_PCH_H
+	bool
+	default n
+	help
+	  Choose this option if you have a PCH-H chipset.
+
 if SOC_INTEL_CANNONLAKE
 
 config CPU_SPECIFIC_OPTIONS
@@ -171,7 +184,7 @@ config CPU_BCLK_MHZ
 	int
 	default 100
 
-config SOC_INTEL_CANNONLAKE_LPDDR4_INIT
+config SOC_INTEL_CANNONLAKE_MEMCFG_INIT
 	bool
 	default n
 

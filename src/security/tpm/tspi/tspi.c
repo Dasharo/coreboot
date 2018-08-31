@@ -25,15 +25,25 @@
 #if IS_ENABLED(CONFIG_TPM1)
 static uint32_t tpm1_invoke_state_machine(void)
 {
-	uint8_t disable;
+	uint8_t disabled;
 	uint8_t deactivated;
 	uint32_t result = TPM_SUCCESS;
 
 	/* Check that the TPM is enabled and activated. */
-	result = tlcl_get_flags(&disable, &deactivated, NULL);
+	result = tlcl_get_flags(&disabled, &deactivated, NULL);
 	if (result != TPM_SUCCESS) {
 		printk(BIOS_ERR, "TPM: Can't read capabilities.\n");
 		return result;
+	}
+
+	if (disabled) {
+		printk(BIOS_INFO, "TPM: is disabled. Enabling...\n");
+
+		result = tlcl_set_enable();
+		if (result != TPM_SUCCESS) {
+			printk(BIOS_ERR, "TPM: Can't set enabled state.\n");
+			return result;
+		}
 	}
 
 	if (!!deactivated != IS_ENABLED(CONFIG_TPM_DEACTIVATE)) {
@@ -47,19 +57,6 @@ static uint32_t tpm1_invoke_state_machine(void)
 		}
 
 		deactivated = !deactivated;
-		result = TPM_E_MUST_REBOOT;
-	}
-
-	if (disable && !deactivated) {
-		printk(BIOS_INFO, "TPM: disabled (%d). Enabling...\n", disable);
-
-		result = tlcl_set_enable();
-		if (result != TPM_SUCCESS) {
-			printk(BIOS_ERR, "TPM: Can't set enabled state.\n");
-			return result;
-		}
-
-		printk(BIOS_INFO, "TPM: Must reboot to re-enable\n");
 		result = TPM_E_MUST_REBOOT;
 	}
 
@@ -122,8 +119,8 @@ uint32_t tpm_setup(int s3flag)
 		result = tlcl_physical_presence_cmd_enable();
 		if (result != TPM_SUCCESS) {
 			printk(
-			    BIOS_ERR,
-			    "TPM: Can't enable physical presence command.\n");
+				BIOS_ERR,
+				"TPM: Can't enable physical presence command.\n");
 			goto out;
 		}
 
@@ -178,13 +175,19 @@ uint32_t tpm_clear_and_reenable(void)
 	return TPM_SUCCESS;
 }
 
-uint32_t tpm_extend_pcr(int pcr, uint8_t *digest, uint8_t *out_digest)
+uint32_t tpm_extend_pcr(int pcr, uint8_t *digest,
+			size_t digest_len, const char *name)
 {
+	uint32_t result;
+
 	if (!digest)
 		return TPM_E_IOERROR;
 
-	if (out_digest)
-		return tlcl_extend(pcr, digest, out_digest);
+	result = tlcl_extend(pcr, digest, NULL);
+	if (result != TPM_SUCCESS)
+		return result;
 
-	return tlcl_extend(pcr, digest, NULL);
+	tcpa_log_add_table_entry(name, pcr, digest, digest_len);
+
+	return TPM_SUCCESS;
 }

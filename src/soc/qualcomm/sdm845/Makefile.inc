@@ -6,21 +6,26 @@ bootblock-y += bootblock.c
 bootblock-y += spi.c
 bootblock-y += mmu.c
 bootblock-y += timer.c
+bootblock-y += gpio.c
+bootblock-$(CONFIG_DRIVERS_UART) += uart_bitbang.c
 
 ################################################################################
 verstage-y += spi.c
 verstage-y += timer.c
+verstage-y += gpio.c
 
 ################################################################################
 romstage-y += spi.c
 romstage-y += cbmem.c
 romstage-y += timer.c
+romstage-y += gpio.c
 
 ################################################################################
 ramstage-y += soc.c
 ramstage-y += spi.c
 ramstage-y += cbmem.c
 ramstage-y += timer.c
+ramstage-y += gpio.c
 
 ################################################################################
 

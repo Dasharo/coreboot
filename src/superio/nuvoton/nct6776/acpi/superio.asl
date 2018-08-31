@@ -23,16 +23,18 @@
  * devices, disabling and reenabling logical devices.
  *
  *   LDN		State
+ * 0x1 PP		Implemented, untested
  * 0x2 SP1		Implemented, untested
- * 0x5 KBCK		Implemented, untested
+ * 0x5 KBC		Implemented, untested
  * 0x8 GPIO		Implemented, untested
  * 0xb HWM		Implemented, untested
  *
  * Controllable through preprocessor defines:
  * SUPERIO_DEV		Device identifier for this SIO (e.g. SIO0)
  * SUPERIO_PNP_BASE	I/O address of the first PnP configuration register
+ * NCT6776_SHOW_PP	If defined, the parallel port will be exposed.
  * NCT6776_SHOW_SP1	If defined, Serial Port 1 will be exposed.
- * NCT6776_SHOW_KBCK	If defined, the Keyboard Controller will be exposed.
+ * NCT6776_SHOW_KBC	If defined, the Keyboard Controller will be exposed.
  * NCT6776_SHOW_GPIO	If defined, GPIO support will be exposed.
  * NCT6776_SHOW_HWM	If defined, the Environment Controller will be exposed.
  */
@@ -85,6 +87,8 @@ Device(SUPERIO_DEV) {
 		PNP_IRQ0,		8, /* First IRQ */
 		Offset (0x72),
 		PNP_IRQ1,		8, /* Second IRQ */
+		Offset (0x74),
+		PNP_DMA0,		8, /* DRQ */
 	}
 
 	Method (_CRS)
@@ -107,6 +111,32 @@ Device(SUPERIO_DEV) {
 	#define PNP_EXIT_MAGIC_1ST	0xaa
 	#include <superio/acpi/pnp_config.asl>
 
+#ifdef NCT6776_SHOW_PP
+	#undef SUPERIO_PNP_HID
+	#undef SUPERIO_PNP_LDN
+	#undef SUPERIO_PNP_DDN
+	#undef SUPERIO_PNP_PM_REG
+	#undef SUPERIO_PNP_PM_VAL
+	#undef SUPERIO_PNP_PM_LDN
+	#undef SUPERIO_PNP_IO0
+	#undef SUPERIO_PNP_IO1
+	#undef SUPERIO_PNP_IO2
+	#undef SUPERIO_PNP_IRQ0
+	#undef SUPERIO_PNP_IRQ1
+	#undef SUPERIO_PNP_DMA
+	/*
+	 * The extra code required to dynamically reflect ECP in the HID
+	 * isn't currently justified, so the HID is hardcoded as not
+	 * using ECP. "PNP0401" would indicate ECP.
+	 */
+	#define SUPERIO_PNP_HID "PNP0400"
+	#define SUPERIO_PNP_LDN 1
+	#define SUPERIO_PNP_IO0 0x08, 0x08
+	#define SUPERIO_PNP_IRQ0
+	#define SUPERIO_PNP_DMA
+	#include <superio/acpi/pnp_generic.asl>
+#endif
+
 #ifdef NCT6776_SHOW_SP1
 	#undef SUPERIO_UART_LDN
 	#undef SUPERIO_UART_DDN
@@ -122,6 +152,7 @@ Device(SUPERIO_DEV) {
 	#undef SUPERIO_KBC_PS2M
 	#undef SUPERIO_KBC_PS2LDN
 	#define SUPERIO_KBC_LDN 5
+	#define SUPERIO_KBC_PS2M
 	#include <superio/acpi/pnp_kbc.asl>
 #endif
 

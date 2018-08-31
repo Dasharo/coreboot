@@ -27,7 +27,6 @@
 #include <superio/nuvoton/common/nuvoton.h>
 #include <lib.h>
 #include <arch/stages.h>
-#include <cbmem.h>
 #include <northbridge/intel/x4x/iomap.h>
 #include <device/pnp_def.h>
 #include <timestamp.h>
@@ -47,7 +46,7 @@ static void mb_lpc_setup(void)
 	setup_pch_gpios(&mainboard_gpio_map);
 
 	/* Set GPIOs on superio, enable UART */
-	if (IS_ENABLED(CONFIG_BOARD_ASROCK_G41C_GS_R2_0)) {
+	if (IS_ENABLED(CONFIG_SUPERIO_NUVOTON_NCT6776)) {
 		nuvoton_pnp_enter_conf_state(SERIAL_DEV_R2);
 		pnp_set_logical_device(SERIAL_DEV_R2);
 
@@ -57,7 +56,7 @@ static void mb_lpc_setup(void)
 
 		nuvoton_pnp_exit_conf_state(SERIAL_DEV_R2);
 		nuvoton_enable_serial(SERIAL_DEV_R2, CONFIG_TTYS0_BASE);
-	} else { /* BOARD_ASROCK_G41C_GS */
+	} else {
 		winbond_enable_serial(SERIAL_DEV_R1, CONFIG_TTYS0_BASE);
 	}
 	/* IRQ routing */

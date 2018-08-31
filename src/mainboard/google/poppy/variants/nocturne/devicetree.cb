@@ -7,6 +7,8 @@ chip soc/intel/skylake
 	register "deep_s5_enable_dc" = "1"
 	register "deep_sx_config" = "DSX_EN_LAN_WAKE_PIN | DSX_EN_WAKE_PIN | DSX_DIS_AC_PRESENT_PD"
 
+	register "eist_enable" = "1"
+
 	# GPE configuration
 	# Note that GPE events called out in ASL code rely on this
 	# route. i.e. If this route changes then the affected GPE
@@ -59,10 +61,9 @@ chip soc/intel/skylake
 	register "PmTimerDisabled" = "1"
 	register "VmxEnable" = "1"
 
-	# Disable P-States
-	register "speed_shift_enable" = "0"
-	register "dptf_enable" = "1"
-	register "tdp_pl2_override" = "15"
+	# Set speed_shift_enable to 1 to enable P-States, and 0 to disable
+	register "speed_shift_enable" = "1"
+	register "tdp_pl2_override" = "18"
 	register "psys_pmax" = "45"
 	register "tcc_offset" = "10"
 	register "pch_trip_temp" = "75"
@@ -87,10 +88,10 @@ chip soc/intel/skylake
 	#| Psi4Enable     | 1     | 1     | 1     | 1     |
 	#| ImonSlope      | 0     | 0     | 0     | 0     |
 	#| ImonOffset     | 0     | 0     | 0     | 0     |
-	#| IccMax         | 4A    | 24A   | 24A   | 24A   |
+	#| IccMax         | Set by SoC code per CPU SKU   |
 	#| VrVoltageLimit | 1.52V | 1.52V | 1.52V | 1.52V |
-	#| AcLoadline     | 14.9  | 5     | 5.7   | 4.57  |
-	#| DcLoadline     | 14.2  | 4.86  | 4.2   | 4.3   |
+	#| AcLoadline     | 14.9  | 4     | 5.7   | 4.57  |
+	#| DcLoadline     | 14.2  | 4     | 4.2   | 4.3   |
 	#+----------------+-------+-------+-------+-------+
 	register "domain_vr_config[VR_SYSTEM_AGENT]" = "{
 		.vr_config_enable = 1,
@@ -101,7 +102,6 @@ chip soc/intel/skylake
 		.psi4enable = 1,
 		.imon_slope = 0x0,
 		.imon_offset = 0x0,
-		.icc_max = VR_CFG_AMP(4),
 		.voltage_limit = 1520,
 		.ac_loadline = 1490,
 		.dc_loadline = 1420,
@@ -116,10 +116,9 @@ chip soc/intel/skylake
 		.psi4enable = 1,
 		.imon_slope = 0x0,
 		.imon_offset = 0x0,
-		.icc_max = VR_CFG_AMP(24),
 		.voltage_limit = 1520,
-		.ac_loadline = 500,
-		.dc_loadline = 486,
+		.ac_loadline = 400,
+		.dc_loadline = 400,
 	}"
 
 	register "domain_vr_config[VR_GT_UNSLICED]" = "{
@@ -131,7 +130,6 @@ chip soc/intel/skylake
 		.psi4enable = 1,
 		.imon_slope = 0x0,
 		.imon_offset = 0x0,
-		.icc_max = VR_CFG_AMP(24),
 		.voltage_limit = 1520,
 		.ac_loadline = 570,
 		.dc_loadline = 420,
@@ -146,7 +144,6 @@ chip soc/intel/skylake
 		.psi4enable = 1,
 		.imon_slope = 0x0,
 		.imon_offset = 0x0,
-		.icc_max = VR_CFG_AMP(24),
 		.voltage_limit = 1520,
 		.ac_loadline = 457,
 		.dc_loadline = 430,
@@ -302,7 +299,7 @@ chip soc/intel/skylake
 			chip drivers/i2c/sx9310
 				register "desc" = ""Right SAR Proximity Sensor""
 				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_D9_IRQ)"
-				register "speed" = "I2C_SPEED_FAST_PLUS"
+				register "speed" = "I2C_SPEED_FAST"
 				register "uid" = "0"
 				register "reg_prox_ctrl0" = "0x10"
 				register "reg_prox_ctrl1" = "0x00"
@@ -314,7 +311,7 @@ chip soc/intel/skylake
 				register "reg_prox_ctrl7" = "0x0d"
 				register "reg_prox_ctrl8" = "0x8d"
 				register "reg_prox_ctrl9" = "0x43"
-				register "reg_prox_ctrl10" = "0x11"
+				register "reg_prox_ctrl10" = "0x1f"
 				register "reg_prox_ctrl11" = "0x00"
 				register "reg_prox_ctrl12" = "0x00"
 				register "reg_prox_ctrl13" = "0x00"
@@ -343,7 +340,7 @@ chip soc/intel/skylake
 			chip drivers/i2c/sx9310
 				register "desc" = ""Left SAR Proximity Sensor""
 				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_D10_IRQ)"
-				register "speed" = "I2C_SPEED_FAST_PLUS"
+				register "speed" = "I2C_SPEED_FAST"
 				register "uid" = "1"
 				register "reg_prox_ctrl0" = "0x10"
 				register "reg_prox_ctrl1" = "0x00"
@@ -355,7 +352,7 @@ chip soc/intel/skylake
 				register "reg_prox_ctrl7" = "0x0d"
 				register "reg_prox_ctrl8" = "0x8d"
 				register "reg_prox_ctrl9" = "0x43"
-				register "reg_prox_ctrl10" = "0x11"
+				register "reg_prox_ctrl10" = "0x1f"
 				register "reg_prox_ctrl11" = "0x00"
 				register "reg_prox_ctrl12" = "0x00"
 				register "reg_prox_ctrl13" = "0x00"
@@ -423,15 +420,8 @@ chip soc/intel/skylake
 				register "compat_string" = ""google,cros-ec-spi""
 				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_C11_IRQ)"
 				register "wake" = "GPE0_DW0_09" # GPP_C9
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C10)"
-				register "reset_delay_ms" = "0"
-				register "reset_off_delay_ms" = "0"
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A11)"
-				register "enable_delay_ms" = "0"
-				register "enable_off_delay_ms" = "0"
-				register "has_power_resource" = "1"
 				device spi 0 on end
-			end
+			end # FPMCU
 		end # GSPI #1
 		device pci 1e.4 on  end # eMMC
 		device pci 1e.5 off end # SDIO

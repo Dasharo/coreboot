@@ -218,7 +218,7 @@ void acpi_create_madt(acpi_madt_t *madt)
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_madt_t);
-	header->revision = 1; /* ACPI 1.0/2.0: 1, ACPI 3.0: 2, ACPI 4.0: 3 */
+	header->revision = get_acpi_table_revision(MADT);
 
 	madt->lapic_addr = LOCAL_APIC_ADDR;
 	madt->flags = 0x1; /* PCAT_COMPAT */
@@ -246,7 +246,7 @@ void acpi_create_mcfg(acpi_mcfg_t *mcfg)
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_mcfg_t);
-	header->revision = 1;
+	header->revision = get_acpi_table_revision(MCFG);
 
 	current = acpi_fill_mcfg(current);
 
@@ -260,14 +260,14 @@ static void *get_tcpa_log(u32 *size)
 	const struct cbmem_entry *ce;
 	const u32 tcpa_default_log_len = 0x10000;
 	void *lasa;
-	ce = cbmem_entry_find(CBMEM_ID_TCPA_LOG);
+	ce = cbmem_entry_find(CBMEM_ID_TCPA_TCG_LOG);
 	if (ce) {
 		lasa = cbmem_entry_start(ce);
 		*size = cbmem_entry_size(ce);
 		printk(BIOS_DEBUG, "TCPA log found at %p\n", lasa);
 		return lasa;
 	}
-	lasa = cbmem_add(CBMEM_ID_TCPA_LOG, tcpa_default_log_len);
+	lasa = cbmem_add(CBMEM_ID_TCPA_TCG_LOG, tcpa_default_log_len);
 	if (!lasa) {
 		printk(BIOS_ERR, "TCPA log creation failed\n");
 		return NULL;
@@ -299,7 +299,7 @@ static void acpi_create_tcpa(acpi_tcpa_t *tcpa)
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_tcpa_t);
-	header->revision = 2;
+	header->revision = get_acpi_table_revision(TCPA);
 
 	tcpa->platform_class = 0;
 	tcpa->laml = tcpa_log_len;
@@ -324,7 +324,7 @@ static void acpi_ssdt_write_cbtable(void)
 	acpigen_write_device("CTBL");
 	acpigen_write_coreboot_hid(COREBOOT_ACPI_ID_CBTABLE);
 	acpigen_write_name_integer("_UID", 0);
-	acpigen_write_STA(ACPI_STATUS_DEVICE_ALL_ON);
+	acpigen_write_STA(ACPI_STATUS_DEVICE_HIDDEN_ON);
 	acpigen_write_name("_CRS");
 	acpigen_write_resourcetemplate_header();
 	acpigen_write_mem32fixed(0, base, size);
@@ -339,7 +339,7 @@ void acpi_create_ssdt_generator(acpi_header_t *ssdt, const char *oem_table_id)
 	memset((void *)ssdt, 0, sizeof(acpi_header_t));
 
 	memcpy(&ssdt->signature, "SSDT", 4);
-	ssdt->revision = 2; /* ACPI 1.0/2.0: ?, ACPI 3.0/4.0: 2 */
+	ssdt->revision = get_acpi_table_revision(SSDT);
 	memcpy(&ssdt->oem_id, OEM_ID, 6);
 	memcpy(&ssdt->oem_table_id, oem_table_id, 8);
 	ssdt->oem_revision = 42;
@@ -410,7 +410,7 @@ void acpi_create_srat(acpi_srat_t *srat,
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_srat_t);
-	header->revision = 1; /* ACPI 1.0: N/A, 2.0: 1, 3.0: 2, 4.0: 3 */
+	header->revision = get_acpi_table_revision(SRAT);
 
 	srat->resv = 1; /* Spec: Reserved to 1 for backwards compatibility. */
 
@@ -436,7 +436,7 @@ void acpi_create_dmar(acpi_dmar_t *dmar, enum dmar_flags flags,
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_dmar_t);
-	header->revision = 1;
+	header->revision = get_acpi_table_revision(DMAR);
 
 	dmar->host_address_width = cpu_phys_address_size() - 1;
 	dmar->flags = flags;
@@ -569,7 +569,7 @@ void acpi_create_slit(acpi_slit_t *slit,
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_slit_t);
-	header->revision = 1; /* ACPI 1.0: N/A, ACPI 2.0/3.0/4.0: 1 */
+	header->revision = get_acpi_table_revision(SLIT);
 
 	current = acpi_fill_slit(current);
 
@@ -593,7 +593,7 @@ void acpi_create_hpet(acpi_hpet_t *hpet)
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_hpet_t);
-	header->revision = 1; /* Currently 1. Table added in ACPI 2.0. */
+	header->revision = get_acpi_table_revision(HPET);
 
 	/* Fill out HPET address. */
 	addr->space_id = 0; /* Memory */
@@ -626,7 +626,7 @@ void acpi_create_vfct(struct device *device,
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(struct acpi_vfct);
-	header->revision = 1; /* ACPI 1.0: N/A, ACPI 2.0/3.0/4.0: 1 */
+	header->revision = get_acpi_table_revision(VFCT);
 
 	current = acpi_fill_vfct(device, vfct, current);
 
@@ -651,7 +651,7 @@ void acpi_create_ivrs(acpi_ivrs_t *ivrs,
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_ivrs_t);
-	header->revision = IVRS_FORMAT_FIXED;
+	header->revision = get_acpi_table_revision(IVRS);
 
 	current = acpi_fill_ivrs(ivrs, current);
 
@@ -696,7 +696,7 @@ void acpi_create_dbg2(acpi_dbg2_header_t *dbg2,
 	current = (uintptr_t)dbg2;
 	memset(dbg2, 0, sizeof(acpi_dbg2_header_t));
 	header = &(dbg2->header);
-	header->revision = 0;
+	header->revision = get_acpi_table_revision(DBG2);
 	memcpy(header->signature, "DBG2", 4);
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
@@ -807,7 +807,7 @@ void acpi_create_facs(acpi_facs_t *facs)
 	facs->flags = 0;
 	facs->x_firmware_waking_vector_l = 0;
 	facs->x_firmware_waking_vector_h = 0;
-	facs->version = 1; /* ACPI 1.0: 0, ACPI 2.0/3.0: 1, ACPI 4.0: 2 */
+	facs->version = get_acpi_table_revision(FACS);
 }
 
 static void acpi_write_rsdt(acpi_rsdt_t *rsdt, char *oem_id, char *oem_table_id)
@@ -821,7 +821,7 @@ static void acpi_write_rsdt(acpi_rsdt_t *rsdt, char *oem_id, char *oem_table_id)
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_rsdt_t);
-	header->revision = 1; /* ACPI 1.0/2.0/3.0/4.0: 1 */
+	header->revision = get_acpi_table_revision(RSDT);
 
 	/* Entries are filled in later, we come with an empty set. */
 
@@ -840,7 +840,7 @@ static void acpi_write_xsdt(acpi_xsdt_t *xsdt, char *oem_id, char *oem_table_id)
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_xsdt_t);
-	header->revision = 1; /* ACPI 1.0: N/A, 2.0/3.0/4.0: 1 */
+	header->revision = get_acpi_table_revision(XSDT);
 
 	/* Entries are filled in later, we come with an empty set. */
 
@@ -870,7 +870,7 @@ static void acpi_write_rsdp(acpi_rsdp_t *rsdp, acpi_rsdt_t *rsdt,
 		rsdp->revision = 0;
 	} else {
 		rsdp->xsdt_address = (u64)(uintptr_t)xsdt;
-		rsdp->revision = 2;
+		rsdp->revision = get_acpi_table_revision(RSDP);
 	}
 
 	/* Calculate checksums. */
@@ -950,7 +950,7 @@ void acpi_write_hest(acpi_hest_t *hest,
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 	header->length += sizeof(acpi_hest_t);
-	header->revision = 1;
+	header->revision = get_acpi_table_revision(HEST);
 
 	acpi_fill_hest(hest);
 
@@ -966,7 +966,7 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	memset((void *) fadt, 0, sizeof(acpi_fadt_t));
 	memcpy(header->signature, "FACP", 4);
 	header->length = sizeof(acpi_fadt_t);
-	header->revision = 4;
+	header->revision = get_acpi_table_revision(FADT);
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
@@ -1252,14 +1252,52 @@ void *acpi_find_wakeup_vector(void)
 	return wake_vec;
 }
 
-void acpi_save_gnvs(u32 gnvs_address)
-{
-	u32 *gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS_PTR, sizeof(*gnvs));
-	if (gnvs)
-		*gnvs = gnvs_address;
-}
-
 __weak int acpi_get_gpe(int gpe)
 {
 	return -1; /* implemented by SOC */
+}
+
+int get_acpi_table_revision(enum acpi_tables table)
+{
+	switch (table) {
+	case FADT:
+		return ACPI_FADT_REV_ACPI_3_0;
+	case MADT: /* ACPI 1.0/2.0: 1, ACPI 3.0: 2, ACPI 4.0: 3 */
+		return 2;
+	case MCFG:
+		return 1;
+	case TCPA:
+		return 2;
+	case SSDT: /* ACPI 1.0/2.0: ?, ACPI 3.0/4.0: 2 */
+		return 2;
+	case SRAT:  /* ACPI 1.0: N/A, 2.0: 1, 3.0: 2, 4.0: 3 */
+		return 1; /* TODO Should probably be upgraded to 2 */
+	case DMAR:
+		return 1;
+	case SLIT:  /* ACPI 1.0: N/A, ACPI 2.0/3.0/4.0: 1 */
+		return 1;
+	case HPET: /* Currently 1. Table added in ACPI 2.0. */
+		return 1;
+	case VFCT:  /* ACPI 1.0: N/A, ACPI 2.0/3.0/4.0: 1 */
+		return 1;
+	case IVRS:
+		return IVRS_FORMAT_FIXED;
+	case DBG2:
+		return 0;
+	case FACS: /* ACPI 1.0: 0, ACPI 2.0/3.0: 1, ACPI 4.0: 2 */
+		return 1;
+	case RSDT: /* ACPI 1.0/2.0/3.0/4.0: 1 */
+		return 1;
+	case XSDT: /* ACPI 1.0: N/A, 2.0/3.0/4.0: 1 */
+		return 1;
+	case RSDP:  /* ACPI 1.0: 0, ACPI 2.0/3.0/4.0: 2. */
+		return 2;
+	case HEST:
+		return 1;
+	case NHLT:
+		return 5;
+	default:
+		return -1;
+	}
+	return -1;
 }

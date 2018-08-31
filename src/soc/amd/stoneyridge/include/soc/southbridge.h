@@ -91,6 +91,7 @@
 #define   PM_ACPI_RTC_WAKE_EN		BIT(29)
 #define PM_RST_CTRL1			0xbe
 #define   SLPTYPE_CONTROL_EN		BIT(5)
+#define PM_RST_STATUS			0xc0
 #define PM_PMIO_DEBUG			0xd2
 #define PM_MANUAL_RESET			0xd3
 #define PM_HUD_SD_FLASH_CTRL		0xe7
@@ -110,9 +111,6 @@
 #define   SPI_PRESERVE_BITS		(BIT(0) | BIT(1) | BIT(2) | BIT(3))
 
 #define LPC_PCI_CONTROL			0x40
-#define   IMC_PRESENT			BIT(7)
-#define   IMC_TO_HOST_SEMAPHORE		BIT(6)
-#define   HOST_TO_IMC_SEMAPHORE		BIT(5)
 #define   LEGACY_DMA_EN			BIT(2)
 
 #define LPC_IO_PORT_DECODE_ENABLE	0x44
@@ -216,8 +214,8 @@
 #define   SPI_FROM_USB_PREFETCH_EN	BIT(23)
 
 #define LPC_HOST_CONTROL		0xbb
-#define   IMC_PAGE_FROM_HOST_EN		BIT(0)
-#define   IMC_PORT_FROM_HOST_EN		BIT(3)
+#define   PREFETCH_EN_SPI_FROM_HOST	BIT(0)
+#define   T_START_ENH			BIT(3)
 
 /* SPI Controller */
 #define SPI_CNTRL0			0x00
@@ -307,6 +305,11 @@
 #define OC_PORT2_SHIFT		8
 #define OC_PORT3_SHIFT		12
 
+#define EHCI_HUB_CONFIG4		0x90
+#define   DEBUG_PORT_SELECT_SHIFT	  16
+#define   DEBUG_PORT_ENABLE		  BIT(18)
+#define   DEBUG_PORT_MASK		(BIT(16) | BIT(17) | (BIT(18))
+
 #define WIDEIO_RANGE_ERROR		-1
 #define TOTAL_WIDEIO_PORTS		3
 
@@ -370,6 +373,28 @@
 #define GPP_CLK0_CLOCK_REQ_MAP_MASK	(0xf << GPP_CLK0_CLOCK_REQ_MAP_SHIFT)
 #define GPP_CLK0_CLOCK_REQ_MAP_CLK_REQ0	1
 
+/* Bit definitions for MISC_MMIO_BASE register MiscClkCntl1 */
+#define MISC_CGPLL_CONFIG1			0x08
+#define   CG1PLL_SPREAD_SPECTRUM_ENABLE		BIT(0)
+#define MISC_CGPLL_CONFIG3			0x10
+#define   CG1PLL_REFDIV_SHIFT			0
+#define   CG1PLL_REFDIV_MASK			(0x3FF << CG1PLL_REFDIV_SHIFT)
+#define   CG1PLL_FBDIV_SHIFT			10
+#define   CG1PLL_FBDIV_MASK			(0xFFF << CG1PLL_FBDIV_SHIFT)
+#define MISC_CGPLL_CONFIG4			0x14
+#define   CG1PLL_SS_STEP_SIZE_DSFRAC_SHIFT	0
+#define   CG1PLL_SS_STEP_SIZE_DSFRAC_MASK	(0xFFFF << CG1PLL_SS_STEP_SIZE_DSFRAC_SHIFT)
+#define   CG1PLL_SS_AMOUNT_DSFRAC_SHIFT		16
+#define   CG1PLL_SS_AMOUNT_DSFRAC_MASK		(0xFFFF << CG1PLL_SS_AMOUNT_DSFRAC_SHIFT)
+#define MISC_CGPLL_CONFIG5			0x18
+#define   CG1PLL_SS_AMOUNT_NFRAC_SLIP_SHIFT	8
+#define   CG1PLL_SS_AMOUNT_NFRAC_SLIP_MASK	(0xF << CG1PLL_SS_AMOUNT_NFRAC_SLIP_SHIFT)
+#define MISC_CGPLL_CONFIG6			0x1C
+#define   CG1PLL_LF_MODE_SHIFT			9
+#define   CG1PLL_LF_MODE_MASK			(0x1FF << CG1PLL_LF_MODE_SHIFT)
+#define MISC_CLK_CNTL1				0x40
+#define   CG1PLL_FBDIV_TEST			BIT(26)
+
 struct stoneyridge_aoac {
 	int enable;
 	int status;
@@ -407,6 +432,8 @@ u32 pm_read32(u8 reg);
 void pm_write8(u8 reg, u8 value);
 void pm_write16(u8 reg, u16 value);
 void pm_write32(u8 reg, u32 value);
+u32 misc_read32(u8 reg);
+void misc_write32(u8 reg, u32 value);
 uint8_t smi_read8(uint8_t offset);
 uint16_t smi_read16(uint8_t offset);
 uint32_t smi_read32(uint8_t offset);
@@ -428,6 +455,7 @@ uint16_t xhci_pm_read16(uint8_t reg);
 void xhci_pm_write32(uint8_t reg, uint32_t value);
 uint32_t xhci_pm_read32(uint8_t reg);
 void bootblock_fch_early_init(void);
+void bootblock_fch_init(void);
 /**
  * @brief Save the UMA bize returned by AGESA
  *

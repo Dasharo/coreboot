@@ -222,7 +222,7 @@ static int marshal_nv_read(struct obuf *ob,
 	return rc;
 }
 
-/* TPM2_Clear command does not require paramaters. */
+/* TPM2_Clear command does not require parameters. */
 static int marshal_clear(struct obuf *ob)
 {
 	const uint32_t handle[] = { TPM_RH_PLATFORM };
@@ -554,6 +554,9 @@ struct tpm2_response *tpm_unmarshal_response(TPM_CC command, struct ibuf *ib)
 		       command, ibuf_remaining(ib));
 		return NULL;
 	}
+	if (rc)
+		printk(BIOS_WARNING, "Warning: %s had one or more failures.\n",
+					__func__);
 
 	/* The entire message have been parsed. */
 	return tpm2_resp;
