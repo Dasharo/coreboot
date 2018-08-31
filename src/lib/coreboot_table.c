@@ -195,18 +195,6 @@ static void lb_gpios(struct lb_header *header)
 	}
 }
 
-static void lb_vdat(struct lb_header *header)
-{
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
-	struct lb_range *vdat;
-
-	vdat = (struct lb_range *)lb_new_record(header);
-	vdat->tag = LB_TAG_VDAT;
-	vdat->size = sizeof(*vdat);
-	acpi_get_vdat_info(&vdat->range_start, &vdat->range_size);
-#endif
-}
-
 static void lb_vbnv(struct lb_header *header)
 {
 #if IS_ENABLED(CONFIG_PC80_SYSTEM)
@@ -339,7 +327,8 @@ static void add_cbmem_pointers(struct lb_header *header)
 		{CBMEM_ID_CONSOLE, LB_TAG_CBMEM_CONSOLE},
 		{CBMEM_ID_ACPI_GNVS, LB_TAG_ACPI_GNVS},
 		{CBMEM_ID_VPD, LB_TAG_VPD},
-		{CBMEM_ID_WIFI_CALIBRATION, LB_TAG_WIFI_CALIBRATION}
+		{CBMEM_ID_WIFI_CALIBRATION, LB_TAG_WIFI_CALIBRATION},
+		{CBMEM_ID_TCPA_LOG, LB_TAG_TCPA_LOG}
 	};
 	int i;
 
@@ -544,9 +533,6 @@ static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 #if IS_ENABLED(CONFIG_CHROMEOS)
 	/* Record our GPIO settings (ChromeOS specific) */
 	lb_gpios(head);
-
-	/* pass along the VDAT buffer address */
-	lb_vdat(head);
 
 	/* pass along VBNV offsets in CMOS */
 	lb_vbnv(head);

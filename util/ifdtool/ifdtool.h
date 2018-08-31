@@ -14,11 +14,42 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #define IFDTOOL_VERSION "1.2"
 
 enum ifd_version {
 	IFD_VERSION_1,
 	IFD_VERSION_2,
+};
+
+/* port from flashrom */
+enum ich_chipset {
+	CHIPSET_ICH_UNKNOWN,
+	CHIPSET_ICH,
+	CHIPSET_ICH2345,
+	CHIPSET_ICH6,
+	CHIPSET_POULSBO, /* SCH U* */
+	CHIPSET_TUNNEL_CREEK, /* Atom E6xx */
+	CHIPSET_CENTERTON, /* Atom S1220 S1240 S1260 */
+	CHIPSET_ICH7,
+	CHIPSET_ICH8,
+	CHIPSET_ICH9,
+	CHIPSET_ICH10,
+	CHIPSET_5_SERIES_IBEX_PEAK,
+	CHIPSET_6_SERIES_COUGAR_POINT,
+	CHIPSET_7_SERIES_PANTHER_POINT,
+	CHIPSET_8_SERIES_LYNX_POINT,
+	CHIPSET_BAYTRAIL, /* Actually all with Silvermont architecture:
+			   * Bay Trail, Avoton/Rangeley
+			   */
+	CHIPSET_8_SERIES_LYNX_POINT_LP,
+	CHIPSET_8_SERIES_WELLSBURG,
+	CHIPSET_9_SERIES_WILDCAT_POINT,
+	CHIPSET_9_SERIES_WILDCAT_POINT_LP,
+	CHIPSET_100_SERIES_SUNRISE_POINT, /* also 6th/7th gen Core i/o (LP)
+					   * variants
+					   */
+	CHIPSET_C620_SERIES_LEWISBURG,
 };
 
 enum platform {
@@ -56,8 +87,6 @@ typedef struct {
 	uint32_t flmap0;
 	uint32_t flmap1;
 	uint32_t flmap2;
-	uint8_t  reserved[0xefc - 0x20];
-	uint32_t flumap1;
 } __attribute__((packed)) fdbar_t;
 
 // regions
@@ -113,6 +142,8 @@ typedef struct {
 
 typedef struct {
 	// Actual number of entries specified in vtl
+	/* FIXME: Rationale for the limit of 8.
+	 *        AFAICT it's 127, cf. flashrom's ich_descriptors_tool). */
 	vscc_t entry[8];
 } vtba_t;
 

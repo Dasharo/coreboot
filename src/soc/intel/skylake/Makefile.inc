@@ -2,6 +2,7 @@ ifeq ($(CONFIG_SOC_INTEL_SKYLAKE),y)
 
 subdirs-y += nhlt
 subdirs-y += romstage
+subdirs-y += ../../../cpu/intel/common
 subdirs-y += ../../../cpu/intel/microcode
 subdirs-y += ../../../cpu/intel/turbo
 subdirs-y += ../../../cpu/x86/lapic
@@ -78,6 +79,7 @@ smm-$(CONFIG_UART_DEBUG) += uart.c
 postcar-y += memmap.c
 postcar-y += gspi.c
 postcar-y += spi.c
+postcar-y += i2c.c
 postcar-$(CONFIG_UART_DEBUG) += uart.c
 
 # cpu_microcode_bins += ???

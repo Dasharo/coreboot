@@ -17,22 +17,13 @@
 
 #include <variant/onboard.h>
 
-Scope (\_SB)
-{
-	Device (PWRB)
-	{
-		Name (_HID, EisaId ("PNP0C0C"))
-		Name (_UID, 1)
-	}
-}
-
 Scope (\_SB.GPNC)
 {
 	Method (_AEI, 0, Serialized)  // _AEI: ACPI Event Interrupts
 	{
 		Name (RBUF, ResourceTemplate ()
 		{
-			GpioInt (Edge, ActiveLow, ExclusiveAndWake, PullNone,,
+			GpioInt (Edge, ActiveLow, ExclusiveAndWake, PullDefault,,
 				"\\_SB.GPNC") { BOARD_SCI_GPIO_INDEX }
 		})
 		Return (RBUF)

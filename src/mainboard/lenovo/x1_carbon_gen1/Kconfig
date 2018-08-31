@@ -22,17 +22,10 @@ config BOARD_SPECIFIC_OPTIONS # dummy
 	select MAINBOARD_HAS_TPM1
 	select MAINBOARD_HAS_LIBGFXINIT
 	select GFX_GMA_INTERNAL_IS_LVDS
+	select INTEL_GMA_HAVE_VBT
 
 	# Workaround for EC/KBC IRQ1.
 	select SERIRQ_CONTINUOUS_MODE
-
-config HAVE_IFD_BIN
-	bool
-	default n
-
-config HAVE_ME_BIN
-	bool
-	default n
 
 config MAINBOARD_DIR
 	string

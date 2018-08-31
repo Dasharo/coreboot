@@ -25,16 +25,13 @@
 #include <device/pci_def.h>
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
-#include <pc80/mc146818rtc.h>
 #include <arch/acpi.h>
-#include <cbmem.h>
 #include <console/console.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
 #include <arch/cpu.h>
-#include <cpu/x86/msr.h>
 #include <cbfs.h>
 
 void pch_enable_lpc(void)
@@ -98,7 +95,13 @@ void mainboard_get_spd(spd_raw_data *spd, bool id_only)
 
 	/* 4gb model = 0, 8gb model = 1 */
 	/* int extended_memory_version = get_gpio(44); */
-	/* TODO: how do they differ? Guess only one slot is connected */
+
+	/*
+	 * So far there is no need to parse gpio 44, as the 4GiB use
+	 * the hynix or elpida memory and 8 GiB versions use samsung.
+	 * All version use both channels.
+	 * But we might miss some versions.
+	 */
 
 	/*
 	 * GPIO45 GPIO25
@@ -108,10 +111,8 @@ void mainboard_get_spd(spd_raw_data *spd, bool id_only)
 	 * 1      1       reserved
 	 */
 
-	/* We only support elpida and samsung.
-           Because the spd data is missing. */
-	if (spd_index != 0 && spd_index != 2)
-		die("Unsupported Memory. Please add your SPD dump to coreboot.");
+	if (spd_index == 3)
+		die("Unsupported Memory. (detected 'reserved' memory configuration).");
 
 	memory = get_spd_data(spd_index);
 	memcpy(&spd[0], memory, 256);

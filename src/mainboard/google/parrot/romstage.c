@@ -22,9 +22,7 @@
 #include <device/pci_def.h>
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
-#include <pc80/mc146818rtc.h>
 #include <arch/acpi.h>
-#include <cbmem.h>
 #include <console/console.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <northbridge/intel/sandybridge/raminit.h>
@@ -32,10 +30,8 @@
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
 #include <arch/cpu.h>
-#include <cpu/x86/msr.h>
 #include <halt.h>
 #include <cbfs.h>
-#include <security/tpm/tspi.h>
 #include "ec/compal/ene932/ec.h"
 
 void pch_enable_lpc(void)

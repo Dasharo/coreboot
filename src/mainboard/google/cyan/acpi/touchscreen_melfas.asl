@@ -33,12 +33,10 @@ Scope (\_SB.PCI0.I2C1)
 					ControllerInitiated,      /* SlaveMode */
 					400000,                   /* ConnectionSpeed */
 					AddressingMode7Bit,       /* AddressingMode */
-					"\\_SB.I2C1",             /* ResourceSource */
+					"\\_SB.PCI0.I2C1",        /* ResourceSource */
 				)
-				Interrupt (ResourceConsumer, Level, ActiveLow)
-				{
-					BOARD_TOUCH_IRQ
-				}
+				GpioInt (Level, ActiveLow, ExclusiveAndWake, PullDefault,,
+ 					"\\_SB.GPNC") { BOARD_TOUCH_GPIO_INDEX }
 			})
 			Return (BUF0)
 		}

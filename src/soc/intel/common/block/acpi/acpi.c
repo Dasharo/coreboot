@@ -110,7 +110,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	const uint16_t pmbase = ACPI_BASE_ADDRESS;
 
 	/* Use ACPI 3.0 revision. */
-	fadt->header.revision = ACPI_FADT_REV_ACPI_3_0;
+	fadt->header.revision = get_acpi_table_revision(FADT);
 
 	fadt->sci_int = acpi_sci_irq();
 	fadt->smi_cmd = APM_CNT;
@@ -169,7 +169,7 @@ unsigned long southbridge_write_acpi_tables(struct device *device,
 					    struct acpi_rsdp *rsdp)
 {
 	current = acpi_write_dbg2_pci_uart(rsdp, current,
-					   pch_uart_get_debug_controller(),
+					   uart_get_device(),
 					   ACPI_ACCESS_SIZE_DWORD_ACCESS);
 	return acpi_write_hpet(device, current, rsdp);
 }
@@ -237,7 +237,6 @@ void southbridge_inject_dsdt(struct device *device)
 
 	if (gnvs) {
 		acpi_create_gnvs(gnvs);
-		acpi_save_gnvs((uintptr_t) gnvs);
 		/* And tell SMI about it */
 		smm_setup_structures(gnvs, NULL, NULL);
 

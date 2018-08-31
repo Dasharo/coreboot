@@ -14,23 +14,21 @@
  * GNU General Public License for more details.
  */
 
+External(\_SB.ALIB, MethodObj)
+
 /* System Bus */
 /*  _SB.PCI0 */
 
 /* Operating System Capabilities Method */
 Method(_OSC,4)
 {
-	// Create DWord-addressable fields from the Capabilities Buffer
-	CreateDWordField(Arg3,0,CDW1)
-	CreateDWordField(Arg3,4,CDW2)
-	CreateDWordField(Arg3,8,CDW3)
-
 	/* Check for proper PCI/PCIe UUID */
 	If(LEqual(Arg0,ToUUID("33DB4D5B-1FF7-401C-9657-7441C03DD766")))
 	{
 		/* Let OS control everything */
 		Return (Arg3)
 	} Else {
+		CreateDWordField(Arg3,0,CDW1)
 		Or(CDW1,4,CDW1)	// Unrecognized UUID
 		Return(Arg3)
 	}
@@ -130,10 +128,6 @@ Method(_CRS, 0) {
 	Return(CRES) /* note to change the Name buffer */
 } /* end of Method(_SB.PCI0._CRS) */
 
-#if IS_ENABLED(CONFIG_STONEYRIDGE_IMC_FWM)
-	#include "acpi/AmdImc.asl"
-#endif
-
 /*
  *
  *               FIRST METHOD CALLED UPON BOOT
@@ -142,7 +136,7 @@ Method(_CRS, 0) {
  *  2. Get PCI Interrupt routing from ACPI VSM, this
  *     value is based on user choice in BIOS setup.
  */
-Method(_INI, 0) {
+Method(_INI, 0, Serialized) {
 	/* DBGO("\\_SB\\_INI\n") */
 	/* DBGO("   DSDT.ASL code from ") */
 	/* DBGO(__DATE__) */
@@ -159,11 +153,16 @@ Method(_INI, 0) {
 	/* Determine the OS we're running on */
 	OSFL()
 
-#if IS_ENABLED(CONFIG_STONEYRIDGE_IMC_FWM)
-#if IS_ENABLED(CONFIG_ACPI_ENABLE_THERMAL_ZONE)
-	ITZE() /* enable IMC Fan Control*/
-#endif
-#endif
+	/* Send ALIB Function 1 the AC/DC state */
+	Name(F1BF, Buffer(0x03){})
+	CreateWordField(F1BF, 0, F1SZ)
+	CreateByteField(F1BF, 2, F1DA)
+
+	Store(3, F1SZ)
+	Store(\PWRS, F1DA)
+
+	\_SB.ALIB(1, F1BF)
+
 } /* End Method(_SB._INI) */
 
 Method(OSFL, 0){

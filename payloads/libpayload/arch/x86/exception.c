@@ -32,6 +32,8 @@
 #include <libpayload.h>
 #include <stdint.h>
 
+#define IF_FLAG				(1 << 9)
+
 u32 exception_stack[0x400] __attribute__((aligned(8)));
 
 static exception_hook hook;
@@ -59,7 +61,7 @@ static const char *names[EXC_COUNT] = {
 
 static void print_segment_error_code(u32 code)
 {
-	printf("%#x - descriptor %#x in the ", code, (code >> 3) & 0x1f);
+	printf("%#x - descriptor %#x in the ", code, (code >> 3) & 0x1FFF);
 	if (code & (0x1 << 1)) {
 		printf("IDT");
 	} else {
@@ -181,4 +183,34 @@ void exception_install_hook(exception_hook h)
 {
 	die_if(hook, "Implement support for a list of hooks if you need it.");
 	hook = h;
+}
+
+static uint32_t eflags(void)
+{
+	uint32_t eflags;
+	asm volatile(
+		"pushf\n\t"
+		"pop %0\n\t"
+	: "=rm" (eflags));
+	return eflags;
+}
+
+void enable_interrupts(void)
+{
+	asm volatile (
+		"sti\n"
+		: : : "cc"
+	);
+}
+void disable_interrupts(void)
+{
+	asm volatile (
+		"cli\n"
+		: : : "cc"
+	);
+}
+
+int interrupts_enabled(void)
+{
+	return !!(eflags() & IF_FLAG);
 }

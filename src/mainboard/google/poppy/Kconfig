@@ -30,6 +30,7 @@ config DEVICETREE
 	default "variants/nami/devicetree.cb" if BOARD_GOOGLE_NAMI
 	default "variants/nautilus/devicetree.cb" if BOARD_GOOGLE_NAUTILUS
 	default "variants/nocturne/devicetree.cb" if BOARD_GOOGLE_NOCTURNE
+	default "variants/rammus/devicetree.cb" if BOARD_GOOGLE_RAMMUS
 	default "variants/soraka/devicetree.cb" if BOARD_GOOGLE_SORAKA
 	default "variants/baseboard/devicetree.cb"
 
@@ -86,6 +87,12 @@ config INCLUDE_NHLT_BLOBS_NOCTURNE
 	select NHLT_DMIC_4CH
 	select NHLT_MAX98373
 
+config INCLUDE_NHLT_BLOBS_RAMMUS
+	bool "Include blobs for rammus audio."
+	select NHLT_DA7219
+	select NHLT_DMIC_4CH
+	select NHLT_MAX98927
+
 config MAINBOARD_DIR
 	string
 	default "google/poppy"
@@ -129,7 +136,7 @@ config VARIANT_DIR
 	default "nami" if BOARD_GOOGLE_NAMI
 	default "nautilus" if BOARD_GOOGLE_NAUTILUS
 	default "nocturne" if BOARD_GOOGLE_NOCTURNE
-	default "poppy" if BOARD_GOOGLE_RAMMUS
+	default "rammus" if BOARD_GOOGLE_RAMMUS
 	default "soraka" if BOARD_GOOGLE_SORAKA
 
 # Select this option to enable camera ACPI support on the variant.
@@ -162,6 +169,7 @@ config VARIANT_SPECIFIC_OPTIONS_NAMI
 	select DRIVERS_SPI_ACPI
 	select EXCLUDE_NATIVE_SD_INTERFACE
 	select MAINBOARD_HAS_SPI_TPM_CR50
+	select DISABLE_POWER_OFF_EC_ON_CR50_UPDATE
 
 config VARIANT_SPECIFIC_OPTIONS_NAUTILUS
 	def_bool n
@@ -182,6 +190,13 @@ config VARIANT_SPECIFIC_OPTIONS_NOCTURNE
 	select MAINBOARD_HAS_SPI_TPM_CR50
 	select VARIANT_HAS_CAMERA_ACPI
 	select GEO_SAR_ENABLE if CHROMEOS_WIFI_SAR
+
+config VARIANT_SPECIFIC_OPTIONS_RAMMUS
+	def_bool n
+	select CHROMEOS_WIFI_SAR if CHROMEOS
+	select DRIVERS_I2C_MAX98927
+	select DRIVERS_I2C_DA7219
+	select MAINBOARD_HAS_SPI_TPM_CR50
 
 config VARIANT_SPECIFIC_OPTIONS_SORAKA
 	def_bool n

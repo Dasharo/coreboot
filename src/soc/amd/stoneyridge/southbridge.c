@@ -25,14 +25,15 @@
 #include <cbmem.h>
 #include <elog.h>
 #include <amdblocks/amd_pci_util.h>
+#include <amdblocks/agesawrapper.h>
 #include <soc/southbridge.h>
 #include <soc/smi.h>
 #include <soc/amd_pci_int_defs.h>
-#include <fchec.h>
 #include <delay.h>
 #include <soc/pci_devs.h>
 #include <agesa_headers.h>
 #include <soc/nvs.h>
+#include <reset.h>
 
 /*
  * Table of devices that need their AOAC registers enabled and waited
@@ -72,18 +73,32 @@ static inline int sb_ide_enable(void)
 
 void SetFchResetParams(FCH_RESET_INTERFACE *params)
 {
+	const struct device *dev = dev_find_slot(0, SATA_DEVFN);
 	params->Xhci0Enable = IS_ENABLED(CONFIG_STONEYRIDGE_XHCI_ENABLE);
-	params->SataEnable = sb_sata_enable();
-	params->IdeEnable = sb_ide_enable();
+	if (dev && dev->enabled) {
+		params->SataEnable = sb_sata_enable();
+		params->IdeEnable = sb_ide_enable();
+	} else {
+		params->SataEnable = FALSE;
+		params->IdeEnable = FALSE;
+	}
 }
 
 void SetFchEnvParams(FCH_INTERFACE *params)
 {
+	const struct device *dev = dev_find_slot(0, SATA_DEVFN);
 	params->AzaliaController = AzEnable;
 	params->SataClass = CONFIG_STONEYRIDGE_SATA_MODE;
-	params->SataEnable = is_sata_config();
-	params->IdeEnable = !params->SataEnable;
-	params->SataIdeMode = (CONFIG_STONEYRIDGE_SATA_MODE == SataLegacyIde);
+	if (dev && dev->enabled) {
+		params->SataEnable = is_sata_config();
+		params->IdeEnable = !params->SataEnable;
+		params->SataIdeMode = (CONFIG_STONEYRIDGE_SATA_MODE ==
+					SataLegacyIde);
+	} else {
+		params->SataEnable = FALSE;
+		params->IdeEnable = FALSE;
+		params->SataIdeMode = FALSE;
+	}
 }
 
 void SetFchMidParams(FCH_INTERFACE *params)
@@ -123,12 +138,6 @@ const static struct irq_idx_name irq_association[] = {
 	{ PIRQ_PMON,	"PerMon" },
 	{ PIRQ_SD,	"SD" },
 	{ PIRQ_SDIO,	"SDIOt" },
-	{ PIRQ_IMC0,	"IMC INT0" },
-	{ PIRQ_IMC1,	"IMC INT1" },
-	{ PIRQ_IMC2,	"IMC INT2" },
-	{ PIRQ_IMC3,	"IMC INT3" },
-	{ PIRQ_IMC4,	"IMC INT4" },
-	{ PIRQ_IMC5,	"IMC INT5" },
 	{ PIRQ_EHCI,	"EHCI" },
 	{ PIRQ_XHCI,	"XHCI" },
 	{ PIRQ_SATA,	"SATA" },
@@ -547,8 +556,76 @@ static void sb_lpc_early_setup(void)
 	}
 }
 
+static void setup_spread_spectrum(int *reboot)
+{
+	uint16_t rstcfg = pm_read16(PWR_RESET_CFG);
+
+	rstcfg &= ~TOGGLE_ALL_PWR_GOOD;
+	pm_write16(PWR_RESET_CFG, rstcfg);
+
+	uint32_t cntl1 = misc_read32(MISC_CLK_CNTL1);
+
+	if (cntl1 & CG1PLL_FBDIV_TEST) {
+		printk(BIOS_DEBUG, "Spread spectrum is ready\n");
+		misc_write32(MISC_CGPLL_CONFIG1,
+			     misc_read32(MISC_CGPLL_CONFIG1) |
+				     CG1PLL_SPREAD_SPECTRUM_ENABLE);
+
+		return;
+	}
+
+	printk(BIOS_DEBUG, "Setting up spread spectrum\n");
+
+	uint32_t cfg6 = misc_read32(MISC_CGPLL_CONFIG6);
+	cfg6 &= ~CG1PLL_LF_MODE_MASK;
+	cfg6 |= (0x0F8 << CG1PLL_LF_MODE_SHIFT) & CG1PLL_LF_MODE_MASK;
+	misc_write32(MISC_CGPLL_CONFIG6, cfg6);
+
+	uint32_t cfg3 = misc_read32(MISC_CGPLL_CONFIG3);
+	cfg3 &= ~CG1PLL_REFDIV_MASK;
+	cfg3 |= (0x003 << CG1PLL_REFDIV_SHIFT) & CG1PLL_REFDIV_MASK;
+	cfg3 &= ~CG1PLL_FBDIV_MASK;
+	cfg3 |= (0x04B << CG1PLL_FBDIV_SHIFT) & CG1PLL_FBDIV_MASK;
+	misc_write32(MISC_CGPLL_CONFIG3, cfg3);
+
+	uint32_t cfg5 = misc_read32(MISC_CGPLL_CONFIG5);
+	cfg5 &= ~CG1PLL_SS_AMOUNT_NFRAC_SLIP_MASK;
+	cfg5 |= (0x2 << CG1PLL_SS_AMOUNT_NFRAC_SLIP_SHIFT) & CG1PLL_SS_AMOUNT_NFRAC_SLIP_MASK;
+	misc_write32(MISC_CGPLL_CONFIG5, cfg5);
+
+	uint32_t cfg4 = misc_read32(MISC_CGPLL_CONFIG4);
+	cfg4 &= ~CG1PLL_SS_AMOUNT_DSFRAC_MASK;
+	cfg4 |= (0xD000 << CG1PLL_SS_AMOUNT_DSFRAC_SHIFT) & CG1PLL_SS_AMOUNT_DSFRAC_MASK;
+	cfg4 &= ~CG1PLL_SS_STEP_SIZE_DSFRAC_MASK;
+	cfg4 |= (0x02D5 << CG1PLL_SS_STEP_SIZE_DSFRAC_SHIFT) & CG1PLL_SS_STEP_SIZE_DSFRAC_MASK;
+	misc_write32(MISC_CGPLL_CONFIG4, cfg4);
+
+	rstcfg |= TOGGLE_ALL_PWR_GOOD;
+	pm_write16(PWR_RESET_CFG, rstcfg);
+
+	cntl1 |= CG1PLL_FBDIV_TEST;
+	misc_write32(MISC_CLK_CNTL1, cntl1);
+
+	*reboot = 1;
+}
+
+static void setup_misc(int *reboot)
+{
+	/* Undocumented register */
+	uint32_t reg = misc_read32(0x50);
+	if (!(reg & BIT(16))) {
+		reg |= BIT(16);
+
+		misc_write32(0x50, reg);
+		*reboot = 1;
+	}
+}
+
+/* Before console init */
 void bootblock_fch_early_init(void)
 {
+	int reboot = 0;
+
 	sb_enable_rom();
 	sb_lpc_port80();
 	sb_lpc_decode();
@@ -557,8 +634,73 @@ void bootblock_fch_early_init(void)
 	sb_disable_4dw_burst(); /* Must be disabled on CZ(ST) */
 	sb_acpi_mmio_decode();
 	sb_enable_cf9_io();
+	setup_spread_spectrum(&reboot);
+	setup_misc(&reboot);
+
+	if (reboot)
+		soft_reset();
+
 	sb_enable_legacy_io();
 	enable_aoac_devices();
+}
+
+static void print_num_status_bits(int num_bits, uint32_t status,
+				  const char *const bit_names[])
+{
+	int i;
+
+	if (!status)
+		return;
+
+	for (i = num_bits - 1; i >= 0; i--) {
+		if (status & (1 << i)) {
+			if (bit_names[i])
+				printk(BIOS_DEBUG, "%s ", bit_names[i]);
+			else
+				printk(BIOS_DEBUG, "BIT%d ", i);
+		}
+	}
+}
+
+static void sb_print_pmxc0_status(void)
+{
+	/* PMxC0 S5/Reset Status shows the source of previous reset. */
+	uint32_t pmxc0_status = pm_read32(PM_RST_STATUS);
+
+	static const char *const pmxc0_status_bits[] = {
+		[0] = "ThermalTrip",
+		[1] = "FourSecondPwrBtn",
+		[2] = "Shutdown",
+		[3] = "ThermalTripFromTemp",
+		[4] = "RemotePowerDownFromASF",
+		[5] = "ShutDownFan0",
+		[16] = "UserRst",
+		[17] = "SoftPciRst",
+		[18] = "DoInit",
+		[19] = "DoReset",
+		[20] = "DoFullReset",
+		[21] = "SleepReset",
+		[22] = "KbReset",
+		[23] = "LtReset",
+		[24] = "FailBootRst",
+		[25] = "WatchdogIssueReset",
+		[26] = "RemoteResetFromASF",
+		[27] = "SyncFlood",
+		[28] = "HangReset",
+		[29] = "EcWatchdogRst",
+		[31] = "BIT31",
+	};
+
+	printk(BIOS_SPEW, "PMxC0 STATUS: 0x%x ", pmxc0_status);
+	print_num_status_bits(ARRAY_SIZE(pmxc0_status_bits), pmxc0_status,
+			      pmxc0_status_bits);
+	printk(BIOS_SPEW, "\n");
+}
+
+/* After console init */
+void bootblock_fch_init(void)
+{
+	sb_print_pmxc0_status();
 }
 
 void sb_enable(device_t dev)
@@ -610,24 +752,6 @@ static void sb_init_acpi_ports(void)
 				PM_ACPI_GLOBAL_EN |
 				PM_ACPI_RTC_EN_EN |
 				PM_ACPI_TIMER_EN_EN);
-}
-
-static void print_num_status_bits(int num_bits, uint32_t status,
-				  const char *const bit_names[])
-{
-	int i;
-
-	if (!status)
-		return;
-
-	for (i = num_bits - 1; i >= 0; i--) {
-		if (status & (1 << i)) {
-			if (bit_names[i])
-				printk(BIOS_DEBUG, "%s ", bit_names[i]);
-			else
-				printk(BIOS_DEBUG, "BIT%d ", i);
-		}
-	}
 }
 
 static uint16_t reset_pm1_status(void)
@@ -766,11 +890,6 @@ void southbridge_final(void *chip_info)
 {
 	uint8_t restored_power = PM_S5_AT_POWER_RECOVERY;
 
-	if (IS_ENABLED(CONFIG_STONEYRIDGE_IMC_FWM)) {
-		agesawrapper_fchecfancontrolservice();
-		if (!IS_ENABLED(CONFIG_ACPI_ENABLE_THERMAL_ZONE))
-			enable_imc_thermal_zone();
-	}
 	if (IS_ENABLED(CONFIG_MAINBOARD_POWER_RESTORE))
 		restored_power = PM_RESTORE_S0_IF_PREV_S0;
 	pm_write8(PM_RTC_SHADOW, restored_power);

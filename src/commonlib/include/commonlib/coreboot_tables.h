@@ -290,7 +290,6 @@ struct lb_gpios {
 	struct lb_gpio gpios[0];
 };
 
-#define LB_TAG_VDAT		0x0015
 #define LB_TAG_VBNV		0x0019
 #define LB_TAB_VBOOT_HANDOFF	0x0020
 #define LB_TAB_DMA		0x0022
@@ -310,6 +309,7 @@ void lb_ramoops(struct lb_header *header);
 #define LB_TAG_CBMEM_CONSOLE	0x0017
 #define LB_TAG_MRC_CACHE	0x0018
 #define LB_TAG_ACPI_GNVS	0x0024
+#define LB_TAG_TCPA_LOG		0x0034
 #define LB_TAG_WIFI_CALIBRATION	0x0027
 #define LB_TAG_VPD		0x002c
 struct lb_cbmem_ref {

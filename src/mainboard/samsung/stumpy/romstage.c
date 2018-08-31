@@ -24,7 +24,6 @@
 #include <cpu/x86/lapic.h>
 #include <pc80/mc146818rtc.h>
 #include <arch/acpi.h>
-#include <cbmem.h>
 #include <console/console.h>
 #include <bootmode.h>
 #include <superio/ite/common/ite.h>
@@ -35,9 +34,7 @@
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
 #include <arch/cpu.h>
-#include <cpu/x86/msr.h>
 #include <halt.h>
-#include <security/tpm/tspi.h>
 #if IS_ENABLED(CONFIG_DRIVERS_UART_8250IO)
 #include <superio/smsc/lpc47n207/lpc47n207.h>
 #endif

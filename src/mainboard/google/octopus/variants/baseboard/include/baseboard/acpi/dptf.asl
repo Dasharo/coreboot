@@ -28,7 +28,7 @@ temperature trip value to avoid abrupt thermal shutdown. */
 
 #define DPTF_TSR1_SENSOR_ID	1
 #define DPTF_TSR1_SENSOR_NAME	"Ambient"
-#define DPTF_TSR1_PASSIVE	48
+#define DPTF_TSR1_PASSIVE	50
 #define DPTF_TSR1_CRITICAL	90
 
 #define DPTF_TSR2_SENSOR_ID	2
@@ -69,8 +69,7 @@ Name (MPPC, Package ()
 	Package () {	/* Power Limit 1 */
 		0,	/* PowerLimitIndex, 0 for Power Limit 1 */
 		3000,	/* PowerLimitMinimum */
-		/* TODO: Need to tune this value on closed chassis system. */
-		8000,	/* PowerLimitMaximum */
+		10000,	/* PowerLimitMaximum */
 		1000,	/* TimeWindowMinimum */
 		1000,	/* TimeWindowMaximum */
 		200	/* StepSize */
@@ -78,7 +77,7 @@ Name (MPPC, Package ()
 
 	Package () {	/* Power Limit 2 */
 		1,	/* PowerLimitIndex, 1 for Power Limit 2 */
-		8000,	/* PowerLimitMinimum */
+		10000,	/* PowerLimitMinimum */
 		15000,	/* PowerLimitMaximum */
 		1000,	/* TimeWindowMinimum */
 		1000,	/* TimeWindowMaximum */

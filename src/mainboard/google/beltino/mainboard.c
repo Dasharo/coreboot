@@ -23,10 +23,8 @@
 #include <boot/coreboot_tables.h>
 #include <console/console.h>
 #include <device/device.h>
-#include <device/device.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
-#include <pc80/mc146818rtc.h>
 #include <southbridge/intel/lynxpoint/pch.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include "onboard.h"

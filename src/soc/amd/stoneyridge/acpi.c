@@ -77,7 +77,7 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	memset((void *)fadt, 0, sizeof(acpi_fadt_t));
 	memcpy(header->signature, "FACP", 4);
 	header->length = sizeof(acpi_fadt_t);
-	header->revision = ACPI_FADT_REV_ACPI_3_0;
+	header->revision = get_acpi_table_revision(FADT);
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
@@ -236,8 +236,7 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 
 void generate_cpu_entries(struct device *device)
 {
-	int cores, cpu, plen = 6;
-	u32 pcontrol_blk = ACPI_GPE0_BLK;
+	int cores, cpu;
 	struct device *cdb_dev;
 
 	/* Stoney Ridge is single node, just report # of cores */
@@ -247,14 +246,12 @@ void generate_cpu_entries(struct device *device)
 	printk(BIOS_DEBUG, "ACPI \\_PR report %d core(s)\n", cores);
 
 	/* Generate BSP \_PR.P000 */
-	acpigen_write_processor(0, pcontrol_blk, plen);
+	acpigen_write_processor(0, ACPI_GPE0_BLK, 6);
 	acpigen_pop_len();
 
 	/* Generate AP \_PR.Pxxx */
-	pcontrol_blk = 0;
-	plen = 0;
 	for (cpu = 1; cpu < cores; cpu++) {
-		acpigen_write_processor(cpu, pcontrol_blk, 0);
+		acpigen_write_processor(cpu, 0, 0);
 		acpigen_pop_len();
 	}
 }
@@ -296,7 +293,6 @@ void southbridge_inject_dsdt(struct device *device)
 
 	if (gnvs) {
 		acpi_create_gnvs(gnvs);
-		acpi_save_gnvs((uintptr_t)gnvs);
 
 		/* Add it to DSDT */
 		acpigen_write_scope("\\");

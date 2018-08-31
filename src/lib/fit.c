@@ -158,7 +158,7 @@ static struct fit_image_node *find_image(const char *name)
 	return NULL;
 }
 
-static int fdt_find_compat(void *blob, uint32_t start_offset,
+static int fdt_find_compat(const void *blob, uint32_t start_offset,
 			   struct fdt_property *prop)
 {
 	int offset = start_offset;
@@ -196,7 +196,7 @@ static int fit_check_compat(struct fdt_property *compat_prop,
 	return -1;
 }
 
-void fit_update_chosen(struct device_tree *tree, char *cmd_line)
+void fit_update_chosen(struct device_tree *tree, const char *cmd_line)
 {
 	const char *path[] = { "chosen", NULL };
 	struct device_tree_node *node;
@@ -212,12 +212,11 @@ void fit_add_ramdisk(struct device_tree *tree, void *ramdisk_addr,
 	struct device_tree_node *node;
 	node = dt_find_node(tree->root, path, NULL, NULL, 1);
 
-	/* Warning: this assumes the ramdisk is currently located below 4GiB. */
-	u32 start = (uintptr_t)ramdisk_addr;
-	u32 end = start + ramdisk_size;
+	u64 start = (uintptr_t)ramdisk_addr;
+	u64 end = start + ramdisk_size;
 
-	dt_add_u32_prop(node, "linux,initrd-start", start);
-	dt_add_u32_prop(node, "linux,initrd-end", end);
+	dt_add_u64_prop(node, "linux,initrd-start", start);
+	dt_add_u64_prop(node, "linux,initrd-end", end);
 }
 
 static void update_reserve_map(uint64_t start, uint64_t end,
@@ -389,10 +388,12 @@ void fit_update_memory(struct device_tree *tree)
  * @param fdt_blob Pointer to FDT
  * @param config The current config node to operate on
  */
-static void fit_update_compat(void *fdt_blob, struct fit_config_node *config)
+static void fit_update_compat(const void *fdt_blob,
+			      struct fit_config_node *config)
 {
 	struct compat_string_entry *compat_node;
-	struct fdt_header *fdt_header = (struct fdt_header *)fdt_blob;
+	const struct fdt_header *fdt_header =
+		(const struct fdt_header *)fdt_blob;
 	uint32_t fdt_offset = be32_to_cpu(fdt_header->structure_offset);
 	size_t i = 0;
 

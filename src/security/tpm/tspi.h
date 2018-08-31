@@ -18,15 +18,25 @@
 #define TSPI_H_
 
 #include <security/tpm/tss.h>
+#include <commonlib/tcpa_log_serialized.h>
+
+/**
+ * Add table entry for cbmem TCPA log.
+ */
+void tcpa_log_add_table_entry(const char *name, const uint32_t pcr,
+			      const uint8_t *digest,
+			      const size_t digest_length);
 
 /**
  * Ask vboot for a digest and extend a TPM PCR with it.
  * @param pcr sets the pcr index
  * @param digest sets the hash to extend into the tpm
- * @param out_digest get extended hash
+ * @param digest_len the length of the digest
+ * @param name sets additional info where the digest comes from
  * @return TPM_SUCCESS on success. If not a tpm error is returned
  */
-uint32_t tpm_extend_pcr(int pcr, uint8_t *digest, uint8_t *out_digest);
+uint32_t tpm_extend_pcr(int pcr, uint8_t *digest, size_t digest_len,
+			const char *name);
 
 /**
  * Issue a TPM_Clear and reenable/reactivate the TPM.

@@ -37,13 +37,12 @@
 #if IS_ENABLED(CONFIG_EC_GOOGLE_CHROMEEC)
 #include <ec/google/chromeec/ec.h>
 #endif
-#include "haswell.h"
-#include "northbridge/intel/haswell/haswell.h"
-#include "northbridge/intel/haswell/raminit.h"
-#include "southbridge/intel/lynxpoint/pch.h"
-#include "southbridge/intel/lynxpoint/me.h"
-#include <security/tpm/tspi.h>
+#include <northbridge/intel/haswell/haswell.h>
+#include <northbridge/intel/haswell/raminit.h>
+#include <southbridge/intel/lynxpoint/pch.h>
+#include <southbridge/intel/lynxpoint/me.h>
 #include <cpu/intel/romstage.h>
+#include "haswell.h"
 
 static inline void reset_system(void)
 {
@@ -157,6 +156,4 @@ void romstage_common(const struct romstage_params *params)
 	romstage_handoff_init(wake_from_s3);
 
 	post_code(0x3f);
-	if (IS_ENABLED(CONFIG_TPM1) || IS_ENABLED(CONFIG_TPM2))
-		tpm_setup(wake_from_s3);
 }

@@ -22,34 +22,37 @@
 void configure_gpio(u32 iomux_gpio, u8 iomux_ftn, u32 gpio, u32 setting)
 {
 	u32 bdata;
-	u32 *memptr;
-	u8  *iomuxptr;
 
-	memptr = (u32 *)(ACPI_MMIO_BASE + GPIO_OFFSET + gpio);
-	bdata = *memptr;
-
+	bdata = read32((const volatile void *)(ACPI_MMIO_BASE + GPIO_OFFSET
+		+ gpio));
 	/* out the data value to prevent glitches */
 	bdata |= (setting & GPIO_OUTPUT_ENABLE);
-	*memptr = bdata;
+	write32((volatile void *)(ACPI_MMIO_BASE + GPIO_OFFSET + gpio), bdata);
 
 	/* set direction and data value */
-	bdata |= (setting & (GPIO_OUTPUT_ENABLE | GPIO_OUTPUT_VALUE | GPIO_PULL_UP_ENABLE | GPIO_PULL_DOWN_ENABLE));
-	*memptr = bdata;
+	bdata |= (setting & (GPIO_OUTPUT_ENABLE | GPIO_OUTPUT_VALUE
+			| GPIO_PULL_UP_ENABLE | GPIO_PULL_DOWN_ENABLE));
+	write32((volatile void *)(ACPI_MMIO_BASE + GPIO_OFFSET + gpio), bdata);
 
-	iomuxptr = (u8 *)(ACPI_MMIO_BASE + IOMUX_OFFSET + iomux_gpio);
-	*iomuxptr = iomux_ftn & 0x3;
+	write8((volatile void *)(ACPI_MMIO_BASE + IOMUX_OFFSET + iomux_gpio),
+			iomux_ftn & 0x3);
 }
 
 u8 read_gpio(u32 gpio)
 {
-	u32 *memptr = (u32 *)(ACPI_MMIO_BASE + GPIO_OFFSET + gpio);
-	return (*memptr & GPIO_PIN_STS) ? 1 : 0;
+	u32 status = read32((const volatile void *)(ACPI_MMIO_BASE + GPIO_OFFSET
+			+ gpio));
+
+	return (status & GPIO_PIN_STS) ? 1 : 0;
 }
 
 void write_gpio(u32 gpio, u8 value)
 {
-	u32 *memptr = (u32 *)(ACPI_MMIO_BASE + GPIO_OFFSET + gpio);
-	*memptr |= (value > 0) ? GPIO_OUTPUT_VALUE : 0;
+	u32 status = read32((const volatile void *)(ACPI_MMIO_BASE + GPIO_OFFSET
+			+ gpio));
+	status &= ~GPIO_OUTPUT_VALUE;
+	status |= (value > 0) ? GPIO_OUTPUT_VALUE : 0;
+	write32((volatile void *)(ACPI_MMIO_BASE + GPIO_OFFSET + gpio), status);
 }
 
 int get_spd_offset(void)

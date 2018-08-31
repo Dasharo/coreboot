@@ -32,22 +32,22 @@ chip soc/amd/stoneyridge
 	register "i2c[1]" = "{
 		.early_init = 1,
 		.speed = I2C_SPEED_FAST,
-		.rise_time_ns = 84,
+		.rise_time_ns = 45,
 		.fall_time_ns = 4,
 	}"
 
 	# Enable I2C2 for trackpad, pen at 400kHz
 	register "i2c[2]" = "{
 		.speed = I2C_SPEED_FAST,
-		.rise_time_ns = 117,
-		.fall_time_ns = 113,
+		.rise_time_ns = 67,
+		.fall_time_ns = 55,
 	}"
 
 	# Enable I2C3 for touchscreen at 400kHz
 	register "i2c[3]" = "{
 		.speed = I2C_SPEED_FAST,
-		.rise_time_ns = 82,
-		.fall_time_ns = 67,
+		.rise_time_ns = 22,
+		.fall_time_ns = 19,
 	}"
 
 	device cpu_cluster 0 on
@@ -73,7 +73,7 @@ chip soc/amd/stoneyridge
 		device pci 9.0 on  end # PCIe Host Bridge
 		device pci 9.2 on  end # HDA
 		device pci 10.0 on  end # xHCI
-		device pci 11.0 on  end # SATA
+		device pci 11.0 off  end # SATA
 		device pci 12.0 on  end # EHCI
 		device pci 14.0 on      # SMbus
 		end # SMbus

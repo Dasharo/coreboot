@@ -99,6 +99,8 @@ struct soc_intel_skylake_config {
 
 	/* PL2 Override value in Watts */
 	u32 tdp_pl2_override;
+	/* PL1 Override value in Watts */
+	u32 tdp_pl1_override;
 
 	/* SysPL2 Value in Watts */
 	u32 tdp_psyspl2;
@@ -116,7 +118,7 @@ struct soc_intel_skylake_config {
 	/* Estimated maximum platform power in Watts */
 	u16 psys_pmax;
 
-	/* Wether to ignore VT-d support of the SKU */
+	/* Whether to ignore VT-d support of the SKU */
 	int ignore_vtd;
 
 	/*
@@ -324,10 +326,6 @@ struct soc_intel_skylake_config {
 	 * in the upper and and lower 128-byte bank of RTC RAM.
 	 */
 	u8 LockDownConfigRtcLock;
-	/* Subsystem Vendor ID of the PCH devices*/
-	u16 PchConfigSubSystemVendorId;
-	/* Subsystem ID of the PCH devices*/
-	u16 PchConfigSubSystemId;
 
 	/*
 	 * Determine if WLAN wake from Sx, corresponds to the

@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <spd.h>
 #include <device/dram/common.h>
+#include <types.h>
 
 
 /**
@@ -174,6 +175,8 @@ typedef struct dimm_attr_st {
 	u16 manufacturer_id;
 	/* ASCII part number - NULL terminated */
 	u8 part_number[17];
+	/* Serial number */
+	u8 serial[SPD_DIMM_SERIAL_LEN];
 } dimm_attr;
 
 enum ddr3_xmp_profile {
@@ -191,7 +194,9 @@ void dram_print_spd_ddr3(const dimm_attr *dimm);
 int spd_xmp_decode_ddr3(dimm_attr *dimm,
 			spd_raw_data spd,
 			enum ddr3_xmp_profile profile);
-
+enum cb_err spd_add_smbios17(const u8 channel, const u8 slot,
+			     const u16 selected_freq,
+			     const dimm_attr *info);
 /**
  * \brief Read double word from specified address
  *

@@ -25,7 +25,6 @@
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
 #include <lib.h>
-#include <pc80/mc146818rtc.h>
 #include <romstage_handoff.h>
 #include <console/console.h>
 #include <cpu/x86/bist.h>
@@ -34,7 +33,6 @@
 #include <delay.h>
 #include <timestamp.h>
 #include <arch/acpi.h>
-#include <cbmem.h>
 
 #include "arch/early_variables.h"
 #include <southbridge/intel/ibexpeak/pch.h>

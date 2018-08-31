@@ -254,7 +254,7 @@ static void mainboard_enable(struct device *dev)
 static void mainboard_final(void *chip_info)
 {
 	//
-	// Turn off LED 2 and 3
+	// Turn off LED 2 and LED 3
 	//
 	write_gpio(GPIO_58, 1);
 	write_gpio(GPIO_59, 1);
@@ -361,14 +361,18 @@ const char *smbios_mainboard_sku(void)
 
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
+<<<<<<< HEAD
 	.final = mainboard_final
+=======
+	.final = mainboard_final,
+>>>>>>> master
 };
 
 static void change_build_date_format()
 {
 	char tmp[15];
-    
-/* 
+
+/*
  * Following lines change format of date in coreboot_dmi_date[]
  * from "dd/mm/yyyy" to "yyyymmdd", as is expected by vendor.
  */

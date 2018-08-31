@@ -3,6 +3,7 @@
 ## This file is part of the coreboot project.
 ##
 ## Copyright (C) 2014 The ChromiumOS Authors
+## Copyright (C) 2018 HardenedLinux
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -39,10 +40,7 @@ COMPILER_RT_ramstage  = $(shell  $(GCC_ramstage) $(riscv_flags) -print-libgcc-fi
 ################################################################################
 ifeq ($(CONFIG_ARCH_BOOTBLOCK_RISCV),y)
 
-bootblock-y += id.S
-$(call src-to-obj,bootblock,$(dir)/id.S): $(obj)/build.h
-
-bootblock-y = bootblock.S stages.c
+bootblock-y = bootblock.S
 bootblock-y += trap_util.S
 bootblock-y += trap_handler.c
 bootblock-y += mcall.c
@@ -82,8 +80,6 @@ romstage-y += \
 	$(top)/src/lib/memmove.c \
 	$(top)/src/lib/memset.c
 
-romstage-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
-
 # Build the romstage
 
 $(objcbfs)/romstage.debug: $$(romstage-objs)
@@ -115,8 +111,6 @@ ramstage-y += \
 	$(top)/src/lib/memset.c
 
 $(eval $(call create_class_compiler,rmodules,riscv))
-
-ramstage-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
 
 ramstage-srcs += src/mainboard/$(MAINBOARDDIR)/mainboard.c
 

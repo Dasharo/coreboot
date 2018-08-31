@@ -30,16 +30,6 @@ static void init(struct device *dev)
 		return;
 
 	switch (dev->path.pnp.device) {
-
-	case WPCD376I_FDC:
-	case WPCD376I_LPT:
-	case WPCD376I_IR:
-	case WPCD376I_SP1:
-	case WPCD376I_SWC:
-	case WPCD376I_KBCM:
-	case WPCD376I_GPIO:
-		break;
-
 	case WPCD376I_KBCK:
 		pc_keyboard_init(NO_AUX_DEVICE);
 		break;
@@ -55,13 +45,33 @@ static struct device_operations ops = {
 };
 
 static struct pnp_info pnp_dev_info[] = {
-	{ &ops, WPCD376I_FDC,  PNP_IO0 | PNP_IRQ0 | PNP_DRQ0, 0x07fa, },
-	{ &ops, WPCD376I_LPT,  PNP_IO0 | PNP_IRQ0 | PNP_DRQ0, 0x04f8, },
-	{ &ops, WPCD376I_IR,   PNP_IO0 | PNP_IRQ0 | PNP_DRQ0 | PNP_DRQ1, 0x07f8, },
-	{ &ops, WPCD376I_SP1,  PNP_IO0 | PNP_IRQ0, 0x07f8, },
-	{ &ops, WPCD376I_KBCM, PNP_IRQ0, },
-	{ &ops, WPCD376I_KBCK, PNP_IO0 | PNP_IO1 | PNP_IRQ0, 0x07f8, 0x07f8, },
-	{ &ops, WPCD376I_GPIO, PNP_IO0 | PNP_IRQ0, 0xfff8, },
+	{ NULL, WPCD376I_FDC,
+		PNP_IO0 | PNP_IRQ0 | PNP_DRQ0 | PNP_MSC0 | PNP_MSC1 | PNP_MSC8,
+		0x07f8, },
+	{ NULL, WPCD376I_LPT,
+		PNP_IO0 | PNP_IRQ0 | PNP_DRQ0 | PNP_MSC0 | PNP_MSC8,
+		0x03f8, },
+	{ NULL, WPCD376I_SP1,
+		PNP_IO0 | PNP_IRQ0 | PNP_MSC0,
+		0x07f8, },
+	{ NULL, WPCD376I_SWC,
+		PNP_IO0 | PNP_IO1 | PNP_IRQ0,
+		0xfff0, 0xfff0, },
+	{ NULL, WPCD376I_KBCM,
+		PNP_IRQ0, },
+	{ NULL, WPCD376I_KBCK,
+		PNP_IO0 | PNP_IO1 | PNP_IRQ0 | PNP_MSC0,
+		0x07f8, 0x07f8, },
+	{ NULL, WPCD376I_GPIO,
+		PNP_IO0 | PNP_IRQ0 | PNP_MSC0 | PNP_MSC1 | PNP_MSC2 | PNP_MSC3 |
+		PNP_MSC8,
+		0xffe0, },
+	{ NULL, WPCD376I_ECIR,
+		PNP_IO0 | PNP_IO1 | PNP_IRQ0,
+		0xfff0, 0xfff0, },
+	{ NULL, WPCD376I_IR,
+		PNP_IO0 | PNP_IRQ0 | PNP_DRQ0 | PNP_DRQ1 | PNP_MSC0,
+		0xfff8, },
 };
 
 static void enable_dev(struct device *dev)

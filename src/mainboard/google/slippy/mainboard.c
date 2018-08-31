@@ -18,12 +18,10 @@
 #include <string.h>
 #include <smbios.h>
 #include <device/device.h>
-#include <device/device.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
 #include <drivers/intel/gma/int15.h>
-#include <pc80/mc146818rtc.h>
 #include <arch/acpi.h>
 #include <arch/io.h>
 #include <arch/interrupt.h>

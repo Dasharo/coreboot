@@ -144,7 +144,7 @@ void acpi_create_intel_hpet(acpi_hpet_t * hpet)
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->length = sizeof(acpi_hpet_t);
-	header->revision = 1;
+	header->revision = get_acpi_table_revision(HPET);
 
 	/* fill out HPET address */
 	addr->space_id = 0;	/* Memory */
@@ -191,7 +191,7 @@ void acpi_fill_in_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	/* FADT Header Structure */
 	memcpy(header->signature, "FACP", 4);
 	header->length = sizeof(acpi_fadt_t);
-	header->revision = ACPI_FADT_REV_ACPI_3_0;
+	header->revision = get_acpi_table_revision(FADT);
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
@@ -594,7 +594,6 @@ void southcluster_inject_dsdt(struct device *device)
 
 	if (gnvs) {
 		acpi_create_gnvs(gnvs);
-		acpi_save_gnvs((unsigned long)gnvs);
 		/* And tell SMI about it */
 		smm_setup_structures(gnvs, NULL, NULL);
 

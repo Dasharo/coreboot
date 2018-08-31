@@ -41,6 +41,18 @@
 #define ACTIVE_ECFW_RO		0
 #define ACTIVE_ECFW_RW		1
 
+/*
+ * chromeos_acpi_t portion of ACPI GNVS is assumed to live at
+ * 0x100 - 0x1000.  When defining global_nvs_t, use check_member
+ * to ensure that it is properly aligned:
+ *
+ *   check_member(global_nvs_t, chromeos, GNVS_CHROMEOS_ACPI_OFFSET);
+ */
+#define GNVS_CHROMEOS_ACPI_OFFSET 0x100
+
+/* device_nvs_t is assumed to live directly after chromeos_acpi_t. */
+#define GNVS_DEVICE_NVS_OFFSET 0x1000
+
 typedef struct {
 	/* ChromeOS specific */
 	u32	vbt0;		// 00 boot reason
@@ -53,7 +65,7 @@ typedef struct {
 	u32	vbt7;		// 18e active main firmware type
 	u32	vbt8;		// 192 recovery reason
 	u32	vbt9;		// 196 fmap base address
-	u8	vdat[3072];	// 19a
+	u8	vdat[3072];	// 19a VDAT space filled by verified boot
 	u32	vbt10;		// d9a smbios bios version
 	u32	mehh[8];	// d9e management engine hash
 	u32	ramoops_base;	// dbe ramoops base address
@@ -61,9 +73,10 @@ typedef struct {
 	u8	pad[314];	// dc6-eff
 } __packed chromeos_acpi_t;
 
-extern chromeos_acpi_t *vboot_data;
-void chromeos_init_vboot(chromeos_acpi_t *chromeos);
+void chromeos_init_vboot(chromeos_acpi_t *init);
 void chromeos_set_me_hash(u32*, int);
-void acpi_get_vdat_info(uint64_t *vdat_addr, uint32_t *vdat_size);
+void acpi_get_chromeos_acpi_info(uint64_t *chromeos_acpi_addr,
+				 uint32_t *chromeos_acpi_size);
+chromeos_acpi_t *acpi_get_chromeos_acpi(void);
 
 #endif

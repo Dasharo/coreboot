@@ -15,6 +15,7 @@
  */
 
 #include <compiler.h>
+#include <assert.h>
 #include <console/console.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -36,9 +37,10 @@ static uintptr_t graphics_get_bar(unsigned long index)
 {
 	struct device *dev = SA_DEV_IGD;
 	struct resource *gm_res;
+	assert(dev != NULL);
 
 	/* Check if Graphics PCI device is disabled */
-	if (!dev->enabled)
+	if (!dev || !dev->enabled)
 		return 0;
 
 	gm_res = find_resource(dev, index);
@@ -117,13 +119,14 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CNL_GT2_ULT_4,
 	PCI_DEVICE_ID_INTEL_GLK_IGD,
 	PCI_DEVICE_ID_INTEL_GLK_IGD_EU12,
+	PCI_DEVICE_ID_INTEL_WHL_GT2_ULT_1,
 	PCI_DEVICE_ID_INTEL_KBL_GT1_SULTM,
 	PCI_DEVICE_ID_INTEL_KBL_GT2_SULXM,
 	PCI_DEVICE_ID_INTEL_KBL_GT2_SULTM,
 	PCI_DEVICE_ID_INTEL_KBL_GT2_SULTMR,
 	PCI_DEVICE_ID_INTEL_KBL_GT2_SHALM,
 	PCI_DEVICE_ID_INTEL_KBL_GT2_DT2P2,
-	PCI_DEVICE_ID_INTEL_KBL_GT2_ULX_R,
+	PCI_DEVICE_ID_INTEL_AML_GT2_ULX,
 	PCI_DEVICE_ID_INTEL_SKL_GT1_SULTM,
 	PCI_DEVICE_ID_INTEL_SKL_GT2_SULXM,
 	PCI_DEVICE_ID_INTEL_SKL_GT2_SULTM,

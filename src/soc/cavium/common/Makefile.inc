@@ -22,14 +22,12 @@ bootblock-$(CONFIG_BOOTBLOCK_CUSTOM) += bootblock.c
 ################################################################################
 # romstage
 
-romstage-y += cbmem.c
 romstage-y += bdk-coreboot.c
 
 ################################################################################
 # ramstage
 
-ramstage-y += cbmem.c
-ramstage-$(CONFIG_ARM64_USE_ARM_TRUSTED_FIRMWARE) += bl31_plat_params.c
+ramstage-y += bdk-coreboot.c
 
 CPPFLAGS_common += -Isrc/soc/cavium/common/include
 
