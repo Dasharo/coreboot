@@ -453,14 +453,14 @@ const char *smbios_system_sku(void)
 
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
-	.final = mainboard_final
+	.final = mainboard_final,
 };
 
 static void change_build_date_format()
 {
 	char tmp[15];
-    
-/* 
+
+/*
  * Following lines change format of date in coreboot_dmi_date[]
  * from "dd/mm/yyyy" to "yyyymmdd", as is expected by vendor.
  */
