@@ -19,6 +19,7 @@ Releases 4.8.0.x are based on continuous synchronization with official
 ## [v4.8.0.4] - 2018-08-31
 ### Changed
 - Synced and rebased with coreboot official repo commit e27c096
+- iPXE revision to master
 
 ### Fixed
 - iPXE autoboot is enabled for all interfaces
