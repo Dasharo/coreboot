@@ -16,6 +16,12 @@ Releases 4.8.0.x are based on continuous synchronization with official
 3. `make`
 
 ## [Unreleased]
+## [v4.8.0.4] - 2018-08-31
+### Changed
+- Synced and rebased with coreboot official repo commit e27c096
+
+### Fixed
+- iPXE autoboot is enabled for all interfaces
 
 ## [v4.8.0.3] - 2018-08-07
 ### Changed
@@ -208,7 +214,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.3...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.4...develop
+[v4.8.0.4]: https://github.com/pcengines/coreboot/compare/v4.8.0.3...v4.8.0.4
 [v4.8.0.3]: https://github.com/pcengines/coreboot/compare/v4.8.0.2...v4.8.0.3
 [v4.8.0.2]: https://github.com/pcengines/coreboot/compare/v4.8.0.1...v4.8.0.2
 [v4.8.0.1]: https://github.com/pcengines/coreboot/compare/v4.6.9...v4.8.0.1
