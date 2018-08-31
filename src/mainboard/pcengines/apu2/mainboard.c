@@ -442,7 +442,7 @@ const char *smbios_system_sku(void)
 
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
-	.final = mainboard_final
+	.final = mainboard_final,
 };
 
 static void change_build_date_format()
