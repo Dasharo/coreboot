@@ -7,6 +7,9 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.19] - 2018-09-02
+### Changed
+- Enabled autoboot for all interfaces in iPXE
 
 ## [v4.0.18] - 2018-06-08
 ### Changed
@@ -174,7 +177,8 @@ built externally
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.18...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.19...coreboot-4.0.x
+[v4.0.19]: https://github.com/pcengines/coreboot/compare/v4.0.18...v4.0.19
 [v4.0.18]: https://github.com/pcengines/coreboot/compare/v4.0.17...v4.0.18
 [v4.0.17]: https://github.com/pcengines/coreboot/compare/v4.0.16...v4.0.17
 [v4.0.16]: https://github.com/pcengines/coreboot/compare/v4.0.15...v4.0.16

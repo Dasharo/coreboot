@@ -7,11 +7,11 @@ item boot           autoboot
 choose --default boot --timeout 3000 target && goto ${target}
  
 :boot
-autoboot net0
+autoboot
 goto MENU
  
 :shell
 shell ||
 goto MENU
  
-autoboot net0
+autoboot
