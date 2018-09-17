@@ -438,6 +438,28 @@ int spi_flash_read_sec(const struct spi_flash *flash, u32 offset, size_t len,
 	return flash->ops->read_sec(flash, offset, len, buf);
 }
 
+int spi_flash_is_write_protected(const struct spi_flash *flash,
+				 const struct region *region)
+{
+	struct region flash_region = { 0 };
+
+	if (!flash || !region)
+		return -1;
+
+	flash_region.size = flash->size;
+
+	if (!region_is_subregion(&flash_region, region))
+		return -1;
+
+	if (!flash->ops->get_write_protection) {
+		printk(BIOS_WARNING, "SPI: Write-protection gathering not "
+		       "implemented for this vendor.\n");
+		return 0;
+	}
+
+	return flash->ops->get_write_protection(flash, region);
+}
+
 static uint32_t volatile_group_count CAR_GLOBAL;
 
 int spi_flash_volatile_group_begin(const struct spi_flash *flash)

@@ -29,6 +29,7 @@
 
 #include <exception.h>
 #include <libpayload.h>
+#include <arch/apic.h>
 
 unsigned long loader_eax;  /**< The value of EAX passed from the loader */
 unsigned long loader_ebx;  /**< The value of EBX passed from the loader */
@@ -56,6 +57,12 @@ int start_main(void)
 #endif
 
 	exception_init();
+
+	if (IS_ENABLED(CONFIG_LP_ENABLE_APIC)) {
+		apic_init();
+
+		enable_interrupts();
+	}
 
 	/*
 	 * Any other system init that has to happen before the

@@ -439,11 +439,55 @@ static unsigned long acpi_fill_hest(acpi_hest_t *hest)
 	return (unsigned long)current;
 }
 
-static void add_ivrs_device_entries(struct device *parent, struct device *dev,
-				    int depth, int linknum, int8_t *root_level,
-				    unsigned long *current, uint16_t *length)
+static void add_ivhd_dev_entry(struct device *parent, struct device *dev,
+			       unsigned long *current, uint16_t *length,
+			       uint8_t type, uint8_t data)
 {
 	uint8_t *p;
+	p = (uint8_t *) *current;
+
+	if (type == 0x2) {
+		/* Entry type */
+		p[0] = type;
+		/* Device */
+		p[1] = dev->path.pci.devfn;
+		/* Bus */
+		p[2] = dev->bus->secondary;
+		/* Data */
+		p[3] = data;
+		/* [4:7] Padding */
+		p[4] = 0x0;
+		p[5] = 0x0;
+		p[6] = 0x0;
+		p[7] = 0x0;
+		*length += 8;
+		*current += 8;
+	} else if (type == 0x42) {
+		/* Entry type */
+		p[0] = type;
+		/* Device */
+		p[1] = dev->path.pci.devfn;
+		/* Bus */
+		p[2] = dev->bus->secondary;
+		/* Data */
+		p[3] = 0x0;
+		/* Reserved */
+		p[4] = 0x0;
+		/* Device */
+		p[5] = parent->path.pci.devfn;
+		/* Bus */
+		p[6] = parent->bus->secondary;
+		/* Reserved */
+		p[7] = 0x0;
+		*length += 8;
+		*current += 8;
+	}
+}
+
+static void add_ivrs_device_entries(struct device *parent, struct device *dev,
+				    unsigned int depth, int linknum, int8_t *root_level,
+				    unsigned long *current, uint16_t *length)
+{
 	struct device *sibling;
 	struct bus *link;
 	unsigned int header_type;
@@ -464,43 +508,13 @@ static void add_ivrs_device_entries(struct device *parent, struct device *dev,
 			if (depth == *root_level) {
 				if (dev->path.pci.devfn == (0x14 << 3)) {
 					/* SMBUS controller */
-					p = (uint8_t *) *current;
-					/* Entry type */
-					p[0] = 0x2;
-					/* Device */
-					p[1] = dev->path.pci.devfn;
-					/* Bus */
-					p[2] = dev->bus->secondary;
-					/* Data */
-					p[3] = 0x97;
-					/* [4:7] Padding */
-					p[4] = 0x0;
-					p[5] = 0x0;
-					p[6] = 0x0;
-					p[7] = 0x0;
-					*length += 8;
-					*current += 8;
+					add_ivhd_dev_entry(parent, dev, current, length, 0x2, 0x97);
 				} else if (dev->path.pci.devfn != 0x2 &&
 					   dev->path.pci.devfn < (0x2 << 3)) {
 					/* FCH control device */
 				} else {
 					/* Other devices */
-					p = (uint8_t *) *current;
-					/* Entry type */
-					p[0] = 0x2;
-					/* Device */
-					p[1] = dev->path.pci.devfn;
-					/* Bus */
-					p[2] = dev->bus->secondary;
-					/* Data */
-					p[3] = 0x0;
-					/* [4:7] Padding */
-					p[4] = 0x0;
-					p[5] = 0x0;
-					p[6] = 0x0;
-					p[7] = 0x0;
-					*length += 8;
-					*current += 8;
+					add_ivhd_dev_entry(parent, dev, current, length, 0x2, 0x0);
 				}
 			} else {
 				header_type = dev->hdr_type & 0x7f;
@@ -509,44 +523,11 @@ static void add_ivrs_device_entries(struct device *parent, struct device *dev,
 				     (header_type == PCI_HEADER_TYPE_BRIDGE))
 				    && is_pcie) {
 					/* Device or Bridge is PCIe */
-					p = (uint8_t *) *current;
-					/* Entry type */
-					p[0] = 0x2;
-					/* Device */
-					p[1] = dev->path.pci.devfn;
-					/* Bus */
-					p[2] = dev->bus->secondary;
-					/* Data */
-					p[3] = 0x0;
-					/* [4:7] Padding */
-					p[4] = 0x0;
-					p[5] = 0x0;
-					p[6] = 0x0;
-					p[7] = 0x0;
-					*length += 8;
-					*current += 8;
+					add_ivhd_dev_entry(parent, dev, current, length, 0x2, 0x0);
 				} else if ((header_type == PCI_HEADER_TYPE_NORMAL) &&
 					   !is_pcie) {
+					add_ivhd_dev_entry(parent, dev, current, length, 0x42, 0x0);
 					/* Device is legacy PCI or PCI-X */
-					p = (uint8_t *) *current;
-					/* Entry type */
-					p[0] = 0x42;
-					/* Device */
-					p[1] = dev->path.pci.devfn;
-					/* Bus */
-					p[2] = dev->bus->secondary;
-					/* Data */
-					p[3] = 0x0;
-					/* Reserved */
-					p[4] = 0x0;
-					/* Device */
-					p[5] = parent->path.pci.devfn;
-					/* Bus */
-					p[6] = parent->bus->secondary;
-					/* Reserved */
-					p[7] = 0x0;
-					*length += 8;
-					*current += 8;
 				}
 			}
 		}
@@ -601,7 +582,6 @@ unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long current)
 static unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current)
 {
 	uint8_t *p;
-	acpi_ivrs_t *ivrs_agesa;
 
 	device_t nb_dev = dev_find_slot(0, PCI_DEVFN(0, 0));
 	if (!nb_dev) {
@@ -620,47 +600,21 @@ static unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current)
 	/* Guest virtual address width */
 	ivrs->iv_info |= (0x2 << 5);
 
-	/* obtain IOMMU base address */
-	ivrs_agesa = agesawrapper_getlateinitptr(PICK_IVRS);
-	if (ivrs_agesa != NULL) {
-		ivrs->ivhd.type = 0x10;
-		ivrs->ivhd.flags = 0x0e;
-		/* Enable ATS support */
-		ivrs->ivhd.flags |= 0x10;
-		ivrs->ivhd.length = sizeof(struct acpi_ivrs_ivhd);
-		/* BDF <bus>:00.2 */
-		ivrs->ivhd.device_id = 0x2 | (nb_dev->bus->secondary << 8);
-		/* Capability block 0x40 (type 0xf, "Secure device") */
-		ivrs->ivhd.capability_offset = 0x40;
-		ivrs->ivhd.iommu_base_low = ivrs_agesa->ivhd.iommu_base_low;
-		ivrs->ivhd.iommu_base_high = ivrs_agesa->ivhd.iommu_base_high;
-		ivrs->ivhd.pci_segment_group = 0x0;
-		ivrs->ivhd.iommu_info = 0x0;
-		ivrs->ivhd.iommu_info |= (0x13 << 8);
-		/* puse only performance counters related bits:
-		 * PNCounters[16:13] and
-		 * PNBanks[22:17],
-		 * otherwise 0 */
-		ivrs->ivhd.iommu_feature_info =
-			ivrs_agesa->ivhd.iommu_feature_info & 0x7fe000;
-	} else {
-		/* TODO: what we can do here? */
-		ivrs->ivhd.type = 0x10;
-		ivrs->ivhd.flags = 0x0e;
-		/* Enable ATS support */
-		ivrs->ivhd.flags |= 0x10;
-		ivrs->ivhd.length = sizeof(struct acpi_ivrs_ivhd);
-		/* BDF <bus>:00.2 */
-		ivrs->ivhd.device_id = 0x2 | (nb_dev->bus->secondary << 8);
-		/* Capability block 0x40 (type 0xf, "Secure device") */
-		ivrs->ivhd.capability_offset = 0x40;
-		ivrs->ivhd.iommu_base_low = 0xfeb00000;
-		ivrs->ivhd.iommu_base_high = 0x0;
-		ivrs->ivhd.pci_segment_group = 0x0;
-		ivrs->ivhd.iommu_info = 0x0;
-		ivrs->ivhd.iommu_info |= (0x13 << 8);
-		ivrs->ivhd.iommu_feature_info = 0x0;
-	}
+	ivrs->ivhd.type = 0x10;
+	ivrs->ivhd.flags = 0x0e;
+	/* Enable ATS support */
+	ivrs->ivhd.flags |= 0x10;
+	ivrs->ivhd.length = sizeof(struct acpi_ivrs_ivhd);
+	/* BDF <bus>:00.2 */
+	ivrs->ivhd.device_id = 0x2 | (nb_dev->bus->secondary << 8);
+	/* Capability block 0x40 (type 0xf, "Secure device") */
+	ivrs->ivhd.capability_offset = 0x40;
+	ivrs->ivhd.iommu_base_low = 0xfeb00000;
+	ivrs->ivhd.iommu_base_high = 0x0;
+	ivrs->ivhd.pci_segment_group = 0x0;
+	ivrs->ivhd.iommu_info = 0x0;
+	ivrs->ivhd.iommu_info |= (0x13 << 8);
+	ivrs->ivhd.iommu_feature_info = 0x0;
 
 	/* Describe HPET */
 	p = (uint8_t *)current;

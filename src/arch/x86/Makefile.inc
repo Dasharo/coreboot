@@ -145,6 +145,7 @@ $(objgenerated)/bootblock.ld: $$(filter-out $(call src-to-obj,bootblock,src/arch
 	cat $^ >> $@.tmp
 	mv $@.tmp $@
 
+-include $(objgenerated)/bootblock.inc.d
 $(objgenerated)/bootblock.inc: $(src)/arch/x86/$(subst ",,$(CONFIG_BOOTBLOCK_SOURCE)) $(objutil)/romcc/romcc $(OPTION_TABLE_H) $(KCONFIG_AUTOHEADER)
 # The open quote in the subst messes with syntax highlighting. Fix it - ")
 	@printf "    ROMCC      $(subst $(obj)/,,$(@))\n"
@@ -291,6 +292,7 @@ ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpigen_dsm.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi_device.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi_pld.c
 ramstage-$(CONFIG_HAVE_ACPI_RESUME) += acpi_s3.c
+ramstage-$(CONFIG_ACPI_BERT) += acpi_bert_storage.c
 ramstage-y += boot.c
 ramstage-y += c_start.S
 ramstage-y += cbmem.c

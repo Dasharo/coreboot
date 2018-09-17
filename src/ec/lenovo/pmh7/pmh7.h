@@ -19,7 +19,8 @@
 #define EC_LENOVO_PMH7_INDEX 0x77
 
 #define EC_LENOVO_PMH7_BASE 0x15e0
-#define EC_LENOVO_PMH7_ADDR (EC_LENOVO_PMH7_BASE + 0x0c)
+#define EC_LENOVO_PMH7_ADDR_L (EC_LENOVO_PMH7_BASE + 0x0c)
+#define EC_LENOVO_PMH7_ADDR_H (EC_LENOVO_PMH7_BASE + 0x0d)
 #define EC_LENOVO_PMH7_DATA (EC_LENOVO_PMH7_BASE + 0x0e)
 
 #define EC_LENOVO_PMH7_REG_ID		0xc2
@@ -35,5 +36,7 @@ void pmh7_dock_event_enable(int onoff);
 void pmh7_touchpad_enable(int onoff);
 void pmh7_ultrabay_power_enable(int onoff);
 void pmh7_trackpoint_enable(int onoff);
+void pmh7_dgpu_power_enable(int onoff);
+bool pmh7_dgpu_power_state(void);
 
 #endif /* EC_LENOVO_PMH7_H */

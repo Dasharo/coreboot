@@ -14,6 +14,7 @@
  * GNU General Public License for more details.
  */
 
+#include <arch/cpu.h>
 #include <arch/encoding.h>
 #include <stdint.h>
 #include <vm.h>
@@ -42,7 +43,6 @@ void mstatus_init(void)
 	uintptr_t ms = 0;
 
 	ms = INSERT_FIELD(ms, MSTATUS_FS, 3);
-	ms = INSERT_FIELD(ms, MSTATUS_XS, 3);
 	write_csr(mstatus, ms);
 
 	// clear any pending timer interrupts.
@@ -52,11 +52,12 @@ void mstatus_init(void)
 	// all other supervisor interrupts.
 	set_csr(mie, MIP_MTIP | MIP_STIP | MIP_SSIP);
 
-	// Delegate supervisor timer and other interrupts
-	// to supervisor mode.
-	set_csr(mideleg,  MIP_STIP | MIP_SSIP);
-
-	set_csr(medeleg, delegate);
+	// Delegate supervisor timer and other interrupts to supervisor mode,
+	// if supervisor mode is supported.
+	if (supports_extension('S')) {
+		set_csr(mideleg, MIP_STIP | MIP_SSIP);
+		set_csr(medeleg, delegate);
+	}
 
 	// Enable all user/supervisor-mode counters using
 	// v1.10 register addresses.

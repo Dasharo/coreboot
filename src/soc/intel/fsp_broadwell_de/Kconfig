@@ -22,10 +22,11 @@ config CPU_SPECIFIC_OPTIONS
 	select SUPPORT_CPU_UCODE_IN_CBFS
 	# Microcode header files are delivered in FSP package
 	select USES_MICROCODE_HEADER_FILES if HAVE_FSP_BIN
-	select HAVE_INTEL_FIRMWARE
+	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select SMM_TSEG
 	select HAVE_SMI_HANDLER
 	select TSC_MONOTONIC_TIMER
+	select TSC_CONSTANT_RATE
 
 config CBFS_SIZE
 	hex

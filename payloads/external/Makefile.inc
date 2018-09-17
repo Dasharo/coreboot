@@ -186,6 +186,7 @@ payloads/external/tianocore/tianocore/Build/UEFIPAYLOAD.fd tianocore: $(DOTCONFI
 		CONFIG_TIANOCORE_REVISION_ID=$(CONFIG_TIANOCORE_REVISION_ID) \
 		CONFIG_TIANOCORE_DEBUG=$(CONFIG_TIANOCORE_DEBUG) \
 		CONFIG_TIANOCORE_TARGET_IA32=$(CONFIG_TIANOCORE_TARGET_IA32) \
+		CONFIG_TIANOCORE_USE_8254_TIMER=$(CONFIG_TIANOCORE_USE_8254_TIMER) \
 		GCC_CC_x86_32=$(GCC_CC_x86_32) \
 		GCC_CC_x86_64=$(GCC_CC_x86_64) \
 		GCC_CC_arm=$(GCC_CC_arm) \
@@ -335,10 +336,23 @@ linuxboot:
 		CONFIG_LINUXBOOT_ARCH=$(CONFIG_LINUXBOOT_ARCH) \
 		CONFIG_LINUXBOOT_UROOT=$(CONFIG_LINUXBOOT_UROOT) \
 		CONFIG_LINUXBOOT_UROOT_FILES=$(CONFIG_LINUXBOOT_UROOT_FILES) \
-		CONFIG_LINUXBOOT_DTB_FILE=$(CONFIG_LINUXBOOT_DTB_FILE)
+		CONFIG_LINUXBOOT_DTB_FILE=$(CONFIG_LINUXBOOT_DTB_FILE) \
+		CONFIG_PAYLOAD_USERSPACE=$(CONFIG_PAYLOAD_USERSPACE)
 
 
 payloads/external/LinuxBoot/linuxboot/kernel-image: linuxboot
 payloads/external/LinuxBoot/linuxboot/initramfs.cpio.xz: linuxboot
 payloads/external/LinuxBoot/linuxboot/kernel/.config: linuxboot
 payloads/external/LinuxBoot/linuxboot/go/src/github.com/u-root/u-root/.git: linuxboot
+
+payloads/external/Yabits/uefi/build/uefi.elf yabits:
+	$(MAKE) -C payloads/external/Yabits all \
+		CC="$(CC_x86_32)" \
+		LD="$(LD_x86_32)" \
+		OBJCOPY="$(OBJCOPY_x86_32)" \
+		AS="$(AS_x86_32)" \
+		CONFIG_YABITS_REVISION=$(CONFIG_YABITS_REVISION) \
+		CONFIG_YABITS_REVISION_ID=$(CONFIG_YABITS_REVISION_ID) \
+		CONFIG_YABITS_MASTER=$(CONFIG_YABITS_MASTER) \
+		CONFIG_YABITS_STABLE=$(CONFIG_YABITS_STABLE) \
+		MFLAGS= MAKEFLAGS=

@@ -1,8 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2018 Intel Corporation.
+ * Copyright (C) 2018 HardenedLinux
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,15 +13,20 @@
  * GNU General Public License for more details.
  */
 
-#ifndef MAINBOARD_SPD_H
-#define MAINBOARD_SPD_H
+#include <mcall.h>
+#include <arch/io.h>
+#include <soc/addressmap.h>
+#include <soc/clint.h>
 
-#define RCOMP_TARGET_PARAMS	0x5
+void mtime_init(void)
+{
+	long hart_id = read_csr(mhartid);
+	HLS()->time = (uint64_t *)(FU540_CLINT + 0xbff8);
+	HLS()->timecmp = (uint64_t *)(FU540_CLINT + 0x4000 + 8 * hart_id);
+}
 
-void mainboard_fill_dq_map_ch0(void *dq_map_ptr);
-void mainboard_fill_dq_map_ch1(void *dq_map_ptr);
-void mainboard_fill_dqs_map_ch0(void *dqs_map_ptr);
-void mainboard_fill_dqs_map_ch1(void *dqs_map_ptr);
-void mainboard_fill_rcomp_res_data(void *rcomp_ptr);
-void mainboard_fill_rcomp_strength_data(void *rcomp_strength_ptr);
-#endif
+void set_msip(int hartid, int val)
+{
+	long hart_id = read_csr(mhartid);
+	write32((void *)(FU540_CLINT + 4 * hart_id), !!val);
+}

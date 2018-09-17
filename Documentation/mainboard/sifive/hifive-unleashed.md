@@ -11,14 +11,14 @@ For general setup instructions, please refer to the [Getting Started Guide].
 
 The following things are still missing from this coreboot port:
 
-- Trampoline in the MBR block to support boot mode 1
+- Support running romstage from flash (fix stack) to support boot mode 1
 - CBMEM support
 - FU540 clock configuration
 - FU540 RAM init
 - Placing the ramstage in DRAM
 - Starting the U54 cores
 - FU540 PIN configuration and GPIO access macros
-- FU540 OTP driver and serial number read-out
+- Provide serial number to payload (e.g. in device tree)
 - Support for booting Linux on RISC-V
 
 

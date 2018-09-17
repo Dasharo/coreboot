@@ -1,8 +1,7 @@
 ##
 ## This file is part of the coreboot project.
 ##
-## Copyright (C) 2014 Google Inc.
-## Copyright (C) 2018 Intel Corporation.
+## Copyright (C) 2012 The Chromium OS Authors.  All rights reserved.
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -14,15 +13,16 @@
 ## GNU General Public License for more details.
 ##
 
-romstage-y += spd_util.c
+config VPD
+	bool "Support for Vital Product Data tables"
+	default n
+	help
+	  Enable support for flash based vital product data.
 
-SPD_BIN = $(obj)/spd.bin
+if VPD
 
-SPD_SOURCES = empty				# 0b000
-SPD_SOURCES += samsung_ddr4_4GB			# 0b001 Dual Channel 4GB
-SPD_SOURCES += samsung_lpddr4_8GB		# 0b001 Dual Channel 8GB
-SPD_SOURCES += empty				# 0b011
-SPD_SOURCES += empty				# 0b100
-SPD_SOURCES += empty				# 0b101
-SPD_SOURCES += empty				# 0b110
-SPD_SOURCES += empty				# 0b111
+config VPD_DEBUG
+	bool "Enable VPD debug output"
+	default n
+
+endif
