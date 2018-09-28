@@ -7,9 +7,9 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
-## [v4.0.20] - 2018-09-24
+## [v4.0.20] - 2018-09-28
 ### Changed
-- Updated sortbootorder to v4.6.10
+- Updated sortbootorder to v4.6.11
 
 ## [v4.0.19] - 2018-09-02
 ### Changed
