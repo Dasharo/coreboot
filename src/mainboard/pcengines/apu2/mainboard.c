@@ -260,15 +260,16 @@ static void mainboard_final(void *chip_info)
 	//
 	u32 val;
 	device_t D18F3 = dev_find_device(0x1022, 0x1583, NULL);
+	device_t D18F5 = dev_find_device(0x1022, 0x1585, NULL);
+
 	val = pci_read_config32(D18F3, 0x88);
 	val |= (1 << 27);		// Disable DRAM ECC scrubbing
 	pci_write_config32(D18F3, 0x88, val);
 
 	val = pci_read_config32(D18F3, 0xB8);
-	val &= ~(1 << 26);		// Reserved bit, but injection doesn't work if set
+	val &= 0xF000003F;		// Reserved bits, but injection doesn't work if set
 	pci_write_config32(D18F3, 0xB8, val);
 
-	device_t D18F5 = dev_find_device(0x1022, 0x1585, NULL);
 	val = pci_read_config32(D18F5, 0x240);
 	val &= ~1;				// Disable ECC exclusion range
 	pci_write_config32(D18F5, 0x240, val);
