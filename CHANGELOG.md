@@ -16,6 +16,16 @@ Releases 4.8.0.x are based on continuous synchronization with official
 3. `make`
 
 ## [Unreleased]
+## [v4.8.0.5] - 2018-10-04
+### Changed
+- Updated sortbootorder to v4.6.11
+- Removed custom libpayload modifications
+- Synced and rebased with coreboot official repo commit b7b085d
+
+### Fixed
+- ECC exclusion range, ECC now works properly
+- apu1 bootorder PCI paths and letter assignments
+
 ## [v4.8.0.4] - 2018-08-31
 ### Changed
 - Synced and rebased with coreboot official repo commit e27c096
@@ -215,7 +225,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.4...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.5...develop
+[v4.8.0.5]: https://github.com/pcengines/coreboot/compare/v4.8.0.4...v4.8.0.5
 [v4.8.0.4]: https://github.com/pcengines/coreboot/compare/v4.8.0.3...v4.8.0.4
 [v4.8.0.3]: https://github.com/pcengines/coreboot/compare/v4.8.0.2...v4.8.0.3
 [v4.8.0.2]: https://github.com/pcengines/coreboot/compare/v4.8.0.1...v4.8.0.2
