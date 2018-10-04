@@ -250,6 +250,46 @@ static void mainboard_enable(struct device *dev)
 
 static void mainboard_final(void *chip_info)
 {
+	/* ECC was not working because all memory was marked
+	 * as excluded from ECC checking and error reporting.
+	 * Normally one contiguous range is excluded to cover
+	 * framebuffer region in systems with internal GPUs.
+	 * AGESA set bit 0, EccExclEn, in register D18F5x240 as 1.
+	 * Range was incorrectly enabled to cover all memory
+	 * for cases without UMA (no integrated graphics).
+	 *
+	 * In order to clear EccExclEn DRAM scrubber needs to be
+	 * disabled temporarily by setting D18F3x88[DisDramScrub]
+	 */
+	u32 val;
+	device_t D18F3 = dev_find_device(0x1022, 0x1583, NULL);
+	device_t D18F5 = dev_find_device(0x1022, 0x1585, NULL);
+
+	/* Disable DRAM ECC scrubbing */
+	val = pci_read_config32(D18F3, 0x88);
+	val |= (1 << 27);
+	pci_write_config32(D18F3, 0x88, val);
+
+	/* Clear reserved bits in register D18F3xB8
+	 *
+	 * D18F3xB8 NB Array Address has reserved bits [27:10]
+	 * Multiple experiments showed that ECC injection
+	 * doesn't work when these bits are set.
+	 */
+	val = pci_read_config32(D18F3, 0xB8);
+	val &= 0xF000003F;
+	pci_write_config32(D18F3, 0xB8, val);
+
+	/* Disable ECC exclusion range */
+	val = pci_read_config32(D18F5, 0x240);
+	val &= ~1;
+	pci_write_config32(D18F5, 0x240, val);
+
+	/*  Re-enable DRAM ECC scrubbing */
+	val = pci_read_config32(D18F3, 0x88);
+	val &= ~(1 << 27);
+	pci_write_config32(D18F3, 0x88, val);
+
 	//
 	// Turn off LED 2 and LED 3
 	//
