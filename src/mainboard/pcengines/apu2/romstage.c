@@ -44,6 +44,7 @@
 #include <build.h>
 #include "bios_knobs.h"
 
+extern char coreboot_dmi_date[];
 //
 // GPIO Init Table
 //
@@ -208,9 +209,14 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	bool scon = check_console();
 
 	if(scon){
+		char tmp[9];
+		strncpy(tmp,   coreboot_dmi_date+6, 4);
+		strncpy(tmp+6, coreboot_dmi_date+3, 2);
+		strncpy(tmp+4, coreboot_dmi_date,   2);
+		tmp[8] = '\0';
 		printk(BIOS_ALERT, CONFIG_MAINBOARD_SMBIOS_MANUFACTURER " "
 		                   CONFIG_MAINBOARD_PART_NUMBER "\n");
-		printk(BIOS_ALERT, "coreboot build %s\n", COREBOOT_DMI_DATE);
+		printk(BIOS_ALERT, "coreboot build %s\n", tmp);
 		printk(BIOS_ALERT, "BIOS version %s\n", COREBOOT_ORIGIN_GIT_TAG);
 	}
 #if CONFIG_SVI2_SLOW_SPEED
