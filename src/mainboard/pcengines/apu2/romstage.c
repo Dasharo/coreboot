@@ -209,10 +209,16 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	bool scon = check_console();
 
 	if(scon){
+		/*
+		 * coreboot_dmi_date is in format mm/dd/yyyy and should remain
+		 * unchanged to conform SMBIOS specification
+		 * Change the order of months, days and years only locally to
+		 * get it printed in sign-of-life in format yyyymmdd
+		 */
 		char tmp[9];
 		strncpy(tmp,   coreboot_dmi_date+6, 4);
-		strncpy(tmp+6, coreboot_dmi_date+3, 2);
-		strncpy(tmp+4, coreboot_dmi_date,   2);
+		strncpy(tmp+4, coreboot_dmi_date+3, 2);
+		strncpy(tmp+6, coreboot_dmi_date,   2);
 		tmp[8] = '\0';
 		printk(BIOS_ALERT, CONFIG_MAINBOARD_SMBIOS_MANUFACTURER " "
 		                   CONFIG_MAINBOARD_PART_NUMBER "\n");
