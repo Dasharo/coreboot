@@ -22,6 +22,10 @@
 #include "bios_knobs.h"
 #include "gpio_ftns.h"
 
+#define SIO_PORT 0x2e
+#define SERIAL1_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
+#define SERIAL2_DEV PNP_DEV(SIO_PORT, NCT5104D_SP2)
+
 static void early_lpc_init(void);
 
 void board_BeforeAgesa(struct sysinfo *cb)
