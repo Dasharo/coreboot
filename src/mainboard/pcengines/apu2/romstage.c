@@ -86,7 +86,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 
 		/* COM2 on apu5 is reserved so only COM1 should be supported */
 		if ((CONFIG_UART_FOR_CONSOLE == 1) &&
-			 !IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+			!IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
 			nuvoton_enable_serial(SERIAL2_DEV, CONFIG_TTYS0_BASE);
 		else if (CONFIG_UART_FOR_CONSOLE == 0)
 			nuvoton_enable_serial(SERIAL1_DEV, CONFIG_TTYS0_BASE);
