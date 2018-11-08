@@ -19,7 +19,6 @@
 #include <arch/acpi.h>
 #include <arch/acpigen.h>
 #include <arch/io.h>
-#include <arch/ioapic.h>
 #include <arch/smp/mpspec.h>
 #include <cbmem.h>
 #include <cpu/x86/smm.h>
@@ -174,7 +173,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 		printk(BIOS_ERR, "BUG! Could not find SOC devicetree config\n");
 		return;
 	}
-        cfg = dev->chip_info;
+	cfg = dev->chip_info;
 
 	if(cfg->lpss_s0ix_enable)
 		fadt->flags |= ACPI_FADT_LOW_PWR_IDLE_S0;

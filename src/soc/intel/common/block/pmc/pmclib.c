@@ -16,7 +16,6 @@
 #include <arch/early_variables.h>
 #include <arch/io.h>
 #include <cbmem.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <halt.h>
 #include <intelblocks/pmclib.h>
@@ -91,6 +90,18 @@ __weak void pmc_soc_restore_power_failure(void)
 	 * SoC code should set PMC config register in order to set
 	 * MAINBOARD_POWER_ON bit as per EDS.
 	 */
+}
+
+int acpi_get_sleep_type(void)
+{
+	struct chipset_power_state *ps;
+	int prev_sleep_state = ACPI_S0;
+
+	ps = pmc_get_power_state();
+	if (ps)
+		prev_sleep_state = ps->prev_sleep_state;
+
+	return prev_sleep_state;
 }
 
 static uint32_t pmc_reset_smi_status(void)

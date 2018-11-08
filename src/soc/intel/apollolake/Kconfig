@@ -75,6 +75,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_DSP
 	select SOC_INTEL_COMMON_BLOCK_FAST_SPI
 	select SOC_INTEL_COMMON_BLOCK_GPIO
+	select SOC_INTEL_COMMON_BLOCK_GPIO_DUAL_ROUTE_SUPPORT
 	select SOC_INTEL_COMMON_BLOCK_GPIO_MULTI_ACPI_DEVICES
 	select SOC_INTEL_COMMON_BLOCK_GPIO_ITSS_POL_CFG
 	select SOC_INTEL_COMMON_BLOCK_GPIO_IOSTANDBY
@@ -104,7 +105,8 @@ config CPU_SPECIFIC_OPTIONS
 	select PLATFORM_USES_FSP2_0
 	select UDK_2015_BINDING if !SOC_INTEL_GLK
 	select UDK_2017_BINDING if SOC_INTEL_GLK
-	select HAVE_HARD_RESET
+	select SOC_INTEL_COMMON_RESET
+	select HAVE_CF9_RESET_PREPARE
 	select INTEL_GMA_ADD_VBT if RUN_FSP_GOP
 	select HAVE_FSP_GOP
 	select NO_UART_ON_SUPERIO
@@ -129,10 +131,6 @@ config TPM_ON_FAST_SPI
 	help
 	 TPM part is conntected on Fast SPI interface, but the LPC MMIO
 	 TPM transactions are decoded and serialized over the SPI interface.
-
-config SOC_INTEL_COMMON_RESET
-	bool
-	default y
 
 config PCR_BASE_ADDRESS
 	hex
@@ -201,6 +199,16 @@ config VERSTAGE_ADDR
 	default 0xfef40000
 	help
 	  The base address (in CAR) where verstage should be linked
+
+config FSP_HEADER_PATH
+	string "Location of FSP headers"
+	default "src/vendorcode/intel/fsp/fsp2_0/glk" if SOC_INTEL_GLK
+	default "3rdparty/fsp/ApolloLakeFspBinPkg/Include/"
+
+config FSP_FD_PATH
+	string
+	depends on FSP_USE_REPO
+	default "3rdparty/fsp/ApolloLakeFspBinPkg/FspBin/Fsp.fd"
 
 config FSP_M_ADDR
 	hex

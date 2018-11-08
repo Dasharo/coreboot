@@ -333,9 +333,11 @@ static void initialize_vr_config(void)
 	msr.hi &= ~(1 << (51 - 32));
 	/* Enable decay mode on C-state entry. */
 	msr.hi |= (1 << (52 - 32));
-	/* Set the slow ramp rate to be fast ramp rate / 4 */
-	msr.hi &= ~(0x3 << (53 - 32));
-	msr.hi |= (0x01 << (53 - 32));
+	if (haswell_is_ult()) {
+		/* Set the slow ramp rate to be fast ramp rate / 4 */
+		msr.hi &= ~(0x3 << (53 - 32));
+		msr.hi |= (0x01 << (53 - 32));
+	}
 	/* Set MIN_VID (31:24) to allow CPU to have full control. */
 	msr.lo &= ~0xff000000;
 	wrmsr(MSR_VR_MISC_CONFIG, msr);
@@ -486,7 +488,7 @@ static void configure_c_states(void)
 {
 	msr_t msr;
 
-	msr = rdmsr(MSR_PMG_CST_CONFIG_CONTROL);
+	msr = rdmsr(MSR_PKG_CST_CONFIG_CONTROL);
 	msr.lo |= (1 << 30);	// Package c-state Undemotion Enable
 	msr.lo |= (1 << 29);	// Package c-state Demotion Enable
 	msr.lo |= (1 << 28);	// C1 Auto Undemotion Enable
@@ -495,7 +497,7 @@ static void configure_c_states(void)
 	msr.lo |= (1 << 25);	// C3 Auto Demotion Enable
 	msr.lo &= ~(1 << 10);	// Disable IO MWAIT redirection
 	/* The deepest package c-state defaults to factory-configured value. */
-	wrmsr(MSR_PMG_CST_CONFIG_CONTROL, msr);
+	wrmsr(MSR_PKG_CST_CONFIG_CONTROL, msr);
 
 	msr = rdmsr(MSR_PMG_IO_CAPTURE_BASE);
 	msr.lo &= ~0xffff;
@@ -649,10 +651,10 @@ static void set_energy_perf_bias(u8 policy)
 		return;
 
 	/* Energy Policy is bits 3:0 */
-	msr = rdmsr(IA32_ENERGY_PERFORMANCE_BIAS);
+	msr = rdmsr(IA32_ENERGY_PERF_BIAS);
 	msr.lo &= ~0xf;
 	msr.lo |= policy & 0xf;
-	wrmsr(IA32_ENERGY_PERFORMANCE_BIAS, msr);
+	wrmsr(IA32_ENERGY_PERF_BIAS, msr);
 
 	printk(BIOS_DEBUG, "haswell: energy policy set to %u\n",
 	       policy);
@@ -661,11 +663,10 @@ static void set_energy_perf_bias(u8 policy)
 static void configure_mca(void)
 {
 	msr_t msr;
-	const unsigned int mcg_cap_msr = 0x179;
 	int i;
 	int num_banks;
 
-	msr = rdmsr(mcg_cap_msr);
+	msr = rdmsr(IA32_MCG_CAP);
 	num_banks = msr.lo & 0xff;
 	msr.lo = msr.hi = 0;
 	/* TODO(adurbin): This should only be done on a cold boot. Also, some
@@ -792,6 +793,7 @@ static struct device_operations cpu_dev_ops = {
 static const struct cpu_device_id cpu_table[] = {
 	{ X86_VENDOR_INTEL, 0x306c1 }, /* Intel Haswell 4+2 A0 */
 	{ X86_VENDOR_INTEL, 0x306c2 }, /* Intel Haswell 4+2 B0 */
+	{ X86_VENDOR_INTEL, 0x306c3 }, /* Intel Haswell C0 */
 	{ X86_VENDOR_INTEL, 0x40650 }, /* Intel Haswell ULT B0 */
 	{ X86_VENDOR_INTEL, 0x40651 }, /* Intel Haswell ULT B1 */
 	{ 0, 0 },

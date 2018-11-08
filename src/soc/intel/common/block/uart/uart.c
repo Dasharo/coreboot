@@ -15,7 +15,6 @@
 
 #include <arch/acpi.h>
 #include <assert.h>
-#include <compiler.h>
 #include <cbmem.h>
 #include <console/uart.h>
 #include <device/device.h>
@@ -263,6 +262,12 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_GLK_UART1,
 	PCI_DEVICE_ID_INTEL_GLK_UART2,
 	PCI_DEVICE_ID_INTEL_GLK_UART3,
+	PCI_DEVICE_ID_INTEL_CNP_H_UART0,
+	PCI_DEVICE_ID_INTEL_CNP_H_UART1,
+	PCI_DEVICE_ID_INTEL_CNP_H_UART2,
+	PCI_DEVICE_ID_INTEL_ICP_UART0,
+	PCI_DEVICE_ID_INTEL_ICP_UART1,
+	PCI_DEVICE_ID_INTEL_ICP_UART2,
 	0,
 };
 

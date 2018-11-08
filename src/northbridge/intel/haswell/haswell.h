@@ -202,7 +202,6 @@
 #define DMIDRCCFG	0xeb4	/* 32bit */
 
 #ifndef __ASSEMBLER__
-#include <compiler.h>
 static inline void barrier(void) { asm("" ::: "memory"); }
 
 struct ied_header {
@@ -210,9 +209,6 @@ struct ied_header {
 	u32 size;
 	u8 reserved[34];
 } __packed;
-
-#define PCI_DEVICE_ID_HSW_MOBILE 0x0c04
-#define PCI_DEVICE_ID_HSW_ULT 0x0a04
 
 #ifdef __SMM__
 void intel_northbridge_haswell_finalize_smm(void);

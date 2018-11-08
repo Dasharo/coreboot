@@ -118,12 +118,12 @@ uint64_t uma_memory_size = 0;
  *
  * @see device_path
  */
-static device_t __alloc_dev(struct bus *parent, struct device_path *path)
+static struct device *__alloc_dev(struct bus *parent, struct device_path *path)
 {
 	struct device *dev, *child;
 
 	/* Find the last child of our parent. */
-	for (child = parent->children; child && child->sibling; /* */ )
+	for (child = parent->children; child && child->sibling; /* */)
 		child = child->sibling;
 
 	dev = malloc(sizeof(*dev));
@@ -152,7 +152,7 @@ static device_t __alloc_dev(struct bus *parent, struct device_path *path)
 	return dev;
 }
 
-device_t alloc_dev(struct bus *parent, struct device_path *path)
+struct device *alloc_dev(struct bus *parent, struct device_path *path)
 {
 	struct device *dev;
 	spin_lock(&dev_lock);
@@ -168,7 +168,7 @@ device_t alloc_dev(struct bus *parent, struct device_path *path)
  * @param path The relative path from the bus to the appropriate device.
  * @return Pointer to a device structure for the device on bus at path.
  */
-device_t alloc_find_dev(struct bus *parent, struct device_path *path)
+struct device *alloc_find_dev(struct bus *parent, struct device_path *path)
 {
 	struct device *child;
 	spin_lock(&dev_lock);

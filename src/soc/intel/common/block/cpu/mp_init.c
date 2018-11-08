@@ -16,7 +16,6 @@
 #include <arch/io.h>
 #include <assert.h>
 #include <bootstate.h>
-#include <compiler.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/msr.h>
@@ -74,6 +73,8 @@ static const struct cpu_device_id cpu_table[] = {
 	{ X86_VENDOR_INTEL, CPUID_WHISKEYLAKE_W0 },
 	{ X86_VENDOR_INTEL, CPUID_COFFEELAKE_U0 },
 	{ X86_VENDOR_INTEL, CPUID_COFFEELAKE_D0 },
+	{ X86_VENDOR_INTEL, CPUID_ICELAKE_A0 },
+	{ X86_VENDOR_INTEL, CPUID_ICELAKE_B0 },
 	{ 0, 0 },
 };
 

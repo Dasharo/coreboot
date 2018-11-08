@@ -22,7 +22,6 @@
 
 #include <arch/cpu.h>
 #include <types.h>
-#include <compiler.h>
 
 #define SMM_DEFAULT_BASE 0x30000
 #define SMM_DEFAULT_SIZE 0x10000
@@ -507,9 +506,6 @@ void smi_release_lock(void);
 /* This is the SMM handler. */
 extern unsigned char _binary_smm_start[];
 extern unsigned char _binary_smm_end[];
-
-/* Get PMBASE address */
-u16 smm_get_pmbase(void);
 
 struct smm_runtime {
 	u32 smbase;

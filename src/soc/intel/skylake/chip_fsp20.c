@@ -21,7 +21,6 @@
 #include <arch/acpi.h>
 #include <arch/io.h>
 #include <chip.h>
-#include <compiler.h>
 #include <bootstate.h>
 #include <console/console.h>
 #include <device/device.h>
@@ -30,6 +29,7 @@
 #include <fsp/api.h>
 #include <fsp/util.h>
 #include <intelblocks/chip.h>
+#include <intelblocks/itss.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
 #include <romstage_handoff.h>
@@ -38,6 +38,7 @@
 #include <soc/interrupt.h>
 #include <soc/iomap.h>
 #include <soc/irq.h>
+#include <soc/itss.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <soc/systemagent.h>
@@ -168,8 +169,16 @@ static void pcie_override_devicetree_after_silicon_init(void)
 
 void soc_init_pre_device(void *chip_info)
 {
+	/* Snapshot the current GPIO IRQ polarities. FSP is setting a
+	 * default policy that doesn't honor boards' requirements. */
+	itss_snapshot_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
+
 	/* Perform silicon specific init. */
 	fsp_silicon_init(romstage_handoff_is_resume());
+
+	/* Restore GPIO IRQ polarities back to previous settings. */
+	itss_restore_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
+
 	/* swap enabled PCI ports in device tree if needed */
 	pcie_override_devicetree_after_silicon_init();
 }
@@ -336,6 +345,15 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->ScsEmmcHs400Enabled = config->ScsEmmcHs400Enabled;
 	params->ScsSdCardEnabled = config->ScsSdCardEnabled;
 
+	if (!!params->ScsEmmcHs400Enabled && !!config->EmmcHs400DllNeed) {
+		params->PchScsEmmcHs400DllDataValid =
+			!!config->EmmcHs400DllNeed;
+		params->PchScsEmmcHs400RxStrobeDll1 =
+			config->ScsEmmcHs400RxStrobeDll1;
+		params->PchScsEmmcHs400TxDataDll =
+			config->ScsEmmcHs400TxDataDll;
+	}
+
 	/* If ISH is enabled, enable ISH elements */
 	dev = dev_find_slot(0, PCH_DEVFN_ISH);
 	if (dev)
@@ -351,6 +369,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->SataMode = config->SataMode;
 	params->SataSpeedLimit = config->SataSpeedLimit;
 	params->SataPwrOptEnable = config->SataPwrOptEnable;
+	params->EnableTcoTimer = !config->PmTimerDisabled;
 
 	tconfig->PchLockDownGlobalSmi = config->LockDownConfigGlobalSmi;
 	tconfig->PchLockDownRtcLock = config->LockDownConfigRtcLock;

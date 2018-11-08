@@ -84,10 +84,10 @@
 #define PAD_CFG1_IOSSTATE_Tx0RxDCRx0	(0x1 << 14)
 /* Tx enabled driving 0, Rx disabled and Rx driving 1 back to its controller
  * internally */
-#define PAD_CFG1_IOSSTATE_Tx0RXDCRx1	(0x2 << 14)
+#define PAD_CFG1_IOSSTATE_Tx0RxDCRx1	(0x2 << 14)
 /* Tx enabled driving 1, Rx disabled and Rx driving 0 back to its controller
  * internally */
-#define PAD_CFG1_IOSSTATE_Tx1RXDCRx0	(0x3 << 14)
+#define PAD_CFG1_IOSSTATE_Tx1RxDCRx0	(0x3 << 14)
 /* Tx enabled driving 1, Rx disabled and Rx driving 1 back to its controller
  * internally */
 #define PAD_CFG1_IOSSTATE_Tx1RxDCRx1	(0x4 << 14)
@@ -129,6 +129,14 @@
 				(PAD_CFG0_ROUTE_##route | \
 				PAD_CFG0_TRIG_##trig | \
 				PAD_CFG0_RX_POL_##inv)
+
+#if IS_ENABLED(CONFIG_SOC_INTEL_COMMON_BLOCK_GPIO_DUAL_ROUTE_SUPPORT)
+#define PAD_IRQ_CFG_DUAL_ROUTE(route1, route2, trig, inv)  \
+				(PAD_CFG0_ROUTE_##route1 | \
+				PAD_CFG0_ROUTE_##route2 | \
+				PAD_CFG0_TRIG_##trig | \
+				PAD_CFG0_RX_POL_##inv)
+#endif /* CONFIG_SOC_INTEL_COMMON_BLOCK_GPIO_DUAL_ROUTE_SUPPORT */
 
 #define _PAD_CFG_STRUCT(__pad, __config0, __config1)	\
 	{					\
@@ -196,7 +204,7 @@
 #define PAD_CFG_GPI(pad, pull, rst) \
 	_PAD_CFG_STRUCT(pad,		\
 		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE, \
-		PAD_PULL(pull) | PAD_IOSSTATE(TxLASTRxE))
+		PAD_PULL(pull) | PAD_IOSSTATE(TxDRxE))
 
 /* General purpose input. The following macro sets the
  * Host Software Pad Ownership to GPIO Driver mode.
@@ -204,7 +212,7 @@
 #define PAD_CFG_GPI_GPIO_DRIVER(pad, pull, rst) \
 	_PAD_CFG_STRUCT(pad,		\
 		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE, \
-		PAD_PULL(pull) | PAD_CFG1_GPIO_DRIVER | PAD_IOSSTATE(TxLASTRxE))
+		PAD_PULL(pull) | PAD_CFG1_GPIO_DRIVER | PAD_IOSSTATE(TxDRxE))
 
 #define PAD_CFG_GPIO_DRIVER_HI_Z(pad, pull, rst, iosstate, iosterm) \
 	_PAD_CFG_STRUCT(pad,		\
@@ -224,7 +232,7 @@
 	_PAD_CFG_STRUCT(pad,		\
 		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE |	\
 			PAD_CFG0_TRIG_##trig | PAD_CFG0_RX_POL_NONE,	\
-		PAD_PULL(pull) | PAD_CFG1_GPIO_DRIVER | PAD_IOSSTATE(TxLASTRxE))
+		PAD_PULL(pull) | PAD_CFG1_GPIO_DRIVER | PAD_IOSSTATE(TxDRxE))
 
 /* No Connect configuration for unused pad.
  * NC should be GPI with Term as PU20K, PD20K, NONE depending upon default Term
@@ -263,7 +271,7 @@
 	_PAD_CFG_STRUCT(pad,		\
 		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE | \
 		PAD_IRQ_CFG(IOAPIC, trig, inv), PAD_PULL(pull) | \
-		PAD_IOSSTATE(TxLASTRxE))
+		PAD_IOSSTATE(TxDRxE))
 #endif
 
 /* General purpose input, routed to APIC - with IOStandby Config*/
@@ -292,7 +300,7 @@
 	_PAD_CFG_STRUCT(pad,		\
 		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE | \
 		PAD_IRQ_CFG(SMI, trig, inv), PAD_PULL(pull) | \
-		PAD_IOSSTATE(TxLASTRxE))
+		PAD_IOSSTATE(TxDRxE))
 
 /* General purpose input, routed to SMI */
 #define PAD_CFG_GPI_SMI_IOS(pad, pull, rst, trig, inv, iosstate, iosterm) \
@@ -312,7 +320,7 @@
 	_PAD_CFG_STRUCT(pad,		\
 		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE | \
 		PAD_IRQ_CFG(SCI, trig, inv), PAD_PULL(pull) | \
-		PAD_IOSSTATE(TxLASTRxE))
+		PAD_IOSSTATE(TxDRxE))
 
 /* General purpose input, routed to SCI */
 #define PAD_CFG_GPI_SCI_IOS(pad, pull, rst, trig, inv, iosstate, iosterm) \
@@ -332,6 +340,18 @@
 	_PAD_CFG_STRUCT(pad,		\
 		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE | \
 		PAD_IRQ_CFG(NMI, trig, inv), PAD_PULL(pull) | \
-		PAD_IOSSTATE(TxLASTRxE))
+		PAD_IOSSTATE(TxDRxE))
+
+#if IS_ENABLED(CONFIG_SOC_INTEL_COMMON_BLOCK_GPIO_DUAL_ROUTE_SUPPORT)
+#define PAD_CFG_GPI_DUAL_ROUTE(pad, pull, rst, trig, inv, route1, route2) \
+	_PAD_CFG_STRUCT(pad,						\
+		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE | \
+		PAD_IRQ_CFG_DUAL_ROUTE(route1, route2,  trig, inv), \
+		PAD_PULL(pull) | PAD_IOSSTATE(TxDRxE))
+
+#define PAD_CFG_GPI_IRQ_WAKE(pad, pull, rst, trig, inv)	\
+	PAD_CFG_GPI_DUAL_ROUTE(pad, pull, rst, trig, inv, IOAPIC, SCI)
+
+#endif /* CONFIG_SOC_INTEL_COMMON_BLOCK_GPIO_DUAL_ROUTE_SUPPORT */
 
 #endif /* _SOC_BLOCK_GPIO_DEFS_H_ */

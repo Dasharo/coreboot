@@ -15,7 +15,6 @@
 
 #include <arch/acpi.h>
 #include <arch/io.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <device/pci.h>
@@ -127,6 +126,8 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_KBP_H_PMC,
 	PCI_DEVICE_ID_INTEL_APL_PMC,
 	PCI_DEVICE_ID_INTEL_GLK_PMC,
+	PCI_DEVICE_ID_INTEL_CNP_H_PMC,
+	PCI_DEVICE_ID_INTEL_ICP_PMC,
 	0
 };
 

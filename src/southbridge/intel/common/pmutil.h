@@ -17,8 +17,13 @@
 #ifndef INTEL_COMMON_PMUTIL_H
 #define INTEL_COMMON_PMUTIL_H
 
+#include <cpu/x86/smm.h>
+
 #define D31F0_PMBASE		0x40
 #define D31F0_GEN_PMCON_3	0xa4
+#define   RTC_BATTERY_DEAD		(1 << 2)
+#define   RTC_POWER_FAILED		(1 << 1)
+#define   SLEEP_AFTER_POWER_FAIL	(1 << 0)
 #define D31F0_GPIO_ROUT		0xb8
 #define  GPI_DISABLE		0x00
 #define  GPI_IS_SMI		0x01

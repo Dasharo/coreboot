@@ -30,7 +30,7 @@
 #ifndef PEI_DATA_H
 #define PEI_DATA_H
 
-#include <compiler.h>
+#include <stdint.h>
 
 typedef struct {
 	uint16_t mode;                // 0: Disable, 1: Enable, 2: Auto, 3: Smart Auto

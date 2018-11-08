@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2013 ChromeOS Authors
+ * Copyright (C) 2013 Google LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,6 @@
  */
 
 #include <arch/io.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <rmodule.h>

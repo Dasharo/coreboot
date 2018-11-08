@@ -15,6 +15,8 @@
 
 #include <console/console.h>
 #include <cpu/x86/msr.h>
+#include <cpu/amd/msr.h>
+#include <cpu/x86/mtrr.h>
 #include <cpu/amd/mtrr.h>
 #include <device/device.h>
 #include <string.h>
@@ -23,14 +25,8 @@
 #include <cpu/x86/lapic.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/cache.h>
-#include <cpu/x86/mtrr.h>
-#include <cpu/amd/amdfam14.h>
 #include <arch/acpi.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
-
-#define MCG_CAP 0x179
-# define MCA_BANKS_MASK 0xff
-#define MC0_STATUS 0x401
 
 static void model_14_init(struct device *dev)
 {
@@ -59,11 +55,11 @@ static void model_14_init(struct device *dev)
 
 	/* Set shadow WB, RdMEM, WrMEM */
 	msr.lo = msr.hi = 0;
-	wrmsr (0x259, msr);
+	wrmsr(MTRR_FIX_16K_A0000, msr);
 	msr.lo = msr.hi = 0x1e1e1e1e;
-	wrmsr(0x250, msr);
-	wrmsr(0x258, msr);
-	for (msrno = 0x268; msrno <= 0x26f; msrno++)
+	wrmsr(MTRR_FIX_64K_00000, msr);
+	wrmsr(MTRR_FIX_16K_80000, msr);
+	for (msrno = MTRR_FIX_4K_C0000; msrno <= MTRR_FIX_4K_F8000; msrno++)
 		wrmsr(msrno, msr);
 
 	msr = rdmsr(SYSCFG_MSR);
@@ -78,12 +74,12 @@ static void model_14_init(struct device *dev)
 	x86_enable_cache();
 
 	/* zero the machine check error status registers */
-	msr = rdmsr(MCG_CAP);
+	msr = rdmsr(IA32_MCG_CAP);
 	num_banks = msr.lo & MCA_BANKS_MASK;
 	msr.lo = 0;
 	msr.hi = 0;
 	for (i = 0; i < num_banks; i++)
-		wrmsr(MC0_STATUS + (i * 4), msr);
+		wrmsr(IA32_MC0_STATUS + (i * 4), msr);
 
 	/* Enable the local CPU APICs */
 	setup_lapic();

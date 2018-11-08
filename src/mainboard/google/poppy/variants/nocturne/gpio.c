@@ -135,7 +135,7 @@ static const struct pad_config gpio_table[] = {
 	/* C10 : UART0_RTS# ==> PCH_FPMCU_RST_ODL */
 	PAD_CFG_GPO(GPP_C10, 1, DEEP),
 	/* C11 : UART0_CTS# ==> FPMCU_INT */
-	PAD_CFG_GPI_APIC(GPP_C11, 20K_PU, DEEP),
+	PAD_CFG_GPI_APIC(GPP_C11, 20K_PU, PLTRST),
 	/* C12 : UART1_RXD ==> PCH_MEM_CONFIG[0] */
 	PAD_CFG_GPI_GPIO_DRIVER(GPP_C12, NONE, DEEP),
 	/* C13 : UART1_TXD ==> PCH_MEM_CONFIG[1] */
@@ -151,7 +151,7 @@ static const struct pad_config gpio_table[] = {
 	/* C18 : I2C1_SDA ==> PCH_I2C1_DISPLAY_SAR_SDA */
 	PAD_CFG_NF(GPP_C18, NONE, DEEP, NF1),
 	/* C19 : I2C1_SCL ==> PCH_I2C1_DISPLAY_SAR_SCL */
-	PAD_CFG_NF(GPP_C16, NONE, DEEP, NF1),
+	PAD_CFG_NF(GPP_C19, NONE, DEEP, NF1),
 	/* C20 : UART2_RXD ==> PCHRX_SERVOTX_UART */
 	PAD_CFG_NF(GPP_C20, NONE, DEEP, NF1),
 	/* C21 : UART2_TXD ==> PCHTX_SERVORX_UART */
@@ -180,9 +180,9 @@ static const struct pad_config gpio_table[] = {
 	/* D8  : ISH_I2C1_SCL ==> NC */
 	PAD_CFG_NC(GPP_D8),
 	/* D9  : ISH_SPI_CS# ==> PCH_SR1_INT_L */
-	PAD_CFG_GPI_APIC(GPP_D9, NONE, DEEP),
+	PAD_CFG_GPI_APIC(GPP_D9, NONE, PLTRST),
 	/* D10 : ISH_SPI_CLK ==> PCH_SR0_INT_L */
-	PAD_CFG_GPI_APIC(GPP_D10, NONE, DEEP),
+	PAD_CFG_GPI_APIC(GPP_D10, NONE, PLTRST),
 	/* D11 : ISH_SPI_MISO ==> NC */
 	PAD_CFG_NC(GPP_D11),
 	/* D12 : ISH_SPI_MOSI ==> NC */
@@ -195,10 +195,10 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_D15, 0, DEEP),
 	/* D16 : ISH_UART0_CTS# ==> RCAM_RST_L */
 	PAD_CFG_GPO(GPP_D16, 0, DEEP),
-	/* D17 : DMIC_CLK1 ==> PCH_DMIC_CLK */
-	PAD_CFG_NF(GPP_D17, NONE, DEEP, NF1),
-	/* D18 : DMIC_DATA1 ==> PCH_DMIC_DATA */
-	PAD_CFG_NF(GPP_D18, NONE, DEEP, NF1),
+	/* D17 : DMIC_CLK1 ==> EC_PCH_ARCORE_INT_L */
+	PAD_CFG_GPI_APIC(GPP_D17, NONE, PLTRST),
+	/* D18 : DMIC_DATA1 ==> TP131 */
+	PAD_CFG_NC(GPP_D18),
 	/* D19 : DMIC_CLK0 ==> PCH_DMIC_CLK_OUT */
 	PAD_CFG_NF(GPP_D19, NONE, DEEP, NF1),
 	/* D20 : DMIC_DATA0 ==> PCH_DMIC_DATA_IN */
@@ -217,6 +217,8 @@ static const struct pad_config gpio_table[] = {
 	/* E2  : SATAXPCIE2 ==> BT_DISABLE_L */
 	PAD_CFG_GPO(GPP_E2, 1, DEEP),
 	/* E3  : CPU_GP0 ==> NC */
+	PAD_CFG_NC(GPP_E3),
+	/* E3  : DEVSLP0 ==> NC */
 	PAD_CFG_NC(GPP_E4),
 	/* E5  : SATA_DEVSLP1 ==> NC */
 	PAD_CFG_NC(GPP_E5),
@@ -227,9 +229,9 @@ static const struct pad_config gpio_table[] = {
 	/* E8  : SATALED# ==> NC */
 	PAD_CFG_NC(GPP_E8),
 	/* E9  : USB2_OCO# ==> USB_C0_OC_ODL */
-	PAD_CFG_NF(GPP_E9, 20K_PD, DEEP, NF1),
+	PAD_CFG_NF(GPP_E9, NONE, DEEP, NF1),
 	/* E10 : USB2_OC1# ==> USB_C1_OC_ODL */
-	PAD_CFG_NF(GPP_E10, 20K_PD, DEEP, NF1),
+	PAD_CFG_NF(GPP_E10, NONE, DEEP, NF1),
 	/* E11 : USB2_OC2# ==> TOUCHSCREEN_RESET_L */
 	PAD_CFG_TERM_GPO(GPP_E11, 0, 20K_PD, DEEP),
 	/* E12 : USB2_OC3# ==> NC */

@@ -28,7 +28,6 @@
 #include <arch/acpi.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/smm.h>
-#include <elog.h>
 #include <cbmem.h>
 #include <string.h>
 #include "nvs.h"
@@ -36,6 +35,8 @@
 #include <arch/acpigen.h>
 #include <cbmem.h>
 #include <drivers/intel/gma/i915.h>
+#include <southbridge/intel/common/acpi_pirq_gen.h>
+#include <southbridge/intel/common/rtc.h>
 
 #define NMI_OFF	0
 
@@ -285,21 +286,6 @@ static void pch_power_options(struct device *dev)
 	reg16 = RCBA16(0x3f02);
 	reg16 &= ~0xf;
 	RCBA16(0x3f02) = reg16;
-}
-
-static void pch_rtc_init(struct device *dev)
-{
-	int rtc_failed = rtc_failure();
-
-	if (rtc_failed) {
-		if (IS_ENABLED(CONFIG_ELOG))
-			elog_add_event(ELOG_TYPE_RTC_RESET);
-		pci_update_config8(dev, GEN_PMCON_3, ~RTC_BATTERY_DEAD, 0);
-	}
-
-	printk(BIOS_DEBUG, "rtc_failed = 0x%x\n", rtc_failed);
-
-	cmos_init(rtc_failed);
 }
 
 /* LynxPoint PCH Power Management init */
@@ -575,7 +561,7 @@ static void lpc_init(struct device *dev)
 	}
 
 	/* Initialize the real time clock. */
-	pch_rtc_init(dev);
+	sb_rtc_init();
 
 	/* Initialize ISA DMA. */
 	isa_dma_init();
@@ -789,6 +775,16 @@ static void southbridge_inject_dsdt(struct device *dev)
 	}
 }
 
+static const char *lpc_acpi_name(const struct device *dev)
+{
+	return "LPCB";
+}
+
+static void southbridge_fill_ssdt(struct device *dev)
+{
+	intel_acpi_gen_def_acpi_pirq(dev);
+}
+
 static unsigned long southbridge_write_acpi_tables(struct device *device,
 						   unsigned long start,
 						   struct acpi_rsdp *rsdp)
@@ -835,7 +831,9 @@ static struct device_operations device_ops = {
 	.read_resources		= pch_lpc_read_resources,
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
+	.acpi_fill_ssdt_generator   = southbridge_fill_ssdt,
 	.acpi_inject_dsdt_generator = southbridge_inject_dsdt,
+	.acpi_name		= lpc_acpi_name,
 	.write_acpi_tables      = southbridge_write_acpi_tables,
 	.init			= lpc_init,
 	.enable			= pch_lpc_enable,
@@ -856,6 +854,11 @@ static const unsigned short pci_device_ids[] = {
 	0x8c4c, /* Q85 SKU */
 	0x8c4e, /* Q87 SKU */
 	0x8c4f, /* QM87 SKU */
+	0x8c50, /* B85 SKU */
+	0x8c52, /* C222 SKU */
+	0x8c54, /* C224 SKU */
+	0x8c56, /* C226 SKU */
+	0x8c5c, /* H81 SKU */
 	0x9c41, /* LP Full Featured Engineering Sample */
 	0x9c43, /* LP Premium SKU */
 	0x9c45, /* LP Mainstream SKU */

@@ -19,7 +19,6 @@
 #include <arch/transition.h>
 #include <arm_tf.h>
 #include <cbmem.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <program_loading.h>
 #include <rules.h>
@@ -54,11 +53,6 @@ void arch_prog_run(struct prog *prog)
 	arg = prog_entry_arg(prog);
 
 	doit(prog_entry_arg(prog));
-}
-
-int arch_supports_bounce_buffer(void)
-{
-	return 0;
 }
 
 /* Generic stage entry point. Can be overridden by board/SoC if needed. */

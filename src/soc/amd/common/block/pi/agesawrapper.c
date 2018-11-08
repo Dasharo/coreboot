@@ -19,7 +19,6 @@
 #include <cpu/x86/mtrr.h>
 #include <cbfs.h>
 #include <cbmem.h>
-#include <compiler.h>
 #include <delay.h>
 #include <rules.h>
 #include <rmodule.h>
@@ -30,7 +29,10 @@
 #include <amdblocks/agesawrapper.h>
 #include <amdblocks/image.h>
 #include <amdblocks/BiosCallOuts.h>
+#include <soc/pci_devs.h>
 #include <soc/southbridge.h>
+#include <soc/northbridge.h>
+#include <soc/cpu.h>
 
 void __weak SetMemParams(AMD_POST_PARAMS *PostParams) {}
 void __weak OemPostParams(AMD_POST_PARAMS *PostParams) {}
@@ -129,6 +131,7 @@ AGESA_STATUS agesawrapper_amdinitearly(void)
 
 	AMD_EARLY_PARAMS *EarlyParams = create_struct(&AmdParamStruct);
 
+	soc_customize_init_early(EarlyParams);
 	OemCustomizeInitEarly(EarlyParams);
 
 	timestamp_add_now(TS_AGESA_INIT_EARLY_START);
@@ -162,7 +165,7 @@ static void print_init_post_settings(AMD_POST_PARAMS *parms)
 		break;
 	}
 
-	syslimit = (u64)parms->MemConfig.SysLimit * 64 * KiB;
+	syslimit = (u64)(parms->MemConfig.SysLimit + 1) * 64 * KiB - 1;
 	bottomio = (u64)parms->MemConfig.BottomIo * 64 * KiB;
 
 	uma_size = (u64)parms->MemConfig.UmaSize * 64 * KiB;
@@ -320,6 +323,12 @@ AGESA_STATUS agesawrapper_amdinitlate(void)
 	 * (AmdInitLateInitializer) would not be called.
 	 */
 	AMD_LATE_PARAMS *LateParams = create_struct(&AmdParamStruct);
+
+	const struct device *dev = dev_find_slot(0, IOMMU_DEVFN);
+	if (dev && dev->enabled) {
+		LateParams->GnbLateConfiguration.GnbIoapicId = CONFIG_MAX_CPUS + 1;
+		LateParams->GnbLateConfiguration.FchIoapicId = CONFIG_MAX_CPUS;
+	}
 
 	timestamp_add_now(TS_AGESA_INIT_LATE_START);
 	Status = AmdInitLate(LateParams);

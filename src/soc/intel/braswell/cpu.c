@@ -36,7 +36,7 @@
 /* Core level MSRs */
 static const struct reg_script core_msr_script[] = {
 	/* Dynamic L2 shrink enable and threshold, clear SINGLE_PCTL bit 11 */
-	REG_MSR_RMW(MSR_PMG_CST_CONFIG_CONTROL, ~0x3f080f, 0xe0008),
+	REG_MSR_RMW(MSR_PKG_CST_CONFIG_CONTROL, ~0x3f080f, 0xe0008),
 	REG_MSR_RMW(MSR_POWER_MISC,
 		    ~(ENABLE_ULFM_AUTOCM_MASK | ENABLE_INDP_AUTOCM_MASK), 0),
 	/* Disable C1E */
@@ -47,7 +47,7 @@ static const struct reg_script core_msr_script[] = {
 
 static void soc_core_init(struct device *cpu)
 {
-	printk(BIOS_SPEW, "%s/%s ( %s )\n",
+	printk(BIOS_SPEW, "%s/%s (%s)\n",
 			__FILE__, __func__, dev_name(cpu));
 	printk(BIOS_DEBUG, "Init Braswell core.\n");
 
@@ -175,7 +175,7 @@ static void per_cpu_smm_trigger(void)
 	msr_t msr_value;
 
 	/* Need to make sure that all cores have microcode loaded. */
-	msr_value = rdmsr(MSR_IA32_BIOS_SIGN_ID);
+	msr_value = rdmsr(IA32_BIOS_SIGN_ID);
 	if (msr_value.hi == 0)
 		intel_microcode_load_unlocked(pattrs->microcode_patch);
 
@@ -219,7 +219,7 @@ void soc_init_cpus(struct device *dev)
 {
 	struct bus *cpu_bus = dev->link_list;
 
-	printk(BIOS_SPEW, "%s/%s ( %s )\n",
+	printk(BIOS_SPEW, "%s/%s (%s)\n",
 			__FILE__, __func__, dev_name(dev));
 
 	if (mp_init_with_smm(cpu_bus, &mp_ops))

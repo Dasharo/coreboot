@@ -290,6 +290,10 @@ static void configure_isst(void)
 static void configure_misc(void)
 {
 	struct device *dev = SA_DEV_ROOT;
+	if (!dev) {
+		printk(BIOS_ERR, "SA_DEV_ROOT device not found!\n");
+		return;
+	}
 	config_t *conf = dev->chip_info;
 	msr_t msr;
 
@@ -353,10 +357,10 @@ static void set_energy_perf_bias(u8 policy)
 		return;
 
 	/* Energy Policy is bits 3:0 */
-	msr = rdmsr(IA32_ENERGY_PERFORMANCE_BIAS);
+	msr = rdmsr(IA32_ENERGY_PERF_BIAS);
 	msr.lo &= ~0xf;
 	msr.lo |= policy & 0xf;
-	wrmsr(IA32_ENERGY_PERFORMANCE_BIAS, msr);
+	wrmsr(IA32_ENERGY_PERF_BIAS, msr);
 
 	printk(BIOS_DEBUG, "cpu: energy policy set to %u\n", policy);
 }
@@ -547,9 +551,14 @@ void cpu_lock_sgx_memory(void)
 int soc_fill_sgx_param(struct sgx_param *sgx_param)
 {
 	struct device *dev = SA_DEV_ROOT;
-	assert(dev != NULL);
-	config_t *conf = dev->chip_info;
+	config_t *conf;
 
+	if (!dev) {
+		printk(BIOS_ERR, "Failed to get root dev for checking SGX param\n");
+		return -1;
+	}
+
+	conf = dev->chip_info;
 	if (!conf) {
 		printk(BIOS_ERR, "Failed to get chip_info for SGX param\n");
 		return -1;
@@ -561,9 +570,14 @@ int soc_fill_sgx_param(struct sgx_param *sgx_param)
 int soc_fill_vmx_param(struct vmx_param *vmx_param)
 {
 	struct device *dev = SA_DEV_ROOT;
-	assert(dev != NULL);
-	config_t *conf = dev->chip_info;
+	config_t *conf;
 
+	if (!dev) {
+		printk(BIOS_ERR, "Failed to get root dev for checking VMX param\n");
+		return -1;
+	}
+
+	conf = dev->chip_info;
 	if (!conf) {
 		printk(BIOS_ERR, "Failed to get chip_info for VMX param\n");
 		return -1;

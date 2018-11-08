@@ -54,7 +54,6 @@
 
 #if !defined(__ASSEMBLER__) && !defined(__ACPI__) && !defined(__ROMCC__)
 #include <stdint.h>
-#include <compiler.h>
 #include <rules.h>
 #include <commonlib/helpers.h>
 #include <device/device.h>
@@ -191,6 +190,15 @@ typedef struct acpi_tcpa {
 	u32 laml;
 	u64 lasa;
 } __packed acpi_tcpa_t;
+
+typedef struct acpi_tpm2 {
+	struct acpi_table_header header;
+	u16 platform_class;
+	u8  reserved[2];
+	u64 control_area;
+	u32 start_method;
+	u8  msp[12];
+} __packed acpi_tpm2_t;
 
 typedef struct acpi_mcfg_mmconfig {
 	u32 base_address;

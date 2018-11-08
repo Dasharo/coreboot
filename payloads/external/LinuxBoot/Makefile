@@ -33,7 +33,7 @@ endif
 
 OBJCOPY:=$(LINUXBOOT_COMPILE)objcopy
 
-all: payload
+all: linuxboot
 
 toolchain:
 	if [[ ! -x "$(LINUXBOOT_COMPILE)gcc" ]]; then \
@@ -45,15 +45,14 @@ $(kernel_dir)/.config:
 	echo "    WWW        Download Linux $(CONFIG_LINUXBOOT_KERNEL_VERSION)"
 	mkdir -p $(kernel_dir)
 ifeq ("$(wildcard $(kernel_dir)/README)","")
-	wget -qO- $(kernel_tarball) | tar xJ -C $(kernel_dir) --strip 1
+	curl -s $(kernel_tarball) | tar xJ -C $(kernel_dir) --strip 1
 endif
 
 config: $(kernel_dir)/.config
 	echo "    CONFIG     Linux $(CONFIG_LINUXBOOT_KERNEL_VERSION)"
 ifneq ($(CONFIG_LINUXBOOT_KERNEL_CONFIGFILE),)
 	cp $(CONFIG_LINUXBOOT_KERNEL_CONFIGFILE) $(kernel_dir)/.config
-endif
-ifeq ($(CONFIG_LINUXBOOT_ARCH),386)
+else ifeq ($(CONFIG_LINUXBOOT_ARCH),386)
 	cp x86/defconfig $(kernel_dir)/.config
 else ifeq ($(CONFIG_LINUXBOOT_ARCH),amd64)
 	cp x86_64/defconfig $(kernel_dir)/.config
@@ -96,7 +95,7 @@ $(PWD)/$(CONFIG_PAYLOAD_USERSPACE):
 	echo "Building without u-root support"
 endif
 
-payload: $(project_dir)/kernel-image $(PWD)/$(CONFIG_PAYLOAD_USERSPACE)
+linuxboot: $(project_dir)/kernel-image $(PWD)/$(CONFIG_PAYLOAD_USERSPACE)
 
 clean:
 	if [ -d "$(kernel_dir)" ]; then rm -rf $(kernel_dir); fi

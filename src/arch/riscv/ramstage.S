@@ -35,6 +35,9 @@ _start:
 	csrr a0, mhartid
 	call hls_init
 
+	li   a0, CONFIG_RISCV_WORKING_HARTID
+	call smp_pause
+
 	# initialize entry of interrupt/exception
 	la   t0, trap_entry
 	csrw mtvec, t0
@@ -43,7 +46,7 @@ _start:
 	csrwi mip, 0
 
 	call exit_car
-	# set up the mstatus register for VM
+	# set up the mstatus register
 	call mstatus_init
 	tail main
 

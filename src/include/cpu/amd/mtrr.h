@@ -1,8 +1,10 @@
 #ifndef CPU_AMD_MTRR_H
 #define CPU_AMD_MTRR_H
 
-#define IORR_FIRST 0xC0010016
-#define IORR_LAST  0xC0010019
+#define MTRR_IORR0_BASE	0xC0010016
+#define MTRR_IORR0_MASK	0xC0010017
+#define MTRR_IORR1_BASE	0xC0010018
+#define MTRR_IORR1_MASK	0xC0010019
 
 #define MTRR_READ_MEM			(1 << 4)
 #define MTRR_WRITE_MEM			(1 << 3)
@@ -38,7 +40,6 @@
 
 #if !defined(__PRE_RAM__) && !defined(__ASSEMBLER__)
 
-#include <compiler.h>
 #include <cpu/x86/msr.h>
 
 void amd_setup_mtrrs(void);

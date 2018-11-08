@@ -155,7 +155,7 @@ detailed_cvt_descriptor(unsigned char *x, int first)
 		printk(BIOS_SPEW, "    (broken)\n");
 	} else {
 		printk(BIOS_SPEW,
-			"    %dx%d @ ( %s%s%s%s%s) Hz (%s%s preferred)\n",
+			"    %dx%d @ (%s%s%s%s%s) Hz (%s%s preferred)\n",
 		       width, height,
 		       fifty ? "50 " : "",
 		       sixty ? "60 " : "",
@@ -175,12 +175,12 @@ detailed_cvt_descriptor(unsigned char *x, int first)
 static char *
 extract_string(unsigned char *x, int *valid_termination, int len)
 {
-	static char ret[128];
+	static char ret[EDID_ASCII_STRING_LENGTH + 1];
 	int i, seen_newline = 0;
 
 	memset(ret, 0, sizeof(ret));
 
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < min(len, EDID_ASCII_STRING_LENGTH); i++) {
 		if (seen_newline) {
 			if (x[i] != 0x20) {
 				*valid_termination = 0;
@@ -204,12 +204,13 @@ detailed_block(struct edid *result_edid, unsigned char *x, int in_extension,
 {
 	struct edid *out = &tmp_edid;
 	int i;
-#if 1
-	printk(BIOS_SPEW, "Hex of detail: ");
-	for (i = 0; i < 18; i++)
-		printk(BIOS_SPEW, "%02x", x[i]);
-	printk(BIOS_SPEW, "\n");
-#endif
+
+	if (console_log_level(BIOS_SPEW)) {
+		printk(BIOS_SPEW, "Hex of detail: ");
+		for (i = 0; i < 18; i++)
+			printk(BIOS_SPEW, "%02x", x[i]);
+		printk(BIOS_SPEW, "\n");
+	}
 
 	/* Result might already have some valid fields like mode_is_supported */
 	*out = *result_edid;
@@ -284,7 +285,7 @@ detailed_block(struct edid *result_edid, unsigned char *x, int in_extension,
 			printk(BIOS_SPEW, "Monitor name: %s\n",
 			       extract_string(x + 5,
 					      &c->has_valid_string_termination,
-					      13));
+					      EDID_ASCII_STRING_LENGTH));
 			return 1;
 		case 0xFD:
 		{
@@ -476,7 +477,8 @@ detailed_block(struct edid *result_edid, unsigned char *x, int in_extension,
 		case 0xFF:
 			printk(BIOS_SPEW, "Serial number: %s\n",
 			       extract_string(x + 5,
-			       &c->has_valid_string_termination, 13));
+			       &c->has_valid_string_termination,
+			       EDID_ASCII_STRING_LENGTH));
 			return 1;
 		default:
 			printk(BIOS_SPEW,

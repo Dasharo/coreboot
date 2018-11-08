@@ -20,6 +20,9 @@ Please follow this official [guide] to install sphinx.
 You will also need python-recommonmark for sphinx to be able to handle
 markdown documenation.
 
+The recommended version is sphinx 1.7.7, sphinx_rtd_theme 0.4.1 and
+recommonmark 0.4.0.
+
 ### Optional
 
 Install [shpinx-autobuild] for rebuilding markdown/rst sources on the fly!
@@ -47,6 +50,11 @@ Documentation:
 12.  Shouldn't cover implementation details; for details, the code is the
      reference.
 
+## Referencing markdown documents
+
+Starting with Sphinx 1.6 recommonmark's *auto_doc_ref* feature is broken.
+To reference documents use the TOC tree or inline RST code.
+
 ## Markdown and Tables
 
 Under Sphinx markdown tables are not supported. Therefore you can use following
@@ -65,6 +73,32 @@ code block to write tables in reStructuredText and embed them into the markdown:
     | body row 4 |            | - blocks. |
     +------------+------------+-----------+
     ``` #just a code block is enough
+
+## TocTree
+
+To make sure that all documents are included into the final documentation, you
+must reference each document from at least one *toctree*. The *toctree* must
+only reference files in the same folder or in subfolders !
+To create a toctree, simply use a bullet list or numbered list with a single
+reference. References in regular text aren't considered as *toctree* .
+This feature is enabled by recommonmark's *enable_auto_toc_tree* .
+
+**Example toctree:**
+
+```
+* [Chapter 1](chapter1.md)
+* [Chapter 2](chapter2.md)
+* [Subchapter](sub/index.md)
+```
+
+```
+1. [Chapter 1](chapter1.md)
+2. [Chapter 2](chapter2.md)
+```
+
+If you do only reference the document, but do not include it in any toctree,
+you'll see the following warning:
+**WARNING: document isn't included in any toctree**
 
 [coreboot]: https://coreboot.org
 [Documentation]: https://review.coreboot.org/cgit/coreboot.git/tree/Documentation

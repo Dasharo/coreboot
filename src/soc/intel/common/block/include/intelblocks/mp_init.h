@@ -41,6 +41,8 @@
 #define CPUID_COFFEELAKE_D0	0x806ea
 #define CPUID_COFFEELAKE_U0	0x906ea
 
+#define CPUID_ICELAKE_A0	0x706e0
+#define CPUID_ICELAKE_B0	0x706e1
 /*
  * MP Init callback function to Find CPU Topology. This function is common
  * among all SOCs and thus its in Common CPU block.
@@ -75,7 +77,7 @@ void get_microcode_info(const void **microcode, int *parallel);
  * In this function SOC must perform CPU feature programming
  * during Ramstage phase.
  */
-void soc_core_init(device_t dev);
+void soc_core_init(struct device *dev);
 
 /*
  * In this function SOC must fill required mp_ops params, also it

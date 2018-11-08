@@ -52,6 +52,9 @@ CPPFLAGS_common += -I$(src)/drivers/intel/fsp2_0/include
 cbfs-files-$(CONFIG_FSP_CAR) += $(CONFIG_FSP_T_CBFS)
 $(CONFIG_FSP_T_CBFS)-file := $(call strip_quotes,$(CONFIG_FSP_T_FILE))
 $(CONFIG_FSP_T_CBFS)-type := fsp
+ifeq ($(CONFIG_FSP_T_XIP),y)
+$(CONFIG_FSP_T_CBFS)-options := --xip
+endif
 
 cbfs-files-$(CONFIG_ADD_FSP_BINARIES) += $(CONFIG_FSP_M_CBFS)
 $(CONFIG_FSP_M_CBFS)-file := $(call strip_quotes,$(CONFIG_FSP_M_FILE))
@@ -63,5 +66,20 @@ endif
 cbfs-files-$(CONFIG_ADD_FSP_BINARIES) += $(CONFIG_FSP_S_CBFS)
 $(CONFIG_FSP_S_CBFS)-file := $(call strip_quotes,$(CONFIG_FSP_S_FILE))
 $(CONFIG_FSP_S_CBFS)-type := fsp
+
+ifeq ($(CONFIG_FSP_USE_REPO),y)
+$(obj)/Fsp_M.fd: $(call strip_quotes,$(CONFIG_FSP_FD_PATH))
+	python2 3rdparty/fsp/Tools/SplitFspBin.py split -f $(CONFIG_FSP_FD_PATH) -o "$(obj)"
+
+$(obj)/Fsp_S.fd: $(call strip_quotes,$(CONFIG_FSP_FD_PATH)) $(obj)/Fsp_M.fd
+	true
+
+$(obj)/Fsp_T.fd: $(call strip_quotes,$(CONFIG_FSP_FD_PATH)) $(obj)/Fsp_M.fd
+	true
+endif
+
+ifneq ($(call strip_quotes,$(CONFIG_FSP_HEADER_PATH)),)
+CPPFLAGS_common+=-I$(CONFIG_FSP_HEADER_PATH)
+endif
 
 endif

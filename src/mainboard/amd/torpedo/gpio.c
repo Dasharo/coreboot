@@ -13,9 +13,9 @@
  * GNU General Public License for more details.
  */
 
-#include "SbPlatform.h"
+#include <southbridge/amd/cimx/sb900/SbPlatform.h>
 #include "gpio.h"
-#include "vendorcode/amd/cimx/sb900/AmdSbLib.h"
+#include <vendorcode/amd/cimx/sb900/AmdSbLib.h>
 
 
 #ifndef SB_GPIO_REG01
@@ -91,7 +91,7 @@ void gpioEarlyInit(void) {
 				Mmio8_And_Or (GpioMmioAddr, Index, 0xA3, gpio_table[Index].value);
 			}
 			if (Index == GPIO_65) {
-				if ( BoardType == 0 ) {
+				if (BoardType == 0) {
 					Mmio8_And_Or (IoMuxMmioAddr, GPIO_65, 0x00, 3);		// function 3
 				}
 			}

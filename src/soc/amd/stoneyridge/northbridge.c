@@ -22,10 +22,10 @@
 #include <chip.h>
 #include <console/console.h>
 #include <cpu/amd/mtrr.h>
-#include <cpu/amd/amdfam15.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/lapic_def.h>
 #include <cpu/x86/msr.h>
+#include <cpu/amd/msr.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -47,27 +47,25 @@ static void set_io_addr_reg(struct device *dev, u32 nodeid, u32 linkn, u32 reg,
 			u32 io_min, u32 io_max)
 {
 	u32 tempreg;
-	struct device *addr_map = dev_find_slot(0, ADDR_DEVFN);
 
 	/* io range allocation.  Limit */
 	tempreg = (nodeid & 0xf) | ((nodeid & 0x30) << (8 - 4)) | (linkn << 4)
 						| ((io_max & 0xf0) << (12 - 4));
-	pci_write_config32(addr_map, reg + 4, tempreg);
+	pci_write_config32(SOC_ADDR_DEV, reg + 4, tempreg);
 	tempreg = 3 | ((io_min & 0xf0) << (12 - 4)); /* base: ISA and VGA ? */
-	pci_write_config32(addr_map, reg, tempreg);
+	pci_write_config32(SOC_ADDR_DEV, reg, tempreg);
 }
 
 static void set_mmio_addr_reg(u32 nodeid, u32 linkn, u32 reg, u32 index,
 						u32 mmio_min, u32 mmio_max)
 {
 	u32 tempreg;
-	struct device *addr_map = dev_find_slot(0, ADDR_DEVFN);
 
 	/* io range allocation.  Limit */
 	tempreg = (nodeid & 0xf) | (linkn << 4) | (mmio_max & 0xffffff00);
-		pci_write_config32(addr_map, reg + 4, tempreg);
+		pci_write_config32(SOC_ADDR_DEV, reg + 4, tempreg);
 	tempreg = 3 | (nodeid & 0x30) | (mmio_min & 0xffffff00);
-		pci_write_config32(addr_map, reg, tempreg);
+		pci_write_config32(SOC_ADDR_DEV, reg, tempreg);
 }
 
 static void read_resources(struct device *dev)
@@ -88,48 +86,48 @@ static void read_resources(struct device *dev)
 	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 }
 
-static void set_resource(struct device *dev, struct resource *resource, u32 nodeid)
+static void set_resource(struct device *dev, struct resource *res, u32 nodeid)
 {
 	resource_t rbase, rend;
 	unsigned int reg, link_num;
 	char buf[50];
 
 	/* Make certain the resource has actually been set */
-	if (!(resource->flags & IORESOURCE_ASSIGNED))
+	if (!(res->flags & IORESOURCE_ASSIGNED))
 		return;
 
 	/* If I have already stored this resource don't worry about it */
-	if (resource->flags & IORESOURCE_STORED)
+	if (res->flags & IORESOURCE_STORED)
 		return;
 
 	/* Only handle PCI memory and IO resources */
-	if (!(resource->flags & (IORESOURCE_MEM | IORESOURCE_IO)))
+	if (!(res->flags & (IORESOURCE_MEM | IORESOURCE_IO)))
 		return;
 
 	/* Ensure I am actually looking at a resource of function 1 */
-	if ((resource->index & 0xffff) < 0x1000)
+	if ((res->index & 0xffff) < 0x1000)
 		return;
 
 	/* Get the base address */
-	rbase = resource->base;
+	rbase = res->base;
 
 	/* Get the limit (rounded up) */
-	rend  = resource_end(resource);
+	rend  = resource_end(res);
 
 	/* Get the register and link */
-	reg  = resource->index & 0xfff; /* 4k */
-	link_num = IOINDEX_LINK(resource->index);
+	reg  = res->index & 0xfff; /* 4k */
+	link_num = IOINDEX_LINK(res->index);
 
-	if (resource->flags & IORESOURCE_IO)
+	if (res->flags & IORESOURCE_IO)
 		set_io_addr_reg(dev, nodeid, link_num, reg, rbase>>8, rend>>8);
-	else if (resource->flags & IORESOURCE_MEM)
+	else if (res->flags & IORESOURCE_MEM)
 		set_mmio_addr_reg(nodeid, link_num, reg,
-				(resource->index >> 24), rbase >> 8, rend >> 8);
+				(res->index >> 24), rbase >> 8, rend >> 8);
 
-	resource->flags |= IORESOURCE_STORED;
+	res->flags |= IORESOURCE_STORED;
 	snprintf(buf, sizeof(buf), " <node %x link %x>",
 			nodeid, link_num);
-	report_resource_stored(dev, resource, buf);
+	report_resource_stored(dev, res, buf);
 }
 
 /**
@@ -153,7 +151,7 @@ static void create_vga_resource(struct device *dev)
 
 	printk(BIOS_DEBUG, "VGA: %s has VGA device\n",	dev_path(dev));
 	/* Route A0000-BFFFF, IO 3B0-3BB 3C0-3DF */
-	pci_write_config32(dev_find_slot(0, ADDR_DEVFN), 0xf4, 1);
+	pci_write_config32(SOC_ADDR_DEV, D18F1_VGAEN, VGA_ADDR_ENABLE);
 }
 
 static void set_resources(struct device *dev)
@@ -378,54 +376,16 @@ void amd_initcpuio(void)
 
 void fam15_finalize(void *chip_info)
 {
-	struct device *dev;
 	u32 value;
-	dev = dev_find_slot(0, GNB_DEVFN); /* clear IoapicSbFeatureEn */
-	pci_write_config32(dev, 0xf8, 0);
-	pci_write_config32(dev, 0xfc, 5); /* TODO: move it to dsdt.asl */
+
+	/* TODO: move IOAPIC code to dsdt.asl */
+	pci_write_config32(SOC_GNB_DEV, NB_IOAPIC_INDEX, 0);
+	pci_write_config32(SOC_GNB_DEV, NB_IOAPIC_DATA, 5);
 
 	/* disable No Snoop */
-	dev = dev_find_slot(0, HDA0_DEVFN);
-	value = pci_read_config32(dev, HDA_DEV_CTRL_STATUS);
+	value = pci_read_config32(SOC_HDA0_DEV, HDA_DEV_CTRL_STATUS);
 	value &= ~HDA_NO_SNOOP_EN;
-	pci_write_config32(dev, HDA_DEV_CTRL_STATUS, value);
-}
-
-void domain_read_resources(struct device *dev)
-{
-	unsigned int reg;
-	struct device *addr_map = dev_find_slot(0, ADDR_DEVFN);
-
-	/* Find the already assigned resource pairs */
-	for (reg = 0x80 ; reg <= 0xd8 ; reg += 0x08) {
-		u32 base, limit;
-		base = pci_read_config32(addr_map, reg);
-		limit = pci_read_config32(addr_map, reg + 4);
-		/* Is this register allocated? */
-		if ((base & 3) != 0) {
-			unsigned int nodeid, reg_link;
-			struct device *reg_dev = dev_find_slot(0, HT_DEVFN);
-			if (reg < 0xc0) /* mmio */
-				nodeid = (limit & 0xf) + (base & 0x30);
-			else /* io */
-				nodeid =  (limit & 0xf) + ((base >> 4) & 0x30);
-
-			reg_link = (limit >> 4) & 7;
-			if (reg_dev) {
-				/* Reserve the resource  */
-				struct resource *res;
-				res = new_resource(reg_dev,
-						IOINDEX(0x1000 + reg,
-								reg_link));
-				if (res)
-					res->flags = 1;
-			}
-		}
-	}
-	/* FIXME: do we need to check extend conf space?
-	   I don't believe that much preset value */
-
-	pci_domain_read_resources(dev);
+	pci_write_config32(SOC_HDA0_DEV, HDA_DEV_CTRL_STATUS, value);
 }
 
 void domain_enable_resources(struct device *dev)
@@ -508,7 +468,8 @@ __weak void set_board_env_params(GNB_ENV_CONFIGURATION *params) { }
 
 void SetNbEnvParams(GNB_ENV_CONFIGURATION *params)
 {
-	params->IommuSupport = FALSE;
+	const struct device *dev = SOC_IOMMU_DEV;
+	params->IommuSupport = dev && dev->enabled;
 	set_board_env_params(params);
 }
 

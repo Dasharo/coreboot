@@ -35,6 +35,7 @@
 #include <commonlib/loglevel.h>
 #include <cpu/x86/bist.h>
 #include <cpu/amd/car.h>
+#include <cpu/amd/msr.h>
 #include <superio/winbond/common/winbond.h>
 #include <superio/winbond/w83627hf/w83627hf.h>
 #include <northbridge/amd/amdfam10/raminit.h>
@@ -51,7 +52,7 @@
 #define SERIAL_DEV PNP_DEV(0x2e, W83627HF_SP1)
 
 void activate_spd_rom(const struct mem_controller *ctrl);
-int spd_read_byte(unsigned device, unsigned address);
+int spd_read_byte(unsigned int device, unsigned int address);
 extern struct sys_info sysinfo_car;
 
 static void memreset_setup(void)
@@ -253,7 +254,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	post_code(0x38);
 
  #if IS_ENABLED(CONFIG_SET_FIDVID)
-	msr = rdmsr(0xc0010071);
+	msr = rdmsr(MSR_COFVID_STS);
 	printk(BIOS_DEBUG, "\nBegin FIDVID MSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 
 	/* FIXME: The sb fid change may survive the warm reset and only
@@ -271,7 +272,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	post_code(0x3A);
 
 	/* show final fid and vid */
-	msr = rdmsr(0xc0010071);
+	msr = rdmsr(MSR_COFVID_STS);
 	printk(BIOS_DEBUG, "End FIDVIDMSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
  #endif
 

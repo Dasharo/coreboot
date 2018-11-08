@@ -32,18 +32,20 @@
  * supported.
  */
 
-#include "mct_d_gcc.h"
-#include "mct_d.h"
 #include <console/console.h>
 #include <northbridge/amd/amdfam10/debug.h>
 #include <northbridge/amd/amdfam10/raminit.h>
 #include <northbridge/amd/amdfam10/amdfam10.h>
-#include <reset.h>
+#include <southbridge/amd/common/reset.h>
 #include <cpu/x86/msr.h>
+#include <cpu/amd/msr.h>
+#include <cpu/x86/mtrr.h>
 #include <arch/acpi.h>
 #include <string.h>
 #include <device/dram/ddr3.h>
 #include "s3utils.h"
+#include "mct_d_gcc.h"
+#include "mct_d.h"
 
 static u8 ReconfigureDIMMspare_D(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstatA);
@@ -2363,10 +2365,10 @@ void precise_ndelay_fam15(struct MCTStatStruc *pMCTstat, uint32_t nanoseconds) {
 	uint64_t start_timestamp;
 	uint64_t current_timestamp;
 
-	tsc_msr = rdmsr(0x00000010);
+	tsc_msr = rdmsr(TSC_MSR);
 	start_timestamp = (((uint64_t)tsc_msr.hi) << 32) | tsc_msr.lo;
 	do {
-		tsc_msr = rdmsr(0x00000010);
+		tsc_msr = rdmsr(TSC_MSR);
 		current_timestamp = (((uint64_t)tsc_msr.hi) << 32) | tsc_msr.lo;
 	} while ((current_timestamp - start_timestamp) < cycle_count);
 }
@@ -3576,10 +3578,10 @@ retry_dqs_training_and_levelization:
 	mctHookBeforeAnyTraining(pMCTstat, pDCTstatA);
 	if (!is_fam15h()) {
 		/* TODO: should be in mctHookBeforeAnyTraining */
-		_WRMSR(0x26C, 0x04040404, 0x04040404);
-		_WRMSR(0x26D, 0x04040404, 0x04040404);
-		_WRMSR(0x26E, 0x04040404, 0x04040404);
-		_WRMSR(0x26F, 0x04040404, 0x04040404);
+		_WRMSR(MTRR_FIX_4K_E0000, 0x04040404, 0x04040404);
+		_WRMSR(MTRR_FIX_4K_E8000, 0x04040404, 0x04040404);
+		_WRMSR(MTRR_FIX_4K_F0000, 0x04040404, 0x04040404);
+		_WRMSR(MTRR_FIX_4K_F8000, 0x04040404, 0x04040404);
 	}
 
 	if (nv_DQSTrainCTL) {
@@ -6788,7 +6790,7 @@ static void mct_InitialMCT_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc 
 		boost_states = (Get_NB32(pDCTstat->dev_link, 0x15c) >> 2) & 0x7;
 
 		/* Retrieve and store the TSC frequency (P0 COF) */
-		p0_state_msr = rdmsr(0xc0010064 + boost_states);
+		p0_state_msr = rdmsr(PSTATE_0_MSR + boost_states);
 		cpu_fid = p0_state_msr.lo & 0x3f;
 		cpu_did = (p0_state_msr.lo >> 6) & 0x7;
 		cpu_divisor = (0x1 << cpu_did);
@@ -6832,7 +6834,7 @@ static void mct_init(struct MCTStatStruc *pMCTstat,
 	pDCTstat->DRPresent = 1;
 
 	/* enable extend PCI configuration access */
-	addr = 0xC001001F;
+	addr = NB_CFG_MSR;
 	_RDMSR(addr, &lo, &hi);
 	if (hi & (1 << (46-32))) {
 		pDCTstat->Status |= 1 << SB_ExtConfig;
@@ -7332,7 +7334,7 @@ static u8 CheckNBCOFEarlyArbEn(struct MCTStatStruc *pMCTstat,
 	 */
 
 	/* 3*(Fn2xD4[NBFid]+4)/(2^NbDid)/(3+Fn2x94[MemClkFreq]) */
-	_RDMSR(0xC0010071, &lo, &hi);
+	_RDMSR(MSR_COFVID_STS, &lo, &hi);
 	if (lo & (1 << 22))
 		NbDid |= 1;
 
@@ -7770,7 +7772,7 @@ void mct_SetClToNB_D(struct MCTStatStruc *pMCTstat,
 	/* FIXME: Maybe check the CPUID? - not for now. */
 	/* pDCTstat->LogicalCPUID; */
 
-	msr = BU_CFG2;
+	msr = BU_CFG2_MSR;
 	_RDMSR(msr, &lo, &hi);
 	lo |= 1 << ClLinesToNbDis;
 	_WRMSR(msr, lo, hi);
@@ -7786,7 +7788,7 @@ void mct_ClrClToNB_D(struct MCTStatStruc *pMCTstat,
 	/* FIXME: Maybe check the CPUID? - not for now. */
 	/* pDCTstat->LogicalCPUID; */
 
-	msr = BU_CFG2;
+	msr = BU_CFG2_MSR;
 	_RDMSR(msr, &lo, &hi);
 	if (!pDCTstat->ClToNB_flag)
 		lo &= ~(1<<ClLinesToNbDis);
@@ -7803,7 +7805,7 @@ void mct_SetWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat,
 	/* FIXME: Maybe check the CPUID? - not for now. */
 	/* pDCTstat->LogicalCPUID; */
 
-	msr = BU_CFG;
+	msr = BU_CFG_MSR;
 	_RDMSR(msr, &lo, &hi);
 	hi |= (1 << WbEnhWsbDis_D);
 	_WRMSR(msr, lo, hi);
@@ -7818,7 +7820,7 @@ void mct_ClrWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat,
 	/* FIXME: Maybe check the CPUID? - not for now. */
 	/* pDCTstat->LogicalCPUID; */
 
-	msr = BU_CFG;
+	msr = BU_CFG_MSR;
 	_RDMSR(msr, &lo, &hi);
 	hi &= ~(1 << WbEnhWsbDis_D);
 	_WRMSR(msr, lo, hi);
@@ -8048,7 +8050,7 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 		return;
 	}
 
-	addr = HWCR;
+	addr = HWCR_MSR;
 	_RDMSR(addr, &lo, &hi);
 	if (lo & (1<<17)) {		/* save the old value */
 		wrap32dis = 1;
@@ -8079,7 +8081,7 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 	}
 
 	if (!wrap32dis) {
-		addr = HWCR;
+		addr = HWCR_MSR;
 		_RDMSR(addr, &lo, &hi);
 		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
 		_WRMSR(addr, lo, hi);

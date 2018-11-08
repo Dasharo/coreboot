@@ -12,7 +12,7 @@
 #ifndef _FSP2_0_UPD_H_
 #define _FSP2_0_UPD_H_
 
-#include <compiler.h>
+#include <stdint.h>
 
 struct FSP_UPD_HEADER {
 	///

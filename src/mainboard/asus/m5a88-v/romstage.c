@@ -36,8 +36,10 @@
 #include <cpu/x86/bist.h>
 #include <superio/ite/common/ite.h>
 #include <superio/ite/it8721f/it8721f.h>
+#include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
 #include <cpu/amd/car.h>
+#include <southbridge/amd/common/reset.h>
 #include <southbridge/amd/sb800/smbus.h>
 #include <northbridge/amd/amdfam10/raminit.h>
 #include <northbridge/amd/amdht/ht_wrapper.h>
@@ -47,7 +49,6 @@
 #include <southbridge/amd/rs780/rs780.h>
 #include "southbridge/amd/sb800/early_setup.c"
 #include "spd.h"
-#include <reset.h>
 
 #include "resourcemap.c"
 #include "cpu/amd/quadcore/quadcore.c"
@@ -55,7 +56,7 @@
 #define SERIAL_DEV PNP_DEV(0x4e, IT8721F_SP1)
 
 void activate_spd_rom(const struct mem_controller *ctrl);
-int spd_read_byte(unsigned device, unsigned address);
+int spd_read_byte(unsigned int device, unsigned int address);
 extern struct sys_info sysinfo_car;
 
 void activate_spd_rom(const struct mem_controller *ctrl)
@@ -161,7 +162,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	sb800_early_setup();
 
 #if IS_ENABLED(CONFIG_SET_FIDVID)
-	msr = rdmsr(0xc0010071);
+	msr = rdmsr(MSR_COFVID_STS);
 	printk(BIOS_DEBUG, "\nBegin FIDVID MSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 	post_code(0x39);
 
@@ -176,7 +177,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	post_code(0x3A);
 
 	/* show final fid and vid */
-	msr = rdmsr(0xc0010071);
+	msr = rdmsr(MSR_COFVID_STS);
 	printk(BIOS_DEBUG, "End FIDVIDMSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 #endif
 

@@ -17,7 +17,6 @@
 #include <types.h>
 #include <arch/io.h>
 #include <arch/acpi.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <cpu/x86/cache.h>
 #include <device/pci_def.h>
@@ -32,12 +31,6 @@
 static int smm_initialized = 0;
 
 u16 get_pmbase(void)
-{
-	return lpc_get_pmbase();
-}
-
-/* Defined in <cpu/x86/smm.h> which is used outside of common code*/
-u16 smm_get_pmbase(void)
 {
 	return lpc_get_pmbase();
 }

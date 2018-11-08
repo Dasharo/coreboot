@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2017 Intel Corp.
+ * Copyright (C) 2017-2018 Intel Corp.
  * (Written by Bora Guvendik <bora.guvendik@intel.com> for Intel Corp.)
  *
  * This program is free software; you can redistribute it and/or modify
@@ -15,6 +15,13 @@
  * GNU General Public License for more details.
  */
 
+#include <intelblocks/itss.h>
+#include <intelblocks/pcr.h>
+#include <soc/itss.h>
+#include <soc/pcr_ids.h>
+
+/* Interrupt Routing */
+#include "irqlinks.asl"
 
 /* PCI IRQ assignment */
 #include "pci_irqs.asl"
@@ -26,13 +33,20 @@
 #include "scs.asl"
 
 /* GPIO controller */
+#if IS_ENABLED(CONFIG_SOC_INTEL_CANNONLAKE_PCH_H)
+#include "gpio_cnp_h.asl"
+#else
 #include "gpio.asl"
+#endif
 
 /* LPC 0:1f.0 */
 #include "lpc.asl"
 
 /* PCH HDA */
 #include "pch_hda.asl"
+
+/* PCIE Ports */
+#include "pcie.asl"
 
 /* Serial IO */
 #include "serialio.asl"
@@ -46,5 +60,5 @@
 /* PCI _OSC */
 #include <soc/intel/common/acpi/pci_osc.asl>
 
-/* CNVi */
-#include "cnvi.asl"
+/* GBe 0:1f.6 */
+#include "pch_glan.asl"

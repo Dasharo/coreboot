@@ -26,6 +26,7 @@
 #include <elog.h>
 #include <amdblocks/amd_pci_util.h>
 #include <amdblocks/agesawrapper.h>
+#include <amdblocks/reset.h>
 #include <soc/southbridge.h>
 #include <soc/smi.h>
 #include <soc/amd_pci_int_defs.h>
@@ -33,7 +34,6 @@
 #include <soc/pci_devs.h>
 #include <agesa_headers.h>
 #include <soc/nvs.h>
-#include <reset.h>
 
 /*
  * Table of devices that need their AOAC registers enabled and waited
@@ -53,22 +53,22 @@ const static struct stoneyridge_aoac aoac_devs[] = {
 
 static int is_sata_config(void)
 {
-	return !((CONFIG_STONEYRIDGE_SATA_MODE == SataNativeIde)
-			|| (CONFIG_STONEYRIDGE_SATA_MODE == SataLegacyIde));
+	return !((SataNativeIde == CONFIG_STONEYRIDGE_SATA_MODE)
+			|| (SataLegacyIde == CONFIG_STONEYRIDGE_SATA_MODE));
 }
 
 static inline int sb_sata_enable(void)
 {
 	/* True if IDE or AHCI. */
-	return (CONFIG_STONEYRIDGE_SATA_MODE == SataNativeIde) ||
-		(CONFIG_STONEYRIDGE_SATA_MODE == SataAhci);
+	return (SataNativeIde == CONFIG_STONEYRIDGE_SATA_MODE) ||
+		(SataAhci == CONFIG_STONEYRIDGE_SATA_MODE);
 }
 
 static inline int sb_ide_enable(void)
 {
 	/* True if IDE or LEGACY IDE. */
-	return (CONFIG_STONEYRIDGE_SATA_MODE == SataNativeIde) ||
-		(CONFIG_STONEYRIDGE_SATA_MODE == SataLegacyIde);
+	return (SataNativeIde == CONFIG_STONEYRIDGE_SATA_MODE) ||
+		(SataLegacyIde == CONFIG_STONEYRIDGE_SATA_MODE);
 }
 
 void SetFchResetParams(FCH_RESET_INTERFACE *params)
@@ -395,7 +395,7 @@ void sb_clk_output_48Mhz(void)
 {
 	u32 ctrl;
 	u32 *misc_clk_cntl_1_ptr = (u32 *)(uintptr_t)(MISC_MMIO_BASE
-				+ MISC_MISC_CLK_CNTL_1);
+				+ MISC_CLK_CNTL1);
 
 	/*
 	 * Enable the X14M_25M_48M_OSC pin and leaving it at it's default so
@@ -429,27 +429,27 @@ static uintptr_t sb_spibase(void)
 void sb_set_spi100(u16 norm, u16 fast, u16 alt, u16 tpm)
 {
 	uintptr_t base = sb_spibase();
-	write16((void *)base + SPI100_SPEED_CONFIG,
+	write16((void *)(base + SPI100_SPEED_CONFIG),
 				(norm << SPI_NORM_SPEED_NEW_SH) |
 				(fast << SPI_FAST_SPEED_NEW_SH) |
 				(alt << SPI_ALT_SPEED_NEW_SH) |
 				(tpm << SPI_TPM_SPEED_NEW_SH));
-	write16((void *)base + SPI100_ENABLE, SPI_USE_SPI100);
+	write16((void *)(base + SPI100_ENABLE), SPI_USE_SPI100);
 }
 
 void sb_disable_4dw_burst(void)
 {
 	uintptr_t base = sb_spibase();
-	write16((void *)base + SPI100_HOST_PREF_CONFIG,
-			read16((void *)base + SPI100_HOST_PREF_CONFIG)
+	write16((void *)(base + SPI100_HOST_PREF_CONFIG),
+			read16((void *)(base + SPI100_HOST_PREF_CONFIG))
 					& ~SPI_RD4DW_EN_HOST);
 }
 
 void sb_read_mode(u32 mode)
 {
 	uintptr_t base = sb_spibase();
-	write32((void *)base + SPI_CNTRL0,
-			(read32((void *)base + SPI_CNTRL0)
+	write32((void *)(base + SPI_CNTRL0),
+			(read32((void *)(base + SPI_CNTRL0))
 					& ~SPI_READ_MODE_MASK) | mode);
 }
 
@@ -578,26 +578,27 @@ static void setup_spread_spectrum(int *reboot)
 
 	uint32_t cfg6 = misc_read32(MISC_CGPLL_CONFIG6);
 	cfg6 &= ~CG1PLL_LF_MODE_MASK;
-	cfg6 |= (0x0F8 << CG1PLL_LF_MODE_SHIFT) & CG1PLL_LF_MODE_MASK;
+	cfg6 |= (0x0f8 << CG1PLL_LF_MODE_SHIFT) & CG1PLL_LF_MODE_MASK;
 	misc_write32(MISC_CGPLL_CONFIG6, cfg6);
 
 	uint32_t cfg3 = misc_read32(MISC_CGPLL_CONFIG3);
 	cfg3 &= ~CG1PLL_REFDIV_MASK;
 	cfg3 |= (0x003 << CG1PLL_REFDIV_SHIFT) & CG1PLL_REFDIV_MASK;
 	cfg3 &= ~CG1PLL_FBDIV_MASK;
-	cfg3 |= (0x04B << CG1PLL_FBDIV_SHIFT) & CG1PLL_FBDIV_MASK;
+	cfg3 |= (0x04b << CG1PLL_FBDIV_SHIFT) & CG1PLL_FBDIV_MASK;
 	misc_write32(MISC_CGPLL_CONFIG3, cfg3);
 
 	uint32_t cfg5 = misc_read32(MISC_CGPLL_CONFIG5);
-	cfg5 &= ~CG1PLL_SS_AMOUNT_NFRAC_SLIP_MASK;
-	cfg5 |= (0x2 << CG1PLL_SS_AMOUNT_NFRAC_SLIP_SHIFT) & CG1PLL_SS_AMOUNT_NFRAC_SLIP_MASK;
+	cfg5 &= ~SS_AMOUNT_NFRAC_SLIP_MASK;
+	cfg5 |= (0x2 << SS_AMOUNT_NFRAC_SLIP_SHIFT) & SS_AMOUNT_NFRAC_SLIP_MASK;
 	misc_write32(MISC_CGPLL_CONFIG5, cfg5);
 
 	uint32_t cfg4 = misc_read32(MISC_CGPLL_CONFIG4);
-	cfg4 &= ~CG1PLL_SS_AMOUNT_DSFRAC_MASK;
-	cfg4 |= (0xD000 << CG1PLL_SS_AMOUNT_DSFRAC_SHIFT) & CG1PLL_SS_AMOUNT_DSFRAC_MASK;
-	cfg4 &= ~CG1PLL_SS_STEP_SIZE_DSFRAC_MASK;
-	cfg4 |= (0x02D5 << CG1PLL_SS_STEP_SIZE_DSFRAC_SHIFT) & CG1PLL_SS_STEP_SIZE_DSFRAC_MASK;
+	cfg4 &= ~SS_AMOUNT_DSFRAC_MASK;
+	cfg4 |= (0xd000 << SS_AMOUNT_DSFRAC_SHIFT) & SS_AMOUNT_DSFRAC_MASK;
+	cfg4 &= ~SS_STEP_SIZE_DSFRAC_MASK;
+	cfg4 |= (0x02d5 << SS_STEP_SIZE_DSFRAC_SHIFT)
+						& SS_STEP_SIZE_DSFRAC_MASK;
 	misc_write32(MISC_CGPLL_CONFIG4, cfg4);
 
 	rstcfg |= TOGGLE_ALL_PWR_GOOD;
@@ -638,7 +639,7 @@ void bootblock_fch_early_init(void)
 	setup_misc(&reboot);
 
 	if (reboot)
-		soft_reset();
+		warm_reset();
 
 	sb_enable_legacy_io();
 	enable_aoac_devices();
@@ -667,7 +668,7 @@ static void sb_print_pmxc0_status(void)
 	/* PMxC0 S5/Reset Status shows the source of previous reset. */
 	uint32_t pmxc0_status = pm_read32(PM_RST_STATUS);
 
-	static const char *const pmxc0_status_bits[] = {
+	static const char *const pmxc0_status_bits[32] = {
 		[0] = "ThermalTrip",
 		[1] = "FourSecondPwrBtn",
 		[2] = "Shutdown",
@@ -688,13 +689,12 @@ static void sb_print_pmxc0_status(void)
 		[27] = "SyncFlood",
 		[28] = "HangReset",
 		[29] = "EcWatchdogRst",
-		[31] = "BIT31",
 	};
 
-	printk(BIOS_SPEW, "PMxC0 STATUS: 0x%x ", pmxc0_status);
+	printk(BIOS_DEBUG, "PMxC0 STATUS: 0x%x ", pmxc0_status);
 	print_num_status_bits(ARRAY_SIZE(pmxc0_status_bits), pmxc0_status,
 			      pmxc0_status_bits);
-	printk(BIOS_SPEW, "\n");
+	printk(BIOS_DEBUG, "\n");
 }
 
 /* After console init */
@@ -763,7 +763,7 @@ static uint16_t reset_pm1_status(void)
 
 static uint16_t print_pm1_status(uint16_t pm1_sts)
 {
-	static const char *const pm1_sts_bits[] = {
+	static const char *const pm1_sts_bits[16] = {
 		[0] = "TMROF",
 		[4] = "BMSTATUS",
 		[5] = "GBL",
@@ -776,9 +776,9 @@ static uint16_t print_pm1_status(uint16_t pm1_sts)
 	if (!pm1_sts)
 		return 0;
 
-	printk(BIOS_SPEW, "PM1_STS: ");
+	printk(BIOS_DEBUG, "PM1_STS: ");
 	print_num_status_bits(ARRAY_SIZE(pm1_sts_bits), pm1_sts, pm1_sts_bits);
-	printk(BIOS_SPEW, "\n");
+	printk(BIOS_DEBUG, "\n");
 
 	return pm1_sts;
 }
@@ -886,6 +886,49 @@ void southbridge_init(void *chip_info)
 	sb_clear_pm1_status();
 }
 
+static void set_sb_final_nvs(void)
+{
+	uintptr_t amdfw_rom;
+	uintptr_t xhci_fw;
+	uintptr_t fwaddr;
+	size_t fwsize;
+	const struct device *sd, *sata;
+
+	struct global_nvs_t *gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
+	if (gnvs == NULL)
+		return;
+
+	gnvs->aoac.ic0e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_I2C0);
+	gnvs->aoac.ic1e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_I2C1);
+	gnvs->aoac.ic2e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_I2C2);
+	gnvs->aoac.ic3e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_I2C3);
+	gnvs->aoac.ut0e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_UART0);
+	gnvs->aoac.ut1e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_UART1);
+	gnvs->aoac.ehce = is_aoac_device_enabled(FCH_AOAC_D3_STATE_USB2);
+	gnvs->aoac.xhce = is_aoac_device_enabled(FCH_AOAC_D3_STATE_USB3);
+	/* Rely on these being in sync with devicetree */
+	sd = dev_find_slot(0, SD_DEVFN);
+	gnvs->aoac.st_e = sd && sd->enabled ? 1 : 0;
+	sata = dev_find_slot(0, SATA_DEVFN);
+	gnvs->aoac.sd_e = sata && sata->enabled ? 1 : 0;
+	gnvs->aoac.espi = 1;
+
+	amdfw_rom = 0x20000 - (0x80000 << CONFIG_AMD_FWM_POSITION_INDEX);
+	xhci_fw = read32((void *)(amdfw_rom + XHCI_FW_SIG_OFFSET));
+
+	fwaddr = 2 + read16((void *)(xhci_fw + XHCI_FW_ADDR_OFFSET
+			+ XHCI_FW_BOOTRAM_SIZE));
+	fwsize = read16((void *)(xhci_fw + XHCI_FW_SIZE_OFFSET
+			+ XHCI_FW_BOOTRAM_SIZE));
+	gnvs->fw00 = 0;
+	gnvs->fw01 = ((32 * KiB) << 16) + 0;
+	gnvs->fw02 = fwaddr + XHCI_FW_BOOTRAM_SIZE;
+	gnvs->fw03 = fwsize << 16;
+
+	gnvs->eh10 = pci_read_config32(SOC_EHCI1_DEV, PCI_BASE_ADDRESS_0)
+			& ~PCI_BASE_ADDRESS_MEM_ATTR_MASK;
+}
+
 void southbridge_final(void *chip_info)
 {
 	uint8_t restored_power = PM_S5_AT_POWER_RECOVERY;
@@ -893,6 +936,8 @@ void southbridge_final(void *chip_info)
 	if (IS_ENABLED(CONFIG_MAINBOARD_POWER_RESTORE))
 		restored_power = PM_RESTORE_S0_IF_PREV_S0;
 	pm_write8(PM_RTC_SHADOW, restored_power);
+
+	set_sb_final_nvs();
 }
 
 /*

@@ -2,6 +2,7 @@
  * This file is part of the coreboot project.
  *
  * Copyright (C) 2011 The Chromium OS Authors. All rights reserved.
+ * Copyright (C) 2018 Eltan B.V.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +47,7 @@
 #define	TPM_DEBUG(fmt, args...)		\
 	if (IS_ENABLED(CONFIG_DEBUG_TPM)) {		\
 		printk(BIOS_DEBUG, PREFIX);		\
-		printk(BIOS_DEBUG, fmt , ##args);	\
+		printk(BIOS_DEBUG, fmt, ##args);	\
 	}
 #define TPM_DEBUG_IO_READ(reg_, val_) \
 	TPM_DEBUG("Read reg 0x%x returns 0x%x\n", (reg_), (val_))
@@ -911,7 +912,8 @@ static void lpc_tpm_fill_ssdt(struct device *dev)
 	acpigen_write_name("_CRS");
 	acpigen_write_resourcetemplate_header();
 	acpigen_write_mem32fixed(1, CONFIG_TPM_TIS_BASE_ADDRESS, 0x5000);
-	acpigen_write_io16(port, port, 1, 2, 1);
+	if (port)
+		acpigen_write_io16(port, port, 1, 2, 1);
 
 	if (CONFIG_TPM_PIRQ) {
 		/*

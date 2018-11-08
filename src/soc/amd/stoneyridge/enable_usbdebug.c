@@ -20,20 +20,16 @@
 #include <arch/io.h>
 #include <device/pci_ehci.h>
 #include <device/pci_def.h>
+#include <soc/pci_devs.h>
 #include <soc/southbridge.h>
 
 pci_devfn_t pci_ehci_dbg_dev(unsigned int hcd_idx)
 {
 	/* Enable all of the USB controllers */
-	outb(0xEF, PM_INDEX);
-	outb(0x7F, PM_DATA);
+	outb(PM_USB_ENABLE, PM_INDEX);
+	outb(PM_USB_ALL_CONTROLLERS, PM_DATA);
 
-	if (hcd_idx == 3)
-		return PCI_DEV(0, 0x16, 0);
-	else if (hcd_idx == 2)
-		return PCI_DEV(0, 0x13, 0);
-	else
-		return PCI_DEV(0, 0x12, 0);
+	return SOC_EHCI1_DEV;
 }
 
 void pci_ehci_dbg_set_port(pci_devfn_t dev, unsigned int port)

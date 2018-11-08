@@ -25,7 +25,6 @@
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
 #include <arch/acpi.h>
-#include <console/console.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <northbridge/intel/sandybridge/raminit.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
@@ -36,7 +35,7 @@
 
 void pch_enable_lpc(void)
 {
-	/* X230 EC Decode Range Port60/64, Port62/66 */
+	/* EC Decode Range Port60/64, Port62/66 */
 	/* Enable EC, PS/2 Keyboard/Mouse */
 	pci_write_config16(PCH_LPC_DEV, LPC_EN,
 			   CNF2_LPC_EN | CNF1_LPC_EN | MC_LPC_EN | KBC_LPC_EN);
@@ -50,7 +49,6 @@ void pch_enable_lpc(void)
 
 void mainboard_rcba_config(void)
 {
-	RCBA32(BUC) = 0;
 }
 
 void mainboard_fill_pei_data(struct pei_data *pei_data)

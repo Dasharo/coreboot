@@ -179,8 +179,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NC(GPP_D8),
 	/* D9  : ISH_SPI_CS# ==> HP_IRQ_GPIO */
 	PAD_CFG_GPI_APIC(GPP_D9, NONE, PLTRST),
-	/* D10 : ISH_SPI_CLK ==> SPKR_RST_L (unstuffed) */
-	PAD_CFG_NC(GPP_D10),
+	/* D10 : ISH_SPI_CLK ==> SINGLE_CHANNEL */
+	PAD_CFG_GPI_GPIO_DRIVER(GPP_D10, NONE, DEEP),
 	/* D11 : ISH_SPI_MISO ==> DCI_CLK (debug header) */
 	PAD_CFG_NC(GPP_D11),
 	/* D12 : ISH_SPI_MOSI ==> DCI_DATA (debug header) */
@@ -370,6 +370,9 @@ static const struct pad_config early_gpio_table[] = {
 
 	/* E0  : SATAXPCI0 ==> H1_PCH_INT_ODL */
 	PAD_CFG_GPI_APIC_INVERT(GPP_E0, NONE, PLTRST),
+
+	/* D10 : ISH_SPI_CLK ==> SINGLE_CHANNEL */
+	PAD_CFG_GPI_GPIO_DRIVER(GPP_D10, 20K_PD, DEEP),
 };
 
 const struct pad_config *variant_gpio_table(size_t *num)
@@ -405,6 +408,29 @@ static const struct pad_config pantheon_gpio_table[] = {
 	PAD_CFG_NC(GPP_C3),
 };
 
+static const struct pad_config fpmcu_gpio_table[] = {
+	/* B11 : EXT_PWR_GATE# ==> PCH_FP_PWR_EN */
+	PAD_CFG_GPO(GPP_B11, 1, DEEP),
+	/* B19 : GSPI1_CS# ==> PCH_SPI_FP_CS# */
+	PAD_CFG_NF(GPP_B19, NONE, DEEP, NF1),
+	/* B20 : GSPI1_CLK ==> PCH_SPI_FP_CLK */
+	PAD_CFG_NF(GPP_B20, NONE, DEEP, NF1),
+	/* B21 : GSPI1_MISO ==> PCH_SPI_FP_MISO */
+	PAD_CFG_NF(GPP_B21, NONE, DEEP, NF1),
+	/* B22 : GSPI1_MOSI ==> PCH_SPI_FP_MOSI */
+	PAD_CFG_NF(GPP_B22, NONE, DEEP, NF1),
+	/* C3  : SML0CLK ==> TOUCHSCREEN_DIS# */
+	PAD_CFG_GPO(GPP_C3, 0, DEEP),
+	/* C9  : UART0_TXD ==> FP_RST_ODL */
+	PAD_CFG_GPO(GPP_C9, 1, DEEP),
+	/* D5  : ISH_I2C0_SDA ==> FPMCU_BOOT0 */
+	PAD_CFG_GPO(GPP_D5, 0, DEEP),
+	/* D6  : ISH_I2C0_SCL ==> FPMCU_INT_L */
+	PAD_CFG_GPI_IRQ_WAKE(GPP_D6, 20K_PU, DEEP, LEVEL, NONE),
+	/* D17 : DMIC_CLK1 ==> NC */
+	PAD_CFG_NC(GPP_D17),
+};
+
 const struct pad_config *variant_sku_gpio_table(size_t *num)
 {
 	uint32_t sku_id = variant_board_sku();
@@ -415,6 +441,10 @@ const struct pad_config *variant_sku_gpio_table(size_t *num)
 	case SKU_2_VAYNE:
 	case SKU_0_SONA:
 	case SKU_1_SONA:
+	case SKU_0_SYNDRA:
+	case SKU_1_SYNDRA:
+	case SKU_2_SYNDRA:
+	case SKU_3_SYNDRA:
 		*num = ARRAY_SIZE(no_dmic1_sku_gpio_table);
 		board_gpio_tables = no_dmic1_sku_gpio_table;
 		break;
@@ -423,6 +453,17 @@ const struct pad_config *variant_sku_gpio_table(size_t *num)
 	case SKU_2_PANTHEON:
 		*num = ARRAY_SIZE(pantheon_gpio_table);
 		board_gpio_tables = pantheon_gpio_table;
+		break;
+	case SKU_0_EKKO:
+	case SKU_1_EKKO:
+	case SKU_2_EKKO:
+	case SKU_3_EKKO:
+	case SKU_0_BARD:
+	case SKU_1_BARD:
+	case SKU_2_BARD:
+	case SKU_3_BARD:
+		*num = ARRAY_SIZE(fpmcu_gpio_table);
+		board_gpio_tables = fpmcu_gpio_table;
 		break;
 	default:
 		*num = ARRAY_SIZE(nami_default_sku_gpio_table);

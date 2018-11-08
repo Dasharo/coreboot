@@ -33,9 +33,9 @@
  * supported.
  */
 
-#include "mct_d.h"
-
 #include <string.h>
+#include <cpu/amd/msr.h>
+#include "mct_d.h"
 
 static u8 ReconfigureDIMMspare_D(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstatA);
@@ -1737,7 +1737,7 @@ static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
 	 * and PCI 0:24N:2x60,64,68,6C config registers (CS Mask 0-3).
 	 */
 
-	u8 ChipSel, Rows, Cols, Ranks ,Banks, DevWidth;
+	u8 ChipSel, Rows, Cols, Ranks, Banks, DevWidth;
 	u32 BankAddrReg, csMask;
 
 	u32 val;
@@ -3255,7 +3255,7 @@ static void mct_init(struct MCTStatStruc *pMCTstat,
 	pDCTstat->DRPresent = 1;
 
 	/* enable extend PCI configuration access */
-	addr = 0xC001001F;
+	addr = NB_CFG_MSR;
 	_RDMSR(addr, &lo, &hi);
 	if (hi & (1 << (46-32))) {
 		pDCTstat->Status |= 1 << SB_ExtConfig;
@@ -3556,7 +3556,7 @@ static u8 CheckNBCOFEarlyArbEn(struct MCTStatStruc *pMCTstat,
 	 */
 
 	/* 3*(Fn2xD4[NBFid]+4)/(2^NbDid)/(3+Fn2x94[MemClkFreq]) */
-	_RDMSR(0xC0010071, &lo, &hi);
+	_RDMSR(MSR_COFVID_STS, &lo, &hi);
 	if (lo & (1 << 22))
 		NbDid |= 1;
 
@@ -3686,7 +3686,7 @@ void mct_SetClToNB_D(struct MCTStatStruc *pMCTstat,
 	// FIXME: Maybe check the CPUID? - not for now.
 	// pDCTstat->LogicalCPUID;
 
-	msr = BU_CFG2;
+	msr = BU_CFG2_MSR;
 	_RDMSR(msr, &lo, &hi);
 	lo |= 1 << ClLinesToNbDis;
 	_WRMSR(msr, lo, hi);
@@ -3703,7 +3703,7 @@ void mct_ClrClToNB_D(struct MCTStatStruc *pMCTstat,
 	// FIXME: Maybe check the CPUID? - not for now.
 	// pDCTstat->LogicalCPUID;
 
-	msr = BU_CFG2;
+	msr = BU_CFG2_MSR;
 	_RDMSR(msr, &lo, &hi);
 	if (!pDCTstat->ClToNB_flag)
 		lo &= ~(1 << ClLinesToNbDis);
@@ -3721,7 +3721,7 @@ void mct_SetWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat,
 	// FIXME: Maybe check the CPUID? - not for now.
 	// pDCTstat->LogicalCPUID;
 
-	msr = BU_CFG;
+	msr = BU_CFG_MSR;
 	_RDMSR(msr, &lo, &hi);
 	hi |= (1 << WbEnhWsbDis_D);
 	_WRMSR(msr, lo, hi);
@@ -3737,7 +3737,7 @@ void mct_ClrWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat,
 	// FIXME: Maybe check the CPUID? - not for now.
 	// pDCTstat->LogicalCPUID;
 
-	msr = BU_CFG;
+	msr = BU_CFG_MSR;
 	_RDMSR(msr, &lo, &hi);
 	hi &= ~(1 << WbEnhWsbDis_D);
 	_WRMSR(msr, lo, hi);
@@ -3845,7 +3845,7 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 		return;
 	}
 
-	addr = HWCR;
+	addr = HWCR_MSR;
 	_RDMSR(addr, &lo, &hi);
 	if (lo & (1<<17)) {		/* save the old value */
 		wrap32dis = 1;
@@ -3877,7 +3877,7 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 		}
 	}
 	if (!wrap32dis) {
-		addr = HWCR;
+		addr = HWCR_MSR;
 		_RDMSR(addr, &lo, &hi);
 		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
 		_WRMSR(addr, lo, hi);

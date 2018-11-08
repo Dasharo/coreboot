@@ -13,9 +13,10 @@
  * GNU General Public License for more details.
  */
 
-#include "mct_d.h"
 #include <cpu/x86/cr.h>
+#include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
+#include "mct_d.h"
 
 static void CalcEccDQSPos_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat, u16 like,
@@ -286,7 +287,7 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 	cr4 |= (1<<9);		/* OSFXSR enable SSE2 */
 	write_cr4(cr4);
 
-	addr = HWCR;
+	addr = HWCR_MSR;
 	_RDMSR(addr, &lo, &hi);
 	if (lo & (1<<17)) {
 		_Wrap32Dis = 1;
@@ -368,7 +369,7 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 		mct_EnableDimmEccEn_D(pMCTstat, pDCTstat, _DisableDramECC);
 	}
 	if (!_Wrap32Dis) {
-		addr = HWCR;
+		addr = HWCR_MSR;
 		_RDMSR(addr, &lo, &hi);
 		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
 		_WRMSR(addr, lo, hi);
@@ -815,10 +816,10 @@ void SetTargetWTIO_D(u32 TestAddr)
 	u32 lo, hi;
 	hi = TestAddr >> 24;
 	lo = TestAddr << 8;
-	_WRMSR(0xC0010016, lo, hi);		/* IORR0 Base */
+	_WRMSR(MTRR_IORR0_BASE, lo, hi);		/* IORR0 Base */
 	hi = 0xFF;
 	lo = 0xFC000800;			/* 64MB Mask */
-	_WRMSR(0xC0010017, lo, hi);		/* IORR0 Mask */
+	_WRMSR(MTRR_IORR0_MASK, lo, hi);		/* IORR0 Mask */
 }
 
 
@@ -828,7 +829,7 @@ void ResetTargetWTIO_D(void)
 
 	hi = 0;
 	lo = 0;
-	_WRMSR(0xc0010017, lo, hi); // IORR0 Mask
+	_WRMSR(MTRR_IORR0_MASK, lo, hi); // IORR0 Mask
 }
 
 

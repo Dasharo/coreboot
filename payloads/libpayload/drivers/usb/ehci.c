@@ -776,6 +776,7 @@ ehci_init (unsigned long physical_bar)
 	int i;
 	hci_t *controller = new_controller ();
 	controller->instance = xzalloc(sizeof (ehci_t));
+	controller->reg_base = (uintptr_t)physical_bar;
 	controller->type = EHCI;
 	controller->start = ehci_start;
 	controller->stop = ehci_stop;
@@ -866,6 +867,9 @@ ehci_pci_init (pcidev_t addr)
 	pci_write_config8(addr, FLADJ, FLADJ_framelength(60000));
 
 	controller = ehci_init((unsigned long)reg_base);
+
+	if (controller)
+		controller->pcidev = addr;
 
 	return controller;
 }

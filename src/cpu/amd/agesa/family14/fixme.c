@@ -14,10 +14,11 @@
  */
 
 #include <cpu/x86/mtrr.h>
-
+#include <cpu/amd/msr.h>
+#include <cpu/amd/mtrr.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
 #include <AGESA.h>
-#include "amdlib.h"
+#include <amdlib.h>
 
 /* Define AMD Ontario APPU SSID/SVID */
 #define AMD_APU_SVID		0x1022
@@ -51,7 +52,7 @@ void amd_initcpuio(void)
 	PciAddress.AddressValue = MAKE_SBDFO(0, 0, 0x18, 1, 0x8C);
 	PciData = 0x00FECF00;	// last address before non-posted range
 	LibAmdPciWrite(AccessWidth32, PciAddress, &PciData, &StdHeader);
-	LibAmdMsrRead(0xC001001A, &MsrReg, &StdHeader);
+	LibAmdMsrRead(TOP_MEM, &MsrReg, &StdHeader);
 	MsrReg = (MsrReg >> 8) | 3;
 	PciAddress.AddressValue = MAKE_SBDFO(0, 0, 0x18, 1, 0x88);
 	PciData = (UINT32) MsrReg;
@@ -78,7 +79,7 @@ void amd_initmmio(void)
 	   Address MSR register.
 	 */
 	MsrReg = CONFIG_MMCONF_BASE_ADDRESS | (LibAmdBitScanReverse(CONFIG_MMCONF_BUS_NUMBER) << 2) | 1;
-	LibAmdMsrWrite(0xC0010058, &MsrReg, &StdHeader);
+	LibAmdMsrWrite(MMIO_CONF_BASE, &MsrReg, &StdHeader);
 
 	/* Set Ontario Link Data */
 	PciAddress.AddressValue = MAKE_SBDFO(0, 0, 0, 0, 0xE0);
@@ -90,13 +91,13 @@ void amd_initmmio(void)
 
 	/* Set ROM cache onto WP to decrease post time */
 	MsrReg = (0x0100000000ull - CACHE_ROM_SIZE) | MTRR_TYPE_WRPROT;
-	LibAmdMsrWrite (0x20C, &MsrReg, &StdHeader);
+	LibAmdMsrWrite(MTRR_PHYS_BASE(6), &MsrReg, &StdHeader);
 	MsrReg = ((1ULL << CONFIG_CPU_ADDR_BITS) - CACHE_ROM_SIZE) | MTRR_PHYS_MASK_VALID;
-	LibAmdMsrWrite (0x20D, &MsrReg, &StdHeader);
+	LibAmdMsrWrite(MTRR_PHYS_MASK(6), &MsrReg, &StdHeader);
 
 	/* Set P-state 0 (1600 MHz) early to save a few ms of boot time */
 	MsrReg = 0;
-	LibAmdMsrWrite (0xC0010062, &MsrReg, &StdHeader);
+	LibAmdMsrWrite(PS_CTL_REG, &MsrReg, &StdHeader);
 }
 
 void amd_initenv(void)
