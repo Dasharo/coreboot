@@ -16,6 +16,14 @@ Releases 4.8.0.x are based on continuous synchronization with official
 3. `make`
 
 ## [Unreleased]
+## [v4.8.0.6] - 2018-11-08
+### Changed
+- Updated SeaBIOS to rel-1.11.0.6
+- Synced and rebased with coreboot official repo commit de46280
+
+### Added
+- [Console output redirection to COM2 option](https://github.com/pcengines/apu2-documentation/blob/master/docs/serial_console.md)
+
 ## [v4.8.0.5] - 2018-10-04
 ### Changed
 - Updated sortbootorder to v4.6.11
@@ -225,7 +233,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.5...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.6...develop
+[v4.8.0.6]: https://github.com/pcengines/coreboot/compare/v4.8.0.5...v4.8.0.6
 [v4.8.0.5]: https://github.com/pcengines/coreboot/compare/v4.8.0.4...v4.8.0.5
 [v4.8.0.4]: https://github.com/pcengines/coreboot/compare/v4.8.0.3...v4.8.0.4
 [v4.8.0.3]: https://github.com/pcengines/coreboot/compare/v4.8.0.2...v4.8.0.3
