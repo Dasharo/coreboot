@@ -56,6 +56,7 @@
 #define SPI_ROM_ENABLE                0x02
 #define SPI_BASE_ADDRESS              0xFEC10000
 
+#define LPC_IO_OR_MEM_DECODE_ENABLE	0x48
 
 #define ACPI_MMIO_BASE  0xFED80000ul
 #define FCH_CFG_BASE     0x000   // DWORD

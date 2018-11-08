@@ -24,6 +24,7 @@
 #include <arch/acpi.h>
 #include <arch/io.h>
 #include <arch/stages.h>
+#include <device/pnp.h>
 #include <device/pnp_def.h>
 #include <arch/cpu.h>
 #include <cpu/x86/lapic.h>
@@ -40,9 +41,16 @@
 #include <fchgpio.h>
 #include "apu2.h"
 #include <northbridge/amd/pi/00730F01/eltannorthbridge.h>
+#include <superio/nuvoton/common/nuvoton.h>
+#include <superio/nuvoton/nct5104d/nct5104d.h>
+#include <southbridge/amd/pi/hudson/hudson.h>
 #include <eltanhudson.h>
 #include <build.h>
 #include "bios_knobs.h"
+
+#define SIO_PORT 0x2e
+#define SERIAL1_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
+#define SERIAL2_DEV PNP_DEV(SIO_PORT, NCT5104D_SP2)
 
 extern char coreboot_dmi_date[];
 //
@@ -102,6 +110,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	if (!cpu_init_detectedx && boot_cpu()) {
 
 		u32 data, *memptr;
+		device_t dev;
 		bool mpcie2_clk;
 
 		hudson_lpc_port80();
@@ -113,6 +122,19 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		hudson_clk_output_48Mhz();
 
 		post_code(0x31);
+
+		dev = PCI_DEV(0, 0x14, 3);
+		data = pci_read_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE);
+		/* enable 0x2e/0x4e IO decoding before configuring SuperIO */
+		pci_write_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE, data | 3);
+
+		/* COM2 on apu5 is reserved so only COM1 should be supported */
+		if ((CONFIG_UART_FOR_CONSOLE == 1) &&
+			!IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+			nuvoton_enable_serial(SERIAL2_DEV, CONFIG_TTYS0_BASE);
+		else if (CONFIG_UART_FOR_CONSOLE == 0)
+			nuvoton_enable_serial(SERIAL1_DEV, CONFIG_TTYS0_BASE);
+
 		console_init();
 
 		printk(BIOS_INFO, "14-25-48Mhz Clock settings\n");
