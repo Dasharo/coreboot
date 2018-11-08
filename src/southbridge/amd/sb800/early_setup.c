@@ -19,6 +19,7 @@
 #include <reset.h>
 #include <arch/cpu.h>
 #include <southbridge/amd/common/amd_defs.h>
+#include <southbridge/amd/common/reset.h>
 #include "sb800.h"
 #include "smbus.c"
 
@@ -218,7 +219,7 @@ static void enable_fid_change_on_sb(u32 sbbusn, u32 sbdn)
 	pmio_write(0x81, byte);
 }
 
-void do_hard_reset(void)
+void do_board_reset(void)
 {
 	set_bios_reset();
 
@@ -633,7 +634,7 @@ int s3_save_nvram_early(u32 dword, int size, int  nvram_pos)
 
 	for (i = 0; i < size; i++) {
 		outb(nvram_pos, BIOSRAM_INDEX);
-		outb((dword >>(8 * i)) & 0xff , BIOSRAM_DATA);
+		outb((dword >> (8 * i)) & 0xff, BIOSRAM_DATA);
 		nvram_pos++;
 	}
 

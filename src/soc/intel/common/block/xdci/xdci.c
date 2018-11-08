@@ -2,7 +2,7 @@
  * This file is part of the coreboot project.
  *
  * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2015-2017 Intel Corporation.
+ * Copyright (C) 2015-2018 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,6 @@
  */
 
 #include <arch/io.h>
-#include <compiler.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -42,6 +41,8 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CNL_LP_XDCI,
 	PCI_DEVICE_ID_INTEL_GLK_XDCI,
 	PCI_DEVICE_ID_INTEL_SPT_LP_XDCI,
+	PCI_DEVICE_ID_INTEL_CNP_H_XDCI,
+	PCI_DEVICE_ID_INTEL_ICP_LP_XDCI,
 	0
 };
 

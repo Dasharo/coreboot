@@ -16,6 +16,10 @@
 ## GNU General Public License for more details.
 ##
 
+ifeq ($(CONFIG_POSTCAR_STAGE),y)
+$(eval $(call init_standard_toolchain,postcar))
+endif
+
 ################################################################################
 # i386 specific tools
 NVRAMTOOL:=$(objutil)/nvramtool/nvramtool
@@ -42,6 +46,12 @@ stripped_vgabios_id = $(call strip_quotes,$(CONFIG_VGA_BIOS_ID))
 cbfs-files-$(CONFIG_VGA_BIOS) += pci$(stripped_vgabios_id).rom
 pci$(stripped_vgabios_id).rom-file := $(call strip_quotes,$(CONFIG_VGA_BIOS_FILE))
 pci$(stripped_vgabios_id).rom-type := optionrom
+
+verstage-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
+bootblock-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
+romstage-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
+ramstage-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
+postcar-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
 
 ###############################################################################
 # common support for early assembly includes
@@ -224,7 +234,7 @@ romstage-$(CONFIG_X86_TOP4G_BOOTMEDIA_MAP) += mmap_boot.c
 romstage-y += postcar_loader.c
 romstage-$(CONFIG_COLLECT_TIMESTAMPS_TSC) += timestamp.c
 
-romstage-srcs += $(src)/mainboard/$(MAINBOARDDIR)/romstage.c
+romstage-srcs += $(wildcard $(src)/mainboard/$(MAINBOARDDIR)/romstage.c)
 romstage-libs ?=
 
 $(eval $(call early_x86_assembly_entry_rule,romstage))

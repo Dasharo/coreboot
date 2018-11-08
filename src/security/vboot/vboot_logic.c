@@ -16,7 +16,6 @@
 #include <arch/exception.h>
 #include <assert.h>
 #include <bootmode.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <console/vtxprintf.h>
 #include <delay.h>
@@ -310,7 +309,6 @@ void verstage_main(void)
 	 * does verification of memory init and thus must ensure it resumes with
 	 * the same slot that it booted from. */
 	if (IS_ENABLED(CONFIG_RESUME_PATH_SAME_AS_BOOT) &&
-	    IS_ENABLED(CONFIG_VBOOT_STARTS_IN_BOOTBLOCK) &&
 	    vboot_platform_is_resuming())
 		ctx.flags |= VB2_CONTEXT_S3_RESUME;
 
@@ -394,15 +392,19 @@ void verstage_main(void)
 		vboot_reboot();
 	}
 
-	timestamp_add_now(TS_START_TPMPCR);
-	rv = extend_pcrs(&ctx);
-	if (rv) {
-		printk(BIOS_WARNING, "Failed to extend TPM PCRs (%#x)\n", rv);
-		vb2api_fail(&ctx, VB2_RECOVERY_RO_TPM_U_ERROR, rv);
-		save_if_needed(&ctx);
-		vboot_reboot();
+	/* Only extend PCRs once on boot. */
+	if (!(ctx.flags & VB2_CONTEXT_S3_RESUME)) {
+		timestamp_add_now(TS_START_TPMPCR);
+		rv = extend_pcrs(&ctx);
+		if (rv) {
+			printk(BIOS_WARNING,
+			       "Failed to extend TPM PCRs (%#x)\n", rv);
+			vb2api_fail(&ctx, VB2_RECOVERY_RO_TPM_U_ERROR, rv);
+			save_if_needed(&ctx);
+			vboot_reboot();
+		}
+		timestamp_add_now(TS_END_TPMPCR);
 	}
-	timestamp_add_now(TS_END_TPMPCR);
 
 	/* Lock TPM */
 

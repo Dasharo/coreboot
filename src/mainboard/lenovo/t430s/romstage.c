@@ -19,7 +19,6 @@
 #include <arch/byteorder.h>
 #include <arch/io.h>
 #include <device/pci_def.h>
-#include <console/console.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <ec/lenovo/pmh7/pmh7.h>
@@ -40,11 +39,10 @@ void pch_enable_lpc(void)
 
 void mainboard_rcba_config(void)
 {
-	RCBA32(BUC) = 0;
 }
 
 const struct southbridge_usb_port mainboard_usb_ports[] = {
-	{ 1, 0,  0 }, /* P0: , OC 0 */
+	{ 1, 0,  0 }, /* P0:, OC 0 */
 	{ 1, 1,  1 }, /* P1: (EHCI debug), OC 1 */
 	{ 1, 1,  3 }, /* P2:  OC 3 */
 	{ 1, 0, -1 }, /* P3: no OC */

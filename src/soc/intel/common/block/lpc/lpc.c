@@ -14,7 +14,6 @@
  * GNU General Public License for more details.
  */
 
-#include <compiler.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -46,7 +45,7 @@ void pch_lpc_add_new_resource(struct device *dev, uint8_t offset,
 	res->flags = flags;
 }
 
-static void pch_lpc_add_io_resources(device_t dev)
+static void pch_lpc_add_io_resources(struct device *dev)
 {
 	/* Add the default claimed legacy IO range for the LPC device. */
 	pch_lpc_add_new_resource(dev, 0, 0, 0x1000, IORESOURCE_IO |
@@ -56,7 +55,7 @@ static void pch_lpc_add_io_resources(device_t dev)
 	pch_lpc_soc_fill_io_resources(dev);
 }
 
-static void pch_lpc_read_resources(device_t dev)
+static void pch_lpc_read_resources(struct device *dev)
 {
 	/* Get the PCI resources of this device. */
 	pci_dev_read_resources(dev);
@@ -101,7 +100,7 @@ static void pch_lpc_set_child_resources(struct device *dev)
 	}
 }
 
-static void pch_lpc_set_resources(device_t dev)
+static void pch_lpc_set_resources(struct device *dev)
 {
 	pci_dev_set_resources(dev);
 
@@ -128,6 +127,9 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_SPT_H_C236,
 	PCI_DEVICE_ID_INTEL_SPT_H_PREMIUM,
 	PCI_DEVICE_ID_INTEL_SPT_H_QM170,
+	PCI_DEVICE_ID_INTEL_SPT_H_HM175,
+	PCI_DEVICE_ID_INTEL_SPT_H_QM175,
+	PCI_DEVICE_ID_INTEL_SPT_H_CM238,
 	PCI_DEVICE_ID_INTEL_KBP_H_Q270,
 	PCI_DEVICE_ID_INTEL_KBP_H_H270,
 	PCI_DEVICE_ID_INTEL_KBP_H_Z270,
@@ -145,6 +147,15 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CNL_BASE_U_LPC,
 	PCI_DEVICE_ID_INTEL_CNL_U_PREMIUM_LPC,
 	PCI_DEVICE_ID_INTEL_CNL_Y_PREMIUM_LPC,
+	PCI_DEVICE_ID_INTEL_CNP_H_LPC_Q370,
+	PCI_DEVICE_ID_INTEL_CNP_H_LPC_QM370,
+	PCI_DEVICE_ID_INTEL_ICL_BASE_U_LPC,
+	PCI_DEVICE_ID_INTEL_ICL_BASE_Y_LPC,
+	PCI_DEVICE_ID_INTEL_ICL_U_PREMIUM_LPC,
+	PCI_DEVICE_ID_INTEL_ICL_U_SUPER_U_LPC,
+	PCI_DEVICE_ID_INTEL_ICL_U_SUPER_U_LPC_REV0,
+	PCI_DEVICE_ID_INTEL_ICL_SUPER_Y_LPC,
+	PCI_DEVICE_ID_INTEL_ICL_Y_PREMIUM_LPC,
 	0
 };
 

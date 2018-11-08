@@ -16,6 +16,7 @@ payloads/coreinfo/lp.config*
 payloads/external/depthcharge/depthcharge/
 payloads/external/FILO/filo/
 payloads/external/GRUB2/grub2/
+payloads/external/LinuxBoot/linuxboot/
 payloads/external/SeaBIOS/seabios/
 payloads/external/tianocore/tianocore/
 payloads/external/tint/tint/
@@ -124,16 +125,12 @@ util/autoport/autoport
 util/kbc1126/kbc1126_ec_dump
 util/kbc1126/kbc1126_ec_insert
 
-documentation/*.aux
-documentation/*.idx
-documentation/*.log
-documentation/*.toc
-documentation/*.out
-documentation/*.pdf
-documentation/cpukconfig.tex
-documentation/mainboardkconfig.tex
-documentation/skconfig.tex
-documentation/socketfkconfig.tex
+Documentation/*.aux
+Documentation/*.idx
+Documentation/*.log
+Documentation/*.toc
+Documentation/*.out
+Documentation/*.pdf
 Documentation/_build
 
 doxygen/*

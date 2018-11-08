@@ -25,9 +25,9 @@
 #define __SOC_STONEYRIDGE_NVS_H__
 
 #include <commonlib/helpers.h>
-#include <compiler.h>
 #include <stdint.h>
 #include <vendorcode/google/chromeos/gnvs.h>
+#include <soc/southbridge.h>
 
 typedef struct global_nvs_t {
 	/* Miscellaneous */
@@ -43,14 +43,21 @@ typedef struct global_nvs_t {
 	uint32_t	nhll; /* 0x21 - 0x24 - NHLT Length */
 	uint32_t	prt0; /* 0x25 - 0x28 - PERST_0 Address */
 	uint8_t		scdp; /* 0x29 - SD_CD GPIO portid */
-	uint8_t		scdo; /* 0x2A - GPIO pad offset relative to the community */
+	uint8_t		scdo; /* 0x2A - GPIO pad relative offset */
 	uint8_t		tmps; /* 0x2B - Temperature Sensor ID */
 	uint8_t		tlvl; /* 0x2C - Throttle Level Limit */
 	uint8_t		flvl; /* 0x2D - Current FAN Level */
 	uint8_t		tcrt; /* 0x2E - Critical Threshold */
 	uint8_t		tpsv; /* 0x2F - Passive Threshold */
 	uint8_t		tmax; /* 0x30 - CPU Tj_max */
-	uint8_t		unused[207];
+	uint8_t		pad1[3];
+	aoac_devs_t	aoac; /* 0x34 - AOAC device enables */
+	uint16_t	fw00; /* 0x38 - XhciFwRomAddr_Rom, Boot RAM */
+	uint16_t	fw02; /* 0x3A - XhciFwRomAddr_Ram, Instr RAM */
+	uint32_t	fw01; /* 0x3C - XhciFwRamAddr_Rom, Boot RAM sz/base */
+	uint32_t	fw03; /* 0x40 - XhciFwRomAddr_Ram, Instr RAM sz/base */
+	uint32_t	eh10; /* 0x40 - EHCI BAR */
+	uint8_t		unused[184];
 
 	/* ChromeOS specific (0x100 - 0xfff) */
 	chromeos_acpi_t chromeos;

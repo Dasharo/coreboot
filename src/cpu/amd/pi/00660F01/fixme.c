@@ -14,8 +14,9 @@
  */
 
 #include <cpu/x86/mtrr.h>
+#include <cpu/amd/msr.h>
+#include <cpu/amd/mtrr.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
-
 #include <Porting.h>
 #include <AGESA.h>
 #include <amdlib.h>
@@ -51,7 +52,7 @@ void amd_initcpuio(void)
 	PciAddress.AddressValue = MAKE_SBDFO(0, 0, 0x18, 1, 0x8C);
 	PciData = 0x00FECF00; /* last address before non-posted range */
 	LibAmdPciWrite(AccessWidth32, PciAddress, &PciData, &StdHeader);
-	LibAmdMsrRead(0xC001001A, &MsrReg, &StdHeader);
+	LibAmdMsrRead(TOP_MEM, &MsrReg, &StdHeader);
 	MsrReg = (MsrReg >> 8) | 3;
 	PciAddress.AddressValue = MAKE_SBDFO(0, 0, 0x18, 1, 0x88);
 	PciData = (UINT32)MsrReg;
@@ -80,7 +81,7 @@ void amd_initmmio(void)
 	 */
 	MsrReg = CONFIG_MMCONF_BASE_ADDRESS |
 		(LibAmdBitScanReverse(CONFIG_MMCONF_BUS_NUMBER) << 2) | 1;
-	LibAmdMsrWrite(0xC0010058, &MsrReg, &StdHeader);
+	LibAmdMsrWrite(MMIO_CONF_BASE, &MsrReg, &StdHeader);
 
 	/* For serial port */
 	PciData = 0xFF03FFD5;
@@ -89,9 +90,9 @@ void amd_initmmio(void)
 
 	/* Set ROM cache onto WP to decrease post time */
 	MsrReg = (0x0100000000ull - CACHE_ROM_SIZE) | 5ull;
-	LibAmdMsrWrite(0x20C, &MsrReg, &StdHeader);
+	LibAmdMsrWrite(MTRR_PHYS_BASE(6), &MsrReg, &StdHeader);
 	MsrReg = ((1ULL << CONFIG_CPU_ADDR_BITS) - CACHE_ROM_SIZE) | 0x800ull;
-	LibAmdMsrWrite(0x20D, &MsrReg, &StdHeader);
+	LibAmdMsrWrite(MTRR_PHYS_MASK(6), &MsrReg, &StdHeader);
 
 	if (IS_ENABLED(CONFIG_UDELAY_LAPIC)) {
 		LibAmdMsrRead(0x1B, &MsrReg, &StdHeader);

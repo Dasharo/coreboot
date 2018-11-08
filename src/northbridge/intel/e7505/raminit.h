@@ -14,6 +14,8 @@
 #ifndef RAMINIT_H
 #define RAMINIT_H
 
+#include <stdint.h>
+
 #define MAX_DIMM_SOCKETS_PER_CHANNEL 4
 #define MAX_NUM_CHANNELS 2
 #define MAX_DIMM_SOCKETS (MAX_NUM_CHANNELS * MAX_DIMM_SOCKETS_PER_CHANNEL)
@@ -35,6 +37,6 @@ int e7505_mch_is_ready(void);
 
 
 /* Mainboard exports this. */
-int spd_read_byte(unsigned device, unsigned address);
+int spd_read_byte(unsigned int device, unsigned int address);
 
 #endif /* RAMINIT_H */

@@ -20,7 +20,6 @@
 #include <arch/cbfs.h>
 #include <arch/early_variables.h>
 #include <bootmode.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <cbfs.h>
 #include <cbmem.h>
@@ -33,7 +32,6 @@
 #include <soc/me.h>
 #include <soc/pei_data.h>
 #include <soc/pm.h>
-#include <soc/reset.h>
 #include <soc/romstage.h>
 #include <soc/spi.h>
 

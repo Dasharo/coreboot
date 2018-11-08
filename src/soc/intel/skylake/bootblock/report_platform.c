@@ -71,6 +71,9 @@ static struct {
 	{ PCI_DEVICE_ID_INTEL_SPT_H_PREMIUM, "Skylake PCH-H Premium" },
 	{ PCI_DEVICE_ID_INTEL_SPT_H_C236, "Skylake PCH-H C236" },
 	{ PCI_DEVICE_ID_INTEL_SPT_H_QM170, "Skylake PCH-H QM170" },
+	{ PCI_DEVICE_ID_INTEL_SPT_H_HM175, "Skylake PCH-H HM175" },
+	{ PCI_DEVICE_ID_INTEL_SPT_H_QM175, "Skylake PCH-H QM175" },
+	{ PCI_DEVICE_ID_INTEL_SPT_H_CM238, "Skylake PCH-H CM238" },
 	{ PCI_DEVICE_ID_INTEL_KBP_H_Q270, "Kabylake-H Q270" },
 	{ PCI_DEVICE_ID_INTEL_KBP_H_H270, "Kabylake-H H270" },
 	{ PCI_DEVICE_ID_INTEL_KBP_H_Z270, "Kabylake-H Z270" },
@@ -145,9 +148,9 @@ static void report_cpu_info(void)
 
 	microcode_ver.lo = 0;
 	microcode_ver.hi = 0;
-	wrmsr(0x8B, microcode_ver);
+	wrmsr(IA32_BIOS_SIGN_ID, microcode_ver);
 	cpuidr = cpuid(1);
-	microcode_ver = rdmsr(0x8b);
+	microcode_ver = rdmsr(IA32_BIOS_SIGN_ID);
 
 	/* Look for string to match the name */
 	for (i = 0; i < ARRAY_SIZE(cpu_table); i++) {

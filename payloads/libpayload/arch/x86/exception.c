@@ -34,17 +34,8 @@
 #include <arch/apic.h>
 
 #define IF_FLAG				(1 << 9)
-/*
- * Local and I/O APICs support 240 vectors (in the range of 16 to 255) as valid
- * interrupts. The Intel 64 and IA-32 architectures reserve vectors 16
- * through 31 for predefined interrupts, exceptions, and Intel-reserved
- * encodings.
-*/
-#define FIRST_USER_DEFINED_VECTOR	32
 
 u32 exception_stack[0x400] __attribute__((aligned(8)));
-
-static exception_hook hook;
 
 static interrupt_handler handlers[256];
 
@@ -173,39 +164,42 @@ static void dump_exception_state(void)
 
 void exception_dispatch(void)
 {
-	u32 vec = exception_state->vector;
+	die_if(exception_state->vector >= ARRAY_SIZE(handlers),
+	       "Invalid vector %u\n", exception_state->vector);
 
-	die_if(vec >= ARRAY_SIZE(handlers), "Invalid vector %u\n", vec);
+	u8 vec = exception_state->vector;
 
 	if (handlers[vec]) {
 		handlers[vec](vec);
-		if (IS_ENABLED(CONFIG_LP_ENABLE_APIC)
-				&& vec >= FIRST_USER_DEFINED_VECTOR)
-			apic_eoi();
-		return;
+		goto success;
+	} else if (vec >= EXC_COUNT
+		   && IS_ENABLED(CONFIG_LP_IGNORE_UNKNOWN_INTERRUPTS)) {
+		goto success;
+	} else if (vec >= EXC_COUNT
+		   && IS_ENABLED(CONFIG_LP_LOG_UNKNOWN_INTERRUPTS)) {
+		printf("Ignoring interrupt vector %u\n", vec);
+		goto success;
 	}
 
 	die_if(vec >= EXC_COUNT || !names[vec], "Bad exception vector %u\n",
 	       vec);
 
-	if (hook && hook(vec))
-		return;
-
 	dump_exception_state();
 	dump_stack(exception_state->regs.esp, 512);
+	/* We don't call apic_eoi because we don't want to ack the interrupt and
+	   allow another interrupt to wake the processor. */
 	halt();
+	return;
+
+success:
+	if (IS_ENABLED(CONFIG_LP_ENABLE_APIC))
+		apic_eoi(vec);
 }
 
 void exception_init(void)
 {
 	exception_stack_end = exception_stack + ARRAY_SIZE(exception_stack);
 	exception_init_asm();
-}
-
-void exception_install_hook(exception_hook h)
-{
-	die_if(hook, "Implement support for a list of hooks if you need it.");
-	hook = h;
 }
 
 void set_interrupt_handler(u8 vector, interrupt_handler handler)

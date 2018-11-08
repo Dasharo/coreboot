@@ -25,7 +25,12 @@ ifeq ($(CONFIG_ARCH_RAMSTAGE_RISCV),y)
 check-ramstage-overlap-regions += stack
 endif
 
-riscv_flags = -I$(src)/arch/riscv/ -mcmodel=$(CONFIG_RISCV_CODEMODEL) -march=$(CONFIG_RISCV_ARCH) -mabi=$(CONFIG_RISCV_ABI)
+riscv_flags = -I$(src)/arch/riscv/
+ifeq ($(CCC_ANALYZER_OUTPUT_FORMAT),)
+riscv_flags += -march=$(CONFIG_RISCV_ARCH) -mabi=$(CONFIG_RISCV_ABI) -mcmodel=$(CONFIG_RISCV_CODEMODEL)
+else
+riscv_flags += -D__riscv -D__riscv_xlen=64 -D__riscv_flen=64
+endif
 
 riscv_asm_flags = -march=$(CONFIG_RISCV_ARCH) -mabi=$(CONFIG_RISCV_ABI)
 
@@ -45,10 +50,13 @@ bootblock-y += trap_util.S
 bootblock-y += trap_handler.c
 bootblock-y += fp_asm.S
 bootblock-y += misaligned.c
+bootblock-y += sbi.c
 bootblock-y += mcall.c
 bootblock-y += virtual_memory.c
 bootblock-y += boot.c
+bootblock-y += smp.c
 bootblock-y += misc.c
+bootblock-y += pmp.c
 bootblock-y += \
 	$(top)/src/lib/memchr.c \
 	$(top)/src/lib/memcmp.c \
@@ -77,6 +85,8 @@ ifeq ($(CONFIG_ARCH_ROMSTAGE_RISCV),y)
 romstage-y += boot.c
 romstage-y += stages.c
 romstage-y += misc.c
+romstage-y += pmp.c
+romstage-y += smp.c
 romstage-y += \
 	$(top)/src/lib/memchr.c \
 	$(top)/src/lib/memcmp.c \
@@ -109,12 +119,15 @@ ramstage-y += trap_util.S
 ramstage-y += trap_handler.c
 ramstage-y += fp_asm.S
 ramstage-y += misaligned.c
+ramstage-y += sbi.c
 ramstage-y += virtual_memory.c
 ramstage-y += stages.c
 ramstage-y += misc.c
+ramstage-y += smp.c
 ramstage-y += boot.c
 ramstage-y += tables.c
 ramstage-y += payload.S
+ramstage-y += pmp.c
 ramstage-y += \
 	$(top)/src/lib/memchr.c \
 	$(top)/src/lib/memcmp.c \

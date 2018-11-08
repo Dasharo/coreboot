@@ -15,7 +15,6 @@
 #include <arch/early_variables.h>
 #include <arch/exception.h>
 #include <commonlib/helpers.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <console/streams.h>
 #include <cpu/x86/cr.h>
@@ -555,8 +554,8 @@ struct intr_gate {
 
 /* Even though the vecX symbols are interrupt entry points just treat them
    like data to more easily get the pointer values in C. Because IDT entries
-   format splits the offset field up one can't use the linker to resolve
-   parts of a relecation on x86 ABI an array of pointers is used to gather
+   format splits the offset field up, one can't use the linker to resolve
+   parts of a relocation on x86 ABI. An array of pointers is used to gather
    the symbols. The IDT is initialized at runtime when exception_init() is
    called. */
 extern u8 vec0[], vec1[], vec2[], vec3[], vec4[], vec5[], vec6[], vec7[];

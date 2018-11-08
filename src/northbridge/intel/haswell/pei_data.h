@@ -30,7 +30,7 @@
 #ifndef PEI_DATA_H
 #define PEI_DATA_H
 
-#include <compiler.h>
+#include <stdint.h>
 
 typedef void (*tx_byte_func)(unsigned char byte);
 #define PEI_VERSION 15

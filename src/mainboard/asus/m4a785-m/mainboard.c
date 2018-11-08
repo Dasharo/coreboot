@@ -104,13 +104,7 @@ int is_dev3_present(void)
 	/* read the GPIO68 input status */
 	word = pci_read_config16(sm_dev, 0x7e);
 
-	if(word & (1 << 10)){
-		/*not exist*/
-		return 0;
-	}else{
-		/*exist*/
-		return 1;
-	}
+	return !(word & (1 << 10));
 }
 
 /*
@@ -133,7 +127,7 @@ static void set_thermal_config(void)
 
 	byte = ADT7461_read_byte(0x02);	/* read status register to clear it */
 	ARA_read_byte(0x05); /* A hardware alert can only be cleared by the master sending an ARA as a read command */
-	printk(BIOS_INFO, "Init adt7461 end , status 0x02 %02x\n", byte);
+	printk(BIOS_INFO, "Init adt7461 end, status 0x02 %02x\n", byte);
 
 	/* sb700 settings for thermal config */
 	/* set SB700 GPIO 64 to GPIO with pull-up */
@@ -172,7 +166,7 @@ static void set_thermal_config(void)
 	 * pm_iowrite(0x55, byte);
 	 *
 	 * byte = pm_ioread(0x67);
-	 * byte &= ~( 1 << 6);
+	 * byte &= ~(1 << 6);
 	 * pm_iowrite(0x67, byte);
 	 */
 }

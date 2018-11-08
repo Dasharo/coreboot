@@ -17,8 +17,8 @@
 
 #include <arch/io.h>
 #include <cpu/x86/msr.h>
+#include <cpu/amd/msr.h>
 #include <cpu/x86/tsc.h>
-#include <cpu/amd/amdfam15.h>
 #include <console/console.h>
 #include <soc/pci_devs.h>
 #include <device/pci_ops.h>
@@ -36,7 +36,7 @@ unsigned long tsc_freq_mhz(void)
 	 * to the "Software P-state Numbering" section, P0 is the highest
 	 * non-boosted state.  freq = 100MHz * (CpuFid + 10h) / (2^(CpuDid)).
 	 */
-	boost_states = (pci_read_config32(DEV_D18F4, CORE_PERF_BOOST_CTRL)
+	boost_states = (pci_read_config32(SOC_PM_DEV, CORE_PERF_BOOST_CTRL)
 			>> 2) & 0x7;
 
 	msr = rdmsr(PSTATE_0_MSR + boost_states);

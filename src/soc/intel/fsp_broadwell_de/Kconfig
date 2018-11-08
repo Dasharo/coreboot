@@ -12,7 +12,7 @@ config CPU_SPECIFIC_OPTIONS
 	select ARCH_VERSTAGE_X86_32
 	select ARCH_ROMSTAGE_X86_32
 	select ARCH_RAMSTAGE_X86_32
-	select HAVE_HARD_RESET
+	select SOUTHBRIDGE_INTEL_COMMON_RESET
 	select NO_RELOCATABLE_RAMSTAGE
 	select PARALLEL_MP
 	select SMP
@@ -31,10 +31,6 @@ config CPU_SPECIFIC_OPTIONS
 config CBFS_SIZE
 	hex
 	default 0x200000
-
-config RAMTOP
-	hex
-	default 0x400000
 
 config HEAP_SIZE
 	hex

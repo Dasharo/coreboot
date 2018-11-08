@@ -20,7 +20,6 @@
 #include <arch/acpi.h>
 #include <bootstate.h>
 #include <cbmem.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/mp.h>
@@ -568,12 +567,19 @@ static void glk_fsp_silicon_init_params_cb(
 	 * has set up. Hence skipping in FSP.
 	 */
 	silconfig->SkipSpiPCP = 1;
+
+	/*
+	 * FSP provides UPD interface to execute IPC command. In order to
+	 * improve boot performance, configure PmicPmcIpcCtrl for PMC to program
+	 * PMIC PCH_PWROK delay.
+	*/
+	silconfig->PmicPmcIpcCtrl = cfg->PmicPmcIpcCtrl;
 #endif
 }
 
 void __weak mainboard_devtree_update(struct device *dev)
 {
-       /* Override dev tree settings per board */
+	/* Override dev tree settings per board */
 }
 
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)

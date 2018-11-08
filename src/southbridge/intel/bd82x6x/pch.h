@@ -64,7 +64,7 @@ void intel_pch_finalize_smm(void);
 #if !defined(__PRE_RAM__)
 #if !defined(__SIMPLE_DEVICE__)
 #include "chip.h"
-void pch_enable(device_t dev);
+void pch_enable(struct device *dev);
 #endif
 int pch_silicon_revision(void);
 int pch_silicon_type(void);
@@ -100,9 +100,6 @@ void
 early_usb_init (const struct southbridge_usb_port *portmap);
 
 #endif
-
-/* Return non-zero when RTC failure happened. */
-int rtc_failure(void);
 #endif
 
 /* PM I/O Space */
@@ -188,6 +185,8 @@ int rtc_failure(void);
 #define LPC_GEN2_DEC		0x88 /* LPC IF Generic Decode Range 2 */
 #define LPC_GEN3_DEC		0x8c /* LPC IF Generic Decode Range 3 */
 #define LPC_GEN4_DEC		0x90 /* LPC IF Generic Decode Range 4 */
+#define LGMR			0x98 /* LPC Generic Memory Range */
+#define BIOS_DEC_EN1		0xd8 /* BIOS Decode Enable */
 
 /* PCI Configuration Space (D31:F1): IDE */
 #define PCH_IDE_DEV		PCI_DEV(0, 0x1f, 1)

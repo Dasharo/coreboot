@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2012 ChromeOS Authors
+ * Copyright (C) 2012 Google LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #include <cbfs.h>
 #include <console/console.h>
 #include <arch/cpu.h>
+#include <cf9_reset.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/bist.h>
 #include <cpu/x86/msr.h>
@@ -32,7 +33,6 @@
 #include <cbmem.h>
 #include <program_loading.h>
 #include <romstage_handoff.h>
-#include <reset.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #if IS_ENABLED(CONFIG_EC_GOOGLE_CHROMEEC)
 #include <ec/google/chromeec/ec.h>
@@ -43,12 +43,6 @@
 #include <southbridge/intel/lynxpoint/me.h>
 #include <cpu/intel/romstage.h>
 #include "haswell.h"
-
-static inline void reset_system(void)
-{
-	hard_reset();
-	halt();
-}
 
 #define ROMSTAGE_RAM_STACK_SIZE 0x5000
 
@@ -147,7 +141,7 @@ void romstage_common(const struct romstage_params *params)
 	} else if (cbmem_initialize()) {
 	#if IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)
 		/* Failed S3 resume, reset to come up cleanly */
-		reset_system();
+		system_reset();
 	#endif
 	}
 

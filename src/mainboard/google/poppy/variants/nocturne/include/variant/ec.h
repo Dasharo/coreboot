@@ -34,7 +34,6 @@
 	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_THROTTLE_START)    |\
 	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_THROTTLE_STOP)     |\
 	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_PD_MCU)            |\
-	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_MKBP)              |\
 	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_MODE_CHANGE))
 
 #define MAINBOARD_EC_SMI_EVENTS \
@@ -78,5 +77,8 @@
 
 #define EC_ENABLE_MKBP_DEVICE  /* Enable cros_ec_keyb device */
 #define EC_ENABLE_CBAS_DEVICE  /* Enable "Base Attached Switch" device */
+
+/* Enable EC sync interrupt, EC_SYNC_IRQ is defined in variant/gpio.h */
+#define EC_ENABLE_SYNC_IRQ
 
 #endif /* __MAINBOARD_EC_H__ */

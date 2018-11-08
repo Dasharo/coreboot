@@ -17,7 +17,6 @@
 #include <arch/io.h>
 #include <arch/cpu.h>
 #include <arch/acpi.h>
-#include <compiler.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/amd/mtrr.h>
@@ -91,11 +90,6 @@ asmlinkage void car_stage_entry(void)
 	int vmtrrs = mtrr_cap.lo & MTRR_CAP_VCNT;
 	int s3_resume = acpi_s3_resume_allowed() && acpi_is_wakeup_s3();
 	int i;
-
-	/*
-	 * When moving AGESA calls to romstage, place the call to
-	 * bsp_agesa_call() here.
-	 */
 
 	console_init();
 
@@ -225,5 +219,29 @@ void SetMemParams(AMD_POST_PARAMS *PostParams)
 		PostParams->MemConfig.UmaMode = UMA_AUTO;
 		PostParams->MemConfig.UmaVersion = UMA_NON_LEGACY;
 		break;
+	}
+}
+
+void soc_customize_init_early(AMD_EARLY_PARAMS *InitEarly)
+{
+	const struct soc_amd_stoneyridge_config *cfg;
+	const struct device *dev = dev_find_slot(0, GNB_DEVFN);
+	struct _PLATFORM_CONFIGURATION *platform;
+
+	if (!dev || !dev->chip_info) {
+		printk(BIOS_WARNING, "Warning: Cannot find SoC devicetree"
+					" config, STAPM unchanged\n");
+		return;
+	}
+	cfg = dev->chip_info;
+	platform = &InitEarly->PlatformConfig;
+	if ((cfg->stapm_percent) && (cfg->stapm_time_ms) &&
+				    (cfg->stapm_power_mw)) {
+		platform->PlatStapmConfig.CfgStapmScalar = cfg->stapm_percent;
+		platform->PlatStapmConfig.CfgStapmTimeConstant =
+							cfg->stapm_time_ms;
+		platform->PkgPwrLimitDC = cfg->stapm_power_mw;
+		platform->PkgPwrLimitAC = cfg->stapm_power_mw;
+		platform->PlatStapmConfig.CfgStapmBoost = StapmBoostEnabled;
 	}
 }

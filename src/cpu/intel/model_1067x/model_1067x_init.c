@@ -63,7 +63,7 @@ static void configure_c_states(const int quad)
 
 	const int cst_range = (c6 ? 6 : (c5 ? 5 : 4)) - 2; /* zero means lvl2 */
 
-	msr = rdmsr(MSR_PMG_CST_CONFIG_CONTROL);
+	msr = rdmsr(MSR_PKG_CST_CONFIG_CONTROL);
 	msr.lo &= ~(1 << 9); // Issue a  single stop grant cycle upon stpclk
 	msr.lo |=  (1 << 8);
 	if (quad)
@@ -79,7 +79,7 @@ static void configure_c_states(const int quad)
 	msr.lo |= (1 << 10); /* Enable IO MWAIT redirection. */
 	if (c6)
 		msr.lo |= (1 << 25);
-	wrmsr(MSR_PMG_CST_CONFIG_CONTROL, msr);
+	wrmsr(MSR_PKG_CST_CONFIG_CONTROL, msr);
 
 	/* Set Processor MWAIT IO BASE */
 	msr.hi = 0;
@@ -129,10 +129,10 @@ static void configure_p_states(const char stepping, const char cores)
 		wrmsr(IA32_PERF_CTL, msr);
 	}
 
-	msr = rdmsr(MSR_PMG_CST_CONFIG_CONTROL);
+	msr = rdmsr(MSR_PKG_CST_CONFIG_CONTROL);
 	msr.lo &= ~(1 << 11); /* Enable hw coordination. */
 	msr.lo |= (1 << 15); /* Lock config until next reset. */
-	wrmsr(MSR_PMG_CST_CONFIG_CONTROL, msr);
+	wrmsr(MSR_PKG_CST_CONFIG_CONTROL, msr);
 }
 
 #define MSR_EMTTM_CR_TABLE(x)	(0xa8 + (x))
@@ -190,7 +190,7 @@ static void configure_misc(const int eist, const int tm2, const int emttm)
 
 	const u32 sub_cstates = cpuid_edx(5);
 
-	msr = rdmsr(IA32_MISC_ENABLES);
+	msr = rdmsr(IA32_MISC_ENABLE);
 	msr.lo |= (1 << 3);	/* TM1 enable */
 	if (tm2)
 		msr.lo |= (1 << 13);	/* TM2 enable */
@@ -220,11 +220,11 @@ static void configure_misc(const int eist, const int tm2, const int emttm)
 	if (rdmsr(MSR_FSB_CLOCK_VCC).hi & (1 << (63 - 32)))
 		msr.hi &= ~(1 << (38 - 32));
 
-	wrmsr(IA32_MISC_ENABLES, msr);
+	wrmsr(IA32_MISC_ENABLE, msr);
 
 	if (eist) {
 		msr.lo |= (1 << 20);	/* Lock Enhanced SpeedStep Enable */
-		wrmsr(IA32_MISC_ENABLES, msr);
+		wrmsr(IA32_MISC_ENABLE, msr);
 	}
 }
 

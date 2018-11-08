@@ -13,7 +13,6 @@
  * GNU General Public License for more details.
  */
 
-#include <compiler.h>
 #include <console/console.h>
 #include <console/usb.h>
 #include <bootmode.h>
@@ -249,7 +248,7 @@ void sdram_initialize(struct pei_data *pei_data)
 	 */
 	u32 version = MCHBAR32(0x5034);
 	printk(BIOS_DEBUG, "System Agent Version %d.%d.%d Build %d\n",
-		version >> 24 , (version >> 16) & 0xff,
+		version >> 24, (version >> 16) & 0xff,
 		(version >> 8) & 0xff, version & 0xff);
 
 	/* Send ME init done for SandyBridge here.  This is done

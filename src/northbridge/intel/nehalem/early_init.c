@@ -36,7 +36,7 @@ static void nehalem_setup_bars(void)
 
 	pci_write_config32(PCI_DEV(0, 0x1f, 0), PMBASE, DEFAULT_PMBASE | 1);
 	/* Enable ACPI BAR */
-	pci_write_config8(PCI_DEV(0, 0x1f, 0), 0x44 /* ACPI_CNTL */ , 0x80);
+	pci_write_config8(PCI_DEV(0, 0x1f, 0), 0x44 /* ACPI_CNTL */, 0x80);
 
 	printk(BIOS_DEBUG, " done.\n");
 
@@ -106,27 +106,27 @@ static void early_cpu_init (void)
 	if (!(result.eax & 0x2)) {
 		m = rdmsr(MSR_FSB_CLOCK_VCC);
 		reg8 = ((m.lo & 0xff00) >> 8) + 1;
-		m = rdmsr (IA32_PERF_CTL);
+		m = rdmsr(IA32_PERF_CTL);
 		m.lo = (m.lo & ~0xff) | reg8;
 		wrmsr(IA32_PERF_CTL, m);
 
-		m = rdmsr(MSR_IA32_MISC_ENABLES);
+		m = rdmsr(IA32_MISC_ENABLE);
 		m.hi &= ~0x00000040;
 		m.lo |= 0x10000;
 
-		wrmsr(MSR_IA32_MISC_ENABLES, m);
+		wrmsr(IA32_MISC_ENABLE, m);
 	}
 
 	m = rdmsr(MSR_FSB_CLOCK_VCC);
 	reg8 = ((m.lo & 0xff00) >> 8) + 1;
 
-	m = rdmsr (IA32_PERF_CTL);
+	m = rdmsr(IA32_PERF_CTL);
 	m.lo = (m.lo & ~0xff) | reg8;
 	wrmsr(IA32_PERF_CTL, m);
 
-	m = rdmsr(MSR_IA32_MISC_ENABLES);
+	m = rdmsr(IA32_MISC_ENABLE);
 	m.lo |= 0x10000;
-	wrmsr(MSR_IA32_MISC_ENABLES, m);
+	wrmsr(IA32_MISC_ENABLE, m);
 }
 
 void nehalem_early_initialization(int chipset_type)

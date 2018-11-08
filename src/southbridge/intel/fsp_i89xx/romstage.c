@@ -31,7 +31,7 @@
 #include <console/usb.h>
 #include <halt.h>
 #include <program_loading.h>
-#include <reset.h>
+#include <cf9_reset.h>
 #include <drivers/intel/fsp1_0/fsp_util.h>
 #include <northbridge/intel/fsp_sandybridge/northbridge.h>
 #include <northbridge/intel/fsp_sandybridge/raminit.h>
@@ -41,12 +41,6 @@
 #include "me.h"
 #include "pch.h"
 #include "romstage.h"
-
-static inline void reset_system(void)
-{
-	hard_reset();
-	halt();
-}
 
 static void pch_enable_lpc(void)
 {
@@ -178,7 +172,7 @@ void romstage_main_continue(EFI_STATUS status, VOID *HobListPtr) {
 	/* For reference print FSP version */
 	uint32_t version = MCHBAR32(0x5034);
 	printk(BIOS_DEBUG, "FSP Version %d.%d.%d Build %d\n",
-			version >> 24 , (version >> 16) & 0xff,
+			version >> 24, (version >> 16) & 0xff,
 			(version >> 8) & 0xff, version & 0xff);
 	printk(BIOS_DEBUG, "FSP Status: 0x%0x\n", (uint32_t)status);
 
@@ -202,7 +196,7 @@ void romstage_main_continue(EFI_STATUS status, VOID *HobListPtr) {
 	cbmem_was_initted = !cbmem_recovery(0);
 
 	if (cbmem_was_initted) {
-		reset_system();
+		system_reset();
 	}
 
 	/* Save the HOB pointer in CBMEM to be used in ramstage. */

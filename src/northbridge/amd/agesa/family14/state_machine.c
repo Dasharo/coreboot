@@ -13,16 +13,16 @@
  * GNU General Public License for more details.
  */
 
-#include "Porting.h"
-#include "AGESA.h"
+#include <Porting.h>
+#include <AGESA.h>
 
 #include <arch/io.h>
 #include <cbmem.h>
+#include <cf9_reset.h>
 #include <device/device.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
 #include <halt.h>
-#include <reset.h>
 #include <smp/node.h>
 #include <northbridge/amd/agesa/state_machine.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
@@ -46,7 +46,7 @@ void platform_BeforeInitReset(struct sysinfo *cb, AMD_RESET_PARAMS *Reset)
 		u32 mct_cfg_lo = pci_read_config32(dev, 0x118);
 		if (mct_cfg_lo & (1<<19)) {
 			printk(BIOS_CRIT, "C6DramLock is set, resetting\n");
-			hard_reset();
+			system_reset();
 		}
 	}
 }

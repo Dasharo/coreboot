@@ -1,6 +1,10 @@
 comment "Coffeelake RVP"
 
 config BOARD_INTEL_COFFEELAKE_RVPU
-	bool "-> Coffeelake U LPDDR4 RVP"
+	bool "-> Coffeelake U SO-DIMM DDR4 RVP"
 config BOARD_INTEL_COFFEELAKE_RVP11
-	bool "-> Coffeelake H LPDDR4 RVP11"
+	bool "-> Coffeelake H SO-DIMM DDR4 RVP11"
+config BOARD_INTEL_WHISKEYLAKE_RVP
+	bool "-> Whiskeylake U DDR4 RVP"
+config BOARD_INTEL_COFFEELAKE_RVP8
+	bool "-> Coffeelake S U-DIMM DDR4 RVP8"

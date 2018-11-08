@@ -49,9 +49,6 @@ void prog_segment_loaded(uintptr_t start, size_t size, int flags);
 void platform_segment_loaded(uintptr_t start, size_t size, int flags);
 void arch_segment_loaded(uintptr_t start, size_t size, int flags);
 
-/* Return true if arch supports bounce buffer.  */
-int arch_supports_bounce_buffer(void);
-
 /* Representation of a program. */
 struct prog {
 	/* The region_device is the source of program content to load. After
@@ -200,12 +197,15 @@ void payload_run(void);
 void mirror_payload(struct prog *payload);
 
 /*
- * Set check_regions to true to check that the payload targets usable memory.
- * With this flag set, if it does not, the load will fail and this function
- * will return false. On successful payload loading this functions return true.
+ * selfload() and selfload_check() load payloads into memory.
+ * selfload() does not check the payload to see if it targets memory.
+ * Call selfload_check() to check that the payload targets usable memory.
+ * If it does not, the load will fail and this function
+ * will return false. On successful payload loading these functions return true.
  *
  * Defined in src/lib/selfboot.c
  */
-bool selfload(struct prog *payload, bool check_regions);
+bool selfload_check(struct prog *payload);
+bool selfload(struct prog *payload);
 
 #endif /* PROGRAM_LOADING_H */

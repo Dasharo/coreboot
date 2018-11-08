@@ -15,7 +15,6 @@
  * GNU General Public License for more details.
  */
 
-#include <compiler.h>
 #include <arch/acpi_device.h>
 #include <arch/acpigen.h>
 #include <console/console.h>
@@ -174,7 +173,7 @@ static void emit_sar_acpi_structures(void)
 	acpigen_write_package(2);
 	acpigen_write_dword(wgds->version);
 	/* Emit 'Domain Type' +
-	 * Group specific delta of power ( 6 bytes * NUM_WGDS_SAR_GROUPS )
+	 * Group specific delta of power (6 bytes * NUM_WGDS_SAR_GROUPS)
 	 */
 	package_size = sizeof(sar_limits.wgds.group) + 1;
 	acpigen_write_package(package_size);
@@ -265,7 +264,7 @@ static void wifi_pci_dev_init(struct device *dev)
 		val = pci_read_config16(dev, PMCS_DR);
 		if (val & PME_STS)
 			elog_add_event_wake(ELOG_WAKE_SOURCE_PME_WIFI, 0);
-        }
+	}
 }
 
 static struct pci_operations pci_ops = {
@@ -312,6 +311,11 @@ static const unsigned short pci_device_ids[] = {
 	/* Stone Peak 2 */
 	PCI_DEVICE_ID_SP_7265_SERIES_1_WIFI,
 	PCI_DEVICE_ID_SP_7265_SERIES_2_WIFI,
+	/* Stone Field Peak */
+	PCI_DEVICE_ID_SFP_8260_SERIES_1_WIFI,
+	PCI_DEVICE_ID_SFP_8260_SERIES_2_WIFI,
+	/* Windstorm Peak */
+	PCI_DEVICE_ID_WSP_8275_SERIES_1_WIFI,
 	/* Jefferson Peak */
 	PCI_DEVICE_ID_JP_9000_SERIES_1_WIFI,
 	PCI_DEVICE_ID_JP_9000_SERIES_2_WIFI,

@@ -13,11 +13,11 @@
  * GNU General Public License for more details.
  */
 
-#include "AGESA.h"
+#include <AGESA.h>
 #include <spd_bin.h>
 #include <northbridge/amd/agesa/BiosCallOuts.h>
-#include "FchPlatform.h"
-#include "cbfs.h"
+#include <FchPlatform.h>
+#include <cbfs.h>
 #include "gpio_ftns.h"
 #include "imc.h"
 #include "hudson.h"
@@ -100,7 +100,7 @@ static AGESA_STATUS Fch_Oem_config(UINT32 Func, UINTN FchData, VOID *ConfigPtr)
 			FchParams->Usb.Ehci1Enable = check_ehci0();
 		}
 
-		// Enable EHCI 1 ( port 4 to 7)
+		// Enable EHCI 1 (port 4 to 7)
 		// port 4 and 5 to EHCI header port 6 and 7 to PCIe slot.
 		FchParams->Usb.Ehci2Enable = TRUE;
 

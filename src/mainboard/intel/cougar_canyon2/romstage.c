@@ -21,6 +21,7 @@
 #include <lib.h>
 #include <timestamp.h>
 #include <arch/io.h>
+#include <cf9_reset.h>
 #include <device/pci_def.h>
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
@@ -28,7 +29,6 @@
 #include <console/console.h>
 #include <halt.h>
 #include <program_loading.h>
-#include <reset.h>
 #include <superio/smsc/sio1007/chip.h>
 #include <fsp_util.h>
 #include <northbridge/intel/fsp_sandybridge/northbridge.h>
@@ -40,12 +40,6 @@
 #include "gpio.h"
 
 #define SIO_PORT 0x164e
-
-static inline void reset_system(void)
-{
-	hard_reset();
-	halt();
-}
 
 static void pch_enable_lpc(void)
 {
@@ -267,7 +261,7 @@ void romstage_main_continue(EFI_STATUS status, VOID *HobListPtr) {
 	/* For reference print FSP version */
 	u32 version = MCHBAR32(0x5034);
 	printk(BIOS_DEBUG, "FSP Version %d.%d.%d Build %d\n",
-		version >> 24 , (version >> 16) & 0xff,
+		version >> 24, (version >> 16) & 0xff,
 		(version >> 8) & 0xff, version & 0xff);
 	printk(BIOS_DEBUG, "FSP Status: 0x%0x\n", (u32)status);
 
@@ -292,7 +286,7 @@ void romstage_main_continue(EFI_STATUS status, VOID *HobListPtr) {
 	cbmem_was_initted = !cbmem_recovery(0);
 
 	if(cbmem_was_initted) {
-		reset_system();
+		system_reset();
 	}
 
 	/* Save the HOB pointer in CBMEM to be used in ramstage. */

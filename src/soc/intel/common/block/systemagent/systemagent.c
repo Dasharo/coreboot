@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2017 Intel Corporation.
+ * Copyright (C) 2017-2018 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,6 @@
 
 #include <arch/io.h>
 #include <cbmem.h>
-#include <compiler.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -88,7 +87,7 @@ static const struct sa_mem_map_descriptor sa_memory_map[MAX_MAP_ENTRIES] = {
 };
 
 /* Read DRAM memory map register value through PCI configuration space */
-static void sa_read_map_entry(device_t dev,
+static void sa_read_map_entry(struct device *dev,
 		const struct sa_mem_map_descriptor *entry, uint64_t *result)
 {
 	uint64_t value = 0;
@@ -155,8 +154,8 @@ static void sa_add_dram_resources(struct device *dev, int *resource_count)
 	if (IS_ENABLED(CONFIG_SA_ENABLE_DPR))
 		dpr_size = sa_get_dpr_size();
 
-        /* Get SoC reserve memory size as per user selection */
-        reserved_mmio_size = soc_reserved_mmio_size();
+	/* Get SoC reserve memory size as per user selection */
+	reserved_mmio_size = soc_reserved_mmio_size();
 
 	top_of_ram = (uintptr_t)cbmem_top();
 
@@ -213,7 +212,8 @@ static bool is_imr_enabled(uint32_t imr_base_reg)
 	return !!(imr_base_reg & (1 << 31));
 }
 
-static void imr_resource(device_t dev, int idx, uint32_t base, uint32_t mask)
+static void imr_resource(struct device *dev, int idx, uint32_t base,
+			 uint32_t mask)
 {
 	uint32_t base_k, size_k;
 	/* Bits 28:0 encode the base address bits 38:10, hence the KiB unit. */
@@ -304,6 +304,12 @@ static const unsigned short systemagent_ids[] = {
 	PCI_DEVICE_ID_INTEL_KBL_U_R,
 	PCI_DEVICE_ID_INTEL_KBL_ID_DT,
 	PCI_DEVICE_ID_INTEL_CFL_ID_U,
+	PCI_DEVICE_ID_INTEL_CFL_ID_H,
+	PCI_DEVICE_ID_INTEL_CFL_ID_S,
+	PCI_DEVICE_ID_INTEL_ICL_ID_U,
+	PCI_DEVICE_ID_INTEL_ICL_ID_U_2_2,
+	PCI_DEVICE_ID_INTEL_ICL_ID_Y,
+	PCI_DEVICE_ID_INTEL_ICL_ID_Y_2,
 	0
 };
 

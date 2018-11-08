@@ -16,7 +16,6 @@
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
 #include <commonlib/helpers.h>
-#include <compiler.h>
 
 /*
  * Pad configuration in ramstage. The order largely follows the 'GPIO Muxing'
@@ -327,7 +326,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPIO_44, 1, DEEP),	 /* GPS_RST_ODL */
 	PAD_CFG_GPI(GPIO_45, NONE, DEEP),	 /* LPSS_UART1_CTS - MEM_CONFIG3 */
 	PAD_CFG_NF(GPIO_46, NATIVE, DEEP, NF1),	 /* LPSS_UART2_RXD */
-	PAD_CFG_NF_IOSSTATE(GPIO_47, NATIVE, DEEP, NF1, Tx1RXDCRx0), /* LPSS_UART2_TXD */
+	PAD_CFG_NF_IOSSTATE(GPIO_47, NATIVE, DEEP, NF1, Tx1RxDCRx0), /* LPSS_UART2_TXD */
 	PAD_CFG_GPI(GPIO_48, UP_20K, DEEP),	 /* LPSS_UART2_RTS - unused */
 	PAD_CFG_GPI_SMI_LOW(GPIO_49, NONE, DEEP, EDGE_SINGLE), /* LPSS_UART2_CTS - EC_SMI_L */
 

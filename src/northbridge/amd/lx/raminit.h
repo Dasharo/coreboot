@@ -17,6 +17,8 @@
 #ifndef RAMINIT_H
 #define RAMINIT_H
 
+#include <stdint.h>
+
 #define DIMM_SOCKETS 2
 
 struct mem_controller {
@@ -30,6 +32,6 @@ void sdram_enable(int controllers, const struct mem_controller *ctrl);
 void sdram_initialize(int controllers, const struct mem_controller *ctrl);
 
 /* mainboard specific */
-int spd_read_byte(unsigned device, unsigned address);
+int spd_read_byte(unsigned int device, unsigned int address);
 
 #endif

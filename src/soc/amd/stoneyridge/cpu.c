@@ -18,8 +18,8 @@
 #include <cpu/x86/mp.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/msr.h>
+#include <cpu/amd/msr.h>
 #include <cpu/x86/lapic.h>
-#include <cpu/amd/amdfam15.h>
 #include <device/device.h>
 #include <device/pci_ops.h>
 #include <soc/pci_devs.h>
@@ -55,8 +55,8 @@ static void pre_mp_init(void)
 
 static int get_cpu_count(void)
 {
-	struct device *nb = dev_find_slot(0, HT_DEVFN);
-	return (pci_read_config16(nb, D18F0_CPU_CNT) & CPU_CNT_MASK) + 1;
+	return (pci_read_config16(SOC_HT_DEV, D18F0_CPU_CNT) & CPU_CNT_MASK)
+									+ 1;
 }
 
 static void get_smm_info(uintptr_t *perm_smbase, size_t *perm_smsize,
@@ -89,10 +89,10 @@ static void relocation_handler(int cpu, uintptr_t curr_smbase,
 
 	tseg_base.lo = relo_attrs.tseg_base;
 	tseg_base.hi = 0;
-	wrmsr(MSR_TSEG_BASE, tseg_base);
+	wrmsr(SMM_ADDR_MSR, tseg_base);
 	tseg_mask.lo = relo_attrs.tseg_mask;
 	tseg_mask.hi = ((1 << (cpu_phys_address_size() - 32)) - 1);
-	wrmsr(MSR_SMM_MASK, tseg_mask);
+	wrmsr(SMM_MASK_MSR, tseg_mask);
 	smm_state = (void *)(SMM_AMD64_SAVE_STATE_OFFSET + curr_smbase);
 	smm_state->smbase = staggered_smbase;
 }
@@ -121,6 +121,23 @@ static void model_15_init(struct device *dev)
 {
 	check_mca();
 	setup_lapic();
+
+	/*
+	 * Per AMD, sync an undocumented MSR with the PSP base address.
+	 * Experiments showed that if you write to the MSR after it has
+	 * been previously programmed, it causes a general protection fault.
+	 * Also, the MSR survives warm reset and S3 cycles, so we need to
+	 * test if it was previously written before writing to it.
+	 */
+	msr_t psp_msr;
+	uint32_t psp_bar; /* Note: NDA BKDG names this 32-bit register BAR3 */
+	psp_bar = pci_read_config32(SOC_PSP_DEV, PCI_BASE_ADDRESS_4);
+	psp_bar &= ~PCI_BASE_ADDRESS_MEM_ATTR_MASK;
+	psp_msr = rdmsr(0xc00110a2);
+	if (psp_msr.lo == 0) {
+		psp_msr.lo = psp_bar;
+		wrmsr(0xc00110a2, psp_msr);
+	}
 }
 
 static struct device_operations cpu_dev_ops = {

@@ -33,6 +33,8 @@
 #include <cpu/x86/lapic.h>
 #include <cpu/amd/microcode.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
+#include <superio/nuvoton/common/nuvoton.h>
+#include <superio/nuvoton/nct5104d/nct5104d.h>
 #include <Fch/Fch.h>
 #include <superio/nuvoton/common/nuvoton.h>
 #include <superio/nuvoton/nct5104d/nct5104d.h>
@@ -70,6 +72,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	if (!cpu_init_detectedx && boot_cpu()) {
 		u32 data, *memptr;
 		pci_devfn_t dev;
+
 		timestamp_init(timestamp_get());
 		timestamp_add_now(TS_START_ROMSTAGE);
 

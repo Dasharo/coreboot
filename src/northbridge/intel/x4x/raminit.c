@@ -296,6 +296,7 @@ static void select_cas_dramfreq_ddr3(struct sysinfo *s,
 		min_tCLK = MAX(min_tCLK, TCK_533MHZ);
 		break;
 	case 3: /* Only on P45 */
+	case 0:
 		min_tCLK = MAX(min_tCLK, TCK_666MHZ);
 		break;
 	}
@@ -303,7 +304,7 @@ static void select_cas_dramfreq_ddr3(struct sysinfo *s,
 	min_tCLK = MAX(min_tCLK, saved_timings->min_tclk);
 	if (min_tCLK == 0) {
 		printk(BIOS_ERR, "DRAM frequency is under lowest supported "
-			"frequency (400 MHz). Increasing to 400 MHz"
+			"frequency (400 MHz). Increasing to 400 MHz "
 			"as last resort");
 		min_tCLK = TCK_400MHZ;
 	}

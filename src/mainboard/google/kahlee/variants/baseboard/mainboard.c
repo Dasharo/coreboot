@@ -15,7 +15,9 @@
 
 #include <ec/google/chromeec/ec.h>
 #include <baseboard/variants.h>
+#include <cbfs.h>
 #include <gpio.h>
+#include <smbios.h>
 #include <variant/gpio.h>
 #include <device/pci.h>
 #include <drivers/generic/bayhub/bh720.h>
@@ -72,4 +74,26 @@ void board_bh720(struct device *dev)
 	write32((void *)(sdbar + BH720_MEM_RW_DATA), 0x80000001);
 	write32((void *)(sdbar + BH720_MEM_RW_ADR), 0x800000D0);
 	write32((void *)(sdbar + BH720_MEM_ACCESS_EN), 0x80000000);
+}
+
+
+const char *smbios_mainboard_manufacturer(void)
+{
+	static char oem_bin_data[11];
+	static const char *manuf;
+
+	if (!IS_ENABLED(CONFIG_USE_OEM_BIN))
+		return CONFIG_MAINBOARD_SMBIOS_MANUFACTURER;
+
+	if (manuf)
+		return manuf;
+
+	if (cbfs_boot_load_file("oem.bin", oem_bin_data,
+					    sizeof(oem_bin_data) - 1,
+					    CBFS_TYPE_RAW))
+		manuf = &oem_bin_data[0];
+	else
+		manuf = CONFIG_MAINBOARD_SMBIOS_MANUFACTURER;
+
+	return manuf;
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of the libpayload project.
  *
- * Copyright 2018 Google LLC.
+ * Copyright 2018 Google LLC
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +38,7 @@ void apic_init(void);
 uint8_t apic_id(void);
 
 /** Signal the end of the interrupt handler. */
-void apic_eoi(void);
+void apic_eoi(uint8_t vector);
 
 void apic_delay(unsigned int usec);
 

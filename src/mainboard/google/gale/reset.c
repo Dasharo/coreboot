@@ -15,11 +15,10 @@
  * GNU General Public License for more details.
  */
 
-#include <console/console.h>
 #include <soc/iomap.h>
 #include <reset.h>
 
-void do_hard_reset(void)
+void do_board_reset(void)
 {
 	/*
 	 * At boot time the boot loaders would have set a magic cookie

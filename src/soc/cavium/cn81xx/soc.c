@@ -24,6 +24,7 @@
 #include <soc/clock.h>
 #include <soc/sdram.h>
 #include <soc/timer.h>
+#include <soc/uart.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -207,6 +208,21 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 		printk(BIOS_ERR, "%s: Node not found. OS might miss-behave !\n",
 		       __func__);
 
+	/* Remove unused UART entries */
+	for (i = 0; i < 4; i++) {
+		char path[32];
+		const uint64_t addr = UAAx_PF_BAR0(i);
+		/* Remove the node */
+		snprintf(path, sizeof(path), "soc@0/serial@%llx", addr);
+		dt_node = dt_find_node_by_path(tree->root, path, NULL, NULL, 0);
+		if (!dt_node || uart_is_enabled(i)) {
+			printk(BIOS_INFO, "%s: ignoring %s\n", __func__, path);
+			continue;
+		}
+		printk(BIOS_INFO, "%s: Removing node %s\n", __func__, path);
+		list_remove(&dt_node->list_node);
+	}
+
 	/* Remove unused PEM entries */
 	for (i = 0; i < 8; i++) {
 		char path[32];
@@ -326,7 +342,7 @@ void bootmem_platform_add_ranges(void)
 			  BM_MEM_RESERVED);
 }
 
-static void soc_read_resources(device_t dev)
+static void soc_read_resources(struct device *dev)
 {
 	// HACK: Don't advertise bootblock romstage CAR region, it's broken...
 	ram_resource(dev, 0, 2 * KiB, sdram_size_mb() * KiB - 2 * KiB);
@@ -358,7 +374,7 @@ static void soc_init_atf(void)
 		register_bl31_param(&cbtable_param.h);
 }
 
-static void soc_init(device_t dev)
+static void soc_init(struct device *dev)
 {
 	/* Init ECAM, MDIO, PEM, PHY, QLM ... */
 	bdk_boot();
@@ -374,11 +390,23 @@ static void soc_init(device_t dev)
 		}
 	}
 
+	/* Init UARTs */
+	size_t i;
+	struct device *uart_dev;
+	for (i = 0; i <= 3; i++) {
+		uart_dev = dev_find_slot(1, PCI_DEVFN(8, i));
+		/* using device enable state from devicetree.cb */
+		if (uart_dev && uart_dev->enabled) {
+			if (!uart_is_enabled(i))
+				uart_setup(i, 0);
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_ARM64_USE_ARM_TRUSTED_FIRMWARE))
 		soc_init_atf();
 }
 
-static void soc_final(device_t dev)
+static void soc_final(struct device *dev)
 {
 	watchdog_disable(0);
 }
@@ -392,7 +420,7 @@ static struct device_operations soc_ops = {
 	.scan_bus         = NULL,
 };
 
-static void enable_soc_dev(device_t dev)
+static void enable_soc_dev(struct device *dev)
 {
 	if (dev->path.type == DEVICE_PATH_DOMAIN &&
 		dev->path.domain.domain == 0) {

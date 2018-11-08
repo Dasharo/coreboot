@@ -11,6 +11,7 @@ subdirs-y += ../../../cpu/x86/smm
 subdirs-y += ../../../cpu/x86/tsc
 
 bootblock-y += bootblock/bootblock.c
+bootblock-$(CONFIG_FSP_CAR) += fspcar.c
 bootblock-y += bootblock/cpu.c
 bootblock-y += i2c.c
 bootblock-y += bootblock/pch.c
@@ -82,7 +83,17 @@ postcar-y += spi.c
 postcar-y += i2c.c
 postcar-$(CONFIG_UART_DEBUG) += uart.c
 
-# cpu_microcode_bins += ???
+
+# Skylake D0
+cpu_microcode_bins += 3rdparty/blobs/cpu/intel/model_406ex/microcode.bin
+# Skylake H Q0
+cpu_microcode_bins += 3rdparty/blobs/cpu/intel/model_506ex/microcode.bin
+# Kabylake H0, Y0
+cpu_microcode_bins += 3rdparty/blobs/cpu/intel/model_806ex/microcode.bin
+# Kabylake HB0
+cpu_microcode_bins += 3rdparty/blobs/cpu/intel/model_906ex/microcode.bin
+# Missing for Skylake C0 (0x406e2), Kabylake G0 (0x406e8), Kabylake HA0 (0x506e8)
+# since those are probably pre-release samples.
 
 CPPFLAGS_common += -I$(src)/soc/intel/skylake
 CPPFLAGS_common += -I$(src)/soc/intel/skylake/include
@@ -92,7 +103,6 @@ CPPFLAGS_common += -I$(src)/soc/intel/skylake/include/fsp11
 CPPFLAGS_common += -I$(src)/vendorcode/intel/fsp/fsp1_1/skylake
 else
 CPPFLAGS_common += -I$(src)/soc/intel/skylake/include/fsp20
-CPPFLAGS_common += -I$(src)/vendorcode/intel/fsp/fsp2_0/skykabylake
 endif
 
 # Currently used for microcode path.
