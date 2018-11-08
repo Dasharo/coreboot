@@ -7,6 +7,16 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.21] - 2018-11-08
+### Changed
+- Updated SeaBIOS to rel-1.11.0.6
+
+### Fixed
+- Release date format in DMI tables
+
+### Added
+- [Console output redirection to COM2 option](https://github.com/pcengines/apu2-documentation/blob/master/docs/serial_console.md)
+
 ## [v4.0.20] - 2018-09-28
 ### Changed
 - Updated sortbootorder to v4.6.11
@@ -181,7 +191,8 @@ built externally
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.20...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.21...coreboot-4.0.x
+[v4.0.21]: https://github.com/pcengines/coreboot/compare/v4.0.20...v4.0.21
 [v4.0.20]: https://github.com/pcengines/coreboot/compare/v4.0.19...v4.0.20
 [v4.0.19]: https://github.com/pcengines/coreboot/compare/v4.0.18...v4.0.19
 [v4.0.18]: https://github.com/pcengines/coreboot/compare/v4.0.17...v4.0.18
