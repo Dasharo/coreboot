@@ -23,7 +23,7 @@ choice
 	depends on PAYLOAD_SEABIOS
 
 config SEABIOS_STABLE
-	bool "Stable version (1.11.0.5 for std)"
+	bool "Stable version (1.11.0.6 for std)"
 	help
 		Stable SeaBIOS version
 
@@ -39,14 +39,27 @@ config ELTAN_SEABIOS_TAG
 	depends on SEABIOS_ELTAN
 	depends on SEABIOS_STABLE
 	string  "SeaBIOS TAG"
-	default "rel-1.11.0.5"
+	default "rel-1.11.0.6"
 	help
 		Specify the SeaBIOS tag to check out
 
-config SEABIOS_SERIAL_CONSOLE
-	bool "SeaBIOS Serial Console"
-	depends on SEABIOS_ELTAN
-	default y
+config SEABIOS_ADD_SERCON_PORT_FILE
+	prompt "Add SeaBIOS sercon-port file to CBFS"
+	default n
+	bool
+	help
+	  Select this option to enable SeaBIOS' VGA adapter emulation
+	  on serial port.
+
+config SEABIOS_SERCON_PORT_ADDR
+	hex "SeaBIOS sercon-port base address"
+	depends on SEABIOS_ADD_SERCON_PORT_FILE
+	default TTYS0_BASE
+	help
+	  Set this field to the IO address of a serial port for SeaBIOS' VGA
+	  adapter emulation.
+
+	  By default primary console UART defined by TTYS0_BASE is used.
 
 config SEABIOS_PS2_TIMEOUT
 	prompt "PS/2 keyboard controller initialization timeout (milliseconds)"
