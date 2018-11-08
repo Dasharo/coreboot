@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2016-2017 Intel Corporation.
+ * Copyright (C) 2016-2018 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,6 @@
  */
 
 #include <chip.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -22,9 +21,11 @@
 #include <fsp/util.h>
 #include <intelblocks/acpi.h>
 #include <intelblocks/chip.h>
+#include <intelblocks/itss.h>
 #include <intelblocks/xdci.h>
 #include <romstage_handoff.h>
 #include <soc/intel/common/vbt.h>
+#include <soc/itss.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <string.h>
@@ -74,6 +75,14 @@ const char *soc_acpi_name(const struct device *dev)
 	case PCH_DEVFN_PCIE14:	return "RP14";
 	case PCH_DEVFN_PCIE15:	return "RP15";
 	case PCH_DEVFN_PCIE16:	return "RP16";
+	case PCH_DEVFN_PCIE17:	return "RP17";
+	case PCH_DEVFN_PCIE18:	return "RP18";
+	case PCH_DEVFN_PCIE19:	return "RP19";
+	case PCH_DEVFN_PCIE20:	return "RP20";
+	case PCH_DEVFN_PCIE21:	return "RP21";
+	case PCH_DEVFN_PCIE22:	return "RP22";
+	case PCH_DEVFN_PCIE23:	return "RP23";
+	case PCH_DEVFN_PCIE24:	return "RP24";
 	case PCH_DEVFN_UART0:	return "UAR0";
 	case PCH_DEVFN_UART1:	return "UAR1";
 	case PCH_DEVFN_GSPI0:	return "SPI0";
@@ -95,50 +104,20 @@ const char *soc_acpi_name(const struct device *dev)
 }
 #endif
 
-static void parse_devicetree(FSP_S_CONFIG *params)
-{
-	struct device *dev = SA_DEV_ROOT;
-	if (!dev) {
-		printk(BIOS_ERR, "Could not find root device\n");
-		return;
-	}
-
-	const config_t *config = dev->chip_info;
-	const int SerialIoDev[] = {
-		PCH_DEVFN_I2C0,
-		PCH_DEVFN_I2C1,
-		PCH_DEVFN_I2C2,
-		PCH_DEVFN_I2C3,
-		PCH_DEVFN_I2C4,
-		PCH_DEVFN_I2C5,
-		PCH_DEVFN_GSPI0,
-		PCH_DEVFN_GSPI1,
-		PCH_DEVFN_GSPI2,
-		PCH_DEVFN_UART0,
-		PCH_DEVFN_UART1,
-		PCH_DEVFN_UART2
-	};
-
-	for (int i = 0; i < ARRAY_SIZE(SerialIoDev); i++) {
-		dev = dev_find_slot(0, SerialIoDev[i]);
-		if (!dev->enabled) {
-			params->SerialIoDevMode[i] = PchSerialIoDisabled;
-			continue;
-		}
-		params->SerialIoDevMode[i] = PchSerialIoPci;
-		if (config->SerialIoDevMode[i] == PchSerialIoAcpi ||
-		    config->SerialIoDevMode[i] == PchSerialIoHidden)
-			params->SerialIoDevMode[i] = config->SerialIoDevMode[i];
-	}
-}
-
 void soc_init_pre_device(void *chip_info)
 {
+	/* Snapshot the current GPIO IRQ polarities. FSP is setting a
+	 * default policy that doesn't honor boards' requirements. */
+	itss_snapshot_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
+
 	/* Perform silicon specific init. */
 	fsp_silicon_init(romstage_handoff_is_resume());
 
 	 /* Display FIRMWARE_VERSION_INFO_HOB */
 	fsp_display_fvi_version_hob();
+
+	/* Restore GPIO IRQ polarities back to previous settings. */
+	itss_restore_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
 }
 
 static void pci_domain_set_resources(struct device *dev)
@@ -177,139 +156,3 @@ struct chip_operations soc_intel_cannonlake_ops = {
 	.enable_dev	= &soc_enable,
 	.init		= &soc_init_pre_device,
 };
-
-/* UPD parameters to be initialized before SiliconInit */
-void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
-{
-	int i;
-	FSP_S_CONFIG *params = &supd->FspsConfig;
-	FSP_S_TEST_CONFIG *tconfig = &supd->FspsTestConfig;
-	struct device *dev = SA_DEV_ROOT;
-	config_t *config = dev->chip_info;
-
-	/* Parse device tree and enable/disable devices */
-	parse_devicetree(params);
-
-	/* Load VBT before devicetree-specific config. */
-	params->GraphicsConfigPtr = (uintptr_t)vbt_get();
-
-	/* Set USB OC pin to 0 first */
-	for (i = 0; i < ARRAY_SIZE(params->Usb2OverCurrentPin); i++) {
-		params->Usb2OverCurrentPin[i] = 0;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(params->Usb3OverCurrentPin); i++) {
-		params->Usb3OverCurrentPin[i] = 0;
-	}
-
-	mainboard_silicon_init_params(params);
-
-	/* Unlock upper 8 bytes of RTC RAM */
-	params->PchLockDownRtcMemoryLock = 0;
-
-	/* SATA */
-	params->SataEnable = config->SataEnable;
-	params->SataMode = config->SataMode;
-	params->SataSalpSupport = config->SataSalpSupport;
-	memcpy(params->SataPortsEnable, config->SataPortsEnable,
-			sizeof(params->SataPortsEnable));
-	memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
-			sizeof(params->SataPortsDevSlp));
-
-	/* Lan */
-	params->PchLanEnable = config->PchLanEnable;
-
-	/* Audio */
-	params->PchHdaDspEnable = config->PchHdaDspEnable;
-	params->PchHdaAudioLinkHda = config->PchHdaAudioLinkHda;
-	params->PchHdaAudioLinkDmic0 = config->PchHdaAudioLinkDmic0;
-	params->PchHdaAudioLinkDmic1 = config->PchHdaAudioLinkDmic1;
-	params->PchHdaAudioLinkSsp0 = config->PchHdaAudioLinkSsp0;
-	params->PchHdaAudioLinkSsp1 = config->PchHdaAudioLinkSsp1;
-	params->PchHdaAudioLinkSsp2 = config->PchHdaAudioLinkSsp2;
-	params->PchHdaAudioLinkSndw1 = config->PchHdaAudioLinkSndw1;
-	params->PchHdaAudioLinkSndw2 = config->PchHdaAudioLinkSndw2;
-	params->PchHdaAudioLinkSndw3 = config->PchHdaAudioLinkSndw3;
-	params->PchHdaAudioLinkSndw4 = config->PchHdaAudioLinkSndw4;
-
-	/* S0ix */
-	params->PchPmSlpS0Enable = config->s0ix_enable;
-
-	/* USB */
-	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
-		params->PortUsb20Enable[i] =
-			config->usb2_ports[i].enable;
-		params->Usb2OverCurrentPin[i] =
-			config->usb2_ports[i].ocpin;
-		params->Usb2AfePetxiset[i] =
-			config->usb2_ports[i].pre_emp_bias;
-		params->Usb2AfeTxiset[i] =
-			config->usb2_ports[i].tx_bias;
-		params->Usb2AfePredeemp[i] =
-			config->usb2_ports[i].tx_emp_enable;
-		params->Usb2AfePehalfbit[i] =
-			config->usb2_ports[i].pre_emp_bit;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(config->usb3_ports); i++) {
-		params->PortUsb30Enable[i] = config->usb3_ports[i].enable;
-		params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
-		if (config->usb3_ports[i].tx_de_emp) {
-			params->Usb3HsioTxDeEmphEnable[i] = 1;
-			params->Usb3HsioTxDeEmph[i] =
-				config->usb3_ports[i].tx_de_emp;
-		}
-		if (config->usb3_ports[i].tx_downscale_amp) {
-			params->Usb3HsioTxDownscaleAmpEnable[i] = 1;
-			params->Usb3HsioTxDownscaleAmp[i] =
-				config->usb3_ports[i].tx_downscale_amp;
-		}
-	}
-
-	/* Enable xDCI controller if enabled in devicetree and allowed */
-	dev = dev_find_slot(0, PCH_DEVFN_USBOTG);
-	if (!xdci_can_enable())
-		dev->enabled = 0;
-	params->XdciEnable = dev->enabled;
-
-	/* PCI Express */
-	for (i = 0; i < ARRAY_SIZE(config->PcieClkSrcUsage); i++) {
-		if (config->PcieClkSrcUsage[i] == 0)
-			config->PcieClkSrcUsage[i] = PCIE_CLK_NOTUSED;
-	}
-	memcpy(params->PcieClkSrcUsage, config->PcieClkSrcUsage,
-	       sizeof(config->PcieClkSrcUsage));
-	memcpy(params->PcieClkSrcClkReq, config->PcieClkSrcClkReq,
-	       sizeof(config->PcieClkSrcClkReq));
-
-	/* eMMC and SD */
-	params->ScsEmmcEnabled = config->ScsEmmcEnabled;
-	params->ScsEmmcHs400Enabled = config->ScsEmmcHs400Enabled;
-	params->PchScsEmmcHs400DllDataValid = config->EmmcHs400DllNeed;
-	if (config->EmmcHs400DllNeed == 1) {
-		params->PchScsEmmcHs400RxStrobeDll1 =
-			config->EmmcHs400RxStrobeDll1;
-		params->PchScsEmmcHs400TxDataDll = config->EmmcHs400TxDataDll;
-	}
-	params->ScsSdCardEnabled = config->ScsSdCardEnabled;
-	params->ScsUfsEnabled = config->ScsUfsEnabled;
-
-	params->Heci3Enabled = config->Heci3Enabled;
-	params->Device4Enable = config->Device4Enable;
-	params->SkipMpInit = !chip_get_fsp_mp_init();
-
-	/* VrConfig Settings for 5 domains
-	 * 0 = System Agent, 1 = IA Core, 2 = Ring,
-	 * 3 = GT unsliced,  4 = GT sliced */
-	for (i = 0; i < ARRAY_SIZE(config->domain_vr_config); i++)
-		fill_vr_domain_config(params, i, &config->domain_vr_config[i]);
-
-	/* Vt-D config */
-	tconfig->VtdDisable = config->VtdDisable;
-}
-
-/* Mainboard GPIO Configuration */
-__weak void mainboard_silicon_init_params(FSP_S_CONFIG *params)
-{
-	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
-}

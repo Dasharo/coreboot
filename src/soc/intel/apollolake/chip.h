@@ -112,6 +112,9 @@ struct soc_intel_apollolake_config {
 	/* Enable DPTF support */
 	int dptf_enable;
 
+	/* TCC activation offset value in degrees Celsius */
+	int tcc_offset;
+
 	/* PL1 override value in mW for APL */
 	uint16_t tdp_pl1_override_mw;
 	/* PL2 override value in mW for APL */
@@ -153,6 +156,12 @@ struct soc_intel_apollolake_config {
 	 * (1) Power
 	 * (2) Power & Performance */
 	enum pnp_settings pnp_settings;
+
+	/* PMIC PCH_PWROK delay configuration - IPC Configuration
+	 * Upd for changing PCH_PWROK delay configuration : I2C_Slave_Address
+	 * (31:24) + Register_Offset (23:16) + OR Value (15:8) + AND Value (7:0)
+	 */
+	uint32_t PmicPmcIpcCtrl;
 };
 
 typedef struct soc_intel_apollolake_config config_t;

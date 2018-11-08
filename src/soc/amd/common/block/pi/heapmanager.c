@@ -13,7 +13,6 @@
 
 
 #include <amdblocks/agesawrapper.h>
-#include <amdlib.h>
 #include <arch/acpi.h>
 #include <amdblocks/BiosCallOuts.h>
 #include <cbmem.h>
@@ -142,7 +141,7 @@ static void ConcatenateNodes(BIOS_BUFFER_NODE *FirstNodePtr,
 
 ROMSTAGE_CBMEM_INIT_HOOK(EmptyHeap)
 
-AGESA_STATUS agesa_AllocateBuffer (UINT32 Func, UINTN Data, VOID *ConfigPtr)
+AGESA_STATUS agesa_AllocateBuffer(UINT32 Func, UINTN Data, VOID *ConfigPtr)
 {
 	/*
 	 * Size variables explanation:
@@ -317,7 +316,7 @@ AGESA_STATUS agesa_AllocateBuffer (UINT32 Func, UINTN Data, VOID *ConfigPtr)
 	return AGESA_SUCCESS;
 }
 
-AGESA_STATUS agesa_DeallocateBuffer (UINT32 Func, UINTN Data, VOID *ConfigPtr)
+AGESA_STATUS agesa_DeallocateBuffer(UINT32 Func, UINTN Data, VOID *ConfigPtr)
 {
 
 	UINT8               *BiosHeapBaseAddr;
@@ -430,7 +429,7 @@ AGESA_STATUS agesa_DeallocateBuffer (UINT32 Func, UINTN Data, VOID *ConfigPtr)
 	return AGESA_SUCCESS;
 }
 
-AGESA_STATUS agesa_LocateBuffer (UINT32 Func, UINTN Data, VOID *ConfigPtr)
+AGESA_STATUS agesa_LocateBuffer(UINT32 Func, UINTN Data, VOID *ConfigPtr)
 {
 	BIOS_BUFFER_NODE    *AllocNodePtr;
 	AGESA_BUFFER_PARAMS *AllocParams;

@@ -60,6 +60,7 @@ config VARIANT_DIR
 	string
 	default "aleena" if BOARD_GOOGLE_ALEENA
 	default "careena" if BOARD_GOOGLE_CAREENA
+	default "delan" if BOARD_GOOGLE_DELAN
 	default "grunt" if BOARD_GOOGLE_GRUNT
 	default "liara" if BOARD_GOOGLE_LIARA
 
@@ -113,6 +114,7 @@ config GBB_HWID
 	depends on CHROMEOS
 	default "ALEENA TEST 7281" if BOARD_GOOGLE_ALEENA
 	default "CAREENA TEST 8777" if BOARD_GOOGLE_CAREENA
+	default "DELAN TEST 0359" if BOARD_GOOGLE_DELAN
 	default "GRUNT TEST 8296" if BOARD_GOOGLE_GRUNT
 	default "LIARA TEST 0464" if BOARD_GOOGLE_LIARA
 
@@ -127,5 +129,16 @@ config DRIVER_TPM_I2C_BUS
 config DRIVER_TPM_I2C_ADDR
 	hex
 	default 0x50
+
+config USE_OEM_BIN
+	bool "Add an oem.bin file"
+	help
+	  Add an oem.bin file to identify the manufacturer in SMBIOS, overriding the
+	  CONFIG_MAINBOARD_SMBIOS_MANUFACTURER value.
+
+config OEM_BIN_FILE
+	string "OEM ID table"
+	depends on USE_OEM_BIN
+	default ""
 
 endif # BOARD_GOOGLE_BASEBOARD_KAHLEE

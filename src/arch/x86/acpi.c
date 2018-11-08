@@ -44,7 +44,6 @@
 #include <arch/acpigen.h>
 #include <device/pci.h>
 #include <cbmem.h>
-#include <compiler.h>
 #include <cpu/x86/lapic_def.h>
 #include <cpu/cpu.h>
 #include <cbfs.h>
@@ -307,6 +306,33 @@ static void acpi_create_tcpa(acpi_tcpa_t *tcpa)
 
 	/* Calculate checksum. */
 	header->checksum = acpi_checksum((void *)tcpa, header->length);
+}
+
+static void acpi_create_tpm2(acpi_tpm2_t *tpm2)
+{
+	acpi_header_t *header = &(tpm2->header);
+
+	memset((void *)tpm2, 0, sizeof(acpi_tpm2_t));
+
+	/* Fill out header fields. */
+	memcpy(header->signature, "TPM2", 4);
+	memcpy(header->oem_id, OEM_ID, 6);
+	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
+	memcpy(header->asl_compiler_id, ASLC, 4);
+
+	header->length = sizeof(acpi_tpm2_t);
+	header->revision = get_acpi_table_revision(TPM2);
+
+	/* Hard to detect for coreboot. Just set it to 0 */
+	tpm2->platform_class = 0;
+	/* Must be set to 0 for TIS interface support */
+	tpm2->control_area = 0;
+	/* coreboot only supports the TIS interface driver. */
+	tpm2->start_method = 6;
+	memset(tpm2->msp, 0, sizeof(tpm2->msp));
+
+	/* Calculate checksum. */
+	header->checksum = acpi_checksum((void *)tpm2, header->length);
 }
 
 static void acpi_ssdt_write_cbtable(void)
@@ -1031,6 +1057,7 @@ unsigned long write_acpi_tables(unsigned long start)
 	acpi_header_t *dsdt_file, *dsdt;
 	acpi_mcfg_t *mcfg;
 	acpi_tcpa_t *tcpa;
+	acpi_tpm2_t *tpm2;
 	acpi_madt_t *madt;
 	struct device *dev;
 	unsigned long fw;
@@ -1164,13 +1191,26 @@ unsigned long write_acpi_tables(unsigned long start)
 		acpi_add_table(rsdp, mcfg);
 	}
 
-	printk(BIOS_DEBUG, "ACPI:    * TCPA\n");
-	tcpa = (acpi_tcpa_t *) current;
-	acpi_create_tcpa(tcpa);
-	if (tcpa->header.length >= sizeof(acpi_tcpa_t)) {
-		current += tcpa->header.length;
-		current = acpi_align_current(current);
-		acpi_add_table(rsdp, tcpa);
+	if (IS_ENABLED(CONFIG_TPM1)) {
+		printk(BIOS_DEBUG, "ACPI:    * TCPA\n");
+		tcpa = (acpi_tcpa_t *) current;
+		acpi_create_tcpa(tcpa);
+		if (tcpa->header.length >= sizeof(acpi_tcpa_t)) {
+			current += tcpa->header.length;
+			current = acpi_align_current(current);
+			acpi_add_table(rsdp, tcpa);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_TPM2)) {
+		printk(BIOS_DEBUG, "ACPI:    * TPM2\n");
+		tpm2 = (acpi_tpm2_t *) current;
+		acpi_create_tpm2(tpm2);
+		if (tpm2->header.length >= sizeof(acpi_tpm2_t)) {
+			current += tpm2->header.length;
+			current = acpi_align_current(current);
+			acpi_add_table(rsdp, tpm2);
+		}
 	}
 
 	printk(BIOS_DEBUG, "ACPI:    * MADT\n");
@@ -1238,8 +1278,11 @@ void *acpi_find_wakeup_vector(void)
 			break;
 	}
 
-	if (rsdp == NULL)
+	if (rsdp == NULL) {
+		printk(BIOS_ALERT,
+		       "No RSDP found, wake up from S3 not possible.\n");
 		return NULL;
+	}
 
 	printk(BIOS_DEBUG, "RSDP found at %p\n", rsdp);
 	rsdt = (acpi_rsdt_t *)(uintptr_t)rsdp->rsdt_address;
@@ -1254,15 +1297,18 @@ void *acpi_find_wakeup_vector(void)
 		fadt = NULL;
 	}
 
-	if (fadt == NULL)
+	if (fadt == NULL) {
+		printk(BIOS_ALERT,
+		       "No FADT found, wake up from S3 not possible.\n");
 		return NULL;
+	}
 
 	printk(BIOS_DEBUG, "FADT found at %p\n", fadt);
 	facs = (acpi_facs_t *)(uintptr_t)fadt->firmware_ctrl;
 
 	if (facs == NULL) {
-		printk(BIOS_DEBUG, "No FACS found, wake up from S3 not "
-		       "possible.\n");
+		printk(BIOS_ALERT,
+		       "No FACS found, wake up from S3 not possible.\n");
 		return NULL;
 	}
 
@@ -1289,6 +1335,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 1;
 	case TCPA:
 		return 2;
+	case TPM2:
+		return 4;
 	case SSDT: /* ACPI 1.0/2.0: ?, ACPI 3.0/4.0: 2 */
 		return 2;
 	case SRAT:  /* ACPI 1.0: N/A, 2.0: 1, 3.0: 2, 4.0: 3 */

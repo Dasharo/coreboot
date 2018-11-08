@@ -19,8 +19,8 @@
 #include <stdint.h>
 #include <arch/io.h>
 #include <cpu/x86/msr.h>
+#include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
-#include <cpu/amd/amdfam15.h>
 #include <cbmem.h>
 #include <stage_cache.h>
 #include <arch/bert_storage.h>
@@ -63,11 +63,11 @@ void *cbmem_top(void)
 
 	if (!tom.lo)
 		return 0;
-	else
-		/* 8MB alignment to keep MTRR usage low */
-		return (void *)ALIGN_DOWN(restore_top_of_low_cacheable()
-				- CONFIG_SMM_TSEG_SIZE
-				- BERT_REGION_MAX_SIZE, 8*MiB);
+
+	/* 8MB alignment to keep MTRR usage low */
+	return (void *)ALIGN_DOWN(restore_top_of_low_cacheable()
+			- CONFIG_SMM_TSEG_SIZE
+			- BERT_REGION_MAX_SIZE, 8*MiB);
 }
 
 static uintptr_t smm_region_start(void)
@@ -102,7 +102,7 @@ void smm_region_info(void **start, size_t *size)
 static void clear_tvalid(void)
 {
 	msr_t hwcr = rdmsr(HWCR_MSR);
-	msr_t mask = rdmsr(MSR_SMM_MASK);
+	msr_t mask = rdmsr(SMM_MASK_MSR);
 	int tvalid = !!(mask.lo & SMM_TSEG_VALID);
 
 	if (hwcr.lo & SMM_LOCK) {
@@ -114,7 +114,7 @@ static void clear_tvalid(void)
 	}
 
 	mask.lo &= ~SMM_TSEG_VALID;
-	wrmsr(MSR_SMM_MASK, mask);
+	wrmsr(SMM_MASK_MSR, mask);
 }
 
 int smm_subregion(int sub, void **start, size_t *size)

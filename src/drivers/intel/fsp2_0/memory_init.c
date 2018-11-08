@@ -11,7 +11,6 @@
  * (at your option) any later version.
  */
 
-#include <compiler.h>
 #include <security/vboot/antirollback.h>
 #include <arch/io.h>
 #include <arch/cpu.h>
@@ -19,6 +18,7 @@
 #include <assert.h>
 #include <cbfs.h>
 #include <cbmem.h>
+#include <cf9_reset.h>
 #include <console/console.h>
 #include <elog.h>
 #include <fsp/api.h>
@@ -26,7 +26,6 @@
 #include <memrange.h>
 #include <mrc_cache.h>
 #include <program_loading.h>
-#include <reset.h>
 #include <romstage_handoff.h>
 #include <string.h>
 #include <symbols.h>
@@ -81,7 +80,8 @@ static void do_fsp_post_memory_init(bool s3wake, uint32_t fsp_version)
 			printk(BIOS_ERR,
 				"Failed to recover CBMEM in S3 resume.\n");
 			/* Failed S3 resume, reset to come up cleanly */
-			hard_reset();
+			/* FIXME: A "system" reset is likely enough: */
+			full_reset();
 		}
 	}
 
@@ -215,7 +215,8 @@ static enum cb_err fsp_fill_common_arch_params(FSPM_ARCH_UPD *arch_upd,
 		 * returning error. Invoking a reset here saves time.
 		 */
 		if (!arch_upd->NvsBufferPtr)
-			hard_reset();
+			/* FIXME: A "system" reset is likely enough: */
+			full_reset();
 		arch_upd->BootMode = FSP_BOOT_ON_S3_RESUME;
 	} else {
 		if (arch_upd->NvsBufferPtr)
@@ -274,7 +275,7 @@ static void do_fsp_memory_init(struct fsp_header *hdr, bool s3wake,
 	FSPM_ARCH_UPD *arch_upd;
 	uint32_t fsp_version;
 
-	post_code(0x34);
+	post_code(POST_MEM_PREINIT_PREP_START);
 
 	fsp_version = fsp_memory_settings_version(hdr);
 
@@ -301,6 +302,8 @@ static void do_fsp_memory_init(struct fsp_header *hdr, bool s3wake,
 
 	if (IS_ENABLED(CONFIG_MMA))
 		setup_mma(&fspm_upd.FspmConfig);
+
+	post_code(POST_MEM_PREINIT_PREP_END);
 
 	/* Call FspMemoryInit */
 	fsp_raminit = (void *)(hdr->image_base + hdr->memory_init_entry_offset);

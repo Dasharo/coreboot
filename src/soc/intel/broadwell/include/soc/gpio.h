@@ -17,7 +17,6 @@
 #define _BROADWELL_GPIO_H_
 
 #include <stdint.h>
-#include <compiler.h>
 
 #define CROS_GPIO_DEVICE_NAME		"PCH-LP"
 #define CROS_GPIO_ACPI_DEVICE_NAME	"INT3437:00"
@@ -145,6 +144,11 @@
 
 #define PCH_GPIO_PIRQ \
 	{ .conf0 = GPIO_MODE_GPIO | GPIO_DIR_INPUT, \
+	  .owner = GPIO_OWNER_GPIO, \
+	  .pirq  = GPIO_PIRQ_APIC_ROUTE }
+
+#define PCH_GPIO_PIRQ_INVERT \
+	{ .conf0 = GPIO_MODE_GPIO | GPIO_DIR_INPUT | GPIO_INVERT, \
 	  .owner = GPIO_OWNER_GPIO, \
 	  .pirq  = GPIO_PIRQ_APIC_ROUTE }
 

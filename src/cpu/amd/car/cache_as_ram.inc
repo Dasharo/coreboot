@@ -17,6 +17,7 @@
 
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/cache.h>
+#include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
 
 #define CacheSize		CONFIG_DCACHE_RAM_SIZE
@@ -26,9 +27,6 @@
 
 /* For CAR with Fam10h. */
 #define CacheSizeAPStack	CONFIG_DCACHE_AP_STACK_SIZE
-
-#define MSR_MCFG_BASE		0xC0010058
-#define MSR_BU_CFG2		0xC001102A
 
 #define jmp_if_not_k8(x)	comisd	%xmm2, %xmm1; jae x
 #define jmp_if_k8(x)		comisd	%xmm2, %xmm1; jb x
@@ -130,13 +128,13 @@ CAR_FAM10_out:
 	 * Errata 193: Disable clean copybacks to L3 cache to allow cached ROM.
 	 * Re-enable it in after RAM is initialized and before CAR is disabled.
 	 */
-	movl	$MSR_BU_CFG2, %ecx
+	movl	$BU_CFG2_MSR, %ecx
 	rdmsr
 	bts	$15, %eax	/* Set bit 15 in EDX:EAX (bit 15 in EAX). */
 	wrmsr
 
 	/* Erratum 343, RevGuide for Fam10h, Pub#41322 Rev. 3.33 */
-	movl	$MSR_BU_CFG2, %ecx
+	movl	$BU_CFG2_MSR, %ecx
 	rdmsr
 	bts	$35-32, %edx	/* Set bit 35 in EDX:EAX (bit 3 in EDX). */
 	wrmsr
@@ -171,7 +169,7 @@ CAR_FAM10_errata_applied:
    #else
 	#error "bad MMCONF_BUS_NUMBER value"
    #endif
-	movl	$MSR_MCFG_BASE, %ecx
+	movl	$MMIO_CONF_BASE, %ecx
 	wrmsr
 #endif
 
@@ -179,7 +177,7 @@ CAR_FAM10_out_post_errata:
 
 	/* Fam15h APIC IDs do not depend on NB config bit 54 */
 	jmp_if_not_fam15h(skip_nb54_set)
-	movl	$0xc001001f, %ecx	/* NB_CFG_MSR */
+	movl	$NB_CFG_MSR, %ecx
 	rdmsr
 	bts	$(54 - 32), %edx	/* Set NB config bit 54 */
 	wrmsr
@@ -227,7 +225,7 @@ skip_cu_check:
 	jmp_if_not_fam15h(CAR_FAM15_errata_applied)
 
 	/* Erratum 714, RevGuide for Fam15h, Pub#48063 Rev. 3.24 */
-	movl	$MSR_BU_CFG2, %ecx
+	movl	$BU_CFG2_MSR, %ecx
 	rdmsr
 	bts	$8, %eax	/* Set bit 8 in EDX:EAX (bit 8 in EAX). */
 	wrmsr
@@ -378,7 +376,7 @@ fam15_skip_dram_mtrr_setup:
 	xorl	%edx, %edx
 	/*
 	 * IMPORTANT: The following calculation _must_ be done at runtime. See
-	 * https://www.coreboot.org/pipermail/coreboot/2010-October/060855.html
+	 * https://mail.coreboot.org/pipermail/coreboot/2010-October/060922.html
 	 */
 	movl	$_program, %eax
 	andl	$(~(CONFIG_XIP_ROM_SIZE - 1)), %eax
@@ -410,33 +408,33 @@ fam10_mtrr_setup_complete:
 	post_code(0xa1)
 
 	/* Disable conversion of INVD to WBINVD (INVDWBINVD = 0) */
-	mov	$0xc0010015, %ecx
+	mov	$HWCR_MSR, %ecx
 	rdmsr
 	btr	$4, %eax
 	wrmsr
 
 jmp_if_not_fam15h(fam15_car_msr_setup_complete)
 	/* Disable streaming store (DisSS = 1) */
-	mov	$0xc0011020, %ecx
+	mov	$LS_CFG_MSR, %ecx
 	rdmsr
 	bts	$28, %eax
 	wrmsr
 
 	/* Disable speculative ITLB reloads (DisSpecTlbRld = 1) */
-	mov	$0xc0011021, %ecx
+	mov	$IC_CFG_MSR, %ecx
 	rdmsr
 	bts	$9, %eax
 	wrmsr
 
 	/* Disable speculative DTLB reloads (DisSpecTlbRld = 1) and set DisHwPf = 1 */
-	mov	$0xc0011022, %ecx
+	mov	$DC_CFG_MSR, %ecx
 	rdmsr
 	bts	$4, %eax
 	bts	$13, %eax
 	wrmsr
 
 	/* Disable CR0 combining (CombineCr0Cd = 0) */
-	mov	$0xc001102b, %ecx
+	mov	$BU_CFG3_MSR, %ecx
 	rdmsr
 	btr	$49-32, %edx
 	wrmsr
@@ -522,7 +520,7 @@ CAR_FAM10_ap:
 	 * system with no obvious clues of what went wrong.
 	 *
 	 * So, need to get the NodeID and CoreID at first.
-	 * If NB_CFG bit 54 is set just use initial APIC ID, otherwise need
+	 * If NB_CFG_MSR bit 54 is set just use initial APIC ID, otherwise need
 	 * to reverse it.
 	 */
 
@@ -539,7 +537,7 @@ CAR_FAM10_ap:
 	shrl	$24, %ebx
 
 	/* Get the nb cfg bit 54. */
-	movl	$0xc001001f, %ecx	/* NB_CFG_MSR */
+	movl	$NB_CFG_MSR, %ecx
 	rdmsr
 	movl	%edi, %ecx		/* CoreID bits */
 	bt	$(54 - 32), %edx

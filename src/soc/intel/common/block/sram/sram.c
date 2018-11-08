@@ -14,7 +14,6 @@
  * GNU General Public License for more details.
  */
 
-#include <compiler.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -50,6 +49,7 @@ static const struct device_operations device_ops = {
 static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_APL_SRAM,
 	PCI_DEVICE_ID_INTEL_GLK_SRAM,
+	PCI_DEVICE_ID_INTEL_ICL_SRAM,
 	0,
 };
 

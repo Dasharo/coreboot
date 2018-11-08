@@ -12,12 +12,10 @@
  */
 
 #include <smbios.h>
-#include <soc/romstage.h>
 #include <variant/onboard.h>
 #include <mainboard/google/auron/variant.h>
 
-int variant_smbios_data(device_t dev, int *handle,
-				 unsigned long *current)
+int variant_smbios_data(struct device *dev, int *handle, unsigned long *current)
 {
 	int len = 0;
 
@@ -31,9 +29,4 @@ int variant_smbios_data(device_t dev, int *handle,
 		0);				/* function */
 
 	return len;
-}
-
-void variant_romstage_entry(struct romstage_params *rp)
-{
-	/* N/A for boards other than SAMUS */
 }

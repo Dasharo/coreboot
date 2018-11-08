@@ -22,7 +22,6 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <reset.h>
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <arch/io.h>
@@ -35,6 +34,8 @@
 #include <cbmem.h>
 #include <cpu/amd/model_10xxx_rev.h>
 #include <cpu/amd/car.h>
+#include <cpu/amd/msr.h>
+#include <southbridge/amd/common/reset.h>
 #include <southbridge/nvidia/ck804/early_smbus.h>
 #include <delay.h>
 #include <cpu/x86/lapic.h>
@@ -59,10 +60,10 @@
 #define GPIO3_DEV PNP_DEV(0x2e, W83627THG_GPIO3)
 
 void activate_spd_rom(const struct mem_controller *ctrl);
-int spd_read_byte(unsigned device, unsigned address);
+int spd_read_byte(unsigned int device, unsigned int address);
 extern struct sys_info sysinfo_car;
 
-int spd_read_byte(unsigned device, unsigned address)
+int spd_read_byte(unsigned int device, unsigned int address)
 {
 	return smbus_read_byte(device, address);
 }
@@ -256,7 +257,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	wait_all_core0_started();
 
 	if (IS_ENABLED(CONFIG_SET_FIDVID)) {
-		msr = rdmsr(0xc0010071);
+		msr = rdmsr(MSR_COFVID_STS);
 		printk(BIOS_DEBUG, "\nBegin FIDVID MSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 
 		post_code(0x39);
@@ -270,7 +271,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		post_code(0x3A);
 
 		/* show final fid and vid */
-		msr = rdmsr(0xc0010071);
+		msr = rdmsr(MSR_COFVID_STS);
 		printk(BIOS_DEBUG, "End FIDVIDMSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 	}
 

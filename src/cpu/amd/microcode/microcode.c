@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <console/console.h>
 #include <cpu/x86/msr.h>
+#include <cpu/amd/msr.h>
 #include <cpu/amd/microcode.h>
 #include <cbfs.h>
 #include <arch/io.h>
@@ -121,15 +122,15 @@ static void apply_microcode_patch(const struct microcode *m)
 	msr.hi = 0;
 	msr.lo = (uint32_t)m;
 
-	wrmsr(0xc0010020, msr);
+	wrmsr(MSR_PATCH_LOADER, msr);
 
 	UCODE_DEBUG("patch id to apply = 0x%08x\n", m->patch_id);
 
 	/* read the patch_id again */
-	msr = rdmsr(0x8b);
+	msr = rdmsr(IA32_BIOS_SIGN_ID);
 	new_patch_id = msr.lo;
 
-	UCODE_DEBUG("updated to patch id = 0x%08x %s\n", new_patch_id ,
+	UCODE_DEBUG("updated to patch id = 0x%08x %s\n", new_patch_id,
 		    (new_patch_id == m->patch_id) ? "success" : "fail");
 }
 

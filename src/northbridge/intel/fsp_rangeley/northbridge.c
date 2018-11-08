@@ -131,7 +131,7 @@ static void mc_add_dram_resources(struct device *dev)
 	mmio_resource(dev, index++, tomlow >> 10, (bmbound - bsmmrrl) >> 10);
 
 	if (bmbound_hi > 0x100000000) {
-		ram_resource(dev, index++, 0x100000000 >> 10, (bmbound_hi - 0x100000000) >> 10 );
+		ram_resource(dev, index++, 0x100000000 >> 10, (bmbound_hi - 0x100000000) >> 10);
 		printk(BIOS_INFO, "Available memory above 4GB: %lluM\n", (bmbound_hi - 0x100000000) >> 20);
 	}
 
@@ -173,7 +173,8 @@ static void mc_set_resources(struct device *dev)
 	pci_dev_set_resources(dev);
 }
 
-static void intel_set_subsystem(struct device *dev, unsigned vendor, unsigned device)
+static void intel_set_subsystem(struct device *dev, unsigned int vendor,
+				unsigned int device)
 {
 	if (!vendor || !device) {
 		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,

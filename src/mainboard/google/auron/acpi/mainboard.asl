@@ -16,6 +16,7 @@
 
 #include <variant/onboard.h>
 
+#if !IS_ENABLED(CONFIG_BOARD_GOOGLE_BUDDY)
 Scope (\_SB.PCI0.RP01)
 {
 	Device (WLAN)
@@ -34,6 +35,7 @@ Scope (\_SB.PCI0.RP01)
 		}
 	}
 }
+#endif
 
 #include <variant/acpi/mainboard.asl>
 

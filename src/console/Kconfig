@@ -157,7 +157,7 @@ config SPKMODEM
 config CONSOLE_USB
 	bool "USB dongle console output"
 	depends on USBDEBUG
-	default n
+	default y
 	help
 	  Send coreboot debug output to USB.
 
@@ -308,6 +308,7 @@ if !CONSOLE_OVERRIDE_LOGLEVEL
 
 choice
 	prompt "Default console log level"
+	default DEFAULT_CONSOLE_LOGLEVEL_8 if CHROMEOS
 	default DEFAULT_CONSOLE_LOGLEVEL_7
 
 config DEFAULT_CONSOLE_LOGLEVEL_8

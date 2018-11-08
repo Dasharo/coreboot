@@ -13,10 +13,10 @@
  * GNU General Public License for more details.
  */
 
-#include "AGESA.h"
+#include <AGESA.h>
 #include <northbridge/amd/agesa/BiosCallOuts.h>
-#include "FchPlatform.h"
-#include "cbfs.h"
+#include <FchPlatform.h>
+#include <cbfs.h>
 #include "imc.h"
 #include "hudson.h"
 #include <stdlib.h>
@@ -159,7 +159,7 @@ static void oem_fan_control(FCH_DATA_BLOCK *FchParams)
 
 		FchParams->Imc.ImcEnable = TRUE;
 		FchParams->Hwm.HwmControl = 1;	/* 1 IMC, 0 HWM */
-		FchParams->Imc.ImcEnableOverWrite = 1; /* 2 disable IMC , 1 enable IMC, 0 following hw strap setting */
+		FchParams->Imc.ImcEnableOverWrite = 1; /* 2 disable IMC, 1 enable IMC, 0 following hw strap setting */
 
 		LibAmdMemFill(&(FchParams->Imc.EcStruct), 0, sizeof(FCH_EC), FchParams->StdHeader);
 

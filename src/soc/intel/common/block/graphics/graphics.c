@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2017 Intel Corp.
+ * Copyright (C) 2017-2018 Intel Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,6 @@
  * GNU General Public License for more details.
  */
 
-#include <compiler.h>
 #include <assert.h>
 #include <console/console.h>
 #include <device/pci.h>
@@ -133,6 +132,24 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_SKL_GT2_SHALM,
 	PCI_DEVICE_ID_INTEL_SKL_GT2_SWKSM,
 	PCI_DEVICE_ID_INTEL_SKL_GT4_SHALM,
+	PCI_DEVICE_ID_INTEL_CFL_H_GT2,
+	PCI_DEVICE_ID_INTEL_CFL_S_GT2,
+	PCI_DEVICE_ID_INTEL_ICL_GT0_ULT,
+	PCI_DEVICE_ID_INTEL_ICL_GT0_5_ULT,
+	PCI_DEVICE_ID_INTEL_ICL_GT1_ULT,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULX_0,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULX_1,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULT_1,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULX_2,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULT_2,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULX_3,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULT_3,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULX_4,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULT_4,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULX_5,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULT_5,
+	PCI_DEVICE_ID_INTEL_ICL_GT2_ULX_6,
+	PCI_DEVICE_ID_INTEL_ICL_GT3_ULT,
 	0,
 };
 

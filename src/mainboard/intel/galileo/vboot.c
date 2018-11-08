@@ -14,8 +14,6 @@
 
 #include <assert.h>
 #include <bootmode.h>
-#include <compiler.h>
-#include <console/console.h>
 #include <delay.h>
 #include <device/i2c_simple.h>
 #include <lib.h>

@@ -22,7 +22,7 @@
 #include <superio/nuvoton/nct5104d/nct5104d.h>
 #include <console/console.h>
 #include "gpio_ftns.h"
-#include "SB800.h"
+#include <SB800.h>
 #include <build.h>
 #include "bios_knobs.h"
 

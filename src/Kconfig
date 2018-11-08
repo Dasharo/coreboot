@@ -153,7 +153,7 @@ config COMPRESS_BOOTBLOCK
 	  a small self-decompression stub to its front. This can drastically
 	  reduce boot time on platforms where the bootblock is loaded over a
 	  very slow connection and bootblock size trumps all other factors for
-	  speed. Since this using this option usually requires changes to the
+	  speed. Since using this option usually requires changes to the
 	  SoC memlayout and possibly extra support code, it should not be
 	  user-selectable. (There's no real point in offering this to the user
 	  anyway... if it works and saves boot time, you would always want it.)
@@ -448,13 +448,6 @@ config RESUME_PATH_SAME_AS_BOOT
 	  This option indicates that when a system resumes it takes the
 	  same path as a regular boot. e.g. an x86 system runs from the
 	  reset vector at 0xfffffff0 on both resume and warm/cold boot.
-
-config HAVE_HARD_RESET
-	bool
-	default n
-	help
-	  This variable specifies whether a given board has a hard_reset
-	  function, no matter if it's provided by board code or chipset code.
 
 config HAVE_ROMSTAGE_CONSOLE_SPINLOCK
 	bool

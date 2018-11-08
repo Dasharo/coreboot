@@ -1,7 +1,7 @@
 /*
  * This file is part of the libpayload project.
  *
- * Copyright 2018 Google LLC.
+ * Copyright 2018 Google LLC
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,7 +42,6 @@
 #define XAPIC_ENABLED_BIT		(1 << 11)
 #define X2APIC_ENABLED_BIT		(1 << 10)
 #define APIC_MASKED_BIT			(1 << 16)
-#define APIC_SW_ENABLED_BIT		(1 << 8)
 
 #define APIC_ID				0x020
 #define   APIC_ID_SHIFT			24
@@ -54,14 +53,20 @@
 #define   APIC_TASK_PRIORITY_MASK	0xFFUL
 #define APIC_EOI			0x0B0
 #define APIC_SPURIOUS			0x0F0
+#define   APIC_SW_ENABLED_BIT		(1 << 8)
+#define   APIC_SPURIOUS_VECTOR_MASK	0xFFUL
+#define APIC_SPURIOUS			0x0F0
 #define APIC_LVT_TIMER			0x320
 #define APIC_TIMER_INIT_COUNT		0x380
 #define APIC_TIMER_CUR_COUNT		0x390
 #define APIC_TIMER_DIV_CFG		0x3E0
+#define APIC_ISR_0			0x100
+#define APIC_ISR_OFFSET			0x010
 
 #define APIC_LVT_SIZE			0x010
 
-#define APIC_TIMER_VECTOR		0x20
+#define APIC_TIMER_VECTOR		0x20UL
+#define APIC_SPURIOUS_VECTOR		0xFFUL
 
 static uint32_t apic_bar;
 static int _apic_initialized;
@@ -141,11 +146,30 @@ static void timer_interrupt_handler(u8 vector)
 	timer_waiting = 0;
 }
 
-void apic_eoi(void)
+static void suprious_interrupt_handler(u8 vector) {}
+
+void apic_eoi(uint8_t vector)
 {
 	die_if(!apic_bar, "APIC is not initialized");
 
-	apic_write32(APIC_EOI, 0);
+	/*
+	 * Local and I/O APICs support 240 vectors (in the range of 16 to 255)
+	 * as valid interrupts.
+	 */
+	if (vector <= 15)
+		return;
+
+	/* Each bank handles 32 vectors */
+	uint8_t bank = vector / 32;
+
+	uint32_t offset = APIC_ISR_0 + bank * APIC_ISR_OFFSET;
+
+	uint32_t mask = apic_read32(offset);
+
+	uint8_t shift = vector % 32;
+
+	if (mask & (1 << shift))
+		apic_write32(APIC_EOI, 0);
 }
 
 static enum APIC_CAPABILITY apic_capabilities(void)
@@ -236,6 +260,17 @@ static void apic_sw_enable(void)
 	apic_write32(APIC_SPURIOUS, reg);
 }
 
+static void apic_setup_spurious(void)
+{
+	uint32_t reg = apic_read32(APIC_SPURIOUS);
+
+	reg &= ~APIC_SPURIOUS_VECTOR_MASK;
+
+	reg |= APIC_SPURIOUS_VECTOR;
+
+	apic_write32(APIC_SPURIOUS, reg);
+}
+
 void apic_init(void)
 {
 	uint64_t apic_bar_reg;
@@ -255,12 +290,15 @@ void apic_init(void)
 
 	apic_reset_all_lvts();
 	apic_set_task_priority(0);
+	apic_setup_spurious();
 
 	apic_sw_enable();
 
 	apic_init_timer();
 
 	set_interrupt_handler(APIC_TIMER_VECTOR, &timer_interrupt_handler);
+	set_interrupt_handler(APIC_SPURIOUS_VECTOR,
+			      &suprious_interrupt_handler);
 
 	_apic_initialized = 1;
 

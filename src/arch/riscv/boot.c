@@ -19,6 +19,7 @@
 #include <arch/encoding.h>
 #include <rules.h>
 #include <console/console.h>
+#include <arch/smp/smp.h>
 
 /*
  * A pointer to the Flattened Device Tree passed to coreboot by the boot ROM.
@@ -28,7 +29,7 @@
  */
 const void *rom_fdt;
 
-void arch_prog_run(struct prog *prog)
+static void do_arch_prog_run(struct prog *prog)
 {
 	void (*doit)(void *) = prog_entry(prog);
 	void riscvpayload(const void *fdt, void *payload);
@@ -49,7 +50,7 @@ void arch_prog_run(struct prog *prog)
 	doit(prog_entry_arg(prog));
 }
 
-int arch_supports_bounce_buffer(void)
+void arch_prog_run(struct prog *prog)
 {
-	return 0;
+	smp_resume((void (*)(void *))do_arch_prog_run, prog);
 }

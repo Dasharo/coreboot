@@ -15,6 +15,7 @@
 
 #include "amd8111.h"
 #include <reset.h>
+#include <southbridge/amd/common/reset.h>
 
 unsigned get_sbdn(unsigned bus)
 {
@@ -52,7 +53,7 @@ static void enable_cf9(void)
 	enable_cf9_x(sbbusn, sbdn);
 }
 
-void do_hard_reset(void)
+void do_board_reset(void)
 {
 	set_bios_reset();
 	/* reset */
@@ -68,7 +69,7 @@ void enable_fid_change_on_sb(unsigned sbbusn, unsigned sbdn)
 
 	pci_write_config8(dev, 0x74, 4);
 
-	/* set VFSMAF ( VID/FID System Management Action Field) to 2 */
+	/* set VFSMAF (VID/FID System Management Action Field) to 2 */
 	pci_write_config32(dev, 0x70, 2<<12);
 
 }

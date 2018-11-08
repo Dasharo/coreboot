@@ -27,13 +27,11 @@
 #include <lib.h>
 #include <cpu/cpu.h>
 #include <cbmem.h>
-
 #include <cpu/x86/lapic.h>
+#include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
-
 #include <northbridge/amd/agesa/state_machine.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
-
 #include <sb_cimx.h>
 
 #define FX_DEVS 1
@@ -151,7 +149,7 @@ static struct resource *amdfam14_find_iopair(struct device *dev,
 	/* Ext conf space */
 	if (!reg) {
 		/* Because of Extend conf space, we will never run out of reg,
-		 * but we need one index to differ them. So ,same node and same
+		 * but we need one index to differ them. So,same node and same
 		 *  link can have multi range
 		 */
 		u32 index = get_io_addr_index(nodeid, link);
@@ -187,7 +185,7 @@ static struct resource *amdfam14_find_mempair(struct device *dev, u32 nodeid,
 	/* Ext conf space */
 	if (!reg) {
 		/* Because of Extend conf space, we will never run out of reg,
-		 * but we need one index to differ them. So ,same node and same
+		 * but we need one index to differ them. So,same node and same
 		 *  link can have multi range
 		 */
 		u32 index = get_mmio_addr_index(nodeid, link);
@@ -298,7 +296,7 @@ static void nb_read_resources(struct device *dev)
 	 * It is not honored by the coreboot resource allocator if it is in
 	 * the CPU_CLUSTER.
 	 */
-	mmconf_resource(dev, 0xc0010058);
+	mmconf_resource(dev, MMIO_CONF_BASE);
 }
 
 static void set_resource(struct device *dev, struct resource *resource,

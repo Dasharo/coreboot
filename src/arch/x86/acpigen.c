@@ -28,7 +28,6 @@
 #include <lib.h>
 #include <string.h>
 #include <arch/acpigen.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <device/device.h>
 
@@ -454,7 +453,7 @@ static void acpigen_write_field_name(const char *name, uint32_t size)
  *	FIELDLIST_OFFSET(0x84),
  *	FIELDLIST_NAMESTR("PMCS", 2),
  *	};
- * acpigen_write_field("UART", l ,ARRAY_SIZE(l), FIELD_ANYACC | FIELD_NOLOCK |
+ * acpigen_write_field("UART", l, ARRAY_SIZE(l), FIELD_ANYACC | FIELD_NOLOCK |
  *								FIELD_PRESERVE);
  * Output:
  * Field (UART, AnyAcc, NoLock, Preserve)

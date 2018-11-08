@@ -43,11 +43,13 @@
 #include <superio/nsc/pc87417/pc87417.h>
 #include <cpu/x86/bist.h>
 #include <cpu/amd/car.h>
+#include <cpu/amd/msr.h>
 #include <northbridge/amd/amdfam10/raminit.h>
 #include <northbridge/amd/amdht/ht_wrapper.h>
 #include <cpu/amd/family_10h-family_15h/init_cpus.h>
 #include <arch/early_variables.h>
 #include <cbmem.h>
+#include <southbridge/amd/common/reset.h>
 #include "southbridge/broadcom/bcm5785/early_smbus.c"
 #include "southbridge/broadcom/bcm5785/early_setup.c"
 
@@ -57,7 +59,7 @@
 #define RTC_DEV PNP_DEV(0x4e, PC87417_RTC)
 
 void activate_spd_rom(const struct mem_controller *ctrl);
-int spd_read_byte(unsigned device, unsigned address);
+int spd_read_byte(unsigned int device, unsigned int address);
 extern struct sys_info sysinfo_car;
 
 inline void activate_spd_rom(const struct mem_controller *ctrl)
@@ -71,7 +73,7 @@ inline void activate_spd_rom(const struct mem_controller *ctrl)
 	outb((val & ~3) | ctrl->spd_switch_addr, 0xcd7);
 }
 
-inline int spd_read_byte(unsigned device, unsigned address)
+inline int spd_read_byte(unsigned int device, unsigned int address)
 {
 	return smbus_read_byte(device, address);
 }
@@ -161,7 +163,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 #endif
 
 #if IS_ENABLED(CONFIG_SET_FIDVID)
-	msr = rdmsr(0xc0010071);
+	msr = rdmsr(MSR_COFVID_STS);
 	printk(BIOS_DEBUG, "\nBegin FIDVID MSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 
 	/* FIXME: The sb fid change may survive the warm reset and only
@@ -180,7 +182,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	post_code(0x3A);
 
 	/* show final fid and vid */
-	msr = rdmsr(0xc0010071);
+	msr = rdmsr(MSR_COFVID_STS);
 	printk(BIOS_DEBUG, "End FIDVIDMSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 #endif
 

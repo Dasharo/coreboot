@@ -20,9 +20,9 @@
 #include <arch/cbfs.h>
 #include <arch/early_variables.h>
 #include <assert.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <cbmem.h>
+#include <cf9_reset.h>
 #include <cpu/intel/microcode.h>
 #include <cpu/x86/mtrr.h>
 #include <ec/google/chromeec/ec.h>
@@ -30,7 +30,6 @@
 #include <elog.h>
 #include <fsp/romstage.h>
 #include <mrc_cache.h>
-#include <reset.h>
 #include <program_loading.h>
 #include <romstage_handoff.h>
 #include <smbios.h>
@@ -135,7 +134,8 @@ void romstage_common(struct romstage_params *params)
 			printk(BIOS_DEBUG,
 			       "No MRC cache found in S3 resume path.\n");
 			post_code(POST_RESUME_FAILURE);
-			hard_reset();
+			/* FIXME: A "system" reset is likely enough: */
+			full_reset();
 		} else {
 			printk(BIOS_DEBUG, "No MRC cache found.\n");
 		}
@@ -165,7 +165,8 @@ void romstage_common(struct romstage_params *params)
 	/* Create romstage handof information */
 	if (romstage_handoff_init(
 			params->power_state->prev_sleep_state == ACPI_S3) < 0)
-		hard_reset();
+		/* FIXME: A "system" reset is likely enough: */
+		full_reset();
 }
 
 void after_cache_as_ram_stage(void)
@@ -345,7 +346,7 @@ __weak int mrc_cache_stash_data(int type, uint32_t version,
 /* Transition RAM from off or self-refresh to active */
 __weak void raminit(struct romstage_params *params)
 {
-	post_code(0x34);
+	post_code(POST_MEM_PREINIT_PREP_START);
 	die("ERROR - No RAM initialization specified!\n");
 }
 

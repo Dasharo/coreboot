@@ -13,10 +13,11 @@
  * GNU General Public License for more details.
  */
 
-#include <compiler.h>
 #include <amdblocks/agesawrapper.h>
 #include <variant/gpio.h>
 #include <boardid.h>
+#include <chip.h>
+#include <soc/pci_devs.h>
 
 static const PCIe_PORT_DESCRIPTOR PortList[] = {
 	/* Initialize Port descriptor (PCIe port, Lanes 7:4, D2F1) for NC*/

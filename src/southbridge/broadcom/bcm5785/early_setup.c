@@ -15,6 +15,7 @@
  */
 
 #include <reset.h>
+#include <southbridge/amd/common/reset.h>
 #include "bcm5785.h"
 
 static void bcm5785_enable_lpc(void)
@@ -103,7 +104,7 @@ void ldtstop_sb(void)
 }
 
 
-void do_hard_reset(void)
+void do_board_reset(void)
 {
 	bcm5785_enable_wdt_port_cf9();
 

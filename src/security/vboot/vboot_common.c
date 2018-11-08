@@ -16,7 +16,6 @@
 #include <boot/coreboot_tables.h>
 #include <boot_device.h>
 #include <cbmem.h>
-#include <compiler.h>
 #include <console/cbmem_console.h>
 #include <console/console.h>
 #include <fmap.h>
@@ -130,6 +129,5 @@ void vboot_reboot(void)
 	if (IS_ENABLED(CONFIG_CONSOLE_CBMEM_DUMP_TO_UART))
 		cbmem_dump_console();
 	vboot_platform_prepare_reboot();
-	hard_reset();
-	die("failed to reboot");
+	board_reset();
 }

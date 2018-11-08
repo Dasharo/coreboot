@@ -19,6 +19,7 @@
 #include <console/console.h>
 #include <reset.h>
 #include <northbridge/amd/amdfam10/amdfam10.h>
+#include <southbridge/amd/common/reset.h>
 #include "mcp55.h"
 
 void do_soft_reset(void)
@@ -29,7 +30,7 @@ void do_soft_reset(void)
 	outb(0x06, 0x0cf9);
 }
 
-void do_hard_reset(void)
+void do_board_reset(void)
 {
 	set_bios_reset();
 

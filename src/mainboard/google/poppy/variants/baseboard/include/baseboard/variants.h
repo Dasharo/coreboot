@@ -60,6 +60,9 @@ struct memory_params {
 
 	/* The voltage offset applied to the SA in mV. 1000(mV) = Maximum */
 	uint16_t sa_voltage_offset_val;
+
+	/* This would be set to true if only have single DDR channel */
+	bool single_channel;
 };
 
 void variant_memory_params(struct memory_params *p);
@@ -72,5 +75,12 @@ struct nhlt;
 void variant_nhlt_init(struct nhlt *nhlt);
 void variant_nhlt_oem_overrides(const char **oem_id, const char **oem_table_id,
 				uint32_t *oem_revision);
+
+struct google_chromeec_event_info;
+/*
+ * Read google_chromeec_event_info structure from variant to set different masks
+ * on the EC e.g. SCI, S3, S5, S0ix, SMI.
+ */
+const struct google_chromeec_event_info *variant_get_event_info(void);
 
 #endif /* __BASEBOARD_VARIANTS_H__ */

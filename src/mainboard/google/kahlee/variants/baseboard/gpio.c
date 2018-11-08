@@ -13,7 +13,6 @@
  * GNU General Public License for more details.
  */
 
-#include <compiler.h>
 #include <baseboard/variants.h>
 #include <soc/gpio.h>
 #include <soc/southbridge.h>
@@ -54,7 +53,7 @@ static const struct soc_amd_gpio gpio_set_stage_reset[] = {
 	PAD_NF(GPIO_26, PCIE_RST_L, PULL_NONE),
 
 	/* GPIO_40 - EMMC_BRIDGE_RST */
-	PAD_GPI(GPIO_40, PULL_DOWN),
+	PAD_GPO(GPIO_40, LOW),
 
 	/* GPIO_70 - WLAN_PE_RST_L */
 	PAD_GPO(GPIO_70, HIGH),

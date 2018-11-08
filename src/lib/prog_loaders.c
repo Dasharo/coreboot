@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include <cbfs.h>
 #include <cbmem.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <fallback.h>
 #include <halt.h>
@@ -85,8 +84,7 @@ static void ramstage_cache_invalid(void)
 {
 	printk(BIOS_ERR, "ramstage cache invalid.\n");
 	if (IS_ENABLED(CONFIG_RESET_ON_INVALID_RAMSTAGE_CACHE)) {
-		hard_reset();
-		halt();
+		board_reset();
 	}
 }
 
@@ -187,7 +185,7 @@ void payload_load(void)
 
 	switch (prog_cbfs_type(payload)) {
 	case CBFS_TYPE_SELF: /* Simple ELF */
-		selfload(payload, true);
+		selfload_check(payload);
 		break;
 	case CBFS_TYPE_FIT: /* Flattened image tree */
 		if (IS_ENABLED(CONFIG_PAYLOAD_FIT_SUPPORT)) {

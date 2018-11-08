@@ -394,7 +394,7 @@ static void configure_c_states(void)
 {
 	msr_t msr;
 
-	msr = rdmsr(MSR_PMG_CST_CONFIG_CONTROL);
+	msr = rdmsr(MSR_PKG_CST_CONFIG_CONTROL);
 	msr.lo |= (1 << 31);	// Timed MWAIT Enable
 	msr.lo |= (1 << 30);	// Package c-state Undemotion Enable
 	msr.lo |= (1 << 29);	// Package c-state Demotion Enable
@@ -404,7 +404,7 @@ static void configure_c_states(void)
 	msr.lo |= (1 << 25);	// C3 Auto Demotion Enable
 	msr.lo &= ~(1 << 10);	// Disable IO MWAIT redirection
 	/* The deepest package c-state defaults to factory-configured value. */
-	wrmsr(MSR_PMG_CST_CONFIG_CONTROL, msr);
+	wrmsr(MSR_PKG_CST_CONFIG_CONTROL, msr);
 
 	msr = rdmsr(MSR_MISC_PWR_MGMT);
 	msr.lo &= ~(1 << 0);	// Enable P-state HW_ALL coordination
@@ -546,10 +546,10 @@ static void set_energy_perf_bias(u8 policy)
 		return;
 
 	/* Energy Policy is bits 3:0 */
-	msr = rdmsr(IA32_ENERGY_PERFORMANCE_BIAS);
+	msr = rdmsr(IA32_ENERGY_PERF_BIAS);
 	msr.lo &= ~0xf;
 	msr.lo |= policy & 0xf;
-	wrmsr(IA32_ENERGY_PERFORMANCE_BIAS, msr);
+	wrmsr(IA32_ENERGY_PERF_BIAS, msr);
 
 	printk(BIOS_DEBUG, "cpu: energy policy set to %u\n", policy);
 }
@@ -557,11 +557,10 @@ static void set_energy_perf_bias(u8 policy)
 static void configure_mca(void)
 {
 	msr_t msr;
-	const unsigned int mcg_cap_msr = 0x179;
 	int i;
 	int num_banks;
 
-	msr = rdmsr(mcg_cap_msr);
+	msr = rdmsr(IA32_MCG_CAP);
 	num_banks = msr.lo & 0xff;
 	msr.lo = msr.hi = 0;
 	/* TODO(adurbin): This should only be done on a cold boot. Also, some

@@ -312,7 +312,11 @@ static void google_chromeec_set_lazy_wake_masks(uint64_t s5_mask,
 		printk(BIOS_DEBUG, "Error: Set S5 LAZY WAKE mask failed\n");
 	if (google_chromeec_set_s3_lazy_wake_mask(s3_mask))
 		printk(BIOS_DEBUG, "Error: Set S3 LAZY WAKE mask failed\n");
-	if (google_chromeec_set_s0ix_lazy_wake_mask(s0ix_mask))
+	/*
+	 * Make sure S0Ix is supported before trying to set up the EC's
+	 * S0Ix lazy wake mask.
+	 */
+	if (s0ix_mask && google_chromeec_set_s0ix_lazy_wake_mask(s0ix_mask))
 		printk(BIOS_DEBUG, "Error: Set S0iX LAZY WAKE mask failed\n");
 }
 
@@ -632,8 +636,7 @@ int google_chromeec_cbi_get_dram_part_num(char *buf, size_t bufsize)
 	return 0;
 }
 
-#ifndef __SMM__
-u16 google_chromeec_get_board_version(void)
+int google_chromeec_get_board_version(uint32_t *version)
 {
 	struct chromeec_command cmd;
 	struct ec_response_board_version board_v;
@@ -645,10 +648,11 @@ u16 google_chromeec_get_board_version(void)
 	cmd.cmd_data_out = &board_v;
 	cmd.cmd_dev_index = 0;
 
-	if (google_chromeec_command(&cmd) != 0)
-		return 0;
+	if (google_chromeec_command(&cmd))
+		return -1;
 
-	return board_v.board_version;
+	*version = board_v.board_version;
+	return 0;
 }
 
 u32 google_chromeec_get_sku_id(void)
@@ -707,8 +711,6 @@ retry:
 
 	return cec_cmd.cmd_code;
 }
-
-#endif /* ! __SMM__ */
 
 #ifndef __PRE_RAM__
 
@@ -915,8 +917,6 @@ int google_chromeec_set_usb_pd_role(u8 port, enum usb_pd_control_role role)
 	return google_chromeec_command(&cmd);
 }
 
-#ifndef __SMM__
-
 static int google_chromeec_hello(void)
 {
 	struct chromeec_command cec_cmd;
@@ -1101,7 +1101,6 @@ int google_ec_running_ro(void)
 {
 	return (ec_image_type == EC_IMAGE_RO);
 }
-#endif /* ! __SMM__ */
 
 #endif /* ! __PRE_RAM__ */
 

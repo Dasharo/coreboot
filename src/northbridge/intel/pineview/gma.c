@@ -98,7 +98,7 @@ static void intel_gma_init(const struct northbridge_intel_pineview_config *info,
 
 	gtt_setup(mmio);
 
-	pci_write_config16(vga, 0x52, 0x130);
+	pci_write_config16(vga, GGC, 0x130);
 
 	/* Disable VGA.  */
 	write32(mmio + VGACNTRL, VGA_DISP_DISABLE);
@@ -304,7 +304,8 @@ static void gma_func0_init(struct device *dev)
 	intel_gma_restore_opregion();
 }
 
-static void gma_set_subsystem(struct device *dev, unsigned vendor, unsigned device)
+static void gma_set_subsystem(struct device *dev, unsigned int vendor,
+			      unsigned int device)
 {
 	if (!vendor || !device) {
 		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,

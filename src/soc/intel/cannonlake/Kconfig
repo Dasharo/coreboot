@@ -10,7 +10,7 @@ config SOC_INTEL_COFFEELAKE
 	help
 	  Intel Coffeelake support
 
-config CANNONLAKE_SOC_PCH_H
+config SOC_INTEL_CANNONLAKE_PCH_H
 	bool
 	default n
 	help
@@ -35,7 +35,6 @@ config CPU_SPECIFIC_OPTIONS
 	select CPU_INTEL_FIRMWARE_INTERFACE_TABLE
 	select GENERIC_GPIO_LIB
 	select HAVE_FSP_GOP
-	select HAVE_HARD_RESET
 	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select HAVE_MONOTONIC_TIMER
 	select HAVE_SMI_HANDLER
@@ -62,6 +61,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_CPU
 	select SOC_INTEL_COMMON_BLOCK_CPU_MPINIT
 	select SOC_INTEL_COMMON_BLOCK_GSPI_VERSION_2
+	select SOC_INTEL_COMMON_BLOCK_HDA
 	select SOC_INTEL_COMMON_BLOCK_SA
 	select SOC_INTEL_COMMON_BLOCK_SMM
 	select SOC_INTEL_COMMON_BLOCK_SMM_IO_TRAP
@@ -75,6 +75,7 @@ config CPU_SPECIFIC_OPTIONS
 	select UDELAY_TSC
 	select UDK_2017_BINDING
 	select DISPLAY_FSP_VERSION_INFO
+	select FSP_T_XIP if FSP_CAR
 
 config UART_DEBUG
 	bool "Enable UART debug port."
@@ -165,7 +166,7 @@ config NHLT_DA7219
 
 config MAX_ROOT_PORTS
 	int
-	default 24 if CANNONLAKE_SOC_PCH_H
+	default 24 if SOC_INTEL_CANNONLAKE_PCH_H
 	default 16
 
 config SMM_TSEG_SIZE
@@ -204,6 +205,7 @@ config SOC_INTEL_COMMON_BLOCK_GSPI_MAX
 
 config SOC_INTEL_I2C_DEV_MAX
 	int
+	default 4 if SOC_INTEL_CANNONLAKE_PCH_H
 	default 6
 
 # Clock divider parameters for 115200 baud rate
@@ -229,6 +231,10 @@ config VBOOT
 config C_ENV_BOOTBLOCK_SIZE
 	hex
 	default 0x8000
+
+config CBFS_SIZE
+	hex
+	default 0x200000
 
 choice
 	prompt "Cache-as-ram implementation"
@@ -256,5 +262,15 @@ config USE_CANNONLAKE_FSP_CAR
 	  Use FSP APIs to initialize and tear down the Cache-As-Ram.
 
 endchoice
+
+config FSP_HEADER_PATH
+	string "Location of FSP headers"
+	default "src/vendorcode/intel/fsp/fsp2_0/cannonlake/" if !SOC_INTEL_COFFEELAKE
+	default "3rdparty/fsp/CoffeeLakeFspBinPkg/Include/" if SOC_INTEL_COFFEELAKE
+
+config FSP_FD_PATH
+	string
+	depends on FSP_USE_REPO
+	default "3rdparty/fsp/CoffeeLakeFspBinPkg/Fsp.fd" if SOC_INTEL_COFFEELAKE
 
 endif

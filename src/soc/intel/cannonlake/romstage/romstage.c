@@ -19,9 +19,9 @@
 #include <chip.h>
 #include <cpu/x86/mtrr.h>
 #include <cbmem.h>
-#include <compiler.h>
 #include <console/console.h>
 #include <fsp/util.h>
+#include <intelblocks/chip.h>
 #include <intelblocks/cse.h>
 #include <intelblocks/pmclib.h>
 #include <memory_info.h>
@@ -145,56 +145,4 @@ asmlinkage void car_stage_entry(void)
 	postcar_frame_add_romcache(&pcf, MTRR_TYPE_WRPROT);
 
 	run_postcar_phase(&pcf);
-}
-
-static void soc_memory_init_params(FSP_M_CONFIG *m_cfg, const config_t *config)
-{
-	unsigned int i;
-	uint32_t mask = 0;
-
-	/* Set IGD stolen size to 64MB. */
-	m_cfg->IgdDvmt50PreAlloc = 2;
-	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
-	m_cfg->IedSize = CONFIG_IED_REGION_SIZE;
-	m_cfg->SaGv = config->SaGv;
-	m_cfg->UserBd = BOARD_TYPE_ULT_ULX;
-	m_cfg->RMT = config->RMT;
-
-	for (i = 0; i < ARRAY_SIZE(config->PcieRpEnable); i++) {
-		if (config->PcieRpEnable[i])
-			mask |= (1 << i);
-	}
-	m_cfg->PcieRpEnableMask = mask;
-	m_cfg->PrmrrSize = config->PrmrrSize;
-	m_cfg->EnableC6Dram = config->enable_c6dram;
-	/* Disable Cpu Ratio Override temporary. */
-	m_cfg->CpuRatio = 0;
-	m_cfg->PcdSerialIoUartNumber = CONFIG_UART_FOR_CONSOLE;
-	/* Disable Vmx if Vt-d is already disabled */
-	if (config->VtdDisable)
-		m_cfg->VmxEnable = 0;
-	else
-		m_cfg->VmxEnable = config->VmxEnable;
-}
-
-void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
-{
-	const struct device *dev = dev_find_slot(0, PCH_DEVFN_LPC);
-	assert(dev != NULL);
-	const config_t *config = dev->chip_info;
-	FSP_M_CONFIG *m_cfg = &mupd->FspmConfig;
-
-	soc_memory_init_params(m_cfg, config);
-
-	/* Enable SMBus controller based on config */
-	m_cfg->SmbusEnable = config->SmbusEnable;
-	/* Set debug probe type */
-	m_cfg->PlatformDebugConsent = config->DebugConsent;
-
-	mainboard_memory_init_params(mupd);
-}
-
-__weak void mainboard_memory_init_params(FSPM_UPD *mupd)
-{
-	/* Do nothing */
 }

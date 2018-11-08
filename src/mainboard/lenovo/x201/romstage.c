@@ -30,12 +30,11 @@
 #include <cpu/x86/bist.h>
 #include <cpu/intel/romstage.h>
 #include <ec/acpi/ec.h>
-#include <delay.h>
 #include <timestamp.h>
 #include <arch/acpi.h>
 
 #include "dock.h"
-#include "arch/early_variables.h"
+#include <arch/early_variables.h>
 #include <southbridge/intel/ibexpeak/pch.h>
 #include <southbridge/intel/common/gpio.h>
 #include <northbridge/intel/nehalem/nehalem.h>
@@ -45,7 +44,7 @@
 
 static void pch_enable_lpc(void)
 {
-	/* X201 EC Decode Range Port60/64, Port62/66 */
+	/* EC Decode Range Port60/64, Port62/66 */
 	/* Enable EC, PS/2 Keyboard/Mouse */
 	pci_write_config16(PCH_LPC_DEV, LPC_EN,
 			   CNF2_LPC_EN | CNF1_LPC_EN | MC_LPC_EN | KBC_LPC_EN |
@@ -122,8 +121,6 @@ static void rcba_config(void)
 		/* 35f0 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		/* 3600 */ 0x0a001f00, 0x00000000, 0x00000000, 0x00000001,
 		/* 3610 */ 0x00010000, 0x00000000, 0x00000000, 0x00000000,
-		/* 3600 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		/* 3610 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		/* 3620 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		/* 3630 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		/* 3640 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
@@ -133,12 +130,14 @@ static void rcba_config(void)
 		/* 3680 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		/* 3690 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		/* 36a0 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		/* 36b0 */ 0x00000000, 0x089c0018, 0x00000000, 0x00000000,
-		/* 36c0 */ 0x11111111, 0x00000000, 0x00000000, 0x00000000,
-		/* 36d0 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		/* 36e0 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		/* 36b0 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		/* 36c0 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		/* 36d0 */ 0x00000000, 0x089c0018, 0x00000000, 0x00000000,
+		/* 36e0 */ 0x11111111, 0x00000000, 0x00000000, 0x00000000,
 		/* 36f0 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		/* 3710 */ 0x00000000, 0x4e564d49, 0x00000000, 0x00000000,
+		/* 3700 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		/* 3710 */ 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		/* 3720 */ 0x00000000, 0x4e564d49, 0x00000000, 0x00000000,
 	};
 	unsigned i;
 	for (i = 0; i < sizeof(rcba_dump3) / 4; i++) {

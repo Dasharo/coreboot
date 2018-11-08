@@ -61,7 +61,7 @@ static struct device *ht_scan_get_devs(struct device **old_devices)
 
 		/* Now add the device to the list of devices on the bus. */
 		/* Find the last child of our parent. */
-		for (child = first->bus->children; child && child->sibling; )
+		for (child = first->bus->children; child && child->sibling;)
 			child = child->sibling;
 
 		/* Place the chain on the list of children of their parent. */
@@ -265,7 +265,7 @@ static unsigned int do_hypertransport_scan_chain(struct bus *bus, unsigned min_d
 	min_unitid = (offset_unitid) ? CONFIG_HT_CHAIN_UNITID_BASE : 1;
 
 #if CONFIG_HT_CHAIN_END_UNITID_BASE != 0x20
-        /*
+	/*
 	 * Let's record the device of last HT device, so we can set the unitid
 	 * to CONFIG_HT_CHAIN_END_UNITID_BASE.
 	 */
