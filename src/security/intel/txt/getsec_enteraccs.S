@@ -177,11 +177,7 @@ cond_clear_var_mtrrs:
 	bsr	%ecx, %ecx			/* find MSB */
 	inc	%ecx
 	shl	%cl, %ebx
-	movl	$(MTRR_PHYS_MASK(0)), %ecx
 	xorl	%eax, %eax
-	subl	%ebx, %eax			/* %eax = 4GIB - log2_ceil(ACM SIZE) */
-	orl	$((1 << 11)), %eax		/* MTRR_PHYS_MASK_VALID */
-	movl	MTRR_HIGH_MASK, %edx
 	wrmsr
 
 	/* Enable cache - GPF# if not done */

@@ -9,7 +9,6 @@
 #include <cbfs.h>
 #include <cpu/intel/common/common.h>
 #include <cpu/x86/msr.h>
-
 #include <device/pci_ops.h>
 
 #include "txt.h"
@@ -157,19 +156,11 @@ static void init_intel_txt(void *unused)
 	/*
 	 * Test BIOS ACM code.
 	 * ACM should do nothing on reserved functions, and return an error code
-	 * in TXT_BIOSACM_ERRORCODE. Tests showed that this is not true.
 	 * Use special function "NOP" that does 'nothing'.
 	 */
 	if (intel_txt_run_bios_acm(ACMINPUT_NOP) < 0) {
 		printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM with NOP function.\n");
 		return;
-	}
-
-	if (status & (ACMSTS_BIOS_TRUSTED | ACMSTS_IBB_MEASURED)) {
-		log_ibb_measurements();
-
-		int s3resume = acpi_is_wakeup_s3();
-		if (!s3resume) {
 			printk(BIOS_INFO, "TEE-TXT: Scheck...\n");
 			if (intel_txt_run_bios_acm(ACMINPUT_SCHECK) < 0) {
 				printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM.\n");
@@ -236,7 +227,8 @@ static void lockdown_intel_txt(void *unused)
 			TXT_DPR_LOCK_SIZE(3) |
 			TXT_DPR_LOCK_MASK));
 
-		// DPR TODO: implement SA_ENABLE_DPR in the intelblocks
+		platform_set_dpr(tseg, 3 * MiB);
+		platform_lock_dpr();
 
 		printk(BIOS_INFO, "TEE-TXT: TXT.DPR 0x%08x\n",
 		       read32((void *)TXT_DPR));

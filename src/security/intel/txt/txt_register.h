@@ -49,7 +49,6 @@
 
 /* Present in Document Number: 315168-016. */
 #define TXT_SPAD (TXT_BASE + 0xa0)
-#define  ACMSTS_IBB_MEASURED		(1ull << 63)
 #define  ACMSTS_VERIFICATION_ERROR	(1ull << 62)
 #define  ACMSTS_BG_STARTUP_ERROR	(1ull << 61)	/* CBnT platforms only */
 #define  ACMSTS_TXT_DISABLED		(1ull << 60)	/* disabled by FIT type 0xA record */
@@ -57,15 +56,6 @@
 #define  ACMSTS_MEM_CLEAR_POWER_DOWN	(1ull << 47)
 #define  ACMSTS_TXT_STARTUP_SUCCESS	(1ull << 30)
 
-#define TXT_VER_FSBIF (TXT_BASE + 0x100)
-#define  TXT_VER_PRODUCTION_FUSED (1ull << 31)
-
-#define TXT_DIDVID (TXT_BASE + 0x110)
-
-/*
- * Chapter 6
- * Intel Trusted Execution Technology Lab Handout
- */
 #define TXT_CAPABILITIES (TXT_BASE + 0x200)
 #define  TXT_CAPABILITIES_DPR (1ull << 26)
 #define  TXT_CAPABILITIES_PMRC (1ull << 19)
@@ -109,6 +99,12 @@
 #define  TXT_E2STS_SECRET_STS (1ull << 1)
 
 /*
+ * TXT MSRs
+ */
+
+#define TXT_UNLOCK_MEMORY_MSR 0x2e6
+
+/*
  * TXT Memory regions
  * Chapter 5.3
  * Intel Trusted Execution Technology Lab Handout
@@ -120,13 +116,15 @@
 
 #define TXT_RESERVED_SPACE_SIZE	0x3ffff
 
-/* ESI flags for GETSEC[ENTERACCS] see  Reference Number: 323372-017 */
+/* ESI flags for GETSEC[ENTERACCS] see  Reference Number: 323372-017 and 572782 */
 #define ACMINPUT_SCLEAN		0
+#define ACMINPUT_RESET_TPM_ESTABLISHMENT 1
 #define ACMINPUT_RESET_TPM_AUXILIARY_INDICIES 2
 #define ACMINPUT_NOP		3
 #define ACMINPUT_SCHECK		4
 #define ACMINPUT_CLEAR_SECRETS	5
 #define ACMINPUT_LOCK_CONFIG	6
+#define ACMINPUT_ACHECK		7
 
 /*
  * GetSec EAX value.
@@ -154,18 +152,12 @@
 #define ACM_FORMAT_FLAGS_DEBUG (1 << 15)
 
 /* Old ACMs are power of two aligned, newer ACMs are not */
-#define ACM_FORMAT_SIZE_64KB   (64 * KiB / 4)
 #define ACM_FORMAT_SIZE_128KB (128 * KiB / 4)
 #define ACM_FORMAT_SIZE_256KB (256 * KiB / 4)
 
 /* MSRs */
 #define IA32_MCG_STATUS 0x17a
 
-typedef enum {
-	CHIPSET_ACM = 2,
-} acm_module_type;
-
-typedef enum {
 	BIOS = 0,
 	SINIT = 1,
 } acm_module_sub_type;

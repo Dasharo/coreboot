@@ -11,7 +11,17 @@ config INTEL_TXT
 	depends on PLATFORM_HAS_DRAM_CLEAR
 	depends on (SOC_INTEL_COMMON_BLOCK_SA || HAVE_CF9_RESET)
 
-if INTEL_TXT
+config LEGACY_INTEL_TXT
+	bool "Intel TXT support (legacy)"
+	default n
+	select MRC_SETTINGS_PROTECT if CACHE_MRC_SETTINGS
+	select ENABLE_VMX if CPU_INTEL_COMMON
+	select AP_IN_SIPI_WAIT
+	depends on TPM1
+	depends on NORTHBRIDGE_INTEL_SANDYBRIDGE
+	depends on PLATFORM_HAS_DRAM_CLEAR
+
+if INTEL_TXT || LEGACY_INTEL_TXT
 
 menu "Intel"
 
