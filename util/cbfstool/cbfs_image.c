@@ -419,8 +419,8 @@ int cbfs_copy_instance(struct cbfs_image *image, struct buffer *dst)
 		dst_entry = (struct cbfs_file *)(
 			(uintptr_t)dst_entry + align_up(entry_size, align));
 
-		if ((size_t)((void *)dst_entry - buffer_get(dst)) >=
-								copy_end) {
+		if ((size_t)((uint8_t *)dst_entry - (uint8_t *)buffer_get(dst))
+					>= copy_end) {
 			ERROR("Ran out of room in copy region.\n");
 			return 1;
 		}
@@ -430,8 +430,9 @@ int cbfs_copy_instance(struct cbfs_image *image, struct buffer *dst)
 	 * which may be used by the master header pointer. This messes with
 	 * the ability to stash something "top-aligned" into the region, but
 	 * keeps things simpler. */
-	last_entry_size = copy_end - ((void *)dst_entry - buffer_get(dst))
-		- cbfs_calculate_file_header_size("") - sizeof(int32_t);
+	last_entry_size = copy_end -
+		((uint8_t *)dst_entry - (uint8_t *)buffer_get(dst)) -
+		cbfs_calculate_file_header_size("") - sizeof(int32_t);
 
 	if (last_entry_size < 0)
 		WARN("No room to create the last entry!\n")
@@ -467,8 +468,9 @@ int cbfs_expand_to_region(struct buffer *region)
 	 * file header. That's either outside the image or exactly the place
 	 * where we need to create a new file.
 	 */
-	int last_entry_size = region_sz - ((void *)entry - buffer_get(region))
-		- cbfs_calculate_file_header_size("") - sizeof(int32_t);
+	int last_entry_size = region_sz -
+		((uint8_t *)entry - (uint8_t *)buffer_get(region)) -
+		cbfs_calculate_file_header_size("") - sizeof(int32_t);
 
 	if (last_entry_size > 0) {
 		cbfs_create_empty_entry(entry, CBFS_COMPONENT_NULL,
@@ -509,10 +511,10 @@ int cbfs_truncate_space(struct buffer *region, uint32_t *size)
 	    (trailer->type != htonl(CBFS_COMPONENT_DELETED))) {
 		/* nothing to truncate. Return de-facto CBFS size in case it
 		 * was already truncated. */
-		*size = (void *)entry - buffer_get(region);
+		*size = (uint8_t *)entry - (uint8_t *)buffer_get(region);
 		return 0;
 	}
-	*size = (void *)trailer - buffer_get(region);
+	*size = (uint8_t *)trailer - (uint8_t *)buffer_get(region);
 	memset(trailer, 0xff, buffer_size(region) - *size);
 
 	return 0;
@@ -723,8 +725,9 @@ static int cbfs_add_entry_at(struct cbfs_image *image,
 
 	len = addr_next - addr - min_entry_size;
 	/* keep space for master header pointer */
-	if ((void *)entry + min_entry_size + len > buffer_get(&image->buffer) +
-		buffer_size(&image->buffer) - sizeof(int32_t)) {
+	if ((uint8_t *)entry + min_entry_size + len >
+			(uint8_t *)buffer_get(&image->buffer) +
+			buffer_size(&image->buffer) - sizeof(int32_t)) {
 		len -= sizeof(int32_t);
 	}
 	cbfs_create_empty_entry(entry, CBFS_COMPONENT_NULL, len, "");
@@ -1283,7 +1286,7 @@ out:
 }
 
 int cbfs_export_entry(struct cbfs_image *image, const char *entry_name,
-		      const char *filename, uint32_t arch)
+		      const char *filename, uint32_t arch, bool do_processing)
 {
 	struct cbfs_file *entry = cbfs_get_entry(image, entry_name);
 	struct buffer buffer;
@@ -1292,26 +1295,37 @@ int cbfs_export_entry(struct cbfs_image *image, const char *entry_name,
 		return -1;
 	}
 
+	unsigned int compressed_size = ntohl(entry->len);
 	unsigned int decompressed_size = 0;
 	unsigned int compression = cbfs_file_get_compression_info(entry,
 		&decompressed_size);
+	unsigned int buffer_size;
+	decomp_func_ptr decompress;
 
-	decomp_func_ptr decompress = decompression_function(compression);
-	if (!decompress) {
-		ERROR("looking up decompression routine failed\n");
-		return -1;
+	if (do_processing) {
+		decompress = decompression_function(compression);
+		if (!decompress) {
+			ERROR("looking up decompression routine failed\n");
+			return -1;
+		}
+		buffer_size = decompressed_size;
+	} else {
+		/* Force nop decompression */
+		decompress = decompression_function(CBFS_COMPRESS_NONE);
+		buffer_size = compressed_size;
 	}
 
-	LOG("Found file %.30s at 0x%x, type %.12s, size %d\n",
+	LOG("Found file %.30s at 0x%x, type %.12s, compressed %d, size %d\n",
 	    entry_name, cbfs_get_entry_addr(image, entry),
-	    get_cbfs_entry_type_name(ntohl(entry->type)), decompressed_size);
+	    get_cbfs_entry_type_name(ntohl(entry->type)), compressed_size,
+	    decompressed_size);
 
 	buffer_init(&buffer, strdup("(cbfs_export_entry)"), NULL, 0);
+	buffer.data = malloc(buffer_size);
+	buffer.size = buffer_size;
 
-	buffer.data = malloc(decompressed_size);
-	buffer.size = decompressed_size;
-	if (decompress(CBFS_SUBHEADER(entry), ntohl(entry->len),
-		buffer.data, buffer.size, NULL)) {
+	if (decompress(CBFS_SUBHEADER(entry), compressed_size,
+		       buffer.data, buffer.size, NULL)) {
 		ERROR("decompression failed for %s\n", entry_name);
 		buffer_delete(&buffer);
 		return -1;
@@ -1323,13 +1337,19 @@ int cbfs_export_entry(struct cbfs_image *image, const char *entry_name,
 	 * one has to do a second pass for stages to potentially decompress
 	 * the stage data to make it more meaningful.
 	 */
-	if (ntohl(entry->type) == CBFS_COMPONENT_STAGE) {
-		if (cbfs_stage_make_elf(&buffer, arch)) {
-			buffer_delete(&buffer);
-			return -1;
+	if (do_processing) {
+		int (*make_elf)(struct buffer *, uint32_t) = NULL;
+		switch (ntohl(entry->type)) {
+		case CBFS_COMPONENT_STAGE:
+			make_elf = cbfs_stage_make_elf;
+			break;
+		case CBFS_COMPONENT_SELF:
+			make_elf = cbfs_payload_make_elf;
+			break;
 		}
-	} else if (ntohl(entry->type) == CBFS_COMPONENT_SELF) {
-		if (cbfs_payload_make_elf(&buffer, arch)) {
+		if (make_elf && make_elf(&buffer, arch)) {
+			ERROR("Failed to write %s into %s.\n",
+			      entry_name, filename);
 			buffer_delete(&buffer);
 			return -1;
 		}

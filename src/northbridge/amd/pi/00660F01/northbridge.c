@@ -25,7 +25,6 @@
 #include <string.h>
 #include <lib.h>
 #include <cpu/cpu.h>
-#include <cbmem.h>
 #include <Porting.h>
 #include <AGESA.h>
 #include <FieldAccessors.h>
@@ -33,7 +32,6 @@
 #include <cpu/x86/lapic.h>
 #include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
-#include <arch/acpi.h>
 #include <arch/acpigen.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
 #if IS_ENABLED(CONFIG_BINARYPI_LEGACY_WRAPPER)

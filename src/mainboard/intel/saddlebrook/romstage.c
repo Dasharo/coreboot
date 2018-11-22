@@ -15,7 +15,6 @@
  * GNU General Public License for more details.
  */
 
-#include <cbfs.h>
 #include <console/console.h>
 #include <fsp/api.h>
 #include <string.h>
@@ -28,8 +27,6 @@
 #include <spd_bin.h>
 #include <superio/nuvoton/common/nuvoton.h>
 #include <superio/nuvoton/nct6776/nct6776.h>
-
-#include <lib.h>
 
 #define SERIAL_DEV PNP_DEV(0x2e, NCT6776_SP1)
 

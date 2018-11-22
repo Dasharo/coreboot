@@ -18,12 +18,11 @@
 #define BRIGHTNESS_UP \_SB.PCI0.GFX0.INCB
 #define BRIGHTNESS_DOWN \_SB.PCI0.GFX0.DECB
 #define ACPI_VIDEO_DEVICE \_SB.PCI0.GFX0
-#define DISPLAY_DEVICE_2_IS_LCD_SCREEN 1
 
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
-	0x03,		// DSDT revision: ACPI v3.0
+	0x02,		// DSDT revision: ACPI v2.0 and up
 	"COREv4",	// OEM id
 	"COREBOOT",	// OEM table id
 	0x20090419	// OEM revision

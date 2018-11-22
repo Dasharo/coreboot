@@ -14,7 +14,9 @@
  */
 
 #include <bootstate.h>
+#include <cf9_reset.h>
 #include <console/console.h>
+#include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <gpio.h>
@@ -31,17 +33,12 @@
 void variant_mainboard_final(void)
 {
 	struct device *dev = NULL;
+	uint16_t cmd = 0;
 
-	/*
-	 * PIR6 register mapping for PCIe root ports
-	 * INTA#->PIRQB#, INTB#->PIRQC#, INTC#->PIRQD#, INTD#-> PIRQA#
+	/* PIR6 register mapping for PCIe root ports
+	 * INTA#->PIRQD#, INTB#->PIRQA#, INTC#->PIRQB#, INTD#-> PIRQC#
 	 */
-	pcr_write16(PID_ITSS, 0x314c, 0x0321);
-
-	/* Disable clock outputs 1-5 (CLKOUT) for XIO2001 PCIe to PCI Bridge. */
-	dev = dev_find_device(PCI_VENDOR_ID_TI, PCI_DEVICE_ID_TI_XIO2001, 0);
-	if (dev)
-		pci_write_config8(dev, 0xd8, 0x3e);
+	pcr_write16(PID_ITSS, 0x314c, 0x2103);
 
 	/* Enable CLKRUN_EN for power gating LPC */
 	lpc_enable_pci_clk_cntl();
@@ -54,13 +51,37 @@ void variant_mainboard_final(void)
 	 */
 	pcr_or32(PID_LPC, PCR_LPC_PRC, (PCR_LPC_CCE_EN | PCR_LPC_PCE_EN));
 
-	/*
-	 * Correct the SATA transmit signal via the High Speed I/O Transmit
-	 * Control Register 3.
-	 * Bit [23:16] set the output voltage swing for TX line.
-	 * The value 0x4a sets the swing level to 0.58 V.
+	/* Set Master Enable for on-board PCI device. */
+	dev = dev_find_device(PCI_VENDOR_ID_SIEMENS, 0x403e, 0);
+	if (dev) {
+		cmd = pci_read_config16(dev, PCI_COMMAND);
+		cmd |= PCI_COMMAND_MASTER;
+		pci_write_config16(dev, PCI_COMMAND, cmd);
+
+		/* Disable clock outputs 0 and 2-4 (CLKOUT) for upstream
+		 * XIO2001 PCIe to PCI Bridge.
+		 */
+		struct device *parent = dev->bus->dev;
+		if (parent && parent->device == PCI_DEVICE_ID_TI_XIO2001)
+			pci_write_config8(parent, 0xd8, 0x1d);
+	}
+
+	/* Disable clock outputs 2-5 (CLKOUT) for another XIO2001 PCIe to PCI
+	 * Bridge on this mainboard.
 	 */
-	pcr_rmw32(PID_MODPHY, TX_DWORD3, (0x00 << 16), (0x4a << 16));
+	dev = dev_find_device(PCI_VENDOR_ID_SIEMENS, 0x403f, 0);
+	if (dev) {
+		struct device *parent = dev->bus->dev;
+		if (parent && parent->device == PCI_DEVICE_ID_TI_XIO2001)
+			pci_write_config8(parent, 0xd8, 0x3c);
+	}
+
+	/* Set Full Reset Bit in Reset Control Register (I/O port CF9h).
+	 * When Bit 3 is set to 1 and then the reset button is pressed the PCH
+	 * will drive SLP_S3 active (low). SLP_S3 is then used on the mainboard
+	 * to generate the right reset timing.
+	 */
+	outb(FULL_RST, RST_CNT);
 }
 
 static void wait_for_legacy_dev(void *unused)

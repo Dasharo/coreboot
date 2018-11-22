@@ -19,9 +19,9 @@
 #include <console/console.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/mtrr.h>
+#include <arch/cpu.h>
 #include <delay.h>
 #include <halt.h>
-#include <lib.h>
 #include "iomap.h"
 #if IS_ENABLED(CONFIG_SOUTHBRIDGE_INTEL_I82801GX)
 #include <southbridge/intel/i82801gx/i82801gx.h> /* smbus_read_byte */

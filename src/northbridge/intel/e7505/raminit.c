@@ -27,7 +27,6 @@
 #include <stdint.h>
 #include <device/pci_def.h>
 #include <arch/io.h>
-#include <arch/cpu.h>
 #include <lib.h>
 #include <stdlib.h>
 #include <commonlib/helpers.h>
@@ -38,7 +37,6 @@
 #include <assert.h>
 #include <spd.h>
 #include <sdram_mode.h>
-#include <cbmem.h>
 
 #include "raminit.h"
 #include "e7505.h"

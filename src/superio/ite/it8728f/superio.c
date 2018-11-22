@@ -18,7 +18,6 @@
 #include <device/device.h>
 #include <device/pnp.h>
 #include <superio/conf_mode.h>
-#include <console/console.h>
 #include <pc80/keyboard.h>
 #include <stdlib.h>
 #include <superio/ite/common/env_ctrl.h>
@@ -34,7 +33,7 @@ static void it8728f_init(struct device *dev)
 	if (!dev->enabled)
 		return;
 
-	switch(dev->path.pnp.device) {
+	switch (dev->path.pnp.device) {
 	/* TODO: Might potentially need code for FDC etc. */
 	case IT8728F_EC:
 		res = find_resource(dev, PNP_IDX_IO0);

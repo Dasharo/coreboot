@@ -56,14 +56,7 @@ config GBB_HWID
 
 config DEVICETREE
 	string
-	default "variants/falco/devicetree.cb" if BOARD_GOOGLE_FALCO
-	default "variants/leon/devicetree.cb" if BOARD_GOOGLE_LEON
-	default "variants/peppy/devicetree.cb" if BOARD_GOOGLE_PEPPY
-	default "variants/wolf/devicetree.cb" if BOARD_GOOGLE_WOLF
-
-config MMCONF_BASE_ADDRESS
-	hex
-	default 0xf0000000
+	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config MAX_CPUS
 	int

@@ -21,9 +21,7 @@
 #include "vx900.h"
 
 #include <arch/io.h>
-#include <cbmem.h>
 #include <stdint.h>
-#include <arch/io.h>
 
 /* North Module devices */
 #define HOST_CTR PCI_DEV(0, 0, 0)
