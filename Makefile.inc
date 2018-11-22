@@ -1054,6 +1054,10 @@ ifeq ($(CONFIG_CPU_MICROCODE_CBFS_GENERATE),y)
 	$(FIT_OPTIONS)
 endif
 endif
+
+ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
+	dd if=$(CONFIG_CPU_UCODE_BINARIES) of=$@.tmp bs=1 seek=6665692 count=3424 conv=notrunc 2> /dev/null
+endif
 	mv $@.tmp $@
 	@printf "    CBFSLAYOUT  $(subst $(obj)/,,$(@))\n\n"
 	$(CBFSTOOL) $@ layout
