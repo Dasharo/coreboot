@@ -665,6 +665,9 @@ ifeq ($(CONFIG_CPU_MICROCODE_ADDED_DURING_BUILD),y)
 	$(CBFSTOOL) $@.tmp update-fit -n cpu_microcode_blob.bin -x $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES)
 endif
 endif
+ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
+	dd if=$(CONFIG_CPU_MICROCODE_FILE) of=$@.tmp bs=1 seek=6665692 count=3424 conv=notrunc 2> /dev/null
+endif
 	mv $@.tmp $@
 	@printf "    CBFSPRINT  $(subst $(obj)/,,$(@))\n\n"
 	$(CBFSTOOL) $@ print
