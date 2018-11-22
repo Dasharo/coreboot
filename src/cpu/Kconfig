@@ -175,9 +175,10 @@ config CPU_MICROCODE_CBFS_NONE
 	  Make sure you have a way of flashing the ROM externally before
 	  selecting this option.
 
-config CPU_UCODE_RAW_BINARY
-	bool "Add raw microcode binary to CBFS"
+config AGESA_UCODE_EXPERIMENTAL
+	bool "Add microcode patch for AMD fam16h (EXPERIMENTAL)"
 	help
+	  Include the microcode with Spectre mitigations for AMD fam16h.
 
 endchoice
 
