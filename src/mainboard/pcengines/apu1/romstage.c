@@ -27,7 +27,8 @@
 #include "bios_knobs.h"
 
 #define SIO_PORT 0x2e
-#define SERIAL_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
+#define SERIAL1_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
+#define SERIAL2_DEV PNP_DEV(SIO_PORT, NCT5104D_SP2)
 
 static void print_sign_of_life(void);
 extern char coreboot_dmi_date[];
@@ -68,8 +69,20 @@ static void early_lpc_init(void)
 
 void board_BeforeAgesa(struct sysinfo *cb)
 {
+	pci_devfn_t dev;
+	u32 data;
+
 	early_lpc_init();
-	nuvoton_enable_serial(SERIAL_DEV, CONFIG_TTYS0_BASE);
+
+	dev = PCI_DEV(0, 0x14, 3);
+	data = pci_read_config32(dev, 0x48);
+	/* enable 0x2e/0x4e IO decoding before configuring SuperIO */
+	pci_write_config32(dev, 0x48, data | 3);
+
+	if (CONFIG_UART_FOR_CONSOLE == 1)
+		nuvoton_enable_serial(SERIAL2_DEV, CONFIG_TTYS0_BASE);
+	else if (CONFIG_UART_FOR_CONSOLE == 0)
+		nuvoton_enable_serial(SERIAL1_DEV, CONFIG_TTYS0_BASE);
 
 	console_init();
 
