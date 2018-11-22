@@ -15,7 +15,6 @@
 #include <console/uart.h>
 #include <gpio.h>
 #include <northbridge/amd/agesa/state_machine.h>
-
 #include <southbridge/amd/pi/hudson/hudson.h>
 #include <Fch/Fch.h>
 #include <smp/node.h>
