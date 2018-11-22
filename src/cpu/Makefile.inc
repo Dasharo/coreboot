@@ -16,12 +16,6 @@ $(eval $(call create_class_compiler,cpu_microcode,x86_32))
 
 cbfs-files-$(CONFIG_USE_CPU_MICROCODE_CBFS_BINS) += cpu_microcode_blob.bin
 
-ifeq ($(CONFIG_CPU_UCODE_RAW_BINARY), y)
-cbfs-files-y += cpu_microcode_blob.bin
-cpu_microcode_blob.bin-file = $(CONFIG_CPU_UCODE_BINARIES)
-cpu_microcode_blob.bin-type = microcode
-endif
-
 ifeq ($(CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_HEADER),y)
 cbfs-files-y  += cpu_microcode_blob.bin
 cpu_microcode_blob.bin-file = $(objgenerated)/microcode.bin
