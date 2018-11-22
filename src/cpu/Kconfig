@@ -12,10 +12,10 @@ source src/cpu/amd/Kconfig
 
 config CPU_INTEL_MODEL_206AX
 	bool
-	
+
 config CPU_INTEL_MODEL_2065X
 	bool
-	
+
 #source src/cpu/via/Kconfig
 #source src/cpu/qemu-x86/Kconfig
 source src/cpu/x86/Kconfig
@@ -158,11 +158,15 @@ config CPU_MICROCODE_CBFS_NONE
 	  Make sure you have a way of flashing the ROM externally before
 	  selecting this option.
 
+config AGESA_UCODE_EXPERIMENTAL
+	bool "Add microcode patch for AMD fam16h (EXPERIMENTAL)"
+	help
+
 endchoice
 
 config CPU_MICROCODE_FILE
 	  string "Path and filename of CPU microcode"
-	  depends on CPU_MICROCODE_CBFS_EXTERNAL
+	  depends on CPU_MICROCODE_CBFS_EXTERNAL || AGESA_UCODE_EXPERIMENTAL
 	  default "cpu_microcode.bin"
 	  help
 	    The path and filename of the file containing the CPU microcode.
