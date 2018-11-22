@@ -26,10 +26,13 @@ export COREBOOT_JENKINS_CACHE_DIR?=/srv/docker/coreboot-builder/cache
 export COREBOOT_JENKINS_CONTAINER?=coreboot_jenkins
 
 # Version of the jenkins / sdk container
-export COREBOOT_CONTAINER_VERSION?=$(crossgcc_version)
+export COREBOOT_IMAGE_TAG?=$(crossgcc_version)
 
 # Commit id to build from
 export DOCKER_COMMIT?=$(shell git log -n 1 --pretty=%h)
+
+# .ccache dir to use
+export DOCKER_CCACHE?=$(HOME)/.ccache
 
 # SDK architecture
 export COREBOOT_CROSSGCC_PARAM?=all_without_gdb
@@ -52,21 +55,21 @@ coreboot-sdk: test-docker
 	@echo "Building coreboot SDK $(crossgcc_version) from commit $(DOCKER_COMMIT)"
 	cat coreboot-sdk/Dockerfile | \
 		sed "s/{{DOCKER_COMMIT}}/$(DOCKER_COMMIT)/" | \
-		sed "s/{{SDK_VERSION}}/$(COREBOOT_CONTAINER_VERSION)/" | \
+		sed "s/{{SDK_VERSION}}/$(COREBOOT_IMAGE_TAG)/" | \
 		sed "s/{{CROSSGCC_PARAM}}/$(COREBOOT_CROSSGCC_PARAM)/" | \
-		$(DOCKER) build -t coreboot/coreboot-sdk:$(COREBOOT_CONTAINER_VERSION) -
+		$(DOCKER) build -t coreboot/coreboot-sdk:$(COREBOOT_IMAGE_TAG) -
 
 upload-coreboot-sdk: test-docker-login
-	$(DOCKER) push coreboot/coreboot-sdk:$(COREBOOT_CONTAINER_VERSION)
+	$(DOCKER) push coreboot/coreboot-sdk:$(COREBOOT_IMAGE_TAG)
 
 coreboot-jenkins-node: test-docker
 	cat coreboot-jenkins-node/Dockerfile | \
-		sed "s/{{SDK_VERSION}}/$(COREBOOT_CONTAINER_VERSION)/" | \
+		sed "s/{{SDK_VERSION}}/$(COREBOOT_IMAGE_TAG)/" | \
 		sed "s|{{SSH_KEY}}|$$(cat coreboot-jenkins-node/authorized_keys)|" | \
-		$(DOCKER) build -t coreboot/coreboot-jenkins-node:$(COREBOOT_CONTAINER_VERSION) -
+		$(DOCKER) build -t coreboot/coreboot-jenkins-node:$(COREBOOT_IMAGE_TAG) -
 
 upload-coreboot-jenkins-node: test-docker-login
-	$(DOCKER) push coreboot/coreboot-jenkins-node:$(COREBOOT_CONTAINER_VERSION)
+	$(DOCKER) push coreboot/coreboot-jenkins-node:$(COREBOOT_IMAGE_TAG)
 
 docker-killall: test-docker
 	@if [ -n "$$($(DOCKER) ps | grep 'coreboot')" ]; then \
@@ -95,29 +98,29 @@ docker-cleanall:
 		$(DOCKER) rmi $$($(DOCKER) images | grep -v "REPOSITORY" | tr -s ' ' | cut -f3 -d ' '); \
 	fi
 
-docker-build-coreboot: test-docker
-	$(DOCKER) run -u root -it -v $(top):/home/coreboot/coreboot \
-		--user $(UID):$(GID) \
-		--rm coreboot/coreboot-sdk:$(COREBOOT_CONTAINER_VERSION) \
-		/bin/bash -c "cd /home/coreboot/coreboot && \
-		make clean && \
-		make $(BUILD_CMD); \
-		rm .xcompile"
+$(DOCKER_CCACHE):
+	@mkdir -p $@
 
-docker-abuild: test-docker
-	$(DOCKER) run -u root -it -v $(top):/home/coreboot/coreboot \
+docker-run-local: test-docker $(DOCKER_CCACHE)
+	$(DOCKER) run -it --rm \
+		--volume $(DOCKER_CCACHE):/home/coreboot/.ccache \
+		--volume $(top):/home/coreboot/coreboot \
+		--env HOME=/home/coreboot \
 		--user $(UID):$(GID) \
-		--rm coreboot/coreboot-sdk:$(COREBOOT_CONTAINER_VERSION) \
-		/bin/bash -c "cd /home/coreboot/coreboot && \
-		make clean && \
-		util/abuild/abuild $(ABUILD_ARGS); \
-		rm -f .xcompile"
+		coreboot/coreboot-sdk:$(COREBOOT_IMAGE_TAG) \
+		/bin/bash -c 'cd $${HOME}/coreboot && $(DOCKER_RUN_LOCAL)'
 
-docker-what-jenkins-does: test-docker
-	$(DOCKER) run -u root -it -v $(top):/home/coreboot/coreboot \
-		--rm coreboot/coreboot-sdk:$(COREBOOT_CONTAINER_VERSION) \
-		/bin/bash -c "cd /home/coreboot/coreboot && \
-		make clean && make what-jenkins-does CPUS=$(CPUS)"
+docker-build-coreboot: docker-run-local
+docker-build-coreboot: override DOCKER_RUN_LOCAL := \
+	make clean && make $(BUILD_CMD); rm -f .xcompile
+
+docker-abuild: docker-run-local
+docker-abuild: override DOCKER_RUN_LOCAL := \
+	make clean && util/abuild/abuild $(ABUILD_ARGS); rm -f .xcompile
+
+docker-what-jenkins-does: docker-run-local
+docker-what-jenkins-does: override DOCKER_RUN_LOCAL := \
+	make clean && make what-jenkins-does CPUS=$(CPUS)
 
 docker-jenkins-server: test-docker
 	@if [ ! -d "$(COREBOOT_JENKINS_CACHE_DIR)" ]; then \
@@ -135,7 +138,7 @@ docker-jenkins-server: test-docker
 		-p $(COREBOOT_JENKINS_PORT):49151 \
 		-v $(COREBOOT_JENKINS_CACHE_DIR):/data/cache \
 		--name=$(COREBOOT_JENKINS_CONTAINER) \
-		coreboot/coreboot-jenkins-node:$(COREBOOT_CONTAINER_VERSION)
+		coreboot/coreboot-jenkins-node:$(COREBOOT_IMAGE_TAG)
 
 docker-jenkins-shell: test-docker
 	@if [ ! -d $(COREBOOT_JENKINS_CACHE_DIR) ]; then printf "\nError: %s does not exist.\nPlease run:\nsudo mkdir -p %s\n\n" "$(COREBOOT_JENKINS_CACHE_DIR)" "$(COREBOOT_JENKINS_CACHE_DIR)"; false; fi
@@ -145,7 +148,7 @@ docker-jenkins-shell: test-docker
 		-v $(top):/home/coreboot/coreboot \
 		-v $(COREBOOT_JENKINS_CACHE_DIR):/data/cache \
 		--name=$(COREBOOT_JENKINS_CONTAINER) \
-		--rm coreboot/coreboot-jenkins-node:$(COREBOOT_CONTAINER_VERSION)
+		--rm coreboot/coreboot-jenkins-node:$(COREBOOT_IMAGE_TAG)
 
 docker-shell: USER=coreboot
 docker-shell: test-docker
@@ -153,7 +156,7 @@ docker-shell: test-docker
 		-e COLUMNS=$(shell tput cols) -e LINES=$(shell tput lines) -e TERM=$(TERM) \
 		-w /home/coreboot/coreboot \
 		-v $(top):/home/coreboot/coreboot \
-		--rm coreboot/coreboot-sdk:$(COREBOOT_CONTAINER_VERSION) \
+		--rm coreboot/coreboot-sdk:$(COREBOOT_IMAGE_TAG) \
 		/bin/bash -l
 
 docker-jenkins-attach: USER=root
@@ -188,7 +191,7 @@ help:
 	@echo "  COREBOOT_JENKINS_PORT=$(COREBOOT_JENKINS_PORT)"
 	@echo "  COREBOOT_JENKINS_CACHE_DIR=$(COREBOOT_JENKINS_CACHE_DIR)"
 	@echo "  COREBOOT_JENKINS_CONTAINER=$(COREBOOT_JENKINS_CONTAINER)"
-	@echo "  COREBOOT_CONTAINER_VERSION=$(COREBOOT_CONTAINER_VERSION)"
+	@echo "  COREBOOT_IMAGE_TAG=$(COREBOOT_IMAGE_TAG)"
 	@echo "  DOCKER_COMMIT=$(DOCKER_COMMIT)"
 
 .PHONY: test-docker test-docker-login

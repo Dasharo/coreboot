@@ -14,13 +14,11 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/cpu.h>
 #include <bootblock_common.h>
 #include <cpu/x86/mtrr.h>
 #include <device/pci.h>
 #include <FsptUpd.h>
 #include <intelblocks/fast_spi.h>
-#include <lib.h>
 #include <soc/bootblock.h>
 #include <soc/iomap.h>
 #include <spi-generic.h>

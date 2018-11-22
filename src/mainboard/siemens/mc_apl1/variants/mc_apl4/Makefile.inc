@@ -1,1 +1,1 @@
-ramstage-y += mainboard.c
+romstage-y += memory.c

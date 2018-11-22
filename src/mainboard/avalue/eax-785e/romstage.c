@@ -18,18 +18,17 @@
 #define FAM10_SCAN_PCI_BUS 0
 #define FAM10_ALLOCATE_IO_RANGE 0
 
-#include <lib.h>
 #include <stdint.h>
 #include <string.h>
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <arch/io.h>
+#include <arch/cpu.h>
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
 #include <timestamp.h>
 #include <cpu/amd/model_10xxx_rev.h>
-#include <cpu/x86/lapic.h>
 #include <commonlib/loglevel.h>
 #include <cpu/x86/bist.h>
 #include <superio/winbond/common/winbond.h>

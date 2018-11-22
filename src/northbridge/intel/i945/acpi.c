@@ -16,15 +16,11 @@
 
 #include <types.h>
 #include <string.h>
-#include <console/console.h>
 #include <arch/acpi.h>
 #include <arch/acpigen.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <cbmem.h>
-#include <arch/acpigen.h>
-#include <cpu/cpu.h>
 #include "i945.h"
 
 unsigned long acpi_fill_mcfg(unsigned long current)

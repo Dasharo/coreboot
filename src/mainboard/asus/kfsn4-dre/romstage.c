@@ -25,11 +25,11 @@
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <arch/io.h>
+#include <arch/cpu.h>
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
 #include <timestamp.h>
-#include <lib.h>
 #include <spd.h>
 #include <cbmem.h>
 #include <cpu/amd/model_10xxx_rev.h>
@@ -38,7 +38,6 @@
 #include <southbridge/amd/common/reset.h>
 #include <southbridge/nvidia/ck804/early_smbus.h>
 #include <delay.h>
-#include <cpu/x86/lapic.h>
 #include <superio/winbond/common/winbond.h>
 #include <superio/winbond/w83627thg/w83627thg.h>
 #include <cpu/x86/bist.h>

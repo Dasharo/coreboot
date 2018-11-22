@@ -18,7 +18,6 @@
 #include <device/device.h>
 #include <device/pnp.h>
 #include <superio/conf_mode.h>
-#include <console/console.h>
 #include <stdlib.h>
 #include <pc80/keyboard.h>
 #include "f71863fg.h"
@@ -30,7 +29,7 @@ static void f71863fg_init(struct device *dev)
 	if (!dev->enabled)
 		return;
 
-	switch(dev->path.pnp.device) {
+	switch (dev->path.pnp.device) {
 	/* TODO: Might potentially need code for HWM or FDC etc. */
 	case F71863FG_KBC:
 		res0 = find_resource(dev, PNP_IDX_IO0);

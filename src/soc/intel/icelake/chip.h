@@ -20,6 +20,7 @@
 #include <drivers/i2c/designware/dw_i2c.h>
 #include <intelblocks/gspi.h>
 #include <stdint.h>
+#include <soc/gpe.h>
 #include <soc/gpio.h>
 #include <soc/pch.h>
 #include <soc/gpio_defs.h>
@@ -32,17 +33,6 @@ struct soc_intel_icelake_config {
 
 	/* Common struct containing soc config data required by common code */
 	struct soc_intel_common_config common_soc_config;
-
-	/* Interrupt Routing configuration.
-	 * If bit7 is 1, the interrupt is disabled. */
-	uint8_t pirqa_routing;
-	uint8_t pirqb_routing;
-	uint8_t pirqc_routing;
-	uint8_t pirqd_routing;
-	uint8_t pirqe_routing;
-	uint8_t pirqf_routing;
-	uint8_t pirqg_routing;
-	uint8_t pirqh_routing;
 
 	/* GPE configuration */
 	uint32_t gpe0_en_1; /* GPE0_EN_31_0 */
@@ -162,11 +152,16 @@ struct soc_intel_icelake_config {
 	/* eMMC and SD */
 	uint8_t ScsEmmcHs400Enabled;
 	/* Need to update DLL setting to get Emmc running at HS400 speed */
-	uint8_t EmmcHs400DllNeed;
-	/* 0-39: number of active delay for RX strobe, unit is 125 psec */
-	uint8_t EmmcHs400RxStrobeDll1;
-	/* 0-78: number of active delay for TX data, unit is 125 psec */
-	uint8_t EmmcHs400TxDataDll;
+	uint8_t EmmcUseCustomDlls;
+	uint32_t EmmcTxCmdDelayRegValue;
+	uint32_t EmmcTxDataDelay1RegValue;
+	uint32_t EmmcTxDataDelay2RegValue;
+	uint32_t EmmcRxCmdDataDelay1RegValue;
+	uint32_t EmmcRxCmdDataDelay2RegValue;
+	uint32_t EmmcRxStrobeDelayRegValue;
+
+	/* Enable if SD Card Power Enable Signal is Active High */
+	uint8_t SdCardPowerEnableActiveHigh;
 
 	/* Integrated Sensor */
 	uint8_t PchIshEnable;
@@ -229,28 +224,27 @@ struct soc_intel_icelake_config {
 	} DebugConsent;
 	/*
 	 * SerialIO device mode selection:
-	 *
-	 * Device index:
-	 * PchSerialIoIndexI2C0
-	 * PchSerialIoIndexI2C1
-	 * PchSerialIoIndexI2C2
-	 * PchSerialIoIndexI2C3
-	 * PchSerialIoIndexI2C4
-	 * PchSerialIoIndexI2C5
-	 * PchSerialIoIndexSPI0
-	 * PchSerialIoIndexSPI1
-	 * PchSerialIoIndexSPI2
-	 * PchSerialIoIndexUART0
-	 * PchSerialIoIndexUART1
-	 * PchSerialIoIndexUART2
-	 *
-	 * Mode select:
-	 * PchSerialIoDisabled
-	 * PchSerialIoPci
-	 * PchSerialIoAcpi
-	 * PchSerialIoHidden
+	 * PchSerialIoDisabled,
+	 * PchSerialIoPci,
+	 * PchSerialIoHidden,
+	 * PchSerialIoLegacyUart,
+	 * PchSerialIoSkipInit
 	 */
-	uint8_t SerialIoDevMode[PchSerialIoIndexMAX];
+	uint8_t SerialIoI2cMode[CONFIG_SOC_INTEL_I2C_DEV_MAX];
+	uint8_t SerialIoGSpiMode[CONFIG_SOC_INTEL_COMMON_BLOCK_GSPI_MAX];
+	uint8_t SerialIoUartMode[CONFIG_SOC_INTEL_UART_DEV_MAX];
+	/*
+	 * GSPIn Default Chip Select Mode:
+	 * 0:Hardware Mode,
+	 * 1:Software Mode
+	 */
+	uint8_t SerialIoGSpiCsMode[CONFIG_SOC_INTEL_COMMON_BLOCK_GSPI_MAX];
+	/*
+	 * GSPIn Default Chip Select State:
+	 * 0: Low,
+	 * 1: High
+	 */
+	uint8_t SerialIoGSpiCsState[CONFIG_SOC_INTEL_COMMON_BLOCK_GSPI_MAX];
 
 	/* GPIO SD card detect pin */
 	unsigned int sdcard_cd_gpio;
@@ -261,6 +255,13 @@ struct soc_intel_icelake_config {
 	/* Intel VT configuration */
 	uint8_t VtdDisable;
 	uint8_t VmxEnable;
+
+	/* CNVi BT Audio Offload: Enable/Disable BT Audio Offload. */
+	enum {
+		PLATFORM_POR,
+		FORCE_ENABLE,
+		FORCE_DISABLE,
+	} CnviBtAudioOffload;
 };
 
 typedef struct soc_intel_icelake_config config_t;

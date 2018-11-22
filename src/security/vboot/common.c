@@ -14,9 +14,7 @@
  */
 
 #include <assert.h>
-#include <cbfs.h>
 #include <cbmem.h>
-#include <console/console.h>
 #include <reset.h>
 #include <string.h>
 #include <vb2_api.h>

@@ -15,13 +15,11 @@
  */
 
 #include <arch/io.h>
-#include <cbfs.h>
 #include <cbmem.h>
 #include <assert.h>
 #include <device/device.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
-#include <console/console.h>
 #include <soc/pci_devs.h>
 #include <soc/systemagent.h>
 #include <soc/smm.h>

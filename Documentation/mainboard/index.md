@@ -6,6 +6,10 @@ This section contains documentation about coreboot on specific mainboards.
 
 - [P8H61-M LX](asus/p8h61-m_lx.md)
 
+## ASRock
+
+- [H81M-HDS](asrock/h81m-hds.md)
+
 ## Cavium
 
 - [CN81XX EVB SFF](cavium/cn8100_sff_evb.md)
@@ -15,6 +19,10 @@ This section contains documentation about coreboot on specific mainboards.
 The boards in this section are not real mainboards, but emulators.
 
 - [Spike RISC-V emulator](emulation/spike-riscv.md)
+
+## Intel
+
+- [DG43GT](intel/dg43gt.md)
 
 ## Foxconn
 
@@ -44,6 +52,8 @@ The boards in this section are not real mainboards, but emulators.
 ### Ivy Bridge series
 
 - [T430](lenovo/t430.md)
+- [T530](lenovo/w530.md)
+- [W530](lenovo/w530.md)
 - [T430 / T530 / X230 / W530 common](lenovo/xx30_series.md)
 
 ## SiFive

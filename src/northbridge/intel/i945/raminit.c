@@ -23,12 +23,11 @@
 #include <spd.h>
 #include <string.h>
 #include <halt.h>
-#include <lib.h>
 #include "raminit.h"
 #include "i945.h"
 #include "chip.h"
-#include <cbmem.h>
 #include <device/dram/ddr2.h>
+#include <timestamp.h>
 
 /* Debugging macros. */
 #if IS_ENABLED(CONFIG_DEBUG_RAM_SETUP)
@@ -661,13 +660,13 @@ static void sdram_program_dram_width(struct sys_info *sysinfo)
 			c1dramw |= (0x0000) << 4*(i % 2);
 			break;
 		case SYSINFO_DIMM_X8DS:
-			c1dramw |= (0x0001) << 4*(i % 2);
+			c1dramw |= (0x0010) << 4*(i % 2);
 			break;
 		case SYSINFO_DIMM_X16SS:
 			c1dramw |= (0x0000) << 4*(i % 2);
 			break;
 		case SYSINFO_DIMM_X8DDS:
-			c1dramw |= (0x0005) << 4*(i % 2);
+			c1dramw |= (0x0050) << 4*(i % 2);
 			break;
 		case SYSINFO_DIMM_NOT_POPULATED:
 			c1dramw |= (0x0000) << 4*(i % 2);
@@ -2735,6 +2734,7 @@ void sdram_initialize(int boot_path, const u8 *spd_addresses)
 	struct sys_info sysinfo;
 	u8 reg8;
 
+	timestamp_add_now(TS_BEFORE_INITRAM);
 	printk(BIOS_DEBUG, "Setting up RAM controller.\n");
 
 	memset(&sysinfo, 0, sizeof(sysinfo));
@@ -2836,4 +2836,5 @@ void sdram_initialize(int boot_path, const u8 *spd_addresses)
 	printk(BIOS_DEBUG, "RAM initialization finished.\n");
 
 	sdram_setup_processor_side();
+	timestamp_add_now(TS_AFTER_INITRAM);
 }

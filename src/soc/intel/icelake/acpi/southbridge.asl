@@ -20,9 +20,6 @@
 #include <soc/itss.h>
 #include <soc/pcr_ids.h>
 
-/* Interrupt Routing */
-#include "irqlinks.asl"
-
 /* PCI IRQ assignment */
 #include "pci_irqs.asl"
 
@@ -55,9 +52,6 @@
 
 /* PCI _OSC */
 #include <soc/intel/common/acpi/pci_osc.asl>
-
-/* CNVi */
-#include "cnvi.asl"
 
 /* GBe 0:1f.6 */
 #include "pch_glan.asl"

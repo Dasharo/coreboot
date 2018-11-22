@@ -23,7 +23,6 @@
 #include <device/device.h>
 #include <device/pnp.h>
 #include <superio/conf_mode.h>
-#include <console/console.h>
 #include <device/smbus.h>
 #include <string.h>
 #include <pc80/keyboard.h>
@@ -44,7 +43,7 @@ static void lpc47b272_init(struct device *dev)
 	if (!dev->enabled)
 		return;
 
-	switch(dev->path.pnp.device) {
+	switch (dev->path.pnp.device) {
 	case LPC47B272_KBC:
 		pc_keyboard_init(NO_AUX_DEVICE);
 		break;

@@ -19,7 +19,6 @@
 #include <device/device.h>
 #include <device/pnp.h>
 #include <superio/conf_mode.h>
-#include <console/console.h>
 #include <pc80/keyboard.h>
 #include <stdlib.h>
 
@@ -31,7 +30,7 @@ static void sch4037_init(struct device *dev)
 		return;
 	}
 
-	switch(dev->path.pnp.device) {
+	switch (dev->path.pnp.device) {
 		case SCH4037_KBC:
 			pc_keyboard_init(NO_AUX_DEVICE);
 			break;

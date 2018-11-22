@@ -23,7 +23,6 @@
 #include <device/pci_def.h>
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
-#include <lib.h>
 #include <arch/acpi.h>
 #include <timestamp.h>
 #include <console/console.h>
@@ -223,9 +222,7 @@ void mainboard_romstage_entry(unsigned long bist)
 	dump_spd_registers();
 #endif
 
-	timestamp_add_now(TS_BEFORE_INITRAM);
 	sdram_initialize(s3resume ? 2 : 0, spd_addrmap);
-	timestamp_add_now(TS_AFTER_INITRAM);
 
 	/* Perform some initialization that must run before stage2 */
 	early_ich7_init();

@@ -22,6 +22,7 @@
 #include <pc80/mc146818rtc.h>
 #include <pc80/isa-dma.h>
 #include <pc80/i8259.h>
+#include <arch/cpu.h>
 #include <arch/io.h>
 #include <arch/ioapic.h>
 #include <arch/acpi.h>
@@ -41,9 +42,7 @@
 #include <soc/ramstage.h>
 #include <soc/rcba.h>
 #include <soc/intel/broadwell/chip.h>
-#include <arch/acpi.h>
 #include <arch/acpigen.h>
-#include <cpu/cpu.h>
 
 static void pch_enable_ioapic(struct device *dev)
 {

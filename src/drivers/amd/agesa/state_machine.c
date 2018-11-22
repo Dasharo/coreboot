@@ -18,9 +18,9 @@
 #include <string.h>
 
 #include <arch/acpi.h>
+#include <arch/cpu.h>
 #include <bootstate.h>
 #include <cbfs.h>
-#include <cbmem.h>
 
 #include <northbridge/amd/agesa/state_machine.h>
 #include <northbridge/amd/agesa/agesa_helper.h>

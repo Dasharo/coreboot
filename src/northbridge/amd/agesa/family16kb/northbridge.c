@@ -26,7 +26,6 @@
 #include <string.h>
 #include <lib.h>
 #include <cpu/cpu.h>
-#include <cbmem.h>
 #include <cpu/x86/lapic.h>
 #include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
@@ -990,7 +989,7 @@ u32 map_oprom_vendev(u32 vendev)
 {
 	u32 new_vendev = vendev;
 
-	switch(vendev) {
+	switch (vendev) {
 	case 0x10029830:
 	case 0x10029831:
 	case 0x10029832:

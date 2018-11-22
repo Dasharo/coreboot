@@ -28,14 +28,13 @@
 #include "h3ffeat.h"
 #include "AsPsNb.h"
 
+#include <arch/cpu.h>
 #include <device/pci.h>
-#include <console/console.h>
 #include <cpu/amd/msr.h>
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <northbridge/amd/amdfam10/raminit.h>
 #include <northbridge/amd/amdfam10/amdfam10.h>
-
 
 /*----------------------------------------------------------------------------
  *			DEFINITIONS AND MACROS
@@ -1253,7 +1252,7 @@ static void ht1SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNode
  ******************************************************************************/
 static u8 convertBitsToWidth(u8 value, cNorthBridge *nb)
 {
-	switch(value) {
+	switch (value) {
 	case 1: return 16;
 	case 0: return 8;
 	case 5: return 4;

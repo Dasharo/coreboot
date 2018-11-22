@@ -18,11 +18,9 @@
 #include <cbmem.h>
 #include <stddef.h>
 #include <arch/early_variables.h>
-#include <arch/cpu.h>
 #include <arch/io.h>
 #include <arch/cbfs.h>
 #include <arch/stages.h>
-#include <cbmem.h>
 #include <chip.h>
 #include <cpu/x86/mtrr.h>
 #include <console/console.h>

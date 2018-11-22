@@ -31,7 +31,6 @@
 #include <northbridge/amd/pi/agesawrapper.h>
 #include <northbridge/amd/pi/agesawrapper_call.h>
 #include <cpu/x86/bist.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/amd/microcode.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
 #include <superio/nuvoton/common/nuvoton.h>
@@ -71,7 +70,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	if (!cpu_init_detectedx && boot_cpu()) {
 		u32 data, *memptr;
 		pci_devfn_t dev;
-		
+
 		timestamp_init(timestamp_get());
 		timestamp_add_now(TS_START_ROMSTAGE);
 
