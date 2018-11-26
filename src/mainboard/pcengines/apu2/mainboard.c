@@ -19,6 +19,7 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_def.h>
+#include <device/pci_ids.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
 #include <southbridge/amd/pi/hudson/pci_devs.h>
 #include <southbridge/amd/pi/hudson/amd_pci_int_defs.h>
@@ -320,10 +321,33 @@ static int read_serial_from_nic(char *serial, size_t len)
 	device_t nic_dev;
 	uintptr_t bar10;
 	u32 mac_addr = 0;
+	u16 vendor_id, device_id;
 	int i;
 
 	nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
+	/*
+	 * Check if we really have found first NIC. In case we have PCIe modules
+	 * connected to mPCIe2 slot, BDF 1:0.0 may not be a NIC, because mPCIe2
+	 * slot is routed to the very first PCIe bridge.
+	 */
 	if (!serial || !nic_dev)
+		return -1;
+	vendor_id = pci_read_config16(nic_dev, 0x0);
+	device_id = pci_read_config16(nic_dev, 0x2);
+
+	/* apu boards have Intel NICs */
+	if (vendor_id != PCI_VENDOR_ID_INTEL) {
+		nic_dev = dev_find_slot(2, PCI_DEVFN(0, 0));
+		if (!nic_dev)
+			return -1;
+		vendor_id = pci_read_config16(nic_dev, 0x0);
+		device_id = pci_read_config16(nic_dev, 0x2);
+		if (vendor_id != PCI_VENDOR_ID_INTEL)
+			return -1;
+	}
+
+	/* Handle both hardware options: i210 and i211 NICs */
+	if ((device_id != 0x1537) && (device_id != 0x157b))
 		return -1;
 
 	/* Read in the last 3 bytes of NIC's MAC address. */
