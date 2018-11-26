@@ -409,6 +409,7 @@ static int read_serial_from_nic(char *serial, size_t len)
 	struct device *dev;
 	uintptr_t bar10;
 	u32 mac_addr = 0;
+	u16 vendor_id, device_id;
 	int i;
 	if (check_pciereverse())
 		dev = pcidev_on_root(2, 3);
@@ -418,6 +419,23 @@ static int read_serial_from_nic(char *serial, size_t len)
 	if (dev)
 		dev = pcidev_path_behind(dev->link_list, PCI_DEVFN(0, 0));
 	if (!dev)
+		return -1;
+	vendor_id = pci_read_config16(nic_dev, 0x0);
+	device_id = pci_read_config16(nic_dev, 0x2);
+
+	/* apu boards have Intel NICs */
+	if (vendor_id != PCI_VENDOR_ID_INTEL) {
+		nic_dev = dev_find_slot(2, PCI_DEVFN(0, 0));
+		if (!nic_dev)
+			return -1;
+		vendor_id = pci_read_config16(nic_dev, 0x0);
+		device_id = pci_read_config16(nic_dev, 0x2);
+		if (vendor_id != PCI_VENDOR_ID_INTEL)
+			return -1;
+	}
+
+	/* Handle both hardware options: i210 and i211 NICs */
+	if ((device_id != 0x1537) && (device_id != 0x157b))
 		return -1;
 
 	/* Read in the last 3 bytes of NIC's MAC address. */
