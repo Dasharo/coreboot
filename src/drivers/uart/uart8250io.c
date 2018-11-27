@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include "uart8250reg.h"
+#include "mainboard/pcengines/apu2/bios_knobs.h"
 
 /* Should support 8250, 16450, 16550, 16550A type UARTs */
 
@@ -90,23 +91,28 @@ void uart_init(unsigned int idx)
 		unsigned int div;
 		div = uart_baudrate_divisor(get_uart_baudrate(),
 			uart_platform_refclk(), uart_input_clock_divider());
-		uart8250_init(uart_platform_base(idx), div);
+		if (check_com2())
+			car_set_var(port_index, 1);
+		else
+			car_set_var(port_index, 0);
+
+		uart8250_init(uart_platform_base(car_get_var(port_index)), div);
 	}
 }
 
 void uart_tx_byte(unsigned int idx, unsigned char data)
 {
-	uart8250_tx_byte(uart_platform_base(idx), data);
+	uart8250_tx_byte(uart_platform_base(car_get_var(port_index)), data);
 }
 
 unsigned char uart_rx_byte(unsigned int idx)
 {
-	return uart8250_rx_byte(uart_platform_base(idx));
+	return uart8250_rx_byte(uart_platform_base(car_get_var(port_index)));
 }
 
 void uart_tx_flush(unsigned int idx)
 {
-	uart8250_tx_flush(uart_platform_base(idx));
+	uart8250_tx_flush(uart_platform_base(car_get_var(port_index)));
 }
 
 enum cb_err fill_lb_serial(struct lb_serial *serial)
