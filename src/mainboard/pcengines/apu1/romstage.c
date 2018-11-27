@@ -79,7 +79,7 @@ void board_BeforeAgesa(struct sysinfo *cb)
 	/* enable 0x2e/0x4e IO decoding before configuring SuperIO */
 	pci_write_config32(dev, 0x48, data | 3);
 
-	if (check_com2()  || CONFIG_UART_FOR_CONSOLE == 1)
+	if (check_com2() || (CONFIG_UART_FOR_CONSOLE == 1))
 		nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 
 	console_init();
