@@ -202,7 +202,8 @@ const char *smbios_mainboard_serial_number(void)
 	static char serial[10];
 	msr_t msr;
 	u32 mac_addr = 0;
-	device_t nic_dev;
+	u32 bus_no;
+	device_t dev;
 
 	// Allows the IO configuration space access method, IOCF8 and IOCFC, to be
 	// used to generate extended configuration cycles
@@ -210,13 +211,22 @@ const char *smbios_mainboard_serial_number(void)
 	msr.hi |= (ENABLE_CF8_EXT_CFG);
 	wrmsr(NB_CFG_MSR, msr);
 
-	nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
+	// In case we have PCIe module connected to mPCIe2 slot, BDF 1:0.0 may
+	// not be a NIC, because mPCIe2 slot is routed to the very first PCIe
+	// bridge and the first NIC is connected to the second PCIe bridge.
+	// Read secondary bus number from the PCIe bridge where the first NIC is
+	// connected.
+	dev = dev_find_slot(0, PCI_DEVFN(2, 2));
+	if ((serial[0] != 0) || !dev)
+		return serial;
 
-	if ((serial[0] != 0) || !nic_dev)
-	return serial;
+	bus_no = dev->link_list->secondary;
+	dev = dev_find_slot(bus_no, PCI_DEVFN(0, 0));
+	if (!dev)
+		return serial;
 
 	// Read 4 bytes starting from 0x144 offset
-	mac_addr = pci_read_config32(nic_dev, 0x144);
+	mac_addr = pci_read_config32(dev, 0x144);
 	// MSB here is always 0xff
 	// Discard it so only bottom 3b of mac address are left
 	mac_addr &= 0x00ffffff;
