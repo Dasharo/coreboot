@@ -8,6 +8,8 @@
 
 #include "uart8250reg.h"
 
+#include "mainboard/pcengines/apu2/bios_knobs.h"
+
 /* Should support 8250, 16450, 16550, 16550A type UARTs */
 
 /* Expected character delay at 1200bps is 9ms for a working UART
@@ -18,6 +20,8 @@
  */
 #define SINGLE_CHAR_TIMEOUT	(50 * 1000)
 #define FIFO_TIMEOUT		(16 * SINGLE_CHAR_TIMEOUT)
+
+static int port_index;
 
 static int uart8250_can_tx_byte(unsigned int base_port)
 {
@@ -90,29 +94,34 @@ void uart_init(unsigned int idx)
 		unsigned int div;
 		div = uart_baudrate_divisor(get_uart_baudrate(),
 			uart_platform_refclk(), uart_input_clock_divider());
-		uart8250_init(uart_platform_base(idx), div);
+		if (check_com2())
+			port_index = 1;
+		else
+			port_index = idx;
+
+		uart8250_init(uart_platform_base(port_index), div);
 	}
 }
 
 void uart_tx_byte(unsigned int idx, unsigned char data)
 {
-	uart8250_tx_byte(uart_platform_base(idx), data);
+	uart8250_tx_byte(uart_platform_base(port_index), data);
 }
 
 unsigned char uart_rx_byte(unsigned int idx)
 {
-	return uart8250_rx_byte(uart_platform_base(idx));
+	return uart8250_rx_byte(uart_platform_base(port_index));
 }
 
 void uart_tx_flush(unsigned int idx)
 {
-	uart8250_tx_flush(uart_platform_base(idx));
+	uart8250_tx_flush(uart_platform_base(port_index));
 }
 
 enum cb_err fill_lb_serial(struct lb_serial *serial)
 {
 	serial->type = LB_SERIAL_TYPE_IO_MAPPED;
-	serial->baseaddr = uart_platform_base(CONFIG_UART_FOR_CONSOLE);
+	serial->baseaddr = uart_platform_base(port_index);
 	serial->baud = get_uart_baudrate();
 	serial->regwidth = 1;
 	serial->input_hertz = uart_platform_refclk();
