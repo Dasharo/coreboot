@@ -86,7 +86,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		/* enable 0x2e/0x4e IO decoding before configuring SuperIO */
 		pci_write_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE, data | 3);
 
-		if (check_com2())
+		if (check_com2() || CONFIG_UART_FOR_CONSOLE == 1)
 			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 
 		console_init();

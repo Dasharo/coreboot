@@ -110,10 +110,10 @@ void uart_init(int idx)
 		unsigned int div;
 		div = uart_baudrate_divisor(get_uart_baudrate(),
 			uart_platform_refclk(), uart_input_clock_divider());
-		if (check_com2())
+		if (check_com2() || idx == 1)
 			car_set_var(port_index, 1);
 		else
-			car_set_var(port_index, 0);
+			car_set_var(port_index, idx);
 
 		uart8250_init(uart_platform_base(car_get_var(port_index)), div);
 	}
