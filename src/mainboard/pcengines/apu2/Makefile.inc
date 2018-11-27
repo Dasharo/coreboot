@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+bootblock-y += pmutil.c
 bootblock-y += bootblock.c
+bootblock-y += bios_knobs.c
 
 bootblock-y += pmutil.c
 
