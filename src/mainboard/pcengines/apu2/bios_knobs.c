@@ -29,9 +29,12 @@ static char * findstr(const char *s, const char *pattern)
 	char *lpattern = (char *) pattern;
 
 	while (*result && *pattern ) {
-		if ( *lpattern == 0)  // the pattern matches return the pointer
+		if ( *lpattern == 0)
+		// the pattern matches return the pointer
 			return result;
-		if ( *result == 0)  // We're at the end of the file content but don't have a patter match yet
+		if ( *result == 0)
+		// We're at the end of the file content but
+		// don't have a pattern match yet
 			return NULL;
 		if (*result == *lpattern ) {
 			// The string matches, simply advance
@@ -57,11 +60,13 @@ static u8 check_knob_value(const char *s)
 	// This function locates a file in cbfs, maps it to memory and returns
 	// a void* pointer
 	//
-	boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE, CBFS_TYPE_RAW, &boot_file_len);
+	boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE, CBFS_TYPE_RAW,
+						&boot_file_len);
 	if (boot_file == NULL)
-		printk(BIOS_ALERT, "file [%s] not found in CBFS\n", BOOTORDER_FILE);
+		printk(BIOS_INFO, "file [%s] not found in CBFS\n",
+			BOOTORDER_FILE);
 	if (boot_file_len < 4096)
-		printk(BIOS_ALERT, "Missing bootorder data.\n");
+		printk(BIOS_INFO, "Missing bootorder data.\n");
 	if (boot_file == NULL || boot_file_len < 4096)
 		return -1;
 
@@ -75,9 +80,78 @@ static u8 check_knob_value(const char *s)
 	return -1;
 }
 
-bool check_console(void)
+u8 check_iommu(void)
 {
+	u8 iommu;
+	iommu = check_knob_value("iommu");
 
+	switch (iommu) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO,
+			"Missing or invalid iommu knob, disable IOMMU.\n");
+		break;
+	}
+
+	return 0;
+}
+
+u8 check_console(void)
+{
+	u8 scon;
+
+	//
+	// Find the serial console item
+	//
+	scon = check_knob_value("scon");
+
+	switch (scon) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO,
+			"Missing or invalid scon knob, enable console.\n");
+		break;
+	}
+
+	return 1;
+}
+
+int check_com2(void)
+{
+	u8 com2en;
+
+	if (CONFIG(BOARD_PCENGINES_APU5))
+		return 0;
+
+	//
+	// Find the COM2 redirection item
+	//
+	com2en = check_knob_value("com2en");
+
+	switch (com2en) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO,
+			"Missing or invalid com2 knob, disable COM2 output.\n");
+		break;
+	}
+
+	return 0;
 }
 
 static bool check_uart(char uart_letter)
@@ -104,7 +178,8 @@ static bool check_uart(char uart_letter)
 		return true;
 		break;
 	default:
-		printk(BIOS_EMERG, "Missing or invalid uart knob, disable port.\n");
+		printk(BIOS_INFO,
+			 "Missing or invalid uart knob, disable port.\n");
 		break;
 	}
 
