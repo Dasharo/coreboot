@@ -1,21 +1,9 @@
-SEABIOSGIT-$(CONFIG_SEABIOS_GENERIC)=http://review.coreboot.org/p/seabios.git
-SEABIOSGIT-$(CONFIG_SEABIOS_ELTAN)=https://github.com/pcengines/seabios.git
+SEABIOSGIT-$(CONFIG_SEABIOS_GENERIC)=http://review.coreboot.org/seabios
+SEABIOSGIT-$(CONFIG_SEABIOS_PCENGINES)=https://github.com/pcengines/seabios.git
 
-ifeq ($(CONFIG_SEABIOS_GENERIC),y)
-#
-# Using the generic seabios
-#
 TAG-$(CONFIG_SEABIOS_MASTER)=origin/master
-TAG-$(CONFIG_SEABIOS_STABLE)=33fbe13a3e2a01e0ba1087a8feed801a0451db21
-endif
-
-ifeq ($(CONFIG_SEABIOS_ELTAN),y)
-#
-# Using the eltan seabios
-#
-TAG-$(CONFIG_SEABIOS_MASTER)=origin/apu2-support
-TAG-$(CONFIG_SEABIOS_STABLE)=$(CONFIG_ELTAN_SEABIOS_TAG)
-endif
+TAG-$(CONFIG_SEABIOS_STABLE)=221144005cc6d01ae094c284e40be4b5fdcb6af0
+TAG-$(CONFIG_SEABIOS_REVISION)=$(CONFIG_SEABIOS_REVISION_ID)
 
 unexport KCONFIG_AUTOHEADER
 unexport KCONFIG_AUTOCONFIG
@@ -70,7 +58,7 @@ ifeq ($(CONFIG_SEABIOS_VGA_COREBOOT),y)
 	echo "CONFIG_BUILD_VGABIOS=y" >> seabios/.config
 endif
 
-	echo "CONFIG_DEBUG_LEVEL=-1" >> seabios/.config
+	echo "CONFIG_DEBUG_LEVEL=$(CONFIG_SEABIOS_DEBUG_LEVEL)" >> seabios/.config
 
 #
 # Project specific configuration for optimized SeaBIOS
