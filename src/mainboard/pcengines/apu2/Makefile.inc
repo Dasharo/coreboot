@@ -39,7 +39,7 @@ bootorder_def-type := raw
 
 # WIV20150126 add boot order
 cbfs-files-y += bootorder
-bootorder-file := src/mainboard/$(MAINBOARDDIR)/bootorder
+bootorder-file := src/mainboard/$(MAINBOARDDIR)/variants/$(VARIANT_DIR)/bootorder
 bootorder-type := raw
 bootorder-align := 0x1000
 
