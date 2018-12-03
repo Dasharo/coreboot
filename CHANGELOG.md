@@ -15,6 +15,8 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 ### Added
 - [experimental option for adding microcode update](https://github.com/pcengines/apu2-documentation/blob/master/docs/microcode_patching.md)
 - [COM2 redirection runtime configuration](https://github.com/pcengines/apu2-documentation/blob/master/docs/serial_console.md)
+- SeaBIOS can be built from arbitrary revision
+- SeaBIOS debug level can be set via Kconfig
 
 ### Fixed
 - generating serial number from MAC address of first NIC
