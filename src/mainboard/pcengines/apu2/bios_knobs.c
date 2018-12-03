@@ -104,6 +104,28 @@ bool check_console(void)
 }
 #endif //CONFIG_FORCE_CONSOLE
 
+int check_com2(void)
+{
+	u8 com2en;
+ 	//
+	// Find the COM2 redirection item
+	//
+	com2en = check_knob_value("com2en");
+ 	switch (com2en) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO,
+			"Missing or invalid com2 knob, disable COM2 output.\n");
+		break;
+	}
+ 	return 0;
+}
+
 static bool check_uart(char uart_letter)
 {
 	u8 uarten;

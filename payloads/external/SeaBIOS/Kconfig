@@ -2,7 +2,7 @@ if PAYLOAD_SEABIOS
 
 choice
 	prompt "SeaBIOS repo"
-	default SEABIOS_ELTAN
+	default SEABIOS_PCENGINES
 	depends on PAYLOAD_SEABIOS
 
 config SEABIOS_GENERIC
@@ -10,10 +10,10 @@ config SEABIOS_GENERIC
 	help
 		Get SeaBIOS from the master GIT repo
 
-config SEABIOS_ELTAN
-	bool "EltanRepo"
+config SEABIOS_PCENGINES
+	bool "PC Engines Repo"
 	help
-		Get SeaBIOS from the Eltan Repo
+		Get SeaBIOS from the PC Engines Repo
 
 endchoice
 
@@ -25,23 +25,31 @@ choice
 config SEABIOS_STABLE
 	bool "Stable version (1.11.0.6 for std)"
 	help
-		Stable SeaBIOS version
+	  Stable SeaBIOS version
 
 config SEABIOS_MASTER
 	bool "master"
 	help
-		Newest SeaBIOS version
+	  Newest SeaBIOS version
+
+config SEABIOS_REVISION
+	bool "git revision"
+	help
+	  Select this option if you have a specific commit or branch
+	  that you want to use as the revision from which to
+	  build SeaBIOS.
+
+	  You will be able to specify the name of a branch or a commit id
+	  later.
 
 endchoice
 
-config ELTAN_SEABIOS_TAG
-	depends on PAYLOAD_SEABIOS
-	depends on SEABIOS_ELTAN
-	depends on SEABIOS_STABLE
-	string  "SeaBIOS TAG"
-	default "rel-1.11.0.6"
+config SEABIOS_REVISION_ID
+	string "Insert a commit's SHA-1 or a branch name"
+	depends on SEABIOS_REVISION
+	default "origin/master"
 	help
-		Specify the SeaBIOS tag to check out
+	   The commit's SHA-1 or branch name of the revision to use.
 
 config SEABIOS_ADD_SERCON_PORT_FILE
 	prompt "Add SeaBIOS sercon-port file to CBFS"
@@ -113,6 +121,33 @@ config PAYLOAD_VGABIOS_FILE
 	depends on SEABIOS_VGA_COREBOOT
 	default "payloads/external/SeaBIOS/seabios/out/vgabios.bin"
 
+config SEABIOS_DEBUG_LEVEL
+	int "SeaBIOS debug level (verbosity)"
+	default -1
+	help
+	  The higher the number, the more verbose SeaBIOS will be. See the table
+	  below for the current values corresponding to various items as of SeaBIOS
+	  version 1.10.1. Set this value to -1 to use SeaBIOS' default.
 
+	  Output at various SeaBIOS log levels:
+	  level 0  - Logging disabled
+	  level 1  - Basic output, interrupts 5, 18h, 19h, 40h, SMP, PNP, PMM
+	  level 2  - AHCI, Floppy, Basic ps2, interrupts 11h, 12h, 14h, 17h
+	  level 3  - bootsplash, initializations, SeaBIOS VGA BIOS interrupts
+	  level 4  - bios tables, more optionrom
+	  level 5  - Extra bootsplash, more XHCI
+	  level 6  - ATA commands, extra optionrom
+	  level 7  - extra ps2 commands, more OHCI & EHCI
+	  level 8  - extra malloc info, more AHCI
+	  level 9  - interrupts 15h, 16h, 1ah, APM, PCI, SMIs, PCIBIOS,
+	             USB-HID commands, SDcard commands, Floppy commands
+	  level 10 - interrupt 13h (Drives other than floppy)
+	  level 20 - interrupt 10h (Display)
+
+comment "Using default SeaBIOS log level"
+	depends on SEABIOS_DEBUG_LEVEL = -1
+
+comment "SeaBIOS logging disabled"
+	depends on SEABIOS_DEBUG_LEVEL = 0
 
 endif
