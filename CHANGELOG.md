@@ -16,6 +16,19 @@ Releases 4.8.0.x are based on continuous synchronization with official
 3. `make`
 
 ## [Unreleased]
+## [v4.8.0.7] - 2018-12-03
+### Changed
+- updated SeaBIOS to rel-1.11.0.7
+- updated sortbootorder to v4.6.12
+
+### Added
+- [experimental option for adding microcode update](https://github.com/pcengines/apu2-documentation/blob/master/docs/microcode_patching.md)
+- enabled PCIe ACS and AER capabilities
+- [COM2 redirection runtime configuration]((https://github.com/pcengines/apu2-documentation/blob/master/docs/serial_console.md))
+
+### Fixed
+- generating serial number from MAC address of first NIC
+
 ## [v4.8.0.6] - 2018-11-08
 ### Changed
 - Updated SeaBIOS to rel-1.11.0.6
@@ -233,7 +246,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.6...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.8.0.7...develop
+[v4.8.0.7]: https://github.com/pcengines/coreboot/compare/v4.8.0.6...v4.8.0.7
 [v4.8.0.6]: https://github.com/pcengines/coreboot/compare/v4.8.0.5...v4.8.0.6
 [v4.8.0.5]: https://github.com/pcengines/coreboot/compare/v4.8.0.4...v4.8.0.5
 [v4.8.0.4]: https://github.com/pcengines/coreboot/compare/v4.8.0.3...v4.8.0.4
