@@ -86,13 +86,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		/* enable 0x2e/0x4e IO decoding before configuring SuperIO */
 		pci_write_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE, data | 3);
 
-		/* COM2 on apu5 is reserved so only COM1 should be supported */
-		if ((CONFIG_UART_FOR_CONSOLE == 1) &&
-			!IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
-			nuvoton_enable_serial(SERIAL2_DEV, CONFIG_TTYS0_BASE);
-		else if (CONFIG_UART_FOR_CONSOLE == 0)
-			nuvoton_enable_serial(SERIAL1_DEV, CONFIG_TTYS0_BASE);
-
+		if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)) &&
+		    !IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 
 		console_init();
 
@@ -106,11 +102,10 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		data = *memptr;
 		printk(BIOS_INFO, "FCH_MISC_REG40 is 0x%08x \n", data);
 
-		bool scon = check_console();
-
 		data = *(u32*)FCH_PMIOxC0_S5ResetStatus;
 		// do not print SOL if reset will take place in FchInit
-		if(scon && !(data & FCH_PMIOxC0_S5ResetStatus_All_Status)) {
+		if (check_console() &&
+		    !(data & FCH_PMIOxC0_S5ResetStatus_All_Status)) {
 			print_sign_of_life();
 		}
 		//
@@ -138,8 +133,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		// force it to be always on
 		data |= 0xF << (1 * 4); // CLKREQ GFX to GFXCLK
 #else
-		bool mpcie2_clk = check_mpcie2_clk();
-		if (mpcie2_clk) {
+		if (check_mpcie2_clk()) {
 			// make GFXCLK to ignore CLKREQ# input
 			// force it to be always on
 			data |= 0xF << (1 * 4); // CLKREQ GFX to GFXCLK
