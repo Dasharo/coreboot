@@ -30,9 +30,6 @@ romstage-y += heapmanager.c
 ramstage-y += heapmanager.c
 ramstage-y += amd_late_init.c
 
-romstage-y += microcode_fam16h.c
-ramstage-y += microcode_fam16h.c
-
 ifeq ($(CONFIG_HAVE_ACPI_RESUME), y)
 
 $(obj)/coreboot_s3nv.rom: $(obj)/config.h
