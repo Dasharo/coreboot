@@ -35,7 +35,6 @@
 #include <northbridge/amd/pi/agesawrapper_call.h>
 #include <cpu/x86/bist.h>
 #include <cpu/x86/lapic.h>
-#include <cpu/amd/microcode.h>
 #include <hudson.h>
 #include <cpu/amd/pi/s3_resume.h>
 #include <fchgpio.h>
@@ -129,12 +128,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		pci_write_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE, data | 3);
 
 		/* COM2 on apu5 is reserved so only COM1 should be supported */
-		if ((CONFIG_UART_FOR_CONSOLE == 1) &&
-			!IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
-			nuvoton_enable_serial(SERIAL2_DEV, CONFIG_TTYS0_BASE);
-		else if (CONFIG_UART_FOR_CONSOLE == 0)
-			nuvoton_enable_serial(SERIAL1_DEV, CONFIG_TTYS0_BASE);
-
+		if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)) &&
+		    !IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 		console_init();
 
 		printk(BIOS_INFO, "14-25-48Mhz Clock settings\n");
@@ -203,8 +199,6 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	val = cpuid_eax(1);
 	printk(BIOS_DEBUG, "BSP Family_Model: %08x \n", val);
 	printk(BIOS_DEBUG, "cpu_init_detectedx = %08lx \n", cpu_init_detectedx);
-
-	update_microcode(val);
 
 	/*
 	 * This refers to LpcClkDrvSth settling time.  Without this setting, processor

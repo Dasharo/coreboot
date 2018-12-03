@@ -7,6 +7,20 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.22] - 2018-12-03
+### Changed
+- Updated SeaBIOS to rel-1.11.0.7
+- Updated sortbootorder to v4.6.12
+
+### Added
+- [experimental option for adding microcode update](https://github.com/pcengines/apu2-documentation/blob/master/docs/microcode_patching.md)
+- [COM2 redirection runtime configuration](https://github.com/pcengines/apu2-documentation/blob/master/docs/serial_console.md)
+- SeaBIOS can be built from arbitrary revision
+- SeaBIOS debug level can be set via Kconfig
+
+### Fixed
+- generating serial number from MAC address of first NIC
+
 ## [v4.0.21] - 2018-11-08
 ### Changed
 - Updated SeaBIOS to rel-1.11.0.6
@@ -191,7 +205,8 @@ built externally
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.21...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.22...coreboot-4.0.x
+[v4.0.22]: https://github.com/pcengines/coreboot/compare/v4.0.21...v4.0.22
 [v4.0.21]: https://github.com/pcengines/coreboot/compare/v4.0.20...v4.0.21
 [v4.0.20]: https://github.com/pcengines/coreboot/compare/v4.0.19...v4.0.20
 [v4.0.19]: https://github.com/pcengines/coreboot/compare/v4.0.18...v4.0.19
