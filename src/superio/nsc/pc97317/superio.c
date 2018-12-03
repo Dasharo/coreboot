@@ -15,7 +15,6 @@
  */
 
 #include <arch/io.h>
-#include <console/console.h>
 #include <device/device.h>
 #include <device/pnp.h>
 #include <stdlib.h>
@@ -27,7 +26,7 @@ static void init(struct device *dev)
 	if (!dev->enabled)
 		return;
 
-	switch(dev->path.pnp.device) {
+	switch (dev->path.pnp.device) {
 	case PC97317_KBCK:
 		pnp_set_logical_device(dev);
 		pnp_set_enable(dev, 0);		   /* Disable keyboard */

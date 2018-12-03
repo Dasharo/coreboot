@@ -22,12 +22,12 @@
 #include <device/pci_ids.h>
 #include <arch/io.h>
 #include <device/pnp_def.h>
-#include <arch/io.h>
 #include <console/console.h>
 #include <lib.h>
 #include <cpu/x86/bist.h>
 #include <string.h>
 #include <timestamp.h>
+#include <cbmem.h>
 
 #include <northbridge/via/vx900/early_vx900.h>
 #include <northbridge/via/vx900/raminit.h>

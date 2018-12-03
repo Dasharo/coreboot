@@ -27,6 +27,7 @@
 #include <superio/nuvoton/nct5104d/nct5104d.h>
 #include <smbios.h>
 #include <string.h>
+#include <types.h>
 #include <cpu/x86/msr.h>
 #include <cpu/amd/mtrr.h>
 #include <spd_bin.h>
@@ -42,7 +43,6 @@
 
 #define SEC_REG_SERIAL_ADDR 0x1000
 #define MAX_SERIAL_LEN	    10
-
 
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
@@ -290,6 +290,30 @@ static void mainboard_final(void *chip_info)
 	val &= ~(1 << 27);
 	pci_write_config32(D18F3, 0x88, val);
 
+	struct device *dev = dev_find_slot(0, PCI_DEVFN(0, 0));
+	val = pci_read_config32(dev, 0xE0);
+
+	pci_write_config32(dev, 0xE0, 0x014000B0);
+	u32 data = pci_read_config32(dev, 0xE4);
+
+	/* Enable AER (bit 5) and ACS (bit 6 undocumented) */
+	data |= (BIT(5) | BIT(6));
+	pci_write_config32(dev, 0xE4, data);
+
+	pci_write_config32(dev, 0xE0, 0x01300000);
+	data = pci_read_config32(dev, 0xE4);
+
+	/* Enable ACS capabilities straps including sub-items (undocumented).
+	 * From lspci it looks like these bits enable:
+	 * - Source Validation
+	 * - Translation Blocking
+	 */
+	data |= (BIT(24) | BIT(25) | BIT(26));
+	pci_write_config32(dev, 0xE4, data);
+
+	/* change back to previous index value */
+	pci_write_config32(dev, 0xE0, val);
+
 	//
 	// Turn off LED 2 and LED 3
 	//
@@ -317,17 +341,30 @@ static void mainboard_final(void *chip_info)
  */
 static int read_serial_from_nic(char *serial, size_t len)
 {
-	device_t nic_dev;
+	struct device *dev;
 	uintptr_t bar10;
 	u32 mac_addr = 0;
+	u32 bus_no;
 	int i;
 
-	nic_dev = dev_find_slot(1, PCI_DEVFN(0, 0));
-	if (!serial || !nic_dev)
+	/*
+	 * In case we have PCIe module connected to mPCIe2 slot, BDF 1:0.0 may
+	 * not be a NIC, because mPCIe2 slot is routed to the very first PCIe
+	 * bridge and the first NIC is connected to the second PCIe bridge.
+	 * Read secondary bus number from the PCIe bridge where the first NIC is
+	 * connected.
+	 */
+	dev = dev_find_slot(0, PCI_DEVFN(2, 2));
+	if (!serial || !dev)
+		return -1;
+
+	bus_no = dev->link_list->secondary;
+	dev = dev_find_slot(bus_no, PCI_DEVFN(0, 0));
+	if (!dev)
 		return -1;
 
 	/* Read in the last 3 bytes of NIC's MAC address. */
-	bar10 = pci_read_config32(nic_dev, 0x10);
+	bar10 = pci_read_config32(dev, 0x10);
 	bar10 &= 0xFFFE0000;
 	bar10 += 0x5400;
 	for (i = 3; i < 6; i++) {

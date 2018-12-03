@@ -47,6 +47,7 @@ config CPU_SPECIFIC_OPTIONS
 	select GENERIC_GPIO_LIB
 	select INTEL_GMA_ACPI
 	select INTEL_GMA_SWSMISCI
+	select CPU_INTEL_COMMON
 
 config VBOOT
 	select VBOOT_STARTS_IN_ROMSTAGE
@@ -126,5 +127,12 @@ config IED_REGION_SIZE
 config CHIPSET_BOOTBLOCK_INCLUDE
 	string
 	default "soc/intel/braswell/bootblock/timestamp.inc"
+
+config DISABLE_HPET
+	bool "Disable the HPET device"
+	default n
+	help
+	 Enable this to disable the HPET support
+	 Solves the Linux MP-BIOS bug timer not connected.
 
 endif

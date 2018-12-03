@@ -21,12 +21,10 @@
 #include <cpu/x86/msr.h>
 #include <cbmem.h>
 #include <arch/cbfs.h>
-#include <cbfs.h>
 #include <ip_checksum.h>
 #include <pc80/mc146818rtc.h>
 #include <device/pci_def.h>
 #include <device/device.h>
-#include <arch/cpu.h>
 #include <halt.h>
 #include <spd.h>
 #include "raminit.h"

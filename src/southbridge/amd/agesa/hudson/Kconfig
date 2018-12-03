@@ -35,10 +35,6 @@ config BOOTBLOCK_SOUTHBRIDGE_INIT
 	string
 	default "southbridge/amd/agesa/hudson/bootblock.c"
 
-config SOUTHBRIDGE_AMD_HUDSON_SKIP_ISA_DMA_INIT
-	bool
-	default n
-
 config EHCI_BAR
 	hex
 	default 0xfef00000
@@ -93,11 +89,6 @@ config HUDSON_GEC_FWM_FILE
 	default "3rdparty/blobs/southbridge/amd/hudson/gec.bin"  if SOUTHBRIDGE_AMD_AGESA_HUDSON
 	default "3rdparty/blobs/southbridge/amd/yangtze/gec.bin"  if SOUTHBRIDGE_AMD_AGESA_YANGTZE
 	depends on HUDSON_GEC_FWM
-
-config HUDSON_FWM
-	bool
-	default y if HUDSON_XHCI_FWM || HUDSON_IMC_FWM || HUDSON_GEC_FWM
-	default n
 
 config HUDSON_SATA_MODE
 	int "SATA Mode"

@@ -160,8 +160,8 @@ config CPU_MICROCODE_CBFS_NONE
 	  Make sure you have a way of flashing the ROM externally before
 	  selecting this option.
 
-config CPU_UCODE_RAW_BINARY
-	bool "Add raw microcode binary to CBFS"
+config AGESA_UCODE_EXPERIMENTAL
+	bool "Add microcode patch for AMD fam16h (EXPERIMENTAL)"
 	help
 
 endchoice
@@ -183,7 +183,7 @@ config CPU_MICROCODE_HEADER_FILES
 
 config CPU_UCODE_BINARIES
 	string "Microcode binary path and filename"
-	depends on CPU_MICROCODE_CBFS_GENERATE || CPU_UCODE_RAW_BINARY
+	depends on CPU_MICROCODE_CBFS_GENERATE || AGESA_UCODE_EXPERIMENTAL
 	default ""
 	help
 	  Some platforms have microcode in the blobs directory, and these can

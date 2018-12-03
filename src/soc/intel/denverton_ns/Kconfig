@@ -29,6 +29,7 @@ config CPU_SPECIFIC_OPTIONS
 	select BOOTBLOCK_CONSOLE
 	select BOOT_DEVICE_SPI_FLASH_RW_NOMMAP_EARLY if BOOT_DEVICE_SPI_FLASH
 	select BOOT_DEVICE_SUPPORTS_WRITES
+	select DEBUG_GPIO
 	select POSTCAR_CONSOLE
 	select SOC_INTEL_COMMON
 	select SOC_INTEL_COMMON_RESET
@@ -50,7 +51,6 @@ config CPU_SPECIFIC_OPTIONS
 #	select SOC_INTEL_COMMON_BLOCK_SA
 	select SOC_INTEL_COMMON_BLOCK_FAST_SPI
 	select SOC_INTEL_COMMON_BLOCK_GPIO
-	select DEBUG_SOC_COMMON_BLOCK_GPIO
 	select SOC_INTEL_COMMON_BLOCK_PCR
 	select TSC_CONSTANT_RATE
 	select TSC_MONOTONIC_TIMER
@@ -146,10 +146,6 @@ config HSUART_DEV
 	hex
 	default 0x1a
 
-config HSUART_FUNC
-	hex
-	default 0x0
-
 choice
 	prompt "UART mode selection"
 	default NON_LEGACY_UART_MODE
@@ -166,7 +162,7 @@ config LEGACY_UART_MODE
 endchoice
 
 config ENABLE_HSUART
-	depends on (!DRIVERS_UART_8250IO && NON_LEGACY_UART_MODE)
+	depends on NON_LEGACY_UART_MODE
 	bool "Enable High-speed UART debug port selected by UART_FOR_CONSOLE."
 	default n
 	select CONSOLE_SERIAL

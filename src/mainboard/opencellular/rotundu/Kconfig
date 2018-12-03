@@ -59,8 +59,7 @@ config MAINBOARD_PART_NUMBER
 
 config DEVICETREE
 	string
-	default "variants/rotundu/devicetree.cb" if BOARD_OPENCELLULAR_ROTUNDU
-	default "variants/supabrckv1/devicetree.cb" if BOARD_OPENCELLULAR_SUPABRCKV1
+	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config MAINBOARD_DIR
 	string
@@ -73,10 +72,6 @@ config MAINBOARD_VENDOR
 config MAX_CPUS
 	int
 	default 16
-
-config CACHE_ROM_SIZE_OVERRIDE
-	hex
-	default 0x800000
 
 config FSP_LOC
 	hex

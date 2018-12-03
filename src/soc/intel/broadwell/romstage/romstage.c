@@ -15,14 +15,11 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <arch/cpu.h>
 #include <arch/io.h>
 #include <arch/cbfs.h>
 #include <arch/early_variables.h>
 #include <bootmode.h>
 #include <console/console.h>
-#include <cbfs.h>
-#include <cbmem.h>
 #include <cpu/x86/mtrr.h>
 #include <elog.h>
 #include <program_loading.h>

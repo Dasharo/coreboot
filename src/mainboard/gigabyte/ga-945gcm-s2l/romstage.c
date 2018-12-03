@@ -22,7 +22,6 @@
 #include <device/pci_def.h>
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
-#include <lib.h>
 #include <arch/acpi.h>
 #include <timestamp.h>
 #include <superio/ite/it8718f/it8718f.h>
@@ -85,7 +84,8 @@ static void rcba_config(void)
 	RCBA8(OIC) = 0x03;
 
 	/* Disable unused devices */
-	RCBA32(FD) = 0x003c0061;
+	RCBA32(FD) = FD_PCIE6 | FD_PCIE5 | FD_PCIE4 | FD_PCIE3
+		| FD_ACMOD | FD_ACAUD | 1;
 
 	/* Enable PCIe Root Port Clock Gate */
 	RCBA32(CG) = 0x00000001;
@@ -189,9 +189,7 @@ void mainboard_romstage_entry(unsigned long bist)
 	dump_spd_registers();
 #endif
 
-	timestamp_add_now(TS_BEFORE_INITRAM);
 	sdram_initialize(s3resume ? 2 : boot_mode, NULL);
-	timestamp_add_now(TS_AFTER_INITRAM);
 
 	/* Perform some initialization that must run before stage2 */
 	early_ich7_init();

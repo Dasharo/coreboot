@@ -16,10 +16,8 @@
 
 #include <arch/io.h>
 #include <arch/cache.h>
-#include <cpu/cpu.h>
 #include <bootmode.h>
 #include <bootstate.h>
-#include <cbmem.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <soc/nvidia/tegra/dc.h>

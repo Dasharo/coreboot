@@ -25,10 +25,8 @@
 #include <device/pci_ids.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cpu/cpu.h>
 #include <cpu/x86/smm.h>
 #include <boot/tables.h>
-#include <cbmem.h>
 #include "chip.h"
 #include "haswell.h"
 

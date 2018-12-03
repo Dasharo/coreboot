@@ -18,11 +18,9 @@
 
 #include <arch/io.h>
 #include <boot/tables.h>
-#include <cbmem.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
 #include <delay.h>
-#include <lib.h>
 #include <device/device.h>
 #include <soc/addressmap.h>
 #include <soc/clk_rst.h>

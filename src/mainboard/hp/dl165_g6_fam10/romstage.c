@@ -29,16 +29,15 @@
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <arch/io.h>
+#include <arch/cpu.h>
 #include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
 #include "option_table.h"
 #include <console/console.h>
 #include <timestamp.h>
 #include <cpu/amd/model_10xxx_rev.h>
-#include <lib.h>
 #include <spd.h>
 #include <delay.h>
-#include <cpu/x86/lapic.h>
 #include <superio/serverengines/pilot/pilot.h>
 #include <superio/nsc/pc87417/pc87417.h>
 #include <cpu/x86/bist.h>

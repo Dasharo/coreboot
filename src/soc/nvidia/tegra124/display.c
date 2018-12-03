@@ -15,13 +15,10 @@
 
 #include <arch/io.h>
 #include <boot/tables.h>
-#include <cbmem.h>
 #include <console/console.h>
-#include <cpu/cpu.h>
 #include <delay.h>
 #include <device/device.h>
 #include <edid.h>
-#include <lib.h>
 #include <soc/addressmap.h>
 #include <soc/clock.h>
 #include <soc/display.h>
@@ -29,7 +26,6 @@
 #include <soc/nvidia/tegra/dc.h>
 #include <soc/nvidia/tegra/pwm.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdlib.h>
 #include <string.h>
 

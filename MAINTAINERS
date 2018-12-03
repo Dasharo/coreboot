@@ -1,6 +1,14 @@
 
 
-	List of maintainers and how to submit coreboot changes
+		    List of upstream coreboot maintainers
+		     and how to submit coreboot changes
+
+This represents the list of maintainers that work on the upstream coreboot
+code base (on coreboot.org).  Maintainers are assigned to topics and when
+applicable to subtrees of the source tree. You'll find some subtrees that
+don't have a maintainer. If you are looking for reviewers for such a sub-
+tree, it's often a good choice to look at the git history to see who worked
+on it last.
 
 Please try to follow the guidelines below.  This will make things
 easier on the maintainers.  Not all of these guidelines matter for every
@@ -65,6 +73,8 @@ trivial patch so apply some common sense.
 Descriptions of section entries:
 
 	M: Maintainer: FullName <address@domain>
+	   Must be registered to Gerrit (https://review.coreboot.org/).
+	   Should have experience with upstream coreboot development.
 	R: Designated reviewer: FullName <address@domain>
 	   These reviewers should be CCed on patches.
 	L: Mailing list that is relevant to this area
@@ -73,8 +83,12 @@ Descriptions of section entries:
 	T: SCM tree type and location.
 	   Type is one of: git, hg, quilt, stgit, topgit
 	S: Status, one of the following:
-	   Supported:	Someone is actually paid to look after this.
-	   Maintained:	Someone actually looks after it.
+	   Supported:	Someone is continuously paid to look after this and
+			a reaction to review requests can be expected
+			within a few days, a month at most.
+	   Maintained:	Someone actually looks after it and a reaction to
+			review requests can usually be expected within a
+			few weeks.
 	   Odd Fixes:	It has a maintainer but they don't have time to do
 			much other than throw the odd patch in. See below..
 	   Orphan:	No current maintainer [but maybe you could take the
@@ -195,18 +209,6 @@ S:	Supported
 F:	src/soc/intel/fsp_broadwell_de/
 F:	src/vendorcode/intel/fsp1_0/broadwell_de/
 F:	src/mainboard/intel/camelbackmountain_fsp/
-
-INTEL FSP IVYBRIDGE/PANTHERPOINT/CAVECREEK & CRBs
-M:	York Yang <york.yang@intel.com>
-S:	Supported
-F:	src/cpu/intel/fsp_model_206ax/
-F:	src/northbridge/intel/fsp_sandybridge/
-F:	src/southbridge/intel/fsp_bd82x6x/
-F:	src/southbridge/intel/fsp_i89xx/
-F:	src/vendorcode/intel/fsp1_0/ivybridge_bd82x6x
-F:	src/vendorcode/intel/fsp1_0/ivybridge_i89xx
-F:	src/mainboard/intel/cougar_canyon2/
-F:	src/mainboard/intel/stargo2/
 
 INTEL FSP DENVERTON-NS SOC & HARCUVAR CRB
 M:	SweeHeng Wong <swee.heng.wong@intel.com>

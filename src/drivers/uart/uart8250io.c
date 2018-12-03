@@ -16,11 +16,13 @@
 
 #include <rules.h>
 #include <stdlib.h>
+#include <arch/early_variables.h>
 #include <arch/io.h>
 #include <boot/coreboot_tables.h>
 #include <console/uart.h>
 #include <trace.h>
 #include "uart8250reg.h"
+#include "mainboard/pcengines/apu2/bios_knobs.h"
 
 /* Should support 8250, 16450, 16550, 16550A type UARTs */
 
@@ -32,6 +34,8 @@
  */
 #define SINGLE_CHAR_TIMEOUT	(50 * 1000)
 #define FIFO_TIMEOUT		(16 * SINGLE_CHAR_TIMEOUT)
+
+static int port_index CAR_GLOBAL;
 
 static int uart8250_can_tx_byte(unsigned base_port)
 {
@@ -106,23 +110,29 @@ void uart_init(int idx)
 		unsigned int div;
 		div = uart_baudrate_divisor(get_uart_baudrate(),
 			uart_platform_refclk(), uart_input_clock_divider());
-		uart8250_init(uart_platform_base(idx), div);
+		if ((check_com2() || idx == 1) &&
+		    !IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+			car_set_var(port_index, 1);
+		else
+			car_set_var(port_index, idx);
+
+		uart8250_init(uart_platform_base(car_get_var(port_index)), div);
 	}
 }
 
 void uart_tx_byte(int idx, unsigned char data)
 {
-	uart8250_tx_byte(uart_platform_base(idx), data);
+	uart8250_tx_byte(uart_platform_base(car_get_var(port_index)), data);
 }
 
 unsigned char uart_rx_byte(int idx)
 {
-	return uart8250_rx_byte(uart_platform_base(idx));
+	return uart8250_rx_byte(uart_platform_base(car_get_var(port_index)));
 }
 
 void uart_tx_flush(int idx)
 {
-	uart8250_tx_flush(uart_platform_base(idx));
+	uart8250_tx_flush(uart_platform_base(car_get_var(port_index)));
 }
 
 #if ENV_RAMSTAGE
@@ -130,7 +140,7 @@ void uart_fill_lb(void *data)
 {
 	struct lb_serial serial;
 	serial.type = LB_SERIAL_TYPE_IO_MAPPED;
-	serial.baseaddr = uart_platform_base(CONFIG_UART_FOR_CONSOLE);
+	serial.baseaddr = uart_platform_base(car_get_var(port_index));
 	serial.baud = get_uart_baudrate();
 	serial.regwidth = 1;
 	serial.input_hertz = uart_platform_refclk();

@@ -15,17 +15,20 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"regexp"
+	"strings"
 )
 
 type subsystem struct {
 	name       string
 	maintainer []string
-	file       []string
+	paths      []string
+	globs      []*regexp.Regexp
 }
 
 var subsystems []subsystem
@@ -84,6 +87,19 @@ func get_maintainers() ([]string, error) {
 	return maintainers, nil
 }
 
+func path_to_regexstr(path string) string {
+	// if prefix, allow all subdirectories
+	if path[len(path)-1] == '/' {
+		path += "*"
+	}
+	return glob_to_regex(path)
+}
+
+func path_to_regex(path string) *regexp.Regexp {
+	regexstr := path_to_regexstr(path)
+	return regexp.MustCompile(regexstr)
+}
+
 func build_maintainers(maintainers []string) {
 	var current *subsystem
 	for _, line := range maintainers {
@@ -95,40 +111,17 @@ func build_maintainers(maintainers []string) {
 			current.name = line
 		} else {
 			switch line[0] {
-			case 'R':
-			case 'M':
-				{
-					/* Add subsystem maintainer */
-					current.maintainer =
-						append(current.maintainer,
-							line[3:len(line)])
-					break
-				}
-			case 'S':
-				{
-					break
-				}
-			case 'L':
-				{
-					break
-				}
-			case 'T':
-				{
-					break
-				}
+			case 'R', 'M':
+				/* Add subsystem maintainer */
+				current.maintainer = append(current.maintainer, line[3:len(line)])
 			case 'F':
-				{
-					// add files
-					current.file =
-						append(current.file,
-							line[3:len(line)])
-					break
-				}
+				// add files
+				current.paths = append(current.paths, line[3:len(line)])
+				current.globs = append(current.globs, path_to_regex(line[3:len(line)]))
+				break
+			case 'L', 'S', 'T', 'W': // ignore
 			default:
-				{
-					fmt.Println("No such specifier: ", line)
-					break
-				}
+				fmt.Println("No such specifier: ", line)
 			}
 		}
 	}
@@ -138,109 +131,189 @@ func print_maintainers() {
 	for _, subsystem := range subsystems {
 		fmt.Println(subsystem.name)
 		fmt.Println("  ", subsystem.maintainer)
-		fmt.Println("  ", subsystem.file)
+		fmt.Println("  ", subsystem.paths)
 	}
 }
 
-func match_file(fname string, files []string) (bool, error) {
-	var matched bool
-	var err error
-
-	for _, file := range files {
-		/* Direct match */
-		matched, err = filepath.Match(file, fname)
-		if err != nil {
-			return false, err
-		}
-		if matched {
-			return true, nil
-		}
-
-		/* There are three cases that match_file can handle:
-		 *
-		 *  dirname/filename
-		 *  dirname/*
-		 *  dirname/
-		 *
-		 * The first case is an exact match, the second case is a
-		 * direct match of everything in that directory, and the third
-		 * is a direct match of everything in that directory and its
-		 * subdirectories.
-		 *
-		 * The first two cases are handled above, the code below is
-		 * only for that latter case, so if file doesn't end in /,
-		 * skip to the next file.
-		 */
-		if file[len(file)-1] != '/' {
-			continue
-		}
-
-		/* Remove / because we add it again below */
-		file = file[:len(file)-1]
-
-		/* Maximum tree depth, as calculated by
-		 * $(( `git ls-files | tr -d "[a-z][A-Z][0-9]\-\_\." | \
-		 *     sort -u | tail -1 | wc -c` - 1 ))
-		 * 11
-		 */
-		max_depth := 11
-
-		for i := 0; i < max_depth; i++ {
-			/* Subdirectory match */
-			file += "/*"
-
-			if matched, err = filepath.Match(file, fname); err != nil {
-				return false, err
-			}
-			if matched {
-				return true, nil
-			}
-
+func match_file(fname string, component subsystem) bool {
+	for _, glob := range component.globs {
+		if glob.Match([]byte(fname)) {
+			return true
 		}
 	}
-	return false, nil
+	return false
 }
 
 func find_maintainer(fname string) {
+	var success bool
+
 	for _, subsystem := range subsystems {
-		matched, err := match_file(fname, subsystem.file)
-		if err != nil {
-			log.Fatalf("match_file failed: %v", err)
-			return
-		}
+		matched := match_file(fname, subsystem)
 		if matched && subsystem.name != "THE REST" {
+			success = true
 			fmt.Println(fname, "is in subsystem",
 				subsystem.name)
-			fmt.Println("Maintainers: ", subsystem.maintainer)
-			return
+			fmt.Println("Maintainers: ", strings.Join(subsystem.maintainer, ", "))
 		}
 	}
-	fmt.Println(fname, "has no subsystem defined in MAINTAINERS")
+	if !success {
+		fmt.Println(fname, "has no subsystem defined in MAINTAINERS")
+	}
 }
 
 func find_unmaintained(fname string) {
+	var success bool
+
 	for _, subsystem := range subsystems {
-		matched, err := match_file(fname, subsystem.file)
-		if err != nil {
-			log.Fatalf("match_file failed: %v", err)
-			return
-		}
+		matched := match_file(fname, subsystem)
 		if matched && subsystem.name != "THE REST" {
+			success = true
 			fmt.Println(fname, "is in subsystem",
 				subsystem.name)
-			return
 		}
 	}
-	fmt.Println(fname, "has no subsystem defined in MAINTAINERS")
+	if !success {
+		fmt.Println(fname, "has no subsystem defined in MAINTAINERS")
+	}
+}
+
+// taken from https://github.com/zyedidia/glob/blob/master/glob.go which is
+// Copyright (c) 2016: Zachary Yedidia.
+// and was published under the MIT "Expat" license.
+//
+// only change: return the string, instead of a compiled golang regex
+func glob_to_regex(glob string) string {
+	regex := ""
+	inGroup := 0
+	inClass := 0
+	firstIndexInClass := -1
+	arr := []byte(glob)
+
+	for i := 0; i < len(arr); i++ {
+		ch := arr[i]
+
+		switch ch {
+		case '\\':
+			i++
+			if i >= len(arr) {
+				regex += "\\"
+			} else {
+				next := arr[i]
+				switch next {
+				case ',':
+					// Nothing
+				case 'Q', 'E':
+					regex += "\\\\"
+				default:
+					regex += "\\"
+				}
+				regex += string(next)
+			}
+		case '*':
+			if inClass == 0 {
+				regex += ".*"
+			} else {
+				regex += "*"
+			}
+		case '?':
+			if inClass == 0 {
+				regex += "."
+			} else {
+				regex += "?"
+			}
+		case '[':
+			inClass++
+			firstIndexInClass = i + 1
+			regex += "["
+		case ']':
+			inClass--
+			regex += "]"
+		case '.', '(', ')', '+', '|', '^', '$', '@', '%':
+			if inClass == 0 || (firstIndexInClass == i && ch == '^') {
+				regex += "\\"
+			}
+			regex += string(ch)
+		case '!':
+			if firstIndexInClass == i {
+				regex += "^"
+			} else {
+				regex += "!"
+			}
+		case '{':
+			inGroup++
+			regex += "("
+		case '}':
+			inGroup--
+			regex += ")"
+		case ',':
+			if inGroup > 0 {
+				regex += "|"
+			} else {
+				regex += ","
+			}
+		default:
+			regex += string(ch)
+		}
+	}
+	return "^" + regex + "$"
+}
+
+var is_email *regexp.Regexp
+
+func extract_maintainer(maintainer string) string {
+	if is_email == nil {
+		is_email = regexp.MustCompile("<[^>]*>")
+	}
+
+	if match := is_email.FindStringSubmatch(maintainer); match != nil {
+		return match[0][1 : len(match[0])-1]
+	}
+	return maintainer
+}
+
+func do_print_gerrit_rules() {
+	for _, subsystem := range subsystems {
+		if len(subsystem.paths) == 0 || len(subsystem.maintainer) == 0 {
+			continue
+		}
+		fmt.Println("#", subsystem.name)
+		for _, path := range subsystem.paths {
+			fmt.Println("[filter \"file:" + path_to_regexstr(path) + "\"]")
+			for _, maint := range subsystem.maintainer {
+				fmt.Println("  reviewer =", extract_maintainer(maint))
+			}
+		}
+		fmt.Println()
+	}
 }
 
 func main() {
-	var files []string
-	var maint bool
-	var debug bool
-	var err error
+	var (
+		files              []string
+		err                error
+		print_gerrit_rules = flag.Bool("print-gerrit-rules", false, "emit the MAINTAINERS rules in a format suitable for Gerrit's reviewers plugin")
+		debug              = flag.Bool("debug", false, "emit additional debug output")
+	)
+	flag.Parse()
 
-	args := os.Args[1:]
+	/* get and build subsystem database */
+	maintainers, err := get_maintainers()
+	if err != nil {
+		log.Fatalf("Oops.")
+		return
+	}
+	build_maintainers(maintainers)
+
+	if *debug {
+		print_maintainers()
+	}
+
+	if *print_gerrit_rules {
+		do_print_gerrit_rules()
+		return
+	}
+
+	args := flag.Args()
 	if len(args) == 0 {
 		/* get the filenames */
 		files, err = get_git_files()
@@ -248,33 +321,15 @@ func main() {
 			log.Fatalf("Oops.")
 			return
 		}
-		maint = false
+		for _, file := range files {
+			find_unmaintained(file)
+		}
 	} else {
 		files = args
-		maint = true
-	}
 
-	maintainers, err := get_maintainers()
-	if err != nil {
-		log.Fatalf("Oops.")
-		return
-	}
-
-	/* build subsystem database */
-	build_maintainers(maintainers)
-
-	if debug {
-		print_maintainers()
-	}
-
-	if maint {
 		/* Find maintainers for each file */
 		for _, file := range files {
 			find_maintainer(file)
-		}
-	} else {
-		for _, file := range files {
-			find_unmaintained(file)
 		}
 	}
 }

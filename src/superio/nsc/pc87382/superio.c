@@ -17,9 +17,7 @@
 #include <arch/io.h>
 #include <device/device.h>
 #include <device/pnp.h>
-#include <console/console.h>
 #include <string.h>
-#include <pc80/keyboard.h>
 #include <stdlib.h>
 #include "pc87382.h"
 
@@ -28,7 +26,7 @@ static void init(struct device *dev)
 	if (!dev->enabled)
 		return;
 
-	switch(dev->path.pnp.device) {
+	switch (dev->path.pnp.device) {
 	case PC87382_DOCK:
 		break;
 
