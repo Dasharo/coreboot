@@ -24,7 +24,7 @@ Releases 4.8.0.x are based on continuous synchronization with official
 ### Added
 - [experimental option for adding microcode update](https://github.com/pcengines/apu2-documentation/blob/master/docs/microcode_patching.md)
 - enabled PCIe ACS and AER capabilities
-- [COM2 redirection runtime configuration]((https://github.com/pcengines/apu2-documentation/blob/master/docs/serial_console.md))
+- [COM2 redirection runtime configuration](https://github.com/pcengines/apu2-documentation/blob/master/docs/serial_console.md)
 
 ### Fixed
 - generating serial number from MAC address of first NIC
