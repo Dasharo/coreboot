@@ -168,9 +168,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	/* Disable SVI2 controller to wait for command completion */
 	val = pci_read_config32(PCI_DEV(0, 0x18, 5), 0x12C);
 	if ( val & (1 << 30 ) ) {
-		printk(BIOS_ALERT, "SVI2 Wait completion disabled\n");
+		printk(BIOS_DEBUG, "SVI2 Wait completion disabled\n");
 	} else {
-		printk(BIOS_ALERT, "Disabling SVI2 Wait completion\n");
+		printk(BIOS_DEBUG, "Disabling SVI2 Wait completion\n");
 		val |= (1 << 30 );
 		pci_write_config32(PCI_DEV(0, 0x18, 5), 0x12C, val );
 	}
