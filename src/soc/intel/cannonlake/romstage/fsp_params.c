@@ -45,8 +45,6 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg, const config_t *config)
 	m_cfg->PcieRpEnableMask = mask;
 	m_cfg->PrmrrSize = config->PrmrrSize;
 	m_cfg->EnableC6Dram = config->enable_c6dram;
-	/* Disable Cpu Ratio Override temporary. */
-	m_cfg->CpuRatio = 0;
 	m_cfg->PcdSerialIoUartNumber = CONFIG_UART_FOR_CONSOLE;
 	/* Disable Vmx if Vt-d is already disabled */
 	if (config->VtdDisable)
@@ -61,6 +59,14 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg, const config_t *config)
 		m_cfg->PchIshEnable = 0;
 	else
 		m_cfg->PchIshEnable = dev->enabled;
+
+	/* If HDA is enabled, enable HDA elements */
+	dev = dev_find_slot(0, PCH_DEVFN_HDA);
+	if (!dev)
+		m_cfg->PchHdaEnable = 0;
+	else
+		m_cfg->PchHdaEnable = dev->enabled;
+
 }
 
 void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)

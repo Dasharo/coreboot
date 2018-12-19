@@ -93,7 +93,7 @@ subdirs-y += $(wildcard src/soc/*/*) $(wildcard src/northbridge/*/*)
 subdirs-y += src/superio
 subdirs-y += $(wildcard src/drivers/*) $(wildcard src/drivers/*/*)
 subdirs-y += src/cpu src/vendorcode
-subdirs-y += util/cbfstool util/sconfig util/nvramtool util/broadcom
+subdirs-y += util/cbfstool util/sconfig util/nvramtool
 subdirs-y += util/futility util/marvell util/bincfg
 subdirs-y += $(wildcard src/arch/*)
 subdirs-y += src/mainboard/$(MAINBOARDDIR)
@@ -120,7 +120,7 @@ $(foreach supported_arch,$(ARCH_SUPPORTED), \
 # values are space separated if using more than one value
 #
 # int-add:        adds an arbitrary length list of integers
-# int-subtract:   subtracts the the second of two integers from the first
+# int-subtract:   subtracts the second of two integers from the first
 # int-multiply:   multiplies an arbitrary length list of integers
 # int-divide:     divides the first integer by the second
 # int-remainder:  arithmetic remainder of the first number divided by the second
@@ -287,7 +287,7 @@ cbfs-files-processor-vsa= \
 # arg1: input
 # arg2: output
 cbfs-files-processor-defconfig= \
-	$(eval $(2): $(1) $(obj)/build.h; \
+	$(eval $(2): $(1) $(obj)/build.h $(objutil)/kconfig/conf; \
 		+printf "    CREATE     $(2) (from $(1))\n"; \
 		printf "\# This image was built using coreboot " > $(2).tmp && \
 		grep "\<COREBOOT_VERSION\>" $(obj)/build.h |cut -d\" -f2 >> $(2).tmp && \

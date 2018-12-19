@@ -217,13 +217,10 @@ uint16_t sb_wideio_size(int index)
  */
 int sb_find_wideio_range(uint16_t start, uint16_t size)
 {
-	uint32_t enable_register;
 	int i, index = WIDEIO_RANGE_ERROR;
 	uint16_t end, current_size, start_wideio, end_wideio;
 
 	end = start + size;
-	enable_register = pci_read_config32(SOC_LPC_DEV,
-					   LPC_IO_OR_MEM_DECODE_ENABLE);
 	for (i = 0; i < TOTAL_WIDEIO_PORTS; i++) {
 		current_size = sb_wideio_size(i);
 		if (current_size == 0)
@@ -414,8 +411,8 @@ static uintptr_t sb_spibase(void)
 
 	/* Make sure the base address is predictable */
 	base = pci_read_config32(SOC_LPC_DEV, SPIROM_BASE_ADDRESS_REGISTER);
-	enables = base & 0xf;
-	base &= ~0x3f;
+	enables = base & SPI_PRESERVE_BITS;
+	base &= ~(SPI_PRESERVE_BITS | SPI_BASE_RESERVED);
 
 	if (!base) {
 		base = SPI_BASE_ADDRESS;
@@ -756,8 +753,8 @@ static void sb_init_acpi_ports(void)
 
 static uint16_t reset_pm1_status(void)
 {
-	uint16_t pm1_sts = inw(ACPI_PM1_STS);
-	outw(pm1_sts, ACPI_PM1_STS);
+	uint16_t pm1_sts = acpi_read16(MMIO_ACPI_PM1_STS);
+	acpi_write16(MMIO_ACPI_PM1_STS, pm1_sts);
 	return pm1_sts;
 }
 
@@ -812,12 +809,12 @@ static void sb_save_sws(uint16_t pm1_status)
 	if (sws == NULL)
 		return;
 	sws->pm1_sts = pm1_status;
-	sws->pm1_en = inw(ACPI_PM1_EN);
-	reg32 = inl(ACPI_GPE0_STS);
-	outl(ACPI_GPE0_STS, reg32);
+	sws->pm1_en = acpi_read16(MMIO_ACPI_PM1_EN);
+	reg32 = acpi_read32(MMIO_ACPI_GPE0_STS);
+	acpi_write32(MMIO_ACPI_GPE0_STS, reg32);
 	sws->gpe0_sts = reg32;
-	sws->gpe0_en = inl(ACPI_GPE0_EN);
-	reg16 = inw(ACPI_PM1_CNT_BLK);
+	sws->gpe0_en = acpi_read32(MMIO_ACPI_GPE0_EN);
+	reg16 = acpi_read16(MMIO_ACPI_PM1_CNT_BLK);
 	reg16 &= SLP_TYP;
 	sws->wake_from = reg16 >> SLP_TYP_SHIFT;
 }

@@ -40,11 +40,6 @@ static int delegate = 0
 
 void mstatus_init(void)
 {
-	uintptr_t ms = 0;
-
-	ms = INSERT_FIELD(ms, MSTATUS_FS, 3);
-	write_csr(mstatus, ms);
-
 	// clear any pending timer interrupts.
 	clear_csr(mip,  MIP_STIP | MIP_SSIP);
 
@@ -59,11 +54,6 @@ void mstatus_init(void)
 		set_csr(medeleg, delegate);
 	}
 
-	// Enable all user/supervisor-mode counters using
-	// v1.10 register addresses.
-	// They moved from the earlier spec.
-	// Until we trust our toolchain use the hardcoded constants.
-	// These were in flux and people who get the older toolchain
-	// will have difficult-to-debug failures.
-	write_csr(/*mcounteren*/0x306, 7);
+	// Enable all user/supervisor-mode counters
+	write_csr(mcounteren, 7);
 }

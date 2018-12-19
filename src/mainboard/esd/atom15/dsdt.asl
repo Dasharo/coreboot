@@ -22,12 +22,13 @@
 #define INCLUDE_LPSS 1
 
 
+#include <arch/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
 	0x02,		// DSDT revision: ACPI v2.0 and up
-	"COREv4",	// OEM id
-	"COREBOOT",	// OEM table id
+	OEM_ID,
+	ACPI_TABLE_CREATOR,
 	0x20110725	// OEM revision
 )
 {
@@ -37,7 +38,7 @@ DefinitionBlock(
 	// global NVS and variables
 	#include <soc/intel/fsp_baytrail/acpi/globalnvs.asl>
 
-	#include <soc/intel/fsp_baytrail/acpi/cpu.asl>
+	#include <cpu/intel/common/acpi/cpu.asl>
 
 	Scope (\_SB) {
 		Device (PCI0)

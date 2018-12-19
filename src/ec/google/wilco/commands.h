@@ -26,10 +26,14 @@ enum {
 	KB_POWER_STATUS = 0x05,
 	/* Inform the EC aboout the reason host is turning off */
 	KB_POWER_OFF = 0x08,
+	/* Control wireless radios */
+	KB_RADIO_CONTROL = 0x2b,
 	/* Save PS/2 data before S3 suspend */
 	KB_SAVE = 0x2f,
 	/* Restore PS/2 data after S3 resume */
 	KB_RESTORE = 0x30,
+	/* Manage the EC control of camera power */
+	KB_CAMERA = 0x33,
 	/* Retrieve information about the EC */
 	KB_EC_INFO = 0x38,
 	/* Set ACPI mode on or off */
@@ -60,6 +64,23 @@ enum ec_audio_mute {
 	AUDIO_MUTE = 0,		/* Mute speakers immediately */
 	AUDIO_UNMUTE_125MS,	/* Unmute in 125ms */
 };
+
+enum ec_radio {
+	RADIO_WIFI = 0x02,
+};
+
+enum ec_camera {
+	CAMERA_ON = 0,
+	CAMERA_OFF
+};
+
+/**
+ * wilco_ec_radio_control() - Control wireless radios.
+ * @ec_radio: Wireless radio type.
+ * @state: Turn radio on or off.
+ * Return: 0 if successful or negative error code on failure.
+ */
+int wilco_ec_radio_control(enum ec_radio radio, uint8_t state);
 
 /*
  * EC Information

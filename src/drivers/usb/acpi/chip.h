@@ -46,9 +46,17 @@ struct drivers_usb_acpi_config {
 	 */
 	enum acpi_upc_type type;
 
-	/* Define a custom physical location for the port */
+	/* Group peer ports */
+	struct acpi_pld_group group;
+
+	/*
+	 * Define a custom physical location for the port.
+	 * If enabled, this takes precedence over the 'group' field.
+	 */
 	bool use_custom_pld;
 	struct acpi_pld custom_pld;
+
+	struct acpi_gpio reset_gpio;
 };
 
 #endif /* __USB_ACPI_CHIP_H__ */

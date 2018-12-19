@@ -149,7 +149,7 @@ func find_maintainer(fname string) {
 
 	for _, subsystem := range subsystems {
 		matched := match_file(fname, subsystem)
-		if matched && subsystem.name != "THE REST" {
+		if matched {
 			success = true
 			fmt.Println(fname, "is in subsystem",
 				subsystem.name)
@@ -166,7 +166,7 @@ func find_unmaintained(fname string) {
 
 	for _, subsystem := range subsystems {
 		matched := match_file(fname, subsystem)
-		if matched && subsystem.name != "THE REST" {
+		if matched {
 			success = true
 			fmt.Println(fname, "is in subsystem",
 				subsystem.name)
@@ -278,7 +278,7 @@ func do_print_gerrit_rules() {
 		}
 		fmt.Println("#", subsystem.name)
 		for _, path := range subsystem.paths {
-			fmt.Println("[filter \"file:" + path_to_regexstr(path) + "\"]")
+			fmt.Println("[filter \"file:\\\"" + path_to_regexstr(path) + "\\\"\"]")
 			for _, maint := range subsystem.maintainer {
 				fmt.Println("  reviewer =", extract_maintainer(maint))
 			}

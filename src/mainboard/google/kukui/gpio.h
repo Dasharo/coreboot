@@ -20,6 +20,7 @@
 
 #define EC_IRQ		GPIO(PERIPHERAL_EN1)
 #define EC_IN_RW	GPIO(PERIPHERAL_EN14)
+#define CR50_IRQ	GPIO(PERIPHERAL_EN3)
 
 void setup_chromeos_gpios(void);
 

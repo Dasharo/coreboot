@@ -54,6 +54,8 @@ config MAINBOARD_DIR
 
 config VGA_BIOS_FILE
 	string
+	default "3rdparty/blobs/mainboard/google/kahlee/aleena/VBIOS_015_049_000_018.bin" if BOARD_GOOGLE_ALEENA
+	default "3rdparty/blobs/mainboard/google/kahlee/liara/VBIOS_BRT39865.001.bin" if BOARD_GOOGLE_LIARA
 	default "3rdparty/blobs/mainboard/google/kahlee/VBIOS_015_049_000_017.bin"
 
 config VARIANT_DIR
@@ -70,7 +72,7 @@ config MAINBOARD_PART_NUMBER
 
 config DEVICETREE
 	string
-	default "variants/${CONFIG_VARIANT_DIR}/devicetree.cb"
+	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config MAINBOARD_FAMILY
 	string

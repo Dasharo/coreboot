@@ -197,7 +197,7 @@ config SOC_INTEL_COMMON_BLOCK_GSPI_CLOCK_MHZ
 
 config DRIVERS_I2C_DESIGNWARE_CLOCK_MHZ
 	int
-	default 133
+	default 216
 
 config SOC_INTEL_COMMON_BLOCK_GSPI_MAX
 	int
@@ -230,7 +230,7 @@ config VBOOT
 
 config C_ENV_BOOTBLOCK_SIZE
 	hex
-	default 0x8000
+	default 0xC000
 
 config CBFS_SIZE
 	hex

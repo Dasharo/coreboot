@@ -136,6 +136,7 @@ Maintainers List (try to look for most precise areas first)
 RISC-V ARCHITECTURE
 M:	Ronald Minnich <rminnich@gmail.com>
 M:	Jonathan Neuschäfer <j.neuschaefer@gmx.net>
+R:	Philipp Hug <philipp@hug.cx>
 S:	Maintained
 F:	src/arch/riscv/
 F:	src/soc/sifive/
@@ -144,11 +145,11 @@ F:	src/mainboard/emulation/*-riscv/
 F:	src/mainboard/sifive/
 F:	util/riscv/
 
-POWER8 ARCHITECTURE
+PPC64 ARCHITECTURE
 M:	Ronald Minnich <rminnich@gmail.com>
 M:	Timothy Pearson <tpearson@raptorengineeringinc.com>
 S:	Maintained
-F:	src/arch/power8/
+F:	src/arch/ppc64/
 F:	src/cpu/qemu-power8/
 F:	src/mainboard/emulation/qemu-power8/
 
@@ -162,6 +163,11 @@ M:	Alexander Couzens <lynxis@fe80.eu>
 M:	Patrick Rudolph <siro@das-labor.org>
 S:	Maintained
 F:	src/mainboard/lenovo/
+
+GETAC P470 MAINBOARD
+M:	Patrick Georgi <patrick@georgi.software>
+S:	Maintained
+F:	src/mainboard/getac/p470
 
 INTEL PINEVIEW CHIPSET
 M:	Damien Zammit <damien@zamaudio.com>
@@ -183,10 +189,54 @@ M:	Damien Zammit <damien@zamaudio.com>
 S:	Odd Fixes
 F:	src/mainboard/gigabyte/ga-g41m-es2l
 
+GIGABYTE GA-H61M-S2PV MAINBOARD
+M:	Angel Pons <th3fanbus@gmail.com>
+S:	Maintained
+F:	src/mainboard/gigabyte/ga-h61m-s2pv
+
 GOOGLE PANTHER MAINBOARD
 M:	Stefan Reinauer <stefan.reinauer@coreboot.org>
 S:	Supported
 F:	src/mainboard/google/panther/
+
+GOOGLE MAINBOARDS (Intel-based, legacy/inactive)
+M:	Matt DeVillier <MrChromebox@gmail.com>
+S:	Maintained
+F:	src/mainboard/google/auron/
+F:	src/mainboard/google/beltino/
+F:	src/mainboard/google/butterfly/
+F:	src/mainboard/google/cyan/
+F:	src/mainboard/google/glados/
+F:	src/mainboard/google/jecht/
+F:	src/mainboard/google/link/
+F:	src/mainboard/google/parrot/
+F:	src/mainboard/google/slippy/
+F:	src/mainboard/google/stout/
+
+OCP MAINBOARDS
+M:	Philipp Deppenwiese <zaolin.daisuki@gmail.com>
+M:	Patrick Rudolph <patrick.rudolph@9elements.com>
+S:	Supported
+F:	src/mainboard/ocp/wedge100s/
+F:	src/mainboard/ocp/monolake/
+
+OPENCELLULAR MAINBOARDS
+M:	Philipp Deppenwiese <zaolin.daisuki@gmail.com>
+M:	Patrick Rudolph <patrick.rudolph@9elements.com>
+S:	Supported
+F:	src/mainboard/opencellular/rotundu/
+F:	src/mainboard/opencellular/elgon/
+
+PURISM MAINBOARDS
+M:	Matt DeVillier <matt.devillier@puri.sm>
+S:	Supported
+F:	src/mainboard/purism
+
+SAMSUNG CHROMEOS MAINBOARDS
+M:	Matt DeVillier <MrChromebox@gmail.com>
+S:	Maintained
+F:	src/mainboard/samsung/lumpy/
+F:	src/mainboard/samsung/stumpy/
 
 INTEL MINNOWBOARD MAX MAINBOARD
 M:	Huang Jin <huang.jin@intel.com>
@@ -197,6 +247,7 @@ F:	src/mainboard/intel/minnowmax/
 INTEL FSP BAYTRAIL CHIP & CRBs
 M:	Huang Jin <huang.jin@intel.com>
 M:	York Yang <york.yang@intel.com>
+M:	Philipp Deppenwiese <zaolin.daisuki@gmail.com>
 S:	Supported
 F:	src/soc/intel/fsp_baytrail/
 F:	src/vendorcode/intel/fsp1_0/baytrail/
@@ -205,6 +256,7 @@ F:	src/mainboard/intel/bayleybay_fsp/
 
 INTEL FSP BROADWELL-DE SOC & CRB
 M:	York Yang <york.yang@intel.com>
+M:	Philipp Deppenwiese <zaolin.daisuki@gmail.com>
 S:	Supported
 F:	src/soc/intel/fsp_broadwell_de/
 F:	src/vendorcode/intel/fsp1_0/broadwell_de/
@@ -234,8 +286,10 @@ F:	src/mainboard/intel/mohonpeak/
 INTEL FSP 1.0
 M:	Huang Jin <huang.jin@intel.com>
 M:	York Yang <york.yang@intel.com>
+M:	Philipp Deppenwiese <zaolin.daisuki@gmail.com>
 S:	Supported
 F:	src/drivers/intel/fsp1_0/
+F:	src/vendorcode/intel/fsp1_0/broadwell_de/
 
 INTEL FSP 1.1
 M:	Lee Leahy <leroy.p.leahy@intel.com>
@@ -265,6 +319,16 @@ M:	Andrey Petrov <andrey.petrov@gmail.com>
 S:	Maintained
 F:	src/soc/intel/apollolake/
 
+ASROCK G41C-GS MAINBOARD & VARIANTS
+M:	Angel Pons <th3fanbus@gmail.com>
+S:	Maintained
+F:	src/mainboard/asrock/g41c-gs/
+
+ASROCK H81M-HDS MAINBOARD
+M:	Tristan Corrick <tristan@corrick.kiwi>
+S:	Maintained
+F:	src/mainboard/asrock/h81m-hds/
+
 ASUS KFSN4-DRE & KFSN4-DRE_K8 MAINBOARDS
 M:	Timothy Pearson <tpearson@raptorengineeringinc.com>
 S:	Supported
@@ -281,11 +345,38 @@ M:	Timothy Pearson <tpearson@raptorengineeringinc.com>
 S:	Supported
 F:	src/mainboard/asus/kgpe-d16/
 
+ASUS MAXIMUS IV GENE-Z MAINBOARD
+M:	Tristan Corrick <tristan@corrick.kiwi>
+S:	Maintained
+F:	src/mainboard/asus/maximus_iv_gene-z/
+
+ASUS P5QC PRO MAINBOARD & VARIANTS
+M:	Angel Pons <th3fanbus@gmail.com>
+S:	Maintained
+F:	src/mainboard/asus/p5qc/
+
+ASUS P8H61-M LX MAINBOARD
+M:	Tristan Corrick <tristan@corrick.kiwi>
+S:	Maintained
+F:	src/mainboard/asus/p8h61-m_lx/
+
+ASUS P8H61-M PRO MAINBOARD
+M:	Angel Pons <th3fanbus@gmail.com>
+S:	Maintained
+F:	src/mainboard/asus/p8h61-m_pro/
+
 PC ENGINES ALL MAINBOARDS
 M:	Piotr Król <piotr.krol@3mdeb.com>
 M:	Michał Żygowski <michal.zygowski@3mdeb.com>
 S:	Supported
 F:	src/mainboard/pcengines/
+
+SIEMENS MC_xxxx MAINBOARDS
+M:	Werner Zeh <werner.zeh@siemens.com>
+S:	Maintained
+F:	src/mainboard/siemens/mc_apl1/
+F:	src/mainboard/siemens/mc_bdx1/
+F:	src/mainboard/siemens/mc_tcu3/
 
 AMD FAMILY10H & FAMILY15H (NON-AGESA) CPUS & NORTHBRIDGE
 M:	Timothy Pearson <tpearson@raptorengineeringinc.com>
@@ -349,12 +440,10 @@ S:	Orphaned
 F:	src/cpu/allwinner/
 F:	src/cpu/armltd/
 F:	src/cpu/ti/
-F:	src/soc/broadcom/
 F:	src/soc/marvell/
 F:	src/soc/qualcomm/
 F:	src/soc/samsung/
 F:	util/arm_boot_tools/
-F:	util/broadcom/
 F:	util/exynos/
 F:	util/ipqheader/
 
@@ -484,16 +573,22 @@ M:	Stefan Reinauer <stefan.reinauer@coreboot.org>
 M:	Martin Roth <gaumless@gmail.com>
 F:	payloads/external
 
+LINUXBOOT PAYLOAD INTEGRATION
+M:	Philipp Deppenwiese <zaolin.daisuki@gmail.com>
+M:	Marcello Sylvester Bauer <info@marcellobauer.com>
+S:	Supported
+F:	payloads/external/LinuxBoot
+
 VERIFIED BOOT 2
 M:	Aaron Durbin <adurbin@chromium.org>
-F:	src/vendorcode/google/chromeos/vboot2/
+F:	src/security/vboot/
 
 TPM SUPPORT
 M:	Philipp Deppenwiese <zaolin.daisuki@gmail.com>
+S:	Supported
 F:	src/drivers/*/tpm/
-F:	src/security/tpm12/
-F:	src/security/tpm20/
-F:	util/tss-generator/
+F:	src/security/vboot/vboot_crtm.*
+F:	src/security/tpm
 
 DOCKER
 M:	Martin Roth <gaumless@gmail.com>
@@ -534,13 +629,6 @@ MISSING: DMP / QEMU-X86
 MISSING: ELOG
 
 MISSING: SPI
-
-THE REST
-M:	Stefan Reinauer <stefan.reinauer@coreboot.org>
-T:	git https://review.coreboot.org/coreboot
-S:	Buried alive in mainboards
-F:	*
-F:	*/
 
 # *** Infrastructure Owners***
 # This is intended to let people know who they should contact for issues with various infrastructure pieces.

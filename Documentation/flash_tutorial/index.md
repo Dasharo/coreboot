@@ -63,15 +63,21 @@ possible methods:
 **WARNING:** Using the wrong method or accidentally using the wrong pinout might
   permanently damage your hardware!
 
+**WARNING:** Do not rely on dots *painted* on flash ICs to orient the pins!
+Any dots painted on flash ICs may only indicate if they've been tested.  Dots
+that appear in datasheets to indicate pin 1 correspond to some kind of physical
+marker, such as a drilled hole, or one side being more flat than the other.
+
 ## Using a layout file
 On platforms where the flash IC is shared with other components you might want
 to write only a part of the flash IC. On Intel for example there are IFD, ME and
 GBE which don't need to be updated to install coreboot.
 To make [flashrom] only write the *bios* region, leaving Intel ME and Intel IFD
-untouched, you can use a layout file, which can be created using ifdtool
+untouched, you can use a layout file, which can be created with ifdtool and a backup
+of the original firmware.
 
 ```bash
-ifdtool -f rom.layout coreboot.rom
+ifdtool -f rom.layout backup.rom
 ```
 
 and looks similar to:

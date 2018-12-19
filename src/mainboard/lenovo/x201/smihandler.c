@@ -20,6 +20,7 @@
 #include <southbridge/intel/ibexpeak/nvs.h>
 #include <southbridge/intel/ibexpeak/pch.h>
 #include <southbridge/intel/ibexpeak/me.h>
+#include <southbridge/intel/common/finalize.h>
 #include <northbridge/intel/nehalem/nehalem.h>
 #include <cpu/intel/model_2065x/model_2065x.h>
 #include <ec/acpi/ec.h>
@@ -177,8 +178,6 @@ int mainboard_smi_apmc(u8 data)
 
 void mainboard_smi_sleep(u8 slp_typ)
 {
-	h8_usb_always_on();
-
 	if (slp_typ == 3) {
 		u8 ec_wake = ec_read(0x32);
 		/* If EC wake events are enabled, enable wake on EC WAKE GPE.  */

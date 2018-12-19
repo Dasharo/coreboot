@@ -15,6 +15,7 @@
 
 #include <bootstate.h>
 #include <console/console.h>
+#include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <gpio.h>
@@ -33,6 +34,7 @@ void variant_mainboard_final(void)
 {
 	int status;
 	struct device *dev = NULL;
+	uint16_t cmd;
 
 	/*
 	 * Set up the DP2LVDS converter.
@@ -49,11 +51,6 @@ void variant_mainboard_final(void)
 	 * INTA#->PIRQB#, INTB#->PIRQC#, INTC#->PIRQD#, INTD#-> PIRQA#
 	 */
 	pcr_write16(PID_ITSS, 0x314c, 0x0321);
-
-	/* Disable clock outputs 1-5 (CLKOUT) for XIO2001 PCIe to PCI Bridge. */
-	dev = dev_find_device(PCI_VENDOR_ID_TI, PCI_DEVICE_ID_TI_XIO2001, 0);
-	if (dev)
-		pci_write_config8(dev, 0xd8, 0x3e);
 
 	/* Enable CLKRUN_EN for power gating LPC */
 	lpc_enable_pci_clk_cntl();
@@ -73,6 +70,30 @@ void variant_mainboard_final(void)
 	 * The value 0x4a sets the swing level to 0.58 V.
 	 */
 	pcr_rmw32(PID_MODPHY, TX_DWORD3, (0x00 << 16), (0x4a << 16));
+
+	/* Set Master Enable for on-board PCI device. */
+	dev = dev_find_device(PCI_VENDOR_ID_SIEMENS, 0x403e, 0);
+	if (dev) {
+		cmd = pci_read_config16(dev, PCI_COMMAND);
+		cmd |= PCI_COMMAND_MASTER;
+		pci_write_config16(dev, PCI_COMMAND, cmd);
+
+		/* Disable clock outputs 0-3 (CLKOUT) for upstream XIO2001 PCIe
+		 * to PCI Bridge. */
+		struct device *parent = dev->bus->dev;
+		if (parent && parent->device == PCI_DEVICE_ID_TI_XIO2001)
+			pci_write_config8(parent, 0xd8, 0x0f);
+	}
+
+	/* Disable clock outputs 1-5 (CLKOUT) for another XIO2001 PCIe to PCI
+	 * Bridge on this mainboard.
+	 */
+	dev = dev_find_device(PCI_VENDOR_ID_SIEMENS, 0x403f, 0);
+	if (dev) {
+		struct device *parent = dev->bus->dev;
+		if (parent && parent->device == PCI_DEVICE_ID_TI_XIO2001)
+			pci_write_config8(parent, 0xd8, 0x3e);
+	}
 }
 
 static void wait_for_legacy_dev(void *unused)

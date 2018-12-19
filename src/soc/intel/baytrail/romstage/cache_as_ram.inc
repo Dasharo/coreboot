@@ -32,7 +32,6 @@
 #define CODE_CACHE_SIZE  _ALIGN_UP_POW2(___FMAP__COREBOOT_SIZE)
 #define CODE_CACHE_BASE  (-CODE_CACHE_SIZE)
 #define CODE_CACHE_MASK  (~(CODE_CACHE_SIZE - 1))
-#define CPU_PHYSMASK_HI  ((1 << (CONFIG_CPU_ADDR_BITS - 32)) - 1)
 
 #define NoEvictMod_MSR 0x2e0
 #define BBL_CR_CTL3_MSR 0x11e
@@ -68,27 +67,45 @@ wait_for_sipi:
 	rdmsr
 	movzx	%al, %ebx
 	/* First variable MTRR. */
-	movl	$0x200, %ecx
+	movl	$MTRR_PHYS_BASE(0), %ecx
 	xorl	%eax, %eax
 	xorl	%edx, %edx
-	1:
+1:
 	wrmsr
 	inc	%ecx
 	dec	%ebx
 	jnz	1b
 
-	/* Zero out all fixed range and variable range MTRRs. */
-	movl	$fixed_mtrr_table, %esi
-	movl	$((fixed_mtrr_table_end - fixed_mtrr_table) >> 1), %edi
-	xorl	%eax, %eax
-	xorl	%edx, %edx
-	1:
-	movw	(%esi), %bx
-	movzx	%bx, %ecx
+	/* Clear/disable fixed MTRRs */
+	mov	$fixed_mtrr_list_size, %ebx
+	xor	%eax, %eax
+	xor	%edx, %edx
+
+clear_fixed_mtrr:
+	add	$-2, %ebx
+	movzwl	fixed_mtrr_list(%ebx), %ecx
 	wrmsr
-	add	$2, %esi
-	dec	%edi
-	jnz	1b
+	jnz	clear_fixed_mtrr
+
+	/* Determine CPU_ADDR_BITS and load PHYSMASK high word to %edx. */
+	movl	$0x80000008, %eax
+	cpuid
+	movb	%al, %cl
+	sub	$32, %cl
+	movl	$1, %edx
+	shl	%cl, %edx
+	subl	$1, %edx
+
+	/* Preload high word of address mask (in %edx) for Variable
+	 * MTRRs 0 and 1.
+	 */
+addrsize_set_high:
+	xorl	%eax, %eax
+	movl	$MTRR_PHYS_MASK(0), %ecx
+	wrmsr
+	movl	$MTRR_PHYS_MASK(1), %ecx
+	wrmsr
+
 
 	post_code(0x23)
 	/* Set Cache-as-RAM base address. */
@@ -100,8 +117,8 @@ wait_for_sipi:
 	post_code(0x24)
 	/* Set Cache-as-RAM mask. */
 	movl	$(MTRR_PHYS_MASK(0)), %ecx
+	rdmsr
 	movl	$(~(CACHE_AS_RAM_SIZE - 1) | MTRR_PHYS_MASK_VALID), %eax
-	movl	$CPU_PHYSMASK_HI, %edx
 	wrmsr
 
 	post_code(0x25)
@@ -111,9 +128,9 @@ wait_for_sipi:
 	xorl	%edx, %edx
 	wrmsr
 
-	movl	$(MTRR_PHYS_MASK(1)), %ecx
-	movl	$(CODE_CACHE_MASK | MTRR_PHYS_MASK_VALID), %eax
-	movl	$CPU_PHYSMASK_HI, %edx
+	movl	$MTRR_PHYS_MASK(1), %ecx
+	rdmsr
+	movl	$(~(CACHE_ROM_SIZE - 1) | MTRR_PHYS_MASK_VALID), %eax
 	wrmsr
 
 	/* Enable MTRR. */
@@ -133,7 +150,7 @@ wait_for_sipi:
 	post_code(0x27)
 
 	/* Enable cache (CR0.CD = 0, CR0.NW = 0). */
-        movl	%cr0, %eax
+	movl	%cr0, %eax
 	andl	$(~(CR0_CacheDisable | CR0_NoWriteThrough)), %eax
 	invd
 	movl	%eax, %cr0
@@ -180,102 +197,24 @@ before_romstage:
 	post_code(0x2a)
 	/* Call romstage.c main function. */
 	call	romstage_main
-	/* Save return value from romstage_main. It contains the stack to use
-	 * after cache-as-ram is torn down. It also contains the information
-	 * for setting up MTRRs. */
-	movl	%eax, %ebx
 
-	post_code(0x2b)
-
-	/* Disable cache. */
-	movl	%cr0, %eax
-	orl	$CR0_CacheDisable, %eax
-	movl	%eax, %cr0
-
-	post_code(0x2c)
-
-	/* Disable MTRR. */
-	movl	$MTRR_DEF_TYPE_MSR, %ecx
-	rdmsr
-	andl	$(~MTRR_DEF_TYPE_EN), %eax
-	wrmsr
-
-	invd
-
-	post_code(0x2d)
-
-	/* Disable the no eviction run state */
-	movl	$NoEvictMod_MSR, %ecx
-	rdmsr
-	andl	$~2, %eax
-	wrmsr
-
-	/* Disable the no eviction mode */
-	rdmsr
-	andl    $~1, %eax
-	wrmsr
-
-	post_code(0x2e)
-
-	/* Setup stack as indicated by return value from romstage_main(). */
-	movl	%ebx, %esp
-
-	/* Get number of MTRRs. */
-	popl	%ebx
-	movl	$MTRR_PHYS_BASE(0), %ecx
-1:
-	testl	%ebx, %ebx
-	jz	1f
-
-	/* Low 32 bits of MTRR base. */
-	popl	%eax
-	/* Upper 32 bits of MTRR base. */
-	popl	%edx
-	/* Write MTRR base. */
-	wrmsr
-	inc	%ecx
-	/* Low 32 bits of MTRR mask. */
-	popl	%eax
-	/* Upper 32 bits of MTRR mask. */
-	popl	%edx
-	/* Write MTRR mask. */
-	wrmsr
-	inc	%ecx
-
-	dec	%ebx
-	jmp	1b
-1:
-	post_code(0x2f)
-
-	/* And enable cache again after setting MTRRs. */
-	movl	%cr0, %eax
-	andl	$~(CR0_CacheDisable | CR0_NoWriteThrough), %eax
-	movl	%eax, %cr0
-
-	post_code(0x30)
-
-	/* Enable MTRR. */
-	movl	$MTRR_DEF_TYPE_MSR, %ecx
-	rdmsr
-	orl	$MTRR_DEF_TYPE_EN, %eax
-	wrmsr
-
-	post_code(0x31)
-
-__main:
-	post_code(POST_PREPARE_RAMSTAGE)
-	cld			/* Clear direction flag. */
-	call	romstage_after_car
+	/* Should never see this postcode */
+	post_code(POST_DEAD_CODE)
 
 .Lhlt:
-	post_code(POST_DEAD_CODE)
 	hlt
 	jmp	.Lhlt
 
-/* Fixed MTRRs */
-fixed_mtrr_table:
-	.word 0x250, 0x258, 0x259
-	.word 0x268, 0x269, 0x26A
-	.word 0x26B, 0x26C, 0x26D
-	.word 0x26E, 0x26F
-fixed_mtrr_table_end:
+fixed_mtrr_list:
+	.word	MTRR_FIX_64K_00000
+	.word	MTRR_FIX_16K_80000
+	.word	MTRR_FIX_16K_A0000
+	.word	MTRR_FIX_4K_C0000
+	.word	MTRR_FIX_4K_C8000
+	.word	MTRR_FIX_4K_D0000
+	.word	MTRR_FIX_4K_D8000
+	.word	MTRR_FIX_4K_E0000
+	.word	MTRR_FIX_4K_E8000
+	.word	MTRR_FIX_4K_F0000
+	.word	MTRR_FIX_4K_F8000
+fixed_mtrr_list_size = . - fixed_mtrr_list

@@ -7,9 +7,11 @@ subdirs-y += ../../../cpu/x86/smm
 subdirs-y += ../../../cpu/x86/tsc
 subdirs-y += ../../../cpu/intel/microcode
 subdirs-y += ../../../cpu/intel/turbo
+subdirs-y += ../../../cpu/intel/common
 
 ramstage-y += memmap.c
 romstage-y += memmap.c
+postcar-y += memmap.c
 ramstage-y += tsc_freq.c
 romstage-y += tsc_freq.c
 smm-y += tsc_freq.c
@@ -20,6 +22,7 @@ ramstage-y += gfx.c
 ramstage-y += iosf.c
 romstage-y += iosf.c
 smm-y += iosf.c
+postcar-y += iosf.c
 ramstage-y += northcluster.c
 ramstage-y += ramstage.c
 ramstage-y += gpio.c
@@ -50,6 +53,8 @@ ramstage-y += hda.c
 
 # Remove as ramstage gets fleshed out
 ramstage-y += placeholders.c
+
+postcar-y += ../../../cpu/intel/car/non-evict/exit_car.S
 
 cpu_microcode_bins += 3rdparty/blobs/soc/intel/baytrail/microcode.bin
 

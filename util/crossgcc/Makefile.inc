@@ -13,7 +13,7 @@
 ## GNU General Public License for more details.
 ##
 
-TOOLCHAIN_ARCHES := i386 x64 arm aarch64 mips riscv power8 nds32le
+TOOLCHAIN_ARCHES := i386 x64 arm aarch64 mips riscv ppc64 nds32le
 
 help_toolchain help::
 	@echo  '*** Toolchain targets ***'
@@ -28,6 +28,7 @@ help_toolchain help::
 	@echo  '  crosstools-ARCH - Build cross-compiler with GDB for specific architecture'
 	@echo  '  ARCH can be "$(subst $(spc),"$(comma) ",$(TOOLCHAIN_ARCHES))"'
 	@echo  '  Use "make [target] CPUS=#" to build toolchain using multiple cores'
+	@echo  '  Use "make [target] DEST=some/path" to install toolchain there'
 	@echo
 
 # For the toolchain builds, use CPUS=x to use multiple processors to build

@@ -5,7 +5,7 @@ choice
 	default SEABIOS_STABLE
 
 config SEABIOS_STABLE
-	bool "1.11.2"
+	bool "1.12.0"
 	help
 	  Stable SeaBIOS version
 config SEABIOS_MASTER
@@ -54,7 +54,7 @@ config SEABIOS_THREAD_OPTIONROMS
 config SEABIOS_VGA_COREBOOT
 	prompt "Include generated option rom that implements legacy VGA BIOS compatibility"
 	default y if !VENDOR_EMULATION
-	depends on !(VGA_BIOS || VGA_ROM_RUN) && (VGA_TEXT_FRAMEBUFFER || LINEAR_FRAMEBUFFER)
+	depends on !VGA_ROM_RUN && (VGA_TEXT_FRAMEBUFFER || LINEAR_FRAMEBUFFER)
 	bool
 	help
 	  coreboot can initialize the GPU of some mainboards.

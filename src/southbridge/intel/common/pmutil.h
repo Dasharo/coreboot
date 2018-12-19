@@ -20,10 +20,20 @@
 #include <cpu/x86/smm.h>
 
 #define D31F0_PMBASE		0x40
+#define D31F0_GEN_PMCON_1	0xa0
+#define   SMI_LOCK		(1 << 4)
+#define D31F0_GEN_PMCON_2	0xa2
 #define D31F0_GEN_PMCON_3	0xa4
 #define   RTC_BATTERY_DEAD		(1 << 2)
 #define   RTC_POWER_FAILED		(1 << 1)
 #define   SLEEP_AFTER_POWER_FAIL	(1 << 0)
+#define D31F0_GEN_PMCON_LOCK	0xa6
+#define   ACPI_BASE_LOCK	(1 << 1)
+#define   SLP_STR_POL_LOCK	(1 << 2)
+#define D31F0_ETR3		0xac
+#define   ETR3_CWORWRE		(1 << 18)
+#define   ETR3_CF9GR		(1 << 20)
+#define   ETR3_CF9LOCK		(1 << 31)
 #define D31F0_GPIO_ROUT		0xb8
 #define  GPI_DISABLE		0x00
 #define  GPI_IS_SMI		0x01
@@ -63,8 +73,14 @@
 #define LV2		0x14
 #define LV3		0x15
 #define LV4		0x16
+#if IS_ENABLED(CONFIG_SOUTHBRIDGE_INTEL_I82801GX)
+#define PM2_CNT		0x20 // mobile only
+#define GPE0_STS	0x28
+#else
 #define PM2_CNT		0x50 // mobile only
 #define GPE0_STS	0x20
+#endif /* IS_ENABLED(CONFIG_SOUTHBRIDGE_INTEL_I82801GX) */
+#define   USB4_STS	(1 << 14) /* i82801gx only */
 #define   PME_B0_STS	(1 << 13)
 #define   PME_STS	(1 << 11)
 #define   BATLOW_STS	(1 << 10)
@@ -74,7 +90,11 @@
 #define   TCOSCI_STS	(1 << 6)
 #define   SWGPE_STS	(1 << 2)
 #define   HOT_PLUG_STS	(1 << 1)
+#if IS_ENABLED(CONFIG_SOUTHBRIDGE_INTEL_I82801GX)
+#define GPE0_EN		0x2c
+#else
 #define GPE0_EN		0x28
+#endif /* IS_ENABLED(CONFIG_SOUTHBRIDGE_INTEL_I82801GX) */
 #define   PME_B0_EN	(1 << 13)
 #define   PME_EN	(1 << 11)
 #define   TCOSCI_EN	(1 << 6)

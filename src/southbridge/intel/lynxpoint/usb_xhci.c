@@ -23,7 +23,11 @@
 
 typedef struct southbridge_intel_lynxpoint_config config_t;
 
-static u8 *usb_xhci_mem_base(device_t dev)
+#ifdef __SIMPLE_DEVICE__
+static u8 *usb_xhci_mem_base(pci_devfn_t dev)
+#else
+static u8 *usb_xhci_mem_base(struct device *dev)
+#endif
 {
 	u32 mem_base = pci_read_config32(dev, PCI_BASE_ADDRESS_0);
 
@@ -34,7 +38,11 @@ static u8 *usb_xhci_mem_base(device_t dev)
 	return (u8 *)(mem_base & ~0xf);
 }
 
-static int usb_xhci_port_count_usb3(device_t dev)
+#ifdef __SIMPLE_DEVICE__
+static int usb_xhci_port_count_usb3(pci_devfn_t dev)
+#else
+static int usb_xhci_port_count_usb3(struct device *dev)
+#endif
 {
 	if (pch_is_lp()) {
 		/* LynxPoint-LP has 4 SS ports */
@@ -81,7 +89,11 @@ static void usb_xhci_reset_port_usb3(u8 *mem_base, int port)
  *  b) Poll for warm reset complete
  *  c) Write 1 to port change status bits
  */
-static void usb_xhci_reset_usb3(device_t dev, int all)
+#ifdef __SIMPLE_DEVICE__
+static void usb_xhci_reset_usb3(pci_devfn_t dev, int all)
+#else
+static void usb_xhci_reset_usb3(struct device *dev, int all)
+#endif
 {
 	u32 status, port_disabled;
 	int timeout, port;
@@ -154,7 +166,7 @@ static void usb_xhci_reset_usb3(device_t dev, int all)
 #ifdef __SMM__
 
 /* Handler for XHCI controller on entry to S3/S4/S5 */
-void usb_xhci_sleep_prepare(device_t dev, u8 slp_typ)
+void usb_xhci_sleep_prepare(pci_devfn_t dev, u8 slp_typ)
 {
 	u16 reg16;
 	u32 reg32;
@@ -238,7 +250,7 @@ void usb_xhci_route_all(void)
 
 #else /* !__SMM__ */
 
-static void usb_xhci_clock_gating(device_t dev)
+static void usb_xhci_clock_gating(struct device *dev)
 {
 	u32 reg32;
 	u16 reg16;
@@ -285,7 +297,7 @@ static void usb_xhci_clock_gating(device_t dev)
 	pci_write_config32(dev, 0xa4, reg32);
 }
 
-static void usb_xhci_init(device_t dev)
+static void usb_xhci_init(struct device *dev)
 {
 	u32 reg32;
 	u16 reg16;
@@ -359,8 +371,8 @@ static void usb_xhci_init(device_t dev)
 	}
 }
 
-static void usb_xhci_set_subsystem(device_t dev, unsigned vendor,
-				   unsigned device)
+static void usb_xhci_set_subsystem(struct device *dev, unsigned int vendor,
+				   unsigned int device)
 {
 	if (!vendor || !device) {
 		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,

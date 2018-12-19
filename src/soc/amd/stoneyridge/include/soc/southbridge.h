@@ -19,7 +19,6 @@
 
 #include <arch/io.h>
 #include <types.h>
-#include <device/pci_ids.h>
 #include <device/device.h>
 #include <device/pci_def.h>
 #include <soc/iomap.h>
@@ -103,6 +102,15 @@
 #define   PM_LPC_ENABLE			BIT(0)
 #define PM_USB_ENABLE			0xef
 #define   PM_USB_ALL_CONTROLLERS	0x7f
+
+/* ACPI MMIO registers 0xfed80800 */
+#define MMIO_ACPI_PM1_STS		0x00
+#define MMIO_ACPI_PM1_EN		0x02
+#define MMIO_ACPI_PM1_CNT_BLK		0x04
+#define MMIO_ACPI_CPU_CONTROL		0x0c
+#define MMIO_ACPI_GPE0_STS		0x14
+#define MMIO_ACPI_GPE0_EN		0x18
+#define MMIO_ACPI_PM_TMR_BLK		0x08
 
 /* FCH MISC Registers 0xfed80e00 */
 #define GPP_CLK_CNTRL			0x00
@@ -304,6 +312,7 @@
 #define LPC_WIDEIO2_GENERIC_PORT	0x90
 
 #define SPIROM_BASE_ADDRESS_REGISTER	0xa0
+#define   SPI_BASE_RESERVED		(BIT(4) | BIT(5))
 #define   ROUTE_TPM_2_SPI		BIT(3)
 #define   SPI_ABORT_ENABLE		BIT(2)
 #define   SPI_ROM_ENABLE		BIT(1)
@@ -444,6 +453,12 @@ u32 pm_read32(u8 reg);
 void pm_write8(u8 reg, u8 value);
 void pm_write16(u8 reg, u16 value);
 void pm_write32(u8 reg, u32 value);
+u8 acpi_read8(u8 reg);
+u16 acpi_read16(u8 reg);
+u32 acpi_read32(u8 reg);
+void acpi_write8(u8 reg, u8 value);
+void acpi_write16(u8 reg, u16 value);
+void acpi_write32(u8 reg, u32 value);
 u32 misc_read32(u8 reg);
 void misc_write32(u8 reg, u32 value);
 uint8_t smi_read8(uint8_t offset);

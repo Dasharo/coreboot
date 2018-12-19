@@ -210,6 +210,21 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	 * 3 = GT unsliced,  4 = GT sliced */
 	for (i = 0; i < ARRAY_SIZE(config->domain_vr_config); i++)
 		fill_vr_domain_config(params, i, &config->domain_vr_config[i]);
+
+	/* Acoustic Noise Mitigation */
+	params->AcousticNoiseMitigation = config->AcousticNoiseMitigation;
+	params->SlowSlewRateForIa = config->SlowSlewRateForIa;
+	params->SlowSlewRateForGt = config->SlowSlewRateForGt;
+	params->SlowSlewRateForSa = config->SlowSlewRateForSa;
+	params->SlowSlewRateForFivr = config->SlowSlewRateForFivr;
+	params->FastPkgCRampDisableIa = config->FastPkgCRampDisableIa;
+	params->FastPkgCRampDisableGt = config->FastPkgCRampDisableGt;
+	params->FastPkgCRampDisableSa = config->FastPkgCRampDisableSa;
+	params->FastPkgCRampDisableFivr = config->FastPkgCRampDisableFivr;
+
+	/* Power Optimizer */
+	params->PchPwrOptEnable = config->dmipwroptimize;
+	params->SataPwrOptEnable = config->satapwroptimize;
 }
 
 /* Mainboard GPIO Configuration */

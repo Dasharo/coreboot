@@ -29,7 +29,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <soc/baytrail.h>
-#include <device/pci_ids.h>
 #include <soc/pci_devs.h>
 #include <soc/acpi.h>
 #include <string.h>
@@ -258,10 +257,8 @@ void acpi_fill_in_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	fadt->reset_reg.addrh = 0x00;
 	fadt->reset_value = 6;
 
-	/* Reserved Bits */
-	fadt->res3 = 0x00;		/* reserved, MUST be 0 ACPI 3.0 */
-	fadt->res4 = 0x00;		/* reserved, MUST be 0 ACPI 3.0 */
-	fadt->res5 = 0x00;		/* reserved, MUST be 0 ACPI 3.0 */
+	fadt->ARM_boot_arch = 0;	/* MUST be 0 ACPI 3.0 */
+	fadt->FADT_MinorVersion = 0;	/* MUST be 0 ACPI 3.0 */
 
 	/* Extended ACPI Pointers */
 	fadt->x_firmware_ctl_l = (unsigned long)facs;
@@ -526,6 +523,13 @@ void generate_cpu_entries(struct device *device)
 
 		acpigen_pop_len();
 	}
+
+	/* PPKG is usually used for thermal management
+	   of the first and only package. */
+	acpigen_write_processor_package("PPKG", 0, pattrs->num_cpus);
+
+	/* Add a method to notify processor nodes */
+	acpigen_write_processor_cnot(pattrs->num_cpus);
 }
 
 unsigned long acpi_madt_irq_overrides(unsigned long current)

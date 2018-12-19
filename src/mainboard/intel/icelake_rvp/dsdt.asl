@@ -13,12 +13,16 @@
  * GNU General Public License for more details.
  */
 
+#include <arch/acpi.h>
+#include "variant/ec.h"
+#include "variant/gpio.h"
+
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
 	0x02,		// DSDT revision: ACPI v2.0 and up
-	"COREv4",	// OEM id
-	"COREBOOT",	// OEM table id
+	OEM_ID,
+	ACPI_TABLE_CREATOR,
 	0x20110725	// OEM revision
 )
 {
@@ -27,6 +31,9 @@ DefinitionBlock(
 
 	// global NVS and variables
 	#include <soc/intel/icelake/acpi/globalnvs.asl>
+
+	// CPU
+	#include <cpu/intel/common/acpi/cpu.asl>
 
 	Scope (\_SB) {
 		Device (PCI0)
@@ -41,7 +48,21 @@ DefinitionBlock(
 	#include <vendorcode/google/chromeos/acpi/chromeos.asl>
 #endif
 
+#if IS_ENABLED(CONFIG_EC_GOOGLE_CHROMEEC)
+	/* Chrome OS Embedded Controller */
+		Scope (\_SB.PCI0.LPCB)
+		{
+			/* ACPI code for EC SuperIO functions */
+			#include <ec/google/chromeec/acpi/superio.asl>
+			/* ACPI code for EC functions */
+			#include <ec/google/chromeec/acpi/ec.asl>
+		}
+#endif
+
 	// Chipset specific sleep states
 	#include <soc/intel/icelake/acpi/sleepstates.asl>
+
+	// Mainboard specific
+	#include "acpi/mainboard.asl"
 
 }

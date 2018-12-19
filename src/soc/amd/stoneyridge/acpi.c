@@ -31,6 +31,7 @@
 #include <soc/acpi.h>
 #include <soc/pci_devs.h>
 #include <soc/southbridge.h>
+#include <soc/northbridge.h>
 #include <soc/nvs.h>
 #include <soc/gpio.h>
 
@@ -96,7 +97,7 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 		fadt->s4bios_req = 0;	/* Not supported */
 		fadt->pstate_cnt = 0;	/* Not supported */
 		fadt->cst_cnt = 0;	/* Not supported */
-		outl(0x0, ACPI_PM1_CNT_BLK);	/* clear SCI_EN */
+		acpi_write32(MMIO_ACPI_PM1_CNT_BLK, 0); /* clear SCI_EN */
 	} else {
 		fadt->smi_cmd = 0;	/* disable system management mode */
 		fadt->acpi_enable = 0;	/* unused if SMI_CMD = 0 */
@@ -104,7 +105,7 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 		fadt->s4bios_req = 0;	/* unused if SMI_CMD = 0 */
 		fadt->pstate_cnt = 0;	/* unused if SMI_CMD = 0 */
 		fadt->cst_cnt = 0x00;	/* unused if SMI_CMD = 0 */
-		outl(0x1, ACPI_PM1_CNT_BLK);	/* set SCI_EN */
+		acpi_write32(MMIO_ACPI_PM1_CNT_BLK, 1); /* set SCI_EN */
 	}
 
 	fadt->pm1a_evt_blk = ACPI_PM_EVT_BLK;
@@ -158,9 +159,8 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 
 	fadt->reset_value = 6;
 
-	fadt->res3 = 0;		/* reserved, MUST be 0 ACPI 3.0 */
-	fadt->res4 = 0;		/* reserved, MUST be 0 ACPI 3.0 */
-	fadt->res5 = 0;		/* reserved, MUST be 0 ACPI 3.0 */
+	fadt->ARM_boot_arch = 0;	/* MUST be 0 ACPI 3.0 */
+	fadt->FADT_MinorVersion = 0;	/* MUST be 0 ACPI 3.0 */
 
 	fadt->x_firmware_ctl_l = 0;	/* set to 0 if firmware_ctrl is used */
 	fadt->x_firmware_ctl_h = 0;
@@ -237,11 +237,10 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 void generate_cpu_entries(struct device *device)
 {
 	int cores, cpu;
-	struct device *cdb_dev;
 
 	/* Stoney Ridge is single node, just report # of cores */
-	cdb_dev = dev_find_slot(0, NB_DEVFN);
-	cores = (pci_read_config32(cdb_dev, 0x84) & 0xff) + 1;
+	cores = pci_read_config32(SOC_NB_DEV, NB_CAPABILITIES2) & CMP_CAP_MASK;
+	cores++; /* number of cores is CmpCap+1 */
 
 	printk(BIOS_DEBUG, "ACPI \\_PR report %d core(s)\n", cores);
 
