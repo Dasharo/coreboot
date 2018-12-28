@@ -99,5 +99,12 @@ config PXE_SERIAL_CONSOLE
 
 	  Unselect to let only SeaBIOS handle printing output.
 
+config PXE_CUSTOM_BUILD_ID
+	string "iPXE custom build_id variable"
+	default ""
+	help
+	  This option allows user to customize build_id for reproducible builds.
+	  It is 32-bit hexadecimal number without "0x" prefix.
+
 endmenu
 endif
