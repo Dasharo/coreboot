@@ -18,6 +18,13 @@ unexport KCONFIG_SPLITCONFIG
 unexport KCONFIG_TRISTATE
 unexport KCONFIG_NEGATIVES
 
+ifneq ($(CONFIG_PXE_CUSTOM_BUILD_ID),)
+PXE_MAKE_OPTS := BUILD_ID_CMD="echo 0x$(CONFIG_PXE_CUSTOM_BUILD_ID)"
+endif
+ifneq ($(CONFIG_PXE_CUSTOM_BOOTMENU_FILE),)
+PXE_MAKE_OPTS += EMBED=./menu.ipxe
+endif
+
 all: build
 
 $(project_dir):
