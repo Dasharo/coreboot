@@ -18,6 +18,13 @@ unexport KCONFIG_SPLITCONFIG
 unexport KCONFIG_TRISTATE
 unexport KCONFIG_NEGATIVES
 
+ifneq ($(CONFIG_PXE_CUSTOM_BUILD_ID),)
+PXE_MAKE_OPTS := BUILD_ID_CMD="echo 0x$(CONFIG_PXE_CUSTOM_BUILD_ID)"
+endif
+ifneq ($(CONFIG_PXE_CUSTOM_BOOTMENU_FILE),)
+PXE_MAKE_OPTS += EMBED=./menu.ipxe
+endif
+
 all: build
 
 $(project_dir):
@@ -86,11 +93,7 @@ ifeq ($(CONFIG_HAS_SCRIPT),y)
 	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom EMBED=$(CONFIG_SCRIPT)
 else
 	echo "    MAKE       $(project_name) $(TAG-y)"
-ifneq ($(CONFIG_PXE_CUSTOM_BOOTMENU_FILE),)
-	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom EMBED=./menu.ipxe
-else
-	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom
-endif
+	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom $(PXE_MAKE_OPTS)
 	cp $(project_dir)/src/bin/$(PXE_ROM_PCI_ID).rom $(project_dir)/ipxe.rom
 ifeq ($(CONSOLE_SERIAL),yy)
 	cp "$(project_dir)/src/config/console.h.cb" "$(project_dir)/src/config/console.h"
