@@ -66,8 +66,7 @@ static void mb_lpc_setup(void)
 	RCBA8(OIC) = 0x03;
 	RCBA8(OIC);
 
-	RCBA32(FD) = FD_PCIE6 | FD_PCIE5 | FD_PCIE4 | FD_PCIE3 | FD_INTLAN |
-		FD_ACMOD | FD_ACAUD | FD_PATA | 1;
+	RCBA32(FD) |= FD_INTLAN;
 	RCBA32(CG) = 0x00000001;
 }
 
@@ -87,9 +86,6 @@ void mainboard_romstage_entry(unsigned long bist)
 	const u8 spd_addrmap[4] = { 0x50, 0, 0, 0 };
 	u8 boot_path = 0;
 	u8 s3_resume;
-
-	timestamp_init(get_initial_timestamp());
-	timestamp_add_now(TS_START_ROMSTAGE);
 
 	/* Set up southbridge and Super I/O GPIOs. */
 	ich7_enable_lpc();

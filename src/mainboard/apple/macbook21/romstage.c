@@ -24,7 +24,6 @@
 #include <device/pnp_def.h>
 #include <cpu/intel/romstage.h>
 #include <cpu/x86/lapic.h>
-#include <timestamp.h>
 #include <console/console.h>
 #include <cpu/x86/bist.h>
 #include <halt.h>
@@ -167,9 +166,7 @@ static void rcba_config(void)
 	RCBA8(OIC) = 0x03;
 
 	/* Disable unused devices */
-	RCBA32(FD) = FD_PCIE6 | FD_PCIE5 | FD_PCIE4 | FD_PCIE3 | FD_INTLAN
-		| FD_ACMOD | FD_ACAUD;
-	RCBA32(FD) |= (1 << 0);	/* Required. */
+	RCBA32(FD) |= FD_INTLAN;
 
 	/* Set up I/O Trap #0 for 0xfe00 (SMIC) */
 
@@ -217,7 +214,6 @@ static void early_ich7_init(void)
 	reg32 &= ~(3 << 0);
 	reg32 |= (1 << 0);
 	RCBA32(0x3430) = reg32;
-	RCBA32(FD) |= (1 << 0);
 	RCBA16(0x0200) = 0x2008;
 	RCBA8(0x2027) = 0x0d;
 	RCBA16(0x3e08) |= (1 << 7);
@@ -236,9 +232,6 @@ void mainboard_romstage_entry(unsigned long bist)
 {
 	int s3resume = 0;
 	const u8 spd_addrmap[2 * DIMM_SOCKETS] = { 0x50, 0x51, 0x52, 0x53 };
-
-	timestamp_init(get_initial_timestamp());
-	timestamp_add_now(TS_START_ROMSTAGE);
 
 	if (bist == 0)
 		enable_lapic();

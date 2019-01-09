@@ -14,6 +14,8 @@
  * GNU General Public License for more details.
  */
 
+#include <assert.h>
+#include <commonlib/helpers.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -22,11 +24,10 @@
 #include <device/pci_ops.h>
 #include "pch.h"
 #include <southbridge/intel/common/gpio.h>
+#include <stddef.h>
+#include <stdint.h>
 
-/* LynxPoint-LP has 6 root ports while non-LP has 8. */
 #define MAX_NUM_ROOT_PORTS 8
-#define H_NUM_ROOT_PORTS MAX_NUM_ROOT_PORTS
-#define LP_NUM_ROOT_PORTS (MAX_NUM_ROOT_PORTS - 2)
 
 struct root_port_config {
 	/* RPFN is a write-once register so keep a copy until it is written */
@@ -49,10 +50,10 @@ static struct root_port_config rpc;
 
 static inline int max_root_ports(void)
 {
-	if (pch_is_lp())
-		return LP_NUM_ROOT_PORTS;
-	else
-		return H_NUM_ROOT_PORTS;
+	if (pch_is_lp() || pch_silicon_id() == PCI_DEVICE_ID_INTEL_LPT_H81)
+		return 6;
+
+	return 8;
 }
 
 static inline int root_port_is_first(struct device *dev)
@@ -69,6 +70,16 @@ static inline int root_port_is_last(struct device *dev)
 static inline int root_port_number(struct device *dev)
 {
 	return PCI_FUNC(dev->path.pci.devfn) + 1;
+}
+
+static bool is_rp_enabled(int rp)
+{
+	ASSERT(rp > 0 && rp <= ARRAY_SIZE(rpc.ports));
+
+	if (rpc.ports[rp - 1] == NULL)
+		return false;
+
+	return rpc.ports[rp - 1]->enabled;
 }
 
 static void root_port_config_update_gbe_port(void)
@@ -166,7 +177,7 @@ static void pch_pcie_device_set_func(int index, int pci_func)
 	/* Determine the new devfn for this port */
 	new_devfn = PCI_DEVFN(PCH_PCIE_DEV_SLOT, pci_func);
 
-	if (dev->path.pci.devfn != new_devfn) {
+	if (dev && dev->path.pci.devfn != new_devfn) {
 		printk(BIOS_DEBUG,
 		       "PCH: PCIe map %02x.%1x -> %02x.%1x\n",
 		       PCI_SLOT(dev->path.pci.devfn),
@@ -191,9 +202,12 @@ static void pcie_enable_clock_gating(void)
 		int rp;
 
 		dev = rpc.ports[i];
+		if (!dev)
+			continue;
+
 		rp = root_port_number(dev);
 
-		if (!dev->enabled) {
+		if (!is_rp_enabled(rp)) {
 			static const uint32_t high_bit = (1UL << 31);
 
 			/* Configure shared resource clock gating. */
@@ -201,15 +215,13 @@ static void pcie_enable_clock_gating(void)
 				pci_update_config8(dev, 0xe1, 0xc3, 0x3c);
 
 			if (!is_lp) {
-				if (rp == 1 && !rpc.ports[1]->enabled &&
-				    !rpc.ports[2]->enabled &&
-				    !rpc.ports[3]->enabled) {
+				if (rp == 1 && !is_rp_enabled(2) &&
+				    !is_rp_enabled(3) && !is_rp_enabled(4)) {
 					pci_update_config8(dev, 0xe2, ~1, 1);
 					pci_update_config8(dev, 0xe1, 0x7f, 0x80);
 				}
-				if (rp == 5 && !rpc.ports[5]->enabled &&
-				    !rpc.ports[6]->enabled &&
-				    !rpc.ports[7]->enabled) {
+				if (rp == 5 && !is_rp_enabled(6) &&
+				    !is_rp_enabled(7) && !is_rp_enabled(8)) {
 					pci_update_config8(dev, 0xe2, ~1, 1);
 					pci_update_config8(dev, 0xe1, 0x7f, 0x80);
 				}
@@ -224,8 +236,8 @@ static void pcie_enable_clock_gating(void)
 				pci_update_config32(dev, 0x420, ~0, (3 << 29));
 
 			/* Enable static clock gating. */
-			if (rp == 1 && !rpc.ports[1]->enabled &&
-			    !rpc.ports[2]->enabled && !rpc.ports[3]->enabled) {
+			if (rp == 1 && !is_rp_enabled(2) &&
+			    !is_rp_enabled(3) && !is_rp_enabled(4)) {
 				pci_update_config8(dev, 0xe2, ~1, 1);
 				pci_update_config8(dev, 0xe1, 0x7f, 0x80);
 			} else if (rp == 5 || rp == 6) {
@@ -259,7 +271,7 @@ static void pcie_enable_clock_gating(void)
 			pci_update_config8(dev, 0xe1, 0xc3, 0x3c);
 	}
 
-	if (!enabled_ports && is_lp)
+	if (!enabled_ports && is_lp && rpc.ports[0])
 		pci_update_config8(rpc.ports[0], 0xe1, ~(1 << 6), (1 << 6));
 }
 
@@ -268,7 +280,7 @@ static void root_port_commit_config(void)
 	int i;
 
 	/* If the first root port is disabled the coalesce ports. */
-	if (!rpc.ports[0]->enabled)
+	if (!is_rp_enabled(1))
 		rpc.coalesce = 1;
 
 	/* Perform clock gating configuration. */
@@ -308,7 +320,7 @@ static void root_port_commit_config(void)
 		 * function numbers. */
 		current_func = 0;
 		for (i = 0; i < rpc.num_ports; i++) {
-			if (!rpc.ports[i]->enabled)
+			if (!is_rp_enabled(i + 1))
 				continue;
 			pch_pcie_device_set_func(i, current_func);
 			current_func++;
@@ -316,7 +328,7 @@ static void root_port_commit_config(void)
 
 		/* Allocate the disabled devices' PCI function number. */
 		for (i = 0; i < rpc.num_ports; i++) {
-			if (rpc.ports[i]->enabled)
+			if (is_rp_enabled(i + 1))
 				continue;
 			pch_pcie_device_set_func(i, current_func);
 			current_func++;

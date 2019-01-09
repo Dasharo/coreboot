@@ -167,11 +167,7 @@ bool lpc_fits_fixed_mmio_window(uintptr_t base, size_t size)
  */
 static void lpc_set_bios_control_reg(uint8_t bios_cntl_bit)
 {
-#if defined(__SIMPLE_DEVICE__)
 	pci_devfn_t dev = PCH_DEV_LPC;
-#else
-	struct device *dev = PCH_DEV_LPC;
-#endif
 	uint8_t bc_cntl;
 
 	assert(IS_POWER_OF_2(bios_cntl_bit));
@@ -214,11 +210,7 @@ void lpc_set_eiss(void)
 */
 void lpc_set_serirq_mode(enum serirq_mode mode)
 {
-#if defined(__SIMPLE_DEVICE__)
 	pci_devfn_t dev = PCH_DEV_LPC;
-#else
-	struct device *dev = PCH_DEV_LPC;
-#endif
 	uint8_t scnt;
 
 	scnt = pci_read_config8(dev, LPC_SERIRQ_CTL);
@@ -273,7 +265,7 @@ static void pch_lpc_interrupt_init(void)
 {
 	const struct device *dev;
 
-	dev = dev_find_slot(0, PCI_DEVFN(PCH_DEV_SLOT_LPC, 0));
+	dev = pcidev_on_root(PCH_DEV_SLOT_LPC, 0);
 	if (!dev || !dev->chip_info)
 		return;
 
@@ -286,7 +278,7 @@ void pch_enable_lpc(void)
 	const struct device *dev;
 	uint32_t gen_io_dec[LPC_NUM_GENERIC_IO_RANGES];
 
-	dev = dev_find_slot(0, PCI_DEVFN(PCH_DEV_SLOT_LPC, 0));
+	dev = pcidev_on_root(PCH_DEV_SLOT_LPC, 0);
 	if (!dev || !dev->chip_info)
 		return;
 

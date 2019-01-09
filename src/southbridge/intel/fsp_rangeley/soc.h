@@ -80,10 +80,6 @@ void rangeley_sb_early_initialization(void);
 #define MAINBOARD_POWER_ON	1
 #define MAINBOARD_POWER_KEEP	2
 
-#ifndef CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL
-#define CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL MAINBOARD_POWER_ON
-#endif
-
 #define SOC_EHCI1_DEV		PCI_DEV(0, 0x1d, 0)
 #define PCIE_DEV_SLOT0	1
 #define PCIE_DEV_SLOT1	2
@@ -92,7 +88,7 @@ void rangeley_sb_early_initialization(void);
 
 /* PCI Configuration Space (D31:F0): LPC */
 #define SOC_LPC_DEV		PCI_DEV(0, 0x1f, 0)
-#define SOC_LPC_DEVFN 0, PCI_DEVFN(0x1f,0)
+#define SOC_LPC_DEVFN		PCI_DEVFN(0x1f, 0)
 
 
 /* Southbridge IO BARs */

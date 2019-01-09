@@ -80,12 +80,8 @@ static void busmaster_disable_on_bus(int bus)
 	for (slot = 0; slot < 0x20; slot++) {
 		for (func = 0; func < 8; func++) {
 			u32 reg32;
-#if defined(__SIMPLE_DEVICE__)
-			pci_devfn_t dev = PCI_DEV(bus, slot, func);
-#else
-			struct device *dev = PCI_DEV(bus, slot, func);
-#endif
 
+			pci_devfn_t dev = PCI_DEV(bus, slot, func);
 			val = pci_read_config32(dev, PCI_VENDOR_ID);
 
 			if (val == 0xffffffff || val == 0x00000000 ||
@@ -156,7 +152,7 @@ static void southbridge_smi_sleep(void)
 	u8 reg8;
 	u32 reg32;
 	u8 slp_typ;
-	u8 s5pwr = CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL;
+	u8 s5pwr = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
 
 	/* save and recover RTC port values */
 	u8 tmp70, tmp72;

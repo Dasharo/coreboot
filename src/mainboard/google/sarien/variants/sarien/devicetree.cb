@@ -27,12 +27,21 @@ chip soc/intel/cannonlake
 	register "InternalGfx" = "1"
 	register "SkipExtGfxScan" = "1"
 	register "VmxEnable" = "1"
+	register "PchPmSlpS3MinAssert" = "3"  # 50ms
+	register "PchPmSlpS4MinAssert" = "4"  # 4s
+	register "PchPmSlpSusMinAssert" = "4" # 4s
+	register "PchPmSlpAMinAssert" = "4"   # 2s
 
 	register "speed_shift_enable" = "1"
 	register "s0ix_enable" = "1"
 	register "dptf_enable" = "1"
 	register "dmipwroptimize" = "1"
 	register "satapwroptimize" = "1"
+	register "AcousticNoiseMitigation" = "1"
+	register "SlowSlewRateForIa" = "2"
+	register "SlowSlewRateForGt" = "2"
+	register "SlowSlewRateForSa" = "2"
+	register "SlowSlewRateForFivr" = "2"
 
 	# Intel Common SoC Config
 	register "usb2_ports[0]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# Left Type-C Port
@@ -69,8 +78,8 @@ chip soc/intel/cannonlake
 		},
 		.i2c[1] = {
 			.speed = I2C_SPEED_FAST,
-			.rise_time_ns = 290,
-			.fall_time_ns = 110,
+			.rise_time_ns = 176,
+			.fall_time_ns = 15,
 		},
 		.i2c[4] = {
 			.early_init = 1,
@@ -94,11 +103,6 @@ chip soc/intel/cannonlake
 	register "PcieRpEnable[9]" = "1"
 	register "PcieClkSrcUsage[1]" = "9"
 	register "PcieClkSrcClkReq[1]" = "1"
-
-	# PCIe port 12 for M.2 3042
-	register "PcieRpEnable[11]" = "1"
-	register "PcieClkSrcUsage[0]" = "11"
-	register "PcieClkSrcClkReq[0]" = "0"
 
 	# PCIe port 13 for M.2 2280 SSD
 	register "PcieRpEnable[12]" = "1"
@@ -259,7 +263,7 @@ chip soc/intel/cannonlake
 		device pci 1d.0 on  end # PCI Express Port 9
 		device pci 1d.1 on  end # PCI Express Port 10
 		device pci 1d.2 off end # PCI Express Port 11
-		device pci 1d.3 on  end # PCI Express Port 12
+		device pci 1d.3 off end # PCI Express Port 12
 		device pci 1d.4 on  end # PCI Express Port 13 (x4)
 		device pci 1e.0 off end # UART #0
 		device pci 1e.1 off end # UART #1

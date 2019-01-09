@@ -205,6 +205,11 @@ const char *mainboard_vbt_filename(void)
 	case SKU_0_AKALI360:
 	case SKU_1_AKALI360:
 		return "vbt-akali.bin";
+	case SKU_0_BARD:
+	case SKU_1_BARD:
+	case SKU_2_BARD:
+	case SKU_3_BARD:
+		return "vbt-bard.bin";
 	default:
 		return "vbt.bin";
 		break;
@@ -249,6 +254,8 @@ void variant_devtree_update(void)
 	case SKU_0_PANTHEON:
 	case SKU_1_PANTHEON:
 	case SKU_2_PANTHEON:
+	case SKU_3_PANTHEON:
+	case SKU_4_PANTHEON:
 		cfg->usb2_ports[5].enable = 0;
 		break;
 	case SKU_0_BARD:

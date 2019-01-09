@@ -45,10 +45,6 @@
 #define MAINBOARD_POWER_ON	1
 #define MAINBOARD_POWER_KEEP	2
 
-#ifndef CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL
-#define CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL MAINBOARD_POWER_ON
-#endif
-
 #define PM1_STS		0x00
 #define   WAK_STS	(1 << 15)
 #define   PCIEXPWAK_STS	(1 << 14)
@@ -149,5 +145,6 @@ void southbridge_update_gnvs(u8 apm_cnt, int *smm_done);
 void southbridge_finalize_all(void);
 void southbridge_smi_monitor(void);
 em64t101_smm_state_save_area_t *smi_apmc_find_state_save(u8 cmd);
+void pch_log_state(void);
 
 #endif /*INTEL_COMMON_PMUTIL_H */

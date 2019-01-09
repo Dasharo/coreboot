@@ -14,14 +14,10 @@
 #include <rules.h>
 #include <device/resource.h>
 #include <device/path.h>
-
-struct device;
-
-#ifndef __SIMPLE_DEVICE__
-typedef struct device *device_t;
-#endif
+#include <device/pci_type.h>
 #include <arch/io.h>
 
+struct device;
 struct pci_operations;
 struct pci_bus_operations;
 struct i2c_bus_operations;
@@ -279,6 +275,11 @@ DEVTREE_CONST struct device *dev_find_slot_on_smbus(unsigned int bus,
 DEVTREE_CONST struct device *dev_find_slot_pnp(u16 port, u16 device);
 DEVTREE_CONST struct device *dev_bus_each_child(const struct bus *parent,
 				DEVTREE_CONST struct device *prev_child);
+
+DEVTREE_CONST struct device *pcidev_path_behind(const struct bus *parent,
+		pci_devfn_t devfn);
+DEVTREE_CONST struct device *pcidev_path_on_root(pci_devfn_t devfn);
+DEVTREE_CONST struct device *pcidev_on_root(uint8_t dev, uint8_t fn);
 
 void scan_smbus(struct device *bus);
 void scan_generic_bus(struct device *bus);

@@ -40,10 +40,10 @@
 	_car_stack_end = .;
 #endif
 	/* The pre-ram cbmem console as well as the timestamp region are fixed
-	 * in size. Therefore place them at the beginning .car.data section
-	 * so that multiple stages (romstage and verstage) have a consistent
-	 * link address of these shared objects. */
-	PRERAM_CBMEM_CONSOLE(., (CONFIG_LATE_CBMEM_INIT ? 0 : CONFIG_PRERAM_CBMEM_CONSOLE_SIZE))
+	 * in size. Therefore place them above the car global section so that
+         * multiple stages (romstage and verstage) have a consistent
+         * link address of these shared objects. */
+	PRERAM_CBMEM_CONSOLE(., CONFIG_PRERAM_CBMEM_CONSOLE_SIZE)
 #if IS_ENABLED(CONFIG_PAGING_IN_CACHE_AS_RAM)
 	. = ALIGN(32);
 	/* Page directory pointer table resides here. There are 4 8-byte entries
@@ -66,6 +66,9 @@
 	. += 256;
 	_car_drivers_storage_end = .;
 #endif
+	_car_ehci_dbg_info_start = .;
+        . += 64;
+        _car_ehci_dbg_info_end = .;
 	/* _car_global_start and _car_global_end provide symbols to per-stage
 	 * variables that are not shared like the timestamp and the pre-ram
 	 * cbmem console. This is useful for clearing this area on a per-stage
@@ -86,6 +89,10 @@
 	_car_global_end = .;
 	_car_relocatable_data_end = .;
 
+#if !IS_ENABLED(CONFIG_C_ENVIRONMENT_BOOTBLOCK)
+	_car_stack_start = .;
+	_car_stack_end = _car_region_end;
+#endif
 	_car_region_end = . + CONFIG_DCACHE_RAM_SIZE - (. - _car_region_start);
 }
 

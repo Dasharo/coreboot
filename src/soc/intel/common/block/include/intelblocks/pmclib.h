@@ -213,17 +213,12 @@ void soc_fill_power_state(struct chipset_power_state *ps);
  * 0 == S5 Soft Off
  * 1 == S0 Full On
  * 2 == Keep Previous State
+ * Keep in sync with `config MAINBOARD_POWER_FAILURE_STATE`.
  */
 enum {
 	MAINBOARD_POWER_STATE_OFF,
 	MAINBOARD_POWER_STATE_ON,
 	MAINBOARD_POWER_STATE_PREVIOUS,
 };
-
-/*
- * Determines what state to go to when power is reapplied
- * after a power failure (G3 State)
- */
-int pmc_get_mainboard_power_failure_state_choice(void);
 
 #endif /* SOC_INTEL_COMMON_BLOCK_PMCLIB_H */
