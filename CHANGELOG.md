@@ -7,6 +7,15 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.23] - 2019-01-09
+## Fixed
+- enabled ECC
+- disabled EHCI0 controller on apu2 which caused problems with pfSense booting
+
+## Changed
+- updated SeaBIOS to rel-1.12.0.1
+- introduced reproducible builds by providing build ID to iPXE
+
 ## [v4.0.22] - 2018-12-03
 ### Changed
 - Updated SeaBIOS to rel-1.11.0.7
@@ -205,7 +214,8 @@ built externally
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.22...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.23...coreboot-4.0.x
+[v4.0.23]: https://github.com/pcengines/coreboot/compare/v4.0.22...v4.0.23
 [v4.0.22]: https://github.com/pcengines/coreboot/compare/v4.0.21...v4.0.22
 [v4.0.21]: https://github.com/pcengines/coreboot/compare/v4.0.20...v4.0.21
 [v4.0.20]: https://github.com/pcengines/coreboot/compare/v4.0.19...v4.0.20
