@@ -54,7 +54,7 @@ check_dependencies:
 
 .sign_rom: &sign_rom
   variables:
-    PLATFORM: 
+    PLATFORM:
   stage: sign_rom
   tags:
     - docker
@@ -64,13 +64,13 @@ check_dependencies:
   artifacts:
     name: ${PLATFORM}
     paths:
-      - ${RELEASE_DIR}/${PLATFORM}_* 
+      - ${RELEASE_DIR}/${PLATFORM}_*
   only:
     - tags
 
 .publish_rom: &publish_rom
   variables:
-    PLATFORM: 
+    PLATFORM:
   stage: publish_rom
   tags:
     - docker
@@ -92,18 +92,18 @@ build:apu2:
   <<: *test_rom
   variables:
     PLATFORM: apu2
-    
+
 .sign:apu2:
   <<: *sign_rom
   variables:
     PLATFORM: apu2
-    
+
 publish:apu2:
   <<: *publish_rom
   variables:
-    PLATFORM: apu2    
-    
-    
+    PLATFORM: apu2
+
+
 build:apu3:
   <<: *build_rom_apu
   variables:
@@ -113,18 +113,18 @@ build:apu3:
   <<: *test_rom
   variables:
     PLATFORM: apu3
-    
+
 .sign:apu3:
   <<: *sign_rom
   variables:
     PLATFORM: apu3
-    
+
 publish:apu3:
   <<: *publish_rom
   variables:
     PLATFORM: apu3
 
-   
+
 build:apu4:
   <<: *build_rom_apu
   variables:
@@ -134,18 +134,18 @@ build:apu4:
   <<: *test_rom
   variables:
     PLATFORM: apu4
-    
+
 .sign:apu4:
   <<: *sign_rom
   variables:
     PLATFORM: apu4
-    
+
 publish:apu4:
   <<: *publish_rom
   variables:
-    PLATFORM: apu4 
+    PLATFORM: apu4
 
-    
+
 build:apu5:
   <<: *build_rom_apu
   variables:
@@ -155,13 +155,13 @@ build:apu5:
   <<: *test_rom
   variables:
     PLATFORM: apu5
-    
+
 .sign:apu5:
   <<: *sign_rom
   variables:
     PLATFORM: apu5
-    
+
 publish:apu5:
   <<: *publish_rom
   variables:
-    PLATFORM: apu5    
+    PLATFORM: apu5
