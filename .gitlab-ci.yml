@@ -30,12 +30,13 @@ check_dependencies:
     - cd /home/coreboot/pce-fw-builder
     - git checkout `git describe --tags --abbrev=0`
     - ./build.sh release-CI "${CI_COMMIT_REF_NAME}" "${PLATFORM}"
-    - cp -v /home/coreboot/release/${PLATFORM}_* ${RELEASE_DIR}
+    - cp -v /home/coreboot/release/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${RELEASE_DIR}
     - ls -al ${RELEASE_DIR}
+    - sha256sum ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom
   artifacts:
     name: ${PLATFORM}
     paths:
-      - ${RELEASE_DIR}/${PLATFORM}_*
+      - ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom
   only:
     - tags
     - web
@@ -79,8 +80,8 @@ check_dependencies:
     - ls -al ${RELEASE_DIR}
     - echo "curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/${PLATFORM}/; curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/${PLATFORM}/releases/"
     - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/${PLATFORM}/"; curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/${PLATFORM}/releases/"
-    - echo "for file in ${RELEASE_DIR}/${PLATFORM}_*.tar.gz; do curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${file} ${UPLOADER_URL}/${PLATFORM}/releases/; done"
-    - for file in ${RELEASE_DIR}/${PLATFORM}_*.tar.gz; do curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${file} "${UPLOADER_URL}/${PLATFORM}/releases/"; done
+    - echo "for file in ${RELEASE_DIR}/${PLATFORM}_*.rom; do curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${file} ${UPLOADER_URL}/${PLATFORM}/releases/; done"
+    - for file in ${RELEASE_DIR}/${PLATFORM}_*.rom; do curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${file} "${UPLOADER_URL}/${PLATFORM}/releases/"; done
   only:
     - tags
 
