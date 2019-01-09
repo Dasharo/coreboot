@@ -13,7 +13,7 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
-## [v4.9.0.1] - 2018-01-09
+## [v4.9.0.1] - 2019-01-09
 ## Changed
 - rebased with official coreboot repository commit cd26f08
 - updated SeaBIOS to rel-1.12.0.1
