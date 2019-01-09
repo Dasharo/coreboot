@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <device/pci_def.h>
-#include <device/pci_ids.h>
 #include <arch/io.h>
 #include <arch/cpu.h>
 #include <device/pnp_def.h>
@@ -48,7 +47,6 @@
 #include <arch/early_variables.h>
 #include <cbmem.h>
 
-#include "resourcemap.c"
 #include "cpu/amd/quadcore/quadcore.c"
 
 void activate_spd_rom(const struct mem_controller *ctrl);

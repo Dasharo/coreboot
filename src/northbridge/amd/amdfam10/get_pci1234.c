@@ -13,8 +13,8 @@
  * GNU General Public License for more details.
  */
 
+#include <bootstate.h>
 #include <device/pci.h>
-#include <device/pci_ids.h>
 #include <string.h>
 #include <stdint.h>
 
@@ -109,3 +109,25 @@ void get_pci1234(void)
 		sysconf.hcid[i] = 0;
 	}
 }
+
+void get_default_pci1234(int mb_hc_possible)
+{
+	int i;
+
+	for (i = 0; i < mb_hc_possible; i++) {
+		sysconf.pci1234[i] = 0x0000ffc;
+		sysconf.hcdn[i] = 0x20202020;
+	}
+	sysconf.hc_possible_num = mb_hc_possible;
+	get_pci1234();
+}
+
+static void amd_bs_sysconf(void *arg)
+{
+	/* Prepare sysconf structures, which are used to generate IRQ,
+	 * MP and ACPI table entries.
+	 */
+	get_bus_conf();
+}
+
+BOOT_STATE_INIT_ENTRY(BS_WRITE_TABLES, BS_ON_ENTRY, amd_bs_sysconf, NULL);

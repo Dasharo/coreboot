@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <device/pci_def.h>
-#include <device/pci_ids.h>
 #include <arch/io.h>
 #include <arch/cpu.h>
 #include <device/pnp_def.h>
@@ -49,7 +48,6 @@
 #include <spd.h>
 #include <southbridge/amd/rs780/rs780.h>
 
-#include "resourcemap.c"
 #include "cpu/amd/quadcore/quadcore.c"
 
 #define SERIAL_DEV PNP_DEV(0x2e, IT8712F_SP1)

@@ -14,9 +14,13 @@
  */
 
 #include <arch/stages.h>
+#include <soc/emi.h>
 #include <soc/mmu_operations.h>
+#include <soc/mt6358.h>
 
 void platform_romstage_main(void)
 {
+	mt6358_init();
+	mt_mem_init(get_sdram_config());
 	mtk_mmu_after_dram();
 }

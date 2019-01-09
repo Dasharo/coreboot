@@ -15,7 +15,7 @@
 #include <soc/gpio_defs_cnp_h.h>
 #include <soc/irq.h>
 #include <soc/pcr_ids.h>
-
+#include "gpio_op.asl"
 
 Device (GPIO)
 {
@@ -27,13 +27,17 @@ Device (GPIO)
 	{
 		Memory32Fixed (ReadWrite, 0, 0, COM0)
 		Memory32Fixed (ReadWrite, 0, 0, COM1)
-		Memory32Fixed (ReadWrite, 0, 0, COM2)
 		Memory32Fixed (ReadWrite, 0, 0, COM3)
 		Memory32Fixed (ReadWrite, 0, 0, COM4)
 		Interrupt (ResourceConsumer, Level, ActiveLow, Shared,,, GIRQ)
 			{ GPIO_IRQ14 }
 	})
 
+	/*
+	 * GPIO communities 0, 1, 3, and 4 are exported for the OS.
+	 * This is based on the Linux kernel provided community map at
+	 * drivers/pinctrl/intel/pinctrl-cannonlake.c:cnhl_communities[]
+	 */
 	Method (_CRS, 0, NotSerialized)
 	{
 		/* GPIO Community 0 */
@@ -48,18 +52,11 @@ Device (GPIO)
 		Store (^^PCRB (PID_GPIOCOM1), BAS1)
 		Store (GPIO_BASE_SIZE, LEN1)
 
-		/* GPIO Community 2 */
-		CreateDWordField (^RBUF, ^COM2._BAS, BAS2)
-		CreateDWordField (^RBUF, ^COM2._LEN, LEN2)
-		Store (^^PCRB (PID_GPIOCOM2), BAS2)
-		Store (GPIO_BASE_SIZE, LEN2)
-
 		/* GPIO Community 3 */
 		CreateDWordField (^RBUF, ^COM3._BAS, BAS3)
 		CreateDWordField (^RBUF, ^COM3._LEN, LEN3)
 		Store (^^PCRB (PID_GPIOCOM3), BAS3)
 		Store (GPIO_BASE_SIZE, LEN3)
-
 
 		/* GPIO Community 4 */
 		CreateDWordField (^RBUF, ^COM4._BAS, BAS4)
@@ -109,20 +106,4 @@ Method (GADD, 1, NotSerialized)
 	Store (PCRB (Local0), Local2)
 	Add (Local2, PAD_CFG_BASE, Local2)
 	Return (Add (Local2, Multiply (Local1, 16)))
-}
-
-/*
- * Get GPIO Value
- * Arg0 - GPIO Number
- */
-Method (GRXS, 1, Serialized)
-{
-	OperationRegion (PREG, SystemMemory, GADD (Arg0), 4)
-	Field (PREG, AnyAcc, NoLock, Preserve)
-	{
-		VAL0, 32
-	}
-	And (GPIORXSTATE_MASK, ShiftRight (VAL0, GPIORXSTATE_SHIFT), Local0)
-
-	Return (Local0)
 }

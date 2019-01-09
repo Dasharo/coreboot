@@ -88,7 +88,7 @@ no_codec:
 	return 0;
 }
 
-static u32 find_verb(struct device *dev, u32 viddid, const u32 ** verb)
+static u32 find_verb(struct device *dev, u32 viddid, const u32 **verb)
 {
 	int idx=0;
 
@@ -278,7 +278,7 @@ static void azalia_init(struct device *dev)
 	// NOTE this will break as soon as the Azalia get's a bar above
 	// 4G. Is there anything we can do about it?
 	base = res2mmio(res, 0, 0);
-	printk(BIOS_DEBUG, "Azalia: base = %08x\n", (u32)base);
+	printk(BIOS_DEBUG, "Azalia: base = %p\n", base);
 	codec_mask = codec_detect(base);
 
 	if (codec_mask) {

@@ -14,12 +14,13 @@
  * GNU General Public License for more details.
  */
 
+#include <arch/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
 	0x02,		/* DSDT Revision: ACPI v3.0 */
-	"COREv4",	/* OEM ID */
-	"COREBOOT",	/* OEM Table ID */
+	OEM_ID,
+	ACPI_TABLE_CREATOR,
 	0x20181031	/* OEM Revision */
 )
 {
@@ -27,7 +28,7 @@ DefinitionBlock(
 	#include <southbridge/intel/lynxpoint/acpi/platform.asl>
 	#include <southbridge/intel/lynxpoint/acpi/globalnvs.asl>
 	#include <southbridge/intel/lynxpoint/acpi/sleepstates.asl>
-	#include <cpu/intel/haswell/acpi/cpu.asl>
+	#include <cpu/intel/common/acpi/cpu.asl>
 
 	Scope (\_SB)
 	{

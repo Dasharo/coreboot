@@ -16,6 +16,7 @@
  */
 
 #include <assert.h>
+#include <arch/cpu.h>
 #include <bootstate.h>
 #include <console/console.h>
 #include <device/device.h>
@@ -39,7 +40,6 @@
 #include <intelblocks/sgx.h>
 #include <intelblocks/smm.h>
 #include <intelblocks/vmx.h>
-#include <pc80/mc146818rtc.h>
 #include <soc/cpu.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
@@ -333,12 +333,12 @@ static void enable_lapic_tpr(void)
 
 static void configure_dca_cap(void)
 {
-	struct cpuid_result cpuid_regs;
+	uint32_t feature_flag;
 	msr_t msr;
 
 	/* Check feature flag in CPUID.(EAX=1):ECX[18]==1 */
-	cpuid_regs = cpuid(1);
-	if (cpuid_regs.ecx & (1 << 18)) {
+	feature_flag = cpu_get_feature_flags_ecx();
+	if (feature_flag & CPUID_DCA) {
 		msr = rdmsr(IA32_PLATFORM_DCA_CAP);
 		msr.lo |= 1;
 		wrmsr(IA32_PLATFORM_DCA_CAP, msr);
@@ -420,7 +420,7 @@ static void enable_pm_timer_emulation(void)
 	/* Set PM1 timer IO port and enable*/
 	msr.lo = (EMULATE_DELAY_VALUE << EMULATE_DELAY_OFFSET_VALUE) |
 			EMULATE_PM_TMR_EN | (ACPI_BASE_ADDRESS + PM1_TMR);
-	wrmsr(MSR_EMULATE_PM_TMR, msr);
+	wrmsr(MSR_EMULATE_PM_TIMER, msr);
 }
 
 /* All CPUs including BSP will run the following function. */
@@ -528,7 +528,7 @@ int soc_skip_ucode_update(u32 current_patch_id, u32 new_patch_id)
 	 * be reloaded after the core PRMRR MSRs are programmed.
 	 */
 	msr1 = rdmsr(MTRR_CAP_MSR);
-	msr2 = rdmsr(PRMRR_PHYS_BASE_MSR);
+	msr2 = rdmsr(MSR_PRMRR_PHYS_BASE);
 	if (msr2.lo && (current_patch_id == new_patch_id - 1))
 		return 0;
 	else

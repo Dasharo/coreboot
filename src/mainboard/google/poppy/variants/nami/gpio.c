@@ -409,6 +409,10 @@ static const struct pad_config pantheon_gpio_table[] = {
 };
 
 static const struct pad_config fpmcu_gpio_table[] = {
+	/* B0  : CORE_VID0 ==> FPMCU_INT_L */
+	PAD_CFG_GPI_APIC(GPP_B0, NONE, DEEP),
+	/* B1  : CORE_VID1 ==> FPMCU_INT_L */
+	PAD_CFG_GPI_ACPI_SCI(GPP_B1, 20K_PU, DEEP, INVERT),
 	/* B11 : EXT_PWR_GATE# ==> PCH_FP_PWR_EN */
 	PAD_CFG_GPO(GPP_B11, 1, DEEP),
 	/* B19 : GSPI1_CS# ==> PCH_SPI_FP_CS# */
@@ -421,14 +425,10 @@ static const struct pad_config fpmcu_gpio_table[] = {
 	PAD_CFG_NF(GPP_B22, NONE, DEEP, NF1),
 	/* C3  : SML0CLK ==> TOUCHSCREEN_DIS# */
 	PAD_CFG_GPO(GPP_C3, 0, DEEP),
-	/* C8  : UART0_RXD ==> FPMCU_INT_L */
-	PAD_CFG_GPI_APIC(GPP_C8, NONE, DEEP),
 	/* C9  : UART0_TXD ==> FP_RST_ODL */
 	PAD_CFG_GPO(GPP_C9, 1, DEEP),
 	/* D5  : ISH_I2C0_SDA ==> FPMCU_BOOT0 */
 	PAD_CFG_GPO(GPP_D5, 0, DEEP),
-	/* D6  : ISH_I2C0_SCL ==> FPMCU_INT_L */
-	PAD_CFG_GPI_ACPI_SCI(GPP_D6, 20K_PU, DEEP, INVERT),
 	/* D17 : DMIC_CLK1 ==> NC */
 	PAD_CFG_NC(GPP_D17),
 };
@@ -447,6 +447,12 @@ const struct pad_config *variant_sku_gpio_table(size_t *num)
 	case SKU_1_SYNDRA:
 	case SKU_2_SYNDRA:
 	case SKU_3_SYNDRA:
+	case SKU_4_SYNDRA:
+	case SKU_5_SYNDRA:
+	case SKU_6_SYNDRA:
+	case SKU_7_SYNDRA:
+	case SKU_3_PANTHEON:
+	case SKU_4_PANTHEON:
 		*num = ARRAY_SIZE(no_dmic1_sku_gpio_table);
 		board_gpio_tables = no_dmic1_sku_gpio_table;
 		break;

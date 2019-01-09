@@ -16,12 +16,13 @@
 #include <variant/ec.h>
 #include <variant/gpio.h>
 
+#include <arch/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
 	0x02,		// DSDT revision: ACPI v2.0 and up
-	"COREv4",	// OEM id
-	"COREBOOT",	// OEM table id
+	OEM_ID,
+	ACPI_TABLE_CREATOR,
 	0x20110725	// OEM revision
 )
 {
@@ -32,7 +33,7 @@ DefinitionBlock(
 	#include <soc/intel/skylake/acpi/globalnvs.asl>
 
 	/* CPU */
-	#include <soc/intel/skylake/acpi/cpu.asl>
+	#include <cpu/intel/common/acpi/cpu.asl>
 
 	Scope (\_SB)
 	{

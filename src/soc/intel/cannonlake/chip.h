@@ -124,13 +124,15 @@ struct soc_intel_cannonlake_config {
 	uint16_t usb3_wake_enable_bitmap;
 
 	/* SATA related */
-	uint8_t SataMode;
+	enum {
+		Sata_AHCI,
+		Sata_RAID,
+	} SataMode;
 	uint8_t SataSalpSupport;
 	uint8_t SataPortsEnable[8];
 	uint8_t SataPortsDevSlp[8];
 
 	/* Audio related */
-	uint8_t PchHdaEnable;
 	uint8_t PchHdaDspEnable;
 
 	/* Enable/Disable HD Audio Link. Muxed with SSP0/SSP1/SNDW1 */
@@ -220,6 +222,43 @@ struct soc_intel_cannonlake_config {
 	 */
 	uint32_t PrmrrSize;
 	uint8_t PmTimerDisabled;
+
+	/*
+	 * SLP_S3 Minimum Assertion Width Policy
+	 *  1 = 60us
+	 *  2 = 1ms (default)
+	 *  3 = 50ms
+	 *  4 = 2s
+	 */
+	uint8_t PchPmSlpS3MinAssert;
+
+	/*
+	 * SLP_S4 Minimum Assertion Width Policy
+	 *  1 = 1s
+	 *  2 = 2s
+	 *  3 = 3s
+	 *  4 = 4s (default)
+	 */
+	uint8_t PchPmSlpS4MinAssert;
+
+	/*
+	 * SLP_SUS Minimum Assertion Width Policy
+	 *  1 = 0ms
+	 *  2 = 500ms
+	 *  3 = 1s (default)
+	 *  4 = 4s
+	 */
+	uint8_t PchPmSlpSusMinAssert;
+
+	/*
+	 * SLP_A Minimum Assertion Width Policy
+	 *  1 = 0ms
+	 *  2 = 4s
+	 *  3 = 98ms (default)
+	 *  4 = 2s
+	 */
+	uint8_t PchPmSlpAMinAssert;
+
 	/* Desired platform debug type. */
 	enum {
 		DebugConsent_Disabled,
@@ -263,6 +302,43 @@ struct soc_intel_cannonlake_config {
 	/* Intel VT configuration */
 	uint8_t VtdDisable;
 	uint8_t VmxEnable;
+
+	/*
+	 * Acoustic Noise Mitigation
+	 * 0b - Disable
+	 * 1b - Enable noise mitigation
+	 */
+	uint8_t AcousticNoiseMitigation;
+
+	/*
+	 * Disable Fast Package C-state ramping
+	 * Need to set AcousticNoiseMitigation = '1' first
+	 * 0b - Enabled
+	 * 1b - Disabled
+	 */
+	uint8_t FastPkgCRampDisableIa;
+	uint8_t FastPkgCRampDisableGt;
+	uint8_t FastPkgCRampDisableSa;
+	uint8_t FastPkgCRampDisableFivr;
+
+	/*
+	 * Adjust the VR slew rates
+	 * Need to set AcousticNoiseMitigation = '1' first
+	 * 000b - Fast/2
+	 * 001b - Fast/4
+	 * 010b - Fast/8
+	 * 011b - Fast/16
+	 */
+	uint8_t SlowSlewRateForIa;
+	uint8_t SlowSlewRateForGt;
+	uint8_t SlowSlewRateForSa;
+	uint8_t SlowSlewRateForFivr;
+
+	/* DMI Power Optimizer */
+	uint8_t dmipwroptimize;
+
+	/* SATA Power Optimizer */
+	uint8_t satapwroptimize;
 };
 
 typedef struct soc_intel_cannonlake_config config_t;

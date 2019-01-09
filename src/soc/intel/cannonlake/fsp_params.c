@@ -162,6 +162,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		dev->enabled = 0;
 	params->XdciEnable = dev->enabled;
 
+	/* Enable CNVi Wifi if enabled in device tree */
+	dev = dev_find_slot(0, PCH_DEVFN_CNViWIFI);
+	params->PchCnviMode = dev->enabled;
+
 	/* PCI Express */
 	for (i = 0; i < ARRAY_SIZE(config->PcieClkSrcUsage); i++) {
 		if (config->PcieClkSrcUsage[i] == 0)
@@ -210,6 +214,31 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	 * 3 = GT unsliced,  4 = GT sliced */
 	for (i = 0; i < ARRAY_SIZE(config->domain_vr_config); i++)
 		fill_vr_domain_config(params, i, &config->domain_vr_config[i]);
+
+	/* Acoustic Noise Mitigation */
+	params->AcousticNoiseMitigation = config->AcousticNoiseMitigation;
+	params->SlowSlewRateForIa = config->SlowSlewRateForIa;
+	params->SlowSlewRateForGt = config->SlowSlewRateForGt;
+	params->SlowSlewRateForSa = config->SlowSlewRateForSa;
+	params->SlowSlewRateForFivr = config->SlowSlewRateForFivr;
+	params->FastPkgCRampDisableIa = config->FastPkgCRampDisableIa;
+	params->FastPkgCRampDisableGt = config->FastPkgCRampDisableGt;
+	params->FastPkgCRampDisableSa = config->FastPkgCRampDisableSa;
+	params->FastPkgCRampDisableFivr = config->FastPkgCRampDisableFivr;
+
+	/* Power Optimizer */
+	params->PchPwrOptEnable = config->dmipwroptimize;
+	params->SataPwrOptEnable = config->satapwroptimize;
+
+	/* Apply minimum assertion width settings if non-zero */
+	if (config->PchPmSlpS3MinAssert)
+		params->PchPmSlpS3MinAssert = config->PchPmSlpS3MinAssert;
+	if (config->PchPmSlpS4MinAssert)
+		params->PchPmSlpS4MinAssert = config->PchPmSlpS4MinAssert;
+	if (config->PchPmSlpSusMinAssert)
+		params->PchPmSlpSusMinAssert = config->PchPmSlpSusMinAssert;
+	if (config->PchPmSlpAMinAssert)
+		params->PchPmSlpAMinAssert = config->PchPmSlpAMinAssert;
 }
 
 /* Mainboard GPIO Configuration */

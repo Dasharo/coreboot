@@ -23,6 +23,8 @@ The boards in this section are not real mainboards, but emulators.
 ## Intel
 
 - [DG43GT](intel/dg43gt.md)
+- [IceLake RVP](intel/icelake_rvp.md)
+- [KBLRVP11](intel/kblrvp11.md)
 
 ## Foxconn
 
@@ -31,6 +33,10 @@ The boards in this section are not real mainboards, but emulators.
 ## Gigabyte
 
 - [GA-H61M-S2PV](gigabyte/ga-h61m-s2pv.md)
+
+## Google
+
+- [Dragonegg](google/dragonegg.md)
 
 ## Open Cellular
 
@@ -55,7 +61,12 @@ The boards in this section are not real mainboards, but emulators.
 - [T530](lenovo/w530.md)
 - [W530](lenovo/w530.md)
 - [T430 / T530 / X230 / W530 common](lenovo/xx30_series.md)
+- [T431s](lenovo/t431s.md)
 
 ## SiFive
 
 - [SiFive HiFive Unleashed](sifive/hifive-unleashed.md)
+
+## Supermicro
+
+- [X10SLM+-F](supermicro/x10slm-f.md)

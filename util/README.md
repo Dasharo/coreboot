@@ -16,7 +16,7 @@ Technologies, for example the Pistachio SoC. `C`
 `Yacc`
 * __board_status__ - Tools to collect logs and upload them to the board
 status repository `Bash` `Go`
-* __broadcom__ - Generate Broadcom secure boot image. `C`
+* __bucts__ - A tool to manipulate the BUC.TS bit on Intel targets. `C`
 * __cavium__ - Devicetree_convert Tool to convert a DTB to a static C
 file `Python`
 * __cbfstool__
@@ -38,6 +38,7 @@ _coreboot.org-status_ and _docs.coreboot.org_
 Controller (EC). `C`
 * __exynos__ - Computes and fills Exynos ROM checksum (for BL1 or BL2).
 `Python2`
+* __find_usbdebug__ - Help find USB debug ports
 * __futility__ - Firmware utility for signing ChromeOS images `Make`
 * __fuzz-tests__ - Create test cases that crash the jpeg code. `C`
 * __genbuild_h__ - Generate build system definitions `Shell`

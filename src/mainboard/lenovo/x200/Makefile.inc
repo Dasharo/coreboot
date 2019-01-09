@@ -19,3 +19,6 @@ ramstage-y += blc.c
 romstage-y += gpio.c
 
 ramstage-$(CONFIG_MAINBOARD_USE_LIBGFXINIT) += gma-mainboard.ads
+
+$(call add_vbt_to_cbfs, data_ccfl.vbt, data_ccfl.vbt)
+$(call add_vbt_to_cbfs, data_led.vbt, data_led.vbt)

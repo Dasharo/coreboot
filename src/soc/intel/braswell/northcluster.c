@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2013 Google Inc.
  * Copyright (C) 2015 Intel Corp.
+ * Copyright (C) 2018 Eltan B.V.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +22,7 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <fsp/memmap.h>
+#include <cpu/x86/lapic.h>
 #include <fsp/util.h>
 #include <soc/iomap.h>
 #include <soc/iosf.h>
@@ -52,7 +54,7 @@
  * +--------------------------+ 0
  *
  * Note that there are really only a few regions that need to enumerated w.r.t.
- * coreboot's resrouce model:
+ * coreboot's resource model:
  *
  * +--------------------------+ BMBOUND_HI
  * |     Cacheable/Usable     |
@@ -148,7 +150,15 @@ static void nc_read_resources(struct device *dev)
 	reserved_ram_resource(dev, index++, (0xc0000 >> 10),
 			      (0x100000 - 0xc0000) >> 10);
 
-	chromeos_reserve_ram_oops(dev, index++);
+	/*
+	 * Reserve local APIC
+	 */
+	base_k = RES_IN_KIB(LAPIC_DEFAULT_BASE);
+	size_k = RES_IN_KIB(0x00100000);
+	mmio_resource(dev, index++, base_k, size_k);
+
+	if (IS_ENABLED(CONFIG_CHROMEOS))
+		chromeos_reserve_ram_oops(dev, index++);
 }
 
 static struct device_operations nc_ops = {

@@ -19,7 +19,6 @@
 #include <stdint.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <device/pci_ids.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cpu/cpu.h>
@@ -42,7 +41,7 @@ static int decode_pcie_bar(u32 *const base, u32 *const len)
 	*base = 0;
 	*len = 0;
 
-	struct device *dev = dev_find_slot(0, PCI_DEVFN(0, 0));
+	struct device *dev = pcidev_on_root(0, 0);
 	if (!dev)
 		return 0;
 
@@ -96,7 +95,7 @@ static void mch_domain_read_resources(struct device *dev)
 
 	pci_domain_read_resources(dev);
 
-	struct device *mch = dev_find_slot(0, PCI_DEVFN(0, 0));
+	struct device *mch = pcidev_on_root(0, 0);
 
 	/* Top of Upper Usable DRAM, including remap */
 	touud = pci_read_config16(mch, D0F0_TOUUD);
@@ -197,7 +196,7 @@ static void mch_domain_init(struct device *dev)
 {
 	u32 reg32;
 
-	struct device *mch = dev_find_slot(0, PCI_DEVFN(0, 0));
+	struct device *mch = pcidev_on_root(0, 0);
 
 	/* Enable SERR */
 	reg32 = pci_read_config32(mch, PCI_COMMAND);
@@ -221,21 +220,14 @@ static const char *northbridge_acpi_name(const struct device *dev)
 	return NULL;
 }
 
-u32 northbridge_get_tseg_base(void)
-{
-	return (u32)smm_region_start();
-}
-
-u32 northbridge_get_tseg_size(void)
-{
-	const u8 esmramc = pci_read_config8(dev_find_slot(0, PCI_DEVFN(0, 0)),
-					D0F0_ESMRAMC);
-	return decode_tseg_size(esmramc) << 10;
-}
-
 void northbridge_write_smram(u8 smram)
 {
-	pci_write_config8(dev_find_slot(0, PCI_DEVFN(0, 0)), D0F0_SMRAM, smram);
+	struct device *dev = pcidev_on_root(0, 0);
+
+	if (dev == NULL)
+		die("could not find pci 00:00.0!\n");
+
+	pci_write_config8(dev, D0F0_SMRAM, smram);
 }
 
 /*
@@ -297,7 +289,7 @@ static void gm45_init(void *const chip_info)
 {
 	int dev, fn, bit_base;
 
-	struct device *const d0f0 = dev_find_slot(0, 0);
+	struct device *const d0f0 = pcidev_on_root(0x0, 0);
 
 	/* Hide internal functions based on devicetree info. */
 	for (dev = 3; dev > 0; --dev) {
@@ -317,7 +309,7 @@ static void gm45_init(void *const chip_info)
 		}
 		for (; fn >= 0; --fn) {
 			const struct device *const d =
-				dev_find_slot(0, PCI_DEVFN(dev, fn));
+				pcidev_on_root(dev, fn);
 			if (!d || d->enabled) continue;
 			const u32 deven = pci_read_config32(d0f0, D0F0_DEVEN);
 			pci_write_config32(d0f0, D0F0_DEVEN,

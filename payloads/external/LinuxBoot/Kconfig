@@ -1,6 +1,7 @@
 ## This file is part of the coreboot project.
 ##
 ## Copyright (C) 2017 Facebook Inc.
+## Copyright (C) 2018 9elements Cyber Security
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -16,6 +17,7 @@ if PAYLOAD_LINUXBOOT
 
 choice
 	prompt "Architecture"
+	depends on LINUXBOOT_COMPILE_KERNEL || LINUXBOOT_BUILD_INITRAMFS
 	default LINUXBOOT_X86_64
 
 config LINUXBOOT_X86_64
@@ -42,8 +44,21 @@ endchoice
 config LINUXBOOT_ARCH
 	string
 	default "amd64" if LINUXBOOT_X86_64
-	default "386" if LINUXBOOT_X86
+	default "i386" if LINUXBOOT_X86
 	default "arm64" if LINUXBOOT_ARM64
+
+comment "Linux kernel"
+
+config LINUXBOOT_COMPILE_KERNEL
+	bool "Compile kernel"
+	default n
+
+config LINUXBOOT_KERNEL_PATH
+	string "Path to kernel"
+	default "Image"
+	depends on !LINUXBOOT_COMPILE_KERNEL
+
+if LINUXBOOT_COMPILE_KERNEL
 
 choice
 	prompt "Kernel version"
@@ -73,19 +88,35 @@ config LINUXBOOT_KERNEL_CONFIGFILE
 	  Add your own kernel configuration file. Otherwise a default
 	  minimal defconfig is used.
 
+config LINUXBOOT_DTB_FILE
+	string "Compiled devicetree file"
+	depends on LINUXBOOT_ARM64
+	default ""
+
+endif #LINUXBOOT_COMPILE_KERNEL
+
 config LINUX_COMMAND_LINE
 	string "Kernel command-line"
 	default ""
 	help
 	  Add your own kernel command-line arguments.
 
-config LINUXBOOT_DTB_FILE
-	string "Compiled devicetree file"
-	depends on LINUXBOOT_ARM64
-	default ""
-
 config PAYLOAD_FILE
-	default "payloads/external/LinuxBoot/linuxboot/kernel-image"
+	default "payloads/external/LinuxBoot/linuxboot/bzImage" if LINUXBOOT_COMPILE_KERNEL && ( LINUXBOOT_X86 || LINUXBOOT_X86_64 )
+	default "payloads/external/LinuxBoot/linuxboot/uImage" if LINUXBOOT_COMPILE_KERNEL && LINUXBOOT_ARM64
+	default LINUXBOOT_KERNEL_PATH if !LINUXBOOT_COMPILE_KERNEL
+
+comment "Linux initramfs"
+
+config LINUXBOOT_BUILD_INITRAMFS
+	bool "Build initramfs"
+	default n
+
+config LINUXBOOT_INITRAMFS_PATH
+	string "Path to initramfs"
+	depends on !LINUXBOOT_BUILD_INITRAMFS
+
+if LINUXBOOT_BUILD_INITRAMFS
 
 choice
 	prompt "Payload Mode"
@@ -96,6 +127,7 @@ config LINUXBOOT_UROOT
 	help
 	  Enable u-root linuxboot mode.
 	  See http://u-root.tk/ for more information.
+
 endchoice
 
 if LINUXBOOT_UROOT
@@ -104,33 +136,109 @@ choice
 	prompt "U-root version"
 	default LINUXBOOT_UROOT_MASTER
 
+config LINUXBOOT_UROOT_CUSTOM
+	bool "custom"
+	help
+	  choose a custom u-root branch
+
 config LINUXBOOT_UROOT_MASTER
 	bool "master"
 	help
 	  Latest u-root version
+
+config LINUXBOOT_UROOT_V3_0_0
+	bool "v3.0.0"
+
+config LINUXBOOT_UROOT_V2_0_0
+	bool "v2.0.0"
+
+config LINUXBOOT_UROOT_V1_0_0
+	bool "v1.0.0"
+
 endchoice
+
+config LINUXBOOT_UROOT_CHECKOUT
+	string "U-root custom branch"
+	depends on LINUXBOOT_UROOT_CUSTOM
 
 config LINUXBOOT_UROOT_VERSION
 	string
+	default LINUXBOOT_UROOT_CHECKOUT if LINUXBOOT_UROOT_CUSTOM
 	default "master" if LINUXBOOT_UROOT_MASTER
+	default "v3.0.0" if LINUXBOOT_UROOT_V3_0_0
+	default "v2.0.0" if LINUXBOOT_UROOT_V2_0_0
+	default "v1.0.0" if LINUXBOOT_UROOT_V1_0_0
 
-config LINUXBOOT_UROOT_COMMANDS
-	string "Select u-root commands"
-	default ""
+choice
+	prompt "Build format"
+	default LINUXBOOT_UROOT_BB
 	help
-	  List of additional modules to include, separated by space. Otherwise
-	  all modules of u-root are included.
+	  u-root build format (e.g. bb or source). (default "bb")
+
+config LINUXBOOT_UROOT_BB
+	bool "bb"
+
+config LINUXBOOT_UROOT_SOURCE
+	bool "source (experimental)"
+
+endchoice
+
+config LINUXBOOT_UROOT_FORMAT
+	string
+	default "bb" if LINUXBOOT_UROOT_BB
+	default "source" if LINUXBOOT_UROOT_SOURCE
 
 config LINUXBOOT_UROOT_FILES
 	string "Add files to u-root base"
-	default ""
 	help
-	  Path to directory containing root structure for embedding into the
-	  initramfs.
+	  Additional files, directories, and binaries (with their ldd dependencies) to add to archive.
+	  Can be speficified multiple times.
+
+config LINUXBOOT_UROOT_INITCMD
+	string "Init target"
+	default "init"
+	help
+	  Symlink target for /init.
+	  Can be an absolute path or a u-root command name. (default "init")
+
+config LINUXBOOT_UROOT_SHELL
+	string "default shell"
+	default "elvish"
+	help
+	  Default shell.
+	  Can be an absolute path or a u-root command name. (default "elvish")
+
+config LINUXBOOT_UROOT_COMMANDS
+	string "U-root commands"
+	default "coreboot-app"
+	help
+	  List of additional modules to include,
+	  separated by space. (default "coreboot-app")
+
+endif #LINUXBOOT_UROOT
+
+endif #LINUXBOOT_BUILD_INITRAMFS
+
+choice LINUXBOOT_INITRAMFS_COMPRESSION
+	prompt "Initramfs compression format"
+	default LINUXBOOT_INITRAMFS_COMPRESSION_XZ
+
+config LINUXBOOT_INITRAMFS_COMPRESSION_NONE
+	bool "none"
+
+config LINUXBOOT_INITRAMFS_COMPRESSION_XZ
+	bool "xz compression"
+
+endchoice
 
 config LINUX_INITRD
 	string
-	default "payloads/external/LinuxBoot/linuxboot/initramfs.cpio.xz"
+	default "payloads/external/LinuxBoot/linuxboot/initramfs_u-root.cpio" if LINUXBOOT_UROOT
+	default LINUXBOOT_INITRAMFS_PATH if !LINUXBOOT_BUILD_INITRAMFS
 
-endif
-endif
+config LINUXBOOT_INITRAMFS_SUFFIX
+	string
+	default "" if LINUXBOOT_INITRAMFS_COMPRESSION_NONE
+	default ".xz" if LINUXBOOT_INITRAMFS_COMPRESSION_XZ
+
+endif #PAYLOAD_LINUXBOOT

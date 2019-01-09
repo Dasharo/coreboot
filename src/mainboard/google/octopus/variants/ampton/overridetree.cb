@@ -1,5 +1,34 @@
 chip soc/intel/apollolake
 
+	register "common_soc_config" = "{
+		.gspi[0] = {
+			.speed_mhz = 1,
+			.early_init = 1,
+		},
+		.i2c[0] = {
+			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 152,
+			.fall_time_ns = 30,
+		},
+		.i2c[5] = {
+			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 60,
+			.fall_time_ns = 20,
+			.data_hold_time_ns = 350,
+		},
+		.i2c[6] = {
+			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 70,
+			.fall_time_ns = 127,
+			.data_hold_time_ns = 350,
+		},
+		.i2c[7] = {
+			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 30,
+			.fall_time_ns = 127,
+			.data_hold_time_ns = 350,
+		},
+	}"
 	device domain 0 on
 		device pci 16.0 on
 			chip drivers/i2c/hid
@@ -7,6 +36,7 @@ chip soc/intel/apollolake
 				register "generic.desc" = ""WCOM Digitizer""
 				register "generic.irq" = "ACPI_IRQ_LEVEL_LOW(GPIO_139_IRQ)"
 				register "generic.reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_140)"
+				register "generic.reset_delay_ms" = "20"
 				register "generic.has_power_resource" = "1"
 				register "hid_desc_reg_offset" = "0x1"
 				device i2c 0x9 on end

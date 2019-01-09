@@ -34,7 +34,7 @@ typedef struct southbridge_intel_fsp_rangeley_config config_t;
 void acpi_fill_in_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 {
 	acpi_header_t *header = &(fadt->header);
-	struct device *lpcdev = dev_find_slot(SOC_LPC_DEVFN);
+	struct device *lpcdev = pcidev_path_on_root(SOC_LPC_DEVFN);
 	u16 pmbase = pci_read_config16(lpcdev, ABASE) & 0xfff0;
 	config_t *config = lpcdev->chip_info;
 
@@ -120,10 +120,8 @@ void acpi_fill_in_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	fadt->reset_reg.addrh = 0x00;
 	fadt->reset_value = 6;
 
-	/* Reserved Bits */
-	fadt->res3 = 0x00;		/* reserved, MUST be 0 ACPI 3.0 */
-	fadt->res4 = 0x00;		/* reserved, MUST be 0 ACPI 3.0 */
-	fadt->res5 = 0x00;		/* reserved, MUST be 0 ACPI 3.0 */
+	fadt->ARM_boot_arch = 0;	/* MUST be 0 ACPI 3.0 */
+	fadt->FADT_MinorVersion = 0;	/* MUST be 0 ACPI 3.0 */
 
 	/* Extended ACPI Pointers */
 	fadt->x_firmware_ctl_l = (unsigned long)facs;

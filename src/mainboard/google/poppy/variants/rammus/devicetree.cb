@@ -191,7 +191,7 @@ chip soc/intel/skylake
 			.speed = I2C_SPEED_FAST,
 			.speed_config[0] = {
 				.speed = I2C_SPEED_FAST,
-				.scl_lcnt = 190,
+				.scl_lcnt = 170,
 				.scl_hcnt = 100,
 				.sda_hold = 36,
 			},
@@ -254,7 +254,40 @@ chip soc/intel/skylake
 	device domain 0 on
 		device pci 00.0 on  end # Host Bridge
 		device pci 02.0 on  end # Integrated Graphics Device
-		device pci 14.0 on  end # USB xHCI
+		device pci 14.0 on
+			chip drivers/usb/acpi
+				register "desc" = ""Root Hub""
+				register "type" = "UPC_TYPE_HUB"
+				device usb 0.0 on
+					chip drivers/usb/acpi
+						register "desc" = ""USB Type C Port 1""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						device usb 2.0 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB Type A Port 1""
+						register "type" = "UPC_TYPE_A"
+						device usb 2.1 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Bluetooth""
+						register "type" = "UPC_TYPE_INTERNAL"
+						register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C8)"
+						device usb 2.2 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB Type C Port 2""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						device usb 2.4 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Camera""
+						register "type" = "UPC_TYPE_INTERNAL"
+						device usb 2.8 on end
+					end
+				end
+			end
+		end # USB xHCI
 		device pci 14.1 on  end # USB xDCI (OTG)
 		device pci 14.2 on  end # Thermal Subsystem
 		device pci 15.0 on
@@ -264,7 +297,9 @@ chip soc/intel/skylake
 				register "generic.irq" = "ACPI_IRQ_LEVEL_LOW(GPP_E7_IRQ)"
 				register "generic.probed" = "1"
 				register "generic.enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_C22)"
-				register "generic.enable_delay_ms" = "120"
+				register "generic.enable_delay_ms" = "105"
+				register "generic.stop_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_E3)"
+				register "generic.stop_off_delay_ms" = "1"
 				register "generic.has_power_resource" = "1"
 				register "generic.disable_gpio_export_in_crs" = "1"
 				register "hid_desc_reg_offset" = "0x0"

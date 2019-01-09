@@ -21,13 +21,8 @@
 #include <stdint.h>
 #include <cpu/amd/amdfam10_sysconf.h>
 
-extern u8 bus_sr5650[14];
-extern u8 bus_sp5100[2];
-
 extern u32 apicid_sp5100;
 
-extern u32 sbdn_sr5650;
-extern u32 sbdn_sp5100;
 
 
 static void *smp_write_config_table(void *v)
@@ -43,8 +38,6 @@ static void *smp_write_config_table(void *v)
 	mptable_init(mc, LOCAL_APIC_ADDR);
 
 	smp_write_processors(mc);
-
-	get_bus_conf();
 
 	if (IS_ENABLED(CONFIG_ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
 		apicid_sp5100 = 0x0;
@@ -62,7 +55,7 @@ static void *smp_write_config_table(void *v)
 
 		sp5100_bus_number = 0; //bus_sp5100[0]; TODO: why bus_sp5100[0] use same value of bus_sr5650[0] assigned by get_pci1234(), instead of 0.
 
-		dev = dev_find_slot(sp5100_bus_number, PCI_DEVFN(sbdn_sp5100 + 0x14, 0));
+		dev = dev_find_slot(sp5100_bus_number, PCI_DEVFN(0x14, 0));
 		if (dev) {
 			dword_ptr = (u32 *)(pci_read_config32(dev, 0x74) & 0xfffffff0);
 			smp_write_ioapic(mc, apicid_sp5100, 0x11, dword_ptr);
@@ -109,7 +102,7 @@ static void *smp_write_config_table(void *v)
 			 * 00:14.6: INTB MCI
 			 */
 		}
-		dev = dev_find_slot(0, PCI_DEVFN(0, 0));
+		dev = pcidev_on_root(0, 0);
 		if (dev) {
 			pci_write_config32(dev, 0xF8, 0x1);
 			dword_ptr = (u32 *)(pci_read_config32(dev, 0xFC) & 0xfffffff0);
@@ -132,32 +125,32 @@ static void *smp_write_config_table(void *v)
 	smp_write_intsrc(mc, mp_INT, MP_IRQ_TRIGGER_LEVEL|MP_IRQ_POLARITY_LOW, 0, (((11)<<2)|(0)), apicid_sr5650, 30);	/* Device 11 (LNKG, APIC pin 30) */
 	smp_write_intsrc(mc, mp_INT, MP_IRQ_TRIGGER_LEVEL|MP_IRQ_POLARITY_LOW, 0, (((12)<<2)|(0)), apicid_sr5650, 30);	/* Device 12 (LNKG, APIC pin 30) */
 
-	dev = dev_find_slot(0, PCI_DEVFN(0x2, 0));
+	dev = pcidev_on_root(0x2, 0);
 	if (dev && dev->enabled) {
 		uint8_t bus_pci = dev->link_list->secondary;
 		smp_write_intsrc(mc, mp_INT, MP_IRQ_TRIGGER_LEVEL|MP_IRQ_POLARITY_LOW, bus_pci, (((0)<<0x2)|(0)), apicid_sr5650, 0);	/* card behind dev2 */
 	}
-	dev = dev_find_slot(0, PCI_DEVFN(0x4, 0));
+	dev = pcidev_on_root(0x4, 0);
 	if (dev && dev->enabled) {
 		uint8_t bus_pci = dev->link_list->secondary;
 		smp_write_intsrc(mc, mp_INT, MP_IRQ_TRIGGER_LEVEL|MP_IRQ_POLARITY_LOW, bus_pci, (((0)<<0x4)|(0)), apicid_sr5650, 0);	/* PIKE */
 	}
-	dev = dev_find_slot(0, PCI_DEVFN(0x9, 0));
+	dev = pcidev_on_root(0x9, 0);
 	if (dev && dev->enabled) {
 		uint8_t bus_pci = dev->link_list->secondary;
 		smp_write_intsrc(mc, mp_INT, MP_IRQ_TRIGGER_LEVEL|MP_IRQ_POLARITY_LOW, bus_pci, (((0)<<0x9)|(0)), apicid_sr5650, 23);	/* NIC A */
 	}
-	dev = dev_find_slot(0, PCI_DEVFN(0xa, 0));
+	dev = pcidev_on_root(0xa, 0);
 	if (dev && dev->enabled) {
 		uint8_t bus_pci = dev->link_list->secondary;
 		smp_write_intsrc(mc, mp_INT, MP_IRQ_TRIGGER_LEVEL|MP_IRQ_POLARITY_LOW, bus_pci, (((0)<<0xa)|(0)), apicid_sr5650, 24);	/* NIC B */
 	}
-	dev = dev_find_slot(0, PCI_DEVFN(0xb, 0));
+	dev = pcidev_on_root(0xb, 0);
 	if (dev && dev->enabled) {
 		uint8_t bus_pci = dev->link_list->secondary;
 		smp_write_intsrc(mc, mp_INT, MP_IRQ_TRIGGER_LEVEL|MP_IRQ_POLARITY_LOW, bus_pci, (((0)<<0xb)|(0)), apicid_sr5650, 0);	/* card behind dev11 */
 	}
-	dev = dev_find_slot(0, PCI_DEVFN(0xc, 0));
+	dev = pcidev_on_root(0xc, 0);
 	if (dev && dev->enabled) {
 		uint8_t bus_pci = dev->link_list->secondary;
 		smp_write_intsrc(mc, mp_INT, MP_IRQ_TRIGGER_LEVEL|MP_IRQ_POLARITY_LOW, bus_pci, (((0)<<0xc)|(0)), apicid_sr5650, 0);	/* card behind dev12 */
@@ -184,7 +177,7 @@ static void *smp_write_config_table(void *v)
 	PCI_INT(sp5100_bus_number, 0x11, 0x0, 0x16); /* 6, INTG */
 
 	/* PCI slots */
-	dev = dev_find_slot(0, PCI_DEVFN(0x14, 4));
+	dev = pcidev_on_root(0x14, 4);
 	if (dev && dev->enabled) {
 		u8 bus_pci = dev->link_list->secondary;
 

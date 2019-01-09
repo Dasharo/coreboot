@@ -22,7 +22,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <device/pci_def.h>
-#include <device/pci_ids.h>
 #include <arch/io.h>
 #include <arch/cpu.h>
 #include <device/pnp_def.h>
@@ -45,7 +44,6 @@
 #include "southbridge/amd/amd8111/early_smbus.c"
 #include "southbridge/amd/amd8111/early_ctrl.c"
 
-#include "resourcemap.c"
 #include "cpu/amd/quadcore/quadcore.c"
 
 #define SERIAL_DEV PNP_DEV(0x2e, W83627HF_SP1)

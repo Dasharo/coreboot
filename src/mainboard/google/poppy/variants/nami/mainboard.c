@@ -35,6 +35,7 @@
 /* PL2 ID define*/
 #define PL2_ID_DEFAULT		0
 #define PL2_ID_SONA_SYNDRA	1
+#define PL2_ID_BARD_EKKO	2
 
 static const struct pl2_config {
 	uint32_t cpuid_y0_pl2;
@@ -42,6 +43,7 @@ static const struct pl2_config {
 } pl2_config_table[] = {
 	[PL2_ID_DEFAULT] = { PL2_I7_SKU, PL2_DEFAULT },
 	[PL2_ID_SONA_SYNDRA] = { PL2_DEFAULT, PL2_KBL_U },
+	[PL2_ID_BARD_EKKO] = { PL2_DEFAULT, PL2_KBL_U },
 };
 
 /* Variant for AKALI */
@@ -203,6 +205,11 @@ const char *mainboard_vbt_filename(void)
 	case SKU_0_AKALI360:
 	case SKU_1_AKALI360:
 		return "vbt-akali.bin";
+	case SKU_0_BARD:
+	case SKU_1_BARD:
+	case SKU_2_BARD:
+	case SKU_3_BARD:
+		return "vbt-bard.bin";
 	default:
 		return "vbt.bin";
 		break;
@@ -236,6 +243,10 @@ void variant_devtree_update(void)
 	case SKU_1_SYNDRA:
 	case SKU_2_SYNDRA:
 	case SKU_3_SYNDRA:
+	case SKU_4_SYNDRA:
+	case SKU_5_SYNDRA:
+	case SKU_6_SYNDRA:
+	case SKU_7_SYNDRA:
 		pl2_id = PL2_ID_SONA_SYNDRA;
 	case SKU_0_VAYNE:
 	case SKU_1_VAYNE:
@@ -243,7 +254,19 @@ void variant_devtree_update(void)
 	case SKU_0_PANTHEON:
 	case SKU_1_PANTHEON:
 	case SKU_2_PANTHEON:
+	case SKU_3_PANTHEON:
+	case SKU_4_PANTHEON:
 		cfg->usb2_ports[5].enable = 0;
+		break;
+	case SKU_0_BARD:
+	case SKU_1_BARD:
+	case SKU_2_BARD:
+	case SKU_3_BARD:
+	case SKU_0_EKKO:
+	case SKU_1_EKKO:
+	case SKU_2_EKKO:
+	case SKU_3_EKKO:
+		pl2_id = PL2_ID_BARD_EKKO;
 		break;
 	default:
 		break;

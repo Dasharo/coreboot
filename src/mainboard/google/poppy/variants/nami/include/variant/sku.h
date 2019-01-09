@@ -24,6 +24,8 @@
 #define SKU_0_PANTHEON	0x3F63
 #define SKU_1_PANTHEON	0x3F67
 #define SKU_2_PANTHEON	0x3F62
+#define SKU_3_PANTHEON  0xBF63
+#define SKU_4_PANTHEON  0xBF62
 #define SKU_0_SONA	0x3AE2
 #define SKU_1_SONA	0x3AE3
 #define SKU_0_AKALI	0x29E1
@@ -34,13 +36,18 @@
 #define SKU_1_SYNDRA	0x2BC62
 #define SKU_2_SYNDRA	0x2BC61
 #define SKU_3_SYNDRA	0X2BC60
-#define SKU_0_EKKO	0x118E3
-#define SKU_1_EKKO	0x18E3
-#define SKU_2_EKKO	0x118E1
-#define SKU_3_EKKO	0X18E1
-#define SKU_0_BARD	0x19CE3
-#define SKU_1_BARD	0x9CE3
-#define SKU_2_BARD	0x19CE1
-#define SKU_3_BARD	0X9CE1
+#define SKU_4_SYNDRA    0X6BC63
+#define SKU_5_SYNDRA    0X6BC62
+#define SKU_6_SYNDRA    0X6BC61
+#define SKU_7_SYNDRA    0X6BC60
+#define SKU_0_EKKO     0x10118E3
+#define SKU_1_EKKO     0x10018E3
+#define SKU_2_EKKO     0x10118E1
+#define SKU_3_EKKO     0X10018E1
+#define SKU_0_BARD     0x1019CE3
+#define SKU_1_BARD     0x1009CE3
+#define SKU_2_BARD     0x1019CE1
+#define SKU_3_BARD     0X1009CE1
+
 
 #endif /* __MAINBOARD_SKU_H__ */

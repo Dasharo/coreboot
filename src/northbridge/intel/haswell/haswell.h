@@ -54,6 +54,11 @@
 #define DMIBAR		0x68
 
 #define GGC		0x50			/* GMCH Graphics Control */
+#define  GGC_DISABLE_VGA_IO_DECODE	(1 << 1)
+#define  GGC_IGD_MEM_IN_32MB_UNITS(x)	(((x) & 0x1f) << 3)
+#define  GGC_GTT_0MB		(0 << 8)
+#define  GGC_GTT_1MB		(1 << 8)
+#define  GGC_GTT_2MB		(2 << 8)
 
 #define DEVEN		0x54			/* Device Enable */
 #define  DEVEN_D7EN	(1 << 14)
@@ -216,6 +221,7 @@ void intel_northbridge_haswell_finalize_smm(void);
 void haswell_early_initialization(int chipset_type);
 void haswell_late_initialization(void);
 void set_translation_table(int start, int end, u64 base, int inc);
+void haswell_unhide_peg(void);
 
 /* debugging functions */
 void print_pci_devices(void);

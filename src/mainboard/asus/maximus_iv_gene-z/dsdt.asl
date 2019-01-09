@@ -14,17 +14,18 @@
  * GNU General Public License for more details.
  */
 
+#include <arch/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
 	0x02,		/* DSDT Revision: ACPI v2.0 and up */
-	"COREv4",	/* OEM ID */
-	"COREBOOT",	/* OEM Table ID */
+	OEM_ID,
+	ACPI_TABLE_CREATOR,
 	0x20171231	/* OEM Revision */
 )
 {
 	#include "acpi/platform.asl"
-	#include <cpu/intel/model_206ax/acpi/cpu.asl>
+	#include <cpu/intel/common/acpi/cpu.asl>
 	#include <southbridge/intel/bd82x6x/acpi/platform.asl>
 	#include <southbridge/intel/bd82x6x/acpi/globalnvs.asl>
 	#include <southbridge/intel/bd82x6x/acpi/sleepstates.asl>

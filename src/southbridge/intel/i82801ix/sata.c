@@ -30,9 +30,14 @@ static void sata_enable_ahci_mmap(struct device *const dev, const u8 port_map,
 {
 	int i;
 	u32 reg32;
+	struct resource *res;
 
 	/* Initialize AHCI memory-mapped space */
-	u8 *abar = (u8 *)pci_read_config32(dev, PCI_BASE_ADDRESS_5);
+	res = find_resource(dev, PCI_BASE_ADDRESS_5);
+	if (!res)
+		return;
+
+	u8 *abar = res2mmio(res, 0, 0);
 	printk(BIOS_DEBUG, "ABAR: %p\n", abar);
 
 	/* Set AHCI access mode.
@@ -208,8 +213,7 @@ static void sata_init(struct device *const dev)
 	pci_write_config32(dev, 0x94, sclkcg);
 
 	if (is_mobile && config->sata_traffic_monitor) {
-		struct device *const lpc_dev = dev_find_slot(0,
-							    PCI_DEVFN(0x1f, 0));
+		struct device *const lpc_dev = pcidev_on_root(0x1f, 0);
 		if (((pci_read_config8(lpc_dev, D31F0_CxSTATE_CNF)
 							>> 3) & 3) == 3) {
 			u8 reg8 = pci_read_config8(dev, 0x9c);

@@ -81,7 +81,7 @@ static int acpi_sci_irq(void)
 {
 	uint8_t actl = 0;
 	static uint8_t sci_irq = 0;
-	struct device *dev = dev_find_slot(0, PCI_DEVFN(LPC_DEV, LPC_FUNC));
+	struct device *dev = pcidev_on_root(LPC_DEV, LPC_FUNC);
 
 	/* If this function was already called, just return the stored value. */
 	if (sci_irq)
@@ -238,10 +238,8 @@ void acpi_fill_in_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	fadt->reset_reg.addrh       = 0x00;
 	fadt->reset_value           = 6;
 
-	/* Reserved Bits */
-	fadt->res3 = 0x00; /* reserved, MUST be 0 ACPI 3.0 */
-	fadt->res4 = 0x00; /* reserved, MUST be 0 ACPI 3.0 */
-	fadt->res5 = 0x00; /* reserved, MUST be 0 ACPI 3.0 */
+	fadt->ARM_boot_arch = 0;	/* MUST be 0 ACPI 3.0 */
+	fadt->FADT_MinorVersion = 0;	/* MUST be 0 ACPI 3.0 */
 
 	/* Extended ACPI Pointers */
 	fadt->x_firmware_ctl_l = (unsigned long)facs;
@@ -309,14 +307,12 @@ void acpi_fill_in_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	fadt->x_gpe1_blk.access_size     = 0;
 	fadt->x_gpe1_blk.addrl           = fadt->gpe1_blk;
 	fadt->x_gpe1_blk.addrh           = 0x00;
-
-	header->checksum = acpi_checksum((void *) fadt, sizeof(acpi_fadt_t));
 }
 
 static unsigned long acpi_fill_dmar(unsigned long current)
 {
 	uint32_t vtbar, tmp = current;
-	struct device *dev = dev_find_slot(0, VTD_DEV_FUNC);
+	struct device *dev = pcidev_path_on_root(VTD_DEV_FUNC);
 	uint16_t bdf, hpet_bdf[8];
 	uint8_t i, j;
 
@@ -333,7 +329,7 @@ static unsigned long acpi_fill_dmar(unsigned long current)
 	current += acpi_create_dmar_ds_ioapic(current,
 			9, 0, 5, 4);
 	/* Get the PCI BDF for the PCH I/O APIC */
-	dev = dev_find_slot(0, LPC_DEV_FUNC);
+	dev = pcidev_path_on_root(LPC_DEV_FUNC);
 	bdf = pci_read_config16(dev, 0x6c);
 	current += acpi_create_dmar_ds_ioapic(current,
 			8, (bdf >> 8), PCI_SLOT(bdf), PCI_FUNC(bdf));

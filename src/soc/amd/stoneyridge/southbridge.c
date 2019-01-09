@@ -73,7 +73,7 @@ static inline int sb_ide_enable(void)
 
 void SetFchResetParams(FCH_RESET_INTERFACE *params)
 {
-	const struct device *dev = dev_find_slot(0, SATA_DEVFN);
+	const struct device *dev = pcidev_path_on_root(SATA_DEVFN);
 	params->Xhci0Enable = IS_ENABLED(CONFIG_STONEYRIDGE_XHCI_ENABLE);
 	if (dev && dev->enabled) {
 		params->SataEnable = sb_sata_enable();
@@ -86,7 +86,7 @@ void SetFchResetParams(FCH_RESET_INTERFACE *params)
 
 void SetFchEnvParams(FCH_INTERFACE *params)
 {
-	const struct device *dev = dev_find_slot(0, SATA_DEVFN);
+	const struct device *dev = pcidev_path_on_root(SATA_DEVFN);
 	params->AzaliaController = AzEnable;
 	params->SataClass = CONFIG_STONEYRIDGE_SATA_MODE;
 	if (dev && dev->enabled) {
@@ -217,13 +217,10 @@ uint16_t sb_wideio_size(int index)
  */
 int sb_find_wideio_range(uint16_t start, uint16_t size)
 {
-	uint32_t enable_register;
 	int i, index = WIDEIO_RANGE_ERROR;
 	uint16_t end, current_size, start_wideio, end_wideio;
 
 	end = start + size;
-	enable_register = pci_read_config32(SOC_LPC_DEV,
-					   LPC_IO_OR_MEM_DECODE_ENABLE);
 	for (i = 0; i < TOTAL_WIDEIO_PORTS; i++) {
 		current_size = sb_wideio_size(i);
 		if (current_size == 0)
@@ -414,8 +411,8 @@ static uintptr_t sb_spibase(void)
 
 	/* Make sure the base address is predictable */
 	base = pci_read_config32(SOC_LPC_DEV, SPIROM_BASE_ADDRESS_REGISTER);
-	enables = base & 0xf;
-	base &= ~0x3f;
+	enables = base & SPI_PRESERVE_BITS;
+	base &= ~(SPI_PRESERVE_BITS | SPI_BASE_RESERVED);
 
 	if (!base) {
 		base = SPI_BASE_ADDRESS;
@@ -703,7 +700,7 @@ void bootblock_fch_init(void)
 	sb_print_pmxc0_status();
 }
 
-void sb_enable(device_t dev)
+void sb_enable(struct device *dev)
 {
 	printk(BIOS_DEBUG, "%s\n", __func__);
 }
@@ -756,8 +753,8 @@ static void sb_init_acpi_ports(void)
 
 static uint16_t reset_pm1_status(void)
 {
-	uint16_t pm1_sts = inw(ACPI_PM1_STS);
-	outw(pm1_sts, ACPI_PM1_STS);
+	uint16_t pm1_sts = acpi_read16(MMIO_ACPI_PM1_STS);
+	acpi_write16(MMIO_ACPI_PM1_STS, pm1_sts);
 	return pm1_sts;
 }
 
@@ -812,12 +809,12 @@ static void sb_save_sws(uint16_t pm1_status)
 	if (sws == NULL)
 		return;
 	sws->pm1_sts = pm1_status;
-	sws->pm1_en = inw(ACPI_PM1_EN);
-	reg32 = inl(ACPI_GPE0_STS);
-	outl(ACPI_GPE0_STS, reg32);
+	sws->pm1_en = acpi_read16(MMIO_ACPI_PM1_EN);
+	reg32 = acpi_read32(MMIO_ACPI_GPE0_STS);
+	acpi_write32(MMIO_ACPI_GPE0_STS, reg32);
 	sws->gpe0_sts = reg32;
-	sws->gpe0_en = inl(ACPI_GPE0_EN);
-	reg16 = inw(ACPI_PM1_CNT_BLK);
+	sws->gpe0_en = acpi_read32(MMIO_ACPI_GPE0_EN);
+	reg16 = acpi_read16(MMIO_ACPI_PM1_CNT_BLK);
 	reg16 &= SLP_TYP;
 	sws->wake_from = reg16 >> SLP_TYP_SHIFT;
 }
@@ -907,9 +904,9 @@ static void set_sb_final_nvs(void)
 	gnvs->aoac.ehce = is_aoac_device_enabled(FCH_AOAC_D3_STATE_USB2);
 	gnvs->aoac.xhce = is_aoac_device_enabled(FCH_AOAC_D3_STATE_USB3);
 	/* Rely on these being in sync with devicetree */
-	sd = dev_find_slot(0, SD_DEVFN);
+	sd = pcidev_path_on_root(SD_DEVFN);
 	gnvs->aoac.st_e = sd && sd->enabled ? 1 : 0;
-	sata = dev_find_slot(0, SATA_DEVFN);
+	sata = pcidev_path_on_root(SATA_DEVFN);
 	gnvs->aoac.sd_e = sata && sata->enabled ? 1 : 0;
 	gnvs->aoac.espi = 1;
 

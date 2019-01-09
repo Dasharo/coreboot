@@ -62,7 +62,6 @@ config CPU_SPECIFIC_OPTIONS
 	select SMM_TSEG
 	select POSTCAR_STAGE
 	select POSTCAR_CONSOLE
-	select SSE
 	select SSE2
 	select RTC
 	select SOC_AMD_PSP_SELECTABLE_SMU_FW
@@ -158,7 +157,7 @@ config STONEYRIDGE_XHCI_ENABLE
 	  The XHCI controller must be enabled and the XHCI firmware
 	  must be added in order to have USB 3.0 support configured
 	  by coreboot. The OS will be responsible for enabling the XHCI
-	  controller if the the XHCI firmware is available but the
+	  controller if the XHCI firmware is available but the
 	  XHCI controller is not enabled by coreboot.
 
 config STONEYRIDGE_XHCI_FWM

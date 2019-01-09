@@ -23,7 +23,6 @@
 #include <arch/acpi.h>
 #include <arch/smp/mpspec.h>
 #include <device/device.h>
-#include <device/pci_ids.h>
 #include <cpu/amd/powernow.h>
 #include <device/pci.h>
 #include <cpu/amd/amdfam10_sysconf.h>
@@ -40,7 +39,6 @@ unsigned long acpi_fill_madt(unsigned long current)
 	struct resource *res;
 	struct device *dev;
 
-	get_bus_conf();
 	sbdn = sysconf.sbdn;
 	m = sysconf.mb;
 

@@ -51,10 +51,6 @@
 #ifndef __ACPI__
 #define DEBUG_PERIODIC_SMIS 0
 
-#if defined(__SMM__) && !defined(__ASSEMBLER__)
-void intel_pch_finalize_smm(void);
-#endif
-
 #if !defined(__ASSEMBLER__)
 #if !defined(__PRE_RAM__)
 #if !defined(__SIMPLE_DEVICE__)
@@ -85,10 +81,6 @@ void southbridge_configure_default_intmap(void);
 #define MAINBOARD_POWER_OFF	0
 #define MAINBOARD_POWER_ON	1
 #define MAINBOARD_POWER_KEEP	2
-
-#ifndef CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL
-#define CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL MAINBOARD_POWER_ON
-#endif
 
 /* PCI Configuration Space (D30:F0): PCI2PCI */
 #define PSTS	0x06

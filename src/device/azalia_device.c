@@ -16,7 +16,6 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <device/azalia_device.h>
 #include <arch/io.h>
@@ -106,7 +105,7 @@ no_codec:
 	return 0;
 }
 
-static u32 find_verb(struct device *dev, u32 viddid, const u32 ** verb)
+static u32 find_verb(struct device *dev, u32 viddid, const u32 **verb)
 {
 	printk(BIOS_DEBUG, "azalia_audio: dev=%s\n", dev_path(dev));
 	printk(BIOS_DEBUG, "azalia_audio: Reading viddid=%x\n", viddid);

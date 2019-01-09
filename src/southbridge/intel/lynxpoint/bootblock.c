@@ -14,19 +14,7 @@
  */
 
 #include <arch/io.h>
-#include <cpu/x86/tsc.h>
 #include "pch.h"
-
-static void store_initial_timestamp(void)
-{
-	/* On Cougar Point we have two 32bit scratchpad registers available:
-	 * D0:F0  0xdc (SKPAD)
-	 * D31:F2 0xd0 (SATA SP)
-	 */
-	tsc_t tsc = rdtsc();
-	pci_write_config32(PCI_DEV(0, 0x00, 0), 0xdc, tsc.lo);
-	pci_write_config32(PCI_DEV(0, 0x1f, 2), 0xd0, tsc.hi);
-}
 
 /*
  * Enable Prefetching and Caching.
@@ -54,7 +42,7 @@ static void map_rcba(void)
 
 static void enable_port80_on_lpc(void)
 {
-	/* Enable port 80 POST on LPC. The chipset does this by deafult,
+	/* Enable port 80 POST on LPC. The chipset does this by default,
 	 * but it doesn't appear to hurt anything. */
 	u32 gcs = RCBA32(GCS);
 	gcs = gcs & ~0x4;
@@ -83,8 +71,6 @@ static void set_spi_speed(void)
 
 static void bootblock_southbridge_init(void)
 {
-	store_initial_timestamp();
-
 	map_rcba();
 	enable_spi_prefetch();
 	enable_port80_on_lpc();

@@ -15,12 +15,13 @@
 
 #include <variant/ec.h>
 
+#include <arch/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
 	0x02,		/* DSDT revision: ACPI v2.0 and up */
-	"COREv4",	/* OEM id */
-	"COREBOOT",	/* OEM table id */
+	OEM_ID,
+	ACPI_TABLE_CREATOR,
 	0x20110725	/* OEM revision */
 )
 {
@@ -31,13 +32,9 @@ DefinitionBlock(
 	#include <soc/intel/cannonlake/acpi/globalnvs.asl>
 
 	/* CPU */
-	#include <soc/intel/cannonlake/acpi/cpu.asl>
+	#include <cpu/intel/common/acpi/cpu.asl>
 
 	Scope (\_SB) {
-		Device (PWRB)
-		{
-			Name (_HID, EisaId ("PNP0C0C"))
-		}
 		Device (PCI0)
 		{
 			#include <soc/intel/cannonlake/acpi/northbridge.asl>
@@ -63,4 +60,15 @@ DefinitionBlock(
 		#include <ec/google/wilco/acpi/ec.asl>
 	}
 #endif
+
+	/* Dynamic Platform Thermal Framework */
+	Scope (\_SB)
+	{
+		/* Per board variant specific definitions. */
+		#include <variant/acpi/dptf.asl>
+		/* Include soc specific DPTF changes */
+		#include <soc/intel/cannonlake/acpi/dptf.asl>
+		/* Include common dptf ASL files */
+		#include <soc/intel/common/acpi/dptf/dptf.asl>
+	}
 }

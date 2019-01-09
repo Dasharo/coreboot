@@ -92,7 +92,6 @@
 #ifndef __ACPI__
 
 #if defined(__SMM__) && !defined(__ASSEMBLER__)
-void intel_pch_finalize_smm(void);
 void usb_ehci_sleep_prepare(pci_devfn_t dev, u8 slp_typ);
 void usb_ehci_disable(pci_devfn_t dev);
 void usb_xhci_sleep_prepare(pci_devfn_t dev, u8 slp_typ);
@@ -142,6 +141,7 @@ struct rcba_config_instruction
 #if !defined(__ASSEMBLER__)
 void pch_config_rcba(const struct rcba_config_instruction *rcba_config);
 int pch_silicon_revision(void);
+int pch_silicon_id(void);
 int pch_silicon_type(void);
 int pch_is_lp(void);
 u16 get_pmbase(void);
@@ -209,10 +209,6 @@ void mainboard_config_superio(void);
 #define MAINBOARD_POWER_OFF	0
 #define MAINBOARD_POWER_ON	1
 #define MAINBOARD_POWER_KEEP	2
-
-#ifndef CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL
-#define CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL MAINBOARD_POWER_ON
-#endif
 
 /* PCI Configuration Space (D30:F0): PCI2PCI */
 #define PSTS	0x06

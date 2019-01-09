@@ -24,6 +24,7 @@
 #include <string.h>
 #include <cpu/cpu.h>
 #include <arch/acpi.h>
+#include <cpu/intel/smm/gen1/smi.h>
 #include "i945.h"
 
 static int get_pcie_bar(u32 *base)
@@ -33,7 +34,7 @@ static int get_pcie_bar(u32 *base)
 
 	*base = 0;
 
-	dev = dev_find_slot(0, PCI_DEVFN(0, 0));
+	dev = pcidev_on_root(0, 0);
 	if (!dev)
 		return 0;
 
@@ -75,16 +76,16 @@ static void mch_domain_read_resources(struct device *dev)
 	printk(BIOS_DEBUG, "pci_tolm: 0x%x\n", pci_tolm);
 
 	printk(BIOS_SPEW, "Base of stolen memory: 0x%08x\n",
-		    pci_read_config32(dev_find_slot(0, PCI_DEVFN(2, 0)), BSM));
+		    pci_read_config32(pcidev_on_root(2, 0), BSM));
 
-	tolud = pci_read_config8(dev_find_slot(0, PCI_DEVFN(0, 0)), TOLUD);
+	tolud = pci_read_config8(pcidev_on_root(0, 0), TOLUD);
 	printk(BIOS_SPEW, "Top of Low Used DRAM: 0x%08x\n", tolud << 24);
 
 	tomk = tolud << 14;
 	tomk_stolen = tomk;
 
 	/* Note: subtract IGD device and TSEG */
-	reg16 = pci_read_config16(dev_find_slot(0, PCI_DEVFN(0, 0)), GGC);
+	reg16 = pci_read_config16(pcidev_on_root(0, 0), GGC);
 	if (!(reg16 & 2)) {
 		printk(BIOS_DEBUG, "IGD decoded, subtracting ");
 		int uma_size = decode_igd_memory_size((reg16 >> 4) & 7);
@@ -97,8 +98,8 @@ static void mch_domain_read_resources(struct device *dev)
 		uma_memory_size = uma_size * 1024ULL;
 	}
 
-	tseg_sizek = decode_tseg_size(pci_read_config8(dev_find_slot(0,
-					PCI_DEVFN(0, 0)), ESMRAMC)) >> 10;
+	tseg_sizek = decode_tseg_size(pci_read_config8(pcidev_on_root(0, 0),
+							ESMRAMC)) >> 10;
 	printk(BIOS_DEBUG, "TSEG decoded, subtracting %dM\n", tseg_sizek >> 10);
 	tomk_stolen -= tseg_sizek;
 	tseg_memory_base = tomk_stolen * 1024ULL;
@@ -152,6 +153,36 @@ static const char *northbridge_acpi_name(const struct device *dev)
 	}
 
 	return NULL;
+}
+
+void northbridge_write_smram(u8 smram)
+{
+	struct device *dev = pcidev_on_root(0, 0);
+
+	if (dev == NULL)
+		die("could not find pci 00:00.0!\n");
+
+	pci_write_config8(dev, SMRAM, smram);
+}
+
+/*
+ * Really doesn't belong here but will go away with parallel mp init,
+ * so let it be here for a while...
+ */
+int cpu_get_apic_id_map(int *apic_id_map)
+{
+	unsigned int i;
+
+	/* Logical processors (threads) per core */
+	const struct cpuid_result cpuid1 = cpuid(1);
+	/* Read number of cores. */
+	const char cores = (cpuid1.ebx >> 16) & 0xf;
+
+	/* TODO in parallel MP cpuid(1).ebx */
+	for (i = 0; i < cores; i++)
+		apic_id_map[i] = i;
+
+	return cores;
 }
 
 	/* TODO We could determine how many PCIe busses we need in

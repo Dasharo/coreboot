@@ -14,6 +14,7 @@
  * GNU General Public License for more details.
  */
 
+#include <commonlib/helpers.h>
 #include <console/console.h>
 #include <arch/acpi.h>
 #include <arch/io.h>
@@ -22,7 +23,9 @@
 #include <cpu/intel/haswell/haswell.h>
 #include <device/device.h>
 #include <device/pci.h>
+#include <device/pci_def.h>
 #include <device/pci_ids.h>
+#include <device/pci_ops.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cpu/x86/smm.h>
@@ -368,13 +371,15 @@ static void mc_add_dram_resources(struct device *dev, int *resource_cnt)
 			  IORESOURCE_STORED | IORESOURCE_RESERVE |
 			  IORESOURCE_ASSIGNED | IORESOURCE_CACHEABLE;
 
-	/* BGSM -> TOLUD */
-	resource = new_resource(dev, index++);
-	resource->base = mc_values[BGSM_REG];
-	resource->size = mc_values[TOLUD_REG] - resource->base;
-	resource->flags = IORESOURCE_MEM | IORESOURCE_FIXED |
-			  IORESOURCE_STORED | IORESOURCE_RESERVE |
-			  IORESOURCE_ASSIGNED;
+	/* BGSM -> TOLUD. If the IGD is disabled, BGSM can equal TOLUD */
+	if (mc_values[BGSM_REG] != mc_values[TOLUD_REG]) {
+		resource = new_resource(dev, index++);
+		resource->base = mc_values[BGSM_REG];
+		resource->size = mc_values[TOLUD_REG] - resource->base;
+		resource->flags = IORESOURCE_MEM | IORESOURCE_FIXED |
+				  IORESOURCE_STORED | IORESOURCE_RESERVE |
+				  IORESOURCE_ASSIGNED;
+	}
 
 	/* 4GiB -> TOUUD */
 	base_k = 4096 * 1024; /* 4GiB */
@@ -423,6 +428,47 @@ static void mc_read_resources(struct device *dev)
 	mc_add_dram_resources(dev, &index);
 }
 
+/*
+ * The Mini-HD audio device is disabled whenever the IGD is. This is
+ * because it provides audio over the integrated graphics port(s), which
+ * requires the IGD to be functional.
+ */
+static void disable_devices(void)
+{
+	static const struct {
+		const unsigned int devfn;
+		const u32 mask;
+		const char *const name;
+	} nb_devs[] = {
+		{ PCI_DEVFN(1, 2), DEVEN_D1F2EN, "PEG12" },
+		{ PCI_DEVFN(1, 1), DEVEN_D1F1EN, "PEG11" },
+		{ PCI_DEVFN(1, 0), DEVEN_D1F0EN, "PEG10" },
+		{ PCI_DEVFN(2, 0), DEVEN_D2EN | DEVEN_D3EN, "IGD" },
+		{ PCI_DEVFN(3, 0), DEVEN_D3EN, "Mini-HD audio" },
+		{ PCI_DEVFN(4, 0), DEVEN_D4EN, "\"device 4\"" },
+		{ PCI_DEVFN(7, 0), DEVEN_D7EN, "\"device 7\"" },
+	};
+
+	struct device *host_dev = pcidev_on_root(0x0, 0);
+	u32 deven;
+	size_t i;
+
+	if (!host_dev)
+		return;
+
+	deven = pci_read_config32(host_dev, DEVEN);
+
+	for (i = 0; i < ARRAY_SIZE(nb_devs); i++) {
+		struct device *dev = pcidev_path_on_root(nb_devs[i].devfn);
+		if (!dev || !dev->enabled) {
+			printk(BIOS_DEBUG, "Disabling %s.\n", nb_devs[i].name);
+			deven &= ~nb_devs[i].mask;
+		}
+	}
+
+	pci_write_config32(host_dev, DEVEN, deven);
+}
+
 static void intel_set_subsystem(struct device *dev, unsigned int vendor,
 				unsigned int device)
 {
@@ -444,6 +490,8 @@ static void northbridge_init(struct device *dev)
 	pair &= ~0x7;	/* Clear 2:0 */
 	pair |= 0x4;	/* Fixed Priority */
 	MCHBAR8(0x5418) = pair;
+
+	disable_devices();
 
 	/*
 	 * Set bits 0+1 of BIOS_RESET_CPL to indicate to the CPU
@@ -480,6 +528,7 @@ static const unsigned short mc_pci_device_ids[] = {
 	0x0c00, /* Desktop */
 	0x0c04, /* Mobile */
 	0x0a04, /* ULT */
+	0x0c08, /* Server */
 	0
 };
 

@@ -134,11 +134,8 @@ static void busmaster_disable_on_bus(int bus)
 	for (slot = 0; slot < 0x20; slot++) {
 		for (func = 0; func < 8; func++) {
 			u32 reg32;
-#if defined(__SIMPLE_DEVICE__)
+
 			pci_devfn_t dev = PCI_DEV(bus, slot, func);
-#else
-			struct device *dev = PCI_DEV(bus, slot, func);
-#endif
 
 			if (!smihandler_soc_disable_busmaster(dev))
 				continue;
@@ -279,7 +276,7 @@ static void southbridge_smi_gsmi(
 	void *io_smi = NULL;
 	uint32_t reg_ebx;
 
-	io_smi = find_save_state(save_state_ops, ELOG_GSMI_APM_CNT);
+	io_smi = find_save_state(save_state_ops, APM_CNT_ELOG_GSMI);
 	if (!io_smi)
 		return;
 	/* Command and return value in EAX */
@@ -301,7 +298,7 @@ static void southbridge_smi_store(
 	void *io_smi;
 	uint32_t reg_ebx;
 
-	io_smi = find_save_state(save_state_ops, SMMSTORE_APM_CNT);
+	io_smi = find_save_state(save_state_ops, APM_CNT_SMMSTORE);
 	if (!io_smi)
 		return;
 	/* Command and return value in EAX */
@@ -387,11 +384,11 @@ void smihandler_southbridge_apmc(
 			printk(BIOS_DEBUG, "SMI#: Setting GNVS to %p\n", gnvs);
 		}
 		break;
-	case ELOG_GSMI_APM_CNT:
+	case APM_CNT_ELOG_GSMI:
 		if (IS_ENABLED(CONFIG_ELOG_GSMI))
 			southbridge_smi_gsmi(save_state_ops);
 		break;
-	case SMMSTORE_APM_CNT:
+	case APM_CNT_SMMSTORE:
 		if (IS_ENABLED(CONFIG_SMMSTORE))
 			southbridge_smi_store(save_state_ops);
 		break;

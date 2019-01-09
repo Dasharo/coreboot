@@ -19,7 +19,6 @@
 #include <cpu/amd/msr.h>
 #include <timer.h>
 #include <device/pci.h>
-#include <device/pci_ids.h>
 #include <northbridge/amd/amdht/AsPsDefs.h>
 
 static struct monotonic_counter {
@@ -52,7 +51,8 @@ static void init_timer(void)
 
 	/* Get boost capability */
 	if ((model == 0x8) || (model == 0x9)) {	/* revision D */
-		boost_capable = (pci_read_config32(dev_find_slot(0, PCI_DEVFN(0x18, 4)), 0x15c) & 0x4) >> 2;
+		boost_capable = (pci_read_config32(pcidev_on_root(0x18, 4),
+							    0x15c) & 0x4) >> 2;
 	}
 
 	/* Set up TSC (BKDG v3.62 section 2.9.4)*/

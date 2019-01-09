@@ -28,7 +28,6 @@
 #include <cpu/x86/smm.h>
 #include <cpu/x86/tsc.h>
 #include <device/pci.h>
-#include <device/pci_ids.h>
 #include <ec/google/chromeec/ec.h>
 #include <drivers/intel/gma/opregion.h>
 #include <rules.h>
@@ -448,6 +447,13 @@ void generate_cpu_entries(struct device *device)
 
 		acpigen_pop_len();
 	}
+
+	/* PPKG is usually used for thermal management
+	   of the first and only package. */
+	acpigen_write_processor_package("PPKG", 0, pattrs->num_cpus);
+
+	/* Add a method to notify processor nodes */
+	acpigen_write_processor_cnot(pattrs->num_cpus);
 }
 
 unsigned long acpi_madt_irq_overrides(unsigned long current)

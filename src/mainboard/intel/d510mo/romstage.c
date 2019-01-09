@@ -30,14 +30,12 @@
 #include <superio/winbond/w83627thg/w83627thg.h>
 #include <superio/winbond/common/winbond.h>
 #include <lib.h>
-#include <arch/stages.h>
 #include <cbmem.h>
 #include <romstage_handoff.h>
 #include <timestamp.h>
 
 #define SERIAL_DEV PNP_DEV(0x4e, W83627THG_SP1)
 #define SUPERIO_DEV PNP_DEV(0x4e, 0)
-
 
 /* Early mainboard specific GPIO setup */
 static void mb_gpio_init(void)
@@ -84,9 +82,7 @@ static void rcba_config(void)
 	/* Enable IOAPIC */
 	RCBA8(OIC) = 0x03;
 
-	RCBA32(FD) = FD_PCIE6 | FD_PCIE5 | FD_INTLAN | FD_ACMOD | FD_ACAUD
-		| FD_PATA;
-	RCBA32(FD) |= 1;
+	RCBA32(FD) |= FD_INTLAN;
 }
 
 void mainboard_romstage_entry(unsigned long bist)
@@ -95,9 +91,6 @@ void mainboard_romstage_entry(unsigned long bist)
 	int cbmem_was_initted;
 	int s3resume = 0;
 	int boot_path;
-
-	timestamp_init(get_initial_timestamp());
-	timestamp_add_now(TS_START_ROMSTAGE);
 
 	if (bist == 0)
 		enable_lapic();

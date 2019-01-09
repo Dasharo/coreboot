@@ -15,8 +15,9 @@
 
 #include <bootblock_common.h>
 #include <timestamp.h>
+#include "board.h"
 
 void bootblock_mainboard_init(void)
 {
-
+	setup_chromeos_gpios();
 }

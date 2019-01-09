@@ -548,7 +548,7 @@ func makeKconfig(ctx Context) {
 
 	fmt.Fprintf(kc, "if %s\n\n", ctx.KconfigName)
 
-	fmt.Fprintf(kc, "config BOARD_SPECIFIC_OPTIONS # dummy\n\tdef_bool y\n")
+	fmt.Fprintf(kc, "config BOARD_SPECIFIC_OPTIONS\n\tdef_bool y\n")
 	keys := []string{}
 	for name, val := range KconfigBool {
 		if val {
@@ -848,12 +848,13 @@ func main() {
 	}
 
 	dsdt.WriteString(
-		`DefinitionBlock(
+		`#include <arch/acpi.h>
+DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
 	0x02,		// DSDT revision: ACPI 2.0 and up
-	"COREv4",	// OEM id
-	"COREBOOT",	// OEM table id
+	OEM_ID,
+	ACPI_TABLE_CREATOR,
 	0x20141018	// OEM revision
 )
 {

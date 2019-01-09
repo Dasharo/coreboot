@@ -29,7 +29,8 @@ ramstage-y += pmbase.c
 postcar-y += pmbase.c
 smm-y += pmbase.c
 
-romstage-$(CONFIG_USBDEBUG_IN_ROMSTAGE) += usb_debug.c
+bootblock-$(CONFIG_USBDEBUG) += usb_debug.c
+romstage-$(CONFIG_USBDEBUG) += usb_debug.c
 ramstage-$(CONFIG_USBDEBUG) += usb_debug.c
 
 romstage-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_GPIO) += gpio.c
@@ -53,6 +54,8 @@ ramstage-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_SMM) += pmutil.c smi.c
 smm-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_SMM) += pmutil.c smihandler.c
 
 ramstage-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_ACPI_MADT) += madt.c
+
+smm-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_FINALIZE) += finalize.c
 
 romstage-y += rtc.c
 ramstage-y += rtc.c

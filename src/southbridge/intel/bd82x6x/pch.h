@@ -56,10 +56,6 @@
 #ifndef __ACPI__
 #define DEBUG_PERIODIC_SMIS 0
 
-#if defined(__SMM__) && !defined(__ASSEMBLER__)
-void intel_pch_finalize_smm(void);
-#endif
-
 #if !defined(__ASSEMBLER__)
 #if !defined(__PRE_RAM__)
 #if !defined(__SIMPLE_DEVICE__)
@@ -70,9 +66,6 @@ int pch_silicon_revision(void);
 int pch_silicon_type(void);
 int pch_silicon_supported(int type, int rev);
 void pch_iobp_update(u32 address, u32 andvalue, u32 orvalue);
-#if IS_ENABLED(CONFIG_ELOG)
-void pch_log_state(void);
-#endif
 #else /* __PRE_RAM__ */
 void enable_smbus(void);
 void enable_usb_bar(void);

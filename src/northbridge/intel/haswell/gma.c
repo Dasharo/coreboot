@@ -235,7 +235,7 @@ static void power_well_enable(void)
 	gtt_poll(HSW_PWR_WELL_CTL1, HSW_PWR_WELL_STATE, HSW_PWR_WELL_STATE);
 
 	/* In the native graphics case, we've got about 20 ms.
-	 * after we power up the the AUX channel until we can talk to it.
+	 * after we power up the AUX channel until we can talk to it.
 	 * So get that going right now. We can't turn on the panel, yet, just VDD.
 	 */
 	if (IS_ENABLED(CONFIG_MAINBOARD_DO_NATIVE_VGA_INIT)) {
@@ -512,7 +512,7 @@ static void gma_set_subsystem(struct device *dev, unsigned int vendor,
 const struct i915_gpu_controller_info *
 intel_gma_get_controller_info(void)
 {
-	struct device *dev = dev_find_slot(0, PCI_DEVFN(0x2,0));
+	struct device *dev = pcidev_on_root(0x2, 0);
 	if (!dev) {
 		return NULL;
 	}

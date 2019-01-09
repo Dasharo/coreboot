@@ -43,35 +43,38 @@ chip northbridge/amd/agesa/family14/root_complex
 					device pci 14.1 off end # IDE	0x439c
 					device pci 14.2 off end # HDA	0x4383
 					device pci 14.3 on # LPC		0x439d
-					chip superio/nuvoton/nct5104d
-						register "irq_trigger_type" = "0"
-						device pnp 2e.0 off end
-						device pnp 2e.2 on
-							io 0x60 = 0x3f8
-							irq 0x70 = 4
+						chip superio/nuvoton/nct5104d
+							register "irq_trigger_type" = "0"
+							device pnp 2e.0 off end
+							device pnp 2e.2 on
+								io 0x60 = 0x3f8
+								irq 0x70 = 4
+							end
+							device pnp 2e.3 on
+								io 0x60 = 0x2f8
+								irq 0x70 = 3
+							end
+							device pnp 2e.10 off
+								# UART C is conditionally turned on
+								io 0x60 = 0x3e8
+								irq 0x70 = 4
+							end
+							device pnp 2e.11 off
+								# UART D is conditionally turned on
+								io 0x60 = 0x2e8
+								irq 0x70 = 3
+							end
+							device pnp 2e.8 off end
+							device pnp 2e.f off end
+							# GPIO0 and GPIO1 are conditionally turned on
+							device pnp 2e.007 off end
+							device pnp 2e.107 off end
+							device pnp 2e.607 off end
+							device pnp 2e.e off end
 						end
-						device pnp 2e.3 on
-							io 0x60 = 0x2f8
-							irq 0x70 = 3
-						end
-						device pnp 2e.10 off
-							# UART C is conditionally turned on
-							io 0x60 = 0x3e8
-							irq 0x70 = 4
-						end
-						device pnp 2e.11 off
-							# UART D is conditionally turned on
-							io 0x60 = 0x2e8
-							irq 0x70 = 3
-						end
-						device pnp 2e.8 off end
-						device pnp 2e.f off end
-						# GPIO0 and GPIO1 are conditionally turned on
-						device pnp 2e.007 off end
-						device pnp 2e.107 off end
-						device pnp 2e.607 off end
-						device pnp 2e.e off end
-					end
+						chip drivers/pc80/tpm
+							device pnp 0c31.0 on end
+						end # LPC TPM
 					end #LPC
 					device pci 14.4 on end # PCIB 0x4384 always active; pins remapped to gpio by disconnect_pcib = 1
 					device pci 14.5 off end # OHCI FS/LS USB

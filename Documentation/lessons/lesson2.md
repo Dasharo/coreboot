@@ -60,23 +60,28 @@ just generated.
 
 ## Part 3: Clone coreboot and configure it for submitting patches
 
-Go to the **Projects** tab in the upper left corner and select **List**.
-From the dropdown menu that appears, select "coreboot".
+On Gerrit, click on the **Browse** tab in the upper left corner and select
+**Repositories**.  From the listing, select the "coreboot" repo.  You may have
+to click the next page arrow at the bottom a few times to find it.
 
-If you are using SSH keys, select **ssh** from the tabs under "Project coreboot"
-and run the command that appears. This should prompt you for your id_rsa passphrase,
-if you previously set one.
+If you are using SSH keys, select **ssh** from the tabs under "Project
+coreboot" and run the "clone with commit-msg hook" command that's provided.
+This should prompt you for your id_rsa passphrase, if you previously set one.
 
 If you are using HTTP, instead, select **http** from the tabs under "Project coreboot"
 and run the command that appears
 
-After it finishes cloning, "cd coreboot" will take you into the local
-git repository. Run "make gitconfig" to set up the hooks and configurations.
-For example, you will be asked to run the following commands to set your
-username and email.
+Now is a good time to configure your global git identity, if you haven't
+already.
 
 	git config --global user.name "Your Name"
 	git config --global user.email "Your Email"
+
+Finally, enter the local git repository and set up repository specific hooks
+and other configurations.
+
+	cd coreboot
+	make gitconfig
 
 ## Part 4: Submit a commit
 
@@ -148,6 +153,11 @@ coreboot.org. **Note:** To submit as a draft, use
 your commit will be on coreboot.org, but is only visible to those you add
 as reviewers.
 
+This has been a quick primer on how to submit a change to Gerrit for review
+using git.  You may wish to review the [Gerrit code review workflow
+documentation](https://gerrit-review.googlesource.com/Documentation/intro-user.html#code-review),
+especially if you plan to work on multiple changes at the same time.
+
 ## Part 4b: Using git cola to stage and submit a commit
 
 If git cola is not installed on your machine, see
@@ -209,7 +219,7 @@ only visible to those you add as reviewers.
 
 ## Part 5: Getting your commit reviewed
 
-Your commits can now be seen on review.coreboot.org if you select “My”
+Your commits can now be seen on review.coreboot.org if you select “Your”
 and click on “Changes” and can be reviewed by others. Your code will
 first be reviewed by build bot (Jenkins), which will either give you a warning
 or verify a successful build; if so, your commit will receive a +1. Other

@@ -262,8 +262,8 @@ static void mainboard_final(void *chip_info)
 	 * disabled temporarily by setting D18F3x88[DisDramScrub]
 	 */
 	u32 val;
-	device_t D18F3 = dev_find_device(0x1022, 0x1583, NULL);
-	device_t D18F5 = dev_find_device(0x1022, 0x1585, NULL);
+	struct device *D18F3 = dev_find_device(0x1022, 0x1583, NULL);
+	struct device *D18F5 = dev_find_device(0x1022, 0x1585, NULL);
 
 	/* Disable DRAM ECC scrubbing */
 	val = pci_read_config32(D18F3, 0x88);
@@ -354,7 +354,7 @@ static int read_serial_from_nic(char *serial, size_t len)
 	 * Read secondary bus number from the PCIe bridge where the first NIC is
 	 * connected.
 	 */
-	dev = dev_find_slot(0, PCI_DEVFN(2, 2));
+	dev = pcidev_on_root(2, 2);
 	if (!serial || !dev)
 		return -1;
 

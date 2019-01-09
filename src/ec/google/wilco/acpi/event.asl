@@ -76,24 +76,30 @@ Method (ECQ1, 1, Serialized)
 Method (ECQ2, 1, Serialized)
 {
 	Printf ("EVT2: %o", Arg0)
+
+	If (EBIT (E2QS, Arg0)) {
+		Printf ("QS EVENT")
+		Notify (^WLCO, 0x90)
+	}
 }
 
 /* Handle events in PmEv3 */
 Method (ECQ3, 1, Serialized)
 {
 	Printf ("EVT3: %o", Arg0)
+
+#ifdef EC_ENABLE_DPTF
+	/* Theraml Events */
+	If (EBIT (E3TH, Arg0)) {
+		^PATX ()
+	}
+#endif
 }
 
 /* Handle events in PmEv4 */
 Method (ECQ4, 1, Serialized)
 {
 	Printf ("EVT4: %o", Arg0)
-}
-
-/* Handle QuickSet events */
-Method (ECQS, 1, Serialized)
-{
-	Printf ("QS EVENT %o", Arg0)
 }
 
 /* Process all events */
@@ -118,9 +124,20 @@ Method (_Q66, 0, Serialized)
 	If (Local0) {
 		ECQ4 (Local0)
 	}
+}
 
+/* Get Event Buffer */
+Method (QSET, 0, Serialized)
+{
+	/* Get count of event bytes */
 	Local0 = R (QSEC)
+	Name (QBUF, Buffer (Local0) {})
+
+	/* Fill QS event buffer with Local0 bytes */
 	For (Local1 = 0, Local1 < Local0, Local1++) {
-		ECQS (R (QSEB))
+		QBUF[Local1] = R (QSEB)
 	}
+
+	Printf ("QS = %o", QBUF)
+	Return (QBUF)
 }

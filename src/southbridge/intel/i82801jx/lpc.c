@@ -172,7 +172,7 @@ static void i82801jx_power_options(struct device *dev)
 	/* Get the chip configuration */
 	config_t *config = dev->chip_info;
 
-	int pwr_on=CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL;
+	int pwr_on = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
 	int nmi_option;
 
 	/* BIOS must program... */
@@ -501,7 +501,7 @@ unsigned long acpi_fill_madt(unsigned long current)
 
 void acpi_fill_fadt(acpi_fadt_t *fadt)
 {
-	struct device *dev = dev_find_slot(0, PCI_DEVFN(0x1f, 0));
+	struct device *dev = pcidev_on_root(0x1f, 0);
 	config_t *chip = dev->chip_info;
 	u16 pmbase = pci_read_config16(dev, 0x40) & 0xfffe;
 
@@ -562,7 +562,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_pm2_cnt_blk.bit_width = 8;
 	fadt->x_pm2_cnt_blk.bit_offset = 0;
 	fadt->x_pm2_cnt_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->x_pm2_cnt_blk.addrl = pmbase + 0x20;
+	fadt->x_pm2_cnt_blk.addrl = pmbase + 0x50;
 	fadt->x_pm2_cnt_blk.addrh = 0x0;
 
 	fadt->x_pm_tmr_blk.space_id = 1;
@@ -727,7 +727,7 @@ static const char *lpc_acpi_name(const struct device *dev)
 
 static void southbridge_fill_ssdt(struct device *device)
 {
-	struct device *dev = dev_find_slot(0, PCI_DEVFN(0x1f,0));
+	struct device *dev = pcidev_on_root(0x1f, 0);
 	config_t *chip = dev->chip_info;
 
 	intel_acpi_pcie_hotplug_generator(chip->pcie_hotplug_map, 8);

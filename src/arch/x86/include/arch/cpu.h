@@ -271,11 +271,6 @@ struct postcar_frame {
 int postcar_frame_init(struct postcar_frame *pcf, size_t stack_size);
 
 /*
- * Initialize postcar_frame object with a fixed stacktop in low memory.
- */
-void postcar_frame_init_lowmem(struct postcar_frame *pcf);
-
-/*
  * Add variable MTRR covering the provided range with MTRR type.
  */
 void postcar_frame_add_mtrr(struct postcar_frame *pcf,
@@ -310,5 +305,23 @@ void run_postcar_phase(struct postcar_frame *pcf);
 void late_car_teardown(void);
 
 #endif
+
+/*
+ * Get processor id using cpuid eax=1
+ * return value in EAX register
+ */
+uint32_t cpu_get_cpuid(void);
+
+/*
+ * Get processor feature flag using cpuid eax=1
+ * return value in ECX register
+ */
+uint32_t cpu_get_feature_flags_ecx(void);
+
+/*
+ * Get processor feature flag using cpuid eax=1
+ * return value in EDX register
+ */
+uint32_t cpu_get_feature_flags_edx(void);
 
 #endif /* ARCH_CPU_H */

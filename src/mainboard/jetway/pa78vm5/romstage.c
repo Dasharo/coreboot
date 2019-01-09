@@ -24,7 +24,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <device/pci_def.h>
-#include <device/pci_ids.h>
 #include <arch/io.h>
 #include <arch/cpu.h>
 #include <device/pnp_def.h>
@@ -50,7 +49,6 @@
 #include <cbmem.h>
 #include <southbridge/amd/rs780/rs780.h>
 
-#include "resourcemap.c"
 #include "cpu/amd/quadcore/quadcore.c"
 
 #if CONFIG_TTYS0_BASE == 0x2f8

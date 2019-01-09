@@ -2,6 +2,7 @@
 ## This file is part of the coreboot project.
 ##
 ## Copyright (C) 2014 Sage Electronic Engineering, LLC.
+## Copyright (C) 2018 Eltan B.V.
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -78,13 +79,6 @@ config DISPLAY_UPD_DATA
 	  Display the user specified product data prior to memory
 	  initialization.
 
-config FSP_USES_UPD
-	bool
-	default n
-	help
-	  If this FSP uses UPD/VPD data regions, select this in the chipset
-	  Kconfig.
-
 config USE_GENERIC_FSP_CAR_INC
 	bool
 	default n
@@ -99,5 +93,10 @@ config CHECKLIST_DATA_FILE_LOCATION
 config RESET_ON_INVALID_RAMSTAGE_CACHE
 	bool "Reset the system on S3 wake when ramstage cache invalid."
 	default n
+
+config SKIP_FSP_CAR
+	def_bool n
+	help
+	  Selected by platforms that implement their own CAR setup.
 
 endif #PLATFORM_USES_FSP1_1

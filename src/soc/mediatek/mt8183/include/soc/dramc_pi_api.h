@@ -27,17 +27,11 @@
 #define dramc_dbg(_x_...)
 #endif
 
-#define ENABLE  1
-#define DISABLE 0
-
 #define DATLAT_TAP_NUMBER 32
-
-#define MAX_CMP_CPT_WAIT_LOOP 10000
-#define TIME_OUT_CNT 100
 
 #define DRAMC_BROADCAST_ON 0x1f
 #define DRAMC_BROADCAST_OFF 0x0
-#define MAX_BACKUP_REG_CNT 32
+#define TX_DQ_COARSE_TUNE_TO_FINE_TUNE_TAP 64
 
 #define IMP_LP4X_TERM_VREF_SEL		0x1b
 #define IMP_DRVP_LP4X_UNTERM_VREF_SEL	0x1a
@@ -47,11 +41,6 @@
 enum dram_te_op {
 	TE_OP_WRITE_READ_CHECK = 0,
 	TE_OP_READ_CHECK
-};
-
-enum {
-	DBI_OFF = 0,
-	DBI_ON
 };
 
 enum {
@@ -72,17 +61,6 @@ enum {
 	MAX_CLK_FINE_TUNE_DELAY = 31,
 	CATRAINING_NUM = 6,
 	PASS_RANGE_NA = 0x7fff
-};
-
-enum {
-	GATING_OFF = 0,
-	GATING_ON = 1
-};
-
-enum {
-	CKE_FIXOFF = 0,
-	CKE_FIXON,
-	CKE_DYNAMIC
 };
 
 enum {
@@ -111,6 +89,11 @@ enum {
 	RESTORE_VALUE
 };
 
+struct reg_value {
+	u32 *addr;
+	u32 value;
+};
+
 enum {
 	DQ_DIV_SHIFT = 3,
 	DQ_DIV_MASK = BIT(DQ_DIV_SHIFT) - 1,
@@ -135,10 +118,13 @@ enum {
 };
 
 void dramc_get_rank_size(u64 *dram_rank_size);
+void dramc_runtime_config(void);
 void dramc_set_broadcast(u32 onoff);
 u32 dramc_get_broadcast(void);
 void dramc_init(void);
 void dramc_sw_impedance(const struct sdram_params *params);
 void dramc_apply_pre_calibration_config(void);
 void dramc_calibrate_all_channels(const struct sdram_params *params);
+void dramc_hw_gating_onoff(u8 chn, bool onoff);
+void dramc_enable_phy_dcm(bool bEn);
 #endif /* _DRAMC_PI_API_MT8183_H */

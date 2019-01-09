@@ -49,15 +49,12 @@
 #include <cpu/amd/model_10xxx_rev.h>
 #endif
 
-#if IS_ENABLED(CONFIG_AMD_SB_CIMX)
-#include <sb_cimx.h>
-#endif
-
 #if IS_ENABLED(CONFIG_DIMM_DDR3)
 #include "../amdmct/mct_ddr3/s3utils.h"
 #endif
 
 struct amdfam10_sysconf_t sysconf;
+u8 pirq_router_bus;
 
 #define FX_DEVS NODE_NUMS
 static struct device *__f0_dev[FX_DEVS];
@@ -1462,7 +1459,7 @@ static void cpu_bus_scan(struct device *dev)
 	nb_cfg_54 = read_nb_cfg_54();
 
 #if CONFIG_CBB
-	dev_mc = dev_find_slot(0, PCI_DEVFN(CONFIG_CDB, 0)); //0x00
+	dev_mc = pcidev_on_root(CONFIG_CDB, 0); //0x00
 	if (dev_mc && dev_mc->bus) {
 		printk(BIOS_DEBUG, "%s found", dev_path(dev_mc));
 		pci_domain = dev_mc->bus->dev;
@@ -1478,7 +1475,7 @@ static void cpu_bus_scan(struct device *dev)
 	}
 	dev_mc = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
 	if (!dev_mc) {
-		dev_mc = dev_find_slot(0, PCI_DEVFN(0x18, 0));
+		dev_mc = pcidev_on_root(0x18, 0);
 		if (dev_mc && dev_mc->bus) {
 			printk(BIOS_DEBUG, "%s found\n", dev_path(dev_mc));
 			pci_domain = dev_mc->bus->dev;
@@ -1722,8 +1719,8 @@ static void detect_and_enable_probe_filter(struct device *dev)
 
 		/* Disable L3 and DRAM scrubbers and configure system for probe filter support */
 		for (i = 0; i < sysconf.nodes; i++) {
-			struct device *f2x_dev = dev_find_slot(0, PCI_DEVFN(0x18 + i, 2));
-			struct device *f3x_dev = dev_find_slot(0, PCI_DEVFN(0x18 + i, 3));
+			struct device *f2x_dev = pcidev_on_root(0x18 + i, 2);
+			struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
 
 			f3x58[i] = pci_read_config32(f3x_dev, 0x58);
 			f3x5c[i] = pci_read_config32(f3x_dev, 0x5c);
@@ -1792,7 +1789,7 @@ static void detect_and_enable_probe_filter(struct device *dev)
 
 		/* Enable probe filter */
 		for (i = 0; i < sysconf.nodes; i++) {
-			struct device *f3x_dev = dev_find_slot(0, PCI_DEVFN(0x18 + i, 3));
+			struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
 
 			dword = pci_read_config32(f3x_dev, 0x1c4);
 			dword |= (0x1 << 31);	/* L3TagInit = 1 */
@@ -1813,8 +1810,10 @@ static void detect_and_enable_probe_filter(struct device *dev)
 
 			/* Enable ATM mode */
 			for (i = 0; i < sysconf.nodes; i++) {
-				struct device *f0x_dev = dev_find_slot(0, PCI_DEVFN(0x18 + i, 0));
-				struct device *f3x_dev = dev_find_slot(0, PCI_DEVFN(0x18 + i, 3));
+				struct device *f0x_dev =
+						   pcidev_on_root(0x18 + i, 0);
+				struct device *f3x_dev =
+						   pcidev_on_root(0x18 + i, 3);
 
 				dword = pci_read_config32(f0x_dev, 0x68);
 				dword |= (0x1 << 12);	/* ATMModeEn = 1 */
@@ -1830,7 +1829,7 @@ static void detect_and_enable_probe_filter(struct device *dev)
 
 		/* Reenable L3 and DRAM scrubbers */
 		for (i = 0; i < sysconf.nodes; i++) {
-			struct device *f3x_dev = dev_find_slot(0, PCI_DEVFN(0x18 + i, 3));
+			struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
 
 			pci_write_config32(f3x_dev, 0x58, f3x58[i]);
 			pci_write_config32(f3x_dev, 0x5c, f3x5c[i]);
@@ -1866,9 +1865,9 @@ static void detect_and_enable_cache_partitioning(struct device *dev)
 		uint8_t dual_node = 0;
 
 		for (i = 0; i < sysconf.nodes; i++) {
-			struct device *f3x_dev = dev_find_slot(0, PCI_DEVFN(0x18 + i, 3));
-			struct device *f4x_dev = dev_find_slot(0, PCI_DEVFN(0x18 + i, 4));
-			struct device *f5x_dev = dev_find_slot(0, PCI_DEVFN(0x18 + i, 5));
+			struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+			struct device *f4x_dev = pcidev_on_root(0x18 + i, 4);
+			struct device *f5x_dev = pcidev_on_root(0x18 + i, 5);
 
 			f3xe8 = pci_read_config32(f3x_dev, 0xe8);
 
@@ -1948,10 +1947,6 @@ static void cpu_bus_init(struct device *dev)
 	detect_and_enable_probe_filter(dev);
 	detect_and_enable_cache_partitioning(dev);
 	initialize_cpus(dev->link_list);
-#if IS_ENABLED(CONFIG_AMD_SB_CIMX)
-	sb_After_Pci_Init();
-	sb_Mid_Post_Init();
-#endif
 }
 
 static struct device_operations cpu_bus_ops = {

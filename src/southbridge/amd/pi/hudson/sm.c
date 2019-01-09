@@ -18,7 +18,6 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <device/smbus.h>
-#include <pc80/mc146818rtc.h>
 #include <arch/io.h>
 #include <cpu/x86/lapic.h>
 #include <arch/ioapic.h>
@@ -30,10 +29,6 @@
 
 #define MAINBOARD_POWER_OFF 0
 #define MAINBOARD_POWER_ON 1
-
-#ifndef CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL
-#define CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL MAINBOARD_POWER_ON
-#endif
 
 /*
 * HUDSON enables all USB controllers by default in SMBUS Control.

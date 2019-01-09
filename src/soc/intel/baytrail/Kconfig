@@ -28,7 +28,6 @@ config CPU_SPECIFIC_OPTIONS
 	select SMP
 	select SPI_FLASH
 	select SSE2
-	select SUPPORT_CPU_UCODE_IN_CBFS
 	select TSC_CONSTANT_RATE
 	select TSC_MONOTONIC_TIMER
 	select TSC_SYNC_MFENCE
@@ -38,6 +37,9 @@ config CPU_SPECIFIC_OPTIONS
 	select HAVE_SPI_CONSOLE_SUPPORT
 	select INTEL_GMA_ACPI
 	select INTEL_GMA_SWSMISCI
+	select POSTCAR_STAGE
+	select POSTCAR_CONSOLE
+	select CPU_INTEL_COMMON
 
 config VBOOT
 	select VBOOT_STARTS_IN_ROMSTAGE
@@ -163,9 +165,5 @@ config REFCODE_BLOB_FILE
 	 The path and filename to the file to be added to cbfs.
 
 endif # HAVE_REFCODE_BLOB
-
-config CHIPSET_BOOTBLOCK_INCLUDE
-	string
-	default "soc/intel/baytrail/bootblock/timestamp.inc"
 
 endif

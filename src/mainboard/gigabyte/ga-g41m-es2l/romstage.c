@@ -28,7 +28,6 @@
 #include <superio/ite/it8718f/it8718f.h>
 #include <superio/ite/common/ite.h>
 #include <lib.h>
-#include <arch/stages.h>
 #include <northbridge/intel/x4x/iomap.h>
 #include <timestamp.h>
 
@@ -102,8 +101,6 @@ static void mb_gpio_init(void)
 	RCBA8(OIC);
 
 	RCBA32(GCS) = 0x00190464;
-	RCBA32(FD) = FD_PCIE6 | FD_PCIE5 | FD_PCIE4 | FD_PCIE3 | FD_ACMOD
-		| FD_ACAUD | 1;
 	RCBA32(CG) = 0x00000000;
 	RCBA32(0x3430) = 0x00000001;
 	RCBA32(0x3e00) = 0xff000001;
@@ -134,9 +131,6 @@ void mainboard_romstage_entry(unsigned long bist)
 	const u8 spd_addrmap[4] = { 0x50, 0, 0x52, 0 };
 	u8 boot_path = 0;
 	u8 s3_resume;
-
-	timestamp_init(get_initial_timestamp());
-	timestamp_add_now(TS_START_ROMSTAGE);
 
 	/* Set southbridge and Super I/O GPIOs. */
 	ich7_enable_lpc();

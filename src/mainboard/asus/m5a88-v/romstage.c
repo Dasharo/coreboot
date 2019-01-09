@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <device/pci_def.h>
-#include <device/pci_ids.h>
 #include <arch/io.h>
 #include <arch/cpu.h>
 #include <device/pnp_def.h>
@@ -49,7 +48,6 @@
 #include "southbridge/amd/sb800/early_setup.c"
 #include "spd.h"
 
-#include "resourcemap.c"
 #include "cpu/amd/quadcore/quadcore.c"
 
 #define SERIAL_DEV PNP_DEV(0x4e, IT8721F_SP1)

@@ -28,7 +28,6 @@
 #include <cpu/intel/turbo.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/name.h>
-#include <pc80/mc146818rtc.h>
 #include "model_2065x.h"
 #include "chip.h"
 #include <cpu/intel/smm/gen1/smi.h>
@@ -334,7 +333,7 @@ static void model_2065x_init(struct device *cpu)
 	setup_lapic();
 
 	/* Set virtualization based on Kconfig option */
-	set_vmx();
+	set_vmx_and_lock();
 
 	/* Configure Enhanced SpeedStep and Thermal Sensors */
 	configure_misc();

@@ -403,7 +403,7 @@ static void southbridge_smi_sleep(void)
 	u8 reg8;
 	u32 reg32;
 	u8 slp_typ;
-	u8 s5pwr = CONFIG_MAINBOARD_POWER_ON_AFTER_POWER_FAIL;
+	u8 s5pwr = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
 
 	// save and recover RTC port values
 	u8 tmp70, tmp72;
@@ -537,7 +537,7 @@ static void southbridge_smi_gsmi(void)
 	u32 *ret, *param;
 	u8 sub_command;
 	em64t101_smm_state_save_area_t *io_smi =
-		smi_apmc_find_state_save(ELOG_GSMI_APM_CNT);
+		smi_apmc_find_state_save(APM_CNT_ELOG_GSMI);
 
 	if (!io_smi)
 		return;
@@ -604,7 +604,7 @@ static void southbridge_smi_apmc(void)
 		}
 		break;
 #if IS_ENABLED(CONFIG_ELOG_GSMI)
-	case ELOG_GSMI_APM_CNT:
+	case APM_CNT_ELOG_GSMI:
 		southbridge_smi_gsmi();
 		break;
 #endif

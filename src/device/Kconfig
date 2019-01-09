@@ -85,7 +85,7 @@ config MAINBOARD_USE_LIBGFXINIT
 # TODO: Explain differences (if any) for onboard cards.
 config VGA_ROM_RUN
 	bool "Run VGA Option ROMs"
-	depends on PCI && (ARCH_X86 || ARCH_POWER8) && !MAINBOARD_FORCE_NATIVE_VGA_INIT
+	depends on PCI && (ARCH_X86 || ARCH_PPC64) && !MAINBOARD_FORCE_NATIVE_VGA_INIT
 	select HAVE_VGA_TEXT_FRAMEBUFFER
 	help
 	  Execute VGA Option ROMs in coreboot if found. This can be used
@@ -170,7 +170,7 @@ choice
 	prompt "Option ROM execution type"
 	default PCI_OPTION_ROM_RUN_YABEL if !ARCH_X86
 	default PCI_OPTION_ROM_RUN_REALMODE if ARCH_X86
-	depends on VGA_ROM_RUN || GEODE_VSA
+	depends on VGA_ROM_RUN
 
 config PCI_OPTION_ROM_RUN_REALMODE
 	prompt "Native mode"
@@ -185,7 +185,6 @@ config PCI_OPTION_ROM_RUN_REALMODE
 config PCI_OPTION_ROM_RUN_YABEL
 	prompt "Secure mode"
 	bool
-	depends on !GEODE_VSA
 	help
 	  If you select this option, the x86emu CPU emulator will be used to
 	  execute PCI Option ROMs.

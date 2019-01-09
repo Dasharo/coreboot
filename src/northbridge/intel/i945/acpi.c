@@ -20,7 +20,6 @@
 #include <arch/acpigen.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <device/pci_ids.h>
 #include "i945.h"
 
 unsigned long acpi_fill_mcfg(unsigned long current)
@@ -30,7 +29,7 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 	u32 pciexbar_reg;
 	int max_buses;
 
-	dev = dev_find_slot(0, PCI_DEVFN(0, 0));
+	dev = pcidev_on_root(0, 0);
 	if (!dev)
 		return current;
 

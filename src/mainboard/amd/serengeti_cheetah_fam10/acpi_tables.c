@@ -18,7 +18,6 @@
 #include <arch/acpi.h>
 #include <arch/ioapic.h>
 #include <device/pci.h>
-#include <device/pci_ids.h>
 #include <cpu/amd/amdfam10_sysconf.h>
 #include <cbfs.h>
 
@@ -129,8 +128,6 @@ unsigned long mainboard_write_acpi_tables(struct device *device,
 	size_t p_size;
 
 	int i;
-
-	get_bus_conf(); /* it will get sblk, pci1234, hcdn, and sbdn */
 
 	/* same htio, but different possition? We may have to copy,
 	 * change HCIN, and recalculate the checknum and add_table

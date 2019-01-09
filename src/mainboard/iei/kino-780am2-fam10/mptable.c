@@ -20,13 +20,9 @@
 #include <stdint.h>
 #include <cpu/amd/amdfam10_sysconf.h>
 
-extern u8 bus_rs780[11];
-extern u8 bus_sb700[2];
 
 extern u32 apicid_sb700;
 
-extern u32 sbdn_rs780;
-extern u32 sbdn_sb700;
 
 static void *smp_write_config_table(void *v)
 {
@@ -39,8 +35,6 @@ static void *smp_write_config_table(void *v)
 
 	smp_write_processors(mc);
 
-	get_bus_conf();
-
 	mptable_write_buses(mc, NULL, &bus_isa);
 
 	/* I/O APICs:   APIC ID Version State   Address */
@@ -50,8 +44,8 @@ static void *smp_write_config_table(void *v)
 		u8 byte;
 
 		dev =
-		    dev_find_slot(bus_sb700[0],
-				  PCI_DEVFN(sbdn_sb700 + 0x14, 0));
+		    dev_find_slot(pirq_router_bus,
+				  PCI_DEVFN(0x14, 0));
 		if (dev) {
 			dword = pci_read_config32(dev, 0x74) & 0xfffffff0;
 			smp_write_ioapic(mc, apicid_sb700,
