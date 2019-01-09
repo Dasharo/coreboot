@@ -30,7 +30,6 @@
 #include <arch/pirq_routing.h>
 #include <cpu/amd/amdfam10_sysconf.h>
 
-extern unsigned char bus_isa;
 extern unsigned char bus_ck804[6];
 
 
@@ -69,10 +68,6 @@ unsigned long write_pirq_routing_table(unsigned long addr)
 	uint8_t *v, sum = 0;
 	int i;
 
-	/* get_bus_conf() will find out all bus num and APIC that share with
-	 * mptable.c and mptable.c.
-	 */
-	get_bus_conf();
 	sbdn = sysconf.sbdn;
 
 	/* Align the table to be 16 byte aligned. */

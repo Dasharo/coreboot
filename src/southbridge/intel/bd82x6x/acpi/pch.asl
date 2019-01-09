@@ -87,7 +87,7 @@ Scope(\)
 		GIO2, 8,
 		GIO3, 8,
 		Offset(0x0c),	// GPIO Level
-		GL00, 1,
+		GP00, 1,
 		GP01, 1,
 		GP02, 1,
 		GP03, 1,
@@ -238,7 +238,7 @@ Scope(\)
 #include "audio.asl"
 
 // PCI Express Ports 0:1c.x
-#include "pcie.asl"
+#include <southbridge/intel/common/acpi/pcie.asl>
 
 // USB EHCI 0:1d.0 and 0:1a.0, XHCI 0:14.0
 #include "usb.asl"

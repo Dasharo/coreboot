@@ -354,7 +354,7 @@ static int read_serial_from_nic(char *serial, size_t len)
 	 * Read secondary bus number from the PCIe bridge where the first NIC is
 	 * connected.
 	 */
-	dev = dev_find_slot(0, PCI_DEVFN(2, 2));
+	dev = pcidev_on_root(2, 2);
 	if (!serial || !dev)
 		return -1;
 

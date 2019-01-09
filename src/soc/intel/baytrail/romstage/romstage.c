@@ -17,6 +17,7 @@
 #include <arch/cpu.h>
 #include <arch/io.h>
 #include <arch/early_variables.h>
+#include <bootblock_common.h>
 #include <console/console.h>
 #include <cbmem.h>
 #include <cpu/x86/mtrr.h>
@@ -95,8 +96,7 @@ static void spi_init(void)
 }
 
 /* Entry from cache-as-ram.inc. */
-void *asmlinkage romstage_main(unsigned long bist, uint32_t tsc_low,
-			       uint32_t tsc_hi)
+static void romstage_main(uint64_t tsc, uint32_t bist)
 {
 	struct romstage_params rp = {
 		.bist = bist,
@@ -104,7 +104,7 @@ void *asmlinkage romstage_main(unsigned long bist, uint32_t tsc_low,
 	};
 
 	/* Save initial timestamp from bootblock. */
-	timestamp_init((((uint64_t)tsc_hi) << 32) | (uint64_t)tsc_low);
+	timestamp_init(tsc);
 
 	/* Save romstage begin */
 	timestamp_add_now(TS_START_ROMSTAGE);
@@ -131,7 +131,14 @@ void *asmlinkage romstage_main(unsigned long bist, uint32_t tsc_low,
 	platform_enter_postcar();
 
 	/* We don't return here */
-	return NULL;
+}
+
+/* This wrapper enables easy transition towards C_ENVIRONMENT_BOOTBLOCK,
+ * keeping changes in cache_as_ram.S easy to manage.
+ */
+asmlinkage void bootblock_c_entry_bist(uint64_t base_timestamp, uint32_t bist)
+{
+	romstage_main(base_timestamp, bist);
 }
 
 static struct chipset_power_state power_state CAR_GLOBAL;
@@ -228,20 +235,6 @@ void romstage_common(struct romstage_params *params)
 	timestamp_add_now(TS_AFTER_INITRAM);
 
 	romstage_handoff_init(prev_sleep_state == ACPI_S3);
-}
-
-void asmlinkage romstage_after_car(void)
-{
-	/* Load the ramstage. */
-	run_ramstage();
-	while (1);
-}
-
-static inline uint32_t *stack_push(u32 *stack, u32 value)
-{
-	stack = &stack[-1];
-	*stack = value;
-	return stack;
 }
 
 #define ROMSTAGE_RAM_STACK_SIZE 0x5000

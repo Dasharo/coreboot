@@ -175,7 +175,7 @@ static CIM_STATUS GetCreativeMMIO(MMIORANGE *pMMIO)
 	CIM_STATUS Status = CIM_UNSUPPORTED;
 	u8 Bus, Dev, Reg, BusStart, BusEnd;
 	u32	Value;
-	struct device *dev0x14 = dev_find_slot(0, PCI_DEVFN(0x14, 4));
+	struct device *dev0x14 = pcidev_on_root(0x14, 4);
 	struct device *tempdev;
 	Value = pci_read_config32(dev0x14, 0x18);
 	BusStart = (Value >> 8) & 0xFF;
@@ -235,7 +235,7 @@ static void ProgramMMIO(MMIORANGE *pMMIO, u8 LinkID, u8 Attribute)
 	int i, j, n = 7;
 	struct device *k8_f1;
 
-	k8_f1 = dev_find_slot(0, PCI_DEVFN(0x18, 1));
+	k8_f1 = pcidev_on_root(0x18, 1);
 
 	for (i = 0; i < 8; i++) {
 		int k = 0, MmioReg;
@@ -319,9 +319,9 @@ static void internal_gfx_pci_dev_init(struct device *dev)
 	u16 command;
 	u32 value;
 	u16 deviceid, vendorid;
-	struct device *nb_dev = dev_find_slot(0, 0);
-	struct device *k8_f2 = dev_find_slot(0, PCI_DEVFN(0x18, 2));
-	struct device *k8_f0 = dev_find_slot(0, PCI_DEVFN(0x18, 0));
+	struct device *nb_dev = pcidev_on_root(0x0, 0);
+	struct device *k8_f2 = pcidev_on_root(0x18, 2);
+	struct device *k8_f0 = pcidev_on_root(0x18, 0);
 	static const u8 ht_freq_lookup [] = {2, 0, 4, 0, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 0, 0, 28, 30, 32};
 	static const u8 ht_width_lookup [] = {8, 16, 0, 0, 2, 4, 0, 0};
 	static const u16 memclk_lookup_fam0F [] = {100, 0, 133, 0, 0, 166, 0, 200};
@@ -733,7 +733,7 @@ static void internal_gfx_pci_dev_init(struct device *dev)
 static void rs780_internal_gfx_disable(struct device *dev)
 {
 	u32 l_dword;
-	struct device *nb_dev = dev_find_slot(0, 0);
+	struct device *nb_dev = pcidev_on_root(0x0, 0);
 
 	/* Disable internal GFX and enable external GFX. */
 	l_dword = pci_read_config32(nb_dev, 0x8c);
@@ -753,7 +753,7 @@ static void rs780_internal_gfx_enable(struct device *dev)
 {
 	u32 l_dword;
 	int i;
-	struct device *nb_dev = dev_find_slot(0, 0);
+	struct device *nb_dev = pcidev_on_root(0x0, 0);
 	msr_t sysmem;
 
 #if !IS_ENABLED(CONFIG_GFXUMA)
@@ -787,7 +787,7 @@ static void rs780_internal_gfx_enable(struct device *dev)
 
 	/* LPC DMA Deadlock workaround? */
 	/* GFX_InitCommon*/
-	struct device *k8_f0 = dev_find_slot(0, PCI_DEVFN(0x18, 0));
+	struct device *k8_f0 = pcidev_on_root(0x18, 0);
 	l_dword = pci_read_config32(k8_f0, 0x68);
 	l_dword &= ~(3 << 21);
 	l_dword |= (1 << 21);
@@ -802,9 +802,9 @@ static void rs780_internal_gfx_enable(struct device *dev)
 #if IS_ENABLED(CONFIG_GFXUMA)
 	/* GFX_InitUMA. */
 	/* Copy CPU DDR Controller to NB MC. */
-	struct device *k8_f1 = dev_find_slot(0, PCI_DEVFN(0x18, 1));
-	struct device *k8_f2 = dev_find_slot(0, PCI_DEVFN(0x18, 2));
-	struct device *k8_f4 = dev_find_slot(0, PCI_DEVFN(0x18, 4));
+	struct device *k8_f1 = pcidev_on_root(0x18, 1);
+	struct device *k8_f2 = pcidev_on_root(0x18, 2);
+	struct device *k8_f4 = pcidev_on_root(0x18, 4);
 	for (i = 0; i < 12; i++) {
 		l_dword = pci_read_config32(k8_f2, 0x40 + i * 4);
 		nbmc_write_index(nb_dev, 0x30 + i, l_dword);
@@ -1145,7 +1145,7 @@ static void dynamic_link_width_control(struct device *nb_dev, struct device *dev
 	while (reg32 & 0x100);
 
 	/* step 5.9.1.6 */
-	sb_dev = dev_find_slot(0, PCI_DEVFN(8, 0));
+	sb_dev = pcidev_on_root(8, 0);
 	do {
 		reg32 = pci_ext_read_config32(nb_dev, sb_dev,
 					  PCIE_VC0_RESOURCE_STATUS);

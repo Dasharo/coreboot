@@ -20,12 +20,7 @@
 #include <stdint.h>
 #include <cpu/amd/amdfam10_sysconf.h>
 
-extern int bus_isa;
-extern u8 bus_rs780[11];
-extern u8 bus_sb800[6];
 extern u32 apicid_sb800;
-extern u32 sbdn_rs780;
-extern u32 sbdn_sb800;
 
 u8 intr_data[] = {
 	[0x00] = 0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17, /* INTA# - INTH# */
@@ -40,6 +35,7 @@ u8 intr_data[] = {
 static void *smp_write_config_table(void *v)
 {
 	struct mp_config_table *mc;
+	int bus_isa;
 	u32 dword = 0;
 	u8 byte;
 
@@ -48,8 +44,6 @@ static void *smp_write_config_table(void *v)
 	mptable_init(mc, LOCAL_APIC_ADDR);
 
 	smp_write_processors(mc);
-
-	get_bus_conf();
 
 	mptable_write_buses(mc, NULL, &bus_isa);
 

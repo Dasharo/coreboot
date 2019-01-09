@@ -12,8 +12,8 @@ SPD_SOURCES += samsung_dimm_K4A4G165WE-BCRC	# 0b0111
 SPD_SOURCES += samsung_dimm_K4A8G165WC-BCTD	# 0b1000
 SPD_SOURCES += samsung_dimm_K4AAG165WB-MCRC	# 0b1001
 SPD_SOURCES += hynix_dimm_H5AN4G6NAFR-UHC	# 0b1010
-SPD_SOURCES += empty_ddr4			# 0b1011
-SPD_SOURCES += empty_ddr4			# 0b1100
+SPD_SOURCES += micron_dimm_MT40A256M16LY-075F	# 0b1011
+SPD_SOURCES += micron_dimm_MT40A512M16TB-062EJ	# 0b1100
 SPD_SOURCES += micron_dimm_MT40A1G16KNR-075E	# 0b1101
 SPD_SOURCES += micron_dimm_MT40A512M16LY-075E	# 0b1110
 SPD_SOURCES += hynix_dimm_H5AN8G6NCJR-VKC	# 0b1111
@@ -41,3 +41,5 @@ smm-$(CONFIG_HAVE_SMI_HANDLER) += smihandler.c
 cbfs-files-y += oem.bin
 oem.bin-file := $(call strip_quotes,$(CONFIG_OEM_BIN_FILE))
 oem.bin-type := raw
+
+$(call add_vbt_to_cbfs, vbt-bard.bin, bard-data.vbt)

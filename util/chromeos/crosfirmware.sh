@@ -14,14 +14,29 @@
 # GNU General Public License for more details.
 #
 
-# This script needs
-# * sharutils
+# On some systems, `parted` and `debugfs` are located in /sbin.
+export PATH="$PATH:/sbin"
 
-#DEBUG=1
+exit_if_uninstalled() {
+	local cmd_name="$1"
+	local deb_pkg_name="$2"
 
-debug()
-{
-	test "$DEBUG" == "1" && echo "$*"
+	if type "$cmd_name" >/dev/null 2>&1; then
+		return
+	fi
+
+	printf '`%s` was not found. ' "$cmd_name" >&2
+	printf 'On Debian-based systems, it can be installed\n' >&2
+	printf 'by running `apt install %s`.\n' "$deb_pkg_name" >&2
+
+	exit 1
+}
+
+exit_if_dependencies_are_missing() {
+	exit_if_uninstalled "uudecode" "sharutils"
+	exit_if_uninstalled "debugfs" "e2fsprogs"
+	exit_if_uninstalled "parted" "parted"
+	exit_if_uninstalled "curl" "curl"
 }
 
 get_inventory()
@@ -29,7 +44,7 @@ get_inventory()
 	_conf=$1
 	_url=https://dl.google.com/dl/edgedl/chromeos/recovery/recovery.conf
 
-	debug "Downloading recovery image inventory..."
+	echo "Downloading recovery image inventory..."
 
 	curl -s "$_url" > $_conf
 }
@@ -39,9 +54,9 @@ download_image()
 	_url=$1
 	_file=$2
 
-	debug "Downloading recovery image"
-	curl -s "$_url" > "$_file.zip"
-	debug "Decompressing recovery image"
+	echo "Downloading recovery image"
+	curl "$_url" > "$_file.zip"
+	echo "Decompressing recovery image"
 	unzip -q "$_file.zip"
 	rm "$_file.zip"
 }
@@ -53,7 +68,7 @@ extract_partition()
 	ROOTFS=$3
 	_bs=1024
 
-	debug "Extracting ROOT-A partition"
+	echo "Extracting ROOT-A partition"
 	ROOTP=$( printf "unit\nB\nprint\nquit\n" | \
 		 parted $FILE 2>/dev/null | grep $NAME )
 
@@ -69,7 +84,7 @@ extract_shellball()
 	ROOTFS=$1
 	SHELLBALL=$2
 
-	debug "Extracting chromeos-firmwareupdate"
+	echo "Extracting chromeos-firmwareupdate"
 	printf "cd /usr/sbin\ndump chromeos-firmwareupdate $SHELLBALL\nquit" | \
 		debugfs $ROOTFS > /dev/null 2>&1
 }
@@ -79,7 +94,7 @@ extract_coreboot()
 	_shellball=$1
 	_unpacked=$( mktemp -d )
 
-	debug "Extracting coreboot image"
+	echo "Extracting coreboot image"
 	sh $_shellball --sb_extract $_unpacked > /dev/null
 
 	_version=$( cat $_unpacked/VERSION | grep BIOS\ version: | \
@@ -109,6 +124,8 @@ do_one_board()
 #
 
 BOARD=$1
+
+exit_if_dependencies_are_missing
 
 if [ "$BOARD" == "all" ]; then
 	CONF=$( mktemp )

@@ -18,6 +18,7 @@
 #include <console/console.h>
 #include <console/usb.h>
 #include <arch/io.h>
+#include <arch/symbols.h>
 #include <arch/early_variables.h>
 #include <string.h>
 #include <cbmem.h>
@@ -61,6 +62,10 @@ static struct ehci_debug_info * glob_dbg_info_p CAR_GLOBAL;
 
 static inline struct ehci_debug_info *dbgp_ehci_info(void)
 {
+	if (IS_ENABLED(CONFIG_USBDEBUG_IN_PRE_RAM)
+	    && (ENV_ROMSTAGE || ENV_BOOTBLOCK || ENV_VERSTAGE))
+		glob_dbg_info_p =
+			(struct ehci_debug_info *)_car_ehci_dbg_info_start;
 	if (car_get_var(glob_dbg_info_p) == NULL)
 		car_set_var(glob_dbg_info_p, &glob_dbg_info);
 
@@ -430,6 +435,7 @@ static int usbdebug_init_(unsigned ehci_bar, unsigned offset, struct ehci_debug_
 	memset(info, 0, sizeof (*info));
 	info->ehci_base = (void *)ehci_bar;
 	info->ehci_debug = (void *)(ehci_bar + offset);
+	info->ep_pipe[0].status	|= DBGP_EP_NOT_PRESENT;
 
 	dprintk(BIOS_INFO, "ehci_bar: 0x%x debug_offset 0x%x\n", ehci_bar, offset);
 
@@ -569,6 +575,8 @@ try_next_port:
 		goto err;
 	}
 
+	info->ep_pipe[0].status	&= ~DBGP_EP_NOT_PRESENT;
+
 	return 0;
 err:
 	/* Things didn't work so remove my claim */
@@ -603,6 +611,12 @@ static int dbgp_enabled(void)
 {
 	struct dbgp_pipe *globals = &dbgp_ehci_info()->ep_pipe[DBGP_SETUP_EP0];
 	return (globals->status & DBGP_EP_ENABLED);
+}
+
+static int dbgp_not_present(void)
+{
+	struct dbgp_pipe *globals = &dbgp_ehci_info()->ep_pipe[DBGP_SETUP_EP0];
+	return (globals->status & DBGP_EP_NOT_PRESENT);
 }
 
 int dbgp_try_get(struct dbgp_pipe *pipe)
@@ -648,11 +662,22 @@ void usbdebug_disable(void)
 
 #endif
 
-static int usbdebug_hw_init(void)
+int usbdebug_hw_init(bool force)
 {
 	struct ehci_debug_info *dbg_info = dbgp_ehci_info();
 	unsigned int ehci_base, dbg_offset;
 
+	if (dbgp_enabled() && !force)
+		return 0;
+
+	if (dbgp_not_present() && !force)
+		return -1;
+
+	/* Do not attempt slow gadget init in postcar. */
+	if (ENV_POSTCAR)
+		return -1;
+
+	/* Do full init if state claims we are still not enabled. */
 	if (ehci_debug_hw_enable(&ehci_base, &dbg_offset))
 		return -1;
 	return usbdebug_init_(ehci_base, dbg_offset, dbg_info);
@@ -675,19 +700,14 @@ static void migrate_ehci_debug(int is_recovery)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_USBDEBUG_IN_ROMSTAGE)) {
+	if (IS_ENABLED(CONFIG_USBDEBUG_IN_PRE_RAM)) {
 		/* Use state in CBMEM. */
 		dbg_info_cbmem = cbmem_find(CBMEM_ID_EHCI_DEBUG);
 		if (dbg_info_cbmem)
 			car_set_var(glob_dbg_info_p, dbg_info_cbmem);
 	}
 
-	/* Redo full init in ramstage if state claims we
-	 * are still not enabled. Should never happen. */
-	rv = dbgp_enabled() ? 0 : -1;
-	if (!ENV_POSTCAR && rv < 0)
-		rv = usbdebug_hw_init();
-
+	rv = usbdebug_hw_init(false);
 	if (rv < 0)
 		printk(BIOS_DEBUG, "usbdebug: Failed hardware init\n");
 	else
@@ -719,12 +739,13 @@ void usbdebug_init(void)
 	 * CBMEM_INIT_HOOKs for postcar and ramstage as we recover state
 	 * from CBMEM.
 	 */
-	if (IS_ENABLED(CONFIG_USBDEBUG_IN_ROMSTAGE) && ENV_ROMSTAGE)
-		usbdebug_hw_init();
+	if (IS_ENABLED(CONFIG_USBDEBUG_IN_PRE_RAM)
+	    && (ENV_ROMSTAGE || ENV_BOOTBLOCK))
+		usbdebug_hw_init(false);
 
 	/* USB console init is done early in ramstage if it was
 	 * not done in romstage, this does not require CBMEM.
 	 */
-	if (!IS_ENABLED(CONFIG_USBDEBUG_IN_ROMSTAGE) && ENV_RAMSTAGE)
-		usbdebug_hw_init();
+	if (!IS_ENABLED(CONFIG_USBDEBUG_IN_PRE_RAM) && ENV_RAMSTAGE)
+		usbdebug_hw_init(false);
 }

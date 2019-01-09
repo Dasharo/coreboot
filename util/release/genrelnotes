@@ -26,7 +26,7 @@
 
 # Check for tools
 
-if ! ( git --version && cloc --version ) > /dev/null 2>&1
+if ! ( git --version && cloc --version && rename --version ) > /dev/null 2>&1
 then
 	echo "ERROR: cloc or git is not installed.  Exiting"
 	exit 1
@@ -39,8 +39,7 @@ then
 fi
 
 # Try to verify that the repo is clean before losing state.
-if ! git diff-index --quiet --cached HEAD 2>/dev/null || \
-	[ "$(git diff origin/master --shortstat 2>/dev/null | tail -n1)" != "" ]; then
+if ! git diff-index --quiet --cached HEAD 2>/dev/null; then
 	echo "ERROR: repo is not clean.  Exiting."
 	exit 1
 fi
@@ -313,7 +312,6 @@ get_log_dedupe "Google Reef / Pyro / Sand / Snappy / Nasher" "src/mainboard/goog
 get_log_dedupe "Siemens mc_apl1" "src/mainboard/siemens/mc_apl1" "mc_apl1"
 get_log_dedupe "Intel Apollolake" "src/soc/intel/apollolake" "apollolake\|apollo.lake"
 
-get_log_dedupe "Google Zoombini / Intel cannonlake_rvp" "src/mainboard/google/zoombini src/mainboard/intel/cannonlake_rvp" "zoombini\|cannonlake_rvp"
 get_log_dedupe "Intel CannonLake" "src/soc/intel/cannonlake src/mainboard/intel/cannonlake_rvp" "cannonlake"
 
 get_log_dedupe "Intel Galileo" "src/mainboard/intel/galileo" "galileo"
@@ -412,7 +410,7 @@ printf "Submodules\n----------\n" >> "$LOGFILE"
 for module in $(git submodule --quiet foreach pwd); do
 	name=$(basename "$module")
 	# shellcheck disable=SC2001
-	path=$(echo "$module" | sed 's|.*coreboot||')
+	path=${module#$PWD}
 	old_version=$(echo "${name^^}_OLD_VERSION" | sed 's/-/_/g')
 	new_version=$(echo "${name^^}_NEW_VERSION" | sed 's/-/_/g')
 	get_log_submodule "${!old_version}" "${!new_version}" "$path"

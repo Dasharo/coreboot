@@ -11,15 +11,17 @@
  * GNU General Public License for more details.
  */
 
+#include <bootblock_common.h>
 #include <console/console.h>
 #include <cpu/intel/romstage.h>
 #include <cpu/x86/mtrr.h>
 #include <arch/symbols.h>
 #include <program_loading.h>
+#include <timestamp.h>
 
 #define DCACHE_RAM_ROMSTAGE_STACK_SIZE 0x2000
 
-asmlinkage void *romstage_main(unsigned long bist)
+static void romstage_main(unsigned long bist)
 {
 	int i;
 	const int num_guards = 4;
@@ -28,15 +30,14 @@ asmlinkage void *romstage_main(unsigned long bist)
 	u32 size;
 
 	/* Size of unallocated CAR. */
-	size = _car_region_end - _car_relocatable_data_end;
-	size = ALIGN_DOWN(size, 16);
+	size = ALIGN_DOWN(_car_stack_size, 16);
 
 	size = MIN(size, DCACHE_RAM_ROMSTAGE_STACK_SIZE);
 	if (size < DCACHE_RAM_ROMSTAGE_STACK_SIZE)
 		printk(BIOS_DEBUG, "Romstage stack size limited to 0x%x!\n",
 			size);
 
-	stack_base = (u32 *) (_car_region_end - size);
+	stack_base = (u32 *) (_car_stack_end - size);
 
 	for (i = 0; i < num_guards; i++)
 		stack_base[i] = stack_guard;
@@ -50,17 +51,31 @@ asmlinkage void *romstage_main(unsigned long bist)
 		printk(BIOS_DEBUG, "Smashed stack detected in romstage!\n");
 	}
 
-	if (!IS_ENABLED(CONFIG_POSTCAR_STAGE))
-		return setup_stack_and_mtrrs();
-
 	platform_enter_postcar();
-
-	/* We do not return. */
-	return NULL;
 }
 
-asmlinkage void romstage_after_car(void)
+#if !IS_ENABLED(CONFIG_C_ENVIRONMENT_BOOTBLOCK)
+/* This wrapper enables easy transition towards C_ENVIRONMENT_BOOTBLOCK,
+ * keeping changes in cache_as_ram.S easy to manage.
+ */
+asmlinkage void bootblock_c_entry_bist(uint64_t base_timestamp, uint32_t bist)
 {
-	/* Load the ramstage. */
-	run_ramstage();
+	timestamp_init(base_timestamp);
+	timestamp_add_now(TS_START_ROMSTAGE);
+	romstage_main(bist);
+}
+#endif
+
+
+/* We don't carry BIST from bootblock in a good location to read from.
+ * Any error should have been reported in bootblock already.
+ */
+#define NO_BIST 0
+
+asmlinkage void car_stage_entry(void)
+{
+	/* Assumes the hardware was set up during the bootblock */
+	console_init();
+
+	romstage_main(NO_BIST);
 }

@@ -21,12 +21,9 @@
 #include <cpu/amd/amdfam10_sysconf.h>
 
 extern u8 bus_sr5650[14];
-extern u8 bus_sp5100[2];
 
 extern u32 apicid_sp5100;
 
-extern u32 sbdn_sr5650;
-extern u32 sbdn_sp5100;
 
 
 static void *smp_write_config_table(void *v)
@@ -41,8 +38,6 @@ static void *smp_write_config_table(void *v)
 
 	smp_write_processors(mc);
 
-	get_bus_conf();
-
 	apicid_sp5100 = 0x20;
 	apicid_sr5650 = apicid_sp5100 + 1;
 
@@ -53,8 +48,8 @@ static void *smp_write_config_table(void *v)
 		u32 *dword;
 		u8 byte;
 
-		dev = dev_find_slot(0, //bus_sp5100[0], TODO: why bus_sp5100[0] use same value of bus_sr5650[0] assigned by get_pci1234(), instead of 0.
-				  PCI_DEVFN(sbdn_sp5100 + 0x14, 0));
+		dev = dev_find_slot(0, //pirq_router_bus TODO: why bus_sp5100[0] use same value of bus_sr5650[0] assigned by get_pci1234(), instead of 0.
+				  PCI_DEVFN(0x14, 0));
 		if (dev) {
 			dword = (u32 *)(pci_read_config32(dev, 0x74) & 0xfffffff0);
 			smp_write_ioapic(mc, apicid_sp5100, 0x11, dword);

@@ -18,6 +18,8 @@
 #include <device/pci_def.h>
 #include <arch/io.h>
 #include <arch/stages.h>
+#include <device/pnp.h>
+#include <device/pnp_def.h>
 #include <arch/cpu.h>
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
@@ -163,6 +165,16 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 
 	post_code(0x39);
 	AGESAWRAPPER(amdinitearly);
+
+	/* Disable SVI2 controller to wait for command completion */
+	val = pci_read_config32(PCI_DEV(0, 0x18, 5), 0x12C);
+	if (val & (1 << 30)) {
+		printk(BIOS_DEBUG, "SVI2 Wait completion disabled\n");
+	} else {
+		printk(BIOS_DEBUG, "Disabling SVI2 Wait completion\n");
+		val |= (1 << 30);
+		pci_write_config32(PCI_DEV(0, 0x18, 5), 0x12C, val);
+	}
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 

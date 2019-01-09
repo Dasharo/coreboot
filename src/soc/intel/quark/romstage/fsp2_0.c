@@ -38,7 +38,7 @@ asmlinkage void *car_stage_c_entry(void)
 
 	if (IS_ENABLED(CONFIG_STORAGE_TEST)) {
 		uint32_t bar;
-		dev_t dev;
+		pci_devfn_t dev;
 		uint32_t previous_bar;
 		uint16_t previous_command;
 
@@ -120,7 +120,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *fspm_upd, uint32_t version)
 		die("Microcode file (rmu.bin) not found.");
 
 	/* Locate the configuration data from devicetree.cb */
-	dev = dev_find_slot(0, LPC_DEV_FUNC);
+	dev = pcidev_path_on_root(LPC_DEV_FUNC);
 	if (!dev)
 		die("ERROR - LPC device not found!");
 	config = dev->chip_info;

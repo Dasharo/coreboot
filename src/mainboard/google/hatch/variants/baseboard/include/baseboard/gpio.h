@@ -18,4 +18,21 @@
 
 #include <soc/gpio.h>
 
+#define GPIO_EC_IN_RW	        GPP_C22
+
+#define GPIO_PCH_WP	        GPP_C20
+
+/* Memory configuration board straps */
+#define GPIO_MEM_CONFIG_0	GPP_F20
+#define GPIO_MEM_CONFIG_1	GPP_F21
+#define GPIO_MEM_CONFIG_2	GPP_F11
+#define GPIO_MEM_CONFIG_3	GPP_F22
+
+
+/* EC wake pin is LAN_WAKE# */
+#define GPE_EC_WAKE		GPE0_LAN_WAK
+
+/* eSPI virtual wire reporting */
+#define EC_SCI_GPI		GPE0_ESPI
+
 #endif /* BASEBOARD_GPIO_H */

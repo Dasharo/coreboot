@@ -122,6 +122,8 @@ else
 $(eval $(call early_x86_stage,bootblock,elf64-x86-64))
 endif
 
+bootblock-y += walkcbfs.S
+
 else # !C_ENVIRONMENT_BOOTBLOCK
 
 # x86-specific linker flags
@@ -143,7 +145,7 @@ $(call src-to-obj,bootblock,$(dir)/bootblock.ld): $(objgenerated)/bootblock.ld
 
 bootblock_romccflags := -mcpu=i386 -O2 -D__PRE_RAM__ -D__BOOTBLOCK__
 ifeq ($(CONFIG_SSE),y)
-bootblock_romccflags := -mcpu=k7 -msse -O2 -D__PRE_RAM__ -D__BOOTBLOCK__
+bootblock_romccflags := -mcpu=k7 -mno-mmx -msse -O2 -D__PRE_RAM__ -D__BOOTBLOCK__
 endif
 
 # This is a hack in case there are no per chipset linker files.
@@ -233,6 +235,7 @@ romstage-y += memset.c
 romstage-$(CONFIG_X86_TOP4G_BOOTMEDIA_MAP) += mmap_boot.c
 romstage-y += postcar_loader.c
 romstage-$(CONFIG_COLLECT_TIMESTAMPS_TSC) += timestamp.c
+romstage-y += walkcbfs.S
 
 romstage-srcs += $(wildcard $(src)/mainboard/$(MAINBOARDDIR)/romstage.c)
 romstage-libs ?=
@@ -377,9 +380,6 @@ ifeq ($(CONFIG_HAVE_SMI_HANDLER),y)
 ifneq ($(wildcard src/mainboard/$(MAINBOARDDIR)/smihandler.c),)
 smm-srcs += src/mainboard/$(MAINBOARDDIR)/smihandler.c
 endif
-endif
-ifneq ($(wildcard src/mainboard/$(MAINBOARDDIR)/get_bus_conf.c),)
-ramstage-srcs += src/mainboard/$(MAINBOARDDIR)/get_bus_conf.c
 endif
 
 ramstage-libs ?=

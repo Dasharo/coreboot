@@ -190,22 +190,24 @@ static void dramc_write_dbi_onoff(bool on)
 			(on ? 1 : 0) << SHU1_WODT_DBIWR_SHIFT);
 }
 
-static void dramc_phy_dcm_disable(u8 chn)
+static void dramc_phy_dcm_2_channel(u8 chn, bool en)
 {
-	clrsetbits_le32(&ch[chn].phy.misc_cg_ctrl0,
-		(0x1 << 20) | (0x1 << 19) | 0x3ff << 8,
-		(0x0 << 20) | (0x1 << 19) | 0x3ff << 8);
+	clrsetbits_le32(&ch[chn].phy.misc_cg_ctrl0, (0x3 << 19) | (0x3ff << 8),
+		((en ? 0 : 0x1) << 19) | ((en ? 0 : 0x1ff) << 9) | (1 << 8));
 
 	for (size_t i = 0; i < DRAM_DFS_SHUFFLE_MAX; i++) {
 		struct ddrphy_ao_shu *shu = &ch[chn].phy.shu[i];
-		setbits_le32(&shu->b[0].dq[8], 0x1fff << 19);
-		setbits_le32(&shu->b[1].dq[8], 0x1fff << 19);
+		for (size_t b = 0; b < 2; b++)
+			clrsetbits_le32(&shu->b[b].dq[8], 0x1fff << 19,
+				((en ? 0 : 0x7ff) << 22) | (0x1 << 21) |
+				((en ? 0 : 0x3) << 19));
 		clrbits_le32(&shu->ca_cmd[8], 0x1fff << 19);
 	}
-	clrbits_le32(&ch[chn].phy.misc_cg_ctrl5, (0x7 << 16) | (0x7 << 20));
+	clrsetbits_le32(&ch[chn].phy.misc_cg_ctrl5, (0x7 << 16) | (0x7 << 20),
+		((en ? 0x7 : 0) << 16) | ((en ? 0x7 : 0) << 20));
 }
 
-static void dramc_enable_phy_dcm(bool en)
+void dramc_enable_phy_dcm(bool en)
 {
 	u32 broadcast_bak = dramc_get_broadcast();
 	dramc_set_broadcast(DRAMC_BROADCAST_OFF);
@@ -250,8 +252,7 @@ static void dramc_enable_phy_dcm(bool en)
 			clrsetbits_le32(&shu->ca_cmd[7], mask, value);
 		}
 
-		if (!en)
-			dramc_phy_dcm_disable(chn);
+		dramc_phy_dcm_2_channel(chn, en);
 	}
 	dramc_set_broadcast(broadcast_bak);
 }
@@ -270,7 +271,7 @@ static void reset_delay_chain_before_calibration(void)
 		}
 }
 
-static void dramc_hw_gating_onoff(u8 chn, bool on)
+void dramc_hw_gating_onoff(u8 chn, bool on)
 {
 	clrsetbits_le32(&ch[chn].ao.shuctrl2, 0x3 << 14,
 		(on ? 0x3 : 0) << 14);
@@ -1624,6 +1625,75 @@ static u8 dramc_window_perbit_cal(u8 chn, u8 rank,
 	return 0;
 }
 
+static void dle_factor_handler(u8 chn, u8 val)
+{
+	val = MAX(val, 2);
+	clrsetbits_le32(&ch[chn].ao.shu[0].conf[1],
+		SHU_CONF1_DATLAT_MASK | SHU_CONF1_DATLAT_DSEL_MASK |
+		SHU_CONF1_DATLAT_DSEL_PHY_MASK,
+		(val << SHU_CONF1_DATLAT_SHIFT) |
+		((val - 2) << SHU_CONF1_DATLAT_DSEL_SHIFT) |
+		((val - 2) << SHU_CONF1_DATLAT_DSEL_PHY_SHIFT));
+	dram_phy_reset(chn);
+}
+
+static u8 dramc_rx_datlat_cal(u8 chn, u8 rank)
+{
+	s32 datlat, first = -1, sum = 0, best_step;
+
+	best_step = read32(&ch[chn].ao.shu[0].conf[1]) & SHU_CONF1_DATLAT_MASK;
+
+	dramc_dbg("[DATLAT] start. CH%d RK%d DATLAT Default: %2x\n",
+		   chn, rank, best_step);
+
+	u32 dummy_rd_backup = read32(&ch[chn].ao.dummy_rd);
+	dramc_engine2_init(chn, rank, 0x400, false);
+
+	for (datlat = 12; datlat < DATLAT_TAP_NUMBER; datlat++) {
+		dle_factor_handler(chn, datlat);
+
+		u32 err = dramc_engine2_run(chn, TE_OP_WRITE_READ_CHECK);
+
+		if (err != 0 && first != -1)
+			break;
+
+		if (sum >= 4)
+			break;
+
+		if (err == 0) {
+			if (first == -1)
+				first = datlat;
+			sum++;
+		}
+
+		dramc_dbg("Datlat=%2d, err_value=0x%8x, sum=%d\n",
+			   datlat, err, sum);
+	}
+
+	dramc_engine2_end(chn);
+	write32(&ch[chn].ao.dummy_rd, dummy_rd_backup);
+
+	best_step = first + (sum >> 1);
+	dramc_dbg("First_step=%d, total pass=%d, best_step=%d\n",
+		  first, sum, best_step);
+
+	assert(sum != 0);
+
+	dle_factor_handler(chn, best_step);
+
+	clrsetbits_le32(&ch[chn].ao.padctrl, PADCTRL_DQIENQKEND_MASK,
+		(0x1 << PADCTRL_DQIENQKEND_SHIFT) |
+		(0x1 << PADCTRL_DQIENLATEBEGIN_SHIFT));
+
+	return (u8) best_step;
+}
+
+static void dramc_dual_rank_rx_datlat_cal(u8 chn, u8 datlat0, u8 datlat1)
+{
+	u8 final_datlat = MAX(datlat0, datlat1);
+	dle_factor_handler(chn, final_datlat);
+}
+
 static void dramc_rx_dqs_gating_post_process(u8 chn)
 {
 	u8 rank_rx_dvs, dqsinctl;
@@ -1720,6 +1790,7 @@ static void dramc_rx_dqs_gating_post_process(u8 chn)
 
 void dramc_calibrate_all_channels(const struct sdram_params *pams)
 {
+	u8 rx_datlat[RANK_MAX] = {0};
 	for (u8 chn = 0; chn < CHANNEL_MAX; chn++) {
 		for (u8 rk = RANK_0; rk < RANK_MAX; rk++) {
 			dramc_show("Start K ch:%d, rank:%d\n", chn, rk);
@@ -1731,9 +1802,11 @@ void dramc_calibrate_all_channels(const struct sdram_params *pams)
 			dramc_window_perbit_cal(chn, rk, RX_WIN_RD_DQC, pams);
 			dramc_window_perbit_cal(chn, rk, TX_WIN_DQ_DQM, pams);
 			dramc_window_perbit_cal(chn, rk, TX_WIN_DQ_ONLY, pams);
+			rx_datlat[rk] = dramc_rx_datlat_cal(chn, rk);
 			dramc_window_perbit_cal(chn, rk, RX_WIN_TEST_ENG, pams);
 		}
 
 		dramc_rx_dqs_gating_post_process(chn);
+		dramc_dual_rank_rx_datlat_cal(chn, rx_datlat[0], rx_datlat[1]);
 	}
 }

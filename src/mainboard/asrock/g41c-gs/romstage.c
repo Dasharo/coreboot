@@ -26,7 +26,6 @@
 #include <superio/winbond/common/winbond.h>
 #include <superio/nuvoton/common/nuvoton.h>
 #include <lib.h>
-#include <arch/stages.h>
 #include <northbridge/intel/x4x/iomap.h>
 #include <device/pnp_def.h>
 #include <timestamp.h>
@@ -70,8 +69,7 @@ static void mb_lpc_setup(void)
 	reg32 = RCBA32(GCS);
 	reg32 |= (1 << 5);
 	RCBA32(GCS) = reg32;
-	RCBA32(FD) = FD_PCIE6 | FD_PCIE5 | FD_PCIE4 | FD_PCIE3 | FD_ACMOD
-		| FD_ACAUD | 1;
+
 	RCBA32(CG) = 0x00000001;
 }
 
@@ -90,9 +88,6 @@ void mainboard_romstage_entry(unsigned long bist)
 	const u8 spd_addrmap[4] = { 0x50, 0, 0x52, 0 };
 	u8 boot_path = 0;
 	u8 s3_resume;
-
-	timestamp_init(get_initial_timestamp());
-	timestamp_add_now(TS_START_ROMSTAGE);
 
 	/* Set southbridge and Super I/O GPIOs. */
 	ich7_enable_lpc();

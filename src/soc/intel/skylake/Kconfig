@@ -113,10 +113,6 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 	select VBOOT_VBNV_CMOS_BACKUP_TO_FLASH
 
-config BOOTBLOCK_RESETS
-	string
-	default "soc/intel/common/reset.c"
-
 config CBFS_SIZE
 	hex
 	default 0x200000
@@ -207,10 +203,6 @@ config SKYLAKE_SOC_PCH_H
 	default n
 	help
 	  Choose this option if you have a PCH-H chipset.
-
-config CHIPSET_BOOTBLOCK_INCLUDE
-	string
-	default "soc/intel/skylake/bootblock/timestamp.inc"
 
 config NHLT_DMIC_2CH
 	bool

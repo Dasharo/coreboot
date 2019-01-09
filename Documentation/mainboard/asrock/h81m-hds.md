@@ -4,23 +4,9 @@ This page describes how to run coreboot on the [ASRock H81M-HDS].
 
 ## Required proprietary blobs
 
-This board currently requires a proprietary blob in order to initialise
-the RAM and a few other components. The blob largely consists of Intel's
-Memory Reference Code (shortened to mrc), and is just under 200 KiB
-in size. It is also known as a system agent binary. Unfortunately,
-it is not currently possible to distribute this as part of coreboot.
-However, the mrc can be obtained from a Haswell Chromebook firmware
-image, and you might find one online. The mrc from a ChromeOS image can
-be extracted with the following command. If extracting from a "standard"
-coreboot image, omit `-r RO_SECTION`.
-
-```bash
-cbfstool coreboot.rom extract -f mrc.bin -n mrc.bin -r RO_SECTION
+```eval_rst
+Please see :doc:`../../northbridge/intel/haswell/mrc.bin`.
 ```
-
-Now, place mrc.bin in the root of the coreboot directory.
-Alternatively, place it anywhere you want, and set `MRC_FILE` to its
-location when building coreboot.
 
 ## Building coreboot
 
@@ -81,9 +67,6 @@ facing towards the bottom of the board.
 
 ## Known issues
 
-- PCIe graphics is non-functional. The PCIe 16x slot doesn't work
-  with other devices, either.
-
 - The VGA port doesn't work until the OS reinitialises the display.
 
 - There is no automatic, OS-independent fan control. This is because
@@ -91,6 +74,10 @@ facing towards the bottom of the board.
   readings from the PECI agent, but the required driver doesn't exist
   in coreboot. The `coretemp` driver can still be used for accurate CPU
   temperature readings from an OS.
+
+```eval_rst
+Please also see :doc:`../../northbridge/intel/haswell/known-issues`.
+```
 
 ## Untested
 
@@ -108,7 +95,7 @@ facing towards the bottom of the board.
 - S3 suspend/resume
 - Gigabit Ethernet
 - integrated graphics
-- PCIe (but not the 16x slot, see [Known issues](#known-issues))
+- PCIe
 - SATA
 - PS/2 mouse
 - serial port
@@ -126,7 +113,7 @@ facing towards the bottom of the board.
 
 ```eval_rst
 +------------------+--------------------------------------------------+
-| Northbridge      | Intel Haswell                                    |
+| Northbridge      | :doc:`../../northbridge/intel/haswell/index`     |
 +------------------+--------------------------------------------------+
 | Southbridge      | Intel Lynx Point (H81)                           |
 +------------------+--------------------------------------------------+
