@@ -14,7 +14,6 @@
  * GNU General Public License for more details.
  */
 
-#include <rules.h>
 #include <stdlib.h>
 #include <arch/early_variables.h>
 #include <arch/io.h>

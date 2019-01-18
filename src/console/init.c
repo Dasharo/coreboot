@@ -20,7 +20,6 @@
 #include <console/streams.h>
 #include <device/pci.h>
 #include <option.h>
-#include <rules.h>
 #include <version.h>
 
 /* Mutable console log level only allowed when RAM comes online. */
@@ -72,6 +71,9 @@ asmlinkage void console_init(void)
 {
 	init_log_level();
 
+	if (IS_ENABLED(CONFIG_DEBUG_CONSOLE_INIT))
+		car_set_var(console_inited, 1);
+
 #if IS_ENABLED(CONFIG_EARLY_PCI_BRIDGE)
 	if (!ENV_SMM && !ENV_RAMSTAGE)
 		pci_early_bridge_init();
@@ -81,6 +83,7 @@ asmlinkage void console_init(void)
 
 	car_set_var(console_inited, 1);
 
-	printk(BIOS_NOTICE, "\n\ncoreboot-%s%s %s " ENV_STRING " starting...\n",
-	       coreboot_version, coreboot_extra_version, coreboot_build);
+	printk(BIOS_NOTICE, "\n\ncoreboot-%s%s %s " ENV_STRING " starting (log level: %i)...\n",
+	       coreboot_version, coreboot_extra_version, coreboot_build,
+	       get_log_level());
 }

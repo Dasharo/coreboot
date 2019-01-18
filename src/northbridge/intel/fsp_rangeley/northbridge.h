@@ -23,7 +23,6 @@
 /* Everything below this line is ignored in the DSDT */
 #ifndef __ACPI__
 
-#include <rules.h>
 #include <device/device.h>
 
 /* Device 0:0.0 PCI configuration space (Host Bridge) */
@@ -69,7 +68,6 @@ void print_pci_devices(void);
 void dump_pci_device(unsigned dev);
 void dump_pci_devices(void);
 void dump_spd_registers(void);
-void dump_mem(unsigned start, unsigned end);
 void report_platform_info(void);
 
 #ifndef __SIMPLE_DEVICE__

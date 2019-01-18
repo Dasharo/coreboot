@@ -14,22 +14,13 @@
  */
 
 #include <stdint.h>
-#include <device/pci_def.h>
 #include <arch/io.h>
-#include <stdlib.h>
 #include <cbmem.h>
 #include <console/console.h>
-#include <cpu/x86/bist.h>
 #include <cpu/intel/romstage.h>
-#include <timestamp.h>
 
 #include <southbridge/intel/i82801dx/i82801dx.h>
 #include <northbridge/intel/e7505/raminit.h>
-
-#include <device/pnp_def.h>
-#include <superio/smsc/lpc47m10x/lpc47m10x.h>
-
-#define SERIAL_DEV PNP_DEV(0x2e, LPC47M10X2_SP1)
 
 int spd_read_byte(unsigned int device, unsigned int address)
 {
@@ -47,29 +38,15 @@ void mainboard_romstage_entry(unsigned long bist)
 		},
 	};
 
-	timestamp_init(timestamp_get());
-	timestamp_add_now(TS_START_ROMSTAGE);
-
-	/* Get the serial port running and print a welcome banner */
-	lpc47m10x_enable_serial(SERIAL_DEV, CONFIG_TTYS0_BASE);
-	console_init();
-
-	/* Halt if there was a built in self test failure */
-	report_bist_failure(bist);
-
 	/* If this is a warm boot, some initialization can be skipped */
 	if (!e7505_mch_is_ready()) {
 		enable_smbus();
-
-		timestamp_add_now(TS_BEFORE_INITRAM);
 
 		/* The real MCH initialisation. */
 		e7505_mch_init(memctrl);
 
 		/* Hook for post ECC scrub settings and debug. */
 		e7505_mch_done(memctrl);
-
-		timestamp_add_now(TS_AFTER_INITRAM);
 	}
 
 	printk(BIOS_DEBUG, "SDRAM is up.\n");

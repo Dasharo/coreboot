@@ -371,15 +371,11 @@ int i945_silicon_revision(void);
 void i945_early_initialization(void);
 void i945_late_initialization(int s3resume);
 
-/* provided by mainboard code */
-void setup_ich7_gpios(void);
-
 /* debugging functions */
 void print_pci_devices(void);
 void dump_pci_device(unsigned int dev);
 void dump_pci_devices(void);
 void dump_spd_registers(void);
-void dump_mem(unsigned int start, unsigned int end);
 
 u32 decode_igd_memory_size(u32 gms);
 u32 decode_tseg_size(const u8 esmramc);

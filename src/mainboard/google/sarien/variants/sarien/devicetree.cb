@@ -42,6 +42,9 @@ chip soc/intel/cannonlake
 	register "SlowSlewRateForGt" = "2"
 	register "SlowSlewRateForSa" = "2"
 	register "SlowSlewRateForFivr" = "2"
+	register "tdp_pl1_override" = "25"
+	register "tdp_pl2_override" = "51"
+	register "Device4Enable" = "1"
 
 	# Intel Common SoC Config
 	register "usb2_ports[0]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# Left Type-C Port
@@ -71,21 +74,26 @@ chip soc/intel/cannonlake
 	#| I2C1              | Touchpad                  |
 	#| I2C4              | H1 TPM                    |
 	#+-------------------+---------------------------+
+
+	register "tcc_offset" = "3"
+
 	register "common_soc_config" = "{
 		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 190,
+			.fall_time_ns = 120,
 		},
 		.i2c[1] = {
 			.speed = I2C_SPEED_FAST,
-			.rise_time_ns = 176,
-			.fall_time_ns = 15,
+			.rise_time_ns = 52,
+			.fall_time_ns = 110,
 		},
 		.i2c[4] = {
 			.early_init = 1,
 			.speed = I2C_SPEED_FAST,
-			.rise_time_ns = 280,
-			.fall_time_ns = 90,
+			.rise_time_ns = 36,
+			.fall_time_ns = 99,
 		},
 	}"
 
