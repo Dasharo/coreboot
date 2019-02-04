@@ -13,14 +13,24 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
+## [v4.9.0.2] - 2019-02-04
+### Changed
+- rebased with official coreboot repository commit 2b2325e
+
+### Fixed
+- removed AGESA headers changes introduced with 1.0.0.A
+
+### Added
+- enabled Core Performance Boost feature
+
 ## [v4.9.0.1] - 2019-01-09
-## Changed
+### Changed
 - rebased with official coreboot repository commit cd26f08
 - updated SeaBIOS to rel-1.12.0.1
 - prepare apu1 platform for TPM usage
 - enabled TPM2.0 module on apu1, apu2 and apu5 in default configuration
 
-## Fixed
+### Fixed
 - disabled waiting for SVI2 command completion causing reboot hangs
 - introduced reproducible builds by passing build ID to iPXE
 - AGESA AmdInitLate error caused by AGESA bugs
@@ -255,7 +265,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.1...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.2...develop
+[v4.9.0.2]: https://github.com/pcengines/coreboot/compare/v4.9.0.1...v4.9.0.2
 [v4.9.0.1]: https://github.com/pcengines/coreboot/compare/v4.8.0.7...v4.9.0.1
 [v4.8.0.7]: https://github.com/pcengines/coreboot/compare/v4.8.0.6...v4.8.0.7
 [v4.8.0.6]: https://github.com/pcengines/coreboot/compare/v4.8.0.5...v4.8.0.6
