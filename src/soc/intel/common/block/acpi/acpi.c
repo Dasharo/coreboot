@@ -31,7 +31,7 @@
 #include <soc/nvs.h>
 #include <soc/pm.h>
 
-unsigned long acpi_fill_mcfg(unsigned long current)
+__attribute__((weak)) unsigned long acpi_fill_mcfg(unsigned long current)
 {
 	/* PCI Segment Group 0, Start Bus Number 0, End Bus Number is 255 */
 	current += acpi_create_mcfg_mmconfig((void *)current,
@@ -180,6 +180,7 @@ uint32_t acpi_fill_soc_wake(uint32_t generic_pm1_en,
 	return generic_pm1_en;
 }
 
+#if IS_ENABLED(CONFIG_SOC_INTEL_COMMON_ACPI_WAKE_SOURCE)
 /*
  * Save wake source information for calculating ACPI _SWS values
  *
@@ -218,6 +219,7 @@ static int acpi_fill_wake(uint32_t *pm1, uint32_t **gpe0)
 
 	return GPE0_REG_MAX;
 }
+#endif
 
 __weak void acpi_create_gnvs(struct global_nvs_t *gnvs)
 {
@@ -299,11 +301,13 @@ void generate_p_state_entries(int core, int cores_per_package)
 	int ratio_min, ratio_max, ratio_turbo, ratio_step;
 	int coord_type, power_max, num_entries;
 	int ratio, power, clock, clock_max;
+	bool turbo;
 
 	coord_type = cpu_get_coord_type();
 	ratio_min = cpu_get_min_ratio();
 	ratio_max = cpu_get_max_ratio();
 	clock_max = (ratio_max * cpu_get_bus_clock()) / KHz;
+	turbo = (get_turbo_state() == TURBO_ENABLED);
 
 	/* Calculate CPU TDP in mW */
 	power_max = cpu_get_power_max();
@@ -321,16 +325,21 @@ void generate_p_state_entries(int core, int cores_per_package)
 
 	/* Determine ratio points */
 	ratio_step = PSS_RATIO_STEP;
-	num_entries = ((ratio_max - ratio_min) / ratio_step) + 1;
-	if (num_entries > PSS_MAX_ENTRIES) {
-		ratio_step += 1;
+	do {
 		num_entries = ((ratio_max - ratio_min) / ratio_step) + 1;
-	}
+		if (((ratio_max - ratio_min) % ratio_step) > 0)
+			num_entries += 1;
+		if (turbo)
+			num_entries += 1;
+		if (num_entries > PSS_MAX_ENTRIES)
+			ratio_step += 1;
+	} while (num_entries > PSS_MAX_ENTRIES);
+
+	/* _PSS package count depends on Turbo */
+	acpigen_write_package(num_entries);
 
 	/* P[T] is Turbo state if enabled */
-	if (get_turbo_state() == TURBO_ENABLED) {
-		/* _PSS package count including Turbo */
-		acpigen_write_package(num_entries + 2);
+	if (turbo) {
 		ratio_turbo = cpu_get_max_turbo_ratio();
 
 		/* Add entry for Turbo ratio */
@@ -340,9 +349,7 @@ void generate_p_state_entries(int core, int cores_per_package)
 					  PSS_LATENCY_BUSMASTER,/* lat2 */
 					  ratio_turbo << 8,	/* control */
 					  ratio_turbo << 8);	/* status */
-	} else {
-		/* _PSS package count without Turbo */
-		acpigen_write_package(num_entries + 1);
+		num_entries -= 1;
 	}
 
 	/* First regular entry is max non-turbo ratio */
@@ -352,6 +359,7 @@ void generate_p_state_entries(int core, int cores_per_package)
 				  PSS_LATENCY_BUSMASTER,/* lat2 */
 				  ratio_max << 8,	/* control */
 				  ratio_max << 8);	/* status */
+	num_entries -= 1;
 
 	/* Generate the remaining entries */
 	for (ratio = ratio_min + ((num_entries - 1) * ratio_step);
@@ -372,7 +380,7 @@ void generate_p_state_entries(int core, int cores_per_package)
 	acpigen_pop_len();
 }
 
-static acpi_tstate_t *soc_get_tss_table(int *entries)
+__attribute__ ((weak)) acpi_tstate_t *soc_get_tss_table(int *entries)
 {
 	*entries = 0;
 	return NULL;

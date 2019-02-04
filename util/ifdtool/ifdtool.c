@@ -943,6 +943,7 @@ static void lock_descriptor(const char *filename, char *image, int size)
 		fmba->flmstr1 &= 0xff;
 		fmba->flmstr2 &= 0xff;
 		fmba->flmstr3 &= 0xff;
+		fmba->flmstr5 &= 0xff;
 	} else {
 		wr_shift = FLMSTR_WR_SHIFT_V1;
 		rd_shift = FLMSTR_RD_SHIFT_V1;
@@ -965,6 +966,8 @@ static void lock_descriptor(const char *filename, char *image, int size)
 		/* TXE can only write Device Expansion */
 		fmba->flmstr2 |= 0x20 << wr_shift;
 		break;
+	case PLATFORM_CNL:
+	case PLATFORM_ICL:
 	case PLATFORM_SKLKBL:
 		/* CPU/BIOS can read descriptor, BIOS and GbE. */
 		fmba->flmstr1 |= 0xb << rd_shift;
@@ -1013,6 +1016,7 @@ static void unlock_descriptor(const char *filename, char *image, int size)
 		fmba->flmstr1 = 0xffffff00 | (fmba->flmstr1 & 0xff);
 		fmba->flmstr2 = 0xffffff00 | (fmba->flmstr2 & 0xff);
 		fmba->flmstr3 = 0xffffff00 | (fmba->flmstr3 & 0xff);
+		fmba->flmstr5 = 0xffffff00 | (fmba->flmstr5 & 0xff);
 	} else {
 		fmba->flmstr1 = 0xffff0000;
 		fmba->flmstr2 = 0xffff0000;

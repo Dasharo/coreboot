@@ -14,7 +14,7 @@ chip soc/intel/cannonlake
 	register "gen3_dec" = "0x000c0951" # 0x950-0x95f
 
 	# FSP configuration
-	register "SaGv" = "3"
+	register "SaGv" = "SaGv_Enabled"
 	register "HeciEnabled" = "1"
 	register "SataSalpSupport" = "1"
 	register "SataMode" = "Sata_AHCI"
@@ -36,6 +36,11 @@ chip soc/intel/cannonlake
 	register "tdp_pl1_override" = "25"
 	register "tdp_pl2_override" = "51"
 	register "Device4Enable" = "1"
+	register "AcousticNoiseMitigation" = "1"
+	register "SlowSlewRateForIa" = "0"
+	register "SlowSlewRateForGt" = "0"
+	register "SlowSlewRateForSa" = "0"
+	register "SlowSlewRateForFivr" = "0"
 
 	# Intel Common SoC Config
 	register "usb2_ports[0]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# Left Type-C Port
@@ -65,21 +70,26 @@ chip soc/intel/cannonlake
 	#| I2C1              | Touchpad                  |
 	#| I2C4              | H1 TPM                    |
 	#+-------------------+---------------------------+
+
+	register "tcc_offset" = "5"
+
 	register "common_soc_config" = "{
 		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 52,
+			.fall_time_ns = 110,
 		},
 		.i2c[1] = {
 			.speed = I2C_SPEED_FAST,
-			.rise_time_ns = 176,
-			.fall_time_ns = 15,
+			.rise_time_ns = 52,
+			.fall_time_ns = 110,
 		},
 		.i2c[4] = {
 			.early_init = 1,
 			.speed = I2C_SPEED_FAST,
-			.rise_time_ns = 452,
-			.fall_time_ns = 110,
+			.rise_time_ns = 36,
+			.fall_time_ns = 99,
 		},
 	}"
 
@@ -90,6 +100,7 @@ chip soc/intel/cannonlake
 
 	# PCIe port 11 for card reader
 	register "PcieRpEnable[10]" = "1"
+	register "PcieRpLtrEnable[10]" = "1"
 	register "PcieClkSrcUsage[1]" = "10"
 	register "PcieClkSrcClkReq[1]" = "1"
 

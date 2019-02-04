@@ -31,7 +31,7 @@
 cd "$(dirname "$0")" || exit 1
 
 CROSSGCC_DATE="$(git log -n 1 --pretty=%ad --date=short .)"
-CROSSGCC_VERSION="$(git describe $(git log -n 1 --pretty=%h .))"
+CROSSGCC_VERSION="$(git log -n 1 --pretty=%h .)"
 CROSSGCC_COMMIT=$( git describe )
 
 # default settings
@@ -50,9 +50,9 @@ THREADS=1
 GMP_VERSION=6.1.2
 MPFR_VERSION=4.0.1
 MPC_VERSION=1.1.0
-GCC_VERSION=8.1.0
+GCC_VERSION=8.2.0
 GCC_AUTOCONF_VERSION=2.69
-BINUTILS_VERSION=2.30
+BINUTILS_VERSION=2.31.1
 GDB_VERSION=8.2.1
 IASL_VERSION=20190108
 PYTHON_VERSION=3.7.2
@@ -60,7 +60,7 @@ EXPAT_VERSION=2.2.6
 # CLANG version number
 CLANG_VERSION=7.0.1
 MAKE_VERSION=4.2.1
-CMAKE_VERSION=3.13.2
+CMAKE_VERSION=3.13.3
 
 # GCC toolchain archive locations
 # These are sanitized by the jenkins toolchain test builder, so if

@@ -219,47 +219,33 @@ uint16_t gpio_acpi_pin(gpio_t gpio)
 	return gpio;
 }
 
-/*
- * Returns the debounce type corresponding to a given interrupt type.
- *
- * This matches what the linux kernel will set during gpio configuration:
- *
- * Interrupt    Debounce
- * Edge         Remove Glitch
- * Level High   Preserve Low Glitch
- * Level Low    Preserve High Glitch
- */
-static uint32_t gpio_irq_debounce(uint32_t flag)
-{
-	uint32_t trigger;
-
-	trigger = flag & FLAGS_TRIGGER_MASK;
-	switch (trigger) {
-	case GPIO_TRIGGER_LEVEL_LOW:
-		return GPIO_IN_PRESERVE_HIGH_GLITCH;
-	case GPIO_TRIGGER_LEVEL_HIGH:
-		return GPIO_IN_PRESERVE_LOW_GLITCH;
-	case GPIO_TRIGGER_EDGE_LOW:
-		return GPIO_IN_REMOVE_GLITCH;
-	case GPIO_TRIGGER_EDGE_HIGH:
-		return GPIO_IN_REMOVE_GLITCH;
-	default:
-		return GPIO_IN_NO_DEBOUNCE;
-	}
-}
-
 void sb_program_gpios(const struct soc_amd_gpio *gpio_list_ptr, size_t size)
 {
 	uint8_t *mux_ptr;
-	uint32_t *gpio_ptr;
+	uint32_t *gpio_ptr, *inter_master;
 	uint32_t control, control_flags, edge_level, direction;
-	uint32_t mask, bit_edge, bit_level, debounce;
+	uint32_t mask, bit_edge, bit_level;
 	uint8_t mux, index, gpio;
 	int gevent_num;
 
+	inter_master = (uint32_t *)(uintptr_t)(GPIO_CONTROL_MMIO_BASE
+					       + GPIO_MASTER_SWITCH);
 	direction = 0;
 	edge_level = 0;
 	mask = 0;
+
+	/*
+	 * Disable blocking wake/interrupt status generation while updating
+	 * debounce registers. Otherwise when a debounce register is updated
+	 * the whole GPIO controller will zero out all interrupt enable status
+	 * bits while the delay happens. This could cause us to drop the bits
+	 * due to the read-modify-write that happens on each register.
+	 *
+	 * Additionally disable interrupt generation so we don't get any
+	 * spurious interrupts while updating the registers.
+	 */
+	mem_read_write32(inter_master, 0, GPIO_MASK_STS_EN | GPIO_INTERRUPT_EN);
+
 	for (index = 0; index < size; index++) {
 		gpio = gpio_list_ptr[index].gpio;
 		mux = gpio_list_ptr[index].function;
@@ -302,10 +288,6 @@ void sb_program_gpios(const struct soc_amd_gpio *gpio_list_ptr, size_t size)
 			case GPIO_SCI_FLAG:
 				mem_read_write32(gpio_ptr, control,
 						INT_SCI_SMI_MASK);
-				/* Always set debounce type for SCI gpio */
-				debounce = gpio_irq_debounce(control_flags);
-				mem_read_write32(gpio_ptr, debounce,
-						 GPIO_DEBOUNCE_MASK);
 				get_sci_config_bits(control_flags, &bit_edge,
 							&bit_level);
 				edge_level |= bit_edge << gevent_num;
@@ -323,6 +305,16 @@ void sb_program_gpios(const struct soc_amd_gpio *gpio_list_ptr, size_t size)
 						AMD_GPIO_CONTROL_MASK);
 		}
 	}
+
+	/*
+	 * Re-enable interrupt status generation.
+	 *
+	 * We leave MASK_STATUS disabled because the kernel may reconfigure the
+	 * debounce registers while the drivers load. This will cause interrupts
+	 * to be missed during boot.
+	 */
+	mem_read_write32(inter_master, GPIO_INTERRUPT_EN, GPIO_INTERRUPT_EN);
+
 	/* Set all SCI trigger direction (high/low) */
 	mem_read_write32((uint32_t *)(uintptr_t)(APU_SMI_BASE + SMI_SCI_TRIG),
 					direction, mask);

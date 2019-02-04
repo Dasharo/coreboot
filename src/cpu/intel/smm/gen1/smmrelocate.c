@@ -22,10 +22,12 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <cpu/x86/cache.h>
+#include <cpu/x86/mp.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/smm.h>
 #include <console/console.h>
+#include <smp/node.h>
 #include "smi.h"
 
 #define SMRR_SUPPORTED (1 << 11)
@@ -56,17 +58,31 @@ struct smm_relocation_params {
 static struct smm_relocation_params smm_reloc_params;
 static void *default_smm_area = NULL;
 
-static void write_smrr(struct smm_relocation_params *relo_params)
+/* On model_6fx, model_1067x and model_106cx SMRR functions slightly
+   differently. The MSR are at different location from the rest
+   and need to be explicitly enabled in IA32_FEATURE_CONTROL MSR. */
+bool cpu_has_alternative_smrr(void)
 {
 	struct cpuinfo_x86 c;
+	get_fms(&c, cpuid_eax(1));
+	if (c.x86 != 6)
+		return false;
+	switch (c.x86_model) {
+	case 0xf:
+	case 0x17: /* core2 */
+	case 0x1c: /* Bonnell */
+		return true;
+	default:
+		return false;
+	}
+}
 
+static void write_smrr(struct smm_relocation_params *relo_params)
+{
 	printk(BIOS_DEBUG, "Writing SMRR. base = 0x%08x, mask=0x%08x\n",
 	       relo_params->smrr_base.lo, relo_params->smrr_mask.lo);
-	/* Both model_6fx and model_1067x SMRR function slightly differently
-	   from the rest. The MSR are at different location from the rest
-	   and need to be explicitly enabled. */
-	get_fms(&c, cpuid_eax(1));
-	if (c.x86 == 6 && (c.x86_model == 0xf || c.x86_model == 0x17)) {
+
+	if (cpu_has_alternative_smrr()) {
 		msr_t msr;
 		msr = rdmsr(IA32_FEATURE_CONTROL);
 		/* SMRR enabled and feature locked */
@@ -171,7 +187,7 @@ static void fill_in_relocation_params(struct smm_relocation_params *params)
 		/* On model_6fx and model_1067x bits [0:11] on smrr_base
 		   are reserved */
 		get_fms(&c, cpuid_eax(1));
-		if (c.x86 == 6 && (c.x86_model == 0xf || c.x86_model == 0x17))
+		if (cpu_has_alternative_smrr())
 			params->smrr_base.lo = (params->smram_base & rmask);
 		else
 			params->smrr_base.lo = (params->smram_base & rmask)
@@ -334,4 +350,83 @@ void smm_lock(void)
 	printk(BIOS_DEBUG, "Locking SMM.\n");
 
 	northbridge_write_smram(D_LCK | G_SMRAME | C_BASE_SEG);
+}
+
+void smm_info(uintptr_t *perm_smbase, size_t *perm_smsize,
+		size_t *smm_save_state_size)
+{
+	printk(BIOS_DEBUG, "Setting up SMI for CPU\n");
+
+	fill_in_relocation_params(&smm_reloc_params);
+
+	if (CONFIG_IED_REGION_SIZE != 0)
+		setup_ied_area(&smm_reloc_params);
+
+	*perm_smbase = smm_reloc_params.smram_base;
+	*perm_smsize = smm_reloc_params.smram_size;
+	*smm_save_state_size = sizeof(em64t101_smm_state_save_area_t);
+}
+
+void smm_initialize(void)
+{
+	/* Clear the SMM state in the southbridge. */
+	southbridge_smm_clear_state();
+
+	/*
+	 * Run the relocation handler for on the BSP to check and set up
+	 * parallel SMM relocation.
+	 */
+	smm_initiate_relocation();
+}
+
+/* The relocation work is actually performed in SMM context, but the code
+ * resides in the ramstage module. This occurs by trampolining from the default
+ * SMRAM entry point to here. */
+void smm_relocation_handler(int cpu, uintptr_t curr_smbase,
+				uintptr_t staggered_smbase)
+{
+	msr_t mtrr_cap;
+	struct smm_relocation_params *relo_params = &smm_reloc_params;
+	em64t101_smm_state_save_area_t *save_state;
+	u32 smbase = staggered_smbase;
+	u32 iedbase = relo_params->ied_base;
+
+	printk(BIOS_DEBUG, "In relocation handler: cpu %d\n", cpu);
+
+	/* Make appropriate changes to the save state map. */
+	if (CONFIG_IED_REGION_SIZE != 0)
+		printk(BIOS_DEBUG, "New SMBASE=0x%08x IEDBASE=0x%08x\n",
+		       smbase, iedbase);
+	else
+		printk(BIOS_DEBUG, "New SMBASE=0x%08x\n",
+		       smbase);
+
+	save_state = (void *)(curr_smbase + SMM_DEFAULT_SIZE -
+			sizeof(*save_state));
+	save_state->smbase = smbase;
+	save_state->iedbase = iedbase;
+
+	/* Write EMRR and SMRR MSRs based on indicated support. */
+	mtrr_cap = rdmsr(MTRR_CAP_MSR);
+	if (mtrr_cap.lo & SMRR_SUPPORTED && relo_params->smrr_mask.lo != 0)
+		write_smrr(relo_params);
+}
+
+/*
+ * The default SMM entry can happen in parallel or serially. If the
+ * default SMM entry is done in parallel the BSP has already setup
+ * the saving state to each CPU's MSRs. At least one save state size
+ * is required for the initial SMM entry for the BSP to determine if
+ * parallel SMM relocation is even feasible.
+ */
+void smm_relocate(void)
+{
+	/*
+	 * If smm_save_state_in_msrs is non-zero then parallel SMM relocation
+	 * shall take place. Run the relocation handler a second time on the
+	 * BSP to do the final move. For APs, a relocation handler always
+	 * needs to be run.
+	 */
+	if (!boot_cpu())
+		smm_initiate_relocation();
 }

@@ -66,6 +66,12 @@ void acpi_create_gnvs(struct global_nvs_t *gnvs);
 acpi_cstate_t *soc_get_cstate_map(size_t *num_entries);
 
 /*
+ * get_tstate_map returns a table of processor specific acpi_tstate_t entries
+ * and number of entries in the table
+ */
+acpi_tstate_t *soc_get_tss_table(int *entries);
+
+/*
  * Chipset specific quirks for the wake enable bits.
  * Returns wake events for the soc.
  */
@@ -74,6 +80,11 @@ uint32_t acpi_fill_soc_wake(uint32_t generic_pm1_en,
 
 /* Chipset specific settings for filling up fadt table */
 void soc_fill_fadt(acpi_fadt_t *fadt);
+
+/* Chipset specific settings for filling up dmar table */
+unsigned long sa_write_acpi_tables(struct device *dev,
+				   unsigned long current,
+				   struct acpi_rsdp *rsdp);
 
 /* Return the polarity flag for SCI IRQ */
 int soc_madt_sci_irq_polarity(int sci);
