@@ -15,15 +15,17 @@ chip northbridge/intel/sandybridge
 	register "gpu_panel_power_backlight_on_delay" = "2100"	# T3: 210ms
 	register "gpu_panel_power_backlight_off_delay" = "2100"	# T4: 210ms
 
+	# Set backlight PWM values
+	register "gpu_cpu_backlight" = "0x000001e8"
+	register "gpu_pch_backlight" = "0x03d00000"
+
 	register "max_mem_clock_mhz" = "666"			# DDR3-1333
 
 	device cpu_cluster 0 on
-		chip cpu/intel/socket_rPGA989
-			device lapic 0 on end
-		end
 		chip cpu/intel/model_206ax
 			# Magic APIC ID to locate this chip
-			device lapic 0xACAC off end
+			device lapic 0x0 on end
+			device lapic 0xacac off end
 
 			register "c1_acpower" = "1"	# ACPI(C1) = MWAIT(C1)
 			register "c2_acpower" = "3"	# ACPI(C2) = MWAIT(C3)

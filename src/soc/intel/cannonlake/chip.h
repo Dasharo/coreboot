@@ -100,12 +100,18 @@ struct soc_intel_cannonlake_config {
 	uint16_t FreqSaGvMid;
 
 	/* System Agent dynamic frequency support. Only effects ULX/ULT CPUs.
-	 * When enabled memory will be training at two different frequencies.
-	 * 0:Disabled, 1:FixedLow, 2:FixedMid, 3:FixedHigh, 4:Enabled */
+	 * For CNL, options are as following
+	 * When enabled, memory will be training at three different frequencies.
+	 * 0:Disabled, 1:FixedLow, 2:FixedMid, 3:FixedHigh, 4:Enabled
+	 * For WHL/CFL options are as following
+	 * When enabled, memory will be training at two different frequencies.
+	 * 0:Disabled, 1:FixedLow, 2:FixedHigh, 3:Enabled*/
 	enum {
 		SaGv_Disabled,
 		SaGv_FixedLow,
+#if !IS_ENABLED(CONFIG_SOC_INTEL_COFFEELAKE)
 		SaGv_FixedMid,
+#endif
 		SaGv_FixedHigh,
 		SaGv_Enabled,
 	} SaGv;
@@ -197,8 +203,22 @@ struct soc_intel_cannonlake_config {
 	/* HeciEnabled decides the state of Heci1 at end of boot
 	 * Setting to 0 (default) disables Heci1 and hides the device from OS */
 	uint8_t HeciEnabled;
+
+	/* PL1 Override value in Watts */
+	uint32_t tdp_pl1_override;
 	/* PL2 Override value in Watts */
 	uint32_t tdp_pl2_override;
+	/* SysPL2 Value in Watts */
+	uint32_t tdp_psyspl2;
+	/* SysPL3 Value in Watts */
+	uint32_t tdp_psyspl3;
+	/* SysPL3 window size */
+	uint32_t tdp_psyspl3_time;
+	/* SysPL3 duty cycle */
+	uint32_t tdp_psyspl3_dutycycle;
+	/* PL4 Value in Watts */
+	uint32_t tdp_pl4;
+
 	/* Intel Speed Shift Technology */
 	uint8_t speed_shift_enable;
 	/* Enable VR specific mailbox command

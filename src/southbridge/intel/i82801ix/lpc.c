@@ -393,7 +393,8 @@ static void i82801ix_lock_smm(struct device *dev)
 	/* Don't allow evil boot loaders, kernels, or
 	 * userspace applications to deceive us:
 	 */
-	smm_lock();
+	if (!IS_ENABLED(CONFIG_PARALLEL_MP))
+		smm_lock();
 
 #if TEST_SMM_FLASH_LOCKDOWN
 	/* Now try this: */
@@ -545,8 +546,10 @@ static void southbridge_inject_dsdt(struct device *dev)
 		memset(gnvs, 0, sizeof(*gnvs));
 		acpi_create_gnvs(gnvs);
 
-		gnvs->ndid = gfx->ndid;
-		memcpy(gnvs->did, gfx->did, sizeof(gnvs->did));
+		if (gfx) {
+			gnvs->ndid = gfx->ndid;
+			memcpy(gnvs->did, gfx->did, sizeof(gnvs->did));
+		}
 
 		/* And tell SMI about it */
 		smm_setup_structures(gnvs, NULL, NULL);

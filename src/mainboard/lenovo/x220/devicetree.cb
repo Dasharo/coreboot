@@ -19,12 +19,10 @@ chip northbridge/intel/sandybridge
 	register "gpu_pch_backlight" = "0x06100610"
 
 	device cpu_cluster 0 on
-		chip cpu/intel/socket_rPGA989
-			device lapic 0 on end
-		end
 		chip cpu/intel/model_206ax
 			# Magic APIC ID to locate this chip
-			device lapic 0xACAC off end
+			device lapic 0x0 on end
+			device lapic 0xacac off end
 
 			register "c1_acpower" = "1"	# ACPI(C1) = MWAIT(C1)
 			register "c2_acpower" = "3"	# ACPI(C2) = MWAIT(C3)
@@ -159,8 +157,6 @@ chip northbridge/intel/sandybridge
 					register "event7_enable" = "0x81"
 					register "event8_enable" = "0x7b"
 					register "event9_enable" = "0xff"
-					register "eventa_enable" = "0x01"
-					register "eventb_enable" = "0xf0"
 					register "eventc_enable" = "0xff"
 					register "eventd_enable" = "0xff"
 					register "evente_enable" = "0x0d"

@@ -28,19 +28,20 @@
 #include "ehci.h"
 
 struct ehci_debug_info {
-	void *ehci_base;
-	void *ehci_debug;
+	u64 ehci_base;
+	u64 ehci_debug;
 
 	struct dbgp_pipe ep_pipe[DBGP_MAX_ENDPOINTS];
-};
+} __packed;
 
-#if IS_ENABLED(CONFIG_DEBUG_USBDEBUG)
-static void dbgp_print_data(struct ehci_dbg_port *ehci_debug);
-static int dbgp_enabled(void);
+#if IS_ENABLED(CONFIG_DEBUG_CONSOLE_INIT)
+/* When selected, you can debug the connection of usbdebug dongle.
+ * EHCI port register bits and USB packets are dumped on console,
+ * assuming some other console already works.
+ */
 # define dprintk(LEVEL, args...) \
 	do { if (!dbgp_enabled()) printk(LEVEL, ##args); } while (0)
 #else
-# define dbgp_print_data(x)	do {} while (0)
 # define dprintk(LEVEL, args...)   do {} while (0)
 #endif
 
@@ -57,18 +58,26 @@ static int dbgp_enabled(void);
 #define DBGP_MICROFRAME_RETRIES		10
 #define DBGP_MAX_PACKET		8
 
+static int dbgp_enabled(void);
+static void dbgp_print_data(struct ehci_dbg_port *ehci_debug);
+
 static struct ehci_debug_info glob_dbg_info CAR_GLOBAL;
 static struct ehci_debug_info * glob_dbg_info_p CAR_GLOBAL;
 
 static inline struct ehci_debug_info *dbgp_ehci_info(void)
 {
-	if (IS_ENABLED(CONFIG_USBDEBUG_IN_PRE_RAM)
-	    && (ENV_ROMSTAGE || ENV_BOOTBLOCK || ENV_VERSTAGE))
-		glob_dbg_info_p =
-			(struct ehci_debug_info *)_car_ehci_dbg_info_start;
-	if (car_get_var(glob_dbg_info_p) == NULL)
-		car_set_var(glob_dbg_info_p, &glob_dbg_info);
-
+	if (car_get_var(glob_dbg_info_p) == NULL) {
+		struct ehci_debug_info *info;
+		if (ENV_BOOTBLOCK || ENV_VERSTAGE || ENV_ROMSTAGE) {
+			/* The message likely does not show if we hit this. */
+			if (sizeof(*info) > _car_ehci_dbg_info_size)
+				die("BUG: Increase ehci_dbg_info reserve in CAR");
+			info = (void *)_car_ehci_dbg_info_start;
+		} else {
+			info = &glob_dbg_info;
+		}
+		car_set_var(glob_dbg_info_p, info);
+	}
 	return car_get_var(glob_dbg_info_p);
 }
 
@@ -202,13 +211,19 @@ static void dbgp_get_data(struct ehci_dbg_port *ehci_debug, void *buf, int size)
 		bytes[i] = (hi >> (8*(i - 4))) & 0xff;
 }
 
-#if IS_ENABLED(CONFIG_DEBUG_USBDEBUG)
 static void dbgp_print_data(struct ehci_dbg_port *ehci_debug)
 {
-	u32 ctrl = read32(&ehci_debug->control);
-	u32	lo = read32(&ehci_debug->data03);
-	u32	hi = read32(&ehci_debug->data47);
-	int len = DBGP_LEN(ctrl);
+	int len;
+	u32 ctrl, lo, hi;
+
+	if (!IS_ENABLED(CONFIG_DEBUG_CONSOLE_INIT) || dbgp_enabled())
+		return;
+
+	ctrl = read32(&ehci_debug->control);
+	lo = read32(&ehci_debug->data03);
+	hi = read32(&ehci_debug->data47);
+
+	len = DBGP_LEN(ctrl);
 	if (len) {
 		int i;
 		dprintk(BIOS_SPEW, "dbgp:    buf:");
@@ -219,7 +234,6 @@ static void dbgp_print_data(struct ehci_dbg_port *ehci_debug)
 		dprintk(BIOS_SPEW, "\n");
 	}
 }
-#endif
 
 static int dbgp_bulk_write(struct ehci_dbg_port *ehci_debug, struct dbgp_pipe *pipe,
 	const char *bytes, int size)
@@ -249,7 +263,9 @@ static int dbgp_bulk_write(struct ehci_dbg_port *ehci_debug, struct dbgp_pipe *p
 int dbgp_bulk_write_x(struct dbgp_pipe *pipe, const char *bytes, int size)
 {
 	struct ehci_debug_info *dbg_info = dbgp_ehci_info();
-	return dbgp_bulk_write(dbg_info->ehci_debug, pipe, bytes, size);
+	struct ehci_dbg_port *port;
+	port = (void *)(uintptr_t)dbg_info->ehci_debug;
+	return dbgp_bulk_write(port, pipe, bytes, size);
 }
 
 static int dbgp_bulk_read(struct ehci_dbg_port *ehci_debug, struct dbgp_pipe *pipe,
@@ -283,7 +299,9 @@ static int dbgp_bulk_read(struct ehci_dbg_port *ehci_debug, struct dbgp_pipe *pi
 int dbgp_bulk_read_x(struct dbgp_pipe *pipe, void *data, int size)
 {
 	struct ehci_debug_info *dbg_info = dbgp_ehci_info();
-	return dbgp_bulk_read(dbg_info->ehci_debug, pipe, data, size);
+	struct ehci_dbg_port *port;
+	port = (void *)(uintptr_t)dbg_info->ehci_debug;
+	return dbgp_bulk_read(port, pipe, data, size);
 }
 
 void dbgp_mdelay(int ms)
@@ -433,8 +451,8 @@ static int usbdebug_init_(unsigned ehci_bar, unsigned offset, struct ehci_debug_
 
 	/* Keep all endpoints disabled before any printk() call. */
 	memset(info, 0, sizeof (*info));
-	info->ehci_base = (void *)ehci_bar;
-	info->ehci_debug = (void *)(ehci_bar + offset);
+	info->ehci_base = ehci_bar;
+	info->ehci_debug = ehci_bar + offset;
 	info->ep_pipe[0].status	|= DBGP_EP_NOT_PRESENT;
 
 	dprintk(BIOS_INFO, "ehci_bar: 0x%x debug_offset 0x%x\n", ehci_bar, offset);
@@ -443,7 +461,7 @@ static int usbdebug_init_(unsigned ehci_bar, unsigned offset, struct ehci_debug_
 	ehci_regs  = (struct ehci_regs *)(ehci_bar +
 			HC_LENGTH(read32(&ehci_caps->hc_capbase)));
 
-	struct ehci_dbg_port *ehci_debug = info->ehci_debug;
+	struct ehci_dbg_port *ehci_debug = (void *)(uintptr_t)info->ehci_debug;
 
 	if (CONFIG_USBDEBUG_DEFAULT_PORT > 0)
 		ehci_debug_select_port(CONFIG_USBDEBUG_DEFAULT_PORT);
@@ -568,7 +586,8 @@ try_next_port:
 
 	dbgp_mdelay(100);
 
-	ret = dbgp_probe_gadget(info->ehci_debug, &info->ep_pipe[0]);
+	struct ehci_dbg_port *port = (void *)(uintptr_t)info->ehci_debug;
+	ret = dbgp_probe_gadget(port, &info->ep_pipe[0]);
 	if (ret < 0) {
 		dprintk(BIOS_INFO, "Could not probe gadget on debug port.\n");
 		ret = -6;
@@ -640,12 +659,12 @@ void dbgp_put(struct dbgp_pipe *pipe)
 void usbdebug_re_enable(unsigned ehci_base)
 {
 	struct ehci_debug_info *dbg_info = dbgp_ehci_info();
-	unsigned diff;
+	u64 diff;
 	int i;
 
-	diff = (unsigned)dbg_info->ehci_base - ehci_base;
+	diff = dbg_info->ehci_base - ehci_base;
 	dbg_info->ehci_debug -= diff;
-	dbg_info->ehci_base = (void *)ehci_base;
+	dbg_info->ehci_base = ehci_base;
 
 	for (i=0; i<DBGP_MAX_ENDPOINTS; i++)
 		if (dbg_info->ep_pipe[i].status & DBGP_EP_VALID)
@@ -665,7 +684,7 @@ void usbdebug_disable(void)
 int usbdebug_hw_init(bool force)
 {
 	struct ehci_debug_info *dbg_info = dbgp_ehci_info();
-	unsigned int ehci_base, dbg_offset;
+	u32 ehci_base, dbg_offset;
 
 	if (dbgp_enabled() && !force)
 		return 0;

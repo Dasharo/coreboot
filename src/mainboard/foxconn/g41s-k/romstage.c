@@ -24,8 +24,6 @@
 #include <southbridge/intel/i82801gx/i82801gx.h>
 #include <superio/ite/common/ite.h>
 #include <superio/ite/it8720f/it8720f.h>
-#include <lib.h>
-#include <timestamp.h>
 
 #define LPC_DEV PCI_DEV(0, 0x1f, 0)
 #define SERIAL_DEV PNP_DEV(0x2e, IT8720F_SP1)
@@ -74,7 +72,7 @@ static void ich7_enable_lpc(void)
 {
 	pci_write_config16(LPC_DEV, LPC_IO_DEC, 0x0010);
 	pci_write_config16(LPC_DEV, LPC_EN, CNF1_LPC_EN | KBC_LPC_EN |
-		COMB_LPC_EN | COMA_LPC_EN);
+			FDD_LPC_EN | COMB_LPC_EN | COMA_LPC_EN);
 
 	/* Decode 64 bytes at 0x0a00 to LPC for Super I/O EC and GPIO. */
 	pci_write_config32(LPC_DEV, GEN1_DEC, 0x003c0a01);
@@ -83,7 +81,13 @@ static void ich7_enable_lpc(void)
 void mainboard_romstage_entry(unsigned long bist)
 {
 	//                          ch0      ch1
+#if IS_ENABLED(CONFIG_BOARD_FOXCONN_G41S_K)
 	const u8 spd_addrmap[4] = { 0x50, 0, 0, 0 };
+#else
+	/* TODO adapt raminit such that other slots can be used
+	 * for single rank dimms */
+	const u8 spd_addrmap[4] = { 0x50, 0, 0x52, 0 };
+#endif
 	u8 boot_path = 0;
 	u8 s3_resume;
 
@@ -105,12 +109,7 @@ void mainboard_romstage_entry(unsigned long bist)
 	if (MCHBAR32(PMSTS_MCHBAR) & PMSTS_WARM_RESET)
 		boot_path = BOOT_PATH_WARM_RESET;
 
-	printk(BIOS_DEBUG, "Initializing memory\n");
-	timestamp_add_now(TS_BEFORE_INITRAM);
 	sdram_initialize(boot_path, spd_addrmap);
-	timestamp_add_now(TS_AFTER_INITRAM);
-	quick_ram_check();
-	printk(BIOS_DEBUG, "Memory initialized\n");
 
 	x4x_late_init(s3_resume);
 

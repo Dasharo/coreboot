@@ -19,10 +19,20 @@
 #include <commonlib/helpers.h>
 
 static const struct pad_config gpio_table[] = {
+	/* SD_1P8_SEL => NC */
+	PAD_NC(GPP_A16, DN_20K),
+	/* EN_PP3300_SD_DX */
+	PAD_CFG_NF(GPP_A17, NONE, DEEP, NF1),
+	/* EN_PP3300_WWAN */
+	PAD_CFG_GPO(GPP_A18, 1, DEEP),
+	/* WWAN_RADIO_DISABLE_1V8_ODL */
+	PAD_CFG_GPO(GPP_A19, 1, DEEP),
 	/* TRACKPAD_INT_ODL */
 	PAD_CFG_GPI_APIC(GPP_A21, NONE, PLTRST, LEVEL, INVERT),
 	/* SRCCLKREQ1 */
 	PAD_CFG_NF(GPP_B6, NONE, DEEP, NF1),
+	/* PCIE_14_WLAN_CLKREQ_ODL */
+	PAD_CFG_NF(GPP_B8, NONE, DEEP, NF1),
 	/* H1_SLAVE_SPI_CS_L */
 	PAD_CFG_NF(GPP_B15, NONE, DEEP, NF1),
 	/* H1_SLAVE_SPI_CLK */
@@ -33,10 +43,20 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_B18, NONE, DEEP, NF1),
 	/* TOUCHSCREEN_DIS_L */
 	PAD_CFG_GPO(GPP_C4, 0, DEEP),
-	/* GPP_C11_TP => NC */
-	PAD_NC(GPP_C11, DN_20K),
-	/* GPP_C10_TP => NC */
+	/* PCIE_14_WLAN_WAKE_ODL */
+	PAD_CFG_GPI_SCI_LOW(GPP_C1, NONE, DEEP, EDGE_SINGLE),
+	/* GPP_C10_TP */
 	PAD_NC(GPP_C10, DN_20K),
+	/* GPP_C11_TP */
+	PAD_NC(GPP_C11, DN_20K),
+	/* BT_DISABLE_L */
+	PAD_CFG_GPO(GPP_C14, 1, DEEP),
+	/* WWAN_DPR_SAR_ODL
+	 *
+	 * TODO: Driver doesn't use this pin as of now. In case driver starts
+	 * using this pin, expose this pin to driver.
+	 */
+	PAD_CFG_GPO(GPP_C15, 1, DEEP),
 	/* PCH_I2C_TRACKPAD_SDA */
 	PAD_CFG_NF(GPP_C16, NONE, DEEP, NF1),
 	/* PCH_I2C_TRACKPAD_SCL */
@@ -51,6 +71,16 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_APIC(GPP_C21, NONE, DEEP, LEVEL, INVERT),
 	/* EC_IN_RW_OD */
 	PAD_CFG_GPI(GPP_C22, NONE, DEEP),
+	/* WLAN_PE_RST# */
+	PAD_CFG_GPO(GPP_C23, 1, DEEP),
+	/* WWAN_CONFIG_0 */
+	PAD_NC(GPP_D5, NONE),
+	/* WWAN_CONFIG_1 */
+	PAD_NC(GPP_D6, NONE),
+	/* WWAN_CONFIG_2 */
+	PAD_NC(GPP_D7, NONE),
+	/* WWAN_CONFIG_3 */
+	PAD_NC(GPP_D8, NONE),
 	/* TOUCHSCREEN_RST_L */
 	PAD_CFG_GPO(GPP_D15, 0, DEEP),
 	/* TOUCHSCREEN_INT_L */
@@ -83,6 +113,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_E22, DN_20K),
 	/* GPIO_WWAN_WLAN_COEX3 */
 	PAD_CFG_NF(GPP_F0, NONE, DEEP, NF1),
+	/* WWAN_RESET_1V8_ODL */
+	PAD_CFG_GPO(GPP_F1, 1, DEEP),
 	/* UART_WWANTX_WLANRX_COEX1 */
 	PAD_CFG_NF(GPP_F8, NONE, DEEP, NF1),
 	/* UART_WWANRX_WLANTX_COEX2 */
@@ -95,6 +127,25 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI(GPP_F11, NONE, PLTRST),
 	/* PCH_MEM_STRAP3 */
 	PAD_CFG_GPI(GPP_F22, NONE, PLTRST),
+	/* SD_CMD */
+	PAD_CFG_NF(GPP_G0, NONE, DEEP, NF1),
+	/* SD_DATA0 */
+	PAD_CFG_NF(GPP_G1, NONE, DEEP, NF1),
+	/* SD_DATA1 */
+	PAD_CFG_NF(GPP_G2, NONE, DEEP, NF1),
+	/* SD_DATA2 */
+	PAD_CFG_NF(GPP_G3, NONE, DEEP, NF1),
+	/* SD_DATA3 */
+	PAD_CFG_NF(GPP_G4, NONE, DEEP, NF1),
+	/* SD_CD# */
+	PAD_CFG_NF(GPP_G5, NONE, DEEP, NF1),
+	/* SD_CLK */
+	PAD_CFG_NF(GPP_G6, NONE, DEEP, NF1),
+	/* SD_WP => NC */
+	PAD_NC(GPP_G7, DN_20K),
+
+	/* GPD2: LAN_WAKE# ==> EC_PCH_WAKE_OD */
+	PAD_CFG_NF(GPD2, NONE, DEEP, NF1),
 };
 
 const struct pad_config *__weak variant_gpio_table(size_t *num)
@@ -115,6 +166,8 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_NF(GPP_B18, NONE, DEEP, NF1),
 	/* H1_PCH_INT_ODL */
 	PAD_CFG_GPI_APIC(GPP_C21, NONE, DEEP, LEVEL, INVERT),
+	/* WLAN_PE_RST# */
+	PAD_CFG_GPO(GPP_C23, 1, DEEP),
 };
 
 const struct pad_config *__weak variant_early_gpio_table(size_t *num)

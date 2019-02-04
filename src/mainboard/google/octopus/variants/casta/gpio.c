@@ -27,20 +27,17 @@ static const struct pad_config default_override_table[] = {
 
 	PAD_NC(GPIO_67, UP_20K), /* EN_PP3300_DX_LTE_SOC -- unused */
 
-	PAD_NC(GPIO_105, DN_20K), /* TOUCHSCREEN_RST -- unused */
+	PAD_NC(GPIO_105, UP_20K), /* TOUCHSCREEN_RST -- unused */
 	PAD_NC(GPIO_108, NONE), /* PMU_SUSCLK -- unused */
 
-	PAD_NC(GPIO_114, DN_20K), /* I2C7 Touchscreen -- unused */
-	PAD_NC(GPIO_115, DN_20K), /* I2C7 Touchscreen -- unused */
+	PAD_NC(GPIO_114, UP_20K), /* I2C7 Touchscreen -- unused */
+	PAD_NC(GPIO_115, UP_20K), /* I2C7 Touchscreen -- unused */
 
 	PAD_NC(GPIO_117, UP_20K), /* PCIE_WAKE1_B - No LTE*/
 	PAD_NC(GPIO_119, UP_20K), /* PCIE_WAKE3_B - only use CNVI */
 
 	/* PCIE_CLKREQ3_B -- unused */
-	PAD_CFG_NF_IOSSTATE_IOSTERM(GPIO_122, UP_20K, DEEP, NF1, HIZCRx1, ENPU),
-	/* CAM_SOC_EC_SYNC */
-	PAD_CFG_GPI_APIC_IOS(GPIO_134, NONE, DEEP, EDGE_SINGLE, INVERT, TxDRxE,
-			     DISPUPD),
+	PAD_CFG_NF_IOSSTATE_IOSTERM(GPIO_123, UP_20K, DEEP, NF1, HIZCRx1, ENPU),
 
 	PAD_NC(GPIO_138, UP_20K), /* PEN_PDCT_ODL -- unused */
 	PAD_NC(GPIO_139, UP_20K), /* PEN_INT_ODL -- unused */

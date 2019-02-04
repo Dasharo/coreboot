@@ -45,7 +45,7 @@ void i82801gx_enable(struct device *dev);
 #else
 void enable_smbus(void);
 int smbus_read_byte(unsigned int device, unsigned int address);
-int i2c_block_read(unsigned int device, unsigned int cmd, unsigned int bytes,
+int i2c_eeprom_read(unsigned int device, unsigned int cmd, unsigned int bytes,
 		u8 *buf);
 int smbus_block_read(unsigned int device, unsigned int cmd, u8 bytes, u8 *buf);
 int smbus_block_write(unsigned int device, unsigned int cmd, u8 bytes,
@@ -83,6 +83,9 @@ int southbridge_detect_s3_resume(void);
 #define   GPI_IS_SMI		0x01
 #define   GPI_IS_SCI		0x02
 #define   GPI_IS_NMI		0x03
+
+#define FDVCT			0xe4
+#define   PCIE_4_PORTS_MAX	(1 << 7)
 
 /* GEN_PMCON_3 bits */
 #define RTC_BATTERY_DEAD	(1 << 2)
@@ -184,9 +187,6 @@ int southbridge_detect_s3_resume(void);
 
 #define PMBASE		0x40
 
-/* Root Complex Register Block */
-#define RCBA		0xf0
-
 #define VCH		0x0000	/* 32bit */
 #define VCAP1		0x0004	/* 32bit */
 #define VCAP2		0x0008	/* 32bit */
@@ -272,12 +272,6 @@ int southbridge_detect_s3_resume(void);
  * Not all features might be disabled on
  * all chipsets. Esp. ICH-7U is picky.
  */
-#define FD_PCIE6	(1 << 21)
-#define FD_PCIE5	(1 << 20)
-#define FD_PCIE4	(1 << 19)
-#define FD_PCIE3	(1 << 18)
-#define FD_PCIE2	(1 << 17)
-#define FD_PCIE1	(1 << 16)
 #define ICH_DISABLE_PCIE(x)	(1 << (16 + (x)))
 #define FD_EHCI		(1 << 15)
 #define FD_LPCB		(1 << 14)

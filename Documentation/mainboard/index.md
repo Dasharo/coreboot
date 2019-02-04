@@ -19,6 +19,7 @@ This section contains documentation about coreboot on specific mainboards.
 The boards in this section are not real mainboards, but emulators.
 
 - [Spike RISC-V emulator](emulation/spike-riscv.md)
+- [Qemu RISC-V emulator](emulation/qemu-riscv.md)
 
 ## Intel
 
@@ -48,12 +49,15 @@ The boards in this section are not real mainboards, but emulators.
 
 ## Lenovo
 
+- [Hardware Maintenance Manual of ThinkPads](lenovo/thinkpad_hmm.md)
 - [T4xx common](lenovo/t4xx_series.md)
+- [X2xx common](lenovo/x2xx_series.md)
 
 ### Sandy Bridge series
 
 - [T420](lenovo/t420.md)
 - [T420 / T520 / X220 / T420s / W520 common](lenovo/xx20_series.md)
+- [x1](lenovo/x1.md)
 
 ### Ivy Bridge series
 

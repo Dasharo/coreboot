@@ -18,8 +18,14 @@
 #include <soc/mmu_operations.h>
 #include <soc/mt6358.h>
 
+#include "early_init.h"
+
 void platform_romstage_main(void)
 {
+	/* This will be done in verstage if CONFIG_VBOOT is enabled. */
+	if (!IS_ENABLED(CONFIG_VBOOT))
+		mainboard_early_init();
+
 	mt6358_init();
 	mt_mem_init(get_sdram_config());
 	mtk_mmu_after_dram();

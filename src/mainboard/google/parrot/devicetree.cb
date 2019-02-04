@@ -6,7 +6,7 @@ chip northbridge/intel/sandybridge
 	# Enable DisplayPort B Hotplug with 6ms pulse
 	register "gpu_dp_b_hotplug" = "0x06"
 
-	# Enable Panel as eDP and configure power delays
+	# Enable Panel as LVDS and configure power delays
 	register "gpu_panel_port_select" = "0"			# LVDS
 	register "gpu_panel_power_cycle_delay" = "5"		# 400ms
 	register "gpu_panel_power_up_delay" = "500"		# 50ms
@@ -21,12 +21,10 @@ chip northbridge/intel/sandybridge
 	register "max_mem_clock_mhz" = "666"
 
 	device cpu_cluster 0 on
-		chip cpu/intel/socket_rPGA989
-			device lapic 0 on end
-		end
 		chip cpu/intel/model_206ax
 			# Magic APIC ID to locate this chip
-			device lapic 0xACAC off end
+			device lapic 0x0 on end
+			device lapic 0xacac off end
 
 			register "c1_acpower" = "1"	# ACPI(C1) = MWAIT(C1)
 			register "c2_acpower" = "3"	# ACPI(C2) = MWAIT(C3)

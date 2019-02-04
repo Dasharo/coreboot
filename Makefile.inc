@@ -198,6 +198,11 @@ forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/
 ifeq ($(CONFIG_PLATFORM_USES_FSP2_0),y)
 forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/fsp))
 endif
+ifeq ($(CONFIG_PLATFORM_USES_FSP1_0),y)
+ifeq ($(CONFIG_SOC_INTEL_FSP_BROADWELL_DE),y)
+forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/fsp))
+endif
+endif
 endif
 UPDATED_SUBMODULES:=1
 COREBOOT_EXPORTS += UPDATED_SUBMODULES
@@ -378,6 +383,7 @@ CPPFLAGS_common += -Isrc/device/oprom/include
 VBOOT_SOURCE ?= 3rdparty/vboot
 CPPFLAGS_common += -I$(VBOOT_SOURCE)/firmware/include
 CPPFLAGS_common += -include $(src)/include/kconfig.h
+CPPFLAGS_common += -include $(src)/include/rules.h
 CPPFLAGS_common += -include $(src)/commonlib/include/commonlib/compiler.h
 CPPFLAGS_common += -I3rdparty
 CPPFLAGS_common += -D__BUILD_DIR__=\"$(obj)\"
@@ -1054,7 +1060,7 @@ ifeq ($(CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_HEADER),y)
 	$(FIT_OPTIONS)
 endif
 
-ifeq ($(CONFIG_CPU_MICROCODE_CBFS_GENERATE),y)
+ifeq ($(CONFIG_USE_CPU_MICROCODE_CBFS_BINS),y)
 	@printf "    UPDATE-FIT\n"
 	$(CBFSTOOL) $@.tmp update-fit -n cpu_microcode_blob.bin -x $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
 	$(FIT_OPTIONS)

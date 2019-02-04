@@ -16,8 +16,10 @@
  */
 
 #include <device/device.h>
+#include <delay.h>
 #include <device/pci.h>
 #include <intelblocks/systemagent.h>
+#include <soc/cpu.h>
 #include <soc/iomap.h>
 #include <soc/systemagent.h>
 
@@ -66,4 +68,8 @@ void soc_systemagent_init(struct device *dev)
 
 	/* Enable BIOS Reset CPL */
 	enable_bios_reset_cpl();
+
+	/* Configure turbo power limits 1ms after reset complete bit */
+	mdelay(1);
+	set_power_limits(28);
 }

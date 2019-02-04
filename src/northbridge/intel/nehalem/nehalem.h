@@ -272,13 +272,6 @@ int bridge_silicon_revision(void);
 void nehalem_early_initialization(int chipset_type);
 void nehalem_late_initialization(void);
 
-/* debugging functions */
-void print_pci_devices(void);
-void dump_pci_device(unsigned dev);
-void dump_pci_devices(void);
-void dump_spd_registers(void);
-void dump_mem(unsigned start, unsigned end);
-void report_platform_info(void);
 #endif /* !__SMM__ */
 
 #endif

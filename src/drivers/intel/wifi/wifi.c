@@ -255,9 +255,34 @@ static const char *intel_wifi_acpi_name(const struct device *dev)
 }
 #endif
 
+static void pci_dev_apply_quirks(struct device *dev)
+{
+	unsigned int cap;
+	uint16_t val;
+	struct device *root = dev->bus->dev;
+
+	switch (dev->device) {
+	case PCI_DEVICE_ID_TP_9260_SERIES_WIFI:
+		cap = pci_find_capability(root, PCI_CAP_ID_PCIE);
+		/* Check the LTR for root port and enable it */
+		if (cap) {
+			val = pci_read_config16(root, cap +
+				PCI_EXP_DEV_CAP2_OFFSET);
+			if (val & LTR_MECHANISM_SUPPORT) {
+				val = pci_read_config16(root, cap +
+					PCI_EXP_DEV_CTL_STS2_CAP_OFFSET);
+				val |= LTR_MECHANISM_EN;
+				pci_write_config16(root, cap +
+					PCI_EXP_DEV_CTL_STS2_CAP_OFFSET, val);
+			}
+		}
+	}
+}
+
 static void wifi_pci_dev_init(struct device *dev)
 {
 	pci_dev_init(dev);
+	pci_dev_apply_quirks(dev);
 
 	if (IS_ENABLED(CONFIG_ELOG)) {
 		uint32_t val;
@@ -281,8 +306,8 @@ struct device_operations device_ops = {
 #endif
 	.ops_pci                  = &pci_ops,
 #if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
-	.acpi_name                = &intel_wifi_acpi_name,
-	.acpi_fill_ssdt_generator = &intel_wifi_fill_ssdt,
+	.acpi_name                = intel_wifi_acpi_name,
+	.acpi_fill_ssdt_generator = intel_wifi_fill_ssdt,
 #endif
 };
 
@@ -341,5 +366,5 @@ static void intel_wifi_enable(struct device *dev)
 
 struct chip_operations drivers_intel_wifi_ops = {
 	CHIP_NAME("Intel WiFi")
-	.enable_dev = &intel_wifi_enable
+	.enable_dev = intel_wifi_enable
 };

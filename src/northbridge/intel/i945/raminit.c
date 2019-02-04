@@ -381,7 +381,7 @@ static void gather_common_timing(struct sys_info *sysinfo,
 		 * only the first 64 bytes contain data needed for raminit.
 		 */
 
-		bytes_read = i2c_block_read(device, 0, 64, raw_spd);
+		bytes_read = i2c_eeprom_read(device, 0, 64, raw_spd);
 		printk(BIOS_DEBUG, "Reading SPD using i2c block operation.\n");
 		if (IS_ENABLED(CONFIG_DEBUG_RAM_SETUP) && bytes_read > 0)
 			hexdump(raw_spd, bytes_read);
@@ -2413,9 +2413,6 @@ static void sdram_recover_receive_enable(void)
 static void sdram_program_receive_enable(struct sys_info *sysinfo)
 {
 	MCHBAR32(REPC) |= (1 << 0);
-
-	/* enable upper CMOS */
-	RCBA32(0x3400) = (1 << 2);
 
 	/* Program Receive Enable Timings */
 	if (sysinfo->boot_path == BOOT_PATH_RESUME) {

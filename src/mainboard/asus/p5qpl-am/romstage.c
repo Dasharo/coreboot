@@ -23,10 +23,8 @@
 #include <cpu/intel/romstage.h>
 #include <superio/winbond/w83627dhg/w83627dhg.h>
 #include <superio/winbond/common/winbond.h>
-#include <lib.h>
 #include <northbridge/intel/x4x/iomap.h>
 #include <device/pnp_def.h>
-#include <timestamp.h>
 #include <halt.h>
 #include <cpu/intel/speedstep.h>
 #include <cpu/x86/msr.h>
@@ -53,12 +51,7 @@ static u8 msr_get_fsb(void)
 	return fsbcfg;
 }
 
-/*
- * BSEL MCH straps are not hooked up to the CPU as usual but to the SIO
- * BSEL0 -> not hooked up (such configs are not supported anyways)
- * BSEL1 -> GPIO33
- * BSEL2 -> GPIO40
- */
+/* BSEL MCH straps are not hooked up to the CPU as usual but to the SIO */
 
 static int setup_sio_gpio(void)
 {
@@ -81,27 +74,55 @@ static int setup_sio_gpio(void)
 	pnp_enter_ext_func_mode(GPIO_DEV);
 	pnp_set_logical_device(GPIO_DEV);
 
-	reg = 0x92;
-	old_reg = pnp_read_config(GPIO_DEV, 0x2c);
-	pnp_write_config(GPIO_DEV, 0x2c, reg);
-	need_reset = (reg != old_reg);
+	if (IS_ENABLED(CONFIG_BOARD_ASUS_P5QPL_AM)) {
+		/*
+		 * P5QPL-AM:
+		 * BSEL0 -> not hooked up (not supported anyways)
+		 * BSEL1 -> GPIO33
+		 * BSEL2 -> GPIO40
+		 */
+		reg = 0x92;
+		old_reg = pnp_read_config(GPIO_DEV, 0x2c);
+		pnp_write_config(GPIO_DEV, 0x2c, reg);
+		need_reset = (reg != old_reg);
 
-	pnp_write_config(GPIO_DEV, 0x30, 0x06);
-	pnp_write_config(GPIO_DEV, 0xf0, 0xf3); /* GPIO3 direction */
-	pnp_write_config(GPIO_DEV, 0xf4, 0x00); /* GPIO4 direction */
+		pnp_write_config(GPIO_DEV, 0x30, 0x06);
+		pnp_write_config(GPIO_DEV, 0xf0, 0xf3); /* GPIO3 direction */
+		pnp_write_config(GPIO_DEV, 0xf4, 0x00); /* GPIO4 direction */
 
-	int gpio33 = (bsel & 2) >> 1;
-	int gpio40 = (bsel & 4) >> 2;
-	reg = (gpio33 << 3);
-	old_reg = pnp_read_config(GPIO_DEV, 0xf1);
-	pnp_write_config(GPIO_DEV, 0xf1, old_reg | reg);
-	need_reset += ((reg & 0x8) != (old_reg & 0x8));
+		const int gpio33 = (bsel & 2) >> 1;
+		const int gpio40 = (bsel & 4) >> 2;
+		reg = (gpio33 << 3);
+		old_reg = pnp_read_config(GPIO_DEV, 0xf1);
+		pnp_write_config(GPIO_DEV, 0xf1, old_reg | reg);
+		need_reset += ((reg & 0x8) != (old_reg & 0x8));
 
-	reg = gpio40;
-	old_reg = pnp_read_config(GPIO_DEV, 0xf5);
-	pnp_write_config(GPIO_DEV, 0xf5, old_reg | reg);
-	need_reset += ((reg & 0x1) != (old_reg & 0x1));
+		reg = gpio40;
+		old_reg = pnp_read_config(GPIO_DEV, 0xf5);
+		pnp_write_config(GPIO_DEV, 0xf5, old_reg | reg);
+		need_reset += ((reg & 0x1) != (old_reg & 0x1));
+	} else {
+		/*
+		 * P5G41T-M LX:
+		 * BSEL0 -> not hooked up
+		 * BSEL1 -> GPIO43 (inverted)
+		 * BSEL2 -> GPIO44
+		 */
+		reg = 0xf2;
+		old_reg = pnp_read_config(GPIO_DEV, 0x2c);
+		pnp_write_config(GPIO_DEV, 0x2c, reg);
+		need_reset = (reg != old_reg);
+		pnp_write_config(GPIO_DEV, 0x30, 0x05);
+		pnp_write_config(GPIO_DEV, 0xf6, 0x08); /* invert GPIO43 */
+		pnp_write_config(GPIO_DEV, 0xf4, 0x00); /* GPIO4 direction */
 
+		const int gpio43 = (bsel & 2) >> 1;
+		const int gpio44 = (bsel & 4) >> 2;
+		reg = (gpio43 << 3) | (gpio44 << 4);
+		old_reg = pnp_read_config(GPIO_DEV, 0xf5);
+		pnp_write_config(GPIO_DEV, 0xf5, old_reg | reg);
+		need_reset += ((reg & 0x18) != (old_reg & 0x18));
+	}
 	pnp_exit_ext_func_mode(GPIO_DEV);
 
 	return need_reset;
@@ -171,12 +192,7 @@ void mainboard_romstage_entry(unsigned long bist)
 		halt();
 	}
 
-	printk(BIOS_DEBUG, "Initializing memory\n");
-	timestamp_add_now(TS_BEFORE_INITRAM);
 	sdram_initialize(boot_path, spd_addrmap);
-	timestamp_add_now(TS_AFTER_INITRAM);
-	quick_ram_check();
-	printk(BIOS_DEBUG, "Memory initialized\n");
 
 	x4x_late_init(s3_resume);
 

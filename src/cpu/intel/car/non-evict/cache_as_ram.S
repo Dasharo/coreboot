@@ -24,6 +24,7 @@
 #define CACHE_AS_RAM_BASE CONFIG_DCACHE_RAM_BASE
 
 #define NoEvictMod_MSR 0x2e0
+#define BBL_CR_CTL3_MSR 0x11e
 
 .global bootblock_pre_c_entry
 
@@ -114,6 +115,17 @@ addrsize_set_high:
 	movl	$(~(CACHE_AS_RAM_SIZE - 1) | MTRR_PHYS_MASK_VALID), %eax
 	wrmsr
 
+	/* Enable cache for our code in Flash because we do XIP here */
+	movl	$MTRR_PHYS_BASE(1), %ecx
+	xorl	%edx, %edx
+	movl	$CACHE_ROM_BASE | MTRR_TYPE_WRPROT, %eax
+	wrmsr
+
+	movl	$MTRR_PHYS_MASK(1), %ecx
+	rdmsr
+	movl	$(~(CACHE_ROM_SIZE - 1) | MTRR_PHYS_MASK_VALID), %eax
+	wrmsr
+
 	post_code(0x25)
 
 	/* Enable MTRR. */
@@ -122,7 +134,43 @@ addrsize_set_high:
 	orl	$MTRR_DEF_TYPE_EN, %eax
 	wrmsr
 
+#if IS_ENABLED(CONFIG_CPU_HAS_L2_ENABLE_MSR)
+	/*
+	 * Enable the L2 cache. Currently this assumes that this
+	 * only affect socketed CPU's for which this is always valid,
+	 * hence the static preprocesser.
+	 */
+	movl	$BBL_CR_CTL3_MSR, %ecx
+	rdmsr
+	orl	$0x100, %eax
+	wrmsr
+#endif
+
 	/* Enable cache (CR0.CD = 0, CR0.NW = 0). */
+	movl	%cr0, %eax
+	andl	$(~(CR0_CacheDisable | CR0_NoWriteThrough)), %eax
+	invd
+	movl	%eax, %cr0
+
+#if IS_ENABLED(CONFIG_MICROCODE_UPDATE_PRE_RAM)
+update_microcode:
+	/* put the return address in %esp */
+	movl	$end_microcode_update, %esp
+	jmp	update_bsp_microcode
+end_microcode_update:
+#endif
+	/* Disable caching to change MTRR's. */
+	movl	%cr0, %eax
+	orl	$CR0_CacheDisable, %eax
+	movl	%eax, %cr0
+
+	/* Clear the mask valid to disable the MTRR */
+	movl	$MTRR_PHYS_MASK(1), %ecx
+	rdmsr
+	andl	$(~MTRR_PHYS_MASK_VALID), %eax
+	wrmsr
+
+	/* Enable cache. */
 	movl	%cr0, %eax
 	andl	$(~(CR0_CacheDisable | CR0_NoWriteThrough)), %eax
 	invd
@@ -154,15 +202,9 @@ addrsize_set_high:
 	orl	$CR0_CacheDisable, %eax
 	movl	%eax, %cr0
 
-	/* Enable cache for our code in Flash because we do XIP here */
-	movl	$MTRR_PHYS_BASE(1), %ecx
-	xorl	%edx, %edx
-	movl	$CACHE_ROM_BASE | MTRR_TYPE_WRPROT, %eax
-	wrmsr
-
 	movl	$MTRR_PHYS_MASK(1), %ecx
 	rdmsr
-	movl	$(~(CACHE_ROM_SIZE - 1) | MTRR_PHYS_MASK_VALID), %eax
+	orl	$MTRR_PHYS_MASK_VALID, %eax
 	wrmsr
 
 	post_code(0x28)
@@ -181,11 +223,11 @@ addrsize_set_high:
 
 	/* push TSC and BIST to stack */
 	movd	%mm0, %eax
-	pushl	%eax 	/* BIST */
+	pushl	%eax	/* BIST */
 	movd	%mm2, %eax
 	pushl	%eax	/* tsc[63:32] */
 	movd	%mm1, %eax
-	pushl	%eax 	/* tsc[31:0] */
+	pushl	%eax	/* tsc[31:0] */
 
 before_c_entry:
 	post_code(0x29)

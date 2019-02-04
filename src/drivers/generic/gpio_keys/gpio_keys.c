@@ -43,8 +43,12 @@ static struct acpi_dp *gpio_keys_add_child_node(
 	if (key->is_wakeup_source)
 		acpi_dp_add_integer(dsd, "wakeup-source",
 				    key->is_wakeup_source);
-	if (key->wake)
+	if (key->wake) {
 		acpigen_write_PRW(key->wake, 3);
+		acpi_dp_add_integer(dsd, "wakeup-event-action",
+					key->wakeup_event_action);
+	}
+
 	if (key->can_be_disabled)
 		acpi_dp_add_integer(dsd, "linux,can-disable",
 				    key->can_be_disabled);
@@ -116,8 +120,8 @@ static struct device_operations gpio_keys_ops = {
 	.read_resources			= DEVICE_NOOP,
 	.set_resources			= DEVICE_NOOP,
 	.enable_resources		= DEVICE_NOOP,
-	.acpi_name			= &gpio_keys_acpi_name,
-	.acpi_fill_ssdt_generator	= &gpio_keys_fill_ssdt_generator,
+	.acpi_name			= gpio_keys_acpi_name,
+	.acpi_fill_ssdt_generator	= gpio_keys_fill_ssdt_generator,
 };
 
 static void gpio_keys_enable(struct device *dev)
@@ -127,5 +131,5 @@ static void gpio_keys_enable(struct device *dev)
 
 struct chip_operations drivers_generic_gpio_keys_ops = {
 	CHIP_NAME("GPIO Keys")
-	.enable_dev = &gpio_keys_enable
+	.enable_dev = gpio_keys_enable
 };

@@ -350,10 +350,6 @@ static void i82801gx_lock_smm(struct device *dev)
 		printk(BIOS_DEBUG, "S3 wakeup, enabling ACPI via APMC\n");
 		outb(APM_CNT_ACPI_ENABLE, APM_CNT);
 	}
-	/* Don't allow evil boot loaders, kernels, or
-	 * userspace applications to deceive us:
-	 */
-	smm_lock();
 
 #if TEST_SMM_FLASH_LOCKDOWN
 	/* Now try this: */
@@ -705,8 +701,10 @@ static void southbridge_inject_dsdt(struct device *dev)
 
 		acpi_create_gnvs(gnvs);
 
-		gnvs->ndid = gfx->ndid;
-		memcpy(gnvs->did, gfx->did, sizeof(gnvs->did));
+		if (gfx) {
+			gnvs->ndid = gfx->ndid;
+			memcpy(gnvs->did, gfx->did, sizeof(gnvs->did));
+		}
 
 		/* And tell SMI about it */
 		smm_setup_structures(gnvs, NULL, NULL);

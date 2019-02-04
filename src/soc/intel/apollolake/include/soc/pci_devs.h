@@ -16,7 +16,6 @@
 #define _SOC_APOLLOLAKE_PCI_DEVS_H_
 
 #include <device/pci_def.h>
-#include <rules.h>
 
 #define _SA_DEVFN(slot)		PCI_DEVFN(SA_DEV_SLOT_ ## slot, 0)
 #define _PCH_DEVFN(slot, func)	PCI_DEVFN(PCH_DEV_SLOT_ ## slot, func)
@@ -44,6 +43,10 @@
 #define SA_DEV_SLOT_IGD		0x02
 #define  SA_DEVFN_IGD		_SA_DEVFN(IGD)
 #define  SA_DEV_IGD		_SA_DEV(IGD)
+
+#define SA_DEV_SLOT_IPU		0x03
+#define  SA_DEVFN_IPU		_SA_DEVFN(IPU)
+#define  SA_DEV_IPU		_SA_DEV(IPU)
 
 /* PCH Devices */
 

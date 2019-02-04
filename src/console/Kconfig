@@ -1,9 +1,12 @@
 menu "Console"
 
+config NO_BOOTBLOCK_CONSOLE
+	bool
+
 config BOOTBLOCK_CONSOLE
 	bool "Enable early (bootblock) console output."
-	depends on C_ENVIRONMENT_BOOTBLOCK
-	default n
+	depends on C_ENVIRONMENT_BOOTBLOCK && !NO_BOOTBLOCK_CONSOLE
+	default y
 	help
 	  Use console during the bootblock if supported
 
@@ -37,6 +40,13 @@ config CONSOLE_SERIAL
 	  shown on the following menu line. Supporting multiple different types
 	  of UARTs in one build is not supported.
 
+config FIXED_UART_FOR_CONSOLE
+	bool
+	help
+	  Select to remove the prompt from UART_FOR_CONSOLE in case a
+	  specific UART has to be used (e.g. when the platform code
+	  performs dangerous configurations).
+
 if CONSOLE_SERIAL
 
 	comment "I/O mapped, 8250-compatible"
@@ -49,7 +59,8 @@ if CONSOLE_SERIAL
 	depends on HAVE_UART_SPECIAL
 
 config UART_FOR_CONSOLE
-	int "Index for UART port to use for console"
+	int
+	prompt "Index for UART port to use for console" if !FIXED_UART_FOR_CONSOLE
 	default 0
 	help
 	  Select an I/O port to use for serial console:

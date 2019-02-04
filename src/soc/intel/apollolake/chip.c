@@ -2,7 +2,7 @@
  * This file is part of the coreboot project.
  *
  * Copyright (C) 2015 - 2017 Intel Corp.
- * Copyright (C) 2017 - 2018 Siemens AG
+ * Copyright (C) 2017 - 2019 Siemens AG
  * (Written by Alexandru Gagniuc <alexandrux.gagniuc@intel.com> for Intel Corp.)
  * (Written by Andrey Petrov <andrey.petrov@intel.com> for Intel Corp.)
  *
@@ -59,6 +59,46 @@
 #define DUAL_ROLE_CFG1          0x80dc
 #define DRD_MODE_MASK           (1 << 29)
 #define DRD_MODE_HOST           (1 << 29)
+
+#define CFG_XHCLKGTEN		0x8650
+/* Naking USB2.0 EPs for Backbone Clock Gating and PLL Shutdown */
+#define NUEFBCGPS		(1 << 28)
+/* SRAM Power Gate Enable */
+#define SRAMPGTEN		(1 << 27)
+/* SS Link PLL Shutdown Enable */
+#define SSLSE			(1 << 26)
+/* USB2 PLL Shutdown Enable */
+#define USB2PLLSE		(1 << 25)
+/* IOSF Sideband Trunk Clock Gating Enable */
+#define IOSFSTCGE		(1 << 24)
+/* BIT[23:20] HS Backbone PXP Trunk Clock Gate Enable */
+#define HSTCGE			(1 << 23 | 1 << 22)
+/* BIT[19:16] SS Backbone PXP Trunk Clock Gate Enable */
+#define SSTCGE			(1 << 19 | 1 << 18 | 1 << 17)
+/* XHC Ignore_EU3S */
+#define XHCIGEU3S		(1 << 15)
+/* XHC Frame Timer Clock Shutdown Enable */
+#define XHCFTCLKSE		(1 << 14)
+/* XHC Backbone PXP Trunk Clock Gate In Presence of ISOCH EP */
+#define XHCBBTCGIPISO		(1 << 13)
+/* XHC HS Backbone PXP Trunk Clock Gate U2 non RWE */
+#define XHCHSTCGU2NRWE		(1 << 12)
+/* BIT[11:10] XHC USB2 PLL Shutdown Lx Enable */
+#define XHCUSB2PLLSDLE		(1 << 11 | 1 << 10)
+/* BIT[9:8] HS Backbone PXP PLL Shutdown Ux Enable */
+#define HSUXDMIPLLSE		(1 << 9)
+/* BIT[7:5] SS Backbone PXP PLL shutdown Ux Enable */
+#define SSPLLSUE		(1 << 6)
+/* XHC Backbone Local Clock Gating Enable */
+#define XHCBLCGE		(1 << 4)
+/* HS Link Trunk Clock Gating Enable */
+#define HSLTCGE			(1 << 3)
+/* SS Link Trunk Clock Gating Enable */
+#define SSLTCGE			(1 << 2)
+/* IOSF Backbone Trunk Clock Gating Enable */
+#define IOSFBTCGE		(1 << 1)
+/* IOSF Gasket Backbone Local Clock Gating Enable */
+#define IOSFGBLCGE		(1 << 0)
 
 const char *soc_acpi_name(const struct device *dev)
 {
@@ -482,6 +522,11 @@ static void disable_dev(struct device *dev, FSP_S_CONFIG *silconfig)
 	case PCH_DEVFN_SMBUS:
 		silconfig->SmbusEnable = 0;
 		break;
+#if !IS_ENABLED(CONFIG_SOC_INTEL_GLK)
+	case SA_DEVFN_IPU:
+		silconfig->IpuEn = 0;
+		break;
+#endif
 	default:
 		printk(BIOS_WARNING, "PCI:%02x.%01x: Could not disable the device\n",
 			PCI_SLOT(dev->path.pci.devfn),
@@ -548,6 +593,22 @@ static void glk_fsp_silicon_init_params_cb(
 	struct soc_intel_apollolake_config *cfg, FSP_S_CONFIG *silconfig)
 {
 #if IS_ENABLED(CONFIG_SOC_INTEL_GLK)
+	uint8_t port;
+
+	for (port = 0; port < APOLLOLAKE_USB2_PORT_MAX; port++) {
+		if (!cfg->usb2eye[port].Usb20OverrideEn)
+			continue;
+
+		silconfig->Usb2AfePehalfbit[port] =
+			cfg->usb2eye[port].Usb20PerPortTxPeHalf;
+		silconfig->Usb2AfePetxiset[port] =
+			cfg->usb2eye[port].Usb20PerPortPeTxiSet;
+		silconfig->Usb2AfeTxiset[port] =
+			cfg->usb2eye[port].Usb20PerPortTxiSet;
+		silconfig->Usb2AfePredeemp[port] =
+			cfg->usb2eye[port].Usb20IUsbTxEmphasisEn;
+	}
+
 	silconfig->Gmm = 0;
 
 	/* On Geminilake, we need to override the default FSP PCIe de-emphasis
@@ -571,8 +632,28 @@ static void glk_fsp_silicon_init_params_cb(
 	 * FSP provides UPD interface to execute IPC command. In order to
 	 * improve boot performance, configure PmicPmcIpcCtrl for PMC to program
 	 * PMIC PCH_PWROK delay.
-	*/
+	 */
 	silconfig->PmicPmcIpcCtrl = cfg->PmicPmcIpcCtrl;
+
+	/*
+	 * Options to disable XHCI Link Compliance Mode.
+	 */
+	silconfig->DisableComplianceMode = cfg->DisableComplianceMode;
+
+	/*
+	 * Options to change USB3 ModPhy setting for Integrated Filter value.
+	 */
+	silconfig->ModPhyIfValue = cfg->ModPhyIfValue;
+
+	/*
+	 * Options to bump USB3 LDO voltage with 40mv.
+	 */
+	silconfig->ModPhyVoltageBump = cfg->ModPhyVoltageBump;
+
+	/*
+	 * Options to adjust PMIC Vdd2 voltage.
+	 */
+	silconfig->PmicVdd2Voltage = cfg->PmicVdd2Voltage;
 #endif
 }
 
@@ -753,6 +834,26 @@ void platform_fsp_notify_status(enum fsp_notify_phase phase)
 		 */
 		if (check_xdci_enable())
 			configure_xhci_host_mode_port0();
+
+		/*
+		 * Override GLK xhci clock gating register(XHCLKGTEN) to
+		 * mitigate usb device suspend and resume failure.
+		 */
+		if (IS_ENABLED(CONFIG_SOC_INTEL_GLK)) {
+			uint32_t *cfg;
+			const struct resource *res;
+			uint32_t reg;
+			struct device *xhci_dev = PCH_DEV_XHCI;
+
+			res = find_resource(xhci_dev, PCI_BASE_ADDRESS_0);
+			cfg = (void *)(uintptr_t)(res->base + CFG_XHCLKGTEN);
+			reg = SRAMPGTEN | SSLSE | USB2PLLSE | IOSFSTCGE |
+				HSTCGE | HSUXDMIPLLSE | SSTCGE | XHCFTCLKSE |
+				XHCBBTCGIPISO | XHCUSB2PLLSDLE | SSPLLSUE |
+				XHCBLCGE | HSLTCGE | SSLTCGE | IOSFBTCGE |
+				IOSFGBLCGE;
+			write32(cfg, reg);
+		}
 	}
 }
 

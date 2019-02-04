@@ -66,6 +66,11 @@ static void ConfigureDefaultUpdData(UPD_DATA_REGION *UpdData)
 			UpdData->SerialPortBaudRate = 12;
 	}
 
+	if (!IS_ENABLED(CONFIG_CONSOLE_SERIAL))
+		UpdData->SerialPortType = 0;
+
+	UpdData->DebugOutputLevel = CONFIG_FSP_1_0_DEBUG_LEVEL;
+
 	/*
 	 * Memory Down
 	 */

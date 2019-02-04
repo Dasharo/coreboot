@@ -2,6 +2,7 @@
  * This file is part of the coreboot project.
  *
  * Copyright (C) 2015 - 2017 Intel Corp.
+ * Copyright (C) 2018 Online SAS
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +24,7 @@
 #include <cpu/intel/turbo.h>
 #include <device/device.h>
 #include <device/pci.h>
+#include <intelblocks/cpulib.h>
 #include <reg_script.h>
 
 #include <soc/msr.h>
@@ -33,11 +35,45 @@
 
 static struct smm_relocation_attrs relo_attrs;
 
+static void dnv_configure_mca(void)
+{
+	msr_t msr;
+	int num_banks;
+	struct cpuid_result cpuid_regs;
+
+	/* Check feature flag in CPUID.(EAX=1):EDX[7]==1  MCE
+	 *                   and CPUID.(EAX=1):EDX[14]==1 MCA*/
+	cpuid_regs = cpuid(1);
+	if ((cpuid_regs.edx & (1<<7 | 1<<14)) != (1<<7 | 1<<14))
+		return;
+
+	msr = rdmsr(IA32_MCG_CAP);
+	num_banks = msr.lo & IA32_MCG_CAP_COUNT_MASK;
+	if (msr.lo & IA32_MCG_CAP_CTL_P_MASK) {
+		/* Enable all error logging */
+		msr.lo = msr.hi = 0xffffffff;
+		wrmsr(IA32_MCG_CTL, msr);
+	}
+
+	/* TODO(adurbin): This should only be done on a cold boot. Also, some
+	   of these banks are core vs package scope. For now every CPU clears
+	   every bank. */
+	mca_configure(NULL);
+}
+
 static void denverton_core_init(struct device *cpu)
 {
 	msr_t msr;
 
 	printk(BIOS_DEBUG, "Init Denverton-NS SoC cores.\n");
+
+	/* Clear out pending MCEs */
+	dnv_configure_mca();
+
+	/* Enable Fast Strings */
+	msr = rdmsr(IA32_MISC_ENABLE);
+	msr.lo |= FAST_STRINGS_ENABLE_BIT;
+	wrmsr(IA32_MISC_ENABLE, msr);
 
 	/* Enable Turbo */
 	enable_turbo();
@@ -167,15 +203,6 @@ int get_cpu_count(void)
 		printk(BIOS_DEBUG, "Number of Cores (CPUID): %d.\n", num_cpus);
 	}
 	return num_cpus;
-}
-
-static int cpu_config_tdp_levels(void)
-{
-	msr_t platform_info;
-
-	/* Bits 34:33 indicate how many levels supported */
-	platform_info = rdmsr(MSR_PLATFORM_INFO);
-	return (platform_info.hi >> 1) & 3;
 }
 
 static void set_max_turbo_freq(void)

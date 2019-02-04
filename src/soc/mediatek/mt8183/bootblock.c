@@ -15,10 +15,8 @@
 
 #include <bootblock_common.h>
 #include <soc/pll.h>
-#include <soc/wdt.h>
 
 void bootblock_soc_init(void)
 {
 	mt_pll_init();
-	mtk_wdt_init();
 }
