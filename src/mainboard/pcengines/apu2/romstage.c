@@ -9,6 +9,7 @@
 #include <device/pci_ops.h>
 #include <gpio.h>
 #include <northbridge/amd/agesa/state_machine.h>
+#include <smp/node.h>
 
 #include "gpio_ftns.h"
 
@@ -32,6 +33,31 @@ void board_BeforeAgesa(struct sysinfo *cb)
 
 	/* Release GPIO32/33 for other uses. */
 	pm_write8(0xea, 1);
+}
+
+void board_BeforeInitReset(struct sysinfo *cb, AMD_RESET_PARAMS *Reset)
+{
+	u32 val;
+
+	if (boot_cpu()) {
+		/* CF9 shadow: 0 */
+		pm_write8(FCH_PMIOA_REGC5, 0);
+
+		/* Check if cold boot was requested */
+		val = pci_read_config32(PCI_DEV(0, 0x18, 0), 0x6C);
+		if (val & (1 << 4)) {
+			printk(BIOS_ALERT, "Forcing cold boot path\n");
+			val &= ~(0x630); // ColdRstDet[4], BiosRstDet[10:9, 5]
+			pci_write_config32(PCI_DEV(0, 0x18, 0), 0x6C, val);
+
+			/* S5ResetStatus */
+			pm_write32(0xc0, 0x3fff003f); // Write-1-to-clear resets
+
+			/* CF9 shadow: FullRst, SysRst, RstCmd */
+			pm_write8(FCH_PMIOA_REGC5, 0xe);
+			printk(BIOS_ALERT, "Did not reset (yet)\n");
+		}
+	}
 }
 
 const struct soc_amd_gpio gpio_common[] = {
