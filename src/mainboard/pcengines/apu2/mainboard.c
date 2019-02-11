@@ -433,17 +433,12 @@ const char *smbios_mainboard_sku(void)
 	return sku;
 }
 
-static int fill_mainboard_smbios_type16(unsigned long *current, int *handle)
+int fill_mainboard_smbios_type16(unsigned long *current, int *handle)
 {
-	// read SPD info from file
-	spd_raw_data *spd;
-	void *spd_file;
-	size_t spd_file_len = 0;
-	spd_file = cbfs_boot_map_with_leak("spd.bin", CBFS_TYPE_SPD, &spd_file_len);
-	if (spd_file && spd_file_len >= 1024) {
-		int i;
-		for (i = 0; i < 4; i++)
-			memcpy(&spd[i], spd_file + 256 * i, 128);
+	u8 spd_index = get_spd_offset();
+	u8 spd_buffer[CONFIG_DIMM_SPD_SIZE];
+	if (read_ddr3_spd_from_cbfs(spd_buffer, spd_index) < 0) {
+		return 0;
 	}
 
 	struct smbios_type16 *t = (struct smbios_type16 *)*current;

@@ -450,6 +450,10 @@ const char *__weak smbios_mainboard_sku(void)
 	return "";
 }
 
+int *__weak fill_mainboard_smbios_type16(void){
+	return 0;
+}
+
 #ifdef CONFIG_MAINBOARD_FAMILY
 const char *smbios_mainboard_family(void)
 {
@@ -597,8 +601,10 @@ static int smbios_write_type11(unsigned long *current, int *handle)
 static int smbios_write_type16(unsigned long *current, int *handle)
 {
 	int len = fill_mainboard_smbios_type16(current, handle);
-	*current += len;
-	(*handle)++;
+	if(len){
+		*current += len;
+		(*handle)++;
+	}
 	return len;
 }
 
