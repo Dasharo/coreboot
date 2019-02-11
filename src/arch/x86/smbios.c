@@ -596,63 +596,9 @@ static int smbios_write_type11(unsigned long *current, int *handle)
 
 static int smbios_write_type16(unsigned long *current, int *handle)
 {
-	// read SPD info from file
-	spd_raw_data *spd;
-	void *spd_file;
-	size_t spd_file_len = 0;
-	spd_file = cbfs_boot_map_with_leak("spd.bin", CBFS_TYPE_SPD, &spd_file_len);
-	if (spd_file && spd_file_len >= 1024) {
-		int i;
-		for (i = 0; i < 4; i++)
-			memcpy(&spd[i], spd_file + 256 * i, 128);
-	}
-
-	struct smbios_type16 *t = (struct smbios_type16 *)*current;
-	int len = sizeof(struct smbios_type16);
-
-	spd_raw_data spds[4];
-	memset(spds, 0, sizeof(spds));
-	mainboard_get_spd(spds, 1);
-
-	memset(t, 0, sizeof(struct smbios_type16));
-	t->handle = *handle;
-	t->length = len = sizeof(*t) - 2;
-	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
-	
-
-	switch (spds[0][4])
-	{
-		case 0x03:
-			t->maximum_capacity = 2 * 1024 * 1024 * 1024; // 2GB
-			break;
-
-		case 0x04:
-			t->maximum_capacity = 4 * 1024 * 1024 * 1024; // 4GB
-			break;
-	
-		default:
-			t->maximum_capacity = 0x0;
-			break;
-	}
-
-	switch(spds[0][3]){
-		case 0x08:
-			t->memory_error_correction = MEMORY_ARRAY_ECC_SINGLE_BIT;
-			break;
-
-		case 0x03:
-			t->memory_error_correction = MEMORY_ARRAY_ECC_NONE;
-			break;
-
-		default:
-			t->memory_error_correction = MEMORY_ARRAY_ECC_UNKNOWN;
-			break;
-
-	}
-	len += smbios_string_table_len(t->eos);
+	int len = fill_mainboard_smbios_type16(current, handle);
 	*current += len;
 	(*handle)++;
-	
 	return len;
 }
 

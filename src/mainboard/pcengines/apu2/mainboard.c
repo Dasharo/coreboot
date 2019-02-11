@@ -433,6 +433,61 @@ const char *smbios_mainboard_sku(void)
 	return sku;
 }
 
+static int fill_mainboard_smbios_type16(unsigned long *current, int *handle)
+{
+	// read SPD info from file
+	spd_raw_data *spd;
+	void *spd_file;
+	size_t spd_file_len = 0;
+	spd_file = cbfs_boot_map_with_leak("spd.bin", CBFS_TYPE_SPD, &spd_file_len);
+	if (spd_file && spd_file_len >= 1024) {
+		int i;
+		for (i = 0; i < 4; i++)
+			memcpy(&spd[i], spd_file + 256 * i, 128);
+	}
+
+	struct smbios_type16 *t = (struct smbios_type16 *)*current;
+	int len = sizeof(struct smbios_type16);
+	memset(t, 0, sizeof(struct smbios_type16));
+
+	t->handle = *handle;
+	t->length = len = sizeof(*t) - 2;
+	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
+	
+	switch (spds[0][4])
+	{
+		case 0x03:
+			t->maximum_capacity = 2 * 1024 * 1024; // 2GB (in kB)
+			break;
+
+		case 0x04:
+			t->maximum_capacity = 4 * 1024 * 1024; // 4GB (in kB)
+			break;
+	
+		default:
+			t->maximum_capacity = 0x0;
+			break;
+	}
+
+	switch(spds[0][3]){
+		case 0x08:
+			t->memory_error_correction = MEMORY_ARRAY_ECC_SINGLE_BIT;
+			break;
+
+		case 0x03:
+			t->memory_error_correction = MEMORY_ARRAY_ECC_NONE;
+			break;
+
+		default:
+			t->memory_error_correction = MEMORY_ARRAY_ECC_UNKNOWN;
+			break;
+
+	}
+	len += smbios_string_table_len(t->eos);
+	
+	return len;
+}
+
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.final = mainboard_final,
