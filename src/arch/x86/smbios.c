@@ -450,7 +450,7 @@ const char *__weak smbios_mainboard_sku(void)
 	return "";
 }
 
-int *__weak fill_mainboard_smbios_type16(void){
+int __weak fill_mainboard_smbios_type16(unsigned long *current, int *handle){
 	return 0;
 }
 
