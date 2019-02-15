@@ -19,7 +19,7 @@ check_dependencies:
     - tags
 
 .build_rom_apu: &build_rom_apu
-  image: coreboot/coreboot-sdk:1.50
+  image: coreboot/coreboot-sdk:1.52
   variables:
     PLATFORM: apux
   stage: build_rom
