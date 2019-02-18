@@ -227,9 +227,7 @@ static void set_dimm_info(uint8_t *spd, struct dimm_info *dimm)
 
 	dimm->dimm_size = capmb / 8 * busw / devw * ranks;  /* MiB */
 	dimm->mod_type = spd[3] & 0xf;
-	strncpy((char *)&dimm->module_part_number[0], (char *)&spd[0x80],
-		LPDDR3_SPD_PART_LEN);
-	dimm->module_part_number[LPDDR3_SPD_PART_LEN] = 0;
+	dimm->module_part_number[0] = '\0';
 	dimm->mod_id = *(uint16_t *)&spd[117];
 
 	switch (busw) {
@@ -250,9 +248,12 @@ static void set_dimm_info(uint8_t *spd, struct dimm_info *dimm)
 		dimm->bus_width = MEMORY_BUS_WIDTH_64;
 		break;
 	}
+	if(spd[3]==0x08){
+		dimm->bus_width |= BIOS_MEMORY_ECC_SINGLE_BIT_CORRECTING;
+	}
 }
 
-static void mainboard_get_dimm_info(void)
+static void mainboard_get_dimm_info(u8 *spd_buffer)
 {
 	struct dimm_info *dimm;
 	struct memory_info *mem_info;
@@ -266,12 +267,6 @@ static void mainboard_get_dimm_info(void)
 	if (mem_info == NULL)
 		return;
 	memset(mem_info, 0, sizeof(*mem_info));
-
-	u8 spd_index = get_spd_offset();
-	u8 spd_buffer[CONFIG_DIMM_SPD_SIZE];
-	if (read_ddr3_spd_from_cbfs(spd_buffer, spd_index) < 0) {
-		return;
-	}
 
 	/* Describe the first channel memory */
 	dimm = &mem_info->dimm[0];
