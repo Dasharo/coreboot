@@ -450,6 +450,11 @@ const char *__weak smbios_mainboard_sku(void)
 	return "";
 }
 
+int __weak fill_mainboard_smbios_type16(unsigned long *current, int *handle)
+{
+	return 0;
+}
+
 #ifdef CONFIG_MAINBOARD_FAMILY
 const char *smbios_mainboard_family(void)
 {
@@ -591,6 +596,16 @@ static int smbios_write_type11(unsigned long *current, int *handle)
 
 	*current += len;
 	(*handle)++;
+	return len;
+}
+
+static int smbios_write_type16(unsigned long *current, int *handle)
+{
+	int len = fill_mainboard_smbios_type16(current, handle);
+	if(len){
+		*current += len;
+		(*handle)++;
+	}
 	return len;
 }
 
@@ -752,6 +767,8 @@ unsigned long smbios_write_tables(unsigned long current)
 	if (IS_ENABLED(CONFIG_ELOG))
 		update_max(len, max_struct_size,
 			elog_smbios_write_type15(&current,handle++));
+	update_max(len, max_struct_size, smbios_write_type16(&current,
+		&handle));
 	update_max(len, max_struct_size, smbios_write_type17(&current,
 		&handle));
 	update_max(len, max_struct_size, smbios_write_type32(&current,

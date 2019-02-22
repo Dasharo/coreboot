@@ -47,6 +47,7 @@ u8 smbios_mainboard_feature_flags(void);
 const char *smbios_mainboard_location_in_chassis(void);
 
 const char *smbios_mainboard_sku(void);
+int fill_mainboard_smbios_type16(unsigned long *current, int *handle);
 u8 smbios_mainboard_enclosure_type(void);
 #ifdef CONFIG_MAINBOARD_FAMILY
 const char *smbios_mainboard_family(void);
