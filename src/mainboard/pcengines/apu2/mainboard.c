@@ -235,19 +235,17 @@ static void set_dimm_info(uint8_t *spd, struct dimm_info *dimm)
 	case 8:
 		dimm->bus_width = MEMORY_BUS_WIDTH_8;
 		break;
-
 	case 16:
 		dimm->bus_width = MEMORY_BUS_WIDTH_16;
 		break;
-
 	case 32:
 		dimm->bus_width = MEMORY_BUS_WIDTH_32;
 		break;
-
 	case 64:
 		dimm->bus_width = MEMORY_BUS_WIDTH_64;
 		break;
 	}
+
 	if(spd[3]==0x08){
 		dimm->bus_width |= BIOS_MEMORY_ECC_SINGLE_BIT_CORRECTING;
 	}
