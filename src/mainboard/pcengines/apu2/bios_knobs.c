@@ -154,6 +154,31 @@ int check_com2(void)
 	return 0;
 }
 
+int check_boost(void)
+{
+	u8 boost;
+
+	//
+	// Find the CPU boost item
+	//
+	boost = check_knob_value("boosten");
+
+	switch (boost) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO,
+			"Missing or invalid boost knob, disable CPU boost.\n");
+		break;
+	}
+
+	return 0;
+}
+
 static bool check_uart(char uart_letter)
 {
 	u8 uarten;
