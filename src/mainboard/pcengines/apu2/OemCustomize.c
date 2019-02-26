@@ -157,8 +157,11 @@ void board_BeforeInitEarly(struct sysinfo *cb, AMD_EARLY_PARAMS *InitEarly)
 		InitEarly->GnbConfig.PcieComplexList = &PcieComplexAspm;
 	else
 		InitEarly->GnbConfig.PcieComplexList = &PcieComplex;
-	InitEarly->PlatformConfig.CStateMode = CStateModeC6;
-	InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+
+	if (dasharo_apu_cpu_boost_enabled()) {
+		InitEarly->PlatformConfig.CStateMode = CStateModeC6;
+		InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+	}
 
 	if (boot_cpu()) {
 		volatile uint32_t *ptr = (uint32_t *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
