@@ -236,4 +236,13 @@ bool dasharo_apu_pcie_pm_enabled(void);
  */
 uint16_t dasharo_apu_watchdog_timeout(void);
 
+/* Looks up CorePerfBoost field in APU/"ApuConfig" to know whether to enable
+ * CPU boost.
+ *
+ * Result:
+ *  - true  - CPU boost should be enabled on boot
+ *  - false - CPU boost should not be enabled on boot
+ */
+bool dasharo_apu_cpu_boost_enabled(void);
+
 #endif /* DASHARO_OPTIONS_H */
