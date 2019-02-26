@@ -453,3 +453,8 @@ uint16_t dasharo_apu_watchdog_timeout(void)
 	struct apu_config_t cfg = get_apu_config();
 	return cfg.WatchdogEnable ? cfg.WatchdogTimeout : 0;
 }
+
+bool dasharo_apu_cpu_boost_enabled(void)
+{
+	return get_apu_config().CorePerfBoost;
+}
