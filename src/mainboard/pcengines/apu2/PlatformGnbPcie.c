@@ -18,6 +18,7 @@
  */
 
 #include <northbridge/amd/pi/agesawrapper.h>
+#include "bios_knobs.h"
 
 #define FILECODE PROC_GNB_PCIE_FAMILY_0X15_F15PCIECOMPLEXCONFIG_FILECODE
 
@@ -123,6 +124,8 @@ OemCustomizeInitEarly (
 	)
 {
 	InitEarly->GnbConfig.PcieComplexList = &PcieComplex;
-	InitEarly->PlatformConfig.CStateMode = CStateModeC6;
-	InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+	if(check_boost()) {
+		InitEarly->PlatformConfig.CStateMode = CStateModeC6;
+		InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+	}
 }
