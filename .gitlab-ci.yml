@@ -58,8 +58,9 @@ check_dependencies:
   tags:
     - docker
   script:
-    - sha256sum ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256 
-    - ls -la ${RELEASE_DIR}
+    - cd ${RELEASE_DIR}
+    - sha256sum ${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256 
+    - ls -la
   artifacts:
     name: ${PLATFORM}
     paths:
