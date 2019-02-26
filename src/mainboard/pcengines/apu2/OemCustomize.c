@@ -15,6 +15,7 @@
 
 #include <AGESA.h>
 #include <northbridge/amd/pi/agesawrapper.h>
+#include "bios_knobs.h"
 
 
 static const PCIe_PORT_DESCRIPTOR PortList[] = {
@@ -97,6 +98,8 @@ OemCustomizeInitEarly (
 	)
 {
 	InitEarly->GnbConfig.PcieComplexList = &PcieComplex;
-	InitEarly->PlatformConfig.CStateMode = CStateModeC6;
-	InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+	if (check_boost()) {
+		InitEarly->PlatformConfig.CStateMode = CStateModeC6;
+		InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+	}
 }
