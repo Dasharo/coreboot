@@ -2,6 +2,7 @@
 
 #include <AGESA.h>
 #include <northbridge/amd/agesa/state_machine.h>
+#include "bios_knobs.h"
 
 #include "gpio_ftns.h"
 
@@ -77,8 +78,10 @@ static const PCIe_COMPLEX_DESCRIPTOR PcieComplex = {
 void board_BeforeInitEarly(struct sysinfo *cb, AMD_EARLY_PARAMS *InitEarly)
 {
 	InitEarly->GnbConfig.PcieComplexList = &PcieComplex;
-	InitEarly->PlatformConfig.CStateMode = CStateModeC6;
-	InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+	if (check_boost()) {
+		InitEarly->PlatformConfig.CStateMode = CStateModeC6;
+		InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+	}
 }
 
 void board_BeforeInitPost(struct sysinfo *cb, AMD_POST_PARAMS *Post)
