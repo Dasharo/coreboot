@@ -30,7 +30,7 @@ check_dependencies:
     - cd /home/coreboot/pce-fw-builder
     - git checkout `git describe --tags --abbrev=0`
     - ./build.sh release-CI "${CI_COMMIT_REF_NAME}" "${PLATFORM}"
-    - cp -v /home/coreboot/release/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${RELEASE_DIR}
+    - cp -v /home/coreboot/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${RELEASE_DIR}
     - ls -al ${RELEASE_DIR}
     - sha256sum ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom
   artifacts:
@@ -60,13 +60,12 @@ check_dependencies:
   tags:
     - docker
   script:
-    - echo "sign_rom"
-    - for rom in ${RELEASE_DIR}/${PLATFORM}_*.rom; do touch ${rom}_dummy_signature; done
-    - ls -la ${RELEASE_DIR}/${PLATFORM}_*.rom
+    - sha256sum ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256 
+    - ls -la ${RELEASE_DIR}
   artifacts:
     name: ${PLATFORM}
     paths:
-      - ${RELEASE_DIR}/${PLATFORM}_*
+      - ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256
   only:
     - tags
 
@@ -78,10 +77,14 @@ check_dependencies:
     - docker
   script:
     - ls -al ${RELEASE_DIR}
-    - echo "curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/${PLATFORM}/; curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/${PLATFORM}/releases/"
-    - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/${PLATFORM}/"; curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/${PLATFORM}/releases/"
-    - echo "for file in ${RELEASE_DIR}/${PLATFORM}_*.rom; do curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${file} ${UPLOADER_URL}/${PLATFORM}/releases/; done"
-    - for file in ${RELEASE_DIR}/${PLATFORM}_*.rom; do curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${file} "${UPLOADER_URL}/${PLATFORM}/releases/"; done
+    - echo "curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/releases/"
+    - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/releases/
+    - echo  "curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/"
+    - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/"
+    - echo "curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/"
+    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
+    - echo "curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/"
+    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
   only:
     - tags
 
