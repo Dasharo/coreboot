@@ -172,7 +172,7 @@ int check_boost(void)
 		break;
 	default:
 		printk(BIOS_INFO,
-			"Missing or invalid com2 knob, disable CPU boost.\n");
+			"Missing or invalid boost knob, disable CPU boost.\n");
 		break;
 	}
 
