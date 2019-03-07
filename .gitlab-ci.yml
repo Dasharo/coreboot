@@ -21,7 +21,7 @@ check_dependencies:
 .build_rom_apu: &build_rom_apu
   image: pcengines/pce-fw-builder-legacy:latest
   variables:
-    PLATFORM: apux
+    PLATFORM:
   stage: build_rom
   tags:
     - docker
@@ -30,9 +30,7 @@ check_dependencies:
     - cd /home/coreboot/pce-fw-builder
     - git checkout `git describe --tags --abbrev=0`
     - ./build.sh release-CI "${CI_COMMIT_REF_NAME}" "${PLATFORM}"
-    - cp -v /home/coreboot/release/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${RELEASE_DIR}
-    - ls -al ${RELEASE_DIR}
-    - sha256sum ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom
+    - cp -v /home/coreboot/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${RELEASE_DIR}
   artifacts:
     name: ${PLATFORM}
     paths:
@@ -59,14 +57,15 @@ check_dependencies:
   tags:
     - docker
   script:
-    - for rom in ${RELEASE_DIR}/${PLATFORM}_*.rom; do touch ${rom}_dummy_signature; done
-    - ls -la ${RELEASE_DIR}/${PLATFORM}_*.rom
+    - sha256sum ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256 
+    - ls -la ${RELEASE_DIR}
   artifacts:
     name: ${PLATFORM}
     paths:
-      - ${RELEASE_DIR}/${PLATFORM}_*
+      - ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256
   only:
     - tags
+    - web
 
 .publish_rom: &publish_rom
   variables:
@@ -76,10 +75,10 @@ check_dependencies:
     - docker
   script:
     - ls -al ${RELEASE_DIR}
-    - echo "curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/${PLATFORM}/; curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/${PLATFORM}/releases/"
-    - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/${PLATFORM}/"; curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/${PLATFORM}/releases/"
-    - echo "for file in ${RELEASE_DIR}/${PLATFORM}_*.rom; do curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${file} ${UPLOADER_URL}/${PLATFORM}/releases/; done"
-    - for file in ${RELEASE_DIR}/${PLATFORM}_*.rom; do curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${file} "${UPLOADER_URL}/${PLATFORM}/releases/"; done
+    - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/releases/
+    - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/"
+    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
+    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
   only:
     - tags
 
@@ -93,7 +92,7 @@ build:apu2:
   variables:
     PLATFORM: apu2
 
-.sign:apu2:
+sign:apu2:
   <<: *sign_rom
   variables:
     PLATFORM: apu2
@@ -114,7 +113,7 @@ build:apu3:
   variables:
     PLATFORM: apu3
 
-.sign:apu3:
+sign:apu3:
   <<: *sign_rom
   variables:
     PLATFORM: apu3
@@ -135,7 +134,7 @@ build:apu4:
   variables:
     PLATFORM: apu4
 
-.sign:apu4:
+sign:apu4:
   <<: *sign_rom
   variables:
     PLATFORM: apu4
@@ -156,7 +155,7 @@ build:apu5:
   variables:
     PLATFORM: apu5
 
-.sign:apu5:
+sign:apu5:
   <<: *sign_rom
   variables:
     PLATFORM: apu5

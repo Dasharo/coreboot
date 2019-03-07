@@ -7,16 +7,28 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.25] - 2019-03-07
+### Changed
+- sortbootorder updated to v4.6.13 introducing CPU boost runtime configuration
+- configured pull-ups on WLAN_DISABLE# pins on the mPCIe connectors which could
+  cause issues with certain modems when floating
+
+### Fixed
+- [memtest86+ and iPXE revisions for fully reproducible builds](https://github.com/pcengines/coreboot/issues/267)
+
+### Added
+- CPU boost runtime configuration in coreboot
+
 ## [v4.0.24] - 2019-02-04
-## Added
+### Added
 - enabled Core Performance Boost feature
 
 ## [v4.0.23] - 2019-01-09
-## Fixed
+### Fixed
 - enabled ECC
 - disabled EHCI0 controller on apu2 which caused problems with pfSense booting
 
-## Changed
+### Changed
 - updated SeaBIOS to rel-1.12.0.1
 - introduced reproducible builds by providing build ID to iPXE
 
@@ -218,7 +230,8 @@ built externally
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.24...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.25...coreboot-4.0.x
+[v4.0.25]: https://github.com/pcengines/coreboot/compare/v4.0.24...v4.0.25
 [v4.0.24]: https://github.com/pcengines/coreboot/compare/v4.0.23...v4.0.24
 [v4.0.23]: https://github.com/pcengines/coreboot/compare/v4.0.22...v4.0.23
 [v4.0.22]: https://github.com/pcengines/coreboot/compare/v4.0.21...v4.0.22
