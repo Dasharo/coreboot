@@ -16,6 +16,9 @@
  */
 
 #include <string.h>
+#include <device/pci_def.h>
+#include <device/pci_ops.h>
+#include <device/pnp.h>
 #include <northbridge/amd/agesa/state_machine.h>
 #include <southbridge/amd/cimx/cimx_util.h>
 #include <superio/nuvoton/common/nuvoton.h>
