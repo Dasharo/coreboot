@@ -14,7 +14,6 @@
 #include <device/resource.h>
 #include <device/path.h>
 #include <device/pci_type.h>
-#include <arch/io.h>
 
 struct device;
 struct pci_operations;
@@ -69,7 +68,6 @@ struct device_operations {
 	const struct i2c_bus_operations *ops_i2c_bus;
 	const struct spi_bus_operations *ops_spi_bus;
 	const struct smbus_bus_operations *ops_smbus_bus;
-	const struct pci_bus_operations * (*ops_pci_bus)(struct device *dev);
 	const struct pnp_mode_ops *ops_pnp_mode;
 };
 

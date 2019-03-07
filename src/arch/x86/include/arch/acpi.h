@@ -77,16 +77,12 @@ enum coreboot_acpi_ids {
 	COREBOOT_ACPI_ID_MAX		= 0xFFFF, /* BOOTFFFF */
 };
 
-/* Table 5-30 DESCRIPTION_HEADER Signatures for tables defined by ACPI 6.2a
- *  Additional tables mssing in 5-30:  MADT, RSDP, VFCT, NHLT
- */
 enum acpi_tables {
-	APIC, BERT, BGRT, CPEP, DSDT, ECDT, EINJ, ERST, FACP, FADT, FACS,
-	FPDT, GTDT, HEST, MSCT, MPST, NFIT, OEMX, PCCT, PMTT, PSDT, RASF,
-	RSDT, SBST, SDEV, SLIT, SRAT, SSDT, XSDT, BOOT, CSRT, DBG2, DBGP,
-	DMAR, DPPT, DRTM, ETDT, HPET, IBFT, IORT, IVRS, LPIT, MCFG, MCHI,
-	MSDM, SDEI, SLIC, SPCR, SPMI, STAO, TCPA, TPM2, WAET, WDAT, WDRT,
-	WPBT, WSMT, XENV, MADT, RSDP, VFCT, NHLT
+	/* Tables defined by ACPI and used by coreboot */
+	BERT, DBG2, DMAR, DSDT, FACS, FADT, HEST, HPET, IVRS, MADT, MCFG,
+	RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT,
+	/* Additional proprietary tables used by coreboot */
+	VFCT, NHLT
 };
 
 /* RSDP (Root System Description Pointer) */
@@ -94,26 +90,20 @@ typedef struct acpi_rsdp {
 	char  signature[8];	/* RSDP signature */
 	u8    checksum;		/* Checksum of the first 20 bytes */
 	char  oem_id[6];	/* OEM ID */
-	u8    revision;		/* 0 for ACPI 1.0, 2 for ACPI 2.0/3.0/4.0/6.2a */
+	u8    revision;		/* RSDP revision */
 	u32   rsdt_address;	/* Physical address of RSDT (32 bits) */
 	u32   length;		/* Total RSDP length (incl. extended part) */
 	u64   xsdt_address;	/* Physical address of XSDT (64 bits) */
 	u8    ext_checksum;	/* Checksum of the whole table */
 	u8    reserved[3];
 } __packed acpi_rsdp_t;
-/* Note: ACPI 1.0 didn't have length, xsdt_address, and ext_checksum. */
 
 /* GAS (Generic Address Structure) */
 typedef struct acpi_gen_regaddr {
 	u8  space_id;		/* Address space ID */
 	u8  bit_width;		/* Register size in bits */
 	u8  bit_offset;		/* Register bit offset */
-	union {
-		u8  resv;		/* Reserved in ACPI 2.0 - 2.0b */
-		u8  access_size;	/* Access size in
-					 * ACPI 2.0c/3.0/4.0/5.0/6.2a
-					 */
-	};
+	u8  access_size;	/* Access size since ACPI 2.0c */
 	u32 addrl;		/* Register address, low 32 bits */
 	u32 addrh;		/* Register address, high 32 bits */
 } __packed acpi_addr_t;
@@ -488,11 +478,7 @@ typedef struct acpi_fadt {
 	struct acpi_table_header header;
 	u32 firmware_ctrl;
 	u32 dsdt;
-	u8 model;	/* Eliminated in ACPI 2.0. Platforms should set
-			 * this field to zero but field values of one
-			 * are also allowed to maintain compatibility
-			 * with ACPI 1.0.
-			 */
+	u8 reserved;	/* Should be 0 */
 	u8 preferred_pm_profile;
 	u16 sci_int;
 	u32 smi_cmd;
@@ -582,7 +568,7 @@ typedef struct acpi_fadt {
 /* Bits 20-31: reserved ACPI 3.0 & 4.0 */
 #define ACPI_FADT_HW_REDUCED_ACPI	(1 << 20)
 #define ACPI_FADT_LOW_PWR_IDLE_S0	(1 << 21)
-/* bits 22-31: reserved ACPI 5.0/6.2a */
+/* bits 22-31: reserved since ACPI 5.0 */
 
 /* FADT Boot Architecture Flags */
 #define ACPI_FADT_LEGACY_DEVICES	(1 << 0)
@@ -596,7 +582,7 @@ typedef struct acpi_fadt {
 /* FADT ARM Boot Architecture Flags */
 #define ACPI_FADT_ARM_PSCI_COMPLIANT	(1 << 0)
 #define ACPI_FADT_ARM_PSCI_USE_HVC	(1 << 1)
-/* bits 2-16: reserved ACPI 6.2a */
+/* bits 2-16: reserved since ACPI 5.1 */
 
 /* FADT Preferred Power Management Profile */
 enum acpi_preferred_pm_profiles {
@@ -608,7 +594,7 @@ enum acpi_preferred_pm_profiles {
 	PM_SOHO_SERVER		= 5,
 	PM_APPLIANCE_PC		= 6,
 	PM_PERFORMANCE_SERVER	= 7,
-	PM_TABLET		= 8,	/* ACPI 5.0/6.2a */
+	PM_TABLET		= 8,	/* ACPI 5.0 & greater */
 };
 
 /* FACS (Firmware ACPI Control Structure) */
@@ -621,10 +607,10 @@ typedef struct acpi_facs {
 	u32 flags;				/* FACS flags */
 	u32 x_firmware_waking_vector_l;		/* X FW waking vector, low */
 	u32 x_firmware_waking_vector_h;		/* X FW waking vector, high */
-	u8 version;				/* ACPI 6.2-A: 2 */
-	u8 resv1[3];				/* ACPI 6.2-A: 0 */
+	u8 version;				/* FACS version */
+	u8 resv1[3];				/* This value is 0 */
 	u32 ospm_flags;				/* 64BIT_WAKE_F */
-	u8 resv2[24];				/* ACPI 6.2-A: 0 */
+	u8 resv2[24];				/* This value is 0 */
 } __packed acpi_facs_t;
 
 /* FACS flags */
@@ -682,7 +668,7 @@ typedef struct acpi_bert {
 	u64 error_region;
 } __packed acpi_bert_t;
 
-/* Generic Error Data Entry (ACPI spec v6.2-A, table 382) */
+/* Generic Error Data Entry */
 typedef struct acpi_hest_generic_data {
 	guid_t section_type;
 	u32 error_severity;
@@ -695,7 +681,7 @@ typedef struct acpi_hest_generic_data {
 	/* error data */
 } __packed acpi_hest_generic_data_t;
 
-/* Generic Error Data Entry (ACPI spec v6.2-A, table 382) */
+/* Generic Error Data Entry v300 */
 typedef struct acpi_hest_generic_data_v300 {
 	guid_t section_type;
 	u32 error_severity;
@@ -721,7 +707,7 @@ typedef struct acpi_hest_generic_data_v300 {
 #define ACPI_GENERROR_VALID_FRUID_TEXT		BIT(1)
 #define ACPI_GENERROR_VALID_TIMESTAMP		BIT(2)
 
-/* Generic Error Status Block (ACPI spec v6.2-A, table 381) */
+/* Generic Error Status Block */
 typedef struct acpi_generic_error_status {
 	u32 block_status;
 	u32 raw_data_offset;	/* must follow any generic entries */
@@ -759,7 +745,6 @@ typedef struct acpi_tstate {
 
 /* Port types for ACPI _UPC object */
 enum acpi_upc_type {
-	/* These types are defined in ACPI 6.2 section 9.14 */
 	UPC_TYPE_A,
 	UPC_TYPE_MINI_AB,
 	UPC_TYPE_EXPRESSCARD,

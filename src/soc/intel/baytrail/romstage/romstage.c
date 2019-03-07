@@ -16,7 +16,8 @@
 #include <stddef.h>
 #include <arch/cpu.h>
 #include <arch/io.h>
-#include <arch/early_variables.h>
+#include <device/mmio.h>
+#include <device/pci_ops.h>
 #include <bootblock_common.h>
 #include <console/console.h>
 #include <cbmem.h>
@@ -141,14 +142,14 @@ asmlinkage void bootblock_c_entry_bist(uint64_t base_timestamp, uint32_t bist)
 	romstage_main(base_timestamp, bist);
 }
 
-static struct chipset_power_state power_state CAR_GLOBAL;
+static struct chipset_power_state power_state;
 
 static void migrate_power_state(int is_recovery)
 {
 	struct chipset_power_state *ps_cbmem;
 	struct chipset_power_state *ps_car;
 
-	ps_car = car_get_var_ptr(&power_state);
+	ps_car = &power_state;
 	ps_cbmem = cbmem_add(CBMEM_ID_POWER_STATE, sizeof(*ps_cbmem));
 
 	if (ps_cbmem == NULL) {
@@ -161,7 +162,7 @@ ROMSTAGE_CBMEM_INIT_HOOK(migrate_power_state)
 
 static struct chipset_power_state *fill_power_state(void)
 {
-	struct chipset_power_state *ps = car_get_var_ptr(&power_state);
+	struct chipset_power_state *ps = &power_state;
 
 	ps->pm1_sts = inw(ACPI_BASE_ADDRESS + PM1_STS);
 	ps->pm1_en = inw(ACPI_BASE_ADDRESS + PM1_EN);
@@ -249,8 +250,7 @@ static void platform_enter_postcar(void)
 	if (postcar_frame_init(&pcf, ROMSTAGE_RAM_STACK_SIZE))
 		die("Unable to initialize postcar frame.\n");
 	/* Cache the ROM as WP just below 4GiB. */
-	postcar_frame_add_mtrr(&pcf, CACHE_ROM_BASE, CACHE_ROM_SIZE,
-			       MTRR_TYPE_WRPROT);
+	postcar_frame_add_romcache(&pcf, MTRR_TYPE_WRPROT);
 
 	/* Cache RAM as WB from 0 -> CACHE_TMP_RAMTOP. */
 	postcar_frame_add_mtrr(&pcf, 0, CACHE_TMP_RAMTOP, MTRR_TYPE_WRBACK);

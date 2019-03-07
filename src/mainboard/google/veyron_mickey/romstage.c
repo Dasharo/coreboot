@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <cbmem.h>
 #include <console/console.h>
+#include <device/mmio.h>
 #include <delay.h>
 #include <program_loading.h>
 #include <soc/sdram.h>
@@ -93,7 +94,7 @@ void main(void)
 	mmu_config_range((uintptr_t)_dram/MiB,
 			 sdram_size_mb(), DCACHE_WRITEBACK);
 	mmu_config_range((uintptr_t)_dma_coherent/MiB,
-			 _dma_coherent_size/MiB, DCACHE_OFF);
+			 REGION_SIZE(dma_coherent)/MiB, DCACHE_OFF);
 
 	cbmem_initialize_empty();
 

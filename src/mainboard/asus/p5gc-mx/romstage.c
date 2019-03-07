@@ -20,10 +20,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <arch/io.h>
+#include <device/pnp_ops.h>
+#include <device/pci_ops.h>
 #include <device/pci_def.h>
-#include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
-#include <arch/acpi.h>
 #include <superio/winbond/common/winbond.h>
 #include <superio/winbond/w83627dhg/w83627dhg.h>
 #include <console/console.h>

@@ -13,7 +13,6 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/io.h>
 #include <assert.h>
 #include <bootstate.h>
 #include <cpu/cpu.h>
@@ -70,11 +69,16 @@ static const struct cpu_device_id cpu_table[] = {
 	{ X86_VENDOR_INTEL, CPUID_APOLLOLAKE_E0 },
 	{ X86_VENDOR_INTEL, CPUID_GLK_A0 },
 	{ X86_VENDOR_INTEL, CPUID_GLK_B0 },
+	{ X86_VENDOR_INTEL, CPUID_WHISKEYLAKE_V0 },
 	{ X86_VENDOR_INTEL, CPUID_WHISKEYLAKE_W0 },
 	{ X86_VENDOR_INTEL, CPUID_COFFEELAKE_U0 },
 	{ X86_VENDOR_INTEL, CPUID_COFFEELAKE_D0 },
 	{ X86_VENDOR_INTEL, CPUID_ICELAKE_A0 },
 	{ X86_VENDOR_INTEL, CPUID_ICELAKE_B0 },
+	{ X86_VENDOR_INTEL, CPUID_COMETLAKE_U_A0 },
+	{ X86_VENDOR_INTEL, CPUID_COMETLAKE_U_K0_S0 },
+	{ X86_VENDOR_INTEL, CPUID_COMETLAKE_H_S_6_2_P0 },
+	{ X86_VENDOR_INTEL, CPUID_COMETLAKE_H_S_10_2_P0 },
 	{ 0, 0 },
 };
 

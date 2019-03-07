@@ -17,7 +17,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <arch/io.h>
 #include <intelblocks/acpi.h>
 #include <intelblocks/xhci.h>
 
@@ -44,6 +43,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_KBP_H_XHCI,
 	PCI_DEVICE_ID_INTEL_CNP_H_XHCI,
 	PCI_DEVICE_ID_INTEL_ICP_LP_XHCI,
+	PCI_DEVICE_ID_INTEL_CMP_LP_XHCI,
 	0
 };
 

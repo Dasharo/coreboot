@@ -16,9 +16,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <arch/io.h>
+#include <device/pci_ops.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <arch/early_variables.h>
 
 #include "gpio.h"
 
@@ -40,7 +40,7 @@ static u16 get_gpio_base(void)
 	/* Don't assume GPIO_BASE is still the same */
 	return pci_read_config16(PCH_LPC_DEV, GPIO_BASE) & 0xfffe;
 #else
-	static u16 gpiobase CAR_GLOBAL;
+	static u16 gpiobase;
 
 	if (gpiobase)
 		return gpiobase;

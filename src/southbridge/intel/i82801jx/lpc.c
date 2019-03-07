@@ -23,6 +23,7 @@
 #include <pc80/isa-dma.h>
 #include <pc80/i8259.h>
 #include <arch/io.h>
+#include <device/pci_ops.h>
 #include <arch/ioapic.h>
 #include <arch/acpi.h>
 #include <cpu/x86/smm.h>
@@ -585,7 +586,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->mon_alrm = 0x00;
 	fadt->century = 0x32;
 
-	fadt->model = 1;
+	fadt->reserved = 0;
 	fadt->sci_int = 0x9;
 	fadt->smi_cmd = APM_CNT;
 	fadt->acpi_enable = APM_CNT_ACPI_ENABLE;

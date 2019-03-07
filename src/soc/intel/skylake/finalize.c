@@ -15,6 +15,8 @@
  */
 
 #include <arch/io.h>
+#include <device/mmio.h>
+#include <device/pci_ops.h>
 #include <bootstate.h>
 #include <chip.h>
 #include <console/console.h>

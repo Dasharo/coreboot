@@ -45,10 +45,17 @@ DefinitionBlock(
 #if IS_ENABLED(CONFIG_CHROMEOS)
 	/* Chrome OS specific */
 	#include <vendorcode/google/chromeos/acpi/chromeos.asl>
+	/* VPD support */
+	#include <vendorcode/google/chromeos/acpi/vpd.asl>
+	/* MAC address passthru */
+	#include <vendorcode/google/chromeos/acpi/amac.asl>
 #endif
 
 	/* Chipset specific sleep states */
 	#include <soc/intel/cannonlake/acpi/sleepstates.asl>
+
+	/* Low power idle table */
+	#include <soc/intel/cannonlake/acpi/lpit.asl>
 
 #if IS_ENABLED(CONFIG_EC_GOOGLE_WILCO)
 	/* Chrome OS Embedded Controller */

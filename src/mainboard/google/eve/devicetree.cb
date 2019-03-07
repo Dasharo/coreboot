@@ -46,13 +46,11 @@ chip soc/intel/skylake
 	register "Device4Enable" = "1"
 	register "HeciEnabled" = "0"
 	register "SaGv" = "3"
-	register "SerialIrqConfigSirqEnable" = "1"
 	register "PmConfigSlpS3MinAssert" = "2"        # 50ms
 	register "PmConfigSlpS4MinAssert" = "1"        # 1s
 	register "PmConfigSlpSusMinAssert" = "1"       # 500ms
 	register "PmConfigSlpAMinAssert" = "3"         # 2s
 	register "PmTimerDisabled" = "1"
-	register "VmxEnable" = "1"
 
 	register "pirqa_routing" = "PCH_IRQ11"
 	register "pirqb_routing" = "PCH_IRQ10"

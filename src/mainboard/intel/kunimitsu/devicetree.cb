@@ -60,8 +60,6 @@ chip soc/intel/skylake
 	# SLP_A Minimum Assertion Width. Values 0: 0ms, 1: 4s, 2: 98ms, 3: 2s
 	register "PmConfigSlpAMinAssert" = "0x03"
 
-	# Determines if enable Serial IRQ. Values 0: Disabled, 1: Enabled
-	register "SerialIrqConfigSirqEnable" = "0x01"
 
 	# VR Settings Configuration for 5 Domains
 	#+----------------+-------+-------+-------------+-------------+-------+
@@ -185,9 +183,6 @@ chip soc/intel/skylake
 
 	# Send an extra VR mailbox command for the PS4 exit issue
 	register "SendVrMbxCmd" = "2"
-
-	# Enable/Disable VMX feature
-	register "VmxEnable" = "0"
 
 	# Use default SD card detect GPIO configuration
 	register "sdcard_cd_gpio_default" = "GPP_A7"

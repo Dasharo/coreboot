@@ -14,7 +14,7 @@
  */
 
 #include <arch/cache.h>
-#include <arch/io.h>
+#include <device/mmio.h>
 #include <boot/coreboot_tables.h>
 #include <delay.h>
 #include <device/device.h>
@@ -126,7 +126,7 @@ void lb_board(struct lb_header *header)
 	dma->tag = LB_TAB_DMA;
 	dma->size = sizeof(*dma);
 	dma->range_start = (uintptr_t)_dma_coherent;
-	dma->range_size = _dma_coherent_size;
+	dma->range_size = REGION_SIZE(dma_coherent);
 }
 
 void mainboard_power_on_backlight(void)

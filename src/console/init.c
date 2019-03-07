@@ -15,6 +15,7 @@
  */
 
 #include <arch/early_variables.h>
+#include <commonlib/helpers.h>
 #include <console/console.h>
 #include <console/uart.h>
 #include <console/streams.h>
@@ -64,7 +65,18 @@ static void init_log_level(void)
 
 int console_log_level(int msg_level)
 {
-	return (get_log_level() >= msg_level);
+	int log_level = get_log_level();
+
+	if (log_level < 0)
+		return CONSOLE_LOG_NONE;
+
+	if (msg_level <= log_level)
+		return CONSOLE_LOG_ALL;
+
+	if (IS_ENABLED(CONFIG_CONSOLE_CBMEM) && (msg_level <= BIOS_DEBUG))
+		return CONSOLE_LOG_FAST;
+
+	return 0;
 }
 
 asmlinkage void console_init(void)
@@ -74,10 +86,8 @@ asmlinkage void console_init(void)
 	if (IS_ENABLED(CONFIG_DEBUG_CONSOLE_INIT))
 		car_set_var(console_inited, 1);
 
-#if IS_ENABLED(CONFIG_EARLY_PCI_BRIDGE)
-	if (!ENV_SMM && !ENV_RAMSTAGE)
+	if (IS_ENABLED(CONFIG_EARLY_PCI_BRIDGE) && !ENV_SMM && !ENV_RAMSTAGE)
 		pci_early_bridge_init();
-#endif
 
 	console_hw_init();
 

@@ -8,7 +8,7 @@
  * Copyright (C) 2005-2009 coresystems GmbH
  * Copyright (C) 2015 Timothy Pearson <tpearson@raptorengineeringinc.com>,
  * Raptor Engineering
- * Copyright (C) 2016-2017 Siemens AG
+ * Copyright (C) 2016-2019 Siemens AG
  *
  * ACPI FADT, FACS, and DSDT table support added by
  * Nick Barker <nick.barker9@btinternet.com>, and those portions
@@ -47,6 +47,8 @@
 #include <cpu/x86/lapic_def.h>
 #include <cpu/cpu.h>
 #include <cbfs.h>
+#include <version.h>
+#include <commonlib/sort.h>
 
 u8 acpi_checksum(u8 *table, u32 length)
 {
@@ -148,7 +150,7 @@ int acpi_create_madt_lapic(acpi_madt_lapic_t *lapic, u8 cpu, u8 apic)
 unsigned long acpi_create_madt_lapics(unsigned long current)
 {
 	struct device *cpu;
-	int index = 0;
+	int index, apic_ids[CONFIG_MAX_CPUS], num_cpus = 0;
 
 	for (cpu = all_devices; cpu; cpu = cpu->next) {
 		if ((cpu->path.type != DEVICE_PATH_APIC) ||
@@ -157,9 +159,14 @@ unsigned long acpi_create_madt_lapics(unsigned long current)
 		}
 		if (!cpu->enabled)
 			continue;
+		if (num_cpus >= ARRAY_SIZE(apic_ids))
+			break;
+		apic_ids[num_cpus++] = cpu->path.apic.apic_id;
+	}
+	bubblesort(apic_ids, num_cpus, NUM_ASCENDING);
+	for (index = 0; index < num_cpus; index++) {
 		current += acpi_create_madt_lapic((acpi_madt_lapic_t *)current,
-				index, cpu->path.apic.apic_id);
-		index++;
+				index, apic_ids[index]);
 	}
 
 	return current;
@@ -216,6 +223,7 @@ void acpi_create_madt(acpi_madt_t *madt)
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_madt_t);
 	header->revision = get_acpi_table_revision(MADT);
 
@@ -244,6 +252,7 @@ void acpi_create_mcfg(acpi_mcfg_t *mcfg)
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_mcfg_t);
 	header->revision = get_acpi_table_revision(MCFG);
 
@@ -297,6 +306,7 @@ static void acpi_create_tcpa(acpi_tcpa_t *tcpa)
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_tcpa_t);
 	header->revision = get_acpi_table_revision(TCPA);
 
@@ -355,6 +365,7 @@ static void acpi_create_tpm2(acpi_tpm2_t *tpm2)
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_tpm2_t);
 	header->revision = get_acpi_table_revision(TPM2);
 
@@ -409,7 +420,7 @@ void acpi_create_ssdt_generator(acpi_header_t *ssdt, const char *oem_table_id)
 	memcpy(&ssdt->oem_table_id, oem_table_id, 8);
 	ssdt->oem_revision = 42;
 	memcpy(&ssdt->asl_compiler_id, ASLC, 4);
-	ssdt->asl_compiler_revision = 42;
+	ssdt->asl_compiler_revision = asl_revision;
 	ssdt->length = sizeof(acpi_header_t);
 
 	acpigen_set_current((char *) current);
@@ -474,6 +485,7 @@ void acpi_create_srat(acpi_srat_t *srat,
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_srat_t);
 	header->revision = get_acpi_table_revision(SRAT);
 
@@ -500,6 +512,7 @@ void acpi_create_dmar(acpi_dmar_t *dmar, enum dmar_flags flags,
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_dmar_t);
 	header->revision = get_acpi_table_revision(DMAR);
 
@@ -633,6 +646,7 @@ void acpi_create_slit(acpi_slit_t *slit,
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_slit_t);
 	header->revision = get_acpi_table_revision(SLIT);
 
@@ -657,6 +671,7 @@ void acpi_create_hpet(acpi_hpet_t *hpet)
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_hpet_t);
 	header->revision = get_acpi_table_revision(HPET);
 
@@ -690,6 +705,7 @@ void acpi_create_vfct(struct device *device,
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(struct acpi_vfct);
 	header->revision = get_acpi_table_revision(VFCT);
 
@@ -715,6 +731,7 @@ void acpi_create_ivrs(acpi_ivrs_t *ivrs,
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_ivrs_t);
 	header->revision = get_acpi_table_revision(IVRS);
 
@@ -766,6 +783,7 @@ void acpi_create_dbg2(acpi_dbg2_header_t *dbg2,
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
+	header->asl_compiler_revision = asl_revision;
 
 	/* One debug device defined */
 	dbg2->devices_offset = sizeof(acpi_dbg2_header_t);
@@ -885,6 +903,7 @@ static void acpi_write_rsdt(acpi_rsdt_t *rsdt, char *oem_id, char *oem_table_id)
 	memcpy(header->oem_table_id, oem_table_id, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_rsdt_t);
 	header->revision = get_acpi_table_revision(RSDT);
 
@@ -904,6 +923,7 @@ static void acpi_write_xsdt(acpi_xsdt_t *xsdt, char *oem_id, char *oem_table_id)
 	memcpy(header->oem_table_id, oem_table_id, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
+	header->asl_compiler_revision = asl_revision;
 	header->length = sizeof(acpi_xsdt_t);
 	header->revision = get_acpi_table_revision(XSDT);
 
@@ -1014,6 +1034,7 @@ void acpi_write_hest(acpi_hest_t *hest,
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
+	header->asl_compiler_revision = asl_revision;
 	header->length += sizeof(acpi_hest_t);
 	header->revision = get_acpi_table_revision(HEST);
 
@@ -1034,6 +1055,7 @@ void acpi_write_bert(acpi_bert_t *bert, uintptr_t region, size_t length)
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
+	header->asl_compiler_revision = asl_revision;
 	header->length += sizeof(acpi_bert_t);
 	header->revision = get_acpi_table_revision(BERT);
 
@@ -1056,7 +1078,7 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
-	header->asl_compiler_revision = 0;
+	header->asl_compiler_revision = asl_revision;
 
 	fadt->firmware_ctrl = (unsigned long) facs;
 	fadt->dsdt = (unsigned long) dsdt;
@@ -1066,8 +1088,12 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	fadt->x_dsdt_l = (unsigned long)dsdt;
 	fadt->x_dsdt_h = 0;
 
-	if (IS_ENABLED(CONFIG_SYSTEM_TYPE_LAPTOP))
+	if (IS_ENABLED(CONFIG_SYSTEM_TYPE_CONVERTIBLE) ||
+	    IS_ENABLED(CONFIG_SYSTEM_TYPE_LAPTOP))
 		fadt->preferred_pm_profile = PM_MOBILE;
+	else if (IS_ENABLED(CONFIG_SYSTEM_TYPE_DETACHABLE) ||
+		 IS_ENABLED(CONFIG_SYSTEM_TYPE_TABLET))
+		fadt->preferred_pm_profile = PM_TABLET;
 	else
 		fadt->preferred_pm_profile = PM_DESKTOP;
 
@@ -1368,7 +1394,7 @@ int get_acpi_table_revision(enum acpi_tables table)
 	switch (table) {
 	case FADT:
 		return ACPI_FADT_REV_ACPI_3_0;
-	case MADT: /* ACPI 1.0/2.0: 1, ACPI 3.0: 2, ACPI 4.0: 3 */
+	case MADT: /* ACPI 3.0: 2, ACPI 4.0/5.0: 3, ACPI 6.2b/6.3: 5 */
 		return 2;
 	case MCFG:
 		return 1;
@@ -1376,29 +1402,29 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 2;
 	case TPM2:
 		return 4;
-	case SSDT: /* ACPI 1.0/2.0: ?, ACPI 3.0/4.0: 2 */
+	case SSDT: /* ACPI 3.0 upto 6.3: 2 */
 		return 2;
-	case SRAT:  /* ACPI 1.0: N/A, 2.0: 1, 3.0: 2, 4.0: 3 */
+	case SRAT: /* ACPI 2.0: 1, ACPI 3.0: 2, ACPI 4.0 upto 6.3: 3 */
 		return 1; /* TODO Should probably be upgraded to 2 */
 	case DMAR:
 		return 1;
-	case SLIT:  /* ACPI 1.0: N/A, ACPI 2.0/3.0/4.0: 1 */
+	case SLIT: /* ACPI 2.0 upto 6.3: 1 */
 		return 1;
 	case HPET: /* Currently 1. Table added in ACPI 2.0. */
 		return 1;
-	case VFCT:  /* ACPI 1.0: N/A, ACPI 2.0/3.0/4.0: 1 */
+	case VFCT: /* ACPI 2.0/3.0/4.0: 1 */
 		return 1;
 	case IVRS:
 		return IVRS_FORMAT_FIXED;
 	case DBG2:
 		return 0;
-	case FACS: /* ACPI 1.0: 0, ACPI 2.0/3.0: 1, ACPI 4.0: 2 */
+	case FACS: /* ACPI 2.0/3.0: 1, ACPI 4.0 upto 6.3: 2 */
 		return 1;
-	case RSDT: /* ACPI 1.0/2.0/3.0/4.0: 1 */
+	case RSDT: /* ACPI 1.0 upto 6.3: 1 */
 		return 1;
-	case XSDT: /* ACPI 1.0: N/A, 2.0/3.0/4.0: 1 */
+	case XSDT: /* ACPI 2.0 upto 6.3: 1 */
 		return 1;
-	case RSDP:  /* ACPI 1.0: 0, ACPI 2.0/3.0/4.0: 2. */
+	case RSDP: /* ACPI 2.0 upto 6.3: 2 */
 		return 2;
 	case HEST:
 		return 1;

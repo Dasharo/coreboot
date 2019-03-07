@@ -19,13 +19,14 @@
 #include <device/pci.h>
 #include <fsp/api.h>
 #include <arch/acpi.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci_ids.h>
 #include <fsp/util.h>
 #include <intelblocks/chip.h>
 #include <intelblocks/itss.h>
+#include <intelblocks/lpc_lib.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
 #include <romstage_handoff.h>
@@ -322,7 +323,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->LogoPtr = config->LogoPtr;
 	params->LogoSize = config->LogoSize;
 
-	params->CpuConfig.Bits.VmxEnable = config->VmxEnable;
+	params->CpuConfig.Bits.VmxEnable = IS_ENABLED(CONFIG_ENABLE_VMX);
 
 	params->PchPmWoWlanEnable = config->PchPmWoWlanEnable;
 	params->PchPmWoWlanDeepSxEnable = config->PchPmWoWlanDeepSxEnable;
@@ -418,8 +419,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* Indicate whether platform supports Voltage Margining */
 	params->PchPmSlpS0VmEnable = config->PchPmSlpS0VmEnable;
 
-	params->PchSirqEnable = config->SerialIrqConfigSirqEnable;
-	params->PchSirqMode = config->SerialIrqConfigSirqMode;
+	params->PchSirqEnable = config->serirq_mode != SERIRQ_OFF;
+	params->PchSirqMode = config->serirq_mode == SERIRQ_CONTINUOUS;
 
 	params->CpuConfig.Bits.SkipMpInit = !chip_get_fsp_mp_init();
 

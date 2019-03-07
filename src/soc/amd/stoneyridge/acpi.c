@@ -22,7 +22,7 @@
 #include <console/console.h>
 #include <arch/acpi.h>
 #include <arch/acpigen.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <arch/ioapic.h>
 #include <cpu/x86/smm.h>
 #include <cbmem.h>
@@ -34,6 +34,7 @@
 #include <soc/northbridge.h>
 #include <soc/nvs.h>
 #include <soc/gpio.h>
+#include <version.h>
 
 unsigned long acpi_fill_madt(unsigned long current)
 {
@@ -82,11 +83,11 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
-	header->asl_compiler_revision = 0;
+	header->asl_compiler_revision = asl_revision;
 
 	fadt->firmware_ctrl = (u32) facs;
 	fadt->dsdt = (u32) dsdt;
-	fadt->model = 0;		/* reserved, should be 0 ACPI 3.0 */
+	fadt->reserved = 0;		/* reserved, should be 0 ACPI 3.0 */
 	fadt->preferred_pm_profile = FADT_PM_PROFILE;
 	fadt->sci_int = 9;		/* IRQ 09 - ACPI SCI */
 

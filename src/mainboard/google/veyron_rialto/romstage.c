@@ -15,7 +15,7 @@
 
 #include <arch/cache.h>
 #include <arch/exception.h>
-#include <arch/io.h>
+#include <device/mmio.h>
 #include <armv7.h>
 #include <assert.h>
 #include <cbmem.h>
@@ -103,7 +103,7 @@ void main(void)
 	mmu_config_range((uintptr_t)_dram/MiB,
 			 sdram_size_mb(), DCACHE_WRITEBACK);
 	mmu_config_range((uintptr_t)_dma_coherent/MiB,
-			 _dma_coherent_size/MiB, DCACHE_OFF);
+			 REGION_SIZE(dma_coherent)/MiB, DCACHE_OFF);
 
 	cbmem_initialize_empty();
 

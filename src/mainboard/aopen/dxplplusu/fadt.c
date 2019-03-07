@@ -15,7 +15,9 @@
 
 #include <string.h>
 #include <device/pci.h>
+#include <device/pci_ops.h>
 #include <arch/acpi.h>
+#include <version.h>
 
 /* FIXME: This needs to go into a separate .h file
  * to be included by the ich7 smi handler, ich7 smi init
@@ -41,11 +43,11 @@ void acpi_create_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
-	header->asl_compiler_revision = 1;
+	header->asl_compiler_revision = asl_revision;
 
 	fadt->firmware_ctrl = (unsigned long) facs;
 	fadt->dsdt = (unsigned long) dsdt;
-	fadt->model = 1;
+	fadt->reserved = 0;
 	fadt->preferred_pm_profile = 0; /* PM_MOBILE; */
 
 	fadt->sci_int = 0x9;
@@ -91,7 +93,7 @@ void acpi_create_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	fadt->reset_reg.space_id = 0;
 	fadt->reset_reg.bit_width = 0;
 	fadt->reset_reg.bit_offset = 0;
-	fadt->reset_reg.resv = 0;
+	fadt->reset_reg.access_size = 0;
 	fadt->reset_reg.addrl = 0x0;
 	fadt->reset_reg.addrh = 0x0;
 
@@ -104,56 +106,56 @@ void acpi_create_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	fadt->x_pm1a_evt_blk.space_id = 1;
 	fadt->x_pm1a_evt_blk.bit_width = 32;
 	fadt->x_pm1a_evt_blk.bit_offset = 0;
-	fadt->x_pm1a_evt_blk.resv = 0;
+	fadt->x_pm1a_evt_blk.access_size = 0;
 	fadt->x_pm1a_evt_blk.addrl = pmbase;
 	fadt->x_pm1a_evt_blk.addrh = 0x0;
 
 	fadt->x_pm1b_evt_blk.space_id = 1;
 	fadt->x_pm1b_evt_blk.bit_width = 0;
 	fadt->x_pm1b_evt_blk.bit_offset = 0;
-	fadt->x_pm1b_evt_blk.resv = 0;
+	fadt->x_pm1b_evt_blk.access_size = 0;
 	fadt->x_pm1b_evt_blk.addrl = 0x0;
 	fadt->x_pm1b_evt_blk.addrh = 0x0;
 
 	fadt->x_pm1a_cnt_blk.space_id = 1;
 	fadt->x_pm1a_cnt_blk.bit_width = 16;
 	fadt->x_pm1a_cnt_blk.bit_offset = 0;
-	fadt->x_pm1a_cnt_blk.resv = 0;
+	fadt->x_pm1a_cnt_blk.access_size = 0;
 	fadt->x_pm1a_cnt_blk.addrl = pmbase + 0x4;
 	fadt->x_pm1a_cnt_blk.addrh = 0x0;
 
 	fadt->x_pm1b_cnt_blk.space_id = 1;
 	fadt->x_pm1b_cnt_blk.bit_width = 0;
 	fadt->x_pm1b_cnt_blk.bit_offset = 0;
-	fadt->x_pm1b_cnt_blk.resv = 0;
+	fadt->x_pm1b_cnt_blk.access_size = 0;
 	fadt->x_pm1b_cnt_blk.addrl = 0x0;
 	fadt->x_pm1b_cnt_blk.addrh = 0x0;
 
 	fadt->x_pm2_cnt_blk.space_id = 1;
 	fadt->x_pm2_cnt_blk.bit_width = 0;
 	fadt->x_pm2_cnt_blk.bit_offset = 0;
-	fadt->x_pm2_cnt_blk.resv = 0;
+	fadt->x_pm2_cnt_blk.access_size = 0;
 	fadt->x_pm2_cnt_blk.addrl = 0x0;
 	fadt->x_pm2_cnt_blk.addrh = 0x0;
 
 	fadt->x_pm_tmr_blk.space_id = 1;
 	fadt->x_pm_tmr_blk.bit_width = 32;
 	fadt->x_pm_tmr_blk.bit_offset = 0;
-	fadt->x_pm_tmr_blk.resv = 0;
+	fadt->x_pm_tmr_blk.access_size = 0;
 	fadt->x_pm_tmr_blk.addrl = pmbase + 0x8;
 	fadt->x_pm_tmr_blk.addrh = 0x0;
 
 	fadt->x_gpe0_blk.space_id = 1;
 	fadt->x_gpe0_blk.bit_width = 64;
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.resv = 0;
+	fadt->x_gpe0_blk.access_size = 0;
 	fadt->x_gpe0_blk.addrl = pmbase + 0x28;
 	fadt->x_gpe0_blk.addrh = 0x0;
 
 	fadt->x_gpe1_blk.space_id = 1;
 	fadt->x_gpe1_blk.bit_width = 0;
 	fadt->x_gpe1_blk.bit_offset = 0;
-	fadt->x_gpe1_blk.resv = 0;
+	fadt->x_gpe1_blk.access_size = 0;
 	fadt->x_gpe1_blk.addrl = 0x0;
 	fadt->x_gpe1_blk.addrh = 0x0;
 

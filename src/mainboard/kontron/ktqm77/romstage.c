@@ -16,19 +16,20 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <timestamp.h>
-#include <device/pci_def.h>
-#include <device/pnp_def.h>
+#include <device/pnp_ops.h>
+#include <device/pci_ops.h>
 #include <cpu/x86/lapic.h>
-#include <arch/acpi.h>
-#include <northbridge/intel/sandybridge/sandybridge.h>
-#include <northbridge/intel/sandybridge/raminit.h>
+#include <cpu/x86/msr.h>
+#include <device/pci_def.h>
+#include <halt.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
+#include <northbridge/intel/sandybridge/raminit.h>
+#include <northbridge/intel/sandybridge/sandybridge.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
-#include <cpu/x86/msr.h>
-#include <halt.h>
 #include <superio/winbond/common/winbond.h>
+#include <timestamp.h>
+
 
 void pch_enable_lpc(void)
 {
@@ -157,7 +158,8 @@ const struct southbridge_usb_port mainboard_usb_ports[] = {
 	{ 1, 0, 4 }, /* P13: internal USB 2.0 (OC4) */
 };
 
-void mainboard_get_spd(spd_raw_data *spd, bool id_only) {
+void mainboard_get_spd(spd_raw_data *spd, bool id_only)
+{
 	read_spd(&spd[0], 0x50, id_only);
 	read_spd(&spd[2], 0x52, id_only);
 }

@@ -17,6 +17,7 @@
  * blatantly copied from linux/kernel/printk.c
  */
 
+#include <console/cbmem_console.h>
 #include <console/console.h>
 #include <console/streams.h>
 #include <console/vtxprintf.h>
@@ -36,19 +37,24 @@ void do_putchar(unsigned char byte)
 
 static void wrap_putchar(unsigned char byte, void *data)
 {
-	do_putchar(byte);
+	console_tx_byte(byte);
 }
 
-int do_printk(int msg_level, const char *fmt, ...)
+static void wrap_putchar_cbmemc(unsigned char byte, void *data)
 {
-	va_list args;
-	int i;
+	__cbmemc_tx_byte(byte);
+}
+
+int vprintk(int msg_level, const char *fmt, va_list args)
+{
+	int i, log_this;
 
 	if (IS_ENABLED(CONFIG_SQUELCH_EARLY_SMP) && ENV_CACHE_AS_RAM &&
 		!boot_cpu())
 		return 0;
 
-	if (!console_log_level(msg_level))
+	log_this = console_log_level(msg_level);
+	if (log_this < CONSOLE_LOG_FAST)
 		return 0;
 
 	DISABLE_TRACE;
@@ -60,11 +66,12 @@ int do_printk(int msg_level, const char *fmt, ...)
 	spin_lock(&console_lock);
 #endif
 
-	va_start(args, fmt);
-	i = vtxprintf(wrap_putchar, fmt, args, NULL);
-	va_end(args);
-
-	console_tx_flush();
+	if (log_this == CONSOLE_LOG_FAST) {
+		i = vtxprintf(wrap_putchar_cbmemc, fmt, args, NULL);
+	} else {
+		i = vtxprintf(wrap_putchar, fmt, args, NULL);
+		console_tx_flush();
+	}
 
 #ifdef __PRE_RAM__
 #if IS_ENABLED(CONFIG_HAVE_ROMSTAGE_CONSOLE_SPINLOCK)
@@ -78,12 +85,14 @@ int do_printk(int msg_level, const char *fmt, ...)
 	return i;
 }
 
-#if IS_ENABLED(CONFIG_VBOOT)
-void do_printk_va_list(int msg_level, const char *fmt, va_list args)
+int do_printk(int msg_level, const char *fmt, ...)
 {
-	if (!console_log_level(msg_level))
-		return;
-	vtxprintf(wrap_putchar, fmt, args, NULL);
-	console_tx_flush();
+	va_list args;
+	int i;
+
+	va_start(args, fmt);
+	i = vprintk(msg_level, fmt, args);
+	va_end(args);
+
+	return i;
 }
-#endif /* CONFIG_VBOOT */

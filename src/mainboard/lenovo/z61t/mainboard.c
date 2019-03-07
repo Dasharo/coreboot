@@ -16,6 +16,7 @@
  */
 
 #include <device/pci_def.h>
+#include <arch/io.h>
 #include <device/device.h>
 #include <ec/lenovo/pmh7/pmh7.h>
 #include <ec/lenovo/h8/h8.h>
@@ -27,9 +28,9 @@
 #define PANEL INT15_5F35_CL_DISPLAY_DEFAULT
 
 static acpi_cstate_t cst_entries[] = {
-	{ 1,  1, 1000, { 0x7f, 1, 2, { 0 }, 1, 0 } },
-	{ 2,  1,  500, { 0x01, 8, 0, { 0 }, DEFAULT_PMBASE + LV2, 0 } },
-	{ 3, 17,  250, { 0x01, 8, 0, { 0 }, DEFAULT_PMBASE + LV3, 0 } },
+	{ 1,  1, 1000, { 0x7f, 1, 2, 0, 1, 0 } },
+	{ 2,  1,  500, { 0x01, 8, 0, 0, DEFAULT_PMBASE + LV2, 0 } },
+	{ 3, 17,  250, { 0x01, 8, 0, 0, DEFAULT_PMBASE + LV3, 0 } },
 };
 
 int get_cst_entries(acpi_cstate_t **entries)

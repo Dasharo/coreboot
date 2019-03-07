@@ -20,8 +20,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <arch/io.h>
+#include <device/pci_ops.h>
 #include <device/pci_def.h>
-#include <device/pnp_def.h>
 #include <cpu/intel/romstage.h>
 #include <cpu/x86/lapic.h>
 #include <console/console.h>

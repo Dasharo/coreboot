@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <soc/acpi.h>
+#include <version.h>
 
 void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 {
@@ -27,11 +28,11 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
-	header->asl_compiler_revision = 1;
+	header->asl_compiler_revision = asl_revision;
 
 	fadt->firmware_ctrl = (u32)facs;
 	fadt->dsdt = (u32)dsdt;
-	fadt->model = 1;
+	fadt->reserved = 0;
 	fadt->preferred_pm_profile = PM_MOBILE;
 
 	fadt->x_firmware_ctl_l = (u32)facs;

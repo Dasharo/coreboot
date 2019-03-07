@@ -18,7 +18,7 @@
 #include <console/console.h>
 #include <commonlib/helpers.h>
 
-int get_ia32_fsb(void)
+static int get_fsb(void)
 {
 	struct cpuinfo_x86 c;
 	static const short core_fsb[8] = { -1, 133, -1, 166, -1, 100, -1, -1 };
@@ -39,8 +39,11 @@ int get_ia32_fsb(void)
 		case 0x17: /* Enhanced Core */
 			ret = core2_fsb[rdmsr(MSR_FSB_FREQ).lo & 7];
 			break;
-		case 0x2a: /* SandyBridge BCLK fixed at 100MHz*/
-		case 0x3a: /* IvyBridge BCLK fixed at 100MHz*/
+		case 0x25: /* Nehalem BCLK fixed at 133MHz */
+			ret = 133;
+			break;
+		case 0x2a: /* SandyBridge BCLK fixed at 100MHz */
+		case 0x3a: /* IvyBridge BCLK fixed at 100MHz */
 		case 0x3c: /* Haswell BCLK fixed at 100MHz */
 		case 0x45: /* Haswell-ULT BCLK fixed at 100MHz */
 			ret = 100;
@@ -60,6 +63,14 @@ int get_ia32_fsb(void)
 			break;
 		}
 	}
+	return ret;
+}
+
+int get_ia32_fsb(void)
+{
+	int ret;
+
+	ret = get_fsb();
 	if (ret == -1)
 		printk(BIOS_ERR, "FSB not found\n");
 	if (ret == -2)

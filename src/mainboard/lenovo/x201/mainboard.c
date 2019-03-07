@@ -19,6 +19,7 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <arch/io.h>
+#include <device/pci_ops.h>
 #include <ec/acpi/ec.h>
 #include <northbridge/intel/nehalem/nehalem.h>
 #include <southbridge/intel/bd82x6x/pch.h>
@@ -31,9 +32,9 @@
 #include <arch/acpigen.h>
 
 static acpi_cstate_t cst_entries[] = {
-	{1, 1, 1000, {0x7f, 1, 2, {0}, 1, 0}},
-	{2, 1, 500, {0x01, 8, 0, {0}, DEFAULT_PMBASE + LV2, 0}},
-	{2, 17, 250, {0x01, 8, 0, {0}, DEFAULT_PMBASE + LV3, 0}},
+	{1, 1, 1000, {0x7f, 1, 2, 0, 1, 0} },
+	{2, 1, 500, {0x01, 8, 0, 0, DEFAULT_PMBASE + LV2, 0} },
+	{2, 17, 250, {0x01, 8, 0, 0, DEFAULT_PMBASE + LV3, 0} },
 };
 
 int get_cst_entries(acpi_cstate_t **entries)

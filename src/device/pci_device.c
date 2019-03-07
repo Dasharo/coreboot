@@ -32,7 +32,7 @@
  */
 
 #include <arch/acpi.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <bootmode.h>
 #include <console/console.h>
 #include <stdlib.h>
@@ -691,6 +691,11 @@ void pci_dev_enable_resources(struct device *dev)
 
 	printk(BIOS_DEBUG, "%s cmd <- %02x\n", dev_path(dev), command);
 	pci_write_config16(dev, PCI_COMMAND, command);
+}
+
+void __noreturn pcidev_die(void)
+{
+	die("PCI: dev is NULL!\n");
 }
 
 void pci_bus_enable_resources(struct device *dev)

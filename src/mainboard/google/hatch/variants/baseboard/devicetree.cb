@@ -57,6 +57,11 @@ chip soc/intel/cannonlake
 	register "speed_shift_enable" = "1"
 	# Enable S0ix
 	register "s0ix_enable" = "1"
+	# Enable DPTF
+	register "dptf_enable" = "1"
+	register "tdp_pl1_override" = "15"
+	register "tdp_pl2_override" = "44"
+	register "Device4Enable" = "1"
 
 	register "usb2_ports[0]" = "USB2_PORT_TYPE_C(OC2)"	# Type-C Port 0
 	register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC2)"	# Type-C Port 1
@@ -84,7 +89,7 @@ chip soc/intel/cannonlake
 	register "PcieClkSrcClkReq[1]" = "1"
 
 	# GPIO for SD card detect
-	register "sdcard_cd_gpio" = "GPP_G5"
+	register "sdcard_cd_gpio" = "vSD3_CD_B"
 
 	# PCIe port 14 for M.2 E-key WLAN
 	register "PcieRpEnable[13]" = "1"
@@ -134,7 +139,7 @@ chip soc/intel/cannonlake
 						device usb 2.3 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""Bluetooth""
+						register "desc" = ""Discrete bluetooth""
 						register "type" = "UPC_TYPE_INTERNAL"
 						device usb 2.4 on end
 					end
@@ -147,6 +152,11 @@ chip soc/intel/cannonlake
 						register "desc" = ""Camera""
 						register "type" = "UPC_TYPE_INTERNAL"
 						device usb 2.6 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Integrated CnVi bluetooth""
+						register "type" = "UPC_TYPE_INTERNAL"
+						device usb 2.9 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""Left Type-C Port""
@@ -190,7 +200,8 @@ chip soc/intel/cannonlake
 			chip drivers/i2c/generic
 				register "hid" = ""ELAN0000""
 				register "desc" = ""ELAN Touchpad""
-				register "irq" = "ACPI_IRQ_EDGE_LOW(GPP_A21_IRQ)"
+				register "irq" = "ACPI_IRQ_EDGE_LOW(GPP_D21_IRQ)"
+				register "wake" = "GPE0_DW0_21"
 				device i2c 15 on end
 			end
 		end # I2C #0
@@ -209,8 +220,8 @@ chip soc/intel/cannonlake
 				device i2c 49 on end
 			end
 		end # I2C #1
-		device pci 15.2 off end # I2C #2
-		device pci 15.3 off end # I2C #3
+		device pci 15.2 on  end # I2C #2
+		device pci 15.3 on  end # I2C #3
 		device pci 16.0 on  end # Management Engine Interface 1
 		device pci 16.1 off end # Management Engine Interface 2
 		device pci 16.2 off end # Management Engine IDE-R
@@ -218,7 +229,7 @@ chip soc/intel/cannonlake
 		device pci 16.4 off end # Management Engine Interface 3
 		device pci 16.5 off end # Management Engine Interface 4
 		device pci 17.0 on  end # SATA
-		device pci 19.0 off end # I2C #4
+		device pci 19.0 on  end # I2C #4
 		device pci 19.1 off end # I2C #5
 		device pci 19.2 off end # UART #2
 		device pci 1a.0 off end # eMMC

@@ -15,7 +15,7 @@
 
 #include <cbmem.h>
 #include <console/console.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <stdint.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -27,7 +27,6 @@
 #include <cpu/intel/smm/gen1/smi.h>
 #include "chip.h"
 #include "gm45.h"
-#include "arch/acpi.h"
 
 /* Reserve segments A and B:
  *

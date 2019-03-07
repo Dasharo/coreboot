@@ -11,7 +11,7 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/io.h>
+#include <device/pci_ops.h>
 
 /* Just re-define this instead of including sandybridge.h. It blows up romcc. */
 #define PCIEXBAR	0x60

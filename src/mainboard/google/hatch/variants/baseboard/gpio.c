@@ -27,8 +27,12 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_A18, 1, DEEP),
 	/* WWAN_RADIO_DISABLE_1V8_ODL */
 	PAD_CFG_GPO(GPP_A19, 1, DEEP),
-	/* TRACKPAD_INT_ODL */
-	PAD_CFG_GPI_APIC(GPP_A21, NONE, PLTRST, LEVEL, INVERT),
+	/*
+	 * TRACKPAD_INT_ODL (wake)
+	 * TODO Combine into single gpio, when ITSS IPCx configuration
+	 * is fixed in FSP.
+	 */
+	PAD_CFG_GPI_SCI(GPP_A21, NONE, DEEP, EDGE_SINGLE, INVERT),
 	/* SRCCLKREQ1 */
 	PAD_CFG_NF(GPP_B6, NONE, DEEP, NF1),
 	/* PCIE_14_WLAN_CLKREQ_ODL */
@@ -41,10 +45,22 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF1),
 	/* H1_SLAVE_SPI_MOSI_R */
 	PAD_CFG_NF(GPP_B18, NONE, DEEP, NF1),
-	/* TOUCHSCREEN_DIS_L */
-	PAD_CFG_GPO(GPP_C4, 0, DEEP),
+	/* GPP_C0 => NC */
+	PAD_NC(GPP_C0, NONE),
 	/* PCIE_14_WLAN_WAKE_ODL */
 	PAD_CFG_GPI_SCI_LOW(GPP_C1, NONE, DEEP, EDGE_SINGLE),
+	/* GPP_C2 => NC */
+	PAD_NC(GPP_C2, NONE),
+	/* WLAN_OFF_L */
+	PAD_CFG_GPO(GPP_C3, 1, DEEP),
+	/* TOUCHSCREEN_DIS_L */
+	PAD_CFG_GPO(GPP_C4, 1, DEEP),
+	/* GPP_C5 => NC */
+	PAD_NC(GPP_C5, NONE),
+	/* PEN_PDCT_OD_L */
+	PAD_CFG_GPI(GPP_C6, NONE, DEEP),
+	/* PEN_IRQ_OD_L */
+	PAD_CFG_GPI_APIC(GPP_C7, NONE, DEEP, LEVEL, NONE),
 	/* GPP_C10_TP */
 	PAD_NC(GPP_C10, DN_20K),
 	/* GPP_C11_TP */
@@ -67,8 +83,12 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_C19, NONE, DEEP, NF1),
 	/* PCH_WP_OD */
 	PAD_CFG_GPI(GPP_C20, NONE, DEEP),
-	/* H1_PCH_INT_ODL */
-	PAD_CFG_GPI_APIC(GPP_C21, NONE, DEEP, LEVEL, INVERT),
+	/*
+	 * H1_PCH_INT_ODL
+	 * TODO Configure it back to invert mode, when
+	 * ITSS IPCx configuration is fixed in FSP.
+	 */
+	PAD_CFG_GPI_APIC(GPP_C21, NONE, DEEP, LEVEL, NONE),
 	/* EC_IN_RW_OD */
 	PAD_CFG_GPI(GPP_C22, NONE, DEEP),
 	/* WLAN_PE_RST# */
@@ -83,8 +103,18 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_D8, NONE),
 	/* TOUCHSCREEN_RST_L */
 	PAD_CFG_GPO(GPP_D15, 0, DEEP),
-	/* TOUCHSCREEN_INT_L */
-	PAD_CFG_GPI_APIC(GPP_D16, NONE, DEEP, LEVEL, INVERT),
+	/*
+	 * TOUCHSCREEN_INT_L
+	 * TODO Configure it back to invert mode, when
+	 * ITSS IPCx configuration is fixed in FSP.
+	 */
+	PAD_CFG_GPI_APIC(GPP_D16, NONE, DEEP, LEVEL, NONE),
+	/*
+	 * TRACKPAD_INT_ODL
+	 * TODO Combine into single gpio with invert mode, when ITSS
+	 * IPCx configuration is fixed in FSP.
+	 */
+	PAD_CFG_GPI_APIC(GPP_D21, NONE, PLTRST, LEVEL, NONE),
 	/* SATAGP1 */
 	PAD_CFG_NF(GPP_E1, NONE, DEEP, NF2),
 	/* M2_SSD_PE_WAKE_ODL */
@@ -144,6 +174,25 @@ static const struct pad_config gpio_table[] = {
 	/* SD_WP => NC */
 	PAD_NC(GPP_G7, DN_20K),
 
+	/* PCH_I2C_PEN_SDA */
+	PAD_CFG_NF(GPP_H4, NONE, DEEP, NF1),
+	/* PCH_I2C_PEN_SCL */
+	PAD_CFG_NF(GPP_H5, NONE, DEEP, NF1),
+	/* PCH_I2C_SAR0_MST_SDA */
+	PAD_CFG_NF(GPP_H6, NONE, DEEP, NF1),
+	/* PCH_I2C_SAR0_MST_SCL */
+	PAD_CFG_NF(GPP_H7, NONE, DEEP, NF1),
+	/* PCH_I2C_M2_AUDIO_SAR1_SDA */
+	PAD_CFG_NF(GPP_H8, NONE, DEEP, NF1),
+	/* PCH_I2C_M2_AUDIO_SAR1_SCL */
+	PAD_CFG_NF(GPP_H9, NONE, DEEP, NF1),
+	/* PCH_I2C_TRACKPAD_SDA */
+	PAD_NC(GPP_H10, NONE),
+	/* PCH_I2C_TRACKPAD_SCL */
+	PAD_NC(GPP_H11, NONE),
+	/* SD card detect VGPIO */
+	PAD_CFG_GPI_GPIO_DRIVER(vSD3_CD_B, NONE, DEEP),
+
 	/* GPD2: LAN_WAKE# ==> EC_PCH_WAKE_OD */
 	PAD_CFG_NF(GPD2, NONE, DEEP, NF1),
 };
@@ -164,8 +213,14 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF1),
 	/* H1_SLAVE_SPI_MOSI_R */
 	PAD_CFG_NF(GPP_B18, NONE, DEEP, NF1),
-	/* H1_PCH_INT_ODL */
-	PAD_CFG_GPI_APIC(GPP_C21, NONE, DEEP, LEVEL, INVERT),
+	/* PCH_WP_OD */
+	PAD_CFG_GPI(GPP_C20, NONE, DEEP),
+	/*
+	 * H1_PCH_INT_ODL
+	 * TODO Configure it back to invert mode, when
+	 * ITSS IPCx configuration is fixed in FSP.
+	 */
+	PAD_CFG_GPI_APIC(GPP_C21, NONE, DEEP, LEVEL, NONE),
 	/* WLAN_PE_RST# */
 	PAD_CFG_GPO(GPP_C23, 1, DEEP),
 };
@@ -177,6 +232,8 @@ const struct pad_config *__weak variant_early_gpio_table(size_t *num)
 }
 
 static const struct cros_gpio cros_gpios[] = {
+	CROS_GPIO_REC_AL(CROS_GPIO_VIRTUAL, CROS_GPIO_DEVICE_NAME),
+	CROS_GPIO_WP_AH(GPIO_PCH_WP, CROS_GPIO_DEVICE_NAME),
 };
 
 const struct cros_gpio *__weak variant_cros_gpios(size_t *num)

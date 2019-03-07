@@ -33,9 +33,9 @@
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/lapic.h>
-#include <arch/acpi.h>
 #include <memrange.h>
 #include <cpu/amd/mtrr.h>
+#include <assert.h>
 #if IS_ENABLED(CONFIG_X86_AMD_FIXED_MTRRS)
 #define MTRR_FIXED_WRBACK_BITS (MTRR_READ_MEM | MTRR_WRITE_MEM)
 #else
@@ -331,6 +331,7 @@ static void commit_fixed_mtrrs(void)
 
 		desc = &fixed_mtrr_desc[i];
 		num_ranges = (desc->end - desc->begin) / desc->step;
+		ASSERT(num_ranges > 0);
 		for (j = 0; j < num_ranges; j += RANGES_PER_FIXED_MTRR) {
 			msr_index[msr_num] = desc->msr_index_base +
 				(j / RANGES_PER_FIXED_MTRR);

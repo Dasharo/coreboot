@@ -26,9 +26,8 @@
 #define VX900_MAX_DIMM_SLOTS 2
 #define VX900_MAX_MEM_RANKS 4
 
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <device/pci.h>
-
 #include <console/console.h>
 
 u32 vx900_get_tolm(void);
@@ -43,20 +42,8 @@ uint64_t get_uma_memory_base(void);
 
 #ifdef __SIMPLE_DEVICE__
 void dump_pci_device(pci_devfn_t dev);
-void pci_mod_config8(pci_devfn_t dev, unsigned int where,
-		     uint8_t clr_mask, uint8_t set_mask);
-void pci_mod_config16(pci_devfn_t dev, unsigned int where,
-		      uint16_t clr_mask, uint16_t set_mask);
-void pci_mod_config32(pci_devfn_t dev, unsigned int where,
-		      uint32_t clr_mask, uint32_t set_mask);
 #else
 void dump_pci_device(struct device *dev);
-void pci_mod_config8(struct device *dev, unsigned int where,
-		     uint8_t clr_mask, uint8_t set_mask);
-void pci_mod_config16(struct device *dev, unsigned int where,
-		      uint16_t clr_mask, uint16_t set_mask);
-void pci_mod_config32(struct device *dev, unsigned int where,
-		      uint32_t clr_mask, uint32_t set_mask);
 #endif
 
 #endif				/* __VX900_H */

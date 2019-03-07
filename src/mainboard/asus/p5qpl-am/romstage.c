@@ -15,19 +15,21 @@
  * GNU General Public License for more details.
  */
 
+#include <arch/io.h>
+#include <device/pnp_ops.h>
+#include <device/pci_ops.h>
 #include <console/console.h>
-#include <southbridge/intel/i82801gx/i82801gx.h>
-#include <southbridge/intel/common/gpio.h>
-#include <northbridge/intel/x4x/x4x.h>
-#include <cpu/x86/bist.h>
 #include <cpu/intel/romstage.h>
-#include <superio/winbond/w83627dhg/w83627dhg.h>
-#include <superio/winbond/common/winbond.h>
-#include <northbridge/intel/x4x/iomap.h>
-#include <device/pnp_def.h>
-#include <halt.h>
 #include <cpu/intel/speedstep.h>
+#include <cpu/x86/bist.h>
 #include <cpu/x86/msr.h>
+#include <halt.h>
+#include <northbridge/intel/x4x/iomap.h>
+#include <northbridge/intel/x4x/x4x.h>
+#include <southbridge/intel/common/gpio.h>
+#include <southbridge/intel/i82801gx/i82801gx.h>
+#include <superio/winbond/common/winbond.h>
+#include <superio/winbond/w83627dhg/w83627dhg.h>
 
 #define SERIAL_DEV PNP_DEV(0x2e, W83627DHG_SP1)
 #define GPIO_DEV PNP_DEV(0x2e, W83627DHG_GPIO2345_V)

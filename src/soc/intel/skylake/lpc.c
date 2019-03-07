@@ -21,7 +21,6 @@
 #include <device/pci.h>
 #include <pc80/isa-dma.h>
 #include <pc80/i8259.h>
-#include <arch/io.h>
 #include <arch/ioapic.h>
 #include <intelblocks/itss.h>
 #include <intelblocks/lpc_lib.h>
@@ -109,6 +108,8 @@ static void clock_gate_8254(struct device *dev)
 
 void lpc_soc_init(struct device *dev)
 {
+	const config_t *const config = dev->chip_info;
+
 	/* Legacy initialization */
 	isa_dma_init();
 	reg_script_run_on_dev(PCH_DEV_LPC, pch_misc_init_script);
@@ -117,10 +118,7 @@ void lpc_soc_init(struct device *dev)
 	lpc_enable_pci_clk_cntl();
 
 	/* Set LPC Serial IRQ mode */
-	if (IS_ENABLED(CONFIG_SERIRQ_CONTINUOUS_MODE))
-		lpc_set_serirq_mode(SERIRQ_CONTINUOUS);
-	else
-		lpc_set_serirq_mode(SERIRQ_QUIET);
+	lpc_set_serirq_mode(config->serirq_mode);
 
 	/* Interrupt configuration */
 	pch_enable_ioapic(dev);

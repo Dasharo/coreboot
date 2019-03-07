@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <commonlib/helpers.h>
 #include <console/console.h>
+#include <device/mmio.h>
 #include <delay.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -520,6 +521,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_SKL_CSE0,
 	PCI_DEVICE_ID_INTEL_CNP_H_CSE0,
 	PCI_DEVICE_ID_INTEL_ICL_CSE0,
+	PCI_DEVICE_ID_INTEL_CMP_CSE0,
 	0,
 };
 

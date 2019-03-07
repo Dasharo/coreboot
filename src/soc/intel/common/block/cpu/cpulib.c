@@ -16,7 +16,6 @@
  */
 
 #include <arch/acpigen.h>
-#include <arch/io.h>
 #include <console/console.h>
 #include <cpu/intel/turbo.h>
 #include <cpu/x86/msr.h>
@@ -322,6 +321,8 @@ void mca_configure(void *unused)
 	msr_t msr;
 	int i;
 	int num_banks;
+
+	printk(BIOS_DEBUG, "Clearing out pending MCEs\n");
 
 	msr = rdmsr(IA32_MCG_CAP);
 	num_banks = msr.lo & 0xff;

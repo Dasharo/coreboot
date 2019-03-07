@@ -16,9 +16,7 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <arch/io.h>
 #include <device/pci_def.h>
-#include <arch/acpi.h>
 #include <cpu/x86/msr.h>
 #include <cpu/amd/mtrr.h>
 

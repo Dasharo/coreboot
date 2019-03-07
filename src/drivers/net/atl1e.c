@@ -20,11 +20,13 @@
  * This driver sets the macaddress of a Atheros AR8121/AR8113/AR8114
  */
 
+#include <device/mmio.h>
 #include <device/device.h>
 #include <cbfs.h>
 #include <string.h>
 #include <console/console.h>
 #include <device/pci.h>
+#include <device/pci_ops.h>
 
 #define REG_SPI_FLASH_CTRL		0x200
 #define SPI_FLASH_CTRL_EN_VPD		0x2000

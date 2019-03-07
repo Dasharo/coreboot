@@ -19,7 +19,7 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <device/pci_ehci.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <soc/ehci.h>
 #include <soc/pch.h>
 

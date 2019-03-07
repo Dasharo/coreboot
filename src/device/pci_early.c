@@ -15,12 +15,12 @@
 
 #define __SIMPLE_DEVICE__
 
-#include <arch/io.h>
 #include <device/pci.h>
 #include <device/pci_def.h>
+#include <device/pci_ops.h>
+#include <device/pci_type.h>
 #include <delay.h>
 
-#if !ENV_RAMSTAGE
 unsigned pci_find_next_capability(pci_devfn_t dev, unsigned cap, unsigned last)
 {
 	unsigned pos = 0;
@@ -68,9 +68,6 @@ unsigned pci_find_capability(pci_devfn_t dev, unsigned cap)
 {
 	return pci_find_next_capability(dev, cap, 0);
 }
-#endif
-
-#if IS_ENABLED(CONFIG_EARLY_PCI_BRIDGE)
 
 static void pci_bridge_reset_secondary(pci_devfn_t p2p_bridge)
 {
@@ -167,4 +164,34 @@ void pci_early_bridge_init(void)
 
 	pci_early_mmio_window(p2p_bridge, CONFIG_EARLY_PCI_MMIO_BASE, 0x4000);
 }
-#endif /* CONFIG_EARLY_PCI_BRIDGE */
+
+/* FIXME: A lot of issues using the following, please avoid.
+ * Assumes 256 PCI busses, scans them all even when PCI bridges are still
+ * disabled. Probes all functions even if 0 is not present.
+ */
+pci_devfn_t pci_locate_device(unsigned int pci_id, pci_devfn_t dev)
+{
+	for (; dev <= PCI_DEV(255, 31, 7); dev += PCI_DEV(0, 0, 1)) {
+		unsigned int id;
+		id = pci_read_config32(dev, 0);
+		if (id == pci_id)
+			return dev;
+	}
+	return PCI_DEV_INVALID;
+}
+
+pci_devfn_t pci_locate_device_on_bus(unsigned int pci_id, unsigned int bus)
+{
+	pci_devfn_t dev, last;
+
+	dev = PCI_DEV(bus, 0, 0);
+	last = PCI_DEV(bus, 31, 7);
+
+	for (; dev <= last; dev += PCI_DEV(0, 0, 1)) {
+		unsigned int id;
+		id = pci_read_config32(dev, 0);
+		if (id == pci_id)
+			return dev;
+	}
+	return PCI_DEV_INVALID;
+}

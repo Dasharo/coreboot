@@ -83,7 +83,7 @@ void set_feature_ctrl_lock(void)
 	msr = rdmsr(IA32_FEATURE_CONTROL);
 
 	if (msr.lo & (1 << 0)) {
-		printk(BIOS_DEBUG, "IA32_FEATURE_CONTROL already locked; ");
+		printk(BIOS_DEBUG, "IA32_FEATURE_CONTROL already locked\n");
 		/* IA32_FEATURE_CONTROL locked. If we set it again we get an
 		 * illegal instruction
 		 */
@@ -113,9 +113,7 @@ void cpu_init_cppc_config(struct cppc_config *config, u32 version)
 		.space_id   = ACPI_ADDRESS_SPACE_FIXED,
 		.bit_width  = 8,
 		.bit_offset = 0,
-		{
-			.access_size = 4
-		},
+		.access_size = 4,
 		.addrl      = 0,
 		.addrh      = 0,
 	};
@@ -123,9 +121,7 @@ void cpu_init_cppc_config(struct cppc_config *config, u32 version)
 		.space_id   = ACPI_ADDRESS_SPACE_MEMORY,
 		.bit_width  = 0,
 		.bit_offset = 0,
-		{
-			.resv = 0
-		},
+		.access_size = 0,
 		.addrl      = 0,
 		.addrh      = 0,
 	};

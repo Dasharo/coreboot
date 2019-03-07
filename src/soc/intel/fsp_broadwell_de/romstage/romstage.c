@@ -17,7 +17,7 @@
 
 #include <stddef.h>
 #include <lib.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <arch/cbfs.h>
 #include <cbmem.h>
 #include <console/console.h>

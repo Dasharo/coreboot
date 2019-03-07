@@ -7,7 +7,7 @@ if EC_LENOVO_H8
 config SEABIOS_PS2_TIMEOUT
 	int
 	depends on PAYLOAD_SEABIOS
-	default 3000
+	default 5000
 
 config H8_BEEP_ON_DEATH
 	bool "Beep on fatal error"
@@ -27,6 +27,10 @@ config H8_SUPPORT_BT_ON_WIFI
 	help
 	  Disable BDC detection and assume bluetooth is installed. Required for
 	  bluetooth on wifi cards, as it's not possible to detect it in coreboot.
+
+config H8_HAS_BAT_TRESHOLDS_IMPL
+	bool
+	default n
 
 endif
 

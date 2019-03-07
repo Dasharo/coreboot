@@ -15,7 +15,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <arch/io.h>
 #include <arch/cbfs.h>
 #include <arch/early_variables.h>
 #include <bootblock_common.h>
@@ -47,8 +46,7 @@ static void platform_enter_postcar(void)
 	if (postcar_frame_init(&pcf, ROMSTAGE_RAM_STACK_SIZE))
 		die("Unable to initialize postcar frame.\n");
 	/* Cache the ROM as WP just below 4GiB. */
-	postcar_frame_add_mtrr(&pcf, CACHE_ROM_BASE, CACHE_ROM_SIZE,
-		MTRR_TYPE_WRPROT);
+	postcar_frame_add_romcache(&pcf, MTRR_TYPE_WRPROT);
 
 	/* Cache RAM as WB from 0 -> CACHE_TMP_RAMTOP. */
 	postcar_frame_add_mtrr(&pcf, 0, CACHE_TMP_RAMTOP, MTRR_TYPE_WRBACK);

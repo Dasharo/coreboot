@@ -23,8 +23,10 @@
 #include <console/console.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/msr.h>
+#include <device/mmio.h>
 #include <device/device.h>
 #include <device/pci.h>
+#include <device/pci_ops.h>
 #include <intelblocks/acpi.h>
 #include <intelblocks/chip.h>
 #include <intelblocks/fast_spi.h>
@@ -121,6 +123,9 @@ const char *soc_acpi_name(const struct device *dev)
 			case 5: return "HS06";
 			case 6: return "HS07";
 			case 7: return "HS08";
+			case 8:
+				if (IS_ENABLED(CONFIG_SOC_INTEL_GLK))
+					return "HS09";
 			}
 			break;
 		case 3:
@@ -751,6 +756,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	if (!xdci_can_enable())
 		dev->enabled = 0;
 	silconfig->UsbOtg = dev->enabled;
+
+	/* Set VTD feature according to devicetree */
+	silconfig->VtdEnable = cfg->enable_vtd;
 }
 
 struct chip_operations soc_intel_apollolake_ops = {

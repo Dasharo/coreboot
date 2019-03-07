@@ -17,11 +17,14 @@
 
 #include <stdint.h>
 #include <halt.h>
+#include <arch/io.h>
 #include <console/console.h>
 #include <cpu/intel/romstage.h>
 #include <cpu/x86/bist.h>
 #include <cpu/x86/lapic.h>
 #include <device/pci_def.h>
+#include <device/pci_ops.h>
+#include <device/pnp_ops.h>
 #include <device/pnp_def.h>
 #include <pc80/mc146818rtc.h>
 #include <northbridge/intel/i945/i945.h>

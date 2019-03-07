@@ -675,6 +675,7 @@ while true ; do
 			scanbuild=true
 			customizing="${customizing}, scan-build"
 			SCANBUILD_ARGS=${SCANBUILD_ARGS:-'-k'}
+			configoptions="${configoptions}CONFIG_FATAL_ASSERTS=y\n"
 			;;
 		-y|--ccache)    shift
 			customizing="${customizing}, ccache"
@@ -717,7 +718,7 @@ while true ; do
 			chromeos=true
 			testclass=chromeos
 			customizing="${customizing}, chrome os"
-			configoptions="${configoptions}CONFIG_CHROMEOS=y\n"
+			configoptions="${configoptions}CONFIG_CHROMEOS=y\nCONFIG_VBOOT_MEASURED_BOOT=y\n"
 			;;
 		-X|--xmlfile)	shift; XMLFILE=$1; REAL_XMLFILE=$1; shift;;
 		-I|--recursive) shift; recursive=true;;

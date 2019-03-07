@@ -188,7 +188,7 @@ static const struct pad_config gpio_table[] = {
 /* I2S2_SCLK */		PAD_NC(GPP_H0, NONE),
 /* I2S2_SFRM */		PAD_CFG_NF(GPP_H1, NONE, DEEP, NF3), /* CNV_RF_RESET# */
 /* I2S2_TXD */		PAD_CFG_NF(GPP_H2, NONE, DEEP, NF3), /* CLKREQ_CNV# */
-/* I2S2_RXD */		PAD_NC(GPP_H3, NONE),
+/* I2S2_RXD */		PAD_CFG_GPO(GPP_H3, 0, DEEP), /* CNVI_EN# */
 /* I2C2_SDA */		PAD_NC(GPP_H4, NONE), /* T388 */
 /* I2C2_SCL */		PAD_NC(GPP_H5, NONE), /* T389 */
 /* I2C3_SDA */		PAD_NC(GPP_H6, NONE), /* T378 */
@@ -200,7 +200,7 @@ static const struct pad_config gpio_table[] = {
 /* M2_SKT2_CFG0 */	PAD_NC(GPP_H12, NONE),
 /* M2_SKT2_CFG1 */	PAD_NC(GPP_H13, NONE),
 /* M2_SKT2_CFG2 */	PAD_NC(GPP_H14, NONE),
-/* M2_SKT2_CFG3 */	PAD_NC(GPP_H15, NONE),
+/* M2_SKT2_CFG3 */      PAD_CFG_GPO(GPP_H15, 1, DEEP), /* BT_RADIO_DIS# */
 /* DDPF_CTRLCLK */	PAD_NC(GPP_H16, NONE),
 /* DPPF_CTRLDATA */	PAD_NC(GPP_H17, NONE),
 /* CPU_C10_GATE# */	PAD_CFG_NF(GPP_H18, NONE, DEEP, NF1), /* C10_GATE# */

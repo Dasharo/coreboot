@@ -14,7 +14,8 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/io.h>
+#include <device/mmio.h>
+#include <device/pci_ops.h>
 #include "pch.h"
 #include "cpu/intel/model_206ax/model_206ax.h"
 #include <cpu/x86/msr.h>

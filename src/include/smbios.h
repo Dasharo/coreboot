@@ -53,18 +53,18 @@ u8 smbios_mainboard_enclosure_type(void);
 const char *smbios_mainboard_family(void);
 #endif
 
-#define BIOS_CHARACTERISTICS_PCI_SUPPORTED  (1 << 7)
-#define BIOS_CHARACTERISTICS_PC_CARD  (1 << 8)
-#define BIOS_CHARACTERISTICS_PNP  (1 << 9)
-#define BIOS_CHARACTERISTICS_APM (1 << 10)
-#define BIOS_CHARACTERISTICS_UPGRADEABLE      (1 << 11)
-#define BIOS_CHARACTERISTICS_SHADOW           (1 << 12)
-#define BIOS_CHARACTERISTICS_BOOT_FROM_CD     (1 << 15)
-#define BIOS_CHARACTERISTICS_SELECTABLE_BOOT  (1 << 16)
-#define BIOS_CHARACTERISTICS_BIOS_SOCKETED    (1 << 17)
+#define BIOS_CHARACTERISTICS_PCI_SUPPORTED	(1 << 7)
+#define BIOS_CHARACTERISTICS_PC_CARD		(1 << 8)
+#define BIOS_CHARACTERISTICS_PNP		(1 << 9)
+#define BIOS_CHARACTERISTICS_APM		(1 << 10)
+#define BIOS_CHARACTERISTICS_UPGRADEABLE	(1 << 11)
+#define BIOS_CHARACTERISTICS_SHADOW		(1 << 12)
+#define BIOS_CHARACTERISTICS_BOOT_FROM_CD	(1 << 15)
+#define BIOS_CHARACTERISTICS_SELECTABLE_BOOT	(1 << 16)
+#define BIOS_CHARACTERISTICS_BIOS_SOCKETED	(1 << 17)
 
-#define BIOS_EXT1_CHARACTERISTICS_ACPI    (1 << 0)
-#define BIOS_EXT2_CHARACTERISTICS_TARGET  (1 << 2)
+#define BIOS_EXT1_CHARACTERISTICS_ACPI		(1 << 0)
+#define BIOS_EXT2_CHARACTERISTICS_TARGET	(1 << 2)
 
 #define BIOS_MEMORY_ECC_SINGLE_BIT_CORRECTING	(1 << 3)
 #define BIOS_MEMORY_ECC_DOUBLE_BIT_CORRECTING	(1 << 4)
@@ -84,6 +84,21 @@ const char *smbios_mainboard_family(void);
 #define MEMORY_TYPE_DETAIL_NON_VOLATILE		(1 << 12)
 #define MEMORY_TYPE_DETAIL_REGISTERED		(1 << 13)
 #define MEMORY_TYPE_DETAIL_UNBUFFERED		(1 << 14)
+#define MEMORY_TYPE_DETAIL_LRDIMM		(1 << 15)
+
+#define MEMORY_TECHNOLOGY_OTHER			0x01
+#define MEMORY_TECHNOLOGY_UNKNOWN		0x02
+#define MEMORY_TECHNOLOGY_DRAM			0x03
+#define MEMORY_TECHNOLOGY_NVDIMM_N		0x04
+#define MEMORY_TECHNOLOGY_NVDIMM_F		0x05
+#define MEMORY_TECHNOLOGY_NVDIMM_P		0x06
+#define MEMORY_TECHNOLOGY_INTEL_PERSISTENT	0x07
+
+#define MEMORY_OPERATING_MODE_CAP_OTHER				(1 << 1)
+#define MEMORY_OPERATING_MODE_CAP_UNKNOWN			(1 << 2)
+#define MEMORY_OPERATING_MODE_CAP_VOLATILE			(1 << 3)
+#define MEMORY_OPERATING_MODE_CAP_BYTE_ACCESS_PERSISTENT	(1 << 4)
+#define MEMORY_OPERATING_MODE_CAP_BLOCK_ACCESS_PERSISTENT	(1 << 5)
 
 typedef enum {
 	MEMORY_BUS_WIDTH_8 = 0,
@@ -236,6 +251,7 @@ struct smbios_type0 {
 	u8 system_bios_minor_release;
 	u8 ec_major_release;
 	u8 ec_minor_release;
+	u16 extended_bios_rom_size;
 	u8 eos[2];
 } __packed;
 
@@ -478,6 +494,7 @@ struct smbios_type38 {
 	u64 base_address;
 	u8 base_address_modifier;
 	u8 irq;
+	u8 eos[2];
 } __packed;
 
 enum smbios_bmc_interface_type {
@@ -485,6 +502,7 @@ enum smbios_bmc_interface_type {
 	SMBIOS_BMC_INTERFACE_KCS,
 	SMBIOS_BMC_INTERFACE_SMIC,
 	SMBIOS_BMC_INTERFACE_BLOCK,
+	SMBIOS_BMC_INTERFACE_SMBUS,
 };
 
 typedef enum {

@@ -888,13 +888,15 @@ void config_gpp_core(struct device *nb_dev, struct device *sb_dev)
 void pcie_config_misc_clk(struct device *nb_dev)
 {
 	u32 reg;
-	//struct bus pbus; /* fake bus for dev0 fun1 */
 
 	reg = pci_read_config32(nb_dev, 0x4c);
 	reg |= 1 << 0;
 	pci_write_config32(nb_dev, 0x4c, reg);
 
-#if 0				/* TODO: Check the mics clock later. */
+#if 0
+	/* TODO: Check the mics clock later. */
+	pci_devfn_t d0f1 = PCI_DEV(0, 0, 1);
+
 	if (AtiPcieCfg.Config & PCIE_GFX_CLK_GATING) {
 		/* TXCLK Clock Gating */
 		set_nbmisc_enable_bits(nb_dev, 0x07, 3 << 0, 3 << 0);
@@ -902,9 +904,9 @@ void pcie_config_misc_clk(struct device *nb_dev)
 		set_pcie_enable_bits(nb_dev, 0x11 | PCIE_CORE_INDEX_GFX, (3 << 6) | (~0xf), 3 << 6);
 
 		/* LCLK Clock Gating */
-		reg =  pci_cf8_conf1.read32(&pbus, 0, 1, 0x94);
+		reg = pci_io_read_config32(d0f1, 0x94);
 		reg &= ~(1 << 16);
-		pci_cf8_conf1.write32(&pbus, 0, 1, 0x94, reg);
+		pci_io_write_config32(d0f1, 0x94, reg);
 	}
 
 	if (AtiPcieCfg.Config & PCIE_GPP_CLK_GATING) {
@@ -914,9 +916,9 @@ void pcie_config_misc_clk(struct device *nb_dev)
 		set_pcie_enable_bits(nb_dev, 0x11 | PCIE_CORE_INDEX_SB, (3 << 6) | (~0xf), 3 << 6);
 
 		/* LCLK Clock Gating */
-		reg =  pci_cf8_conf1.read32(&pbus, 0, 1, 0x94);
+		reg = pci_io_read_config32(d0f1, 0x94);
 		reg &= ~(1 << 24);
-		pci_cf8_conf1.write32(&pbus, 0, 1, 0x94, reg);
+		pci_io_write_config32(d0f1, 0x94, reg);
 	}
 #endif
 

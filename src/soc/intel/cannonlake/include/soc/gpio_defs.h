@@ -19,8 +19,8 @@
 #ifndef __ACPI__
 #include <stddef.h>
 #endif
+#include <soc/gpio_common.h>
 #include <soc/gpio_soc_defs.h>
-
 
 #define GPIO_NUM_PAD_CFG_REGS   4 /* DW0, DW1, DW2, DW3 */
 
@@ -250,7 +250,4 @@
 #define GPI_SMI_EN_0				0x1A0
 #define PAD_CFG_BASE				0x600
 
-#define GPIORXSTATE_MASK			0x1
-#define GPIORXSTATE_SHIFT			1
-#define GPIOTXSTATE_MASK			0x1
 #endif

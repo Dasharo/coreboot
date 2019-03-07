@@ -17,9 +17,11 @@
  * so this one is named with prefix mainboard.
  */
 
+#include <arch/io.h>
 #include <lib.h>
 #include <timestamp.h>
 #include <console/console.h>
+#include <device/pci_ops.h>
 #include <cbmem.h>
 #include <romstage_handoff.h>
 #include <southbridge/intel/i82801gx/i82801gx.h>

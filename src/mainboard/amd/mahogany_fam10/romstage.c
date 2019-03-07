@@ -17,16 +17,10 @@
 #define SYSTEM_TYPE 1	/* DESKTOP */
 //#define SYSTEM_TYPE 2	/* MOBILE */
 
-//used by incoherent_ht
-#define FAM10_SCAN_PCI_BUS 0
-#define FAM10_ALLOCATE_IO_RANGE 0
-
 #include <stdint.h>
 #include <string.h>
 #include <device/pci_def.h>
-#include <arch/io.h>
 #include <arch/cpu.h>
-#include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
 #include <timestamp.h>

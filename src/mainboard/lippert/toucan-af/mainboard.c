@@ -17,10 +17,10 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <arch/io.h>
+#include <device/mmio.h>
+#include <device/pci_ops.h>
 #include <device/pci_def.h>
 #include <southbridge/amd/sb800/sb800.h>
-#include <arch/acpi.h>
 #include <southbridge/amd/cimx/sb800/SBPLATFORM.h>
 #include <vendorcode/amd/cimx/sb800/OEM.h> /* SMBUS0_BASE_ADDRESS */
 #include <southbridge/amd/cimx/sb800/gpio_oem.h>
