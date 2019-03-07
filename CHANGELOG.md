@@ -18,6 +18,8 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 - rebased with official coreboot repository commit 7a732b4
 - sortbootorder updated to v4.6.13 introducing CPU boost runtime configuration
 - firmware is now built with coreboot SDK 1.52
+- configured pull-ups on WLAN_DISABLE# pins on the mPCIe connectors which could
+  cause issues with certain modems when floating
 
 ### Fixed
 - [microcode update option](https://github.com/pcengines/apu2-documentation/issues/75#issuecomment-462979810)
