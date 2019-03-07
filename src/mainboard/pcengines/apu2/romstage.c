@@ -243,6 +243,19 @@ static void early_lpc_init(void)
 
 	configure_gpio(IOMUX_GPIO_51, Function2, GPIO_51, setting);
 	configure_gpio(IOMUX_GPIO_55, Function3, GPIO_55, setting);
+
+	if (IS_ENABLED(CONFIG_BOARD_PCENGINES_APU2) ||
+		IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) ||
+		IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)) {
+		/* W_DIS# pins are connected directly to the SoC GPIOs without
+		 * any external pull-ups. This causes issues with certain mPCIe
+		 * modems. Configure pull-ups and output high in order to
+		 * prevent disabling WLAN on the modules. APU5 has hardware
+		 * pull-ups on the PCB.
+		 */
+		setting = GPIO_PULL_UP_ENABLE | GPIO_OUTPUT_VALUE;
+	}
+
 	configure_gpio(IOMUX_GPIO_64, Function2, GPIO_64, setting);
 	configure_gpio(IOMUX_GPIO_68, Function0, GPIO_68, setting);
 }
