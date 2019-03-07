@@ -11,6 +11,8 @@ extern const char coreboot_tag[];
 extern const char coreboot_extra_version[];
 extern const char coreboot_build[];
 extern const unsigned int coreboot_version_timestamp;
+extern const unsigned int coreboot_major_revision;
+extern const unsigned int coreboot_minor_revision;
 
 /* When coreboot was compiled */
 extern const char coreboot_compile_time[];
@@ -25,5 +27,8 @@ struct bcd_date {
 };
 
 extern const struct bcd_date coreboot_build_date;
+
+/* IASL version */
+extern const unsigned int asl_revision;
 
 #endif /* VERSION_H */

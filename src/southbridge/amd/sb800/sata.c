@@ -20,6 +20,7 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <arch/io.h>
+#include <device/mmio.h>
 #include "sb800.h"
 
 static int sata_drive_detect(int portnum, u16 iobar)
@@ -87,7 +88,6 @@ static void sata_init(struct device *dev)
 
 	struct device *sm_dev;
 	/* SATA SMBus Disable */
-	/* sm_dev = pci_locate_device(PCI_ID(0x1002, 0x4385), 0); */
 	sm_dev = pcidev_on_root(0x14, 0);
 
 	/* get rev_id */

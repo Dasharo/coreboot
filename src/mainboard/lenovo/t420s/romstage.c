@@ -16,7 +16,7 @@
  */
 
 #include <arch/byteorder.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <drivers/lenovo/hybrid_graphics/hybrid_graphics.h>
@@ -85,7 +85,8 @@ const struct southbridge_usb_port mainboard_usb_ports[] = {
 	{ 1, 1, -1 }, /* P13: camera (LCD), no OC */
 };
 
-void mainboard_get_spd(spd_raw_data *spd, bool id_only) {
+void mainboard_get_spd(spd_raw_data *spd, bool id_only)
+{
 	read_spd(&spd[0], 0x50, id_only);
 	read_spd(&spd[2], 0x51, id_only);
 }

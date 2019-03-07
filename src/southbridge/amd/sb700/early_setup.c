@@ -20,8 +20,10 @@
 #include <stdint.h>
 #include <option.h>
 #include <arch/io.h>
+#include <device/pci_ops.h>
 #include <console/console.h>
 #include <cpu/x86/msr.h>
+#include <device/pci.h>
 
 #include <reset.h>
 #include "sb700.h"

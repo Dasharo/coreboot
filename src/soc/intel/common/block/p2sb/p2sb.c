@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -167,6 +167,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CNL_P2SB,
 	PCI_DEVICE_ID_INTEL_CNP_H_P2SB,
 	PCI_DEVICE_ID_INTEL_ICL_P2SB,
+	PCI_DEVICE_ID_INTEL_CMP_P2SB,
 	0,
 };
 

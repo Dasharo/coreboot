@@ -16,8 +16,7 @@
 
 #include <stdint.h>
 #include <device/pci_def.h>
-#include <io.h>
-#include <arch/pci_io_cfg.h>
+#include <device/pci_ops.h>
 #include <soc/uart.h>
 
 #define MY_PCI_DEV(SEGBUS, DEV, FN) \

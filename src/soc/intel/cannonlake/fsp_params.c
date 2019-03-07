@@ -88,6 +88,13 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	mainboard_silicon_init_params(params);
 
+	/* Set PsysPmax if it is available from DT */
+	if (config->psys_pmax) {
+		printk(BIOS_DEBUG, "psys_pmax = %dW\n", config->psys_pmax);
+		/* PsysPmax is in unit of 1/8 Watt */
+		tconfig->PsysPmax = config->psys_pmax * 8;
+	}
+
 	/* Unlock upper 8 bytes of RTC RAM */
 	params->PchLockDownRtcMemoryLock = 0;
 
@@ -163,6 +170,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		dev->enabled = 0;
 	params->XdciEnable = dev->enabled;
 
+	/* Set Debug serial port */
+	params->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;
+
 	/* Enable CNVi Wifi if enabled in device tree */
 	dev = dev_find_slot(0, PCH_DEVFN_CNViWIFI);
 	params->PchCnviMode = dev->enabled;
@@ -178,6 +188,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	       sizeof(config->PcieClkSrcClkReq));
 	memcpy(params->PcieRpLtrEnable, config->PcieRpLtrEnable,
 	       sizeof(config->PcieRpLtrEnable));
+	memcpy(params->PcieRpHotPlug, config->PcieRpHotPlug,
+	       sizeof(config->PcieRpHotPlug));
 
 	/* eMMC and SD */
 	dev = dev_find_slot(0, PCH_DEVFN_EMMC);
@@ -196,10 +208,13 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	dev = dev_find_slot(0, PCH_DEVFN_SDCARD);
-	if (!dev)
+	if (!dev) {
 		params->ScsSdCardEnabled = 0;
-	else
+	} else {
 		params->ScsSdCardEnabled = dev->enabled;
+		params->SdCardPowerEnableActiveHigh =
+			IS_ENABLED(CONFIG_MB_HAS_ACTIVE_HIGH_SD_PWR_ENABLE);
+	}
 
 	dev = dev_find_slot(0, PCH_DEVFN_UFS);
 	if (!dev)

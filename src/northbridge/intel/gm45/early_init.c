@@ -14,7 +14,7 @@
  */
 
 #include <stdint.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include "gm45.h"
 
 void gm45_early_init(void)

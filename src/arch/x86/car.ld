@@ -26,9 +26,9 @@
 	.  += 4096 * CONFIG_NUM_CAR_PAGE_TABLE_PAGES;
 	_epagetables = . ;
 #endif
-	/* Vboot work buffer is completely volatile outside of verstage and
-	 * romstage. Appropriate code needs to handle the transition. */
-#if IS_ENABLED(CONFIG_VBOOT_SEPARATE_VERSTAGE)
+	/* Vboot work buffer only needs to be available when verified boot
+	 * starts in bootblock. */
+#if IS_ENABLED(CONFIG_VBOOT_STARTS_IN_BOOTBLOCK)
 	VBOOT2_WORK(., 16K)
 #endif
 	/* Stack for CAR stages. Since it persists across all stages that
@@ -61,11 +61,6 @@
 	 * to reside in the migrated area (between _car_relocatable_data_start
 	 * and _car_relocatable_data_end). */
 	TIMESTAMP(., 0x200)
-#if IS_ENABLED(CONFIG_COMMONLIB_STORAGE)
-	_car_drivers_storage_start = .;
-	. += 256;
-	_car_drivers_storage_end = .;
-#endif
 	_car_ehci_dbg_info_start = .;
 	/* Reserve sizeof(struct ehci_dbg_info). */
         . += 80;
@@ -89,6 +84,14 @@
 	. = ALIGN(ARCH_POINTER_ALIGN_SIZE);
 	_car_global_end = .;
 	_car_relocatable_data_end = .;
+
+#if IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SANDYBRIDGE) && \
+    !IS_ENABLED(CONFIG_USE_NATIVE_RAMINIT)
+	. = ABSOLUTE(0xff7e1000);
+	_mrc_pool = .;
+	. += 0x5000;
+	_emrc_pool = .;
+#endif
 
 #if !IS_ENABLED(CONFIG_C_ENVIRONMENT_BOOTBLOCK)
 	_car_stack_start = .;

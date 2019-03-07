@@ -36,8 +36,6 @@
 #include <soc/gpio_defs.h>
 #endif
 
-
-
 struct soc_intel_cannonlake_config {
 
 	/* Common struct containing soc config data required by common code */
@@ -109,7 +107,7 @@ struct soc_intel_cannonlake_config {
 	enum {
 		SaGv_Disabled,
 		SaGv_FixedLow,
-#if !IS_ENABLED(CONFIG_SOC_INTEL_COFFEELAKE)
+#if !IS_ENABLED(CONFIG_SOC_INTEL_COMMON_CANNONLAKE_BASE)
 		SaGv_FixedMid,
 #endif
 		SaGv_FixedHigh,
@@ -164,6 +162,8 @@ struct soc_intel_cannonlake_config {
 	uint8_t PcieClkSrcClkReq[CONFIG_MAX_ROOT_PORTS];
 	/* PCIe LTR(Latency Tolerance Reporting) mechanism */
 	uint8_t PcieRpLtrEnable[CONFIG_MAX_ROOT_PORTS];
+	/* Enable/Disable HotPlug support for Root Port */
+	uint8_t PcieRpHotPlug[CONFIG_MAX_ROOT_PORTS];
 
 	/* eMMC and SD */
 	uint8_t ScsEmmcHs400Enabled;
@@ -218,6 +218,8 @@ struct soc_intel_cannonlake_config {
 	uint32_t tdp_psyspl3_dutycycle;
 	/* PL4 Value in Watts */
 	uint32_t tdp_pl4;
+	/* Estimated maximum platform power in Watts */
+	uint16_t psys_pmax;
 
 	/* Intel Speed Shift Technology */
 	uint8_t speed_shift_enable;

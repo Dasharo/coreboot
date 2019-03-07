@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/i2c_simple.h>
@@ -223,6 +223,12 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_ICP_I2C3,
 	PCI_DEVICE_ID_INTEL_ICP_I2C4,
 	PCI_DEVICE_ID_INTEL_ICP_I2C5,
+	PCI_DEVICE_ID_INTEL_CMP_I2C0,
+	PCI_DEVICE_ID_INTEL_CMP_I2C1,
+	PCI_DEVICE_ID_INTEL_CMP_I2C2,
+	PCI_DEVICE_ID_INTEL_CMP_I2C3,
+	PCI_DEVICE_ID_INTEL_CMP_I2C4,
+	PCI_DEVICE_ID_INTEL_CMP_I2C5,
 	0,
 };
 

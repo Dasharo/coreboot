@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 #include <arch/cpu.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <device/pci_def.h>
 #include <console/console.h>
 #include <cpu/intel/romstage.h>

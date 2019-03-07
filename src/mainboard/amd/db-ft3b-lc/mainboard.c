@@ -14,8 +14,6 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/acpi.h>
-#include <arch/io.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>

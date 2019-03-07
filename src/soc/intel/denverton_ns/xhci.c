@@ -18,7 +18,7 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>

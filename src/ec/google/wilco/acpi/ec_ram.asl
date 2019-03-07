@@ -53,6 +53,7 @@ Name (P5U1, Package () { 0x04, 0x01, RD })	/* PmSt5_BAT1_UPDATE */
 Name (P6ST, Package () { 0x05, 0xff, RD })	/* PmSt6 */
 Name (P6AC, Package () { 0x05, 0x08, RD })	/* PmSt6_AC_UPDATE */
 
+Name (PWSR, Package () { 0x06, 0xff, RD })	/* POWER_SOURCE */
 Name (ACEX, Package () { 0x06, 0x01, RD })	/* AC Present */
 Name (BTEX, Package () { 0x06, 0x02, RD })	/* Battery Present */
 Name (BTSC, Package () { 0x06, 0x04, RD })	/* Battery Status Changed */
@@ -115,16 +116,12 @@ Name (DRHY, Package () { 0x37, 0xff, RD })	/* DPTF: Read Hysteresis */
 Name (DRTQ, Package () { 0x38, 0xff, RD })	/* DPTF: Read Trip Query */
 
 Name (ORST, Package () { 0x39, 0xff, RD })	/* Orientation State */
+Name (OTBL, Package () { 0x39, 0x02, RD })	/* Orientation: Tablet mode */
 Name (OREV, Package () { 0x3a, 0xff, RD })	/* Orientation Events */
 Name (OECH, Package () { 0x3a, 0x01, RD })	/* Event: Orientation */
 Name (OERL, Package () { 0x3a, 0x02, RD })	/* Event: Rotation Lock */
 
 Name (BCCY, Package () { 0x3e, 0xffff, RD })	/* BCACHE: Cycle Count */
-
-Name (APWR, Package () { 0x47, 0xff, RD })	/* POWER: Full Status */
-Name (APAC, Package () { 0x47, 0x01, RD })	/* POWER: AC */
-Name (APB1, Package () { 0x47, 0x02, RD })	/* POWER: Main Battery */
-Name (APC1, Package () { 0x47, 0x04, RD })	/* POWER: Main Batt Status */
 
 /*
  * EC RAM WRITE
@@ -142,3 +139,5 @@ Name (DWTL, Package () { 0x35, 0xff, WR })	/* DPTF: Write Trip Low */
 Name (DWTH, Package () { 0x36, 0xff, WR })	/* DPTF: Write Trip High */
 Name (DWHY, Package () { 0x37, 0xff, WR })	/* DPTF: Write Hysteresis */
 Name (DWTQ, Package () { 0x38, 0xff, WR })	/* DPTF: Write Trip Query */
+Name (CSOS, Package () { 0xb8, 0xff, WR })	/* OS support for S0ix */
+Name (CSEX, Package () { 0xb9, 0xff, WR })	/* OS enter(1)/exit(0) S0ix */

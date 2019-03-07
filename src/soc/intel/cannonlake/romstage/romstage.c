@@ -13,8 +13,6 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/io.h>
-#include <arch/early_variables.h>
 #include <assert.h>
 #include <chip.h>
 #include <cpu/x86/mtrr.h>
@@ -93,6 +91,7 @@ static void save_dimm_info(void)
 				src_dimm->DimmCapacity,
 				memory_info_hob->MemoryType,
 				memory_info_hob->ConfiguredMemoryClockSpeed,
+				src_dimm->RankInDimm,
 				channel_info->ChannelId,
 				src_dimm->DimmId,
 				(const char *)src_dimm->ModulePartNum,

@@ -15,7 +15,6 @@
 
 #include <arch/cpu.h>
 #include <arch/early_variables.h>
-#include <arch/io.h>
 #include <arch/symbols.h>
 #include <assert.h>
 #include <cpu/x86/mtrr.h>
@@ -121,6 +120,7 @@ static void save_dimm_info(void)
 				src_dimm->DimmCapacity,
 				ddr_type,
 				memory_info_hob->ConfiguredMemoryClockSpeed,
+				src_dimm->RankInDimm,
 				channel_info->ChannelId,
 				src_dimm->DimmId,
 				(const char *)src_dimm->ModulePartNum,
@@ -225,7 +225,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->RMT = config->Rmt;
 	m_cfg->CmdTriStateDis = config->CmdTriStateDis;
 	m_cfg->DdrFreqLimit = config->DdrFreqLimit;
-	m_cfg->VmxEnable = config->VmxEnable;
+	m_cfg->VmxEnable = IS_ENABLED(CONFIG_ENABLE_VMX);
 	m_cfg->PrmrrSize = config->PrmrrSize;
 	for (i = 0; i < ARRAY_SIZE(config->PcieRpEnable); i++) {
 		if (config->PcieRpEnable[i])

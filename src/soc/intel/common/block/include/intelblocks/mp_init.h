@@ -37,12 +37,18 @@
 #define CPUID_APOLLOLAKE_E0	0x506ca
 #define CPUID_GLK_A0		0x706a0
 #define CPUID_GLK_B0		0x706a1
+#define CPUID_WHISKEYLAKE_V0	0x806ec
 #define CPUID_WHISKEYLAKE_W0	0x806eb
 #define CPUID_COFFEELAKE_D0	0x806ea
 #define CPUID_COFFEELAKE_U0	0x906ea
 
 #define CPUID_ICELAKE_A0	0x706e0
 #define CPUID_ICELAKE_B0	0x706e1
+#define CPUID_COMETLAKE_U_A0		0xa0660
+#define CPUID_COMETLAKE_U_K0_S0		0xa0661
+#define CPUID_COMETLAKE_H_S_6_2_P0	0xa0650
+#define CPUID_COMETLAKE_H_S_10_2_P0	0xa0651
+
 /*
  * MP Init callback function to Find CPU Topology. This function is common
  * among all SOCs and thus its in Common CPU block.

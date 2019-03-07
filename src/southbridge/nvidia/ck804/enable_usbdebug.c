@@ -21,7 +21,7 @@
 #define __SIMPLE_DEVICE__
 
 #include <stdint.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <device/pci_ehci.h>
 #include <device/pci_def.h>
 #include "ck804.h"

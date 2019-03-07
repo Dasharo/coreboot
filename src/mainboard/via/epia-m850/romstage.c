@@ -18,10 +18,9 @@
  * Inspired from the EPIA-M700
  */
 #include <stdint.h>
-#include <device/pci_def.h>
-#include <arch/io.h>
-#include <device/pnp_def.h>
 #include <console/console.h>
+#include <device/pci_ops.h>
+#include <device/pci_def.h>
 #include <lib.h>
 #include <cpu/x86/bist.h>
 #include <string.h>
@@ -96,5 +95,5 @@ void main(unsigned long bist)
 
 	/* FIXME: See if this is needed or take this out please */
 	/* Disable Memcard and SDIO */
-	pci_mod_config8(LPC, 0x51, 0, (1 << 7) | (1 << 4));
+	pci_or_config8(LPC, 0x51, (1 << 7) | (1 << 4));
 }

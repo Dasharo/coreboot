@@ -15,18 +15,19 @@
  * GNU General Public License for more details.
  */
 
+#include <device/pnp_ops.h>
+#include <device/pci_ops.h>
 #include <console/console.h>
-#include <southbridge/intel/i82801gx/i82801gx.h>
-#include <southbridge/intel/common/gpio.h>
-#include <northbridge/intel/x4x/x4x.h>
-#include <cpu/x86/bist.h>
 #include <cpu/intel/romstage.h>
-#include <superio/nuvoton/nct6776/nct6776.h>
-#include <superio/winbond/w83627dhg/w83627dhg.h>
-#include <superio/winbond/common/winbond.h>
-#include <superio/nuvoton/common/nuvoton.h>
+#include <cpu/x86/bist.h>
 #include <northbridge/intel/x4x/iomap.h>
-#include <device/pnp_def.h>
+#include <northbridge/intel/x4x/x4x.h>
+#include <southbridge/intel/common/gpio.h>
+#include <southbridge/intel/i82801gx/i82801gx.h>
+#include <superio/nuvoton/common/nuvoton.h>
+#include <superio/nuvoton/nct6776/nct6776.h>
+#include <superio/winbond/common/winbond.h>
+#include <superio/winbond/w83627dhg/w83627dhg.h>
 
 #define SERIAL_DEV_R2 PNP_DEV(0x2e, NCT6776_SP1)
 #define SERIAL_DEV_R1 PNP_DEV(0x2e, W83627DHG_SP1)

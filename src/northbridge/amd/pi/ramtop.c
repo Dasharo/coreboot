@@ -14,7 +14,7 @@
 #define __SIMPLE_DEVICE__
 
 #include <stdint.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <cbmem.h>
 
 #define CBMEM_TOP_SCRATCHPAD 0x78

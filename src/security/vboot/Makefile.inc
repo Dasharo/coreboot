@@ -22,7 +22,13 @@ ramstage-y += bootmode.c
 verstage-y += bootmode.c
 postcar-y += bootmode.c
 
-verstage-generic-ccopts += -D__PRE_RAM__ -D__VERSTAGE__
+# When VBOOT_STARTS_IN_ROMSTAGE is selected, DRAM is already up by
+# the time verstage runs.
+ifneq ($(CONFIG_VBOOT_STARTS_IN_ROMSTAGE),y)
+verstage-generic-ccopts += -D__PRE_RAM__
+endif
+
+verstage-generic-ccopts += -D__VERSTAGE__
 
 ramstage-y += gbb.c
 
@@ -62,6 +68,13 @@ verstage-y += vboot_common.c
 romstage-y += vboot_common.c
 ramstage-y += vboot_common.c
 postcar-y += vboot_common.c
+
+ifeq ($(CONFIG_VBOOT_MEASURED_BOOT),y)
+verstage-y += vboot_crtm.c
+romstage-y += vboot_crtm.c
+ramstage-y += vboot_crtm.c
+postcar-y += vboot_crtm.c
+endif
 
 bootblock-y += common.c
 verstage-y += vboot_logic.c

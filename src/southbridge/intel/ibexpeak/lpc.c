@@ -23,6 +23,8 @@
 #include <pc80/isa-dma.h>
 #include <pc80/i8259.h>
 #include <arch/io.h>
+#include <device/mmio.h>
+#include <device/pci_ops.h>
 #include <arch/ioapic.h>
 #include <arch/acpi.h>
 #include <arch/cpu.h>
@@ -655,7 +657,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	u16 pmbase = pci_read_config16(dev, 0x40) & 0xfffe;
 	int c2_latency;
 
-	fadt->model = 1;
+	fadt->reserved = 0;
 
 	fadt->sci_int = 0x9;
 	fadt->smi_cmd = APM_CNT;

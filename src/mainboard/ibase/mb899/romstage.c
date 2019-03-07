@@ -18,6 +18,8 @@
 #include <stdint.h>
 #include <halt.h>
 #include <arch/io.h>
+#include <device/pnp_ops.h>
+#include <device/pci_ops.h>
 #include <console/console.h>
 #include <cpu/intel/romstage.h>
 #include <cpu/x86/bist.h>

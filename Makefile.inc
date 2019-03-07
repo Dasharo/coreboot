@@ -146,6 +146,7 @@ int-lt=$(if $(filter 1,$(words $1)),$(strip $1),$(shell expr $(call _toint,$(wor
 int-gt=$(if $(filter 1,$(words $1)),$(strip $1),$(shell expr $(call _toint,$(word 1,$1)) \> $(call _toint,$(word 2,$1))))
 int-eq=$(if $(filter 1,$(words $1)),$(strip $1),$(shell expr $(call _toint,$(word 1,$1)) = $(call _toint,$(word 2,$1))))
 int-align=$(shell A=$(call _toint,$1) B=$(call _toint,$2); expr $$A + \( \( $$B - \( $$A % $$B \) \) % $$B \) )
+int-align-down=$(shell A=$(call _toint,$1) B=$(call _toint,$2); expr $$A - \( $$A % $$B \) )
 file-size=$(strip $(shell cat $1 | wc -c))
 tolower=$(shell echo '$1' | tr '[:upper:]' '[:lower:]')
 toupper=$(shell echo '$1' | tr '[:lower:]' '[:upper:]')
@@ -215,7 +216,9 @@ verstage-c-deps:=$$(OPTION_TABLE_H)
 bootblock-c-deps:=$$(OPTION_TABLE_H)
 $(foreach type,ads adb, \
   $(foreach stage,$(COREBOOT_STANDARD_STAGES), \
-    $(eval $(stage)-$(type)-deps := $(obj)/libgnat-$(ARCH-$(stage)-y)/libgnat.a)))
+    $(eval $(stage)-$(type)-deps := \
+	$(obj)/$(stage)/$(notdir $(KCONFIG_AUTOADS)) \
+	$(obj)/libgnat-$(ARCH-$(stage)-y)/libgnat.a)))
 
 # Add handler to copy linker scripts
 define generic-objs_ld_template_gen
@@ -262,8 +265,8 @@ cbfs-files-$(if $(2),$(2),y) += $(CONFIG_CBFS_PREFIX)/$(1).aml
 -include $(obj)/$(1).d
 $(obj)/$(1).aml: $(src)/mainboard/$(MAINBOARDDIR)/$(1).asl $(obj)/config.h
 	@printf "    IASL       $$(subst $(top)/,,$$(@))\n"
-	$(CC_ramstage) -x assembler-with-cpp -E -MMD -MT $$(@) $$(CPPFLAGS_ramstage) -D__ACPI__ -P -include $(src)/include/kconfig.h -I$(obj) -I$(src) -I$(src)/include -I$(src)/arch/$(ARCHDIR-$(ARCH-ramstage-y))/include -I$(src)/mainboard/$(MAINBOARDDIR) $$< -o $$@
-	cd $$(dir $$@); $(IASL) $(IGNORED_IASL_WARNINGS) -we -p $$(notdir $$@) $$(notdir $$@)
+	$(CC_ramstage) -x assembler-with-cpp -E -MMD -MT $$(@) $$(CPPFLAGS_ramstage) -D__ACPI__ -P -include $(src)/include/kconfig.h -I$(obj) -I$(src) -I$(src)/include -I$(src)/arch/$(ARCHDIR-$(ARCH-ramstage-y))/include -I$(src)/mainboard/$(MAINBOARDDIR) $$< -o $(obj)/$(1).asl
+	cd $$(dir $$@); $(IASL) $(IGNORED_IASL_WARNINGS) -we -p $$(notdir $$@) $(1).asl
 	if [ -z "$$$$($(IASL) -d $$@ 2>&1 | grep 'ACPI Warning')" ]; then echo "    IASL       $$@ disassembled correctly."; true; else echo "Error: Could not correctly disassemble $$@"; $(IASL) -d $$@; false; fi
 endef
 
@@ -379,7 +382,6 @@ COREBOOT_EXPORTS += COREBOOT_EXTRA_VERSION
 endif
 
 CPPFLAGS_common := -Isrc -Isrc/include -Isrc/commonlib/include -I$(obj)
-CPPFLAGS_common += -Isrc/device/oprom/include
 VBOOT_SOURCE ?= 3rdparty/vboot
 CPPFLAGS_common += -I$(VBOOT_SOURCE)/firmware/include
 CPPFLAGS_common += -include $(src)/include/kconfig.h
@@ -387,6 +389,10 @@ CPPFLAGS_common += -include $(src)/include/rules.h
 CPPFLAGS_common += -include $(src)/commonlib/include/commonlib/compiler.h
 CPPFLAGS_common += -I3rdparty
 CPPFLAGS_common += -D__BUILD_DIR__=\"$(obj)\"
+
+ifeq ($(CONFIG_PCI_OPTION_ROM_RUN_YABEL)$(CONFIG_PCI_OPTION_ROM_RUN_REALMODE),y)
+CPPFLAGS_ramstage += -Isrc/device/oprom/include
+endif
 
 CFLAGS_common += -pipe -g -nostdinc -std=gnu11
 CFLAGS_common += -nostdlib -Wall -Wundef -Wstrict-prototypes -Wmissing-prototypes
@@ -847,22 +853,19 @@ FMAP_ROM_ADDR := $(call int-subtract, 0x100000000 $(CONFIG_ROM_SIZE))
 FMAP_ROM_SIZE := $(CONFIG_ROM_SIZE)
 # entire "BIOS" region (everything directly of concern to the host system)
 # relative to ROM_BASE
-FMAP_BIOS_BASE := $(call int-subtract, $(CONFIG_ROM_SIZE) $(CONFIG_CBFS_SIZE))
-FMAP_BIOS_SIZE := $(shell echo $(CONFIG_CBFS_SIZE) | tr A-F a-f)
+FMAP_BIOS_BASE := $(call int-align, $(call int-subtract, $(CONFIG_ROM_SIZE) $(CONFIG_CBFS_SIZE)), 0x10000)
+FMAP_BIOS_SIZE := $(call int-align-down, $(shell echo $(CONFIG_CBFS_SIZE) | tr A-F a-f), 0x10000)
 # position and size of flashmap, relative to BIOS_BASE
-FMAP_FMAP_BASE := 0
-FMAP_FMAP_SIZE := 0x200
 
 #
 # X86 CONSOLE FMAP region
 #
 # position, size and entry line of CONSOLE relative to BIOS_BASE, if enabled
+FMAP_CONSOLE_BASE := 0
 ifeq ($(CONFIG_CONSOLE_SPI_FLASH),y)
-FMAP_CONSOLE_BASE := $(call int-add, $(FMAP_FMAP_BASE) $(FMAP_FMAP_SIZE))
 FMAP_CONSOLE_SIZE := $(CONFIG_CONSOLE_SPI_FLASH_BUFFER_SIZE)
 FMAP_CONSOLE_ENTRY := CONSOLE@$(FMAP_CONSOLE_BASE) $(FMAP_CONSOLE_SIZE)
 else # ifeq ($(CONFIG_CONSOLE_SPI_FLASH),y)
-FMAP_CONSOLE_BASE := 0
 FMAP_CONSOLE_SIZE := 0
 FMAP_CONSOLE_ENTRY :=
 endif # ifeq ($(CONFIG_CONSOLE_SPI_FLASH),y)
@@ -872,13 +875,8 @@ endif # ifeq ($(CONFIG_CONSOLE_SPI_FLASH),y)
 #
 # position, size and entry line of MRC_CACHE relative to BIOS_BASE, if enabled
 ifeq ($(CONFIG_CACHE_MRC_SETTINGS),y)
-ifeq ($(CONFIG_CONSOLE_SPI_FLASH),y)
-FMAP_MRC_CACHE_BASE := $(call int-align, $(call int-add, $(FMAP_CONSOLE_BASE) \
+FMAP_MRC_CACHE_BASE := $(call int-align, $(call int-add,  $(FMAP_CONSOLE_BASE) \
 	$(FMAP_CONSOLE_SIZE)), 0x10000)
-else
-FMAP_MRC_CACHE_BASE := $(call int-align, $(call int-add, $(FMAP_FMAP_BASE) \
-	$(FMAP_FMAP_SIZE)), 0x10000)
-endif
 FMAP_MRC_CACHE_SIZE := $(CONFIG_MRC_SETTINGS_CACHE_SIZE)
 FMAP_MRC_CACHE_ENTRY := RW_MRC_CACHE@$(FMAP_MRC_CACHE_BASE) $(FMAP_MRC_CACHE_SIZE)
 else # ifeq ($(CONFIG_CACHE_MRC_SETTINGS),y)
@@ -888,14 +886,34 @@ FMAP_MRC_CACHE_ENTRY :=
 endif # ifeq ($(CONFIG_CACHE_MRC_SETTINGS),y)
 
 #
+# X86 SMMSTORE FMAP region
+#
+# position, size and entry line of SMMSTORE relative to BIOS_BASE, if enabled
+ifeq ($(CONFIG_SMMSTORE),y)
+FMAP_SMMSTORE_BASE := $(call int-align, $(call int-add, $(FMAP_CONSOLE_BASE) \
+	$(FMAP_CONSOLE_SIZE) $(FMAP_MRC_CACHE_SIZE)), 0x10000)
+FMAP_SMMSTORE_SIZE := $(CONFIG_SMMSTORE_SIZE)
+FMAP_SMMSTORE_ENTRY := SMMSTORE@$(FMAP_SMMSTORE_BASE) $(FMAP_SMMSTORE_SIZE)
+else # ifeq ($(CONFIG_SMMSTORE),y)
+FMAP_SMMSTORE_BASE := 0
+FMAP_SMMSTORE_SIZE := 0
+FMAP_SMMSTORE_ENTRY :=
+endif # ifeq ($(CONFIG_CACHE_MRC_SETTINGS),y)
+
+#
+# X86 FMAP region
+#
+#
+# position, size
+FMAP_FMAP_BASE := $(call int-add, $(FMAP_CONSOLE_BASE) $(FMAP_CONSOLE_SIZE) \
+	$(FMAP_MRC_CACHE_SIZE) $(FMAP_SMMSTORE_SIZE))
+FMAP_FMAP_SIZE := 0x200
+
+#
 # X86 COREBOOT default cbfs FMAP region
 #
 # position and size of CBFS, relative to BIOS_BASE
-ifeq ($(CONFIG_CACHE_MRC_SETTINGS),y)
-FMAP_CBFS_BASE := $(call int-add, $(FMAP_MRC_CACHE_BASE) $(FMAP_MRC_CACHE_SIZE))
-else
-FMAP_CBFS_BASE := $(call int-add, $(FMAP_CONSOLE_SIZE) $(FMAP_FMAP_SIZE))
-endif
+FMAP_CBFS_BASE := $(call int-add, $(FMAP_FMAP_BASE) $(FMAP_FMAP_SIZE))
 FMAP_CBFS_SIZE := $(call int-subtract, $(FMAP_BIOS_SIZE) $(FMAP_CBFS_BASE))
 else # ifeq ($(CONFIG_ARCH_X86),y)
 DEFAULT_FLASHMAP:=$(top)/util/cbfstool/default.fmd
@@ -962,6 +980,7 @@ $(obj)/fmap.fmd: $(top)/Makefile.inc $(DEFAULT_FLASHMAP) $(obj)/config.h
 	    -e "s,##FMAP_SIZE##,$(FMAP_FMAP_SIZE)," \
 	    -e "s,##CONSOLE_ENTRY##,$(FMAP_CONSOLE_ENTRY)," \
 	    -e "s,##MRC_CACHE_ENTRY##,$(FMAP_MRC_CACHE_ENTRY)," \
+	    -e "s,##SMMSTORE_ENTRY##,$(FMAP_SMMSTORE_ENTRY)," \
 	    -e "s,##CBFS_BASE##,$(FMAP_CBFS_BASE)," \
 	    -e "s,##CBFS_SIZE##,$(FMAP_CBFS_SIZE)," \
 		$(DEFAULT_FLASHMAP) > $@.tmp

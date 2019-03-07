@@ -17,6 +17,7 @@
 
 #include <cpu/intel/haswell/haswell.h>
 #include <cpu/intel/romstage.h>
+#include <device/pnp_ops.h>
 #include <northbridge/intel/haswell/haswell.h>
 #include <northbridge/intel/haswell/pei_data.h>
 #include <southbridge/intel/common/gpio.h>
@@ -68,7 +69,7 @@ void mainboard_romstage_entry(unsigned long bist)
 		.mchbar = (uintptr_t)DEFAULT_MCHBAR,
 		.dmibar = (uintptr_t)DEFAULT_DMIBAR,
 		.epbar = DEFAULT_EPBAR,
-		.pciexbar = DEFAULT_PCIEXBAR,
+		.pciexbar = CONFIG_MMCONF_BASE_ADDRESS,
 		.smbusbar = SMBUS_IO_BASE,
 		.wdbbar = 0x4000000,
 		.wdbsize = 0x1000,

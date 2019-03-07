@@ -16,9 +16,9 @@
 #include <stdint.h>
 #include <arch/acpi.h>
 #include <arch/io.h>
+#include <device/pci_ops.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <arch/early_variables.h>
 #include <assert.h>
 #include <security/vboot/vboot_common.h>
 
@@ -42,7 +42,7 @@ u16 lpc_get_pmbase(void)
 	/* Don't assume PMBASE is still the same */
 	return pci_read_config16(PCH_LPC_DEV, PMBASE) & 0xfffc;
 #else
-	static u16 pmbase CAR_GLOBAL;
+	static u16 pmbase;
 
 	if (pmbase)
 		return pmbase;

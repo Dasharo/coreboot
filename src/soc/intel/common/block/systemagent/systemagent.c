@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <cbmem.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -310,6 +310,7 @@ static const unsigned short systemagent_ids[] = {
 	PCI_DEVICE_ID_INTEL_WHL_ID_Wx4,
 	PCI_DEVICE_ID_INTEL_KBL_ID_S,
 	PCI_DEVICE_ID_INTEL_SKL_ID_H_EM,
+	PCI_DEVICE_ID_INTEL_SKL_ID_DT,
 	PCI_DEVICE_ID_INTEL_KBL_ID_U,
 	PCI_DEVICE_ID_INTEL_KBL_ID_Y,
 	PCI_DEVICE_ID_INTEL_KBL_ID_H,
@@ -322,6 +323,14 @@ static const unsigned short systemagent_ids[] = {
 	PCI_DEVICE_ID_INTEL_ICL_ID_U_2_2,
 	PCI_DEVICE_ID_INTEL_ICL_ID_Y,
 	PCI_DEVICE_ID_INTEL_ICL_ID_Y_2,
+	PCI_DEVICE_ID_INTEL_CML_ULT,
+	PCI_DEVICE_ID_INTEL_CML_ULT_2_2,
+	PCI_DEVICE_ID_INTEL_CML_ULT_6_2,
+	PCI_DEVICE_ID_INTEL_CML_ULX,
+	PCI_DEVICE_ID_INTEL_CML_S,
+	PCI_DEVICE_ID_INTEL_CML_S_10_2,
+	PCI_DEVICE_ID_INTEL_CML_H,
+	PCI_DEVICE_ID_INTEL_CML_H_8_2,
 	0
 };
 

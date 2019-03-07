@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/io.h>
+#include <device/mmio.h>
 #include <assert.h>
 #include <console/console.h>
 #include <soc/cpu.h>
@@ -287,7 +287,7 @@ void exynos_init_spi_boot_device(void)
 {
 	boot_slave = &exynos_spi_slaves[1];
 
-	mmap_helper_device_init(&mdev, _cbfs_cache, _cbfs_cache_size);
+	mmap_helper_device_init(&mdev, _cbfs_cache, REGION_SIZE(cbfs_cache));
 }
 
 const struct region_device *exynos_spi_boot_device(void)

@@ -14,8 +14,10 @@
  * GNU General Public License for more details.
  */
 
+#include <arch/io.h>
 #include <inttypes.h>
 #include <console/console.h>
+#include <device/pci_ops.h>
 #include <northbridge/amd/amdfam10/raminit.h>
 #include <northbridge/amd/amdfam10/amdfam10.h>
 

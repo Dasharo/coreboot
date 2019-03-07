@@ -133,6 +133,7 @@ ramstage-y += wrdd.c
 ramstage-$(CONFIG_CONSOLE_CBMEM) += cbmem_console.c
 ramstage-$(CONFIG_BOOTSPLASH) += jpeg.c
 ramstage-$(CONFIG_TRACE) += trace.c
+postcar-$(CONFIG_TRACE) += trace.c
 ramstage-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
 ramstage-$(CONFIG_COVERAGE) += libgcov.c
 ramstage-y += edid.c
@@ -295,6 +296,8 @@ $(objcbfs)/%.debug.rmod: $(objcbfs)/%.debug | $(RMODTOOL)
 
 $(obj)/%.elf.rmod: $(obj)/%.elf | $(RMODTOOL)
 	$(RMODTOOL) -i $< -o $@
+
+ramstage-$(CONFIG_RAMSTAGE_ADA) += cb.ads
 
 ifeq ($(CONFIG_RAMSTAGE_LIBHWBASE),y)
 

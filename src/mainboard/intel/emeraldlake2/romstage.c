@@ -18,10 +18,9 @@
 #include <string.h>
 #include <timestamp.h>
 #include <arch/io.h>
+#include <device/pci_ops.h>
 #include <device/pci_def.h>
-#include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
-#include <arch/acpi.h>
 #include <superio/smsc/sio1007/chip.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <northbridge/intel/sandybridge/raminit.h>
@@ -160,7 +159,8 @@ const struct southbridge_usb_port mainboard_usb_ports[] = {
 	{ 1, 0, 5 }, /* P13: Back port  (OC5) */
 };
 
-void mainboard_get_spd(spd_raw_data *spd, bool id_only) {
+void mainboard_get_spd(spd_raw_data *spd, bool id_only)
+{
 	read_spd(&spd[0], 0x50, id_only);
 	read_spd(&spd[2], 0x52, id_only);
 }

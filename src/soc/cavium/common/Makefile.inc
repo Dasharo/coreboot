@@ -15,6 +15,8 @@
 
 ifeq ($(CONFIG_SOC_CAVIUM_COMMON),y)
 
+subdirs-y += pci
+
 CFLAGS_arm64   += -Wstack-usage=$(CONFIG_STACK_SIZE)
 
 bootblock-$(CONFIG_BOOTBLOCK_CUSTOM) += bootblock.c
@@ -23,11 +25,13 @@ bootblock-$(CONFIG_BOOTBLOCK_CUSTOM) += bootblock.c
 # romstage
 
 romstage-y += bdk-coreboot.c
+romstage-y += ecam.c
 
 ################################################################################
 # ramstage
 
 ramstage-y += bdk-coreboot.c
+ramstage-y += ecam.c
 
 CPPFLAGS_common += -Isrc/soc/cavium/common/include
 

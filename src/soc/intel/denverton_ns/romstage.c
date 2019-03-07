@@ -14,11 +14,14 @@
  * GNU General Public License for more details.
  */
 
+#include <arch/io.h>
 #include <cbmem.h>
 #include <cf9_reset.h>
 #include <console/console.h>
 #include <cpu/x86/mtrr.h>
+#include <device/pci_ops.h>
 #include <soc/fiamux.h>
+#include <device/mmio.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/pcr.h>

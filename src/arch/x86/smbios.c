@@ -371,15 +371,20 @@ static int smbios_write_type0(unsigned long *current, int handle)
 #endif
 #endif /* CONFIG_CHROMEOS */
 
-	/* As a work around to prevent a compiler error, temporarily specify
-	 * 16 MiB flash sizes when ROM size >= 16 MiB.  An update is necessary
-	 * once the SMBIOS specification addresses ROM sizes > 16 MiB.
-	 */
 	uint32_t rom_size = CONFIG_ROM_SIZE;
 	rom_size = MIN(CONFIG_ROM_SIZE, 16 * MiB);
 	t->bios_rom_size = (rom_size / 65535) - 1;
 
-	t->system_bios_major_release = 4;
+	if (CONFIG_ROM_SIZE >= 1 * GiB) {
+		t->extended_bios_rom_size =
+			DIV_ROUND_UP(CONFIG_ROM_SIZE, GiB) | (1 << 14);
+	} else {
+		t->extended_bios_rom_size = DIV_ROUND_UP(CONFIG_ROM_SIZE, MiB);
+	}
+
+	t->system_bios_major_release = coreboot_major_revision;
+	t->system_bios_minor_release = coreboot_minor_revision;
+
 	t->bios_characteristics =
 		BIOS_CHARACTERISTICS_PCI_SUPPORTED |
 		BIOS_CHARACTERISTICS_SELECTABLE_BOOT |
@@ -448,6 +453,11 @@ smbios_board_type __weak smbios_mainboard_board_type(void)
 const char *__weak smbios_mainboard_sku(void)
 {
 	return "";
+}
+
+int __weak fill_mainboard_smbios_type16(unsigned long *current, int *handle)
+{
+	return 0;
 }
 
 #ifdef CONFIG_MAINBOARD_FAMILY
@@ -555,7 +565,6 @@ static int smbios_write_type4(unsigned long *current, int handle)
 	t->processor_version = smbios_processor_name(t->eos);
 	t->processor_family = (res.eax > 0) ? 0x0c : 0x6;
 	t->processor_type = 3; /* System Processor */
-	t->processor_upgrade = 0x06;
 	t->core_count = (res.ebx >> 16) & 0xff;
 	t->l1_cache_handle = 0xffff;
 	t->l2_cache_handle = 0xffff;
@@ -591,6 +600,16 @@ static int smbios_write_type11(unsigned long *current, int *handle)
 
 	*current += len;
 	(*handle)++;
+	return len;
+}
+
+static int smbios_write_type16(unsigned long *current, int *handle)
+{
+	int len = fill_mainboard_smbios_type16(current, handle);
+	if(len){
+		*current += len;
+		(*handle)++;
+	}
 	return len;
 }
 
@@ -752,6 +771,8 @@ unsigned long smbios_write_tables(unsigned long current)
 	if (IS_ENABLED(CONFIG_ELOG))
 		update_max(len, max_struct_size,
 			elog_smbios_write_type15(&current,handle++));
+	update_max(len, max_struct_size, smbios_write_type16(&current,
+		&handle));
 	update_max(len, max_struct_size, smbios_write_type17(&current,
 		&handle));
 	update_max(len, max_struct_size, smbios_write_type32(&current,

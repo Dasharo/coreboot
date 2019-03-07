@@ -13,8 +13,10 @@
  * GNU General Public License for more details.
  */
 
+#include <arch/io.h>
 #include <soc/gpio.h>
 #include <soc/pm.h>
+#include <device/mmio.h>
 #include <soc/iomap.h>
 
 #define SUSPEND_CYCLE 1

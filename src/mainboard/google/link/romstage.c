@@ -17,10 +17,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <timestamp.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <device/pci.h>
 #include <device/pci_def.h>
-#include <device/pnp_def.h>
 #include <cpu/x86/lapic.h>
 #include <arch/acpi.h>
 #include <console/console.h>
@@ -196,7 +195,8 @@ const struct southbridge_usb_port mainboard_usb_ports[] = {
 	{ 0, 0, -1 }, /* P13: Empty */
 };
 
-void mainboard_get_spd(spd_raw_data *spd, bool id_only) {
+void mainboard_get_spd(spd_raw_data *spd, bool id_only)
+{
 	memcpy(&spd[0], locate_spd(), 128);
 }
 

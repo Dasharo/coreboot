@@ -24,7 +24,7 @@
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/smm.h>
 #include <console/console.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <soc/lpc.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>

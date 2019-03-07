@@ -20,6 +20,7 @@
 #include <string.h>
 #include <console/console.h>
 #include <arch/acpi.h>
+#include <version.h>
 
 extern unsigned pm_base;	/* pm_base should be set in sb acpi */
 
@@ -42,7 +43,7 @@ void acpi_create_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
 	memcpy(header->asl_compiler_id, ASLC, 4);
-	header->asl_compiler_revision = 0;
+	header->asl_compiler_revision = asl_revision;
 
 	fadt->firmware_ctrl = (u32)facs;
 	fadt->dsdt = (u32)dsdt;
@@ -82,7 +83,7 @@ void acpi_create_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	fadt->day_alrm = 0x7d;
 	fadt->mon_alrm = 0x7e;
 	fadt->century = 0x32;
-	fadt->iapc_boot_arch = 0;
+	fadt->iapc_boot_arch = ACPI_FADT_LEGACY_FREE;
 	fadt->flags = 0xa5;
 
 #ifdef LONG_FADT
@@ -91,7 +92,7 @@ void acpi_create_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	fadt->reset_reg.space_id = 1;
 	fadt->reset_reg.bit_width = 8;
 	fadt->reset_reg.bit_offset = 0;
-	fadt->reset_reg.resv = 0;
+	fadt->reset_reg.access_size = 0;
 	fadt->reset_reg.addrl = 0xcf9;
 	fadt->reset_reg.addrh = 0x0;
 
@@ -104,56 +105,56 @@ void acpi_create_fadt(acpi_fadt_t * fadt, acpi_facs_t * facs, void *dsdt)
 	fadt->x_pm1a_evt_blk.space_id = 1;
 	fadt->x_pm1a_evt_blk.bit_width = 32;
 	fadt->x_pm1a_evt_blk.bit_offset = 0;
-	fadt->x_pm1a_evt_blk.resv = 0;
+	fadt->x_pm1a_evt_blk.access_size = 0;
 	fadt->x_pm1a_evt_blk.addrl = pm_base;
 	fadt->x_pm1a_evt_blk.addrh = 0x0;
 
 	fadt->x_pm1b_evt_blk.space_id = 1;
 	fadt->x_pm1b_evt_blk.bit_width = 4;
 	fadt->x_pm1b_evt_blk.bit_offset = 0;
-	fadt->x_pm1b_evt_blk.resv = 0;
+	fadt->x_pm1b_evt_blk.access_size = 0;
 	fadt->x_pm1b_evt_blk.addrl = 0x0;
 	fadt->x_pm1b_evt_blk.addrh = 0x0;
 
 	fadt->x_pm1a_cnt_blk.space_id = 1;
 	fadt->x_pm1a_cnt_blk.bit_width = 16;
 	fadt->x_pm1a_cnt_blk.bit_offset = 0;
-	fadt->x_pm1a_cnt_blk.resv = 0;
+	fadt->x_pm1a_cnt_blk.access_size = 0;
 	fadt->x_pm1a_cnt_blk.addrl = pm_base + 4;
 	fadt->x_pm1a_cnt_blk.addrh = 0x0;
 
 	fadt->x_pm1b_cnt_blk.space_id = 1;
 	fadt->x_pm1b_cnt_blk.bit_width = 2;
 	fadt->x_pm1b_cnt_blk.bit_offset = 0;
-	fadt->x_pm1b_cnt_blk.resv = 0;
+	fadt->x_pm1b_cnt_blk.access_size = 0;
 	fadt->x_pm1b_cnt_blk.addrl = 0x0;
 	fadt->x_pm1b_cnt_blk.addrh = 0x0;
 
 	fadt->x_pm2_cnt_blk.space_id = 1;
 	fadt->x_pm2_cnt_blk.bit_width = 0;
 	fadt->x_pm2_cnt_blk.bit_offset = 0;
-	fadt->x_pm2_cnt_blk.resv = 0;
+	fadt->x_pm2_cnt_blk.access_size = 0;
 	fadt->x_pm2_cnt_blk.addrl = 0x0;
 	fadt->x_pm2_cnt_blk.addrh = 0x0;
 
 	fadt->x_pm_tmr_blk.space_id = 1;
 	fadt->x_pm_tmr_blk.bit_width = 32;
 	fadt->x_pm_tmr_blk.bit_offset = 0;
-	fadt->x_pm_tmr_blk.resv = 0;
+	fadt->x_pm_tmr_blk.access_size = 0;
 	fadt->x_pm_tmr_blk.addrl = pm_base + 0x08;
 	fadt->x_pm_tmr_blk.addrh = 0x0;
 
 	fadt->x_gpe0_blk.space_id = 1;
 	fadt->x_gpe0_blk.bit_width = 32;
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.resv = 0;
+	fadt->x_gpe0_blk.access_size = 0;
 	fadt->x_gpe0_blk.addrl = pm_base + 0x20;
 	fadt->x_gpe0_blk.addrh = 0x0;
 
 	fadt->x_gpe1_blk.space_id = 1;
 	fadt->x_gpe1_blk.bit_width = 64;
 	fadt->x_gpe1_blk.bit_offset = 16;
-	fadt->x_gpe1_blk.resv = 0;
+	fadt->x_gpe1_blk.access_size = 0;
 	fadt->x_gpe1_blk.addrl = pm_base + 0xb0;
 	fadt->x_gpe1_blk.addrh = 0x0;
 #endif

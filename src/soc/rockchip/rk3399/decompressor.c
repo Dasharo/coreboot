@@ -14,7 +14,6 @@
  *
  */
 
-#include <arch/io.h>
 #include <arch/mmu.h>
 #include <bootblock_common.h>
 #include <soc/mmu_operations.h>
@@ -30,7 +29,7 @@ void decompressor_soc_init(void)
 	 */
 	mmu_config_range((void *)0, (uintptr_t)4 * GiB, DEV_MEM);
 
-	mmu_config_range(_sram, _sram_size, SECURE_MEM);
+	mmu_config_range(_sram, REGION_SIZE(sram), SECURE_MEM);
 
 	mmu_enable();
 }

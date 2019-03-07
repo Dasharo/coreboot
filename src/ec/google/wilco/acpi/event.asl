@@ -19,17 +19,17 @@ Name (ECPR, 0)
 
 Method (ECQP, 0, Serialized)
 {
-	Local0 = R (APWR)
+	Local0 = R (PWSR)
 	Local1 = Local0 ^ ECPR
 	ECPR = Local0
 
-	If (EBIT (APAC, Local1)) {
+	If (EBIT (ACEX, Local1)) {
 		Printf ("AC Power Status Changed")
 		Notify (AC, 0x80)
 	}
 
-	If (EBIT (APB1, Local1)) {
-		If (EBIT (APB1, Local0)) {
+	If (EBIT (BTEX, Local1)) {
+		If (EBIT (BTEX, Local0)) {
 			Printf ("BAT0 Inserted")
 			Notify (BAT0, 0x81)
 		} Else {
@@ -39,7 +39,7 @@ Method (ECQP, 0, Serialized)
 		}
 	}
 
-	If (EBIT (APC1, Local1)) {
+	If (EBIT (BTSC, Local1)) {
 		Printf ("BAT0 Status Change")
 		Notify (BAT0, 0x80)
 	}
@@ -79,7 +79,17 @@ Method (ECQ2, 1, Serialized)
 
 	If (EBIT (E2QS, Arg0)) {
 		Printf ("QS EVENT")
-		Notify (^WLCO, 0x90)
+		Notify (^WEVT, 0x90)
+	}
+
+	If (EBIT (E2OR, Arg0)) {
+		If (R (OTBL)) {
+			Printf ("EC event indicates tablet mode")
+			Notify (^VBTN, ^VTBL)
+		} Else {
+			Printf ("EC event indicates laptop mode")
+			Notify (^VBTN, ^VLAP)
+		}
 	}
 }
 
@@ -87,6 +97,16 @@ Method (ECQ2, 1, Serialized)
 Method (ECQ3, 1, Serialized)
 {
 	Printf ("EVT3: %o", Arg0)
+
+	If (EBIT (E3CP, Arg0)) {
+		If (R (P2PB)) {
+			Printf ("Power button pressed")
+			Notify (^VBTN, ^VPPB)
+		} Else {
+			Printf ("Power button released")
+			Notify (^VBTN, ^VRPB)
+		}
+	}
 
 #ifdef EC_ENABLE_DPTF
 	/* Theraml Events */
@@ -124,20 +144,4 @@ Method (_Q66, 0, Serialized)
 	If (Local0) {
 		ECQ4 (Local0)
 	}
-}
-
-/* Get Event Buffer */
-Method (QSET, 0, Serialized)
-{
-	/* Get count of event bytes */
-	Local0 = R (QSEC)
-	Name (QBUF, Buffer (Local0) {})
-
-	/* Fill QS event buffer with Local0 bytes */
-	For (Local1 = 0, Local1 < Local0, Local1++) {
-		QBUF[Local1] = R (QSEB)
-	}
-
-	Printf ("QS = %o", QBUF)
-	Return (QBUF)
 }

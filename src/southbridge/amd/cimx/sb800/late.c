@@ -15,8 +15,10 @@
  */
 
 
+#include <device/mmio.h>
 #include <device/device.h>
 #include <device/pci.h>		/* device_operations */
+#include <device/pci_ops.h>
 #include <device/pci_ids.h>
 #include <bootstate.h>
 #include <arch/ioapic.h>

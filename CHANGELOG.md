@@ -13,6 +13,21 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
+## [v4.9.0.3] - 2019-03-07
+### Changed
+- rebased with official coreboot repository commit 7a732b4
+- sortbootorder updated to v4.6.13 introducing CPU boost runtime configuration
+- firmware is now built with coreboot SDK 1.52
+
+### Fixed
+- [microcode update option](https://github.com/pcengines/apu2-documentation/issues/75#issuecomment-462979810)
+- [memtest86+ and iPXE revisions for fully reproducible builds](https://github.com/pcengines/coreboot/issues/267)
+
+### Added
+- CPU boost runtime configuration in coreboot
+- information about ECC memory capability in SMBIOS tables on 4GB platforms
+- interrupt configuration entries for PCIe bridge devices 2.4 and 2.5
+
 ## [v4.9.0.2] - 2019-02-04
 ### Changed
 - rebased with official coreboot repository commit 2b2325e
@@ -265,7 +280,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.2...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.3...develop
+[v4.9.0.3]: https://github.com/pcengines/coreboot/compare/v4.9.0.2...v4.9.0.3
 [v4.9.0.2]: https://github.com/pcengines/coreboot/compare/v4.9.0.1...v4.9.0.2
 [v4.9.0.1]: https://github.com/pcengines/coreboot/compare/v4.8.0.7...v4.9.0.1
 [v4.8.0.7]: https://github.com/pcengines/coreboot/compare/v4.8.0.6...v4.8.0.7

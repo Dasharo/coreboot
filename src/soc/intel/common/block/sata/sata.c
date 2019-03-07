@@ -13,8 +13,10 @@
  * GNU General Public License for more details.
  */
 
+#include <device/mmio.h>
 #include <device/device.h>
 #include <device/pci.h>
+#include <device/pci_ops.h>
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <soc/pci_devs.h>
@@ -75,10 +77,13 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_SPT_KBL_SATA,
 	PCI_DEVICE_ID_INTEL_CNL_SATA,
 	PCI_DEVICE_ID_INTEL_CNL_PREMIUM_SATA,
-	PCI_DEVICE_ID_INTEL_CNL_COMPAT_SATA,
+	PCI_DEVICE_ID_INTEL_CNP_CMP_COMPAT_SATA,
 	PCI_DEVICE_ID_INTEL_CNP_H_SATA,
 	PCI_DEVICE_ID_INTEL_CNP_LP_SATA,
 	PCI_DEVICE_ID_INTEL_ICP_U_SATA,
+	PCI_DEVICE_ID_INTEL_CMP_SATA,
+	PCI_DEVICE_ID_INTEL_CMP_PREMIUM_SATA,
+	PCI_DEVICE_ID_INTEL_CMP_LP_SATA,
 	0
 };
 

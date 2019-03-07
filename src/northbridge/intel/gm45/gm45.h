@@ -195,8 +195,6 @@ enum {
 #define DEFAULT_EPBAR		0xfed19000
 #define DEFAULT_HECIBAR		((u8 *)0xfed1a000)
 
-				/* 4 KB per PCIe device */
-#define DEFAULT_PCIEXBAR	CONFIG_MMCONF_BASE_ADDRESS
 
 #define IOMMU_BASE1 0xfed90000
 #define IOMMU_BASE2 0xfed91000
@@ -435,6 +433,13 @@ u32 decode_igd_gtt_size(u32 gsm);
 u32 decode_tseg_size(u8 esmramc);
 
 void init_iommu(void);
+
+/* romstage mainboard hookups */
+void mb_setup_lpc(void);
+void mb_setup_superio(void); /* optional */
+void get_mb_spd_addrmap(u8 spd_addrmap[4]);
+void mb_pre_raminit_setup(sysinfo_t *); /* optional */
+void mb_post_raminit_setup(void); /* optional */
 
 struct blc_pwm_t {
 	char ascii_string[13];

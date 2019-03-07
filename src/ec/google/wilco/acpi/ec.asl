@@ -42,10 +42,13 @@ Device (EC0)
 		EREG = Arg1
 
 		/* Store initial value for power status */
-		ECPR = R (APWR)
+		ECPR = R (PWSR)
 
 		/* Indicate to EC that OS is ready for queries */
 		W (ERDY, Arg1)
+
+		/* Indicate that the OS supports S0ix */
+		W (CSOS, One)
 
 		/* Tell EC to stop emulating PS/2 mouse */
 		W (PS2M, Zero)
@@ -140,6 +143,20 @@ Device (EC0)
 		Return (ECRW (Arg0, Arg1))
 	}
 
+	/*
+	 * Tell EC that the OS is entering or exiting S0ix
+	 */
+	Method (S0IX, 1, Serialized)
+	{
+		If (Arg0) {
+			Printf ("EC Enter S0ix")
+			W (CSEX, One)
+		} Else {
+			Printf ("EC Exit S0ix")
+			W (CSEX, Zero)
+		}
+	}
+
 	#include "ec_dev.asl"
 	#include "ec_ram.asl"
 	#include "ac.asl"
@@ -147,6 +164,7 @@ Device (EC0)
 	#include "event.asl"
 	#include "lid.asl"
 	#include "platform.asl"
+	#include "vbtn.asl"
 #ifdef EC_ENABLE_DPTF
 	#include "dptf.asl"
 #endif

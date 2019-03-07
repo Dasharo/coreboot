@@ -20,6 +20,7 @@
 #include "vx900.h"
 
 #include <device/pci.h>
+#include <device/pci_ops.h>
 #include <cbmem.h>
 
 #define MCU PCI_DEV(0, 0, 3)
@@ -83,7 +84,7 @@ void vx900_set_chrome9hd_fb_size(u32 size_mb)
 	fb_pow--;
 	size_mb = (1 << fb_pow);
 
-	pci_mod_config8(MCU, 0xa1, 7 << 4, (fb_pow - 2) << 4);
+	pci_update_config8(MCU, 0xa1, ~(7 << 4), (fb_pow - 2) << 4);
 }
 
 /* Gets the configured framebuffer size as a power of 2 */

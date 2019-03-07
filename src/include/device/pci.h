@@ -19,13 +19,11 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <arch/io.h>
 #include <device/pci_def.h>
 #include <device/resource.h>
 #include <device/device.h>
-#include <device/pci_ops.h>
 #include <device/pci_rom.h>
-
+#include <device/pci_type.h>
 
 /* Common pci operations without a standard interface */
 struct pci_operations {
@@ -37,15 +35,12 @@ struct pci_operations {
 
 /* Common pci bus operations */
 struct pci_bus_operations {
-	uint8_t   (*read8)(struct bus *pbus, int bus, int devfn, int where);
-	uint16_t (*read16)(struct bus *pbus, int bus, int devfn, int where);
-	uint32_t (*read32)(struct bus *pbus, int bus, int devfn, int where);
-	void     (*write8)(struct bus *pbus, int bus, int devfn, int where,
-			uint8_t val);
-	void    (*write16)(struct bus *pbus, int bus, int devfn, int where,
-			uint16_t val);
-	void    (*write32)(struct bus *pbus, int bus, int devfn, int where,
-			uint32_t val);
+	uint8_t   (*read8)(struct device *dev, int where);
+	uint16_t (*read16)(struct device *dev, int where);
+	uint32_t (*read32)(struct device *dev, int where);
+	void     (*write8)(struct device *dev, int where, uint8_t val);
+	void    (*write16)(struct device *dev, int where, uint16_t val);
+	void    (*write32)(struct device *dev, int where, uint32_t val);
 };
 
 struct pci_driver {
@@ -133,6 +128,12 @@ static inline const struct pci_operations *ops_pci(struct device *dev)
 	return pops;
 }
 
+#define PCI_ID(VENDOR_ID, DEVICE_ID) \
+	((((DEVICE_ID) & 0xFFFF) << 16) | ((VENDOR_ID) & 0xFFFF))
+
+pci_devfn_t pci_locate_device(unsigned int pci_id, pci_devfn_t dev);
+pci_devfn_t pci_locate_device_on_bus(unsigned int pci_id, unsigned int bus);
+
 #ifdef __SIMPLE_DEVICE__
 unsigned int pci_find_next_capability(pci_devfn_t dev, unsigned int cap,
 	unsigned int last);
@@ -143,7 +144,6 @@ unsigned int pci_find_next_capability(struct device *dev, unsigned int cap,
 unsigned int pci_find_capability(struct device *dev, unsigned int cap);
 #endif /* __SIMPLE_DEVICE__ */
 
-void pci_early_bridge_init(void);
 void pci_early_mmio_window(pci_devfn_t p2p_bridge, u32 mmio_base,
 			   u32 mmio_size);
 int pci_early_device_probe(u8 bus, u8 dev, u32 mmio_base);
@@ -156,5 +156,7 @@ static inline int pci_base_address_is_memory_space(unsigned int attr)
 #endif
 
 #endif /* CONFIG_PCI */
+
+void pci_early_bridge_init(void);
 
 #endif /* PCI_H */

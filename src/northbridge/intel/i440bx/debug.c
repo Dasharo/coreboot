@@ -12,7 +12,7 @@
  */
 
 #include <console/console.h>
-#include <arch/io.h>
+#include <device/pci_ops.h>
 #include <spd.h>
 #include "raminit.h"
 

@@ -14,8 +14,9 @@
  */
 
 #include <arch/io.h>
+#include <endian.h>
+#include <device/pnp_ops.h>
 #include <device/pnp_def.h>
-#include <swab.h>
 
 #include "bootblock.h"
 

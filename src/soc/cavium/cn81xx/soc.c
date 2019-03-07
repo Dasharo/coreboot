@@ -319,18 +319,11 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 	return 0;
 }
 
-extern u8 _bl31[];
-extern u8 _ebl31[];
 extern u8 _sff8104[];
 extern u8 _esff8104[];
 
 void bootmem_platform_add_ranges(void)
 {
-	/* ATF reserved */
-	bootmem_add_range((uintptr_t)_bl31,
-			  ((uintptr_t)_ebl31 - (uintptr_t)_bl31),
-			  BM_MEM_RESERVED);
-
 	bootmem_add_range((uintptr_t)_sff8104,
 			  ((uintptr_t)_esff8104 - (uintptr_t)_sff8104),
 			  BM_MEM_RESERVED);
@@ -385,18 +378,6 @@ static void soc_init(struct device *dev)
 			dt_fixup->fixup = dt_platform_fixup;
 			list_insert_after(&dt_fixup->list_node,
 					  &device_tree_fixups);
-		}
-	}
-
-	/* Init UARTs */
-	size_t i;
-	struct device *uart_dev;
-	for (i = 0; i <= 3; i++) {
-		uart_dev = dev_find_slot(1, PCI_DEVFN(8, i));
-		/* using device enable state from devicetree.cb */
-		if (uart_dev && uart_dev->enabled) {
-			if (!uart_is_enabled(i))
-				uart_setup(i, 0);
 		}
 	}
 
