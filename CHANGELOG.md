@@ -13,7 +13,7 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
-## [v4.9.0.3] - 2019-03-07
+## [v4.9.0.3] - 2019-03-08
 ### Changed
 - rebased with official coreboot repository commit 7a732b4
 - sortbootorder updated to v4.6.13 introducing CPU boost runtime configuration
