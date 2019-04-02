@@ -23,7 +23,6 @@
 #include <device/pci_ops.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/smm.h>
-#include <string.h>
 #include <cpu/intel/smm/gen1/smi.h>
 #include "pch.h"
 
@@ -228,7 +227,7 @@ void southbridge_smm_init(void)
 	u16 pm1_en;
 	u32 gpe0_en;
 
-#if IS_ENABLED(CONFIG_ELOG)
+#if CONFIG(ELOG)
 	/* Log events from chipset before clearing */
 	pch_log_state();
 #endif

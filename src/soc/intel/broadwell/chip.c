@@ -30,7 +30,7 @@ static struct device_operations pci_domain_ops = {
 	.read_resources    = &pci_domain_read_resources,
 	.set_resources     = &pci_domain_set_resources,
 	.scan_bus          = &pci_domain_scan_bus,
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 	.write_acpi_tables = &northbridge_write_acpi_tables,
 #endif
 };
@@ -64,17 +64,6 @@ struct chip_operations soc_intel_broadwell_ops = {
 	.init       = &broadwell_init_pre_device,
 };
 
-static void pci_set_subsystem(struct device *dev, unsigned int vendor,
-	unsigned int device)
-{
-	if (!vendor || !device)
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				   pci_read_config32(dev, PCI_VENDOR_ID));
-	else
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				   (device << 16) | vendor);
-}
-
 struct pci_operations broadwell_pci_ops = {
-	.set_subsystem = &pci_set_subsystem
+	.set_subsystem = &pci_dev_set_subsystem
 };

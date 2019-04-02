@@ -24,7 +24,7 @@
 #include <delay.h>
 #include "mcp55.h"
 
-#if IS_ENABLED(CONFIG_MCP55_USE_AZA)
+#if CONFIG(MCP55_USE_AZA)
 #define HDA_ICII_REG 0x68
 #define HDA_ICII_BUSY (1 << 0)
 #define HDA_ICII_VALID (1 << 1)
@@ -203,7 +203,7 @@ static void codecs_init(struct device *dev, u8 *base, u32 codec_mask)
 
 static void azalia_init(struct device *dev)
 {
-#if IS_ENABLED(CONFIG_MCP55_USE_AZA)
+#if CONFIG(MCP55_USE_AZA)
 	u8 *base;
 	u32 codec_mask, reg32;
 	struct resource *res;
@@ -254,20 +254,8 @@ static void azalia_init(struct device *dev)
 #endif
 }
 
-static void azalia_set_subsystem(struct device *dev, unsigned vendor,
-				 unsigned device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
-}
-
 static struct pci_operations azalia_pci_ops = {
-	.set_subsystem = azalia_set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations azalia_ops = {

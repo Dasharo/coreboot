@@ -28,7 +28,7 @@ static void pcie_disable(struct device *dev)
 	dev->enabled = 0;
 }
 
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 static const char *pcie_acpi_name(const struct device *dev)
 {
 	assert(dev);
@@ -65,20 +65,8 @@ static const char *pcie_acpi_name(const struct device *dev)
 }
 #endif
 
-static void
-pcie_set_subsystem(struct device *dev, unsigned int ven, unsigned int device)
-{
-	/* NOTE: This is not the default position! */
-	if (!ven || !device)
-		pci_write_config32(dev, 0x94,
-				   pci_read_config32(dev, 0));
-	else
-		pci_write_config32(dev, 0x94,
-				   ((device & 0xffff) << 16) | (ven & 0xffff));
-}
-
 static struct pci_operations pci_ops = {
-	.set_subsystem = pcie_set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations device_ops = {
@@ -90,7 +78,7 @@ static struct device_operations device_ops = {
 	.disable		= pcie_disable,
 	.init			= pci_dev_init,
 	.ops_pci		= &pci_ops,
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name		= pcie_acpi_name,
 #endif
 };

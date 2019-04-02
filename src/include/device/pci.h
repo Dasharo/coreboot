@@ -15,13 +15,14 @@
 #ifndef PCI_H
 #define PCI_H
 
-#if IS_ENABLED(CONFIG_PCI)
+#if CONFIG(PCI)
 
 #include <stdint.h>
 #include <stddef.h>
 #include <device/pci_def.h>
 #include <device/resource.h>
 #include <device/device.h>
+#include <device/pci_ops.h>
 #include <device/pci_rom.h>
 #include <device/pci_type.h>
 
@@ -31,16 +32,6 @@ struct pci_operations {
 	void (*set_subsystem)(struct device *dev, unsigned int vendor,
 		unsigned int device);
 	void (*set_L1_ss_latency)(struct device *dev, unsigned int off);
-};
-
-/* Common pci bus operations */
-struct pci_bus_operations {
-	uint8_t   (*read8)(struct device *dev, int where);
-	uint16_t (*read16)(struct device *dev, int where);
-	uint32_t (*read32)(struct device *dev, int where);
-	void     (*write8)(struct device *dev, int where, uint8_t val);
-	void    (*write16)(struct device *dev, int where, uint16_t val);
-	void    (*write32)(struct device *dev, int where, uint32_t val);
 };
 
 struct pci_driver {

@@ -13,13 +13,6 @@
 ## GNU General Public License for more details.
 ##
 
-SPD_SOURCES = 4G_2400		# 0b000
-SPD_SOURCES += empty_ddr4	# 0b001
-SPD_SOURCES += empty_ddr4	# 0b010
-SPD_SOURCES += empty_ddr4	# 0b011
-SPD_SOURCES += empty_ddr4	# 0b100
-SPD_SOURCES += 8G_2666		# 0b101
-
 bootblock-y += gpio.c
 
 romstage-y += gpio.c
@@ -28,3 +21,5 @@ romstage-y += memory.c
 ramstage-y += gpio.c
 
 verstage-y += gpio.c
+
+smm-y += gpio.c

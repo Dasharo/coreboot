@@ -16,7 +16,6 @@
 
 #include <arch/exception.h>
 #include <cbmem.h>
-#include <romstage_handoff.h>
 #include <soc/sdram.h>
 #include <soc/timer.h>
 #include <soc/mmu.h>
@@ -24,7 +23,6 @@
 #include <console/console.h>
 #include <program_loading.h>
 #include <libbdk-hal/bdk-config.h>
-#include <string.h>
 #include <arch/stages.h>
 
 extern const struct bdk_devicetree_key_value devtree[];

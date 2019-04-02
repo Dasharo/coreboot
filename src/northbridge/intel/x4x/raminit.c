@@ -23,9 +23,8 @@
 #include <arch/cpu.h>
 #include <delay.h>
 #include <halt.h>
-#include <lib.h>
 #include "iomap.h"
-#if IS_ENABLED(CONFIG_SOUTHBRIDGE_INTEL_I82801GX)
+#if CONFIG(SOUTHBRIDGE_INTEL_I82801GX)
 #include <southbridge/intel/i82801gx/i82801gx.h> /* smbus_read_byte */
 #else
 #include <southbridge/intel/i82801jx/i82801jx.h> /* smbus_read_byte */
@@ -174,7 +173,7 @@ static int ddr2_save_dimminfo(u8 dimm_idx, u8 *raw_spd,
 		return CB_ERR;
 	}
 
-	if (IS_ENABLED(CONFIG_DEBUG_RAM_SETUP))
+	if (CONFIG(DEBUG_RAM_SETUP))
 		dram_print_spd_ddr2(&decoded_dimm);
 
 	if (!(decoded_dimm.width & (0x08 | 0x10))) {
@@ -383,7 +382,7 @@ static int ddr3_save_dimminfo(u8 dimm_idx, u8 *raw_spd,
 	if (spd_decode_ddr3(&decoded_dimm, raw_spd) != SPD_STATUS_OK)
 		return CB_ERR;
 
-	if (IS_ENABLED(CONFIG_DEBUG_RAM_SETUP))
+	if (CONFIG(DEBUG_RAM_SETUP))
 		dram_print_spd_ddr3(&decoded_dimm);
 
 	/* x4 DIMMs are not supported (true for both ddr2 and ddr3) */
@@ -734,6 +733,5 @@ void sdram_initialize(int boot_path, const u8 *spd_map)
 	}
 
 	timestamp_add_now(TS_AFTER_INITRAM);
-	quick_ram_check();
 	printk(BIOS_DEBUG, "Memory initialized\n");
 }

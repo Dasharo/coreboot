@@ -35,7 +35,7 @@
 #include "chip.h"
 #include "haswell.h"
 
-#if IS_ENABLED(CONFIG_CHROMEOS)
+#if CONFIG(CHROMEOS)
 #include <vendorcode/google/chromeos/chromeos.h>
 #endif
 
@@ -240,7 +240,7 @@ static void power_well_enable(void)
 	 * after we power up the AUX channel until we can talk to it.
 	 * So get that going right now. We can't turn on the panel, yet, just VDD.
 	 */
-	if (IS_ENABLED(CONFIG_MAINBOARD_DO_NATIVE_VGA_INIT)) {
+	if (CONFIG(MAINBOARD_DO_NATIVE_VGA_INIT)) {
 		gtt_write(PCH_PP_CONTROL, PCH_PP_UNLOCK| EDP_FORCE_VDD | PANEL_POWER_RESET);
 	}
 }
@@ -475,7 +475,7 @@ static void gma_func0_init(struct device *dev)
 
 	int vga_disable = (pci_read_config16(dev, GGC) & 2) >> 1;
 
-	if (IS_ENABLED(CONFIG_MAINBOARD_USE_LIBGFXINIT)) {
+	if (CONFIG(MAINBOARD_USE_LIBGFXINIT)) {
 		if (vga_disable) {
 			printk(BIOS_INFO,
 			       "IGD is not decoding legacy VGA MEM and IO: skipping NATIVE graphic init\n");
@@ -497,18 +497,6 @@ static void gma_func0_init(struct device *dev)
 
 	gma_enable_swsci();
 	intel_gma_restore_opregion();
-}
-
-static void gma_set_subsystem(struct device *dev, unsigned int vendor,
-			      unsigned int device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
 }
 
 const struct i915_gpu_controller_info *
@@ -558,7 +546,7 @@ gma_write_acpi_tables(struct device *const dev, unsigned long current,
 }
 
 static struct pci_operations gma_pci_ops = {
-	.set_subsystem    = gma_set_subsystem,
+	.set_subsystem    = pci_dev_set_subsystem,
 };
 
 static struct device_operations gma_func0_ops = {

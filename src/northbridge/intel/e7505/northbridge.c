@@ -11,6 +11,7 @@
  * GNU General Public License for more details.
  */
 
+#include <arch/acpi.h>
 #include <console/console.h>
 #include <device/pci_ops.h>
 #include <stdint.h>
@@ -18,9 +19,8 @@
 #include <device/pci.h>
 #include <cpu/cpu.h>
 #include <stdlib.h>
-#include <string.h>
+
 #include "e7505.h"
-#include <arch/acpi.h>
 
 unsigned long acpi_fill_mcfg(unsigned long current)
 {
@@ -74,15 +74,8 @@ static void mch_domain_set_resources(struct device *dev)
 	assign_resources(dev->link_list);
 }
 
-static void intel_set_subsystem(struct device *dev, unsigned int vendor,
-				unsigned int device)
-{
-	pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-		((device & 0xffff) << 16) | (vendor & 0xffff));
-}
-
 static struct pci_operations intel_pci_ops = {
-	.set_subsystem = intel_set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations pci_domain_ops = {

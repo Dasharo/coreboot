@@ -15,8 +15,6 @@
  */
 
 #include <stdint.h>
-#include <string.h>
-#include <timestamp.h>
 #include <device/pci_ops.h>
 #include <device/pci_def.h>
 #include <cpu/x86/lapic.h>
@@ -26,7 +24,6 @@
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
-#include <halt.h>
 #include "ec/compal/ene932/ec.h"
 
 void pch_enable_lpc(void)

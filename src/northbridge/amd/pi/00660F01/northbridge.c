@@ -35,7 +35,7 @@
 #include <arch/acpigen.h>
 #include <northbridge/amd/pi/nb_common.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
-#if IS_ENABLED(CONFIG_BINARYPI_LEGACY_WRAPPER)
+#if CONFIG(BINARYPI_LEGACY_WRAPPER)
 #include <northbridge/amd/pi/agesawrapper.h>
 #include <northbridge/amd/pi/agesawrapper_call.h>
 #endif
@@ -355,7 +355,7 @@ static void create_vga_resource(struct device *dev, unsigned nodeid)
 	 * we only deal with the 'first' vga card */
 	for (link = dev->link_list; link; link = link->next) {
 		if (link->bridge_ctrl & PCI_BRIDGE_CTL_VGA) {
-#if IS_ENABLED(CONFIG_MULTIPLE_VGA_ADAPTERS)
+#if CONFIG(MULTIPLE_VGA_ADAPTERS)
 			extern struct device *vga_pri; // the primary vga device, defined in device.c
 			printk(BIOS_DEBUG, "VGA: vga_pri bus num = %d bus range [%d,%d]\n", vga_pri->bus->secondary,
 					link->secondary,link->subordinate);
@@ -573,7 +573,7 @@ struct chip_operations northbridge_amd_pi_00660F01_ops = {
 
 static void domain_read_resources(struct device *dev)
 {
-	unsigned reg;
+	unsigned int reg;
 
 	/* Find the already assigned resource pairs */
 	get_fx_devs();
@@ -583,7 +583,7 @@ static void domain_read_resources(struct device *dev)
 		limit = f1_read_config32(reg + 0x04);
 		/* Is this register allocated? */
 		if ((base & 3) != 0) {
-			unsigned nodeid, reg_link;
+			unsigned int nodeid, reg_link;
 			struct device *reg_dev;
 			if (reg < 0xc0) { // mmio
 				nodeid = (limit & 0xf) + (base & 0x30);
@@ -610,7 +610,7 @@ static void domain_read_resources(struct device *dev)
 
 static void domain_enable_resources(struct device *dev)
 {
-#if IS_ENABLED(CONFIG_BINARYPI_LEGACY_WRAPPER)
+#if CONFIG(BINARYPI_LEGACY_WRAPPER)
 	/* Must be called after PCI enumeration and resource allocation */
 	if (!acpi_is_wakeup_s3())
 		AGESAWRAPPER(amdinitmid);
@@ -621,7 +621,7 @@ static void domain_enable_resources(struct device *dev)
 
 #if CONFIG_HW_MEM_HOLE_SIZEK != 0
 struct hw_mem_hole_info {
-	unsigned hole_startk;
+	unsigned int hole_startk;
 	int node_id;
 };
 static struct hw_mem_hole_info get_hw_mem_hole_info(void)
@@ -738,7 +738,7 @@ static void domain_set_resources(struct device *dev)
 		/* split the region to accommodate pci memory space */
 		if ((basek < 4*1024*1024) && (limitk > mmio_basek)) {
 			if (basek <= mmio_basek) {
-				unsigned pre_sizek;
+				unsigned int pre_sizek;
 				pre_sizek = mmio_basek - basek;
 				if (pre_sizek > 0) {
 					ram_resource(dev, (idx | i), basek, pre_sizek);

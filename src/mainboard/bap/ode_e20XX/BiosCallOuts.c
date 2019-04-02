@@ -17,10 +17,10 @@
 #include <northbridge/amd/agesa/BiosCallOuts.h>
 #include <northbridge/amd/agesa/state_machine.h>
 #include <FchPlatform.h>
-#include <cbfs.h>
-#include "imc.h"
 #include <stdlib.h>
 #include <spd_bin.h>
+
+#include "imc.h"
 
 static AGESA_STATUS board_ReadSpd_from_cbfs(UINT32 Func, UINTN Data, VOID *ConfigPtr);
 
@@ -105,7 +105,7 @@ static const CODEC_TBL_LIST CodecTableList[] =
 static void oem_fan_control(FCH_DATA_BLOCK *FchParams)
 {
 	/* Enable IMC fan control. the recommand way */
-	if (IS_ENABLED(CONFIG_HUDSON_IMC_FWM)) {
+	if (CONFIG(HUDSON_IMC_FWM)) {
 		imc_reg_init();
 
 		/* HwMonitorEnable = TRUE &&  HwmFchtsiAutoOpll ==FALSE to call FchECfancontrolservice */
@@ -195,7 +195,7 @@ static AGESA_STATUS board_ReadSpd_from_cbfs(UINT32 Func, UINTN Data, VOID *Confi
 	AGESA_READ_SPD_PARAMS *info = ConfigPtr;
 	u8 index;
 
-	if (IS_ENABLED(CONFIG_BAP_E20_DDR3_1066))
+	if (CONFIG(BAP_E20_DDR3_1066))
 		index = 1;
 	else	/* CONFIG_BAP_E20_DDR3_800 */
 		index = 0;

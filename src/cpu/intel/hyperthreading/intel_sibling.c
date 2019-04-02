@@ -19,12 +19,12 @@
 #include <smp/spinlock.h>
 #include <assert.h>
 
-#if IS_ENABLED(CONFIG_PARALLEL_CPU_INIT)
+#if CONFIG(PARALLEL_CPU_INIT)
 #error Intel hyper-threading requires serialized CPU init
 #endif
 
 static int first_time = 1;
-static int disable_siblings = !CONFIG_LOGICAL_CPUS;
+static int disable_siblings = !CONFIG(LOGICAL_CPUS);
 
 /* Return true if running thread does not have the smallest lapic ID
  * within a CPU core.

@@ -34,7 +34,6 @@ payloads/external/Memtest86Plus \
 payloads/external/iPXE \
 payloads/external/tint \
 payloads/external/sortbootorder \
-payloads/external/sgabios \
 payloads/external/tianocore \
 payloads/external/GRUB2 \
 payloads/external/LinuxBoot \

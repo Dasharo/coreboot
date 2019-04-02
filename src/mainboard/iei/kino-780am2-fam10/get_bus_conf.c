@@ -14,11 +14,9 @@
  */
 
 #include <device/pci.h>
-#include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <cpu/amd/multicore.h>
-
 #include <cpu/amd/amdfam10_sysconf.h>
 
 /* Global variables for MB layouts and these will be shared by irqtable mptable
@@ -38,7 +36,7 @@ void get_bus_conf(void)
 	pirq_router_bus = (sysconf.pci1234[0] >> 16) & 0xff;
 
 	/* I/O APICs:   APIC ID Version State   Address */
-	if (IS_ENABLED(CONFIG_LOGICAL_CPUS))
+	if (CONFIG(LOGICAL_CPUS))
 		apicid_base = get_apicid_base(1);
 	else
 		apicid_base = CONFIG_MAX_PHYSICAL_CPUS;

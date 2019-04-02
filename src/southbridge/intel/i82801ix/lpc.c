@@ -370,7 +370,7 @@ static void enable_clock_gating(void)
 	RCBA32(0x38c0) |= 7;
 }
 
-#if IS_ENABLED(CONFIG_HAVE_SMI_HANDLER)
+#if CONFIG(HAVE_SMI_HANDLER)
 static void i82801ix_lock_smm(struct device *dev)
 {
 #if TEST_SMM_FLASH_LOCKDOWN
@@ -394,7 +394,7 @@ static void i82801ix_lock_smm(struct device *dev)
 	/* Don't allow evil boot loaders, kernels, or
 	 * userspace applications to deceive us:
 	 */
-	if (!IS_ENABLED(CONFIG_PARALLEL_MP))
+	if (!CONFIG(PARALLEL_MP))
 		smm_lock();
 
 #if TEST_SMM_FLASH_LOCKDOWN
@@ -466,7 +466,7 @@ static void lpc_init(struct device *dev)
 	/* Interrupt 9 should be level triggered (SCI) */
 	i8259_configure_irq_trigger(9, 1);
 
-#if IS_ENABLED(CONFIG_HAVE_SMI_HANDLER)
+#if CONFIG(HAVE_SMI_HANDLER)
 	i82801ix_lock_smm(dev);
 #endif
 }
@@ -527,17 +527,6 @@ static void i82801ix_lpc_read_resources(struct device *dev)
 	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 }
 
-static void set_subsystem(struct device *dev, unsigned vendor, unsigned device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
-}
-
 static void southbridge_inject_dsdt(struct device *dev)
 {
 	global_nvs_t *gnvs = cbmem_add (CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
@@ -578,7 +567,7 @@ static void southbridge_fill_ssdt(struct device *device)
 }
 
 static struct pci_operations pci_ops = {
-	.set_subsystem = set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations device_ops = {

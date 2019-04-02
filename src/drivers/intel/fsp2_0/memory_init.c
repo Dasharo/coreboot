@@ -33,12 +33,17 @@
 #include <vb2_api.h>
 #include <fsp/memory_init.h>
 
+/* TPM MRC hash functionality depends on vboot starting before memory init. */
+_Static_assert(!CONFIG(FSP2_0_USES_TPM_MRC_HASH) ||
+	       CONFIG(VBOOT_STARTS_IN_BOOTBLOCK),
+	       "for TPM MRC hash functionality, vboot must start in bootblock");
+
 static void save_memory_training_data(bool s3wake, uint32_t fsp_version)
 {
 	size_t  mrc_data_size;
 	const void *mrc_data;
 
-	if (!IS_ENABLED(CONFIG_CACHE_MRC_SETTINGS) || s3wake)
+	if (!CONFIG(CACHE_MRC_SETTINGS) || s3wake)
 		return;
 
 	mrc_data = fsp_find_nv_storage_data(&mrc_data_size);
@@ -57,7 +62,7 @@ static void save_memory_training_data(bool s3wake, uint32_t fsp_version)
 				mrc_data_size) < 0)
 		printk(BIOS_ERR, "Failed to stash MRC data\n");
 
-	if (IS_ENABLED(CONFIG_FSP2_0_USES_TPM_MRC_HASH))
+	if (CONFIG(FSP2_0_USES_TPM_MRC_HASH))
 		mrc_cache_update_hash(mrc_data, mrc_data_size);
 }
 
@@ -74,7 +79,7 @@ static void do_fsp_post_memory_init(bool s3wake, uint32_t fsp_version)
 			range_entry_size(&fsp_mem));
 	} else if (cbmem_initialize_id_size(CBMEM_ID_FSP_RESERVED_MEMORY,
 				range_entry_size(&fsp_mem))) {
-		if (IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)) {
+		if (CONFIG(HAVE_ACPI_RESUME)) {
 			printk(BIOS_ERR,
 				"Failed to recover CBMEM in S3 resume.\n");
 			/* Failed S3 resume, reset to come up cleanly */
@@ -92,14 +97,6 @@ static void do_fsp_post_memory_init(bool s3wake, uint32_t fsp_version)
 
 	/* Create romstage handof information */
 	romstage_handoff_init(s3wake);
-
-	/*
-	 * Initialize the TPM, unless the TPM was already initialized
-	 * in verstage and used to verify romstage.
-	 */
-	if ((IS_ENABLED(CONFIG_TPM1) || IS_ENABLED(CONFIG_TPM2)) &&
-	    !IS_ENABLED(CONFIG_VBOOT_STARTS_IN_BOOTBLOCK))
-		tpm_setup(s3wake);
 }
 
 static void fsp_fill_mrc_cache(FSPM_ARCH_UPD *arch_upd, uint32_t fsp_version)
@@ -109,7 +106,7 @@ static void fsp_fill_mrc_cache(FSPM_ARCH_UPD *arch_upd, uint32_t fsp_version)
 
 	arch_upd->NvsBufferPtr = NULL;
 
-	if (!IS_ENABLED(CONFIG_CACHE_MRC_SETTINGS))
+	if (!CONFIG(CACHE_MRC_SETTINGS))
 		return;
 
 	/*
@@ -118,7 +115,7 @@ static void fsp_fill_mrc_cache(FSPM_ARCH_UPD *arch_upd, uint32_t fsp_version)
 	 * 2. Memory retrain switch is set.
 	 */
 	if (vboot_recovery_mode_enabled()) {
-		if (!IS_ENABLED(CONFIG_HAS_RECOVERY_MRC_CACHE))
+		if (!CONFIG(HAS_RECOVERY_MRC_CACHE))
 			return;
 		if (vboot_recovery_mode_memory_retrain())
 			return;
@@ -128,13 +125,13 @@ static void fsp_fill_mrc_cache(FSPM_ARCH_UPD *arch_upd, uint32_t fsp_version)
 		return;
 
 	/* Assume boot device is memory mapped. */
-	assert(IS_ENABLED(CONFIG_BOOT_DEVICE_MEMORY_MAPPED));
+	assert(CONFIG(BOOT_DEVICE_MEMORY_MAPPED));
 	data = rdev_mmap_full(&rdev);
 
 	if (data == NULL)
 		return;
 
-	if (IS_ENABLED(CONFIG_FSP2_0_USES_TPM_MRC_HASH) &&
+	if (CONFIG(FSP2_0_USES_TPM_MRC_HASH) &&
 	    !mrc_cache_verify_hash(data, region_device_sz(&rdev)))
 		return;
 
@@ -174,8 +171,8 @@ static enum cb_err setup_fsp_stack_frame(FSPM_ARCH_UPD *arch_upd,
 	 * setting up seprate stack frame. FSP 2.1 would not relocate stack
 	 * top and does not reinitialize stack pointer.
 	 */
-	if (IS_ENABLED(CONFIG_FSP_USES_CB_STACK)) {
-		arch_upd->StackBase = (void *)_car_stack_end;
+	if (CONFIG(FSP_USES_CB_STACK)) {
+		arch_upd->StackBase = (void *)_car_stack_start;
 		arch_upd->StackSize = CONFIG_DCACHE_BSP_STACK_SIZE;
 		return CB_SUCCESS;
 	}
@@ -254,7 +251,7 @@ static uint32_t fsp_memory_settings_version(const struct fsp_header *hdr)
 	/* Use the full FSP version by default. */
 	uint32_t ver = hdr->fsp_revision;
 
-	if (!IS_ENABLED(CONFIG_FSP_PLATFORM_MEMORY_SETTINGS_VERSIONS))
+	if (!CONFIG(FSP_PLATFORM_MEMORY_SETTINGS_VERSIONS))
 		return ver;
 
 	ver &= ~0xff;
@@ -298,7 +295,7 @@ static void do_fsp_memory_init(struct fsp_header *hdr, bool s3wake,
 	/* Give SoC and mainboard a chance to update the UPD */
 	platform_fsp_memory_init_params_cb(&fspm_upd, fsp_version);
 
-	if (IS_ENABLED(CONFIG_MMA))
+	if (CONFIG(MMA))
 		setup_mma(&fspm_upd.FspmConfig);
 
 	post_code(POST_MEM_PREINIT_PREP_END);
@@ -383,7 +380,7 @@ void fsp_memory_init(bool s3wake)
 	struct memranges memmap;
 	struct range_entry freeranges[2];
 
-	if (IS_ENABLED(CONFIG_ELOG_BOOT_COUNT) && !s3wake)
+	if (CONFIG(ELOG_BOOT_COUNT) && !s3wake)
 		boot_count_increment();
 
 	if (cbfs_boot_locate(&file_desc, name, NULL)) {
@@ -399,7 +396,7 @@ void fsp_memory_init(bool s3wake)
 		_car_relocatable_data_end - _car_region_start, 0);
 	memranges_insert(&memmap, (uintptr_t)_program, REGION_SIZE(program), 0);
 
-	if (!IS_ENABLED(CONFIG_FSP_M_XIP))
+	if (!CONFIG(FSP_M_XIP))
 		status = load_fspm_mem(&hdr, &file_data, &memmap);
 	else
 		status = load_fspm_xip(&hdr, &file_data);

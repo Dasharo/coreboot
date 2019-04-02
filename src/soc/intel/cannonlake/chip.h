@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2007-2008 coresystems GmbH
  * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2017-2018 Intel Corporation.
+ * Copyright (C) 2017-2019 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,11 +30,13 @@
 #include <soc/serialio.h>
 #include <soc/usb.h>
 #include <soc/vr_config.h>
-#if IS_ENABLED(CONFIG_SOC_INTEL_CANNONLAKE_PCH_H)
+#if CONFIG(SOC_INTEL_CANNONLAKE_PCH_H)
 #include <soc/gpio_defs_cnp_h.h>
 #else
 #include <soc/gpio_defs.h>
 #endif
+
+#define SOC_INTEL_CML_UART_DEV_MAX 3
 
 struct soc_intel_cannonlake_config {
 
@@ -101,13 +103,13 @@ struct soc_intel_cannonlake_config {
 	 * For CNL, options are as following
 	 * When enabled, memory will be training at three different frequencies.
 	 * 0:Disabled, 1:FixedLow, 2:FixedMid, 3:FixedHigh, 4:Enabled
-	 * For WHL/CFL options are as following
+	 * For WHL/CFL/CML options are as following
 	 * When enabled, memory will be training at two different frequencies.
 	 * 0:Disabled, 1:FixedLow, 2:FixedHigh, 3:Enabled*/
 	enum {
 		SaGv_Disabled,
 		SaGv_FixedLow,
-#if !IS_ENABLED(CONFIG_SOC_INTEL_COMMON_CANNONLAKE_BASE)
+#if !CONFIG(SOC_INTEL_COMMON_CANNONLAKE_BASE)
 		SaGv_FixedMid,
 #endif
 		SaGv_FixedHigh,
@@ -135,6 +137,15 @@ struct soc_intel_cannonlake_config {
 	uint8_t SataSalpSupport;
 	uint8_t SataPortsEnable[8];
 	uint8_t SataPortsDevSlp[8];
+
+	/* Enable/Disable SLP_S0 with GBE Support. 0: disable, 1: enable */
+	uint8_t SlpS0WithGbeSupport;
+	/* SLP_S0 Voltage Margining Policy. 0: disable, 1: enable */
+	uint8_t PchPmSlpS0VmRuntimeControl;
+	/* SLP_S0 Voltage Margining  0.70V Policy. 0: disable, 1: enable */
+	uint8_t PchPmSlpS0Vm070VSupport;
+	/* SLP_S0 Voltage Margining  0.75V Policy. 0: disable, 1: enable */
+	uint8_t PchPmSlpS0Vm075VSupport;
 
 	/* Audio related */
 	uint8_t PchHdaDspEnable;
@@ -308,10 +319,30 @@ struct soc_intel_cannonlake_config {
 	 * PchSerialIoIndexUART2
 	 *
 	 * Mode select:
+	 * For Cannonlake PCH following values are supported:
+	 * PchSerialIoNotInitialized
 	 * PchSerialIoDisabled
 	 * PchSerialIoPci
 	 * PchSerialIoAcpi
 	 * PchSerialIoHidden
+	 * PchSerialIoMax
+	 *
+	 * For Cometlake following values are supported:
+	 * PchSerialIoNotInitialized
+	 * PchSerialIoDisabled,
+	 * PchSerialIoPci,
+	 * PchSerialIoHidden,
+	 * PchSerialIoLegacyUart,
+	 * PchSerialIoSkipInit,
+	 * PchSerialIoMax
+	 *
+	 * NOTE:
+	 * PchSerialIoNotInitialized is not an option provided by FSP, this
+	 * option is default selected in case devicetree doesn't fill this param
+	 * In case PchSerialIoNotInitialized is selected or an invalid value is
+	 * provided from devicetree, coreboot will configure device into PCI
+	 * mode by default.
+	 *
 	 */
 	uint8_t SerialIoDevMode[PchSerialIoIndexMAX];
 
@@ -361,6 +392,24 @@ struct soc_intel_cannonlake_config {
 
 	/* SATA Power Optimizer */
 	uint8_t satapwroptimize;
+
+	/* Enable or disable eDP device */
+	uint8_t DdiPortEdp;
+
+	/* Enable or disable HPD of DDI port B/C/D/F */
+	uint8_t DdiPortBHpd;
+	uint8_t DdiPortCHpd;
+	uint8_t DdiPortDHpd;
+	uint8_t DdiPortFHpd;
+
+	/* Enable or disable DDC of DDI port B/C/D/F  */
+	uint8_t DdiPortBDdc;
+	uint8_t DdiPortCDdc;
+	uint8_t DdiPortDDdc;
+	uint8_t DdiPortFDdc;
+
+	/* Unlock all GPIO Pads */
+	uint8_t PchUnlockGpioPads;
 };
 
 typedef struct soc_intel_cannonlake_config config_t;

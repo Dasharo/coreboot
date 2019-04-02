@@ -30,7 +30,7 @@
 #include <memory_info.h>
 #include <spd.h>
 #include <cbmem.h>
-#if IS_ENABLED(CONFIG_CHROMEOS)
+#if CONFIG(CHROMEOS)
 #include <vendorcode/google/chromeos/gnvs.h>
 #endif
 
@@ -350,7 +350,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 	t->length = len - 2;
 
 	t->vendor = smbios_add_string(t->eos, "coreboot");
-#if !IS_ENABLED(CONFIG_CHROMEOS)
+#if !CONFIG(CHROMEOS)
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
 
 	t->bios_version = smbios_add_string(t->eos,
@@ -359,12 +359,12 @@ static int smbios_write_type0(unsigned long *current, int handle)
 #define SPACES \
 	"                                                                  "
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 	u32 version_offset = (u32)smbios_string_table_len(t->eos);
 #endif
 	t->bios_version = smbios_add_string(t->eos, SPACES);
 
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 	/* SMBIOS offsets start at 1 rather than 0 */
 	chromeos_get_chromeos_acpi()->vbt10 =
 		(u32)t->eos + (version_offset - 1);
@@ -390,10 +390,10 @@ static int smbios_write_type0(unsigned long *current, int handle)
 		BIOS_CHARACTERISTICS_SELECTABLE_BOOT |
 		BIOS_CHARACTERISTICS_UPGRADEABLE;
 
-	if (IS_ENABLED(CONFIG_CARDBUS_PLUGIN_SUPPORT))
+	if (CONFIG(CARDBUS_PLUGIN_SUPPORT))
 		t->bios_characteristics |= BIOS_CHARACTERISTICS_PC_CARD;
 
-	if (IS_ENABLED(CONFIG_HAVE_ACPI_TABLES))
+	if (CONFIG(HAVE_ACPI_TABLES))
 		t->bios_characteristics_ext1 = BIOS_EXT1_CHARACTERISTICS_ACPI;
 
 	t->bios_characteristics_ext2 = BIOS_EXT2_CHARACTERISTICS_TARGET;
@@ -401,8 +401,6 @@ static int smbios_write_type0(unsigned long *current, int handle)
 	*current += len;
 	return len;
 }
-
-#if !IS_ENABLED(CONFIG_SMBIOS_PROVIDED_BY_MOBO)
 
 const char *__weak smbios_mainboard_serial_number(void)
 {
@@ -424,12 +422,6 @@ const char *__weak smbios_mainboard_product_name(void)
 	return CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME;
 }
 
-void __weak smbios_mainboard_set_uuid(u8 *uuid)
-{
-	/* leave all zero */
-}
-#endif
-
 const char *__weak smbios_mainboard_asset_tag(void)
 {
 	return "";
@@ -450,7 +442,32 @@ smbios_board_type __weak smbios_mainboard_board_type(void)
 	return SMBIOS_BOARD_TYPE_UNKNOWN;
 }
 
-const char *__weak smbios_mainboard_sku(void)
+const char *__weak smbios_system_serial_number(void)
+{
+	return smbios_mainboard_serial_number();
+}
+
+const char *__weak smbios_system_version(void)
+{
+	return smbios_mainboard_version();
+}
+
+const char *__weak smbios_system_manufacturer(void)
+{
+	return smbios_mainboard_manufacturer();
+}
+
+const char *__weak smbios_system_product_name(void)
+{
+	return smbios_mainboard_product_name();
+}
+
+void __weak smbios_system_set_uuid(u8 *uuid)
+{
+	/* leave all zero */
+}
+
+const char *__weak smbios_system_sku(void)
 {
 	return "";
 }
@@ -460,12 +477,27 @@ int __weak fill_mainboard_smbios_type16(unsigned long *current, int *handle)
 	return 0;
 }
 
-#ifdef CONFIG_MAINBOARD_FAMILY
-const char *smbios_mainboard_family(void)
+static int get_socket_type(void)
 {
-	return CONFIG_MAINBOARD_FAMILY;
+	if (CONFIG(CPU_INTEL_SLOT_1))
+		return 0x08;
+	if (CONFIG(CPU_INTEL_SOCKET_MPGA604))
+		return 0x13;
+	if (CONFIG(CPU_INTEL_SOCKET_LGA775))
+		return 0x15;
+	if (CONFIG(CPU_AMD_SOCKET_AM2R2))
+		return 0x17;
+	if (CONFIG(CPU_AMD_SOCKET_F_1207))
+		return 0x18;
+	if (CONFIG(CPU_AMD_SOCKET_G34_NON_AGESA))
+		return 0x1a;
+	if (CONFIG(CPU_AMD_SOCKET_AM3))
+		return 0x1b;
+	if (CONFIG(CPU_AMD_SOCKET_C32_NON_AGESA))
+		return 0x1c;
+
+	return 0x02; /* Unknown */
 }
-#endif /* CONFIG_MAINBOARD_FAMILY */
 
 static int smbios_write_type1(unsigned long *current, int handle)
 {
@@ -477,17 +509,17 @@ static int smbios_write_type1(unsigned long *current, int handle)
 	t->handle = handle;
 	t->length = len - 2;
 	t->manufacturer = smbios_add_string(t->eos,
-		smbios_mainboard_manufacturer());
+		smbios_system_manufacturer());
 	t->product_name = smbios_add_string(t->eos,
-		smbios_mainboard_product_name());
+		smbios_system_product_name());
 	t->serial_number = smbios_add_string(t->eos,
-		smbios_mainboard_serial_number());
-	t->sku = smbios_add_string(t->eos, smbios_mainboard_sku());
-	t->version = smbios_add_string(t->eos, smbios_mainboard_version());
+		smbios_system_serial_number());
+	t->sku = smbios_add_string(t->eos, smbios_system_sku());
+	t->version = smbios_add_string(t->eos, smbios_system_version());
 #ifdef CONFIG_MAINBOARD_FAMILY
-	t->family = smbios_add_string(t->eos, smbios_mainboard_family());
+	t->family = smbios_add_string(t->eos, CONFIG_MAINBOARD_FAMILY);
 #endif
-	smbios_mainboard_set_uuid(t->uuid);
+	smbios_system_set_uuid(t->uuid);
 	len = t->length + smbios_string_table_len(t->eos);
 	*current += len;
 	return len;
@@ -531,7 +563,7 @@ static int smbios_write_type3(unsigned long *current, int handle)
 	t->handle = handle;
 	t->length = len - 2;
 	t->manufacturer = smbios_add_string(t->eos,
-		smbios_mainboard_manufacturer());
+		smbios_system_manufacturer());
 	t->bootup_state = SMBIOS_STATE_SAFE;
 	t->power_supply_state = SMBIOS_STATE_SAFE;
 	t->thermal_state = SMBIOS_STATE_SAFE;
@@ -569,7 +601,7 @@ static int smbios_write_type4(unsigned long *current, int handle)
 	t->l1_cache_handle = 0xffff;
 	t->l2_cache_handle = 0xffff;
 	t->l3_cache_handle = 0xffff;
-	t->processor_upgrade = 1;
+	t->processor_upgrade = get_socket_type();
 	len = t->length + smbios_string_table_len(t->eos);
 	*current += len;
 	return len;
@@ -768,7 +800,7 @@ unsigned long smbios_write_tables(unsigned long current)
 		handle++));
 	update_max(len, max_struct_size, smbios_write_type11(&current,
 		&handle));
-	if (IS_ENABLED(CONFIG_ELOG))
+	if (CONFIG(ELOG))
 		update_max(len, max_struct_size,
 			elog_smbios_write_type15(&current,handle++));
 	update_max(len, max_struct_size, smbios_write_type16(&current,

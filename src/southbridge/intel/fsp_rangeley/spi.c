@@ -14,9 +14,9 @@
  */
 
 /* This file is derived from the flashrom project. */
+
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <commonlib/helpers.h>
 #include <delay.h>
 #include <device/mmio.h>
@@ -193,7 +193,7 @@ enum {
 	SPI_OPCODE_TYPE_WRITE_WITH_ADDRESS =	3,
 };
 
-#if IS_ENABLED(CONFIG_DEBUG_SPI_FLASH)
+#if CONFIG(DEBUG_SPI_FLASH)
 
 static u8 readb_(const void *addr)
 {

@@ -19,7 +19,6 @@
 #include <device/device.h>
 #include <gpio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <soc/nhlt.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include "ec.h"
@@ -27,7 +26,7 @@
 
 static void mainboard_init(struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_EC_GOOGLE_CHROMEEC))
+	if (CONFIG(EC_GOOGLE_CHROMEEC))
 		mainboard_ec_init();
 }
 

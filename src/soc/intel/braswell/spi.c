@@ -14,6 +14,7 @@
  */
 
 /* This file is derived from the flashrom project. */
+
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <bootstate.h>
@@ -28,7 +29,6 @@
 #include <spi-generic.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
 typedef struct spi_slave ich_spi_slave;
 
@@ -119,7 +119,7 @@ enum {
 	SPI_OPCODE_TYPE_WRITE_WITH_ADDRESS =	3
 };
 
-#if IS_ENABLED(CONFIG_DEBUG_SPI_FLASH)
+#if CONFIG(DEBUG_SPI_FLASH)
 
 static u8 readb_(void *addr)
 {

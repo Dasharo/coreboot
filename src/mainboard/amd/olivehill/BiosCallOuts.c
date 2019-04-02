@@ -17,9 +17,9 @@
 #include <northbridge/amd/agesa/BiosCallOuts.h>
 #include <northbridge/amd/agesa/state_machine.h>
 #include <FchPlatform.h>
-#include <cbfs.h>
-#include "imc.h"
 #include <stdlib.h>
+
+#include "imc.h"
 
 const BIOS_CALLOUT_STRUCT BiosCallouts[] =
 {
@@ -102,7 +102,7 @@ static const CODEC_TBL_LIST OlivehillCodecTableList[] =
 static void oem_fan_control(FCH_DATA_BLOCK *FchParams)
 {
 	/* Enable IMC fan control. the recommand way */
-	if (IS_ENABLED(CONFIG_HUDSON_IMC_FWM)) {
+	if (CONFIG(HUDSON_IMC_FWM)) {
 		imc_reg_init();
 
 		/* HwMonitorEnable = TRUE &&  HwmFchtsiAutoOpll ==FALSE to call FchECfancontrolservice */

@@ -17,13 +17,12 @@
 #include <string.h>
 #include <device/pci_def.h>
 #include <arch/io.h>
-#include <arch/stages.h>
 #include <device/pci_ops.h>
 #include <device/pnp.h>
 #include <arch/cpu.h>
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
-#include <commonlib/loglevel.h>
+#include <timestamp.h>
 #include <cpu/amd/car.h>
 #include <device/pnp.h>
 #include <device/pnp_def.h>
@@ -37,7 +36,6 @@
 #include <Fch/Fch.h>
 #include <superio/nuvoton/common/nuvoton.h>
 #include <superio/nuvoton/nct5104d/nct5104d.h>
-#include <timestamp.h>
 #include "gpio_ftns.h"
 #include <build.h>
 #include "bios_knobs.h"
@@ -204,13 +202,13 @@ static void early_lpc_init(void)
 	//
 	// Configure output disabled, value low, pull up/down disabled
 	//
-	if (IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5)) {
+	if (CONFIG(BOARD_PCENGINES_APU5)) {
 		configure_gpio(IOMUX_GPIO_22, Function0, GPIO_22, setting);
 	}
 
-	if (IS_ENABLED(CONFIG_BOARD_PCENGINES_APU2) ||
-		IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) ||
-		IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)) {
+	if (CONFIG(BOARD_PCENGINES_APU2) ||
+		CONFIG(BOARD_PCENGINES_APU3) ||
+		CONFIG(BOARD_PCENGINES_APU4)) {
 		configure_gpio(IOMUX_GPIO_32, Function0, GPIO_32, setting);
 	}
 
@@ -222,8 +220,8 @@ static void early_lpc_init(void)
 	// Configure output enabled, value low, pull up/down disabled
 	//
 	setting = GPIO_OUTPUT_ENABLE;
-	if (IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) ||
-		IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)) {
+	if (CONFIG(BOARD_PCENGINES_APU3) ||
+		CONFIG(BOARD_PCENGINES_APU4)) {
 		configure_gpio(IOMUX_GPIO_33, Function0, GPIO_33, setting);
 	}
 
@@ -236,7 +234,7 @@ static void early_lpc_init(void)
 	//
 	setting = GPIO_OUTPUT_ENABLE | GPIO_OUTPUT_VALUE;
 
-	if (IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5)) {
+	if (CONFIG(BOARD_PCENGINES_APU5)) {
 		configure_gpio(IOMUX_GPIO_32, Function0, GPIO_32, setting);
 		configure_gpio(IOMUX_GPIO_33, Function0, GPIO_33, setting);
 	}

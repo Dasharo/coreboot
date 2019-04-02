@@ -33,13 +33,7 @@ static void usb_ehci_set_subsystem(struct device *dev, unsigned int vendor,
 	/* Enable writes to protected registers. */
 	pci_write_config8(dev, 0x80, access_cntl | 1);
 
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
+	pci_dev_set_subsystem(dev, vendor, device);
 
 	/* Restore protection. */
 	pci_write_config8(dev, 0x80, access_cntl);
@@ -47,7 +41,7 @@ static void usb_ehci_set_subsystem(struct device *dev, unsigned int vendor,
 
 static void ehci_enable(struct device *dev)
 {
-	if (CONFIG_USBDEBUG)
+	if (CONFIG(USBDEBUG))
 		dev->enabled = 1;
 	else
 		pch_disable_devfn(dev);

@@ -21,7 +21,6 @@
 #include <console/console.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
-#include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <cpu/amd/multicore.h>
@@ -74,7 +73,7 @@ void get_bus_conf(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_LOGICAL_CPUS)) {
+	if (CONFIG(LOGICAL_CPUS)) {
 		apicid_base = get_apicid_base(1);
 		printk(BIOS_SPEW, "CONFIG_LOGICAL_CPUS == 1: apicid_base: %08x\n", apicid_base);
 	}

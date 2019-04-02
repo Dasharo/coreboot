@@ -21,12 +21,6 @@
 #include <device/pci_ops.h>
 
 #define CACHE_LINE_SIZE	0x10
-/* Latency tolerance reporting, max non-snoop latency value 3.14ms */
-#define PCIE_LTR_MAX_NO_SNOOP_LATENCY_VALUE	0x1003
-/* Latency tolerance reporting, max snoop latency value 3.14ms */
-#define PCIE_LTR_MAX_SNOOP_LATENCY_VALUE	0x1003
-/* PCI-E Sub-System ID */
-#define PCIE_SUBSYSTEM_VENDOR_ID	0x94
 
 static void pch_pcie_init(struct device *dev)
 {
@@ -46,7 +40,7 @@ static void pch_pcie_init(struct device *dev)
 	/* disable parity error response, enable ISA */
 	pci_update_config16(dev, PCI_BRIDGE_CONTROL, ~1, 1<<2);
 
-	if (IS_ENABLED(CONFIG_PCIE_DEBUG_INFO)) {
+	if (CONFIG(PCIE_DEBUG_INFO)) {
 		printk(BIOS_SPEW, "    MBL    = 0x%08x\n",
 				pci_read_config32(dev, PCI_MEMORY_BASE));
 		printk(BIOS_SPEW, "    PMBL   = 0x%08x\n",
@@ -68,20 +62,13 @@ static void pcie_set_L1_ss_max_latency(struct device *dev, unsigned int offset)
 {
 	/* Set max snoop and non-snoop latency for the SOC */
 	pci_write_config32(dev, offset,
-			PCIE_LTR_MAX_NO_SNOOP_LATENCY_VALUE << 16 |
-			PCIE_LTR_MAX_SNOOP_LATENCY_VALUE);
-}
-
-static void pcie_dev_set_subsystem(struct device *dev,
-		unsigned vendor, unsigned device)
-{
-	pci_write_config32(dev, PCIE_SUBSYSTEM_VENDOR_ID,
-			((device & 0xffff) << 16) | (vendor & 0xffff));
+		PCIE_LTR_MAX_NO_SNOOP_LATENCY_3146US << 16 |
+		PCIE_LTR_MAX_SNOOP_LATENCY_3146US);
 }
 
 static struct pci_operations pcie_ops = {
 	.set_L1_ss_latency = pcie_set_L1_ss_max_latency,
-	.set_subsystem = pcie_dev_set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations device_ops = {

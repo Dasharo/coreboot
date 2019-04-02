@@ -33,6 +33,7 @@ ramstage-y += BiosCallOuts.c
 ramstage-y += OemCustomize.c
 ramstage-y += gpio_ftns.c
 
+
 # Order of names in SPD_SOURCES is important!
 SPD_SOURCES = HYNIX-H5TQ2G83CFR
 SPD_SOURCES += HYNIX-H5TQ4G83MFR

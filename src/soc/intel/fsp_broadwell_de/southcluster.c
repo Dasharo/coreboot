@@ -27,7 +27,6 @@
 #include <pc80/i8254.h>
 #include <pc80/i8259.h>
 #include <pc80/isa-dma.h>
-#include <romstage_handoff.h>
 #include <soc/iomap.h>
 #include <soc/irq.h>
 #include <soc/lpc.h>
@@ -228,7 +227,7 @@ static void sc_init(struct device *dev)
 
 	/* Program Serial IRQ register. */
 	pci_write_config8(dev, SIRQ_CNTL, SIRQ_EN | SIRQ_MODE_CONT);
-	if (!IS_ENABLED(CONFIG_SERIRQ_CONTINUOUS_MODE)) {
+	if (!CONFIG(SERIRQ_CONTINUOUS_MODE)) {
 		/* If SERIRQ have to operate in quiet mode, it should have been
 		   run in continuous mode for at least one frame first. Use I/O
 		   access to achieve the delay of at least one LPC cycle. */
@@ -263,7 +262,7 @@ void southcluster_enable_dev(struct device *dev)
 	}
 }
 
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 static const char *lpc_acpi_name(const struct device *dev)
 {
 	if (dev->path.pci.devfn == LPC_DEV_FUNC)
@@ -281,7 +280,7 @@ static struct device_operations device_ops = {
 	.enable           = southcluster_enable_dev,
 	.scan_bus         = scan_lpc_bus,
 	.ops_pci          = &soc_pci_ops,
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name        = lpc_acpi_name,
 #endif
 };

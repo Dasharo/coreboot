@@ -20,7 +20,6 @@
 #include <cpu/amd/mtrr.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <string.h>
 #include <cpu/x86/pae.h>
 #include <cpu/x86/lapic.h>
 #include <cpu/cpu.h>
@@ -34,7 +33,7 @@ static void model_16_init(struct device *dev)
 	msr_t msr;
 	int num_banks;
 	int msrno;
-#if IS_ENABLED(CONFIG_LOGICAL_CPUS)
+#if CONFIG(LOGICAL_CPUS)
 	u32 siblings;
 #endif
 
@@ -75,7 +74,7 @@ static void model_16_init(struct device *dev)
 	/* Enable the local CPU APICs */
 	setup_lapic();
 
-#if IS_ENABLED(CONFIG_LOGICAL_CPUS)
+#if CONFIG(LOGICAL_CPUS)
 	siblings = cpuid_ecx(0x80000008) & 0xff;
 
 	if (siblings > 0) {

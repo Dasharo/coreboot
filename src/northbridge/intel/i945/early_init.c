@@ -22,7 +22,6 @@
 #include <cbmem.h>
 #include <halt.h>
 #include <romstage_handoff.h>
-#include <string.h>
 #include "i945.h"
 #include <pc80/mc146818rtc.h>
 #include <southbridge/intel/common/gpio.h>
@@ -93,7 +92,7 @@ static void i945m_detect_chipset(void)
 	}
 	printk(BIOS_DEBUG, "\n");
 
-	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GC))
+	if (CONFIG(NORTHBRIDGE_INTEL_SUBTYPE_I945GC))
 		printk(BIOS_ERR, "coreboot is compiled for the wrong chipset.\n");
 }
 
@@ -143,7 +142,7 @@ static void i945_detect_chipset(void)
 	}
 	printk(BIOS_DEBUG, "\n");
 
-	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GM))
+	if (CONFIG(NORTHBRIDGE_INTEL_SUBTYPE_I945GM))
 		printk(BIOS_ERR, "coreboot is compiled for the wrong chipset.\n");
 }
 
@@ -237,7 +236,7 @@ static void i945_setup_egress_port(void)
 	/* Egress Port Virtual Channel 1 Configuration */
 	reg32 = EPBAR32(0x2c);
 	reg32 &= 0xffffff00;
-	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GC)) {
+	if (CONFIG(NORTHBRIDGE_INTEL_SUBTYPE_I945GC)) {
 		if ((MCHBAR32(CLKCFG) & 7) == 0)
 			reg32 |= 0x1a;	/* 1067MHz */
 	}
@@ -256,7 +255,7 @@ static void i945_setup_egress_port(void)
 	reg32 |= (0x0a << 16);
 	EPBAR32(EPVC1RCAP) = reg32;
 
-	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GC)) {
+	if (CONFIG(NORTHBRIDGE_INTEL_SUBTYPE_I945GC)) {
 		if ((MCHBAR32(CLKCFG) & 7) == 0) {	/* 1067MHz */
 			EPBAR32(EPVC1IST + 0) = 0x01380138;
 			EPBAR32(EPVC1IST + 4) = 0x01380138;
@@ -552,8 +551,6 @@ static void i945_setup_pci_express_x16(void)
 	u32 reg32;
 	u16 reg16;
 
-	u8 reg8;
-
 	printk(BIOS_DEBUG, "Enabling PCI Express x16 Link\n");
 
 	reg16 = pci_read_config16(PCI_DEV(0, 0x00, 0), DEVEN);
@@ -732,9 +729,6 @@ static void i945_setup_pci_express_x16(void)
 
 	reg32 = pci_read_config32(PCI_DEV(0, 0x01, 0), 0x328);
 	pci_write_config32(PCI_DEV(0, 0x01, 0), 0x328, reg32);
-
-	reg8 = pci_read_config8(PCI_DEV(0, 0x01, 0), SLOTCAP);
-	pci_write_config8(PCI_DEV(0, 0x01, 0), SLOTCAP, reg8);
 
 	/* Additional PCIe graphics setup */
 	reg32 = pci_read_config32(PCI_DEV(0, 0x01, 0), 0xf0);
@@ -941,27 +935,13 @@ void i945_late_initialization(int s3resume)
 
 	i945_setup_dmi_rcrb();
 
-	if (IS_ENABLED(CONFIG_NORTHBRIDGE_INTEL_SUBTYPE_I945GM))
+	if (CONFIG(NORTHBRIDGE_INTEL_SUBTYPE_I945GM))
 		i945_setup_pci_express_x16();
 
 	i945_setup_root_complex_topology();
 
-#if !IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)
-#if CONFIG_DEFAULT_CONSOLE_LOGLEVEL > 8
-#if IS_ENABLED(CONFIG_DEBUG_RAM_SETUP)
-	sdram_dump_mchbar_registers();
-
-	{
-		/* This will not work if TSEG is in place! */
-		u32 tom = pci_read_config32(PCI_DEV(0, 2, 0), BSM);
-
-		printk(BIOS_DEBUG, "TOM: 0x%08x\n", tom);
-		ram_check(0x00000000, 0x000a0000);
-		ram_check(0x00100000, tom);
-	}
-#endif
-#endif
-#endif
+	if (CONFIG(DEBUG_RAM_SETUP))
+		sdram_dump_mchbar_registers();
 
 	MCHBAR16(SSKPD) = 0xCAFE;
 

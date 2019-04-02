@@ -26,7 +26,6 @@
 #include <spi_flash.h>
 #include <spi-generic.h>
 #include <stdlib.h>
-#include <string.h>
 
 /*
  * Get the FAST_SPIBAR.
@@ -157,7 +156,7 @@ void fast_spi_lock_bar(void)
 	void *spibar = fast_spi_get_bar();
 	uint16_t hsfs = SPIBAR_HSFSTS_FLOCKDN;
 
-	if (IS_ENABLED(CONFIG_FAST_SPI_DISABLE_WRITE_STATUS))
+	if (CONFIG(FAST_SPI_DISABLE_WRITE_STATUS))
 		hsfs |= SPIBAR_HSFSTS_WRSDIS;
 
 	write16(spibar + SPIBAR_HSFSTS_CTL, hsfs);

@@ -16,7 +16,6 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <timestamp.h>
 #include <device/pci_ops.h>
 #include <device/pci.h>
 #include <device/pci_def.h>
@@ -28,7 +27,6 @@
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <southbridge/intel/common/gpio.h>
 #include "ec/google/chromeec/ec.h"
-#include <halt.h>
 #include <cbfs.h>
 
 #include <southbridge/intel/bd82x6x/chip.h>

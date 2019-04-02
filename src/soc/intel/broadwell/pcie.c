@@ -555,7 +555,7 @@ static void pch_pcie_early(struct device *dev)
 	pci_update_config8(dev, 0xf5, 0x0f, 0);
 
 	/* Set AER Extended Cap ID to 01h and Next Cap Pointer to 200h. */
-	if (IS_ENABLED(CONFIG_PCIEXP_AER))
+	if (CONFIG(PCIEXP_AER))
 		pci_update_config32(dev, 0x100, ~(1 << 29) & ~0xfffff,
 			(1 << 29) | 0x10001);
 	else
@@ -563,7 +563,7 @@ static void pch_pcie_early(struct device *dev)
 			(1 << 29));
 
 	/* Set L1 Sub-State Cap ID to 1Eh and Next Cap Pointer to None. */
-	if (IS_ENABLED(CONFIG_PCIEXP_L1_SUB_STATE))
+	if (CONFIG(PCIEXP_L1_SUB_STATE))
 		pci_update_config32(dev, 0x200, ~0xfffff, 0x001e);
 	else
 		pci_update_config32(dev, 0x200, ~0xfffff, 0);
@@ -649,24 +649,16 @@ static void pch_pcie_enable(struct device *dev)
 		root_port_commit_config();
 }
 
-static void pcie_set_subsystem(struct device *dev, unsigned int vendor,
-	unsigned int device)
-{
-	/* NOTE: This is not the default position! */
-	if (!vendor || !device)
-		pci_write_config32(dev, 0x94, pci_read_config32(dev, 0));
-	else
-		pci_write_config32(dev, 0x94, (device << 16) | vendor);
-}
-
 static void pcie_set_L1_ss_max_latency(struct device *dev, unsigned int off)
 {
 	/* Set max snoop and non-snoop latency for Broadwell */
-	pci_write_config32(dev, off, 0x10031003);
+	pci_write_config32(dev, off,
+		PCIE_LTR_MAX_NO_SNOOP_LATENCY_3146US << 16 |
+		PCIE_LTR_MAX_SNOOP_LATENCY_3146US);
 }
 
 static struct pci_operations pcie_ops = {
-	.set_subsystem = pcie_set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 	.set_L1_ss_latency = pcie_set_L1_ss_max_latency,
 };
 

@@ -18,7 +18,6 @@
 #include <soc/cpu.h>
 #include <stdint.h>
 #include <timer.h>
-#include <timestamp.h>
 
 #define PISTACHIO_CLOCK_SWITCH		0xB8144200
 #define MIPS_EXTERN_PLL_BYPASS_MASK	0x00000002
@@ -36,7 +35,7 @@ static int get_count_mhz_freq(void)
 			 * frequency of 550 MHz; otherwise, the crystal is
 			 * used with a frequency of 52 MHz
 			 */
-			if (read32(PISTACHIO_CLOCK_SWITCH) &
+			if (read32_x(PISTACHIO_CLOCK_SWITCH) &
 				MIPS_EXTERN_PLL_BYPASS_MASK)
 				/* Half MIPS PLL freq. */
 				count_mhz_freq = 275;

@@ -47,6 +47,11 @@ cbfs-files-$(CONFIG_VGA_BIOS) += pci$(stripped_vgabios_id).rom
 pci$(stripped_vgabios_id).rom-file := $(call strip_quotes,$(CONFIG_VGA_BIOS_FILE))
 pci$(stripped_vgabios_id).rom-type := optionrom
 
+stripped_vgabios_dgpu_id = $(call strip_quotes,$(CONFIG_VGA_BIOS_DGPU_ID))
+cbfs-files-$(CONFIG_VGA_BIOS_DGPU) += pci$(stripped_vgabios_dgpu_id).rom
+pci$(stripped_vgabios_dgpu_id).rom-file := $(call strip_quotes,$(CONFIG_VGA_BIOS_DGPU_FILE))
+pci$(stripped_vgabios_dgpu_id).rom-type := optionrom
+
 verstage-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
 bootblock-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
 romstage-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
@@ -322,8 +327,6 @@ ramstage-y += memmove.c
 ramstage-y += memset.c
 ramstage-$(CONFIG_X86_TOP4G_BOOTMEDIA_MAP) += mmap_boot.c
 ramstage-$(CONFIG_GENERATE_MP_TABLE) += mpspec.c
-ramstage-y += pci_ops_conf1.c
-ramstage-$(CONFIG_NO_MMCONF_SUPPORT) += pci_ops.c
 ramstage-$(CONFIG_GENERATE_PIRQ_TABLE) += pirq_routing.c
 ramstage-y += rdrand.c
 ramstage-$(CONFIG_GENERATE_SMBIOS_TABLES) += smbios.c

@@ -74,7 +74,7 @@ static void pch_enable_serial_irqs(struct device *dev)
 	/* Set packet length and toggle silent mode bit for one frame. */
 	pci_write_config8(dev, SERIRQ_CNTL,
 			  (1 << 7) | (1 << 6) | ((21 - 17) << 2) | (0 << 0));
-#if !IS_ENABLED(CONFIG_SERIRQ_CONTINUOUS_MODE)
+#if !CONFIG(SERIRQ_CONTINUOUS_MODE)
 	pci_write_config8(dev, SERIRQ_CNTL,
 			  (1 << 7) | (0 << 6) | ((21 - 17) << 2) | (0 << 0));
 #endif
@@ -283,7 +283,7 @@ static void pch_rtc_init(struct device *dev)
 	if (rtc_failed) {
 		reg8 &= ~RTC_BATTERY_DEAD;
 		pci_write_config8(dev, GEN_PMCON_3, reg8);
-#if IS_ENABLED(CONFIG_ELOG)
+#if CONFIG(ELOG)
 		elog_add_event(ELOG_TYPE_RTC_RESET);
 #endif
 	}
@@ -433,7 +433,7 @@ static void enable_clock_gating(struct device *dev)
 
 static void pch_set_acpi_mode(void)
 {
-	if (!acpi_is_wakeup_s3() && CONFIG_HAVE_SMI_HANDLER) {
+	if (!acpi_is_wakeup_s3() && CONFIG(HAVE_SMI_HANDLER)) {
 #if ENABLE_ACPI_MODE_IN_COREBOOT
 		printk(BIOS_DEBUG, "Enabling ACPI via APMC:\n");
 		outb(APM_CNT_ACPI_ENABLE, APM_CNT); // Enable ACPI mode
@@ -607,18 +607,6 @@ static void pch_lpc_enable(struct device *dev)
 	RCBA32_OR(FD2, PCH_ENABLE_DBDF);
 
 	pch_enable(dev);
-}
-
-static void set_subsystem(struct device *dev, unsigned vendor,
-			  unsigned device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
 }
 
 static void southbridge_inject_dsdt(struct device *dev)
@@ -798,8 +786,8 @@ static void southbridge_fill_ssdt(struct device *device)
 static void lpc_final(struct device *dev)
 {
 	/* Call SMM finalize() handlers before resume */
-	if (IS_ENABLED(CONFIG_HAVE_SMI_HANDLER)) {
-		if (IS_ENABLED(CONFIG_INTEL_CHIPSET_LOCKDOWN) ||
+	if (CONFIG(HAVE_SMI_HANDLER)) {
+		if (CONFIG(INTEL_CHIPSET_LOCKDOWN) ||
 		    acpi_is_wakeup_s3()) {
 			outb(APM_CNT_FINALIZE, APM_CNT);
 		}
@@ -807,7 +795,7 @@ static void lpc_final(struct device *dev)
 }
 
 static struct pci_operations pci_ops = {
-	.set_subsystem = set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations device_ops = {

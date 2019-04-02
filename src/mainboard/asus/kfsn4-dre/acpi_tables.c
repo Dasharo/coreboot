@@ -20,7 +20,6 @@
  * Copyright (C) 2015 Timothy Pearson <tpearson@raptorengineeringinc.com>, Raptor Engineering
  */
 
-#include <string.h>
 #include <assert.h>
 #include <arch/acpi.h>
 #include <device/pci_ops.h>
@@ -48,7 +47,7 @@ unsigned long acpi_fill_madt(unsigned long current)
 		CONFIG_MAX_CPUS * CONFIG_MAX_PHYSICAL_CPUS, res->base, 0);
 
 	/* Initialize interrupt mapping if mptable.c didn't. */
-	if (!IS_ENABLED(CONFIG_GENERATE_MP_TABLE)) {
+	if (!CONFIG(GENERATE_MP_TABLE)) {
 		/* Copied from mptable.c */
 		/* Enable interrupts for commonly used devices (USB, SATA, etc.) */
 		pci_write_config32(dev, 0x7c, 0x0d800018);

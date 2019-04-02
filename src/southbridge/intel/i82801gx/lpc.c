@@ -330,7 +330,7 @@ static void enable_clock_gating(void)
 	RCBA32(CG) = reg32;
 }
 
-#if IS_ENABLED(CONFIG_HAVE_SMI_HANDLER)
+#if CONFIG(HAVE_SMI_HANDLER)
 static void i82801gx_lock_smm(struct device *dev)
 {
 #if TEST_SMM_FLASH_LOCKDOWN
@@ -445,7 +445,7 @@ static void lpc_init(struct device *dev)
 	/* Interrupt 9 should be level triggered (SCI) */
 	i8259_configure_irq_trigger(9, 1);
 
-#if IS_ENABLED(CONFIG_HAVE_SMI_HANDLER)
+#if CONFIG(HAVE_SMI_HANDLER)
 	i82801gx_lock_smm(dev);
 #endif
 
@@ -649,7 +649,7 @@ static void lpc_final(struct device *dev)
 {
 	u16 tco1_cnt;
 
-	if (!IS_ENABLED(CONFIG_INTEL_CHIPSET_LOCKDOWN))
+	if (!CONFIG(INTEL_CHIPSET_LOCKDOWN))
 		return;
 
 	SPIBAR16(PREOP) = SPI_OPPREFIX;
@@ -674,18 +674,6 @@ static void lpc_final(struct device *dev)
 
 	/* Indicate finalize step with post code */
 	outb(POST_OS_BOOT, 0x80);
-}
-
-static void set_subsystem(struct device *dev, unsigned int vendor,
-			  unsigned int device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
 }
 
 static void southbridge_inject_dsdt(struct device *dev)
@@ -728,7 +716,7 @@ static void southbridge_fill_ssdt(struct device *device)
 }
 
 static struct pci_operations pci_ops = {
-	.set_subsystem = set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations device_ops = {

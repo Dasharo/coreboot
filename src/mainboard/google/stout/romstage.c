@@ -15,8 +15,6 @@
  */
 
 #include <stdint.h>
-#include <string.h>
-#include <timestamp.h>
 #include <device/pci_ops.h>
 #include <device/pci_def.h>
 #include <cpu/x86/lapic.h>
@@ -27,7 +25,6 @@
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
-#include <halt.h>
 #include <bootmode.h>
 #include <ec/quanta/it8518/ec.h>
 #include "ec.h"

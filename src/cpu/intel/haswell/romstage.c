@@ -14,15 +14,12 @@
  */
 
 #include <stdint.h>
-#include <string.h>
 #include <console/console.h>
 #include <arch/cpu.h>
 #include <cf9_reset.h>
 #include <cpu/x86/bist.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
-#include <halt.h>
-#include <lib.h>
 #include <timestamp.h>
 #include <device/pci_def.h>
 #include <cpu/x86/lapic.h>
@@ -30,7 +27,7 @@
 #include <program_loading.h>
 #include <romstage_handoff.h>
 #include <vendorcode/google/chromeos/chromeos.h>
-#if IS_ENABLED(CONFIG_EC_GOOGLE_CHROMEEC)
+#if CONFIG(EC_GOOGLE_CHROMEEC)
 #include <ec/google/chromeec/ec.h>
 #endif
 #include <northbridge/intel/haswell/haswell.h>
@@ -89,7 +86,7 @@ void romstage_common(const struct romstage_params *params)
 	printk(BIOS_DEBUG, "Back from haswell_early_initialization()\n");
 
 	if (wake_from_s3) {
-#if IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)
+#if CONFIG(HAVE_ACPI_RESUME)
 		printk(BIOS_DEBUG, "Resume from S3 detected.\n");
 #else
 		printk(BIOS_DEBUG, "Resume from S3 detected, but disabled.\n");
@@ -123,15 +120,12 @@ void romstage_common(const struct romstage_params *params)
 
 	intel_early_me_status();
 
-	quick_ram_check();
-	post_code(0x3e);
-
 	if (!wake_from_s3) {
 		cbmem_initialize_empty();
 		/* Save data returned from MRC on non-S3 resumes. */
 		save_mrc_data(params->pei_data);
 	} else if (cbmem_initialize()) {
-	#if IS_ENABLED(CONFIG_HAVE_ACPI_RESUME)
+	#if CONFIG(HAVE_ACPI_RESUME)
 		/* Failed S3 resume, reset to come up cleanly */
 		system_reset();
 	#endif

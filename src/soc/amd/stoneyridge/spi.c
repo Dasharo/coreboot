@@ -15,7 +15,6 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <device/mmio.h>
 #include <lib.h>
 #include <timer.h>
@@ -29,7 +28,7 @@
 #include <soc/southbridge.h>
 #include <soc/pci_devs.h>
 
-#define SPI_DEBUG_DRIVER IS_ENABLED(CONFIG_DEBUG_SPI_FLASH)
+#define SPI_DEBUG_DRIVER CONFIG(DEBUG_SPI_FLASH)
 
 static uintptr_t spibar;
 

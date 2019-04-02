@@ -41,6 +41,13 @@ chip soc/intel/cannonlake
 	register "SlowSlewRateForGt" = "0"
 	register "SlowSlewRateForSa" = "0"
 	register "SlowSlewRateForFivr" = "0"
+	# Enable eDP device
+	register "DdiPortEdp" = "1"
+	# Enable HPD for DDI ports B/C
+	register "DdiPortBHpd" = "1"
+	register "DdiPortCHpd" = "1"
+	# Enable DDC for DDI port B
+	register "DdiPortBDdc" = "1"
 
 	# VR Settings Configuration for 4 Domains
 	#+----------------+-------+-------+-------+-------+
@@ -125,7 +132,14 @@ chip soc/intel/cannonlake
 	register "usb2_ports[3]" = "USB2_PORT_EMPTY"
 	register "usb2_ports[4]" = "USB2_PORT_EMPTY"
 	register "usb2_ports[5]" = "USB2_PORT_LONG(OC_SKIP)"	# Camera
-	register "usb2_ports[6]" = "USB2_PORT_MID(OC_SKIP)"	# WWAN
+	register "usb2_ports[6]" = "{
+		.enable        = 1, \
+		.ocpin         = OC_SKIP, \
+		.tx_bias       = USB2_BIAS_0MV, \
+		.tx_emp_enable = USB2_DE_EMP_ON_PRE_EMP_ON, \
+		.pre_emp_bias  = USB2_BIAS_28P15MV, \
+		.pre_emp_bit   = USB2_HALF_BIT_PRE_EMP, \
+		}"	# WWAN
 	register "usb2_ports[7]" = "USB2_PORT_MID(OC_SKIP)"	# USH
 	register "usb2_ports[8]" = "USB2_PORT_MID(OC_SKIP)"	# Fingerprint
 	register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# Bluetooth
@@ -247,6 +261,7 @@ chip soc/intel/cannonlake
 					chip drivers/usb/acpi
 						register "desc" = ""Bluetooth""
 						register "type" = "UPC_TYPE_INTERNAL"
+						register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H15)"
 						device usb 2.9 on end
 					end
 					chip drivers/usb/acpi
@@ -285,7 +300,7 @@ chip soc/intel/cannonlake
 			chip drivers/i2c/hid
 				register "generic.hid" = ""WCOM48E2""
 				register "generic.desc" = ""Wacom Touchscreen""
-				register "generic.irq" = "ACPI_IRQ_EDGE_LOW(GPP_C23_IRQ)"
+				register "generic.irq" = "ACPI_IRQ_LEVEL_LOW(GPP_C23_IRQ)"
 				register "generic.probed" = "1"
 				register "generic.enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_E7)"
 				register "generic.enable_delay_ms" = "5"

@@ -25,7 +25,6 @@
 #include <soc/pmc.h>
 #include <soc/power.h>
 #include <soc/romstage.h>
-#include <string.h>
 #include <timer.h>
 
 #define PMC_REGS (void *)(uintptr_t)(TEGRA_PMC_BASE)
@@ -43,7 +42,7 @@ static void enable_cpu_power_partitions(void)
 	power_ungate_partition(POWER_PARTID_C0NC);
 	power_ungate_partition(POWER_PARTID_CE0);
 
-	if (IS_ENABLED(CONFIG_ARM64_USE_ARM_TRUSTED_FIRMWARE)) {
+	if (CONFIG(ARM64_USE_ARM_TRUSTED_FIRMWARE)) {
 		/*
 		 * Deassert reset signal of all the secondary CPUs.
 		 * PMC and flow controller will take over the power sequence

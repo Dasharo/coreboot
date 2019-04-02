@@ -15,21 +15,17 @@
  */
 
 #include <stdint.h>
-#include <string.h>
 #include <device/pnp_ops.h>
 #include <device/pci_ops.h>
 #include <cpu/x86/lapic.h>
 #include <cpu/x86/msr.h>
 #include <device/pci_def.h>
-#include <halt.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <northbridge/intel/sandybridge/raminit.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
 #include <superio/winbond/common/winbond.h>
-#include <timestamp.h>
-
 
 void pch_enable_lpc(void)
 {

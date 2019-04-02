@@ -33,7 +33,7 @@ ifeq ($(CONFIG_INTEL_GMA_ADD_VBT),y)
 $(call add_vbt_to_cbfs, vbt.bin, $(call strip_quotes,$(CONFIG_INTEL_GMA_VBT_FILE)))
 endif
 
-ifeq ($(CONFIG_MAINBOARD_USE_LIBGFXINIT),y)
+ifeq ($(CONFIG_GFX_GMA),y)
 
 $(call add-special-class,gfxinit)
 gfxinit-handler = $(eval ramstage-srcs += $(1)$(2))
@@ -51,10 +51,12 @@ CONFIG_GFX_GMA_DEFAULT_MMIO := 0 # dummy, will be overwritten at runtime
 subdirs-y += ../../../../3rdparty/libgfxinit
 
 ramstage-y += gma.ads
+
+ramstage-$(CONFIG_MAINBOARD_USE_LIBGFXINIT) += gma-gfx_init.ads
 ifeq ($(CONFIG_LINEAR_FRAMEBUFFER),y)
-ramstage-y += hires_fb/gma.adb
+ramstage-$(CONFIG_MAINBOARD_USE_LIBGFXINIT) += hires_fb/gma-gfx_init.adb
 else
-ramstage-y += text_fb/gma.adb
+ramstage-$(CONFIG_MAINBOARD_USE_LIBGFXINIT) += text_fb/gma-gfx_init.adb
 endif
 
-endif # CONFIG_MAINBOARD_USE_LIBGFXINIT
+endif # CONFIG_GFX_GMA

@@ -307,7 +307,7 @@ void chipset_fsp_early_init(FSP_INIT_PARAMS *pFspInitParams,
 	ConfigureDefaultUpdData(fsp_ptr, pFspRtBuffer->Common.UpdDataRgnPtr);
 	pFspInitParams->NvsBufferPtr = NULL;
 
-#if IS_ENABLED(CONFIG_ENABLE_MRC_CACHE)
+#if CONFIG(ENABLE_MRC_CACHE)
 	/* Find the fastboot cache that was saved in the ROM */
 	pFspInitParams->NvsBufferPtr = find_and_set_fastboot_cache();
 #endif
@@ -334,18 +334,6 @@ void chipset_fsp_early_init(FSP_INIT_PARAMS *pFspInitParams,
 	}
 
 	return;
-}
-
-/* The FSP returns here after the fsp_early_init call */
-void ChipsetFspReturnPoint(EFI_STATUS Status,
-		VOID *HobListPtr)
-{
-	*(void **)CBMEM_FSP_HOB_PTR=HobListPtr;
-
-	if (Status == 0xFFFFFFFF) {
-		system_reset();
-	}
-	romstage_main_continue(Status, HobListPtr);
 }
 
 #endif	/* __PRE_RAM__ */

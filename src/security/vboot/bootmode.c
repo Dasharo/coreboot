@@ -17,29 +17,28 @@
 #include <bootmode.h>
 #include <bootstate.h>
 #include <cbmem.h>
-#include <string.h>
 #include <vb2_api.h>
 #include <security/vboot/misc.h>
 #include <security/vboot/vbnv.h>
 #include <security/vboot/vboot_common.h>
 
-static int vb2_get_recovery_reason_shared_data(void)
+static int vboot_get_recovery_reason_shared_data(void)
 {
 	/* Shared data does not exist for Ramstage and Post-CAR stage. */
 	if (ENV_RAMSTAGE || ENV_POSTCAR)
 		return 0;
 
-	struct vb2_shared_data *sd = vb2_get_shared_data();
+	struct vb2_shared_data *sd = vboot_get_shared_data();
 	assert(sd);
 	return sd->recovery_reason;
 }
 
-void vb2_save_recovery_reason_vbnv(void)
+void vboot_save_recovery_reason_vbnv(void)
 {
-	if (!IS_ENABLED(CONFIG_VBOOT_SAVE_RECOVERY_REASON_ON_REBOOT))
+	if (!CONFIG(VBOOT_SAVE_RECOVERY_REASON_ON_REBOOT))
 		return;
 
-	int reason =  vb2_get_recovery_reason_shared_data();
+	int reason = vboot_get_recovery_reason_shared_data();
 	if (!reason)
 		return;
 
@@ -48,7 +47,7 @@ void vb2_save_recovery_reason_vbnv(void)
 
 static void vb2_clear_recovery_reason_vbnv(void *unused)
 {
-	if (!IS_ENABLED(CONFIG_VBOOT_SAVE_RECOVERY_REASON_ON_REBOOT))
+	if (!CONFIG(VBOOT_SAVE_RECOVERY_REASON_ON_REBOOT))
 		return;
 
 	set_recovery_mode_into_vbnv(0);
@@ -73,13 +72,13 @@ BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT,
  */
 static int vboot_possibly_executed(void)
 {
-	if (IS_ENABLED(CONFIG_VBOOT_STARTS_IN_BOOTBLOCK)) {
-		if (ENV_BOOTBLOCK && IS_ENABLED(CONFIG_VBOOT_SEPARATE_VERSTAGE))
+	if (CONFIG(VBOOT_STARTS_IN_BOOTBLOCK)) {
+		if (ENV_BOOTBLOCK && CONFIG(VBOOT_SEPARATE_VERSTAGE))
 			return 0;
 		return 1;
 	}
 
-	if (IS_ENABLED(CONFIG_VBOOT_STARTS_IN_ROMSTAGE)) {
+	if (CONFIG(VBOOT_STARTS_IN_ROMSTAGE)) {
 		if (ENV_BOOTBLOCK)
 			return 0;
 		return 1;
@@ -128,9 +127,9 @@ int vboot_check_recovery_request(void)
 	 * verification is already complete and no slot was selected
 	 * i.e. recovery path was requested.
 	 */
-	if (vboot_possibly_executed() && vb2_logic_executed() &&
-	    !vb2_is_slot_selected())
-		return vb2_get_recovery_reason_shared_data();
+	if (vboot_possibly_executed() && vboot_logic_executed() &&
+	    !vboot_is_slot_selected())
+		return vboot_get_recovery_reason_shared_data();
 
 	return 0;
 }
@@ -169,7 +168,7 @@ int vboot_developer_mode_enabled(void)
 	return 0;
 }
 
-#if IS_ENABLED(CONFIG_VBOOT_NO_BOARD_SUPPORT)
+#if CONFIG(VBOOT_NO_BOARD_SUPPORT)
 /**
  * TODO: Create flash protection interface which implements get_write_protect_state.
  * get_recovery_mode_switch should be implemented as default function.

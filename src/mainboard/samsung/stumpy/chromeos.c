@@ -24,61 +24,38 @@
 
 #define GPIO_SPI_WP	68
 #define GPIO_REC_MODE	42
-#define GPIO_DEV_MODE	17
 
 #define FLAG_SPI_WP	0
 #define FLAG_REC_MODE	1
-#define FLAG_DEV_MODE	2
 
-#ifndef __PRE_RAM__
+#if ENV_RAMSTAGE
 #include <boot/coreboot_tables.h>
-
-#define GPIO_COUNT	6
 
 void fill_lb_gpios(struct lb_gpios *gpios)
 {
 	struct device *dev = pcidev_on_root(0x1f, 0);
 	u16 gen_pmcon_1 = pci_read_config32(dev, GEN_PMCON_1);
 
-	gpios->size = sizeof(*gpios) + (GPIO_COUNT * sizeof(struct lb_gpio));
-	gpios->count = GPIO_COUNT;
+	struct lb_gpio chromeos_gpios[] = {
+		/* Write Protect: GPIO68 = CHP3_SPI_WP */
+		{GPIO_SPI_WP, ACTIVE_HIGH, get_write_protect_state(),
+		 "write protect"},
 
-	/* Write Protect: GPIO68 = CHP3_SPI_WP */
-	gpios->gpios[0].port = GPIO_SPI_WP;
-	gpios->gpios[0].polarity = ACTIVE_HIGH;
-	gpios->gpios[0].value = get_write_protect_state();
-	strncpy((char *)gpios->gpios[0].name,"write protect",
-							GPIO_MAX_NAME_LENGTH);
+		/* Recovery: GPIO42 = CHP3_REC_MODE# */
+		{GPIO_REC_MODE, ACTIVE_LOW, !get_recovery_mode_switch(),
+		 "recovery"},
 
-	/* Recovery: GPIO42 = CHP3_REC_MODE# */
-	gpios->gpios[1].port = GPIO_REC_MODE;
-	gpios->gpios[1].polarity = ACTIVE_LOW;
-	gpios->gpios[1].value = !get_recovery_mode_switch();
-	strncpy((char *)gpios->gpios[1].name,"recovery", GPIO_MAX_NAME_LENGTH);
+		/* Hard code the lid switch GPIO to open. */
+		{100, ACTIVE_HIGH, 1, "lid"},
 
-	/* Developer: GPIO17 = KBC3_DVP_MODE */
-	gpios->gpios[2].port = GPIO_DEV_MODE;
-	gpios->gpios[2].polarity = ACTIVE_HIGH;
-	gpios->gpios[2].value = get_developer_mode_switch();
-	strncpy((char *)gpios->gpios[2].name,"developer", GPIO_MAX_NAME_LENGTH);
+		/* Power Button */
+		{101, ACTIVE_LOW, (gen_pmcon_1 >> 9) & 1, "power"},
 
-	/* Hard code the lid switch GPIO to open. */
-	gpios->gpios[3].port = 100;
-	gpios->gpios[3].polarity = ACTIVE_HIGH;
-	gpios->gpios[3].value = 1;
-	strncpy((char *)gpios->gpios[3].name,"lid", GPIO_MAX_NAME_LENGTH);
-
-	/* Power Button */
-	gpios->gpios[4].port = 101;
-	gpios->gpios[4].polarity = ACTIVE_LOW;
-	gpios->gpios[4].value = (gen_pmcon_1 >> 9) & 1;
-	strncpy((char *)gpios->gpios[4].name,"power", GPIO_MAX_NAME_LENGTH);
-
-	/* Did we load the VGA Option ROM? */
-	gpios->gpios[5].port = -1; /* Indicate that this is a pseudo GPIO */
-	gpios->gpios[5].polarity = ACTIVE_HIGH;
-	gpios->gpios[5].value = gfx_get_init_done();
-	strncpy((char *)gpios->gpios[5].name,"oprom", GPIO_MAX_NAME_LENGTH);
+		/* Did we load the VGA Option ROM? */
+		/* -1 indicates that this is a pseudo GPIO */
+		{-1, ACTIVE_HIGH, gfx_get_init_done(), "oprom"},
+	};
+	lb_add_gpios(gpios, chromeos_gpios, ARRAY_SIZE(chromeos_gpios));
 }
 #endif
 
@@ -90,16 +67,6 @@ int get_write_protect_state(void)
 	struct device *dev = pcidev_on_root(0x1f, 2);
 #endif
 	return (pci_read_config32(dev, SATA_SP) >> FLAG_SPI_WP) & 1;
-}
-
-int get_developer_mode_switch(void)
-{
-#ifdef __SIMPLE_DEVICE__
-	pci_devfn_t dev = PCI_DEV(0, 0x1f, 2);
-#else
-	struct device *dev = pcidev_on_root(0x1f, 2);
-#endif
-	return (pci_read_config32(dev, SATA_SP) >> FLAG_DEV_MODE) & 1;
 }
 
 int get_recovery_mode_switch(void)
@@ -127,16 +94,12 @@ void init_bootmode_straps(void)
 	/* Recovery: GPIO42 = CHP3_REC_MODE#, active low */
 	if (!get_gpio(GPIO_REC_MODE))
 		flags |= (1 << FLAG_REC_MODE);
-	/* Developer: GPIO17 = KBC3_DVP_MODE, active high */
-	if (get_gpio(GPIO_DEV_MODE))
-		flags |= (1 << FLAG_DEV_MODE);
 
 	pci_write_config32(dev, SATA_SP, flags);
 }
 
 static const struct cros_gpio cros_gpios[] = {
 	CROS_GPIO_REC_AL(GPIO_REC_MODE, CROS_GPIO_DEVICE_NAME),
-	CROS_GPIO_DEV_AH(GPIO_DEV_MODE, CROS_GPIO_DEVICE_NAME),
 	CROS_GPIO_WP_AH(GPIO_SPI_WP, CROS_GPIO_DEVICE_NAME),
 };
 

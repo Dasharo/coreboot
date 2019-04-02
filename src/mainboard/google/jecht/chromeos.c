@@ -13,7 +13,6 @@
  * GNU General Public License for more details.
  */
 
-#include <string.h>
 #include <device/pci_ops.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -28,9 +27,8 @@
 
 #define FLAG_SPI_WP	0
 #define FLAG_REC_MODE	1
-#define FLAG_DEV_MODE	2
 
-#ifndef __PRE_RAM__
+#if ENV_RAMSTAGE
 #include <boot/coreboot_tables.h>
 
 void fill_lb_gpios(struct lb_gpios *gpios)

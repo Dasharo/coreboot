@@ -107,6 +107,21 @@ config VBOOT_STARTS_IN_ROMSTAGE
 	  memory initialization). This implies that vboot working data is
 	  allocated in CBMEM.
 
+config VBOOT_MIGRATE_WORKING_DATA
+	bool
+	default y if CACHE_AS_RAM
+	depends on !VBOOT_STARTS_IN_ROMSTAGE
+	help
+	  In order to make vboot data structures available downstream,
+	  migrate verified boot working data to CBMEM after CBMEM comes
+	  online, when VBOOT_STARTS_IN_BOOTBLOCK is employed.  This should
+	  always be enabled on x86 architectures to migrate data from CAR
+	  before losing access in ramstage, and should almost always be
+	  disabled in SRAM architectures, where access to SRAM is usually
+	  retained.  Any SRAM platform where the original location of the
+	  VBOOT_WORKBUF region becomes inaccessible in later stages should
+	  manually select this option.
+
 config VBOOT_MOCK_SECDATA
 	bool "Mock secdata for firmware verification"
 	default n
@@ -156,6 +171,7 @@ config VBOOT_SAVE_RECOVERY_REASON_ON_REBOOT
 
 config VBOOT_OPROM_MATTERS
 	bool
+	default y if VGA_ROM_RUN
 	default n
 	help
 	  Set this option to indicate to vboot that this platform will skip its
@@ -175,41 +191,6 @@ config VBOOT_HAS_REC_HASH_SPACE
 config VBOOT_SOFT_REBOOT_WORKAROUND
 	bool
 	default n
-
-config VBOOT_EC_SOFTWARE_SYNC
-	bool "Enable EC software sync"
-	default y if EC_GOOGLE_CHROMEEC
-	default n
-	help
-	  EC software sync is a mechanism where the AP helps the EC verify its
-	  firmware similar to how vboot verifies the main system firmware. This
-	  option selects whether vboot should support EC software sync.
-
-config VBOOT_EC_SLOW_UPDATE
-	bool
-	default n
-	depends on VBOOT_EC_SOFTWARE_SYNC
-	help
-	  Whether the EC (or PD) is slow to update and needs to display a
-	  screen that informs the user the update is happening.
-
-config VBOOT_EC_EFS
-	bool
-	default n
-	depends on VBOOT_EC_SOFTWARE_SYNC
-	help
-	  CrosEC can support EFS: Early Firmware Selection. If it's enabled,
-	  software sync need to also support it. This setting tells vboot to
-	  perform EFS software sync.
-
-config VBOOT_PHYSICAL_DEV_SWITCH
-	bool
-	default n
-	help
-	  Whether this platform has a physical developer switch. Note that this
-	  disables virtual dev switch functionality (through secdata). Operation
-	  where both a physical pin and the virtual switch get sampled is not
-	  supported by coreboot.
 
 config VBOOT_PHYSICAL_REC_SWITCH
 	bool
