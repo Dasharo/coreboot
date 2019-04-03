@@ -196,11 +196,11 @@ static void config_addon_uart(void)
 	struct device *uart;
 
 	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP3);
-	if (uart && uart->enabled && CONFIG_UART_C_RS485)
+	if (uart && uart->enabled && CONFIG(UART_C_RS485))
 		pnp_raw_resource(uart, 0xf2, 0x12);
 
 	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
-	if (uart && uart->enabled && CONFIG_UART_D_RS485)
+	if (uart && uart->enabled && CONFIG(UART_D_RS485))
 		pnp_raw_resource(uart, 0xf2, 0x12);
 }
 
@@ -294,7 +294,7 @@ static void usb_oc_setup(void)
 /*
  * We will stuff the memory size into the smbios sku location.
  */
-const char *smbios_mainboard_sku(void)
+const char *smbios_system_sku(void)
 {
 	static char sku[5];
 	if (sku[0] != 0)

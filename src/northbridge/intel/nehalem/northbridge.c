@@ -26,7 +26,6 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <stdlib.h>
-#include <string.h>
 #include <cpu/cpu.h>
 #include "chip.h"
 #include "nehalem.h"
@@ -78,7 +77,7 @@ static void add_fixed_resources(struct device *dev, int index)
 	reserved_ram_resource(dev, index++, 0xc0000 >> 10,
 			      (0x100000 - 0xc0000) >> 10);
 
-#if IS_ENABLED(CONFIG_CHROMEOS_RAMOOPS)
+#if CONFIG(CHROMEOS_RAMOOPS)
 	reserved_ram_resource(dev, index++,
 			      CONFIG_CHROMEOS_RAMOOPS_RAM_START >> 10,
 			      CONFIG_CHROMEOS_RAMOOPS_RAM_SIZE >> 10);
@@ -90,7 +89,7 @@ static void pci_domain_set_resources(struct device *dev)
 	assign_resources(dev->link_list);
 }
 
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 static const char *northbridge_acpi_name(const struct device *dev)
 {
 	if (dev->path.type == DEVICE_PATH_DOMAIN)
@@ -114,7 +113,7 @@ static struct device_operations pci_domain_ops = {
 	.enable_resources = NULL,
 	.init = NULL,
 	.scan_bus = pci_domain_scan_bus,
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name = northbridge_acpi_name,
 #endif
 };
@@ -188,19 +187,6 @@ static void mc_set_resources(struct device *dev)
 {
 	/* And call the normal set_resources */
 	pci_dev_set_resources(dev);
-}
-
-static void intel_set_subsystem(struct device *dev, unsigned int vendor,
-				unsigned int device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				   pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				   ((device & 0xffff) << 16) | (vendor &
-								0xffff));
-	}
 }
 
 static void northbridge_dmi_init(struct device *dev)
@@ -304,7 +290,7 @@ static void northbridge_init(struct device *dev)
 }
 
 static struct pci_operations intel_pci_ops = {
-	.set_subsystem = intel_set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations mc_ops = {

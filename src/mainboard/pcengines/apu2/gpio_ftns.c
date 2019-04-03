@@ -61,9 +61,9 @@ int get_spd_offset(void)
 	/* One SPD file contains all 4 options, determine which index to
 	 * read here, then call into the standard routines.
 	 */
-
-	index = read_gpio(GPIO_49);
-	index |= read_gpio(GPIO_50) << 1;
+	u8 *gpio_bank0_ptr = (u8 *)(ACPI_MMIO_BASE + GPIO_BANK0_BASE);
+	if (*(gpio_bank0_ptr + (0x40 << 2) + 2) & BIT0) index |= BIT0;
+	if (*(gpio_bank0_ptr + (0x41 << 2) + 2) & BIT0) index |= BIT1;
 
 	return index;
 }

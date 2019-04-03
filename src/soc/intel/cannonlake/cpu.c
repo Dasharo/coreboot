@@ -456,7 +456,7 @@ static void post_mp_init(void)
 	 * Now that all APs have been relocated as well as the BSP let SMIs
 	 * start flowing.
 	 */
-	smm_southbridge_enable(PWRBTN_EN | GBL_EN);
+	smm_southbridge_enable(GBL_EN);
 
 	/* Lock down the SMRAM space. */
 	smm_lock();
@@ -497,7 +497,7 @@ int soc_skip_ucode_update(u32 current_patch_id, u32 new_patch_id)
 	 * have this check, where CNL CPU die is not based on KBL CPU
 	 * so skip this check for CNL.
 	 */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_COMMON_CANNONLAKE_BASE))
+	if (!CONFIG(SOC_INTEL_COMMON_CANNONLAKE_BASE))
 		return 0;
 
 	/*

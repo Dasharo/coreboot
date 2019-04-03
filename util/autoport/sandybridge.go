@@ -55,7 +55,7 @@ func (i sandybridgemc) Scan(ctx Context, addr PCIDevData) {
 			"gfx.link_frequency_270_mhz":          FormatBool(link_frequency > 200000),
 			/* FIXME:XX hardcoded.  */
 			"gfx.ndid": "3",
-			"gfx.did":  "{ 0x80000100, 0x80000240, 0x80000410, 0x80000410, 0x00000005 }",
+			"gfx.did":  "{ 0x80000100, 0x80000240, 0x80000410 }",
 		},
 		Children: []DevTreeNode{
 			{
@@ -106,8 +106,6 @@ func (i sandybridgemc) Scan(ctx Context, addr PCIDevData) {
 	PutPCIDev(addr, "Host bridge")
 
 	/* FIXME:XX some configs are unsupported.  */
-	KconfigBool["SANDYBRIDGE_IVYBRIDGE_LVDS"] = true
-
 	KconfigBool["NORTHBRIDGE_INTEL_"+i.variant+"BRIDGE"] = true
 	KconfigBool["USE_NATIVE_RAMINIT"] = true
 	KconfigBool["INTEL_INT15"] = true
@@ -138,5 +136,13 @@ func init() {
 		0x0152, 0x0156, 0x0162, 0x0166,
 	} {
 		RegisterPCI(0x8086, id, GenericVGA{GenericPCI{Comment: "VGA controller"}})
+	}
+
+	/* PCIe bridge */
+	for _, id := range []uint16{
+		0x0101, 0x0105, 0x0109, 0x010d,
+		0x0151, 0x0155, 0x0159, 0x015d,
+	} {
+		RegisterPCI(0x8086, id, GenericPCI{})
 	}
 }

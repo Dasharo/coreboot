@@ -15,8 +15,6 @@
  */
 
 #include <stdint.h>
-#include <string.h>
-#include <lib.h>
 #include <timestamp.h>
 #include <arch/io.h>
 #include <device/mmio.h>
@@ -102,7 +100,7 @@ void romstage_main_continue(EFI_STATUS status, void *hob_list_ptr) {
 		__func__, (u32) status, (u32) hob_list_ptr);
 
 	/* FSP reconfigures USB, so reinit it to have debug */
-	if (IS_ENABLED(CONFIG_USBDEBUG_IN_PRE_RAM))
+	if (CONFIG(USBDEBUG_IN_PRE_RAM))
 		usbdebug_hw_init(true);
 
 	printk(BIOS_DEBUG, "FSP Status: 0x%0x\n", (u32)status);
@@ -114,9 +112,6 @@ void romstage_main_continue(EFI_STATUS status, void *hob_list_ptr) {
 
 	/* Decode E0000 and F0000 segment to DRAM */
 	sideband_write(B_UNIT, BMISC, sideband_read(B_UNIT, BMISC) | (1 << 1) | (1 << 0));
-
-	quick_ram_check();
-	post_code(0x4d);
 
 	cbmem_was_initted = !cbmem_recovery(0);
 

@@ -18,7 +18,7 @@
 #include <console/console.h>
 #include <cbmem.h>
 #include <imd.h>
-#include <string.h>
+#include <lib.h>
 #include <stdlib.h>
 #include <arch/early_variables.h>
 
@@ -40,8 +40,8 @@
  * NULL from cbmem_top() before that point.
  */
 #define CAN_USE_GLOBALS \
-	(!IS_ENABLED(CONFIG_ARCH_X86) || ENV_RAMSTAGE || ENV_POSTCAR || \
-	 IS_ENABLED(CONFIG_NO_CAR_GLOBAL_MIGRATION))
+	(!CONFIG(ARCH_X86) || ENV_RAMSTAGE || ENV_POSTCAR || \
+	 CONFIG(NO_CAR_GLOBAL_MIGRATION))
 
 static inline struct imd *cbmem_get_imd(void)
 {
@@ -120,6 +120,10 @@ static void cbmem_top_init_once(void)
 		return;
 
 	cbmem_top_init();
+
+	/* The test is only effective on X86 and when address hits UC memory. */
+	if (ENV_X86)
+		quick_ram_check_or_die((uintptr_t)cbmem_top() - sizeof(u32));
 }
 
 void cbmem_initialize_empty_id_size(u32 id, u64 size)
@@ -303,7 +307,7 @@ void cbmem_get_region(void **baseptr, size_t *size)
 	imd_region_used(cbmem_get_imd(), baseptr, size);
 }
 
-#if ENV_RAMSTAGE || (IS_ENABLED(CONFIG_EARLY_CBMEM_LIST) \
+#if ENV_RAMSTAGE || (CONFIG(EARLY_CBMEM_LIST) \
 	&& (ENV_POSTCAR || ENV_ROMSTAGE))
 /*
  * -fdata-sections doesn't work so well on read only strings. They all

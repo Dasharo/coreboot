@@ -16,7 +16,6 @@
  */
 
 #include <stdint.h>
-#include <string.h>
 #include <console/console.h>
 #include <arch/io.h>
 #include <device/pci_ops.h>
@@ -27,7 +26,6 @@
 #include <cpu/intel/romstage.h>
 #include <device/pci_def.h>
 #include <device/device.h>
-#include <halt.h>
 #include <northbridge/intel/sandybridge/chip.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
@@ -69,7 +67,7 @@ void mainboard_romstage_entry(unsigned long bist)
 	mainboard_config_superio();
 
 	/* USB is initialized in MRC if MRC is used.  */
-	if (CONFIG_USE_NATIVE_RAMINIT) {
+	if (CONFIG(USE_NATIVE_RAMINIT)) {
 		early_usb_init(mainboard_usb_ports);
 	}
 

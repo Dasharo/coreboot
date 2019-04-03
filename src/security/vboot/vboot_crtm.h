@@ -16,10 +16,10 @@
 #ifndef __SECURITY_VBOOT_CRTM_H__
 #define __SECURITY_VBOOT_CRTM_H__
 
+#include <commonlib/cbfs.h>
 #include <program_loading.h>
 #include <security/tpm/tspi.h>
 #include <types.h>
-#include <cbfs.h>
 
 /* CRTM */
 #define TPM_CRTM_PCR 2
@@ -46,7 +46,7 @@
  */
 uint32_t vboot_init_crtm(void);
 
-#if (IS_ENABLED(CONFIG_VBOOT_MEASURED_BOOT) && \
+#if (CONFIG(VBOOT_MEASURED_BOOT) && \
 !ENV_BOOTBLOCK && !ENV_DECOMPRESSOR && !ENV_SMM)
 /*
  * Measures cbfs data via hook (cbfs)

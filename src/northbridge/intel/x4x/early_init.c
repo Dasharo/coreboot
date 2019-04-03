@@ -18,7 +18,7 @@
 #include <arch/io.h>
 #include <device/pci_ops.h>
 #include "iomap.h"
-#if IS_ENABLED(CONFIG_SOUTHBRIDGE_INTEL_I82801GX)
+#if CONFIG(SOUTHBRIDGE_INTEL_I82801GX)
 #include <southbridge/intel/i82801gx/i82801gx.h> /* DEFAULT_PMBASE */
 #else
 #include <southbridge/intel/i82801jx/i82801jx.h> /* DEFAULT_PMBASE */
@@ -26,7 +26,6 @@
 #include <pc80/mc146818rtc.h>
 #include "x4x.h"
 #include <console/console.h>
-#include <halt.h>
 #include <romstage_handoff.h>
 
 void x4x_early_init(void)

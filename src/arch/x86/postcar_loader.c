@@ -23,6 +23,7 @@
 #include <rmodule.h>
 #include <romstage_handoff.h>
 #include <stage_cache.h>
+#include <timestamp.h>
 
 static inline void stack_push(struct postcar_frame *pcf, uint32_t val)
 {
@@ -105,7 +106,7 @@ void postcar_frame_add_mtrr(struct postcar_frame *pcf,
 
 void postcar_frame_add_romcache(struct postcar_frame *pcf, int type)
 {
-	if (!IS_ENABLED(CONFIG_BOOT_DEVICE_MEMORY_MAPPED))
+	if (!CONFIG(BOOT_DEVICE_MEMORY_MAPPED))
 		return;
 	postcar_frame_add_mtrr(pcf, CACHE_ROM_BASE, CACHE_ROM_SIZE, type);
 }
@@ -150,7 +151,7 @@ static void load_postcar_cbfs(struct prog *prog, struct postcar_frame *pcf)
 
 	finalize_load(rsl.params, pcf->stack);
 
-	if (!IS_ENABLED(CONFIG_NO_STAGE_CACHE))
+	if (!CONFIG(NO_STAGE_CACHE))
 		stage_cache_add(STAGE_POSTCAR, prog);
 }
 
@@ -161,7 +162,7 @@ void run_postcar_phase(struct postcar_frame *pcf)
 
 	postcar_commit_mtrrs(pcf);
 
-	if (!IS_ENABLED(CONFIG_NO_STAGE_CACHE) &&
+	if (!CONFIG(NO_STAGE_CACHE) &&
 				romstage_handoff_is_resume()) {
 		stage_cache_load_stage(STAGE_POSTCAR, &prog);
 		/* This is here to allow platforms to pass different stack
@@ -170,6 +171,9 @@ void run_postcar_phase(struct postcar_frame *pcf)
 		finalize_load(prog.arg, pcf->stack);
 	} else
 		load_postcar_cbfs(&prog, pcf);
+
+	/* As postcar exist, it's end of romstage here */
+	timestamp_add_now(TS_END_ROMSTAGE);
 
 	prog_run(&prog);
 }

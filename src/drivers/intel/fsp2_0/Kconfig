@@ -19,6 +19,18 @@ config PLATFORM_USES_FSP2_0
 	help
 	  Include FSP 2.0 wrappers and functionality
 
+config PLATFORM_USES_FSP2_1
+	bool
+	default n
+	select PLATFORM_USES_FSP2_0
+	select FSP_USES_CB_STACK
+	select FSP_PEIM_TO_PEIM_INTERFACE
+	help
+	  Include FSP 2.1 wrappers and functionality.
+	  Features added into FSP 2.1 specification that impacts corerboot are:
+	  1. Remove FSP stack switch and use the same stack with boot firmware
+	  2. FSP should support external PPI interface pulled in via FSP_PEIM_TO_PEIM_INTERFACE
+
 if PLATFORM_USES_FSP2_0
 
 config ADD_FSP_BINARIES
@@ -159,10 +171,19 @@ config DISPLAY_FSP_VERSION_INFO
 config FSP2_0_USES_TPM_MRC_HASH
 	bool
 	depends on TPM1 || TPM2
-	depends on VBOOT
+	depends on VBOOT && VBOOT_STARTS_IN_BOOTBLOCK
 	default y if HAS_RECOVERY_MRC_CACHE
 	default n
 	select VBOOT_HAS_REC_HASH_SPACE
+	help
+	  Store hash of trained recovery MRC cache in NVRAM space in TPM.
+	  Use the hash to validate recovery MRC cache before using it.
+	  This hash needs to be updated every time recovery mode training
+	  is recomputed, or if the hash does not match recovery MRC cache.
+	  Selecting this option requires that TPM already be setup by this
+	  point in time.  Thus it is only compatible when the option
+	  VBOOT_STARTS_IN_BOOTBLOCK is selected, which causes verstage and
+	  TPM setup to occur prior to memory initialization.
 
 config FSP_PLATFORM_MEMORY_SETTINGS_VERSIONS
 	bool
@@ -171,5 +192,19 @@ config FSP_PLATFORM_MEMORY_SETTINGS_VERSIONS
 	  concept of a version for the memory settings respectively.
 	  This allows deployed systems to bump their version number
 	  with the same FSP which will trigger a retrain of the memory.
+
+config FSP_PEIM_TO_PEIM_INTERFACE
+	bool
+	select FSP_USES_MP_SERVICES_PPI
+	help
+	  This option allows SOC user to create specific PPI for Intel FSP
+	  usage, coreboot will provide required PPI structure definitions
+	  along with all APIs as per EFI specification. So far this feature
+	  is limited till EFI_PEI_MP_SERVICE_PPI and this option might be
+	  useful to add further PPI if required.
+
+if FSP_PEIM_TO_PEIM_INTERFACE
+source "src/drivers/intel/fsp2_0/ppi/Kconfig"
+endif
 
 endif

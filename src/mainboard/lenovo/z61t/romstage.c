@@ -18,7 +18,6 @@
 // __PRE_RAM__ means: use "unsigned" for device, not a struct.
 
 #include <stdint.h>
-#include <string.h>
 #include <arch/io.h>
 #include <device/pnp_ops.h>
 #include <device/pci_ops.h>
@@ -77,7 +76,6 @@ static void rcba_config(void)
 {
 	/* Set up virtual channel 0 */
 	RCBA32(V0CTL) = 0x80000001;
-	RCBA32(V1CAP) = 0x03128010;
 
 	/* Device 1f interrupt pin register */
 	RCBA32(D31IP) = 0x00001230;
@@ -211,9 +209,8 @@ void mainboard_romstage_entry(unsigned long bist)
 	/* Enable SPD ROMs and DDR-II DRAM */
 	enable_smbus();
 
-#if CONFIG_DEFAULT_CONSOLE_LOGLEVEL > 8
-	dump_spd_registers();
-#endif
+	if (CONFIG(DEBUG_RAM_SETUP))
+		dump_spd_registers();
 
 	sdram_initialize(s3resume ? 2 : 0, spd_addrmap);
 

@@ -20,7 +20,6 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <device/pciexp.h>
 #include <device/pci_ids.h>
 #include <stdlib.h>
 #include "pch.h"
@@ -238,20 +237,8 @@ static void serialio_init(struct device *dev)
 	}
 }
 
-static void serialio_set_subsystem(struct device *dev, unsigned int vendor,
-				   unsigned int device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
-}
-
 static struct pci_operations pci_ops = {
-	.set_subsystem		= serialio_set_subsystem,
+	.set_subsystem		= pci_dev_set_subsystem,
 };
 
 static struct device_operations device_ops = {

@@ -19,7 +19,7 @@
 #include <chipset_fsp_util.h>
 #include "fsp_values.h"
 
-#if IS_ENABLED(CONFIG_ENABLE_MRC_CACHE)
+#if CONFIG(ENABLE_MRC_CACHE)
 int save_mrc_data(void *hob_start);
 void *find_and_set_fastboot_cache(void);
 #endif
@@ -32,9 +32,11 @@ void romstage_fsp_rt_buffer_callback(FSP_INIT_RT_BUFFER *FspRtBuffer);
 void print_fsp_info(void);
 void chipset_fsp_early_init(FSP_INIT_PARAMS *FspInitParams,
 	FSP_INFO_HEADER *fsp_ptr);
-void ChipsetFspReturnPoint(EFI_STATUS Status, VOID *HobListPtr);
 void *find_saved_temp_mem(void *hob_list_ptr);
 void *find_fsp_reserved_mem(void *hob_list_ptr);
+
+/* function in romstage.c */
+void romstage_main_continue(EFI_STATUS status, void *hob_list_ptr);
 
 /* functions in hob.c */
 void print_hob_mem_attributes(void *Hobptr);
@@ -61,7 +63,7 @@ void printguid(EFI_GUID *guid);
 #define EFI_HOB_TYPE_HANDOFF		0x0001
 #define EFI_HOB_TYPE_MEMORY_POOL	0x0007
 
-#if IS_ENABLED(CONFIG_ENABLE_MRC_CACHE)
+#if CONFIG(ENABLE_MRC_CACHE)
 #define MRC_DATA_ALIGN			0x1000
 #define MRC_DATA_SIGNATURE		(('M'<<0)|('R'<<8)|('C'<<16)|('D'<<24))
 

@@ -95,7 +95,7 @@ static void soc_enable_serial_irqs(struct device *dev)
 	/* Set packet length and toggle silent mode bit for one frame. */
 	write8(ibase + ILB_SERIRQ_CNTL, (1 << 7));
 
-#if !IS_ENABLED(CONFIG_SERIRQ_CONTINUOUS_MODE)
+#if !CONFIG(SERIRQ_CONTINUOUS_MODE)
 	write8(ibase + ILB_SERIRQ_CNTL, 0);
 #endif
 }
@@ -417,17 +417,6 @@ static void soc_lpc_enable(struct device *dev)
 	soc_enable(dev);
 }
 
-static void set_subsystem(struct device *dev, unsigned vendor, unsigned device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
-}
-
 static void southbridge_inject_dsdt(struct device *dev)
 {
 	global_nvs_t *gnvs = cbmem_add (CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
@@ -435,7 +424,7 @@ static void southbridge_inject_dsdt(struct device *dev)
 	if (gnvs) {
 		memset(gnvs, 0, sizeof(*gnvs));
 		acpi_create_gnvs(gnvs);
-#if IS_ENABLED(CONFIG_HAVE_SMI_HANDLER)
+#if CONFIG(HAVE_SMI_HANDLER)
 		/* And tell SMI about it */
 		smm_setup_structures(gnvs, NULL, NULL);
 #endif
@@ -448,7 +437,7 @@ static void southbridge_inject_dsdt(struct device *dev)
 }
 
 static struct pci_operations pci_ops = {
-	.set_subsystem = set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations device_ops = {

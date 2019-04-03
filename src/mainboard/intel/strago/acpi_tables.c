@@ -15,7 +15,6 @@
  */
 
 #include <arch/acpi.h>
-#include <arch/acpigen.h>
 #include <arch/ioapic.h>
 #include <arch/smp/mpspec.h>
 #include <device/device.h>
@@ -23,7 +22,6 @@
 #include <soc/acpi.h>
 #include <soc/iomap.h>
 #include <soc/nvs.h>
-#include <string.h>
 #include <types.h>
 #include <boardid.h>
 #include "onboard.h"

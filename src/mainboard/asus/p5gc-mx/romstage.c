@@ -18,7 +18,6 @@
 // __PRE_RAM__ means: use "unsigned" for device, not a struct.
 
 #include <stdint.h>
-#include <string.h>
 #include <arch/io.h>
 #include <device/pnp_ops.h>
 #include <device/pci_ops.h>
@@ -221,9 +220,8 @@ void mainboard_romstage_entry(unsigned long bist)
 	/* Enable SPD ROMs and DDR-II DRAM */
 	enable_smbus();
 
-#if CONFIG_DEFAULT_CONSOLE_LOGLEVEL > 8
-	dump_spd_registers();
-#endif
+	if (CONFIG(DEBUG_RAM_SETUP))
+		dump_spd_registers();
 
 	sdram_initialize(s3resume ? 2 : boot_mode, NULL);
 

@@ -76,11 +76,11 @@ static void pch_log_power_and_resets(struct chipset_power_state *ps)
 		elog_add_event(ELOG_TYPE_THERM_TRIP);
 
 	/* PWR_FLR Power Failure */
-	if (ps->gen_pmcon_b & PWR_FLR)
+	if (ps->gen_pmcon_a & PWR_FLR)
 		elog_add_event(ELOG_TYPE_POWER_FAIL);
 
 	/* SUS Well Power Failure */
-	if (ps->gen_pmcon_b & SUS_PWR_FLR)
+	if (ps->gen_pmcon_a & SUS_PWR_FLR)
 		elog_add_event(ELOG_TYPE_SUS_POWER_FAIL);
 
 	/* TCO Timeout */
@@ -97,7 +97,7 @@ static void pch_log_power_and_resets(struct chipset_power_state *ps)
 		elog_add_event(ELOG_TYPE_RTC_RESET);
 
 	/* Host Reset Status */
-	if (ps->gen_pmcon_b & HOST_RST_STS)
+	if (ps->gen_pmcon_a & HOST_RST_STS)
 		elog_add_event(ELOG_TYPE_SYSTEM_RESET);
 
 	/* ACPI Wake Event */
@@ -123,3 +123,10 @@ static void pch_log_state(void *unused)
 }
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT, pch_log_state, NULL);
+
+void elog_gsmi_cb_platform_log_wake_source(void)
+{
+	struct chipset_power_state ps;
+	pmc_fill_pm_reg_info(&ps);
+	pch_log_wake_source(&ps);
+}

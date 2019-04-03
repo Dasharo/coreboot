@@ -14,7 +14,6 @@
  * GNU General Public License for more details.
  */
 
-#include <string.h>
 #include <bootstate.h>
 #include <console/console.h>
 #include <device/device.h>
@@ -30,7 +29,7 @@ static void pci_domain_set_resources(struct device *dev)
 	assign_resources(dev->link_list);
 }
 
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 static const char *domain_acpi_name(const struct device *dev)
 {
 	if (dev->path.type == DEVICE_PATH_DOMAIN)
@@ -45,7 +44,7 @@ static struct device_operations pci_domain_ops = {
 	.enable_resources = NULL,
 	.init             = NULL,
 	.scan_bus         = pci_domain_scan_bus,
-#if IS_ENABLED(CONFIG_HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name        = domain_acpi_name
 #endif
 };
@@ -89,18 +88,6 @@ struct chip_operations soc_intel_fsp_broadwell_de_ops = {
 	.init = soc_init,
 };
 
-static void pci_set_subsystem(struct device *dev, unsigned vendor,
-			      unsigned device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
-}
-
 struct pci_operations soc_pci_ops = {
-	.set_subsystem = &pci_set_subsystem,
+	.set_subsystem = &pci_dev_set_subsystem,
 };

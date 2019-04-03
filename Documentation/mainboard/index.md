@@ -4,11 +4,13 @@ This section contains documentation about coreboot on specific mainboards.
 
 ## ASUS
 
+- [F2A85-M](asus/f2a85-m.md)
 - [P8H61-M LX](asus/p8h61-m_lx.md)
 
 ## ASRock
 
 - [H81M-HDS](asrock/h81m-hds.md)
+- [H110M-DVS](asrock/h110m-dvs.md)
 
 ## Cavium
 

@@ -302,23 +302,21 @@ func (b bd82x6x) Scan(ctx Context, addr PCIDevData) {
 	sb := Create(ctx, "romstage.c")
 	defer sb.Close()
 	Add_gpl(sb)
-	sb.WriteString(`#include <stdint.h>
+	sb.WriteString(`/* FIXME: Check if all includes are needed. */
+
+#include <stdint.h>
 #include <string.h>
-#include <lib.h>
 #include <timestamp.h>
 #include <arch/byteorder.h>
 #include <arch/io.h>
-#include <device/pci_def.h>
-#include <device/pnp_def.h>
-#include <cpu/x86/lapic.h>
-#include <arch/acpi.h>
+#include <device/mmio.h>
+#include <device/pci_ops.h>
+#include <device/pnp_ops.h>
 #include <console/console.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
-#include <arch/cpu.h>
-#include <cpu/x86/msr.h>
 
 void pch_enable_lpc(void)
 {
@@ -430,12 +428,11 @@ func init() {
 
 	/* PCIe bridge */
 	for _, id := range []uint16{
-		0x0151, 0x0155, 0x1c10, 0x1c12,
-		0x1c14, 0x1c16, 0x1c18, 0x1c1a,
-		0x1c1c, 0x1c1e, 0x1e10, 0x1e12,
-		0x1e14, 0x1e16, 0x1e18, 0x1e1a,
-		0x1e1c, 0x1e1e, 0x1e25, 0x244e,
-		0x2448,
+		0x1c10, 0x1c12, 0x1c14, 0x1c16,
+		0x1c18, 0x1c1a, 0x1c1c, 0x1c1e,
+		0x1e10, 0x1e12, 0x1e14, 0x1e16,
+		0x1e18, 0x1e1a, 0x1e1c, 0x1e1e,
+		0x1e25, 0x244e, 0x2448,
 	} {
 		RegisterPCI(0x8086, id, GenericPCI{})
 	}

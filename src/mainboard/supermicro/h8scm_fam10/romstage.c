@@ -18,14 +18,12 @@
 //#define SYSTEM_TYPE 2	/* MOBILE */
 
 #include <stdint.h>
-#include <string.h>
 #include <device/pci_def.h>
 #include <arch/cpu.h>
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
 #include <timestamp.h>
 #include <cpu/amd/model_10xxx_rev.h>
-#include <commonlib/loglevel.h>
 #include <cpu/x86/bist.h>
 #include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
@@ -145,7 +143,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	 */
 	wait_all_core0_started();
 
-#if IS_ENABLED(CONFIG_LOGICAL_CPUS)
+#if CONFIG(LOGICAL_CPUS)
 	/* Core0 on each node is configured. Now setup any additional cores. */
 	printk(BIOS_DEBUG, "start_other_cores()\n");
 	start_other_cores(bsp_apicid);
@@ -159,7 +157,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	sr5650_early_setup();
 	sb7xx_51xx_early_setup();
 
-#if IS_ENABLED(CONFIG_SET_FIDVID)
+#if CONFIG(SET_FIDVID)
 	msr = rdmsr(MSR_COFVID_STS);
 	printk(BIOS_DEBUG, "\nBegin FIDVID MSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 

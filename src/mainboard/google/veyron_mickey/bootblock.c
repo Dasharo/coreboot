@@ -18,7 +18,6 @@
 #include <assert.h>
 #include <bootblock_common.h>
 #include <delay.h>
-#include <reset.h>
 #include <soc/clock.h>
 #include <soc/i2c.h>
 #include <soc/grf.h>
@@ -31,7 +30,7 @@
 
 void bootblock_mainboard_early_init()
 {
-	if (IS_ENABLED(CONFIG_CONSOLE_SERIAL)) {
+	if (CONFIG(CONSOLE_SERIAL)) {
 		assert(CONFIG_CONSOLE_SERIAL_UART_ADDRESS == UART2_BASE);
 		write32(&rk3288_grf->iomux_uart2, IOMUX_UART2);
 	}

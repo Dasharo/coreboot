@@ -19,7 +19,6 @@
 #include <cbmem.h>
 #include <arch/early_variables.h>
 #include <symbols.h>
-#include <string.h>
 
 /*
  * Structure describing console buffer. It is overlaid on a flat memory area,
@@ -184,7 +183,7 @@ ROMSTAGE_CBMEM_INIT_HOOK(cbmemc_reinit)
 RAMSTAGE_CBMEM_INIT_HOOK(cbmemc_reinit)
 POSTCAR_CBMEM_INIT_HOOK(cbmemc_reinit)
 
-#if IS_ENABLED(CONFIG_CONSOLE_CBMEM_DUMP_TO_UART)
+#if CONFIG(CONSOLE_CBMEM_DUMP_TO_UART)
 void cbmem_dump_console(void)
 {
 	struct cbmem_console *cbm_cons_p;

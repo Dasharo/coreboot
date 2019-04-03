@@ -45,6 +45,13 @@ chip soc/intel/cannonlake
 	register "tdp_pl1_override" = "25"
 	register "tdp_pl2_override" = "51"
 	register "Device4Enable" = "1"
+	# Enable eDP device
+	register "DdiPortEdp" = "1"
+	# Enable HPD for DDI ports B/C
+	register "DdiPortBHpd" = "1"
+	register "DdiPortCHpd" = "1"
+	# Enable DDC for DDI port B
+	register "DdiPortBDdc" = "1"
 
 	# VR Settings Configuration for 4 Domains
 	#+----------------+-------+-------+-------+-------+
@@ -257,6 +264,7 @@ chip soc/intel/cannonlake
 					chip drivers/usb/acpi
 						register "desc" = ""Bluetooth""
 						register "type" = "UPC_TYPE_INTERNAL"
+						register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H15)"
 						device usb 2.9 on end
 					end
 					chip drivers/usb/acpi

@@ -4,7 +4,7 @@
  * Copyright (C) 2008-2009 coresystems GmbH
  * Copyright (C) 2013 Google Inc.
  * Copyright (C) 2015 Intel Corp.
- * Copyright (C) 2018 Eltan B.V.
+ * Copyright (C) 2018-2019 Eltan B.V.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <arch/ioapic.h>
 #include <bootstate.h>
 #include "chip.h"
 #include <console/console.h>
@@ -31,7 +31,6 @@
 #include <pc80/isa-dma.h>
 #include <pc80/i8254.h>
 #include <pc80/i8259.h>
-#include <romstage_handoff.h>
 #include <soc/acpi.h>
 #include <soc/iomap.h>
 #include <soc/irq.h>
@@ -76,6 +75,10 @@ static void sc_add_mmio_resources(struct device *dev)
 	add_mmio_resource(dev, MPBASE, MPHY_BASE_ADDRESS, MPHY_BASE_SIZE);
 	add_mmio_resource(dev, PUBASE, PUNIT_BASE_ADDRESS, PUNIT_BASE_SIZE);
 	add_mmio_resource(dev, RCBA, RCBA_BASE_ADDRESS, RCBA_BASE_SIZE);
+	add_mmio_resource(dev, 0xfff,
+		0xffffffff - (CONFIG_COREBOOT_ROMSIZE_KB*KiB) + 1,
+		(CONFIG_COREBOOT_ROMSIZE_KB*KiB));	/* BIOS ROM */
+	add_mmio_resource(dev, 0xfec, IO_APIC_ADDR, 0x00001000); /* IOAPIC */
 }
 
 /* Default IO range claimed by the LPC device. The upper bound is exclusive. */
@@ -264,12 +267,21 @@ static void sc_init(struct device *dev)
 	int i;
 	const unsigned long pr_base = ILB_BASE_ADDRESS + 0x08;
 	const unsigned long ir_base = ILB_BASE_ADDRESS + 0x20;
+	const unsigned long ilb_base = ILB_BASE_ADDRESS;
 	void *gen_pmcon1 = (void *)(PMC_BASE_ADDRESS + GEN_PMCON1);
 	const struct soc_irq_route *ir = &global_soc_irq_route;
 	struct soc_intel_braswell_config *config = dev->chip_info;
 
 	printk(BIOS_SPEW, "%s/%s (%s)\n",
 			__FILE__, __func__, dev_name(dev));
+
+	/* Set the value for PCI command register. */
+	pci_write_config16(dev, PCI_COMMAND,
+		PCI_COMMAND_IO | PCI_COMMAND_MEMORY |
+		PCI_COMMAND_MASTER | PCI_COMMAND_SPECIAL);
+
+	/* Use IRQ9 for SCI Interrupt */
+	write32((void *)(ilb_base + ACTL), 0);
 
 	isa_dma_init();
 

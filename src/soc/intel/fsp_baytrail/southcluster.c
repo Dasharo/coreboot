@@ -41,7 +41,6 @@
 #include <soc/ramstage.h>
 #include "chip.h"
 #include <arch/acpi.h>
-#include <arch/acpigen.h>
 
 #define ENABLE_ACPI_MODE_IN_COREBOOT	0
 #define TEST_SMM_FLASH_LOCKDOWN		0
@@ -139,7 +138,7 @@ static void sc_enable_serial_irqs(struct device *dev)
 	write32(ibase + ILB_OIC, read32(ibase + ILB_OIC) | SIRQEN);
 	write8(ibase + ILB_SERIRQ_CNTL, SCNT_CONTINUOUS_MODE);
 
-#if !IS_ENABLED(CONFIG_SERIRQ_CONTINUOUS_MODE)
+#if !CONFIG(SERIRQ_CONTINUOUS_MODE)
 	/*
 	 * SoC requires that the System BIOS first set the SERIRQ logic to
 	 * continuous mode operation for at least one frame before switching

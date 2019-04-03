@@ -19,12 +19,10 @@
 /* __PRE_RAM__ means: use "unsigned" for device, not a struct.  */
 
 #include <stdint.h>
-#include <string.h>
 #include <arch/io.h>
 #include <device/pci_ops.h>
 #include <device/pci_def.h>
 #include <cpu/x86/lapic.h>
-#include <lib.h>
 #include <romstage_handoff.h>
 #include <console/console.h>
 #include <cpu/x86/bist.h>
@@ -267,7 +265,4 @@ void mainboard_romstage_entry(unsigned long bist)
 	}
 
 	romstage_handoff_init(s3resume);
-
-	if (!s3resume)
-		quick_ram_check();
 }

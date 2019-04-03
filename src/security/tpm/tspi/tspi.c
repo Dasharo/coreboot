@@ -17,17 +17,15 @@
 
 #include <console/cbmem_console.h>
 #include <console/console.h>
-#include <reset.h>
 #include <security/tpm/tspi.h>
 #include <security/tpm/tss.h>
 #include <stdlib.h>
-#include <string.h>
-#if IS_ENABLED(CONFIG_VBOOT)
+#if CONFIG(VBOOT)
 #include <vb2_api.h>
 #include <assert.h>
 #endif
 
-#if IS_ENABLED(CONFIG_TPM1)
+#if CONFIG(TPM1)
 static uint32_t tpm1_invoke_state_machine(void)
 {
 	uint8_t disabled;
@@ -51,7 +49,7 @@ static uint32_t tpm1_invoke_state_machine(void)
 		}
 	}
 
-	if (!!deactivated != IS_ENABLED(CONFIG_TPM_DEACTIVATE)) {
+	if (!!deactivated != CONFIG(TPM_DEACTIVATE)) {
 		printk(BIOS_INFO,
 		       "TPM: Unexpected TPM deactivated state. Toggling...\n");
 		result = tlcl_set_deactivated(!deactivated);
@@ -167,7 +165,7 @@ uint32_t tpm_setup(int s3flag)
 		}
 	}
 
-#if IS_ENABLED(CONFIG_TPM1)
+#if CONFIG(TPM1)
 	result = tpm1_invoke_state_machine();
 #endif
 
@@ -185,7 +183,7 @@ uint32_t tpm_clear_and_reenable(void)
 		return result;
 	}
 
-#if IS_ENABLED(CONFIG_TPM1)
+#if CONFIG(TPM1)
 	result = tlcl_set_enable();
 	if (result != TPM_SUCCESS) {
 		printk(BIOS_ERR, "TPM: Can't set enabled state.\n");
@@ -202,8 +200,8 @@ uint32_t tpm_clear_and_reenable(void)
 	return TPM_SUCCESS;
 }
 
-uint32_t tpm_extend_pcr(int pcr, uint8_t *digest,
-			size_t digest_len, const char *name)
+uint32_t tpm_extend_pcr(int pcr, enum vb2_hash_algorithm digest_algo,
+			uint8_t *digest, size_t digest_len, const char *name)
 {
 	uint32_t result;
 
@@ -214,10 +212,14 @@ uint32_t tpm_extend_pcr(int pcr, uint8_t *digest,
 	if (result != TPM_SUCCESS)
 		return result;
 
+	if (CONFIG(VBOOT_MEASURED_BOOT))
+		tcpa_log_add_table_entry(name, pcr, digest_algo,
+			digest, digest_len);
+
 	return TPM_SUCCESS;
 }
 
-#if IS_ENABLED(CONFIG_VBOOT)
+#if CONFIG(VBOOT)
 uint32_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 			    const char *rname)
 {
@@ -235,10 +237,11 @@ uint32_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 		printk(BIOS_ERR, "TPM: Can't initialize library.\n");
 		return result;
 	}
-	if (IS_ENABLED(CONFIG_TPM1))
+	if (CONFIG(TPM1)) {
 		hash_alg = VB2_HASH_SHA1;
-	else /* CONFIG_TPM2 */
+	} else { /* CONFIG_TPM2 */
 		hash_alg = VB2_HASH_SHA256;
+	}
 
 	digest_len = vb2_digest_size(hash_alg);
 	assert(digest_len <= sizeof(digest));
@@ -267,7 +270,7 @@ uint32_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 		printk(BIOS_ERR, "TPM: Error finalizing hash.\n");
 		return TPM_E_HASH_ERROR;
 	}
-	result = tpm_extend_pcr(pcr, digest, digest_len, rname);
+	result = tpm_extend_pcr(pcr, hash_alg, digest, digest_len, rname);
 	if (result != TPM_SUCCESS) {
 		printk(BIOS_ERR, "TPM: Extending hash into PCR failed.\n");
 		return result;

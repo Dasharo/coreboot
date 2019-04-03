@@ -15,7 +15,6 @@
  */
 
 #include <stddef.h>
-#include <lib.h>
 #include <arch/io.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
@@ -63,7 +62,7 @@ uint32_t chipset_prev_sleep_state(uint32_t clear)
 	if (pm1_sts & WAK_STS) {
 		switch (acpi_sleep_from_pm1(pm1_cnt)) {
 		case ACPI_S3:
-			if (IS_ENABLED(CONFIG_HAVE_ACPI_RESUME))
+			if (CONFIG(HAVE_ACPI_RESUME))
 				prev_sleep_state = ACPI_S3;
 			break;
 		case ACPI_S4:
@@ -229,7 +228,7 @@ void romstage_main_continue(EFI_STATUS status, void *hob_list_ptr)
 		__func__, (u32) status, (u32) hob_list_ptr);
 
 	/* FSP reconfigures USB, so reinit it to have debug */
-	if (IS_ENABLED(CONFIG_USBDEBUG_IN_PRE_RAM))
+	if (CONFIG(USBDEBUG_IN_PRE_RAM))
 		usbdebug_hw_init(true);
 
 	printk(BIOS_DEBUG, "FSP Status: 0x%0x\n", (u32)status);
@@ -244,12 +243,6 @@ void romstage_main_continue(EFI_STATUS status, void *hob_list_ptr)
 
 	late_mainboard_romstage_entry();
 	post_code(0x4c);
-
-	/* if S3 resume skip RAM check */
-	if (prev_sleep_state != ACPI_S3) {
-		quick_ram_check();
-		post_code(0x4d);
-	}
 
 	cbmem_was_initted = !cbmem_recovery(prev_sleep_state == ACPI_S3);
 

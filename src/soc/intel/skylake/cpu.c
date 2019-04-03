@@ -21,7 +21,6 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <string.h>
 #include <chip.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/msr.h>
@@ -489,7 +488,7 @@ static void post_mp_init(void)
 	smm_southbridge_enable(GBL_EN);
 
 	/* Lock down the SMRAM space. */
-#if IS_ENABLED(CONFIG_HAVE_SMI_HANDLER)
+#if CONFIG(HAVE_SMI_HANDLER)
 	smm_lock();
 #endif
 

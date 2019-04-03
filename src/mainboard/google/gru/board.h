@@ -24,21 +24,21 @@
 #define GPIO_RESET	GPIO(0, B, 3)
 #define GPIO_SDMMC_PWR	GPIO(4, D, 5)
 
-#if IS_ENABLED(CONFIG_GRU_BASEBOARD_SCARLET)
+#if CONFIG(GRU_BASEBOARD_SCARLET)
 #define GPIO_BL_EN	GPIO(4, C, 5)
 #define GPIO_BACKLIGHT	GPIO(4, C, 6)
 #define GPIO_EC_IN_RW	GPIO(0, A, 1)
 #define GPIO_EC_IRQ	GPIO(1, C, 2)
-#define GPIO_P15V_EN	dead_code_t(gpio_t, "PP1500 doesn't exist on scarlet.")
-#define GPIO_P18V_AUDIO_PWREN dead_code_t(gpio_t, "doesn't exist on scarlet.")
+#define GPIO_P15V_EN	dead_code_t(gpio_t)
+#define GPIO_P18V_AUDIO_PWREN dead_code_t(gpio_t)
 #define GPIO_P30V_EN	GPIO(0, B, 1)
 #define GPIO_SPK_PA_EN	GPIO(0, A, 2)
-#define GPIO_TP_RST_L	dead_code_t(gpio_t, "don't need TP_RST_L on scarlet.")
+#define GPIO_TP_RST_L	dead_code_t(gpio_t)
 #define GPIO_TPM_IRQ	GPIO(1, C, 1)
 #define GPIO_WP		GPIO(0, B, 5)
 #else
 #define GPIO_BL_EN	GPIO(1, C, 1)
-#define GPIO_BACKLIGHT	dead_code_t(gpio_t, "backlight controlled by ec")
+#define GPIO_BACKLIGHT	dead_code_t(gpio_t)
 #define GPIO_EC_IN_RW	GPIO(3, B, 0)
 #define GPIO_EC_IRQ	GPIO(0, A, 1)
 #define GPIO_P15V_EN	GPIO(0, B, 2)
@@ -50,10 +50,10 @@
 #define GPIO_WP		GPIO(1, C, 2)
 #endif
 
-#if IS_ENABLED(CONFIG_GRU_HAS_WLAN_RESET)
+#if CONFIG(GRU_HAS_WLAN_RESET)
 #define GPIO_WLAN_RST_L	GPIO(1, B, 3)
 #else
-#define GPIO_WLAN_RST_L	dead_code_t(gpio_t, "no WLAN reset on this board in FW")
+#define GPIO_WLAN_RST_L	dead_code_t(gpio_t)
 #endif
 
 void setup_chromeos_gpios(void);

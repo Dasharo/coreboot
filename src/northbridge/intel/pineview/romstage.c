@@ -18,11 +18,11 @@
  */
 
 #include <arch/io.h>
-#include <lib.h>
 #include <timestamp.h>
 #include <console/console.h>
 #include <device/pci_ops.h>
 #include <cbmem.h>
+#include <halt.h>
 #include <romstage_handoff.h>
 #include <southbridge/intel/i82801gx/i82801gx.h>
 #include <southbridge/intel/common/gpio.h>
@@ -103,8 +103,6 @@ void mainboard_romstage_entry(unsigned long bist)
 	printk(BIOS_DEBUG, "Memory initialized\n");
 
 	post_code(0x31);
-
-	quick_ram_check();
 
 	mb_pirq_setup();
 

@@ -21,14 +21,14 @@
 #include <arch/io.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/smm.h>
-#include <string.h>
+
 #include "pch.h"
 
 void southbridge_smm_clear_state(void)
 {
 	u32 smi_en;
 
-#if IS_ENABLED(CONFIG_ELOG)
+#if CONFIG(ELOG)
 	/* Log events from chipset before clearing */
 	pch_log_state();
 #endif

@@ -26,9 +26,9 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <stdlib.h>
-#include <string.h>
 #include <cpu/x86/smm.h>
 #include <boot/tables.h>
+
 #include "chip.h"
 #include "haswell.h"
 
@@ -395,7 +395,7 @@ static void mc_add_dram_resources(struct device *dev, int *resource_cnt)
 	mmio_resource(dev, index++, (0xa0000 >> 10), (0xc0000 - 0xa0000) >> 10);
 	reserved_ram_resource(dev, index++, (0xc0000 >> 10),
 			      (0x100000 - 0xc0000) >> 10);
-#if IS_ENABLED(CONFIG_CHROMEOS_RAMOOPS)
+#if CONFIG(CHROMEOS_RAMOOPS)
 	reserved_ram_resource(dev, index++,
 			CONFIG_CHROMEOS_RAMOOPS_RAM_START >> 10,
 			CONFIG_CHROMEOS_RAMOOPS_RAM_SIZE >> 10);
@@ -468,18 +468,6 @@ static void disable_devices(void)
 	pci_write_config32(host_dev, DEVEN, deven);
 }
 
-static void intel_set_subsystem(struct device *dev, unsigned int vendor,
-				unsigned int device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
-}
-
 static void northbridge_init(struct device *dev)
 {
 	u8 bios_reset_cpl, pair;
@@ -510,7 +498,7 @@ static void northbridge_init(struct device *dev)
 }
 
 static struct pci_operations intel_pci_ops = {
-	.set_subsystem    = intel_set_subsystem,
+	.set_subsystem    = pci_dev_set_subsystem,
 };
 
 static struct device_operations mc_ops = {

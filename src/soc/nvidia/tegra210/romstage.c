@@ -29,7 +29,6 @@
 #include <soc/nvidia/tegra/apbmisc.h>
 #include <symbols.h>
 #include <timer.h>
-#include <timestamp.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 
 void __weak romstage_mainboard_init(void)
@@ -44,7 +43,7 @@ void romstage(void)
 
 	printk(BIOS_INFO, "T210: romstage here\n");
 
-#if IS_ENABLED(CONFIG_BOOTROM_SDRAM_INIT)
+#if CONFIG(BOOTROM_SDRAM_INIT)
 	printk(BIOS_INFO, "T210 romstage: SDRAM init done by BootROM, RAMCODE = %d\n",
 		sdram_get_ram_code());
 #else

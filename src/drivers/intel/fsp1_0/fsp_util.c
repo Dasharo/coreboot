@@ -23,6 +23,7 @@
 #include <ip_checksum.h>
 #include <timestamp.h>
 #include <cpu/intel/microcode.h>
+#include <cf9_reset.h>
 
 #ifndef __PRE_RAM__
 /* Globals pointers for FSP structures */
@@ -63,6 +64,17 @@ void FspNotify (u32 Phase)
 
 #ifdef __PRE_RAM__
 
+/* The FSP returns here after the fsp_early_init call */
+static void ChipsetFspReturnPoint(EFI_STATUS Status, VOID *HobListPtr)
+{
+	*(void **)CBMEM_FSP_HOB_PTR = HobListPtr;
+
+	if (Status == 0xFFFFFFFF)
+		system_reset();
+
+	romstage_main_continue(Status, HobListPtr);
+}
+
 /*
  * Call the FSP to do memory init. The FSP doesn't return to this function.
  * The FSP returns to the romstage_main_continue().
@@ -72,19 +84,19 @@ void __noreturn fsp_early_init (FSP_INFO_HEADER *fsp_ptr)
 	FSP_FSP_INIT FspInitApi;
 	FSP_INIT_PARAMS FspInitParams;
 	FSP_INIT_RT_BUFFER FspRtBuffer;
-#if IS_ENABLED(CONFIG_FSP_USES_UPD)
+#if CONFIG(FSP_USES_UPD)
 	UPD_DATA_REGION fsp_upd_data;
 #endif
 
 	/* Load microcode before RAM init */
-	if (IS_ENABLED(CONFIG_SUPPORT_CPU_UCODE_IN_CBFS))
+	if (CONFIG(SUPPORT_CPU_UCODE_IN_CBFS))
 		intel_update_microcode_from_cbfs();
 
 	memset((void *)&FspRtBuffer, 0, sizeof(FSP_INIT_RT_BUFFER));
 	FspRtBuffer.Common.StackTop = (u32 *)CONFIG_RAMTOP;
 	FspInitParams.NvsBufferPtr = NULL;
 
-#if IS_ENABLED(CONFIG_FSP_USES_UPD)
+#if CONFIG(FSP_USES_UPD)
 	FspRtBuffer.Common.UpdDataRgnPtr = &fsp_upd_data;
 #endif
 	FspInitParams.RtBufferPtr = (FSP_INIT_RT_BUFFER *)&FspRtBuffer;
@@ -238,7 +250,7 @@ void print_fsp_info(void) {
 }
 
 
-#if IS_ENABLED(CONFIG_ENABLE_MRC_CACHE)
+#if CONFIG(ENABLE_MRC_CACHE)
 /**
  *  Save the FSP memory HOB (mrc data) to the MRC area in CBMEM
  */
@@ -308,7 +320,7 @@ static void find_fsp_hob_update_mrc(void *unused)
 		/* 0x0000: Print all types */
 		print_hob_type_structure(0x000, FspHobListPtr);
 
-	#if IS_ENABLED(CONFIG_ENABLE_MRC_CACHE)
+	#if CONFIG(ENABLE_MRC_CACHE)
 		if (save_mrc_data(FspHobListPtr))
 			update_mrc_cache(NULL);
 		else

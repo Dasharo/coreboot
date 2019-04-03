@@ -50,12 +50,20 @@ enum {
 	KB_BIOS_PROGRESS = 0xc2,
 };
 
+enum ec_ram_addr {
+	/* Indicate if EC uses signed firmware */
+	EC_RAM_SIGNED_FW = 0x5c,
+	/* Indicate support for S0ix */
+	EC_RAM_S0IX_SUPPORT = 0xb8,
+};
+
 enum set_acpi_mode_cmd {
 	ACPI_OFF = 0,
 	ACPI_ON
 };
 
 enum bios_progress_code {
+	BIOS_PROGRESS_BEFORE_MEMORY = 0x00,
 	BIOS_PROGRESS_MEMORY_INIT = 0x01,
 	BIOS_PROGRESS_VIDEO_INIT = 0x02,
 	BIOS_PROGRESS_LOGO_DISPLAYED = 0x03,
@@ -279,5 +287,14 @@ enum ec_acpi_wake_events {
 	EC_ACPI_WAKE_LID = BIT(1),	/* Wake up by lid switch */
 	EC_ACPI_WAKE_RTC = BIT(5),	/* Wake up by RTC */
 };
+
+/**
+ * wilco_ec_signed_fw
+ *
+ * Indicate if the EC uses signed firmware.
+ *
+ * Returns 1 if EC uses signed firmware, otherwise returns 0
+ */
+int wilco_ec_signed_fw(void);
 
 #endif /* EC_GOOGLE_WILCO_COMMANDS_H */

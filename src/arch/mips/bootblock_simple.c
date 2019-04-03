@@ -26,16 +26,16 @@ void main(void)
 	/* Mainboard basic init */
 	bootblock_mainboard_init();
 
-#if IS_ENABLED(CONFIG_BOOTBLOCK_CONSOLE)
+#if CONFIG(BOOTBLOCK_CONSOLE)
 	console_init();
 #endif
 
 	bootblock_mmu_init();
 
-	if (init_extra_hardware()) {
+	if (init_extra_hardware())
 		printk(BIOS_ERR, "bootblock_simple: failed to init HW.\n");
-	} else {
+	else
 		run_romstage();
-	}
+
 	halt();
 }

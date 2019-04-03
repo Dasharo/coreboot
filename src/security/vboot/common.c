@@ -15,107 +15,74 @@
 
 #include <assert.h>
 #include <cbmem.h>
-#include <reset.h>
+#include <console/console.h>
+#include <stdint.h>
 #include <string.h>
+#include <symbols.h>
 #include <vb2_api.h>
 #include <security/vboot/misc.h>
 #include <security/vboot/symbols.h>
 #include <security/vboot/vboot_common.h>
 
-struct selected_region {
-	uint32_t offset;
-	uint32_t size;
-};
-
-/*
- * this is placed at the start of the vboot work buffer. selected_region is used
- * for the verstage to return the location of the selected slot. buffer is used
- * by the vboot2 core. Keep the struct CPU architecture agnostic as it crosses
- * stage boundaries.
- */
-struct vb2_working_data {
-	struct selected_region selected_region;
-	/* offset of the buffer from the start of this struct */
-	uint32_t buffer_offset;
-	uint32_t buffer_size;
-};
-
-static const size_t vb_work_buf_size = 16 * KiB;
-
-static struct vb2_working_data * const vboot_get_working_data(void)
+struct vboot_working_data * const vboot_get_working_data(void)
 {
-	if (IS_ENABLED(CONFIG_VBOOT_STARTS_IN_ROMSTAGE))
-		/* cbmem_add() does a cbmem_find() first. */
-		return cbmem_add(CBMEM_ID_VBOOT_WORKBUF, vb_work_buf_size);
-	else
-		return (struct vb2_working_data *)_vboot2_work;
+	struct vboot_working_data *wd = NULL;
+
+	if (cbmem_possibly_online())
+		wd = cbmem_find(CBMEM_ID_VBOOT_WORKBUF);
+
+	if (wd == NULL && CONFIG(VBOOT_STARTS_IN_BOOTBLOCK) &&
+	    preram_symbols_available())
+		wd = (struct vboot_working_data *)_vboot2_work;
+
+	assert(wd != NULL);
+
+	return wd;
 }
 
-static size_t vb2_working_data_size(void)
+void vboot_init_work_context(struct vb2_context *ctx)
 {
-	if (IS_ENABLED(CONFIG_VBOOT_STARTS_IN_ROMSTAGE))
-		return vb_work_buf_size;
-	else
-		return REGION_SIZE(vboot2_work);
-}
-
-static struct selected_region *vb2_selected_region(void)
-{
-	struct selected_region *sel_reg = NULL;
-
-	/* Ramstage and postcar always uses cbmem as a source of truth. */
-	if (ENV_RAMSTAGE || ENV_POSTCAR)
-		sel_reg = cbmem_find(CBMEM_ID_VBOOT_SEL_REG);
-	else if (ENV_ROMSTAGE) {
-		/* Try cbmem first. Fall back on working data if not found. */
-		sel_reg = cbmem_find(CBMEM_ID_VBOOT_SEL_REG);
-
-		if (sel_reg == NULL) {
-			struct vb2_working_data *wd = vboot_get_working_data();
-			sel_reg = &wd->selected_region;
-		}
-	} else {
-		/* Stages such as bootblock and verstage use working data. */
-		struct vb2_working_data *wd = vboot_get_working_data();
-		sel_reg = &wd->selected_region;
-	}
-
-	return sel_reg;
-}
-
-void vb2_init_work_context(struct vb2_context *ctx)
-{
-	struct vb2_working_data *wd;
-	size_t work_size;
+	struct vboot_working_data *wd;
 
 	/* First initialize the working data region. */
-	work_size = vb2_working_data_size();
 	wd = vboot_get_working_data();
-	memset(wd, 0, work_size);
+	memset(wd, 0, VB2_FIRMWARE_WORKBUF_RECOMMENDED_SIZE);
 
 	/*
 	 * vboot prefers 16-byte alignment. This takes away 16 bytes
 	 * from the VBOOT2_WORK region, but the vboot devs said that's okay.
 	 */
 	wd->buffer_offset = ALIGN_UP(sizeof(*wd), 16);
-	wd->buffer_size = work_size - wd->buffer_offset;
+	wd->buffer_size = VB2_FIRMWARE_WORKBUF_RECOMMENDED_SIZE
+			  - wd->buffer_offset;
 
 	/* Initialize the vb2_context. */
 	memset(ctx, 0, sizeof(*ctx));
-	ctx->workbuf = (void *)vb2_get_shared_data();
+	ctx->workbuf = (void *)vboot_get_shared_data();
 	ctx->workbuf_size = wd->buffer_size;
-
 }
 
-struct vb2_shared_data *vb2_get_shared_data(void)
+void vboot_finalize_work_context(struct vb2_context *ctx)
 {
-	struct vb2_working_data *wd = vboot_get_working_data();
+	/*
+	 * Shrink buffer_size so that vboot_migrate_cbmem knows how
+	 * much of vboot_working_data needs to be copied into CBMEM
+	 * (if applicable), and so that downstream users know how much
+	 * of the workbuf is currently used.
+	 */
+	vboot_get_working_data()->buffer_size = ctx->workbuf_used;
+}
+
+struct vb2_shared_data *vboot_get_shared_data(void)
+{
+	struct vboot_working_data *wd = vboot_get_working_data();
 	return (void *)((uintptr_t)wd + wd->buffer_offset);
 }
 
-int vb2_get_selected_region(struct region *region)
+int vboot_get_selected_region(struct region *region)
 {
-	const struct selected_region *reg = vb2_selected_region();
+	const struct selected_region *reg =
+		&vboot_get_working_data()->selected_region;
 
 	if (reg == NULL)
 		return -1;
@@ -129,9 +96,10 @@ int vb2_get_selected_region(struct region *region)
 	return 0;
 }
 
-void vb2_set_selected_region(const struct region *region)
+void vboot_set_selected_region(const struct region *region)
 {
-	struct selected_region *reg = vb2_selected_region();
+	struct selected_region *reg =
+		&vboot_get_working_data()->selected_region;
 
 	assert(reg != NULL);
 
@@ -139,42 +107,46 @@ void vb2_set_selected_region(const struct region *region)
 	reg->size = region_sz(region);
 }
 
-int vb2_is_slot_selected(void)
+int vboot_is_slot_selected(void)
 {
-	const struct selected_region *reg = vb2_selected_region();
+	struct selected_region *reg =
+		&vboot_get_working_data()->selected_region;
 
 	assert(reg != NULL);
 
 	return reg->size > 0;
 }
 
-void vb2_store_selected_region(void)
-{
-	const struct vb2_working_data *wd;
-	struct selected_region *sel_reg;
-
-	/* Always use the working data in this path since it's the object
-	 * which has the result.. */
-	wd = vboot_get_working_data();
-
-	sel_reg = cbmem_add(CBMEM_ID_VBOOT_SEL_REG, sizeof(*sel_reg));
-
-	assert(sel_reg != NULL);
-
-	sel_reg->offset = wd->selected_region.offset;
-	sel_reg->size = wd->selected_region.size;
-}
-
+#if CONFIG(VBOOT_MIGRATE_WORKING_DATA)
 /*
- * For platforms that employ VBOOT_STARTS_IN_ROMSTAGE, the vboot
- * verification doesn't happen until after cbmem is brought online.
- * Therefore, the selected region contents would not be initialized
- * so don't automatically add results when cbmem comes online.
+ * For platforms that do not employ VBOOT_STARTS_IN_ROMSTAGE, vboot
+ * verification occurs before CBMEM is brought online, using pre-RAM.
+ * In order to make vboot data structures available downstream, copy
+ * vboot_working_data from SRAM/CAR into CBMEM on platforms where this
+ * memory later becomes unavailable.
  */
-#if !IS_ENABLED(CONFIG_VBOOT_STARTS_IN_ROMSTAGE)
-static void vb2_store_selected_region_cbmem(int unused)
+static void vboot_migrate_cbmem(int unused)
 {
-	vb2_store_selected_region();
+	const struct vboot_working_data *wd_preram =
+		(struct vboot_working_data *)_vboot2_work;
+	size_t cbmem_size = wd_preram->buffer_offset + wd_preram->buffer_size;
+	struct vboot_working_data *wd_cbmem =
+		cbmem_add(CBMEM_ID_VBOOT_WORKBUF, cbmem_size);
+	assert(wd_cbmem != NULL);
+
+	printk(BIOS_DEBUG,
+	       "VBOOT: copying vboot_working_data (%zu bytes) to CBMEM...\n",
+	       cbmem_size);
+	memcpy(wd_cbmem, wd_preram, cbmem_size);
 }
-ROMSTAGE_CBMEM_INIT_HOOK(vb2_store_selected_region_cbmem)
+ROMSTAGE_CBMEM_INIT_HOOK(vboot_migrate_cbmem)
+#elif CONFIG(VBOOT_STARTS_IN_ROMSTAGE)
+static void vboot_setup_cbmem(int unused)
+{
+	struct vboot_working_data *wd_cbmem =
+		cbmem_add(CBMEM_ID_VBOOT_WORKBUF,
+			  VB2_FIRMWARE_WORKBUF_RECOMMENDED_SIZE);
+	assert(wd_cbmem != NULL);
+}
+ROMSTAGE_CBMEM_INIT_HOOK(vboot_setup_cbmem)
 #endif

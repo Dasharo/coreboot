@@ -23,8 +23,6 @@
 #include <bootstate.h>
 #include <delay.h>
 #include <elog.h>
-#include <halt.h>
-#include <reset.h>
 #include <rtc.h>
 #include <stdlib.h>
 #include <security/vboot/vboot_common.h>
@@ -413,7 +411,7 @@ static void google_chromeec_log_device_events(uint64_t mask)
 	uint64_t events;
 	int i;
 
-	if (!IS_ENABLED(CONFIG_ELOG) || !mask)
+	if (!CONFIG(ELOG) || !mask)
 		return;
 
 	if (google_chromeec_check_feature(EC_FEATURE_DEVICE_EVENT) != 1)
@@ -434,7 +432,7 @@ void google_chromeec_log_events(uint64_t mask)
 	uint64_t wake_mask;
 	bool restore_wake_mask = false;
 
-	if (!IS_ENABLED(CONFIG_ELOG))
+	if (!CONFIG(ELOG))
 		return;
 
 	/*
@@ -536,7 +534,7 @@ int google_chromeec_set_sku_id(u32 skuid)
 	return 0;
 }
 
-#if IS_ENABLED(CONFIG_EC_GOOGLE_CHROMEEC_RTC)
+#if CONFIG(EC_GOOGLE_CHROMEEC_RTC)
 int rtc_get(struct rtc_time *time)
 {
 	struct chromeec_command cmd;

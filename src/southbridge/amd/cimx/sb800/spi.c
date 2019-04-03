@@ -14,7 +14,6 @@
  */
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <device/mmio.h>
 #include <console/console.h>
 #include <spi_flash.h>
@@ -135,7 +134,7 @@ static void ImcWakeup(void)
 
 int chipset_volatile_group_begin(const struct spi_flash *flash)
 {
-	if (!IS_ENABLED(CONFIG_SB800_IMC_FWM))
+	if (!CONFIG(SB800_IMC_FWM))
 		return 0;
 
 	ImcSleep();
@@ -144,7 +143,7 @@ int chipset_volatile_group_begin(const struct spi_flash *flash)
 
 int chipset_volatile_group_end(const struct spi_flash *flash)
 {
-	if (!IS_ENABLED(CONFIG_SB800_IMC_FWM))
+	if (!CONFIG(SB800_IMC_FWM))
 		return 0;
 
 	ImcWakeup();

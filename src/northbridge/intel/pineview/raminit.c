@@ -20,7 +20,6 @@
 #include <console/console.h>
 #include <cpu/x86/cache.h>
 #include <delay.h>
-#include <halt.h>
 #include <lib.h>
 #include "pineview.h"
 #include "raminit.h"
@@ -28,7 +27,7 @@
 #include <string.h>
 
 /* Debugging macros. */
-#if IS_ENABLED(CONFIG_DEBUG_RAM_SETUP)
+#if CONFIG(DEBUG_RAM_SETUP)
 #define PRINTK_DEBUG(x...)	printk(BIOS_DEBUG, x)
 #else
 #define PRINTK_DEBUG(x...)
@@ -134,7 +133,7 @@ static int decode_spd(struct dimminfo *d, int i)
 	d->tRCD = d->spd_data[29];
 	d->tWR = d->spd_data[36];
 	d->ranks = d->sides; // XXX
-#if IS_ENABLED(CONFIG_DEBUG_RAM_SETUP)
+#if CONFIG(DEBUG_RAM_SETUP)
 	const char *ubso[2] = { "UB", "SO" };
 #endif
 	PRINTK_DEBUG("%s-DIMM %d\n", &ubso[d->type][0], i);
@@ -311,7 +310,7 @@ static void sdram_read_spds(struct sysinfo *s)
 	}
 }
 
-#if IS_ENABLED(CONFIG_DEBUG_RAM_SETUP)
+#if CONFIG(DEBUG_RAM_SETUP)
 static u32 fsb_reg_to_mhz(u32 speed)
 {
 	return (speed * 133) + 667;

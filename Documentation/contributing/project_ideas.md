@@ -29,6 +29,12 @@ Provide packages/installers of our compiler toolchain for Linux distros,
 Windows, Mac OS. For Windows, this should also include the environment
 (shell, make, ...).
 
+The scripts to generate these packages should be usable on a Linux
+host, as that's what we're using for our automated build testing system
+that we could extend to provide current packages going forward. This
+might include automating some virtualization system (eg. QEMU or CrosVM) for
+non-Linux builds or Docker for different Linux distributions.
+
 ### Requirements
 * coreboot knowledge: Should know how to build coreboot images and where
   the compiler comes into play in our build system.
@@ -78,6 +84,7 @@ code doesn't entirely break these architectures
   hardware is available.
 
 ### Mentors
+* Patrick Georgi <patrick@georgi.software>
 
 ## Add Kernel Address Sanitizer functionality to coreboot
 The Kernel Address Sanitizer (KASAN) is a runtime dynamic memory error detector.
@@ -145,3 +152,52 @@ their bug reports.
 
 ### Mentors
 * Patrick Georgi <patrick@georgi.software>
+
+## Make coreboot coverity clean
+coreboot and several other of our projects are automatically tested
+using Synopsys' free "Coverity Scan" service. While some fare pretty
+good, like [em100](https://scan.coverity.com/projects/em100) at 0 known
+defects, there are still many open issues in other projects, most notably
+[coreboot](https://scan.coverity.com/projects/coreboot) itself (which
+is also the largest codebase).
+
+Not all of the reports are actual issues, but the project benefits a
+lot if the list of unhandled reports is down to 0 because that provides
+a baseline when future changes reintroduce new issues: it's easier to
+triage and handle a list of 5 issues rather than more than 350.
+
+This project would be going through all reports and handling them
+appropriately: Figure out if reports are valid or not and mark them
+as such. For valid reports, provide patches to fix the underlying issue.
+
+### Mentors
+* Patrick Georgi <patrick@georgi.software>
+
+## Extend Ghidra to support analysis of firmware images
+[Ghidra](https://ghidra-sre.org) is a recently released cross-platform
+disassembler and decompiler that is extensible through plugins. Make it
+useful for firmware related work: Automatically parse formats (eg. by
+integrating UEFITool, cbfstool, decompressors), automatically identify
+16/32/64bit code on x86/amd64, etc.
+
+## Learn hardware behavior from I/O and memory access logs
+[SerialICE](https://www.serialice.com) is a tool to trace the behavior of
+executable code like firmware images. One result of that is a long log file
+containing the accesses to hardware resources.
+
+It would be useful to have a tool that assists a developer-analyst in deriving
+knowledge about hardware from such logs. This likely can't be entirely
+automatic, but a tool that finds patterns and can propagate them across the
+log (incrementially raising the log from plain I/O accesses to a high-level
+description of driver behavior) would be of great use.
+
+This is a research-heavy project.
+
+### Requirements
+* Driver knowledge: Somebody working on this should be familiar with
+  how hardware works (eg. MMIO based register access, index/data port
+  accesses) and how to read data sheets.
+* Machine Learning: ML techniques may be useful to find structure in traces.
+
+### Mentors
+* Ron Minnich <rminnich@google.com>

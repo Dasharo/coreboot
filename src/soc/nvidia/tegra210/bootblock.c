@@ -26,7 +26,6 @@
 #include <soc/nvidia/tegra/apbmisc.h>
 #include <soc/pmc.h>
 #include <soc/power.h>
-#include <timestamp.h>
 
 #define BCT_OFFSET_IN_BIT	0x4c
 #define ODMDATA_OFFSET_IN_BCT	0x508
@@ -178,7 +177,7 @@ void main(void)
 
 	bootblock_mainboard_early_init();
 
-	if (CONFIG_BOOTBLOCK_CONSOLE) {
+	if (CONFIG(BOOTBLOCK_CONSOLE)) {
 		console_init();
 		exception_init();
 		printk(BIOS_INFO, "T210: Bootblock here\n");

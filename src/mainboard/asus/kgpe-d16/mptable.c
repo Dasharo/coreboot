@@ -17,7 +17,6 @@
 #include <arch/smp/mpspec.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
-#include <string.h>
 #include <stdint.h>
 #include <cpu/amd/amdfam10_sysconf.h>
 
@@ -36,7 +35,7 @@ static void *smp_write_config_table(void *v)
 
 	smp_write_processors(mc);
 
-	if (IS_ENABLED(CONFIG_ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
+	if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
 		apicid_sp5100 = 0x0;
 	else
 		apicid_sp5100 = 0x20;

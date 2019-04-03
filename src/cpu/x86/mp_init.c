@@ -16,6 +16,7 @@
 
 #include <console/console.h>
 #include <stdint.h>
+#include <string.h>
 #include <rmodule.h>
 #include <arch/cpu.h>
 #include <commonlib/helpers.h>
@@ -714,7 +715,7 @@ struct mp_state {
 
 static int is_smm_enabled(void)
 {
-	return IS_ENABLED(CONFIG_HAVE_SMI_HANDLER) && mp_state.do_smm;
+	return CONFIG(HAVE_SMI_HANDLER) && mp_state.do_smm;
 }
 
 static void smm_disable(void)
@@ -724,7 +725,7 @@ static void smm_disable(void)
 
 static void smm_enable(void)
 {
-	if (IS_ENABLED(CONFIG_HAVE_SMI_HANDLER))
+	if (CONFIG(HAVE_SMI_HANDLER))
 		mp_state.do_smm = 1;
 }
 
@@ -891,7 +892,7 @@ static int run_ap_work(struct mp_callback *val, long expire_us)
 	struct stopwatch sw;
 	int cur_cpu = cpu_index();
 
-	if (!IS_ENABLED(CONFIG_PARALLEL_MP_AP_WORK)) {
+	if (!CONFIG(PARALLEL_MP_AP_WORK)) {
 		printk(BIOS_ERR, "APs already parked. PARALLEL_MP_AP_WORK not selected.\n");
 		return -1;
 	}
@@ -933,7 +934,7 @@ static void ap_wait_for_instruction(void)
 	struct mp_callback **per_cpu_slot;
 	int cur_cpu;
 
-	if (!IS_ENABLED(CONFIG_PARALLEL_MP_AP_WORK))
+	if (!CONFIG(PARALLEL_MP_AP_WORK))
 		return;
 
 	cur_cpu = cpu_index();
@@ -1028,7 +1029,7 @@ static void fill_mp_state(struct mp_state *state, const struct mp_ops *ops)
 	 * Default to smm_initiate_relocation() if trigger callback isn't
 	 * provided.
 	 */
-	if (IS_ENABLED(CONFIG_HAVE_SMI_HANDLER) &&
+	if (CONFIG(HAVE_SMI_HANDLER) &&
 		ops->per_cpu_smm_trigger == NULL)
 		mp_state.ops.per_cpu_smm_trigger = smm_initiate_relocation;
 }

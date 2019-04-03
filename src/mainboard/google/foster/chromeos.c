@@ -24,51 +24,26 @@
 
 void fill_lb_gpios(struct lb_gpios *gpios)
 {
-	int count = 0;
-
 	/* TBD(twarren@nvidia.com): Any analogs for these on Foster-FFD? */
+	struct lb_gpio chromeos_gpios[] = {
+		/* Write Protect: active low */
+		{-1, ACTIVE_LOW, get_write_protect_state(), "write protect"},
 
-	/* Write Protect: active low */
-	gpios->gpios[count].port = -1;
-	gpios->gpios[count].polarity = ACTIVE_LOW;
-	gpios->gpios[count].value = get_write_protect_state();
-	strncpy((char *)gpios->gpios[count].name, "write protect",
-		GPIO_MAX_NAME_LENGTH);
-	count++;
+		/* Recovery: active high */
+		{-1, ACTIVE_HIGH, get_recovery_mode_switch(), "recovery"},
 
-	/* Recovery: active high */
-	gpios->gpios[count].port = -1;
-	gpios->gpios[count].polarity = ACTIVE_HIGH;
-	gpios->gpios[count].value = get_recovery_mode_switch();
-	strncpy((char *)gpios->gpios[count].name, "recovery",
-		GPIO_MAX_NAME_LENGTH);
-	count++;
+		/* TODO: Power: active low / high depending on board id */
+		{GPIO(X5), ACTIVE_LOW, -1, "power"},
 
-	/* TODO: Power: active low / high depending on board id */
-	gpios->gpios[count].port = GPIO(X5);
-	gpios->gpios[count].polarity = ACTIVE_LOW;
-	gpios->gpios[count].value = -1;
-	strncpy((char *)gpios->gpios[count].name, "power",
-		GPIO_MAX_NAME_LENGTH);
-	count++;
-
-	/* TODO: Reset: active low (output) */
-	gpios->gpios[count].port = GPIO(I5);
-	gpios->gpios[count].polarity = ACTIVE_LOW;
-	gpios->gpios[count].value = -1;
-	strncpy((char *)gpios->gpios[count].name, "reset",
-		GPIO_MAX_NAME_LENGTH);
-	count++;
-
-	gpios->size = sizeof(*gpios) + (count * sizeof(struct lb_gpio));
-	gpios->count = count;
-
-	printk(BIOS_ERR, "Added %d GPIOS size %d\n", count, gpios->size);
+		/* TODO: Reset: active low (output) */
+		{GPIO(I5), ACTIVE_LOW, -1, "reset"},
+	};
+	lb_add_gpios(gpios, chromeos_gpios, ARRAY_SIZE(chromeos_gpios));
 }
 
 int get_recovery_mode_switch(void)
 {
-#if IS_ENABLED(CONFIG_EC_GOOGLE_CHROMEEC)
+#if CONFIG(EC_GOOGLE_CHROMEEC)
 	uint64_t ec_events;
 
 	ec_events = google_chromeec_get_events_b();

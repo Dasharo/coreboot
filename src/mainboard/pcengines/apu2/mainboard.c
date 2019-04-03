@@ -39,6 +39,7 @@
 #include "bios_knobs.h"
 #include "s1_button.h"
 
+#define SPD_SIZE  128
 #define PM_RTC_CONTROL	    0x56
 #define PM_RTC_SHADOW	    0x5B
 #define PM_S_STATE_CONTROL  0xBA
@@ -147,7 +148,7 @@ static void pirq_setup(void)
 /* Wrapper to enable GPIO/UART devices under menuconfig. Revisit
  * once configuration file format for SPI flash storage is complete.
  */
-#define SIO_PORT 0x2E
+#define SIO_PORT 0x2e
 
 static void config_gpio_mux(void)
 {
@@ -221,7 +222,7 @@ static void set_dimm_info(uint8_t *spd, struct dimm_info *dimm)
 			dimm->ddr_frequency = 0;
 			break;
 	}
-	
+
 	dimm->ddr_type = MEMORY_TYPE_DDR3;
 
 	/* Parse the SPD data to determine the DIMM information */
@@ -279,6 +280,7 @@ static void mainboard_get_dimm_info(u8 *spd_buffer)
 
 static void mainboard_enable(struct device *dev)
 {
+	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
 	bool scon = check_console();
 
 	config_gpio_mux();
@@ -405,7 +407,7 @@ static void mainboard_final(void *chip_info)
 		// The console is disabled, check if S1 is pressed and enable if so
 		//
 #if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5)
- 		if (!read_gpio(GPIO_22)) {
+		if (!read_gpio(GPIO_22)) {
 #else
 		if (!read_gpio(GPIO_32)) {
 #endif
@@ -500,7 +502,7 @@ const char *smbios_mainboard_serial_number(void)
 /*
  * We will stuff the memory size into the smbios sku location.
  */
-const char *smbios_mainboard_sku(void)
+const char *smbios_system_sku(void)
 {
 	static char sku[5];
 	if (sku[0] != 0)

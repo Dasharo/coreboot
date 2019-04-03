@@ -15,10 +15,8 @@
 
 #include <assert.h>
 #include <baseboard/variants.h>
-#include <cbfs.h>
 #include <console/console.h>
 #include <soc/romstage.h>
-#include <string.h>
 
 void mainboard_memory_init_params(FSPM_UPD *mupd)
 {

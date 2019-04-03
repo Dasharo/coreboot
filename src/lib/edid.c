@@ -525,7 +525,7 @@ detailed_block(struct edid *result_edid, unsigned char *x, int in_extension,
 	 * another call to edid_set_framebuffer_bits_per_pixel(). As a cheap
 	 * heuristic, assume that X86 systems require a 64-byte row alignment
 	 * (since that seems to be true for most Intel chipsets). */
-	if (IS_ENABLED(CONFIG_ARCH_X86))
+	if (CONFIG(ARCH_X86))
 		edid_set_framebuffer_bits_per_pixel(out, 32, 64);
 	else
 		edid_set_framebuffer_bits_per_pixel(out, 32, 0);
@@ -1002,6 +1002,7 @@ parse_extension(struct edid *out, unsigned char *x, struct edid_context *c)
 		break;
 	case 0xFF:
 		printk(BIOS_SPEW, "Manufacturer-specific extension block\n");
+		break;
 	default:
 		printk(BIOS_SPEW, "Unknown extension block\n");
 		break;
@@ -1138,12 +1139,17 @@ int decode_edid(unsigned char *edid, int size, struct edid *out)
 	    .conformant = EDID_CONFORMANT,
 	};
 
-	dump_breakdown(edid);
-
 	memset(out, 0, sizeof(*out));
 
-	if (!edid || memcmp(edid, "\x00\xFF\xFF\xFF\xFF\xFF\xFF\x00", 8)) {
-		printk(BIOS_SPEW, "No header found\n");
+	if (!edid) {
+		printk(BIOS_ERR, "No EDID found\n");
+		return EDID_ABSENT;
+	}
+
+	dump_breakdown(edid);
+
+	if (memcmp(edid, "\x00\xFF\xFF\xFF\xFF\xFF\xFF\x00", 8)) {
+		printk(BIOS_ERR, "No header found\n");
 		return EDID_ABSENT;
 	}
 

@@ -150,7 +150,7 @@ int acpi_create_madt_lapic(acpi_madt_lapic_t *lapic, u8 cpu, u8 apic)
 unsigned long acpi_create_madt_lapics(unsigned long current)
 {
 	struct device *cpu;
-	int index, apic_ids[CONFIG_MAX_CPUS], num_cpus = 0;
+	int index, apic_ids[CONFIG_MAX_CPUS] = {0}, num_cpus = 0;
 
 	for (cpu = all_devices; cpu; cpu = cpu->next) {
 		if ((cpu->path.type != DEVICE_PATH_APIC) ||
@@ -163,7 +163,8 @@ unsigned long acpi_create_madt_lapics(unsigned long current)
 			break;
 		apic_ids[num_cpus++] = cpu->path.apic.apic_id;
 	}
-	bubblesort(apic_ids, num_cpus, NUM_ASCENDING);
+	if (num_cpus > 1)
+		bubblesort(apic_ids, num_cpus, NUM_ASCENDING);
 	for (index = 0; index < num_cpus; index++) {
 		current += acpi_create_madt_lapic((acpi_madt_lapic_t *)current,
 				index, apic_ids[index]);
@@ -1066,7 +1067,7 @@ void acpi_write_bert(acpi_bert_t *bert, uintptr_t region, size_t length)
 	header->checksum = acpi_checksum((void *)bert, header->length);
 }
 
-#if IS_ENABLED(CONFIG_COMMON_FADT)
+#if CONFIG(COMMON_FADT)
 void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 {
 	acpi_header_t *header = &(fadt->header);
@@ -1088,11 +1089,11 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	fadt->x_dsdt_l = (unsigned long)dsdt;
 	fadt->x_dsdt_h = 0;
 
-	if (IS_ENABLED(CONFIG_SYSTEM_TYPE_CONVERTIBLE) ||
-	    IS_ENABLED(CONFIG_SYSTEM_TYPE_LAPTOP))
+	if (CONFIG(SYSTEM_TYPE_CONVERTIBLE) ||
+	    CONFIG(SYSTEM_TYPE_LAPTOP))
 		fadt->preferred_pm_profile = PM_MOBILE;
-	else if (IS_ENABLED(CONFIG_SYSTEM_TYPE_DETACHABLE) ||
-		 IS_ENABLED(CONFIG_SYSTEM_TYPE_TABLET))
+	else if (CONFIG(SYSTEM_TYPE_DETACHABLE) ||
+		 CONFIG(SYSTEM_TYPE_TABLET))
 		fadt->preferred_pm_profile = PM_TABLET;
 	else
 		fadt->preferred_pm_profile = PM_DESKTOP;
@@ -1256,7 +1257,7 @@ unsigned long write_acpi_tables(unsigned long start)
 		acpi_add_table(rsdp, mcfg);
 	}
 
-	if (IS_ENABLED(CONFIG_TPM1)) {
+	if (CONFIG(TPM1)) {
 		printk(BIOS_DEBUG, "ACPI:    * TCPA\n");
 		tcpa = (acpi_tcpa_t *) current;
 		acpi_create_tcpa(tcpa);
@@ -1267,7 +1268,7 @@ unsigned long write_acpi_tables(unsigned long start)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_TPM2)) {
+	if (CONFIG(TPM2)) {
 		printk(BIOS_DEBUG, "ACPI:    * TPM2\n");
 		tpm2 = (acpi_tpm2_t *) current;
 		acpi_create_tpm2(tpm2);

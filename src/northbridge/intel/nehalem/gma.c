@@ -21,7 +21,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <string.h>
 #include <device/pci_ops.h>
 #include <drivers/intel/gma/edid.h>
 #include <drivers/intel/gma/i915.h>
@@ -603,7 +602,7 @@ static void gma_func0_init(struct device *dev)
 	/* Init graphics power management */
 	gma_pm_init_pre_vbios(dev);
 
-	if (IS_ENABLED(CONFIG_MAINBOARD_USE_LIBGFXINIT)) {
+	if (CONFIG(MAINBOARD_USE_LIBGFXINIT)) {
 		struct northbridge_intel_nehalem_config *conf = dev->chip_info;
 		int lightup_ok;
 		printk(BIOS_SPEW, "Initializing VGA without OPROM.");
@@ -622,19 +621,6 @@ static void gma_func0_init(struct device *dev)
 
 	gma_enable_swsci();
 	intel_gma_restore_opregion();
-}
-
-static void gma_set_subsystem(struct device *dev, unsigned int vendor,
-			      unsigned int device)
-{
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				   pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				   ((device & 0xffff) << 16) | (vendor &
-								0xffff));
-	}
 }
 
 static void gma_read_resources(struct device *dev)
@@ -704,7 +690,7 @@ gma_write_acpi_tables(struct device *const dev,
 }
 
 static struct pci_operations gma_pci_ops = {
-	.set_subsystem = gma_set_subsystem,
+	.set_subsystem = pci_dev_set_subsystem,
 };
 
 static struct device_operations gma_func0_ops = {

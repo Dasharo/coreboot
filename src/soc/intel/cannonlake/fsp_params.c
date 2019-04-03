@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2018 Intel Corporation.
+ * Copyright (C) 2018-2019 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,75 @@
 #include <soc/ramstage.h>
 #include <string.h>
 
+static const int serial_io_dev[] = {
+	PCH_DEVFN_I2C0,
+	PCH_DEVFN_I2C1,
+	PCH_DEVFN_I2C2,
+	PCH_DEVFN_I2C3,
+	PCH_DEVFN_I2C4,
+	PCH_DEVFN_I2C5,
+	PCH_DEVFN_GSPI0,
+	PCH_DEVFN_GSPI1,
+	PCH_DEVFN_GSPI2,
+	PCH_DEVFN_UART0,
+	PCH_DEVFN_UART1,
+	PCH_DEVFN_UART2
+};
+
+/*
+ * Given an enum for PCH_SERIAL_IO_MODE, 1 needs to be subtracted to get the FSP
+ * UPD expected value for Serial IO since valid enum index starts from 1.
+ */
+#define PCH_SERIAL_IO_INDEX(x)		((x) - 1)
+
+static uint8_t get_param_value(const config_t *config, uint32_t dev_offset)
+{
+	struct device *dev;
+
+	dev = dev_find_slot(0, serial_io_dev[dev_offset]);
+	if (!dev || !dev->enabled)
+		return PCH_SERIAL_IO_INDEX(PchSerialIoDisabled);
+
+	if ((config->SerialIoDevMode[dev_offset] >= PchSerialIoMax) ||
+	    (config->SerialIoDevMode[dev_offset] == PchSerialIoNotInitialized))
+		return PCH_SERIAL_IO_INDEX(PchSerialIoPci);
+
+	/*
+	 * Correct Enum index starts from 1, so subtract 1 while returning value
+	 */
+	return PCH_SERIAL_IO_INDEX(config->SerialIoDevMode[dev_offset]);
+}
+
+#if IS_ENABLED(CONFIG_SOC_INTEL_COMETLAKE)
+static void parse_devicetree_param(const config_t *config, FSP_S_CONFIG *params)
+{
+	uint32_t dev_offset = 0;
+	uint32_t i = 0;
+
+	for (i = 0; i < CONFIG_SOC_INTEL_I2C_DEV_MAX; i++, dev_offset++) {
+		params->SerialIoI2cMode[i] =
+				get_param_value(config, dev_offset);
+	}
+
+	for (i = 0; i < CONFIG_SOC_INTEL_COMMON_BLOCK_GSPI_MAX; i++,
+	     dev_offset++) {
+		params->SerialIoSpiMode[i] =
+				get_param_value(config, dev_offset);
+	}
+
+	for (i = 0; i < SOC_INTEL_CML_UART_DEV_MAX; i++, dev_offset++) {
+		params->SerialIoUartMode[i] =
+				get_param_value(config, dev_offset);
+	}
+}
+#else
+static void parse_devicetree_param(const config_t *config, FSP_S_CONFIG *params)
+{
+	for (int i = 0; i < ARRAY_SIZE(serial_io_dev); i++)
+		params->SerialIoDevMode[i] = get_param_value(config, i);
+}
+#endif
+
 static void parse_devicetree(FSP_S_CONFIG *params)
 {
 	struct device *dev = SA_DEV_ROOT;
@@ -34,32 +103,19 @@ static void parse_devicetree(FSP_S_CONFIG *params)
 	}
 
 	const config_t *config = dev->chip_info;
-	const int SerialIoDev[] = {
-		PCH_DEVFN_I2C0,
-		PCH_DEVFN_I2C1,
-		PCH_DEVFN_I2C2,
-		PCH_DEVFN_I2C3,
-		PCH_DEVFN_I2C4,
-		PCH_DEVFN_I2C5,
-		PCH_DEVFN_GSPI0,
-		PCH_DEVFN_GSPI1,
-		PCH_DEVFN_GSPI2,
-		PCH_DEVFN_UART0,
-		PCH_DEVFN_UART1,
-		PCH_DEVFN_UART2
-	};
 
-	for (int i = 0; i < ARRAY_SIZE(SerialIoDev); i++) {
-		dev = dev_find_slot(0, SerialIoDev[i]);
-		if (!dev->enabled) {
-			params->SerialIoDevMode[i] = PchSerialIoDisabled;
-			continue;
-		}
-		params->SerialIoDevMode[i] = PchSerialIoPci;
-		if (config->SerialIoDevMode[i] == PchSerialIoAcpi ||
-		    config->SerialIoDevMode[i] == PchSerialIoHidden)
-			params->SerialIoDevMode[i] = config->SerialIoDevMode[i];
-	}
+	parse_devicetree_param(config, params);
+}
+
+/* Ignore LTR value for GBE devices */
+static void ignore_gbe_ltr(void)
+{
+	uint8_t reg8;
+	uint8_t *pmcbase = pmc_mmio_regs();
+
+	reg8 = read8(pmcbase + LTR_IGN);
+	reg8 |= IGN_GBE;
+	write8(pmcbase + LTR_IGN, reg8);
 }
 
 /* UPD parameters to be initialized before SiliconInit */
@@ -116,8 +172,16 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	dev = dev_find_slot(0, PCH_DEVFN_GBE);
 	if (!dev)
 		params->PchLanEnable = 0;
-	else
+	else {
 		params->PchLanEnable = dev->enabled;
+		if (config->s0ix_enable) {
+			params->SlpS0WithGbeSupport = 1;
+			params->PchPmSlpS0VmRuntimeControl = 0;
+			params->PchPmSlpS0Vm070VSupport = 0;
+			params->PchPmSlpS0Vm075VSupport = 0;
+			ignore_gbe_ltr();
+		}
+	}
 
 	/* Audio */
 	params->PchHdaDspEnable = config->PchHdaDspEnable;
@@ -131,6 +195,21 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchHdaAudioLinkSndw2 = config->PchHdaAudioLinkSndw2;
 	params->PchHdaAudioLinkSndw3 = config->PchHdaAudioLinkSndw3;
 	params->PchHdaAudioLinkSndw4 = config->PchHdaAudioLinkSndw4;
+
+	/* eDP device */
+	params->DdiPortEdp = config->DdiPortEdp;
+
+	/* HPD of DDI ports */
+	params->DdiPortBHpd = config->DdiPortBHpd;
+	params->DdiPortCHpd = config->DdiPortCHpd;
+	params->DdiPortDHpd = config->DdiPortDHpd;
+	params->DdiPortFHpd = config->DdiPortFHpd;
+
+	/* DDC of DDI ports */
+	params->DdiPortBDdc = config->DdiPortBDdc;
+	params->DdiPortCDdc = config->DdiPortCDdc;
+	params->DdiPortDDdc = config->DdiPortDDdc;
+	params->DdiPortFDdc = config->DdiPortFDdc;
 
 	/* S0ix */
 	params->PchPmSlpS0Enable = config->s0ix_enable;
@@ -175,8 +254,11 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	/* Enable CNVi Wifi if enabled in device tree */
 	dev = dev_find_slot(0, PCH_DEVFN_CNViWIFI);
+#if IS_ENABLED(CONFIG_SOC_INTEL_COMETLAKE)
+	params->CnviMode = dev->enabled;
+#else
 	params->PchCnviMode = dev->enabled;
-
+#endif
 	/* PCI Express */
 	for (i = 0; i < ARRAY_SIZE(config->PcieClkSrcUsage); i++) {
 		if (config->PcieClkSrcUsage[i] == 0)
@@ -213,7 +295,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	} else {
 		params->ScsSdCardEnabled = dev->enabled;
 		params->SdCardPowerEnableActiveHigh =
-			IS_ENABLED(CONFIG_MB_HAS_ACTIVE_HIGH_SD_PWR_ENABLE);
+			CONFIG(MB_HAS_ACTIVE_HIGH_SD_PWR_ENABLE);
 	}
 
 	dev = dev_find_slot(0, PCH_DEVFN_UFS);
@@ -258,6 +340,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	/* Set TccActivationOffset */
 	tconfig->TccActivationOffset = config->tcc_offset;
+
+	/* Unlock all GPIO pads */
+	tconfig->PchUnlockGpioPads = config->PchUnlockGpioPads;
 }
 
 /* Mainboard GPIO Configuration */

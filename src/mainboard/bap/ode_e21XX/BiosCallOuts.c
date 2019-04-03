@@ -16,11 +16,11 @@
 #include <AGESA.h>
 #include <northbridge/amd/agesa/BiosCallOuts.h>
 #include <FchPlatform.h>
-#include <cbfs.h>
-#include "imc.h"
-#include "hudson.h"
 #include <stdlib.h>
 #include <spd_bin.h>
+
+#include "imc.h"
+#include "hudson.h"
 
 static AGESA_STATUS Fch_Oem_config(UINT32 Func, UINTN FchData, VOID *ConfigPtr);
 static AGESA_STATUS board_ReadSpd_from_cbfs(UINT32 Func, UINTN Data, VOID *ConfigPtr);
@@ -120,7 +120,7 @@ static void oem_fan_control(FCH_DATA_BLOCK *FchParams)
 	LibAmdMemCopy ((VOID *)(FchParams->Hwm.HwmFanControl), &oem_factl, (sizeof(FCH_HWM_FAN_CTR) * 5), FchParams->StdHeader);
 
 	/* Enable IMC fan control. the recommended way */
-	if (IS_ENABLED(CONFIG_HUDSON_IMC_FWM)) {
+	if (CONFIG(HUDSON_IMC_FWM)) {
 		/* HwMonitorEnable = TRUE &&  HwmFchtsiAutoOpll ==FALSE to call FchECfancontrolservice */
 		FchParams->Hwm.HwMonitorEnable = TRUE;
 		FchParams->Hwm.HwmFchtsiAutoPoll = FALSE;               /* 0 disable, 1 enable TSI Auto Polling */
@@ -255,10 +255,10 @@ static AGESA_STATUS Fch_Oem_config(UINT32 Func, UINTN FchData, VOID *ConfigPtr)
 		FCH_RESET_DATA_BLOCK *FchParams =  (FCH_RESET_DATA_BLOCK *) FchData;
 		printk(BIOS_DEBUG, "Fch OEM config in INIT RESET ");
 		//FchParams_reset->EcChannel0 = TRUE; /* logical devicd 3 */
-		FchParams->LegacyFree = CONFIG_HUDSON_LEGACY_FREE;
+		FchParams->LegacyFree = CONFIG(HUDSON_LEGACY_FREE);
 		FchParams->FchReset.SataEnable = hudson_sata_enable();
 		FchParams->FchReset.IdeEnable = hudson_ide_enable();
-		FchParams->FchReset.Xhci0Enable = IS_ENABLED(CONFIG_HUDSON_XHCI_ENABLE);
+		FchParams->FchReset.Xhci0Enable = CONFIG(HUDSON_XHCI_ENABLE);
 		FchParams->FchReset.Xhci1Enable = FALSE;
 	} else if (StdHeader->Func == AMD_INIT_ENV) {
 		FCH_DATA_BLOCK *FchParams = (FCH_DATA_BLOCK *)FchData;
@@ -272,7 +272,7 @@ static AGESA_STATUS Fch_Oem_config(UINT32 Func, UINTN FchData, VOID *ConfigPtr)
 		oem_fan_control(FchParams);
 
 		/* XHCI configuration */
-		FchParams->Usb.Xhci0Enable = IS_ENABLED(CONFIG_HUDSON_XHCI_ENABLE);
+		FchParams->Usb.Xhci0Enable = CONFIG(HUDSON_XHCI_ENABLE);
 		FchParams->Usb.Xhci1Enable = FALSE;
 
 		/* sata configuration */
@@ -303,9 +303,9 @@ static AGESA_STATUS board_ReadSpd_from_cbfs(UINT32 Func, UINTN Data, VOID *Confi
 	AGESA_READ_SPD_PARAMS *info = ConfigPtr;
 	u8 index;
 
-	if (IS_ENABLED(CONFIG_BAP_E21_DDR3_1066))
+	if (CONFIG(BAP_E21_DDR3_1066))
 		index = 1;
-	else if (IS_ENABLED(CONFIG_BAP_E21_DDR3_1333))
+	else if (CONFIG(BAP_E21_DDR3_1333))
 		index = 2;
 	else	/* CONFIG_BAP_E21_DDR3_800 */
 		index = 0;

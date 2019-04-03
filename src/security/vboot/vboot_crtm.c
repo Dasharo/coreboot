@@ -15,8 +15,40 @@
 
 #include <console/console.h>
 #include <fmap.h>
+#include <cbfs.h>
 #include <security/vboot/vboot_crtm.h>
 #include <security/vboot/misc.h>
+#include <string.h>
+
+/*
+ * This functions sets the TCPA log namespace
+ * for the cbfs file (region) lookup.
+ */
+static int create_tcpa_metadata(const struct region_device *rdev,
+		const char *cbfs_name, char log_string[TCPA_PCR_HASH_NAME])
+{
+	int i;
+	struct region_device fmap;
+	const static char *fmap_cbfs_names[] = {
+	"COREBOOT",
+	"FW_MAIN_A",
+	"FW_MAIN_B",
+	"RW_LEGACY"};
+
+	for (i = 0; i < ARRAY_SIZE(fmap_cbfs_names); i++) {
+		if (fmap_locate_area_as_rdev(fmap_cbfs_names[i], &fmap) == 0) {
+			if (region_is_subregion(region_device_region(&fmap),
+				region_device_region(rdev))) {
+				snprintf(log_string, TCPA_PCR_HASH_NAME,
+					"FMAP: %s CBFS: %s",
+					fmap_cbfs_names[i], cbfs_name);
+				return 0;
+			}
+		}
+	}
+
+	return -1;
+}
 
 uint32_t vboot_init_crtm(void)
 {
@@ -25,6 +57,10 @@ uint32_t vboot_init_crtm(void)
 		PROG_INIT(PROG_VERSTAGE, CONFIG_CBFS_PREFIX "/verstage");
 	struct prog romstage =
 		PROG_INIT(PROG_ROMSTAGE, CONFIG_CBFS_PREFIX "/romstage");
+	char tcpa_metadata[TCPA_PCR_HASH_NAME];
+
+	/* Initialize TCPE PRERAM log. */
+	tcpa_preram_log_clear();
 
 	/* measure bootblock from RO */
 	struct cbfsf bootblock_data;
@@ -32,16 +68,20 @@ uint32_t vboot_init_crtm(void)
 	if (fmap_locate_area_as_rdev("BOOTBLOCK", &bootblock_fmap) == 0) {
 		if (tpm_measure_region(&bootblock_fmap,
 				       TPM_CRTM_PCR,
-				       prog_name(&bootblock)))
+				       "FMAP: BOOTBLOCK"))
 			return VB2_ERROR_UNKNOWN;
 	} else {
 		if (cbfs_boot_locate(&bootblock_data,
 			prog_name(&bootblock), NULL) == 0) {
 			cbfs_file_data(prog_rdev(&bootblock), &bootblock_data);
 
+			if (create_tcpa_metadata(prog_rdev(&bootblock),
+				prog_name(&bootblock), tcpa_metadata) < 0)
+				return VB2_ERROR_UNKNOWN;
+
 			if (tpm_measure_region(prog_rdev(&bootblock),
-					       TPM_CRTM_PCR,
-					       prog_name(&bootblock)))
+					TPM_CRTM_PCR,
+					tcpa_metadata))
 				return VB2_ERROR_UNKNOWN;
 		} else {
 			printk(BIOS_INFO,
@@ -50,16 +90,20 @@ uint32_t vboot_init_crtm(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_VBOOT_STARTS_IN_ROMSTAGE)) {
+	if (CONFIG(VBOOT_STARTS_IN_ROMSTAGE)) {
 		struct cbfsf romstage_data;
 		/* measure romstage from RO */
 		if (cbfs_boot_locate(&romstage_data,
 			prog_name(&romstage), NULL) == 0) {
 			cbfs_file_data(prog_rdev(&romstage), &romstage_data);
 
+			if (create_tcpa_metadata(prog_rdev(&romstage),
+				prog_name(&romstage), tcpa_metadata) < 0)
+				return VB2_ERROR_UNKNOWN;
+
 			if (tpm_measure_region(prog_rdev(&romstage),
-					       TPM_CRTM_PCR,
-					       CONFIG_CBFS_PREFIX "/romstage"))
+				TPM_CRTM_PCR,
+				tcpa_metadata))
 				return VB2_ERROR_UNKNOWN;
 		} else {
 			printk(BIOS_INFO,
@@ -69,16 +113,20 @@ uint32_t vboot_init_crtm(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_VBOOT_SEPARATE_VERSTAGE)) {
+	if (CONFIG(VBOOT_SEPARATE_VERSTAGE)) {
 		struct cbfsf verstage_data;
 		/* measure verstage from RO */
 		if (cbfs_boot_locate(&verstage_data,
 			prog_name(&verstage), NULL) == 0) {
 			cbfs_file_data(prog_rdev(&verstage), &verstage_data);
 
+			if (create_tcpa_metadata(prog_rdev(&verstage),
+				prog_name(&verstage), tcpa_metadata) < 0)
+				return VB2_ERROR_UNKNOWN;
+
 			if (tpm_measure_region(prog_rdev(&verstage),
-					       TPM_CRTM_PCR,
-					       CONFIG_CBFS_PREFIX "/verstage"))
+				TPM_CRTM_PCR,
+				tcpa_metadata))
 				return VB2_ERROR_UNKNOWN;
 		} else {
 			printk(BIOS_INFO,
@@ -114,8 +162,9 @@ uint32_t vboot_measure_cbfs_hook(struct cbfsf *fh, const char *name)
 	uint32_t pcr_index;
 	uint32_t cbfs_type;
 	struct region_device rdev;
+	char tcpa_metadata[TCPA_PCR_HASH_NAME];
 
-	if (!vb2_logic_executed())
+	if (!vboot_logic_executed())
 		return 0;
 
 	cbfsf_file_type(fh, &cbfs_type);
@@ -139,6 +188,8 @@ uint32_t vboot_measure_cbfs_hook(struct cbfsf *fh, const char *name)
 		break;
 	}
 
-	return tpm_measure_region(&rdev, pcr_index,
-				  name);
+	if (create_tcpa_metadata(&rdev, name, tcpa_metadata) < 0)
+		return VB2_ERROR_UNKNOWN;
+
+	return tpm_measure_region(&rdev, pcr_index, tcpa_metadata);
 }

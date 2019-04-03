@@ -21,7 +21,6 @@
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
 #include <soc/soc_chip.h>
-#include <string.h>
 
 #define PCR_DMI_GCS		0x274C
 #define PCR_DMI_GCS_BILD	(1 << 0)
@@ -58,7 +57,7 @@ static void dmi_lockdown_cfg(void)
 
 static void fast_spi_lockdown_cfg(int chipset_lockdown)
 {
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_COMMON_BLOCK_FAST_SPI))
+	if (!CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI))
 		return;
 
 	/* Set FAST_SPI opcode menu */

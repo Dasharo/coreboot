@@ -17,7 +17,6 @@
 #include <arch/acpi.h>
 #include <cbmem.h>
 #include <delay.h>
-#include <string.h>
 #include <timestamp.h>
 #include <amdblocks/s3_resume.h>
 #include <amdblocks/agesawrapper.h>
@@ -181,7 +180,7 @@ AGESA_STATUS agesawrapper_amdinitpost(void)
 
 	AMD_POST_PARAMS *PostParams = create_struct(&AmdParamStruct);
 
-	PostParams->MemConfig.UmaMode = CONFIG_GFXUMA ? UMA_AUTO : UMA_NONE;
+	PostParams->MemConfig.UmaMode = CONFIG(GFXUMA) ? UMA_AUTO : UMA_NONE;
 	PostParams->MemConfig.UmaSize = 0;
 	PostParams->MemConfig.BottomIo = (uint16_t)
 					 (CONFIG_BOTTOMIO_POSITION >> 24);

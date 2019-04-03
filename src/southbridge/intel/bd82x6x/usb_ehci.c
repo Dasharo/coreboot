@@ -35,7 +35,7 @@ static void usb_ehci_init(struct device *dev)
 	printk(BIOS_DEBUG, "EHCI: Setting up controller.. ");
 
 	/* For others, done in MRC.  */
-#if IS_ENABLED(CONFIG_USE_NATIVE_RAMINIT)
+#if CONFIG(USE_NATIVE_RAMINIT)
 	pci_write_config32(dev, 0x84, 0x930c8811);
 	pci_write_config32(dev, 0x88, 0x24000d30);
 	pci_write_config32(dev, 0xf4, 0x80408588);
@@ -50,7 +50,7 @@ static void usb_ehci_init(struct device *dev)
 	pci_write_config32(dev, PCI_COMMAND, reg32);
 
 	/* For others, done in MRC.  */
-#if IS_ENABLED(CONFIG_USE_NATIVE_RAMINIT)
+#if CONFIG(USE_NATIVE_RAMINIT)
 	struct resource *res;
 	u8 access_cntl;
 
@@ -84,13 +84,7 @@ static void usb_ehci_set_subsystem(struct device *dev, unsigned vendor,
 	/* Enable writes to protected registers. */
 	pci_write_config8(dev, 0x80, access_cntl | 1);
 
-	if (!vendor || !device) {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				pci_read_config32(dev, PCI_VENDOR_ID));
-	} else {
-		pci_write_config32(dev, PCI_SUBSYSTEM_VENDOR_ID,
-				((device & 0xffff) << 16) | (vendor & 0xffff));
-	}
+	pci_dev_set_subsystem(dev, vendor, device);
 
 	/* Restore protection. */
 	pci_write_config8(dev, 0x80, access_cntl);
