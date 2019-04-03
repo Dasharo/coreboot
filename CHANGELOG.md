@@ -12,6 +12,16 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.9.0.4] - 2019-04-03
+### Changed
+- rebased with official coreboot repository commit 28def8b
+- [updated SeaBIOS to rel-1.12.1.1 with new TPM menu option](https://github.com/pcengines/apu2-documentation/blob/master/docs/tpm_menu.md)
+
+### Added
+- possibility to reboot platform with coldboot path to ensure full platform
+  reset during [remote firmware update](https://github.com/pcengines/apu2-documentation/blob/master/docs/firmware_flashing.md#corebootrom-flashing),
+  option is intended to mitigate reboot issue when migrating from BIOS version
+  older than v4.9.0.x
 
 ## [v4.9.0.3] - 2019-03-08
 ### Changed
@@ -282,7 +292,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.3...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.4...develop
+[v4.9.0.4]: https://github.com/pcengines/coreboot/compare/v4.9.0.3...v4.9.0.4
 [v4.9.0.3]: https://github.com/pcengines/coreboot/compare/v4.9.0.2...v4.9.0.3
 [v4.9.0.2]: https://github.com/pcengines/coreboot/compare/v4.9.0.1...v4.9.0.2
 [v4.9.0.1]: https://github.com/pcengines/coreboot/compare/v4.8.0.7...v4.9.0.1
