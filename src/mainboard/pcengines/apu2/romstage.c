@@ -69,6 +69,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	if (!cpu_init_detectedx && boot_cpu()) {
 		u32 data, *memptr;
 		pci_devfn_t dev;
+		volatile u8 *CF9_shadow;
+		CF9_shadow = (u8 *)(ACPI_MMIO_BASE + PMIO_BASE + FCH_PMIOA_REGC5);
+		*CF9_shadow = 0x0;
 
 		timestamp_init(timestamp_get());
 		timestamp_add_now(TS_START_ROMSTAGE);
@@ -89,6 +92,21 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 
 		console_init();
+
+		/* Check if cold boot was requested */
+		val = pci_read_config32(PCI_DEV(0, 0x18, 0), 0x6C);
+		if (val & (1 << 4)) {
+			volatile u32 *ptr;
+			printk(BIOS_ALERT, "Forcing cold boot path\n");
+			val &= ~(0x630);	// ColdRstDet[4], BiosRstDet[10:9, 5]
+			pci_write_config32(PCI_DEV(0, 0x18, 0), 0x6C, val);
+
+			ptr = (u32*)FCH_PMIOxC0_S5ResetStatus;
+			*ptr = 0x3fff003f;	// Write-1-to-clear
+
+			*CF9_shadow = 0xe;	// FullRst, SysRst, RstCmd
+			printk(BIOS_ALERT, "Did not reset (yet)\n");
+		}
 
 		printk(BIOS_INFO, "14-25-48Mhz Clock settings\n");
 
@@ -155,6 +173,16 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	printk(BIOS_DEBUG, "BSP Family_Model: %08x\n", val);
 	printk(BIOS_DEBUG, "cpu_init_detectedx = %08lx\n", cpu_init_detectedx);
 
+	/* Disable SVI2 controller to wait for command completion */
+	val = pci_read_config32(PCI_DEV(0, 0x18, 5), 0x12C);
+	if (val & (1 << 30)) {
+		printk(BIOS_ALERT, "SVI2 Wait completion disabled\n");
+	} else {
+		printk(BIOS_ALERT, "Disabling SVI2 Wait completion\n");
+		val |= (1 << 30);
+		pci_write_config32(PCI_DEV(0, 0x18, 5), 0x12C, val);
+	}
+
 	post_code(0x37);
 	AGESAWRAPPER(amdinitreset);
 
@@ -163,16 +191,6 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 
 	post_code(0x39);
 	AGESAWRAPPER(amdinitearly);
-
-	/* Disable SVI2 controller to wait for command completion */
-	val = pci_read_config32(PCI_DEV(0, 0x18, 5), 0x12C);
-	if (val & (1 << 30)) {
-		printk(BIOS_DEBUG, "SVI2 Wait completion disabled\n");
-	} else {
-		printk(BIOS_DEBUG, "Disabling SVI2 Wait completion\n");
-		val |= (1 << 30);
-		pci_write_config32(PCI_DEV(0, 0x18, 5), 0x12C, val);
-	}
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
