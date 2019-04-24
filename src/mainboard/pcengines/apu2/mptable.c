@@ -71,6 +71,11 @@ static void *smp_write_config_table(void *v)
 #define PCI_INT(bus, dev, int_sign, pin)				\
         smp_write_intsrc(mc, mp_INT, MP_IRQ_TRIGGER_LEVEL|MP_IRQ_POLARITY_LOW, (bus), (((dev)<<2)|(int_sign)), ioapic_id, (pin))
 
+	/* IOMMU */
+	PCI_INT(0x0, 0x0, 0x0, intr_data_ptr[PIRQ_A]);
+	PCI_INT(0x0, 0x0, 0x1, intr_data_ptr[PIRQ_B]);
+	PCI_INT(0x0, 0x0, 0x2, intr_data_ptr[PIRQ_C]);
+	PCI_INT(0x0, 0x0, 0x3, intr_data_ptr[PIRQ_D]);
 
 	/* SMBUS / ACPI */
 	PCI_INT(0x0, 0x14, 0x0, intr_data_ptr[PIRQ_SMBUS]);
