@@ -16,6 +16,7 @@
 
 #include <arch/smp/mpspec.h>
 #include <arch/ioapic.h>
+#include <device/pci.h>
 #include <stdint.h>
 #include <southbridge/amd/common/amd_pci_util.h>
 
@@ -75,35 +76,44 @@ static void *smp_write_config_table(void *v)
 	PCI_INT(0x0, 0x14, 0x0, intr_data_ptr[PIRQ_SMBUS]);
 
 	/* SD card */
-	PCI_INT(0x0, 0x14, 0x1, intr_data_ptr[PIRQ_SD]);
+	PCI_INT(0x0, 0x14, 0x7, intr_data_ptr[PIRQ_SD]);
 
 	/* USB */
+	PCI_INT(0x0, 0x10, 0x0, intr_data_ptr[PIRQ_C]);
 	PCI_INT(0x0, 0x12, 0x0, intr_data_ptr[PIRQ_OHCI1]);
 	PCI_INT(0x0, 0x12, 0x1, intr_data_ptr[PIRQ_EHCI1]);
 	PCI_INT(0x0, 0x13, 0x0, intr_data_ptr[PIRQ_OHCI2]);
 	PCI_INT(0x0, 0x13, 0x1, intr_data_ptr[PIRQ_EHCI2]);
 	PCI_INT(0x0, 0x16, 0x0, intr_data_ptr[PIRQ_OHCI3]);
 	PCI_INT(0x0, 0x16, 0x1, intr_data_ptr[PIRQ_EHCI3]);
+
+	/* HDA */
 	PCI_INT(0x0, 0x14, 0x2, intr_data_ptr[PIRQ_OHCI4]);
 
 	/* SATA */
 	PCI_INT(0x0, 0x11, 0x0, intr_data_ptr[PIRQ_SATA]);
 
-	/* on board NIC & Slot PCIE */
-	PCI_INT(0x1, 0x0, 0x0, intr_data_ptr[PIRQ_E]);
-	PCI_INT(0x2, 0x0, 0x0, intr_data_ptr[PIRQ_F]);
-
+	int i;
+	for (i = 1; i <= 5; i++) {
+		struct device *dev = pcidev_on_root(0x2, i);
+		if (dev && dev->enabled) {
+			u8 bus_pci = dev->link_list->secondary;
+			u8 int_pin = (i % 4) - 1; // PIRQ A,B,C,D,A
+			/* on board NICs & Slots PCIe */
+			PCI_INT(bus_pci, 0x0, 0x0, intr_data_ptr[int_pin]);
+		}
+	}
 
 	/* GPP0 */
-	PCI_INT(0x0, 0x2, 0x0, 0x10);	// Network 3
+	PCI_INT(0x0, 0x2, 0x1, 0x10);	// mPCIe2
 	/* GPP1 */
-	PCI_INT(0x0, 0x2, 0x1, 0x11);	// Network 2
+	PCI_INT(0x0, 0x2, 0x2, 0x11);	// Network 3
 	/* GPP2 */
-	PCI_INT(0x0, 0x2, 0x2, 0x12);	// Network 1
+	PCI_INT(0x0, 0x2, 0x3, 0x12);	// Network 2
 	/* GPP3 */
-	PCI_INT(0x0, 0x2, 0x3, 0x13);	// mPCI
+	PCI_INT(0x0, 0x2, 0x4, 0x13);	// Network 1
 	/* GPP4 */
-	PCI_INT(0x0, 0x2, 0x4, 0x14);	// mPCI
+	PCI_INT(0x0, 0x2, 0x5, 0x14);	// mPCIe1
 
 	IO_LOCAL_INT(mp_ExtINT, 0x0, MP_APIC_ALL, 0x0);
 	IO_LOCAL_INT(mp_NMI, 0x0, MP_APIC_ALL, 0x1);
