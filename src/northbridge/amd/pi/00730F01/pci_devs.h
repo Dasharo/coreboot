@@ -5,6 +5,18 @@
 
 #define BUS0 0
 
+/* GNB Root Complex */
+#define GNB_DEV			0x0
+#define GNB_FUNC		0
+#define GNB_DEVID		0x1576
+#define GNB_DEVFN		PCI_DEVFN(GNB_DEV, GNB_FUNC)
+
+/* IOMMU */
+#define IOMMU_DEV		0x0
+#define IOMMU_FUNC		2
+#define IOMMU_DEVID		0x1577
+#define IOMMU_DEVFN		PCI_DEVFN(IOMMU_DEV, IOMMU_FUNC)
+
 /* Graphics and Display */
 #define GFX_DEV 0x1
 #define GFX_FUNC 0
