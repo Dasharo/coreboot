@@ -19,6 +19,7 @@
 #include <device/pci_ops.h>
 #include <device/device.h>
 #include <device/pci_def.h>
+#include <southbridge/intel/common/pmclib.h>
 #include <elog.h>
 #include "pch.h"
 #include "chip.h"
@@ -67,26 +68,6 @@ static void pch_generic_setup(void)
 	printk(BIOS_DEBUG, " done.\n");
 }
 
-static int sleep_type_s3(void)
-{
-	u32 pm1_cnt;
-	u16 pm1_sts;
-	int is_s3 = 0;
-
-	/* Check PM1_STS[15] to see if we are waking from Sx */
-	pm1_sts = inw(DEFAULT_PMBASE + PM1_STS);
-	if (pm1_sts & WAK_STS) {
-		/* Read PM1_CNT[12:10] to determine which Sx state */
-		pm1_cnt = inl(DEFAULT_PMBASE + PM1_CNT);
-		if (((pm1_cnt >> 10) & 7) == SLP_TYP_S3) {
-			/* Clear SLP_TYPE. */
-			outl(pm1_cnt & ~(7 << 10), DEFAULT_PMBASE + PM1_CNT);
-			is_s3 = 1;
-		}
-	}
-	return is_s3;
-}
-
 void pch_enable_lpc(void)
 {
 	const struct device *dev = pcidev_on_root(0x1f, 0);
@@ -123,8 +104,6 @@ int early_pch_init(const void *gpio_map,
 {
 	int wake_from_s3;
 
-	pch_enable_lpc();
-
 	pch_enable_bars();
 
 #if CONFIG(INTEL_LYNXPOINT_LP)
@@ -132,11 +111,6 @@ int early_pch_init(const void *gpio_map,
 #else
 	setup_pch_gpios(gpio_map);
 #endif
-
-	mainboard_config_superio();
-
-	console_init();
-
 	pch_generic_setup();
 
 	/* Enable SMBus for reading SPDs. */
@@ -148,7 +122,7 @@ int early_pch_init(const void *gpio_map,
 	/* Mainboard RCBA settings */
 	pch_config_rcba(rcba_config);
 
-	wake_from_s3 = sleep_type_s3();
+	wake_from_s3 = southbridge_detect_s3_resume();
 
 #if CONFIG(ELOG_BOOT_COUNT)
 	if (!wake_from_s3)

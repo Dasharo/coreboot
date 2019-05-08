@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2013 Google Inc.
  * Copyright (C) 2015 Intel Corp.
+ * Copyright (C) 2019 Eltan B.V.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,14 +25,12 @@
 
 #include <stdint.h>
 #include <fsp/util.h>
+#include <intelblocks/lpc_lib.h>
 #include <soc/pci_devs.h>
 
 #define SVID_CONFIG1		1
 #define SVID_CONFIG3		3
 #define SVID_PMIC_CONFIG	8
-
-#define MEM_DDR3	0
-#define MEM_LPDDR3	1
 
 enum lpe_clk_src {
 	LPE_CLK_SRC_XTAL,
@@ -53,6 +52,8 @@ enum usb_comp_bg_value {
 struct soc_intel_braswell_config {
 	uint8_t enable_xdp_tap;
 	uint8_t clkreq_enable;
+
+	enum serirq_mode serirq_mode;
 
 	/* Disable SLP_X stretching after SUS power well loss. */
 	int disable_slp_x_stretch_sus_fail;
@@ -168,11 +169,6 @@ struct soc_intel_braswell_config {
 	UINT8  I2C4Frequency;
 	UINT8  I2C5Frequency;
 	UINT8  I2C6Frequency;
-	UINT8  D0Usb2Port0PerPortRXISet; /*setting for D0 stepping SOC*/
-	UINT8  D0Usb2Port1PerPortRXISet; /*setting for D0 stepping SOC*/
-	UINT8  D0Usb2Port2PerPortRXISet; /*setting for D0 stepping SOC*/
-	UINT8  D0Usb2Port3PerPortRXISet; /*setting for D0 stepping SOC*/
-	UINT8  D0Usb2Port4PerPortRXISet; /*setting for D0 stepping SOC*/
 };
 
 extern struct chip_operations soc_intel_braswell_ops;

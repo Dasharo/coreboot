@@ -29,9 +29,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <assert.h>
 #include <console/console.h>
-#include <delay.h>
 #include <device/i2c_simple.h>
 #include <stdlib.h>
 #include <string.h>

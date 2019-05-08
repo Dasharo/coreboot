@@ -16,14 +16,12 @@
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
-#include <delay.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <drivers/intel/gma/opregion.h>
 #include <reg_script.h>
 #include <stdlib.h>
-
 #include <soc/gfx.h>
 #include <soc/iosf.h>
 #include <soc/nvs.h>
@@ -50,7 +48,7 @@ static void gfx_lock_pcbase(struct device *dev)
 
 	gms = pci_read_config32(dev, GGC) & GGC_GSM_SIZE_MASK;
 	gms >>= 3;
-	if (gms > ARRAY_SIZE(gms_size_map))
+	if (gms >= ARRAY_SIZE(gms_size_map))
 		return;
 	gmsize = gms_size_map[gms];
 

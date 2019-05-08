@@ -53,7 +53,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOUTHBRIDGE_INTEL_COMMON_SMBUS
 
 config VBOOT
-	select VBOOT_OPROM_MATTERS
+	select VBOOT_MUST_REQUEST_DISPLAY
 	select VBOOT_STARTS_IN_ROMSTAGE
 
 config BOOTBLOCK_CPU_INIT
@@ -134,5 +134,19 @@ config DISABLE_HPET
 	help
 	 Enable this to disable the HPET support
 	 Solves the Linux MP-BIOS bug timer not connected.
+
+config USE_GOOGLE_FSP
+	bool
+	help
+	 Select this to use Google's custom Braswell FSP header/binary
+	 instead of the public release on Github. Only google/cyan
+	 variants require this; all other boards should use the public release.
+
+config FSP_HEADER_PATH
+	string
+	default "$(src)/vendorcode/intel/fsp/fsp1_1/braswell" if USE_GOOGLE_FSP
+	default "3rdparty/fsp/BraswellFspBinPkg/Include/"
+	help
+	 Location of FSP header file FspUpdVpd.h
 
 endif

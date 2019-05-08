@@ -16,7 +16,6 @@
 #include <arch/cpu.h>
 #include <console/console.h>
 #include <device/pci.h>
-#include <chip.h>
 #include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/msr.h>
@@ -33,6 +32,9 @@
 #include <soc/systemagent.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/intel/microcode.h>
+#include <cpu/intel/common/common.h>
+
+#include "chip.h"
 
 /* Convert time in seconds to POWER_LIMIT_1_TIME MSR value */
 static const u8 power_limit_time_sec_to_msr[] = {
@@ -269,10 +271,8 @@ static void configure_misc(void)
 	msr = rdmsr(IA32_MISC_ENABLE);
 	msr.lo |= (1 << 0);	/* Fast String enable */
 	msr.lo |= (1 << 3);	/* TM1/TM2/EMTTM enable */
-	if (conf && conf->eist_enable)
-		cpu_enable_eist();
-	else
-		cpu_disable_eist();
+	/* Set EIST status */
+	cpu_set_eist(conf->eist_enable);
 	wrmsr(IA32_MISC_ENABLE, msr);
 
 	/* Disable Thermal interrupts */
@@ -439,6 +439,9 @@ void soc_core_init(struct device *cpu)
 
 	/* Enable Turbo */
 	enable_turbo();
+
+	/* Enable Vmx */
+	set_vmx_and_lock();
 }
 
 static void per_cpu_smm_trigger(void)

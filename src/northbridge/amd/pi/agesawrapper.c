@@ -17,6 +17,7 @@
 #include <cbfs.h>
 #include <cbmem.h>
 #include <delay.h>
+#include <console/console.h>
 #include <cpu/x86/mtrr.h>
 #include <FchPlatform.h>
 #include <heapManager.h>
@@ -125,8 +126,6 @@ AGESA_STATUS agesawrapper_amdinitpost(void)
 	AmdCreateStruct (&AmdParamStruct);
 	PostParams = (AMD_POST_PARAMS *)AmdParamStruct.NewStructPtr;
 
-	// Do not use IS_ENABLED here.  CONFIG_GFXUMA should always have a value.  Allow
-	// the compiler to flag the error if CONFIG_GFXUMA is not set.
 	PostParams->MemConfig.UmaMode = CONFIG(GFXUMA) ? UMA_AUTO : UMA_NONE;
 	PostParams->MemConfig.UmaSize = 0;
 	PostParams->MemConfig.BottomIo = (UINT16)

@@ -13,13 +13,11 @@
  * GNU General Public License for more details.
  */
 
-
 #include <device/pci_ops.h>
 #include <arch/ioapic.h>
 #include <arch/acpi.h>
 #include <arch/acpigen.h>
 #include <cbmem.h>
-#include <chip.h>
 #include <console/console.h>
 #include <cpu/amd/mtrr.h>
 #include <cpu/x86/lapic_def.h>
@@ -41,6 +39,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arch/bert_storage.h>
+
+#include "chip.h"
 
 static void set_io_addr_reg(struct device *dev, u32 nodeid, u32 linkn, u32 reg,
 			u32 io_min, u32 io_max)
@@ -174,6 +174,18 @@ static void set_resources(struct device *dev)
 static void northbridge_init(struct device *dev)
 {
 	setup_ioapic((u8 *)IO_APIC2_ADDR, CONFIG_MAX_CPUS+1);
+}
+
+unsigned long acpi_fill_mcfg(unsigned long current)
+{
+
+	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *)current,
+					     CONFIG_MMCONF_BASE_ADDRESS,
+					     0,
+					     0,
+					     CONFIG_MMCONF_BUS_NUMBER);
+
+	return current;
 }
 
 static unsigned long acpi_fill_hest(acpi_hest_t *hest)
@@ -391,7 +403,7 @@ void domain_enable_resources(struct device *dev)
 {
 	/* Must be called after PCI enumeration and resource allocation */
 	if (!romstage_handoff_is_resume())
-		do_agesawrapper(agesawrapper_amdinitmid, "amdinitmid");
+		do_agesawrapper(AMD_INIT_MID, "amdinitmid");
 }
 
 void domain_set_resources(struct device *dev)

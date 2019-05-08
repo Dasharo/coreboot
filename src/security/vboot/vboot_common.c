@@ -18,12 +18,12 @@
 #include <cbmem.h>
 #include <console/cbmem_console.h>
 #include <fmap.h>
-#include <gbb_header.h>
 #include <reset.h>
 #include <stddef.h>
 #include <security/vboot/gbb.h>
 #include <security/vboot/vboot_common.h>
 #include <security/vboot/vbnv.h>
+#include <vb2_api.h>
 
 int vboot_named_region_device(const char *name, struct region_device *rdev)
 {
@@ -42,7 +42,7 @@ int vboot_can_enable_udc(void)
 	if (!vboot_developer_mode_enabled())
 		return 0;
 	/* Enable if GBB flag is set */
-	if (gbb_is_flag_set(GBB_FLAG_ENABLE_UDC))
+	if (gbb_is_flag_set(VB2_GBB_FLAG_ENABLE_UDC))
 		return 1;
 	/* Enable if VBNV flag is set */
 	if (vbnv_udc_enable_flag())
@@ -86,11 +86,6 @@ static int vboot_get_handoff_flag(uint32_t flag)
 		return 0;
 
 	return !!(vbho->init_params.out_flags & flag);
-}
-
-int vboot_handoff_skip_display_init(void)
-{
-	return !vboot_get_handoff_flag(VB_INIT_OUT_ENABLE_DISPLAY);
 }
 
 int vboot_handoff_check_developer_flag(void)

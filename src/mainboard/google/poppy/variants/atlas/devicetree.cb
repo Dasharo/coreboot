@@ -49,7 +49,6 @@ chip soc/intel/skylake
 	register "ScsEmmcHs400Enabled" = "1"
 	register "ScsSdCardEnabled" = "0"
 	register "PttSwitch" = "0"
-	register "InternalGfx" = "1"
 	register "SkipExtGfxScan" = "1"
 	register "Device4Enable" = "1"
 	register "HeciEnabled" = "0"
@@ -89,8 +88,8 @@ chip soc/intel/skylake
 	#| ImonOffset     | 0     | 0     | 0     | 0     |
 	#| IccMax         | set by SoC code per CPU SKU   |
 	#| VrVoltageLimit | 1.52V | 1.52V | 1.52V | 1.52V |
-	#| AcLoadline     | 14.75 | 4.42  | 4.7   | 4.7   |
-	#| DcLoadline     | 14.2  | 4.2   | 4.41  | 4.41  |
+	#| AcLoadline     | 16.20 | 5.24  | 4.62  | 4.62  |
+	#| DcLoadline     | 14.2  | 4.94  | 4.25  | 4.25  |
 	#+----------------+-------+-------+-------+-------+
 	register "domain_vr_config[VR_SYSTEM_AGENT]" = "{
 		.vr_config_enable = 1,
@@ -102,7 +101,7 @@ chip soc/intel/skylake
 		.imon_slope = 0x0,
 		.imon_offset = 0x0,
 		.voltage_limit = 1520,
-		.ac_loadline = 1475,
+		.ac_loadline = 1620,
 		.dc_loadline = 1420,
 	}"
 
@@ -116,8 +115,8 @@ chip soc/intel/skylake
 		.imon_slope = 0x0,
 		.imon_offset = 0x0,
 		.voltage_limit = 1520,
-		.ac_loadline = 442,
-		.dc_loadline = 420,
+		.ac_loadline = 524,
+		.dc_loadline = 494,
 	}"
 
 	register "domain_vr_config[VR_GT_UNSLICED]" = "{
@@ -130,8 +129,8 @@ chip soc/intel/skylake
 		.imon_slope = 0x0,
 		.imon_offset = 0x0,
 		.voltage_limit = 1520,
-		.ac_loadline = 470,
-		.dc_loadline = 441,
+		.ac_loadline = 462,
+		.dc_loadline = 425,
 	}"
 
 	register "domain_vr_config[VR_GT_SLICED]" = "{
@@ -144,8 +143,8 @@ chip soc/intel/skylake
 		.imon_slope = 0x0,
 		.imon_offset = 0x0,
 		.voltage_limit = 1520,
-		.ac_loadline = 470,
-		.dc_loadline = 441,
+		.ac_loadline = 462,
+		.dc_loadline = 425,
 	}"
 
 	# PCIe Root port 1 with SRCCLKREQ1# (WLAN)
@@ -266,7 +265,30 @@ chip soc/intel/skylake
 		device pci 00.0 on  end # Host Bridge
 		device pci 02.0 on  end # Integrated Graphics Device
 		device pci 13.0 off end # Integrated Sensor Hub
-		device pci 14.0 on  end # USB xHCI
+		device pci 14.0 on
+			chip drivers/usb/acpi
+				register "desc" = ""Root Hub""
+				register "type" = "UPC_TYPE_HUB"
+				device usb 0.0 on
+					chip drivers/usb/acpi
+						register "desc" = ""USB Type C Port 1""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						device usb 2.0 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Bluetooth""
+						register "type" = "UPC_TYPE_INTERNAL"
+						register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_E2)"
+						device usb 2.2 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB Type C Port 2""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						device usb 2.4 on end
+					end
+				end
+			end
+		end # USB xHCI
 		device pci 14.1 on  end # USB xDCI (OTG)
 		device pci 14.2 on  end # Thermal Subsystem
 		device pci 15.0 on

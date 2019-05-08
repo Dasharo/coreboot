@@ -36,6 +36,7 @@ RUN \
 		git \
 		gnat \
 		graphviz \
+		libcrypto++-dev \
 		libfreetype6-dev \
 		libftdi-dev \
 		libftdi1-dev \
@@ -46,7 +47,7 @@ RUN \
 		libncurses5-dev \
 		libpci-dev \
 		libreadline-dev \
-		libssl1.0-dev \
+		libssl-dev \
 		libusb-1.0-0-dev \
 		libusb-dev \
 		libxml2-dev \
@@ -69,7 +70,9 @@ RUN \
 		wget \
 		xz-utils \
 		zlib1g-dev \
-	&& apt-get clean
+	&& apt-get clean \
+	&& ln -s /usr/bin/automake /usr/bin/automake-1.15 \
+	&& ln -s /usr/bin/aclocal /usr/bin/aclocal-1.15
 
 RUN \
 	cd /root && \
