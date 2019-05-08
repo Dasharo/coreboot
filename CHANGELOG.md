@@ -12,6 +12,14 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.9.0.5] - 2019-05-08
+### Fixed
+- MP table creation: fixed SDHCI, xHCI interrupt entries
+- redundant SVI2 information string in sign-of-life
+
+### Added
+- MP table entries for PCIe bridges, endpoints and IOMMU
+
 ## [v4.9.0.4] - 2019-04-03
 ### Changed
 - rebased with official coreboot repository commit 28def8b
@@ -292,7 +300,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.4...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.5...develop
+[v4.9.0.5]: https://github.com/pcengines/coreboot/compare/v4.9.0.4...v4.9.0.5
 [v4.9.0.4]: https://github.com/pcengines/coreboot/compare/v4.9.0.3...v4.9.0.4
 [v4.9.0.3]: https://github.com/pcengines/coreboot/compare/v4.9.0.2...v4.9.0.3
 [v4.9.0.2]: https://github.com/pcengines/coreboot/compare/v4.9.0.1...v4.9.0.2
