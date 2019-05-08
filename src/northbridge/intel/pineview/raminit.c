@@ -15,6 +15,7 @@
  */
 
 #include <arch/io.h>
+#include <cf9_reset.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
@@ -326,18 +327,24 @@ static u32 ddr_reg_to_mhz(u32 speed)
 }
 #endif
 
-static u8 lsbpos(u8 val) //Forward
+// Return the position of the least significant set bit, 0-indexed.
+// 0 does not have a lsb, so return -1 for error.
+static int lsbpos(u8 val)
 {
-	u8 i;
-	for (i = 0; (i < 8) && ((val & (1 << i)) == 0); i++);
-	return i;
+	for (int i = 0; i < 8; i++)
+		if (val & (1 << i))
+			return i;
+	return -1;
 }
 
-static u8 msbpos(u8 val) //Reverse
+// Return the position of the most significant set bit, 0-indexed.
+// 0 does not have a msb, so return -1 for error.
+static int msbpos(u8 val)
 {
-	u8 i;
-	for (i = 7; (i >= 0) && ((val & (1 << i)) == 0); i--);
-	return i;
+	for (int i = 7; i >= 0; i--)
+		if (val & (1 << i))
+			return i;
+	return -1;
 }
 
 static void sdram_detect_smallest_params(struct sysinfo *s)
@@ -443,10 +450,14 @@ static void sdram_detect_ram_speed(struct sysinfo *s)
 		die("No common CAS among dimms\n");
 	}
 
+	// commoncas is nonzero, so these calls will not error
+	u8 msbp = (u8)msbpos(commoncas);
+	u8 lsbp = (u8)lsbpos(commoncas);
+
 	// Start with fastest common CAS
 	cas = 0;
-	highcas = msbpos(commoncas);
-	lowcas = max(lsbpos(commoncas), 5);
+	highcas = msbp;
+	lowcas = max(lsbp, 5);
 
 	while (cas == 0 && highcas >= lowcas) {
 		FOR_EACH_POPULATED_DIMM(s->dimms, i) {
@@ -484,8 +495,8 @@ static void sdram_detect_ram_speed(struct sysinfo *s)
 			die("Timings not supported by MCH\n");
 		}
 		cas = 0;
-		highcas = msbpos(commoncas);
-		lowcas = lsbpos(commoncas);
+		highcas = msbp;
+		lowcas = lsbp;
 		while (cas == 0 && highcas >= lowcas) {
 			FOR_EACH_POPULATED_DIMM(s->dimms, i) {
 				switch (freq) {
@@ -1163,7 +1174,7 @@ static void sdram_dlltiming(struct sysinfo *s)
 
 static void sdram_rcomp(struct sysinfo *s)
 {
-	u8 i, j, reg8, f, rcompp, rcompn, srup, srun;
+	u8 i, j, reg8, rcompp, rcompn, srup, srun;
 	u16 reg16;
 	u32 reg32, rcomp1, rcomp2;
 
@@ -1253,10 +1264,8 @@ static void sdram_rcomp(struct sysinfo *s)
 	srun = 0;
 
 	if (s->selected_timings.mem_clock == MEM_CLOCK_667MHz) {
-		f = 0;
 		rcomp1 = 0x00050431;
 	} else {
-		f = 1;
 		rcomp1 = 0x00050542;
 	}
 	if (s->selected_timings.fsb_clock == FSB_CLOCK_667MHz) {
@@ -1736,10 +1745,8 @@ static void sdram_checkreset(void)
 	}
 	pci_write_config8(PCI_DEV(0, 0x1f, 0), 0xa2, pmcon2);
 	pci_write_config8(PCI_DEV(0, 0x1f, 0), 0xa4, pmcon3);
-	if (reset) {
-		printk(BIOS_DEBUG, "Power cycle reset...\n");
-		outb(0xe, 0xcf9);
-	}
+	if (reset)
+		full_reset();
 }
 
 static void sdram_dradrb(struct sysinfo *s)
@@ -2115,30 +2122,24 @@ static void sdram_enhancedmode(struct sysinfo *s)
 	reg8 = pci_read_config8(PCI_DEV(0,0,0), 0xf0);
 	pci_write_config8(PCI_DEV(0,0,0), 0xf0, reg8 & ~1);
 
-	u32 nranks, curranksize, maxranksize, maxdra, dra;
-	u8 rankmismatch, dramismatch;
+	u32 nranks, curranksize, maxranksize, dra;
+	u8 rankmismatch;
 	static const u8 drbtab[10] = { 0x4, 0x2, 0x8, 0x4, 0x8, 0x4, 0x10, 0x8,
 				       0x20, 0x10 };
 
 	nranks = 0;
 	curranksize = 0;
 	maxranksize = 0;
-	maxdra = 0;
 	rankmismatch = 0;
-	dramismatch = 0;
 	FOR_EACH_POPULATED_RANK(s->dimms, ch, r) {
 		nranks++;
 		dra = (u8) ((MCHBAR32(0x208) >> (8*r)) & 0x7f);
 		curranksize = drbtab[dra];
 		if (maxranksize == 0) {
 			maxranksize = curranksize;
-			maxdra = dra;
 		}
 		if (curranksize != maxranksize) {
 			rankmismatch = 1;
-		}
-		if (dra != maxdra) {
-			dramismatch = 1;
 		}
 	}
 
@@ -2210,7 +2211,7 @@ static void sdram_periodic_rcomp(void)
 static void sdram_new_trd(struct sysinfo *s)
 {
 	u8 pidelay, i, j, k, cc, trd_perphase[5];
-	u8 bypass, freqgb, trd, reg8, txfifo, cas;
+	u8 bypass, freqgb, trd, reg8, txfifo;
 	u32 reg32, datadelay, tio, rcvendelay, maxrcvendelay;
 	u16 tmclk, thclk, buffertocore, postcalib;
 	static const u8 txfifo_lut[8] = { 0, 7, 6, 5, 2, 1, 4, 3 };
@@ -2226,7 +2227,6 @@ static void sdram_new_trd(struct sysinfo *s)
 
 	freqgb = 110;
 	buffertocore = 5000;
-	cas = s->selected_timings.CAS;
 	postcalib = (s->selected_timings.mem_clock == MEM_CLOCK_667MHz) ? 1250 : 500;
 	tmclk = (s->selected_timings.mem_clock == MEM_CLOCK_667MHz) ? 3000 : 2500;
 	tmclk = tmclk * 100 / freqgb;

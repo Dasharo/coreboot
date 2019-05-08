@@ -17,7 +17,6 @@
 #include <arch/cbfs.h>
 #include <arch/early_variables.h>
 #include <assert.h>
-#include <chip.h>
 #include <console/console.h>
 #include <cpu/x86/mtrr.h>
 #include <device/device.h>
@@ -27,7 +26,6 @@
 #include <intelblocks/fast_spi.h>
 #include <intelblocks/pmclib.h>
 #include <soc/pci_devs.h>
-#include <soc/pei_wrapper.h>
 #include <soc/pm.h>
 #include <soc/pmc.h>
 #include <soc/serialio.h>
@@ -37,14 +35,19 @@
 #include <stdint.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 
+#include "../chip.h"
+
 /* SOC initialization before RAM is enabled */
 void soc_pre_ram_init(struct romstage_params *params)
 {
 	/* Program MCHBAR and DMIBAR */
 	systemagent_early_init();
 
-	/* Prepare to initialize memory */
-	soc_fill_pei_data(params->pei_data);
+	const struct device *const dev = pcidev_path_on_root(PCH_DEVFN_LPC);
+	const struct soc_intel_skylake_config *const config =
+		dev ? dev->chip_info : NULL;
+	/* Force a full memory train if RMT is enabled */
+	params->disable_saved_data = config && config->Rmt;
 }
 
 /* UPD parameters to be initialized before MemoryInit */

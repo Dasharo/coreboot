@@ -51,6 +51,7 @@ The boards in this section are not real mainboards, but emulators.
 
 ## Lenovo
 
+- [Mainboard codenames](lenovo/codenames.md)
 - [Hardware Maintenance Manual of ThinkPads](lenovo/thinkpad_hmm.md)
 - [T4xx common](lenovo/t4xx_series.md)
 - [X2xx common](lenovo/x2xx_series.md)
@@ -68,6 +69,10 @@ The boards in this section are not real mainboards, but emulators.
 - [W530](lenovo/w530.md)
 - [T430 / T530 / X230 / W530 common](lenovo/xx30_series.md)
 - [T431s](lenovo/t431s.md)
+
+## MSI
+
+- [MS-7707](msi/ms7707/ms7707.md)
 
 ## SiFive
 

@@ -13,9 +13,10 @@
  * GNU General Public License for more details.
  */
 
-#include <assert.h>
+#include <console/console.h>
 #include <soc/pmic_wrap.h>
 #include <soc/mt6358.h>
+#include <timer.h>
 
 static struct pmic_setting init_setting[] = {
 	/* [15:0]: TMA_KEY */
@@ -493,6 +494,10 @@ static struct pmic_setting init_setting[] = {
 	/* [2:1]: RG_LDO_VSRAM_PROC12_TRACK_ON_CTRL */
 	/* [2:2]: RG_LDO_VSRAM_PROC12_TRACK_VPROC12_ON_CTRL */
 	{0x1B6C, 0x6, 0x6, 0},
+
+	/* Vproc11/Vproc12 to 1.05V */
+	{0x13a6, 0x58, 0x7F, 0},
+	{0x140a, 0x58, 0x7F, 0},
 };
 
 static struct pmic_setting lp_setting[] = {
@@ -771,13 +776,18 @@ static void mt6358_lp_setting(void)
 
 void mt6358_init(void)
 {
+	struct stopwatch voltage_settled;
+
 	if (pwrap_init())
 		die("ERROR - Failed to initialize pmic wrap!");
 
 	pmic_set_power_hold(true);
 	pmic_wdt_set();
 	mt6358_init_setting();
+	stopwatch_init_usecs_expire(&voltage_settled, 200);
 	wk_sleep_voltage_by_ddr();
 	wk_power_down_seq();
 	mt6358_lp_setting();
+	while (!stopwatch_expired(&voltage_settled))
+		/* wait for voltages to settle */;
 }

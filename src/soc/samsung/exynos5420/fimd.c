@@ -18,13 +18,11 @@
 
 #include <device/mmio.h>
 #include <console/console.h>
-#include <delay.h>
 #include <soc/clk.h>
 #include <soc/dp.h>
 #include <soc/fimd.h>
 #include <soc/periph.h>
 #include <soc/sysreg.h>
-#include <timer.h>
 
 /* fairly useful debugging stuff. */
 #if 0

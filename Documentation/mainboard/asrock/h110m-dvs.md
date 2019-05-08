@@ -5,9 +5,9 @@ This page describes how to run coreboot on the [ASRock H110M-DVS].
 ## Required proprietary blobs
 
 Mainboard is based on Intel Skylake/Kaby Lake processor and H110 Chipset.
-Intel company provides [Firmware Support Package (2.0)](../../Documentation/soc/intel/fsp/index.md)
+Intel company provides [Firmware Support Package (2.0)](../../soc/intel/fsp/index.md)
 (intel FSP 2.0) to initialize this generation silicon. Please see this
-[document](../../Documentation/soc/intel/code_development_model/code_development_model.md).
+[document](../../soc/intel/code_development_model/code_development_model.md).
 
 FSP Information:
 
@@ -21,27 +21,6 @@ FSP Information:
 +-----------------------------+-------------------+-------------------+
 ```
 
-Please take FSP from the directory `3rdparty/fsp/KabylakeFspBinPkg/` in
-the coreboot or download the latest version from [github][FSP github].
-
-You must use [Intel Binary Configuration Tool] BCT to set the following
-parameters in FSP.fd to initialize the PEG x16 port:
-
-```
-Peg0Enable = Enable
-Peg0MaxLinkSpeed = Gen3
-Peg0MaxLinkWidth = Auto
-```
-
-BCT creates Fsp_M.fd, Fsp_S.fd and Fsp_T.fd. These files are integrated
-into the coreboot image. If PEG port is not used, you can get these files
-without BTC:
-
-```bash
-# split FSP.fd
-python 3rdparty/fsp/Tools/SplitFspBin.py split -f 3rdparty/fsp/KabylakeFspBinPkg/Fsp.fd
-```
-
 ## Building coreboot
 
 The following steps set the default parameters for this board to build a
@@ -53,8 +32,7 @@ touch .config
 ./util/scripts/config --enable VENDOR_ASROCK
 ./util/scripts/config --enable BOARD_ASROCK_H110M_DVS
 ./util/scripts/config --enable CONFIG_ADD_FSP_BINARIES
-./util/scripts/config --set-str CONFIG_FSP_M_FILE "/path/to/Fsp_M.fd"
-./util/scripts/config --set-str CONFIG_FSP_S_FILE "/path/to/Fsp_S.fd"
+./util/scripts/config --enable CONFIG_FSP_USE_REPO
 ./util/scripts/config --set-str REALTEK_8168_MACADDRESS "xx:xx:xx:xx:xx:xx"
 make olddefconfig
 ```
@@ -82,7 +60,7 @@ The main SPI flash can be accessed using [flashrom]. By default, only
 the BIOS region of the flash is writable. If you wish to change any
 other region, such as the Management Engine or firmware descriptor, then
 an external programmer is required (unless you find a clever way around
-the flash protection). More information about this [here](../../Documentation/flash_tutorial/index.md).
+the flash protection). More information about this [here](../../flash_tutorial/index.md).
 
 ### External programming
 
@@ -97,10 +75,9 @@ facing towards the bottom of the board.
 
 ## Known issues
 
-- The VGA port doesn't work.
-
-- PEG x16 port training correctly runs only at link speed of 2.5GT/s(gen1).
-  It takes more time to research the schematic of this board.
+- The VGA port doesn't work. Discrete graphic card is used as primary
+  device for display output (if CONFIG_ONBOARD_VGA_IS_PRIMARY is not
+  set). Dynamic switching between iGPU and PEG is not yet supported.
 
 - SuperIO GPIO pin is used to reset Realtek chip. However, since the
   Logical Device 7 (GPIO6, GPIO7, GPIO8) is not initialized, the network
@@ -121,7 +98,7 @@ facing towards the bottom of the board.
 
 - integrated graphics init with libgfxinit (see [Known issues](#known-issues))
 - PCIe x1
-- PEG x16 Gen1 (see [Known issues](#known-issues))
+- PEG x16 Gen3
 - SATA
 - USB
 - serial port
@@ -131,7 +108,6 @@ facing towards the bottom of the board.
 
 ## TODO
 
-- PEG x16 Gen3
 - NCT6791D GPIOs
 - onboard network (see [Known issues](#known-issues))
 - S3 suspend/resume
@@ -155,8 +131,6 @@ facing towards the bottom of the board.
 ```
 
 [ASRock H110M-DVS]: https://www.asrock.com/mb/Intel/H110M-DVS%20R2.0/
-[FSP github]: https://github.com/IntelFsp/FSP
-[Intel Binary Configuration Tool]: https://github.com/IntelFsp/BCT
 [MX25L6473E]: http://www.macronix.com/Lists/Datasheet/Attachments/7380/MX25L6473E,%203V,%2064Mb,%20v1.4.pdf
 [flashrom]: https://flashrom.org/Flashrom
 [H110M-DVS manual]: http://asrock.pc.cdn.bitgravity.com/Manual/H110M-DVS%20R2.0.pdf

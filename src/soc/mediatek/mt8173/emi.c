@@ -14,10 +14,8 @@
  */
 
 #include <device/mmio.h>
-#include <assert.h>
 #include <boardid.h>
 #include <console/console.h>
-#include <delay.h>
 #include <soc/addressmap.h>
 #include <soc/dramc_common.h>
 #include <soc/dramc_register.h>

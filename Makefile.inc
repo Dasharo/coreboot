@@ -196,13 +196,10 @@ ifeq ($(CONFIG_USE_BLOBS),y)
 # this is necessary because 3rdparty/blobs is update=none, and so is ignored
 # unless explicitly requested and enabled through --checkout
 forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/blobs))
-ifeq ($(CONFIG_PLATFORM_USES_FSP2_0),y)
+ifeq ($(CONFIG_PLATFORM_USES_FSP1_0)$(CONFIG_PLATFORM_USES_FSP1_1)$(CONFIG_PLATFORM_USES_FSP2_0),y)
+# this is necessary because 3rdparty/fsp is update=none, and so is ignored
+# unless explicitly requested and enabled through --checkout
 forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/fsp))
-endif
-ifeq ($(CONFIG_PLATFORM_USES_FSP1_0),y)
-ifeq ($(CONFIG_SOC_INTEL_FSP_BROADWELL_DE),y)
-forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/fsp))
-endif
 endif
 endif
 UPDATED_SUBMODULES:=1
@@ -267,7 +264,14 @@ $(obj)/$(1).aml: $(src)/mainboard/$(MAINBOARDDIR)/$(1).asl $(obj)/config.h
 	@printf "    IASL       $$(subst $(top)/,,$$(@))\n"
 	$(CC_ramstage) -x assembler-with-cpp -E -MMD -MT $$(@) $$(CPPFLAGS_ramstage) -D__ACPI__ -P -include $(src)/include/kconfig.h -I$(obj) -I$(src) -I$(src)/include -I$(src)/arch/$(ARCHDIR-$(ARCH-ramstage-y))/include -I$(src)/mainboard/$(MAINBOARDDIR) $$< -o $(obj)/$(1).asl
 	cd $$(dir $$@); $(IASL) $(IGNORED_IASL_WARNINGS) -we -p $$(notdir $$@) $(1).asl
-	if [ -z "$$$$($(IASL) -d $$@ 2>&1 | grep 'ACPI Warning')" ]; then echo "    IASL       $$@ disassembled correctly."; true; else echo "Error: Could not correctly disassemble $$@"; $(IASL) -d $$@; false; fi
+	if ! $(IASL) -d $$@ 2>&1 | grep -Eq 'ACPI (Warning|Error)'; then	\
+		echo "    IASL       $$@ disassembled correctly.";		\
+		true;								\
+	else									\
+		echo "Error: Could not correctly disassemble $$@";		\
+		$(IASL) -d $$@;							\
+		false;								\
+	fi
 endef
 
 #######################################################################

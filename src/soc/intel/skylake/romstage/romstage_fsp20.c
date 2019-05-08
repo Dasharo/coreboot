@@ -20,7 +20,6 @@
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/msr.h>
 #include <cbmem.h>
-#include <chip.h>
 #include <console/console.h>
 #include <device/pci_def.h>
 #include <fsp/util.h>
@@ -36,6 +35,8 @@
 #include <string.h>
 #include <timestamp.h>
 #include <security/vboot/vboot_common.h>
+
+#include "../chip.h"
 
 #define FSP_SMBIOS_MEMORY_INFO_GUID	\
 {	\
@@ -202,20 +203,67 @@ static void cpu_flex_override(FSP_M_CONFIG *m_cfg)
 	m_cfg->CpuRatio = (flex_ratio.lo >> 8) & 0xff;
 }
 
+static void soc_peg_init_params(FSP_M_CONFIG *m_cfg,
+			FSP_M_TEST_CONFIG *m_t_cfg,
+			const struct soc_intel_skylake_config *config)
+{
+	const struct device *dev;
+	/*
+	 * To enable or disable the corresponding PEG root port you need to
+	 * add to the devicetree.cb:
+	 *
+	 *     device pci 01.0 on  end # enable PEG0 root port
+	 *     device pci 01.1 off end # do not configure PEG1
+	 *
+	 * If PEG port is not defined in the device tree, it will be disabled
+	 * in FSP
+	 */
+	dev = SA_DEV_PEG0; /* PEG 0:1:0 */
+	if (!dev || !dev->enabled)
+		m_cfg->Peg0Enable = 0;
+	else if (dev->enabled) {
+		m_cfg->Peg0Enable = dev->enabled;
+		m_cfg->Peg0MaxLinkWidth = config->Peg0MaxLinkWidth;
+		/* Use maximum possible link speed */
+		m_cfg->Peg0MaxLinkSpeed = 0;
+		/* Power down unused lanes based on the max possible width */
+		m_cfg->Peg0PowerDownUnusedLanes = 1;
+		/* Set [Auto] for options to enable equalization methods */
+		m_t_cfg->Peg0Gen3EqPh2Enable = 2;
+		m_t_cfg->Peg0Gen3EqPh3Method = 0;
+	}
+
+	dev = SA_DEV_PEG1; /* PEG 0:1:1 */
+	if (!dev || !dev->enabled)
+		m_cfg->Peg1Enable = 0;
+	else if (dev->enabled) {
+		m_cfg->Peg1Enable = dev->enabled;
+		m_cfg->Peg1MaxLinkWidth = config->Peg1MaxLinkWidth;
+		m_cfg->Peg1MaxLinkSpeed = 0;
+		m_cfg->Peg1PowerDownUnusedLanes = 1;
+		m_t_cfg->Peg1Gen3EqPh2Enable = 2;
+		m_t_cfg->Peg1Gen3EqPh3Method = 0;
+	}
+
+	dev = SA_DEV_PEG2; /* PEG 0:1:2 */
+	if (!dev || !dev->enabled)
+		m_cfg->Peg2Enable = 0;
+	else if (dev->enabled) {
+		m_cfg->Peg2Enable = dev->enabled;
+		m_cfg->Peg2MaxLinkWidth = config->Peg2MaxLinkWidth;
+		m_cfg->Peg2MaxLinkSpeed = 0;
+		m_cfg->Peg2PowerDownUnusedLanes = 1;
+		m_t_cfg->Peg2Gen3EqPh2Enable = 2;
+		m_t_cfg->Peg2Gen3EqPh3Method = 0;
+	}
+}
+
 static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 			const struct soc_intel_skylake_config *config)
 {
 	int i;
 	uint32_t mask = 0;
 
-	/*
-	 * Set IGD stolen size to 64MB.  The FBC hardware for skylake does not
-	 * have access to the bios_reserved range so it always assumes 8MB is
-	 * used and so the kernel will avoid the last 8MB of the stolen window.
-	 * With the default stolen size of 32MB(-8MB) there is not enough space
-	 * for FBC to work with a high resolution panel.
-	 */
-	m_cfg->IgdDvmt50PreAlloc = 2;
 	m_cfg->MmioSize = 0x800; /* 2GB in MB */
 	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
 	m_cfg->IedSize = CONFIG_IED_REGION_SIZE;
@@ -243,6 +291,34 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	}
 }
 
+static void soc_primary_gfx_config_params(FSP_M_CONFIG *m_cfg,
+				const struct soc_intel_skylake_config *config)
+{
+	const struct device *dev;
+
+	dev = dev_find_slot(0, SA_DEVFN_IGD);
+	if (!dev || !dev->enabled) {
+		/*
+		 * If iGPU is disabled or not defined in the devicetree.cb,
+		 * the FSP does not initialize this device
+		 */
+		m_cfg->InternalGfx = 0;
+		m_cfg->IgdDvmt50PreAlloc = 0;
+	} else {
+		m_cfg->InternalGfx = 1;
+		/*
+		 * Set IGD stolen size to 64MB.  The FBC hardware for skylake
+		 * does not have access to the bios_reserved range so it always
+		 * assumes 8MB is used and so the kernel will avoid the last
+		 * 8MB of the stolen window. With the default stolen size of
+		 * 32MB(-8MB) there is not enough space for FBC to work with
+		 * a high resolution panel
+		 */
+		m_cfg->IgdDvmt50PreAlloc = 2;
+	}
+	m_cfg->PrimaryDisplay = config->PrimaryDisplay;
+}
+
 void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 {
 	const struct device *dev;
@@ -254,6 +330,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	config = dev->chip_info;
 
 	soc_memory_init_params(m_cfg, config);
+	soc_peg_init_params(m_cfg, m_t_cfg, config);
 
 	/* Skip creating Management Engine MBP HOB */
 	m_t_cfg->SkipMbpHob = 0x01;
@@ -273,6 +350,10 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 
 	/* Enable SMBus controller based on config */
 	m_cfg->SmbusEnable = config->SmbusEnable;
+
+	/* Set primary graphic device */
+	soc_primary_gfx_config_params(m_cfg, config);
+	m_t_cfg->SkipExtGfxScan = config->SkipExtGfxScan;
 
 	mainboard_memory_init_params(mupd);
 }

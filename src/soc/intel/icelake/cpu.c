@@ -16,7 +16,6 @@
 #include <arch/cpu.h>
 #include <console/console.h>
 #include <device/pci.h>
-#include <chip.h>
 #include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/msr.h>
@@ -32,6 +31,8 @@
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/smm.h>
+
+#include "chip.h"
 
 static void soc_fsp_load(void)
 {
@@ -73,10 +74,8 @@ static void configure_misc(void)
 	msr = rdmsr(IA32_MISC_ENABLE);
 	msr.lo |= (1 << 0);	/* Fast String enable */
 	msr.lo |= (1 << 3);	/* TM1/TM2/EMTTM enable */
-	if (conf->eist_enable)
-		cpu_enable_eist();
-	else
-		cpu_disable_eist();
+	/* Set EIST status */
+	cpu_set_eist(conf->eist_enable);
 	wrmsr(IA32_MISC_ENABLE, msr);
 
 	/* Disable Thermal interrupts */

@@ -17,25 +17,25 @@
 #include <arch/io.h>
 #include <device/pci_ops.h>
 #include <cbmem.h>
+#include <cf9_reset.h>
 #include <console/console.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/mtrr.h>
 #include <arch/cpu.h>
-#include <delay.h>
-#include <halt.h>
-#include "iomap.h"
 #if CONFIG(SOUTHBRIDGE_INTEL_I82801GX)
 #include <southbridge/intel/i82801gx/i82801gx.h> /* smbus_read_byte */
 #else
 #include <southbridge/intel/i82801jx/i82801jx.h> /* smbus_read_byte */
 #endif
-#include "x4x.h"
 #include <spd.h>
 #include <string.h>
 #include <device/dram/ddr2.h>
 #include <device/dram/ddr3.h>
 #include <mrc_cache.h>
 #include <timestamp.h>
+
+#include "iomap.h"
+#include "x4x.h"
 
 #define MRC_CACHE_VERSION 0
 
@@ -623,9 +623,7 @@ static void checkreset_ddr2(int boot_path)
 		reg8 = pci_read_config8(PCI_DEV(0, 0, 0), 0xf0);
 		pci_write_config8(PCI_DEV(0, 0, 0), 0xf0, reg8 |  (1 << 2));
 
-		printk(BIOS_DEBUG, "Reset...\n");
-		outb(0xe, 0xcf9);
-		asm ("hlt");
+		full_reset();
 	}
 	pmcon2 |= 0x80;
 	pci_write_config8(PCI_DEV(0, 0x1f, 0), 0xa2, pmcon2);
@@ -654,13 +652,11 @@ void sdram_initialize(int boot_path, const u8 *spd_map)
 	if (cache_not_found || (region_device_sz(&rdev) < sizeof(s))) {
 		if (boot_path == BOOT_PATH_RESUME) {
 			/* Failed S3 resume, reset to come up cleanly */
-			outb(0x6, 0xcf9);
-			halt();
+			system_reset();
 		} else if (boot_path == BOOT_PATH_WARM_RESET) {
 			/* On warm reset some of dram calibrations fail
 			   and therefore requiring valid cached settings */
-			outb(0xe, 0xcf9);
-			halt();
+			full_reset();
 		}
 		ctrl_cached = NULL;
 	} else {
@@ -728,8 +724,7 @@ void sdram_initialize(int boot_path, const u8 *spd_map)
 					&s, sizeof(s));
 	if (s.boot_path == BOOT_PATH_RESUME && !cbmem_was_inited) {
 		/* Failed S3 resume, reset to come up cleanly */
-		outb(0x6, 0xcf9);
-		halt();
+		system_reset();
 	}
 
 	timestamp_add_now(TS_AFTER_INITRAM);

@@ -100,11 +100,25 @@ If you do only reference the document, but do not include it in any toctree,
 you'll see the following warning:
 **WARNING: document isn't included in any toctree**
 
+## CSV
+
+You can import CSV files and let sphinx automatically convert them to human
+readable tables, using the following reStructuredText snipped:
+
+    ```eval_rst
+    .. csv-table::
+       :header: "Key", "Value"
+       :file: keyvalues.csv
+    ```
+
+Of course this can only be done from a markdown file that is included in the
+TOC tree.
+
 [coreboot]: https://coreboot.org
 [Documentation]: https://review.coreboot.org/cgit/coreboot.git/tree/Documentation
 [shpinx-autobuild]: https://github.com/GaretJax/sphinx-autobuild
 [guide]: http://www.sphinx-doc.org/en/stable/install.html
 [Sphinx]: http://www.sphinx-doc.org/en/master/
 [Markdown Guide]: https://www.markdownguide.org/
-[Gerrit Guidelines]: https://doc.coreboot.org/gerrit_guidelines.html
+[Gerrit Guidelines]: gerrit_guidelines.md
 [review.coreboot.org]: https://review.coreboot.org

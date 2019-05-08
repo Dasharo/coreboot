@@ -15,7 +15,6 @@
  */
 
 #include <console/console.h>
-#include <delay.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -503,7 +502,7 @@ static void pch_lpc_add_mmio_resources(struct device *dev)
 #define LPC_DEFAULT_IO_RANGE_LOWER 0
 #define LPC_DEFAULT_IO_RANGE_UPPER 0x1000
 
-static inline int pch_io_range_in_default(u16 base, u16 size)
+static inline int pch_io_range_in_default(int base, int size)
 {
 	/* Does it start above the range? */
 	if (base >= LPC_DEFAULT_IO_RANGE_UPPER)

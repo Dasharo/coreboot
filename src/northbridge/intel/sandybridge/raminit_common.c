@@ -23,7 +23,7 @@
 #include <northbridge/intel/sandybridge/chip.h>
 #include <device/pci_def.h>
 #include <delay.h>
-#include <arch/cpu.h>
+
 #include "raminit_native.h"
 #include "raminit_common.h"
 #include "sandybridge.h"
@@ -1142,6 +1142,7 @@ static struct run get_longest_zero_run(int *seq, int sz)
 		ret.middle = sz / 2;
 		ret.start = 0;
 		ret.end = sz;
+		ret.length = sz;
 		ret.all = 1;
 		return ret;
 	}

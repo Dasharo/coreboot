@@ -14,8 +14,7 @@
  */
 
 #include <device/mmio.h>
-#include <assert.h>
-#include <delay.h>
+#include <console/console.h>
 #include <stdlib.h>
 #include <soc/addressmap.h>
 #include <soc/dramc_common.h>

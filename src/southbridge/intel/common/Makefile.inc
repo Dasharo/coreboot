@@ -25,8 +25,13 @@ postcar-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_RESET) += reset.c
 romstage-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_SMBUS) += smbus.c
 ramstage-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_SMBUS) += smbus.c
 
+romstage-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_PMCLIB) += pmclib.c
+
+ramstage-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_WATCHDOG) += watchdog.c
+
 ifeq ($(CONFIG_SOUTHBRIDGE_INTEL_COMMON),y)
 
+verstage-y += pmbase.c
 romstage-y += pmbase.c
 ramstage-y += pmbase.c
 postcar-y += pmbase.c
@@ -57,6 +62,7 @@ ramstage-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_ACPI_MADT) += madt.c
 
 smm-$(CONFIG_SOUTHBRIDGE_INTEL_COMMON_FINALIZE) += finalize.c
 
+verstage-y += rtc.c
 romstage-y += rtc.c
 ramstage-y += rtc.c
 postcar-y += rtc.c
