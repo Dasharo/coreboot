@@ -13,6 +13,9 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 ## [v4.9.0.5] - 2019-05-08
+### Changed
+- rebased with official coreboot repository commit fe80bf2
+
 ### Fixed
 - MP table creation: fixed SDHCI, xHCI interrupt entries
 - redundant SVI2 information string in sign-of-life
