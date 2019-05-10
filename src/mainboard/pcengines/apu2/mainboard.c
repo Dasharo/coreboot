@@ -284,6 +284,48 @@ const char *smbios_mainboard_serial_number(void)
 	return serial;
 }
 
+int fill_mainboard_smbios_type16(unsigned long *current, int *handle)
+{
+	u8 spd_index = 0;
+	if ( ReadFchGpio(APU2_SPD_STRAP0_GPIO) ) spd_index |= BIT0;
+	if ( ReadFchGpio(APU2_SPD_STRAP1_GPIO) ) spd_index |= BIT1;
+	
+	//u8 spd_index = get_spd_offset();
+
+	u8 spd_buffer[SPD_SIZE];
+	if (read_spd_from_cbfs(spd_buffer, spd_index) < 0) {
+		return 0;
+	}
+
+	struct smbios_type16 *t = (struct smbios_type16 *)*current;
+	int len = sizeof(struct smbios_type16) - 2;
+	memset(t, 0, sizeof(struct smbios_type16));
+
+	t->handle = *handle;
+	t->length = len;
+	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
+	t->use = MEMORY_ARRAY_USE_SYSTEM;
+	t->location = MEMORY_ARRAY_LOCATION_SYSTEM_BOARD;
+	t->maximum_capacity = 4 * 1024 * 1024; // 4GB (in kB) due to board design
+	t->extended_maximum_capacity = 0;
+	t->memory_error_information_handle = 0xFFFE;
+	t->number_of_memory_devices = 1; // only 1 device soldered down to 1 channel
+
+	switch(spd_buffer[3]){
+		case 0x08:
+			t->memory_error_correction = MEMORY_ARRAY_ECC_MULTI_BIT;
+			break;
+		case 0x03:
+			t->memory_error_correction = MEMORY_ARRAY_ECC_NONE;
+			break;
+		default:
+			t->memory_error_correction = MEMORY_ARRAY_ECC_UNKNOWN;
+			break;
+	}
+	len = t->length + smbios_string_table_len(t->eos);
+	return len;
+}
+
 const char *smbios_mainboard_sku(void)
 {
 	static char sku[5];
