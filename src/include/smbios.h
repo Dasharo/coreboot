@@ -22,6 +22,7 @@ const char *smbios_mainboard_bios_version(void);
 const char *smbios_mainboard_sku(void);
 u8 smbios_mainboard_enclosure_type(void);
 int fill_mainboard_smbios_type16(unsigned long *current, int *handle);
+int fill_mainboard_smbios_type17(unsigned long *current, int *handle);
 
 #define BIOS_CHARACTERISTICS_PCI_SUPPORTED  (1 << 7)
 #define BIOS_CHARACTERISTICS_PC_CARD  (1 << 8)

@@ -351,6 +351,15 @@ static int smbios_write_type16(unsigned long *current, int *handle)
 	return len;
 }
 
+static int smbios_write_type17(unsigned long *current, int *handle)
+{
+	int len = fill_mainboard_smbios_type17(current, handle);
+	if(len){
+		*current += len;
+	}
+	return len;
+}
+
 static int smbios_write_type32(unsigned long *current, int handle)
 {
 	struct smbios_type32 *t = (struct smbios_type32 *)*current;
@@ -441,6 +450,7 @@ unsigned long smbios_write_tables(unsigned long current)
 	len += elog_smbios_write_type15(&current, handle++);
 #endif
 	len += smbios_write_type16(&current, &handle);
+	len += smbios_write_type17(&current, &handle);
 	len += smbios_write_type32(&current, handle++);
 
 	len += smbios_walk_device_tree(all_devices, &handle, &current);

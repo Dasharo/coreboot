@@ -51,6 +51,7 @@
 #include <build.h>
 #include "bios_knobs.h"
 #include "s1_button.h"
+#include <spd_bin.h>
 
 /**********************************************
  * enable the dedicated function in mainboard.
@@ -290,8 +291,6 @@ int fill_mainboard_smbios_type16(unsigned long *current, int *handle)
 	if ( ReadFchGpio(APU2_SPD_STRAP0_GPIO) ) spd_index |= BIT0;
 	if ( ReadFchGpio(APU2_SPD_STRAP1_GPIO) ) spd_index |= BIT1;
 	
-	//u8 spd_index = get_spd_offset();
-
 	u8 spd_buffer[SPD_SIZE];
 	if (read_spd_from_cbfs(spd_buffer, spd_index) < 0) {
 		return 0;
@@ -324,6 +323,79 @@ int fill_mainboard_smbios_type16(unsigned long *current, int *handle)
 	}
 	len = t->length + smbios_string_table_len(t->eos);
 	return len;
+}
+
+int fill_mainboard_smbios_type17(unsigned long *current, int *handle){
+
+	u8 spd_index = 0;
+	if ( ReadFchGpio(APU2_SPD_STRAP0_GPIO) ) spd_index |= BIT0;
+	if ( ReadFchGpio(APU2_SPD_STRAP1_GPIO) ) spd_index |= BIT1;
+	
+	u8 spd_buffer[SPD_SIZE];
+	if (read_spd_from_cbfs(spd_buffer, spd_index) < 0) {
+		/* Indicate no ECC */
+		spd_buffer[3] = 3;
+	}
+
+	struct smbios_type17 *t = (struct smbios_type17 *)*current;
+	int len = sizeof(struct smbios_type17) - 2;
+	memset(t, 0, sizeof(struct smbios_type17));
+
+	/* Pola struktury type 17, ktore nalezy wypelnic 
+	   Zrobic to korzystajac z pliku SPD, ktory zczytuje konfiguracje RAM*/
+	
+	t->type = 17;
+	t->length = len;
+	t->handle = *handle;
+	*handle += 1;
+
+	t->memory_error_information_handle = 0xFFFE;
+
+	/* SPD 3 option gives info about module type: SO-DIMM or 72b-SO-DIMM */
+	switch (spd_buffer[12]) 
+	{
+		case 0x0a:
+			t->speed = 1600;
+			break;
+		case 0x0c:
+			t->speed = 1333;
+			break;
+		default:
+			t->speed = 0;
+			break;
+	}
+
+	t->data_width = 64;
+	
+	if((spd_buffer[8] & 0x18) == 1)
+	{
+		t->total_width = t->data_width + 8;		// there is additional 8-bit ECC width
+	}
+	else
+	{
+		t->total_width = t->data_width;			// there is no additional 8-bit ECC width
+	}
+
+	t->clock_speed = t->speed; 
+	t->type_detail = 0x0080;
+
+	//t->size ;    			yes
+	// t->form_factor;  	yes
+	// t->device_set;		yes
+	// t->device_locator;	yes
+	// t->bank_locator; 	yes 
+	// t->memory_type;  	yes
+	// t->extended_size;    yes
+	
+	//t->manufacturer = ""; no
+	// t->serial_number; 	no
+	// t->asset_tag;   		no
+	// t->part_number; 		no
+	// t->attributes;  		no
+	
+
+	return t->length + smbios_string_table_len(t->eos);
+
 }
 
 const char *smbios_mainboard_sku(void)
