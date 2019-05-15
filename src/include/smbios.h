@@ -8,9 +8,7 @@ int smbios_add_string(char *start, const char *str);
 int smbios_string_table_len(char *start);
 
 /* Used by mainboard to add an on-board device */
-int smbios_write_type41(unsigned long *current, int *handle,
-			const char *name, u8 instance, u16 segment,
-			u8 bus, u8 device, u8 function);
+int smbios_write_type41(unsigned long *current, int *handle, const char *name, u8 instance, u16 segment, u8 bus, u8 device, u8 function);
 	
 const char *smbios_mainboard_manufacturer(void);
 const char *smbios_mainboard_product_name(void);
@@ -22,7 +20,7 @@ const char *smbios_mainboard_bios_version(void);
 const char *smbios_mainboard_sku(void);
 u8 smbios_mainboard_enclosure_type(void);
 int fill_mainboard_smbios_type16(unsigned long *current, int *handle);
-int fill_mainboard_smbios_type17(unsigned long *current, int *handle);
+int fill_mainboard_smbios_type17(unsigned long *current, int *handle, int *type16_handle);
 
 #define BIOS_CHARACTERISTICS_PCI_SUPPORTED  (1 << 7)
 #define BIOS_CHARACTERISTICS_PC_CARD  (1 << 8)
@@ -347,9 +345,8 @@ struct smbios_type17 {
 	u8 asset_tag;
 	u8 part_number;
 	u8 attributes;
-	u16 extended_size;
+	u32 extended_size;
 	u16 clock_speed;
-
 	char eos[2];
 } __attribute__((packed));
 
