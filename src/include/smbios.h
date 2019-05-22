@@ -8,10 +8,8 @@ int smbios_add_string(char *start, const char *str);
 int smbios_string_table_len(char *start);
 
 /* Used by mainboard to add an on-board device */
-int smbios_write_type41(unsigned long *current, int *handle,
-			const char *name, u8 instance, u16 segment,
-			u8 bus, u8 device, u8 function);
-
+int smbios_write_type41(unsigned long *current, int *handle, const char *name, u8 instance, u16 segment, u8 bus, u8 device, u8 function);
+	
 const char *smbios_mainboard_manufacturer(void);
 const char *smbios_mainboard_product_name(void);
 
@@ -21,6 +19,8 @@ void smbios_mainboard_set_uuid(u8 *uuid);
 const char *smbios_mainboard_bios_version(void);
 const char *smbios_mainboard_sku(void);
 u8 smbios_mainboard_enclosure_type(void);
+int fill_mainboard_smbios_type16(unsigned long *current, int *handle);
+int fill_mainboard_smbios_type17(unsigned long *current, int *handle, int *type16_handle);
 
 #define BIOS_CHARACTERISTICS_PCI_SUPPORTED  (1 << 7)
 #define BIOS_CHARACTERISTICS_PC_CARD  (1 << 8)
@@ -34,6 +34,105 @@ u8 smbios_mainboard_enclosure_type(void);
 
 #define BIOS_EXT1_CHARACTERISTICS_ACPI    (1 << 0)
 #define BIOS_EXT2_CHARACTERISTICS_TARGET  (1 << 2)
+
+typedef enum {
+	MEMORY_BUS_WIDTH_8 = 0,
+	MEMORY_BUS_WIDTH_16 = 1,
+	MEMORY_BUS_WIDTH_32 = 2,
+	MEMORY_BUS_WIDTH_64 = 3,
+	MEMORY_BUS_WIDTH_128 = 4,
+	MEMORY_BUS_WIDTH_256 = 5,
+	MEMORY_BUS_WIDTH_512 = 6,
+	MEMORY_BUS_WIDTH_1024 = 7,
+	MEMORY_BUS_WIDTH_MAX = 7,
+} smbios_memory_bus_width;
+
+typedef enum {
+	MEMORY_FORMFACTOR_OTHER = 0x01,
+	MEMORY_FORMFACTOR_UNKNOWN = 0x02,
+	MEMORY_FORMFACTOR_SIMM = 0x03,
+	MEMORY_FORMFACTOR_SIP = 0x04,
+	MEMORY_FORMFACTOR_CHIP = 0x05,
+	MEMORY_FORMFACTOR_DIP = 0x06,
+	MEMORY_FORMFACTOR_ZIP = 0x07,
+	MEMORY_FORMFACTOR_PROPRIETARY_CARD = 0x08,
+	MEMORY_FORMFACTOR_DIMM = 0x09,
+	MEMORY_FORMFACTOR_TSOP = 0x0a,
+	MEMORY_FORMFACTOR_ROC = 0x0b,
+	MEMORY_FORMFACTOR_RIMM = 0x0c,
+	MEMORY_FORMFACTOR_SODIMM = 0x0d,
+	MEMORY_FORMFACTOR_SRIMM = 0x0e,
+	MEMORY_FORMFACTOR_FBDIMM = 0x0f,
+} smbios_memory_form_factor;
+
+typedef enum {
+	MEMORY_TYPE_OTHER = 0x01,
+	MEMORY_TYPE_UNKNOWN = 0x02,
+	MEMORY_TYPE_DRAM = 0x03,
+	MEMORY_TYPE_EDRAM = 0x04,
+	MEMORY_TYPE_VRAM = 0x05,
+	MEMORY_TYPE_SRAM = 0x06,
+	MEMORY_TYPE_RAM = 0x07,
+	MEMORY_TYPE_ROM = 0x08,
+	MEMORY_TYPE_FLASH = 0x09,
+	MEMORY_TYPE_EEPROM = 0x0a,
+	MEMORY_TYPE_FEPROM = 0x0b,
+	MEMORY_TYPE_EPROM = 0x0c,
+	MEMORY_TYPE_CDRAM = 0x0d,
+	MEMORY_TYPE_3DRAM = 0x0e,
+	MEMORY_TYPE_SDRAM = 0x0f,
+	MEMORY_TYPE_SGRAM = 0x10,
+	MEMORY_TYPE_RDRAM = 0x11,
+	MEMORY_TYPE_DDR = 0x12,
+	MEMORY_TYPE_DDR2 = 0x13,
+	MEMORY_TYPE_DDR2_FBDIMM = 0x14,
+	MEMORY_TYPE_DDR3 = 0x18,
+	MEMORY_TYPE_FBD2 = 0x19,
+	MEMORY_TYPE_DDR4 = 0x1a,
+	MEMORY_TYPE_LPDDR = 0x1b,
+	MEMORY_TYPE_LPDDR2 = 0x1c,
+	MEMORY_TYPE_LPDDR3 = 0x1d,
+	MEMORY_TYPE_LPDDR4 = 0x1e,
+	MEMORY_TYPE_LOGICAL_NON_VOLATILE_DEVICE = 0x1f,
+} smbios_memory_type;
+
+typedef enum {
+	MEMORY_ARRAY_LOCATION_OTHER = 0x01,
+	MEMORY_ARRAY_LOCATION_UNKNOWN = 0x02,
+	MEMORY_ARRAY_LOCATION_SYSTEM_BOARD = 0x03,
+	MEMORY_ARRAY_LOCATION_ISA_ADD_ON = 0x04,
+	MEMORY_ARRAY_LOCATION_EISA_ADD_ON = 0x05,
+	MEMORY_ARRAY_LOCATION_PCI_ADD_ON = 0x06,
+	MEMORY_ARRAY_LOCATION_MCA_ADD_ON = 0x07,
+	MEMORY_ARRAY_LOCATION_PCMCIA_ADD_ON = 0x08,
+	MEMORY_ARRAY_LOCATION_PROPRIETARY_ADD_ON = 0x09,
+	MEMORY_ARRAY_LOCATION_NUBUS = 0x0a,
+	MEMORY_ARRAY_LOCATION_PC_98_C20_ADD_ON = 0xa0,
+	MEMORY_ARRAY_LOCATION_PC_98_C24_ADD_ON = 0xa1,
+	MEMORY_ARRAY_LOCATION_PC_98_E_ADD_ON = 0xa2,
+	MEMORY_ARRAY_LOCATION_PC_98_LOCAL_BUS_ADD_ON = 0xa3,
+} smbios_memory_array_location;
+
+typedef enum {
+	MEMORY_ARRAY_USE_OTHER = 0x01,
+	MEMORY_ARRAY_USE_UNKNOWN = 0x02,
+	MEMORY_ARRAY_USE_SYSTEM = 0x03,
+	MEMORY_ARRAY_USE_VIDEO = 0x04,
+	MEMORY_ARRAY_USE_FLASH = 0x05,
+	MEMORY_ARRAY_USE_NVRAM = 0x06,
+	MEMORY_ARRAY_USE_CACHE = 0x07,
+} smbios_memory_array_use;
+
+typedef enum {
+	MEMORY_ARRAY_ECC_OTHER = 0x01,
+	MEMORY_ARRAY_ECC_UNKNOWN = 0x02,
+	MEMORY_ARRAY_ECC_NONE = 0x03,
+	MEMORY_ARRAY_ECC_PARITY = 0x04,
+	MEMORY_ARRAY_ECC_SINGLE_BIT = 0x05,
+	MEMORY_ARRAY_ECC_MULTI_BIT = 0x06,
+	MEMORY_ARRAY_ECC_CRC = 0x07,
+} smbios_memory_array_ecc;
+
 
 #define SMBIOS_STATE_SAFE 3
 typedef enum {
@@ -246,9 +345,8 @@ struct smbios_type17 {
 	u8 asset_tag;
 	u8 part_number;
 	u8 attributes;
-	u16 extended_size;
+	u32 extended_size;
 	u16 clock_speed;
-
 	char eos[2];
 } __attribute__((packed));
 

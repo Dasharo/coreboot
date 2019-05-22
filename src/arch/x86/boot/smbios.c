@@ -75,6 +75,10 @@ int smbios_string_table_len(char *start)
 		p += i;
 		len += i;
 	}
+
+	if (!len)
+		return 2;
+
 	return len + 1;
 }
 
@@ -337,6 +341,26 @@ static int smbios_write_type11(unsigned long *current, int *handle)
 	return len;
 }
 
+static int smbios_write_type16(unsigned long *current, int *handle)
+{
+	int len = fill_mainboard_smbios_type16(current, handle);
+	if(len){
+		*current += len;
+		(*handle)++;
+	}	
+	return len;
+}
+
+static int smbios_write_type17(unsigned long *current, int *handle, int *type16_handle)
+{
+	int len = fill_mainboard_smbios_type17(current, handle, type16_handle);
+	if(len){
+		*current += len;
+		(*handle)++;
+	}
+	return len;
+}
+
 static int smbios_write_type32(unsigned long *current, int handle)
 {
 	struct smbios_type32 *t = (struct smbios_type32 *)*current;
@@ -408,6 +432,7 @@ unsigned long smbios_write_tables(unsigned long current)
 	struct smbios_entry *se;
 	unsigned long tables;
 	int len, handle = 0;
+	int type16_handle = 0;
 
 	current = ALIGN(current, 16);
 	printk(BIOS_DEBUG, "%s: %08lx\n", __func__, current);
@@ -426,6 +451,9 @@ unsigned long smbios_write_tables(unsigned long current)
 #if CONFIG_ELOG
 	len += elog_smbios_write_type15(&current, handle++);
 #endif
+	type16_handle = handle;
+	len += smbios_write_type16(&current, &handle);
+	len += smbios_write_type17(&current, &handle, &type16_handle);
 	len += smbios_write_type32(&current, handle++);
 
 	len += smbios_walk_device_tree(all_devices, &handle, &current);
