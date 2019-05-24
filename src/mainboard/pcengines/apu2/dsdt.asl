@@ -81,5 +81,8 @@ DefinitionBlock (
 
 	/* Define the System Indicators for the platform */
 	#include "acpi/si.asl"
+
+	/* Super IO devices (COM ports) */
+	#include "acpi/superio.asl"
 }
 /* End of ASL file */
