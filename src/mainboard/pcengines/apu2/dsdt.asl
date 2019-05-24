@@ -57,5 +57,8 @@ DefinitionBlock (
 
 	/* Define the General Purpose Events for the platform */
 	#include "acpi/gpe.asl"
+
+	/* Super IO devices (COM ports) */
+	#include "acpi/superio.asl"
 }
 /* End of ASL file */
