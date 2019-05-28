@@ -320,7 +320,8 @@ void verstage_main(void)
 	if (CONFIG(VBOOT_MEASURED_BOOT) &&
 		!(ctx.flags & VB2_CONTEXT_S3_RESUME)) {
 		if (vboot_init_crtm() != VB2_SUCCESS)
-			die("Initializing measured boot mode failed!");
+			die_with_post_code(POST_INVALID_ROM,
+				"Initializing measured boot mode failed!");
 	}
 
 	if (get_recovery_mode_switch()) {
@@ -336,9 +337,21 @@ void verstage_main(void)
 	if (CONFIG(VBOOT_LID_SWITCH) && !get_lid_switch())
 		ctx.flags |= VB2_CONTEXT_NOFAIL_BOOT;
 
+	/* Mainboard/SoC always initializes display. */
+	if (!CONFIG(VBOOT_MUST_REQUEST_DISPLAY))
+		ctx.flags |= VB2_CONTEXT_DISPLAY_INIT;
+
 	/* Do early init (set up secdata and NVRAM, load GBB) */
 	printk(BIOS_INFO, "Phase 1\n");
 	rv = vb2api_fw_phase1(&ctx);
+
+	/* Jot down some information from vboot which may be required later on
+	   in coreboot boot flow. */
+	if (ctx.flags & VB2_CONTEXT_DISPLAY_INIT)
+		/* Mainboard/SoC should initialize display. */
+		vboot_get_working_data()->flags |= VBOOT_WD_FLAG_DISPLAY_INIT;
+	if (ctx.flags & VB2_CONTEXT_DEVELOPER_MODE)
+		vboot_get_working_data()->flags |= VBOOT_WD_FLAG_DEVELOPER_MODE;
 
 	if (rv) {
 		/*
@@ -383,7 +396,8 @@ void verstage_main(void)
 	printk(BIOS_INFO, "Phase 4\n");
 	rv = locate_firmware(&ctx, &fw_main);
 	if (rv)
-		die("Failed to read FMAP to locate firmware");
+		die_with_post_code(POST_INVALID_ROM,
+			"Failed to read FMAP to locate firmware");
 
 	rv = hash_body(&ctx, &fw_main);
 	save_if_needed(&ctx);

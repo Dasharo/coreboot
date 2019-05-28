@@ -13,6 +13,8 @@
  * GNU General Public License for more details.
  */
 
+#include <cpu/x86/post_code.h>
+
 /* I/O delay between post codes on failure */
 #define LHLT_DELAY	0x50000
 
@@ -20,9 +22,8 @@
 .global car_stage_entry
 car_stage_entry:
 	call	romstage_c_entry
-	#include "src/drivers/intel/fsp1_1/after_raminit.S"
 
-
+	/* we don't return here */
 	movb	$0x69, %ah
 	jmp	.Lhlt
 

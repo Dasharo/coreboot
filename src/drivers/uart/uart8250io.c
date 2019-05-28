@@ -134,7 +134,6 @@ void uart_tx_flush(int idx)
 	uart8250_tx_flush(uart_platform_base(car_get_var(port_index)));
 }
 
-#if ENV_RAMSTAGE
 void uart_fill_lb(void *data)
 {
 	struct lb_serial serial;
@@ -148,4 +147,3 @@ void uart_fill_lb(void *data)
 
 	lb_add_console(LB_TAG_CONSOLE_SERIAL8250, data);
 }
-#endif

@@ -6,6 +6,7 @@ This section contains documentation about coreboot on specific mainboards.
 
 - [F2A85-M](asus/f2a85-m.md)
 - [P8H61-M LX](asus/p8h61-m_lx.md)
+- [P8H61-M Pro](asus/p8h61-m_pro.md)
 
 ## ASRock
 
@@ -44,10 +45,16 @@ The boards in this section are not real mainboards, but emulators.
 ## Open Cellular
 
 - [Elgon](opencellular/elgon.md)
+- [Rotundu](opencellular/rotundu.md)
 
 ## HP
 
 - [Compaq 8200 Elite SFF](hp/compaq_8200_sff.md)
+
+### EliteBook series
+
+- [EliteBook common](hp/elitebook_series.md)
+- [EliteBook 8760w](hp/8760w.md)
 
 ## Lenovo
 
@@ -81,3 +88,7 @@ The boards in this section are not real mainboards, but emulators.
 ## Supermicro
 
 - [X10SLM+-F](supermicro/x10slm-f.md)
+
+## UP
+
+- [Squared](up/squared/index.md)

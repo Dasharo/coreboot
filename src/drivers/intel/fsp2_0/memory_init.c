@@ -277,7 +277,8 @@ static void do_fsp_memory_init(struct fsp_header *hdr, bool s3wake,
 	upd = (FSPM_UPD *)(hdr->cfg_region_offset + hdr->image_base);
 
 	if (upd->FspUpdHeader.Signature != FSPM_UPD_SIGNATURE)
-		die("Invalid FSPM signature!\n");
+		die_with_post_code(POST_INVALID_VENDOR_BINARY,
+			"Invalid FSPM signature!\n");
 
 	/* Copy the default values from the UPD area */
 	memcpy(&fspm_upd, upd, sizeof(fspm_upd));
@@ -290,7 +291,8 @@ static void do_fsp_memory_init(struct fsp_header *hdr, bool s3wake,
 	/* Fill common settings on behalf of chipset. */
 	if (fsp_fill_common_arch_params(arch_upd, s3wake, fsp_version,
 					memmap) != CB_SUCCESS)
-		die("FSPM_ARCH_UPD not found!\n");
+		die_with_post_code(POST_INVALID_VENDOR_BINARY,
+			"FSPM_ARCH_UPD not found!\n");
 
 	/* Give SoC and mainboard a chance to update the UPD */
 	platform_fsp_memory_init_params_cb(&fspm_upd, fsp_version);
@@ -314,7 +316,8 @@ static void do_fsp_memory_init(struct fsp_header *hdr, bool s3wake,
 	fsp_handle_reset(status);
 	if (status != FSP_SUCCESS) {
 		printk(BIOS_CRIT, "FspMemoryInit returned 0x%08x\n", status);
-		die("FspMemoryInit returned an error!\n");
+		die_with_post_code(POST_RAM_FAILURE,
+			"FspMemoryInit returned an error!\n");
 	}
 
 	do_fsp_post_memory_init(s3wake, fsp_version);

@@ -140,7 +140,7 @@ void smbios_fill_dimm_manufacturer_from_id(uint16_t mod_id,
 	struct smbios_type17 *t)
 {
 	switch (mod_id) {
-	case 0x2c80:
+	case 0x9b85:
 		t->manufacturer = smbios_add_string(t->eos,
 						    "Crucial");
 		break;
@@ -172,9 +172,9 @@ void smbios_fill_dimm_manufacturer_from_id(uint16_t mod_id,
 		t->manufacturer = smbios_add_string(t->eos,
 						    "Hynix/Hyundai");
 		break;
-	case 0xb502:
+	case 0x3486:
 		t->manufacturer = smbios_add_string(t->eos,
-						    "SuperTalent");
+						    "Super Talent");
 		break;
 	case 0xcd04:
 		t->manufacturer = smbios_add_string(t->eos,
@@ -188,7 +188,7 @@ void smbios_fill_dimm_manufacturer_from_id(uint16_t mod_id,
 		t->manufacturer = smbios_add_string(t->eos,
 						    "Elpida");
 		break;
-	case 0xff2c:
+	case 0x2c80:
 		t->manufacturer = smbios_add_string(t->eos,
 						    "Micron");
 		break;
@@ -977,7 +977,7 @@ int smbios_write_type38(unsigned long *current, int *handle,
 
 int smbios_write_type41(unsigned long *current, int *handle,
 			const char *name, u8 instance, u16 segment,
-			u8 bus, u8 device, u8 function)
+			u8 bus, u8 device, u8 function, u8 device_type)
 {
 	struct smbios_type41 *t = (struct smbios_type41 *)*current;
 	int len = sizeof(struct smbios_type41);
@@ -987,7 +987,7 @@ int smbios_write_type41(unsigned long *current, int *handle,
 	t->handle = *handle;
 	t->length = len - 2;
 	t->reference_designation = smbios_add_string(t->eos, name);
-	t->device_type = SMBIOS_DEVICE_TYPE_OTHER;
+	t->device_type = device_type;
 	t->device_status = 1;
 	t->device_type_instance = instance;
 	t->segment_group_number = segment;

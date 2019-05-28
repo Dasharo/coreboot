@@ -19,6 +19,12 @@
 #include <arch/hlt.h>
 #include <console/console.h>
 
+/* TODO: Fix vendorcode headers to not define macros coreboot uses or to be more
+   properly isolated. */
+#ifdef ASSERT
+#undef ASSERT
+#endif
+
 /* GCC and CAR versions */
 #define ASSERT(x) {						\
 	if (!(x)) {						\
@@ -50,7 +56,8 @@
  * bootmode.c:42: undefined reference to `dead_code_assertion_failed_at_line_42'
  */
 #define __dead_code(line) do { \
-	extern void dead_code_assertion_failed_at_line_##line(void); \
+	extern void dead_code_assertion_failed_at_line_##line(void) \
+		__attribute__((noreturn)); \
 	dead_code_assertion_failed_at_line_##line(); \
 } while (0)
 #define _dead_code(line) __dead_code(line)

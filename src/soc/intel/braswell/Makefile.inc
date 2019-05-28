@@ -14,8 +14,13 @@ romstage-y += iosf.c
 romstage-y += lpc_init.c
 romstage-y += memmap.c
 romstage-y += pmutil.c
+romstage-y += smbus.c
+romstage-y += spi.c
 romstage-y += tsc_freq.c
 
+postcar-y += memmap.c
+postcar-y += iosf.c
+postcar-y += spi.c
 postcar-y += tsc_freq.c
 
 ramstage-y += acpi.c
@@ -51,6 +56,9 @@ smm-y += pmutil.c
 smm-y += smihandler.c
 smm-y += spi.c
 smm-y += tsc_freq.c
+
+verstage-y += pmutil.c
+verstage-y += tsc_freq.c
 
 CPPFLAGS_common += -I$(src)/soc/intel/braswell/
 CPPFLAGS_common += -I$(src)/soc/intel/braswell/include
