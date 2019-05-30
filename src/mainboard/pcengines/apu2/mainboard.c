@@ -13,12 +13,17 @@
  * GNU General Public License for more details.
  */
 
+#include <cbfs.h>
+#include <fmap.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
+#include <commonlib/region.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_def.h>
+#include <security/vboot/vboot_crtm.h>
+#include <security/vboot/misc.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
 #include <southbridge/amd/pi/hudson/pci_devs.h>
 #include <southbridge/amd/pi/hudson/amd_pci_int_defs.h>
@@ -274,6 +279,28 @@ static void mainboard_get_dimm_info(u8 *spd_buffer)
 	mem_info->dimm_cnt = 1;
 }
 
+static void measure_amd_blobs(void)
+{
+	struct region_device rdev;
+	uint32_t cbfs_type = CBFS_TYPE_SPD;
+	struct cbfsf fh;
+
+	printk(BIOS_DEBUG, "Measuring AMD blobs.\n");
+
+	if(fmap_locate_area_as_rdev("PSPDIR", &rdev)) {
+		printk(BIOS_ERR, "Error: Couldn't find PSPDIR region.");
+		return;
+	}
+	tpm_measure_region(&rdev, TPM_RUNTIME_DATA_PCR,"PSPDIR");
+
+	/* Measure SPD */
+	if (cbfs_locate_file_in_region(&fh, "COREBOOT", "spd.bin",
+				       &cbfs_type) < 0) {
+		printk(BIOS_ERR, "Error: Couldn't find SPD.");
+		return;
+	}
+}
+
 /**********************************************
  * enable the dedicated function in mainboard.
  **********************************************/
@@ -311,6 +338,12 @@ static void mainboard_enable(struct device *dev)
 		printk(BIOS_ALERT, " DRAM\n\n");
 	}
 	mainboard_get_dimm_info(spd_buffer);
+
+	if (CONFIG(VBOOT_MEASURED_BOOT)) {
+		/* Measure AGESA and PSPDIR */
+		measure_amd_blobs();
+	}
+
 	//
 	// Enable the RTC output
 	//
@@ -406,7 +439,7 @@ static void mainboard_final(void *chip_info)
 		//
 		// The console is disabled, check if S1 is pressed and enable if so
 		//
-#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5)
+#if CONFIG(BOARD_PCENGINES_APU5)
 		if (!read_gpio(GPIO_22)) {
 #else
 		if (!read_gpio(GPIO_32)) {
