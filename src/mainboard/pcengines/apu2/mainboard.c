@@ -7,6 +7,7 @@
 #include <amdblocks/acpimmio.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
+#include <commonlib/region.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci_def.h>
@@ -200,6 +201,28 @@ static void config_gpio_mux(void)
 }
 
 
+static void measure_amd_blobs(void)
+{
+	struct region_device rdev;
+	uint32_t cbfs_type = CBFS_TYPE_SPD;
+	struct cbfsf fh;
+
+	printk(BIOS_DEBUG, "Measuring AMD blobs.\n");
+
+	if(fmap_locate_area_as_rdev("PSPDIR", &rdev)) {
+		printk(BIOS_ERR, "Error: Couldn't find PSPDIR region.");
+		return;
+	}
+	tpm_measure_region(&rdev, TPM_RUNTIME_DATA_PCR,"PSPDIR");
+
+	/* Measure SPD */
+	if (cbfs_locate_file_in_region(&fh, "COREBOOT", "spd.bin",
+				       &cbfs_type) < 0) {
+		printk(BIOS_ERR, "Error: Couldn't find SPD.");
+		return;
+	}
+}
+
 /**********************************************
  * enable the dedicated function in mainboard.
  **********************************************/
@@ -310,6 +333,12 @@ static void mainboard_enable(struct device *dev)
 
 		printk(BIOS_ALERT, " DRAM\n\n");
 	}
+
+	if (CONFIG(VBOOT_MEASURED_BOOT)) {
+		/* Measure AGESA and PSPDIR */
+		measure_amd_blobs();
+	}
+
 
 	/* Enable the RTC output */
 	pm_write16(PM_RTC_CONTROL, pm_read16(PM_RTC_CONTROL) | (1 << 11));
@@ -427,10 +456,10 @@ static void mainboard_final(void *chip_info)
 		//
 		// The console is disabled, check if S1 is pressed and enable if so
 		//
-#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5)
- 		if (!read_gpio(GPIO_22)) {
+#if CONFIG(BOARD_PCENGINES_APU5)
+		if (!gpio_get(GPIO_22)) {
 #else
-		if (!read_gpio(GPIO_32)) {
+		if (!gpio_get(GPIO_32)) {
 #endif
 			printk(BIOS_INFO, "S1 PRESSED\n");
 			enable_console();
