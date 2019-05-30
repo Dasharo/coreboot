@@ -23,5 +23,6 @@ bool check_ehci0(void);
 bool check_mpcie2_clk(void);
 int check_com2(void);
 int check_boost(void);
+bool check_sd3_mode(void);
 
 #endif
