@@ -328,6 +328,14 @@ static void mainboard_enable(struct device *dev)
 
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
+
+	struct device *sd_dev = dev_find_slot(0, PCI_DEVFN(0x14, 7));
+
+	struct southbridge_amd_pi_hudson_config *sd_chip =
+		(struct southbridge_amd_pi_hudson_config *)(sd_dev->chip_info);
+
+	if (!check_sd3_mode())
+		sd_chip->sd_mode = 0;
 }
 
 static void mainboard_final(void *chip_info)
