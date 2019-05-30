@@ -92,7 +92,7 @@ void uart_init(unsigned int idx)
 		div = uart_baudrate_divisor(get_uart_baudrate(),
 			uart_platform_refclk(), uart_input_clock_divider());
 		if ((check_com2() || idx == 1) &&
-		    !IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+		    !CONFIG(BOARD_PCENGINES_APU5))
 			car_set_var(port_index, 1);
 		else
 			car_set_var(port_index, idx);

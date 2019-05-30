@@ -136,7 +136,7 @@ static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 
 int chipset_volatile_group_begin(const struct spi_flash *flash)
 {
-	if (!IS_ENABLED (CONFIG_HUDSON_IMC_FWM))
+	if (!CONFIG(HUDSON_IMC_FWM))
 		return 0;
 
 	ImcSleep(NULL);
@@ -145,7 +145,7 @@ int chipset_volatile_group_begin(const struct spi_flash *flash)
 
 int chipset_volatile_group_end(const struct spi_flash *flash)
 {
-	if (!IS_ENABLED (CONFIG_HUDSON_IMC_FWM))
+	if (!CONFIG(HUDSON_IMC_FWM))
 		return 0;
 
 	ImcWakeup(NULL);
