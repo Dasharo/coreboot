@@ -135,9 +135,11 @@ ramstage-libs += $(agesa_output_path)/libagesa.a
 
 #######################################################################
 
-cbfs-files-y += $(CONFIG_AGESA_CBFS_NAME)
-$(CONFIG_AGESA_CBFS_NAME)-file := $(CONFIG_AGESA_BINARY_PI_FILE)
-$(CONFIG_AGESA_CBFS_NAME)-type := raw
-$(CONFIG_AGESA_CBFS_NAME)-position := $(CONFIG_AGESA_BINARY_PI_LOCATION)
+agesa_binary := $(call strip_quotes,$(CONFIG_AGESA_CBFS_NAME))
+
+cbfs-files-$(CONFIG_CPU_AMD_AGESA_BINARY_PI) += $(agesa_binary)
+$(agesa_binary)-file := $(CONFIG_AGESA_BINARY_PI_FILE)
+$(agesa_binary)-type := raw
+$(agesa_binary)-position := $(CONFIG_AGESA_BINARY_PI_LOCATION)
 
 endif
