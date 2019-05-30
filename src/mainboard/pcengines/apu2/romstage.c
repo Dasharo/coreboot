@@ -36,9 +36,10 @@
 #include <Fch/Fch.h>
 #include <superio/nuvoton/common/nuvoton.h>
 #include <superio/nuvoton/nct5104d/nct5104d.h>
-#include "gpio_ftns.h"
 #include <build.h>
+
 #include "bios_knobs.h"
+#include "gpio_ftns.h"
 
 #define SIO_PORT 0x2e
 #define SERIAL1_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
@@ -88,7 +89,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		pci_write_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE, data | 3);
 
 		if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)) &&
-		    !IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+		    !CONFIG(BOARD_PCENGINES_APU5))
 			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 
 		console_init();
@@ -132,9 +133,13 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		data &= 0xFFFF0000;
 		data |= (0 + 1) << (0 * 4);	// CLKREQ 0 to CLK0
 		data |= (1 + 1) << (1 * 4);	// CLKREQ 1 to CLK1
-#if IS_ENABLED(CONFIG_BOARD_PCENGINES_APU2) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) || IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)
-		data |= (2 + 1) << (2 * 4);	// CLKREQ 2 to CLK2 disabled on APU5
-#endif
+		if (CONFIG(BOARD_PCENGINES_APU2) ||
+		    CONFIG(BOARD_PCENGINES_APU3) ||
+		    CONFIG(BOARD_PCENGINES_APU4) ) {
+			// CLKREQ 2 to CLK2 disabled on APU5
+			data |= (2 + 1) << (2 * 4);
+		}
+
 		// make CLK3 to ignore CLKREQ# input
 		// force it to be always on
 		data |= ( 0xf ) << (3 * 4);	// CLKREQ 3 to CLK3
@@ -144,12 +149,8 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		data = *((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG04));
 
 		data &= 0xFFFFFF0F;
-#if IS_ENABLED(CONFIG_FORCE_MPCIE2_CLK)
-		// make GFXCLK to ignore CLKREQ# input
-		// force it to be always on
-		data |= 0xF << (1 * 4); // CLKREQ GFX to GFXCLK
-#else
-		if (check_mpcie2_clk()) {
+
+		if (check_mpcie2_clk() || CONFIG(FORCE_MPCIE2_CLK)) {
 			// make GFXCLK to ignore CLKREQ# input
 			// force it to be always on
 			data |= 0xF << (1 * 4); // CLKREQ GFX to GFXCLK
@@ -159,7 +160,6 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 			data |= 0xA << (1 * 4);	// CLKREQ GFX to GFXCLK
 			printk(BIOS_DEBUG, "mPCIe clock disabled\n");
 		}
-#endif
 
 		*((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG04)) = data;
 	}
@@ -260,9 +260,9 @@ static void early_lpc_init(void)
 	configure_gpio(IOMUX_GPIO_51, Function2, GPIO_51, setting);
 	configure_gpio(IOMUX_GPIO_55, Function3, GPIO_55, setting);
 
-	if (IS_ENABLED(CONFIG_BOARD_PCENGINES_APU2) ||
-		IS_ENABLED(CONFIG_BOARD_PCENGINES_APU3) ||
-		IS_ENABLED(CONFIG_BOARD_PCENGINES_APU4)) {
+	if (CONFIG(BOARD_PCENGINES_APU2) ||
+		CONFIG(BOARD_PCENGINES_APU3) ||
+		CONFIG(BOARD_PCENGINES_APU4)) {
 		/* W_DIS# pins are connected directly to the SoC GPIOs without
 		 * any external pull-ups. This causes issues with certain mPCIe
 		 * modems. Configure pull-ups and output high in order to
