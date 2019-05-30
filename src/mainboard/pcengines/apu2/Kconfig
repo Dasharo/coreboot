@@ -124,6 +124,38 @@ config FORCE_MPCIE2_CLK
 	help
 	  If no card is attached to mPCIe2 slot, say N.
 
+config FMDFILE
+	string
+	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/vboot-rw-ab.fmd" if VBOOT
+
+config CBFS_SIZE
+	hex
+	default 0x0020C000 if VBOOT
+	default 0x00800000
+
+config VBOOT
+	select VBOOT_VBNV_CMOS
+	select VBOOT_NO_BOARD_SUPPORT
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+	select RTC
+	select VBOOT_STARTS_IN_ROMSTAGE
+	select AMDFW_OUTSIDE_CBFS
+
+config VBOOT_MEASURED_BOOT_RUNTIME_DATA
+	string
+	default "bootorder" if VBOOT
+
+config VBOOT_VBNV_OFFSET
+	hex
+	default 0x2D8 if VBOOT
+
+config RO_REGION_ONLY
+	string
+	default "spd.bin AGESA" if VBOOT
+
 config AGESA_USE_1_0_0_4_HEADER
 	bool
 	default y
