@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <AGESA.h>
+#include <cbfs.h>
 #include <console/console.h>
 #include <spd_bin.h>
 #include <northbridge/amd/agesa/BiosCallOuts.h>
@@ -118,9 +119,26 @@ static AGESA_STATUS board_ReadSpd_from_cbfs(UINT32 Func, UINTN Data, VOID *Confi
 	if (info->DimmId != 0)
 		return AGESA_UNSUPPORTED;
 
-	/* Read index 0, first SPD_SIZE bytes of spd.bin file. */
-	if (read_ddr3_spd_from_cbfs((u8*)info->Buffer, index) < 0)
-		die("No SPD data\n");
+	if (CONFIG(VBOOT_MEASURED_BOOT)) {
+		struct cbfsf fh;
+		u32 cbfs_type = CBFS_TYPE_SPD;
+
+		/* Read index 0, first SPD_SIZE bytes of spd.bin file. */
+		if (cbfs_locate_file_in_region(&fh, "COREBOOT", "spd.bin",
+						&cbfs_type) < 0) {
+			printk(BIOS_WARNING, "spd.bin not found\n");
+		}
+		u8 *spd = rdev_mmap_full(&fh.data);
+		if (spd) {
+			memcpy((u8 *)info->Buffer,
+				&spd[index * CONFIG_DIMM_SPD_SIZE],
+				CONFIG_DIMM_SPD_SIZE);
+		} else
+			return AGESA_UNSUPPORTED;
+	} else {
+		if (read_ddr3_spd_from_cbfs((u8 *)info->Buffer, index) < 0)
+			return AGESA_UNSUPPORTED;
+	}
 
 	return AGESA_SUCCESS;
 }
