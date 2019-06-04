@@ -12,6 +12,18 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.9.0.6] - 2019-06-05
+### Changed
+- [updated SeaBIOS to rel-1.12.1.2](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11212---2019-06-04)
+- [updated sortbootorder to v4.6.14](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4614---2019-06-04)
+- SD 3.0 mode is now runtime configurable
+- watchdog is now runtime configurable
+- rebased with official coreboot repository commit 3b4d0e0
+
+### Added
+- [vboot support with measured boot for apu2](https://github.com/pcengines/apu2-documentation/blob/master/docs/apu2_vboot.md)
+- [serial ports are now decribed in ACPI](http://pcengines.info/forums/?page=post&fid=6D8DBBA4-9D40-4C87-B471-80CB5D9BD945&lastp=1&id=776921E8-222D-45F7-A234-910DEBBDA767)
+
 ## [v4.9.0.5] - 2019-05-08
 ### Changed
 - rebased with official coreboot repository commit fe80bf2
@@ -303,7 +315,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.5...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.6...develop
+[v4.9.0.6]: https://github.com/pcengines/coreboot/compare/v4.9.0.5...v4.9.0.6
 [v4.9.0.5]: https://github.com/pcengines/coreboot/compare/v4.9.0.4...v4.9.0.5
 [v4.9.0.4]: https://github.com/pcengines/coreboot/compare/v4.9.0.3...v4.9.0.4
 [v4.9.0.3]: https://github.com/pcengines/coreboot/compare/v4.9.0.2...v4.9.0.3
