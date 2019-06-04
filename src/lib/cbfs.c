@@ -96,7 +96,12 @@ int cbfs_locate_file_in_region(struct cbfsf *fh, const char *region_name,
 		return -1;
 	}
 
-	return cbfs_locate(fh, &rdev, name, type);
+	int ret = cbfs_locate(fh, &rdev, name, type);
+	if (!ret)
+		if (vboot_measure_cbfs_hook(fh, name))
+			return -1;
+
+	return ret;
 }
 
 size_t cbfs_load_and_decompress(const struct region_device *rdev, size_t offset,

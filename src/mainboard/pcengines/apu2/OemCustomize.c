@@ -103,3 +103,13 @@ OemCustomizeInitEarly (
 		InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
 	}
 }
+
+void OemPostParams(AMD_POST_PARAMS *PostParams)
+{
+	/*
+	 * Bank interleaving does not work on this platform.
+	 * Disable it so AGESA will return success.
+	 */
+	PostParams->MemConfig.EnableBankIntlv = FALSE;
+	PostParams->MemConfig.EnableEccFeature = TRUE;
+}
