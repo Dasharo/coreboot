@@ -13,7 +13,6 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/acpi.h>
 #include <security/vboot/vboot_common.h>
 #include <security/vboot/vbnv.h>
 #include <pc80/mc146818rtc.h>
