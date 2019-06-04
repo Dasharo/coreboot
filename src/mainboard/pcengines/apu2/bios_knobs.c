@@ -466,3 +466,112 @@ bool check_sd3_mode(void)
 
 	return false;
 }
+
+static int _valid(char ch, int base)
+{
+	char end = (base > 9) ? '9' : '0' + (base - 1);
+
+	/* all bases will be some subset of the 0-9 range */
+
+	if (ch >= '0' && ch <= end)
+		return 1;
+
+	/* Bases > 11 will also have to match in the a-z range */
+
+	if (base > 11) {
+		if (tolower(ch) >= 'a' &&
+		    tolower(ch) <= 'a' + (base - 11))
+			return 1;
+	}
+
+	return 0;
+}
+
+/* Return the "value" of the character in the given base */
+
+static int _offset(char ch, int base)
+{
+	if (ch >= '0' && ch <= '9')
+		return ch - '0';
+	else
+		return 10 + tolower(ch) - 'a';
+}
+
+
+static unsigned long long int strtoull(const char *ptr, char **endptr, int base)
+{
+	unsigned long long int ret = 0;
+
+	if (endptr != NULL)
+		*endptr = (char *) ptr;
+
+	/* Purge whitespace */
+
+	for( ; *ptr && isspace(*ptr); ptr++);
+
+	if (!*ptr)
+		return 0;
+
+	/* Determine the base */
+
+	if (base == 0) {
+		if (ptr[0] == '0' && (ptr[1] == 'x' || ptr[1] == 'X'))
+			base = 16;
+		else if (ptr[0] == '0') {
+			base = 8;
+			ptr++;
+		}
+		else
+			base = 10;
+	}
+
+	/* Base 16 allows the 0x on front - so skip over it */
+
+	if (base == 16) {
+		if (ptr[0] == '0' && (ptr[1] == 'x' || ptr[1] == 'X') &&
+		    _valid(ptr[2], base))
+			ptr += 2;
+	}
+
+	for( ; *ptr && _valid(*ptr, base); ptr++)
+		ret = (ret * base) + _offset(*ptr, base);
+
+	if (endptr != NULL)
+		*endptr = (char *) ptr;
+
+	return ret;
+}
+
+#define ULONG_MAX	((unsigned long int)~0UL)
+
+static unsigned long int strtoul(const char *ptr, char **endptr, int base)
+{
+	unsigned long long val = strtoull(ptr, endptr, base);
+	if (val > ULONG_MAX) return ULONG_MAX;
+	return val;
+}
+
+u16 get_watchdog_timeout(void)
+{
+	const char *boot_file = NULL;
+	size_t boot_file_len = 0;
+	u16 timeout;
+
+	//
+	// This function locates a file in cbfs, maps it to memory and returns
+	// a void* pointer
+	//
+	boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE, CBFS_TYPE_RAW,
+						&boot_file_len);
+	if (boot_file == NULL)
+		printk(BIOS_INFO, "file [%s] not found in CBFS\n",
+			BOOTORDER_FILE);
+	if (boot_file_len < 4096)
+		printk(BIOS_INFO, "Missing bootorder data.\n");
+	if (boot_file == NULL || boot_file_len < 4096)
+		return -1;
+
+	timeout = (u16) strtoul(findstr(boot_file, "watchdog"), NULL, 16);
+
+	return timeout;
+}
