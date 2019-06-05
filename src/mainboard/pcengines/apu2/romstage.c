@@ -168,7 +168,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 
 		if (watchdog_timeout == 0) {
 			//disable watchdog
-			printk(BIOS_ALERT, "Watchdog is disabled\n");
+			printk(BIOS_WARNING, "Watchdog is disabled\n");
 			*ptr |= (1 << 3);
 		} else {
 			// enable
@@ -179,7 +179,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 			// trigger
 			*ptr |= (1 << 7);
 
-			printk(BIOS_ALERT, "Watchdog is enabled, state = 0x%x, time = %d\n", *ptr, *(ptr + 1));
+			printk(BIOS_WARNING, "Watchdog is enabled, state = 0x%x, time = %d\n", *ptr, *(ptr + 1));
 		}
 	}
 
