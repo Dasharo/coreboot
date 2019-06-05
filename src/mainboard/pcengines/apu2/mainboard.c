@@ -622,10 +622,29 @@ const char *smbios_system_sku(void)
 int fill_mainboard_smbios_type16(unsigned long *current, int *handle)
 {
 	u8 spd_index = get_spd_offset();
+	u8 *spd;
 	u8 spd_buffer[CONFIG_DIMM_SPD_SIZE];
-	if (read_ddr3_spd_from_cbfs(spd_buffer, spd_index) < 0) {
+
+	if(CONFIG(VBOOT_MEASURED_BOOT)) {
+		struct cbfsf fh;
+		u32 cbfs_type = CBFS_TYPE_SPD;
+
+		/* Read index 0, first SPD_SIZE bytes of spd.bin file. */
+		if (cbfs_locate_file_in_region(&fh, "COREBOOT", "spd.bin",
+						&cbfs_type) < 0) {
+			printk(BIOS_WARNING, "spd.bin not found\n");
+		}
+		spd = rdev_mmap_full(&fh.data);
+		if (spd) {
+			memcpy(spd_buffer,
+				&spd[spd_index * CONFIG_DIMM_SPD_SIZE],
+				CONFIG_DIMM_SPD_SIZE);
+		} else {
+			return 0;
+		}
+	} else if (read_ddr3_spd_from_cbfs(spd_buffer, spd_index) < 0)
 		return 0;
-	}
+	
 
 	struct smbios_type16 *t = (struct smbios_type16 *)*current;
 	int len = sizeof(struct smbios_type16) - 2;
