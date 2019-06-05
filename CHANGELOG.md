@@ -7,6 +7,15 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.26] - 2019-06-07
+### Changed
+- [updated SeaBIOS to rel-1.12.1.2](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11212---2019-06-04)
+- [updated sortbootorder to v4.6.14](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4614---2019-06-04)
+- SD 3.0 mode is now runtime configurable
+- watchdog is now runtime configurable
+- all USB devices have now a single boot order priority
+- ECC presence is reported in SMBIOS tables
+
 ## [v4.0.25] - 2019-03-07
 ### Changed
 - sortbootorder updated to v4.6.13 introducing CPU boost runtime configuration
