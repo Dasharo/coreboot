@@ -238,7 +238,6 @@ bool check_mpcie2_clk(void)
 	return false;
 }
 
-
 bool check_sd3_mode(void)
 {
 	u8 sd3mode;
@@ -354,17 +353,12 @@ u16 get_watchdog_timeout(void)
 	size_t boot_file_len = 0;
 	u16 timeout;
 
-	//
-	// This function locates a file in cbfs, maps it to memory and returns
-	// a void* pointer
-	//
-	boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE, CBFS_TYPE_RAW,
-						&boot_file_len);
+	boot_file = cbfs_get_file_content(CBFS_DEFAULT_MEDIA, BOOTORDER_FILE,
+					  CBFS_TYPE_RAW, &boot_file_len);
 	if (boot_file == NULL)
-		printk(BIOS_INFO, "file [%s] not found in CBFS\n",
-			BOOTORDER_FILE);
+		printk(BIOS_EMERG, "file [%s] not found in CBFS\n", BOOTORDER_FILE);
 	if (boot_file_len < 4096)
-		printk(BIOS_INFO, "Missing bootorder data.\n");
+		printk(BIOS_EMERG, "Missing bootorder data.\n");
 	if (boot_file == NULL || boot_file_len < 4096)
 		return -1;
 
