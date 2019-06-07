@@ -12,7 +12,7 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
-## [v4.9.0.6] - 2019-06-05
+## [v4.9.0.6] - 2019-06-08
 ### Changed
 - [updated SeaBIOS to rel-1.12.1.2](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11212---2019-06-04)
 - [updated sortbootorder to v4.6.14](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4614---2019-06-04)
