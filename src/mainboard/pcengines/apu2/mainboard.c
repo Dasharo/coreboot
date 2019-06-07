@@ -133,6 +133,14 @@ static void mainboard_enable(device_t dev)
 		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO1);
 		if ( sio_dev ) sio_dev->enabled = 1;
 	}
+
+	struct device *sd_dev = dev_find_slot(0, PCI_DEVFN(0x14, 7));
+
+	struct southbridge_amd_pi_hudson_config *sd_chip =
+		(struct southbridge_amd_pi_hudson_config *)(sd_dev->chip_info);
+
+	if (!check_sd3_mode())
+		sd_chip->sd_mode = 0;
 }
 
 static void mainboard_final(void *chip_info) {
@@ -282,6 +290,145 @@ const char *smbios_mainboard_serial_number(void)
 	snprintf(serial, sizeof(serial), "%d", mac_addr);
 
 	return serial;
+}
+
+int fill_mainboard_smbios_type16(unsigned long *current, int *handle)
+{
+	u8 spd_index = 0;
+	if ( ReadFchGpio(APU2_SPD_STRAP0_GPIO) ) spd_index |= BIT0;
+	if ( ReadFchGpio(APU2_SPD_STRAP1_GPIO) ) spd_index |= BIT1;
+	
+	u8 spd_buffer[SPD_SIZE];
+	if (read_spd_from_cbfs(spd_buffer, spd_index) < 0) {
+		return 0;
+	}
+
+	struct smbios_type16 *t = (struct smbios_type16 *)*current;
+	int len = sizeof(struct smbios_type16) - 2;
+	memset(t, 0, sizeof(struct smbios_type16));
+
+	t->handle = *handle;
+	t->length = len;
+	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
+	t->use = MEMORY_ARRAY_USE_SYSTEM;
+	t->location = MEMORY_ARRAY_LOCATION_SYSTEM_BOARD;
+	t->maximum_capacity = 4 * 1024 * 1024; 		// 4GB (in kB) due to board design
+	t->extended_maximum_capacity = 0;
+	t->memory_error_information_handle = 0xFFFE;
+	t->number_of_memory_devices = 1; 			// only 1 device soldered down to 1 channel
+
+	switch(spd_buffer[3]){
+		case 0x08:
+			t->memory_error_correction = MEMORY_ARRAY_ECC_MULTI_BIT;
+			break;
+		case 0x03:
+			t->memory_error_correction = MEMORY_ARRAY_ECC_NONE;
+			break;
+		default:
+			t->memory_error_correction = MEMORY_ARRAY_ECC_UNKNOWN;
+			break;
+	}
+	len = t->length + smbios_string_table_len(t->eos);
+	return len;
+}
+
+int fill_mainboard_smbios_type17(unsigned long *current, int *handle, int *type16_handle){
+
+	u8 spd_index = 0;
+	if ( ReadFchGpio(APU2_SPD_STRAP0_GPIO) ) spd_index |= BIT0;
+	if ( ReadFchGpio(APU2_SPD_STRAP1_GPIO) ) spd_index |= BIT1;
+	
+	u8 spd_buffer[SPD_SIZE];
+	if (read_spd_from_cbfs(spd_buffer, spd_index) < 0) {
+		;
+	}
+
+	char locator[40];
+
+	struct smbios_type17 *t = (struct smbios_type17 *)*current;
+	int len = sizeof(struct smbios_type17) - 2;
+	memset(t, 0, sizeof(struct smbios_type17));
+
+	t->memory_error_information_handle = 0xFFFE;
+
+	/* There can be 2GB or 4GB RAM */
+	if((spd_buffer[4] & 0x07) == 3)
+	{
+		t->size = 0x800;				/* 2048 MB size */
+	}
+	else if((spd_buffer[4] & 0x07) == 4)
+	{
+		t->size = 0x1000;				/* 4096 MB size */
+	}
+
+	/* Memory speed */
+	switch (spd_buffer[12]) 
+	{
+		case 0x0a:
+			t->speed = 1600;
+			t->clock_speed = 1600;
+			break;
+		case 0x0c:
+			t->speed = 1333;
+			t->clock_speed = 1333;
+			break;
+		default:
+			t->speed = 0;
+			t->clock_speed = 0;
+			break;
+	}
+
+	/* Data width bus is always 64 bits */
+	t->data_width = 64;
+	
+	/* Checking if there is ECC correction 
+		If there is - total width is 72b
+		If not total width is the same as data width - 64b */
+	if(((spd_buffer[8] & 0x18) >> 3) == 1)
+	{
+		t->total_width = t->data_width + 8;		
+	}
+	else
+	{
+		t->total_width = t->data_width;			
+	}
+
+	t->type_detail = 0x0080;
+	t->memory_type = MEMORY_TYPE_DDR3;
+
+	/* Retrieve information about memory form factor*/
+	switch(spd_buffer[3] & 0x0f)
+	{
+	case 0x01:
+	case 0x10:
+		t->form_factor = MEMORY_FORMFACTOR_RIMM;
+		break;
+	case 0x02:
+	case 0x08:
+	case 0x20:
+		t->form_factor = MEMORY_FORMFACTOR_DIMM;
+		break;
+	case 0x04:
+		t->form_factor = MEMORY_FORMFACTOR_SODIMM;
+		break;
+	default:
+		t->form_factor = MEMORY_FORMFACTOR_UNKNOWN;
+		break;
+	}
+
+	snprintf(locator, sizeof(locator), "Channel-%d-DIMM-%d", 0, 0);
+	t->device_locator = smbios_add_string(t->eos, locator);
+
+	snprintf(locator, sizeof(locator), "BANK %d", 0);
+	t->bank_locator = smbios_add_string(t->eos, locator);
+
+	t->device_set = 0;			/* None information about device set */			
+	t->type = SMBIOS_MEMORY_DEVICE;
+	t->length = len;
+	t->handle = *handle;		/* Handle is incremented in outside function */
+	t->phys_memory_array_handle = *type16_handle;
+	
+	return t->length + smbios_string_table_len(t->eos);
 }
 
 const char *smbios_mainboard_sku(void)
