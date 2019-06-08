@@ -17,7 +17,6 @@
 #define __SIMPLE_DEVICE__
 
 #include <stdint.h>
-#include <arch/io.h>
 #include <device/pci_ops.h>
 #include <device/pci_ehci.h>
 #include <device/pci_def.h>
@@ -26,10 +25,7 @@
 
 pci_devfn_t pci_ehci_dbg_dev(unsigned int hcd_idx)
 {
-	/* Enable all of the USB controllers */
-	outb(PM_USB_ENABLE, PM_INDEX);
-	outb(PM_USB_ALL_CONTROLLERS, PM_DATA);
-
+	pm_io_write8(PM_USB_ENABLE, PM_USB_ALL_CONTROLLERS);
 	return SOC_EHCI1_DEV;
 }
 

@@ -22,6 +22,9 @@
 #define SPI_BASE_ADDRESS		0xfec10000
 #define IO_APIC2_ADDR			0xfec20000
 
+/* AcpiMmio blocks are at fixed offsets from FED8_0000h, enabled in PMx04[1] */
+#include <amdblocks/acpimmio_map.h>
+
 /* I2C fixed address */
 #define I2C_BASE_ADDRESS	0xfedc2000
 #define I2C_DEVICE_SIZE		0x00001000
@@ -31,20 +34,6 @@
 #error HPET address override is not allowed and must be fixed at 0xfed00000
 #endif
 #define HPET_BASE_ADDRESS		0xfed00000
-
-/* Register blocks at fixed offsets from FED8_0000h and enabled in PMx04[1] */
-#define AMD_SB_ACPI_MMIO_ADDR		0xfed80000
-#define APU_SMI_BASE			0xfed80200
-#define PM_MMIO_BASE			0xfed80300
-#define BIOSRAM_MMIO_BASE		0xfed80500
-#define ACPI_REG_MMIO_BASE		0xfed80800
-#define ASF_MMIO_BASE			0xfed80900
-#define SMBUS_MMIO_BASE			0xfed80a00
-#define GPIO_IOMUX_MMIO_BASE		0xfed80d00
-#define MISC_MMIO_BASE			0xfed80e00
-#define XHCI_ACPI_PM_MMIO_BASE		0xfed81c00
-#define GPIO_CONTROL_MMIO_BASE		0xfed81500
-#define AOAC_MMIO_BASE			0xfed81e00
 
 #define APU_UART0_BASE			0xfedc6000
 #define APU_UART1_BASE			0xfedc8000
@@ -68,8 +57,6 @@
 #define PM2_DATA			0xcd1
 #define BIOSRAM_INDEX			0xcd4
 #define BIOSRAM_DATA			0xcd5
-#define PM_INDEX			0xcd6
-#define PM_DATA				0xcd7
 #define AB_INDX				0xcd8
 #define AB_DATA				(AB_INDX+4)
 #define SYS_RESET			0xcf9

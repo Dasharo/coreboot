@@ -285,7 +285,7 @@ AGESA_STATUS agesawrapper_amdinitlate(void)
 	AmdLateParams->PlatformConfig.UserOptionCdit = 0;
 
 	Status = AmdInitLate(AmdLateParams);
-	if (Status != AGESA_SUCCESS) {
+	if (Status > AGESA_UNSUPPORTED) {
 		agesawrapper_amdreadeventlog(AmdLateParams->StdHeader.HeapStatus);
 		printk(BIOS_WARNING, "AmdInitLate returned error!\n");
 	}
@@ -303,11 +303,16 @@ const void *agesawrapper_locate_module (const CHAR8 name[8])
 	const AMD_IMAGE_HEADER* image;
 	const AMD_MODULE_HEADER* module;
 	size_t file_size;
+	uint32_t cbfs_type = CBFS_TYPE_RAW;
+	struct cbfsf fh;
 
-	if (CONFIG(VBOOT)) {
-		/* Use phys. location in flash and prevent vboot from searching cbmem */
-		agesa = (void *)CONFIG_AGESA_BINARY_PI_LOCATION;
-		file_size = 0x100000;
+	if (CONFIG(VBOOT_MEASURED_BOOT)) {
+		if (cbfs_locate_file_in_region(&fh, "COREBOOT", "AGESA",
+				               &cbfs_type) < 0) {
+			die("AGESA not found!");
+		}
+		file_size = region_device_sz(&fh.data);
+		agesa = rdev_mmap_full(&fh.data);
 	} else {
 		agesa = cbfs_boot_map_with_leak((const char *)CONFIG_AGESA_CBFS_NAME,
 					CBFS_TYPE_RAW, &file_size);

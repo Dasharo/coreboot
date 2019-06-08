@@ -258,6 +258,7 @@ int keyboard_getchar(void)
 				/* vulcan nerve pinch */
 				if ((modifier & KB_MOD_ALT) && reset_handler)
 					reset_handler();
+				/* fallthrough */
 			default:
 				ret = 0;
 			}
@@ -296,7 +297,8 @@ int keyboard_set_layout(char *country)
 
 static struct console_input_driver cons = {
 	.havekey = keyboard_havechar,
-	.getchar = keyboard_getchar
+	.getchar = keyboard_getchar,
+	.input_type = CONSOLE_INPUT_TYPE_EC,
 };
 
 void keyboard_init(void)
@@ -314,6 +316,13 @@ void keyboard_init(void)
 
 	/* Enable first PS/2 port */
 	i8042_cmd(I8042_CMD_EN_KB);
+
+	/* Reset keyboard and self test (keyboard side) */
+	ret = keyboard_cmd(I8042_KBCMD_RESET);
+	if (ret != I8042_KBCMD_ACK) {
+		printf("ERROR: Keyboard reset failed ACK: 0x%x\n", ret);
+		return;
+	}
 
 	/* Set scancode set 1 */
 	ret = keyboard_cmd(I8042_KBCMD_SET_SCANCODE);

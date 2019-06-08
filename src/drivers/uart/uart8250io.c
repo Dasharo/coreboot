@@ -110,7 +110,7 @@ void uart_init(int idx)
 		div = uart_baudrate_divisor(get_uart_baudrate(),
 			uart_platform_refclk(), uart_input_clock_divider());
 		if ((check_com2() || idx == 1) &&
-		    !IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+		    !CONFIG(BOARD_PCENGINES_APU5))
 			car_set_var(port_index, 1);
 		else
 			car_set_var(port_index, idx);
@@ -134,7 +134,6 @@ void uart_tx_flush(int idx)
 	uart8250_tx_flush(uart_platform_base(car_get_var(port_index)));
 }
 
-#if ENV_RAMSTAGE
 void uart_fill_lb(void *data)
 {
 	struct lb_serial serial;
@@ -148,4 +147,3 @@ void uart_fill_lb(void *data)
 
 	lb_add_console(LB_TAG_CONSOLE_SERIAL8250, data);
 }
-#endif

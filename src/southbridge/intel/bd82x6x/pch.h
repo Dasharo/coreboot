@@ -77,6 +77,8 @@ void southbridge_rcba_config(void);
 void mainboard_rcba_config(void);
 void early_pch_init_native(void);
 void early_pch_init(void);
+void early_pch_init_native_dmi_pre(void);
+void early_pch_init_native_dmi_post(void);
 
 struct southbridge_usb_port
 {
@@ -309,6 +311,8 @@ early_usb_init (const struct southbridge_usb_port *portmap);
 #define IOTR1		0x1e88	/* 64bit */
 #define IOTR2		0x1e90	/* 64bit */
 #define IOTR3		0x1e98	/* 64bit */
+
+#define  VCNEGPND	2
 
 #define TCTL		0x3000	/*  8bit */
 
