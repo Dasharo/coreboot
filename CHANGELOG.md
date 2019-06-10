@@ -239,7 +239,8 @@ built externally
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.25...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.26...coreboot-4.0.x
+[v4.0.26]: https://github.com/pcengines/coreboot/compare/v4.0.25...v4.0.26
 [v4.0.25]: https://github.com/pcengines/coreboot/compare/v4.0.24...v4.0.25
 [v4.0.24]: https://github.com/pcengines/coreboot/compare/v4.0.23...v4.0.24
 [v4.0.23]: https://github.com/pcengines/coreboot/compare/v4.0.22...v4.0.23
