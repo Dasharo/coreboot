@@ -57,12 +57,13 @@ check_dependencies:
   tags:
     - docker
   script:
-    - sha256sum ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256 
+    - cd ${RELEASE_DIR}
+    - sha256sum ${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256 
     - ls -la ${RELEASE_DIR}
   artifacts:
     name: ${PLATFORM}
     paths:
-      - ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256
+      - ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256
   only:
     - tags
     - web
@@ -78,7 +79,7 @@ check_dependencies:
     - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/releases/
     - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/"
     - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
-    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
+    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
   only:
     - tags
 
