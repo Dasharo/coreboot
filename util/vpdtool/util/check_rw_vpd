@@ -1,0 +1,156 @@
+#!/bin/sh
+#
+# Copyright 2016 The Chromium OS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+# Log UMA on whether the VPD can be read and whether the contents match the data
+# from dump_vpd_log and on the count of unknown RW_VPD keys.
+#
+# The script has no input arguments and is supposed to run after the boot is
+# done.
+
+# Documented RW_VPD keys.
+# https://www.google.com/chromeos/partner/fe/docs/factory/vpd.html
+DOCUMENTED_VPD_KEYS="
+  ActivateDate
+  block_devmode
+  check_enrollment
+  dock_passthrough
+  first_active_omaha_ping_sent
+  gbind_attribute
+  rlz_embargo_end_date
+  should_send_rlz_ping
+  tpm_firmware_update_params
+  ubind_attribute"
+
+# Undocumented/deprecated RW_VPD keys and where they have been observed:
+# celes:
+#   "injection_date"="2015-12-14 20:49:20"
+#   "Main"="1"
+#   "System_UUID"="991bf906-7571-4f63-a367-aa7f3879fb17"
+# clapper:
+#   "component.has_cellular"="False"
+#   "component.has_lte"="False"
+#   "component.has_touchscreen"="True"
+#   "component.keyboard"="US_API"
+#   "factory.device_data.fatp_complete"="True"
+#   "factory.device_data.smt_complete"="True"
+#   "MTM"="20425"
+#   "UUID"="325A2d25C48811E3ADFAF8A963268EC7"
+# eve:
+#   "battery_cto_disabled"="1"
+# gnawty:
+#   "ec_status"="False"
+# guado:
+#   "oem_device_requisition"="none"
+# kefka:
+#   "asset_tag"=""
+#   "gvc_mode"=""
+# lumpy:
+#   "MACAddress"=""
+# peach_pit:
+#   "BTMac"="24F5AA00D6FB"
+#   "WiFiMac"="24F5AA27081E"
+# peppy:
+#   "mlb_serial_number"="4260K0JTMBQC00009"
+# sand (also cyan, banjo, lars):
+#   "BIOS"="Google_Sand.9042.110.0"
+#   "BT_MAC"="E442A61026BE"
+#   "WLANID"="E442A61026BA"
+# snow:
+#   "FCT1Finished"=""
+#   "Main"="2"
+#   "System_UUID"="59cfeb4c-6a27-44bb-bd53-8909c240bed6"
+#   "UTCTime"="1"
+
+# Undocumented but well-known RW_VPD keys. Keeping those for the time being.
+UNDOCUMENTED_VPD_KEYS="
+  asset_tag
+  battery_cto_disabled
+  BIOS
+  BTMac
+  BT_MAC
+  component.has_cellular
+  component.has_lte
+  component.has_touchscreen
+  component.keyboard
+  ec_status
+  gvc_mode
+  MACAddress
+  MTM
+  oem_device_requisition
+  System_UUID
+  UTCTime
+  UUID
+  WiFiMac
+  WLANID"
+
+# Deprecated RW_VPD keys. Will be deleted eventually.
+DEPRECATED_VPD_KEYS="
+  FCT1Finished
+  injection_date
+  Main
+  mlb_serial_number
+  recovery_count"
+
+SUCCESS=0
+CONTENT_MISMATCH=256
+EMPTY_VPD=257
+EMPTY_DUMP_VPD=258
+EMPTY_RW_VPD=259
+
+send_uma_result() {
+  metrics_client -s Enterprise.VpdCheck "$1" &
+}
+
+main() {
+  renice -n 19 $$
+
+  # Read from RW_VPD.
+  vpd_rw_output="$(vpd -i RW_VPD -l)"
+  read_status=$?
+  if [ "${read_status}" != 0 ]; then
+    send_uma_result "${read_status}"
+    exit "${read_status}"
+  fi
+
+  # Report unknown RW_VPD keys.
+  unknown_count=0
+  while IFS="=" read -r key remainder; do
+    # Skip over known keys.
+    for known_key in ${DOCUMENTED_VPD_KEYS} ${UNDOCUMENTED_VPD_KEYS} \
+        ${DEPRECATED_VPD_KEYS}; do
+      if [ "${key}" = "\"${known_key}\"" ]; then
+        continue 2
+      fi
+    done
+
+    # Skip over keys starting with "factory.".
+    if [ "\"factory.${key#\"factory.}" = "${key}" ]; then
+      continue
+    fi
+
+    # Count remaining keys.
+    : $(( unknown_count += 1 ))
+  done << EOF
+${vpd_rw_output}
+EOF
+  metrics_client -e Platform.Vpd.UnknownKeys "${unknown_count}" 10
+
+  # Compare RW_VPD contents against dump_vpd_log output.
+  dump_vpd_output="$(dump_vpd_log --stdout --full)"
+  if [ -z "${dump_vpd_output}" ] && [ -z "${vpd_rw_output}" ]; then
+    send_uma_result "${EMPTY_VPD}"
+  elif [ -z "${dump_vpd_output}" ]; then
+    send_uma_result "${EMPTY_DUMP_VPD}"
+  elif [ -z "${vpd_rw_output}" ]; then
+    send_uma_result "${EMPTY_RW_VPD}"
+  elif [ -z "${dump_vpd_output##*$vpd_rw_output}" ]; then
+    send_uma_result "${SUCCESS}"
+  else
+    send_uma_result "${CONTENT_MISMATCH}"
+  fi
+}
+
+main "$@"

@@ -1,0 +1,8 @@
+# The factory team are owners for VPD values (and format).
+include chromiumos/platform/factory:/OWNERS
+
+# hungte for underlying data structure and layout.
+hungte@chromium.org
+
+# tnagel represents privacy team.
+tnagel@chromium.org

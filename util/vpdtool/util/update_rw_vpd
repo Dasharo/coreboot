@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# Copyright 2016 The Chromium OS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+# Helper script to update values (eg. block_devmode) in VPD which uses cached
+# data from dump_vpd_log to avoid unnecessary vpd calls. This avoids both
+# unnecessary reads and writes.
+#
+# The script must not be run with untrusted input.
+#
+# Call with params
+#   key1 value1 key2 value2...
+#
+# The values can be arbitrary strings. Empty strings as values cause a deletion
+# of the corresponding key. The keys can contain only alphanumeric ASCII
+# characters and underscores.
+#
+# Example usage: update_rw_vpd block_devmode 1 check_enrollment 0
+
+set -e
+
+: "${VPD_IGNORE_CACHE:=}"
+
+# Read current VPD contents.
+declare -A vpd_contents
+if [[ -z "${VPD_IGNORE_CACHE}" ]]; then
+  while IFS='=' read -r key value; do
+    vpd_contents["${key}"]="${value}"
+  done < <(dump_vpd_log --full --stdout)
+fi
+
+# Build up the VPD command line in the updates array.
+updates=()
+while [[ "$#" -gt 0 ]]; do
+  key="$1"
+  value="$2"
+  shift 2
+
+  # Reject bad keys.
+  if [[ -z "${key}" || "${key}" =~ [^a-zA-Z0-9_] ]]; then
+    echo "Invalid param name: ${key}" >&2
+    exit 1
+  fi
+
+  quoted_key="\"${key}\""
+  if [[ -z "${value}" ]]; then
+    # Delete ${key} if it exists.
+    if [[ "${vpd_contents[${quoted_key}]+set}" == "set" || \
+          -n "${VPD_IGNORE_CACHE}" ]]; then
+      updates+=( -d "${key}" )
+    fi
+  else
+    # Set ${key} to ${value} if the value doesn't match already.
+    if [[ "\"${value}\"" != "${vpd_contents[${quoted_key}]}" ]]; then
+      updates+=( -s "${key}=${value}" )
+    fi
+  fi
+done
+
+if [[ "${#updates[@]}" != 0 ]]; then
+  vpd -i RW_VPD "${updates[@]}"
+  dump_vpd_log --force
+fi
