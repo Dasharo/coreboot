@@ -7,6 +7,13 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.27] - 2019-07-05
+### Changed
+- [updated SeaBIOS to rel-1.12.1.3](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11213---2019-07-05)
+- [updated sortbootorder to v4.6.15](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4615---2019-07-05)
+- disabled IPv6 in iPXE that often caused the dhcp/autoboot command to time out
+- updated iPXE revision to the 2019.3
+
 ## [v4.0.26] - 2019-06-07
 ### Changed
 - [updated SeaBIOS to rel-1.12.1.2](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11212---2019-06-04)
