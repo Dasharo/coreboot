@@ -1,10 +1,23 @@
+#ifndef CONFIG_GENERAL_H
+#define CONFIG_GENERAL_H
+
+/** @file
+ *
+ * General configuration
+ *
+ */
+
+FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
+
+#include <config/defaults.h>
+
 /*
  * Network protocols
  *
  */
 
 #define	NET_PROTO_IPV4		/* IPv4 protocol */
-#define	NET_PROTO_IPV6		/* IPv6 protocol */
+#undef	NET_PROTO_IPV6		/* IPv6 protocol */
 #undef	NET_PROTO_FCOE		/* Fibre Channel over Ethernet protocol */
 #define	NET_PROTO_STP		/* Spanning Tree protocol */
 
@@ -134,3 +147,32 @@
  *
  */
 #define	ERRMSG_80211		/* All 802.11 error descriptions (~3.3kb) */
+
+/*
+ * Obscure configuration options
+ *
+ * You probably don't need to touch these.
+ *
+ */
+
+#undef	BUILD_SERIAL		/* Include an automatic build serial
+				 * number.  Add "bs" to the list of
+				 * make targets.  For example:
+				 * "make bin/rtl8139.dsk bs" */
+#undef	BUILD_ID		/* Include a custom build ID string,
+				 * e.g "test-foo" */
+#undef	NULL_TRAP		/* Attempt to catch NULL function calls */
+#undef	GDBSERIAL		/* Remote GDB debugging over serial */
+#undef	GDBUDP			/* Remote GDB debugging over UDP
+				 * (both may be set) */
+//#define EFI_DOWNGRADE_UX	/* Downgrade UEFI user experience */
+#define	TIVOLI_VMM_WORKAROUND	/* Work around the Tivoli VMM's garbling of SSE
+				 * registers when iPXE traps to it due to
+				 * privileged instructions */
+
+#include <config/named.h>
+#include NAMED_CONFIG(general.h)
+#include <config/local/general.h>
+#include LOCAL_NAMED_CONFIG(general.h)
+
+#endif /* CONFIG_GENERAL_H */
