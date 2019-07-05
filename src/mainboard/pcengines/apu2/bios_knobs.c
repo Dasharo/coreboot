@@ -12,6 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+
+#include <ctype.h>
 #include <stdint.h>
 #include <console/console.h>
 #include <program_loading.h>
