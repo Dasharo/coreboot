@@ -236,21 +236,20 @@ void fast_spi_cache_bios_region(void)
 	/* Only the IFD BIOS region is memory mapped (at top of 4G) */
 	fast_spi_get_bios_region(&bios_size);
 
-	if (!bios_size)
-		return;
-
 	/* LOCAL APIC default address is 0xFEE0000, bios_size over 16MB will
 	 * cause memory type conflict when setting memory type to write
 	 * protection, so limit the cached bios region to be no more than 16MB.
 	 * */
 	bios_size = MIN(bios_size, 16 * MiB);
+	if (!bios_size)
+		return;
 
 	/* Round to power of two */
 	alignment = 1UL << (log2_ceil(bios_size));
 	bios_size = ALIGN_UP(bios_size, alignment);
 	base = 4ULL*GiB - bios_size;
 
-	if (ENV_RAMSTAGE) {
+	if (ENV_PAYLOAD_LOADER) {
 		mtrr_use_temp_range(base, bios_size, type);
 	} else {
 		int mtrr = get_free_var_mtrr();

@@ -256,7 +256,7 @@ static void pcie_update_device_tree(unsigned int devfn0, int num_funcs)
 	int i;
 	unsigned int inc = PCI_DEVFN(0, 1);
 
-	func0 = dev_find_slot(0, devfn0);
+	func0 = pcidev_path_on_root(devfn0);
 	if (func0 == NULL)
 		return;
 
@@ -272,7 +272,7 @@ static void pcie_update_device_tree(unsigned int devfn0, int num_funcs)
 	 * as that port was move to func0.
 	 */
 	for (i = 1; i < num_funcs; i++, devfn += inc) {
-		struct device *dev = dev_find_slot(0, devfn);
+		struct device *dev = pcidev_path_on_root(devfn);
 		if (dev == NULL)
 			continue;
 
@@ -389,8 +389,6 @@ static void set_sci_irq(void)
 
 static void soc_init(void *data)
 {
-	struct global_nvs_t *gnvs;
-
 	/* Snapshot the current GPIO IRQ polarities. FSP is setting a
 	 * default policy that doesn't honor boards' requirements. */
 	itss_snapshot_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
@@ -418,7 +416,7 @@ static void soc_init(void *data)
 	p2sb_unhide();
 
 	/* Allocate ACPI NVS in CBMEM */
-	gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
+	cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(struct global_nvs_t));
 
 	/* Set RAPL MSR for Package power limits*/
 	set_power_limits();
@@ -762,7 +760,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 		apl_fsp_silicon_init_params_cb(cfg, silconfig);
 
 	/* Enable xDCI controller if enabled in devicetree and allowed */
-	dev = dev_find_slot(0, PCH_DEVFN_XDCI);
+	dev = pcidev_path_on_root(PCH_DEVFN_XDCI);
 	if (!xdci_can_enable())
 		dev->enabled = 0;
 	silconfig->UsbOtg = dev->enabled;

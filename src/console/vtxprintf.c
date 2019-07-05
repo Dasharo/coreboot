@@ -16,7 +16,9 @@
  */
 
 #include <console/vtxprintf.h>
+#include <ctype.h>
 #include <string.h>
+#include <stdint.h>
 
 #define call_tx(x) tx_byte(x, data)
 
@@ -37,7 +39,7 @@ static int number(void (*tx_byte)(unsigned char byte, void *data),
 	void *data)
 {
 	char c, sign, tmp[66];
-	const char *digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+	const char *digits = "0123456789abcdef";
 	int i;
 	int count = 0;
 #ifdef SUPPORT_64BIT_INTS
@@ -56,11 +58,9 @@ static int number(void (*tx_byte)(unsigned char byte, void *data),
 #endif
 
 	if (type & LARGE)
-		digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		digits = "0123456789ABCDEF";
 	if (type & LEFT)
 		type &= ~ZEROPAD;
-	if (base < 2 || base > 36)
-		return 0;
 	c = (type & ZEROPAD) ? '0' : ' ';
 	sign = 0;
 	if (type & SIGN) {
@@ -137,7 +137,7 @@ int vtxprintf(void (*tx_byte)(unsigned char byte, void *data),
 	int field_width;	/* width of output field */
 	int precision;		/* min. # of digits for integers; max
 				   number of chars for from string */
-	int qualifier;		/* 'h', 'H', 'l', or 'L' for integer fields */
+	int qualifier;		/* 'h', 'H', 'l', 'L', 'z', or 'j' for integer fields */
 
 	int count;
 
@@ -191,7 +191,7 @@ repeat:
 
 		/* get the conversion qualifier */
 		qualifier = -1;
-		if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L' || *fmt == 'z') {
+		if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L' || *fmt == 'z' || *fmt == 'j') {
 			qualifier = *fmt;
 			++fmt;
 			if (*fmt == 'l') {
@@ -292,6 +292,8 @@ repeat:
 			num = va_arg(args, unsigned long);
 		} else if (qualifier == 'z') {
 			num = va_arg(args, size_t);
+		} else if (qualifier == 'j') {
+			num = va_arg(args, uintmax_t);
 		} else if (qualifier == 'h') {
 			num = (unsigned short) va_arg(args, int);
 			if (flags & SIGN)

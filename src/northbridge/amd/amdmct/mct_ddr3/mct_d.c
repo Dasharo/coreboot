@@ -43,7 +43,9 @@
 #include <device/pci_ops.h>
 #include <arch/acpi.h>
 #include <string.h>
+#include <types.h>
 #include <device/dram/ddr3.h>
+
 #include "s3utils.h"
 #include "mct_d_gcc.h"
 #include "mct_d.h"
@@ -3069,11 +3071,6 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		 */
 		uint8_t dimm_event_l_pin_support = 0;
 
-		if (pDCTstat->DIMMValidDCT[dct] == 0)
-			ddr_voltage_index = 1;
-		else
-			ddr_voltage_index = dct_ddr_voltage_index(pDCTstat, dct);
-
 		ddr_voltage_index = dct_ddr_voltage_index(pDCTstat, dct);
 		max_dimms_installable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
@@ -3087,12 +3084,6 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 
 		if (pDCTstat->DIMMValidDCT[0] && pDCTstat->DIMMValidDCT[1] && mctGet_NVbits(NV_Unganged))
 			interleave_channels = 1;
-
-		dword = (Get_NB32_DCT(dev, dct, 0x240) >> 4) & 0xf;
-		if (dword > 6)
-			read_odt_delay = dword - 6;
-		else
-			read_odt_delay = 0;
 
 		dword = Get_NB32_DCT(dev, dct, 0x240);
 		delay = (dword >> 4) & 0xf;
@@ -3808,7 +3799,7 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 {
 	u8 Node;
 	u32 NextBase, BottomIO;
-	u8 _MemHoleRemap, DramHoleBase, DramHoleOffset;
+	u8 _MemHoleRemap, DramHoleBase;
 	u32 HoleSize, DramSelBaseAddr;
 
 	u32 val;
@@ -3867,7 +3858,6 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 					if ((DramSelBaseAddr > 0) && (DramSelBaseAddr < BottomIO))
 						base = DramSelBaseAddr;
 					val = ((base + HoleSize) >> (24-8)) & 0xFF;
-					DramHoleOffset = val;
 					val <<= 8; /* shl 16, rol 24 */
 					val |= DramHoleBase << 24;
 					val |= 1  << DramHoleValid;

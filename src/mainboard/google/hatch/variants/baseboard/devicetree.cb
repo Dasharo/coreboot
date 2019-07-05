@@ -28,7 +28,7 @@ chip soc/intel/cannonlake
 	# Enable System Agent dynamic frequency
 	register "SaGv" = "SaGv_Enabled"
 	# Enable heci communication
-	register "HeciEnabled" = "1"
+	register "HeciEnabled" = "0"
 	# Enable Speed Shift Technology support
 	register "speed_shift_enable" = "1"
 	# Enable S0ix
@@ -36,7 +36,7 @@ chip soc/intel/cannonlake
 	# Enable DPTF
 	register "dptf_enable" = "1"
 	register "tdp_pl1_override" = "15"
-	register "tdp_pl2_override" = "44"
+	register "tdp_pl2_override" = "64"
 	register "Device4Enable" = "1"
 	# Enable eDP device
 	register "DdiPortEdp" = "1"
@@ -56,12 +56,12 @@ chip soc/intel/cannonlake
 	register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC2)"	# Type-C Port 1
 	register "usb2_ports[2]" = "USB2_PORT_SHORT(OC3)"	# Type-A Port 0
 	register "usb2_ports[3]" = "USB2_PORT_LONG(OC3)"	# Type-A Port 1
-	register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)"	# BT
+	register "usb2_ports[4]" = "USB2_PORT_EMPTY"
 	register "usb2_ports[5]" = "USB2_PORT_MID(OC_SKIP)"	# WWAN
 	register "usb2_ports[6]" = "USB2_PORT_LONG(OC_SKIP)"	# Camera
 	register "usb2_ports[7]" = "USB2_PORT_EMPTY"
 	register "usb2_ports[8]" = "USB2_PORT_EMPTY"
-	register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# CnVi BT
+	register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# BT
 
 	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC2)"	# Type-C Port 0
 	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC2)"	# Type-C Port 1
@@ -72,6 +72,7 @@ chip soc/intel/cannonlake
 
 	# Enable Root port 9(x4) for NVMe.
 	register "PcieRpEnable[8]" = "1"
+	register "PcieRpLtrEnable[8]" = "1"
 	# RP 9 uses CLK SRC 1
 	register "PcieClkSrcUsage[1]" = "8"
 	# ClkReq-to-ClkSrc mapping for CLK SRC 1
@@ -79,6 +80,7 @@ chip soc/intel/cannonlake
 
 	# PCIe port 14 for M.2 E-key WLAN
 	register "PcieRpEnable[13]" = "1"
+	register "PcieRpLtrEnable[13]" = "1"
 	# RP 14 uses CLK SRC 3
 	register "PcieClkSrcUsage[3]" = "13"
 	register "PcieClkSrcClkReq[3]" = "3"
@@ -97,7 +99,9 @@ chip soc/intel/cannonlake
 	register "gpio_pm[COMM_1]" = "MISCCFG_ENABLE_GPIO_PM_CONFIG"
 	register "gpio_pm[COMM_2]" = "MISCCFG_ENABLE_GPIO_PM_CONFIG"
 	register "gpio_pm[COMM_3]" = "MISCCFG_ENABLE_GPIO_PM_CONFIG"
-	register "gpio_pm[COMM_4]" = "MISCCFG_GPSIDEDPCGEN | MISCCFG_GPRTCDLCGEN | MISCCFG_GSXSLCGEN | MISCCFG_GPDPCGEN | MISCCFG_GPDLCGEN"
+	# Disable clock gating on this community so that cr50's short irq
+	# pulses won't be missed.
+	register "gpio_pm[COMM_4]" = "0"
 
 	device cpu_cluster 0 on
 		device lapic 0 on end
@@ -141,12 +145,6 @@ chip soc/intel/cannonlake
 						device usb 2.3 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""Discrete bluetooth""
-						register "type" = "UPC_TYPE_INTERNAL"
-						register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C14)"
-						device usb 2.4 on end
-					end
-					chip drivers/usb/acpi
 						register "desc" = ""WWAN""
 						register "type" = "UPC_TYPE_INTERNAL"
 						device usb 2.5 on end
@@ -157,7 +155,7 @@ chip soc/intel/cannonlake
 						device usb 2.6 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""Integrated CnVi bluetooth""
+						register "desc" = ""Bluetooth""
 						register "type" = "UPC_TYPE_INTERNAL"
 						register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C14)"
 						device usb 2.9 on end

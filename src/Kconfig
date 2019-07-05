@@ -32,8 +32,13 @@ config LOCALVERSION
 	  the coreboot version number, so that you can easily distinguish
 	  boot logs of different boards from each other.
 
+config CONFIGURABLE_CBFS_PREFIX
+	bool
+	help
+	  Select this to prompt to use to configure the prefix for cbfs files.
+
 config CBFS_PREFIX
-	string "CBFS prefix to use"
+	string "CBFS prefix to use" if CONFIGURABLE_CBFS_PREFIX
 	default "fallback"
 	help
 	  Select the prefix to all files put into the image. It's "fallback"
@@ -129,6 +134,7 @@ config STATIC_OPTION_TABLE
 
 config COMPRESS_RAMSTAGE
 	bool "Compress ramstage with LZMA"
+	depends on HAVE_RAMSTAGE
 	# Default value set at the end of the file
 	help
 	  Compress ramstage to save memory in the flash image. Note
@@ -137,7 +143,7 @@ config COMPRESS_RAMSTAGE
 
 config COMPRESS_PRERAM_STAGES
 	bool "Compress romstage and verstage with LZ4"
-	depends on !ARCH_X86
+	depends on !ARCH_X86 && (HAVE_ROMSTAGE || HAVE_VERSTAGE)
 	# Default value set at the end of the file
 	help
 	  Compress romstage and (if it exists) verstage with LZ4 to save flash
@@ -148,6 +154,7 @@ config COMPRESS_PRERAM_STAGES
 
 config COMPRESS_BOOTBLOCK
 	bool
+	depends on HAVE_BOOTBLOCK
 	help
 	  This option can be used to compress the bootblock with LZ4 and attach
 	  a small self-decompression stub to its front. This can drastically
@@ -234,6 +241,7 @@ config NO_RELOCATABLE_RAMSTAGE
 
 config RELOCATABLE_RAMSTAGE
 	bool
+	depends on HAVE_RAMSTAGE
 	default !NO_RELOCATABLE_RAMSTAGE
 	select RELOCATABLE_MODULES
 	help
@@ -277,10 +285,13 @@ config BOOTSPLASH_FILE
 	  The path and filename of the file to use as graphical bootsplash
 	  screen. The file format has to be jpg.
 
+config HAVE_RAMPAYLOAD
+	bool
+
 config RAMPAYLOAD
 	bool "Enable coreboot flow without executing ramstage"
-	default n
-	depends on ARCH_X86
+	default y if ARCH_X86
+	depends on HAVE_RAMPAYLOAD
 	help
 	  If this option is enabled, coreboot flow will skip ramstage
 	  loading and execution of ramstage to load payload.
@@ -1188,3 +1199,26 @@ config BOOTSPLASH_FILE
 
 config CBFS_SIZE
 	default ROM_SIZE
+
+config HAVE_BOOTBLOCK
+	bool
+	default y
+
+config HAVE_VERSTAGE
+	bool
+	depends on VBOOT_SEPARATE_VERSTAGE
+	default y
+
+config HAVE_ROMSTAGE
+	bool
+	default y
+
+config HAVE_POSTCAR
+	bool
+	depends on POSTCAR_STAGE
+	default y
+
+config HAVE_RAMSTAGE
+	bool
+	default n if RAMPAYLOAD
+	default y

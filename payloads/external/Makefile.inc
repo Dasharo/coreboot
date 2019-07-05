@@ -284,7 +284,9 @@ endif
 ifeq ($(CONFIG_BUILD_IPXE),y)
 PXE_ROM_FILE:=payloads/external/iPXE/ipxe/ipxe.rom
 endif
-
+ifeq ($(CONFIG_PXE_ADD_SCRIPT),y)
+PXE_CONFIG_SCRIPT:=$(abspath $(patsubst "%",%,$(CONFIG_PXE_SCRIPT)))
+endif
 ifeq ($(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO),yy)
 IPXE_UART=COM$(call int-add,$(CONFIG_UART_FOR_CONSOLE) 1)
 endif
@@ -303,7 +305,7 @@ else
 IPXE_SERIAL_CONSOLE = n
 endif
 
-payloads/external/iPXE/ipxe/ipxe.rom ipxe: $(DOTCONFIG)
+payloads/external/iPXE/ipxe/ipxe.rom ipxe: $(DOTCONFIG) $(PXE_CONFIG_SCRIPT)
 	$(MAKE) -C payloads/external/iPXE all \
 	CROSS_COMPILE="$(CROSS_COMPILE_$(ARCH-ramstage-y))" \
 	PXE_ROM_PCI_ID=$(PXE_ROM_PCI_ID) \
@@ -313,8 +315,10 @@ payloads/external/iPXE/ipxe/ipxe.rom ipxe: $(DOTCONFIG)
 	IPXE_UART=$(IPXE_UART) \
 	CONFIG_TTYS0_BAUD=$(CONFIG_TTYS0_BAUD) \
 	CONFIG_PXE_CUSTOM_GENERAL_H=$(CONFIG_PXE_CUSTOM_GENERAL_H) \
-	CONFIG_PXE_CUSTOM_BOOTMENU_FILE=$(CONFIG_PXE_CUSTOM_BOOTMENU_FILE) \
 	CONFIG_PXE_CUSTOM_BUILD_ID=$(CONFIG_PXE_CUSTOM_BUILD_ID) \
+	CONFIG_SCRIPT=$(PXE_CONFIG_SCRIPT) \
+	CONFIG_HAS_SCRIPT=$(CONFIG_PXE_ADD_SCRIPT) \
+	CONFIG_PXE_NO_PROMT=$(CONFIG_PXE_NO_PROMT) \
 	MFLAGS= MAKEFLAGS=
 
 # LinuxBoot

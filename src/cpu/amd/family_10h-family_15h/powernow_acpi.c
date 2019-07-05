@@ -16,7 +16,6 @@
  */
 
 #include <console/console.h>
-#include <stdint.h>
 #include <option.h>
 #include <cpu/x86/msr.h>
 #include <cpu/amd/msr.h>
@@ -30,6 +29,7 @@
 #include <northbridge/amd/amdht/AsPsDefs.h>
 #include <northbridge/amd/amdmct/mct/mct.h>
 #include <northbridge/amd/amdmct/amddefs.h>
+#include <types.h>
 
 static inline uint8_t is_fam15h(void)
 {
@@ -258,8 +258,6 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 		boost_count = (dtemp >> 2) & 0x1;
 	else if (mctGetLogicalCPUID(0) & AMD_FAM15_ALL)
 		boost_count = (dtemp >> 2) & 0x7;
-
-	Pstate_num = 0;
 
 	/* See if the CPUID(0x80000007) returned EDX[7]==1b */
 	cpuid1 = cpuid(0x80000007);

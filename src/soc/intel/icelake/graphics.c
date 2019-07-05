@@ -23,6 +23,7 @@
 #include <drivers/intel/gma/i915_reg.h>
 #include <drivers/intel/gma/opregion.h>
 #include <intelblocks/graphics.h>
+#include <types.h>
 
 uintptr_t fsp_soc_get_igd_bar(void)
 {
@@ -32,6 +33,10 @@ uintptr_t fsp_soc_get_igd_bar(void)
 void graphics_soc_init(struct device *dev)
 {
 	uint32_t ddi_buf_ctl;
+
+	/* Skip IGD GT programming */
+	if (CONFIG(SKIP_GRAPHICS_ENABLING))
+		return;
 
 	/*
 	 * Enable DDI-A (eDP) 4-lane operation if the link is not up yet.

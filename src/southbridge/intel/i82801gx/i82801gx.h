@@ -36,7 +36,6 @@
 
 #if !defined(__ASSEMBLER__)
 #if !defined(__PRE_RAM__)
-#include "chip.h"
 #if !defined(__SIMPLE_DEVICE__)
 void i82801gx_enable(struct device *dev);
 #endif
@@ -83,6 +82,7 @@ int smbus_block_write(unsigned int device, unsigned int cmd, u8 bytes,
 
 #define FDVCT			0xe4
 #define   PCIE_4_PORTS_MAX	(1 << 7)
+#define   AHCI_UNSUPPORTED	(1 << 3)
 
 /* GEN_PMCON_3 bits */
 #define RTC_BATTERY_DEAD	(1 << 2)

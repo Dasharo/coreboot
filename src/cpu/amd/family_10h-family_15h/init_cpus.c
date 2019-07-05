@@ -17,6 +17,8 @@
 #include <console/console.h>
 #include <cpu/amd/msr.h>
 #include <device/pci_ops.h>
+#include <types.h>
+
 #include "init_cpus.h"
 
 #if CONFIG(HAVE_OPTION_TABLE)
@@ -502,10 +504,9 @@ u32 init_cpus(u32 cpu_init_detectedx, struct sys_info *sysinfo)
 		if (is_fam15h()) {
 			/* core 1 on node 0 is special; to avoid corrupting the
 			 * BSP do not alter MTRRs on that core */
+			fam15_bsp_core1_apicid = 1;
 			if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
-				fam15_bsp_core1_apicid = CONFIG_APIC_ID_OFFSET + 1;
-			else
-				fam15_bsp_core1_apicid = 1;
+				fam15_bsp_core1_apicid += CONFIG_APIC_ID_OFFSET;
 
 			if (apicid == fam15_bsp_core1_apicid)
 				set_mtrrs = 0;
@@ -984,7 +985,6 @@ void cpuSetAMDMSR(uint8_t node_id)
 	uint8_t nvram;
 	u32 platform;
 	uint64_t revision;
-	uint8_t enable_c_states;
 	uint8_t enable_cpb;
 
 	printk(BIOS_DEBUG, "cpuSetAMDMSR ");
@@ -1060,21 +1060,16 @@ void cpuSetAMDMSR(uint8_t node_id)
 	}
 
 	if (revision & (AMD_DR_Ex | AMD_FAM15_ALL)) {
-		enable_c_states = 0;
 		if (CONFIG(HAVE_ACPI_TABLES))
-			if (get_option(&nvram, "cpu_c_states") == CB_SUCCESS)
-				enable_c_states = !!nvram;
-
-		if (enable_c_states) {
-			/* Set up the C-state base address */
-			msr_t c_state_addr_msr;
-			c_state_addr_msr = rdmsr(MSR_CSTATE_ADDRESS);
-			c_state_addr_msr.lo = ACPI_CPU_P_LVL2;	/* CstateAddr = ACPI_CPU_P_LVL2 */
-			wrmsr(MSR_CSTATE_ADDRESS, c_state_addr_msr);
-		}
+			if ((get_option(&nvram, "cpu_c_states") == CB_SUCCESS) &&
+			    (nvram)) {
+				/* Set up the C-state base address */
+				msr_t c_state_addr_msr;
+				c_state_addr_msr = rdmsr(MSR_CSTATE_ADDRESS);
+				c_state_addr_msr.lo = ACPI_CPU_P_LVL2;
+				wrmsr(MSR_CSTATE_ADDRESS, c_state_addr_msr);
+			}
 	}
-#else
-	enable_c_states = 0;
 #endif
 
 	if (revision & AMD_FAM15_ALL) {

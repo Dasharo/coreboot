@@ -1,3 +1,2 @@
-romstage-y += early_spi.c
-romstage-y += pmc.c
+romstage-y += ../../../../cpu/intel/car/romstage.c
 romstage-y += romstage.c

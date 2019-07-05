@@ -84,12 +84,6 @@ config PXE_CUSTOM_GENERAL_H
 	help
 	  This option allows user to customize feature set built-in into iPXE ROM.
 
-config PXE_CUSTOM_BOOTMENU_FILE
-	string "iPXE custom menu.ipxe file"
-	default "menu.ipxe"
-	help
-	  This option allows user to customize boot menu for iPXE ROM.
-
 config PXE_SERIAL_CONSOLE
 	bool "Enable iPXE serial console"
 	def_bool y
@@ -105,6 +99,32 @@ config PXE_CUSTOM_BUILD_ID
 	help
 	  This option allows user to customize build_id for reproducible builds.
 	  It is 32-bit hexadecimal number without "0x" prefix.
+
+config PXE_NO_PROMT
+	bool "Do not show prompt to boot from PXE"
+	default n
+	depends on BUILD_IPXE
+	help
+	  Don't wait for the user to press Ctrl-B.
+	  The PXE still can be run as it shows up in SeaBIOS's payload list.
+
+config PXE_ADD_SCRIPT
+	bool "Embed an iPXE script for automated provisioning"
+	depends on BUILD_IPXE
+	default n
+	help
+	  Enable to embed a script that is run instead of an iPXE shell.
+
+config PXE_SCRIPT
+	string "Embedded iPXE script path and filename"
+	depends on PXE_ADD_SCRIPT
+	default ""
+	help
+	  Path to a script that is embedded into the iPXE binary.
+	  Example: startup.ipxe
+
+	  Uses the ipxe script instead showing the prompt:
+	  "Press Ctrl-B to start iPXE..."
 
 endmenu
 endif

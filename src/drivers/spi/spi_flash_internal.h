@@ -23,6 +23,8 @@
 #define CMD_READ_ARRAY_FAST		0x0b
 #define CMD_READ_ARRAY_LEGACY		0xe8
 
+#define CMD_READ_FAST_DUAL_OUTPUT	0x3b
+
 #define CMD_READ_STATUS			0x05
 #define CMD_WRITE_ENABLE		0x06
 
@@ -35,12 +37,6 @@
 int spi_flash_cmd(const struct spi_slave *spi, u8 cmd, void *response, size_t len);
 int spi_flash_cmd_read(const struct spi_slave *spi, const u8 *cmd,
 		size_t cmd_len, void *data, size_t data_len);
-
-int spi_flash_cmd_read_fast(const struct spi_flash *flash, u32 offset,
-		size_t len, void *data);
-
-int spi_flash_cmd_read_slow(const struct spi_flash *flash, u32 offset,
-		size_t len, void *data);
 
 /*
  * Send a multi-byte command to the device followed by (optional)

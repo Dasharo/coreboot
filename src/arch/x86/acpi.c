@@ -44,6 +44,7 @@
 #include <arch/acpigen.h>
 #include <device/pci.h>
 #include <cbmem.h>
+#include <commonlib/helpers.h>
 #include <cpu/x86/lapic_def.h>
 #include <cpu/cpu.h>
 #include <cbfs.h>
@@ -218,6 +219,9 @@ void acpi_create_madt(acpi_madt_t *madt)
 
 	memset((void *)madt, 0, sizeof(acpi_madt_t));
 
+	if (!header)
+		return;
+
 	/* Fill out header fields. */
 	memcpy(header->signature, "APIC", 4);
 	memcpy(header->oem_id, OEM_ID, 6);
@@ -247,6 +251,9 @@ void acpi_create_mcfg(acpi_mcfg_t *mcfg)
 	unsigned long current = (unsigned long)mcfg + sizeof(acpi_mcfg_t);
 
 	memset((void *)mcfg, 0, sizeof(acpi_mcfg_t));
+
+	if (!header)
+		return;
 
 	/* Fill out header fields. */
 	memcpy(header->signature, "MCFG", 4);
@@ -300,6 +307,9 @@ static void acpi_create_tcpa(acpi_tcpa_t *tcpa)
 
 	lasa = get_tcpa_log(&tcpa_log_len);
 	if (!lasa)
+		return;
+
+	if (!header)
 		return;
 
 	/* Fill out header fields. */
@@ -360,6 +370,9 @@ static void acpi_create_tpm2(acpi_tpm2_t *tpm2)
 	lasa = get_tpm2_log(&tpm2_log_len);
 	if (!lasa)
 		tpm2_log_len = 0;
+
+	if (!header)
+		return;
 
 	/* Fill out header fields. */
 	memcpy(header->signature, "TPM2", 4);
@@ -481,6 +494,9 @@ void acpi_create_srat(acpi_srat_t *srat,
 
 	memset((void *)srat, 0, sizeof(acpi_srat_t));
 
+	if (!header)
+		return;
+
 	/* Fill out header fields. */
 	memcpy(header->signature, "SRAT", 4);
 	memcpy(header->oem_id, OEM_ID, 6);
@@ -507,6 +523,9 @@ void acpi_create_dmar(acpi_dmar_t *dmar, enum dmar_flags flags,
 	unsigned long current = (unsigned long)dmar + sizeof(acpi_dmar_t);
 
 	memset((void *)dmar, 0, sizeof(acpi_dmar_t));
+
+	if (!header)
+		return;
 
 	/* Fill out header fields. */
 	memcpy(header->signature, "DMAR", 4);
@@ -669,6 +688,9 @@ void acpi_create_slit(acpi_slit_t *slit,
 
 	memset((void *)slit, 0, sizeof(acpi_slit_t));
 
+	if (!header)
+		return;
+
 	/* Fill out header fields. */
 	memcpy(header->signature, "SLIT", 4);
 	memcpy(header->oem_id, OEM_ID, 6);
@@ -693,6 +715,9 @@ void acpi_create_hpet(acpi_hpet_t *hpet)
 	acpi_addr_t *addr = &(hpet->addr);
 
 	memset((void *)hpet, 0, sizeof(acpi_hpet_t));
+
+	if (!header)
+		return;
 
 	/* Fill out header fields. */
 	memcpy(header->signature, "HPET", 4);
@@ -728,6 +753,9 @@ void acpi_create_vfct(struct device *device,
 
 	memset((void *)vfct, 0, sizeof(struct acpi_vfct));
 
+	if (!header)
+		return;
+
 	/* Fill out header fields. */
 	memcpy(header->signature, "VFCT", 4);
 	memcpy(header->oem_id, OEM_ID, 6);
@@ -735,14 +763,68 @@ void acpi_create_vfct(struct device *device,
 	memcpy(header->asl_compiler_id, ASLC, 4);
 
 	header->asl_compiler_revision = asl_revision;
-	header->length = sizeof(struct acpi_vfct);
 	header->revision = get_acpi_table_revision(VFCT);
 
 	current = acpi_fill_vfct(device, vfct, current);
 
+	/* If no BIOS image, return with header->length == 0. */
+	if (!vfct->VBIOSImageOffset)
+		return;
+
 	/* (Re)calculate length and checksum. */
 	header->length = current - (unsigned long)vfct;
 	header->checksum = acpi_checksum((void *)vfct, header->length);
+}
+
+void acpi_create_ipmi(struct device *device,
+		      struct acpi_spmi *spmi,
+		      const u16 ipmi_revision,
+		      const acpi_addr_t *addr,
+		      const enum acpi_ipmi_interface_type type,
+		      const s8 gpe_interrupt,
+		      const u32 apic_interrupt,
+		      const u32 uid)
+{
+	acpi_header_t *header = &(spmi->header);
+	memset((void *)spmi, 0, sizeof(struct acpi_spmi));
+
+	/* Fill out header fields. */
+	memcpy(header->signature, "SPMI", 4);
+	memcpy(header->oem_id, OEM_ID, 6);
+	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
+	memcpy(header->asl_compiler_id, ASLC, 4);
+
+	header->asl_compiler_revision = asl_revision;
+	header->length = sizeof(struct acpi_spmi);
+	header->revision = get_acpi_table_revision(SPMI);
+
+	spmi->reserved = 1;
+
+	if (device->path.type == DEVICE_PATH_PCI) {
+		spmi->pci_device_flag = ACPI_IPMI_PCI_DEVICE_FLAG;
+		spmi->pci_bus = device->bus->secondary;
+		spmi->pci_device = device->path.pci.devfn >> 3;
+		spmi->pci_function = device->path.pci.devfn & 0x7;
+	} else if (type != IPMI_INTERFACE_SSIF) {
+		memcpy(spmi->uid, &uid, sizeof(spmi->uid));
+	}
+
+	spmi->base_address = *addr;
+	spmi->specification_revision = ipmi_revision;
+
+	spmi->interface_type = type;
+
+	if (gpe_interrupt >= 0 && gpe_interrupt < 32) {
+		spmi->gpe = gpe_interrupt;
+		spmi->interrupt_type |= ACPI_IPMI_INT_TYPE_SCI;
+	}
+	if (apic_interrupt > 0) {
+		spmi->global_system_interrupt = apic_interrupt;
+		spmi->interrupt_type |= ACPI_IPMI_INT_TYPE_APIC;
+	}
+
+	/* Calculate checksum. */
+	header->checksum = acpi_checksum((void *)spmi, header->length);
 }
 
 void acpi_create_ivrs(acpi_ivrs_t *ivrs,
@@ -753,6 +835,9 @@ void acpi_create_ivrs(acpi_ivrs_t *ivrs,
 	unsigned long current = (unsigned long)ivrs + sizeof(acpi_ivrs_t);
 
 	memset((void *)ivrs, 0, sizeof(acpi_ivrs_t));
+
+	if (!header)
+		return;
 
 	/* Fill out header fields. */
 	memcpy(header->signature, "IVRS", 4);
@@ -783,7 +868,7 @@ unsigned long acpi_write_hpet(struct device *device, unsigned long current,
 
 	hpet = (acpi_hpet_t *) current;
 	current += sizeof(acpi_hpet_t);
-	current = ALIGN(current, 16);
+	current = ALIGN_UP(current, 16);
 	acpi_create_hpet(hpet);
 	acpi_add_table(rsdp, hpet);
 
@@ -807,6 +892,10 @@ void acpi_create_dbg2(acpi_dbg2_header_t *dbg2,
 	current = (uintptr_t)dbg2;
 	memset(dbg2, 0, sizeof(acpi_dbg2_header_t));
 	header = &(dbg2->header);
+
+	if (!header)
+		return;
+
 	header->revision = get_acpi_table_revision(DBG2);
 	memcpy(header->signature, "DBG2", 4);
 	memcpy(header->oem_id, OEM_ID, 6);
@@ -926,6 +1015,9 @@ static void acpi_write_rsdt(acpi_rsdt_t *rsdt, char *oem_id, char *oem_table_id)
 {
 	acpi_header_t *header = &(rsdt->header);
 
+	if (!header)
+		return;
+
 	/* Fill out header fields. */
 	memcpy(header->signature, "RSDT", 4);
 	memcpy(header->oem_id, oem_id, 6);
@@ -945,6 +1037,9 @@ static void acpi_write_rsdt(acpi_rsdt_t *rsdt, char *oem_id, char *oem_table_id)
 static void acpi_write_xsdt(acpi_xsdt_t *xsdt, char *oem_id, char *oem_table_id)
 {
 	acpi_header_t *header = &(xsdt->header);
+
+	if (!header)
+		return;
 
 	/* Fill out header fields. */
 	memcpy(header->signature, "XSDT", 4);
@@ -1046,7 +1141,8 @@ unsigned long acpi_create_hest_error_source(acpi_hest_t *hest,
 
 	memcpy(pos, data, data_len);
 	len += data_len;
-	header->length += len;
+	if (header)
+		header->length += len;
 
 	return len;
 }
@@ -1058,6 +1154,9 @@ void acpi_write_hest(acpi_hest_t *hest,
 	acpi_header_t *header = &(hest->header);
 
 	memset(hest, 0, sizeof(acpi_hest_t));
+
+	if (!header)
+		return;
 
 	memcpy(header->signature, "HEST", 4);
 	memcpy(header->oem_id, OEM_ID, 6);
@@ -1080,6 +1179,9 @@ void acpi_write_bert(acpi_bert_t *bert, uintptr_t region, size_t length)
 
 	memset(bert, 0, sizeof(acpi_bert_t));
 
+	if (!header)
+		return;
+
 	memcpy(header->signature, "BERT", 4);
 	memcpy(header->oem_id, OEM_ID, 6);
 	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
@@ -1101,6 +1203,10 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	acpi_header_t *header = &(fadt->header);
 
 	memset((void *) fadt, 0, sizeof(acpi_fadt_t));
+
+	if (!header)
+		return;
+
 	memcpy(header->signature, "FACP", 4);
 	header->length = sizeof(acpi_fadt_t);
 	header->revision = get_acpi_table_revision(FADT);
@@ -1220,7 +1326,7 @@ unsigned long write_acpi_tables(unsigned long start)
 	acpi_write_xsdt(xsdt, oem_id, oem_table_id);
 
 	printk(BIOS_DEBUG, "ACPI:    * FACS\n");
-	current = (ALIGN(current, 64));
+	current = ALIGN_UP(current, 64);
 	facs = (acpi_facs_t *) current;
 	current += sizeof(acpi_facs_t);
 	current = acpi_align_current(current);
@@ -1439,6 +1545,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 1;
 	case SLIT: /* ACPI 2.0 upto 6.3: 1 */
 		return 1;
+	case SPMI: /* IMPI 2.0 */
+		return 5;
 	case HPET: /* Currently 1. Table added in ACPI 2.0. */
 		return 1;
 	case VFCT: /* ACPI 2.0/3.0/4.0: 1 */

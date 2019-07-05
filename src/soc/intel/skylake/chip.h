@@ -34,6 +34,7 @@
 #include <soc/serialio.h>
 #include <soc/usb.h>
 #include <soc/vr_config.h>
+#include <smbios.h>
 
 #define MAX_PEG_PORTS	3
 
@@ -46,6 +47,18 @@ struct soc_intel_skylake_config {
 
 	/* Common struct containing soc config data required by common code */
 	struct soc_intel_common_config common_soc_config;
+
+	/* IGD panel configuration */
+	unsigned int gpu_pp_up_delay_ms;
+	unsigned int gpu_pp_down_delay_ms;
+	unsigned int gpu_pp_cycle_delay_ms;
+	unsigned int gpu_pp_backlight_on_delay_ms;
+	unsigned int gpu_pp_backlight_off_delay_ms;
+	unsigned int gpu_pch_backlight_pwm_hz;
+	enum {
+		GPU_BACKLIGHT_POLARITY_HIGH = 0,
+		GPU_BACKLIGHT_POLARITY_LOW,
+	} gpu_pch_backlight_polarity;
 
 	/*
 	 * Interrupt Routing configuration

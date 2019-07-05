@@ -152,6 +152,7 @@ static inline unsigned int cpuid_edx(unsigned int op)
 #define X86_VENDOR_TRANSMETA  8
 #define X86_VENDOR_NSC        9
 #define X86_VENDOR_SIS       10
+#define X86_VENDOR_HYGON     11
 #define X86_VENDOR_ANY     0xfe
 #define X86_VENDOR_UNKNOWN 0xff
 
@@ -199,7 +200,7 @@ static inline unsigned int cpuid_edx(unsigned int op)
 #define CPUID_CACHE_NO_OF_SETS_MASK 0xffffffff
 #define CPUID_CACHE_NO_OF_SETS(res) CPUID_CACHE(NO_OF_SETS, (res).ecx)
 
-int cpu_cpuid_extended_level(void);
+unsigned int cpu_cpuid_extended_level(void);
 int cpu_have_cpuid(void);
 
 void smm_init(void);
@@ -308,8 +309,9 @@ struct postcar_frame {
 };
 
 /*
- * Initialize postcar_frame object allocating stack size in cbmem
- * with the provided size. Returns 0 on success, < 0 on error.
+ * Initialize postcar_frame object allocating stack from cbmem,
+ * with stack_size == 0, default 4 KiB is allocated.
+ * Returns 0 on success, < 0 on error.
  */
 int postcar_frame_init(struct postcar_frame *pcf, size_t stack_size);
 
