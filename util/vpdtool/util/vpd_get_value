@@ -1,0 +1,64 @@
+#!/bin/sh
+# Copyright 2016 The Chromium OS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+# Helper utility to read a single value from VPD.
+#
+# The script is optimized for reading one entry from VPD, first RO then RW.
+# If the given key is not found, prints nothing.
+
+# CACHE_FILE is defined from dump_vpd_log.
+CACHE_FILE=/mnt/stateful_partition/unencrypted/cache/vpd/full-v2.txt
+SYS_VPD=/sys/firmware/vpd
+TMP_FILE=
+
+# This script is very time critical for boot time process and should not use
+# heavy libraries like shflags.
+: "${VPD_IGNORE_CACHE:=}"
+: "${VPD_IGNORE_SYS_CACHE}"
+: "${VPD_NEVER_CREATE_CACHE:=}"
+
+main() {
+  if [ "$#" != 1 ]; then
+    echo "Usage: $0 key_name" >&2
+    exit 1
+  fi
+  local key="$1"
+
+  if [ -n "${VPD_IGNORE_CACHE}" ]; then
+    exec vpd -g "${key}"
+  fi
+
+  # Reading from /sys (works on ARM 3.18+, x86 4.4+) is most efficient;
+  # otherwise we have to parse from VPD cache (maintained by dump_vpd_log).
+  local sys_vpd_present=0
+  # VPD ro section may have no entries for reference boards; check for rw as
+  # well to prefer the fast path when possible.
+  if [ -d "${SYS_VPD}/ro" ] || [ -d "${SYS_VPD}/rw" ]; then
+    sys_vpd_present=1
+  fi
+  if [ -z "${VPD_IGNORE_SYS_CACHE}" ] && [ "${sys_vpd_present}" = "1" ]; then
+    for file in "${SYS_VPD}/ro/${key}" "${SYS_VPD}/rw/${key}"; do
+      if [ -f "${file}" ]; then
+        cat "${file}"
+        return 0
+      fi
+    done
+  else
+    if [ ! -f "${CACHE_FILE}" ] && [ -z "${VPD_NEVER_CREATE_CACHE}" ]; then
+      # /etc/init/vpd-log.conf was not executed, or cache corrupted, or if
+      # system stateful partition was not mounted yet.
+      TMP_FILE="$(mktemp)"
+      dump_vpd_log --full --stdout >"${TMP_FILE}"
+      CACHE_FILE="${TMP_FILE}"
+    fi
+    # Use printf(1) to suppress the newline that head(1) adds to the value.
+    printf '%s' "$(sed -n "s/^\"${key}\"=\"\(.*\)\"\$/\1/p" "${CACHE_FILE}" |
+      head -1)"
+    if [ -e "${TMP_FILE}" ]; then
+      rm -f "${TMP_FILE}"
+    fi
+  fi
+}
+main "$@"
