@@ -68,7 +68,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 	hudson_lpc_port80();
 
 	if (!cpu_init_detectedx && boot_cpu()) {
-		u32 data, *memptr;
+		u32 data;
 		pci_devfn_t dev;
 		volatile u8 *CF9_shadow;
 		CF9_shadow = (u8 *)(ACPI_MMIO_BASE + PMIO_BASE + FCH_PMIOA_REGC5);
@@ -88,7 +88,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		/* enable 0x2e/0x4e IO decoding before configuring SuperIO */
 		pci_write_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE, data | 3);
 
-		if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)) &&
+		if ((CONFIG_UART_FOR_CONSOLE == 1) &&
 		    !CONFIG(BOARD_PCENGINES_APU5))
 			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 
@@ -109,59 +109,12 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 			printk(BIOS_ALERT, "Did not reset (yet)\n");
 		}
 
-		printk(BIOS_INFO, "14-25-48Mhz Clock settings\n");
-
-		memptr = (u32 *)(ACPI_MMIO_BASE + MISC_BASE + FCH_MISC_REG28 );
-		data = *memptr;
-		printk(BIOS_INFO, "FCH_MISC_REG28 is 0x%08x \n", data);
-
-		memptr = (u32 *)(ACPI_MMIO_BASE + MISC_BASE + FCH_MISC_REG40 );
-		data = *memptr;
-		printk(BIOS_INFO, "FCH_MISC_REG40 is 0x%08x \n", data);
-
 		data = *(u32*)FCH_PMIOxC0_S5ResetStatus;
 		// do not print SOL if reset will take place in FchInit
 		if (check_console() &&
 		    !(data & FCH_PMIOxC0_S5ResetStatus_All_Status)) {
 			print_sign_of_life();
 		}
-		//
-		// Configure clock request
-		//
-		data = *((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG00));
-
-		data &= 0xFFFF0000;
-		data |= (0 + 1) << (0 * 4);	// CLKREQ 0 to CLK0
-		data |= (1 + 1) << (1 * 4);	// CLKREQ 1 to CLK1
-		if (CONFIG(BOARD_PCENGINES_APU2) ||
-		    CONFIG(BOARD_PCENGINES_APU3) ||
-		    CONFIG(BOARD_PCENGINES_APU4) ) {
-			// CLKREQ 2 to CLK2 disabled on APU5
-			data |= (2 + 1) << (2 * 4);
-		}
-
-		// make CLK3 to ignore CLKREQ# input
-		// force it to be always on
-		data |= ( 0xf ) << (3 * 4);	// CLKREQ 3 to CLK3
-
-		*((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG00)) = data;
-
-		data = *((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG04));
-
-		data &= 0xFFFFFF0F;
-
-		if (check_mpcie2_clk() || CONFIG(FORCE_MPCIE2_CLK)) {
-			// make GFXCLK to ignore CLKREQ# input
-			// force it to be always on
-			data |= 0xF << (1 * 4); // CLKREQ GFX to GFXCLK
-			printk(BIOS_DEBUG, "mPCIe clock enabled\n");
-		}
-		else {
-			data |= 0xA << (1 * 4);	// CLKREQ GFX to GFXCLK
-			printk(BIOS_DEBUG, "mPCIe clock disabled\n");
-		}
-
-		*((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG04)) = data;
 
 		volatile u32 *ptr = (u32 *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
 		u16 watchdog_timeout = get_watchdog_timeout();

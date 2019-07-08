@@ -20,9 +20,8 @@ bool check_console(void);
 bool check_uartc(void);
 bool check_uartd(void);
 bool check_ehci0(void);
-bool check_mpcie2_clk(void);
-int check_com2(void);
-int check_boost(void);
+bool check_com2(void);
+bool check_boost(void);
 bool check_sd3_mode(void);
 u16 get_watchdog_timeout(void);
 

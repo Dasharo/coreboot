@@ -85,6 +85,50 @@ static int32_t get_vpd_size(const char *fmap_name, int32_t *base)
 
 	return size;
 }
+#if ENV_ROMSTAGE
+static void *get_vpd(const char *fmap_name, int32_t *vpd_size)
+{
+	struct google_vpd_info info;
+	struct region_device vpd;
+	int32_t size;
+	void *vpd_buffer;
+
+	if (fmap_locate_area_as_rdev(fmap_name, &vpd)) {
+		printk(BIOS_ERR, "%s: No %s FMAP section.\n", __func__,
+			fmap_name);
+		return NULL;
+	}
+
+	size = region_device_sz(&vpd);
+
+	if ((size < GOOGLE_VPD_2_0_OFFSET + sizeof(info)) ||
+	    rdev_chain(&vpd, &vpd, GOOGLE_VPD_2_0_OFFSET,
+			size - GOOGLE_VPD_2_0_OFFSET)) {
+		printk(BIOS_ERR, "%s: Too small (%d) for Google VPD 2.0.\n",
+		       __func__, size);
+		return NULL;
+	}
+
+	vpd_buffer = rdev_mmap(&vpd, 0, region_device_sz(&vpd));
+	info = *(struct google_vpd_info *)vpd_buffer;
+
+	if (memcmp(info.header.magic, VPD_INFO_MAGIC, sizeof(info.header.magic))
+	    == 0 && size >= info.size + sizeof(info)) {
+		size = info.size;
+	} else if (info.header.tlv.type == VPD_TYPE_TERMINATOR ||
+		   info.header.tlv.type == VPD_TYPE_IMPLICIT_TERMINATOR) {
+		printk(BIOS_WARNING, "WARNING: %s is uninitialized or empty.\n",
+		       fmap_name);
+		size = 0;
+	} else {
+		size -= GOOGLE_VPD_2_0_OFFSET;
+	}
+
+	*vpd_size = size;
+
+	return vpd_buffer;
+}
+#endif
 
 static void cbmem_add_cros_vpd(int is_recovery)
 {
@@ -177,19 +221,23 @@ static int vpd_gets_callback(const uint8_t *key, int32_t key_len,
 	return VPD_FAIL;
 }
 
+
 const void *vpd_find(const char *key, int *size, enum vpd_region region)
 {
 	struct vpd_gets_arg arg = {0};
 	int consumed = 0;
+
+#if !ENV_ROMSTAGE
 	const struct vpd_cbmem *vpd;
 
 	vpd = cbmem_find(CBMEM_ID_VPD);
 	if (!vpd || !vpd->ro_size)
 		return NULL;
-
+#endif
 	arg.key = (const uint8_t *)key;
 	arg.key_len = strlen(key);
 
+#if !ENV_ROMSTAGE
 	if (region == VPD_ANY || region == VPD_RO)
 		while (VPD_OK == decodeVpdString(vpd->ro_size, vpd->blob,
 		       &consumed, vpd_gets_callback, &arg)) {
@@ -202,7 +250,31 @@ const void *vpd_find(const char *key, int *size, enum vpd_region region)
 		       vpd_gets_callback, &arg)) {
 		/* Iterate until found or no more entries. */
 		}
+#else
+	void *ro_vpd_base;
+	void *rw_vpd_base;
+	int32_t ro_vpd_size, rw_vpd_size;
 
+	ro_vpd_base = get_vpd("RO_VPD", &ro_vpd_size);
+	rw_vpd_base = get_vpd("RW_VPD", &rw_vpd_size);
+
+	if (region == VPD_ANY || region == VPD_RO) {
+		if (!ro_vpd_base || !ro_vpd_size)
+			return NULL;
+		while (VPD_OK == decodeVpdString(ro_vpd_size, ro_vpd_base,
+		       &consumed, vpd_gets_callback, &arg)) {
+		/* Iterate until found or no more entries. */
+		}
+	}
+	if (!arg.matched && region != VPD_RO) {
+		if (!rw_vpd_base || !rw_vpd_size)
+			return NULL;
+		while (VPD_OK == decodeVpdString(rw_vpd_size,
+		       rw_vpd_base, &consumed, vpd_gets_callback, &arg)) {
+		/* Iterate until found or no more entries. */
+		}
+	}
+#endif
 	if (!arg.matched)
 		return NULL;
 
