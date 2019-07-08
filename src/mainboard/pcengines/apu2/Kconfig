@@ -128,7 +128,7 @@ config FMDFILE
 
 config CBFS_SIZE
 	hex
-	default 0x0020C000 if VBOOT
+	default 0x005bb000 if VBOOT
 	default 0x00800000
 
 config VBOOT
