@@ -74,23 +74,7 @@ bool check_console(void)
 	}
 }
 
-bool check_com2(void)
-{
-	int com2en = is_knob_enabled("com2en");
-
-	switch (com2en) {
-	case 0:
-		return false;
-		break;
-	case 1:
-		return true;
-		break;
-	default:
-		printk(BIOS_INFO, "Disable COM2 output\n");
-		return false;
-		break;
-	}
-}
+bool check_com2(void) { return false; }
 
 bool check_boost(void)
 {
