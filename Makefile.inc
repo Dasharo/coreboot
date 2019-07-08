@@ -1102,13 +1102,11 @@ ifeq ($(CONFIG_VPD),y)
 	$(VPDTOOL) -f $@.tmp -O -i RW_VPD
 	$(VPDTOOL) -f $@.tmp -i RO_VPD -s scon=enabled
 	$(VPDTOOL) -f $@.tmp -i RO_VPD -s usben=enabled
-	$(VPDTOOL) -f $@.tmp -i RO_VPD -s com2_en=disabled
 	$(VPDTOOL) -f $@.tmp -i RO_VPD -s boosten=enabled
 	$(VPDTOOL) -f $@.tmp -i RO_VPD -s sd3mode=disabled
 	$(VPDTOOL) -f $@.tmp -i RO_VPD -s watchdog=0
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s scon=enabled
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s usben=enabled
-	$(VPDTOOL) -f $@.tmp -i RW_VPD -s com2_en=disabled
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s boosten=enabled
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s sd3mode=disabled
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s watchdog=0
