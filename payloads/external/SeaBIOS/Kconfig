@@ -86,6 +86,14 @@ config SEABIOS_BOOTORDER_FILE
 	  If used, a typical value would be:
 	    $(top)/src/mainboard/$(MAINBOARDDIR)/bootorder
 
+config SEABIOS_BOOTORDER_IN_FMAP
+	bool "SeaBIOS bootorder in fmap"
+	default n
+	help
+	  Puts bootorder contents to a BOOTORDER fmap region instead of CBFS.
+	  In such way bootorder can be preserved across updates and stays in
+	  one place with vboot multiple partitions.
+
 config SEABIOS_BOOTORDER_MAP_FILE
 	string "SeaBIOS bootorder_map file"
 	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_map"
