@@ -1,5 +1,5 @@
 config BOARD_PCENGINES_APU2
-	bool "APU2"
+	bool "Polisy"
 
 config BOARD_PCENGINES_APU3
 	bool "APU3"
