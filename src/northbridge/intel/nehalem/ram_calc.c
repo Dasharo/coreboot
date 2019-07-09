@@ -35,15 +35,13 @@ static uintptr_t smm_region_start(void)
 
 u32 northbridge_get_tseg_base(void)
 {
-	return (u32)smm_region_start & ~1;
+	return (u32)smm_region_start();
 }
 
 void *cbmem_top(void)
 {
 	return (void *) smm_region_start();
 }
-
-#define ROMSTAGE_RAM_STACK_SIZE 0x5000
 
 /* platform_enter_postcar() determines the stack to use after
  * cache-as-ram is torn down as well as the MTRR settings to use,
@@ -53,7 +51,7 @@ void platform_enter_postcar(void)
 	struct postcar_frame pcf;
 	uintptr_t top_of_ram;
 
-	if (postcar_frame_init(&pcf, ROMSTAGE_RAM_STACK_SIZE))
+	if (postcar_frame_init(&pcf, 0))
 		die("Unable to initialize postcar frame.\n");
 
 	/* Cache the ROM as WP just below 4GiB. */

@@ -16,6 +16,7 @@
 #include <console/cbmem_console.h>
 #include <cbmem.h>
 #include <boardid.h>
+#include <string.h>
 #include <fmap.h>
 #include <assert.h>
 #include <arch/mmu.h>
@@ -41,7 +42,7 @@ void qclib_add_if_table_entry(const char *name, void *base,
 	struct qclib_cb_if_table_entry *te =
 		&qclib_cb_if_table.te[qclib_cb_if_table.num_entries++];
 	assert(qclib_cb_if_table.num_entries <= qclib_cb_if_table.max_entries);
-	strncpy(te->name, name, sizeof(te->name));
+	strncpy(te->name, name, sizeof(te->name) - 1);
 	te->blob_address = (uintptr_t)base;
 	te->size = size;
 	te->blob_attributes = attrs;

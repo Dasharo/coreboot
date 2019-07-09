@@ -193,7 +193,7 @@ verstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += gdt_init.S
 verstage-$(CONFIG_IDT_IN_EVERY_STAGE) += exception.c
 verstage-$(CONFIG_IDT_IN_EVERY_STAGE) += idt.S
 
-verstage-$(CONFIG_ARCH_RAMSTAGE_X86_32) += cpu_common.c
+verstage-y += cpu_common.c
 verstage-y += memset.c
 verstage-y += memcpy.c
 verstage-y += memmove.c
@@ -230,7 +230,7 @@ romstage-y += boot.c
 romstage-$(CONFIG_C_ENVIRONMENT_BOOTBLOCK) += gdt_init.S
 romstage-y += cbmem.c
 romstage-y += cbfs_and_run.c
-romstage-$(CONFIG_ARCH_RAMSTAGE_X86_32) += cpu_common.c
+romstage-y += cpu_common.c
 romstage-$(CONFIG_EARLY_EBDA_INIT) += ebda.c
 romstage-$(CONFIG_IDT_IN_EVERY_STAGE) += exception.c
 romstage-$(CONFIG_IDT_IN_EVERY_STAGE) += idt.S
@@ -336,13 +336,6 @@ ramstage-$(CONFIG_COOP_MULTITASKING) += thread_switch.S
 ramstage-$(CONFIG_COLLECT_TIMESTAMPS_TSC) += timestamp.c
 ramstage-$(CONFIG_HAVE_ACPI_RESUME) += wakeup.S
 
-smm-$(CONFIG_IDT_IN_EVERY_STAGE) += exception.c
-smm-$(CONFIG_IDT_IN_EVERY_STAGE) += idt.S
-smm-y += memcpy.c
-smm-y += memmove.c
-smm-y += memset.c
-smm-$(CONFIG_X86_TOP4G_BOOTMEDIA_MAP) += mmap_boot.c
-
 ifeq ($(CONFIG_ARCH_RAMSTAGE_X86_32),y)
 rmodules_x86_32-y += memcpy.c
 rmodules_x86_32-y += memmove.c
@@ -379,11 +372,6 @@ ifneq ($(wildcard src/mainboard/$(MAINBOARDDIR)/fadt.c),)
 ramstage-srcs += src/mainboard/$(MAINBOARDDIR)/fadt.c
 endif
 endif # CONFIG_GENERATE_ACPI_TABLES
-ifeq ($(CONFIG_HAVE_SMI_HANDLER),y)
-ifneq ($(wildcard src/mainboard/$(MAINBOARDDIR)/smihandler.c),)
-smm-srcs += src/mainboard/$(MAINBOARDDIR)/smihandler.c
-endif
-endif
 
 ramstage-libs ?=
 
@@ -408,3 +396,16 @@ else
 endif
 
 endif # CONFIG_ARCH_RAMSTAGE_X86_32 / CONFIG_ARCH_RAMSTAGE_X86_64
+
+smm-$(CONFIG_IDT_IN_EVERY_STAGE) += exception.c
+smm-$(CONFIG_IDT_IN_EVERY_STAGE) += idt.S
+smm-y += memcpy.c
+smm-y += memmove.c
+smm-y += memset.c
+smm-$(CONFIG_X86_TOP4G_BOOTMEDIA_MAP) += mmap_boot.c
+
+ifeq ($(CONFIG_HAVE_SMI_HANDLER),y)
+ifneq ($(wildcard src/mainboard/$(MAINBOARDDIR)/smihandler.c),)
+smm-srcs += src/mainboard/$(MAINBOARDDIR)/smihandler.c
+endif
+endif

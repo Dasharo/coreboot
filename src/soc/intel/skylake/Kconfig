@@ -1,16 +1,20 @@
+config SOC_INTEL_COMMON_SKYLAKE_BASE
+	bool
+
 config SOC_INTEL_SKYLAKE
 	bool
+	select SOC_INTEL_COMMON_SKYLAKE_BASE
 	help
 	  Intel Skylake support
 
 config SOC_INTEL_KABYLAKE
 	bool
-	default n
-	select SOC_INTEL_SKYLAKE
+	select SOC_INTEL_COMMON_SKYLAKE_BASE
+	select MAINBOARD_USES_FSP2_0
 	help
 	  Intel Kabylake support
 
-if SOC_INTEL_SKYLAKE
+if SOC_INTEL_COMMON_SKYLAKE_BASE
 
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
@@ -288,6 +292,11 @@ config SOC_INTEL_I2C_DEV_MAX
 config CPU_BCLK_MHZ
 	int
 	default 100
+
+config CONSOLE_UART_BASE_ADDRESS
+	hex
+	default 0xfe030000
+	depends on INTEL_LPSS_UART_FOR_CONSOLE
 
 # Clock divider parameters for 115200 baud rate
 config SOC_INTEL_COMMON_LPSS_UART_CLK_M_VAL

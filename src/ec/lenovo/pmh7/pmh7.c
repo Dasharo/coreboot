@@ -17,9 +17,9 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pnp.h>
-#include <stdlib.h>
 #include <pc80/mc146818rtc.h>
 #include <delay.h>
+#include <types.h>
 
 #include "pmh7.h"
 #include "chip.h"

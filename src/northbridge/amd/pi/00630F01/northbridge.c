@@ -463,11 +463,9 @@ static unsigned long agesa_write_acpi_tables(struct device *device,
 	acpi_header_t *ssdt;
 	acpi_header_t *alib;
 	acpi_header_t *ivrs;
-	acpi_hest_t *hest;
 
 	/* HEST */
 	current = ALIGN(current, 8);
-	hest = (acpi_hest_t *)current;
 	acpi_write_hest((void *)current, acpi_fill_hest);
 	acpi_add_table(rsdp, (void *)current);
 	current += ((acpi_header_t *)current)->length;
@@ -680,7 +678,6 @@ static void domain_set_resources(struct device *dev)
 	struct bus *link;
 #if CONFIG_HW_MEM_HOLE_SIZEK != 0
 	struct hw_mem_hole_info mem_hole;
-	u32 reset_memhole = 1;
 #endif
 
 	pci_tolm = 0xffffffffUL;
@@ -711,7 +708,6 @@ static void domain_set_resources(struct device *dev)
 	// Use hole_basek as mmio_basek, and we don't need to reset hole anymore
 	if ((mem_hole.node_id !=  -1) && (mmio_basek > mem_hole.hole_startk)) {
 		mmio_basek = mem_hole.hole_startk;
-		reset_memhole = 0;
 	}
 #endif
 
@@ -788,42 +784,6 @@ static void sysconf_init(struct device *dev) // first node
 {
 	sblink = (pci_read_config32(dev, 0x64)>>8) & 7; // don't forget sublink1
 	node_nums = ((pci_read_config32(dev, 0x60)>>4) & 7) + 1; //NodeCnt[2:0]
-}
-
-static void add_more_links(struct device *dev, unsigned total_links)
-{
-	struct bus *link, *last = NULL;
-	int link_num;
-
-	for (link = dev->link_list; link; link = link->next)
-		last = link;
-
-	if (last) {
-		int links = total_links - last->link_num;
-		link_num = last->link_num;
-		if (links > 0) {
-			link = malloc(links*sizeof(*link));
-			if (!link)
-				die("Couldn't allocate more links!\n");
-			memset(link, 0, links*sizeof(*link));
-			last->next = link;
-		}
-	}
-	else {
-		link_num = -1;
-		link = malloc(total_links*sizeof(*link));
-		memset(link, 0, total_links*sizeof(*link));
-		dev->link_list = link;
-	}
-
-	for (link_num = link_num + 1; link_num < total_links; link_num++) {
-		link->link_num = link_num;
-		link->dev = dev;
-		link->next = link + 1;
-		last = link;
-		link = link->next;
-	}
-	last->next = NULL;
 }
 
 static void cpu_bus_scan(struct device *dev)

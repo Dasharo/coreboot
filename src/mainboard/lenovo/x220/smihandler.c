@@ -16,7 +16,6 @@
  */
 
 #include <arch/io.h>
-#include <device/pci_ops.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <ec/acpi/ec.h>
@@ -26,23 +25,6 @@
 
 #define GPE_EC_SCI	1
 #define GPE_EC_WAKE	13
-
-static void mainboard_smi_brightness_up(void)
-{
-	u8 value;
-
-	if ((value = pci_read_config8(PCI_DEV(0, 2, 1), 0xf4)) < 0xf0)
-		pci_write_config8(PCI_DEV(0, 2, 1), 0xf4, (value + 0x10) | 0xf);
-}
-
-static void mainboard_smi_brightness_down(void)
-{
-	u8 value;
-
-	if ((value = pci_read_config8(PCI_DEV(0, 2, 1), 0xf4)) > 0x10)
-		pci_write_config8(PCI_DEV(0, 2, 1), 0xf4,
-				  (value - 0x10) & 0xf0);
-}
 
 static void mainboard_smi_handle_ec_sci(void)
 {
@@ -54,19 +36,6 @@ static void mainboard_smi_handle_ec_sci(void)
 
 	event = ec_query();
 	printk(BIOS_DEBUG, "EC event %02x\n", event);
-
-	switch (event) {
-	case 0x14:
-		/* brightness up */
-		mainboard_smi_brightness_up();
-		break;
-	case 0x15:
-		/* brightness down */
-		mainboard_smi_brightness_down();
-		break;
-	default:
-		break;
-	}
 }
 
 void mainboard_smi_gpi(u32 gpi_sts)

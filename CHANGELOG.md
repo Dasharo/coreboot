@@ -12,6 +12,17 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.9.0.7] - 2019-07-09
+### Changed
+- [updated SeaBIOS to rel-1.12.1.3](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11213---2019-07-05)
+- [updated sortbootorder to v4.6.15](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4615---2019-07-05)
+- disabled IPv6 in iPXE that often caused the dhcp/autoboot command to time out
+- removed incorrectly assigned clock request mappings
+- rebased with official coreboot repository commit c32ccb7
+
+### Added
+- [prepared integration of tianocore payload allowing to boot UEFI aware systems](https://github.com/pcengines/apu2-documentation/blob/master/docs/tianocore_build.md)
+
 ## [v4.9.0.6] - 2019-06-08
 ### Changed
 - [updated SeaBIOS to rel-1.12.1.2](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11212---2019-06-04)
@@ -315,7 +326,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.6...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.7...develop
+[v4.9.0.7]: https://github.com/pcengines/coreboot/compare/v4.9.0.6...v4.9.0.7
 [v4.9.0.6]: https://github.com/pcengines/coreboot/compare/v4.9.0.5...v4.9.0.6
 [v4.9.0.5]: https://github.com/pcengines/coreboot/compare/v4.9.0.4...v4.9.0.5
 [v4.9.0.4]: https://github.com/pcengines/coreboot/compare/v4.9.0.3...v4.9.0.4

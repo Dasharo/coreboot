@@ -31,7 +31,7 @@ CONFIG_OVERRIDE_DEVICETREE:=$(call strip_quotes, $(CONFIG_OVERRIDE_DEVICETREE))
 # misleadingly named, this is the coreboot version
 ifeq ($(KERNELVERSION),)
 ifeq ($(BUILD_TIMELESS),1)
-KERNELVERSION := TIMELESS
+KERNELVERSION := -TIMELESS--LESSTIME-
 else
 KERNELVERSION := $(strip $(if $(GIT),\
 	$(shell git describe --dirty --always || git describe),\
@@ -193,9 +193,10 @@ ifneq ($(UPDATED_SUBMODULES),1)
 # try to fetch non-optional submodules if the source is under git
 forgetthis:=$(if $(GIT),$(shell git submodule update --init))
 ifeq ($(CONFIG_USE_BLOBS),y)
-# this is necessary because 3rdparty/blobs is update=none, and so is ignored
+# this is necessary because 3rdparty/{blobs,intel-microcode} is update=none, and so is ignored
 # unless explicitly requested and enabled through --checkout
 forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/blobs))
+forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/intel-microcode))
 ifeq ($(CONFIG_PLATFORM_USES_FSP1_0)$(CONFIG_PLATFORM_USES_FSP1_1)$(CONFIG_PLATFORM_USES_FSP2_0),y)
 # this is necessary because 3rdparty/fsp is update=none, and so is ignored
 # unless explicitly requested and enabled through --checkout
@@ -512,6 +513,8 @@ CBFSTOOL:=$(objutil)/cbfstool/cbfstool
 FMAPTOOL:=$(objutil)/cbfstool/fmaptool
 RMODTOOL:=$(objutil)/cbfstool/rmodtool
 IFWITOOL:=$(objutil)/cbfstool/ifwitool
+IFITTOOL:=$(objutil)/cbfstool/ifittool
+AMDCOMPRESS:=$(objutil)/cbfstool/amdcompress
 
 $(obj)/cbfstool: $(CBFSTOOL)
 	cp $< $@
@@ -523,6 +526,12 @@ $(obj)/rmodtool: $(RMODTOOL)
 	cp $< $@
 
 $(obj)/ifwitool: $(IFWITOOL)
+	cp $< $@
+
+$(obj)/ifittool: $(IFITTOOL)
+	cp $< $@
+
+$(obj)/amdcompress: $(AMDCOMPRESS)
 	cp $< $@
 
 _WINCHECK=$(shell uname -o 2> /dev/null)
@@ -637,7 +646,7 @@ install-git-commit-clangfmt:
 include util/crossgcc/Makefile.inc
 
 .PHONY: tools
-tools: $(objutil)/kconfig/conf $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(ROMCC_BIN) $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(FUTILITY) $(BINCFG)
+tools: $(objutil)/kconfig/conf $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(ROMCC_BIN) $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL)
 
 ###########################################################################
 # Common recipes for all stages
@@ -1007,10 +1016,9 @@ $(obj)/fmap.fmap: $(obj)/fmap.fmd $(FMAPTOOL)
 
 ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
 TS_OPTIONS := -j $(CONFIG_INTEL_TOP_SWAP_BOOTBLOCK_SIZE)
-FIT_OPTIONS := $(TS_OPTIONS)
 endif
 ifneq ($(CONFIG_UPDATE_IMAGE),y)
-$(obj)/coreboot.pre: $(objcbfs)/bootblock.bin $$(prebuilt-files) $(CBFSTOOL) $$(cpu_ucode_cbfs_file) $(obj)/fmap.fmap $(obj)/fmap.desc
+$(obj)/coreboot.pre: $(objcbfs)/bootblock.bin $$(prebuilt-files) $(CBFSTOOL) $(IFITTOOL) $$(cpu_ucode_cbfs_file) $(obj)/fmap.fmap $(obj)/fmap.desc
 	$(CBFSTOOL) $@.tmp create -M $(obj)/fmap.fmap -r $(shell cat $(obj)/fmap.desc)
 ifeq ($(CONFIG_ARCH_X86),y)
 	$(CBFSTOOL) $@.tmp add \
@@ -1054,11 +1062,15 @@ $(REFCODE_BLOB): $(RMODTOOL)
 endif
 
 FIT_ENTRY=$(call strip_quotes, $(CONFIG_INTEL_TOP_SWAP_FIT_ENTRY_FMAP_REG))
-ifneq ($(FIT_ENTRY),)
-FIT_OPTIONS += -q $(FIT_ENTRY)
+
+ifeq ($(CONFIG_HAVE_RAMSTAGE),y)
+RAMSTAGE=$(objcbfs)/ramstage.elf
+else
+RAMSTAGE=
 endif
 
-$(obj)/coreboot.rom: $(obj)/coreboot.pre $(objcbfs)/ramstage.elf $(CBFSTOOL) $$(INTERMEDIATE)
+$(obj)/coreboot.rom: $(obj)/coreboot.pre $(RAMSTAGE) $(CBFSTOOL) $$(INTERMEDIATE)
+
 	@printf "    CBFS       $(subst $(obj)/,,$(@))\n"
 # The full ROM may be larger than the CBFS part, so create an empty
 # file (filled with \377 = 0xff) and copy the CBFS image over it.
@@ -1079,15 +1091,38 @@ endif
 ifeq ($(CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE),y)
 ifeq ($(CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_HEADER),y)
 	@printf "    UPDATE-FIT\n"
-	$(CBFSTOOL) $@.tmp update-fit -n cpu_microcode_blob.bin -x $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
-	$(FIT_OPTIONS)
+	$(IFITTOOL) -f $@.tmp -a -n cpu_microcode_blob.bin -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
+	-r COREBOOT
 endif
-
 ifeq ($(CONFIG_USE_CPU_MICROCODE_CBFS_BINS),y)
 	@printf "    UPDATE-FIT\n"
-	$(CBFSTOOL) $@.tmp update-fit -n cpu_microcode_blob.bin -x $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
-	$(FIT_OPTIONS)
+	$(IFITTOOL) -f $@.tmp -a -n cpu_microcode_blob.bin -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
+	-r COREBOOT
 endif
+	$(IFITTOOL) -f $@.tmp -D -r COREBOOT
+
+# Second FIT in TOP_SWAP bootblock
+ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
+# INTEL_TOP_SWAP_FIT_ENTRY_FMAP_REG adds a region as first ucode into the seconds bootblock
+ifneq ($(FIT_ENTRY),)
+	@printf "    UPDATE-FIT2\n"
+	$(IFITTOOL) -f $@.tmp -A -n $(FIT_ENTRY) -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
+	$(TS_OPTIONS) -r COREBOOT
+endif
+ifeq ($(CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_HEADER),y)
+	@printf "    UPDATE-FIT2\n"
+	$(IFITTOOL) -f $@.tmp -a -n cpu_microcode_blob.bin -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
+	$(TS_OPTIONS) -r COREBOOT
+endif
+ifeq ($(CONFIG_USE_CPU_MICROCODE_CBFS_BINS),y)
+	@printf "    UPDATE-FIT2\n"
+	$(IFITTOOL) -f $@.tmp -a -n cpu_microcode_blob.bin -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
+	$(TS_OPTIONS) -r COREBOOT
+endif
+	$(IFITTOOL) -f $@.tmp -D $(TS_OPTIONS) -r COREBOOT
+
+endif
+
 endif
 
 ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
@@ -1132,8 +1167,8 @@ endif    # CONFIG_NO_FIXED_XIP_ROM_SIZE
 endif   # CONFIG_NO_XIP_EARLY_STAGES
 endif   # CONFIG_ARCH_ROMSTAGE_X86_32 / CONFIG_ARCH_ROMSTAGE_X86_64
 
-cbfs-files-y += $(CONFIG_CBFS_PREFIX)/ramstage
-$(CONFIG_CBFS_PREFIX)/ramstage-file := $(objcbfs)/ramstage.elf
+cbfs-files-$(CONFIG_HAVE_RAMSTAGE) += $(CONFIG_CBFS_PREFIX)/ramstage
+$(CONFIG_CBFS_PREFIX)/ramstage-file := $(RAMSTAGE)
 $(CONFIG_CBFS_PREFIX)/ramstage-type := stage
 $(CONFIG_CBFS_PREFIX)/ramstage-compression := $(CBFS_COMPRESS_FLAG)
 

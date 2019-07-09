@@ -27,6 +27,7 @@
 #include <memory_info.h>
 #include <cbmem.h>
 #include <smbios.h>
+#include <types.h>
 
 /*==============================================================================
  * = DDR3 SPD decoding helpers
@@ -381,8 +382,7 @@ int spd_decode_ddr3(dimm_attr * dimm, spd_raw_data spd)
 		 dimm->flags.therm_sensor ? "yes" : "no");
 
 	/*  SDRAM Device Type */
-	reg8 = spd[33];
-	printram("  Standard SDRAM     : %s\n", (reg8 & 0x80) ? "no" : "yes");
+	printram("  Standard SDRAM     : %s\n", (spd[33] & 0x80) ? "no" : "yes");
 
 	if (spd[63] & 0x01) {
 		dimm->flags.pins_mirrored = 1;

@@ -7,6 +7,7 @@ This section contains documentation about coreboot on specific mainboards.
 - [F2A85-M](asus/f2a85-m.md)
 - [P8H61-M LX](asus/p8h61-m_lx.md)
 - [P8H61-M Pro](asus/p8h61-m_pro.md)
+- [P8Z77-M Pro](asus/p8z77-m_pro.md)
 
 ## ASRock
 
@@ -30,6 +31,10 @@ The boards in this section are not real mainboards, but emulators.
 - [IceLake RVP](intel/icelake_rvp.md)
 - [KBLRVP11](intel/kblrvp11.md)
 
+## Facebook
+
+- [FBG-1701](facebook/fbg1701.md)
+
 ## Foxconn
 
 - [D41S](foxconn/d41s.md)
@@ -50,6 +55,7 @@ The boards in this section are not real mainboards, but emulators.
 ## HP
 
 - [Compaq 8200 Elite SFF](hp/compaq_8200_sff.md)
+- [Z220 Workstation SFF](hp/z220_sff.md)
 
 ### EliteBook series
 
@@ -80,6 +86,18 @@ The boards in this section are not real mainboards, but emulators.
 ## MSI
 
 - [MS-7707](msi/ms7707/ms7707.md)
+
+## PC Engines
+
+- [APU2](pcengines/apu2.md)
+
+## Roda
+
+- [RK9 Flash Header](roda/rk9/flash_header.md)
+
+## PC Engines
+
+- [APU1](pcengines/apu1.md)
 
 ## SiFive
 

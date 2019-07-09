@@ -51,7 +51,7 @@ static uint8_t get_param_value(const config_t *config, uint32_t dev_offset)
 {
 	struct device *dev;
 
-	dev = dev_find_slot(0, serial_io_dev[dev_offset]);
+	dev = pcidev_path_on_root(serial_io_dev[dev_offset]);
 	if (!dev || !dev->enabled)
 		return PCH_SERIAL_IO_INDEX(PchSerialIoDisabled);
 
@@ -178,7 +178,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchLockDownRtcMemoryLock = 0;
 
 	/* SATA */
-	dev = dev_find_slot(0, PCH_DEVFN_SATA);
+	dev = pcidev_path_on_root(PCH_DEVFN_SATA);
 	if (!dev)
 		params->SataEnable = 0;
 	else {
@@ -192,7 +192,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	/* Lan */
-	dev = dev_find_slot(0, PCH_DEVFN_GBE);
+	dev = pcidev_path_on_root(PCH_DEVFN_GBE);
 	if (!dev)
 		params->PchLanEnable = 0;
 	else {
@@ -244,6 +244,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* disable Legacy PME */
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
+	/* Legacy 8254 timer support */
+	params->Enable8254ClockGating = !CONFIG_USE_LEGACY_8254_TIMER;
+	params->Enable8254ClockGatingOnS3 = 1;
+
 	/* USB */
 	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
 		params->PortUsb20Enable[i] = config->usb2_ports[i].enable;
@@ -271,7 +275,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	/* Enable xDCI controller if enabled in devicetree and allowed */
-	dev = dev_find_slot(0, PCH_DEVFN_USBOTG);
+	dev = pcidev_path_on_root(PCH_DEVFN_USBOTG);
 	if (dev) {
 		if (!xdci_can_enable())
 			dev->enabled = 0;
@@ -283,7 +287,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;
 
 	/* Enable CNVi Wifi if enabled in device tree */
-	dev = dev_find_slot(0, PCH_DEVFN_CNViWIFI);
+	dev = pcidev_path_on_root(PCH_DEVFN_CNViWIFI);
 #if CONFIG(SOC_INTEL_COMETLAKE)
 	if (dev)
 		params->CnviMode = dev->enabled;
@@ -310,7 +314,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	       sizeof(config->PcieRpHotPlug));
 
 	/* eMMC and SD */
-	dev = dev_find_slot(0, PCH_DEVFN_EMMC);
+	dev = pcidev_path_on_root(PCH_DEVFN_EMMC);
 	if (!dev)
 		params->ScsEmmcEnabled = 0;
 	else {
@@ -325,7 +329,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		}
 	}
 
-	dev = dev_find_slot(0, PCH_DEVFN_SDCARD);
+	dev = pcidev_path_on_root(PCH_DEVFN_SDCARD);
 	if (!dev) {
 		params->ScsSdCardEnabled = 0;
 	} else {
@@ -334,7 +338,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 			CONFIG(MB_HAS_ACTIVE_HIGH_SD_PWR_ENABLE);
 	}
 
-	dev = dev_find_slot(0, PCH_DEVFN_UFS);
+	dev = pcidev_path_on_root(PCH_DEVFN_UFS);
 	if (!dev)
 		params->ScsUfsEnabled = 0;
 	else

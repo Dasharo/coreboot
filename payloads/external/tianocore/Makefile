@@ -18,11 +18,11 @@ export SHELL := env bash
 
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
-project_git_repo=https://github.com/mrchromebox/edk2
-project_git_branch=coreboot_fb
+project_git_repo=https://github.com/3mdeb/edk2
+project_git_branch=coreboot-4.7.x-uefi
 upstream_git_repo=https://github.com/tianocore/edk2
 
-# STABLE revision is MrChromebox's coreboot framebuffer (coreboot_fb) branch
+# STABLE revision is 3mdeb's coreboot uefi (coreboot-4.7.x-uefi) branch
 TAG-$(CONFIG_TIANOCORE_STABLE)=origin/$(project_git_branch)
 TAG-$(CONFIG_TIANOCORE_REVISION)=$(CONFIG_TIANOCORE_REVISION_ID)
 

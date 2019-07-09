@@ -1141,16 +1141,7 @@ static void sdram_dlltiming(struct sysinfo *s)
 
 	MCHBAR8(0x1a8) = MCHBAR8(0x1a8) | 1;
 	MCHBAR32(0x1a0) = 0x551803;
-	if (ONLY_DIMMA_IS_POPULATED(s->dimms, 0)) {
-		reg8 = 0x3c;
-	} else if (ONLY_DIMMB_IS_POPULATED(s->dimms, 0)) {
-		reg8 = 0x27;
-	} else if (BOTH_DIMMS_ARE_POPULATED(s->dimms, 0)) {
-		reg8 = 0x24;
-	} else {
-		// None
-		reg8 = 0x3f;
-	}
+
 	reg8 = 0x00; //switch all clocks on anyway
 
 	MCHBAR32(0x5a0) = (MCHBAR32(0x5a0) & ~0x3f000000) | (reg8 << 24);
@@ -1835,7 +1826,6 @@ static void sdram_dradrb(struct sysinfo *s)
 
 static u8 sampledqs(u32 dqshighaddr, u32 strobeaddr, u8 highlow, u8 count)
 {
-	volatile u32 strobedata;
 	u8 dqsmatches = 1;
 	while (count--) {
 		MCHBAR8(0x5d8) = MCHBAR8(0x5d8) & ~0x2;
@@ -1843,7 +1833,7 @@ static u8 sampledqs(u32 dqshighaddr, u32 strobeaddr, u8 highlow, u8 count)
 		MCHBAR8(0x5d8) = MCHBAR8(0x5d8) | 0x2;
 		hpet_udelay(1);
 		barrier();
-		strobedata = read32((void *)strobeaddr);
+		read32((void *)strobeaddr);
 		barrier();
 		hpet_udelay(1);
 

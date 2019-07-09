@@ -14,7 +14,6 @@
  */
 
 #include <arch/cpu.h>
-#include <arch/early_variables.h>
 #include <arch/symbols.h>
 #include <assert.h>
 #include <cpu/x86/mtrr.h>
@@ -115,6 +114,7 @@ static void save_dimm_info(void)
 				ddr_type = MEMORY_TYPE_UNKNOWN;
 				break;
 			}
+			u8 memProfNum = memory_info_hob->MemoryProfile;
 
 			/* Populate the DIMM information */
 			dimm_info_fill(dest_dimm,
@@ -127,7 +127,11 @@ static void save_dimm_info(void)
 				(const char *)src_dimm->ModulePartNum,
 				sizeof(src_dimm->ModulePartNum),
 				src_dimm->SpdSave + SPD_SAVE_OFFSET_SERIAL,
-				memory_info_hob->DataWidth);
+				memory_info_hob->DataWidth,
+				memory_info_hob->VddVoltage[memProfNum],
+				memory_info_hob->EccSupport,
+				src_dimm->MfgId,
+				src_dimm->SpdModuleType);
 			index++;
 		}
 	}
@@ -154,7 +158,7 @@ asmlinkage void car_stage_entry(void)
 	pmc_set_disb();
 	if (!s3wake)
 		save_dimm_info();
-	if (postcar_frame_init(&pcf, 1*KiB))
+	if (postcar_frame_init(&pcf, 0))
 		die("Unable to initialize postcar frame.\n");
 
 	/*
@@ -297,7 +301,7 @@ static void soc_primary_gfx_config_params(FSP_M_CONFIG *m_cfg,
 {
 	const struct device *dev;
 
-	dev = dev_find_slot(0, SA_DEVFN_IGD);
+	dev = pcidev_path_on_root(SA_DEVFN_IGD);
 	if (!dev || !dev->enabled) {
 		/*
 		 * If iGPU is disabled or not defined in the devicetree.cb,
@@ -327,7 +331,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	FSP_M_CONFIG *m_cfg = &mupd->FspmConfig;
 	FSP_M_TEST_CONFIG *m_t_cfg = &mupd->FspmTestConfig;
 
-	dev = dev_find_slot(0, PCI_DEVFN(PCH_DEV_SLOT_LPC, 0));
+	dev = pcidev_on_root(PCH_DEV_SLOT_LPC, 0);
 	config = dev->chip_info;
 
 	soc_memory_init_params(m_cfg, config);

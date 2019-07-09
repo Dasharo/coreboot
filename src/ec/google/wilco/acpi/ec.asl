@@ -57,6 +57,9 @@ Device (EC0)
 		If (\DPTE == One) {
 			W (DWST, Arg1)
 		}
+
+		/* Initialize UCSI */
+		^UCSI.INIT ()
 	}
 
 	/*
@@ -151,6 +154,12 @@ Device (EC0)
 		If (Arg0) {
 			Printf ("EC Enter S0ix")
 			W (CSEX, One)
+
+			/*
+			 * Read back from EC RAM after enabling S0ix
+			 * to prevent EC from aborting S0ix entry.
+			 */
+			R (EVT1)
 		} Else {
 			Printf ("EC Exit S0ix")
 			W (CSEX, Zero)
@@ -165,6 +174,7 @@ Device (EC0)
 	#include "lid.asl"
 	#include "platform.asl"
 	#include "vbtn.asl"
+	#include "ucsi.asl"
 #ifdef EC_ENABLE_DPTF
 	#include "dptf.asl"
 #endif

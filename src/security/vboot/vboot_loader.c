@@ -26,9 +26,6 @@
 _Static_assert(CONFIG(VBOOT_STARTS_IN_BOOTBLOCK) +
 	       CONFIG(VBOOT_STARTS_IN_ROMSTAGE) == 1,
 	       "vboot must either start in bootblock or romstage (not both!)");
-_Static_assert(CONFIG(VBOOT_STARTS_IN_BOOTBLOCK) ||
-	       !CONFIG(VBOOT_MIGRATE_WORKING_DATA),
-	       "no need to migrate working data after CBMEM is already up!");
 _Static_assert(!CONFIG(VBOOT_SEPARATE_VERSTAGE) ||
 	       CONFIG(VBOOT_STARTS_IN_BOOTBLOCK),
 	       "stand-alone verstage must start in (i.e. after) bootblock");
@@ -73,17 +70,6 @@ static void vboot_prepare(void)
 
 		car_set_var(vboot_executed, 1);
 	}
-
-	/*
-	 * Fill in vboot cbmem objects before moving to ramstage so all
-	 * downstream users have access to vboot results. This path only
-	 * applies to platforms employing VBOOT_STARTS_IN_ROMSTAGE because
-	 * cbmem comes online prior to vboot verification taking place. For
-	 * other platforms the vboot cbmem objects are initialized when
-	 * cbmem comes online.
-	 */
-	if (ENV_ROMSTAGE && CONFIG(VBOOT_STARTS_IN_ROMSTAGE))
-		vboot_fill_handoff();
 }
 
 static int vboot_locate(struct cbfs_props *props)

@@ -16,6 +16,7 @@
 #include <arch/exception.h>
 #include <assert.h>
 #include <bootmode.h>
+#include <cbmem.h>
 #include <console/console.h>
 #include <console/vtxprintf.h>
 #include <string.h>
@@ -281,6 +282,26 @@ static uint32_t extend_pcrs(struct vb2_context *ctx)
 		   vboot_extend_pcr(ctx, 1, HWID_DIGEST_PCR);
 }
 
+static void vboot_log_and_clear_recovery_mode_switch(int unused)
+{
+	/* Log the recovery mode switches if required, before clearing them. */
+	log_recovery_mode_switch();
+
+	/*
+	 * The recovery mode switch is cleared (typically backed by EC) here
+	 * to allow multiple queries to get_recovery_mode_switch() and have
+	 * them return consistent results during the verified boot path as well
+	 * as dram initialization. x86 systems ignore the saved dram settings
+	 * in the recovery path in order to start from a clean slate. Therefore
+	 * clear the state here since this function is called when memory
+	 * is known to be up.
+	 */
+	clear_recovery_mode_switch();
+}
+#if !CONFIG(VBOOT_STARTS_IN_ROMSTAGE)
+ROMSTAGE_CBMEM_INIT_HOOK(vboot_log_and_clear_recovery_mode_switch)
+#endif
+
 /**
  * Verify and select the firmware in the RW image
  *
@@ -364,8 +385,7 @@ void verstage_main(void)
 			printk(BIOS_INFO, "Recovery requested (%x)\n", rv);
 			save_if_needed(&ctx);
 			extend_pcrs(&ctx); /* ignore failures */
-			timestamp_add_now(TS_END_VBOOT);
-			return;
+			goto verstage_main_exit;
 		}
 
 		printk(BIOS_INFO, "Reboot requested (%x)\n", rv);
@@ -447,6 +467,13 @@ void verstage_main(void)
 
 	printk(BIOS_INFO, "Slot %c is selected\n", is_slot_a(&ctx) ? 'A' : 'B');
 	vboot_set_selected_region(region_device_region(&fw_main));
+
+ verstage_main_exit:
+	/* If CBMEM is not up yet, let the ROMSTAGE_CBMEM_INIT_HOOK take care
+	   of running this function. */
+	if (ENV_ROMSTAGE && CONFIG(VBOOT_STARTS_IN_ROMSTAGE))
+		vboot_log_and_clear_recovery_mode_switch(0);
+
 	vboot_finalize_work_context(&ctx);
 	timestamp_add_now(TS_END_VBOOT);
 }

@@ -23,8 +23,8 @@
 
 #if !defined(__SIMPLE_DEVICE__)
 #include <device/device.h>
-#define _SA_DEV(slot)		dev_find_slot(0, _SA_DEVFN(slot))
-#define _PCH_DEV(slot, func)	dev_find_slot(0, _PCH_DEVFN(slot, func))
+#define _SA_DEV(slot)		pcidev_path_on_root(_SA_DEVFN(slot))
+#define _PCH_DEV(slot, func)	pcidev_path_on_root(_PCH_DEVFN(slot, func))
 #else
 #define _SA_DEV(slot)		PCI_DEV(0, SA_DEV_SLOT_ ## slot, 0)
 #define _PCH_DEV(slot, func)	PCI_DEV(0, PCH_DEV_SLOT_ ## slot, func)
@@ -171,22 +171,24 @@
 #define  PCH_DEV_GSPI0		_PCH_DEV(SIO3, 2)
 #define  PCH_DEV_GSPI1		_PCH_DEV(SIO3, 3)
 
-#define PCH_DEV_SLOT_LPC	0x1f
-#define  PCH_DEVFN_LPC		_PCH_DEVFN(LPC, 0)
-#define  PCH_DEVFN_P2SB		_PCH_DEVFN(LPC, 1)
-#define  PCH_DEVFN_PMC		_PCH_DEVFN(LPC, 2)
-#define  PCH_DEVFN_HDA		_PCH_DEVFN(LPC, 3)
-#define  PCH_DEVFN_SMBUS	_PCH_DEVFN(LPC, 4)
-#define  PCH_DEVFN_SPI		_PCH_DEVFN(LPC, 5)
-#define  PCH_DEVFN_GBE		_PCH_DEVFN(LPC, 6)
-#define  PCH_DEVFN_TRACEHUB	_PCH_DEVFN(LPC, 7)
-#define  PCH_DEV_LPC		_PCH_DEV(LPC, 0)
-#define  PCH_DEV_P2SB		_PCH_DEV(LPC, 1)
-#define  PCH_DEV_PMC		_PCH_DEV(LPC, 2)
-#define  PCH_DEV_HDA		_PCH_DEV(LPC, 3)
-#define  PCH_DEV_SMBUS		_PCH_DEV(LPC, 4)
-#define  PCH_DEV_SPI		_PCH_DEV(LPC, 5)
-#define  PCH_DEV_GBE		_PCH_DEV(LPC, 6)
-#define  PCH_DEV_TRACEHUB	_PCH_DEV(LPC, 7)
+#define PCH_DEV_SLOT_ESPI	0x1f
+#define PCH_DEV_SLOT_LPC	PCH_DEV_SLOT_ESPI
+#define  PCH_DEVFN_ESPI		_PCH_DEVFN(ESPI, 0)
+#define  PCH_DEVFN_P2SB		_PCH_DEVFN(ESPI, 1)
+#define  PCH_DEVFN_PMC		_PCH_DEVFN(ESPI, 2)
+#define  PCH_DEVFN_HDA		_PCH_DEVFN(ESPI, 3)
+#define  PCH_DEVFN_SMBUS	_PCH_DEVFN(ESPI, 4)
+#define  PCH_DEVFN_SPI		_PCH_DEVFN(ESPI, 5)
+#define  PCH_DEVFN_GBE		_PCH_DEVFN(ESPI, 6)
+#define  PCH_DEVFN_TRACEHUB	_PCH_DEVFN(ESPI, 7)
+#define  PCH_DEV_ESPI	_PCH_DEV(ESPI, 0)
+#define  PCH_DEV_LPC		PCH_DEV_ESPI
+#define  PCH_DEV_P2SB		_PCH_DEV(ESPI, 1)
+#define  PCH_DEV_PMC		_PCH_DEV(ESPI, 2)
+#define  PCH_DEV_HDA		_PCH_DEV(ESPI, 3)
+#define  PCH_DEV_SMBUS		_PCH_DEV(ESPI, 4)
+#define  PCH_DEV_SPI		_PCH_DEV(ESPI, 5)
+#define  PCH_DEV_GBE		_PCH_DEV(ESPI, 6)
+#define  PCH_DEV_TRACEHUB	_PCH_DEV(ESPI, 7)
 
 #endif

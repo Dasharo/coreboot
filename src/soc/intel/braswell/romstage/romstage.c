@@ -17,136 +17,54 @@
 
 #include <cbmem.h>
 #include <stddef.h>
-#include <arch/early_variables.h>
 #include <arch/io.h>
 #include <device/mmio.h>
-#include <device/pci_ops.h>
-#include <arch/cbfs.h>
-#include <cpu/x86/mtrr.h>
 #include <console/console.h>
-#include <device/device.h>
-#include <device/pci_def.h>
-#include <elog.h>
-#include <mrc_cache.h>
-#include <string.h>
-#include <vendorcode/google/chromeos/chromeos.h>
-#include <fsp/util.h>
-#include <soc/gpio.h>
 #include <soc/iomap.h>
 #include <soc/iosf.h>
-#include <soc/lpc.h>
-#include <soc/pci_devs.h>
 #include <soc/romstage.h>
-#include <soc/smm.h>
-#include <soc/spi.h>
-#include <build.h>
-#include <pc80/mc146818rtc.h>
 
 #include "../chip.h"
 
-void program_base_addresses(void)
-{
-	uint32_t reg;
-	const uint32_t lpc_dev = PCI_DEV(0, LPC_DEV, LPC_FUNC);
 
-	/* Memory Mapped IO registers. */
-	reg = PMC_BASE_ADDRESS | 2;
-	pci_write_config32(lpc_dev, PBASE, reg);
-	reg = IO_BASE_ADDRESS | 2;
-	pci_write_config32(lpc_dev, IOBASE, reg);
-	reg = ILB_BASE_ADDRESS | 2;
-	pci_write_config32(lpc_dev, IBASE, reg);
-	reg = SPI_BASE_ADDRESS | 2;
-	pci_write_config32(lpc_dev, SBASE, reg);
-	reg = MPHY_BASE_ADDRESS | 2;
-	pci_write_config32(lpc_dev, MPBASE, reg);
-	reg = PUNIT_BASE_ADDRESS | 2;
-	pci_write_config32(lpc_dev, PUBASE, reg);
-	reg = RCBA_BASE_ADDRESS | 1;
-	pci_write_config32(lpc_dev, RCBA, reg);
-
-	/* IO Port Registers. */
-	reg = ACPI_BASE_ADDRESS | 2;
-	pci_write_config32(lpc_dev, ABASE, reg);
-	reg = GPIO_BASE_ADDRESS | 2;
-	pci_write_config32(lpc_dev, GBASE, reg);
-}
-
-static void spi_init(void)
-{
-	void *scs = (void *)(SPI_BASE_ADDRESS + SCS);
-	void *bcr = (void *)(SPI_BASE_ADDRESS + BCR);
-	uint32_t reg;
-
-	/* Disable generating SMI when setting WPD bit. */
-	write32(scs, read32(scs) & ~SMIWPEN);
-	/*
-	 * Enable caching and prefetching in the SPI controller. Disable
-	 * the SMM-only BIOS write and set WPD bit.
-	 */
-	reg = (read32(bcr) & ~SRC_MASK) | SRC_CACHE_PREFETCH | BCR_WPD;
-	reg &= ~EISS;
-	write32(bcr, reg);
-}
-
-static void soc_rtc_init(void)
-{
-	int rtc_failed = rtc_failure();
-
-	if (rtc_failed) {
-		printk(BIOS_ERR,
-			"RTC Failure detected. Resetting date to %x/%x/%x%x\n",
-			COREBOOT_BUILD_MONTH_BCD,
-			COREBOOT_BUILD_DAY_BCD,
-			0x20,
-			COREBOOT_BUILD_YEAR_BCD);
-	}
-
-	cmos_init(rtc_failed);
-}
-
-static struct chipset_power_state power_state CAR_GLOBAL;
+static struct chipset_power_state power_state;
 
 static void migrate_power_state(int is_recovery)
 {
 	struct chipset_power_state *ps_cbmem;
-	struct chipset_power_state *ps_car;
 
-	ps_car = car_get_var_ptr(&power_state);
 	ps_cbmem = cbmem_add(CBMEM_ID_POWER_STATE, sizeof(*ps_cbmem));
 
 	if (ps_cbmem == NULL) {
 		printk(BIOS_DEBUG, "Not adding power state to cbmem!\n");
 		return;
 	}
-	memcpy(ps_cbmem, ps_car, sizeof(*ps_cbmem));
+	memcpy(ps_cbmem, &power_state, sizeof(*ps_cbmem));
 }
 ROMSTAGE_CBMEM_INIT_HOOK(migrate_power_state);
 
 struct chipset_power_state *fill_power_state(void)
 {
-	struct chipset_power_state *ps = car_get_var_ptr(&power_state);
+	power_state.pm1_sts = inw(ACPI_BASE_ADDRESS + PM1_STS);
+	power_state.pm1_en = inw(ACPI_BASE_ADDRESS + PM1_EN);
+	power_state.pm1_cnt = inl(ACPI_BASE_ADDRESS + PM1_CNT);
+	power_state.gpe0_sts = inl(ACPI_BASE_ADDRESS + GPE0_STS);
+	power_state.gpe0_en = inl(ACPI_BASE_ADDRESS + GPE0_EN);
+	power_state.tco_sts = inl(ACPI_BASE_ADDRESS + TCO_STS);
+	power_state.prsts = read32((void *)(PMC_BASE_ADDRESS + PRSTS));
+	power_state.gen_pmcon1 = read32((void *)(PMC_BASE_ADDRESS + GEN_PMCON1));
+	power_state.gen_pmcon2 = read32((void *)(PMC_BASE_ADDRESS + GEN_PMCON2));
 
-	ps->pm1_sts = inw(ACPI_BASE_ADDRESS + PM1_STS);
-	ps->pm1_en = inw(ACPI_BASE_ADDRESS + PM1_EN);
-	ps->pm1_cnt = inl(ACPI_BASE_ADDRESS + PM1_CNT);
-	ps->gpe0_sts = inl(ACPI_BASE_ADDRESS + GPE0_STS);
-	ps->gpe0_en = inl(ACPI_BASE_ADDRESS + GPE0_EN);
-	ps->tco_sts = inl(ACPI_BASE_ADDRESS + TCO_STS);
-	ps->prsts = read32((void *)(PMC_BASE_ADDRESS + PRSTS));
-	ps->gen_pmcon1 = read32((void *)(PMC_BASE_ADDRESS + GEN_PMCON1));
-	ps->gen_pmcon2 = read32((void *)(PMC_BASE_ADDRESS + GEN_PMCON2));
-
-	ps->prev_sleep_state = chipset_prev_sleep_state(ps);
+	power_state.prev_sleep_state = chipset_prev_sleep_state(&power_state);
 
 	printk(BIOS_DEBUG, "pm1_sts: %04x pm1_en: %04x pm1_cnt: %08x\n",
-		ps->pm1_sts, ps->pm1_en, ps->pm1_cnt);
+		power_state.pm1_sts, power_state.pm1_en, power_state.pm1_cnt);
 	printk(BIOS_DEBUG, "gpe0_sts: %08x gpe0_en: %08x tco_sts: %08x\n",
-		ps->gpe0_sts, ps->gpe0_en, ps->tco_sts);
+		power_state.gpe0_sts, power_state.gpe0_en, power_state.tco_sts);
 	printk(BIOS_DEBUG, "prsts: %08x gen_pmcon1: %08x gen_pmcon2: %08x\n",
-		ps->prsts, ps->gen_pmcon1, ps->gen_pmcon2);
-	printk(BIOS_DEBUG, "prev_sleep_state %d\n", ps->prev_sleep_state);
-	return ps;
+		power_state.prsts, power_state.gen_pmcon1, power_state.gen_pmcon2);
+	printk(BIOS_DEBUG, "prev_sleep_state %d\n", power_state.prev_sleep_state);
+	return &power_state;
 }
 
 /* Return 0, 3, or 5 to indicate the previous sleep state. */
@@ -176,24 +94,6 @@ int chipset_prev_sleep_state(struct chipset_power_state *ps)
 	return prev_sleep_state;
 }
 
-/* SOC initialization before the console is enabled */
-void car_soc_pre_console_init(void)
-{
-	/* Early chipset initialization */
-	program_base_addresses();
-	tco_disable();
-}
-
-/* SOC initialization after console is enabled */
-void car_soc_post_console_init(void)
-{
-	/* Continue chipset initialization */
-	soc_rtc_init();
-	set_max_freq();
-	spi_init();
-
-	lpc_init();
-}
 
 /* SOC initialization after RAM is enabled */
 void soc_after_ram_init(struct romstage_params *params)

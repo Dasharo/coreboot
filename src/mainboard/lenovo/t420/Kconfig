@@ -46,7 +46,6 @@ config VBOOT_VBNV_OFFSET
 config FMDFILE
 	string
 	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT
-	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd"
 
 config MAINBOARD_DIR
 	string
@@ -75,9 +74,5 @@ config VGA_BIOS_FILE
 config VGA_BIOS_ID
 	string
 	default "8086,0126"
-
-config ONBOARD_VGA_IS_PRIMARY
-	bool
-	default y
 
 endif # BOARD_LENOVO_T420

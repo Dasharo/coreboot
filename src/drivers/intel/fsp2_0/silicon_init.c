@@ -22,6 +22,7 @@
 #include <stage_cache.h>
 #include <string.h>
 #include <timestamp.h>
+#include <types.h>
 
 struct fsp_header fsps_hdr;
 
@@ -72,7 +73,7 @@ static void do_silicon_init(struct fsp_header *hdr)
 		}
 		printk(BIOS_SPEW, "FspSiliconInit returned 0x%08x\n", status);
 		die_with_post_code(postcode,
-			"FspSiliconINit returned an error!\n");
+			"FspSiliconInit returned an error!\n");
 	}
 }
 

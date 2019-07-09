@@ -62,6 +62,7 @@ config CPU_SPECIFIC_OPTIONS
 	select UDELAY_TSC
 	select UDK_2017_BINDING
 	select DISPLAY_FSP_VERSION_INFO
+	select HECI_DISABLE_USING_SMM
 
 config DCACHE_RAM_BASE
 	default 0xfef00000
@@ -137,6 +138,11 @@ config SOC_INTEL_I2C_DEV_MAX
 config SOC_INTEL_UART_DEV_MAX
 	int
 	default 3
+
+config CONSOLE_UART_BASE_ADDRESS
+	hex
+	default 0xfe032000
+	depends on INTEL_LPSS_UART_FOR_CONSOLE
 
 # Clock divider parameters for 115200 baud rate
 config SOC_INTEL_COMMON_LPSS_UART_CLK_M_VAL

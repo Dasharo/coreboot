@@ -44,7 +44,6 @@ chip northbridge/intel/x4x		# Northbridge
 			register "gpi13_routing" = "1" # ??vendor
 
 			register "ide_enable_primary" = "0x1"
-			register "sata_ahci" = "0x0" # AHCI not supported on this ICH7 variant
 			register "gpe0_en" = "0x440"
 
 			device pci 1b.0 on end		# Audio
@@ -55,8 +54,6 @@ chip northbridge/intel/x4x		# Northbridge
 			end
 			device pci 1c.2 off end		# PCIe 3
 			device pci 1c.3 off end		# PCIe 4
-			device pci 1c.4 off end		# PCIe 5
-			device pci 1c.5 off end		# PCIe 6
 			device pci 1d.0 on end		# USB
 			device pci 1d.1 on end		# USB
 			device pci 1d.2 on end		# USB
