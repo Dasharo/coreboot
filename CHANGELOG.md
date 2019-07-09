@@ -18,6 +18,7 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 - [updated sortbootorder to v4.6.15](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4615---2019-07-05)
 - disabled IPv6 in iPXE that often caused the dhcp/autoboot command to time out
 - removed incorrectly assigned clock request mappings
+- rebased with official coreboot repository commit c32ccb7
 
 ### Added
 - [prepared integration of tianocore payload allowing to boot UEFI aware systems](https://github.com/pcengines/apu2-documentation/blob/master/docs/tianocore_build.md)
