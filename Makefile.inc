@@ -1083,8 +1083,10 @@ ifeq ($(CONFIG_SEABIOS_ADD_SERCON_PORT_FILE),y)
 	$(CBFSTOOL) $@.tmp add-int -i $(CONFIG_SEABIOS_SERCON_PORT_ADDR) -n etc/sercon-port
 endif
 ifeq ($(CONFIG_SEABIOS_BOOTORDER_IN_FMAP),y)
+ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_FILE)),)
 	@printf "    SeaBIOS    Fill bootorder region\n"
 	$(CBFSTOOL) $@.tmp write -r BOOTORDER -f $(CONFIG_SEABIOS_BOOTORDER_FILE)
+endif
 endif
 
 ifeq ($(CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE),y)
