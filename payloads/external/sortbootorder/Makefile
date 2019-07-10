@@ -3,7 +3,8 @@ TAG-$(SORTBOOTORDER_STABLE)=v4.6.14
 TAG-$(SORTBOOTORDER_REVISION)=$(SORTBOOTORDER_REVISION_ID)
 
 project_git_repo=git@gitlab.com:3mdeb/universal-devices/sortbootorder.git
-project_dir=sortbootorder
+project_name=sortbootorder
+project_dir=$(CURDIR)/sortbootorder
 
 unexport KCONFIG_AUTOHEADER
 unexport KCONFIG_AUTOCONFIG
@@ -14,11 +15,11 @@ unexport KCONFIG_NEGATIVES
 
 all: build
 
-sortbootorder:
+$(project_dir):
 	echo "    Cloning sortbootorder from Git"
 	git clone $(project_git_repo) $(project_dir)
 
-fetch: sortbootorder
+fetch: $(project_dir)
 ifeq ($(TAG-y),)
 	echo "Error: The specified tag is invalid"
 ifeq ($(SORTBOOTORDER_REVISION),y)
