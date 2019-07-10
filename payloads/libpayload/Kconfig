@@ -408,6 +408,12 @@ source "drivers/timer/Kconfig"
 source "drivers/storage/Kconfig"
 source "drivers/usb/Kconfig"
 
+config VPD
+	bool "Support for Vital Product Data"
+	default y
+	help
+	  Enable support for flash based vital product data.
+
 endmenu
 
 menu "Debugging"
