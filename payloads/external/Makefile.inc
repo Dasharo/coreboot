@@ -268,7 +268,7 @@ payloads/external/Memtest86Plus/memtest86plus/memtest: $(DOTCONFIG)
 # sortbootorder
 
 payloads/external/sortbootorder/sortbootorder/sortbootorder.elf sortbootorder:
-	$(MAKE) -C payloads/external/sortbootorder \
+	$(MAKE) -C payloads/external/sortbootorder all \
 		TARGET_APU1=$(CONFIG_BOARD_PCENGINES_APU1) \
 		SORTBOOTORDER_REVISION=$(CONFIG_SORTBOOTORDER_REVISION) \
 		SORTBOOTORDER_REVISION_ID=$(CONFIG_SORTBOOTORDER_REVISION_ID) \
