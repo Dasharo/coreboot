@@ -65,7 +65,6 @@
 #include <sysinfo.h>
 #include <pci.h>
 #include <archive.h>
-#include <vpd.h>
 
 /* Double-evaluation unsafe min/max, for bitfields and outside of functions */
 #define __CMP_UNSAFE(a, b, op) ((a) op (b) ? (a) : (b))
