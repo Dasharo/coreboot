@@ -551,8 +551,8 @@ void selfboot(void *entry);
 
 /* look for area "name" in "fmap", setting offset and size to describe it.
    Returns 0 on success, < 0 on error. */
-int fmap_region_by_name(const uint32_t fmap_offset, const char * const name,
-			uint32_t * const offset, uint32_t * const size);
+int fmap_region_by_name(const char * const name, uint32_t * const offset,
+			uint32_t * const size);
 
 
 enum vpd_region {
