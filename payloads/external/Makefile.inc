@@ -148,6 +148,12 @@ etc/boot-menu-message-file := $(strip $(CONFIG_SEABIOS_BOOTMENU_MESSAGE_FILE))
 etc/boot-menu-message-type := raw
 endif
 
+# add a seaBIOS threads file
+ifneq ($(CONFIG_SEABIOS_THREAD_OPTIONROMS),)
+cbfs-files-y += etc/threads
+etc/threads-file := $(strip $(top)/src/mainboard/$(MAINBOARDDIR)/threads)
+etc/threads-type := raw
+endif
 
 # add a SeaBIOS sercon-port file
 ifneq ($(strip $(CONFIG_SEABIOS_SERCON_PORT_FILE)),)

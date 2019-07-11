@@ -155,55 +155,6 @@ static void pirq_setup(void)
  */
 #define SIO_PORT 0x2e
 
-static void config_gpio_mux(void)
-{
-	struct device *uart, *gpio;
-
-	if (check_uartc()) {
-		printk(BIOS_INFO, "UARTC enabled\n");
-
-		uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP3);
-		if (uart)
-			uart->enabled = 1;
-
-		gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO0);
-		if (gpio)
-			gpio->enabled = 0;
-	} else {
-		printk(BIOS_INFO, "UARTC disabled\n");
-
-		uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP3);
-		if (uart)
-			uart->enabled = 0;
-
-		gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO0);
-		if (gpio)
-			gpio->enabled = 1;
-	}
-
-	if (check_uartd()) {
-		printk(BIOS_INFO, "UARTD enabled\n");
-
-		uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
-		if (uart)
-			uart->enabled = 1;
-
-		gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO1);
-		if (gpio)
-			gpio->enabled = 0;
-	} else {
-		printk(BIOS_INFO, "UARTD disabled\n");
-
-		uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
-		if (uart)
-			uart->enabled = 0;
-
-		gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO1);
-		if (gpio)
-			gpio->enabled = 1;
-	}
-}
-
 static void set_dimm_info(uint8_t *spd, struct dimm_info *dimm)
 {
 	const int spd_capmb[8] = {  1,  2,  4,  8, 16, 32, 64,  0 };
@@ -300,8 +251,6 @@ static void mainboard_enable(struct device *dev)
 {
 	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
 	bool scon = check_console();
-
-	config_gpio_mux();
 
 	setup_bsp_ramtop();
 	u32 total_mem = bsp_topmem() / (1024 * 1024);

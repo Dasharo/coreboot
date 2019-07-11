@@ -263,8 +263,8 @@ static void print_sign_of_life()
 	strncpy(tmp+4, coreboot_dmi_date+3, 2);
 	strncpy(tmp+6, coreboot_dmi_date,   2);
 	tmp[8] = '\0';
-	printk(BIOS_ALERT, CONFIG_MAINBOARD_VENDOR " "
-	                   CONFIG_MAINBOARD_PART_NUMBER "\n");
+	printk(BIOS_ALERT, CONFIG_MAINBOARD_SMBIOS_MANUFACTURER " "
+					   CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME "\n");
 	printk(BIOS_ALERT, "coreboot build %s\n", tmp);
 	printk(BIOS_ALERT, "BIOS version %s\n", mainboard_bios_version());
 }
