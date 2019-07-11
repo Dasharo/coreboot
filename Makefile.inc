@@ -1085,7 +1085,7 @@ endif
 ifeq ($(CONFIG_SEABIOS_BOOTORDER_IN_FMAP),y)
 ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_FILE)),)
 	@printf "    SeaBIOS    Fill bootorder region\n"
-	$(CBFSTOOL) $@.tmp write -r BOOTORDER -f $(CONFIG_SEABIOS_BOOTORDER_FILE)
+	$(CBFSTOOL) $@.tmp write -r BOOTORDER -u -i 0 -f $(CONFIG_SEABIOS_BOOTORDER_FILE)
 endif
 endif
 
