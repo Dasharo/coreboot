@@ -18,7 +18,6 @@
 #include <boot_device.h>
 #include <cbmem.h>
 #include <fmap.h>
-#include <lib.h>
 #include <spi_flash.h>
 #include <spi-generic.h>
 #include <commonlib/region.h>
@@ -185,9 +184,6 @@ void enable_console(void)
 	memcpy(&vpd->blob[vpd->ro_size],
 	       output_buffer + 0x600 + sizeof(struct google_vpd_info),
 	       info.size);
-
-	hexdump(vpd, vpd->ro_size + vpd->rw_size + 16);
-	hexdump(output_buffer, vpd_region.size);
 
 	if (fmap_overwrite_area("RW_VPD", output_buffer, vpd_region.size) == -1)
 		printk(BIOS_ERR, "Flashing VPD failed\n");
