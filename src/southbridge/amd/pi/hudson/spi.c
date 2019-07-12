@@ -16,16 +16,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arch/io.h>
+#include <arch/early_variables.h>
+#include <lib.h>
 #include <console/console.h>
 #include <spi_flash.h>
 #include <spi-generic.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
+#include "pci_devs.h"
 
 #include <Proc/Fch/FchPlatform.h>
 
 #define SPI_REG_OPCODE		0x0
+#define SPI_REG_CNTRL00		0x0
 #define SPI_REG_CNTRL02		0x2
  #define CNTRL02_FIFO_RESET	(1 << 4)
  #define CNTRL02_EXEC_OPCODE	(1 << 0)
@@ -41,16 +45,52 @@
 
 #define AMD_SB_SPI_TX_LEN	64
 
-static uintptr_t spibar;
+#define SPI_DEBUG_DRIVER CONFIG(DEBUG_SPI_FLASH)
 
-static inline uint8_t spi_read(uint8_t reg)
+static uintptr_t spibar CAR_GLOBAL;
+
+static uintptr_t get_spibase(void)
 {
-	return read8((void *)(spibar + reg));
+	return car_get_var(spibar);
 }
 
-static inline void spi_write(uint8_t reg, uint8_t val)
+static void set_spibar(uintptr_t base)
 {
-	write8((void *)(spibar + reg), val);
+	car_set_var(spibar, base);
+}
+
+static inline uint8_t spi_read8(uint8_t reg)
+{
+	return read8((void *)(get_spibase() + reg));
+}
+
+static inline uint32_t spi_read32(uint8_t reg)
+{
+	return read32((void *)(get_spibase() + reg));
+}
+
+static inline void spi_write8(uint8_t reg, uint8_t val)
+{
+	write8((void *)(get_spibase() + reg), val);
+}
+
+static inline void spi_write32(uint8_t reg, uint32_t val)
+{
+	write32((void *)(get_spibase() + reg), val);
+}
+
+static void dump_state(const char *str)
+{
+	if (!SPI_DEBUG_DRIVER)
+		return;
+
+	printk(BIOS_DEBUG, "SPI: %s\n", str);
+	printk(BIOS_DEBUG, "Cntrl0: %x\n", spi_read32(SPI_REG_CNTRL00));
+	printk(BIOS_DEBUG, "Cntrl1: %x\n", spi_read32(SPI_REG_CNTRL11));
+	printk(BIOS_DEBUG, "TxByteCount: %x\n", spi_read8(SPI_EXT_REG_TXCOUNT));
+	printk(BIOS_DEBUG, "RxByteCount: %x\n", spi_read8(SPI_EXT_REG_RXCOUNT));
+	printk(BIOS_DEBUG, "CmdCode: %x\n", spi_read8(SPI_REG_OPCODE));
+	hexdump((void *)(get_spibase() + SPI_REG_FIFO), AMD_SB_SPI_TX_LEN);
 }
 
 static void reset_internal_fifo_pointer(void)
@@ -58,30 +98,35 @@ static void reset_internal_fifo_pointer(void)
 	uint8_t reg8;
 
 	do {
-		reg8 = spi_read(SPI_REG_CNTRL02);
+		reg8 = spi_read8(SPI_REG_CNTRL02);
 		reg8 |= CNTRL02_FIFO_RESET;
-		spi_write(SPI_REG_CNTRL02, reg8);
-	} while (spi_read(SPI_REG_CNTRL11) & CNTRL11_FIFOPTR_MASK);
+		spi_write8(SPI_REG_CNTRL02, reg8);
+	} while (spi_read8(SPI_REG_CNTRL11) & CNTRL11_FIFOPTR_MASK);
 }
 
 static void execute_command(void)
 {
 	uint8_t reg8;
 
-	reg8 = spi_read(SPI_REG_CNTRL02);
-	reg8 |= CNTRL02_EXEC_OPCODE;
-	spi_write(SPI_REG_CNTRL02, reg8);
+	dump_state("Before Execute");
 
-	while ((spi_read(SPI_REG_CNTRL02) & CNTRL02_EXEC_OPCODE) &&
-	       (spi_read(SPI_REG_CNTRL03) & CNTRL03_SPIBUSY));
+	reg8 = spi_read8(SPI_REG_CNTRL02);
+	reg8 |= CNTRL02_EXEC_OPCODE;
+	spi_write8(SPI_REG_CNTRL02, reg8);
+
+	while ((spi_read8(SPI_REG_CNTRL02) & CNTRL02_EXEC_OPCODE) &&
+		(spi_read8(SPI_REG_CNTRL03) & CNTRL03_SPIBUSY))
+		;
+
+	dump_state("Transaction finished");
 }
 
 void spi_init(void)
 {
-	struct device *dev;
+	uintptr_t bar;
 
-	dev = pcidev_on_root(0x14, 3);
-	spibar = pci_read_config32(dev, 0xA0) & ~0x1F;
+	bar = pci_read_config32(LPC_PCIDEV, 0xA0) & ~0x1F;
+	set_spibar(bar);
 }
 
 static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
@@ -90,6 +135,10 @@ static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 	/* First byte is cmd which can not being sent through FIFO. */
 	u8 cmd = *(u8 *)dout++;
 	size_t count;
+
+	if (SPI_DEBUG_DRIVER)
+		printk(BIOS_DEBUG, "%s(%zx, %zx)\n", __func__, bytesout,
+			bytesin);
 
 	bytesout--;
 
@@ -101,35 +150,32 @@ static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 	 * by the SPI chip driver.
 	 */
 	if (bytesout > AMD_SB_SPI_TX_LEN) {
-		printk(BIOS_WARNING, "FCH SPI: Too much to write. Does your SPI chip driver use"
-		     " spi_crop_chunk()?\n");
+		printk(BIOS_WARNING, "FCH SPI: Too much to write."
+			" Does your SPI chip driver use spi_crop_chunk()?\n");
 		return -1;
 	}
 
-	spi_write(SPI_EXT_REG_INDX, SPI_EXT_REG_TXCOUNT);
-	spi_write(SPI_EXT_REG_DATA, bytesout);
-	spi_write(SPI_EXT_REG_INDX, SPI_EXT_REG_RXCOUNT);
-	spi_write(SPI_EXT_REG_DATA, bytesin);
+	spi_write8(SPI_EXT_REG_INDX, SPI_EXT_REG_TXCOUNT);
+	spi_write8(SPI_EXT_REG_DATA, bytesout);
+	spi_write8(SPI_EXT_REG_INDX, SPI_EXT_REG_RXCOUNT);
+	spi_write8(SPI_EXT_REG_DATA, bytesin);
 
-	spi_write(SPI_REG_OPCODE, cmd);
+	spi_write8(SPI_REG_OPCODE, cmd);
 
 	reset_internal_fifo_pointer();
-	for (count = 0; count < bytesout; count++, dout++) {
-		spi_write(SPI_REG_FIFO, *(uint8_t *)dout);
-	}
+	for (count = 0; count < bytesout; count++, dout++)
+		spi_write8(SPI_REG_FIFO, *(uint8_t *)dout);
 
 	reset_internal_fifo_pointer();
 	execute_command();
 
 	reset_internal_fifo_pointer();
 	/* Skip the bytes we sent. */
-	for (count = 0; count < bytesout; count++) {
-		cmd = spi_read(SPI_REG_FIFO);
-	}
+	for (count = 0; count < bytesout; count++)
+		cmd = spi_read8(SPI_REG_FIFO);
 
-	for (count = 0; count < bytesin; count++, din++) {
-		*(uint8_t *)din = spi_read(SPI_REG_FIFO);
-	}
+	for (count = 0; count < bytesin; count++, din++)
+		*(uint8_t *)din = spi_read8(SPI_REG_FIFO);
 
 	return 0;
 }
@@ -159,17 +205,17 @@ static int xfer_vectors(const struct spi_slave *slave,
 }
 
 static const struct spi_ctrlr spi_ctrlr = {
-        .xfer_vector = xfer_vectors,
-        .max_xfer_size = AMD_SB_SPI_TX_LEN,
-        .flags = SPI_CNTRLR_DEDUCT_CMD_LEN,
+	.xfer_vector = xfer_vectors,
+	.max_xfer_size = AMD_SB_SPI_TX_LEN,
+	.flags = SPI_CNTRLR_DEDUCT_CMD_LEN,
 };
 
 const struct spi_ctrlr_buses spi_ctrlr_bus_map[] = {
-        {
-                .ctrlr = &spi_ctrlr,
-                .bus_start = 0,
-                .bus_end = 0,
-        },
+	{
+		.ctrlr = &spi_ctrlr,
+		.bus_start = 0,
+		.bus_end = 0,
+	},
 };
 
 const size_t spi_ctrlr_bus_map_count = ARRAY_SIZE(spi_ctrlr_bus_map);
