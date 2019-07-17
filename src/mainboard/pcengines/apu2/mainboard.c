@@ -44,13 +44,15 @@
 #include "bios_knobs.h"
 #include "s1_button.h"
 
-#define SPD_SIZE  128
-#define PM_RTC_CONTROL	    0x56
-#define PM_RTC_SHADOW	    0x5B
-#define PM_S_STATE_CONTROL  0xBA
+#define SIO_PORT		0x2e
 
-#define SEC_REG_SERIAL_ADDR 0x1000
-#define MAX_SERIAL_LEN	    10
+#define SPD_SIZE		128
+#define PM_RTC_CONTROL		0x56
+#define PM_RTC_SHADOW		0x5B
+#define PM_S_STATE_CONTROL	0xBA
+
+#define SEC_REG_SERIAL_ADDR	0x1000
+#define MAX_SERIAL_LEN		10
 
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
