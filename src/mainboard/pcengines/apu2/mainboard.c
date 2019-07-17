@@ -153,7 +153,6 @@ static void pirq_setup(void)
 /* Wrapper to enable GPIO/UART devices under menuconfig. Revisit
  * once configuration file format for SPI flash storage is complete.
  */
-#define SIO_PORT 0x2e
 
 static void set_dimm_info(uint8_t *spd, struct dimm_info *dimm)
 {
