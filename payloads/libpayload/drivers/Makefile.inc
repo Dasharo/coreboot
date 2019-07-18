@@ -115,5 +115,8 @@ libc-$(CONFIG_LP_UDC) += udc/udc.c
 libc-$(CONFIG_LP_UDC_CI) += udc/chipidea.c
 libc-$(CONFIG_LP_UDC_DWC2) += udc/dwc2.c
 
+libc-$(CONFIG_LP_VPD) += vpd/lib_vpd.c
+libc-$(CONFIG_LP_VPD) += vpd/vpd.c
+
 # used by both USB HID and keyboard
 libc-y += hid.c

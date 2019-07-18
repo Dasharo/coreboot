@@ -34,15 +34,22 @@
 #include <fmap_serialized.h>
 #include <stdint.h>
 
-int fmap_region_by_name(const uint32_t fmap_offset, const char * const name,
-			uint32_t * const offset, uint32_t * const size)
+int fmap_region_by_name(const char * const name, uint32_t * const offset,
+			uint32_t * const size)
 {
 	int i;
-
 	struct fmap *fmap;
 	struct fmap fmap_head;
 	struct cbfs_media default_media;
 	struct cbfs_media *media = &default_media;
+
+	if (!lib_sysinfo.fmap_offset)
+		lib_get_sysinfo();
+
+	if (!lib_sysinfo.fmap_offset)
+		return -1;
+
+	const uint32_t fmap_offset = (uint32_t)lib_sysinfo.fmap_offset;
 
 	if (init_default_cbfs_media(media) != 0)
 		return -1;

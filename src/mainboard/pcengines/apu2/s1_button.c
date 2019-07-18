@@ -13,154 +13,181 @@
  * GNU General Public License for more details.
  */
 
-#include <console/console.h>
-#include <string.h>
 #include <stdlib.h>
-#include "s1_button.h"
+#include <string.h>
+#include <boot_device.h>
+#include <cbmem.h>
+#include <fmap.h>
 #include <spi_flash.h>
 #include <spi-generic.h>
-#include <boot_device.h>
-#include <cbfs.h>
 #include <commonlib/region.h>
-#include <commonlib/cbfs.h>
+#include <console/console.h>
+#include <drivers/vpd/lib_vpd.h>
+#include <drivers/vpd/vpd.h>
+#include <drivers/vpd/vpd_tables.h>
 
-#define BOOTORDER_FILE "bootorder"
+#include "s1_button.h"
 
-static int find_knob_index(const char *s, const char *pattern)
+struct cbmem_vpd {
+	uint32_t magic;
+	uint32_t version;
+	uint32_t ro_size;
+	uint32_t rw_size;
+	uint8_t blob[0];
+	/* The blob contains both RO and RW data. It starts with RO (0 ..
+	 * ro_size) and then RW (ro_size .. ro_size+rw_size).
+	 */
+};
+
+
+static int find_scon_offset(void *vpd_buffer, struct google_vpd_info *info,
+			    uint32_t *scon_offset)
 {
+	uint32_t offset = 0x600 + sizeof(struct google_vpd_info);
+	uint8_t type;
+	int32_t key_len, value_len, decoded_len;
+	const uint8_t *key, *value;
+	uint32_t consumed = 0;
+	uint32_t strings_offset = offset;
 
-       int pattern_index = 0;
-       char *result = (char *) s;
-       char *lpattern = (char *) pattern;
+	while (consumed < info->size) {
+		offset = strings_offset + consumed;
+		type = *(uint8_t *)(vpd_buffer + offset);
+		if (type == 0) {
+			printk(BIOS_WARNING, "VPD is empty or end of VPD\n");
+			break;
+		} else if (type == 1) {
+			consumed++;
+			if (decodeLen(info->size - consumed,
+				       vpd_buffer + strings_offset + consumed,
+				       &key_len, &decoded_len)) {
+				if (consumed + decoded_len >= info->size) {
+					printk(BIOS_WARNING, "String too long\n");
+					return -1;
+				}
+			}
+			consumed += decoded_len;
+			key = (uint8_t *)(vpd_buffer + strings_offset +
+					  consumed);
+			consumed += key_len;
+			if (decodeLen(info->size - consumed,
+				       vpd_buffer + strings_offset + consumed,
+				       &value_len, &decoded_len)) {
+				if (consumed + decoded_len >= info->size) {
+					printk(BIOS_WARNING, "Value too long\n");
+					return -1;
+				}
+			}
+			consumed += decoded_len;
+			value = (uint8_t *)(vpd_buffer + strings_offset +
+					    consumed);
+			consumed += value_len;
 
-       while (*result && *pattern ) {
-               if ( *lpattern == 0)  // the pattern matches return the pointer
-                       return pattern_index;
-               if ( *result == 0)  // We're at the end of the file content but don't have a patter match yet
-                       return -1;
-               if (*result == *lpattern ) {
-                       // The string matches, simply advance
-                       result++;
-                       pattern_index++;
-                       lpattern++;
-               } else {
-                       // The string doesn't match restart the pattern
-                       result++;
-                       pattern_index++;
-                       lpattern = (char *) pattern;
-               }
-       }
-
-       return -1;
+			if (!memcmp("scon", key, strlen("scon")) &&
+			    strlen("scon") == key_len)
+				break;
+			else
+				continue;
+		} else {
+			printk(BIOS_DEBUG, "Unknown entry %x\n", type);
+			return -1;
+		}
+	}
+	*scon_offset = offset;
+	return consumed;
 }
 
-static size_t get_bootorder_cbfs_offset(const char *name, uint32_t type)
+static int replace_scon_tag(void *vpd_buffer, void *output_buffer,
+			     struct google_vpd_info *info,
+			     struct region vpd_region)
 {
-	struct region_device rdev;
-	const struct region_device *boot_dev;
-	struct cbfs_props props;
-	struct cbfsf fh;
+	uint32_t strings_offset, offset = 0; 
+	int consumed;
+	consumed = find_scon_offset(vpd_buffer, info, &offset);
+	if (consumed == -1)
+		return -1;
 
-	boot_dev = boot_device_ro();
+	strings_offset = 0x600 + sizeof(struct google_vpd_info);
+	char scon_entry[2 + strlen("scon") + 1 + strlen("enabled")];
+	scon_entry[0] = 0x01;
+	scon_entry[1] = strlen("scon");
+	memcpy(&scon_entry[2], "scon", strlen("scon"));
+	scon_entry[2 + strlen("scon")] = strlen("enabled");
+	memcpy(&scon_entry[3 + strlen("scon")], "enabled", strlen("enabled"));
 
-	if (boot_dev == NULL) {
-		printk(BIOS_WARNING, "Can't init CBFS boot device\n");
-		return 0;
+	if (*(char *)(vpd_buffer + offset) == 0x00) {
+		memcpy(output_buffer + offset, scon_entry,
+		       sizeof(scon_entry));
+		*(char *)(output_buffer + offset + sizeof(scon_entry)) = 0;
+	} else {
+		memset(output_buffer + offset, 0xFF,
+		       vpd_region.size - offset);
+		memcpy(output_buffer + offset, scon_entry,
+		       sizeof(scon_entry));
+		strcpy(output_buffer + offset + sizeof(scon_entry),
+		       vpd_buffer + offset + consumed);
 	}
-
-	if (cbfs_boot_region_properties(&props)) {
-		printk(BIOS_WARNING, "Can't locate CBFS\n");
-		return 0;
-	}
-
-	if (rdev_chain(&rdev, boot_dev, props.offset, props.size)) {
-		printk(BIOS_WARNING, "Rdev chain failed\n");
-		return 0;
-	}
-
-	if (cbfs_locate(&fh, &rdev, name, &type)) {
-		printk(BIOS_WARNING, "Can't locate file in CBFS\n");
-		return 0;
-	}
-
-	return (size_t) rdev_relative_offset(boot_dev, &fh.data);
-}
-
-static int flash_bootorder(size_t offset, size_t fsize, char *buffer)
-{
-        const struct spi_flash *flash;
-
-        flash = boot_device_spi_flash();
-
-        if (flash == NULL) {
-                printk(BIOS_WARNING, "Can't get boot flash device\n");
-                return -1;
-        }
-
-        if (spi_flash_erase(flash, (u32) offset, fsize)) {
-                printk(BIOS_WARNING, "SPI erase failed\n");
-                return -1;
-        }
-
-        if (spi_flash_write(flash, offset, fsize, buffer)) {
-                printk(BIOS_WARNING, "SPI write failed\n");
-                return -1;
-        }
-
-        printk(BIOS_INFO, "Bootorder write successed\n");
-        return 0;
+	*(uint32_t *)(output_buffer + 0x600 + 12) = info->size - 1;
+	return 0;
 }
 
 void enable_console(void)
 {
-        size_t fsize, offset;
-        char* bootorder_file = NULL;
-        int knob_index;
-        char *bootorder_copy;
+	int tag_size;
+	struct region vpd_region;
+	void *vpd_buffer, *output_buffer;
+	struct google_vpd_info info;
+	struct cbmem_vpd *vpd;
 
-        bootorder_file = cbfs_boot_map_with_leak("bootorder", CBFS_TYPE_RAW, &fsize);
+	if (!vpd_find("scon", &tag_size, VPD_RW)) {
+		printk(BIOS_WARNING, "scon tag not found in RW_VPD\n");
+		return;
+	}
 
-        if (bootorder_file == NULL){
-                printk(BIOS_WARNING, "Could not mmap bootorder\n");
-                return;
-        }
+	if (fmap_locate_area("RW_VPD", &vpd_region)) {
+		printk(BIOS_WARNING, "Could not locate RW_VPD region\n");
+		return;
+	}
 
-        if (fsize & 0xFFF) {
-                printk(BIOS_WARNING,"The bootorder file is not 4k aligned\n");
-                return;
-        }
+	vpd_buffer = malloc(vpd_region.size);
+	output_buffer = malloc(vpd_region.size);
+	if (!vpd_buffer || !output_buffer) {
+		printk(BIOS_WARNING, "Could not allocate memory\n");
+		return;
+	}
 
-        offset = get_bootorder_cbfs_offset("bootorder", CBFS_TYPE_RAW);
+	vpd = (struct cbmem_vpd *)cbmem_find(CBMEM_ID_VPD);
+	if (!vpd || !vpd->ro_size || !vpd->rw_size)
+		return;
 
-        if(offset == -1) {
-                printk(BIOS_WARNING,"Failed to retrieve bootorder file offset\n");
-                return;
-        }
+	fmap_read_area("RW_VPD", vpd_buffer, vpd_region.size);
+	memcpy(output_buffer, vpd_buffer, vpd_region.size);
 
-        bootorder_copy = (char *) malloc(fsize);
+	info = *(struct google_vpd_info *)(vpd_buffer + 0x600);
+	if (memcmp(info.header.magic, VPD_INFO_MAGIC,
+	           sizeof(info.header.magic))) {
+		printk(BIOS_WARNING, "Bad VPD info header magic\n");
+		free(vpd_buffer);
+		free(output_buffer);
+		return;
+	}
 
-        if(bootorder_copy == NULL) {
-                printk(BIOS_WARNING,"Failed to allocate memory for bootorder\n");
-                return;
-        }
+	if (replace_scon_tag(vpd_buffer, output_buffer, &info,
+			     vpd_region) == -1) {
+		printk(BIOS_DEBUG, "Replacing scon tag failed\n");
+		free(vpd_buffer);
+		free(output_buffer);
+		return;
+	}
 
-        if(memcpy(bootorder_copy, bootorder_file, fsize) == NULL) {
-                printk(BIOS_WARNING,"Copying bootorder failed\n");
-                free(bootorder_copy);
-                return;
-        }
+	vpd->rw_size = info.size - 1;
+	memcpy(&vpd->blob[vpd->ro_size],
+	       output_buffer + 0x600 + sizeof(struct google_vpd_info),
+	       info.size);
 
-        knob_index = find_knob_index(bootorder_copy, "scon");
+	if (fmap_overwrite_area("RW_VPD", output_buffer, vpd_region.size) == -1)
+		printk(BIOS_ERR, "Flashing VPD failed\n");
 
-        if(knob_index == -1){
-                printk(BIOS_WARNING,"scon knob not found in bootorder\n");
-                free(bootorder_copy);
-                return;
-        }
-
-        *(bootorder_copy + knob_index) = '1';
-
-        if(flash_bootorder(offset, fsize, bootorder_copy)) {
-                printk(BIOS_WARNING, "Failed to flash bootorder\n");
-        }
+	free(vpd_buffer);
+	free(output_buffer);
 }

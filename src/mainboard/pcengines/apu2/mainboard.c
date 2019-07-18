@@ -44,13 +44,15 @@
 #include "bios_knobs.h"
 #include "s1_button.h"
 
-#define SPD_SIZE  128
-#define PM_RTC_CONTROL	    0x56
-#define PM_RTC_SHADOW	    0x5B
-#define PM_S_STATE_CONTROL  0xBA
+#define SIO_PORT		0x2e
 
-#define SEC_REG_SERIAL_ADDR 0x1000
-#define MAX_SERIAL_LEN	    10
+#define SPD_SIZE		128
+#define PM_RTC_CONTROL		0x56
+#define PM_RTC_SHADOW		0x5B
+#define PM_S_STATE_CONTROL	0xBA
+
+#define SEC_REG_SERIAL_ADDR	0x1000
+#define MAX_SERIAL_LEN		10
 
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
@@ -154,6 +156,25 @@ static void pirq_setup(void)
  * once configuration file format for SPI flash storage is complete.
  */
 
+static void config_gpio_mux(void)
+{
+	struct device *uart, *gpio;
+
+	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP3);
+	gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO0);
+	if (uart)
+		uart->enabled = CONFIG(APU2_PINMUX_UART_C);
+	if (gpio)
+		gpio->enabled = CONFIG(APU2_PINMUX_GPIO0);
+
+	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
+	gpio = dev_find_slot_pnp(SIO_PORT, NCT5104D_GPIO1);
+	if (uart)
+		uart->enabled = CONFIG(APU2_PINMUX_UART_D);
+	if (gpio)
+		gpio->enabled = CONFIG(APU2_PINMUX_GPIO1);
+}
+
 static void set_dimm_info(uint8_t *spd, struct dimm_info *dimm)
 {
 	const int spd_capmb[8] = {  1,  2,  4,  8, 16, 32, 64,  0 };
@@ -249,6 +270,9 @@ static void measure_amd_blobs(void)
 static void mainboard_enable(struct device *dev)
 {
 	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
+
+	config_gpio_mux();
+
 	bool scon = check_console();
 
 	setup_bsp_ramtop();

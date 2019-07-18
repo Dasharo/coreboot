@@ -62,7 +62,7 @@ void hudson_pci_port80(void)
 	pci_devfn_t dev;
 
 	/* P2P Bridge */
-	dev = PCI_DEV(0, 0x14, 4);
+	dev = SB_PCI_PORT_PCIDEV;
 
 	/* Chip Control: Enable subtractive decoding */
 	byte = pci_read_config8(dev, 0x40);
@@ -126,7 +126,7 @@ void hudson_lpc_decode(void)
 	u32 tmp = 0;
 
 	/* Enable I/O decode to LPC bus */
-	dev = PCI_DEV(0, PCU_DEV, LPC_FUNC);
+	dev = LPC_PCIDEV;
 	tmp = DECODE_ENABLE_PARALLEL_PORT0 | DECODE_ENABLE_PARALLEL_PORT2
 		| DECODE_ENABLE_PARALLEL_PORT4 | DECODE_ENABLE_SERIAL_PORT0
 		| DECODE_ENABLE_SERIAL_PORT1 | DECODE_ENABLE_SERIAL_PORT2
@@ -155,7 +155,7 @@ static void enable_wideio(uint8_t port, uint16_t size)
 		LPC_ALT_WIDEIO1_ENABLE,
 		LPC_ALT_WIDEIO2_ENABLE
 	};
-	pci_devfn_t dev = PCI_DEV(0, PCU_DEV, LPC_FUNC);
+	pci_devfn_t dev = LPC_PCIDEV;
 	uint32_t tmp;
 
 	/* Only allow port 0-2 */
@@ -189,7 +189,7 @@ static void enable_wideio(uint8_t port, uint16_t size)
  */
 static void lpc_wideio_window(uint16_t base, uint16_t size)
 {
-	pci_devfn_t dev = PCI_DEV(0, PCU_DEV, LPC_FUNC);
+	pci_devfn_t dev = LPC_PCIDEV;
 	u32 tmp;
 
 	/* Support 512 or 16 bytes per range */
@@ -278,7 +278,7 @@ void hudson_clk_output_48Mhz(void)
 static uintptr_t hudson_spibase(void)
 {
 	/* Make sure the base address is predictable */
-	pci_devfn_t dev = PCI_DEV(0, 0x14, 3);
+	pci_devfn_t dev = LPC_PCIDEV;
 
 	u32 base = pci_read_config32(dev, SPIROM_BASE_ADDRESS_REGISTER)
 							& 0xfffffff0;
@@ -331,7 +331,7 @@ void hudson_read_mode(u32 mode)
 
 void hudson_tpm_decode_spi(void)
 {
-	pci_devfn_t dev = PCI_DEV(0, 0x14, 3);	/* LPC device */
+	pci_devfn_t dev = LPC_PCIDEV;
 
 	u32 spibase = pci_read_config32(dev, SPIROM_BASE_ADDRESS_REGISTER);
 	pci_write_config32(dev, SPIROM_BASE_ADDRESS_REGISTER, spibase

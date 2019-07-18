@@ -7,6 +7,7 @@
 #include <console/console.h>
 #include <cbmem.h>
 #include <fmap.h>
+#include <lib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <timestamp.h>
@@ -114,6 +115,7 @@ static void *get_vpd(const char *fmap_name, int32_t *vpd_size)
 
 	if (memcmp(info.header.magic, VPD_INFO_MAGIC, sizeof(info.header.magic))
 	    == 0 && size >= info.size + sizeof(info)) {
+		vpd_buffer += sizeof(info);
 		size = info.size;
 	} else if (info.header.tlv.type == VPD_TYPE_TERMINATOR ||
 		   info.header.tlv.type == VPD_TYPE_IMPLICIT_TERMINATOR) {

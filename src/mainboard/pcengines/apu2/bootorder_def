@@ -12,11 +12,3 @@
 /pci@i0cf8/usb@13/usb-*@3
 /pci@i0cf8/usb@13/usb-*@4
 /pci@i0cf8/*@14,7
-scon1
-usben1
-ehcien0
-mpcie2_clk0
-com2en0
-boosten1
-sd3mode0
-watchdog0000
