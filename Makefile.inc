@@ -1118,6 +1118,11 @@ ifeq ($(CONFIG_VPD),y)
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s sd3mode=disabled
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s watchdog=0
 endif
+	$(CBFSTOOL) $@.tmp remove -r COREBOOT -n fallback/payload
+	$(CBFSTOOL) $@.tmp remove -r COREBOOT -n img/setup
+	$(CBFSTOOL) $@.tmp remove -r COREBOOT -n linux/payload
+	$(CBFSTOOL) $@.tmp add-payload -f bzImage -n fallback/payload -c none \
+	-r COREBOOT -C "console=ttyS1,115200 iomem=relaxed" -I "initrd.cpio.xz"
 
 ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
 	dd if=$(CONFIG_CPU_UCODE_BINARIES) of=$@.tmp bs=1 seek=6665692 count=3424 conv=notrunc 2> /dev/null
