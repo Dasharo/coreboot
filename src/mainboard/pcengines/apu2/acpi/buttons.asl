@@ -19,15 +19,16 @@ Scope (\_SB.PCI0.SBUS)
 {
 	Device (BTNS)
 	{
-		Name (_HID, "AMD0030")
+		Name (_HID, "PRP0001")
 
 		Name (_CRS, ResourceTemplate () {
-		#if CONFIG(BOARD_PCENGINES_APU5)
-			GpioIo (Exclusive, PullUp, 0, "\\_SB.PCI0.SBUS.GPIO", 0, ResourceConsumer) {
+			
+			GpioInt (Edge, ActiveLow, Shared, PullUp, 0,
+				 "\\_SB.PCI0.SBUS.GPIO", 0, ResourceConsumer) {
 			#if CONFIG(BOARD_PCENGINES_APU5)
-				0x24
+				9
 			#else
-				0x164
+				89
 			#endif
 			}
 		})
@@ -35,24 +36,25 @@ Scope (\_SB.PCI0.SBUS)
 		Name (_DSD, Package () {
 			ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
 			Package () {
-				Package () {"compatible", Package () {"gpio-keys-polled"}},
-				Package () {"poll-interval", 60},
+				Package () {"compatible",
+					    Package () {"gpio-keys"}},
 				Package () {"autorepeat", 1}
 			}
 		})
 
 		Device (BTN1)
 		{
-			Name (_HID, "AMD0030")
+			Name (_HID, "PRP0001")
 			Name (_DSD, Package () {
 				ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
 				Package () {
-					/* BTN_1 is 0x101 in linux/input.h */
 					Package () {"linux,code", 257},
 					Package () {"linux,input-type", 1},
-					/* labeled S1 on the board, MODESW in the gpio header files */
+					Package () {"debounce-interval", 500},
 					Package () {"label", "switch1"},
-					Package () {"gpios", Package () {^^BTNS, 0, 0, 1 /* low-active */}},
+					Package () {"interrupts", 11},
+					Package () {"gpios", Package ()
+							{^^BTNS, 0, 0, 1}}
 				}
 			})
 		}

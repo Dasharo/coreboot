@@ -16,6 +16,17 @@
 
 /* DefinitionBlock Statement */
 #include <arch/acpi.h>
+
+#if CONFIG(BOARD_PCENGINES_APU2)
+#define DEVICE_NAME "apu2
+#elif CONFIG(BOARD_PCENGINES_APU3)
+#define DEVICE_NAME "apu3
+#elif CONFIG(BOARD_PCENGINES_APU4)
+#define DEVICE_NAME "apu4
+#elif CONFIG(BOARD_PCENGINES_APU5)
+#define DEVICE_NAME "apu5
+#endif
+
 DefinitionBlock (
 	"DSDT.AML",	/* Output filename */
 	"DSDT",		/* Signature */
@@ -71,9 +82,8 @@ DefinitionBlock (
 		/* Describe PCI INT[A-H] for the Southbridge */
 		#include <southbridge/amd/pi/hudson/acpi/pci_int.asl>
 
-		/* Describe the devices in the Southbridge */
-		#include "acpi/fch.asl"
-
+		/* Describe the GPIO controller in southbridge */
+		#include "acpi/gpio.asl"
 	} /* End \_SB scope */
 
 	/* Describe SMBUS for the Southbridge */
@@ -87,5 +97,9 @@ DefinitionBlock (
 
 	/* Super IO devices (COM ports) */
 	#include "acpi/superio.asl"
+
+	/* GPIO buttons and leds */
+	#include "acpi/buttons.asl"
+	#include "acpi/leds.asl"
 }
 /* End of ASL file */
