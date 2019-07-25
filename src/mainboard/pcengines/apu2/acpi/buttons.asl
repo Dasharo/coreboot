@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  */
 
-Scope (\_SB.PCI0.SBUS)
+Scope (\_SB.PCI0)
 {
 	Device (BTNS)
 	{
@@ -24,7 +24,7 @@ Scope (\_SB.PCI0.SBUS)
 		Name (_CRS, ResourceTemplate () {
 			
 			GpioInt (Edge, ActiveLow, Shared, PullUp, 0,
-				 "\\_SB.PCI0.SBUS.GPIO", 0, ResourceConsumer) {
+				 "\\_SB.PCI0.GPIO", 0, ResourceConsumer) {
 			#if CONFIG(BOARD_PCENGINES_APU5)
 				9
 			#else
@@ -36,8 +36,7 @@ Scope (\_SB.PCI0.SBUS)
 		Name (_DSD, Package () {
 			ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
 			Package () {
-				Package () {"compatible",
-					    Package () {"gpio-keys"}},
+				Package () {"compatible", "gpio-keys"},
 				Package () {"autorepeat", 1}
 			}
 		})
@@ -50,9 +49,9 @@ Scope (\_SB.PCI0.SBUS)
 				Package () {
 					Package () {"linux,code", 257},
 					Package () {"linux,input-type", 1},
-					Package () {"debounce-interval", 500},
+					Package () {"debounce-interval", 100},
 					Package () {"label", "switch1"},
-					Package () {"interrupts", 11},
+					Package () {"interrupts", 7},
 					Package () {"gpios", Package ()
 							{^^BTNS, 0, 0, 1}}
 				}

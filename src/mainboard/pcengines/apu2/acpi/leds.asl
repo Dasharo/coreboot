@@ -15,21 +15,20 @@
  * GNU General Public License for more details.
  */
 
-Scope (\_SB.PCI0.SBUS)
+Scope (\_SB.PCI0)
 {
 	Device (LEDS)
 	{
 		Name (_HID, "PRP0001")
 
 		Name (_CRS, ResourceTemplate () {
-			GpioIo (Exclusive, PullNone, 0, 0, IoRestrictionOutputOnly, "\\_SB.PCI0.SBUS.GPIO", 0, ResourceConsumer) { 68, 69, 70 }
+			GpioIo (Exclusive, PullUp, 0, 0, IoRestrictionOutputOnly, "\\_SB.PCI0.GPIO", 0, ResourceConsumer) { 68, 69, 70 }
 		})
 
 		Name (_DSD, Package () {
 			ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
 			Package () {
-				Package () {"compatible",
-					    Package () {"gpio-leds"}},
+				Package () {"compatible","gpio-leds"}
 			}
 		})
 
