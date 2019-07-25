@@ -46,8 +46,6 @@
 #define SEC_REG_SERIAL_ADDR	0x1000
 #define MAX_SERIAL_LEN		10
 
-#define BOOTORDER_FILE "bootorder"
-
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
  * This table is responsible for physically routing the PIC and
@@ -79,7 +77,7 @@ static const u8 mainboard_picr_data[FCH_INT_TABLE_SIZE] = {
 	[0x48] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x50] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x58] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	[0x60] = 0x00,0x0B,0x1F
+	[0x60] = 0x00,0x07,0x1F
 };
 
 static const u8 mainboard_intr_data[FCH_INT_TABLE_SIZE] = {
@@ -102,7 +100,7 @@ static const u8 mainboard_intr_data[FCH_INT_TABLE_SIZE] = {
 	[0x48] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x50] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x58] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	[0x60] = 0x00,0x0B,0x1F
+	[0x60] = 0x00,0x07,0x1F
 };
 
 /*
@@ -426,29 +424,6 @@ static void mainboard_final(void *chip_info)
 
 	if (!check_console()) {
 	/*The console is disabled, check if S1 is pressed and enable if so */
-#if CONFIG(BOARD_PCENGINES_APU5)
-		if (!gpio_get(GPIO_22)) {
-#else
-		if (!gpio_get(GPIO_32)) {
-#endif
-			printk(BIOS_INFO, "S1 PRESSED\n");
-			enable_console();
-		}
-	}
-}
-
-static void mainboard_final(void *chip_info)
-{
-	//
-	// Turn off LED D4 and D5
-	//
-	write_gpio(GPIO_58, 1);
-	write_gpio(GPIO_59, 1);
-
-	if (!check_console()) {
-		//
-		// The console is disabled, check if S1 is pressed and enable if so
-		//
 #if CONFIG(BOARD_PCENGINES_APU5)
 		if (!gpio_get(GPIO_22)) {
 #else
