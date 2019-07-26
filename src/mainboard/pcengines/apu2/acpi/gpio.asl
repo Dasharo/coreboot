@@ -21,17 +21,14 @@ Scope (\_SB.PCI0)
 		Name (_UID, 0)
 		Name (_DDN, "GPIO Controller")
 
-		Method (_CRS, 0x0, Serialized) {
-			Name (RBUF, ResourceTemplate () {
-				Interrupt(ResourceConsumer, Level, ActiveLow, Shared, , , ) {7}
-				Memory32Fixed(ReadWrite, 0xFED81500, 0x300)
-			})
-
-			Return (RBUF)
-		}
+		Name (_CRS, ResourceTemplate () {
+			Interrupt(ResourceConsumer, Level, ActiveLow,
+				  Shared, , , ) {7}
+			Memory32Fixed(ReadWrite, 0xFED81500, 0x300)
+		})
 
 		Method (_STA, 0x0, NotSerialized) {
-				Return (0x0F)
+			Return (0x0F)
 		}
 	}
 }

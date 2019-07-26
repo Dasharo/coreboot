@@ -22,9 +22,8 @@ Scope (\_SB.PCI0)
 		Name (_HID, "PRP0001")
 
 		Name (_CRS, ResourceTemplate () {
-			
-			GpioInt (Edge, ActiveLow, Shared, PullUp, 0,
-				 "\\_SB.PCI0.GPIO", 0, ResourceConsumer) {
+			GpioInt (Edge, ActiveLow, Shared, PullUp, ,
+				 "\\_SB.PCI0.GPIO") {
 			#if CONFIG(BOARD_PCENGINES_APU5)
 				9
 			#else
