@@ -3,75 +3,75 @@ services:
 
 variables:
   RELEASE_DIR: ${CI_PROJECT_DIR}
+  HEADS_BRANCH_NAME: universal_devices
+  COREBOOT_BRANCH_NAME: universal_devices
 
 stages:
-  - check_dependencies
   - build_rom
   - test_rom
-  - sign_rom
   - publish_rom
 
-check_dependencies:
-  stage: check_dependencies
-  script:
-    - git ls-remote https://github.com/pcengines/coreboot.git | grep ${CI_COMMIT_REF_NAME}
-  only:
-    - tags
-
-.build_rom_apu: &build_rom_apu
-  image: coreboot/coreboot-sdk:1.52
-  variables:
-    PLATFORM:
+build_heads:
+  image: 3mdeb/heads-docker
   stage: build_rom
   tags:
     - docker
   script:
-    - git clone https://github.com/pcengines/pce-fw-builder.git /home/coreboot/pce-fw-builder
-    - cd /home/coreboot/pce-fw-builder
-    - git checkout `git describe --tags --abbrev=0`
-    - ./build.sh release-CI "${CI_COMMIT_REF_NAME}" "${PLATFORM}"
-    - cp -v /home/coreboot/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${RELEASE_DIR}
+    - git clone "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/3mdeb/universal-devices/heads.git" -b ${HEADS_BRANCH_NAME} /home/heads/heads
+    - echo $PWD
+    - cd /home/heads/heads
+    #- make BOARD=apu2
+    - mkdir -v ${CI_PROJECT_DIR}/share
+    - touch ${CI_PROJECT_DIR}/share/initrd.txt
+    #- touch /home/heads/heads/share/bzImage.txt
+    #- cp -v /home/heads/heads/build/apu2/initrd.cpio.xz /home/heads/heads/share/initrd.cpio.xz
+    #- cp -v /home/heads/heads/build/apu2/bzImage /home/heads/heads/share/bzImage
+    - ls -al ${CI_PROJECT_DIR}/share/
+    #- ls -al /builds/$CI_PROJECT_DIR/home/heads/heads/share/
   artifacts:
-    name: ${PLATFORM}
     paths:
-      - ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom
+      - ${CI_PROJECT_DIR}/share/initrd.txt
+
+  #artifacts:
+  #  name: BZIMAGE
+  #  paths:
+  #    - /home/heads/heads/share/bzImage.txt
+
+build_coreboot_rom:
+  image: coreboot/coreboot-sdk:1.52
+  stage: build_rom
+  tags:
+    - docker
+  script:
+    - git clone "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/3mdeb/universal-devices/coreboot.git" -b ${COREBOOT_BRANCH_NAME} /home/coreboot
+    - cp initrd.txt /home/coreboot/initrd.cpio.xz
+    #- cp /home/heads/heads/share/bzImage.txt /home/coreboot/bzImage
+    - cd /home/coreboot
+    - ls -al /home/coreboot/initrd.txt
+    #- ls -al /home/coreboot/bzImage.txt
+    - cp configs/config.pcengines_apu2_vboot .config
+    - make olddefconfig && make
+    - cp -v /home/coreboot/build/coreboot.rom ${RELEASE_DIR}/apu2_vboot_${CI_COMMIT_REF_NAME}.rom
+    - ls -al ${RELEASE_DIR}
+  artifacts:
+    name: ${IMAGE}
+    paths:
+      - ${RELEASE_DIR}/apu2_vboot_${CI_COMMIT_REF_NAME}.rom
   only:
     - tags
     - web
 
-.test_rom: &test_rom
-  variables:
-    PLATFORM:
+test_rom:
   stage: test_rom
   tags:
     - docker
   script:
     - echo "test_rom"
-    - ls -la ${RELEASE_DIR}/${PLATFORM}_*.rom
+    - ls -la ${RELEASE_DIR}/$apu2_vboot_*.rom
   only:
     - tags
 
-.sign_rom: &sign_rom
-  variables:
-    PLATFORM:
-  stage: sign_rom
-  tags:
-    - docker
-  script:
-    - cd ${RELEASE_DIR}
-    - sha256sum ${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256 
-    - ls -la
-  artifacts:
-    name: ${PLATFORM}
-    paths:
-      - ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256
-  only:
-    - tags
-    - web
-
-.publish_rom: &publish_rom
-  variables:
-    PLATFORM:
+publish_rom:
   stage: publish_rom
   tags:
     - docker
@@ -83,108 +83,3 @@ check_dependencies:
     - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
   only:
     - tags
-
-
-build:apu1:
-  <<: *build_rom_apu
-  variables:
-    PLATFORM: apu1
-
-.test:apu1:
-  <<: *test_rom
-  variables:
-    PLATFORM: apu1
-
-sign:apu1:
-  <<: *sign_rom
-  variables:
-    PLATFORM: apu1
-
-publish:apu1:
-  <<: *publish_rom
-  variables:
-    PLATFORM: apu1
-
-
-build:apu2:
-  <<: *build_rom_apu
-  variables:
-    PLATFORM: apu2
-
-.test:apu2:
-  <<: *test_rom
-  variables:
-    PLATFORM: apu2
-
-sign:apu2:
-  <<: *sign_rom
-  variables:
-    PLATFORM: apu2
-
-publish:apu2:
-  <<: *publish_rom
-  variables:
-    PLATFORM: apu2
-
-
-build:apu3:
-  <<: *build_rom_apu
-  variables:
-    PLATFORM: apu3
-
-.test:apu3:
-  <<: *test_rom
-  variables:
-    PLATFORM: apu3
-
-sign:apu3:
-  <<: *sign_rom
-  variables:
-    PLATFORM: apu3
-
-publish:apu3:
-  <<: *publish_rom
-  variables:
-    PLATFORM: apu3
-
-
-build:apu4:
-  <<: *build_rom_apu
-  variables:
-    PLATFORM: apu4
-
-.test:apu4:
-  <<: *test_rom
-  variables:
-    PLATFORM: apu4
-
-sign:apu4:
-  <<: *sign_rom
-  variables:
-    PLATFORM: apu4
-
-publish:apu4:
-  <<: *publish_rom
-  variables:
-    PLATFORM: apu4
-
-
-build:apu5:
-  <<: *build_rom_apu
-  variables:
-    PLATFORM: apu5
-
-.test:apu5:
-  <<: *test_rom
-  variables:
-    PLATFORM: apu5
-
-sign:apu5:
-  <<: *sign_rom
-  variables:
-    PLATFORM: apu5
-
-publish:apu5:
-  <<: *publish_rom
-  variables:
-    PLATFORM: apu5
