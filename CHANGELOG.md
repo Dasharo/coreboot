@@ -12,6 +12,11 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.10.0.0] - 2019-08-09
+### Changed
+- [ACPI support for GPIOs](https://github.com/pcengines/apu2-documentation/blob/master/docs/gpios.md)
+- rebased with official coreboot repository commit 2a20d13
+
 ## [v4.9.0.7] - 2019-07-09
 ### Changed
 - [updated SeaBIOS to rel-1.12.1.3](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11213---2019-07-05)
@@ -326,7 +331,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.9.0.7...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.10.0.0...develop
+[v4.10.0.0]: https://github.com/pcengines/coreboot/compare/v4.9.0.7...v4.10.0.0
 [v4.9.0.7]: https://github.com/pcengines/coreboot/compare/v4.9.0.6...v4.9.0.7
 [v4.9.0.6]: https://github.com/pcengines/coreboot/compare/v4.9.0.5...v4.9.0.6
 [v4.9.0.5]: https://github.com/pcengines/coreboot/compare/v4.9.0.4...v4.9.0.5

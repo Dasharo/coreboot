@@ -513,9 +513,6 @@ struct soc_intel_skylake_config {
 	/* Enable/Disable host reads to PMC XRAM registers */
 	u8 PchPmPmcReadDisable;
 
-	/* Statically clock gate 8254 PIT. */
-	u8 clock_gate_8254;
-
 	/*
 	 * Use SD card detect GPIO with default config:
 	 * - Edge triggered
@@ -587,9 +584,6 @@ struct soc_intel_skylake_config {
 	 * 2 - VR mailbox command sent for IA/GT/SA rails.
 	 */
 	u8 IslVrCmd;
-
-	/* PCH Trip Temperature */
-	u8 pch_trip_temp;
 
 	/* Enable/Disable Sata power optimization */
 	u8 SataPwrOptEnable;

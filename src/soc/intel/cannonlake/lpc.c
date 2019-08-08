@@ -51,7 +51,7 @@ const struct lpc_mmio_range *soc_get_fixed_mmio_ranges()
 
 void soc_get_gen_io_dec_range(const struct device *dev, uint32_t *gen_io_dec)
 {
-	const config_t *config = dev->chip_info;
+	const config_t *config = config_of(dev);
 
 	gen_io_dec[0] = config->gen1_dec;
 	gen_io_dec[1] = config->gen2_dec;
@@ -201,10 +201,10 @@ static void pch_misc_init(void)
 
 	/* Setup NMI on errors, disable SERR */
 	reg8 = (inb(0x61)) & 0xf0;
-	outb(0x61, (reg8 | (1 << 2)));
+	outb((reg8 | (1 << 2)), 0x61);
 
 	/* Disable NMI sources */
-	outb(0x70, (1 << 7));
+	outb((1 << 7), 0x70);
 };
 
 void lpc_soc_init(struct device *dev)

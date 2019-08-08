@@ -30,7 +30,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_INT(GPP_A6, NONE, PLTRST, LEVEL),
 	/* A7  : PP3300_SOC_A */
 	PAD_NC(GPP_A7, NONE),
-	/* A8  : PEN_GARAGE_DET_L */
+	/* A8  : PEN_GARAGE_DET_L (wake) */
 	PAD_CFG_GPI_GPIO_DRIVER_SCI(GPP_A8, NONE, DEEP, LEVEL, NONE),
 	/* A9  : ESPI_CLK */
 	/* A10 : FPMCU_PCH_BOOT1 */
@@ -99,8 +99,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF1),
 	/* B18 : H1_SLAVE_SPI_MOSI_R */
 	PAD_CFG_NF(GPP_B18, NONE, DEEP, NF1),
-	/* B19 : GPP_B19 ==> NC */
-	PAD_NC(GPP_B19, NONE),
+	/* B19 : Set to NF1 to match FSP setting it to NF1, i.e., GSPI1_CS0# */
+	PAD_CFG_NF(GPP_B19, NONE, DEEP, NF1),
 	/* B20 : PCH_SPI_FPMCU_CLK_R */
 	PAD_CFG_NF(GPP_B20, NONE, DEEP, NF1),
 	/* B21 : PCH_SPI_FPMCU_MISO */
@@ -181,8 +181,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_D7, NONE),
 	/* D8  : WWAN_CONFIG_3 */
 	PAD_NC(GPP_D8, NONE),
-	/* D9  : GPP_D9 ==> NC */
-	PAD_NC(GPP_D9, NONE),
+	/* D9  : GPP_D9 ==> EN_PP3300_DX_TOUCHSCREEN */
+	PAD_CFG_GPO(GPP_D9, 0, DEEP),
 	/* D10 : GPP_D10 ==> NC */
 	PAD_NC(GPP_D10, NONE),
 	/* D11 : GPP_D11 ==> NC */
@@ -311,25 +311,29 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_F23, NONE),
 
 	/* G0  : SD_CMD */
-	PAD_CFG_NF(GPP_G0, NONE, DEEP, NF1),
+	PAD_CFG_NF(GPP_G0, NATIVE, DEEP, NF1),
 	/* G1  : SD_DATA0 */
-	PAD_CFG_NF(GPP_G1, NONE, DEEP, NF1),
+	PAD_CFG_NF(GPP_G1, NATIVE, DEEP, NF1),
 	/* G2  : SD_DATA1 */
-	PAD_CFG_NF(GPP_G2, NONE, DEEP, NF1),
+	PAD_CFG_NF(GPP_G2, NATIVE, DEEP, NF1),
 	/* G3  : SD_DATA2 */
-	PAD_CFG_NF(GPP_G3, NONE, DEEP, NF1),
+	PAD_CFG_NF(GPP_G3, NATIVE, DEEP, NF1),
 	/* G4  : SD_DATA3 */
-	PAD_CFG_NF(GPP_G4, NONE, DEEP, NF1),
+	PAD_CFG_NF(GPP_G4, NATIVE, DEEP, NF1),
 	/* G5  : SD_CD# */
 	PAD_CFG_NF(GPP_G5, NONE, PLTRST, NF1),
 	/* G6  : SD_CLK */
 	PAD_CFG_NF(GPP_G6, NONE, DEEP, NF1),
-	/* G7  : SD_WP => NC */
-	PAD_NC(GPP_G7, NONE),
+	/* G7  : SD_WP
+	 * As per schematics SD host controller SD_WP pin is not connected to
+	 * uSD card connector. In order to overcome gpio default state, ensures
+	 * to configure gpio pin as NF1 with internal 20K pull down.
+	 */
+	PAD_CFG_NF(GPP_G7, DN_20K, DEEP, NF1),
 	/*
 	 * H0  : HP_INT_L
 	 */
-	PAD_CFG_GPI_INT(GPP_H0, NONE, PLTRST, LEVEL),
+	PAD_CFG_GPI_INT(GPP_H0, NONE, PLTRST, EDGE_BOTH),
 	/* H1  : CNV_RF_RESET_L */
 	PAD_CFG_NF(GPP_H1, NONE, DEEP, NF3),
 	/* H2  : CNV_CLKREQ0 */
@@ -382,6 +386,9 @@ static const struct pad_config gpio_table[] = {
 
 	/* SD card detect VGPIO */
 	PAD_CFG_GPI_GPIO_DRIVER(vSD3_CD_B, NONE, DEEP),
+
+	/* CNV_WCEN  : Disable Wireless Charging */
+	PAD_CFG_GPO(CNV_WCEN, 0, DEEP),
 };
 
 const struct pad_config *base_gpio_table(size_t *num)
@@ -431,12 +438,18 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF1),
 	/* B18 : H1_SLAVE_SPI_MOSI_R */
 	PAD_CFG_NF(GPP_B18, NONE, DEEP, NF1),
+	/* C14 : BT_DISABLE_L */
+	PAD_CFG_GPO(GPP_C14, 0, DEEP),
 	/* PCH_WP_OD */
 	PAD_CFG_GPI(GPP_C20, NONE, DEEP),
 	/* C21 : H1_PCH_INT_ODL */
 	PAD_CFG_GPI_APIC(GPP_C21, NONE, PLTRST, LEVEL, INVERT),
 	/* C23 : WLAN_PE_RST# */
 	PAD_CFG_GPO(GPP_C23, 1, DEEP),
+	/* E1  : M2_SSD_PEDET */
+	PAD_CFG_NF(GPP_E1, NONE, DEEP, NF1),
+	/* E5  : SATA_DEVSLP1 */
+	PAD_CFG_NF(GPP_E5, NONE, PLTRST, NF1),
 	/* F2  : MEM_CH_SEL */
 	PAD_CFG_GPI(GPP_F2, NONE, PLTRST),
 	/* F11 : PCH_MEM_STRAP2 */

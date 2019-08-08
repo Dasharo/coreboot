@@ -38,6 +38,7 @@ enum prog_type {
 	PROG_BL31,
 	PROG_BL32,
 	PROG_POSTCAR,
+	PROG_OPENSBI,
 };
 
 /*
@@ -172,10 +173,6 @@ void run_romstage(void);
 
 /* Run ramstage from romstage. */
 void run_ramstage(void);
-
-/* Determine where stack for ramstage loader is located. */
-enum { ROMSTAGE_STACK_CBMEM, ROMSTAGE_STACK_LOW_MEM };
-uintptr_t romstage_ram_stack_base(size_t size, int src);
 
 /* Backup OS memory to CBMEM_ID_RESUME on ACPI S3 resume path,
  * if ramstage overwrites low memory. */

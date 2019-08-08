@@ -501,10 +501,6 @@ void mainboard_smi_gpi(u32 gpi_sts);
 int  mainboard_smi_apmc(u8 data);
 void mainboard_smi_sleep(u8 slp_typ);
 
-#if !CONFIG(SMM_TSEG)
-void smi_release_lock(void);
-#endif
-
 /* This is the SMM handler. */
 extern unsigned char _binary_smm_start[];
 extern unsigned char _binary_smm_end[];
@@ -586,5 +582,26 @@ int smm_load_module(void *smram, size_t size, struct smm_loader_params *params);
 /* Backup and restore default SMM region. */
 void *backup_default_smm_area(void);
 void restore_default_smm_area(void *smm_save_area);
+
+/*
+ * Fills in the arguments for the entire SMM region covered by chipset
+ * protections. e.g. TSEG.
+ */
+void smm_region(uintptr_t *start, size_t *size);
+
+enum {
+	/* SMM handler area. */
+	SMM_SUBREGION_HANDLER,
+	/* SMM cache region. */
+	SMM_SUBREGION_CACHE,
+	/* Chipset specific area. */
+	SMM_SUBREGION_CHIPSET,
+	/* Total sub regions supported. */
+	SMM_SUBREGION_NUM,
+};
+
+/* Fills in the start and size for the requested SMM subregion. Returns
+ * 0 on success, < 0 on failure. */
+int smm_subregion(int sub, uintptr_t *start, size_t *size);
 
 #endif /* CPU_X86_SMM_H */

@@ -45,12 +45,13 @@
 #include "s1_button.h"
 
 #define SPD_SIZE  128
-#define PM_RTC_CONTROL	    0x56
-#define PM_RTC_SHADOW	    0x5B
-#define PM_S_STATE_CONTROL  0xBA
+#define PM_RTC_CONTROL		0x56
+#define PM_RTC_SHADOW		0x5B
+#define PM_S_STATE_CONTROL	0xBA
+#define PM_PCI_CONFIG		0xEA
 
-#define SEC_REG_SERIAL_ADDR 0x1000
-#define MAX_SERIAL_LEN	    10
+#define SEC_REG_SERIAL_ADDR	0x1000
+#define MAX_SERIAL_LEN		10
 
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
@@ -83,7 +84,7 @@ static const u8 mainboard_picr_data[FCH_INT_TABLE_SIZE] = {
 	[0x48] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x50] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x58] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	[0x60] = 0x00,0x00,0x1F
+	[0x60] = 0x00,0x00,0x07
 };
 
 static const u8 mainboard_intr_data[FCH_INT_TABLE_SIZE] = {
@@ -106,7 +107,7 @@ static const u8 mainboard_intr_data[FCH_INT_TABLE_SIZE] = {
 	[0x48] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x50] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	[0x58] = 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	[0x60] = 0x00,0x00,0x1F
+	[0x60] = 0x00,0x00,0x07
 };
 
 /*
@@ -352,20 +353,18 @@ static void mainboard_enable(struct device *dev)
 		measure_amd_blobs();
 	}
 
-	//
-	// Enable the RTC output
-	//
+
+	/* Enable the RTC output */
 	pm_write16(PM_RTC_CONTROL, pm_read16(PM_RTC_CONTROL) | (1 << 11));
 
-	//
-	// Enable power on from WAKE#
-	//
+	/* Enable power on from WAKE# */
 	pm_write16(PM_S_STATE_CONTROL, pm_read16(PM_S_STATE_CONTROL) | (1 << 14));
 
-	//
-	// Enable power on after power fail
-	//
-	pm_write8 ( PM_RTC_SHADOW, pm_read8( PM_RTC_SHADOW ) | (1 << 0));
+	/* Enable power on after power fail */
+	pm_write8(PM_RTC_SHADOW, pm_read8(PM_RTC_SHADOW) | (1 << 0));
+
+	/* Enable GENINTx as GPIO */
+	pm_write8(PM_PCI_CONFIG, 1);
 
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
@@ -445,16 +444,13 @@ static void mainboard_final(void *chip_info)
 	/* change back to previous index value */
 	pci_write_config32(dev, 0xE0, val);
 
-	//
-	// Turn off LED 2 and LED 3
-	//
+
+	/* Turn off LED 2 and LED 3 */
 	write_gpio(GPIO_58, 1);
 	write_gpio(GPIO_59, 1);
 
 	if (!check_console()) {
-		//
-		// The console is disabled, check if S1 is pressed and enable if so
-		//
+	/*The console is disabled, check if S1 is pressed and enable if so */
 #if CONFIG(BOARD_PCENGINES_APU5)
 		if (!read_gpio(GPIO_22)) {
 #else

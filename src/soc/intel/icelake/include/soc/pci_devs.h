@@ -18,31 +18,30 @@
 
 #include <device/pci_def.h>
 
-#define _SA_DEVFN(slot)		PCI_DEVFN(SA_DEV_SLOT_ ## slot, 0)
 #define _PCH_DEVFN(slot, func)	PCI_DEVFN(PCH_DEV_SLOT_ ## slot, func)
 
 #if !defined(__SIMPLE_DEVICE__)
 #include <device/device.h>
-#define _SA_DEV(slot)		pcidev_path_on_root(_SA_DEVFN(slot))
-#define _PCH_DEV(slot, func)	pcidev_path_on_root(_PCH_DEVFN(slot, func))
+#define _PCH_DEV(slot, func)	pcidev_path_on_root_debug(_PCH_DEVFN(slot, func), __func__)
 #else
-#define _SA_DEV(slot)		PCI_DEV(0, SA_DEV_SLOT_ ## slot, 0)
 #define _PCH_DEV(slot, func)	PCI_DEV(0, PCH_DEV_SLOT_ ## slot, func)
 #endif
 
 /* System Agent Devices */
 
 #define SA_DEV_SLOT_ROOT	0x00
-#define  SA_DEVFN_ROOT		_SA_DEVFN(ROOT)
-#define  SA_DEV_ROOT		_SA_DEV(ROOT)
+#define  SA_DEVFN_ROOT		PCI_DEVFN(SA_DEV_SLOT_ROOT, 0)
+#if defined(__SIMPLE_DEVICE__)
+#define  SA_DEV_ROOT		PCI_DEV(0, SA_DEV_SLOT_ROOT, 0)
+#endif
 
 #define SA_DEV_SLOT_IGD		0x02
-#define  SA_DEVFN_IGD		_SA_DEVFN(IGD)
-#define  SA_DEV_IGD		_SA_DEV(IGD)
+#define  SA_DEVFN_IGD		PCI_DEVFN(SA_DEV_SLOT_IGD, 0)
+#define  SA_DEV_IGD		PCI_DEV(0, SA_DEV_SLOT_IGD, 0)
 
 #define SA_DEV_SLOT_DSP		0x04
-#define  SA_DEVFN_DSP		_SA_DEVFN(DSP)
-#define  SA_DEV_DSP		_SA_DEV(DSP)
+#define  SA_DEVFN_DSP		PCI_DEVFN(SA_DEV_SLOT_DSP, 0)
+#define  SA_DEV_DSP		PCI_DEV(0, SA_DEV_SLOT_DSP, 0)
 
 /* PCH Devices */
 #define PCH_DEV_SLOT_THERMAL	0x12
@@ -184,7 +183,19 @@
 #define  PCH_DEV_ESPI	_PCH_DEV(ESPI, 0)
 #define  PCH_DEV_LPC		PCH_DEV_ESPI
 #define  PCH_DEV_P2SB		_PCH_DEV(ESPI, 1)
+
+#if !ENV_RAMSTAGE
+/*
+ * PCH_DEV_PMC is intentionally not defined in RAMSTAGE since PMC device gets
+ * hidden from PCI bus after call to FSP-S. This leads to resource allocator
+ * dropping it from the root bus as unused device. All references to PCH_DEV_PMC
+ * would then return NULL and can go unnoticed if not handled properly. Since,
+ * this device does not have any special chip config associated with it, it is
+ * okay to not provide the definition for it in ramstage.
+ */
 #define  PCH_DEV_PMC		_PCH_DEV(ESPI, 2)
+#endif
+
 #define  PCH_DEV_HDA		_PCH_DEV(ESPI, 3)
 #define  PCH_DEV_SMBUS		_PCH_DEV(ESPI, 4)
 #define  PCH_DEV_SPI		_PCH_DEV(ESPI, 5)

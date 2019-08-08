@@ -29,8 +29,7 @@
 #include <soc/irq.h>
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
-
-#include "chip.h"
+#include <soc/soc_chip.h>
 
 /*
 * As per the BWG, Chapter 5.9.1. "PCH BIOS component will reserve
@@ -49,7 +48,7 @@ const struct lpc_mmio_range *soc_get_fixed_mmio_ranges()
 
 void soc_get_gen_io_dec_range(const struct device *dev, uint32_t *gen_io_dec)
 {
-	const config_t *config = dev->chip_info;
+	const config_t *config = config_of(dev);
 
 	gen_io_dec[0] = config->gen1_dec;
 	gen_io_dec[1] = config->gen2_dec;
@@ -194,21 +193,11 @@ static void pch_misc_init(void)
 
 	/* Setup NMI on errors, disable SERR */
 	reg8 = (inb(0x61)) & 0xf0;
-	outb(0x61, (reg8 | (1 << 2)));
+	outb((reg8 | (1 << 2)), 0x61);
 
 	/* Disable NMI sources */
-	outb(0x70, (1 << 7));
+	outb((1 << 7), 0x70);
 };
-
-static void clock_gate_8254(const struct device *dev)
-{
-	const config_t *config = dev->chip_info;
-
-	if (!config->clock_gate_8254)
-		return;
-
-	itss_clock_gate_8254();
-}
 
 void lpc_soc_init(struct device *dev)
 {
@@ -230,7 +219,6 @@ void lpc_soc_init(struct device *dev)
 	soc_pch_pirq_init(dev);
 	setup_i8259();
 	i8259_configure_irq_trigger(9, 1);
-	clock_gate_8254(dev);
 	soc_mirror_dmi_pcr_io_dec();
 }
 

@@ -14,22 +14,33 @@
  */
 
 #include <assert.h>
-#include <chip.h>
 #include <console/console.h>
 #include <fsp/util.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/romstage.h>
+#include <soc/soc_chip.h>
 
 static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 		const struct soc_intel_icelake_config *config)
 {
 	unsigned int i;
-	const struct device *dev;
+	const struct device *dev = pcidev_path_on_root(SA_DEVFN_IGD);
 	uint32_t mask = 0;
 
-	/* Set IGD stolen size to 60MB. */
-	m_cfg->IgdDvmt50PreAlloc = 0xFE;
+	if (!dev || !dev->enabled) {
+		/*
+		 * Skip IGD initialization in FSP if device
+		 * is disable in devicetree.cb.
+		 */
+		m_cfg->InternalGfx = 0;
+		m_cfg->IgdDvmt50PreAlloc = 0;
+	} else {
+		m_cfg->InternalGfx = 1;
+		/* Set IGD stolen size to 60MB. */
+		m_cfg->IgdDvmt50PreAlloc = 0xFE;
+	}
+
 	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
 	m_cfg->IedSize = CONFIG_IED_REGION_SIZE;
 	m_cfg->SaGv = config->SaGv;
@@ -38,7 +49,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->SkipMbpHob = 1;
 
 	/* If Audio Codec is enabled, enable FSP UPD */
-	dev = pcidev_on_root(0x1f, 3);
+	dev = pcidev_path_on_root(PCH_DEVFN_HDA);
 	if (!dev)
 		m_cfg->PchHdaEnable = 0;
 	else
@@ -65,10 +76,10 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 
 void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 {
-	const struct device *dev = pcidev_on_root(0, 0);
-	assert(dev != NULL);
-	const struct soc_intel_icelake_config *config = dev->chip_info;
+	const struct soc_intel_icelake_config *config;
 	FSP_M_CONFIG *m_cfg = &mupd->FspmConfig;
+
+	config = config_of_path(SA_DEVFN_ROOT);
 
 	soc_memory_init_params(m_cfg, config);
 

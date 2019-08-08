@@ -1,5 +1,7 @@
 chip soc/intel/apollolake
 
+	register "enable_vtd" = "1"
+
 	device cpu_cluster 0 on
 		device lapic 0 on end
 	end
@@ -46,5 +48,8 @@ chip soc/intel/apollolake
 		device pci 1e.0 on end	# - SDIO
 		device pci 1f.0 on end	# - LPC
 		device pci 1f.1 on end	# - SMBUS
+	end
+	chip drivers/crb
+		device mmio 0xfed40000 on end
 	end
 end

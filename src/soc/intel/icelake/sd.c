@@ -14,11 +14,11 @@
  */
 
 #include <intelblocks/sd.h>
-#include "chip.h"
+#include <soc/soc_chip.h>
 
 int sd_fill_soc_gpio_info(struct acpi_gpio *gpio, struct device *dev)
 {
-	config_t *config = dev->chip_info;
+	config_t *config = config_of(dev);
 
 	if (!config->sdcard_cd_gpio)
 		return -1;
