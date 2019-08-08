@@ -10,6 +10,8 @@
 #include "gpio_ftns.h"
 #include "imc.h"
 #include "hudson.h"
+#include "bios_knobs.h"
+#include <string.h>
 
 static AGESA_STATUS board_ReadSpd_from_cbfs(UINT32 Func, UINTN Data, VOID *ConfigPtr);
 
