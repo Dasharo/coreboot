@@ -24,6 +24,7 @@
 #include "imc.h"
 #include "hudson.h"
 #include "bios_knobs.h"
+#include <string.h>
 
 static AGESA_STATUS Fch_Oem_config(UINT32 Func, UINTN FchData, VOID *ConfigPtr);
 static AGESA_STATUS board_ReadSpd_from_cbfs(UINT32 Func, UINTN Data, VOID *ConfigPtr);
