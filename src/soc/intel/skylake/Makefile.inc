@@ -64,9 +64,9 @@ ramstage-y += sd.c
 ramstage-y += smmrelocate.c
 ramstage-y += spi.c
 ramstage-y += systemagent.c
-ramstage-y += thermal.c
 ramstage-y += uart.c
 ramstage-y += vr_config.c
+ramstage-y += xhci.c
 
 smm-y += elog.c
 smm-y += gpio.c
@@ -74,6 +74,7 @@ smm-y += p2sb.c
 smm-y += pmutil.c
 smm-y += smihandler.c
 smm-y += uart.c
+smm-y += xhci.c
 
 postcar-y += memmap.c
 postcar-y += gspi.c

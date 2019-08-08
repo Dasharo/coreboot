@@ -22,10 +22,9 @@ config SOC_SIFIVE_FU540
 	select ARCH_ROMSTAGE_RISCV
 	select ARCH_RAMSTAGE_RISCV
 	select DRIVERS_UART_SIFIVE
-	select GENERIC_UDELAY
-	select HAVE_MONOTONIC_TIMER
 	select RISCV_USE_ARCH_TIMER
 	select UART_OVERRIDE_REFCLK
+	select RISCV_HAS_OPENSBI
 
 if SOC_SIFIVE_FU540
 
@@ -49,4 +48,11 @@ config RISCV_WORKING_HARTID
 	int
 	default 0
 
+config OPENSBI_PLATFORM
+	string
+	default "sifive/fu540"
+
+config OPENSBI_TEXT_START
+	hex
+	default 0x80000000
 endif

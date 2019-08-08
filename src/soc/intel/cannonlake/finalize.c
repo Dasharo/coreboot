@@ -24,6 +24,7 @@
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/pcr.h>
 #include <intelblocks/tco.h>
+#include <intelblocks/thermal.h>
 #include <reg_script.h>
 #include <spi-generic.h>
 #include <soc/p2sb.h>
@@ -56,21 +57,34 @@ static void pch_handle_sideband(config_t *config)
 
 static void pch_finalize(void)
 {
-	struct device *dev;
 	uint32_t reg32;
 	uint8_t *pmcbase;
 	config_t *config;
 	uint8_t reg8;
 
 	tco_lockdown();
+
+	/*
+	 * Set low maximum temp threshold value used for dynamic thermal sensor
+	 * shutdown consideration.
+	 *
+	 * If Dynamic Thermal Shutdown is enabled then PMC logic shuts down the
+	 * thermal sensor when CPU is in a C-state and DTS Temp <= LTT.
+	 */
+	pch_thermal_configuration();
+
 	/*
 	 * Disable ACPI PM timer based on dt policy
 	 *
 	 * Disabling ACPI PM timer is necessary for XTAL OSC shutdown.
 	 * Disabling ACPI PM timer also switches off TCO
+	 *
+	 * SA_DEV_ROOT device is used here instead of PCH_DEV_PMC since it is
+	 * just required to get to chip config. PCH_DEV_PMC is hidden by this
+	 * point and hence removed from the root bus. pcidev_path_on_root thus
+	 * returns NULL for PCH_DEV_PMC device.
 	 */
-	dev = PCH_DEV_PMC;
-	config = dev->chip_info;
+	config = config_of_path(SA_DEVFN_ROOT);
 	pmcbase = pmc_mmio_regs();
 	if (config->PmTimerDisabled) {
 		reg8 = read8(pmcbase + PCH_PWRM_ACPI_TMR_CTL);

@@ -595,6 +595,8 @@ static void calculate_timings(struct raminfo *info)
 					info->
 					spd[channel][slot][CAS_LATENCY_TIME]);
 			}
+	if (cycletime > min_cycletime[0])
+		die("RAM init: Decoded SPD DRAM freq is slower than the controller minimum!");
 	for (clock_speed_index = 0; clock_speed_index < 3; clock_speed_index++) {
 		if (cycletime == min_cycletime[clock_speed_index])
 			break;
@@ -1009,6 +1011,9 @@ static void compute_derived_timings(struct raminfo *info)
 					max_of_unk = max(max_of_unk, unk1 - t);
 			}
 		}
+
+		if (count == 0)
+			die("No memory ranks found for channel %u\n", channel);
 
 		info->avg4044[channel] = sum / count;
 		info->max4048[channel] = max_of_unk;
@@ -1431,14 +1436,17 @@ static void program_total_memory_map(struct raminfo *info)
 		memory_map[2] = TOUUD | 1;
 	quickpath_reserved = 0;
 
-	{
-		u32 t;
+	u32 t = pci_read_config32(PCI_DEV(QUICKPATH_BUS, 0, 1), 0x68);
 
-		gav(t = pci_read_config32(PCI_DEV(QUICKPATH_BUS, 0, 1), 0x68));
-		if (t & 0x800)
-			quickpath_reserved =
-			    (1 << find_lowest_bit_set32(t >> 20));
+	gav(t);
+
+	if (t & 0x800) {
+		u32 shift = t >> 20;
+		if (shift == 0)
+			die("Quickpath value is 0\n");
+		quickpath_reserved = (u32)1 << find_lowest_bit_set32(shift);
 	}
+
 	if (memory_remap)
 		TOUUD -= quickpath_reserved;
 

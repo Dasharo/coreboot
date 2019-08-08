@@ -15,6 +15,9 @@
  */
 
 #include <ctype.h>
+/* stat.h needs to be included before commonlib/helpers.h to avoid errors.*/
+#include <sys/stat.h>
+#include <commonlib/helpers.h>
 #include "sconfig.h"
 #include "sconfig.tab.h"
 
@@ -696,17 +699,17 @@ static int dev_has_children(struct device *dev)
 static void pass0(FILE *fil, struct device *ptr, struct device *next)
 {
 	if (ptr == &base_root_dev) {
-		fprintf(fil, "DEVTREE_CONST struct bus %s_links[];\n",
+		fprintf(fil, "STORAGE struct bus %s_links[];\n",
 			ptr->name);
 		return;
 	}
 
-	fprintf(fil, "static DEVTREE_CONST struct device %s;\n", ptr->name);
+	fprintf(fil, "STORAGE struct device %s;\n", ptr->name);
 	if (ptr->res)
-		fprintf(fil, "DEVTREE_CONST struct resource %s_res[];\n",
+		fprintf(fil, "STORAGE struct resource %s_res[];\n",
 			ptr->name);
 	if (dev_has_children(ptr))
-		fprintf(fil, "DEVTREE_CONST struct bus %s_links[];\n",
+		fprintf(fil, "STORAGE struct bus %s_links[];\n",
 			ptr->name);
 
 	if (next)
@@ -723,7 +726,7 @@ static void emit_resources(FILE *fil, struct device *ptr)
 		return;
 
 	int i = 1;
-	fprintf(fil, "DEVTREE_CONST struct resource %s_res[] = {\n", ptr->name);
+	fprintf(fil, "STORAGE struct resource %s_res[] = {\n", ptr->name);
 	struct resource *r = ptr->res;
 	while (r) {
 		fprintf(fil,
@@ -765,7 +768,7 @@ static void emit_bus(FILE *fil, struct bus *bus)
 
 static void emit_dev_links(FILE *fil, struct device *ptr)
 {
-	fprintf(fil, "DEVTREE_CONST struct bus %s_links[] = {\n",
+	fprintf(fil, "STORAGE struct bus %s_links[] = {\n",
 		ptr->name);
 
 	struct bus *bus = ptr->bus;
@@ -784,9 +787,11 @@ static void pass1(FILE *fil, struct device *ptr, struct device *next)
 	struct chip_instance *chip_ins = ptr->chip_instance;
 	int has_children = dev_has_children(ptr);
 
-	if (ptr != &base_root_dev)
-		fprintf(fil, "static ");
-	fprintf(fil, "DEVTREE_CONST struct device %s = {\n", ptr->name);
+	if (ptr == &base_root_dev)
+		fprintf(fil, "DEVTREE_CONST struct device %s = {\n", ptr->name);
+	else
+		fprintf(fil, "STORAGE struct device %s = {\n", ptr->name);
+
 	fprintf(fil, "#if !DEVTREE_EARLY\n");
 
 	/*
@@ -810,18 +815,6 @@ static void pass1(FILE *fil, struct device *ptr, struct device *next)
 		fprintf(fil, "\t.subsystem_vendor = 0x%04x,\n",
 			ptr->subsystem_vendor);
 
-	for (pin = 0; pin < 4; pin++) {
-		if (ptr->pci_irq_info[pin].ioapic_irq_pin > 0)
-			fprintf(fil,
-				"\t.pci_irq_info[%d].ioapic_irq_pin = %d,\n",
-				pin, ptr->pci_irq_info[pin].ioapic_irq_pin);
-
-		if (ptr->pci_irq_info[pin].ioapic_dst_id > 0)
-			fprintf(fil,
-				"\t.pci_irq_info[%d].ioapic_dst_id = %d,\n",
-				pin, ptr->pci_irq_info[pin].ioapic_dst_id);
-	}
-
 	if (ptr->subsystem_device > 0)
 		fprintf(fil, "\t.subsystem_device = 0x%04x,\n",
 			ptr->subsystem_device);
@@ -838,6 +831,17 @@ static void pass1(FILE *fil, struct device *ptr, struct device *next)
 	if (ptr->sibling)
 		fprintf(fil, "\t.sibling = &%s,\n", ptr->sibling->name);
 	fprintf(fil, "#if !DEVTREE_EARLY\n");
+	for (pin = 0; pin < 4; pin++) {
+		if (ptr->pci_irq_info[pin].ioapic_irq_pin > 0)
+			fprintf(fil,
+				"\t.pci_irq_info[%d].ioapic_irq_pin = %d,\n",
+				pin, ptr->pci_irq_info[pin].ioapic_irq_pin);
+
+		if (ptr->pci_irq_info[pin].ioapic_dst_id > 0)
+			fprintf(fil,
+				"\t.pci_irq_info[%d].ioapic_dst_id = %d,\n",
+				pin, ptr->pci_irq_info[pin].ioapic_dst_id);
+	}
 	fprintf(fil, "\t.chip_ops = &%s_ops,\n",
 		chip_ins->chip->name_underscore);
 	if (chip_ins == &mainboard_instance)
@@ -942,7 +946,7 @@ static void emit_chip_headers(FILE *fil, struct chip *chip)
 
 static void emit_chip_instance(FILE *fil, struct chip_instance *instance)
 {
-	fprintf(fil, "DEVTREE_CONST struct %s_config %s_info_%d = {",
+	fprintf(fil, "STORAGE struct %s_config %s_info_%d = {",
 		instance->chip->name_underscore,
 		instance->chip->name_underscore,
 		instance->id);
@@ -964,6 +968,8 @@ static void emit_chips(FILE *fil)
 	struct chip_instance *instance;
 
 	emit_chip_headers(fil, chip);
+
+	fprintf(fil, "\n#define STORAGE static __unused DEVTREE_CONST\n\n");
 
 	for (; chip; chip = chip->next) {
 		if (!chip->chiph_exists)

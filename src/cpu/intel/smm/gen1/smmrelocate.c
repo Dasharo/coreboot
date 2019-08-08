@@ -57,7 +57,6 @@ struct smm_relocation_params {
 
 /* This gets filled in and used during relocation. */
 static struct smm_relocation_params smm_reloc_params;
-static void *default_smm_area = NULL;
 
 /* On model_6fx, model_1067x and model_106cx SMRR functions slightly
    differently. The MSR are at different location from the rest
@@ -122,7 +121,7 @@ static void fill_in_relocation_params(struct smm_relocation_params *params)
 	}
 
 	/* Adjust available SMM handler memory size. */
-	if (CONFIG(CACHE_RELOCATED_RAMSTAGE_OUTSIDE_CBMEM)) {
+	if (CONFIG(TSEG_STAGE_CACHE)) {
 		ASSERT(params->smram_size > CONFIG_SMM_RESERVED_SIZE);
 		params->smram_size -= CONFIG_SMM_RESERVED_SIZE;
 	}
@@ -166,11 +165,6 @@ static void setup_ied_area(struct smm_relocation_params *params)
 
 	/* Zero out 32KiB at IEDBASE + 1MiB */
 	memset(ied_base + (1 << 20), 0, (32 << 10));
-}
-
-void smm_init_completion(void)
-{
-	restore_default_smm_area(default_smm_area);
 }
 
 void smm_lock(void)

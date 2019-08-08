@@ -15,18 +15,14 @@ ramstage-y += acpi.c
 
 ramstage-y += common.c
 romstage-y += common.c
-smm-$(CONFIG_HAVE_SMI_HANDLER) += common.c
+smm-y += common.c
 
 ramstage-y += tsc_freq.c
 romstage-y += tsc_freq.c
 postcar-y += tsc_freq.c
-smm-$(CONFIG_HAVE_SMI_HANDLER) += tsc_freq.c
+smm-y += tsc_freq.c
 
-smm-$(CONFIG_HAVE_SMI_HANDLER) += finalize.c
-
-romstage-$(CONFIG_CACHE_RELOCATED_RAMSTAGE_OUTSIDE_CBMEM) += stage_cache.c
-postcar-$(CONFIG_CACHE_RELOCATED_RAMSTAGE_OUTSIDE_CBMEM) += stage_cache.c
-ramstage-$(CONFIG_CACHE_RELOCATED_RAMSTAGE_OUTSIDE_CBMEM) += stage_cache.c
+smm-y += finalize.c
 
 cpu_microcode_bins += $(wildcard 3rdparty/intel-microcode/intel-ucode/06-2a-*)
 cpu_microcode_bins += $(wildcard 3rdparty/intel-microcode/intel-ucode/06-3a-*)

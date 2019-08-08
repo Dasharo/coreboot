@@ -225,9 +225,6 @@
 #define SATA_CAPABILITIES_REG		0xfc
 #define SATA_CAPABILITY_SPM		BIT(12)
 
-/* SPI Controller (base address in D14F3xA0) */
-#define SPI_BASE_ALIGNMENT		BIT(6)
-
 #define SPI_CNTRL0			0x00
 #define   SPI_BUSY			BIT(31)
 #define   SPI_READ_MODE_MASK		(BIT(30) | BIT(29) | BIT(18))
@@ -322,7 +319,7 @@ void sb_set_spi100(u16 norm, u16 fast, u16 alt, u16 tpm);
 void bootblock_fch_early_init(void);
 void bootblock_fch_init(void);
 /**
- * @brief Save the UMA bize returned by AGESA
+ * @brief Save the UMA bize
  *
  * @param size = in bytes
  *
@@ -330,7 +327,7 @@ void bootblock_fch_init(void);
  */
 void save_uma_size(uint32_t size);
 /**
- * @brief Save the UMA base address returned by AGESA
+ * @brief Save the UMA base address
  *
  * @param base = 64bit base address
  *

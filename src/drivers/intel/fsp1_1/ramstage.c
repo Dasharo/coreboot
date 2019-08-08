@@ -17,7 +17,7 @@
 #include <bootmode.h>
 #include <arch/acpi.h>
 #include <console/console.h>
-#include <fsp/memmap.h>
+#include <cpu/x86/smm.h>
 #include <fsp/ramstage.h>
 #include <fsp/util.h>
 #include <lib.h>
@@ -33,38 +33,35 @@ __weak void soc_after_silicon_init(void)
 /* Display SMM memory map */
 static void smm_memory_map(void)
 {
-	void *base;
+	uintptr_t base;
 	size_t size;
 	int i;
 
 	printk(BIOS_SPEW, "SMM Memory Map\n");
 
 	smm_region(&base, &size);
-	printk(BIOS_SPEW, "SMRAM       : %p 0x%zx\n", base, size);
+	printk(BIOS_SPEW, "SMRAM       : 0x%zx 0x%zx\n", base, size);
 
 	for (i = 0; i < SMM_SUBREGION_NUM; i++) {
 		if (smm_subregion(i, &base, &size))
 			continue;
-		printk(BIOS_SPEW, " Subregion %d: %p 0x%zx\n", i, base, size);
+		printk(BIOS_SPEW, " Subregion %d: 0x%zx 0x%zx\n", i, base, size);
 	}
 }
 
 static void display_hob_info(FSP_INFO_HEADER *fsp_info_header)
 {
 	const EFI_GUID graphics_info_guid = EFI_PEI_GRAPHICS_INFO_HOB_GUID;
-	int missing_hob = 0;
 	void *hob_list_ptr = get_hob_list();
-
-	if (!CONFIG(DISPLAY_HOBS))
-		return;
 
 	/* Verify the HOBs */
 	if (hob_list_ptr == NULL) {
-		printk(BIOS_INFO, "ERROR - HOB pointer is NULL!\n");
+		printk(BIOS_ERR, "ERROR - HOB pointer is NULL!\n");
 		return;
 	}
 
-	print_hob_type_structure(0, hob_list_ptr);
+	if (CONFIG(DISPLAY_HOBS))
+		print_hob_type_structure(0, hob_list_ptr);
 
 	/*
 	 * Verify that FSP is generating the required HOBs:
@@ -77,14 +74,12 @@ static void display_hob_info(FSP_INFO_HEADER *fsp_info_header)
 	 *	FSP_SMBIOS_MEMORY_INFO HOB verified by raminit
 	 */
 	if ((fsp_info_header->ImageAttribute & GRAPHICS_SUPPORT_BIT) &&
-		!get_next_guid_hob(&graphics_info_guid, hob_list_ptr)) {
-		printk(BIOS_INFO, "7.5: EFI_PEI_GRAPHICS_INFO_HOB missing!\n");
-		missing_hob = 1;
-	}
-
-	if (missing_hob)
-		printk(BIOS_INFO,
+		!get_next_guid_hob(&graphics_info_guid, hob_list_ptr) &&
+		CONFIG(DISPLAY_HOBS)) {
+		printk(BIOS_ERR, "7.5: EFI_PEI_GRAPHICS_INFO_HOB missing!\n");
+		printk(BIOS_ERR,
 		       "ERROR - Missing one or more required FSP HOBs!\n");
+	}
 }
 
 void fsp_run_silicon_init(FSP_INFO_HEADER *fsp_info_header, int is_s3_wakeup)

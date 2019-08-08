@@ -237,6 +237,7 @@ static int tegra_dc_sor_power_dplanes(struct tegra_dc_sor_data *sor,
 			/* fall through */
 		case 2:
 			reg_val |= NV_SOR_DP_PADCTL_PD_TXD_1_NO;
+			/* fall through */
 		case 1:
 			reg_val |= NV_SOR_DP_PADCTL_PD_TXD_0_NO;
 			break;
@@ -347,10 +348,10 @@ static void tegra_dc_sor_io_set_dpd(struct tegra_dc_sor_data *sor, int up)
 	}
 
 	reg_val = READL(pmc_base + APBDEV_PMC_IO_DPD2_REQ);
-	reg_val &= ~(APBDEV_PMC_IO_DPD2_REQ_LVDS_ON ||
+	reg_val &= ~(APBDEV_PMC_IO_DPD2_REQ_LVDS_ON |
 		APBDEV_PMC_IO_DPD2_REQ_CODE_DEFAULT_MASK);
 
-	reg_val = up ? APBDEV_PMC_IO_DPD2_REQ_LVDS_ON |
+	reg_val |= up ? APBDEV_PMC_IO_DPD2_REQ_LVDS_ON |
 		APBDEV_PMC_IO_DPD2_REQ_CODE_DPD_OFF :
 		APBDEV_PMC_IO_DPD2_REQ_LVDS_OFF |
 		APBDEV_PMC_IO_DPD2_REQ_CODE_DPD_ON;
@@ -844,6 +845,7 @@ void tegra_dc_sor_set_voltage_swing(struct tegra_dc_sor_data *sor)
 		break;
 	case SOR_LINK_SPEED_G5_4:
 		printk(BIOS_WARNING, "T124 does not support 5.4G link clock.\n");
+		return;
 	default:
 		printk(BIOS_WARNING, "Invalid sor link bandwidth: %d\n",
 			sor->link_cfg->link_bw);

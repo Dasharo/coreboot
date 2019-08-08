@@ -28,8 +28,9 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <spi_flash.h>
-
 #include <spi-generic.h>
+
+#include "spi.h"
 
 #define HSFC_FCYCLE_OFF		1	/* 1-2: FLASH Cycle */
 #define HSFC_FCYCLE		(0x3 << HSFC_FCYCLE_OFF)
@@ -725,7 +726,7 @@ static int ich_hwseq_erase(const struct spi_flash *flash, u32 offset,
 	u32 start, end, erase_size;
 	int ret;
 	uint16_t hsfc;
-	uint16_t timeout = 1000 * 60;
+	unsigned int timeout = 1000 * SPI_FLASH_SECTOR_ERASE_TIMEOUT_MS;
 
 	erase_size = flash->sector_size;
 	if (offset % erase_size || len % erase_size) {
@@ -1046,6 +1047,45 @@ static int spi_flash_protect(const struct spi_flash *flash,
 	printk(BIOS_INFO, "%s: FPR %d is enabled for range 0x%08x-0x%08x\n",
 	       __func__, fpr, start, end);
 	return 0;
+}
+
+void spi_finalize_ops(void)
+{
+	struct ich_spi_controller *cntlr = &g_cntlr;
+	u16 spi_opprefix;
+	u16 optype = 0;
+	struct intel_swseq_spi_config spi_config = {
+		{0x06, 0x50},  /* OPPREFIXES: EWSR and WREN */
+		{ /* OPTYPE and OPCODE */
+			{0x01, WRITE_NO_ADDR},		/* WRSR: Write Status Register */
+			{0x02, WRITE_WITH_ADDR},	/* BYPR: Byte Program */
+			{0x03, READ_WITH_ADDR},		/* READ: Read Data */
+			{0x05, READ_NO_ADDR},		/* RDSR: Read Status Register */
+			{0x20, WRITE_WITH_ADDR},	/* SE20: Sector Erase 0x20 */
+			{0x9f, READ_NO_ADDR},		/* RDID: Read ID */
+			{0xd8, WRITE_WITH_ADDR},	/* BED8: Block Erase 0xd8 */
+			{0x0b, READ_WITH_ADDR},		/* FAST: Fast Read */
+		}
+	};
+	int i;
+
+	if (spi_locked())
+		return;
+
+	intel_southbridge_override_spi(&spi_config);
+
+	spi_opprefix = spi_config.opprefixes[0]
+		| (spi_config.opprefixes[1] << 8);
+	writew_(spi_opprefix, cntlr->preop);
+	for (i = 0; i < ARRAY_SIZE(spi_config.ops); i++) {
+		optype |= (spi_config.ops[i].type & 3) << (i * 2);
+		writeb_(spi_config.ops[i].op, &cntlr->opmenu[i]);
+	}
+	writew_(optype, cntlr->optype);
+}
+
+__weak void intel_southbridge_override_spi(struct intel_swseq_spi_config *spi_config)
+{
 }
 
 static const struct spi_ctrlr spi_ctrlr = {

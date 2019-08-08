@@ -18,16 +18,16 @@ ifeq ($(CONFIG_NORTHBRIDGE_INTEL_FSP_RANGELEY),y)
 
 subdirs-y += fsp
 ramstage-y += northbridge.c
-ramstage-y += raminit.c
+ramstage-y += memmap.c
 
 ramstage-y += acpi.c
 ramstage-y += port_access.c
 
-romstage-y += raminit.c
+romstage-y += memmap.c
 romstage-y += ../../../arch/x86/walkcbfs.S
 romstage-y += port_access.c
 
-smm-$(CONFIG_HAVE_SMI_HANDLER) += udelay.c
+smm-y += udelay.c
 
 CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)
 
