@@ -248,13 +248,15 @@ AGESA_STATUS agesawrapper_amdinitmid(void)
 	return status;
 }
 
-#ifndef __PRE_RAM__
 AGESA_STATUS agesawrapper_amdinitlate(void)
 {
 	AGESA_STATUS Status;
 	AMD_INTERFACE_PARAMS AmdParamStruct;
 	AMD_LATE_PARAMS *AmdLateParams;
 	AGESA_BUFFER_PARAMS BufParams;
+
+	if (!ENV_RAMSTAGE)
+		return AGESA_UNSUPPORTED;
 
 	LibAmdMemFill (&AmdParamStruct,
 		       0,
@@ -295,7 +297,6 @@ AGESA_STATUS agesawrapper_amdinitlate(void)
 	/* No AmdReleaseStruct(&AmdParamStruct), we need AmdLateParams later. */
 	return Status;
 }
-#endif /* #ifndef __PRE_RAM__ */
 
 const void *agesawrapper_locate_module (const CHAR8 name[8])
 {

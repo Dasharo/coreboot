@@ -26,8 +26,6 @@
 #ifndef __ASM_ACPI_H
 #define __ASM_ACPI_H
 
-#define HIGH_MEMORY_SAVE	(CONFIG_RAMTOP - CONFIG_RAMBASE)
-
 /*
  * The type and enable fields are common in ACPI, but the
  * values themselves are hardware implementation defined.
@@ -130,6 +128,14 @@ typedef struct acpi_gen_regaddr {
 #define ACPI_ACCESS_SIZE_WORD_ACCESS	2
 #define ACPI_ACCESS_SIZE_DWORD_ACCESS	3
 #define ACPI_ACCESS_SIZE_QWORD_ACCESS	4
+
+/* Common ACPI HIDs */
+#define ACPI_HID_FDC "PNP0700"
+#define ACPI_HID_KEYBOARD "PNP0303"
+#define ACPI_HID_MOUSE "PNP0F03"
+#define ACPI_HID_COM "PNP0501"
+#define ACPI_HID_LPT "PNP0400"
+#define ACPI_HID_PNP "PNP0C02"
 
 /* Generic ACPI header, provided by (almost) all tables */
 typedef struct acpi_table_header {
@@ -936,7 +942,6 @@ unsigned long acpi_create_hest_error_source(acpi_hest_t *hest,
 /* For ACPI S3 support. */
 void acpi_fail_wakeup(void);
 void acpi_resume(void *wake_vec);
-void acpi_prepare_resume_backup(void);
 void mainboard_suspend_resume(void);
 void *acpi_find_wakeup_vector(void);
 
@@ -975,13 +980,6 @@ static inline int acpi_s3_resume_allowed(void)
 {
 	return CONFIG(HAVE_ACPI_RESUME);
 }
-
-/* Return address in reserved memory where to backup low memory
- * while platform resumes from S3 suspend. Caller is responsible of
- * making a complete copy of the region base..base+size, with
- * parameteres base and size that meet page alignment requirement.
- */
-void *acpi_backup_container(uintptr_t base, size_t size);
 
 #if CONFIG(HAVE_ACPI_RESUME)
 

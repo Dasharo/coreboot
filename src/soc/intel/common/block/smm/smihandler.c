@@ -20,6 +20,8 @@
 #include <console/console.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/smm.h>
+#include <cpu/intel/em64t100_save_state.h>
+#include <cpu/intel/em64t101_save_state.h>
 #include <delay.h>
 #include <device/pci_def.h>
 #include <elog.h>
@@ -29,6 +31,7 @@
 #include <intelblocks/uart.h>
 #include <smmstore.h>
 #include <soc/nvs.h>
+#include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/gpio.h>
 #include <soc/iomap.h>
@@ -221,7 +224,7 @@ void smihandler_southbridge_sleep(
 		/* Disable all GPE */
 		pmc_disable_all_gpe();
 		/* Set which state system will be after power reapplied */
-		pmc_soc_restore_power_failure();
+		pmc_set_power_failure_state(false);
 		/* also iterates over all bridges on bus 0 */
 		busmaster_disable_on_bus(0);
 

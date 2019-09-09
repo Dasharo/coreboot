@@ -13,7 +13,12 @@
 ## GNU General Public License for more details.
 ##
 
+## GPP_F12-F16 indicates mem_id to match specific spd file
+SPD_SOURCES = empty_ddr4	# 0b00000
+
 bootblock-y += gpio.c
 ramstage-y += gpio.c
 romstage-y += gpio.c
 verstage-y += gpio.c
+
+romstage-y += memory.c

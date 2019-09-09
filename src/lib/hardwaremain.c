@@ -187,8 +187,6 @@ static boot_state_t bs_os_resume_check(void *arg)
 		boot_states[BS_OS_RESUME].arg = wake_vector;
 		return BS_OS_RESUME;
 	}
-
-	acpi_prepare_resume_backup();
 #endif
 	timestamp_add_now(TS_CBMEM_POST);
 
@@ -453,8 +451,9 @@ void main(void)
 	/* console_init() MUST PRECEDE ALL printk()! Additionally, ensure
 	 * it is the very first thing done in ramstage.*/
 	console_init();
-
 	post_code(POST_CONSOLE_READY);
+
+	exception_init();
 
 	/*
 	 * CBMEM needs to be recovered because timestamps, ACPI, etc rely on
@@ -472,8 +471,6 @@ void main(void)
 #if CONFIG(HAVE_ACPI_RESUME)
 	acpi_is_wakeup();
 #endif
-
-	exception_init();
 	threads_initialize();
 
 	/* Schedule the static boot state entries. */

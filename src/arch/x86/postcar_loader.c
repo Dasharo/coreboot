@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/cpu.h>
+#include <arch/romstage.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
@@ -120,7 +120,31 @@ void postcar_frame_add_romcache(struct postcar_frame *pcf, int type)
 	postcar_frame_add_mtrr(pcf, CACHE_ROM_BASE, CACHE_ROM_SIZE, type);
 }
 
-void *postcar_commit_mtrrs(struct postcar_frame *pcf)
+void postcar_frame_common_mtrrs(struct postcar_frame *pcf)
+{
+	if (pcf->skip_common_mtrr)
+		return;
+
+	/* Cache the ROM as WP just below 4GiB. */
+	postcar_frame_add_romcache(pcf, MTRR_TYPE_WRPROT);
+}
+
+/* prepare_and_run_postcar() determines the stack to use after
+ * cache-as-ram is torn down as well as the MTRR settings to use. */
+void prepare_and_run_postcar(struct postcar_frame *pcf)
+{
+	if (postcar_frame_init(pcf, 0))
+		die("Unable to initialize postcar frame.\n");
+
+	fill_postcar_frame(pcf);
+
+	postcar_frame_common_mtrrs(pcf);
+
+	run_postcar_phase(pcf);
+	/* We do not return here. */
+}
+
+static void postcar_commit_mtrrs(struct postcar_frame *pcf)
 {
 	/*
 	 * Place the number of used variable MTRRs on stack then max number
@@ -128,7 +152,6 @@ void *postcar_commit_mtrrs(struct postcar_frame *pcf)
 	 */
 	stack_push(pcf, pcf->num_var_mtrrs);
 	stack_push(pcf, pcf->max_var_mtrrs);
-	return (void *) pcf->stack;
 }
 
 static void finalize_load(uintptr_t *stack_top_ptr, uintptr_t stack_top)

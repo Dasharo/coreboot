@@ -41,6 +41,7 @@ _start:
 	movl	$(_car_global_end), %ecx
 	movl	$(_car_global_start), %edi
 	sub	%edi, %ecx
+	shrl	$2, %ecx
 	rep	stosl
 
 #if ((ENV_VERSTAGE && CONFIG(VERSTAGE_DEBUG_SPINLOOP)) \
@@ -60,9 +61,7 @@ debug_spinloop:
 #endif
 	call	car_stage_entry
 
-/* This is here for linking purposes. */
-.weak car_stage_entry
-car_stage_entry:
+	/* Expect to never return. */
 1:
 	jmp	1b
 

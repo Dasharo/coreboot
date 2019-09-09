@@ -22,4 +22,7 @@
 #define VARIANT_SKU_ID_SIGNED_EC	4
 #define VARIANT_SKU_NAME_SIGNED_EC	"sku4"
 
+/* Return memory SKU for the variant */
+int variant_memory_sku(void);
+
 #endif

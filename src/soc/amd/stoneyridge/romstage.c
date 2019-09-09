@@ -16,6 +16,7 @@
 
 #include <device/pci_ops.h>
 #include <arch/cpu.h>
+#include <arch/romstage.h>
 #include <arch/acpi.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
@@ -37,7 +38,7 @@
 
 #include "chip.h"
 
-void __weak mainboard_romstage_entry(int s3_resume)
+void __weak mainboard_romstage_entry_s3(int s3_resume)
 {
 	/* By default, don't do anything */
 }
@@ -97,7 +98,7 @@ asmlinkage void car_stage_entry(void)
 	if (CONFIG(SOC_AMD_PSP_SELECTABLE_SMU_FW))
 		load_smu_fw1();
 
-	mainboard_romstage_entry(s3_resume);
+	mainboard_romstage_entry_s3(s3_resume);
 
 	bsp_agesa_call();
 
@@ -151,6 +152,9 @@ asmlinkage void car_stage_entry(void)
 		printk(BIOS_CRIT, "Failed to recover cbmem\n");
 	if (romstage_handoff_init(s3_resume))
 		printk(BIOS_ERR, "Failed to set romstage handoff data\n");
+
+	if (CONFIG(SMM_TSEG))
+		smm_list_regions();
 
 	post_code(0x44);
 	if (postcar_frame_init(&pcf, 0))

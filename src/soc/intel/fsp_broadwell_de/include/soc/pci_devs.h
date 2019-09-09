@@ -126,4 +126,14 @@
 #define SMM_FUNC		0x06
 #define SMM_DEV_FUNC		PCI_DEVFN(SMM_DEV, SMM_FUNC)
 
+#define IMC_DEV0		19
+#define IMC_FUNC0		0
+
+#define IMC_DEV			PCI_DEV(QPI_BUS, IMC_DEV0, IMC_FUNC0)
+
+#define PCU1_DEV		30
+#define PCU1_FUNC		01
+#define UBOX_DEV		16
+#define UBOX_FUNC		7
+
 #endif /* _SOC_PCI_DEVS_H_ */
