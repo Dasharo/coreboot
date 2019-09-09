@@ -7,6 +7,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.28] - 2019-09-10
+### Fixed
+- watchdog is now available on APU3
+
 ## [v4.0.27] - 2019-07-05
 ### Changed
 - [updated SeaBIOS to rel-1.12.1.3](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11213---2019-07-05)
@@ -246,7 +250,8 @@ built externally
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.27...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.28...coreboot-4.0.x
+[v4.0.28]: https://github.com/pcengines/coreboot/compare/v4.0.27...v4.0.28
 [v4.0.27]: https://github.com/pcengines/coreboot/compare/v4.0.26...v4.0.27
 [v4.0.26]: https://github.com/pcengines/coreboot/compare/v4.0.25...v4.0.26
 [v4.0.25]: https://github.com/pcengines/coreboot/compare/v4.0.24...v4.0.25
