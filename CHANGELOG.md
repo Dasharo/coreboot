@@ -7,7 +7,7 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
-## [v4.0.28] - 2019-09-10
+## [v4.0.28] - 2019-09-09
 ### Fixed
 - watchdog is now available on APU3
 
