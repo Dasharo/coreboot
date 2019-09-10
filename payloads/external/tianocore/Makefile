@@ -23,8 +23,15 @@ project_git_branch=coreboot-4.7.x-uefi
 upstream_git_repo=https://github.com/tianocore/edk2
 
 # STABLE revision is 3mdeb's coreboot uefi (coreboot-4.7.x-uefi) branch
-TAG-$(CONFIG_TIANOCORE_STABLE)=origin/$(project_git_branch)
-TAG-$(CONFIG_TIANOCORE_REVISION)=$(CONFIG_TIANOCORE_REVISION_ID)
+ifeq ($(CONFIG_TIANOCORE_UEFIPAYLOAD),y)
+bootloader=UefiPayloadPkg
+build_flavor=-D BOOTLOADER=COREBOOT -D PCIE_BASE=$(CONFIG_MMCONF_BASE_ADDRESS)
+TAG=$(CONFIG_TIANOCORE_REVISION_ID)
+else
+bootloader=CorebootPayloadPkg
+# STABLE revision is MrChromebox's coreboot framebuffer (coreboot_fb) branch
+TAG=$(CONFIG_TIANOCORE_REVISION_ID)
+endif
 
 export EDK_TOOLS_PATH=$(project_dir)/BaseTools
 
