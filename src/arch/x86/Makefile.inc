@@ -219,7 +219,6 @@ postcar-y += cpu_common.c
 postcar-$(CONFIG_IDT_IN_EVERY_STAGE) += exception.c
 postcar-$(CONFIG_IDT_IN_EVERY_STAGE) += idt.S
 postcar-y += exit_car.S
-postcar-y += ../../mainboard/$(MAINBOARDDIR)/bios_knobs.c
 postcar-y += memcpy.c
 postcar-$(CONFIG_ARCH_POSTCAR_X86_32) += memmove_32.c
 postcar-$(CONFIG_ARCH_POSTCAR_X86_64) += memmove_64.S
