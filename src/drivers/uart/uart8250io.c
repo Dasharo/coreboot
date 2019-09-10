@@ -7,7 +7,12 @@
 #include <stdint.h>
 
 #include "uart8250reg.h"
-#include "mainboard/pcengines/apu2/bios_knobs.h"
+
+#if CONFIG(BOARD_PCENGINES_APU1)
+	#include "mainboard/pcengines/apu1/bios_knobs.h"
+#else
+	#include "mainboard/pcengines/apu2/bios_knobs.h"
+#endif
 
 /* Should support 8250, 16450, 16550, 16550A type UARTs */
 
