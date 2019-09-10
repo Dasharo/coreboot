@@ -275,6 +275,7 @@ postcar-$(CONFIG_EARLY_EBDA_INIT) += ebda.c
 postcar-$(CONFIG_IDT_IN_EVERY_STAGE) += exception.c
 postcar-$(CONFIG_IDT_IN_EVERY_STAGE) += idt.S
 postcar-y += exit_car.S
+postcar-y += ../../mainboard/$(MAINBOARDDIR)/bios_knobs.c
 postcar-y += memcpy.c
 postcar-y += memmove.c
 postcar-y += memset.c
