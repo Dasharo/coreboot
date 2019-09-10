@@ -22,6 +22,7 @@
 #include <console/console.h>
 #include <console/usb.h>
 #include <cpu/x86/mtrr.h>
+#include <cpu/x86/smm.h>
 #include <program_loading.h>
 #include <timestamp.h>
 #include <version.h>
@@ -29,9 +30,12 @@
 #include <pc80/mc146818rtc.h>
 #include <soc/iomap.h>
 #include <soc/lpc.h>
+#include <soc/memory.h>
 #include <soc/pci_devs.h>
 #include <soc/romstage.h>
 #include <soc/gpio.h>
+#include <soc/vtd.h>
+#include <soc/ubox.h>
 #include <build.h>
 
 static void init_rtc(void)
@@ -55,6 +59,47 @@ static void setup_gpio_io_address(void)
 }
 
 
+static void enable_integrated_uart(uint8_t port)
+{
+	uint32_t reg32, busno1 = 0, ubox_uart_en = 0, dfx1 = 0;
+	pci_devfn_t vtd_dev, ubox_dev;
+
+	vtd_dev = PCI_DEV(BUS0, VTD_DEV, VTD_FUNC);
+
+	/* Figure out what bus number is assigned for CPUBUSNO(1) */
+	reg32 = pci_mmio_read_config32(vtd_dev, VTD_CPUBUSNO);
+	busno1 = (reg32 >> VTD_CPUBUSNO_BUS1_SHIFT) & VTD_CPUBUSNO_BUS1_MASK;
+
+	/* UBOX sits on CPUBUSNO(1) */
+	ubox_dev = PCI_DEV(busno1, UBOX_DEV, UBOX_FUNC);
+	uint32_t reset_sts = pci_mmio_read_config32(ubox_dev, UBOX_SC_RESET_STATUS);
+
+	/* In case we are in bypass mode do nothing */
+	if (reset_sts & UBOX_SC_BYPASS)
+		return;
+
+	dfx1 = pci_mmio_read_config32(vtd_dev, VTD_DFX1);
+	ubox_uart_en = pci_mmio_read_config32(ubox_dev, UBOX_UART_ENABLE);
+
+	switch (port) {
+	case 0:
+		ubox_uart_en |= UBOX_UART_ENABLE_PORT0;
+		dfx1 |= VTD_DFX1_RANGE_3F8_DISABLE;
+		break;
+	case 1:
+		ubox_uart_en |= UBOX_UART_ENABLE_PORT1;
+		dfx1 |= VTD_DFX1_RANGE_2F8_DISABLE;
+		break;
+	default:
+		printk(BIOS_ERR, "incorrect port number\n");
+		return;
+	}
+
+	/* Disable decoding and enable the port we want */
+	pci_mmio_write_config32(vtd_dev, VTD_DFX1, dfx1);
+	pci_mmio_write_config32(ubox_dev, UBOX_UART_ENABLE, ubox_uart_en);
+}
+
 /* Entry from cache-as-ram.inc. */
 void *asmlinkage main(FSP_INFO_HEADER *fsp_info_header)
 {
@@ -65,6 +110,8 @@ void *asmlinkage main(FSP_INFO_HEADER *fsp_info_header)
 					   LPC_IO_DEC, 0x0010);
 		pci_write_config16(PCI_DEV(0x0, LPC_DEV, LPC_FUNC),
 					   LPC_EN, 0x340f);
+	} else {
+		enable_integrated_uart(CONFIG_UART_FOR_CONSOLE);
 	}
 
 	/* Call into mainboard. */
@@ -119,6 +166,12 @@ void romstage_main_continue(EFI_STATUS status, void *hob_list_ptr)
 	if (cbmem_hob_ptr == NULL)
 		die("Could not allocate cbmem for HOB pointer");
 	*(u32 *)cbmem_hob_ptr = (u32)hob_list_ptr;
+
+	if (!CONFIG(FSP_MEMORY_DOWN))
+		save_dimm_info();
+
+	if (CONFIG(SMM_TSEG))
+		smm_list_regions();
 
 	/* Load the ramstage. */
 	post_code(0x4e);

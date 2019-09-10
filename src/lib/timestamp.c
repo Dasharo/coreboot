@@ -128,7 +128,7 @@ static int timestamp_should_run(void)
 
 static struct timestamp_table *timestamp_table_get(void)
 {
-	MAYBE_STATIC struct timestamp_table *ts_table = NULL;
+	MAYBE_STATIC_BSS struct timestamp_table *ts_table = NULL;
 	struct timestamp_cache *ts_cache;
 
 	if (ts_table != NULL)
@@ -180,8 +180,7 @@ static void timestamp_add_table_entry(struct timestamp_table *ts_table,
 	tse->entry_stamp = ts_time - ts_table->base_time;
 
 	if (CONFIG(TIMESTAMPS_ON_CONSOLE))
-		printk(BIOS_SPEW, "Timestamp - %s: %" PRIu64 "\n",
-				timestamp_name(id), ts_time);
+		printk(BIOS_SPEW, "Timestamp - %s: %llu\n", timestamp_name(id), ts_time);
 
 	if (ts_table->num_entries == ts_table->max_entries)
 		printk(BIOS_ERR, "ERROR: Timestamp table full\n");

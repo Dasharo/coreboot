@@ -46,10 +46,9 @@ const static struct picasso_aoac aoac_devs[] = {
 	{ (FCH_AOAC_D3_CONTROL_UART0 + CONFIG_UART_FOR_CONSOLE * 2),
 		(FCH_AOAC_D3_STATE_UART0 + CONFIG_UART_FOR_CONSOLE * 2) },
 	{ FCH_AOAC_D3_CONTROL_AMBA, FCH_AOAC_D3_STATE_AMBA },
-	{ FCH_AOAC_D3_CONTROL_I2C0, FCH_AOAC_D3_STATE_I2C0 },
-	{ FCH_AOAC_D3_CONTROL_I2C1, FCH_AOAC_D3_STATE_I2C1 },
 	{ FCH_AOAC_D3_CONTROL_I2C2, FCH_AOAC_D3_STATE_I2C2 },
-	{ FCH_AOAC_D3_CONTROL_I2C3, FCH_AOAC_D3_STATE_I2C3 }
+	{ FCH_AOAC_D3_CONTROL_I2C3, FCH_AOAC_D3_STATE_I2C3 },
+	{ FCH_AOAC_D3_CONTROL_I2C4, FCH_AOAC_D3_STATE_I2C4 }
 };
 
 /*
@@ -190,26 +189,12 @@ static void sb_enable_legacy_io(void)
 	pm_write32(PM_DECODE_EN, reg | LEGACY_IO_EN);
 }
 
-void sb_clk_output_48Mhz(u32 osc)
+void sb_clk_output_48Mhz(void)
 {
 	u32 ctrl;
 
-	/*
-	 * Clear the disable for OSCOUT1 (signal typically named XnnM_25M_48M)
-	 * or OSCOUT2 (USBCLK/25M_48M_OSC).  The frequency defaults to 48MHz.
-	 */
 	ctrl = misc_read32(MISC_CLK_CNTL1);
-
-	switch (osc) {
-	case 1:
-		ctrl &= ~OSCOUT1_CLK_OUTPUT_ENB;
-		break;
-	case 2:
-		ctrl &= ~OSCOUT2_CLK_OUTPUT_ENB;
-		break;
-	default:
-		return; /* do nothing if invalid */
-	}
+	ctrl |= BP_X48M0_OUTPUT_EN;
 	misc_write32(MISC_CLK_CNTL1, ctrl);
 }
 
@@ -528,10 +513,9 @@ static void set_sb_final_nvs(void)
 	if (gnvs == NULL)
 		return;
 
-	gnvs->aoac.ic0e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_I2C0);
-	gnvs->aoac.ic1e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_I2C1);
 	gnvs->aoac.ic2e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_I2C2);
 	gnvs->aoac.ic3e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_I2C3);
+	gnvs->aoac.ic4e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_I2C4);
 	gnvs->aoac.ut0e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_UART0);
 	gnvs->aoac.ut1e = is_aoac_device_enabled(FCH_AOAC_D3_STATE_UART1);
 	/* Rely on these being in sync with devicetree */

@@ -24,6 +24,7 @@
 #include <device/pci_def.h>
 #include <security/vboot/vboot_crtm.h>
 #include <security/vboot/misc.h>
+#include <southbridge/amd/pi/hudson/chip.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
 #include <southbridge/amd/pi/hudson/pci_devs.h>
 #include <southbridge/amd/pi/hudson/amd_pci_int_defs.h>

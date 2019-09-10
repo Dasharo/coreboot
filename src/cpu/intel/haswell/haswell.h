@@ -141,7 +141,6 @@ struct romstage_params {
 	struct pei_data *pei_data;
 	const void *gpio_map;
 	const struct rcba_config_instruction *rcba_config;
-	unsigned long bist;
 	void (*copy_spd)(struct pei_data *);
 };
 void romstage_common(const struct romstage_params *params);
@@ -154,15 +153,6 @@ void intel_cpu_haswell_finalize_smm(void);
 /* Configure power limits for turbo mode */
 void set_power_limits(u8 power_limit_1_time);
 int cpu_config_tdp_levels(void);
-void smm_relocation_handler(int cpu, uintptr_t curr_smbase,
-				uintptr_t staggered_smbase);
-void smm_info(uintptr_t *perm_smbase, size_t *perm_smsize,
-		size_t *smm_save_state_size);
-void smm_initialize(void);
-void smm_relocate(void);
-void smm_lock(void);
-struct bus;
-void bsp_init_and_start_aps(struct bus *cpu_bus);
 /* Determine if HyperThreading is disabled. The variable is not valid until
  * setup_ap_init() has been called. */
 #endif

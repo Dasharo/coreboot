@@ -2,13 +2,48 @@
 #
 # This does not necessarily list everyone who has contributed code, since in
 # some cases, their employer may be the copyright holder.  To see the full list
-# of contributors, see the revision history in source control.
-# git log --pretty=format:%an | sort | uniq
-#
+# of contributors, and their email addresses, see the revision history in source
+# control.
+# Run the below commands in the coreboot repo for additional information.
+# To see a list of contributors: git log --pretty=format:%an | sort | uniq
+# For patches adding or removing a name: git log -i -S "NAME" --source --all
 
+Alex Züpke
 Alexander Couzens
+Alexandru Gagniuc
+ARM Limited and Contributors
+coresystems GmbH
+DENX Software Engineering
+Eric Biederman
+Facebook, Inc.
+Free Software Foundation, Inc.
+Gary Jennejohn
+Google LLC
+Imagination Technologies
+Kshitij
+Marius Gröger
+MontaVista Software, Inc.
+Nick Barker
+Per Odlund
+Raptor Engineering, LLC.
+Richard Woodruff
+Ronald G. Minnich
+Russell King
+Siemens AG
+Steve Magnani
+SUSE LINUX AG
+Syed Mohammed Khasim
+Texas Instruments
+The Linux Foundation
+Timothy Pearson
+Wolfgang Denk
 
 
 
 # Directories transferred
 src/acpi
+src/arch/arm
+src/arch/arm64
+src/arch/mips
+src/arch/ppc64
+

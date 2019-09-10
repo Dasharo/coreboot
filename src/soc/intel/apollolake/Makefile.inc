@@ -21,6 +21,7 @@ bootblock-y += spi.c
 bootblock-y += uart.c
 
 romstage-y += car.c
+romstage-y += ../../../cpu/intel/car/romstage.c
 romstage-$(CONFIG_PLATFORM_USES_FSP2_0) += romstage.c
 romstage-y += gspi.c
 romstage-y += heci.c
@@ -39,6 +40,7 @@ romstage-y += reset.c
 romstage-y += spi.c
 
 smm-y += mmap_boot.c
+smm-y += pmc.c
 smm-y += pmutil.c
 smm-y += smihandler.c
 smm-y += spi.c

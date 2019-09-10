@@ -92,8 +92,6 @@ config USE_FSP2_0_DRIVER
 	select PLATFORM_USES_FSP2_0
 	select UDK_2015_BINDING
 	select INTEL_GMA_ADD_VBT if RUN_FSP_GOP
-	select POSTCAR_CONSOLE
-	select POSTCAR_STAGE
 
 config USE_FSP1_1_DRIVER
 	def_bool y
@@ -303,5 +301,9 @@ config SOC_INTEL_COMMON_LPSS_UART_CLK_N_VAL
 config IFD_CHIPSET
 	string
 	default "sklkbl"
+
+config INTEL_TXT_BIOSACM_ALIGNMENT
+	hex
+	default 0x40000 # 256KB
 
 endif
