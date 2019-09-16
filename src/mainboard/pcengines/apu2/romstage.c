@@ -25,6 +25,7 @@
 #define SIO_PORT 0x2e
 #define SERIAL1_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
 #define SERIAL2_DEV PNP_DEV(SIO_PORT, NCT5104D_SP2)
+#define GPIO_CONFIG_DEV  PNP_DEV(SIO_PORT, NCT5104D_GPIO_WDT)
 
 static void early_lpc_init(void);
 static void print_sign_of_life(void);
