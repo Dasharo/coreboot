@@ -62,3 +62,18 @@ void nuvoton_enable_serial(pnp_devfn_t dev, u16 iobase)
 	pnp_set_enable(dev, 1);
 	nuvoton_pnp_exit_conf_state(dev);
 }
+
+void nuvoton_soft_reset(pnp_devfn_t dev)
+{
+	u8 reg;
+	
+	nuvoton_pnp_enter_conf_state(dev);
+
+	pnp_set_logical_device(dev);
+	reg = pnp_read_config(dev, 0xe2);
+
+	pnp_write_config(dev, 0xe2, reg | 0x03);
+	pnp_write_config(dev, 0xe2, reg);
+
+	nuvoton_pnp_exit_conf_state(dev);
+}
