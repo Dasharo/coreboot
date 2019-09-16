@@ -62,3 +62,32 @@ void nuvoton_enable_serial(pnp_devfn_t dev, u16 iobase)
 	pnp_set_enable(dev, 1);
 	nuvoton_pnp_exit_conf_state(dev);
 }
+
+void nuvoton_assign_io_port_gpio(pnp_devfn_t dev, u16 iobase)
+{
+	nuvoton_pnp_enter_conf_state(dev);
+
+	pnp_set_logical_device(dev);
+	pnp_set_enable(dev, 0);
+	pnp_set_iobase(dev, PNP_IDX_IO0, iobase);
+	pnp_set_enable(dev, 1);
+
+	u8 reg;
+	reg = pnp_read_config(dev, 0x30);
+	pnp_write_config(dev, 0x30, reg | 0x02);
+
+	nuvoton_pnp_exit_conf_state(dev);
+}
+
+u8 nuvoton_read_register(pnp_devfn_t dev, u8 read_reg)
+{
+	nuvoton_pnp_enter_conf_state(dev);
+
+	pnp_set_logical_device(dev);
+
+	u8 reg;
+	reg = pnp_read_config(dev, read_reg);
+	nuvoton_pnp_exit_conf_state(dev);
+
+	return reg;
+}
