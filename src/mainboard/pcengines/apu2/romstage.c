@@ -45,6 +45,7 @@
 #define SIO_PORT 0x2e
 #define SERIAL1_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
 #define SERIAL2_DEV PNP_DEV(SIO_PORT, NCT5104D_SP2)
+#define NUVOTON_LD_9 PNP_DEV(SIO_PORT, NCT5104D_RESET_GPIO)
 
 static void early_lpc_init(void);
 static void print_sign_of_life(void);
@@ -88,6 +89,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		data = pci_read_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE);
 		/* enable 0x2e/0x4e IO decoding before configuring SuperIO */
 		pci_write_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE, data | 3);
+
+		//Soft reset Nuvoton chip
+		nuvoton_soft_reset(NUVOTON_LD_9);
 
 		if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)) &&
 		    !CONFIG(BOARD_PCENGINES_APU5))
