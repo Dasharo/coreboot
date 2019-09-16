@@ -109,9 +109,15 @@ static void route_pins_to_uart(struct device *dev, bool to_uart)
 
 static void reset_gpio(struct device *dev)
 {
-	pnp_write_config(dev, LDN_SELECT_CR07, NCT5104D_GPIO_V);
+	// Soft reset GPIOs to default state: IN, Open-drain
+	
+	pnp_write_config(dev, GLOBAL_OPTION_CR7, NCT5104D_GPIO);
 	pnp_write_config(dev, NCT5104D_GPIO0_IO, 0xff);
 	pnp_write_config(dev, NCT5104D_GPIO1_IO, 0xff);
+
+	pnp_write_config(dev, GLOBAL_OPTION_CR7, NCT5104D_GPIO_PP_OD);
+	pnp_write_config(dev, NCT5104D_GPIO0_PP_OD, 0xFF);
+	pnp_write_config(dev, NCT5104D_GPIO1_PP_OD, 0xFF);
 }
 
 static void nct5104d_init(struct device *dev)
