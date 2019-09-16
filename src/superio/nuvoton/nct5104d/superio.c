@@ -183,6 +183,7 @@ static void nct5104d_init(struct device *dev)
 		break;
 	case NCT5104D_GPIO0:
 	case NCT5104D_GPIO1:
+		reset_gpio(dev);
 		route_pins_to_uart(dev, false);
 		__fallthrough;
 	case NCT5104D_GPIO6:
