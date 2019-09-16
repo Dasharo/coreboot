@@ -9,6 +9,7 @@
 #define IRQ_TYPE_SEL_CR10   0x10     /* UARTA,UARTB */
 #define IRQ_TYPE_SEL_CR11   0x11     /* SMI,UARTC,UARTD,WDTO */
 #define GLOBAL_OPTION_CR26  0x26
+#define GLOBAL_OPTION_CR2   0x02
 #define CR26_LOCK_REG       (1 << 4) /* required to access CR10/CR11 */
 
 /* LDN 0x07 specific registers */
