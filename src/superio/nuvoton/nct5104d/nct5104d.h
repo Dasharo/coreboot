@@ -19,7 +19,6 @@
 #define SUPERIO_NUVOTON_NCT5104D_H
 
 /* SIO global configuration */
-#define LDN_SELECT_CR07     0x07
 #define IRQ_TYPE_SEL_CR10   0x10     /* UARTA,UARTB */
 #define IRQ_TYPE_SEL_CR11   0x11     /* SMI,UARTC,UARTD,WDTO */
 #define GLOBAL_OPTION_CR26  0x26
