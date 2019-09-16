@@ -45,6 +45,7 @@
 #define SIO_PORT 0x2e
 #define SERIAL1_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
 #define SERIAL2_DEV PNP_DEV(SIO_PORT, NCT5104D_SP2)
+#define GPIO_CONFIG_DEV  PNP_DEV(SIO_PORT, NCT5104D_GPIO_WDT)
 
 static void early_lpc_init(void);
 static void print_sign_of_life(void);
@@ -93,7 +94,19 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		    !CONFIG(BOARD_PCENGINES_APU5))
 			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 
+		nuvoton_assign_io_port_gpio(GPIO_CONFIG_DEV, 0x290);
+
 		console_init();
+
+		u8 reg;
+		reg = nuvoton_read_register(GPIO_CONFIG_DEV, 0x60);
+		printk(BIOS_ALERT, "LDN 8 Reg [0x60] = %d\n", reg);
+
+		reg = nuvoton_read_register(GPIO_CONFIG_DEV, 0x61);
+		printk(BIOS_ALERT, "LDN 8 Reg [0x61] = %d\n", reg);
+
+		reg = nuvoton_read_register(GPIO_CONFIG_DEV, 0x30);
+		printk(BIOS_ALERT, "LDN 8 Reg [0x30] = %d\n", reg);
 
 		/* Check if cold boot was requested */
 		val = pci_read_config32(PCI_DEV(0, 0x18, 0), 0x6C);
