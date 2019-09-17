@@ -9,7 +9,6 @@
 void nuvoton_pnp_enter_conf_state(pnp_devfn_t dev);
 void nuvoton_pnp_exit_conf_state(pnp_devfn_t dev);
 void nuvoton_enable_serial(pnp_devfn_t dev, u16 iobase);
-void nuvoton_assign_io_port_gpio(pnp_devfn_t dev, u16 iobase);
 u8 nuvoton_read_register(pnp_devfn_t dev, u8 read_reg);
 
 #endif /* SUPERIO_NUVOTON_COMMON_PRE_RAM_H */
