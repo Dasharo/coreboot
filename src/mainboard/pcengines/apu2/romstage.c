@@ -94,9 +94,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		    !CONFIG(BOARD_PCENGINES_APU5))
 			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 
-		nuvoton_assign_io_port_gpio(GPIO_CONFIG_DEV, 0x290);
-
 		console_init();
+
+		nuvoton_assign_io_port_gpio(GPIO_CONFIG_DEV, 0x220);
 
 		u8 reg;
 		reg = nuvoton_read_register(GPIO_CONFIG_DEV, 0x60);
