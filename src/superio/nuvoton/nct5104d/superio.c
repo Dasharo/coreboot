@@ -110,11 +110,11 @@ static void reset_gpio(struct device *dev)
 {	
 	// Soft reset GPIOs to default state: IN, Open-drain
 
-	pnp_write_config(dev, GLOBAL_OPTION_CR7, NCT5104D_GPIO);
+	pnp_write_config(dev, LDN_SELECT_CR07, NCT5104D_GPIO);
 	pnp_write_config(dev, NCT5104D_GPIO0_IO, 0xFF);
 	pnp_write_config(dev, NCT5104D_GPIO1_IO, 0xFF);
 
-	pnp_write_config(dev, GLOBAL_OPTION_CR7, NCT5104D_GPIO_PP_OD);
+	pnp_write_config(dev, LDN_SELECT_CR07, NCT5104D_GPIO_PP_OD);
 	pnp_write_config(dev, NCT5104D_GPIO0_PP_OD, 0xFF);
 	pnp_write_config(dev, NCT5104D_GPIO1_PP_OD, 0xFF);
 }
