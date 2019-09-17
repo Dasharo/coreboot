@@ -34,11 +34,16 @@
 #define NCT5104D_GPIO0_IO   0xE0
 #define NCT5104D_GPIO1_IO   0xE4
 
+/* LDN 0x0F specific registers */
+#define NCT5104D_GPIO0_PP_OD   0xE0
+#define NCT5104D_GPIO1_PP_OD   0xE1
+
 /* Logical Device Numbers (LDN). */
 #define NCT5104D_FDC        0x00 /* FDC - not pinned out */
 #define NCT5104D_SP1        0x02 /* UARTA */
 #define NCT5104D_SP2        0x03 /* UARTB */
-#define NCT5104D_GPIO_WDT   0x08 /* GPIO WDT Interface */
+#define NCT5104D_GPIO       0x07 /* GPIO In-Out Interface */ 
+#define NCT5104D_GPIO_WDT   0x08 /* GPIO WDT Interface */ 
 #define NCT5104D_GPIO_PP_OD 0x0F /* GPIO Push-Pull / Open drain select  */
 #define NCT5104D_SP3        0x10 /* UARTC */
 #define NCT5104D_SP4        0x11 /* UARTD */
