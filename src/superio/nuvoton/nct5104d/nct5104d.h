@@ -19,10 +19,10 @@
 #define SUPERIO_NUVOTON_NCT5104D_H
 
 /* SIO global configuration */
+#define LDN_SELECT_CR07     0x07
 #define IRQ_TYPE_SEL_CR10   0x10     /* UARTA,UARTB */
 #define IRQ_TYPE_SEL_CR11   0x11     /* SMI,UARTC,UARTD,WDTO */
 #define GLOBAL_OPTION_CR26  0x26
-#define GLOBAL_OPTION_CR7   0x07
 #define CR26_LOCK_REG       (1 << 4) /* required to access CR10/CR11/CR12/CR13 */
 #define CR1C_MULTI_FUNCTION_SELECT  0x1C    /* Select UART or GPIO operation */
 #define CR1C_UARTC                  (1 < 3) /* set is UART clear is GPIO operation */
