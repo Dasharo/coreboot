@@ -96,18 +96,6 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 
 		console_init();
 
-		nuvoton_assign_io_port_gpio(GPIO_CONFIG_DEV, 0x220);
-
-		u8 reg;
-		reg = nuvoton_read_register(GPIO_CONFIG_DEV, 0x60);
-		printk(BIOS_ALERT, "LDN 8 Reg [0x60] = %d\n", reg);
-
-		reg = nuvoton_read_register(GPIO_CONFIG_DEV, 0x61);
-		printk(BIOS_ALERT, "LDN 8 Reg [0x61] = %d\n", reg);
-
-		reg = nuvoton_read_register(GPIO_CONFIG_DEV, 0x30);
-		printk(BIOS_ALERT, "LDN 8 Reg [0x30] = %d\n", reg);
-
 		/* Check if cold boot was requested */
 		val = pci_read_config32(PCI_DEV(0, 0x18, 0), 0x6C);
 		if (val & (1 << 4)) {
