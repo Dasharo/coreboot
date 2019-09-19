@@ -197,7 +197,7 @@ static void nct5104d_init(struct device *dev)
 		disable_gpio_io_port(dev);
 		break;
 	case NCT5104D_GPIO_WDT:
-		enable_gpio_io_port(dev);
+		enable_gpio_io_port(dev, conf->enable_wdt1 != 0);
 		break;
 	default:
 		break;
