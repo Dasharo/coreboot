@@ -107,30 +107,36 @@ static void route_pins_to_uart(struct device *dev, bool to_uart)
 	pnp_write_config(dev, 0x1c, reg);
 }
 
-static void enable_gpio_io_port(struct device *dev)
+static void enable_gpio_io_port(struct device *dev, bool enable_wdt1)
 {
 	u8 reg, reg1;
 	u16 io_base_address;
 	u8 uartc_enabled, uartd_enabled;
 
-	// Fix devictree 'enable' bit
-	// Clear LDN 8 CR30.0 bit
 	pnp_write_config(dev, 0x07, NCT5104D_GPIO_WDT);
-	reg = pnp_read_config(dev, 0x30);
 
-	pnp_write_config(dev, 0x30, reg & 0xFE);
+	/* 
+		Devictree always sets LDN 8 CR30.0 bit (WDT1 enable)
+		See if user really wants Watchdog Timer 1 to be enabled
+	*/ 
 
-	// Check if UARTC and UARTD are both enabled
-	// If they are, don't activate GPIO Address Mode
-	// In any other case - activate GPIO Address Mode
+	if(!enable_wdt1)
+	{
+		reg = pnp_read_config(dev, 0x30);
+		pnp_write_config(dev, 0x30, reg & 0xFE);
+	}
 
-	// select logical device 10
+	/*  
+		Check if UARTC and UARTD are both enabled
+		If they are, don't activate GPIO Address Mode
+		In any other case - activate GPIO Address Mode
+	*/
+
 	pnp_write_config(dev, 0x07, NCT5104D_SP3);
 
 	reg = pnp_read_config(dev, 0x30);
 	uartc_enabled = reg & 0x01;
 
-	// select logical device 11
 	pnp_write_config(dev, 0x07, NCT5104D_SP4);
 
 	reg = pnp_read_config(dev, 0x30);
@@ -138,10 +144,11 @@ static void enable_gpio_io_port(struct device *dev)
 
 	if (!uartc_enabled || !uartd_enabled)
 	{
-		// Check if LDN 8 CR60 and CR61 contain valid IO Base Address
-		// IO Base Address <100h ; FF8h>
+		/* 
+			Check if LDN 8 CR60 and CR61 contain valid IO Base Address
+			IO Base Address <100h ; FF8h>
+		*/
 
-		// select logical device 8
 		pnp_write_config(dev, 0x07, NCT5104D_GPIO_WDT);
 
 		reg = pnp_read_config(dev, 0x60);
@@ -159,7 +166,7 @@ static void enable_gpio_io_port(struct device *dev)
 			return;
 		}
 
-		// Set LDN 8 CR 30.1 to activate GPIO Address Mode
+		/* Set LDN 8 CR 30.1 to activate GPIO Address Mode */
 		reg = pnp_read_config(dev, 0x30);
 		pnp_write_config(dev, 0x30, reg | 0x02);
 	}
@@ -173,7 +180,7 @@ static void nct5104d_init(struct device *dev)
 		return;
 
 	pnp_enter_conf_mode(dev);
-
+	
 	switch (dev->path.pnp.device) {
 	case NCT5104D_SP1:
 	case NCT5104D_SP2:
@@ -189,7 +196,7 @@ static void nct5104d_init(struct device *dev)
 		route_pins_to_uart(dev, false);
 		break;
 	case NCT5104D_GPIO_WDT:
-		enable_gpio_io_port(dev);
+		enable_gpio_io_port(dev, conf->enable_wdt1 != 0);
 		break;
 	default:
 		break;
