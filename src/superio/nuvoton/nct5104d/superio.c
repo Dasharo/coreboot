@@ -7,6 +7,7 @@
 
 #include "nct5104d.h"
 #include "chip.h"
+#include "console/console.h"
 
 static void set_irq_trigger_type(struct device *dev, bool trig_level)
 {
@@ -194,6 +195,9 @@ static void nct5104d_init(struct device *dev)
 		break;
 	case NCT5104D_GPIO_IO:
 		disable_gpio_io_port(dev);
+		break;
+	case NCT5104D_GPIO_WDT:
+		enable_gpio_io_port(dev);
 		break;
 	default:
 		break;
