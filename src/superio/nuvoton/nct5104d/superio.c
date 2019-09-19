@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include "nct5104d.h"
 #include "chip.h"
+#include "console/console.h"
 
 static void set_irq_trigger_type(struct device *dev, bool trig_level)
 {
@@ -106,6 +107,64 @@ static void route_pins_to_uart(struct device *dev, bool to_uart)
 	pnp_write_config(dev, 0x1c, reg);
 }
 
+static void enable_gpio_io_port(struct device *dev)
+{
+	u8 reg, reg1;
+	u16 io_base_address;
+	u8 uartc_enabled, uartd_enabled;
+
+	// Fix devictree 'enable' bit
+	// Clear LDN 8 CR30.0 bit
+	pnp_write_config(dev, 0x07, NCT5104D_GPIO_WDT);
+	reg = pnp_read_config(dev, 0x30);
+
+	pnp_write_config(dev, 0x30, reg & 0xFE);
+
+	// Check if UARTC and UARTD are both enabled
+	// If they are, don't activate GPIO Address Mode
+	// In any other case - activate GPIO Address Mode
+
+	// select logical device 10
+	pnp_write_config(dev, 0x07, NCT5104D_SP3);
+
+	reg = pnp_read_config(dev, 0x30);
+	uartc_enabled = reg & 0x01;
+
+	// select logical device 11
+	pnp_write_config(dev, 0x07, NCT5104D_SP4);
+
+	reg = pnp_read_config(dev, 0x30);
+	uartd_enabled = reg & 0x01;
+
+	if (!uartc_enabled || !uartd_enabled)
+	{
+		// Check if LDN 8 CR60 and CR61 contain valid IO Base Address
+		// IO Base Address <100h ; FF8h>
+
+		// select logical device 8
+		pnp_write_config(dev, 0x07, NCT5104D_GPIO_WDT);
+
+		reg = pnp_read_config(dev, 0x60);
+		reg1 = pnp_read_config(dev, 0x61);
+
+		io_base_address = (reg << 8) + reg1;
+		printk(BIOS_INFO, "SuperIO IO Base Address = %x\n", io_base_address);
+
+		if (io_base_address < 0x100 || io_base_address > 0xFF8)
+		{
+			printk(BIOS_WARNING, "SuperIO IO Base Address should be in "
+						"<100h ; FF8h>, but is equal %x\n", io_base_address);
+			printk(BIOS_INFO, "GPIO Address Mode is not enabled\n");
+
+			return;
+		}
+
+		// Set LDN 8 CR 30.1 to activate GPIO Address Mode
+		reg = pnp_read_config(dev, 0x30);
+		pnp_write_config(dev, 0x30, reg | 0x02);
+	}
+}
+
 static void nct5104d_init(struct device *dev)
 {
 	struct superio_nuvoton_nct5104d_config *conf = dev->chip_info;
@@ -128,6 +187,9 @@ static void nct5104d_init(struct device *dev)
 	case NCT5104D_GPIO0:
 	case NCT5104D_GPIO1:
 		route_pins_to_uart(dev, false);
+		break;
+	case NCT5104D_GPIO_WDT:
+		enable_gpio_io_port(dev);
 		break;
 	default:
 		break;
