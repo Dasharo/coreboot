@@ -24,6 +24,7 @@
 #include <device/pci_ops.h>
 #include <arch/io.h>
 #include "hudson.h"
+#include <mainboard/pcengines/apu2/bios_knobs.h>
 
 static void sd_init(struct device *dev)
 {
@@ -34,6 +35,9 @@ static void sd_init(struct device *dev)
 
 	struct southbridge_amd_pi_hudson_config *sd_chip =
 		(struct southbridge_amd_pi_hudson_config *)(dev->chip_info);
+
+	if (!check_sd3_mode())
+		sd_chip->sd_mode = 0;
 
 	if (sd_chip->sd_mode == 3) {	/* SD 3.0 mode */
 		pci_write_config32(dev, 0xA4, 0x21FEC8B2);
