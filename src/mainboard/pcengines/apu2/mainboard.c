@@ -133,14 +133,6 @@ static void mainboard_enable(device_t dev)
 		sio_dev = dev_find_slot_pnp(0x2E, NCT5104D_GPIO1);
 		if ( sio_dev ) sio_dev->enabled = 1;
 	}
-
-	struct device *sd_dev = dev_find_slot(0, PCI_DEVFN(0x14, 7));
-
-	struct southbridge_amd_pi_hudson_config *sd_chip =
-		(struct southbridge_amd_pi_hudson_config *)(sd_dev->chip_info);
-
-	if (!check_sd3_mode())
-		sd_chip->sd_mode = 0;
 }
 
 static void mainboard_final(void *chip_info) {
