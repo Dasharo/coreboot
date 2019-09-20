@@ -15,11 +15,14 @@
  */
 
 #include <device/pnp.h>
+#include <device/device.h>
 #include <superio/conf_mode.h>
 #include <stdlib.h>
 #include "nct5104d.h"
 #include "chip.h"
 #include "console/console.h"
+
+#define SIO_PORT  0x2e
 
 static void set_irq_trigger_type(struct device *dev, bool trig_level)
 {
@@ -132,15 +135,13 @@ static void enable_gpio_io_port(struct device *dev, bool enable_wdt1)
 		In any other case - activate GPIO Address Mode
 	*/
 
-	pnp_write_config(dev, 0x07, NCT5104D_SP3);
+	struct device *uart;
 
-	reg = pnp_read_config(dev, 0x30);
-	uartc_enabled = reg & 0x01;
+	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP3);
+	uartc_enabled = uart->enabled;
 
-	pnp_write_config(dev, 0x07, NCT5104D_SP4);
-
-	reg = pnp_read_config(dev, 0x30);
-	uartd_enabled = reg & 0x01;
+	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
+	uartd_enabled = uart->enabled;
 
 	if (!uartc_enabled || !uartd_enabled)
 	{
