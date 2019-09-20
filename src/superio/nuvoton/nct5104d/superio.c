@@ -8,6 +8,8 @@
 #include "nct5104d.h"
 #include "chip.h"
 
+#define SIO_PORT  0x2e
+
 static void set_irq_trigger_type(struct device *dev, bool trig_level)
 {
 	u8 reg10, reg11, reg26;
