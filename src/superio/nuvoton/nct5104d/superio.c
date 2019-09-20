@@ -9,6 +9,8 @@
 #include "chip.h"
 #include "console/console.h"
 
+#define SIO_PORT  0x2e
+
 static void set_irq_trigger_type(struct device *dev, bool trig_level)
 {
 	u8 reg10, reg11, reg26;
@@ -197,7 +199,7 @@ static void nct5104d_init(struct device *dev)
 		disable_gpio_io_port(dev);
 		break;
 	case NCT5104D_GPIO_WDT:
-		enable_gpio_io_port(dev, conf->enable_wdt1 != 0);
+		enable_gpio_io_port(dev, conf->enable_wdt1);
 		break;
 	default:
 		break;
