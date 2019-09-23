@@ -110,30 +110,27 @@ static void route_pins_to_uart(struct device *dev, bool to_uart)
 	pnp_write_config(dev, 0x1c, reg);
 }
 
-static void enable_gpio_io_port(struct device *dev, bool enable_wdt1)
+static void enable_gpio_io_port(struct device *dev, u8 enable_wdt1)
 {
-	u8 reg, reg1;
+	u8 reg;
 	u16 io_base_address;
 	u8 uartc_enabled, uartd_enabled;
 
 	pnp_write_config(dev, 0x07, NCT5104D_GPIO_WDT);
 
-	/* 
-		Devictree always sets LDN 8 CR30.0 bit (WDT1 enable)
-		See if user really wants Watchdog Timer 1 to be enabled
-	*/ 
+	/* Devictree always sets LDN 8 CR30.0 bit (WDT1 enable)
+	 * See if user really wants Watchdog Timer 1 to be enabled
+	 */ 
 
-	if(!enable_wdt1)
-	{
+	if(enable_wdt1 != 0) {
 		reg = pnp_read_config(dev, 0x30);
 		pnp_write_config(dev, 0x30, reg & 0xFE);
 	}
 
-	/*  
-		Check if UARTC and UARTD are both enabled
-		If they are, don't activate GPIO Address Mode
-		In any other case - activate GPIO Address Mode
-	*/
+	/* Check if UARTC and UARTD are both enabled
+	 * If they are, don't activate GPIO Address Mode
+	 * In any other case - activate GPIO Address Mode
+	 */
 
 	struct device *uart;
 
@@ -143,26 +140,20 @@ static void enable_gpio_io_port(struct device *dev, bool enable_wdt1)
 	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
 	uartd_enabled = uart->enabled;
 
-	if (!uartc_enabled || !uartd_enabled)
-	{
-		/* 
-			Check if LDN 8 CR60 and CR61 contain valid IO Base Address
-			IO Base Address <100h ; FF8h>
-		*/
+	if (!uartc_enabled || !uartd_enabled) {
+
+		/* Check if LDN 8 CR60 and CR61 contain valid IO Base Address
+		 * IO Base Address <100h ; FF8h>
+		 */
 
 		pnp_write_config(dev, 0x07, NCT5104D_GPIO_WDT);
 
-		reg = pnp_read_config(dev, 0x60);
-		reg1 = pnp_read_config(dev, 0x61);
+		io_base_address = pnp_read_config(dev, 0x61);
+		io_base_address |= (pnp_read_config(dev, 0x60) << 8);
 
-		io_base_address = (reg << 8) + reg1;
-		printk(BIOS_INFO, "SuperIO IO Base Address = %x\n", io_base_address);
-
-		if (io_base_address < 0x100 || io_base_address > 0xFF8)
-		{
-			printk(BIOS_WARNING, "SuperIO IO Base Address should be in "
-						"<100h ; FF8h>, but is equal %x\n", io_base_address);
-			printk(BIOS_INFO, "GPIO Address Mode is not enabled\n");
+		if (io_base_address < 0x100 || io_base_address > 0xFF8) {
+			printk(BIOS_ERR, "Invalid io base address %x != "
+					"<100h ; FF8h> \n", io_base_address);
 
 			return;
 		}
@@ -181,7 +172,7 @@ static void nct5104d_init(struct device *dev)
 		return;
 
 	pnp_enter_conf_mode(dev);
-	
+
 	switch (dev->path.pnp.device) {
 	case NCT5104D_SP1:
 	case NCT5104D_SP2:
@@ -197,7 +188,7 @@ static void nct5104d_init(struct device *dev)
 		route_pins_to_uart(dev, false);
 		break;
 	case NCT5104D_GPIO_WDT:
-		enable_gpio_io_port(dev, conf->enable_wdt1 != 0);
+		enable_gpio_io_port(dev, conf->enable_wdt1);
 		break;
 	default:
 		break;
