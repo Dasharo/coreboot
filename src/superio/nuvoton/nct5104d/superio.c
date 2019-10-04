@@ -22,8 +22,6 @@
 #include "chip.h"
 #include "console/console.h"
 
-#define SIO_PORT  0x2e
-
 static void set_irq_trigger_type(struct device *dev, bool trig_level)
 {
 	u8 reg10, reg11, reg26;
@@ -115,6 +113,9 @@ static void enable_gpio_io_port(struct device *dev, u8 enable_wdt1)
 	u8 reg;
 	u16 io_base_address;
 	u8 uartc_enabled, uartd_enabled;
+	u8 sio_port;
+
+	sio_port = dev->path.pnp.port;
 
 	pnp_write_config(dev, 0x07, NCT5104D_GPIO_WDT);
 
@@ -134,10 +135,10 @@ static void enable_gpio_io_port(struct device *dev, u8 enable_wdt1)
 
 	struct device *uart;
 
-	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP3);
+	uart = dev_find_slot_pnp(sio_port, NCT5104D_SP3);
 	uartc_enabled = uart->enabled;
 
-	uart = dev_find_slot_pnp(SIO_PORT, NCT5104D_SP4);
+	uart = dev_find_slot_pnp(sio_port, NCT5104D_SP4);
 	uartd_enabled = uart->enabled;
 
 	if (!uartc_enabled || !uartd_enabled) {
