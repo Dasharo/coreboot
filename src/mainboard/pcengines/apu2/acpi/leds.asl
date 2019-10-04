@@ -38,7 +38,7 @@ Scope (\_SB.PCI0)
 			Name (_DSD, Package () {
 				ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
 				Package () {
-					Package () {"label", "apu:green:led1"},
+					Package () {"label", DEVICE_NAME:green:led1"},
 					Package () {"gpios", Package () {^^LEDS, 0, 0, 1 }},
 					Package () {"default-state", "on"}
 				}
@@ -52,7 +52,7 @@ Scope (\_SB.PCI0)
 			Name (_DSD, Package () {
 				ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
 				Package () {
-					Package () {"label", "apu:green:led2"},
+					Package () {"label", DEVICE_NAME:green:led2"},
 					Package () {"gpios", Package () {^^LEDS, 0, 1, 1 }},
 					Package () {"default-state", "off"}
 				}
@@ -65,7 +65,7 @@ Scope (\_SB.PCI0)
 			Name (_DSD, Package () {
 				ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
 				Package () {
-					Package () {"label", "apu:green:led3"},
+					Package () {"label", DEVICE_NAME:green:led3"},
 					Package () {"gpios", Package () {^^LEDS, 0, 2, 1 }},
 					Package () {"linux,default-trigger", "heartbeat"}
 				}

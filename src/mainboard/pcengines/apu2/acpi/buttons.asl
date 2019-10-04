@@ -32,6 +32,14 @@ Scope (\_SB.PCI0)
 			}
 		})
 
+		Name (_DSD, Package () {
+			ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
+			Package () {
+				Package () {"compatible", "gpio-keys"},
+				Package () {"autorepeat", 1}
+			}
+		})
+
 		Device (BTN1)
 		{
 			Name (_HID, "PRP0001")
