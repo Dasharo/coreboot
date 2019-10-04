@@ -74,8 +74,8 @@ DefinitionBlock (
 		/* Describe PCI INT[A-H] for the Southbridge */
     #include "acpi/pci_int.asl"
 
-
-
+		/* Describe the GPIO controller in southbridge */
+		#include "acpi/gpio.asl"
 
 	} /* End \_SB scope */
 
@@ -90,5 +90,9 @@ DefinitionBlock (
 
 	/* Define the System Indicators for the platform */
 	#include "acpi/si.asl"
+
+	/* GPIO buttons and leds */
+	#include "acpi/buttons.asl"
+	#include "acpi/leds.asl"
 }
 /* End of ASL file */
