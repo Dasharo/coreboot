@@ -7,7 +7,7 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
-## [v4.0.29] - 2019-10-09
+## [v4.0.29] - 2019-10-07
 ### Fixed
 - SD 3.0 mode is correctly configurable now
 
