@@ -93,7 +93,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *fspm_upd, uint32_t version)
 			"Microcode file (rmu.bin) not found.");
 
 	/* Locate the configuration data from devicetree.cb */
-	config = config_of_path(LPC_DEV_FUNC);
+	config = config_of_soc();
 
 	/* Update the architectural UPD values. */
 	aupd = &fspm_upd->FspmArchUpd;
@@ -115,7 +115,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *fspm_upd, uint32_t version)
 			aupd->StackBase);
 		printk(BIOS_SPEW, "|                   |\n");
 		printk(BIOS_SPEW, "+-------------------+ 0x%p\n",
-			_car_relocatable_data_end);
+			_car_unallocated_start);
 		printk(BIOS_SPEW, "| coreboot data     |\n");
 		printk(BIOS_SPEW, "+-------------------+ 0x%p\n",
 			_car_stack_end);

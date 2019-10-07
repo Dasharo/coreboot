@@ -8,12 +8,6 @@ subdirs-y += ../../intel/turbo
 subdirs-y += ../../intel/microcode
 subdirs-y += ../../x86/smm
 subdirs-y += ../smm/gen1
-subdirs-y += ../common
-
-ramstage-y += tsc_freq.c
-romstage-y += tsc_freq.c
-postcar-y += tsc_freq.c
-smm-y += tsc_freq.c
 
 ramstage-y += acpi.c
 

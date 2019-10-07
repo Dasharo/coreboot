@@ -1,7 +1,6 @@
 ramstage-y += model_206ax_init.c
 subdirs-y += ../../x86/name
 subdirs-y += ../smm/gen1
-subdirs-y += ../common
 
 subdirs-y += ../../x86/tsc
 subdirs-y += ../../x86/mtrr
@@ -16,11 +15,6 @@ ramstage-y += acpi.c
 ramstage-y += common.c
 romstage-y += common.c
 smm-y += common.c
-
-ramstage-y += tsc_freq.c
-romstage-y += tsc_freq.c
-postcar-y += tsc_freq.c
-smm-y += tsc_freq.c
 
 smm-y += finalize.c
 

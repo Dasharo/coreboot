@@ -22,7 +22,7 @@
 #include <arch/acpi_device.h>
 #include <device/i2c_simple.h>
 #include <drivers/i2c/designware/dw_i2c.h>
-#include <intelblocks/chip.h>
+#include <intelblocks/cfg.h>
 #include <intelblocks/gspi.h>
 #include <intelblocks/lpc_lib.h>
 #include <stdint.h>
@@ -200,11 +200,19 @@ struct soc_intel_skylake_config {
 	u8 SataSalpSupport;
 	u8 SataPortsEnable[8];
 	u8 SataPortsDevSlp[8];
+	u8 SataPortsSpinUp[8];
+	u8 SataPortsHotPlug[8];
 	u8 SataSpeedLimit;
 
 	/* Audio related */
 	u8 EnableAzalia;
 	u8 DspEnable;
+
+	/* HDA Virtual Channel Type Select */
+	enum {
+		Vc0,
+		Vc1,
+	} PchHdaVcType;
 
 	/*
 	 * I/O Buffer Ownership:
@@ -587,6 +595,9 @@ struct soc_intel_skylake_config {
 
 	/* Enable/Disable Sata power optimization */
 	u8 SataPwrOptEnable;
+
+	/* Enable/Disable Sata test mode */
+	u8 SataTestMode;
 };
 
 typedef struct soc_intel_skylake_config config_t;

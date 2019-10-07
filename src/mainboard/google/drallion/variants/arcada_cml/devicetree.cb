@@ -32,7 +32,6 @@ chip soc/intel/cannonlake
 	register "psys_pmax" = "140"
 	register "s0ix_enable" = "1"
 	register "dptf_enable" = "1"
-	register "dmipwroptimize" = "1"
 	register "satapwroptimize" = "1"
 	register "tdp_pl1_override" = "25"
 	register "tdp_pl2_override" = "51"
@@ -231,7 +230,7 @@ chip soc/intel/cannonlake
 		device pci 12.6 off end # GSPI #2
 		device pci 13.0 on	# Integrated Sensor Hub
 			chip drivers/intel/ish
-				register "firmware_name" = ""drallion_ish.bin""
+				register "firmware_name" = ""arcada_ish.bin""
 				device generic 0 on end
 			end
 		end

@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2005-2009 coresystems GmbH
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
@@ -61,12 +59,6 @@ int acpi_is_wakeup_s4(void)
 {
 	acpi_handoff_wakeup();
 	return (acpi_slp_type == ACPI_S4);
-}
-
-void acpi_fail_wakeup(void)
-{
-	if (acpi_slp_type == ACPI_S3 || acpi_slp_type == ACPI_S2)
-		acpi_slp_type = ACPI_S0;
 }
 #endif /* ENV_RAMSTAGE */
 

@@ -78,6 +78,7 @@ enum {
 	CB_TAG_VBOOT_WORKBUF		= 0x0034,
 	CB_TAG_MMC_INFO			= 0x0035,
 	CB_TAG_TCPA_LOG			= 0x0036,
+	CB_TAG_FMAP			= 0x0037,
 	CB_TAG_CMOS_OPTION_TABLE	= 0x00c8,
 	CB_TAG_OPTION			= 0x00c9,
 	CB_TAG_OPTION_ENUM		= 0x00ca,
@@ -394,4 +395,6 @@ static inline const char *cb_mb_part_string(const struct cb_mainboard *cbm)
 	(void *)(((u8 *) (_rec)) + sizeof(*(_rec)) \
 		+ (sizeof((_rec)->map[0]) * (_idx)))
 
+/* Helper functions */
+void *get_cbmem_ptr(unsigned char *ptr);
 #endif
