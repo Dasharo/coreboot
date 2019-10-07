@@ -19,6 +19,7 @@
 
 struct superio_nuvoton_nct5104d_config {
 	u8 irq_trigger_type;
+	u8 enable_wdt1;
 };
 
 #endif
