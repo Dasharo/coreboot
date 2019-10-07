@@ -163,6 +163,19 @@ static void enable_gpio_io_port(struct device *dev, u8 enable_wdt1)
 		reg = pnp_read_config(dev, 0x30);
 		pnp_write_config(dev, 0x30, reg | 0x02);
 	}
+
+static void reset_gpio(struct device *dev)
+{	
+	/* Soft reset GPIOs to default state: IN, Open-drain*/
+
+	pnp_write_config(dev, LDN_SELECT_CR07, NCT5104D_GPIO);
+	pnp_write_config(dev, NCT5104D_GPIO0_IO, 0xFF);
+	pnp_write_config(dev, NCT5104D_GPIO1_IO, 0xFF);
+
+	pnp_write_config(dev, LDN_SELECT_CR07, NCT5104D_GPIO_PP_OD);
+	pnp_write_config(dev, NCT5104D_GPIO0_PP_OD, 0xFF);
+	pnp_write_config(dev, NCT5104D_GPIO1_PP_OD, 0xFF);
+
 }
 
 static void nct5104d_init(struct device *dev)
@@ -186,6 +199,7 @@ static void nct5104d_init(struct device *dev)
 		break;
 	case NCT5104D_GPIO0:
 	case NCT5104D_GPIO1:
+		reset_gpio(dev);
 		route_pins_to_uart(dev, false);
 		break;
 	case NCT5104D_GPIO_WDT:
