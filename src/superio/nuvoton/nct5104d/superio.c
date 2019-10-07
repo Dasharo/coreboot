@@ -163,6 +163,7 @@ static void enable_gpio_io_port(struct device *dev, u8 enable_wdt1)
 		reg = pnp_read_config(dev, 0x30);
 		pnp_write_config(dev, 0x30, reg | 0x02);
 	}
+}
 
 static void reset_gpio(struct device *dev)
 {	
