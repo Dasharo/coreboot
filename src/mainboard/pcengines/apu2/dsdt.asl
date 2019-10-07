@@ -28,6 +28,17 @@ DefinitionBlock (
 	0x00010001	/* OEM Revision */
 	)
 {	/* Start of ASL file */
+
+	#if CONFIG_BOARD_PCENGINES_APU2
+	#define DEVICE_NAME "apu2
+	#elif CONFIG_BOARD_PCENGINES_APU3
+	#define DEVICE_NAME "apu3
+	#elif CONFIG_BOARD_PCENGINES_APU4
+	#define DEVICE_NAME "apu4
+	#elif CONFIG_BOARD_PCENGINES_APU5
+	#define DEVICE_NAME "apu5
+	#endif
+
 	/* #include <arch/x86/acpi/debug.asl> */	/* Include global debug methods if needed */
 
 	/* Globals for the platform */
@@ -74,8 +85,8 @@ DefinitionBlock (
 		/* Describe PCI INT[A-H] for the Southbridge */
     #include "acpi/pci_int.asl"
 
-
-
+		/* Describe the GPIO controller in southbridge */
+		#include "acpi/gpio.asl"
 
 	} /* End \_SB scope */
 
@@ -90,5 +101,9 @@ DefinitionBlock (
 
 	/* Define the System Indicators for the platform */
 	#include "acpi/si.asl"
+
+	/* GPIO buttons and leds */
+	#include "acpi/buttons.asl"
+	#include "acpi/leds.asl"
 }
 /* End of ASL file */
