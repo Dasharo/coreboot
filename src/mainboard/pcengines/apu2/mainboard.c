@@ -206,9 +206,9 @@ static void set_dimm_info(uint8_t *spd, struct dimm_info *dimm)
 	const int spd_busw[8]  = {  8, 16, 32, 64, -1, -1, -1, -1 };
 
 	int capmb = spd_capmb[spd[SPD_DENSITY_BANKS] & 7] * 256;
-	int ranks = spd_ranks[(spd[SPD_ORGANIZATION] >> 3) & 7];
-	int devw  = spd_devw[spd[SPD_ORGANIZATION] & 7];
-	int busw  = spd_busw[spd[SPD_BUS_DEV_WIDTH] & 7];
+	int ranks = spd_ranks[(spd[DDR3_ORGANIZATION] >> 3) & 7];
+	int devw  = spd_devw[spd[DDR3_ORGANIZATION] & 7];
+	int busw  = spd_busw[spd[DDR3_BUS_DEV_WIDTH] & 7];
 
 	switch (spd[12]) {
 		case 0x0a:
