@@ -144,7 +144,7 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(CONFIG_HUDSON_XHCI_FWM_FILE)) \
 		$(OPT_2SMUFIRMWARE2_FN_FILE) \
 		$(OPT_2SMUSCS_FILE) \
 		--flashsize $(CONFIG_ROM_SIZE) \
-		--location $(HUDSON_FWM_POSITION) \
+		--location $(shell printf "0x%x" $(HUDSON_FWM_POSITION)) \
 		--config $(CONFIG_AMDFW_CONFIG_FILE) \
 		--output	$@
 
