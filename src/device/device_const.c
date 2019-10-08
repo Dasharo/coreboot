@@ -1,13 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2003-2004 Linux Networx
- * (Written by Eric Biederman <ebiederman@lnxi.com> for Linux Networx)
- * Copyright (C) 2003 Greg Watson <jarrah@users.sourceforge.net>
- * Copyright (C) 2004 Li-Ta Lo <ollie@lanl.gov>
- * Copyright (C) 2005-2006 Tyan
- * (Written by Yinghai Lu <yhlu@tyan.com> for Tyan)
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
@@ -30,6 +23,12 @@ DEVTREE_CONST struct device * DEVTREE_CONST all_devices = &dev_root;
 
 /**
  * Given a PCI bus and a devfn number, find the device structure.
+ *
+ * Note that this function can return the incorrect device prior
+ * to PCI enumeration because the secondary field of the bus object
+ * is 0. The failing scenario is determined by the order of the
+ * devices in all_devices singly-linked list as well as the time
+ * when this function is called (secondary reflecting topology).
  *
  * @param bus The bus number.
  * @param devfn A device/function number.

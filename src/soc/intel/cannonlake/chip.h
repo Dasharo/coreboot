@@ -18,7 +18,7 @@
 #ifndef _SOC_CHIP_H_
 #define _SOC_CHIP_H_
 
-#include <intelblocks/chip.h>
+#include <intelblocks/cfg.h>
 #include <drivers/i2c/designware/dw_i2c.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
@@ -136,9 +136,19 @@ struct soc_intel_cannonlake_config {
 		Sata_AHCI,
 		Sata_RAID,
 	} SataMode;
+
+	/* SATA devslp pad reset configuration */
+	enum {
+		SataDevSlpResumeReset = 1,
+		SataDevSlpHostDeepReset = 3,
+		SataDevSlpPlatformReset = 5,
+		SataDevSlpDswReset = 7
+	} SataDevSlpRstConfig;
+
 	uint8_t SataSalpSupport;
 	uint8_t SataPortsEnable[8];
 	uint8_t SataPortsDevSlp[8];
+	uint8_t SataPortsDevSlpResetConfig[8];
 
 	/* Enable/Disable SLP_S0 with GBE Support. 0: disable, 1: enable */
 	uint8_t SlpS0WithGbeSupport;
@@ -376,9 +386,6 @@ struct soc_intel_cannonlake_config {
 	uint8_t SlowSlewRateForGt;
 	uint8_t SlowSlewRateForSa;
 	uint8_t SlowSlewRateForFivr;
-
-	/* DMI Power Optimizer */
-	uint8_t dmipwroptimize;
 
 	/* SATA Power Optimizer */
 	uint8_t satapwroptimize;

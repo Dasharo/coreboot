@@ -1,10 +1,5 @@
-################################################################################
 ##
 ## This file is part of the coreboot project.
-##
-## Copyright (C) 2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
-## Copyright (C) 2009-2010 coresystems GmbH
-## Copyright (C) 2009 Ronald G. Minnich
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -166,7 +161,7 @@ $(objgenerated)/bootblock.ld: $$(filter-out $(call src-to-obj,bootblock,src/arch
 $(objgenerated)/bootblock.inc: $(src)/arch/x86/$(subst ",,$(CONFIG_BOOTBLOCK_SOURCE)) $(objutil)/romcc/romcc $(OPTION_TABLE_H) $(KCONFIG_AUTOHEADER)
 # The open quote in the subst messes with syntax highlighting. Fix it - ")
 	@printf "    ROMCC      $(subst $(obj)/,,$(@))\n"
-	$(CC_bootblock) $(CPPFLAGS_bootblock) -MM -MT$(objgenerated)/bootblock.inc \
+	$(CC_bootblock) -D__ROMCC__ -D__PRE_RAM__ -D__BOOTBLOCK__ $(CPPFLAGS_bootblock) -MM -MT$(objgenerated)/bootblock.inc \
 		$< > $(objgenerated)/bootblock.inc.d
 	$(ROMCC) -c -S $(bootblock_romccflags) -I. $(CPPFLAGS_bootblock) $< -o $@
 

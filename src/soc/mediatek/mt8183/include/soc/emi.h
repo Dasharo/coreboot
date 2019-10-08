@@ -21,16 +21,23 @@
 #include <soc/dramc_common_mt8183.h>
 
 struct sdram_params {
-	u32 impedance[2][4];
 	u8 wr_level[CHANNEL_MAX][RANK_MAX][DQS_NUMBER];
-	u8 cbt_cs[CHANNEL_MAX][RANK_MAX];
-	u8 cbt_mr12[CHANNEL_MAX][RANK_MAX];
+	u8 cbt_cs_dly[CHANNEL_MAX][RANK_MAX];
+	u8 cbt_final_vref[CHANNEL_MAX][RANK_MAX];
 	u32 emi_cona_val;
 	u32 emi_conh_val;
 	u32 emi_conf_val;
 	u32 chn_emi_cona_val[CHANNEL_MAX];
 	u32 cbt_mode_extern;
 	u16 delay_cell_unit;
+};
+
+enum {
+	LP4X_DDR1600,
+	LP4X_DDR2400,
+	LP4X_DDR3200,
+	LP4X_DDR3600,
+	LP4X_DDRFREQ_MAX,
 };
 
 extern const u8 phy_mapping[CHANNEL_MAX][16];

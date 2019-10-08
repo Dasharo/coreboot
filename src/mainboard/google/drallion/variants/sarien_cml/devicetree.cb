@@ -34,7 +34,6 @@ chip soc/intel/cannonlake
 	register "speed_shift_enable" = "1"
 	register "s0ix_enable" = "1"
 	register "dptf_enable" = "1"
-	register "dmipwroptimize" = "1"
 	register "satapwroptimize" = "1"
 	register "AcousticNoiseMitigation" = "1"
 	register "SlowSlewRateForIa" = "2"
@@ -418,6 +417,6 @@ chip soc/intel/cannonlake
 		device pci 1f.3 on  end # Intel HDA
 		device pci 1f.4 on  end # SMBus
 		device pci 1f.5 on  end # PCH SPI
-		device pci 1f.6 on  end # GbE
+		device pci 1f.6 off end # GbE
 	end
 end

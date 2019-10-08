@@ -15,6 +15,8 @@ romstage-y += gpio.c
 romstage-y += memmap.c
 romstage-y += tsc_freq.c
 romstage-y += smbus-imc.c
+romstage-y += ubox.c
+romstage-y += vtd.c
 
 postcar-y += tsc_freq.c
 
@@ -32,6 +34,7 @@ ramstage-y += smi.c
 ramstage-y += southcluster.c
 ramstage-y += tsc_freq.c
 ramstage-y += vtd.c
+ramstage-y += ubox.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += pmutil.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smmrelocate.c
 

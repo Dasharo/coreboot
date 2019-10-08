@@ -15,7 +15,6 @@
 
 #include <stdint.h>
 #include <cf9_reset.h>
-#include <delay.h>
 #include <console/console.h>
 #include <arch/romstage.h>
 #include <cpu/x86/lapic.h>
@@ -245,11 +244,6 @@ void mainboard_romstage_entry(void)
 	int s3resume = 0;
 
 	enable_lapic();
-
-	/* Force PCIRST# */
-	pci_write_config16(PCI_DEV(0, 0x1e, 0), BCTRL, SBR);
-	udelay(200 * 1000);
-	pci_write_config16(PCI_DEV(0, 0x1e, 0), BCTRL, 0);
 
 	ich7_enable_lpc();
 	early_superio_config_w83627thg();

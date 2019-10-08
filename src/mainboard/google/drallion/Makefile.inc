@@ -16,7 +16,6 @@
 bootblock-y += bootblock.c
 
 ramstage-y += ramstage.c
-ramstage-y += sku.c
 
 romstage-y += romstage.c
 
@@ -33,6 +32,9 @@ bootblock-y += ec.c
 ramstage-y += ec.c
 romstage-y += ec.c
 verstage-y += ec.c
+
+subdirs-y += variants/baseboard
+CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)/variants/baseboard/include
 
 subdirs-y += variants/$(VARIANT_DIR)
 CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)/variants/$(VARIANT_DIR)/include

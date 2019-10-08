@@ -20,6 +20,7 @@ config SOUTHBRIDGE_INTEL_COMMON_SMBUS
 config SOUTHBRIDGE_INTEL_COMMON_SPI
 	def_bool n
 	select SPI_FLASH
+	select BOOT_DEVICE_SUPPORTS_WRITES
 
 config SOUTHBRIDGE_INTEL_COMMON_PIRQ_ACPI_GEN
 	def_bool n
@@ -53,6 +54,15 @@ config INTEL_DESCRIPTOR_MODE_REQUIRED
 	help
 	  This config states descriptor mode is *required* for the platform to
 	  function properly, or to function at all.
+
+config VALIDATE_INTEL_DESCRIPTOR
+	depends on INTEL_DESCRIPTOR_MODE_CAPABLE
+	bool "Validate Intel firmware descriptor"
+	default n
+	help
+	  This config enables validating the Intel firmware descriptor against the
+	  fmap layout. If the firmware descriptor layout does not match the fmap
+	  then the bootimage cannot be built.
 
 config INTEL_CHIPSET_LOCKDOWN
 	depends on HAVE_INTEL_CHIPSET_LOCKDOWN && HAVE_SMI_HANDLER && !CHROMEOS

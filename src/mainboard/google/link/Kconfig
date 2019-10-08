@@ -7,6 +7,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select SOUTHBRIDGE_INTEL_C216
 	select BOARD_ROMSIZE_KB_8192
 	select EC_GOOGLE_CHROMEEC
+	select EC_GOOGLE_CHROMEEC_LPC
 	select HAVE_ACPI_TABLES
 	select HAVE_OPTION_TABLE
 	select HAVE_ACPI_RESUME
@@ -38,11 +39,6 @@ config MAX_CPUS
 config VGA_BIOS_FILE
 	string
 	default "pci8086,0166.rom"
-
-config GBB_HWID
-	string
-	depends on CHROMEOS
-	default "X86 LINK TEST 6638"
 
 config MAINBOARD_SMBIOS_MANUFACTURER
 	string
