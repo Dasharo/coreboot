@@ -23,7 +23,7 @@
 #include <device/device.h>
 #include <device/pci_ids.h>
 #include <fsp/util.h>
-#include <intelblocks/chip.h>
+#include <intelblocks/cfg.h>
 #include <intelblocks/itss.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/mp_init.h>
@@ -237,7 +237,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	uintptr_t vbt_data = (uintptr_t)vbt_get();
 	int i;
 
-	config = config_of_path(SA_DEVFN_ROOT);
+	config = config_of_soc();
 
 	mainboard_silicon_init_params(params);
 	/* Set PsysPmax if it is available from DT */
@@ -283,6 +283,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	       sizeof(params->SataPortsEnable));
 	memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
 	       sizeof(params->SataPortsDevSlp));
+	memcpy(params->SataPortsHotPlug, config->SataPortsHotPlug,
+	       sizeof(params->SataPortsHotPlug));
+	memcpy(params->SataPortsSpinUp, config->SataPortsSpinUp,
+	       sizeof(params->SataPortsSpinUp));
 	memcpy(params->PcieRpClkReqSupport, config->PcieRpClkReqSupport,
 	       sizeof(params->PcieRpClkReqSupport));
 	memcpy(params->PcieRpClkReqNumber, config->PcieRpClkReqNumber,
@@ -357,6 +361,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchIshEnable = dev ? dev->enabled : 0;
 
 	params->PchHdaEnable = config->EnableAzalia;
+	params->PchHdaVcType = config->PchHdaVcType;
 	params->PchHdaIoBufferOwnership = config->IoBufferOwnership;
 	params->PchHdaDspEnable = config->DspEnable;
 	params->Device4Enable = config->Device4Enable;
@@ -369,6 +374,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	tconfig->PchLockDownGlobalSmi = config->LockDownConfigGlobalSmi;
 	tconfig->PchLockDownRtcLock = config->LockDownConfigRtcLock;
 	tconfig->PowerLimit4 = config->PowerLimit4;
+	tconfig->SataTestMode = config->SataTestMode;
 	/*
 	 * To disable HECI, the Psf needs to be left unlocked
 	 * by FSP till end of post sequence. Based on the devicetree

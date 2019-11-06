@@ -19,7 +19,6 @@
 #include <console/console.h>
 #include <device/mmio.h>
 #include <device/device.h>
-#include <device/pci_ops.h>
 #include <intelblocks/pmc.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/rtc.h>
@@ -103,7 +102,7 @@ static void config_deep_sx(uint32_t deepsx_config)
 
 static void pmc_init(void *unused)
 {
-	const config_t *config = config_of_path(SA_DEVFN_ROOT);
+	const config_t *config = config_of_soc();
 
 	rtc_init();
 

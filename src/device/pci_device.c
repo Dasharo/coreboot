@@ -1,22 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * It was originally based on the Linux kernel (drivers/pci/pci.c).
- * Copyright 1993 -- 1997 Drew Eckhardt, Frederic Potter,
- * David Mosberger-Tang
- *
- * Copyright 1997 -- 1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
- *
- * Copyright (C) 2003-2004 Linux Networx
- * (Written by Eric Biederman <ebiederman@lnxi.com> for Linux Networx)
- * Copyright (C) 2003-2006 Ronald G. Minnich <rminnich@gmail.com>
- * Copyright (C) 2004-2005 Li-Ta Lo <ollie@lanl.gov>
- * Copyright (C) 2005-2006 Tyan
- * (Written by Yinghai Lu <yhlu@tyan.com> for Tyan)
- * Copyright (C) 2005-2009 coresystems GmbH
- * (Written by Stefan Reinauer <stepan@coresystems.de> for coresystems GmbH)
- * Copyright (C) 2014 Sage Electronic Engineering, LLC.
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
@@ -28,13 +12,13 @@
  */
 
 /*
+ * Originally based on the Linux kernel (drivers/pci/pci.c).
  * PCI Bus Services, see include/linux/pci.h for further explanation.
  */
 
 #include <arch/acpi.h>
 #include <device/pci_ops.h>
 #include <bootmode.h>
-#include <bootsplash.h>
 #include <console/console.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -642,7 +626,7 @@ void pci_bus_enable_resources(struct device *dev)
 		dev->command |= PCI_COMMAND_IO;
 	ctrl = pci_read_config16(dev, PCI_BRIDGE_CONTROL);
 	ctrl |= dev->link_list->bridge_ctrl;
-	ctrl |= (PCI_BRIDGE_CTL_PARITY + PCI_BRIDGE_CTL_SERR); /* Error check. */
+	ctrl |= (PCI_BRIDGE_CTL_PARITY | PCI_BRIDGE_CTL_SERR); /* Error check. */
 	printk(BIOS_DEBUG, "%s bridge ctrl <- %04x\n", dev_path(dev), ctrl);
 	pci_write_config16(dev, PCI_BRIDGE_CONTROL, ctrl);
 
@@ -695,9 +679,14 @@ void pci_dev_set_subsystem(struct device *dev, unsigned int vendor,
 	}
 }
 
-static int should_run_oprom(struct device *dev)
+static int should_run_oprom(struct device *dev, struct rom_header *rom)
 {
 	static int should_run = -1;
+
+	if (CONFIG(VENDORCODE_ELTAN_VBOOT))
+		if (rom != NULL)
+			if (!verified_boot_should_run_oprom(rom))
+				return 0;
 
 	if (should_run >= 0)
 		return should_run;
@@ -727,7 +716,7 @@ static int should_load_oprom(struct device *dev)
 		return 0;
 	if (CONFIG(ALWAYS_LOAD_OPROM))
 		return 1;
-	if (should_run_oprom(dev))
+	if (should_run_oprom(dev, NULL))
 		return 1;
 
 	return 0;
@@ -758,7 +747,7 @@ void pci_dev_init(struct device *dev)
 		return;
 	timestamp_add_now(TS_OPROM_COPY_END);
 
-	if (!should_run_oprom(dev))
+	if (!should_run_oprom(dev, rom))
 		return;
 
 	run_bios(dev, (unsigned long)ram);
@@ -766,9 +755,6 @@ void pci_dev_init(struct device *dev)
 	gfx_set_init_done(1);
 	printk(BIOS_DEBUG, "VGA Option ROM was run\n");
 	timestamp_add_now(TS_OPROM_END);
-
-	if (CONFIG(BOOTSPLASH))
-		set_vesa_bootsplash();
 }
 
 /** Default device operation for PCI devices */
@@ -805,6 +791,43 @@ struct device_operations default_pci_ops_bus = {
 	.reset_bus        = pci_bus_reset,
 	.ops_pci          = &pci_bus_ops_pci,
 };
+
+/**
+ * Check for compatibility to route legacy VGA cycles through a bridge.
+ *
+ * Originally, when decoding i/o ports for legacy VGA cycles, bridges
+ * should only consider the 10 least significant bits of the port address.
+ * This means all VGA registers were aliased every 1024 ports!
+ *     e.g. 0x3b0 was also decoded as 0x7b0, 0xbb0 etc.
+ *
+ * To avoid this mess, a bridge control bit (VGA16) was introduced in
+ * 2003 to enable decoding of 16-bit port addresses. As we don't want
+ * to make this any more complex for now, we use this bit if possible
+ * and only warn if it's not supported (in set_vga_bridge_bits()).
+ */
+static void pci_bridge_vga_compat(struct bus *const bus)
+{
+	uint16_t bridge_ctrl;
+
+	bridge_ctrl = pci_read_config16(bus->dev, PCI_BRIDGE_CONTROL);
+
+	/* Ensure VGA decoding is disabled during probing (it should
+	   be by default, but we run blobs nowadays) */
+	bridge_ctrl &= ~PCI_BRIDGE_CTL_VGA;
+	pci_write_config16(bus->dev, PCI_BRIDGE_CONTROL, bridge_ctrl);
+
+	/* If the upstream bridge doesn't support VGA16, we don't have to check */
+	bus->no_vga16 |= bus->dev->bus->no_vga16;
+	if (bus->no_vga16)
+		return;
+
+	/* Test if we can enable 16-bit decoding */
+	bridge_ctrl |= PCI_BRIDGE_CTL_VGA16;
+	pci_write_config16(bus->dev, PCI_BRIDGE_CONTROL, bridge_ctrl);
+	bridge_ctrl = pci_read_config16(bus->dev, PCI_BRIDGE_CONTROL);
+
+	bus->no_vga16 = !(bridge_ctrl & PCI_BRIDGE_CTL_VGA16);
+}
 
 /**
  * Detect the type of downstream bridge.
@@ -1306,6 +1329,8 @@ void do_pci_scan_bridge(struct device *dev,
 	}
 
 	bus = dev->link_list;
+
+	pci_bridge_vga_compat(bus);
 
 	pci_bridge_route(bus, PCI_ROUTE_SCAN);
 

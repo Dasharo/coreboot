@@ -30,7 +30,7 @@ choice
 config GLK_CHROME_EC
 	bool "Chrome EC"
 	select EC_GOOGLE_CHROMEEC
-	select EC_GOOGLE_CHROMEEC_LPC
+	select EC_GOOGLE_CHROMEEC_ESPI
 
 config GLK_INTEL_EC
 	bool "Intel EC"
@@ -67,11 +67,6 @@ config MAINBOARD_PART_NUMBER
 config MAINBOARD_FAMILY
 	string
 	default "Intel_Glkrvp" if BOARD_INTEL_GLKRVP
-
-config GBB_HWID
-	string
-	depends on CHROMEOS
-	default "GLKRVP TEST A-A 6939" if BOARD_INTEL_GLKRVP
 
 config MAX_CPUS
 	int

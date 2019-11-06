@@ -16,6 +16,7 @@
  */
 
 /* This file is derived from the flashrom project. */
+#include <arch/early_variables.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -109,7 +110,7 @@ struct ich_spi_controller {
 	uint8_t fpr_max;
 };
 
-static struct ich_spi_controller g_cntlr;
+static struct ich_spi_controller g_cntlr CAR_GLOBAL;
 
 enum {
 	SPIS_SCIP =		0x0001,
@@ -254,7 +255,7 @@ static void read_reg(const void *src, void *value, uint32_t size)
 
 static void ich_set_bbar(uint32_t minaddr)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	const uint32_t bbar_mask = 0x00ffff00;
 	uint32_t ichspi_bbar;
 
@@ -272,7 +273,7 @@ static void ich_set_bbar(uint32_t minaddr)
 
 void spi_init(void)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	uint8_t *rcrb; /* Root Complex Register Block */
 	uint32_t rcba; /* Root Complex Base Address */
 	uint8_t bios_cntl;
@@ -414,7 +415,7 @@ static void spi_setup_type(spi_transaction *trans)
 
 static int spi_setup_opcode(spi_transaction *trans)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	uint16_t optypes;
 	uint8_t opmenu[MENU_BYTES];
 
@@ -494,7 +495,7 @@ static int spi_setup_offset(spi_transaction *trans)
  */
 static int ich_status_poll(u16 bitmask, int wait_til_set)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	int timeout = 600000; /* This will result in 6 seconds */
 	u16 status = 0;
 
@@ -515,7 +516,7 @@ static int ich_status_poll(u16 bitmask, int wait_til_set)
 
 static int spi_is_multichip(void)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	if (!(cntlr->hsfs & HSFS_FDV))
 		return 0;
 	return !!((cntlr->flmap0 >> 8) & 3);
@@ -524,7 +525,7 @@ static int spi_is_multichip(void)
 static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 		size_t bytesout, void *din, size_t bytesin)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	uint16_t control;
 	int16_t opcode_index;
 	int with_address;
@@ -674,7 +675,7 @@ spi_xfer_exit:
 /* Sets FLA in FADDR to (addr & 0x01FFFFFF) without touching other bits. */
 static void ich_hwseq_set_addr(uint32_t addr)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	uint32_t addr_old = readl_(&cntlr->ich9_spi->faddr) & ~0x01FFFFFF;
 
 	writel_((addr & 0x01FFFFFF) | addr_old, &cntlr->ich9_spi->faddr);
@@ -687,7 +688,7 @@ static void ich_hwseq_set_addr(uint32_t addr)
 static int ich_hwseq_wait_for_cycle_complete(unsigned int timeout,
 					     unsigned int len)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	uint16_t hsfs;
 	uint32_t addr;
 
@@ -727,7 +728,7 @@ static int ich_hwseq_wait_for_cycle_complete(unsigned int timeout,
 static int ich_hwseq_erase(const struct spi_flash *flash, u32 offset,
 			size_t len)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	u32 start, end, erase_size;
 	int ret;
 	uint16_t hsfc;
@@ -777,7 +778,7 @@ out:
 
 static void ich_read_data(uint8_t *data, int len)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	int i;
 	uint32_t temp32 = 0;
 
@@ -792,7 +793,7 @@ static void ich_read_data(uint8_t *data, int len)
 static int ich_hwseq_read(const struct spi_flash *flash, u32 addr, size_t len,
 			void *buf)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	uint16_t hsfc;
 	uint16_t timeout = 100 * 60;
 	uint8_t block_len;
@@ -838,7 +839,7 @@ static int ich_hwseq_read(const struct spi_flash *flash, u32 addr, size_t len,
  */
 static void ich_fill_data(const uint8_t *data, int len)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	uint32_t temp32 = 0;
 	int i;
 
@@ -862,7 +863,7 @@ static void ich_fill_data(const uint8_t *data, int len)
 static int ich_hwseq_write(const struct spi_flash *flash, u32 addr, size_t len,
 			const void *buf)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	uint16_t hsfc;
 	uint16_t timeout = 100 * 60;
 	uint8_t block_len;
@@ -918,7 +919,7 @@ static const struct spi_flash_ops spi_flash_ops = {
 static int spi_flash_programmer_probe(const struct spi_slave *spi,
 					struct spi_flash *flash)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 
 	if (CONFIG(SOUTHBRIDGE_INTEL_I82801GX))
 		return spi_flash_generic_probe(spi, flash);
@@ -998,7 +999,7 @@ static int spi_flash_protect(const struct spi_flash *flash,
 			const struct region *region,
 			const enum ctrlr_prot_type type)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	u32 start = region_offset(region);
 	u32 end = start + region_sz(region) - 1;
 	u32 reg;
@@ -1056,12 +1057,12 @@ static int spi_flash_protect(const struct spi_flash *flash,
 
 void spi_finalize_ops(void)
 {
-	struct ich_spi_controller *cntlr = &g_cntlr;
+	struct ich_spi_controller *cntlr = car_get_var_ptr(&g_cntlr);
 	u16 spi_opprefix;
 	u16 optype = 0;
-	struct intel_swseq_spi_config spi_config = {
+	struct intel_swseq_spi_config spi_config_default = {
 		{0x06, 0x50},  /* OPPREFIXES: EWSR and WREN */
-		{ /* OPTYPE and OPCODE */
+		{ /* OPCODE and OPTYPE */
 			{0x01, WRITE_NO_ADDR},		/* WRSR: Write Status Register */
 			{0x02, WRITE_WITH_ADDR},	/* BYPR: Byte Program */
 			{0x03, READ_WITH_ADDR},		/* READ: Read Data */
@@ -1072,19 +1073,43 @@ void spi_finalize_ops(void)
 			{0x0b, READ_WITH_ADDR},		/* FAST: Fast Read */
 		}
 	};
+	struct intel_swseq_spi_config spi_config_aai_write = {
+		{0x06, 0x50}, /* OPPREFIXES: EWSR and WREN */
+		{ /* OPCODE and OPTYPE */
+			{0x01, WRITE_NO_ADDR},		/* WRSR: Write Status Register */
+			{0x02, WRITE_WITH_ADDR},	/* BYPR: Byte Program */
+			{0x03, READ_WITH_ADDR},		/* READ: Read Data */
+			{0x05, READ_NO_ADDR},		/* RDSR: Read Status Register */
+			{0x20, WRITE_WITH_ADDR},	/* SE20: Sector Erase 0x20 */
+			{0x9f, READ_NO_ADDR},		/* RDID: Read ID */
+			{0xad, WRITE_NO_ADDR},		/* Auto Address Increment Word Program */
+			{0x04, WRITE_NO_ADDR}		/* Write Disable */
+		}
+	};
+	const struct spi_flash *flash = boot_device_spi_flash();
+	struct intel_swseq_spi_config *spi_config = &spi_config_default;
 	int i;
+
+	/*
+	 * Some older SST SPI flashes support AAI write but use 0xaf opcde for
+	 * that. Flashrom uses the byte program opcode to write those flashes,
+	 * so this configuration is fine too. SST25VF064C (id = 0x4b) is an
+	 * exception.
+	 */
+	if (flash && flash->vendor == VENDOR_ID_SST && (flash->model & 0x00ff) != 0x4b)
+		spi_config = &spi_config_aai_write;
 
 	if (spi_locked())
 		return;
 
-	intel_southbridge_override_spi(&spi_config);
+	intel_southbridge_override_spi(spi_config);
 
-	spi_opprefix = spi_config.opprefixes[0]
-		| (spi_config.opprefixes[1] << 8);
+	spi_opprefix = spi_config->opprefixes[0]
+		| (spi_config->opprefixes[1] << 8);
 	writew_(spi_opprefix, cntlr->preop);
-	for (i = 0; i < ARRAY_SIZE(spi_config.ops); i++) {
-		optype |= (spi_config.ops[i].type & 3) << (i * 2);
-		writeb_(spi_config.ops[i].op, &cntlr->opmenu[i]);
+	for (i = 0; i < ARRAY_SIZE(spi_config->ops); i++) {
+		optype |= (spi_config->ops[i].type & 3) << (i * 2);
+		writeb_(spi_config->ops[i].op, &cntlr->opmenu[i]);
 	}
 	writew_(optype, cntlr->optype);
 }

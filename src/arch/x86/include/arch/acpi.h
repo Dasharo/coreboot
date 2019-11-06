@@ -1,14 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2004 SUSE LINUX AG
- * Copyright (C) 2004 Nick Barker
- * Copyright (C) 2008-2009 coresystems GmbH
- * Copyright (C) 2015 Timothy Pearson <tpearson@raptorengineeringinc.com>,
- * Raptor Engineering
- * Copyright (C) 2016 Siemens AG
- * (Written by Stefan Reinauer <stepan@coresystems.de>)
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
@@ -940,7 +932,6 @@ unsigned long acpi_create_hest_error_source(acpi_hest_t *hest,
 	acpi_hest_esd_t *esd, u16 type, void *data, u16 len);
 
 /* For ACPI S3 support. */
-void acpi_fail_wakeup(void);
 void acpi_resume(void *wake_vec);
 void mainboard_suspend_resume(void);
 void *acpi_find_wakeup_vector(void);
@@ -983,7 +974,7 @@ static inline int acpi_s3_resume_allowed(void)
 
 #if CONFIG(HAVE_ACPI_RESUME)
 
-#ifdef __PRE_RAM__
+#if ENV_ROMSTAGE_OR_BEFORE
 static inline int acpi_is_wakeup_s3(void)
 {
 	return (acpi_get_sleep_type() == ACPI_S3);

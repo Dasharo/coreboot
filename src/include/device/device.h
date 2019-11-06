@@ -94,6 +94,7 @@ struct bus {
 	unsigned int	reset_needed : 1;
 	unsigned int	disable_relaxed_ordering : 1;
 	unsigned int	ht_link_up : 1;
+	unsigned int	no_vga16 : 1;	/* No support for 16-bit VGA decoding */
 };
 
 /*
@@ -298,7 +299,14 @@ DEVTREE_CONST struct device *pcidev_path_on_bus(unsigned int bus, pci_devfn_t de
 DEVTREE_CONST struct device *pcidev_on_root(uint8_t dev, uint8_t fn);
 DEVTREE_CONST struct bus *pci_root_bus(void);
 
-/* To be deprecated, avoid using. */
+/* To be deprecated, avoid using.
+ *
+ * Note that this function can return the incorrect device prior
+ * to PCI enumeration because the secondary field of the bus object
+ * is 0. The failing scenario is determined by the order of the
+ * devices in all_devices singly-linked list as well as the time
+ * when this function is called (secondary reflecting topology).
+ */
 DEVTREE_CONST struct device *dev_find_slot(unsigned int bus, unsigned int devfn);
 DEVTREE_CONST struct device *pcidev_path_on_root_debug(pci_devfn_t devfn, const char *func);
 
@@ -314,16 +322,9 @@ static inline DEVTREE_CONST void *config_of(const struct device *dev)
 	devtree_die();
 }
 
-static inline DEVTREE_CONST void *config_of_path(pci_devfn_t devfn)
+static inline DEVTREE_CONST void *config_of_soc(void)
 {
-	const struct device *dev = pcidev_path_on_root(devfn);
-	if (dev)
-		return config_of(dev);
-
-	devtree_bug(__func__, devfn);
-
-	dev = dev_find_slot(0, devfn);
-	return config_of(dev);
+	return config_of(pcidev_on_root(0, 0));
 }
 
 void scan_smbus(struct device *bus);

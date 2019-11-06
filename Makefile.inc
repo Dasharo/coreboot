@@ -504,7 +504,7 @@ $(build_h): $$(shell $$(build_h_check))
 	@printf "    GEN        build.h\n"
 	mv $< $@
 
-build-dirs:
+build-dirs $(objcbfs) $(objgenerated):
 	mkdir -p $(objcbfs) $(objgenerated)
 
 #######################################################################
@@ -591,11 +591,12 @@ OVERRIDE_DEVICETREE_FILE := $(src)/mainboard/$(MAINBOARDDIR)/$(CONFIG_OVERRIDE_D
 endif
 
 DEVICETREE_STATIC_C := $(obj)/mainboard/$(MAINBOARDDIR)/static.c
+DEVICETREE_STATIC_H := $(obj)/static.h
 
 $(DEVICETREE_STATIC_C): $(DEVICETREE_FILE) $(OVERRIDE_DEVICETREE_FILE) $(objutil)/sconfig/sconfig
 	@printf "    SCONFIG    $(subst $(src)/,,$(<))\n"
 	mkdir -p $(dir $(DEVICETREE_STATIC_C))
-	$(objutil)/sconfig/sconfig $(DEVICETREE_FILE) $(DEVICETREE_STATIC_C) $(OVERRIDE_DEVICETREE_FILE)
+	$(objutil)/sconfig/sconfig $(DEVICETREE_FILE) $(DEVICETREE_STATIC_C) $(DEVICETREE_STATIC_H) $(OVERRIDE_DEVICETREE_FILE)
 
 ramstage-y+=$(DEVICETREE_STATIC_C)
 romstage-y+=$(DEVICETREE_STATIC_C)
@@ -706,7 +707,7 @@ $(objcbfs)/bootblock.raw.bin: $(objcbfs)/bootblock.raw.elf
 	$(OBJCOPY_bootblock) -O binary $< $@
 
 ifneq ($(CONFIG_HAVE_BOOTBLOCK),y)
-$(objcbfs)/bootblock.bin:
+$(objcbfs)/bootblock.bin: $(objcbfs)
 	dd if=/dev/zero of=$@ bs=64 count=1
 endif
 

@@ -99,7 +99,7 @@ static void parse_devicetree_param(const config_t *config, FSP_S_CONFIG *params)
 
 static void parse_devicetree(FSP_S_CONFIG *params)
 {
-	const config_t *config = config_of_path(SA_DEVFN_ROOT);
+	const config_t *config = config_of_soc();
 
 	parse_devicetree_param(config, params);
 }
@@ -145,7 +145,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	FSP_S_TEST_CONFIG *tconfig = &supd->FspsTestConfig;
 	struct device *dev;
 
-	config_t *config = config_of_path(SA_DEVFN_ROOT);
+	config_t *config = config_of_soc();
 
 	/* Parse device tree and enable/disable devices */
 	parse_devicetree(params);
@@ -186,6 +186,11 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 			sizeof(params->SataPortsEnable));
 		memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
 			sizeof(params->SataPortsDevSlp));
+#if CONFIG(SOC_INTEL_COMETLAKE)
+		memcpy(params->SataPortsDevSlpResetConfig,
+			config->SataPortsDevSlpResetConfig,
+			sizeof(params->SataPortsDevSlpResetConfig));
+#endif
 	}
 
 	/* Lan */
@@ -349,6 +354,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->ScsUfsEnabled = dev->enabled;
 
 	params->Heci3Enabled = config->Heci3Enabled;
+#if !CONFIG(HECI_DISABLE_USING_SMM)
+	params->Heci1Disabled = !config->HeciEnabled;
+#endif
 	params->Device4Enable = config->Device4Enable;
 
 	/* VrConfig Settings for 5 domains
@@ -369,7 +377,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->FastPkgCRampDisableFivr = config->FastPkgCRampDisableFivr;
 
 	/* Power Optimizer */
-	params->PchPwrOptEnable = config->dmipwroptimize;
 	params->SataPwrOptEnable = config->satapwroptimize;
 
 	/* Disable PCH ACPI timer */
@@ -418,31 +425,29 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		tconfig->PchLockDownBiosInterface = 0;
 		params->PchLockDownBiosLock = 0;
 		params->PchLockDownRtcMemoryLock = 0;
+#if CONFIG(SOC_INTEL_COMETLAKE)
 		/*
-		 * TODO: Disable SpiFlashCfgLockDown config after FSP provides
-		 * dedicated UPD
-		 *
 		 * Skip SPI Flash Lockdown from inside FSP.
 		 * Making this config "0" means FSP won't set the FLOCKDN bit
 		 * of SPIBAR + 0x04 (i.e., Bit 15 of BIOS_HSFSTS_CTL).
 		 * So, it becomes coreboot's responsibility to set this bit
 		 * before end of POST for security concerns.
 		 */
-		// params->SpiFlashCfgLockDown = 0;
+		params->SpiFlashCfgLockDown = 0;
+#endif
 	} else {
 		tconfig->PchLockDownGlobalSmi = 1;
 		tconfig->PchLockDownBiosInterface = 1;
 		params->PchLockDownBiosLock = 1;
 		params->PchLockDownRtcMemoryLock = 1;
+#if CONFIG(SOC_INTEL_COMETLAKE)
 		/*
-		 * TODO: Enable SpiFlashCfgLockDown config after FSP provides
-		 * dedicated UPD
-		 *
 		 * Enable SPI Flash Lockdown from inside FSP.
 		 * Making this config "1" means FSP will set the FLOCKDN bit
 		 * of SPIBAR + 0x04 (i.e., Bit 15 of BIOS_HSFSTS_CTL).
 		 */
-		// params->SpiFlashCfgLockDown = 1;
+		params->SpiFlashCfgLockDown = 1;
+#endif
 	}
 }
 

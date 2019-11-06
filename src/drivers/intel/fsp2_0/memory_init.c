@@ -392,10 +392,7 @@ void fsp_memory_init(bool s3wake)
 	struct memranges memmap;
 	struct range_entry freeranges[2];
 
-	timestamp_add_now(TS_BEFORE_INITRAM);
-
-	if (CONFIG(ELOG_BOOT_COUNT) && !s3wake)
-		boot_count_increment();
+	elog_boot_notify(s3wake);
 
 	if (cbfs_boot_locate(&file_desc, name, NULL)) {
 		printk(BIOS_CRIT, "Could not locate %s in CBFS\n", name);
@@ -407,7 +404,7 @@ void fsp_memory_init(bool s3wake)
 	/* Build up memory map of romstage address space including CAR. */
 	memranges_init_empty(&memmap, &freeranges[0], ARRAY_SIZE(freeranges));
 	memranges_insert(&memmap, (uintptr_t)_car_region_start,
-		_car_relocatable_data_end - _car_region_start, 0);
+		_car_unallocated_start - _car_region_start, 0);
 	memranges_insert(&memmap, (uintptr_t)_program, REGION_SIZE(program), 0);
 
 	if (!CONFIG(FSP_M_XIP))
@@ -420,6 +417,8 @@ void fsp_memory_init(bool s3wake)
 
 	/* Signal that FSP component has been loaded. */
 	prog_segment_loaded(hdr.image_base, hdr.image_size, SEG_FINAL);
+
+	timestamp_add_now(TS_BEFORE_INITRAM);
 
 	do_fsp_memory_init(&hdr, s3wake, &memmap);
 

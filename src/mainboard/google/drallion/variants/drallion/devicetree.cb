@@ -13,13 +13,24 @@ chip soc/intel/cannonlake
 	register "gen2_dec" = "0x00040941" # 0x940-0x947
 	register "gen3_dec" = "0x000c0951" # 0x950-0x95f
 
+	register "SerialIoDevMode" = "{
+		[PchSerialIoIndexI2C0]  = PchSerialIoPci,
+		[PchSerialIoIndexI2C1]  = PchSerialIoPci,
+		[PchSerialIoIndexI2C2]  = PchSerialIoDisabled,
+		[PchSerialIoIndexI2C3]  = PchSerialIoDisabled,
+		[PchSerialIoIndexI2C4]  = PchSerialIoPci,
+		[PchSerialIoIndexI2C5]  = PchSerialIoDisabled,
+		[PchSerialIoIndexSPI0] = PchSerialIoDisabled,
+		[PchSerialIoIndexSPI1] = PchSerialIoDisabled,
+		[PchSerialIoIndexSPI2] = PchSerialIoDisabled,
+		[PchSerialIoIndexUART0] = PchSerialIoSkipInit,
+		[PchSerialIoIndexUART1] = PchSerialIoDisabled,
+		[PchSerialIoIndexUART2] = PchSerialIoDisabled,
+	}"
+
 	# FSP configuration
 	register "SaGv" = "SaGv_Enabled"
 	register "HeciEnabled" = "0"
-	register "SataSalpSupport" = "1"
-	register "SataMode" = "Sata_AHCI"
-	register "SataPortsEnable[2]" = "1"
-	register "SataPortsDevSlp[2]" = "1"
 	register "InternalGfx" = "1"
 	register "SkipExtGfxScan" = "1"
 	register "PchPmSlpS3MinAssert" = "3"  # 50ms
@@ -32,8 +43,6 @@ chip soc/intel/cannonlake
 	register "psys_pmax" = "140"
 	register "s0ix_enable" = "1"
 	register "dptf_enable" = "1"
-	register "dmipwroptimize" = "1"
-	register "satapwroptimize" = "1"
 	register "tdp_pl1_override" = "25"
 	register "tdp_pl2_override" = "51"
 	register "Device4Enable" = "1"
@@ -131,29 +140,22 @@ chip soc/intel/cannonlake
 	}"
 
 	# Intel Common SoC Config
-	register "usb2_ports[0]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# Left Type-C Port
-	register "usb2_ports[1]" = "USB2_PORT_LONG(OC0)"	# Left Type-A Port
-	register "usb2_ports[2]" = "USB2_PORT_LONG(OC1)"	# Right Type-A Port
-	register "usb2_ports[3]" = "USB2_PORT_EMPTY"
-	register "usb2_ports[4]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[0]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# Left Type-C Port 1
+	register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# Left Type-C Port 2
+	register "usb2_ports[2]" = "USB2_PORT_LONG(OC0)"	# Right Type-A Port 1
+	register "usb2_ports[3]" = "USB2_PORT_LONG(OC1)"	# Right Type-A Port 2
+	register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)"	# WWAN
 	register "usb2_ports[5]" = "USB2_PORT_LONG(OC_SKIP)"	# Camera
-	register "usb2_ports[6]" = "{
-		.enable        = 1, \
-		.ocpin         = OC_SKIP, \
-		.tx_bias       = USB2_BIAS_0MV, \
-		.tx_emp_enable = USB2_DE_EMP_ON_PRE_EMP_ON, \
-		.pre_emp_bias  = USB2_BIAS_28P15MV, \
-		.pre_emp_bit   = USB2_HALF_BIT_PRE_EMP, \
-		}"	# WWAN
-	register "usb2_ports[7]" = "USB2_PORT_MID(OC_SKIP)"	# USH
-	register "usb2_ports[8]" = "USB2_PORT_MID(OC_SKIP)"	# Fingerprint
+	register "usb2_ports[6]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[7]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[8]" = "USB2_PORT_EMPTY"
 	register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# Bluetooth
 
 	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# Left Type-C Port
-	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC0)"	# Left Type-A Port
-	register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC1)"	# Right Type-A Port
-	register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# WWAN
-	register "usb3_ports[4]" = "USB3_PORT_EMPTY"
+	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# Left Type-C Port 2
+	register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC0)"	# Right Type-A Port 1
+	register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC1)"	# Right Type-A Port 2
+	register "usb3_ports[4]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# WWAN
 	register "usb3_ports[5]" = "USB3_PORT_EMPTY"
 
 	# Intel Common SoC Config
@@ -194,16 +196,6 @@ chip soc/intel/cannonlake
 	register "PcieRpLtrEnable[8]" = "1"
 	register "PcieClkSrcUsage[4]" = "8"
 	register "PcieClkSrcClkReq[4]" = "4"
-
-	# PCIe port 10 for M.2 2230 WLAN
-	register "PcieRpEnable[9]" = "1"
-	register "PcieClkSrcUsage[1]" = "9"
-	register "PcieClkSrcClkReq[1]" = "1"
-
-	# PCIe port 12 for M.2 3042 WWAN
-	register "PcieRpEnable[11]" = "1"
-	register "PcieClkSrcUsage[0]" = "11"
-	register "PcieClkSrcClkReq[0]" = "0"
 
 	# PCIe port 13 for M.2 2280 SSD
 	register "PcieRpEnable[12]" = "1"
@@ -253,8 +245,8 @@ chip soc/intel/cannonlake
 						device usb 2.0 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""Left Type-A Port""
-						register "type" = "UPC_TYPE_A"
+						register "desc" = ""Left Type-C Port""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 						register "group" = "ACPI_PLD_GROUP(1, 2)"
 						device usb 2.1 on end
 					end
@@ -265,24 +257,20 @@ chip soc/intel/cannonlake
 						device usb 2.2 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""Camera""
-						register "type" = "UPC_TYPE_INTERNAL"
-						device usb 2.5 on end
+						register "desc" = ""Right Type-A Port""
+						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						device usb 2.3 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""WWAN""
 						register "type" = "UPC_TYPE_INTERNAL"
-						device usb 2.6 on end
+						device usb 2.4 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USH""
+						register "desc" = ""Camera""
 						register "type" = "UPC_TYPE_INTERNAL"
-						device usb 2.7 on end
-					end
-					chip drivers/usb/acpi
-						register "desc" = ""Fingerprint""
-						register "type" = "UPC_TYPE_INTERNAL"
-						device usb 2.8 on end
+						device usb 2.5 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""Bluetooth""
@@ -297,21 +285,27 @@ chip soc/intel/cannonlake
 						device usb 3.0 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""Left Type-A Port""
+						register "desc" = ""Right Type-A Port""
 						register "type" = "UPC_TYPE_USB3_A"
-						register "group" = "ACPI_PLD_GROUP(1, 2)"
+						register "group" = "ACPI_PLD_GROUP(2, 1)"
 						device usb 3.1 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""Right Type-A Port""
 						register "type" = "UPC_TYPE_USB3_A"
-						register "group" = "ACPI_PLD_GROUP(2, 1)"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
 						device usb 3.2 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Left Type-C Port""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
+						device usb 3.3 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""WWAN""
 						register "type" = "UPC_TYPE_INTERNAL"
-						device usb 3.3 on end
+						device usb 3.4 on end
 					end
 				end
 			end
@@ -337,6 +331,37 @@ chip soc/intel/cannonlake
 				register "hid_desc_reg_offset" = "0x1"
 				device i2c 0A on end
 			end
+			chip drivers/i2c/hid
+				register "generic.hid" = ""ELAN900C""
+				register "generic.desc" = ""ELAN Touchscreen""
+				register "generic.irq" = "ACPI_IRQ_EDGE_LOW(GPP_C23_IRQ)"
+				register "generic.probed" = "1"
+				register "generic.reset_gpio" =
+							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_E7)"
+				register "generic.reset_delay_ms" = "10"
+				register "generic.enable_gpio" =
+							"ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B21)"
+				register "generic.enable_delay_ms" = "55"
+				register "generic.has_power_resource" = "1"
+				register "hid_desc_reg_offset" = "0x01"
+				register "generic.device_present_gpio" = "GPP_B4"
+				register "generic.device_present_gpio_invert" = "1"
+				device i2c 10 on end
+			end
+			chip drivers/i2c/generic
+				register "hid" = ""MLFS0000""
+				register "desc" = ""Melfas Touchscreen""
+				register "irq" = "ACPI_IRQ_EDGE_LOW(GPP_C23_IRQ)"
+				register "probed" = "1"
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_E7)"
+				register "reset_delay_ms" = "10"
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B21)"
+				register "enable_delay_ms" = "55"
+				register "has_power_resource" = "1"
+				register "device_present_gpio" = "GPP_B4"
+				register "device_present_gpio_invert" = "1"
+				device i2c 34 on end
+			end
 		end # I2C #0
 		device pci 15.1 on
 			chip drivers/i2c/generic
@@ -355,7 +380,7 @@ chip soc/intel/cannonlake
 		device pci 16.3 off end # Management Engine KT Redirection
 		device pci 16.4 off end # Management Engine Interface 3
 		device pci 16.5 off end # Management Engine Interface 4
-		device pci 17.0 on  end # SATA
+		device pci 17.0 off  end # SATA
 		device pci 19.0 on
 			chip drivers/i2c/tpm
 				register "hid" = ""GOOG0005""
@@ -364,7 +389,7 @@ chip soc/intel/cannonlake
 			end
 		end # I2C #4
 		device pci 19.1 off end # I2C #5
-		device pci 19.2 on  end # UART #2
+		device pci 19.2 off  end # UART #2
 		device pci 1a.0 off end # eMMC
 		device pci 1c.0 off end # PCI Express Port 1 (USB)
 		device pci 1c.1 off end # PCI Express Port 2 (USB)
@@ -377,13 +402,13 @@ chip soc/intel/cannonlake
 		device pci 1d.0 on
 			smbios_slot_desc "SlotTypeM2Socket1_SD" "SlotLengthOther" "2230" "SlotDataBusWidth1X"
 		end # PCI Express Port 9
-		device pci 1d.1 on  end # PCI Express Port 10
+		device pci 1d.1 off  end # PCI Express Port 10
 		device pci 1d.2 off end # PCI Express Port 11
-		device pci 1d.3 on  end # PCI Express Port 12
+		device pci 1d.3 off  end # PCI Express Port 12
 		device pci 1d.4 on
 			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther" "2280" "SlotDataBusWidth4X"
 		end # PCI Express Port 13 (x4)
-		device pci 1e.0 off end # UART #0
+		device pci 1e.0 on end # UART #0
 		device pci 1e.1 off end # UART #1
 		device pci 1e.2 off end # GSPI #0
 		device pci 1e.3 off end # GSPI #1

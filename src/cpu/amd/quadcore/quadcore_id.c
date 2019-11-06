@@ -1,10 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015 Timothy Pearson <tpearson@raptorengineeringinc.com>,
- *		      Raptor Engineering
- * Copyright (C) 2007 Advanced Micro Devices, Inc.
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
@@ -46,7 +42,7 @@ struct node_core_id get_node_core_id(u32 nb_cfg_54)
 	uint32_t family;
 	uint32_t model;
 
-#ifdef __SIMPLE_DEVICE__
+#if ENV_PCI_SIMPLE_DEVICE
 	f3xe8 = pci_read_config32(NODE_PCI(0, 3), 0xe8);
 #else
 	f3xe8 = pci_read_config32(get_node_pci(0, 3), 0xe8);
@@ -113,7 +109,7 @@ struct node_core_id get_node_core_id(u32 nb_cfg_54)
 		uint32_t f5x84;
 		uint8_t core_count;
 
-#ifdef __SIMPLE_DEVICE__
+#if ENV_PCI_SIMPLE_DEVICE
 		f5x84 = pci_read_config32(NODE_PCI(0, 5), 0x84);
 #else
 		f5x84 = pci_read_config32(get_node_pci(0, 5), 0x84);

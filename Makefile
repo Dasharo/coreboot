@@ -30,6 +30,9 @@
 ## SUCH DAMAGE.
 ##
 
+ifneq ($(words $(CURDIR)),1)
+    $(error Error: Path to the main directory cannot contain spaces)
+endif
 top := $(CURDIR)
 src := src
 srck := $(top)/util/kconfig
@@ -41,6 +44,12 @@ absobj := $(abspath $(obj))
 
 COREBOOT_EXPORTS := COREBOOT_EXPORTS
 COREBOOT_EXPORTS += top src srck obj objutil objk
+
+# reproducible builds
+LANG:=C
+LC_ALL:=C
+TZ:=UTC0
+COREBOOT_EXPORTS += LANG LC_ALL TZ
 
 DOTCONFIG ?= $(top)/.config
 KCONFIG_CONFIG = $(DOTCONFIG)
