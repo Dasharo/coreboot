@@ -57,6 +57,7 @@ site-local
 *.\#
 *.bin
 *.debug
+!Kconfig.debug
 *.elf
 *.o
 *.out

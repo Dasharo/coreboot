@@ -2,6 +2,7 @@
  * This file is part of the coreboot project.
  *
  * Copyright 2015 Google Inc.
+ * Copyright (C) 2018-2019 Eltan B.V.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +30,7 @@
 #include <symbols.h>
 #include <timestamp.h>
 #include <fit_payload.h>
+#include <security/vboot/vboot_common.h>
 
 /* Only can represent up to 1 byte less than size_t. */
 const struct mem_region_device addrspace_32bit =
@@ -37,6 +39,9 @@ const struct mem_region_device addrspace_32bit =
 int prog_locate(struct prog *prog)
 {
 	struct cbfsf file;
+
+	if (prog_locate_hook(prog))
+		return -1;
 
 	cbfs_prepare_program_locate();
 
@@ -54,6 +59,8 @@ void run_romstage(void)
 {
 	struct prog romstage =
 		PROG_INIT(PROG_ROMSTAGE, CONFIG_CBFS_PREFIX "/romstage");
+
+	vboot_run_logic();
 
 	if (prog_locate(&romstage))
 		goto fail;
@@ -74,6 +81,8 @@ fail:
 	halt();
 }
 
+int __weak prog_locate_hook(struct prog *prog) { return 0; }
+
 static void ramstage_cache_invalid(void)
 {
 	printk(BIOS_ERR, "ramstage cache invalid.\n");
@@ -89,6 +98,8 @@ static void run_ramstage_from_resume(struct prog *ramstage)
 
 	/* Load the cached ramstage to runtime location. */
 	stage_cache_load_stage(STAGE_RAMSTAGE, ramstage);
+
+	prog_set_arg(ramstage, cbmem_top());
 
 	if (prog_entry(ramstage) != NULL) {
 		printk(BIOS_DEBUG, "Jumping to image.\n");
@@ -127,6 +138,8 @@ void run_ramstage(void)
 	    !CONFIG(NO_STAGE_CACHE))
 		run_ramstage_from_resume(&ramstage);
 
+	vboot_run_logic();
+
 	if (prog_locate(&ramstage))
 		goto fail;
 
@@ -141,6 +154,9 @@ void run_ramstage(void)
 	stage_cache_add(STAGE_RAMSTAGE, &ramstage);
 
 	timestamp_add_now(TS_END_COPYRAM);
+
+	/* This overrides the arg fetched from the relocatable module */
+	prog_set_arg(&ramstage, cbmem_top());
 
 	prog_run(&ramstage);
 

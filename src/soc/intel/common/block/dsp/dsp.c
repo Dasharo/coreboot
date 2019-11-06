@@ -23,7 +23,7 @@ static struct device_operations dsp_dev_ops = {
 	.set_resources          = pci_dev_set_resources,
 	.enable_resources       = pci_dev_enable_resources,
 	.ops_pci                = &pci_dev_ops_pci,
-	.scan_bus               = scan_static_bus,
+	.scan_bus               = enable_static_devices,
 };
 
 static const unsigned short pci_device_ids[] = {
@@ -34,6 +34,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CNP_H_AUDIO,
 	PCI_DEVICE_ID_INTEL_CMP_AUDIO,
 	PCI_DEVICE_ID_INTEL_ICL_AUDIO,
+	PCI_DEVICE_ID_INTEL_TGL_AUDIO,
 	0,
 };
 

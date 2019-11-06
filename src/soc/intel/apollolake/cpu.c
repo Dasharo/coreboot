@@ -75,8 +75,7 @@ void soc_core_init(struct device *cpu)
 	/* Clear out pending MCEs */
 	/* TODO(adurbin): Some of these banks are core vs package
 			  scope. For now every CPU clears every bank. */
-	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX) ||
-	    acpi_get_sleep_type() == ACPI_S5)
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE) || acpi_get_sleep_type() == ACPI_S5)
 		mca_configure();
 
 	/* Set core MSRs */
@@ -89,7 +88,7 @@ void soc_core_init(struct device *cpu)
 	enable_pm_timer_emulation();
 
 	/* Configure Core PRMRR for SGX. */
-	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX))
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
 		prmrr_core_configure();
 
 	/* Set Max Non-Turbo ratio if RAPL is disabled. */
@@ -255,7 +254,7 @@ static void post_mp_init(void)
 {
 	smm_southbridge_enable(PWRBTN_EN | GBL_EN);
 
-	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX))
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
 		mp_run_on_all_cpus(sgx_configure, NULL);
 }
 
@@ -286,18 +285,4 @@ void apollolake_init_cpus(struct device *dev)
 	if (CONFIG(BOOT_DEVICE_MEMORY_MAPPED) &&
 		CONFIG(BOOT_DEVICE_SPI_FLASH))
 		fast_spi_cache_bios_region();
-}
-
-void cpu_lock_sgx_memory(void)
-{
-	/* Do nothing because MCHECK while loading microcode and enabling
-	 * IA untrusted mode takes care of necessary locking */
-}
-
-int soc_fill_sgx_param(struct sgx_param *sgx_param)
-{
-	config_t *conf = config_of_soc();
-
-	sgx_param->enable = conf->sgx_enable;
-	return 0;
 }

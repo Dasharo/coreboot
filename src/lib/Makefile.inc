@@ -249,6 +249,14 @@ postcar-y += string.c
 ramstage-y += string.c
 smm-y += string.c
 
+decompressor-y += crc_byte.c
+bootblock-y += crc_byte.c
+verstage-y += crc_byte.c
+romstage-y += crc_byte.c
+postcar-y += crc_byte.c
+ramstage-y += crc_byte.c
+smm-y += crc_byte.c
+
 postcar-y += bootmode.c
 postcar-y += boot_device.c
 postcar-y += cbfs.c
@@ -347,3 +355,5 @@ cbfs-files-$(CONFIG_GENERIC_SPD_BIN) += spd.bin
 spd.bin-file := $(LIB_SPD_BIN)
 spd.bin-type := spd
 endif
+
+ramstage-y += uuid.c

@@ -115,7 +115,7 @@ static struct device_operations device_ops = {
 	.write_acpi_tables		= southbridge_write_acpi_tables,
 	.acpi_inject_dsdt_generator	= southbridge_inject_dsdt,
 	.init				= lpc_soc_init,
-	.scan_bus			= scan_lpc_bus,
+	.scan_bus			= scan_static_bus,
 	.ops_pci			= &pci_dev_ops_pci,
 };
 
@@ -190,6 +190,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CMP_PREMIUM_U_LPC,
 	PCI_DEVICE_ID_INTEL_CMP_BASE_U_LPC,
 	PCI_DEVICE_ID_INTEL_CMP_SUPER_Y_LPC,
+	PCI_DEVICE_ID_INTEL_TGL_ESPI,
 	0
 };
 

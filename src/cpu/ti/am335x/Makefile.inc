@@ -3,14 +3,16 @@ bootblock-y	+= bootblock_media.c
 bootblock-y	+= dmtimer.c
 bootblock-y	+= gpio.c
 bootblock-y	+= pinmux.c
+bootblock-y	+= monotonic_timer.c
 
 romstage-y	+= nand.c
 romstage-y	+= cbmem.c
+romstage-y	+= dmtimer.c
+romstage-y	+= monotonic_timer.c
 
 ramstage-y	+= dmtimer.c
 ramstage-y	+= monotonic_timer.c
 ramstage-y	+= nand.c
-ramstage-y	+= cbmem.c
 
 bootblock-y	+= uart.c
 romstage-y	+= uart.c

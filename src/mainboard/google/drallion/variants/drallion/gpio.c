@@ -14,6 +14,7 @@
  */
 
 #include <variant/gpio.h>
+#include <variant/variant.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <gpio.h>
 #include <soc/romstage.h>
@@ -39,13 +40,13 @@ static const struct pad_config gpio_table[] = {
 /* ESPI_RESET# */
 /* SUSACK# */		PAD_CFG_GPO(GPP_A15, 0, DEEP),
 /* SD_1P8_SEL */	PAD_CFG_GPI(GPP_A16, NONE, PLTRST), /* 2.7MM_CAM_DET# */
-/* SD_PWR_EN# */	PAD_CFG_NF(GPP_A17, NONE, DEEP, NF2),
+/* SD_PWR_EN# */	PAD_NC(GPP_A17, NONE),
 			/* ISH_ACC1_INT# */
 /* ISH_GP0 */		PAD_CFG_NF(GPP_A18, NONE, DEEP, NF1),
 			/* ISH_ACC2_INT# */
 /* ISH_GP1 */		PAD_CFG_NF(GPP_A19, NONE, DEEP, NF1),
 /* ISH_GP2 */		PAD_CFG_NF(GPP_A20, NONE, DEEP, NF1),
-/* ISH_GP3 */		PAD_CFG_NF(GPP_A21, NONE, DEEP, NF1),
+/* ISH_GP3 */		PAD_NC(GPP_A21, NONE),
 			/* ISH_NB_MODE */
 /* ISH_GP4 */		PAD_CFG_NF(GPP_A22, NONE, DEEP, NF1),
 			/* ISH_LID_CL#_NB */
@@ -63,11 +64,10 @@ static const struct pad_config gpio_table[] = {
 /* SRCCLKREQ1# */	PAD_CFG_NF(GPP_B6, NONE, DEEP, NF1),
 			/* WLAN_CLKREQ_CPU_N */
 /* SRCCLKREQ2# */	PAD_CFG_NF(GPP_B7, NONE, DEEP, NF1),
-			/* WWAN_CLKREQ_CPU_N */
-/* SRCCLKREQ3# */	PAD_CFG_NF(GPP_B8, NONE, DEEP, NF1),
+/* SRCCLKREQ3# */	PAD_NC(GPP_B8, NONE),
 			/* SSD_CKLREQ_CPU_N */
 /* SRCCLKREQ4# */	PAD_CFG_NF(GPP_B9, NONE, DEEP, NF1),
-/* SRCCLKREQ5# */	PAD_CFG_NF(GPP_B10, NONE, DEEP, NF1),
+/* SRCCLKREQ5# */	PAD_NC(GPP_B10, NONE),
 /* EXT_PWR_GATE# */	PAD_CFG_GPO(GPP_B11, 0, PLTRST), /* 3.3V_CAM_EN# */
 /* SLP_S0# */		PAD_CFG_NF(GPP_B12, NONE, DEEP, NF1),
 /* PLTRST# */		PAD_CFG_NF(GPP_B13, NONE, DEEP, NF1),
@@ -78,7 +78,7 @@ static const struct pad_config gpio_table[] = {
 /* GSPI0_MOSI */	PAD_NC(GPP_B18, NONE),
 /* GSPI1_CS# */		PAD_NC(GPP_B19, NONE), /* HDD_FALL_INT (nostuff) */
 /* GSPI1_CLK */		PAD_NC(GPP_B20, NONE),
-/* GSPI1_MISO */	PAD_CFG_GPO(GPP_B21, 1, PLTRST), /* PCH_3.3V_TS_EN */
+/* GSPI1_MISO */	PAD_CFG_GPO(GPP_B21, 0, PLTRST), /* PCH_3.3V_TS_EN */
 /* GSPI1_MOSI */	PAD_NC(GPP_B22, NONE),
 /* SML1ALERT# */	PAD_NC(GPP_B23, DN_20K),
 
@@ -154,7 +154,7 @@ static const struct pad_config gpio_table[] = {
 /* DDPB_HPD0 */		PAD_CFG_NF(GPP_E13, NONE, DEEP, NF1), /* DP_HPD_CPU */
 /* DDPC_HPD1 */		PAD_CFG_NF(GPP_E14, NONE, DEEP, NF1), /* DP2_HPD_CPU */
 /* DDPD_HPD2 */		PAD_CFG_GPI(GPP_E15, NONE, DEEP), /* H1_FLASH_WP */
-/* DDPE_HPD3 */		PAD_CFG_GPO(GPP_E16, 1, PLTRST), /* HDMI_PD# */
+/* DDPE_HPD3 */		PAD_CFG_GPO(GPP_E16, 1, DEEP), /* HDMI_PD# */
 /* EDP_HPD */		PAD_CFG_NF(GPP_E17, NONE, DEEP, NF1),
 /* DDPB_CTRLCLK */	PAD_CFG_NF(GPP_E18, NONE, DEEP, NF1),
 /* DDPB_CTRLDATA */	PAD_CFG_NF(GPP_E19, NONE, DEEP, NF1),
@@ -275,17 +275,11 @@ const struct cros_gpio *variant_cros_gpios(size_t *num)
 	return cros_gpios;
 }
 
-static int is_ish_device_enabled(void)
-{
-	gpio_input(SENSOR_DET_360);
-	return gpio_get(SENSOR_DET_360) == 0;
-}
-
 void variant_mainboard_post_init_params(FSPM_UPD *mupd)
 {
 	FSP_M_CONFIG *fsp_m_cfg = &mupd->FspmConfig;
 	if (fsp_m_cfg->PchIshEnable)
-		fsp_m_cfg->PchIshEnable = is_ish_device_enabled();
+		fsp_m_cfg->PchIshEnable = has_360_sensor_board();
 
 	/*
 	 * Disable memory channel by HW strap pin, HW default is enable

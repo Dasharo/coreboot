@@ -37,3 +37,4 @@
 [submodule "3rdparty/ffs"]
 	path = 3rdparty/ffs
 	url = https://github.com/coreboot/ffs.git
+	url = ../ffs.git

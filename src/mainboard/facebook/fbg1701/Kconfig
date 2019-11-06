@@ -30,6 +30,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select DISABLE_HPET
 	select INTEL_GMA_HAVE_VBT
 	select GENERIC_SPD_BIN
+	select USE_VENDORCODE_ELTAN
 
 config ONBOARD_SAMSUNG_MEM
 	bool "Onboard memory manufacturer Samsung"
@@ -68,11 +69,16 @@ config FSP_LOC
 	default 0xfff9c000
 
 config FSP1_1_DISPLAY_LOGO
-	bool
+	bool "Enable logo"
 	default n
 
+config FSP1_1_LOGO_FILE_NAME
+	string "Logo file"
+	depends on FSP1_1_DISPLAY_LOGO
+	default "3rdparty/blobs/mainboard/$(MAINBOARDDIR)/logo.bmp"
+
 config VENDORCODE_ELTAN_OEM_MANIFEST_LOC
-	hex "OEM Manifest working dflt"
+	hex
 	default 0xFFFE9000
 
 config SPI_FLASH_INCLUDE_ALL_DRIVERS
@@ -100,7 +106,11 @@ config VENDORCODE_ELTAN_VBOOT_MANIFEST
 	default "mainboard/facebook/fbg1701/manifest.h"
 
 config VENDORCODE_ELTAN_VBOOT_KEY_LOCATION
-	hex "Key Location working dflt"
+	hex
 	default 0xFFFF9C00
+
+config DRIVERS_INTEL_WIFI
+	bool
+	default n
 
 endif # BOARD_FACEBOOK_FBG1701
