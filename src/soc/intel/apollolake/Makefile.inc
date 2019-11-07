@@ -1,5 +1,6 @@
 ifeq ($(CONFIG_SOC_INTEL_APOLLOLAKE),y)
 
+subdirs-y += ../../../cpu/intel/common
 subdirs-y += ../../../cpu/intel/microcode
 subdirs-y += ../../../cpu/intel/turbo
 subdirs-y += ../../../cpu/x86/lapic
@@ -22,7 +23,7 @@ bootblock-y += uart.c
 
 romstage-y += car.c
 romstage-y += ../../../cpu/intel/car/romstage.c
-romstage-$(CONFIG_PLATFORM_USES_FSP2_0) += romstage.c
+romstage-y += romstage.c
 romstage-y += gspi.c
 romstage-y += heci.c
 romstage-y += i2c.c
@@ -107,7 +108,7 @@ endif
 CPPFLAGS_common += -I$(src)/soc/intel/apollolake/include
 
 # Since FSP-M runs in CAR we need to relocate it to a specific address
-$(CONFIG_FSP_M_CBFS)-options := -b $(CONFIG_FSP_M_ADDR)
+$(FSP_M_CBFS)-options := -b $(CONFIG_FSP_M_ADDR)
 
 # Handle GLK paging requirements
 ifeq ($(CONFIG_PAGING_IN_CACHE_AS_RAM),y)

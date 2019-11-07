@@ -1,13 +1,15 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015-2018 Intel Corp.
- * (Written by Alexandru Gagniuc <alexandrux.gagniuc@intel.com> for Intel Corp.)
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  */
 
 #include <device/mmio.h>
@@ -187,9 +189,10 @@ int fsp_find_range_hob(struct range_entry *re, const uint8_t guid[16])
 	return 0;
 }
 
-int fsp_find_reserved_memory(struct range_entry *re)
+void fsp_find_reserved_memory(struct range_entry *re)
 {
-	return fsp_find_range_hob(re, fsp_reserved_memory_guid);
+	if (fsp_find_range_hob(re, fsp_reserved_memory_guid))
+		die("9.1: FSP_RESERVED_MEMORY_RESOURCE_HOB missing!\n");
 }
 
 const void *fsp_find_extension_hob_by_guid(const uint8_t *guid, size_t *size)
@@ -296,4 +299,10 @@ void fsp_display_fvi_version_hob(void)
 const void *fsp_find_nv_storage_data(size_t *size)
 {
 	return fsp_find_extension_hob_by_guid(fsp_nv_storage_guid, size);
+}
+
+void fsp_find_bootloader_tolum(struct range_entry *re)
+{
+	if (fsp_find_range_hob(re, fsp_bootloader_tolum_guid))
+		die("9.3: FSP_BOOTLOADER_TOLUM_HOB missing!\n");
 }

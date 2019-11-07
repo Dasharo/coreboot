@@ -414,10 +414,29 @@ static void enable_pm_timer_emulation(void)
 	 * frequency is used.
 	 */
 	msr.hi = (3579545ULL << 32) / CTC_FREQ;
-	/* Set PM1 timer IO port and enable*/
+	/* Set PM1 timer IO port and enable */
 	msr.lo = (EMULATE_DELAY_VALUE << EMULATE_DELAY_OFFSET_VALUE) |
 			EMULATE_PM_TMR_EN | (ACPI_BASE_ADDRESS + PM1_TMR);
 	wrmsr(MSR_EMULATE_PM_TIMER, msr);
+}
+
+/*
+ * Lock AES-NI (MSR_FEATURE_CONFIG) to prevent unintended disabling
+ * as suggested in Intel document 325384-070US.
+ */
+static void cpu_lock_aesni(void)
+{
+	msr_t msr;
+
+	/* Only run once per core as specified in the MSR datasheet */
+	if (intel_ht_sibling())
+		return;
+
+	msr = rdmsr(MSR_FEATURE_CONFIG);
+	if ((msr.lo & 1) == 0) {
+		msr.lo |= 1;
+		wrmsr(MSR_FEATURE_CONFIG, msr);
+	}
 }
 
 /* All CPUs including BSP will run the following function. */
@@ -442,6 +461,9 @@ void soc_core_init(struct device *cpu)
 	/* Configure Intel Speed Shift */
 	configure_isst();
 
+	/* Lock AES-NI MSR */
+	cpu_lock_aesni();
+
 	/* Enable ACPI Timer Emulation via MSR 0x121 */
 	enable_pm_timer_emulation();
 
@@ -455,7 +477,8 @@ void soc_core_init(struct device *cpu)
 	enable_turbo();
 
 	/* Configure Core PRMRR for SGX. */
-	prmrr_core_configure();
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
+		prmrr_core_configure();
 }
 
 static void per_cpu_smm_trigger(void)
@@ -493,7 +516,8 @@ static void post_mp_init(void)
 
 	ret |= mp_run_on_all_cpus(vmx_configure, NULL);
 
-	ret |= mp_run_on_all_cpus(sgx_configure, NULL);
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
+		ret |= mp_run_on_all_cpus(sgx_configure, NULL);
 
 	ret |= mp_run_on_all_cpus(fc_lock_configure, NULL);
 
@@ -547,23 +571,4 @@ int soc_skip_ucode_update(u32 current_patch_id, u32 new_patch_id)
 	else
 		return (msr1.lo & PRMRR_SUPPORTED) &&
 			(current_patch_id == new_patch_id - 1);
-}
-
-void cpu_lock_sgx_memory(void)
-{
-	msr_t msr;
-
-	msr = rdmsr(MSR_LT_LOCK_MEMORY);
-	if ((msr.lo & 1) == 0) {
-		msr.lo |= 1; /* Lock it */
-		wrmsr(MSR_LT_LOCK_MEMORY, msr);
-	}
-}
-
-int soc_fill_sgx_param(struct sgx_param *sgx_param)
-{
-	config_t *conf = config_of_soc();
-
-	sgx_param->enable = conf->sgx_enable;
-	return 0;
 }

@@ -76,18 +76,12 @@ void enable_pam_region(void);
 void enable_power_aware_intr(void);
 /* API to get TOLUD base address */
 uintptr_t sa_get_tolud_base(void);
-/* API to get DSM size */
-size_t sa_get_dsm_size(void);
 /* API to get GSM base address */
 uintptr_t sa_get_gsm_base(void);
-/* API to get GSM size */
-size_t sa_get_gsm_size(void);
 /* API to get TSEG base address */
 uintptr_t sa_get_tseg_base(void);
 /* API to get TSEG size */
 size_t sa_get_tseg_size(void);
-/* API to get DPR size */
-size_t sa_get_dpr_size(void);
 /*
  * SoC overrides
  *
@@ -106,8 +100,4 @@ void soc_add_fixed_mmio_resources(struct device *dev, int *resource_cnt);
 /* SoC specific APIs to get UNCORE PRMRR base and mask values
  * returns 0, if able to get base and mask values; otherwise returns -1 */
 int soc_get_uncore_prmmr_base_and_mask(uint64_t *base, uint64_t *mask);
-
-/* SoC call to summarize all Intel Reserve MMIO size and report to SA */
-size_t soc_reserved_mmio_size(void);
-
 #endif	/* SOC_INTEL_COMMON_BLOCK_SA_H */

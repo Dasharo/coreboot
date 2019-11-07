@@ -27,7 +27,6 @@
 #include <drivers/intel/gma/intel_bios.h>
 #include <drivers/intel/gma/libgfxinit.h>
 #include <pc80/vga.h>
-#include <pc80/vga_io.h>
 #include <southbridge/intel/ibexpeak/nvs.h>
 #include <drivers/intel/gma/opregion.h>
 #include <cbmem.h>
@@ -65,7 +64,7 @@ void gtt_write(u32 reg, u32 data)
 #define GTT_RETRY 1000
 int gtt_poll(u32 reg, u32 mask, u32 value)
 {
-	unsigned try = GTT_RETRY;
+	unsigned int try = GTT_RETRY;
 	u32 data;
 
 	while (try--) {

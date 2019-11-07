@@ -68,7 +68,7 @@ static struct device_operations hda_ops = {
 	.init			= hda_init,
 #endif
 	.ops_pci		= &pci_dev_ops_pci,
-	.scan_bus		= scan_static_bus,
+	.scan_bus		= enable_static_devices,
 };
 
 static const unsigned short pci_device_ids[] = {
@@ -82,6 +82,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_ICL_AUDIO,
 	PCI_DEVICE_ID_INTEL_CMP_AUDIO,
 	PCI_DEVICE_ID_INTEL_BSW_AUDIO,
+	PCI_DEVICE_ID_INTEL_TGL_AUDIO,
 	0
 };
 

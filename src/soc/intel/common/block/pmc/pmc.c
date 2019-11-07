@@ -119,7 +119,7 @@ static struct device_operations device_ops = {
 	.enable_resources	= pci_dev_enable_resources,
 	.init			= pmc_soc_init,
 	.ops_pci		= &pci_dev_ops_pci,
-	.scan_bus		= scan_lpc_bus,
+	.scan_bus		= scan_static_bus,
 };
 
 static const unsigned short pci_device_ids[] = {
@@ -133,6 +133,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CNP_H_PMC,
 	PCI_DEVICE_ID_INTEL_ICP_PMC,
 	PCI_DEVICE_ID_INTEL_CMP_PMC,
+	PCI_DEVICE_ID_INTEL_TGP_PMC,
 	0
 };
 
