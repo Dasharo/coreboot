@@ -14,9 +14,7 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 ## [Unreleased]
 ## [v4.10.0.3] - 2019-11-08
 ### Changed
-- rebased with official coreboot repository commit
-
-### Added
+- rebased with official coreboot repository commit 2d90cb1
 
 ## [v4.10.0.2] - 2019-10-08
 ### Changed
