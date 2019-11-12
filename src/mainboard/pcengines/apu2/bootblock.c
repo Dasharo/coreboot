@@ -28,7 +28,10 @@ void bootblock_mainboard_early_init(void)
 	hudson_lpc_port80();
 	hudson_clk_output_48Mhz();
 
-	if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)) &&
-	    !CONFIG(BOARD_PCENGINES_APU5))
+	/* Enable UARTB for LPC MCU */
+	if (CONFIG(BOARD_PCENGINES_APU5))
+		nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
+
+	if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)))
 		nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 }
