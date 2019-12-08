@@ -14,9 +14,8 @@
 #include <arch/acpi.h>
 #include <arch/cpu.h>
 #include <arch/romstage.h>
+#include <bootblock_common.h>
 #include <cbmem.h>
-#include <cpu/amd/car.h>
-#include <cpu/x86/bist.h>
 #include <console/console.h>
 #include <halt.h>
 #include <program_loading.h>
@@ -26,18 +25,6 @@
 #include <timestamp.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
 #include <northbridge/amd/agesa/state_machine.h>
-
-#if !CONFIG(POSTCAR_STAGE)
-#error "Only POSTCAR_STAGE is supported."
-#endif
-#if HAS_LEGACY_WRAPPER
-#error "LEGACY_WRAPPER code not supported"
-#endif
-
-void asmlinkage early_all_cores(void)
-{
-	amd_initmmio();
-}
 
 void __weak platform_once(struct sysinfo *cb)
 {
@@ -52,7 +39,7 @@ static void fill_sysinfo(struct sysinfo *cb)
 	agesa_set_interface(cb);
 }
 
-void *asmlinkage romstage_main(unsigned long bist)
+static void romstage_main(void)
 {
 	struct postcar_frame pcf;
 	struct sysinfo romstage_state;
@@ -60,22 +47,23 @@ void *asmlinkage romstage_main(unsigned long bist)
 	u8 initial_apic_id = (u8) (cpuid_ebx(1) >> 24);
 	int cbmem_initted = 0;
 
+	/* Enable PCI MMIO configuration. */
+	amd_initmmio();
+
 	fill_sysinfo(cb);
 
-	if ((initial_apic_id == 0) && boot_cpu()) {
+	if (initial_apic_id == 0) {
 
 		timestamp_init(timestamp_get());
 		timestamp_add_now(TS_START_ROMSTAGE);
 
 		platform_once(cb);
 
+		console_init();
 	}
 
 	printk(BIOS_DEBUG, "APIC %02d: CPU Family_Model = %08x\n",
 		initial_apic_id, cpuid_eax(1));
-
-	/* Halt if there was a built in self test failure */
-	report_bist_failure(bist);
 
 	agesa_execute_state(cb, AMD_INIT_RESET);
 
@@ -109,5 +97,35 @@ void *asmlinkage romstage_main(unsigned long bist)
 
 	run_postcar_phase(&pcf);
 	/* We do not return. */
-	return NULL;
+}
+
+static void ap_romstage_main(void)
+{
+	struct sysinfo romstage_state;
+	struct sysinfo *cb = &romstage_state;
+
+	/* Enable PCI MMIO configuration. */
+	amd_initmmio();
+
+	fill_sysinfo(cb);
+
+	agesa_execute_state(cb, AMD_INIT_RESET);
+
+	agesa_execute_state(cb, AMD_INIT_EARLY);
+
+	/* Not reached. */
+	halt();
+}
+
+/* This wrapper enables easy transition away from ROMCC_BOOTBLOCK
+ * keeping changes in cache_as_ram.S easy to manage.
+ */
+asmlinkage void bootblock_c_entry(uint64_t base_timestamp)
+{
+	romstage_main();
+}
+
+asmlinkage void ap_bootblock_c_entry(void)
+{
+	ap_romstage_main();
 }

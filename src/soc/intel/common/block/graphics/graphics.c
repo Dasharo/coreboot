@@ -118,6 +118,7 @@ static const struct device_operations graphics_ops = {
 	.init			= graphics_soc_init,
 	.ops_pci		= &pci_dev_ops_pci,
 	.write_acpi_tables	= graphics_soc_write_acpi_opregion,
+	.scan_bus		= scan_generic_bus,
 };
 
 static const unsigned short pci_device_ids[] = {
@@ -207,10 +208,10 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CML_GT1_H_2,
 	PCI_DEVICE_ID_INTEL_CML_GT2_H_1,
 	PCI_DEVICE_ID_INTEL_CML_GT2_H_2,
-	PCI_DEVICE_ID_INTEL_TGL_GT1,
-	PCI_DEVICE_ID_INTEL_TGL_GT2_UY,
-	PCI_DEVICE_ID_INTEL_TGL_GT2,
-	PCI_DEVICE_ID_INTEL_TGL_GT2_Y,
+	PCI_DEVICE_ID_INTEL_TGL_GT0,
+	PCI_DEVICE_ID_INTEL_TGL_GT2_ULT,
+	PCI_DEVICE_ID_INTEL_TGL_GT2_ULX,
+	PCI_DEVICE_ID_INTEL_TGL_GT3_ULT,
 	0,
 };
 

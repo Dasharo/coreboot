@@ -16,11 +16,13 @@
 #ifndef _BIOS_KNOBS_H
 #define _BIOS_KNOBS_H
 
-bool check_console(void);
-bool check_uartc(void);
-bool check_uartd(void);
-bool check_ehci0(void);
-bool check_mpcie2_clk(void);
+#include <stdint.h>
+
+u8 check_console(void);
+u8 check_uartc(void);
+u8 check_uartd(void);
+u8 check_ehci0(void);
+u8 check_mpcie2_clk(void);
 int check_com2(void);
 
 #endif

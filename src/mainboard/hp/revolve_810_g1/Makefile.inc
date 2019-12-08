@@ -13,9 +13,12 @@
 ## GNU General Public License for more details.
 ##
 
+bootblock-y += gpio.c
 romstage-y += gpio.c
 
 ramstage-$(CONFIG_MAINBOARD_USE_LIBGFXINIT) += gma-mainboard.ads
 
 # FIXME: Other varients with same size onboard ram may exist.
 SPD_SOURCES = hynix_4g
+bootblock-y += early_init.c
+romstage-y += early_init.c

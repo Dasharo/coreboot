@@ -32,7 +32,6 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON
 	select SOC_INTEL_COMMON_RESET
 	select PLATFORM_USES_FSP2_0
-	select C_ENVIRONMENT_BOOTBLOCK
 	select IOAPIC
 	select HAVE_SMI_HANDLER
 	select CACHE_MRC_SETTINGS
@@ -108,14 +107,6 @@ config DCACHE_RAM_SIZE
 config DCACHE_BSP_STACK_SIZE
 	hex
 	default 0x10000
-
-config CPU_MICROCODE_CBFS_LOC
-	hex
-	default 0xfff20040
-
-config CPU_MICROCODE_CBFS_LEN
-	hex
-	default 0x0ff80
 
 config CPU_BCLK_MHZ
 	int

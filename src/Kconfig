@@ -154,9 +154,7 @@ config COMPRESS_RAMSTAGE
 	depends on HAVE_RAMSTAGE
 	# Default value set at the end of the file
 	help
-	  Compress ramstage to save memory in the flash image. Note
-	  that decompression might slow down booting if the boot flash
-	  is connected through a slow link (i.e. SPI).
+	  Compress ramstage to save memory in the flash image.
 
 config COMPRESS_PRERAM_STAGES
 	bool "Compress romstage and verstage with LZ4"
@@ -463,6 +461,7 @@ endmenu
 menu "Security"
 
 source "src/security/Kconfig"
+source "src/vendorcode/eltan/security/Kconfig"
 
 endmenu
 
@@ -527,22 +526,6 @@ config RESUME_PATH_SAME_AS_BOOT
 	  This option indicates that when a system resumes it takes the
 	  same path as a regular boot. e.g. an x86 system runs from the
 	  reset vector at 0xfffffff0 on both resume and warm/cold boot.
-
-config HAVE_ROMSTAGE_CONSOLE_SPINLOCK
-	bool
-	default n
-
-config HAVE_ROMSTAGE_NVRAM_CBFS_SPINLOCK
-	bool
-	default n
-	help
-	  This should be enabled on certain plaforms, such as the AMD
-	  SR565x, that cannot handle concurrent CBFS accesses from
-	  multiple APs during early startup.
-
-config HAVE_ROMSTAGE_MICROCODE_CBFS_SPINLOCK
-	bool
-	default n
 
 config NO_MONOTONIC_TIMER
 	def_bool n
@@ -1194,9 +1177,7 @@ config BOOTBLOCK_CUSTOM
 	# src/lib/bootblock.c#main() C entry point.
 	bool
 
-config C_ENVIRONMENT_BOOTBLOCK
-	# To be selected by arch or platform if a C environment is available during the
-	# bootblock. Normally this signifies availability of RW memory (e.g. SRAM).
+config ROMCC_BOOTBLOCK
 	bool
 
 ###############################################################################

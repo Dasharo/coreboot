@@ -16,7 +16,6 @@ config ARCH_X86
 	default n
 	select PCI
 	select RELOCATABLE_MODULES
-	select RAMSTAGE_CBMEM_TOP_ARG
 
 # stage selectors for x86
 
@@ -24,7 +23,7 @@ config ARCH_BOOTBLOCK_X86_32
 	bool
 	default n
 	select ARCH_X86
-	select BOOTBLOCK_CUSTOM if !C_ENVIRONMENT_BOOTBLOCK
+	select BOOTBLOCK_CUSTOM if ROMCC_BOOTBLOCK
 
 config ARCH_VERSTAGE_X86_32
 	bool
@@ -48,7 +47,7 @@ config ARCH_BOOTBLOCK_X86_64
 	bool
 	default n
 	select ARCH_X86
-	select BOOTBLOCK_CUSTOM if !C_ENVIRONMENT_BOOTBLOCK
+	select BOOTBLOCK_CUSTOM if ROMCC_BOOTBLOCK
 
 config ARCH_VERSTAGE_X86_64
 	bool
@@ -87,6 +86,16 @@ config AP_IN_SIPI_WAIT
 	bool
 	default n
 	depends on ARCH_X86 && SMP
+
+config X86_RESET_VECTOR
+	hex
+	depends on ARCH_X86
+	default 0xfffffff0
+	help
+	  Specify the location of the x86 reset vector.  In traditional devices
+	  this must match the architectural reset vector to produce a bootable
+	  image.  Nontraditional designs may use this to position the reset
+	  vector into its desired location.
 
 config RESET_VECTOR_IN_RAM
 	bool
@@ -149,15 +158,6 @@ config PRERAM_CBMEM_CONSOLE_SIZE
 	help
 	  Increase this value if preram cbmem console is getting truncated
 
-config EARLY_EBDA_INIT
-	bool
-	default n
-	help
-	  Initialize BIOS EBDA area early in romstage to allow bootloader to
-	  use this region for storing data which can be available across
-	  various stages. If user is selecting this option then its users
-	  responsibility to perform EBDA initialization call during romstage.
-
 config PC80_SYSTEM
 	bool
 	default y if ARCH_X86
@@ -209,7 +209,7 @@ config ID_SECTION_OFFSET
 	hex
 	default 0x80
 
-# 64KiB default bootblock size when employing C_ENVIRONMENT_BOOTBLOCK.
+# 64KiB default bootblock size
 config C_ENV_BOOTBLOCK_SIZE
 	hex
 	default 0x10000
@@ -229,7 +229,6 @@ config VERSTAGE_ADDR
 config POSTCAR_STAGE
 	def_bool y
 	depends on ARCH_X86
-	depends on !CAR_GLOBAL_MIGRATION
 
 config VERSTAGE_DEBUG_SPINLOOP
 	bool
@@ -249,7 +248,7 @@ config ROMSTAGE_DEBUG_SPINLOOP
 choice
 	prompt "Bootblock behaviour"
 	default BOOTBLOCK_SIMPLE
-	depends on !C_ENVIRONMENT_BOOTBLOCK
+	depends on ROMCC_BOOTBLOCK
 
 config BOOTBLOCK_SIMPLE
 	bool "Always load fallback"

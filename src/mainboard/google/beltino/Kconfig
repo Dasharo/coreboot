@@ -10,6 +10,7 @@ config BOARD_GOOGLE_BASEBOARD_BELTINO
 	select HAVE_OPTION_TABLE
 	select HAVE_ACPI_RESUME
 	select MAINBOARD_HAS_CHROMEOS
+	select MAINBOARD_HAS_LIBGFXINIT
 	select MAINBOARD_HAS_LPC_TPM
 	select MAINBOARD_HAS_TPM1
 
@@ -20,7 +21,7 @@ config VBOOT
 
 config MAINBOARD_DIR
 	string
-	default google/beltino
+	default "google/beltino"
 
 config VARIANT_DIR
 	string

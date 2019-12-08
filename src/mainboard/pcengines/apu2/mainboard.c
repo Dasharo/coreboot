@@ -15,6 +15,7 @@
 
 #include <cbfs.h>
 #include <fmap.h>
+#include <amdblocks/acpimmio.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <commonlib/region.h>
@@ -370,7 +371,7 @@ static void mainboard_enable(struct device *dev)
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
 
-	struct device *sd_dev = dev_find_slot(0, PCI_DEVFN(0x14, 7));
+	struct device *sd_dev = pcidev_on_root(0x14, 7);
 
 	struct southbridge_amd_pi_hudson_config *sd_chip =
 		(struct southbridge_amd_pi_hudson_config *)(sd_dev->chip_info);
@@ -421,7 +422,7 @@ static void mainboard_final(void *chip_info)
 	val &= ~(1 << 27);
 	pci_write_config32(D18F3, 0x88, val);
 
-	struct device *dev = dev_find_slot(0, PCI_DEVFN(0, 0));
+	struct device *dev = pcidev_on_root(0, 0);
 	val = pci_read_config32(dev, 0xE0);
 
 	pci_write_config32(dev, 0xE0, 0x014000B0);

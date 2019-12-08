@@ -16,10 +16,11 @@ config BOARD_SPECIFIC_OPTIONS
 	select BOARD_ROMSIZE_KB_1024
 	select INTEL_INT15
 	select OVERRIDE_CLOCK_DISABLE
+	select BOOT_DEVICE_NOT_SPI_FLASH
 
 config MAINBOARD_DIR
 	string
-	default kontron/986lcd-m
+	default "kontron/986lcd-m"
 
 config MAINBOARD_PART_NUMBER
 	string

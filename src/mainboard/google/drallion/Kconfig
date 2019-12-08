@@ -2,6 +2,7 @@
 config BOARD_GOOGLE_BASEBOARD_DRALLION
 	def_bool n
 	select BOARD_ROMSIZE_KB_32768
+	select DRIVERS_GENERIC_GFX
 	select DRIVERS_I2C_GENERIC
 	select DRIVERS_I2C_HID
 	select DRIVERS_INTEL_ISH
@@ -73,10 +74,6 @@ config MAINBOARD_PART_NUMBER
 	default "Arcada_cml" if BOARD_GOOGLE_ARCADA_CML
 	default "Sarien_cml" if BOARD_GOOGLE_SARIEN_CML
 	default "Drallion" if BOARD_GOOGLE_DRALLION
-
-config MAINBOARD_VENDOR
-	string
-	default "Google"
 
 config MAX_CPUS
 	int

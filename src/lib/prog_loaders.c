@@ -43,8 +43,6 @@ int prog_locate(struct prog *prog)
 	if (prog_locate_hook(prog))
 		return -1;
 
-	cbfs_prepare_program_locate();
-
 	if (cbfs_boot_locate(&file, prog_name(prog), NULL))
 		return -1;
 
@@ -71,6 +69,8 @@ void run_romstage(void)
 		goto fail;
 
 	timestamp_add_now(TS_END_COPYROM);
+
+	console_time_report();
 
 	prog_run(&romstage);
 
@@ -154,6 +154,8 @@ void run_ramstage(void)
 	stage_cache_add(STAGE_RAMSTAGE, &ramstage);
 
 	timestamp_add_now(TS_END_COPYRAM);
+
+	console_time_report();
 
 	/* This overrides the arg fetched from the relocatable module */
 	prog_set_arg(&ramstage, cbmem_top());

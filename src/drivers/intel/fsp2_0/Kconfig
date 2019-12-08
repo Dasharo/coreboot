@@ -37,21 +37,6 @@ config ADD_FSP_BINARIES
 	  Add the FSP-M and FSP-S binaries to CBFS. Currently coreboot does not
 	  use the FSP-T binary and it is not added.
 
-config CPU_MICROCODE_CBFS_LEN
-	hex "Microcode update region length in bytes"
-	depends on FSP_CAR
-	default 0x0
-	help
-	  The length in bytes of the microcode update region.
-
-config CPU_MICROCODE_CBFS_LOC
-	hex "Microcode update base address in CBFS"
-	depends on FSP_CAR
-	default 0x0
-	help
-	  The location (base address) in CBFS that contains the
-	  microcode update binary.
-
 config FSP_T_CBFS
 	string "Name of FSP-T in CBFS"
 	depends on FSP_CAR
@@ -170,6 +155,20 @@ config FSP_PEIM_TO_PEIM_INTERFACE
 	  along with all APIs as per EFI specification. So far this feature
 	  is limited till EFI_PEI_MP_SERVICE_PPI and this option might be
 	  useful to add further PPI if required.
+
+config FSP2_0_DISPLAY_LOGO
+	bool "Enable logo"
+	default n
+	depends on HAVE_FSP_GOP
+	help
+	  Uses the FSP to display the boot logo. This method supports a
+	  BMP file only. The uncompressed size can be up to 1 MB. The logo can be compressed
+	  using LZMA.
+
+config FSP2_0_LOGO_FILE_NAME
+	string "Logo file"
+	depends on FSP2_0_DISPLAY_LOGO
+	default "3rdparty/blobs/mainboard/$(MAINBOARDDIR)/logo.bmp"
 
 if FSP_PEIM_TO_PEIM_INTERFACE
 source "src/drivers/intel/fsp2_0/ppi/Kconfig"

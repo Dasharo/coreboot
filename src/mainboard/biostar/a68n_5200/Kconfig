@@ -19,6 +19,7 @@ if BOARD_BIOSTAR_A68N5200
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
+	select ROMCC_BOOTBLOCK
 	select CPU_AMD_AGESA_FAMILY16_KB
 	select NORTHBRIDGE_AMD_AGESA_FAMILY16_KB
 	select SOUTHBRIDGE_AMD_AGESA_YANGTZE
@@ -32,7 +33,7 @@ config BOARD_SPECIFIC_OPTIONS
 
 config MAINBOARD_DIR
 	string
-	default biostar/a68n_5200
+	default "biostar/a68n_5200"
 
 config MAINBOARD_PART_NUMBER
 	string

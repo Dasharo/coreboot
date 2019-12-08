@@ -41,7 +41,6 @@
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/ramstage.h>
-#include <soc/smm.h>
 #include <soc/systemagent.h>
 #include <timer.h>
 
@@ -231,7 +230,6 @@ void set_power_limits(u8 power_limit_1_time)
 
 	/* Use nominal TDP values for CPUs with configurable TDP */
 	if (cpu_config_tdp_levels()) {
-		msr = rdmsr(MSR_CONFIG_TDP_NOMINAL);
 		limit.hi = 0;
 		limit.lo = cpu_get_tdp_nominal_ratio();
 		wrmsr(MSR_TURBO_ACTIVATION_RATIO, limit);

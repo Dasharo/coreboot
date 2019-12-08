@@ -20,7 +20,6 @@
 #include <device/device.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
-#include <southbridge/amd/sb800/sb800.h>
 #include <southbridge/amd/cimx/sb800/SBPLATFORM.h>
 
 /**********************************************

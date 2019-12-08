@@ -28,10 +28,14 @@
 #
 #*****************************************************************************
 
+ifneq ($(CONFIG_ROMCC_BOOTBLOCK),y)
+bootblock-y += bootblock.c
+bootblock-y += early_setup.c
 bootblock-$(CONFIG_USBDEBUG) += enable_usbdebug.c
+endif
 
 romstage-y += early_setup.c
-romstage-$(CONFIG_USBDEBUG) += enable_usbdebug.c
+romstage-y += enable_usbdebug.c
 romstage-$(CONFIG_HUDSON_IMC_FWM) += imc.c
 romstage-y += smbus.c
 romstage-y += smbus_spd.c
@@ -41,7 +45,7 @@ verstage-y += early_setup.c
 verstage-y += reset.c
 verstage-$(CONFIG_HUDSON_UART) += uart.c
 
-ramstage-$(CONFIG_USBDEBUG) += enable_usbdebug.c
+ramstage-y += enable_usbdebug.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += fadt.c
 ramstage-$(CONFIG_SOUTHBRIDGE_AMD_PI_KERN) += gpio.c
 ramstage-y += hda.c

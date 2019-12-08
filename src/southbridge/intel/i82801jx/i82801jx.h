@@ -234,6 +234,9 @@ int smbus_block_read(unsigned int device, unsigned int cmd, u8 bytes, u8 *buf);
 int smbus_block_write(unsigned int device, unsigned int cmd, u8 bytes,
 		const u8 *buf);
 #endif
+void i82801jx_lpc_setup(void);
+void i82801jx_setup_bars(void);
+void i82801jx_early_init(void);
 
 #endif
 

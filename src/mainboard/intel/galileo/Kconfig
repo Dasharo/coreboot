@@ -28,15 +28,11 @@ config BOARD_SPECIFIC_OPTIONS
 
 config MAINBOARD_DIR
 	string
-	default intel/galileo
+	default "intel/galileo"
 
 config MAINBOARD_PART_NUMBER
 	string
 	default "Galileo"
-
-config MAINBOARD_VENDOR
-	string
-	default "Intel"
 
 config GALILEO_GEN2
 	bool "Board generation: GEN1 (n) or GEN2 (y)"
