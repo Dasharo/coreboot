@@ -56,9 +56,7 @@ static int find_knob_index(const char *s, const char *pattern)
 
 static size_t get_bootorder_cbfs_offset(const char *name, uint32_t type)
 {
-	struct region_device rdev;
 	const struct region_device *boot_dev;
-	struct cbfs_props props;
 	struct cbfsf fh;
 
 	boot_dev = boot_device_ro();
@@ -68,17 +66,7 @@ static size_t get_bootorder_cbfs_offset(const char *name, uint32_t type)
 		return 0;
 	}
 
-	if (cbfs_boot_region_properties(&props)) {
-		printk(BIOS_WARNING, "Can't locate CBFS\n");
-		return 0;
-	}
-
-	if (rdev_chain(&rdev, boot_dev, props.offset, props.size)) {
-		printk(BIOS_WARNING, "Rdev chain failed\n");
-		return 0;
-	}
-
-	if (cbfs_locate(&fh, &rdev, name, &type)) {
+	if (cbfs_locate(&fh, boot_dev, name, &type)) {
 		printk(BIOS_WARNING, "Can't locate file in CBFS\n");
 		return 0;
 	}

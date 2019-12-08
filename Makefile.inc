@@ -182,9 +182,9 @@ ramstage-postprocess=$$(eval DEPENDENCIES+=$$(addsuffix .d,$$(basename $(1)))) \
 	$(eval $(d)ramstage.a: $(call files-in-dir,$(d),$(filter-out %.ld,$(1))); rm -f $$@ && $(AR_ramstage) rcsT $$@ $$^ ) \
 	$(eval ramstage-objs:=$(d)ramstage.a $(filter-out $(filter-out %.ld, $(call files-in-dir,$(d),$(1))),$(ramstage-objs))))
 
-decompressor-generic-ccopts += -D__PRE_RAM__ -D__DECOMPRESSOR__
-bootblock-generic-ccopts += -D__PRE_RAM__ -D__BOOTBLOCK__
-romstage-generic-ccopts += -D__PRE_RAM__ -D__ROMSTAGE__
+decompressor-generic-ccopts += -D__DECOMPRESSOR__
+bootblock-generic-ccopts += -D__BOOTBLOCK__
+romstage-generic-ccopts += -D__ROMSTAGE__
 ramstage-generic-ccopts += -D__RAMSTAGE__
 ifeq ($(CONFIG_TRACE),y)
 ramstage-c-ccopts += -finstrument-functions
@@ -226,7 +226,7 @@ $(foreach type,ads adb, \
 # Add handler to copy linker scripts
 define generic-objs_ld_template_gen
 de$(EMPTY)fine $(1)-objs_ld_template
-$$(call src-to-obj,$1,$$(1).ld): $$(1).ld $(obj)/config.h
+$$(call src-to-obj,$1,$$(1).ld): $$(1).ld $(obj)/config.h $(obj)/fmap_config.h
 	@printf "    CP         $$$$(subst $$$$(obj)/,,$$$$(@))\n"
 	$$(CC_$(1)) -MMD $$(CPPFLAGS_$(1)) $$($(1)-ld-ccopts) $(PREPROCESS_ONLY) -include $(obj)/config.h -MT $$$$@ -o $$$$@ $$$$<
 en$(EMPTY)def
@@ -258,7 +258,10 @@ endef
 # ResourceTemplate is the correct code.
 # As it's valid ASL, disable the warning.
 EMPTY_RESOURCE_TEMPLATE_WARNING = 3150
-IGNORED_IASL_WARNINGS = -vw $(EMPTY_RESOURCE_TEMPLATE_WARNING)
+# Redundant offset remarks are not useful in any way and are masking useful
+# ones that might indicate an issue so it is better to hide them.
+REDUNDANT_OFFSET_REMARK = 2158
+IGNORED_IASL_WARNINGS = -vw $(EMPTY_RESOURCE_TEMPLATE_WARNING) -vw $(REDUNDANT_OFFSET_REMARK)
 
 define asl_template
 $(CONFIG_CBFS_PREFIX)/$(1).aml-file = $(obj)/$(1).aml
@@ -416,6 +419,7 @@ CFLAGS_common += -fno-delete-null-pointer-checks
 ifeq ($(CCC_ANALYZER_OUTPUT_FORMAT),)
 CFLAGS_common += -Wno-packed-not-aligned
 CFLAGS_common += -fconserve-stack
+CFLAGS_common += -Wnull-dereference -Wreturn-type
 # cf. commit f69a99db (coreboot: x86: enable gc-sections)
 CFLAGS_common += -Wno-unused-but-set-variable
 endif
@@ -484,7 +488,7 @@ endif
 
 additional-dirs := $(objutil)/cbfstool $(objutil)/romcc $(objutil)/ifdtool \
 		   $(objutil)/options $(objutil)/amdfwtool \
-		   $(objutil)/cbootimage $(objutil)/bimgtool
+		   $(objutil)/cbootimage
 
 export $(COREBOOT_EXPORTS)
 
@@ -576,11 +580,6 @@ CBOOTIMAGE:=$(objutil)/cbootimage/cbootimage
 FUTILITY?=$(objutil)/futility/futility
 
 subdirs-y += util/nvidia
-
-BIMGTOOL:=$(objutil)/bimgtool/bimgtool
-$(BIMGTOOL): $(top)/util/bimgtool/bimgtool.c
-	@printf "    HOSTCC     $(subst $(obj)/,,$(@))\n"
-	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
 
 $(obj)/config.h: $(objutil)/kconfig/conf
 

@@ -13,11 +13,15 @@
 # GNU General Public License for more details.
 #
 
+config BOARD_ODE_E21XX
+	def_bool n
+
 if BOARD_ODE_E21XX
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
-	select BINARYPI_LEGACY_WRAPPER
+	#select BINARYPI_LEGACY_WRAPPER
+	select ROMCC_BOOTBLOCK
 	select CPU_AMD_PI_00730F01
 	select NORTHBRIDGE_AMD_PI_00730F01
 	select SOUTHBRIDGE_AMD_PI_AVALON
@@ -31,7 +35,7 @@ config BOARD_SPECIFIC_OPTIONS
 
 config MAINBOARD_DIR
 	string
-	default bap/ode_e21XX
+	default "bap/ode_e21XX"
 
 config MAINBOARD_PART_NUMBER
 	string

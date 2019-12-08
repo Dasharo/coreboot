@@ -14,11 +14,15 @@
 # GNU General Public License for more details.
 #
 
+config BOARD_AMD_DB_FT3B_LC
+	def_bool n
+
 if BOARD_AMD_DB_FT3B_LC
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
-	select BINARYPI_LEGACY_WRAPPER
+	#select BINARYPI_LEGACY_WRAPPER
+	select ROMCC_BOOTBLOCK
 	select CPU_AMD_PI_00730F01
 	select NORTHBRIDGE_AMD_PI_00730F01
 	select SOUTHBRIDGE_AMD_PI_AVALON
@@ -31,7 +35,7 @@ config BOARD_SPECIFIC_OPTIONS
 
 config MAINBOARD_DIR
 	string
-	default amd/db-ft3b-lc
+	default "amd/db-ft3b-lc"
 
 config MAINBOARD_PART_NUMBER
 	string

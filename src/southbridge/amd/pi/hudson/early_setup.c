@@ -123,22 +123,17 @@ void hudson_lpc_port80(void)
 void hudson_lpc_decode(void)
 {
 	pci_devfn_t dev;
-	u32 tmp = 0;
+	u32 tmp;
 
-	/* Enable I/O decode to LPC bus */
-	dev = PCI_DEV(0, PCU_DEV, LPC_FUNC);
-	tmp = DECODE_ENABLE_PARALLEL_PORT0 | DECODE_ENABLE_PARALLEL_PORT2
-		| DECODE_ENABLE_PARALLEL_PORT4 | DECODE_ENABLE_SERIAL_PORT0
-		| DECODE_ENABLE_SERIAL_PORT1 | DECODE_ENABLE_SERIAL_PORT2
-		| DECODE_ENABLE_SERIAL_PORT3 | DECODE_ENABLE_SERIAL_PORT4
-		| DECODE_ENABLE_SERIAL_PORT5 | DECODE_ENABLE_SERIAL_PORT6
-		| DECODE_ENABLE_SERIAL_PORT7 | DECODE_ENABLE_AUDIO_PORT0
-		| DECODE_ENABLE_AUDIO_PORT1 | DECODE_ENABLE_AUDIO_PORT2
-		| DECODE_ENABLE_AUDIO_PORT3 | DECODE_ENABLE_MSS_PORT2
-		| DECODE_ENABLE_MSS_PORT3 | DECODE_ENABLE_FDC_PORT0
-		| DECODE_ENABLE_FDC_PORT1 | DECODE_ENABLE_GAME_PORT
-		| DECODE_ENABLE_KBC_PORT | DECODE_ENABLE_ACPIUC_PORT
-		| DECODE_ENABLE_ADLIB_PORT;
+	dev = PCI_DEV(0, 0x14, 3);
+	/* Serial port numeration on Hudson:
+	 * PORT0 - 0x3f8
+	 * PORT1 - 0x2f8
+	 * PORT5 - 0x2e8
+	 * PORT7 - 0x3e8
+	 */
+	tmp =  DECODE_ENABLE_SERIAL_PORT0 | DECODE_ENABLE_SERIAL_PORT1
+	     | DECODE_ENABLE_SERIAL_PORT5 | DECODE_ENABLE_SERIAL_PORT7;
 
 	pci_write_config32(dev, LPC_IO_PORT_DECODE_ENABLE, tmp);
 }
@@ -228,36 +223,6 @@ void lpc_wideio_16_window(uint16_t base)
 {
 	assert(IS_ALIGNED(base, 16));
 	lpc_wideio_window(base, 16);
-}
-
-int s3_save_nvram_early(u32 dword, int size, int  nvram_pos)
-{
-	int i;
-	printk(BIOS_DEBUG, "Writing %x of size %d to nvram pos: %d\n", dword, size, nvram_pos);
-
-	for (i = 0; i < size; i++) {
-		outb(nvram_pos, BIOSRAM_INDEX);
-		outb((dword >> (8 * i)) & 0xff, BIOSRAM_DATA);
-		nvram_pos++;
-	}
-
-	return nvram_pos;
-}
-
-int s3_load_nvram_early(int size, u32 *old_dword, int nvram_pos)
-{
-	u32 data = *old_dword;
-	int i;
-	for (i = 0; i < size; i++) {
-		outb(nvram_pos, BIOSRAM_INDEX);
-		data &= ~(0xff << (i * 8));
-		data |= inb(BIOSRAM_DATA) << (i *8);
-		nvram_pos++;
-	}
-	*old_dword = data;
-	printk(BIOS_DEBUG, "Loading %x of size %d to nvram pos:%d\n", *old_dword, size,
-		nvram_pos-size);
-	return nvram_pos;
 }
 
 void hudson_clk_output_48Mhz(void)

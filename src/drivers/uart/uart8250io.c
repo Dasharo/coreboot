@@ -12,7 +12,6 @@
  */
 
 #include <stdlib.h>
-#include <arch/early_variables.h>
 #include <arch/io.h>
 #include <boot/coreboot_tables.h>
 #include <console/uart.h>
@@ -36,7 +35,8 @@
 #define SINGLE_CHAR_TIMEOUT	(50 * 1000)
 #define FIFO_TIMEOUT		(16 * SINGLE_CHAR_TIMEOUT)
 
-static int port_index CAR_GLOBAL;
+static int port_index;
+
 static int uart8250_can_tx_byte(unsigned int base_port)
 {
 	return inb(base_port + UART8250_LSR) & UART8250_LSR_THRE;
@@ -112,34 +112,34 @@ void uart_init(int idx)
 			uart_platform_refclk(), uart_input_clock_divider());
 		if ((check_com2() || idx == 1) &&
 		    !CONFIG(BOARD_PCENGINES_APU5))
-			car_set_var(port_index, 1);
+			port_index = 1;
 		else
-			car_set_var(port_index, idx);
+			port_index = idx;
 
-		uart8250_init(uart_platform_base(car_get_var(port_index)), div);
+		uart8250_init(uart_platform_base(port_index), div);
 	}
 }
 
 void uart_tx_byte(int idx, unsigned char data)
 {
-	uart8250_tx_byte(uart_platform_base(car_get_var(port_index)), data);
+	uart8250_tx_byte(uart_platform_base(port_index), data);
 }
 
 unsigned char uart_rx_byte(int idx)
 {
-	return uart8250_rx_byte(uart_platform_base(car_get_var(port_index)));
+	return uart8250_rx_byte(uart_platform_base(port_index));
 }
 
 void uart_tx_flush(int idx)
 {
-	uart8250_tx_flush(uart_platform_base(car_get_var(port_index)));
+	uart8250_tx_flush(uart_platform_base(port_index));
 }
 
 void uart_fill_lb(void *data)
 {
 	struct lb_serial serial;
 	serial.type = LB_SERIAL_TYPE_IO_MAPPED;
-	serial.baseaddr = uart_platform_base(car_get_var(port_index));
+	serial.baseaddr = uart_platform_base(port_index);
 	serial.baud = get_uart_baudrate();
 	serial.regwidth = 1;
 	serial.input_hertz = uart_platform_refclk();

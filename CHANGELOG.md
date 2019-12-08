@@ -12,6 +12,14 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+
+## [v4.11.0.1] - 2019-12-08
+### Changed
+- rebased with official coreboot repository commit 9f56eed
+
+### Fixed
+- issue with temperature not showing on pfSense dashboard
+
 ## [v4.10.0.3] - 2019-11-08
 ### Changed
 - rebased with official coreboot repository commit 2d90cb1
@@ -348,7 +356,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.10.0.3...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.11.0.1...develop
+[v4.11.0.1]: https://github.com/pcengines/coreboot/compare/v4.10.0.3...v4.11.0.1
 [v4.10.0.3]: https://github.com/pcengines/coreboot/compare/v4.10.0.2...v4.10.0.3
 [v4.10.0.2]: https://github.com/pcengines/coreboot/compare/v4.10.0.1...v4.10.0.2
 [v4.10.0.1]: https://github.com/pcengines/coreboot/compare/v4.10.0.0...v4.10.0.1

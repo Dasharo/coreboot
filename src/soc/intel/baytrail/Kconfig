@@ -18,6 +18,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SUPPORT_CPU_UCODE_IN_CBFS
 	select HAVE_SMI_HANDLER
 	select SOUTHBRIDGE_INTEL_COMMON_RESET
+	select SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
 	select NO_FIXED_XIP_ROM_SIZE
 	select PARALLEL_MP
 	select PCIEXP_ASPM
@@ -41,10 +42,6 @@ config CPU_SPECIFIC_OPTIONS
 config VBOOT
 	select VBOOT_MUST_REQUEST_DISPLAY
 	select VBOOT_STARTS_IN_ROMSTAGE
-
-config BOOTBLOCK_CPU_INIT
-	string
-	default "soc/intel/baytrail/bootblock/bootblock.c"
 
 config MMCONF_BASE_ADDRESS
 	hex
@@ -95,14 +92,9 @@ config MRC_RMT
 # +-------------+ DCACHE_RAM_BASE + DCACHE_RAM_SIZE + DCACHE_RAM_MRC_VAR_SIZE
 # | MRC usage   |
 # |             |
-# +-------------+ DCACHE_RAM_BASE + DCACHE_RAM_SIZE
-# |  Stack      |
-# |    |        |
-# |    v        |
-# +-------------+
-# |    ^        |
-# |    |        |
-# | CAR Globals |
+# -------------+ DCACHE_RAM_BASE + DCACHE_RAM_SIZE
+# | coreboot    |
+# | usage       |
 # +-------------+ DCACHE_RAM_BASE
 #
 # Note that the MRC binary is linked to assume the region marked as "MRC usage"
@@ -127,6 +119,10 @@ config DCACHE_RAM_MRC_VAR_SIZE
 	default 0x8000
 	help
 	  The amount of cache-as-ram region required by the reference code.
+
+config DCACHE_BSP_STACK_SIZE
+	hex
+	default 0x2000
 
 config RESET_ON_INVALID_RAMSTAGE_CACHE
 	bool "Reset the system on S3 wake when ramstage cache invalid."

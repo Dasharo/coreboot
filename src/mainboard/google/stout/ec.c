@@ -17,6 +17,7 @@
 #include <bootmode.h>
 #include <types.h>
 #include <console/console.h>
+#include <cpu/x86/smm.h>
 #include <ec/quanta/it8518/ec.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -25,11 +26,6 @@
 #include <elog.h>
 #include "ec.h"
 
-#ifdef __SMM__
-#include <cpu/x86/smm.h>
-#endif
-
-#ifndef __SMM__
 void stout_ec_init(void)
 {
 
@@ -59,8 +55,6 @@ void stout_ec_init(void)
 	// TODO: Power Limit Setting
 }
 
-#else // SMM
-
 void stout_ec_finalize_smm(void)
 {
 	u8 ec_reg, critical_shutdown = 0;
@@ -75,10 +69,6 @@ void stout_ec_finalize_smm(void)
 	if (ec_reg & 0x8) {
 		printk(BIOS_ERR, "  EC Fan Error\n");
 		critical_shutdown = 1;
-#if CONFIG(ELOG_GSMI)
-		elog_add_event_word(EC_HOST_EVENT_BATTERY_CRITICAL,
-				    EC_HOST_EVENT_THROTTLE_START);
-#endif
 	}
 
 
@@ -86,10 +76,6 @@ void stout_ec_finalize_smm(void)
 	if (ec_reg & 0x80) {
 		printk(BIOS_ERR, "  EC Thermal Device Error\n");
 		critical_shutdown = 1;
-#if CONFIG(ELOG_GSMI)
-		elog_add_event_word(EC_HOST_EVENT_BATTERY_CRITICAL,
-				    EC_HOST_EVENT_THERMAL);
-#endif
 	}
 
 
@@ -99,17 +85,10 @@ void stout_ec_finalize_smm(void)
 	if ((ec_reg & 0xCF) == 0xC0) {
 		printk(BIOS_ERR, "  EC Critical Battery Error\n");
 		critical_shutdown = 1;
-#if CONFIG(ELOG_GSMI)
-		elog_add_event_word(ELOG_TYPE_EC_EVENT,
-				    EC_HOST_EVENT_BATTERY_CRITICAL);
-#endif
 	}
 
 	if ((ec_reg & 0x8F) == 0x8F) {
 		printk(BIOS_ERR, "  EC Read Battery Error\n");
-#if CONFIG(ELOG_GSMI)
-		elog_add_event_word(ELOG_TYPE_EC_EVENT, EC_HOST_EVENT_BATTERY);
-#endif
 	}
 
 
@@ -120,4 +99,3 @@ void stout_ec_finalize_smm(void)
 		write_pmbase32(PM1_CNT, read_pmbase32(PM1_CNT) | (0xf << 10));
 	}
 }
-#endif //__SMM__

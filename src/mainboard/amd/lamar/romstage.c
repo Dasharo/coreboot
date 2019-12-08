@@ -19,18 +19,14 @@
 #include <arch/cpu.h>
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
-#include <cpu/amd/car.h>
 #include <northbridge/amd/agesa/state_machine.h>
-#include <northbridge/amd/pi/agesawrapper.h>
-#include <northbridge/amd/pi/agesawrapper_call.h>
-#include <cpu/x86/bist.h>
 #include <southbridge/amd/common/amd_defs.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
 #include <superio/fintek/f81216h/f81216h.h>
 
 #define SERIAL_DEV PNP_DEV(0x4e, F81216H_SP1)
 
-void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
+static void romstage_main_template(void)
 {
 	u32 val;
 
@@ -60,10 +56,6 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		post_code(0x31);
 		console_init();
 	}
-
-	/* Halt if there was a built in self test failure */
-	post_code(0x34);
-	report_bist_failure(bist);
 
 	/* Load MPB */
 	val = cpuid_eax(1);

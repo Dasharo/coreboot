@@ -82,7 +82,7 @@ static u8 check_knob_value(const char *s)
 	return -1;
 }
 
-bool check_console(void)
+u8 check_console(void)
 {
 	u8 scon;
 
@@ -93,10 +93,10 @@ bool check_console(void)
 
 	switch (scon) {
 	case 0:
-		return false;
+		return 0;
 		break;
 	case 1:
-		return true;
+		return 1;
 		break;
 	default:
 		printk(BIOS_INFO,
@@ -104,7 +104,7 @@ bool check_console(void)
 		break;
 	}
 
-	return true;
+	return 1;
 }
 
 int check_com2(void)
@@ -157,7 +157,7 @@ int check_boost(void)
 	return 0;
 }
 
-static bool check_uart(char uart_letter)
+static u8 check_uart(char uart_letter)
 {
 	u8 uarten;
 
@@ -175,10 +175,10 @@ static bool check_uart(char uart_letter)
 
 	switch (uarten) {
 	case 0:
-		return false;
+		return 0;
 		break;
 	case 1:
-		return true;
+		return 1;
 		break;
 	default:
 		printk(BIOS_INFO,
@@ -186,20 +186,20 @@ static bool check_uart(char uart_letter)
 		break;
 	}
 
-	return false;
+	return 0;
 }
 
-inline bool check_uartc(void)
+inline u8 check_uartc(void)
 {
 	return check_uart('c');
 }
 
-inline bool check_uartd(void)
+inline u8 check_uartd(void)
 {
 	return check_uart('d');
 }
 
-bool check_ehci0(void)
+u8 check_ehci0(void)
 {
 	u8 ehci0;
 
@@ -210,10 +210,10 @@ bool check_ehci0(void)
 
 	switch (ehci0) {
 	case 0:
-		return false;
+		return 0;
 		break;
 	case 1:
-		return true;
+		return 1;
 		break;
 	default:
 		printk(BIOS_INFO,
@@ -221,10 +221,10 @@ bool check_ehci0(void)
 		break;
 	}
 
-	return true;
+	return 1;
 }
 
-bool check_mpcie2_clk(void)
+u8 check_mpcie2_clk(void)
 {
 	u8 mpcie2_clk;
 
@@ -235,10 +235,10 @@ bool check_mpcie2_clk(void)
 
 	switch (mpcie2_clk) {
 	case 0:
-		return false;
+		return 0;
 		break;
 	case 1:
-		return true;
+		return 1;
 		break;
 	default:
 		printk(BIOS_INFO, "Missing or invalid mpcie2_clk knob, forcing"
@@ -246,10 +246,10 @@ bool check_mpcie2_clk(void)
 		break;
 	}
 
-	return false;
+	return 0;
 }
 
-bool check_sd3_mode(void)
+u8 check_sd3_mode(void)
 {
 	u8 sd3mode;
 
@@ -260,10 +260,10 @@ bool check_sd3_mode(void)
 
 	switch (sd3mode) {
 	case 0:
-		return false;
+		return 0;
 		break;
 	case 1:
-		return true;
+		return 1;
 		break;
 	default:
 		printk(BIOS_INFO, "Missing or invalid sd3mode knob."
@@ -271,7 +271,7 @@ bool check_sd3_mode(void)
 		break;
 	}
 
-	return false;
+	return 0;
 }
 
 static int _valid(char ch, int base)

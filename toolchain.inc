@@ -56,12 +56,10 @@ ARCHDIR-x86_64	:= x86
 ARCHDIR-arm	:= arm
 ARCHDIR-arm64	:= arm64
 ARCHDIR-riscv	:= riscv
-ARCHDIR-mips	:= mips
 ARCHDIR-ppc64	:= ppc64
 
 CFLAGS_arm	+=
 CFLAGS_arm64	+= -mgeneral-regs-only
-CFLAGS_mips	+= -mips32r2 -G 0 -mno-abicalls -fno-pic
 CFLAGS_riscv	+=
 CFLAGS_x86_32	+=
 CFLAGS_x86_64	+= -mcmodel=large -mno-red-zone
@@ -72,7 +70,7 @@ CFLAGS_ppc64	+=
 # stack use, we use 1.5K as heuristic, assuming that we typically have lots
 # of tiny stack frames and the odd large one.
 #
-# Store larger buffers in BSS, use MAYBE_STATIC_BSS to share code with __PRE_RAM__
+# Store larger buffers in BSS, use MAYBE_STATIC_BSS to share data in cache-as-ram
 # on x86.
 # Since GCCs detection of dynamic array bounds unfortunately seems to be
 # very basic, you'll sometimes have to use a static upper bound for the
@@ -83,7 +81,6 @@ CFLAGS_ppc64	+=
 ifeq ($(CONFIG_COMPILER_GCC),y)
 CFLAGS_arm	+= -Wstack-usage=1536
 CFLAGS_arm64	+= -Wstack-usage=1536
-CFLAGS_mips	+= -Wstack-usage=1536
 CFLAGS_riscv	+= -Wstack-usage=1536
 CFLAGS_ppc64	+= -Wstack-usage=1536
 endif

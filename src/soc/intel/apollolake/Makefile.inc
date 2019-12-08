@@ -28,7 +28,6 @@ romstage-y += gspi.c
 romstage-y += heci.c
 romstage-y += i2c.c
 romstage-y += uart.c
-romstage-y += memmap.c
 romstage-y += meminit.c
 ifeq ($(CONFIG_SOC_INTEL_GLK),y)
 romstage-y += meminit_util_glk.c
@@ -59,7 +58,6 @@ ramstage-y += gspi.c
 ramstage-y += heci.c
 ramstage-y += i2c.c
 ramstage-y += lpc.c
-ramstage-y += memmap.c
 ramstage-y += mmap_boot.c
 ramstage-y += uart.c
 ramstage-y += nhlt.c
@@ -73,7 +71,6 @@ ramstage-y += xdci.c
 ramstage-y += sd.c
 ramstage-y += xhci.c
 
-postcar-y += memmap.c
 postcar-y += mmap_boot.c
 postcar-y += spi.c
 postcar-y += i2c.c
@@ -86,7 +83,6 @@ verstage-y += car.c
 verstage-y += i2c.c
 verstage-y += gspi.c
 verstage-y += heci.c
-verstage-y += memmap.c
 verstage-y += mmap_boot.c
 verstage-y += uart.c
 verstage-y += pmutil.c
@@ -108,7 +104,7 @@ endif
 CPPFLAGS_common += -I$(src)/soc/intel/apollolake/include
 
 # Since FSP-M runs in CAR we need to relocate it to a specific address
-$(FSP_M_CBFS)-options := -b $(CONFIG_FSP_M_ADDR)
+$(call strip_quotes,$(CONFIG_FSP_M_CBFS))-options := -b $(CONFIG_FSP_M_ADDR)
 
 # Handle GLK paging requirements
 ifeq ($(CONFIG_PAGING_IN_CACHE_AS_RAM),y)

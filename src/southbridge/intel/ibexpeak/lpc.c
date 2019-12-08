@@ -43,8 +43,6 @@
 
 #define NMI_OFF	0
 
-#define ENABLE_ACPI_MODE_IN_COREBOOT	0
-
 typedef struct southbridge_intel_ibexpeak_config config_t;
 
 /**
@@ -286,9 +284,7 @@ static void pch_rtc_init(struct device *dev)
 	if (rtc_failed) {
 		reg8 &= ~RTC_BATTERY_DEAD;
 		pci_write_config8(dev, GEN_PMCON_3, reg8);
-#if CONFIG(ELOG)
 		elog_add_event(ELOG_TYPE_RTC_RESET);
-#endif
 	}
 	printk(BIOS_DEBUG, "rtc_failed = 0x%x\n", rtc_failed);
 
@@ -433,15 +429,9 @@ static void enable_clock_gating(struct device *dev)
 static void pch_set_acpi_mode(void)
 {
 	if (!acpi_is_wakeup_s3() && CONFIG(HAVE_SMI_HANDLER)) {
-#if ENABLE_ACPI_MODE_IN_COREBOOT
-		printk(BIOS_DEBUG, "Enabling ACPI via APMC:\n");
-		outb(APM_CNT_ACPI_ENABLE, APM_CNT); // Enable ACPI mode
-		printk(BIOS_DEBUG, "done.\n");
-#else
 		printk(BIOS_DEBUG, "Disabling ACPI via APMC:\n");
 		outb(APM_CNT_ACPI_DISABLE, APM_CNT); // Disable ACPI mode
 		printk(BIOS_DEBUG, "done.\n");
-#endif
 	}
 }
 

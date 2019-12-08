@@ -19,8 +19,8 @@
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
 #include <device/pnp.h>
+#include <amdblocks/acpimmio.h>
 #include <northbridge/amd/agesa/state_machine.h>
-#include <southbridge/amd/cimx/cimx_util.h>
 #include <superio/nuvoton/common/nuvoton.h>
 #include <superio/nuvoton/nct5104d/nct5104d.h>
 #include <console/console.h>
@@ -45,16 +45,16 @@ static void early_lpc_init(void)
 	 * controlled in PM_REG 5Bh register. "Always Power On" works by writing a
 	 * value of 05h.
 	 */
-	u8 bdata = pm_ioread(SB_PMIOA_REG5B);
+	u8 bdata = pm_read8(SB_PMIOA_REG5B);
 	bdata &= 0xf8; //clear bits 0-2
 	bdata |= 0x05; //set bits 0,2
-	pm_iowrite(SB_PMIOA_REG5B, bdata);
+	pm_write8(SB_PMIOA_REG5B, bdata);
 
 	/* Multi-function pins switch to GPIO0-35, these pins are shared with PCI pins */
-	bdata = pm_ioread(SB_PMIOA_REGEA);
+	bdata = pm_read8(SB_PMIOA_REGEA);
 	bdata &= 0xfe; //clear bit 0
 	bdata |= 0x01; //set bit 0
-	pm_iowrite(SB_PMIOA_REGEA, bdata);
+	pm_write8(SB_PMIOA_REGEA, bdata);
 
 	//configure required GPIOs
 	mmio_base = find_gpio_base();
@@ -85,12 +85,6 @@ void board_BeforeAgesa(struct sysinfo *cb)
 	if (check_com2() || (CONFIG_UART_FOR_CONSOLE == 1))
 		nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 
-	console_init();
-
-	if(check_console()) {
-		print_sign_of_life();
-	}
-
 }
 
 static const char *mainboard_bios_version(void)
@@ -112,4 +106,11 @@ static void print_sign_of_life()
 	                   CONFIG_MAINBOARD_PART_NUMBER "\n");
 	printk(BIOS_ALERT, "coreboot build %s\n", tmp);
 	printk(BIOS_ALERT, "BIOS version %s\n", mainboard_bios_version());
+}
+
+void board_BeforeInitReset(struct sysinfo *cb, AMD_RESET_PARAMS *Reset)
+{
+	if(check_console()) {
+		print_sign_of_life();
+	}
 }

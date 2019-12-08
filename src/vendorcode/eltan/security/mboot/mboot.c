@@ -120,7 +120,7 @@ int tpm2_get_capability_pcrs(TPML_PCR_SELECTION *Pcrs)
  * Calculates the hash over the data and extends it in active PCR banks and
  * then logs them in the event log.
  *
- * @param[in] flags		flags associated with hash data. Currently unused.
+ * @param[in] flags		flags associated with hash data.
  * @param[in] hashData		data to be hashed.
  * @param[in] hashDataLen	length of the data to be hashed.
  * @param[in] newEventHdr	event header in TCG_PCR_EVENT2 format.
@@ -266,7 +266,6 @@ int mb_measure_log_worker(const char *name, uint32_t type, uint32_t pcr,
 	return status;
 }
 
-#ifdef __PRE_RAM__
 /*
  * Called from early romstage
  *
@@ -473,4 +472,3 @@ int __attribute__((weak))mb_crtm(void)
 
 	return status;
 }
-#endif // __PRE_RAM__

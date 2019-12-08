@@ -40,10 +40,6 @@
 #include <vb2_api.h>
 #include <console/console.h>
 
-#ifndef offsetof
-#define offsetof(A,B) __builtin_offsetof(A,B)
-#endif
-
 #ifdef FOR_TEST
 #include <stdio.h>
 #define VBDEBUG(format, args...) printf(format, ## args)
@@ -137,7 +133,7 @@ static const uint8_t rec_hash_data[REC_HASH_NV_SIZE] = { };
  * i.e. those which should not be possible to delete or modify once
  * the RO exits, and the rest of the NVRAM spaces.
  */
-const static TPMA_NV ro_space_attributes = {
+static const TPMA_NV ro_space_attributes = {
 	.TPMA_NV_PPWRITE = 1,
 	.TPMA_NV_AUTHREAD = 1,
 	.TPMA_NV_PPREAD = 1,
@@ -146,7 +142,7 @@ const static TPMA_NV ro_space_attributes = {
 	.TPMA_NV_POLICY_DELETE = 1,
 };
 
-const static TPMA_NV rw_space_attributes = {
+static const TPMA_NV rw_space_attributes = {
 	.TPMA_NV_PPWRITE = 1,
 	.TPMA_NV_AUTHREAD = 1,
 	.TPMA_NV_PPREAD = 1,
@@ -157,7 +153,7 @@ const static TPMA_NV rw_space_attributes = {
  * This policy digest was obtained using TPM2_PolicyPCR
  * selecting only PCR_0 with a value of all zeros.
  */
-const static uint8_t pcr0_unchanged_policy[] = {
+static const uint8_t pcr0_unchanged_policy[] = {
 	0x09, 0x93, 0x3C, 0xCE, 0xEB, 0xB4, 0x41, 0x11, 0x18, 0x81, 0x1D,
 	0xD4, 0x47, 0x78, 0x80, 0x08, 0x88, 0x86, 0x62, 0x2D, 0xD7, 0x79,
 	0x94, 0x46, 0x62, 0x26, 0x68, 0x8E, 0xEE, 0xE6, 0x6A, 0xA1};
@@ -192,7 +188,7 @@ static uint32_t set_space(const char *name, uint32_t index, const void *data,
 	if (rv != TPM_SUCCESS)
 		return rv;
 
-	return safe_write(index, data, length);
+	return write_secdata(index, data, length);
 }
 
 static uint32_t set_firmware_space(const void *firmware_blob)
@@ -402,6 +398,11 @@ static uint32_t factory_initialize_tpm(struct vb2_context *ctx)
 	if (result != TPM_SUCCESS)
 		return result;
 
+	/* _factory_initialize_tpm() writes initial secdata values to TPM
+	   immediately, so let vboot know that it's up to date now. */
+	ctx->flags &= ~(VB2_CONTEXT_SECDATA_FIRMWARE_CHANGED |
+			VB2_CONTEXT_SECDATA_KERNEL_CHANGED);
+
 	VBDEBUG("TPM: factory initialization successful\n");
 
 	return TPM_SUCCESS;
@@ -414,14 +415,11 @@ uint32_t antirollback_read_space_firmware(struct vb2_context *ctx)
 	/* Read the firmware space. */
 	rv = read_space_firmware(ctx);
 	if (rv == TPM_E_BADINDEX) {
-		/*
-		 * This seems the first time we've run. Initialize the TPM.
-		 */
+		/* This seems the first time we've run. Initialize the TPM. */
 		VBDEBUG("TPM: Not initialized yet.\n");
 		RETURN_ON_FAILURE(factory_initialize_tpm(ctx));
 	} else if (rv != TPM_SUCCESS) {
 		VBDEBUG("TPM: Firmware space in a bad state; giving up.\n");
-		//RETURN_ON_FAILURE(factory_initialize_tpm(ctx));
 		return TPM_E_CORRUPTED_STATE;
 	}
 

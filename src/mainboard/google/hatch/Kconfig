@@ -60,7 +60,11 @@ config DIMM_SPD_SIZE
 
 config ROMSTAGE_SPD_CBFS
 	bool
-	default y
+	default y if !ROMSTAGE_SPD_SMBUS
+
+config ROMSTAGE_SPD_SMBUS
+	bool
+	default n
 
 config DRIVER_TPM_SPI_BUS
 	default 0x1
@@ -87,12 +91,12 @@ config MAINBOARD_PART_NUMBER
 	default "Dratini" if BOARD_GOOGLE_DRATINI
 	default "Hatch" if BOARD_GOOGLE_HATCH
 	default "Helios" if BOARD_GOOGLE_HELIOS
+	default "Helios_Diskswap" if BOARD_GOOGLE_HELIOS_DISKSWAP
+	default "Jinlon" if BOARD_GOOGLE_JINLON
 	default "Kindred" if BOARD_GOOGLE_KINDRED
 	default "Kohaku" if BOARD_GOOGLE_KOHAKU
-
-config MAINBOARD_VENDOR
-	string
-	default "Google"
+	default "Puff" if BOARD_GOOGLE_PUFF
+	default "Stryke" if BOARD_GOOGLE_STRYKE
 
 config MAX_CPUS
 	int
@@ -100,6 +104,7 @@ config MAX_CPUS
 
 config OVERRIDE_DEVICETREE
 	string
+	default "variants/helios_diskswap/overridetree.cb" if BOARD_GOOGLE_HELIOS_DISKSWAP
 	default "variants/$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config TPM_TIS_ACPI_INTERRUPT
@@ -112,12 +117,17 @@ config VARIANT_DIR
 	default "dratini" if BOARD_GOOGLE_DRATINI
 	default "hatch" if BOARD_GOOGLE_HATCH
 	default "helios" if BOARD_GOOGLE_HELIOS
+	default "helios" if BOARD_GOOGLE_HELIOS_DISKSWAP
+	default "jinlon" if BOARD_GOOGLE_JINLON
 	default "kindred" if BOARD_GOOGLE_KINDRED
 	default "kohaku" if BOARD_GOOGLE_KOHAKU
+	default "puff" if BOARD_GOOGLE_PUFF
+	default "stryke" if BOARD_GOOGLE_STRYKE
 
 config VBOOT
 	select HAS_RECOVERY_MRC_CACHE
 	select MRC_CLEAR_NORMAL_CACHE_ON_RECOVERY_RETRAIN
+	select VBOOT_EARLY_EC_SYNC
 	select VBOOT_LID_SWITCH
 
 endif # BOARD_GOOGLE_BASEBOARD_HATCH

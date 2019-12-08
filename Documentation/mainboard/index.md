@@ -32,6 +32,7 @@ The boards in this section are not real mainboards, but emulators.
 ## Facebook
 
 - [FBG-1701](facebook/fbg1701.md)
+- [Monolith](facebook/monolith.md)
 
 ## Foxconn
 
@@ -94,10 +95,6 @@ The boards in this section are not real mainboards, but emulators.
 ### Haswell series
 
 - [T440p](lenovo/t440p.md)
-
-## Portwell
-
-- [PQ7-M107](portwell/pq7-m107.md)
 
 ## MSI
 

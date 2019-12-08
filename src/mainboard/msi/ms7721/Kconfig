@@ -20,6 +20,7 @@ if BOARD_MSI_MS7721
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
+	select ROMCC_BOOTBLOCK
 	select CPU_AMD_AGESA_FAMILY15_TN
 	select NORTHBRIDGE_AMD_AGESA_FAMILY15_TN
 	select SOUTHBRIDGE_AMD_AGESA_HUDSON
@@ -33,7 +34,7 @@ config BOARD_SPECIFIC_OPTIONS
 
 config MAINBOARD_DIR
 	string
-	default msi/ms7721
+	default "msi/ms7721"
 
 config MAINBOARD_PART_NUMBER
 	string

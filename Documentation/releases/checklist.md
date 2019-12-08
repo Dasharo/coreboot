@@ -56,22 +56,24 @@ be more frequent than was needed, so we scaled it back to twice a year.
       and to update the release notes
 - [ ] Update the topic in the irc channel with the date of the upcoming
       release
+- [ ] Finalize release notes (as much as possible), without specifying
+      release commit ids
 
 ### Day of release
-- [ ] Update release notes, without specifying release commit ids
 - [ ] Select a commit ID to base the release upon, announce to IRC,
       ask for testing.
 - [ ] Test the commit selected for release
+- [ ] Update release notes with actual commit id, push to repo
 - [ ] Run release script
 - [ ] Test the release from the actual release tarballs
 - [ ] Push signed Tag to repo
 - [ ] Announce that the release tag is done on IRC
-- [ ] Update release notes with actual commit id, push to repo
 - [ ] Upload release files to web server
 - [ ] Upload crossgcc sources to web server
 - [ ] Update download page to point to files, push to repo
 - [ ] Write and publish blog post with release notes.
 - [ ] Update the topic in the irc channel that the release is done.
+- [ ] Announce the release to the mailing list
 
 ## Pre-Release tasks
 Announce the upcoming release to the mailing list release 2 weeks ahead
@@ -82,9 +84,7 @@ release notes that are in the making and ask people to test the hardware
 they have to make sure it's working with the current master branch,
 from which the release will ultimately be derived from.
 
-People should also be encouraged to provide additions to the
-release notes, for example by putting them on some [collaborative
-editor](https://www.piratenpad.de).
+People should be encouraged to provide additions to the release notes.
 
 The final release notes will reside in coreboot's Documentation/releases
 directory, so asking for additions to that through the regular Gerrit

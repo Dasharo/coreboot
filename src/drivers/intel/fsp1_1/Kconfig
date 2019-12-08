@@ -56,19 +56,6 @@ config FSP_LOC
 	  value that is set in the FSP binary.  If the FSP needs to be moved,
 	  rebase the FSP with Intel's BCT (tool).
 
-config CPU_MICROCODE_CBFS_LEN
-	hex "Microcode update region length in bytes"
-	default 0x0
-	help
-	  The length in bytes of the microcode update region.
-
-config CPU_MICROCODE_CBFS_LOC
-	hex "Microcode update base address in CBFS"
-	default 0x0
-	help
-	  The location (base address) in CBFS that contains the microcode update
-	  binary.
-
 config DISPLAY_HOBS
 	bool "Display hand-off-blocks (HOBs)"
 	default n
@@ -103,5 +90,17 @@ config SKIP_FSP_CAR
 	def_bool n
 	help
 	  Selected by platforms that implement their own CAR setup.
+
+config FSP1_1_DISPLAY_LOGO
+	bool "Enable logo"
+	default n
+	help
+	  Uses the FSP to display the boot logo. This method supports a
+	  BMP file only. The uncompressed size can be up to 1 MB.
+
+config FSP1_1_LOGO_FILE_NAME
+	string "Logo file"
+	depends on FSP1_1_DISPLAY_LOGO
+	default "3rdparty/blobs/mainboard/$(MAINBOARDDIR)/logo.bmp"
 
 endif #PLATFORM_USES_FSP1_1

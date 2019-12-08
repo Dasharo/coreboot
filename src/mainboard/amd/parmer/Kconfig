@@ -17,6 +17,7 @@ if BOARD_AMD_PARMER
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
+	select ROMCC_BOOTBLOCK
 	select CPU_AMD_AGESA_FAMILY15_TN
 	select NORTHBRIDGE_AMD_AGESA_FAMILY15_TN
 	select SOUTHBRIDGE_AMD_AGESA_HUDSON
@@ -30,7 +31,7 @@ config BOARD_SPECIFIC_OPTIONS
 
 config MAINBOARD_DIR
 	string
-	default amd/parmer
+	default "amd/parmer"
 
 config MAINBOARD_PART_NUMBER
 	string

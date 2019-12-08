@@ -31,7 +31,6 @@
 #include <device/device.h>
 #include <console/console.h>
 #include <security/tpm/tis.h>
-#include <arch/early_variables.h>
 #include <device/pnp.h>
 #include "chip.h"
 
@@ -162,7 +161,7 @@ static const struct vendor_name vendor_names[] = {
  * Cached vendor/device ID pair to indicate that the device has been already
  * discovered
  */
-static u32 vendor_dev_id CAR_GLOBAL;
+static u32 vendor_dev_id;
 
 static inline u8 tpm_read_status(int locality)
 {
@@ -402,7 +401,7 @@ static u32 tis_probe(void)
 	u16 vid, did;
 	int i;
 
-	if (car_get_var(vendor_dev_id))
+	if (vendor_dev_id)
 		return 0;  /* Already probed. */
 
 	didvid = tpm_read_did_vid(0);
@@ -411,7 +410,7 @@ static u32 tis_probe(void)
 		return TPM_DRIVER_ERR;
 	}
 
-	car_set_var(vendor_dev_id, didvid);
+	vendor_dev_id = didvid;
 
 	vid = didvid & 0xffff;
 	did = (didvid >> 16) & 0xffff;
@@ -721,8 +720,6 @@ int tis_sendrecv(const uint8_t *sendbuf, size_t send_size,
 	return tis_readresponse(recvbuf, recv_len);
 }
 
-#ifdef __RAMSTAGE__
-
 /*
  * tis_setup_interrupt()
  *
@@ -769,7 +766,7 @@ static void lpc_tpm_read_resources(struct device *dev)
 static void lpc_tpm_set_resources(struct device *dev)
 {
 	tpm_config_t *config = (tpm_config_t *)dev->chip_info;
-	struct resource *res;
+	DEVTREE_CONST struct resource *res;
 
 	for (res = dev->resource_list; res; res = res->next) {
 		if (!(res->flags & IORESOURCE_ASSIGNED))
@@ -783,8 +780,10 @@ static void lpc_tpm_set_resources(struct device *dev)
 			continue;
 		}
 
+#if !DEVTREE_EARLY
 		res->flags |= IORESOURCE_STORED;
 		report_resource_stored(dev, res, " <tpm>");
+#endif
 	}
 }
 
@@ -973,8 +972,10 @@ static void lpc_tpm_fill_ssdt(struct device *dev)
 	acpigen_pop_len(); /* Device */
 	acpigen_pop_len(); /* Scope */
 
+#if !DEVTREE_EARLY
 	printk(BIOS_INFO, "%s.%s: %s %s\n", path, acpi_device_name(dev),
 	       dev->chip_ops->name, dev_path(dev));
+#endif
 }
 
 static const char *lpc_tpm_acpi_name(const struct device *dev)
@@ -1006,5 +1007,3 @@ struct chip_operations drivers_pc80_tpm_ops = {
 	CHIP_NAME("LPC TPM")
 	.enable_dev = enable_dev
 };
-
-#endif /* __RAMSTAGE__ */

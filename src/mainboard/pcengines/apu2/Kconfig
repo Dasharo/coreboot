@@ -20,7 +20,7 @@ if BOARD_PCENGINES_APU2 || BOARD_PCENGINES_APU3 || BOARD_PCENGINES_APU4 || \
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
-	select BINARYPI_LEGACY_WRAPPER
+	select ROMCC_BOOTBLOCK
 	select CPU_AMD_PI_00730F01
 	select NORTHBRIDGE_AMD_PI_00730F01
 	select SOUTHBRIDGE_AMD_PI_AVALON
@@ -38,7 +38,7 @@ config BOARD_SPECIFIC_OPTIONS
 
 config MAINBOARD_DIR
 	string
-	default pcengines/apu2
+	default "pcengines/apu2"
 
 config VARIANT_DIR
 	string
@@ -72,7 +72,7 @@ config ONBOARD_VGA_IS_PRIMARY
 
 config HUDSON_LEGACY_FREE
 	bool
-	default y
+	default n
 
 config AGESA_BINARY_PI_FILE
 	string

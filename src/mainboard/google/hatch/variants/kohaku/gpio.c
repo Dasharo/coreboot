@@ -23,8 +23,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_A0, NONE),
 	/* A6  : SERIRQ ==> NC */
 	PAD_NC(GPP_A6, NONE),
-	/* A10 : PEN_RESET_ODL for old revision devices */
-	PAD_CFG_GPO(GPP_A10, 1, DEEP),
+	/* A10 : GPP_A10 ==> NC */
+	PAD_NC(GPP_A10, NONE),
 	/* A16 : EMR_GARAGE_DET (notification) */
 	PAD_CFG_GPI_GPIO_DRIVER(GPP_A16, NONE, PLTRST),
 	/* A17 : PIRQA# ==> NC */
@@ -55,6 +55,14 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_E23, NONE),
 	/* F1 : GPP_F1 ==> NC */
 	PAD_NC(GPP_F1, NONE),
+	/* F11 : PCH_MEM_STRAP2 */
+	PAD_CFG_GPI(GPP_F11, NONE, PLTRST),
+	/* F20 : PCH_MEM_STRAP0 */
+	PAD_CFG_GPI(GPP_F20, NONE, PLTRST),
+	/* F21 : PCH_MEM_STRAP1 */
+	PAD_CFG_GPI(GPP_F21, NONE, PLTRST),
+	/* F22 : PCH_MEM_STRAP3 */
+	PAD_CFG_GPI(GPP_F22, NONE, PLTRST),
 	/* G0 : GPP_G0 ==> NC  */
 	PAD_NC(GPP_G0, NONE),
 	/* G1 : GPP_G1 ==> NC  */
@@ -89,8 +97,6 @@ const struct pad_config *override_gpio_table(size_t *num)
  * needed in this table.
  */
 static const struct pad_config early_gpio_table[] = {
-	/* A12 : FPMCU_RST_ODL */
-	PAD_CFG_GPO(GPP_A12, 0, DEEP),
 	/* B15 : H1_SLAVE_SPI_CS_L */
 	PAD_CFG_NF(GPP_B15, NONE, DEEP, NF1),
 	/* B16 : H1_SLAVE_SPI_CLK */
@@ -111,6 +117,14 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_NF(GPP_E5, NONE, PLTRST, NF1),
 	/* F2  : MEM_CH_SEL */
 	PAD_CFG_GPI(GPP_F2, NONE, PLTRST),
+	/* F11 : PCH_MEM_STRAP2 */
+	PAD_CFG_GPI(GPP_F11, NONE, PLTRST),
+	/* F20 : PCH_MEM_STRAP0 */
+	PAD_CFG_GPI(GPP_F20, NONE, PLTRST),
+	/* F21 : PCH_MEM_STRAP1 */
+	PAD_CFG_GPI(GPP_F21, NONE, PLTRST),
+	/* F22 : PCH_MEM_STRAP3 */
+	PAD_CFG_GPI(GPP_F22, NONE, PLTRST),
 };
 
 const struct pad_config *variant_early_gpio_table(size_t *num)
@@ -120,14 +134,30 @@ const struct pad_config *variant_early_gpio_table(size_t *num)
 }
 
 /*
- * GPIO settings before entering all sleep states
+ * Default GPIO settings before entering non-S5 sleep states.
+ * Configure A12: FPMCU_RST_ODL as GPO before entering sleep.
+ * This guarantees that A12's native3 function is disabled.
+ * See https://review.coreboot.org/c/coreboot/+/32111 .
  */
-static const struct pad_config sleep_gpio_table[] = {
+static const struct pad_config default_sleep_gpio_table[] = {
 	PAD_CFG_GPO(GPP_A12, 1, DEEP), /* FPMCU_RST_ODL */
+};
+
+/*
+ * GPIO settings before entering S5, which are same as
+ * default_sleep_gpio_table but also, turn off FPMCU.
+ */
+static const struct pad_config s5_sleep_gpio_table[] = {
+	PAD_CFG_GPO(GPP_A12, 0, DEEP), /* FPMCU_RST_ODL */
+	PAD_CFG_GPO(GPP_C11, 0, DEEP), /* PCH_FP_PWR_EN */
 };
 
 const struct pad_config *variant_sleep_gpio_table(u8 slp_typ, size_t *num)
 {
-	*num = ARRAY_SIZE(sleep_gpio_table);
-	return sleep_gpio_table;
+	if (slp_typ == ACPI_S5) {
+		*num = ARRAY_SIZE(s5_sleep_gpio_table);
+		return s5_sleep_gpio_table;
+	}
+	*num = ARRAY_SIZE(default_sleep_gpio_table);
+	return default_sleep_gpio_table;
 }
