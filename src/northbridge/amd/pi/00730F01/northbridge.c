@@ -36,6 +36,7 @@
 #include <arch/acpigen.h>
 #include <northbridge/amd/pi/nb_common.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
+#include "bios_knobs.h"
 
 #define MAX_NODE_NUMS MAX_NODES
 
@@ -681,7 +682,7 @@ static unsigned long agesa_write_acpi_tables(struct device *device,
 	current += ((acpi_header_t *)current)->length;
 
 	/* IVRS */
-    if (0)
+    if (check_iommu())
     {
         current = ALIGN(current, 8);
         printk(BIOS_DEBUG, "ACPI:   * IVRS at %lx\n", current);
