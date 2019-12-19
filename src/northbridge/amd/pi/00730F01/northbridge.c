@@ -25,6 +25,8 @@
 #include <southbridge/amd/pi/hudson/pci_devs.h>
 #include <amdblocks/cpu.h>
 
+#include "mainboard/pcengines/apu2/bios_knobs.h"
+
 #define MAX_NODE_NUMS MAX_NODES
 #define PCIE_CAP_AER		BIT(5)
 #define PCIE_CAP_ACS		BIT(6)
