@@ -371,7 +371,6 @@ static void mainboard_enable(struct device *dev)
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
 
-
 	struct device *sd_dev = pcidev_on_root(0x14, 7);
 
 	struct southbridge_amd_pi_hudson_config *sd_chip =
@@ -380,22 +379,18 @@ static void mainboard_enable(struct device *dev)
 	if (!check_sd3_mode())
 		sd_chip->sd_mode = 0;
     
+	/* Enable IOMMU if activated in config file */
+	struct device* iommu_dev;
+	iommu_dev = pcidev_on_root(0, 2);
 
-    /* Enable IOMMU if activated in config file */
-    struct device* iommu_dev;
-    iommu_dev = pcidev_on_root(0, 2);
+	if (iommu_dev)
+	{
+		if (check_iommu())
+			iommu_dev->enabled = 1;
 
-    if (iommu_dev)
-    {
-        if (check_iommu())
-        {
-            iommu_dev->enabled = 1;
-        }
-        else
-        {
-            iommu_dev->enabled = 0;
-        }
-    }
+		else
+			iommu_dev->enabled = 0;
+	}
 }
 
 static void mainboard_final(void *chip_info)
