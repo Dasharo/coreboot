@@ -36,7 +36,7 @@
 #include <arch/acpigen.h>
 #include <northbridge/amd/pi/nb_common.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
-#include "bios_knobs.h"
+#include "mainboard/pcengines/apu2/bios_knobs.h"
 
 #define MAX_NODE_NUMS MAX_NODES
 
