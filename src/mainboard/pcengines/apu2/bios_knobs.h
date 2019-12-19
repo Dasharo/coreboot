@@ -16,6 +16,9 @@
 #ifndef _BIOS_KNOBS_H
 #define _BIOS_KNOBS_H
 
+#include <stdint.h>
+
+u8 check_iommu(void);
 u8 check_console(void);
 u8 check_uartc(void);
 u8 check_uartd(void);
