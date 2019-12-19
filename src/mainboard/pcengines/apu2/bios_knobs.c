@@ -82,7 +82,28 @@ static u8 check_knob_value(const char *s)
 	return -1;
 }
 
-bool check_console(void)
+u8 check_iommu(void)
+{
+	u8 iommu;
+	iommu = check_knob_value("iommu");
+
+	switch (iommu) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO,
+			"Missing or invalid iommu knob, disable IOMMU.\n");
+		break;
+	}
+
+	return 0;
+}
+
+u8 check_console(void)
 {
 	u8 scon;
 
