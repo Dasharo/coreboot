@@ -420,6 +420,17 @@ static void mainboard_enable(struct device *dev)
 
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
+
+	/* Enable IOMMU if activated in config file */
+	struct device* iommu_dev;
+	iommu_dev = pcidev_on_root(0, 2);
+
+	if (iommu_dev) {
+		if (check_iommu())
+			iommu_dev->enabled = 1;
+		else
+			iommu_dev->enabled = 0;
+	}
 #if CONFIG(GENERATE_SMBIOS_TABLES)
 	dev->ops->get_smbios_data = mainboard_smbios_data;
 #endif
