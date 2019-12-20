@@ -682,8 +682,7 @@ static unsigned long agesa_write_acpi_tables(struct device *device,
 	current += ((acpi_header_t *)current)->length;
 
 	/* IVRS */
-    if (check_iommu())
-    {
+    if (check_iommu()) {
         current = ALIGN(current, 8);
         printk(BIOS_DEBUG, "ACPI:   * IVRS at %lx\n", current);
         ivrs = (acpi_ivrs_t *) current;
