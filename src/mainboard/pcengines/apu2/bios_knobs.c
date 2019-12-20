@@ -96,7 +96,7 @@ u8 check_iommu(void)
 		break;
 	default:
 		printk(BIOS_INFO,
-			"Missing or invalid iommu knob, enable console.\n");
+			"Missing or invalid iommu knob, disable IOMMU.\n");
 		break;
 	}
 
