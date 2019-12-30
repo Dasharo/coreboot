@@ -13,6 +13,14 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
+## [v4.11.0.2] - 2019-12-30
+### Changed
+- rebased with official coreboot repository commit 536799d
+- [updated sortbootorder to v4.6.16](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4616---2019-12-30)
+
+### Added
+- IOMMU runtime configuration (IOMMU is disabled by default)
+
 ## [v4.11.0.1] - 2019-12-08
 ### Changed
 - rebased with official coreboot repository commit 9f56eed
@@ -356,7 +364,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.11.0.1...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.11.0.2...develop
+[v4.11.0.2]: https://github.com/pcengines/coreboot/compare/v4.11.0.1...v4.11.0.2
 [v4.11.0.1]: https://github.com/pcengines/coreboot/compare/v4.10.0.3...v4.11.0.1
 [v4.10.0.3]: https://github.com/pcengines/coreboot/compare/v4.10.0.2...v4.10.0.3
 [v4.10.0.2]: https://github.com/pcengines/coreboot/compare/v4.10.0.1...v4.10.0.2
