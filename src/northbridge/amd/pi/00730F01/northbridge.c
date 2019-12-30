@@ -36,6 +36,7 @@
 #include <arch/acpigen.h>
 #include <northbridge/amd/pi/nb_common.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
+#include "mainboard/pcengines/apu2/bios_knobs.h"
 
 #define MAX_NODE_NUMS MAX_NODES
 
@@ -681,12 +682,14 @@ static unsigned long agesa_write_acpi_tables(struct device *device,
 	current += ((acpi_header_t *)current)->length;
 
 	/* IVRS */
-	current = ALIGN(current, 8);
-	printk(BIOS_DEBUG, "ACPI:   * IVRS at %lx\n", current);
-	ivrs = (acpi_ivrs_t *) current;
-	acpi_create_ivrs(ivrs, acpi_fill_ivrs);
-	current += ivrs->header.length;
-	acpi_add_table(rsdp, ivrs);
+	if (check_iommu()) {
+		current = ALIGN(current, 8);
+		printk(BIOS_DEBUG, "ACPI:   * IVRS at %lx\n", current);
+		ivrs = (acpi_ivrs_t *) current;
+		acpi_create_ivrs(ivrs, acpi_fill_ivrs);
+		current += ivrs->header.length;
+		acpi_add_table(rsdp, ivrs);
+	}
 
 	/* SRAT */
 	current = ALIGN(current, 8);
