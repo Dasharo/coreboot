@@ -21,6 +21,9 @@ pci$(stripped_ahcibios_id).rom-file := $(call strip_quotes,$(CONFIG_AHCI_BIOS_FI
 pci$(stripped_ahcibios_id).rom-type := optionrom
 endif
 
+bootblock-y += bootblock.c
+bootblock-y += bios_knobs.c
+
 romstage-y += buildOpts.c
 romstage-y += BiosCallOuts.c
 romstage-y += OemCustomize.c

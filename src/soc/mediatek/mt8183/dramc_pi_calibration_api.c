@@ -1588,18 +1588,24 @@ static void dramc_set_tx_best_dly(u8 chn, u8 rank, bool bypass_tx,
 	struct per_byte_dly center_dly[DQS_NUMBER];
 	u16 tune_diff, dq_delay_cell[DQ_DATA_WIDTH];
 
+
+	/*
+	 * The clock rate is usually (frequency / 2 - delta), where the delta
+	 * is introduced to avoid interference from RF peripherals like
+	 * modem, WiFi, and Bluetooth.
+	 */
 	switch (freq_group) {
 	case LP4X_DDR1600:
-		clock_rate = 800;
+		clock_rate = 796;
 		break;
 	case LP4X_DDR2400:
-		clock_rate = 1200;
+		clock_rate = 1196;
 		break;
 	case LP4X_DDR3200:
-		clock_rate = 1600;
+		clock_rate = 1596;
 		break;
 	case LP4X_DDR3600:
-		clock_rate = 1866;
+		clock_rate = 1792;
 		break;
 	default:
 		die("Invalid DDR frequency group %u\n", freq_group);
@@ -1612,7 +1618,7 @@ static void dramc_set_tx_best_dly(u8 chn, u8 rank, bool bypass_tx,
 		use_delay_cell = 0;
 
 	if (fast_calib && bypass_tx) {
-		dramc_dbg("bypass TX\n");
+		dramc_dbg("bypass TX, clock_rate: %d\n", clock_rate);
 		for (u8 byte = 0; byte < DQS_NUMBER; byte++) {
 			center_dly[byte].min_center = params->tx_center_min[chn][rank][byte];
 			center_dly[byte].max_center = params->tx_center_max[chn][rank][byte];
@@ -1645,8 +1651,10 @@ static void dramc_set_tx_best_dly(u8 chn, u8 rank, bool bypass_tx,
 				tune_diff = vref_dly[index].win_center -
 					center_dly[byte].min_center;
 				dq_delay_cell[index] = ((tune_diff * 100000000) /
-					(clock_rate / 2 * 64)) / dly_cell_unit;
+					(clock_rate * 64)) / dly_cell_unit;
 				byte_dly_cell[byte] |= (dq_delay_cell[index] << (bit * 4));
+				dramc_show("u1DelayCellOfst[%d]=%d cells (%d PI)\n",
+					index, dq_delay_cell[index], tune_diff);
 			}
 		}
 	}
@@ -1788,8 +1796,9 @@ static u8 dramc_window_perbit_cal(u8 chn, u8 rank, u8 freq_group,
 
 	u8 fsp = get_freq_fsq(freq_group);
 	u8 vref_range = !fsp;
-	bool bypass_tx = !fsp;
+	bool bypass_tx_rx = !fsp;
 
+	dramc_dbg("bypass TX RX window: %s\n", bypass_tx_rx ? "Yes" : "No");
 	dramc_get_vref_prop(rank, type, fsp,
 		&vref_scan_enable, &vref_begin, &vref_end);
 	dramc_get_dly_range(chn, rank, type, freq_group, dq_precal_result,
@@ -1826,9 +1835,9 @@ static u8 dramc_window_perbit_cal(u8 chn, u8 rank, u8 freq_group,
 			vref_step = 2;
 	}
 
-	if (fast_calib && bypass_tx &&
+	if (fast_calib && bypass_tx_rx &&
 	    (type == TX_WIN_DQ_ONLY || type == TX_WIN_DQ_DQM)) {
-		dramc_set_tx_best_dly(chn, rank, true, vref_dly.perbit_dly,
+		dramc_set_tx_best_dly(chn, rank, bypass_tx_rx, vref_dly.perbit_dly,
 			type, freq_group, dq_precal_result, dly_cell_unit,
 			params, fast_calib);
 
@@ -1872,7 +1881,7 @@ static u8 dramc_window_perbit_cal(u8 chn, u8 rank, u8 freq_group,
 				RX_DQ, FIRST_DQ_DELAY);
 		}
 
-		if (fast_calib &&
+		if (fast_calib && bypass_tx_rx &&
 		    (type == RX_WIN_RD_DQC || type == RX_WIN_TEST_ENG)) {
 			dramc_dbg("bypass RX params\n");
 			for (size_t bit = 0; bit < DQ_DATA_WIDTH; bit++) {

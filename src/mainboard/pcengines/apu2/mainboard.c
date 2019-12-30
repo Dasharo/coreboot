@@ -21,7 +21,6 @@
 #include <commonlib/region.h>
 #include <console/console.h>
 #include <device/device.h>
-#include <device/pci.h>
 #include <device/pci_def.h>
 #include <security/vboot/vboot_crtm.h>
 #include <security/vboot/misc.h>
@@ -378,6 +377,17 @@ static void mainboard_enable(struct device *dev)
 
 	if (!check_sd3_mode())
 		sd_chip->sd_mode = 0;
+    
+	/* Enable IOMMU if activated in config file */
+	struct device* iommu_dev;
+	iommu_dev = pcidev_on_root(0, 2);
+
+	if (iommu_dev) {
+		if (check_iommu())
+			iommu_dev->enabled = 1;
+		else
+			iommu_dev->enabled = 0;
+	}
 }
 
 static void mainboard_final(void *chip_info)

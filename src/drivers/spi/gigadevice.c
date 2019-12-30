@@ -13,7 +13,7 @@
  */
 
 #include <console/console.h>
-#include <stdlib.h>
+#include <commonlib/helpers.h>
 #include <spi_flash.h>
 #include <spi-generic.h>
 #include <string.h>
@@ -178,7 +178,7 @@ static int gigadevice_write(const struct spi_flash *flash, u32 offset,
 
 	for (actual = 0; actual < len; actual += chunk_len) {
 		byte_addr = offset % page_size;
-		chunk_len = min(len - actual, page_size - byte_addr);
+		chunk_len = MIN(len - actual, page_size - byte_addr);
 		chunk_len = spi_crop_chunk(&flash->spi, sizeof(cmd), chunk_len);
 
 		ret = spi_flash_cmd(&flash->spi, CMD_GD25_WREN, NULL, 0);
@@ -194,7 +194,7 @@ static int gigadevice_write(const struct spi_flash *flash, u32 offset,
 		cmd[3] = offset & 0xff;
 #if CONFIG(DEBUG_SPI_FLASH)
 		printk(BIOS_SPEW,
-		       "PP gigadevice.c: 0x%p => cmd = { 0x%02x 0x%02x%02x%02x }"
+		       "PP gigadevice.c: %p => cmd = { 0x%02x 0x%02x%02x%02x }"
 		       " chunk_len = %zu\n", buf + actual,
 		       cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
 #endif

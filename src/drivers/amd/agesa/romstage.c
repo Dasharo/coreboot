@@ -11,10 +11,10 @@
  * GNU General Public License for more details.
  */
 
+#include <amdblocks/biosram.h>
 #include <arch/acpi.h>
 #include <arch/cpu.h>
 #include <arch/romstage.h>
-#include <bootblock_common.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <halt.h>
@@ -26,10 +26,7 @@
 #include <northbridge/amd/agesa/agesa_helper.h>
 #include <northbridge/amd/agesa/state_machine.h>
 
-void __weak platform_once(struct sysinfo *cb)
-{
-	board_BeforeAgesa(cb);
-}
+void __weak board_BeforeAgesa(struct sysinfo *cb) { }
 
 static void fill_sysinfo(struct sysinfo *cb)
 {
@@ -39,6 +36,11 @@ static void fill_sysinfo(struct sysinfo *cb)
 	agesa_set_interface(cb);
 }
 
+/* APs will enter directly here from bootblock, bypassing verstage
+ * and potential fallback / normal bootflow detection.
+ */
+static void ap_romstage_main(void);
+
 static void romstage_main(void)
 {
 	struct postcar_frame pcf;
@@ -47,23 +49,21 @@ static void romstage_main(void)
 	u8 initial_apic_id = (u8) (cpuid_ebx(1) >> 24);
 	int cbmem_initted = 0;
 
-	/* Enable PCI MMIO configuration. */
-	amd_initmmio();
-
 	fill_sysinfo(cb);
 
 	if (initial_apic_id == 0) {
 
-		timestamp_init(timestamp_get());
 		timestamp_add_now(TS_START_ROMSTAGE);
 
-		platform_once(cb);
+		board_BeforeAgesa(cb);
 
 		console_init();
 	}
 
 	printk(BIOS_DEBUG, "APIC %02d: CPU Family_Model = %08x\n",
 		initial_apic_id, cpuid_eax(1));
+
+	set_ap_entry_ptr(ap_romstage_main);
 
 	agesa_execute_state(cb, AMD_INIT_RESET);
 
@@ -104,9 +104,6 @@ static void ap_romstage_main(void)
 	struct sysinfo romstage_state;
 	struct sysinfo *cb = &romstage_state;
 
-	/* Enable PCI MMIO configuration. */
-	amd_initmmio();
-
 	fill_sysinfo(cb);
 
 	agesa_execute_state(cb, AMD_INIT_RESET);
@@ -117,15 +114,7 @@ static void ap_romstage_main(void)
 	halt();
 }
 
-/* This wrapper enables easy transition away from ROMCC_BOOTBLOCK
- * keeping changes in cache_as_ram.S easy to manage.
- */
-asmlinkage void bootblock_c_entry(uint64_t base_timestamp)
+asmlinkage void car_stage_entry(void)
 {
 	romstage_main();
-}
-
-asmlinkage void ap_bootblock_c_entry(void)
-{
-	ap_romstage_main();
 }

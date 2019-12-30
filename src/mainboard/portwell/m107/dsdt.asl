@@ -18,6 +18,8 @@
 
 #include <arch/acpi.h>
 
+#define SDCARD_CD 81 /* Not used */
+
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
@@ -27,7 +29,6 @@ DefinitionBlock(
 	0x20110725	/* OEM revision */
 )
 {
-	/* Some generic macros */
 	#include <acpi/platform.asl>
 
 	/* global NVS and variables */

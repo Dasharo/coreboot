@@ -15,6 +15,8 @@
 #
 
 bootblock-y += pmutil.c
+bootblock-y += bootblock.c
+bootblock-y += bios_knobs.c
 
 romstage-y += bios_knobs.c
 romstage-y += BiosCallOuts.c

@@ -28,11 +28,9 @@
 #
 #*****************************************************************************
 
-ifneq ($(CONFIG_ROMCC_BOOTBLOCK),y)
 bootblock-y += bootblock.c
 bootblock-y += early_setup.c
 bootblock-$(CONFIG_USBDEBUG) += enable_usbdebug.c
-endif
 
 romstage-y += early_setup.c
 romstage-y += enable_usbdebug.c
@@ -42,7 +40,6 @@ romstage-y += smbus_spd.c
 romstage-$(CONFIG_HUDSON_UART) += uart.c
 
 verstage-y += early_setup.c
-verstage-y += reset.c
 verstage-$(CONFIG_HUDSON_UART) += uart.c
 
 ramstage-y += enable_usbdebug.c
@@ -55,7 +52,6 @@ ramstage-$(CONFIG_HUDSON_IMC_FWM) += imc.c
 ramstage-y += lpc.c
 ramstage-y += pci.c
 ramstage-y += pcie.c
-ramstage-y += reset.c
 ramstage-y += sata.c
 ramstage-y += sd.c
 ramstage-y += sm.c
@@ -64,6 +60,8 @@ ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi_util.c
 ramstage-$(CONFIG_HUDSON_UART) += uart.c
 ramstage-y += usb.c
+
+all-y += reset.c
 
 smm-y += smihandler.c
 smm-y += smi_util.c

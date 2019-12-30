@@ -19,7 +19,6 @@
 #include <stdint.h>
 #include <cf9_reset.h>
 #include <device/pnp_ops.h>
-#include <device/pci_ops.h>
 #include <superio/winbond/common/winbond.h>
 #include <superio/winbond/w83627dhg/w83627dhg.h>
 #include <console/console.h>
@@ -94,7 +93,7 @@ static u8 msr_get_fsb(void)
 
 void mainboard_late_rcba_config(void)
 {
-	/* Enable PCIe Root Port Clock Gate */
+	/* Enable only PCIe Root Port Clock Gate */
 	RCBA32(CG) = 0x00000001;
 }
 

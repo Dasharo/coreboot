@@ -14,7 +14,6 @@
  */
 
 #include <bootblock_common.h>
-#include <device/pci_ops.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <southbridge/intel/bd82x6x/pch.h>
@@ -22,7 +21,6 @@
 #include <superio/ite/it8728f/it8728f.h>
 
 #define SUPERIO_BASE 0x2e
-#define SUPERIO_DEV PNP_DEV(SUPERIO_BASE, 0)
 #define SIO_GPIO PNP_DEV(SUPERIO_BASE, IT8728F_GPIO)
 #define SERIAL_DEV PNP_DEV(SUPERIO_BASE, 0x01)
 

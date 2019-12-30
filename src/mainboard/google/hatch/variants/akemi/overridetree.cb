@@ -57,6 +57,7 @@ chip soc/intel/cannonlake
 			.speed = I2C_SPEED_FAST,
 			.rise_time_ns = 50,
 			.fall_time_ns = 15,
+			.data_hold_time_ns = 400,
 		},
 		.i2c[1] = {
 			.speed = I2C_SPEED_FAST,
@@ -205,7 +206,7 @@ chip soc/intel/cannonlake
 				register "generic.probed" = "1"
 				register "generic.reset_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D15)"
-				register "generic.reset_delay_ms" = "120"
+				register "generic.reset_delay_ms" = "150"
 				register "generic.reset_off_delay_ms" = "3"
 				register "generic.enable_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D9)"
@@ -233,6 +234,13 @@ chip soc/intel/cannonlake
 		end #I2C #4
 		device pci 1a.0 on  end # eMMC
 		device pci 1e.3 off end # GSPI #1
+		device pci 1f.3 on
+			chip drivers/generic/max98357a
+				register "sdmode_gpio" =  "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_H3)"
+				register "sdmode_delay" = "5"
+				device generic 0 on end
+			end
+		end # Intel HDA
 	end
 
 end
