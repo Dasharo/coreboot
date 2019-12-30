@@ -13,9 +13,7 @@
  * GNU General Public License for more details.
  */
 
-#include <stdlib.h>
 #include <console/console.h>
-#include <delay.h>
 #include <device/mmio.h>
 #include <soc/usb.h>
 #include <soc/clock.h>

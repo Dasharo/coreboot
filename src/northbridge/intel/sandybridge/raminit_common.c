@@ -15,6 +15,7 @@
  * GNU General Public License for more details.
  */
 
+#include <commonlib/helpers.h>
 #include <console/console.h>
 #include <string.h>
 #include <arch/cpu.h>
@@ -520,98 +521,97 @@ void dram_memorymap(ramctr_timing * ctrl, int me_uma_size)
 	printk(BIOS_DEBUG, "Update PCI-E configuration space:\n");
 
 	// TOM (top of memory)
-	reg = pci_read_config32(PCI_DEV(0, 0, 0), 0xa0);
+	reg = pci_read_config32(PCI_DEV(0, 0, 0), TOM);
 	val = tom & 0xfff;
 	reg = (reg & ~0xfff00000) | (val << 20);
-	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0xa0, reg);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xa0, reg);
+	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", TOM, reg);
+	pci_write_config32(PCI_DEV(0, 0, 0), TOM, reg);
 
-	reg = pci_read_config32(PCI_DEV(0, 0, 0), 0xa4);
+	reg = pci_read_config32(PCI_DEV(0, 0, 0), TOM + 4);
 	val = tom & 0xfffff000;
 	reg = (reg & ~0x000fffff) | (val >> 12);
-	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0xa4, reg);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xa4, reg);
+	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", TOM + 4, reg);
+	pci_write_config32(PCI_DEV(0, 0, 0), TOM + 4, reg);
 
 	// TOLUD (top of low used dram)
-	reg = pci_read_config32(PCI_DEV(0, 0, 0), 0xbc);
+	reg = pci_read_config32(PCI_DEV(0, 0, 0), TOLUD);
 	val = toludbase & 0xfff;
 	reg = (reg & ~0xfff00000) | (val << 20);
-	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0xbc, reg);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xbc, reg);
+	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", TOLUD, reg);
+	pci_write_config32(PCI_DEV(0, 0, 0), TOLUD, reg);
 
 	// TOUUD LSB (top of upper usable dram)
-	reg = pci_read_config32(PCI_DEV(0, 0, 0), 0xa8);
+	reg = pci_read_config32(PCI_DEV(0, 0, 0), TOUUD);
 	val = touudbase & 0xfff;
 	reg = (reg & ~0xfff00000) | (val << 20);
-	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0xa8, reg);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xa8, reg);
+	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", TOUUD, reg);
+	pci_write_config32(PCI_DEV(0, 0, 0), TOUUD, reg);
 
 	// TOUUD MSB
-	reg = pci_read_config32(PCI_DEV(0, 0, 0), 0xac);
+	reg = pci_read_config32(PCI_DEV(0, 0, 0), TOUUD + 4);
 	val = touudbase & 0xfffff000;
 	reg = (reg & ~0x000fffff) | (val >> 12);
-	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0xac, reg);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xac, reg);
+	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", TOUUD + 4, reg);
+	pci_write_config32(PCI_DEV(0, 0, 0), TOUUD + 4, reg);
 
 	if (reclaim) {
 		// REMAP BASE
-		pci_write_config32(PCI_DEV(0, 0, 0), 0x90, remapbase << 20);
-		pci_write_config32(PCI_DEV(0, 0, 0), 0x94, remapbase >> 12);
+		pci_write_config32(PCI_DEV(0, 0, 0), REMAPBASE, remapbase << 20);
+		pci_write_config32(PCI_DEV(0, 0, 0), REMAPBASE + 4, remapbase >> 12);
 
 		// REMAP LIMIT
-		pci_write_config32(PCI_DEV(0, 0, 0), 0x98, remaplimit << 20);
-		pci_write_config32(PCI_DEV(0, 0, 0), 0x9c, remaplimit >> 12);
+		pci_write_config32(PCI_DEV(0, 0, 0), REMAPLIMIT, remaplimit << 20);
+		pci_write_config32(PCI_DEV(0, 0, 0), REMAPLIMIT + 4, remaplimit >> 12);
 	}
 	// TSEG
-	reg = pci_read_config32(PCI_DEV(0, 0, 0), 0xb8);
+	reg = pci_read_config32(PCI_DEV(0, 0, 0), TSEGMB);
 	val = tsegbase & 0xfff;
 	reg = (reg & ~0xfff00000) | (val << 20);
-	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0xb8, reg);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xb8, reg);
+	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", TSEGMB, reg);
+	pci_write_config32(PCI_DEV(0, 0, 0), TSEGMB, reg);
 
 	// GFX stolen memory
-	reg = pci_read_config32(PCI_DEV(0, 0, 0), 0xb0);
+	reg = pci_read_config32(PCI_DEV(0, 0, 0), BDSM);
 	val = gfxstolenbase & 0xfff;
 	reg = (reg & ~0xfff00000) | (val << 20);
-	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0xb0, reg);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xb0, reg);
+	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", BDSM, reg);
+	pci_write_config32(PCI_DEV(0, 0, 0), BDSM, reg);
 
 	// GTT stolen memory
-	reg = pci_read_config32(PCI_DEV(0, 0, 0), 0xb4);
+	reg = pci_read_config32(PCI_DEV(0, 0, 0), BGSM);
 	val = gttbase & 0xfff;
 	reg = (reg & ~0xfff00000) | (val << 20);
-	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0xb4, reg);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xb4, reg);
+	printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", BGSM, reg);
+	pci_write_config32(PCI_DEV(0, 0, 0), BGSM, reg);
 
 	if (me_uma_size) {
-		reg = pci_read_config32(PCI_DEV(0, 0, 0), 0x7c);
+		reg = pci_read_config32(PCI_DEV(0, 0, 0), MEMASK + 4);
 		val = (0x80000 - me_uma_size) & 0xfffff000;
 		reg = (reg & ~0x000fffff) | (val >> 12);
-		printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0x7c, reg);
-		pci_write_config32(PCI_DEV(0, 0, 0), 0x7c, reg);
+		printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", MEMASK + 4, reg);
+		pci_write_config32(PCI_DEV(0, 0, 0), MEMASK + 4, reg);
 
 		// ME base
-		reg = pci_read_config32(PCI_DEV(0, 0, 0), 0x70);
+		reg = pci_read_config32(PCI_DEV(0, 0, 0), MEBASE);
 		val = mestolenbase & 0xfff;
 		reg = (reg & ~0xfff00000) | (val << 20);
-		printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0x70, reg);
-		pci_write_config32(PCI_DEV(0, 0, 0), 0x70, reg);
+		printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", MEBASE, reg);
+		pci_write_config32(PCI_DEV(0, 0, 0), MEBASE, reg);
 
-		reg = pci_read_config32(PCI_DEV(0, 0, 0), 0x74);
+		reg = pci_read_config32(PCI_DEV(0, 0, 0), MEBASE + 4);
 		val = mestolenbase & 0xfffff000;
 		reg = (reg & ~0x000fffff) | (val >> 12);
-		printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0x74, reg);
-		pci_write_config32(PCI_DEV(0, 0, 0), 0x74, reg);
+		printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", MEBASE + 4, reg);
+		pci_write_config32(PCI_DEV(0, 0, 0), MEBASE + 4, reg);
 
 		// ME mask
-		reg = pci_read_config32(PCI_DEV(0, 0, 0), 0x78);
+		reg = pci_read_config32(PCI_DEV(0, 0, 0), MEMASK);
 		val = (0x80000 - me_uma_size) & 0xfff;
 		reg = (reg & ~0xfff00000) | (val << 20);
-		reg = (reg & ~0x400) | (1 << 10);	// set lockbit on ME mem
-
-		reg = (reg & ~0x800) | (1 << 11);	// set ME memory enable
-		printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", 0x78, reg);
-		pci_write_config32(PCI_DEV(0, 0, 0), 0x78, reg);
+		reg = reg | (1 << 10);	// set lockbit on ME mem
+		reg = reg | (1 << 11);	// set ME memory enable
+		printk(BIOS_DEBUG, "PCI(0, 0, 0)[%x] = %x\n", MEMASK, reg);
+		pci_write_config32(PCI_DEV(0, 0, 0), MEMASK, reg);
 	}
 }
 
@@ -1461,7 +1461,7 @@ static void test_timC(ramctr_timing * ctrl, int channel, int slotrank)
 	/* DRAM command ACT */
 	MCHBAR32(0x4220 + 0x400 * channel) = 0x1f006;
 	MCHBAR32(0x4230 + 0x400 * channel) =
-		(max((ctrl->tFAW >> 2) + 1, ctrl->tRRD) << 10)
+		(MAX((ctrl->tFAW >> 2) + 1, ctrl->tRRD) << 10)
 		| 4 | (ctrl->tRCD << 16);
 	MCHBAR32(0x4200 + 0x400 * channel) = (slotrank << 24) | (6 << 16);
 	MCHBAR32(0x4210 + 0x400 * channel) = 0x244;
@@ -1499,7 +1499,7 @@ static void test_timC(ramctr_timing * ctrl, int channel, int slotrank)
 	/* DRAM command ACT */
 	MCHBAR32(0x4224 + 0x400 * channel) = 0x1f006;
 	MCHBAR32(0x4234 + 0x400 * channel) =
-		(max(ctrl->tRRD, (ctrl->tFAW >> 2) + 1) << 10)
+		(MAX(ctrl->tRRD, (ctrl->tFAW >> 2) + 1) << 10)
 		| 8 | (ctrl->CAS << 16);
 	MCHBAR32(0x4204 + 0x400 * channel) = (slotrank << 24) | 0x60000;
 	MCHBAR32(0x4214 + 0x400 * channel) = 0x244;
@@ -1507,7 +1507,7 @@ static void test_timC(ramctr_timing * ctrl, int channel, int slotrank)
 	/* DRAM command RD */
 	MCHBAR32(0x4228 + 0x400 * channel) = 0x1f105;
 	MCHBAR32(0x4238 + 0x400 * channel) =
-		0x40011f4 | (max(ctrl->tRTP, 8) << 16);
+		0x40011f4 | (MAX(ctrl->tRTP, 8) << 16);
 	MCHBAR32(0x4208 + 0x400 * channel) = (slotrank << 24);
 	MCHBAR32(0x4218 + 0x400 * channel) = 0x242;
 
@@ -2101,7 +2101,7 @@ static int test_320c(ramctr_timing * ctrl, int channel, int slotrank)
 		/* DRAM command ACT */
 		MCHBAR32(0x4220 + 0x400 * channel) = 0x1f006;
 		MCHBAR32(0x4230 + 0x400 * channel) =
-			((max(ctrl->tRRD, (ctrl->tFAW >> 2) + 1)) << 10)
+			((MAX(ctrl->tRRD, (ctrl->tFAW >> 2) + 1)) << 10)
 			| 8 | (ctrl->tRCD << 16);
 		MCHBAR32(0x4200 + 0x400 * channel) =
 			(slotrank << 24) | ctr | 0x60000;
@@ -2118,7 +2118,7 @@ static int test_320c(ramctr_timing * ctrl, int channel, int slotrank)
 		/* DRAM command RD */
 		MCHBAR32(0x4228 + 0x400 * channel) = 0x1f105;
 		MCHBAR32(0x4238 + 0x400 * channel) =
-			0x4001020 | (max(ctrl->tRTP, 8) << 16);
+			0x4001020 | (MAX(ctrl->tRTP, 8) << 16);
 		MCHBAR32(0x4208 + 0x400 * channel) = (slotrank << 24);
 		MCHBAR32(0x4248 + 0x400 * channel) = 0x389abcd;
 		MCHBAR32(0x4218 + 0x400 * channel) = 0x20e42;
@@ -2662,7 +2662,7 @@ static int discover_edges_write_real(ramctr_timing *ctrl, int channel,
 				MCHBAR32(0x4220 + 0x400 * channel) = 0x1f006;
 				MCHBAR32(0x4230 + 0x400 * channel) =
 					0x4 | (ctrl->tRCD << 16) |
-					(max(ctrl->tRRD, (ctrl->tFAW >> 2) + 1)
+					(MAX(ctrl->tRRD, (ctrl->tFAW >> 2) + 1)
 					<< 10);
 				MCHBAR32(0x4200 + 0x400 * channel) =
 					(slotrank << 24) | 0x60000;
@@ -2679,7 +2679,7 @@ static int discover_edges_write_real(ramctr_timing *ctrl, int channel,
 				/* DRAM command RD */
 				MCHBAR32(0x4228 + 0x400 * channel) = 0x1f105;
 				MCHBAR32(0x4238 + 0x400 * channel) =
-					0x4005020 | (max(ctrl->tRTP, 8) << 16);
+					0x4005020 | (MAX(ctrl->tRTP, 8) << 16);
 				MCHBAR32(0x4208 + 0x400 * channel) =
 					slotrank << 24;
 				MCHBAR32(0x4218 + 0x400 * channel) = 0x242;
@@ -2717,9 +2717,9 @@ static int discover_edges_write_real(ramctr_timing *ctrl, int channel,
 					 rn.end, rn.start + ctrl->edge_offset[i],
 					 rn.end - ctrl->edge_offset[i]);
 				lower[lane] =
-					max(rn.start + ctrl->edge_offset[i], lower[lane]);
+					MAX(rn.start + ctrl->edge_offset[i], lower[lane]);
 				upper[lane] =
-					min(rn.end - ctrl->edge_offset[i], upper[lane]);
+					MIN(rn.end - ctrl->edge_offset[i], upper[lane]);
 				edges[lane] = (lower[lane] + upper[lane]) / 2;
 				if (rn.all || (lower[lane] > upper[lane])) {
 					printk(BIOS_EMERG, "edge write discovery failed: %d, %d, %d\n",
@@ -2787,7 +2787,7 @@ static void test_timC_write(ramctr_timing *ctrl, int channel, int slotrank)
 	/* DRAM command ACT */
 	MCHBAR32(0x4220 + 0x400 * channel) = 0x1f006;
 	MCHBAR32(0x4230 + 0x400 * channel) =
-		(max((ctrl->tFAW >> 2) + 1, ctrl->tRRD)
+		(MAX((ctrl->tFAW >> 2) + 1, ctrl->tRRD)
 		 << 10) | (ctrl->tRCD << 16) | 4;
 	MCHBAR32(0x4200 + 0x400 * channel) =
 		(slotrank << 24) | 0x60000;
@@ -2803,7 +2803,7 @@ static void test_timC_write(ramctr_timing *ctrl, int channel, int slotrank)
 	/* DRAM command RD */
 	MCHBAR32(0x4228 + 0x400 * channel) = 0x1f105;
 	MCHBAR32(0x4238 + 0x400 * channel) =
-		0x40011e0 | (max(ctrl->tRTP, 8) << 16);
+		0x40011e0 | (MAX(ctrl->tRTP, 8) << 16);
 	MCHBAR32(0x4208 + 0x400 * channel) = slotrank << 24;
 	MCHBAR32(0x4218 + 0x400 * channel) = 0x242;
 
@@ -2883,10 +2883,10 @@ int discover_timC_write(ramctr_timing *ctrl)
 							 rn.start + ctrl->timC_offset[i],
 							 rn.end - ctrl->timC_offset[i]);
 						lower[channel][slotrank][lane] =
-							max(rn.start + ctrl->timC_offset[i],
+							MAX(rn.start + ctrl->timC_offset[i],
 							    lower[channel][slotrank][lane]);
 						upper[channel][slotrank][lane] =
-							min(rn.end - ctrl->timC_offset[i],
+							MIN(rn.end - ctrl->timC_offset[i],
 							    upper[channel][slotrank][lane]);
 
 					}
@@ -2927,7 +2927,7 @@ void normalize_training(ramctr_timing * ctrl)
 		int delta;
 		mat = 0;
 		FOR_ALL_LANES mat =
-		    max(ctrl->timings[channel][slotrank].lanes[lane].timA, mat);
+		    MAX(ctrl->timings[channel][slotrank].lanes[lane].timA, mat);
 		printram("normalize %d, %d, %d: mat %d\n",
 		    channel, slotrank, lane, mat);
 
@@ -3080,8 +3080,8 @@ void set_4008c(ramctr_timing * ctrl)
 		int max_320c = -10000;
 
 		FOR_ALL_POPULATED_RANKS {
-			max_320c = max(ctrl->timings[channel][slotrank].val_320c, max_320c);
-			min_320c = min(ctrl->timings[channel][slotrank].val_320c, min_320c);
+			max_320c = MAX(ctrl->timings[channel][slotrank].val_320c, max_320c);
+			min_320c = MIN(ctrl->timings[channel][slotrank].val_320c, min_320c);
 		}
 
 		if (max_320c - min_320c > 51)

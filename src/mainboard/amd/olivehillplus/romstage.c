@@ -37,8 +37,6 @@ static void romstage_main_template(void)
 	outb(0xD2, 0xcd6);
 	outb(0x00, 0xcd7);
 
-	hudson_lpc_port80();
-
 	if (!cpu_init_detectedx && boot_cpu()) {
 		post_code(0x30);
 
@@ -61,26 +59,11 @@ static void romstage_main_template(void)
 		for (i = 0; i < 200000; i++)
 			inb(0xCD6);
 	}
-
-	post_code(0x37);
-	AGESAWRAPPER(amdinitreset);
-
-	post_code(0x38);
-	printk(BIOS_DEBUG, "Got past avalon_early_setup\n");
-
-	post_code(0x39);
-	AGESAWRAPPER(amdinitearly);
-
-	post_code(0x40);
-	AGESAWRAPPER(amdinitpost);
 }
 
 void agesa_postcar(struct sysinfo *cb)
 {
-	//PspMboxBiosCmdDramInfo();
-	post_code(0x41);
-	AGESAWRAPPER(amdinitenv);
-
+	/* After AMD_INIT_ENV -> move to ramstage ? */
 	outb(0xEA, 0xCD6);
 	outb(0x1, 0xcd7);
 }

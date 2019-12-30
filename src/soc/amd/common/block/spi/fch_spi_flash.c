@@ -13,6 +13,7 @@
  * GNU General Public License for more details.
  */
 
+#include <commonlib/helpers.h>
 #include <console/console.h>
 #include <spi_flash.h>
 #include <soc/southbridge.h>
@@ -31,7 +32,7 @@ static void spi_flash_addr(u32 addr, u8 *cmd)
 
 static int crop_chunk(unsigned int cmd_len, unsigned int buf_len)
 {
-	return min((SPI_FIFO_DEPTH - (cmd_len - 1)), buf_len);
+	return MIN((SPI_FIFO_DEPTH - (cmd_len - 1)), buf_len);
 }
 
 int fch_spi_flash_cmd_write(const u8 *cmd, size_t cmd_len, const void *data, size_t data_len)
@@ -39,7 +40,8 @@ int fch_spi_flash_cmd_write(const u8 *cmd, size_t cmd_len, const void *data, siz
 	int ret;
 	u8 buff[SPI_FIFO_DEPTH + 1];
 
-	if ((cmd_len + data_len) > SPI_FIFO_DEPTH)
+	/* Ensure FIFO is large enough.  First byte of command does not go in the FIFO. */
+	if ((cmd_len - 1 + data_len) > SPI_FIFO_DEPTH)
 		return -1;
 	memcpy(buff, cmd, cmd_len);
 	memcpy(buff + cmd_len, data, data_len);
@@ -192,7 +194,7 @@ static int fch_spi_flash_write(const struct spi_flash *flash, uint32_t offset, s
 
 	for (actual = start; actual < len; actual += chunk_len) {
 		byte_addr = offset % page_size;
-		chunk_len = min(len - actual, page_size - byte_addr);
+		chunk_len = MIN(len - actual, page_size - byte_addr);
 		chunk_len = crop_chunk(sizeof(cmd), chunk_len);
 
 		cmd[0] = spi_data_ptr->write_cmd;
@@ -200,7 +202,7 @@ static int fch_spi_flash_write(const struct spi_flash *flash, uint32_t offset, s
 		cmd[2] = (offset >> 8) & 0xff;
 		cmd[3] = offset & 0xff;
 #if CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG)
-		printk(BIOS_DEBUG, "PP: 0x%p => cmd = { 0x%02x 0x%02x%02x%02x } chunk_len = %zu"
+		printk(BIOS_DEBUG, "PP: %p => cmd = { 0x%02x 0x%02x%02x%02x } chunk_len = %zu"
 				"\n", buf + actual, cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
 #endif
 

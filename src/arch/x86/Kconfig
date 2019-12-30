@@ -13,7 +13,6 @@
 
 config ARCH_X86
 	bool
-	default n
 	select PCI
 	select RELOCATABLE_MODULES
 
@@ -21,17 +20,15 @@ config ARCH_X86
 
 config ARCH_BOOTBLOCK_X86_32
 	bool
-	default n
 	select ARCH_X86
-	select BOOTBLOCK_CUSTOM if ROMCC_BOOTBLOCK
 
 config ARCH_VERSTAGE_X86_32
 	bool
-	default n
+	select ARCH_X86
 
 config ARCH_ROMSTAGE_X86_32
 	bool
-	default n
+	select ARCH_X86
 
 config ARCH_POSTCAR_X86_32
 	bool
@@ -39,23 +36,21 @@ config ARCH_POSTCAR_X86_32
 
 config ARCH_RAMSTAGE_X86_32
 	bool
-	default n
+	select ARCH_X86
 
 # stage selectors for x64
 
 config ARCH_BOOTBLOCK_X86_64
 	bool
-	default n
 	select ARCH_X86
-	select BOOTBLOCK_CUSTOM if ROMCC_BOOTBLOCK
 
 config ARCH_VERSTAGE_X86_64
 	bool
-	default n
+	select ARCH_X86
 
 config ARCH_ROMSTAGE_X86_64
 	bool
-	default n
+	select ARCH_X86
 
 config ARCH_POSTCAR_X86_64
 	bool
@@ -63,7 +58,9 @@ config ARCH_POSTCAR_X86_64
 
 config ARCH_RAMSTAGE_X86_64
 	bool
-	default n
+	select ARCH_X86
+
+if ARCH_X86
 
 config ARCH_X86_64_PGTBL_LOC
 	hex "x86_64 page table location in CBFS"
@@ -169,12 +166,6 @@ config BOOTBLOCK_DEBUG_SPINLOOP
 	  Add a spin (JMP .) in bootblock_crt0.S during early bootblock to wait
 	  for a JTAG debugger to break into the execution sequence.
 
-config BOOTBLOCK_MAINBOARD_INIT
-	string
-
-config BOOTBLOCK_NORTHBRIDGE_INIT
-	string
-
 config BOOTBLOCK_RESETS
 	string
 
@@ -186,9 +177,6 @@ config CMOS_DEFAULT_FILE
 	string
 	default "src/mainboard/$(MAINBOARDDIR)/cmos.default"
 	depends on HAVE_CMOS_DEFAULT
-
-config BOOTBLOCK_SOUTHBRIDGE_INIT
-	string
 
 config IOAPIC_INTERRUPTS_ON_FSB
 	bool
@@ -244,11 +232,10 @@ config ROMSTAGE_DEBUG_SPINLOOP
 	  Add a spin (JMP .) in assembly_entry.S during early romstage to wait
 	  for a JTAG debugger to break into the execution sequence.
 
-# Selecting a cbfs prefix from the bootblock is only implemented with romcc
 choice
 	prompt "Bootblock behaviour"
 	default BOOTBLOCK_SIMPLE
-	depends on ROMCC_BOOTBLOCK
+	depends on !VBOOT
 
 config BOOTBLOCK_SIMPLE
 	bool "Always load fallback"
@@ -258,11 +245,6 @@ config BOOTBLOCK_NORMAL
 	bool "Switch to normal if CMOS says so"
 
 endchoice
-
-config BOOTBLOCK_SOURCE
-	string
-	default "bootblock_simple.c" if BOOTBLOCK_SIMPLE
-	default "bootblock_normal.c" if BOOTBLOCK_NORMAL
 
 config SKIP_MAX_REBOOT_CNT_CLEAR
 	bool "Do not clear reboot count after successful boot"
@@ -350,3 +332,5 @@ config MAX_PIRQ_LINKS
 	  also have a separate link for ATA or IOAPIC interrupts. When the PIRQ
 	  table specifies links greater than 4, pirq_route_irqs will not
 	  function properly, unless this variable is correctly set.
+
+endif

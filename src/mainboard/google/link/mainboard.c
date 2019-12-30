@@ -16,7 +16,6 @@
 
 #include <types.h>
 #include <device/device.h>
-#include <device/pci_def.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
 #if CONFIG(VGA_ROM_RUN)
@@ -30,7 +29,6 @@
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
 #include <smbios.h>
-#include <device/pci.h>
 #include <ec/google/chromeec/ec.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 

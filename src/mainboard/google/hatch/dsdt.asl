@@ -26,7 +26,6 @@ DefinitionBlock(
 	0x20110725	/* OEM revision */
 )
 {
-	/* Some generic macros */
 	#include <soc/intel/cannonlake/acpi/platform.asl>
 
 	/* global NVS and variables */
@@ -41,9 +40,6 @@ DefinitionBlock(
 			#include <soc/intel/cannonlake/acpi/northbridge.asl>
 			#include <soc/intel/cannonlake/acpi/southbridge.asl>
 		}
-
-		/* Mainboard hooks */
-		#include "mainboard.asl"
 	}
 
 #if CONFIG(CHROMEOS)

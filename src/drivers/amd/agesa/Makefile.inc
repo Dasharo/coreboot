@@ -19,7 +19,9 @@ romstage-y += state_machine.c
 
 ramstage-y += state_machine.c
 
-cpu_incs-y += $(src)/drivers/amd/agesa/cache_as_ram.S
+bootblock-y += bootblock.c
+bootblock-y += cache_as_ram.S
+
 postcar-y += exit_car.S
 
 romstage-y += def_callouts.c

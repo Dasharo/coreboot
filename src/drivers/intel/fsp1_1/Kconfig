@@ -15,6 +15,7 @@ config PLATFORM_USES_FSP1_1
 	bool
 	select UEFI_2_4_BINDING
 	select INTEL_GMA_ADD_VBT if RUN_FSP_GOP
+	select MICROCODE_UPDATE_PRE_RAM
 	help
 	  Does the code require the Intel Firmware Support Package?
 
@@ -81,10 +82,6 @@ config USE_GENERIC_FSP_CAR_INC
 	help
 	  The chipset can select this to use a generic cache_as_ram.inc file
 	  that should be good for all FSP based platforms.
-
-config RESET_ON_INVALID_RAMSTAGE_CACHE
-	bool "Reset the system on S3 wake when ramstage cache invalid."
-	default n
 
 config SKIP_FSP_CAR
 	def_bool n

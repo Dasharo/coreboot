@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #*****************************************************************************
-ifeq ($(CONFIG_SOC_AMD_MERLINFALCON)$(CONFIG_SOC_AMD_STONEYRIDGE_FP4)$(CONFIG_SOC_AMD_STONEYRIDGE_FT4),y)
+ifeq ($(CONFIG_SOC_AMD_STONEYRIDGE),y)
 
 subdirs-y += ../../../cpu/amd/mtrr/
 subdirs-y += ../../../cpu/x86/tsc
@@ -45,7 +45,6 @@ bootblock-y += i2c.c
 bootblock-y += enable_usbdebug.c
 bootblock-y += monotonic_timer.c
 bootblock-y += pmutil.c
-bootblock-y += reset.c
 bootblock-y += tsc_freq.c
 bootblock-y += southbridge.c
 bootblock-$(CONFIG_HAVE_SMI_HANDLER) += smi_util.c
@@ -57,7 +56,6 @@ romstage-y += enable_usbdebug.c
 romstage-y += gpio.c
 romstage-y += monotonic_timer.c
 romstage-y += pmutil.c
-romstage-y += reset.c
 romstage-y += smbus.c
 romstage-y += smbus_spd.c
 romstage-y += memmap.c
@@ -70,7 +68,6 @@ verstage-y += gpio.c
 verstage-y += i2c.c
 verstage-y += monotonic_timer.c
 verstage-y += pmutil.c
-verstage-y += reset.c
 verstage-$(CONFIG_STONEYRIDGE_UART) += uart.c
 verstage-y += tsc_freq.c
 
@@ -92,7 +89,6 @@ ramstage-y += monotonic_timer.c
 ramstage-y += southbridge.c
 ramstage-y += northbridge.c
 ramstage-y += pmutil.c
-ramstage-y += reset.c
 ramstage-y += sata.c
 ramstage-y += sm.c
 ramstage-y += smbus.c
@@ -103,6 +99,8 @@ ramstage-$(CONFIG_STONEYRIDGE_UART) += uart.c
 ramstage-y += usb.c
 ramstage-y += tsc_freq.c
 ramstage-y += finalize.c
+
+all-y += reset.c
 
 smm-y += monotonic_timer.c
 smm-y += smihandler.c
@@ -139,8 +137,12 @@ else
 ifeq ($(CONFIG_AMD_APU_MERLINFALCON),y)
 FIRMWARE_TYPE=CZ
 else
+ifeq ($(CONFIG_AMD_APU_PRAIRIEFALCON),y)
+FIRMWARE_TYPE=ST
+else
 $(error soc/amd/stoneyridge: Unusable FIRMWARE_TYPE)
 
+endif # CONFIG_AMD_APU_PRAIRIEFALCON
 endif # CONFIG_AMD_APU_MERLINFALCON
 endif # CONFIG_AMD_APU_STONEYRIDGE
 
@@ -334,4 +336,4 @@ files_added:: warn_no_amdfw
 
 endif # ifneq ($(FIRMWARE_LOCATE),)
 
-endif # ($(CONFIG_SOC_AMD_MERLINFALCON)$(CONFIG_SOC_AMD_STONEYRIDGE_FP4)$(CONFIG_SOC_AMD_STONEYRIDGE_FT4),y)
+endif # ($(CONFIG_SOC_AMD_STONEYRIDGE),y)
