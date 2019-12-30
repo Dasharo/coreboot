@@ -13,7 +13,7 @@
  */
 
 #include <console/console.h>
-#include <stdlib.h>
+#include <commonlib/helpers.h>
 #include <spi_flash.h>
 #include <spi-generic.h>
 #include <string.h>
@@ -232,7 +232,7 @@ static int spansion_write(const struct spi_flash *flash, u32 offset, size_t len,
 
 	for (actual = 0; actual < len; actual += chunk_len) {
 		byte_addr = offset % page_size;
-		chunk_len = min(len - actual, page_size - byte_addr);
+		chunk_len = MIN(len - actual, page_size - byte_addr);
 		chunk_len = spi_crop_chunk(&flash->spi, sizeof(cmd), chunk_len);
 
 		cmd[0] = CMD_S25FLXX_PP;
@@ -241,7 +241,7 @@ static int spansion_write(const struct spi_flash *flash, u32 offset, size_t len,
 		cmd[3] = offset & 0xff;
 
 #if CONFIG(DEBUG_SPI_FLASH)
-		printk(BIOS_SPEW, "PP: 0x%p => cmd = { 0x%02x 0x%02x%02x%02x }"
+		printk(BIOS_SPEW, "PP: %p => cmd = { 0x%02x 0x%02x%02x%02x }"
 		     " chunk_len = %zu\n",
 		     buf + actual, cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
 #endif

@@ -23,7 +23,6 @@
 #define SERIAL_DEV PNP_DEV(0x2e, IT8718F_SP1)
 #define GPIO_DEV PNP_DEV(0x2e, IT8718F_GPIO)
 #define EC_DEV PNP_DEV(0x2e, IT8718F_EC)
-#define SUPERIO_DEV PNP_DEV(0x2e, 0)
 
 void bootblock_mainboard_early_init(void)
 {
@@ -56,6 +55,6 @@ void bootblock_mainboard_early_init(void)
 
 void mainboard_late_rcba_config(void)
 {
-	/* Enable PCIe Root Port Clock Gate */
+	/* Enable only PCIe Root Port Clock Gate */
 	RCBA32(CG) = 0x00000001;
 }

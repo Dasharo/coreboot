@@ -21,7 +21,6 @@
 #include <commonlib/region.h>
 #include <console/console.h>
 #include <device/device.h>
-#include <device/pci.h>
 #include <device/pci_def.h>
 #include <security/vboot/vboot_crtm.h>
 #include <security/vboot/misc.h>

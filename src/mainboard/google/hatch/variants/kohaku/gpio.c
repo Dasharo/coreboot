@@ -19,12 +19,12 @@
 #include <commonlib/helpers.h>
 
 static const struct pad_config gpio_table[] = {
-	/* A0  : RCIN# ==> NC */
-	PAD_NC(GPP_A0, NONE),
-	/* A6  : SERIRQ ==> NC */
-	PAD_NC(GPP_A6, NONE),
-	/* A10 : GPP_A10 ==> NC */
-	PAD_NC(GPP_A10, NONE),
+	/* A8  : PEN_GARAGE_DET_L (wake) */
+	PAD_CFG_GPI_SCI(GPP_A8, NONE, DEEP, EDGE_SINGLE, NONE),
+	/* A11 : PCH_SPI_FPMCU_CS_L */
+	PAD_CFG_NF(GPP_A11, NONE, DEEP, NF2),
+	/* A12 : FPMCU_RST_ODL */
+	PAD_CFG_GPO(GPP_A12, 0, DEEP),
 	/* A16 : EMR_GARAGE_DET (notification) */
 	PAD_CFG_GPI_GPIO_DRIVER(GPP_A16, NONE, PLTRST),
 	/* A17 : PIRQA# ==> NC */
@@ -55,13 +55,13 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_E23, NONE),
 	/* F1 : GPP_F1 ==> NC */
 	PAD_NC(GPP_F1, NONE),
-	/* F11 : PCH_MEM_STRAP2 */
+	/* F11 : PCH_MEM_STRAP_2 */
 	PAD_CFG_GPI(GPP_F11, NONE, PLTRST),
-	/* F20 : PCH_MEM_STRAP0 */
+	/* F20 : PCH_MEM_STRAP_0 */
 	PAD_CFG_GPI(GPP_F20, NONE, PLTRST),
-	/* F21 : PCH_MEM_STRAP1 */
+	/* F21 : PCH_MEM_STRAP_1 */
 	PAD_CFG_GPI(GPP_F21, NONE, PLTRST),
-	/* F22 : PCH_MEM_STRAP3 */
+	/* F22 : PCH_MEM_STRAP_3 */
 	PAD_CFG_GPI(GPP_F22, NONE, PLTRST),
 	/* G0 : GPP_G0 ==> NC  */
 	PAD_NC(GPP_G0, NONE),
@@ -77,6 +77,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_G5, NONE),
 	/* G6 : GPP_G6 ==> NC  */
 	PAD_NC(GPP_G6, NONE),
+	/* H3  : SPKR_PA_EN */
+	PAD_CFG_GPO(GPP_H3, 0, DEEP),
 	/* H4  : PCH_I2C_PEN_SDA */
 	PAD_CFG_NF(GPP_H4, NONE, DEEP, NF1),
 	/* H5  : PCH_I2C_PEN_SCL */

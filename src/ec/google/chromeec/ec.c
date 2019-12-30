@@ -757,11 +757,21 @@ int google_chromeec_read_limit_power_request(int *limit_power)
 		.cmd_data_out = &resp,
 		.cmd_dev_index = 0,
 	};
+	int rv;
 
-	if (google_chromeec_command(&cmd))
+	rv = google_chromeec_command(&cmd);
+
+	if (rv != 0 && (cmd.cmd_code == EC_RES_INVALID_COMMAND ||
+				cmd.cmd_code == EC_RES_INVALID_PARAM)) {
+		printk(BIOS_INFO, "PARAM_LIMIT_POWER not supported by EC.\n");
+		*limit_power = 0;
+		return 0;
+	} else if (rv != 0) {
 		return -1;
+	}
 
 	*limit_power = resp.get_param.value;
+
 	return 0;
 }
 

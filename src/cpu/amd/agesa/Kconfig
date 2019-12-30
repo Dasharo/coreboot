@@ -26,7 +26,6 @@ config CPU_AMD_AGESA
 	select UDELAY_LAPIC
 	select LAPIC_MONOTONIC_TIMER
 	select SPI_FLASH if HAVE_ACPI_RESUME
-	select CBMEM_STAGE_CACHE if HAVE_ACPI_RESUME
 	select SMM_ASEG
 	select NO_FIXED_XIP_ROM_SIZE
 	select SSE2
@@ -48,6 +47,14 @@ config DCACHE_RAM_BASE
 config DCACHE_RAM_SIZE
 	hex
 	default 0x10000
+
+config DCACHE_BSP_STACK_SIZE
+	hex
+	default 0x4000
+
+config C_ENV_BOOTBLOCK_SIZE
+	hex
+	default 0x8000
 
 config ENABLE_MRC_CACHE
 	bool "Use cached memory configuration"

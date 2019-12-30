@@ -13,7 +13,7 @@
  */
 
 #include <console/console.h>
-#include <stdlib.h>
+#include <commonlib/helpers.h>
 #include <spi_flash.h>
 #include <spi-generic.h>
 #include <string.h>
@@ -249,7 +249,7 @@ static int eon_write(const struct spi_flash *flash,
 
 	for (actual = 0; actual < len; actual += chunk_len) {
 		byte_addr = offset % page_size;
-		chunk_len = min(len - actual, page_size - byte_addr);
+		chunk_len = MIN(len - actual, page_size - byte_addr);
 		chunk_len = spi_crop_chunk(&flash->spi, sizeof(cmd), chunk_len);
 
 		ret = spi_flash_cmd(&flash->spi, CMD_EN25_WREN, NULL, 0);
@@ -265,7 +265,7 @@ static int eon_write(const struct spi_flash *flash,
 
 #if CONFIG(DEBUG_SPI_FLASH)
 		printk(BIOS_SPEW,
-		    "PP: 0x%p => cmd = { 0x%02x 0x%02x%02x%02x } chunk_len = %zu\n",
+		    "PP: %p => cmd = { 0x%02x 0x%02x%02x%02x } chunk_len = %zu\n",
 		     buf + actual, cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
 #endif
 

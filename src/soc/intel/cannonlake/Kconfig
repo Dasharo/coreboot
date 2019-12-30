@@ -23,6 +23,7 @@ config SOC_INTEL_CANNONLAKE
 config SOC_INTEL_COFFEELAKE
 	bool
 	select SOC_INTEL_CANNONLAKE_BASE
+	select FSP_USES_CB_STACK
 	help
 	  Intel Coffeelake support
 
@@ -65,6 +66,7 @@ config CPU_SPECIFIC_OPTIONS
 	select FSP_M_XIP
 	select GENERIC_GPIO_LIB
 	select HAVE_FSP_GOP
+	select HAVE_FSP_LOGO_SUPPORT
 	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select HAVE_SMI_HANDLER
 	select IDT_IN_EVERY_STAGE
@@ -106,6 +108,10 @@ config CPU_SPECIFIC_OPTIONS
 	select DISPLAY_FSP_VERSION_INFO
 	select FSP_T_XIP if FSP_CAR
 	select HECI_DISABLE_USING_SMM if !SOC_INTEL_COFFEELAKE && !SOC_INTEL_WHISKEYLAKE && !SOC_INTEL_COMETLAKE
+
+config MAX_CPUS
+	int
+	default 12
 
 config DCACHE_RAM_BASE
 	default 0xfef00000
@@ -310,7 +316,7 @@ config FSP_HEADER_PATH
 config FSP_FD_PATH
 	string
 	depends on FSP_USE_REPO
-	default "3rdparty/fsp/CoffeeLakeFspBinPkg/FSP.fd" if SOC_INTEL_COFFEELAKE || SOC_INTEL_WHISKEYLAKE
+	default "3rdparty/fsp/CoffeeLakeFspBinPkg/Fsp.fd" if SOC_INTEL_COFFEELAKE || SOC_INTEL_WHISKEYLAKE
 
 config SOC_INTEL_CANNONLAKE_DEBUG_CONSENT
 	int "Debug Consent for CNL"
