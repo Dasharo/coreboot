@@ -226,4 +226,14 @@ uint8_t dasharo_get_memory_profile(void);
  */
 bool dasharo_apu_pcie_pm_enabled(void);
 
+/* Looks up WatchdogEnable and WatchdogTimeout fields in APU/"ApuConfig" to
+ * know whether to enable watchdog on boot and what period to use.
+ *
+ * Result:
+ *  - = 0 - watchdog is disabled
+ *  - > 0 - watchdog is enabled and should be configured to reboot after
+ *          returned number of seconds has passed
+ */
+uint16_t dasharo_apu_watchdog_timeout(void);
+
 #endif /* DASHARO_OPTIONS_H */

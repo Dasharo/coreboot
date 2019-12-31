@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <AGESA.h>
+#include <Fch/Fch.h>
 #include <dasharo/options.h>
 #include <northbridge/amd/agesa/state_machine.h>
+#include <smp/node.h>
 
 #include "gpio_ftns.h"
 
@@ -157,6 +159,39 @@ void board_BeforeInitEarly(struct sysinfo *cb, AMD_EARLY_PARAMS *InitEarly)
 		InitEarly->GnbConfig.PcieComplexList = &PcieComplex;
 	InitEarly->PlatformConfig.CStateMode = CStateModeC6;
 	InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+
+	if (boot_cpu()) {
+		volatile uint32_t *ptr = (uint32_t *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
+
+		/*
+		 * Set PMxBE[RstToCpuPwrGdEn] = 1: FCH toggles CpuPwrGd on every reset.
+		 * Without it, after watchdog causes a restart, D18F5x84[CmpCap]
+		 * (number of cores on the node) sometimes reads as 0. Because of that
+		 * AGESA hangs in subsequent InitReset calls, until next cold reset.
+		 */
+		volatile u8 *rc1 = (u8 *)(ACPI_MMIO_BASE + PMIO_BASE + FCH_PMIOA_REGBE);
+		*rc1 |= 0x80;
+
+		uint16_t watchdog_timeout = dasharo_apu_watchdog_timeout();
+
+		if (watchdog_timeout == 0) {
+			/* watchdog disabled - default state */
+			printk(BIOS_INFO, "Watchdog is disabled\n");
+		} else {
+			/* bit 1 (WatchdogFired) is write-1-to-clear, needs to be preserved */
+			uint32_t val = *ptr & ~(1 << 1);
+			/* enable */
+			*ptr = val | (1 << 0);
+			/* configure timeout */
+			*(ptr + 1) = (uint16_t)watchdog_timeout;
+			/* trigger */
+			val = *ptr & ~(1 << 1);
+			*ptr = val | (1 << 7);
+
+			printk(BIOS_INFO, "Watchdog is enabled, state = 0x%x, time = %d\n",
+			       *ptr, *(ptr + 1));
+		}
+	}
 }
 
 void board_BeforeInitPost(struct sysinfo *cb, AMD_POST_PARAMS *Post)
