@@ -447,3 +447,9 @@ bool dasharo_apu_pcie_pm_enabled(void)
 {
 	return get_apu_config().PciePwrMgmt;
 }
+
+uint16_t dasharo_apu_watchdog_timeout(void)
+{
+	struct apu_config_t cfg = get_apu_config();
+	return cfg.WatchdogEnable ? cfg.WatchdogTimeout : 0;
+}
