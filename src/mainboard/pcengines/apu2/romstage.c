@@ -161,24 +161,5 @@ void board_BeforeInitReset(struct sysinfo *cb, AMD_RESET_PARAMS *Reset)
 			misc_write32(FCH_MISC_REG04, data);
 			printk(BIOS_DEBUG, "force mPCIe clock enabled\n");
 		}
-
-		volatile u32 *ptr = (u32 *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
-		u16 watchdog_timeout = get_watchdog_timeout();
-
-		if (watchdog_timeout == 0) {
-			//disable watchdog
-			printk(BIOS_WARNING, "Watchdog is disabled\n");
-			*ptr |= (1 << 3);
-		} else {
-			// enable
-			*ptr &= ~(1 << 3);
-			*ptr |= (1 << 0);
-			// configure timeout
-			*(ptr + 1) = (u16) watchdog_timeout;
-			// trigger
-			*ptr |= (1 << 7);
-
-			printk(BIOS_WARNING, "Watchdog is enabled, state = 0x%x, time = %d\n", *ptr, *(ptr + 1));
-		}
 	}
 }
