@@ -18,6 +18,7 @@
 #include "bios_knobs.h"
 #include <smp/node.h>
 #include <Fch/Fch.h>
+#include <amdblocks/acpimmio.h>
 
 static const PCIe_PORT_DESCRIPTOR PortList[] = {
 	{
@@ -95,8 +96,7 @@ void board_BeforeInitEarly(struct sysinfo *cb, AMD_EARLY_PARAMS *InitEarly)
 		 * (number of cores on the node) sometimes reads as 0. Because of that
 		 * AGESA hangs in subsequent InitReset calls, until next cold reset.
 		 */
-		volatile u8 *rc1 = (u8 *)(ACPI_MMIO_BASE + PMIO_BASE + FCH_PMIOA_REGBE);
-		*rc1 |= 0x80;
+		pm_write8(FCH_PMIOA_REGBE, pm_read8(FCH_PMIOA_REGBE) | 0x80);
 
 		u16 watchdog_timeout = get_watchdog_timeout();
 
