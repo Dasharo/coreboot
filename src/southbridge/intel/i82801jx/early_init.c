@@ -14,6 +14,7 @@
 
 #include <console/console.h>
 #include <device/pci_ops.h>
+#include <device/smbus_host.h>
 #include <southbridge/intel/common/gpio.h>
 #include <southbridge/intel/common/pmbase.h>
 #include "i82801jx.h"
@@ -80,6 +81,9 @@ void i82801jx_setup_bars(void)
 void i82801jx_early_init(void)
 {
 	const pci_devfn_t d31f0 = PCI_DEV(0, 0x1f, 0);
+
+	if (ENV_ROMSTAGE)
+		enable_smbus();
 
 	printk(BIOS_DEBUG, "Setting up static southbridge registers...");
 	i82801jx_setup_bars();

@@ -62,10 +62,12 @@ struct acpi_dp {
 struct device;
 const char *acpi_device_name(const struct device *dev);
 const char *acpi_device_hid(const struct device *dev);
+uint32_t acpi_device_uid(struct device *dev);
 const char *acpi_device_path(const struct device *dev);
 const char *acpi_device_scope(const struct device *dev);
 const char *acpi_device_path_join(const struct device *dev, const char *name);
 int acpi_device_status(const struct device *dev);
+void acpi_device_write_uid(struct device *dev);
 
 /*
  * ACPI Descriptor for extended Interrupt()
@@ -298,6 +300,26 @@ struct acpi_gpio {
 	.pull = ACPI_GPIO_PULL_DEFAULT, \
 	.irq.mode = ACPI_IRQ_LEVEL_TRIGGERED, \
 	.irq.polarity = ACPI_IRQ_ACTIVE_LOW, \
+	.pin_count = 1, \
+	.pins = { (gpio) } }
+
+/* Level Triggered Active High GPIO interrupt with wake */
+#define ACPI_GPIO_IRQ_LEVEL_HIGH_WAKE(gpio) { \
+	.type = ACPI_GPIO_TYPE_INTERRUPT, \
+	.pull = ACPI_GPIO_PULL_DEFAULT, \
+	.irq.mode = ACPI_IRQ_LEVEL_TRIGGERED, \
+	.irq.polarity = ACPI_IRQ_ACTIVE_HIGH, \
+	.irq.wake = ACPI_IRQ_WAKE, \
+	.pin_count = 1, \
+	.pins = { (gpio) } }
+
+/* Level Triggered Active Low GPIO interrupt with wake */
+#define ACPI_GPIO_IRQ_LEVEL_LOW_WAKE(gpio) { \
+	.type = ACPI_GPIO_TYPE_INTERRUPT, \
+	.pull = ACPI_GPIO_PULL_DEFAULT, \
+	.irq.mode = ACPI_IRQ_LEVEL_TRIGGERED, \
+	.irq.polarity = ACPI_IRQ_ACTIVE_LOW, \
+	.irq.wake = ACPI_IRQ_WAKE, \
 	.pin_count = 1, \
 	.pins = { (gpio) } }
 

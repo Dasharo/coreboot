@@ -65,8 +65,6 @@ const char *smbios_mainboard_bios_version(void);
 const char *smbios_mainboard_asset_tag(void);
 u8 smbios_mainboard_feature_flags(void);
 const char *smbios_mainboard_location_in_chassis(void);
-u8 smbios_mainboard_enclosure_type(void);
-int fill_mainboard_smbios_type16(unsigned long *current, int *handle);
 
 #define BIOS_CHARACTERISTICS_PCI_SUPPORTED	(1 << 7)
 #define BIOS_CHARACTERISTICS_PC_CARD		(1 << 8)
@@ -800,5 +798,6 @@ void smbios_fill_dimm_locator(const struct dimm_info *dimm,
 	struct smbios_type17 *t);
 
 smbios_board_type smbios_mainboard_board_type(void);
+smbios_enclosure_type smbios_mainboard_enclosure_type(void);
 
 #endif

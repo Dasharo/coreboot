@@ -37,7 +37,7 @@ DefinitionBlock(
 	Scope (\_SB) {
 		Device (PCI0)
 		{
-			#include <soc/intel/icelake/acpi/northbridge.asl>
+			#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
 			#include <soc/intel/icelake/acpi/southbridge.asl>
 		}
 	}
@@ -58,7 +58,6 @@ DefinitionBlock(
 		}
 #endif
 
-	// Chipset specific sleep states
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 
 	// Mainboard specific

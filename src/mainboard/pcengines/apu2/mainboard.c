@@ -13,34 +13,33 @@
  * GNU General Public License for more details.
  */
 
-#include <cbfs.h>
-#include <fmap.h>
 #include <amdblocks/acpimmio.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
-#include <commonlib/region.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci_def.h>
-#include <security/vboot/vboot_crtm.h>
-#include <security/vboot/misc.h>
-#include <southbridge/amd/pi/hudson/chip.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
 #include <southbridge/amd/pi/hudson/pci_devs.h>
 #include <southbridge/amd/pi/hudson/amd_pci_int_defs.h>
+#include <northbridge/amd/agesa/agesa_helper.h>
 #include <northbridge/amd/pi/00730F01/pci_devs.h>
 #include <southbridge/amd/common/amd_pci_util.h>
 #include <superio/nuvoton/nct5104d/nct5104d.h>
 #include <smbios.h>
 #include <string.h>
-#include <types.h>
-#include <cpu/x86/msr.h>
+#include <AGESA.h>
+
+#include <cbfs.h>
+#include <fmap.h>
+#include <commonlib/region.h>
+#include <security/vboot/vboot_crtm.h>
+#include <security/vboot/misc.h>
+#include <southbridge/amd/pi/hudson/chip.h>
 #include <cpu/amd/mtrr.h>
 #include <spd_bin.h>
-#include <memory_info.h>
 #include <spi_flash.h>
-#include <spi-generic.h>
-#include <cbmem.h>
+
 #include "gpio_ftns.h"
 #include "bios_knobs.h"
 #include "s1_button.h"
@@ -206,81 +205,6 @@ static void config_gpio_mux(void)
 	}
 }
 
-static void set_dimm_info(uint8_t *spd, struct dimm_info *dimm)
-{
-	const int spd_capmb[8] = {  1,  2,  4,  8, 16, 32, 64,  0 };
-	const int spd_ranks[8] = {  1,  2,  3,  4, -1, -1, -1, -1 };
-	const int spd_devw[8]  = {  4,  8, 16, 32, -1, -1, -1, -1 };
-	const int spd_busw[8]  = {  8, 16, 32, 64, -1, -1, -1, -1 };
-
-	int capmb = spd_capmb[spd[SPD_DENSITY_BANKS] & 7] * 256;
-	int ranks = spd_ranks[(spd[DDR3_ORGANIZATION] >> 3) & 7];
-	int devw  = spd_devw[spd[DDR3_ORGANIZATION] & 7];
-	int busw  = spd_busw[spd[DDR3_BUS_DEV_WIDTH] & 7];
-
-	switch (spd[12]) {
-		case 0x0a:
-			dimm->ddr_frequency = 1600;
-			break;
-		case 0x0c:
-			dimm->ddr_frequency = 1333;
-			break;
-		default:
-			dimm->ddr_frequency = 0;
-			break;
-	}
-
-	dimm->ddr_type = MEMORY_TYPE_DDR3;
-
-	/* Parse the SPD data to determine the DIMM information */
-
-	dimm->dimm_size = capmb / 8 * busw / devw * ranks;  /* MiB */
-	dimm->mod_type = spd[3] & 0xf;
-	dimm->module_part_number[0] = '\0';
-	dimm->mod_id = *(uint16_t *)&spd[117];
-
-	switch (busw) {
-	default:
-	case 8:
-		dimm->bus_width = MEMORY_BUS_WIDTH_8;
-		break;
-	case 16:
-		dimm->bus_width = MEMORY_BUS_WIDTH_16;
-		break;
-	case 32:
-		dimm->bus_width = MEMORY_BUS_WIDTH_32;
-		break;
-	case 64:
-		dimm->bus_width = MEMORY_BUS_WIDTH_64;
-		break;
-	}
-
-	if(spd[3]==0x08){
-		dimm->bus_width |= BIOS_MEMORY_ECC_SINGLE_BIT_CORRECTING;
-	}
-}
-
-static void mainboard_get_dimm_info(u8 *spd_buffer)
-{
-	struct dimm_info *dimm;
-	struct memory_info *mem_info;
-
-	/*
-	 * Allocate CBMEM area for DIMM information used to populate SMBIOS
-	 * table 17
-	 */
-	mem_info = cbmem_add(CBMEM_ID_MEMINFO, sizeof(*mem_info));
-	printk(BIOS_DEBUG, "CBMEM entry for DIMM info: 0x%p\n", mem_info);
-	if (mem_info == NULL)
-		return;
-	memset(mem_info, 0, sizeof(*mem_info));
-
-	/* Describe the first channel memory */
-	dimm = &mem_info->dimm[0];
-	set_dimm_info(spd_buffer, dimm);
-	mem_info->dimm_cnt = 1;
-}
-
 static void measure_amd_blobs(void)
 {
 	struct region_device rdev;
@@ -297,6 +221,97 @@ static void measure_amd_blobs(void)
 /**********************************************
  * enable the dedicated function in mainboard.
  **********************************************/
+#if CONFIG(GENERATE_SMBIOS_TABLES)
+static int mainboard_smbios_type16(DMI_INFO *agesa_dmi, int *handle,
+				 unsigned long *current)
+{
+	struct smbios_type16 *t;
+	u32 max_capacity;
+	int len = 0;
+
+	t = (struct smbios_type16 *)*current;
+	len = sizeof(struct smbios_type16);
+	memset(t, 0, sizeof(struct smbios_type16));
+	max_capacity = get_spd_offset() ? 4 : 2; /* 4GB or 2GB variant */
+
+	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
+	t->handle = *handle;
+	t->length = len - 2;
+	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
+	t->use = MEMORY_ARRAY_USE_SYSTEM;
+	t->location = MEMORY_ARRAY_LOCATION_SYSTEM_BOARD;
+	t->memory_error_correction = agesa_dmi->T16.MemoryErrorCorrection;
+	t->maximum_capacity = max_capacity * 1024 * 1024;
+	t->memory_error_information_handle = 0xfffe;
+	t->number_of_memory_devices = 1;
+
+	*current += len;
+
+	return len;
+}
+
+static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
+				 unsigned long *current)
+{
+	struct smbios_type17 *t;
+	int len = 0;
+
+	t = (struct smbios_type17 *)*current;
+	memset(t, 0, sizeof(struct smbios_type17));
+
+	t->type = SMBIOS_MEMORY_DEVICE;
+	t->length = sizeof(struct smbios_type17) - 2;
+	t->handle = *handle + 1;
+	t->phys_memory_array_handle = *handle;
+	t->memory_error_information_handle = 0xfffe;
+	t->total_width = agesa_dmi->T17[0][0][0].TotalWidth;
+	t->data_width = agesa_dmi->T17[0][0][0].DataWidth;
+	t->size = agesa_dmi->T17[0][0][0].MemorySize;
+	t->form_factor = agesa_dmi->T17[0][0][0].FormFactor;
+	t->device_set = agesa_dmi->T17[0][0][0].DeviceSet;
+	t->device_locator = smbios_add_string(t->eos,
+				agesa_dmi->T17[0][0][0].DeviceLocator);
+	t->bank_locator = smbios_add_string(t->eos,
+				agesa_dmi->T17[0][0][0].BankLocator);
+	t->memory_type = agesa_dmi->T17[0][0][0].MemoryType;
+	t->type_detail = *(u16 *)&agesa_dmi->T17[0][0][0].TypeDetail;
+	t->speed = agesa_dmi->T17[0][0][0].Speed;
+	t->manufacturer = agesa_dmi->T17[0][0][0].ManufacturerIdCode;
+	t->serial_number = smbios_add_string(t->eos,
+				agesa_dmi->T17[0][0][0].SerialNumber);
+	t->part_number = smbios_add_string(t->eos,
+				agesa_dmi->T17[0][0][0].PartNumber);
+	t->attributes = agesa_dmi->T17[0][0][0].Attributes;
+	t->extended_size = agesa_dmi->T17[0][0][0].ExtSize;
+	t->clock_speed = agesa_dmi->T17[0][0][0].ConfigSpeed;
+	t->minimum_voltage = 1500; /* From SPD: 1.5V */
+	t->maximum_voltage = 1500;
+
+	len = t->length + smbios_string_table_len(t->eos);
+	*current += len;
+
+	return len;
+}
+
+static int mainboard_smbios_data(struct device *dev, int *handle,
+				 unsigned long *current)
+{
+	DMI_INFO *agesa_dmi;
+	int len = 0;
+
+	agesa_dmi = agesawrapper_getlateinitptr(PICK_DMI);
+
+	if (!agesa_dmi)
+		return len;
+
+	len += mainboard_smbios_type16(agesa_dmi, handle, current);
+	len += mainboard_smbios_type17(agesa_dmi, handle, current);
+
+	*handle += 2;
+
+	return len;
+}
+#endif
 
 static void mainboard_enable(struct device *dev)
 {
@@ -346,8 +361,6 @@ static void mainboard_enable(struct device *dev)
 
 		printk(BIOS_ALERT, " DRAM\n\n");
 	}
-	mainboard_get_dimm_info(spd_buffer);
-
 
 	if (CONFIG(VBOOT_MEASURED_BOOT)) {
 		/* Measure AGESA and PSPDIR */
@@ -388,6 +401,9 @@ static void mainboard_enable(struct device *dev)
 		else
 			iommu_dev->enabled = 0;
 	}
+#if CONFIG(GENERATE_SMBIOS_TABLES)
+	dev->ops->get_smbios_data = mainboard_smbios_data;
+#endif
 }
 
 static void mainboard_final(void *chip_info)
@@ -559,62 +575,6 @@ const char *smbios_system_sku(void)
 	else
 		snprintf(sku, sizeof(sku), "4 GB");
 	return sku;
-}
-
-int fill_mainboard_smbios_type16(unsigned long *current, int *handle)
-{
-	u8 spd_index = get_spd_offset();
-	u8 *spd;
-	u8 spd_buffer[CONFIG_DIMM_SPD_SIZE];
-
-	if(CONFIG(VBOOT_MEASURED_BOOT)) {
-		struct cbfsf fh;
-		u32 cbfs_type = CBFS_TYPE_SPD;
-
-		/* Read index 0, first SPD_SIZE bytes of spd.bin file. */
-		if (cbfs_locate_file_in_region(&fh, "COREBOOT", "spd.bin",
-						&cbfs_type) < 0) {
-			printk(BIOS_WARNING, "spd.bin not found\n");
-		}
-		spd = rdev_mmap_full(&fh.data);
-		if (spd) {
-			memcpy(spd_buffer,
-				&spd[spd_index * CONFIG_DIMM_SPD_SIZE],
-				CONFIG_DIMM_SPD_SIZE);
-		} else {
-			return 0;
-		}
-	} else if (read_ddr3_spd_from_cbfs(spd_buffer, spd_index) < 0)
-		return 0;
-	
-
-	struct smbios_type16 *t = (struct smbios_type16 *)*current;
-	int len = sizeof(struct smbios_type16) - 2;
-	memset(t, 0, sizeof(struct smbios_type16));
-
-	t->handle = *handle;
-	t->length = len;
-	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
-	t->use = MEMORY_ARRAY_USE_SYSTEM;
-	t->location = MEMORY_ARRAY_LOCATION_SYSTEM_BOARD;
-	t->maximum_capacity = 4 * 1024 * 1024; // 4GB (in kB) due to board design
-	t->extended_maximum_capacity = 0;
-	t->memory_error_information_handle = 0xFFFE;
-	t->number_of_memory_devices = 1; // only 1 device soldered down to 1 channel
-
-	switch(spd_buffer[3]){
-		case 0x08:
-			t->memory_error_correction = MEMORY_ARRAY_ECC_MULTI_BIT;
-			break;
-		case 0x03:
-			t->memory_error_correction = MEMORY_ARRAY_ECC_NONE;
-			break;
-		default:
-			t->memory_error_correction = MEMORY_ARRAY_ECC_UNKNOWN;
-			break;
-	}
-	len += smbios_string_table_len(t->eos);
-	return len;
 }
 
 struct chip_operations mainboard_ops = {

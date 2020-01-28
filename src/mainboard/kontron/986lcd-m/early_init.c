@@ -17,19 +17,19 @@
 #include <device/pci_ops.h>
 #include <device/pnp_ops.h>
 #include <device/pnp_def.h>
-#include <pc80/mc146818rtc.h>
+#include <option.h>
 #include <northbridge/intel/i945/i945.h>
 #include <southbridge/intel/i82801gx/i82801gx.h>
 #include <superio/winbond/common/winbond.h>
 #include <superio/winbond/w83627thg/w83627thg.h>
 
-#include "option_table.h"
-
 /* Override the default lpc decode ranges */
 void mainboard_lpc_decode(void)
 {
 	int lpt_en = 0;
-	if (read_option(lpt, 0) != 0)
+	u8 val;
+
+	if (get_option(&val, "lpt") == CB_SUCCESS && val)
 		lpt_en = LPT_LPC_EN; /* enable LPT */
 
 	pci_update_config16(PCI_DEV(0, 0x1f, 0), LPC_EN, ~LPT_LPC_EN, lpt_en);

@@ -13,6 +13,7 @@ This section contains documentation about coreboot on specific mainboards.
 ## ASUS
 
 - [F2A85-M](asus/f2a85-m.md)
+- [P5Q](asus/p5q.md)
 - [P8H61-M LX](asus/p8h61-m_lx.md)
 - [P8H61-M Pro](asus/p8h61-m_pro.md)
 - [P8Z77-M Pro](asus/p8z77-m_pro.md)
@@ -126,6 +127,7 @@ The boards in this section are not real mainboards, but emulators.
 
 - [X10SLM+-F](supermicro/x10slm-f.md)
 - [X11 LGA1151 series](supermicro/x11-lga1151-series/x11-lga1151-series.md)
+- [Flashing using the BMC](supermicro/flashing_on_vendorbmc.md)
 
 ## UP
 

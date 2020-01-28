@@ -94,7 +94,7 @@ subdirs-y += src/superio
 subdirs-y += $(wildcard src/drivers/*) $(wildcard src/drivers/*/*)
 subdirs-y += src/cpu src/vendorcode
 subdirs-y += util/cbfstool util/sconfig util/nvramtool util/pgtblgen
-subdirs-y += util/futility util/marvell util/bincfg
+subdirs-y += util/futility util/marvell util/bincfg util/supermicro
 subdirs-y += $(wildcard src/arch/*)
 subdirs-y += src/mainboard/$(MAINBOARDDIR)
 subdirs-y += src/security
@@ -394,12 +394,12 @@ COREBOOT_EXTRA_VERSION := -$(call strip_quotes,$(CONFIG_LOCALVERSION))
 COREBOOT_EXPORTS += COREBOOT_EXTRA_VERSION
 endif
 
-CPPFLAGS_common := -Isrc -Isrc/include -Isrc/commonlib/include -I$(obj)
+CPPFLAGS_common := -Isrc -Isrc/include -Isrc/commonlib/include -Isrc/commonlib/bsd/include -I$(obj)
 VBOOT_SOURCE ?= 3rdparty/vboot
 CPPFLAGS_common += -I$(VBOOT_SOURCE)/firmware/include
 CPPFLAGS_common += -include $(src)/include/kconfig.h
 CPPFLAGS_common += -include $(src)/include/rules.h
-CPPFLAGS_common += -include $(src)/commonlib/include/commonlib/compiler.h
+CPPFLAGS_common += -include $(src)/commonlib/bsd/include/commonlib/bsd/compiler.h
 CPPFLAGS_common += -I3rdparty
 CPPFLAGS_common += -D__BUILD_DIR__=\"$(obj)\"
 
@@ -641,7 +641,7 @@ install-git-commit-clangfmt:
 include util/crossgcc/Makefile.inc
 
 .PHONY: tools
-tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL)
+tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL) $(objutil)/supermicro/smcbiosinfo
 
 ###########################################################################
 # Common recipes for all stages

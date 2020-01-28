@@ -29,6 +29,7 @@
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/pmc.h>
+#include <soc/sata.h>
 #include <soc/serialio.h>
 #include <soc/usb.h>
 #include <soc/vr_config.h>
@@ -39,6 +40,7 @@
 #endif
 
 #define SOC_INTEL_CML_UART_DEV_MAX 3
+#define SOC_INTEL_CML_SATA_DEV_MAX 8
 
 struct soc_intel_cannonlake_config {
 
@@ -218,6 +220,15 @@ struct soc_intel_cannonlake_config {
 	uint8_t TcoIrqSelect;
 	uint8_t TcoIrqEnable;
 
+	/* CPU PL2/4 Config
+	 * Performance: Maximum PLs for maximum performance.
+	 * Baseline: Baseline PLs for balanced performance at lower power.
+	 */
+	enum {
+		baseline,
+		performance
+	} cpu_pl2_4_cfg;
+
 	/* VrConfig Settings for 5 domains
 	 * 0 = System Agent, 1 = IA Core, 2 = Ring,
 	 * 3 = GT unsliced,  4 = GT sliced */
@@ -380,6 +391,9 @@ struct soc_intel_cannonlake_config {
 
 	/* SATA Power Optimizer */
 	uint8_t satapwroptimize;
+
+	/* SATA Gen3 Strength */
+	struct sata_port_config sata_port[SOC_INTEL_CML_SATA_DEV_MAX];
 
 	/* Enable or disable eDP device */
 	uint8_t DdiPortEdp;

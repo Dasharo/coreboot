@@ -14,13 +14,13 @@
  * GNU General Public License for more details.
  */
 
+#include <console/console.h>
 #include <device/pnp.h>
 #include <device/device.h>
 #include <superio/conf_mode.h>
 
 #include "nct5104d.h"
 #include "chip.h"
-#include "console/console.h"
 
 static void set_irq_trigger_type(struct device *dev, bool trig_level)
 {
@@ -108,75 +108,68 @@ static void route_pins_to_uart(struct device *dev, bool to_uart)
 	pnp_write_config(dev, 0x1c, reg);
 }
 
-static void enable_gpio_io_port(struct device *dev, u8 enable_wdt1)
+static void reset_gpio_default_in(struct device *dev)
 {
-	u8 reg;
-	u16 io_base_address;
-	u8 uartc_enabled, uartd_enabled;
-	u8 sio_port;
+	pnp_set_logical_device(dev);
 
-	sio_port = dev->path.pnp.port;
-
-	pnp_write_config(dev, 0x07, NCT5104D_GPIO_WDT);
-
-	/* Devictree always sets LDN 8 CR30.0 bit (WDT1 enable)
-	 * See if user really wants Watchdog Timer 1 to be enabled
-	 */ 
-
-	if(enable_wdt1 != 0) {
-		reg = pnp_read_config(dev, 0x30);
-		pnp_write_config(dev, 0x30, reg & 0xFE);
-	}
-
-	/* Check if UARTC and UARTD are both enabled
-	 * If they are, don't activate GPIO Address Mode
-	 * In any other case - activate GPIO Address Mode
-	 */
-
-	struct device *uart;
-
-	uart = dev_find_slot_pnp(sio_port, NCT5104D_SP3);
-	uartc_enabled = uart->enabled;
-
-	uart = dev_find_slot_pnp(sio_port, NCT5104D_SP4);
-	uartd_enabled = uart->enabled;
-
-	if (!uartc_enabled || !uartd_enabled) {
-
-		/* Check if LDN 8 CR60 and CR61 contain valid IO Base Address
-		 * IO Base Address <100h ; FF8h>
-		 */
-
-		pnp_write_config(dev, 0x07, NCT5104D_GPIO_WDT);
-
-		io_base_address = pnp_read_config(dev, 0x61);
-		io_base_address |= (pnp_read_config(dev, 0x60) << 8);
-
-		if (io_base_address < 0x100 || io_base_address > 0xFF8) {
-			printk(BIOS_ERR, "Invalid io base address %x != "
-					"<100h ; FF8h> \n", io_base_address);
-
-			return;
-		}
-
-		/* Set LDN 8 CR 30.1 to activate GPIO Address Mode */
-		reg = pnp_read_config(dev, 0x30);
-		pnp_write_config(dev, 0x30, reg | 0x02);
+	/* Soft reset GPIOs to default state: IN */
+	switch (dev->path.pnp.device) {
+	case NCT5104D_GPIO0:
+		pnp_write_config(dev, NCT5104D_GPIO0_IO, 0xFF);
+		break;
+	case NCT5104D_GPIO1:
+		pnp_write_config(dev, NCT5104D_GPIO1_IO, 0xFF);
+		break;
+	case NCT5104D_GPIO6:
+		pnp_write_config(dev, NCT5104D_GPIO6_IO, 0xFF);
+		break;
+	default:
+		break;
 	}
 }
 
-static void reset_gpio(struct device *dev)
-{	
-	/* Soft reset GPIOs to default state: IN, Open-drain*/
+static void reset_gpio_default_od(struct device *dev)
+{
+	struct device *gpio0, *gpio1, *gpio6;
 
-	pnp_write_config(dev, LDN_SELECT_CR07, NCT5104D_GPIO);
-	pnp_write_config(dev, NCT5104D_GPIO0_IO, 0xFF);
-	pnp_write_config(dev, NCT5104D_GPIO1_IO, 0xFF);
+	gpio0 = dev_find_slot_pnp(dev->path.pnp.port, NCT5104D_GPIO0);
+	gpio1 = dev_find_slot_pnp(dev->path.pnp.port, NCT5104D_GPIO1);
+	gpio6 = dev_find_slot_pnp(dev->path.pnp.port, NCT5104D_GPIO6);
 
-	pnp_write_config(dev, LDN_SELECT_CR07, NCT5104D_GPIO_PP_OD);
-	pnp_write_config(dev, NCT5104D_GPIO0_PP_OD, 0xFF);
-	pnp_write_config(dev, NCT5104D_GPIO1_PP_OD, 0xFF);
+	pnp_set_logical_device(dev);
 
+	/* Soft reset GPIOs to default state: Open-drain */
+	if (gpio0 && gpio0->enabled)
+		pnp_write_config(dev, NCT5104D_GPIO0_PP_OD, 0xFF);
+
+	if (gpio1 && gpio1->enabled)
+		pnp_write_config(dev, NCT5104D_GPIO1_PP_OD, 0xFF);
+
+	if (gpio6 && gpio6->enabled)
+		pnp_write_config(dev, NCT5104D_GPIO6_PP_OD, 0xFF);
+}
+
+static void disable_gpio_io_port(struct device *dev)
+{
+	struct device *gpio0, *gpio1, *gpio6;
+
+	/*
+	 * Since UARTC and UARTD share pins with GPIO0 and GPIO1 and the
+	 * GPIO/UART can be selected via Kconfig, check whether at least one of
+	 * GPIOs is enabled and if yes keep the GPIO IO VLDN enabled. If no
+	 * GPIOs are enabled, disable the VLDN in order to protect from invalid
+	 * devicetree + Kconfig settings.
+	 */
+	gpio0 = dev_find_slot_pnp(dev->path.pnp.port, NCT5104D_GPIO0);
+	gpio1 = dev_find_slot_pnp(dev->path.pnp.port, NCT5104D_GPIO1);
+	gpio6 = dev_find_slot_pnp(dev->path.pnp.port, NCT5104D_GPIO6);
+
+	if (!((gpio0 && gpio0->enabled) || (gpio1 && gpio1->enabled) ||
+	      (gpio6 && gpio6->enabled))) {
+		dev->enabled = 0;
+		printk(BIOS_WARNING, "WARNING: GPIO IO port configured,"
+				     " but no GPIO enabled. Disabling...");
+	}
 }
 
 static void nct5104d_init(struct device *dev)
@@ -200,11 +193,17 @@ static void nct5104d_init(struct device *dev)
 		break;
 	case NCT5104D_GPIO0:
 	case NCT5104D_GPIO1:
-		reset_gpio(dev);
 		route_pins_to_uart(dev, false);
+		reset_gpio_default_in(dev);
 		break;
-	case NCT5104D_GPIO_WDT:
-		enable_gpio_io_port(dev, conf->enable_wdt1);
+	case NCT5104D_GPIO6:
+		reset_gpio_default_in(dev);
+		break;
+	case NCT5104D_GPIO_PP_OD:
+		reset_gpio_default_od(dev);
+		break;
+	case NCT5104D_GPIO_IO:
+		disable_gpio_io_port(dev);
 		break;
 	default:
 		break;
@@ -228,11 +227,12 @@ static struct pnp_info pnp_dev_info[] = {
 	{ NULL, NCT5104D_SP2,  PNP_IO0 | PNP_IRQ0, 0x07f8, },
 	{ NULL, NCT5104D_SP3,  PNP_IO0 | PNP_IRQ0, 0x07f8, },
 	{ NULL, NCT5104D_SP4,  PNP_IO0 | PNP_IRQ0, 0x07f8, },
-	{ NULL, NCT5104D_GPIO_WDT, PNP_IO0, 0x07f8, },
-	{ NULL, NCT5104D_GPIO_PP_OD},
+	{ NULL, NCT5104D_GPIO_WDT},
 	{ NULL, NCT5104D_GPIO0},
 	{ NULL, NCT5104D_GPIO1},
 	{ NULL, NCT5104D_GPIO6},
+	{ NULL, NCT5104D_GPIO_PP_OD},
+	{ NULL, NCT5104D_GPIO_IO, PNP_IO0, 0x07f8, },
 	{ NULL, NCT5104D_PORT80},
 };
 

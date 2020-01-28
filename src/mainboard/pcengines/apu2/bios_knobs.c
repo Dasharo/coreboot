@@ -20,7 +20,6 @@
 #include <cbfs.h>
 #include <commonlib/cbfs.h>
 #include <commonlib/region.h>
-#include <commonlib/cbfs_serialized.h>
 #include "bios_knobs.h"
 
 #define BOOTORDER_FILE "bootorder"

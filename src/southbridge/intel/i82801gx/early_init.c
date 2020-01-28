@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <console/console.h>
 #include <device/pci_ops.h>
+#include <device/smbus_host.h>
 #include <southbridge/intel/common/gpio.h>
 #include <southbridge/intel/common/pmbase.h>
 #include "i82801gx.h"
@@ -73,6 +74,9 @@ void i82801gx_early_init(void)
 {
 	uint8_t reg8;
 	uint32_t reg32;
+
+	enable_smbus();
+
 	/* Setting up Southbridge. In the northbridge code. */
 	printk(BIOS_DEBUG, "Setting up static southbridge registers...");
 	i82801gx_setup_bars();

@@ -62,7 +62,6 @@ int pch_silicon_type(void);
 int pch_silicon_supported(int type, int rev);
 void pch_iobp_update(u32 address, u32 andvalue, u32 orvalue);
 
-void enable_smbus(void);
 void enable_usb_bar(void);
 
 #if ENV_ROMSTAGE
@@ -238,7 +237,6 @@ void early_usb_init(const struct southbridge_usb_port *portmap);
 #define PCH_SMBUS_DEV		PCI_DEV(0, 0x1f, 3)
 #define SMB_BASE		0x20
 #define HOSTC			0x40
-#define SMB_RCV_SLVA		0x09
 
 /* HOSTC bits */
 #define I2C_EN			(1 << 2)

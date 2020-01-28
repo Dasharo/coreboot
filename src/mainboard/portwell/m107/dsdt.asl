@@ -43,7 +43,5 @@ DefinitionBlock(
 		}
 	}
 
-	/* Chipset specific sleep states */
-	#include "acpi/sleepstates.asl"
-	#include "acpi/mainboard.asl"
+	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }

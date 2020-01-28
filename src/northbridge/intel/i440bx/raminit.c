@@ -22,8 +22,11 @@
 #include <device/pci_ops.h>
 #include <device/pci_def.h>
 #include <console/console.h>
+#include <timestamp.h>
 #include "i440bx.h"
 #include "raminit.h"
+
+#include <southbridge/intel/i82371eb/i82371eb.h>
 
 /*
  * Macros and definitions
@@ -354,10 +357,7 @@ static const u8 register_values[] = {
 	 *         1 = Enable
 	 *         0 = Disable
 	 */
-	/* Enable normal refresh and the gated clock. */
-	// TODO: Only do this later?
-	// PMCR, 0x00, 0x14,
-	PMCR, 0x00, 0x00,
+	/* PMCR will be set later. */
 
 	/* Enable SCRR.SRRAEN and let BX choose the SRR. */
 	SCRR + 1, 0x00, 0x10,
@@ -650,7 +650,7 @@ static void spd_enable_refresh(void)
 	reg = pci_read_config8(NB, DRAMC);
 
 	for (i = 0; i < DIMM_SOCKETS; i++) {
-		value = spd_read_byte(DIMM0 + i, SPD_REFRESH);
+		value = smbus_read_byte(DIMM0 + i, SPD_REFRESH);
 		if (value < 0)
 			continue;
 		reg = (reg & 0xf8) | refresh_rate_map[(value & 0x7f)];
@@ -665,7 +665,7 @@ static void spd_enable_refresh(void)
 Public interface.
 -----------------------------------------------------------------------------*/
 
-void sdram_set_registers(void)
+static void sdram_set_registers(void)
 {
 	int i, max;
 	uint8_t reg;
@@ -694,8 +694,8 @@ static struct dimm_size spd_get_dimm_size(unsigned int device)
 	struct dimm_size sz;
 	int i, module_density, dimm_banks;
 	sz.side1 = 0;
-	module_density = spd_read_byte(device, SPD_DENSITY_OF_EACH_ROW_ON_MODULE);
-	dimm_banks = spd_read_byte(device, SPD_NUM_DIMM_BANKS);
+	module_density = smbus_read_byte(device, SPD_DENSITY_OF_EACH_ROW_ON_MODULE);
+	dimm_banks = smbus_read_byte(device, SPD_NUM_DIMM_BANKS);
 
 	/* Find the size of side1. */
 	/* Find the larger value. The larger value is always side1. */
@@ -780,7 +780,7 @@ static void set_dram_row_attributes(void)
 		nbxecc >>= 2;
 
 		/* First check if a DIMM is actually present. */
-		value = spd_read_byte(device, SPD_MEMORY_TYPE);
+		value = smbus_read_byte(device, SPD_MEMORY_TYPE);
 		/* This is 440BX! We do EDO too! */
 		if (value == SPD_MEMORY_TYPE_EDO
 			|| value == SPD_MEMORY_TYPE_SDRAM) {
@@ -801,21 +801,21 @@ static void set_dram_row_attributes(void)
 			dra = 0;
 
 			/* Columns */
-			col = spd_read_byte(device, SPD_NUM_COLUMNS);
+			col = smbus_read_byte(device, SPD_NUM_COLUMNS);
 
 			/*
 			 * Is this an ECC DIMM? Actually will be a 2 if so.
 			 * TODO: Other register than NBXCFG also needs this
 			 * ECC information.
 			 */
-			value = spd_read_byte(device, SPD_DIMM_CONFIG_TYPE);
+			value = smbus_read_byte(device, SPD_DIMM_CONFIG_TYPE);
 
 			/* Data width */
-			width = spd_read_byte(device, SPD_MODULE_DATA_WIDTH_LSB);
+			width = smbus_read_byte(device, SPD_MODULE_DATA_WIDTH_LSB);
 
 			/* Exclude error checking data width from page size calculations */
 			if (value) {
-				value = spd_read_byte(device,
+				value = smbus_read_byte(device,
 					SPD_ERROR_CHECKING_SDRAM_WIDTH);
 				width -= value;
 				/* ### ECC */
@@ -831,7 +831,7 @@ static void set_dram_row_attributes(void)
 			 * By registered, only the address and control lines need to be, which
 			 * we can tell by reading SPD byte 21, bit 1.
 			 */
-			value = spd_read_byte(device, SPD_MODULE_ATTRIBUTES);
+			value = smbus_read_byte(device, SPD_MODULE_ATTRIBUTES);
 
 			PRINT_DEBUG("DIMM is ");
 			if ((value & MODULE_REGISTERED) == 0) {
@@ -847,12 +847,12 @@ static void set_dram_row_attributes(void)
 			dra = (value >> 13);
 
 			/* Number of banks of DIMM (single or double sided). */
-			value = spd_read_byte(device, SPD_NUM_DIMM_BANKS);
+			value = smbus_read_byte(device, SPD_NUM_DIMM_BANKS);
 
 			/* Once we have dra, col is done and can be reused.
 			 * So it's reused for number of banks.
 			 */
-			col = spd_read_byte(device, SPD_NUM_BANKS_PER_SDRAM);
+			col = smbus_read_byte(device, SPD_NUM_BANKS_PER_SDRAM);
 
 			if (value == 1) {
 				/*
@@ -975,23 +975,16 @@ static void set_dram_row_attributes(void)
 	PRINT_DEBUG("DRAMC has been set to 0x%02x\n", value);
 }
 
-void sdram_set_spd_registers(void)
+static void sdram_set_spd_registers(void)
 {
 	/* Setup DRAM row boundary registers and other attributes. */
 	set_dram_row_attributes();
 
 	/* Setup DRAM buffer strength. */
 	set_dram_buffer_strength();
-
-	/* TODO: Set PMCR? */
-	// pci_write_config8(NB, PMCR, 0x14);
-	pci_write_config8(NB, PMCR, 0x10);
-
-	/* TODO: This is for EDO memory only. */
-	pci_write_config8(NB, DRAMT, 0x03);
 }
 
-void sdram_enable(void)
+static void sdram_enable(void)
 {
 	int i;
 
@@ -1027,7 +1020,7 @@ void sdram_enable(void)
 
 	/* 6. Finally enable refresh. */
 	PRINT_DEBUG("RAM Enable 6: Enable refresh\n");
-	// pci_write_config8(NB, PMCR, 0x10);
+	pci_write_config8(NB, PMCR, 0x10);
 	spd_enable_refresh();
 	udelay(1);
 
@@ -1035,10 +1028,20 @@ void sdram_enable(void)
 	DUMPNORTH();
 }
 
+/* Implemented under mainboard. */
+void __weak enable_spd(void) { }
+void __weak disable_spd(void) { }
+
 void sdram_initialize(void)
 {
+	timestamp_add_now(TS_BEFORE_INITRAM);
+	enable_spd();
+
 	dump_spd_registers();
 	sdram_set_registers();
 	sdram_set_spd_registers();
 	sdram_enable();
+
+	disable_spd();
+	timestamp_add_now(TS_AFTER_INITRAM);
 }

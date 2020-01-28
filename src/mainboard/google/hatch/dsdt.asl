@@ -37,7 +37,7 @@ DefinitionBlock(
 	Scope (\_SB) {
 		Device (PCI0)
 		{
-			#include <soc/intel/cannonlake/acpi/northbridge.asl>
+			#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
 			#include <soc/intel/cannonlake/acpi/southbridge.asl>
 		}
 	}
@@ -47,7 +47,6 @@ DefinitionBlock(
 	#include <vendorcode/google/chromeos/acpi/chromeos.asl>
 #endif
 
-	/* Chipset specific sleep states */
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 
 	/* Low power idle table */
