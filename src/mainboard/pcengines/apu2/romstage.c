@@ -58,29 +58,39 @@ static void early_lpc_init(void)
 {
 	u32 setting = 0x0;
 
-	/* Configure output disabled, value low, pull up/down disabled */
-
-	if (CONFIG(BOARD_PCENGINES_APU5))
+	//
+	// Configure output disabled, value low, pull up/down disabled
+	//
+	if (CONFIG(BOARD_PCENGINES_APU5)) {
 		configure_gpio(IOMUX_GPIO_22, Function0, GPIO_22, setting);
+	}
 
-	if (CONFIG(BOARD_PCENGINES_APU2) || CONFIG(BOARD_PCENGINES_APU3) ||
-	    CONFIG(BOARD_PCENGINES_APU4))
+	if (CONFIG(BOARD_PCENGINES_APU2) ||
+		CONFIG(BOARD_PCENGINES_APU3) ||
+		CONFIG(BOARD_PCENGINES_APU4)) {
 		configure_gpio(IOMUX_GPIO_32, Function0, GPIO_32, setting);
+	}
 
 	configure_gpio(IOMUX_GPIO_49, Function2, GPIO_49, setting);
 	configure_gpio(IOMUX_GPIO_50, Function2, GPIO_50, setting);
 	configure_gpio(IOMUX_GPIO_71, Function0, GPIO_71, setting);
 
-	/* Configure output enabled, value low, pull up/down disabled */
+	//
+	// Configure output enabled, value low, pull up/down disabled
+	//
 	setting = GPIO_OUTPUT_ENABLE;
-	if (CONFIG(BOARD_PCENGINES_APU3) || CONFIG(BOARD_PCENGINES_APU4))
+	if (CONFIG(BOARD_PCENGINES_APU3) ||
+		CONFIG(BOARD_PCENGINES_APU4)) {
 		configure_gpio(IOMUX_GPIO_33, Function0, GPIO_33, setting);
+	}
 
 	configure_gpio(IOMUX_GPIO_57, Function1, GPIO_57, setting);
 	configure_gpio(IOMUX_GPIO_58, Function1, GPIO_58, setting);
 	configure_gpio(IOMUX_GPIO_59, Function3, GPIO_59, setting);
 
-	/* Configure output enabled, value high, pull up/down disabled */
+	//
+	// Configure output enabled, value high, pull up/down disabled
+	//
 	setting = GPIO_OUTPUT_ENABLE | GPIO_OUTPUT_VALUE;
 
 	if (CONFIG(BOARD_PCENGINES_APU5)) {
@@ -160,25 +170,6 @@ void board_BeforeInitReset(struct sysinfo *cb, AMD_RESET_PARAMS *Reset)
 			data |= 0xF << (1 * 4); // CLKREQ GFX to GFXCLK
 			misc_write32(FCH_MISC_REG04, data);
 			printk(BIOS_DEBUG, "force mPCIe clock enabled\n");
-		}
-
-		volatile u32 *ptr = (u32 *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
-		u16 watchdog_timeout = get_watchdog_timeout();
-
-		if (watchdog_timeout == 0) {
-			//disable watchdog
-			printk(BIOS_WARNING, "Watchdog is disabled\n");
-			*ptr |= (1 << 3);
-		} else {
-			// enable
-			*ptr &= ~(1 << 3);
-			*ptr |= (1 << 0);
-			// configure timeout
-			*(ptr + 1) = (u16) watchdog_timeout;
-			// trigger
-			*ptr |= (1 << 7);
-
-			printk(BIOS_WARNING, "Watchdog is enabled, state = 0x%x, time = %d\n", *ptr, *(ptr + 1));
 		}
 	}
 }

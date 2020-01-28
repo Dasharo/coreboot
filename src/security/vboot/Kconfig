@@ -28,7 +28,7 @@ config VBOOT
 	default n
 	select VBOOT_LIB
 	select VBOOT_MOCK_SECDATA if !TPM1 && !TPM2
-	depends on !MISSING_BOARD_RESET
+	depends on 0 = 0  # Must have a 'depends on' or board overrides will break it.
 	help
 	  Enabling VBOOT will use vboot to verify the components of the firmware
 	  (stages, payload, etc).
@@ -180,6 +180,13 @@ config VBOOT_ALWAYS_ENABLE_DISPLAY
 	default n
 	help
 	  Set this option to indicate to vboot that display should always be enabled.
+
+config VBOOT_ALWAYS_ALLOW_UDC
+	bool "Always allow UDC"
+	default n
+	depends on !CHROMEOS
+	help
+	  This option allows UDC to be enabled regardless of the vboot state.
 
 config VBOOT_HAS_REC_HASH_SPACE
 	bool

@@ -16,23 +16,13 @@
  */
 
 #include <string.h>
-#include <device/pci_def.h>
-#include <device/pci_ops.h>
-#include <device/pnp.h>
 #include <amdblocks/acpimmio.h>
 #include <northbridge/amd/agesa/state_machine.h>
-#include <superio/nuvoton/common/nuvoton.h>
-#include <superio/nuvoton/nct5104d/nct5104d.h>
-#include <console/console.h>
 #include "gpio_ftns.h"
 #include <SB800.h>
-#include <build.h>
+
 #include "bios_knobs.h"
 #include <sb_cimx.h>
-
-#define SIO_PORT 0x2e
-#define SERIAL1_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
-#define SERIAL2_DEV PNP_DEV(SIO_PORT, NCT5104D_SP2)
 
 static void print_sign_of_life(void);
 extern char coreboot_dmi_date[];

@@ -21,23 +21,14 @@
 
 void bootblock_mainboard_early_init(void)
 {
-	volatile u32 *addr32;
-	u32 t32;
-
 	/* Disable PCI-PCI bridge and release GPIO32/33 for other uses. */
 	pm_write8(0xea, 0x1);
 
 	/* Set auxiliary output clock frequency on OSCOUT1 pin to be 48MHz */
-	addr32 = (u32 *)0xfed80e28;
-	t32 = *addr32;
-	t32 &= 0xfff8ffff;
-	*addr32 = t32;
+	misc_write32(0x28, misc_read32(0x28) & 0xfff8ffff);
 
 	/* Enable Auxiliary Clock1, disable FCH 14 MHz OscClk */
-	addr32 = (u32 *)0xfed80e40;
-	t32 = *addr32;
-	t32 &= 0xffffbffb;
-	*addr32 = t32;
+	misc_write32(0x40, misc_read32(0x40) & 0xffffbffb);
 
 	/* w83627uhg has a default clk of 48MHz, p.9 of data-sheet */
 	winbond_enable_serial(SERIAL_DEV, CONFIG_TTYS0_BASE);

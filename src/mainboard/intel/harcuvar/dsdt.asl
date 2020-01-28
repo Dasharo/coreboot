@@ -30,9 +30,6 @@ DefinitionBlock(
 	#include "acpi/platform.asl"
 	#include "acpi/mainboard.asl"
 
-	// General Purpose Events
-	//#include "acpi/gpe.asl"
-
 	// Thermal Handler
 	#include "acpi/thermal.asl"
 
@@ -49,6 +46,5 @@ DefinitionBlock(
 		}
 	}
 
-	/* Chipset specific sleep states */
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }

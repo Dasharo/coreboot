@@ -16,6 +16,9 @@
 #include <AGESA.h>
 #include <northbridge/amd/agesa/state_machine.h>
 #include "bios_knobs.h"
+#include <smp/node.h>
+#include <Fch/Fch.h>
+#include <amdblocks/acpimmio.h>
 
 static const PCIe_PORT_DESCRIPTOR PortList[] = {
 	{
@@ -82,6 +85,37 @@ void board_BeforeInitEarly(struct sysinfo *cb, AMD_EARLY_PARAMS *InitEarly)
 	if (check_boost()) {
 		InitEarly->PlatformConfig.CStateMode = CStateModeC6;
 		InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+	}
+
+	if (boot_cpu()) {
+		volatile u32 *ptr = (u32 *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
+
+		/*
+		 * Set PMxBE[RstToCpuPwrGdEn] = 1: FCH toggles CpuPwrGd on every reset.
+		 * Without it, after watchdog causes a restart, D18F5x84[CmpCap]
+		 * (number of cores on the node) sometimes reads as 0. Because of that
+		 * AGESA hangs in subsequent InitReset calls, until next cold reset.
+		 */
+		pm_write8(FCH_PMIOA_REGBE, pm_read8(FCH_PMIOA_REGBE) | 0x80);
+
+		u16 watchdog_timeout = get_watchdog_timeout();
+
+		if (watchdog_timeout == 0) {
+			// watchdog disabled - default state
+			printk(BIOS_WARNING, "Watchdog is disabled\n");
+		} else {
+			// bit 1 (WatchdogFired) is write-1-to-clear, needs to be preserved
+			u32 val = *ptr & ~(1 << 1);
+			// enable
+			*ptr = val | (1 << 0);
+			// configure timeout
+			*(ptr + 1) = (u16) watchdog_timeout;
+			// trigger
+			val = *ptr & ~(1 << 1);
+			*ptr = val | (1 << 7);
+
+			printk(BIOS_WARNING, "Watchdog is enabled, state = 0x%x, time = %d\n", *ptr, *(ptr + 1));
+		}
 	}
 }
 

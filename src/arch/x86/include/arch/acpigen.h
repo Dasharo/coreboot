@@ -309,6 +309,7 @@ void acpigen_write_dword(unsigned int data);
 void acpigen_write_qword(uint64_t data);
 void acpigen_write_integer(uint64_t data);
 void acpigen_write_string(const char *string);
+void acpigen_write_name_unicode(const char *name, const char *string);
 void acpigen_write_name(const char *name);
 void acpigen_write_name_zero(const char *name);
 void acpigen_write_name_one(const char *name);
@@ -388,7 +389,7 @@ void acpigen_write_dsm(const char *uuid, void (**callbacks)(void *),
 void acpigen_write_dsm_uuid_arr(struct dsm_uuid *ids, size_t count);
 
 /*
- * Generate ACPI AML code for _CPC (Continuous Perfmance Control).
+ * Generate ACPI AML code for _CPC (Continuous Performance Control).
  * Execute the package function once to create a global table, then
  * execute the method function within each processor object to
  * create a method that points to the global table.

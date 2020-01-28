@@ -112,8 +112,10 @@ static struct device_operations device_ops = {
 	.read_resources			= pch_lpc_read_resources,
 	.set_resources			= pch_lpc_set_resources,
 	.enable_resources		= pci_dev_enable_resources,
+#if CONFIG(HAVE_ACPI_TABLES)
 	.write_acpi_tables		= southbridge_write_acpi_tables,
 	.acpi_inject_dsdt_generator	= southbridge_inject_dsdt,
+#endif
 	.init				= lpc_soc_init,
 	.scan_bus			= scan_static_bus,
 	.ops_pci			= &pci_dev_ops_pci,
@@ -224,6 +226,14 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_TGP_ESPI_26,
 	PCI_DEVICE_ID_INTEL_JSP_PRE_PROD_ESPI_1,
 	PCI_DEVICE_ID_INTEL_JSP_PRE_PROD_ESPI_2,
+	PCI_DEVICE_ID_INTEL_MCC_ESPI_0,
+	PCI_DEVICE_ID_INTEL_MCC_ESPI_1,
+	PCI_DEVICE_ID_INTEL_MCC_BASE_ESPI,
+	PCI_DEVICE_ID_INTEL_MCC_PREMIUM_ESPI,
+	PCI_DEVICE_ID_INTEL_MCC_SUPER_ESPI,
+	PCI_DEVICE_ID_INTEL_MCC_ESPI_2,
+	PCI_DEVICE_ID_INTEL_MCC_ESPI_3,
+	PCI_DEVICE_ID_INTEL_MCC_ESPI_4,
 	0
 };
 

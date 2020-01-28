@@ -45,7 +45,6 @@ chip northbridge/amd/pi/00730F01/root_complex
 			device pci 14.3 on      # LPC 0x439d
 				chip superio/nuvoton/nct5104d # SIO NCT5104D
 					register "irq_trigger_type" = "0"
-					register "enable_wdt1" = "0"
 					device pnp 2e.0 off end
 					device pnp 2e.2 on
 						io 0x60 = 0x3f8
@@ -65,15 +64,16 @@ chip northbridge/amd/pi/00730F01/root_complex
 						io 0x60 = 0x2e8
 						irq 0x70 = 3
 					end
-					device pnp 2e.8 on
+					device pnp 2e.008 off end
+					device pnp 2e.108 on
 						io 0x60 = 0x220
 					end
-					device pnp 2e.f off end
 					# GPIO0 and GPIO1 are conditionally turned on
 					device pnp 2e.007 on end
 					device pnp 2e.107 on end
 					device pnp 2e.607 off end
 					device pnp 2e.e off end
+					device pnp 2e.f on end
 				end # SIO NCT5104D
 			end # LPC 0x439d
 			register "sd_mode" = "3"

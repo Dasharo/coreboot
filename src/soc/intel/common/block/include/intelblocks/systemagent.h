@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2017 Intel Corporation.
+ * Copyright 2017-2020 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include <device/device.h>
 #include <soc/iomap.h>
+#include <soc/nvs.h>
 #include <stddef.h>
 
 /* Device 0:0.0 PCI configuration space */
@@ -42,13 +43,13 @@ void bootblock_systemagent_early_init(void);
  * Fixed MMIO range
  *   INDEX = Either PCI configuration space registers or MMIO offsets
  *   mapped from REG.
- *   BASE = 32 bit Address.
+ *   BASE = 64 bit Address.
  *   SIZE = base length
  *   DESCRIPTION = Name of the register/offset.
  */
 struct sa_mmio_descriptor {
 	unsigned int index;
-	uintptr_t base;
+	uint64_t base;
 	size_t size;
 	const char *description;
 };
@@ -82,6 +83,8 @@ uintptr_t sa_get_gsm_base(void);
 uintptr_t sa_get_tseg_base(void);
 /* API to get TSEG size */
 size_t sa_get_tseg_size(void);
+/* Fill MMIO resource above 4GB into GNVS */
+void sa_fill_gnvs(global_nvs_t *gnvs);
 /*
  * SoC overrides
  *

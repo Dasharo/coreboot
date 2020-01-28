@@ -491,7 +491,7 @@ smbios_board_type __weak smbios_mainboard_board_type(void)
 	return SMBIOS_BOARD_TYPE_UNKNOWN;
 }
 
-u8 __weak smbios_mainboard_enclosure_type(void)
+smbios_enclosure_type __weak smbios_mainboard_enclosure_type(void)
 {
 	return CONFIG_SMBIOS_ENCLOSURE_TYPE;
 }
@@ -534,11 +534,6 @@ unsigned int __weak smbios_cpu_get_current_speed_mhz(void)
 const char *__weak smbios_system_sku(void)
 {
 	return "";
-}
-
-int __weak fill_mainboard_smbios_type16(unsigned long *current, int *handle)
-{
-	return 0;
 }
 
 static int get_socket_type(void)
@@ -970,16 +965,6 @@ static int smbios_write_type11(unsigned long *current, int *handle)
 	return len;
 }
 
-static int smbios_write_type16(unsigned long *current, int *handle)
-{
-	int len = fill_mainboard_smbios_type16(current, handle);
-	if(len){
-		*current += len;
-		(*handle)++;
-	}
-	return len;
-}
-
 static int smbios_write_type17(unsigned long *current, int *handle)
 {
 	int len = sizeof(struct smbios_type17);
@@ -1218,8 +1203,6 @@ unsigned long smbios_write_tables(unsigned long current)
 	if (CONFIG(ELOG))
 		update_max(len, max_struct_size,
 			elog_smbios_write_type15(&current,handle++));
-	update_max(len, max_struct_size, smbios_write_type16(&current,
-		&handle));
 	update_max(len, max_struct_size, smbios_write_type17(&current,
 		&handle));
 	update_max(len, max_struct_size, smbios_write_type32(&current,
