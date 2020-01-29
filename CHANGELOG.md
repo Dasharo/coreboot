@@ -13,7 +13,7 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
-## [v4.11.0.3] - 2020-01-28
+## [v4.11.0.3] - 2020-01-29
 ### Changed
 - rebased with official coreboot repository commit 536799d
 - [updated sortbootorder to v4.6.17](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4617---2020-01-28)
