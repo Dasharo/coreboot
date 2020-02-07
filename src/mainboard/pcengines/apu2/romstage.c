@@ -200,7 +200,7 @@ static void lpc_mcu_msg(void)
 			if (timeout == 0) {
 				uart_init(CONFIG_UART_FOR_CONSOLE);
 				udelay(10000);
-				printk(BIOS_EMERG, "Failed to sync with LPC"
+				printk(BIOS_ERR, "Failed to sync with LPC"
 				       " MCU, number of retries %d\n", 3 - i);
 				udelay(10000);
 				uart_init(1);
@@ -229,7 +229,7 @@ static void lpc_mcu_msg(void)
 	while (uart_rx_byte(1) != 0xe1) {
 		if (timeout == 0) {
 			uart_init(CONFIG_UART_FOR_CONSOLE);
-			printk(BIOS_EMERG, "Did not receive response to BIOSBOOT\n");
+			printk(BIOS_ERR, "Did not receive response to BIOSBOOT\n");
 			return;
 		}
 		udelay(100);
