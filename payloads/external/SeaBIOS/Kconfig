@@ -88,12 +88,14 @@ config SEABIOS_BOOTORDER_FILE
 
 config SEABIOS_BOOTORDER_MAP_FILE
 	string "SeaBIOS bootorder_map file"
+	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_map_apu5" if BOARD_PCENGINES_APU5
 	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_map"
 	help
 	  Determine mapping of keystrokes to group of positions in bootorder
 
 config SEABIOS_BOOTORDER_DEF_FILE
 	string "SeaBIOS bootorder_def file"
+	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_def_apu5" if BOARD_PCENGINES_APU5
 	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_def"
 	help
 	  Determine default boot order and default values for runtime config
