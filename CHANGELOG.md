@@ -14,7 +14,7 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 ## [Unreleased]
 
 ## [v4.11.0.4] - 2020-02-26
-### Chnaged
+### Changed
 - rebased with official coreboot repository commit e53f8c9
 
 ### Fixed
