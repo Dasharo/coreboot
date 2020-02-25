@@ -30,11 +30,19 @@ ramstage-y += bios_knobs.c
 ramstage-y += s1_button.c
 
 cbfs-files-y += bootorder_map
+ifeq ($(CONFIG_BOARD_PCENGINES_APU5),y)
+bootorder_map-file := bootorder_map_apu5
+else
 bootorder_map-file := bootorder_map
+endif
 bootorder_map-type := raw
 
 cbfs-files-y += bootorder_def
+ifeq ($(CONFIG_BOARD_PCENGINES_APU5),y)
+bootorder_def-file := bootorder_def_apu5
+else
 bootorder_def-file := bootorder_def
+endif
 bootorder_def-type := raw
 
 # WIV20150126 add boot order

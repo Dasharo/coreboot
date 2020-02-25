@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <delay.h>
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <arch/acpi.h>
@@ -30,6 +31,7 @@
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
 #include <console/loglevel.h>
+#include <console/uart.h>
 #include <cpu/amd/car.h>
 #include <agesawrapper.h>
 #include <northbridge/amd/pi/agesawrapper_call.h>
@@ -85,8 +87,66 @@ static const GPIO_CONTROL gGpioInitTable[] = {
 		GPIO_DEFINITION (APU5_BIOS_CONSOLE_GPIO, APU5_BIOS_CONSOLE_FUNC, 0, 0, 0, 0),
 #endif
 		{0xFF, 0xFF, 0xFF}									// Terminator
-	};
+};
 
+static void lpc_mcu_msg(void)
+{
+	unsigned int i, timeout;
+	const char *post_msg = "BIOSBOOT";
+	unsigned char sync_byte = 0;
+
+	if (!IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+		return;
+
+	uart_init(1);
+
+	for (i = 0; i < 4; i++) {
+		uart_tx_byte(1, 0xe1);
+		uart_tx_flush(1);
+		timeout = 10;
+		while (sync_byte != 0xe1) {
+			sync_byte = uart_rx_byte(1);
+			if (timeout == 0) {
+				uart_init(CONFIG_UART_FOR_CONSOLE);
+				udelay(10000);
+				printk(BIOS_ERR, "Failed to sync with LPC"
+				       " MCU, number of retries %d\n", 3 - i);
+				udelay(10000);
+				uart_init(1);
+				udelay(10000);
+				break;
+			}
+			udelay(100);
+			timeout--;
+		}
+		if (sync_byte == 0xe1)
+			break;
+	}
+
+	if (sync_byte != 0xe1)
+		return;
+
+	uart_init(1);
+	timeout = 10;
+
+	for (i = 0; i < strlen(post_msg); i++)
+		uart_tx_byte(1, *(post_msg + i));
+
+	uart_tx_byte(1, 0xe1);
+	uart_tx_flush(1);
+
+	while (uart_rx_byte(1) != 0xe1) {
+		if (timeout == 0) {
+			uart_init(CONFIG_UART_FOR_CONSOLE);
+			printk(BIOS_ERR, "Did not receive response to BIOSBOOT\n");
+			return;
+		}
+		udelay(100);
+		timeout--;
+	}
+
+	uart_init(CONFIG_UART_FOR_CONSOLE);
+}
 
 void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 {
@@ -132,10 +192,13 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		/* enable 0x2e/0x4e IO decoding before configuring SuperIO */
 		pci_write_config32(dev, LPC_IO_OR_MEM_DECODE_ENABLE, data | 3);
 
-		/* COM2 on apu5 is reserved so only COM1 should be supported */
-		if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)) &&
-		    !IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
+		/* Enable UARTB for LPC MCU */
+		if (IS_ENABLED(CONFIG_BOARD_PCENGINES_APU5))
 			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
+
+		if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)))
+			nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
+
 		console_init();
 
 		printk(BIOS_INFO, "14-25-48Mhz Clock settings\n");
@@ -265,6 +328,9 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 		printk(BIOS_ALERT, "coreboot build %s\n", tmp);
 		printk(BIOS_ALERT, "BIOS version %s\n", COREBOOT_ORIGIN_GIT_TAG);
 	}
+
+	lpc_mcu_msg();
+
 #if CONFIG_SVI2_SLOW_SPEED
 	/* Force SVI2 to slow speed for APU2 */
 	val = pci_read_config32( d18f3_dev, 0xA0);
