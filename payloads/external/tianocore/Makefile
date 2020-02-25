@@ -51,9 +51,9 @@ build_flavor+= -D SECURE_BOOT_ENABLE=TRUE
 endif
 
 ifeq ($(CONFIG_TIANOCORE_TARGET_IA32), y)
-	BUILD_STR=-q -a IA32 -t COREBOOT -p $(bootloader)/$(bootloader)Ia32.dsc -b $(BUILD_TYPE) $(TIMER) $(build_flavor) -D NETWORK_IPXE=TRUE -D SERIAL_TERMINAL=TRUE -D SECURE_BOOT_ENABLE=TRUE
+	BUILD_STR=-q -a IA32 -t COREBOOT -p $(bootloader)/$(bootloader)Ia32.dsc -b $(BUILD_TYPE) $(TIMER) $(build_flavor)
 else
-	BUILD_STR=-q -a IA32 -a X64 -t COREBOOT -p $(bootloader)/$(bootloader)Ia32X64.dsc -b $(BUILD_TYPE) $(TIMER) $(build_flavor) -D NETWORK_IPXE=TRUE -D SERIAL_TERMINAL=TRUE -D SECURE_BOOT_ENABLE=TRUE
+	BUILD_STR=-q -a IA32 -a X64 -t COREBOOT -p $(bootloader)/$(bootloader)Ia32X64.dsc -b $(BUILD_TYPE) $(TIMER) $(build_flavor)
 endif
 
 all: clean build
