@@ -13,6 +13,16 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
+## [v4.11.0.4] - 2020-02-26
+### Chnaged
+- rebased with official coreboot repository commit e53f8c9
+
+### Fixed
+- microSD card boot order on apu5
+
+### Added
+- ARM management controller interaction on apu5
+
 ## [v4.11.0.3] - 2020-01-29
 ### Changed
 - rebased with official coreboot repository commit 536799d
@@ -369,7 +379,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.11.0.3...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.11.0.4...develop
+[v4.11.0.4]: https://github.com/pcengines/coreboot/compare/v4.11.0.3...v4.11.0.4
 [v4.11.0.3]: https://github.com/pcengines/coreboot/compare/v4.11.0.2...v4.11.0.3
 [v4.11.0.2]: https://github.com/pcengines/coreboot/compare/v4.11.0.1...v4.11.0.2
 [v4.11.0.1]: https://github.com/pcengines/coreboot/compare/v4.10.0.3...v4.11.0.1
