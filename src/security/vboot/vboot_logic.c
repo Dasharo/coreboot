@@ -17,8 +17,6 @@
 #include <assert.h>
 #include <bootmode.h>
 #include <cbmem.h>
-#include <console/console.h>
-#include <console/vtxprintf.h>
 #include <fmap.h>
 #include <string.h>
 #include <timestamp.h>
@@ -36,20 +34,6 @@
 #define TODO_BLOCK_SIZE 1024
 
 /* exports */
-
-void vb2ex_printf(const char *func, const char *fmt, ...)
-{
-	va_list args;
-
-	if (func)
-		printk(BIOS_INFO, "VB2:%s() ", func);
-
-	va_start(args, fmt);
-	vprintk(BIOS_INFO, fmt, args);
-	va_end(args);
-
-	return;
-}
 
 vb2_error_t vb2ex_read_resource(struct vb2_context *ctx,
 				enum vb2_resource_index index,
@@ -81,11 +65,6 @@ vb2_error_t vb2ex_read_resource(struct vb2_context *ctx,
 		return VB2_ERROR_EX_READ_RESOURCE_SIZE;
 
 	return VB2_SUCCESS;
-}
-
-void vb2ex_abort(void)
-{
-	die("vboot has aborted execution; exit\n");
 }
 
 /* No-op stubs that can be overridden by SoCs with hardware crypto support. */
@@ -269,26 +248,6 @@ static uint32_t extend_pcrs(struct vb2_context *ctx)
 		   vboot_extend_pcr(ctx, 1, HWID_DIGEST_PCR);
 }
 
-static void vboot_log_and_clear_recovery_mode_switch(int unused)
-{
-	/* Log the recovery mode switches if required, before clearing them. */
-	log_recovery_mode_switch();
-
-	/*
-	 * The recovery mode switch is cleared (typically backed by EC) here
-	 * to allow multiple queries to get_recovery_mode_switch() and have
-	 * them return consistent results during the verified boot path as well
-	 * as dram initialization. x86 systems ignore the saved dram settings
-	 * in the recovery path in order to start from a clean slate. Therefore
-	 * clear the state here since this function is called when memory
-	 * is known to be up.
-	 */
-	clear_recovery_mode_switch();
-}
-#if !CONFIG(VBOOT_STARTS_IN_ROMSTAGE)
-ROMSTAGE_CBMEM_INIT_HOOK(vboot_log_and_clear_recovery_mode_switch)
-#endif
-
 /**
  * Verify and select the firmware in the RW image
  *
@@ -449,13 +408,5 @@ void verstage_main(void)
 	       vboot_is_firmware_slot_a(ctx) ? 'A' : 'B');
 
  verstage_main_exit:
-	/* If CBMEM is not up yet, let the ROMSTAGE_CBMEM_INIT_HOOK take care
-	   of running this function. */
-	if (ENV_ROMSTAGE && CONFIG(VBOOT_STARTS_IN_ROMSTAGE))
-		vboot_log_and_clear_recovery_mode_switch(0);
-
-	/* Save recovery reason in case of unexpected reboots on x86. */
-	vboot_save_recovery_reason_vbnv();
-
 	timestamp_add_now(TS_END_VBOOT);
 }

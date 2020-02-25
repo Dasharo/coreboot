@@ -18,6 +18,7 @@
 #ifndef _EC_GOOGLE_CHROMEEC_EC_H
 #define _EC_GOOGLE_CHROMEEC_EC_H
 #include <types.h>
+#include <device/device.h>
 #include "ec_commands.h"
 
 /* Fill in base and size of the IO port resources used. */
@@ -298,5 +299,57 @@ int google_chromeec_get_protocol_info(
  * @return		0 on success, -1 on error
  */
 int google_chromeec_get_cmd_versions(int command, uint32_t *pmask);
+
+/**
+ * Get number of PD-capable USB ports from EC.
+ *
+ * @param *num_ports	If successful, num_ports is the number
+ *			of PD-capable USB ports according to the EC.
+ * @return		0 on success, -1 on error
+ */
+int google_chromeec_get_num_pd_ports(int *num_ports);
+
+/* Structure representing the capabilities of a USB-PD port */
+struct usb_pd_port_caps {
+	enum ec_pd_power_role_caps power_role_cap;
+	enum ec_pd_try_power_role_caps try_power_role_cap;
+	enum ec_pd_data_role_caps data_role_cap;
+	enum ec_pd_port_location port_location;
+};
+
+/**
+ * Get role-based capabilities for a USB-PD port
+ *
+ * @param port			Which port to get information about
+ * @param *power_role_cap	The power-role capabillity of the port
+ * @param *try_power_role_cap	The Try-power-role capability of the port
+ * @param *data_role_cap	The data role capability of the port
+ * @param *port_location	Location of the port on the device
+ * @return			0 on success, -1 on error
+ */
+int google_chromeec_get_pd_port_caps(int port,
+				struct usb_pd_port_caps *port_caps);
+
+#if CONFIG(HAVE_ACPI_TABLES)
+/**
+ * Writes USB Type-C PD related information to the SSDT
+ *
+ * @param dev			EC device
+ */
+void google_chromeec_fill_ssdt_generator(struct device *dev);
+
+/**
+ * Returns the ACPI name for the EC device.
+ *
+ * @param dev			EC device
+ */
+const char *google_chromeec_acpi_name(const struct device *dev);
+
+#endif /* HAVE_ACPI_TABLES */
+
+/*
+ * Allows bus-specific EC code to perform actions when the device is enabled.
+ */
+void google_ec_enable_extra(struct device *dev);
 
 #endif /* _EC_GOOGLE_CHROMEEC_EC_H */

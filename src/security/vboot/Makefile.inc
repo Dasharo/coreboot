@@ -16,6 +16,12 @@
 
 ifeq ($(CONFIG_VBOOT_LIB),y)
 
+bootblock-y += vboot_lib.c
+verstage-y += vboot_lib.c
+romstage-y += vboot_lib.c
+ramstage-y += vboot_lib.c
+postcar-y += vboot_lib.c
+
 vboot-fixup-includes = $(patsubst -I%,-I$(top)/%,\
 		       $(patsubst $(src)/%.h,$(top)/$(src)/%.h,\
 		       $(filter-out -I$(obj),$(1))))
@@ -220,7 +226,7 @@ GBB_FLAGS := $(call int-add, \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DISABLE_FW_ROLLBACK_CHECK),0x20) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_ENTER_TRIGGERS_TONORM),0x40) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_FORCE_DEV_BOOT_LEGACY),0x80) \
-	$(call bool-to-mask,$(CONFIG_GBB_FLAG_FAFT_KEY_OVERIDE),0x100) \
+	$(call bool-to-mask,$(CONFIG_GBB_FLAG_RUNNING_FAFT),0x100) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC),0x200) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DEFAULT_DEV_BOOT_LEGACY),0x400) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC),0x800) \

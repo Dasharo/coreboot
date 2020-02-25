@@ -27,7 +27,9 @@ which is a bad experience when trying to build coreboot the first time.
 
 Provide packages/installers of our compiler toolchain for Linux distros,
 Windows, Mac OS. For Windows, this should also include the environment
-(shell, make, ...).
+(shell, make, ...). A student doesn't have to cover _all_ platforms, but
+pick a set of systems that match their interest and knowledge and lay
+out a plan on how to do this.
 
 The scripts to generate these packages should be usable on a Linux
 host, as that's what we're using for our automated build testing system
@@ -63,28 +65,6 @@ across architectures.
 
 ### Mentors
 * Timothy Pearson <tpearson@raptorengineering.com>
-
-## Support QEMU AArch64
-Having QEMU support for the architectures coreboot can boot helps with
-some (limited) compatibility testing: While QEMU generally doesn't need
-much hardware init, any CPU state changes in the boot flow will likely
-be quite close to reality.
-
-That could be used as a baseline to ensure that changes to architecture
-code doesn't entirely break these architectures
-
-### Requirements
-* coreboot knowledge: Should know the general boot flow in coreboot.
-* other knowledge: This will require knowing how the architecture
-  typically boots, to adapt the coreboot payload interface to be
-  appropriate and, for example, provide a device tree in the platform's
-  typical format.
-* hardware requirements: since QEMU runs practically everywhere and
-  needs no recovery mechanism, these are suitable projects when no special
-  hardware is available.
-
-### Mentors
-* Patrick Georgi <patrick@georgi.software>
 
 ## Add Kernel Address Sanitizer functionality to coreboot
 The Kernel Address Sanitizer (KASAN) is a runtime dynamic memory error detector.
@@ -153,32 +133,17 @@ their bug reports.
 ### Mentors
 * Patrick Georgi <patrick@georgi.software>
 
-## Make coreboot coverity clean
-coreboot and several other of our projects are automatically tested
-using Synopsys' free "Coverity Scan" service. While some fare pretty
-good, like [em100](https://scan.coverity.com/projects/em100) at 0 known
-defects, there are still many open issues in other projects, most notably
-[coreboot](https://scan.coverity.com/projects/coreboot) itself (which
-is also the largest codebase).
-
-Not all of the reports are actual issues, but the project benefits a
-lot if the list of unhandled reports is down to 0 because that provides
-a baseline when future changes reintroduce new issues: it's easier to
-triage and handle a list of 5 issues rather than more than 350.
-
-This project would be going through all reports and handling them
-appropriately: Figure out if reports are valid or not and mark them
-as such. For valid reports, provide patches to fix the underlying issue.
-
-### Mentors
-* Patrick Georgi <patrick@georgi.software>
-
 ## Extend Ghidra to support analysis of firmware images
 [Ghidra](https://ghidra-sre.org) is a recently released cross-platform
 disassembler and decompiler that is extensible through plugins. Make it
 useful for firmware related work: Automatically parse formats (eg. by
 integrating UEFITool, cbfstool, decompressors), automatically identify
 16/32/64bit code on x86/amd64, etc.
+
+This has been done in 2019 with [some neat
+features](https://github.com/al3xtjames/ghidra-firmware-utils) being
+developed, but it may be possible to expand support for all kinds of firmware
+analyses.
 
 ## Learn hardware behavior from I/O and memory access logs
 [SerialICE](https://www.serialice.com) is a tool to trace the behavior of

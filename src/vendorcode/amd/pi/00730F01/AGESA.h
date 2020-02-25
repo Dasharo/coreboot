@@ -775,6 +775,19 @@ typedef enum {
   DP_VS_0_4V_9_5DB = 0x18                                 ///< 0x18
 } DP_FIXED_VOLT_SWING_TYPE;
 
+#if CONFIG(AGESA_USE_1_0_0_4_HEADER)
+/// Alternative DRAM MAC
+typedef enum {
+  MAC_UNTESTEDMAC,                               ///< Assign 0 to Untested MAC
+  MAC_700k,                                      ///< Assign 1 to 700k
+  MAC_600k,                                      ///< Assign 2 to 600k
+  MAC_500k,                                      ///< Assign 3 to 500k
+  MAC_400k,                                      ///< Assign 4 to 400k
+  MAC_300k,                                      ///< Assign 5 to 300k
+  MAC_200k,                                      ///< Assign 6 to 200k
+} DRAM_MAXIMUM_ACTIVATE_COUNT;
+#endif
+
 // Macro for statically initializing various structures
 #define  PCIE_ENGINE_DATA_INITIALIZER(mType, mStartLane, mEndLane) {mType, mStartLane, mEndLane}
 #define  PCIE_PORT_DATA_INITIALIZER(mPortPresent, mChannelType, mDevAddress, mHotplug, mMaxLinkSpeed, mMaxLinkCap, mAspm, mResetId) \
@@ -1536,6 +1549,9 @@ typedef struct _CH_TIMING_STRUCT {
                                   ///<  667 (MHz)
                                   ///<  800 (MHz)
                                   ///<  and so on...
+#if CONFIG(AGESA_USE_1_0_0_4_HEADER)
+  OUT UINT8   Mac;                ///< Maximum Activate Count
+#endif
   OUT UINT8   CasL;               ///< CAS latency DCT setting (busclocks)
   OUT UINT8   Trcd;               ///< DCT Trcd (busclocks)
   OUT UINT8   Trp;                ///< DCT Trp (busclocks)
@@ -1791,6 +1807,23 @@ typedef struct _MEM_PARAMETER_STRUCT {
                                    ///<
                                    ///< @BldCfgItem{BLDCFG_MEMORY_POWER_DOWN}
 
+#if CONFIG(AGESA_USE_1_0_0_4_HEADER)
+  // Dram Mac Default
+
+  IN  UINT8 DramMacDefault;  ///< Default Maximum Activate Count
+                             ///<
+                             ///< @BldCfgItem{BLDCFG_MEMORY_ALTERNATIVE_MAX_ACTIVATE_COUNT}
+
+  // Dram Extended Temperature Range
+
+  IN  BOOLEAN EnableExtendedTemperatureRange; ///< enable extended temperature support.
+                              ///<   - FALSE =disable (default)
+                              ///<   - TRUE =enable
+                             ///<
+                             ///< @BldCfgItem{BLDCFG_MEMORY_EXTENDED_TEMPERATURE_RANGE}
+                             // Extended temperature range
+
+#endif
   // Online Spare
 
   IN BOOLEAN EnableOnLineSpareCtl; ///< Chip Select Spare Control bit 0.
@@ -2694,6 +2727,10 @@ typedef struct {
   IN BOOLEAN CfgMemoryEnableNodeInterleaving;     ///< Memory Enable Node Interleaving.
   IN BOOLEAN CfgMemoryChannelInterleaving;        ///< Memory Channel Interleaving.
   IN BOOLEAN CfgMemoryPowerDown;                  ///< Memory Power Down.
+#if CONFIG(AGESA_USE_1_0_0_4_HEADER)
+  IN UINT8   CfgMemoryMacDefault;                 ///< Memory DRAM MAC Default
+  IN BOOLEAN CfgMemoryExtendedTemperatureRange;   ///< Memory Extended Temperature Range
+#endif
   IN UINT32  CfgPowerDownMode;                    ///< Power Down Mode.
   IN BOOLEAN CfgOnlineSpare;                      ///< Online Spare.
   IN BOOLEAN CfgMemoryParityEnable;               ///< Memory Parity Enable.

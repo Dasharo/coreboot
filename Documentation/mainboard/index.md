@@ -82,16 +82,17 @@ The boards in this section are not real mainboards, but emulators.
 ### Sandy Bridge series
 
 - [T420](lenovo/t420.md)
-- [T420 / T520 / X220 / T420s / W520 common](lenovo/xx20_series.md)
-- [x1](lenovo/x1.md)
+- [T420 / T520 / X220 / T420s / W520 common](lenovo/Sandy_Bridge_series.md)
+- [X1](lenovo/x1.md)
 
 ### Ivy Bridge series
 
 - [T430](lenovo/t430.md)
 - [T530](lenovo/w530.md)
 - [W530](lenovo/w530.md)
-- [T430 / T530 / X230 / W530 common](lenovo/xx30_series.md)
+- [T430 / T530 / X230 / W530 common](lenovo/Ivy_Bridge_series.md)
 - [T431s](lenovo/t431s.md)
+- [Internal flashing](lenovo/ivb_internal_flashing.md)
 
 ### Haswell series
 
