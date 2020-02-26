@@ -478,30 +478,6 @@ static void mainboard_final(void *chip_info)
 	val &= ~(1 << 27);
 	pci_write_config32(D18F3, 0x88, val);
 
-	struct device *dev = dev_find_slot(0, PCI_DEVFN(0, 0));
-	val = pci_read_config32(dev, 0xE0);
-
-	pci_write_config32(dev, 0xE0, 0x014000B0);
-	u32 data = pci_read_config32(dev, 0xE4);
-
-	/* Enable AER (bit 5) and ACS (bit 6 undocumented) */
-	data |= (BIT(5) | BIT(6));
-	pci_write_config32(dev, 0xE4, data);
-
-	pci_write_config32(dev, 0xE0, 0x01300000);
-	data = pci_read_config32(dev, 0xE4);
-
-	/* Enable ACS capabilities straps including sub-items (undocumented).
-	 * From lspci it looks like these bits enable:
-	 * - Source Validation
-	 * - Translation Blocking
-	 */
-	data |= (BIT(24) | BIT(25) | BIT(26));
-	pci_write_config32(dev, 0xE4, data);
-
-	/* change back to previous index value */
-	pci_write_config32(dev, 0xE0, val);
-
 	//
 	// Turn off LED 2 and LED 3
 	//
