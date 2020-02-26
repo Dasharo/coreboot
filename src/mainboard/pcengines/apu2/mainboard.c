@@ -231,7 +231,7 @@ static int mainboard_smbios_type16(DMI_INFO *agesa_dmi, int *handle,
 
 	t = (struct smbios_type16 *)*current;
 	len = sizeof(struct smbios_type16);
-	memset(t, 0, sizeof(struct smbios_type16));
+	memset(t, 0, len);
 	max_capacity = get_spd_offset() ? 4 : 2; /* 4GB or 2GB variant */
 
 	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
@@ -254,7 +254,7 @@ static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 				 unsigned long *current)
 {
 	struct smbios_type17 *t;
-	int len = 0;
+	int len;
 
 	t = (struct smbios_type17 *)*current;
 	memset(t, 0, sizeof(struct smbios_type17));
@@ -447,31 +447,6 @@ static void mainboard_final(void *chip_info)
 	val = pci_read_config32(D18F3, 0x88);
 	val &= ~(1 << 27);
 	pci_write_config32(D18F3, 0x88, val);
-
-	struct device *dev = pcidev_on_root(0, 0);
-	val = pci_read_config32(dev, 0xE0);
-
-	pci_write_config32(dev, 0xE0, 0x014000B0);
-	u32 data = pci_read_config32(dev, 0xE4);
-
-	/* Enable AER (bit 5) and ACS (bit 6 undocumented) */
-	data |= (BIT(5) | BIT(6));
-	pci_write_config32(dev, 0xE4, data);
-
-	pci_write_config32(dev, 0xE0, 0x01300000);
-	data = pci_read_config32(dev, 0xE4);
-
-	/* Enable ACS capabilities straps including sub-items (undocumented).
-	 * From lspci it looks like these bits enable:
-	 * - Source Validation
-	 * - Translation Blocking
-	 */
-	data |= (BIT(24) | BIT(25) | BIT(26));
-	pci_write_config32(dev, 0xE4, data);
-
-	/* change back to previous index value */
-	pci_write_config32(dev, 0xE0, val);
-
 
 	/* Turn off LED 2 and LED 3 */
 	write_gpio(GPIO_58, 1);

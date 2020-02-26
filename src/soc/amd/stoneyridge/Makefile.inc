@@ -56,7 +56,6 @@ romstage-y += enable_usbdebug.c
 romstage-y += gpio.c
 romstage-y += monotonic_timer.c
 romstage-y += pmutil.c
-romstage-y += smbus.c
 romstage-y += smbus_spd.c
 romstage-y += memmap.c
 romstage-$(CONFIG_STONEYRIDGE_UART) += uart.c
@@ -90,8 +89,6 @@ ramstage-y += southbridge.c
 ramstage-y += northbridge.c
 ramstage-y += pmutil.c
 ramstage-y += sata.c
-ramstage-y += sm.c
-ramstage-y += smbus.c
 ramstage-y += memmap.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi_util.c
@@ -158,8 +155,8 @@ PSPRCVR_FILE=$(top)/$(FIRMWARE_LOCATE)/PspRecoveryBootLoader_prod_$(FIRMWARE_TYP
 ###4
 PSPNVRAM_FILE=$(top)/$(FIRMWARE_LOCATE)/PspNvram$(FIRMWARE_TYPE).bin
 
-###8 - Check for SMU firmware named either *.sbin or *.csbin
-###    TODO: Remove *.sbin section after the blobs repo is updated.
+###8 - Check for SMU firmware named either *.sbin or *.csbin.  Both "signed" and
+###    "compressed signed" are used by generations supported by this file.
 SMUFWM_FILE=$(top)/$(FIRMWARE_LOCATE)/SmuFirmware_$(FIRMWARE_TYPE).csbin
 SMUFWM_FN_FILE=$(top)/$(FIRMWARE_LOCATE)/SmuFirmware_$(FIRMWARE_TYPE)_FN.csbin
 ifeq ("$(wildcard $(SMUFWM_FILE))","")

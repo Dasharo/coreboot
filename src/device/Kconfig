@@ -413,6 +413,8 @@ choice
 	prompt "Framebuffer mode"
 	default VBE_LINEAR_FRAMEBUFFER if HAVE_VBE_LINEAR_FRAMEBUFFER && CHROMEOS
 	default GENERIC_LINEAR_FRAMEBUFFER if HAVE_LINEAR_FRAMEBUFFER && CHROMEOS
+	default VBE_LINEAR_FRAMEBUFFER if HAVE_VBE_LINEAR_FRAMEBUFFER && PAYLOAD_TIANOCORE
+	default GENERIC_LINEAR_FRAMEBUFFER if HAVE_LINEAR_FRAMEBUFFER && PAYLOAD_TIANOCORE
 	default VGA_TEXT_FRAMEBUFFER
 
 config VGA_TEXT_FRAMEBUFFER
@@ -555,6 +557,50 @@ config PCIEXP_L1_SUB_STATE
 	help
 	  Detect and enable ASPM on PCIe links.
 
+config PCIEXP_HOTPLUG
+	prompt "Enable PCIe Hotplug Support"
+	bool
+	default n
+	help
+	  Allocate resources for PCIe hotplug bridges
+
+if PCIEXP_HOTPLUG
+
+config PCIEXP_HOTPLUG_BUSES
+	int "PCI Express Hotplug Buses"
+	default 32
+	help
+	  This is the number of buses allocated for hotplug PCI express
+	  bridges, for use by hotplugged child devices. The default is 32
+	  buses.
+
+config PCIEXP_HOTPLUG_MEM
+	hex "PCI Express Hotplug Memory"
+	default 0x800000
+	help
+	  This is the amount of memory space, in bytes, to allocate to
+	  hotplug PCI express bridges, for use by hotplugged child devices.
+	  This size should be page-aligned. The default is 8 MiB.
+
+config PCIEXP_HOTPLUG_PREFETCH_MEM
+	hex "PCI Express Hotplug Prefetch Memory"
+	default 0x10000000
+	help
+	  This is the amount of pre-fetchable memory space, in bytes, to
+	  allocate to hot-plug PCI express bridges, for use by hotplugged
+	  child devices. This size should be page-aligned. The default is
+	  256 MiB.
+
+config PCIEXP_HOTPLUG_IO
+	hex "PCI Express Hotplug I/O Space"
+	default 0x2000
+	help
+	  This is the amount of I/O space to allocate to hot-plug PCI
+	  express bridges, for use by hotplugged child devices. The default
+	  is 8 KiB.
+
+endif # PCIEXP_HOTPLUG
+
 endif # PCIEXP_PLUGIN_SUPPORT
 
 config EARLY_PCI_BRIDGE
@@ -677,7 +723,7 @@ config INTEL_GMA_HAVE_VBT
 
 config INTEL_GMA_ADD_VBT
 	depends on SOC_INTEL_COMMON || CPU_INTEL_COMMON
-	bool "Add a Video Bios Table (VBT) binary to CBFS"
+	bool "Add a Video BIOS Table (VBT) binary to CBFS"
 	default y if INTEL_GMA_HAVE_VBT
 	help
 	  Add a VBT data file to CBFS. The VBT describes the integrated

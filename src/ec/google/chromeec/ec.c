@@ -15,21 +15,21 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <cbmem.h>
-#include <console/console.h>
 #include <assert.h>
 #include <bootmode.h>
 #include <bootstate.h>
+#include <cbmem.h>
+#include <console/console.h>
 #include <delay.h>
+#include <device/device.h>
+#include <device/path.h>
 #include <elog.h>
 #include <rtc.h>
-#include <stdlib.h>
 #include <security/vboot/vboot_common.h>
+#include <stdlib.h>
 #include <timer.h>
 
-#include "chip.h"
 #include "ec.h"
-#include "ec_commands.h"
 
 #define INVALID_HCMD 0xFF
 
@@ -78,41 +78,6 @@ static const struct {
 		EC_CMD_HOST_EVENT_GET_WAKE_MASK,
 	},
 };
-
-void log_recovery_mode_switch(void)
-{
-	uint64_t *events;
-
-	if (cbmem_find(CBMEM_ID_EC_HOSTEVENT))
-		return;
-
-	events = cbmem_add(CBMEM_ID_EC_HOSTEVENT, sizeof(*events));
-	if (!events)
-		return;
-
-	*events = google_chromeec_get_events_b();
-}
-
-static void google_chromeec_elog_add_recovery_event(void *unused)
-{
-	uint64_t *events = cbmem_find(CBMEM_ID_EC_HOSTEVENT);
-	uint8_t event_byte = EC_HOST_EVENT_KEYBOARD_RECOVERY;
-
-	if (!events)
-		return;
-
-	if (!(*events & EC_HOST_EVENT_MASK(EC_HOST_EVENT_KEYBOARD_RECOVERY)))
-		return;
-
-	if (*events &
-	    EC_HOST_EVENT_MASK(EC_HOST_EVENT_KEYBOARD_RECOVERY_HW_REINIT))
-		event_byte = EC_HOST_EVENT_KEYBOARD_RECOVERY_HW_REINIT;
-
-	elog_add_event_byte(ELOG_TYPE_EC_EVENT, event_byte);
-}
-
-BOOT_STATE_INIT_ENTRY(BS_WRITE_TABLES, BS_ON_ENTRY,
-		      google_chromeec_elog_add_recovery_event, NULL);
 
 uint8_t google_chromeec_calc_checksum(const uint8_t *data, int size)
 {
@@ -1419,6 +1384,57 @@ enum ec_current_image google_chromeec_get_current_image(void)
 	return ec_image_type;
 }
 
+int google_chromeec_get_num_pd_ports(int *num_ports)
+{
+	struct ec_response_charge_port_count resp = {};
+	struct chromeec_command cmd = {
+		.cmd_code = EC_CMD_CHARGE_PORT_COUNT,
+		.cmd_version = 0,
+		.cmd_data_out = &resp,
+		.cmd_size_in = 0,
+		.cmd_size_out = sizeof(resp),
+		.cmd_dev_index = 0,
+	};
+	int rv;
+
+	rv = google_chromeec_command(&cmd);
+	if (rv)
+		return rv;
+
+	*num_ports = resp.port_count;
+	return 0;
+}
+
+int google_chromeec_get_pd_port_caps(int port,
+				struct usb_pd_port_caps *port_caps)
+{
+	struct ec_params_get_pd_port_caps params = {
+		.port = port,
+	};
+	struct ec_response_get_pd_port_caps resp = {};
+	struct chromeec_command cmd = {
+		.cmd_code = EC_CMD_GET_PD_PORT_CAPS,
+		.cmd_version = 0,
+		.cmd_data_in = &params,
+		.cmd_size_in = sizeof(params),
+		.cmd_data_out = &resp,
+		.cmd_size_out = sizeof(resp),
+		.cmd_dev_index = 0,
+	};
+	int rv;
+
+	rv = google_chromeec_command(&cmd);
+	if (rv)
+		return rv;
+
+	port_caps->power_role_cap = resp.pd_power_role_cap;
+	port_caps->try_power_role_cap = resp.pd_try_power_role_cap;
+	port_caps->data_role_cap = resp.pd_data_role_cap;
+	port_caps->port_location = resp.pd_port_location;
+
+	return 0;
+}
+
 void google_chromeec_init(void)
 {
 	google_chromeec_log_uptimeinfo();
@@ -1509,3 +1525,28 @@ int google_chromeec_wait_for_displayport(long timeout)
 
 	return 1;
 }
+
+#if CONFIG(HAVE_ACPI_TABLES) && !DEVTREE_EARLY
+static struct device_operations ec_chromeec_ops = {
+	.acpi_name			= google_chromeec_acpi_name,
+	.acpi_fill_ssdt_generator	= google_chromeec_fill_ssdt_generator,
+};
+#endif
+
+/* ec_lpc, ec_spi, or ec_i2c can override this */
+__weak void google_ec_enable_extra(struct device *dev)
+{
+}
+
+static void google_chromeec_enable(struct device *dev)
+{
+#if CONFIG(HAVE_ACPI_TABLES) && !DEVTREE_EARLY
+	dev->ops = &ec_chromeec_ops;
+#endif
+	google_ec_enable_extra(dev);
+}
+
+struct chip_operations ec_google_chromeec_ops = {
+	CHIP_NAME("Google Chrome EC")
+	.enable_dev = google_chromeec_enable
+};

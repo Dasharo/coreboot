@@ -1,7 +1,7 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2019 Intel Corporation.
+ * Copyright (C) 2019-2020 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,10 @@
 #include <soc/pmc.h>
 #include <soc/serialio.h>
 #include <soc/usb.h>
+
+#define MAX_HD_AUDIO_DMIC_LINKS 2
+#define MAX_HD_AUDIO_SNDW_LINKS 4
+#define MAX_HD_AUDIO_SSP_LINKS  6
 
 struct soc_intel_tigerlake_config {
 
@@ -99,20 +103,14 @@ struct soc_intel_tigerlake_config {
 	uint8_t SataPortsDevSlp[8];
 
 	/* Audio related */
-	uint8_t PchHdaEnable;
 	uint8_t PchHdaDspEnable;
-
-	/* Enable/Disable HD Audio Link. Muxed with SSP0/SSP1/SNDW1 */
-	uint8_t PchHdaAudioLinkHda;
-	uint8_t PchHdaAudioLinkDmic0;
-	uint8_t PchHdaAudioLinkDmic1;
-	uint8_t PchHdaAudioLinkSsp0;
-	uint8_t PchHdaAudioLinkSsp1;
-	uint8_t PchHdaAudioLinkSsp2;
-	uint8_t PchHdaAudioLinkSndw1;
-	uint8_t PchHdaAudioLinkSndw2;
-	uint8_t PchHdaAudioLinkSndw3;
-	uint8_t PchHdaAudioLinkSndw4;
+	uint8_t PchHdaAudioLinkHdaEnable;
+	uint8_t PchHdaAudioLinkDmicEnable[MAX_HD_AUDIO_DMIC_LINKS];
+	uint8_t PchHdaAudioLinkSspEnable[MAX_HD_AUDIO_SSP_LINKS];
+	uint8_t PchHdaAudioLinkSndwEnable[MAX_HD_AUDIO_SNDW_LINKS];
+	uint8_t PchHdaIDispLinkTmode;
+	uint8_t PchHdaIDispLinkFrequency;
+	uint8_t PchHdaIDispCodecDisconnect;
 
 	/* PCIe Root Ports */
 	uint8_t PcieRpEnable[CONFIG_MAX_ROOT_PORTS];
@@ -218,6 +216,10 @@ struct soc_intel_tigerlake_config {
 		FORCE_ENABLE,
 	} CnviBtAudioOffload;
 
+	/* Tcss */
+	uint8_t TcssXhciEn;
+	uint8_t TcssXdciEn;
+
 	/*
 	 * Override GPIO PM configuration:
 	 * 0: Use FSP default GPIO PM program,
@@ -236,6 +238,32 @@ struct soc_intel_tigerlake_config {
 	 * Bit 0: MISCCFG_GPDLCGEN
 	 */
 	uint8_t gpio_pm[TOTAL_GPIO_COMM];
+
+	/* DP config */
+	/*
+	 * Port config
+	 * 0:Disabled, 1:eDP, 2:MIPI DSI
+	 */
+	uint8_t DdiPortAConfig;
+	uint8_t DdiPortBConfig;
+
+	/* Enable(1)/Disable(0) HPD */
+	uint8_t DdiPortAHpd;
+	uint8_t DdiPortBHpd;
+	uint8_t DdiPortCHpd;
+	uint8_t DdiPort1Hpd;
+	uint8_t DdiPort2Hpd;
+	uint8_t DdiPort3Hpd;
+	uint8_t DdiPort4Hpd;
+
+	/* Enable(1)/Disable(0) DDC */
+	uint8_t DdiPortADdc;
+	uint8_t DdiPortBDdc;
+	uint8_t DdiPortCDdc;
+	uint8_t DdiPort1Ddc;
+	uint8_t DdiPort2Ddc;
+	uint8_t DdiPort3Ddc;
+	uint8_t DdiPort4Ddc;
 };
 
 typedef struct soc_intel_tigerlake_config config_t;

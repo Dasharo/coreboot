@@ -17,7 +17,6 @@ menu "Verified Boot (vboot)"
 
 config VBOOT_LIB
 	bool
-	depends on !VENDORCODE_ELTAN_VBOOT && !VENDORCODE_ELTAN_MBOOT
 	help
 	  Build and link the vboot library. Makes the vboot API accessible across
 	  all coreboot stages, without enabling vboot verification. For verification,
@@ -115,8 +114,8 @@ config VBOOT_STARTS_IN_ROMSTAGE
 	depends on !VBOOT_STARTS_IN_BOOTBLOCK
 	help
 	  Firmware verification happens during the end of romstage (after
-	  memory initialization). This implies that vboot working data is
-	  allocated in CBMEM.
+	  memory initialization). This implies that the vboot work buffer is
+	  in CBMEM from the start and doesn't need to be reserved in memlayout.
 
 config VBOOT_MOCK_SECDATA
 	bool "Mock secdata for firmware verification"
@@ -156,14 +155,6 @@ config VBOOT_RETURN_FROM_VERSTAGE
 	  of exiting to the succeeding stage so that the verstage space can be
 	  reused by the succeeding stage. This is useful if a RAM space is too
 	  small to fit both the verstage and the succeeding stage.
-
-config VBOOT_SAVE_RECOVERY_REASON_ON_REBOOT
-	bool
-	default n
-	help
-	  This option ensures that the recovery request is not lost because of
-	  reboots caused after vboot verification is run. e.g. reboots caused by
-	  FSP components on Intel platforms.
 
 config VBOOT_MUST_REQUEST_DISPLAY
 	bool
@@ -316,8 +307,8 @@ config GBB_FLAG_FORCE_DEV_BOOT_LEGACY
 	bool "Allow booting to legacy in dev mode even if dev_boot_legacy=0"
 	default n
 
-config GBB_FLAG_FAFT_KEY_OVERIDE
-	bool "Allow booting using alternative keys for FAFT servo testing"
+config GBB_FLAG_RUNNING_FAFT
+	bool "Running FAFT tests; used as a hint to disable other debug features"
 	default n
 
 config GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC

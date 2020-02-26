@@ -135,11 +135,17 @@ void pch_early_iorange_init(void)
 	if (pch_check_decode_enable() == 0) {
 		io_enables = lpc_enable_fixed_io_ranges(io_enables);
 		/*
-		 * As per PCH BWG 2.5.16.
-		 * Set up LPC IO Enables PCR[DMI] + 2774h [15:0] to the same
-		 * value program in LPC PCI offset 82h.
+		 * As per PCH BWG 2.5.1.6.
+		 * Set LPC IO Enables PCR[DMI] + 2774h [15:0] to the same
+		 * value programmed in LPC PCI offset 82h.
 		 */
 		pcr_write16(PID_DMI, PCR_DMI_LPCIOE, io_enables);
+		/*
+		 * As per PCH BWG 2.5.1.5.
+		 * Set LPC IO Decode Ranges PCR[DMI] + 2770h [15:0] to the same
+		 * value programmed in LPC PCI offset 80h.
+		 */
+		pcr_write16(PID_DMI, PCR_DMI_LPCIOD, lpc_get_fixed_io_decode());
 	}
 
 	/* Program generic IO Decode Range */

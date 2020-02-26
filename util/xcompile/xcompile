@@ -221,7 +221,7 @@ SUBARCH_SUPPORTED+=${TSUPP-${TARCH}}
 GCC_CC_${TARCH}:=${GCC}
 GCC_CFLAGS_${TARCH}:=${CFLAGS_GCC}
 # Generally available for GCC's cc1:
-GCC_CFLAGS_${TARCH}+=-Wlogical-op
+GCC_CFLAGS_${TARCH}+=-fno-delete-null-pointer-checks -Wlogical-op
 GCC_ADAFLAGS_${TARCH}:=${CFLAGS_GCC}
 GCC_COMPILER_RT_${TARCH}:=${CC_RT_GCC}
 GCC_COMPILER_RT_FLAGS_${TARCH}:=${CC_RT_EXTRA_GCC}
@@ -293,12 +293,17 @@ EOF
 	fi # if [ "${TARCH}" = "arm64" ]...
 
 	cat <<EOF
-NM_${TARCH}:=${GCCPREFIX}nm
+ifeq (\$(CONFIG_COMPILER_GCC)\$(CONFIG_LP_COMPILER_GCC),y)
+	NM_${TARCH}:=${GCCPREFIX}gcc-nm
+	AR_${TARCH}:=${GCCPREFIX}gcc-ar
+else
+	NM_${TARCH}:=${GCCPREFIX}nm
+	AR_${TARCH}:=${GCCPREFIX}ar
+endif
 OBJCOPY_${TARCH}:=${GCCPREFIX}objcopy
 OBJDUMP_${TARCH}:=${GCCPREFIX}objdump
 READELF_${TARCH}:=${GCCPREFIX}readelf
 STRIP_${TARCH}:=${GCCPREFIX}strip
-AR_${TARCH}:=${GCCPREFIX}ar
 GNATBIND_${TARCH}:=${GCCPREFIX}gnatbind
 CROSS_COMPILE_${TARCH}:=${GCCPREFIX}
 

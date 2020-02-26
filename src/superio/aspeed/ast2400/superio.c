@@ -1,19 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- * Copyright (C) 2008 Corey Osgood <corey.osgood@gmail.com>
- * Copyright (C) 2018 Eltan B.V.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pnp.h>
@@ -89,17 +75,14 @@ static struct device_operations ops = {
 static struct pnp_info pnp_dev_info[] = {
 	{ NULL, AST2400_SUART1,   PNP_IO0 | PNP_IRQ0 | PNP_MSC0, 0xfff8, },
 	{ NULL, AST2400_SUART2,   PNP_IO0 | PNP_IRQ0 | PNP_MSC0, 0xfff8, },
-	{ NULL, AST2400_SWAK,     PNP_IO0 | PNP_IO1 | PNP_IO2 | PNP_IO3
+	{ NULL, AST2400_SWC,      PNP_IO0 | PNP_IO1 | PNP_IO2 | PNP_IO3
 		| PNP_IRQ0, 0xfff8, 0xfff8, 0xfff8, 0xfff8, },
 	{ NULL, AST2400_KBC,      PNP_IO0 | PNP_IO1 | PNP_IRQ0 | PNP_IRQ1
 		| PNP_MSC0, 0xffff, 0xffff, },
 	{ NULL, AST2400_GPIO,     PNP_IRQ0, }, // GPIO LDN has no IO Region
 	{ NULL, AST2400_SUART3,   PNP_IO0 | PNP_IRQ0 | PNP_MSC0, 0xfff8, },
 	{ NULL, AST2400_SUART4,   PNP_IO0 | PNP_IRQ0 | PNP_MSC0, 0xfff8, },
-	{ NULL, AST2400_ILPC2AHB, PNP_IRQ0 | PNP_MSC0 | PNP_MSC1 | PNP_MSC2
-		| PNP_MSC3 | PNP_MSC4 | PNP_MSC5 | PNP_MSC6 | PNP_MSC7
-		| PNP_MSC8 | PNP_MSC9 | PNP_MSCA | PNP_MSCB | PNP_MSCC
-		| PNP_MSCD | PNP_MSCE, },
+	{ NULL, AST2400_ILPC2AHB, PNP_IRQ0 },
 	{ NULL, AST2400_MAILBOX,  PNP_IO0 | PNP_IRQ0, 0xfffe, },
 };
 

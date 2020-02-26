@@ -37,6 +37,11 @@ uint16_t lpc_enable_fixed_io_ranges(uint16_t io_enables)
 	return io_enables;
 }
 
+uint16_t lpc_get_fixed_io_decode(void)
+{
+	return pci_read_config16(PCH_DEV_LPC, LPC_IO_DECODE);
+}
+
 /*
  * Find the first unused IO window.
  * Returns -1 if not found, 0 for reg 0x84, 1 for reg 0x88 ...
@@ -265,17 +270,6 @@ static void lpc_set_gen_decode_range(
 			gen_io_dec[i]);
 }
 
-static void pch_lpc_interrupt_init(void)
-{
-	const struct device *dev;
-
-	dev = pcidev_on_root(PCH_DEV_SLOT_LPC, 0);
-	if (!dev)
-		return;
-
-	soc_pch_pirq_init(dev);
-}
-
 void pch_enable_lpc(void)
 {
 	/* Lookup device tree in romstage */
@@ -290,7 +284,7 @@ void pch_enable_lpc(void)
 	lpc_set_gen_decode_range(gen_io_dec);
 	soc_setup_dmi_pcr_io_dec(gen_io_dec);
 	if (ENV_PAYLOAD_LOADER)
-		pch_lpc_interrupt_init();
+		soc_pch_pirq_init(dev);
 }
 
 void lpc_enable_pci_clk_cntl(void)

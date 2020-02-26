@@ -88,12 +88,14 @@ config SEABIOS_BOOTORDER_FILE
 
 config SEABIOS_BOOTORDER_MAP_FILE
 	string "SeaBIOS bootorder_map file"
+	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_map_apu5" if BOARD_PCENGINES_APU5
 	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_map"
 	help
 	  Determine mapping of keystrokes to group of positions in bootorder
 
 config SEABIOS_BOOTORDER_DEF_FILE
 	string "SeaBIOS bootorder_def file"
+	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_def_apu5" if BOARD_PCENGINES_APU5
 	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_def"
 	help
 	  Determine default boot order and default values for runtime config
@@ -172,7 +174,7 @@ config SEABIOS_DEBUG_LEVEL
 	  level 1  - Basic output, interrupts 5, 18h, 19h, 40h, SMP, PNP, PMM
 	  level 2  - AHCI, Floppy, Basic ps2, interrupts 11h, 12h, 14h, 17h
 	  level 3  - bootsplash, initializations, SeaBIOS VGA BIOS interrupts
-	  level 4  - bios tables, more optionrom
+	  level 4  - BIOS tables, more optionrom
 	  level 5  - Extra bootsplash, more XHCI
 	  level 6  - ATA commands, extra optionrom
 	  level 7  - extra ps2 commands, more OHCI & EHCI

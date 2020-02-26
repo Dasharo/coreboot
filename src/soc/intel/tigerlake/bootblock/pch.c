@@ -41,7 +41,7 @@
 #include <soc/pm.h>
 
 #define PCR_PSF3_TO_SHDW_PMC_REG_BASE_TGP	0x1100
-#define PCR_PSF3_TO_SHDW_PMC_REG_BASE_JSP	0x0980
+#define PCR_PSF3_TO_SHDW_PMC_REG_BASE_JSP	0xA00
 #define PCR_PSFX_TO_SHDW_BAR0	0
 #define PCR_PSFX_TO_SHDW_BAR1	0x4
 #define PCR_PSFX_TO_SHDW_BAR2	0x8
@@ -165,10 +165,15 @@ void pch_early_iorange_init(void)
 	if (pch_check_decode_enable() == 0) {
 		io_enables = lpc_enable_fixed_io_ranges(io_enables);
 		/*
-		 * Set up ESPI IO Enables PCR[DMI] + 2774h [15:0] to the same
-		 * value program in ESPI PCI offset 82h.
+		 * Set ESPI IO Enables PCR[DMI] + 2774h [15:0] to the same
+		 * value programmed in ESPI PCI offset 82h.
 		 */
 		pcr_write16(PID_DMI, PCR_DMI_LPCIOE, io_enables);
+		/*
+		 * Set LPC IO Decode Ranges PCR[DMI] + 2770h [15:0] to the same
+		 * value programmed in LPC PCI offset 80h.
+		 */
+		pcr_write16(PID_DMI, PCR_DMI_LPCIOD, lpc_get_fixed_io_decode());
 	}
 
 	/* Program generic IO Decode Range */

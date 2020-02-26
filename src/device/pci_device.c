@@ -878,6 +878,14 @@ static struct device_operations *get_pci_bridge_ops(struct device *dev)
 		case PCI_EXP_TYPE_DOWNSTREAM:
 			printk(BIOS_DEBUG, "%s subordinate bus PCI Express\n",
 			       dev_path(dev));
+#if CONFIG(PCIEXP_HOTPLUG)
+			u16 sltcap;
+			sltcap = pci_read_config16(dev, pciexpos + PCI_EXP_SLTCAP);
+			if (sltcap & PCI_EXP_SLTCAP_HPC) {
+				printk(BIOS_DEBUG, "%s hot-plug capable\n", dev_path(dev));
+				return &default_pciexp_hotplug_ops_bus;
+			}
+#endif /* CONFIG(PCIEXP_HOTPLUG) */
 			return &default_pciexp_ops_bus;
 		case PCI_EXP_TYPE_PCI_BRIDGE:
 			printk(BIOS_DEBUG, "%s subordinate PCI\n",
@@ -1187,6 +1195,12 @@ void pci_scan_bus(struct bus *bus, unsigned int min_devfn,
 	 * non-existence and single function devices.
 	 */
 	for (devfn = min_devfn; devfn <= max_devfn; devfn++) {
+		if (CONFIG(MINIMAL_PCI_SCANNING)) {
+			dev = pcidev_path_behind(bus, devfn);
+			if (!dev || !dev->mandatory)
+				continue;
+		}
+
 		/* First thing setup the device structure. */
 		dev = pci_scan_get_dev(bus, devfn);
 
@@ -1259,7 +1273,7 @@ static void pci_bridge_route(struct bus *link, scan_state state)
 
 	if (state == PCI_ROUTE_SCAN) {
 		link->secondary = parent->subordinate + 1;
-		link->subordinate = link->secondary;
+		link->subordinate = link->secondary + dev->hotplug_buses;
 	}
 
 	if (state == PCI_ROUTE_CLOSE) {

@@ -18,9 +18,7 @@
 
 #include <assert.h>
 #include <security/vboot/vboot_common.h>
-
-struct vb2_context;
-struct vb2_shared_data;
+#include <vb2_api.h>
 
 /*
  * Source: security/vboot/common.c
@@ -50,11 +48,6 @@ static inline bool vboot_is_gbb_flag_set(enum vb2_gbb_flag flag)
  * Locates firmware as a region device. Returns 0 on success, -1 on failure.
  */
 int vboot_locate_firmware(struct vb2_context *ctx, struct region_device *fw);
-
-/*
- * Source: security/vboot/bootmode.c
- */
-void vboot_save_recovery_reason_vbnv(void);
 
 /*
  * The stage loading code is compiled and entered from multiple stages. The
