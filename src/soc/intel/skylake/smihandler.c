@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2008-2009 coresystems GmbH
- * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2015-2020 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +23,9 @@ const smi_handler_t southbridge_smi[SMI_STS_BITS] = {
 	[GPIO_STS_BIT] = smihandler_southbridge_gpi,
 	[ESPI_SMI_STS_BIT] = smihandler_southbridge_espi,
 	[MCSMI_STS_BIT] = smihandler_southbridge_mc,
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_TCO_ENABLE)
 	[TCO_STS_BIT] = smihandler_southbridge_tco,
+#endif
 	[PERIODIC_STS_BIT] = smihandler_southbridge_periodic,
 	[MONITOR_STS_BIT] = smihandler_southbridge_monitor,
 };

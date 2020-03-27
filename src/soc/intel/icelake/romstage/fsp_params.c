@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2018 Intel Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,10 +29,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	uint32_t mask = 0;
 
 	if (!dev || !dev->enabled) {
-		/*
-		 * Skip IGD initialization in FSP if device
-		 * is disable in devicetree.cb.
-		 */
+		/* Skip IGD initialization in FSP if device is disabled in devicetree.cb. */
 		m_cfg->InternalGfx = 0;
 		m_cfg->IgdDvmt50PreAlloc = 0;
 	} else {
@@ -87,7 +83,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	/* Enable SMBus controller based on config */
 	m_cfg->SmbusEnable = config->SmbusEnable;
 	/* Set debug probe type */
-	m_cfg->PlatformDebugConsent = config->DebugConsent;
+	m_cfg->PlatformDebugConsent = CONFIG_SOC_INTEL_ICELAKE_DEBUG_CONSENT;
 
 	/* Vt-D config */
 	m_cfg->VtdDisable = 0;

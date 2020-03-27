@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2009 coresystems GmbH
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -100,7 +99,7 @@ Device(EC0)
 	// EC Query methods, called upon SCI interrupts.
 	Method (_Q01, 0)
 	{
-		Notify (\_PR.CP00, 0x80)
+		Notify (\_SB.CP00, 0x80)
 		If(ADP) {
 			Store(1, \_SB.AC.ACST)
 			TRAP(0xe3)

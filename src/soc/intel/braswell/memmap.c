@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2013 Google, Inc.
- * Copyright (C) 2015-2016 Intel Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +19,7 @@
 static size_t smm_region_size(void)
 {
 	u32 smm_size;
-	smm_size = iosf_bunit_read(BUNIT_SMRRH) & 0xFFFF;
+	smm_size =  iosf_bunit_read(BUNIT_SMRRH) & 0xFFFF;
 	smm_size -= iosf_bunit_read(BUNIT_SMRRL) & 0xFFFF;
 	smm_size = (smm_size + 1) << 20;
 	return smm_size;

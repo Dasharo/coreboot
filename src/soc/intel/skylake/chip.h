@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2008 coresystems GmbH
- * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2015-2018 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,6 +75,10 @@ struct soc_intel_skylake_config {
 	uint8_t gpe0_dw0; /* GPE0_31_0 STS/EN */
 	uint8_t gpe0_dw1; /* GPE0_63_32 STS/EN */
 	uint8_t gpe0_dw2; /* GPE0_95_64 STS/EN */
+
+	/* LPC fixed enables and ranges */
+	uint16_t lpc_iod;
+	uint16_t lpc_ioe;
 
 	/* Generic IO decode ranges */
 	uint32_t gen1_dec;
@@ -226,7 +227,7 @@ struct soc_intel_skylake_config {
 	u8 PchDciEn;
 
 	/*
-	 * Pcie Root Port configuration:
+	 * PCIe Root Port configuration:
 	 * each element of array corresponds to
 	 * respective PCIe root port.
 	 */

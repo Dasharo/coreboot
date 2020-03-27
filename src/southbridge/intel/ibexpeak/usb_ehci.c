@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2008-2009 coresystems GmbH
- * Copyright (C) 2013 Vladimir Serbinenko
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -98,7 +96,11 @@ static struct device_operations usb_ehci_ops = {
 	.ops_pci = &lops_pci,
 };
 
-static const unsigned short pci_device_ids[] = { 0x3b34, 0x3b3c, 0 };
+static const unsigned short pci_device_ids[] = {
+	PCI_DID_INTEL_IBEXPEAK_EHCI_1,
+	PCI_DID_INTEL_IBEXPEAK_EHCI_2,
+	0
+};
 
 static const struct pci_driver pch_usb_ehci __pci_driver = {
 	.ops = &usb_ehci_ops,

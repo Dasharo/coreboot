@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2016 Google Inc.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -65,6 +64,7 @@ Device (EC)
 		BTLE, 1,	/* Bluetooth Enable/Disable */
 		Offset (0x25),
 		, 5,
+		FANM, 2,
 		TPSE, 1,	/* topstar-laptop driver enable/disable */
 		Offset (0x31),
 		, 6,

@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2019 Intel Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,14 +39,23 @@
 /* PCIE Ports */
 #include "pcie.asl"
 
+/* pmc 0:1f.2 */
+#include "pmc.asl"
+
 /* Serial IO */
 #include "serialio.asl"
 
 /* SMBus 0:1f.4 */
 #include "smbus.asl"
 
+/* ISH 0:12.0 */
+#include "ish.asl"
+
 /* USB XHCI 0:14.0 */
 #include "xhci.asl"
 
 /* PCI _OSC */
 #include <soc/intel/common/acpi/pci_osc.asl>
+
+/* PMC Core*/
+#include <soc/intel/common/block/acpi/acpi/pmc.asl>

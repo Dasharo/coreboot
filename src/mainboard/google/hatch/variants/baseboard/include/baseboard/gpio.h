@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2018 Google LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +21,7 @@
 
 #define GPIO_PCH_WP	        GPP_C20
 
-/* EC wake pin is LAN_WAKE# */
+/* EC wake pin is routed to GPD2/LAN_WAKE# on PCH */
 #define GPE_EC_WAKE		GPE0_LAN_WAK
 
 /* eSPI virtual wire reporting */

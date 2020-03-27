@@ -2,6 +2,10 @@
 
 This section contains documentation about coreboot on specific mainboards.
 
+## 51NB
+
+- [X210](51nb/x210.md)
+
 ## AMD
 - [padmelon](amd/padmelon/padmelon.md)
 
@@ -71,12 +75,17 @@ The boards in this section are not real mainboards, but emulators.
 - [T4xx common](lenovo/t4xx_series.md)
 - [X2xx common](lenovo/x2xx_series.md)
 
-### Nehalem series
+## Libretrend
+
+- [LT1000](libretrend/lt1000.md)
+
+### Arrandale series
 
 - [T410](lenovo/t410.md)
 
 ### GM45 series
 
+- [X200 / T400 / T500 / X301 common](lenovo/montevina_series.md)
 - [X301](lenovo/x301.md)
 
 ### Sandy Bridge series
@@ -116,6 +125,11 @@ The boards in this section are not real mainboards, but emulators.
 
 - [PQ7-M107](portwell/pq7-m107.md)
 
+## Protectli
+
+- [FW2B / FW4B](protectli/fw2b_fw4b.md)
+- [FW6A / FW6B / FW6C](protectli/fw6.md)
+
 ## Roda
 
 - [RK9 Flash Header](roda/rk9/flash_header.md)
@@ -129,6 +143,10 @@ The boards in this section are not real mainboards, but emulators.
 - [X10SLM+-F](supermicro/x10slm-f.md)
 - [X11 LGA1151 series](supermicro/x11-lga1151-series/x11-lga1151-series.md)
 - [Flashing using the BMC](supermicro/flashing_on_vendorbmc.md)
+
+## System76
+
+- [Lemur Pro](system76/lemp9.md)
 
 ## UP
 

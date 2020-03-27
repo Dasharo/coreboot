@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2019-2020 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,19 +15,19 @@
 #ifndef _SOC_CHIP_H_
 #define _SOC_CHIP_H_
 
-#include <intelblocks/cfg.h>
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
-#include <stdint.h>
 #include <soc/gpe.h>
 #include <soc/gpio.h>
-#include <soc/pch.h>
 #include <soc/gpio_defs.h>
+#include <soc/pch.h>
 #include <soc/pci_devs.h>
 #include <soc/pmc.h>
 #include <soc/serialio.h>
 #include <soc/usb.h>
+#include <stdint.h>
 
 #define MAX_HD_AUDIO_DMIC_LINKS 2
 #define MAX_HD_AUDIO_SNDW_LINKS 4
@@ -114,13 +113,21 @@ struct soc_intel_tigerlake_config {
 
 	/* PCIe Root Ports */
 	uint8_t PcieRpEnable[CONFIG_MAX_ROOT_PORTS];
-	/* PCIe output clocks type to Pcie devices.
+	/* PCIe output clocks type to PCIe devices.
 	 * 0-23: PCH rootport, 0x70: LAN, 0x80: unspecified but in use,
 	 * 0xFF: not used */
 	uint8_t PcieClkSrcUsage[CONFIG_MAX_PCIE_CLOCKS];
 	/* PCIe ClkReq-to-ClkSrc mapping, number of clkreq signal assigned to
 	 * clksrc. */
 	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCKS];
+
+	/* PCIe RP L1 substate */
+	enum L1_substates_control {
+		L1_SS_FSP_DEFAULT,
+		L1_SS_DISABLED,
+		L1_SS_L1_1,
+		L1_SS_L1_2,
+	} PcieRpL1Substates[CONFIG_MAX_ROOT_PORTS];
 
 	/* SMBus */
 	uint8_t SmbusEnable;
@@ -169,17 +176,6 @@ struct soc_intel_tigerlake_config {
 	 */
 	uint32_t PrmrrSize;
 	uint8_t PmTimerDisabled;
-	/* Desired platform debug type. */
-	enum {
-		DebugConsent_Disabled,
-		DebugConsent_DCI_DBC,
-		DebugConsent_DCI,
-		DebugConsent_USB3_DBC,
-		DebugConsent_XDP, /* XDP/Mipi60 */
-		DebugConsent_USB2_DBC,
-		DebugConsent_2WIRE_DCI,
-		DebugConsent_Manual,
-	} DebugConsent;
 	/*
 	 * SerialIO device mode selection:
 	 * PchSerialIoDisabled,
@@ -203,6 +199,21 @@ struct soc_intel_tigerlake_config {
 	 * 1: High
 	 */
 	uint8_t SerialIoGSpiCsState[CONFIG_SOC_INTEL_COMMON_BLOCK_GSPI_MAX];
+
+	/*
+	 * TraceHubMode config
+	 * 0: Disable, 1: Target Debugger Mode, 2: Host Debugger Mode
+	 */
+	uint8_t TraceHubMode;
+
+	/* Debug interface selection */
+	enum {
+		DEBUG_INTERFACE_RAM = (1 << 0),
+		DEBUG_INTERFACE_UART = (1 << 1),
+		DEBUG_INTERFACE_USB3 = (1 << 3),
+		DEBUG_INTERFACE_SERIAL_IO = (1 << 4),
+		DEBUG_INTERFACE_TRACEHUB = (1 << 5),
+	} debug_interface_flag;
 
 	/* GPIO SD card detect pin */
 	unsigned int sdcard_cd_gpio;
@@ -264,6 +275,25 @@ struct soc_intel_tigerlake_config {
 	uint8_t DdiPort2Ddc;
 	uint8_t DdiPort3Ddc;
 	uint8_t DdiPort4Ddc;
+
+	/* Hybrid storage mode enable (1) / disable (0)
+	 * This mode makes FSP detect Optane and NVME and set PCIe lane mode
+	 * accordingly */
+	uint8_t HybridStorageMode;
+
+	/*
+	 * Override CPU flex ratio value:
+	 * CPU ratio value controls the maximum processor non-turbo ratio.
+	 * Valid Range 0 to 63.
+	 * In general descriptor provides option to set default cpu flex ratio.
+	 * Default cpu flex ratio 0 ensures booting with non-turbo max frequency.
+	 * That's the reason FSP skips cpu_ratio override if cpu_ratio is 0.
+	 * Only override CPU flex ratio to not boot with non-turbo max.
+	 */
+	uint8_t cpu_ratio_override;
+
+	/* HyperThreadingDisable : Yes (1) / No (0) */
+	uint8_t HyperThreadingDisable;
 };
 
 typedef struct soc_intel_tigerlake_config config_t;

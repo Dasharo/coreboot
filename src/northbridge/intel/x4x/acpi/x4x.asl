@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2009 coresystems GmbH
- * Copyright (C) 2015 Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -47,4 +45,4 @@ Device (PDRC)
 #include "peg.asl"
 
 // Integrated graphics 0:2.0
-#include <drivers/intel/gma/acpi/non-pch.asl>
+#include <drivers/intel/gma/acpi/gma.asl>

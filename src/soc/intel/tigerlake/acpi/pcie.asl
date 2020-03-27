@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2019 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -299,74 +298,6 @@ Device (RP11)
 Device (RP12)
 {
 	Name (_ADR, 0x001D0003)
-
-	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
-	Field (RPCS, AnyAcc, NoLock, Preserve)
-	{
-		, 24,
-		RPPN, 8,	/* Root Port Number */
-	}
-
-	Method (_PRT)
-	{
-		Return (IRQM (RPPN))
-	}
-}
-
-Device (RP13)
-{
-	Name (_ADR, 0x001D0004)
-
-	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
-	Field (RPCS, AnyAcc, NoLock, Preserve)
-	{
-		, 24,
-		RPPN, 8,	/* Root Port Number */
-	}
-
-	Method (_PRT)
-	{
-		Return (IRQM (RPPN))
-	}
-}
-
-Device (RP14)
-{
-	Name (_ADR, 0x001D0005)
-
-	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
-	Field (RPCS, AnyAcc, NoLock, Preserve)
-	{
-		, 24,
-		RPPN, 8,	/* Root Port Number */
-	}
-
-	Method (_PRT)
-	{
-		Return (IRQM (RPPN))
-	}
-}
-
-Device (RP15)
-{
-	Name (_ADR, 0x001D0006)
-
-	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
-	Field (RPCS, AnyAcc, NoLock, Preserve)
-	{
-		, 24,
-		RPPN, 8,	/* Root Port Number */
-	}
-
-	Method (_PRT)
-	{
-		Return (IRQM (RPPN))
-	}
-}
-
-Device (RP16)
-{
-	Name (_ADR, 0x001D0007)
 
 	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
 	Field (RPCS, AnyAcc, NoLock, Preserve)

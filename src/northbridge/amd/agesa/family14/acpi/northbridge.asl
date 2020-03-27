@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2011 Advanced Micro Devices, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -125,7 +124,6 @@ Device(PE23) {
 /* Northbridge function 3 */
 Device(NBF3) {
 	Name(_ADR, 0x00180003)
-
 	/* k10temp thermal zone */
-	#include "thermal_mixin.asl"
+	#include <soc/amd/common/acpi/thermal_zone.asl>
 } /* end NBF3 */

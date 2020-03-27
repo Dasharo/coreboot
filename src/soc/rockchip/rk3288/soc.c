@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2014 Rockchip Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,7 +12,6 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/cache.h>
 #include <bootmode.h>
 #include <console/console.h>
 #include <device/device.h>

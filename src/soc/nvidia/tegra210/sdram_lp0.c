@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (c) 2013, NVIDIA CORPORATION.  All rights reserved.
- * Copyright 2014 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +12,6 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/cache.h>
 #include <console/console.h>
 #include <soc/addressmap.h>
 #include <soc/pmc.h>

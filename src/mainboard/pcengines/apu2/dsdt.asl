@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2013 Advanced Micro Devices, Inc.
- * Copyright (C) 2013 Sage Electronic Engineering, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +45,7 @@ DefinitionBlock (
 	/* PCI IRQ mapping for the Southbridge */
 	#include <southbridge/amd/pi/hudson/acpi/pcie.asl>
 
-	/* Describe the processor tree (\_PR) */
+	/* Describe the processor tree (\_SB) */
 	#include <cpu/amd/pi/00730F01/acpi/cpu.asl>
 
 	/* Contains the supported sleep states for this chipset */

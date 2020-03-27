@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2016-2018 Intel Corp.
- * (Written by Alexandru Gagniuc <alexandrux.gagniuc@intel.com> for Intel Corp.)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +38,17 @@ uint16_t lpc_enable_fixed_io_ranges(uint16_t io_enables)
 uint16_t lpc_get_fixed_io_decode(void)
 {
 	return pci_read_config16(PCH_DEV_LPC, LPC_IO_DECODE);
+}
+
+uint16_t lpc_set_fixed_io_ranges(uint16_t io_ranges, uint16_t mask)
+{
+	uint16_t reg_io_ranges;
+
+	reg_io_ranges = lpc_get_fixed_io_decode() & ~mask;
+	io_ranges |= reg_io_ranges & mask;
+	pci_write_config16(PCH_DEV_LPC, LPC_IO_DECODE, io_ranges);
+
+	return io_ranges;
 }
 
 /*

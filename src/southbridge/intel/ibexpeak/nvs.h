@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2008-2009 coresystems GmbH
- * Copyright (C) 2011 Google Inc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,9 +74,7 @@ typedef struct global_nvs_t {
 	u8	tlst; /* 0x3d - Display Toggle List Pointer */
 	u8	cadl; /* 0x3e - currently attached devices */
 	u8	padl; /* 0x3f - previously attached devices */
-	u16	cste; /* 0x40 - current display state */
-	u16	nste; /* 0x42 - next display state */
-	u16	sste; /* 0x44 - set display state */
+	u16	rsvd14[3];
 	u8	ndid; /* 0x46 - number of device ids */
 	u32	did[5]; /* 0x47 - 5b device id 1..5 */
 	u8	rsvd5[0x9];
@@ -137,7 +133,7 @@ typedef struct global_nvs_t {
 	u8	pavp; /* 0xe9 - IGD PAVP data */
 	u8	rsvd12; /* 0xea - rsvd */
 	u8	oscc; /* 0xeb - PCIe OSC control */
-	u8	npce; /* 0xec - native pcie support */
+	u8	npce; /* 0xec - native PCIe support */
 	u8	plfl; /* 0xed - platform flavor */
 	u8	brev; /* 0xee - board revision */
 	u8	dpbm; /* 0xef - digital port b mode */

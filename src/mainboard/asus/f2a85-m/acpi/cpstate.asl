@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2012 Advanced Micro Devices, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +21,7 @@
 #include <arch/acpi.h>
 DefinitionBlock ("DSDT.AML", "DSDT", 0x01, OEM_ID, ACPI_TABLE_CREATOR, 0x00010001)
 	{
-	Scope (\_PR) {
+	Scope (\_SB) {
 		Device (CPU0) {
 		Name (_HID, "ACPI0007")
 		Name (_UID, 0)

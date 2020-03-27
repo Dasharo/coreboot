@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2018, The Linux Foundation.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -26,7 +25,7 @@ static struct usb_board_data usb1_board_data = {
 
 static void setup_usb(void)
 {
-	/* Setting Secondary usb controller */
+	/* Setting Secondary USB controller */
 	setup_usb_host(HSUSB_HS_PORT_1, &usb1_board_data);
 }
 

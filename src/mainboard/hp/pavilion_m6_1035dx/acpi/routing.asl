@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2012 Advanced Micro Devices, Inc.
- * Copyright (C) 2013 Sage Electronic Engineering, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,7 +88,7 @@
 		/* Bus 0, Dev 17 - SATA controller */
 		Package(){0x0011FFFF, 0, INTD, 0 },
 
-		/* Bus 0, Dev 21 Pcie Bridge */
+		/* Bus 0, Dev 21 PCIe Bridge */
 		Package(){0x0015FFFF, 0, INTA, 0 },
 		Package(){0x0015FFFF, 1, INTB, 0 },
 		Package(){0x0015FFFF, 2, INTC, 0 },

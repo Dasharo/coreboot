@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2009 coresystems GmbH
- * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2015-2019 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -291,13 +288,10 @@ static void configure_misc(void)
 	msr = rdmsr(IA32_MISC_ENABLE);
 	msr.lo |= (1 << 0);	/* Fast String enable */
 	msr.lo |= (1 << 3);	/* TM1/TM2/EMTTM enable */
-
-	if (conf->eist_enable)
-		msr.lo |= (1 << 16);	/* Enhanced SpeedStep Enable */
-	else
-		msr.lo &= ~(1 << 16);	/* Enhanced SpeedStep Disable */
-
 	wrmsr(IA32_MISC_ENABLE, msr);
+
+	/* Set EIST status */
+	cpu_set_eist(conf->eist_enable);
 
 	/* Disable Thermal interrupts */
 	msr.lo = 0;

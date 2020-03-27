@@ -3,9 +3,13 @@ config BOARD_GOOGLE_BASEBOARD_DEDEDE
 	select DRIVERS_I2C_GENERIC
 	select DRIVERS_I2C_HID
 	select DRIVERS_SPI_ACPI
+	select DRIVERS_USB_ACPI
 	select EC_GOOGLE_CHROMEEC
 	select EC_GOOGLE_CHROMEEC_BOARDID
 	select EC_GOOGLE_CHROMEEC_ESPI
+	select EC_GOOGLE_CHROMEEC_SKUID
+	select GENERIC_SPD_BIN
+	select GOOGLE_SMBIOS_MAINBOARD_VERSION
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
 	select INTEL_LPSS_UART_FOR_CONSOLE
@@ -31,6 +35,10 @@ config DEVICETREE
 	string
 	default "variants/baseboard/devicetree.cb"
 
+config DIMM_SPD_SIZE
+	int
+	default 512
+
 config DRIVER_TPM_SPI_BUS
 	default 0x1
 
@@ -46,6 +54,7 @@ config MAINBOARD_PART_NUMBER
 	string
 	default "Dedede" if BOARD_GOOGLE_DEDEDE
 	default "Waddledoo" if BOARD_GOOGLE_WADDLEDOO
+	default "Waddledee" if BOARD_GOOGLE_WADDLEDEE
 
 config MAX_CPUS
 	int
@@ -67,5 +76,6 @@ config VARIANT_DIR
 	string
 	default "dedede" if BOARD_GOOGLE_DEDEDE
 	default "waddledoo" if BOARD_GOOGLE_WADDLEDOO
+	default "waddledee" if BOARD_GOOGLE_WADDLEDEE
 
 endif #BOARD_GOOGLE_BASEBOARD_DEDEDE

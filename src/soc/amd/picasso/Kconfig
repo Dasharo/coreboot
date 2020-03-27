@@ -1,7 +1,6 @@
 ##
 ## This file is part of the coreboot project.
 ##
-## Copyright (C) 2019 Advanced Micro Devices, Inc.
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -196,7 +195,7 @@ config RO_REGION_ONLY
 
 config DRIVERS_I2C_DESIGNWARE_CLOCK_MHZ
 	int
-	default 133
+	default 150
 
 config PICASSO_LPC_IOMUX
 	bool

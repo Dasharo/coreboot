@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2016 - 2017 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,8 +75,8 @@ static struct device_operations csme_ie_kt_ops = {
 };
 
 static const unsigned short pci_device_ids[] = {
-	ME_MEKT_DEVID, /* DVN CSME KT */
-	IE_MEKT_DEVID, /* DVN IE KT */
+	PCI_DEVICE_ID_INTEL_DENVERTON_ME_KT,
+	PCI_DEVICE_ID_INTEL_DENVERTON_IE_KT,
 	0
 };
 

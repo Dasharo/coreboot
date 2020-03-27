@@ -30,7 +30,6 @@ endchoice
 
 config TIANOCORE_REVISION_ID
 	string "Insert a commit's SHA-1 or a branch name"
-	default "origin/coreboot-4.7.x-uefi"
 	help
 	   The commit's SHA-1 or branch name of the revision to use. Choose "upstream/master"
 	   for master branch of Tianocore release on github.

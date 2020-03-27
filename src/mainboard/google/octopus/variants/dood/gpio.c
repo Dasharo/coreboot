@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2019 The coreboot project Authors.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +17,7 @@
 #include <boardid.h>
 #include <gpio.h>
 #include <soc/gpio.h>
+#include <ec/google/chromeec/ec.h>
 
 enum {
 	SKU_1_LTE  = 1, /* Wifi + LTE */
@@ -60,7 +60,7 @@ static const struct pad_config lte_override_table[] = {
 const struct pad_config *variant_override_gpio_table(size_t *num)
 {
 	uint32_t sku_id;
-	sku_id = get_board_sku();
+	sku_id = google_chromeec_get_board_sku();
 
 	switch (sku_id) {
 	case SKU_1_LTE:

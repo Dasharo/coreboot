@@ -13,6 +13,22 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
+## [v4.11.0.5] - 2020-03-27
+### Changed
+- rebased with official coreboot repository commit 90557f4
+
+### Fixed
+- Processors definitions and scope in ACPI
+- Missing GNB IOAPIC initialization
+
+### Added
+- Enabled PCI Express power management capabilities: ASPM L0s and L1,
+  CommonClock, ClockPowerManagement
+- PCI Express endpoint reset logic using GPIOs for apu2
+- Thermal zone definition in ACPI
+- SMBIOS memory tables for apu1
+- GNB IOAPIC to MP table
+
 ## [v4.11.0.4] - 2020-02-26
 ### Changed
 - rebased with official coreboot repository commit e53f8c9
@@ -379,7 +395,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.11.0.4...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.11.0.5...develop
+[v4.11.0.5]: https://github.com/pcengines/coreboot/compare/v4.11.0.4...v4.11.0.5
 [v4.11.0.4]: https://github.com/pcengines/coreboot/compare/v4.11.0.3...v4.11.0.4
 [v4.11.0.3]: https://github.com/pcengines/coreboot/compare/v4.11.0.2...v4.11.0.3
 [v4.11.0.2]: https://github.com/pcengines/coreboot/compare/v4.11.0.1...v4.11.0.2

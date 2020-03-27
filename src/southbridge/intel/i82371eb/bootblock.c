@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2009 Uwe Hermann <uwe@hermann-uwe.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,4 +60,7 @@ void bootblock_early_southbridge_init(void)
 	reg16 |= LOWER_BIOS_ENABLE | EXT_BIOS_ENABLE | EXT_BIOS_ENABLE_1MB;
 	reg16 &= ~(WRITE_PROTECT_ENABLE);	/* Disable ROM write access. */
 	pci_write_config16(dev, XBCS, reg16);
+
+	/* Enable (RTC and) upper NVRAM bank. */
+	pci_write_config8(dev, RTCCFG, RTC_POS_DECODE | UPPER_RAM_EN | RTC_ENABLE);
 }

@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015 - 2017 Intel Corp.
- * Copyright (C) 2018 Online SAS
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +73,13 @@ static void denverton_core_init(struct device *cpu)
 	msr = rdmsr(IA32_MISC_ENABLE);
 	msr.lo |= FAST_STRINGS_ENABLE_BIT;
 	wrmsr(IA32_MISC_ENABLE, msr);
+
+	/* Lock AES-NI only if supported */
+	if (cpuid_ecx(1) & (1 << 25)) {
+		msr = rdmsr(MSR_FEATURE_CONFIG);
+		msr.lo |= FEATURE_CONFIG_LOCK;		/* Lock AES-NI */
+		wrmsr(MSR_FEATURE_CONFIG, msr);
+	}
 
 	/* Enable Turbo */
 	enable_turbo();

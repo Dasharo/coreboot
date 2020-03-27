@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2015 MediaTek Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,8 +33,6 @@ void setup_chromeos_gpios(void)
 void fill_lb_gpios(struct lb_gpios *gpios)
 {
 	struct lb_gpio chromeos_gpios[] = {
-		{WRITE_PROTECT.id, ACTIVE_LOW,
-			!get_write_protect_state(), "write protect"},
 		{LID.id, ACTIVE_HIGH, -1, "lid"},
 		{POWER_BUTTON.id, ACTIVE_HIGH, -1, "power"},
 		{EC_IN_RW.id, ACTIVE_HIGH, -1, "EC in RW"},

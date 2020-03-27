@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015 - 2017 Intel Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,15 +56,10 @@ static struct device_operations uart_ops = {
 	.enable = DEVICE_NOOP
 };
 
-static const unsigned short uart_ids[] = {
-	HSUART_DEVID, /* HSUART 0/1/2 */
-	0
-};
-
 static const struct pci_driver uart_driver __pci_driver = {
 	.ops = &uart_ops,
 	.vendor = PCI_VENDOR_ID_INTEL,
-	.devices = uart_ids
+	.device = PCI_DEVICE_ID_INTEL_DENVERTON_HSUART
 };
 
 static void hide_hsuarts(void)

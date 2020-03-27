@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2010 coresystems GmbH
- * Copyright (C) 2011 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -154,7 +152,7 @@ void mainboard_fill_pei_data(struct pei_data *pei_data)
 }
 
 const struct southbridge_usb_port mainboard_usb_ports[] = {
-	/* enabled power  usb oc pin  */
+	/* enabled power  USB oc pin  */
 	{ 0, 0, -1 }, /* P0: Empty */
 	{ 1, 0, 0 }, /* P1: Left USB 1  (OC0) */
 	{ 1, 0, 1 }, /* P2: Left USB 2  (OC1) */

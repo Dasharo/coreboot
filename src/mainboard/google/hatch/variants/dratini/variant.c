@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2019 Google LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,11 +15,12 @@
 #include <baseboard/variants.h>
 #include <variant/sku.h>
 #include <sar.h>
+#include <ec/google/chromeec/ec.h>
 
 const char *get_wifi_sar_cbfs_filename(void)
 {
 	const char *filename = NULL;
-	uint32_t sku_id = get_board_sku();
+	uint32_t sku_id = google_chromeec_get_board_sku();
 
 	switch (sku_id) {
 	case SKU_21_DRAGONAIR:

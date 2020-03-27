@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2013 Google Inc.
- * Copyright (C) 2014 - 2017 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -53,7 +51,7 @@ void smm_southbridge_enable_smi(void)
 {
 
 	printk(BIOS_DEBUG, "Enabling SMIs.\n");
-	/* Configure events Disable pcie wake. */
+	/* Configure events Disable PCIe wake. */
 	enable_pm1(PWRBTN_EN | GBL_EN | PCIEXPWAK_DIS);
 	disable_gpe(PME_B0_EN);
 

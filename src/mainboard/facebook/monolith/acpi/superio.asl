@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2011 Google Inc.
- * Copyright (C) 2015 Intel Corp.
- * Copyright (C) 2018-2019 Eltan B.V.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,14 +52,14 @@ Device (COM2) {
 
 	Name (_CRS, ResourceTemplate ()
 	{
-		FixedIO (0x02F8, 0x08)
+		FixedIO (0x03E8, 0x08)
 		IRQNoFlags () {3}
 	})
 
 	Name (_PRS, ResourceTemplate ()
 	{
 		StartDependentFn (0, 0) {
-			FixedIO (0x02F8, 0x08)
+			FixedIO (0x03E8, 0x08)
 			IRQNoFlags () {3}
 		}
 		EndDependentFn ()

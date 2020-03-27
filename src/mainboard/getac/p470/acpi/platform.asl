@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2009 coresystems GmbH
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -90,15 +89,15 @@ Method(_WAK,1)
 
 	// Windows XP SP2 P-State restore
 	If (LAnd(LEqual(OSYS, 2002), And(CFGD, 1))) {
-		If (LGreater(\_PR.CP00._PPC, 0)) {
-			Subtract(\_PR.CP00._PPC, 1, \_PR.CP00._PPC)
+		If (LGreater(\_SB.CP00._PPC, 0)) {
+			Subtract(\_SB.CP00._PPC, 1, \_SB.CP00._PPC)
 			PNOT()
-			Add(\_PR.CP00._PPC, 1, \_PR.CP00._PPC)
+			Add(\_SB.CP00._PPC, 1, \_SB.CP00._PPC)
 			PNOT()
 		} Else {
-			Add(\_PR.CP00._PPC, 1, \_PR.CP00._PPC)
+			Add(\_SB.CP00._PPC, 1, \_SB.CP00._PPC)
 			PNOT()
-			Subtract(\_PR.CP00._PPC, 1, \_PR.CP00._PPC)
+			Subtract(\_SB.CP00._PPC, 1, \_SB.CP00._PPC)
 			PNOT()
 		}
 	}

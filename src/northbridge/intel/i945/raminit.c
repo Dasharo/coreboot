@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2009 coresystems GmbH
- * Copyright (C) 2017 Arthur Heymans <arthur@aheymans.xyz>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,7 +109,7 @@ static int memclk(void)
 	case 2: return 533;
 	case 3: return 667;
 	default:
-		printk(BIOS_DEBUG, "memclk: unknown register value %x\n",
+		printk(BIOS_DEBUG, "%s: unknown register value %x\n", __func__,
 			((MCHBAR32(CLKCFG) >> 4) & 7) - offset);
 	}
 	return -1;
@@ -125,7 +123,7 @@ static u16 fsbclk(void)
 		case 1: return 533;
 		case 3: return 667;
 		default:
-			printk(BIOS_DEBUG, "fsbclk: unknown register value %x\n",
+			printk(BIOS_DEBUG, "%s: unknown register value %x\n", __func__,
 				MCHBAR32(CLKCFG) & 7);
 		}
 		return 0xffff;
@@ -135,7 +133,7 @@ static u16 fsbclk(void)
 		case 1: return 533;
 		case 2: return 800;
 		default:
-			printk(BIOS_DEBUG, "fsbclk: unknown register value %x\n",
+			printk(BIOS_DEBUG, "%s: unknown register value %x\n", __func__,
 				MCHBAR32(CLKCFG) & 7);
 		}
 		return 0xffff;
@@ -2027,9 +2025,9 @@ static void sdram_pre_jedec_initialization(void)
 static void sdram_enhanced_addressing_mode(struct sys_info *sysinfo)
 {
 	u32 chan0 = 0, chan1 = 0;
-	int chan0_dualsided, chan1_dualsided, chan0_populated, chan1_populated;
+	bool chan0_dualsided, chan1_dualsided, chan0_populated, chan1_populated;
 
-	chan0_populated =  (sysinfo->dimm[0] != SYSINFO_DIMM_NOT_POPULATED ||
+	chan0_populated = (sysinfo->dimm[0] != SYSINFO_DIMM_NOT_POPULATED ||
 			sysinfo->dimm[1] != SYSINFO_DIMM_NOT_POPULATED);
 	chan1_populated = (sysinfo->dimm[2] != SYSINFO_DIMM_NOT_POPULATED ||
 			sysinfo->dimm[3] != SYSINFO_DIMM_NOT_POPULATED);
@@ -2437,8 +2435,8 @@ static void sdram_on_die_termination(struct sys_info *sysinfo)
 	reg32 |= (1 << 14) | (1 << 6) | (2 << 16);
 	MCHBAR32(ODTC) = reg32;
 
-	if (!(sysinfo->dimm[0] != SYSINFO_DIMM_NOT_POPULATED &&
-			sysinfo->dimm[1] != SYSINFO_DIMM_NOT_POPULATED)) {
+	if (sysinfo->dimm[0] == SYSINFO_DIMM_NOT_POPULATED ||
+			sysinfo->dimm[1] == SYSINFO_DIMM_NOT_POPULATED) {
 		printk(BIOS_DEBUG, "one dimm per channel config..\n");
 
 		reg32 = MCHBAR32(C0ODT);

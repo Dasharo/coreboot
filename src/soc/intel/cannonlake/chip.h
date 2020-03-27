@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2008 coresystems GmbH
- * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2017-2019 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +19,7 @@
 #include <drivers/i2c/designware/dw_i2c.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
+#include <intelblocks/lpc_lib.h>
 #include <smbios.h>
 #include <stdint.h>
 #include <soc/gpio.h>
@@ -180,7 +178,7 @@ struct soc_intel_cannonlake_config {
 
 	/* PCIe Root Ports */
 	uint8_t PcieRpEnable[CONFIG_MAX_ROOT_PORTS];
-	/* PCIe output clocks type to Pcie devices.
+	/* PCIe output clocks type to PCIe devices.
 	 * 0-23: PCH rootport, 0x70: LAN, 0x80: unspecified but in use,
 	 * 0xFF: not used */
 	uint8_t PcieClkSrcUsage[CONFIG_MAX_PCIE_CLOCKS];
@@ -241,6 +239,9 @@ struct soc_intel_cannonlake_config {
 	/* HeciEnabled decides the state of Heci1 at end of boot
 	 * Setting to 0 (default) disables Heci1 and hides the device from OS */
 	uint8_t HeciEnabled;
+
+	/* Enables support for Teton Glacier hybrid storage device */
+	uint8_t TetonGlacierMode;
 
 	/* PL1 Override value in Watts */
 	uint32_t tdp_pl1_override;
@@ -356,6 +357,8 @@ struct soc_intel_cannonlake_config {
 	 *
 	 */
 	uint8_t SerialIoDevMode[PchSerialIoIndexMAX];
+
+	enum serirq_mode serirq_mode;
 
 	/* GPIO SD card detect pin */
 	unsigned int sdcard_cd_gpio;

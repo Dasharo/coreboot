@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2014 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,16 +71,16 @@ Scope (\_SB.PCI0.MCHC)
 	 *     Package (6) { freq, power, tlat, blat, control, status }
 	 *   }
 	 */
-	External (\_PR.CP00._PSS)
+	External (\_SB.CP00._PSS)
 	Method (PSSS, 1, NotSerialized)
 	{
 		Store (One, Local0) /* Start at P1 */
-		Store (SizeOf (\_PR.CP00._PSS), Local1)
+		Store (SizeOf (\_SB.CP00._PSS), Local1)
 
 		While (LLess (Local0, Local1)) {
 			/* Store _PSS entry Control value to Local2 */
 			ShiftRight (DeRefOf (Index (DeRefOf (Index
-			      (\_PR.CP00._PSS, Local0)), 4)), 8, Local2)
+			      (\_SB.CP00._PSS, Local0)), 4)), 8, Local2)
 			If (LEqual (Local2, Arg0)) {
 				Return (Subtract (Local0, 1))
 			}

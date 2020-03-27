@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2015 Google Inc.
- * Copyright (C) 2014 Imagination Technologies
- * Copyright (C) 2018 Eltan B.V.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -204,9 +201,6 @@ void payload_load(void);
 
 /* Run the loaded payload. */
 void payload_run(void);
-
-/* Mirror the payload to be loaded. */
-void mirror_payload(struct prog *payload);
 
 /*
  * selfload() and selfload_check() load payloads into memory.

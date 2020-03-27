@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2019 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,6 +52,10 @@
 #define  SA_DEV_TBT2		PCI_DEV(0, SA_DEV_SLOT_TBT, 2)
 #define  SA_DEV_TBT3		PCI_DEV(0, SA_DEV_SLOT_TBT, 3)
 
+#define SA_DEV_SLOT_IPU		0x05
+#define  SA_DEVFN_IPU		PCI_DEVFN(SA_DEV_SLOT_IPU, 0)
+#define  SA_DEV_IPU		PCI_DEV(0, SA_DEV_SLOT_IPU, 0)
+
 /* PCH Devices */
 #define PCH_DEV_SLOT_SIO0	0x10
 #define  PCH_DEVFN_CNVI_BT	_PCH_DEVFN(SIO0, 2)
@@ -64,7 +67,7 @@
 
 #define PCH_DEV_SLOT_SIO1	0x11
 #define  PCH_DEVFN_UART3	_PCH_DEVFN(SIO1, 0)
-#define  PCH_DEV_UART3          _PCH_DEVFN(SIO1, 0)
+#define  PCH_DEV_UART3          _PCH_DEV(SIO1, 0)
 
 #define PCH_DEV_SLOT_ISH	0x12
 #define  PCH_DEVFN_ISH		_PCH_DEVFN(ISH, 0)
@@ -85,6 +88,11 @@
 #define  PCH_DEV_USBOTG		_PCH_DEV(XHCI, 1)
 #define  PCH_DEV_SRAM		_PCH_DEV(XHCI, 2)
 #define  PCH_DEV_CNVI_WIFI	_PCH_DEV(XHCI, 3)
+
+#if CONFIG(SOC_INTEL_JASPERLAKE)
+#define  PCH_DEVFN_SDCARD	_PCH_DEVFN(XHCI, 5)
+#define  PCH_DEV_SDCARD		_PCH_DEV(XHCI, 5)
+#endif
 
 #define PCH_DEV_SLOT_SIO3	0x15
 #define  PCH_DEVFN_I2C0		_PCH_DEVFN(SIO3, 0)
@@ -121,6 +129,12 @@
 #define  PCH_DEV_I2C4		_PCH_DEV(SIO4, 0)
 #define  PCH_DEV_I2C5		_PCH_DEV(SIO4, 1)
 #define  PCH_DEV_UART2		_PCH_DEV(SIO4, 2)
+
+#if CONFIG(SOC_INTEL_JASPERLAKE)
+#define PCH_DEV_SLOT_STORAGE	0x1a
+#define  PCH_DEVFN_EMMC		_PCH_DEVFN(STORAGE, 0)
+#define  PCH_DEV_EMMC		_PCH_DEV(STORAGE, 0)
+#endif
 
 #define PCH_DEV_SLOT_PCIE	0x1c
 #define  PCH_DEVFN_PCIE1	_PCH_DEVFN(PCIE, 0)

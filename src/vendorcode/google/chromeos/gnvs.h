@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2011 The ChromiumOS Authors.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,26 +16,6 @@
 #define __VENDORCODE_GOOGLE_CHROMEOS_GNVS_H
 
 #include <stdint.h>
-
-#define BOOT_REASON_OTHER	0
-#define BOOT_REASON_S3DIAG	9
-
-#define CHSW_RECOVERY_X86	(1 << 1)
-#define CHSW_RECOVERY_EC	(1 << 2)
-#define CHSW_DEVELOPER_SWITCH	(1 << 5)
-#define CHSW_FIRMWARE_WP_DIS	(1 << 9)
-
-#define ACTIVE_MAINFW_RECOVERY	0
-#define ACTIVE_MAINFW_RW_A	1
-#define ACTIVE_MAINFW_RW_B	2
-
-#define ACTIVE_MAINFW_TYPE_RECOVERY	0
-#define ACTIVE_MAINFW_TYPE_NORMAL	1
-#define ACTIVE_MAINFW_TYPE_DEVELOPER	2
-
-#define RECOVERY_REASON_NONE	0
-#define RECOVERY_REASON_ME	1
-// TODO(reinauer) other recovery reasons?
 
 #define ACTIVE_ECFW_RO		0
 #define ACTIVE_ECFW_RW		1

@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2018 Google LLC
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -57,7 +56,7 @@ Method (ECQ1, 1, Serialized)
 	/* LID state changed */
 	If (EBIT (E1LD, Arg0)) {
 		Printf ("Lid State Changed")
-		Notify (^LID, 0x80)
+		Notify (^LID0, 0x80)
 	}
 
 	/* Power Event */

@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2012 The Chromium OS Authors. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1525,28 +1524,3 @@ int google_chromeec_wait_for_displayport(long timeout)
 
 	return 1;
 }
-
-#if CONFIG(HAVE_ACPI_TABLES) && !DEVTREE_EARLY
-static struct device_operations ec_chromeec_ops = {
-	.acpi_name			= google_chromeec_acpi_name,
-	.acpi_fill_ssdt_generator	= google_chromeec_fill_ssdt_generator,
-};
-#endif
-
-/* ec_lpc, ec_spi, or ec_i2c can override this */
-__weak void google_ec_enable_extra(struct device *dev)
-{
-}
-
-static void google_chromeec_enable(struct device *dev)
-{
-#if CONFIG(HAVE_ACPI_TABLES) && !DEVTREE_EARLY
-	dev->ops = &ec_chromeec_ops;
-#endif
-	google_ec_enable_extra(dev);
-}
-
-struct chip_operations ec_google_chromeec_ops = {
-	CHIP_NAME("Google Chrome EC")
-	.enable_dev = google_chromeec_enable
-};

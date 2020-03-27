@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2013 Sage Electronic Engineering, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,14 +21,14 @@ Method (PNOT)
  * Processor Object
  */
 /* These devices are created at runtime */
-External (\_PR.P000, DeviceObj)
-External (\_PR.P001, DeviceObj)
-External (\_PR.P002, DeviceObj)
-External (\_PR.P003, DeviceObj)
-External (\_PR.P004, DeviceObj)
-External (\_PR.P005, DeviceObj)
-External (\_PR.P006, DeviceObj)
-External (\_PR.P007, DeviceObj)
+External (\_SB.P000, DeviceObj)
+External (\_SB.P001, DeviceObj)
+External (\_SB.P002, DeviceObj)
+External (\_SB.P003, DeviceObj)
+External (\_SB.P004, DeviceObj)
+External (\_SB.P005, DeviceObj)
+External (\_SB.P006, DeviceObj)
+External (\_SB.P007, DeviceObj)
 
 /* Return a package containing enabled processor entries */
 Method (PPKG)
@@ -37,13 +36,13 @@ Method (PPKG)
 	If (LGreaterEqual (\PCNT, 2)) {
 		Return (Package ()
 		{
-			\_PR.P000,
-			\_PR.P001
+			\_SB.P000,
+			\_SB.P001
 		})
 	} Else {
 		Return (Package ()
 		{
-			\_PR.P000
+			\_SB.P000
 		})
 	}
 }

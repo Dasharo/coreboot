@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2013 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,7 +12,6 @@
  * GNU General Public License for more details.
  */
 
-#include <arch/cache.h>
 #include <arch/exception.h>
 #include <armv7.h>
 #include <boot_device.h>

@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2011 Advanced Micro Devices, Inc.
- * Copyright (C) 2013 Sage Electronic Engineering, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -200,7 +198,7 @@ Scope(\_SB) {
 		/* Package(){0x00140005, 1, 0, 17 }, */
 		/* Package(){0x00140006, 1, 0, 17 }, */
 
-		/* TODO: pcie */
+		/* TODO: PCIe */
 		Package(){0x0015FFFF, 0, 0, 16 },
 		Package(){0x0015FFFF, 1, 0, 17 },
 		Package(){0x0015FFFF, 2, 0, 18 },

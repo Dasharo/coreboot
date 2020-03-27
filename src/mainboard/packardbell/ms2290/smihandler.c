@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2008-2009 coresystems GmbH
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,7 +18,7 @@
 #include <device/pci_ops.h>
 #include <southbridge/intel/ibexpeak/nvs.h>
 #include <southbridge/intel/common/pmutil.h>
-#include <northbridge/intel/nehalem/nehalem.h>
+#include <northbridge/intel/ironlake/ironlake.h>
 #include <ec/acpi/ec.h>
 
 void mainboard_smi_gpi(u32 gpi_sts)
