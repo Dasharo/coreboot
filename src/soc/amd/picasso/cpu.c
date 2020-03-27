@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015-2016 Intel Corp.
- * Copyright (C) 2017-2019 Advanced Micro Devices, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -131,6 +129,7 @@ static struct device_operations cpu_dev_ops = {
 static struct cpu_device_id cpu_table[] = {
 	{ X86_VENDOR_AMD, 0x810f80 },
 	{ X86_VENDOR_AMD, 0x810f81 },
+	{ X86_VENDOR_AMD, 0x820f01 },
 	{ 0, 0 },
 };
 

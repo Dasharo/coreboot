@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2018 Google LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,9 +42,6 @@ const struct pad_config *variant_early_gpio_table(size_t *num);
 
 /* Return ChromeOS gpio table and fill in number of entries. */
 const struct cros_gpio *variant_cros_gpios(size_t *num);
-
-/* Return board SKU */
-uint32_t get_board_sku(void);
 
 /* Modify devictree settings during ramstage. */
 void variant_devtree_update(void);

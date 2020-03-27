@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2012, 2017 Advanced Micro Devices, Inc.
- * Copyright (C) 2014 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -243,13 +241,13 @@ void generate_cpu_entries(struct device *device)
 	cores = pci_read_config32(SOC_NB_DEV, NB_CAPABILITIES2) & CMP_CAP_MASK;
 	cores++; /* number of cores is CmpCap+1 */
 
-	printk(BIOS_DEBUG, "ACPI \\_PR report %d core(s)\n", cores);
+	printk(BIOS_DEBUG, "ACPI \\_SB report %d core(s)\n", cores);
 
-	/* Generate BSP \_PR.P000 */
+	/* Generate BSP \_SB.P000 */
 	acpigen_write_processor(0, ACPI_GPE0_BLK, 6);
 	acpigen_pop_len();
 
-	/* Generate AP \_PR.Pxxx */
+	/* Generate AP \_SB.Pxxx */
 	for (cpu = 1; cpu < cores; cpu++) {
 		acpigen_write_processor(cpu, 0, 0);
 		acpigen_pop_len();

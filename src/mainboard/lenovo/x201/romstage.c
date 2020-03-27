@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2009 coresystems GmbH
- * Copyright (C) 2011 Sven Schnelle <svens@stackframe.org>
- * Copyright (C) 2013 Vladimir Serbinenko <phcoder@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,7 +18,7 @@
 #include <ec/acpi/ec.h>
 
 #include <southbridge/intel/ibexpeak/pch.h>
-#include <northbridge/intel/nehalem/nehalem.h>
+#include <northbridge/intel/ironlake/ironlake.h>
 
 const struct southbridge_usb_port mainboard_usb_ports[] = {
 	/* Enabled, Current table lookup index, OC map */

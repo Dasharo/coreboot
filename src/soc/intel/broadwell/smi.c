@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2008-2009 coresystems GmbH
- * Copyright (C) 2014 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,7 +71,7 @@ static void __unused southbridge_trigger_smi(void)
 	 *  - Writes to io 0xb2 (APMC)
 	 *  - Writes to the Local Apic ICR with Delivery mode SMI.
 	 *
-	 * Using the local apic is a bit more tricky. According to
+	 * Using the local APIC is a bit more tricky. According to
 	 * AMD Family 11 Processor BKDG no destination shorthand must be
 	 * used.
 	 * The whole SMM initialization is quite a bit hardware specific, so

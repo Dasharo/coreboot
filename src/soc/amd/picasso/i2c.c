@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2017 Google
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,19 +39,6 @@ uintptr_t dw_i2c_base_address(unsigned int bus)
 		return 0;
 
 	return i2c_bus_address[bus - APU_I2C_MIN_BUS];
-}
-
-static const struct soc_amd_picasso_config *get_soc_config(void)
-{
-	const struct device *dev = pcidev_path_on_root(GNB_DEVFN);
-
-	if (!dev || !dev->chip_info) {
-		printk(BIOS_ERR, "%s: Could not find SoC devicetree config!\n",
-			__func__);
-		return NULL;
-	}
-
-	return dev->chip_info;
 }
 
 const struct dw_i2c_bus_config *dw_i2c_get_soc_cfg(unsigned int bus)

@@ -1,8 +1,5 @@
 #*****************************************************************************
 #
-# Copyright (c) 2012, 2016-2019 Advanced Micro Devices, Inc.
-#               2013 - 2014 Sage Electronic Engineering, LLC
-# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -78,6 +75,7 @@ ramstage-y += usb.c
 ramstage-y += tsc_freq.c
 ramstage-y += finalize.c
 
+all-y += cfg_util.c
 all-y += reset.c
 
 smm-y += smihandler.c

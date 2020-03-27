@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2019 Wiwynn Corp.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -319,7 +318,7 @@ static void read_fru_product_info_area(const int port, const uint8_t id,
 				goto out;
 			}
 		if (!data2str((const uint8_t *)data_ptr, info->asset_tag, length))
-			free(info->serial_number);
+			free(info->asset_tag);
 	}
 
 out:

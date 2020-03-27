@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2011 The ChromiumOS Authors.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,10 +37,6 @@ void fill_lb_gpios(struct lb_gpios *gpios)
 	u8 lid = ec_read(0x83);
 
 	struct lb_gpio chromeos_gpios[] = {
-		/* Write Protect: GPIO24 = KBC3_SPI_WP# */
-		{GPIO_SPI_WP, ACTIVE_HIGH, get_write_protect_state(),
-		 "write protect"},
-
 		/* Recovery: GPIO42 = CHP3_REC_MODE# */
 		{GPIO_REC_MODE, ACTIVE_LOW, !get_recovery_mode_switch(),
 		 "presence"},

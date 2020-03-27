@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2014 - 2017 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -113,5 +112,5 @@ static struct device_operations pmc_ops = {
 static const struct pci_driver pch_pmc __pci_driver = {
 	.ops = &pmc_ops,
 	.vendor = PCI_VENDOR_ID_INTEL,
-	.device = PMC_DEVID,
+	.device = PCI_DEVICE_ID_INTEL_DENVERTON_PMC,
 };

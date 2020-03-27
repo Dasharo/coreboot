@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2008-2009 coresystems GmbH
- * Copyright (C) 2013 Vladimir Serbinenko
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -247,7 +245,12 @@ static struct device_operations sata_ops = {
 	.ops_pci = &sata_pci_ops,
 };
 
-static const unsigned short pci_device_ids[] = { 0x3b28, 0x3b29, 0x3b2e, 0 };
+static const unsigned short pci_device_ids[] = {
+	PCI_DID_INTEL_IBEXPEAK_MOBILE_SATA_IDE_1,
+	PCI_DID_INTEL_IBEXPEAK_MOBILE_SATA_AHCI,
+	PCI_DID_INTEL_IBEXPEAK_MOBILE_SATA_IDE_2,
+	0
+};
 
 static const struct pci_driver pch_sata __pci_driver = {
 	.ops = &sata_ops,

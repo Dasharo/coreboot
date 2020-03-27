@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2015 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,9 +24,8 @@
 
 /* Return mapping of option ROM found in boot device. NULL on error. */
 void *cbfs_boot_map_optionrom(uint16_t vendor, uint16_t device);
-/* Load stage by name into memory. Returns entry address on success. NULL on
- * failure. */
-void *cbfs_boot_load_stage_by_name(const char *name);
+/* Return mapping of option ROM with revision number. Returns NULL on error. */
+void *cbfs_boot_map_optionrom_revision(uint16_t vendor, uint16_t device, uint8_t rev);
 /* Locate file by name and optional type. Return 0 on success. < 0 on error. */
 int cbfs_boot_locate(struct cbfsf *fh, const char *name, uint32_t *type);
 /* Map file into memory leaking the mapping. Only should be used when
@@ -50,11 +48,6 @@ size_t cbfs_boot_load_file(const char *name, void *buf, size_t buf_size,
  * in-place with the buffer size requirements outlined in compression.h. */
 size_t cbfs_load_and_decompress(const struct region_device *rdev, size_t offset,
 	size_t in_size, void *buffer, size_t buffer_size, uint32_t compression);
-
-/* Return the size and fill base of the memory pstage will occupy after
- * loaded.
- */
-size_t cbfs_prog_stage_section(struct prog *pstage, uintptr_t *base);
 
 /* Load stage into memory filling in prog. Return 0 on success. < 0 on error. */
 int cbfs_prog_stage_load(struct prog *prog);

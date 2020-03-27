@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015-2016 Intel Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +22,7 @@
 #define PAD_CFG0_RX_STATE		(1 << PAD_CFG0_RX_STATE_BIT)
 #define PAD_CFG0_TX_DISABLE		(1 << 8)
 #define PAD_CFG0_RX_DISABLE		(1 << 9)
+#define PAD_CFG0_MODE_SHIFT		10
 #define PAD_CFG0_MODE_MASK		(7 << 10)
 #define  PAD_CFG0_MODE_GPIO		(0 << 10)
 #define  PAD_CFG0_MODE_FUNC(x)		((x) << 10)
@@ -225,6 +225,11 @@
 	_PAD_CFG_STRUCT(pad, PAD_RESET(rst) | PAD_FUNC(func), PAD_PULL(pull) | \
 		PAD_IOSSTATE(iosstate) | PAD_IOSTERM(iosterm))
 
+/* Configure native function, iosstate, iosterm and disable input/output buffer */
+#define PAD_CFG_NF_BUF_IOSSTATE_IOSTERM(pad, pull, rst, func, bufdis, iosstate, iosterm) \
+	_PAD_CFG_STRUCT(pad, PAD_RESET(rst) | PAD_BUF(bufdis) | PAD_FUNC(func), \
+		PAD_PULL(pull) | PAD_IOSSTATE(iosstate) | PAD_IOSTERM(iosterm))
+
 /* General purpose output, no pullup/down. */
 #define PAD_CFG_GPO(pad, val, rst)	\
 	_PAD_CFG_STRUCT(pad,		\
@@ -258,6 +263,16 @@
 	_PAD_CFG_STRUCT(pad,		\
 		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_BUF(TX_DISABLE), \
 		PAD_PULL(pull) | PAD_IOSSTATE(TxDRxE))
+
+#define PAD_CFG_GPI_IOSSTATE(pad, pull, rst, iosstate) \
+	_PAD_CFG_STRUCT(pad,		\
+		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE, \
+		PAD_PULL(pull) | PAD_IOSSTATE(iosstate))
+
+#define PAD_CFG_GPI_IOSSTATE_IOSTERM(pad, pull, rst, iosstate, iosterm) \
+	_PAD_CFG_STRUCT(pad,		\
+		PAD_FUNC(GPIO) | PAD_RESET(rst) | PAD_CFG0_TX_DISABLE, \
+		PAD_PULL(pull) | PAD_IOSSTATE(iosstate) | PAD_IOSTERM(iosterm))
 
 /* General purpose input. The following macro sets the
  * Host Software Pad Ownership to GPIO Driver mode.

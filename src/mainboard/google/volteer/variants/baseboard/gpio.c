@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2020 The coreboot project Authors.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -29,7 +28,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI(GPP_A9, NONE, DEEP),
 	/* A10 : I2S2_RXD ==> EN_SPKR_PA */
 	PAD_CFG_GPO(GPP_A10, 1, DEEP),
-	/* A11 : PMC_I2C_SDA ==> SSD_PERST_ODL */
+	/* A11 : PMC_I2C_SDA ==> SSD_PERST_L */
 	PAD_CFG_GPO(GPP_A11, 1, DEEP),
 	/* A12 : SATAXPCIE1 ==> M2_SSD_PEDET */
 	PAD_CFG_NF(GPP_A12, NONE, DEEP, NF1),
@@ -146,7 +145,8 @@ static const struct pad_config gpio_table[] = {
 	/* C19 : I2C1_SCL ==> PCH_I2C1_TOUCH_USI_SCL */
 	PAD_CFG_NF(GPP_C19, NONE, DEEP, NF1),
 	/* C20 : UART2_RXD ==> FPMCU_INT_L */
-	PAD_CFG_GPI_SCI_LOW(GPP_C20, NONE, PLTRST, EDGE_SINGLE),
+	/* APIC interrupt conflict, so used GPI_INT; see b/147500717 */
+	PAD_CFG_GPI_INT(GPP_C20, NONE, PLTRST, LEVEL),
 	/* C21 : UART2_TXD ==> H1_PCH_INT_ODL */
 	PAD_CFG_GPI_APIC(GPP_C21, NONE, PLTRST, LEVEL, INVERT),
 	/* C22 : UART2_RTS# ==> PCH_FPMCU_BOOT0 */
@@ -169,7 +169,7 @@ static const struct pad_config gpio_table[] = {
 	/* D6  : SRCCLKREQ1# ==> WLAN_CLKREQ_ODL */
 	PAD_CFG_NF(GPP_D6, NONE, DEEP, NF1),
 	/* D7  : SRCCLKREQ2# ==> WWAN_CLKREQ_ODL */
-	PAD_CFG_NF(GPP_D7, NONE, DEEP, NF1),
+	PAD_NC(GPP_D7, NONE),
 	/* D8  : SRCCLKREQ3# ==> SD_CLKREQ_ODL */
 	PAD_CFG_NF(GPP_D8, NONE, DEEP, NF1),
 	/* D9  : ISH_SPI_CS# ==> PCH_GSPI2_CVF_CS_L */
@@ -381,7 +381,7 @@ static const struct pad_config gpio_table[] = {
 	/* GPD1: ACPRESENT ==> PCH_ACPRESENT */
 	PAD_CFG_NF(GPD1, NONE, DEEP, NF1),
 	/* GPD2: LAN_WAKE# ==> EC_PCH_WAKE_ODL */
-	PAD_CFG_GPI(GPD2, NONE, DEEP),
+	PAD_CFG_NF(GPD2, NONE, DEEP, NF1),
 	/* GPD3: PWRBTN# ==> EC_PCH_PWR_BTN_ODL */
 	PAD_CFG_NF(GPD3, NONE, DEEP, NF1),
 	/* GPD4: SLP_S3# ==> SLP_S3_L */
@@ -452,7 +452,7 @@ const struct pad_config *__weak variant_override_gpio_table(size_t *num)
 	return NULL;
 }
 
-const struct pad_config *variant_early_gpio_table(size_t *num)
+const struct pad_config *__weak variant_early_gpio_table(size_t *num)
 {
 	*num = ARRAY_SIZE(early_gpio_table);
 	return early_gpio_table;

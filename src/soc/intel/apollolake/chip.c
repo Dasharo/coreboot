@@ -1,10 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015 - 2017 Intel Corp.
- * Copyright (C) 2017 - 2019 Siemens AG
- * (Written by Alexandru Gagniuc <alexandrux.gagniuc@intel.com> for Intel Corp.)
- * (Written by Andrey Petrov <andrey.petrov@intel.com> for Intel Corp.)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -425,6 +421,12 @@ static void soc_final(void *data)
 static void disable_dev(struct device *dev, FSP_S_CONFIG *silconfig)
 {
 	switch (dev->path.pci.devfn) {
+	case PCH_DEVFN_NPK:
+		/*
+		 * Disable this device in the parse_devicetree_setting() function
+		 * in romstage.c
+		 */
+		break;
 	case PCH_DEVFN_ISH:
 		silconfig->IshEnable = 0;
 		break;
@@ -552,11 +554,18 @@ static void parse_devicetree(FSP_S_CONFIG *silconfig)
 static void apl_fsp_silicon_init_params_cb(struct soc_intel_apollolake_config
 	*cfg, FSP_S_CONFIG *silconfig)
 {
-#if !CONFIG(SOC_INTEL_GLK) /* GLK FSP does not have these
-					 fields in FspsUpd.h yet */
+#if !CONFIG(SOC_INTEL_GLK) /* GLK FSP does not have these fields in FspsUpd.h yet */
 	uint8_t port;
 
 	for (port = 0; port < APOLLOLAKE_USB2_PORT_MAX; port++) {
+		if (cfg->usb_config_override) {
+			if (!cfg->usb2_port[port].enable)
+				continue;
+
+			silconfig->PortUsb20Enable[port] = 1;
+			silconfig->PortUs20bOverCurrentPin[port] = cfg->usb2_port[port].oc_pin;
+		}
+
 		if (cfg->usb2eye[port].Usb20PerPortTxPeHalf != 0)
 			silconfig->PortUsb20PerPortTxPeHalf[port] =
 				cfg->usb2eye[port].Usb20PerPortTxPeHalf;
@@ -585,6 +594,16 @@ static void apl_fsp_silicon_init_params_cb(struct soc_intel_apollolake_config
 			silconfig->PortUsb20HsNpreDrvSel[port] =
 				cfg->usb2eye[port].Usb20HsNpreDrvSel;
 	}
+
+	if (cfg->usb_config_override) {
+		for (port = 0; port < APOLLOLAKE_USB3_PORT_MAX; port++) {
+			if (!cfg->usb3_port[port].enable)
+				continue;
+
+			silconfig->PortUsb30Enable[port] = 1;
+			silconfig->PortUs30bOverCurrentPin[port] = cfg->usb3_port[port].oc_pin;
+		}
+	}
 #endif
 }
 
@@ -593,6 +612,7 @@ static void glk_fsp_silicon_init_params_cb(
 {
 #if CONFIG(SOC_INTEL_GLK)
 	uint8_t port;
+	struct device *dev;
 
 	for (port = 0; port < APOLLOLAKE_USB2_PORT_MAX; port++) {
 		if (!cfg->usb2eye[port].Usb20OverrideEn)
@@ -608,7 +628,8 @@ static void glk_fsp_silicon_init_params_cb(
 			cfg->usb2eye[port].Usb20IUsbTxEmphasisEn;
 	}
 
-	silconfig->Gmm = 0;
+	dev = pcidev_path_on_root(SA_GLK_DEVFN_GMM);
+	silconfig->Gmm = dev ? dev->enabled : 0;
 
 	/* On Geminilake, we need to override the default FSP PCIe de-emphasis
 	 * settings using the device tree settings. This is because PCIe
@@ -842,7 +863,7 @@ void platform_fsp_notify_status(enum fsp_notify_phase phase)
 
 		/*
 		 * Override GLK xhci clock gating register(XHCLKGTEN) to
-		 * mitigate usb device suspend and resume failure.
+		 * mitigate USB device suspend and resume failure.
 		 */
 		if (CONFIG(SOC_INTEL_GLK)) {
 			uint32_t *cfg;

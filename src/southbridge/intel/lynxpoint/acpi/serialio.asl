@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2013 Google Inc.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -551,8 +550,9 @@ Device (GPIO)
 			,            // ResourceSourceIndex
 			,            // ResourceSource
 			BAR0)
-		Interrupt (ResourceConsumer,
-			Level, ActiveHigh, Shared, , ,) {14}
+		// Disabled due to IRQ storm: http://crosbug.com/p/29548
+		//Interrupt (ResourceConsumer,
+		//	Level, ActiveHigh, Shared, , , ) {14}
 	})
 
 	Method (_CRS, 0, NotSerialized)

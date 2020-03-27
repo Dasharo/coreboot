@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2010 coresystems GmbH
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -34,6 +33,17 @@
 			hlt();					\
 	}							\
 }
+
+#define ASSERT_MSG(x, msg) {					\
+	if (!(x)) {						\
+		printk(BIOS_EMERG, "ASSERTION ERROR: file '%s'"	\
+			", line %d\n", __FILE__, __LINE__);	\
+		printk(BIOS_EMERG, "%s", msg);                  \
+		if (CONFIG(FATAL_ASSERTS))			\
+			hlt();					\
+	}							\
+}
+
 #define BUG() {							\
 	printk(BIOS_EMERG, "ERROR: BUG ENCOUNTERED at file '%s'"\
 		", line %d\n", __FILE__, __LINE__);		\

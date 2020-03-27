@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015-2016 Intel Corp.
- * (Written by Lance Zhao <lijian.zhao@intel.com> for Intel Corp.)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,7 +76,7 @@
 #endif
 #define   USB_EN	(1 << SMI_XHCI) /* Legacy USB2 SMI logic */
 #define   PERIODIC_EN	(1 << SMI_PERIODIC) /* SMI on PERIODIC_STS in SMI_STS */
-#define   TCO_EN	(1 << SMI_TCO) /* Enable TCO Logic (BIOSWE et al) */
+#define   TCO_SMI_EN	(1 << SMI_TCO) /* Enable TCO Logic (BIOSWE et al) */
 #define   GPIO_EN	(1 << SMI_GPIO) /* Enable GPIO SMI */
 #define   BIOS_RLS	(1 << SMI_BIOS_RLS) /* asserts SCI on bit set */
 /* start software smi timer on bit set */
@@ -99,7 +97,7 @@
  *  - on eSPI events (does nothing on LPC systems)
  * No SMIs:
  *  - on microcontroller writes (io 0x62/0x66)
- *  - on TCO events
+ *  - on TCO events, unless enabled in common code
  */
 #define   ENABLE_SMI_PARAMS \
 	(ESPI_SMI_EN | APMC_EN | SLP_SMI_EN | GBL_SMI_EN | EOS | GPIO_EN)

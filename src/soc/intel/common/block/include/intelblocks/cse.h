@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2017 Intel Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +21,7 @@
 /* MKHI Command groups */
 #define MKHI_GROUP_ID_CBM	0x0
 #define MKHI_GROUP_ID_HMRFPO	0x5
+#define MKHI_GROUP_ID_GEN	0xff
 
 /* Global Reset Command ID */
 #define MKHI_CBM_GLOBAL_RESET_REQ	0xb
@@ -32,6 +32,9 @@
 /* HMRFPO Command Ids */
 #define MKHI_HMRFPO_ENABLE	0x1
 #define MKHI_HMRFPO_GET_STATUS	0x3
+
+/* Get Firmware Version Command Id */
+#define MKHI_GEN_GET_FW_VERSION	0x2
 
 /* ME Current Working States */
 #define ME_HFS1_CWS_NORMAL	0x5
@@ -121,7 +124,6 @@ uint8_t cse_wait_sec_override_mode(void);
 
 enum rst_req_type {
 	GLOBAL_RESET = 1,
-	HOST_RESET_ONLY = 2,
 	CSE_RESET_ONLY = 3,
 };
 
@@ -133,8 +135,20 @@ enum rst_req_type {
 int cse_request_global_reset(enum rst_req_type rst_type);
 
 /*
- * Send HMRFPO_ENABLE command.
- * returns 0 on failure and 1 on success.
+ * Sends HMRFPO_ENABLE command.
+ * HMRFPO - Host ME Region Flash Protection Override.
+ * For CSE Firmware SKU Custom, procedure to place CSE in HMRFPO (SECOVER_MEI_MSG) mode:
+ *	1. Ensure CSE boots from BP1(RO).
+ *		- Send set_next_boot_partition(BP1)
+ *		- Issue CSE Only Reset
+ *	2. Send HMRFPO_ENABLE command to CSE. Further, no reset is required.
+ *
+ * The HMRFPO mode prevents CSE to execute SPI I/O cycles to CSE region, and unlocks
+ * the CSE region to perform updates to it.
+ * This command is only valid before EOP.
+ *
+ * Returns 0 on failure to send HECI command and to enable HMRFPO mode, and 1 on success.
+ *
  */
 int cse_hmrfpo_enable(void);
 
@@ -163,6 +177,11 @@ int cse_hmrfpo_get_status(void);
 
 /* Host can access ME region */
 #define MKHI_HMRFPO_ENABLED	2
+
+/*
+ * Queries and logs ME firmware version
+ */
+void print_me_fw_version(void *unused);
 
 /*
  * Checks current working operation state is normal or not.

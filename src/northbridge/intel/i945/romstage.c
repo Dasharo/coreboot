@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2009 coresystems GmbH
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -76,7 +75,8 @@ void mainboard_romstage_entry(void)
 	mainboard_late_rcba_config();
 
 	/* Chipset Errata! */
-	fixup_i945_errata();
+	if (CONFIG(NORTHBRIDGE_INTEL_SUBTYPE_I945GM))
+		fixup_i945gm_errata();
 
 	/* Initialize the internal PCIe links before we go into stage2 */
 	i945_late_initialization(s3resume);

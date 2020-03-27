@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2009 coresystems GmbH
- * Copyright (C) 2015  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,7 +16,6 @@
 #include <arch/acpigen.h>
 #include <arch/acpi.h>
 #include <device/device.h>
-#include <device/pci.h>
 #include <northbridge/intel/pineview/pineview.h>
 #include <types.h>
 
@@ -32,8 +29,8 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 		return current;
 
 	max_buses = length >> 20;
-	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *) current,
-			pciexbar, 0x0, 0x0, max_buses - 1);
+	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *) current, pciexbar, 0, 0,
+			max_buses - 1);
 
 	return current;
 }

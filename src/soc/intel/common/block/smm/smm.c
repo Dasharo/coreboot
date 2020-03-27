@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2008-2009 coresystems GmbH
- * Copyright (C) 2014 Google Inc.
- * Copyright (C) 2015 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,12 +60,15 @@ void smm_southbridge_enable(uint16_t pm1_events)
 	 *  - on writes to SLP_EN (sleep states)
 	 *  - on writes to GBL_RLS (bios commands)
 	 *  - on eSPI events, unless disabled (does nothing on LPC systems)
+	 *  - on TCO events (TIMEOUT, case intrusion, ...), if enabled
 	 * No SMIs:
 	 *  - on microcontroller writes (io 0x62/0x66)
-	 *  - on TCO events
 	 */
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_ESPI_DISABLE))
 		smi_params &= ~ESPI_SMI_EN;
+
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_TCO_ENABLE))
+		smi_params |= TCO_SMI_EN;
 
 	/* Enable SMI generation: */
 	pmc_enable_smi(smi_params);

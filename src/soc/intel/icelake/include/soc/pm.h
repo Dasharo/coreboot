@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2018 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -126,8 +125,8 @@
  *  - on writes to GBL_RLS (bios commands)
  *  - on eSPI events (does nothing on LPC systems)
  * No SMIs:
+ *  - on TCO events, unless enabled in common code
  *  - on microcontroller writes (io 0x62/0x66)
- *  - on TCO events
  */
 #define ENABLE_SMI_PARAMS \
 	(APMC_EN | SLP_SMI_EN | GBL_SMI_EN | ESPI_SMI_EN | EOS)

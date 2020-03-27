@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2018 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +18,7 @@
 #include <device/pci.h>
 #include <device/pci_def.h>
 #include <intelblocks/pcr.h>
+#include <intelblocks/pmclib.h>
 #include <intelblocks/tco.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
@@ -74,13 +74,13 @@ uint32_t tco_reset_status(void)
 	uint16_t tco1_sts;
 	uint16_t tco2_sts;
 
-	/* TCO Status 2 register */
-	tco2_sts = tco_read_reg(TCO2_STS);
-	tco2_sts |= TCO_STS_SECOND_TO;
-	tco_write_reg(TCO2_STS, tco2_sts);
-
 	/* TCO Status 1 register */
 	tco1_sts = tco_read_reg(TCO1_STS);
+	tco_write_reg(TCO1_STS, tco1_sts);
+
+	/* TCO Status 2 register */
+	tco2_sts = tco_read_reg(TCO2_STS);
+	tco_write_reg(TCO2_STS, tco2_sts | TCO_STS_SECOND_TO);
 
 	return (tco2_sts << 16) | tco1_sts;
 }
@@ -94,6 +94,18 @@ static void tco_timer_disable(void)
 	tcocnt = tco_read_reg(TCO1_CNT);
 	tcocnt |= TCO_TMR_HLT;
 	tco_write_reg(TCO1_CNT, tcocnt);
+}
+
+/* Enable and initialize TCO intruder SMI */
+static void tco_intruder_smi_enable(void)
+{
+	uint16_t tcocnt;
+
+	/* Make TCO issue an SMI on INTRD_DET assertion */
+	tcocnt = tco_read_reg(TCO2_CNT);
+	tcocnt &= ~TCO_INTRD_SEL_MASK;
+	tcocnt |= TCO_INTRD_SEL_SMI;
+	tco_write_reg(TCO2_CNT, tcocnt);
 }
 
 /* Enable TCO BAR using SMBUS TCO base to access TCO related register */
@@ -137,4 +149,8 @@ void tco_configure(void)
 		tco_enable_bar();
 
 	tco_timer_disable();
+
+	/* Enable intruder interrupt if TCO interrupts are enabled*/
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_TCO_ENABLE))
+		tco_intruder_smi_enable();
 }

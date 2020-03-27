@@ -1,9 +1,6 @@
 #
 # This file is part of the coreboot project.
 #
-# Copyright (C) 2012 Advanced Micro Devices, Inc.
-# Copyright (C) 2015 Kyösti Mälkki <kyosti.malkki@gmail.com>
-# Copyright (C) 2016 Eltan B.V.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +32,10 @@ config BOARD_SPECIFIC_OPTIONS
 	select SPI_FLASH_WINBOND
 	select MAINBOARD_HAS_LPC_TPM
 	select SEABIOS_ADD_SERCON_PORT_FILE if PAYLOAD_SEABIOS
+	select PCIEXP_ASPM
+	select PCIEXP_CLK_PM
+	select PCIEXP_COMMON_CLOCK
+	select PCIEXP_L1_SUB_STATE
 
 config MAINBOARD_DIR
 	string

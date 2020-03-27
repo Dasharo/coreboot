@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2013 Google, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,7 +11,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+
+#include <assert.h>
 #include <stdlib.h>
+#include <commonlib/helpers.h>
 #include <console/console.h>
 #include <memrange.h>
 
@@ -231,9 +233,9 @@ static void do_action(struct memranges *ranges,
 	/* The addresses are aligned to 4096 bytes: the begin address is
 	 * aligned down while the end address is aligned up to be conservative
 	 * about the full range covered. */
-	begin = ALIGN_DOWN(base, 4096);
+	begin = ALIGN_DOWN(base, ranges->align);
 	end = begin + size + (base - begin);
-	end = ALIGN_UP(end, 4096) - 1;
+	end = ALIGN_UP(end, ranges->align) - 1;
 	action(ranges, begin, end, tag);
 }
 
@@ -290,23 +292,28 @@ void memranges_add_resources(struct memranges *ranges,
 	memranges_add_resources_filter(ranges, mask, match, tag, NULL);
 }
 
-void memranges_init_empty(struct memranges *ranges, struct range_entry *to_free,
-			  size_t num_free)
+void memranges_init_empty_with_alignment(struct memranges *ranges,
+					 struct range_entry *to_free,
+					 size_t num_free, size_t align)
 {
 	size_t i;
 
+	/* Alignment must be a power of 2. */
+	assert(IS_POWER_OF_2(align));
+
 	ranges->entries = NULL;
 	ranges->free_list = NULL;
+	ranges->align = align;
 
 	for (i = 0; i < num_free; i++)
 		range_entry_link(&ranges->free_list, &to_free[i]);
 }
 
-void memranges_init(struct memranges *ranges,
-		    unsigned long mask, unsigned long match,
-		    unsigned long tag)
+void memranges_init_with_alignment(struct memranges *ranges,
+				   unsigned long mask, unsigned long match,
+				   unsigned long tag, size_t align)
 {
-	memranges_init_empty(ranges, NULL, 0);
+	memranges_init_empty_with_alignment(ranges, NULL, 0, align);
 	memranges_add_resources(ranges, mask, match, tag);
 }
 
@@ -316,7 +323,7 @@ void memranges_clone(struct memranges *newranges, struct memranges *oldranges)
 	struct range_entry *r, *cur;
 	struct range_entry **prev_ptr;
 
-	memranges_init_empty(newranges, NULL, 0);
+	memranges_init_empty_with_alignment(newranges, NULL, 0, oldranges->align);
 
 	prev_ptr = &newranges->entries;
 	memranges_each_entry(r, oldranges) {
@@ -382,4 +389,59 @@ struct range_entry *memranges_next_entry(struct memranges *ranges,
 					 const struct range_entry *r)
 {
 	return r->next;
+}
+
+/* Find a range entry that satisfies the given constraints to fit a hole that matches the
+ * required alignment, is big enough, does not exceed the limit and has a matching tag. */
+static const struct range_entry *memranges_find_entry(struct memranges *ranges,
+						      resource_t limit, resource_t size,
+						      size_t align, unsigned long tag)
+{
+	const struct range_entry *r;
+	resource_t base, end;
+
+	if (size == 0)
+		return NULL;
+
+	if (!IS_POWER_OF_2(align))
+		return NULL;
+
+	if (!IS_ALIGNED(align, ranges->align))
+		return NULL;
+
+	memranges_each_entry(r, ranges) {
+
+		if (r->tag != tag)
+			continue;
+
+		base = ALIGN_UP(r->begin, align);
+		end = base + size - 1;
+
+		if (end > r->end)
+			continue;
+
+		if (end > limit)
+			continue;
+
+		return r;
+	}
+
+	return NULL;
+}
+
+bool memranges_steal(struct memranges *ranges, resource_t limit, resource_t size, size_t align,
+		     unsigned long tag, resource_t *stolen_base)
+{
+	resource_t base;
+	const struct range_entry *r = memranges_find_entry(ranges, limit, size, align, tag);
+
+	if (r == NULL)
+		return false;
+
+	base = ALIGN_UP(r->begin, align);
+
+	memranges_create_hole(ranges, base, size);
+	*stolen_base = base;
+
+	return true;
 }

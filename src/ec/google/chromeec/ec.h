@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2012 The Chromium OS Authors. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,6 +87,9 @@ int google_chromeec_cbi_get_sku_id(uint32_t *id);
 int google_chromeec_cbi_get_fw_config(uint32_t *fw_config);
 int google_chromeec_cbi_get_dram_part_num(char *buf, size_t bufsize);
 int google_chromeec_cbi_get_oem_name(char *buf, size_t bufsize);
+
+uint32_t google_chromeec_get_board_sku(void);
+const char *google_chromeec_smbios_system_sku(void);
 
 /* MEC uses 0x800/0x804 as register/index pair, thus an 8-byte resource. */
 #define MEC_EMI_BASE		0x800
@@ -346,10 +348,5 @@ void google_chromeec_fill_ssdt_generator(struct device *dev);
 const char *google_chromeec_acpi_name(const struct device *dev);
 
 #endif /* HAVE_ACPI_TABLES */
-
-/*
- * Allows bus-specific EC code to perform actions when the device is enabled.
- */
-void google_ec_enable_extra(struct device *dev);
 
 #endif /* _EC_GOOGLE_CHROMEEC_EC_H */

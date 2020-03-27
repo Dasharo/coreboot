@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2016 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,11 +68,6 @@ BOOT_STATE_INIT_ENTRY(BS_WRITE_TABLES, BS_ON_ENTRY,
 int __weak get_recovery_mode_retrain_switch(void)
 {
 	return 0;
-}
-
-int vboot_recovery_mode_memory_retrain(void)
-{
-	return get_recovery_mode_retrain_switch();
 }
 
 #if CONFIG(VBOOT_NO_BOARD_SUPPORT)

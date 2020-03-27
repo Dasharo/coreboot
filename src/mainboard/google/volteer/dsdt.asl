@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2020 The coreboot project Authors.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -19,7 +18,6 @@ DefinitionBlock(
 	0x20110725	// OEM revision
 )
 {
-	// Some generic macros
 	#include <soc/intel/tigerlake/acpi/platform.asl>
 
 	// global NVS and variables
@@ -48,6 +46,8 @@ DefinitionBlock(
 		#include <ec/google/chromeec/acpi/ec.asl>
 	}
 
-	// Chipset specific sleep states
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
+	/* Camera */
+	#include <soc/intel/tigerlake/acpi/ipu.asl>
+	#include "acpi/mipi_camera.asl"
 }

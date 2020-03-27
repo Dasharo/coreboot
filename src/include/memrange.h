@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2013 Google, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +15,7 @@
 #define MEMRANGE_H_
 
 #include <device/resource.h>
+#include <stdbool.h>
 
 /* A memranges structure consists of a list of range_entry(s). The structure
  * is exposed so that a memranges can be used on the stack if needed. */
@@ -24,6 +24,8 @@ struct memranges {
 	/* coreboot doesn't have a free() function. Therefore, keep a cache of
 	 * free'd entries.  */
 	struct range_entry *free_list;
+	/* Alignment for base and end addresses of the range. (Must be power of 2). */
+	size_t align;
 };
 
 /* Each region within a memranges structure is represented by a
@@ -78,6 +80,11 @@ static inline void range_entry_update_tag(struct range_entry *r,
 	r->tag = new_tag;
 }
 
+static inline bool memranges_is_empty(struct memranges *ranges)
+{
+	return ranges->entries == NULL;
+}
+
 /* Iterate over each entry in a memranges structure. Ranges cannot
  * be deleted while processing each entry as the list cannot be safely
  * traversed after such an operation.
@@ -86,17 +93,32 @@ static inline void range_entry_update_tag(struct range_entry *r,
 #define memranges_each_entry(r, ranges) \
 	for (r = (ranges)->entries; r != NULL; r = r->next)
 
+
 /* Initialize memranges structure providing an optional array of range_entry
- * to use as the free list. */
-void memranges_init_empty(struct memranges *ranges, struct range_entry *free,
-			  size_t num_free);
+ * to use as the free list. Additionally, it accepts an align parameter that
+ * determines the alignment of addresses. (Alignment must be a power of 2). */
+void memranges_init_empty_with_alignment(struct memranges *ranges,
+					 struct range_entry *free,
+					 size_t num_free, size_t align);
 
 /* Initialize and fill a memranges structure according to the
  * mask and match type for all memory resources. Tag each entry with the
- * specified type. */
-void memranges_init(struct memranges *ranges,
+ * specified type. Additionally, it accepts an align parameter that
+ * determines the alignment of addresses. (Alignment must be a power of 2). */
+void memranges_init_with_alignment(struct memranges *ranges,
 		    unsigned long mask, unsigned long match,
-		    unsigned long tag);
+		    unsigned long tag, size_t align);
+
+/* Initialize memranges structure providing an optional array of range_entry
+ * to use as the free list. Addresses are default aligned to 4KiB. */
+#define memranges_init_empty(__ranges, __free, __num_free)	\
+	memranges_init_empty_with_alignment(__ranges, __free, __num_free, 4 * KiB)
+
+/* Initialize and fill a memranges structure according to the
+ * mask and match type for all memory resources. Tag each entry with the
+ * specified type. Addresses are default aligned to 4KiB. */
+#define memranges_init(__ranges, __mask, __match, __tag)	\
+	memranges_init_with_alignment(__ranges, __mask, __match, __tag, 4 * KiB)
 
 /* Clone a memrange. The new memrange has the same entries as the old one. */
 void memranges_clone(struct memranges *newranges, struct memranges *oldranges);
@@ -149,4 +171,18 @@ void memranges_update_tag(struct memranges *ranges, unsigned long old_tag,
 /* Returns next entry after the provided entry. NULL if r is last. */
 struct range_entry *memranges_next_entry(struct memranges *ranges,
 					 const struct range_entry *r);
+
+/* Steals memory from the available list in given ranges as per the constraints:
+ * limit = Upper bound for the memory range to steal.
+ * size  = Requested size for the stolen memory.
+ * align = Alignment requirements for the starting address of the stolen memory.
+ *         (Alignment must be a power of 2).
+ * tag   = Use a range that matches the given tag.
+ *
+ * If the constraints can be satisfied, this function creates a hole in the memrange,
+ * writes the base address of that hole to stolen_base and returns true. Otherwise it returns
+ * false. */
+bool memranges_steal(struct memranges *ranges, resource_t limit, resource_t size, size_t align,
+		     unsigned long tag, resource_t *stolen_base);
+
 #endif /* MEMRANGE_H_ */

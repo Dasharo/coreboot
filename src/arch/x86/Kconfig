@@ -1,14 +1,6 @@
 ##
+## SPDX-License-Identifier: GPL-2.0-only
 ## This file is part of the coreboot project.
-##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
 ##
 
 config ARCH_X86
@@ -262,11 +254,11 @@ config ACPI_HAVE_PCAT_8259
 
 config ACPI_CPU_STRING
 	string
-	default "\\_PR.CP%02d"
+	default "\\_SB.CP%02d"
 	depends on HAVE_ACPI_TABLES
 	help
 	  Sets the ACPI name string in the processor scope as written by
-	  the acpigen function. Default is \_PR.CPxx. Note that you need
+	  the acpigen function. Default is \_SB.CPxx. Note that you need
 	  the \ escape character in the string.
 
 config COLLECT_TIMESTAMPS_NO_TSC

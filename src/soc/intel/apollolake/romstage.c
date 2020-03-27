@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015 Intel Corp.
- * (Written by Alexandru Gagniuc <alexandrux.gagniuc@intel.com> for Intel Corp.)
- * (Written by Andrey Petrov <andrey.petrov@intel.com> for Intel Corp.)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -198,6 +195,7 @@ void mainboard_romstage_entry(void)
 	const void *new_var_data;
 
 	soc_early_romstage_init();
+	report_platform_info();
 
 	s3wake = pmc_fill_power_state(ps) == ACPI_S3;
 	fsp_memory_init(s3wake);
@@ -290,12 +288,12 @@ static void soc_memory_init_params(FSPM_UPD *mupd)
 
 static void parse_devicetree_setting(FSPM_UPD *m_upd)
 {
-#if CONFIG(SOC_INTEL_GLK)
 	DEVTREE_CONST struct device *dev = pcidev_path_on_root(PCH_DEVFN_NPK);
-	if (!dev)
-		return;
 
-	m_upd->FspmConfig.TraceHubEn = dev->enabled;
+#if CONFIG(SOC_INTEL_GLK)
+	m_upd->FspmConfig.TraceHubEn = dev ? dev->enabled : 0;
+#else
+	m_upd->FspmConfig.NpkEn = dev ? dev->enabled : 0;
 #endif
 }
 

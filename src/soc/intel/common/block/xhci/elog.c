@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2019 Google LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,7 +83,7 @@ static bool pch_xhci_port_wake_check(uintptr_t base, uint8_t num, uint8_t event)
 		/*
 		 * Check if CSC bit is set and port is capable of wake on
 		 * connect/disconnect to identify if the port caused wake
-		 * event for usb attach/detach.
+		 * event for USB attach/detach.
 		 */
 		if (pch_xhci_csc_set(port_status) &&
 		    pch_xhci_wake_capable(port_status)) {
@@ -95,7 +94,7 @@ static bool pch_xhci_port_wake_check(uintptr_t base, uint8_t num, uint8_t event)
 
 		/*
 		 * Check if PLC is set and PLS indicates resume to identify if
-		 * the port caused wake event for usb activity.
+		 * the port caused wake event for USB activity.
 		 */
 		if (pch_xhci_plc_set(port_status) &&
 		    pch_xhci_resume(port_status)) {

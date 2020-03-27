@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2016 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,6 +58,10 @@ Device (CREC)
 		Name (_UID, 1)
 		Name (_DDN, "EC Base Switch Device")
 	}
+#endif
+
+#ifdef EC_ENABLE_PD_MCU_DEVICE
+	#include "pd.asl"
 #endif
 	Method(_STA, 0)
 	{

@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2008 coresystems GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,9 +19,9 @@
 
 /*
  * Digital Port Hotplug Enable:
- *  0x04 = Enabled, 2ms short pulse
+ *  0x04 = Enabled, 2ms   short pulse
  *  0x05 = Enabled, 4.5ms short pulse
- *  0x06 = Enabled, 6ms short pulse
+ *  0x06 = Enabled, 6ms   short pulse
  *  0x07 = Enabled, 100ms short pulse
  */
 struct northbridge_intel_haswell_config {

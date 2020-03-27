@@ -1,15 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 /* How much nesting do we support? */
 #define ACPIGEN_LENSTACK_SIZE 10
@@ -350,7 +340,7 @@ void acpigen_write_scope(const char *name)
 void acpigen_write_processor(u8 cpuindex, u32 pblock_addr, u8 pblock_len)
 {
 /*
-	Processor (\_PR.CPcpuindex, cpuindex, pblock_addr, pblock_len)
+	Processor (\_SB.CPcpuindex, cpuindex, pblock_addr, pblock_len)
 	{
 */
 	char pscope[16];
@@ -386,7 +376,7 @@ void acpigen_write_processor_cnot(const unsigned int number_of_cores)
 {
 	int core_id;
 
-	acpigen_write_method("\\_PR.CNOT", 1);
+	acpigen_write_method("\\_SB.CNOT", 1);
 	for (core_id = 0; core_id < number_of_cores; core_id++) {
 		char buffer[DEVICE_PATH_MAX];
 		snprintf(buffer, sizeof(buffer), CONFIG_ACPI_CPU_STRING,
@@ -1203,6 +1193,15 @@ void acpigen_write_or(uint8_t arg1, uint8_t arg2, uint8_t res)
 	acpigen_emit_byte(res);
 }
 
+/* Xor (arg1, arg2, res) */
+void acpigen_write_xor(uint8_t arg1, uint8_t arg2, uint8_t res)
+{
+	acpigen_emit_byte(XOR_OP);
+	acpigen_emit_byte(arg1);
+	acpigen_emit_byte(arg2);
+	acpigen_emit_byte(res);
+}
+
 /* And (arg1, arg2, res) */
 void acpigen_write_and(uint8_t arg1, uint8_t arg2, uint8_t res)
 {
@@ -1757,6 +1756,14 @@ int acpigen_disable_tx_gpio(struct acpi_gpio *gpio)
 		return acpigen_soc_set_tx_gpio(gpio->pins[0]);
 	else
 		return acpigen_soc_clear_tx_gpio(gpio->pins[0]);
+}
+
+void acpigen_get_rx_gpio(struct acpi_gpio *gpio)
+{
+	acpigen_soc_read_rx_gpio(gpio->pins[0]);
+
+	if (gpio->polarity == ACPI_GPIO_ACTIVE_LOW)
+		acpigen_write_xor(LOCAL0_OP, 1, LOCAL0_OP);
 }
 
 /* refer to ACPI 6.4.3.5.3 Word Address Space Descriptor section for details */

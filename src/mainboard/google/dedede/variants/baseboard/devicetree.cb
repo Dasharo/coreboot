@@ -11,23 +11,30 @@ chip soc/intel/tigerlake
 	#   - GPP_B3 - TRACKPAD_INT_ODL
 	#   - GPP_B4 - H1_AP_INT_ODL
 	# DW1 is used by:
-	#   - GPP_D3 - WLAN_PCIE_WAKE_ODL
+	#   - GPP_C12 - AP_PEN_DET_ODL
 	# DW2 is used by:
-	#   - GPP_H16 - WWAN_HOST_WAKE
+	#   - GPP_D0 - WWAN_HOST_WAKE
+	#   - GPP_D3 - WLAN_PCIE_WAKE_ODL
 	# EC_AP_WAKE_ODL is routed to LAN_WAKE#/GPD02 & is part of DW3.
 	register "pmc_gpe0_dw0" = "GPP_B"
-	register "pmc_gpe0_dw1" = "GPP_D"
-	register "pmc_gpe0_dw2" = "GPP_H"
+	register "pmc_gpe0_dw1" = "GPP_C"
+	register "pmc_gpe0_dw2" = "GPP_D"
+
+	# EC host command ranges are in 0x800-0x8ff & 0x200-0x20f
+	register "gen1_dec" = "0x00fc0801"
+	register "gen2_dec" = "0x000c0201"
+	# EC memory map range is 0x900-0x9ff
+	register "gen3_dec" = "0x00fc0901"
 
 	# USB Port Configuration
 	register "usb2_ports[0]" = "USB2_PORT_MID(OC_SKIP)"	# Type-C Port C0
 	register "usb2_ports[1]" = "USB2_PORT_MID(OC_SKIP)"	# Type-C Port C1
 	register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)"	# Type-A Port A0
 	register "usb2_ports[3]" = "USB2_PORT_MID(OC_SKIP)"	# Type-A Port A1
-	register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)"	# Bluetooth
+	register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)"	# Discrete Bluetooth
 	register "usb2_ports[5]" = "USB2_PORT_EMPTY"		# Not Used
 	register "usb2_ports[6]" = "USB2_PORT_EMPTY"		# Not Used
-	register "usb2_ports[7]" = "USB2_PORT_EMPTY"		# Not Used
+	register "usb2_ports[7]" = "USB2_PORT_MID(OC_SKIP)"	# Integrated Bluetooth
 
 	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB3/2 Type-C Port C0
 	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB3/2 Type-C Port C1
@@ -69,8 +76,54 @@ chip soc/intel/tigerlake
 		[PchSerialIoIndexUART2] = PchSerialIoSkipInit,
 	}"
 
+	# PCIE Root Port Configuration
+	register "PcieRpEnable[0]" = "0"
+	register "PcieRpEnable[1]" = "0"
+	register "PcieRpEnable[2]" = "0"
+	register "PcieRpEnable[3]" = "0"
+	register "PcieRpEnable[4]" = "0"
+	register "PcieRpEnable[5]" = "0"
+	register "PcieRpEnable[6]" = "0"
+	# PCIe Root Port 8 (index 7) hosts M.2 E-key WLAN.
+	register "PcieRpEnable[7]" = "1"
+
+	register "PcieClkSrcUsage[0]" = "0xff"
+	register "PcieClkSrcUsage[1]" = "0xff"
+	register "PcieClkSrcUsage[2]" = "0xff"
+	# PCIe Clock Source 4 (index 3) is used by WLAN on PCIe Root Port 8 (index 7)
+	register "PcieClkSrcUsage[3]" = "7"
+	register "PcieClkSrcUsage[4]" = "0xff"
+	register "PcieClkSrcUsage[5]" = "0xff"
+
+	# PCIE Clock Request to Clock Source Mapping
+	register "PcieClkSrcClkReq[0]" = "0"
+	register "PcieClkSrcClkReq[1]" = "1"
+	register "PcieClkSrcClkReq[2]" = "2"
+	register "PcieClkSrcClkReq[3]" = "3"
+	register "PcieClkSrcClkReq[4]" = "4"
+	register "PcieClkSrcClkReq[5]" = "5"
+
+	# Audio related configurations
+	register "PchHdaDspEnable" = "1"
+	register "PchHdaAudioLinkHdaEnable" = "1"
+	register "PchHdaAudioLinkSspEnable[0]" = "1"
+	register "PchHdaAudioLinkSspEnable[1]" = "1"
+	register "PchHdaAudioLinkDmicEnable[0]" = "1"
+	register "PchHdaAudioLinkDmicEnable[1]" = "1"
+
 	# Enable EMMC HS400 mode
 	register "ScsEmmcHs400Enabled" = "1"
+
+	# Display related UPDs
+	# Select eDP for port A
+	register "DdiPortAConfig" = "1"
+
+	# Enable HPD for DDI ports B/C
+	register "DdiPortBHpd" = "1"
+	register "DdiPortCHpd" = "1"
+	# Enable DDC for DDI ports B/C
+	register "DdiPortBDdc" = "1"
+	register "DdiPortCDdc" = "1"
 
 	# Intel Common SoC Config
 	#+-------------------+---------------------------+
@@ -109,16 +162,86 @@ chip soc/intel/tigerlake
 	}"
 
 	device domain 0 on
-		device pci 00.0 off end # Host Bridge
-		device pci 02.0 off end # Integrated Graphics Device
+		device pci 00.0 on end # Host Bridge
+		device pci 02.0 on end # Integrated Graphics Device
 		device pci 04.0 off end # SA Thermal device
 		device pci 05.0 off end # IPU
 		device pci 09.0 off end # Intel Trace Hub
 		device pci 12.6 off end # GSPI 2
-		device pci 14.0 on  end # USB xHCI
+		device pci 14.0 on
+			chip drivers/usb/acpi
+				register "desc" = ""Root Hub""
+				register "type" = "UPC_TYPE_HUB"
+				device usb 0.0 on
+					chip drivers/usb/acpi
+						register "desc" = ""Left Type-C Port""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(1, 1)"
+						device usb 2.0 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Right Type-C Port""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(2, 1)"
+						device usb 2.1 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Left Type-A Port""
+						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
+						device usb 2.2 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Right Type-A Port""
+						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						device usb 2.3 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Discrete Bluetooth""
+						register "type" = "UPC_TYPE_INTERNAL"
+						register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H19)"
+						device usb 2.4 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Integrated Bluetooth""
+						register "type" = "UPC_TYPE_INTERNAL"
+						register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H19)"
+						device usb 2.7 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Left Type-C Port""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(1, 1)"
+						device usb 3.0 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Right Type-C Port""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(2, 1)"
+						device usb 3.1 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Left Type-A Port""
+						register "type" = "UPC_TYPE_USB3_A"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
+						device usb 3.2 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Right Type-A Port""
+						register "type" = "UPC_TYPE_USB3_A"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						device usb 3.3 on end
+					end
+				end
+			end
+		end # USB xHCI
 		device pci 14.1 off end # USB xDCI (OTG)
 		device pci 14.2 off end # PMC SRAM
-		device pci 14.3 off end # CNVi wifi
+		chip drivers/intel/wifi
+			register "wake" = "GPE0_PME_B0"
+			device pci 14.3 on  end # CNVi wifi
+		end
 		device pci 14.5 off end # SDCard
 		device pci 15.0 on  end # I2C 0
 		device pci 15.1 on  end # I2C 1
@@ -136,11 +259,12 @@ chip soc/intel/tigerlake
 		device pci 1c.0 off end # PCI Express Root Port 1
 		device pci 1c.1 off end # PCI Express Root Port 2
 		device pci 1c.2 off end # PCI Express Root Port 3
-		device pci 1c.3 off end # PCI Express Root Port 4 - WLAN
+		device pci 1c.3 off end # PCI Express Root Port 4
 		device pci 1c.4 off end # PCI Express Root Port 5
 		device pci 1c.5 off end # PCI Express Root Port 6
 		device pci 1c.6 off end # PCI Express Root Port 7
-		device pci 1c.7 off end # PCI Express Root Port 8
+		# External PCIe port 4 is mapped to PCIe Root port 8
+		device pci 1c.7 on  end # PCI Express Root Port 8 - WLAN
 		device pci 1e.0 off end # UART 0
 		device pci 1e.1 off end # UART 1
 		device pci 1e.2 on

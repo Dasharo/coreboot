@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2015 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +20,6 @@
 void fill_lb_gpios(struct lb_gpios *gpios)
 {
 	struct lb_gpio chromeos_gpios[] = {
-		{WRITE_PROTECT_L, ACTIVE_LOW,
-			!get_write_protect_state(), "write protect"},
 		{POWER_BUTTON, ACTIVE_LOW, -1, "power"},
 		{EC_IN_RW, ACTIVE_HIGH, -1, "EC in RW"},
 		{AP_SYS_RESET_L, ACTIVE_LOW, -1, "reset"},

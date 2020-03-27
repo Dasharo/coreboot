@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2009 coresystems GmbH
- * Copyright (C) 2012 secunet Security Networks AG
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -81,9 +79,9 @@ Scope (\_TZ)
 		Method (_PSL, 0, Serialized)
 		{
 			If (MPEN) {
-				Return (Package() {\_PR.CP00, \_PR.CP01})
+				Return (Package() {\_SB.CP00, \_SB.CP01})
 			}
-			Return (Package() {\_PR.CP00})
+			Return (Package() {\_SB.CP00})
 		}
 
 		// TC1 value for passive cooling

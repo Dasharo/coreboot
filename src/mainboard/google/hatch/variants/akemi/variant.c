@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2019 Google LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +27,7 @@ void variant_devtree_update(void)
 	ssd_host = pcidev_path_on_root(PCH_DEVFN_SATA);
 
 	/* SKU ID 2 and 4 do not have eMMC, hence disable it. */
-	sku_id = get_board_sku();
+	sku_id = google_chromeec_get_board_sku();
 	if ((sku_id == 2) || (sku_id == 4)) {
 		if (emmc_host == NULL)
 			return;

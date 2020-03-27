@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015 Intel Corp.
- * (Written by Andrey Petrov <andrey.petrov@intel.com> for Intel Corp.)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,5 +21,6 @@
 void set_max_freq(void);
 void mainboard_memory_init_params(FSPM_UPD *mupd);
 void mainboard_save_dimm_info(void);
+void report_platform_info(void);
 
 #endif /* _SOC_APOLLOLAKE_ROMSTAGE_H_ */

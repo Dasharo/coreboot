@@ -1,7 +1,5 @@
 ## This file is part of the coreboot project.
 ##
-## Copyright (c) 2013 The Chromium OS Authors. All rights reserved.
-## Copyright (C) 2018 Facebook Inc.
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -99,7 +97,7 @@ config TPM_STARTUP_IGNORE_POSTINIT
 	  Select this to ignore POSTINIT INVALID return codes on TPM
 	  startup. This is useful on platforms where a previous stage
 	  issued a TPM startup. Examples of use cases are Intel TXT
-	  or VBOOT on the Intel Nehalem northbridge which issues a
+	  or VBOOT on the Intel Arrandale processor, which issues a
 	  CPU-only reset during the romstage.
 
 endmenu # Trusted Platform Module (tpm)

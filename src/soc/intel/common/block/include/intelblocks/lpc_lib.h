@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2017-2018 Intel Corp.
- * Copyright (C) 2018 Siemens AG
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,6 +70,8 @@ struct lpc_mmio_range {
 uint16_t lpc_enable_fixed_io_ranges(uint16_t io_enables);
 /* Return the current decode settings */
 uint16_t lpc_get_fixed_io_decode(void);
+/* Set the current decode ranges */
+uint16_t lpc_set_fixed_io_ranges(uint16_t io_ranges, uint16_t mask);
 /* Open a generic IO window to the LPC bus. Four windows are available. */
 void lpc_open_pmio_window(uint16_t base, uint16_t size);
 /* Close all generic IO windows to the LPC bus. */

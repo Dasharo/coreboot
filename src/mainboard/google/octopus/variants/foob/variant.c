@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2019 Google LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +15,7 @@
 #include <baseboard/variants.h>
 #include <soc/pci_devs.h>
 #include <ec/google/chromeec/ec.h>
+#include <sar.h>
 
 #define SKU_UNKNOWN     0xFFFFFFFF
 
@@ -30,7 +30,18 @@ void variant_update_devtree(struct device *dev)
 		return;
 
 	/* SKU ID 1 does not have a touchscreen device, hence disable it. */
-	sku_id = get_board_sku();
+	sku_id = google_chromeec_get_board_sku();
 	if (no_touchscreen_sku(sku_id))
 		touchscreen_i2c_host->enabled = 0;
+}
+
+const char *get_wifi_sar_cbfs_filename(void)
+{
+	const char *filename = NULL;
+	uint32_t sku_id = SKU_UNKNOWN;
+
+	sku_id = google_chromeec_get_board_sku();
+	if (sku_id == 9)
+		filename = "wifi_sar-foob360.hex";
+	return filename;
 }

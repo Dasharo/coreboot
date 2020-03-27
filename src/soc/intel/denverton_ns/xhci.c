@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015 - 2017 Intel Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,5 +46,5 @@ static struct device_operations usb_xhci_ops = {
 static const struct pci_driver pch_usb_xhci __pci_driver = {
 	.ops = &usb_xhci_ops,
 	.vendor = PCI_VENDOR_ID_INTEL,
-	.device = XHCI_DEVID,
+	.device = PCI_DEVICE_ID_INTEL_DENVERTON_XHCI,
 };

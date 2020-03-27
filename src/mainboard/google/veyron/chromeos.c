@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2014 Rockchip Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,8 +39,6 @@ void setup_chromeos_gpios(void)
 void fill_lb_gpios(struct lb_gpios *gpios)
 {
 	struct lb_gpio chromeos_gpios[] = {
-		{GPIO_WP.raw, ACTIVE_LOW, !get_write_protect_state(),
-			"write protect"},
 		{GPIO_RECOVERY.raw, ACTIVE_LOW,
 			!get_recovery_mode_switch(), "presence"},
 		{GPIO_LID.raw, ACTIVE_HIGH, -1, "lid"},

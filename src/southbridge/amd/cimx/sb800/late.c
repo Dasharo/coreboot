@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2011 Advanced Micro Devices, Inc.
- * Copyright (C) 2014 Sage Electronic Engineering, LLC.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -214,7 +212,7 @@ static struct device_operations usb_ops = {
 };
 
 /*
- * The pci id of usb ctrl 0 and 1 are the same.
+ * The pci id of USB ctrl 0 and 1 are the same.
  */
 static const struct pci_driver usb_ohci123_driver __pci_driver = {
 	.ops = &usb_ops,

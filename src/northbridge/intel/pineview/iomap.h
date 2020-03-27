@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2015  Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,5 +19,6 @@
 #define DEFAULT_MCHBAR		0xfed14000	/* 16 KB */
 #define DEFAULT_DMIBAR		0xfed18000	/* 4 KB */
 #define DEFAULT_EPBAR		0xfed19000	/* 4 KB */
+#define DEFAULT_PMIOBAR		0x00000400
 
 #endif /* PINEVIEW_IOMAP_H */

@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2010 Tobias Diedrich <ranma+coreboot@tdiedrich.de>
- * Copyright (C) 2017 Keith Hui <buurin@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +23,7 @@
 #include <arch/acpi.h>
 DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 {
-	/* \_PR scope defining the main processor is generated in SSDT. */
+	/* \_SB scope defining the main processor is generated in SSDT. */
 
 	OperationRegion(X80, SystemIO, 0x80, 1)
 	Field(X80, ByteAcc, NoLock, Preserve)

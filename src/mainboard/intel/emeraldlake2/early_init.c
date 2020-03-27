@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2007-2010 coresystems GmbH
- * Copyright (C) 2011 The ChromiumOS Authors.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,7 +109,7 @@ void mainboard_fill_pei_data(struct pei_data *pei_data)
 }
 
 const struct southbridge_usb_port mainboard_usb_ports[] = {
-	/* enabled power  usb oc pin  */
+	/* enabled power  USB oc pin  */
 	{ 1, 0, 0 }, /* P0: Front port  (OC0) */
 	{ 1, 0, 1 }, /* P1: Back port   (OC1) */
 	{ 1, 0, -1 }, /* P2: MINIPCIE1   (no OC) */

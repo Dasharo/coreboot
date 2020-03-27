@@ -1,7 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright 2013 Google Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +14,7 @@
 
 #ifndef __SOC_NVIDIA_TEGRA124_CHIP_H__
 #define __SOC_NVIDIA_TEGRA124_CHIP_H__
-#include <arch/cache.h>
+
 #include <gpio.h>
 #include <soc/addressmap.h>
 

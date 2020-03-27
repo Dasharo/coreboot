@@ -1,8 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2008-2009 coresystems GmbH
- * Copyright (C) 2013 Vladimir Serbinenko
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -779,7 +777,11 @@ static struct device_operations device_ops = {
 };
 
 
-static const unsigned short pci_device_ids[] = { 0x3b07, 0x3b09, 0 };
+static const unsigned short pci_device_ids[] = {
+	PCI_DID_INTEL_IBEXPEAK_LPC_QM57,
+	PCI_DID_INTEL_IBEXPEAK_LPC_HM55,
+	0
+};
 
 static const struct pci_driver pch_lpc __pci_driver = {
 	.ops	 = &device_ops,

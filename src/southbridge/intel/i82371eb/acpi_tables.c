@@ -1,9 +1,6 @@
 /*
  * This file is part of the coreboot project.
  *
- * Copyright (C) 2004 Stefan Reinauer <stepan@openbios.org>
- * Copyright (C) 2005 Nick Barker <nick.barker9@btinternet.com>
- * Copyright (C) 2007 Rudolf Marek <r.marek@assembler.cz>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +44,7 @@ void generate_cpu_entries(struct device *device)
 
 	/* without the outer scope, furhter ssdt addition will end up
 	 * within the processor statement */
-	acpigen_write_scope("\\_PR");
+	acpigen_write_scope("\\_SB");
 	for (cpu=0; cpu < numcpus; cpu++) {
 		acpigen_write_processor(cpu, pcontrol_blk, plen);
 		acpigen_pop_len();
