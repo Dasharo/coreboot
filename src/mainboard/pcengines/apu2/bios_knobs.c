@@ -131,6 +131,9 @@ int check_com2(void)
 {
 	u8 com2en;
 
+	if (CONFIG(BOARD_PCENGINES_APU5))
+		return 0;
+
 	//
 	// Find the COM2 redirection item
 	//
