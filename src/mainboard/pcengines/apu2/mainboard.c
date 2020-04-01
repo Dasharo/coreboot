@@ -382,14 +382,6 @@ static void mainboard_enable(struct device *dev)
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
 
-	struct device *sd_dev = pcidev_on_root(0x14, 7);
-
-	struct southbridge_amd_pi_hudson_config *sd_chip =
-		(struct southbridge_amd_pi_hudson_config *)(sd_dev->chip_info);
-
-	if (!check_sd3_mode())
-		sd_chip->sd_mode = 0;
-    
 	/* Enable IOMMU if activated in config file */
 	struct device* iommu_dev;
 	iommu_dev = pcidev_on_root(0, 2);

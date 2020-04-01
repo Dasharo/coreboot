@@ -19,6 +19,7 @@
 
 #include "chip.h"
 #include "hudson.h"
+#include "mainboard/pcengines/apu2/bios_knobs.h"
 
 static void sd_init(struct device *dev)
 {
@@ -26,7 +27,7 @@ static void sd_init(struct device *dev)
 	u32 stepping = pci_read_config32(pcidev_on_root(0x18, 3), 0xFC);
 	u8 sd_mode = 0;
 
-	if (sd_chip)
+	if (sd_chip && check_sd3_mode())
 		sd_mode = sd_chip->sd_mode;
 
 	if (sd_mode == 3) {	/* SD 3.0 mode */
