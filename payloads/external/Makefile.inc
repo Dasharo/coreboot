@@ -180,6 +180,16 @@ $(call add_intermediate, seabios_thread_optionroms, $(CBFSTOOL))
 	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< remove -n etc/threads 2>/dev/null)
 	$(CBFSTOOL) $< add-int -i 2 -n etc/threads
 endif
+
+ifeq ($(CONFIG_SEABIOS_BOOTORDER_IN_FMAP),y)
+ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_FILE)),)
+$(call add_intermediate, seabios_bootorder_fmap, $(CBFSTOOL))
+	@printf "    SeaBIOS    Fill bootorder region\n"
+	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f /dev/zero 2>/dev/null)
+	$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f $(CONFIG_SEABIOS_BOOTORDER_FILE)
+endif
+endif
+
 ifeq ($(CONFIG_PAYLOAD_SEAGRUB),y)
 ifneq ($(CONFIG_SEAGRUB_ALLOW_SEABIOS_BOOTMENU),y)
 $(call add_intermediate, seabios_bootmenu, $(CBFSTOOL))
@@ -190,14 +200,6 @@ else
 $(call add_intermediate, seabios_bootmenu, $(CBFSTOOL))
 	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< remove -n etc/show-boot-menu 2>/dev/null)
 endif
-endif
-
-
-# add a SeaBIOS sercon-port file
-ifneq ($(strip $(CONFIG_SEABIOS_SERCON_PORT_FILE)),)
-cbfs-files-y += etc/sercon-port
-etc/sercon-port-file := $(strip $(CONFIG_SEABIOS_SERCON_PORT_FILE))
-etc/sercon-port-type := raw
 endif
 
 # Depthcharge
