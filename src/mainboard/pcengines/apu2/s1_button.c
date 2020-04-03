@@ -56,17 +56,17 @@ void enable_console(void)
 	char bootorder_copy[0x1000];
 	struct region_device bootorder_area;
 
-	if (!fmap_locate_area_as_rdev_rw("BOOTORDER", &bootorder_area)) {
+	if (fmap_locate_area_as_rdev_rw("BOOTORDER", &bootorder_area)) {
 		printk(BIOS_WARNING, "Could not find bootorder area\n");
-		return;
-	}
-	
-	if (region_device_sz(&bootorder_area) < 0x1000) {
-		printk(BIOS_WARNING, "Wrong bootorder size\n");
 		return;
 	}
 
 	fsize = region_device_sz(&bootorder_area);
+
+	if (fsize != 0x1000) {
+		printk(BIOS_WARNING, "Wrong bootorder size\n");
+		return;
+	}
 
 	if (rdev_readat(&bootorder_area, bootorder_file, 0, fsize) != fsize) {
 		printk(BIOS_WARNING, "Could not read bootorder\n");

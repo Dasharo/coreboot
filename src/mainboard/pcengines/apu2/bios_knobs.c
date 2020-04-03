@@ -20,6 +20,7 @@
 #include <cbfs.h>
 #include <commonlib/cbfs.h>
 #include <commonlib/region.h>
+#include <fmap.h>
 #include "bios_knobs.h"
 
 #define BOOTORDER_FILE "bootorder"
@@ -56,18 +57,28 @@ static u8 check_knob_value(const char *s)
 	const char *boot_file = NULL;
 	size_t boot_file_len = 0;
 	char * token = NULL;
+	struct region_device bootorder_area;
 
-	//
-	// This function locates a file in cbfs, maps it to memory and returns
-	// a void* pointer
-	//
-	boot_file = (const char *) cbfs_map(BOOTORDER_FILE, &boot_file_len);
-	if (boot_file == NULL)
-		printk(BIOS_INFO, "file [%s] not found in CBFS\n",
-			BOOTORDER_FILE);
-	if (boot_file_len < 4096)
-		printk(BIOS_INFO, "Missing bootorder data.\n");
-	if (boot_file == NULL || boot_file_len < 4096)
+	if (CONFIG(SEABIOS_BOOTORDER_IN_FMAP)) {
+		if (fmap_locate_area_as_rdev("BOOTORDER", &bootorder_area)) {
+			printk(BIOS_WARNING, "Could not find bootorder area\n");
+			return -1;
+		}
+		boot_file_len = region_device_sz(&bootorder_area);
+		boot_file = rdev_mmap_full(&bootorder_area);
+	} else {
+		boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE,
+						    CBFS_TYPE_RAW,
+						    &boot_file_len);
+	}
+
+
+	if (boot_file == NULL) {
+		printk(BIOS_INFO, "Could not get bootorder content\n");
+	}
+	if (boot_file_len != 4096)
+		printk(BIOS_INFO, "Wrong bootorder size.\n");
+	if (boot_file == NULL || boot_file_len != 4096)
 		return -1;
 
 	token = findstr(boot_file, s);
