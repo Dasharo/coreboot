@@ -99,11 +99,13 @@ img/seabios-type := payload
 img/seabios-compression := $(CBFS_SECONDARY_PAYLOAD_COMPRESS_FLAG)
 
 # add a SeaBIOS bootorder file
+ifneq ($(CONFIG_SEABIOS_BOOTORDER_IN_FMAP),y)
 ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_FILE)),)
 cbfs-files-y += bootorder
 bootorder-file := $(strip $(CONFIG_SEABIOS_BOOTORDER_FILE))
 bootorder-type := raw
 bootorder-align := 0x1000
+endif
 endif
 
 # add a SeaBIOS bootorder_map file
@@ -162,6 +164,16 @@ $(call add_intermediate, seabios_thread_optionroms, $(CBFSTOOL))
 	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< remove -n etc/threads 2>/dev/null)
 	$(CBFSTOOL) $< add-int -i 2 -n etc/threads
 endif
+
+ifeq ($(CONFIG_SEABIOS_BOOTORDER_IN_FMAP),y)
+ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_FILE)),)
+$(call add_intermediate, seabios_bootorder_fmap, $(CBFSTOOL))
+	@printf "    SeaBIOS    Fill bootorder region\n"
+	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f /dev/zero 2>/dev/null)
+	$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f $(CONFIG_SEABIOS_BOOTORDER_FILE)
+endif
+endif
+
 ifeq ($(CONFIG_PAYLOAD_SEAGRUB),y)
 ifneq ($(CONFIG_SEAGRUB_ALLOW_SEABIOS_BOOTMENU),y)
 $(call add_intermediate, seabios_bootmenu, $(CBFSTOOL))
