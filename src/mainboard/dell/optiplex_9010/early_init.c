@@ -1,4 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
+<<<<<<< HEAD
+=======
+/* This file is part of the coreboot project. */
+>>>>>>> mb/dell/optiplex_9010: Add Dell OptiPlex 9010 SFF support
 
 #include <bootblock_common.h>
 #include <device/pci_ops.h>
