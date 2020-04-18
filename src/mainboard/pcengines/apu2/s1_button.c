@@ -51,9 +51,8 @@ static int find_knob_index(const char *s, const char *pattern)
 void enable_console(void)
 {
 	size_t fsize;
-	char bootorder_file[0x1000];
+	static char bootorder_file[0x1000];
 	int knob_index;
-	char bootorder_copy[0x1000];
 	struct region_device bootorder_area;
 
 	if (fmap_locate_area_as_rdev_rw("BOOTORDER", &bootorder_area)) {
@@ -73,20 +72,15 @@ void enable_console(void)
 		return;
 	}
 
-	if(memcpy(bootorder_copy, bootorder_file, fsize) == NULL) {
-		printk(BIOS_WARNING,"Copying bootorder failed\n");
-		return;
-	}
-
-	knob_index = find_knob_index(bootorder_copy, "scon");
+	knob_index = find_knob_index(bootorder_file, "scon");
 
 	if(knob_index == -1){
 		printk(BIOS_WARNING,"scon knob not found in bootorder\n");
 		return;
 	}
 
-	*(bootorder_copy + knob_index) = '1';
+	*(bootorder_file + knob_index) = '1';
 
-	if (rdev_writeat(&bootorder_area, bootorder_copy, 0, fsize) != fsize)
+	if (rdev_writeat(&bootorder_area, bootorder_file, knob_index, 1) != 1)
 		printk(BIOS_WARNING, "Failed to flash bootorder\n");
 }
