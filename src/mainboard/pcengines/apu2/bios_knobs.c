@@ -54,7 +54,7 @@ static char * findstr(const char *s, const char *pattern)
 
 static u8 check_knob_value(const char *s)
 {
-	const char *boot_file = NULL;
+	char *boot_file = NULL;
 	size_t boot_file_len = 0;
 	char * token = NULL;
 	struct region_device bootorder_area;
@@ -65,25 +65,29 @@ static u8 check_knob_value(const char *s)
 			return -1;
 		}
 		boot_file_len = region_device_sz(&bootorder_area);
-		boot_file = rdev_mmap_full(&bootorder_area);
+		boot_file = rdev_mmap(&bootorder_area, 0, 0x400);
 	} else {
 		boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE,
 						    CBFS_TYPE_RAW,
 						    &boot_file_len);
 	}
 
-
-	if (boot_file == NULL) {
+	if (boot_file == NULL)
 		printk(BIOS_INFO, "Could not get bootorder content\n");
-	}
 	if (boot_file_len != 4096)
 		printk(BIOS_INFO, "Wrong bootorder size.\n");
-	if (boot_file == NULL || boot_file_len != 4096)
+	if (boot_file == NULL || boot_file_len != 4096) {
+		if (CONFIG(SEABIOS_BOOTORDER_IN_FMAP))
+			rdev_munmap(&bootorder_area, boot_file);
 		return -1;
+	}
 
 	token = findstr(boot_file, s);
 
 	cbfs_unmap((void *)boot_file);
+
+	if (CONFIG(SEABIOS_BOOTORDER_IN_FMAP))
+		rdev_munmap(&bootorder_area, boot_file);
 
 	if (token) {
 		if (*token == '0') return 0;
@@ -441,10 +445,10 @@ static unsigned long int strtoul(const char *ptr, char **endptr, int base)
 
 u16 get_watchdog_timeout(void)
 {
-	const char *boot_file = NULL;
+	char *boot_file = NULL;
 	size_t boot_file_len = 0;
-	struct region_device bootorder_area;
 	u16 timeout;
+	struct region_device bootorder_area;
 
 	if (CONFIG(SEABIOS_BOOTORDER_IN_FMAP)) {
 		if (fmap_locate_area_as_rdev("BOOTORDER", &bootorder_area)) {
@@ -452,24 +456,29 @@ u16 get_watchdog_timeout(void)
 			return -1;
 		}
 		boot_file_len = region_device_sz(&bootorder_area);
-		boot_file = rdev_mmap_full(&bootorder_area);
+		boot_file = rdev_mmap(&bootorder_area, 0, 0x400);
 	} else {
 		boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE,
 						    CBFS_TYPE_RAW,
 						    &boot_file_len);
 	}
 
-	if (boot_file == NULL) {
+	if (boot_file == NULL)
 		printk(BIOS_INFO, "Could not get bootorder content\n");
-	}
 	if (boot_file_len != 4096)
 		printk(BIOS_INFO, "Wrong bootorder size.\n");
-	if (boot_file == NULL || boot_file_len != 4096)
+	if (boot_file == NULL || boot_file_len != 4096) {
+		if (CONFIG(SEABIOS_BOOTORDER_IN_FMAP))
+			rdev_munmap(&bootorder_area, boot_file);
 		return -1;
+	}
 
 	timeout = (u16) strtoul(findstr(boot_file, "watchdog"), NULL, 16);
 
-	cbfs_unmap((void *)boot_file);
+	if (CONFIG(SEABIOS_BOOTORDER_IN_FMAP))
+		rdev_munmap(&bootorder_area, boot_file);
+	else
+		cbfs_unmap((void *)boot_file);
 
 	return timeout;
 }
