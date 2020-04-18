@@ -13,12 +13,14 @@
  * GNU General Public License for more details.
  */
 
-#include <console/console.h>
+
 #include <string.h>
 #include <stdlib.h>
-#include "s1_button.h"
 #include <fmap.h>
 #include <commonlib/region.h>
+#include <console/console.h>
+
+#include "s1_button.h"
 
 static int find_knob_index(const char *s, const char *pattern)
 {
@@ -51,7 +53,7 @@ static int find_knob_index(const char *s, const char *pattern)
 void enable_console(void)
 {
 	size_t fsize;
-	static char bootorder_file[0x1000];
+	char bootorder_file[0x1000];
 	int knob_index;
 	struct region_device bootorder_area;
 
@@ -74,13 +76,13 @@ void enable_console(void)
 
 	knob_index = find_knob_index(bootorder_file, "scon");
 
-	if(knob_index == -1){
+	if (knob_index == -1){
 		printk(BIOS_WARNING,"scon knob not found in bootorder\n");
 		return;
 	}
 
-	*(bootorder_file + knob_index) = '1';
+	*(bootorder_file + (size_t)knob_index) = '1';
 
-	if (rdev_writeat(&bootorder_area, bootorder_file, knob_index, 1) != 1)
+	if (fmap_overwrite_area("BOOTORDER", bootorder_file, fsize) != fsize)
 		printk(BIOS_WARNING, "Failed to flash bootorder\n");
 }
