@@ -14,6 +14,7 @@
 #include "chip.h"
 #include "sandybridge.h"
 #include <cpu/intel/smm_reloc.h>
+#include <security/intel/txt/txt.h>
 
 static int bridge_revision_id = -1;
 
@@ -424,6 +425,51 @@ static void northbridge_init(struct device *dev)
 void northbridge_write_smram(u8 smram)
 {
 	pci_write_config8(pcidev_on_root(0, 0), SMRAM, smram);
+}
+
+/*
+ * Set DPR region.
+ */
+void platform_set_dpr(const uintptr_t addr, const size_t size)
+{
+	struct device *dev;
+	uint32_t dpr_reg;
+	uint64_t txt_dpr;
+	/*
+	 * DMA Protected Range can be reserved below TSEG for PCODE patch
+	 * or TXT/BootGuard related data.  Rather than reporting a base address
+	 * the DPR register reports the TOP of the region, which is the same
+	 * as TSEG base.  The region size is reported in MiB in bits 11:4.
+	 */
+	dev = pcidev_on_root(0, 0);
+	dpr_reg = pci_read_config32(dev, DPR);
+	if (dpr_reg & DPR_LOCK) {
+		printk(BIOS_ERR, "ERROR: HOSTBRIDGE[DPR] is already locked\n");
+		return;
+	}
+
+	dpr_reg &= ~(DPR_ADDR_MASK | DPR_SIZE_MASK);
+	dpr_reg |= addr & DPR_ADDR_MASK;
+	dpr_reg |= (size >> (20 - DPR_SIZE_SHIFT)) & DPR_SIZE_MASK;
+	dpr_reg |= DPR_EPM;
+	pci_write_config32(dev, DPR, dpr_reg);
+}
+
+/*
+ * Lock DPR register.
+ */
+void platform_lock_dpr(void)
+{
+	struct device *dev;
+	uint32_t dpr_reg;
+	dev = pcidev_on_root(0, 0);
+	dpr_reg = pci_read_config32(dev, DPR);
+	if (dpr_reg & DPR_LOCK) {
+		printk(BIOS_ERR, "ERROR: HOSTBRIDGE[DPR] is already locked\n");
+		return;
+	}
+	dpr_reg |= DPR_LOCK;
+	pci_write_config32(dev, DPR, dpr_reg);
 }
 
 static struct device_operations mc_ops = {

@@ -19,6 +19,13 @@
 
 #define PAVPC		0x58	/* Protected Audio Video Path Control */
 #define DPR		0x5c	/* DMA Protected Range */
+#define  DPR_LOCK	(1 << 0)
+#define  DPR_EPM	(1 << 2)
+#define  DPR_PRS	(1 << 1)
+#define  DPR_SIZE_MASK	0xff0
+#define  DPR_SIZE_SHIFT	4
+#define  DPR_ADDR_MASK	0xfff00000
+#define  DPR_ADDR_SHIFT	20
 
 #define PCIEXBAR	0x60
 #define DMIBAR		0x68
