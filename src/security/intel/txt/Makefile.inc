@@ -1,7 +1,10 @@
-ifeq ($(CONFIG_INTEL_TXT),y)
+ifeq ($(CONFIG_INTEL_TXT)$(CONFIG_LEGACY_INTEL_TXT),y)
 
+romstage-y += romstage.c
 romstage-y += common.c
 romstage-$(CONFIG_INTEL_TXT_LOGGING) += logging.c
+romstage-y += getsec_enteraccs.S
+romstage-y += getsec.c
 
 ramstage-y += common.c
 ramstage-y += getsec.c

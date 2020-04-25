@@ -84,6 +84,9 @@ static bool get_wake_error_status(void)
 
 static void check_secrets_txt(void *unused)
 {
+	if (CONFIG(LEGACY_INTEL_TXT))
+		return;
+
 	uint64_t status = read64((void *)TXT_SPAD);
 
 	if (status & ACMSTS_TXT_DISABLED)
@@ -123,6 +126,9 @@ BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY, check_secrets_txt, NULL);
  */
 static void init_intel_txt(void *unused)
 {
+	if (CONFIG(LEGACY_INTEL_TXT))
+		return;
+
 	const uint64_t status = read64((void *)TXT_SPAD);
 
 	if (status & ACMSTS_TXT_DISABLED)
@@ -197,6 +203,9 @@ static void push_sinit_heap(u8 **heap_ptr, void *data, size_t data_length)
  */
 static void lockdown_intel_txt(void *unused)
 {
+	if (CONFIG(LEGACY_INTEL_TXT))
+		return;
+
 	const uint64_t status = read64((void *)TXT_SPAD);
 	uintptr_t tseg = 0;
 

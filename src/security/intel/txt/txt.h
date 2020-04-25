@@ -25,5 +25,6 @@ int intel_txt_run_bios_acm(const u8 input_params);
 bool intel_txt_prepare_txt_env(void);
 void platform_set_dpr(const uintptr_t addr, const size_t size);
 void platform_lock_dpr(void);
+void intel_txt_acm_check(void);
 
 #endif /* SECURITY_INTEL_TXT_H_ */
