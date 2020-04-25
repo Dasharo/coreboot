@@ -46,7 +46,7 @@ void set_feature_ctrl_vmx(void)
 		msr.lo |= (1 << 2);
 		if (feature_flag & CPUID_SMX) {
 			msr.lo |= (1 << 1);
-			if (CONFIG(INTEL_TXT)) {
+			if (CONFIG(INTEL_TXT) || CONFIG(LEGACY_INTEL_TXT)) {
 				/* Enable GetSec and all GetSec leaves */
 				msr.lo |= (0xff << 8);
 			}
@@ -58,6 +58,7 @@ void set_feature_ctrl_vmx(void)
 	printk(BIOS_DEBUG, "VMX status: %s\n",
 		enable ? "enabled" : "disabled");
 }
+
 void set_feature_ctrl_lock(void)
 {
 	msr_t msr;
