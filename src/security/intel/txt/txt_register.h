@@ -15,13 +15,26 @@
 #define TXT_BASE 0xfed30000UL
 
 #define TXT_STS (TXT_BASE + 0)
+#define   TXT_STS_SENTER_DONE_MASK              (1ul << 0)
+#define   TXT_STS_SEXIT_DONE_MASK               (1ul << 1)
+#define   TXT_STS_MEM_UNLOCK_STS_MASK           (1ul << 4)
+#define   TXT_STS_NODMAEN_MASK                  (1ul << 5)
+#define   TXT_STS_MEMCONFIGLOCK_STS_MASK        (1ul << 6)
+#define   TXT_STS_PRIVATEOPEN_STS_MASK          (1ul << 7)
+#define   TXT_STS_BLOCKMAP_STS_MASK             (1ul << 8)
+#define   TXT_STS_NODMACACHE_STS_MASK           (1ul << 9)
+#define   TXT_STS_NODMATABLEPROTECT_STS_MASK    (1ul << 10)
+
 #define TXT_ESTS (TXT_BASE + 8)
-#define  TXT_ESTS_TXT_RESET_STS (1 << 0)
+#define  TXT_ESTS_TXT_RESET_STS (1ul << 0)
 /*
  * Chapter 6
  * Intel Trusted Execution Technology Lab Handout
  */
-#define  TXT_ESTS_WAKE_ERROR_STS (1 << 6)
+#define  TXT_ESTS_WAKE_ERROR_STS (1ul << 6)
+
+#define TXT_THREADS_EXIST (TXT_BASE + 0x10)
+#define TXT_THREADS_JOIN (TXT_BASE + 0x20)
 
 #define TXT_ERROR (TXT_BASE + 0x30)
 #define  ACMERROR_TXT_VALID	(1ul << 31)
@@ -45,6 +58,7 @@
 #define  TXT_ERROR_MASK (0x3ff << 0)
 
 #define TXT_CMD_RESET (TXT_BASE + 0x38)
+#define TXT_CMD_OPEN_PRIVATE (TXT_BASE + 0x48)
 #define TXT_CMD_CLOSE_PRIVATE (TXT_BASE + 0x48)
 
 /* Present in Document Number: 315168-016. */
@@ -56,11 +70,25 @@
 #define  ACMSTS_MEM_CLEAR_POWER_DOWN	(1ull << 47)
 #define  ACMSTS_TXT_STARTUP_SUCCESS	(1ull << 30)
 
+#define TXT_POISON (TXT_BASE + 0xb0)
+
+#define TXT_VER_FSBIF (TXT_BASE + 0x100)
+#define  TXT_VER_PRODUCTION_FUSED (1ull << 31)
+
+#define TXT_DIDVID (TXT_BASE + 0x110)
+#define TXT_VER_EID (TXT_BASE + 0x118)
+
 #define TXT_CAPABILITIES (TXT_BASE + 0x200)
 #define  TXT_CAPABILITIES_DPR (1ull << 26)
 #define  TXT_CAPABILITIES_PMRC (1ull << 19)
 
 #define TXT_VER_QPIIF (TXT_BASE + 0x200)
+
+#define TXT_CMD_LOCK_MEM_CONFIG (TXT_BASE + 0x210)
+#define TXT_CMD_UNLOCK_MEM_CONFIG (TXT_BASE + 0x218)
+#define TXT_CMD_UNLOCK_MEMORY (TXT_BASE + 0x220)
+#define TXT_CMD_NODMA_EN (TXT_BASE + 0x230)
+#define TXT_CMD_NODMA_DIS (TXT_BASE + 0x238)
 
 #define TXT_SINIT_BASE (TXT_BASE + 0x270)
 #define TXT_SINIT_SIZE (TXT_BASE + 0x278)
@@ -92,16 +120,37 @@
 #define  TXT_DPR_LOCK_SIZE(x)	((x) << TXT_DPR_LOCK_SIZE_SHIFT)
 #define  TXT_DPR_TOP_ADDR(x)	((x) << TXT_DPR_TOP_ADDR_SHIFT)
 
+#define TXT_CMD_OPEN_LOCALITY1 (TXT_BASE + 0x380)
+#define TXT_CMD_CLOSE_LOCALITY1 (TXT_BASE + 0x388)
+#define TXT_CMD_OPEN_LOCALITY3 (TXT_BASE + 0x3a0)
+#define TXT_CMD_CLOSE_LOCALITY3 (TXT_BASE + 0x3a8)
+
 #define TXT_ACM_KEY_HASH (TXT_BASE + 0x400)
 #define  TXT_ACM_KEY_HASH_LEN 0x4
 
+#define TXT_TGFX_CMD (TXT_BASE + 0x504)
+#define TXT_TGA_BASE (TXT_BASE + 0x510)
+#define TXT_TGR_BASE (TXT_BASE + 0x518)
+#define TXT_TGTT_BASE (TXT_BASE + 0x520)
+
+#define TXT_TMSAC (TXT_BASE + 0x540)
+#define   TGTT_128MB (1ull << 0)
+#define   TGTT_256MB (1ull << 1)
+#define   TGTT_512MB (TGTT_128MB + TGTT_256MB)
+
+#define TXT_VER_FTIF (TXT_BASE + 0x800h
+#define TXT_PCH_DIDVID (TXT_BASE + 0x810h
+#define TXT_CMD_SECRETS (TXT_BASE + 0x8E0)
+#define TXT_CMD_NO_SECRETS (TXT_BASE + 0x8E8)
+
 #define TXT_E2STS (TXT_BASE + 0x8f0)
+#define  TXT_E2STS_SLP_ENTRY_ERROR_STS (1ull << 0)
 #define  TXT_E2STS_SECRET_STS (1ull << 1)
+#define  TXT_E2STS_BLOCK_MEM_STS (1ull << 2)
 
 /*
  * TXT MSRs
  */
-
 #define TXT_UNLOCK_MEMORY_MSR 0x2e6
 
 /*
@@ -140,8 +189,7 @@
 #define IA32_GETSEC_SMCTRL		7
 #define IA32_GETSEC_WAKEUP		8
 
-#define GETSEC_PARAMS_TXT_EXT (1ul << 5)
-#define GETSEC_PARAMS_TXT_EXT_CRTM_SUPPORT (1ul << 1)
+#define GETSEC_PARAMS_TXT_EXT_CRTM_SUPPORT (1ul << 5)
 #define GETSEC_PARAMS_TXT_EXT_MACHINE_CHECK (1ul << 6)
 
 /* ACM defines */
