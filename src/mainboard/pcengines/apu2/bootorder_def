@@ -27,4 +27,5 @@ com2_en0
 boosten1
 sd3mode0
 iommu0
+pciepm0
 watchdog0000
