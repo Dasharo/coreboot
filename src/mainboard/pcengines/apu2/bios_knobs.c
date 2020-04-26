@@ -272,7 +272,7 @@ u8 check_mpcie2_clk(void)
 	return 0;
 }
 
-u8 check_mpcie2_clk(void)
+u8 check_pciepm(void)
 {
 	u8 pciepm;
 
