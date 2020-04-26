@@ -13,8 +13,23 @@
 #include <intelblocks/cse.h>
 #endif
 
+_Static_assert(sizeof(bool) == 1, "Size of bool, must be 1");
+
+/* Keeping field names as in EDK to make things easier to follow, types are
+ * different though. */
+struct apu_config_t {
+	bool CorePerfBoost;
+	bool WatchdogEnable;
+	uint16_t WatchdogTimeout; /* in seconds */
+	bool PciePwrMgmt;
+} __packed;
+
 static const EFI_GUID dasharo_system_features_guid = {
 	0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+};
+
+static const EFI_GUID dasharo_apu_features_guid = {
+	0x6f4e051b, 0x1c10, 0x422a, { 0x98, 0xcf, 0x96, 0x2e, 0x78, 0x36, 0x5c, 0x74 }
 };
 
 /* Value of *var is not changed on failure, so it's safe to initialize it with
@@ -55,6 +70,42 @@ static enum cb_err read_bool_var(const char *var_name, bool *var)
 	}
 
 	return CB_ERR;
+}
+
+/* Never fails, just returns defaults on error. */
+static struct apu_config_t get_apu_config(void)
+{
+	static bool init_done;
+	static struct apu_config_t cfg;
+
+	if (init_done)
+		return cfg;
+
+	/* Start with defaults as in EDK. */
+	struct apu_config_t val = {
+		.CorePerfBoost = true,
+		.WatchdogEnable = false,
+		.WatchdogTimeout = 60,
+		.PciePwrMgmt = false,
+	};
+
+	cfg = val;
+
+	struct region_device rdev;
+	if (CONFIG(SMMSTORE_V2) && !smmstore_lookup_region(&rdev)) {
+		uint32_t size = sizeof(val);
+		enum cb_err ret = efi_fv_get_option(&rdev,
+						    &dasharo_apu_features_guid,
+						    "ApuConfig", &val, &size);
+		/* Deliberately allowing mismatched size of structure to allow
+		 * compatible changes. All known fields are initialized and
+		 * extra fields are irrelevant. */
+		if (ret == CB_SUCCESS)
+			cfg = val;
+	}
+
+	init_done = true;
+	return cfg;
 }
 
 enum cb_err dasharo_reset_options(void)
@@ -390,4 +441,9 @@ uint8_t dasharo_get_memory_profile(void)
 		read_u8_var("MemoryProfile", &profile);
 
 	return profile;
+}
+
+bool dasharo_apu_pcie_pm_enabled(void)
+{
+	return get_apu_config().PciePwrMgmt;
 }
