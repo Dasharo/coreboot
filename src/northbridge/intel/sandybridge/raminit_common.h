@@ -24,7 +24,7 @@
 #define NUM_CHANNELS	2
 #define NUM_SLOTRANKS	4
 #define NUM_SLOTS	2
-#define NUM_LANES	8
+#define NUM_LANES	9
 
 #define NO_RANKSEL		(~(1 << 16))
 #define IOSAV_MRS		(0x1f000)
@@ -43,7 +43,7 @@
 /*
  * WARNING: Do not forget to increase MRC_CACHE_VERSION when the saved data is changed!
  */
-#define MRC_CACHE_VERSION 3
+#define MRC_CACHE_VERSION 5
 
 typedef struct odtmap_st {
 	u16 rttwr;
@@ -132,6 +132,10 @@ typedef struct ramctr_timing_st {
 	int pi_code_offset;
 	int pi_coding_threshold;
 
+	bool ecc_supported;
+	bool ecc_forced;
+	bool ecc_enabled;
+	int lanes;	/* active lanes: 8 or 9 */
 	int edge_offset[3];
 	int timC_offset[3];
 
@@ -147,7 +151,7 @@ typedef struct ramctr_timing_st {
 
 #define SOUTHBRIDGE	PCI_DEV(0, 0x1f, 0)
 
-#define FOR_ALL_LANES for (lane = 0; lane < NUM_LANES; lane++)
+#define FOR_ALL_LANES for (lane = 0; lane < ctrl->lanes; lane++)
 #define FOR_ALL_CHANNELS for (channel = 0; channel < NUM_CHANNELS; channel++)
 #define FOR_ALL_POPULATED_RANKS for (slotrank = 0; slotrank < NUM_SLOTRANKS; slotrank++) if (ctrl->rankmap[channel] & (1 << slotrank))
 #define FOR_ALL_POPULATED_CHANNELS for (channel = 0; channel < NUM_CHANNELS; channel++) if (ctrl->rankmap[channel])
@@ -168,9 +172,8 @@ void dram_find_common_params(ramctr_timing *ctrl);
 void dram_xover(ramctr_timing *ctrl);
 void dram_timing_regs(ramctr_timing *ctrl);
 void dram_dimm_mapping(ramctr_timing *ctrl);
-void dram_dimm_set_mapping(ramctr_timing *ctrl);
+void dram_dimm_set_mapping(ramctr_timing *ctrl, int training);
 void dram_zones(ramctr_timing *ctrl, int training);
-unsigned int get_mem_min_tck(void);
 void dram_memorymap(ramctr_timing *ctrl, int me_uma_size);
 void dram_jedecreset(ramctr_timing *ctrl);
 int read_training(ramctr_timing *ctrl);
@@ -190,5 +193,9 @@ void set_normal_operation(ramctr_timing *ctrl);
 void final_registers(ramctr_timing *ctrl);
 void restore_timings(ramctr_timing *ctrl);
 int try_init_dram_ddr3(ramctr_timing *ctrl, int fast_boot, int s3resume, int me_uma_size);
+
+void channel_scrub(ramctr_timing *ctrl);
+bool get_host_ecc_cap(void);
+bool get_host_ecc_forced(void);
 
 #endif

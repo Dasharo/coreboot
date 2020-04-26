@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <cbmem.h>
 #include <console/console.h>
@@ -129,7 +118,7 @@ static void lpc_read_resources(struct device *dev)
 	res->size = 0x00001000;
 	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 
-	/* I2C devices (all 4 devices) */
+	/* I2C devices */
 	res = new_resource(dev, 4);
 	res->base = I2C_BASE_ADDRESS;
 	res->size = I2C_DEVICE_SIZE * I2C_DEVICE_COUNT;
@@ -325,7 +314,7 @@ static struct device_operations lpc_ops = {
 	.read_resources = lpc_read_resources,
 	.set_resources = lpc_set_resources,
 	.enable_resources = lpc_enable_resources,
-	.acpi_inject_dsdt_generator = southbridge_inject_dsdt,
+	.acpi_inject_dsdt = southbridge_inject_dsdt,
 	.write_acpi_tables = southbridge_write_acpi_tables,
 	.init = lpc_init,
 	.scan_bus = scan_static_bus,

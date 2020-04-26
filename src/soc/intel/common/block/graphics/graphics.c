@@ -18,6 +18,7 @@
 #include <device/mmio.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
+#include <drivers/intel/gma/i915.h>
 #include <intelblocks/graphics.h>
 #include <soc/pci_devs.h>
 
@@ -30,6 +31,20 @@ __weak void graphics_soc_init(struct device *dev)
 	 * along with pci_dev_init(dev)
 	 */
 	pci_dev_init(dev);
+}
+
+__weak const struct i915_gpu_controller_info *
+intel_igd_get_controller_info(struct device *device)
+{
+	return NULL;
+}
+
+static void gma_generate_ssdt(struct device *device)
+{
+	const struct i915_gpu_controller_info *gfx = intel_igd_get_controller_info(device);
+
+	if (gfx)
+		drivers_intel_gma_displays_ssdt_generate(gfx);
 }
 
 static int is_graphics_disabled(struct device *dev)
@@ -118,6 +133,7 @@ static const struct device_operations graphics_ops = {
 	.ops_pci		= &pci_dev_ops_pci,
 #if CONFIG(HAVE_ACPI_TABLES)
 	.write_acpi_tables	= graphics_soc_write_acpi_opregion,
+	.acpi_fill_ssdt		= gma_generate_ssdt,
 #endif
 	.scan_bus		= scan_generic_bus,
 };

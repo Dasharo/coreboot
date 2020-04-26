@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include "chip.h"
 #include <console/console.h>
@@ -18,6 +7,7 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <drivers/intel/gma/opregion.h>
+#include <drivers/intel/gma/i915.h>
 #include <reg_script.h>
 #include <soc/gfx.h>
 #include <soc/nvs.h>
@@ -87,12 +77,20 @@ void gma_set_gnvs_aslb(void *gnvs, uintptr_t aslb)
 		gnvs_ptr->aslb = aslb;
 }
 
+static void gma_generate_ssdt(struct device *dev)
+{
+	const struct soc_intel_braswell_config *chip = dev->chip_info;
+
+	drivers_intel_gma_displays_ssdt_generate(&chip->gfx);
+}
+
 static struct device_operations gfx_device_ops = {
 	.read_resources		= pci_dev_read_resources,
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
 	.init			= gfx_init,
 	.ops_pci		= &soc_pci_ops,
+	.acpi_fill_ssdt		= gma_generate_ssdt,
 };
 
 static const struct pci_driver gfx_driver __pci_driver = {

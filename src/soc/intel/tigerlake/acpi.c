@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <arch/acpi.h>
 #include <arch/acpigen.h>
@@ -178,7 +167,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_pm_tmr_blk.space_id = 1;
 	fadt->x_pm_tmr_blk.bit_width = fadt->pm_tmr_len * 8;
 	fadt->x_pm_tmr_blk.bit_offset = 0;
-	fadt->x_pm_tmr_blk.access_size = 0;
+	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
 	fadt->x_pm_tmr_blk.addrl = pmbase + PM1_TMR;
 	fadt->x_pm_tmr_blk.addrh = 0x0;
 
@@ -246,7 +235,7 @@ static unsigned long soc_fill_dmar(unsigned long current)
 			unsigned long tmp = current;
 
 			current += acpi_create_dmar_drhd(current, 0, 0, tbtbar);
-			current += acpi_create_dmar_ds_pci(current, 0, 7, i);
+			current += acpi_create_dmar_ds_pci_br(current, 0, 7, i);
 
 			acpi_dmar_drhd_fixup(tmp, current);
 		}
@@ -340,4 +329,41 @@ uint32_t acpi_fill_soc_wake(uint32_t generic_pm1_en,
 int soc_madt_sci_irq_polarity(int sci)
 {
 	return MP_IRQ_POLARITY_HIGH;
+}
+
+static int acpigen_soc_gpio_op(const char *op, unsigned int gpio_num)
+{
+	/* op (gpio_num) */
+	acpigen_emit_namestring(op);
+	acpigen_write_integer(gpio_num);
+	return 0;
+}
+
+static int acpigen_soc_get_gpio_state(const char *op, unsigned int gpio_num)
+{
+	/* Store (op (gpio_num), Local0) */
+	acpigen_write_store();
+	acpigen_soc_gpio_op(op, gpio_num);
+	acpigen_emit_byte(LOCAL0_OP);
+	return 0;
+}
+
+int acpigen_soc_read_rx_gpio(unsigned int gpio_num)
+{
+	return acpigen_soc_get_gpio_state("\\_SB.PCI0.GRXS", gpio_num);
+}
+
+int acpigen_soc_get_tx_gpio(unsigned int gpio_num)
+{
+	return acpigen_soc_get_gpio_state("\\_SB.PCI0.GTXS", gpio_num);
+}
+
+int acpigen_soc_set_tx_gpio(unsigned int gpio_num)
+{
+	return acpigen_soc_gpio_op("\\_SB.PCI0.STXS", gpio_num);
+}
+
+int acpigen_soc_clear_tx_gpio(unsigned int gpio_num)
+{
+	return acpigen_soc_gpio_op("\\_SB.PCI0.CTXS", gpio_num);
 }

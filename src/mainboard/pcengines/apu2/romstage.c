@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <stdint.h>
 #include <string.h>
@@ -54,15 +43,6 @@ void board_BeforeAgesa(struct sysinfo *cb)
 
 	/* Release GPIO32/33 for other uses. */
 	pm_write8(0xea, 1);
-
-	/*
-	 * Assert resets on the PCIe slots, since AGESA calls deassert callout
-	 * only. Only apu2 uses GPIOs to reset PCIe slots.
-	 */
-	if (CONFIG(BOARD_PCENGINES_APU2)) {
-		gpio1_write8(0xa, gpio1_read8(0xa) & ~(1 << 6));
-		gpio1_write8(0xe, gpio1_read8(0xe) & ~(1 << 6));
-	}
 }
 
 static void early_lpc_init(void)

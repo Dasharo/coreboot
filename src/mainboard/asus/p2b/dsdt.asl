@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <southbridge/intel/i82371eb/i82371eb.h>
 
@@ -55,9 +44,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 	 * 6: reserved
 	 * 7: reserved
 	 */
+	/* Guard these entries for the purpose of variant validation. They will be aligned later. */
 	Name (\_S0, Package () { 0x05, 0x05, 0x00, 0x00 })
+#if CONFIG(BOARD_ASUS_P2B)
 	Name (\_S1, Package () { 0x03, 0x03, 0x00, 0x00 })
 	Name (\_S5, Package () { 0x00, 0x00, 0x00, 0x00 })
+#endif
+#if CONFIG(BOARD_ASUS_P2B_LS)
+	Name (\_S5, Package () { 0x00, 0x06, 0x00, 0x00 })
+#endif
 
 	OperationRegion (GPOB, SystemIO, DEFAULT_PMBASE+DEVCTL, 0x10)
 	Field (GPOB, ByteAcc, NoLock, Preserve)
@@ -137,6 +132,12 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 				Package (0x04) { 0x0004FFFF, 2, LNKC, 0 },
 				Package (0x04) { 0x0004FFFF, 3, LNKD, 0 },
 
+#if CONFIG(BOARD_ASUS_P2B_LS)
+				Package (0x04) { 0x0006FFFF, 0, LNKD, 0 },
+				Package (0x04) { 0x0006FFFF, 1, LNKA, 0 },
+				Package (0x04) { 0x0006FFFF, 2, LNKB, 0 },
+				Package (0x04) { 0x0006FFFF, 3, LNKC, 0 },
+#endif
 				Package (0x04) { 0x0009FFFF, 0, LNKD, 0 },
 				Package (0x04) { 0x0009FFFF, 1, LNKA, 0 },
 				Package (0x04) { 0x0009FFFF, 2, LNKB, 0 },
@@ -147,6 +148,12 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 				Package (0x04) { 0x000AFFFF, 2, LNKA, 0 },
 				Package (0x04) { 0x000AFFFF, 3, LNKB, 0 },
 
+#if CONFIG(BOARD_ASUS_P2B_LS)
+				Package (0x04) { 0x0007FFFF, 0, LNKC, 0 },
+				Package (0x04) { 0x0007FFFF, 1, LNKD, 0 },
+				Package (0x04) { 0x0007FFFF, 2, LNKA, 0 },
+				Package (0x04) { 0x0007FFFF, 3, LNKB, 0 },
+#endif
 				Package (0x04) { 0x000BFFFF, 0, LNKB, 0 },
 				Package (0x04) { 0x000BFFFF, 1, LNKC, 0 },
 				Package (0x04) { 0x000BFFFF, 2, LNKD, 0 },
@@ -159,6 +166,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 
 			})
 			#include <northbridge/intel/i440bx/acpi/sb_pci0_crs.asl>
+			#include <southbridge/intel/i82371eb/acpi/isabridge.asl>
 
 			/* Begin southbridge block */
 			Device (PX40)
@@ -177,6 +185,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 				Device (SYSR)
 				{
 					Name (_HID, EisaId ("PNP0C02"))
+					Name (_UID, 0x02)
 					Method (_CRS, 0, NotSerialized)
 					{
 					Name (BUF1, ResourceTemplate ()

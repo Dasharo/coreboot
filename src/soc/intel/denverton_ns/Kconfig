@@ -32,6 +32,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_RESET
 	select PLATFORM_USES_FSP2_0
 	select IOAPIC
+	select HAVE_INTEL_FSP_REPO
 	select HAVE_SMI_HANDLER
 	select CACHE_MRC_SETTINGS
 	select PARALLEL_MP
@@ -80,12 +81,9 @@ config FSP_S_ADDR
 	  The memory location of the Intel FSP-S binary for this platform.
 
 config FSP_HEADER_PATH
-	string
 	default "3rdparty/fsp/DenvertonNSFspBinPkg/Include/"
 
 config FSP_FD_PATH
-	string
-	depends on FSP_USE_REPO
 	default "3rdparty/fsp/DenvertonNSFspBinPkg/FspBin/DenvertonNSFsp.fd"
 
 # CAR memory layout on DENVERTON_NS hardware:

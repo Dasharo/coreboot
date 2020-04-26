@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 #ifndef __VBOOT_VBOOT_COMMON_H__
 #define __VBOOT_VBOOT_COMMON_H__
 
@@ -48,12 +37,6 @@ int vboot_save_hash(void *digest, size_t digest_size);
  */
 int vboot_retrieve_hash(void *digest, size_t digest_size);
 
-/*
- * Determine if the platform is resuming from suspend. Returns 0 when
- * not resuming, > 0 if resuming, and < 0 on error.
- */
-int vboot_platform_is_resuming(void);
-
 /* ============================= VERSTAGE ================================== */
 /*
  * Main logic for verified boot. verstage_main() is just the core vboot logic.
@@ -78,7 +61,6 @@ static inline void vboot_run_logic(void) {}
 static inline int vboot_locate_cbfs(struct region_device *rdev) { return -1; }
 #endif
 
-void vboot_save_nvdata_only(struct vb2_context *ctx);
 void vboot_save_data(struct vb2_context *ctx);
 
 /*

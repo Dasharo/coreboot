@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <AGESA.h>
 #include <northbridge/amd/agesa/state_machine.h>
@@ -18,16 +7,6 @@
 #include <smp/node.h>
 #include <Fch/Fch.h>
 #include <amdblocks/acpimmio.h>
-
-#define PCIE_NIC_RESET_ID	1
-
-#if CONFIG(BOARD_PCENGINES_APU2)
-#define	PCIE_GFX_RESET_ID	55
-#define PCIE_PORT3_RESET_ID	51
-#else
-#define	PCIE_GFX_RESET_ID	PCIE_NIC_RESET_ID
-#define PCIE_PORT3_RESET_ID	PCIE_NIC_RESET_ID
-#endif
 
 static const PCIe_PORT_DESCRIPTOR PortList[] = {
 	{
@@ -38,7 +17,7 @@ static const PCIe_PORT_DESCRIPTOR PortList[] = {
 				PcieGenMaxSupported,
 				PcieGenMaxSupported,
 				AspmL0sL1,
-				PCIE_PORT3_RESET_ID,
+				0x01,
 				0)
 	},
 	/* Initialize Port descriptor (PCIe port, Lanes 1, PCI Device Number 2, ...) */
@@ -50,7 +29,7 @@ static const PCIe_PORT_DESCRIPTOR PortList[] = {
 				PcieGenMaxSupported,
 				PcieGenMaxSupported,
 				AspmL0sL1,
-				PCIE_NIC_RESET_ID,
+				0x02,
 				0)
 	},
 	/* Initialize Port descriptor (PCIe port, Lanes 2, PCI Device Number 2, ...) */
@@ -62,7 +41,7 @@ static const PCIe_PORT_DESCRIPTOR PortList[] = {
 				PcieGenMaxSupported,
 				PcieGenMaxSupported,
 				AspmL0sL1,
-				PCIE_NIC_RESET_ID,
+				0x03,
 				0)
 	},
 	/* Initialize Port descriptor (PCIe port, Lanes 3, PCI Device Number 2, ...) */
@@ -74,7 +53,7 @@ static const PCIe_PORT_DESCRIPTOR PortList[] = {
 				PcieGenMaxSupported,
 				PcieGenMaxSupported,
 				AspmL0sL1,
-				PCIE_NIC_RESET_ID,
+				0x04,
 				0)
 	},
 	/* Initialize Port descriptor (PCIe port, Lanes 4-7, PCI Device Number 4, ...) */
@@ -86,7 +65,7 @@ static const PCIe_PORT_DESCRIPTOR PortList[] = {
 				PcieGenMaxSupported,
 				PcieGenMaxSupported,
 				AspmL0sL1,
-				PCIE_GFX_RESET_ID,
+				0x05,
 				0)
 	}
 };

@@ -50,8 +50,8 @@ struct device_operations {
 #if CONFIG(HAVE_ACPI_TABLES)
 	unsigned long (*write_acpi_tables)(struct device *dev,
 		unsigned long start, struct acpi_rsdp *rsdp);
-	void (*acpi_fill_ssdt_generator)(struct device *dev);
-	void (*acpi_inject_dsdt_generator)(struct device *dev);
+	void (*acpi_fill_ssdt)(struct device *dev);
+	void (*acpi_inject_dsdt)(struct device *dev);
 	const char *(*acpi_name)(const struct device *dev);
 	/* Returns the optional _HID (Hardware ID) */
 	const char *(*acpi_hid)(const struct device *dev);
@@ -66,8 +66,8 @@ struct device_operations {
 /**
  * Standard device operations function pointers shims.
  */
-static inline void device_noop(struct device *dev) {}
-#define DEVICE_NOOP device_noop
+static inline void noop_read_resources(struct device *dev) {}
+static inline void noop_set_resources(struct device *dev) {}
 
 struct bus {
 
@@ -207,6 +207,19 @@ DEVTREE_CONST struct device *dev_find_path(
 struct device *dev_find_lapic(unsigned int apic_id);
 int dev_count_cpu(void);
 
+/*
+ * Signature for matching function that is used by dev_find_matching_device_on_bus() to decide
+ * if the device being considered is the one that matches the caller's criteria. This function
+ * is supposed to return true if the provided device matches the criteria, else false.
+ */
+typedef bool (*match_device_fn)(DEVTREE_CONST struct device *dev);
+/*
+ * Returns the first device on the bus that the match_device_fn returns true for. If no such
+ * device is found, it returns NULL.
+ */
+DEVTREE_CONST struct device *dev_find_matching_device_on_bus(const struct bus *bus,
+							match_device_fn fn);
+
 struct device *add_cpu_device(struct bus *cpu_bus, unsigned int apic_id,
 				int enabled);
 void set_cpu_topology(struct device *cpu, unsigned int node,
@@ -293,6 +306,10 @@ DEVTREE_CONST struct device *pcidev_path_on_root(pci_devfn_t devfn);
 DEVTREE_CONST struct device *pcidev_path_on_bus(unsigned int bus, pci_devfn_t devfn);
 DEVTREE_CONST struct device *pcidev_on_root(uint8_t dev, uint8_t fn);
 DEVTREE_CONST struct bus *pci_root_bus(void);
+/* Find PCI device with given D#:F# sitting behind the given PCI-to-PCI bridge device. */
+DEVTREE_CONST struct device *pcidev_path_behind_pci2pci_bridge(
+							const struct device *bridge,
+							pci_devfn_t devfn);
 
 /* To be deprecated, avoid using.
  *

@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 /*
  * The devicetree parser expects chip.h to reside directly in the path
@@ -21,6 +10,7 @@
 #define _SOC_CHIP_H_
 
 #include <stdint.h>
+#include <drivers/intel/gma/i915.h>
 #include <fsp/util.h>
 #include <intelblocks/lpc_lib.h>
 #include <soc/pci_devs.h>
@@ -169,6 +159,8 @@ struct soc_intel_braswell_config {
 	uint8_t  I2C4Frequency;
 	uint8_t  I2C5Frequency;
 	uint8_t  I2C6Frequency;
+
+	struct i915_gpu_controller_info gfx;
 };
 
 #endif /* _SOC_CHIP_H_ */

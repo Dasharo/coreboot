@@ -90,17 +90,17 @@ static struct pci_operations pci_ops = {
 };
 
 struct device_operations device_ops = {
-	.read_resources           = pci_dev_read_resources,
-	.set_resources            = pci_dev_set_resources,
-	.enable_resources         = pci_dev_enable_resources,
-	.init                     = wifi_pci_dev_init,
+	.read_resources   = pci_dev_read_resources,
+	.set_resources    = pci_dev_set_resources,
+	.enable_resources = pci_dev_enable_resources,
+	.init             = wifi_pci_dev_init,
 #if CONFIG(GENERATE_SMBIOS_TABLES)
-	.get_smbios_data          = smbios_write_wifi,
+	.get_smbios_data  = smbios_write_wifi,
 #endif
-	.ops_pci                  = &pci_ops,
+	.ops_pci          = &pci_ops,
 #if CONFIG(HAVE_ACPI_TABLES)
-	.acpi_name                = generic_wifi_acpi_name,
-	.acpi_fill_ssdt_generator = intel_wifi_fill_ssdt,
+	.acpi_name        = generic_wifi_acpi_name,
+	.acpi_fill_ssdt   = intel_wifi_fill_ssdt,
 #endif
 };
 
@@ -145,6 +145,14 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_HrP_9560_SERIES_2_WIFI,
 	PCI_DEVICE_ID_HrP_9560_SERIES_3_WIFI,
 	PCI_DEVICE_ID_HrP_9560_SERIES_4_WIFI,
+	PCI_DEVICE_ID_HrP_6SERIES_WIFI,
+	/* Cyclone Peak */
+	PCI_DEVICE_ID_CyP_6SERIES_WIFI,
+	/* Typhoon Peak */
+	PCI_DEVICE_ID_TyP_6SERIES_WIFI,
+	/* Garfiled Peak */
+	PCI_DEVICE_ID_GrP_6SERIES_1_WIFI,
+	PCI_DEVICE_ID_GrP_6SERIES_2_WIFI,
 	0
 };
 

@@ -29,7 +29,7 @@ static const struct pad_config gpio_table[] = {
 	/* A10 : WWAN_EN */
 	PAD_NC(GPP_A10, NONE),
 	/* A11 : TOUCH_RPT_EN */
-	PAD_NC(GPP_A11, NONE),
+	PAD_CFG_GPO(GPP_A11, 0, DEEP),
 	/* A12 : USB_OC1_N */
 	PAD_NC(GPP_A12, NONE),
 	/* A13 : USB_OC2_N */
@@ -154,11 +154,11 @@ static const struct pad_config gpio_table[] = {
 	/* D3  : WLAN_PCIE_WAKE_ODL */
 	PAD_CFG_GPI_SCI_LOW(GPP_D3, NONE, DEEP, EDGE_SINGLE),
 	/* D4  : TOUCH_INT_ODL */
-	PAD_NC(GPP_D4, NONE),
+	PAD_CFG_GPI_APIC(GPP_D4, NONE, PLTRST, LEVEL, INVERT),
 	/* D5  : TOUCH_RESET_L */
-	PAD_NC(GPP_D5, NONE),
+	PAD_CFG_GPO(GPP_D5, 0, DEEP),
 	/* D6  : EN_PP3300_TOUCH_S0 */
-	PAD_NC(GPP_D6, NONE),
+	PAD_CFG_GPO(GPP_D6, 0, DEEP),
 	/* D7  : EMR_INT_ODL */
 	PAD_NC(GPP_D7, NONE),
 	/* D8  : GPP_D8/GSPI2_CS0B/UART0A_RXD */
@@ -348,7 +348,7 @@ static const struct pad_config gpio_table[] = {
 
 
 	/* S0  : RAM_STRAP_4 */
-	PAD_NC(GPP_S0, NONE),
+	PAD_CFG_GPI(GPP_S0, UP_5K, DEEP),
 	/* S1  : RSVD_STRAP */
 	PAD_NC(GPP_S1, NONE),
 	/* S2  : DMIC1_CLK */
@@ -372,7 +372,7 @@ static const struct pad_config gpio_table[] = {
 	/* GPD2 : EC_AP_WAKE_ODL */
 	PAD_CFG_NF(GPD2, NONE, DEEP, NF1),
 	/* GPD3 : EC_AP_PWR_BTN_ODL */
-	PAD_CFG_NF(GPD3, NONE, DEEP, NF1),
+	PAD_CFG_NF(GPD3, UP_20K, DEEP, NF1),
 	/* GPD4 : AP_SLP_S3_L */
 	PAD_CFG_NF(GPD4, NONE, DEEP, NF1),
 	/* GPD5 : AP_SLP_S4_L */
@@ -416,6 +416,9 @@ static const struct pad_config early_gpio_table[] = {
 
 	/* H19 : BT_DISABLE_L */
 	PAD_CFG_GPO(GPP_H19, 0, DEEP),
+
+	/* S0  : RAM_STRAP_4 */
+	PAD_CFG_GPI(GPP_S0, UP_5K, DEEP),
 };
 
 const struct pad_config *__weak variant_gpio_table(size_t *num)

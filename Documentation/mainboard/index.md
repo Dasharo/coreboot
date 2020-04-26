@@ -58,7 +58,7 @@ The boards in this section are not real mainboards, but emulators.
 
 ### EliteBook series
 
-- [EliteBook common](hp/elitebook_series.md)
+- [HP Laptops with KBC1126 EC](hp/hp_kbc1126_laptops.md)
 - [EliteBook 8760w](hp/8760w.md)
 
 ## Intel
@@ -74,10 +74,6 @@ The boards in this section are not real mainboards, but emulators.
 - [R60](lenovo/r60.md)
 - [T4xx common](lenovo/t4xx_series.md)
 - [X2xx common](lenovo/x2xx_series.md)
-
-## Libretrend
-
-- [LT1000](libretrend/lt1000.md)
 
 ### Arrandale series
 
@@ -106,6 +102,10 @@ The boards in this section are not real mainboards, but emulators.
 ### Haswell series
 
 - [T440p](lenovo/t440p.md)
+
+## Libretrend
+
+- [LT1000](libretrend/lt1000.md)
 
 ## MSI
 

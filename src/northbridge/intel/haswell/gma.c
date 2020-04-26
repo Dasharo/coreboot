@@ -1,17 +1,7 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
+#include <commonlib/helpers.h>
 #include <arch/io.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
@@ -347,14 +337,39 @@ static void gma_setup_panel(struct device *dev)
 		gtt_write(PCH_PP_DIVISOR, reg32);
 	}
 
-	/* Enable Backlight if needed */
-	if (conf->gpu_cpu_backlight) {
-		gtt_write(BLC_PWM_CPU_CTL2, BLC_PWM2_ENABLE);
-		gtt_write(BLC_PWM_CPU_CTL, conf->gpu_cpu_backlight);
-	}
-	if (conf->gpu_pch_backlight) {
-		gtt_write(BLC_PWM_PCH_CTL1, BLM_PCH_PWM_ENABLE);
-		gtt_write(BLC_PWM_PCH_CTL2, conf->gpu_pch_backlight);
+	/* Enforce the PCH PWM function, as so does Linux.
+	   The CPU PWM controls are disabled after reset.  */
+	if (conf->gpu_pch_backlight_pwm_hz) {
+		/* Reference clock is either 24MHz or 135MHz. We can choose
+		   either a 16 or a 128 step increment. Use 16 if we would
+		   have less than 100 steps otherwise. */
+		const unsigned int refclock = CONFIG(INTEL_LYNXPOINT_LP) ? 24*MHz : 135*MHz;
+		const unsigned int hz_limit = refclock / 128 / 100;
+		unsigned int pwm_increment, pwm_period;
+		u32 south_chicken2;
+
+		south_chicken2 = gtt_read(SOUTH_CHICKEN2);
+		if (conf->gpu_pch_backlight_pwm_hz > hz_limit) {
+			pwm_increment = 16;
+			south_chicken2 |= LPT_PWM_GRANULARITY;
+		} else {
+			pwm_increment = 128;
+			south_chicken2 &= ~LPT_PWM_GRANULARITY;
+		}
+		gtt_write(SOUTH_CHICKEN2, south_chicken2);
+
+		pwm_period = refclock / pwm_increment / conf->gpu_pch_backlight_pwm_hz;
+		printk(BIOS_INFO,
+			"GMA: Setting backlight PWM frequency to %uMHz / %u / %u = %uHz\n",
+			refclock / MHz, pwm_increment, pwm_period,
+			DIV_ROUND_CLOSEST(refclock, pwm_increment * pwm_period));
+
+		/* Start with a 50% duty cycle. */
+		gtt_write(BLC_PWM_PCH_CTL2, pwm_period << 16 | pwm_period / 2);
+
+		gtt_write(BLC_PWM_PCH_CTL1,
+			(conf->gpu_pch_backlight_polarity == GPU_BACKLIGHT_POLARITY_LOW) << 29 |
+			BLM_PCH_OVERRIDE_ENABLE | BLM_PCH_PWM_ENABLE);
 	}
 
 	/* Get display,pipeline,and DDI registers into a basic sane state */
@@ -498,24 +513,11 @@ static void gma_func0_init(struct device *dev)
 	intel_gma_restore_opregion();
 }
 
-const struct i915_gpu_controller_info *intel_gma_get_controller_info(void)
+static void gma_generate_ssdt(struct device *dev)
 {
-	struct device *dev = pcidev_on_root(2, 0);
-	if (!dev) {
-		return NULL;
-	}
-	struct northbridge_intel_haswell_config *chip = dev->chip_info;
-	return &chip->gfx;
-}
+	const struct northbridge_intel_haswell_config *chip = dev->chip_info;
 
-static void gma_ssdt(struct device *device)
-{
-	const struct i915_gpu_controller_info *gfx = intel_gma_get_controller_info();
-	if (!gfx) {
-		return;
-	}
-
-	drivers_intel_gma_displays_ssdt_generate(gfx);
+	drivers_intel_gma_displays_ssdt_generate(&chip->gfx);
 }
 
 static unsigned long gma_write_acpi_tables(struct device *const dev, unsigned long current,
@@ -547,15 +549,13 @@ static struct pci_operations gma_pci_ops = {
 };
 
 static struct device_operations gma_func0_ops = {
-	.read_resources           = pci_dev_read_resources,
-	.set_resources            = pci_dev_set_resources,
-	.enable_resources         = pci_dev_enable_resources,
-	.init                     = gma_func0_init,
-	.acpi_fill_ssdt_generator = gma_ssdt,
-	.scan_bus                 = NULL,
-	.enable                   = NULL,
-	.ops_pci                  = &gma_pci_ops,
-	.write_acpi_tables        = gma_write_acpi_tables,
+	.read_resources		= pci_dev_read_resources,
+	.set_resources		= pci_dev_set_resources,
+	.enable_resources	= pci_dev_enable_resources,
+	.init			= gma_func0_init,
+	.acpi_fill_ssdt		= gma_generate_ssdt,
+	.ops_pci		= &gma_pci_ops,
+	.write_acpi_tables	= gma_write_acpi_tables,
 };
 
 static const unsigned short pci_device_ids[] = {

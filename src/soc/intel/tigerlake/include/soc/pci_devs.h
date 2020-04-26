@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #ifndef _SOC_TIGERLAKE_PCI_DEVS_H_
 #define _SOC_TIGERLAKE_PCI_DEVS_H_
@@ -89,11 +78,6 @@
 #define  PCH_DEV_SRAM		_PCH_DEV(XHCI, 2)
 #define  PCH_DEV_CNVI_WIFI	_PCH_DEV(XHCI, 3)
 
-#if CONFIG(SOC_INTEL_JASPERLAKE)
-#define  PCH_DEVFN_SDCARD	_PCH_DEVFN(XHCI, 5)
-#define  PCH_DEV_SDCARD		_PCH_DEV(XHCI, 5)
-#endif
-
 #define PCH_DEV_SLOT_SIO3	0x15
 #define  PCH_DEVFN_I2C0		_PCH_DEVFN(SIO3, 0)
 #define  PCH_DEVFN_I2C1		_PCH_DEVFN(SIO3, 1)
@@ -129,12 +113,6 @@
 #define  PCH_DEV_I2C4		_PCH_DEV(SIO4, 0)
 #define  PCH_DEV_I2C5		_PCH_DEV(SIO4, 1)
 #define  PCH_DEV_UART2		_PCH_DEV(SIO4, 2)
-
-#if CONFIG(SOC_INTEL_JASPERLAKE)
-#define PCH_DEV_SLOT_STORAGE	0x1a
-#define  PCH_DEVFN_EMMC		_PCH_DEVFN(STORAGE, 0)
-#define  PCH_DEV_EMMC		_PCH_DEV(STORAGE, 0)
-#endif
 
 #define PCH_DEV_SLOT_PCIE	0x1c
 #define  PCH_DEVFN_PCIE1	_PCH_DEVFN(PCIE, 0)

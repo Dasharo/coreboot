@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <bootblock_common.h>
 #include <stdint.h>
@@ -46,7 +35,7 @@ void bootblock_mainboard_early_init(void)
 {
 	int lvds_3v = 0; /* 0 (5V) or 1 (3V3) */
 	int dis_bl_inv = 1; /* backlight inversion: 1 = disabled, 0 = enabled */
-	pnp_devfn_t dev = PNP_DEV(0x2e, 0x9);
+	const pnp_devfn_t dev = PNP_DEV(0x2e, 0x9);
 	pnp_enter_conf_state(dev);
 	pnp_write_config(dev, 0x29, 0x02); /* Pins 119, 120 are GPIO21, 20 */
 	pnp_write_config(dev, 0x30, 0x03); /* Enable GPIO2+3 */

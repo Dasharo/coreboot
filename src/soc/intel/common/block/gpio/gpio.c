@@ -89,7 +89,8 @@ static inline size_t gpio_group_index(const struct pad_community *comm,
 			return i;
 		}
 	}
-
+	printk(BIOS_ERR, "%s: pad %d is not found in community %s!\n",
+			__func__, relative_pad, comm->name);
 	assert(0);
 
 	return i;
@@ -155,7 +156,7 @@ static void gpio_configure_owner(const struct pad_config *cfg,
 	 * needs GPIO driver ownership.  Set the bit if GPIO driver ownership
 	 * requested, otherwise clear the bit.
 	 */
-	if (cfg->pad_config[1] & PAD_CFG1_GPIO_DRIVER)
+	if (cfg->pad_config[1] & PAD_CFG_OWN_GPIO_DRIVER)
 		hostsw_own |= gpio_bitmask_within_group(comm, pin);
 	else
 		hostsw_own &= ~gpio_bitmask_within_group(comm, pin);

@@ -21,6 +21,9 @@ chip soc/intel/cannonlake
 	}"
 
 	# USB configuration
+	# NOTE: This only applies to Puff,
+	# usb2_ports[1] and usb2_ports[3] were swapped on
+	# reference schematics after Puff has been built.
 	register "usb2_ports[0]" = "USB2_PORT_MID(OC2)"        # Type-A Port 2
 	register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC_SKIP)" # Type-C Port
 	register "usb2_ports[2]" = "{
@@ -161,8 +164,8 @@ chip soc/intel/cannonlake
 		},
 		.i2c[4] = {
 			.speed = I2C_SPEED_FAST,
-			.rise_time_ns = 0,
-			.fall_time_ns = 0,
+			.rise_time_ns = 60,
+			.fall_time_ns = 60,
 		},
 	}"
 
@@ -191,31 +194,37 @@ chip soc/intel/cannonlake
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Type-A Front Left""
 						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(0, 0)"
 						device usb 2.0 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Type-C Port Rear""
 						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(1, 3)"
 						device usb 2.1 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Type-A Front Right""
 						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(0, 1)"
 						device usb 2.2 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Type-A Rear Right""
 						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
 						device usb 2.3 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Type-A Rear Middle""
 						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(1, 1)"
 						device usb 2.4 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Type-A Rear Left""
 						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(1, 0)"
 						device usb 2.5 on end
 					end
 					chip drivers/usb/acpi
@@ -224,31 +233,37 @@ chip soc/intel/cannonlake
 					chip drivers/usb/acpi
 						register "desc" = ""USB3 Type-A Front Left""
 						register "type" = "UPC_TYPE_USB3_A"
+						register "group" = "ACPI_PLD_GROUP(0, 0)"
 						device usb 3.0 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB3 Type-A Front Right""
 						register "type" = "UPC_TYPE_USB3_A"
+						register "group" = "ACPI_PLD_GROUP(0, 1)"
 						device usb 3.1 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB3 Type-A Rear Right""
 						register "type" = "UPC_TYPE_USB3_A"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
 						device usb 3.2 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB3 Type-C Rear""
 						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(1, 3)"
 						device usb 3.3 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB3 Type-A Rear Left""
 						register "type" = "UPC_TYPE_USB3_A"
+						register "group" = "ACPI_PLD_GROUP(1, 0)"
 						device usb 3.4 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB3 Type-A Rear Middle""
 						register "type" = "UPC_TYPE_USB3_A"
+						register "group" = "ACPI_PLD_GROUP(1, 1)"
 						device usb 3.5 on end
 					end
 				end

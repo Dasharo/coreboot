@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <commonlib/helpers.h>
 #include <stdint.h>
@@ -75,9 +64,7 @@ typedef struct global_nvs_t {
 	u8	tlst; /* 0x3d - Display Toggle List Pointer */
 	u8	cadl; /* 0x3e - currently attached devices */
 	u8	padl; /* 0x3f - previously attached devices */
-	u16	rsvd14[3];
-	u8	ndid; /* 0x46 - number of device ids */
-	u32	did[5]; /* 0x47 - 5b device id 1..5 */
+	u8	rsvd14[27];
 	/* TPM support */
 	u8	tpmp; /* 0x5b - TPM Present */
 	u8	tpme; /* 0x5c - TPM Enable */

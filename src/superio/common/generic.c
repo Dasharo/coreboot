@@ -37,8 +37,7 @@ static void generic_ssdt(struct device *dev)
 	const char *name = acpi_device_name(dev);
 
 	if (!scope || !name) {
-		printk(BIOS_ERR, "%s: Missing ACPI path/scope\n",
-		       dev_path(dev));
+		printk(BIOS_ERR, "%s: Missing ACPI path/scope\n", dev_path(dev));
 		return;
 	}
 
@@ -298,11 +297,10 @@ static const char *generic_acpi_name(const struct device *dev)
 static struct device_operations ops = {
 	.read_resources   = generic_read_resources,
 	.set_resources    = generic_set_resources,
-	.enable_resources = DEVICE_NOOP,
 	.scan_bus	  = scan_static_bus,
 #if CONFIG(HAVE_ACPI_TABLES)
-	.acpi_fill_ssdt_generator = generic_ssdt,
-	.acpi_name = generic_acpi_name,
+	.acpi_fill_ssdt	  = generic_ssdt,
+	.acpi_name	  = generic_acpi_name,
 #endif
 };
 

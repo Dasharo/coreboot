@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #ifndef SOC_INTEL_COMMON_BLOCK_GRAPHICS_H
 #define SOC_INTEL_COMMON_BLOCK_GRAPHICS_H
@@ -43,6 +32,10 @@ void graphics_soc_init(struct device *dev);
  */
 uintptr_t graphics_soc_write_acpi_opregion(struct device *device,
 		uintptr_t current, struct acpi_rsdp *rsdp);
+
+/* i915 controller info for ACPI backlight controls */
+const struct i915_gpu_controller_info *
+intel_igd_get_controller_info(struct device *device);
 
 /* Graphics MMIO register read/write APIs */
 uint32_t graphics_gtt_read(unsigned long reg);

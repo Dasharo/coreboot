@@ -15,6 +15,7 @@
 
 #include <cbfs.h>
 #include <assert.h>
+#include <post.h>
 #include <device/pci.h>
 #include <soc/acpi.h>
 #include <soc/ramstage.h>
@@ -482,14 +483,12 @@ static struct device_operations pci_domain_ops = {
 };
 
 static struct device_operations cpu_bus_ops = {
-	.read_resources = DEVICE_NOOP,
-	.set_resources = DEVICE_NOOP,
-	.enable_resources = DEVICE_NOOP,
+	.read_resources = noop_read_resources,
+	.set_resources = noop_set_resources,
 	.init = xeon_sp_init_cpus,
-	.scan_bus = NULL,
 #if CONFIG(HAVE_ACPI_TABLES)
 	/* defined in src/soc/intel/common/block/acpi/acpi.c */
-	.acpi_fill_ssdt_generator = generate_cpu_entries,
+	.acpi_fill_ssdt = generate_cpu_entries,
 #endif
 };
 
