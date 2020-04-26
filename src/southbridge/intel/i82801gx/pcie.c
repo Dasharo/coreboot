@@ -1,17 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; version 2 of
- * the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -141,8 +129,7 @@ static void root_port_init_config(struct device *dev)
 
 	rp = root_port_number(dev);
 	if (rp > rpc.num_ports) {
-		printk(BIOS_ERR, "Found Root Port %d, expecting %d\n",
-		       rp, rpc.num_ports);
+		printk(BIOS_ERR, "Found Root Port %d, expecting %d\n", rp, rpc.num_ports);
 		return;
 	}
 
@@ -182,8 +169,7 @@ static void root_port_commit_config(struct device *dev)
 	int coalesce = 0;
 
 	if (dev->chip_info != NULL) {
-		struct southbridge_intel_i82801gx_config *config
-			= dev->chip_info;
+		struct southbridge_intel_i82801gx_config *config = dev->chip_info;
 		coalesce = config->pcie_port_coalesce;
 	}
 
@@ -196,16 +182,14 @@ static void root_port_commit_config(struct device *dev)
 		pcie_dev = rpc.ports[i];
 
 		if (pcie_dev == NULL) {
-			printk(BIOS_ERR, "Root Port %d device is NULL?\n",
-			       i + 1);
+			printk(BIOS_ERR, "Root Port %d device is NULL?\n", i + 1);
 			continue;
 		}
 
 		if (pcie_dev->enabled)
 			continue;
 
-		printk(BIOS_DEBUG, "%s: Disabling device\n",
-		       dev_path(pcie_dev));
+		printk(BIOS_DEBUG, "%s: Disabling device\n", dev_path(pcie_dev));
 
 		/* Disable this device if possible */
 		i82801gx_enable(pcie_dev);
@@ -234,8 +218,7 @@ static void root_port_commit_config(struct device *dev)
 		}
 	}
 
-	printk(BIOS_SPEW, "ICH: RPFN 0x%08x -> 0x%08x\n",
-	       rpc.orig_rpfn, rpc.new_rpfn);
+	printk(BIOS_SPEW, "ICH: RPFN 0x%08x -> 0x%08x\n", rpc.orig_rpfn, rpc.new_rpfn);
 	RCBA32(RPFN) = rpc.new_rpfn;
 }
 

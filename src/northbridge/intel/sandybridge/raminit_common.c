@@ -16,7 +16,6 @@
 #include "raminit_tables.h"
 #include "sandybridge.h"
 
-/* FIXME: no ECC support */
 /* FIXME: no support for 3-channel chipsets */
 
 /* length:      [1..4] */
@@ -309,12 +308,21 @@ void dram_dimm_mapping(ramctr_timing *ctrl)
 	}
 }
 
-void dram_dimm_set_mapping(ramctr_timing *ctrl)
+void dram_dimm_set_mapping(ramctr_timing *ctrl, int training)
 {
 	int channel;
+	u32 ecc;
+
+	if (ctrl->ecc_enabled)
+		ecc = training ? (1 << 24) : (3 << 24);
+	else
+		ecc = 0;
+
 	FOR_ALL_CHANNELS {
-		MCHBAR32(MAD_DIMM(channel)) = ctrl->mad_dimm[channel];
+		MCHBAR32(MAD_DIMM(channel)) = ctrl->mad_dimm[channel] | ecc;
 	}
+
+	//udelay(10); /* TODO: Might be needed for ECC configurations; so far works without. */
 }
 
 void dram_zones(ramctr_timing *ctrl, int training)
@@ -350,75 +358,6 @@ void dram_zones(ramctr_timing *ctrl, int training)
 	}
 }
 
-#define DEFAULT_TCK	TCK_800MHZ
-
-unsigned int get_mem_min_tck(void)
-{
-	u32 reg32;
-	u8 rev;
-	const struct device *dev;
-	const struct northbridge_intel_sandybridge_config *cfg = NULL;
-
-	dev = pcidev_path_on_root(PCI_DEVFN(0, 0));
-	if (dev)
-		cfg = dev->chip_info;
-
-	/* If this is zero, it just means devicetree.cb didn't set it */
-	if (!cfg || cfg->max_mem_clock_mhz == 0) {
-
-		if (CONFIG(NATIVE_RAMINIT_IGNORE_MAX_MEM_FUSES))
-			return TCK_1333MHZ;
-
-		rev = pci_read_config8(HOST_BRIDGE, PCI_DEVICE_ID);
-
-		if ((rev & BASE_REV_MASK) == BASE_REV_SNB) {
-			/* Read Capabilities A Register DMFC bits */
-			reg32 = pci_read_config32(HOST_BRIDGE, CAPID0_A);
-			reg32 &= 0x7;
-
-			switch (reg32) {
-			case 7: return TCK_533MHZ;
-			case 6: return TCK_666MHZ;
-			case 5: return TCK_800MHZ;
-			/* Reserved */
-			default:
-				break;
-			}
-		} else {
-			/* Read Capabilities B Register DMFC bits */
-			reg32 = pci_read_config32(HOST_BRIDGE, CAPID0_B);
-			reg32 = (reg32 >> 4) & 0x7;
-
-			switch (reg32) {
-			case 7: return TCK_533MHZ;
-			case 6: return TCK_666MHZ;
-			case 5: return TCK_800MHZ;
-			case 4: return TCK_933MHZ;
-			case 3: return TCK_1066MHZ;
-			case 2: return TCK_1200MHZ;
-			case 1: return TCK_1333MHZ;
-			/* Reserved */
-			default:
-				break;
-			}
-		}
-		return DEFAULT_TCK;
-	} else {
-		if (cfg->max_mem_clock_mhz >= 1066)
-			return TCK_1066MHZ;
-		else if (cfg->max_mem_clock_mhz >= 933)
-			return TCK_933MHZ;
-		else if (cfg->max_mem_clock_mhz >= 800)
-			return TCK_800MHZ;
-		else if (cfg->max_mem_clock_mhz >= 666)
-			return TCK_666MHZ;
-		else if (cfg->max_mem_clock_mhz >= 533)
-			return TCK_533MHZ;
-		else
-			return TCK_400MHZ;
-	}
-}
-
 #define DEFAULT_PCI_MMIO_SIZE 2048
 
 static unsigned int get_mmio_size(void)
@@ -435,6 +374,32 @@ static unsigned int get_mmio_size(void)
 		return DEFAULT_PCI_MMIO_SIZE;
 	else
 		return cfg->pci_mmio_size;
+}
+
+/*
+ * Returns the ECC mode the NB is running at. It takes precedence over ECC capability.
+ * The ME/PCU/.. has the ability to change this.
+ * Return 0: ECC is optional
+ * Return 1: ECC is forced
+ */
+bool get_host_ecc_forced(void)
+{
+	/* read Capabilities A Register */
+	const u32 reg32 = pci_read_config32(HOST_BRIDGE, CAPID0_A);
+	return !!(reg32 & (1 << 24));
+}
+
+/*
+ * Returns the ECC capability.
+ * The ME/PCU/.. has the ability to change this.
+ * Return 0: ECC is disabled
+ * Return 1: ECC is possible
+ */
+bool get_host_ecc_cap(void)
+{
+	/* read Capabilities A Register */
+	const u32 reg32 = pci_read_config32(HOST_BRIDGE, CAPID0_A);
+	return !(reg32 & (1 << 25));
 }
 
 void dram_memorymap(ramctr_timing *ctrl, int me_uma_size)
@@ -2094,13 +2059,13 @@ static int test_320c(ramctr_timing *ctrl, int channel, int slotrank)
 				lanes_ok |= 1 << lane;
 		}
 		ctr++;
-		if (lanes_ok == ((1 << NUM_LANES) - 1))
+		if (lanes_ok == ((1 << ctrl->lanes) - 1))
 			break;
 	}
 
 	ctrl->timings[channel][slotrank] = saved_rt;
 
-	return lanes_ok != ((1 << NUM_LANES) - 1);
+	return lanes_ok != ((1 << ctrl->lanes) - 1);
 }
 
 static void fill_pattern5(ramctr_timing *ctrl, int channel, int patno)
@@ -2978,6 +2943,46 @@ int channel_test(ramctr_timing *ctrl)
 			}
 	}
 	return 0;
+}
+
+void channel_scrub(ramctr_timing *ctrl)
+{
+	int channel, slotrank, row, rowsize;
+
+	FOR_ALL_POPULATED_CHANNELS FOR_ALL_POPULATED_RANKS {
+		rowsize = 1 << ctrl->info.dimm[channel][slotrank >> 1].row_bits;
+		for (row = 0; row < rowsize; row += 16) {
+
+			wait_for_iosav(channel);
+
+			/* DRAM command ACT */
+			MCHBAR32(IOSAV_n_SP_CMD_CTRL_ch(channel, 0)) = IOSAV_ACT;
+			MCHBAR32(IOSAV_n_SUBSEQ_CTRL_ch(channel, 0)) =
+				(MAX((ctrl->tFAW >> 2) + 1, ctrl->tRRD) << 10)
+				| 1 | (ctrl->tRCD << 16);
+			MCHBAR32(IOSAV_n_SP_CMD_ADDR_ch(channel, 0)) =
+				row | 0x00060000 | (slotrank << 24);
+			MCHBAR32(IOSAV_n_ADDR_UPDATE_ch(channel, 0)) = 0x00000241;
+
+			/* DRAM command WR */
+			MCHBAR32(IOSAV_n_SP_CMD_CTRL_ch(channel, 1)) = IOSAV_WR;
+			MCHBAR32(IOSAV_n_SUBSEQ_CTRL_ch(channel, 1)) = 0x08281081;
+			MCHBAR32(IOSAV_n_SP_CMD_ADDR_ch(channel, 1)) = row | (slotrank << 24);
+			MCHBAR32(IOSAV_n_ADDR_UPDATE_ch(channel, 1)) = 0x00000242;
+
+			/* DRAM command PRE */
+			MCHBAR32(IOSAV_n_SP_CMD_CTRL_ch(channel, 2)) = IOSAV_PRE;
+			MCHBAR32(IOSAV_n_SUBSEQ_CTRL_ch(channel, 2)) = 0x00280c01;
+			MCHBAR32(IOSAV_n_SP_CMD_ADDR_ch(channel, 2)) =
+				0x00060400 | (slotrank << 24);
+			MCHBAR32(IOSAV_n_ADDR_UPDATE_ch(channel, 2)) = 0x00000240;
+
+			/* execute command queue */
+			MCHBAR32(IOSAV_SEQ_CTL_ch(channel)) = IOSAV_RUN_ONCE(3);
+
+			wait_for_iosav(channel);
+		}
+	}
 }
 
 void set_scrambling_seed(ramctr_timing *ctrl)

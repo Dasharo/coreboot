@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <arch/acpi.h>
 #include <baseboard/variants.h>
@@ -115,8 +104,9 @@ static void mainboard_set_power_limits(config_t *conf)
 {
 	enum usb_chg_type type;
 	u32 watts;
+	u16 volts_mv, current_ma;
 	u32 pl2, psyspl2;
-	int rv = google_chromeec_get_usb_pd_power_info(&type, &watts);
+	int rv = google_chromeec_get_usb_pd_power_info(&type, &current_ma, &volts_mv);
 	uint8_t sku = board_sku_id();
 	const uint32_t u42_mask = (1 << FIZZ_SKU_ID_I7_U42) |
 				  (1 << FIZZ_SKU_ID_I5_U42) |
@@ -137,6 +127,7 @@ static void mainboard_set_power_limits(config_t *conf)
 			psyspl2 = FIZZ_PSYSPL2_U42;
 	} else {
 		/* Detected TypeC.  Base on max value of adapter */
+		watts = ((u32)volts_mv * current_ma) / 1000000;
 		psyspl2 = watts;
 		conf->tdp_psyspl3 = SET_PSYSPL2(psyspl2);
 		/* set max possible time window */
@@ -230,7 +221,7 @@ static void mainboard_enable(struct device *dev)
 	mainboard_set_power_limits(conf);
 
 	dev->ops->init = mainboard_init;
-	dev->ops->acpi_inject_dsdt_generator = chromeos_dsdt_generator;
+	dev->ops->acpi_inject_dsdt = chromeos_dsdt_generator;
 	dev->ops->write_acpi_tables = mainboard_write_acpi_tables;
 }
 

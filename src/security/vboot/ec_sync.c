@@ -1,15 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <assert.h>
 #include <cbfs.h>
@@ -60,7 +50,7 @@ void vboot_sync_ec(void)
 	ctx->flags |= VB2_CONTEXT_EC_SYNC_SUPPORTED;
 
 	retval = vb2api_ec_sync(ctx);
-	vboot_save_nvdata_only(ctx);
+	vboot_save_data(ctx);
 
 	switch (retval) {
 	case VB2_SUCCESS:

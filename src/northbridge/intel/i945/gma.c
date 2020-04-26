@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <bootmode.h>
@@ -755,25 +744,11 @@ static void gma_func1_init(struct device *dev)
 		pci_write_config8(dev, 0xf4, 0xff);
 }
 
-const struct i915_gpu_controller_info *
-intel_gma_get_controller_info(void)
+static void gma_generate_ssdt(struct device *device)
 {
-	struct device *dev = pcidev_on_root(0x2, 0);
-	if (!dev)
-		return NULL;
-	struct northbridge_intel_i945_config *chip = dev->chip_info;
-	if (!chip)
-		return NULL;
-	return &chip->gfx;
-}
+	const struct northbridge_intel_i945_config *chip = device->chip_info;
 
-static void gma_ssdt(struct device *device)
-{
-	const struct i915_gpu_controller_info *gfx = intel_gma_get_controller_info();
-	if (!gfx)
-		return;
-
-	drivers_intel_gma_displays_ssdt_generate(gfx);
+	drivers_intel_gma_displays_ssdt_generate(&chip->gfx);
 }
 
 static void gma_func0_read_resources(struct device *dev)
@@ -829,9 +804,7 @@ static struct device_operations gma_func0_ops = {
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
 	.init			= gma_func0_init,
-	.acpi_fill_ssdt_generator = gma_ssdt,
-	.scan_bus		= 0,
-	.enable			= 0,
+	.acpi_fill_ssdt		= gma_generate_ssdt,
 	.disable		= gma_func0_disable,
 	.ops_pci		= &gma_pci_ops,
 	.acpi_name		= gma_acpi_name,
@@ -844,8 +817,6 @@ static struct device_operations gma_func1_ops = {
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
 	.init			= gma_func1_init,
-	.scan_bus		= 0,
-	.enable			= 0,
 	.ops_pci		= &gma_pci_ops,
 };
 

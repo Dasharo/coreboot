@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <amdblocks/acpimmio.h>
 #include <device/mmio.h>
@@ -32,8 +21,8 @@
 #include <cbfs.h>
 #include <fmap.h>
 #include <commonlib/region.h>
-#include <security/vboot/vboot_crtm.h>
-#include <security/vboot/misc.h>
+#include <security/tpm/tspi.h>
+#include <security/tpm/tspi/crtm.h>
 #include <southbridge/amd/pi/hudson/chip.h>
 #include <cpu/amd/mtrr.h>
 #include <spd_bin.h>

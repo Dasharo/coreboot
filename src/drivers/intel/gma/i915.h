@@ -1,15 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #ifndef INTEL_I915_H
 #define INTEL_I915_H 1
@@ -88,15 +78,17 @@ u32 gtt_read(u32 reg);
 struct i915_gpu_controller_info
 {
 	int use_spread_spectrum_clock;
-	u32 backlight;
 	int ndid;
 	u32 did[5];
 };
 
+#define GMA_STATIC_DISPLAYS(ssc) {			\
+	.use_spread_spectrum_clock = (ssc),		\
+	.ndid = 3, .did = { 0x0100, 0x0240, 0x0410, }	\
+}
+
 void
 drivers_intel_gma_displays_ssdt_generate(const struct i915_gpu_controller_info *conf);
-const struct i915_gpu_controller_info *
-intel_gma_get_controller_info(void);
 
 /* vbt.c */
 struct device;

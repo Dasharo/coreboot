@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #ifndef __VBOOT_MISC_H__
 #define __VBOOT_MISC_H__
@@ -58,7 +47,7 @@ int vboot_locate_firmware(struct vb2_context *ctx, struct region_device *fw);
 static inline int verification_should_run(void)
 {
 	if (CONFIG(VBOOT_SEPARATE_VERSTAGE))
-		return ENV_VERSTAGE;
+		return ENV_SEPARATE_VERSTAGE;
 	else if (CONFIG(VBOOT_STARTS_IN_ROMSTAGE))
 		return ENV_ROMSTAGE;
 	else if (CONFIG(VBOOT_STARTS_IN_BOOTBLOCK))

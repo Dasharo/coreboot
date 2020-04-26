@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <arch/acpi.h>
 #include <arch/acpi_device.h>
@@ -228,12 +217,11 @@ static const char *wilco_ec_acpi_name(const struct device *dev)
 }
 
 static struct device_operations ops = {
-	.init				= wilco_ec_init,
-	.read_resources			= wilco_ec_read_resources,
-	.enable_resources		= DEVICE_NOOP,
-	.set_resources			= DEVICE_NOOP,
-	.acpi_fill_ssdt_generator	= wilco_ec_fill_ssdt_generator,
-	.acpi_name			= wilco_ec_acpi_name,
+	.init			= wilco_ec_init,
+	.read_resources		= wilco_ec_read_resources,
+	.set_resources		= noop_set_resources,
+	.acpi_fill_ssdt		= wilco_ec_fill_ssdt_generator,
+	.acpi_name		= wilco_ec_acpi_name,
 };
 
 static struct pnp_info info[] = {

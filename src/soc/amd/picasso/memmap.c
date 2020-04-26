@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #define __SIMPLE_DEVICE__
 
@@ -27,26 +16,6 @@
 #include <soc/iomap.h>
 #include <amdblocks/acpimmio.h>
 
-#if CONFIG(ACPI_BERT)
- #if CONFIG_SMM_TSEG_SIZE == 0x0
-  #define BERT_REGION_MAX_SIZE 0x100000
- #else
-  /* SMM_TSEG_SIZE must stay on a boundary appropriate for its granularity */
-  #define BERT_REGION_MAX_SIZE CONFIG_SMM_TSEG_SIZE
- #endif
-#else
- #define BERT_REGION_MAX_SIZE 0
-#endif
-
-void bert_reserved_region(void **start, size_t *size)
-{
-	if (CONFIG(ACPI_BERT))
-		*start = cbmem_top();
-	else
-		start = NULL;
-	*size = BERT_REGION_MAX_SIZE;
-}
-
 void *cbmem_top_chipset(void)
 {
 	msr_t tom = rdmsr(TOP_MEM);
@@ -56,13 +25,12 @@ void *cbmem_top_chipset(void)
 
 	/* 8MB alignment to keep MTRR usage low */
 	return (void *)ALIGN_DOWN(restore_top_of_low_cacheable()
-			- CONFIG_SMM_TSEG_SIZE
-			- BERT_REGION_MAX_SIZE, 8*MiB);
+			- CONFIG_SMM_TSEG_SIZE, 8*MiB);
 }
 
 static uintptr_t smm_region_start(void)
 {
-	return (uintptr_t)cbmem_top() + BERT_REGION_MAX_SIZE;
+	return (uintptr_t)cbmem_top();
 }
 
 static size_t smm_region_size(void)

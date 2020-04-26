@@ -108,16 +108,16 @@ static void pch_lpc_set_resources(struct device *dev)
 }
 
 static struct device_operations device_ops = {
-	.read_resources			= pch_lpc_read_resources,
-	.set_resources			= pch_lpc_set_resources,
-	.enable_resources		= pci_dev_enable_resources,
+	.read_resources		= pch_lpc_read_resources,
+	.set_resources		= pch_lpc_set_resources,
+	.enable_resources	= pci_dev_enable_resources,
 #if CONFIG(HAVE_ACPI_TABLES)
-	.write_acpi_tables		= southbridge_write_acpi_tables,
-	.acpi_inject_dsdt_generator	= southbridge_inject_dsdt,
+	.write_acpi_tables	= southbridge_write_acpi_tables,
+	.acpi_inject_dsdt	= southbridge_inject_dsdt,
 #endif
-	.init				= lpc_soc_init,
-	.scan_bus			= scan_static_bus,
-	.ops_pci			= &pci_dev_ops_pci,
+	.init			= lpc_soc_init,
+	.scan_bus		= scan_static_bus,
+	.ops_pci		= &pci_dev_ops_pci,
 };
 
 static const unsigned short pci_device_ids[] = {
@@ -147,11 +147,17 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_LWB_C627,
 	PCI_DEVICE_ID_INTEL_LWB_C628,
 	PCI_DEVICE_ID_INTEL_LWB_C629,
+	PCI_DEVICE_ID_INTEL_LWB_C621A,
+	PCI_DEVICE_ID_INTEL_LWB_C627A,
+	PCI_DEVICE_ID_INTEL_LWB_C629A,
 	PCI_DEVICE_ID_INTEL_LWB_C624_SUPER,
 	PCI_DEVICE_ID_INTEL_LWB_C627_SUPER_1,
 	PCI_DEVICE_ID_INTEL_LWB_C621_SUPER,
 	PCI_DEVICE_ID_INTEL_LWB_C627_SUPER_2,
 	PCI_DEVICE_ID_INTEL_LWB_C628_SUPER,
+	PCI_DEVICE_ID_INTEL_LWB_C621A_SUPER,
+	PCI_DEVICE_ID_INTEL_LWB_C627A_SUPER,
+	PCI_DEVICE_ID_INTEL_LWB_C629A_SUPER,
 	PCI_DEVICE_ID_INTEL_KBP_H_Q270,
 	PCI_DEVICE_ID_INTEL_KBP_H_H270,
 	PCI_DEVICE_ID_INTEL_KBP_H_Z270,
