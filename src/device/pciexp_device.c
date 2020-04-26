@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <commonlib/helpers.h>
+#include <dasharo/options.h>
 #include <delay.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -638,21 +639,24 @@ static void pciexp_tune_dev(struct device *dev)
 	if (!root_cap)
 		return;
 
-	/* Check for and enable Common Clock */
-	if (CONFIG(PCIEXP_COMMON_CLOCK))
-		pciexp_enable_common_clock(root, root_cap, dev, cap);
+	if (!CONFIG(VENDOR_PCENGINES) || CONFIG(BOARD_PCENGINES_APU5) ||
+	    dasharo_apu_pcie_pm_enabled()) {
+		/* Check for and enable Common Clock */
+		if (CONFIG(PCIEXP_COMMON_CLOCK))
+			pciexp_enable_common_clock(root, root_cap, dev, cap);
 
-	/* Check if per port CLK req is supported by endpoint*/
-	if (CONFIG(PCIEXP_CLK_PM))
-		pciexp_enable_clock_power_pm(dev, cap);
+		/* Check if per port CLK req is supported by endpoint*/
+		if (CONFIG(PCIEXP_CLK_PM))
+			pciexp_enable_clock_power_pm(dev, cap);
 
-	/* Enable L1 Sub-State when both root port and endpoint support */
-	if (CONFIG(PCIEXP_L1_SUB_STATE))
-		pciexp_config_L1_sub_state(root, dev);
+		/* Enable L1 Sub-State when both root port and endpoint support */
+		if (CONFIG(PCIEXP_L1_SUB_STATE))
+			pciexp_config_L1_sub_state(root, dev);
 
-	/* Check for and enable ASPM */
-	if (CONFIG(PCIEXP_ASPM))
-		pciexp_enable_aspm(root, root_cap, dev, cap);
+		/* Check for and enable ASPM */
+		if (CONFIG(PCIEXP_ASPM))
+			pciexp_enable_aspm(root, root_cap, dev, cap);
+	}
 
 	/* Clear PCIe Lane Error Status */
 	if (CONFIG(PCIEXP_LANE_ERR_STAT_CLEAR))

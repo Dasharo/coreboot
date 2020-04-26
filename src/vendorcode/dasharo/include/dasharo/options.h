@@ -217,4 +217,13 @@ bool get_uuid_from_efivar(uint8_t *uuid);
  */
 uint8_t dasharo_get_memory_profile(void);
 
+/* Looks up PciePwrMgmt field in APU/"ApuConfig" to know whether to enable
+ * Clock Power Management, ASPM L0s and L1 features on PCI Express ports.
+ *
+ * Result:
+ *  - true  - PM features on PCI express ports are enabled
+ *  - false - PM features on PCI express ports are disabled
+ */
+bool dasharo_apu_pcie_pm_enabled(void);
+
 #endif /* DASHARO_OPTIONS_H */
