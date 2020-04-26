@@ -13,6 +13,23 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
+## [v4.11.0.6] - 2020-04-26
+### Changed
+- rebased with official coreboot repository commit d6f7ec5
+- [updated sortbootorder to v4.6.18](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4618---2020-04-26)
+- reverted changes to ACPI CPU definitions causing BSD systems to
+  [not probe CPU frequency driver](https://github.com/pcengines/coreboot/issues/389)
+- reverted changes with PCIe reset logic causing
+  [mPCIe2 slot connected modules to not appear in OS](https://github.com/pcengines/coreboot/issues/388)
+
+### Added
+- PCIe power management features runtime configuration
+- [IOMMU IVRS generation expanded with IVHD type 11h for newer Xen](https://review.coreboot.org/c/coreboot/+/40042)
+
+### Fixed
+- [memtest hang on apu1](https://github.com/pcengines/coreboot/issues/395)
+- [TPM2 detection on FreeBSD 12.1](https://review.coreboot.org/c/coreboot/+/39699)
+
 ## [v4.11.0.5] - 2020-03-27
 ### Changed
 - rebased with official coreboot repository commit 90557f4
