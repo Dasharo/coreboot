@@ -454,7 +454,7 @@ static void pciexp_tune_dev(struct device *dev)
 	if (!root_cap)
 		return;
 
-	if (check_pciepm()) {
+	if (check_pciepm() || CONFIG(BOARD_PCENGINES_APU1)) {
 		/* Check for and enable Common Clock */
 		if (CONFIG(PCIEXP_COMMON_CLOCK))
 			pciexp_enable_common_clock(root, root_cap, dev, cap);
