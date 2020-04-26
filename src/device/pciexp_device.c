@@ -9,6 +9,8 @@
 #include <device/pci_ops.h>
 #include <device/pciexp.h>
 
+#include "mainboard/pcengines/apu2/bios_knobs.h"
+
 unsigned int pciexp_find_extended_cap(struct device *dev, unsigned int cap)
 {
 	unsigned int this_cap_offset, next_cap_offset;
@@ -452,21 +454,23 @@ static void pciexp_tune_dev(struct device *dev)
 	if (!root_cap)
 		return;
 
-	/* Check for and enable Common Clock */
-	if (CONFIG(PCIEXP_COMMON_CLOCK))
-		pciexp_enable_common_clock(root, root_cap, dev, cap);
+	if (check_pciepm()) {
+		/* Check for and enable Common Clock */
+		if (CONFIG(PCIEXP_COMMON_CLOCK))
+			pciexp_enable_common_clock(root, root_cap, dev, cap);
 
-	/* Check if per port CLK req is supported by endpoint*/
-	if (CONFIG(PCIEXP_CLK_PM))
-		pciexp_enable_clock_power_pm(dev, cap);
+		/* Check if per port CLK req is supported by endpoint*/
+		if (CONFIG(PCIEXP_CLK_PM))
+			pciexp_enable_clock_power_pm(dev, cap);
 
-	/* Enable L1 Sub-State when both root port and endpoint support */
-	if (CONFIG(PCIEXP_L1_SUB_STATE))
-		pciexp_config_L1_sub_state(root, dev);
+		/* Enable L1 Sub-State when both root port and endpoint support */
+		if (CONFIG(PCIEXP_L1_SUB_STATE))
+			pciexp_config_L1_sub_state(root, dev);
 
-	/* Check for and enable ASPM */
-	if (CONFIG(PCIEXP_ASPM))
-		pciexp_enable_aspm(root, root_cap, dev, cap);
+		/* Check for and enable ASPM */
+		if (CONFIG(PCIEXP_ASPM))
+			pciexp_enable_aspm(root, root_cap, dev, cap);
+	}
 
 	/* Adjust Max_Payload_Size of link ends. */
 	pciexp_set_max_payload_size(root, root_cap, dev, cap);
