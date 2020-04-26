@@ -24,6 +24,7 @@ u8 check_uartc(void);
 u8 check_uartd(void);
 u8 check_ehci0(void);
 u8 check_mpcie2_clk(void);
+u8 check_pciepm(void);
 int check_com2(void);
 int check_boost(void);
 u8 check_sd3_mode(void);
