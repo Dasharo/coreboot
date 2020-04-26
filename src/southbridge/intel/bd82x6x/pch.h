@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #ifndef SOUTHBRIDGE_INTEL_BD82X6X_PCH_H
 #define SOUTHBRIDGE_INTEL_BD82X6X_PCH_H
@@ -178,7 +167,6 @@ void early_usb_init(const struct southbridge_usb_port *portmap);
 #define PCH_IDE_DEV		PCI_DEV(0, 0x1f, 1)
 #define PCH_SATA_DEV		PCI_DEV(0, 0x1f, 2)
 #define PCH_SATA2_DEV		PCI_DEV(0, 0x1f, 5)
-#define INTR_LN			0x3c
 #define IDE_TIM_PRI		0x40	/* IDE timings, primary */
 #define   IDE_DECODE_ENABLE	(1 << 15)
 #define   IDE_SITRE		(1 << 14)

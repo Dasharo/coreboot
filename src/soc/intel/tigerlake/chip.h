@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #ifndef _SOC_CHIP_H_
 #define _SOC_CHIP_H_
@@ -107,9 +96,6 @@ struct soc_intel_tigerlake_config {
 	uint8_t PchHdaAudioLinkDmicEnable[MAX_HD_AUDIO_DMIC_LINKS];
 	uint8_t PchHdaAudioLinkSspEnable[MAX_HD_AUDIO_SSP_LINKS];
 	uint8_t PchHdaAudioLinkSndwEnable[MAX_HD_AUDIO_SNDW_LINKS];
-	uint8_t PchHdaIDispLinkTmode;
-	uint8_t PchHdaIDispLinkFrequency;
-	uint8_t PchHdaIDispCodecDisconnect;
 
 	/* PCIe Root Ports */
 	uint8_t PcieRpEnable[CONFIG_MAX_ROOT_PORTS];
@@ -129,14 +115,14 @@ struct soc_intel_tigerlake_config {
 		L1_SS_L1_2,
 	} PcieRpL1Substates[CONFIG_MAX_ROOT_PORTS];
 
+	/* PCIe LTR: Enable (1) / Disable (0) */
+	uint8_t PcieRpLtrEnable[CONFIG_MAX_ROOT_PORTS];
+
+	/* PCIE RP Advanced Error Report: Enable (1) / Disable (0) */
+	uint8_t PcieRpAdvancedErrorReporting[CONFIG_MAX_ROOT_PORTS];
+
 	/* SMBus */
 	uint8_t SmbusEnable;
-
-	/* eMMC and SD */
-	uint8_t ScsEmmcHs400Enabled;
-
-	/* Enable if SD Card Power Enable Signal is Active High */
-	uint8_t SdCardPowerEnableActiveHigh;
 
 	/* Integrated Sensor */
 	uint8_t PchIshEnable;
@@ -215,9 +201,6 @@ struct soc_intel_tigerlake_config {
 		DEBUG_INTERFACE_TRACEHUB = (1 << 5),
 	} debug_interface_flag;
 
-	/* GPIO SD card detect pin */
-	unsigned int sdcard_cd_gpio;
-
 	/* Enable Pch iSCLK */
 	uint8_t pch_isclk;
 
@@ -230,6 +213,15 @@ struct soc_intel_tigerlake_config {
 	/* Tcss */
 	uint8_t TcssXhciEn;
 	uint8_t TcssXdciEn;
+
+	/*
+	 * SOC Aux orientation override:
+	 * This is a bitfield that corresponds to up to 4 TCSS ports on TGL.
+	 * Even numbered bits (0, 2, 4, 6) control the retimer being handled by SOC.
+	 * Odd numbered bits (1, 3, 5, 7) control the orientation of the physical aux lines
+	 * on the motherboard.
+	 */
+	uint16_t TcssAuxOri;
 
 	/*
 	 * Override GPIO PM configuration:

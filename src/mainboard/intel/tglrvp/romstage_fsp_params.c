@@ -1,23 +1,12 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 #include <assert.h>
 #include <console/console.h>
 #include <fsp/api.h>
 #include <soc/romstage.h>
 #include <spd_bin.h>
 #include <string.h>
-#include <soc/meminit_tgl.h>
+#include <soc/meminit.h>
 #include <baseboard/variants.h>
 #include <cbfs.h>
 #include "board_id.h"
@@ -56,13 +45,14 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 {
 	FSP_M_CONFIG *mem_cfg = &mupd->FspmConfig;
 
-	const struct mb_lpddr4x_cfg *mem_config = variant_memory_params();
+	const struct lpddr4x_cfg *mem_config = variant_memory_params();
 	const struct spd_info spd_info = {
-		.read_type = READ_SPD_CBFS,
-		.spd_spec.spd_index = mainboard_get_spd_index(),
+		.topology = MEMORY_DOWN,
+		.md_spd_loc = SPD_CBFS,
+		.cbfs_index = mainboard_get_spd_index(),
 	};
 	bool half_populated = false;
 
-	meminit_lpddr4x_dimm0(mem_cfg, mem_config, &spd_info, half_populated);
+	meminit_lpddr4x(mem_cfg, mem_config, &spd_info, half_populated);
 
 }

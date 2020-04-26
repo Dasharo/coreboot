@@ -99,6 +99,10 @@
 /* IOSF Gasket Backbone Local Clock Gating Enable */
 #define IOSFGBLCGE		(1 << 0)
 
+#define CFG_XHCPMCTRL		0x80a4
+/* BIT[7:4] LFPS periodic sampling for USB3 Ports */
+#define LFPS_PM_DISABLE_MASK    0xFFFFFF0F
+
 const char *soc_acpi_name(const struct device *dev)
 {
 	if (dev->path.type == DEVICE_PATH_DOMAIN)
@@ -214,19 +218,15 @@ static void pci_domain_set_resources(struct device *dev)
 static struct device_operations pci_domain_ops = {
 	.read_resources = pci_domain_read_resources,
 	.set_resources = pci_domain_set_resources,
-	.enable_resources = NULL,
-	.init = NULL,
 	.scan_bus = pci_domain_scan_bus,
 	.acpi_name = &soc_acpi_name,
 };
 
 static struct device_operations cpu_bus_ops = {
-	.read_resources = DEVICE_NOOP,
-	.set_resources = DEVICE_NOOP,
-	.enable_resources = DEVICE_NOOP,
+	.read_resources = noop_read_resources,
+	.set_resources = noop_set_resources,
 	.init = apollolake_init_cpus,
-	.scan_bus = NULL,
-	.acpi_fill_ssdt_generator = generate_cpu_entries,
+	.acpi_fill_ssdt = generate_cpu_entries,
 };
 
 static void enable_dev(struct device *dev)
@@ -833,6 +833,30 @@ static int check_xdci_enable(void)
 	return !!dev->enabled;
 }
 
+static void disable_xhci_lfps_pm(void)
+{
+	struct soc_intel_apollolake_config *cfg;
+
+	cfg = config_of_soc();
+
+	if (cfg->disable_xhci_lfps_pm) {
+		void *addr;
+		const struct resource *res;
+		uint32_t reg;
+		struct device *xhci_dev = PCH_DEV_XHCI;
+
+		res = find_resource(xhci_dev, PCI_BASE_ADDRESS_0);
+		addr = (void *)(uintptr_t)(res->base + CFG_XHCPMCTRL);
+		reg = read32(addr);
+		printk(BIOS_DEBUG, "XHCI PM: control reg=0x%x.\n", reg);
+		if (reg) {
+			reg &= LFPS_PM_DISABLE_MASK;
+			write32(addr, reg);
+			printk(BIOS_INFO, "XHCI PM: Disable xHCI LFPS as configured in devicetree.\n");
+		}
+	}
+}
+
 void platform_fsp_notify_status(enum fsp_notify_phase phase)
 {
 	if (phase == END_OF_FIRMWARE) {
@@ -880,6 +904,9 @@ void platform_fsp_notify_status(enum fsp_notify_phase phase)
 				IOSFGBLCGE;
 			write32(cfg, reg);
 		}
+
+		/* Disable XHCI LFPS power management if the option in dev tree is set. */
+		disable_xhci_lfps_pm();
 	}
 }
 

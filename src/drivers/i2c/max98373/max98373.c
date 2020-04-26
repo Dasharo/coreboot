@@ -1,15 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <arch/acpi.h>
 #include <arch/acpi_device.h>
@@ -85,11 +75,10 @@ static const char *max98373_acpi_name(const struct device *dev)
 }
 
 static struct device_operations max98373_ops = {
-	.read_resources		  = DEVICE_NOOP,
-	.set_resources		  = DEVICE_NOOP,
-	.enable_resources	  = DEVICE_NOOP,
-	.acpi_name		  = max98373_acpi_name,
-	.acpi_fill_ssdt_generator = max98373_fill_ssdt,
+	.read_resources		= noop_read_resources,
+	.set_resources		= noop_set_resources,
+	.acpi_name		= max98373_acpi_name,
+	.acpi_fill_ssdt		= max98373_fill_ssdt,
 };
 
 static void max98373_enable(struct device *dev)

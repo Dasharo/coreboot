@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/mmio.h>
@@ -111,8 +100,7 @@ static int normalize(int channel_offset, u8 *mediumcoarse, u8 *fine)
 		return -1;
 	}
 
-	set_receive_enable(channel_offset, *mediumcoarse & 3,
-			   *mediumcoarse >> 2);
+	set_receive_enable(channel_offset, *mediumcoarse & 3, *mediumcoarse >> 2);
 
 	MCHBAR8(C0WL0REOST + channel_offset) = *fine;
 
@@ -134,8 +122,7 @@ static int find_preamble(int channel_offset, u8 *mediumcoarse,
 		}
 		*mediumcoarse -= 4;
 
-		set_receive_enable(channel_offset, *mediumcoarse & 3,
-				   *mediumcoarse >> 2);
+		set_receive_enable(channel_offset, *mediumcoarse & 3, *mediumcoarse >> 2);
 
 		reg32 = sample_strobes(channel_offset, sysinfo);
 
@@ -166,8 +153,7 @@ static int add_quarter_clock(int channel_offset, u8 *mediumcoarse, u8 *fine)
 			return -1;
 		}
 
-		set_receive_enable(channel_offset, *mediumcoarse & 3,
-				   *mediumcoarse >> 2);
+		set_receive_enable(channel_offset, *mediumcoarse & 3, *mediumcoarse >> 2);
 	} else {
 		*fine += 0x80;
 	}
@@ -187,8 +173,7 @@ static int find_strobes_low(int channel_offset, u8 *mediumcoarse, u8 *fine,
 	for (;;) {
 		MCHBAR8(C0WL0REOST + channel_offset) = *fine;
 
-		set_receive_enable(channel_offset, *mediumcoarse & 3,
-				   *mediumcoarse >> 2);
+		set_receive_enable(channel_offset, *mediumcoarse & 3, *mediumcoarse >> 2);
 
 		rcvenmt = sample_strobes(channel_offset, sysinfo);
 
@@ -221,8 +206,7 @@ static int find_strobes_edge(int channel_offset, u8 *mediumcoarse, u8 *fine,
 	printk(BIOS_SPEW, "  %s()\n", __func__);
 
 	counter = 8;
-	set_receive_enable(channel_offset, *mediumcoarse & 3,
-			   *mediumcoarse >> 2);
+	set_receive_enable(channel_offset, *mediumcoarse & 3, *mediumcoarse >> 2);
 
 	for (;;) {
 		MCHBAR8(C0WL0REOST + channel_offset) = *fine;
@@ -260,8 +244,7 @@ static int find_strobes_edge(int channel_offset, u8 *mediumcoarse, u8 *fine,
 	*fine -= 7;
 	if (*fine >= 0xf9) {
 		*mediumcoarse -= 2;
-		set_receive_enable(channel_offset, *mediumcoarse & 3,
-				   *mediumcoarse >> 2);
+		set_receive_enable(channel_offset, *mediumcoarse & 3, *mediumcoarse >> 2);
 	}
 
 	*fine &= ~(1 << 3);
@@ -276,8 +259,7 @@ static int find_strobes_edge(int channel_offset, u8 *mediumcoarse, u8 *fine,
  * a lot of if ()s so let's just pass 0 or 0x80 for the channel offset.
  */
 
-static int receive_enable_autoconfig(int channel_offset,
-				     struct sys_info *sysinfo)
+static int receive_enable_autoconfig(int channel_offset, struct sys_info *sysinfo)
 {
 	u8 mediumcoarse;
 	u8 fine;

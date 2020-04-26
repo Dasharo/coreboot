@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <cpu/x86/smm.h>
 #include <device/device.h>
@@ -136,12 +125,7 @@ static void nc_read_resources(struct device *dev)
 
 static struct device_operations nc_ops = {
 	.read_resources   = nc_read_resources,
-	.acpi_fill_ssdt_generator = generate_cpu_entries,
-	.set_resources    = NULL,
-	.enable_resources = NULL,
-	.init             = NULL,
-	.enable           = NULL,
-	.scan_bus         = NULL,
+	.acpi_fill_ssdt   = generate_cpu_entries,
 	.ops_pci          = &soc_pci_ops,
 };
 

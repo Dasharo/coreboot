@@ -26,8 +26,7 @@ uint8_t npcd378_hwm_read(const uint16_t iobase, const uint16_t reg)
 	return reg8;
 }
 
-void npcd378_hwm_write(const uint16_t iobase, const uint16_t reg,
-		       const uint8_t val)
+void npcd378_hwm_write(const uint16_t iobase, const uint16_t reg, const uint8_t val)
 {
 	outb((reg >> 8) & 0xf, iobase + 0xff);
 	outb(val, iobase + (reg & 0xff));
@@ -65,8 +64,7 @@ static void npcd378_init(struct device *dev)
 	case NPCD378_HWM:
 		res = find_resource(dev, PNP_IDX_IO0);
 		if (!res || !res->base) {
-			printk(BIOS_ERR, "NPCD378: LDN%u IOBASE not set.\n",
-			       NPCD378_HWM);
+			printk(BIOS_ERR, "NPCD378: LDN%u IOBASE not set.\n", NPCD378_HWM);
 			break;
 		}
 
@@ -424,16 +422,16 @@ static void npcd378_fill_ssdt_generator(struct device *dev)
 #endif
 
 static struct device_operations ops = {
-	.read_resources             = pnp_read_resources,
-	.set_resources              = pnp_set_resources,
-	.enable_resources           = pnp_enable_resources,
-	.enable                     = pnp_alt_enable,
-	.init                       = npcd378_init,
-	.ops_pnp_mode               = &pnp_conf_mode_8787_aa,
+	.read_resources   = pnp_read_resources,
+	.set_resources    = pnp_set_resources,
+	.enable_resources = pnp_enable_resources,
+	.enable           = pnp_alt_enable,
+	.init             = npcd378_init,
+	.ops_pnp_mode     = &pnp_conf_mode_8787_aa,
 #if CONFIG(HAVE_ACPI_TABLES)
-	.acpi_fill_ssdt_generator   = npcd378_fill_ssdt_generator,
-	.acpi_name                  = superio_common_ldn_acpi_name,
-	.acpi_hid                   = npcd378_acpi_hid,
+	.acpi_fill_ssdt   = npcd378_fill_ssdt_generator,
+	.acpi_name        = superio_common_ldn_acpi_name,
+	.acpi_hid         = npcd378_acpi_hid,
 #endif
 };
 

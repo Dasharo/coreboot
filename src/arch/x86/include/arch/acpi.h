@@ -290,6 +290,33 @@ typedef struct acpi_ivrs {
 	struct acpi_ivrs_ivhd ivhd;
 } __packed acpi_ivrs_t;
 
+/* IVHD Type 11h IOMMU Attributes */
+typedef struct ivhd11_iommu_attr {
+	uint32_t reserved1 : 13;
+	uint32_t perf_counters : 4;
+	uint32_t perf_counter_banks : 6;
+	uint32_t msi_num_ppr : 5;
+	uint32_t reserved2 : 4;
+} __packed ivhd11_iommu_attr_t;
+
+/* IVRS IVHD (I/O Virtualization Hardware Definition Block) Type 11h */
+typedef struct acpi_ivrs_ivhd_11 {
+	uint8_t type;
+	uint8_t flags;
+	uint16_t length;
+	uint16_t device_id;
+	uint16_t capability_offset;
+	uint32_t iommu_base_low;
+	uint32_t iommu_base_high;
+	uint16_t pci_segment_group;
+	uint16_t iommu_info;
+	struct ivhd11_iommu_attr iommu_attributes;
+	uint32_t efr_reg_image_low;
+	uint32_t efr_reg_image_high;
+	uint32_t reserved[2];
+	uint8_t entry[0];
+} __packed acpi_ivrs_ivhd11_t;
+
 enum dev_scope_type {
 	SCOPE_PCI_ENDPOINT = 1,
 	SCOPE_PCI_SUB = 2,
@@ -439,6 +466,26 @@ typedef struct acpi_madt_irqoverride {
 	u16 flags;			/* MPS INTI flags */
 } __packed acpi_madt_irqoverride_t;
 
+/* MADT: Processor Local x2APIC Structure */
+typedef struct acpi_madt_lx2apic {
+	u8 type;			/* Type (9) */
+	u8 length;			/* Length in bytes (16) */
+	u16 reserved;
+	u32 x2apic_id;			/* Local x2APIC ID */
+	u32 flags;			/* Same as Local APIC flags */
+	u32 processor_id;		/* ACPI processor ID */
+} __packed acpi_madt_lx2apic_t;
+
+/* MADT: Processor Local x2APIC NMI Structure */
+typedef struct acpi_madt_lx2apic_nmi {
+	u8 type;			/* Type (10) */
+	u8 length;			/* Length in bytes (12) */
+	u16 flags;			/* Same as MPS INTI flags */
+	u32 processor_id;		/* ACPI processor ID */
+	u8 lint;			/* Local APIC LINT# */
+	u8 reserved[3];
+} __packed acpi_madt_lx2apic_nmi_t;
+
 #define ACPI_DBG2_PORT_SERIAL			0x8000
 #define  ACPI_DBG2_PORT_SERIAL_16550		0x0000
 #define  ACPI_DBG2_PORT_SERIAL_16550_DBGP	0x0001
@@ -519,8 +566,8 @@ typedef struct acpi_fadt {
 	u32 flags;
 	acpi_addr_t reset_reg;
 	u8 reset_value;
-	u16 ARM_boot_arch;
-	u8 FADT_MinorVersion;
+	u16 ARM_boot_arch;	/* Revision 6 only, Revision 5: Must be zero */
+	u8 FADT_MinorVersion;	/* Revision 6 only, Revision 5: Must be zero */
 	u32 x_firmware_ctl_l;
 	u32 x_firmware_ctl_h;
 	u32 x_dsdt_l;
@@ -533,6 +580,11 @@ typedef struct acpi_fadt {
 	acpi_addr_t x_pm_tmr_blk;
 	acpi_addr_t x_gpe0_blk;
 	acpi_addr_t x_gpe1_blk;
+	/* Revision 5 */
+	acpi_addr_t sleep_control_reg;
+	acpi_addr_t sleep_status_reg;
+	/* Revision 6 */
+	u64 hypervisor_vendor_identity;
 } __packed acpi_fadt_t;
 
 /* FADT TABLE Revision values */
@@ -839,7 +891,9 @@ void acpi_create_madt(acpi_madt_t *madt);
 unsigned long acpi_create_madt_lapics(unsigned long current);
 unsigned long acpi_create_madt_lapic_nmis(unsigned long current, u16 flags,
 					  u8 lint);
-
+int acpi_create_madt_lx2apic(acpi_madt_lx2apic_t *lapic, u32 cpu, u32 apic);
+int acpi_create_madt_lx2apic_nmi(acpi_madt_lx2apic_nmi_t *lapic_nmi, u32 cpu,
+				 u16 flags, u8 lint);
 int acpi_create_srat_lapic(acpi_srat_lapic_t *lapic, u8 node, u8 apic);
 int acpi_create_srat_mem(acpi_srat_mem_t *mem, u8 node, u32 basek, u32 sizek,
 			 u32 flags);
@@ -925,13 +979,14 @@ void acpi_resume(void *wake_vec);
 void mainboard_suspend_resume(void);
 void *acpi_find_wakeup_vector(void);
 
+/* ACPI_Sn assignments are defined to always equal the sleep state numbers */
 enum {
-	ACPI_S0,
-	ACPI_S1,
-	ACPI_S2,
-	ACPI_S3,
-	ACPI_S4,
-	ACPI_S5,
+	ACPI_S0 = 0,
+	ACPI_S1 = 1,
+	ACPI_S2 = 2,
+	ACPI_S3 = 3,
+	ACPI_S4 = 4,
+	ACPI_S5 = 5,
 };
 
 #if CONFIG(ACPI_INTEL_HARDWARE_SLEEP_VALUES) \

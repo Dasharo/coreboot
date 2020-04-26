@@ -1,15 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <commonlib/helpers.h>
@@ -18,6 +8,8 @@
 #include <device/pci.h>
 #include <device/pci_ops.h>
 #include <device/pciexp.h>
+
+#include "mainboard/pcengines/apu2/bios_knobs.h"
 
 unsigned int pciexp_find_extended_cap(struct device *dev, unsigned int cap)
 {
@@ -462,21 +454,23 @@ static void pciexp_tune_dev(struct device *dev)
 	if (!root_cap)
 		return;
 
-	/* Check for and enable Common Clock */
-	if (CONFIG(PCIEXP_COMMON_CLOCK))
-		pciexp_enable_common_clock(root, root_cap, dev, cap);
+	if (check_pciepm() || CONFIG(BOARD_PCENGINES_APU1)) {
+		/* Check for and enable Common Clock */
+		if (CONFIG(PCIEXP_COMMON_CLOCK))
+			pciexp_enable_common_clock(root, root_cap, dev, cap);
 
-	/* Check if per port CLK req is supported by endpoint*/
-	if (CONFIG(PCIEXP_CLK_PM))
-		pciexp_enable_clock_power_pm(dev, cap);
+		/* Check if per port CLK req is supported by endpoint*/
+		if (CONFIG(PCIEXP_CLK_PM))
+			pciexp_enable_clock_power_pm(dev, cap);
 
-	/* Enable L1 Sub-State when both root port and endpoint support */
-	if (CONFIG(PCIEXP_L1_SUB_STATE))
-		pciexp_config_L1_sub_state(root, dev);
+		/* Enable L1 Sub-State when both root port and endpoint support */
+		if (CONFIG(PCIEXP_L1_SUB_STATE))
+			pciexp_config_L1_sub_state(root, dev);
 
-	/* Check for and enable ASPM */
-	if (CONFIG(PCIEXP_ASPM))
-		pciexp_enable_aspm(root, root_cap, dev, cap);
+		/* Check for and enable ASPM */
+		if (CONFIG(PCIEXP_ASPM))
+			pciexp_enable_aspm(root, root_cap, dev, cap);
+	}
 
 	/* Adjust Max_Payload_Size of link ends. */
 	pciexp_set_max_payload_size(root, root_cap, dev, cap);
@@ -512,9 +506,7 @@ struct device_operations default_pciexp_ops_bus = {
 	.read_resources   = pci_bus_read_resources,
 	.set_resources    = pci_dev_set_resources,
 	.enable_resources = pci_bus_enable_resources,
-	.init             = 0,
 	.scan_bus         = pciexp_scan_bridge,
-	.enable           = 0,
 	.reset_bus        = pci_bus_reset,
 	.ops_pci          = &pciexp_bus_ops_pci,
 };

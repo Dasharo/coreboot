@@ -245,8 +245,6 @@ static const char *northbridge_acpi_name(const struct device *dev)
 static struct device_operations pci_domain_ops = {
 	.read_resources    = pci_domain_read_resources,
 	.set_resources     = pci_domain_set_resources,
-	.enable_resources  = NULL,
-	.init              = NULL,
 	.scan_bus          = pci_domain_scan_bus,
 	.write_acpi_tables = northbridge_write_acpi_tables,
 	.acpi_name         = northbridge_acpi_name,
@@ -440,13 +438,12 @@ static struct pci_operations intel_pci_ops = {
 };
 
 static struct device_operations mc_ops = {
-	.read_resources           = mc_read_resources,
-	.set_resources            = pci_dev_set_resources,
-	.enable_resources         = pci_dev_enable_resources,
-	.init                     = northbridge_init,
-	.scan_bus                 = NULL,
-	.ops_pci                  = &intel_pci_ops,
-	.acpi_fill_ssdt_generator = generate_cpu_entries,
+	.read_resources         = mc_read_resources,
+	.set_resources          = pci_dev_set_resources,
+	.enable_resources       = pci_dev_enable_resources,
+	.init                   = northbridge_init,
+	.ops_pci                = &intel_pci_ops,
+	.acpi_fill_ssdt		= generate_cpu_entries,
 };
 
 static const unsigned short pci_device_ids[] = {
@@ -462,11 +459,9 @@ static const struct pci_driver mc_driver __pci_driver = {
 };
 
 static struct device_operations cpu_bus_ops = {
-	.read_resources   = DEVICE_NOOP,
-	.set_resources    = DEVICE_NOOP,
-	.enable_resources = DEVICE_NOOP,
+	.read_resources   = noop_read_resources,
+	.set_resources    = noop_set_resources,
 	.init             = mp_cpu_bus_init,
-	.scan_bus         = 0,
 };
 
 static void enable_dev(struct device *dev)

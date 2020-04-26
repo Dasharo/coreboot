@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #ifndef __PICASSO_CHIP_H__
 #define __PICASSO_CHIP_H__
@@ -20,9 +9,8 @@
 #include <commonlib/helpers.h>
 #include <drivers/i2c/designware/dw_i2c.h>
 #include <soc/i2c.h>
+#include <soc/iomap.h>
 #include <arch/acpi_device.h>
-
-#define PICASSO_I2C_DEV_MAX 4
 
 struct soc_amd_picasso_config {
 	/*
@@ -34,7 +22,7 @@ struct soc_amd_picasso_config {
 	 * register i2c_scl_reset = (GPIO_I2C0_SCL | GPIO_I2C3_SCL)
 	 */
 	u8 i2c_scl_reset;
-	struct dw_i2c_bus_config i2c[PICASSO_I2C_DEV_MAX];
+	struct dw_i2c_bus_config i2c[I2C_MASTER_DEV_COUNT];
 	enum {
 		I2S_PINS_MAX_HDA = 0,	/* HDA w/reset  3xSDI, SW w/Data0 */
 		I2S_PINS_MAX_MHDA = 1,	/* HDA no reset 3xSDI, SW w/Data0-1 */

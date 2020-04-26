@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 /* Note: Only need HID on Primary Bus */
 External (TOM1)
@@ -42,6 +31,10 @@ Method(_PRT,0, NotSerialized)
 Device(AMRT) {
 	Name(_ADR, 0x00000000)
 } /* end AMRT */
+
+Device(PCSD) { /* Processor configuration space devices */
+	Name(_ADR, 0x00180000)	/* Dev# = BSP Dev#, Func# = 0 */
+}
 
 /* Gpp 0 */
 Device(PBR4) {

@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pci.h>
@@ -19,6 +8,7 @@
 
 #include "chip.h"
 #include "hudson.h"
+#include "mainboard/pcengines/apu2/bios_knobs.h"
 
 static void sd_init(struct device *dev)
 {
@@ -26,7 +16,7 @@ static void sd_init(struct device *dev)
 	u32 stepping = pci_read_config32(pcidev_on_root(0x18, 3), 0xFC);
 	u8 sd_mode = 0;
 
-	if (sd_chip)
+	if (sd_chip && check_sd3_mode())
 		sd_mode = sd_chip->sd_mode;
 
 	if (sd_mode == 3) {	/* SD 3.0 mode */
@@ -55,7 +45,6 @@ static struct device_operations sd_ops = {
 	.set_resources = pci_dev_set_resources,
 	.enable_resources = pci_dev_enable_resources,
 	.init = sd_init,
-	.scan_bus = 0,
 };
 
 static const struct pci_driver sd_driver __pci_driver = {

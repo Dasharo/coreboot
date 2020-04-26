@@ -1,29 +1,24 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 /*
  * Processor Object
  *
  */
-Scope (\_SB) {		/* define processor scope */
-
-	Device (C000) {
-	Name (_HID, "ACPI0007")
-	Name (_UID, 0)
+Scope (\_PR) {		/* define processor scope */
+	Processor(
+		C000,		/* name space name, align with BLDCFG_PROCESSOR_SCOPE_NAME[01] */
+		0,		/* Unique number for this processor */
+		0x810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
 
-	Device (C001) {
-	Name (_HID, "ACPI0007")
-	Name (_UID, 1)
+	Processor(
+		C001,		/* name space name */
+		1,		/* Unique number for this processor */
+		0x810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
 } /* End _SB scope */

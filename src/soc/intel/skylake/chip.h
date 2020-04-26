@@ -1,16 +1,5 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 
 #ifndef _SOC_CHIP_H_
@@ -19,6 +8,7 @@
 #include <arch/acpi_device.h>
 #include <device/i2c_simple.h>
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <drivers/intel/gma/i915.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/gspi.h>
 #include <intelblocks/lpc_lib.h>
@@ -583,6 +573,9 @@ struct soc_intel_skylake_config {
 
 	/* Enable/Disable Sata test mode */
 	u8 SataTestMode;
+
+	/* i915 struct for GMA backlight control */
+	struct i915_gpu_controller_info gfx;
 };
 
 typedef struct soc_intel_skylake_config config_t;

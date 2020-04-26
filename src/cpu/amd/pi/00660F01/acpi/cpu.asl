@@ -1,59 +1,66 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* This file is part of the coreboot project. */
 
 /*
  * Processor Object
  *
  */
-Scope (\_SB) {	/* define processor scope */
-
-	Device (P000) {
-	Name(_HID, "ACPI0007")
-	Name(_UID, 0)
+Scope (\_PR) {		/* define processor scope */
+	Processor(
+		P000,		/* name space name */
+		0,			/* Unique number for this processor */
+		0x810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
 
-	Device (P001) {
-	Name(_HID, "ACPI0007")
-	Name(_UID, 1)
+	Processor(
+		P001,		/* name space name */
+		1,			/* Unique number for this processor */
+		0x0810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
-
-	Device (P002) {
-	Name(_HID, "ACPI0007")
-	Name(_UID, 2)
+	Processor(
+		P002,		/* name space name */
+		2,			/* Unique number for this processor */
+		0x0810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
-
-	Device (P003) {
-	Name(_HID, "ACPI0007")
-	Name(_UID, 3)
+	Processor(
+		P003,		/* name space name */
+		3,			/* Unique number for this processor */
+		0x0810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
-
-	Device (P004) {
-	Name(_HID, "ACPI0007")
-	Name(_UID, 4)
+	Processor(
+		P004,		/* name space name */
+		4,			/* Unique number for this processor */
+		0x0810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
-
-	Device (P005) {
-	Name(_HID, "ACPI0007")
-	Name(_UID, 5)
+	Processor(
+		P005,		/* name space name */
+		5,			/* Unique number for this processor */
+		0x0810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
-
-	Device (P006) {
-	Name(_HID, "ACPI0007")
-	Name(_UID, 6)
+	Processor(
+		P006,		/* name space name */
+		6,			/* Unique number for this processor */
+		0x0810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
-
-	Device (P007) {
-	Name(_HID, "ACPI0007")
-	Name(_UID, 7)
+	Processor(
+		P007,		/* name space name */
+		7,			/* Unique number for this processor */
+		0x0810,		/* PBLK system I/O address !hardcoded! */
+		0x06		/* PBLKLEN for boot processor */
+		) {
 	}
 } /* End _SB scope */
