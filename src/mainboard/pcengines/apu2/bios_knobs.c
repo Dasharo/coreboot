@@ -273,7 +273,53 @@ bool check_mpcie2_clk(void)
 	return false;
 }
 
-bool check_sd3_mode(void)
+u8 check_pciepm(void)
+{
+	u8 pciepm;
+
+	//
+	// Find the mPCIe2 clock item
+	//
+	pciepm = check_knob_value("pciepm");
+
+	switch (pciepm) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO, "Missing or invalid pciepm knob, disabling"
+			"PCIe power management features.\n");
+		break;
+	}
+
+	return 0;
+}
+
+u8 check_pciereverse(void)
+{
+	u8 pciereverse;
+	pciereverse = check_knob_value("pciereverse");
+
+	switch (pciereverse) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO, "Missing or invalid pciereverse knob, "
+			"PCIe order remains unchanged.\n");
+		break;
+	}
+
+	return 0;
+}
+
+u8 check_sd3_mode(void)
 {
 	u8 sd3mode;
 
