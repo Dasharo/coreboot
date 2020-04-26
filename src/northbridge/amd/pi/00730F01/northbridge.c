@@ -837,7 +837,8 @@ static unsigned long agesa_write_acpi_tables(struct device *device,
 	printk(BIOS_DEBUG, "ACPI:    * SSDT at %lx\n", current);
 	ssdt = (acpi_header_t *)agesawrapper_getlateinitptr (PICK_PSTATE);
 	if (ssdt != NULL) {
-		patch_ssdt_processor_scope(ssdt);
+		if (0)
+			patch_ssdt_processor_scope(ssdt);
 		memcpy((void *)current, ssdt, ssdt->length);
 		ssdt = (acpi_header_t *) current;
 		current += ssdt->length;
