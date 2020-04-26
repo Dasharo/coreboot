@@ -182,3 +182,8 @@ u8 check_mpcie2_clk(void)
 	// Not supported on apu1
 	return 0;
 }
+u8 check_pciepm(void)
+{
+	// Not supported on apu1
+	return 1;
+}
