@@ -341,32 +341,7 @@ u8 check_sd3_mode(void)
 		break;
 	}
 
-	return false;
-}
-
-bool check_sd3_mode(void)
-{
-	u8 sd3mode;
-
-	//
-	// Find the SD 3.0 mode item
-	//
-	sd3mode = check_knob_value("sd3mode");
-
-	switch (sd3mode) {
-	case 0:
-		return false;
-		break;
-	case 1:
-		return true;
-		break;
-	default:
-		printk(BIOS_INFO, "Missing or invalid sd3mode knob."
-				  " Disable SD3.0 mode.\n");
-		break;
-	}
-
-	return false;
+	return 0;
 }
 
 static int _valid(char ch, int base)
