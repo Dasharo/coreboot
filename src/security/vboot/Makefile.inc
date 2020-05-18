@@ -1,16 +1,4 @@
-##
-## This file is part of the coreboot project.
-##
-##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
+## SPDX-License-Identifier: GPL-2.0-only
 
 ifeq ($(CONFIG_VBOOT_LIB),y)
 
@@ -111,17 +99,18 @@ verstage-y += common.c
 verstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += verstage.c
 ifeq (${CONFIG_VBOOT_MOCK_SECDATA},y)
 verstage-y += secdata_mock.c
-romstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += secdata_mock.c
+romstage-y += secdata_mock.c
+ramstage-y += secdata_mock.c
 else
 verstage-y += secdata_tpm.c
-romstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += secdata_tpm.c
+romstage-y += secdata_tpm.c
+ramstage-y += secdata_tpm.c
 endif
 
 ifneq ($(CONFIG_TPM1)$(CONFIG_TPM2),)
 verstage-y += tpm_common.c
 endif
 
-romstage-y += vboot_logic.c
 romstage-y += common.c
 
 ramstage-y += common.c

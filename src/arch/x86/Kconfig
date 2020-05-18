@@ -1,7 +1,4 @@
-##
 ## SPDX-License-Identifier: GPL-2.0-only
-## This file is part of the coreboot project.
-##
 
 config ARCH_X86
 	bool
@@ -89,9 +86,10 @@ config X86_RESET_VECTOR
 config RESET_VECTOR_IN_RAM
 	bool
 	depends on ARCH_X86
+	select NO_XIP_EARLY_STAGES
 	help
-	  Select this option if the x86 soc implements custom code to handle the
-	  reset vector in RAM instead of the traditional 0xfffffff0 location.
+	  Select this option if the x86 processor's reset vector is in
+	  preinitialized DRAM instead of the traditional 0xfffffff0 location.
 
 # Aligns 16bit entry code in bootblock so that hyper-threading CPUs
 # can boot AP CPUs to enable their shared caches.
@@ -206,6 +204,7 @@ config VERSTAGE_ADDR
 config POSTCAR_STAGE
 	def_bool y
 	depends on ARCH_X86
+	depends on !RESET_VECTOR_IN_RAM
 
 config VERSTAGE_DEBUG_SPINLOOP
 	bool
@@ -244,22 +243,11 @@ config SKIP_MAX_REBOOT_CNT_CLEAR
 	  Note that it is the responsibility of the payload to reset the
 	  normal boot bit to 1 after each successful boot.
 
-config ACPI_NO_PCAT_8259
+config ACPI_BERT
 	bool
-	help
-	  Selected by platforms that don't expose a PC/AT 8259 PIC pair.
-
-config ACPI_HAVE_PCAT_8259
-	def_bool y if !ACPI_NO_PCAT_8259
-
-config ACPI_CPU_STRING
-	string
-	default "\\_SB.CP%02d"
 	depends on HAVE_ACPI_TABLES
 	help
-	  Sets the ACPI name string in the processor scope as written by
-	  the acpigen function. Default is \_SB.CPxx. Note that you need
-	  the \ escape character in the string.
+	  Build an ACPI Boot Error Record Table.
 
 config COLLECT_TIMESTAMPS_NO_TSC
 	bool

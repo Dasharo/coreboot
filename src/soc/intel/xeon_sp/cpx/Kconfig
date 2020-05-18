@@ -1,7 +1,4 @@
-##
 ## SPDX-License-Identifier: GPL-2.0-only
-## This file is part of the coreboot project.
-##
 
 if SOC_INTEL_COOPERLAKE_SP
 
@@ -73,5 +70,8 @@ config FSP_TEMP_RAM_SIZE
 	  The amount of anticipated heap usage in CAR by FSP.
 	  Refer to Platform FSP integration guide document to know
 	  the exact FSP requirement for Heap setup.
+
+config SOC_INTEL_COMMON_BLOCK_P2SB
+	def_bool y
 
 endif

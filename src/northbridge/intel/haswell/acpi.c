@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <types.h>
 #include <console/console.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <device/device.h>
 #include <device/pci_ops.h>
 #include "haswell.h"
@@ -93,7 +92,8 @@ static unsigned long acpi_fill_dmar(unsigned long current)
 	return current;
 }
 
-unsigned long northbridge_write_acpi_tables(struct device *const dev, unsigned long current,
+unsigned long northbridge_write_acpi_tables(const struct device *const dev,
+					    unsigned long current,
 					    struct acpi_rsdp *const rsdp)
 {
 	/* Create DMAR table only if we have VT-d capability. */

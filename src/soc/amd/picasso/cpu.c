@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cpu/cpu.h>
 #include <cpu/x86/mp.h>
@@ -13,7 +12,7 @@
 #include <device/pci_ops.h>
 #include <soc/pci_devs.h>
 #include <soc/cpu.h>
-#include <soc/northbridge.h>
+#include <soc/reset.h>
 #include <soc/smi.h>
 #include <soc/iomap.h>
 #include <console/console.h>

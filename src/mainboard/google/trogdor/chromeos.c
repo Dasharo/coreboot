@@ -1,20 +1,9 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <boot/coreboot_tables.h>
 #include <bootmode.h>
 #include "board.h"
+#include <security/tpm/tis.h>
 
 int get_write_protect_state(void)
 {
@@ -27,7 +16,9 @@ void setup_chromeos_gpios(void)
 	gpio_input_pullup(GPIO_AP_EC_INT);
 	gpio_output(GPIO_AP_SUSPEND, 1);
 	gpio_input(GPIO_WP_STATE);
-	gpio_input_pullup(GPIO_H1_AP_INT);
+	gpio_input_pullup(GPIO_SD_CD_L);
+	gpio_input_irq(GPIO_H1_AP_INT, IRQ_TYPE_RISING_EDGE, GPIO_PULL_UP);
+	gpio_output(GPIO_AMP_ENABLE, 0);
 }
 
 void fill_lb_gpios(struct lb_gpios *gpios)
@@ -39,7 +30,16 @@ void fill_lb_gpios(struct lb_gpios *gpios)
 			"EC interrupt"},
 		{GPIO_H1_AP_INT.addr, ACTIVE_LOW, gpio_get(GPIO_H1_AP_INT),
 			"TPM interrupt"},
+		{GPIO_SD_CD_L.addr, ACTIVE_LOW, gpio_get(GPIO_SD_CD_L),
+			"SD card detect"},
+		{GPIO_AMP_ENABLE.addr, ACTIVE_HIGH, gpio_get(GPIO_AMP_ENABLE),
+			"speaker enable"},
 	};
 
 	lb_add_gpios(gpios, chromeos_gpios, ARRAY_SIZE(chromeos_gpios));
+}
+
+int tis_plat_irq_status(void)
+{
+	return gpio_irq_status(GPIO_H1_AP_INT);
 }

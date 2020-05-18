@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <arch/io.h>
 #include <bcd.h>
 #include <fallback.h>
@@ -10,7 +9,6 @@
 #include <option.h>
 #include <pc80/mc146818rtc.h>
 #include <rtc.h>
-#include <string.h>
 #include <cbfs.h>
 #include <security/vboot/vbnv.h>
 #include <security/vboot/vbnv_layout.h>

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _IMPI_CHIP_H_
 #define _IPMI_CHIP_H_
@@ -23,6 +22,7 @@ struct drivers_ipmi_config {
 	 * Will be used if wait_for_bmc is true.
 	 */
 	u16 bmc_boot_timeout;
+	unsigned int uid; /* Auto-filled by ipmi_ssdt() */
 };
 
 #endif /* _IMPI_CHIP_H_ */

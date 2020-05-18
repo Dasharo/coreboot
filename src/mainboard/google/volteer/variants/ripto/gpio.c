@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
@@ -256,7 +255,7 @@ static const struct pad_config gpio_table[] = {
 	/* F7  : GPPF7_STRAP */
 	PAD_NC(GPP_F7, DN_20K),
 	/* F8  : I2S_MCLK2_INOUT ==> HP_INT_L */
-	PAD_CFG_GPI_APIC(GPP_F8, UP_20K, DEEP, EDGE_BOTH, INVERT),
+	PAD_CFG_GPI_INT(GPP_F8, NONE, PLTRST, EDGE_BOTH),
 	/* F9  : Reserved ==> NC */
 	/* F10 : GPPF10_STRAP */
 	PAD_NC(GPP_F10, DN_20K),
@@ -444,8 +443,8 @@ const struct pad_config *variant_early_gpio_table(size_t *num)
 }
 
 static const struct cros_gpio cros_gpios[] = {
-	CROS_GPIO_REC_AL(CROS_GPIO_VIRTUAL, CROS_GPIO_COMM0_NAME),
-	CROS_GPIO_WP_AH(GPIO_PCH_WP, CROS_GPIO_COMM0_NAME),
+	CROS_GPIO_REC_AL(CROS_GPIO_VIRTUAL, CROS_GPIO_DEVICE_NAME),
+	CROS_GPIO_WP_AH(GPIO_PCH_WP, CROS_GPIO_DEVICE_NAME),
 };
 
 const struct cros_gpio *variant_cros_gpios(size_t *num)

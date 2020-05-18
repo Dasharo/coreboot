@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cbmem.h>
 #include <console/console.h>
+#include <cpu/cpu.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -34,39 +34,11 @@ __weak int soc_get_uncore_prmmr_base_and_mask(uint64_t *base,
 	return -1;
 }
 
-__weak unsigned long sa_write_acpi_tables(struct device *dev,
+__weak unsigned long sa_write_acpi_tables(const struct device *dev,
 					  unsigned long current,
 					  struct acpi_rsdp *rsdp)
 {
 	return current;
-}
-
-/*
- * This function will get above 4GB mmio enable config specific to soc.
- *
- * Return values:
- *  0 = Above 4GB memory is not enable
- *  1 = Above 4GB memory is enable
- */
-static int get_enable_above_4GB_mmio(void)
-{
-	const struct soc_intel_common_config *common_config;
-	common_config = chip_get_common_soc_structure();
-
-	return common_config->enable_above_4GB_mmio;
-}
-
-/* Fill MMIO resource above 4GB into GNVS */
-void sa_fill_gnvs(global_nvs_t *gnvs)
-{
-	if (get_enable_above_4GB_mmio()) {
-		gnvs->e4gm = 1;
-		gnvs->a4gb = ABOVE_4GB_MEM_BASE_ADDRESS;
-		gnvs->a4gs = ABOVE_4GB_MEM_BASE_SIZE;
-		printk(BIOS_DEBUG,
-			"PCI space above 4GB MMIO is from 0x%llx  to len = 0x%llx\n",
-				gnvs->a4gb, gnvs->a4gs);
-	}
 }
 
 /*
@@ -124,6 +96,18 @@ static void sa_read_map_entry(struct device *dev,
 
 	*result = value;
 }
+
+/* Fill MMIO resource above 4GB into GNVS */
+void sa_fill_gnvs(global_nvs_t *gnvs)
+{
+	struct device *sa_dev = pcidev_path_on_root(SA_DEVFN_ROOT);
+
+	sa_read_map_entry(sa_dev, &sa_memory_map[SA_TOUUD_REG], &gnvs->a4gb);
+	gnvs->a4gs = POWER_OF_2(cpu_phys_address_size()) - gnvs->a4gb;
+	printk(BIOS_DEBUG, "PCI space above 4GB MMIO is at 0x%llx, len = 0x%llx\n",
+	       gnvs->a4gb, gnvs->a4gs);
+}
+
 
 static void sa_get_mem_map(struct device *dev, uint64_t *values)
 {
@@ -390,6 +374,9 @@ static const unsigned short systemagent_ids[] = {
 	PCI_DEVICE_ID_INTEL_JSL_EHL,
 	PCI_DEVICE_ID_INTEL_EHL_ID_1,
 	PCI_DEVICE_ID_INTEL_JSL_ID_1,
+	PCI_DEVICE_ID_INTEL_JSL_ID_2,
+	PCI_DEVICE_ID_INTEL_JSL_ID_3,
+	PCI_DEVICE_ID_INTEL_JSL_ID_4,
 	0
 };
 

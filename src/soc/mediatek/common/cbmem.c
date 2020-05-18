@@ -1,9 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cbmem.h>
 #include <commonlib/helpers.h>
-#include <stddef.h>
 #include <symbols.h>
 #include <soc/emi.h>
 

@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <baseboard/variant.h>
 #include <console/console.h>
 #include <device/device.h>
@@ -38,7 +37,7 @@ static uint8_t max_codec_enable(void)
 }
 
 static unsigned long mainboard_write_acpi_tables(
-	struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
+	const struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
 {
 	uintptr_t start_addr;
 	uintptr_t end_addr;

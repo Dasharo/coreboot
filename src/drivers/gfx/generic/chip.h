@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __DRIVERS_GFX_GENERIC_CHIP_H__
 #define __DRIVERS_GFX_GENERIC_CHIP_H__
 
-#include <arch/acpi_device.h>
+#include <acpi/acpi_device.h>
 
 /* Config for electronic privacy screen */
 struct drivers_gfx_generic_privacy_screen_config {

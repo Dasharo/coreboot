@@ -1,102 +1,56 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
+#include <intelblocks/gpio.h>
 #include <soc/gpio_defs.h>
+#include <soc/intel/common/acpi/gpio.asl>
 #include <soc/irq.h>
 #include <soc/pcr_ids.h>
-#include <intelblocks/gpio.h>
 #include "gpio_op.asl"
 
-Device (GCM0)
+Device (GPIO)
 {
-	Name (_HID, CROS_GPIO_NAME)
+	Name (_HID, "INT34C5")
 	Name (_UID, 0)
-	Name (_DDN, "GPIO Controller Community 0")
+	Name (_DDN, "GPIO Controller")
 
 	Name (RBUF, ResourceTemplate()
 	{
-		Memory32Fixed (ReadWrite, 0, GPIO_BASE_SIZE, COM0)
+		Memory32Fixed (ReadWrite, 0, 0, COM0)
+		Memory32Fixed (ReadWrite, 0, 0, COM1)
+		Memory32Fixed (ReadWrite, 0, 0, COM4)
+		Memory32Fixed (ReadWrite, 0, 0, COM5)
 		Interrupt (ResourceConsumer, Level, ActiveLow, Shared,,, GIRQ)
 			{ GPIO_IRQ14 }
 	})
 	Method (_CRS, 0, NotSerialized)
 	{
+		/* GPIO Community 0 */
 		CreateDWordField (^RBUF, ^COM0._BAS, BAS0)
+		CreateDWordField (^RBUF, ^COM0._LEN, LEN0)
 		BAS0 = ^^PCRB (PID_GPIOCOM0)
-		Return (^RBUF)
-	}
-	Method (_STA)
-	{
-		Return (0xF)
-	}
-}
+		LEN0 = GPIO_BASE_SIZE
 
-Device (GCM1)
-{
-	Name (_HID, CROS_GPIO_NAME)
-	Name (_UID, 1)
-	Name (_DDN, "GPIO Controller Community 1")
-
-	Name (RBUF, ResourceTemplate()
-	{
-		Memory32Fixed (ReadWrite, 0, GPIO_BASE_SIZE, COM1)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared,,, GIRQ)
-			{ GPIO_IRQ14 }
-	})
-	Method (_CRS, 0, NotSerialized)
-	{
+		/* GPIO Community 1 */
 		CreateDWordField (^RBUF, ^COM1._BAS, BAS1)
+		CreateDWordField (^RBUF, ^COM1._LEN, LEN1)
 		BAS1 = ^^PCRB (PID_GPIOCOM1)
-		Return (^RBUF)
-	}
-	Method (_STA)
-	{
-		Return (0xF)
-	}
-}
+		LEN1 = GPIO_BASE_SIZE
 
-Device (GCM4)
-{
-	Name (_HID, CROS_GPIO_NAME)
-	Name (_UID, 4)
-	Name (_DDN, "GPIO Controller Community 4")
-
-	Name (RBUF, ResourceTemplate()
-	{
-		Memory32Fixed (ReadWrite, 0, GPIO_BASE_SIZE, COM4)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared,,, GIRQ)
-			{ GPIO_IRQ14 }
-	})
-	Method (_CRS, 0, NotSerialized)
-	{
+		/* GPIO Community 4 */
 		CreateDWordField (^RBUF, ^COM4._BAS, BAS4)
+		CreateDWordField (^RBUF, ^COM4._LEN, LEN4)
 		BAS4 = ^^PCRB (PID_GPIOCOM4)
-		Return (^RBUF)
-	}
-	Method (_STA)
-	{
-		Return (0xF)
-	}
-}
+		LEN4 = GPIO_BASE_SIZE
 
-Device (GCM5)
-{
-	Name (_HID, CROS_GPIO_NAME)
-	Name (_UID, 5)
-	Name (_DDN, "GPIO Controller Community 5")
-
-	Name (RBUF, ResourceTemplate()
-	{
-		Memory32Fixed (ReadWrite, 0, GPIO_BASE_SIZE, COM5)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared,,, GIRQ)
-		{ GPIO_IRQ14 }
-	})
-	Method (_CRS, 0, NotSerialized)
-	{
+		/* GPIO Community 5 */
 		CreateDWordField (^RBUF, ^COM5._BAS, BAS5)
+		CreateDWordField (^RBUF, ^COM5._LEN, LEN5)
 		BAS5 = ^^PCRB (PID_GPIOCOM5)
-		Return (^RBUF)
+		LEN5 = GPIO_BASE_SIZE
+
+		Return (RBUF)
 	}
-	Method (_STA)
+
+	Method (_STA, 0, NotSerialized)
 	{
 		Return (0xF)
 	}
@@ -141,4 +95,36 @@ Method (GADD, 1, NotSerialized)
 
 	Local2 = PCRB(Local0) + PAD_CFG_BASE + (Local1 * 16)
 	Return (Local2)
+}
+
+/*
+ * Return PCR Port ID of GPIO Communities
+ *
+ * Arg0: GPIO Community (0-5)
+ */
+Method (GPID, 1, Serialized)
+{
+	Switch (ToInteger (Arg0))
+	{
+		Case (0) {
+			Local0 = PID_GPIOCOM0
+		}
+		Case (1) {
+			Local0 = PID_GPIOCOM1
+		}
+		Case (2) {
+			Local0 = PID_GPIOCOM2
+		}
+		Case (4) {
+			Local0 = PID_GPIOCOM4
+		}
+		Case (5) {
+			Local0 = PID_GPIOCOM5
+		}
+		Default {
+			Return (0)
+		}
+	}
+
+	Return (Local0)
 }

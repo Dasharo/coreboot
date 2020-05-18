@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/mmio.h>
@@ -13,8 +12,10 @@
 #include <amdblocks/amd_pci_util.h>
 #include <amdblocks/reset.h>
 #include <amdblocks/acpimmio.h>
+#include <amdblocks/espi.h>
 #include <amdblocks/lpc.h>
 #include <amdblocks/acpi.h>
+#include <amdblocks/spi.h>
 #include <soc/cpu.h>
 #include <soc/southbridge.h>
 #include <soc/smi.h>
@@ -23,6 +24,7 @@
 #include <soc/pci_devs.h>
 #include <soc/nvs.h>
 #include <types.h>
+#include "chip.h"
 
 #define FCH_AOAC_UART_FOR_CONSOLE \
 		(CONFIG_UART_FOR_CONSOLE == 0 ? FCH_AOAC_DEV_UART0 \
@@ -164,16 +166,6 @@ void enable_aoac_devices(void)
 	} while (!status);
 }
 
-static void sb_enable_lpc(void)
-{
-	u8 byte;
-
-	/* Enable LPC controller */
-	byte = pm_io_read8(PM_LPC_GATING);
-	byte |= PM_LPC_ENABLE;
-	pm_io_write8(PM_LPC_GATING, byte);
-}
-
 static void sb_enable_cf9_io(void)
 {
 	uint32_t reg = pm_read32(PM_DECODE_EN);
@@ -197,47 +189,6 @@ void sb_clk_output_48Mhz(void)
 	misc_write32(MISC_CLK_CNTL1, ctrl);
 }
 
-static uintptr_t sb_init_spi_base(void)
-{
-	uintptr_t base;
-
-	/* Make sure the base address is predictable */
-	base = lpc_get_spibase();
-
-	if (base)
-		return base;
-
-	lpc_set_spibase(SPI_BASE_ADDRESS, SPI_ROM_ENABLE);
-	return SPI_BASE_ADDRESS;
-}
-
-void sb_set_spi100(u16 norm, u16 fast, u16 alt, u16 tpm)
-{
-	uintptr_t base = sb_init_spi_base();
-	write16((void *)(base + SPI100_SPEED_CONFIG),
-				(norm << SPI_NORM_SPEED_NEW_SH) |
-				(fast << SPI_FAST_SPEED_NEW_SH) |
-				(alt << SPI_ALT_SPEED_NEW_SH) |
-				(tpm << SPI_TPM_SPEED_NEW_SH));
-	write16((void *)(base + SPI100_ENABLE), SPI_USE_SPI100);
-}
-
-void sb_disable_4dw_burst(void)
-{
-	uintptr_t base = sb_init_spi_base();
-	write16((void *)(base + SPI100_HOST_PREF_CONFIG),
-			read16((void *)(base + SPI100_HOST_PREF_CONFIG))
-					& ~SPI_RD4DW_EN_HOST);
-}
-
-void sb_read_mode(u32 mode)
-{
-	uintptr_t base = sb_init_spi_base();
-	write32((void *)(base + SPI_CNTRL0),
-			(read32((void *)(base + SPI_CNTRL0))
-					& ~SPI_READ_MODE_MASK) | mode);
-}
-
 static void fch_smbus_init(void)
 {
 	/* 400 kHz smbus speed. */
@@ -252,22 +203,21 @@ static void fch_smbus_init(void)
 	asf_write8(SMBSLVSTAT, SMBSLV_STAT_CLEAR);
 }
 
+static void lpc_configure_decodes(void)
+{
+	if (CONFIG(POST_IO) && (CONFIG_POST_IO_PORT == 0x80))
+		lpc_enable_port80();
+}
+
 /* Before console init */
 void fch_pre_init(void)
 {
-	/* Turn on LPC in case the PSP didn't use it.  However, ensure all
-	 * decoding is cleared as the PSP may have enabled decode paths. */
-	sb_enable_lpc();
-	lpc_disable_decodes();
+	lpc_early_init();
 
-	if (CONFIG(POST_IO) && (CONFIG_POST_IO_PORT == 0x80)
-					&& CONFIG(PICASSO_LPC_IOMUX))
-		lpc_enable_port80();
-	lpc_enable_spi_prefetch();
-	sb_init_spi_base();
-	sb_disable_4dw_burst();
-	sb_set_spi100(SPI_SPEED_33M, SPI_SPEED_33M,
-			SPI_SPEED_16M, SPI_SPEED_16M);
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_USE_ESPI))
+		lpc_configure_decodes();
+
+	fch_spi_early_init();
 	enable_acpimmio_decode_pm04();
 	fch_smbus_init();
 	sb_enable_cf9_io();
@@ -335,6 +285,14 @@ void fch_early_init(void)
 {
 	sb_print_pmxc0_status();
 	i2c_soc_early_init();
+
+	if (CONFIG(DISABLE_SPI_FLASH_ROM_SHARING))
+		lpc_disable_spi_rom_sharing();
+
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_USE_ESPI)) {
+		espi_setup();
+		espi_configure_decodes();
+	}
 }
 
 void sb_enable(struct device *dev)
@@ -442,6 +400,7 @@ BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, set_nvs_sws, NULL);
 
 void southbridge_init(void *chip_info)
 {
+	i2c_soc_init();
 	sb_init_acpi_ports();
 	acpi_clear_pm1_status();
 }

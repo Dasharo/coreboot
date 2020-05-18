@@ -1,14 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 #include <string.h>
 
 #include "h8.h"
 #include "chip.h"
 
-static char *h8_dsdt_scope(struct device *dev, const char *scope)
+static char *h8_dsdt_scope(const struct device *dev, const char *scope)
 {
 	static char buf[DEVICE_PATH_MAX] = {};
 	const char *path = acpi_device_path(dev);
@@ -22,7 +21,7 @@ static char *h8_dsdt_scope(struct device *dev, const char *scope)
 /*
  * Generates EC SSDT.
  */
-void h8_ssdt_generator(struct device *dev)
+void h8_ssdt_generator(const struct device *dev)
 {
 	struct ec_lenovo_h8_config *conf = dev->chip_info;
 

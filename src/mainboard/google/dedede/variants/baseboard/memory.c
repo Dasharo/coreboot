@@ -1,9 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <baseboard/variants.h>
 #include <baseboard/gpio.h>
@@ -69,4 +64,9 @@ int __weak variant_memory_sku(void)
 	};
 
 	return gpio_base2_value(spd_gpios, ARRAY_SIZE(spd_gpios));
+}
+
+bool __weak variant_mem_is_half_populated(void)
+{
+	return !gpio_get(GPIO_MEM_CH_SEL);
 }

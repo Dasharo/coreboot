@@ -1,11 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cbfs.h>
 #include <fallback.h>
 #include <program_loading.h>
 #include <stddef.h>
-#include <string.h>
 
 static const char *get_fallback(const char *stagelist)
 {

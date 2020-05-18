@@ -1,5 +1,4 @@
 /*
- * This file is part of the coreboot project.
  *
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -32,5 +31,12 @@ const struct mb_cfg *variant_memcfg_config(void);
 
 /* Return memory SKU for the variant */
 int variant_memory_sku(void);
+
+/**
+ * Get data whether memory channel is half-populated or not
+ *
+ * @return false on boards where memory channel is half-populated, true otherwise.
+ */
+bool variant_mem_is_half_populated(void);
 
 #endif /*__BASEBOARD_VARIANTS_H__ */

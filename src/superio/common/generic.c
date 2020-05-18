@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pnp.h>
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 
 static void generic_set_resources(struct device *dev)
@@ -31,7 +30,7 @@ static void generic_read_resources(struct device *dev)
 }
 
 #if CONFIG(HAVE_ACPI_TABLES)
-static void generic_ssdt(struct device *dev)
+static void generic_ssdt(const struct device *dev)
 {
 	const char *scope = acpi_device_scope(dev);
 	const char *name = acpi_device_name(dev);

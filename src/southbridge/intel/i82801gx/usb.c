@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -10,14 +9,12 @@
 
 static void usb_init(struct device *dev)
 {
-	u32 reg32;
 	u8 reg8;
 
 	/* USB Specification says the device must be Bus Master */
 	printk(BIOS_DEBUG, "UHCI: Setting up controller.. ");
 
-	reg32 = pci_read_config32(dev, PCI_COMMAND);
-	pci_write_config32(dev, PCI_COMMAND, reg32 | PCI_COMMAND_MASTER);
+	pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER);
 
 	// Erratum
 	pci_write_config8(dev, 0xca, 0x00);

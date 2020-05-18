@@ -1,9 +1,4 @@
-################################################################################
-##
 ## SPDX-License-Identifier: GPL-2.0-only
-## This file is part of the coreboot project.
-##
-###############################################################################
 
 armv4_flags = -marm -march=armv4t -I$(src)/arch/arm/include/armv4/ \
 	-D__COREBOOT_ARM_ARCH__=4

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/cbconfig.h>
 #include <console/console.h>
@@ -26,7 +25,7 @@
 #endif
 #if CONFIG(CHROMEOS)
 #if CONFIG(HAVE_ACPI_TABLES)
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #endif
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <vendorcode/google/chromeos/gnvs.h>

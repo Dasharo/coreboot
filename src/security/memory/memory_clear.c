@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #if CONFIG(ARCH_X86)
 #include <cpu/x86/pae.h>
@@ -20,7 +19,7 @@
 #include <string.h>
 #include <security/memory/memory.h>
 #include <cbmem.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 
 /* Helper to find free space for memset_pae. */
 static uintptr_t get_free_memory_range(struct memranges *mem,

@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <device/device.h>
 #include "i82371eb.h"
@@ -25,7 +24,7 @@ static int determine_total_number_of_cores(void)
 	return count;
 }
 
-void generate_cpu_entries(struct device *device)
+void generate_cpu_entries(const struct device *device)
 {
 	int cpu, pcontrol_blk=DEFAULT_PMBASE+PCNTRL, plen=6;
 	int numcpus = determine_total_number_of_cores();

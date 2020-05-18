@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /*
  * This driver resets the 10ec:8168 NIC then tries to read
@@ -9,8 +8,8 @@
  */
 
 #include <cbfs.h>
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <string.h>
 #include <arch/io.h>
 #include <console/console.h>
@@ -306,7 +305,7 @@ static void r8168_init(struct device *dev)
 
 #if CONFIG(HAVE_ACPI_TABLES)
 #define R8168_ACPI_HID "R8168"
-static void r8168_net_fill_ssdt(struct device *dev)
+static void r8168_net_fill_ssdt(const struct device *dev)
 {
 	struct drivers_net_config *config = dev->chip_info;
 	const char *path = acpi_device_path(dev->bus->dev);

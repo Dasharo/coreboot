@@ -1,11 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 #include <assert.h>
 #include <console/console.h>
 #include <fsp/api.h>
 #include <soc/romstage.h>
 #include <spd_bin.h>
-#include <string.h>
 #include <soc/meminit.h>
 #include <baseboard/variants.h>
 #include <cbfs.h>

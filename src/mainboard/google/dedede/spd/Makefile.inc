@@ -1,9 +1,4 @@
-##
-## This file is part of the coreboot project.
-##
-##
 ## SPDX-License-Identifier: GPL-2.0-or-later
-##
 
 ifneq ($(SPD_SOURCES),)
 SPD_BIN = $(obj)/spd.bin

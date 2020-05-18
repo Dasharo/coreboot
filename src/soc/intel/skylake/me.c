@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/pci_ops.h>
 #include <bootstate.h>
@@ -10,7 +9,6 @@
 #include <soc/iomap.h>
 #include <soc/me.h>
 #include <soc/pci_devs.h>
-#include <stdint.h>
 
 
 /* HFSTS1[3:0] Current Working State Values */

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pci.h>
@@ -167,11 +166,6 @@ void soc_init_pre_device(void *chip_info)
 	cnl_configure_pads(NULL, 0);
 
 	soc_gpio_pm_configuration();
-}
-
-static void pci_domain_set_resources(struct device *dev)
-{
-	assign_resources(dev->link_list);
 }
 
 static struct device_operations pci_domain_ops = {

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <bootmem.h>
 #include <bootmode.h>
@@ -10,7 +9,6 @@
 #include <soc/display.h>
 #include <soc/sdram.h>
 #include <soc/symbols.h>
-#include <stddef.h>
 #include <symbols.h>
 
 void bootmem_platform_add_ranges(void)

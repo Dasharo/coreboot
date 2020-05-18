@@ -1,17 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 /*
  * NOTE: The layout of the global_nvs_t structure below must match the layout
@@ -45,10 +32,9 @@ typedef struct global_nvs_t {
 	uint8_t		ecps; /* 0x2C - SGX Enabled status */
 	uint64_t	emna; /* 0x2D - 0x34 EPC base address */
 	uint64_t	elng; /* 0x35 - 0x3C EPC Length */
-	uint8_t		e4gm; /* 0x3D - Enable above 4GB MMIO Resource */
-	uint64_t	a4gb; /* 0x3E - 0x45 Base of above 4GB MMIO Resource */
-	uint64_t	a4gs; /* 0x46 - 0x4D Length of above 4GB MMIO Resource */
-	uint8_t		unused[178];
+	uint64_t	a4gb; /* 0x3D - 0x44 Base of above 4GB MMIO Resource */
+	uint64_t	a4gs; /* 0x45 - 0x4C Length of above 4GB MMIO Resource */
+	uint8_t		unused[179];
 
 	/* ChromeOS specific (0x100 - 0xfff) */
 	chromeos_acpi_t chromeos;

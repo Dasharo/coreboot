@@ -1,17 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <assert.h>
 #include <console/console.h>
@@ -34,12 +21,12 @@ __weak void graphics_soc_init(struct device *dev)
 }
 
 __weak const struct i915_gpu_controller_info *
-intel_igd_get_controller_info(struct device *device)
+intel_igd_get_controller_info(const struct device *device)
 {
 	return NULL;
 }
 
-static void gma_generate_ssdt(struct device *device)
+static void gma_generate_ssdt(const struct device *device)
 {
 	const struct i915_gpu_controller_info *gfx = intel_igd_get_controller_info(device);
 

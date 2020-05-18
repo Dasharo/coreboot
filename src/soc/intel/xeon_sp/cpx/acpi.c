@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 #include <arch/ioapic.h>
 #include <arch/smp/mpspec.h>
 #include <cbmem.h>
@@ -18,7 +17,7 @@
 
 #define SCI_INT_NUM		9
 
-unsigned long southbridge_write_acpi_tables(struct device *device, unsigned long current,
+unsigned long southbridge_write_acpi_tables(const struct device *device, unsigned long current,
 						struct acpi_rsdp *rsdp)
 {
 	current = acpi_write_hpet(device, current, rsdp);
@@ -34,7 +33,7 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 	return current;
 }
 
-void southbridge_inject_dsdt(struct device *device)
+void southbridge_inject_dsdt(const struct device *device)
 {
 	global_nvs_t *gnvs;
 

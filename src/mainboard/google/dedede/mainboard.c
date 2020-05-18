@@ -1,11 +1,6 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <baseboard/variants.h>
 #include <device/device.h>
 #include <ec/ec.h>
@@ -26,7 +21,7 @@ static void mainboard_dev_init(struct device *dev)
 }
 
 static unsigned long mainboard_write_acpi_tables(
-		struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
+		const struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
 {
 	return current;
 }

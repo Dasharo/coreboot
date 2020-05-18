@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 #ifndef CR50_TSS_STRUCTURES_H_
 #define CR50_TSS_STRUCTURES_H_
 
@@ -21,6 +20,7 @@
 #define VENDOR_RC_ERR              0x00000500
 enum cr50_vendor_rc {
 	VENDOR_RC_INTERNAL_ERROR = (VENDOR_RC_ERR | 6),
+	VENDOR_RC_NO_SUCH_SUBCOMMAND = (VENDOR_RC_ERR | 8),
 	VENDOR_RC_NO_SUCH_COMMAND = (VENDOR_RC_ERR | 127),
 };
 

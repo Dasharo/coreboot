@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _SOC_PM_H_
 #define _SOC_PM_H_
 
 #include <stdint.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 
 struct chipset_power_state {
 	uint32_t prev_sleep_state;

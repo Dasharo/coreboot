@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /*
  * The code in this file has been heavily based on the article "Writing a TPM
@@ -15,9 +14,9 @@
 #include <string.h>
 #include <delay.h>
 #include <device/mmio.h>
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
-#include <arch/acpi_device.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
+#include <acpi/acpi_device.h>
 #include <device/device.h>
 #include <console/console.h>
 #include <security/tpm/tis.h>
@@ -872,7 +871,7 @@ static void (*tpm_mci_callbacks[])(void *) = {
 	tpm_mci_func1_cb,
 };
 
-static void lpc_tpm_fill_ssdt(struct device *dev)
+static void lpc_tpm_fill_ssdt(const struct device *dev)
 {
 	const char *path = acpi_device_path(dev->bus->dev);
 	u32 arg;

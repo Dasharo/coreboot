@@ -1,16 +1,4 @@
-##
-## This file is part of the coreboot project.
-##
-##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
+## SPDX-License-Identifier: GPL-2.0-only
 
 chip soc/intel/skylake
 
@@ -259,7 +247,9 @@ chip soc/intel/skylake
 	register "PcieRpHotPlug[6]" = "1"
 
 	# PL2 override 91W
-	register "tdp_pl2_override" = "91"
+	register "power_limits_config" = "{
+		.tdp_pl2_override = 91,
+	}"
 
 	# Send an extra VR mailbox command for the PS4 exit issue
 	register "SendVrMbxCmd" = "2"

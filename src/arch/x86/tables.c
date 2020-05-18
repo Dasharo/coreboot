@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <bootmem.h>
@@ -8,7 +7,7 @@
 #include <boot/coreboot_tables.h>
 #include <arch/pirq_routing.h>
 #include <arch/smp/mpspec.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <commonlib/helpers.h>
 #include <string.h>
 #include <cbmem.h>

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <boot_device.h>
 #include <bootmem.h>
@@ -26,7 +25,7 @@ int verified_boot_check_manifest(void)
 	struct vb2_kernel_preamble *pre;
 	static struct vb2_shared_data *sd;
 	size_t size;
-	uint8_t wb_buffer[2800];
+	uint8_t wb_buffer[3000];
 
 	if (vb2api_init(&wb_buffer, sizeof(wb_buffer), &ctx)) {
 		goto fail;

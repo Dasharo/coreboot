@@ -1,17 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #ifndef _SOC_APOLLOLAKE_IOMAP_H_
 #define _SOC_APOLLOLAKE_IOMAP_H_
@@ -57,8 +44,5 @@
 /* Temporary BAR for early I2C bus access */
 #define EARLY_I2C_BASE_ADDRESS		0xfe020000
 #define EARLY_I2C_BASE(x)	(EARLY_I2C_BASE_ADDRESS + (0x1000 * (x)))
-
-#define ABOVE_4GB_MEM_BASE_ADDRESS	(128ULL * GiB)
-#define ABOVE_4GB_MEM_BASE_SIZE	(64ULL * GiB)
 
 #endif /* _SOC_APOLLOLAKE_IOMAP_H_ */

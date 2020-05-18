@@ -1,17 +1,8 @@
 ##
-## This file is part of the coreboot project.
 ##
 ## Copyright (C) 2017 Google Inc.
 ##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
+## SPDX-License-Identifier: GPL-2.0-only
 
 # force the shell to bash - the edksetup.sh script doesn't work with dash
 export SHELL := env bash
@@ -25,10 +16,12 @@ upstream_git_repo=https://github.com/tianocore/edk2
 # STABLE revision is 3mdeb's coreboot uefi (coreboot-4.7.x-uefi) branch
 ifeq ($(CONFIG_TIANOCORE_UEFIPAYLOAD),y)
 bootloader=UefiPayloadPkg
+logo_pkg=MdeModulePkg
 build_flavor=-D BOOTLOADER=COREBOOT -D PCIE_BASE=$(CONFIG_MMCONF_BASE_ADDRESS) -DPS2_KEYBOARD_ENABLE
 TAG=upstream/master
 else
 bootloader=CorebootPayloadPkg
+logo_pkg=CorebootPayloadPkg
 # STABLE revision is MrChromebox's coreboot framebuffer (coreboot_fb) branch
 TAG=$(CONFIG_TIANOCORE_REVISION_ID)
 endif
@@ -67,12 +60,13 @@ update: $(project_dir)
 			echo "    $(TAG) is not a valid git reference"; \
 			exit 1; \
 		fi; \
-		if git describe --all --dirty | grep -qv dirty; then \
+		if git status --ignore-submodules=dirty | grep -qv clean; then \
 			echo "    Checking out $(project_name) revision $(TAG)"; \
 			git checkout --detach $(TAG); \
 		else \
 			echo "    Working directory not clean; will not overwrite"; \
-		fi
+		fi; \
+		git submodule update --init --recursive
 
 checktools:
 	echo "Checking uuid-dev..."
@@ -88,13 +82,13 @@ checktools:
 build: update checktools
 	unset CC; $(MAKE) -C $(project_dir)/BaseTools
 	echo " build $(project_name) $(TAG)"
-	if [ -n $(CONFIG_TIANOCORE_BOOTSPLASH_FILE) ]; then \
+	if [ -n "$(CONFIG_TIANOCORE_BOOTSPLASH_FILE)" ]; then \
 		echo "    Copying custom bootsplash image"; \
 		case "$(CONFIG_TIANOCORE_BOOTSPLASH_FILE)" in \
 			/*) cp $(CONFIG_TIANOCORE_BOOTSPLASH_FILE) \
-				$(project_dir)/CorebootPayloadPkg/Logo/Logo.bmp;; \
+				$(project_dir)/$(logo_pkg)/Logo/Logo.bmp;; \
 			*) cp $(top)/$(CONFIG_TIANOCORE_BOOTSPLASH_FILE) \
-				$(project_dir)/CorebootPayloadPkg/Logo/Logo.bmp;; \
+				$(project_dir)/$(logo_pkg)/Logo/Logo.bmp;; \
 		esac \
 	fi; \
 	cd $(project_dir); \
@@ -107,7 +101,7 @@ build: update checktools
 		fi; \
 		build $(BUILD_STR); \
 		mv $(project_dir)/Build/$(bootloader)*/*/FV/UEFIPAYLOAD.fd $(project_dir)/Build/UEFIPAYLOAD.fd; \
-		git checkout CorebootPayloadPkg/Logo/Logo.bmp > /dev/null 2>&1 || true
+		git checkout $(logo_pkg)/Logo/Logo.bmp > /dev/null 2>&1 || true
 
 clean:
 	test -d $(project_dir) && (cd $(project_dir); rm -rf Build; rm -f Conf/tools_def.txt) || exit 0

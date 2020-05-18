@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <types.h>
 #include <stddef.h>
@@ -7,7 +6,7 @@
 #include <security/tpm/tspi.h>
 
 #if CONFIG(HAVE_ACPI_RESUME)
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #endif
 
 static void init_tpm_dev(void *unused)

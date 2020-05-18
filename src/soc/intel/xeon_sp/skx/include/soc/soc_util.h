@@ -1,12 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _SOC_UTIL_H_
 #define _SOC_UTIL_H_
 
 #include <hob_iiouds.h>
 #include <hob_memmap.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <soc/util.h>
 
 struct iiostack_resource {

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pci.h>
@@ -36,7 +35,7 @@ static struct device_operations iommu_ops = {
 static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_AMD_15H_MODEL_303F_NB_IOMMU,
 	PCI_DEVICE_ID_AMD_15H_MODEL_707F_NB_IOMMU,
-	PCI_DEVICE_ID_AMD_17H_MODEL_101F_NB_IOMMU,
+	PCI_DEVICE_ID_AMD_17H_MODEL_1020_NB_IOMMU,
 	0
 };
 

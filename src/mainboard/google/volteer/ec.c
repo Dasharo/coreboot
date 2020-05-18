@@ -1,11 +1,10 @@
 /*
- * This file is part of the coreboot project.
  *
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <ec/ec.h>
 #include <ec/google/chromeec/ec.h>
 #include <variant/ec.h>

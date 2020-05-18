@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef INTEL_COMMON_ACPI_PIRQ_GEN_H
 #define INTEL_COMMON_ACPI_PIRQ_GEN_H
@@ -24,7 +23,7 @@ enum pirq {
 	PIRQ_H,
 };
 
-void intel_acpi_gen_def_acpi_pirq(struct device *dev);
+void intel_acpi_gen_def_acpi_pirq(const struct device *dev);
 enum pirq intel_common_map_pirq(const struct device *dev,
 				const enum pci_pin pci_pin);
 

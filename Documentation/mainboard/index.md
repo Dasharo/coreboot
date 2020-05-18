@@ -26,6 +26,10 @@ This section contains documentation about coreboot on specific mainboards.
 
 - [CN81XX EVB SFF](cavium/cn8100_sff_evb.md)
 
+## Dell
+
+- [OptiPlex 9010 SFF](dell/optiplex_9010.md)
+
 ## Emulation
 
 The boards in this section are not real mainboards, but emulators.
@@ -74,6 +78,7 @@ The boards in this section are not real mainboards, but emulators.
 - [R60](lenovo/r60.md)
 - [T4xx common](lenovo/t4xx_series.md)
 - [X2xx common](lenovo/x2xx_series.md)
+- [vboot](lenovo/vboot.md)
 
 ### Arrandale series
 
@@ -97,6 +102,7 @@ The boards in this section are not real mainboards, but emulators.
 - [W530](lenovo/w530.md)
 - [T430 / T530 / X230 / W530 common](lenovo/Ivy_Bridge_series.md)
 - [T431s](lenovo/t431s.md)
+- [X230s](lenovo/x230s.md)
 - [Internal flashing](lenovo/ivb_internal_flashing.md)
 
 ### Haswell series

@@ -1,5 +1,4 @@
 /*
- * This file is part of the coreboot project.
  *
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -23,7 +22,7 @@ static const struct pad_config gpio_table[] = {
 	/* A7  : I2S2_SCLK ==> EN_PP3300_TRACKPAD */
 	PAD_CFG_GPO(GPP_A7, 1, DEEP),
 	/* A8  : I2S2_SFRM ==> EN_PP3300_TOUCHSCREEN */
-	PAD_CFG_GPO(GPP_A8, 1, DEEP),
+	PAD_CFG_GPO(GPP_A8, 0, DEEP),
 	/* A9  : I2S2_TXD ==> EC_IN_RW_OD */
 	PAD_CFG_GPI(GPP_A9, NONE, DEEP),
 	/* A10 : I2S2_RXD ==> EN_SPKR_PA */
@@ -125,7 +124,7 @@ static const struct pad_config gpio_table[] = {
 	/* C9  : UART0_TXD ==> UART_PCH_TX_DEBUG_RX */
 	PAD_CFG_NF(GPP_C9, NONE, DEEP, NF1),
 	/* C10 : UART0_RTS# ==> USI_RST_L */
-	PAD_CFG_GPO(GPP_C10, 1, DEEP),
+	PAD_CFG_GPO(GPP_C10, 0, DEEP),
 	/* C11 : UART0_CTS# ==> CVF_LPSS_INT_L */
 	PAD_CFG_GPI(GPP_C11, NONE, DEEP),
 	/* C12 : UART1_RXD ==> MEM_STRAP_0 */
@@ -210,7 +209,7 @@ static const struct pad_config gpio_table[] = {
 	/* E6  : THC0_SPI1_RST# ==> GPPE6_STRAP */
 	PAD_NC(GPP_E6, NONE),
 	/* E7  : CPU_GP1 ==> USI_INT */
-	PAD_CFG_GPI(GPP_E7, NONE, DEEP),
+	PAD_CFG_GPI_APIC(GPP_E7, NONE, PLTRST, LEVEL, NONE),
 	/* E8  : SPI1_CS1# ==> SLP_S0IX */
 	PAD_CFG_GPO(GPP_E8, 0, DEEP),
 	/* E9  : USB2_OC0# ==> USB_C1_OC_ODL */
@@ -261,15 +260,13 @@ static const struct pad_config gpio_table[] = {
 	/* F7  : GPPF7_STRAP */
 	PAD_NC(GPP_F7, NONE),
 	/* F8  : I2S_MCLK2_INOUT ==> HP_INT_L */
-	PAD_CFG_GPI_APIC(GPP_F8, UP_20K, DEEP, EDGE_BOTH, INVERT),
+	PAD_CFG_GPI_INT(GPP_F8, NONE, PLTRST, EDGE_BOTH),
 	/* F9  : Reserved ==> NC */
 	PAD_NC(GPP_F9, NONE),
 	/* F10 : GPPF10_STRAP */
 	PAD_NC(GPP_F10, DN_20K),
-	/* F11 : THC1_SPI2_CLK ==> EN_PP3300_WWAN */
-	PAD_CFG_GPO(GPP_F11, 1, DEEP),
 	/* F12 : GSXDOUT ==> WWAN_RST_ODL */
-	PAD_CFG_GPO(GPP_F12, 1, DEEP),
+	PAD_CFG_GPI(GPP_F12, NONE, DEEP),
 	/* F13 : GSXDOUT ==> WiFi_DISABLE_L */
 	PAD_CFG_GPO(GPP_F13, 1, DEEP),
 	/* F14 : GSXDIN ==> SAR0_INT_L */
@@ -436,6 +433,14 @@ static const struct pad_config early_gpio_table[] = {
 	/* E12 : SPI1_MISO_IO1 ==> EN_PP3300_SSD */
 	PAD_CFG_GPO(GPP_E12, 1, DEEP),
 
+	/* F11 : THC1_SPI2_CLK ==> EN_PP3300_WWAN */
+	PAD_CFG_GPO(GPP_F11, 1, DEEP),
+
+	/* F12 : GSXDOUT ==> WWAN_RST_ODL
+	   To meet timing constrains - drive reset low.
+	   Deasserted in ramstage. */
+	PAD_CFG_GPO(GPP_F12, 0, DEEP),
+
 	/* H11 : SRCCLKREQ5# ==> WLAN_PERST_L */
 	PAD_CFG_GPO(GPP_H11, 1, DEEP),
 };
@@ -459,8 +464,8 @@ const struct pad_config *__weak variant_early_gpio_table(size_t *num)
 }
 
 static const struct cros_gpio cros_gpios[] = {
-	CROS_GPIO_REC_AL(CROS_GPIO_VIRTUAL, CROS_GPIO_COMM1_NAME),
-	CROS_GPIO_WP_AH(GPIO_PCH_WP, CROS_GPIO_COMM0_NAME),
+	CROS_GPIO_REC_AL(CROS_GPIO_VIRTUAL, CROS_GPIO_DEVICE_NAME),
+	CROS_GPIO_WP_AH(GPIO_PCH_WP, CROS_GPIO_DEVICE_NAME),
 };
 
 const struct cros_gpio *__weak variant_cros_gpios(size_t *num)

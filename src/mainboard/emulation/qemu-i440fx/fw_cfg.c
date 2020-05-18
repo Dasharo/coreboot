@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <endian.h>
 #include <stdlib.h>
@@ -7,7 +6,7 @@
 #include <smbios.h>
 #include <console/console.h>
 #include <arch/io.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <commonlib/endian.h>
 
 #include "fw_cfg.h"

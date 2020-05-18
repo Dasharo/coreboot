@@ -1,20 +1,9 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #ifndef _COREBOOT_SRC_MAINBOARD_GOOGLE_TROGDOR_BOARD_H_
 #define _COREBOOT_SRC_MAINBOARD_GOOGLE_TROGDOR_BOARD_H_
 
+#include <boardid.h>
 #include <gpio.h>
 #include <soc/gpio.h>
 
@@ -22,7 +11,9 @@
 #define GPIO_AP_EC_INT	GPIO(94)
 #define GPIO_AP_SUSPEND	GPIO(20)
 #define GPIO_WP_STATE	GPIO(42)
-#define GPIO_H1_AP_INT	GPIO(21)
+#define GPIO_H1_AP_INT	(CONFIG(TROGDOR_REV0) ? GPIO(21) : GPIO(42))
+#define GPIO_SD_CD_L	GPIO(69)
+#define GPIO_AMP_ENABLE	GPIO(23)
 
 void setup_chromeos_gpios(void);
 

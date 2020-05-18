@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <bootmode.h>
@@ -592,7 +591,7 @@ static void igd_init(struct device *dev)
 }
 
 static unsigned long
-gma_write_acpi_tables(struct device *const dev, unsigned long current,
+gma_write_acpi_tables(const struct device *const dev, unsigned long current,
 		struct acpi_rsdp *const rsdp)
 {
 	igd_opregion_t *opregion = (igd_opregion_t *)current;
@@ -616,7 +615,7 @@ gma_write_acpi_tables(struct device *const dev, unsigned long current,
 	return current;
 }
 
-static void gma_generate_ssdt(struct device *dev)
+static void gma_generate_ssdt(const struct device *dev)
 {
 	const struct soc_intel_broadwell_config *chip = dev->chip_info;
 

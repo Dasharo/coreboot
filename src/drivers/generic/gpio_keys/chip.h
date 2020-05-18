@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __DRIVERS_GENERIC_GPIO_KEYS_H__
 #define __DRIVERS_GENERIC_GPIO_KEYS_H__
 
-#include <arch/acpi_device.h>
+#include <acpi/acpi_device.h>
 #include <stdint.h>
 
 /* Linux input type */

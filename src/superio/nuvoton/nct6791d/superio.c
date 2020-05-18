@@ -1,12 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pnp.h>
 #include <pc80/keyboard.h>
 #include <superio/conf_mode.h>
 #include <superio/common/ssdt.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include "nct6791d.h"
 
 static void nct6791d_init(struct device *dev)

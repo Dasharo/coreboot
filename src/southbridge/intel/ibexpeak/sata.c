@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/mmio.h>
 #include <device/pci_ops.h>
@@ -8,7 +7,7 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <option.h>
-#include <acpi/sata.h>
+#include <acpi/acpi_sata.h>
 #include <types.h>
 
 #include "chip.h"
@@ -212,7 +211,7 @@ static void sata_enable(struct device *dev)
 	pci_write_config16(dev, 0x90, map);
 }
 
-static void sata_fill_ssdt(struct device *dev)
+static void sata_fill_ssdt(const struct device *dev)
 {
 	config_t *config = dev->chip_info;
 	generate_sata_ssdt_ports("\\_SB_.PCI0.SATA", config->sata_port_map);

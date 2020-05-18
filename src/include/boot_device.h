@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _BOOT_DEVICE_H_
 #define _BOOT_DEVICE_H_
@@ -62,4 +61,12 @@ int boot_device_wp_region(const struct region_device *rd,
  **/
 void boot_device_init(void);
 
+/*
+ * Restrict read/write access to the bootmedia using platform defined rules.
+ */
+#if CONFIG(BOOTMEDIA_LOCK_NONE) || (CONFIG(BOOTMEDIA_LOCK_IN_VERSTAGE) && ENV_RAMSTAGE)
+static inline void boot_device_security_lockdown(void) {}
+#else
+void boot_device_security_lockdown(void);
+#endif
 #endif /* _BOOT_DEVICE_H_ */

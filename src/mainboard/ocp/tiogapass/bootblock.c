@@ -1,18 +1,21 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <bootblock_common.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
+#include <device/pnp_ops.h>
 #include <intelblocks/pcr.h>
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
 #include <superio/aspeed/ast2400/ast2400.h>
 #include <superio/aspeed/common/aspeed.h>
+#include <tp_pch_gpio.h>
 
 /* these are defined in intelblocks/lpc_lib.h but we can't use them yet */
 #define PCR_DMI_LPCIOD 0x2770
 #define PCR_DMI_LPCIOE 0x2774
+#define ASPEED_CONFIG_INDEX 0x2E
+#define ASPEED_CONFIG_DATA 0x2F
 
 static void enable_espi_lpc_io_windows(void)
 {
@@ -50,10 +53,21 @@ static uint8_t com_to_ast_sio(uint8_t com)
 
 void bootblock_mainboard_early_init(void)
 {
+	/* pre-configure Lewisburg PCH GPIO pads */
+	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
+
 	/* Open IO windows */
 	enable_espi_lpc_io_windows();
 
 	/* Configure appropriate physical port of SuperIO chip off BMC */
-	const pnp_devfn_t serial_dev = PNP_DEV(0x2e, com_to_ast_sio(CONFIG_UART_FOR_CONSOLE));
+	const pnp_devfn_t serial_dev = PNP_DEV(ASPEED_CONFIG_INDEX,
+					com_to_ast_sio(CONFIG_UART_FOR_CONSOLE));
 	aspeed_enable_serial(serial_dev, CONFIG_TTYS0_BASE);
+
+	/* Port 80h direct to GPIO for LED display */
+	const pnp_devfn_t gpio_dev = PNP_DEV(ASPEED_CONFIG_INDEX, AST2400_GPIO);
+	aspeed_enable_port80_direct_gpio(gpio_dev, GPIOH);
+
+	/* Enable UART function pin */
+	aspeed_enable_uart_pin(serial_dev);
 }

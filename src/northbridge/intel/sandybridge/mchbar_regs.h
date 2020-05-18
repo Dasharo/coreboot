@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __SANDYBRIDGE_MCHBAR_REGS_H__
 #define __SANDYBRIDGE_MCHBAR_REGS_H__
@@ -159,6 +158,45 @@
  *
  */
 
+/* Temporary IOSAV register macros to verifiably split bitfields */
+#define SUBSEQ_CTRL(reps, gap, post, dir)	(((reps) <<  0) | \
+						 ((gap)  << 10) | \
+						 ((post) << 16) | \
+						 ((dir)  << 26))
+
+#define SSQ_NA		0 /* Non-data */
+#define SSQ_RD		1 /* Read */
+#define SSQ_WR		2 /* Write */
+#define SSQ_RW		3 /* Read and write */
+
+#define SP_CMD_ADDR(addr, rowbits, bank, rank)	(((addr)    <<  0) | \
+						 ((rowbits) << 16) | \
+						 ((bank)    << 20) | \
+						 ((rank)    << 24))
+
+#define ADDR_UPDATE(addr_1, addr_8, bank, rank, wrap, lfsr, rate, xors)	(((addr_1) <<  0) | \
+									 ((addr_8) <<  1) | \
+									 ((bank)   <<  2) | \
+									 ((rank)   <<  3) | \
+									 ((wrap)   <<  5) | \
+									 ((lfsr)   << 10) | \
+									 ((rate)   << 12) | \
+									 ((xors)   << 16))
+
+/* Marker macro for IOSAV_n_ADDR_UPDATE */
+#define ADDR_UPDATE_NONE	0
+
+/* Only programming the wraparound without any triggers is suspicious */
+#define ADDR_UPDATE_WRAP(wrap)	((wrap) << 5)
+
+#define IOSAV_SUBSEQUENCE(ch, n, sp_cmd_ctrl, reps, gap, post, dir, addr, rowbits, bank, rank, addr_update) \
+	do { \
+		MCHBAR32(IOSAV_n_SP_CMD_CTRL_ch(ch, n)) = sp_cmd_ctrl; \
+		MCHBAR32(IOSAV_n_SUBSEQ_CTRL_ch(ch, n)) = SUBSEQ_CTRL(reps, gap, post, dir); \
+		MCHBAR32(IOSAV_n_SP_CMD_ADDR_ch(ch, n)) = SP_CMD_ADDR(addr, rowbits, bank, rank); \
+		MCHBAR32(IOSAV_n_ADDR_UPDATE_ch(ch, n)) = addr_update; \
+	} while (0)
+
 /* Indexed register helper macros */
 #define Gz(r, z)	((r) + ((z) <<  8))
 #define Ly(r, y)	((r) + ((y) <<  2))
@@ -209,6 +247,12 @@
 #define GDCRDATACOMP			0x340c /* COMP values register */
 
 #define CRCOMPOFST2			0x3714 /* CMD DRV, SComp and Static Leg controls */
+
+/*
+ * The register bank that would correspond to Channel 3 are actually "broadcast" registers.
+ * They can be used to write values to all channels. Use this macro instead of a literal '3'.
+ */
+#define BROADCAST_CH	3
 
 /* MC per-channel registers */
 #define TC_DBP_ch(ch)			Cx(0x4000, ch) /* Timings: BIN */
@@ -315,12 +359,6 @@
 #define WMM_READ_CONFIG		0x4cd4 /** WARNING: Only exists on IVB! */
 
 #define IOSAV_By_BW_SERROR_C(y)	Ly(0x4d40, y) /* IOSAV Bytelane Bit-wise error */
-
-#define IOSAV_n_SP_CMD_ADDR(n)	Ly(0x4e00, n) /* Sub-sequence special command address */
-#define IOSAV_n_ADDR_UPDATE(n)	Ly(0x4e10, n) /* Address update after command execution */
-#define IOSAV_n_SP_CMD_CTRL(n)	Ly(0x4e20, n) /* Command signals in sub-sequence command */
-#define IOSAV_n_SUBSEQ_CTRL(n)	Ly(0x4e30, n) /* Sub-sequence command parameter control */
-#define IOSAV_n_ADDRESS_LFSR(n)	Ly(0x4e40, n) /* 23-bit LFSR value of the sequence */
 
 #define PM_THML_STAT		0x4e80 /* Thermal status of each rank */
 #define IOSAV_SEQ_CTL		0x4e84 /* IOSAV sequence level control */

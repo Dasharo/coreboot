@@ -1,14 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/i2c.h>
 #include <device/device.h>
 #include <device/path.h>
-#include <stdint.h>
 #include "chip.h"
 
 #define RT5663_ACPI_NAME	"RT53"
@@ -17,7 +15,7 @@
 #define RT5663_DP_INT(key, val) \
 	acpi_dp_add_integer(dp, "realtek," key, (val))
 
-static void rt5663_fill_ssdt(struct device *dev)
+static void rt5663_fill_ssdt(const struct device *dev)
 {
 	struct drivers_i2c_rt5663_config *config = dev->chip_info;
 	const char *scope = acpi_device_scope(dev);

@@ -1,5 +1,4 @@
 ##
-## This file is part of the coreboot project.
 ##
 ## Copyright (C) 2008 Advanced Micro Devices, Inc.
 ## Copyright (C) 2008 Uwe Hermann <uwe@hermann-uwe.de>
@@ -141,6 +140,14 @@ NOMKDIR:=1
 endif
 endif
 
+ifneq ($(filter %-test %-tests,$(MAKECMDGOALS)),)
+ifneq ($(filter-out %-test %-tests, $(MAKECMDGOALS)),)
+$(error Cannot mix unit-tests targets with other targets)
+endif
+UNIT_TEST:=1
+NOCOMPILE:=
+endif
+
 .xcompile: util/xcompile/xcompile
 	rm -f $@
 	$< $(XGCCPATH) > $@.tmp
@@ -159,7 +166,9 @@ real-all:
 	@exit 1
 else
 
+ifneq ($(UNIT_TEST),1)
 include $(DOTCONFIG)
+endif
 
 # in addition to the dependency below, create the file if it doesn't exist
 # to silence stupid warnings about a file that would be generated anyway.
@@ -177,7 +186,9 @@ ifneq ($(CONFIG_MMX),y)
 CFLAGS_x86_32 += -mno-mmx
 endif
 
+ifneq ($(UNIT_TEST),1)
 include toolchain.inc
+endif
 
 strip_quotes = $(strip $(subst ",,$(subst \",,$(1))))
 # fix makefile syntax highlighting after strip macro \" "))
@@ -276,7 +287,14 @@ evaluate_subdirs= \
 # collect all object files eligible for building
 subdirs:=$(TOPLEVEL)
 postinclude-hooks :=
+
+# Don't iterate through Makefile.incs under src/ when building tests
+ifneq ($(UNIT_TEST),1)
 $(eval $(call evaluate_subdirs))
+else
+include $(TOPLEVEL)/tests/Makefile.inc
+endif
+
 ifeq ($(FAILBUILD),1)
 $(error cannot continue build)
 endif

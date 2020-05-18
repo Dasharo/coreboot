@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <bootstate.h>
 #include <cpu/amd/mtrr.h>
@@ -9,10 +8,11 @@
 #include <romstage_handoff.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
-#include <soc/northbridge.h>
+#include <soc/data_fabric.h>
 #include <soc/pci_devs.h>
 #include <soc/southbridge.h>
 #include "chip.h"
+#include <fsp/api.h>
 
 /* Supplied by i2c.c */
 extern struct device_operations picasso_i2c_mmio_ops;
@@ -51,8 +51,6 @@ const char *soc_acpi_name(const struct device *dev)
 		return NULL;
 
 	switch (dev->path.pci.devfn) {
-	case GFX_DEVFN:
-		return "IGFX";
 	case PCIE0_DEVFN:
 		return "PBR4";
 	case PCIE1_DEVFN:
@@ -67,8 +65,6 @@ const char *soc_acpi_name(const struct device *dev)
 		return "AZHD";
 	case LPC_DEVFN:
 		return "LPCB";
-	case SATA_DEVFN:
-		return "STCR";
 	case SMBUS_DEVFN:
 		return "SBUS";
 	case XHCI0_DEVFN:
@@ -82,7 +78,7 @@ const char *soc_acpi_name(const struct device *dev)
 
 struct device_operations pci_domain_ops = {
 	.read_resources	  = pci_domain_read_resources,
-	.set_resources	  = domain_set_resources,
+	.set_resources	  = pci_domain_set_resources,
 	.scan_bus	  = pci_domain_scan_bus,
 	.acpi_name	  = soc_acpi_name,
 };
@@ -103,6 +99,9 @@ static void enable_dev(struct device *dev)
 
 static void soc_init(void *chip_info)
 {
+	fsp_silicon_init(acpi_is_wakeup_s3());
+
+	data_fabric_set_mmio_np();
 	southbridge_init(chip_info);
 	setup_bsp_ramtop();
 }

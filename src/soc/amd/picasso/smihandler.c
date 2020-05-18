@@ -1,12 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* This file is part of the coreboot project. */
 
 #include <arch/io.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <cpu/x86/cache.h>
 #include <cpu/amd/amd64_save_state.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <arch/hlt.h>
 #include <device/pci_def.h>
 #include <smmstore.h>

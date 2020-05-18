@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <ec/acpi/ec.h>
@@ -10,7 +9,7 @@
 #include <cpu/x86/lapic.h>
 #include <drivers/lenovo/lenovo.h>
 
-static void fill_ssdt(struct device *device)
+static void fill_ssdt(const struct device *device)
 {
 	drivers_lenovo_serial_ports_ssdt_generate("\\_SB.PCI0.LPCB", 0);
 }
@@ -26,8 +25,6 @@ static void mainboard_enable(struct device *dev)
 	install_intel_vga_int15_handler(GMA_INT15_ACTIVE_LFP_INT_LVDS,
 					GMA_INT15_PANEL_FIT_DEFAULT,
 					GMA_INT15_BOOT_DISPLAY_LFP, 2);
-
-	init_dock();
 }
 
 struct chip_operations mainboard_ops = {

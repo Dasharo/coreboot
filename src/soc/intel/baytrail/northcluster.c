@@ -1,12 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cpu/x86/smm.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <vendorcode/google/chromeos/chromeos.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <stddef.h>
 #include <soc/iomap.h>
 #include <soc/iosf.h>

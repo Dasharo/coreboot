@@ -1,18 +1,5 @@
-/*
- * sconfig, coreboot device tree compiler
- *
- * Copyright (C) 2010 coresystems GmbH
- *   written by Patrick Georgi <patrick@georgi-clan.de>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* sconfig, coreboot device tree compiler */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,10 +30,7 @@ struct pci_irq_info {
 
 struct chip;
 struct chip_instance {
-	/*
-	 * Monotonically increasing ID for each newly allocated
-	 * node(chip/device).
-	 */
+	/* Monotonically increasing ID for each chip instance. */
 	int id;
 
 	/* Pointer to registers for this chip. */
@@ -59,10 +43,16 @@ struct chip_instance {
 	struct chip_instance *next;
 
 	/*
-	 * Reference count - Indicates how many devices hold pointer to this
-	 * chip instance.
+	 * Pointer to corresponding chip instance in base devicetree.
+	 * a) If the chip instance belongs to the base devicetree, then this pointer is set to
+	 * NULL.
+	 * b) If the chip instance belongs to override tree, then this pointer is set to its
+	 * corresponding chip instance in base devicetree (if it exists), else to NULL.
+	 *
+	 * This is useful when generating chip instances and chip_ops for a device to determine
+	 * if this is the instance to emit or if there is a base chip instance to use instead.
 	 */
-	int ref_count;
+	struct chip_instance *base_chip_instance;
 };
 
 struct chip {
@@ -98,9 +88,6 @@ struct bus {
 };
 
 struct device {
-	/* Monotonically increasing ID for the device. */
-	int id;
-
 	/* Indicates device status (enabled / hidden or not). */
 	int enabled;
 	int hidden;

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __NORTHBRIDGE_INTEL_GM45_GM45_H__
 #define __NORTHBRIDGE_INTEL_GM45_GM45_H__
@@ -438,7 +437,8 @@ u16 get_blc_pwm_freq_value(const char *edid_ascii_string);
 #include <device/device.h>
 
 struct acpi_rsdp;
-unsigned long northbridge_write_acpi_tables(struct device *device, unsigned long start, struct acpi_rsdp *rsdp);
+unsigned long northbridge_write_acpi_tables(const struct device *device, unsigned long start,
+						struct acpi_rsdp *rsdp);
 
 #endif /* !__ACPI__ */
 #endif /* __NORTHBRIDGE_INTEL_GM45_GM45_H__ */

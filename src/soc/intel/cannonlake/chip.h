@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _SOC_CHIP_H_
 #define _SOC_CHIP_H_
@@ -9,7 +8,6 @@
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
 #include <intelblocks/lpc_lib.h>
-#include <smbios.h>
 #include <stdint.h>
 #include <soc/gpio.h>
 #include <soc/pch.h>
@@ -195,6 +193,7 @@ struct soc_intel_cannonlake_config {
 
 	/* Heci related */
 	uint8_t Heci3Enabled;
+	uint8_t DisableHeciRetry;
 
 	/* Gfx related */
 	uint8_t IgdDvmt50PreAlloc;

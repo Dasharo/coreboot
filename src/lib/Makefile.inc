@@ -1,16 +1,5 @@
-#
-# This file is part of the coreboot project.
-#
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
+# SPDX-License-Identifier: GPL-2.0-only
+
 subdirs-y += gnat
 
 ifeq ($(CONFIG_UBSAN),y)
@@ -169,6 +158,11 @@ ramstage-y += hexdump.c
 romstage-y += hexdump.c
 verstage-y += hexdump.c
 smm-y += hexdump.c
+
+bootblock-$(CONFIG_ESPI_DEBUG) += espi_debug.c
+verstage-$(CONFIG_ESPI_DEBUG) += espi_debug.c
+romstage-$(CONFIG_ESPI_DEBUG) += espi_debug.c
+ramstage-$(CONFIG_ESPI_DEBUG) += espi_debug.c
 
 bootblock-$(CONFIG_REG_SCRIPT) += reg_script.c
 verstage-$(CONFIG_REG_SCRIPT) += reg_script.c
@@ -349,3 +343,5 @@ spd.bin-type := spd
 endif
 
 ramstage-y += uuid.c
+
+romstage-$(CONFIG_ROMSTAGE_SPD_SMBUS) += spd_cache.c

@@ -1,9 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
@@ -119,7 +114,7 @@ static const struct pad_config gpio_table[] = {
 	/* C10 : GPP_C10/UART0_RTSB */
 	PAD_NC(GPP_C10, NONE),
 	/* C11 : AP_WP_OD */
-	PAD_NC(GPP_C11, NONE),
+	PAD_CFG_GPI(GPP_C11, NONE, DEEP),
 	/* C12 : AP_PEN_DET_ODL */
 	PAD_NC(GPP_C12, NONE),
 	/* C13 : GPP_C13/UART1_TXD */
@@ -170,13 +165,13 @@ static const struct pad_config gpio_table[] = {
 	/* D11 : GPP_D11/GSPI2_MOSI/UART0A_CTSB */
 	PAD_NC(GPP_D11, NONE),
 	/* D12 : WCAM_RST_L */
-	PAD_NC(GPP_D12, NONE),
+	PAD_CFG_GPO(GPP_D12, 0, PLTRST),
 	/* D13 : EN_PP2800_CAMERA */
-	PAD_NC(GPP_D13, NONE),
+	PAD_CFG_GPO(GPP_D13, 0, PLTRST),
 	/* D14 : EN_PP1200_CAMERA */
-	PAD_NC(GPP_D14, NONE),
+	PAD_CFG_GPO(GPP_D14, 0, PLTRST),
 	/* D15 : UCAM_RST_L */
-	PAD_NC(GPP_D15, NONE),
+	PAD_CFG_GPO(GPP_D15, 0, PLTRST),
 	/* D16 : HP_INT_ODL */
 	PAD_CFG_GPI_INT(GPP_D16, NONE, PLTRST, EDGE_BOTH),
 	/* D17 : EN_SPK */
@@ -195,11 +190,11 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_D23, NONE),
 
 	/* E0  : CLK_24M_UCAM */
-	PAD_NC(GPP_E0, NONE),
+	PAD_CFG_NF(GPP_E0, NONE, DEEP, NF2),
 	/* E1  : EMR_RESET_L */
 	PAD_NC(GPP_E1, NONE),
 	/* E2  : CLK_24M_WCAM */
-	PAD_NC(GPP_E2, NONE),
+	PAD_CFG_NF(GPP_E2, NONE, DEEP, NF1),
 	/* E3  : GPP_E3/SATA_0_DEVSLP */
 	PAD_NC(GPP_E3, NONE),
 	/* E4  : IMGCLKOUT_2 */
@@ -348,7 +343,7 @@ static const struct pad_config gpio_table[] = {
 
 
 	/* S0  : RAM_STRAP_4 */
-	PAD_CFG_GPI(GPP_S0, UP_5K, DEEP),
+	PAD_CFG_GPI(GPP_S0, NONE, DEEP),
 	/* S1  : RSVD_STRAP */
 	PAD_NC(GPP_S1, NONE),
 	/* S2  : DMIC1_CLK */
@@ -418,7 +413,7 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_GPO(GPP_H19, 0, DEEP),
 
 	/* S0  : RAM_STRAP_4 */
-	PAD_CFG_GPI(GPP_S0, UP_5K, DEEP),
+	PAD_CFG_GPI(GPP_S0, NONE, DEEP),
 };
 
 const struct pad_config *__weak variant_gpio_table(size_t *num)
@@ -444,6 +439,8 @@ const struct pad_config *__weak variant_sleep_gpio_table(size_t *num)
 }
 
 static const struct cros_gpio cros_gpios[] = {
+	CROS_GPIO_REC_AL(CROS_GPIO_VIRTUAL, CROS_GPIO_COMM0_NAME),
+	CROS_GPIO_WP_AH(GPIO_PCH_WP, CROS_GPIO_COMM0_NAME),
 };
 
 const struct cros_gpio *__weak variant_cros_gpios(size_t *num)

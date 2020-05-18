@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef MBOOT_H
 #define MBOOT_H
 
 #include <arch/io.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <string.h>
 #include <console/console.h>
 #include <cbfs.h>

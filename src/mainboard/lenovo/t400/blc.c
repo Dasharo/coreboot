@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <stdint.h>
 #include <commonlib/helpers.h>
 #include <northbridge/intel/gm45/gm45.h>
 

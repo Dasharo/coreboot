@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /*
  * ACPI - create the Fixed ACPI Description Tables (FADT)
@@ -7,7 +6,7 @@
 
 #include <string.h>
 #include <console/console.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <device/device.h>
 #include <version.h>
 

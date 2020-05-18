@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <device/pci_ops.h>
 #include <stdint.h>
 #include <delay.h>
@@ -66,11 +65,6 @@ static void add_fixed_resources(struct device *dev, int index)
 			      CONFIG_CHROMEOS_RAMOOPS_RAM_START >> 10,
 			      CONFIG_CHROMEOS_RAMOOPS_RAM_SIZE >> 10);
 #endif
-}
-
-static void pci_domain_set_resources(struct device *dev)
-{
-	assign_resources(dev->link_list);
 }
 
 #if CONFIG(HAVE_ACPI_TABLES)

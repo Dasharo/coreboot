@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 #include <assert.h>
 #include <console/console.h>
 #include <fsp/api.h>
@@ -13,6 +12,18 @@
 #include <soc/ramstage.h>
 #include <soc/soc_chip.h>
 #include <string.h>
+
+/*
+ * ME End of Post configuration
+ * 0 - Disable EOP.
+ * 1 - Send in PEI (Applicable for FSP in API mode)
+ * 2 - Send in DXE (Not applicable for FSP in API mode)
+ */
+enum {
+	EOP_DISABLE,
+	EOP_PEI,
+	EOP_DXE,
+} EndOfPost;
 
 static const pci_devfn_t serial_io_dev[] = {
 	PCH_DEVFN_I2C0,
@@ -97,12 +108,19 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* Unlock upper 8 bytes of RTC RAM */
 	params->RtcMemoryLock = 0;
 
+	/* Enable End of Post in PEI phase */
+	params->EndOfPostMessage = EOP_PEI;
+
 	/* Legacy 8254 timer support */
 	params->Enable8254ClockGating = !CONFIG_USE_LEGACY_8254_TIMER;
 	params->Enable8254ClockGatingOnS3 = 1;
 
 	/* disable Legacy PME */
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
+
+	/* Enable ClkReqDetect for enabled port */
+	memcpy(params->PcieRpClkReqDetect, config->PcieRpClkReqDetect,
+		sizeof(config->PcieRpClkReqDetect));
 
 	/* USB configuration */
 	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
@@ -130,12 +148,34 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		}
 	}
 
+	/* SATA */
+	dev = pcidev_path_on_root(PCH_DEVFN_SATA);
+	if (dev) {
+		params->SataEnable = dev->enabled;
+		params->SataMode = config->SataMode;
+		params->SataSalpSupport = config->SataSalpSupport;
+
+		_Static_assert(ARRAY_SIZE(params->SataPortsEnable) >=
+				ARRAY_SIZE(config->SataPortsEnable), "copy buffer overflow!");
+		memcpy(params->SataPortsEnable, config->SataPortsEnable,
+				sizeof(params->SataPortsEnable));
+
+		_Static_assert(ARRAY_SIZE(params->SataPortsDevSlp) >=
+				ARRAY_SIZE(config->SataPortsDevSlp), "copy buffer overflow!");
+		memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
+				sizeof(params->SataPortsDevSlp));
+	} else {
+		params->SataEnable = 0;
+	}
+
 	/* SDCard related configuration */
 	dev = pcidev_path_on_root(PCH_DEVFN_SDCARD);
-	if (!dev)
+	if (!dev) {
 		params->ScsSdCardEnabled = 0;
-	else
+	} else {
 		params->ScsSdCardEnabled = dev->enabled;
+		params->SdCardPowerEnableActiveHigh = config->SdCardPowerEnableActiveHigh;
+	}
 
 	params->Device4Enable = config->Device4Enable;
 

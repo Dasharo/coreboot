@@ -1,5 +1,4 @@
 ## SPDX-License-Identifier: GPL-2.0-only
-## This file is part of the coreboot project.
 
 config SOUTHBRIDGE_INTEL_BD82X6X
 	bool
@@ -27,7 +26,6 @@ config SOUTH_BRIDGE_OPTIONS # dummy
 	select PCIEXP_ASPM
 	select PCIEXP_COMMON_CLOCK
 	select COMMON_FADT
-	select ACPI_SATA_GENERATOR
 	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select SOUTHBRIDGE_INTEL_COMMON_GPIO
 	select RTC

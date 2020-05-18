@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _SOC_CHIP_H_
 #define _SOC_CHIP_H_
@@ -96,6 +95,7 @@ struct soc_intel_tigerlake_config {
 	uint8_t PchHdaAudioLinkDmicEnable[MAX_HD_AUDIO_DMIC_LINKS];
 	uint8_t PchHdaAudioLinkSspEnable[MAX_HD_AUDIO_SSP_LINKS];
 	uint8_t PchHdaAudioLinkSndwEnable[MAX_HD_AUDIO_SNDW_LINKS];
+	uint8_t PchHdaIDispCodecDisconnect;
 
 	/* PCIe Root Ports */
 	uint8_t PcieRpEnable[CONFIG_MAX_ROOT_PORTS];
@@ -106,6 +106,9 @@ struct soc_intel_tigerlake_config {
 	/* PCIe ClkReq-to-ClkSrc mapping, number of clkreq signal assigned to
 	 * clksrc. */
 	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCKS];
+
+	/* Probe CLKREQ# signal before enabling CLKREQ# based power management.*/
+	uint8_t PcieRpClkReqDetect[CONFIG_MAX_ROOT_PORTS];
 
 	/* PCIe RP L1 substate */
 	enum L1_substates_control {
@@ -195,9 +198,9 @@ struct soc_intel_tigerlake_config {
 	/* Debug interface selection */
 	enum {
 		DEBUG_INTERFACE_RAM = (1 << 0),
-		DEBUG_INTERFACE_UART = (1 << 1),
+		DEBUG_INTERFACE_UART_8250IO = (1 << 1),
 		DEBUG_INTERFACE_USB3 = (1 << 3),
-		DEBUG_INTERFACE_SERIAL_IO = (1 << 4),
+		DEBUG_INTERFACE_LPSS_SERIAL_IO = (1 << 4),
 		DEBUG_INTERFACE_TRACEHUB = (1 << 5),
 	} debug_interface_flag;
 
@@ -210,9 +213,13 @@ struct soc_intel_tigerlake_config {
 		FORCE_ENABLE,
 	} CnviBtAudioOffload;
 
-	/* Tcss */
+	/* Tcss USB */
 	uint8_t TcssXhciEn;
 	uint8_t TcssXdciEn;
+
+	/* Tcss DMA */
+	uint8_t TcssDma0En;
+	uint8_t TcssDma1En;
 
 	/*
 	 * SOC Aux orientation override:
@@ -286,6 +293,18 @@ struct soc_intel_tigerlake_config {
 
 	/* HyperThreadingDisable : Yes (1) / No (0) */
 	uint8_t HyperThreadingDisable;
+
+	/*
+	 * Enable(0)/Disable(1) DMI Power Optimizer on PCH side.
+	 * Default 0. Setting this to 1 disables the DMI Power Optimizer.
+	 */
+	uint8_t DmiPwrOptimizeDisable;
+
+	/*
+	 * Enable(0)/Disable(1) SATA Power Optimizer on PCH side.
+	 * Default 0. Setting this to 1 disables the SATA Power Optimizer.
+	 */
+	uint8_t SataPwrOptimizeDisable;
 };
 
 typedef struct soc_intel_tigerlake_config config_t;

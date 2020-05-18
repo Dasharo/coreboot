@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <types.h>
 #include <string.h>
 #include <console/console.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <device/device.h>
 #include <southbridge/intel/i82801gx/nvs.h>
 
@@ -63,7 +62,7 @@ static long acpi_create_ecdt(acpi_ecdt_t * ecdt)
 	return header->length;
 }
 
-unsigned long mainboard_write_acpi_tables(struct device *device,
+unsigned long mainboard_write_acpi_tables(const struct device *device,
 					  unsigned long start,
 					  acpi_rsdp_t *rsdp)
 {

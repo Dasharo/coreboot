@@ -1,18 +1,16 @@
 /*
- * This file is part of the coreboot project.
  *
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include <console/console.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <baseboard/variants.h>
 #include <device/device.h>
 #include <ec/ec.h>
 #include <ec/google/chromeec/ec.h>
 #include <soc/gpio.h>
-#include <smbios.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <variant/gpio.h>
 

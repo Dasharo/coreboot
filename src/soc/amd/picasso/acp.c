@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -7,9 +6,9 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include "chip.h"
+#include <soc/acp.h>
 #include <soc/acpi.h>
 #include <soc/pci_devs.h>
-#include <soc/northbridge.h>
 #include <soc/southbridge.h>
 #include <amdblocks/acpimmio.h>
 #include <commonlib/helpers.h>
@@ -56,5 +55,5 @@ static struct device_operations acp_ops = {
 static const struct pci_driver acp_driver __pci_driver = {
 	.ops = &acp_ops,
 	.vendor = PCI_VENDOR_ID_AMD,
-	.device = PCI_DEVICD_ID_AMD_PCO_ACP,
+	.device = PCI_DEVICE_ID_AMD_FAM17H_ACP,
 };

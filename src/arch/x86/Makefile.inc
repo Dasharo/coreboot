@@ -1,7 +1,4 @@
-##
 ## SPDX-License-Identifier: GPL-2.0-only
-## This file is part of the coreboot project.
-##
 
 ifeq ($(CONFIG_POSTCAR_STAGE),y)
 $(eval $(call init_standard_toolchain,postcar))
@@ -230,12 +227,6 @@ $(CONFIG_CBFS_PREFIX)/postcar-compression := none
 
 ifeq ($(CONFIG_ARCH_RAMSTAGE_X86_32)$(CONFIG_ARCH_RAMSTAGE_X86_64),y)
 
-ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
-ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpigen.c
-ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpigen_dsm.c
-ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi_device.c
-ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi_pld.c
-ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpigen_ps2_keybd.c
 ramstage-$(CONFIG_HAVE_ACPI_RESUME) += acpi_s3.c
 ramstage-$(CONFIG_ACPI_BERT) += acpi_bert_storage.c
 ramstage-y += c_start.S
@@ -287,15 +278,6 @@ endif
 ifneq ($(wildcard src/mainboard/$(MAINBOARDDIR)/reset.c),)
 ramstage-srcs += src/mainboard/$(MAINBOARDDIR)/reset.c
 endif
-ifeq ($(CONFIG_HAVE_ACPI_TABLES),y)
-ifneq ($(wildcard src/mainboard/$(MAINBOARDDIR)/acpi_tables.c),)
-ramstage-srcs += src/mainboard/$(MAINBOARDDIR)/acpi_tables.c
-endif
-$(eval $(call asl_template,dsdt))
-ifneq ($(wildcard src/mainboard/$(MAINBOARDDIR)/fadt.c),)
-ramstage-srcs += src/mainboard/$(MAINBOARDDIR)/fadt.c
-endif
-endif # CONFIG_GENERATE_ACPI_TABLES
 
 ramstage-libs ?=
 

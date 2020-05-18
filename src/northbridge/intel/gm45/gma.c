@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/mmio.h>
 #include <console/console.h>
@@ -208,7 +207,7 @@ static void gma_func0_init(struct device *dev)
 	intel_gma_restore_opregion();
 }
 
-static void gma_generate_ssdt(struct device *device)
+static void gma_generate_ssdt(const struct device *device)
 {
 	const struct northbridge_intel_gm45_config *chip = device->chip_info;
 
@@ -216,7 +215,7 @@ static void gma_generate_ssdt(struct device *device)
 }
 
 static unsigned long
-gma_write_acpi_tables(struct device *const dev,
+gma_write_acpi_tables(const struct device *const dev,
 		      unsigned long current,
 		      struct acpi_rsdp *const rsdp)
 {

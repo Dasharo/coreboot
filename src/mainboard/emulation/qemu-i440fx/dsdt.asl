@@ -1,19 +1,7 @@
-/*
- * Bochs/QEMU ACPI DSDT ASL definition
- *
- * Copyright (c) 2006 Fabrice Bellard
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License version 2 as published by the Free Software Foundation.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- */
+/* Bochs/QEMU ACPI DSDT ASL definition */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 DefinitionBlock (
 	"dsdt.aml",         // Output Filename
 	"DSDT",             // Signature

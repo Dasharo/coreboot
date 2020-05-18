@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/mmio.h>
 #include <assert.h>
@@ -10,7 +9,6 @@
 #include <soc/i2c.h>
 #include <soc/periph.h>
 #include <soc/pinmux.h>
-#include <stddef.h>
 #include <timer.h>
 
 struct __packed i2c_regs

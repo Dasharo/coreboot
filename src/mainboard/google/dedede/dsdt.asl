@@ -1,11 +1,6 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <variant/ec.h>
 #include <variant/gpio.h>
 
@@ -33,6 +28,11 @@ DefinitionBlock(
 			#include <soc/intel/jasperlake/acpi/southbridge.asl>
 		}
 	}
+
+#if CONFIG(VARIANT_HAS_CAMERA_ACPI)
+	/* Camera */
+	#include <variant/acpi/camera.asl>
+#endif
 
 	/* Chrome OS specific */
 	#include <vendorcode/google/chromeos/acpi/chromeos.asl>

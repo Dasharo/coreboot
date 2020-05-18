@@ -1,17 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <soc/iomap.h>
 
@@ -195,22 +182,24 @@ Method (_CRS, 0, Serialized)
 	/*
 	 * Fix up PCI memory region
 	 * Start with Top of Lower Usable DRAM
+	 * Lower 20 bits of TOLUD register need to be masked since they contain lock and
+	 * reserved bits.
 	 */
-	Store (\_SB.PCI0.MCHC.TLUD, PMIN)
-	Add (Subtract (PMAX, PMIN), 1, PLEN)
+	PMIN = \_SB.PCI0.MCHC.TLUD & (0xfff << 20)
+	PLEN = PMAX - PMIN + 1
 
 	/* Patch PM02 range based on Memory Size */
-	If (LEqual (A4GS, 0)) {
+	If (A4GS == 0) {
 		CreateQwordField (MCRS, PM02._LEN, MSEN)
-		Store (0, MSEN)
+		MSEN = 0
 	} Else {
 		CreateQwordField (MCRS, PM02._MIN, MMIN)
 		CreateQwordField (MCRS, PM02._MAX, MMAX)
 		CreateQwordField (MCRS, PM02._LEN, MLEN)
 		/* Set 64bit MMIO resource base and length */
-		Store (A4GS, MLEN)
-		Store (A4GB, MMIN)
-		Subtract (Add (MMIN, MLEN), 1, MMAX)
+		MLEN = A4GS
+		MMIN = A4GB
+		MMAX = MMIN + MLEN - 1
 	}
 
 	Return (MCRS)
@@ -219,35 +208,35 @@ Method (_CRS, 0, Serialized)
 /* Get MCH BAR */
 Method (GMHB, 0, Serialized)
 {
-	ShiftLeft (\_SB.PCI0.MCHC.MHBR, 15, Local0)
+	Local0 = \_SB.PCI0.MCHC.MHBR << 15
 	Return (Local0)
 }
 
 /* Get EP BAR */
 Method (GEPB, 0, Serialized)
 {
-	ShiftLeft (\_SB.PCI0.MCHC.EPBR, 12, Local0)
+	Local0 = \_SB.PCI0.MCHC.EPBR << 12
 	Return (Local0)
 }
 
 /* Get PCIe BAR */
 Method (GPCB, 0, Serialized)
 {
-	ShiftLeft (\_SB.PCI0.MCHC.PXBR, 26, Local0)
+	Local0 = \_SB.PCI0.MCHC.PXBR << 26
 	Return (Local0)
 }
 
 /* Get PCIe Length */
 Method (GPCL, 0, Serialized)
 {
-	ShiftRight (0x10000000, \_SB.PCI0.MCHC.PXSZ, Local0)
+	Local0 = 0x10000000 << \_SB.PCI0.MCHC.PXSZ
 	Return (Local0)
 }
 
 /* Get DMI BAR */
 Method (GDMB, 0, Serialized)
 {
-	ShiftLeft (\_SB.PCI0.MCHC.DIBR, 12, Local0)
+	Local0 = \_SB.PCI0.MCHC.DIBR << 12
 	Return (Local0)
 }
 
@@ -295,22 +284,22 @@ Device (PDRC)
 		})
 
 		CreateDwordField (BUF0, MCHB._BAS, MBR0)
-		Store (\_SB.PCI0.GMHB (), MBR0)
+		MBR0 = \_SB.PCI0.GMHB ()
 
 		CreateDwordField (BUF0, DMIB._BAS, DBR0)
-		Store (\_SB.PCI0.GDMB (), DBR0)
+		DBR0 = \_SB.PCI0.GDMB ()
 
 		CreateDwordField (BUF0, EGPB._BAS, EBR0)
-		Store (\_SB.PCI0.GEPB (), EBR0)
+		EBR0 = \_SB.PCI0.GEPB ()
 
 		CreateDwordField (BUF0, PCIX._BAS, XBR0)
-		Store (\_SB.PCI0.GPCB (), XBR0)
+		XBR0 = \_SB.PCI0.GPCB ()
 
 		CreateDwordField (BUF0, PCIX._LEN, XSZ0)
-		Store (\_SB.PCI0.GPCL (), XSZ0)
+		XSZ0 = \_SB.PCI0.GPCL ()
 
 		CreateDwordField (BUF0, FIOH._BAS, FBR0)
-		Subtract(0x100000000, CONFIG_ROM_SIZE, FBR0)
+		FBR0 = 0x100000000 - CONFIG_ROM_SIZE
 
 		Return (BUF0)
 	}

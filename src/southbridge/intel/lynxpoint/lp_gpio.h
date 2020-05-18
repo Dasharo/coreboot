@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef INTEL_LYNXPOINT_LP_GPIO_H
 #define INTEL_LYNXPOINT_LP_GPIO_H
+
+#include <stdint.h>
 
 /* LynxPoint LP GPIOBASE Registers */
 #define GPIO_OWNER(set)		(0x00 + ((set) * 4))

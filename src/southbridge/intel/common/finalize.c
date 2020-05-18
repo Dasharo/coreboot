@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/io.h>
 #include <console/post_codes.h>
@@ -14,16 +13,6 @@
 void intel_pch_finalize_smm(void)
 {
 	const pci_devfn_t lpc_dev = PCI_DEV(0, 0x1f, 0);
-
-	if (CONFIG(LOCK_SPI_FLASH_RO) ||
-	    CONFIG(LOCK_SPI_FLASH_NO_ACCESS)) {
-		int i;
-		u32 lockmask = 1UL << 31;
-		if (CONFIG(LOCK_SPI_FLASH_NO_ACCESS))
-			lockmask |= 1 << 15;
-		for (i = 0; i < 20; i += 4)
-			RCBA32(0x3874 + i) = RCBA32(0x3854 + i) | lockmask;
-	}
 
 	/* Lock SPIBAR */
 	RCBA32_OR(0x3804, (1 << 15));

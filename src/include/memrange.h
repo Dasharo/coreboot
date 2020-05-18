@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 #ifndef MEMRANGE_H_
 #define MEMRANGE_H_
 
@@ -69,7 +68,7 @@ static inline void range_entry_update_tag(struct range_entry *r,
 	r->tag = new_tag;
 }
 
-static inline bool memranges_is_empty(struct memranges *ranges)
+static inline bool memranges_is_empty(const struct memranges *ranges)
 {
 	return ranges->entries == NULL;
 }
@@ -162,7 +161,7 @@ struct range_entry *memranges_next_entry(struct memranges *ranges,
 					 const struct range_entry *r);
 
 /* Steals memory from the available list in given ranges as per the constraints:
- * limit = Upper bound for the memory range to steal.
+ * limit = Upper bound for the memory range to steal (Inclusive).
  * size  = Requested size for the stolen memory.
  * align = Required alignment(log 2) for the starting address of the stolen memory.
  * tag   = Use a range that matches the given tag.

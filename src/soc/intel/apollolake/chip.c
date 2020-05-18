@@ -1,19 +1,6 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <bootstate.h>
 #include <cbmem.h>
 #include <console/console.h>
@@ -208,11 +195,6 @@ const char *soc_acpi_name(const struct device *dev)
 	}
 
 	return NULL;
-}
-
-static void pci_domain_set_resources(struct device *dev)
-{
-	assign_resources(dev->link_list);
 }
 
 static struct device_operations pci_domain_ops = {

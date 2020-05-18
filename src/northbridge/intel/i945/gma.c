@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <bootmode.h>
@@ -744,7 +743,7 @@ static void gma_func1_init(struct device *dev)
 		pci_write_config8(dev, 0xf4, 0xff);
 }
 
-static void gma_generate_ssdt(struct device *device)
+static void gma_generate_ssdt(const struct device *device)
 {
 	const struct northbridge_intel_i945_config *chip = device->chip_info;
 
@@ -765,7 +764,7 @@ static void gma_func0_read_resources(struct device *dev)
 }
 
 static unsigned long
-gma_write_acpi_tables(struct device *const dev,
+gma_write_acpi_tables(const struct device *const dev,
 		      unsigned long current,
 		      struct acpi_rsdp *const rsdp)
 {

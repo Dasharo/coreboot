@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 Name(IRQB, ResourceTemplate(){
 	IRQ(Level,ActiveLow,Shared){}
 })
@@ -45,4 +44,4 @@ Device(intx) {						\
 		}					\
 		Store(Local0, pinx)			\
 	}						\
-}							\
+}

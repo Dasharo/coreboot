@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/io.h>
 #include <device/device.h>
 #include <superio/conf_mode.h>
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 
 /* Common enter/exit implementations */
 

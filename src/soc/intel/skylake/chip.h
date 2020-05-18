@@ -1,17 +1,17 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 
 #ifndef _SOC_CHIP_H_
 #define _SOC_CHIP_H_
 
-#include <arch/acpi_device.h>
+#include <acpi/acpi_device.h>
 #include <device/i2c_simple.h>
 #include <drivers/i2c/designware/dw_i2c.h>
 #include <drivers/intel/gma/i915.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/gspi.h>
 #include <intelblocks/lpc_lib.h>
+#include <intelblocks/power_limit.h>
 #include <stdint.h>
 #include <soc/gpe.h>
 #include <soc/gpio.h>
@@ -21,7 +21,6 @@
 #include <soc/serialio.h>
 #include <soc/usb.h>
 #include <soc/vr_config.h>
-#include <smbios.h>
 
 #define MAX_PEG_PORTS	3
 
@@ -34,6 +33,9 @@ struct soc_intel_skylake_config {
 
 	/* Common struct containing soc config data required by common code */
 	struct soc_intel_common_config common_soc_config;
+
+	/* Common struct containing power limits configuration information */
+	struct soc_power_limits_config power_limits_config;
 
 	/* IGD panel configuration */
 	unsigned int gpu_pp_up_delay_ms;
@@ -101,27 +103,6 @@ struct soc_intel_skylake_config {
 
 	/* Package PL4 power limit in Watts */
 	u32 PowerLimit4;
-
-	/* PL2 Override value in Watts */
-	u32 tdp_pl2_override;
-	/* PL1 Override value in Watts */
-	u32 tdp_pl1_override;
-
-	/* SysPL2 Value in Watts */
-	u32 tdp_psyspl2;
-
-	/* SysPL3 Value in Watts */
-	u32 tdp_psyspl3;
-	/* SysPL3 window size */
-	u32 tdp_psyspl3_time;
-	/* SysPL3 duty cycle */
-	u32 tdp_psyspl3_dutycycle;
-
-	/* PL4 Value in Watts */
-	u32 tdp_pl4;
-
-	/* Estimated maximum platform power in Watts */
-	u16 psys_pmax;
 
 	/* Whether to ignore VT-d support of the SKU */
 	int ignore_vtd;
@@ -284,6 +265,22 @@ struct soc_intel_skylake_config {
 
 	/* Enable/Disable HotPlug support for Root Port */
 	u8 PcieRpHotPlug[CONFIG_MAX_ROOT_PORTS];
+
+	/* PCIE RP Max Payload, Max Payload Size supported */
+	enum {
+		RpMaxPayload_128,
+		RpMaxPayload_256,
+	} PcieRpMaxPayload[CONFIG_MAX_ROOT_PORTS];
+
+	/* PCIE RP ASPM, ASPM support for the root port */
+	enum {
+		AspmDefault,
+		AspmDisabled,
+		AspmL0s,
+		AspmL1,
+		AspmL0sL1,
+		AspmAutoConfig,
+	} PcieRpAspm[CONFIG_MAX_ROOT_PORTS];
 
 	/* USB related */
 	struct usb2_port_config usb2_ports[16];
@@ -567,9 +564,6 @@ struct soc_intel_skylake_config {
 	 * 2 - VR mailbox command sent for IA/GT/SA rails.
 	 */
 	u8 IslVrCmd;
-
-	/* Enable/Disable Sata power optimization */
-	u8 SataPwrOptEnable;
 
 	/* Enable/Disable Sata test mode */
 	u8 SataTestMode;

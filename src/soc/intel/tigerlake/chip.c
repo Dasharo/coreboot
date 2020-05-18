@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pci.h>
@@ -80,6 +79,7 @@ const char *soc_acpi_name(const struct device *dev)
 	case PCH_DEVFN_PCIE10:	return "RP10";
 	case PCH_DEVFN_PCIE11:	return "RP11";
 	case PCH_DEVFN_PCIE12:	return "RP12";
+	case PCH_DEVFN_PMC:	return "PMC";
 	case PCH_DEVFN_UART0:	return "UAR0";
 	case PCH_DEVFN_UART1:	return "UAR1";
 	case PCH_DEVFN_UART2:	return "UAR2";
@@ -130,11 +130,6 @@ void soc_init_pre_device(void *chip_info)
 	itss_restore_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
 
 	soc_fill_gpio_pm_configuration();
-}
-
-static void pci_domain_set_resources(struct device *dev)
-{
-	assign_resources(dev->link_list);
 }
 
 static struct device_operations pci_domain_ops = {

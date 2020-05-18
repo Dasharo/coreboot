@@ -1,17 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #ifndef SOC_INTEL_COMMON_CSE_H
 #define SOC_INTEL_COMMON_CSE_H
@@ -23,6 +10,7 @@
 #define MKHI_GROUP_ID_CBM	0x0
 #define MKHI_GROUP_ID_HMRFPO	0x5
 #define MKHI_GROUP_ID_GEN	0xff
+#define MKHI_GROUP_ID_BUP_COMMON	0xf0
 
 /* Global Reset Command ID */
 #define MKHI_CBM_GLOBAL_RESET_REQ	0xb
@@ -37,6 +25,10 @@
 /* Get Firmware Version Command Id */
 #define MKHI_GEN_GET_FW_VERSION	0x2
 
+/* Boot partition info and set boot partition info command ids */
+#define MKHI_BUP_COMMON_GET_BOOT_PARTITION_INFO	0x1c
+#define MKHI_BUP_COMMON_SET_BOOT_PARTITION_INFO	0x1d
+
 /* ME Current Working States */
 #define ME_HFS1_CWS_NORMAL	0x5
 
@@ -48,7 +40,7 @@
 /* ME Firmware SKU Types */
 #define ME_HFS3_FW_SKU_CONSUMER	0x2
 #define ME_HFS3_FW_SKU_CORPORATE	0x3
-#define ME_HFS3_FW_SKU_CUSTOM	0x5
+#define ME_HFS3_FW_SKU_LITE	0x5
 
 /* HFSTS register offsets in PCI config space */
 enum {
@@ -138,10 +130,10 @@ int cse_request_global_reset(enum rst_req_type rst_type);
 /*
  * Sends HMRFPO_ENABLE command.
  * HMRFPO - Host ME Region Flash Protection Override.
- * For CSE Firmware SKU Custom, procedure to place CSE in HMRFPO (SECOVER_MEI_MSG) mode:
- *	1. Ensure CSE boots from BP1(RO).
- *		- Send set_next_boot_partition(BP1)
- *		- Issue CSE Only Reset
+ * For CSE Lite SKU, procedure to place CSE in HMRFPO (SECOVER_MEI_MSG) mode:
+ *	1. Ensure CSE boots from RO(BP1).
+ *		- Set CSE's next boot partition to RO
+ *		- Issue GLOBAL_RESET command to reset the system
  *	2. Send HMRFPO_ENABLE command to CSE. Further, no reset is required.
  *
  * The HMRFPO mode prevents CSE to execute SPI I/O cycles to CSE region, and unlocks
@@ -209,14 +201,23 @@ bool cse_is_hfs1_com_secover_mei_msg(void);
 bool cse_is_hfs1_com_soft_temp_disable(void);
 
 /*
- * Checks CSE's Firmware SKU is Custom or not.
- * Returns true if CSE's Firmware SKU is Custom, otherwise false
+ * Checks CSE's Firmware SKU is Lite or not.
+ * Returns true if CSE's Firmware SKU is Lite, otherwise false
  */
-bool cse_is_hfs3_fw_sku_custom(void);
+bool cse_is_hfs3_fw_sku_lite(void);
 
 /*
  * Polls for CSE's current operation mode 'Soft Temp Disable'.
  * Returns 0 on failure and 1 on success.
  */
 uint8_t cse_wait_com_soft_temp_disable(void);
+
+/*
+ * The CSE Lite SKU supports notion of RO and RW boot partitions. The function will set
+ * CSE's boot partition as per Chrome OS boot modes. In normal mode, the function allows CSE to
+ * boot from RW and triggers recovery mode if CSE fails to jump to RW.
+ * In software triggered recovery mode, the function allows CSE to boot from whatever is
+ * currently selected partition.
+ */
+void cse_fw_sync(void *unused);
 #endif // SOC_INTEL_COMMON_CSE_H

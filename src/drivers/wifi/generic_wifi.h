@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _GENERIC_WIFI_H_
 #define _GENERIC_WIFI_H_
@@ -22,7 +21,7 @@ struct generic_wifi_config {
  * This function implements common device operation to help fill ACPI SSDT
  * table for WiFi controller.
  */
-void generic_wifi_fill_ssdt(struct device *dev,
+void generic_wifi_fill_ssdt(const struct device *dev,
 			    const struct generic_wifi_config *config);
 
 /**

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/cpu.h>
 #include <device/pci_ops.h>
@@ -26,7 +25,10 @@ static struct {
 	u16 mchid;
 	const char *name;
 } mch_table[] = {
-	{ PCI_DEVICE_ID_INTEL_JSL_ID_1, "Jasperlake-1" },
+	{ PCI_DEVICE_ID_INTEL_JSL_ID_1, "Jasperlake SKU4-1" },
+	{ PCI_DEVICE_ID_INTEL_JSL_ID_2, "Jasperlake SKU4-2" },
+	{ PCI_DEVICE_ID_INTEL_JSL_ID_3, "Jasperlake SKU2-1" },
+	{ PCI_DEVICE_ID_INTEL_JSL_ID_4, "Jasperlake SKU2-2" },
 };
 
 static struct {

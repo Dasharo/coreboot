@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /* DefinitionBlock Statement */
-#include <arch/acpi.h>
 
 #if CONFIG(BOARD_PCENGINES_APU2)
 #define DEVICE_NAME "apu2
@@ -14,6 +12,7 @@
 #define DEVICE_NAME "apu5
 #endif
 
+#include <acpi/acpi.h>
 DefinitionBlock (
 	"DSDT.AML",	/* Output filename */
 	"DSDT",		/* Signature */

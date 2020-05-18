@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -11,14 +10,14 @@
 #include <pc80/i8259.h>
 #include <arch/io.h>
 #include <arch/ioapic.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <cpu/x86/smm.h>
 #include <cbmem.h>
 #include <string.h>
 #include "chip.h"
 #include "nvs.h"
 #include "pch.h"
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
 #include <southbridge/intel/common/rtc.h>
 #include <southbridge/intel/common/spi.h>
@@ -699,7 +698,7 @@ static void pch_lpc_enable(struct device *dev)
 	pch_enable(dev);
 }
 
-static void southbridge_inject_dsdt(struct device *dev)
+static void southbridge_inject_dsdt(const struct device *dev)
 {
 	global_nvs_t *gnvs;
 
@@ -877,12 +876,12 @@ static const char *lpc_acpi_name(const struct device *dev)
 	return "LPCB";
 }
 
-static void southbridge_fill_ssdt(struct device *dev)
+static void southbridge_fill_ssdt(const struct device *dev)
 {
 	intel_acpi_gen_def_acpi_pirq(dev);
 }
 
-static unsigned long southbridge_write_acpi_tables(struct device *device,
+static unsigned long southbridge_write_acpi_tables(const struct device *device,
 						   unsigned long start,
 						   struct acpi_rsdp *rsdp)
 {

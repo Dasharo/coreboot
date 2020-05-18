@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* This file is part of the coreboot project. */
 
-#include <stdlib.h>
 #include <console/console.h>
 #include <device/pnp.h>
 #include <device/device.h>

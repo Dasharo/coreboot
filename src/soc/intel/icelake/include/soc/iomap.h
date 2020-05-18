@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _SOC_ICELAKE_IOMAP_H_
 #define _SOC_ICELAKE_IOMAP_H_
@@ -48,9 +47,6 @@
 
 #define VTD_BASE_ADDRESS	0xFED90000
 #define VTD_BASE_SIZE		0x00004000
-
-#define ABOVE_4GB_MEM_BASE_ADDRESS	(256ULL * GiB)
-#define ABOVE_4GB_MEM_BASE_SIZE	(256ULL * GiB)
 
 /*
  * I/O port address space

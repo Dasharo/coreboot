@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -30,8 +29,7 @@ static void ide_init(struct device *dev)
 		enable_secondary = config->ide_enable_secondary;
 	}
 
-	reg32 = pci_read_config32(dev, PCI_COMMAND);
-	pci_write_config32(dev, PCI_COMMAND, reg32 | PCI_COMMAND_IO | PCI_COMMAND_MASTER);
+	pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_IO | PCI_COMMAND_MASTER);
 
 	/* Native Capable, but not enabled. */
 	pci_write_config8(dev, 0x09, 0x8a);

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __ARCH_ROMSTAGE_H__
 #define __ARCH_ROMSTAGE_H__
@@ -40,11 +39,6 @@ void postcar_frame_add_mtrr(struct postcar_frame *pcf,
  * Add variable MTRR covering the memory-mapped ROM with given MTRR type.
  */
 void postcar_frame_add_romcache(struct postcar_frame *pcf, int type);
-
-/*
- * Add a common MTRR setup most platforms will have as a subset.
- */
-void postcar_frame_common_mtrrs(struct postcar_frame *pcf);
 
 /*
  * fill_postcar_frame() is called after raminit completes and right before

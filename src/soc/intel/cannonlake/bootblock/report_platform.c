@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/cpu.h>
 #include <device/pci_ops.h>
@@ -12,7 +11,6 @@
 #include <soc/bootblock.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
-#include <string.h>
 
 #define BIOS_SIGN_ID	0x8B
 

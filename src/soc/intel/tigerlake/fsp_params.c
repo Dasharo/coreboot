@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <assert.h>
 #include <console/console.h>
@@ -151,6 +150,11 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->PcieRpAdvancedErrorReporting[i] =
 			config->PcieRpAdvancedErrorReporting[i];
 	}
+
+	/* Enable ClkReqDetect for enabled port */
+	memcpy(params->PcieRpClkReqDetect, config->PcieRpClkReqDetect,
+		sizeof(config->PcieRpClkReqDetect));
+
 	/* Enable xDCI controller if enabled in devicetree and allowed */
 	dev = pcidev_path_on_root(PCH_DEVFN_USBOTG);
 	if (dev) {
@@ -179,6 +183,15 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
 			sizeof(params->SataPortsDevSlp));
 	}
+
+	/*
+	 * Power Optimizer for DMI and SATA.
+	 * DmiPwrOptimizeDisable and SataPwrOptimizeDisable is default to 0.
+	 * Boards not needing the optimizers explicitly disables them by setting
+	 * these disable variables to 1 in devicetree overrides.
+	 */
+	params->PchPwrOptEnable = !(config->DmiPwrOptimizeDisable);
+	params->SataPwrOptEnable = !(config->SataPwrOptimizeDisable);
 
 	/* LAN */
 	dev = pcidev_path_on_root(PCH_DEVFN_GBE);

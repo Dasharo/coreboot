@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* This file is part of the coreboot project. */
 
 #include <arch/io.h>
 #include <console/console.h>
@@ -8,8 +7,8 @@
 #include <option.h>
 #include <pc80/keyboard.h>
 #include <superio/conf_mode.h>
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <superio/common/ssdt.h>
 #include <stdlib.h>
 
@@ -115,7 +114,7 @@ static const char *npcd378_acpi_hid(const struct device *dev)
 	}
 }
 
-static void npcd378_ssdt_aux(struct device *dev)
+static void npcd378_ssdt_aux(const struct device *dev)
 {
 	/* Scope */
 	acpigen_write_scope(acpi_device_path(dev));
@@ -131,7 +130,7 @@ static void npcd378_ssdt_aux(struct device *dev)
 	acpigen_pop_len();		/* Pop Scope */
 }
 
-static void npcd378_ssdt_kbc(struct device *dev)
+static void npcd378_ssdt_kbc(const struct device *dev)
 {
 	/* Scope */
 	acpigen_write_scope(acpi_device_path(dev));
@@ -147,7 +146,7 @@ static void npcd378_ssdt_kbc(struct device *dev)
 	acpigen_pop_len();		/* Pop Scope */
 }
 
-static void npcd378_ssdt_pwr(struct device *dev)
+static void npcd378_ssdt_pwr(const struct device *dev)
 {
 	const char *name = acpi_device_path(dev);
 	const char *scope = acpi_device_scope(dev);
@@ -403,7 +402,7 @@ static void npcd378_ssdt_pwr(struct device *dev)
 	acpigen_pop_len();		/* Scope */
 }
 
-static void npcd378_fill_ssdt_generator(struct device *dev)
+static void npcd378_fill_ssdt_generator(const struct device *dev)
 {
 	superio_common_fill_ssdt_generator(dev);
 

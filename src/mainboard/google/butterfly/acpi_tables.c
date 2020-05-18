@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <stdint.h>
 #include <southbridge/intel/bd82x6x/nvs.h>
 #include <vendorcode/google/chromeos/gnvs.h>
 #include "thermal.h"

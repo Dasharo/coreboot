@@ -1,22 +1,12 @@
 ################################################################################
 ##
-## This file is part of the coreboot project.
 ##
 ## Copyright (C) 2009-2010 coresystems GmbH
 ## Copyright (C) 2015 Google Inc.
 ## Copyright (C) 2017 Facebook Inc.
 ##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
+## SPDX-License-Identifier: GPL-2.0-only
 
-######################################################################
 # set up payload config and version files for later inclusion
 ifeq ($(CONFIG_PAYLOAD_SEABIOS),y)
 PAYLOAD_CONFIG=payloads/external/SeaBIOS/seabios/.config
@@ -102,7 +92,8 @@ payloads/external/SeaBIOS/seabios/out/bios.bin.elf: $(DOTCONFIG)
 			CONFIG_SEABIOS_DEBUG_LEVEL=$(CONFIG_SEABIOS_DEBUG_LEVEL) \
 			CONFIG_DRIVERS_UART_8250MEM_32=$(CONFIG_DRIVERS_UART_8250MEM_32) \
 			CONFIG_ENABLE_HSUART=$(CONFIG_ENABLE_HSUART) \
-			CONFIG_CONSOLE_UART_BASE_ADDRESS=$(CONFIG_CONSOLE_UART_BASE_ADDRESS)
+			CONFIG_CONSOLE_UART_BASE_ADDRESS=$(CONFIG_CONSOLE_UART_BASE_ADDRESS) \
+			CONFIG_SEABIOS_HARDWARE_IRQ=$(CONFIG_SEABIOS_HARDWARE_IRQ)
 
 payloads/external/SeaBIOS/seabios/out/vgabios.bin: payloads/external/SeaBIOS/seabios/out/bios.bin.elf
 payloads/external/SeaBIOS/seabios/.config: payloads/external/SeaBIOS/seabios/out/bios.bin.elf
@@ -329,6 +320,7 @@ payloads/external/iPXE/ipxe/ipxe.rom ipxe: $(DOTCONFIG) $(PXE_CONFIG_SCRIPT)
 	CONFIG_SCRIPT=$(PXE_CONFIG_SCRIPT) \
 	CONFIG_HAS_SCRIPT=$(CONFIG_PXE_ADD_SCRIPT) \
 	CONFIG_PXE_NO_PROMT=$(CONFIG_PXE_NO_PROMT) \
+	CONFIG_PXE_HAS_HTTPS=$(CONFIG_PXE_HAS_HTTPS) \
 	MFLAGS= MAKEFLAGS=
 
 # LinuxBoot

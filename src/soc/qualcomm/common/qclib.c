@@ -1,16 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/cbmem_console.h>
 #include <cbmem.h>
@@ -25,6 +13,8 @@
 #include <soc/mmu_common.h>
 #include <soc/qclib_common.h>
 #include <soc/symbols_common.h>
+#include <security/vboot/misc.h>
+#include <vb2_api.h>
 
 struct qclib_cb_if_table qclib_cb_if_table = {
 	.magic = QCLIB_MAGIC_NUMBER,
@@ -156,9 +146,11 @@ void qclib_load_and_run(void)
 		qclib_cb_if_table.global_attributes =
 			QCLIB_GA_ENABLE_UART_LOGGING;
 
-	if (CONFIG(QC_SDI_ENABLE)) {
+	if (CONFIG(QC_SDI_ENABLE) && (!CONFIG(VBOOT) ||
+		!vboot_is_gbb_flag_set(VB2_GBB_FLAG_RUNNING_FAFT))) {
 		struct prog qcsdi =
-			PROG_INIT(PROG_REFCODE, CONFIG_CBFS_PREFIX "/qcsdi");
+			PROG_INIT(PROG_REFCODE,
+				CONFIG_CBFS_PREFIX "/qcsdi");
 
 		/* Attempt to load QCSDI elf */
 		if (prog_locate(&qcsdi))
@@ -167,8 +159,8 @@ void qclib_load_and_run(void)
 		if (cbfs_prog_stage_load(&qcsdi))
 			goto fail;
 
-		qclib_add_if_table_entry(QCLIB_TE_QCSDI, prog_entry(&qcsdi),
-				   prog_size(&qcsdi), 0);
+		qclib_add_if_table_entry(QCLIB_TE_QCSDI,
+			prog_entry(&qcsdi), prog_size(&qcsdi), 0);
 		printk(BIOS_INFO, "qcsdi.entry[%p]\n", qcsdi.entry);
 	}
 

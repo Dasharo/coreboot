@@ -1,12 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/path.h>
-#include <stdint.h>
 #include "chip.h"
 
 #if CONFIG(HAVE_ACPI_TABLES)
@@ -14,7 +12,7 @@
 #define ADAU7002_ACPI_NAME	"ADAU"
 #define ADAU7002_ACPI_HID	"ADAU7002"
 
-static void adau7002_fill_ssdt(struct device *dev)
+static void adau7002_fill_ssdt(const struct device *dev)
 {
 	struct drivers_generic_adau7002_config *config;
 	struct acpi_dp *dp;

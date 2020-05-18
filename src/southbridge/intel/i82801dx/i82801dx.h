@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /* the problem: we have 82801dbm support in fb1, and 82801er in fb2.
  * fb1 code is what we want, fb2 structure is needed however.
@@ -12,7 +11,7 @@
 #ifndef I82801DX_H
 #define I82801DX_H
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 
 #if !defined(__ASSEMBLER__)
 

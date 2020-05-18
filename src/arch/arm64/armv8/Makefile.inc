@@ -1,9 +1,4 @@
-################################################################################
-##
 ## SPDX-License-Identifier: GPL-2.0-only
-## This file is part of the coreboot project.
-##
-################################################################################
 
 ifeq ($(CONFIG_ARCH_ARMV8_EXTENSION),0)
 march = armv8-a

@@ -3,6 +3,7 @@ config BOARD_GOOGLE_BASEBOARD_VOLTEER
 	select BOARD_ROMSIZE_KB_32768
 	select DRIVERS_GENERIC_MAX98357A
 	select DRIVERS_I2C_GENERIC
+	select DRIVERS_I2C_HID
 	select DRIVERS_SPI_ACPI
 	select EC_GOOGLE_CHROMEEC
 	select EC_GOOGLE_CHROMEEC_BOARDID
@@ -58,6 +59,7 @@ config MAINBOARD_PART_NUMBER
 	default "Halvor" if BOARD_GOOGLE_HALVOR
 	default "Malefor" if BOARD_GOOGLE_MALEFOR
 	default "Ripto" if BOARD_GOOGLE_RIPTO
+	default "Trondo" if BOARD_GOOGLE_TRONDO
 	default "Volteer" if BOARD_GOOGLE_VOLTEER
 
 config MAX_CPUS
@@ -73,6 +75,11 @@ config VARIANT_DIR
 	default "halvor" if BOARD_GOOGLE_HALVOR
 	default "malefor" if BOARD_GOOGLE_MALEFOR
 	default "ripto" if BOARD_GOOGLE_RIPTO
+	default "trondo" if BOARD_GOOGLE_TRONDO
 	default "volteer" if BOARD_GOOGLE_VOLTEER
+
+config VARIANT_HAS_MIPI_CAMERA
+	bool
+	default n
 
 endif # BOARD_GOOGLE_BASEBOARD_VOLTEER

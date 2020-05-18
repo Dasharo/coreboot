@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -116,7 +115,6 @@ static void azalia_init(struct device *dev)
 	u8 *base;
 	struct resource *res;
 	u32 codec_mask;
-	u32 reg32;
 
 	/* Find base address */
 	res = find_resource(dev, PCI_BASE_ADDRESS_0);
@@ -127,8 +125,7 @@ static void azalia_init(struct device *dev)
 	printk(BIOS_DEBUG, "Azalia: base = %p\n", base);
 
 	/* Set Bus Master */
-	reg32 = pci_read_config32(dev, PCI_COMMAND);
-	pci_write_config32(dev, PCI_COMMAND, reg32 | PCI_COMMAND_MASTER);
+	pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER);
 
 	azalia_pch_init(dev, base);
 

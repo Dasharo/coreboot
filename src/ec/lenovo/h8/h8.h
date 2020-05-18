@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef EC_LENOVO_H8_H
 #define EC_LENOVO_H8_H
@@ -29,13 +28,18 @@ int h8_get_sense_ready(void);
 
 void h8_bluetooth_enable(int on);
 bool h8_bluetooth_nv_enable(void);
-bool h8_has_bdc(struct device *dev);
+bool h8_has_bdc(const struct device *dev);
 
 void h8_wwan_enable(int on);
 bool h8_wwan_nv_enable(void);
-bool h8_has_wwan(struct device *dev);
+bool h8_has_wwan(const struct device *dev);
 
-void h8_ssdt_generator(struct device *dev);
+void h8_ssdt_generator(const struct device *dev);
+/*
+ * boards needing specific h8-related inits could override it
+ */
+void h8_mb_init(void);
+
 
 /* EC registers */
 #define H8_CONFIG0 0x00

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cbmem.h>
 #include <console/console.h>
@@ -24,9 +23,7 @@ static void adsp_init(struct device *dev)
 	u32 tmp32;
 
 	/* Ensure memory and bus master are enabled */
-	tmp32 = pci_read_config32(dev, PCI_COMMAND);
-	tmp32 |= PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
-	pci_write_config32(dev, PCI_COMMAND, tmp32);
+	pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY);
 
 	/* Find BAR0 and BAR1 */
 	bar0 = find_resource(dev, PCI_BASE_ADDRESS_0);

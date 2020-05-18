@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <bootmode.h>
 #include <console/console.h>
@@ -8,7 +7,6 @@
 #include <soc/display.h>
 #include <soc/soc.h>
 #include <soc/sdram.h>
-#include <stddef.h>
 #include <symbols.h>
 
 #include "chip.h"
