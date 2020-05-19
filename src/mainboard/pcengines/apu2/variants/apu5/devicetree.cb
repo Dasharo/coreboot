@@ -52,12 +52,12 @@ chip northbridge/amd/pi/00730F01/root_complex
 						io 0x60 = 0x2e8
 						irq 0x70 = 3
 					end
-					device pnp 2e.008 off end # WDT1 is turned off
-					device pnp 2e.108 off end # GPIO base address mode is off
-					device pnp 2e.f off end   # GPIO Push-Pull selected
-					device pnp 2e.007 off end # GPIO0 is turned off
-					device pnp 2e.107 on end  # GPIO1 is conditionally turned on
-					device pnp 2e.607 off end # GPIO6 is turned off
+					device pnp 2e.008 off end
+					device pnp 2e.108 off end
+					device pnp 2e.f off end
+					device pnp 2e.007 off end
+					device pnp 2e.107 on end
+					device pnp 2e.607 off end
 				end # SIO NCT5104D
 				chip drivers/pc80/tpm
 					device pnp 0c31.0 on end
