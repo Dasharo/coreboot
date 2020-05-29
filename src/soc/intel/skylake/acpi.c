@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <arch/cpu.h>
 #include <arch/ioapic.h>
 #include <arch/smp/mpspec.h>
@@ -491,7 +490,7 @@ static void generate_p_state_entries(int core, int cores_per_package)
 	acpigen_pop_len();
 }
 
-void generate_cpu_entries(struct device *device)
+void generate_cpu_entries(const struct device *device)
 {
 	int core_id, cpu_id, pcontrol_blk = ACPI_BASE_ADDRESS, plen = 6;
 	int totalcores = dev_count_cpu();
@@ -588,7 +587,7 @@ static unsigned long acpi_fill_dmar(unsigned long current)
 	return current;
 }
 
-unsigned long northbridge_write_acpi_tables(struct device *const dev,
+unsigned long northbridge_write_acpi_tables(const struct device *const dev,
 					    unsigned long current,
 					    struct acpi_rsdp *const rsdp)
 {
@@ -630,7 +629,7 @@ unsigned long acpi_madt_irq_overrides(unsigned long current)
 	return current;
 }
 
-unsigned long southbridge_write_acpi_tables(struct device *device,
+unsigned long southbridge_write_acpi_tables(const struct device *device,
 					     unsigned long current,
 					     struct acpi_rsdp *rsdp)
 {
@@ -641,7 +640,7 @@ unsigned long southbridge_write_acpi_tables(struct device *device,
 	return acpi_align_current(current);
 }
 
-void southbridge_inject_dsdt(struct device *device)
+void southbridge_inject_dsdt(const struct device *device)
 {
 	global_nvs_t *gnvs;
 
@@ -654,7 +653,6 @@ void southbridge_inject_dsdt(struct device *device)
 
 	if (gnvs) {
 		acpi_create_gnvs(gnvs);
-		acpi_mainboard_gnvs(gnvs);
 		/* And tell SMI about it */
 		smm_setup_structures(gnvs, NULL, NULL);
 
@@ -705,10 +703,6 @@ int soc_fill_acpi_wake(uint32_t *pm1, uint32_t **gpe0)
 	gpe0_sts[last_index] = ps->gpe0_sts[last_index] & gpe0_std;
 
 	return GPE0_REG_MAX;
-}
-
-__weak void acpi_mainboard_gnvs(global_nvs_t *gnvs)
-{
 }
 
 const char *soc_acpi_name(const struct device *dev)

@@ -1,13 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi_device.h>
-#include <arch/acpi_pld.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpi_pld.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/path.h>
-#include <stdint.h>
 #include "chip.h"
 
 static bool usb_acpi_add_gpios_to_crs(struct drivers_usb_acpi_config *cfg)
@@ -21,7 +19,7 @@ static bool usb_acpi_add_gpios_to_crs(struct drivers_usb_acpi_config *cfg)
 	return true;
 }
 
-static void usb_acpi_fill_ssdt_generator(struct device *dev)
+static void usb_acpi_fill_ssdt_generator(const struct device *dev)
 {
 	struct drivers_usb_acpi_config *config = dev->chip_info;
 	const char *path = acpi_device_path(dev);

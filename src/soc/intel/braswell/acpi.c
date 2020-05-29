@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <device/mmio.h>
 #include <arch/smp/mpspec.h>
 #include <cbmem.h>
@@ -405,7 +404,7 @@ static void generate_p_state_entries(int core, int cores_per_package)
 	acpigen_pop_len();
 }
 
-void generate_cpu_entries(struct device *device)
+void generate_cpu_entries(const struct device *device)
 {
 	int core;
 	int pcontrol_blk = get_pmbase(), plen = 6;
@@ -461,35 +460,13 @@ unsigned long acpi_madt_irq_overrides(unsigned long current)
 	return current;
 }
 
-/* Initialize IGD OpRegion, called from ACPI code */
-static int update_igd_opregion(igd_opregion_t *opregion)
-{
-	/* FIXME: Add platform specific mailbox initialization */
-
-	return 0;
-}
-
-unsigned long southcluster_write_acpi_tables(struct device *device, unsigned long current,
+unsigned long southcluster_write_acpi_tables(const struct device *device, unsigned long current,
 					     struct acpi_rsdp *rsdp)
 {
 	acpi_header_t *ssdt2;
-	global_nvs_t *gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
 
 	if (!CONFIG(DISABLE_HPET)) {
 		current = acpi_write_hpet(device, current, rsdp);
-		current = acpi_align_current(current);
-	}
-
-	if (CONFIG(INTEL_GMA_ADD_VBT)) {
-		igd_opregion_t *opregion;
-
-		printk(BIOS_DEBUG, "ACPI:    * IGD OpRegion\n");
-		opregion = (igd_opregion_t *)current;
-		intel_gma_init_igd_opregion(opregion);
-		if (gnvs)
-			gnvs->aslb = (u32)opregion;
-		update_igd_opregion(opregion);
-		current += sizeof(igd_opregion_t);
 		current = acpi_align_current(current);
 	}
 
@@ -512,7 +489,7 @@ unsigned long southcluster_write_acpi_tables(struct device *device, unsigned lon
 	return current;
 }
 
-void southcluster_inject_dsdt(struct device *device)
+void southcluster_inject_dsdt(const struct device *device)
 {
 	global_nvs_t *gnvs;
 

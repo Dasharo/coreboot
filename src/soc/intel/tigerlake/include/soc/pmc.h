@@ -1,8 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _SOC_TIGERLAKE_PMC_H_
 #define _SOC_TIGERLAKE_PMC_H_
+
+#include <device/device.h>
+
+extern struct device_operations pmc_ops;
 
 /* PCI Configuration Space (D31:F2): PMC */
 #define  PWRMBASE		0x10
@@ -98,6 +101,30 @@
 #define   PCH2CPU_TPR_CFG_LOCK		(1 << 31)
 #define   PCH2CPU_TT_EN			(1 << 26)
 
+#define PCH_PMC_EPOC			0x18EC
+#define PCH_EPOC_2LM(__epoc)		((__epoc) & 0x1)
+/* XTAL frequency in bits 21, 20, 17 */
+#define PCH_EPOC_XTAL_FREQ(__epoc)	((((__epoc) >> 19) & 0x6) | ((__epoc) >> 17 & 0x1))
+
+/**
+ * enum pch_pmc_xtal - External crystal oscillator frequency.
+ * @XTAL_24_MHZ: 24 MHz external crystal.
+ * @XTAL_19_2_MHZ: 19.2 MHz external crystal.
+ * @XTAL_38_4_MHZ: 38.4 MHz external crystal.
+ */
+enum pch_pmc_xtal {
+	XTAL_24_MHZ,
+	XTAL_19_2_MHZ,
+	XTAL_38_4_MHZ,
+};
+
+/**
+ * pmc_get_xtal_freq() - Return frequency of external oscillator.
+ *
+ * Return &enum pch_pmc_xtal corredsponding to frequency returned by PMC.
+ */
+enum pch_pmc_xtal pmc_get_xtal_freq(void);
+
 #define PCH_PWRM_ACPI_TMR_CTL		0x18FC
 #define GPIO_GPE_CFG			0x1920
 #define  GPE0_DWX_MASK			0xf
@@ -119,6 +146,10 @@
 #define GBLRST_CAUSE0			0x1924
 #define   GBLRST_CAUSE0_THERMTRIP	(1 << 5)
 #define GBLRST_CAUSE1			0x1928
+#define HPR_CAUSE0			0x192C
+#define   HPR_CAUSE0_MI_HRPD		(1 << 10)
+#define   HPR_CAUSE0_MI_HRPC		(1 << 9)
+#define   HPR_CAUSE0_MI_HR		(1 << 8)
 
 #define CPPMVRIC			0x1B1C
 #define   XTALSDQDIS			(1 << 22)

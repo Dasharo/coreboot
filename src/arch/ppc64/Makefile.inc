@@ -1,9 +1,4 @@
-################################################################################
-##
 ## SPDX-License-Identifier: GPL-2.0-only
-## This file is part of the coreboot project.
-##
-################################################################################
 
 ppc64_flags = -I$(src)/arch/ppc64/ -mbig-endian -mcpu=power8 -mtune=power8
 

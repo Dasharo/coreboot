@@ -1,12 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __USB_ACPI_CHIP_H__
 #define __USB_ACPI_CHIP_H__
 
-#include <arch/acpi_device.h>
-#include <arch/acpi.h>
-#include <arch/acpi_pld.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpi.h>
+#include <acpi/acpi_pld.h>
 
 struct drivers_usb_acpi_config {
 	const char *desc;

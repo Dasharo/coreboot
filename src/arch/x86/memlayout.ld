@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <memlayout.h>
 #include <arch/header.ld>
@@ -9,7 +8,7 @@
 #if ENV_CACHE_AS_RAM
 #define EARLY_MEMLAYOUT	"car.ld"
 #else
-#error "Early DRAM environment for x86 is work-in-progress. */
+#define EARLY_MEMLAYOUT	"early_ram.ld"
 #endif
 #endif
 
@@ -53,7 +52,9 @@ SECTIONS
 /* Bootblock specific scripts which provide more SECTION directives. */
 #include <cpu/x86/16bit/entry16.ld>
 #include <cpu/x86/16bit/reset16.ld>
+#if !CONFIG(RESET_VECTOR_IN_RAM)
 #include <arch/x86/id.ld>
+#endif
 #if CONFIG(CPU_INTEL_FIRMWARE_INTERFACE_TABLE)
 #include <cpu/intel/fit/fit.ld>
 #endif

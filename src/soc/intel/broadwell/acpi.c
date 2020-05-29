@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <cbmem.h>
 #include <device/pci_ops.h>
@@ -25,6 +24,7 @@
 #include <soc/pm.h>
 #include <soc/systemagent.h>
 #include <soc/intel/broadwell/chip.h>
+#include <intelblocks/cpulib.h>
 
 /*
  * List of supported C-states in this processor. Only the ULT parts support C8,
@@ -496,7 +496,7 @@ static void generate_P_state_entries(int core, int cores_per_package)
 	acpigen_pop_len();
 }
 
-void generate_cpu_entries(struct device *device)
+void generate_cpu_entries(const struct device *device)
 {
 	int coreID, cpuID, pcontrol_blk = ACPI_BASE_ADDRESS, plen = 6;
 	int totalcores = dev_count_cpu();
@@ -586,7 +586,7 @@ static unsigned long acpi_fill_dmar(unsigned long current)
 	return current;
 }
 
-unsigned long northbridge_write_acpi_tables(struct device *const dev,
+unsigned long northbridge_write_acpi_tables(const struct device *const dev,
 					    unsigned long current,
 					    struct acpi_rsdp *const rsdp)
 {

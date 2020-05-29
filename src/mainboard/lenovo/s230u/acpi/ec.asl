@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 Device (EC0)
 {
@@ -117,7 +116,7 @@ Device (EC0)
 
 	/* Video output switch hotkey */
 	Method (_Q16, 0, NotSerialized) {
-		Notify (ACPI_VIDEO_DEVICE, 0x82)
+		Notify (\_SB.PCI0.GFX0, 0x82)
 		^HKEY.MHKQ (0x1007)
 	}
 

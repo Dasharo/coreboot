@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /*
  * This file is created based on Intel Tiger Lake Processor PCH Datasheet
@@ -133,7 +132,7 @@
 
 #if !defined(__ACPI__)
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <soc/gpe.h>
 #include <soc/iomap.h>
 #include <soc/smbus.h>
@@ -150,6 +149,7 @@ struct chipset_power_state {
 	uint32_t gen_pmcon_a;
 	uint32_t gen_pmcon_b;
 	uint32_t gblrst_cause[2];
+	uint32_t hpr_cause0;
 	uint32_t prev_sleep_state;
 } __packed;
 

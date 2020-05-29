@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <baseboard/variants.h>
 #include <chip.h>
 #include <console/console.h>
@@ -10,6 +9,7 @@
 #include <ec/ec.h>
 #include <ec/google/chromeec/ec.h>
 #include <gpio.h>
+#include <intelblocks/power_limit.h>
 #include <variant/gpio.h>
 #include <smbios.h>
 #include <soc/gpio.h>
@@ -100,7 +100,7 @@ static uint8_t board_sku_id(void)
  * | n  (U22)    |  29 |   .9n   |   .9n   | x(43) |
  * +-------------+-----+---------+---------+-------+
  */
-static void mainboard_set_power_limits(config_t *conf)
+static void mainboard_set_power_limits(struct soc_power_limits_config *conf)
 {
 	enum usb_chg_type type;
 	u32 watts;
@@ -187,7 +187,7 @@ static void mainboard_init(struct device *dev)
 }
 
 static unsigned long mainboard_write_acpi_tables(
-	struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
+	const struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
 {
 	const char *oem_id = NULL;
 	const char *oem_table_id = NULL;
@@ -216,9 +216,11 @@ static unsigned long mainboard_write_acpi_tables(
 
 static void mainboard_enable(struct device *dev)
 {
+	struct soc_power_limits_config *soc_conf;
 	config_t *conf = config_of_soc();
 
-	mainboard_set_power_limits(conf);
+	soc_conf = &conf->power_limits_config;
+	mainboard_set_power_limits(soc_conf);
 
 	dev->ops->init = mainboard_init;
 	dev->ops->acpi_inject_dsdt = chromeos_dsdt_generator;

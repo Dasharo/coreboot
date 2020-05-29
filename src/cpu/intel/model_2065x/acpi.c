@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <types.h>
 #include <console/console.h>
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <arch/cpu.h>
 #include <cpu/x86/msr.h>
 #include <cpu/intel/speedstep.h>
@@ -281,7 +280,7 @@ static void generate_P_state_entries(int core, int cores_per_package)
 	acpigen_pop_len();
 }
 
-void generate_cpu_entries(struct device *device)
+void generate_cpu_entries(const struct device *device)
 {
 	int coreID, cpuID, pcontrol_blk = PMB0_BASE, plen = 6;
 	int totalcores = dev_count_cpu();

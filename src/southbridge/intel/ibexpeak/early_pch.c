@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <stdint.h>
 #include <device/pci_ops.h>
 #include <device/smbus_host.h>
 #include <northbridge/intel/ironlake/ironlake.h>

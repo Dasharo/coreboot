@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <commonlib/helpers.h>
 #include <console/console.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <stdint.h>
 #include <delay.h>
 #include <cpu/intel/haswell/haswell.h>
@@ -51,11 +50,6 @@ static int get_pcie_bar(struct device *dev, unsigned int index, u32 *base, u32 *
 	}
 
 	return 0;
-}
-
-static void pci_domain_set_resources(struct device *dev)
-{
-	assign_resources(dev->link_list);
 }
 
 static const char *northbridge_acpi_name(const struct device *dev)
@@ -255,7 +249,7 @@ static struct map_entry memory_map[NUM_MAP_ENTRIES] = {
 	[TOLUD_REG]       = MAP_ENTRY_BASE_32(TOLUD, "TOLUD"),
 	[BDSM_REG]        = MAP_ENTRY_BASE_32(BDSM, "BDSM"),
 	[BGSM_REG]        = MAP_ENTRY_BASE_32(BGSM, "BGSM"),
-	[TSEG_REG]        = MAP_ENTRY_BASE_32(TSEG, "TESGMB"),
+	[TSEG_REG]        = MAP_ENTRY_BASE_32(TSEG, "TSEGMB"),
 };
 
 static void mc_read_map_entries(struct device *dev, uint64_t *values)

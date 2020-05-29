@@ -1,12 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef SOC_JASPERLAKE_PCR_H
 #define SOC_JASPERLAKE_PCR_H
 /*
- * Port ids
+ * Port IDs
  */
-#define PID_EMMC	0x52
+#define PID_EMMC	0x51
 #define PID_SDX		0x53
 
 #define PID_GPIOCOM0	0x6e

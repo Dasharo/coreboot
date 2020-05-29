@@ -1,9 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <boardid.h>
 #include <string.h>
-#include <stddef.h>
 #include <fsp/soc_binding.h>
 #include <soc/romstage.h>
 #include <console/console.h>

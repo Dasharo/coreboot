@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <bootmode.h>
 #include <console/console.h>
@@ -15,7 +14,7 @@
  * Will break if we get 2. Sigh.
  * We assume it's all multiples of MiB for MMUs sake.
  */
-static void soc_enable(struct device *dev)
+static void soc_read_resources(struct device *dev)
 {
 	u32 lcdbase = fb_base_mb();
 	unsigned long fb_size = FB_SIZE_MB;
@@ -42,9 +41,8 @@ static void soc_init(struct device *dev)
 }
 
 static struct device_operations soc_ops = {
-	.read_resources   = noop_read_resources,
+	.read_resources   = soc_read_resources,
 	.set_resources    = noop_set_resources,
-	.enable_resources = soc_enable,
 	.init             = soc_init,
 };
 

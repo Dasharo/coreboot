@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /*
  * This file is created based on Intel Tiger Lake Processor PCH Datasheet
@@ -27,24 +26,6 @@
 #include <soc/smbus.h>
 #include <soc/soc_chip.h>
 #include <soc/systemagent.h>
-
-#define CAMERA1_CLK		0x8000 /* Camera 1 Clock */
-#define CAMERA2_CLK		0x8080 /* Camera 2 Clock */
-#define CAM_CLK_EN		(1 << 1)
-#define MIPI_CLK		(1 << 0)
-#define HDPLL_CLK		(0 << 0)
-
-static void pch_enable_isclk(void)
-{
-	pcr_or32(PID_ISCLK, CAMERA1_CLK, CAM_CLK_EN | MIPI_CLK);
-	pcr_or32(PID_ISCLK, CAMERA2_CLK, CAM_CLK_EN | MIPI_CLK);
-}
-
-static void pch_handle_sideband(config_t *config)
-{
-	if (config->pch_isclk)
-		pch_enable_isclk();
-}
 
 static void pch_finalize(void)
 {
@@ -83,8 +64,6 @@ static void pch_finalize(void)
 		reg32 |= XTALSDQDIS;
 		write32(pmcbase + CPPMVRIC, reg32);
 	}
-
-	pch_handle_sideband(config);
 
 	pmc_clear_pmcon_sts();
 }

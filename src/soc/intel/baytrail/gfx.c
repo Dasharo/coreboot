@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/mmio.h>
 #include <device/pci_ops.h>
@@ -11,10 +10,8 @@
 #include <reg_script.h>
 #include <soc/gfx.h>
 #include <soc/iosf.h>
-#include <soc/nvs.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
-#include <cbmem.h>
 #include <types.h>
 
 #include "chip.h"
@@ -353,21 +350,10 @@ static void gfx_panel_setup(struct device *dev)
 	}
 }
 
-uintptr_t gma_get_gnvs_aslb(const void *gnvs)
-{
-	const global_nvs_t *gnvs_ptr = gnvs;
-	return (uintptr_t)(gnvs_ptr ? gnvs_ptr->aslb : 0);
-}
-
-void gma_set_gnvs_aslb(void *gnvs, uintptr_t aslb)
-{
-	global_nvs_t *gnvs_ptr = gnvs;
-	if (gnvs_ptr)
-		gnvs_ptr->aslb = aslb;
-}
-
 static void gfx_init(struct device *dev)
 {
+	intel_gma_init_igd_opregion();
+
 	/* Pre VBIOS Init */
 	gfx_pre_vbios_init(dev);
 
@@ -381,42 +367,13 @@ static void gfx_init(struct device *dev)
 
 	/* Post VBIOS Init */
 	gfx_post_vbios_init(dev);
-
-	/* Restore opregion on S3 resume */
-	intel_gma_restore_opregion();
 }
 
-static void gma_generate_ssdt(struct device *dev)
+static void gma_generate_ssdt(const struct device *dev)
 {
 	const struct soc_intel_baytrail_config *chip = dev->chip_info;
 
 	drivers_intel_gma_displays_ssdt_generate(&chip->gfx);
-}
-
-static unsigned long
-gma_write_acpi_tables(struct device *const dev,
-		      unsigned long current,
-		      struct acpi_rsdp *const rsdp)
-{
-	igd_opregion_t *opregion = (igd_opregion_t *)current;
-	global_nvs_t *gnvs;
-
-	if (intel_gma_init_igd_opregion(opregion) != CB_SUCCESS)
-		return current;
-
-	current += sizeof(igd_opregion_t);
-
-	/* GNVS has been already set up */
-	gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
-	if (gnvs) {
-		/* IGD OpRegion Base Address */
-		gma_set_gnvs_aslb(gnvs, (uintptr_t)opregion);
-	} else {
-		printk(BIOS_ERR, "Error: GNVS table not found.\n");
-	}
-
-	current = acpi_align_current(current);
-	return current;
 }
 
 static struct device_operations gfx_device_ops = {
@@ -425,7 +382,6 @@ static struct device_operations gfx_device_ops = {
 	.enable_resources	= pci_dev_enable_resources,
 	.init			= gfx_init,
 	.ops_pci		= &soc_pci_ops,
-	.write_acpi_tables	= gma_write_acpi_tables,
 	.acpi_fill_ssdt		= gma_generate_ssdt,
 };
 

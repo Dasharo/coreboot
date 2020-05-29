@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -12,9 +11,9 @@
 #include <arch/io.h>
 #include <device/pci_ops.h>
 #include <arch/ioapic.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <cpu/x86/smm.h>
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <cbmem.h>
 #include <string.h>
@@ -355,7 +354,7 @@ static void i82801gx_fixups(struct device *dev)
 
 static void lpc_init(struct device *dev)
 {
-	printk(BIOS_DEBUG, "i82801gx: lpc_init\n");
+	printk(BIOS_DEBUG, "i82801gx: %s\n", __func__);
 
 	/* Set the value for PCI command register. */
 	pci_write_config16(dev, PCI_COMMAND, 0x000f);
@@ -620,7 +619,7 @@ static void lpc_final(struct device *dev)
 	outb(POST_OS_BOOT, 0x80);
 }
 
-static void southbridge_inject_dsdt(struct device *dev)
+static void southbridge_inject_dsdt(const struct device *dev)
 {
 	global_nvs_t *gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
 
@@ -647,7 +646,7 @@ static const char *lpc_acpi_name(const struct device *dev)
 	return "LPCB";
 }
 
-static void southbridge_fill_ssdt(struct device *device)
+static void southbridge_fill_ssdt(const struct device *device)
 {
 	intel_acpi_gen_def_acpi_pirq(device);
 }

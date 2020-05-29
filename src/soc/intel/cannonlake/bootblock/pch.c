@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/mmio.h>
@@ -61,22 +60,21 @@ static uint32_t get_pmc_reg_base(void)
 static void soc_config_pwrmbase(void)
 {
 	uint32_t reg32;
+	uint16_t reg16;
 
 	/*
 	 * Assign Resources to PWRMBASE
 	 * Clear BIT 1-2  Command Register
 	 */
-	reg32 = pci_read_config32(PCH_DEV_PMC, PCI_COMMAND);
-	reg32 &= ~(PCI_COMMAND_MEMORY);
-	pci_write_config32(PCH_DEV_PMC, PCI_COMMAND, reg32);
+	reg16 = pci_read_config16(PCH_DEV_PMC, PCI_COMMAND);
+	reg16 &= ~(PCI_COMMAND_MEMORY);
+	pci_write_config16(PCH_DEV_PMC, PCI_COMMAND, reg16);
 
 	/* Program PWRM Base */
 	pci_write_config32(PCH_DEV_PMC, PWRMBASE, PCH_PWRM_BASE_ADDRESS);
 
 	/* Enable Bus Master and MMIO Space */
-	reg32 = pci_read_config32(PCH_DEV_PMC, PCI_COMMAND);
-	reg32 |= PCI_COMMAND_MEMORY;
-	pci_write_config32(PCH_DEV_PMC, PCI_COMMAND, reg32);
+	pci_or_config16(PCH_DEV_PMC, PCI_COMMAND, PCI_COMMAND_MEMORY);
 
 	/* Enable PWRM in PMC */
 	reg32 = read32((void *)(PCH_PWRM_BASE_ADDRESS + ACTL));

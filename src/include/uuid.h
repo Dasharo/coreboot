@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _UUID_H_
 #define _UUID_H_
 
 #include <string.h>
+#include <stdint.h>
 
 #define UUID_LEN	16
 #define UUID_STRLEN	36

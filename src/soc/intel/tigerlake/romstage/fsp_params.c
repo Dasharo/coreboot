@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <assert.h>
 #include <console/console.h>
@@ -71,7 +70,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 
 	/* Set debug interface flags */
 	m_cfg->PcdDebugInterfaceFlags = CONFIG(DRIVERS_UART_8250IO) ?
-		DEBUG_INTERFACE_UART : DEBUG_INTERFACE_SERIAL_IO;
+		DEBUG_INTERFACE_UART_8250IO : DEBUG_INTERFACE_LPSS_SERIAL_IO;
 
 	/* TraceHub configuration */
 	dev = pcidev_path_on_root(PCH_DEVFN_TRACEHUB);
@@ -82,6 +81,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	}
 
 	m_cfg->SerialIoUartDebugControllerNumber = CONFIG_UART_FOR_CONSOLE;
+	m_cfg->SerialIoUartDebugMode = PchSerialIoSkipInit;
 
 	/* ISH */
 	dev = pcidev_path_on_root(PCH_DEVFN_ISH);
@@ -111,9 +111,13 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	/* Image clock: disable all clocks for bypassing FSP pin mux */
 	memset(m_cfg->ImguClkOutEn, 0, sizeof(m_cfg->ImguClkOutEn));
 
-	/* Tcss */
+	/* Tcss USB */
 	m_cfg->TcssXhciEn = config->TcssXhciEn;
 	m_cfg->TcssXdciEn = config->TcssXdciEn;
+
+	/* TCSS DMA */
+	m_cfg->TcssDma0En = config->TcssDma0En;
+	m_cfg->TcssDma1En = config->TcssDma1En;
 
 	/* USB4/TBT */
 	dev = pcidev_path_on_root(SA_DEVFN_TBT0);
@@ -159,6 +163,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 
 	m_cfg->PchHdaDspEnable = config->PchHdaDspEnable;
 	m_cfg->PchHdaAudioLinkHdaEnable = config->PchHdaAudioLinkHdaEnable;
+	m_cfg->PchHdaIDispCodecDisconnect = config->PchHdaIDispCodecDisconnect;
 	memcpy(m_cfg->PchHdaAudioLinkDmicEnable, config->PchHdaAudioLinkDmicEnable,
 			sizeof(m_cfg->PchHdaAudioLinkDmicEnable));
 	memcpy(m_cfg->PchHdaAudioLinkSspEnable, config->PchHdaAudioLinkSspEnable,

@@ -1,5 +1,4 @@
 /*
- * This file is part of the coreboot project.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -65,7 +64,7 @@ Field (PXCS, AnyAcc, NoLock, WriteAsZeros)
  */
 Method (_DSM, 4, Serialized)
 {
-	return (Buffer() {0x00})
+	Return (Buffer() {0x00})
 }
 
 Device (PXSX)

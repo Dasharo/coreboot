@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <cbmem.h>
 #include <cpu/x86/smm.h>
 #include <device/device.h>
@@ -57,7 +56,7 @@
 
 uint32_t nc_read_top_of_low_memory(void)
 {
-	MAYBE_STATIC_BSS uint32_t tolm = 0;
+	static uint32_t tolm;
 
 	if (tolm)
 		return tolm;

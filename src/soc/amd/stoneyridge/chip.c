@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <bootstate.h>
 #include <console/console.h>
@@ -81,14 +80,10 @@ const char *soc_acpi_name(const struct device *dev)
 		return "PBR7";
 	case PCIE4_DEVFN:
 		return "PBR8";
-	case HDA1_DEVFN:
-		return "AZHD";
 	case EHCI1_DEVFN:
 		return "EHC0";
 	case LPC_DEVFN:
 		return "LPCB";
-	case SATA_DEVFN:
-		return "STCR";
 	case SD_DEVFN:
 		return "SDCN";
 	case SMBUS_DEVFN:
@@ -101,8 +96,8 @@ const char *soc_acpi_name(const struct device *dev)
 };
 
 struct device_operations pci_domain_ops = {
-	.read_resources	  = pci_domain_read_resources,
-	.set_resources	  = domain_set_resources,
+	.read_resources	  = domain_read_resources,
+	.set_resources	  = pci_domain_set_resources,
 	.enable_resources = domain_enable_resources,
 	.scan_bus	  = pci_domain_scan_bus,
 	.acpi_name	  = soc_acpi_name,

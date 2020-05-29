@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/pci_ops.h>
 #include <console/console.h>
@@ -14,7 +13,7 @@
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 
-int dw_i2c_soc_dev_to_bus(struct device *dev)
+int dw_i2c_soc_dev_to_bus(const struct device *dev)
 {
 	pci_devfn_t devfn = dev->path.pci.devfn;
 	return dw_i2c_soc_devfn_to_bus(devfn);
@@ -69,7 +68,7 @@ static int lpss_i2c_early_init_bus(unsigned int bus)
 	/* Prepare early base address for access before memory */
 	base = dw_i2c_get_soc_early_base(bus);
 	pci_write_config32(dev, PCI_BASE_ADDRESS_0, base);
-	pci_write_config32(dev, PCI_COMMAND,
+	pci_write_config16(dev, PCI_COMMAND,
 			   PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER);
 
 	/* Take device out of reset */

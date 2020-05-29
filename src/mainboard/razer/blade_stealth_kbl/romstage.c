@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <assert.h>
 #include <console/console.h>
@@ -8,7 +7,6 @@
 #include "spd/spd.h"
 #include <ec/acpi/ec.h>
 #include <stdint.h>
-#include <stddef.h>
 
 #define SPD_4X_2GB 0
 #define SPD_4X_4GB 1

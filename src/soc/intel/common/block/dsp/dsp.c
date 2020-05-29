@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pci.h>
@@ -10,7 +9,7 @@ static struct device_operations dsp_dev_ops = {
 	.set_resources          = pci_dev_set_resources,
 	.enable_resources       = pci_dev_enable_resources,
 	.ops_pci                = &pci_dev_ops_pci,
-	.scan_bus               = enable_static_devices,
+	.scan_bus               = scan_static_bus,
 };
 
 static const unsigned short pci_device_ids[] = {

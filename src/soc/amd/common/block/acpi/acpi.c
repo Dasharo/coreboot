@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/acpi.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <bootmode.h>
 #include <cbmem.h>
 #include <console/console.h>

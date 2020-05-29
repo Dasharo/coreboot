@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 SECTIONS {
-	. = (0xffffffff - CONFIG_ID_SECTION_OFFSET) - (__id_end - __id_start) + 1;
+	. = (CONFIG_X86_RESET_VECTOR - CONFIG_ID_SECTION_OFFSET) + 0x10 - (__id_end - __id_start);
 	.id (.): {
 		KEEP(*(.id))
 	}

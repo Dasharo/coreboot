@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -30,8 +29,7 @@ static void ide_init(struct device *dev)
 		enable_secondary = config->ide_enable_secondary;
 	}
 
-	reg32 = pci_read_config32(dev, PCI_COMMAND);
-	pci_write_config32(dev, PCI_COMMAND, reg32 | PCI_COMMAND_IO | PCI_COMMAND_MASTER);
+	pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_IO | PCI_COMMAND_MASTER);
 
 	/* Native Capable, but not enabled. */
 	pci_write_config8(dev, 0x09, 0x8a);
@@ -42,10 +40,10 @@ static void ide_init(struct device *dev)
 	if (enable_primary) {
 		/* Enable primary IDE interface. */
 		ideTimingConfig |= IDE_DECODE_ENABLE;
-		ideTimingConfig |= (2 << 12); // ISP = 3 clocks
-		ideTimingConfig |= (3 << 8); // RCT = 1 clock
-		ideTimingConfig |= (1 << 1); // IE0
-		ideTimingConfig |= (1 << 0); // TIME0
+		ideTimingConfig |= IDE_ISP_3_CLOCKS;
+		ideTimingConfig |= IDE_RCT_1_CLOCKS;
+		ideTimingConfig |= IDE_IE0;
+		ideTimingConfig |= IDE_TIME0; // TIME0
 		printk(BIOS_DEBUG, " IDE0");
 	}
 	pci_write_config16(dev, IDE_TIM_PRI, ideTimingConfig);
@@ -56,10 +54,10 @@ static void ide_init(struct device *dev)
 	if (enable_secondary) {
 		/* Enable secondary IDE interface. */
 		ideTimingConfig |= IDE_DECODE_ENABLE;
-		ideTimingConfig |= (2 << 12); // ISP = 3 clocks
-		ideTimingConfig |= (3 << 8); // RCT = 1 clock
-		ideTimingConfig |= (1 << 1); // IE0
-		ideTimingConfig |= (1 << 0); // TIME0
+		ideTimingConfig |= IDE_ISP_3_CLOCKS;
+		ideTimingConfig |= IDE_RCT_1_CLOCKS;
+		ideTimingConfig |= IDE_IE0;
+		ideTimingConfig |= IDE_TIME0;
 		printk(BIOS_DEBUG, " IDE1");
 	}
 	pci_write_config16(dev, IDE_TIM_SEC, ideTimingConfig);

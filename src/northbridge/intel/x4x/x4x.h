@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __NORTHBRIDGE_INTEL_X4X_H__
 #define __NORTHBRIDGE_INTEL_X4X_H__
@@ -403,7 +402,7 @@ extern const u16 ddr3_c2_x23c[3][6];
 
 #include <device/device.h>
 struct acpi_rsdp;
-unsigned long northbridge_write_acpi_tables(struct device *device,
+unsigned long northbridge_write_acpi_tables(const struct device *device,
 		unsigned long start, struct acpi_rsdp *rsdp);
 
 #endif /* __NORTHBRIDGE_INTEL_X4X_H__ */

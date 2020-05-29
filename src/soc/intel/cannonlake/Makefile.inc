@@ -36,7 +36,6 @@ ramstage-y += cpu.c
 ramstage-y += elog.c
 ramstage-y += finalize.c
 ramstage-y += fsp_params.c
-ramstage-y += graphics.c
 ramstage-y += gspi.c
 ramstage-y += i2c.c
 ramstage-y += lockdown.c
@@ -108,7 +107,11 @@ else ifeq ($(CONFIG_SOC_INTEL_WHISKEYLAKE),y)
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-8e-0b
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-8e-0c
 else ifeq ($(CONFIG_SOC_INTEL_COMETLAKE),y)
-# TODO
+ifneq ($(CONFIG_SOC_INTEL_CANNONLAKE_PCH_H),y)
+# Missing 06-a6-01
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-8e-0c
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-a6-00
+endif
 endif
 
 CPPFLAGS_common += -I$(src)/soc/intel/cannonlake

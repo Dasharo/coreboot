@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __PI_STONEYRIDGE_NORTHBRIDGE_H__
 #define __PI_STONEYRIDGE_NORTHBRIDGE_H__
@@ -85,7 +84,7 @@
 #define   CMP_CAP_MASK		0xff
 
 void domain_enable_resources(struct device *dev);
-void domain_set_resources(struct device *dev);
+void domain_read_resources(struct device *dev);
 void fam15_finalize(void *chip_info);
 void set_warm_reset_flag(void);
 int is_warm_reset(void);

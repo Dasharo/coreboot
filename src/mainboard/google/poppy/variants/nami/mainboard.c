@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/cpu.h>
 #include <assert.h>
@@ -11,6 +10,7 @@
 #include <drivers/intel/gma/opregion.h>
 #include <ec/google/chromeec/ec.h>
 #include <intelblocks/mp_init.h>
+#include <intelblocks/power_limit.h>
 #include <smbios.h>
 #include <soc/ramstage.h>
 #include <string.h>
@@ -280,8 +280,11 @@ void variant_devtree_update(void)
 		break;
 	}
 
+	struct soc_power_limits_config *soc_conf;
+	soc_conf = &cfg->power_limits_config;
+
 	/* Update PL2 based on SKU. */
-	cfg->tdp_pl2_override = get_pl2(pl2_id);
+	soc_conf->tdp_pl2_override = get_pl2(pl2_id);
 
 	/* Overwrite settings for different projects based on OEM ID*/
 	oem_index = find_sku_mapping(read_oem_id());

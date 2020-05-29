@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <amdblocks/acpimmio.h>
 #include <console/console.h>
@@ -40,7 +39,7 @@ static void hudson_disable_usb(u8 disable)
 
 void hudson_enable(struct device *dev)
 {
-	printk(BIOS_DEBUG, "hudson_enable()\n");
+	printk(BIOS_DEBUG, "%s()\n", __func__);
 	switch (dev->path.pci.devfn) {
 	case PCI_DEVFN(0x14, 5):
 		if (dev->enabled == 0) {

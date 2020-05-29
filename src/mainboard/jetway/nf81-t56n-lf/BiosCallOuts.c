@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <AGESA.h>
 #include <northbridge/amd/agesa/BiosCallOuts.h>
@@ -8,7 +7,6 @@
 #include <amdblocks/acpimmio.h>
 #include <vendorcode/amd/cimx/sb800/SB800.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 static AGESA_STATUS board_GnbPcieSlotReset (UINT32 Func, UINTN Data, VOID *ConfigPtr);
 static AGESA_STATUS board_BeforeDramInit (UINT32 Func, UINTN Data, VOID *ConfigPtr);

@@ -1,18 +1,6 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; version 2, or (at your option)
- * any later version of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <types.h>
 #include <string.h>
 #include <cbfs.h>
@@ -69,7 +57,7 @@ void *locate_vbt(size_t *vbt_size)
 }
 
 /* Write ASLS PCI register and prepare SWSCI register. */
-void intel_gma_opregion_register(uintptr_t opregion)
+static void intel_gma_opregion_register(uintptr_t opregion)
 {
 	struct device *igd;
 	u16 reg16;
@@ -106,17 +94,16 @@ void intel_gma_opregion_register(uintptr_t opregion)
 }
 
 /* Restore ASLS register on S3 resume and prepare SWSCI. */
-void intel_gma_restore_opregion(void)
+static enum cb_err intel_gma_restore_opregion(void)
 {
-	if (acpi_is_wakeup_s3()) {
-		const void *const gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
-		uintptr_t aslb;
-
-		if (gnvs && (aslb = gma_get_gnvs_aslb(gnvs)))
-			intel_gma_opregion_register(aslb);
-		else
-			printk(BIOS_ERR, "Error: GNVS or ASLB not set.\n");
+	const igd_opregion_t *const opregion = cbmem_find(CBMEM_ID_IGD_OPREGION);
+	if (!opregion) {
+		printk(BIOS_ERR, "GMA: Failed to find IGD OpRegion.\n");
+		return CB_ERR;
 	}
+	/* Write ASLS PCI register and prepare SWSCI register. */
+	intel_gma_opregion_register((uintptr_t)opregion);
+	return CB_SUCCESS;
 }
 
 static enum cb_err vbt_validate(struct region_device *rdev)
@@ -236,13 +223,16 @@ static enum cb_err locate_vbt_vbios_cbfs(struct region_device *rdev)
 }
 
 /* Initialize IGD OpRegion, called from ACPI code and OS drivers */
-enum cb_err
-intel_gma_init_igd_opregion(igd_opregion_t *opregion)
+enum cb_err intel_gma_init_igd_opregion(void)
 {
+	igd_opregion_t *opregion;
 	struct region_device rdev;
 	optionrom_vbt_t *vbt = NULL;
 	optionrom_vbt_t *ext_vbt;
 	bool found = false;
+
+	if (acpi_is_wakeup_s3())
+		return intel_gma_restore_opregion();
 
 	/* Search for vbt.bin in CBFS. */
 	if (locate_vbt_cbfs(&rdev) == CB_SUCCESS &&
@@ -282,6 +272,12 @@ intel_gma_init_igd_opregion(igd_opregion_t *opregion)
 	if (vbt->hdr_vbt_size > region_device_sz(&rdev)) {
 		printk(BIOS_ERR, "GMA: Error mapped only a partial VBT\n");
 		rdev_munmap(&rdev, vbt);
+		return CB_ERR;
+	}
+
+	opregion = cbmem_add(CBMEM_ID_IGD_OPREGION, sizeof(*opregion));
+	if (!opregion) {
+		printk(BIOS_ERR, "GMA: Failed to add IGD OpRegion to CBMEM.\n");
 		return CB_ERR;
 	}
 

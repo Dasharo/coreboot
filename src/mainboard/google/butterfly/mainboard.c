@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <types.h>
 #include <cbfs.h>
@@ -8,7 +7,7 @@
 #include <console/console.h>
 #include <drivers/intel/gma/int15.h>
 #include <fmap.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <arch/io.h>
 #include "onboard.h"
 #include "ec.h"

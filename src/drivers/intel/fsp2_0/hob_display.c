@@ -1,16 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <console/console.h>
 #include <fsp/util.h>
@@ -173,6 +161,9 @@ void fsp_print_guid_extension_hob(const struct hob_header *hob)
 	printk(BIOS_SPEW, "\t");
 	fsp_print_guid(res->owner_guid);
 	printk(BIOS_SPEW, ": %s\n", fsp_get_guid_name(res->owner_guid));
+
+	/* Some of the SoC FSP specific hobs are of type HOB_TYPE_GUID_EXTENSION */
+	soc_display_hob(hob);
 }
 
 __weak const char *soc_get_guid_name(const uint8_t *guid)

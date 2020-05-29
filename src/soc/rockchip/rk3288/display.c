@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/cache.h>
 #include <device/mmio.h>
@@ -8,7 +7,6 @@
 #include <delay.h>
 #include <edid.h>
 #include <gpio.h>
-#include <stddef.h>
 #include <string.h>
 #include <soc/addressmap.h>
 #include <soc/clock.h>

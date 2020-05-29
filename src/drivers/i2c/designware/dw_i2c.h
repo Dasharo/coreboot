@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __DRIVERS_I2C_DESIGNWARE_I2C_H__
 #define __DRIVERS_I2C_DESIGNWARE_I2C_H__
@@ -129,7 +128,7 @@ int dw_i2c_transfer(unsigned int bus,
  * -1 = failure
  * >=0 = logical bus number
  */
-int dw_i2c_soc_dev_to_bus(struct device *dev);
+int dw_i2c_soc_dev_to_bus(const struct device *dev);
 
 /*
  * Common device_operations implementation to initialize the i2c host
@@ -141,7 +140,7 @@ void dw_i2c_dev_init(struct device *dev);
  * Common device_operations implementation to fill ACPI SSDT table for i2c
  * host controller.
  */
-void dw_i2c_acpi_fill_ssdt(struct device *dev);
+void dw_i2c_acpi_fill_ssdt(const struct device *dev);
 
 /*
  * Common device_operations implementation for i2c host controller ops.

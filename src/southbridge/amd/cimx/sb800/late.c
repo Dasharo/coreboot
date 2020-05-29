@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <amdblocks/acpimmio.h>
 #include <device/mmio.h>
@@ -14,7 +13,7 @@
 #include <pc80/i8254.h>
 #include <pc80/i8259.h>
 #include <console/console.h>	/* printk */
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <device/pci_ehci.h>
 #include "lpc.h"		/* lpc_read_resources */
 #include "SBPLATFORM.h"		/* Platform Specific Definitions */
@@ -109,7 +108,7 @@ static struct pci_operations lops_pci = {
 
 static void lpc_init(struct device *dev)
 {
-	printk(BIOS_DEBUG, "SB800 - Late.c - lpc_init - Start.\n");
+	printk(BIOS_DEBUG, "SB800 - Late.c - %s - Start.\n", __func__);
 
 	cmos_check_update_date();
 
@@ -123,7 +122,7 @@ static void lpc_init(struct device *dev)
 	setup_i8259(); /* Initialize i8259 pic */
 	setup_i8254(); /* Initialize i8254 timers */
 
-	printk(BIOS_DEBUG, "SB800 - Late.c - lpc_init - End.\n");
+	printk(BIOS_DEBUG, "SB800 - Late.c - %s - End.\n", __func__);
 }
 
 unsigned long acpi_fill_mcfg(unsigned long current)

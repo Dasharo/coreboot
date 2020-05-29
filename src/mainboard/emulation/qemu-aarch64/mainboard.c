@@ -1,5 +1,4 @@
 /*
- * This file is part of the coreboot project.
  *
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -28,3 +27,5 @@ struct chip_operations mainboard_ops = {
 	.name = "qemu_aarch64",
 	.enable_dev = mainboard_enable,
 };
+
+struct chip_operations mainboard_emulation_qemu_aarch64_ops = { };

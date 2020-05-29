@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cpu/x86/msr.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <soc/cpu.h>
-#include <soc/northbridge.h>
+#include <soc/reset.h>
 #include <console/console.h>
 #include <arch/bert_storage.h>
 #include <cper.h>

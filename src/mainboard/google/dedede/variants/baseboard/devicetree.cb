@@ -133,6 +133,9 @@ chip soc/intel/jasperlake
 	register "DdiPortBDdc" = "1"
 	register "DdiPortCDdc" = "1"
 
+	# Enable Speed Shift Technology support
+	register "speed_shift_enable" = "1"
+
 	# Intel Common SoC Config
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
@@ -289,11 +292,11 @@ chip soc/intel/jasperlake
 				device pnp 0c09.0 on end
 			end
 		end # eSPI Interface
-		device pci 1f.1 off end # P2SB
-		device pci 1f.2 off end # Power Management Controller
+		device pci 1f.1 on  end # P2SB
+		device pci 1f.2 on  end # Power Management Controller
 		device pci 1f.3 off end # Intel HDA/cAVS
 		device pci 1f.4 off end # SMBus
-		device pci 1f.5 off end # PCH SPI
+		device pci 1f.5 on  end # PCH SPI
 		device pci 1f.7 off end # Intel Trace Hub
 	end
 end

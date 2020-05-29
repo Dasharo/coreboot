@@ -1,10 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cpu/x86/msr.h>
 #include <cpu/x86/tsc.h>
 #include <soc/msr.h>
-#include <stdint.h>
 
 static const unsigned int cpu_bus_clk_freq_table[] = {
 	83333,

@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: GPL-2.0-only
-# This file is part of the coreboot project.
 
 subdirs-y += dme1737
 subdirs-y += fdc37n972
@@ -17,3 +16,4 @@ subdirs-y += mec1308
 subdirs-y += smscsuperio
 subdirs-y += sio1036
 subdirs-y += sch4037
+subdirs-y += sch5545

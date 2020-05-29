@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __MAINBOARD_SKU_H__
 #define __MAINBOARD_SKU_H__
@@ -13,6 +12,8 @@ enum {
 	SKU_20_2A2C_TS = 20,
 	SKU_37_2A2C_360 = 37,
 	SKU_38_2A2C_360_TS_NO_STYLUES = 38,
+	SKU_49_2A2C_TS = 49,
+	SKU_50_HDMI = 50,
 };
 
 #endif /* __MAINBOARD_SKU_H__ */

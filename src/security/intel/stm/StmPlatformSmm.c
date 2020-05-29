@@ -1,17 +1,4 @@
-/* @file
- * STM platform SMM API
- *
- * Copyright (c) 2015, Intel Corporation. All rights reserved.
- * This program and the accompanying materials are licensed and made
- * available under the terms and conditions of the BSD License which
- * accompanies this distribution.  The full text of the license may be found
- * at http://opensource.org/licenses/bsd-license.php.
- *
- * THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
- * WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR
- * IMPLIED.
- *
- */
+/* SPDX-License-Identifier: BSD-2-Clause */
 
 #include <security/intel/stm/StmApi.h>
 #include <security/intel/stm/SmmStm.h>
@@ -20,10 +7,8 @@
 #include <cpu/x86/smm.h>
 #include <cpu/x86/msr.h>
 
-#include <stddef.h>
 #include <cbfs.h>
 #include <console/console.h>
-#include <lib.h>
 #include <stdint.h>
 #include <arch/rom_segs.h>
 
@@ -154,7 +139,7 @@ extern uint8_t *stm_resource_heap;
 
 static int stm_load_status = 0;
 
-void stm_setup(uintptr_t mseg, int cpu, int num_cpus, uintptr_t smbase,
+void stm_setup(uintptr_t mseg, int cpu, uintptr_t smbase,
 			uintptr_t base_smbase, uint32_t offset32)
 {
 	msr_t InitMseg;
@@ -163,7 +148,7 @@ void stm_setup(uintptr_t mseg, int cpu, int num_cpus, uintptr_t smbase,
 
 	uintptr_t addr_calc;  // used to calculate the stm resource heap area
 
-	printk(BIOS_DEBUG, "STM: set up for cpu %d/%d\n", cpu, num_cpus);
+	printk(BIOS_DEBUG, "STM: set up for cpu %d\n", cpu);
 
 	vmx_basic = rdmsr(IA32_VMX_BASIC_MSR);
 
@@ -177,12 +162,7 @@ void stm_setup(uintptr_t mseg, int cpu, int num_cpus, uintptr_t smbase,
 
 		// need to create the BIOS resource list once
 		// first calculate the location in SMRAM
-		addr_calc = (mseg - (CONFIG_SMM_MODULE_STACK_SIZE * num_cpus));
-
-		if (CONFIG(SSE))
-			addr_calc -= FXSAVE_SIZE * num_cpus;
-
-		addr_calc -= CONFIG_BIOS_RESOURCE_LIST_SIZE;
+		addr_calc = mseg - CONFIG_BIOS_RESOURCE_LIST_SIZE;
 		stm_resource_heap = (uint8_t *) addr_calc;
 		printk(BIOS_DEBUG, "STM: stm_resource_heap located at %p\n",
 				stm_resource_heap);

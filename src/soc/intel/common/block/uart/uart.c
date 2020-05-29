@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <cbmem.h>
 #include <console/uart.h>
 #include <device/device.h>
@@ -68,7 +67,7 @@ void uart_common_init(const struct device *device, uintptr_t baseaddr)
 	pci_write_config32(dev, PCI_BASE_ADDRESS_0, baseaddr);
 
 	/* Enable memory access and bus master */
-	pci_write_config32(dev, PCI_COMMAND, UART_PCI_ENABLE);
+	pci_write_config16(dev, PCI_COMMAND, UART_PCI_ENABLE);
 
 	uart_lpss_init(device, baseaddr);
 }
@@ -109,7 +108,7 @@ bool uart_is_controller_initialized(void)
 	if (!base)
 		return false;
 
-	if ((pci_read_config32(dev, PCI_COMMAND) & UART_PCI_ENABLE)
+	if ((pci_read_config16(dev, PCI_COMMAND) & UART_PCI_ENABLE)
 	    != UART_PCI_ENABLE)
 		return false;
 

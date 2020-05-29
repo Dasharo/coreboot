@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/pci_ops.h>
 #include <device/pci_def.h>
@@ -17,7 +16,7 @@ int smbus_enable_iobar(uintptr_t base)
 	const pci_devfn_t dev = PCI_DEV(0x0, 0x1f, 0x3);
 
 	/* Check to make sure we've got the right device. */
-	if (pci_read_config16(dev, 0x2) != 0x27da)
+	if (pci_read_config16(dev, PCI_DEVICE_ID) != 0x27da)
 		return -1;
 
 	/* Set SMBus I/O base. */

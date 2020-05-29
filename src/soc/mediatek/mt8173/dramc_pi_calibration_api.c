@@ -1,9 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/mmio.h>
 #include <console/console.h>
-#include <stdlib.h>
 #include <soc/addressmap.h>
 #include <soc/dramc_common.h>
 #include <soc/dramc_register.h>

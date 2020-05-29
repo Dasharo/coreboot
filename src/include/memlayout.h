@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /* This file contains macro definitions for memlayout.ld linker scripts. */
 
@@ -57,6 +56,9 @@
 
 #define PRERAM_CBMEM_CONSOLE(addr, size) \
 	REGION(preram_cbmem_console, addr, size, 4)
+
+#define EARLYRAM_STACK(addr, size) \
+	REGION(earlyram_stack, addr, size, ARCH_STACK_ALIGN_SIZE)
 
 /* Use either CBFS_CACHE (unified) or both (PRERAM|POSTRAM)_CBFS_CACHE */
 #define CBFS_CACHE(addr, size) \

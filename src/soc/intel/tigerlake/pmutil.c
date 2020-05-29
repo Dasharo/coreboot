@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /*
  * Helper functions for dealing with power management registers
@@ -260,16 +259,36 @@ void soc_fill_power_state(struct chipset_power_state *ps)
 	ps->gen_pmcon_b = read32(pmc + GEN_PMCON_B);
 	ps->gblrst_cause[0] = read32(pmc + GBLRST_CAUSE0);
 	ps->gblrst_cause[1] = read32(pmc + GBLRST_CAUSE1);
+	ps->hpr_cause0 = read32(pmc + HPR_CAUSE0);
 
 	printk(BIOS_DEBUG, "GEN_PMCON: %08x %08x\n",
 		ps->gen_pmcon_a, ps->gen_pmcon_b);
 
 	printk(BIOS_DEBUG, "GBLRST_CAUSE: %08x %08x\n",
 		ps->gblrst_cause[0], ps->gblrst_cause[1]);
+
+	printk(BIOS_DEBUG, "HPR_CAUSE0: %08x\n", ps->hpr_cause0);
 }
 
 /* STM Support */
 uint16_t get_pmbase(void)
 {
 	return (uint16_t) ACPI_BASE_ADDRESS;
+}
+
+/*
+ * Set which power state system will be after reapplying
+ * the power (from G3 State)
+ */
+void pmc_soc_set_afterg3_en(const bool on)
+{
+	uint8_t reg8;
+	uint8_t *const pmcbase = pmc_mmio_regs();
+
+	reg8 = read8(pmcbase + GEN_PMCON_A);
+	if (on)
+		reg8 &= ~SLEEP_AFTER_POWER_FAIL;
+	else
+		reg8 |= SLEEP_AFTER_POWER_FAIL;
+	write8(pmcbase + GEN_PMCON_A, reg8);
 }

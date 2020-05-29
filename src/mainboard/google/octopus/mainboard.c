@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <baseboard/variants.h>
 #include <boardid.h>
 #include <bootstate.h>
@@ -19,7 +18,6 @@
 #include <soc/nhlt.h>
 #include <soc/pci_devs.h>
 #include <stdint.h>
-#include <string.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <variant/ec.h>
 #include <variant/gpio.h>
@@ -71,7 +69,7 @@ static void mainboard_init(void *chip_info)
 }
 
 static unsigned long mainboard_write_acpi_tables(
-	struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
+	const struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
 {
 	uintptr_t start_addr;
 	uintptr_t end_addr;

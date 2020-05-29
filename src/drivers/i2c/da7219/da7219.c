@@ -1,14 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/i2c_simple.h>
 #include <device/device.h>
 #include <device/path.h>
-#include <stdint.h>
 
 #include "chip.h"
 
@@ -17,7 +15,7 @@
 #define DA7219_ACPI_NAME	"DLG7"
 #define DA7219_ACPI_HID		"DLGS7219"
 
-static void da7219_fill_ssdt(struct device *dev)
+static void da7219_fill_ssdt(const struct device *dev)
 {
 	struct drivers_i2c_da7219_config *config = dev->chip_info;
 	const char *scope = acpi_device_scope(dev);

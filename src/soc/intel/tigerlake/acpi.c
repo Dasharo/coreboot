@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <device/mmio.h>
 #include <arch/smp/mpspec.h>
 #include <cbmem.h>
@@ -53,70 +52,70 @@ enum {
 static const acpi_cstate_t cstate_map[NUM_C_STATES] = {
 	[C_STATE_C0] = {},
 	[C_STATE_C1] = {
-		.latency = 0,
+		.latency = C1_LATENCY,
 		.power = C1_POWER,
 		.resource = MWAIT_RES(0, 0),
 	},
 	[C_STATE_C1E] = {
-		.latency = 0,
+		.latency = C1_LATENCY,
 		.power = C1_POWER,
 		.resource = MWAIT_RES(0, 1),
 	},
 	[C_STATE_C6_SHORT_LAT] = {
-		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.latency = C6_LATENCY,
 		.power = C6_POWER,
 		.resource = MWAIT_RES(2, 0),
 	},
 	[C_STATE_C6_LONG_LAT] = {
-		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.latency = C6_LATENCY,
 		.power = C6_POWER,
 		.resource = MWAIT_RES(2, 1),
 	},
 	[C_STATE_C7_SHORT_LAT] = {
-		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.latency = C7_LATENCY,
 		.power = C7_POWER,
 		.resource = MWAIT_RES(3, 0),
 	},
 	[C_STATE_C7_LONG_LAT] = {
-		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.latency = C7_LATENCY,
 		.power = C7_POWER,
 		.resource = MWAIT_RES(3, 1),
 	},
 	[C_STATE_C7S_SHORT_LAT] = {
-		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.latency = C7_LATENCY,
 		.power = C7_POWER,
 		.resource = MWAIT_RES(3, 2),
 	},
 	[C_STATE_C7S_LONG_LAT] = {
-		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.latency = C7_LATENCY,
 		.power = C7_POWER,
 		.resource = MWAIT_RES(3, 3),
 	},
 	[C_STATE_C8] = {
-		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.latency = C8_LATENCY,
 		.power = C8_POWER,
 		.resource = MWAIT_RES(4, 0),
 	},
 	[C_STATE_C9] = {
-		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.latency = C9_LATENCY,
 		.power = C9_POWER,
 		.resource = MWAIT_RES(5, 0),
 	},
 	[C_STATE_C10] = {
-		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.latency = C10_LATENCY,
 		.power = C10_POWER,
 		.resource = MWAIT_RES(6, 0),
 	},
 };
 
 static int cstate_set_non_s0ix[] = {
-	C_STATE_C1E,
+	C_STATE_C1,
 	C_STATE_C6_LONG_LAT,
 	C_STATE_C7S_LONG_LAT
 };
 
 static int cstate_set_s0ix[] = {
-	C_STATE_C1E,
+	C_STATE_C1,
 	C_STATE_C7S_LONG_LAT,
 	C_STATE_C10
 };
@@ -251,7 +250,7 @@ static unsigned long soc_fill_dmar(unsigned long current)
 	return current;
 }
 
-unsigned long sa_write_acpi_tables(struct device *dev, unsigned long current,
+unsigned long sa_write_acpi_tables(const struct device *dev, unsigned long current,
 				   struct acpi_rsdp *rsdp)
 {
 	acpi_dmar_t *const dmar = (acpi_dmar_t *)current;

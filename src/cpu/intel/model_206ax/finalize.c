@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <stdint.h>
 #include <arch/cpu.h>
 #include <cpu/x86/msr.h>
 #include <cpu/intel/speedstep.h>

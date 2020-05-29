@@ -1,16 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 or (at your option)
- * any later version of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <device/device.h>
 #include <device/pci.h>
@@ -59,7 +47,7 @@ static int smbios_write_wifi(struct device *dev, int *handle,
 #endif
 
 #if CONFIG(HAVE_ACPI_TABLES)
-static void intel_wifi_fill_ssdt(struct device *dev)
+static void intel_wifi_fill_ssdt(const struct device *dev)
 {
 	struct drivers_intel_wifi_config *config = dev->chip_info;
 	struct generic_wifi_config generic_config;

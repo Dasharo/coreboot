@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef SOC_MEDIATEK_MT8183_PLL_H
 #define SOC_MEDIATEK_MT8183_PLL_H
@@ -218,6 +217,7 @@ enum {
 
 	MUX_MASK = 0x3 << 9,
 	MUX_SRC_ARMPLL = 0x1 << 9,
+	MUX_SRC_DIV_PLL1 = 0x2 << 9,
 };
 
 enum {

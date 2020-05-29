@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/i2c_simple.h>
 #include <device/device.h>
@@ -19,7 +18,7 @@
 #define NAU8825_DP_INT(key,val) \
 	acpi_dp_add_integer(dp, "nuvoton," key, (val))
 
-static void nau8825_fill_ssdt(struct device *dev)
+static void nau8825_fill_ssdt(const struct device *dev)
 {
 	struct drivers_i2c_nau8825_config *config = dev->chip_info;
 	const char *scope = acpi_device_scope(dev);

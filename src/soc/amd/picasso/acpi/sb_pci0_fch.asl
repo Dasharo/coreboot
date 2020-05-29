@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 External(\_SB.ALIB, MethodObj)
 
@@ -22,11 +21,6 @@ Method(_OSC,4)
 }
 
 /* Describe the Southbridge devices */
-
-/* 0:11.0 - SATA */
-Device(STCR) {
-	Name(_ADR, 0x00110000)
-} /* end STCR */
 
 /* 0:14.0 - SMBUS */
 Device(SBUS) {

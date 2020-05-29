@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/mmio.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <console/console.h>
 #include <delay.h>
 #include <device/device.h>
@@ -63,7 +62,7 @@ const char *i2c_acpi_name(const struct device *dev)
 	}
 }
 
-int dw_i2c_soc_dev_to_bus(struct device *dev)
+int dw_i2c_soc_dev_to_bus(const struct device *dev)
 {
 	switch (dev->path.mmio.addr) {
 	case APU_I2C2_BASE:

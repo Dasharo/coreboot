@@ -1,16 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpigen_dsm.h>
+#include <acpi/acpigen_dsm.h>
 #include <device/device.h>
-#include <stdint.h>
 #include <string.h>
 #include "chip.h"
 #include <gpio.h>
 #include <console/console.h>
 
 #if CONFIG(HAVE_ACPI_TABLES)
-static void i2c_hid_fill_dsm(struct device *dev)
+static void i2c_hid_fill_dsm(const struct device *dev)
 {
 	struct drivers_i2c_hid_config *config = dev->chip_info;
 	struct dsm_i2c_hid_config dsm_config = {
@@ -20,7 +18,7 @@ static void i2c_hid_fill_dsm(struct device *dev)
 	acpigen_write_dsm_i2c_hid(&dsm_config);
 }
 
-static void i2c_hid_fill_ssdt_generator(struct device *dev)
+static void i2c_hid_fill_ssdt_generator(const struct device *dev)
 {
 	struct drivers_i2c_hid_config *config = dev->chip_info;
 	config->generic.cid = I2C_HID_CID;

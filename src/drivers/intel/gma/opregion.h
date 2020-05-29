@@ -1,16 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #ifndef _COMMON_GMA_H_
 #define _COMMON_GMA_H_
@@ -243,11 +231,7 @@ typedef struct {
 	u8	coreblock_biossignon[155];
 } __packed optionrom_vbt_t;
 
-void intel_gma_opregion_register(uintptr_t opregion);
-void intel_gma_restore_opregion(void);
-uintptr_t gma_get_gnvs_aslb(const void *gnvs);
-void gma_set_gnvs_aslb(void *gnvs, uintptr_t aslb);
-enum cb_err intel_gma_init_igd_opregion(igd_opregion_t *opregion);
+enum cb_err intel_gma_init_igd_opregion(void);
 
 /*
  * Returns the CBFS filename of the VBT blob.

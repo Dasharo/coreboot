@@ -1,15 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <device/device.h>
 #include <device/path.h>
 #include <string.h>
 
 #include "chip.h"
 
-static void gpio_regulator_fill_ssdt_generator(struct device *dev)
+static void gpio_regulator_fill_ssdt_generator(const struct device *dev)
 {
 	struct drivers_generic_gpio_regulator_config *config = dev->chip_info;
 	const char *scope = acpi_device_scope(dev);

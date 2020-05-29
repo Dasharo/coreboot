@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <console/usb.h>
@@ -112,7 +111,8 @@ void sdram_initialize(struct pei_data *pei_data)
 	printk(BIOS_DEBUG, "Starting UEFI PEI System Agent\n");
 
 	/* Do not pass MRC data in for recovery mode boot, always pass it in for S3 resume */
-	if (!vboot_recovery_mode_enabled() || pei_data->boot_mode == 2)
+	if (!(CONFIG(HASWELL_VBOOT_IN_BOOTBLOCK) && vboot_recovery_mode_enabled())
+	    || pei_data->boot_mode == 2)
 		prepare_mrc_cache(pei_data);
 
 	/* If MRC data is not found, we cannot continue S3 resume */

@@ -1,18 +1,21 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __PICASSO_CHIP_H__
 #define __PICASSO_CHIP_H__
 
 #include <stddef.h>
 #include <stdint.h>
+#include <amdblocks/chip.h>
 #include <commonlib/helpers.h>
 #include <drivers/i2c/designware/dw_i2c.h>
 #include <soc/i2c.h>
 #include <soc/iomap.h>
-#include <arch/acpi_device.h>
+#include <soc/southbridge.h>
+#include <acpi/acpi_device.h>
+#include <arch/smp/mpspec.h>
 
 struct soc_amd_picasso_config {
+	struct soc_amd_common_config common_config;
 	/*
 	 * If sb_reset_i2c_slaves() is called, this devicetree register
 	 * defines which I2C SCL will be toggled 9 times at 100 KHz.
@@ -31,6 +34,75 @@ struct soc_amd_picasso_config {
 		I2S_PINS_I2S_TDM = 4,
 		I2S_PINS_UNCONF = 7,	/* All pads will be input mode */
 	} acp_pin_cfg;
+
+	/**
+	 * IRQ 0 - 15 have a default trigger of edge and default polarity of high.
+	 * If you have a device that requires a different configuration you can override the
+	 * settings here.
+	 */
+	struct {
+		uint8_t irq;
+		/* See MP_IRQ_* from mpspec.h */
+		uint8_t flags;
+	} irq_override[16];
+
+	/* Options for these are in src/arch/x86/include/acpi/acpi.h */
+	uint8_t  fadt_pm_profile;
+	uint16_t fadt_boot_arch;
+	uint32_t fadt_flags;
+
+	/* System config index */
+	uint8_t system_config;
+
+	/* STAPM Configuration */
+	uint32_t fast_ppt_limit;
+	uint32_t slow_ppt_limit;
+	uint32_t slow_ppt_time_constant;
+	uint32_t stapm_time_constant;
+	uint32_t sustained_power_limit;
+
+	/* PROCHOT_L de-assertion Ramp Time */
+	uint32_t prochot_l_deassertion_ramp_time;
+
+	/* Lower die temperature limit */
+	uint32_t thermctl_limit;
+
+	/* FP5 Processor Voltage Supply PSI Currents. 0 indicates use SOC default */
+	uint32_t psi0_current_limit;
+	uint32_t psi0_soc_current_limit;
+	uint32_t vddcr_soc_voltage_margin;
+	uint32_t vddcr_vdd_voltage_margin;
+
+	/* VRM Limits. 0 indicates use SOC default */
+	uint32_t vrm_maximum_current_limit;
+	uint32_t vrm_soc_maximum_current_limit;
+	uint32_t vrm_current_limit;
+	uint32_t vrm_soc_current_limit;
+
+	/* Misc SMU settings */
+	uint8_t sb_tsi_alert_comparator_mode_en;
+	uint8_t core_dldo_bypass;
+	uint8_t min_soc_vid_offset;
+	uint8_t aclk_dpm0_freq_400MHz;
+	uint32_t telemetry_vddcr_vdd_slope;
+	uint32_t telemetry_vddcr_vdd_offset;
+	uint32_t telemetry_vddcr_soc_slope;
+	uint32_t telemetry_vddcr_soc_offset;
+
+	enum {
+		SD_EMMC_DISABLE,
+		SD_EMMC_SD_LOW_SPEED,
+		SD_EMMC_SD_HIGH_SPEED,
+		SD_EMMC_SD_UHS_I_SDR_50,
+		SD_EMMC_SD_UHS_I_DDR_50,
+		SD_EMMC_SD_UHS_I_SDR_104,
+		SD_EMMC_EMMC_SDR_26,
+		SD_EMMC_EMMC_SDR_52,
+		SD_EMMC_EMMC_DDR_52,
+		SD_EMMC_EMMC_HS200,
+		SD_EMMC_EMMC_HS400,
+		SD_EMMC_EMMC_HS300,
+	} sd_emmc_config;
 };
 
 typedef struct soc_amd_picasso_config config_t;

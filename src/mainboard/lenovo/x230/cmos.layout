@@ -1,16 +1,4 @@
-##
-## This file is part of the coreboot project.
-##
-##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
+## SPDX-License-Identifier: GPL-2.0-only
 
 # -----------------------------------------------------------------
 entries
@@ -68,6 +56,7 @@ entries
 419         2       e       12       usb_always_on
 421         1       e       9        sata_mode
 422         2       e       10       backlight
+424         1       e       1        f1_to_f12_as_primary
 
 # coreboot config options: cpu
 #424        8       r       0        unused

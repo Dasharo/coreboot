@@ -1,19 +1,6 @@
 %{
-/*
- * sconfig, coreboot device tree compiler
- *
- * Copyright (C) 2010 coresystems GmbH
- *   written by Patrick Georgi <patrick@georgi-clan.de>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* sconfig, coreboot device tree compiler */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include "sconfig.tab.h"
 
@@ -43,6 +30,8 @@ generic			{yylval.number=GENERIC; return(BUS);}
 mmio			{yylval.number=MMIO; return(BUS);}
 spi			{yylval.number=SPI; return(BUS);}
 usb			{yylval.number=USB; return(BUS);}
+lpc			{yylval.number=LPC; return(BUS);}
+espi			{yylval.number=ESPI; return(BUS);}
 irq			{yylval.number=IRQ; return(RESOURCE);}
 drq			{yylval.number=DRQ; return(RESOURCE);}
 io			{yylval.number=IO; return(RESOURCE);}

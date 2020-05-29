@@ -1,34 +1,4 @@
-##
-## This file is part of the coreboot project.
-##
-## Copyright (C) 2008 Advanced Micro Devices, Inc.
-## Copyright (C) 2008 Uwe Hermann <uwe@hermann-uwe.de>
-## Copyright (C) 2009-2010 coresystems GmbH
-## Copyright (C) 2011 secunet Security Networks AG
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions
-## are met:
-## 1. Redistributions of source code must retain the above copyright
-##    notice, this list of conditions and the following disclaimer.
-## 2. Redistributions in binary form must reproduce the above copyright
-##    notice, this list of conditions and the following disclaimer in the
-##    documentation and/or other materials provided with the distribution.
-## 3. The name of the author may not be used to endorse or promote products
-##    derived from this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-## ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-## OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-## HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-## LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-## OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-## SUCH DAMAGE.
-##
+## SPDX-License-Identifier: BSD-3-Clause
 
 ifneq ($(words $(CURDIR)),1)
     $(error Error: Path to the main directory cannot contain spaces)
@@ -141,6 +111,14 @@ NOMKDIR:=1
 endif
 endif
 
+ifneq ($(filter %-test %-tests,$(MAKECMDGOALS)),)
+ifneq ($(filter-out %-test %-tests, $(MAKECMDGOALS)),)
+$(error Cannot mix unit-tests targets with other targets)
+endif
+UNIT_TEST:=1
+NOCOMPILE:=
+endif
+
 .xcompile: util/xcompile/xcompile
 	rm -f $@
 	$< $(XGCCPATH) > $@.tmp
@@ -159,7 +137,9 @@ real-all:
 	@exit 1
 else
 
+ifneq ($(UNIT_TEST),1)
 include $(DOTCONFIG)
+endif
 
 # in addition to the dependency below, create the file if it doesn't exist
 # to silence stupid warnings about a file that would be generated anyway.
@@ -177,7 +157,9 @@ ifneq ($(CONFIG_MMX),y)
 CFLAGS_x86_32 += -mno-mmx
 endif
 
+ifneq ($(UNIT_TEST),1)
 include toolchain.inc
+endif
 
 strip_quotes = $(strip $(subst ",,$(subst \",,$(1))))
 # fix makefile syntax highlighting after strip macro \" "))
@@ -276,7 +258,14 @@ evaluate_subdirs= \
 # collect all object files eligible for building
 subdirs:=$(TOPLEVEL)
 postinclude-hooks :=
+
+# Don't iterate through Makefile.incs under src/ when building tests
+ifneq ($(UNIT_TEST),1)
 $(eval $(call evaluate_subdirs))
+else
+include $(TOPLEVEL)/tests/Makefile.inc
+endif
+
 ifeq ($(FAILBUILD),1)
 $(error cannot continue build)
 endif

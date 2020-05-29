@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __NORTHBRIDGE_INTEL_HASWELL_HASWELL_H__
 #define __NORTHBRIDGE_INTEL_HASWELL_HASWELL_H__
@@ -200,7 +199,7 @@ void report_platform_info(void);
 #include <device/device.h>
 
 struct acpi_rsdp;
-unsigned long northbridge_write_acpi_tables(struct device *device, unsigned long start,
+unsigned long northbridge_write_acpi_tables(const struct device *device, unsigned long start,
 					    struct acpi_rsdp *rsdp);
 
 #endif /* __ASSEMBLER__ */

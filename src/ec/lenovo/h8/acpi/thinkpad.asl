@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 Device (HKEY)
 {
@@ -9,7 +8,7 @@ Device (HKEY)
 	External (\HKBL, IntObj)
 	External (\HUWB, IntObj)
 
-	Name (_HID, EisaId ("IBM0068"))
+	Name (_HID, EisaId (CONFIG_THINKPADEC_HKEY_EISAID))
 
 	Name (BTN, 0)
 

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -216,6 +215,14 @@ const char *dev_path(const struct device *dev)
 			snprintf(buffer, sizeof(buffer), "MMIO: %08lx",
 				 dev->path.mmio.addr);
 			break;
+		case DEVICE_PATH_ESPI:
+			snprintf(buffer, sizeof(buffer), "ESPI: %08lx",
+				 dev->path.espi.addr);
+			break;
+		case DEVICE_PATH_LPC:
+			snprintf(buffer, sizeof(buffer), "LPC: %08lx",
+				 dev->path.lpc.addr);
+			break;
 		default:
 			printk(BIOS_ERR, "Unknown device path type: %d\n",
 			       dev->path.type);
@@ -225,7 +232,7 @@ const char *dev_path(const struct device *dev)
 	return buffer;
 }
 
-const char *dev_name(struct device *dev)
+const char *dev_name(const struct device *dev)
 {
 	if (dev->name)
 		return dev->name;
@@ -876,6 +883,13 @@ void tolm_test(void *gp, struct device *dev, struct resource *new)
 
 	best = *best_p;
 
+	/*
+	 * If resource is not allocated any space i.e. size is zero,
+	 * then do not consider this resource in tolm calculations.
+	 */
+	if (new->size == 0)
+		return;
+
 	if (!best || (best->base > new->base))
 		best = new;
 
@@ -886,9 +900,9 @@ u32 find_pci_tolm(struct bus *bus)
 {
 	struct resource *min = NULL;
 	u32 tolm;
+	unsigned long mask_match = IORESOURCE_MEM | IORESOURCE_ASSIGNED;
 
-	search_bus_resources(bus, IORESOURCE_MEM, IORESOURCE_MEM,
-			     tolm_test, &min);
+	search_bus_resources(bus, mask_match, mask_match, tolm_test, &min);
 
 	tolm = 0xffffffffUL;
 

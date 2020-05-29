@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <southbridge/intel/common/gpio.h>
 #include <console/console.h>
@@ -23,7 +22,7 @@ void h8_wwan_enable(int on)
 /*
  * Detect WWAN on supported MBs.
  */
-bool h8_has_wwan(struct device *dev)
+bool h8_has_wwan(const struct device *dev)
 {
 	struct ec_lenovo_h8_config *conf = dev->chip_info;
 

@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <string.h>
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 #include <southbridge/intel/i82801jx/nvs.h>
 
 void acpi_create_gnvs(global_nvs_t *gnvs)

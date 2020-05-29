@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /**
  * @file
@@ -10,50 +9,19 @@
  * build option selections desired for that platform.
  *
  * For Information about this file, see @ref platforminstall.
- *
  */
 
-
-
-/*	Select the CPU family.	*/
-#define INSTALL_FAMILY_10_SUPPORT FALSE
-#define INSTALL_FAMILY_12_SUPPORT FALSE
+/* Select the CPU family. */
 #define INSTALL_FAMILY_14_SUPPORT TRUE
-#define INSTALL_FAMILY_15_SUPPORT FALSE
 
-/*	Select the CPU socket type.	*/
-#define INSTALL_G34_SOCKET_SUPPORT	FALSE
-#define INSTALL_C32_SOCKET_SUPPORT	FALSE
-#define INSTALL_S1G3_SOCKET_SUPPORT FALSE
-#define INSTALL_S1G4_SOCKET_SUPPORT FALSE
-#define INSTALL_ASB2_SOCKET_SUPPORT FALSE
-#define INSTALL_FS1_SOCKET_SUPPORT	FALSE
-#define INSTALL_FM1_SOCKET_SUPPORT	FALSE
-#define INSTALL_FP1_SOCKET_SUPPORT	FALSE
+/* Select the CPU socket type. */
 #define INSTALL_FT1_SOCKET_SUPPORT	TRUE
-#define INSTALL_AM3_SOCKET_SUPPORT	FALSE
 
 /*
  * Agesa optional capabilities selection.
  * Uncomment and mark FALSE those features you wish to include in the build.
  * Comment out or mark TRUE those features you want to REMOVE from the build.
  */
-
-#define BLDOPT_REMOVE_FAMILY_10_SUPPORT			TRUE
-#define BLDOPT_REMOVE_FAMILY_12_SUPPORT			TRUE
-#define BLDOPT_REMOVE_FAMILY_14_SUPPORT			FALSE
-#define BLDOPT_REMOVE_FAMILY_15_SUPPORT			TRUE
-
-#define BLDOPT_REMOVE_AM3_SOCKET_SUPPORT		TRUE
-#define BLDOPT_REMOVE_ASB2_SOCKET_SUPPORT		TRUE
-#define BLDOPT_REMOVE_C32_SOCKET_SUPPORT		TRUE
-#define BLDOPT_REMOVE_FM1_SOCKET_SUPPORT		TRUE
-#define BLDOPT_REMOVE_FP1_SOCKET_SUPPORT		TRUE
-#define BLDOPT_REMOVE_FS1_SOCKET_SUPPORT		TRUE
-#define BLDOPT_REMOVE_FT1_SOCKET_SUPPORT		FALSE
-#define BLDOPT_REMOVE_G34_SOCKET_SUPPORT		TRUE
-#define BLDOPT_REMOVE_S1G3_SOCKET_SUPPORT		TRUE
-#define BLDOPT_REMOVE_S1G4_SOCKET_SUPPORT		TRUE
 
 #define BLDOPT_REMOVE_UDIMMS_SUPPORT			FALSE
 #define BLDOPT_REMOVE_RDIMMS_SUPPORT			TRUE
@@ -86,10 +54,6 @@
 #define BLDOPT_REMOVE_GFX_RECOVERY				TRUE
 #define BLDOPT_REMOVE_EARLY_SAMPLES				TRUE
 
-
-#define BLDCFG_PCI_MMIO_BASE					CONFIG_MMCONF_BASE_ADDRESS
-#define BLDCFG_PCI_MMIO_SIZE					CONFIG_MMCONF_BUS_NUMBER
-
 #define BLDCFG_VRM_CURRENT_LIMIT				24000
 //#define BLDCFG_VRM_NB_CURRENT_LIMIT			0
 #define BLDCFG_VRM_LOW_POWER_THRESHOLD			24000
@@ -116,7 +80,6 @@
 #define BLDCFG_PLATFORM_CSTATE_IO_BASE_ADDRESS	0x840
 //#define BLDCFG_PLATFORM_CPB_MODE				CpbModeAuto
 #define BLDCFG_CORE_LEVELING_MODE				CORE_LEVEL_LOWEST
-#define BLDCFG_AP_MTRR_SETTINGS_LIST			&OntarioApMtrrSettingsList
 #define BLDCFG_AMD_PLATFORM_TYPE				AMD_PLATFORM_MOBILE
 //#define BLDCFG_STARTING_BUSNUM				0
 //#define BLDCFG_MAXIMUM_BUSNUM					0xf8
@@ -190,24 +153,7 @@
  */
 #include <AGESA.h>
 
-/* The fixed MTRR values to be set after memory initialization. */
-CONST AP_MTRR_SETTINGS ROMDATA OntarioApMtrrSettingsList[] =
-{
-	{ AMD_AP_MTRR_FIX64k_00000, 0x1E1E1E1E1E1E1E1Eull },
-	{ AMD_AP_MTRR_FIX16k_80000, 0x1E1E1E1E1E1E1E1Eull },
-	{ AMD_AP_MTRR_FIX16k_A0000, 0x0000000000000000ull },
-	{ AMD_AP_MTRR_FIX4k_C0000, 0x1E1E1E1E1E1E1E1Eull },
-	{ AMD_AP_MTRR_FIX4k_C8000, 0x1E1E1E1E1E1E1E1Eull },
-	{ AMD_AP_MTRR_FIX4k_D0000, 0x1E1E1E1E1E1E1E1Eull },
-	{ AMD_AP_MTRR_FIX4k_D8000, 0x1E1E1E1E1E1E1E1Eull },
-	{ AMD_AP_MTRR_FIX4k_E0000, 0x1E1E1E1E1E1E1E1Eull },
-	{ AMD_AP_MTRR_FIX4k_E8000, 0x1E1E1E1E1E1E1E1Eull },
-	{ AMD_AP_MTRR_FIX4k_F0000, 0x1E1E1E1E1E1E1E1Eull },
-	{ AMD_AP_MTRR_FIX4k_F8000, 0x1E1E1E1E1E1E1E1Eull },
-	{ CPU_LIST_TERMINAL }
-};
-
-/*	Include the files that instantiate the configuration definitions.	*/
+/* Include the files that instantiate the configuration definitions. */
 
 #include "cpuRegisters.h"
 #include "cpuFamRegisters.h"
@@ -220,62 +166,6 @@ CONST AP_MTRR_SETTINGS ROMDATA OntarioApMtrrSettingsList[] =
 #include "cpuEarlyInit.h"
 #include "cpuLateInit.h"
 #include "GnbInterface.h"
-
-/*****************************************************************************
- *	 Define the RELEASE VERSION string
- *
- * The Release Version string should identify the next planned release.
- * When a branch is made in preparation for a release, the release manager
- * should change/confirm that the branch version of this file contains the
- * string matching the desired version for the release. The trunk version of
- * the file should always contain a trailing 'X'. This will make sure that a
- * development build from trunk will not be confused for a released version.
- * The release manager will need to remove the trailing 'X' and update the
- * version string as appropriate for the release. The trunk copy of this file
- * should also be updated/incremented for the next expected version, + trailing 'X'
- ****************************************************************************/
-// This is the delivery package title, "BrazosPI"
-// This string MUST be exactly 8 characters long
-#define AGESA_PACKAGE_STRING	{'c', 'b', '_', 'A', 'g', 'e', 's', 'a'}
-
-// This is the release version number of the AGESA component
-// This string MUST be exactly 12 characters long
-#define AGESA_VERSION_STRING	{'V', '1', '.', '1', '.', '0', '.', '3', ' ', ' ', ' ', ' '}
-
-/* MEMORY_BUS_SPEED */
-#define DDR400_FREQUENCY				200 ///< DDR 400
-#define DDR533_FREQUENCY				266 ///< DDR 533
-#define DDR667_FREQUENCY				333 ///< DDR 667
-#define DDR800_FREQUENCY				400 ///< DDR 800
-#define DDR1066_FREQUENCY				533 ///< DDR 1066
-#define DDR1333_FREQUENCY				667 ///< DDR 1333
-#define DDR1600_FREQUENCY				800 ///< DDR 1600
-#define DDR1866_FREQUENCY				933 ///< DDR 1866
-#define UNSUPPORTED_DDR_FREQUENCY		934 ///< Highest limit of DDR frequency
-
-/* QUANDRANK_TYPE*/
-#define QUADRANK_REGISTERED				0 ///< Quadrank registered DIMM
-#define QUADRANK_UNBUFFERED				1 ///< Quadrank unbuffered DIMM
-
-/* USER_MEMORY_TIMING_MODE */
-#define TIMING_MODE_AUTO				0 ///< Use best rate possible
-#define TIMING_MODE_LIMITED				1 ///< Set user top limit
-#define TIMING_MODE_SPECIFIC			2 ///< Set user specified speed
-
-/* POWER_DOWN_MODE */
-#define POWER_DOWN_BY_CHANNEL			0 ///< Channel power down mode
-#define POWER_DOWN_BY_CHIP_SELECT		1 ///< Chip select power down mode
-
-// The following definitions specify the default values for various parameters in which there are
-// no clearly defined defaults to be used in the common file.	The values below are based on product
-// and BKDG content, please consult the AGESA Memory team for consultation.
-#define DFLT_SCRUB_DRAM_RATE			(0)
-#define DFLT_SCRUB_L2_RATE				(0)
-#define DFLT_SCRUB_L3_RATE				(0)
-#define DFLT_SCRUB_IC_RATE				(0)
-#define DFLT_SCRUB_DC_RATE				(0)
-#define DFLT_MEMORY_QUADRANK_TYPE		QUADRANK_UNBUFFERED
-#define DFLT_VRM_SLEW_RATE				(5000)
 
 // Instantiate all solution relevant data.
 #include <PlatformInstall.h>

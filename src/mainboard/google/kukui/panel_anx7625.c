@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <delay.h>
@@ -7,13 +6,17 @@
 #include <edid.h>
 #include <gpio.h>
 #include <soc/i2c.h>
-#include <string.h>
 
 #include "panel.h"
 
 
 static void power_on_anx7625(void)
 {
+	/* Disable backlight before turning on bridge */
+	gpio_output(GPIO(PERIPHERAL_EN13), 0);
+	gpio_output(GPIO(DISP_PWM), 0);
+
+	/* Turn on bridge */
 	gpio_output(GPIO_MIPIBRDG_RST_L_1V8, 0);
 	gpio_output(GPIO_PP1200_MIPIBRDG_EN, 1);
 	gpio_output(GPIO_VDDIO_MIPIBRDG_EN, 1);

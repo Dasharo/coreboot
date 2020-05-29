@@ -1,10 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <types.h>
 #include <device/device.h>
 #include <device/smbus.h>
-#include <smbios.h>
 #include <console/console.h>
 
 static void at24rf08c_init(struct device *dev)

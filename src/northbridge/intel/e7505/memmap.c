@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 // Use simple device model for this file even in ramstage
 #define __SIMPLE_DEVICE__
@@ -13,7 +12,7 @@
 
 void *cbmem_top_chipset(void)
 {
-	pci_devfn_t mch = PCI_DEV(0, 0, 0);
+	const pci_devfn_t mch = PCI_DEV(0, 0, 0);
 	uintptr_t tolm;
 
 	/* This is at 128 MiB boundary. */
@@ -27,7 +26,7 @@ void northbridge_write_smram(u8 smram);
 
 void northbridge_write_smram(u8 smram)
 {
-	pci_devfn_t mch = PCI_DEV(0, 0, 0);
+	const pci_devfn_t mch = PCI_DEV(0, 0, 0);
 	pci_write_config8(mch, SMRAMC, smram);
 }
 

@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _BAYTRAIL_ACPI_H_
 #define _BAYTRAIL_ACPI_H_
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <soc/nvs.h>
 
 void acpi_fill_in_fadt(acpi_fadt_t *fadt);

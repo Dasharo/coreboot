@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <cpu/x86/smm.h>
@@ -10,7 +9,6 @@
 #include <southbridge/intel/common/pmbase.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <cpu/intel/model_206ax/model_206ax.h>
-#include <elog.h>
 #include <ec/compal/ene932/ec.h>
 #include "ec.h"
 

@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/path.h>
@@ -12,7 +11,7 @@
 #define CROS_EC_I2C_TUNNEL_HID		"GOOG0012"
 #define CROS_EC_I2C_TUNNEL_DDN		"Cros EC I2C Tunnel"
 
-static void crosec_i2c_tunnel_fill_ssdt(struct device *dev)
+static void crosec_i2c_tunnel_fill_ssdt(const struct device *dev)
 {
 	const char *scope = acpi_device_scope(dev);
 	struct ec_google_chromeec_i2c_tunnel_config *cfg = dev->chip_info;

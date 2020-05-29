@@ -1,16 +1,4 @@
-##
-## This file is part of the coreboot project.
-##
-##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
+## SPDX-License-Identifier: GPL-2.0-only
 
 mainmenu "coreboot configuration"
 
@@ -624,12 +612,6 @@ config GFXUMA
 	help
 	  Enable Unified Memory Architecture for graphics.
 
-config HAVE_ACPI_TABLES
-	bool
-	help
-	  This variable specifies whether a given board has ACPI table support.
-	  It is usually set in mainboard/*/Kconfig.
-
 config HAVE_MP_TABLE
 	bool
 	help
@@ -655,12 +637,6 @@ config ACPI_NHLT
 	default n
 	help
 	  Build support for NHLT (non HD Audio) ACPI table generation.
-
-config ACPI_BERT
-	bool
-	depends on HAVE_ACPI_TABLES
-	help
-	  Build an ACPI Boot Error Record Table.
 
 #These Options are here to avoid "undefined" warnings.
 #The actual selection and help texts are in the following menu.

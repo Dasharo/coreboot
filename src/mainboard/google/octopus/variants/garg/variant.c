@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <boardid.h>
 #include <ec/google/chromeec/ec.h>
 #include <drivers/intel/gma/opregion.h>
@@ -47,6 +46,7 @@ const char *mainboard_vbt_filename(void)
 	switch (sku_id) {
 	case SKU_9_HDMI:
 	case SKU_19_HDMI_TS:
+	case SKU_50_HDMI:
 		return "vbt_garg_hdmi.bin";
 	default:
 		return "vbt.bin";

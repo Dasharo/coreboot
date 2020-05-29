@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef SOUTHBRIDGE_INTEL_I82801IX_NVS_H
 #define SOUTHBRIDGE_INTEL_I82801IX_NVS_H
@@ -92,27 +91,7 @@ typedef struct {
 	u8	gtf2[7];
 	u8	idem;
 	u8	idet;
-	u8	rsvd11[7];
-	/* IGD OpRegion (not implemented yet) */
-	u32	aslb; /* 0xb4 - IGD OpRegion Base Address */
-	u8	ibtt;
-	u8	ipat;
-	u8	itvf;
-	u8	itvm;
-	u8	ipsc;
-	u8	iblc;
-	u8	ibia;
-	u8	issc;
-	u8	i409;
-	u8	i509;
-	u8	i609;
-	u8	i709;
-	u8	idmm;
-	u8	idms;
-	u8	if1e;
-	u8	hvco;
-	u32	nxd[8];
-	u8	rsvd12[8];
+	u8	rsvd11[67];
 	/* Mainboard specific */
 	u8	dock; /* 0xf0 - Docking Status */
 	u8	bten;

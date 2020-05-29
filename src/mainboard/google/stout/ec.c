@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <bootmode.h>
 #include <types.h>
 #include <console/console.h>
@@ -10,7 +9,6 @@
 #include <device/device.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/pmbase.h>
-#include <elog.h>
 #include "ec.h"
 
 void stout_ec_init(void)

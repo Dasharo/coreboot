@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /**
  * @file
@@ -10,13 +9,11 @@
  * build option selections desired for that platform.
  *
  * For Information about this file, see @ref platforminstall.
- *
  */
-
 
 #include <vendorcode/amd/agesa/f15tn/AGESA.h>
 
-/*  Include the files that instantiate the configuration definitions.  */
+/* Include the files that instantiate the configuration definitions. */
 #include <vendorcode/amd/agesa/f15tn/Include/AdvancedApi.h>
 #include <vendorcode/amd/agesa/f15tn/Proc/CPU/cpuFamilyTranslation.h>
 #include <vendorcode/amd/agesa/f15tn/Proc/CPU/Feature/cpuFeatures.h>
@@ -28,14 +25,13 @@
 #include <vendorcode/amd/agesa/f15tn/Proc/Mem/mm.h>
 #include <vendorcode/amd/agesa/f15tn/Proc/Mem/mn.h>
 
-
-/*  Select the CPU family.  */
+/* Select the CPU family. */
 #define INSTALL_FAMILY_10_SUPPORT FALSE
 #define INSTALL_FAMILY_12_SUPPORT FALSE
 #define INSTALL_FAMILY_14_SUPPORT FALSE
 #define INSTALL_FAMILY_15_MODEL_1x_SUPPORT TRUE
 
-/*  Select the CPU socket type.  */
+/* Select the CPU socket type. */
 #define INSTALL_G34_SOCKET_SUPPORT  FALSE
 #define INSTALL_C32_SOCKET_SUPPORT  FALSE
 #define INSTALL_S1G3_SOCKET_SUPPORT FALSE
@@ -80,8 +76,6 @@
 
 //#define BLDCFG_FORCE_INDEPENDENT_PSD_OBJECT  TRUE
 
-#define BLDCFG_PCI_MMIO_BASE	CONFIG_MMCONF_BASE_ADDRESS
-#define BLDCFG_PCI_MMIO_SIZE	CONFIG_MMCONF_BUS_NUMBER
 /* Build configuration values here.
  */
 #define BLDCFG_VRM_CURRENT_LIMIT                 90000
@@ -157,7 +151,7 @@
 #if CONFIG(GFXUMA)
 #define BLDCFG_UMA_ALIGNMENT			UMA_4MB_ALIGNED
 #define BLDCFG_UMA_ALLOCATION_MODE		UMA_SPECIFIED
-//#define BLDCFG_UMA_ALLOCATION_SIZE		0x1000//0x1800//0x1000 /* (1000 << 16) = 256M*/
+//#define BLDCFG_UMA_ALLOCATION_SIZE		0x1000//0x1800//0x1000 /* (1000 << 16) = 256M */
 #define BLDCFG_UMA_ALLOCATION_SIZE		0x2000//512M
 #define BLDCFG_UMA_ABOVE4G_SUPPORT		FALSE
 #endif
@@ -169,7 +163,7 @@
 //#define BLDCFG_IGPU_HD_AUDIO_SUBSYSTEM_ID   OEM_IGPU_HD_AUDIO_SSID
 //#define BLFCFG_APU_PCIE_PORTS_SUBSYSTEM_ID  OEM_APU_PCIE_PORTS_SSID
 
-/*  Process the options...
+/* Process the options...
  * This file include MUST occur AFTER the user option selection settings
  */
 /*
@@ -212,59 +206,6 @@
 // #define BLDCFG_FCH_GPP_PORT1_HOTPLUG          FALSE
 // #define BLDCFG_FCH_GPP_PORT2_HOTPLUG          FALSE
 // #define BLDCFG_FCH_GPP_PORT3_HOTPLUG          FALSE
-
-CONST AP_MTRR_SETTINGS ROMDATA TrinityApMtrrSettingsList[] =
-{
-  { AMD_AP_MTRR_FIX64k_00000, 0x1E1E1E1E1E1E1E1E },
-  { AMD_AP_MTRR_FIX16k_80000, 0x1E1E1E1E1E1E1E1E },
-  { AMD_AP_MTRR_FIX16k_A0000, 0x0000000000000000 },
-  { AMD_AP_MTRR_FIX4k_C0000, 0x0000000000000000 },
-  { AMD_AP_MTRR_FIX4k_C8000, 0x0000000000000000 },
-  { AMD_AP_MTRR_FIX4k_D0000, 0x0000000000000000 },
-  { AMD_AP_MTRR_FIX4k_D8000, 0x0000000000000000 },
-  { AMD_AP_MTRR_FIX4k_E0000, 0x1818181818181818 },
-  { AMD_AP_MTRR_FIX4k_E8000, 0x1818181818181818 },
-  { AMD_AP_MTRR_FIX4k_F0000, 0x1818181818181818 },
-  { AMD_AP_MTRR_FIX4k_F8000, 0x1818181818181818 },
-  { CPU_LIST_TERMINAL }
-};
-
-#define BLDCFG_AP_MTRR_SETTINGS_LIST &TrinityApMtrrSettingsList
-
-                  // This is the delivery package title, "BrazosPI"
-                  // This string MUST be exactly 8 characters long
-#define AGESA_PACKAGE_STRING  {'c', 'b', '_', 'A', 'g', 'e', 's', 'a'}
-
-                  // This is the release version number of the AGESA component
-                  // This string MUST be exactly 12 characters long
-#define AGESA_VERSION_STRING  {'V', '0', '.', '0', '.', '0', '.', '1', ' ', ' ', ' ', ' '}
-
-/* MEMORY_BUS_SPEED */
-#define DDR400_FREQUENCY   200     ///< DDR 400
-#define DDR533_FREQUENCY   266     ///< DDR 533
-#define DDR667_FREQUENCY   333     ///< DDR 667
-#define DDR800_FREQUENCY   400     ///< DDR 800
-#define DDR1066_FREQUENCY   533    ///< DDR 1066
-#define DDR1333_FREQUENCY   667    ///< DDR 1333
-#define DDR1600_FREQUENCY   800    ///< DDR 1600
-#define DDR1866_FREQUENCY   933    ///< DDR 1866
-#define DDR2100_FREQUENCY   1050   ///< DDR 2100
-#define DDR2133_FREQUENCY   1066   ///< DDR 2133
-#define DDR2400_FREQUENCY   1200   ///< DDR 2400
-#define UNSUPPORTED_DDR_FREQUENCY		1201 ///< Highest limit of DDR frequency
-
-/* QUANDRANK_TYPE*/
-#define QUADRANK_REGISTERED				0 ///< Quadrank registered DIMM
-#define QUADRANK_UNBUFFERED				1 ///< Quadrank unbuffered DIMM
-
-/* USER_MEMORY_TIMING_MODE */
-#define TIMING_MODE_AUTO				0 ///< Use best rate possible
-#define TIMING_MODE_LIMITED				1 ///< Set user top limit
-#define TIMING_MODE_SPECIFIC			2 ///< Set user specified speed
-
-/* POWER_DOWN_MODE */
-#define POWER_DOWN_BY_CHANNEL			0 ///< Channel power down mode
-#define POWER_DOWN_BY_CHIP_SELECT		1 ///< Chip select power down mode
 
 /*
  * Agesa optional capabilities selection.
@@ -310,24 +251,12 @@ CONST AP_MTRR_SETTINGS ROMDATA TrinityApMtrrSettingsList[] =
 #define DFLT_FCH_GPP_PORT1_HOTPLUG          FALSE
 #define DFLT_FCH_GPP_PORT2_HOTPLUG          FALSE
 #define DFLT_FCH_GPP_PORT3_HOTPLUG          FALSE
-//#define BLDCFG_IR_PIN_CONTROL	0x33
 //#define FCH_NO_XHCI_SUPPORT			FALSE
 GPIO_CONTROL   ms7721_m_gpio[] = {
 //	{183, Function1, PullUpB},
 	{-1}
 };
 #define BLDCFG_FCH_GPIO_CONTROL_LIST           (&ms7721_m_gpio[0])
-
-// The following definitions specify the default values for various parameters in which there are
-// no clearly defined defaults to be used in the common file.  The values below are based on product
-// and BKDG content, please consult the AGESA Memory team for consultation.
-#define DFLT_SCRUB_DRAM_RATE            (0)
-#define DFLT_SCRUB_L2_RATE              (0)
-#define DFLT_SCRUB_L3_RATE              (0)
-#define DFLT_SCRUB_IC_RATE              (0)
-#define DFLT_SCRUB_DC_RATE              (0)
-#define DFLT_MEMORY_QUADRANK_TYPE       QUADRANK_UNBUFFERED
-#define DFLT_VRM_SLEW_RATE              (5000)
 
 /* Moving this include up will break AGESA. */
 #include <PlatformInstall.h>

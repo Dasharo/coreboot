@@ -1,20 +1,7 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <assert.h>
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <intelblocks/acpi.h>
 #include <device/pci.h>
@@ -200,7 +187,7 @@ void generate_p_state_entries(int core, int cores_per_package)
 {
 }
 
-void generate_cpu_entries(struct device *device)
+void generate_cpu_entries(const struct device *device)
 {
 	int core_id, cpu_id, pcontrol_blk = ACPI_BASE_ADDRESS;
 	int plen = 6;
@@ -498,7 +485,7 @@ int soc_madt_sci_irq_polarity(int sci)
 		return MP_IRQ_POLARITY_HIGH;
 }
 
-unsigned long southbridge_write_acpi_tables(struct device *device,
+unsigned long southbridge_write_acpi_tables(const struct device *device,
 					     unsigned long current,
 					     struct acpi_rsdp *rsdp)
 {
@@ -871,7 +858,7 @@ static unsigned long acpi_fill_dmar(unsigned long current)
 	return current;
 }
 
-unsigned long northbridge_write_acpi_tables(struct device *device,
+unsigned long northbridge_write_acpi_tables(const struct device *device,
 					    unsigned long current,
 					    struct acpi_rsdp *rsdp)
 {
@@ -987,7 +974,7 @@ void uncore_inject_dsdt(void)
 	acpigen_pop_len();
 }
 
-void southbridge_inject_dsdt(struct device *device)
+void southbridge_inject_dsdt(const struct device *device)
 {
 	global_nvs_t *gnvs;
 

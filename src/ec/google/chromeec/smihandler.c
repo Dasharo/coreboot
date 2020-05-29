@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <ec/google/chromeec/ec.h>
@@ -41,7 +40,7 @@ static void clear_pending_events(void)
 	while (google_chromeec_get_event() != 0)
 		;
 
-	printk(BIOS_DEBUG,"Clearing pending EC events. Error code 1 is expected.\n");
+	printk(BIOS_DEBUG, "Clearing pending EC events. Error code EC_RES_UNAVAILABLE(9) is expected.\n");
 	while (google_chromeec_get_mkbp_event(&mkbp_event) == 0)
 		;
 }

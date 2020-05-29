@@ -1,14 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/i2c_simple.h>
 #include <device/device.h>
 #include <device/path.h>
 #include <gpio.h>
-#include <stdint.h>
 #include <string.h>
 #include "chip.h"
 
@@ -43,8 +41,8 @@ static int i2c_generic_write_gpio(struct acpi_gpio *gpio, int *curr_index)
 	return ret;
 }
 
-void i2c_generic_fill_ssdt(struct device *dev,
-			void (*callback)(struct device *dev),
+void i2c_generic_fill_ssdt(const struct device *dev,
+			void (*callback)(const struct device *dev),
 			struct drivers_i2c_generic_config *config)
 {
 	const char *scope = acpi_device_scope(dev);
@@ -159,7 +157,7 @@ void i2c_generic_fill_ssdt(struct device *dev,
 	       config->desc ? : dev->chip_ops->name, dev_path(dev));
 }
 
-static void i2c_generic_fill_ssdt_generator(struct device *dev)
+static void i2c_generic_fill_ssdt_generator(const struct device *dev)
 {
 	i2c_generic_fill_ssdt(dev, NULL, dev->chip_info);
 }

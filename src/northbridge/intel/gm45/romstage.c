@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cbmem.h>
 #include <romstage_handoff.h>
 #include <console/console.h>
 #include <device/pci_ops.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <cpu/x86/lapic.h>
 #include <arch/romstage.h>
 #include <northbridge/intel/gm45/gm45.h>

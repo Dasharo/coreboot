@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/pci_ops.h>
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <stdint.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -285,8 +284,9 @@ static void amdfam14_link_read_bases(struct device *dev, u32 nodeid, u32 link)
 static u32 my_find_pci_tolm(struct bus *bus, u32 tolm)
 {
 	struct resource *min;
+	unsigned long mask_match = IORESOURCE_MEM | IORESOURCE_ASSIGNED;
 	min = 0;
-	search_bus_resources(bus, IORESOURCE_MEM, IORESOURCE_MEM, tolm_test,
+	search_bus_resources(bus, mask_match, mask_match, tolm_test,
 			     &min);
 	if (min && tolm > min->base) {
 		tolm = min->base;
@@ -658,7 +658,7 @@ static void cpu_bus_init(struct device *dev)
 
 /* North Bridge Structures */
 
-static void northbridge_fill_ssdt_generator(struct device *device)
+static void northbridge_fill_ssdt_generator(const struct device *device)
 {
 	msr_t msr;
 	char pscope[] = "\\_SB.PCI0";
@@ -714,7 +714,7 @@ static void patch_ssdt_processor_scope(acpi_header_t *ssdt)
 	ssdt->checksum = acpi_checksum((void *)ssdt, ssdt->length);
 }
 
-static unsigned long agesa_write_acpi_tables(struct device *device,
+static unsigned long agesa_write_acpi_tables(const struct device *device,
 					     unsigned long current,
 					     acpi_rsdp_t *rsdp)
 {

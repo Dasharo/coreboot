@@ -1,8 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <cpu/x86/smm.h>
 #include <ec/google/wilco/smm.h>

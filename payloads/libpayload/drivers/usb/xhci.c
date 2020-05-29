@@ -1,5 +1,4 @@
 /*
- * This file is part of the libpayload project.
  *
  * Copyright (C) 2010 Patrick Georgi
  * Copyright (C) 2013 secunet Security Networks AG
@@ -185,20 +184,20 @@ xhci_init (unsigned long physical_bar)
 		goto _free_xhci;
 	}
 
-	memcpy(&xhci->capreg, phys_to_virt(physical_bar), sizeof(xhci->capreg));
+	xhci->capreg = phys_to_virt(physical_bar);
 	xhci->opreg = phys_to_virt(physical_bar) + CAP_GET(CAPLEN, xhci->capreg);
-	xhci->hcrreg = phys_to_virt(physical_bar) + xhci->capreg.rtsoff;
-	xhci->dbreg = phys_to_virt(physical_bar) + xhci->capreg.dboff;
+	xhci->hcrreg = phys_to_virt(physical_bar) + xhci->capreg->rtsoff;
+	xhci->dbreg = phys_to_virt(physical_bar) + xhci->capreg->dboff;
 
 	xhci_debug("regbase: 0x%"PRIx32"\n", physical_bar);
 	xhci_debug("caplen:  0x%"PRIx32"\n", CAP_GET(CAPLEN, xhci->capreg));
-	xhci_debug("rtsoff:  0x%"PRIx32"\n", xhci->capreg.rtsoff);
-	xhci_debug("dboff:   0x%"PRIx32"\n", xhci->capreg.dboff);
+	xhci_debug("rtsoff:  0x%"PRIx32"\n", xhci->capreg->rtsoff);
+	xhci_debug("dboff:   0x%"PRIx32"\n", xhci->capreg->dboff);
 
 	xhci_debug("hciversion: %"PRIx8".%"PRIx8"\n",
 		   CAP_GET(CAPVER_HI, xhci->capreg), CAP_GET(CAPVER_LO, xhci->capreg));
 	if ((CAP_GET(CAPVER, xhci->capreg) < 0x96) ||
-	    (CAP_GET(CAPVER, xhci->capreg) > 0x110)) {
+	    (CAP_GET(CAPVER, xhci->capreg) > 0x120)) {
 		xhci_debug("Unsupported xHCI version\n");
 		goto _free_xhci;
 	}
@@ -314,9 +313,13 @@ xhci_pci_init (pcidev_t addr)
 
 	controller = xhci_init((unsigned long)reg_addr);
 	if (controller) {
+		xhci_t *xhci = controller->instance;
 		controller->pcidev = addr;
 
 		xhci_switch_ppt_ports(addr);
+
+		/* Set up any quirks for controller root hub */
+		xhci->roothub->quirks = pci_quirk_check(addr);
 	}
 
 	return controller;

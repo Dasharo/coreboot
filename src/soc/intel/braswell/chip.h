@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /*
  * The devicetree parser expects chip.h to reside directly in the path
@@ -14,7 +13,6 @@
 #include <fsp/util.h>
 #include <intelblocks/lpc_lib.h>
 #include <soc/pci_devs.h>
-#include <smbios.h>
 
 #define SVID_CONFIG1		1
 #define SVID_CONFIG3		3

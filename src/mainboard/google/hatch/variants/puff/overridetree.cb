@@ -24,7 +24,14 @@ chip soc/intel/cannonlake
 	# NOTE: This only applies to Puff,
 	# usb2_ports[1] and usb2_ports[3] were swapped on
 	# reference schematics after Puff has been built.
-	register "usb2_ports[0]" = "USB2_PORT_MID(OC2)"        # Type-A Port 2
+	register "usb2_ports[0]" = "{
+		.enable = 1,
+		.ocpin = OC2,
+		.tx_bias = USB2_BIAS_0MV,
+		.tx_emp_enable = USB2_PRE_EMP_ON,
+		.pre_emp_bias  = USB2_BIAS_11P25MV,
+		.pre_emp_bit   = USB2_HALF_BIT_PRE_EMP,
+	}" # Type-A Port 2
 	register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC_SKIP)" # Type-C Port
 	register "usb2_ports[2]" = "{
 		.enable = 1,
@@ -290,7 +297,7 @@ chip soc/intel/cannonlake
 			end
 		end #I2C #4
 		device pci 1a.0 on  end # eMMC
-		device pci 1c.0 on
+		device pci 1c.6 on
 			chip drivers/net
 				register "customized_leds" = "0x05af"
 				register "wake" = "GPE0_DW1_07" # GPP_C7
@@ -301,8 +308,7 @@ chip soc/intel/cannonlake
 				register "device_index" = "0"
 				device pci 00.0 on end
 			end
-		end # FSP requires func0 be enabled.
-		device pci 1c.6 on  end # RTL8111H Ethernet NIC (becomes RP1).
+		end # RTL8111H Ethernet NIC
 		device pci 1d.2 on end # PCI Express Port 11 (X2 NVMe)
 		device pci 1e.3 off end # GSPI #1
 	end

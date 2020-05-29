@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <cbmem.h>
 #include <console/console.h>
@@ -8,7 +7,7 @@
 #include <stdint.h>
 #include <device/device.h>
 #include <boot/tables.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <cpu/intel/smm_reloc.h>
 
 #include "chip.h"
@@ -179,14 +178,10 @@ static void mch_domain_set_resources(struct device *dev)
 
 static void mch_domain_init(struct device *dev)
 {
-	u32 reg32;
-
 	struct device *mch = pcidev_on_root(0, 0);
 
 	/* Enable SERR */
-	reg32 = pci_read_config32(mch, PCI_COMMAND);
-	reg32 |= PCI_COMMAND_SERR;
-	pci_write_config32(mch, PCI_COMMAND, reg32);
+	pci_or_config16(mch, PCI_COMMAND, PCI_COMMAND_SERR);
 }
 
 static const char *northbridge_acpi_name(const struct device *dev)

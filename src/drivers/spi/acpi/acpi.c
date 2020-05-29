@@ -1,14 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/path.h>
 #include <device/spi.h>
 #include <spi-generic.h>
-#include <stdint.h>
 #include <string.h>
 #include "chip.h"
 
@@ -59,7 +57,7 @@ static int spi_acpi_write_gpio(struct acpi_gpio *gpio, int *curr_index)
 	return ret;
 }
 
-static void spi_acpi_fill_ssdt_generator(struct device *dev)
+static void spi_acpi_fill_ssdt_generator(const struct device *dev)
 {
 	struct drivers_spi_acpi_config *config = dev->chip_info;
 	const char *scope = acpi_device_scope(dev);

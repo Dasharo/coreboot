@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <commonlib/helpers.h>
 #include <console/console.h>
@@ -11,7 +10,6 @@
 #include <intelblocks/pcr.h>
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
-#include <string.h>
 
 #define CSME0_FBE	0xf
 #define CSME0_BAR	0x0

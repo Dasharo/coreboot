@@ -1,12 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/mmio.h>
 #include <timer.h>
 #include <bootstate.h>
 #include <amdblocks/psp.h>
 #include <soc/iomap.h>
-#include <soc/northbridge.h>
 #include "psp_def.h"
 
 static u16 rd_mbox_sts(struct pspv2_mbox *mbox)

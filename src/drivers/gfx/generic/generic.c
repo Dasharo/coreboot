@@ -1,12 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <stdint.h>
 
 #include "chip.h"
 
@@ -101,7 +99,7 @@ static void gfx_fill_privacy_screen_dsm(
 		privacy);
 }
 
-static void gfx_fill_ssdt_generator(struct device *dev)
+static void gfx_fill_ssdt_generator(const struct device *dev)
 {
 	size_t i;
 	struct drivers_gfx_generic_config *config = dev->chip_info;

@@ -1,13 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <intelblocks/sd.h>
 
 #if CONFIG(HAVE_ACPI_TABLES)
-static void sd_fill_ssdt(struct device *dev)
+static void sd_fill_ssdt(const struct device *dev)
 {
 	const char *path;
 	struct acpi_gpio default_gpio = { 0 };

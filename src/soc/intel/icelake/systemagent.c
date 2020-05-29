@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pci.h>
@@ -52,4 +51,18 @@ void soc_systemagent_init(struct device *dev)
 
 	/* Enable BIOS Reset CPL */
 	enable_bios_reset_cpl();
+}
+
+uint32_t soc_systemagent_max_chan_capacity_mib(u8 capid0_a_ddrsz)
+{
+	switch (capid0_a_ddrsz) {
+	case 1:
+		return 8192;
+	case 2:
+		return 4096;
+	case 3:
+		return 2048;
+	default:
+		return 65536;
+	}
 }

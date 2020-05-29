@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <assert.h>
 #include <console/console.h>
@@ -27,7 +26,6 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	}
 
 	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
-	m_cfg->IedSize = CONFIG_IED_REGION_SIZE;
 	m_cfg->SaGv = config->SaGv;
 	m_cfg->RMT = config->RMT;
 
@@ -50,7 +48,6 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 			sizeof(config->PcieClkSrcClkReq));
 
 	m_cfg->PrmrrSize = config->PrmrrSize;
-	m_cfg->EnableC6Dram = config->enable_c6dram;
 
 	/* Disable BIOS Guard */
 	m_cfg->BiosGuard = 0;
@@ -60,7 +57,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 
 	/* Set debug interface flags */
 	m_cfg->PcdDebugInterfaceFlags = CONFIG(DRIVERS_UART_8250IO) ?
-			DEBUG_INTERFACE_UART : DEBUG_INTERFACE_SERIAL_IO;
+		DEBUG_INTERFACE_UART_8250IO : DEBUG_INTERFACE_LPSS_SERIAL_IO;
 
 	/* TraceHub configuration */
 	dev = pcidev_path_on_root(PCH_DEVFN_TRACEHUB);

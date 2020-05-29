@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <commonlib/helpers.h>
@@ -517,7 +516,7 @@ static void pciexp_hotplug_dummy_read_resources(struct device *dev)
 {
 	struct resource *resource;
 
-	// Add extra memory space
+	/* Add extra memory space */
 	resource = new_resource(dev, 0x10);
 	resource->size = CONFIG_PCIEXP_HOTPLUG_MEM;
 	resource->align = 12;
@@ -525,7 +524,7 @@ static void pciexp_hotplug_dummy_read_resources(struct device *dev)
 	resource->limit = 0xffffffff;
 	resource->flags |= IORESOURCE_MEM;
 
-	// Add extra prefetchable memory space
+	/* Add extra prefetchable memory space */
 	resource = new_resource(dev, 0x14);
 	resource->size = CONFIG_PCIEXP_HOTPLUG_PREFETCH_MEM;
 	resource->align = 12;
@@ -533,7 +532,11 @@ static void pciexp_hotplug_dummy_read_resources(struct device *dev)
 	resource->limit = 0xffffffffffffffff;
 	resource->flags |= IORESOURCE_MEM | IORESOURCE_PREFETCH;
 
-	// Add extra I/O space
+	/* Set resource flag requesting allocation above 4G boundary. */
+	if (CONFIG(PCIEXP_HOTPLUG_PREFETCH_MEM_ABOVE_4G))
+		resource->flags |= IORESOURCE_ABOVE_4G;
+
+	/* Add extra I/O space */
 	resource = new_resource(dev, 0x18);
 	resource->size = CONFIG_PCIEXP_HOTPLUG_IO;
 	resource->align = 12;

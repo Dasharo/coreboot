@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 Device(EC)
 {
@@ -141,13 +140,12 @@ Device(EC)
 		BRIGHTNESS_DOWN()
 	}
 
-#ifdef ACPI_VIDEO_DEVICE
 	/* Next display GPE */
 	Method(_Q16, 0, NotSerialized)
 	{
-		Notify (ACPI_VIDEO_DEVICE, 0x82)
+		Notify (\_SB.PCI0.GFX0, 0x82)
 	}
-#endif
+
 	/* AC status change: present */
 	Method(_Q26, 0, NotSerialized)
 	{

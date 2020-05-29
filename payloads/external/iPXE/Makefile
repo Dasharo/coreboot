@@ -1,17 +1,8 @@
 ##
-## This file is part of the coreboot project.
 ##
 ## Copyright (C) 2016 Google Inc.
 ##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
+## SPDX-License-Identifier: GPL-2.0-only
 
 # 2019.3 - Last commit of March 2019
 # When updating, change the name both here and in payloads/external/iPXE/Kconfig
@@ -82,6 +73,10 @@ ifeq ($(CONFIG_HAS_SCRIPT),y)
 endif
 ifeq ($(CONFIG_PXE_NO_PROMT),y)
 	sed 's|#define\s*BANNER_TIMEOUT.*|#define BANNER_TIMEOUT 0|' "$(project_dir)/src/config/general.h" > "$(project_dir)/src/config/general.h.tmp"
+	mv "$(project_dir)/src/config/general.h.tmp" "$(project_dir)/src/config/general.h"
+endif
+ifeq ($(CONFIG_PXE_HAS_HTTPS),y)
+	sed 's|.*DOWNLOAD_PROTO_HTTPS|#define DOWNLOAD_PROTO_HTTPS|g' "$(project_dir)/src/config/general.h" > "$(project_dir)/src/config/general.h.tmp"
 	mv "$(project_dir)/src/config/general.h.tmp" "$(project_dir)/src/config/general.h"
 endif
 

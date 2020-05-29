@@ -1,10 +1,8 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-/* This file is part of the coreboot project. */
 /*
  * cache.c: Cache maintenance routines for ARMv7-M
  */
 
-#include <stdint.h>
 
 #include <arch/cache.h>
 

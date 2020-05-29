@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/romstage.h>
 #include <cbmem.h>
@@ -108,8 +107,8 @@ static void save_dimm_info(void)
 					src_dimm->RankInDimm,
 					channel_info->ChannelId,
 					src_dimm->DimmId,
-					(const char *)src_dimm->ModulePartNum,
-					sizeof(src_dimm->ModulePartNum),
+					dram_part_num,
+					dram_part_num_len,
 					serial_num,
 					meminfo_hob->DataWidth,
 					meminfo_hob->VddVoltage[memProfNum],

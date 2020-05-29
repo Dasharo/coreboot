@@ -1,17 +1,4 @@
-/*
- * Copyright (C) 2009 coresystems GmbH
- *                 written by Patrick Georgi <patrick.georgi@coresystems.de>
- * Copyright (C) 2016 Siemens AG
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #ifndef __CBFS_H
 #define __CBFS_H
@@ -223,7 +210,8 @@ static struct typedesc_t filetypes[] unused = {
 	{CBFS_COMPONENT_EFI, "efi"},
 	{CBFS_COMPONENT_STRUCT, "struct"},
 	{CBFS_COMPONENT_DELETED, "deleted"},
-	{CBFS_COMPONENT_NULL, "null"}
+	{CBFS_COMPONENT_NULL, "null"},
+	{0, NULL}
 };
 
 static const struct typedesc_t types_cbfs_hash[] unused = {

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <assert.h>
 #include <device/device.h>
@@ -105,11 +104,6 @@ static void chip_init(void *chip_info)
 
 	/* Perform silicon specific init. */
 	fsp_silicon_init(romstage_handoff_is_resume());
-}
-
-static void pci_domain_set_resources(struct device *dev)
-{
-	assign_resources(dev->link_list);
 }
 
 static struct device_operations pci_domain_ops = {

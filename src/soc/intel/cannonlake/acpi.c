@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <cbmem.h>
 #include <console/console.h>
@@ -335,7 +334,7 @@ static unsigned long soc_fill_dmar(unsigned long current)
 	return current;
 }
 
-unsigned long sa_write_acpi_tables(struct device *dev, unsigned long current,
+unsigned long sa_write_acpi_tables(const struct device *dev, unsigned long current,
 				   struct acpi_rsdp *rsdp)
 {
 	acpi_dmar_t *const dmar = (acpi_dmar_t *)current;

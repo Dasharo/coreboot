@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <stddef.h>
@@ -741,7 +740,7 @@ static void asmlinkage smm_do_relocation(void *arg)
 		mseg = mp_state.perm_smbase +
 			(mp_state.perm_smsize - CONFIG_MSEG_SIZE);
 
-		stm_setup(mseg, p->cpu, runtime->num_cpus,
+		stm_setup(mseg, p->cpu,
 				perm_smbase,
 				mp_state.perm_smbase,
 				runtime->start32_offset);

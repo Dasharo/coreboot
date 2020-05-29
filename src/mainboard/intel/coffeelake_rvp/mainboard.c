@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <baseboard/variants.h>
 #include <device/device.h>
 #include <nhlt.h>
@@ -18,7 +17,7 @@ static void mainboard_init(void *chip_info)
 	gpio_configure_pads(pads, num);
 }
 
-static unsigned long mainboard_write_acpi_tables(struct device *device,
+static unsigned long mainboard_write_acpi_tables(const struct device *device,
 						 unsigned long current,
 						 acpi_rsdp_t *rsdp)
 {

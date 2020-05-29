@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /*
- * #include <arch/acpi.h>
+ * #include <acpi/acpi.h>
 DefinitionBlock ("DSDT.AML", "DSDT", 0x01, OEM_ID, ACPI_TABLE_CREATOR, 0x00010001)
  *{
  *	#include "routing.asl"

@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <intelblocks/gpio.h>
 #include <soc/gpio_defs.h>
 #include <soc/irq.h>
 #include <soc/pcr_ids.h>
 #include "gpio_op.asl"
+
+#include <soc/intel/common/acpi/gpio.asl>
 
 Device (GPIO)
 {
@@ -103,4 +104,36 @@ Method (GADD, 1, NotSerialized)
 
 	Local2 = PCRB(Local0) + PAD_CFG_BASE + (Local1 * 16)
 	Return (Local2)
+}
+
+/*
+ * Return PCR Port ID of GPIO Communities
+ *
+ * Arg0: GPIO Community (0-5)
+ */
+Method (GPID, 1, Serialized)
+{
+	Switch (ToInteger (Arg0))
+	{
+		Case (COMM_0) {
+			Local0 = PID_GPIOCOM0
+		}
+		Case (COMM_1) {
+			Local0 = PID_GPIOCOM1
+		}
+		Case (COMM_2) {
+			Local0 = PID_GPIOCOM2
+		}
+		Case (COMM_4) {
+			Local0 = PID_GPIOCOM4
+		}
+		Case (COMM_5) {
+			Local0 = PID_GPIOCOM5
+		}
+		Default {
+			Return (0)
+		}
+	}
+
+	Return (Local0)
 }

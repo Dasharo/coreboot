@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __AMDBLOCK_GPIO_BANKS_H__
 #define __AMDBLOCK_GPIO_BANKS_H__
@@ -276,6 +275,21 @@ enum {
 		.flags = GPIO_FLAG_DEBOUNCE }
 
 typedef uint32_t gpio_t;
+
+/*
+ * gpio_configure_pads_with_override accepts as input two GPIO tables:
+ * 1. Base config
+ * 2. Override config
+ *
+ * This function configures raw pads in base config and applies override in
+ * override config if any. Thus, for every GPIO_x in base config, this function
+ * looks up the GPIO in override config and if it is present there, then applies
+ * the configuration from override config.
+ */
+void gpio_configure_pads_with_override(const struct soc_amd_gpio *base_cfg,
+					size_t base_num_pads,
+					const struct soc_amd_gpio *override_cfg,
+					size_t override_num_pads);
 
 /* Get the address of the control register of a particular pin */
 uintptr_t gpio_get_address(gpio_t gpio_num);

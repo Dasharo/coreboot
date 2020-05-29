@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <device/mmio.h>
 #include <device/device.h>
@@ -294,4 +293,37 @@ int gpio_interrupt_status(gpio_t gpio)
 	}
 
 	return 0;
+}
+
+/*
+ * This function checks to see if there is an override config present for the
+ * provided pad_config. If no override config is present, then the input config
+ * is returned. Else, it returns the override config.
+ */
+static const struct soc_amd_gpio *gpio_get_config(const struct soc_amd_gpio *c,
+				const struct soc_amd_gpio *override_cfg_table,
+				size_t num)
+{
+	size_t i;
+	if (override_cfg_table == NULL)
+		return c;
+	for (i = 0; i < num; i++) {
+		if (c->gpio == override_cfg_table[i].gpio)
+			return override_cfg_table + i;
+	}
+	return c;
+}
+void gpio_configure_pads_with_override(const struct soc_amd_gpio *base_cfg,
+					size_t base_num_pads,
+					const struct soc_amd_gpio *override_cfg,
+					size_t override_num_pads)
+{
+	size_t i;
+	const struct soc_amd_gpio *c;
+
+	for (i = 0; i < base_num_pads; i++) {
+		c = gpio_get_config(base_cfg + i, override_cfg,
+				override_num_pads);
+		program_gpios(c, 1);
+	}
 }

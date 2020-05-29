@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/romstage.h>
 #include <arch/symbols.h>
@@ -323,9 +322,4 @@ void soc_update_memory_params_for_mma(FSP_M_CONFIG *memory_cfg,
 			region_device_sz(&mma_cfg->test_param);
 	memory_cfg->MrcFastBoot = 0x00;
 	memory_cfg->SaGv = 0x02;
-}
-
-__weak void mainboard_memory_init_params(FSPM_UPD *mupd)
-{
-	/* Do nothing */
 }

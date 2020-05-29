@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <device/device.h>
@@ -55,7 +54,7 @@ static struct device_operations hda_ops = {
 	.init			= hda_init,
 #endif
 	.ops_pci		= &pci_dev_ops_pci,
-	.scan_bus		= enable_static_devices,
+	.scan_bus		= scan_static_bus
 };
 
 static const unsigned short pci_device_ids[] = {

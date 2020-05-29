@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _BROADWELL_CPU_H_
 #define _BROADWELL_CPU_H_
@@ -37,10 +36,6 @@
 #define C_STATE_LATENCY_FROM_LAT_REG(reg) \
 	C_STATE_LATENCY_MICRO_SECONDS(C_STATE_LATENCY_CONTROL_ ##reg## _LIMIT, \
 					(IRTL_1024_NS >> 10))
-
-/* Configure power limits for turbo mode */
-void set_power_limits(u8 power_limit_1_time);
-int cpu_config_tdp_levels(void);
 
 /* CPU identification */
 u32 cpu_family_model(void);

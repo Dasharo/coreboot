@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /*
  * ACPI - create the Fixed ACPI Description Tables (FADT)
@@ -7,10 +6,11 @@
 
 #include <string.h>
 #include <console/console.h>
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <device/pci_ops.h>
 #include <arch/ioapic.h>
+#include <arch/smp/mpspec.h>
 #include <cpu/x86/smm.h>
 #include <cbmem.h>
 #include <device/device.h>
@@ -21,13 +21,30 @@
 #include <soc/pci_devs.h>
 #include <soc/cpu.h>
 #include <soc/southbridge.h>
-#include <soc/northbridge.h>
 #include <soc/nvs.h>
 #include <soc/gpio.h>
 #include <version.h>
+#include "chip.h"
+
+unsigned long acpi_fill_mcfg(unsigned long current)
+{
+
+	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *)current,
+					     CONFIG_MMCONF_BASE_ADDRESS,
+					     0,
+					     0,
+					     CONFIG_MMCONF_BUS_NUMBER);
+
+	return current;
+}
 
 unsigned long acpi_fill_madt(unsigned long current)
 {
+	const struct soc_amd_picasso_config *cfg = config_of_soc();
+	unsigned int i;
+	uint8_t irq;
+	uint8_t flags;
+
 	/* create all subtables for processors */
 	current = acpi_create_madt_lapics(current);
 
@@ -41,8 +58,20 @@ unsigned long acpi_fill_madt(unsigned long current)
 	/* 5 mean: 0101 --> Edge-triggered, Active high */
 	current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)
 						current, 0, 0, 2, 0);
-	current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)
-						current, 0, 9, 9, 0xf);
+	current += acpi_create_madt_irqoverride(
+		(acpi_madt_irqoverride_t *)current, 0, 9, 9,
+		MP_IRQ_TRIGGER_LEVEL | MP_IRQ_POLARITY_LOW);
+
+	for (i = 0; i < ARRAY_SIZE(cfg->irq_override); ++i) {
+		irq = cfg->irq_override[i].irq;
+		flags = cfg->irq_override[i].flags;
+
+		if (!flags)
+			continue;
+
+		current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)current, 0,
+							irq, irq, flags);
+	}
 
 	/* create all subtables for processors */
 	current += acpi_create_madt_lapic_nmi((acpi_madt_lapic_nmi_t *)current,
@@ -220,7 +249,7 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	header->checksum = acpi_checksum((void *)fadt, sizeof(acpi_fadt_t));
 }
 
-void generate_cpu_entries(struct device *device)
+void generate_cpu_entries(const struct device *device)
 {
 	int cores, cpu;
 
@@ -238,7 +267,7 @@ void generate_cpu_entries(struct device *device)
 	}
 }
 
-unsigned long southbridge_write_acpi_tables(struct device *device,
+unsigned long southbridge_write_acpi_tables(const struct device *device,
 		unsigned long current,
 		struct acpi_rsdp *rsdp)
 {
@@ -267,7 +296,7 @@ static void acpi_create_gnvs(struct global_nvs_t *gnvs)
 	gnvs->pcnt = dev_count_cpu();
 }
 
-void southbridge_inject_dsdt(struct device *device)
+void southbridge_inject_dsdt(const struct device *device)
 {
 	struct global_nvs_t *gnvs;
 

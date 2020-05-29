@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <baseboard/variants.h>
 #include <boardid.h>
 #include <console/console.h>
@@ -95,7 +94,7 @@ void __weak variant_nhlt_oem_overrides(const char **oem_id,
 }
 
 static unsigned long mainboard_write_acpi_tables(
-	struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
+	const struct device *device, unsigned long current, acpi_rsdp_t *rsdp)
 {
 	uintptr_t start_addr;
 	uintptr_t end_addr;

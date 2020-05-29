@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _BERT_STORAGE_H_
 #define _BERT_STORAGE_H_
 
 #include <stdint.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 
 /* Items in the BERT region
  *

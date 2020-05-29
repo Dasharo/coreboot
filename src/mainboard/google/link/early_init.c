@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <stdint.h>
 #include <string.h>
 #include <device/pci_ops.h>
 #include <cpu/x86/lapic.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <console/console.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <northbridge/intel/sandybridge/raminit.h>

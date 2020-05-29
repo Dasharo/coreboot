@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __CHROMEOS_H__
 #define __CHROMEOS_H__
@@ -70,7 +69,7 @@ void chromeos_acpi_gpio_generate(const struct cros_gpio *gpios, size_t num);
  */
 void mainboard_chromeos_acpi_generate(void);
 #if CONFIG(CHROMEOS)
-void chromeos_dsdt_generator(struct device *dev);
+void chromeos_dsdt_generator(const struct device *dev);
 #else
 #define chromeos_dsdt_generator NULL
 #endif

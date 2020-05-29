@@ -1,21 +1,10 @@
-##
 ## SPDX-License-Identifier: GPL-2.0-only
-## This file is part of the coreboot project.
-##
 
 if SOC_INTEL_COOPERLAKE_SP
 
 config MAINBOARD_USES_FSP2_0
 	  bool
 	  default y
-
-config USE_FSP2_0_DRIVER
-	  def_bool y
-	  depends on MAINBOARD_USES_FSP2_0
-	  select PLATFORM_USES_FSP2_0
-	  select UDK_2015_BINDING
-	  select POSTCAR_CONSOLE
-	  select POSTCAR_STAGE
 
 config FSP_HEADER_PATH
 	  string "Location of FSP headers"
@@ -73,5 +62,8 @@ config FSP_TEMP_RAM_SIZE
 	  The amount of anticipated heap usage in CAR by FSP.
 	  Refer to Platform FSP integration guide document to know
 	  the exact FSP requirement for Heap setup.
+
+config SOC_INTEL_COMMON_BLOCK_P2SB
+	def_bool y
 
 endif

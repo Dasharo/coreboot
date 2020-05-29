@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 /* This was originally for the e7500, modified for e7501
  * The primary differences are that 7501 apparently can
@@ -21,7 +20,6 @@
 #include <commonlib/helpers.h>
 #include <console/console.h>
 #include <cpu/x86/mtrr.h>
-#include <cpu/x86/cache.h>
 #include <cpu/x86/msr.h>
 #include <assert.h>
 #include <spd.h>

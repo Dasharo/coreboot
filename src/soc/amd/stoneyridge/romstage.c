@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <amdblocks/biosram.h>
 #include <device/pci_ops.h>
 #include <arch/cpu.h>
 #include <arch/romstage.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/smm.h>

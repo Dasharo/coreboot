@@ -1,11 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#define BRIGHTNESS_UP \DSPC.BRTU
-#define BRIGHTNESS_DOWN \DSPC.BRTD
-#define ACPI_VIDEO_DEVICE \_SB.PCI0.GFX0
-
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _SOC_CHIP_H_
 #define _SOC_CHIP_H_
@@ -172,8 +171,6 @@ struct soc_intel_icelake_config {
 	/* HeciEnabled decides the state of Heci1 at end of boot
 	 * Setting to 0 (default) disables Heci1 and hides the device from OS */
 	uint8_t HeciEnabled;
-	/* PL2 Override value in Watts */
-	uint32_t tdp_pl2_override;
 	/* Intel Speed Shift Technology */
 	uint8_t speed_shift_enable;
 	/* Enable VR specific mailbox command

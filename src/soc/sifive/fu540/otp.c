@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <stddef.h>
 #include <delay.h>
 #include <device/mmio.h>
 #include <console/console.h>

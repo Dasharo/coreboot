@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <console/console.h>
 #include <security/tpm/tspi.h>
@@ -12,7 +11,7 @@
 
 static struct tcpa_table *tcpa_cbmem_init(void)
 {
-	MAYBE_STATIC_BSS struct tcpa_table *tclt = NULL;
+	static struct tcpa_table *tclt;
 	if (tclt)
 		return tclt;
 
@@ -33,7 +32,7 @@ static struct tcpa_table *tcpa_cbmem_init(void)
 
 struct tcpa_table *tcpa_log_init(void)
 {
-	MAYBE_STATIC_BSS struct tcpa_table *tclt = NULL;
+	static struct tcpa_table *tclt;
 
 	/* We are dealing here with pre CBMEM environment.
 	 * If cbmem isn't available use CAR or SRAM */

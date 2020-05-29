@@ -1,12 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <assert.h>
 #include <boardid.h>
 #include <console/console.h>
 #include <soc/auxadc.h>
 #include <ec/google/chromeec/ec.h>
-#include <stddef.h>
 
 /* For CBI un-provisioned/corrupted Flapjack board. */
 #define FLAPJACK_UNDEF_SKU_ID 0

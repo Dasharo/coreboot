@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <types.h>
 #include <string.h>
 #include <device/device.h>
 #include <drivers/intel/gma/int15.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <ec/smsc/mec1308/ec.h>
 #include "ec.h"
 #include "onboard.h"

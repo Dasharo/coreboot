@@ -1,10 +1,6 @@
-/*
- * This file is part of the coreboot project.
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include <baseboard/variants.h>
 #include <baseboard/gpio.h>
 #include <soc/gpio.h>
@@ -32,7 +28,7 @@ static const struct pad_config gpio_table[] = {
 	/* A12 : GPP_A12 ==> M2280_PCIE_SATA# */
 	PAD_CFG_NF(GPP_A12, NONE, DEEP, NF1),
 	/* A13 : GPP_A13 ==> PCH_BT_RADIO_DIS# */
-	PAD_CFG_GPO(GPP_A13, 0, DEEP),
+	PAD_CFG_GPO(GPP_A13, 1, DEEP),
 	/* A14 : GPP_A14 ==> USB_OC1# */
 	PAD_CFG_NF(GPP_A14, NONE, DEEP, NF1),
 	/* A15 : GPP_A15 ==> USB_OC2# */
@@ -77,7 +73,7 @@ static const struct pad_config gpio_table[] = {
 	/* B10 : GPP_B10 ===> NC */
 	PAD_NC(GPP_B10, NONE),
 	/* B11 : GPP_B11 ==> TBT_I2C_INT# */
-	PAD_CFG_GPI_APIC(GPP_B11, NONE, PLTRST, LEVEL, INVERT),
+	PAD_CFG_NF(GPP_B11, NONE, DEEP, NF1),
 	/* B12 : GPP_B12 ==> SIO_SLP_S0# */
 	PAD_CFG_NF(GPP_B12, NONE, DEEP, NF1),
 	/* B13 : PLTRST# ==> PCH_PLTRST# */
@@ -407,8 +403,8 @@ const struct pad_config *__weak variant_base_gpio_table(size_t *num)
 }
 
 static const struct cros_gpio cros_gpios[] = {
-	CROS_GPIO_REC_AL(GPIO_REC_MODE, CROS_GPIO_NAME),
-	CROS_GPIO_WP_AH(GPIO_PCH_WP, CROS_GPIO_NAME),
+	CROS_GPIO_REC_AL(GPIO_REC_MODE, CROS_GPIO_DEVICE_NAME),
+	CROS_GPIO_WP_AH(GPIO_PCH_WP, CROS_GPIO_DEVICE_NAME),
 };
 
 const struct cros_gpio *__weak variant_cros_gpios(size_t *num)

@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <intelblocks/sd.h>
 #include <soc/soc_chip.h>
 
-int sd_fill_soc_gpio_info(struct acpi_gpio *gpio, struct device *dev)
+int sd_fill_soc_gpio_info(struct acpi_gpio *gpio, const struct device *dev)
 {
 	config_t *config = config_of(dev);
 

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* This file is part of the coreboot project. */
 
 #include <device/device.h>
 #include <device/pnp.h>
@@ -9,7 +8,7 @@
 
 #if CONFIG(HAVE_ACPI_TABLES)
 #include <superio/common/ssdt.h>
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #endif
 
 static void nct5539d_init(struct device *dev)

@@ -1,9 +1,4 @@
-/*
- * Copyright 2016 The Chromium OS Authors. All rights reserved.
- * Copyright (c) 2018 Eltan B.V.
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
+/* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <commonlib/iobuf.h>
 #include <console/console.h>
@@ -587,17 +582,23 @@ struct tpm2_response *tpm_unmarshal_response(TPM_CC command, struct ibuf *ib)
 	if (rc != 0)
 		return NULL;
 
-	if (ibuf_remaining(ib) == 0) {
-		if (tpm2_static_resp.hdr.tpm_size != ibuf_nr_read(ib))
-			printk(BIOS_ERR,
-			       "%s: size mismatch in response to command %#x\n",
-			       __func__, command);
-		return &tpm2_static_resp;
+	if (ibuf_capacity(ib) != tpm2_static_resp.hdr.tpm_size) {
+		printk(BIOS_ERR,
+		       "%s: size mismatch in response to command %#x\n",
+		       __func__, command);
+		return NULL;
 	}
+
+	/* On errors, we're not sure what the TPM is returning. None of the
+	   commands we use actually expect useful data payloads for errors, so
+	   just ignore any data after the header. */
+	if (tpm2_static_resp.hdr.tpm_code != TPM2_RC_SUCCESS)
+		return &tpm2_static_resp;
 
 	switch (command) {
 	case TPM2_Startup:
 	case TPM2_Shutdown:
+	case TPM2_SelfTest:
 		break;
 
 	case TPM2_GetCapability:

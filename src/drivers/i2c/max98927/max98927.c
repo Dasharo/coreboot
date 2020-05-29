@@ -1,20 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi.h>
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/i2c_simple.h>
 #include <device/device.h>
 #include <device/path.h>
-#include <stdint.h>
 #include "chip.h"
 
 #define MAX98927_ACPI_NAME	"MAXI"
 #define MAX98927_ACPI_HID	"MX98927"
 
-static void max98927_fill_ssdt(struct device *dev)
+static void max98927_fill_ssdt(const struct device *dev)
 {
 	struct drivers_i2c_max98927_config *config = dev->chip_info;
 	const char *scope = acpi_device_scope(dev);

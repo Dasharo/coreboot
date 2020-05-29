@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* This file is part of the coreboot project. */
 /*
  * This is the modern bootblock. It prepares the system for C environment runtime
  * setup. The actual setup is done by hardware-specific code.
@@ -11,11 +10,12 @@
 
 #include <cpu/x86/cr.h>
 
+.section .text
+
 /*
  * Include the old code for reset vector and protected mode entry. That code has
  * withstood the test of time.
  */
-#include <arch/x86/prologue.inc>
 #include <cpu/x86/16bit/entry16.inc>
 #include <cpu/x86/16bit/reset16.inc>
 #include <cpu/x86/32bit/entry32.inc>

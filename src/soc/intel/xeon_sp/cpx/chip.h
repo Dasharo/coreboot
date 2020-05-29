@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _SOC_CHIP_H_
 #define _SOC_CHIP_H_
@@ -17,8 +16,6 @@ struct soc_intel_xeon_sp_cpx_config {
 	uint32_t gen3_dec;
 	uint32_t gen4_dec;
 };
-
-extern struct chip_operations soc_intel_xeon_sp_cpx_ops;
 
 typedef struct soc_intel_xeon_sp_cpx_config config_t;
 

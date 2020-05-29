@@ -5,6 +5,7 @@
 #include <device/resource.h>
 #include <device/path.h>
 #include <device/pci_type.h>
+#include <smbios.h>
 #include <types.h>
 
 struct device;
@@ -29,7 +30,6 @@ struct chip_operations {
 
 struct bus;
 
-struct smbios_type11;
 struct acpi_rsdp;
 
 struct device_operations {
@@ -48,10 +48,10 @@ struct device_operations {
 	void (*get_smbios_strings)(struct device *dev, struct smbios_type11 *t);
 #endif
 #if CONFIG(HAVE_ACPI_TABLES)
-	unsigned long (*write_acpi_tables)(struct device *dev,
+	unsigned long (*write_acpi_tables)(const struct device *dev,
 		unsigned long start, struct acpi_rsdp *rsdp);
-	void (*acpi_fill_ssdt)(struct device *dev);
-	void (*acpi_inject_dsdt)(struct device *dev);
+	void (*acpi_fill_ssdt)(const struct device *dev);
+	void (*acpi_inject_dsdt)(const struct device *dev);
 	const char *(*acpi_name)(const struct device *dev);
 	/* Returns the optional _HID (Hardware ID) */
 	const char *(*acpi_hid)(const struct device *dev);
@@ -182,7 +182,7 @@ void dev_finalize_chips(void);
 int reset_bus(struct bus *bus);
 void scan_bridges(struct bus *bus);
 void assign_resources(struct bus *bus);
-const char *dev_name(struct device *dev);
+const char *dev_name(const struct device *dev);
 const char *dev_path(const struct device *dev);
 u32 dev_path_encode(const struct device *dev);
 const char *bus_path(struct bus *bus);
@@ -256,6 +256,7 @@ void show_all_devs_resources(int debug_level, const char *msg);
 
 extern struct device_operations default_dev_ops_root;
 void pci_domain_read_resources(struct device *dev);
+void pci_domain_set_resources(struct device *dev);
 void pci_domain_scan_bus(struct device *dev);
 
 void fixed_io_resource(struct device *dev, unsigned long index,

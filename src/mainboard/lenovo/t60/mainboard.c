@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <arch/io.h>
 #include <device/device.h>
@@ -9,7 +8,7 @@
 #include <northbridge/intel/i945/i945.h>
 #include <southbridge/intel/i82801gx/chip.h>
 #include <drivers/intel/gma/int15.h>
-#include <arch/acpigen.h>
+#include <acpi/acpigen.h>
 
 #define PANEL INT15_5F35_CL_DISPLAY_DEFAULT
 

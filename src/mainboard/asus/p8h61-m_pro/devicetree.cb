@@ -1,16 +1,4 @@
-##
-## This file is part of the coreboot project.
-##
-##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
+## SPDX-License-Identifier: GPL-2.0-only
 
 chip northbridge/intel/sandybridge
 	device cpu_cluster 0x0 on
@@ -90,19 +78,19 @@ chip northbridge/intel/sandybridge
 						irq 0xe5 = 0x06
 						irq 0xe6 = 0x0c
 						irq 0xe7 = 0x11
-						irq 0xf0 = 0x20
+						irq 0xf0 = 0x00
 						irq 0xf2 = 0x5d
 					end
 					device pnp 2e.b on		# HWM, LED
 						io 0x60 = 0x0290
-						io 0x62 = 0x0200
+						io 0x62 = 0x0000
 					end
 					device pnp 2e.d on  end		# VID
 					device pnp 2e.e off end		# CIR WAKE-UP
 					device pnp 2e.f on		# GPIO Push-Pull or Open-drain
 						irq 0xf0 = 0x9d
 					end
-					device pnp 2e.14 on end		# SVID
+					device pnp 2e.14 off end	# SVID
 					device pnp 2e.16 on		# Deep Sleep
 						io 0x30 = 0x20
 					end

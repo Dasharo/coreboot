@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* This file is part of the coreboot project. */
 
 /*
  * A generic pre-ram driver for Aspeed variant Super I/O chips.
@@ -26,9 +25,6 @@
 #include <device/pnp_ops.h>
 #include <stdint.h>
 #include "aspeed.h"
-
-#define ASPEED_ENTRY_KEY 0xA5
-#define ASPEED_EXIT_KEY 0xAA
 
 /* Enable configuration: pass entry key '0xA5' into index port dev. */
 void pnp_enter_conf_state(pnp_devfn_t dev)

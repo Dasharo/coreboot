@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <device/device.h>
 #include <device/path.h>
 #include <string.h>
@@ -46,7 +45,7 @@ static struct acpi_dp *gpio_keys_add_child_node(
 	return dsd;
 }
 
-static void gpio_keys_fill_ssdt_generator(struct device *dev)
+static void gpio_keys_fill_ssdt_generator(const struct device *dev)
 {
 	struct drivers_generic_gpio_keys_config *config = dev->chip_info;
 	const char *scope = acpi_device_scope(dev);

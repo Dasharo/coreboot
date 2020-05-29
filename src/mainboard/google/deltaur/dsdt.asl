@@ -1,10 +1,6 @@
-/*
- * This file is part of the coreboot project.
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 #include "variant/ec.h"
 #include "variant/gpio.h"
 
@@ -29,6 +25,7 @@ DefinitionBlock(
 		{
 			#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
 			#include <soc/intel/tigerlake/acpi/southbridge.asl>
+			#include <soc/intel/tigerlake/acpi/tcss.asl>
 		}
 	}
 
@@ -37,6 +34,9 @@ DefinitionBlock(
 
 	/* VPD support */
 	#include <vendorcode/google/chromeos/acpi/vpd.asl>
+
+	/* Low power idle table */
+	#include <soc/intel/common/acpi/lpit.asl>
 
 	/* Chrome OS Embedded Controller */
 	Scope (\_SB.PCI0.LPCB)

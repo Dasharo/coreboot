@@ -1,17 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <cpu/cpu.h>
 #include <console/console.h>
@@ -100,4 +87,10 @@ int soc_get_uncore_prmmr_base_and_mask(uint64_t *prmrr_base,
 	*prmrr_mask = phys_address_mask & ~(uint64_t)(prmrr_size - 1);
 
 	return 0;
+}
+
+uint32_t soc_systemagent_max_chan_capacity_mib(u8 capid0_a_ddrsz)
+{
+	/* Max 4GiB per rank, 2 ranks per channel. Intel Document: 332092-002 */
+	return 8192;
 }

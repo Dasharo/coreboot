@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <bootstate.h>
 #include <boot/coreboot_tables.h>
@@ -353,4 +352,9 @@ int cpu_index(void)
 			return i;
 	}
 	return -1;
+}
+
+uintptr_t cpu_get_lapic_addr(void)
+{
+	return LOCAL_APIC_ADDR;
 }

@@ -1,17 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <stdint.h>
 #include <console/console.h>
@@ -23,8 +10,8 @@
 #include <pc80/mc146818rtc.h>
 #include <arch/ioapic.h>
 #if CONFIG(HAVE_ACPI_TABLES)
-#include <arch/acpi.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #endif
 #include "i82371eb.h"
 #include "chip.h"
@@ -118,7 +105,7 @@ static void sb_read_resources(struct device *dev)
 }
 
 #if CONFIG(HAVE_ACPI_TABLES)
-static void southbridge_acpi_fill_ssdt_generator(struct device *device)
+static void southbridge_acpi_fill_ssdt_generator(const struct device *device)
 {
 	acpigen_write_mainboard_resources("\\_SB.PCI0.MBRS", "_CRS");
 	generate_cpu_entries(device);

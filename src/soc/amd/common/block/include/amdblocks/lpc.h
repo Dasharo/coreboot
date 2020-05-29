@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef __AMDBLOCKS_LPC_H__
 #define __AMDBLOCKS_LPC_H__
@@ -10,6 +9,8 @@
 /* PCI registers for D14F3 */
 #define LPC_PCI_CONTROL			0x40
 #define   LEGACY_DMA_EN			BIT(2)
+#define   VW_ROM_SHARING_EN		BIT(3)
+#define   EXT_ROM_SHARING_EN		BIT(4)
 
 #define LPC_IO_PORT_DECODE_ENABLE	0x44
 #define   DECODE_ENABLE_PARALLEL_PORT0	BIT(0)
@@ -148,6 +149,7 @@ void lpc_tpm_decode(void);
 void lpc_tpm_decode_spi(void);
 void lpc_enable_rom(void);
 void lpc_enable_spi_prefetch(void);
+void lpc_disable_spi_rom_sharing(void);
 
 /**
  * @brief Find the size of a particular wide IO
@@ -177,6 +179,24 @@ int lpc_find_wideio_range(uint16_t start, uint16_t size);
 int lpc_set_wideio_range(uint16_t start, uint16_t size);
 
 uintptr_t lpc_get_spibase(void);
-void lpc_set_spibase(uint32_t base, uint32_t enable);
+
+/*
+ * Perform early initialization for LPC:
+ * 1. Enable LPC controller
+ * 2. Disable any LPC decodes
+ * 3. Set SPI Base which is the MMIO base for both SPI and eSPI controller (if supported by
+ * platform).
+ */
+void lpc_early_init(void);
+
+/*
+ * Sets MMIO base address for SPI controller and eSPI controller (if supported by platform).
+ *
+ * eSPI base = SPI base + 0x10000
+ */
+void lpc_set_spibase(uint32_t base);
+
+/* Enable SPI ROM (SPI_ROM_ENABLE, SPI_ROM_ALT_ENABLE) */
+void lpc_enable_spi_rom(uint32_t enable);
 
 #endif /* __AMDBLOCKS_LPC_H__ */

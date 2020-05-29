@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _SOC_IOMAP_H_
 #define _SOC_IOMAP_H_
@@ -61,9 +60,6 @@
 /* PTT registers */
 #define PTT_TXT_BASE_ADDRESS	0xfed30800
 #define PTT_PRESENT		0x00070000
-
-#define ABOVE_4GB_MEM_BASE_ADDRESS	(128ULL * GiB)
-#define ABOVE_4GB_MEM_BASE_SIZE	(64ULL * GiB)
 
 /*
  * I/O port address space

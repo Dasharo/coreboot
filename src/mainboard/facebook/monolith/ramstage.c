@@ -1,10 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <stdint.h>
 #include <console/console.h>
 #include <drivers/vpd/vpd.h>
-#include <lib.h>
 #include <smbios.h>
 #include <soc/ramstage.h>
 #include <uuid.h>

@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #ifndef _REGION_H_
 #define _REGION_H_
@@ -7,6 +6,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <commonlib/mem_pool.h>
 
 /*
@@ -115,6 +115,12 @@ static inline size_t region_sz(const struct region *r)
 static inline size_t region_end(const struct region *r)
 {
 	return region_offset(r) + region_sz(r);
+}
+
+static inline bool region_overlap(const struct region *r1, const struct region *r2)
+{
+	return (region_end(r1) > region_offset(r2)) &&
+	       (region_offset(r1) < region_end(r2));
 }
 
 static inline const struct region *region_device_region(

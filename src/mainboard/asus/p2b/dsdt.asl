@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 #include <southbridge/intel/i82371eb/i82371eb.h>
 
@@ -9,7 +8,7 @@
 #define SUPERIO_SHOW_FDC
 #define SUPERIO_SHOW_LPT
 
-#include <arch/acpi.h>
+#include <acpi/acpi.h>
 DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 {
 	/* \_SB scope defining the main processor is generated in SSDT. */
@@ -19,13 +18,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 	{
 		P80, 8
 	}
-
-	/*
-	 * For now only define 2 power states:
-	 *  - S0 which is fully on
-	 *  - S5 which is soft off
-	 * Any others would involve declaring the wake up methods.
-	 */
 
 	/*
 	 * Intel 82371EB (PIIX4E) datasheet, section 7.2.3, page 142
@@ -44,15 +36,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 	 * 6: reserved
 	 * 7: reserved
 	 */
-	/* Guard these entries for the purpose of variant validation. They will be aligned later. */
 	Name (\_S0, Package () { 0x05, 0x05, 0x00, 0x00 })
-#if CONFIG(BOARD_ASUS_P2B)
 	Name (\_S1, Package () { 0x03, 0x03, 0x00, 0x00 })
 	Name (\_S5, Package () { 0x00, 0x00, 0x00, 0x00 })
-#endif
-#if CONFIG(BOARD_ASUS_P2B_LS)
-	Name (\_S5, Package () { 0x00, 0x06, 0x00, 0x00 })
-#endif
 
 	OperationRegion (GPOB, SystemIO, DEFAULT_PMBASE+DEVCTL, 0x10)
 	Field (GPOB, ByteAcc, NoLock, Preserve)
@@ -97,15 +83,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 	/* Root of the bus hierarchy */
 	Scope (\_SB)
 	{
-		Device (PWRB)
-		{
-			/* Power Button Device */
-			Name (_HID, EisaId ("PNP0C0C"))
-			Method (_STA, 0, NotSerialized)
-			{
-				Return (0x0B)
-			}
-		}
 		#include <southbridge/intel/i82371eb/acpi/intx.asl>
 
 		PCI_INTX_DEV(LNKA, \_SB.PCI0.PX40.PIRA, 1)

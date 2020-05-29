@@ -1,20 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
-#include <arch/acpi_device.h>
-#include <arch/acpigen.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/path.h>
 #include <gpio.h>
-#include <stdint.h>
 #include "chip.h"
 
 #if CONFIG(HAVE_ACPI_TABLES)
 
 #define MAX98357A_ACPI_NAME	"MAXM"
 
-static void max98357a_fill_ssdt(struct device *dev)
+static void max98357a_fill_ssdt(const struct device *dev)
 {
 	struct drivers_generic_max98357a_config *config = dev->chip_info;
 	const char *path;

@@ -1,17 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 
 #ifndef _SOC_CHIP_H_
@@ -83,8 +70,6 @@ struct soc_intel_xeon_sp_skx_config {
 	uint32_t gen3_dec;
 	uint32_t gen4_dec;
 };
-
-extern struct chip_operations soc_intel_xeon_sp_ops;
 
 typedef struct soc_intel_xeon_sp_skx_config config_t;
 

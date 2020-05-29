@@ -1,12 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 /*
  * Early initialization code for riscv virtual memory
  */
 
 #include <arch/cpu.h>
 #include <arch/encoding.h>
-#include <stdint.h>
 #include <vm.h>
 
 /* Delegate controls which traps are delegated to the payload. If you
