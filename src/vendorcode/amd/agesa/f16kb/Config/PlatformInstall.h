@@ -62,6 +62,23 @@ VOLATILE  AMD_MODULE_HEADER mCpuModuleID = {
   NULL
 };
 
+/* The default fixed MTRR values to be set after memory initialization */
+static const AP_MTRR_SETTINGS ROMDATA KabiniApMtrrSettingsList[] =
+{
+	{ AMD_AP_MTRR_FIX64k_00000, 0x1E1E1E1E1E1E1E1E },
+	{ AMD_AP_MTRR_FIX16k_80000, 0x1E1E1E1E1E1E1E1E },
+	{ AMD_AP_MTRR_FIX16k_A0000, 0x0000000000000000 },
+	{ AMD_AP_MTRR_FIX4k_C0000,  0x0000000000000000 },
+	{ AMD_AP_MTRR_FIX4k_C8000,  0x0000000000000000 },
+	{ AMD_AP_MTRR_FIX4k_D0000,  0x0000000000000000 },
+	{ AMD_AP_MTRR_FIX4k_D8000,  0x0000000000000000 },
+	{ AMD_AP_MTRR_FIX4k_E0000,  0x1818181818181818 },
+	{ AMD_AP_MTRR_FIX4k_E8000,  0x1818181818181818 },
+	{ AMD_AP_MTRR_FIX4k_F0000,  0x1818181818181818 },
+	{ AMD_AP_MTRR_FIX4k_F8000,  0x1818181818181818 },
+	{ CPU_LIST_TERMINAL },
+};
+
 /* Process solution defined socket / family installations
  *
  * As part of the release package for each image, define the options below to select the
@@ -747,7 +764,7 @@ CONST UINT32 ROMDATA AmdPlatformTypeCgf = CFG_AMD_PLATFORM_TYPE;
 #ifdef BLDCFG_VRM_SLEW_RATE
   #define CFG_VRM_SLEW_RATE                BLDCFG_VRM_SLEW_RATE
 #else
-  #define CFG_VRM_SLEW_RATE                DFLT_VRM_SLEW_RATE
+  #define CFG_VRM_SLEW_RATE                (5000)
 #endif
 
 #ifdef BLDCFG_VRM_MAXIMUM_CURRENT_LIMIT
@@ -789,7 +806,7 @@ CONST UINT32 ROMDATA AmdPlatformTypeCgf = CFG_AMD_PLATFORM_TYPE;
 #ifdef BLDCFG_VRM_NB_SLEW_RATE
   #define CFG_VRM_NB_SLEW_RATE             BLDCFG_VRM_NB_SLEW_RATE
 #else
-  #define CFG_VRM_NB_SLEW_RATE             DFLT_VRM_SLEW_RATE
+  #define CFG_VRM_NB_SLEW_RATE             (5000)
 #endif
 
 #ifdef BLDCFG_PLAT_NUM_IO_APICS
@@ -897,7 +914,7 @@ CONST UINT32 ROMDATA AmdPlatformTypeCgf = CFG_AMD_PLATFORM_TYPE;
 #ifdef BLDCFG_MEMORY_QUADRANK_TYPE
   #define CFG_MEMORY_QUADRANK_TYPE              BLDCFG_MEMORY_QUADRANK_TYPE
 #else
-  #define CFG_MEMORY_QUADRANK_TYPE              DFLT_MEMORY_QUADRANK_TYPE
+  #define CFG_MEMORY_QUADRANK_TYPE              QUADRANK_UNBUFFERED
 #endif
 
 #ifdef BLDCFG_MEMORY_RDIMM_CAPABLE
@@ -1029,31 +1046,31 @@ CONST UINT32 ROMDATA AmdPlatformTypeCgf = CFG_AMD_PLATFORM_TYPE;
 #ifdef BLDCFG_SCRUB_DRAM_RATE
   #define CFG_SCRUB_DRAM_RATE         BLDCFG_SCRUB_DRAM_RATE
 #else
-  #define CFG_SCRUB_DRAM_RATE         DFLT_SCRUB_DRAM_RATE
+  #define CFG_SCRUB_DRAM_RATE         (0)
 #endif
 
 #ifdef BLDCFG_SCRUB_L2_RATE
   #define CFG_SCRUB_L2_RATE           BLDCFG_SCRUB_L2_RATE
 #else
-  #define CFG_SCRUB_L2_RATE           DFLT_SCRUB_L2_RATE
+  #define CFG_SCRUB_L2_RATE           (0)
 #endif
 
 #ifdef BLDCFG_SCRUB_L3_RATE
   #define CFG_SCRUB_L3_RATE           BLDCFG_SCRUB_L3_RATE
 #else
-  #define CFG_SCRUB_L3_RATE           DFLT_SCRUB_L3_RATE
+  #define CFG_SCRUB_L3_RATE           (0)
 #endif
 
 #ifdef BLDCFG_SCRUB_IC_RATE
   #define CFG_SCRUB_IC_RATE           BLDCFG_SCRUB_IC_RATE
 #else
-  #define CFG_SCRUB_IC_RATE           DFLT_SCRUB_IC_RATE
+  #define CFG_SCRUB_IC_RATE           (0)
 #endif
 
 #ifdef BLDCFG_SCRUB_DC_RATE
   #define CFG_SCRUB_DC_RATE           BLDCFG_SCRUB_DC_RATE
 #else
-  #define CFG_SCRUB_DC_RATE           DFLT_SCRUB_DC_RATE
+  #define CFG_SCRUB_DC_RATE           (0)
 #endif
 
 #ifdef BLDCFG_ECC_SYNC_FLOOD
@@ -1426,22 +1443,14 @@ CONST UINT32 ROMDATA AmdPlatformTypeCgf = CFG_AMD_PLATFORM_TYPE;
   #define CFG_LHTC_TEMPERATURE_LIMIT        (0)
 #endif
 
-#ifdef BLDCFG_PCI_MMIO_BASE
-  #define CFG_PCI_MMIO_BASE               (BLDCFG_PCI_MMIO_BASE)
-#else
-  #define CFG_PCI_MMIO_BASE               (0)
-#endif
+#define CFG_PCI_MMIO_BASE                   (CONFIG_MMCONF_BASE_ADDRESS)
 
-#ifdef BLDCFG_PCI_MMIO_SIZE
-  #define CFG_PCI_MMIO_SIZE               (BLDCFG_PCI_MMIO_SIZE)
-#else
-  #define CFG_PCI_MMIO_SIZE               (0)
-#endif
+#define CFG_PCI_MMIO_SIZE                   (CONFIG_MMCONF_BUS_NUMBER)
 
 #ifdef BLDCFG_AP_MTRR_SETTINGS_LIST
   #define CFG_AP_MTRR_SETTINGS_LIST           (BLDCFG_AP_MTRR_SETTINGS_LIST)
 #else
-  #define CFG_AP_MTRR_SETTINGS_LIST           (NULL)
+  #define CFG_AP_MTRR_SETTINGS_LIST           (KabiniApMtrrSettingsList)
 #endif
 
 #ifdef BLDCFG_IOMMU_EXCLUSION_RANGE_LIST
@@ -1501,6 +1510,13 @@ CONST UINT32 ROMDATA AmdPlatformTypeCgf = CFG_AMD_PLATFORM_TYPE;
 /*---------------------------------------------------------------------------
  *       Processing the options:  Third, perform the option cross checks
  *--------------------------------------------------------------------------*/
+// Check that deprecated options are not used
+#ifdef BLDCFG_PCI_MMIO_BASE
+  #error  BLDOPT: BLDCFG_PCI_MMIO_BASE has been deprecated in coreboot. Do not use!
+#endif
+#ifdef BLDCFG_PCI_MMIO_SIZE
+  #error  BLDOPT: BLDCFG_PCI_MMIO_SIZE has been deprecated in coreboot. Do not use!
+#endif
 // Assure that at least one type of memory support is included
 #if OPTION_UDIMMS == FALSE
   #if OPTION_RDIMMS == FALSE

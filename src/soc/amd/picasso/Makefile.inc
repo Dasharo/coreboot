@@ -44,6 +44,7 @@ ramstage-y += i2c.c
 ramstage-y += chip.c
 ramstage-y += cpu.c
 ramstage-y += data_fabric_util.c
+ramstage-y += root_complex.c
 ramstage-y += mca.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
 ramstage-y += gpio.c
@@ -71,6 +72,7 @@ smm-y += tsc_freq.c
 smm-$(CONFIG_DEBUG_SMI) += uart.c
 smm-y += gpio.c
 smm-y += psp.c
+smm-y += smu.c
 smm-y += config.c
 
 CPPFLAGS_common += -I$(src)/soc/amd/picasso
@@ -105,11 +107,11 @@ PICASSO_FWM_POSITION=$(call int-add, \
 FIRMWARE_LOCATE=$(dir $(call strip_quotes, $(CONFIG_AMD_PUBKEY_FILE)))
 
 # type = 0x1
-ifeq ($(CONFIG_HAVE_PSP_WHITELIST_FILE),y)
-PSPBTLDR_FILE=$(top)/$(FIRMWARE_LOCATE)/PspBootLoader_WL_RV.sbin
-else
-PSPBTLDR_FILE=$(top)/$(FIRMWARE_LOCATE)/PspBootLoader_prod_RV.sbin
+ifeq ($(CONFIG_PSP_BOOTLOADER_FILE),)
+$(error CONFIG_PSP_BOOTLOADER_FILE was not defined)
 endif
+PSPBTLDR_FILE=$(realpath $(call strip_quotes, $(CONFIG_PSP_BOOTLOADER_FILE)))
+$(info Adding PSP $(shell md5sum $(PSPBTLDR_FILE)))
 
 # types = 0x8 and 0x12
 PSP_SMUFW1_SUB1_FILE=$(top)/$(FIRMWARE_LOCATE)/SmuFirmwareRV2.csbin
@@ -180,7 +182,7 @@ endif
 PSP_APCB_FILES=$(foreach f, $(APCB_SOURCES), $(obj)/APCB_$(f).bin)
 
 # type = 0x61
-PSP_APOB_BASE=$(CONFIG_PSP_APOB_DESTINATION)
+PSP_APOB_BASE=$(CONFIG_PSP_APOB_DRAM_ADDRESS)
 
 # type = 0x62
 PSP_BIOSBIN_FILE=$(obj)/amd_biospsp.img
@@ -191,11 +193,18 @@ PSP_BIOSBIN_SIZE=$(CONFIG_C_ENV_BOOTBLOCK_SIZE)
 # This address must match the BOOTBLOCK logic in arch/x86/memlayout.ld.
 PSP_BIOSBIN_DEST=$(shell printf "%x" $(call int-subtract, $(call int-add, $(CONFIG_X86_RESET_VECTOR) 0x10) $(PSP_BIOSBIN_SIZE)))
 
-# type = 0x63
-ifeq ($(CONFIG_HAVE_ACPI_RESUME),y)
-PSP_APOBNV_BASE=$(CONFIG_PSP_APOB_NV_ADDRESS)
-PSP_APOBNV_SIZE=$(CONFIG_PSP_APOB_NV_SIZE)
-endif
+# type = 0x63 - construct APOB NV base/size from flash map
+# TODO(b/157068645): Add ability to fmaptool to extract offsets and sizes
+# This code currently assumes the following FMAP structure. If
+# the UNIFIED_MRC_CACHE region is present, it must have a 0 offset.
+# FLASH@* {
+#     BIOS@* {
+#         RW_MRC_CACHE@* {
+_FLASH_BASE=$(call int-subtract, 0x100000000 $(CONFIG_ROM_SIZE))
+_GET_FLASH_BASE=grep "FLASH" | sed 's/.*FLASH@//' | sed 's/ .*//'
+_GET_BIOS_REG_BASE=grep "BIOS" | sed 's/.*BIOS@//' | sed 's/ .*//'
+_GET_APOBNV_BASE=grep "RW_MRC_CACHE" | sed 's/.*@//' | sed 's/ .*//'
+_GET_APOBNV_SIZE=grep "RW_MRC_CACHE" | sed 's/.*@//' | sed 's/.* //'
 
 # type2 = 0x64, 0x65
 PSP_PMUI_FILE1=$(top)/$(FIRMWARE_LOCATE)/Appb_Rv_1D_Ddr4_Udimm_Imem.csbin
@@ -263,8 +272,6 @@ OPT_APOB_ADDR=$(call add_opt_prefix, $(PSP_APOB_BASE), --apob-base)
 OPT_PSP_BIOSBIN_FILE=$(call add_opt_prefix, $(PSP_BIOSBIN_FILE), --bios-bin)
 OPT_PSP_BIOSBIN_DEST=$(call add_opt_prefix, $(PSP_BIOSBIN_DEST), --bios-bin-dest)
 OPT_PSP_BIOSBIN_SIZE=$(call add_opt_prefix, $(PSP_BIOSBIN_SIZE), --bios-uncomp-size)
-OPT_APOBNV_ADDR=$(call add_opt_prefix, $(PSP_APOBNV_BASE), --apob-nv-base)
-OPT_APOBNV_SIZE=$(call add_opt_prefix, $(PSP_APOBNV_SIZE), --apob-nv-size)
 OPT_PSP_PMUI_FILE1=$(call add_opt_prefix, $(PSP_PMUI_FILE1), --subprogram 0 --instance 1 --pmu-inst)
 OPT_PSP_PMUI_FILE2=$(call add_opt_prefix, $(PSP_PMUI_FILE2), --subprogram 0 --instance 4 --pmu-inst)
 OPT_PSP_PMUI_FILE3=$(call add_opt_prefix, $(PSP_PMUI_FILE3), --subprogram 1 --instance 1 --pmu-inst)
@@ -283,7 +290,7 @@ $(obj)/APCB_%.bin: $(MAINBOARD_BLOBS_DIR)/APCB_%.bin
 	cp $< $@
 
 # APCB binary with magic numbers to be replaced by apcb_edit tool
-APCB_MAGIC_BLOB:=$(MAINBOARD_BLOBS_DIR)/APCB_magic.bin
+APCB_MAGIC_BLOB:=$(FIRMWARE_LOCATE)/APCB_magic.bin
 
 $(obj)/APCB_empty.bin: $(APCB_MAGIC_BLOB) $(APCB_EDIT_TOOL)
 	$(APCB_EDIT_TOOL) \
@@ -358,7 +365,8 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(CONFIG_AMD_PUBKEY_FILE)) \
 			$(call_strip_quotes, $(PSP_IKEK_FILE)) \
 			$(call_strip_quotes, $(PSP_SEC_DEBUG_FILE)) \
 			$$(PSP_APCB_FILES) \
-			$(AMDFWTOOL)
+			$(AMDFWTOOL) \
+			$(obj)/fmap.fmd
 	rm -f $@
 	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
 	$(AMDFWTOOL) \
@@ -372,8 +380,12 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(CONFIG_AMD_PUBKEY_FILE)) \
 		$(OPT_SMUFW2_SUB1_FILE) \
 		$(OPT_PSP_APCB_FILES) \
 		$(OPT_APOB_ADDR) \
-		$(OPT_APOBNV_ADDR) \
-		$(OPT_APOBNV_SIZE) \
+		--apob-nv-size $(shell printf "0x%x" \
+			$(shell cat $(obj)/fmap.fmd | $(_GET_APOBNV_SIZE))) \
+		--apob-nv-base $(shell printf "0x%x" $(call int-add, \
+			$(shell cat $(obj)/fmap.fmd | $(_GET_FLASH_BASE)) \
+			$(shell cat $(obj)/fmap.fmd | $(_GET_BIOS_REG_BASE)) \
+			$(shell cat $(obj)/fmap.fmd | $(_GET_APOBNV_BASE)))) \
 		$(OPT_PSP_BIOSBIN_FILE) \
 		$(OPT_PSP_BIOSBIN_DEST) \
 		$(OPT_PSP_BIOSBIN_SIZE) \

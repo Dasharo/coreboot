@@ -58,10 +58,7 @@ chip northbridge/intel/sandybridge
 			register "gen2_dec" = "0x0c15e1"
 			register "gen4_dec" = "0x0c06a1"
 
-			register "pcie_hotplug_map" = "{ 0, 0, 1, 0, 0, 0, 0, 0 }"
-
-			# Wire port 4 (wwan usb) to ehci for it lacks superspeed components
-			register "xhci_switchable_ports" = "0x7"
+			register "xhci_switchable_ports" = "0xf"
 			register "superspeed_capable_ports" = "0xf"
 			register "xhci_overcurrent_mapping" = "0x4000201"
 

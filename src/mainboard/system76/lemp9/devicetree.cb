@@ -19,8 +19,10 @@ chip soc/intel/cannonlake
 
 # CPU (soc/intel/cannonlake/cpu.c)
 	# Power limit
-	register "tdp_pl1_override" = "15"
-	register "tdp_pl2_override" = "25"
+	register "power_limits_config" = "{
+		.tdp_pl1_override = 15,
+		.tdp_pl2_override = 25,
+	}"
 
 	# Enable "Intel Speed Shift Technology"
 	register "speed_shift_enable" = "1"
@@ -207,7 +209,7 @@ chip soc/intel/cannonlake
 		device pci 19.1 off end # I2C #5
 		device pci 19.2 on  end # UART #2
 		device pci 1a.0 off end # eMMC
-		device pci 1c.0 on  end # PCI Express Port 1
+		device pci 1c.0 off end # PCI Express Port 1
 		device pci 1c.1 off end # PCI Express Port 2
 		device pci 1c.2 off end # PCI Express Port 3
 		device pci 1c.3 off end # PCI Express Port 4
