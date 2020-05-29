@@ -422,7 +422,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.11.0.6...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.12.0.1...develop
+[v4.12.0.1]: https://github.com/pcengines/coreboot/compare/v4.11.0.6...v4.12.0.1
 [v4.11.0.6]: https://github.com/pcengines/coreboot/compare/v4.11.0.5...v4.11.0.6
 [v4.11.0.5]: https://github.com/pcengines/coreboot/compare/v4.11.0.4...v4.11.0.5
 [v4.11.0.4]: https://github.com/pcengines/coreboot/compare/v4.11.0.3...v4.11.0.4
