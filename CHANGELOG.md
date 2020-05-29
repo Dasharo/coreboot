@@ -16,7 +16,7 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 ## [v4.12.0.1] - 2020-05-29
 ### Changed
 - rebased with official coreboot repository commit 8952d1c
-- Memtest86+ revision update to 7b03010464bcf4f6f9d4843ffdef5739b0d0e4e3
+- Memtest86+ revision updated to 0b756257276729c1a12bc1d95e7a1f044894bda2
 
 ### Fixed
 - [random coreboot hangs on apu1](https://github.com/pcengines/coreboot/issues/394)
