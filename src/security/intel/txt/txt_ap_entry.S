@@ -130,7 +130,7 @@ mca_error_clean_loop_end:
 	 *   AP's APIC ID minus 1. Only AFTER that AP will INCREMENT semaphore.
 	 *   This allows BSP to judge WHEN all APs finished.
 	 */
-	mov     $TXT_SPAD, %ecx
+	mov     $TXT_MLE_JOIN, %ecx
 
 keep_waiting:
 	mov	(%ecx), %eax

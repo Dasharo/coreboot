@@ -15,8 +15,12 @@
  */
 
 #include <arch/mmio.h>
+#include <arch/cpu.h>
 #include <console/console.h>
 #include <stdint.h>
+#include <cpu/x86/lapic.h>
+#include <cf9_reset.h>
+#include <delay.h>
 
 #include "txt.h"
 #include "txt_register.h"
@@ -27,6 +31,36 @@ static bool get_wake_error_status(void)
 {
 	const uint8_t error = read8((void *)TXT_ESTS);
 	return !!(error & TXT_ESTS_WAKE_ERROR_STS);
+}
+
+static bool is_reset_set(void)
+{
+	const uint8_t error = read8((void *)TXT_ESTS);
+	return !!(error & TXT_ESTS_TXT_RESET_STS);
+}
+
+static void config_aps(void)
+{
+	/* Keep in sync with txt_ap_entry.ld */
+	const uint8_t sipi_vector = 0xef;
+	uint32_t num_cpus = cpuid_ebx(1);
+
+	write32((void *)TXT_MLE_JOIN, 0);
+
+	/* Send INIT IPI to all but self. */
+	lapic_wait_icr_idle();
+	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
+			   LAPIC_DM_INIT);
+	mdelay(10);
+
+	/* Send SIPI */
+	lapic_wait_icr_idle();
+	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
+			   LAPIC_DM_STARTUP | sipi_vector);
+
+	while (read32((void *)TXT_MLE_JOIN) != num_cpus);
 }
 
 /**
@@ -62,10 +96,21 @@ void intel_txt_acm_check(void)
 		return;
 	}
 
-	/* Check for fatal ACM error and TXT reset */
+	if (is_reset_set()) {
+		printk(BIOS_INFO, "TEE-TXT: Performing global reset\n");
+		system_reset();
+		return;
+	}
+
+	config_aps();
+
+	/*
+	 * Framework TXT Reference Code Design Specification and Integration Guide:
+	 * If Wake Error Status bit equals 1 - memory is locked.
+	 */
 	if (get_wake_error_status()) {
-		/* Can't run ACMs with TXT_ESTS_WAKE_ERROR_STS set */
-		printk(BIOS_ERR, "TEE-TXT: Failed to prepare TXT environment\n");
+		printk(BIOS_ERR, "TEE-TXT: Calling SCLEAN\n");
+		intel_txt_run_bios_acm(ACMINPUT_SCLEAN);
 		return;
 	}
 
