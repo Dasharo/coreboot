@@ -46,4 +46,7 @@ SECTIONS
 #if CONFIG(CPU_INTEL_FIRMWARE_INTERFACE_TABLE)
 #include <cpu/intel/fit/fit.ld>
 #endif
+#if CONFIG(LEGACY_INTEL_TXT)
+#include <security/intel/txt/txt_ap_entry.ld>
+#endif
 #endif  /* ENV_BOOTBLOCK */

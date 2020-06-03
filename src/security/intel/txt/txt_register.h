@@ -3,8 +3,10 @@
 #ifndef SECURITY_INTEL_TXT_REGISTER_H_
 #define SECURITY_INTEL_TXT_REGISTER_H_
 
+#ifndef __ASSEMBLER__
 #include <types.h>
 #include <stddef.h>
+#endif
 
 /*
  * Document: 315168-016
@@ -205,7 +207,13 @@
 
 /* MSRs */
 #define IA32_MCG_STATUS 0x17a
+#ifndef __ASSEMBLER__
 
+typedef enum {
+	CHIPSET_ACM = 2,
+} acm_module_type;
+
+typedef enum {
 	BIOS = 0,
 	SINIT = 1,
 } acm_module_sub_type;
@@ -311,5 +319,6 @@ struct __packed txt_biosdataregion {
 void txt_dump_regions(void);
 void txt_dump_chipset_info(void);
 void txt_dump_acm_info(const struct acm_header_v0 *acm_header);
+#endif /* __ASSEMBLER__ */
 
 #endif /* SECURITY_INTEL_TXT_REGISTER_H_ */

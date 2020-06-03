@@ -1,5 +1,7 @@
 ifeq ($(CONFIG_INTEL_TXT)$(CONFIG_LEGACY_INTEL_TXT),y)
 
+bootblock-$(CONFIG_LEGACY_INTEL_TXT) += txt_ap_entry.S
+
 romstage-y += romstage.c
 romstage-y += common.c
 romstage-$(CONFIG_INTEL_TXT_LOGGING) += logging.c

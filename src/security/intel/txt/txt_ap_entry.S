@@ -4,38 +4,29 @@
 #include <cpu/x86/cr.h>
 #include <cpu/x86/mtrr.h>
 
-#include <arch/x86/prologue.inc>
-#include <cpu/x86/16bit/reset16.inc>
-
 /* For starting coreboot in protected mode */
 
 #include <arch/rom_segs.h>
-#include <cpu/x86/post_code.h>
-#include <arch/x86/gdt_init.S>
-#include <cpu/intel/microcode/microcode_asm.S>
 
+#include "txt_register.h"
+
+.section ".txt_ap_sipi", "ax", @progbits
 /* Symbol _start16bit must be aligned to 4kB to start AP CPUs with
  * Startup IPI message without RAM.
  */
 .align 4096
 .code16
-.globl _start16bit
-.type _start16bit, @function
+.globl _start16bit_txt_ap
+.type _start16bit_txt_ap, @function
 
-_start16bit:
+_start16bit_txt_ap:
 	cli
 
 	xorl	%eax, %eax
 	movl	%eax, %cr3    /* Invalidate TLB*/
 
-	movw	%cs, %ax
-	shlw	$4, %ax
-	movw	$nullidt_offset, %bx
-	subw	%ax, %bx
-	lidt	%cs:(%bx)
-	movw	$gdtptr16_offset, %bx
-	subw	%ax, %bx
-	lgdtl	%cs:(%bx)
+	lidtl	%cs:(nullidt - _start16bit_txt_ap)
+	lgdtl	%cs:(gdtptr - _start16bit_txt_ap)
 
 	movl	%cr0, %eax
 	andl	$0x7FFAFFD1, %eax /* PG,AM,WP,NE,TS,EM,MP = 0 */
@@ -48,32 +39,11 @@ _start16bit:
 	/* Now that we are in protected mode jump to a 32 bit code segment. */
 	ljmpl	$ROM_CODE_SEG, $__protected_start
 
-	/**
-	 * The gdt is defined in entry32.inc, it has a 4 Gb code segment
-	 * at 0x08, and a 4 GB data segment at 0x10;
-	 */
-.align	4
-.globl gdtptr16
-gdtptr16:
-	.word	gdt_end - gdt -1 /* compute the table limit */
-	.long	gdt		 /* we know the offset */
+.globl _estart16bit_txt_ap
+_estart16bit_txt_ap:
 
-.align	4
-.globl nullidt
-nullidt:
-	.word	0	/* limit */
-	.long	0
-	.word	0
-
-.globl _estart16bit
-_estart16bit:
 	.code32
-
 	.align	4
-
-	lgdt	%cs:gdtptr
-	ljmp	$ROM_CODE_SEG, $__protected_start
-
 __protected_start:
 	movw	$ROM_DATA_SEG, %ax
 	movw	%ax, %ds
@@ -89,7 +59,7 @@ __protected_start:
 cache_rom:
 	/* Disable cache */
 	movl	%cr0, %eax
-	orl	$CR0_CacheDisable, %eax
+	orl	$CR0_CD, %eax
 	movl	%eax, %cr0
 
 	movl	$MTRR_PHYS_BASE(1), %ecx
@@ -104,7 +74,7 @@ cache_rom:
 
 	/* Enable cache */
 	movl	%cr0, %eax
-	andl	$(~(CR0_CacheDisable | CR0_NoWriteThrough)), %eax
+	andl	$(~(CR0_CD | CR0_NW)), %eax
 	invd
 	movl	%eax, %cr0
 
@@ -114,15 +84,14 @@ cache_rom:
 	orl	$MTRR_DEF_TYPE_EN, %eax
 	wrmsr
 
-update_microcode:
 	/* put the return address in %esp */
-	movl	$end_microcode_update, %esp
+	movl	$end_microcode_update_ap, %esp
 	jmp	update_bsp_microcode
-end_microcode_update:
+end_microcode_update_ap:
 
 	/* Cache needs to be disabled for ACM calls */
 	mov	%cr0, %eax
-	andl	$(~(CR0_CacheDisable | CR0_NoWriteThrough)), %eax
+	andl	$(~(CR0_CD | CR0_NW)), %eax
 	movl	%eax, %cr0
 
 	/*
@@ -147,7 +116,7 @@ mca_error_clean_loop_end:
 
 	mov	%cr4, %eax
 	or	$(CR4_DE | CR4_SMXE), %eax
-	mov	CR4, eax
+	mov	%eax, %cr4
 
 	mov	$1, %eax
 	cpuid
@@ -161,7 +130,7 @@ mca_error_clean_loop_end:
 	 *   AP's APIC ID minus 1. Only AFTER that AP will INCREMENT semaphore.
 	 *   This allows BSP to judge WHEN all APs finished.
 	 */
-	mov     ecx, [TXT_PUBLIC_BASE + SEMAPHORE]	/* change this to TXT scratchpad */
+	mov     $TXT_SPAD, %ecx
 
 keep_waiting:
 	mov	(%ecx), %eax
