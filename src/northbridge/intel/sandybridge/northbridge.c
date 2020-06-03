@@ -434,7 +434,7 @@ void platform_set_dpr(const uintptr_t addr, const size_t size)
 {
 	struct device *dev;
 	uint32_t dpr_reg;
-	uint64_t txt_dpr;
+
 	/*
 	 * DMA Protected Range can be reserved below TSEG for PCODE patch
 	 * or TXT/BootGuard related data.  Rather than reporting a base address

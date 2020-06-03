@@ -45,7 +45,7 @@ static void dump_txt_capabilities(void)
 	if (!getsec_parameter(&version_mask, &version_numbers_supported,
 			      &max_size_acm_area, &memory_type_mask,
 			      &senter_function_disable, &txt_feature_flags)) {
-		printk(BIOS_WARN, "Could not obtain GETSEC parameters\n");
+		printk(BIOS_WARNING, "Could not obtain GETSEC parameters\n");
 		return;
 	}
 	printk(BIOS_DEBUG, "TXT: ACM Version comparison mask: %08x\n", version_mask);
