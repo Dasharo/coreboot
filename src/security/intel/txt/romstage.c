@@ -22,6 +22,13 @@
 #include "txt_register.h"
 #include "txt_getsec.h"
 
+
+static bool get_wake_error_status(void)
+{
+	const uint8_t error = read8((void *)TXT_ESTS);
+	return !!(error & TXT_ESTS_WAKE_ERROR_STS);
+}
+
 /**
  * Log TXT startup errors, check all bits for TXT, run BIOSACM using
  * GETSEC[ENTERACCS].

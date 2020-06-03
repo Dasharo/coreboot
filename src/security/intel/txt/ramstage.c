@@ -178,6 +178,7 @@ static void init_intel_txt(void *unused)
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT, init_intel_txt, NULL);
 
+#if !CONFIG(LEGACY_INTEL_TXT)
 static void push_sinit_heap(u8 **heap_ptr, void *data, size_t data_length)
 {
 	/* Push size */
@@ -203,9 +204,6 @@ static void push_sinit_heap(u8 **heap_ptr, void *data, size_t data_length)
  */
 static void lockdown_intel_txt(void *unused)
 {
-	if (CONFIG(LEGACY_INTEL_TXT))
-		return;
-
 	const uint64_t status = read64((void *)TXT_SPAD);
 	uintptr_t tseg = 0;
 
@@ -368,5 +366,10 @@ static void lockdown_intel_txt(void *unused)
 	if (CONFIG(INTEL_TXT_LOGGING))
 		txt_dump_regions();
 }
+#else
+static void lockdown_intel_txt(void *unused)
+{
+}
+#endif
 
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, lockdown_intel_txt, NULL);

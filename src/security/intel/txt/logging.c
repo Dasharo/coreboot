@@ -214,8 +214,10 @@ void txt_dump_chipset_info(void)
 void txt_dump_regions(void)
 {
 	struct txt_biosdataregion *bdr = NULL;
-	uintptr_t tseg = 0;
+	uintptr_t tseg_size, tseg = 0;
 	uint64_t reg64;
+
+	smm_region(&tseg, &tseg_size);
 
 	reg64 = read64((void *)TXT_HEAP_BASE);
 	if ((reg64 != 0 && reg64 != ~0UL) &&
