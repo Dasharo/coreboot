@@ -43,7 +43,7 @@ static void config_aps(void)
 {
 	/* Keep in sync with txt_ap_entry.ld */
 	const uint8_t sipi_vector = 0xef;
-	uint32_t num_cpus = cpuid_ebx(1);
+	uint32_t num_cpus = (cpuid_ebx(1) << 12) & 0xff;
 
 	printk(BIOS_INFO, "TEE-TXT: Preparing %d APs for TXT init\n", num_cpus);
 
@@ -59,7 +59,7 @@ static void config_aps(void)
 
 	printk(BIOS_DEBUG, "TEE-TXT: Sending first SIPI\n");
 	/* Send SIPI */
-	lapic_wait_icr_idle();
+	/*lapic_wait_icr_idle();*/
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
 	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
 			   LAPIC_DM_STARTUP | sipi_vector);
@@ -68,7 +68,7 @@ static void config_aps(void)
 	printk(BIOS_INFO, "TEE-TXT: Sending second SIPI\n");
 
 	/* Send second SIPI */
-	lapic_wait_icr_idle();
+	/*lapic_wait_icr_idle();*/
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
 	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
 			   LAPIC_DM_STARTUP | sipi_vector);
@@ -76,7 +76,7 @@ static void config_aps(void)
 	printk(BIOS_DEBUG, "TEE-TXT: Waiting till APs finish their work\n");
 
 	/* Wait for APs to do their job */
-	while (read32((void *)TXT_MLE_JOIN) != num_cpus);
+	while (read32((void *)TXT_MLE_JOIN) != num_cpus - 1);
 
 	printk(BIOS_DEBUG, "TEE-TXT: Putting APs in wati-for-SIPI state\n");
 
