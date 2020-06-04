@@ -43,7 +43,7 @@ static void config_aps(void)
 {
 	/* Keep in sync with txt_ap_entry.ld */
 	const uint8_t sipi_vector = 0xef;
-	uint32_t num_cpus = (cpuid_ebx(1) << 12) & 0xff;
+	uint32_t num_cpus = (cpuid_ebx(1) >> 16) & 0xff;
 
 	printk(BIOS_INFO, "TEE-TXT: Preparing %d APs for TXT init\n", num_cpus);
 
@@ -137,6 +137,7 @@ void intel_txt_acm_check(void)
 	if (get_wake_error_status()) {
 		printk(BIOS_ERR, "TEE-TXT: Calling SCLEAN\n");
 		intel_txt_run_bios_acm(ACMINPUT_SCLEAN);
+		global_full_reset();
 		return;
 	}
 
