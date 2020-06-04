@@ -124,7 +124,7 @@ void intel_txt_acm_check(void)
 
 	if (is_reset_set()) {
 		printk(BIOS_INFO, "TEE-TXT: Performing global reset\n");
-		system_reset();
+		global_system_reset();
 		return;
 	}
 
