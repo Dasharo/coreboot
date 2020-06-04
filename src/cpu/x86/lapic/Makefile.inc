@@ -1,3 +1,4 @@
+romstage-y += lapic.c
 ramstage-y += lapic.c
 ramstage-y += lapic_cpu_init.c
 ramstage-$(CONFIG_SMP) += secondary.S
