@@ -43,11 +43,34 @@ static void config_aps(void)
 {
 	/* Keep in sync with txt_ap_entry.ld */
 	const uint8_t sipi_vector = 0xef;
-	uint32_t num_cpus = (cpuid_ebx(1) >> 16) & 0xff;
+	struct cpuid_result res;
+	res = cpuid(1);
 
-	printk(BIOS_INFO, "TEE-TXT: Preparing %d APs for TXT init\n", num_cpus);
+	printk(BIOS_INFO, "cpuid(1) %8.8x %8.8x %8.8x %8.8x\n",
+	       res.eax, res.ebx, res.ecx, res.edx);
+
+	uint32_t num_cpus = (res.ebx >> 16) & 0xff;
+
+	if (cpu_have_cpuid() && cpuid_get_max_func() >= 0xb) {
+		res = cpuid_ext(0xb, 0);
+		printk(BIOS_INFO, "cpuid_ext(0xb, 0) %8.8x %8.8x %8.8x %8.8x\n",
+			   res.eax, res.ebx, res.ecx, res.edx);
+		num_cpus = res.ebx; /* Number of threads */
+
+		res = cpuid_ext(0xb, 1);
+		printk(BIOS_INFO, "cpuid_ext(0xb, 1) %8.8x %8.8x %8.8x %8.8x\n",
+			   res.eax, res.ebx, res.ecx, res.edx);
+		/* res.ebx = Number of cores */
+	}
+
+	printk(BIOS_INFO, "TEE-TXT: Preparing %d APs for TXT init\n", num_cpus - 1);
+
+	if (num_cpus == 1)
+		return;
 
 	write32((void *)TXT_MLE_JOIN, 0);
+
+	enable_lapic();
 
 	printk(BIOS_DEBUG, "TEE-TXT: Sending INIT SIPI\n");
 	/* Send INIT IPI to all but self. */
