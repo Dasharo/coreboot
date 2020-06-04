@@ -70,7 +70,7 @@ static void config_aps(void)
 
 	write32((void *)TXT_MLE_JOIN, 0);
 
-	enable_lapic();
+	setup_lapic();
 
 	printk(BIOS_DEBUG, "TEE-TXT: Sending INIT SIPI\n");
 	/* Send INIT IPI to all but self. */
