@@ -73,12 +73,21 @@ static void config_aps(void)
 
 	setup_lapic();
 
-	printk(BIOS_DEBUG, "TEE-TXT: Sending INIT SIPI\n");
+	printk(BIOS_DEBUG, "TEE-TXT: Asserting INIT\n");
 	/* Send INIT IPI to all but self. */
 	lapic_wait_icr_idle();
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
-	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
-			   LAPIC_DM_INIT);
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_LEVELTRIG
+			   | LAPIC_INT_ASSERT | LAPIC_DM_INIT);
+	printk(BIOS_DEBUG, "TEE-TXT: Delay 10 ms\n");
+	mdelay(10);
+
+	printk(BIOS_DEBUG, "TEE-TXT: Deasserting INIT\n");
+	/* Send INIT IPI to all but self. */
+	lapic_wait_icr_idle();
+	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_LEVELTRIG
+			    | LAPIC_DM_INIT);
 	printk(BIOS_DEBUG, "TEE-TXT: Delay 10 ms\n");
 	mdelay(10);
 
