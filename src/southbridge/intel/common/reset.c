@@ -20,3 +20,7 @@ void cf9_global_reset_prepare(void)
 	/* Set bit 20 for global reset */
 	pci_write_config32(dev, 0xac, pci_read_config32(dev, 0xac) | BIT(20));
 }
+
+void cf9_reset_prepare(void)
+{
+}
