@@ -59,8 +59,23 @@ static void config_aps(void)
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
 	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
 			   LAPIC_DM_STARTUP | sipi_vector);
+	udelay(200);
 
+	/* Send second SIPI */
+	lapic_wait_icr_idle();
+	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
+			   LAPIC_DM_STARTUP | sipi_vector);
+
+	/* Wait for APs to do their job */
 	while (read32((void *)TXT_MLE_JOIN) != num_cpus);
+
+	/* Put APs in wait-for-SIPI state for ACM */
+	lapic_wait_icr_idle();
+	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
+			   LAPIC_DM_INIT);
+	mdelay(10);
 }
 
 /**
