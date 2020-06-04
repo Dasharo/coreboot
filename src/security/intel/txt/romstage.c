@@ -45,22 +45,23 @@ static void config_aps(void)
 	const uint8_t sipi_vector = 0xef;
 	struct cpuid_result res;
 	res = cpuid(1);
-
-	printk(BIOS_INFO, "cpuid(1) %8.8x %8.8x %8.8x %8.8x\n",
-	       res.eax, res.ebx, res.ecx, res.edx);
-
 	uint32_t num_cpus = (res.ebx >> 16) & 0xff;
 
 	if (cpu_have_cpuid() && cpuid_get_max_func() >= 0xb) {
-		res = cpuid_ext(0xb, 0);
-		printk(BIOS_INFO, "cpuid_ext(0xb, 0) %8.8x %8.8x %8.8x %8.8x\n",
-			   res.eax, res.ebx, res.ecx, res.edx);
-		num_cpus = res.ebx; /* Number of threads */
+		uint32_t leaf_b_cores = 0, leaf_b_threads = 0;
 
 		res = cpuid_ext(0xb, 1);
-		printk(BIOS_INFO, "cpuid_ext(0xb, 1) %8.8x %8.8x %8.8x %8.8x\n",
-			   res.eax, res.ebx, res.ecx, res.edx);
-		/* res.ebx = Number of cores */
+		leaf_b_cores = res.ebx;
+		res = cpuid_ext(0xb, 0);
+		leaf_b_threads = res.ebx;
+
+		/* if hyperthreading is not available, pretend this is 1 */
+		if (leaf_b_threads == 0)
+			leaf_b_threads = 1;
+		else
+			printk(BIOS_INFO, "TEE-TXT: Hyperthreading capable CPU detected\n");
+
+		num_cpus = leaf_b_cores;
 	}
 
 	printk(BIOS_INFO, "TEE-TXT: Preparing %d APs for TXT init\n", num_cpus - 1);
@@ -78,20 +79,22 @@ static void config_aps(void)
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
 	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
 			   LAPIC_DM_INIT);
+	printk(BIOS_DEBUG, "TEE-TXT: Delay 10 ms\n");
 	mdelay(10);
 
 	printk(BIOS_DEBUG, "TEE-TXT: Sending first SIPI\n");
 	/* Send SIPI */
-	/*lapic_wait_icr_idle();*/
+	lapic_wait_icr_idle();
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
 	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
 			   LAPIC_DM_STARTUP | sipi_vector);
+	printk(BIOS_DEBUG, "TEE-TXT: Delay 200 us\n");
 	udelay(200);
 
 	printk(BIOS_INFO, "TEE-TXT: Sending second SIPI\n");
 
 	/* Send second SIPI */
-	/*lapic_wait_icr_idle();*/
+	lapic_wait_icr_idle();
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
 	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
 			   LAPIC_DM_STARTUP | sipi_vector);
