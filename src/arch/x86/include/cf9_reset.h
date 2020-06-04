@@ -16,12 +16,16 @@ void do_full_reset(void);
 /* Called by functions below before reset. */
 #if CONFIG(HAVE_CF9_RESET_PREPARE)
 void cf9_reset_prepare(void);
+void cf9_global_reset_prepare(void);
 #else
 static inline void cf9_reset_prepare(void) {}
+static inline void cf9_global_reset_prepare(void) {}
 #endif
 
 /* Prepare for reset, run do_*_reset(), halt. */
 __noreturn void system_reset(void);
 __noreturn void full_reset(void);
+__noreturn void global_system_reset(void);
+__noreturn void global_full_reset(void);
 
 #endif	/* X86_CF9_RESET_H */

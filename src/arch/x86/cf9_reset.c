@@ -49,3 +49,21 @@ void full_reset(void)
 	do_full_reset();
 	halt();
 }
+
+void global_system_reset(void)
+{
+	printk(BIOS_INFO, "%s() called!\n", __func__);
+	cf9_reset_prepare();
+	cf9_global_reset_prepare();
+	do_system_reset();
+	halt();
+}
+
+void global_full_reset(void)
+{
+	printk(BIOS_INFO, "%s() called!\n", __func__);
+	cf9_reset_prepare();
+	cf9_global_reset_prepare();
+	do_full_reset();
+	halt();
+}
