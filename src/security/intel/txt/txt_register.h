@@ -107,6 +107,12 @@
 #define TXT_MSEG_BASE (TXT_BASE + 0x310)
 #define TXT_MSEG_SIZE (TXT_BASE + 0x318)
 
+/* Legacy TXT only */
+#define TXT_SCRATCHPAD1 (TXT_BASE + 0x320)
+#define TXT_SCRATCHPAD2 (TXT_BASE + 0x324)
+#define TXT_SCRATCHPAD3 (TXT_BASE + 0x328)
+#define TXT_SCRATCHPAD4 (TXT_BASE + 0x32C)
+
 /*
  * Chapter 5.4.2.1
  * Intel Trusted Execution Technology Lab Handout
@@ -123,6 +129,8 @@
 #define  TXT_DPR_LOCK_MASK	(1 << TXT_DPR_LOCK_SHIFT)
 #define  TXT_DPR_LOCK_SIZE(x)	((x) << TXT_DPR_LOCK_SIZE_SHIFT)
 #define  TXT_DPR_TOP_ADDR(x)	((x) << TXT_DPR_TOP_ADDR_SHIFT)
+
+#define TXT_SCRATCHPAD (TXT_BASE + 0x378)
 
 #define TXT_CMD_OPEN_LOCALITY1 (TXT_BASE + 0x380)
 #define TXT_CMD_CLOSE_LOCALITY1 (TXT_BASE + 0x388)
@@ -142,8 +150,8 @@
 #define   TGTT_256MB (1ull << 1)
 #define   TGTT_512MB (TGTT_128MB + TGTT_256MB)
 
-#define TXT_VER_FTIF (TXT_BASE + 0x800h
-#define TXT_PCH_DIDVID (TXT_BASE + 0x810h
+#define TXT_VER_FTIF (TXT_BASE + 0x800)
+#define TXT_PCH_DIDVID (TXT_BASE + 0x810)
 #define TXT_CMD_SECRETS (TXT_BASE + 0x8E0)
 #define TXT_CMD_NO_SECRETS (TXT_BASE + 0x8E8)
 
@@ -178,6 +186,8 @@
 #define ACMINPUT_CLEAR_SECRETS	5
 #define ACMINPUT_LOCK_CONFIG	6
 #define ACMINPUT_ACHECK		7
+/* EDI flags for GETSEC[ENTERACCS] SCHECK see Reference Number */
+#define ACMINPUT_SCHECK_ON_S3_RESUME 2
 
 /*
  * GetSec EAX value.
