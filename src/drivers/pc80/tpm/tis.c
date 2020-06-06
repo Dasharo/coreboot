@@ -709,6 +709,11 @@ int tis_sendrecv(const uint8_t *sendbuf, size_t send_size,
 	return tis_readresponse(recvbuf, recv_len);
 }
 
+int tis_is_establishment_set(void)
+{
+	return tis_wait_access(0, 0x81, 0x81) ? 0 : 1;
+}
+
 /*
  * tis_setup_interrupt()
  *

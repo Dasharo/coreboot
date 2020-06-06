@@ -84,4 +84,13 @@ int tis_sendrecv(const u8 *sendbuf, size_t send_size, u8 *recvbuf,
  */
 int tis_plat_irq_status(void);
 
+/*
+ * tis_is_establishment_set()
+ * 
+ * Check tpm access registers for establishment bit
+ * 
+ * Returns 1 when Establishment is asserted or 0 when not.
+ */
+int tis_is_establishment_set(void);
+
 #endif /* TIS_H_ */
