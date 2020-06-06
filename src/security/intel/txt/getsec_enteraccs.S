@@ -4,11 +4,9 @@
 #include <cpu/x86/cr.h>
 #include <cpu/x86/msr.h>
 
-#define MTRR_HIGH_MASK $((1 << (CONFIG_CPU_ADDR_BITS - 32)) - 1)
 
 .macro PUSH_MSR x
 	movl	$(\x), %ecx
-	rdmsr
 	push	%eax
 	push	%edx
 .endm
@@ -25,6 +23,23 @@
 	xorl	%edx, %edx
 	xorl	%eax, %eax
 	wrmsr
+.endm
+
+.macro CLEAR_MCA_STS_MSRS
+	mov	$(IA32_MCG_CAP), %ecx
+	rdmsr
+	movzx	%al, %ebx	/* Bank count to ebx */
+	movl	$0, %eax	/* Write 0 into all MCi_STATUS registers */
+	movl	$0, %edx
+	mov	$(IA32_MC0_STATUS), %ecx
+
+mca_error_clean_loop:
+	wrmsr
+	dec	%ebx
+	jz	1f
+	add	$4, %ecx		/* Number of MSRs per bank */
+	jmp	mca_error_clean_loop
+1:
 .endm
 
 .align 4
@@ -159,6 +174,10 @@ cond_clear_var_mtrrs:
 	cmpl	$0, %ebx
 	jnz	body_clear_var_mtrrs
 
+#if CONFIG(LEGACY_INTEL_TXT)
+	CLEAR_MCA_STS_MSRS
+#endif
+
 	/*
 	 * Setup BIOS ACM as WB
 	 * Chapter A.1.1
@@ -220,6 +239,12 @@ cond_clear_var_mtrrs:
 
 	movl	$0, %edx	/* reserved, must be zero */
 	movl	$0, %edi	/* must be zero */
+#if CONFIG(LEGACY_INTEL_TXT)
+	/* We use TXT_SCRATCHPAD to hold the EDI flags for S3 resume SCHECK */
+	movl	$TXT_SCRATCHPAD, %edi
+	movl	$(%edi), %eax
+	movl	%eax, %edi
+#endif
 	movl	$2, %eax	/* GetSec[ENTERACCS] */
 
 	getsec
