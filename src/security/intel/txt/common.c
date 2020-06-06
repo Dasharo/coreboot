@@ -366,6 +366,20 @@ bool intel_txt_prepare_txt_env(void)
 	printk(BIOS_DEBUG, " SEXIT available:      %s\n", (eax & BIT(5)) ? "true" : "false");
 	printk(BIOS_DEBUG, " PARAMETERS available: %s\n", (eax & BIT(6)) ? "true" : "false");
 
+	printk(BIOS_DEBUG, " SMCTRL available: ");
+	if (eax & (1 << 7)) {
+		printk(BIOS_DEBUG, "true\n");
+	} else {
+		printk(BIOS_DEBUG, "false\n");
+	}
+
+	printk(BIOS_DEBUG, " WAKEUP available: ");
+	if (eax & (1 << 8)) {
+		printk(BIOS_DEBUG, "true\n");
+	} else {
+		printk(BIOS_DEBUG, "false\n");
+	}
+
 	/*
 	 * Causes #GP if function is not supported by getsec.
 	 * SAFER MODE EXTENSIONS REFERENCE.
