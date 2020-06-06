@@ -85,6 +85,8 @@
 #define  TXT_CAPABILITIES_PMRC (1ull << 19)
 
 #define TXT_VER_QPIIF (TXT_BASE + 0x200)
+/* Only present in Document Number: 315168-010 and 315168-016 */
+#define TXT_VER_EMIF (TXT_BASE + 0x200)
 
 #define TXT_CMD_LOCK_MEM_CONFIG (TXT_BASE + 0x210)
 #define TXT_CMD_UNLOCK_MEM_CONFIG (TXT_BASE + 0x218)

@@ -19,6 +19,8 @@
 #include <console/console.h>
 #include <stdint.h>
 #include <cpu/x86/lapic.h>
+#include <cpu/x86/msr.h>
+#include <security/tpm/tis.h>
 #include <cf9_reset.h>
 #include <delay.h>
 
@@ -46,6 +48,8 @@ static void config_aps(void)
 	struct cpuid_result res;
 	res = cpuid(1);
 	uint32_t num_cpus = (res.ebx >> 16) & 0xff;
+	msr_t msr;
+	void *lapic_base;
 
 	if (cpu_have_cpuid() && cpuid_get_max_func() >= 0xb) {
 		uint32_t leaf_b_cores = 0, leaf_b_threads = 0;
@@ -71,7 +75,16 @@ static void config_aps(void)
 
 	write32((void *)TXT_MLE_JOIN, 0);
 
-	setup_lapic();
+	msr = rdmsr(LAPIC_BASE_MSR);
+
+	/* Check for x2APIC mode */
+	if (((msr.lo & 0xc00) == 0xc00) {
+		msr.hi = 0;
+		msr.lo = 0x1ff;
+		wrmsr(LAPIC_BASE_MSR, msr);
+	} else {
+		lapic_write_around(LAPIC_SPIV, 0x1ff);
+	}
 
 	printk(BIOS_DEBUG, "TEE-TXT: Asserting INIT\n");
 	/* Send INIT IPI to all but self. */
@@ -134,9 +147,10 @@ static void config_aps(void)
  * 3. TXT-RESET will be issued by code above later
  *
  */
-void intel_txt_acm_check(void)
+void intel_txt_acm_sclean(void)
 {
 	const uint64_t status = read64((void *)TXT_SPAD);
+	msr_t msr = {.lo = 0, .hi = 0 };
 
 	if (status & ACMSTS_TXT_DISABLED)
 		return;
@@ -157,35 +171,21 @@ void intel_txt_acm_check(void)
 		return;
 	}
 
-	if (is_reset_set()) {
-		printk(BIOS_INFO, "TEE-TXT: Performing global reset\n");
-		global_system_reset();
-		return;
-	}
+	/* Prepare to run SCLEAN if TPM Establishment asserted and TXT Wake Error detected */
+	if (tis_is_establishment_set() && get_wake_error_status()) {
+		if (is_reset_set()) {
+			printk(BIOS_INFO, "TEE-TXT: Performing global reset\n");
+			global_system_reset();
+			return;
+		}
 
-	config_aps();
+		config_aps();
 
-	/*
-	 * Framework TXT Reference Code Design Specification and Integration Guide:
-	 * If Wake Error Status bit equals 1 - memory is locked.
-	 */
-	if (get_wake_error_status()) {
-		printk(BIOS_ERR, "TEE-TXT: Calling SCLEAN\n");
+		printk(BIOS_INFO, "TEE-TXT: Calling SCLEAN\n");
 		intel_txt_run_bios_acm(ACMINPUT_SCLEAN);
 		global_full_reset();
-		return;
 	}
 
-	printk(BIOS_INFO, "TEE-TXT: Testing BIOS ACM calling code...\n");
-
-	/*
-	 * Test BIOS ACM code.
-	 * ACM should do nothing on reserved functions, and return an error code
-	 * in TXT_BIOSACM_ERRORCODE. Tested show that this is not true.
-	 * Use special function "NOP" that does 'nothing'.
-	 */
-	if (intel_txt_run_bios_acm(ACMINPUT_NOP) < 0) {
-		printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM.\n");
-		return;
-	}
+	/* We don't need to run SCLEAN, simply unlock the memory */
+	wrmsr(0x2e6, msr);
 }

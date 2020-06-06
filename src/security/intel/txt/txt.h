@@ -26,5 +26,6 @@ bool intel_txt_prepare_txt_env(void);
 void platform_set_dpr(const uintptr_t addr, const size_t size);
 void platform_lock_dpr(void);
 void intel_txt_acm_check(void);
+void intel_txt_acm_sclean(void);
 
 #endif /* SECURITY_INTEL_TXT_H_ */
