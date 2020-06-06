@@ -208,7 +208,7 @@ void txt_dump_chipset_info(void)
 
 	printk(BIOS_INFO, "TEE-TXT: DIDVID 0x%x\n", read32((void *)TXT_DIDVID));
 	printk(BIOS_INFO, "TEE-TXT: production fused chipset: %s\n",
-	       (read64((void *)TXT_VER_FSBIF) & TXT_VER_PRODUCTION_FUSED) ? "true" : "false");
+	       (read64((void *)TXT_VER_EMIF) & TXT_VER_PRODUCTION_FUSED) ? "true" : "false");
 }
 
 void txt_dump_regions(void)
