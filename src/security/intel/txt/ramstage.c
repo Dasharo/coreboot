@@ -11,7 +11,6 @@
 #include <cpu/x86/msr.h>
 #include <device/pci_ops.h>
 
-#include "txt.h"
 #include "txt_register.h"
 #include "txt_getsec.h"
 
@@ -178,7 +177,6 @@ static void init_intel_txt(void *unused)
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT, init_intel_txt, NULL);
 
-#if !CONFIG(LEGACY_INTEL_TXT)
 static void push_sinit_heap(u8 **heap_ptr, void *data, size_t data_length)
 {
 	/* Push size */
@@ -217,6 +215,13 @@ static void lockdown_intel_txt(void *unused)
 		printk(BIOS_ERR, "TEE-TXT: Failed to lock registers.\n");
 		printk(BIOS_ERR, "TEE-TXT: SINIT won't be supported.\n");
 		return;
+	}
+
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SA)) {
+		tseg = sa_get_tseg_base() >> 20;
+	} else {
+		smm_region(&tseg, NULL);
+		tseg >>= 20;
 	}
 
 	/*
@@ -366,10 +371,18 @@ static void lockdown_intel_txt(void *unused)
 	if (CONFIG(INTEL_TXT_LOGGING))
 		txt_dump_regions();
 }
-#else
-static void lockdown_intel_txt(void *unused)
-{
-}
-#endif
 
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, lockdown_intel_txt, NULL);
+
+#if CONFIG(LEGACY_INTEL_TXT)
+void intel_txt_run_scheck(void *unused)
+{
+	int s3resume = acpi_is_wakeup_s3();
+	write32(TXT_SCRATCHPAD, s3resume);
+	printk(BIOS_INFO, "TEE-TXT: Scheck... (S3 resume = %d)\n", s3resume);
+	if (intel_txt_run_bios_acm(ACMINPUT_SCHECK) < 0)
+		printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM.\n");
+}
+
+BOOT_STATE_INIT_ENTRY(BS_OS_RESUME_CHECK, BS_ON_EXIT, intel_txt_run_scheck, NULL);
+#endif
