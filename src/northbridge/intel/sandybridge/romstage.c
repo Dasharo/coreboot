@@ -107,13 +107,8 @@ void mainboard_romstage_entry(void)
 		if (tpm_setup(s3resume) != TPM_SUCCESS)
 			printk(BIOS_WARNING, "TPM setup failed\n");
 		set_vmx_and_lock();
-		/* called by intel_txt_acm_check() */
-		/*
-		if (intel_txt_prepare_txt_env())
-			printk(BIOS_WARNING, "Preparing Intel TXT failed\n");
-		*/
 		dump_txt_capabilities();
-		intel_txt_acm_check();
+		intel_txt_acm_sclean();
 	}
 
 	perform_raminit(s3resume);
