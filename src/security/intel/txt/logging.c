@@ -134,7 +134,7 @@ void txt_dump_acm_info(const struct acm_header_v0 *acm_header)
 		printk(BIOS_INFO, " Type:     Chipset ACM\n");
 
 	if (acm_header->module_sub_type == 0)
-		printk(BIOS_INFO, " Subtype:  undefined\n");
+		printk(BIOS_INFO, " Subtype:  Legacy\n");
 	else if (acm_header->module_sub_type == 1)
 		printk(BIOS_INFO, " Subtype:  Run at reset\n");
 
@@ -180,8 +180,11 @@ void txt_dump_acm_info(const struct acm_header_v0 *acm_header)
 		break;
 	}
 
-	printk(BIOS_INFO, " TXT SVN:  %u\n", acm_header->txt_svn);
-	printk(BIOS_INFO, " SE SVN:   %u\n", acm_header->se_svn);
+	/* Reserved in Legacy TXT, all zeros */
+	if (!CONFIG(LEGACY_INTEL_TXT)) {
+		printk(BIOS_INFO, " TXT SVN:  %u\n", acm_header->txt_svn);
+		printk(BIOS_INFO, " SE SVN:   %u\n", acm_header->se_svn);
+	}
 
 	if (!info)
 		return;
