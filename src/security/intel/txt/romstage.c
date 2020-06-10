@@ -45,29 +45,15 @@ static void config_aps(void)
 {
 	/* Keep in sync with txt_ap_entry.ld */
 	const uint8_t sipi_vector = 0xef;
-	struct cpuid_result res;
-	res = cpuid(1);
-	uint32_t num_cpus = (res.ebx >> 16) & 0xff;
+	uint32_t num_cpus;
 	msr_t msr;
-	void *lapic_base;
 
-	if (cpu_have_cpuid() && cpuid_get_max_func() >= 0xb) {
-		uint32_t leaf_b_cores = 0, leaf_b_threads = 0;
+	/* Read MSR_CORE_THREAD_COUNT */
+	msr = rdmsr(0x35);
+	num_cpus = (msr.lo >> 0) & 0xffff;
 
-		res = cpuid_ext(0xb, 1);
-		leaf_b_cores = res.ebx;
-		res = cpuid_ext(0xb, 0);
-		leaf_b_threads = res.ebx;
-
-		/* if hyperthreading is not available, pretend this is 1 */
-		if (leaf_b_threads == 0)
-			leaf_b_threads = 1;
-		else
-			printk(BIOS_INFO, "TEE-TXT: Hyperthreading capable CPU detected\n");
-
-		num_cpus = leaf_b_cores;
-	}
-
+	printk(BIOS_INFO, "TEE-TXT: TXT detected %llu registered threads\n",
+	       read64((const volatile void *)TXT_THREADS_EXIST));
 	printk(BIOS_INFO, "TEE-TXT: Preparing %d APs for TXT init\n", num_cpus - 1);
 
 	if (num_cpus == 1)
@@ -78,29 +64,21 @@ static void config_aps(void)
 	msr = rdmsr(LAPIC_BASE_MSR);
 
 	/* Check for x2APIC mode */
-	if (((msr.lo & 0xc00) == 0xc00) {
+	if ((msr.lo & 0xc00) == 0xc00) {
+		printk(BIOS_INFO, "TEE-TXT: x2APIC mode detected\n");
 		msr.hi = 0;
 		msr.lo = 0x1ff;
-		wrmsr(LAPIC_BASE_MSR, msr);
+		/* If x2APIC mode is enabled we need to enable APIC via IA32_X2APIC_SIVR */
+		wrmsr(0x80f, msr);
 	} else {
 		lapic_write_around(LAPIC_SPIV, 0x1ff);
 	}
 
-	printk(BIOS_DEBUG, "TEE-TXT: Asserting INIT\n");
+	printk(BIOS_DEBUG, "TEE-TXT: Sending INIT\n");
 	/* Send INIT IPI to all but self. */
 	lapic_wait_icr_idle();
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
-	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_LEVELTRIG
-			   | LAPIC_INT_ASSERT | LAPIC_DM_INIT);
-	printk(BIOS_DEBUG, "TEE-TXT: Delay 10 ms\n");
-	mdelay(10);
-
-	printk(BIOS_DEBUG, "TEE-TXT: Deasserting INIT\n");
-	/* Send INIT IPI to all but self. */
-	lapic_wait_icr_idle();
-	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
-	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_LEVELTRIG
-			    | LAPIC_DM_INIT);
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_DM_INIT);
 	printk(BIOS_DEBUG, "TEE-TXT: Delay 10 ms\n");
 	mdelay(10);
 
@@ -108,8 +86,7 @@ static void config_aps(void)
 	/* Send SIPI */
 	lapic_wait_icr_idle();
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
-	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
-			   LAPIC_DM_STARTUP | sipi_vector);
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_DM_STARTUP | sipi_vector);
 	printk(BIOS_DEBUG, "TEE-TXT: Delay 200 us\n");
 	udelay(200);
 
@@ -118,8 +95,7 @@ static void config_aps(void)
 	/* Send second SIPI */
 	lapic_wait_icr_idle();
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
-	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
-			   LAPIC_DM_STARTUP | sipi_vector);
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_DM_STARTUP | sipi_vector);
 
 	printk(BIOS_DEBUG, "TEE-TXT: Waiting till APs finish their work\n");
 
@@ -131,8 +107,7 @@ static void config_aps(void)
 	/* Put APs in wait-for-SIPI state for ACM */
 	lapic_wait_icr_idle();
 	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
-	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
-			   LAPIC_DM_INIT);
+	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_DM_INIT);
 	mdelay(10);
 	printk(BIOS_DEBUG, "TEE-TXT: AP cofniguration finished\n");
 }
@@ -141,10 +116,8 @@ static void config_aps(void)
  * Log TXT startup errors, check all bits for TXT, run BIOSACM using
  * GETSEC[ENTERACCS].
  *
- * If a "TXT reset" is detected or "memory had secrets" is set, then do nothing as
- * 1. Running ACMs will cause a TXT-RESET
- * 2. Memory will be scrubbed in BS_DEV_INIT
- * 3. TXT-RESET will be issued by code above later
+ * If a "TXT reset" is detected or "memory had secrets" is set, then we need to
+ * run SCLEAN and/or do global reset.
  *
  */
 void intel_txt_acm_sclean(void)
@@ -173,8 +146,10 @@ void intel_txt_acm_sclean(void)
 
 	/* Prepare to run SCLEAN if TPM Establishment asserted and TXT Wake Error detected */
 	if (tis_is_establishment_set() && get_wake_error_status()) {
+		printk(BIOS_INFO, "TEE-TXT: TPM Establishment asserted or TXT wake error\n");
+		printk(BIOS_INFO, "TEE-TXT: Preparing to run SCLEAN\n");
 		if (is_reset_set()) {
-			printk(BIOS_INFO, "TEE-TXT: Performing global reset\n");
+			printk(BIOS_INFO, "TEE-TXT: TXT Reset set. Performing global reset\n");
 			global_system_reset();
 			return;
 		}
@@ -187,5 +162,5 @@ void intel_txt_acm_sclean(void)
 	}
 
 	/* We don't need to run SCLEAN, simply unlock the memory */
-	wrmsr(0x2e6, msr);
+	wrmsr(TXT_UNLOCK_MEMORY_MSR, msr);
 }
