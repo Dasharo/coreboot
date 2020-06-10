@@ -21,6 +21,7 @@ void intel_txt_log_bios_acm_error(void);
 int intel_txt_log_acm_error(const uint32_t acm_error);
 void intel_txt_log_spad(void);
 bool intel_txt_memory_has_secrets(void);
+bool intel_txt_chipset_is_production_fused(void);
 int intel_txt_run_bios_acm(const u8 input_params);
 bool intel_txt_prepare_txt_env(void);
 void platform_set_dpr(const uintptr_t addr, const size_t size);
