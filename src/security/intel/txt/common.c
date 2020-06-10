@@ -278,9 +278,16 @@ int intel_txt_run_bios_acm(const u8 input_params)
 	}
 
 	/* Call into assembly which invokes the referenced ACM */
+#if ENV_RAMSTAGE
 	getsec_enteraccs(input_params, (uintptr_t)acm_data, acm_len,
 			 (uint32_t)acpi_is_wakeup_s3() && (input_params == ACMINPUT_SCHECK));
-
+#else
+	/*
+	 * We don't need to check for S3 resume in romstage, since SCHECK won't
+	 * happend there
+	 */
+	getsec_enteraccs(input_params, (uintptr_t)acm_data, acm_len, 0);
+#endif
 	rdev_munmap(&acm, acm_data);
 
 	const uint64_t acm_status = read64((void *)TXT_SPAD);
@@ -448,9 +455,11 @@ bool intel_txt_prepare_txt_env(void)
 		}
 	}
 
+#if ENV_RAMSTAGE
 	/* Need to park all APs. */
 	if (CONFIG(PARALLEL_MP_AP_WORK))
 		mp_park_aps();
+#endif
 
 	return failure;
 }

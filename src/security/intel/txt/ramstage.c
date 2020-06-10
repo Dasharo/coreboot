@@ -204,6 +204,7 @@ static void lockdown_intel_txt(void *unused)
 {
 	const uint64_t status = read64((void *)TXT_SPAD);
 	uintptr_t tseg = 0;
+	size_t tseg_size;
 
 	if (status & ACMSTS_TXT_DISABLED)
 		return;
@@ -375,7 +376,7 @@ static void lockdown_intel_txt(void *unused)
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, lockdown_intel_txt, NULL);
 
 #if CONFIG(LEGACY_INTEL_TXT)
-void intel_txt_run_scheck(void *unused)
+static void intel_txt_run_scheck(void *unused)
 {
 	printk(BIOS_INFO, "TEE-TXT: Scheck... (S3 resume = %d)\n", acpi_is_wakeup_s3());
 	if (intel_txt_run_bios_acm(ACMINPUT_SCHECK) < 0)
