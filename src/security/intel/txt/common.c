@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi.h>
 #include <arch/mmio.h>
 #include <string.h>
 #include <console/console.h>
@@ -277,7 +278,8 @@ int intel_txt_run_bios_acm(const u8 input_params)
 	}
 
 	/* Call into assembly which invokes the referenced ACM */
-	getsec_enteraccs(input_params, (uintptr_t)acm_data, acm_len);
+	getsec_enteraccs(input_params, (uintptr_t)acm_data, acm_len,
+			 (uint32_t)acpi_is_wakeup_s3() && (input_params == ACMINPUT_SCHECK));
 
 	rdev_munmap(&acm, acm_data);
 

@@ -377,9 +377,7 @@ BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, lockdown_intel_txt, NULL);
 #if CONFIG(LEGACY_INTEL_TXT)
 void intel_txt_run_scheck(void *unused)
 {
-	int s3resume = acpi_is_wakeup_s3();
-	write32(TXT_SCRATCHPAD, s3resume);
-	printk(BIOS_INFO, "TEE-TXT: Scheck... (S3 resume = %d)\n", s3resume);
+	printk(BIOS_INFO, "TEE-TXT: Scheck... (S3 resume = %d)\n", acpi_is_wakeup_s3());
 	if (intel_txt_run_bios_acm(ACMINPUT_SCHECK) < 0)
 		printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM.\n");
 }

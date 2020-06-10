@@ -241,14 +241,10 @@ cond_clear_var_mtrrs:
 	movl	$0, %edi	/* must be zero */
 #if CONFIG(LEGACY_INTEL_TXT)
 	/* 
-	 * TODO: add another parameter to getsec_enteraccs
-	 * We use TXT_SCRATCHPAD to hold the EDI flags for S3 resume SCHECK.
 	 * On older TXT, EDI register was used to pass the S3 resume information to ACM
 	 * because SCHECK does not have to perform all operations durign S3 resume path
 	 */
-	movl	$TXT_SCRATCHPAD, %edi
-	movl	$(%edi), %eax
-	movl	%eax, %edi
+	movl	20(%ebp), %edi
 #endif
 	movl	$2, %eax	/* GetSec[ENTERACCS] */
 

@@ -16,6 +16,7 @@ bool getsec_capabilities(uint32_t *eax);
 
 void getsec_enteraccs(const uint32_t esi,
 		      const uint32_t acm_base,
-		      const uint32_t acm_size);
+		      const uint32_t acm_size,
+		      const uint32_t is_s3_resume);
 
 #endif /* SECURITY_INTEL_TXT_REGISTER_H_ */
