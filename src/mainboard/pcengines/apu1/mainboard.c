@@ -120,6 +120,7 @@ static void pirq_setup(void)
  * once configuration file format for SPI flash storage is complete.
  */
 #define SIO_PORT 0x2e
+#define PCI_BAR_2_REG 0x18
 
 static void config_gpio_mux(void)
 {
@@ -316,10 +317,9 @@ const char *smbios_mainboard_serial_number(void)
 {
 	static char serial[10];
 	struct device *dev;
-	// uintptr_t bar18;
-	// u32 mac_addr = 0;
+	u32 mac_addr = 0;
+	u32 val32 = 0;
 	int i;
-	u32 val32 = 0x00000000;
 
 	/* Already initialized. */
 	if (serial[0] != 0)
@@ -327,48 +327,31 @@ const char *smbios_mainboard_serial_number(void)
 
 	dev = pcidev_on_root(4, 0);
 
-	/* Debug purpose only. Will be deleted in final fix. */
-	printk(BIOS_ERR, "dev->class = %x \r\n", dev->class);
-	printk(BIOS_ERR, "dev->vendor = %x \r\n", dev->vendor);
-	printk(BIOS_ERR, "dev->device = %x \r\n", dev->device);
-
 	if (dev)
 		dev = pcidev_path_behind(dev->link_list, PCI_DEVFN(0, 0));
 	if (!dev)
 		return serial;
 
-	/* Debug purpose only. Will be deleted in final fix. */
-	printk(BIOS_ERR, "dev->class = %x \r\n", dev->class);
-	printk(BIOS_ERR, "dev->vendor = %x \r\n", dev->vendor);
-	printk(BIOS_ERR, "dev->device = %x \r\n", dev->device);
+	/* Read PCI Configuration Space Bar 2 (0x18 offset).
+	 * Bits 31-4 contain memory address where internal NIC registers are mapped.
+	 * val32 stores that address.
+	 */
+	val32 = pci_io_read_config32(PCI_DEV(1, 0, 0), PCI_BAR_2_REG);
+	val32 &= 0xFFFFFFF0;
+
+	u8* mac_reg_addr = (u8 *)val32;
 
 	/* Read in the last 3 bytes of NIC's MAC address. */
-	/* Read all registers of PCIe NIC and print their values. */
-	for (i = 0; i < 0xfff; ) {
-		val32 = pci_io_read_config32(PCI_DEV(1, 0, 0), i);
-		printk(BIOS_ERR, "val[%.02x] = %x\r\n", i, (u8)(val32));
-		printk(BIOS_ERR, "val[%.02x] = %x\r\n", i, (u8)(val32 >> 8));
-		printk(BIOS_ERR, "val[%.02x] = %x\r\n", i, (u8)(val32 >> 16));
-		printk(BIOS_ERR, "val[%.02x] = %x\r\n", i, (u8)(val32 >> 24));
-		i += 4;
+	for (i = 3; i < 6; i++) {
+		mac_addr <<= 8;
+		mac_addr |= mac_reg_addr[i];
 	}
 
-	/* For now, counting serial number from MAC is disabled,
-	 * as read values are not valid (probably).
-	 */
+	mac_addr &= 0x00FFFFFF;
+	mac_addr /= 4;
+	mac_addr -= 64;
 
-	// bar18 &= 0xFFFFFC00;
-	// for (i = 3; i < 6; i++) {
-	// 	mac_addr <<= 8;
-	// 	mac_addr |= read8((u8 *)bar18 + i);
-	// }
-	// mac_addr &= 0x00FFFFFF;
-	// mac_addr /= 4;
-	// mac_addr -= 64;
-
-	// snprintf(serial, sizeof(serial), "%d", mac_addr);
-
-	// printk(BIOS_ERR, "serial number = %x\r\n", mac_addr);
+	snprintf(serial, sizeof(serial), "%d", mac_addr);
 
 	return serial;
 }
