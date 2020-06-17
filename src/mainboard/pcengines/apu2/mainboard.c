@@ -135,26 +135,26 @@ static void mainboard_enable(device_t dev)
 		if ( sio_dev ) sio_dev->enabled = 1;
 	}
 
-	/* Enable or disable watchdog depending on the configuration*/
-	if (boot_cpu()){
-		volatile u32 *ptr = (u32 *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
-		u16 watchdog_timeout = get_watchdog_timeout();
+	// /* Enable or disable watchdog depending on the configuration*/
+	// if (boot_cpu()){
+	// 	volatile u32 *ptr = (u32 *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
+	// 	u16 watchdog_timeout = get_watchdog_timeout();
 
-		if (watchdog_timeout == 0) {
-			//disable watchdog
-			printk(BIOS_WARNING, "Watchdog is disabled\n");
-			*ptr |= (1 << 3);
-		} else {
-			// enable
-			*ptr &= ~(1 << 3);
-			*ptr |= (1 << 0);
-			// configure timeout
-			*(ptr + 1) = (u16) watchdog_timeout;
-			// trigger
-			*ptr |= (1 << 7);
-			printk(BIOS_WARNING, "Watchdog is enabled, state = 0x%x, time = %d\n", *ptr, *(ptr + 1));
-		}
-	}
+	// 	if (watchdog_timeout == 0) {
+	// 		//disable watchdog
+	// 		printk(BIOS_WARNING, "Watchdog is disabled\n");
+	// 		*ptr |= (1 << 3);
+	// 	} else {
+	// 		// enable
+	// 		*ptr &= ~(1 << 3);
+	// 		*ptr |= (1 << 0);
+	// 		// configure timeout
+	// 		*(ptr + 1) = (u16) watchdog_timeout;
+	// 		// trigger
+	// 		*ptr |= (1 << 7);
+	// 		printk(BIOS_WARNING, "Watchdog is enabled, state = 0x%x, time = %d\n", *ptr, *(ptr + 1));
+	// 	}
+	// }
 }
 
 static void mainboard_final(void *chip_info) {
