@@ -317,8 +317,8 @@ const char *smbios_mainboard_serial_number(void)
 {
 	static char serial[10];
 	struct device *dev;
+	uintptr_t bar18;
 	u32 mac_addr = 0;
-	u32 val32 = 0;
 	int i;
 
 	/* Already initialized. */
@@ -326,33 +326,32 @@ const char *smbios_mainboard_serial_number(void)
 		return serial;
 
 	dev = pcidev_on_root(4, 0);
-
 	if (dev)
 		dev = pcidev_path_behind(dev->link_list, PCI_DEVFN(0, 0));
 	if (!dev)
 		return serial;
 
+	/* dev->bus->secondary has 0x100 value, while it should has 0x001.
+	 * This workaround simply corrects it to be valid.
+	 */
+	dev->bus->secondary >>= 8;
+
 	/* Read PCI Configuration Space Bar 2 (0x18 offset).
 	 * Bits 31-4 contain memory address where internal NIC registers are mapped.
-	 * val32 stores that address.
 	 */
-	val32 = pci_io_read_config32(PCI_DEV(1, 0, 0), PCI_BAR_2_REG);
-	val32 &= 0xFFFFFFF0;
-
-	u8* mac_reg_addr = (u8 *)val32;
+	bar18 = pci_read_config32(dev, PCI_BAR_2_REG);
+	bar18 &= 0xFFFFFFF0;
 
 	/* Read in the last 3 bytes of NIC's MAC address. */
 	for (i = 3; i < 6; i++) {
 		mac_addr <<= 8;
-		mac_addr |= mac_reg_addr[i];
+		mac_addr |= read8((u8 *)bar18 + i);
 	}
-
 	mac_addr &= 0x00FFFFFF;
 	mac_addr /= 4;
 	mac_addr -= 64;
 
 	snprintf(serial, sizeof(serial), "%d", mac_addr);
-
 	return serial;
 }
 
