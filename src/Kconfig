@@ -315,6 +315,15 @@ config BOOTSPLASH_IMAGE
 	  This will only add the image to the ROM. To actually run it check
 	  options under 'Display' section.
 
+config COMPRESS_BOOTSPLASH
+	bool "Compress bootsplash image"
+	depends on PAYLOAD_SEABIOS
+	help
+	  The bootsplash image can be compressed with LZMA. This is especially
+	  useful when BMP bootsplash is used and occupies too much SPI flash
+	  space. The bootsplash CBFS file name will be compressed and suffixed
+	  with lzma extension to indicate SeaBIOS to decompress it when loaded.
+
 config BOOTSPLASH_FILE
 	string "Bootsplash path and filename"
 	depends on BOOTSPLASH_IMAGE

@@ -1211,9 +1211,16 @@ revision-file := $(obj)/build.h
 revision-type := raw
 
 BOOTSPLASH_SUFFIX=$(suffix $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE)))
+ifeq ($(CONFIG_COMPRESS_BOOTSPLASH),)
 cbfs-files-$(CONFIG_BOOTSPLASH_IMAGE) += bootsplash$(BOOTSPLASH_SUFFIX)
 bootsplash$(BOOTSPLASH_SUFFIX)-file := $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE))
 bootsplash$(BOOTSPLASH_SUFFIX)-type := bootsplash
+else
+cbfs-files-$(CONFIG_BOOTSPLASH_IMAGE) += bootsplash$(BOOTSPLASH_SUFFIX).lzma
+bootsplash$(BOOTSPLASH_SUFFIX).lzma-file := $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE))
+bootsplash$(BOOTSPLASH_SUFFIX).lzma-compression := $(CBFS_COMPRESS_FLAG)
+bootsplash$(BOOTSPLASH_SUFFIX).lzma-type := bootsplash
+endif
 
 # Ensure that no payload segment overlaps with memory regions used by ramstage
 # (not for x86 since it can relocate itself in that case)
