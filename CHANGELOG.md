@@ -12,6 +12,12 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.12.0.2] - 2020-06-28
+## Fixed
+- [incorrrect serial number in dmidecode for apu1](https://github.com/pcengines/coreboot/issues/402)
+
+### Changed
+- enabled TPM2 for apu3d and apu4d supporting a TPM module connection
 
 ## [v4.12.0.1] - 2020-05-29
 ### Changed
@@ -422,7 +428,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.12.0.1...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.12.0.2...develop
+[v4.12.0.2]: https://github.com/pcengines/coreboot/compare/v4.12.0.1...v4.12.0.2
 [v4.12.0.1]: https://github.com/pcengines/coreboot/compare/v4.11.0.6...v4.12.0.1
 [v4.11.0.6]: https://github.com/pcengines/coreboot/compare/v4.11.0.5...v4.11.0.6
 [v4.11.0.5]: https://github.com/pcengines/coreboot/compare/v4.11.0.4...v4.11.0.5
