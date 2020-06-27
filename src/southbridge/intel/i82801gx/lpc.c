@@ -27,8 +27,6 @@
 
 #define NMI_OFF	0
 
-typedef struct southbridge_intel_i82801gx_config config_t;
-
 /**
  * Set miscellaneous static southbridge features.
  *
@@ -79,7 +77,7 @@ static void i82801gx_pirq_init(struct device *dev)
 {
 	struct device *irq_dev;
 	/* Get the chip configuration */
-	config_t *config = dev->chip_info;
+	const struct southbridge_intel_i82801gx_config *config = dev->chip_info;
 
 	pci_write_config8(dev, PIRQA_ROUT, config->pirqa_routing);
 	pci_write_config8(dev, PIRQB_ROUT, config->pirqb_routing);
@@ -124,7 +122,7 @@ static void i82801gx_pirq_init(struct device *dev)
 static void i82801gx_gpi_routing(struct device *dev)
 {
 	/* Get the chip configuration */
-	config_t *config = dev->chip_info;
+	const struct southbridge_intel_i82801gx_config *config = dev->chip_info;
 	u32 reg32 = 0;
 
 	/* An array would be much nicer here, or some other method of doing this. */
@@ -155,7 +153,7 @@ static void i82801gx_power_options(struct device *dev)
 	u32 reg32;
 	const char *state;
 	/* Get the chip configuration */
-	config_t *config = dev->chip_info;
+	const struct southbridge_intel_i82801gx_config *config = dev->chip_info;
 
 	int pwr_on = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
 	int nmi_option;
@@ -227,12 +225,8 @@ static void i82801gx_power_options(struct device *dev)
 	// another laptop wants this?
 	// reg16 &= ~(1 << 10);	// BIOS_PCI_EXP_EN - Desktop/Mobile only
 	reg16 |= (1 << 10);	// BIOS_PCI_EXP_EN - Desktop/Mobile only
-#if DEBUG_PERIODIC_SMIS
-	/* Set DEBUG_PERIODIC_SMIS in i82801gx.h to debug using
-	 * periodic SMIs.
-	 */
-	reg16 |= (3 << 0); // Periodic SMI every 8s
-#endif
+	if (CONFIG(DEBUG_PERIODIC_SMI))
+		reg16 |= (3 << 0); // Periodic SMI every 8s
 	pci_write_config16(dev, GEN_PMCON_1, reg16);
 
 	// Set the board's GPI routing.
@@ -318,15 +312,10 @@ static void enable_clock_gating(void)
 
 static void i82801gx_set_acpi_mode(struct device *dev)
 {
-	if (CONFIG(HAVE_SMI_HANDLER)) {
-		if (!acpi_is_wakeup_s3()) {
-			printk(BIOS_DEBUG, "Disabling ACPI via APMC:\n");
-			outb(APM_CNT_ACPI_DISABLE, APM_CNT); // Disable ACPI mode
-			printk(BIOS_DEBUG, "done.\n");
-		} else {
-			printk(BIOS_DEBUG, "S3 wakeup, enabling ACPI via APMC\n");
-			outb(APM_CNT_ACPI_ENABLE, APM_CNT);
-		}
+	if (!acpi_is_wakeup_s3()) {
+		apm_control(APM_CNT_ACPI_DISABLE);
+	} else {
+		apm_control(APM_CNT_ACPI_ENABLE);
 	}
 }
 
@@ -431,7 +420,7 @@ unsigned long acpi_fill_madt(unsigned long current)
 void acpi_fill_fadt(acpi_fadt_t *fadt)
 {
 	struct device *dev = pcidev_on_root(0x1f, 0);
-	config_t *chip = dev->chip_info;
+	const struct southbridge_intel_i82801gx_config *chip = dev->chip_info;
 	u16 pmbase = lpc_get_pmbase();
 
 	fadt->pm1a_evt_blk = pmbase;
@@ -505,7 +494,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.space_id = 1;
 	fadt->x_gpe0_blk.bit_width = 64;
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = pmbase + GPE0_STS;
 	fadt->x_gpe0_blk.addrh = 0x0;
 
@@ -519,15 +508,16 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->mon_alrm = 0x00;
 	fadt->century = 0x32;
 
-	fadt->reserved = 0;
 	fadt->sci_int = 0x9;
-	fadt->smi_cmd = APM_CNT;
-	fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-	fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	fadt->s4bios_req = 0x0;
-	fadt->pstate_cnt = APM_CNT_PST_CONTROL;
 
-	fadt->cst_cnt = APM_CNT_CST_CONTROL;
+	if (permanent_smi_handler()) {
+		fadt->smi_cmd = APM_CNT;
+		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
+		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
+		fadt->pstate_cnt = APM_CNT_PST_CONTROL;
+		fadt->cst_cnt = APM_CNT_CST_CONTROL;
+	}
+
 	fadt->p_lvl2_lat = 1;
 	fadt->p_lvl3_lat = chip->c3_latency;
 	fadt->flush_size = 0;
@@ -632,7 +622,7 @@ static void southbridge_inject_dsdt(const struct device *dev)
 		acpi_create_gnvs(gnvs);
 
 		/* And tell SMI about it */
-		smm_setup_structures(gnvs, NULL, NULL);
+		apm_control(APM_CNT_GNVS_UPDATE);
 
 		/* Add it to SSDT.  */
 		acpigen_write_scope("\\");
@@ -651,10 +641,6 @@ static void southbridge_fill_ssdt(const struct device *device)
 	intel_acpi_gen_def_acpi_pirq(device);
 }
 
-static struct pci_operations pci_ops = {
-	.set_subsystem = pci_dev_set_subsystem,
-};
-
 static struct device_operations device_ops = {
 	.read_resources		= i82801gx_lpc_read_resources,
 	.set_resources		= pci_dev_set_resources,
@@ -666,7 +652,7 @@ static struct device_operations device_ops = {
 	.init			= lpc_init,
 	.scan_bus		= scan_static_bus,
 	.enable			= i82801gx_enable,
-	.ops_pci		= &pci_ops,
+	.ops_pci		= &pci_dev_ops_pci,
 	.final			= lpc_final,
 };
 

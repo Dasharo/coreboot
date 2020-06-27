@@ -4,13 +4,11 @@
 #include <device/pci_ops.h>
 #include <arch/symbols.h>
 #include <assert.h>
-#include <bootmode.h>
 #include <cbmem.h>
 #include <cf9_reset.h>
 #include <console/console.h>
 #include <cpu/x86/pae.h>
 #include <delay.h>
-#include <cpu/x86/smm.h>
 #include <device/pci_def.h>
 #include <device/resource.h>
 #include <fsp/api.h>

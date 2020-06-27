@@ -20,14 +20,10 @@ config BOARD_SPECIFIC_OPTIONS
 
 config MAINBOARD_DIR
 	string
-	default asrock/b85m_pro4
+	default "asrock/b85m_pro4"
 
 config MAINBOARD_PART_NUMBER
 	string
 	default "B85M Pro4"
-
-config MAX_CPUS
-	int
-	default 8
 
 endif

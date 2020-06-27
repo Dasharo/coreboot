@@ -254,7 +254,7 @@ static void post_mp_init(void)
 	 * Now that all APs have been relocated as well as the BSP let SMIs
 	 * start flowing.
 	 */
-	smm_southbridge_enable(GBL_EN);
+	global_smi_enable_no_pwrbtn();
 
 	/* Lock down the SMRAM space. */
 	smm_lock();
@@ -312,6 +312,6 @@ int soc_skip_ucode_update(u32 current_patch_id, u32 new_patch_id)
 	if (msr2.lo && (current_patch_id == new_patch_id - 1))
 		return 0;
 
-	return (msr1.lo & PRMRR_SUPPORTED) &&
+	return (msr1.lo & MTRR_CAP_PRMRR) &&
 		(current_patch_id == new_patch_id - 1);
 }

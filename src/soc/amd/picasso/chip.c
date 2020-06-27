@@ -1,15 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <bootstate.h>
-#include <cpu/amd/mtrr.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <drivers/i2c/designware/dw_i2c.h>
-#include <romstage_handoff.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
 #include <soc/data_fabric.h>
+#include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/southbridge.h>
 #include "chip.h"
@@ -17,12 +15,13 @@
 
 /* Supplied by i2c.c */
 extern struct device_operations picasso_i2c_mmio_ops;
-extern const char *i2c_acpi_name(const struct device *dev);
+/* Supplied by uart.c */
+extern struct device_operations picasso_uart_mmio_ops;
 
 struct device_operations cpu_bus_ops = {
 	.read_resources	  = noop_read_resources,
 	.set_resources	  = noop_set_resources,
-	.init		  = picasso_init_cpus,
+	.init		  = mp_cpu_bus_init,
 	.acpi_fill_ssdt   = generate_cpu_entries,
 };
 
@@ -121,6 +120,23 @@ static struct device_operations pci_ops_ops_bus_ab = {
 	.acpi_fill_ssdt		= acpi_device_write_pci_dev,
 };
 
+static void set_mmio_dev_ops(struct device *dev)
+{
+	switch (dev->path.mmio.addr) {
+	case APU_I2C2_BASE:
+	case APU_I2C3_BASE:
+	case APU_I2C4_BASE:
+		dev->ops = &picasso_i2c_mmio_ops;
+		break;
+	case APU_UART0_BASE:
+	case APU_UART1_BASE:
+	case APU_UART2_BASE:
+	case APU_UART3_BASE:
+		dev->ops = &picasso_uart_mmio_ops;
+		break;
+	}
+}
+
 static void enable_dev(struct device *dev)
 {
 	/* Set the operations if it is a special bus type */
@@ -138,18 +154,18 @@ static void enable_dev(struct device *dev)
 		}
 		sb_enable(dev);
 	} else if (dev->path.type == DEVICE_PATH_MMIO) {
-		if (i2c_acpi_name(dev) != NULL)
-			dev->ops = &picasso_i2c_mmio_ops;
+		set_mmio_dev_ops(dev);
 	}
 }
 
 static void soc_init(void *chip_info)
 {
+	default_dev_ops_root.write_acpi_tables = agesa_write_acpi_tables;
+
 	fsp_silicon_init(acpi_is_wakeup_s3());
 
 	data_fabric_set_mmio_np();
 	southbridge_init(chip_info);
-	setup_bsp_ramtop();
 }
 
 static void soc_final(void *chip_info)

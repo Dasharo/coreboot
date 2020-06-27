@@ -479,9 +479,24 @@ smbios_board_type __weak smbios_mainboard_board_type(void)
 	return SMBIOS_BOARD_TYPE_UNKNOWN;
 }
 
+/*
+ * System Enclosure or Chassis Types as defined in SMBIOS specification.
+ * The default value is SMBIOS_ENCLOSURE_DESKTOP (0x03) but laptop,
+ * convertible, or tablet enclosure will be used if the appropriate
+ * system type is selected.
+ */
 smbios_enclosure_type __weak smbios_mainboard_enclosure_type(void)
 {
-	return CONFIG_SMBIOS_ENCLOSURE_TYPE;
+	if (CONFIG(SYSTEM_TYPE_LAPTOP))
+		return SMBIOS_ENCLOSURE_LAPTOP;
+	else if (CONFIG(SYSTEM_TYPE_TABLET))
+		return SMBIOS_ENCLOSURE_TABLET;
+	else if (CONFIG(SYSTEM_TYPE_CONVERTIBLE))
+		return SMBIOS_ENCLOSURE_CONVERTIBLE;
+	else if (CONFIG(SYSTEM_TYPE_DETACHABLE))
+		return SMBIOS_ENCLOSURE_DETACHABLE;
+	else
+		return SMBIOS_ENCLOSURE_DESKTOP;
 }
 
 const char *__weak smbios_system_serial_number(void)
@@ -520,6 +535,21 @@ unsigned int __weak smbios_cpu_get_current_speed_mhz(void)
 }
 
 const char *__weak smbios_system_sku(void)
+{
+	return "";
+}
+
+const char * __weak smbios_chassis_version(void)
+{
+	return "";
+}
+
+const char * __weak smbios_chassis_serial_number(void)
+{
+	return "";
+}
+
+const char * __weak smbios_processor_serial_number(void)
 {
 	return "";
 }
@@ -606,6 +636,9 @@ static int smbios_write_type3(unsigned long *current, int handle)
 	t->thermal_state = SMBIOS_STATE_SAFE;
 	t->_type = smbios_mainboard_enclosure_type();
 	t->security_status = SMBIOS_STATE_SAFE;
+	t->asset_tag_number = smbios_add_string(t->eos, smbios_mainboard_asset_tag());
+	t->version = smbios_add_string(t->eos, smbios_chassis_version());
+	t->serial_number = smbios_add_string(t->eos, smbios_chassis_serial_number());
 	len = t->length + smbios_string_table_len(t->eos);
 	*current += len;
 	return len;
@@ -659,6 +692,7 @@ static int smbios_write_type4(unsigned long *current, int handle)
 	t->l1_cache_handle = 0xffff;
 	t->l2_cache_handle = 0xffff;
 	t->l3_cache_handle = 0xffff;
+	t->serial_number = smbios_add_string(t->eos, smbios_processor_serial_number());
 	t->processor_upgrade = get_socket_type();
 	len = t->length + smbios_string_table_len(t->eos);
 	if (cpu_have_cpuid() && cpuid_get_max_func() >= 0x16) {

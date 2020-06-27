@@ -16,30 +16,14 @@
  * Create the Fixed ACPI Description Tables (FADT) for any board with this SB.
  * Reference: ACPIspec40a, 5.2.9, page 118
  */
-void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
+void acpi_fill_fadt(acpi_fadt_t *fadt)
 {
-	acpi_header_t *header = &(fadt->header);
-
-	/* Power management controller */
-
-	memset((void *) fadt, 0, sizeof(acpi_fadt_t));
-	memcpy(header->signature, "FACP", 4);
-	header->length = sizeof(acpi_fadt_t);
-	header->revision = ACPI_FADT_REV_ACPI_1_0;
-	memcpy(header->oem_id, OEM_ID, 6);
-	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
-	memcpy(header->asl_compiler_id, ASLC, 4);
-	header->asl_compiler_revision = asl_revision;
-
-	fadt->firmware_ctrl = (uintptr_t)facs;
-	fadt->dsdt = (uintptr_t)dsdt;
-	fadt->preferred_pm_profile = 0; /* unspecified */
 	fadt->sci_int = 9;
-	fadt->smi_cmd = 0; /* smi command port */
-	fadt->acpi_enable = 0; /* acpi enable smi command */
-	fadt->acpi_disable = 0; /* acpi disable smi command */
-	fadt->s4bios_req = 0x0;
-	fadt->pstate_cnt = 0x0;
+
+	if (permanent_smi_handler()) {
+		/* TODO: SMI handler is not implemented. */
+		fadt->smi_cmd = 0x00;
+	}
 
 	fadt->pm1a_evt_blk = DEFAULT_PMBASE;
 	fadt->pm1b_evt_blk = 0x0;
@@ -60,7 +44,6 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	fadt->pm_tmr_len = 4;
 	fadt->gpe0_blk_len = 4;
 
-	fadt->cst_cnt = 0; /* smi command to indicate c state changed notification */
 	fadt->p_lvl2_lat = 101; /* >100 means c2 not supported */
 	fadt->p_lvl3_lat = 1001; /* >1000 means c3 not supported */
 	fadt->flush_size = 0; /* only needed if CPU wbinvd is broken */
@@ -138,11 +121,6 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	fadt->reset_reg.addrh = 0x0;
 	fadt->reset_value = 0;
 
-	fadt->x_firmware_ctl_l = (uintptr_t)facs;
-	fadt->x_firmware_ctl_h = 0;
-	fadt->x_dsdt_l = (uintptr_t)dsdt;
-	fadt->x_dsdt_h = 0;
-
 	fadt->x_pm1a_evt_blk.space_id = 1;
 	fadt->x_pm1a_evt_blk.bit_width = fadt->pm1_evt_len * 8;
 	fadt->x_pm1a_evt_blk.bit_offset = 0;
@@ -199,5 +177,4 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	fadt->x_gpe1_blk.addrl = fadt->gpe1_blk;
 	fadt->x_gpe1_blk.addrh = 0x0;
 
-	header->checksum = acpi_checksum((void *) fadt, sizeof(acpi_fadt_t));
 }

@@ -113,20 +113,9 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 	return current;
 }
 
-__attribute__ ((weak)) void motherboard_fill_fadt(acpi_fadt_t *fadt)
-{
-}
-
 void soc_fill_fadt(acpi_fadt_t *fadt)
 {
 	u16 pmbase = get_pmbase();
-
-	/* System Management */
-	if (!CONFIG(HAVE_SMI_HANDLER)) {
-		fadt->smi_cmd = 0x00;
-		fadt->acpi_enable = 0x00;
-		fadt->acpi_disable = 0x00;
-	}
 
 	/* Power Control */
 	fadt->pm2_cnt_blk = pmbase + PM2_CNT;
@@ -139,7 +128,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->gpe0_blk_len = 8;
 	fadt->gpe1_blk_len = 0;
 	fadt->gpe1_base = 0;
-	fadt->cst_cnt = 0;
+
 	fadt->p_lvl2_lat = ACPI_FADT_C2_NOT_SUPPORTED;
 	fadt->p_lvl3_lat = ACPI_FADT_C3_NOT_SUPPORTED;
 	fadt->flush_size = 0;   /* set to 0 if WBINVD is 1 in flags */
@@ -217,7 +206,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_gpe0_blk.bit_width = 64; /* EventStatus + EventEnable */
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
 	fadt->x_gpe0_blk.addrh = 0x00;
 
@@ -227,8 +216,6 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe1_blk.access_size = 0;
 	fadt->x_gpe1_blk.addrl = fadt->gpe1_blk;
 	fadt->x_gpe1_blk.addrh = 0x00;
-
-	motherboard_fill_fadt(fadt);
 }
 
 static acpi_tstate_t denverton_tss_table[] = {
@@ -305,7 +292,7 @@ void southcluster_inject_dsdt(const struct device *device)
 	if (gnvs) {
 		acpi_create_gnvs(gnvs);
 		/* And tell SMI about it */
-		smm_setup_structures(gnvs, NULL, NULL);
+		apm_control(APM_CNT_GNVS_UPDATE);
 
 		/* Add it to DSDT.  */
 		acpigen_write_scope("\\");

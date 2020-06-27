@@ -228,7 +228,7 @@ static void model_2065x_init(struct device *cpu)
 	/* Print processor name */
 	fill_processor_name(processor_name);
 	printk(BIOS_INFO, "CPU: %s.\n", processor_name);
-	printk(BIOS_INFO, "CPU:lapic=%ld, boot_cpu=%d\n", lapicid(),
+	printk(BIOS_INFO, "CPU:lapic=%d, boot_cpu=%d\n", lapicid(),
 		boot_cpu());
 
 	/* Setup Page Attribute Tables (PAT) */
@@ -302,7 +302,7 @@ static void post_mp_init(void)
 {
 	/* Now that all APs have been relocated as well as the BSP let SMIs
 	 * start flowing. */
-	smm_southbridge_enable_smi();
+	global_smi_enable();
 
 	/* Lock down the SMRAM space. */
 	smm_lock();

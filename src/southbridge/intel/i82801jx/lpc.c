@@ -160,8 +160,7 @@ static void i82801jx_power_options(struct device *dev)
 	int nmi_option;
 
 	/* BIOS must program... */
-	reg32 = pci_read_config32(dev, 0xac);
-	pci_write_config32(dev, 0xac, reg32 | (1 << 30) | (3 << 8));
+	pci_or_config32(dev, 0xac, (1 << 30) | (3 << 8));
 
 	/* Which state do we want to goto after g3 (power restored)?
 	 * 0 == S0 Full On
@@ -230,12 +229,8 @@ static void i82801jx_power_options(struct device *dev)
 	// another laptop wants this?
 	// reg16 &= ~(1 << 10);	// BIOS_PCI_EXP_EN - Desktop/Mobile only
 	reg16 |= (1 << 10);	// BIOS_PCI_EXP_EN - Desktop/Mobile only
-#if DEBUG_PERIODIC_SMIS
-	/* Set DEBUG_PERIODIC_SMIS in i82801jx.h to debug using
-	 * periodic SMIs.
-	 */
-	reg16 |= (3 << 0); // Periodic SMI every 8s
-#endif
+	if (CONFIG(DEBUG_PERIODIC_SMI))
+		reg16 |= (3 << 0); // Periodic SMI every 8s
 	if (config->c5_enable)
 		reg16 |= (1 << 11); /* Enable C5, C6 and PMSYNC# */
 	pci_write_config16(dev, D31F0_GEN_PMCON_1, reg16);
@@ -281,18 +276,13 @@ static void i82801jx_power_options(struct device *dev)
 
 static void i82801jx_configure_cstates(struct device *dev)
 {
-	u8 reg8;
-
-	reg8 = pci_read_config8(dev, D31F0_CxSTATE_CNF);
-	reg8 |= (1 << 4) | (1 << 3) | (1 << 2);	// Enable Popup & Popdown
-	pci_write_config8(dev, D31F0_CxSTATE_CNF, reg8);
+	// Enable Popup & Popdown
+	pci_or_config8(dev, D31F0_CxSTATE_CNF, (1 << 4) | (1 << 3) | (1 << 2));
 
 	// Set Deeper Sleep configuration to recommended values
-	reg8 = pci_read_config8(dev, D31F0_C4TIMING_CNT);
-	reg8 &= 0xf0;
-	reg8 |= (2 << 2);	// Deeper Sleep to Stop CPU: 34-40us
-	reg8 |= (2 << 0);	// Deeper Sleep to Sleep: 15us
-	pci_write_config8(dev, D31F0_C4TIMING_CNT, reg8);
+	// Deeper Sleep to Stop CPU: 34-40us
+	// Deeper Sleep to Sleep: 15us
+	pci_update_config8(dev, D31F0_C4TIMING_CNT, ~0x0f, (2 << 2) | (2 << 0));
 
 	/* We could enable slow-C4 exit here, if someone needs it? */
 }
@@ -357,15 +347,10 @@ static void enable_clock_gating(void)
 
 static void i82801jx_set_acpi_mode(struct device *dev)
 {
-	if (CONFIG(HAVE_SMI_HANDLER)) {
-		if (!acpi_is_wakeup_s3()) {
-			printk(BIOS_DEBUG, "Disabling ACPI via APMC:\n");
-			outb(APM_CNT_ACPI_DISABLE, APM_CNT); // Disable ACPI mode
-			printk(BIOS_DEBUG, "done.\n");
-		} else {
-			printk(BIOS_DEBUG, "S3 wakeup, enabling ACPI via APMC\n");
-			outb(APM_CNT_ACPI_ENABLE, APM_CNT);
-		}
+	if (!acpi_is_wakeup_s3()) {
+		apm_control(APM_CNT_ACPI_DISABLE);
+	} else {
+		apm_control(APM_CNT_ACPI_ENABLE);
 	}
 }
 
@@ -516,7 +501,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.space_id = 1;
 	fadt->x_gpe0_blk.bit_width = 128;
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = pmbase + 0x20;
 	fadt->x_gpe0_blk.addrh = 0x0;
 
@@ -530,15 +515,16 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->mon_alrm = 0x00;
 	fadt->century = 0x32;
 
-	fadt->reserved = 0;
 	fadt->sci_int = 0x9;
-	fadt->smi_cmd = APM_CNT;
-	fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-	fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	fadt->s4bios_req = 0x0;
-	fadt->pstate_cnt = APM_CNT_PST_CONTROL;
 
-	fadt->cst_cnt = APM_CNT_CST_CONTROL;
+	if (permanent_smi_handler()) {
+		fadt->smi_cmd = APM_CNT;
+		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
+		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
+		fadt->cst_cnt = APM_CNT_CST_CONTROL;
+		fadt->pstate_cnt = APM_CNT_PST_CONTROL;
+	}
+
 	fadt->p_lvl2_lat = 1;
 	fadt->p_lvl3_lat = chip->c3_latency;
 	fadt->flush_size = 0;
@@ -637,7 +623,7 @@ static void southbridge_inject_dsdt(const struct device *dev)
 		acpi_create_gnvs(gnvs);
 
 		/* And tell SMI about it */
-		smm_setup_structures(gnvs, NULL, NULL);
+		apm_control(APM_CNT_GNVS_UPDATE);
 
 		/* Add it to SSDT.  */
 		acpigen_write_scope("\\");
@@ -660,10 +646,6 @@ static void southbridge_fill_ssdt(const struct device *device)
 	intel_acpi_gen_def_acpi_pirq(device);
 }
 
-static struct pci_operations pci_ops = {
-	.set_subsystem = pci_dev_set_subsystem,
-};
-
 static struct device_operations device_ops = {
 	.read_resources		= i82801jx_lpc_read_resources,
 	.set_resources		= pci_dev_set_resources,
@@ -674,7 +656,7 @@ static struct device_operations device_ops = {
 	.acpi_name		= lpc_acpi_name,
 	.init			= lpc_init,
 	.scan_bus		= scan_static_bus,
-	.ops_pci		= &pci_ops,
+	.ops_pci		= &pci_dev_ops_pci,
 };
 
 static const unsigned short pci_device_ids[] = {

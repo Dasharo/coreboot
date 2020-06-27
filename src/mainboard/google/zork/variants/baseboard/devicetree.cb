@@ -48,6 +48,8 @@ chip soc/amd/picasso
 
 	register "sd_emmc_config" = "SD_EMMC_EMMC_HS400"
 
+	register "xhci0_force_gen1" = "0"
+
 	# SPI Configuration
 	register "common_config.spi_config" = "{
 		.normal_speed = SPI_SPEED_66M, /* MHz */
@@ -172,6 +174,7 @@ chip soc/amd/picasso
 	end # domain
 
 	chip drivers/generic/max98357a
+			register "hid" = ""MX98357A""
 			register "sdmode_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_91)"
 			register "sdmode_delay" = "5"
 			device generic 0.1 on end
@@ -185,5 +188,9 @@ chip soc/amd/picasso
 			device i2c 50 on end
 		end
 	end
+
+	device mmio 0xfedca000 off end # UART1
+	device mmio 0xfedce000 off end # UART2
+	device mmio 0xfedcf000 off end # UART3
 
 end	# chip soc/amd/picasso

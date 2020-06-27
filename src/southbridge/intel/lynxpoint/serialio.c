@@ -2,7 +2,7 @@
 
 #include <device/mmio.h>
 #include <device/pci_ops.h>
-#include <cbmem.h>
+#include <acpi/acpi_gnvs.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -137,7 +137,7 @@ static void serialio_init(struct device *dev)
 	printk(BIOS_DEBUG, "Initializing Serial IO device\n");
 
 	/* Ensure memory and bus master are enabled */
-	pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MEMORY);
+	pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY);
 
 	/* Find BAR0 and BAR1 */
 	bar0 = find_resource(dev, PCI_BASE_ADDRESS_0);
@@ -208,11 +208,9 @@ static void serialio_init(struct device *dev)
 		global_nvs_t *gnvs;
 
 		/* Find ACPI NVS to update BARs */
-		gnvs = (global_nvs_t *)cbmem_find(CBMEM_ID_ACPI_GNVS);
-		if (!gnvs) {
-			printk(BIOS_ERR, "Unable to locate Global NVS\n");
+		gnvs = acpi_get_gnvs();
+		if (!gnvs)
 			return;
-		}
 
 		/* Save BAR0 and BAR1 to ACPI NVS */
 		gnvs->s0b[sio_index] = (u32)bar0->base;
@@ -220,16 +218,12 @@ static void serialio_init(struct device *dev)
 	}
 }
 
-static struct pci_operations pci_ops = {
-	.set_subsystem		= pci_dev_set_subsystem,
-};
-
 static struct device_operations device_ops = {
 	.read_resources		= pci_dev_read_resources,
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
 	.init			= serialio_init,
-	.ops_pci		= &pci_ops,
+	.ops_pci		= &pci_dev_ops_pci,
 };
 
 static const unsigned short pci_device_ids[] = {
