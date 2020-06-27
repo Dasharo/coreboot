@@ -1,57 +1,24 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <baseboard/variants.h>
+#include <delay.h>
+#include <gpio.h>
 #include <soc/gpio.h>
 #include <soc/smi.h>
 #include <stdlib.h>
 #include <boardid.h>
 #include <variant/gpio.h>
 
-static const struct soc_amd_gpio gpio_set_stage_reset[] = {
-	/* H1_FCH_INT_ODL */
-	PAD_INT(GPIO_3, PULL_UP, EDGE_LOW, STATUS),
-	/* I2C3_SCL - H1 */
-	PAD_NF(GPIO_19, I2C3_SCL, PULL_UP),
-	/* I2C3_SDA - H1 */
-	PAD_NF(GPIO_20, I2C3_SDA, PULL_UP),
-
-	/* FCH_ESPI_EC_CS_L */
-	PAD_NF(GPIO_30, ESPI_CS_L, PULL_NONE),
-
-	/* ESPI_ALERT_L (may be unused) */
-	PAD_NF(GPIO_108, ESPI_ALERT_L, PULL_UP),
-
-	/* UART0_RXD - DEBUG */
-	PAD_NF(GPIO_136, UART0_RXD, PULL_NONE),
-	/* BIOS_FLASH_WP_ODL */
-	PAD_GPI(GPIO_137, PULL_NONE),
-	/* UART0_TXD - DEBUG */
-	PAD_NF(GPIO_138, UART0_TXD, PULL_NONE),
-};
-
-static const struct soc_amd_gpio gpio_set_stage_rom[] = {
-	/* H1_FCH_INT_ODL */
-	PAD_INT(GPIO_3, PULL_UP, EDGE_LOW, STATUS),
+static const struct soc_amd_gpio gpio_set_stage_rom_pre_v3[] = {
 	/* PEN_POWER_EN - reset */
 	PAD_GPO(GPIO_5, LOW),
-	/* I2C3_SCL - H1 */
-	PAD_NF(GPIO_19, I2C3_SCL, PULL_UP),
-	/* I2C3_SDA - H1 */
-	PAD_NF(GPIO_20, I2C3_SDA, PULL_UP),
 	/* EC_FCH_WAKE_L */
 	PAD_GPI(GPIO_24, PULL_UP),
 	PAD_WAKE(GPIO_24, PULL_UP, EDGE_LOW, S3_S4_S5),
-	/* PCIE_RST0_L - Fixed timings */
-	/* TODO: Make sure this gets locked at end of post */
-	PAD_NF(GPIO_26, PCIE_RST_L, PULL_NONE),
 	/* PCIE_RST1_L - Variable timings (May remove) */
 	PAD_NF(GPIO_27, PCIE_RST1_L, PULL_NONE),
-	/* FCH_ESPI_EC_CS_L */
-	PAD_NF(GPIO_30, ESPI_CS_L, PULL_NONE),
 	/* NVME_AUX_RESET_L */
 	PAD_GPO(GPIO_40, HIGH),
-	/* WIFI_AUX_RESET_L */
-	PAD_GPO(GPIO_42, HIGH),
 	/* EN_PWR_TOUCHPAD_PS2 - reset */
 	PAD_GPO(GPIO_67, LOW),
 	/* EMMC_RESET - reset (default stuffing unused)*/
@@ -60,18 +27,12 @@ static const struct soc_amd_gpio gpio_set_stage_rom[] = {
 	PAD_GPO(GPIO_76, LOW),
 	/* CLK_REQ0_L - WIFI */
 	PAD_NF(GPIO_92, CLK_REQ0_L, PULL_UP),
-	/* ESPI_ALERT_L (may be unused) */
-	PAD_NF(GPIO_108, ESPI_ALERT_L, PULL_UP),
 	/* CLK_REQ1_L - SD Card */
 	PAD_NF(GPIO_115, CLK_REQ1_L, PULL_UP),
 	/* CLK_REQ2_L - NVMe */
 	PAD_NF(GPIO_116, CLK_REQ2_L, PULL_UP),
-	/* UART0_RXD - DEBUG */
-	PAD_NF(GPIO_136, UART0_RXD, PULL_NONE),
 	/* BIOS_FLASH_WP_ODL */
 	PAD_GPI(GPIO_137, PULL_NONE),
-	/* UART0_TXD - DEBUG */
-	PAD_NF(GPIO_138, UART0_TXD, PULL_NONE),
 	/* USI_RESET - reset */
 	PAD_GPO(GPIO_140, HIGH),
 	/* USB_HUB_RST_L - reset*/
@@ -80,9 +41,36 @@ static const struct soc_amd_gpio gpio_set_stage_rom[] = {
 	PAD_GPO(GPIO_142, HIGH),
 };
 
-static const struct soc_amd_gpio gpio_set_wifi[] = {
-	/* EN_PWR_WIFI */
-	PAD_GPO(GPIO_29, HIGH),
+static const struct soc_amd_gpio gpio_set_stage_rom_v3[] = {
+	/* PEN_POWER_EN - reset */
+	PAD_GPO(GPIO_5, LOW),
+	/* EN_PWR_TOUCHPAD_PS2 - reset */
+	PAD_GPO(GPIO_6, LOW),
+	/* EC_FCH_WAKE_L */
+	PAD_GPI(GPIO_24, PULL_UP),
+	PAD_WAKE(GPIO_24, PULL_UP, EDGE_LOW, S3_S4_S5),
+	/* PCIE_RST1_L - Variable timings (May remove) */
+	PAD_NF(GPIO_27, PCIE_RST1_L, PULL_NONE),
+	/* NVME_AUX_RESET_L */
+	PAD_GPO(GPIO_40, HIGH),
+	/* EMMC_RESET - reset (default stuffing unused)*/
+	PAD_GPO(GPIO_68, HIGH),
+	/* EN_PWR_CAMERA - reset */
+	PAD_GPO(GPIO_76, LOW),
+	/* CLK_REQ0_L - WIFI */
+	PAD_NF(GPIO_92, CLK_REQ0_L, PULL_UP),
+	/* CLK_REQ1_L - SD Card */
+	PAD_NF(GPIO_115, CLK_REQ1_L, PULL_UP),
+	/* CLK_REQ2_L - NVMe */
+	PAD_NF(GPIO_116, CLK_REQ2_L, PULL_UP),
+	/* BIOS_FLASH_WP_ODL */
+	PAD_GPI(GPIO_137, PULL_NONE),
+	/* USI_RESET - reset */
+	PAD_GPO(GPIO_140, HIGH),
+	/* USB_HUB_RST_L - reset*/
+	PAD_GPO(GPIO_141, LOW),
+	/* SD_AUX_RESET_L */
+	PAD_GPO(GPIO_142, HIGH),
 };
 
 static const struct soc_amd_gpio gpio_set_stage_ram[] = {
@@ -97,8 +85,8 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	PAD_GPI(GPIO_4, PULL_UP),
 	/* PEN_POWER_EN - Enabled*/
 	PAD_GPO(GPIO_5, HIGH),
-	/* DMIC_SEL */
-	PAD_GPO(GPIO_6, LOW), // Select Camera 1 Dmic
+	/* EN_PWR_TOUCHPAD */
+	PAD_GPO(GPIO_6, HIGH),
 	/* I2S_SDIN */
 	PAD_NF(GPIO_7, ACP_I2S_SDIN, PULL_NONE),
 	/* I2S_LRCLK - Bit banged in depthcharge */
@@ -128,12 +116,12 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	PAD_GPI(GPIO_31, PULL_UP),
 	/*  */
 	PAD_GPI(GPIO_32, PULL_DOWN),
-	/* EN_PWR_TOUCHPAD_PS2 */
+	/* DMIC_SEL */
 	/*
-	 * EN_PWR_TOUCHPAD_PS2 - Make sure Ext ROM Sharing is disabled before
-	 * using this GPIO.  Otherwise SPI flash access will be very slow.
+	 * Make sure Ext ROM Sharing is disabled before using this GPIO.  Otherwise SPI flash
+	 * access will be very slow.
 	 */
-	PAD_GPO(GPIO_67, HIGH),
+	PAD_GPO(GPIO_67, LOW),  // Select Camera 1 Dmic
 	/* EMMC_RESET */
 	PAD_GPO(GPIO_68, LOW),
 	/* RAM ID 3*/
@@ -198,24 +186,18 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 };
 
 const __weak
-struct soc_amd_gpio *variant_early_gpio_table(size_t *size)
-{
-	*size = ARRAY_SIZE(gpio_set_stage_reset);
-	return gpio_set_stage_reset;
-}
-
-const __weak
 struct soc_amd_gpio *variant_romstage_gpio_table(size_t *size)
 {
-	*size = ARRAY_SIZE(gpio_set_stage_rom);
-	return gpio_set_stage_rom;
-}
+	uint32_t board_version;
 
-const __weak
-struct soc_amd_gpio *variant_wifi_romstage_gpio_table(size_t *size)
-{
-	*size = ARRAY_SIZE(gpio_set_wifi);
-	return gpio_set_wifi;
+	if (!google_chromeec_cbi_get_board_version(&board_version) &&
+	    (board_version >= CONFIG_VARIANT_MIN_BOARD_ID_V3_SCHEMATICS)) {
+		*size = ARRAY_SIZE(gpio_set_stage_rom_v3);
+		return gpio_set_stage_rom_v3;
+	}
+
+	*size = ARRAY_SIZE(gpio_set_stage_rom_pre_v3);
+	return gpio_set_stage_rom_pre_v3;
 }
 
 const __weak
@@ -235,4 +217,62 @@ struct soc_amd_gpio *variant_base_gpio_table(size_t *size)
 const __weak struct sci_source *get_gpe_table(size_t *num)
 {
 	return NULL;
+}
+
+static void wifi_power_reset_configure_v3(void)
+{
+	/*
+	 * Configure WiFi GPIOs such that:
+	 * - WIFI_AUX_RESET is configured first to assert PERST# to WiFi device.
+	 * - Enable power to WiFi using EN_PWR_WIFI.
+	 * - Wait for 50ms after power to WiFi is enabled.
+	 * - Deassert PERST# to WiFi device by driving WIFI_AUX_RESET low.
+	 */
+	static const struct soc_amd_gpio v3_wifi_table[] = {
+		/* WIFI_AUX_RESET */
+		PAD_GPO(GPIO_29, HIGH),
+		/* EN_PWR_WIFI */
+		PAD_GPO(GPIO_42, HIGH),
+	};
+	program_gpios(v3_wifi_table, ARRAY_SIZE(v3_wifi_table));
+
+	mdelay(50);
+	gpio_set(GPIO_29, 0);
+}
+
+static void wifi_power_reset_configure_pre_v3(void)
+{
+	/*
+	 * Configure WiFi GPIOs such that:
+	 * - WIFI_AUX_RESET_L is configured first to assert PERST# to WiFi device.
+	 * - Disable power to WiFi since GPIO_29 goes high on PWRGOOD but has a glitch on RESET#
+	 *   deassertion causing WiFi to enter a bad state.
+	 * - Wait 10ms for WiFi power to go low.
+	 * - Enable power to WiFi using EN_PWR_WIFI.
+	 * - Wait for 50ms after power to WiFi is enabled.
+	 * - Deassert WIFI_AUX_RESET_L.
+	 */
+	static const struct soc_amd_gpio pre_v3_wifi_table[] = {
+		/* WIFI_AUX_RESET_L */
+		PAD_GPO(GPIO_42, LOW),
+		/* EN_PWR_WIFI */
+		PAD_GPO(GPIO_29, LOW),
+	};
+	program_gpios(pre_v3_wifi_table, ARRAY_SIZE(pre_v3_wifi_table));
+
+	mdelay(10);
+	gpio_set(GPIO_29, 1);
+	mdelay(50);
+	gpio_set(GPIO_42, 1);
+}
+
+__weak void variant_pcie_power_reset_configure(void)
+{
+	uint32_t board_version;
+
+	if (!google_chromeec_cbi_get_board_version(&board_version) &&
+	    (board_version >= CONFIG_VARIANT_MIN_BOARD_ID_V3_SCHEMATICS))
+		wifi_power_reset_configure_v3();
+	else
+		wifi_power_reset_configure_pre_v3();
 }

@@ -28,7 +28,7 @@
 #define DPTF_TSR1_ACTIVE_AC3   42
 #define DPTF_TSR1_ACTIVE_AC4   39
 
-#define DPTF_TSR2_SENSOR_ID    1
+#define DPTF_TSR2_SENSOR_ID    2
 #define DPTF_TSR2_SENSOR_NAME  "Thermal Sensor 3"
 #define DPTF_TSR2_PASSIVE      65
 #define DPTF_TSR2_CRITICAL     75
@@ -37,6 +37,16 @@
 #define DPTF_TSR2_ACTIVE_AC2   45
 #define DPTF_TSR2_ACTIVE_AC3   42
 #define DPTF_TSR2_ACTIVE_AC4   39
+
+#define DPTF_TSR3_SENSOR_ID    3
+#define DPTF_TSR3_SENSOR_NAME  "Thermal Sensor 4"
+#define DPTF_TSR3_PASSIVE      65
+#define DPTF_TSR3_CRITICAL     75
+#define DPTF_TSR3_ACTIVE_AC0   50
+#define DPTF_TSR3_ACTIVE_AC1   47
+#define DPTF_TSR3_ACTIVE_AC2   45
+#define DPTF_TSR3_ACTIVE_AC3   42
+#define DPTF_TSR3_ACTIVE_AC4   39
 
 #define DPTF_ENABLE_CHARGER
 #define DPTF_ENABLE_FAN_CONTROL
@@ -91,6 +101,10 @@ Name (DART, Package () {
        Package () {
                \_SB.DPTF.TFN1, \_SB.DPTF.TSR2, 100, 90, 69, 56, 46, 36, 0, 0,
                        0, 0, 0
+       },
+       Package () {
+               \_SB.DPTF.TFN1, \_SB.DPTF.TSR3, 100, 90, 69, 56, 46, 36, 0, 0,
+                       0, 0, 0
        }
 })
 
@@ -99,14 +113,17 @@ Name (DTRT, Package () {
        /* CPU Throttle Effect on CPU */
        Package () { \_SB.PCI0.TCPU, \_SB.PCI0.TCPU, 100, 50, 0, 0, 0, 0 },
 
-       /* CPU Throttle Effect on TSR0 sensor */
-       Package () { \_SB.PCI0.TCPU, \_SB.DPTF.TSR0, 100, 60, 0, 0, 0, 0 },
+       /* CPU Throttle Effect on TSR1 sensor */
+       Package () { \_SB.PCI0.TCPU, \_SB.DPTF.TSR1, 100, 60, 0, 0, 0, 0 },
 
-       /* Charger Throttle Effect on Charger (TSR1) */
-       Package () { \_SB.DPTF.TCHG, \_SB.DPTF.TSR1, 100, 60, 0, 0, 0, 0 },
+       /* Charger Throttle Effect on Charger (TSR0) */
+       Package () { \_SB.DPTF.TCHG, \_SB.DPTF.TSR0, 100, 60, 0, 0, 0, 0 },
 
        /* CPU Throttle Effect on TSR2 sensor */
        Package () { \_SB.PCI0.TCPU, \_SB.DPTF.TSR2, 100, 60, 0, 0, 0, 0 },
+
+       /* CPU Throttle Effect on TSR3 sensor */
+       Package () { \_SB.PCI0.TCPU, \_SB.DPTF.TSR3, 100, 60, 0, 0, 0, 0 },
 })
 
 Name (MPPC, Package ()

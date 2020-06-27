@@ -162,7 +162,7 @@ config HAVE_CMOS_DEFAULT
 
 config CMOS_DEFAULT_FILE
 	string
-	default "src/mainboard/$(MAINBOARDDIR)/cmos.default"
+	default "src/mainboard/\$(MAINBOARDDIR)/cmos.default"
 	depends on HAVE_CMOS_DEFAULT
 
 config IOAPIC_INTERRUPTS_ON_FSB
@@ -315,5 +315,9 @@ config MAX_ACPI_TABLE_SIZE_KB
 	default 144
 	help
 	  Set the maximum size of all ACPI tables in KiB.
+
+config MEMLAYOUT_LD_FILE
+	string
+	default "src/arch/x86/memlayout.ld"
 
 endif

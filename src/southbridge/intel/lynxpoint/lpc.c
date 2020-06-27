@@ -473,11 +473,8 @@ static void enable_lp_clock_gating(struct device *dev)
 
 static void pch_set_acpi_mode(void)
 {
-	if (CONFIG(HAVE_SMI_HANDLER) && !acpi_is_wakeup_s3()) {
-		printk(BIOS_DEBUG, "Disabling ACPI via APMC:\n");
-		outb(APM_CNT_ACPI_DISABLE, APM_CNT);
-		printk(BIOS_DEBUG, "done.\n");
-	}
+	if (!acpi_is_wakeup_s3())
+		apm_control(APM_CNT_ACPI_DISABLE);
 }
 
 static void pch_disable_smm_only_flashing(struct device *dev)
@@ -724,7 +721,7 @@ static void southbridge_inject_dsdt(const struct device *dev)
 		gnvs->cbmc = (u32)cbmem_find(CBMEM_ID_CONSOLE);
 
 		/* And tell SMI about it */
-		smm_setup_structures(gnvs, NULL, NULL);
+		apm_control(APM_CNT_GNVS_UPDATE);
 
 		/* Add it to DSDT.  */
 		acpigen_write_scope("\\");
@@ -740,11 +737,12 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	u16 pmbase = get_pmbase();
 
 	fadt->sci_int = 0x9;
-	fadt->smi_cmd = APM_CNT;
-	fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-	fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	fadt->s4bios_req = 0x0;
-	fadt->pstate_cnt = 0;
+
+	if (permanent_smi_handler()) {
+		fadt->smi_cmd = APM_CNT;
+		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
+		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
+	}
 
 	fadt->pm1a_evt_blk = pmbase + PM1_STS;
 	fadt->pm1b_evt_blk = 0x0;
@@ -775,7 +773,6 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->gpe1_blk_len = 0;
 	fadt->gpe1_base = 0;
 
-	fadt->cst_cnt = 0;
 	fadt->p_lvl2_lat = 1;
 	fadt->p_lvl3_lat = 87;
 	fadt->flush_size = 0;
@@ -859,7 +856,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_gpe0_blk.bit_width = fadt->gpe0_blk_len * 8;
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
 	fadt->x_gpe0_blk.addrh = 0x0;
 
@@ -923,12 +920,8 @@ static void lpc_final(struct device *dev)
 	spi_finalize_ops();
 
 	if (acpi_is_wakeup_s3() || CONFIG(INTEL_CHIPSET_LOCKDOWN))
-		outb(APM_CNT_FINALIZE, APM_CNT);
+		apm_control(APM_CNT_FINALIZE);
 }
-
-static struct pci_operations pci_ops = {
-	.set_subsystem = pci_dev_set_subsystem,
-};
 
 static struct device_operations device_ops = {
 	.read_resources		= pch_lpc_read_resources,
@@ -942,7 +935,7 @@ static struct device_operations device_ops = {
 	.final			= lpc_final,
 	.enable			= pch_lpc_enable,
 	.scan_bus		= scan_static_bus,
-	.ops_pci		= &pci_ops,
+	.ops_pci		= &pci_dev_ops_pci,
 };
 
 

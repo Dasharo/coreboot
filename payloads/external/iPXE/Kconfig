@@ -91,7 +91,7 @@ config PXE_CUSTOM_BUILD_ID
 	  This option allows user to customize build_id for reproducible builds.
 	  It is 32-bit hexadecimal number without "0x" prefix.
 
-config PXE_NO_PROMT
+config PXE_NO_PROMPT
 	bool "Do not show prompt to boot from PXE"
 	default n
 	depends on BUILD_IPXE

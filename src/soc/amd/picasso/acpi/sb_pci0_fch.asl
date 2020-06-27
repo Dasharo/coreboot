@@ -101,6 +101,11 @@ Method(_CRS, 0) {
 	Subtract(Local0, TOM1, Local0)
 	Store(Local0, MM1L)
 
+	CreateWordField(CRES, ^PSB0._MAX, BMAX)
+	CreateWordField(CRES, ^PSB0._LEN, BLEN)
+	Store(CONFIG_MMCONF_BUS_NUMBER - 1, BMAX)
+	Store(CONFIG_MMCONF_BUS_NUMBER, BLEN)
+
 	Return(CRES) /* note to change the Name buffer */
 } /* end of Method(_SB.PCI0._CRS) */
 
@@ -128,17 +133,6 @@ Method(_INI, 0, Serialized) {
 
 	/* Determine the OS we're running on */
 	OSFL()
-
-	/* Send ALIB Function 1 the AC/DC state */
-	Name(F1BF, Buffer(0x03){})
-	CreateWordField(F1BF, 0, F1SZ)
-	CreateByteField(F1BF, 2, F1DA)
-
-	Store(3, F1SZ)
-	Store(\PWRS, F1DA)
-
-	\_SB.ALIB(1, F1BF)
-
 } /* End Method(_SB._INI) */
 
 Method(OSFL, 0){

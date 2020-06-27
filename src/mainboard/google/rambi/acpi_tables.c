@@ -3,7 +3,6 @@
 #include <types.h>
 #include <acpi/acpi.h>
 #include <arch/ioapic.h>
-#include <arch/smp/mpspec.h>
 #include <device/device.h>
 #include <soc/acpi.h>
 #include <soc/nvs.h>
@@ -40,4 +39,9 @@ unsigned long acpi_fill_madt(unsigned long current)
 	current = acpi_madt_irq_overrides(current);
 
 	return current;
+}
+
+void mainboard_fill_fadt(acpi_fadt_t *fadt)
+{
+	fadt->preferred_pm_profile = PM_MOBILE;
 }
