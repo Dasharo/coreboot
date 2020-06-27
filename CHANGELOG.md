@@ -7,6 +7,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.31] - 2020-06-27
+### Fixed
+- [watchdog not causing reset after cold boot](https://github.com/pcengines/coreboot/issues/380)
+
 ## [v4.0.30] - 2020-02-25
 ### Fixed
 - microSD card boot order on apu5
@@ -266,7 +270,8 @@ built externally
 - forced to use SD in 2.0 mode
 - git repository in `Makefile`
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.30...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.31...coreboot-4.0.x
+[v4.0.31]: https://github.com/pcengines/coreboot/compare/v4.0.30...v4.0.31
 [v4.0.30]: https://github.com/pcengines/coreboot/compare/v4.0.29...v4.0.30
 [v4.0.29]: https://github.com/pcengines/coreboot/compare/v4.0.28...v4.0.29
 [v4.0.28]: https://github.com/pcengines/coreboot/compare/v4.0.27...v4.0.28
