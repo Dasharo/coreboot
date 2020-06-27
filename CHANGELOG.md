@@ -19,6 +19,9 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 ### Changed
 - enabled TPM2 for apu3d and apu4d supporting a TPM module connection
 
+### Added
+- DRTM ACPI table (holds information about TPM log area for TrenchBoot DRTM)
+
 ## [v4.12.0.1] - 2020-05-29
 ### Changed
 - rebased with official coreboot repository commit 8952d1c
