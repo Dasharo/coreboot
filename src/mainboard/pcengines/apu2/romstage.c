@@ -257,27 +257,7 @@ void cache_as_ram_main(unsigned long bist, unsigned long cpu_init_detectedx)
 //			data |= 3 << (3 * 2);	// CLK3
 //
 //			*((u32 *)(ACPI_MMIO_BASE + MISC_BASE+FCH_MISC_REG24)) = data;
-
-		volatile u32 *ptr = (u32 *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
-		u16 watchdog_timeout = get_watchdog_timeout();
-
-		if (watchdog_timeout == 0) {
-			//disable watchdog
-			printk(BIOS_WARNING, "Watchdog is disabled\n");
-			*ptr |= (1 << 3);
-		} else {
-			// enable
-			*ptr &= ~(1 << 3);
-			*ptr |= (1 << 0);
-			// configure timeout
-			*(ptr + 1) = (u16) watchdog_timeout;
-			// trigger
-			*ptr |= (1 << 7);
-
-			printk(BIOS_WARNING, "Watchdog is enabled, state = 0x%x, time = %d\n", *ptr, *(ptr + 1));
-		}
 	}
-
 	/* Halt if there was a built in self test failure */
 	post_code(0x34);
 	report_bist_failure(bist);

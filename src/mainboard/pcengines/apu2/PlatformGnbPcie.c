@@ -19,6 +19,10 @@
 
 #include <northbridge/amd/pi/agesawrapper.h>
 #include "bios_knobs.h"
+#include <southbridge/amd/pi/hudson/hudson.h>
+#include <console/console.h>
+#include <console/loglevel.h>
+#include <smp/node.h>
 
 #define FILECODE PROC_GNB_PCIE_FAMILY_0X15_F15PCIECOMPLEXCONFIG_FILECODE
 
@@ -127,5 +131,26 @@ OemCustomizeInitEarly (
 	if(check_boost()) {
 		InitEarly->PlatformConfig.CStateMode = CStateModeC6;
 		InitEarly->PlatformConfig.CpbMode = CpbModeAuto;
+	}
+
+	/* Enable or disable watchdog depending on the configuration*/
+	if (boot_cpu()){
+		volatile u32 *ptr = (u32 *)(ACPI_MMIO_BASE + WATCHDOG_BASE);
+		u16 watchdog_timeout = get_watchdog_timeout();
+
+		if (watchdog_timeout == 0) {
+			//disable watchdog
+			printk(BIOS_WARNING, "Watchdog is disabled\n");
+			*ptr |= (1 << 3);
+		} else {
+			// enable
+			*ptr &= ~(1 << 3);
+			*ptr |= (1 << 0);
+			// configure timeout
+			*(ptr + 1) = (u16) watchdog_timeout;
+			// trigger
+			*ptr |= (1 << 7);
+			printk(BIOS_WARNING, "Watchdog is enabled, state = 0x%x, time = %d\n", *ptr, *(ptr + 1));
+		}
 	}
 }
