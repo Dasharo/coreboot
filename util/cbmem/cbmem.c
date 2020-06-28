@@ -268,6 +268,7 @@ static int find_cbmem_entry(uint32_t id, uint64_t *addr, size_t *size)
 static struct lb_cbmem_ref timestamps;
 static struct lb_cbmem_ref console;
 static struct lb_cbmem_ref tpm_cb_log;
+static struct lb_cbmem_ref drtm_log;
 static struct lb_memory_range cbmem;
 
 /* This is a work-around for a nasty problem introduced by initially having
@@ -342,10 +343,12 @@ static int parse_cbtable_entries(const struct mapping *table_mapping)
 			    parse_cbmem_ref((struct lb_cbmem_ref *)lbr_p);
 			continue;
 		}
-		case LB_TAG_TSC_INFO:
-			debug("    Found TSC info.\n");
-			tsc_freq_khz = ((struct lb_tsc_info *)lbr_p)->freq_khz;
+		case LB_TAG_DRTM_LOG: {
+			debug("    Found drtm log table.\n");
+			drtm_log =
+			    parse_cbmem_ref((struct lb_cbmem_ref *)lbr_p);
 			continue;
+		}
 		case LB_TAG_FORWARD: {
 			int ret;
 			/*
@@ -884,6 +887,213 @@ static void dump_tpm_cb_log(void)
 	unmap_memory(&log_mapping);
 }
 
+static void print_hex(uint8_t *hex, size_t len)
+{
+	unsigned int i;
+	for (i = 0; i < len; i++)
+		printf("%02x", *(hex + i));
+	printf("\n");
+}
+
+static void parse_drtm_tcpa_log(const struct tcpa_spec_entry *drtm_tcpa_log)
+{
+	uintptr_t current = (uintptr_t)drtm_tcpa_log + sizeof(struct tcpa_spec_entry);
+	static uint8_t zero_block[sizeof(struct tcpa_spec_entry)];
+	struct tcpa_log_entry *log_entry;
+	uint32_t counter = 0;
+	uint32_t len;
+
+	printf("DRTM TCPA log:\n");
+	printf("\tSpecification: %d.%d%d", drtm_tcpa_log->spec_version_major,
+					   drtm_tcpa_log->spec_version_minor,
+					   drtm_tcpa_log->spec_errata);
+	printf("\tPlatform class: %s\n", drtm_tcpa_log->platform_class == 0 ? "PC Client" :
+					 drtm_tcpa_log->platform_class == 1 ? "Server" :
+									 "Unknown");
+	len = drtm_tcpa_log->vendor_info_size;
+	if (len != 0) {
+		current += len;
+		printf("\tVendor information: %.*s\n", len, drtm_tcpa_log->vendor_info);
+	} else {
+		printf("\tNo vendor information provided\n");
+	}
+
+	while (memcmp((const void *)current, (const void *) zero_block,
+	       sizeof(struct tcpa_spec_entry))) {
+		log_entry = (struct tcpa_log_entry *)current;
+		printf("DRTM TCPA log entry %u:\n", ++counter);
+		printf("\tPCR: %d\n", log_entry->pcr);
+		if (log_entry->event_type >= ARRAY_SIZE(tpm_event_types))
+			printf("\tEvent type: Unknown (0x%x)\n", log_entry->event_type);
+		else
+			printf("\tEvent type: %s\n", tpm_event_types[log_entry->event_type]);
+		printf("\tDigest: ");
+		print_hex(log_entry->digest, SHA1_DIGEST_SIZE);
+		current += sizeof(struct tcpa_log_entry);
+		len = log_entry->event_data_size;
+		if (len != 0) {
+			current += len;
+			printf("\tEvent data: %.*s\n", len, log_entry->event);
+		} else {
+			printf("\tEvent data not provided\n");
+		}
+	}
+}
+
+static uint32_t print_tpm2_digests(tpm_digest_values *digest_values)
+{
+	unsigned int i;
+	uintptr_t current = (uintptr_t)digest_values->digests;
+	uint32_t consumed = sizeof(digest_values->count);
+	tpm_hash_algorithm *hash;
+
+	for (i = 0; i < digest_values->count; i++) {
+		hash = (tpm_hash_algorithm *)current;
+		switch (hash->hashAlg) {
+		case TPM2_ALG_SHA1:
+			printf("\t\t SHA1: ");
+			print_hex(hash->digest.sha1, SHA1_DIGEST_SIZE);
+			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sha1);
+			consumed += sizeof(hash->hashAlg) + sizeof(hash->digest.sha1);
+			break;
+		case TPM2_ALG_SHA256:
+			printf("\t\t SHA256: ");
+			print_hex(hash->digest.sha256, SHA256_DIGEST_SIZE);
+			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sha256);
+			consumed += sizeof(hash->hashAlg) + sizeof(hash->digest.sha256);
+			break;
+		case TPM2_ALG_SHA384:
+			printf("\t\t SHA384: ");
+			print_hex(hash->digest.sha384, SHA384_DIGEST_SIZE);
+			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sha384);
+			consumed += sizeof(hash->hashAlg) + sizeof(hash->digest.sha384);
+			break;
+		case TPM2_ALG_SHA512:
+			printf("\t\t SHA512: ");
+			print_hex(hash->digest.sha512, SHA512_DIGEST_SIZE);
+			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sha512);
+			consumed += sizeof(hash->hashAlg) + sizeof(hash->digest.sha512);
+			break;
+		case TPM2_ALG_SM3_256:
+			printf("\t\t SM3: ");
+			print_hex(hash->digest.sm3_256, SM3_256_DIGEST_SIZE);
+			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sm3_256);
+			consumed += sizeof(hash->hashAlg) + sizeof(hash->digest.sm3_256);
+			break;
+		default:
+			die("Unknown hash algorithm\n");
+		}
+	}
+
+	return consumed;
+}
+
+static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
+{
+	uintptr_t current = (uintptr_t)tpm2_log + sizeof(tcg_efi_spec_id_event);
+	static uint8_t zero_block[10]; /* Only pcr index, event type and digest count */
+	tcg_pcr_event2_header *log_entry;
+	uint32_t counter = 0;
+	uint32_t len;
+
+	printf("DRTM TPM2 log:\n");
+	printf("\tSpecification: %d.%d%d\n", tpm2_log->spec_version_major,
+					   tpm2_log->spec_version_minor,
+					   tpm2_log->spec_errata);
+	printf("\tPlatform class: %s\n", tpm2_log->platform_class == 0 ? "PC Client" :
+					 tpm2_log->platform_class == 1 ? "Server" :
+									 "Unknown");
+	len = tpm2_log->vendor_info_size;
+	if (len != 0) {
+		current += len;
+		printf("\tVendor information: %.*s\n", len, tpm2_log->vendor_info);
+	} else {
+		printf("\tNo vendor information provided\n");
+	}
+
+	while (memcmp((const void *)current, (const void *)zero_block, sizeof(zero_block))) {
+		log_entry = (tcg_pcr_event2_header *)current;
+		printf("DRTM TPM2 log entry %u:\n", ++counter);
+		printf("\tPCR: %d\n", log_entry->pcr_index);
+		if (log_entry->event_type >= ARRAY_SIZE(tpm_event_types))
+			printf("\tEvent type: Unknown (0x%x)\n", log_entry->event_type);
+		else
+			printf("\tEvent type: %s\n", tpm_event_types[log_entry->event_type]);
+
+		current = (uintptr_t)&log_entry->digest;
+		if (log_entry->digest.count > 0) {
+			printf("\tDigests:\n");
+			current += print_tpm2_digests(&log_entry->digest);
+		} else {
+			current += sizeof(log_entry->digest.count);
+			printf("\tNo digests in this log entry\n");
+		}
+		/* Now the vend size and event is left to be parsed */
+		len = *(uint32_t *)current;
+		current += sizeof(uint32_t);
+		if (len != 0) {
+			printf("\tEvent data: %.*s\n", len, (uint8_t *)current);
+			current += len;
+		} else {
+			printf("\tEvent data not provided\n");
+		}
+	}
+}
+
+/* dump the tcpa log table */
+static void dump_drtm_log(void)
+{
+	const struct tcpa_spec_entry *tspec_entry;
+	const tcg_efi_spec_id_event *tcg_spec_entry;
+	size_t size;
+	struct mapping drtm_mapping;
+
+	if (drtm_log.tag != LB_TAG_DRTM_LOG) {
+		fprintf(stderr, "No DRTM log found in coreboot table.\n");
+		return;
+	}
+
+	size = drtm_log.size;
+	tspec_entry = map_memory(&drtm_mapping, drtm_log.cbmem_addr, size);
+	if (!tspec_entry)
+		die("Unable to map tcpa log header\n");
+
+	if (!strcmp((const char *)tspec_entry->signature, TCPA_SPEC_ID_EVENT_SIGNATURE)) {
+		if (tspec_entry->spec_version_major == 1 &&
+		    tspec_entry->spec_version_minor == 2 &&
+		    tspec_entry->spec_errata >= 1 &&
+		    tspec_entry->entry.event_type == EV_NO_ACTION) {
+			parse_drtm_tcpa_log(tspec_entry);
+			unmap_memory(&drtm_mapping);
+			return;
+		}
+		else {
+			fprintf(stderr, "Unknown DRTM TCPA log specification\n");
+			unmap_memory(&drtm_mapping);
+			return;
+		}
+	} else {
+		unmap_memory(&drtm_mapping);
+		tcg_spec_entry = map_memory(&drtm_mapping, drtm_log.cbmem_addr, size);
+
+		if (!strcmp((const char *)tcg_spec_entry->signature,
+			    TCG_EFI_SPEC_ID_EVENT_SIGNATURE)) {
+			if (tcg_spec_entry->spec_version_major == 2 &&
+			    tcg_spec_entry->spec_version_minor == 0 &&
+			    tcg_spec_entry->event_type == EV_NO_ACTION) {
+				parse_drtm_tpm2_log(tcg_spec_entry);
+				unmap_memory(&drtm_mapping);
+				return;
+			}
+			else {
+				fprintf(stderr, "Unknown DRTM TPM2 log specification.\n");
+				unmap_memory(&drtm_mapping);
+				return;
+			}
+		}
+	}
+}
+
 struct cbmem_console {
 	u32 size;
 	u32 cursor;
@@ -1325,8 +1535,10 @@ static void print_version(void)
 
 static void print_usage(const char *name, int exit_code)
 {
-	printf("usage: %s [-cCltTLxVvh?]\n", name);
+	printf("usage: %s [-A:s:c12B:CltTSa:LdxVvh?r:]\n", name);
 	printf("\n"
+	     "   -A | --addr address:              set base address\n"
+	     "   -s | --size size:                 set table size. Change is applied only if address is also specified\n"
 	     "   -c | --console:                   print cbmem console\n"
 	     "   -1 | --oneboot:                   print cbmem console for last boot only\n"
 	     "   -2 | --2ndtolast:                 print cbmem console for the boot that came before the last one only\n"
@@ -1340,6 +1552,7 @@ static void print_usage(const char *name, int exit_code)
 	     "   -S | --stacked-timestamps:        print stacked timestamps (e.g. for flame graph tools)\n"
 	     "   -a | --add-timestamp ID:          append timestamp with ID\n"
 	     "   -L | --tcpa-log                   print TPM log\n"
+	     "   -d | --drtm-log                   print DRTM TPM log\n"
 	     "   -V | --verbose:                   verbose (debugging) output\n"
 	     "   -v | --version:                   print the version\n"
 	     "   -h | --help:                      print this help\n"
@@ -1464,6 +1677,9 @@ static char *dt_find_compat(const char *parent, const char *compat,
 
 int main(int argc, char** argv)
 {
+	unsigned long long possible_base_addresses[] = { 0, 0xf0000 };
+	int address_specified = 0;
+	size_t table_size = 0;
 	int print_defaults = 1;
 	int print_console = 0;
 	int print_coverage = 0;
@@ -1471,6 +1687,7 @@ int main(int argc, char** argv)
 	int print_hexdump = 0;
 	int print_rawdump = 0;
 	int print_tcpa_log = 0;
+	int print_drtm_log = 0;
 	enum timestamps_print_type timestamp_type = TIMESTAMPS_PRINT_NONE;
 	enum console_print_type console_type = CONSOLE_PRINT_FULL;
 	unsigned int rawdump_id = 0;
@@ -1480,6 +1697,8 @@ int main(int argc, char** argv)
 
 	int opt, option_index = 0;
 	static struct option long_options[] = {
+		{"addr", 0, 0, 'A'},
+		{"size", 0, 0, 's'},
 		{"console", 0, 0, 'c'},
 		{"oneboot", 0, 0, '1'},
 		{"2ndtolast", 0, 0, '2'},
@@ -1487,6 +1706,7 @@ int main(int argc, char** argv)
 		{"coverage", 0, 0, 'C'},
 		{"list", 0, 0, 'l'},
 		{"tcpa-log", 0, 0, 'L'},
+		{"drtm-log", 0, 0, 'd'},
 		{"timestamps", 0, 0, 't'},
 		{"parseable-timestamps", 0, 0, 'T'},
 		{"stacked-timestamps", 0, 0, 'S'},
@@ -1498,9 +1718,19 @@ int main(int argc, char** argv)
 		{"help", 0, 0, 'h'},
 		{0, 0, 0, 0}
 	};
-	while ((opt = getopt_long(argc, argv, "c12B:CltTSa:LxVvh?r:",
+	while ((opt = getopt_long(argc, argv, "A:s:c12B:CltTSa:LdxVvh?r:",
 				  long_options, &option_index)) != EOF) {
 		switch (opt) {
+		case 'A':
+			if (optarg) {
+				possible_base_addresses[0] = strtoull(optarg, NULL, 0);
+				address_specified = 1;
+			}
+			break;
+		case 's':
+			if (optarg)
+				table_size = strtoul(optarg, NULL, 0);
+			break;
 		case 'c':
 			print_console = 1;
 			print_defaults = 0;
@@ -1528,6 +1758,10 @@ int main(int argc, char** argv)
 			break;
 		case 'L':
 			print_tcpa_log = 1;
+			print_defaults = 0;
+			break;
+		case 'd':
+			print_drtm_log = 1;
 			print_defaults = 0;
 			break;
 		case 'x':
@@ -1640,12 +1874,15 @@ int main(int argc, char** argv)
 
 	parse_cbtable(baseaddr, cb_table_size);
 #else
-	unsigned long long possible_base_addresses[] = { 0, 0xf0000 };
 
 	/* Find and parse coreboot table */
-	for (size_t j = 0; j < ARRAY_SIZE(possible_base_addresses); j++) {
-		if (!parse_cbtable(possible_base_addresses[j], 0))
-			break;
+	if (address_specified) {
+		parse_cbtable(possible_base_addresses[0], table_size);
+	} else {
+		for (size_t j = 0; j < ARRAY_SIZE(possible_base_addresses); j++) {
+			if (!parse_cbtable(possible_base_addresses[j], 0))
+				break;
+		}
 	}
 #endif
 
@@ -1678,6 +1915,9 @@ int main(int argc, char** argv)
 
 	if (print_tcpa_log)
 		dump_tpm_cb_log();
+
+	if (print_drtm_log)
+		dump_drtm_log();
 
 	unmap_memory(&lbtable_mapping);
 
