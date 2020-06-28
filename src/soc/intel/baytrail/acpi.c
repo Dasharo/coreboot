@@ -73,14 +73,16 @@ void acpi_init_gnvs(global_nvs_t *gnvs)
 	gnvs->cbmc = (u32)cbmem_find(CBMEM_ID_CONSOLE);
 #endif
 
-#if CONFIG(CHROMEOS)
-	/* Initialize Verified Boot data */
-	chromeos_init_chromeos_acpi(&(gnvs->chromeos));
-#if CONFIG(EC_GOOGLE_CHROMEEC)
-	gnvs->chromeos.vbt2 = google_ec_running_ro() ?
-		ACTIVE_ECFW_RO : ACTIVE_ECFW_RW;
-#endif
-#endif
+	if (CONFIG(CHROMEOS)) {
+		/* Initialize Verified Boot data */
+		chromeos_init_chromeos_acpi(&(gnvs->chromeos));
+		if (CONFIG(EC_GOOGLE_CHROMEEC)) {
+			gnvs->chromeos.vbt2 = google_ec_running_ro() ?
+				ACTIVE_ECFW_RO : ACTIVE_ECFW_RW;
+		} else {
+			gnvs->chromeos.vbt2 = ACTIVE_ECFW_RO;
+		}
+	}
 }
 
 static int acpi_sci_irq(void)
@@ -123,16 +125,17 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 	return current;
 }
 
-void acpi_fill_in_fadt(acpi_fadt_t *fadt)
+void acpi_fill_fadt(acpi_fadt_t *fadt)
 {
 	const uint16_t pmbase = ACPI_BASE_ADDRESS;
 
 	fadt->sci_int = acpi_sci_irq();
-	fadt->smi_cmd = APM_CNT;
-	fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-	fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	fadt->s4bios_req = 0x0;
-	fadt->pstate_cnt = 0;
+
+	if (permanent_smi_handler()) {
+		fadt->smi_cmd = APM_CNT;
+		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
+		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
+	}
 
 	fadt->pm1a_evt_blk = pmbase + PM1_STS;
 	fadt->pm1b_evt_blk = 0x0;
@@ -150,7 +153,6 @@ void acpi_fill_in_fadt(acpi_fadt_t *fadt)
 	fadt->gpe0_blk_len = 2 * (GPE0_EN - GPE0_STS);
 	fadt->gpe1_blk_len = 0;
 	fadt->gpe1_base = 0;
-	fadt->cst_cnt = 0;
 	fadt->p_lvl2_lat = 1;
 	fadt->p_lvl3_lat = 87;
 	fadt->flush_size = 1024;

@@ -120,6 +120,7 @@ static void pirq_setup(void)
  * once configuration file format for SPI flash storage is complete.
  */
 #define SIO_PORT 0x2e
+#define PCI_BAR_2_REG 0x18
 
 static void config_gpio_mux(void)
 {
@@ -330,9 +331,18 @@ const char *smbios_mainboard_serial_number(void)
 	if (!dev)
 		return serial;
 
+	/* dev->bus->secondary has 0x100 value, while it should has 0x001.
+	 * This workaround simply corrects it to be valid.
+	 */
+	dev->bus->secondary >>= 8;
+
+	/* Read PCI Configuration Space Bar 2 (0x18 offset).
+	 * Bits 31-4 contain memory address where internal NIC registers are mapped.
+	 */
+	bar18 = pci_read_config32(dev, PCI_BAR_2_REG);
+	bar18 &= 0xFFFFFFF0;
+
 	/* Read in the last 3 bytes of NIC's MAC address. */
-	bar18 = pci_read_config32(dev, 0x18);
-	bar18 &= 0xFFFFFC00;
 	for (i = 3; i < 6; i++) {
 		mac_addr <<= 8;
 		mac_addr |= read8((u8 *)bar18 + i);
@@ -393,8 +403,6 @@ const char *smbios_system_sku(void)
 
 static void mainboard_final(void *chip_info)
 {
-	u32 mmio_base;
-
 	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Final.\n");
 
 	/*
@@ -402,10 +410,9 @@ static void mainboard_final(void *chip_info)
 	 * LED2/D6/GPIO_190 should be 1
 	 * LED3/D5/GPIO_191 should be 1
 	 */
-	mmio_base = find_gpio_base();
-	configure_gpio(mmio_base, GPIO_189, GPIO_FTN_1, GPIO_OUTPUT | GPIO_DATA_LOW);
-	configure_gpio(mmio_base, GPIO_190, GPIO_FTN_1, GPIO_OUTPUT | GPIO_DATA_HIGH);
-	configure_gpio(mmio_base, GPIO_191, GPIO_FTN_1, GPIO_OUTPUT | GPIO_DATA_HIGH);
+	configure_gpio(GPIO_189, GPIO_FTN_1, GPIO_OUTPUT | GPIO_DATA_LOW);
+	configure_gpio(GPIO_190, GPIO_FTN_1, GPIO_OUTPUT | GPIO_DATA_HIGH);
+	configure_gpio(GPIO_191, GPIO_FTN_1, GPIO_OUTPUT | GPIO_DATA_HIGH);
 	usb_oc_setup();
 }
 

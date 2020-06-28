@@ -11,7 +11,6 @@
 #include <console/console.h>
 #include <cpu/cpu.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <delay.h>
 #include <device/cardbus.h>
@@ -1643,5 +1642,10 @@ void pci_assign_irqs(struct device *dev, const unsigned char pIntAtoD[4])
 					    IRQ_LEVEL_TRIGGERED);
 #endif
 	}
+}
+
+void pci_dev_disable_bus_master(const struct device *dev)
+{
+	pci_update_config16(dev, PCI_COMMAND, ~PCI_COMMAND_MASTER, 0x0);
 }
 #endif

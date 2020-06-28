@@ -6,6 +6,7 @@
 #include <intelblocks/acpi.h>
 #include <device/pci.h>
 #include <cbmem.h>
+#include <cpu/x86/smm.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
 #include <soc/pci_devs.h>
@@ -175,10 +176,6 @@ unsigned long acpi_fill_madt(unsigned long current)
 	return acpi_madt_irq_overrides(current);
 }
 
-__attribute__ ((weak)) void motherboard_fill_fadt(acpi_fadt_t *fadt)
-{
-}
-
 void generate_t_state_entries(int core, int cores_per_package)
 {
 }
@@ -227,13 +224,6 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 {
 	uint16_t pmbase = ACPI_BASE_ADDRESS;
 
-	/* System Management */
-	if (!CONFIG(HAVE_SMI_HANDLER)) {
-		fadt->smi_cmd = 0x00;
-		fadt->acpi_enable = 0x00;
-		fadt->acpi_disable = 0x00;
-	}
-
 	/* Power Control */
 	fadt->pm2_cnt_blk = pmbase + PM2_CNT;
 	fadt->pm_tmr_blk = pmbase + PM1_TMR;
@@ -246,7 +236,6 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->gpe0_blk_len = 2 * GPE0_REG_MAX * sizeof(uint32_t);
 	fadt->gpe1_blk_len = 0;
 	fadt->gpe1_base = 0;
-	fadt->cst_cnt = 0;
 	fadt->p_lvl2_lat = ACPI_FADT_C2_NOT_SUPPORTED;
 	fadt->p_lvl3_lat = ACPI_FADT_C3_NOT_SUPPORTED;
 	fadt->flush_size = 0;   /* set to 0 if WBINVD is 1 in flags */
@@ -324,7 +313,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_gpe0_blk.bit_width = 64; /* EventStatus + EventEnable */
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
 	fadt->x_gpe0_blk.addrh = 0x00;
 
@@ -334,8 +323,6 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe1_blk.access_size = 0;
 	fadt->x_gpe1_blk.addrl = fadt->gpe1_blk;
 	fadt->x_gpe1_blk.addrh = 0x00;
-
-	motherboard_fill_fadt(fadt);
 }
 
 void acpi_fill_fadt(acpi_fadt_t *fadt)
@@ -345,17 +332,13 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->header.revision = get_acpi_table_revision(FADT);
 
 	fadt->sci_int = acpi_sci_irq();
-	/*
-	TODO: enabled SMM mode switch when SMM handlers are set up.
-	fadt->smi_cmd = APM_CNT;
-	fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-	fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	*/
-	fadt->smi_cmd = 0x00;
-	fadt->acpi_enable = 0x00;
-	fadt->acpi_disable = 0x00;
-	fadt->s4bios_req = 0x0;
-	fadt->pstate_cnt = 0;
+
+	/* TODO: enabled SMM mode switch when SMM handlers are set up. */
+	if (0 && permanent_smi_handler()) {
+		fadt->smi_cmd = APM_CNT;
+		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
+		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
+	}
 
 	fadt->pm1a_evt_blk = pmbase + PM1_STS;
 	fadt->pm1b_evt_blk = 0x0;
@@ -374,7 +357,6 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->gpe0_blk_len = 2 * GPE0_REG_MAX * sizeof(uint32_t);
 	fadt->gpe1_blk_len = 0;
 	fadt->gpe1_base = 0;
-	fadt->cst_cnt = 0;
 	fadt->p_lvl2_lat = 1;
 	fadt->p_lvl3_lat = 87;
 	fadt->flush_size = 1024;
@@ -446,7 +428,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_gpe0_blk.bit_width = fadt->gpe0_blk_len * 8;
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
 	fadt->x_gpe0_blk.addrh = 0;
 
@@ -456,8 +438,6 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe1_blk.access_size = 0;
 	fadt->x_gpe1_blk.addrl = 0x0;
 	fadt->x_gpe1_blk.addrh = 0x0;
-
-	soc_fill_fadt(fadt);
 }
 
 static acpi_tstate_t xeon_sp_tss_table[] = {
@@ -988,7 +968,7 @@ void southbridge_inject_dsdt(const struct device *device)
 	if (gnvs) {
 		acpi_create_gnvs(gnvs);
 		/* TODO: tell SMI about it, if HAVE_SMI_HANDLER */
-		// smm_setup_structures(gnvs, NULL, NULL);
+		// apm_control(APM_CNT_GNVS_UPDATE);
 
 		/* Add it to DSDT.  */
 		printk(BIOS_SPEW, "%s injecting NVSA with 0x%x\n", __FILE__, (uint32_t)gnvs);

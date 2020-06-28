@@ -33,7 +33,7 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 					     CONFIG_MMCONF_BASE_ADDRESS,
 					     0,
 					     0,
-					     CONFIG_MMCONF_BUS_NUMBER);
+					     CONFIG_MMCONF_BUS_NUMBER - 1);
 
 	return current;
 }
@@ -85,42 +85,16 @@ unsigned long acpi_fill_madt(unsigned long current)
  * Reference section 5.2.9 Fixed ACPI Description Table (FADT)
  * in the ACPI 3.0b specification.
  */
-void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
+void acpi_fill_fadt(acpi_fadt_t *fadt)
 {
-	acpi_header_t *header = &(fadt->header);
-
 	printk(BIOS_DEBUG, "pm_base: 0x%04x\n", PICASSO_ACPI_IO_BASE);
 
-	/* Prepare the header */
-	memset((void *)fadt, 0, sizeof(acpi_fadt_t));
-	memcpy(header->signature, "FACP", 4);
-	header->length = sizeof(acpi_fadt_t);
-	header->revision = get_acpi_table_revision(FADT);
-	memcpy(header->oem_id, OEM_ID, 6);
-	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
-	memcpy(header->asl_compiler_id, ASLC, 4);
-	header->asl_compiler_revision = asl_revision;
-
-	fadt->firmware_ctrl = (u32) facs;
-	fadt->dsdt = (u32) dsdt;
-	fadt->reserved = 0;		/* reserved, should be 0 ACPI 3.0 */
-	fadt->preferred_pm_profile = FADT_PM_PROFILE;
 	fadt->sci_int = 9;		/* IRQ 09 - ACPI SCI */
 
-	if (CONFIG(HAVE_SMI_HANDLER)) {
+	if (permanent_smi_handler()) {
 		fadt->smi_cmd = APM_CNT;
 		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
 		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-		fadt->s4bios_req = 0;	/* Not supported */
-		fadt->pstate_cnt = 0;	/* Not supported */
-		fadt->cst_cnt = 0;	/* Not supported */
-	} else {
-		fadt->smi_cmd = 0;	/* disable system management mode */
-		fadt->acpi_enable = 0;	/* unused if SMI_CMD = 0 */
-		fadt->acpi_disable = 0;	/* unused if SMI_CMD = 0 */
-		fadt->s4bios_req = 0;	/* unused if SMI_CMD = 0 */
-		fadt->pstate_cnt = 0;	/* unused if SMI_CMD = 0 */
-		fadt->cst_cnt = 0x00;	/* unused if SMI_CMD = 0 */
 	}
 
 	fadt->pm1a_evt_blk = ACPI_PM_EVT_BLK;
@@ -179,8 +153,6 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 
 	fadt->x_firmware_ctl_l = 0;	/* set to 0 if firmware_ctrl is used */
 	fadt->x_firmware_ctl_h = 0;
-	fadt->x_dsdt_l = (u32) dsdt;
-	fadt->x_dsdt_h = 0;
 
 	fadt->x_pm1a_evt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm1a_evt_blk.bit_width = 32;
@@ -234,7 +206,7 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_gpe0_blk.bit_width = 64; /* EventStatus + Event Enable */
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = ACPI_GPE0_BLK;
 	fadt->x_gpe0_blk.addrh = 0x0;
 
@@ -245,8 +217,6 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	fadt->x_gpe1_blk.access_size = 0;
 	fadt->x_gpe1_blk.addrl = 0;
 	fadt->x_gpe1_blk.addrh = 0x0;
-
-	header->checksum = acpi_checksum((void *)fadt, sizeof(acpi_fadt_t));
 }
 
 void generate_cpu_entries(const struct device *device)

@@ -31,6 +31,14 @@
  #define  SLP_TYP_S5	5
 #endif
 
+/* ACPI Device Sleep States */
+#define ACPI_DEVICE_SLEEP_D0		0
+#define ACPI_DEVICE_SLEEP_D1		1
+#define ACPI_DEVICE_SLEEP_D2		2
+#define ACPI_DEVICE_SLEEP_D3		3
+#define ACPI_DEVICE_SLEEP_D3_HOT	ACPI_DEVICE_SLEEP_D3
+#define ACPI_DEVICE_SLEEP_D3_COLD	4
+
 #define ACPI_TABLE_CREATOR	"COREBOOT"  /* Must be exactly 8 bytes long! */
 #define OEM_ID			"COREv4"    /* Must be exactly 6 bytes long! */
 
@@ -59,7 +67,7 @@ enum coreboot_acpi_ids {
 enum acpi_tables {
 	/* Tables defined by ACPI and used by coreboot */
 	BERT, DBG2, DMAR, DSDT, FACS, FADT, HEST, HPET, IVRS, MADT, MCFG,
-	RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT,
+	RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT, DRTM,
 	/* Additional proprietary tables used by coreboot */
 	VFCT, NHLT, SPMI
 };
@@ -639,6 +647,50 @@ typedef struct acpi_fadt {
 #define ACPI_FADT_ARM_PSCI_USE_HVC	(1 << 1)
 /* bits 2-16: reserved since ACPI 5.1 */
 
+/* TCG D-RTM Architecture v1.0 April 20, 2013 Section 4.2.2 */
+typedef struct acpi_drtm {
+	acpi_header_t header;
+	u64 dl_entry_base;
+	u64 dl_entry_length;
+	u32 dl_entry32;
+	u64 dl_entry64;
+	u64 dlme_exit;
+	u64 log_area_start;
+	u32 log_area_length;
+	u64 arch_dependent;
+	u32 drt_flags;
+	/* drtm_validated_tables_list_t
+	   drtm_resources_t
+	   drtm_dps_t */
+} __packed acpi_drtm_t;
+
+typedef struct drtm_validated_tables_list {
+	u32 vtl_length;
+	u64 validated_tables_list[];
+} __packed drtm_validated_tables_list_t;
+
+typedef struct drtm_resource_descriptor {
+	u8 region_size[7];
+	u8 type;
+	u64 address;
+} __packed drtm_resource_descriptor_t;
+
+typedef struct drtm_resources {
+	u32 rl_length;
+	drtm_resource_descriptor_t  resources_list[];
+} __packed drtm_resources_t;
+
+typedef struct drtm_dps {
+	u32 dps_length;
+	u64 dps_supported[2];
+} __packed drtm_dps_t;
+
+/* DRT Flags */
+#define DRT_NAME_SPACE_IN_TCB		(1 << 0)
+#define DRT_GAP_CODE_ON_S3_RESUME	(1 << 1)
+#define DRT_GAP_CODE_ON_DLME_EXIT	(1 << 2)
+#define DRT_PCR_AUTHORITIES_CHANGED	(1 << 3)
+
 /* FADT Preferred Power Management Profile */
 enum acpi_preferred_pm_profiles {
 	PM_UNSPECIFIED		= 0,
@@ -868,9 +920,10 @@ unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long current);
 void acpi_create_ssdt_generator(acpi_header_t *ssdt, const char *oem_table_id);
 void acpi_write_bert(acpi_bert_t *bert, uintptr_t region, size_t length);
 void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt);
-#if CONFIG(COMMON_FADT)
+
 void acpi_fill_fadt(acpi_fadt_t *fadt);
-#endif
+void soc_fill_fadt(acpi_fadt_t *fadt);
+void mainboard_fill_fadt(acpi_fadt_t *fadt);
 
 void update_ssdt(void *ssdt);
 void update_ssdtx(void *ssdtx, int i);
@@ -1011,6 +1064,13 @@ int acpi_get_sleep_type(void);
 /* Read and clear GPE status */
 int acpi_get_gpe(int gpe);
 
+/* Once we enter payload, is SMI handler installed and capable of
+   responding to APM_CNT Advanced Power Management Control commands. */
+static inline int permanent_smi_handler(void)
+{
+	return CONFIG(HAVE_SMI_HANDLER);
+}
+
 static inline int acpi_s3_resume_allowed(void)
 {
 	return CONFIG(HAVE_ACPI_RESUME);
@@ -1046,6 +1106,6 @@ static inline uintptr_t acpi_align_current(uintptr_t current)
  * coreboot default ACPI spec version supported. */
 int get_acpi_table_revision(enum acpi_tables table);
 
-#endif  // !defined(__ASSEMBLER__) && !defined(__ACPI__) && !defined(__ROMC__)
+#endif  // !defined(__ASSEMBLER__) && !defined(__ACPI__)
 
 #endif  /* __ACPI_ACPI_H__ */

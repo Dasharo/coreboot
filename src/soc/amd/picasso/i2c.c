@@ -13,9 +13,6 @@
 #include <soc/southbridge.h>
 #include "chip.h"
 
-/* Global to provide access to chip.c */
-const char *i2c_acpi_name(const struct device *dev);
-
 /*
  * We don't have addresses for I2C0-1.
  */
@@ -48,7 +45,7 @@ const struct dw_i2c_bus_config *dw_i2c_get_soc_cfg(unsigned int bus)
 	return &config->i2c[bus];
 }
 
-const char *i2c_acpi_name(const struct device *dev)
+static const char *i2c_acpi_name(const struct device *dev)
 {
 	switch (dev->path.mmio.addr) {
 	case APU_I2C2_BASE:
@@ -180,13 +177,10 @@ static void restore_i2c_pin_registers(uint8_t gpio,
 void sb_reset_i2c_slaves(void)
 {
 	const struct soc_amd_picasso_config *cfg;
-	const struct device *dev = pcidev_path_on_root(GNB_DEVFN);
 	struct soc_amd_i2c_save save_table[saved_pins_count];
 	uint8_t i, j, control;
 
-	if (!dev || !dev->chip_info)
-		return;
-	cfg = dev->chip_info;
+	cfg = config_of_soc();
 	control = cfg->i2c_scl_reset & GPIO_I2C_MASK;
 	if (control == 0)
 		return;

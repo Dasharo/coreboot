@@ -6,6 +6,7 @@
 #include <bootstate.h>
 #include <cbmem.h>
 #include <cf9_reset.h>
+#include <acpi/acpi_gnvs.h>
 #include <console/console.h>
 #include <cpu/intel/turbo.h>
 #include <cpu/x86/msr.h>
@@ -89,10 +90,6 @@ unsigned long acpi_fill_madt(unsigned long current)
 	return acpi_madt_irq_overrides(current);
 }
 
-__weak void soc_fill_fadt(acpi_fadt_t *fadt)
-{
-}
-
 void acpi_fill_fadt(acpi_fadt_t *fadt)
 {
 	const uint16_t pmbase = ACPI_BASE_ADDRESS;
@@ -100,11 +97,12 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->header.revision = get_acpi_table_revision(FADT);
 
 	fadt->sci_int = acpi_sci_irq();
-	fadt->smi_cmd = APM_CNT;
-	fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-	fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	fadt->s4bios_req = 0x0;
-	fadt->pstate_cnt = 0;
+
+	if (permanent_smi_handler()) {
+		fadt->smi_cmd = APM_CNT;
+		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
+		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
+	}
 
 	fadt->pm1a_evt_blk = pmbase + PM1_STS;
 	fadt->pm1b_evt_blk = 0x0;
@@ -159,13 +157,11 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_gpe0_blk.bit_width = fadt->gpe0_blk_len * 8;
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
 	fadt->x_gpe0_blk.addrh = 0;
 
 	fadt->x_gpe1_blk.space_id = 1;
-
-	soc_fill_fadt(fadt);
 }
 
 unsigned long southbridge_write_acpi_tables(const struct device *device,
@@ -244,7 +240,7 @@ void southbridge_inject_dsdt(const struct device *device)
 	if (gnvs) {
 		acpi_create_gnvs(gnvs);
 		/* And tell SMI about it */
-		smm_setup_structures(gnvs, NULL, NULL);
+		apm_control(APM_CNT_GNVS_UPDATE);
 
 		/* Add it to DSDT.  */
 		acpigen_write_scope("\\");
@@ -461,7 +457,7 @@ void generate_cpu_entries(const struct device *device)
 /* Save wake source data for ACPI _SWS methods in NVS */
 static void acpi_save_wake_source(void *unused)
 {
-	global_nvs_t *gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
+	global_nvs_t *gnvs = acpi_get_gnvs();
 	uint32_t pm1, *gpe0;
 	int gpe_reg, gpe_reg_count;
 	int reg_size = sizeof(uint32_t) * 8;

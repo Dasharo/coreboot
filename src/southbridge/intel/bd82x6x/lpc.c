@@ -231,12 +231,8 @@ static void pch_power_options(struct device *dev)
 	reg16 = pci_read_config16(dev, GEN_PMCON_1);
 	reg16 &= ~(3 << 0);	// SMI# rate 1 minute
 	reg16 &= ~(1 << 10);	// Disable BIOS_PCI_EXP_EN for native PME
-#if DEBUG_PERIODIC_SMIS
-	/* Set DEBUG_PERIODIC_SMIS in pch.h to debug using
-	 * periodic SMIs.
-	 */
-	reg16 |= (3 << 0); // Periodic SMI every 8s
-#endif
+	if (CONFIG(DEBUG_PERIODIC_SMI))
+		reg16 |= (3 << 0); // Periodic SMI every 8s
 	pci_write_config16(dev, GEN_PMCON_1, reg16);
 
 	// Set the board's GPI routing.
@@ -408,31 +404,22 @@ static void enable_clock_gating(struct device *dev)
 
 static void pch_set_acpi_mode(void)
 {
-	if (!acpi_is_wakeup_s3() && CONFIG(HAVE_SMI_HANDLER)) {
-		printk(BIOS_DEBUG, "Disabling ACPI via APMC:\n");
-		outb(APM_CNT_ACPI_DISABLE, APM_CNT); // Disable ACPI mode
-		printk(BIOS_DEBUG, "done.\n");
+	if (!acpi_is_wakeup_s3()) {
+		apm_control(APM_CNT_ACPI_DISABLE);
 	}
 }
 
 static void pch_disable_smm_only_flashing(struct device *dev)
 {
-	u8 reg8;
-
 	printk(BIOS_SPEW, "Enabling BIOS updates outside of SMM... ");
-	reg8 = pci_read_config8(dev, BIOS_CNTL);
-	reg8 &= ~(1 << 5);
-	pci_write_config8(dev, BIOS_CNTL, reg8);
+
+	pci_and_config8(dev, BIOS_CNTL, ~(1 << 5));
 }
 
 static void pch_fixups(struct device *dev)
 {
-	u8 gen_pmcon_2;
-
 	/* Indicate DRAM init done for MRC S3 to know it can resume */
-	gen_pmcon_2 = pci_read_config8(dev, GEN_PMCON_2);
-	gen_pmcon_2 |= (1 << 7);
-	pci_write_config8(dev, GEN_PMCON_2, gen_pmcon_2);
+	pci_or_config8(dev, GEN_PMCON_2, 1 << 7);
 
 	/*
 	 * Enable DMI ASPM in the PCH
@@ -678,7 +665,7 @@ static void southbridge_inject_dsdt(const struct device *dev)
 #endif
 
 		/* And tell SMI about it */
-		smm_setup_structures(gnvs, NULL, NULL);
+		apm_control(APM_CNT_GNVS_UPDATE);
 
 		/* Add it to DSDT.  */
 		acpigen_write_scope("\\");
@@ -694,14 +681,14 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	u16 pmbase = pci_read_config16(dev, 0x40) & 0xfffe;
 	int c2_latency;
 
-	fadt->reserved = 0;
 
 	fadt->sci_int = 0x9;
-	fadt->smi_cmd = APM_CNT;
-	fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-	fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	fadt->s4bios_req = 0x0;
-	fadt->pstate_cnt = 0;
+
+	if (permanent_smi_handler()) {
+		fadt->smi_cmd = APM_CNT;
+		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
+		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
+	}
 
 	fadt->pm1a_evt_blk = pmbase;
 	fadt->pm1b_evt_blk = 0x0;
@@ -719,7 +706,6 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->gpe0_blk_len = 16;
 	fadt->gpe1_blk_len = 0;
 	fadt->gpe1_base = 0;
-	fadt->cst_cnt = 0;
 	c2_latency = chip->c2_latency;
 	if (!c2_latency) {
 		c2_latency = 101; /* c2 unsupported */
@@ -805,7 +791,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.space_id = 1;
 	fadt->x_gpe0_blk.bit_width = 128;
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = pmbase + 0x20;
 	fadt->x_gpe0_blk.addrh = 0x0;
 
@@ -836,11 +822,9 @@ static void lpc_final(struct device *dev)
 	spi_finalize_ops();
 
 	/* Call SMM finalize() handlers before resume */
-	if (CONFIG(HAVE_SMI_HANDLER)) {
-		if (CONFIG(INTEL_CHIPSET_LOCKDOWN) ||
-		    acpi_is_wakeup_s3()) {
-			outb(APM_CNT_FINALIZE, APM_CNT);
-		}
+	if (CONFIG(INTEL_CHIPSET_LOCKDOWN) ||
+	    acpi_is_wakeup_s3()) {
+		apm_control(APM_CNT_FINALIZE);
 	}
 }
 
@@ -861,10 +845,6 @@ void intel_southbridge_override_spi(
 		memcpy(spi_config, &config->spi, sizeof(*spi_config));
 }
 
-static struct pci_operations pci_ops = {
-	.set_subsystem = pci_dev_set_subsystem,
-};
-
 static struct device_operations device_ops = {
 	.read_resources		= pch_lpc_read_resources,
 	.set_resources		= pci_dev_set_resources,
@@ -877,7 +857,7 @@ static struct device_operations device_ops = {
 	.final			= lpc_final,
 	.enable			= pch_lpc_enable,
 	.scan_bus		= scan_static_bus,
-	.ops_pci		= &pci_ops,
+	.ops_pci		= &pci_dev_ops_pci,
 };
 
 
