@@ -810,14 +810,14 @@ static void acpi_create_drtm_table(acpi_drtm_t *drtm)
 	/* Validated ACPI tables go first */
 	drtm_vtl = (drtm_validated_tables_list_t *)current;
 	drtm_vtl->vtl_length = 0; /* unused for now */
-	current += sizeof(drtm_vtl->vtl_length);
-	header->length += sizeof(drtm_vtl->vtl_length);
+	current += sizeof(drtm_vtl->vtl_length) + drtm_vtl->vtl_length;
+	header->length += sizeof(drtm_vtl->vtl_length) + drtm_vtl->vtl_length;
 
 	/* DRTM Resources List */
 	drtm_resources = (drtm_resources_t *)current;
 	drtm_resources->rl_length = 0; /* unused for now */
-	current += sizeof(drtm_resources->rl_length);
-	header->length += sizeof(drtm_resources->rl_length);
+	current += sizeof(drtm_resources->rl_length) + drtm_resources->rl_length;
+	header->length += sizeof(drtm_resources->rl_length) + drtm_resources->rl_length;
 
 	/* DLME Platfrom Specific IDs */
 	drtm_dps = (drtm_dps_t *)current;
