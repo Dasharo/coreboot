@@ -4,6 +4,7 @@
 #define __TPM_LOG_SERIALIZED_H__
 
 #include <stdint.h>
+#include <commonlib/helpers.h>
 
 #define MAX_TCPA_LOG_ENTRIES 50
 #define TCPA_DIGEST_MAX_LENGTH 64
@@ -48,29 +49,16 @@ struct tcpa_spec_entry {
 	uint8_t vendor_info[0];
 } __packed;
 
-/* Basic TPM2 types. */
-typedef uint16_t TPM_SU;
-typedef uint16_t TPM_ALG_ID;
-typedef uint32_t TPM_HANDLE;
-typedef uint32_t TPM_RC;
-typedef uint8_t TPMI_YES_NO;
-typedef TPM_ALG_ID TPMI_ALG_HASH;
-typedef TPM_HANDLE TPMI_DH_PCR;
-typedef TPM_HANDLE TPMI_RH_NV_INDEX;
-typedef TPM_HANDLE TPMI_RH_ENABLES;
-typedef TPM_HANDLE TPMI_SH_AUTH_SESSION;
-typedef TPM_HANDLE TPM_RH;
-
 /* Some hardcoded algorithm values. */
 /* Table 7 - TPM_ALG_ID Constants */
-#define TPM_ALG_ERROR   ((TPM_ALG_ID)0x0000)
-#define TPM_ALG_HMAC    ((TPM_ALG_ID)0x0005)
-#define TPM_ALG_NULL    ((TPM_ALG_ID)0x0010)
-#define TPM_ALG_SHA1    ((TPM_ALG_ID)0x0004)
-#define TPM_ALG_SHA256  ((TPM_ALG_ID)0x000b)
-#define TPM_ALG_SHA384  ((TPM_ALG_ID)0x000C)
-#define TPM_ALG_SHA512  ((TPM_ALG_ID)0x000D)
-#define TPM_ALG_SM3_256 ((TPM_ALG_ID)0x0012)
+#define TPM_ALG_ERROR   0x0000
+#define TPM_ALG_HMAC    0x0005
+#define TPM_ALG_NULL    0x0010
+#define TPM_ALG_SHA1    0x0004
+#define TPM_ALG_SHA256  0x000b
+#define TPM_ALG_SHA384  0x000c
+#define TPM_ALG_SHA512  0x000d
+#define TPM_ALG_SM3_256 0x0012
 
 /* Annex A Algorithm Constants */
 
@@ -94,31 +82,31 @@ typedef union {
 	uint8_t sm3_256[SM3_256_DIGEST_SIZE];
 	uint8_t sha384[SHA384_DIGEST_SIZE];
 	uint8_t sha512[SHA512_DIGEST_SIZE];
-} TPMU_HA;
+} tpm_hash_digest;
 
 typedef struct {
-	TPMI_ALG_HASH  hashAlg;
-	TPMU_HA        digest;
-} TPMT_HA;
+	uint16_t   hashAlg;
+	tpm_hash_digest digest;
+} tpm_hash_algorithm;
 
 /* Table 96 -- TPML_DIGEST_VALUES Structure <I/O> */
 typedef struct {
 	uint32_t   count;
-	TPMT_HA digests[HASH_COUNT];
-} TPML_DIGEST_VALUES;
+	tpm_hash_algorithm digests[HASH_COUNT];
+} tpm_digest_values;
 
 typedef struct {
 	uint16_t alg_id;
 	uint16_t digest_size;
-} __packed TPM_DIGEST_SIZES;
+} __packed tpm_digest_sizes;
 
 typedef struct {
 	uint32_t pcr_index;
 	uint32_t event_type;
-	TPML_DIGEST_VALUES digest;
+	tpm_digest_values digest;
 	uint32_t event_size;
 	uint8_t event[0];
-} __packed TCG_PCR_EVENT2_HDR;
+} __packed tcg_pcr_event2_header;
 
 typedef struct {
 	uint32_t pcr_index;
@@ -132,10 +120,10 @@ typedef struct {
 	uint8_t spec_errata;
 	uint8_t uintn_size;
 	uint32_t num_of_algorithms;
-	TPM_DIGEST_SIZES digest_sizes[HASH_COUNT];
+	tpm_digest_sizes digest_sizes[HASH_COUNT];
 	uint8_t vendor_info_size;
 	uint8_t vendor_info[0];
-} __packed TCG_EFI_SPEC_ID_EVENT;
+} __packed tcg_efi_spec_id_event;
 
 #define TCG_EFI_SPEC_ID_EVENT_SIGNATURE "Spec ID Event03"
 
@@ -159,7 +147,7 @@ typedef struct {
 #define EV_NONHOST_INFO			0x00000011
 #define EV_OMIT_BOOT_DEVICE_EVENTS	0x00000012
 
-static const char *tpm_event_types[] = {
+static const char *tpm_event_types[] __unused = {
 	[EV_PREBOOT_CERT]		= "Reserved",
 	[EV_POST_CODE]			= "POST code",
 	[EV_UNUSED]			= "Unused",

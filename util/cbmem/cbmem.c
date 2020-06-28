@@ -763,15 +763,15 @@ static void parse_drtm_tcpa_log(const struct tcpa_spec_entry *tcpa_log)
 	}
 }
 
-static uint32_t print_tpm2_digests(TPML_DIGEST_VALUES *digest_values)
+static uint32_t print_tpm2_digests(tpm_digest_values *digest_values)
 {
 	unsigned int i;
 	uintptr_t current = (uintptr_t)digest_values->digests;
 	uint32_t consumed = sizeof(digest_values->count);
-	TPMT_HA *hash;
+	tpm_hash_algorithm *hash;
 
 	for (i = 0; i < digest_values->count; i++) {
-		hash = (TPMT_HA *)current;
+		hash = (tpm_hash_algorithm *)current;
 		switch (hash->hashAlg) {
 		case TPM_ALG_SHA1:
 			printf("\t\t SHA1: ");
@@ -811,11 +811,11 @@ static uint32_t print_tpm2_digests(TPML_DIGEST_VALUES *digest_values)
 	return consumed;
 }
 
-static void parse_drtm_tpm2_log(const TCG_EFI_SPEC_ID_EVENT *tpm2_log)
+static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
 {
-	uintptr_t current = (uintptr_t)(tpm2_log + sizeof(TCG_EFI_SPEC_ID_EVENT));
+	uintptr_t current = (uintptr_t)(tpm2_log + sizeof(tcg_efi_spec_id_event));
 	static uint8_t zero_block[10]; /* Only pcr index, event type and digest count */
-	TCG_PCR_EVENT2_HDR *log_entry;
+	tcg_pcr_event2_header *log_entry;
 	uint32_t counter = 0;
 
 	printf("DRTM TPM2 log:\n");
@@ -833,7 +833,7 @@ static void parse_drtm_tpm2_log(const TCG_EFI_SPEC_ID_EVENT *tpm2_log)
 	}
 
 	while (memcmp((const void *)current, (const void *)zero_block, sizeof(zero_block))) {
-		log_entry = (TCG_PCR_EVENT2_HDR *)current;
+		log_entry = (tcg_pcr_event2_header *)current;
 		printf("DRTM TCPA log entry %u:\n", ++counter);
 		printf("\tPCR: %d\n", log_entry->pcr_index);
 		if (log_entry->event_type > EV_OMIT_BOOT_DEVICE_EVENTS)
@@ -863,7 +863,7 @@ static void parse_drtm_tpm2_log(const TCG_EFI_SPEC_ID_EVENT *tpm2_log)
 static void dump_drtm_log(void)
 {
 	const struct tcpa_spec_entry *tspec_entry;
-	const TCG_EFI_SPEC_ID_EVENT *tcg_spec_entry;
+	const tcg_efi_spec_id_event *tcg_spec_entry;
 	size_t size;
 	struct mapping drtm_mapping;
 
