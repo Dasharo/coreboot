@@ -4,7 +4,7 @@
 #define TSPI_H_
 
 #include <security/tpm/tss.h>
-#include <commonlib/tcpa_log_serialized.h>
+#include <commonlib/tpm_log_serialized.h>
 #include <commonlib/region.h>
 #include <vb2_api.h>
 

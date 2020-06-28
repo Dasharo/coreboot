@@ -1614,6 +1614,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 1; /* TODO Should probably be upgraded to 2 */
 	case DMAR:
 		return 1;
+	case DRTM:
+		return 1;
 	case SLIT: /* ACPI 2.0 upto 6.3: 1 */
 		return 1;
 	case SPMI: /* IMPI 2.0 */

@@ -67,7 +67,7 @@ enum coreboot_acpi_ids {
 enum acpi_tables {
 	/* Tables defined by ACPI and used by coreboot */
 	BERT, DBG2, DMAR, DSDT, FACS, FADT, HEST, HPET, IVRS, MADT, MCFG,
-	RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT,
+	RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT, DRTM,
 	/* Additional proprietary tables used by coreboot */
 	VFCT, NHLT, SPMI
 };
@@ -646,6 +646,50 @@ typedef struct acpi_fadt {
 #define ACPI_FADT_ARM_PSCI_COMPLIANT	(1 << 0)
 #define ACPI_FADT_ARM_PSCI_USE_HVC	(1 << 1)
 /* bits 2-16: reserved since ACPI 5.1 */
+
+/* TCG D-RTM Architecture v1.0 April 20, 2013 Section 4.2.2 */
+typedef struct acpi_drtm {
+	acpi_header_t header;
+	u64 dl_entry_base;
+	u64 dl_entry_length;
+	u32 dl_entry32;
+	u64 dl_entry64;
+	u64 dlme_exit;
+	u64 log_area_start;
+	u32 log_area_length;
+	u64 arch_dependent;
+	u32 drt_flags;
+	/* drtm_validated_tables_list_t
+	   drtm_resources_t
+	   drtm_dps_t */
+} __packed acpi_drtm_t;
+
+typedef struct drtm_validated_tables_list {
+	u32 vtl_length;
+	u64 validated_tables_list[];
+} __packed drtm_validated_tables_list_t;
+
+typedef struct drtm_resource_descriptor {
+	u8 region_size[7];
+	u8 type;
+	u64 address;
+} __packed drtm_resource_descriptor_t;
+
+typedef struct drtm_resources {
+	u32 rl_length;
+	drtm_resource_descriptor_t  resources_list[];
+} __packed drtm_resources_t;
+
+typedef struct drtm_dps {
+	u32 dps_length;
+	u64 dps_supported[2];
+} __packed drtm_dps_t;
+
+/* DRT Flags */
+#define DRT_NAME_SPACE_IN_TCB		(1 << 0)
+#define DRT_GAP_CODE_ON_S3_RESUME	(1 << 1)
+#define DRT_GAP_CODE_ON_DLME_EXIT	(1 << 2)
+#define DRT_PCR_AUTHORITIES_CHANGED	(1 << 3)
 
 /* FADT Preferred Power Management Profile */
 enum acpi_preferred_pm_profiles {
