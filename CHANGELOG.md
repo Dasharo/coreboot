@@ -17,6 +17,7 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 - [incorrrect serial number in dmidecode for apu1](https://github.com/pcengines/coreboot/issues/402)
 
 ### Changed
+- rebased with official coreboot repository commit f183626
 - enabled TPM2 for apu3d and apu4d supporting a TPM module connection
 
 ### Added
