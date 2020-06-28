@@ -773,31 +773,31 @@ static uint32_t print_tpm2_digests(tpm_digest_values *digest_values)
 	for (i = 0; i < digest_values->count; i++) {
 		hash = (tpm_hash_algorithm *)current;
 		switch (hash->hashAlg) {
-		case TPM_ALG_SHA1:
+		case TPM2_ALG_SHA1:
 			printf("\t\t SHA1: ");
 			print_hex(hash->digest.sha1, SHA1_DIGEST_SIZE);
 			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sha1);
 			consumed += sizeof(hash->hashAlg) + sizeof(hash->digest.sha1);
 			break;
-		case TPM_ALG_SHA256:
+		case TPM2_ALG_SHA256:
 			printf("\t\t SHA256: ");
 			print_hex(hash->digest.sha256, SHA256_DIGEST_SIZE);
 			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sha256);
 			consumed += sizeof(hash->hashAlg) + sizeof(hash->digest.sha256);
 			break;
-		case TPM_ALG_SHA384:
+		case TPM2_ALG_SHA384:
 			printf("\t\t SHA384: ");
 			print_hex(hash->digest.sha384, SHA384_DIGEST_SIZE);
 			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sha384);
 			consumed += sizeof(hash->hashAlg) + sizeof(hash->digest.sha384);
 			break;
-		case TPM_ALG_SHA512:
+		case TPM2_ALG_SHA512:
 			printf("\t\t SHA512: ");
 			print_hex(hash->digest.sha512, SHA512_DIGEST_SIZE);
 			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sha512);
 			consumed += sizeof(hash->hashAlg) + sizeof(hash->digest.sha512);
 			break;
-		case TPM_ALG_SM3_256:
+		case TPM2_ALG_SM3_256:
 			printf("\t\t SM3: ");
 			print_hex(hash->digest.sm3_256, SM3_256_DIGEST_SIZE);
 			current += sizeof(hash->hashAlg) + sizeof(hash->digest.sm3_256);

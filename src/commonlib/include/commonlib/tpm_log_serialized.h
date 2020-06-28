@@ -51,14 +51,14 @@ struct tcpa_spec_entry {
 
 /* Some hardcoded algorithm values. */
 /* Table 7 - TPM_ALG_ID Constants */
-#define TPM_ALG_ERROR   0x0000
-#define TPM_ALG_HMAC    0x0005
-#define TPM_ALG_NULL    0x0010
-#define TPM_ALG_SHA1    0x0004
-#define TPM_ALG_SHA256  0x000b
-#define TPM_ALG_SHA384  0x000c
-#define TPM_ALG_SHA512  0x000d
-#define TPM_ALG_SM3_256 0x0012
+#define TPM2_ALG_ERROR   0x0000
+#define TPM2_ALG_HMAC    0x0005
+#define TPM2_ALG_NULL    0x0010
+#define TPM2_ALG_SHA1    0x0004
+#define TPM2_ALG_SHA256  0x000b
+#define TPM2_ALG_SHA384  0x000c
+#define TPM2_ALG_SHA512  0x000d
+#define TPM2_ALG_SM3_256 0x0012
 
 /* Annex A Algorithm Constants */
 
