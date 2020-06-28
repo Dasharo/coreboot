@@ -5,6 +5,7 @@
 
 #include <commonlib/bsd/helpers.h>
 #include <stdint.h>
+#include <commonlib/helpers.h>
 
 #define TPM_CB_LOG_DIGEST_MAX_LENGTH 64
 #define TPM_CB_LOG_PCR_HASH_NAME 50
