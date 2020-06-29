@@ -897,9 +897,9 @@ static void dump_drtm_log(void)
 	
 		if (!strcmp((const char *)tcg_spec_entry->signature,
 			    TCG_EFI_SPEC_ID_EVENT_SIGNATURE)) {
-			if (tcg_spec_entry->spec_version_major == 1 &&
-			    tcg_spec_entry->spec_version_minor == 2 &&
-			    tcg_spec_entry->spec_errata == 1 &&
+			if (tcg_spec_entry->spec_version_major == 2 &&
+			    tcg_spec_entry->spec_version_minor == 0 &&
+			    tcg_spec_entry->spec_errata == 2 &&
 			    tcg_spec_entry->event_type == EV_NO_ACTION) {
 				parse_drtm_tpm2_log(tcg_spec_entry);
 				unmap_memory(&drtm_mapping);
