@@ -901,6 +901,7 @@ static void parse_drtm_tcpa_log(const struct tcpa_spec_entry *tcpa_log)
 	static uint8_t zero_block[sizeof(struct tcpa_spec_entry)];
 	struct tcpa_log_entry *log_entry;
 	uint32_t counter = 0;
+	uint32_t len;
 
 	printf("DRTM TCPA log:\n");
 	printf("\tSpecification: %d.%d%d", tcpa_log->spec_version_major,
@@ -909,9 +910,10 @@ static void parse_drtm_tcpa_log(const struct tcpa_spec_entry *tcpa_log)
 	printf("\tPlatform class: %s\n", tcpa_log->platform_class == 0 ? "PC Client" :
 					 tcpa_log->platform_class == 1 ? "Server" :
 									 "Unknown");
-	if (tcpa_log->vendor_info_size != 0) {
-		current += tcpa_log->vendor_info_size;
-		printf("\tVendor information: %s\n", tcpa_log->vendor_info);
+	len = tcpa_log->vendor_info_size;
+	if (len != 0) {
+		current += len;
+		printf("\tVendor information: %.*s\n", len, tcpa_log->vendor_info);
 	} else {
 		printf("\tNo vendor information provided\n");
 	}
@@ -928,9 +930,10 @@ static void parse_drtm_tcpa_log(const struct tcpa_spec_entry *tcpa_log)
 		printf("\tDigest: ");
 		print_hex(log_entry->digest, SHA1_DIGEST_SIZE);
 		current += sizeof(struct tcpa_log_entry);
-		if (log_entry->event_data_size != 0) {
-			current += log_entry->event_data_size;
-			printf("\tEvent data: %s\n", log_entry->event);
+		len = log_entry->event_data_size;
+		if (len != 0) {
+			current += len;
+			printf("\tEvent data: %.*s\n", len, log_entry->event);
 		} else {
 			printf("\tEvent data not provided\n");
 		}
@@ -991,6 +994,7 @@ static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
 	static uint8_t zero_block[10]; /* Only pcr index, event type and digest count */
 	tcg_pcr_event2_header *log_entry;
 	uint32_t counter = 0;
+	uint32_t len;
 
 	printf("DRTM TPM2 log:\n");
 	printf("\tSpecification: %d.%d%d\n", tpm2_log->spec_version_major,
@@ -999,9 +1003,10 @@ static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
 	printf("\tPlatform class: %s\n", tpm2_log->platform_class == 0 ? "PC Client" :
 					 tpm2_log->platform_class == 1 ? "Server" :
 									 "Unknown");
-	if (tpm2_log->vendor_info_size != 0) {
-		current += tpm2_log->vendor_info_size;
-		printf("\tVendor information: %s\n", tpm2_log->vendor_info);
+	len = tpm2_log->vendor_info_size;
+	if (len != 0) {
+		current += len;
+		printf("\tVendor information: %.*s\n", len, tpm2_log->vendor_info);
 	} else {
 		printf("\tNo vendor information provided\n");
 	}
@@ -1023,10 +1028,12 @@ static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
 			current += sizeof(log_entry->digest.count);
 			printf("\tNo digests in this log entry\n");
 		}
-		/* Now the vent size and event is left to be parsed */
-		if (*(uint32_t *)current != 0) {
-			current += sizeof(log_entry->event_size) + (*(uint32_t *)current);
-			printf("\tEvent data: %s\n", (uint8_t *)current);
+		/* Now the vend size and event is left to be parsed */
+		len = *(uint32_t *)current;
+		current += sizeof(uint32_t);
+		if (len != 0) {
+			printf("\tEvent data: %.*s\n", len, (uint8_t *)current);
+			current += len;
 		} else {
 			printf("\tEvent data not provided\n");
 		}
@@ -1704,7 +1711,7 @@ int main(int argc, char** argv)
 		{"help", 0, 0, 'h'},
 		{0, 0, 0, 0}
 	};
-	while ((opt = getopt_long(argc, argv, "c12B:CltTSa:LxVvh?r:",
+	while ((opt = getopt_long(argc, argv, "A:s:c12B:CltTSa:LdxVvh?r:",
 				  long_options, &option_index)) != EOF) {
 		switch (opt) {
 		case 'c':
