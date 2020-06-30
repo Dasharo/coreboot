@@ -723,7 +723,7 @@ static void print_hex(uint8_t *hex, size_t len)
 
 static void parse_drtm_tcpa_log(const struct tcpa_spec_entry *tcpa_log)
 {
-	uintptr_t current = (uintptr_t)(tcpa_log + sizeof(struct tcpa_spec_entry));
+	uintptr_t current = (uintptr_t)tcpa_log + sizeof(struct tcpa_spec_entry);
 	static uint8_t zero_block[sizeof(struct tcpa_spec_entry)];
 	struct tcpa_log_entry *log_entry;
 	uint32_t counter = 0;
@@ -813,7 +813,7 @@ static uint32_t print_tpm2_digests(tpm_digest_values *digest_values)
 
 static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
 {
-	uintptr_t current = (uintptr_t)(tpm2_log + sizeof(tcg_efi_spec_id_event));
+	uintptr_t current = (uintptr_t)tpm2_log + sizeof(tcg_efi_spec_id_event);
 	static uint8_t zero_block[10]; /* Only pcr index, event type and digest count */
 	tcg_pcr_event2_header *log_entry;
 	uint32_t counter = 0;
@@ -880,7 +880,7 @@ static void dump_drtm_log(void)
 	if (!strcmp((const char *)tspec_entry->signature, TCPA_SPEC_ID_EVENT_SIGNATURE)) {
 		if (tspec_entry->spec_version_major == 1 &&
 		    tspec_entry->spec_version_minor == 2 &&
-		    tspec_entry->spec_errata == 1 &&
+		    tspec_entry->spec_errata >= 1 &&
 		    tspec_entry->entry.event_type == EV_NO_ACTION) {
 			parse_drtm_tcpa_log(tspec_entry);
 			unmap_memory(&drtm_mapping);
@@ -899,7 +899,6 @@ static void dump_drtm_log(void)
 			    TCG_EFI_SPEC_ID_EVENT_SIGNATURE)) {
 			if (tcg_spec_entry->spec_version_major == 2 &&
 			    tcg_spec_entry->spec_version_minor == 0 &&
-			    tcg_spec_entry->spec_errata == 2 &&
 			    tcg_spec_entry->event_type == EV_NO_ACTION) {
 				parse_drtm_tpm2_log(tcg_spec_entry);
 				unmap_memory(&drtm_mapping);
