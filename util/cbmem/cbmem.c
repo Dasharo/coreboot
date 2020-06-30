@@ -1455,7 +1455,7 @@ int main(int argc, char** argv)
 		{"help", 0, 0, 'h'},
 		{0, 0, 0, 0}
 	};
-	while ((opt = getopt_long(argc, argv, "c1CltTLxVvh?r:",
+	while ((opt = getopt_long(argc, argv, "c1CltTLdxVvh?r:",
 				  long_options, &option_index)) != EOF) {
 		switch (opt) {
 		case 'c':
