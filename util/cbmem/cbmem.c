@@ -747,8 +747,8 @@ static void parse_drtm_tcpa_log(const struct tcpa_spec_entry *tcpa_log)
 		log_entry = (struct tcpa_log_entry *)current;
 		printf("DRTM TCPA log entry %u:\n", ++counter);
 		printf("\tPCR: %d\n", log_entry->pcr);
-		if (log_entry->event_type > EV_OMIT_BOOT_DEVICE_EVENTS)
-			printf("\tEvent type: Unknown\n");
+		if (log_entry->event_type >= ARRAY_SIZE(tpm_event_types))
+			printf("\tEvent type: Unknown (0x%x)\n", log_entry->event_type);
 		else
 			printf("\tEvent type: %s\n", tpm_event_types[log_entry->event_type]);
 		printf("\tDigest: ");
@@ -834,10 +834,10 @@ static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
 
 	while (memcmp((const void *)current, (const void *)zero_block, sizeof(zero_block))) {
 		log_entry = (tcg_pcr_event2_header *)current;
-		printf("DRTM TCPA log entry %u:\n", ++counter);
+		printf("DRTM TPM2 log entry %u:\n", ++counter);
 		printf("\tPCR: %d\n", log_entry->pcr_index);
-		if (log_entry->event_type > EV_OMIT_BOOT_DEVICE_EVENTS)
-			printf("\tEvent type: Unknown\n");
+		if (log_entry->event_type >= ARRAY_SIZE(tpm_event_types))
+			printf("\tEvent type: Unknown (0x%x)\n", log_entry->event_type);
 		else
 			printf("\tEvent type: %s\n", tpm_event_types[log_entry->event_type]);
 
@@ -849,13 +849,14 @@ static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
 			current += sizeof(log_entry->digest.count);
 			printf("\tNo digests in this log entry\n");
 		}
-		/* Now the vent size and event is left to be parsed */
+		/* Now the vend size and event is left to be parsed */
 		if (*(uint32_t *)current != 0) {
-			current += sizeof(log_entry->event_size) + (*(uint32_t *)current);
-			printf("\tEvent data: %s\n", (uint8_t *)current);
+			printf("\tEvent data: %s\n", (uint8_t *)current + sizeof(uint32_t));
+			current += *(uint32_t *)current;
 		} else {
 			printf("\tEvent data not provided\n");
 		}
+		current += sizeof(uint32_t);
 	}
 }
 
