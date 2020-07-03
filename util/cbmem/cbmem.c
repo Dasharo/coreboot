@@ -819,7 +819,7 @@ static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
 	uint32_t counter = 0;
 
 	printf("DRTM TPM2 log:\n");
-	printf("\tSpecification: %d.%d%d", tpm2_log->spec_version_major,
+	printf("\tSpecification: %d.%d%d\n", tpm2_log->spec_version_major,
 					   tpm2_log->spec_version_minor,
 					   tpm2_log->spec_errata);
 	printf("\tPlatform class: %s\n", tpm2_log->platform_class == 0 ? "PC Client" :
@@ -843,7 +843,7 @@ static void parse_drtm_tpm2_log(const tcg_efi_spec_id_event *tpm2_log)
 
 		current = (uintptr_t)&log_entry->digest;
 		if (log_entry->digest.count > 0) {
-			printf("\tDigests: ");
+			printf("\tDigests:\n");
 			current += print_tpm2_digests(&log_entry->digest);
 		} else {
 			current += sizeof(log_entry->digest.count);
