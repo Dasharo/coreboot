@@ -288,7 +288,8 @@ static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 				agesa_dmi->T17[0][0][0].PartNumber);
 	t->attributes = agesa_dmi->T17[0][0][0].Attributes;
 	t->extended_size = agesa_dmi->T17[0][0][0].ExtSize;
-	t->clock_speed = agesa_dmi->T17[0][0][0].ConfigSpeed;
+	t->clock_speed = ddr_speed_from_bus_speed(
+				agesa_dmi->T17[0][0][0].ConfigSpeed);
 	t->minimum_voltage = 1500; /* From SPD: 1.5V */
 	t->maximum_voltage = 1500;
 
