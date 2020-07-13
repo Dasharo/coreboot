@@ -16,6 +16,10 @@ fi
 
 function buildImage {
 
+	if [ ! -d 3rdparty/blobs/mainboard ]; then
+		git submodule update --init --checkout
+	fi
+
 	if [ ! -d 3rdparty/blobs/mainboard/protectli ]; then
 		wget https://cloud.3mdeb.com/index.php/s/FzF5fjqieEyQX4e/download -O protectli_blobs.zip
 		unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
@@ -56,6 +60,10 @@ function buildImage {
 }
 
 function buildFW6Image {
+
+	if [ ! -d 3rdparty/blobs/mainboard ]; then
+		git submodule update --init --checkout
+	fi
 
 	if [ ! -d 3rdparty/blobs/mainboard/protectli ]; then
 		wget https://cloud.3mdeb.com/index.php/s/FzF5fjqieEyQX4e/download -O protectli_blobs.zip
