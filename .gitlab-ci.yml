@@ -1,0 +1,68 @@
+services:
+- docker:dind
+
+variables:
+  RELEASE_DIR: ${CI_PROJECT_DIR}
+stages:
+  - check_dependencies
+  - build_rom
+  - publish_rom
+
+check_dependencies:
+  stage: check_dependencies
+  script:
+    - git ls-remote "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/3mdeb/dasharo/coreboot.git" | grep ${CI_COMMIT_REF_NAME}
+  only:
+      - tags 
+  
+.build_rom: &build_rom_optiplex
+  image: coreboot/coreboot-sdk:1.52
+  variables:
+    PLATFORM: Dell OptiPlex
+  stage: build_rom
+  tags: 
+    - docker
+  script:
+    - git clone "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/3mdeb/dasharo/coreboot.git" -b ${CI_COMMIT_REF_NAME} /home/coreboot/coreboot
+    - cd /home/coreboot/coreboot
+    - git submodule update --init --checkout
+    - cp "configs/config.dell_optiplex_9010_sff" .config
+    - make olddefconfig && make
+    - build/cbfstool build/coreboot.rom add -f dasharo-black.bmp -t bootsplash -c lzma -n bootsplash.bmp.lzma
+    - build/cbfstool build/coreboot.rom add-int -n etc/boot-menu-wait -i 5000
+    - cp -v /home/coreboot/coreboot/build/coreboot.rom ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.rom
+    - sha256sum ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.rom > ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.SHA256
+  artifacts:
+    name: ${PLATFORM}
+    paths:
+      - ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.rom
+      - ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.SHA256
+  only:
+    - tags
+    - web
+
+.publish_rom: &publish_rom
+  variables:
+    PLATFORM: Dell OptiPlex
+  stage: publish_rom
+  tags:
+    - docker
+  script:
+    - ls -al ${RELEASE_DIR}
+    - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/releases/"
+    - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/"
+    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.rom ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
+    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
+  only:
+    - tags
+
+
+build:Dell OptiPlex:
+  <<: *build_rom_optiplex
+  variables:
+    PLATFORM: Dell OptiPlex
+
+publish:Dell OptiPlex:
+  <<: *publish_rom
+  variables:
+    PLATFORM: Dell OptiPlex
