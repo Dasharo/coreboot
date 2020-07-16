@@ -26,4 +26,5 @@ mpcie2_clk0
 com2en0
 boosten1
 sd3mode0
+pciereverse0
 watchdog0000

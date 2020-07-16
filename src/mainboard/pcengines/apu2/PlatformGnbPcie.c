@@ -78,6 +78,58 @@ const PCIe_PORT_DESCRIPTOR PortList [] = {
 	}
 };
 
+const PCIe_PORT_DESCRIPTOR PortListReverse [] = {
+	{
+		0, //Descriptor flags  !!!IMPORTANT!!! Terminate last element of array
+		PCIE_ENGINE_DATA_INITIALIZER (PciePortEngine, 3, 3),
+		PCIE_PORT_DATA_INITIALIZER_V2 (PortEnabled, ChannelTypeExt6db, 2, 4,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled, 0x01, 0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 1, PCI Device Number 2, ...) */
+	{
+		0, //Descriptor flags  !!!IMPORTANT!!! Terminate last element of array
+		PCIE_ENGINE_DATA_INITIALIZER (PciePortEngine, 2, 2),
+		PCIE_PORT_DATA_INITIALIZER_V2 (PortEnabled, ChannelTypeExt6db, 2, 3,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled, 0x02, 0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 2, PCI Device Number 2, ...) */
+	{
+		0, //Descriptor flags  !!!IMPORTANT!!! Terminate last element of array
+		PCIE_ENGINE_DATA_INITIALIZER (PciePortEngine, 1, 1),
+		PCIE_PORT_DATA_INITIALIZER_V2 (PortEnabled, ChannelTypeExt6db, 2, 2,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled, 0x03, 0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 3, PCI Device Number 2, ...) */
+	{
+		0,
+		PCIE_ENGINE_DATA_INITIALIZER (PciePortEngine, 0, 0),
+		PCIE_PORT_DATA_INITIALIZER_V2 (PortEnabled, ChannelTypeExt6db, 2, 1,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled, 0x04, 0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 4-7, PCI Device Number 4, ...) */
+	{
+		DESCRIPTOR_TERMINATE_LIST, //Descriptor flags  !!!IMPORTANT!!! Terminate last element of array
+		PCIE_ENGINE_DATA_INITIALIZER (PciePortEngine, 4, 7),
+		PCIE_PORT_DATA_INITIALIZER_V2 (PortEnabled, ChannelTypeExt6db, 2, 5,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled, 0x05, 0)
+	}
+};
+
 const PCIe_DDI_DESCRIPTOR DdiList [] = {
 	/* DP0 to HDMI0/DP */
 	{
@@ -106,6 +158,13 @@ const PCIe_COMPLEX_DESCRIPTOR PcieComplex = {
 	.DdiLinkList  = DdiList
 };
 
+const PCIe_COMPLEX_DESCRIPTOR PcieComplexReverse = {
+	.Flags        = DESCRIPTOR_TERMINATE_LIST,
+	.SocketId     = 0,
+	.PciePortList = PortListReverse,
+	.DdiLinkList  = DdiList
+};
+
 /*---------------------------------------------------------------------------------------*/
 /**
  *  OemCustomizeInitEarly
@@ -127,7 +186,11 @@ OemCustomizeInitEarly (
 	IN  OUT AMD_EARLY_PARAMS    *InitEarly
 	)
 {
-	InitEarly->GnbConfig.PcieComplexList = &PcieComplex;
+	if(check_pciereverse())
+		InitEarly->GnbConfig.PcieComplexList = &PcieComplexReverse;
+	else
+		InitEarly->GnbConfig.PcieComplexList = &PcieComplex;
+
 	if(check_boost()) {
 		InitEarly->PlatformConfig.CStateMode = CStateModeC6;
 		InitEarly->PlatformConfig.CpbMode = CpbModeAuto;

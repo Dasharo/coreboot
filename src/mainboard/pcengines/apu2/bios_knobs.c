@@ -127,10 +127,29 @@ int check_com2(void)
  	return 0;
 }
 
+int check_pciereverse(void)
+{
+	u8 pciereverse;
+	pciereverse = check_knob_value("pciereverse");
+ 	switch (pciereverse) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO, "Missing or invalid pciereverse knob, "
+			"PCIe order remains unchanged.\n");
+		break;
+	}
+ 	return 0;
+}
+
 int check_boost(void)
 {
 	u8 boosten;
- 	//
+	//
 	// Find the boost item
 	//
 	boosten = check_knob_value("boosten");
