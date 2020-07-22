@@ -297,6 +297,27 @@ u8 check_pciepm(void)
 	return 0;
 }
 
+u8 check_pciereverse(void)
+{
+	u8 pciereverse;
+	pciereverse = check_knob_value("pciereverse");
+
+	switch (pciereverse) {
+	case 0:
+		return 0;
+		break;
+	case 1:
+		return 1;
+		break;
+	default:
+		printk(BIOS_INFO, "Missing or invalid pciereverse knob, "
+			"PCIe order remains unchanged.\n");
+		break;
+	}
+
+	return 0;
+}
+
 u8 check_sd3_mode(void)
 {
 	u8 sd3mode;
