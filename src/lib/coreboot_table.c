@@ -30,6 +30,11 @@
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <vendorcode/google/chromeos/gnvs.h>
 #endif
+#if CONFIG(PLATFORM_USES_FSP2_0)
+#include <fsp/util.h>
+#else
+void lb_string_platform_blob_version(struct lb_header *header);
+#endif
 
 static struct lb_header *lb_table_init(unsigned long addr)
 {
@@ -316,7 +321,7 @@ static void add_cbmem_pointers(struct lb_header *header)
 		{CBMEM_ID_VPD, LB_TAG_VPD},
 		{CBMEM_ID_WIFI_CALIBRATION, LB_TAG_WIFI_CALIBRATION},
 		{CBMEM_ID_TCPA_LOG, LB_TAG_TCPA_LOG},
-		{CBMEM_ID_DRTM_LOG, LB_TAG_DRTM_LOG},
+		{CBMEM_ID_DRTM_LOG, LB_TAG_PLATFORM_BLOB_VERSION},
 		{CBMEM_ID_FMAP, LB_TAG_FMAP},
 		{CBMEM_ID_VBOOT_WORKBUF, LB_TAG_VBOOT_WORKBUF},
 	};
@@ -516,6 +521,8 @@ static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 
 	/* Record our various random string information */
 	lb_strings(head);
+	if (CONFIG(PLATFORM_USES_FSP2_0))
+		lb_string_platform_blob_version(head);
 	lb_record_version_timestamp(head);
 	/* Record our framebuffer */
 	lb_framebuffer(head);

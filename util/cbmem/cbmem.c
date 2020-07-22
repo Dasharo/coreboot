@@ -326,7 +326,7 @@ static int parse_cbtable_entries(const struct mapping *table_mapping)
 			    parse_cbmem_ref((struct lb_cbmem_ref *)lbr_p);
 			continue;
 		}
-		case LB_TAG_DRTM_LOG: {
+		case LB_TAG_PLATFORM_BLOB_VERSION: {
 			debug("    Found drtm log table.\n");
 			drtm_log =
 			    parse_cbmem_ref((struct lb_cbmem_ref *)lbr_p);
@@ -868,7 +868,7 @@ static void dump_drtm_log(void)
 	size_t size;
 	struct mapping drtm_mapping;
 
-	if (drtm_log.tag != LB_TAG_DRTM_LOG) {
+	if (drtm_log.tag != LB_TAG_PLATFORM_BLOB_VERSION) {
 		fprintf(stderr, "No DRTM log found in coreboot table.\n");
 		return;
 	}

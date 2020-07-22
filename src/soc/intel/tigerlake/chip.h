@@ -133,6 +133,23 @@ struct soc_intel_tigerlake_config {
 	uint8_t SataPortsEnable[8];
 	uint8_t SataPortsDevSlp[8];
 
+	/*
+	 * Enable(0)/Disable(1) SATA Power Optimizer on PCH side.
+	 * Default 0. Setting this to 1 disables the SATA Power Optimizer.
+	 */
+	uint8_t SataPwrOptimizeDisable;
+
+	/*
+	 * SATA Port Enable Dito Config.
+	 * Enable DEVSLP Idle Timeout settings (DmVal, DitoVal).
+	 */
+	uint8_t SataPortsEnableDitoConfig[8];
+
+	/* SataPortsDmVal is the DITO multiplier. Default is 15. */
+	uint8_t SataPortsDmVal[8];
+	/* SataPortsDitoVal is the DEVSLP Idle Timeout, default is 625ms */
+	uint16_t SataPortsDitoVal[8];
+
 	/* Audio related */
 	uint8_t PchHdaDspEnable;
 	uint8_t PchHdaAudioLinkHdaEnable;
@@ -192,16 +209,6 @@ struct soc_intel_tigerlake_config {
 
 	/* Enable C6 DRAM */
 	uint8_t enable_c6dram;
-	/*
-	 * PRMRR size setting with below options
-	 * Disable: 0x0
-	 * 32MB: 0x2000000
-	 * 64MB: 0x4000000
-	 * 128 MB: 0x8000000
-	 * 256 MB: 0x10000000
-	 * 512 MB: 0x20000000
-	 */
-	uint32_t PrmrrSize;
 	uint8_t PmTimerDisabled;
 	/*
 	 * SerialIO device mode selection:
@@ -347,12 +354,6 @@ struct soc_intel_tigerlake_config {
 	 */
 	uint8_t DmiPwrOptimizeDisable;
 
-	/*
-	 * Enable(0)/Disable(1) SATA Power Optimizer on PCH side.
-	 * Default 0. Setting this to 1 disables the SATA Power Optimizer.
-	 */
-	uint8_t SataPwrOptimizeDisable;
-
 	/* structure containing various settings for PCH FIVRs */
 	struct {
 		bool configure_ext_fivr;
@@ -365,6 +366,12 @@ struct soc_intel_tigerlake_config {
 		/* External Vnn Voltage in mV */
 		int vnn_sx_voltage_mv;
 	} ext_fivr_settings;
+
+	/*
+	 * Enable(1)/Disable(0) CPU Replacement check.
+	 * Default 0. Setting this to 1 to check CPU replacement.
+	 */
+	uint8_t CpuReplacementCheck;
 };
 
 typedef struct soc_intel_tigerlake_config config_t;

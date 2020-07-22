@@ -4,6 +4,7 @@
 #include <console/console.h>
 #include <cpu/x86/msr.h>
 #include <fsp/util.h>
+#include <intelblocks/cpulib.h>
 #include <soc/gpio_soc_defs.h>
 #include <soc/iomap.h>
 #include <soc/msr.h>
@@ -63,7 +64,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	memcpy(m_cfg->PcieClkSrcClkReq, config->PcieClkSrcClkReq,
 		sizeof(config->PcieClkSrcClkReq));
 
-	m_cfg->PrmrrSize = config->PrmrrSize;
+	m_cfg->PrmrrSize = get_prmrr_size();
 	m_cfg->EnableC6Dram = config->enable_c6dram;
 	/* Disable BIOS Guard */
 	m_cfg->BiosGuard = 0;
@@ -199,6 +200,9 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 
 	/* Command Pins Mirrored */
 	m_cfg->CmdMirror[0] = config->CmdMirror;
+
+	/* Skip CPU replacement check */
+	m_cfg->SkipCpuReplacementCheck = !config->CpuReplacementCheck;
 }
 
 void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)

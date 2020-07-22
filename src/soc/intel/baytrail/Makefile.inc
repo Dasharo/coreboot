@@ -29,6 +29,7 @@ ramstage-y += cpu.c
 ramstage-y += dptf.c
 ramstage-y += ehci.c
 ramstage-y += emmc.c
+ramstage-y += fadt.c
 ramstage-y += gfx.c
 ramstage-y += gpio.c
 ramstage-y += hda.c
@@ -60,7 +61,8 @@ ramstage-y += placeholders.c
 
 postcar-y += ../../../cpu/intel/car/non-evict/exit_car.S
 
-cpu_microcode_bins += 3rdparty/blobs/soc/intel/baytrail/microcode.bin
+cpu_microcode_bins += 3rdparty/blobs/soc/intel/baytrail/microcode.bin \
+	3rdparty/intel-microcode/intel-ucode/06-37-09
 
 CPPFLAGS_common += -Isrc/soc/intel/baytrail/include
 

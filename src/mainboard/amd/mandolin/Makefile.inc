@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
 bootblock-y += bootblock.c
-bootblock-y += early_gpio.c
+bootblock-y += variants/$(VARIANT_DIR)/early_gpio.c
 
-ramstage-y += gpio.c
+ramstage-y += variants/$(VARIANT_DIR)/gpio.c
+ramstage-y += variants/$(VARIANT_DIR)/port_descriptors.c
+
+ifneq ($(CONFIG_PICASSO_LPC_IOMUX),y)
+ramstage-y += emmc_gpio.c
+endif
 
 # APCB_mandolin.bin
 APCB_SOURCES = mandolin

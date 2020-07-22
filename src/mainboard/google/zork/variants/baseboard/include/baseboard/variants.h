@@ -10,9 +10,8 @@
 #include <soc/platform_descriptors.h>
 #include "chip.h"
 
-const struct sci_source *get_gpe_table(size_t *num);
+const struct sci_source *variant_gpe_table(size_t *num);
 const struct soc_amd_gpio *variant_early_gpio_table(size_t *size);
-const struct soc_amd_gpio *variant_romstage_gpio_table(size_t *size);
 /*
  * This function provides base GPIO configuration table. It is typically provided by
  * baseboard using a weak implementation. If GPIO configuration for a variant differs
@@ -25,11 +24,19 @@ const struct soc_amd_gpio *variant_base_gpio_table(size_t *size);
  * configuration provided by variant_base_gpio_table().
  */
 const struct soc_amd_gpio *variant_override_gpio_table(size_t *size);
-void variant_romstage_entry(void);
+
+/*
+ * This function provides GPIO table for the pads that need to be configured when entering
+ * sleep.
+ */
+const struct soc_amd_gpio *variant_sleep_gpio_table(size_t *size, int slp_typ);
+
 /* Modify devictree settings during ramstage. */
 void variant_devtree_update(void);
-/* Configure PCIe power and reset lines as per variant sequencing requirements. */
-void variant_pcie_power_reset_configure(void);
+/* Update audio configuration in devicetree during ramstage. */
+void variant_audio_update(void);
+/* Configure PCIe GPIOs as per variant sequencing requirements. */
+void variant_pcie_gpio_configure(void);
 
 /* Per variant FSP-S initialization, default implementation in baseboard and
  * overrideable by the variant. */
@@ -54,5 +61,10 @@ int variant_has_nvme(void);
 
 /* Determine if booting in factory by using CROS_SKU_UNPROVISIONED. */
 int boot_is_factory_unprovisioned(void);
+
+/* Return true if variant uses v3 version of reference schematics. */
+bool variant_uses_v3_schematics(void);
+/* Return true if variant has active low power enable fow WiFi. */
+bool variant_has_active_low_wifi_power(void);
 
 #endif /* __BASEBOARD_VARIANTS_H__ */

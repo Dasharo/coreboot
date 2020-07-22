@@ -53,10 +53,6 @@ config CONSOLE_POST
 	bool
 	default y
 
-config ONBOARD_VGA_IS_PRIMARY
-	bool
-	default y
-
 config UART_FOR_CONSOLE
 	int
 	default 2
@@ -80,10 +76,6 @@ config VGA_BIOS_FILE
 config VGA_BIOS_ID
 	string
 	default "8086,9b41"
-
-config FSP_M_XIP
-	bool
-	default y
 
 config POST_DEVICE
 	bool

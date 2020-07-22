@@ -1,10 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
 #include <console/console.h>
 #include <fsp/util.h>
-#include <assert.h>
 #include <hob_iiouds.h>
 #include <hob_memmap.h>
+#include <lib.h>
 #include <soc/soc_util.h>
 
 static const uint8_t fsp_hob_iio_uds_guid[16] = FSP_HOB_IIO_UNIVERSAL_DATA_GUID;
@@ -32,62 +33,37 @@ const char *soc_get_guid_name(const uint8_t *guid)
 	return NULL;
 }
 
-void soc_display_hob(const struct hob_header *hob)
+static void soc_display_memmap_hob(const struct SystemMemoryMapHob *hob_addr)
 {
-	const struct hob_resource *res;
+	struct SystemMemoryMapHob *hob = (struct SystemMemoryMapHob *)hob_addr;
 
-	res = fsp_hob_header_to_resource(hob);
-	assert(res != NULL);
-	printk(BIOS_DEBUG, "\tResource type: 0x%x, attribute: 0x%x, addr: 0x%08llx, len: 0x%08llx\n",
-		res->type, res->attribute_type, res->addr, res->length);
-	printk(BIOS_DEBUG, "\tOwner GUID: ");
-	fsp_print_guid(res->owner_guid);
-	printk(BIOS_DEBUG, " (%s)\n", fsp_get_guid_name(res->owner_guid));
+	printk(BIOS_DEBUG, "================== MEMORY MAP HOB DATA ==================\n");
+	printk(BIOS_DEBUG, "hob: %p, structure size: 0x%lx\n",
+		hob, sizeof(*hob));
 
-	if (fsp_guid_compare(res->owner_guid, fsp_hob_iio_uds_guid))
-		soc_display_iio_universal_data_hob();
-	else if (fsp_guid_compare(res->owner_guid, fsp_hob_memmap_guid))
-		soc_display_memmap_hob();
-}
-
-void soc_display_memmap_hob(void)
-{
-	size_t hob_size;
-	const struct SystemMemoryMapHob *hob;
-	const uint8_t mem_hob_guid[16] = FSP_SYSTEM_MEMORYMAP_HOB_GUID;
-
-	hob = (const struct SystemMemoryMapHob *)fsp_find_extension_hob_by_guid(
-		mem_hob_guid, &hob_size);
-	assert(hob != NULL);
-
-	printk(BIOS_DEBUG, "===================== MEMORY MAP HOB DATA =====================\n");
-	printk(BIOS_DEBUG, "hob: %p\n", hob);
 	printk(BIOS_DEBUG, "\tlowMemBase: 0x%x, lowMemSize: 0x%x, highMemBase: 0x%x, "
 		"highMemSize: 0x%x\n",
 		hob->lowMemBase, hob->lowMemSize, hob->highMemBase, hob->highMemSize);
 	printk(BIOS_DEBUG, "\tmemSize: 0x%x, memFreq: 0x%x\n",
 		hob->memSize, hob->memFreq);
 
-	printk(BIOS_DEBUG, "\tSystemMemoryMapElement Entries: %d\n", hob->numberEntries);
+	printk(BIOS_DEBUG, "\tSystemMemoryMapElement Entries: %d, entry size: %ld\n",
+		hob->numberEntries, sizeof(SYSTEM_MEMORY_MAP_ELEMENT));
 	for (int e = 0; e < hob->numberEntries; ++e) {
 		const struct SystemMemoryMapElement *mem_element = &hob->Element[e];
 		printk(BIOS_DEBUG, "\t\tmemory_map %d BaseAddress: 0x%x, ElementSize: 0x%x, Type: 0x%x\n",
 			e, mem_element->BaseAddress,
 			mem_element->ElementSize, mem_element->Type);
 	}
+
+	hexdump(hob, sizeof(*hob));
 }
 
-void soc_display_iio_universal_data_hob(void)
+static void soc_display_iio_universal_data_hob(const IIO_UDS *hob)
 {
-	size_t hob_size;
-	const IIO_UDS *hob;
-	const uint8_t fsp_hob_iio_universal_data_guid[16] = FSP_HOB_IIO_UNIVERSAL_DATA_GUID;
-
-	hob = (const IIO_UDS *)fsp_find_extension_hob_by_guid(
-		fsp_hob_iio_universal_data_guid, &hob_size);
-	assert(hob != NULL);
-
 	printk(BIOS_DEBUG, "===================== IIO_UDS HOB DATA =====================\n");
+	printk(BIOS_DEBUG, "hob: %p, structure size: 0x%lx\n",
+		hob, sizeof(*hob));
 
 	printk(BIOS_DEBUG, "\t===================== SYSTEM STATUS =====================\n");
 	printk(BIOS_DEBUG, "\tnumCpus: 0x%x\n", hob->SystemStatus.numCpus);
@@ -97,14 +73,14 @@ void soc_display_iio_universal_data_hob(void)
 	printk(BIOS_DEBUG, "\t===================== PLATFORM DATA =====================\n");
 	printk(BIOS_DEBUG, "\tPlatGlobalIoBase: 0x%x\n", hob->PlatformData.PlatGlobalIoBase);
 	printk(BIOS_DEBUG, "\tPlatGlobalIoLimit: 0x%x\n", hob->PlatformData.PlatGlobalIoLimit);
-	printk(BIOS_DEBUG, "\tPlatGlobalMmiolBase: 0x%x\n",
-		hob->PlatformData.PlatGlobalMmiolBase);
-	printk(BIOS_DEBUG, "\tPlatGlobalMmiolLimit: 0x%x\n",
-		hob->PlatformData.PlatGlobalMmiolLimit);
-	printk(BIOS_DEBUG, "\tPlatGlobalMmiohBase: 0x%llx\n",
-		hob->PlatformData.PlatGlobalMmiohBase);
-	printk(BIOS_DEBUG, "\tPlatGlobalMmiohLimit: 0x%llx\n",
-		hob->PlatformData.PlatGlobalMmiohLimit);
+	printk(BIOS_DEBUG, "\tPlatGlobalMmio32Base: 0x%x\n",
+		hob->PlatformData.PlatGlobalMmio32Base);
+	printk(BIOS_DEBUG, "\tPlatGlobalMmio32Limit: 0x%x\n",
+		hob->PlatformData.PlatGlobalMmio32Limit);
+	printk(BIOS_DEBUG, "\tPlatGlobalMmio64Base: 0x%llx\n",
+		hob->PlatformData.PlatGlobalMmio64Base);
+	printk(BIOS_DEBUG, "\tPlatGlobalMmio64Limit: 0x%llx\n",
+		hob->PlatformData.PlatGlobalMmio64Limit);
 	printk(BIOS_DEBUG, "\tMemTsegSize: 0x%x\n", hob->PlatformData.MemTsegSize);
 	printk(BIOS_DEBUG, "\tMemIedSize: 0x%x\n", hob->PlatformData.MemIedSize);
 	printk(BIOS_DEBUG, "\tPciExpressBase: 0x%llx\n", hob->PlatformData.PciExpressBase);
@@ -137,14 +113,14 @@ void soc_display_iio_universal_data_hob(void)
 			hob->PlatformData.IIO_resource[s].IoApicBase);
 		printk(BIOS_DEBUG, "\tIoApicLimit: 0x%x\n",
 			hob->PlatformData.IIO_resource[s].IoApicLimit);
-		printk(BIOS_DEBUG, "\tPciResourceMem32Base: 0x%x\n",
-			hob->PlatformData.IIO_resource[s].PciResourceMem32Base);
-		printk(BIOS_DEBUG, "\tPciResourceMem32Limit: 0x%x\n",
-			hob->PlatformData.IIO_resource[s].PciResourceMem32Limit);
-		printk(BIOS_DEBUG, "\tPciResourceMem64Base: 0x%llx\n",
-			hob->PlatformData.IIO_resource[s].PciResourceMem64Base);
-		printk(BIOS_DEBUG, "\tPciResourceMem64Limit: 0x%llx\n",
-			hob->PlatformData.IIO_resource[s].PciResourceMem64Limit);
+		printk(BIOS_DEBUG, "\tMmio32Base: 0x%x\n",
+			hob->PlatformData.IIO_resource[s].Mmio32Base);
+		printk(BIOS_DEBUG, "\tMmio32Limit: 0x%x\n",
+			hob->PlatformData.IIO_resource[s].Mmio32Limit);
+		printk(BIOS_DEBUG, "\tMmio64Base: 0x%llx\n",
+			hob->PlatformData.IIO_resource[s].Mmio64Base);
+		printk(BIOS_DEBUG, "\tMmio64Limit: 0x%llx\n",
+			hob->PlatformData.IIO_resource[s].Mmio64Limit);
 
 		printk(BIOS_DEBUG, "\t============ Stack Info ================\n");
 		for (int x = 0; x < MAX_LOGIC_IIO_STACK; ++x) {
@@ -153,12 +129,22 @@ void soc_display_iio_universal_data_hob(void)
 			printk(BIOS_DEBUG, "\t\tPersonality: 0x%x\n", ri->Personality);
 			printk(BIOS_DEBUG, "\t\tBusBase: 0x%x\n", ri->BusBase);
 			printk(BIOS_DEBUG, "\t\tBusLimit: 0x%x\n", ri->BusLimit);
+			printk(BIOS_DEBUG, "\t\tIoBase: 0x%x\n", ri->IoBase);
+			printk(BIOS_DEBUG, "\t\tIoLimit: 0x%x\n", ri->IoLimit);
+			printk(BIOS_DEBUG, "\t\tIoApicBase: 0x%x\n", ri->IoApicBase);
+			printk(BIOS_DEBUG, "\t\tIoApicLimit: 0x%x\n", ri->IoApicLimit);
+			printk(BIOS_DEBUG, "\t\tMmio32Base: 0x%x\n", ri->Mmio32Base);
+			printk(BIOS_DEBUG, "\t\tMmio32Limit: 0x%x\n", ri->Mmio32Limit);
+			printk(BIOS_DEBUG, "\t\tMmio64Base: 0x%llx\n", ri->Mmio64Base);
+			printk(BIOS_DEBUG, "\t\tMmio64Limit: 0x%llx\n", ri->Mmio64Limit);
+			printk(BIOS_DEBUG, "\t\tPciResourceBusBase: 0x%x\n",
+				ri->PciResourceBusBase);
+			printk(BIOS_DEBUG, "\t\tPciResourceBusLimit: 0x%x\n",
+				ri->PciResourceBusLimit);
 			printk(BIOS_DEBUG, "\t\tPciResourceIoBase: 0x%x\n",
 				ri->PciResourceIoBase);
 			printk(BIOS_DEBUG, "\t\tPciResourceIoLimit: 0x%x\n",
 				ri->PciResourceIoLimit);
-			printk(BIOS_DEBUG, "\t\tIoApicBase: 0x%x\n", ri->IoApicBase);
-			printk(BIOS_DEBUG, "\t\tIoApicLimit: 0x%x\n", ri->IoApicLimit);
 			printk(BIOS_DEBUG, "\t\tPciResourceMem32Base: 0x%x\n",
 				ri->PciResourceMem32Base);
 			printk(BIOS_DEBUG, "\t\tPciResourceMem32Limit: 0x%x\n",
@@ -179,4 +165,21 @@ void soc_display_iio_universal_data_hob(void)
 				iio_resource.PcieInfo.PortInfo[p].Function);
 		}
 	}
+
+	hexdump(hob, sizeof(*hob));
+}
+
+void soc_display_hob(const struct hob_header *hob)
+{
+	uint8_t *guid;
+
+	if (hob->type != HOB_TYPE_GUID_EXTENSION)
+		return;
+
+	guid = (uint8_t *) fsp_hob_header_to_resource(hob);
+
+	if (fsp_guid_compare(guid, fsp_hob_iio_uds_guid))
+		soc_display_iio_universal_data_hob((const IIO_UDS *)(guid + 16));
+	else if (fsp_guid_compare(guid, fsp_hob_memmap_guid))
+		soc_display_memmap_hob((const struct SystemMemoryMapHob *)(guid + 16));
 }

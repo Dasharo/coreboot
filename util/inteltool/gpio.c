@@ -943,6 +943,7 @@ int print_gpios(struct pci_dev *sb, int show_all, int show_diffs)
 		defaults_size = ARRAY_SIZE(pp_pch_mobile_defaults);
 		break;
 	case PCI_DEVICE_ID_INTEL_ICH10:
+	case PCI_DEVICE_ID_INTEL_ICH10DO:
 	case PCI_DEVICE_ID_INTEL_ICH10R:
 		gpiobase = pci_read_word(sb, 0x48) & 0xfffc;
 		gpio_registers = ich10_gpio_registers;
@@ -1044,11 +1045,17 @@ int print_gpios(struct pci_dev *sb, int show_all, int show_diffs)
 	case PCI_DEVICE_ID_INTEL_C627:
 	case PCI_DEVICE_ID_INTEL_C628:
 	case PCI_DEVICE_ID_INTEL_C629:
+	case PCI_DEVICE_ID_INTEL_C621A:
+	case PCI_DEVICE_ID_INTEL_C627A:
+	case PCI_DEVICE_ID_INTEL_C629A:
 	case PCI_DEVICE_ID_INTEL_C624_SUPER:
 	case PCI_DEVICE_ID_INTEL_C627_SUPER_1:
 	case PCI_DEVICE_ID_INTEL_C621_SUPER:
 	case PCI_DEVICE_ID_INTEL_C627_SUPER_2:
 	case PCI_DEVICE_ID_INTEL_C628_SUPER:
+	case PCI_DEVICE_ID_INTEL_C621A_SUPER:
+	case PCI_DEVICE_ID_INTEL_C627A_SUPER:
+	case PCI_DEVICE_ID_INTEL_C629A_SUPER:
 	case PCI_DEVICE_ID_INTEL_H310:
 	case PCI_DEVICE_ID_INTEL_H370:
 	case PCI_DEVICE_ID_INTEL_Z390:

@@ -7,9 +7,11 @@
 #include <fsp/api.h>
 #include <fsp/ppi/mp_service_ppi.h>
 #include <fsp/util.h>
+#include <intelblocks/cse.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
+#include <security/vboot/vboot_common.h>
 #include <soc/gpio_soc_defs.h>
 #include <soc/intel/common/vbt.h>
 #include <soc/pci_devs.h>
@@ -21,6 +23,10 @@
 #define THC_NONE	0
 #define THC_0		1
 #define THC_1		2
+
+/* SATA DEVSLP idle timeout default values */
+#define DEF_DMVAL	15
+#define DEF_DITOVAL	625
 
 /*
  * Chip config parameter PcieRpL1Substates uses (UPD value + 1)
@@ -210,8 +216,31 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchPwrOptEnable = !(config->DmiPwrOptimizeDisable);
 	params->SataPwrOptEnable = !(config->SataPwrOptimizeDisable);
 
+	/*
+	 *  Enable DEVSLP Idle Timeout settings DmVal and DitoVal.
+	 *  SataPortsDmVal is the DITO multiplier. Default is 15.
+	 *  SataPortsDitoVal is the DEVSLP Idle Timeout (DITO), Default is 625ms.
+	 *  The default values can be changed from devicetree.
+	 */
+	for (i = 0; i < ARRAY_SIZE(config->SataPortsEnableDitoConfig); i++) {
+		if (config->SataPortsEnableDitoConfig[i]) {
+			if (config->SataPortsDmVal[i])
+				params->SataPortsDmVal[i] = config->SataPortsDmVal[i];
+			else
+				params->SataPortsDmVal[i] = DEF_DMVAL;
+
+			if (config->SataPortsDitoVal[i])
+				params->SataPortsDitoVal[i] = config->SataPortsDitoVal[i];
+			else
+				params->SataPortsDitoVal[i] = DEF_DITOVAL;
+		}
+	}
+
 	/* Enable TCPU for processor thermal control */
 	params->Device4Enable = config->Device4Enable;
+
+	/* Set TccActivationOffset */
+	params->TccActivationOffset = config->tcc_offset;
 
 	/* LAN */
 	dev = pcidev_path_on_root(PCH_DEVFN_GBE);
@@ -252,7 +281,19 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->Enable8254ClockGatingOnS3 = !CONFIG_USE_LEGACY_8254_TIMER;
 
 	/* Enable Hybrid storage auto detection */
-	params->HybridStorageMode = config->HybridStorageMode;
+	if (CONFIG(SOC_INTEL_CSE_LITE_SKU) && cse_is_hfs3_fw_sku_lite()
+		&& vboot_recovery_mode_enabled() && !cse_is_hfs1_com_normal()) {
+		/*
+		 * CSE Lite SKU does not support hybrid storage dynamic configuration
+		 * in CSE RO boot, and FSP does not allow to send the strap override
+		 * HECI commands if CSE is not in normal mode; hence, hybrid storage
+		 * mode is disabled on CSE RO boot in recovery boot mode.
+		 */
+		printk(BIOS_INFO, "cse_lite: CSE RO boot. HybridStorageMode disabled\n");
+		params->HybridStorageMode = 0;
+	} else {
+		params->HybridStorageMode = config->HybridStorageMode;
+	}
 
 	/* USB4/TBT */
 	for (i = 0; i < ARRAY_SIZE(params->ITbtPcieRootPortEn); i++) {
@@ -286,7 +327,27 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	}
 
+	/* EnableMultiPhaseSiliconInit for running MultiPhaseSiInit */
+	params->EnableMultiPhaseSiliconInit = 1;
 	mainboard_silicon_init_params(params);
+}
+
+/*
+ * Callbacks for SoC/Mainboard specific overrides for FspMultiPhaseSiInit
+ * This platform supports below MultiPhaseSIInit Phase(s):
+ * Phase   |  FSP return point                                |  Purpose
+ * ------- + ------------------------------------------------ + -------------------------------
+ *   1     |  After TCSS initialization completed             |  for TCSS specific init
+ */
+void platform_fsp_multi_phase_init_cb(uint32_t phase_index)
+{
+	switch (phase_index) {
+	case 1:
+		/* TCSS specific initialization here */
+		break;
+	default:
+		break;
+	}
 }
 
 /* Mainboard GPIO Configuration */

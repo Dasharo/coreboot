@@ -158,11 +158,6 @@ enum acpi_gpio_io_restrict {
 	ACPI_GPIO_IO_RESTRICT_PRESERVE
 };
 
-enum acpi_gpio_polarity {
-	ACPI_GPIO_ACTIVE_HIGH = 0,
-	ACPI_GPIO_ACTIVE_LOW = 1,
-};
-
 #define ACPI_GPIO_REVISION_ID		1
 #define ACPI_GPIO_MAX_PINS		8
 
@@ -182,137 +177,105 @@ struct acpi_gpio {
 	uint16_t output_drive_strength;		/* 1/100 mA */
 	int io_shared;
 	enum acpi_gpio_io_restrict io_restrict;
-	enum acpi_gpio_polarity polarity;
+	/*
+	 * As per ACPI spec, GpioIo does not have any polarity associated with it. Linux kernel
+	 * uses `active_low` argument within GPIO _DSD property to allow BIOS to indicate if the
+	 * corresponding GPIO should be treated as active low. Thus, if the GPIO has active high
+	 * polarity or if it does not have any polarity, then the `active_low` argument is
+	 * supposed to be set to 0.
+	 *
+	 * Reference:
+	 * https://www.kernel.org/doc/html/latest/firmware-guide/acpi/gpio-properties.html
+	 */
+	bool active_low;
 };
 
-/* Basic output GPIO with default pull settings */
-#define ACPI_GPIO_OUTPUT_ACTIVE_HIGH(gpio) { \
+/* GpioIo-related macros */
+#define ACPI_GPIO_CFG(_gpio, _io_restrict, _active_low) { \
 	.type = ACPI_GPIO_TYPE_IO, \
 	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.io_restrict = ACPI_GPIO_IO_RESTRICT_OUTPUT, \
-	.polarity = ACPI_GPIO_ACTIVE_HIGH,     \
+	.io_restrict = _io_restrict, \
+	.active_low = _active_low, \
 	.pin_count = 1, \
-	.pins = { (gpio) } }
+	.pins = { (_gpio) } }
 
-#define ACPI_GPIO_OUTPUT_ACTIVE_LOW(gpio) { \
-	.type = ACPI_GPIO_TYPE_IO, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.io_restrict = ACPI_GPIO_IO_RESTRICT_OUTPUT, \
-	.polarity = ACPI_GPIO_ACTIVE_LOW,     \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+/* Basic output GPIO with default pull settings */
+#define ACPI_GPIO_OUTPUT_CFG(gpio, active_low) \
+		ACPI_GPIO_CFG(gpio, ACPI_GPIO_IO_RESTRICT_OUTPUT, active_low)
+
+#define ACPI_GPIO_OUTPUT(gpio)			ACPI_GPIO_OUTPUT_CFG(gpio, 0)
+#define ACPI_GPIO_OUTPUT_ACTIVE_HIGH(gpio)	ACPI_GPIO_OUTPUT_CFG(gpio, 0)
+#define ACPI_GPIO_OUTPUT_ACTIVE_LOW(gpio)	ACPI_GPIO_OUTPUT_CFG(gpio, 1)
 
 /* Basic input GPIO with default pull settings */
-#define ACPI_GPIO_INPUT_ACTIVE_HIGH(gpio) {   \
-	.type = ACPI_GPIO_TYPE_IO, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.io_restrict = ACPI_GPIO_IO_RESTRICT_INPUT, \
-	.polarity = ACPI_GPIO_ACTIVE_HIGH,     \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_INPUT_CFG(gpio, polarity) \
+		ACPI_GPIO_CFG(gpio, ACPI_GPIO_IO_RESTRICT_INPUT, polarity)
 
-#define ACPI_GPIO_INPUT_ACTIVE_LOW(gpio) {   \
-	.type = ACPI_GPIO_TYPE_IO, \
+#define ACPI_GPIO_INPUT(gpio)			ACPI_GPIO_INPUT_CFG(gpio, 0)
+#define ACPI_GPIO_INPUT_ACTIVE_HIGH(gpio)	ACPI_GPIO_INPUT_CFG(gpio, 0)
+#define ACPI_GPIO_INPUT_ACTIVE_LOW(gpio)	ACPI_GPIO_INPUT_CFG(gpio, 1)
+
+/* GpioInt-related macros */
+#define ACPI_GPIO_IRQ_CFG(_gpio, _mode, _polarity, _wake) { \
+	.type = ACPI_GPIO_TYPE_INTERRUPT, \
 	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.io_restrict = ACPI_GPIO_IO_RESTRICT_INPUT, \
-	.polarity = ACPI_GPIO_ACTIVE_LOW,     \
+	.irq.mode = _mode, \
+	.irq.polarity = _polarity, \
+	.irq.wake = _wake, \
 	.pin_count = 1, \
-	.pins = { (gpio) } }
+	.pins = { (_gpio) } }
+
+#define ACPI_GPIO_IRQ_EDGE(gpio, polarity) \
+		ACPI_GPIO_IRQ_CFG(gpio, ACPI_IRQ_EDGE_TRIGGERED, polarity, 0)
+
+#define ACPI_GPIO_IRQ_EDGE_WAKE(gpio, polarity) \
+		ACPI_GPIO_IRQ_CFG(gpio, ACPI_IRQ_EDGE_TRIGGERED, polarity, ACPI_IRQ_WAKE)
+
+#define ACPI_GPIO_IRQ_LEVEL(gpio, polarity) \
+		ACPI_GPIO_IRQ_CFG(gpio, ACPI_IRQ_LEVEL_TRIGGERED, polarity, 0)
+
+#define ACPI_GPIO_IRQ_LEVEL_WAKE(gpio, polarity) \
+		ACPI_GPIO_IRQ_CFG(gpio, ACPI_IRQ_LEVEL_TRIGGERED, polarity, ACPI_IRQ_WAKE)
 
 /* Edge Triggered Active High GPIO interrupt */
-#define ACPI_GPIO_IRQ_EDGE_HIGH(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_EDGE_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_HIGH, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_EDGE_HIGH(gpio) \
+		ACPI_GPIO_IRQ_EDGE(gpio, ACPI_IRQ_ACTIVE_HIGH)
 
 /* Edge Triggered Active Low GPIO interrupt */
-#define ACPI_GPIO_IRQ_EDGE_LOW(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_EDGE_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_LOW, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_EDGE_LOW(gpio) \
+		ACPI_GPIO_IRQ_EDGE(gpio, ACPI_IRQ_ACTIVE_LOW)
 
 /* Edge Triggered Active Both GPIO interrupt */
-#define ACPI_GPIO_IRQ_EDGE_BOTH(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_EDGE_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_BOTH, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_EDGE_BOTH(gpio) \
+		ACPI_GPIO_IRQ_EDGE(gpio, ACPI_IRQ_ACTIVE_BOTH)
 
 /* Edge Triggered Active High GPIO interrupt with wake */
-#define ACPI_GPIO_IRQ_EDGE_HIGH_WAKE(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_EDGE_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_HIGH, \
-	.irq.wake = ACPI_IRQ_WAKE, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_EDGE_HIGH_WAKE(gpio) \
+		ACPI_GPIO_IRQ_EDGE_WAKE(gpio, ACPI_IRQ_ACTIVE_HIGH)
 
 /* Edge Triggered Active Low GPIO interrupt with wake */
-#define ACPI_GPIO_IRQ_EDGE_LOW_WAKE(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_EDGE_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_LOW, \
-	.irq.wake = ACPI_IRQ_WAKE, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_EDGE_LOW_WAKE(gpio) \
+		ACPI_GPIO_IRQ_EDGE_WAKE(gpio, ACPI_IRQ_ACTIVE_LOW)
 
 /* Edge Triggered Active Both GPIO interrupt with wake */
-#define ACPI_GPIO_IRQ_EDGE_BOTH_WAKE(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_EDGE_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_BOTH, \
-	.irq.wake = ACPI_IRQ_WAKE, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_EDGE_BOTH_WAKE(gpio) \
+		ACPI_GPIO_IRQ_EDGE_WAKE(gpio, ACPI_IRQ_ACTIVE_BOTH)
 
 /* Level Triggered Active High GPIO interrupt */
-#define ACPI_GPIO_IRQ_LEVEL_HIGH(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_LEVEL_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_HIGH, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_LEVEL_HIGH(gpio) \
+		ACPI_GPIO_IRQ_LEVEL(gpio, ACPI_IRQ_ACTIVE_HIGH)
 
 /* Level Triggered Active Low GPIO interrupt */
-#define ACPI_GPIO_IRQ_LEVEL_LOW(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_LEVEL_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_LOW, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_LEVEL_LOW(gpio) \
+		ACPI_GPIO_IRQ_LEVEL(gpio, ACPI_IRQ_ACTIVE_LOW)
 
 /* Level Triggered Active High GPIO interrupt with wake */
-#define ACPI_GPIO_IRQ_LEVEL_HIGH_WAKE(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_LEVEL_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_HIGH, \
-	.irq.wake = ACPI_IRQ_WAKE, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_LEVEL_HIGH_WAKE(gpio) \
+		ACPI_GPIO_IRQ_LEVEL_WAKE(gpio, ACPI_IRQ_ACTIVE_HIGH)
 
 /* Level Triggered Active Low GPIO interrupt with wake */
-#define ACPI_GPIO_IRQ_LEVEL_LOW_WAKE(gpio) { \
-	.type = ACPI_GPIO_TYPE_INTERRUPT, \
-	.pull = ACPI_GPIO_PULL_DEFAULT, \
-	.irq.mode = ACPI_IRQ_LEVEL_TRIGGERED, \
-	.irq.polarity = ACPI_IRQ_ACTIVE_LOW, \
-	.irq.wake = ACPI_IRQ_WAKE, \
-	.pin_count = 1, \
-	.pins = { (gpio) } }
+#define ACPI_GPIO_IRQ_LEVEL_LOW_WAKE(gpio) \
+		ACPI_GPIO_IRQ_LEVEL_WAKE(gpio, ACPI_IRQ_ACTIVE_LOW)
 
 /* Write GpioIo() or GpioInt() descriptor to SSDT AML output */
 void acpi_device_write_gpio(const struct acpi_gpio *gpio);

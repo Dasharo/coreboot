@@ -32,13 +32,14 @@ chip soc/intel/tigerlake
 	register "usb3_ports[2]" = "USB3_PORT_EMPTY"		# Not used
 	register "usb3_ports[3]" = "USB3_PORT_EMPTY"		# USB3/USB2 Flex Connector
 
+        # CPU replacement check
+        register "CpuReplacementCheck" = "1"
+
 	# EC host command ranges are in 0x800-0x8ff & 0x200-0x20f
 	register "gen1_dec" = "0x00fc0801"
 	register "gen2_dec" = "0x000c0201"
 	# EC memory map range is 0x900-0x9ff
 	register "gen3_dec" = "0x00fc0901"
-
-	register "PrmrrSize" = "0x10000000"
 
 	register "PcieRpEnable[2]" = "1"
 	register "PcieRpEnable[3]" = "1"
@@ -112,6 +113,9 @@ chip soc/intel/tigerlake
 	# TCSS USB3
 	register "TcssXhciEn" = "1"
 	register "TcssAuxOri" = "0"
+
+	# Enable S0ix
+	register "s0ix_enable" = "1"
 
 	# D3Hot and D3Cold for TCSS
 	register "TcssD3HotEnable" = "1"
@@ -254,7 +258,28 @@ chip soc/intel/tigerlake
 		device pci 1e.3 off end # GSPI1			0xA0AB
 		device pci 1f.0 on  end # eSPI			0xA080 - A09F
 		device pci 1f.1 on  end # P2SB			0xA0A0
-		device pci 1f.2 hidden end # PMC		0xA0A1
+		device pci 1f.2 hidden  # PMC			0xA0A1
+			# The pmc_mux chip driver is a placeholder for the
+			# PMC.MUX device in the ACPI hierarchy.
+			chip drivers/intel/pmc_mux
+				device generic 0 on
+					chip drivers/intel/pmc_mux/conn
+						register "usb2_port_number" = "6"
+						register "usb3_port_number" = "3"
+						# SBU is fixed, HSL follows CC
+						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
+						device generic 0 on end
+					end
+					chip drivers/intel/pmc_mux/conn
+						register "usb2_port_number" = "7"
+						register "usb3_port_number" = "4"
+						# SBU is fixed, HSL follows CC
+						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
+						device generic 1 on end
+					end
+				end
+			end
+		end # PMC
 		device pci 1f.3 on  end # Intel HD audio	0xA0C8-A0CF
 		device pci 1f.4 on  end # SMBus			0xA0A3
 		device pci 1f.5 on  end # SPI			0xA0A4

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
 #include <device/mmio.h>
 #include <arch/smp/mpspec.h>
@@ -163,7 +164,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 
 	fadt->pm_tmr_blk = pmbase + PM1_TMR;
 	fadt->pm_tmr_len = 4;
-	fadt->x_pm_tmr_blk.space_id = 1;
+	fadt->x_pm_tmr_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm_tmr_blk.bit_width = fadt->pm_tmr_len * 8;
 	fadt->x_pm_tmr_blk.bit_offset = 0;
 	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
@@ -272,7 +273,7 @@ unsigned long sa_write_acpi_tables(const struct device *dev, unsigned long curre
 	return current;
 }
 
-void acpi_create_gnvs(struct global_nvs_t *gnvs)
+void acpi_create_gnvs(struct global_nvs *gnvs)
 {
 	config_t *config = config_of_soc();
 
