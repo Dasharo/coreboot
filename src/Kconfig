@@ -234,6 +234,26 @@ config USE_AMD_BLOBS
 	  Note that for some products, omitting PSP, SMU images, or other items
 	  may result in a nonbooting coreboot.rom.
 
+config USE_QC_BLOBS
+	bool "Allow QC blobs repository (selecting this agrees to the license!)"
+	depends on USE_BLOBS
+	help
+	  This draws in the qc_blobs repository, which contains binary files
+	  distributed by Qualcomm that are required to build firmware for
+	  certain Qualcomm SoCs (including QcLib, QC-SEC, qtiseclib and QUP
+	  firmware). If you say Y here you are implicitly agreeing to the
+	  Qualcomm license agreement which can be found at:
+	  https://review.coreboot.org/cgit/qc_blobs.git/tree/LICENSE
+
+	  *****************************************************
+	  PLEASE MAKE SURE YOU READ AND AGREE TO ALL TERMS IN
+	  ABOVE LICENSE AGREEMENT BEFORE SELECTING THIS OPTION!
+	  *****************************************************
+
+	  Not selecting this option means certain Qualcomm SoCs and related
+	  mainboards cannot be built and will be hidden from the "Mainboards"
+	  section.
+
 config COVERAGE
 	bool "Code coverage support"
 	depends on COMPILER_GCC
@@ -250,20 +270,9 @@ config UBSAN
 	  say N because it adds a small performance penalty and may abort
 	  on code that happens to work in spite of the UB.
 
-config RELOCATABLE_RAMSTAGE
-	bool
-	default y if ARCH_X86
-	select RELOCATABLE_MODULES
-	help
-	 The reloctable ramstage support allows for the ramstage to be built
-	 as a relocatable module. The stage loader can identify a place
-	 out of the OS way so that copying memory is unnecessary during an S3
-	 wake. When selecting this option the romstage is responsible for
-	 determing a stack location to use for loading the ramstage.
-
 choice
 	prompt "Stage Cache for ACPI S3 resume"
-	default NO_STAGE_CACHE if !HAVE_ACPI_RESUME || !RELOCATABLE_RAMSTAGE
+	default NO_STAGE_CACHE if !HAVE_ACPI_RESUME
 	default TSEG_STAGE_CACHE if SMM_TSEG
 
 config NO_STAGE_CACHE
@@ -556,7 +565,6 @@ source "src/console/Kconfig"
 config HAVE_ACPI_RESUME
 	bool
 	default n
-	depends on RELOCATABLE_RAMSTAGE
 
 config DISABLE_ACPI_HIBERNATE
 	bool
@@ -729,6 +737,16 @@ config MAINBOARD_SMBIOS_PRODUCT_NAME
 	default MAINBOARD_PART_NUMBER
 	help
 	  Override the default Product name stored in SMBIOS structures.
+
+config VPD_SMBIOS_VERSION
+	bool "Populates SMBIOS type 0 version from the VPD_RO variable 'firmware_version'"
+	default n
+	depends on VPD && GENERATE_SMBIOS_TABLES
+	help
+	  Selecting this option will read firmware_version from
+	  VPD_RO and override SMBIOS type 0 version. One special
+	  scenario of using this feature is to assign a BIOS version
+	  to a coreboot image without the need to rebuild from source.
 
 endmenu
 

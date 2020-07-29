@@ -237,6 +237,24 @@ static int mainboard_smbios_type16(DMI_INFO *agesa_dmi, int *handle,
 	return len;
 }
 
+static int ddr_speed_from_bus_speed(int bus)
+{
+	switch(bus)
+	{
+		case 166:
+		case 216:
+		case 266:
+		case 333:
+		case 1066:
+		case 1666: return bus*2+1;
+		case 556:
+		case 667:
+		case 688:
+		case 813:  return bus*2-1;
+		default:   return bus*2;
+	}
+}
+
 static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 				 unsigned long *current)
 {
@@ -262,7 +280,7 @@ static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 				agesa_dmi->T17[0][0][0].BankLocator);
 	t->memory_type = agesa_dmi->T17[0][0][0].MemoryType;
 	t->type_detail = *(u16 *)&agesa_dmi->T17[0][0][0].TypeDetail;
-	t->speed = agesa_dmi->T17[0][0][0].Speed;
+	t->speed = ddr_speed_from_bus_speed(agesa_dmi->T17[0][0][0].Speed);
 	t->manufacturer = agesa_dmi->T17[0][0][0].ManufacturerIdCode;
 	t->serial_number = smbios_add_string(t->eos,
 				agesa_dmi->T17[0][0][0].SerialNumber);
@@ -270,7 +288,8 @@ static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 				agesa_dmi->T17[0][0][0].PartNumber);
 	t->attributes = agesa_dmi->T17[0][0][0].Attributes;
 	t->extended_size = agesa_dmi->T17[0][0][0].ExtSize;
-	t->clock_speed = agesa_dmi->T17[0][0][0].ConfigSpeed;
+	t->clock_speed = ddr_speed_from_bus_speed(
+				agesa_dmi->T17[0][0][0].ConfigSpeed);
 	t->minimum_voltage = 1500; /* From SPD: 1.5V */
 	t->maximum_voltage = 1500;
 

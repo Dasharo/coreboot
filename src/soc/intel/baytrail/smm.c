@@ -8,7 +8,7 @@
 #include <cpu/x86/smm.h>
 #include <cpu/intel/smm_reloc.h>
 #include <soc/iomap.h>
-#include <soc/pmc.h>
+#include <soc/pm.h>
 #include <soc/smm.h>
 
 /* Save settings which will be committed in SMI functions. */
@@ -76,13 +76,15 @@ static void smm_southbridge_enable(uint16_t pm1_events)
 	printk(BIOS_DEBUG, "Enabling SMIs.\n");
 	if (!smm_save_params[SMM_SAVE_PARAM_PCIE_WAKE_ENABLE])
 		pm1_events |= PCIEXPWAK_DIS;
+
 	enable_pm1(pm1_events);
 	disable_gpe(PME_B0_EN);
 
 	/* Set up the GPIO route. */
 	smm_southcluster_route_gpios();
 
-	/* Enable SMI generation:
+	/*
+	 * Enable SMI generation:
 	 *  - on APMC writes (io 0xb2)
 	 *  - on writes to SLP_EN (sleep states)
 	 *  - on writes to GBL_RLS (bios commands)

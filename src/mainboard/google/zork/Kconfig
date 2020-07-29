@@ -14,10 +14,13 @@ config BOARD_SPECIFIC_OPTIONS
 	select SOC_AMD_PICASSO
 	select VGA_BIOS
 	select BOARD_ROMSIZE_KB_16384
+	select DRIVERS_AMD_I2S_MACHINE_DEV
 	select DISABLE_SPI_FLASH_ROM_SHARING
+	select DRIVERS_GENERIC_GPIO_KEYS
 	select DRIVERS_I2C_GENERIC
 	select DRIVERS_I2C_HID
 	select EC_GOOGLE_CHROMEEC
+	select EC_GOOGLE_CHROMEEC_AUDIO_CODEC
 	select EC_GOOGLE_CHROMEEC_BOARDID
 	select EC_GOOGLE_CHROMEEC_ESPI
 	select EC_GOOGLE_CHROMEEC_I2C_TUNNEL
@@ -65,6 +68,7 @@ config VARIANT_DIR
 	default "dalboz" if BOARD_GOOGLE_DALBOZ
 	default "berknip" if BOARD_GOOGLE_BERKNIP
 	default "vilboz" if BOARD_GOOGLE_VILBOZ
+	default "woomax" if BOARD_GOOGLE_WOOMAX
 
 config MAINBOARD_PART_NUMBER
 	string
@@ -74,10 +78,12 @@ config MAINBOARD_PART_NUMBER
 	default "Dalboz" if BOARD_GOOGLE_DALBOZ
 	default "Berknip" if BOARD_GOOGLE_BERKNIP
 	default "Vilboz" if BOARD_GOOGLE_VILBOZ
+	default "Woomax" if BOARD_GOOGLE_WOOMAX
 
 config DEVICETREE
 	string
-	default "variants/baseboard/devicetree.cb"
+	default "variants/baseboard/devicetree_trembyle.cb" if BOARD_GOOGLE_BASEBOARD_TREMBYLE
+	default "variants/baseboard/devicetree_dalboz.cb" if BOARD_GOOGLE_BASEBOARD_DALBOZ
 
 config OVERRIDE_DEVICETREE
 	string
@@ -98,8 +104,6 @@ config ONBOARD_VGA_IS_PRIMARY
 config VBOOT
 	select EC_GOOGLE_CHROMEEC_SWITCHES
 	select VBOOT_LID_SWITCH
-	select VBOOT_STARTS_IN_BOOTBLOCK
-	select VBOOT_SEPARATE_VERSTAGE
 
 config VBOOT_VBNV_OFFSET
 	hex
@@ -121,6 +125,22 @@ config DRIVER_TPM_I2C_ADDR
 	hex
 	default 0x50
 
+config PICASSO_FW_A_POSITION
+	hex
+	default 0xFF031040
+	depends on VBOOT_SLOTS_RW_AB && VBOOT_STARTS_BEFORE_BOOTBLOCK
+	help
+	  Location of the AMD firmware in the RW_A region. This is the
+	  start of the RW-A region + 64 bytes for the cbfs header.
+
+config PICASSO_FW_B_POSITION
+	hex
+	default 0xFF3CF040
+	depends on VBOOT_SLOTS_RW_AB && VBOOT_STARTS_BEFORE_BOOTBLOCK
+	help
+	  Location of the AMD firmware in the RW_B region. This is the
+	  start of the RW-A region + 64 bytes for the cbfs header.
+
 config VARIANT_HAS_FW_CONFIG
 	bool
 	help
@@ -133,13 +153,75 @@ config VARIANT_BOARD_VER_FW_CONFIG_VALID
 	help
 	  Which board version did FW_CONFIG become valid in CBI.
 
+config VARIANT_SUPPORTS_PRE_V3_SCHEMATICS
+	bool
+	default y if BOARD_GOOGLE_TREMBYLE
+	default y if BOARD_GOOGLE_EZKINIL
+	default y if BOARD_GOOGLE_MORPHIUS
+	default y if BOARD_GOOGLE_BERKNIP
+	default y if BOARD_GOOGLE_DALBOZ
+	default n
+	help
+	  Whether this variant supports pre-v3 version of schematics.
+	  Eventually, when a variant moves to a point where it no
+	  longer has to support pre-v3 schematics, `default y` entry
+	  for it can be dropped.
+
 config VARIANT_MIN_BOARD_ID_V3_SCHEMATICS
 	int
+	depends on VARIANT_SUPPORTS_PRE_V3_SCHEMATICS
 	default 4 if BOARD_GOOGLE_TREMBYLE
 	default 3 if BOARD_GOOGLE_EZKINIL
 	default 3 if BOARD_GOOGLE_MORPHIUS
 	default 2 if BOARD_GOOGLE_BERKNIP
 	default 3 if BOARD_GOOGLE_DALBOZ
+	default 256
+	help
+	  Minimum board version where the variant starts supporting
+	  v3 version of reference schematics.
+
+config VARIANT_SUPPORTS_WIFI_POWER_ACTIVE_HIGH
+	bool
+	default y if VARIANT_SUPPORTS_PRE_V3_SCHEMATICS
+	default y if BOARD_GOOGLE_BERKNIP
+	default y if BOARD_GOOGLE_VILBOZ
+	default y if BOARD_GOOGLE_WOOMAX
+	default n
+	help
+	  Whether this variant supports active high power enable for
+	  WiFi. For pre-v3 schematics, this is always true. There are
+	  some variants which used v3 schematics, but did not pick up
+	  the change for active low WiFi power enable. Those variants
+	  will have to set this config to true. Eventually, when a
+	  variant needs to only support v3 schematics with active low
+	  power enable for WiFi, `default y` entry for it can be
+	  dropped.
+
+config VARIANT_MIN_BOARD_ID_WIFI_POWER_ACTIVE_LOW
+	int
+	depends on VARIANT_SUPPORTS_WIFI_POWER_ACTIVE_HIGH
+	default 3 if BOARD_GOOGLE_BERKNIP
 	default 2 if BOARD_GOOGLE_VILBOZ
+	default 1 if BOARD_GOOGLE_WOOMAX
+	default VARIANT_MIN_BOARD_ID_V3_SCHEMATICS
+	help
+	  Minimum board version where the variant starts supporting
+	  active low power enable for WiFi.
+
+config VBOOT_STARTS_BEFORE_BOOTBLOCK
+	bool "PSP verstage"
+	default y if VBOOT
+	help
+	  Firmware verification happens before the main processor is brought
+	  online.
+
+config VBOOT_STARTS_IN_BOOTBLOCK
+	bool "X86 verstage (in bootblock)"
+	depends on  VBOOT && ! VBOOT_STARTS_BEFORE_BOOTBLOCK
+	select VBOOT_SEPARATE_VERSTAGE
+	help
+	  Firmware verification happens during the end of or right after the
+	  bootblock. This implies that a static VBOOT2_WORK() buffer must be
+	  allocated in memlayout.
 
 endif # BOARD_GOOGLE_BASEBOARD_TREMBYLE || BOARD_GOOGLE_BASEBOARD_DALBOZ

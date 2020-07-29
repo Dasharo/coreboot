@@ -52,6 +52,8 @@
 #define RSDP_SIG		"RSD PTR "  /* RSDT pointer signature */
 #define ASLC			"CORE"      /* Must be exactly 4 bytes long! */
 
+#define ACPI_NAME_BUFFER_SIZE	5 /* 4 chars + 1 NUL */
+
 /*
  * The assigned ACPI ID for the coreboot project is 'BOOT'
  * http://www.uefi.org/acpi_id_list
@@ -922,6 +924,7 @@ void acpi_write_bert(acpi_bert_t *bert, uintptr_t region, size_t length);
 void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt);
 
 void acpi_fill_fadt(acpi_fadt_t *fadt);
+void arch_fill_fadt(acpi_fadt_t *fadt);
 void soc_fill_fadt(acpi_fadt_t *fadt);
 void mainboard_fill_fadt(acpi_fadt_t *fadt);
 

@@ -32,13 +32,14 @@ chip soc/intel/tigerlake
 	register "usb3_ports[2]" = "USB3_PORT_EMPTY"		# Not used
 	register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC3)"	# USB3/USB2 Flex Connector
 
+        # CPU replacement check
+        register "CpuReplacementCheck" = "1"
+
 	# EC host command ranges are in 0x800-0x8ff & 0x200-0x20f
 	register "gen1_dec" = "0x00fc0801"
 	register "gen2_dec" = "0x000c0201"
 	# EC memory map range is 0x900-0x9ff
 	register "gen3_dec" = "0x00fc0901"
-
-	register "PrmrrSize" = "0x10000000"
 
 	register "PcieRpEnable[2]" = "1"
 	register "PcieRpEnable[3]" = "1"
@@ -108,6 +109,9 @@ chip soc/intel/tigerlake
 	# TCSS USB3
 	register "TcssXhciEn" = "1"
 	register "TcssAuxOri" = "0"
+
+	# Enable S0ix
+	register "s0ix_enable" = "1"
 
 	# D3Hot and D3Cold for TCSS
 	register "TcssD3HotEnable" = "1"

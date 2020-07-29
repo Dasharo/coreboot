@@ -4,7 +4,6 @@
  * Based on src/southbridge/via/vt8237r/vt8237_fadt.c
  */
 
-#include <string.h>
 #include <acpi/acpi.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -26,28 +25,19 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	}
 
 	fadt->pm1a_evt_blk = DEFAULT_PMBASE;
-	fadt->pm1b_evt_blk = 0x0;
 	fadt->pm1a_cnt_blk = DEFAULT_PMBASE + PMCNTRL;
-	fadt->pm1b_cnt_blk = 0x0;
 
-	fadt->pm2_cnt_blk = 0;
 	fadt->pm_tmr_blk = DEFAULT_PMBASE + PMTMR;
 	fadt->gpe0_blk = DEFAULT_PMBASE + GPSTS;
-	fadt->gpe1_blk = 0x0;
-	fadt->gpe1_base = 0;
-	fadt->gpe1_blk_len = 0;
 
 	/* *_len define register width in bytes */
 	fadt->pm1_evt_len = 4;
 	fadt->pm1_cnt_len = 2;
-	fadt->pm2_cnt_len = 0; /* not supported */
 	fadt->pm_tmr_len = 4;
 	fadt->gpe0_blk_len = 4;
 
 	fadt->p_lvl2_lat = 101; /* >100 means c2 not supported */
 	fadt->p_lvl3_lat = 1001; /* >1000 means c3 not supported */
-	fadt->flush_size = 0; /* only needed if CPU wbinvd is broken */
-	fadt->flush_stride = 0;
 	fadt->duty_offset = 1; /* bit 1:3 in PCNTRL reg (pmbase+0x10) */
 	fadt->duty_width = 3; /* this width is in bits */
 	fadt->day_alrm = 0x0d; /* rtc CMOS RAM offset */
@@ -111,70 +101,33 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	 * 18   FORCE_APIC_CLUSTER_MODEL
 	 * 19   FORCE_APIC_PHYSICAL_DESTINATION_MODE
 	 */
-	fadt->flags = 0xa5;
+	fadt->flags |= 0xa5;
 
-	fadt->reset_reg.space_id = 0;
-	fadt->reset_reg.bit_width = 0;
-	fadt->reset_reg.bit_offset = 0;
-	fadt->reset_reg.access_size = 0;
-	fadt->reset_reg.addrl = 0x0;
-	fadt->reset_reg.addrh = 0x0;
-	fadt->reset_value = 0;
-
-	fadt->x_pm1a_evt_blk.space_id = 1;
+	fadt->x_pm1a_evt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm1a_evt_blk.bit_width = fadt->pm1_evt_len * 8;
 	fadt->x_pm1a_evt_blk.bit_offset = 0;
-	fadt->x_pm1a_evt_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_pm1a_evt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
 	fadt->x_pm1a_evt_blk.addrl = fadt->pm1a_evt_blk;
 	fadt->x_pm1a_evt_blk.addrh = 0x0;
 
-	fadt->x_pm1b_evt_blk.space_id = 1;
-	fadt->x_pm1b_evt_blk.bit_width = fadt->pm1_evt_len * 8;
-	fadt->x_pm1b_evt_blk.bit_offset = 0;
-	fadt->x_pm1b_evt_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
-	fadt->x_pm1b_evt_blk.addrl = fadt->pm1b_evt_blk;
-	fadt->x_pm1b_evt_blk.addrh = 0x0;
-
-	fadt->x_pm1a_cnt_blk.space_id = 1;
+	fadt->x_pm1a_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm1a_cnt_blk.bit_width = fadt->pm1_cnt_len * 8;
 	fadt->x_pm1a_cnt_blk.bit_offset = 0;
 	fadt->x_pm1a_cnt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
 	fadt->x_pm1a_cnt_blk.addrl = fadt->pm1a_cnt_blk;
 	fadt->x_pm1a_cnt_blk.addrh = 0x0;
 
-	fadt->x_pm1b_cnt_blk.space_id = 1;
-	fadt->x_pm1b_cnt_blk.bit_width = fadt->pm1_cnt_len * 8;
-	fadt->x_pm1b_cnt_blk.bit_offset = 0;
-	fadt->x_pm1b_cnt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
-	fadt->x_pm1b_cnt_blk.addrl = fadt->pm1b_cnt_blk;
-	fadt->x_pm1b_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm2_cnt_blk.space_id = 1;
-	fadt->x_pm2_cnt_blk.bit_width = fadt->pm2_cnt_len * 8;
-	fadt->x_pm2_cnt_blk.bit_offset = 0;
-	fadt->x_pm2_cnt_blk.access_size = 0;
-	fadt->x_pm2_cnt_blk.addrl = fadt->pm2_cnt_blk;
-	fadt->x_pm2_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm_tmr_blk.space_id = 1;
+	fadt->x_pm_tmr_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm_tmr_blk.bit_width = fadt->pm_tmr_len * 8;
 	fadt->x_pm_tmr_blk.bit_offset = 0;
 	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
 	fadt->x_pm_tmr_blk.addrl = fadt->pm_tmr_blk;
 	fadt->x_pm_tmr_blk.addrh = 0x0;
 
-	fadt->x_gpe0_blk.space_id = 1;
+	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_gpe0_blk.bit_width = fadt->gpe0_blk_len * 8;
 	fadt->x_gpe0_blk.bit_offset = 0;
 	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
 	fadt->x_gpe0_blk.addrh = 0x0;
-
-	fadt->x_gpe1_blk.space_id = 1;
-	fadt->x_gpe1_blk.bit_width = fadt->gpe1_blk_len * 8;
-	fadt->x_gpe1_blk.bit_offset = 0;
-	fadt->x_gpe1_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->x_gpe1_blk.addrl = fadt->gpe1_blk;
-	fadt->x_gpe1_blk.addrh = 0x0;
-
 }

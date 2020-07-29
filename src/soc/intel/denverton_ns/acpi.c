@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <cpu/x86/smm.h>
@@ -57,7 +58,7 @@ static acpi_cstate_t cstate_map[] = {
 	}
 };
 
-void acpi_init_gnvs(global_nvs_t *gnvs)
+void acpi_init_gnvs(struct global_nvs *gnvs)
 {
 	/* CPU core count */
 	gnvs->pcnt = dev_count_cpu();
@@ -120,19 +121,14 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	/* Power Control */
 	fadt->pm2_cnt_blk = pmbase + PM2_CNT;
 	fadt->pm_tmr_blk = pmbase + PM1_TMR;
-	fadt->gpe1_blk = 0;
 
 	/* Control Registers - Length */
 	fadt->pm2_cnt_len = 1;
 	fadt->pm_tmr_len = 4;
 	fadt->gpe0_blk_len = 8;
-	fadt->gpe1_blk_len = 0;
-	fadt->gpe1_base = 0;
 
 	fadt->p_lvl2_lat = ACPI_FADT_C2_NOT_SUPPORTED;
 	fadt->p_lvl3_lat = ACPI_FADT_C3_NOT_SUPPORTED;
-	fadt->flush_size = 0;   /* set to 0 if WBINVD is 1 in flags */
-	fadt->flush_stride = 0; /* set to 0 if WBINVD is 1 in flags */
 	fadt->duty_offset = 1;
 	fadt->duty_width = 0;
 
@@ -142,34 +138,18 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->century = 0x00;
 	fadt->iapc_boot_arch = ACPI_FADT_LEGACY_DEVICES | ACPI_FADT_8042;
 
-	fadt->flags = ACPI_FADT_WBINVD | ACPI_FADT_C1_SUPPORTED |
-		      ACPI_FADT_C2_MP_SUPPORTED | ACPI_FADT_SLEEP_BUTTON |
-		      ACPI_FADT_RESET_REGISTER | ACPI_FADT_SLEEP_TYPE |
-		      ACPI_FADT_S4_RTC_WAKE | ACPI_FADT_PLATFORM_CLOCK;
-
-	/* Reset Register */
-	fadt->reset_reg.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->reset_reg.bit_width = 8;
-	fadt->reset_reg.bit_offset = 0;
-	fadt->reset_reg.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->reset_reg.addrl = 0xCF9;
-	fadt->reset_reg.addrh = 0x00;
-	fadt->reset_value = 6;
+	fadt->flags |= ACPI_FADT_WBINVD | ACPI_FADT_C1_SUPPORTED |
+		       ACPI_FADT_C2_MP_SUPPORTED | ACPI_FADT_SLEEP_BUTTON |
+		       ACPI_FADT_SLEEP_TYPE | ACPI_FADT_S4_RTC_WAKE |
+		       ACPI_FADT_PLATFORM_CLOCK;
 
 	/* PM1 Status & PM1 Enable */
 	fadt->x_pm1a_evt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm1a_evt_blk.bit_width = 32;
 	fadt->x_pm1a_evt_blk.bit_offset = 0;
-	fadt->x_pm1a_evt_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_pm1a_evt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
 	fadt->x_pm1a_evt_blk.addrl = fadt->pm1a_evt_blk;
 	fadt->x_pm1a_evt_blk.addrh = 0x00;
-
-	fadt->x_pm1b_evt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm1b_evt_blk.bit_width = 0;
-	fadt->x_pm1b_evt_blk.bit_offset = 0;
-	fadt->x_pm1b_evt_blk.access_size = 0;
-	fadt->x_pm1b_evt_blk.addrl = fadt->pm1b_evt_blk;
-	fadt->x_pm1b_evt_blk.addrh = 0x00;
 
 	/* PM1 Control Registers */
 	fadt->x_pm1a_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
@@ -178,13 +158,6 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_pm1a_cnt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
 	fadt->x_pm1a_cnt_blk.addrl = fadt->pm1a_cnt_blk;
 	fadt->x_pm1a_cnt_blk.addrh = 0x00;
-
-	fadt->x_pm1b_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm1b_cnt_blk.bit_width = 0;
-	fadt->x_pm1b_cnt_blk.bit_offset = 0;
-	fadt->x_pm1b_cnt_blk.access_size = 0;
-	fadt->x_pm1b_cnt_blk.addrl = fadt->pm1b_cnt_blk;
-	fadt->x_pm1b_cnt_blk.addrh = 0x00;
 
 	/* PM2 Control Registers */
 	fadt->x_pm2_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
@@ -209,13 +182,6 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
 	fadt->x_gpe0_blk.addrh = 0x00;
-
-	fadt->x_gpe1_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_gpe1_blk.bit_width = 0;
-	fadt->x_gpe1_blk.bit_offset = 0;
-	fadt->x_gpe1_blk.access_size = 0;
-	fadt->x_gpe1_blk.addrl = fadt->gpe1_blk;
-	fadt->x_gpe1_blk.addrh = 0x00;
 }
 
 static acpi_tstate_t denverton_tss_table[] = {
@@ -280,7 +246,7 @@ unsigned long southcluster_write_acpi_tables(const struct device *device,
 
 void southcluster_inject_dsdt(const struct device *device)
 {
-	global_nvs_t *gnvs;
+	struct global_nvs *gnvs;
 
 	gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
 	if (!gnvs) {

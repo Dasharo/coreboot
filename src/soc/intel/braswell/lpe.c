@@ -53,7 +53,7 @@ static void lpe_enable_acpi_mode(struct device *dev)
 
 		REG_SCRIPT_END
 	};
-	global_nvs_t *gnvs;
+	struct global_nvs *gnvs;
 
 	/* Find ACPI NVS to update BARs */
 	gnvs = acpi_get_gnvs();
@@ -132,12 +132,9 @@ static void lpe_stash_firmware_info(struct device *dev)
 	write32((void *)(uintptr_t)(mmio->base + FIRMWARE_REG_LENGTH_C0), res->size);
 }
 
-
 static void lpe_init(struct device *dev)
 {
 	struct soc_intel_braswell_config *config = config_of(dev);
-
-	printk(BIOS_SPEW, "%s/%s (%s)\n", __FILE__, __func__, dev_name(dev));
 
 	lpe_stash_firmware_info(dev);
 	setup_codec_clock(dev);

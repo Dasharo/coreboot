@@ -13,13 +13,9 @@ DefinitionBlock (
 	0x00010001	/* OEM Revision */
 	)
 {	/* Start of ASL file */
-	/* #include <arch/x86/acpi/debug.asl> */	/* as needed */
 
 	/* global NVS and variables */
 	#include <globalnvs.asl>
-
-	/* Globals for the platform */
-	#include "acpi/mainboard.asl"
 
 	/* PCI IRQ mapping for the Southbridge */
 	#include <pcie.asl>
@@ -29,9 +25,6 @@ DefinitionBlock (
 
 	/* Contains the supported sleep states for this chipset */
 	#include <sleepstates.asl>
-
-	/* Contains the Sleep methods (WAK, PTS, GTS, etc.) */
-	#include "acpi/sleep.asl"
 
 	/* Contains _SWS methods */
 	#include <soc/amd/common/acpi/acpi_wake_source.asl>

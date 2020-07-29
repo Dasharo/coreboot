@@ -9,6 +9,7 @@ subdirs-y += ../../../cpu/x86/cache
 subdirs-y += ../../../cpu/x86/mtrr
 subdirs-y += ../../../cpu/x86/pae
 subdirs-y += ../../../cpu/x86/smm
+subdirs-$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK) += psp_verstage
 
 bootblock-y += bootblock/pre_c.S
 bootblock-y += bootblock/bootblock.c
@@ -26,6 +27,7 @@ romstage-y += i2c.c
 romstage-y += romstage.c
 romstage-y += gpio.c
 romstage-y += pmutil.c
+romstage-y += reset.c
 romstage-y += memmap.c
 romstage-y += uart.c
 romstage-$(CONFIG_PICASSO_CONSOLE_UART) += uart_console.c
@@ -37,19 +39,20 @@ romstage-y += psp.c
 romstage-y += config.c
 romstage-y += mrc_cache.c
 
-verstage-y += gpio.c
 verstage-y += i2c.c
 verstage-y += pmutil.c
 verstage-y += config.c
 verstage-y += aoac.c
-verstage-y += uart.c
-verstage-$(CONFIG_PICASSO_CONSOLE_UART) += uart_console.c
-verstage-y += tsc_freq.c
+verstage_x86-y += gpio.c
+verstage_x86-y += uart.c
+verstage_x86-$(CONFIG_PICASSO_CONSOLE_UART) += uart_console.c
+verstage_x86-y += tsc_freq.c
+verstage_x86-y += reset.c
 
 ramstage-y += i2c.c
 ramstage-y += chip.c
 ramstage-y += cpu.c
-ramstage-y += data_fabric_util.c
+ramstage-y += data_fabric.c
 ramstage-y += root_complex.c
 ramstage-y += mca.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
@@ -58,6 +61,7 @@ ramstage-y += gpio.c
 ramstage-y += aoac.c
 ramstage-y += southbridge.c
 ramstage-y += pmutil.c
+ramstage-y += reset.c
 ramstage-y += acp.c
 ramstage-y += sata.c
 ramstage-y += memmap.c
@@ -65,7 +69,6 @@ ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi_util.c
 ramstage-y += uart.c
 ramstage-$(CONFIG_PICASSO_CONSOLE_UART) += uart_console.c
-ramstage-y += usb.c
 ramstage-y += tsc_freq.c
 ramstage-y += finalize.c
 ramstage-y += soc_util.c
@@ -74,8 +77,9 @@ ramstage-y += fsp_params.c
 ramstage-y += config.c
 ramstage-y += update_microcode.c
 ramstage-y += graphics.c
-
-all-y += reset.c
+ramstage-y += pcie_gpp.c
+ramstage-y += xhci.c
+ramstage-y += dmi.c
 
 smm-y += smihandler.c
 smm-y += smi_util.c
@@ -235,6 +239,24 @@ PSP_UCODE_FILE1=$(FIRMWARE_LOCATE)/UcodePatch_PCO_B1.bin
 PSP_UCODE_FILE2=$(FIRMWARE_LOCATE)/UcodePatch_PCO_B0.bin
 PSP_UCODE_FILE3=$(FIRMWARE_LOCATE)/UcodePatch_RV2_A0.bin
 
+ifeq ($(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK),y)
+# type = 0x6B - PSP Shared memory location
+ifneq ($(CONFIG_PSP_SHAREDMEM_SIZE),0x0)
+PSP_SHAREDMEM_SIZE=$(CONFIG_PSP_SHAREDMEM_SIZE)
+_PSP_SHAREDMEM_BASE=$(shell grep _psp_sharedmem_dram $(obj)/cbfs/$(CONFIG_CBFS_PREFIX)/bootblock.map | cut -f1 -d' ')
+PSP_SHAREDMEM_BASE=$(shell printf "0x%s" $(_PSP_SHAREDMEM_BASE))
+endif
+
+# type = 0x52 - PSP Bootloader Userspace Application (verstage)
+PSP_VERSTAGE_FILE=$(obj)/psp_verstage.bin
+endif # CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK
+
+APOB_NV_SIZE=$(shell printf "0x%x" 	$(shell cat $(obj)/fmap.fmd | $(_GET_APOBNV_SIZE)))
+APOB_NV_BASE=$(shell printf "0x%x" $(call int-add, \
+			$(shell cat $(obj)/fmap.fmd | $(_GET_FLASH_BASE)) \
+			$(shell cat $(obj)/fmap.fmd | $(_GET_BIOS_REG_BASE)) \
+			$(shell cat $(obj)/fmap.fmd | $(_GET_APOBNV_BASE))))
+
 # type = 0xb - See #55758 (NDA) for bit definitions.
 PSP_SOFTFUSE_BITS += 28
 
@@ -277,6 +299,7 @@ OPT_ABL5_FILE=$(call add_opt_prefix,  $(PSP_ABL5_FILE), --abl-image)
 OPT_ABL6_FILE=$(call add_opt_prefix,  $(PSP_ABL6_FILE), --abl-image)
 OPT_ABL7_FILE=$(call add_opt_prefix,  $(PSP_ABL7_FILE), --abl-image)
 OPT_WHITELIST_FILE=$(call add_opt_prefix, $(PSP_WHITELIST_FILE), --whitelist)
+OPT_VERSTAGE_FILE=$(call add_opt_prefix, $(PSP_VERSTAGE_FILE), --verstage)
 
 OPT_PSP_APCB_FILES=$(foreach i, $(shell seq $(words $(PSP_APCB_FILES))), \
 	$(call add_opt_prefix, $(word $(i), $(PSP_APCB_FILES)), \
@@ -295,6 +318,59 @@ OPT_PSP_PMUD_FILE2=$(call add_opt_prefix, $(PSP_PMUD_FILE2), --subprogram 0 --in
 OPT_PSP_PMUD_FILE3=$(call add_opt_prefix, $(PSP_PMUD_FILE3), --subprogram 1 --instance 1 --pmu-data)
 OPT_PSP_PMUD_FILE4=$(call add_opt_prefix, $(PSP_PMUD_FILE4), --subprogram 1 --instance 4 --pmu-data)
 OPT_MP2CFG_FILE=$(call add_opt_prefix, $(PSP_MP2CFG_FILE), --mp2-config)
+OPT_PSP_SHAREDMEM_BASE=$(call add_opt_prefix, $(PSP_SHAREDMEM_BASE), --sharedmem)
+OPT_PSP_SHAREDMEM_SIZE=$(call add_opt_prefix, $(PSP_SHAREDMEM_SIZE), --sharedmem-size)
+OPT_APOB_NV_SIZE=$(call add_opt_prefix, $(APOB_NV_SIZE), --apob-nv-size)
+OPT_APOB_NV_BASE=$(call add_opt_prefix, $(APOB_NV_BASE),--apob-nv-base)
+
+AMDFW_COMMON_ARGS=$(OPT_AMD_PUBKEY_FILE) \
+		$(OPT_PSPBTLDR_FILE) \
+		$(OPT_PSPSCUREOS_FILE) \
+		$(OPT_PSP_SEC_DBG_KEY_FILE) \
+		$(OPT_SMUFW1_SUB2_FILE) \
+		$(OPT_SMUFW2_SUB2_FILE) \
+		$(OPT_SMUFW1_SUB1_FILE) \
+		$(OPT_SMUFW2_SUB1_FILE) \
+		$(OPT_PSP_APCB_FILES) \
+		$(OPT_APOB_ADDR) \
+		$(OPT_APOB_NV_SIZE) \
+		$(OPT_APOB_NV_BASE) \
+		$(OPT_PSP_BIOSBIN_FILE) \
+		$(OPT_PSP_BIOSBIN_DEST) \
+		$(OPT_PSP_BIOSBIN_SIZE) \
+		$(OPT_PSP_SOFTFUSE) \
+		$(OPT_PSP_PMUI_FILE1) \
+		$(OPT_PSP_PMUI_FILE2) \
+		$(OPT_PSP_PMUI_FILE3) \
+		$(OPT_PSP_PMUI_FILE4) \
+		$(OPT_PSP_PMUD_FILE1) \
+		$(OPT_PSP_PMUD_FILE2) \
+		$(OPT_PSP_PMUD_FILE3) \
+		$(OPT_PSP_PMUD_FILE4) \
+		$(OPT_MP2CFG_FILE) \
+		$(OPT_ABL0_FILE) \
+		$(OPT_ABL1_FILE) \
+		$(OPT_ABL2_FILE) \
+		$(OPT_ABL3_FILE) \
+		$(OPT_ABL4_FILE) \
+		$(OPT_ABL5_FILE) \
+		$(OPT_ABL6_FILE) \
+		$(OPT_ABL7_FILE) \
+		$(OPT_WHITELIST_FILE) \
+		$(OPT_SECG1_FILE) \
+		$(OPT_SECG2_FILE) \
+		$(OPT_MP2FW1_FILE) \
+		$(OPT_MP2FW2_FILE) \
+		$(OPT_DRIVERS_FILE) \
+		$(OPT_PSP_S0I3_FILE) \
+		$(OPT_IKEK_FILE) \
+		$(OPT_SEC_DEBUG_FILE) \
+		$(OPT_VERSTAGE_FILE) \
+		$(OPT_PSP_SHAREDMEM_BASE) \
+		$(OPT_PSP_SHAREDMEM_SIZE) \
+		--combo-capable \
+		$(OPT_TOKEN_UNLOCK) \
+		--flashsize $(CONFIG_ROM_SIZE)
 
 # Copy prebuild APCBs if they exist
 $(obj)/APCB_%.bin: $(MAINBOARD_BLOBS_DIR)/APCB_%.bin
@@ -372,63 +448,16 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(CONFIG_AMD_PUBKEY_FILE)) \
 			$(call_strip_quotes, $(PSP_S0I3_FILE)) \
 			$(call_strip_quotes, $(PSP_IKEK_FILE)) \
 			$(call_strip_quotes, $(PSP_SEC_DEBUG_FILE)) \
+			$(PSP_VERSTAGE_FILE) \
 			$$(PSP_APCB_FILES) \
 			$(AMDFWTOOL) \
 			$(obj)/fmap.fmd
 	rm -f $@
 	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
 	$(AMDFWTOOL) \
-		$(OPT_AMD_PUBKEY_FILE) \
-		$(OPT_PSPBTLDR_FILE) \
-		$(OPT_PSPSCUREOS_FILE) \
-		$(OPT_PSP_SEC_DBG_KEY_FILE) \
-		$(OPT_SMUFW1_SUB2_FILE) \
-		$(OPT_SMUFW2_SUB2_FILE) \
-		$(OPT_SMUFW1_SUB1_FILE) \
-		$(OPT_SMUFW2_SUB1_FILE) \
-		$(OPT_PSP_APCB_FILES) \
-		$(OPT_APOB_ADDR) \
-		--apob-nv-size $(shell printf "0x%x" \
-			$(shell cat $(obj)/fmap.fmd | $(_GET_APOBNV_SIZE))) \
-		--apob-nv-base $(shell printf "0x%x" $(call int-add, \
-			$(shell cat $(obj)/fmap.fmd | $(_GET_FLASH_BASE)) \
-			$(shell cat $(obj)/fmap.fmd | $(_GET_BIOS_REG_BASE)) \
-			$(shell cat $(obj)/fmap.fmd | $(_GET_APOBNV_BASE)))) \
-		$(OPT_PSP_BIOSBIN_FILE) \
-		$(OPT_PSP_BIOSBIN_DEST) \
-		$(OPT_PSP_BIOSBIN_SIZE) \
-		$(OPT_PSP_SOFTFUSE) \
-		$(OPT_PSP_PMUI_FILE1) \
-		$(OPT_PSP_PMUI_FILE2) \
-		$(OPT_PSP_PMUI_FILE3) \
-		$(OPT_PSP_PMUI_FILE4) \
-		$(OPT_PSP_PMUD_FILE1) \
-		$(OPT_PSP_PMUD_FILE2) \
-		$(OPT_PSP_PMUD_FILE3) \
-		$(OPT_PSP_PMUD_FILE4) \
-		$(OPT_MP2CFG_FILE) \
-		$(OPT_ABL0_FILE) \
-		$(OPT_ABL1_FILE) \
-		$(OPT_ABL2_FILE) \
-		$(OPT_ABL3_FILE) \
-		$(OPT_ABL4_FILE) \
-		$(OPT_ABL5_FILE) \
-		$(OPT_ABL6_FILE) \
-		$(OPT_ABL7_FILE) \
-		$(OPT_WHITELIST_FILE) \
-		$(OPT_SECG1_FILE) \
-		$(OPT_SECG2_FILE) \
-		$(OPT_MP2FW1_FILE) \
-		$(OPT_MP2FW2_FILE) \
-		$(OPT_DRIVERS_FILE) \
-		$(OPT_PSP_S0I3_FILE) \
-		$(OPT_IKEK_FILE) \
-		$(OPT_SEC_DEBUG_FILE) \
-		--combo-capable \
-		$(OPT_TOKEN_UNLOCK) \
-		--flashsize $(CONFIG_ROM_SIZE) \
-		--location $(shell printf "0x%x" $(PICASSO_FWM_POSITION)) \
-		--output	$@
+		$(AMDFW_COMMON_ARGS) \
+		--location $(shell printf "%#x" $(PICASSO_FWM_POSITION)) \
+		--output $@
 
 $(PSP_BIOSBIN_FILE): $(PSP_ELF_FILE) $(AMDCOMPRESS)
 	rm -f $@
@@ -436,10 +465,40 @@ $(PSP_BIOSBIN_FILE): $(PSP_ELF_FILE) $(AMDCOMPRESS)
 	$(AMDCOMPRESS) --infile $(PSP_ELF_FILE) --outfile $@ --compress \
 		--maxsize $(PSP_BIOSBIN_SIZE)
 
+$(obj)/amdfw_a.rom: $(obj)/amdfw.rom
+	rm -f $@
+	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
+	$(AMDFWTOOL) \
+		$(AMDFW_COMMON_ARGS) \
+		--location $(shell printf "%#x" $(CONFIG_PICASSO_FW_A_POSITION)) \
+		--anywhere \
+		--output $@
+
+$(obj)/amdfw_b.rom: $(obj)/amdfw.rom
+	rm -f $@
+	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
+	$(AMDFWTOOL) \
+		$(AMDFW_COMMON_ARGS) \
+		--location $(shell printf "%#x" $(CONFIG_PICASSO_FW_B_POSITION)) \
+		--anywhere \
+		--output $@
+
 cbfs-files-y += apu/amdfw
 apu/amdfw-file := $(obj)/amdfw.rom
 apu/amdfw-position := $(PICASSO_FWM_POSITION)
 apu/amdfw-type := raw
+
+ifeq ($(CONFIG_VBOOT_SLOTS_RW_AB)$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK),yy)
+cbfs-files-y += apu/amdfw_a
+apu/amdfw_a-file := $(obj)/amdfw_a.rom
+apu/amdfw_a-position := $(call strip_quotes, $(CONFIG_PICASSO_FW_A_POSITION))
+apu/amdfw_a-type := raw
+
+cbfs-files-y += apu/amdfw_b
+apu/amdfw_b-file := $(obj)/amdfw_b.rom
+apu/amdfw_b-position := $(call strip_quotes, $(CONFIG_PICASSO_FW_B_POSITION))
+apu/amdfw_b-type := raw
+endif
 
 $(call strip_quotes,$(CONFIG_FSP_M_CBFS))-options := -b $(CONFIG_FSP_M_ADDR)
 
