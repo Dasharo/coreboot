@@ -1,4 +1,4 @@
-version=4.6.15
+version=4.6.19
 branch_name=v$(version)
 project_url=https://github.com/pcengines/sortbootorder/archive/$(branch_name).tar.gz
 archive_name=$(branch_name).tar.gz
