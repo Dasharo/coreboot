@@ -104,6 +104,7 @@ check_dependencies:
   stage: run_regression
   tags:
     - local
+  timeout: 12h
   before_script:
     - apt-get update
     - apt-get install binutils
