@@ -25,7 +25,7 @@ check_dependencies:
     PLATFORM:
   stage: build_rom
   tags:
-    - local
+    - docker
   script:
     - git clone https://github.com/pcengines/pce-fw-builder.git /home/coreboot/pce-fw-builder
     - cd /home/coreboot/pce-fw-builder
@@ -45,7 +45,7 @@ check_dependencies:
     PLATFORM:
   stage: test_rom
   tags:
-    - local
+    - docker
   script:
     - echo "test_rom"
     - ls -la ${RELEASE_DIR}/${PLATFORM}_*.rom
@@ -57,7 +57,7 @@ check_dependencies:
     PLATFORM:
   stage: sign_rom
   tags:
-    - local
+    - docker
   script:
     - cd ${RELEASE_DIR}
     - sha256sum ${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256
@@ -75,9 +75,10 @@ check_dependencies:
     PLATFORM:
   stage: publish_rom
   tags:
-    - local
+    - docker
   before_script:
-    - apk add curl
+    - apt-get update
+    - apt-get install curl
   script:
     - ls -al ${RELEASE_DIR}
     - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/releases/
