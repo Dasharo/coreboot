@@ -1,8 +1,10 @@
 config BOARD_GOOGLE_BASEBOARD_DEDEDE
 	def_bool n
 	select BOARD_ROMSIZE_KB_16384 if !BOARD_ROMSIZE_KB_32768
+	select DPTF_USE_EISA_HID
 	select DRIVERS_I2C_GENERIC
 	select DRIVERS_I2C_HID
+	select DRIVERS_INTEL_DPTF
 	select DRIVERS_SPI_ACPI
 	select DRIVERS_USB_ACPI
 	select EC_GOOGLE_CHROMEEC
@@ -17,6 +19,7 @@ config BOARD_GOOGLE_BASEBOARD_DEDEDE
 	select MAINBOARD_HAS_SPI_TPM_CR50
 	select MAINBOARD_HAS_TPM2
 	select SOC_INTEL_JASPERLAKE
+	select SOC_INTEL_COMMON_BLOCK_DTT
 
 if BOARD_GOOGLE_BASEBOARD_DEDEDE
 
@@ -64,8 +67,11 @@ config MAINBOARD_FAMILY
 config MAINBOARD_PART_NUMBER
 	string
 	default "Boten" if BOARD_GOOGLE_BOTEN
+	default "Boten" if BOARD_GOOGLE_BOTEN_LEGACY
 	default "Dedede" if BOARD_GOOGLE_DEDEDE
 	default "Drawcia" if BOARD_GOOGLE_DRAWCIA
+	default "Drawcia" if BOARD_GOOGLE_DRAWCIA_LEGACY
+	default "Madoo" if BOARD_GOOGLE_MADOO
 	default "Waddledoo" if BOARD_GOOGLE_WADDLEDOO
 	default "Waddledee" if BOARD_GOOGLE_WADDLEDEE
 	default "Wheelie" if BOARD_GOOGLE_WHEELIE
@@ -89,8 +95,11 @@ config UART_FOR_CONSOLE
 config VARIANT_DIR
 	string
 	default "boten" if BOARD_GOOGLE_BOTEN
+	default "boten" if BOARD_GOOGLE_BOTEN_LEGACY
 	default "dedede" if BOARD_GOOGLE_DEDEDE
 	default "drawcia" if BOARD_GOOGLE_DRAWCIA
+	default "drawcia" if BOARD_GOOGLE_DRAWCIA_LEGACY
+	default "madoo" if BOARD_GOOGLE_MADOO
 	default "waddledoo" if BOARD_GOOGLE_WADDLEDOO
 	default "waddledee" if BOARD_GOOGLE_WADDLEDEE
 	default "wheelie" if BOARD_GOOGLE_WHEELIE

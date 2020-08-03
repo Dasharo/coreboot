@@ -50,7 +50,7 @@ pci$(stripped_vgabios_dgpu_id).rom-type := optionrom
 # into a single generated file.
 crt0s = $(cpu_incs-y)
 
-$(objgenerated)/assembly.inc: $$(crt0s)
+$(objgenerated)/assembly.inc: build-dirs $$(crt0s)
 	@printf "    GEN        $(subst $(obj)/,,$(@))\n"
 	printf '$(foreach crt0,$(crt0s),#include "$(crt0)"\n)' > $@
 
@@ -94,6 +94,7 @@ bootblock-$(CONFIG_IDT_IN_EVERY_STAGE) += exception.c
 bootblock-$(CONFIG_IDT_IN_EVERY_STAGE) += idt.S
 bootblock-y += memcpy.c
 bootblock-y += memset.c
+bootblock-y += memmove.c
 bootblock-$(CONFIG_COLLECT_TIMESTAMPS_TSC) += timestamp.c
 bootblock-$(CONFIG_X86_TOP4G_BOOTMEDIA_MAP) += mmap_boot.c
 bootblock-$(CONFIG_BOOTBLOCK_NORMAL) += bootblock_normal.c
@@ -163,7 +164,6 @@ romstage-y += post.c
 # gdt_init.S is included by entry32.inc when romstage is the first C
 # environment.
 romstage-y += gdt_init.S
-romstage-y += cbmem.c
 romstage-y += cpu_common.c
 romstage-$(CONFIG_IDT_IN_EVERY_STAGE) += exception.c
 romstage-$(CONFIG_IDT_IN_EVERY_STAGE) += idt.S
@@ -235,6 +235,7 @@ $(CONFIG_CBFS_PREFIX)/postcar-compression := none
 
 ifeq ($(CONFIG_ARCH_RAMSTAGE_X86_32)$(CONFIG_ARCH_RAMSTAGE_X86_64),y)
 
+ramstage-y += acpi.c
 ramstage-$(CONFIG_HAVE_ACPI_RESUME) += acpi_s3.c
 ramstage-$(CONFIG_ACPI_BERT) += acpi_bert_storage.c
 ramstage-y += boot.c
@@ -245,7 +246,6 @@ ramstage-y += cpu_common.c
 ramstage-y += ebda.c
 ramstage-y += exception.c
 ramstage-y += idt.S
-ramstage-y += gdt.c
 ramstage-$(CONFIG_IOAPIC) += ioapic.c
 ramstage-y += memcpy.c
 ramstage-y += memmove.c
@@ -288,19 +288,12 @@ endif
 ifeq ($(CONFIG_GENERATE_PIRQ_TABLE),y)
 ramstage-srcs += src/mainboard/$(MAINBOARDDIR)/irq_tables.c
 endif
-ifneq ($(wildcard src/mainboard/$(MAINBOARDDIR)/reset.c),)
-ramstage-srcs += src/mainboard/$(MAINBOARDDIR)/reset.c
-endif
 
 ramstage-libs ?=
-
-ifeq ($(CONFIG_RELOCATABLE_RAMSTAGE),y)
 
 # The rmodule_link definition creates an elf file with .rmod extension.
 $(objcbfs)/ramstage.elf: $(objcbfs)/ramstage.debug.rmod
 	cp $< $@
-
-endif
 
 $(objcbfs)/ramstage.debug: $(objgenerated)/ramstage.o $(call src-to-obj,ramstage,$(CONFIG_MEMLAYOUT_LD_FILE))
 	@printf "    CC         $(subst $(obj)/,,$(@))\n"

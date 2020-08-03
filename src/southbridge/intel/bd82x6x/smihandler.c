@@ -17,12 +17,6 @@
 #include "pch.h"
 #include "nvs.h"
 
-static global_nvs_t *gnvs;
-global_nvs_t *smm_get_gnvs(void)
-{
-	return gnvs;
-}
-
 int southbridge_io_trap_handler(int smif)
 {
 	switch (smif) {
@@ -186,7 +180,7 @@ void southbridge_smi_monitor(void)
 
 void southbridge_smm_xhci_sleep(u8 slp_type)
 {
-	if (smm_get_gnvs()->xhci)
+	if (gnvs->xhci)
 		xhci_sleep(slp_type);
 }
 
@@ -196,7 +190,7 @@ void southbridge_update_gnvs(u8 apm_cnt, int *smm_done)
 		smi_apmc_find_state_save(apm_cnt);
 	if (state) {
 		/* EBX in the state save contains the GNVS pointer */
-		gnvs = (global_nvs_t *)((u32)state->rbx);
+		gnvs = (struct global_nvs *)((u32)state->rbx);
 		*smm_done = 1;
 		printk(BIOS_DEBUG, "SMI#: Setting GNVS to %p\n", gnvs);
 	}

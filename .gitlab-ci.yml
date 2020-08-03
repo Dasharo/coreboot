@@ -10,6 +10,7 @@ stages:
   - test_rom
   - sign_rom
   - publish_rom
+  - run_regression
 
 check_dependencies:
   stage: check_dependencies
@@ -29,7 +30,7 @@ check_dependencies:
     - git clone https://github.com/pcengines/pce-fw-builder.git /home/coreboot/pce-fw-builder
     - cd /home/coreboot/pce-fw-builder
     - git checkout `git describe --tags --abbrev=0`
-    - ./build.sh release-CI "${CI_COMMIT_REF_NAME}" "${PLATFORM}"
+    - bash -x ./build.sh release-CI "${CI_COMMIT_REF_NAME}" "${PLATFORM}"
     - cp -v /home/coreboot/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${RELEASE_DIR}
   artifacts:
     name: ${PLATFORM}
@@ -59,8 +60,8 @@ check_dependencies:
     - docker
   script:
     - cd ${RELEASE_DIR}
-    - sha256sum ${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256 
-    - ls -la
+    - sha256sum ${PLATFORM}_${CI_COMMIT_REF_NAME}.rom > ${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256
+    - ls -la ${RELEASE_DIR}
   artifacts:
     name: ${PLATFORM}
     paths:
@@ -75,12 +76,40 @@ check_dependencies:
   stage: publish_rom
   tags:
     - docker
+  before_script:
+    - apt-get update
+    - apt-get install curl
   script:
     - ls -al ${RELEASE_DIR}
     - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/releases/
     - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/"
     - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.rom ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
     - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${PLATFORM}_${CI_COMMIT_REF_NAME}.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
+  only:
+    - tags
+
+.run_regression: &run_regression
+  image:
+    name: 3mdeb/rf-docker:0.4.2
+    # https://docs.gitlab.com/ee/ci/docker/using_docker_images.html#overriding-the-entrypoint-of-an-image
+    # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2692
+    # use EMPTY ENTRYPOINT for docker >17.06
+    entrypoint: [""]
+  variables:
+    PLATFORM:
+    RTE_IP:
+    CONFIG:
+    AUTOFILL: 1
+    FIRMWARE_VERSION: $CI_COMMIT_REF_NAME
+  stage: run_regression
+  tags:
+    - local
+  timeout: 12h
+  before_script:
+    - apt-get update
+    - apt-get install binutils
+  script:
+    - bash -x .gitlab-ci/regression.sh
   only:
     - tags
 
@@ -126,6 +155,13 @@ publish:apu2:
   variables:
     PLATFORM: apu2
 
+regression:apu2:
+  <<: *run_regression
+  variables:
+    PLATFORM: apu2
+    CONFIG: apu2
+    RTE_IP: $RTE_IP_APU2
+
 
 build:apu3:
   <<: *build_rom_apu
@@ -146,6 +182,13 @@ publish:apu3:
   <<: *publish_rom
   variables:
     PLATFORM: apu3
+
+regression:apu3:
+  <<: *run_regression
+  variables:
+    PLATFORM: apu3
+    CONFIG: apu3
+    RTE_IP: $RTE_IP_APU3
 
 
 build:apu4:
@@ -168,6 +211,13 @@ publish:apu4:
   variables:
     PLATFORM: apu4
 
+regression:apu4:
+  <<: *run_regression
+  variables:
+    PLATFORM: apu4
+    CONFIG: apu4
+    RTE_IP: $RTE_IP_APU4
+
 
 build:apu5:
   <<: *build_rom_apu
@@ -188,3 +238,10 @@ publish:apu5:
   <<: *publish_rom
   variables:
     PLATFORM: apu5
+
+regression:apu5:
+  <<: *run_regression
+  variables:
+    PLATFORM: apu5
+    CONFIG: apu5
+    RTE_IP: $RTE_IP_APU5

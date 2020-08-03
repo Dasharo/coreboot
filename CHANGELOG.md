@@ -12,8 +12,21 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.12.0.3] - 2020-07-29
+### Fixed
+- [memory speed values in the DMI table](https://github.com/pcengines/apu2-documentation/issues/176)
+- [Cbmem error on apu1 caused by wrong ACPI table](https://github.com/pcengines/coreboot/issues/411)
+
+### Changed
+- rebased with official coreboot repository commit 8d5cedf
+- [updated sortbootorder to v4.6.19](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4619---2020-07-29)
+- [extended flashing documentation with FreeBSD/pfSense guides](https://github.com/pcengines/apu2-documentation/blob/master/docs/firmware_flashing.md)
+
+### Added
+- [option in runtime config to reverse PCI addressing order](https://github.com/pcengines/coreboot/issues/392)
+
 ## [v4.12.0.2] - 2020-06-28
-## Fixed
+### Fixed
 - [incorrrect serial number in dmidecode for apu1](https://github.com/pcengines/coreboot/issues/402)
 
 ### Changed
@@ -432,7 +445,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.12.0.2...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.12.0.3...develop
+[v4.12.0.3]: https://github.com/pcengines/coreboot/compare/v4.12.0.2...v4.12.0.3
 [v4.12.0.2]: https://github.com/pcengines/coreboot/compare/v4.12.0.1...v4.12.0.2
 [v4.12.0.1]: https://github.com/pcengines/coreboot/compare/v4.11.0.6...v4.12.0.1
 [v4.11.0.6]: https://github.com/pcengines/coreboot/compare/v4.11.0.5...v4.11.0.6

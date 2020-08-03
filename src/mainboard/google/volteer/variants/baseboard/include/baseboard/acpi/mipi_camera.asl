@@ -163,6 +163,9 @@ Scope (\_SB.PCI0.I2C3)
 				CTXS(GPP_D4)
 #endif
 
+				/* Pull SNRPWR_EN high */
+				STXS(GPP_H14)
+
 				/* Pull PWREN high */
 				STXS(GPP_H20)
 				Sleep(2) /* reset pulse width */
@@ -195,6 +198,9 @@ Scope (\_SB.PCI0.I2C3)
 
 				/* Pull PWREN low */
 				CTXS(GPP_H20)
+
+				/* Pull SNRPWR_EN low */
+				CTXS(GPP_H14)
 
 				Store(0,STA)
 			}
@@ -489,7 +495,7 @@ Scope (\_SB.PCI0.I2C2)
 
 	Device (CAM1)
 	{
-		Name (_HID, "OVTI2740")  /* _HID: Hardware ID */
+		Name (_HID, "INT3474")  /* _HID: Hardware ID */
 		Name (_UID, Zero)  /* _UID: Unique ID */
 		Name (_DDN, "Ov 2740 Camera")  /* _DDN: DOS Device Name */
 		Method (_STA, 0, NotSerialized)  /* _STA: Status */

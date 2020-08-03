@@ -294,6 +294,15 @@ S:	Maintained
 F:	src/mainboard/libretrend/lt1000
 
 
+OCP DELTALAKE MAINBOARD
+M:	Jonathan Zhang <jonzhang@fb.com>
+M:	Reddy Chagam <anjaneya.chagam@intel.com>
+M:	Johnny Lin <Johnny_Lin@wiwynn.com>
+M:	Morgan Jang <Morgan_Jang@wiwynn.com>
+M:	Ryback Hung <<Ryback.Hung@quantatw.com>
+M:	Bryant Ou <Bryant.Ou@quantatw.com>
+S:	Supported
+F:	src/mainboard/ocp/deltalake
 
 OCP TIOGAPASS MAINBOARD
 M:	Jonathan Zhang <jonzhang@fb.com>
@@ -336,6 +345,14 @@ M:	Piotr Król <piotr.krol@3mdeb.com>
 M:	Michał Żygowski <michal.zygowski@3mdeb.com>
 S:	Maintained
 F:	src/mainboard/protectli/
+
+
+
+PRODRIVE HERMES MAINBOARD
+M:	Christian Walter <christian.walter@9elements.com>
+M:	Patrick Rudolph <patrick.rudolph@9elements.com>
+S:	Maintained
+F:	src/mainboard/prodrive/hermes
 
 
 
@@ -505,6 +522,18 @@ M:	Frans Hendriks <fhendriks@eltan.com>
 S:	Maintained
 F:	/src/soc/intel/braswell
 F:	/src/vendorcode/intel/fsp/fsp1_1/braswell
+
+INTEL Xeon Sacalable Processor Family
+M:	Jonathan Zhang <jonzhang@fb.com>
+M:	Reddy Chagam <anjaneya.chagam@intel.com>
+M:	Johnny Lin <Johnny_Lin@wiwynn.com>
+M:	Morgan Jang <Morgan_Jang@wiwynn.com>
+M:	Ryback Hung <<Ryback.Hung@quantatw.com>
+M:	Bryant Ou <Bryant.Ou@quantatw.com>
+S:	Supported
+F:	src/soc/intel/xeon_sp
+F:	src/vendorcode/intel/fsp/fsp2_0/skylake_sp
+F:	src/vendorcode/intel/fsp/fsp2_0/copperlake_sp
 
 ORPHANED ARM SOCS
 S:	Orphaned

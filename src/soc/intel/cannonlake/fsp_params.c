@@ -297,6 +297,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 			sizeof(params->SataPortsEnable));
 		memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
 			sizeof(params->SataPortsDevSlp));
+
+		memcpy(params->SataPortsHotPlug, config->SataPortsHotPlug,
+			sizeof(params->SataPortsHotPlug));
+
 #if CONFIG(SOC_INTEL_COMETLAKE)
 		memcpy(params->SataPortsDevSlpResetConfig,
 			config->SataPortsDevSlpResetConfig,
@@ -399,6 +403,36 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 			params->Usb3HsioTxDownscaleAmpEnable[i] = 1;
 			params->Usb3HsioTxDownscaleAmp[i] =
 				config->usb3_ports[i].tx_downscale_amp;
+		}
+#if CONFIG(SOC_INTEL_COMETLAKE)
+		if (config->usb3_ports[i].gen2_tx_rate0_uniq_tran_enable) {
+			params->Usb3HsioTxRate0UniqTranEnable[i] = 1;
+			params->Usb3HsioTxRate0UniqTran[i] =
+				config->usb3_ports[i].gen2_tx_rate0_uniq_tran;
+		}
+		if (config->usb3_ports[i].gen2_tx_rate1_uniq_tran_enable) {
+			params->Usb3HsioTxRate1UniqTranEnable[i] = 1;
+			params->Usb3HsioTxRate1UniqTran[i] =
+				config->usb3_ports[i].gen2_tx_rate1_uniq_tran;
+		}
+		if (config->usb3_ports[i].gen2_tx_rate2_uniq_tran_enable) {
+			params->Usb3HsioTxRate2UniqTranEnable[i] = 1;
+			params->Usb3HsioTxRate2UniqTran[i] =
+				config->usb3_ports[i].gen2_tx_rate2_uniq_tran;
+		}
+		if (config->usb3_ports[i].gen2_tx_rate3_uniq_tran_enable) {
+			params->Usb3HsioTxRate3UniqTranEnable[i] = 1;
+			params->Usb3HsioTxRate3UniqTran[i] =
+				config->usb3_ports[i].gen2_tx_rate3_uniq_tran;
+		}
+#endif
+		if (config->usb3_ports[i].gen2_rx_tuning_enable) {
+			params->PchUsbHsioRxTuningEnable[i] =
+				config->usb3_ports[i].gen2_rx_tuning_enable;
+			params->PchUsbHsioRxTuningParameters[i] =
+				config->usb3_ports[i].gen2_rx_tuning_params;
+			params->PchUsbHsioFilterSel[i] =
+				config->usb3_ports[i].gen2_rx_filter_sel;
 		}
 	}
 

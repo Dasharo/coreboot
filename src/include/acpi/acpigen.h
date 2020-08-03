@@ -319,6 +319,7 @@ void acpigen_write_empty_PCT(void);
 void acpigen_write_empty_PTC(void);
 void acpigen_write_PRW(u32 wake, u32 level);
 void acpigen_write_STA(uint8_t status);
+void acpigen_write_STA_ext(const char *namestring);
 void acpigen_write_TPC(const char *gnvs_tpc_limit);
 void acpigen_write_PSS_package(u32 coreFreq, u32 power, u32 transLat,
 			u32 busmLat, u32 control, u32 status);
@@ -507,5 +508,8 @@ void acpigen_resource_dword(u16 res_type, u16 gen_flags, u16 type_flags,
 /* refer to ACPI 6.4.3.5.1 QWord Address Space Descriptor section for details */
 void acpigen_resource_qword(u16 res_type, u16 gen_flags, u16 type_flags,
 	u64 gran, u64 range_min, u64 range_max, u64 translation, u64 length);
+
+/* Emits Notify(namestr, value) */
+void acpigen_notify(const char *namestr, int value);
 
 #endif /* __ACPI_ACPIGEN_H__ */

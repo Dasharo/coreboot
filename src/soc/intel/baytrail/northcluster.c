@@ -5,13 +5,14 @@
 #include <device/pci_ids.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <acpi/acpi.h>
-#include <stddef.h>
+#include <stdint.h>
 #include <soc/iomap.h>
 #include <soc/iosf.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 
-/* Host Memory Map:
+/*
+ * Host Memory Map:
  *
  * +--------------------------+ BMBOUND_HI
  * |     Usable DRAM          |

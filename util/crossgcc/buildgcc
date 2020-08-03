@@ -40,7 +40,7 @@ GCC_VERSION=8.3.0
 GCC_AUTOCONF_VERSION=2.69
 BINUTILS_VERSION=2.33.1
 GDB_VERSION=9.2
-IASL_VERSION=20200110
+IASL_VERSION=20200528
 PYTHON_VERSION=3.8.1
 EXPAT_VERSION=2.2.9
 # CLANG version number
@@ -843,9 +843,9 @@ build_IASL() {
 	test "$UNAME" = "Cygwin" && HOST="_CYGWIN"
 	HOST="$HOST" CFLAGS="$CFLAGS" \
 	OPT_CFLAGS="-O -D_FORTIFY_SOURCE=2 -D COREBOOT_TOOLCHAIN_VERSION='\"coreboot toolchain v$CROSSGCC_VERSION $CROSSGCC_DATE\"' " \
-	$MAKE $JOBS CC="$(hostcc host)" iasl acpibin acpidump acpiexec acpihelp acpinames acpisrc acpixtract
-	rm -f "$DESTDIR$TARGETDIR/bin/{iasl,acpibin,acpidump,acpiexec,acpihelp,acpinames,acpisrc,acpixtract}" || touch "$RDIR/.failed"
-	cp bin/{iasl,acpibin,acpidump,acpiexec,acpihelp,acpinames,acpisrc,acpixtract} "$DESTDIR$TARGETDIR/bin" || touch "$RDIR/.failed"
+	$MAKE $JOBS CC="$(hostcc host)" iasl acpibin acpidump acpiexec acpihelp acpisrc acpixtract
+	rm -f "$DESTDIR$TARGETDIR/bin/{iasl,acpibin,acpidump,acpiexec,acpihelp,acpisrc,acpixtract}" || touch "$RDIR/.failed"
+	cp bin/{iasl,acpibin,acpidump,acpiexec,acpihelp,acpisrc,acpixtract} "$DESTDIR$TARGETDIR/bin" || touch "$RDIR/.failed"
 }
 
 build_LLVM() {
@@ -1178,32 +1178,24 @@ if [ -z "${LANGUAGES}" ]; then
 		LANGUAGES="${DEFAULT_LANGUAGES}"
 	fi
 fi
+if [ "$BOOTSTRAP" != 1 ] && \
+	{ [ "$(hostcc_major)" -lt 4 ] || \
+	{ [ "$(hostcc_major)" -eq 4 ] && \
+	[ "$(hostcc_minor)" -lt 9 ] ; } ; }
+then
+	printf "\n${red}WARNING${NC}\n"
+	printf "Building coreboot requires a host compiler newer than 4.9.x while\n"
+	printf "yours is $(hostcc_version).\n"
+	printf "Enabling bootstrapping to provide a sufficiently new compiler:\n"
+	printf "This will take significantly longer than a usual build.\n"
+	printf "Alternatively you can abort now and update your host compiler.\n"
+	timeout 15
+	BOOTSTRAP=1
+fi
 if ada_requested; then
-	if have_gnat; then
-		if [ "$BOOTSTRAP" != 1 ] && \
-			{ [ "$(hostcc_major)" -lt 4 ] || \
-			{ [ "$(hostcc_major)" -eq 4 ] && \
-			[ "$(hostcc_minor)" -lt 9 ] ; } ; }
-		then
-			printf "\n${red}WARNING${NC}\n"
-			printf "Building the Ada compiler (GNAT $(buildcc_version)) with a host compiler older\n"
-			printf "than 4.9.x (yours $(hostcc_version)) requires bootstrapping. This will take\n"
-			printf "significantly longer than a usual build. You can abort and update\n"
-			printf "your host GNAT or disable Ada support with BUILD_LANGUAGES=c (or\n"
-			printf "\`-l c\` in case you invoke \`buildgcc\` directly).\n"
-			timeout 15
-			BOOTSTRAP=1
-		fi
-	else
+	if ! have_gnat; then
 		please_install gnat gcc-ada
 		exit 1
-	fi
-else
-	if [ "$(hostcc_major)" -lt 4 ] && [ "$BOOTSTRAP" != 1 ]; then
-		printf "\n${red}WARNING${NC}\n"
-		printf "Building GCC $(buildcc_version) with a very old host compiler ($(hostcc_version)).\n"
-		printf "Bootstrapping (-b) is recommended.\n"
-		timeout 10
 	fi
 fi
 fi # GCC

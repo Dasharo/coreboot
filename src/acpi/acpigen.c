@@ -742,6 +742,17 @@ void acpigen_write_STA(uint8_t status)
 	acpigen_pop_len();
 }
 
+void acpigen_write_STA_ext(const char *namestring)
+{
+	/*
+	 * Method (_STA, 0, NotSerialized) { Return (ext_val) }
+	 */
+	acpigen_write_method("_STA", 0);
+	acpigen_emit_byte(RETURN_OP);
+	acpigen_emit_namestring(namestring);
+	acpigen_pop_len();
+}
+
 /*
  * Generates a func with max supported P-states.
  */
@@ -1800,15 +1811,15 @@ int __weak acpigen_soc_clear_tx_gpio(unsigned int gpio_num)
  */
 int acpigen_enable_tx_gpio(struct acpi_gpio *gpio)
 {
-	if (gpio->polarity == ACPI_GPIO_ACTIVE_HIGH)
-		return acpigen_soc_set_tx_gpio(gpio->pins[0]);
-	else
+	if (gpio->active_low)
 		return acpigen_soc_clear_tx_gpio(gpio->pins[0]);
+	else
+		return acpigen_soc_set_tx_gpio(gpio->pins[0]);
 }
 
 int acpigen_disable_tx_gpio(struct acpi_gpio *gpio)
 {
-	if (gpio->polarity == ACPI_GPIO_ACTIVE_LOW)
+	if (gpio->active_low)
 		return acpigen_soc_set_tx_gpio(gpio->pins[0]);
 	else
 		return acpigen_soc_clear_tx_gpio(gpio->pins[0]);
@@ -1818,7 +1829,7 @@ void acpigen_get_rx_gpio(struct acpi_gpio *gpio)
 {
 	acpigen_soc_read_rx_gpio(gpio->pins[0]);
 
-	if (gpio->polarity == ACPI_GPIO_ACTIVE_LOW)
+	if (gpio->active_low)
 		acpigen_write_xor(LOCAL0_OP, 1, LOCAL0_OP);
 }
 
@@ -1826,7 +1837,7 @@ void acpigen_get_tx_gpio(struct acpi_gpio *gpio)
 {
 	acpigen_soc_get_tx_gpio(gpio->pins[0]);
 
-	if (gpio->polarity == ACPI_GPIO_ACTIVE_LOW)
+	if (gpio->active_low)
 		acpigen_write_xor(LOCAL0_OP, 1, LOCAL0_OP);
 }
 
@@ -1952,4 +1963,11 @@ void acpigen_write_ADR_soundwire_device(const struct soundwire_address *address)
 			  (((uint64_t)address->manufacturer_id & 0xffff) << 24) |
 			  (((uint64_t)address->part_id & 0xffff) << 8) |
 			  (((uint64_t)address->class & 0xff)));
+}
+
+void acpigen_notify(const char *namestr, int value)
+{
+	acpigen_emit_byte(NOTIFY_OP);
+	acpigen_emit_namestring(namestr);
+	acpigen_write_integer(value);
 }

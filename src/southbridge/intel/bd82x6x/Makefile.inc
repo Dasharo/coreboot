@@ -7,6 +7,7 @@ bootblock-y += early_pch.c
 
 ramstage-y += pch.c
 ramstage-y += azalia.c
+ramstage-y += fadt.c
 ramstage-y += lpc.c
 ramstage-y += pci.c
 ramstage-y += pcie.c
@@ -26,7 +27,7 @@ ramstage-$(CONFIG_ELOG) += elog.c
 
 smm-y += smihandler.c me.c me_8.x.c pch.c
 
-romstage-y += early_smbus.c me_status.c
+romstage-y += me_status.c
 romstage-y += early_rcba.c
 romstage-y += early_pch.c
 
