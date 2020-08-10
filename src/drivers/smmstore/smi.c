@@ -6,6 +6,7 @@
 #include <smmstore.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <cpu/x86/save_state.h>
 
 /*
  * Check that the given range is legal.
@@ -136,13 +137,35 @@ static uint32_t smmstorev2_exec(uint8_t command, void *param)
 	return ret;
 }
 
-uint32_t smmstore_exec(uint8_t command, void *param)
+void apmc_smmtore_handler(void)
 {
-	if (command != SMMSTORE_CMD_CLEAR && !param)
-		return SMMSTORE_RET_FAILURE;
+	uint8_t command;
+	uint16_t ax;
+	uint32_t ret = SMMSTORE_RET_FAILURE, param;
+	const int apmc_node = get_apmc_node(APM_CNT_SMMSTORE);
+
+	if (apmc_node < 0)
+		return;
+
+	/* Command and return value in EAX */
+	if (get_save_state_reg(RAX, apmc_node, &ax, sizeof(ax)))
+		return;
+
+	command = (ax >> 8);
+
+	/* Parameter buffer in EBX */
+	if (get_save_state_reg(RBX, apmc_node, &param, sizeof(param)))
+		return;
+
+	if (command != SMMSTORE_CMD_CLEAR && !param) {
+		set_save_state_reg(RAX, apmc_node, &ret, sizeof(ret));;
+		return;
+	}
 
 	if (CONFIG(SMMSTORE_V2))
-		return smmstorev2_exec(command, param);
+		ret = smmstorev2_exec(command, (void *)param);
 	else
-		return smmstorev1_exec(command, param);
+		ret = smmstorev1_exec(command, (void *)param);
+
+	set_save_state_reg(RAX, apmc_node, &ret, sizeof(ret));
 }

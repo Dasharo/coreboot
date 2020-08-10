@@ -258,40 +258,6 @@ static void set_insmm_sts(const bool enable_writes)
 		wrmsr(MSR_SPCL_CHIPSET_USAGE, msr);
 }
 
-static void southbridge_smi_store(
-	const struct smm_save_state_ops *save_state_ops)
-{
-	u8 sub_command, ret;
-	void *io_smi;
-	uint32_t reg_ebx;
-
-	io_smi = find_save_state(save_state_ops, APM_CNT_SMMSTORE);
-	if (!io_smi)
-		return;
-	/* Command and return value in EAX */
-	sub_command = (save_state_ops->get_reg(io_smi, RAX) >> 8) & 0xff;
-
-	/* Parameter buffer in EBX */
-	reg_ebx = save_state_ops->get_reg(io_smi, RBX);
-
-	const bool wp_enabled = !fast_spi_wpd_status();
-	if (wp_enabled) {
-		set_insmm_sts(true);
-		fast_spi_disable_wp();
-		/* Not clearing SPI sync SMI status here results in hangs */
-		fast_spi_clear_sync_smi_status();
-	}
-
-	/* drivers/smmstore/smi.c */
-	ret = smmstore_exec(sub_command, (void *)(uintptr_t)reg_ebx);
-	save_state_ops->set_reg(io_smi, RAX, ret);
-
-	if (wp_enabled) {
-		fast_spi_enable_wp();
-		set_insmm_sts(false);
-	}
-}
-
 __weak const struct gpio_lock_config *soc_gpio_lock_config(size_t *num)
 {
 	*num = 0;
@@ -364,7 +330,7 @@ void smihandler_southbridge_apmc(
 		break;
 	case APM_CNT_SMMSTORE:
 		if (CONFIG(SMMSTORE))
-			southbridge_smi_store(save_state_ops);
+			apmc_smmtore_handler();
 		break;
 	case APM_CNT_FINALIZE:
 		finalize();

@@ -192,62 +192,6 @@ static void southbridge_smi_sleep(void)
 	}
 }
 
-/*
- * Look for Synchronous IO SMI and use save state from that
- * core in case we are not running on the same core that
- * initiated the IO transaction.
- */
-static em64t101_smm_state_save_area_t *smi_apmc_find_state_save(u8 cmd)
-{
-	em64t101_smm_state_save_area_t *state;
-	int node;
-
-	/* Check all nodes looking for the one that issued the IO */
-	for (node = 0; node < CONFIG_MAX_CPUS; node++) {
-		state = smm_get_save_state(node);
-
-		/* Check for Synchronous IO (bit0 == 1) */
-		if (!(state->io_misc_info & (1 << 0)))
-			continue;
-
-		/* Make sure it was a write (bit4 == 0) */
-		if (state->io_misc_info & (1 << 4))
-			continue;
-
-		/* Check for APMC IO port */
-		if (((state->io_misc_info >> 16) & 0xff) != APM_CNT)
-			continue;
-
-		/* Check AX against the requested command */
-		if ((state->rax & 0xff) != cmd)
-			continue;
-
-		return state;
-	}
-
-	return NULL;
-}
-
-static void southbridge_smi_store(void)
-{
-	u8 sub_command, ret;
-	em64t101_smm_state_save_area_t *io_smi =
-		smi_apmc_find_state_save(APM_CNT_SMMSTORE);
-	uintptr_t reg_rbx;
-
-	if (!io_smi)
-		return;
-	/* Command and return value in EAX */
-	sub_command = (io_smi->rax >> 8) & 0xff;
-
-	/* Parameter buffer in EBX */
-	reg_rbx = (uintptr_t)io_smi->rbx;
-
-	/* drivers/smmstore/smi.c */
-	ret = smmstore_exec(sub_command, (void *)reg_rbx);
-	io_smi->rax = ret;
-}
-
 static int mainboard_finalized = 0;
 
 static void southbridge_smi_apmc(void)
@@ -277,7 +221,7 @@ static void southbridge_smi_apmc(void)
 		break;
 	case APM_CNT_SMMSTORE:
 		if (CONFIG(SMMSTORE))
-			southbridge_smi_store();
+			apmc_smmtore_handler();
 		break;
 	}
 

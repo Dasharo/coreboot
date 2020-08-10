@@ -100,7 +100,7 @@ struct smmstore_params_raw_clear {
 
 
 /* SMM handler */
-uint32_t smmstore_exec(uint8_t command, void *param);
+void apmc_smmtore_handler(void);
 
 /* Implementation of Version 1 */
 int smmstore_read_region(void *buf, ssize_t *bufsize);
