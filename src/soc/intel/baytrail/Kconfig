@@ -31,6 +31,7 @@ config SOC_INTEL_BAYTRAIL
 	select CPU_HAS_L2_ENABLE_MSR
 	select TCO_SPACE_NOT_YET_SPLIT
 	select USE_DDR3
+	select X86_EM64T100_SAVE_STATE
 	help
 	  Bay Trail M/D part support.
 

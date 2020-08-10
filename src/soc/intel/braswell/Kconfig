@@ -37,6 +37,7 @@ config SOC_INTEL_BRASWELL
 	select SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
 	select NO_CBFS_MCACHE
 	select TCO_SPACE_NOT_YET_SPLIT
+	select X86_EM64T100_SAVE_STATE
 	help
 	  Braswell M/D part support.
 

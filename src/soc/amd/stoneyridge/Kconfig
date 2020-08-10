@@ -45,6 +45,8 @@ config SOC_AMD_STONEYRIDGE
 	select TSC_SYNC_LFENCE
 	select USE_DDR4
 	select X86_AMD_FIXED_MTRRS
+	select ACPI_NO_SMI_GNVS
+	select X86_AMD64_SAVE_STATE
 	help
 	  AMD support for SOCs in Family 15h Models 60h-6Fh and Models 70h-7Fh.
 

@@ -2,6 +2,10 @@ config CPU_INTEL_SOCKET_M
 	bool
 	select CPU_INTEL_MODEL_6EX
 	select CPU_INTEL_MODEL_6FX
+	select MMX
+	select SSE
+	select X86_LEGACY_SAVE_STATE
+	select X86_EM64T101_SAVE_STATE
 
 if CPU_INTEL_SOCKET_M
 

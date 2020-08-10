@@ -16,6 +16,8 @@ config CPU_AMD_PI
 	select SOC_AMD_COMMON_BLOCK_SMI
 	select SOC_AMD_COMMON_BLOCK_ACPI
 	select SSE2
+	select ACPI_NO_SMI_GNVS
+	select X86_AMD64_SAVE_STATE
 
 if CPU_AMD_PI
 

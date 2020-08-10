@@ -7,10 +7,37 @@ config SOC_INTEL_BROADWELL
 	select REG_SCRIPT
 	select TCO_SPACE_NOT_YET_SPLIT
 	select INTEL_LYNXPOINT_LP
+	select PARALLEL_MP
+	select RTC
+	select SPI_FLASH
+	select SSE2
+	select TSC_SYNC_MFENCE
+	select UDELAY_TSC
+	select TSC_MONOTONIC_TIMER
+	select SOC_INTEL_COMMON
+	select INTEL_DESCRIPTOR_MODE_CAPABLE
+	select SOC_INTEL_COMMON_ACPI_WAKE_SOURCE
+	select HAVE_EM100PRO_SPI_CONSOLE_SUPPORT
+	select INTEL_GMA_ACPI
+	select HAVE_POWER_STATE_AFTER_FAILURE
+	select HAVE_POWER_STATE_PREVIOUS_AFTER_FAILURE
+	select X86_EM64T101_SAVE_STATE
 	help
 	  Intel Broadwell and Haswell ULT support.
 
 if SOC_INTEL_BROADWELL
+
+config PCIEXP_ASPM
+	bool
+	default y
+
+config PCIEXP_AER
+	bool
+	default y
+
+config PCIEXP_COMMON_CLOCK
+	bool
+	default y
 
 config BROADWELL_LPDDR3
 	bool

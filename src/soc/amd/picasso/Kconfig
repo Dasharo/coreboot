@@ -73,6 +73,9 @@ config SOC_AMD_PICASSO
 	select X86_AMD_FIXED_MTRRS
 	select X86_INIT_NEED_1_SIPI
 	select HAVE_EXP_X86_64_SUPPORT
+	select SUPPORT_CPU_UCODE_IN_CBFS
+	select ACPI_NO_SMI_GNVS
+	select X86_AMD64_SAVE_STATE
 	help
 	  AMD Picasso support
 

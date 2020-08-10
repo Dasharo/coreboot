@@ -1,6 +1,9 @@
 config CPU_INTEL_SOCKET_BGA956
 	bool
 	select CPU_INTEL_MODEL_1067X
+	select MMX
+	select SSE
+	select X86_EM64T101_SAVE_STATE
 
 if CPU_INTEL_SOCKET_BGA956
 

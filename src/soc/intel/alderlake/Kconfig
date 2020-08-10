@@ -92,6 +92,9 @@ config SOC_INTEL_ALDERLAKE
 	select UDK_202005_BINDING
 	select VBOOT_LIB
 	select X86_CLFLUSH_CAR
+	select DISPLAY_FSP_VERSION_INFO
+	select HECI_DISABLE_USING_SMM
+	select X86_EM64T101_SAVE_STATE
 	help
 	  Intel Alderlake support. Mainboards should specify the PCH
 	  type using the `SOC_INTEL_ALDERLAKE_PCH_*` options instead
