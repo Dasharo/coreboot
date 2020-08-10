@@ -160,7 +160,40 @@ config SMM_TSEG
 	default y
 	depends on !(NO_SMM || SMM_ASEG)
 
-if HAVE_SMI_HANDLER
+config X86_LEGACY_SAVE_STATE
+	bool
+	help
+	  Select this on platforms that have CPUs with a legacy SMM save
+	  state area.
+
+config X86_EM64T100_SAVE_STATE
+	bool
+	help
+	  Select this on platforms that have CPUs with a SMM save
+	  state area revision 0x00030100. These are mostly small
+	  core (atom) Intel targets.
+
+config X86_EM64T101_SAVE_STATE
+	bool
+	help
+	  Select this on platforms that have CPUs with a SMM save
+	  state area revision 0x00030101. These are mostly big
+	  core (core i) Intel targets.
+
+config X86_AMD64_SAVE_STATE
+	bool
+	help
+	  Select this on platforms that have CPUs with a AMD64 save
+	  state area.
+
+if SMM_TSEG
+
+config SMM_MODULE_HEAP_SIZE
+	hex
+	default 0x4000
+	help
+	  This option determines the size of the heap within the SMM handler
+	  modules.
 
 config SMM_MODULE_STACK_SIZE
 	hex

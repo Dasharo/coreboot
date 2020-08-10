@@ -31,6 +31,10 @@ ramstage-srcs += $(obj)/cpu/x86/smm/smm.manual
 endif
 
 smm-y += save_state.c
+smm-$(CONFIG_X86_LEGACY_SAVE_STATE) += legacy_save_state.c
+smm-$(CONFIG_X86_EM64T100_SAVE_STATE) += ../../intel/smm/em64t100_save_state.c
+smm-$(CONFIG_X86_EM64T101_SAVE_STATE) += ../../intel/smm/em64t101_save_state.c
+smm-$(CONFIG_X86_AMD64_SAVE_STATE) += ../../amd/smm/amd64_save_state.c
 
 ramstage-y += tseg_region.c
 romstage-y += tseg_region.c
