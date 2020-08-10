@@ -168,26 +168,6 @@ static em64t100_smm_state_save_area_t *smi_apmc_find_state_save(uint8_t cmd)
 	return NULL;
 }
 
-static void southbridge_smi_gsmi(void)
-{
-	u32 *ret, *param;
-	uint8_t sub_command;
-	em64t100_smm_state_save_area_t *io_smi = smi_apmc_find_state_save(APM_CNT_ELOG_GSMI);
-
-	if (!io_smi)
-		return;
-
-	/* Command and return value in EAX */
-	ret = (u32 *)&io_smi->rax;
-	sub_command = (uint8_t)(*ret >> 8);
-
-	/* Parameter buffer in EBX */
-	param = (u32 *)&io_smi->rbx;
-
-	/* drivers/elog/gsmi.c */
-	*ret = gsmi_exec(sub_command, param);
-}
-
 void *acpi_get_device_nvs(void)
 {
 	return (u8 *)gnvs + ALIGN_UP(sizeof(struct global_nvs), sizeof(uint64_t));
@@ -281,7 +261,7 @@ static void southbridge_smi_apmc(void)
 		break;
 	case APM_CNT_ELOG_GSMI:
 		if (CONFIG(ELOG_GSMI))
-			southbridge_smi_gsmi();
+			apmc_smi_gsmi();
 		break;
 	case APM_CNT_LEGACY:
 		soc_legacy();

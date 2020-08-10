@@ -3,6 +3,8 @@
 #include <console/console.h>
 #include <elog.h>
 #include <stdint.h>
+#include <cpu/x86/smm.h>
+#include <cpu/x86/save_state.h>
 
 #define GSMI_RET_SUCCESS		0x00
 #define GSMI_RET_INVALID_PARAMETER	0x82
@@ -44,7 +46,7 @@ void __weak elog_gsmi_cb_mainboard_log_wake_source(void)
 }
 
 /* Param is usually EBX, ret in EAX */
-u32 gsmi_exec(u8 command, u32 *param)
+static u32 gsmi_exec(u8 command, u32 *param)
 {
 	struct gsmi_set_eventlog_param *sel;
 	struct gsmi_set_eventlog_type1 *type1;
@@ -121,4 +123,28 @@ u32 gsmi_exec(u8 command, u32 *param)
 	}
 
 	return ret;
+}
+
+void apmc_smi_gsmi(void)
+{
+	u8 sub_command;
+	u16 ax;
+	u32 ret, param;
+	const int apmc_node = get_apmc_node(APM_CNT_ELOG_GSMI);
+
+	if (apmc_node < 0)
+		return;
+
+	/* Command and return value in EAX */
+	if (get_save_state_reg(RAX, apmc_node, &ax, sizeof(ax)))
+		return;
+
+	sub_command = (ax >> 8);
+
+	/* Parameter buffer in EBX */
+	if (get_save_state_reg(RBX, apmc_node, &param, sizeof(param)))
+		return;
+
+	ret = gsmi_exec(sub_command, &param);
+	set_save_state_reg(RAX, apmc_node, &ret, sizeof(ret));
 }

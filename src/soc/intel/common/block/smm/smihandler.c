@@ -243,28 +243,6 @@ void smihandler_southbridge_sleep(
 	}
 }
 
-static void southbridge_smi_gsmi(
-	const struct smm_save_state_ops *save_state_ops)
-{
-	u8 sub_command, ret;
-	void *io_smi = NULL;
-	uint32_t reg_ebx;
-
-	io_smi = find_save_state(save_state_ops, APM_CNT_ELOG_GSMI);
-	if (!io_smi)
-		return;
-	/* Command and return value in EAX */
-	sub_command = (save_state_ops->get_reg(io_smi, RAX) >> 8)
-		& 0xff;
-
-	/* Parameter buffer in EBX */
-	reg_ebx = save_state_ops->get_reg(io_smi, RBX);
-
-	/* drivers/elog/gsmi.c */
-	ret = gsmi_exec(sub_command, &reg_ebx);
-	save_state_ops->set_reg(io_smi, RAX, ret);
-}
-
 static void set_insmm_sts(const bool enable_writes)
 {
 	msr_t msr = {
@@ -382,7 +360,7 @@ void smihandler_southbridge_apmc(
 		break;
 	case APM_CNT_ELOG_GSMI:
 		if (CONFIG(ELOG_GSMI))
-			southbridge_smi_gsmi(save_state_ops);
+			apmc_smi_gsmi();
 		break;
 	case APM_CNT_SMMSTORE:
 		if (CONFIG(SMMSTORE))

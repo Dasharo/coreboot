@@ -47,7 +47,8 @@ static inline int elog_gsmi_add_event_byte(u8 event_type, u8 data) { return 0; }
 static inline int elog_gsmi_add_event_word(u8 event_type, u16 data) { return 0; }
 #endif
 
-u32 gsmi_exec(u8 command, u32 *param);
+void apmc_smi_gsmi(void);
+//extern u32 gsmi_exec(u8 command, u32 *param);
 
 #if CONFIG(ELOG_BOOT_COUNT)
 u32 boot_count_read(void);
