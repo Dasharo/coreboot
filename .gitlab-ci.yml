@@ -134,6 +134,14 @@ publish:apu1:
   variables:
     PLATFORM: apu1
 
+regression:apu1:
+  <<: *run_regression
+  variables:
+    PLATFORM: apu1
+    CONFIG: apu1
+    RTE_IP: $RTE_IP_APU1
+    AUTOFILL: 1
+
 
 build:apu2:
   <<: *build_rom_apu
