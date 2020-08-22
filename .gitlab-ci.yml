@@ -99,7 +99,7 @@ check_dependencies:
     PLATFORM:
     RTE_IP:
     CONFIG:
-    AUTOFILL: 1
+    AUTOFILL:
     FIRMWARE_VERSION: $CI_COMMIT_REF_NAME
   stage: run_regression
   tags:
@@ -161,6 +161,7 @@ regression:apu2:
     PLATFORM: apu2
     CONFIG: apu2
     RTE_IP: $RTE_IP_APU2
+    AUTOFILL: 1
 
 
 build:apu3:
@@ -189,6 +190,7 @@ regression:apu3:
     PLATFORM: apu3
     CONFIG: apu3
     RTE_IP: $RTE_IP_APU3
+    AUTOFILL: 1
 
 
 build:apu4:
@@ -217,6 +219,7 @@ regression:apu4:
     PLATFORM: apu4
     CONFIG: apu4
     RTE_IP: $RTE_IP_APU4
+    AUTOFILL: 1
 
 
 build:apu5:
@@ -245,3 +248,4 @@ regression:apu5:
     PLATFORM: apu5
     CONFIG: apu5
     RTE_IP: $RTE_IP_APU5
+    AUTOFILL: 1
