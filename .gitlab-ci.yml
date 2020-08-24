@@ -107,7 +107,7 @@ check_dependencies:
   timeout: 12h
   before_script:
     - apt-get update
-    - apt-get install binutils
+    - apt-get install binutils zip
   script:
     - bash -x .gitlab-ci/regression.sh
   only:
