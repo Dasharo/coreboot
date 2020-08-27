@@ -12,6 +12,15 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.12.0.4] - 2020-07-28
+### Changed
+- rebased with official coreboot repository commit 81a2f45
+- updates sortbootorder to v4.6.20 for minor build fix
+
+### Fixed
+- TPM2 visibility in OS for apu3d and apu4d
+- issues with IRQ vectors reported in Xen and Linux dmesg
+
 ## [v4.12.0.3] - 2020-07-29
 ### Fixed
 - [memory speed values in the DMI table](https://github.com/pcengines/apu2-documentation/issues/176)
