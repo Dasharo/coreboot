@@ -49,3 +49,15 @@ config BOARD_GOOGLE_STERN
 config BOARD_GOOGLE_WILLOW
 	bool "->  Willow"
 	select BOARD_GOOGLE_JACUZZI_COMMON
+
+config BOARD_GOOGLE_ESCHE
+	bool "->  Esche"
+	select BOARD_GOOGLE_JACUZZI_COMMON
+
+config BOARD_GOOGLE_BURNET
+	bool "->  Burnet"
+	select BOARD_GOOGLE_JACUZZI_COMMON
+
+config BOARD_GOOGLE_FENNEL
+	bool "->  Fennel"
+	select BOARD_GOOGLE_JACUZZI_COMMON

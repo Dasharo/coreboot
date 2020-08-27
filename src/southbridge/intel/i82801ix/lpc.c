@@ -97,7 +97,7 @@ static void i82801ix_pirq_init(struct device *dev)
 	 */
 
 	for (irq_dev = all_devices; irq_dev; irq_dev = irq_dev->next) {
-		u8 int_pin=0, int_line=0;
+		u8 int_pin = 0, int_line = 0;
 
 		if (!irq_dev->enabled || irq_dev->path.type != DEVICE_PATH_PCI)
 			continue;
@@ -160,8 +160,7 @@ static void i82801ix_power_options(struct device *dev)
 	int nmi_option;
 
 	/* BIOS must program... */
-	reg32 = pci_read_config32(dev, 0xac);
-	pci_write_config32(dev, 0xac, reg32 | (1 << 30) | (3 << 8));
+	pci_or_config32(dev, 0xac, (1 << 30) | (3 << 8));
 
 	/* Which state do we want to goto after g3 (power restored)?
 	 * 0 == S0 Full On
@@ -357,7 +356,9 @@ static void lpc_init(struct device *dev)
 	printk(BIOS_DEBUG, "i82801ix: %s\n", __func__);
 
 	/* Set the value for PCI command register. */
-	pci_write_config16(dev, PCI_COMMAND, 0x000f);
+	pci_write_config16(dev, PCI_COMMAND,
+			   PCI_COMMAND_MASTER | PCI_COMMAND_SPECIAL |
+			   PCI_COMMAND_MEMORY | PCI_COMMAND_IO);
 
 	/* IO APIC initialization. */
 	i82801ix_enable_apic(dev);
@@ -474,7 +475,6 @@ void southbridge_inject_dsdt(const struct device *dev)
 		acpigen_pop_len();
 	}
 }
-
 
 static const char *lpc_acpi_name(const struct device *dev)
 {

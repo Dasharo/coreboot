@@ -35,7 +35,6 @@ config CPU_SPECIFIC_OPTIONS
 	select PLATFORM_USES_FSP2_2
 	select FSP_PEIM_TO_PEIM_INTERFACE
 	select REG_SCRIPT
-	select SMP
 	select PMC_GLOBAL_RESET_ENABLE_LOCK
 	select CPU_INTEL_COMMON_SMM
 	select SOC_INTEL_COMMON
@@ -171,6 +170,11 @@ config SOC_INTEL_COMMON_LPSS_UART_CLK_N_VAL
 config CHROMEOS
 	select CHROMEOS_RAMOOPS_DYNAMIC
 
+# Tiger Lake SoC requires at least 100us interrupt pulses in order to guarantee detection
+# in all low power states.  Cr50 TPM, if used, needs to be told to generate longer pulses.
+config TPM_CR50
+	select CR50_USE_LONG_INTERRUPT_PULSES
+
 config VBOOT
 	select VBOOT_SEPARATE_VERSTAGE
 	select VBOOT_MUST_REQUEST_DISPLAY
@@ -210,5 +214,5 @@ config SOC_INTEL_TIGERLAKE_DEBUG_CONSENT
 
 config PRERAM_CBMEM_CONSOLE_SIZE
 	hex
-	default 0xe00
+	default 0x1400
 endif

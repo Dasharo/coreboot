@@ -133,6 +133,22 @@ int draw_rounded_box(const struct scale *pos_rel, const struct scale *dim_rel,
 		     const struct fraction *radius);
 
 /**
+ * Draw a horizontal or vertical line segment on screen. If horizontal, pos1
+ * must be the left endpoint. If vertical, pos1 must be the top endpoint. When
+ * the specified thickness is zero (or truncated to zero), a line with 1-pixel
+ * width will be drawn.
+ *
+ * @param[in] pos1	Start position of the line relative to the canvas.
+ * @param[in] pos2	End position of the line relative to the canvas.
+ * @param[in] thickness Thickness of the line relative to the canvas.
+ * @param[in] rgb       Color of the line.
+ *
+ * @return CBGFX_* error codes
+ */
+int draw_line(const struct scale *pos1, const struct scale *pos2,
+	      const struct fraction *thickness, const struct rgb_color *rgb);
+
+/**
  * Clear the canvas
  */
 int clear_canvas(const struct rgb_color *rgb);
@@ -212,6 +228,24 @@ int draw_bitmap_direct(const void *bitmap, size_t size,
 int get_bitmap_dimension(const void *bitmap, size_t sz, struct scale *dim_rel);
 
 /**
+ * Setup color mappings of background and foreground colors. Black and white
+ * pixels will be mapped to the background and foreground colors, respectively.
+ * Call clear_color_map() to disabled color mapping.
+ *
+ * @param[in] background	Background color.
+ * @param[in] foreground	Foreground color.
+ *
+ * @return CBGFX_* error codes
+ */
+int set_color_map(const struct rgb_color *background,
+		  const struct rgb_color *foreground);
+
+/**
+ * Clear color mappings.
+ */
+void clear_color_map(void);
+
+/**
  * Setup alpha and rgb values for alpha blending.  When alpha is != 0,
  * this enables a translucent layer of color (defined by rgb) to be
  * blended at a given translucency (alpha) to all things drawn.  Call
@@ -228,8 +262,6 @@ int set_blend(const struct rgb_color *rgb, uint8_t alpha);
 
 /**
  * Clear alpha and rgb values, thus disabling any alpha blending.
- *
- * @return CBGFX_* error codes
  */
 void clear_blend(void);
 

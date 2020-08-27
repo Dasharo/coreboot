@@ -378,6 +378,13 @@ F:	src/mainboard/siemens/mc_apl1/
 
 
 
+SYSTEM76 MAINBOARDS
+M:	Jeremy Soller <jeremy@system76.com>
+S:	Maintained
+F:	src/mainboard/system76/
+
+
+
 SUPERMICRO X10SLM+-F MAINBOARD
 M:	Tristan Corrick <tristan@corrick.kiwi>
 S:	Maintained
@@ -397,7 +404,6 @@ M:	Julius Werner <jwerner@chromium.org>
 S:	Supported
 F:	src/arch/arm/
 F:	src/arch/arm64/
-F:	src/soc/mediatek/
 F:	src/soc/nvidia/
 F:	src/soc/rockchip/
 F:	util/nvidia/
@@ -437,6 +443,11 @@ LENOVO EC
 M:	Alexander Couzens <lynxis@fe80.eu>
 S:	Maintained
 F:	src/ec/lenovo/
+
+SYSTEM76 EC
+M:	Jeremy Soller <jeremy@system76.com>
+S:	Maintained
+F:	src/ec/system76/
 
 ################################################################################
 # Northbridges
@@ -535,10 +546,15 @@ F:	src/soc/intel/xeon_sp
 F:	src/vendorcode/intel/fsp/fsp2_0/skylake_sp
 F:	src/vendorcode/intel/fsp/fsp2_0/copperlake_sp
 
+MEDIATEK SOCS
+M:	Hung-Te Lin <hungte@chromium.org>
+S:	Supported
+F:	src/soc/mediatek
+
 ORPHANED ARM SOCS
 S:	Orphaned
 F:	src/cpu/armltd/
-F:	src/cpu/ti/
+F:	src/soc/ti/
 F:	src/soc/qualcomm/
 F:	src/soc/samsung/
 F:	util/exynos/

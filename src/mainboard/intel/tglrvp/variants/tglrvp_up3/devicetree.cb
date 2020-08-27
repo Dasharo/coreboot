@@ -13,7 +13,7 @@ chip soc/intel/tigerlake
 	register "pmc_gpe0_dw2" = "GPP_E"
 
 	# FSP configuration
-	register "SaGv" = "SaGv_Disabled"
+	register "SaGv" = "SaGv_Enabled"
 	register "SmbusEnable" = "1"
 
 	register "usb2_ports[0]" = "USB2_PORT_MID(OC0)"		# Type-C Port1
@@ -32,8 +32,8 @@ chip soc/intel/tigerlake
 	register "usb3_ports[2]" = "USB3_PORT_EMPTY"		# Not used
 	register "usb3_ports[3]" = "USB3_PORT_EMPTY"		# USB3/USB2 Flex Connector
 
-        # CPU replacement check
-        register "CpuReplacementCheck" = "1"
+	# CPU replacement check
+	register "CpuReplacementCheck" = "1"
 
 	# EC host command ranges are in 0x800-0x8ff & 0x200-0x20f
 	register "gen1_dec" = "0x00fc0801"
@@ -117,10 +117,6 @@ chip soc/intel/tigerlake
 	# Enable S0ix
 	register "s0ix_enable" = "1"
 
-	# D3Hot and D3Cold for TCSS
-	register "TcssD3HotEnable" = "1"
-	register "TcssD3ColdEnable" = "1"
-
 	#HD Audio
 	register "PchHdaDspEnable" = "1"
 	register "PchHdaAudioLinkHdaEnable" = "0"
@@ -142,7 +138,7 @@ chip soc/intel/tigerlake
 		},
 		.i2c[2] = {
 			.speed = I2C_SPEED_FAST,
-                },
+		},
 		.i2c[3] = {
 			.speed = I2C_SPEED_FAST,
 		},
@@ -256,7 +252,11 @@ chip soc/intel/tigerlake
 		device pci 1e.1 off end # UART1			0xA0A9
 		device pci 1e.2 off end # GSPI0			0xA0AA
 		device pci 1e.3 off end # GSPI1			0xA0AB
-		device pci 1f.0 on  end # eSPI			0xA080 - A09F
+		device pci 1f.0 on
+			chip ec/google/chromeec
+				device pnp 0c09.0 on end
+			end
+		end # eSPI                                      0xA080 - A09F
 		device pci 1f.1 on  end # P2SB			0xA0A0
 		device pci 1f.2 hidden  # PMC			0xA0A1
 			# The pmc_mux chip driver is a placeholder for the

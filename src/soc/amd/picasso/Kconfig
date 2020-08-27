@@ -53,7 +53,6 @@ config CPU_SPECIFIC_OPTIONS
 	select PLATFORM_USES_FSP2_0
 	select FSP_COMPRESS_FSP_M_LZMA
 	select FSP_COMPRESS_FSP_S_LZMA
-	select FSP_USES_CB_STACK
 	select UDK_2017_BINDING
 	select HAVE_CF9_RESET
 	select SUPPORT_CPU_UCODE_IN_CBFS
@@ -271,7 +270,7 @@ config PICASSO_CONSOLE_UART
 	  2: 0xfedc3000
 	  3: 0xfedcf000
 
-choice PICASSO_UART_CLOCK_SOURCE
+choice
 	prompt "UART Frequency"
 	depends on PICASSO_CONSOLE_UART
 	default PICASSO_UART_48MZ
@@ -321,7 +320,7 @@ config SMM_MODULE_STACK_SIZE
 
 config ACPI_CPU_STRING
 	string
-	default "\\_PR.C%03d"
+	default "\\_SB.C%03d"
 
 config ACPI_BERT
 	bool "Build ACPI BERT Table"
@@ -377,7 +376,6 @@ config MAINBOARD_POWER_RESTORE
 
 config FSP_TEMP_RAM_SIZE
 	hex
-	depends on FSP_USES_CB_STACK
 	default 0x40000
 	help
 	  The amount of coreboot-allocated heap and stack usage by the FSP.
@@ -497,7 +495,7 @@ endmenu
 
 config VBOOT
 	select VBOOT_VBNV_CMOS
-	select VBOOT_VBNV_CMOS_BACKUP_TO_FLASH if ! VBOOT_STARTS_BEFORE_BOOTBLOCK
+	select VBOOT_VBNV_CMOS_BACKUP_TO_FLASH
 
 config VBOOT_STARTS_BEFORE_BOOTBLOCK
 	def_bool n
@@ -506,6 +504,18 @@ config VBOOT_STARTS_BEFORE_BOOTBLOCK
 	help
 	  Runs verstage on the PSP.  Only available on
 	  certain Chrome OS branded parts from AMD.
+
+config CMOS_RECOVERY_BYTE
+	hex
+	default 0x51
+	depends on VBOOT_STARTS_BEFORE_BOOTBLOCK
+	help
+	  If the workbuf is not passed from the PSP to coreboot, set the
+	  recovery flag and reboot.  The PSP will read this byte, mark the
+	  recovery request in VBNV, and reset the system into recovery mode.
+
+	  This is the byte before the default first byte used by VBNV
+	  (0x26 + 0x0E - 1)
 
 if VBOOT_SLOTS_RW_AB && VBOOT_STARTS_BEFORE_BOOTBLOCK
 

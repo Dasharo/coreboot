@@ -84,8 +84,8 @@ struct soc_intel_xeon_sp_cpx_config {
 
 	uint32_t pstate_req_ratio;
 
-	uint32_t coherency_support;
-	uint32_t ats_support;
+	uint8_t vtd_support;
+	uint8_t x2apic;
 
 	/* Generic IO decode ranges */
 	uint32_t gen1_dec;

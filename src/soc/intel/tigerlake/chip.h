@@ -16,16 +16,18 @@
 #include <soc/pmc.h>
 #include <soc/serialio.h>
 #include <soc/usb.h>
-#include <stdint.h>
+#include <types.h>
 
 #define MAX_HD_AUDIO_DMIC_LINKS 2
 #define MAX_HD_AUDIO_SNDW_LINKS 4
 #define MAX_HD_AUDIO_SSP_LINKS  6
 
 /* The first two are for TGL-U */
-#define POWER_LIMITS_U_4_CORE	0
-#define POWER_LIMITS_U_2_CORE	1
-#define POWER_LIMITS_MAX	2
+#define POWER_LIMITS_U_2_CORE	0
+#define POWER_LIMITS_U_4_CORE	1
+#define POWER_LIMITS_Y_2_CORE	2
+#define POWER_LIMITS_Y_4_CORE	3
+#define POWER_LIMITS_MAX	4
 
 /*
  * Enable External V1P05 Rail in: BIT0:S0i1/S0i2,
@@ -54,6 +56,20 @@ enum fivr_voltage_supported {
 #define FIVR_ENABLE_ALL_SX (FIVR_ENABLE_S0i1_S0i2 | FIVR_ENABLE_S0i3 |	\
 			    FIVR_ENABLE_S3 | FIVR_ENABLE_S4 | FIVR_ENABLE_S5)
 
+/* Bit values for use in LpmStateEnableMask. */
+enum lpm_state_mask {
+	LPM_S0i2_0 = BIT(0),
+	LPM_S0i2_1 = BIT(1),
+	LPM_S0i2_2 = BIT(2),
+	LPM_S0i3_0 = BIT(3),
+	LPM_S0i3_1 = BIT(4),
+	LPM_S0i3_2 = BIT(5),
+	LPM_S0i3_3 = BIT(6),
+	LPM_S0i3_4 = BIT(7),
+	LPM_S0iX_ALL = LPM_S0i2_0 | LPM_S0i2_1 | LPM_S0i2_2
+		     | LPM_S0i3_0 | LPM_S0i3_1 | LPM_S0i3_2 | LPM_S0i3_3 | LPM_S0i3_4,
+};
+
 struct soc_intel_tigerlake_config {
 
 	/* Common struct containing soc config data required by common code */
@@ -76,10 +92,13 @@ struct soc_intel_tigerlake_config {
 
 	/* Enable S0iX support */
 	int s0ix_enable;
+	/* S0iX: Selectively disable individual sub-states, by default all are enabled. */
+	enum lpm_state_mask LpmStateDisableMask;
+
 	/* Support for TCSS xhci, xdci, TBT PCIe root ports and DMA controllers */
-	uint8_t TcssD3HotEnable;
+	uint8_t TcssD3HotDisable;
 	/* Support for TBT PCIe root ports and DMA controllers with D3Hot->D3Cold */
-	uint8_t TcssD3ColdEnable;
+	uint8_t TcssD3ColdDisable;
 
 	/* Enable DPTF support */
 	int dptf_enable;
