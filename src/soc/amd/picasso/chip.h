@@ -16,7 +16,7 @@
 /*
   USB 2.0 PHY Parameters
 */
-struct usb2_phy_tune {
+struct __packed usb2_phy_tune {
 	/* Disconnect Threshold Adjustment. Range 0 - 0x7 */
 	uint8_t	com_pds_tune;
 	/* Squelch Threshold Adjustment. Range 0 - 0x7 */
@@ -36,6 +36,8 @@ struct usb2_phy_tune {
 	/* USB Source Impedance Adjustment. Range 0 - 0x3. */
 	uint8_t	tx_res_tune;
 };
+
+#define USB_PORT_COUNT	6
 
 struct soc_amd_picasso_config {
 	struct soc_amd_common_config common_config;
@@ -91,6 +93,14 @@ struct soc_amd_picasso_config {
 	/* PROCHOT_L de-assertion Ramp Time */
 	uint32_t prochot_l_deassertion_ramp_time;
 
+	enum {
+		DOWNCORE_AUTO = 0,
+		DOWNCORE_1 = 1, /* Run with single core */
+		DOWNCORE_2 = 3, /* Run with two cores */
+		DOWNCORE_3 = 4, /* Run with three cores */
+	} downcore_mode;
+	uint8_t smt_disable; /* 1=disable SMT, 0=enable SMT */
+
 	/* Lower die temperature limit */
 	uint32_t thermctl_limit;
 
@@ -133,13 +143,17 @@ struct soc_amd_picasso_config {
 
 	uint8_t xhci0_force_gen1;
 
-	struct usb2_phy_tune usb_2_port_0_tune_params;
-	struct usb2_phy_tune usb_2_port_1_tune_params;
-	struct usb2_phy_tune usb_2_port_2_tune_params;
-	struct usb2_phy_tune usb_2_port_3_tune_params;
-	struct usb2_phy_tune usb_2_port_4_tune_params;
-	struct usb2_phy_tune usb_2_port_5_tune_params;
-
+	uint8_t has_usb2_phy_tune_params;
+	struct usb2_phy_tune usb_2_port_tune_params[USB_PORT_COUNT];
+	enum {
+		USB_OC_PIN_0	= 0x0,
+		USB_OC_PIN_1	= 0x1,
+		USB_OC_PIN_2	= 0x2,
+		USB_OC_PIN_3	= 0x3,
+		USB_OC_PIN_4	= 0x4,
+		USB_OC_PIN_5	= 0x5,
+		USB_OC_NONE	= 0xf,
+	} usb_port_overcurrent_pin[USB_PORT_COUNT];
 };
 
 typedef struct soc_amd_picasso_config config_t;

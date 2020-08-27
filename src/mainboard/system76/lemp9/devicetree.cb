@@ -129,9 +129,6 @@ chip soc/intel/cannonlake
 	register "PcieClkSrcClkReq[5]" = "5"
 
 	# Misc
-	register "Device4Enable" = "0"
-	register "HeciEnabled" = "0"
-	register "Heci3Enabled" = "0"
 	register "AcousticNoiseMitigation" = "1"
 	#register "dmipwroptimize" = "1"
 	#register "satapwroptimize" = "1"
@@ -147,14 +144,14 @@ chip soc/intel/cannonlake
 
 # LPC (soc/intel/cannonlake/lpc.c)
 	# LPC configuration from lspci -s 1f.0 -xxx
-	# Address 0x84: Decode 0x80 - 0x8F
+	# Address 0x84: Decode 0x80 - 0x8F (Port 80)
 	register "gen1_dec" = "0x000c0081"
-	# Address 0x88: Decode 0x68 - 0x6F
+	# Address 0x88: Decode 0x68 - 0x6F (PMC)
 	register "gen2_dec" = "0x00040069"
-	# Address 0x8C: Decode 0x3320 - 0x332F
-	register "gen3_dec" = "0x000c3321"
-	# Address 0x90: Disabled
-	register "gen4_dec" = "0x00000000"
+	# Address 0x8C: Decode 0xE00 - 0xEFF (AP/EC command)
+	register "gen3_dec" = "0x00fc0E01"
+	# Address 0x90: Decode 0xF00 - 0xFFF (AP/EC debug)
+	register "gen4_dec" = "0x00fc0F01"
 
 # PMC (soc/intel/cannonlake/pmc.c)
 	# Enable deep Sx states
@@ -182,7 +179,9 @@ chip soc/intel/cannonlake
 	device domain 0 on
 		device pci 00.0 on  end # Host Bridge
 		device pci 02.0 on  end # Integrated Graphics Device
-		device pci 04.0 off end # SA Thermal device
+		device pci 04.0 off     # SA Thermal device
+			register "Device4Enable" = "0"
+		end
 		device pci 12.0 on  end # Thermal Subsystem
 		device pci 12.5 off end # UFS SCS
 		device pci 12.6 off end # GSPI #2
@@ -202,7 +201,9 @@ chip soc/intel/cannonlake
 		device pci 16.1 off end # Management Engine Interface 2
 		device pci 16.2 off end # Management Engine IDE-R
 		device pci 16.3 off end # Management Engine KT Redirection
-		device pci 16.4 off end # Management Engine Interface 3
+		device pci 16.4 off     # Management Engine Interface 3
+			register "Heci3Enabled" = "0"
+		end
 		device pci 16.5 off end # Management Engine Interface 4
 		device pci 17.0 on  end # SATA
 		device pci 19.0 off end # I2C #4
@@ -214,14 +215,22 @@ chip soc/intel/cannonlake
 		device pci 1c.2 off end # PCI Express Port 3
 		device pci 1c.3 off end # PCI Express Port 4
 		device pci 1c.4 off end # PCI Express Port 5
-		device pci 1c.5 on  end # PCI Express Port 6
+		device pci 1c.5 on	# PCI Express Port 6
+			register "PcieRpSlotImplemented[5]" = "1"
+		end
 		device pci 1c.6 off end # PCI Express Port 7
-		device pci 1c.7 on  end # PCI Express Port 8
-		device pci 1d.0 on  end # PCI Express Port 9
+		device pci 1c.7 on	# PCI Express Port 8
+			register "PcieRpSlotImplemented[7]" = "1"
+		end
+		device pci 1d.0 on	# PCI Express Port 9
+			register "PcieRpSlotImplemented[8]" = "1"
+		end
 		device pci 1d.1 off end # PCI Express Port 10
 		device pci 1d.2 off end # PCI Express Port 11
 		device pci 1d.3 off end # PCI Express Port 12
-		device pci 1d.4 on  end # PCI Express Port 13
+		device pci 1d.4 on	# PCI Express Port 13
+			register "PcieRpSlotImplemented[12]" = "1"
+		end
 		device pci 1d.5 off end # PCI Express Port 14
 		device pci 1d.6 off end # PCI Express Port 15
 		device pci 1d.7 off end # PCI Express Port 16

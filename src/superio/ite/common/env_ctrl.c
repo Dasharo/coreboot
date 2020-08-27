@@ -113,6 +113,7 @@ static void fan_smartconfig(const u16 base, const u8 fan,
 	u8 pwm_ctrl;
 	u8 pwm_start = 0;
 	u8 pwm_auto = 0;
+	u8 delta_temp;
 
 	if (mode == FAN_SMART_SOFTWARE) {
 		pwm_ctrl = ITE_EC_FAN_CTL_PWM_MODE_SOFTWARE;
@@ -127,13 +128,19 @@ static void fan_smartconfig(const u16 base, const u8 fan,
 		pwm_ctrl = ITE_EC_FAN_CTL_PWM_MODE_AUTOMATIC;
 		pwm_ctrl |= ITE_EC_FAN_CTL_TEMPIN(conf->tmpin);
 
-		pwm_start = ITE_EC_FAN_CTL_PWM_START_DUTY(conf->pwm_start);
-
-		if (CONFIG(SUPERIO_ITE_ENV_CTRL_7BIT_SLOPE_REG)) {
-			pwm_auto = conf->slope & 0x7f;
-		} else {
-			pwm_start |= ITE_EC_FAN_CTL_PWM_SLOPE_BIT6(conf->slope);
+		if (conf->clsd_loop) {
+			pwm_ctrl |= ITE_EC_FAN_PWM_CLSD_LOOP;
+			pwm_start = ITE_EC_FAN_CTL_PWM_START_RPM(conf->rpm_start);
 			pwm_auto = ITE_EC_FAN_CTL_PWM_SLOPE_LOWER(conf->slope);
+		} else {
+			pwm_start = ITE_EC_FAN_CTL_PWM_START_DUTY(conf->pwm_start);
+
+			if (CONFIG(SUPERIO_ITE_ENV_CTRL_7BIT_SLOPE_REG)) {
+				pwm_auto = conf->slope & 0x7f;
+			} else {
+				pwm_start |= ITE_EC_FAN_CTL_PWM_SLOPE_BIT6(conf->slope);
+				pwm_auto = ITE_EC_FAN_CTL_PWM_SLOPE_LOWER(conf->slope);
+			}
 		}
 
 		if (conf->smoothing)
@@ -145,8 +152,11 @@ static void fan_smartconfig(const u16 base, const u8 fan,
 		/* Full speed above 127°C by default */
 		pnp_write_hwm5_index(base, ITE_EC_FAN_CTL_TEMP_LIMIT_FULL(fan),
 			conf->tmp_full ? conf->tmp_full : 127);
+
+		delta_temp = ITE_EC_FAN_CTL_DELTA_TEMP_INTRVL(conf->tmp_delta);
+		delta_temp |= ITE_EC_FAN_CTL_FULL_AT_THRML_LMT(conf->full_lmt);
 		pnp_write_hwm5_index(base, ITE_EC_FAN_CTL_DELTA_TEMP(fan),
-			ITE_EC_FAN_CTL_DELTA_TEMP_INTRVL(conf->tmp_delta));
+			delta_temp);
 	}
 
 	pnp_write_hwm5_index(base, ITE_EC_FAN_CTL_PWM_CONTROL(fan), pwm_ctrl);
@@ -258,6 +268,13 @@ void ite_ec_init(const u16 base, const struct ite_ec_config *const conf)
 		pnp_write_hwm5_index(base, ITE_EC_INTERFACE_SELECT,
 			pnp_read_hwm5_index(base, ITE_EC_INTERFACE_SELECT) |
 				ITE_EC_INTERFACE_SMB_ENABLE);
+	}
+
+	/* Set SST/PECI Host Controller Clock to either 24 MHz or internal 32 MHz */
+	if (conf->smbus_24mhz) {
+		pnp_write_hwm5_index(base, ITE_EC_INTERFACE_SELECT,
+			pnp_read_hwm5_index(base, ITE_EC_INTERFACE_SELECT) |
+				ITE_EC_INTERFACE_CLOCK_24MHZ);
 	}
 
 	/* Enable reading of voltage pins */

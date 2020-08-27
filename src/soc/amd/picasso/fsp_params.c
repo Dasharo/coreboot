@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
 #include <device/pci.h>
 #include <soc/pci_devs.h>
 #include <soc/platform_descriptors.h>
@@ -55,10 +56,13 @@ static void fsps_update_emmc_config(FSP_S_CONFIG *scfg,
 	scfg->emmc0_mode = val;
 }
 
-static void fill_pcie_descriptors(FSP_S_CONFIG *scfg,
-			const fsp_pcie_descriptor *descs, size_t num)
+static void fill_dxio_descriptors(FSP_S_CONFIG *scfg,
+			const fsp_dxio_descriptor *descs, size_t num)
 {
 	size_t i;
+
+	ASSERT_MSG(num <= FSPS_UPD_DXIO_DESCRIPTOR_COUNT,
+			"Too many DXIO descriptors provided.");
 
 	for (i = 0; i < num; i++) {
 		memcpy(scfg->dxio_descriptor[i], &descs[i], sizeof(scfg->dxio_descriptor[0]));
@@ -70,36 +74,52 @@ static void fill_ddi_descriptors(FSP_S_CONFIG *scfg,
 {
 	size_t i;
 
+	ASSERT_MSG(num <= FSPS_UPD_DDI_DESCRIPTOR_COUNT,
+			"Too many DDI descriptors provided.");
+
 	for (i = 0; i < num; i++) {
 		memcpy(&scfg->ddi_descriptor[i], &descs[i], sizeof(scfg->ddi_descriptor[0]));
 	}
 }
+
 static void fsp_fill_pcie_ddi_descriptors(FSP_S_CONFIG *scfg)
 {
-	const fsp_pcie_descriptor *fsp_pcie;
+	const fsp_dxio_descriptor *fsp_dxio;
 	const fsp_ddi_descriptor *fsp_ddi;
-	size_t num_pcie;
+	size_t num_dxio;
 	size_t num_ddi;
 
-	mainboard_get_pcie_ddi_descriptors(&fsp_pcie, &num_pcie,
+	mainboard_get_dxio_ddi_descriptors(&fsp_dxio, &num_dxio,
 						&fsp_ddi, &num_ddi);
-	fill_pcie_descriptors(scfg, fsp_pcie, num_pcie);
+	fill_dxio_descriptors(scfg, fsp_dxio, num_dxio);
 	fill_ddi_descriptors(scfg, fsp_ddi, num_ddi);
 }
 
 static void fsp_usb_oem_customization(FSP_S_CONFIG *scfg,
 			const struct soc_amd_picasso_config *cfg)
 {
-	size_t num = sizeof(struct usb2_phy_tune);
+	size_t i;
+
+	ASSERT(FSPS_UPD_USB2_PORT_COUNT == USB_PORT_COUNT);
+	/* each OC mapping in xhci_oc_pin_select is 4 bit per USB port */
+	ASSERT(2 * sizeof(scfg->xhci_oc_pin_select) >= USB_PORT_COUNT);
 
 	scfg->xhci0_force_gen1 = cfg->xhci0_force_gen1;
 
-	memcpy(scfg->fch_usb_2_port0_phy_tune, &cfg->usb_2_port_0_tune_params, num);
-	memcpy(scfg->fch_usb_2_port1_phy_tune, &cfg->usb_2_port_1_tune_params, num);
-	memcpy(scfg->fch_usb_2_port2_phy_tune, &cfg->usb_2_port_2_tune_params, num);
-	memcpy(scfg->fch_usb_2_port3_phy_tune, &cfg->usb_2_port_3_tune_params, num);
-	memcpy(scfg->fch_usb_2_port4_phy_tune, &cfg->usb_2_port_4_tune_params, num);
-	memcpy(scfg->fch_usb_2_port5_phy_tune, &cfg->usb_2_port_5_tune_params, num);
+	if (cfg->has_usb2_phy_tune_params) {
+		for (i = 0; i < FSPS_UPD_USB2_PORT_COUNT; i++) {
+			memcpy(scfg->fch_usb_2_port_phy_tune[i],
+				&cfg->usb_2_port_tune_params[i],
+				sizeof(scfg->fch_usb_2_port_phy_tune[0]));
+		}
+	}
+
+	/* lowest nibble of xhci_oc_pin_select corresponds to OC mapping of first USB port */
+	for (i = 0; i < USB_PORT_COUNT; i++) {
+		scfg->xhci_oc_pin_select &= ~(0xf << (i * 4));
+		scfg->xhci_oc_pin_select |=
+			(cfg->usb_port_overcurrent_pin[i] & 0xf) << (i * 4);
+	}
 }
 
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)

@@ -42,7 +42,6 @@
 
 int pch_silicon_revision(void);
 int pch_silicon_type(void);
-int pch_silicon_supported(int type, int rev);
 void pch_iobp_update(u32 address, u32 andvalue, u32 orvalue);
 
 void enable_usb_bar(void);
@@ -155,8 +154,7 @@ void early_usb_init(const struct southbridge_usb_port *portmap);
 #define LGMR			0x98 /* LPC Generic Memory Range */
 #define BIOS_DEC_EN1		0xd8 /* BIOS Decode Enable */
 
-/* PCI Configuration Space (D31:F1): IDE */
-#define PCH_IDE_DEV		PCI_DEV(0, 0x1f, 1)
+/* PCI Configuration Space (D31:F2): SATA */
 #define PCH_SATA_DEV		PCI_DEV(0, 0x1f, 2)
 #define PCH_SATA2_DEV		PCI_DEV(0, 0x1f, 5)
 #define IDE_TIM_PRI		0x40	/* IDE timings, primary */
@@ -229,26 +227,6 @@ void early_usb_init(const struct southbridge_usb_port *portmap);
 
 #define CIR0		0x0050	/* 32bit */
 #define  TCLOCKDN	(1u << 31)
-
-#define RCTCL		0x0100	/* 32bit */
-#define ESD		0x0104	/* 32bit */
-#define ULD		0x0110	/* 32bit */
-#define ULBA		0x0118	/* 64bit */
-
-#define RP1D		0x0120	/* 32bit */
-#define RP1BA		0x0128	/* 64bit */
-#define RP2D		0x0130	/* 32bit */
-#define RP2BA		0x0138	/* 64bit */
-#define RP3D		0x0140	/* 32bit */
-#define RP3BA		0x0148	/* 64bit */
-#define RP4D		0x0150	/* 32bit */
-#define RP4BA		0x0158	/* 64bit */
-#define HDD		0x0160	/* 32bit */
-#define HDBA		0x0168	/* 64bit */
-#define RP5D		0x0170	/* 32bit */
-#define RP5BA		0x0178	/* 64bit */
-#define RP6D		0x0180	/* 32bit */
-#define RP6BA		0x0188	/* 64bit */
 
 #define RPC		0x0400	/* 32bit */
 #define RPFN		0x0404	/* 32bit */

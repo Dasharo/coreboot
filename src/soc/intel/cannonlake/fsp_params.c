@@ -292,15 +292,14 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	else {
 		params->SataEnable = dev->enabled;
 		params->SataMode = config->SataMode;
+		params->SataPwrOptEnable = config->satapwroptimize;
 		params->SataSalpSupport = config->SataSalpSupport;
 		memcpy(params->SataPortsEnable, config->SataPortsEnable,
 			sizeof(params->SataPortsEnable));
 		memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
 			sizeof(params->SataPortsDevSlp));
-
 		memcpy(params->SataPortsHotPlug, config->SataPortsHotPlug,
 			sizeof(params->SataPortsHotPlug));
-
 #if CONFIG(SOC_INTEL_COMETLAKE)
 		memcpy(params->SataPortsDevSlpResetConfig,
 			config->SataPortsDevSlpResetConfig,
@@ -374,8 +373,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
 	/* Legacy 8254 timer support */
-	params->Enable8254ClockGating = !CONFIG_USE_LEGACY_8254_TIMER;
-	params->Enable8254ClockGatingOnS3 = !CONFIG_USE_LEGACY_8254_TIMER;
+	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
+	params->Enable8254ClockGatingOnS3 = !CONFIG(USE_LEGACY_8254_TIMER);
 
 	/* USB */
 	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
@@ -448,7 +447,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* Set Debug serial port */
 	params->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;
 #if !CONFIG(SOC_INTEL_COMETLAKE)
-	params->SerialIoEnableDebugUartAfterPost = CONFIG_INTEL_LPSS_UART_FOR_CONSOLE;
+	params->SerialIoEnableDebugUartAfterPost = CONFIG(INTEL_LPSS_UART_FOR_CONSOLE);
 #endif
 
 	/* Enable CNVi Wifi if enabled in device tree */
@@ -480,6 +479,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	memcpy(params->PcieRpLtrEnable, config->PcieRpLtrEnable,
 	       sizeof(config->PcieRpLtrEnable));
+	memcpy(params->PcieRpSlotImplemented, config->PcieRpSlotImplemented,
+	       sizeof(config->PcieRpSlotImplemented));
 	memcpy(params->PcieRpHotPlug, config->PcieRpHotPlug,
 	       sizeof(params->PcieRpHotPlug));
 
@@ -526,7 +527,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	params->Heci3Enabled = config->Heci3Enabled;
 #if !CONFIG(HECI_DISABLE_USING_SMM)
-	params->Heci1Disabled = !config->HeciEnabled;
+	dev = pcidev_path_on_root(PCH_DEVFN_CSE);
+	params->Heci1Disabled = !is_dev_enabled(dev);
 #endif
 	params->Device4Enable = config->Device4Enable;
 
@@ -549,9 +551,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->FastPkgCRampDisableGt = config->FastPkgCRampDisableGt;
 	params->FastPkgCRampDisableSa = config->FastPkgCRampDisableSa;
 	params->FastPkgCRampDisableFivr = config->FastPkgCRampDisableFivr;
-
-	/* Power Optimizer */
-	params->SataPwrOptEnable = config->satapwroptimize;
 
 	/* Disable PCH ACPI timer */
 	params->EnableTcoTimer = !config->PmTimerDisabled;

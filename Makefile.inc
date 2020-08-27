@@ -411,6 +411,10 @@ CPPFLAGS_common += -include $(src)/commonlib/bsd/include/commonlib/bsd/compiler.
 CPPFLAGS_common += -I3rdparty
 CPPFLAGS_common += -D__BUILD_DIR__=\"$(obj)\"
 
+ifeq ($(BUILD_TIMELESS),1)
+CPPFLAGS_common += -D__TIMELESS__
+endif
+
 ifeq ($(CONFIG_PCI_OPTION_ROM_RUN_YABEL)$(CONFIG_PCI_OPTION_ROM_RUN_REALMODE),y)
 CPPFLAGS_ramstage += -Isrc/device/oprom/include
 endif
@@ -418,10 +422,10 @@ endif
 CFLAGS_common += -pipe -g -nostdinc -std=gnu11
 CFLAGS_common += -nostdlib -Wall -Wundef -Wstrict-prototypes -Wmissing-prototypes
 CFLAGS_common += -Wwrite-strings -Wredundant-decls -Wno-trigraphs -Wimplicit-fallthrough
-CFLAGS_common += -Wstrict-aliasing -Wshadow -Wdate-time -Wtype-limits -Wvla
+CFLAGS_common += -Wshadow -Wdate-time -Wtype-limits -Wvla
 CFLAGS_common += -Wlogical-op -Wduplicated-cond -Wdangling-else
 CFLAGS_common += -fno-common -ffreestanding -fno-builtin -fomit-frame-pointer
-CFLAGS_common += -ffunction-sections -fdata-sections -fno-pie
+CFLAGS_common += -fstrict-aliasing -ffunction-sections -fdata-sections -fno-pie
 ifeq ($(CONFIG_COMPILER_GCC),y)
 # Don't add these GCC specific flags when running scan-build
 ifeq ($(CCC_ANALYZER_OUTPUT_FORMAT),)

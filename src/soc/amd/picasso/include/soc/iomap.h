@@ -12,7 +12,12 @@
 #endif
 #define HPET_BASE_ADDRESS		0xfed00000
 
+/* FCH AL2AHB Registers */
 #define ALINK_AHB_ADDRESS		0xfedc0000
+#define AL2AHB_CONTROL_CLK_OFFSET	0x10
+#define   AL2AHB_CLK_GATE_EN		(1 << 1)
+#define AL2AHB_CONTROL_HCLK_OFFSET	0x30
+#define   AL2AHB_HCLK_GATE_EN		(1 << 1)
 
 /* Reserved				0xfecd1000-0xfedc3fff */
 
@@ -64,7 +69,7 @@
 #define  ACPI_PM1_EN		(ACPI_PM_EVT_BLK + 0x02)	  /* 2 bytes */
 #define  ACPI_PM1_CNT_BLK	(PICASSO_ACPI_IO_BASE + 0x04)     /* 2 bytes */
 #define  ACPI_PM_TMR_BLK	(PICASSO_ACPI_IO_BASE + 0x08)     /* 4 bytes */
-#define  ACPI_CPU_CONTROL	(PICASSO_ACPI_IO_BASE + 0x0c)     /* 6 bytes */
+#define  ACPI_CPU_CONTROL	(PICASSO_ACPI_IO_BASE + 0x13)
 /* doc says 0x14 for GPE0_BLK but FT5 only works with 0x20 */
 #define  ACPI_GPE0_BLK		(PICASSO_ACPI_IO_BASE + 0x20)     /* 8 bytes */
 #define  ACPI_GPE0_STS		(ACPI_GPE0_BLK + 0x00)		  /* 4 bytes */

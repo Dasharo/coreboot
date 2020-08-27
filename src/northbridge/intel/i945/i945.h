@@ -31,6 +31,7 @@
 #define INT15_5F35_CL_DISPLAY_LCD2		(1 << 7)
 
 /* Device 0:0.0 PCI configuration space (Host Bridge) */
+#define HOST_BRIDGE	PCI_DEV(0, 0, 0)
 
 #define EPBAR		0x40
 #define MCHBAR		0x44
@@ -88,6 +89,7 @@
 
 
 /* Device 0:2.0 PCI configuration space (Graphics Device) */
+#define IGD_DEV		PCI_DEV(0, 2, 0)
 
 #define GMADR		0x18
 #define GTTADR		0x1c
@@ -361,6 +363,8 @@ void sdram_dump_mchbar_registers(void);
 
 u32 decode_igd_memory_size(u32 gms);
 u32 decode_tseg_size(const u8 esmramc);
+
+int decode_pcie_bar(u32 *const base, u32 *const len);
 
 /* Romstage mainboard callbacks */
 /* Optional: Override the default LPC config. */

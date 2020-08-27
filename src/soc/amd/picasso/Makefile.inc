@@ -22,6 +22,7 @@ bootblock-y += tsc_freq.c
 bootblock-y += gpio.c
 bootblock-y += smi_util.c
 bootblock-y += config.c
+bootblock-y += reset.c
 
 romstage-y += i2c.c
 romstage-y += romstage.c
@@ -129,7 +130,7 @@ ifeq ($(CONFIG_PSP_BOOTLOADER_FILE),)
 $(error CONFIG_PSP_BOOTLOADER_FILE was not defined)
 endif
 PSPBTLDR_FILE=$(realpath $(call strip_quotes, $(CONFIG_PSP_BOOTLOADER_FILE)))
-$(info Adding PSP $(shell md5sum $(PSPBTLDR_FILE)))
+$(info Adding PSP $(shell dd if=$(PSPBTLDR_FILE) | md5sum))
 
 # types = 0x8 and 0x12
 PSP_SMUFW1_SUB1_FILE=$(FIRMWARE_LOCATE)/SmuFirmwareRV2.csbin
@@ -251,7 +252,7 @@ endif
 PSP_VERSTAGE_FILE=$(obj)/psp_verstage.bin
 endif # CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK
 
-APOB_NV_SIZE=$(shell printf "0x%x" 	$(shell cat $(obj)/fmap.fmd | $(_GET_APOBNV_SIZE)))
+APOB_NV_SIZE=$(shell printf "0x%x" $(shell cat $(obj)/fmap.fmd | $(_GET_APOBNV_SIZE)))
 APOB_NV_BASE=$(shell printf "0x%x" $(call int-add, \
 			$(shell cat $(obj)/fmap.fmd | $(_GET_FLASH_BASE)) \
 			$(shell cat $(obj)/fmap.fmd | $(_GET_BIOS_REG_BASE)) \
@@ -322,6 +323,14 @@ OPT_PSP_SHAREDMEM_BASE=$(call add_opt_prefix, $(PSP_SHAREDMEM_BASE), --sharedmem
 OPT_PSP_SHAREDMEM_SIZE=$(call add_opt_prefix, $(PSP_SHAREDMEM_SIZE), --sharedmem-size)
 OPT_APOB_NV_SIZE=$(call add_opt_prefix, $(APOB_NV_SIZE), --apob-nv-size)
 OPT_APOB_NV_BASE=$(call add_opt_prefix, $(APOB_NV_BASE),--apob-nv-base)
+OPT_EFS_SPI_READ_MODE=$(call add_opt_prefix, $(CONFIG_EFS_SPI_READ_MODE), --spi-read-mode)
+OPT_EFS_SPI_SPEED=$(call add_opt_prefix, $(CONFIG_EFS_SPI_SPEED), --spi-speed)
+OPT_EFS_SPI_MICRON_FLAG=$(call add_opt_prefix, $(CONFIG_EFS_SPI_MICRON_FLAG), --spi-micron-flag)
+
+ifeq ($(CONFIG_VBOOT),)
+OPT_APOB0_NV_SIZE=$(OPT_APOB_NV_SIZE)
+OPT_APOB0_NV_BASE=$(OPT_APOB_NV_BASE)
+endif
 
 AMDFW_COMMON_ARGS=$(OPT_AMD_PUBKEY_FILE) \
 		$(OPT_PSPBTLDR_FILE) \
@@ -333,8 +342,6 @@ AMDFW_COMMON_ARGS=$(OPT_AMD_PUBKEY_FILE) \
 		$(OPT_SMUFW2_SUB1_FILE) \
 		$(OPT_PSP_APCB_FILES) \
 		$(OPT_APOB_ADDR) \
-		$(OPT_APOB_NV_SIZE) \
-		$(OPT_APOB_NV_BASE) \
 		$(OPT_PSP_BIOSBIN_FILE) \
 		$(OPT_PSP_BIOSBIN_DEST) \
 		$(OPT_PSP_BIOSBIN_SIZE) \
@@ -370,6 +377,10 @@ AMDFW_COMMON_ARGS=$(OPT_AMD_PUBKEY_FILE) \
 		$(OPT_PSP_SHAREDMEM_SIZE) \
 		--combo-capable \
 		$(OPT_TOKEN_UNLOCK) \
+		$(OPT_EFS_SPI_READ_MODE) \
+		$(OPT_EFS_SPI_SPEED) \
+		$(OPT_EFS_SPI_MICRON_FLAG) \
+		--soc-name "Picasso" \
 		--flashsize $(CONFIG_ROM_SIZE)
 
 # Copy prebuild APCBs if they exist
@@ -395,6 +406,7 @@ $(obj)/APCB_%_x1.bin:	$$(SPD_SOURCES_DIR)/%.spd.hex \
 	$(APCB_MAGIC_BLOB) \
 	$@ \
 	--hex \
+	--strip_manufacturer_information \
 	--spd_0_0 $< \
 	--board_id_gpio0 $(APCB_BOARD_ID_GPIO0) \
 	--board_id_gpio1 $(APCB_BOARD_ID_GPIO1) \
@@ -408,6 +420,7 @@ $(obj)/APCB_%_x2.bin:	$$(SPD_SOURCES_DIR)/%.spd.hex \
 	$(APCB_MAGIC_BLOB) \
 	$@ \
 	--hex \
+	--strip_manufacturer_information \
 	--spd_0_0 $< \
 	--spd_1_0 $< \
 	--board_id_gpio0 $(APCB_BOARD_ID_GPIO0) \
@@ -456,6 +469,8 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(CONFIG_AMD_PUBKEY_FILE)) \
 	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
 	$(AMDFWTOOL) \
 		$(AMDFW_COMMON_ARGS) \
+		$(OPT_APOB0_NV_SIZE) \
+		$(OPT_APOB0_NV_BASE) \
 		--location $(shell printf "%#x" $(PICASSO_FWM_POSITION)) \
 		--output $@
 
@@ -470,6 +485,8 @@ $(obj)/amdfw_a.rom: $(obj)/amdfw.rom
 	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
 	$(AMDFWTOOL) \
 		$(AMDFW_COMMON_ARGS) \
+		$(OPT_APOB_NV_SIZE) \
+		$(OPT_APOB_NV_BASE) \
 		--location $(shell printf "%#x" $(CONFIG_PICASSO_FW_A_POSITION)) \
 		--anywhere \
 		--output $@
@@ -479,6 +496,8 @@ $(obj)/amdfw_b.rom: $(obj)/amdfw.rom
 	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
 	$(AMDFWTOOL) \
 		$(AMDFW_COMMON_ARGS) \
+		$(OPT_APOB_NV_SIZE) \
+		$(OPT_APOB_NV_BASE) \
 		--location $(shell printf "%#x" $(CONFIG_PICASSO_FW_B_POSITION)) \
 		--anywhere \
 		--output $@

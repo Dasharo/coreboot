@@ -554,7 +554,7 @@ static void glk_fsp_silicon_init_params_cb(
 	}
 
 	dev = pcidev_path_on_root(SA_GLK_DEVFN_GMM);
-	silconfig->Gmm = dev ? dev->enabled : 0;
+	silconfig->Gmm = is_dev_enabled(dev);
 
 	/* On Geminilake, we need to override the default FSP PCIe de-emphasis
 	 * settings using the device tree settings. This is because PCIe
@@ -668,7 +668,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	if (!CONFIG(SOC_INTEL_GLK))
 		silconfig->MonitorMwaitEnable = 0;
 
-	silconfig->SkipMpInit = !CONFIG_USE_INTEL_FSP_MP_INIT;
+	silconfig->SkipMpInit = !CONFIG(USE_INTEL_FSP_MP_INIT);
 
 	/* Disable setting of EISS bit in FSP. */
 	silconfig->SpiEiss = 0;
@@ -696,10 +696,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	silconfig->VtdEnable = cfg->enable_vtd;
 
 	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	if (CONFIG(RUN_FSP_GOP) && dev && dev->enabled)
-		silconfig->PeiGraphicsPeimInit = 1;
-	else
-		silconfig->PeiGraphicsPeimInit = 0;
+	silconfig->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_dev_enabled(dev);
 
 	mainboard_silicon_init_params(silconfig);
 }

@@ -1,4 +1,10 @@
 chip soc/intel/tigerlake
+	register "TcssAuxOri" = "1"
+	register "IomTypeCPortPadCfg[0]" = "0x090E000A"
+	register "IomTypeCPortPadCfg[1]" = "0x090E000D"
+	register "DdiPort1Hpd" = "0"
+	register "DdiPort2Hpd" = "0"
+
 	device domain 0 on
 		device pci 15.0 on
 			chip drivers/i2c/generic
@@ -45,10 +51,16 @@ chip soc/intel/tigerlake
 				register "generic.probed" = "1"
 				register "generic.reset_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C10)"
+				# Parameter T3 >= 10ms
 				register "generic.reset_delay_ms" = "120"
+				# Parameter T2 >= 1ms
 				register "generic.reset_off_delay_ms" = "3"
 				register "generic.enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A8)"
+				# Parameter T1 >= 10ms
 				register "generic.enable_delay_ms" = "12"
+				register "generic.stop_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_E3)"
+				# Parameter T4 >= 1ms
+				register "generic.stop_off_delay_ms" = "1"
 				register "generic.has_power_resource" = "1"
 				register "hid_desc_reg_offset" = "0x01"
 				device i2c 14 on end
@@ -66,6 +78,19 @@ chip soc/intel/tigerlake
 				register "generic.disable_gpio_export_in_crs" = "1"
 				register "hid_desc_reg_offset" = "0x01"
 				device i2c 10 on end
+			end
+			chip drivers/generic/gpio_keys
+				register "name" = ""PENH""
+				# GPP_B3 is the IRQ source, and GPP_E1 is the wake source
+				register "gpio" = "ACPI_GPIO_INPUT_ACTIVE_LOW(GPP_B3)"
+				register "key.wake_gpe" = "GPE0_DW2_01"
+				register "key.wakeup_route" = "WAKEUP_ROUTE_SCI"
+				register "key.wakeup_event_action" = "EV_ACT_DEASSERTED"
+				register "key.dev_name" = ""EJCT""
+				register "key.linux_code" = "SW_PEN_INSERTED"
+				register "key.linux_input_type" = "EV_SW"
+				register "key.label" = ""pen_eject""
+				device generic 0 on end
 			end
 		end # I2C1				0xA0E9
 		device pci 15.2 on
@@ -156,7 +181,20 @@ chip soc/intel/tigerlake
 						register "usb3_port_number" = "2"
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
-						device generic 1 on end
+						device generic 1 on
+							probe DB_USB USB4_GEN2
+							probe DB_USB USB3_ACTIVE
+							probe DB_USB USB4_GEN3
+							probe DB_USB USB3_NO_A
+						end
+					end
+					chip drivers/intel/pmc_mux/conn
+						register "usb2_port_number" = "4"
+						register "usb3_port_number" = "2"
+						# SBU & HSL follow CC
+						device generic 1 on
+							probe DB_USB USB3_PASSIVE
+						end
 					end
 				end
 			end

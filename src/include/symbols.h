@@ -24,6 +24,17 @@ DECLARE_REGION(cbfs_cache)
 DECLARE_REGION(fmap_cache)
 DECLARE_REGION(tpm_tcpa_log)
 
+#if ENV_ROMSTAGE && CONFIG(ASAN_IN_ROMSTAGE)
+DECLARE_REGION(bss)
+DECLARE_REGION(asan_shadow)
+#endif
+
+#if ENV_RAMSTAGE && CONFIG(ASAN_IN_RAMSTAGE)
+DECLARE_REGION(data)
+DECLARE_REGION(heap)
+DECLARE_REGION(asan_shadow)
+#endif
+
 /* Regions for execution units. */
 
 DECLARE_REGION(payload)
@@ -49,6 +60,7 @@ DECLARE_REGION(framebuffer)
 DECLARE_REGION(pdpt)
 DECLARE_REGION(opensbi)
 DECLARE_REGION(bl31)
+DECLARE_REGION(transfer_buffer)
 
 /*
  * Put this into a .c file accessing a linker script region to mark that region
