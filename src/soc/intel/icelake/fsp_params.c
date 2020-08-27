@@ -71,10 +71,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	for (i = 0; i < ARRAY_SIZE(params->Usb3OverCurrentPin); i++)
 		params->Usb3OverCurrentPin[i] = 0;
 
-	/* Mandatory to make use of CpuMpPpi implementation from ICL onwards */
-	params->CpuMpPpi = (uintptr_t) mp_fill_ppi_services_data();
-	/* TODO: Remove me as SkipMpInit is getting deprecated */
-	params->SkipMpInit = 0;
+	/* Use coreboot MP PPI services if Kconfig is enabled */
+	if (CONFIG(USE_INTEL_FSP_TO_CALL_COREBOOT_PUBLISH_MP_PPI))
+		params->CpuMpPpi = (uintptr_t) mp_fill_ppi_services_data();
 
 	mainboard_silicon_init_params(params);
 
@@ -126,8 +125,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
 	/* Legacy 8254 timer support */
-	params->Enable8254ClockGating = !CONFIG_USE_LEGACY_8254_TIMER;
-	params->Enable8254ClockGatingOnS3 = !CONFIG_USE_LEGACY_8254_TIMER;
+	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
+	params->Enable8254ClockGatingOnS3 = !CONFIG(USE_LEGACY_8254_TIMER);
 
 	/* S0ix */
 	params->PchPmSlpS0Enable = config->s0ix_enable;

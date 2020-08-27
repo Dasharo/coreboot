@@ -27,6 +27,7 @@
 /* Boot partition info and set boot partition info command ids */
 #define MKHI_BUP_COMMON_GET_BOOT_PARTITION_INFO	0x1c
 #define MKHI_BUP_COMMON_SET_BOOT_PARTITION_INFO	0x1d
+#define MKHI_BUP_COMMON_DATA_CLEAR		0x20
 
 /* ME Current Working States */
 #define ME_HFS1_CWS_NORMAL	0x5
@@ -219,4 +220,8 @@ uint8_t cse_wait_com_soft_temp_disable(void);
  * currently selected partition.
  */
 void cse_fw_sync(void *unused);
+
+/* Perform a board-specific reset sequence for CSE RO<->RW jump */
+void cse_board_reset(void);
+
 #endif // SOC_INTEL_COMMON_CSE_H

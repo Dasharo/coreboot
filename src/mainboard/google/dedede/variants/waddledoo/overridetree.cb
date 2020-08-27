@@ -50,6 +50,7 @@ chip soc/intel/jasperlake
 		},
 	}"
 	device domain 0 on
+		device pci 05.0 on end # IPU - MIPI Camera
 		device pci 14.0 on
 			chip drivers/usb/acpi
 				device usb 0.0 on
@@ -91,9 +92,9 @@ chip soc/intel/jasperlake
 				register "generic.probed" = "1"
 				register "generic.reset_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D5)"
-				register "generic.reset_delay_ms" = "100"
 				register "generic.stop_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_A11)"
+				register "generic.stop_delay_ms" = "100"
 				register "generic.enable_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D6)"
 				register "generic.enable_delay_ms" = "7"
@@ -147,12 +148,12 @@ chip soc/intel/jasperlake
 				device i2c 1a on end
 			end
 		end #I2C 4
-                device pci 1f.3 on
-                        chip drivers/generic/max98357a
-                                register "hid" = ""MX98360A""
+		device pci 1f.3 on
+			chip drivers/generic/max98357a
+				register "hid" = ""MX98360A""
 				register "sdmode_gpio" =  "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D17)"
-                                device generic 0 on end
-                        end
-                end # Intel HDA
+				device generic 0 on end
+			end
+		end # Intel HDA
 	end
 end

@@ -3,6 +3,12 @@
 #ifndef _RULES_H
 #define _RULES_H
 
+#if defined(__TIMELESS__)
+#define ENV_TIMELESS 1
+#else
+#define ENV_TIMELESS 0
+#endif
+
 /* Useful helpers to tell whether the code is executing in bootblock,
  * romstage, ramstage or SMM.
  */
@@ -260,6 +266,20 @@
 
 /* Currently rmodules, ramstage and smm have heap. */
 #define ENV_STAGE_HAS_HEAP_SECTION	(ENV_RMODULE || ENV_RAMSTAGE || ENV_SMM)
+
+/* Set USER_SPACE in the makefile for the rare code that runs in userspace */
+#if defined(__USER_SPACE__)
+#define ENV_USER_SPACE		1
+#else
+#define ENV_USER_SPACE		0
+#endif
+
+/* Define the first stage to run */
+#if CONFIG(VBOOT_STARTS_BEFORE_BOOTBLOCK)
+#define ENV_INITIAL_STAGE		ENV_SEPARATE_VERSTAGE
+#else
+#define ENV_INITIAL_STAGE		ENV_BOOTBLOCK
+#endif
 
 /**
  * For pre-DRAM stages and post-CAR always build with simple device model, ie.

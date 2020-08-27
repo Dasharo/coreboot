@@ -8,6 +8,9 @@
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
 #include <northbridge/intel/sandybridge/chip.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "raminit_native.h"
 #include "raminit_common.h"
 #include "raminit_tables.h"
@@ -684,9 +687,6 @@ int try_init_dram_ddr3(ramctr_timing *ctrl, int fast_boot, int s3resume, int me_
 		err = channel_test(ctrl);
 		if (err)
 			return err;
-
-		if (ctrl->ecc_enabled)
-			channel_scrub(ctrl);
 	}
 
 	/* Set MAD-DIMM registers */

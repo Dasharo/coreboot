@@ -45,8 +45,10 @@ static struct rect screen;
  * Framebuffer is assumed to assign a higher coordinate (larger x, y) to
  * a higher address
  */
-static struct cb_framebuffer *fbinfo;
-static uint8_t *fbaddr;
+static const struct cb_framebuffer *fbinfo;
+
+/* Shorthand for up-to-date virtual framebuffer address */
+#define FB ((unsigned char *)phys_to_virt(fbinfo->physical_address))
 
 #define LOG(x...)	printf("CBGFX: " x)
 #define PIVOT_H_MASK	(PIVOT_H_LEFT|PIVOT_H_CENTER|PIVOT_H_RIGHT)
@@ -61,17 +63,53 @@ static const struct vector vzero = {
 	.y = 0,
 };
 
+struct color_transformation {
+	uint8_t base;
+	int16_t scale;
+};
+
+struct color_mapping {
+	struct color_transformation red;
+	struct color_transformation green;
+	struct color_transformation blue;
+	int enabled;
+};
+
+static struct color_mapping color_map;
+
+static inline void set_color_trans(struct color_transformation *trans,
+				   uint8_t bg_color, uint8_t fg_color)
+{
+	trans->base = bg_color;
+	trans->scale = fg_color - bg_color;
+}
+
+int set_color_map(const struct rgb_color *background,
+		  const struct rgb_color *foreground)
+{
+	if (background == NULL || foreground == NULL)
+		return CBGFX_ERROR_INVALID_PARAMETER;
+
+	set_color_trans(&color_map.red, background->red, foreground->red);
+	set_color_trans(&color_map.green, background->green,
+			foreground->green);
+	set_color_trans(&color_map.blue, background->blue, foreground->blue);
+	color_map.enabled = 1;
+
+	return CBGFX_SUCCESS;
+}
+
+void clear_color_map(void)
+{
+	color_map.enabled = 0;
+}
+
 struct blend_value {
 	uint8_t alpha;
 	struct rgb_color rgb;
 };
 
-static struct blend_value blend = {
-	.alpha = 0,
-	.rgb.red = 0,
-	.rgb.green = 0,
-	.rgb.blue = 0,
-};
+static struct blend_value blend;
 
 int set_blend(const struct rgb_color *rgb, uint8_t alpha)
 {
@@ -99,6 +137,11 @@ static void add_vectors(struct vector *out,
 	out->y = v1->y + v2->y;
 }
 
+static int fraction_equal(const struct fraction *f1, const struct fraction *f2)
+{
+	return (int64_t)f1->n * f2->d == (int64_t)f2->n * f1->d;
+}
+
 static int is_valid_fraction(const struct fraction *f)
 {
 	return f->d != 0;
@@ -109,17 +152,31 @@ static int is_valid_scale(const struct scale *s)
 	return is_valid_fraction(&s->x) && is_valid_fraction(&s->y);
 }
 
+static void reduce_fraction(struct fraction *out, int64_t n, int64_t d)
+{
+	/* Simplest way to reduce the fraction until fitting in int32_t */
+	int shift = log2(MAX(ABS(n), ABS(d)) >> 31) + 1;
+	out->n = n >> shift;
+	out->d = d >> shift;
+}
+
+/* out = f1 + f2 */
 static void add_fractions(struct fraction *out,
 			  const struct fraction *f1, const struct fraction *f2)
 {
-	int64_t n, d;
-	int shift;
-	n = (int64_t)f1->n * f2->d + (int64_t)f2->n * f1->d;
-	d = (int64_t)f1->d * f2->d;
-	/* Simplest way to reduce the fraction until fitting in int32_t */
-	shift = log2(MAX(ABS(n), ABS(d)) >> 31) + 1;
-	out->n = n >> shift;
-	out->d = d >> shift;
+	reduce_fraction(out,
+			(int64_t)f1->n * f2->d + (int64_t)f2->n * f1->d,
+			(int64_t)f1->d * f2->d);
+}
+
+/* out = f1 - f2 */
+static void subtract_fractions(struct fraction *out,
+			       const struct fraction *f1,
+			       const struct fraction *f2)
+{
+	reduce_fraction(out,
+			(int64_t)f1->n * f2->d - (int64_t)f2->n * f1->d,
+			(int64_t)f1->d * f2->d);
 }
 
 static void add_scales(struct scale *out,
@@ -166,6 +223,15 @@ static int within_box(const struct vector *v, const struct rect *bound)
 		return -1;
 }
 
+/* Helper function that applies color_map to the color. */
+static inline uint8_t apply_map(uint8_t color,
+				const struct color_transformation *trans)
+{
+	if (!color_map.enabled)
+		return color;
+	return trans->base + trans->scale * color / UINT8_MAX;
+}
+
 /*
  * Helper function that applies color and opacity from blend struct
  * into the color.
@@ -184,13 +250,16 @@ static inline uint32_t calculate_color(const struct rgb_color *rgb,
 {
 	uint32_t color = 0;
 
-	color |= (apply_blend(rgb->red, blend.rgb.red)
+	color |= (apply_blend(apply_map(rgb->red, &color_map.red),
+			      blend.rgb.red)
 		  >> (8 - fbinfo->red_mask_size))
 		 << fbinfo->red_mask_pos;
-	color |= (apply_blend(rgb->green, blend.rgb.green)
+	color |= (apply_blend(apply_map(rgb->green, &color_map.green),
+			      blend.rgb.green)
 		  >> (8 - fbinfo->green_mask_size))
 		 << fbinfo->green_mask_pos;
-	color |= (apply_blend(rgb->blue, blend.rgb.blue)
+	color |= (apply_blend(apply_map(rgb->blue, &color_map.blue),
+			      blend.rgb.blue)
 		  >> (8 - fbinfo->blue_mask_size))
 		 << fbinfo->blue_mask_pos;
 	if (invert)
@@ -229,7 +298,7 @@ static inline void set_pixel(struct vector *coord, uint32_t color)
 		break;
 	}
 
-	uint8_t * const pixel = fbaddr + rcoord.y * bpl + rcoord.x * bpp / 8;
+	uint8_t * const pixel = FB + rcoord.y * bpl + rcoord.x * bpp / 8;
 	for (i = 0; i < bpp / 8; i++)
 		pixel[i] = (color >> (i * 8));
 }
@@ -243,12 +312,9 @@ static int cbgfx_init(void)
 	if (initialized)
 		return 0;
 
-	fbinfo = lib_sysinfo.framebuffer;
-	if (!fbinfo)
-		return CBGFX_ERROR_FRAMEBUFFER_INFO;
+	fbinfo = &lib_sysinfo.framebuffer;
 
-	fbaddr = phys_to_virt((uint8_t *)(uintptr_t)(fbinfo->physical_address));
-	if (!fbaddr)
+	if (!fbinfo->physical_address)
 		return CBGFX_ERROR_FRAMEBUFFER_ADDR;
 
 	switch (fbinfo->orientation) {
@@ -477,6 +543,59 @@ int draw_rounded_box(const struct scale *pos_rel, const struct scale *dim_rel,
 	return CBGFX_SUCCESS;
 }
 
+int draw_line(const struct scale *pos1, const struct scale *pos2,
+	      const struct fraction *thickness, const struct rgb_color *rgb)
+{
+	struct fraction len;
+	struct vector top_left;
+	struct vector size;
+	struct vector p, t;
+
+	if (cbgfx_init())
+		return CBGFX_ERROR_INIT;
+
+	const uint32_t color = calculate_color(rgb, 0);
+
+	if (!is_valid_fraction(thickness))
+		return CBGFX_ERROR_INVALID_PARAMETER;
+
+	transform_vector(&top_left, &canvas.size, pos1, &canvas.offset);
+	if (fraction_equal(&pos1->y, &pos2->y)) {
+		/* Horizontal line */
+		subtract_fractions(&len, &pos2->x, &pos1->x);
+		struct scale dim = {
+			.x = { .n = len.n, .d = len.d },
+			.y = { .n = thickness->n, .d = thickness->d },
+		};
+		transform_vector(&size, &canvas.size, &dim, &vzero);
+		size.y = MAX(size.y, 1);
+	} else if (fraction_equal(&pos1->x, &pos2->x)) {
+		/* Vertical line */
+		subtract_fractions(&len, &pos2->y, &pos1->y);
+		struct scale dim = {
+			.x = { .n = thickness->n, .d = thickness->d },
+			.y = { .n = len.n, .d = len.d },
+		};
+		transform_vector(&size, &canvas.size, &dim, &vzero);
+		size.x = MAX(size.x, 1);
+	} else {
+		LOG("Only support horizontal and vertical lines\n");
+		return CBGFX_ERROR_INVALID_PARAMETER;
+	}
+
+	add_vectors(&t, &top_left, &size);
+	if (within_box(&t, &canvas) < 0) {
+		LOG("Line exceeds canvas boundary\n");
+		return CBGFX_ERROR_BOUNDARY;
+	}
+
+	for (p.y = top_left.y; p.y < t.y; p.y++)
+		for (p.x = top_left.x; p.x < t.x; p.x++)
+			set_pixel(&p, color);
+
+	return CBGFX_SUCCESS;
+}
+
 int clear_canvas(const struct rgb_color *rgb)
 {
 	const struct rect box = {
@@ -507,7 +626,7 @@ int clear_screen(const struct rgb_color *rgb)
 	 * We assume that for 32bpp the high byte gets ignored anyway. */
 	if ((((color >> 8) & 0xff) == (color & 0xff)) && (bpp == 16 ||
 	    (((color >> 16) & 0xff) == (color & 0xff)))) {
-		memset(fbaddr, color & 0xff, fbinfo->y_resolution * bpl);
+		memset(FB, color & 0xff, fbinfo->y_resolution * bpl);
 	} else {
 		for (p.y = 0; p.y < screen.size.height; p.y++)
 			for (p.x = 0; p.x < screen.size.width; p.x++)

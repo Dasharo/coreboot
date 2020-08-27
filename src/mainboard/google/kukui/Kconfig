@@ -55,6 +55,9 @@ config MAINBOARD_PART_NUMBER
 	default "Cerise" if BOARD_GOOGLE_CERISE
 	default "Stern" if BOARD_GOOGLE_STERN
 	default "Willow" if BOARD_GOOGLE_WILLOW
+	default "Esche" if BOARD_GOOGLE_ESCHE
+	default "Burnet" if BOARD_GOOGLE_BURNET
+	default "Fennel" if BOARD_GOOGLE_FENNEL
 
 config DRIVER_TPM_SPI_BUS
 	hex
@@ -67,5 +70,10 @@ config BOOT_DEVICE_SPI_FLASH_BUS
 config EC_GOOGLE_CHROMEEC_SPI_BUS
 	hex
 	default 0x2
+
+config BOARD_SDRAM_TABLE_OFFSET
+	hex
+	default 0x10 if BOARD_GOOGLE_BURNET || BOARD_GOOGLE_ESCHE
+	default 0x0
 
 endif

@@ -13,6 +13,10 @@ config BOARD_SPECIFIC_OPTIONS
 	select OCP_DMI
 	select VPD
 	select VPD_SMBIOS_VERSION
+	select IPMI_OCP
+
+config POWER_STATE_DEFAULT_ON_AFTER_FAILURE
+	default n
 
 config IPMI_KCS_REGISTER_SPACING
 	int
@@ -36,6 +40,15 @@ config MAX_SOCKET
 
 config FMDFILE
 	string
-	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd"
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
+
+# Deltalake is single socket server, the platform design has 1 DIMM per channel
+config DIMM_MAX
+	int
+	default 6
+
+config CONSOLE_POST
+	bool
+	default y
 
 endif # BOARD_OCP_DELTALAKE

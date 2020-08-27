@@ -10,6 +10,8 @@ config BOARD_SPECIFIC_OPTIONS
 	select BOARD_ROMSIZE_KB_8192 if BOARD_AMD_MANDOLIN
 	select AZALIA_PLUGIN_SUPPORT
 	select HAVE_ACPI_RESUME
+	select DRIVERS_UART_ACPI
+	select PICASSO_CONSOLE_UART if !AMD_LPC_DEBUG_CARD
 
 config FMDFILE
 	string
@@ -70,7 +72,7 @@ config MANDOLIN_MCHP_FW_FILE
 	default "3rdparty/blobs/mainboard/amd/mandolin/EC_mandolin.bin" if BOARD_AMD_MANDOLIN
 
 if !AMD_LPC_DEBUG_CARD
-choice MANDOLIN_LPC_IOMUX
+choice
 	prompt "State of IOMux for LPC/eMMC signals"
 	default MANDOLIN_IOMUX_USE_EMMC
 	help
@@ -104,5 +106,19 @@ config VGA_BIOS_DGPU_ID
 config VGA_BIOS_DGPU_FILE
 	string
 	default "3rdparty/amd_blobs/picasso/PicassoGenericVbios.bin" if BOARD_AMD_MANDOLIN
+
+config EFS_SPI_READ_MODE
+	int
+	default 0 if EM100
+	default 5
+
+config EFS_SPI_SPEED
+	int
+	default 3 if EM100
+	default 0
+
+config EFS_SPI_MICRON_FLAG
+	int
+	default 0
 
 endif # BOARD_AMD_MANDOLIN
