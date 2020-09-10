@@ -161,9 +161,9 @@ endif # CONFIG_VBOOT_SEPARATE_VERSTAGE
 #RO-Partition is always there!
 VBOOT_PARTITIONS := COREBOOT
 # Check for RW_A partition
-ifeq ($(CONFIG_VBOOT_SLOTS_RW_A),y)
-VBOOT_PARTITIONS += FW_MAIN_A
-endif
+#ifeq ($(CONFIG_VBOOT_SLOTS_RW_A),y)
+#VBOOT_PARTITIONS += FW_MAIN_A
+#endif
 # Check for RW_B partition
 ifeq ($(CONFIG_VBOOT_SLOTS_RW_AB),y)
 VBOOT_PARTITIONS += FW_MAIN_B
@@ -283,14 +283,14 @@ endif
 # When passing the minimized image to vbutil_firmware, its length is recorded
 # in the keyblock, and coreboot's vboot code clips the region_device to match,
 # which prevents any potential extension attacks.
-$(obj)/FW_MAIN_%.bin: $(obj)/coreboot.rom
+$(obj)/FW_MAIN_B.bin: $(obj)/coreboot.rom
 	$(CBFSTOOL) $< truncate -r $(basename $(notdir $@)) > $@.tmp.size
 	$(CBFSTOOL) $< read -r $(basename $(notdir $@)) -f $@.tmp
 	head -c $$( printf "%d" $$(cat $@.tmp.size)) $@.tmp > $@.tmp2
 	mv $@.tmp2 $@
 	rm -f $@.tmp $@.tmp.size
 
-$(obj)/VBLOCK_%.bin: $(obj)/FW_MAIN_%.bin $(FUTILITY)
+$(obj)/VBLOCK_B.bin: $(obj)/FW_MAIN_B.bin $(FUTILITY)
 	$(FUTILITY) vbutil_firmware \
 		--vblock $@ \
 		--keyblock "$(CONFIG_VBOOT_KEYBLOCK)" \
@@ -301,8 +301,7 @@ $(obj)/VBLOCK_%.bin: $(obj)/FW_MAIN_%.bin $(FUTILITY)
 		--flags $(CONFIG_VBOOT_KEYBLOCK_PREAMBLE_FLAGS)
 
 ifeq ($(CONFIG_VBOOT_SLOTS_RW_AB),y)
-files_added:: $(obj)/VBLOCK_A.bin $(obj)/VBLOCK_B.bin
-	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r VBLOCK_A -f $(obj)/VBLOCK_A.bin
+files_added:: $(obj)/VBLOCK_B.bin
 	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r VBLOCK_B -f $(obj)/VBLOCK_B.bin
 	@printf "    FLASHMAP Layout generated for RO, A and B partition.\n"
 else ifeq ($(CONFIG_VBOOT_SLOTS_RW_A),y)
