@@ -1125,6 +1125,7 @@ endif
 	$(CBFSTOOL) $@.tmp add-payload -f bzImage -n fallback/payload -c none \
 	-r COREBOOT -C "console=ttyS1,115200 iomem=relaxed" -I "initrd.cpio.xz"
 	$(CBFSTOOL) $@.tmp add-payload -r COREBOOT -n img/setup -f setup.elf -c lzma
+	$(CBFSTOOL) $@.tmp add-payload -r FW_MAIN_A -n fallback/payload -f UEFIPAYLOAD.fd -c lzma
 
 ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
 	dd if=$(CONFIG_CPU_UCODE_BINARIES) of=$@.tmp bs=1 seek=6665692 count=3424 conv=notrunc 2> /dev/null
