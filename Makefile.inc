@@ -1118,13 +1118,9 @@ ifeq ($(CONFIG_VPD),y)
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s sd3mode=disabled
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s watchdog=0
 endif
-	$(CBFSTOOL) $@.tmp remove -r COREBOOT -n fallback/payload
-	$(CBFSTOOL) $@.tmp extract -r COREBOOT -n img/setup -f setup.elf -m x86
-	$(CBFSTOOL) $@.tmp remove -r COREBOOT -n img/setup
-	$(CBFSTOOL) $@.tmp remove -r COREBOOT -n linux/payload
-	$(CBFSTOOL) $@.tmp add-payload -f bzImage -n fallback/payload -c none \
-	-r COREBOOT -C "console=ttyS1,115200 iomem=relaxed" -I "initrd.cpio.xz"
-	$(CBFSTOOL) $@.tmp add-payload -r COREBOOT -n img/setup -f setup.elf -c lzma
+	$(CBFSTOOL) UD_Polisy_v1.0.0_generic.rom read -r WP_RO -f region_WPRO.rom
+	$(CBFSTOOL) $@.tmp write -r WP_RO -f region_WPRO.rom
+	rm region_WPRO.rom
 	$(CBFSTOOL) $@.tmp add-payload -r FW_MAIN_A -n fallback/payload -f UEFIPAYLOAD.fd -c lzma
 
 ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
@@ -1135,6 +1131,7 @@ endif
 	$(CBFSTOOL) $@ layout
 	@printf "    CBFSPRINT  $(subst $(obj)/,,$(@))\n\n"
 	$(CBFSTOOL) $@ print -r $(subst $(spc),$(comma),$(all-regions))
+	3rdparty/vboot/scripts/image_signing/sign_firmware.sh build/coreboot.rom keys UD_polisy_signed.rom 1
 
 cbfs-files-y += $(CONFIG_CBFS_PREFIX)/romstage
 $(CONFIG_CBFS_PREFIX)/romstage-file := $(objcbfs)/romstage.elf
