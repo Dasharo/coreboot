@@ -65,6 +65,7 @@
 
 /* Present in Document Number: 315168-016. */
 #define TXT_SPAD (TXT_BASE + 0xa0)
+#define  ACMSTS_IBB_MEASURED		(1ull << 63)
 #define  ACMSTS_VERIFICATION_ERROR	(1ull << 62)
 #define  ACMSTS_BG_STARTUP_ERROR	(1ull << 61)	/* CBnT platforms only */
 #define  ACMSTS_TXT_DISABLED		(1ull << 60)	/* disabled by FIT type 0xA record */
@@ -181,6 +182,8 @@
 #define ACMINPUT_SCLEAN		0
 #define ACMINPUT_RESET_TPM_ESTABLISHMENT 1
 #define ACMINPUT_RESET_TPM_AUXILIARY_INDICIES 2
+/* This was spotted in document Reference Number: 572782 */
+#define ACMINPUT_UNREGISTER_ACM	3
 #define ACMINPUT_NOP		3
 #define ACMINPUT_SCHECK		4
 #define ACMINPUT_CLEAR_SECRETS	5
@@ -214,6 +217,7 @@
 #define ACM_FORMAT_FLAGS_DEBUG (1 << 15)
 
 /* Old ACMs are power of two aligned, newer ACMs are not */
+#define ACM_FORMAT_SIZE_64KB  (64 * KiB / 4)
 #define ACM_FORMAT_SIZE_128KB (128 * KiB / 4)
 #define ACM_FORMAT_SIZE_256KB (256 * KiB / 4)
 

@@ -6,6 +6,7 @@
 #endif
 
 #include <arch/mmio.h>
+#include <cpu/x86/smm.h>
 #include <string.h>
 
 #include "txt.h"

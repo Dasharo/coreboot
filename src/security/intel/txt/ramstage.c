@@ -9,10 +9,12 @@
 #include <cbfs.h>
 #include <cpu/intel/common/common.h>
 #include <cpu/x86/msr.h>
+#include <cpu/x86/smm.h>
 #include <device/pci_ops.h>
 
 #include "txt_register.h"
 #include "txt_getsec.h"
+#include "txt.h"
 
 /* FIXME: Seems to work only on some platforms */
 static void log_ibb_measurements(void)
@@ -125,8 +127,6 @@ BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY, check_secrets_txt, NULL);
  */
 static void init_intel_txt(void *unused)
 {
-	if (CONFIG(LEGACY_INTEL_TXT))
-		return;
 
 	const uint64_t status = read64((void *)TXT_SPAD);
 
@@ -156,16 +156,25 @@ static void init_intel_txt(void *unused)
 		return;
 	}
 
-	printk(BIOS_INFO, "TEE-TXT: Testing BIOS ACM calling code...\n");
+	if (!CONFIG(LEGACY_INTEL_TXT)) {
+		printk(BIOS_INFO, "TEE-TXT: Testing BIOS ACM calling code...\n");
+	
+		/*
+		 * Test BIOS ACM code.
+		 * ACM should do nothing on reserved functions, and return an error code
+		 * Use special function "NOP" that does 'nothing'.
+		 */
+		if (intel_txt_run_bios_acm(ACMINPUT_NOP) < 0) {
+			printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM with NOP function.\n");
+			return;
+		}
+	}
 
-	/*
-	 * Test BIOS ACM code.
-	 * ACM should do nothing on reserved functions, and return an error code
-	 * Use special function "NOP" that does 'nothing'.
-	 */
-	if (intel_txt_run_bios_acm(ACMINPUT_NOP) < 0) {
-		printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM with NOP function.\n");
-		return;
+	if (status & (ACMSTS_BIOS_TRUSTED | ACMSTS_IBB_MEASURED)) {
+		log_ibb_measurements();
+
+		int s3resume = acpi_is_wakeup_s3();
+		if (!s3resume) {
 			printk(BIOS_INFO, "TEE-TXT: Scheck...\n");
 			if (intel_txt_run_bios_acm(ACMINPUT_SCHECK) < 0) {
 				printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM.\n");
@@ -204,7 +213,6 @@ static void lockdown_intel_txt(void *unused)
 {
 	const uint64_t status = read64((void *)TXT_SPAD);
 	uintptr_t tseg = 0;
-	size_t tseg_size;
 
 	if (status & ACMSTS_TXT_DISABLED)
 		return;
@@ -218,12 +226,12 @@ static void lockdown_intel_txt(void *unused)
 		return;
 	}
 
-	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SA)) {
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_SA)
 		tseg = sa_get_tseg_base() >> 20;
-	} else {
+#else
 		smm_region(&tseg, NULL);
 		tseg >>= 20;
-	}
+#endif
 
 	/*
 	 * Document Number: 558294
