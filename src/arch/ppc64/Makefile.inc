@@ -33,6 +33,7 @@ endif
 ################################################################################
 ifeq ($(CONFIG_ARCH_ROMSTAGE_PPC64),y)
 
+romstage-y += arch_timer.c
 romstage-y += boot.c
 romstage-y += stages.c
 romstage-y += \
@@ -60,6 +61,7 @@ endif
 ################################################################################
 ifeq ($(CONFIG_ARCH_RAMSTAGE_PPC64),y)
 
+ramstage-y += arch_timer.c
 ramstage-y += stages.c
 ramstage-y += boot.c
 ramstage-y += tables.c
