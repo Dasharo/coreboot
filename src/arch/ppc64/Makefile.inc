@@ -62,6 +62,7 @@ endif
 ################################################################################
 ifeq ($(CONFIG_ARCH_RAMSTAGE_PPC64),y)
 
+ramstage-y += arch_timer.c
 ramstage-y += stages.c
 ramstage-y += arch_timer.c
 ramstage-y += boot.c
