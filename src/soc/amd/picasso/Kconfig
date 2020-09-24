@@ -243,6 +243,24 @@ config EHCI_BAR
 	hex
 	default 0xfef00000
 
+config PICASSO_FCH_IOAPIC_ID
+	hex
+	default 0x8
+	help
+	  The Picasso APU has two IOAPICs, one in the FCH and one in the
+	  northbridge.  Set this value for the intended ID to assign to the
+	  FCH IOAPIC.  The value should be >= MAX_CPUS and different from
+	  the GNB's IOAPIC_ID.
+
+config PICASSO_GNB_IOAPIC_ID
+	hex
+	default 0x9
+	help
+	  The Picasso APU has two IOAPICs, one in the FCH and one in the
+	  northbridge.  Set this value for the intended ID to assign to the
+	  GNB IOAPIC.  The value should be >= MAX_CPUS and different from
+	  the FCH's IOAPIC_ID.
+
 config SERIRQ_CONTINUOUS_MODE
 	bool
 	default n
@@ -290,12 +308,10 @@ endchoice
 
 config PICASSO_UART_LEGACY
 	bool "Decode legacy I/O range"
-	depends on PICASSO_CONSOLE_UART # TODO: shouldn't depend on this
 	help
-	  Assign I/O 3F8, 2F8, etc. to a Picasso UART.  Only a single UART may
-	  decode legacy addresses and this option enables the one used for the
-	  console.  A UART accessed with I/O does not allow all the features
-	  of MMIO.  The MMIO decode is still present when this option is used.
+	  Assign I/O 3F8, 2F8, etc. to a Picasso UART. A UART accessed with I/O
+	  does not allow all the features of MMIO. The MMIO decode is still
+	  present when this option is used.
 
 config CONSOLE_UART_BASE_ADDRESS
 	depends on CONSOLE_SERIAL && PICASSO_CONSOLE_UART
@@ -427,7 +443,7 @@ config AMD_PUBKEY_FILE
 	string
 	default "3rdparty/amd_blobs/picasso/PSP/AmdPubKeyRV.bin"
 
-config USE_PSPSCUREOS
+config USE_PSPSECUREOS
 	bool
 	default y
 	help
@@ -490,8 +506,21 @@ config PSP_UNLOCK_SECURE_DEBUG
 	help
 	  Select this item to enable secure debug options in PSP.
 
-endmenu
+config PSP_VERSTAGE_FILE
+	string "Specify the PSP_verstage file path"
+	depends on VBOOT_STARTS_BEFORE_BOOTBLOCK
+	default "$(obj)/psp_verstage.bin"
+	help
+	  Add psp_verstage file to the build & PSP Directory Table
 
+config PSP_VERSTAGE_SIGNING_TOKEN
+	string "Specify the PSP_verstage Signature Token file path"
+	depends on VBOOT_STARTS_BEFORE_BOOTBLOCK
+	default ""
+	help
+	  Add psp_verstage signature token to the build & PSP Directory Table
+
+endmenu
 
 config VBOOT
 	select VBOOT_VBNV_CMOS

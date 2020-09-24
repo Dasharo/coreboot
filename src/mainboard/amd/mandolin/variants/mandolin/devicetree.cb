@@ -7,7 +7,9 @@ chip soc/amd/picasso
 	register "fadt_boot_arch" = "ACPI_FADT_LEGACY_DEVICES | ACPI_FADT_8042"
 	register "fadt_flags" = "ACPI_FADT_SLEEP_BUTTON" # See table 5-34 ACPI 6.3 spec
 
-	register "sd_emmc_config" = "SD_EMMC_DISABLE"
+	register "emmc_config" = "{
+		.timing = SD_EMMC_DISABLE,
+	}"
 
 	register "has_usb2_phy_tune_params" = "1"
 
@@ -114,6 +116,15 @@ chip soc/amd/picasso
 		.oob_ch_en = 0,
 		.flash_ch_en = 0,
 	}"
+
+	# genral purpose PCIe clock output configuration
+	register "gpp_clk_config[0]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[1]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[2]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[3]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[4]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[5]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[6]" = "GPP_CLK_REQ"
 
 	device cpu_cluster 0 on
 		device lapic 0 on end

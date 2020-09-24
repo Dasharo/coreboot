@@ -61,7 +61,7 @@ typedef struct {
 	u8 largest;
 } timing_bounds_t[2][2][2][9];
 
-#define MRC_CACHE_VERSION 1
+#define MRC_CACHE_VERSION 3
 
 struct ram_training {
 	/* [TM][CHANNEL][SLOT][RANK][LANE] */
@@ -192,8 +192,6 @@ struct raminfo {
 	unsigned int interleaved_part_mb;
 	unsigned int non_interleaved_part_mb;
 
-	u32 heci_bar;
-	u64 heci_uma_addr;
 	unsigned int memory_reserved_for_heci_mb;
 
 	struct ram_training training;
@@ -1469,9 +1467,6 @@ static void collect_system_info(struct raminfo *info)
 	while (!(read8((u8 *)0xfed40000) & (1 << 7)))
 		;
 
-	if (!info->heci_bar)
-		gav(info->heci_bar =
-		    pci_read_config32(HECIDEV, HECIBAR) & 0xFFFFFFF8);
 	if (!info->memory_reserved_for_heci_mb) {
 		/* Wait for ME to be ready */
 		intel_early_me_init();
@@ -1628,8 +1623,8 @@ static void wait_heci_ready(void)
 {
 	while (!(read32(DEFAULT_HECIBAR + 0xc) & 8))	// = 0x8000000c
 		;
-	write32((DEFAULT_HECIBAR + 0x4),
-		(read32(DEFAULT_HECIBAR + 0x4) & ~0x10) | 0xc);
+
+	write32((DEFAULT_HECIBAR + 0x4), (read32(DEFAULT_HECIBAR + 0x4) & ~0x10) | 0xc);
 }
 
 /* FIXME: add timeout.  */
@@ -1643,12 +1638,10 @@ static void wait_heci_cb_avail(int len)
 	while (!(read32(DEFAULT_HECIBAR + 0xc) & 8))
 		;
 
-	do
+	do {
 		csr.raw = read32(DEFAULT_HECIBAR + 0x4);
-	while (len >
-	       csr.csr.buffer_depth - (csr.csr.buffer_write_ptr -
-				       csr.csr.buffer_read_ptr))
-		;
+	} while (len > csr.csr.buffer_depth - (csr.csr.buffer_write_ptr -
+					       csr.csr.buffer_read_ptr));
 }
 
 static void send_heci_packet(struct mei_header *head, u32 *payload)
@@ -1667,8 +1660,7 @@ static void send_heci_packet(struct mei_header *head, u32 *payload)
 	write32(DEFAULT_HECIBAR + 0x4, read32(DEFAULT_HECIBAR + 0x4) | 0x4);
 }
 
-static void
-send_heci_message(u8 *msg, int len, u8 hostaddress, u8 clientaddress)
+static void send_heci_message(u8 *msg, int len, u8 hostaddress, u8 clientaddress)
 {
 	struct mei_header head;
 	int maxlen;
@@ -1694,9 +1686,7 @@ send_heci_message(u8 *msg, int len, u8 hostaddress, u8 clientaddress)
 }
 
 /* FIXME: Add timeout.  */
-static int
-recv_heci_packet(struct raminfo *info, struct mei_header *head, u32 *packet,
-		 u32 *packet_size)
+static int recv_heci_packet(struct mei_header *head, u32 *packet, u32 *packet_size)
 {
 	union {
 		struct mei_csr csr;
@@ -1707,27 +1697,23 @@ recv_heci_packet(struct raminfo *info, struct mei_header *head, u32 *packet,
 	write32(DEFAULT_HECIBAR + 0x4, read32(DEFAULT_HECIBAR + 0x4) | 2);
 	do {
 		csr.raw = read32(DEFAULT_HECIBAR + 0xc);
-	}
-	while (csr.csr.buffer_write_ptr == csr.csr.buffer_read_ptr)
-		;
+	} while (csr.csr.buffer_write_ptr == csr.csr.buffer_read_ptr);
+
 	*(u32 *) head = read32(DEFAULT_HECIBAR + 0x8);
 	if (!head->length) {
-		write32(DEFAULT_HECIBAR + 0x4,
-			read32(DEFAULT_HECIBAR + 0x4) | 2);
+		write32(DEFAULT_HECIBAR + 0x4, read32(DEFAULT_HECIBAR + 0x4) | 2);
 		*packet_size = 0;
 		return 0;
 	}
-	if (head->length + 4 > 4 * csr.csr.buffer_depth
-	    || head->length > *packet_size) {
+	if (head->length + 4 > 4 * csr.csr.buffer_depth || head->length > *packet_size) {
 		*packet_size = 0;
 		return -1;
 	}
 
-	do
+	do {
 		csr.raw = read32(DEFAULT_HECIBAR + 0xc);
-	while (((head->length + 3) >> 2) >
-		(csr.csr.buffer_write_ptr - csr.csr.buffer_read_ptr))
-		;
+	} while (((head->length + 3) >> 2) >
+		(csr.csr.buffer_write_ptr - csr.csr.buffer_read_ptr));
 
 	for (i = 0; i < (head->length + 3) >> 2; i++)
 		packet[i++] = read32(DEFAULT_HECIBAR + 0x8);
@@ -1739,8 +1725,7 @@ recv_heci_packet(struct raminfo *info, struct mei_header *head, u32 *packet,
 }
 
 /* FIXME: Add timeout.  */
-static int
-recv_heci_message(struct raminfo *info, u32 *message, u32 *message_size)
+static int recv_heci_message(u32 *message, u32 *message_size)
 {
 	struct mei_header head;
 	int current_position;
@@ -1750,7 +1735,7 @@ recv_heci_message(struct raminfo *info, u32 *message, u32 *message_size)
 		u32 current_size;
 		current_size = *message_size - current_position;
 		if (recv_heci_packet
-		    (info, &head, message + (current_position >> 2),
+		    (&head, message + (current_position >> 2),
 		     &current_size) == -1)
 			break;
 		if (!current_size)
@@ -1768,9 +1753,9 @@ recv_heci_message(struct raminfo *info, u32 *message, u32 *message_size)
 	return -1;
 }
 
-static void send_heci_uma_message(struct raminfo *info)
+static void send_heci_uma_message(const u64 heci_uma_addr, const unsigned int heci_uma_size)
 {
-	struct uma_reply {
+	volatile struct uma_reply {
 		u8 group_id;
 		u8 command;
 		u8 reserved;
@@ -1789,18 +1774,24 @@ static void send_heci_uma_message(struct raminfo *info)
 		u8 result;
 		u32 c2;
 		u64 heci_uma_addr;
-		u32 memory_reserved_for_heci_mb;
+		u32 heci_uma_size;
 		u16 c3;
 	} __packed msg = {
-	0, MKHI_SET_UMA, 0, 0,
-		    0x82,
-		    info->heci_uma_addr, info->memory_reserved_for_heci_mb, 0};
+		.group_id      = 0,
+		.cmd           = MKHI_SET_UMA,
+		.reserved      = 0,
+		.result        = 0,
+		.c2            = 0x82,
+		.heci_uma_addr = heci_uma_addr,
+		.heci_uma_size = heci_uma_size,
+		.c3            = 0,
+	};
 	u32 reply_size;
 
-	send_heci_message((u8 *) & msg, sizeof(msg), 0, 7);
+	send_heci_message((u8 *) &msg, sizeof(msg), 0, 7);
 
 	reply_size = sizeof(reply);
-	if (recv_heci_message(info, (u32 *) & reply, &reply_size) == -1)
+	if (recv_heci_message((u32 *) &reply, &reply_size) == -1)
 		return;
 
 	if (reply.command != (MKHI_SET_UMA | (1 << 7)))
@@ -1809,54 +1800,39 @@ static void send_heci_uma_message(struct raminfo *info)
 
 static void setup_heci_uma(struct raminfo *info)
 {
-	u32 reg44;
-
-	reg44 = pci_read_config32(HECIDEV, 0x44);	// = 0x80010020
-	info->memory_reserved_for_heci_mb = 0;
-	info->heci_uma_addr = 0;
-	if (!((reg44 & 0x10000) && !(pci_read_config32(HECIDEV, 0x40) & 0x20)))
+	if (!info->memory_reserved_for_heci_mb && !(pci_read_config32(HECIDEV, 0x40) & 0x20))
 		return;
 
-	info->heci_bar = pci_read_config32(HECIDEV, 0x10) & 0xFFFFFFF0;
-	info->memory_reserved_for_heci_mb = reg44 & 0x3f;
-	info->heci_uma_addr =
+	const u64 heci_uma_addr =
 	    ((u64)
-	     ((((u64) pci_read_config16(NORTHBRIDGE, TOM)) << 6) -
+	     ((((u64)pci_read_config16(NORTHBRIDGE, TOM)) << 6) -
 	      info->memory_reserved_for_heci_mb)) << 20;
 
 	pci_read_config32(NORTHBRIDGE, DMIBAR);
 	if (info->memory_reserved_for_heci_mb) {
-		write32(DEFAULT_DMIBAR + 0x14,
-			read32(DEFAULT_DMIBAR + 0x14) & ~0x80);
-		write32(DEFAULT_RCBA + 0x14,
-			read32(DEFAULT_RCBA + 0x14) & ~0x80);
-		write32(DEFAULT_DMIBAR + 0x20,
-			read32(DEFAULT_DMIBAR + 0x20) & ~0x80);
-		write32(DEFAULT_RCBA + 0x20,
-			read32(DEFAULT_RCBA + 0x20) & ~0x80);
-		write32(DEFAULT_DMIBAR + 0x2c,
-			read32(DEFAULT_DMIBAR + 0x2c) & ~0x80);
-		write32(DEFAULT_RCBA + 0x30,
-			read32(DEFAULT_RCBA + 0x30) & ~0x80);
-		write32(DEFAULT_DMIBAR + 0x38,
-			read32(DEFAULT_DMIBAR + 0x38) & ~0x80);
-		write32(DEFAULT_RCBA + 0x40,
-			read32(DEFAULT_RCBA + 0x40) & ~0x80);
+		DMIBAR32(0x14) &= ~0x80;
+		write32(DEFAULT_RCBA   + 0x14, read32(DEFAULT_RCBA   + 0x14) & ~0x80);
+		DMIBAR32(0x20) &= ~0x80;
+		write32(DEFAULT_RCBA   + 0x20, read32(DEFAULT_RCBA   + 0x20) & ~0x80);
+		DMIBAR32(0x2c) &= ~0x80;
+		write32(DEFAULT_RCBA   + 0x30, read32(DEFAULT_RCBA   + 0x30) & ~0x80);
+		DMIBAR32(0x38) &= ~0x80;
+		write32(DEFAULT_RCBA   + 0x40, read32(DEFAULT_RCBA   + 0x40) & ~0x80);
 
-		write32(DEFAULT_RCBA + 0x40, 0x87000080);	// OK
-		write32(DEFAULT_DMIBAR + 0x38, 0x87000080);	// OK
+		write32(DEFAULT_RCBA   + 0x40, 0x87000080);	// OK
+		DMIBAR32(0x38) = 0x87000080;	// OK
+
 		while ((read16(DEFAULT_RCBA + 0x46) & 2) &&
-			read16(DEFAULT_DMIBAR + 0x3e) & 2)
+			DMIBAR16(0x3e) & 2)
 			;
 	}
 
 	MCHBAR32(0x24) = 0x10000 + info->memory_reserved_for_heci_mb;
 
-	send_heci_uma_message(info);
+	send_heci_uma_message(heci_uma_addr, info->memory_reserved_for_heci_mb);
 
 	pci_write_config32(HECIDEV, 0x10, 0x0);
 	pci_write_config8(HECIDEV, 0x4, 0x0);
-
 }
 
 static int have_match_ranks(struct raminfo *info, int channel, int ranks)
@@ -3628,12 +3604,12 @@ static void restore_274265(struct raminfo *info)
 
 static void dmi_setup(void)
 {
-	gav(read8(DEFAULT_DMIBAR + 0x254));
-	write8(DEFAULT_DMIBAR + 0x254, 0x1);
-	write16(DEFAULT_DMIBAR + 0x1b8, 0x18f2);
+	gav(DMIBAR8(0x254));
+	DMIBAR8(0x254) = 0x1;
+	DMIBAR16(0x1b8) = 0x18f2;
 	MCHBAR16_AND_OR(0x48, 0, 0x2);
 
-	write32(DEFAULT_DMIBAR + 0xd68, read32(DEFAULT_DMIBAR + 0xd68) | 0x08000000);
+	DMIBAR32(0xd68) |= 0x08000000;
 
 	outl((gav(inl(DEFAULT_GPIOBASE | 0x38)) & ~0x140000) | 0x400000,
 	     DEFAULT_GPIOBASE | 0x38);
@@ -3678,8 +3654,8 @@ void chipset_init(const int s3resume)
 		MCHBAR16_OR(0x2c30, 0x200);
 		MCHBAR16(0x2c32) = 0x434;
 		MCHBAR32_AND_OR(0x2c44, 0, 0x1053687);
-		pci_read_config8(GMA, 0x62);	// = 0x2
-		pci_write_config8(GMA, 0x62, 0x2);
+		pci_read_config8(GMA, MSAC);	// = 0x2
+		pci_write_config8(GMA, MSAC, 0x2);
 		read8(DEFAULT_RCBA + 0x2318);
 		write8(DEFAULT_RCBA + 0x2318, 0x47);
 		read8(DEFAULT_RCBA + 0x2320);
@@ -3727,7 +3703,6 @@ void raminit(const int s3resume, const u8 *spd_addrmap)
 	info.training.reg_178 = 0;
 	info.training.reg_10b = 0;
 
-	info.heci_bar = 0;
 	info.memory_reserved_for_heci_mb = 0;
 
 	/* before SPD */
@@ -4625,9 +4600,9 @@ void raminit(const int s3resume, const u8 *spd_addrmap)
 	}
 	u32 reg1c;
 	pci_read_config32(NORTHBRIDGE, 0x40);	// = DEFAULT_EPBAR | 0x001 // OK
-	reg1c = read32p(DEFAULT_EPBAR | 0x01c);	// = 0x8001 // OK
+	reg1c = EPBAR32(0x01c);	// = 0x8001 // OK
 	pci_read_config32(NORTHBRIDGE, 0x40);	// = DEFAULT_EPBAR | 0x001 // OK
-	write32p(DEFAULT_EPBAR | 0x01c, reg1c);	// OK
+	EPBAR32(0x01c) = reg1c;	// OK
 	MCHBAR8(0xe08);	// = 0x0
 	pci_read_config32(NORTHBRIDGE, 0xe4);	// = 0x316126
 	MCHBAR8_OR(0x1210, 2);

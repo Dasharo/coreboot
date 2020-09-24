@@ -8,7 +8,7 @@ chip soc/amd/picasso
 
 	register "acp_pin_cfg" = "I2S_PINS_I2S_TDM"
 	register "acp_i2s_wake_enable" = "0"
-	register "acpi_pme_enable" = "0"
+	register "acp_pme_enable" = "0"
 
 	# Start : OPN Performance Configuration
 	# (Configuratin that is common for all variants)
@@ -40,7 +40,9 @@ chip soc/amd/picasso
 
 	# End : OPN Performance Configuration
 
-	register "sd_emmc_config" = "SD_EMMC_EMMC_HS400"
+	register "emmc_config" = "{
+		.timing = SD_EMMC_EMMC_HS400,
+	}"
 
 	register "xhci0_force_gen1" = "0"
 
@@ -180,6 +182,15 @@ chip soc/amd/picasso
 
 	register "i2c_scl_reset" = "GPIO_I2C2_SCL | GPIO_I2C3_SCL"
 
+	# genral purpose PCIe clock output configuration
+	register "gpp_clk_config[0]" = "GPP_CLK_REQ" # WLAN
+	register "gpp_clk_config[1]" = "GPP_CLK_REQ" # SD Reader
+	register "gpp_clk_config[2]" = "GPP_CLK_REQ" # NVME SSD
+	register "gpp_clk_config[3]" = "GPP_CLK_OFF"
+	register "gpp_clk_config[4]" = "GPP_CLK_OFF"
+	register "gpp_clk_config[5]" = "GPP_CLK_OFF"
+	register "gpp_clk_config[6]" = "GPP_CLK_OFF"
+
 	device cpu_cluster 0 on
 		device lapic 0 on end
 	end
@@ -286,8 +297,8 @@ chip soc/amd/picasso
 			device pci 0.6 off end # HDA
 			device pci 0.7 on  end # non-Sensor Fusion Hub device
 		end
-		device pci 8.2 on      # Internal GPP Bridge 0 to Bus B
-			device pci 0.0 on  end # AHCI
+		device pci 8.2 off     # Internal GPP Bridge 0 to Bus B
+			device pci 0.0 off end # AHCI
 		end
 		device pci 14.0 on  end # SM
 		device pci 14.3 on  # - D14F3 bridge

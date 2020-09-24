@@ -45,6 +45,7 @@ are permitted provided that the following conditions are met:
 #define MAX_IMC                   2
 #define MAX_CH                    6
 #define MC_MAX_NODE               (MAX_SOCKET * MAX_IMC)
+#define MAX_CHA_MAP               4
 
 // Maximum KTI PORTS to be used in structure definition
 #if (MAX_SOCKET == 1)
@@ -111,13 +112,20 @@ typedef enum {
 } PCIE_PORTS;
 
 /**
- IIO Stacks
- **/
+ * IIO Stacks
+ *
+ * Ports    Stack	Stack(HOB)	IioConfigIou
+ * =================================================
+ * 0        CSTACK	stack 0		IOU0
+ * 1A..1D   PSTACK0	stack 1		IOU1
+ * 2A..2D   PSTACK1	stack 2		IOU2
+ * 3A..3D   PSTACK2	stack 4		IOU3
+ */
 typedef enum {
 	CSTACK = 0,
 	PSTACK0,
 	PSTACK1,
-	PSTACK2,
+	PSTACK2 = 4,
 	MAX_STACKS
 } IIO_STACKS;
 
@@ -147,7 +155,7 @@ typedef struct {
   uint16_t                    M2PciePresentBitmap;
   uint8_t                     TotM3Kti;
   uint8_t                     TotCha;
-  uint32_t                    ChaList;
+  uint32_t                    ChaList[MAX_CHA_MAP];
   uint32_t                    SocId;
   QPI_PEER_DATA               PeerInfo[MAX_FW_KTI_PORTS];    // QPI LEP info
 } QPI_CPU_DATA;
@@ -188,18 +196,14 @@ typedef struct _STACK_RES {
   uint8_t                   Personality; // see STACK_TYPE for details
   uint8_t                   BusBase;
   uint8_t                   BusLimit;
-  uint16_t                  IoBase; // Base of IO configured for this stack
-  uint16_t                  IoLimit; // Limit of IO configured for this stack
+  uint16_t                  PciResourceIoBase;
+  uint16_t                  PciResourceIoLimit;
   uint32_t                  IoApicBase; // Base of IO configured for this stack
   uint32_t                  IoApicLimit; // Limit of IO configured for this stack
   uint32_t                  Mmio32Base;
   uint32_t                  Mmio32Limit;
   uint64_t                  Mmio64Base;
   uint64_t                  Mmio64Limit;
-  uint8_t                   PciResourceBusBase; // Base of Bus resource available for PCI devices
-  uint8_t                   PciResourceBusLimit; // Limit of Bus resource available for PCI devices
-  uint16_t                  PciResourceIoBase; // Base of IO resource available for PCI devices
-  uint16_t                  PciResourceIoLimit; // Limit of IO resource available for PCI devices
   uint32_t                  PciResourceMem32Base;
   uint32_t                  PciResourceMem32Limit;
   uint64_t                  PciResourceMem64Base;

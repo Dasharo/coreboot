@@ -8,19 +8,7 @@
 #define HASWELL_DESKTOP	1
 #define HASWELL_SERVER	2
 
-/* Intel Enhanced Debug region */
-#define IED_SIZE	CONFIG_IED_REGION_SIZE
-
-/* Northbridge BARs */
-#define DEFAULT_MCHBAR		0xfed10000		/* 16 KB */
-#define DEFAULT_DMIBAR		0xfed18000		/* 4 KB */
-#define DEFAULT_EPBAR		0xfed19000		/* 4 KB */
-
-#define GFXVT_BASE_ADDRESS	0xfed90000ULL
-#define GFXVT_BASE_SIZE		0x1000
-
-#define VTVC0_BASE_ADDRESS	0xfed91000ULL
-#define VTVC0_BASE_SIZE		0x1000
+#include "memmap.h"
 
 #include <southbridge/intel/lynxpoint/pch.h>
 
@@ -30,8 +18,7 @@
 /* Device 0:0.0 PCI configuration space (Host Bridge) */
 #define HOST_BRIDGE	PCI_DEV(0, 0, 0)
 
-#include "hostbridge_regs.h"
-
+#include "registers/host_bridge.h"
 
 /* Device 0:2.0 PCI configuration space (Graphics Device) */
 
@@ -55,7 +42,7 @@
 #define MCHBAR32_AND_OR(x, and, or) (MCHBAR32(x) = (MCHBAR32(x) & (and)) | (or))
 
 /* As there are many registers, define them on a separate file */
-#include "mchbar_regs.h"
+#include "registers/mchbar.h"
 
 #define ARCHDIS		0xff0	/* DMA Remap Engine Policy Control */
 #define  DMAR_LCKDN	(1 << 31)
@@ -69,80 +56,21 @@
  * EPBAR - Egress Port Root Complex Register Block
  */
 
-#define EPBAR8(x)  *((volatile u8  *)(DEFAULT_EPBAR + x))
-#define EPBAR16(x) *((volatile u16 *)(DEFAULT_EPBAR + x))
-#define EPBAR32(x) *((volatile u32 *)(DEFAULT_EPBAR + x))
+#define EPBAR8(x)  *((volatile u8  *)(DEFAULT_EPBAR + (x)))
+#define EPBAR16(x) *((volatile u16 *)(DEFAULT_EPBAR + (x)))
+#define EPBAR32(x) *((volatile u32 *)(DEFAULT_EPBAR + (x)))
 
-#define EPPVCCAP1	0x004	/* 32bit */
-#define EPPVCCAP2	0x008	/* 32bit */
-
-#define EPVC0RCAP	0x010	/* 32bit */
-#define EPVC0RCTL	0x014	/* 32bit */
-#define EPVC0RSTS	0x01a	/* 16bit */
-
-#define EPVC1RCAP	0x01c	/* 32bit */
-#define EPVC1RCTL	0x020	/* 32bit */
-#define EPVC1RSTS	0x026	/* 16bit */
-
-#define EPVC1MTS	0x028	/* 32bit */
-#define EPVC1IST	0x038	/* 64bit */
-
-#define EPESD		0x044	/* 32bit */
-
-#define EPLE1D		0x050	/* 32bit */
-#define EPLE1A		0x058	/* 64bit */
-#define EPLE2D		0x060	/* 32bit */
-#define EPLE2A		0x068	/* 64bit */
-
-#define PORTARB		0x100	/* 256bit */
+#include "registers/epbar.h"
 
 /*
  * DMIBAR
  */
 
-#define DMIBAR8(x)  *((volatile u8  *)(DEFAULT_DMIBAR + x))
-#define DMIBAR16(x) *((volatile u16 *)(DEFAULT_DMIBAR + x))
-#define DMIBAR32(x) *((volatile u32 *)(DEFAULT_DMIBAR + x))
+#define DMIBAR8(x)  *((volatile u8  *)(DEFAULT_DMIBAR + (x)))
+#define DMIBAR16(x) *((volatile u16 *)(DEFAULT_DMIBAR + (x)))
+#define DMIBAR32(x) *((volatile u32 *)(DEFAULT_DMIBAR + (x)))
 
-#define DMIVCECH	0x000	/* 32bit */
-#define DMIPVCCAP1	0x004	/* 32bit */
-#define DMIPVCCAP2	0x008	/* 32bit */
-
-#define DMIPVCCCTL	0x00c	/* 16bit */
-
-#define DMIVC0RCAP	0x010	/* 32bit */
-#define DMIVC0RCTL0	0x014	/* 32bit */
-#define DMIVC0RSTS	0x01a	/* 16bit */
-
-#define DMIVC1RCAP	0x01c	/* 32bit */
-#define DMIVC1RCTL	0x020	/* 32bit */
-#define DMIVC1RSTS	0x026	/* 16bit */
-
-#define DMILE1D		0x050	/* 32bit */
-#define DMILE1A		0x058	/* 64bit */
-#define DMILE2D		0x060	/* 32bit */
-#define DMILE2A		0x068	/* 64bit */
-
-#define DMILCAP		0x084	/* 32bit */
-#define DMILCTL		0x088	/* 16bit */
-#define DMILSTS		0x08a	/* 16bit */
-
-#define DMILCTL2	0x098	/* 16bit */
-
-#define DMICTL1		0x0f0	/* 32bit */
-#define DMICTL2		0x0fc	/* 32bit */
-
-#define DMIUESTS	0x1c4	/* 32bit */
-#define DMICESTS	0x1d0	/* 32bit */
-
-#define DMICC		0x208	/* 32bit */
-
-#define DMIL0SLAT	0x22c	/* 32bit */
-#define DMILLTC		0x238	/* 32bit */
-
-#define DMI_AFE_PM_TMR	0xc28	/* 32bit */
-
-#define DMIDRCCFG	0xeb4	/* 32bit */
+#include "registers/dmibar.h"
 
 #ifndef __ASSEMBLER__
 

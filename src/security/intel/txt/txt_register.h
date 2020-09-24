@@ -121,6 +121,7 @@
 #define TXT_RESERVED_SPACE_SIZE	0x3ffff
 
 /* ESI flags for GETSEC[ENTERACCS] see  Reference Number: 323372-017 */
+#define ACMINPUT_SCLEAN		0
 #define ACMINPUT_RESET_TPM_AUXILIARY_INDICIES 2
 #define ACMINPUT_NOP		3
 #define ACMINPUT_SCHECK		4
@@ -231,6 +232,13 @@ struct __packed txt_extended_data_element_header {
 #define HEAP_EXTDATA_TYPE_ACM 2
 #define HEAP_EXTDATA_TYPE_CUSTOM 4
 
+struct __packed txt_bios_spec_ver_element {
+	struct txt_extended_data_element_header header;
+	uint16_t ver_major;
+	uint16_t ver_minor;
+	uint16_t ver_revision;
+};
+
 struct __packed txt_heap_acm_element {
 	struct txt_extended_data_element_header header;
 	uint32_t num_acms; // must greater 0, smaller than 3
@@ -258,7 +266,6 @@ struct __packed txt_biosdataregion {
 	};
 	u8 extended_data_elements[0];
 };
-
 
 void txt_dump_regions(void);
 void txt_dump_chipset_info(void);

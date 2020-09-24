@@ -10,6 +10,7 @@
 #include <intelblocks/cse.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/mp_init.h>
+#include <intelblocks/pmclib.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
 #include <security/vboot/vboot_common.h>
@@ -82,6 +83,11 @@ static const pci_devfn_t serial_io_dev[] = {
 	PCH_DEVFN_UART2
 };
 
+__weak void mainboard_update_soc_chip_config(struct soc_intel_tigerlake_config *config)
+{
+	/* Override settings per board. */
+}
+
 /* UPD parameters to be initialized before SiliconInit */
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 {
@@ -92,6 +98,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	struct device *dev;
 	struct soc_intel_tigerlake_config *config;
 	config = config_of_soc();
+	mainboard_update_soc_chip_config(config);
 
 	/* Parse device tree and enable/disable Serial I/O devices */
 	parse_devicetree(params);
@@ -142,16 +149,24 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* USB */
 	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
 		params->PortUsb20Enable[i] = config->usb2_ports[i].enable;
-		params->Usb2OverCurrentPin[i] = config->usb2_ports[i].ocpin;
 		params->Usb2PhyPetxiset[i] = config->usb2_ports[i].pre_emp_bias;
 		params->Usb2PhyTxiset[i] = config->usb2_ports[i].tx_bias;
 		params->Usb2PhyPredeemp[i] = config->usb2_ports[i].tx_emp_enable;
 		params->Usb2PhyPehalfbit[i] = config->usb2_ports[i].pre_emp_bit;
+
+		if (config->usb2_ports[i].enable)
+			params->Usb2OverCurrentPin[i] = config->usb2_ports[i].ocpin;
+		else
+			params->Usb2OverCurrentPin[i] = 0xff;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(config->usb3_ports); i++) {
 		params->PortUsb30Enable[i] = config->usb3_ports[i].enable;
-		params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
+		if (config->usb3_ports[i].enable) {
+			params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
+		} else {
+			params->Usb3OverCurrentPin[i] = 0xff;
+		}
 		if (config->usb3_ports[i].tx_de_emp) {
 			params->Usb3HsioTxDeEmphEnable[i] = 1;
 			params->Usb3HsioTxDeEmph[i] = config->usb3_ports[i].tx_de_emp;
@@ -316,6 +331,22 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 			config->ext_fivr_settings.v1p05_icc_max_ma;
 
 	}
+
+	/* Apply minimum assertion width settings if non-zero */
+	if (config->PchPmSlpS3MinAssert)
+		params->PchPmSlpS3MinAssert = config->PchPmSlpS3MinAssert;
+	if (config->PchPmSlpS4MinAssert)
+		params->PchPmSlpS4MinAssert = config->PchPmSlpS4MinAssert;
+	if (config->PchPmSlpSusMinAssert)
+		params->PchPmSlpSusMinAssert = config->PchPmSlpSusMinAssert;
+	if (config->PchPmSlpAMinAssert)
+		params->PchPmSlpAMinAssert = config->PchPmSlpAMinAssert;
+
+	/* Set Power Cycle Duration */
+	if (config->PchPmPwrCycDur)
+		params->PchPmPwrCycDur = get_pm_pwr_cyc_dur(config->PchPmSlpS4MinAssert,
+				config->PchPmSlpS3MinAssert, config->PchPmSlpAMinAssert,
+				config->PchPmPwrCycDur);
 
 	/* EnableMultiPhaseSiliconInit for running MultiPhaseSiInit */
 	params->EnableMultiPhaseSiliconInit = 1;

@@ -169,13 +169,14 @@ static void cse_trigger_recovery(uint8_t rec_sub_code)
 	/* Log CSE Firmware Status Registers to help debugging */
 	cse_log_status_registers();
 	if (CONFIG(VBOOT)) {
-		struct vb2_context *ctx;
-		ctx = vboot_get_context();
+		struct vb2_context *ctx = vboot_get_context();
+		if (ctx == NULL)
+			goto failure;
 		vb2api_fail(ctx, VB2_RECOVERY_INTEL_CSE_LITE_SKU, rec_sub_code);
 		vboot_save_data(ctx);
 		vboot_reboot();
 	}
-
+failure:
 	die("cse_lite: Failed to trigger recovery mode(recovery subcode:%d)\n", rec_sub_code);
 }
 
@@ -750,7 +751,7 @@ void cse_fw_sync(void *unused)
 	}
 }
 
-#if CONFIG(SOC_INTEL_TIGERLAKE)
+#if CONFIG(SOC_INTEL_TIGERLAKE) || CONFIG(SOC_INTEL_JASPERLAKE)
 /*
  * This needs to happen after the MRC cache write to avoid a 2nd
  * memory training sequence.

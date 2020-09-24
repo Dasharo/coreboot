@@ -71,7 +71,7 @@ static void update_hp_int_odl(void)
 	 */
 	soc_cfg = config_of_soc();
 	soc_cfg->acp_i2s_wake_enable = 1;
-	soc_cfg->acpi_pme_enable = 1;
+	soc_cfg->acp_pme_enable = 1;
 }
 
 static void update_dmic_gpio(void)
@@ -126,7 +126,6 @@ void variant_audio_update(void)
 	update_dmic_gpio();
 	update_hp_int_odl();
 }
-
 
 /*
  * Removes reset_gpio from usb device in device tree.

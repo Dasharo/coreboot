@@ -12,6 +12,9 @@ chip soc/intel/tigerlake
 	register "pmc_gpe0_dw1" = "GPP_D"
 	register "pmc_gpe0_dw2" = "GPP_E"
 
+	# Enable heci1 communication
+	register "HeciEnabled" = "1"
+
 	# FSP configuration
 	register "SaGv" = "SaGv_Disabled"
 	register "SmbusEnable" = "1"
@@ -22,14 +25,10 @@ chip soc/intel/tigerlake
 	register "usb2_ports[3]" = "USB2_PORT_MID(OC3)"		# USB3/2 Type A port1
 	register "usb2_ports[4]" = "USB2_PORT_MID(OC3)"		# Type-C Port2
 	register "usb2_ports[5]" = "USB2_PORT_MID(OC3)"		# Type-C Port3
-	register "usb3_ports[6]" = "USB3_PORT_EMPTY"		# Not used
-	register "usb3_ports[7]" = "USB3_PORT_EMPTY"		# Not used
-	register "usb3_ports[8]" = "USB3_PORT_EMPTY"		# Not used
 	register "usb2_ports[9]" = "USB2_PORT_MID(OC3)"		# CNVi/BT
 
 	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC0)"	# USB3/2 Type A port1
 	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC0)"	# USB3/2 Type A port2
-	register "usb3_ports[2]" = "USB3_PORT_EMPTY"		# Not used
 	register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC3)"	# USB3/USB2 Flex Connector
 
 	# CPU replacement check
@@ -109,6 +108,9 @@ chip soc/intel/tigerlake
 	# TCSS USB3
 	register "TcssXhciEn" = "1"
 	register "TcssAuxOri" = "0"
+
+	# Enable "Intel Speed Shift Technology"
+	register "speed_shift_enable" = "1"
 
 	# Enable S0ix
 	register "s0ix_enable" = "1"

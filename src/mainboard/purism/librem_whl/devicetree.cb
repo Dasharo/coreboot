@@ -82,27 +82,14 @@ chip soc/intel/cannonlake
 	register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)"	# Type-A front right upper
 	register "usb2_ports[5]" = "USB2_PORT_TYPE_C(OC3)"	# Type-C rear
 	register "usb2_ports[6]" = "USB2_PORT_MID(OC_SKIP)"	# m.2-2230/Bluetooth
-	register "usb2_ports[7]" = "USB2_PORT_EMPTY"		# NC
-	register "usb2_ports[8]" = "USB2_PORT_EMPTY"		# NC
 	register "usb2_ports[9]" = "USB2_PORT_MID(OC2)"		# Type-A rear lower
-	register "usb2_ports[10]" = "USB2_PORT_EMPTY"		# NC
-	register "usb2_ports[11]" = "USB2_PORT_EMPTY"		# NC
-	register "usb2_ports[12]" = "USB2_PORT_EMPTY"		# NC
-	register "usb2_ports[13]" = "USB2_PORT_EMPTY"		# NC
-	register "usb2_ports[14]" = "USB2_PORT_EMPTY"		# NC
-	register "usb2_ports[15]" = "USB2_PORT_EMPTY"		# NC
 
 	# USB3
 	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)" # Type-A front left upper
 	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# Type-A front left lower
-	register "usb3_ports[2]" = "USB3_PORT_EMPTY"		# NC
 	register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC3)"	# Type-C rear
 	register "usb3_ports[4]" = "USB3_PORT_DEFAULT(OC2)"	# Type-A rear lower
 	register "usb3_ports[5]" = "USB3_PORT_DEFAULT(OC2)"	# Type-A rear upper
-	register "usb3_ports[6]" = "USB3_PORT_EMPTY"		# NC
-	register "usb3_ports[7]" = "USB3_PORT_EMPTY"		# NC
-	register "usb3_ports[8]" = "USB3_PORT_EMPTY"		# NC
-	register "usb3_ports[9]" = "USB3_PORT_EMPTY"		# NC
 
 	# All SRCCLKREQ pins mapped directly
 	register "PcieClkSrcClkReq[0]" = "0"
@@ -277,9 +264,7 @@ chip soc/intel/cannonlake
 		device pci 16.1 off end # Management Engine Interface 2
 		device pci 16.2 off end # Management Engine IDE-R
 		device pci 16.3 off end # Management Engine KT Redirection
-		device pci 16.4 off	# Management Engine Interface 3
-			register "Heci3Enabled" = "0"
-		end
+		device pci 16.4 off end # Management Engine Interface 3
 		device pci 16.5 off end # Management Engine Interface 4
 		device pci 17.0 on  end # SATA
 		device pci 19.0 off end # I2C #4

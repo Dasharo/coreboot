@@ -63,7 +63,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	memcpy(m_cfg->PcieClkSrcClkReq, config->PcieClkSrcClkReq,
 		sizeof(config->PcieClkSrcClkReq));
 
-	m_cfg->PrmrrSize = get_prmrr_size();
+	m_cfg->PrmrrSize = get_valid_prmrr_size();
 	m_cfg->EnableC6Dram = config->enable_c6dram;
 	/* Disable BIOS Guard */
 	m_cfg->BiosGuard = 0;
@@ -86,6 +86,9 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	/* ISH */
 	dev = pcidev_path_on_root(PCH_DEVFN_ISH);
 	m_cfg->PchIshEnable = is_dev_enabled(dev);
+
+	/* Skip GPIO configuration from FSP */
+	m_cfg->GpioOverride = 0x1;
 
 	/* DP port config */
 	m_cfg->DdiPortAConfig = config->DdiPortAConfig;

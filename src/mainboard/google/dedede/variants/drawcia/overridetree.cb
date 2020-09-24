@@ -24,24 +24,42 @@ chip soc/intel/jasperlake
 		},
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
+			.speed_config[0] = {
+				.speed = I2C_SPEED_FAST,
+				.scl_lcnt = 190,
+				.scl_hcnt = 100,
+				.sda_hold = 40,
+			}
 		},
 		.i2c[1] = {
 			.speed = I2C_SPEED_FAST,
 		},
 		.i2c[2] = {
 			.speed = I2C_SPEED_FAST,
+			.speed_config[0] = {
+				.speed = I2C_SPEED_FAST,
+				.scl_lcnt = 190,
+				.scl_hcnt = 100,
+				.sda_hold = 40,
+			}
 		},
 		.i2c[3] = {
 			.speed = I2C_SPEED_FAST,
 		},
 		.i2c[4] = {
 			.speed = I2C_SPEED_FAST,
+			.speed_config[0] = {
+				.speed = I2C_SPEED_FAST,
+				.scl_lcnt = 190,
+				.scl_hcnt = 100,
+				.sda_hold = 40,
+			}
 		},
 	}"
 
 	register "power_limits_config" = "{
 		.tdp_pl1_override = 6,
-		.tdp_pl2_override = 15,
+		.tdp_pl2_override = 20,
 	}"
 
 	register "tcc_offset" = "20"	# TCC of 85C
@@ -75,7 +93,7 @@ chip soc/intel/jasperlake
 					.granularity = 200,}"
 				register "controls.power_limits.pl2" = "{
 					.min_power = 6000,
-					.max_power = 15000,
+					.max_power = 20000,
 					.time_window_min = 1 * MSECS_PER_SEC,
 					.time_window_max = 1 * MSECS_PER_SEC,
 					.granularity = 1000,}"
@@ -150,6 +168,22 @@ chip soc/intel/jasperlake
 				register "generic.has_power_resource" = "1"
 				register "hid_desc_reg_offset" = "0x01"
 				device i2c 0x5d on end
+			end
+			chip drivers/i2c/hid
+				register "generic.hid" = ""ELAN2513""
+				register "generic.desc" = ""ELAN Touchscreen""
+				register "generic.irq" = "ACPI_IRQ_EDGE_LOW(GPP_D4_IRQ)"
+				register "generic.probed" = "1"
+				register "generic.reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D5)"
+				register "generic.reset_delay_ms" = "20"
+				register "generic.reset_off_delay_ms" = "2"
+				register "generic.enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D6)"
+				register "generic.enable_delay_ms" = "10"
+				register "generic.stop_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_A11)"
+				register "generic.stop_delay_ms" = "130"
+				register "generic.has_power_resource" = "1"
+				register "hid_desc_reg_offset" = "0x01"
+				device i2c 15 on end
 			end
 		end # I2C 2
 		device pci 19.0 on
