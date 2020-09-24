@@ -562,6 +562,7 @@ AMDCOMPRESS:=$(objutil)/cbfstool/amdcompress
 CSE_FPT:=$(objutil)/cbfstool/cse_fpt
 CSE_SERGER:=$(objutil)/cbfstool/cse_serger
 ECCTOOL:=$(objutil)/ffs/ecc/ecc
+SBSIGNTOOLS:=$(objutil)/sb-signing-utils
 
 $(obj)/cbfstool: $(CBFSTOOL)
 	cp $< $@
@@ -607,6 +608,12 @@ $(ECCTOOL):
 	cp -r $(top)/3rdparty/ffs $(objutil)
 	cd $(objutil)/ffs && autoreconf -i && ./configure
 	+$(MAKE) -C $(objutil)/ffs
+
+$(SBSIGNTOOLS):
+	@printf "    Compile SB SIGNING UTILS\n"
+	cp -r $(top)/3rdparty/sb-signing-utils $(objutil)
+	cd $(objutil)/sb-signing-utils && autoreconf -i -Wno-unsupported && ./configure
+	+$(MAKE) -C $(objutil)/sb-signing-utils
 
 APCB_EDIT_TOOL:=$(top)/util/apcb/apcb_edit.py
 
@@ -708,7 +715,7 @@ install-git-commit-clangfmt:
 include util/crossgcc/Makefile.inc
 
 .PHONY: tools
-tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL) $(objutil)/supermicro/smcbiosinfo $(CSE_FPT) $(CSE_SERGER) $(ECCTOOL)
+tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL) $(objutil)/supermicro/smcbiosinfo $(CSE_FPT) $(CSE_SERGER) $(ECCTOOL) $(SBSIGNTOOLS)
 
 ###########################################################################
 # Common recipes for all stages
@@ -1153,7 +1160,7 @@ add_intermediate = \
 	$(1): $(obj)/coreboot.pre $(2) | $(INTERMEDIATE) \
 	$(eval INTERMEDIATE+=$(1)) $(eval PHONY+=$(1))
 
-$(obj)/coreboot.rom: $(obj)/coreboot.pre $(CBFSTOOL) $(IFITTOOL) $(ECCTOOL) $$(INTERMEDIATE)
+$(obj)/coreboot.rom: $(obj)/coreboot.pre $(CBFSTOOL) $(IFITTOOL) $(ECCTOOL) $(SBSIGNTOOLS) $$(INTERMEDIATE)
 	@printf "    CBFS       $(subst $(obj)/,,$(@))\n"
 # The full ROM may be larger than the CBFS part, so create an empty
 # file (filled with \377 = 0xff) and copy the CBFS image over it.
@@ -1181,7 +1188,17 @@ ifeq ($(CONFIG_CBFS_VERIFICATION),y)
 	fi
 endif # CONFIG_CBFS_VERIFICATION
 ifeq ($(CONFIG_ARCH_PPC64),y)
-	$(ECCTOOL) --inject $@ --output $@.ecc --p8
+	cp -r $(top)/3rdparty/sb-signing-utils/test/keys /tmp
+	@printf "    SBSIGN  $(subst $(obj)/,,$(@))\n"
+	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$(objcbfs)/bootblock.bin $(top)/$(obj)/bootblock.signed 2> /dev/null
+	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$@ $(top)/$@.signed 2> /dev/null
+	@printf "    ECC     $(subst $(obj)/,,$(@))\n"
+	$(ECCTOOL) --inject $(top)/$@.signed --output $(top)/$@.signed.ecc --p8
+	$(ECCTOOL) --inject $(top)/$@ --output $(top)/$@.ecc --p8
+	@printf "    ECC     bootblock\n"
+	dd  if=$(obj)/bootblock.signed  of=$(obj)/bootblock.signed.pad  ibs=25486 conv=sync 2> /dev/null
+	$(ECCTOOL) --inject $(obj)/bootblock.signed.pad --output $(obj)/bootblock.signed.ecc --p8
+	rm $(obj)/bootblock.signed $(obj)/bootblock.signed.pad
 endif # CONFIG_ARCH_PPC64
 
 cbfs-files-y += $(CONFIG_CBFS_PREFIX)/romstage
