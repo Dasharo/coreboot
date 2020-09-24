@@ -519,7 +519,7 @@ endif
 
 additional-dirs += $(objutil)/cbfstool $(objutil)/ifdtool \
 		   $(objutil)/options $(objutil)/amdfwtool \
-		   $(objutil)/cbootimage
+		   $(objutil)/cbootimage $(objutil)/ffs
 
 export $(COREBOOT_EXPORTS)
 
@@ -561,6 +561,7 @@ IFITTOOL:=$(objutil)/cbfstool/ifittool
 AMDCOMPRESS:=$(objutil)/cbfstool/amdcompress
 CSE_FPT:=$(objutil)/cbfstool/cse_fpt
 CSE_SERGER:=$(objutil)/cbfstool/cse_serger
+ECCTOOL:=$(objutil)/ffs/ecc/ecc
 
 $(obj)/cbfstool: $(CBFSTOOL)
 	cp $< $@
@@ -600,6 +601,12 @@ BINCFG:=$(objutil)/bincfg/bincfg
 IFDTOOL:=$(objutil)/ifdtool/ifdtool
 
 AMDFWTOOL:=$(objutil)/amdfwtool/amdfwtool
+
+$(ECCTOOL):
+	@printf "    Compile ECCTOOL\n"
+	cp -r $(top)/3rdparty/ffs $(objutil)
+	cd $(objutil)/ffs && autoreconf -i && ./configure
+	+$(MAKE) -C $(objutil)/ffs
 
 APCB_EDIT_TOOL:=$(top)/util/apcb/apcb_edit.py
 
@@ -701,7 +708,7 @@ install-git-commit-clangfmt:
 include util/crossgcc/Makefile.inc
 
 .PHONY: tools
-tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL) $(objutil)/supermicro/smcbiosinfo $(CSE_FPT) $(CSE_SERGER)
+tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL) $(objutil)/supermicro/smcbiosinfo $(CSE_FPT) $(CSE_SERGER) $(ECCTOOL)
 
 ###########################################################################
 # Common recipes for all stages
@@ -1146,7 +1153,7 @@ add_intermediate = \
 	$(1): $(obj)/coreboot.pre $(2) | $(INTERMEDIATE) \
 	$(eval INTERMEDIATE+=$(1)) $(eval PHONY+=$(1))
 
-$(obj)/coreboot.rom: $(obj)/coreboot.pre $(CBFSTOOL) $(IFITTOOL) $$(INTERMEDIATE)
+$(obj)/coreboot.rom: $(obj)/coreboot.pre $(CBFSTOOL) $(IFITTOOL) $(ECCTOOL) $$(INTERMEDIATE)
 	@printf "    CBFS       $(subst $(obj)/,,$(@))\n"
 # The full ROM may be larger than the CBFS part, so create an empty
 # file (filled with \377 = 0xff) and copy the CBFS image over it.
@@ -1173,6 +1180,9 @@ ifeq ($(CONFIG_CBFS_VERIFICATION),y)
 		exit 1 ;\
 	fi
 endif # CONFIG_CBFS_VERIFICATION
+ifeq ($(CONFIG_ARCH_PPC64),y)
+	$(ECCTOOL) --inject $@ --output $@.ecc --p8
+endif # CONFIG_ARCH_PPC64
 
 cbfs-files-y += $(CONFIG_CBFS_PREFIX)/romstage
 $(CONFIG_CBFS_PREFIX)/romstage-file := $(objcbfs)/romstage.elf
