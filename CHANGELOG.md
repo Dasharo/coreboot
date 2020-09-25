@@ -13,9 +13,10 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
-## [v4.12.0.5] - 2020-09-29
+## [v4.12.0.5] - 2020-09-25
 ## Changed
 - rebased with official coreboot repository commit da3375e
+- added apu6 build target
 
 ## [v4.12.0.4] - 2020-08-28
 ### Changed
