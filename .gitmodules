@@ -53,4 +53,4 @@
 	ignore = dirty
 [submodule "3rdparty/intel-sec-tools"]
 	path = 3rdparty/intel-sec-tools
-	url = ../9esec-security-tooling.git
+	url = https://review.coreboot.org/9esec-security-tooling.git
