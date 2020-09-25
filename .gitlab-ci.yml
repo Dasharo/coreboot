@@ -7,7 +7,6 @@ variables:
 stages:
   - check_dependencies
   - build_rom
-  - test_rom
   - sign_rom
   - publish_rom
   - run_regression
@@ -39,18 +38,6 @@ check_dependencies:
   only:
     - tags
     - web
-
-.test_rom: &test_rom
-  variables:
-    PLATFORM:
-  stage: test_rom
-  tags:
-    - docker
-  script:
-    - echo "test_rom"
-    - ls -la ${RELEASE_DIR}/${PLATFORM}_*.rom
-  only:
-    - tags
 
 .sign_rom: &sign_rom
   variables:
@@ -116,11 +103,6 @@ build:apu1:
   variables:
     PLATFORM: apu1
 
-.test:apu1:
-  <<: *test_rom
-  variables:
-    PLATFORM: apu1
-
 sign:apu1:
   <<: *sign_rom
   variables:
@@ -142,11 +124,6 @@ regression:apu1:
 
 build:apu2:
   <<: *build_rom_apu
-  variables:
-    PLATFORM: apu2
-
-.test:apu2:
-  <<: *test_rom
   variables:
     PLATFORM: apu2
 
@@ -174,11 +151,6 @@ build:apu3:
   variables:
     PLATFORM: apu3
 
-.test:apu3:
-  <<: *test_rom
-  variables:
-    PLATFORM: apu3
-
 sign:apu3:
   <<: *sign_rom
   variables:
@@ -200,11 +172,6 @@ regression:apu3:
 
 build:apu4:
   <<: *build_rom_apu
-  variables:
-    PLATFORM: apu4
-
-.test:apu4:
-  <<: *test_rom
   variables:
     PLATFORM: apu4
 
@@ -232,11 +199,6 @@ build:apu5:
   variables:
     PLATFORM: apu5
 
-.test:apu5:
-  <<: *test_rom
-  variables:
-    PLATFORM: apu5
-
 sign:apu5:
   <<: *sign_rom
   variables:
@@ -254,3 +216,19 @@ regression:apu5:
     CONFIG: apu5
     RTE_IP: $RTE_IP_APU5
     AUTOFILL: 1
+
+
+build:apu6:
+  <<: *build_rom_apu
+  variables:
+    PLATFORM: apu6
+
+sign:apu6:
+  <<: *sign_rom
+  variables:
+    PLATFORM: apu6
+
+publish:apu6:
+  <<: *publish_rom
+  variables:
+    PLATFORM: apu6
