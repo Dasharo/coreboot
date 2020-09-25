@@ -370,15 +370,17 @@ typedef struct {
 **/
   UINT32                      mmiohBase;
 
-/** Offset 0x0098 - High Gap
+/** Offset 0x0098 - CPU Physical Address Limit
+  CPU Physical Address Limit
+  0:Disable, 1:Enable
+**/
+  UINT8                       CpuPaLimit;
+
+/** Offset 0x0099 - High Gap
   Enable or Disable High Gap
   $EN_DIS
 **/
   UINT8                       highGap;
-
-/** Offset 0x0099
-**/
-  UINT8                       UnusedUpdSpace0;
 
 /** Offset 0x009A - MMIO High Size
   MMIO High Size, Number of 1GB contiguous regions to be assigned for MMIOH space
@@ -400,7 +402,7 @@ typedef struct {
 
 /** Offset 0x009E
 **/
-  UINT8                       UnusedUpdSpace1[2];
+  UINT8                       UnusedUpdSpace0[2];
 
 /** Offset 0x00A0 - } TYPE:{Combo
   Enable or Disable
@@ -473,39 +475,45 @@ typedef struct {
 **/
   UINT8                       X2apic;
 
-/** Offset 0x00BE - IIO ConfigIOU0
+/** Offset 0x00BE - Usage type for DDR frequency limit
+  Processor X2apic Function, if enabled, the value is 0x01, if disabled, the value is 0x00
+**/
+  UINT8                       DdrFreqLimit;
+
+/** Offset 0x00BF - Usage type for Memory Serial Debug Message Level
+  Processor X2apic Function, if enabled, the value is 0x01, if disabled, the value is 0x00
+**/
+  UINT8                       serialDebugMsgLvl;
+
+/** Offset 0x00C0 - IIO ConfigIOU0
   ConfigIOU[MAX_SOCKET][0]: MAX_SOCKET=8, 0x00:x4x4x4x4, 0x01:x4x4xxx8, 0x02:xxx8x4x4,
   0x03:xxx8xxx8, 0x04:xxxxxx16, 0xFF:AUTO
 **/
   UINT8                       IioConfigIOU0[8];
 
-/** Offset 0x00C6 - IIO ConfigIOU1
+/** Offset 0x00C8 - IIO ConfigIOU1
   ConfigIOU[MAX_SOCKET][1]: MAX_SOCKET=8, 0x00:x4x4x4x4, 0x01:x4x4xxx8, 0x02:xxx8x4x4,
   0x03:xxx8xxx8, 0x04:xxxxxx16, 0xFF:AUTO
 **/
   UINT8                       IioConfigIOU1[8];
 
-/** Offset 0x00CE - IIO ConfigIOU2
+/** Offset 0x00D0 - IIO ConfigIOU2
   ConfigIOU[MAX_SOCKET][2]: MAX_SOCKET=8, 0x00:x4x4x4x4, 0x01:x4x4xxx8, 0x02:xxx8x4x4,
   0x03:xxx8xxx8, 0x04:xxxxxx16, 0xFF:AUTO
 **/
   UINT8                       IioConfigIOU2[8];
 
-/** Offset 0x00D6 - IIO ConfigIOU3
+/** Offset 0x00D8 - IIO ConfigIOU3
   ConfigIOU[MAX_SOCKET][3]: MAX_SOCKET=8, 0x00:x4x4x4x4, 0x01:x4x4xxx8, 0x02:xxx8x4x4,
   0x03:xxx8xxx8, 0x04:xxxxxx16, 0xFF:AUTO
 **/
   UINT8                       IioConfigIOU3[8];
 
-/** Offset 0x00DE - IIO ConfigIOU4
+/** Offset 0x00E0 - IIO ConfigIOU4
   ConfigIOU[MAX_SOCKET][4]: MAX_SOCKET=8, 0x00:x4x4x4x4, 0x01:x4x4xxx8, 0x02:xxx8x4x4,
   0x03:xxx8xxx8, 0x04:xxxxxx16, 0xFF:AUTO
 **/
   UINT8                       IioConfigIOU4[8];
-
-/** Offset 0x00E6
-**/
-  UINT8                       UnusedUpdSpace2[2];
 
 /** Offset 0x00E8 - Usage type for IIO PCIE Config Table Ptr
   IIO PCIE Config Table Ptr
@@ -677,15 +685,16 @@ typedef struct {
 **/
   UINT8                       PchPciePortLinkSpeed[20];
 
-/** Offset 0x0148 - SerialIoUartDebugEnable
+/** Offset 0x0148 - PchDciEn
+  Enable or Disable Pch DciEn
+**/
+  UINT8                       PchDciEn;
+
+/** Offset 0x0149 - SerialIoUartDebugEnable
   Enable SerialIo Uart debug library in FSP.
   0:Disable, 1:Enable
 **/
   UINT8                       SerialIoUartDebugEnable;
-
-/** Offset 0x0149
-**/
-  UINT8                       UnusedUpdSpace3;
 
 /** Offset 0x014A - ISA Serial Base selection
   Select ISA Serial Base address could be initialized by boot loader. Default is 0x3F8
@@ -716,7 +725,7 @@ typedef struct {
 
 /** Offset 0x015C
 **/
-  UINT8                       UnusedUpdSpace4[2];
+  UINT8                       UnusedUpdSpace1[2];
 
 /** Offset 0x015E
 **/

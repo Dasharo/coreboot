@@ -452,7 +452,12 @@ static void camera_fill_sensor(const struct device *dev)
 static void camera_fill_nvm(const struct device *dev)
 {
 	struct drivers_intel_mipi_camera_config *config = dev->chip_info;
-	struct acpi_dp *dsd = acpi_dp_new_table("_DSD");
+	struct acpi_dp *dsd;
+
+	if (!config->nvm_compat)
+		return;
+
+	dsd = acpi_dp_new_table("_DSD");
 
 	/* It might be possible to default size or width based on type. */
 	if (!config->disable_nvm_defaults && !config->nvm_pagesize)
@@ -473,6 +478,7 @@ static void camera_fill_nvm(const struct device *dev)
 	if (config->nvm_width)
 		acpi_dp_add_integer(dsd, "address-width", config->nvm_width);
 
+	acpi_dp_add_string(dsd, "compatible", config->nvm_compat);
 	acpi_dp_write(dsd);
 }
 
@@ -822,10 +828,9 @@ static void write_i2c_camera_device(const struct device *dev, const char *scope)
 
 	if (config->acpi_hid)
 		acpigen_write_name_string("_HID", config->acpi_hid);
-	else if (config->device_type == INTEL_ACPI_CAMERA_VCM)
+	else if (config->device_type == INTEL_ACPI_CAMERA_VCM ||
+		 config->device_type == INTEL_ACPI_CAMERA_NVM)
 		acpigen_write_name_string("_HID", ACPI_DT_NAMESPACE_HID);
-	else if (config->device_type == INTEL_ACPI_CAMERA_NVM)
-		acpigen_write_name_string("_HID", "INT3499");
 
 	acpigen_write_name_integer("_UID", config->acpi_uid);
 	acpigen_write_name_string("_DDN", config->chip_name);

@@ -20,19 +20,7 @@
 #define IVB_STEP_K0	(BASE_REV_IVB + 5)
 #define IVB_STEP_D0	(BASE_REV_IVB + 6)
 
-/* Northbridge BARs */
-#ifndef __ACPI__
-#define DEFAULT_MCHBAR		((u8 *)0xfed10000)	/* 16 KB */
-#define DEFAULT_DMIBAR		((u8 *)0xfed18000)	/* 4 KB */
-#else
-#define DEFAULT_MCHBAR		0xfed10000	/* 16 KB */
-#define DEFAULT_DMIBAR		0xfed18000	/* 4 KB */
-#endif
-#define DEFAULT_EPBAR		0xfed19000	/* 4 KB */
-#define DEFAULT_RCBABASE	((u8 *)0xfed1c000)
-
-#define GFXVT_BASE		0xfed90000ULL
-#define VTVC0_BASE		0xfed91000ULL
+#include "memmap.h"
 
 /* Everything below this line is ignored in the DSDT */
 #ifndef __ACPI__
@@ -44,17 +32,14 @@ enum platform_type {
 	PLATFORM_DESKTOP_SERVER,
 };
 
-
 /* Device 0:0.0 PCI configuration space (Host Bridge) */
 #define HOST_BRIDGE	PCI_DEV(0, 0, 0)
 
-#include "hostbridge_regs.h"
-
+#include "registers/host_bridge.h"
 
 /* Devices 0:1.0, 0:1.1, 0:1.2, 0:6.0 PCI configuration space (PCI Express Graphics) */
 
 #define AFE_PWRON	0xc24	/* PEG Analog Front-End Power-On */
-
 
 /* Device 0:2.0 PCI configuration space (Graphics Device) */
 
@@ -78,7 +63,7 @@ enum platform_type {
 #define MCHBAR32_AND_OR(x, and, or) (MCHBAR32(x) = (MCHBAR32(x) & (and)) | (or))
 
 /* As there are many registers, define them on a separate file */
-#include "mchbar_regs.h"
+#include "registers/mchbar.h"
 
 /*
  * EPBAR - Egress Port Root Complex Register Block
@@ -88,28 +73,7 @@ enum platform_type {
 #define EPBAR16(x) (*((volatile u16 *)(DEFAULT_EPBAR + (x))))
 #define EPBAR32(x) (*((volatile u32 *)(DEFAULT_EPBAR + (x))))
 
-#define EPPVCCAP1	0x004	/* 32bit */
-#define EPPVCCAP2	0x008	/* 32bit */
-
-#define EPVC0RCAP	0x010	/* 32bit */
-#define EPVC0RCTL	0x014	/* 32bit */
-#define EPVC0RSTS	0x01a	/* 16bit */
-
-#define EPVC1RCAP	0x01c	/* 32bit */
-#define EPVC1RCTL	0x020	/* 32bit */
-#define EPVC1RSTS	0x026	/* 16bit */
-
-#define EPVC1MTS	0x028	/* 32bit */
-#define EPVC1IST	0x038	/* 64bit */
-
-#define EPESD		0x044	/* 32bit */
-
-#define EPLE1D		0x050	/* 32bit */
-#define EPLE1A		0x058	/* 64bit */
-#define EPLE2D		0x060	/* 32bit */
-#define EPLE2A		0x068	/* 64bit */
-
-#define PORTARB		0x100	/* 256bit */
+#include "registers/epbar.h"
 
 /*
  * DMIBAR
@@ -119,46 +83,7 @@ enum platform_type {
 #define DMIBAR16(x) (*((volatile u16 *)(DEFAULT_DMIBAR + (x))))
 #define DMIBAR32(x) (*((volatile u32 *)(DEFAULT_DMIBAR + (x))))
 
-#define DMIVCECH	0x000	/* 32bit */
-#define DMIPVCCAP1	0x004	/* 32bit */
-#define DMIPVCCAP2	0x008	/* 32bit */
-
-#define DMIPVCCCTL	0x00c	/* 16bit */
-
-#define DMIVC0RCAP	0x010	/* 32bit */
-#define DMIVC0RCTL	0x014	/* 32bit */
-#define DMIVC0RSTS	0x01a	/* 16bit */
-#define  VC0NP		0x2
-
-#define DMIVC1RCAP	0x01c	/* 32bit */
-#define DMIVC1RCTL	0x020	/* 32bit */
-#define DMIVC1RSTS	0x026	/* 16bit */
-#define  VC1NP		0x2
-
-#define DMIVCPRCTL	0x02c	/* 32bit */
-
-#define DMIVCPRSTS	0x032	/* 16bit */
-#define  VCPNP		0x2
-
-#define DMIVCMRCTL	0x0038	/* 32 bit */
-#define DMIVCMRSTS	0x003e	/* 16 bit */
-#define  VCMNP		0x2
-
-#define DMILE1D		0x050	/* 32bit */
-#define DMILE1A		0x058	/* 64bit */
-#define DMILE2D		0x060	/* 32bit */
-#define DMILE2A		0x068	/* 64bit */
-
-#define DMILCAP		0x084	/* 32bit */
-#define DMILCTL		0x088	/* 16bit */
-#define DMILSTS		0x08a	/* 16bit */
-#define  TXTRN		(1 << 11)
-#define DMICTL1		0x0f0	/* 32bit */
-#define DMICTL2		0x0fc	/* 32bit */
-
-#define DMICC		0x208	/* 32bit */
-
-#define DMIDRCCFG	0xeb4	/* 32bit */
+#include "registers/dmibar.h"
 
 #ifndef __ASSEMBLER__
 

@@ -166,6 +166,8 @@ static void configure_emttm_tables(void)
 	wrmsr(MSR_EMTTM_CR_TABLE(5), msr);
 }
 
+#define IA32_PECI_CTL		0x5a0
+
 static void configure_misc(const int eist, const int tm2, const int emttm)
 {
 	msr_t msr;
@@ -208,6 +210,13 @@ static void configure_misc(const int eist, const int tm2, const int emttm)
 		msr.lo |= (1 << 20);	/* Lock Enhanced SpeedStep Enable */
 		wrmsr(IA32_MISC_ENABLE, msr);
 	}
+
+	/* Enable PECI
+	   WARNING: due to Erratum AW67 described in Intel document #318733
+	   the microcode must be updated before this MSR is written to. */
+	msr = rdmsr(IA32_PECI_CTL);
+	msr.lo |= 1;
+	wrmsr(IA32_PECI_CTL, msr);
 }
 
 #define PIC_SENS_CFG	0x1aa
@@ -233,7 +242,6 @@ static void model_1067x_init(struct device *cpu)
 {
 	char processor_name[49];
 
-
 	/* Gather some information: */
 
 	const struct cpuid_result cpuid1 = cpuid(1);
@@ -255,7 +263,6 @@ static void model_1067x_init(struct device *cpu)
 			  !(rdmsr(IA32_PLATFORM_ID).lo & (1 << 17));
 	/* Test for TM2 only if EIST is available. */
 	const char tm2 = eist && (cpuid1.ecx & (1 << 8));
-
 
 	/* Turn on caching if we haven't already */
 	x86_enable_cache();

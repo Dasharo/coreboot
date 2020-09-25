@@ -68,10 +68,7 @@ verstage-y += libgcc.c
 verstage-y += memcmp.c
 verstage-y += string.c
 
-# TODO: Remove this when PSP bootblock timestamps are implemented.
-ifeq ($(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK),)
 verstage-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
-endif
 verstage-y += boot_device.c
 verstage-$(CONFIG_CONSOLE_CBMEM) += cbmem_console.c
 
@@ -354,20 +351,24 @@ endif # CONFIG_RAMSTAGE_LIBHWBASE
 romstage-y += spd_bin.c
 ramstage-y += spd_bin.c
 
-ifeq ($(CONFIG_GENERIC_SPD_BIN),y)
+ifeq ($(CONFIG_HAVE_SPD_IN_CBFS),y)
 LIB_SPD_BIN = $(obj)/spd.bin
 
 LIB_SPD_DEPS = $(foreach f, $(SPD_SOURCES), src/mainboard/$(MAINBOARDDIR)/spd/$(f).spd.hex)
 
 # Include spd ROM data
 $(LIB_SPD_BIN): $(LIB_SPD_DEPS)
+	test -n "$(SPD_SOURCES)" || \
+	    (echo "HAVE_SPD_BIN_IN_CBFS is set but SPD_SOURCES is empty" && exit 1)
+	test -n "$(LIB_SPD_DEPS)" || \
+	    (echo "SPD_SOURCES is set but no SPD file was found" && exit 1)
 	for f in $(LIB_SPD_DEPS); \
 	 do for c in $$(cat $$f | grep --binary-files=text -v ^#); \
-	  do printf $$(printf '\%o' 0x$$c); \
+	  do printf $$(printf '\\%o' 0x$$c); \
 	 done; \
 	done > $@
 
-cbfs-files-$(CONFIG_GENERIC_SPD_BIN) += spd.bin
+cbfs-files-y += spd.bin
 spd.bin-file := $(LIB_SPD_BIN)
 spd.bin-type := spd
 endif

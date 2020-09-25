@@ -14,6 +14,7 @@
 #include <lib.h>
 #include <dimm_info_util.h>
 #include <vendorcode/amd/fsp/picasso/dmi_info.h>
+#include <device/dram/ddr4.h>
 
 /**
  * Populate dimm_info using AGESA TYPE17_DMI_INFO.
@@ -27,15 +28,9 @@ static void transfer_memory_info(const TYPE17_DMI_INFO *dmi17,
 
 	dimm->ddr_type = dmi17->MemoryType;
 
-	/**
-	 * Based on the name, ddr_frequency should hold the memory clock
-	 * frequency in MHz. However it is interpreted as MT/s in SMBIOS
-	 * downstream. So multiply by 2 to translate to memory speed in MT/s.
-	 * ddr_frequency is used for setting both config speed and max
-	 * speed. Using config speed so we don't get the false impression
-	 * that the RAM is running faster than it actually is.
-	 */
-	dimm->ddr_frequency = 2 * dmi17->ConfigSpeed;
+	dimm->configured_speed_mts = ddr4_speed_mhz_to_reported_mts(dmi17->ConfigSpeed);
+
+	dimm->max_speed_mts = ddr4_speed_mhz_to_reported_mts(dmi17->Speed);
 
 	dimm->rank_per_dimm = dmi17->Attributes;
 

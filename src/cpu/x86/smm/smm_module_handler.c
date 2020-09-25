@@ -69,7 +69,6 @@ static void smi_set_eos(void)
 	southbridge_smi_set_eos();
 }
 
-
 static u32 pci_orig;
 
 /**
@@ -88,7 +87,6 @@ static void smi_restore_pci_address(void)
 	outl(pci_orig, 0xcf8);
 }
 
-
 static const struct smm_runtime *smm_runtime;
 
 struct global_nvs *gnvs;
@@ -104,6 +102,13 @@ void *smm_get_save_state(int cpu)
 	base -= (cpu + 1) * smm_runtime->save_state_size;
 
 	return base;
+}
+
+uint32_t smm_revision(void)
+{
+	const uintptr_t save_state = (uintptr_t)(smm_get_save_state(0));
+
+	return *(uint32_t *)(save_state + smm_runtime->save_state_size - SMM_REVISION_OFFSET_FROM_TOP);
 }
 
 bool smm_region_overlaps_handler(const struct region *r)

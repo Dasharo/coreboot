@@ -3,7 +3,7 @@
 #ifndef NORTHBRIDGE_INTEL_PINEVIEW_H
 #define NORTHBRIDGE_INTEL_PINEVIEW_H
 
-#include <northbridge/intel/pineview/iomap.h>
+#include <northbridge/intel/pineview/memmap.h>
 #include <southbridge/intel/i82801gx/i82801gx.h>
 
 #define BOOT_PATH_NORMAL	0
@@ -59,17 +59,17 @@
  * EPBAR - Egress Port Root Complex Register Block
  */
 
-#define EPBAR8(x)  *((volatile u8  *)(DEFAULT_EPBAR + x))
-#define EPBAR16(x) *((volatile u16 *)(DEFAULT_EPBAR + x))
-#define EPBAR32(x) *((volatile u32 *)(DEFAULT_EPBAR + x))
+#define EPBAR8(x)  *((volatile u8  *)(DEFAULT_EPBAR + (x)))
+#define EPBAR16(x) *((volatile u16 *)(DEFAULT_EPBAR + (x)))
+#define EPBAR32(x) *((volatile u32 *)(DEFAULT_EPBAR + (x)))
 
 /*
  * DMIBAR
  */
 
-#define DMIBAR8(x)  *((volatile u8  *)(DEFAULT_DMIBAR + x))
-#define DMIBAR16(x) *((volatile u16 *)(DEFAULT_DMIBAR + x))
-#define DMIBAR32(x) *((volatile u32 *)(DEFAULT_DMIBAR + x))
+#define DMIBAR8(x)  *((volatile u8  *)(DEFAULT_DMIBAR + (x)))
+#define DMIBAR16(x) *((volatile u16 *)(DEFAULT_DMIBAR + (x)))
+#define DMIBAR32(x) *((volatile u32 *)(DEFAULT_DMIBAR + (x)))
 
 enum fsb_clk {
 	FSB_CLOCK_667MHz = 0,

@@ -63,7 +63,7 @@ struct soc_amd_picasso_config {
 	/* Enable ACP I2S wake feature (0 = disable, 1 = enable) */
 	u8 acp_i2s_wake_enable;
 	/* Enable ACP PME (0 = disable, 1 = enable) */
-	u8 acpi_pme_enable;
+	u8 acp_pme_enable;
 
 	/**
 	 * IRQ 0 - 15 have a default trigger of edge and default polarity of high.
@@ -90,6 +90,14 @@ struct soc_amd_picasso_config {
 	uint32_t stapm_time_constant;
 	uint32_t sustained_power_limit;
 
+	/* Enable dptc for tablet mode (0 = disable, 1 = enable) */
+	uint8_t dptc_enable;
+
+	/* STAPM Configuration for tablet mode (need enable dptc_enable first) */
+	uint32_t fast_ppt_limit_tablet_mode;
+	uint32_t slow_ppt_limit_tablet_mode;
+	uint32_t sustained_power_limit_tablet_mode;
+
 	/* PROCHOT_L de-assertion Ramp Time */
 	uint32_t prochot_l_deassertion_ramp_time;
 
@@ -103,6 +111,7 @@ struct soc_amd_picasso_config {
 
 	/* Lower die temperature limit */
 	uint32_t thermctl_limit;
+	uint32_t thermctl_limit_tablet_mode;
 
 	/* FP5 Processor Voltage Supply PSI Currents. 0 indicates use SOC default */
 	uint32_t psi0_current_limit;
@@ -126,20 +135,34 @@ struct soc_amd_picasso_config {
 	uint32_t telemetry_vddcr_soc_slope;
 	uint32_t telemetry_vddcr_soc_offset;
 
-	enum {
-		SD_EMMC_DISABLE,
-		SD_EMMC_SD_LOW_SPEED,
-		SD_EMMC_SD_HIGH_SPEED,
-		SD_EMMC_SD_UHS_I_SDR_50,
-		SD_EMMC_SD_UHS_I_DDR_50,
-		SD_EMMC_SD_UHS_I_SDR_104,
-		SD_EMMC_EMMC_SDR_26,
-		SD_EMMC_EMMC_SDR_52,
-		SD_EMMC_EMMC_DDR_52,
-		SD_EMMC_EMMC_HS200,
-		SD_EMMC_EMMC_HS400,
-		SD_EMMC_EMMC_HS300,
-	} sd_emmc_config;
+	struct {
+		/*
+		 * SDHCI doesn't directly support eMMC. There is an implicit mapping between
+		 * eMMC timing modes and SDHCI UHS-I timing modes defined in the linux
+		 * kernel.
+		 *
+		 *  HS    -> UHS_SDR12 (0x00)
+		 *  DDR52 -> UHS_DDR50 (0x04)
+		 *  HS200 -> UHS_SDR104 (0x03)
+		 *  HS400 -> NONE (0x05)
+		 *
+		 * The kernel driver uses a heuristic to determine if HS400 is supported.
+		*/
+		enum {
+			SD_EMMC_DISABLE,
+			SD_EMMC_SD_LOW_SPEED,
+			SD_EMMC_SD_HIGH_SPEED,
+			SD_EMMC_SD_UHS_I_SDR_50,
+			SD_EMMC_SD_UHS_I_DDR_50,
+			SD_EMMC_SD_UHS_I_SDR_104,
+			SD_EMMC_EMMC_SDR_26,
+			SD_EMMC_EMMC_SDR_52,
+			SD_EMMC_EMMC_DDR_52,
+			SD_EMMC_EMMC_HS200,
+			SD_EMMC_EMMC_HS400,
+			SD_EMMC_EMMC_HS300,
+		} timing;
+	} emmc_config;
 
 	uint8_t xhci0_force_gen1;
 
@@ -154,6 +177,9 @@ struct soc_amd_picasso_config {
 		USB_OC_PIN_5	= 0x5,
 		USB_OC_NONE	= 0xf,
 	} usb_port_overcurrent_pin[USB_PORT_COUNT];
+
+	/* The array index is the general purpose PCIe clock output number. */
+	enum gpp_clk_req_setting gpp_clk_config[GPP_CLK_OUTPUT_COUNT];
 };
 
 typedef struct soc_amd_picasso_config config_t;

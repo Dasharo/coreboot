@@ -1296,8 +1296,10 @@ static void print_version(void)
 
 static void print_usage(const char *name, int exit_code)
 {
-	printf("usage: %s [-cCltTLxVvh?]\n", name);
+	printf("usage: %s [-a:s:c1CltTLdxVvh?r:]\n", name);
 	printf("\n"
+	     "   -a | --addr address:              set base address\n"
+	     "   -s | --size size:                 set table size. Change is applied only if address is also specified\n"
 	     "   -c | --console:                   print cbmem console\n"
 	     "   -1 | --oneboot:                   print cbmem console for last boot only\n"
 	     "   -C | --coverage:                  dump coverage information\n"
@@ -1432,6 +1434,9 @@ static char *dt_find_compat(const char *parent, const char *compat,
 
 int main(int argc, char** argv)
 {
+	unsigned long long possible_base_addresses[] = { 0, 0xf0000 };
+	int address_specified = 0;
+	size_t table_size = 0;
 	int print_defaults = 1;
 	int print_console = 0;
 	int print_coverage = 0;
@@ -1447,6 +1452,8 @@ int main(int argc, char** argv)
 
 	int opt, option_index = 0;
 	static struct option long_options[] = {
+		{"addr", 0, 0, 'a'},
+		{"size", 0, 0, 's'},
 		{"console", 0, 0, 'c'},
 		{"oneboot", 0, 0, '1'},
 		{"coverage", 0, 0, 'C'},
@@ -1462,9 +1469,19 @@ int main(int argc, char** argv)
 		{"help", 0, 0, 'h'},
 		{0, 0, 0, 0}
 	};
-	while ((opt = getopt_long(argc, argv, "c1CltTLdxVvh?r:",
+	while ((opt = getopt_long(argc, argv, "a:s:c1CltTLdxVvh?r:",
 				  long_options, &option_index)) != EOF) {
 		switch (opt) {
+		case 'a':
+			if (optarg) {
+				possible_base_addresses[0] = strtoull(optarg, NULL, 0);
+				address_specified = 1;
+			}
+			break;
+		case 's':
+			if (optarg)
+				table_size = strtoul(optarg, NULL, 0);
+			break;
 		case 'c':
 			print_console = 1;
 			print_defaults = 0;
@@ -1590,12 +1607,15 @@ int main(int argc, char** argv)
 
 	parse_cbtable(baseaddr, cb_table_size);
 #else
-	unsigned long long possible_base_addresses[] = { 0, 0xf0000 };
 
 	/* Find and parse coreboot table */
-	for (size_t j = 0; j < ARRAY_SIZE(possible_base_addresses); j++) {
-		if (!parse_cbtable(possible_base_addresses[j], 0))
-			break;
+	if (address_specified) {
+		parse_cbtable(possible_base_addresses[0], table_size);
+	} else {
+		for (size_t j = 0; j < ARRAY_SIZE(possible_base_addresses); j++) {
+			if (!parse_cbtable(possible_base_addresses[j], 0))
+				break;
+		}
 	}
 #endif
 
