@@ -10,6 +10,8 @@
 #define DEVICE_NAME "apu4
 #elif CONFIG(BOARD_PCENGINES_APU5)
 #define DEVICE_NAME "apu5
+#elif CONFIG(BOARD_PCENGINES_APU6)
+#define DEVICE_NAME "apu6
 #endif
 
 #include <acpi/acpi.h>
