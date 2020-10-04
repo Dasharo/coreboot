@@ -221,6 +221,97 @@ config EDK2_GOP_FILE
 	default "3rdparty/blobs/soc/intel/tgl/IntelGopDriver.efi" if SOC_INTEL_TIGERLAKE
 	default "IntelGopDriver.efi"
 
+config EDK2_ENABLE_IPXE
+	bool "Include iPXE in edk2 payload"
+	default n
+	help
+	  Includes a prebuilt iPXE for EFI to the EDK2 payload.
+
+config EDK2_SECURE_BOOT
+	bool "Enable UEFI Secure Boot"
+	depends on SMMSTORE_V2
+	default n
+	help
+	  Enables UEFI Secure Boot image verification in EDK2 Payload.
+
+config EDK2_SATA_PASSWORD
+	bool "Enable TianoCore SATA disk password"
+	default n
+	help
+	  Enable SATA disk password suupport in the TianoCore payload.
+
+config EDK2_OPAL_PASSWORD
+	bool "Enable TianoCore TCG OPAL password"
+	default n
+	help
+	  Enables TCG OPAL disk password in the TianoCore Payload.
+
+config EDK2_BOOT_MENU_KEY
+	hex "TianoCore boot menu key"
+	default 0x0016
+	help
+	  Select the TianoCore payload boot menu key:
+	  UP         0x0001
+	  DOWN       0x0002
+	  RIGHT      0x0003
+	  LEFT       0x0004
+	  HOME       0x0005
+	  END        0x0006
+	  INSERT     0x0007
+	  DELETE     0x0008
+	  F1         0x000B
+	  F2         0x000C
+	  F3         0x000D
+	  F4         0x000E
+	  F5         0x000F
+	  F6         0x0010
+	  F7         0x0011
+	  F8         0x0012
+	  F9         0x0013
+	  F10        0x0014
+	  F11        0x0015
+	  F12        0x0016
+	  ESC        0x0017
+
+config EDK2_SETUP_MENU_KEY
+	hex "TianoCore setup menu key"
+	default 0x0017
+	help
+	  Select the TianoCore payload setup menu key:
+	  UP         0x0001
+	  DOWN       0x0002
+	  RIGHT      0x0003
+	  LEFT       0x0004
+	  HOME       0x0005
+	  END        0x0006
+	  INSERT     0x0007
+	  DELETE     0x0008
+	  F1         0x000B
+	  F2         0x000C
+	  F3         0x000D
+	  F4         0x000E
+	  F5         0x000F
+	  F6         0x0010
+	  F7         0x0011
+	  F8         0x0012
+	  F9         0x0013
+	  F10        0x0014
+	  F11        0x0015
+	  F12        0x0016
+	  ESC        0x0017
+
+if EDK2_SECURE_BOOT
+
+config EDK2_SECURE_BOOT_DEFAULT_ENABLE
+	bool "Set Secure Boot state to enabled by default"
+	default y
+	help
+	  Sets the UEFI Secure Boot state to enabled by default.
+
+endif
+
+endif
+
 config EDK2_CUSTOM_BUILD_PARAMS
 	string "edk2 additional custom build parameters"
 	default "-D VARIABLE_SUPPORT=SMMSTORE" if EDK2_REPO_MRCHROMEBOX && SMMSTORE_V2 && !SOC_AMD_PICASSO
