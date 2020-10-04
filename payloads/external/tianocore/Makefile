@@ -10,7 +10,7 @@ export SHELL := env bash
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
 project_git_repo=https://github.com/3mdeb/edk2
-project_git_branch=coreboot_fb
+project_git_branch=dasharo
 upstream_git_repo=https://github.com/tianocore/edk2
 
 ifeq ($(CONFIG_TIANOCORE_UEFIPAYLOAD),y)
@@ -46,7 +46,7 @@ build_flavor+= -D NETWORK_IPXE=TRUE
 endif
 
 ifeq ($(CONFIG_TIANOCORE_SERIAL),y)
-build_flavor+= -D SERIAL_TERMINAL=FALSE
+build_flavor+= -D SERIAL_TERMINAL=TRUE
 endif
 
 ifeq ($(CONFIG_TIANOCORE_TARGET_IA32), y)
