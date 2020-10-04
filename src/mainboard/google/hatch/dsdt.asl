@@ -37,7 +37,7 @@ DefinitionBlock(
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 
 	/* Low power idle table */
-	#include <soc/intel/cannonlake/acpi/lpit.asl>
+	#include <soc/intel/common/acpi/lpit.asl>
 
 	/* Chrome OS Embedded Controller */
 	Scope (\_SB.PCI0.LPCB)
@@ -48,6 +48,7 @@ DefinitionBlock(
 		#include <ec/google/chromeec/acpi/ec.asl>
 	}
 
+#if CONFIG(BOARD_GOOGLE_BASEBOARD_HATCH)
 	/* Dynamic Platform Thermal Framework */
 	Scope (\_SB)
 	{
@@ -56,4 +57,5 @@ DefinitionBlock(
 		/* Include common dptf ASL files */
 		#include <soc/intel/common/acpi/dptf/dptf.asl>
 	}
+#endif
 }

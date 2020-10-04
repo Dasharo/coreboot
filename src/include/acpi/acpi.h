@@ -800,6 +800,26 @@ typedef struct acpi_cstate {
 	acpi_addr_t resource;
 } __packed acpi_cstate_t;
 
+struct acpi_sw_pstate {
+	u32 core_freq;
+	u32 power;
+	u32 transition_latency;
+	u32 bus_master_latency;
+	u32 control_value;
+	u32 status_value;
+} __packed;
+
+struct acpi_xpss_sw_pstate {
+	u64 core_freq;
+	u64 power;
+	u64 transition_latency;
+	u64 bus_master_latency;
+	u64 control_value;
+	u64 status_value;
+	u64 control_mask;
+	u64 status_mask;
+} __packed;
+
 typedef struct acpi_tstate {
 	u32 percent;
 	u32 power;
@@ -880,6 +900,7 @@ void acpi_write_bert(acpi_bert_t *bert, uintptr_t region, size_t length);
 void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt);
 
 void acpi_fill_fadt(acpi_fadt_t *fadt);
+void arch_fill_fadt(acpi_fadt_t *fadt);
 void soc_fill_fadt(acpi_fadt_t *fadt);
 void mainboard_fill_fadt(acpi_fadt_t *fadt);
 
@@ -986,7 +1007,7 @@ unsigned long acpi_create_hest_error_source(acpi_hest_t *hest,
 	acpi_hest_esd_t *esd, u16 type, void *data, u16 len);
 
 /* For ACPI S3 support. */
-void acpi_resume(void *wake_vec);
+void __noreturn acpi_resume(void *wake_vec);
 void mainboard_suspend_resume(void);
 void *acpi_find_wakeup_vector(void);
 

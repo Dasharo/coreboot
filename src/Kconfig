@@ -270,6 +270,45 @@ config UBSAN
 	  say N because it adds a small performance penalty and may abort
 	  on code that happens to work in spite of the UB.
 
+config HAVE_ASAN_IN_ROMSTAGE
+	bool
+	default n
+
+config ASAN_IN_ROMSTAGE
+	bool
+	default n
+	help
+	  Enable address sanitizer in romstage for platform.
+
+config HAVE_ASAN_IN_RAMSTAGE
+	bool
+	default n
+
+config ASAN_IN_RAMSTAGE
+	bool
+	default n
+	help
+	  Enable address sanitizer in ramstage for platform.
+
+config ASAN
+	bool "Address sanitizer support"
+	default n
+	select ASAN_IN_ROMSTAGE if HAVE_ASAN_IN_ROMSTAGE
+	select ASAN_IN_RAMSTAGE if HAVE_ASAN_IN_RAMSTAGE
+	help
+	  Enable address sanitizer - runtime memory debugger,
+	  designed to find out-of-bounds accesses and use-after-scope bugs.
+
+	  This feature consumes up to 1/8 of available memory and brings about
+	  ~1.5x performance slowdown.
+
+	  If unsure, say N.
+
+if ASAN
+	comment "Before using this feature, make sure that           "
+	comment "asan_shadow_offset_callback patch is applied to GCC."
+endif
+
 choice
 	prompt "Stage Cache for ACPI S3 resume"
 	default NO_STAGE_CACHE if !HAVE_ACPI_RESUME
@@ -1104,7 +1143,6 @@ config EM100
 	  by changing the settings in the descriptor.bin file.
 
 endmenu
-
 
 ###############################################################################
 # Set variables with no prompt - these can be set anywhere, and putting at

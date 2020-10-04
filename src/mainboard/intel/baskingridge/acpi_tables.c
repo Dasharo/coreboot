@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <acpi/acpi.h>
 #include <acpi/acpi_gnvs.h>
 #include <device/device.h>
@@ -25,7 +24,6 @@ void acpi_create_gnvs(struct global_nvs *gnvs)
 
 	/* TPM Present */
 	gnvs->tpmp = 1;
-
 
 #if CONFIG(CHROMEOS)
 	/* Emerald Lake has no EC (?) */

@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <commonlib/sort.h>
 #include <console/console.h>
-#include <cpu/x86/msr.h>
 #include <delay.h>
 #include <device/pci.h>
 #include <hob_iiouds.h>
@@ -415,7 +414,6 @@ void xeonsp_init_cpu_config(void)
 			apic_ids_by_thread[index++] = apic_id;
 		}
 	}
-
 
 	/* update apic_id, node_id in sorted order */
 	num_apics = 0;

@@ -5,42 +5,10 @@
 
 #define DEFAULT_HECIBAR		((u8 *)0xfed17000)
 
-
 #define IOMMU_BASE1 0xfed90000
 #define IOMMU_BASE2 0xfed91000
 #define IOMMU_BASE3 0xfed92000
 #define IOMMU_BASE4 0xfed93000
-
-/*
- * D0:F0
- */
-#define D0F0_EPBAR_LO		0x40
-#define D0F0_EPBAR_HI		0x44
-#define D0F0_MCHBAR_LO		0x48
-#define D0F0_MCHBAR_HI		0x4c
-#define D0F0_GGC		0x52
-#define D0F0_DEVEN		0x54
-#define  DEVEN_IGD		(1 << 3)
-#define  DEVEN_PEG10		(1 << 1)
-#define  DEVEN_HOST		(1 << 0)
-#define D0F0_PCIEXBAR_LO	0x60
-#define D0F0_PCIEXBAR_HI	0x64
-#define D0F0_DMIBAR_LO		0x68
-#define D0F0_DMIBAR_HI		0x6c
-#define D0F0_PMBASE		0x78
-#define QPD0F1_PAM(x)		(0x40 + (x)) /* 0-6 */
-#define D0F0_REMAPBASE		0x98
-#define D0F0_REMAPLIMIT		0x9a
-#define D0F0_TOM		0xa0
-#define D0F0_TOUUD		0xa2
-#define D0F0_IGD_BASE		0xa4
-#define D0F0_GTT_BASE		0xa8
-#define D0F0_TOLUD		0xb0
-#define D0F0_SKPD		0xdc /* Scratchpad Data */
-
-#define D0F0_CAPID0		0xe0
-
-#define TSEG			0xac /* TSEG base */
 
 /*
  * D1:F0 PEG
@@ -65,7 +33,6 @@
 #define DEFAULT_DMIBAR		0xfed18000	/* 4 KB */
 #endif
 #define DEFAULT_EPBAR		0xfed19000	/* 4 KB */
-#define DEFAULT_RCBABASE	((u8 *)0xfed1c000)
 
 #define QUICKPATH_BUS 0xff
 
@@ -76,17 +43,54 @@
 
 /* Device 0:0.0 PCI configuration space (Host Bridge) */
 
-#define EPBAR		0x40
-#define MCHBAR		0x48
-#define PCIEXBAR	0x60
-#define DMIBAR		0x68
-#define X60BAR		0x60
+#include "hostbridge_regs.h"
 
-#define LAC		0x87	/* Legacy Access Control */
+/*
+ * Generic Non-Core Registers
+ */
+#define QPI_NON_CORE		PCI_DEV(QUICKPATH_BUS, 0, 0)
+
+#define MAX_RTIDS		0x60
+#define DESIRED_CORES		0x80
+#define MIRROR_PORT_CTL		0xd0
+
+/*
+ * SAD - System Address Decoder
+ */
+#define QPI_SAD			PCI_DEV(QUICKPATH_BUS, 0, 1)
+
+#define QPD0F1_PAM(x)		(0x40 + (x)) /* 0-6 */
 #define QPD0F1_SMRAM		0x4d	/* System Management RAM Control */
 
-#define SKPAD		0xdc	/* Scratchpad Data */
+#define SAD_PCIEXBAR		0x50
 
+#define SAD_DRAM_RULE(x)	(0x80 + 4 * (x)) /* 0-7 */
+#define SAD_INTERLEAVE_LIST(x)	(0xc0 + 4 * (x)) /* 0-7 */
+
+/*
+ * QPI Link 0
+ */
+#define QPI_LINK_0		PCI_DEV(QUICKPATH_BUS, 2, 0)
+
+#define QPI_QPILCP		0x40 /* QPI Link Capability */
+#define QPI_QPILCL		0x48 /* QPI Link Control */
+#define QPI_QPILS		0x50 /* QPI Link Status */
+#define QPI_DEF_RMT_VN_CREDITS	0x58 /* Default Available Remote Credits */
+
+/*
+ * QPI Physical Layer 0
+ */
+#define QPI_PHY_0		PCI_DEV(QUICKPATH_BUS, 2, 1)
+
+#define QPI_PLL_STATUS		0x50
+#define QPI_PLL_RATIO		0x54
+#define QPI_PHY_CAPABILITY	0x68 /* QPI Phys. Layer Capability */
+#define QPI_PHY_CONTROL		0x6c /* QPI Phys. Layer Control */
+#define QPI_PHY_INIT_STATUS	0x80 /* QPI Phys. Layer Initialization Status */
+#define QPI_PHY_PRIM_TIMEOUT	0x94 /* QPI Phys. Layer Primary Timeout Value */
+#define QPI_PHY_PWR_MGMT	0xd0 /* QPI Phys. Layer Power Management */
+#define QPI_PHY_EP_SELECT	0xe0 /* QPI Phys. Layer Electrical Parameter Select */
+#define QPI_PHY_EP_MCTR		0xf4 /* QPI Phys. Layer Electrical Parameter Misc. Control */
 
 /* Device 0:2.0 PCI configuration space (Graphics Device) */
 

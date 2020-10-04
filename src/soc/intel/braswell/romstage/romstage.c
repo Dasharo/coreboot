@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cbmem.h>
-#include <stddef.h>
+#include <stdint.h>
 #include <arch/io.h>
 #include <device/mmio.h>
 #include <console/console.h>
@@ -10,7 +10,6 @@
 #include <soc/romstage.h>
 
 #include "../chip.h"
-
 
 static struct chipset_power_state power_state;
 
@@ -82,7 +81,6 @@ int chipset_prev_sleep_state(struct chipset_power_state *ps)
 
 	return prev_sleep_state;
 }
-
 
 /* SOC initialization after RAM is enabled */
 void soc_after_ram_init(struct romstage_params *params)

@@ -1,12 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <device/device.h>
 #include <console/console.h>
 #if CONFIG(VGA_ROM_RUN)
 #include <x86emu/x86emu.h>
 #endif
-#include <acpi/acpi.h>
 #include <arch/interrupt.h>
 #include <smbios.h>
 #include "ec.h"
@@ -14,10 +12,6 @@
 #include <soc/gpio.h>
 #include <bootstate.h>
 #include <vendorcode/google/chromeos/chromeos.h>
-
-void mainboard_suspend_resume(void)
-{
-}
 
 #if CONFIG(VGA_ROM_RUN)
 static int int15_handler(void)

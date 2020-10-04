@@ -37,7 +37,6 @@ DefinitionBlock(
 	#include <variant/acpi/camera.asl>
 #endif
 
-
 	/* Include Low power idle table for a short term workaround to enable
 	   S0ix. Once cr50 pulse width is fixed, this can be removed. */
 	#include <soc/intel/common/acpi/lpit.asl>
@@ -55,13 +54,4 @@ DefinitionBlock(
 		/* ACPI code for EC functions */
 		#include <ec/google/chromeec/acpi/ec.asl>
         }
-
-	/* Dynamic Platform Thermal Framework */
-	Scope (\_SB)
-	{
-		/* Per board variant specific definitions. */
-		#include <variant/acpi/dptf.asl>
-		/* Include common dptf ASL files */
-		#include <soc/intel/common/acpi/dptf/dptf.asl>
-	}
 }

@@ -7,17 +7,20 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_ACPI_TABLES
 	select MAINBOARD_HAS_CHROMEOS
 	select DRIVERS_I2C_HID
+	select DRIVERS_INTEL_DPTF
 	select DRIVERS_I2C_GENERIC
 	select DRIVERS_I2C_MAX98373
 	select DRIVERS_INTEL_PMC
 	select DRIVERS_USB_ACPI
 	select DRIVERS_SPI_ACPI
-	select GENERATE_SMBIOS_TABLES
 	select SOC_INTEL_TIGERLAKE
+	select SOC_INTEL_COMMON_BLOCK_DTT
 	select INTEL_LPSS_UART_FOR_CONSOLE
 	select DRIVERS_INTEL_ISH
 	select EC_ACPI
 	select PCIEXP_HOTPLUG
+	select HAVE_SPD_IN_CBFS
+	select SOC_INTEL_CSE_LITE_SKU
 
 config CHROMEOS
 	bool
@@ -46,7 +49,8 @@ config GBB_HWID
 
 config MAINBOARD_PART_NUMBER
 	string
-	default "tglrvp"
+	default "tglrvpu" if BOARD_INTEL_TGLRVP_UP3
+	default "tglrvpy" if BOARD_INTEL_TGLRVP_UP4
 
 config MAINBOARD_FAMILY
 	string
@@ -76,7 +80,7 @@ config DIMM_SPD_SIZE
 	int
 	default 512
 
-choice TGL_EC
+choice
 	prompt "ON BOARD EC"
 	default TGL_CHROME_EC
 	help

@@ -16,6 +16,7 @@
 #include <cbmem.h>
 #include <string.h>
 #include "chip.h"
+#include "iobp.h"
 #include "nvs.h"
 #include "pch.h"
 #include <acpi/acpigen.h>
@@ -96,18 +97,18 @@ static void pch_enable_serial_irqs(struct device *dev)
 static void pch_pirq_init(struct device *dev)
 {
 	struct device *irq_dev;
-	/* Get the chip configuration */
-	config_t *config = dev->chip_info;
 
-	pci_write_config8(dev, PIRQA_ROUT, config->pirqa_routing);
-	pci_write_config8(dev, PIRQB_ROUT, config->pirqb_routing);
-	pci_write_config8(dev, PIRQC_ROUT, config->pirqc_routing);
-	pci_write_config8(dev, PIRQD_ROUT, config->pirqd_routing);
+	const uint8_t pirq = 0x80;
 
-	pci_write_config8(dev, PIRQE_ROUT, config->pirqe_routing);
-	pci_write_config8(dev, PIRQF_ROUT, config->pirqf_routing);
-	pci_write_config8(dev, PIRQG_ROUT, config->pirqg_routing);
-	pci_write_config8(dev, PIRQH_ROUT, config->pirqh_routing);
+	pci_write_config8(dev, PIRQA_ROUT, pirq);
+	pci_write_config8(dev, PIRQB_ROUT, pirq);
+	pci_write_config8(dev, PIRQC_ROUT, pirq);
+	pci_write_config8(dev, PIRQD_ROUT, pirq);
+
+	pci_write_config8(dev, PIRQE_ROUT, pirq);
+	pci_write_config8(dev, PIRQF_ROUT, pirq);
+	pci_write_config8(dev, PIRQG_ROUT, pirq);
+	pci_write_config8(dev, PIRQH_ROUT, pirq);
 
 	/* Eric Biederman once said we should let the OS do this.
 	 * I am not so sure anymore he was right.
@@ -122,10 +123,12 @@ static void pch_pirq_init(struct device *dev)
 		int_pin = pci_read_config8(irq_dev, PCI_INTERRUPT_PIN);
 
 		switch (int_pin) {
-		case 1: /* INTA# */ int_line = config->pirqa_routing; break;
-		case 2: /* INTB# */ int_line = config->pirqb_routing; break;
-		case 3: /* INTC# */ int_line = config->pirqc_routing; break;
-		case 4: /* INTD# */ int_line = config->pirqd_routing; break;
+		case 1: /* INTA# */
+		case 2: /* INTB# */
+		case 3: /* INTC# */
+		case 4: /* INTD# */
+			int_line = pirq;
+			break;
 		}
 
 		if (!int_line)
@@ -332,8 +335,7 @@ static void lpt_lp_pm_init(struct device *dev)
 	RCBA32_AND_OR(0x2b20,  0, 0x0005db01); /* Power Optimizer */
 	RCBA32_AND_OR(0x3a80,  0, 0x05145005);
 
-	pci_write_config32(dev, 0xac,
-		pci_read_config32(dev, 0xac) | (1 << 21));
+	pci_or_config32(dev, 0xac, 1 << 21);
 
 	pch_iobp_update(0xED00015C, ~(1 << 11), 0x00003700);
 	pch_iobp_update(0xED000118, ~0UL, 0x00c00000);
@@ -422,9 +424,7 @@ static void enable_lp_clock_gating(struct device *dev)
 	reg16 |= (1 << 2); // PCI CLKRUN# Enable
 	pci_write_config16(dev, GEN_PMCON_1, reg16);
 
-	reg32 = pci_read_config32(dev, 0x64);
-	reg32 |= (1 << 6);
-	pci_write_config32(dev, 0x64, reg32);
+	pci_or_config32(dev, 0x64, 1 << 6);
 
 	/*
 	 * RCBA + 0x2614[27:25,14:13,10,8] = 101,11,1,1
@@ -475,22 +475,15 @@ static void pch_set_acpi_mode(void)
 
 static void pch_disable_smm_only_flashing(struct device *dev)
 {
-	u8 reg8;
-
 	printk(BIOS_SPEW, "Enabling BIOS updates outside of SMM... ");
-	reg8 = pci_read_config8(dev, BIOS_CNTL);
-	reg8 &= ~(1 << 5);
-	pci_write_config8(dev, BIOS_CNTL, reg8);
+
+	pci_and_config8(dev, BIOS_CNTL, ~(1 << 5));
 }
 
 static void pch_fixups(struct device *dev)
 {
-	u8 gen_pmcon_2;
-
 	/* Indicate DRAM init done for MRC S3 to know it can resume */
-	gen_pmcon_2 = pci_read_config8(dev, GEN_PMCON_2);
-	gen_pmcon_2 |= (1 << 7);
-	pci_write_config8(dev, GEN_PMCON_2, gen_pmcon_2);
+	pci_or_config8(dev, GEN_PMCON_2, 1 << 7);
 
 	/*
 	 * Enable DMI ASPM in the PCH
@@ -505,7 +498,9 @@ static void lpc_init(struct device *dev)
 	printk(BIOS_DEBUG, "pch: %s\n", __func__);
 
 	/* Set the value for PCI command register. */
-	pci_write_config16(dev, PCI_COMMAND, 0x000f);
+	pci_write_config16(dev, PCI_COMMAND,
+			   PCI_COMMAND_MASTER | PCI_COMMAND_SPECIAL |
+			   PCI_COMMAND_MEMORY | PCI_COMMAND_IO);
 
 	/* IO APIC initialization. */
 	pch_enable_ioapic(dev);
@@ -726,144 +721,6 @@ void southbridge_inject_dsdt(const struct device *dev)
 	}
 }
 
-void acpi_fill_fadt(acpi_fadt_t *fadt)
-{
-	struct device *dev = pcidev_on_root(0x1f, 0);
-	struct southbridge_intel_lynxpoint_config *cfg = dev->chip_info;
-	u16 pmbase = get_pmbase();
-
-	fadt->sci_int = 0x9;
-
-	if (permanent_smi_handler()) {
-		fadt->smi_cmd = APM_CNT;
-		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	}
-
-	fadt->pm1a_evt_blk = pmbase + PM1_STS;
-	fadt->pm1b_evt_blk = 0x0;
-	fadt->pm1a_cnt_blk = pmbase + PM1_CNT;
-	fadt->pm1b_cnt_blk = 0x0;
-	fadt->pm2_cnt_blk = pmbase + PM2_CNT;
-	fadt->pm_tmr_blk = pmbase + PM1_TMR;
-	if (pch_is_lp())
-		fadt->gpe0_blk = pmbase + LP_GPE0_STS_1;
-	else
-		fadt->gpe0_blk = pmbase + GPE0_STS;
-	fadt->gpe1_blk = 0;
-
-	/*
-	 * Some of the lengths here are doubled. This is because they describe
-	 * blocks containing two registers, where the size of each register
-	 * is found by halving the block length. See Table 5-34 and section
-	 * 4.8.3 of the ACPI specification for details.
-	 */
-	fadt->pm1_evt_len = 2 * 2;
-	fadt->pm1_cnt_len = 2;
-	fadt->pm2_cnt_len = 1;
-	fadt->pm_tmr_len = 4;
-	if (pch_is_lp())
-		fadt->gpe0_blk_len = 2 * 16;
-	else
-		fadt->gpe0_blk_len = 2 * 8;
-	fadt->gpe1_blk_len = 0;
-	fadt->gpe1_base = 0;
-
-	fadt->p_lvl2_lat = 1;
-	fadt->p_lvl3_lat = 87;
-	fadt->flush_size = 0;
-	fadt->flush_stride = 0;
-	fadt->duty_offset = 0;
-	fadt->duty_width = 0;
-	fadt->day_alrm = 0xd;
-	fadt->mon_alrm = 0x00;
-	fadt->century = 0x00;
-	fadt->iapc_boot_arch = ACPI_FADT_LEGACY_DEVICES | ACPI_FADT_8042;
-
-	fadt->flags = ACPI_FADT_WBINVD |
-		      ACPI_FADT_C1_SUPPORTED |
-		      ACPI_FADT_C2_MP_SUPPORTED |
-		      ACPI_FADT_SLEEP_BUTTON |
-		      ACPI_FADT_RESET_REGISTER |
-		      ACPI_FADT_SEALED_CASE |
-		      ACPI_FADT_S4_RTC_WAKE |
-		      ACPI_FADT_PLATFORM_CLOCK;
-
-	if (cfg->docking_supported)
-		fadt->flags |= ACPI_FADT_DOCKING_SUPPORTED;
-
-	fadt->reset_reg.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->reset_reg.bit_width = 8;
-	fadt->reset_reg.bit_offset = 0;
-	fadt->reset_reg.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->reset_reg.addrl = 0xcf9;
-	fadt->reset_reg.addrh = 0;
-
-	fadt->reset_value = 6;
-
-	fadt->x_pm1a_evt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm1a_evt_blk.bit_width = 2 * 16;
-	fadt->x_pm1a_evt_blk.bit_offset = 0;
-	fadt->x_pm1a_evt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
-	fadt->x_pm1a_evt_blk.addrl = pmbase + PM1_STS;
-	fadt->x_pm1a_evt_blk.addrh = 0x0;
-
-	fadt->x_pm1b_evt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm1b_evt_blk.bit_width = 0;
-	fadt->x_pm1b_evt_blk.bit_offset = 0;
-	fadt->x_pm1b_evt_blk.access_size = 0;
-	fadt->x_pm1b_evt_blk.addrl = 0x0;
-	fadt->x_pm1b_evt_blk.addrh = 0x0;
-
-	fadt->x_pm1a_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm1a_cnt_blk.bit_width = 16;
-	fadt->x_pm1a_cnt_blk.bit_offset = 0;
-	fadt->x_pm1a_cnt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
-	fadt->x_pm1a_cnt_blk.addrl = pmbase + PM1_CNT;
-	fadt->x_pm1a_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm1b_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm1b_cnt_blk.bit_width = 0;
-	fadt->x_pm1b_cnt_blk.bit_offset = 0;
-	fadt->x_pm1b_cnt_blk.access_size = 0;
-	fadt->x_pm1b_cnt_blk.addrl = 0x0;
-	fadt->x_pm1b_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm2_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm2_cnt_blk.bit_width = 8;
-	fadt->x_pm2_cnt_blk.bit_offset = 0;
-	fadt->x_pm2_cnt_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->x_pm2_cnt_blk.addrl = pmbase + PM2_CNT;
-	fadt->x_pm2_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm_tmr_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm_tmr_blk.bit_width = 32;
-	fadt->x_pm_tmr_blk.bit_offset = 0;
-	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
-	fadt->x_pm_tmr_blk.addrl = pmbase + PM1_TMR;
-	fadt->x_pm_tmr_blk.addrh = 0x0;
-
-	/*
-	 * Windows 10 requires x_gpe0_blk to be set starting with FADT revision 5.
-	 * The bit_width field intentionally overflows here.
-	 * The OSPM can instead use the values in `fadt->gpe0_blk{,_len}`, which
-	 * seems to work fine on Linux 5.0 and Windows 10.
-	 */
-	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_gpe0_blk.bit_width = fadt->gpe0_blk_len * 8;
-	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
-	fadt->x_gpe0_blk.addrh = 0x0;
-
-	fadt->x_gpe1_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_gpe1_blk.bit_width = 0;
-	fadt->x_gpe1_blk.bit_offset = 0;
-	fadt->x_gpe1_blk.access_size = 0;
-	fadt->x_gpe1_blk.addrl = 0x0;
-	fadt->x_gpe1_blk.addrh = 0x0;
-}
-
 static const char *lpc_acpi_name(const struct device *dev)
 {
 	return "LPCB";
@@ -933,7 +790,6 @@ static struct device_operations device_ops = {
 	.scan_bus		= scan_static_bus,
 	.ops_pci		= &pci_dev_ops_pci,
 };
-
 
 /* IDs for LPC device of Intel 8 Series Chipset (Lynx Point) */
 static const unsigned short pci_device_ids[] = {

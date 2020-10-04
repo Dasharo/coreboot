@@ -264,11 +264,13 @@ REDUNDANT_OFFSET_REMARK = 2158
 # "Multiple types (Device object requires either a _HID or _ADR, but not both)"
 MULTIPLE_TYPES_WARNING = 3073
 
+IASL_WARNINGS_LIST = $(EMPTY_RESOURCE_TEMPLATE_WARNING) $(REDUNDANT_OFFSET_REMARK)
+
 ifeq ($(CONFIG_SOUTHBRIDGE_INTEL_LYNXPOINT)$(CONFIG_SOC_INTEL_BROADWELL),y)
-IGNORED_IASL_WARNINGS = -vw $(EMPTY_RESOURCE_TEMPLATE_WARNING) -vw $(REDUNDANT_OFFSET_REMARK) -vw $(MULTIPLE_TYPES_WARNING)
-else
-IGNORED_IASL_WARNINGS = -vw $(EMPTY_RESOURCE_TEMPLATE_WARNING) -vw $(REDUNDANT_OFFSET_REMARK)
+IASL_WARNINGS_LIST += $(MULTIPLE_TYPES_WARNING)
 endif
+
+IGNORED_IASL_WARNINGS = $(addprefix -vw , $(IASL_WARNINGS_LIST))
 
 define asl_template
 $(CONFIG_CBFS_PREFIX)/$(1).aml-file = $(obj)/$(1).aml
@@ -280,6 +282,7 @@ $(obj)/$(1).aml: $(src)/mainboard/$(MAINBOARDDIR)/$(1).asl $(obj)/config.h
 	@printf "    IASL       $$(subst $(top)/,,$$(@))\n"
 	$(CC_ramstage) -x assembler-with-cpp -E -MMD -MT $$(@) $$(CPPFLAGS_ramstage) -D__ACPI__ -P -include $(src)/include/kconfig.h -I$(obj) -I$(src) -I$(src)/include -I$(src)/arch/$(ARCHDIR-$(ARCH-ramstage-y))/include -I$(src)/mainboard/$(MAINBOARDDIR) $$< -o $(obj)/$(1).asl
 	cd $$(dir $$@); $(IASL) $(IGNORED_IASL_WARNINGS) -we -p $$(notdir $$@) $(1).asl
+	echo "    IASL       "$(IASL_WARNINGS_LIST)" warning types were ignored!"
 	if ! $(IASL) -d $$@ 2>&1 | grep -Eq 'ACPI (Warning|Error)'; then	\
 		echo "    IASL       $$@ disassembled correctly.";		\
 		true;								\
@@ -411,6 +414,10 @@ CPPFLAGS_common += -include $(src)/commonlib/bsd/include/commonlib/bsd/compiler.
 CPPFLAGS_common += -I3rdparty
 CPPFLAGS_common += -D__BUILD_DIR__=\"$(obj)\"
 
+ifeq ($(BUILD_TIMELESS),1)
+CPPFLAGS_common += -D__TIMELESS__
+endif
+
 ifeq ($(CONFIG_PCI_OPTION_ROM_RUN_YABEL)$(CONFIG_PCI_OPTION_ROM_RUN_REALMODE),y)
 CPPFLAGS_ramstage += -Isrc/device/oprom/include
 endif
@@ -418,10 +425,10 @@ endif
 CFLAGS_common += -pipe -g -nostdinc -std=gnu11
 CFLAGS_common += -nostdlib -Wall -Wundef -Wstrict-prototypes -Wmissing-prototypes
 CFLAGS_common += -Wwrite-strings -Wredundant-decls -Wno-trigraphs -Wimplicit-fallthrough
-CFLAGS_common += -Wstrict-aliasing -Wshadow -Wdate-time -Wtype-limits -Wvla
+CFLAGS_common += -Wshadow -Wdate-time -Wtype-limits -Wvla
 CFLAGS_common += -Wlogical-op -Wduplicated-cond -Wdangling-else
 CFLAGS_common += -fno-common -ffreestanding -fno-builtin -fomit-frame-pointer
-CFLAGS_common += -ffunction-sections -fdata-sections -fno-pie
+CFLAGS_common += -fstrict-aliasing -ffunction-sections -fdata-sections -fno-pie
 ifeq ($(CONFIG_COMPILER_GCC),y)
 # Don't add these GCC specific flags when running scan-build
 ifeq ($(CCC_ANALYZER_OUTPUT_FORMAT),)
@@ -588,19 +595,23 @@ $(obj)/config.h: $(objutil)/kconfig/conf
 # Creation of these is architecture and mainboard independent
 DEVICETREE_FILE := $(src)/mainboard/$(MAINBOARDDIR)/$(CONFIG_DEVICETREE)
 
+SCONFIG_OPTIONS := --mainboard_devtree=$(DEVICETREE_FILE)
+
 ifneq ($(CONFIG_OVERRIDE_DEVICETREE),)
-
 OVERRIDE_DEVICETREE_FILE := $(src)/mainboard/$(MAINBOARDDIR)/$(CONFIG_OVERRIDE_DEVICETREE)
-
+SCONFIG_OPTIONS += --override_devtree=$(OVERRIDE_DEVICETREE_FILE)
 endif
 
 DEVICETREE_STATIC_C := $(obj)/mainboard/$(MAINBOARDDIR)/static.c
+SCONFIG_OPTIONS += --output_c=$(DEVICETREE_STATIC_C)
+
 DEVICETREE_STATIC_H := $(obj)/static.h
+SCONFIG_OPTIONS += --output_h=$(DEVICETREE_STATIC_H)
 
 $(DEVICETREE_STATIC_C): $(DEVICETREE_FILE) $(OVERRIDE_DEVICETREE_FILE) $(objutil)/sconfig/sconfig
 	@printf "    SCONFIG    $(subst $(src)/,,$(<))\n"
 	mkdir -p $(dir $(DEVICETREE_STATIC_C))
-	$(objutil)/sconfig/sconfig $(DEVICETREE_FILE) $(DEVICETREE_STATIC_C) $(DEVICETREE_STATIC_H) $(OVERRIDE_DEVICETREE_FILE)
+	$(objutil)/sconfig/sconfig $(SCONFIG_OPTIONS)
 
 ramstage-y+=$(DEVICETREE_STATIC_C)
 romstage-y+=$(DEVICETREE_STATIC_C)

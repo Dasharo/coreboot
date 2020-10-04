@@ -255,8 +255,6 @@
 #define   SPI_FIFO_PTR_CLR		BIT(20)
 #define   SPI_ARB_ENABLE		BIT(19)
 #define   EXEC_OPCODE			BIT(16)
-#define SPI_FIFO			0x80
-#define   SPI_FIFO_DEPTH		(0xc7 - SPI_FIFO)
 
 #define SPI100_ENABLE			0x20
 #define   SPI_USE_SPI100		BIT(0)
@@ -319,14 +317,6 @@ typedef struct aoac_devs {
 	unsigned int espi:1; /* 27: ESPI */
 	unsigned int :4;
 } __packed aoac_devs_t;
-
-struct soc_power_reg {
-	uint16_t pm1_sts;
-	uint16_t pm1_en;
-	uint32_t gpe0_sts;
-	uint32_t gpe0_en;
-	uint16_t wake_from;
-};
 
 #define XHCI_FW_SIG_OFFSET			0xc
 #define XHCI_FW_ADDR_OFFSET			0x6

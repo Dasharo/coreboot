@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <acpi/acpi.h>
 #include <acpi/acpi_gnvs.h>
 #include <device/device.h>
@@ -22,7 +21,6 @@ void acpi_create_gnvs(struct global_nvs *gnvs)
 	/* Disable USB ports in S5 by default */
 	gnvs->s5u0 = 0;
 	gnvs->s5u1 = 0;
-
 
 #if CONFIG(CHROMEOS)
 	gnvs->chromeos.vbt2 = parrot_ec_running_ro() ?

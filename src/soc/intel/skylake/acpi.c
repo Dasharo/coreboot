@@ -10,7 +10,6 @@
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <cpu/x86/msr.h>
-#include <cpu/x86/tsc.h>
 #include <cpu/intel/common/common.h>
 #include <cpu/intel/turbo.h>
 #include <ec/google/chromeec/ec.h>
@@ -219,130 +218,6 @@ unsigned long acpi_fill_madt(unsigned long current)
 	return acpi_madt_irq_overrides(current);
 }
 
-void acpi_fill_fadt(acpi_fadt_t *fadt)
-{
-	const uint16_t pmbase = ACPI_BASE_ADDRESS;
-	config_t *config = config_of_soc();
-
-	fadt->header.revision = get_acpi_table_revision(FADT);
-
-	fadt->sci_int = acpi_sci_irq();
-
-	if (permanent_smi_handler()) {
-		fadt->smi_cmd = APM_CNT;
-		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	}
-
-	fadt->pm1a_evt_blk = pmbase + PM1_STS;
-	fadt->pm1b_evt_blk = 0x0;
-	fadt->pm1a_cnt_blk = pmbase + PM1_CNT;
-	fadt->pm1b_cnt_blk = 0x0;
-	fadt->pm2_cnt_blk = pmbase + PM2_CNT;
-	fadt->pm_tmr_blk = pmbase + PM1_TMR;
-	fadt->gpe0_blk = pmbase + GPE0_STS(0);
-	fadt->gpe1_blk = 0;
-
-	fadt->pm1_evt_len = 4;
-	fadt->pm1_cnt_len = 2;
-	fadt->pm2_cnt_len = 1;
-	fadt->pm_tmr_len = 4;
-	/* There are 4 GPE0 STS/EN pairs each 32 bits wide. */
-	fadt->gpe0_blk_len = 2 * GPE0_REG_MAX * sizeof(uint32_t);
-	fadt->gpe1_blk_len = 0;
-	fadt->gpe1_base = 0;
-	fadt->p_lvl2_lat = 1;
-	fadt->p_lvl3_lat = 87;
-	fadt->flush_size = 1024;
-	fadt->flush_stride = 16;
-	fadt->duty_offset = 1;
-	fadt->duty_width = 0;
-	fadt->day_alrm = 0xd;
-	fadt->mon_alrm = 0x00;
-	fadt->century = 0x00;
-	fadt->iapc_boot_arch = ACPI_FADT_LEGACY_FREE;
-	if (!CONFIG(NO_FADT_8042))
-		fadt->iapc_boot_arch |= ACPI_FADT_8042;
-
-	fadt->flags = ACPI_FADT_WBINVD | ACPI_FADT_C1_SUPPORTED |
-			ACPI_FADT_C2_MP_SUPPORTED | ACPI_FADT_SLEEP_BUTTON |
-			ACPI_FADT_RESET_REGISTER | ACPI_FADT_SEALED_CASE |
-			ACPI_FADT_S4_RTC_WAKE | ACPI_FADT_PLATFORM_CLOCK;
-
-	if (config->s0ix_enable)
-		fadt->flags |= ACPI_FADT_LOW_PWR_IDLE_S0;
-
-	fadt->reset_reg.space_id = 1;
-	fadt->reset_reg.bit_width = 8;
-	fadt->reset_reg.bit_offset = 0;
-	fadt->reset_reg.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->reset_reg.addrl = 0xcf9;
-	fadt->reset_reg.addrh = 0;
-	fadt->reset_value = 6;
-
-	fadt->x_pm1a_evt_blk.space_id = 1;
-	fadt->x_pm1a_evt_blk.bit_width = fadt->pm1_evt_len * 8;
-	fadt->x_pm1a_evt_blk.bit_offset = 0;
-	fadt->x_pm1a_evt_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
-	fadt->x_pm1a_evt_blk.addrl = pmbase + PM1_STS;
-	fadt->x_pm1a_evt_blk.addrh = 0x0;
-
-	fadt->x_pm1b_evt_blk.space_id = 1;
-	fadt->x_pm1b_evt_blk.bit_width = 0;
-	fadt->x_pm1b_evt_blk.bit_offset = 0;
-	fadt->x_pm1b_evt_blk.access_size = 0;
-	fadt->x_pm1b_evt_blk.addrl = 0x0;
-	fadt->x_pm1b_evt_blk.addrh = 0x0;
-
-	fadt->x_pm1a_cnt_blk.space_id = 1;
-	fadt->x_pm1a_cnt_blk.bit_width = fadt->pm1_cnt_len * 8;
-	fadt->x_pm1a_cnt_blk.bit_offset = 0;
-	fadt->x_pm1a_cnt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
-	fadt->x_pm1a_cnt_blk.addrl = pmbase + PM1_CNT;
-	fadt->x_pm1a_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm1b_cnt_blk.space_id = 1;
-	fadt->x_pm1b_cnt_blk.bit_width = 0;
-	fadt->x_pm1b_cnt_blk.bit_offset = 0;
-	fadt->x_pm1b_cnt_blk.access_size = 0;
-	fadt->x_pm1b_cnt_blk.addrl = 0x0;
-	fadt->x_pm1b_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm2_cnt_blk.space_id = 1;
-	fadt->x_pm2_cnt_blk.bit_width = fadt->pm2_cnt_len * 8;
-	fadt->x_pm2_cnt_blk.bit_offset = 0;
-	fadt->x_pm2_cnt_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->x_pm2_cnt_blk.addrl = pmbase + PM2_CNT;
-	fadt->x_pm2_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm_tmr_blk.space_id = 1;
-	fadt->x_pm_tmr_blk.bit_width = fadt->pm_tmr_len * 8;
-	fadt->x_pm_tmr_blk.bit_offset = 0;
-	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
-	fadt->x_pm_tmr_blk.addrl = pmbase + PM1_TMR;
-	fadt->x_pm_tmr_blk.addrh = 0x0;
-
-	/*
-	 * Windows 10 requires x_gpe0_blk to be set starting with FADT revision 5.
-	 * The bit_width field intentionally overflows here.
-	 * The OSPM can instead use the values in `fadt->gpe0_blk{,_len}`, which
-	 * seems to work fine on Linux 5.0 and Windows 10.
-	 */
-	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_gpe0_blk.bit_width = fadt->gpe0_blk_len * 8;
-	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
-	fadt->x_gpe0_blk.addrh = 0;
-
-	fadt->x_gpe1_blk.space_id = 1;
-	fadt->x_gpe1_blk.bit_width = 0;
-	fadt->x_gpe1_blk.bit_offset = 0;
-	fadt->x_gpe1_blk.access_size = 0;
-	fadt->x_gpe1_blk.addrl = 0x0;
-	fadt->x_gpe1_blk.addrh = 0x0;
-}
-
 static void write_c_state_entries(acpi_cstate_t *map, const int *set, size_t max_c_state)
 {
 	for (size_t i = 0; i < max_c_state; i++) {
@@ -504,7 +379,7 @@ void generate_cpu_entries(const struct device *device)
 	printk(BIOS_DEBUG, "Found %d CPU(s) with %d core(s) each.\n",
 	       numcpus, cores_per_package);
 
-	if (config->eist_enable && config->speed_shift_enable) {
+	if (config->speed_shift_enable) {
 		struct cppc_config cppc_config;
 		cpu_init_cppc_config(&cppc_config, 2 /* version 2 */);
 		acpigen_write_CPPC_package(&cppc_config);
@@ -528,9 +403,11 @@ void generate_cpu_entries(const struct device *device)
 				/* Generate P-state tables */
 				generate_p_state_entries(core_id,
 						cores_per_package);
-				if (config->speed_shift_enable)
-					acpigen_write_CPPC_method();
 			}
+
+			if (config->speed_shift_enable)
+				acpigen_write_CPPC_method();
+
 			acpigen_pop_len();
 		}
 	}
@@ -550,22 +427,19 @@ static unsigned long acpi_fill_dmar(unsigned long current)
 	const bool gfxvten = MCHBAR32(GFXVTBAR) & 1;
 
 	/* iGFX has to be enabled, GFXVTBAR set and in 32-bit space. */
-	if (igfx_dev && igfx_dev->enabled && gfxvten &&
-	    gfx_vtbar && !MCHBAR32(GFXVTBAR + 4)) {
-		unsigned long tmp = current;
+	const bool emit_igd =
+			igfx_dev && igfx_dev->enabled &&
+			gfx_vtbar && gfxvten &&
+			!MCHBAR32(GFXVTBAR + 4);
+
+	/* First, add DRHD entries */
+	if (emit_igd) {
+		const unsigned long tmp = current;
 
 		current += acpi_create_dmar_drhd(current, 0, 0, gfx_vtbar);
 		current += acpi_create_dmar_ds_pci(current, 0, 2, 0);
 
 		acpi_dmar_drhd_fixup(tmp, current);
-
-		/* Add RMRR entry */
-		tmp = current;
-
-		current += acpi_create_dmar_rmrr(current, 0,
-				sa_get_gsm_base(), sa_get_tolud_base() - 1);
-		current += acpi_create_dmar_ds_pci(current, 0, 2, 0);
-		acpi_dmar_rmrr_fixup(tmp, current);
 	}
 
 	const u32 vtvc0bar = MCHBAR32(VTVC0BAR) & ~0xfff;
@@ -584,6 +458,16 @@ static unsigned long acpi_fill_dmar(unsigned long current)
 							V_P2SB_HBDF_DEV, V_P2SB_HBDF_FUN);
 
 		acpi_dmar_drhd_fixup(tmp, current);
+	}
+
+	/* Then, add RMRR entries after all DRHD entries */
+	if (emit_igd) {
+		const unsigned long tmp = current;
+
+		current += acpi_create_dmar_rmrr(current, 0,
+				sa_get_gsm_base(), sa_get_tolud_base() - 1);
+		current += acpi_create_dmar_ds_pci(current, 0, 2, 0);
+		acpi_dmar_rmrr_fixup(tmp, current);
 	}
 
 	return current;
@@ -750,12 +634,18 @@ const char *soc_acpi_name(const struct device *dev)
 	if (dev->path.type != DEVICE_PATH_PCI)
 		return NULL;
 
-	/* Only match devices on the root bus */
-	if (dev->bus && dev->bus->secondary > 0)
+	/* Match functions 0 and 1 for possible GPUs on a secondary bus */
+	if (dev->bus && dev->bus->secondary > 0) {
+		switch (PCI_FUNC(dev->path.pci.devfn)) {
+		case 0: return "DEV0";
+		case 1: return "DEV1";
+		}
 		return NULL;
+	}
 
 	switch (dev->path.pci.devfn) {
 	case SA_DEVFN_ROOT:	return "MCHC";
+	case SA_DEVFN_PEG0:	return "PEGP";
 	case SA_DEVFN_IGD:	return "GFX0";
 	case PCH_DEVFN_ISH:	return "ISHB";
 	case PCH_DEVFN_XHCI:	return "XHCI";
@@ -798,7 +688,6 @@ const char *soc_acpi_name(const struct device *dev)
 	case PCH_DEVFN_EMMC:	return "EMMC";
 	case PCH_DEVFN_SDIO:	return "SDIO";
 	case PCH_DEVFN_SDCARD:	return "SDXC";
-	case PCH_DEVFN_LPC:	return "LPCB";
 	case PCH_DEVFN_P2SB:	return "P2SB";
 	case PCH_DEVFN_PMC:	return "PMC_";
 	case PCH_DEVFN_HDA:	return "HDAS";
