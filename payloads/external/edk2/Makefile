@@ -63,9 +63,9 @@ BUILD_STR += -D CPU_TIMER_LIB_ENABLE=FALSE
 else
 BUILD_STR += --pcd gUefiCpuPkgTokenSpaceGuid.PcdCpuCoreCrystalClockFrequency=$(CONFIG_CPU_XTAL_HZ)
 endif
-# DISABLE_SERIAL_TERMINAL	= FALSE
-ifneq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
-BUILD_STR += -D DISABLE_SERIAL_TERMINAL=TRUE
+# SERIAL_TERMINAL	= TRUE
+ifeq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
+BUILD_STR += -D SERIAL_TERMINAL=TRUE
 endif
 # FOLLOW_BGRT_SPEC		= FALSE
 ifeq ($(CONFIG_EDK2_FOLLOW_BGRT_SPEC),y)
@@ -79,7 +79,7 @@ endif
 ifneq ($(CONFIG_ECAM_MMCONF_LENGTH),)
 BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress=$(CONFIG_ECAM_MMCONF_BASE_ADDRESS)
 endif
-# PCIE_BASE_LENGTH		= 0
+# PCIE_BASE_LENGTH             = 0
 ifneq ($(CONFIG_ECAM_MMCONF_LENGTH),)
 BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseSize=$(CONFIG_ECAM_MMCONF_LENGTH)
 endif
@@ -111,18 +111,41 @@ endif
 ifneq ($(CONFIG_EDK2_SD_MMC_TIMEOUT),)
 BUILD_STR += -D SD_MMC_TIMEOUT=$(shell echo $$(( $(CONFIG_EDK2_SD_MMC_TIMEOUT) * 1000)) )
 endif
-# EDK2_SECURE_BOOT_SUPPORT      = FALSE
-ifeq ($(CONFIG_EDK2_SECURE_BOOT_SUPPORT), y)
+# NETWORK_IPXE                  = FALSE
+ifeq ($(CONFIG_EDK2_IPXE),y)
+BUILD_STR += -D NETWORK_IPXE=TRUE
+endif
+# SECURE_BOOT_ENABLE            = TRUE
+ifeq ($(CONFIG_EDK2_SECURE_BOOT),y)
 BUILD_STR += -D SECURE_BOOT_ENABLE=TRUE
 endif
 # PCIEXP_SUPPORT_RESIZABLE_BARS = FALSE
 ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS), y)
-BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarSupport=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPciMenuShowResizeableBars=TRUE
 endif
 # GOP_DRIVER			= FALSE
 ifeq ($(CONFIG_EDK2_GOP_DRIVER), y)
 BUILD_STR += -D USE_PLATFORM_GOP=TRUE
 endif
+# SECURE_BOOT_DEFAULT_ENABLE	= TRUE
+ifneq ($(CONFIG_EDK2_SECURE_BOOT_DEFAULT_ENABLE),y)
+BUILD_STR += -D SECURE_BOOT_DEFAULT_ENABLE=FALSE
+endif
+# SATA_PASSWORD_ENABLE		= TRUE
+ifeq ($(CONFIG_EDK2_SATA_PASSWORD),y)
+BUILD_STR += -D SATA_PASSWORD_ENABLE=TRUE
+endif
+# OPAL_PASSWORD_ENABLE		= TRUE
+ifeq ($(CONFIG_EDK2_OPAL_PASSWORD),y)
+BUILD_STR += -D OPAL_PASSWORD_ENABLE=TRUE
+endif
+# TPM_ENABLE		= TRUE
+ifeq ($(CONFIG_EDK2_TPM_ENABLE),y)
+BUILD_STR += -D TPM_ENABLE=TRUE
+endif
+
+BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
+BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
 
 #
 # EDKII has the below PCDs that are relevant to coreboot:
@@ -193,10 +216,10 @@ $(EDK2_PATH): $(WORKSPACE)
 logo: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
-		/*) convert -background None $(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
-		*) convert -background None $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
+		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
+				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
+		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
+				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
 	esac \
 
 gop_driver:
@@ -217,15 +240,6 @@ checktools:
 	echo -n "EDK2: Checking nasm:"
 	type nasm > /dev/null 2>&1 && echo "        Found!" || \
 		( echo "        Not found!"; echo "ERROR: Please install nasm."; exit 1 )
-	echo -n "EDK2: Checking imagemagick:"
-	-convert -size 1x1 xc: test.png &> /dev/null;
-	if [ -f test.png ]; then \
-		rm test.png && echo " Found!"; \
-	else \
-		echo " Not found!"; \
-		echo "ERROR: Please install imagemagick"; \
-		exit 1; \
-	fi
 
 print:
 	echo "   ##### $(project_name) Build Summary #####"
