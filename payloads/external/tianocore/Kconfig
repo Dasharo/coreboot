@@ -201,5 +201,12 @@ config TIANOCORE_CUSTOM_BUILD_PARAMS
 	  to build command. You may specify additional parameters to the custom
 	  TianoCore build
 
+config TIANOCORE_SECURE_BOOT
+	bool "Enable TianoCore Secure Boot"
+	depends on SMMSTORE_V2
+	default n
+	help
+	  Enables UEFI Secure Boot image verification in TianoCore Payload.
+
 endif
 
