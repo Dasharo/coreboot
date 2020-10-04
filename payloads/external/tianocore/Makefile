@@ -38,6 +38,18 @@ ifneq ($(CONFIG_TIANOCORE_USE_8254_TIMER), y)
 TIMER=-DUSE_HPET_TIMER
 endif
 
+ifeq ($(CONFIG_TIANOCORE_IPXE),y)
+build_flavor+= -D NETWORK_IPXE=TRUE
+endif
+
+ifeq ($(CONFIG_TIANOCORE_SERIAL),y)
+build_flavor+= -D SERIAL_TERMINAL=TRUE
+endif
+
+ifeq ($(CONFIG_TIANOCORE_SECURE_BOOT),y)
+build_flavor+= -D SECURE_BOOT_ENABLE=TRUE
+endif
+
 ifeq ($(CONFIG_TIANOCORE_TARGET_IA32), y)
 	BUILD_STR=-q -a IA32 -t COREBOOT -p $(bootloader)/$(bootloader)Ia32.dsc -b $(BUILD_TYPE) $(TIMER) $(build_flavor) -D NETWORK_IPXE=TRUE -D SERIAL_TERMINAL=TRUE -D SECURE_BOOT_ENABLE=TRUE
 else
