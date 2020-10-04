@@ -175,6 +175,12 @@ config TIANOCORE_SD_MMC_TIMEOUT
 	  The amount of time allowed to initialize the SD Card reader and/or eMMC drive.
 	  Most only require 1000μs, but certain readers can take 1000000μs.
 
+config TIANOCORE_ENABLE_IPXE
+	bool "Include iPXE in Tianocore payload"
+	default n
+	help
+	  Includes a prebuilt iPXE for EFI to the TianoCore payload.
+
 endif
 
 if TIANOCORE_COREBOOTPAYLOAD
@@ -197,4 +203,3 @@ config TIANOCORE_CUSTOM_BUILD_PARAMS
 
 endif
 
-endif
