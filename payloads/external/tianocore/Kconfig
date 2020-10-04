@@ -100,4 +100,10 @@ config TIANOCORE_BOOTSPLASH_FILE
 	  If an absolute path is not given, the path will assumed to be
 	  relative to the coreboot root directory.
 
+config CONFIG_TIANOCORE_ENABLE_IPXE
+	bool "Include iPXE in Tianocore payload"
+	default n
+	help
+	  Includes a prebuilt iPXE for EFI to the TianoCore payload.
+
 endif

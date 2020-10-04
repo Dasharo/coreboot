@@ -9,7 +9,7 @@ export SHELL := env bash
 
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
-project_git_repo=https://github.com/mrchromebox/edk2
+project_git_repo=https://github.com/3mdeb/edk2
 project_git_branch=coreboot_fb
 upstream_git_repo=https://github.com/tianocore/edk2
 
@@ -39,6 +39,14 @@ endif
 
 ifneq ($(CONFIG_TIANOCORE_USE_8254_TIMER), y)
 TIMER=-DUSE_HPET_TIMER
+endif
+
+ifeq ($(CONFIG_TIANOCORE_IPXE),y)
+build_flavor+= -D NETWORK_IPXE=TRUE
+endif
+
+ifeq ($(CONFIG_TIANOCORE_SERIAL),y)
+build_flavor+= -D SERIAL_TERMINAL=FALSE
 endif
 
 ifeq ($(CONFIG_TIANOCORE_TARGET_IA32), y)
