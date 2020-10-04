@@ -119,7 +119,6 @@ config TIANOCORE_BOOTSPLASH_FILE
 	  If an absolute path is not given, the path will assumed to be
 	  relative to the coreboot root directory.
 
-<<<<<<< HEAD
 config TIANOCORE_BOOT_MANAGER_ESCAPE
 	bool "Use Escape key for Boot Manager"
 	default n
@@ -192,5 +191,12 @@ config CONFIG_TIANOCORE_ENABLE_IPXE
 	default n
 	help
 	  Includes a prebuilt iPXE for EFI to the TianoCore payload.
+
+config TIANOCORE_SECURE_BOOT
+	bool "Enable TianoCore Secure Boot"
+	depends on SMMSTORE_V2
+	default n
+	help
+	  Enables UEFI Secure Boot image verification in TianoCore Payload.
 
 endif
