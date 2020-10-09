@@ -4,7 +4,6 @@
 
 #include <arch/header.ld>
 
-// TODO: fill in these blanks for Power9.
 SECTIONS
 {
 	// On POWER, 0 is wherever HRMOR points to rather than physical DRAM start
@@ -43,5 +42,7 @@ SECTIONS
 	// - a bit more work in postcar is required
 	// - need to be compatible with payload's expectations
 
+	// It doesn't work if anything is above 4M, HBBL doesn't 'dcbz' it.
+	CBFS_CACHE(0x280000, 512K)
 	RAMSTAGE(0x300000, 5M)
 }
