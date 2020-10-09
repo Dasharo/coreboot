@@ -3,8 +3,11 @@
 ifeq ($(CONFIG_CPU_IBM_POWER9),y)
 
 bootblock-y += bootblock.c
+bootblock-y += rom_media.c
+romstage-y += rom_media.c
 romstage-y += romstage.c
 ramstage-y += chip.c
+ramstage-y += rom_media.c
 ramstage-y += timer.c
 
 endif
