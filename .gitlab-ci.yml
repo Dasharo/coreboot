@@ -11,19 +11,19 @@ stages:
 check_dependencies:
   stage: check_dependencies
   script:
-    - git ls-remote "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/3mdeb/dasharo/coreboot.git" | grep ${CI_COMMIT_REF_NAME}
+    - git ls-remote "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git" | grep ${CI_COMMIT_REF_NAME}
   only:
-      - tags 
-  
+      - tags
+
 .build_rom: &build_rom_optiplex
   image: coreboot/coreboot-sdk:1.52
   variables:
     PLATFORM: Dell OptiPlex
   stage: build_rom
-  tags: 
+  tags:
     - docker
   script:
-    - git clone "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/3mdeb/dasharo/coreboot.git" -b ${CI_COMMIT_REF_NAME} /home/coreboot/coreboot
+    - git clone "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git" -b ${CI_COMMIT_REF_NAME} /home/coreboot/coreboot
     - cd /home/coreboot/coreboot
     - git submodule update --init --checkout
     - cp "configs/config.dell_optiplex_9010_sff" .config
@@ -39,6 +39,7 @@ check_dependencies:
       - ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.SHA256
   only:
     - tags
+    - develop
     - web
 
 .publish_rom: &publish_rom
