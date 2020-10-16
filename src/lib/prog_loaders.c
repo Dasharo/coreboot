@@ -31,7 +31,7 @@
 #include <timestamp.h>
 #include <fit_payload.h>
 #include <vb2_api.h>
-#include <region.h>
+#include <commonlib/region.h>
 
 /* Only can represent up to 1 byte less than size_t. */
 const struct mem_region_device addrspace_32bit =
