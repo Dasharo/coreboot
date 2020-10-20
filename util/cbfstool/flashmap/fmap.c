@@ -15,6 +15,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <assert.h>
+#include <commonlib/bsd/sysincludes.h>
 
 #include "fmap.h"
 #include "kv_pair.h"
