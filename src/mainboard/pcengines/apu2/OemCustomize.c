@@ -132,7 +132,133 @@ static const PCIe_PORT_DESCRIPTOR PortList[] = {
 				0)
 	}
 };
+#if CONFIG(BOARD_PCENGINES_APU2)
+static const PCIe_PORT_DESCRIPTOR PortListAspmReverse[] = {
+	/* Initialize Port descriptor (PCIe port, Lanes 3, PCI Device Number 2.4, ...) */
+	{
+		0,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 3, 3),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 4,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmL0sL1,
+				0x01,
+				0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 2, PCI Device Number 2.1, ...) */
+	{
+		0,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 2, 2),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 1,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmL0sL1,
+				0x02,
+				0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 1, PCI Device Number 2.2, ...) */
+	{
+		0,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 1, 1),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 2,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmL0sL1,
+				0x03,
+				0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 0, PCI Device Number 2.3, ...) */
+	{
+		0,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 0, 0),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 3,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmL0sL1,
+				0x04,
+				0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 4-7, PCI Device Number 2.5, ...) */
+	{
+		DESCRIPTOR_TERMINATE_LIST,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 4, 7),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 5,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmL0sL1,
+				0x05,
+				0)
+	}
+};
 
+static const PCIe_PORT_DESCRIPTOR PortListReverse[] = {
+	/* Initialize Port descriptor (PCIe port, Lanes 3, PCI Device Number 2.4, ...) */
+	{
+		0,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 3, 3),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 4,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled,
+				0x01,
+				0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 2, PCI Device Number 2.1, ...) */
+	{
+		0,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 2, 2),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 1,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled,
+				0x02,
+				0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 1, PCI Device Number 2.2, ...) */
+	{
+		0,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 1, 1),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 2,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled,
+				0x03,
+				0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 0, PCI Device Number 2.3, ...) */
+	{
+		0,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 0, 0),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 3,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled,
+				0x04,
+				0)
+	},
+	/* Initialize Port descriptor (PCIe port, Lanes 4-7, PCI Device Number 2.5, ...) */
+	{
+		DESCRIPTOR_TERMINATE_LIST,
+		PCIE_ENGINE_DATA_INITIALIZER(PciePortEngine, 4, 7),
+		PCIE_PORT_DATA_INITIALIZER_V2(PortEnabled, ChannelTypeExt6db, 2, 5,
+				HotplugDisabled,
+				PcieGenMaxSupported,
+				PcieGenMaxSupported,
+				AspmDisabled,
+				0x05,
+				0)
+	}
+};
+#else
 static const PCIe_PORT_DESCRIPTOR PortListAspmReverse[] = {
 	/* Initialize Port descriptor (PCIe port, Lanes 3, PCI Device Number 2.5, ...) */
 	{
@@ -258,7 +384,7 @@ static const PCIe_PORT_DESCRIPTOR PortListReverse[] = {
 				0)
 	}
 };
-
+#endif
 static const PCIe_COMPLEX_DESCRIPTOR PcieComplex = {
 	.Flags        = DESCRIPTOR_TERMINATE_LIST,
 	.SocketId     = 0,
