@@ -473,8 +473,11 @@ static int read_serial_from_nic(char *serial, size_t len)
 	uintptr_t bar10;
 	u32 mac_addr = 0;
 	int i;
+	if (check_pciereverse())
+		dev = pcidev_on_root(2, 3);
+	else
+		dev = pcidev_on_root(2, 2);
 
-	dev = pcidev_on_root(2, 2);
 	if (dev)
 		dev = pcidev_path_behind(dev->link_list, PCI_DEVFN(0, 0));
 	if (!dev)
