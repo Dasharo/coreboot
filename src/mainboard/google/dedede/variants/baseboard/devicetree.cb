@@ -129,23 +129,12 @@ chip soc/intel/jasperlake
 	# Select eDP for port A
 	register "DdiPortAConfig" = "1"
 
-	# Disable PM to allow for shorter irq pulses
-	register "gpio_override_pm" = "1"
-	register "gpio_pm[0]" = "0"
-	register "gpio_pm[1]" = "0"
-	register "gpio_pm[2]" = "0"
-	register "gpio_pm[3]" = "0"
-	register "gpio_pm[4]" = "0"
-
 	# Enable HPD for DDI ports B/C
 	register "DdiPortBHpd" = "1"
 	register "DdiPortCHpd" = "1"
 	# Enable DDC for DDI ports B/C
 	register "DdiPortBDdc" = "1"
 	register "DdiPortCDdc" = "1"
-
-	# Enable Speed Shift Technology support
-	register "speed_shift_enable" = "1"
 
 	# Enable DPTF
 	register "dptf_enable" = "1"
@@ -163,8 +152,21 @@ chip soc/intel/jasperlake
 	# register "common_soc_config.<variable_name>" = "value"
 	register "common_soc_config.chipset_lockdown" = CHIPSET_LOCKDOWN_COREBOOT
 
+	# VR config settings
+	# Imon Slope correction specified in 1/100 increment values. Range is 0-200.
+	# Eg: 125 = 1.25
+	register "ImonSlope" = "100"
+
+	# Imon offset correction. Value is a 2's complement signed integer.
+	# Units 1/1000, Range 0-63999.
+	# For an offset = 12.580, use 12580
+	register "ImonOffset" = "0"
+
 	# Skip the CPU repalcement check
 	register "SkipCpuReplacementCheck" = "1"
+
+	# Sagv Configuration
+	register "SaGv" = "SaGv_Enabled"
 
 	# Set the minimum assertion width
 	register "PchPmSlpS3MinAssert"  = "3"  # 50ms
@@ -184,27 +186,39 @@ chip soc/intel/jasperlake
 		device pci 00.0 on end # Host Bridge
 		device pci 02.0 on end # Integrated Graphics Device
 		device pci 04.0 on
+			# Default DPTF Policy for all Dedede boards if not overridden
 			chip drivers/intel/dptf
-				register "policies.passive[0]" = "DPTF_PASSIVE(CPU, CPU,           90, 10000)"
-				register "policies.passive[1]" = "DPTF_PASSIVE(CPU, TEMP_SENSOR_0, 80, 60000)"
-				register "policies.passive[2]" = "DPTF_PASSIVE(CPU, TEMP_SENSOR_1, 55, 15000)"
+				## Passive Policy
+				register "policies.passive" = "{
+					[0] = DPTF_PASSIVE(CPU, CPU,           90, 10000),
+					[1] = DPTF_PASSIVE(CPU, TEMP_SENSOR_0, 80, 60000),
+					[2] = DPTF_PASSIVE(CPU, TEMP_SENSOR_1, 55, 15000)
+				}"
 
-				register "policies.critical[0]" = "DPTF_CRITICAL(CPU,           105, SHUTDOWN)"
-				register "policies.critical[1]" = "DPTF_CRITICAL(TEMP_SENSOR_0, 90, SHUTDOWN)"
-				register "policies.critical[2]" = "DPTF_CRITICAL(TEMP_SENSOR_1, 80, SHUTDOWN)"
+				## Critical Policy
+				register "policies.critical" = "{
+					[0] = DPTF_CRITICAL(CPU,           105, SHUTDOWN),
+					[1] = DPTF_CRITICAL(TEMP_SENSOR_0, 90, SHUTDOWN),
+					[2] = DPTF_CRITICAL(TEMP_SENSOR_1, 80, SHUTDOWN)
+				}"
 
-				register "controls.power_limits.pl1" = "{
-					.min_power = 3000,
-					.max_power = 6000,
-					.time_window_min = 1 * MSECS_PER_SEC,
-					.time_window_max = 1 * MSECS_PER_SEC,
-					.granularity = 200,}"
-				register "controls.power_limits.pl2" = "{
-					.min_power = 6000,
-					.max_power = 20000,
-					.time_window_min = 1 * MSECS_PER_SEC,
-					.time_window_max = 1 * MSECS_PER_SEC,
-					.granularity = 1000,}"
+				## Power Limits Control
+				register "controls.power_limits" = "{
+					.pl1 = {
+						.min_power = 3000,
+						.max_power = 6000,
+						.time_window_min = 1 * MSECS_PER_SEC,
+						.time_window_max = 1 * MSECS_PER_SEC,
+						.granularity = 200,
+					},
+					.pl2 = {
+						.min_power = 6000,
+						.max_power = 20000,
+						.time_window_min = 1 * MSECS_PER_SEC,
+						.time_window_max = 1 * MSECS_PER_SEC,
+						.granularity = 1000,
+					}
+				}"
 
 				register "options.tsr[0].desc" = ""Memory""
 				register "options.tsr[1].desc" = ""Ambient""
@@ -288,7 +302,7 @@ chip soc/intel/jasperlake
 		end # USB xHCI
 		device pci 14.1 off end # USB xDCI (OTG)
 		device pci 14.2 off end # PMC SRAM
-		chip drivers/intel/wifi
+		chip drivers/wifi/generic
 			register "wake" = "GPE0_PME_B0"
 			device pci 14.3 on  end # CNVi wifi
 		end

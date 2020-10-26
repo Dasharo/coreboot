@@ -71,10 +71,12 @@ uint32_t antirollback_read_space_kernel(struct vb2_context *ctx)
 	return TPM_SUCCESS;
 }
 
-static uint32_t read_space_rec_hash(uint8_t *data)
+#if CONFIG(TPM2)
+
+static uint32_t read_space_mrc_hash(uint32_t index, uint8_t *data)
 {
-	RETURN_ON_FAILURE(tlcl_read(REC_HASH_NV_INDEX, data,
-				    REC_HASH_NV_SIZE));
+	RETURN_ON_FAILURE(tlcl_read(index, data,
+				    HASH_NV_SIZE));
 	return TPM_SUCCESS;
 }
 
@@ -83,9 +85,8 @@ static uint32_t read_space_rec_hash(uint8_t *data)
  * it. Since there is no data available to calculate hash at the point where TPM
  * space is defined, initialize it to all 0s.
  */
-static const uint8_t rec_hash_data[REC_HASH_NV_SIZE] = { };
+static const uint8_t mrc_hash_data[HASH_NV_SIZE] = { };
 
-#if CONFIG(TPM2)
 /*
  * Different sets of NVRAM space attributes apply to the "ro" spaces,
  * i.e. those which should not be possible to delete or modify once
@@ -162,12 +163,16 @@ static uint32_t set_kernel_space(const void *kernel_blob)
 			 VB2_SECDATA_KERNEL_SIZE, rw_space_attributes, NULL, 0);
 }
 
-static uint32_t set_rec_hash_space(const uint8_t *data)
+static uint32_t set_mrc_hash_space(uint32_t index, const uint8_t *data)
 {
-	return set_space("MRC Hash", REC_HASH_NV_INDEX, data,
-			 REC_HASH_NV_SIZE,
-			 ro_space_attributes, pcr0_unchanged_policy,
-			 sizeof(pcr0_unchanged_policy));
+	if (index == MRC_REC_HASH_NV_INDEX) {
+		return set_space("RO MRC Hash", index, data, HASH_NV_SIZE,
+				 ro_space_attributes, pcr0_unchanged_policy,
+				 sizeof(pcr0_unchanged_policy));
+	} else {
+		return set_space("RW MRC Hash", index, data, HASH_NV_SIZE,
+				 rw_space_attributes, NULL, 0);
+	}
 }
 
 static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
@@ -184,8 +189,15 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	 */
 	RETURN_ON_FAILURE(set_kernel_space(ctx->secdata_kernel));
 
+	/*
+	 * Define and set rec hash space, if available.  No need to
+	 * create the RW hash space because we will definitely boot
+	 * once in normal mode before shipping, meaning that the space
+	 * will get created with correct permissions while still in in
+	 * our hands.
+	 */
 	if (CONFIG(VBOOT_HAS_REC_HASH_SPACE))
-		RETURN_ON_FAILURE(set_rec_hash_space(rec_hash_data));
+		RETURN_ON_FAILURE(set_mrc_hash_space(MRC_REC_HASH_NV_INDEX, mrc_hash_data));
 
 	RETURN_ON_FAILURE(set_firmware_space(ctx->secdata_firmware));
 
@@ -197,9 +209,48 @@ uint32_t antirollback_lock_space_firmware(void)
 	return tlcl_lock_nv_write(FIRMWARE_NV_INDEX);
 }
 
-uint32_t antirollback_lock_space_rec_hash(void)
+uint32_t antirollback_read_space_mrc_hash(uint32_t index, uint8_t *data, uint32_t size)
 {
-	return tlcl_lock_nv_write(REC_HASH_NV_INDEX);
+	if (size != HASH_NV_SIZE) {
+		VBDEBUG("TPM: Incorrect buffer size for hash idx 0x%x. "
+			"(Expected=0x%x Actual=0x%x).\n", index, HASH_NV_SIZE,
+			size);
+		return TPM_E_READ_FAILURE;
+	}
+	return read_space_mrc_hash(index, data);
+}
+
+uint32_t antirollback_write_space_mrc_hash(uint32_t index, const uint8_t *data, uint32_t size)
+{
+	uint8_t spc_data[HASH_NV_SIZE];
+	uint32_t rv;
+
+	if (size != HASH_NV_SIZE) {
+		VBDEBUG("TPM: Incorrect buffer size for hash idx 0x%x. "
+			"(Expected=0x%x Actual=0x%x).\n", index, HASH_NV_SIZE,
+			size);
+		return TPM_E_WRITE_FAILURE;
+	}
+
+	rv = read_space_mrc_hash(index, spc_data);
+	if (rv == TPM_E_BADINDEX) {
+		/*
+		 * If space is not defined already for hash, define
+		 * new space.
+		 */
+		VBDEBUG("TPM: Initializing hash space.\n");
+		return set_mrc_hash_space(index, data);
+	}
+
+	if (rv != TPM_SUCCESS)
+		return rv;
+
+	return safe_write(index, data, size);
+}
+
+uint32_t antirollback_lock_space_mrc_hash(uint32_t index)
+{
+	return tlcl_lock_nv_write(index);
 }
 
 #else
@@ -237,18 +288,6 @@ static uint32_t safe_define_space(uint32_t index, uint32_t perm, uint32_t size)
 	} else {
 		return result;
 	}
-}
-
-static uint32_t set_rec_hash_space(const uint8_t *data)
-{
-	RETURN_ON_FAILURE(safe_define_space(REC_HASH_NV_INDEX,
-					    TPM_NV_PER_GLOBALLOCK |
-					    TPM_NV_PER_PPWRITE,
-					    REC_HASH_NV_SIZE));
-	RETURN_ON_FAILURE(safe_write(REC_HASH_NV_INDEX, data,
-				     REC_HASH_NV_SIZE));
-
-	return TPM_SUCCESS;
 }
 
 static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
@@ -305,10 +344,6 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 				     ctx->secdata_firmware,
 					VB2_SECDATA_FIRMWARE_SIZE));
 
-	/* Define and set rec hash space, if available. */
-	if (CONFIG(VBOOT_HAS_REC_HASH_SPACE))
-		RETURN_ON_FAILURE(set_rec_hash_space(rec_hash_data));
-
 	return TPM_SUCCESS;
 }
 
@@ -317,14 +352,6 @@ uint32_t antirollback_lock_space_firmware(void)
 	return tlcl_set_global_lock();
 }
 
-uint32_t antirollback_lock_space_rec_hash(void)
-{
-	/*
-	 * Nothing needs to be done here, since global lock is already set while
-	 * locking firmware space.
-	 */
-	return TPM_SUCCESS;
-}
 #endif
 
 /**
@@ -415,45 +442,6 @@ uint32_t antirollback_write_space_kernel(struct vb2_context *ctx)
 		tlcl_cr50_enable_nvcommits();
 
 	return safe_write(KERNEL_NV_INDEX, ctx->secdata_kernel, size);
-}
-
-uint32_t antirollback_read_space_rec_hash(uint8_t *data, uint32_t size)
-{
-	if (size != REC_HASH_NV_SIZE) {
-		VBDEBUG("TPM: Incorrect buffer size for rec hash. "
-			"(Expected=0x%x Actual=0x%x).\n", REC_HASH_NV_SIZE,
-			size);
-		return TPM_E_READ_FAILURE;
-	}
-	return read_space_rec_hash(data);
-}
-
-uint32_t antirollback_write_space_rec_hash(const uint8_t *data, uint32_t size)
-{
-	uint8_t spc_data[REC_HASH_NV_SIZE];
-	uint32_t rv;
-
-	if (size != REC_HASH_NV_SIZE) {
-		VBDEBUG("TPM: Incorrect buffer size for rec hash. "
-			"(Expected=0x%x Actual=0x%x).\n", REC_HASH_NV_SIZE,
-			size);
-		return TPM_E_WRITE_FAILURE;
-	}
-
-	rv = read_space_rec_hash(spc_data);
-	if (rv == TPM_E_BADINDEX) {
-		/*
-		 * If space is not defined already for recovery hash, define
-		 * new space.
-		 */
-		VBDEBUG("TPM: Initializing recovery hash space.\n");
-		return set_rec_hash_space(data);
-	}
-
-	if (rv != TPM_SUCCESS)
-		return rv;
-
-	return safe_write(REC_HASH_NV_INDEX, data, size);
 }
 
 vb2_error_t vb2ex_tpm_clear_owner(struct vb2_context *ctx)

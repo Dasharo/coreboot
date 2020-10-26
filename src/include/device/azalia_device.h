@@ -54,7 +54,7 @@ enum azalia_pin_type {
 	STEREO_MONO_1_4,
 	ATAPI,
 	RCA,
-	OPTIONAL,
+	OPTICAL,
 	OTHER_DIGITAL,
 	OTHER_ANALOG,
 	MULTICHANNEL_ANALOG,
@@ -127,6 +127,8 @@ enum azalia_pin_location_2 {
 		| (((val) >> 16) & 0xff)),		\
 	(((codec) << 28) | ((pin) << 20) | (0x71f << 8)	\
 		| (((val) >> 24) & 0xff))
+
+#define AZALIA_PIN_CFG_NC(n)   (0x411111f0 | (n & 0xf))
 
 #define AZALIA_RESET(pin)					\
 	(((pin) << 20) | 0x7ff00), (((pin) << 20) | 0x7ff00),	\

@@ -139,9 +139,6 @@ const char *soc_acpi_name(const struct device *dev)
 	/* DSDT: acpi/northbridge.asl */
 	case SA_DEVFN_ROOT:
 		return "MCHC";
-	/* DSDT: acpi/lpc.asl */
-	case PCH_DEVFN_LPC:
-		return "LPCB";
 	/* DSDT: acpi/xhci.asl */
 	case PCH_DEVFN_XHCI:
 		return "XHCI";
@@ -699,6 +696,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 
 	dev = pcidev_path_on_root(SA_DEVFN_IGD);
 	silconfig->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_dev_enabled(dev);
+
+	silconfig->PavpEnable = CONFIG(PAVP);
 
 	mainboard_silicon_init_params(silconfig);
 }

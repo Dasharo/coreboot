@@ -256,6 +256,14 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		}
 	}
 
+	params->AcousticNoiseMitigation = config->AcousticNoiseMitigation;
+	memcpy(&params->SlowSlewRate, &config->SlowSlewRate,
+		ARRAY_SIZE(config->SlowSlewRate) * sizeof(config->SlowSlewRate[0]));
+
+	memcpy(&params->FastPkgCRampDisable, &config->FastPkgCRampDisable,
+		ARRAY_SIZE(config->FastPkgCRampDisable) *
+			sizeof(config->FastPkgCRampDisable[0]));
+
 	/* Enable TCPU for processor thermal control */
 	params->Device4Enable = config->Device4Enable;
 
@@ -269,6 +277,13 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* CNVi */
 	dev = pcidev_path_on_root(PCH_DEVFN_CNVI_WIFI);
 	params->CnviMode = is_dev_enabled(dev);
+
+	/* CNVi BT Core */
+	dev = pcidev_path_on_root(PCH_DEVFN_CNVI_BT);
+	params->CnviBtCore = is_dev_enabled(dev);
+
+	/* CNVi BT Audio Offload */
+	params->CnviBtAudioOffload = config->CnviBtAudioOffload;
 
 	/* VMD */
 	dev = pcidev_path_on_root(SA_DEVFN_VMD);

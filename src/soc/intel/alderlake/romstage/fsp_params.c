@@ -16,7 +16,7 @@
 #include <string.h>
 
 static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
-		const struct soc_intel_alderlake_dev_config *config)
+		const struct soc_intel_alderlake_config *config)
 {
 	unsigned int i;
 	uint32_t mask = 0;
@@ -155,11 +155,16 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	/* Skip CPU side PCIe enablement in FSP if device is disabled in devicetree */
 	dev = pcidev_path_on_root(SA_DEVFN_CPU_PCIE);
 	m_cfg->CpuPcieRpEnableMask = is_dev_enabled(dev);
+
+	m_cfg->TmeEnable = CONFIG(INTEL_TME);
+
+	/* Skip GPIO configuration from FSP */
+	m_cfg->GpioOverride = 0x1;
 }
 
 void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 {
-	const struct soc_intel_alderlake_dev_config *config;
+	const struct soc_intel_alderlake_config *config;
 	FSP_M_CONFIG *m_cfg = &mupd->FspmConfig;
 
 	config = config_of_soc();

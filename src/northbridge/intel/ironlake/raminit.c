@@ -1810,20 +1810,20 @@ static void setup_heci_uma(struct raminfo *info)
 
 	pci_read_config32(NORTHBRIDGE, DMIBAR);
 	if (info->memory_reserved_for_heci_mb) {
-		DMIBAR32(0x14) &= ~0x80;
+		DMIBAR32(DMIVC0RCTL) &= ~0x80;
 		write32(DEFAULT_RCBA   + 0x14, read32(DEFAULT_RCBA   + 0x14) & ~0x80);
-		DMIBAR32(0x20) &= ~0x80;
+		DMIBAR32(DMIVC1RCTL) &= ~0x80;
 		write32(DEFAULT_RCBA   + 0x20, read32(DEFAULT_RCBA   + 0x20) & ~0x80);
-		DMIBAR32(0x2c) &= ~0x80;
+		DMIBAR32(DMIVCPRCTL) &= ~0x80;
 		write32(DEFAULT_RCBA   + 0x30, read32(DEFAULT_RCBA   + 0x30) & ~0x80);
-		DMIBAR32(0x38) &= ~0x80;
+		DMIBAR32(DMIVCMRCTL) &= ~0x80;
 		write32(DEFAULT_RCBA   + 0x40, read32(DEFAULT_RCBA   + 0x40) & ~0x80);
 
 		write32(DEFAULT_RCBA   + 0x40, 0x87000080);	// OK
-		DMIBAR32(0x38) = 0x87000080;	// OK
+		DMIBAR32(DMIVCMRCTL) = 0x87000080;	// OK
 
 		while ((read16(DEFAULT_RCBA + 0x46) & 2) &&
-			DMIBAR16(0x3e) & 2)
+			DMIBAR16(DMIVCMRSTS) & VCMNP)
 			;
 	}
 
@@ -1941,7 +1941,7 @@ static void flush_cache(u32 start, u32 size)
 
 	end = start + (ALIGN_DOWN(size + 4096, 4096));
 	for (addr = start; addr < end; addr += 64)
-		clflush((void *)addr);
+		clflush((void *)(uintptr_t)addr);
 }
 
 static void clear_errors(void)
@@ -1956,7 +1956,7 @@ static void write_testing(struct raminfo *info, int totalrank, int flip)
 	u32 offset;
 	u8 *base;
 
-	base = (u8 *)(totalrank << 28);
+	base = (u8 *)(uintptr_t)(totalrank << 28);
 	for (offset = 0; offset < 9 * 480; offset += 2) {
 		write32(base + offset * 8, get_etalon2(flip, offset));
 		write32(base + offset * 8 + 4, get_etalon2(flip, offset));
@@ -4600,9 +4600,9 @@ void raminit(const int s3resume, const u8 *spd_addrmap)
 	}
 	u32 reg1c;
 	pci_read_config32(NORTHBRIDGE, 0x40);	// = DEFAULT_EPBAR | 0x001 // OK
-	reg1c = EPBAR32(0x01c);	// = 0x8001 // OK
+	reg1c = EPBAR32(EPVC1RCAP);	// = 0x8001 // OK
 	pci_read_config32(NORTHBRIDGE, 0x40);	// = DEFAULT_EPBAR | 0x001 // OK
-	EPBAR32(0x01c) = reg1c;	// OK
+	EPBAR32(EPVC1RCAP) = reg1c;	// OK
 	MCHBAR8(0xe08);	// = 0x0
 	pci_read_config32(NORTHBRIDGE, 0xe4);	// = 0x316126
 	MCHBAR8_OR(0x1210, 2);

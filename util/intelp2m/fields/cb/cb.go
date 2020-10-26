@@ -19,11 +19,11 @@ type field struct {
 }
 
 // generate - wrapper for generating bitfield macros string
-// fileds : field structure
-func generate(fileds ...*field) {
+// fields : field structure
+func generate(fields ...*field) {
 	macro := common.GetMacro()
 	var allhidden bool = true
-	for _, field := range fileds {
+	for _, field := range fields {
 		if field.unhide {
 			allhidden = false
 			macro.Or()
@@ -50,7 +50,9 @@ func (FieldMacros) DecodeDW0() {
 	generate(
 		&field {
 			prefix : "PAD_FUNC",
-			unhide : config.InfoLevelGet() <= 3 || dw0.GetPadMode() != 0,
+			// TODO: Find another way to hide PAD_FUNC(GPIO) in the comment with
+			// ignored fields
+			unhide : config.InfoLevelGet() < 3 || dw0.GetPadMode() != 0,
 			configurator : func() { macro.Padfn() },
 		},
 
