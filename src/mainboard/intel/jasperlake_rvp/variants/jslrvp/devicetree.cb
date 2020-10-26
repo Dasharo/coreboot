@@ -122,9 +122,6 @@ chip soc/intel/jasperlake
 		[PchSerialIoIndexUART2] = PchSerialIoSkipInit,
 	}"
 
-	# Enable "Intel Speed Shift Technology"
-	register "speed_shift_enable" = "1"
-
 	# Enable DPTF
 	register "dptf_enable" = "1"
 
@@ -299,7 +296,7 @@ chip soc/intel/jasperlake
 		end # USB xHCI
 		device pci 14.1 off end # USB xDCI (OTG)
 		device pci 14.2 off end # PMC SRAM
-		chip drivers/intel/wifi
+		chip drivers/wifi/generic
 			register "wake" = "GPE0_PME_B0"
 			device pci 14.3 on  end # CNVi wifi
 		end
@@ -466,7 +463,7 @@ chip soc/intel/jasperlake
 		end # GSPI #1
 		device pci 1f.0 on  end # eSPI Interface
 		device pci 1f.1 on  end # P2SB
-		device pci 1f.2 on  end # Power Management Controller
+		device pci 1f.2 hidden end # Power Management Controller
 		device pci 1f.3 on  end # Intel HDA
 		device pci 1f.4 on  end # SMBus
 		device pci 1f.5 on  end # PCH SPI

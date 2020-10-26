@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <arch/io.h>
 #include <bootstate.h>
 #include <console/console.h>
 #include <console/post_codes.h>
@@ -9,6 +8,7 @@
 #include <device/pci.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/pcr.h>
+#include <intelblocks/pmclib.h>
 #include <intelblocks/tco.h>
 #include <intelblocks/thermal.h>
 #include <soc/p2sb.h>
@@ -22,10 +22,7 @@
 
 static void pch_finalize(void)
 {
-	uint32_t reg32;
-	uint8_t *pmcbase;
 	config_t *config;
-	uint8_t reg8;
 
 	/* TCO Lock down */
 	tco_lockdown();
@@ -44,19 +41,8 @@ static void pch_finalize(void)
 	 * returns NULL for PCH_DEV_PMC device.
 	 */
 	config = config_of_soc();
-	pmcbase = pmc_mmio_regs();
-	if (config->PmTimerDisabled) {
-		reg8 = read8(pmcbase + PCH_PWRM_ACPI_TMR_CTL);
-		reg8 |= (1 << 1);
-		write8(pmcbase + PCH_PWRM_ACPI_TMR_CTL, reg8);
-	}
-
-	/* Disable XTAL shutdown qualification for low power idle. */
-	if (config->s0ix_enable) {
-		reg32 = read32(pmcbase + CPPMVRIC);
-		reg32 |= XTALSDQDIS;
-		write32(pmcbase + CPPMVRIC, reg32);
-	}
+	if (config->PmTimerDisabled)
+		pmc_disable_acpi_timer();
 
 	pmc_clear_pmcon_sts();
 }

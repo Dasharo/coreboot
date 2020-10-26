@@ -13,15 +13,15 @@ chip soc/amd/picasso
 	register "slow_ppt_limit" = "6000" # mW
 	register "fast_ppt_limit" = "9000" # mW
 	register "slow_ppt_time_constant" = "5" # second
-	register "stapm_time_constant" = "2500" # second
+	register "stapm_time_constant" = "1400" # second
 	register "sustained_power_limit" = "4800" # mW
 
 	# End : OPN Performance Configuration
 
-	register "telemetry_vddcr_vdd_slope" = "32453" #mA
-	register "telemetry_vddcr_vdd_offset" = "168"
-	register "telemetry_vddcr_soc_slope" = "22644" #mA
-	register "telemetry_vddcr_soc_offset" = "-70"
+	register "telemetry_vddcr_vdd_slope" = "32643" #mA
+	register "telemetry_vddcr_vdd_offset" = "208"
+	register "telemetry_vddcr_soc_slope" = "22742" #mA
+	register "telemetry_vddcr_soc_offset" = "-83"
 
 	# USB OC pin mapping
 	register "usb_port_overcurrent_pin[1]" = "USB_OC_NONE"	# LTE instead of USB C1
@@ -39,6 +39,12 @@ chip soc/amd/picasso
 		.rise_time_ns = 110,
 		.fall_time_ns = 5,
 		.early_init = true,
+	}"
+
+	register "emmc_config" = "{
+		.timing = SD_EMMC_EMMC_HS400,
+		.sdr104_hs400_driver_strength = SD_EMMC_DRIVE_STRENGTH_A,
+		.init_khz_preset = 400,
 	}"
 
 	# See AMD 55570-B1 Table 13: PCI Device ID Assignments.
@@ -135,6 +141,13 @@ chip soc/amd/picasso
 			register "generic.probed" = "1"
 			register "hid_desc_reg_offset" = "0x20"
 			device i2c 2c on end
+		end
+		chip drivers/i2c/generic
+			register "hid" = ""STH9324""
+			register "name" = ""SEMTECH SX9324""
+			register "desc" = ""SAR Proximity Sensor""
+			register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPIO_40)"
+			device i2c 28 on end
 		end
 	end
 end	# chip soc/amd/picasso

@@ -22,7 +22,9 @@ bootblock-y += tsc_freq.c
 bootblock-y += gpio.c
 bootblock-y += smi_util.c
 bootblock-y += config.c
+bootblock-y += pmutil.c
 bootblock-y += reset.c
+bootblock-$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK) += bootblock/vboot_bootblock.c
 
 romstage-y += i2c.c
 romstage-y += romstage.c
@@ -98,6 +100,7 @@ CPPFLAGS_common += -I$(src)/soc/amd/picasso
 CPPFLAGS_common += -I$(src)/soc/amd/picasso/include
 CPPFLAGS_common += -I$(src)/soc/amd/picasso/acpi
 CPPFLAGS_common += -I$(src)/vendorcode/amd/fsp/picasso
+CPPFLAGS_common += -I$(src)/vendorcode/amd/fsp/picasso/include
 
 MAINBOARD_BLOBS_DIR:=$(top)/3rdparty/blobs/mainboard/$(MAINBOARDDIR)
 
@@ -206,12 +209,8 @@ PSP_APOB_BASE=$(CONFIG_PSP_APOB_DRAM_ADDRESS)
 # type = 0x62
 PSP_BIOSBIN_FILE=$(obj)/amd_biospsp.img
 PSP_ELF_FILE=$(objcbfs)/bootblock.elf
-# TODO(b/154957411): Refactor amdfwtool to extract the address and size from
-# the elf file.
-PSP_BIOSBIN_SIZE=$(CONFIG_C_ENV_BOOTBLOCK_SIZE)
-# This address must match the BOOTBLOCK logic in arch/x86/memlayout.ld.
-PSP_BIOSBIN_DEST=$(shell printf "%x" $(call int-subtract, $(call int-add, $(CONFIG_X86_RESET_VECTOR) 0x10) $(PSP_BIOSBIN_SIZE)))
-
+PSP_BIOSBIN_SIZE=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | awk '{print $$5}')
+PSP_BIOSBIN_DEST=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | awk '{print $$3}')
 # type = 0x63 - construct APOB NV base/size from flash map
 # The flashmap section used for this is expected to be named RW_MRC_CACHE
 APOB_NV_SIZE=$(shell grep "FMAP_SECTION_RW_MRC_CACHE_SIZE" $(obj)/fmap_config.h | awk '{print $$(NF)}')

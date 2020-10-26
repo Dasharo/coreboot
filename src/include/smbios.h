@@ -54,10 +54,16 @@ const char *smbios_chassis_version(void);
 const char *smbios_chassis_serial_number(void);
 const char *smbios_processor_serial_number(void);
 
+void smbios_ec_revision(uint8_t *ec_major_revision, uint8_t *ec_minor_revision);
+
 unsigned int smbios_processor_external_clock(void);
 unsigned int smbios_processor_characteristics(void);
 struct cpuid_result;
 unsigned int smbios_processor_family(struct cpuid_result res);
+
+unsigned int smbios_cache_error_correction_type(u8 level);
+unsigned int smbios_cache_sram_type(void);
+unsigned int smbios_cache_conf_operation_mode(u8 level);
 
 /* Used by mainboard to add port information of type 8 */
 struct port_information;
@@ -498,6 +504,13 @@ enum smbios_cache_associativity {
 #define SMBIOS_CACHE_SIZE2_UNIT_1KB		(0 << 31)
 #define SMBIOS_CACHE_SIZE2_UNIT_64KB		(1UL << 31)
 #define SMBIOS_CACHE_SIZE2_MASK			0x7fffffff
+
+/* define for cache operation mode */
+
+#define SMBIOS_CACHE_OP_MODE_WRITE_THROUGH 0
+#define SMBIOS_CACHE_OP_MODE_WRITE_BACK 1
+#define SMBIOS_CACHE_OP_MODE_VARIES_WITH_MEMORY_ADDRESS 2
+#define SMBIOS_CACHE_OP_MODE_UNKNOWN 3
 
 struct smbios_type7 {
 	u8 type;

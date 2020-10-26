@@ -37,7 +37,25 @@ struct __packed usb2_phy_tune {
 	uint8_t	tx_res_tune;
 };
 
+/* force USB3 port to gen1, bit0 - controller0 Port0, bit1 - Port1, etc */
+union __packed usb3_force_gen1 {
+		struct {
+			uint8_t xhci0_port0:1;
+			uint8_t xhci0_port1:1;
+			uint8_t xhci0_port2:1;
+			uint8_t xhci0_port3:1;
+		} ports;
+		uint8_t usb3_port_force_gen1_en;
+};
+
 #define USB_PORT_COUNT	6
+
+enum sd_emmc_driver_strength {
+	SD_EMMC_DRIVE_STRENGTH_B,
+	SD_EMMC_DRIVE_STRENGTH_A,
+	SD_EMMC_DRIVE_STRENGTH_C,
+	SD_EMMC_DRIVE_STRENGTH_D,
+};
 
 struct soc_amd_picasso_config {
 	struct soc_amd_common_config common_config;
@@ -162,9 +180,30 @@ struct soc_amd_picasso_config {
 			SD_EMMC_EMMC_HS400,
 			SD_EMMC_EMMC_HS300,
 		} timing;
+
+		/*
+		 * Sets the driver strength reflected in the SDHCI Preset Value Registers.
+		 *
+		 * According to the SDHCI spec:
+		 *   The host should select the weakest drive strength that meets rise /
+		 *   fall time requirement at system operating frequency.
+		 */
+		enum sd_emmc_driver_strength sdr104_hs400_driver_strength;
+		enum sd_emmc_driver_strength ddr50_driver_strength;
+		enum sd_emmc_driver_strength sdr50_driver_strength;
+
+		/*
+		 * Sets the frequency in kHz reflected in the Initialization Preset Value
+		 * Register.
+		 *
+		 * This value is used while in open-drain mode, and has a maximum value of
+		 * 400 kHz.
+		 */
+		uint16_t init_khz_preset;
 	} emmc_config;
 
-	uint8_t xhci0_force_gen1;
+	/* Force USB3 port to gen1, bit0 - controller0 Port0, bit1 - Port1 */
+	union usb3_force_gen1 usb3_port_force_gen1;
 
 	uint8_t has_usb2_phy_tune_params;
 	struct usb2_phy_tune usb_2_port_tune_params[USB_PORT_COUNT];

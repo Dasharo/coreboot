@@ -102,7 +102,7 @@ void southbridge_smi_monitor(void)
 	RCBA32(0x1e00) = trap_sts; // Clear trap(s) in TRSR
 
 	trap_cycle = RCBA32(0x1e10);
-	for (i=16; i<20; i++) {
+	for (i = 16; i < 20; i++) {
 		if (trap_cycle & (1 << i))
 			mask |= (0xff << ((i - 16) << 2));
 	}
@@ -131,7 +131,10 @@ void southbridge_smi_monitor(void)
 	}
 
 	printk(BIOS_DEBUG, "  trapped io address = 0x%x\n", trap_cycle & 0xfffc);
-	for (i=0; i < 4; i++) if (IOTRAP(i)) printk(BIOS_DEBUG, "  TRAP = %d\n", i);
+	for (i = 0; i < 4; i++) {
+		if (IOTRAP(i))
+			printk(BIOS_DEBUG, "  TRAP = %d\n", i);
+	}
 	printk(BIOS_DEBUG, "  AHBE = %x\n", (trap_cycle >> 16) & 0xf);
 	printk(BIOS_DEBUG, "  MASK = 0x%08x\n", mask);
 	printk(BIOS_DEBUG, "  read/write: %s\n", (trap_cycle & (1 << 24)) ? "read" : "write");
@@ -150,7 +153,7 @@ void southbridge_update_gnvs(u8 apm_cnt, int *smm_done)
 		smi_apmc_find_state_save(apm_cnt);
 	if (state) {
 		/* EBX in the state save contains the GNVS pointer */
-		gnvs = (struct global_nvs *)((u32)state->rbx);
+		gnvs = (struct global_nvs *)(uintptr_t)((u32)state->rbx);
 		if (smm_points_to_smram(gnvs, sizeof(*gnvs))) {
 			printk(BIOS_ERR, "SMI#: ERROR: GNVS overlaps SMM\n");
 			return;

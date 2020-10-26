@@ -51,27 +51,12 @@ func main() {
 		"\tIn this case, some fields of the configuration registers\n" +
 		"\tDW0 will be ignored.\n")
 
-	infoLevel1 := flag.Bool("i",
-		false,
-		"\n\tInfo Level 1: adds DW0/DW1 value to the comments:\n" +
-		"\t/* GPIO_173 - SDCARD_D0 */\n")
-
-	infoLevel2 := flag.Bool("ii",
-		false,
-		"Info Level 2: adds original macro to the comments:\n" +
-		"\t/* GPIO_173 - SDCARD_D0 (DW0: 0x44000400, DW1: 0x00021000) */\n")
-
-	infoLevel3 := flag.Bool("iii",
-		false,
-		"Info Level 3: adds information about bit fields that (need to be ignored)\n" +
-		"\twere ignored to generate a macro:\n" +
-		"\t/* GPIO_173 - SDCARD_D0 (DW0: 0x44000400, DW1: 0x00021000) */\n" +
-		"\t/* PAD_CFG_NF_IOSSTATE(GPIO_173, DN_20K, DEEP, NF1, HIZCRx1), */\n")
-
-	infoLevel4 := flag.Bool("iiii",
-		false,
-		"Info Level 4: show decoded DW0/DW1 register:\n" +
-		"\t/* DW0: PAD_TRIG(DEEP) | PAD_BUF(TX_RX_DISABLE) - IGNORED */\n")
+	infoLevels := []*bool {
+		flag.Bool("i",    false, "Show pads function in the comments"),
+		flag.Bool("ii",   false, "Show DW0/DW1 value in the comments"),
+		flag.Bool("iii",  false, "Show ignored bit fields in the comments"),
+		flag.Bool("iiii", false, "Show target PAD_CFG() macro in the comments"),
+	}
 
 	template := flag.Int("t", 0, "template type number\n"+
 		"\t0 - inteltool.log (default)\n"+
@@ -82,9 +67,9 @@ func main() {
 		"\tsnr - Sunrise PCH or Skylake/Kaby Lake SoC\n"+
 		"\tlbg - Lewisburg PCH with Xeon SP\n"+
 		"\tapl - Apollo Lake SoC\n"+
-		"\tcnl - CannonLake-LP or Whiskeylake/Coffelake/Cometlake-U SoC\n")
+		"\tcnl - CannonLake-LP or Whiskeylake/Coffeelake/Cometlake-U SoC\n")
 
-	filedstyle :=  flag.String("fld", "none", "set fileds macros style:\n"+
+	fieldstyle :=  flag.String("fld", "none", "set fields macros style:\n"+
 		"\tcb  - use coreboot style for bit fields macros\n"+
 		"\tfsp - use fsp style\n"+
 		"\traw - do not convert, print as is\n")
@@ -94,14 +79,12 @@ func main() {
 	config.IgnoredFieldsFlagSet(*ignFlag)
 	config.NonCheckingFlagSet(*nonCheckFlag)
 
-	if *infoLevel1 {
-		config.InfoLevelSet(1)
-	} else if *infoLevel2 {
-		config.InfoLevelSet(2)
-	} else if *infoLevel3 {
-		config.InfoLevelSet(3)
-	} else if *infoLevel4 {
-		config.InfoLevelSet(4)
+	for level, flag := range infoLevels {
+		if *flag {
+			config.InfoLevelSet(level + 1)
+			fmt.Printf("Info level: Use level %d!\n", level + 1)
+			break
+		}
 	}
 
 	if !config.TemplateSet(*template) {
@@ -123,8 +106,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if config.FldStyleSet(*filedstyle) != 0 {
-		fmt.Printf("Error! Unknown bit fields style option -%s!\n", *filedstyle)
+	if config.FldStyleSet(*fieldstyle) != 0 {
+		fmt.Printf("Error! Unknown bit fields style option -%s!\n", *fieldstyle)
 		os.Exit(1)
 	}
 

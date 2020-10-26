@@ -42,9 +42,17 @@ chip soc/amd/picasso
 
 	register "emmc_config" = "{
 		.timing = SD_EMMC_EMMC_HS400,
+		.sdr104_hs400_driver_strength = SD_EMMC_DRIVE_STRENGTH_A,
+		/*
+		 * The reference design was missing a pull-up on the CMD line.
+		 * This means we can't run at the full 400 kHz. By setting this
+		 * to 1 we run at the slowest frequency possible by the
+		 * controller (~97 kHz).
+		 *
+		 * Boards that have the pull-up should correctly set this.
+		 */
+		.init_khz_preset = 1,
 	}"
-
-	register "xhci0_force_gen1" = "0"
 
 	register "has_usb2_phy_tune_params" = "1"
 
@@ -202,7 +210,12 @@ chip soc/amd/picasso
 		device pci 0.2 on  end # IOMMU
 		device pci 1.0 on  end # Dummy Host Bridge, must be enabled
 		device pci 1.1 off end # GPP Bridge 0
-		device pci 1.2 on  end # GPP Bridge 1 - Wifi
+		device pci 1.2 on      # GPP Bridge 1 - Wifi
+			chip drivers/wifi/generic
+				register "wake" = "GEVENT_8"
+				device pci 00.0 on  end
+			end
+		end
 		device pci 1.3 on  end # GPP Bridge 2 - SD
 		device pci 1.4 off end # GPP Bridge 3
 		device pci 1.5 off end # GPP Bridge 4

@@ -116,7 +116,7 @@ Device (SDMA)
 	Name (RBUF, ResourceTemplate ()
 	{
 		Memory32Fixed (ReadWrite, 0x00000000, 0x00000000, BAR0)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , ,) {7}
+		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , , ) {7}
 	})
 
 	Method (_CRS, 0, NotSerialized)
@@ -156,15 +156,14 @@ Device (I2C0)
 	Name (RBUF, ResourceTemplate ()
 	{
 		Memory32Fixed (ReadWrite, 0x00000000, 0x00000000, BAR0)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , ,) {7}
+		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , , ) {7}
 	})
 
 	// DMA channels are only used if Serial IO DMA controller is enabled
 	Name (DBUF, ResourceTemplate ()
 	{
-		// TODO: Need to update IASL to support FixedDMA
-		//FixedDMA (0x18, 4, Width32Bit, DMA1) // Tx
-		//FixedDMA (0x19, 5, Width32Bit, DMA2) // Rx
+		FixedDMA (0x18, 4, Width32Bit, DMA1) // Tx
+		FixedDMA (0x19, 5, Width32Bit, DMA2) // Rx
 	})
 
 	Method (_CRS, 0, NotSerialized)
@@ -237,15 +236,14 @@ Device (I2C1)
 	Name (RBUF, ResourceTemplate ()
 	{
 		Memory32Fixed (ReadWrite, 0x00000000, 0x00000000, BAR0)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , ,) {7}
+		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , , ) {7}
 	})
 
 	// DMA channels are only used if Serial IO DMA controller is enabled
 	Name (DBUF, ResourceTemplate ()
 	{
-		// TODO: Need to update IASL to support FixedDMA
-		//FixedDMA (0x1A, 6, Width32Bit, DMA1) // Tx
-		//FixedDMA (0x1B, 7, Width32Bit, DMA2) // Rx
+		FixedDMA (0x1A, 6, Width32Bit, DMA1) // Tx
+		FixedDMA (0x1B, 7, Width32Bit, DMA2) // Rx
 	})
 
 	Method (_CRS, 0, NotSerialized)
@@ -315,7 +313,7 @@ Device (SPI0)
 	Name (RBUF, ResourceTemplate ()
 	{
 		Memory32Fixed (ReadWrite, 0x00000000, 0x00000000, BAR0)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , ,) {7}
+		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , , ) {7}
 	})
 
 	Method (_CRS, 0, NotSerialized)
@@ -352,15 +350,14 @@ Device (SPI1)
 	Name (RBUF, ResourceTemplate ()
 	{
 		Memory32Fixed (ReadWrite, 0x00000000, 0x00000000, BAR0)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , ,) {7}
+		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , , ) {7}
 	})
 
 	// DMA channels are only used if Serial IO DMA controller is enabled
 	Name (DBUF, ResourceTemplate ()
 	{
-		// TODO: Need to update IASL to support FixedDMA
-		//FixedDMA (0x10, 0, Width32Bit, DMA1) // Tx
-		//FixedDMA (0x11, 1, Width32Bit, DMA2) // Rx
+		FixedDMA (0x10, 0, Width32Bit, DMA1) // Tx
+		FixedDMA (0x11, 1, Width32Bit, DMA2) // Rx
 	})
 
 	Method (_CRS, 0, NotSerialized)
@@ -402,15 +399,14 @@ Device (UAR0)
 	Name (RBUF, ResourceTemplate ()
 	{
 		Memory32Fixed (ReadWrite, 0x00000000, 0x00000000, BAR0)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , ,) {13}
+		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , , ) {13}
 	})
 
 	// DMA channels are only used if Serial IO DMA controller is enabled
 	Name (DBUF, ResourceTemplate ()
 	{
-		// TODO: Need to update IASL to support FixedDMA
-		//FixedDMA (0x16, 2, Width32Bit, DMA1) // Tx
-		//FixedDMA (0x17, 3, Width32Bit, DMA2) // Rx
+		FixedDMA (0x16, 2, Width32Bit, DMA1) // Tx
+		FixedDMA (0x17, 3, Width32Bit, DMA2) // Rx
 	})
 
 	Method (_CRS, 0, NotSerialized)
@@ -452,7 +448,7 @@ Device (UAR1)
 	Name (RBUF, ResourceTemplate ()
 	{
 		Memory32Fixed (ReadWrite, 0x00000000, 0x00000000, BAR0)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , ,) {13}
+		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , , ) {13}
 	})
 
 	Method (_CRS, 0, NotSerialized)
@@ -489,7 +485,7 @@ Device (SDIO)
 	Name (RBUF, ResourceTemplate ()
 	{
 		Memory32Fixed (ReadWrite, 0x00000000, 0x00000000, BAR0)
-		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , ,) {5}
+		Interrupt (ResourceConsumer, Level, ActiveLow, Shared, , , ) {5}
 	})
 
 	Method (_CRS, 0, NotSerialized)
