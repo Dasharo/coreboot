@@ -41,15 +41,11 @@ int prog_locate(struct prog *prog)
 {
 	struct cbfsf file;
 
-#ifdef RAMSTAGE
+#ifdef __RAMSTAGE__
 	u32 cbfs_type;
 	u8 sr[2];
-	uint8_t data_hash[VB2_SHA256_DIGEST_SIZE];
-	/* TODO put the golden has here */
-	uint8_t golden_hash[VB2_SHA256_DIGEST_SIZE] = {0};
-	void* prog_memmap;
 
-	if (spi_flash_status(boot_device_spi_flash(), &sr) < 0) {
+	if (spi_flash_status(boot_device_spi_flash(), sr) < 0) {
 		printk(BIOS_ERR, "Failed to read SPI status register 1\n");
 		return -1;
 	}
@@ -58,6 +54,7 @@ int prog_locate(struct prog *prog)
 	/* Check if we looking for payload and SPI flash is locked. */
 	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog))) {
 		cbfs_type = CBFS_TYPE_SELF;
+		printk(BIOS_ERR, "Locating payload in FW_MAIN_A\n");
 		/* We should load UEFI payload form FW_MAIN_A now */
 		if (cbfs_locate_file_in_region(&file, "FW_MAIN_A",
 					       prog_name(prog), &cbfs_type) < 0)
@@ -65,7 +62,8 @@ int prog_locate(struct prog *prog)
 
 		cbfsf_file_type(&file, &prog->cbfs_type);
 		cbfs_file_data(prog_rdev(prog), &file);
-                return 0;
+		return 0;
+	}
 #else
 	cbfs_prepare_program_locate();
 
