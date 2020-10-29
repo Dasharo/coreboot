@@ -8,10 +8,11 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
-## [v4.0.33] - 2020-10-28
+## [v4.0.33] - 2020-10-30
 ### Fixed
 - option in runtime config to reverse PCI addressing order, now not only mPCIe
-devices, but NICs are reversed as well.
+  devices, but NICs are reversed as well. The WoL capable NIC should be the
+  first booting in iPXE when the reverse option is enabled.
 
 ## [v4.0.32] - 2020-07-29
 ### Added
