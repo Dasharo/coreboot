@@ -281,7 +281,7 @@ built externally
 - git repository in `Makefile`
 
 [Unreleased]: https://github.com/pcengines/coreboot/compare/v4.0.33...coreboot-4.0.x
-[v4.0.32]: https://github.com/pcengines/coreboot/compare/v4.0.32...v4.0.33
+[v4.0.33]: https://github.com/pcengines/coreboot/compare/v4.0.32...v4.0.33
 [v4.0.32]: https://github.com/pcengines/coreboot/compare/v4.0.31...v4.0.32
 [v4.0.31]: https://github.com/pcengines/coreboot/compare/v4.0.30...v4.0.31
 [v4.0.30]: https://github.com/pcengines/coreboot/compare/v4.0.29...v4.0.30
