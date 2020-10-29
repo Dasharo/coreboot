@@ -14,8 +14,8 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	PAD_NF(GPIO_0, PWR_BTN_L, PULL_NONE),
 	/* SYS_RESET_L */
 	PAD_NF(GPIO_1, SYS_RESET_L, PULL_NONE),
-	/* PCIE_WAKE_L */
-	PAD_NF(GPIO_2, WAKE_L, PULL_NONE),
+	/* WIFI_PCIE_WAKE_ODL */
+	PAD_SCI(GPIO_2, PULL_NONE, EDGE_LOW),
 	/* H1_FCH_INT_ODL */
 	PAD_INT(GPIO_3, PULL_NONE, EDGE_LOW, STATUS_DELIVERY),
 	/* PEN_DETECT_ODL */
@@ -85,8 +85,8 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	 * access will be very slow.
 	 */
 	PAD_GPO(GPIO_67, LOW), // Select Camera 1 Dmic
-	/* EMMC_RESET */
-	PAD_GPO(GPIO_68, LOW),
+	/* EMMC_RESET_L */
+	PAD_GPO(GPIO_68, HIGH),
 	/* FPMCU_BOOT0 - TODO: Check this */
 	PAD_GPO(GPIO_69, LOW),
 	/* EMMC_CLK */

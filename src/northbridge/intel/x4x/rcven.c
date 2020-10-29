@@ -3,7 +3,7 @@
 #include <device/mmio.h>
 #include <console/console.h>
 #include <delay.h>
-#include "iomap.h"
+#include "raminit.h"
 #include "x4x.h"
 
 #define MAX_COARSE 15

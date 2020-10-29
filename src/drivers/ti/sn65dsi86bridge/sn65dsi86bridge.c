@@ -259,11 +259,11 @@ static void sn65dsi86_bridge_valid_dp_rates(uint8_t bus, uint8_t chip, bool rate
 					DP_BRIDGE_DPCD_REV, 1, DPCD_READ, &dpcd_val);
 	if (dpcd_val >= DP_BRIDGE_14) {
 		/* eDP 1.4 devices must provide a custom table */
-		uint8_t sink_rates[DP_MAX_SUPPORTED_RATES * 2];
+		uint16_t sink_rates[DP_MAX_SUPPORTED_RATES] = {0};
 
 		sn65dsi86_bridge_dpcd_request(bus, chip, DP_SUPPORTED_LINK_RATES,
 					      sizeof(sink_rates),
-					      DPCD_READ, sink_rates);
+					      DPCD_READ, (void *)sink_rates);
 		for (i = 0; i < ARRAY_SIZE(sink_rates); i++) {
 			rate_per_200khz = le16_to_cpu(sink_rates[i]);
 
@@ -288,14 +288,12 @@ static void sn65dsi86_bridge_valid_dp_rates(uint8_t bus, uint8_t chip, bool rate
 	}
 
 	/* On older versions best we can do is use DP_MAX_LINK_RATE */
-	 sn65dsi86_bridge_dpcd_request(bus, chip,
-					DP_MAX_LINK_RATE, 1, DPCD_READ, &dpcd_val);
+	sn65dsi86_bridge_dpcd_request(bus, chip, DP_MAX_LINK_RATE, 1, DPCD_READ, &dpcd_val);
 
 	switch (dpcd_val) {
 	default:
-		printk(BIOS_ERR,
-			      "Unexpected max rate (%#x); assuming 5.4 GHz\n",
-			      (int)dpcd_val);
+		printk(BIOS_ERR, "Unexpected max rate (%#x); assuming 5.4 GHz\n",
+		       (int)dpcd_val);
 		/* fall through */
 	case DP_LINK_BW_5_4:
 		rate_valid[7] = 1;
@@ -415,44 +413,20 @@ static void sn65dsi86_bridge_link_training(uint8_t bus, uint8_t chip)
 	sn65dsi86_bridge_dpcd_request(bus, chip,
 				      DP_BRIDGE_CONFIGURATION_SET, 1, DPCD_WRITE, &buf);
 
-	/* semi auto link training mode */
-	i2c_writeb(bus, chip, SN_ML_TX_MODE_REG, 0xa);
+	int i;	/* Kernel driver suggests to retry this up to 10 times if it fails. */
+	for (i = 0; i < 10; i++) {
+		i2c_writeb(bus, chip, SN_ML_TX_MODE_REG, SEMI_AUTO_LINK_TRAINING);
 
-	if (!wait_ms(500,
-	    !(i2c_readb(bus, chip, SN_ML_TX_MODE_REG, &buf)) &&
-	    (buf & NORMAL_MODE))) {
-		printk(BIOS_ERR, "ERROR: Link training failed");
+		if (!wait_ms(500, !(i2c_readb(bus, chip, SN_ML_TX_MODE_REG, &buf)) &&
+				  (buf == NORMAL_MODE || buf == MAIN_LINK_OFF))) {
+			printk(BIOS_ERR, "ERROR: unexpected link training state: %#x\n", buf);
+			return;
+		}
+		if (buf == NORMAL_MODE)
+			return;
 	}
 
-}
-
-static enum cb_err sn65dsi86_bridge_get_plug_in_status(uint8_t bus, uint8_t chip)
-{
-	int val;
-	uint8_t buf;
-
-	val = i2c_readb(bus, chip, SN_HPD_DISABLE_REG, &buf);
-	if (val == 0 && (buf & HPD_DISABLE))
-		return CB_SUCCESS;
-
-	return CB_ERR;
-}
-
-/*
- * support bridge HPD function some hardware versions do not support bridge hdp,
- * we use 360ms to try to get the hpd single now, if we can not get bridge hpd single,
- * it will delay 360ms, also meet the bridge power timing request, to be compatible
- * all of the hardware versions
- */
-static void sn65dsi86_bridge_wait_hpd(uint8_t bus, uint8_t chip)
-{
-	if (wait_ms(400, sn65dsi86_bridge_get_plug_in_status(bus, chip)))
-		return;
-
-	printk(BIOS_WARNING, "HPD detection failed, force hpd\n");
-
-	/* Force HPD */
-	i2c_write_field(bus, chip, SN_HPD_DISABLE_REG, HPD_DISABLE, 1, 0);
+	printk(BIOS_ERR, "ERROR: Link training failed 10 times\n");
 }
 
 static void sn65dsi86_bridge_assr_config(uint8_t bus, uint8_t chip, int enable)
@@ -476,7 +450,8 @@ static int sn65dsi86_bridge_dp_lane_config(uint8_t bus, uint8_t chip)
 
 void sn65dsi86_bridge_init(uint8_t bus, uint8_t chip, enum dp_pll_clk_src ref_clk)
 {
-	sn65dsi86_bridge_wait_hpd(bus, chip);
+	/* disable HPD */
+	i2c_write_field(bus, chip, SN_HPD_DISABLE_REG, HPD_DISABLE, 1, 0);
 
 	/* set refclk to 19.2 MHZ */
 	i2c_write_field(bus, chip, SN_DPPLL_SRC_REG, ref_clk, 7, 1);

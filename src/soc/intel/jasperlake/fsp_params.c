@@ -96,6 +96,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	dev = pcidev_path_on_root(SA_DEVFN_IGD);
 	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_dev_enabled(dev);
 
+	params->PavpEnable = CONFIG(PAVP);
+
 	/* Use coreboot MP PPI services if Kconfig is enabled */
 	if (CONFIG(USE_INTEL_FSP_TO_CALL_COREBOOT_PUBLISH_MP_PPI))
 		params->CpuMpPpi = (uintptr_t) mp_fill_ppi_services_data();
@@ -177,6 +179,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 				sizeof(params->SataPortsDevSlp));
 	}
 
+	/* VR Configuration */
+	params->ImonSlope[0] = config->ImonSlope;
+	params->ImonOffset[0] = config->ImonOffset;
+
 	/* SDCard related configuration */
 	dev = pcidev_path_on_root(PCH_DEVFN_SDCARD);
 	params->ScsSdCardEnabled = is_dev_enabled(dev);
@@ -206,9 +212,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	} else {
 		params->XdciEnable = 0;
 	}
-
-	/* Disable Pavp */
-	params->PavpEnable = 0;
 
 	/* Provide correct UART number for FSP debug logs */
 	params->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;

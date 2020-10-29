@@ -119,13 +119,13 @@ static inline void read_me_csr(struct mei_csr *csr)
 
 static inline void write_cb(u32 dword)
 {
-	write32(mei_base_address + (MEI_H_CB_WW/sizeof(u32)), dword);
+	write32(mei_base_address + (MEI_H_CB_WW / sizeof(u32)), dword);
 	mei_dump(NULL, dword, MEI_H_CB_WW, "WRITE");
 }
 
 static inline u32 read_cb(void)
 {
-	u32 dword = read32(mei_base_address + (MEI_ME_CB_RW/sizeof(u32)));
+	u32 dword = read32(mei_base_address + (MEI_ME_CB_RW / sizeof(u32)));
 	mei_dump(NULL, dword, MEI_ME_CB_RW, "READ");
 	return dword;
 }
@@ -261,9 +261,8 @@ static int mei_recv_msg(struct mei_header *mei, struct mkhi_header *mkhi,
 		udelay(ME_DELAY);
 	}
 	if (!n) {
-		printk(BIOS_ERR, "ME: timeout waiting for data: expected "
-		       "%u, available %u\n", expected,
-		       me.buffer_write_ptr - me.buffer_read_ptr);
+		printk(BIOS_ERR, "ME: timeout waiting for data: expected %u, available %u\n",
+		       expected, me.buffer_write_ptr - me.buffer_read_ptr);
 		return -1;
 	}
 
@@ -298,8 +297,8 @@ static int mei_recv_msg(struct mei_header *mei, struct mkhi_header *mkhi,
 
 	/* Make sure caller passed a buffer with enough space */
 	if (ndata != (rsp_bytes >> 2)) {
-		printk(BIOS_ERR, "ME: not enough room in response buffer: "
-		       "%u != %u\n", ndata, rsp_bytes >> 2);
+		printk(BIOS_ERR, "ME: not enough room in response buffer: %u != %u\n",
+		       ndata, rsp_bytes >> 2);
 		return -1;
 	}
 
@@ -359,7 +358,7 @@ static void intel_me7_finalize_smm(void)
 	u32 reg32;
 	u16 reg16;
 
-	mei_base_address = (u32 *)
+	mei_base_address = (u32 *)(uintptr_t)
 		(pci_read_config32(PCH_ME_DEV, PCI_BASE_ADDRESS_0) & ~0xf);
 
 	/* S3 path will have hidden this device already */
