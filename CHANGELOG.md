@@ -13,9 +13,14 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
-## [v4.12.0.6] - 2020-10-28
+## [v4.12.0.6] - 2020-10-29
 ## Changed
 - rebased with official coreboot repository commit 43439f6
+
+## Fixed
+- the option in runtime config to reverse PCI addressing order, now not only
+  mPCIe devices, but NICs are reversed as well. The WoL capable NIC should be
+  the first booting in iPXE when the reverse option is enabled.
 
 ## [v4.12.0.5] - 2020-09-25
 ## Changed
