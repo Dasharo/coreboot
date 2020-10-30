@@ -71,7 +71,7 @@ static int legacy_apmc_node(u8 cmd)
 	legacy_smm_state_save_area_t *state;
 	int node;
 
-	for (node = 0; node < CONFIG_MAX_CPUS; node++) {
+	for (node = 0; node < smm_max_cpus(); node++) {
 		state = smm_get_save_state(node);
 
 		/* Check AL against the requested command */

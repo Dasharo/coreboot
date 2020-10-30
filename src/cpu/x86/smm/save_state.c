@@ -61,7 +61,7 @@ int get_save_state_reg(const enum cpu_reg reg, const int node, void *out, const 
 	if (init_save_state())
 		return -1;
 
-	if (node > CONFIG_MAX_CPUS)
+	if (node > smm_max_cpus())
 		return -1;
 
 	return save_state->get_reg(reg, node, out, length);
@@ -72,7 +72,7 @@ int set_save_state_reg(const enum cpu_reg reg, const int node, void *in, const u
 	if (init_save_state())
 		return -1;
 
-	if (node > CONFIG_MAX_CPUS)
+	if (node > smm_max_cpus())
 		return -1;
 
 	return save_state->set_reg(reg, node, in, length);

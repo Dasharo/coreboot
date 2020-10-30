@@ -84,7 +84,7 @@ static int amd64_apmc_node(u8 cmd)
 	int node;
 	u8 reg_al;
 
-	for (node = 0; node < CONFIG_MAX_CPUS; node++) {
+	for (node = 0; node < smm_max_cpus(); node++) {
 		state = smm_get_save_state(node);
 		smm_io_trap = state->smm_io_trap_offset;
 

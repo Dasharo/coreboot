@@ -128,6 +128,11 @@ bool smm_region_overlaps_handler(const struct region *r)
 	return region_overlap(&r_smm, r) || region_overlap(&r_aseg, r);
 }
 
+uint32_t smm_max_cpus(void)
+{
+	return MIN(smm_runtime.num_cpus, CONFIG_MAX_CPUS);
+}
+
 asmlinkage void smm_handler_start(void *arg)
 {
 	const struct smm_module_params *p;
@@ -143,8 +148,10 @@ asmlinkage void smm_handler_start(void *arg)
 	 * will be the same across CPUs as well as multiple SMIs. */
 	gnvs = (void *)(uintptr_t)smm_runtime.gnvs_ptr;
 
-	if (cpu >= CONFIG_MAX_CPUS) {
-		/* Do not log messages to console here, it is not thread safe */
+	if (cpu >= smm_max_cpus()) {
+		console_init();
+		printk(BIOS_CRIT,
+		       "Invalid CPU number assigned in SMM stub: %d\n", cpu);
 		return;
 	}
 
