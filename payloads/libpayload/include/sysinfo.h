@@ -29,6 +29,7 @@
 #ifndef _SYSINFO_H
 #define _SYSINFO_H
 
+#include <pci/pci.h>
 #include <stdint.h>
 
 /* Maximum number of memory range definitions. */
@@ -106,10 +107,17 @@ struct sysinfo_t {
 	uintptr_t mrc_cache;
 	uintptr_t acpi_gnvs;
 
-#define UNDEFINED_STRAPPING_ID (~0)
+#define UNDEFINED_STRAPPING_ID	(~0)
+#define UNDEFINED_FW_CONFIG	~((uint64_t)0)
 	u32		board_id;
 	u32		ram_code;
 	u32		sku_id;
+
+	/*
+	 * A payload using this field is responsible for ensuring it checks its
+	 * value against UNDEFINED_FW_CONFIG before using it.
+	 */
+	u64		fw_config;
 
 	uintptr_t	wifi_calibration;
 	uint64_t	ramoops_buffer;
@@ -130,6 +138,10 @@ struct sysinfo_t {
 
 	/* Pointer to FMAP cache in CBMEM */
 	uintptr_t fmap_cache;
+
+#if CONFIG(LP_PCI)
+	struct pci_access pacc;
+#endif
 };
 
 extern struct sysinfo_t lib_sysinfo;

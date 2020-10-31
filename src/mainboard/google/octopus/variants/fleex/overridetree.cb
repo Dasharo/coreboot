@@ -84,6 +84,10 @@ chip soc/intel/apollolake
 		},
 	}"
 
+	# Disable compliance mode
+	register "DisableComplianceMode" = "1"
+	register "disable_xhci_lfps_pm" = "0"
+
 	device domain 0 on
 		device pci 16.0 on
 			chip drivers/i2c/hid
@@ -127,6 +131,15 @@ chip soc/intel/apollolake
 				register "wake" = "GPE0_DW3_27"
 				register "probed" = "1"
 				device i2c 15 on end
+			end
+			chip drivers/i2c/hid
+				register "generic.hid" = ""GXTP7288""
+				register "generic.desc" = ""Goodix Touchpad""
+				register "generic.irq" = "ACPI_IRQ_EDGE_LOW(GPIO_135_IRQ)"
+				register "generic.wake" = "GPE0_DW3_27"
+				register "generic.probed" = "1"
+				register "hid_desc_reg_offset" = "0x20"
+				device i2c 2c on end
 			end
 		end	# - I2C 6
 		device pci 17.3 on
@@ -172,7 +185,4 @@ chip soc/intel/apollolake
 			end
 		end	# - I2C 7
 	end
-
-	# Disable compliance mode
-	register "DisableComplianceMode" = "1"
 end

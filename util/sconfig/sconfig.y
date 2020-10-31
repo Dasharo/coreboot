@@ -2,6 +2,7 @@
 /* sconfig, coreboot device tree compiler */
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <stdint.h>
 #include "sconfig.h"
 
 int yylex();
@@ -16,7 +17,7 @@ static struct fw_config_field *cur_field;
 	struct device *dev;
 	struct chip_instance *chip_instance;
 	char *string;
-	int number;
+	uint64_t number;
 }
 
 %token CHIP DEVICE REGISTER ALIAS REFERENCE ASSOCIATION BOOL STATUS MANDATORY BUS RESOURCE END EQUALS HEX STRING PCI PNP I2C APIC CPU_CLUSTER CPU DOMAIN IRQ DRQ SLOT_DESC IO NUMBER SUBSYSTEMID INHERIT IOAPIC_IRQ IOAPIC PCIINT GENERIC SPI USB MMIO LPC ESPI FW_CONFIG_TABLE FW_CONFIG_FIELD FW_CONFIG_OPTION FW_CONFIG_PROBE
@@ -37,11 +38,19 @@ chip: CHIP STRING /* == path */ {
 };
 
 device: DEVICE BUS NUMBER /* == devnum */ alias status {
-	$<dev>$ = new_device(cur_parent, cur_chip_instance, $<number>2, $<string>3, $<string>4, $<number>5);
+	$<dev>$ = new_device_raw(cur_parent, cur_chip_instance, $<number>2, $<string>3, $<string>4, $<number>5);
 	cur_parent = $<dev>$->last_bus;
 }
 	devicechildren END {
 	cur_parent = $<dev>6->parent;
+};
+
+device: DEVICE REFERENCE STRING status {
+	$<dev>$ = new_device_reference(cur_parent, cur_chip_instance, $<string>3, $<number>4);
+	cur_parent = $<dev>$->last_bus;
+}
+	devicechildren END {
+	cur_parent = $<dev>5->parent;
 };
 
 alias: /* empty */ {
@@ -108,7 +117,7 @@ fw_config_field: FW_CONFIG_FIELD STRING {
 
 /* option <value> */
 fw_config_option: FW_CONFIG_OPTION STRING NUMBER /* == field value */
-	{ add_fw_config_option(cur_field, $<string>2, strtoul($<string>3, NULL, 0)); };
+	{ add_fw_config_option(cur_field, $<string>2, strtoull($<string>3, NULL, 0)); };
 
 /* probe <field> <option> */
 fw_config_probe: FW_CONFIG_PROBE STRING /* == field */ STRING /* == option */

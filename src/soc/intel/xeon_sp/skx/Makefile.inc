@@ -19,11 +19,10 @@ romstage-y += hob_display.c
 romstage-$(CONFIG_DISPLAY_UPD_DATA) += upd_display.c
 romstage-$(CONFIG_DISPLAY_HOBS) += hob_display.c
 
-ramstage-y += soc_util.c
+ramstage-y += soc_acpi.c
 ramstage-y += chip.c
 ramstage-y += soc_util.c
 ramstage-y += cpu.c
-ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
 ramstage-$(CONFIG_DISPLAY_UPD_DATA) += upd_display.c
 ramstage-$(CONFIG_DISPLAY_HOBS) += hob_display.c
 ramstage-y += hob_display.c

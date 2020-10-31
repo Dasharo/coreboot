@@ -261,6 +261,38 @@ void show_one_resource(int debug_level, struct device *dev,
 		       struct resource *resource, const char *comment);
 void show_all_devs_resources(int debug_level, const char *msg);
 
+/* Debug macros */
+#if CONFIG(DEBUG_RESOURCES)
+#include <console/console.h>
+#define LOG_MEM_RESOURCE(type, dev, index, base_kb, size_kb) \
+	printk(BIOS_SPEW, "%s:%d res: %s, dev: %s, index: 0x%x, base: 0x%llx, " \
+		"end: 0x%llx, size_kb: 0x%llx\n", \
+		__func__, __LINE__, type, dev_path(dev), index, (base_kb << 10), \
+		(base_kb << 10) + (size_kb << 10) - 1, size_kb)
+
+#define LOG_IO_RESOURCE(type, dev, index, base, size) \
+	printk(BIOS_SPEW, "%s:%d res: %s, dev: %s, index: 0x%x, base: 0x%llx, " \
+		"end: 0x%llx, size: 0x%llx\n", \
+		__func__, __LINE__, type, dev_path(dev), index, base, base + size - 1, size)
+#else /* DEBUG_RESOURCES*/
+#define LOG_MEM_RESOURCE(type, dev, index, base_kb, size_kb)
+#define LOG_IO_RESOURCE(type, dev, index, base, size)
+#endif /* DEBUG_RESOURCES*/
+
+#if CONFIG(DEBUG_FUNC)
+#include <console/console.h>
+#define DEV_FUNC_ENTER(dev) \
+	printk(BIOS_SPEW, "%s:%s:%d: ENTER (dev: %s)\n", \
+		__FILE__, __func__, __LINE__, dev_path(dev))
+
+#define DEV_FUNC_EXIT(dev) \
+	printk(BIOS_SPEW, "%s:%s:%d: EXIT (dev: %s)\n", __FILE__, \
+		__func__, __LINE__, dev_path(dev))
+#else /* DEBUG_FUNC */
+#define DEV_FUNC_ENTER(dev)
+#define DEV_FUNC_EXIT(dev)
+#endif /* DEBUG_FUNC */
+
 /* Rounding for boundaries.
  * Due to some chip bugs, go ahead and round IO to 16
  */
@@ -339,6 +371,12 @@ DEVTREE_CONST struct device *pcidev_path_on_root_debug(pci_devfn_t devfn, const 
 void devtree_bug(const char *func, pci_devfn_t devfn);
 void __noreturn devtree_die(void);
 
+/*
+ * Dies if `dev` or `dev->chip_info` are NULL. Returns `dev->chip_info` otherwise.
+ *
+ * Only use if missing `chip_info` is fatal and we can't boot. If it's
+ * not fatal, please handle the NULL case gracefully.
+ */
 static inline DEVTREE_CONST void *config_of(const struct device *dev)
 {
 	if (dev && dev->chip_info)
@@ -352,6 +390,7 @@ static inline DEVTREE_CONST void *config_of_soc(void)
 	return config_of(pcidev_on_root(0, 0));
 }
 
+void enable_static_device(struct device *dev);
 void enable_static_devices(struct device *bus);
 void scan_smbus(struct device *bus);
 void scan_generic_bus(struct device *bus);

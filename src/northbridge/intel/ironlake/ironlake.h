@@ -43,7 +43,7 @@
 
 /* Device 0:0.0 PCI configuration space (Host Bridge) */
 
-#include "hostbridge_regs.h"
+#include "registers/host_bridge.h"
 
 /*
  * Generic Non-Core Registers
@@ -120,28 +120,7 @@
 #define EPBAR16(x)	(*((volatile u16 *)(DEFAULT_EPBAR + (x))))
 #define EPBAR32(x)	(*((volatile u32 *)(DEFAULT_EPBAR + (x))))
 
-#define EPPVCCAP1	0x004	/* 32bit */
-#define EPPVCCAP2	0x008	/* 32bit */
-
-#define EPVC0RCAP	0x010	/* 32bit */
-#define EPVC0RCTL	0x014	/* 32bit */
-#define EPVC0RSTS	0x01a	/* 16bit */
-
-#define EPVC1RCAP	0x01c	/* 32bit */
-#define EPVC1RCTL	0x020	/* 32bit */
-#define EPVC1RSTS	0x026	/* 16bit */
-
-#define EPVC1MTS	0x028	/* 32bit */
-#define EPVC1IST	0x038	/* 64bit */
-
-#define EPESD		0x044	/* 32bit */
-
-#define EPLE1D		0x050	/* 32bit */
-#define EPLE1A		0x058	/* 64bit */
-#define EPLE2D		0x060	/* 32bit */
-#define EPLE2A		0x068	/* 64bit */
-
-#define PORTARB		0x100	/* 256bit */
+#include "registers/epbar.h"
 
 /*
  * DMIBAR
@@ -151,35 +130,7 @@
 #define DMIBAR16(x)	(*((volatile u16 *)(DEFAULT_DMIBAR + (x))))
 #define DMIBAR32(x)	(*((volatile u32 *)(DEFAULT_DMIBAR + (x))))
 
-#define DMIVCECH	0x000	/* 32bit */
-#define DMIPVCCAP1	0x004	/* 32bit */
-#define DMIPVCCAP2	0x008	/* 32bit */
-
-#define DMIPVCCCTL	0x00c	/* 16bit */
-
-#define DMIVC0RCAP	0x010	/* 32bit */
-#define DMIVC0RCTL	0x014	/* 32bit */
-#define DMIVC0RSTS	0x01a	/* 16bit */
-
-#define DMIVC1RCAP	0x01c	/* 32bit */
-#define DMIVC1RCTL	0x020	/* 32bit */
-#define DMIVC1RSTS	0x026	/* 16bit */
-
-#define DMILE1D		0x050	/* 32bit */
-#define DMILE1A		0x058	/* 64bit */
-#define DMILE2D		0x060	/* 32bit */
-#define DMILE2A		0x068	/* 64bit */
-
-#define DMILCAP		0x084	/* 32bit */
-#define DMILCTL		0x088	/* 16bit */
-#define DMILSTS		0x08a	/* 16bit */
-
-#define DMICTL1		0x0f0	/* 32bit */
-#define DMICTL2		0x0fc	/* 32bit */
-
-#define DMICC		0x208	/* 32bit */
-
-#define DMIDRCCFG	0xeb4	/* 32bit */
+#include "registers/dmibar.h"
 
 #ifndef __ASSEMBLER__
 

@@ -110,7 +110,7 @@ static void fsp_usb_oem_customization(FSP_S_CONFIG *scfg,
 	/* each OC mapping in xhci_oc_pin_select is 4 bit per USB port */
 	ASSERT(2 * sizeof(scfg->xhci_oc_pin_select) >= USB_PORT_COUNT);
 
-	scfg->xhci0_force_gen1 = cfg->xhci0_force_gen1;
+	scfg->fch_usb_3_port_force_gen1 = cfg->usb3_port_force_gen1.usb3_port_force_gen1_en;
 
 	if (cfg->has_usb2_phy_tune_params) {
 		for (i = 0; i < FSPS_UPD_USB2_PORT_COUNT; i++) {

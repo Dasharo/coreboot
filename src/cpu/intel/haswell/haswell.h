@@ -28,7 +28,6 @@
 #define MSR_TEMPERATURE_TARGET		0x1a2
 #define MSR_LT_LOCK_MEMORY		0x2e7
 
-#define MSR_PIC_MSG_CONTROL		0x2e
 #define MSR_PLATFORM_INFO		0xce
 #define  PLATFORM_INFO_SET_TDP		(1 << 29)
 #define MSR_PKG_CST_CONFIG_CONTROL	0xe2
@@ -85,7 +84,7 @@
 
 /* PCODE MMIO communications live in the MCHBAR. */
 #define BIOS_MAILBOX_INTERFACE			0x5da4
-#define  MAILBOX_RUN_BUSY			(1UL << 31)
+#define  MAILBOX_RUN_BUSY			(1 << 31)
 #define  MAILBOX_BIOS_CMD_READ_PCS		1
 #define  MAILBOX_BIOS_CMD_WRITE_PCS		2
 #define  MAILBOX_BIOS_CMD_READ_CALIBRATION	0x509

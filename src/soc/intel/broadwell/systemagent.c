@@ -8,8 +8,8 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <intelblocks/power_limit.h>
 #include <vendorcode/google/chromeos/chromeos.h>
+#include <soc/acpi.h>
 #include <soc/cpu.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
@@ -405,7 +405,6 @@ static void systemagent_read_resources(struct device *dev)
 
 static void systemagent_init(struct device *dev)
 {
-	struct soc_power_limits_config *config;
 	u8 bios_reset_cpl, pair;
 
 	/* Enable Power Aware Interrupt Routing */
@@ -425,8 +424,7 @@ static void systemagent_init(struct device *dev)
 
 	/* Configure turbo power limits 1ms after reset complete bit */
 	mdelay(1);
-	config = config_of_soc();
-	set_power_limits(MOBILE_SKU_PL1_TIME_SEC, config);
+	set_power_limits(28);
 }
 
 static struct device_operations systemagent_ops = {
@@ -435,7 +433,7 @@ static struct device_operations systemagent_ops = {
 	.set_resources    = pci_dev_set_resources,
 	.enable_resources = pci_dev_enable_resources,
 	.init             = systemagent_init,
-	.ops_pci          = &broadwell_pci_ops,
+	.ops_pci          = &pci_dev_ops_pci,
 };
 
 static const unsigned short systemagent_ids[] = {
@@ -450,4 +448,35 @@ static const struct pci_driver systemagent_driver __pci_driver = {
 	.ops     = &systemagent_ops,
 	.vendor  = PCI_VENDOR_ID_INTEL,
 	.devices = systemagent_ids
+};
+
+static struct device_operations pci_domain_ops = {
+	.read_resources    = &pci_domain_read_resources,
+	.set_resources     = &pci_domain_set_resources,
+	.scan_bus          = &pci_domain_scan_bus,
+#if CONFIG(HAVE_ACPI_TABLES)
+	.write_acpi_tables = &northbridge_write_acpi_tables,
+#endif
+};
+
+static struct device_operations cpu_bus_ops = {
+	.read_resources   = noop_read_resources,
+	.set_resources    = noop_set_resources,
+	.init             = &broadwell_init_cpus,
+};
+
+static void broadwell_enable(struct device *dev)
+{
+	/* Set the operations if it is a special bus type */
+	if (dev->path.type == DEVICE_PATH_DOMAIN) {
+		dev->ops = &pci_domain_ops;
+	} else if (dev->path.type == DEVICE_PATH_CPU_CLUSTER) {
+		dev->ops = &cpu_bus_ops;
+	}
+}
+
+struct chip_operations soc_intel_broadwell_ops = {
+	CHIP_NAME("Intel Broadwell")
+	.enable_dev = &broadwell_enable,
+	.init       = &broadwell_init_pre_device,
 };

@@ -47,9 +47,22 @@ chip soc/intel/tigerlake
 	register "IomTypeCPortPadCfg[0]" = "0x090E000A"
 	register "IomTypeCPortPadCfg[1]" = "0x090E000D"
 
+	register "HybridStorageMode" = "1"
+
+	# Acoustic settings
+	register "AcousticNoiseMitigation" = "1"
+	register "SlowSlewRate[VR_DOMAIN_IA]" = "SLEW_FAST_8"
+	register "SlowSlewRate[VR_DOMAIN_GT]" = "SLEW_FAST_8"
+	register "SlowSlewRate[VR_DOMAIN_SA]" = "SLEW_FAST_8"
+	register "SlowSlewRate[VR_DOMAIN_VLCC]" = "SLEW_FAST_8"
+	register "FastPkgCRampDisable[VR_DOMAIN_IA]" = "1"
+	register "FastPkgCRampDisable[VR_DOMAIN_GT]" = "1"
+	register "FastPkgCRampDisable[VR_DOMAIN_SA]" = "1"
+	register "FastPkgCRampDisable[VR_DOMAIN_VLCC]" = "1"
+
 	device domain 0 on
-		device pci 05.0 on end # IPU                           0x9A19
-		device pci 15.0 on
+		device ref ipu on end
+		device ref i2c0 on
 			chip drivers/i2c/generic
 				register "hid" = ""10EC5682""
 				register "name" = ""RT58""
@@ -86,7 +99,7 @@ chip soc/intel/tigerlake
 				end
 			end
 		end
-		device pci 15.1 on
+		device ref i2c1 on
 			chip drivers/i2c/hid
 				register "generic.hid" = ""GDIX0000""
 				register "generic.desc" = ""Goodix Touchscreen""
@@ -135,8 +148,8 @@ chip soc/intel/tigerlake
 				register "key.label" = ""pen_eject""
 				device generic 0 on end
 			end
-		end # I2C1				0xA0E9
-		device pci 15.2 on
+		end
+		device ref i2c2 on
 			chip drivers/i2c/sx9310
 				register "desc" = ""SAR0 Proximity Sensor""
 				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_F14_IRQ)"
@@ -167,8 +180,8 @@ chip soc/intel/tigerlake
 				register "reg_sar_ctrl2" = "0x3c"
 				device i2c 28 on end
 			end
-		end # I2C2				0xA0EA
-		device pci 19.1 on
+		end
+		device ref i2c5 on
 			chip drivers/i2c/generic
 				register "hid" = ""ELAN0000""
 				register "desc" = ""ELAN Touchpad""
@@ -177,8 +190,8 @@ chip soc/intel/tigerlake
 				register "probed" = "1"
 				device i2c 15 on end
 			end
-		end # I2C5				0xA0C6
-		device pci 1f.3 on
+		end
+		device ref hda on
 			chip drivers/generic/max98357a
 				register "hid" = ""MX98357A""
 				register "sdmode_gpio" =  "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A10)"
@@ -208,7 +221,14 @@ chip soc/intel/tigerlake
 				end
 			end
 		end
-		device pci 1f.2 hidden
+		device ref pch_espi on
+			chip ec/google/chromeec
+				use conn0 as mux_conn[0]
+				use conn1 as mux_conn[1]
+				device pnp 0c09.0 on end
+			end
+		end
+		device ref pmc hidden
 			# The pmc_mux chip driver is a placeholder for the
 			# PMC.MUX device in the ACPI hierarchy.
 			chip drivers/intel/pmc_mux
@@ -217,30 +237,15 @@ chip soc/intel/tigerlake
 						register "usb2_port_number" = "9"
 						register "usb3_port_number" = "1"
 						# SBU & HSL follow CC
-						device generic 0 on end
+						device generic 0 alias conn0 on end
 					end
 					chip drivers/intel/pmc_mux/conn
 						register "usb2_port_number" = "4"
 						register "usb3_port_number" = "2"
-						# SBU is fixed, HSL follows CC
-						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
-						device generic 1 on
-							probe DB_USB USB4_GEN2
-							probe DB_USB USB3_ACTIVE
-							probe DB_USB USB4_GEN3
-							probe DB_USB USB3_NO_A
-						end
-					end
-					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "4"
-						register "usb3_port_number" = "2"
-						# SBU & HSL follow CC
-						device generic 1 on
-							probe DB_USB USB3_PASSIVE
-						end
+						device generic 1 alias conn1 on end
 					end
 				end
 			end
-		end # PMC
+		end
 	end
 end

@@ -13,6 +13,7 @@ CONFIG_CBFS_PREFIX:=$(call strip_quotes,$(CONFIG_CBFS_PREFIX))
 CONFIG_FMDFILE:=$(call strip_quotes,$(CONFIG_FMDFILE))
 CONFIG_DEVICETREE:=$(call strip_quotes, $(CONFIG_DEVICETREE))
 CONFIG_OVERRIDE_DEVICETREE:=$(call strip_quotes, $(CONFIG_OVERRIDE_DEVICETREE))
+CONFIG_CHIPSET_DEVICETREE:=$(call strip_quotes, $(CONFIG_CHIPSET_DEVICETREE))
 CONFIG_MEMLAYOUT_LD_FILE:=$(call strip_quotes, $(CONFIG_MEMLAYOUT_LD_FILE))
 
 #######################################################################
@@ -79,9 +80,9 @@ subdirs-y := src/lib src/commonlib/ src/console src/device src/acpi
 subdirs-y += src/ec/acpi $(wildcard src/ec/*/*) $(wildcard src/southbridge/*/*)
 subdirs-y += $(wildcard src/soc/*/*) $(wildcard src/northbridge/*/*)
 subdirs-y += src/superio
-subdirs-y += $(wildcard src/drivers/*) $(wildcard src/drivers/*/*)
+subdirs-y += $(wildcard src/drivers/*) $(wildcard src/drivers/*/*) $(wildcard src/drivers/*/*/*)
 subdirs-y += src/cpu src/vendorcode
-subdirs-y += util/cbfstool util/sconfig util/nvramtool util/pgtblgen
+subdirs-y += util/cbfstool util/sconfig util/nvramtool util/pgtblgen util/amdfwtool
 subdirs-y += util/futility util/marvell util/bincfg util/supermicro
 subdirs-y += $(wildcard src/arch/*)
 subdirs-y += src/mainboard/$(MAINBOARDDIR)
@@ -576,9 +577,6 @@ $(IFDTOOL):
 	cp -a $(top)/util/ifdtool/ifdtool $@
 
 AMDFWTOOL:=$(objutil)/amdfwtool/amdfwtool
-$(AMDFWTOOL): $(top)/util/amdfwtool/amdfwtool.c
-	@printf "    HOSTCC     $(subst $(obj)/,,$(@))\n"
-	$(HOSTCC) $(HOSTCFLAGS) -DCONFIG_ROM_SIZE=$(CONFIG_ROM_SIZE) -o $@ $<
 
 APCB_EDIT_TOOL:=$(top)/util/apcb/apcb_edit.py
 
@@ -602,13 +600,24 @@ OVERRIDE_DEVICETREE_FILE := $(src)/mainboard/$(MAINBOARDDIR)/$(CONFIG_OVERRIDE_D
 SCONFIG_OPTIONS += --override_devtree=$(OVERRIDE_DEVICETREE_FILE)
 endif
 
+ifneq ($(CONFIG_CHIPSET_DEVICETREE),)
+CHIPSET_DEVICETREE_FILE := $(src)/$(CONFIG_CHIPSET_DEVICETREE)
+SCONFIG_OPTIONS += --chipset_devtree=$(CHIPSET_DEVICETREE_FILE)
+endif
+
 DEVICETREE_STATIC_C := $(obj)/mainboard/$(MAINBOARDDIR)/static.c
 SCONFIG_OPTIONS += --output_c=$(DEVICETREE_STATIC_C)
 
 DEVICETREE_STATIC_H := $(obj)/static.h
 SCONFIG_OPTIONS += --output_h=$(DEVICETREE_STATIC_H)
 
-$(DEVICETREE_STATIC_C): $(DEVICETREE_FILE) $(OVERRIDE_DEVICETREE_FILE) $(objutil)/sconfig/sconfig
+DEVICETREE_DEVICENAMES_H := $(obj)/static_devices.h
+SCONFIG_OPTIONS += --output_d=$(DEVICETREE_DEVICENAMES_H)
+
+DEVICETREE_FWCONFIG_H := $(obj)/static_fw_config.h
+SCONFIG_OPTIONS += --output_f=$(DEVICETREE_FWCONFIG_H)
+
+$(DEVICETREE_STATIC_C): $(DEVICETREE_FILE) $(OVERRIDE_DEVICETREE_FILE) $(CHIPSET_DEVICETREE_FILE) $(objutil)/sconfig/sconfig
 	@printf "    SCONFIG    $(subst $(src)/,,$(<))\n"
 	mkdir -p $(dir $(DEVICETREE_STATIC_C))
 	$(objutil)/sconfig/sconfig $(SCONFIG_OPTIONS)
@@ -1108,7 +1117,6 @@ RAMSTAGE=
 endif
 
 $(obj)/coreboot.rom: $(obj)/coreboot.pre $(RAMSTAGE) $(CBFSTOOL) $$(INTERMEDIATE)
-
 	@printf "    CBFS       $(subst $(obj)/,,$(@))\n"
 # The full ROM may be larger than the CBFS part, so create an empty
 # file (filled with \377 = 0xff) and copy the CBFS image over it.

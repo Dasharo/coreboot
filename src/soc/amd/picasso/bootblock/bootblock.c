@@ -16,12 +16,7 @@
 #include <soc/i2c.h>
 #include <amdblocks/amd_pci_mmconf.h>
 #include <acpi/acpi.h>
-#include <security/vboot/symbols.h>
-
-/* vboot includes directory may not be in include path if vboot is not enabled */
-#if CONFIG(VBOOT_STARTS_BEFORE_BOOTBLOCK)
-#include <2struct.h>
-#endif
+#include <security/vboot/vbnv.h>
 
 asmlinkage void bootblock_resume_entry(void);
 
@@ -132,19 +127,10 @@ void bootblock_soc_init(void)
 	u32 val = cpuid_eax(1);
 	printk(BIOS_DEBUG, "Family_Model: %08x\n", val);
 
-#if CONFIG(VBOOT_STARTS_BEFORE_BOOTBLOCK)
-	if (*(uint32_t *)_vboot2_work != VB2_SHARED_DATA_MAGIC) {
-		printk(BIOS_ERR, "ERROR: VBOOT workbuf not valid.\n");
-
-		printk(BIOS_DEBUG, "Signature: %#08x\n", *(uint32_t *)_vboot2_work);
-
-		cmos_init(0);
-		cmos_write(CMOS_RECOVERY_MAGIC_VAL, CMOS_RECOVERY_BYTE);
-		warm_reset();
-	} else {
-		cmos_write(0x00, CMOS_RECOVERY_BYTE);
+	if (CONFIG(VBOOT_STARTS_BEFORE_BOOTBLOCK)) {
+		verify_psp_transfer_buf();
+		show_psp_transfer_info();
 	}
-#endif
 
 	fch_early_init();
 }

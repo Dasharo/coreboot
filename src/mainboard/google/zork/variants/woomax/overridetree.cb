@@ -24,7 +24,7 @@ chip soc/amd/picasso
 	# End : OPN Performance Configuration
 	#USB 2.0 strength
 	register "usb_2_port_tune_params[0]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -36,7 +36,7 @@ chip soc/amd/picasso
 	}"
 
 	register "usb_2_port_tune_params[3]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -63,6 +63,12 @@ chip soc/amd/picasso
 		.rise_time_ns = 110,  /* 0 to 1.26v (1.8 * .7) */
 		.fall_time_ns = 34,  /* 1.26v to 0 */
 		.early_init = true,
+	}"
+
+	register "emmc_config" = "{
+		.timing = SD_EMMC_EMMC_HS400,
+		.sdr104_hs400_driver_strength = SD_EMMC_DRIVE_STRENGTH_A,
+		.init_khz_preset = 400,
 	}"
 
 	# See AMD 55570-B1 Table 13: PCI Device ID Assignments.

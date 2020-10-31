@@ -24,7 +24,7 @@ config SOUTH_BRIDGE_OPTIONS # dummy
 	select PCIEXP_ASPM
 	select PCIEXP_COMMON_CLOCK
 	select INTEL_DESCRIPTOR_MODE_CAPABLE
-	select HAVE_SPI_CONSOLE_SUPPORT
+	select HAVE_EM100PRO_SPI_CONSOLE_SUPPORT
 	select RTC
 	select SOUTHBRIDGE_INTEL_COMMON_GPIO if !INTEL_LYNXPOINT_LP
 	select SOUTHBRIDGE_INTEL_COMMON_RCBA_PIRQ
@@ -51,11 +51,19 @@ config SERIRQ_CONTINUOUS_MODE
 	  If you set this option to y, the serial IRQ machine will be
 	  operated in continuous mode.
 
+config HPET_MIN_TICKS
+	hex
+	default 0x80
+
 config FINALIZE_USB_ROUTE_XHCI
 	bool "Route all ports to XHCI controller in finalize step"
 	default y
 	help
 	  If you set this option to y, the USB ports will be routed
 	  to the XHCI controller during the finalize SMM callback.
+
+config PCIEXP_AER
+	bool
+	default y
 
 endif
