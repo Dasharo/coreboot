@@ -235,7 +235,7 @@ int spi_flash_probe_adesto(const struct spi_slave *spi, u8 *idcode,
 	flash->size = flash->sector_size *params->sectors_per_block *
 			params->nr_blocks;
 	flash->erase_cmd = CMD_AT25DF_SE;
-	flash-_status_cmd = CMD_AT25DF_RDSR;
+	flash->status_cmd = CMD_AT25DF_RDSR;
 
 	flash->ops = &spi_flash_ops;
 
