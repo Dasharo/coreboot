@@ -302,8 +302,10 @@ $(obj)/VBLOCK_B.bin: $(obj)/FW_MAIN_B.bin $(FUTILITY)
 
 ifeq ($(CONFIG_VBOOT_SLOTS_RW_AB),y)
 files_added:: $(obj)/VBLOCK_B.bin
-	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r VBLOCK_B -f $(obj)/VBLOCK_B.bin
-	@printf "    FLASHMAP Layout generated for RO, A and B partition.\n"
+files_added:: $(obj)/VBLOCK_B.bin payloads/external/tianocore/tianocore/Build/UEFIPAYLOAD.fd
+ 	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r VBLOCK_B -f $(obj)/VBLOCK_B.bin
+	$(CBFSTOOL) $(obj)/coreboot.rom add-payload -r FW_MAIN_A -f payloads/external/tianocore/tianocore/Build/UEFIPAYLOAD.fd -n fallback/payload -c lzma
+	$(CBFSTOOL) $(obj)/coreboot.rom print -r FW_MAIN_A
 else ifeq ($(CONFIG_VBOOT_SLOTS_RW_A),y)
 files_added:: $(obj)/VBLOCK_A.bin
 	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r VBLOCK_A -f $(obj)/VBLOCK_A.bin
