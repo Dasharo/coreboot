@@ -32,6 +32,8 @@
 #include <fit_payload.h>
 #include <vb2_api.h>
 #include <commonlib/region.h>
+#include <fmap.h>
+#include <security/tpm/tspi.h>
 
 /* Only can represent up to 1 byte less than size_t. */
 const struct mem_region_device addrspace_32bit =
@@ -53,15 +55,20 @@ int prog_locate(struct prog *prog)
 
 	/* Check if we looking for payload and SPI flash is locked. */
 	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog))) {
+		struct region_device rdev;
 		cbfs_type = CBFS_TYPE_SELF;
-		printk(BIOS_ERR, "Locating payload in FW_MAIN_A\n");
-		/* We should load UEFI payload form FW_MAIN_A now */
-		if (cbfs_locate_file_in_region(&file, "FW_MAIN_A",
-					       prog_name(prog), &cbfs_type) < 0)
+		/* Locate PSPDIR just to fill the rdev fields */
+		fmap_locate_area_as_rdev("PSPDIR", &rdev);
+		/* Update the region fields to locate modified FW_MAIN_A region */
+		rdev.region.offset=0x90000;
+		rdev.region.size=0x100000;
+		/* We should load UEFI payload from FW_MAIN_A now */
+		if (cbfs_locate(&file, &rdev, prog_name(prog), &cbfs_type) < 0)
 			return -1;
-
 		cbfsf_file_type(&file, &prog->cbfs_type);
 		cbfs_file_data(prog_rdev(prog), &file);
+		if (tpm_measure_region(prog_rdev(prog), 2, "FMAP: FW_MAIN_A CBFS: fallback/payload"))
+			return -1;
 		return 0;
 	}
 #else
