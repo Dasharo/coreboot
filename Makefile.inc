@@ -1118,9 +1118,9 @@ ifeq ($(CONFIG_VPD),y)
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s sd3mode=disabled
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s watchdog=0
 endif
-	$(CBFSTOOL) UD_Polisy_v1.0.0_generic.rom read -r WP_RO -f region_WPRO.rom
-	$(CBFSTOOL) $@.tmp write -r WP_RO -f region_WPRO.rom
-	rm region_WPRO.rom
+	$(CBFSTOOL) UD_Polisy_v1.0.0_generic.rom read -r COREBOOT -f region_COREBOOT.rom
+	$(CBFSTOOL) $@.tmp write -F -r COREBOOT -f region_COREBOOT.rom
+	rm region_COREBOOT.rom
 	$(CBFSTOOL) $@.tmp add-payload -r FW_MAIN_A -n fallback/payload -f UEFIPAYLOAD.fd -c lzma
 
 ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
