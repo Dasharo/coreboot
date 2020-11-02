@@ -1118,9 +1118,6 @@ ifeq ($(CONFIG_VPD),y)
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s sd3mode=disabled
 	$(VPDTOOL) -f $@.tmp -i RW_VPD -s watchdog=0
 endif
-	$(CBFSTOOL) UD_Polisy_v1.0.0_generic.rom read -r COREBOOT -f region_COREBOOT.rom
-	$(CBFSTOOL) $@.tmp write -F -r COREBOOT -f region_COREBOOT.rom
-	rm region_COREBOOT.rom
 
 ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
 	dd if=$(CONFIG_CPU_UCODE_BINARIES) of=$@.tmp bs=1 seek=6665692 count=3424 conv=notrunc 2> /dev/null
