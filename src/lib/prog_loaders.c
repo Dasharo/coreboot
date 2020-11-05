@@ -32,6 +32,8 @@
 #include <fit_payload.h>
 #include <vb2_api.h>
 #include <commonlib/region.h>
+#include <fmap.h>
+#include <security/tpm/tspi.h>
 
 /* Only can represent up to 1 byte less than size_t. */
 const struct mem_region_device addrspace_32bit =
@@ -49,46 +51,52 @@ int prog_locate(struct prog *prog)
 	uint8_t golden_hash[VB2_SHA256_DIGEST_SIZE] = {0};
 	void* prog_memmap;
 
-	if (spi_flash_status(boot_device_spi_flash(), &sr) < 0) {
+
+	if (spi_flash_status(boot_device_spi_flash(), sr) < 0) {
 		printk(BIOS_ERR, "Failed to read SPI status register 1\n");
 		return -1;
 	}
 	cbfs_prepare_program_locate();
 
 	/* Check if we looking for payload and SPI flash is locked. */
-	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog)) &&
-	    (sr[0] & 0x80) && (sr[1] & 1) ) {
+	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog))) {
+		struct region_device rdev;
 		cbfs_type = CBFS_TYPE_SELF;
-		/* We should load UEFI payload form FW_MAIN_A now */
-		if (cbfs_locate_file_in_region(&file, "FW_MAIN_A",
-					       prog_name(prog), &cbfs_type) < 0)
+		/* Locate PSPDIR just to fill the rdev fields */
+		fmap_locate_area_as_rdev("PSPDIR", &rdev);
+		/* Update the region fields to locate modified FW_MAIN_A region */
+		rdev.region.offset=0x90000;
+		rdev.region.size=0xc0000;
+		/* We should load UEFI payload from FW_MAIN_A now */
+		if (cbfs_locate(&file, &rdev, prog_name(prog), &cbfs_type) < 0)
 			return -1;
-
 		cbfsf_file_type(&file, &prog->cbfs_type);
 		cbfs_file_data(prog_rdev(prog), &file);
-		prog_memmap = rdev_mmap_full(prog_rdev(prog));
-		if (!prog_memmap)
+		if (tpm_measure_region(prog_rdev(prog), 2, "FMAP: FW_MAIN_A CBFS: fallback/payload"))
 			return -1;
-		/* TODO verify SHA256sum to ensure verified boot is preserved */
+		-               prog_memmap = rdev_mmap_full(prog_rdev(prog));
+                if (!prog_memmap)
+			return -1;
+                /* TODO verify SHA256sum to ensure verified boot is preserved */
 		vb2_digest_buffer((const uint8_t *)prog_memmap,
-				  region_device_sz(prog_rdev(prog)),
-				  VB2_HASH_SHA256, data_hash,
-				  sizeof(data_hash));
+                                  region_device_sz(prog_rdev(prog)),
+                                  VB2_HASH_SHA256, data_hash,
+                                  sizeof(data_hash));
+ 
+                rdev_munmap(prog_rdev(prog), prog_memmap);
+ 
+                if (!memcmp((const void *) golden_hash,
+                            (const void *) data_hash,
+                            VB2_SHA256_DIGEST_SIZE)) {
+                        return 0;
+                } else {
+                        printk(BIOS_ERR, "Failed to verify payload integrity\n");
+			hexdump(golden_hash, VB2_SHA256_DIGEST_SIZE);
+			hexdump(data_hash, VB2_SHA256_DIGEST_SIZE);
+                        return -1;
+                }
 
-		rdev_munmap(prog_rdev(prog), prog_memmap);
-
-		if (!memcmp((const void *) golden_hash,
-			    (const void *) data_hash,
-			    VB2_SHA256_DIGEST_SIZE)) {
-			return 0;
-		} else {
-			printk(BIOS_ERR, "Failed to verify payload integrity\n");
-			return -1;
-		}
-	} else {
-		/* Load the SeaBIOS from current partition */
-		if (cbfs_boot_locate(&file, prog_name(prog), NULL))
-			return -1;
+		return 0;
 	}
 #else
 	cbfs_prepare_program_locate();
