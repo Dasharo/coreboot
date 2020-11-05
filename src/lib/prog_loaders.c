@@ -34,6 +34,7 @@
 #include <commonlib/region.h>
 #include <fmap.h>
 #include <security/tpm/tspi.h>
+#include <security/vboot/vbnv.h>
 
 /* Only can represent up to 1 byte less than size_t. */
 const struct mem_region_device addrspace_32bit =
@@ -48,7 +49,12 @@ int prog_locate(struct prog *prog)
 	u8 sr[2];
 	uint8_t data_hash[VB2_SHA256_DIGEST_SIZE];
 	/* TODO put the golden has here */
-	uint8_t golden_hash[VB2_SHA256_DIGEST_SIZE] = {0};
+	uint8_t golden_hash[VB2_SHA256_DIGEST_SIZE] = {
+		0xf8, 0x40, 0xa2, 0x86, 0x7a, 0x61, 0x81, 0xda,
+		0xab, 0xeb, 0xb6, 0x65, 0xe6, 0x2a, 0x0b, 0xef,
+		0x73, 0x0b, 0x6f, 0xd0, 0xd2, 0x9c, 0xf2, 0x62,
+		0xcf, 0x33, 0x31, 0x3e, 0x01, 0xbb, 0x10, 0x95,
+	};
 	void* prog_memmap;
 
 
@@ -90,7 +96,7 @@ int prog_locate(struct prog *prog)
                             VB2_SHA256_DIGEST_SIZE)) {
                         return 0;
                 } else {
-                        printk(BIOS_ERR, "Failed to verify payload integrity\n");
+                        printk(BIOS_ALERT, "Failed to verify payload integrity\n");
 			hexdump(golden_hash, VB2_SHA256_DIGEST_SIZE);
 			hexdump(data_hash, VB2_SHA256_DIGEST_SIZE);
                         return -1;
@@ -264,8 +270,11 @@ void payload_load(void)
 	}
 
 out:
-	if (prog_entry(payload) == NULL)
-		die_with_post_code(POST_INVALID_ROM, "Payload not loaded.\n");
+	if (prog_entry(payload) == NULL) {
+		printk(BIOS_ALERT, "Payload not loaded.\n");
+		set_recovery_mode_into_vbnv(0x03);
+		board_reset();
+	}
 }
 
 void payload_run(void)
