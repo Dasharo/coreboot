@@ -74,7 +74,7 @@ int prog_locate(struct prog *prog)
 		cbfs_file_data(prog_rdev(prog), &file);
 		if (tpm_measure_region(prog_rdev(prog), 2, "FMAP: FW_MAIN_A CBFS: fallback/payload"))
 			return -1;
-		-               prog_memmap = rdev_mmap_full(prog_rdev(prog));
+		prog_memmap = rdev_mmap_full(prog_rdev(prog));
                 if (!prog_memmap)
 			return -1;
                 /* TODO verify SHA256sum to ensure verified boot is preserved */
