@@ -38,7 +38,7 @@ $(project_dir):
 update: $(project_dir)
 	cd  $(project_dir); \
 		echo "    Fetching new commits from the $(project_name) repo"; \
-		git fetch origin 2>/dev/null;
+		git fetch origin 2>/dev/null; \
 		if ! git rev-parse --verify -q $(TAG-y) >/dev/null; then \
 			echo "    $(TAG-y) is not a valid git reference"; \
 			exit 1; \
