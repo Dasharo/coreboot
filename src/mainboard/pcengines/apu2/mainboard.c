@@ -341,7 +341,7 @@ static void mainboard_enable(struct device *dev)
 	u8 *spd;
 	u8 spd_buffer[CONFIG_DIMM_SPD_SIZE];
 
-	if(CONFIG(VBOOT_MEASURED_BOOT)) {
+	if(CONFIG(VBOOT)) {
 		struct cbfsf fh;
 		u32 cbfs_type = CBFS_TYPE_SPD;
 
