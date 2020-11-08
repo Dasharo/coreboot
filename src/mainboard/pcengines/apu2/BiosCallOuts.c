@@ -121,7 +121,7 @@ static AGESA_STATUS board_ReadSpd_from_cbfs(UINT32 Func, UINTN Data, VOID *Confi
 	if (info->DimmId != 0)
 		return AGESA_UNSUPPORTED;
 
-	if (CONFIG(VBOOT_MEASURED_BOOT)) {
+	if (CONFIG(VBOOT)) {
 		struct cbfsf fh;
 		u32 cbfs_type = CBFS_TYPE_SPD;
 

@@ -5,6 +5,7 @@
 #include <console/console.h>
 #include <program_loading.h>
 #include <security/vboot/vboot_common.h>
+#include <smp/node.h>
 
 void __weak verstage_mainboard_init(void)
 {
@@ -17,7 +18,7 @@ void main(void)
 	exception_init();
 	verstage_mainboard_init();
 
-	if (CONFIG(VBOOT_RETURN_FROM_VERSTAGE)) {
+	if (CONFIG(VBOOT_RETURN_FROM_VERSTAGE) && boot_cpu()) {
 		verstage_main();
 	} else {
 		run_romstage();

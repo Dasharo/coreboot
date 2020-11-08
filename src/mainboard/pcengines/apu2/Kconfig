@@ -143,7 +143,11 @@ config VBOOT_VBNV_OFFSET
 
 config RO_REGION_ONLY
 	string
-	default "spd.bin AGESA" if VBOOT
+	default "spd.bin AGESA apu/amdfw" if VBOOT
+
+config RW_REGION_ONLY
+	string
+	default "fallback/payload"
 
 config AGESA_USE_1_0_0_4_HEADER
 	bool
