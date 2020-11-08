@@ -1181,7 +1181,7 @@ ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
 endif
 	$(CBFSTOOL) $@.tmp remove -r COREBOOT -n linux/payload
 	$(CBFSTOOL) $@.tmp add-payload -f bzImage -n fallback/payload -c none \
-		-r COREBOOT -C "console=ttyS1,115200 iomem=relaxed" -I "initrd.cpio.xz"
+		-r COREBOOT -C "console=ttyS0,115200 iomem=relaxed" -I "initrd.cpio.xz"
 	mv $@.tmp $@
 	@printf "    CBFSLAYOUT  $(subst $(obj)/,,$(@))\n\n"
 	$(CBFSTOOL) $@ layout

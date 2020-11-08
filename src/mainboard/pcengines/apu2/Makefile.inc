@@ -32,7 +32,7 @@ bootorder-file := bootorder_def
 bootorder-type := raw
 
 LINUX_OPTIONS=-I "initrd.cpio.xz"
-LINUX_OPTIONS+=-C "console=ttyS1,115200 iomem=relaxed"
+LINUX_OPTIONS+=-C "console=ttyS0,115200 iomem=relaxed"
 
 cbfs-files-y += linux/payload
 linux/payload-file := bzImage
