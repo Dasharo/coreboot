@@ -18,7 +18,7 @@ ifeq ($(CONFIG_TIANOCORE_UEFIPAYLOAD),y)
 bootloader=UefiPayloadPkg
 logo_pkg=MdeModulePkg
 build_flavor=-D BOOTLOADER=COREBOOT -D PCIE_BASE=$(CONFIG_MMCONF_BASE_ADDRESS) -DPS2_KEYBOARD_ENABLE
-TAG=upstream/master
+TAG=$(CONFIG_TIANOCORE_REVISION_ID)
 else
 bootloader=CorebootPayloadPkg
 logo_pkg=CorebootPayloadPkg
@@ -39,9 +39,9 @@ TIMER=-DUSE_HPET_TIMER
 endif
 
 ifeq ($(CONFIG_TIANOCORE_TARGET_IA32), y)
-	BUILD_STR=-q -a IA32 -t COREBOOT -p $(bootloader)/$(bootloader)Ia32.dsc -b $(BUILD_TYPE) $(TIMER) $(build_flavor)
+	BUILD_STR=-q -a IA32 -t COREBOOT -p $(bootloader)/$(bootloader)Ia32.dsc -b $(BUILD_TYPE) $(TIMER) $(build_flavor) -D NETWORK_IPXE=TRUE -D SERIAL_TERMINAL=TRUE -D SECURE_BOOT_ENABLE=TRUE
 else
-	BUILD_STR=-q -a IA32 -a X64 -t COREBOOT -p $(bootloader)/$(bootloader)Ia32X64.dsc -b $(BUILD_TYPE) $(TIMER) $(build_flavor)
+	BUILD_STR=-q -a IA32 -a X64 -t COREBOOT -p $(bootloader)/$(bootloader)Ia32X64.dsc -b $(BUILD_TYPE) $(TIMER) $(build_flavor) -D NETWORK_IPXE=TRUE -D SERIAL_TERMINAL=TRUE -D SECURE_BOOT_ENABLE=TRUE
 endif
 
 all: clean build
