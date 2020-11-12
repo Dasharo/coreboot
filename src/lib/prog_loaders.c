@@ -71,8 +71,8 @@ int prog_locate(struct prog *prog)
 		/* Locate PSPDIR just to fill the rdev fields */
 		fmap_locate_area_as_rdev("PSPDIR", &rdev);
 		/* Update the region fields to locate modified FW_MAIN_A region */
-		rdev.region.offset=0x90000;
-		rdev.region.size=0xc0000;
+		rdev.region.offset=0x5a900;
+		rdev.region.size=0xc5700;
 		/* We should load UEFI payload from FW_MAIN_A now */
 		if (cbfs_locate(&file, &rdev, prog_name(prog), &cbfs_type) < 0)
 			return -1;
