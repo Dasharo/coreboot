@@ -143,7 +143,7 @@ config VBOOT_VBNV_OFFSET
 
 config RO_REGION_ONLY
 	string
-	default "spd.bin AGESA apu/amdfw" if VBOOT
+	default "spd.bin AGESA apu/amdfw linux/payload" if VBOOT
 
 config RW_REGION_ONLY
 	string
