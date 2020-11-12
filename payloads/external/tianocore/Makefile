@@ -19,13 +19,13 @@ export SHELL := env bash
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
 project_git_repo=https://github.com/3mdeb/edk2.git
-project_git_branch=spi
+project_git_branch=uefi_paylaod_strip_x64
 
 TAG-y=origin/$(project_git_branch)
 
 export EDK_TOOLS_PATH=$(project_dir)/BaseTools
 
-BUILD_STR=-q -a IA32 -t COREBOOT -p UefiPayloadPkg/UefiPayloadPkgIa32.dsc -b RELEASE \
+BUILD_STR=-q -a IA32 -a X64 -t COREBOOT -p UefiPayloadPkg/UefiPayloadPkgIa32X64.dsc -b RELEASE \
 		-D NETWORK_IPXE=FALSE -D SERIAL_TERMINAL=TRUE -D BOOTLOADER=COREBOOT \
 		-D SECURE_BOOT_ENABLE=TRUE -D PS2_KEYBOARD_ENABLE=FALSE -DUSE_HPET_TIMER
 
