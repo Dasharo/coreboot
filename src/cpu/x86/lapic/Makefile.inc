@@ -4,6 +4,7 @@ bootblock-$(CONFIG_UDELAY_LAPIC) += apic_timer.c
 romstage-$(CONFIG_UDELAY_LAPIC) += apic_timer.c
 ramstage-$(CONFIG_UDELAY_LAPIC) += apic_timer.c
 postcar-$(CONFIG_UDELAY_LAPIC) += apic_timer.c
+verstage_x86-$(CONFIG_UDELAY_LAPIC) += apic_timer.c
 bootblock-y += boot_cpu.c
 verstage_x86-y += boot_cpu.c
 romstage-y += boot_cpu.c
