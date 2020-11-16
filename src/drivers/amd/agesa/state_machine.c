@@ -29,9 +29,22 @@ static void agesa_locate_image(AMD_CONFIG_PARAMS *StdHeader)
 	const char ModuleIdentifier[] = AGESA_ID;
 	const void *agesa, *image;
 	size_t file_size;
+	uint32_t cbfs_type = CBFS_TYPE_RAW;
+	struct cbfsf fh;
 
-	agesa = cbfs_boot_map_with_leak((const char *)CONFIG_AGESA_CBFS_NAME,
-			CBFS_TYPE_RAW, &file_size);
+	if (CONFIG(VBOOT)) {
+		if (cbfs_locate_file_in_region(&fh, "COREBOOT",
+					       (const char *)CONFIG_AGESA_CBFS_NAME,
+				               &cbfs_type) < 0) {
+			die("AGESA not found!");
+		}
+		file_size = region_device_sz(&fh.data);
+		agesa = rdev_mmap_full(&fh.data);
+	} else {
+		agesa = cbfs_boot_map_with_leak((const char *)CONFIG_AGESA_CBFS_NAME,
+					CBFS_TYPE_RAW, &file_size);
+	}
+
 	if (agesa == NULL)
 		return;
 
@@ -263,7 +276,7 @@ int agesa_execute_state(struct sysinfo *cb, AGESA_STRUCT_NAME func)
 	if (CONFIG(AGESA_EXTRA_TIMESTAMPS) && task.ts_entry_id)
 		timestamp_add_now(task.ts_entry_id);
 
-	if (ENV_ROMSTAGE)
+	if (ENV_ROMSTAGE || ENV_BOOTBLOCK)
 		final = romstage_dispatch(cb, func, StdHeader);
 
 	if (ENV_RAMSTAGE)
