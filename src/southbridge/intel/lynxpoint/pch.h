@@ -120,7 +120,6 @@ void disable_gpe(u32 mask);
 void pch_enable(struct device *dev);
 void pch_disable_devfn(struct device *dev);
 void pch_log_state(void);
-void acpi_create_intel_hpet(acpi_hpet_t * hpet);
 void acpi_create_serialio_ssdt(acpi_header_t *ssdt);
 
 void enable_usb_bar(void);
@@ -168,7 +167,7 @@ void mainboard_config_rcba(void);
 #define GEN_PMCON_2		0xa2
 #define GEN_PMCON_3		0xa4
 #define PMIR			0xac
-#define  PMIR_CF9LOCK		(1UL << 31)
+#define  PMIR_CF9LOCK		(1 << 31)
 #define  PMIR_CF9GR		(1 << 20)
 
 /* GEN_PMCON_3 bits */
@@ -268,10 +267,10 @@ void mainboard_config_rcba(void);
 /* SATA IOBP Registers */
 #define SATA_IOBP_SP0G3IR	0xea000151
 #define SATA_IOBP_SP1G3IR	0xea000051
-#define SATA_IOBP_SP0DTLE_DATA	0xea002550
-#define SATA_IOBP_SP0DTLE_EDGE	0xea002554
-#define SATA_IOBP_SP1DTLE_DATA	0xea002750
-#define SATA_IOBP_SP1DTLE_EDGE	0xea002754
+#define SATA_IOBP_SP0DTLE_DATA	0xea002750
+#define SATA_IOBP_SP0DTLE_EDGE	0xea002754
+#define SATA_IOBP_SP1DTLE_DATA	0xea002550
+#define SATA_IOBP_SP1DTLE_EDGE	0xea002554
 
 #define SATA_DTLE_MASK		0xF
 #define SATA_DTLE_DATA_SHIFT	24
@@ -316,7 +315,7 @@ void mainboard_config_rcba(void);
 #define  XHCI_USB3_PORTSC_WRC	(1 << 19)	/* Warm Reset Complete */
 #define  XHCI_USB3_PORTSC_LWS	(1 << 16)	/* Link Write Strobe */
 #define  XHCI_USB3_PORTSC_PED	(1 << 1)	/* Port Enabled/Disabled */
-#define  XHCI_USB3_PORTSC_WPR	(1UL << 31)	/* Warm Port Reset */
+#define  XHCI_USB3_PORTSC_WPR	(1 << 31)	/* Warm Port Reset */
 #define  XHCI_USB3_PORTSC_PLS	(0xf << 5)	/* Port Link State */
 #define   XHCI_PLSR_DISABLED	(4 << 5)	/* Port is disabled */
 #define   XHCI_PLSR_RXDETECT	(5 << 5)	/* Port is disconnected */
@@ -409,7 +408,7 @@ void mainboard_config_rcba(void);
 #define RPFN		0x0404	/* 32bit */
 
 /* Root Port configuratinon space hide */
-#define RPFN_HIDE(port)         (1UL << (((port) * 4) + 3))
+#define RPFN_HIDE(port)         (1 << (((port) * 4) + 3))
 /* Get the function number assigned to a Root Port */
 #define RPFN_FNGET(reg,port)    (((reg) >> ((port) * 4)) & 7)
 /* Set the function number for a Root Port */

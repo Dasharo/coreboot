@@ -79,15 +79,6 @@ void pci_bus_enable_resources(struct device *dev);
 void pci_bus_reset(struct bus *bus);
 struct device *pci_probe_dev(struct device *dev, struct bus *bus,
 				unsigned int devfn);
-
-/*
- * Determine if the given PCI device is the source of wake from sleep by checking PME_STATUS and
- * PME_ENABLE bits in PM control and status register.
- *
- * Returns true if PCI device is wake source, false otherwise.
- */
-bool pci_dev_is_wake_source(const struct device *dev);
-
 void do_pci_scan_bridge(struct device *dev,
 	void (*do_scan_bus)(struct bus *bus,
 		unsigned int min_devfn, unsigned int max_devfn));
@@ -144,7 +135,7 @@ void pci_dev_request_bus_master(pci_devfn_t dev)
 void pci_dev_request_bus_master(struct device *dev)
 #endif /* ENV_PCI_SIMPLE_DEVICE */
 {
-	if (CONFIG(PCI_ALLOW_BUS_MASTER))
+	if (CONFIG(PCI_ALLOW_BUS_MASTER_ANY_DEVICE))
 		pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER);
 }
 

@@ -22,6 +22,9 @@ chip soc/intel/tigerlake
 	device domain 0 on
 		device ref dptf on
 			chip drivers/intel/dptf
+				## Disable Active Policy
+				register "policies.active" = "{[0] = {.target=DPTF_NONE}}"
+
 				## Passive Policy
 				register "policies.passive" = "{
 					[0] = DPTF_PASSIVE(CPU,		CPU,	       85, 1000),
@@ -102,7 +105,7 @@ chip soc/intel/tigerlake
 			chip drivers/i2c/hid
 				register "generic.hid" = ""GDIX0000""
 				register "generic.desc" = ""Goodix Touchscreen""
-				register "generic.irq" = "ACPI_IRQ_EDGE_LOW(GPP_E7_IRQ)"
+				register "generic.irq" = "ACPI_IRQ_LEVEL_LOW(GPP_E7_IRQ)"
 				register "generic.probed" = "1"
 				register "generic.reset_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C10)"
@@ -117,7 +120,7 @@ chip soc/intel/tigerlake
 			chip drivers/i2c/hid
 				register "generic.hid" = ""ELAN90FC""
 				register "generic.desc" = ""ELAN Touchscreen""
-				register "generic.irq" = "ACPI_IRQ_EDGE_LOW(GPP_E7_IRQ)"
+				register "generic.irq" = "ACPI_IRQ_LEVEL_LOW(GPP_E7_IRQ)"
 				register "generic.probed" = "1"
 				register "generic.reset_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C10)"
@@ -165,11 +168,18 @@ chip soc/intel/tigerlake
 			chip drivers/i2c/hid
 				register "generic.hid" = ""ELAN2700""
 				register "generic.desc" = ""ELAN Touchpad""
-				register "generic.irq" = "ACPI_IRQ_WAKE_EDGE_LOW(GPP_E15_IRQ)"
+				register "generic.irq" = "ACPI_IRQ_WAKE_LEVEL_LOW(GPP_E15_IRQ)"
 				register "generic.wake" = "GPE0_DW2_15"
 				register "generic.probed" = "1"
 				register "hid_desc_reg_offset" = "0x01"
 				device i2c 15 on end
+			end
+		end
+		device ref pch_espi on
+			chip ec/google/chromeec
+				use conn0 as mux_conn[0]
+				use conn1 as mux_conn[1]
+				device pnp 0c09.0 on end
 			end
 		end
 		device ref pmc hidden
@@ -182,14 +192,14 @@ chip soc/intel/tigerlake
 						register "usb3_port_number" = "1"
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
-						device generic 0 on end
+						device generic 0 alias conn0 on end
 					end
 					chip drivers/intel/pmc_mux/conn
 						register "usb2_port_number" = "3"
 						register "usb3_port_number" = "2"
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
-						device generic 1 on end
+						device generic 1 alias conn1 on end
 					end
 				end
 			end

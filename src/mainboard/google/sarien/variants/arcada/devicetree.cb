@@ -19,7 +19,6 @@ chip soc/intel/cannonlake
 	register "SataMode" = "Sata_AHCI"
 	register "SataPortsEnable[2]" = "1"
 	register "SataPortsDevSlp[2]" = "1"
-	register "InternalGfx" = "1"
 	register "SkipExtGfxScan" = "1"
 	register "PchPmSlpS3MinAssert" = "3"  # 50ms
 	register "PchPmSlpS4MinAssert" = "4"  # 4s
@@ -304,10 +303,12 @@ chip soc/intel/cannonlake
 			end
 		end # USB xHCI
 		device pci 14.1 off end # USB xDCI (OTG)
-		chip drivers/wifi/generic
-			register "wake" = "PME_B0_EN_BIT"
-			device pci 14.3 on  end # CNVi wifi
-		end
+		device pci 14.3 on
+			chip drivers/wifi/generic
+				register "wake" = "PME_B0_EN_BIT"
+				device generic 0 on end
+			end
+		end # CNVi wifi
 		device pci 14.5 off end # SDCard
 		device pci 15.0 on
 			chip drivers/i2c/hid
