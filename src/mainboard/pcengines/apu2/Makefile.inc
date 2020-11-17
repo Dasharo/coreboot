@@ -34,10 +34,11 @@ SPD_SOURCES  = HYNIX-2G-1333
 SPD_SOURCES += HYNIX-4G-1333-ECC
 
 cbfs-files-y += bootorder
-bootorder-file := bootorder_def
+bootorder-file := variants/$(CONFIG_VARIANT_DIR)/bootorder
 bootorder-type := raw
+bootorder-align := 0x1000
 
-LINUX_OPTIONS=-I "initrd.cpio.xz"
+LINUX_OPTIONS=-I initrd.cpio.xz
 LINUX_OPTIONS+=-C "console=ttyS0,115200 iomem=relaxed"
 
 cbfs-files-y += linux/payload
