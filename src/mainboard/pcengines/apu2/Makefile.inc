@@ -5,6 +5,7 @@ bootblock-y += bootblock.c
 bootblock-y += bios_knobs.c
 bootblock-y += BiosCallOuts.c
 bootblock-y += OemCustomize.c
+bootblock-y += gpio_ftns.c
 
 verstage-y += pmutil.c
 verstage-y += bios_knobs.c
