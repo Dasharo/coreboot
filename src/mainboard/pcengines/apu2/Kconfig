@@ -119,11 +119,10 @@ config FMDFILE
 
 config CBFS_SIZE
 	hex
-	default 0x0020C000 if VBOOT
 	default 0x00800000
 
 config VBOOT
-	select VBOOT_VBNV_CMOS
+	select VBOOT_VBNV_FLASH
 	select VBOOT_NO_BOARD_SUPPORT
 	select GBB_FLAG_DISABLE_LID_SHUTDOWN
 	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
@@ -139,11 +138,11 @@ config VBOOT_MEASURED_BOOT_RUNTIME_DATA
 
 config VBOOT_VBNV_OFFSET
 	hex
-	default 0x2D8 if VBOOT
+	default 0x2D8 if VBOOT_VBNV_CMOS
 
 config RO_REGION_ONLY
 	string
-	default "spd.bin AGESA apu/amdfw linux/payload" if VBOOT
+	default "AGESA apu/amdfw linux/payload" if VBOOT
 
 config RW_REGION_ONLY
 	string

@@ -55,7 +55,8 @@ subdirs-$(CONFIG_LP_CBFS) += libcbfs
 subdirs-$(CONFIG_LP_LZMA) += liblzma
 subdirs-$(CONFIG_LP_LZ4) += liblz4
 
-INCLUDES := -Iinclude -Iinclude/$(ARCHDIR-y) -I$(obj) -include include/kconfig.h
+INCLUDES := -Iinclude -Iinclude/$(ARCHDIR-y) -I$(obj)
+INCLUDES += -include include/kconfig.h -include include/compiler.h
 
 CFLAGS +=  $(EXTRA_CFLAGS) $(INCLUDES) -Os -pipe -nostdinc -ggdb3
 CFLAGS += -nostdlib -fno-builtin -ffreestanding -fomit-frame-pointer
@@ -63,6 +64,10 @@ CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wmissing-prototypes -Wvla
 CFLAGS += -Wwrite-strings -Wredundant-decls -Wno-trigraphs -Wimplicit-fallthrough
 CFLAGS += -Wstrict-aliasing -Wshadow -Werror
+
+ifeq ($(CONFIG_LP_LTO),y)
+CFLAGS += -flto
+endif
 
 $(obj)/libpayload-config.h: $(KCONFIG_AUTOHEADER)
 	cmp $@ $< 2>/dev/null || cp $< $@

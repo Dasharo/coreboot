@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
-#ifndef __SOUTHBRIDGE_AMD_PI_PICASSO_SMI_H__
-#define __SOUTHBRIDGE_AMD_PI_PICASSO_SMI_H__
+#ifndef AMD_PICASSO_SMI_H
+#define AMD_PICASSO_SMI_H
 
 #include <types.h>
 
@@ -160,6 +160,7 @@
 #define SMI_TIMER_EN				(1 << 15)
 
 #define SMI_REG_SMITRIG0		0x98
+# define SMITRIG0_PSP				(1 << 25)
 # define SMITRG0_EOS				(1 << 28)
 # define SMI_TIMER_SEL				(1 << 29)
 # define SMITRG0_SMIENB				(1 << 31)
@@ -213,7 +214,6 @@ struct sci_source {
 	uint8_t level;		/* Edge or Level,  smi_sci_dir */
 };
 
-uint16_t pm_acpi_smi_cmd_port(void);
 void configure_smi(uint8_t smi_num, uint8_t mode);
 void configure_gevent_smi(uint8_t gevent, uint8_t mode, uint8_t level);
 void configure_scimap(const struct sci_source *sci);
@@ -221,4 +221,4 @@ void disable_gevent_smi(uint8_t gevent);
 void gpe_configure_sci(const struct sci_source *scis, size_t num_gpes);
 void soc_route_sci(uint8_t event);
 
-#endif /* __SOUTHBRIDGE_AMD_PI_PICASSO_SMI_H__ */
+#endif /* AMD_PICASSO_SMI_H */

@@ -41,9 +41,6 @@ static void pch_enable_ioapic(struct device *dev)
 	pci_write_config16(dev, LPC_IBDF,
 		PCH_IOAPIC_PCI_BUS << 8 | PCH_IOAPIC_PCI_SLOT << 3);
 
-	/* Enable ACPI I/O range decode */
-	pci_write_config8(dev, ACPI_CNTL, ACPI_EN);
-
 	set_ioapic_id(VIO_APIC_VADDR, 0x02);
 
 	/* affirm full set of redirection table entries ("write once") */
@@ -71,6 +68,25 @@ static void pch_enable_serial_irqs(struct device *dev)
 	pci_write_config8(dev, SERIRQ_CNTL,
 			  (1 << 7) | (0 << 6) | ((21 - 17) << 2) | (0 << 0));
 #endif
+}
+
+static void enable_hpet(struct device *const dev)
+{
+	u32 reg32;
+	size_t i;
+
+	/* Assign unique bus/dev/fn for each HPET */
+	for (i = 0; i < 8; ++i)
+		pci_write_config16(dev, LPC_HnBDF(i),
+			PCH_HPET_PCI_BUS << 8 | PCH_HPET_PCI_SLOT << 3 | i);
+
+	/* Move HPET to default address 0xfed00000 and enable it */
+	reg32 = RCBA32(HPTC);
+	reg32 |= (1 << 7); // HPET Address Enable
+	reg32 &= ~(3 << 0);
+	RCBA32(HPTC) = reg32;
+	/* Read it back to stick. It's affected by posted write syndrome. */
+	RCBA32(HPTC);
 }
 
 /* PIRQ[n]_ROUT[3:0] - PIRQ Routing Control
@@ -246,7 +262,7 @@ static void pch_power_options(struct device *dev)
 		 * Set the board's GPI routing on LynxPoint-H.
 		 * This is done as part of GPIO configuration on LynxPoint-LP.
 		 */
-		if (pch_is_lp())
+		if (!pch_is_lp())
 			pch_gpi_routing(dev, config);
 
 		/* GPE setup based on device tree configuration */
@@ -289,58 +305,66 @@ static void lpt_lp_pm_init(struct device *dev)
 
 	pci_write_config8(dev, 0xa9, 0x46);
 
-	RCBA32_AND_OR(0x232c, ~1, 0x00000000);
+	RCBA32_AND_OR(0x232c, ~1, 0);
+
 	RCBA32_AND_OR(0x1100, ~0xc000, 0xc000);
-	RCBA32_AND_OR(0x1100, ~0, 0x00000100);
-	RCBA32_AND_OR(0x1100, ~0, 0x0000003f);
+	RCBA32_OR(0x1100, 0x00000100);
+	RCBA32_OR(0x1100, 0x0000003f);
+
 	RCBA32_AND_OR(0x2320, ~0x60, 0x10);
-	RCBA32_AND_OR(0x3314,  0, 0x00012fff);
-	RCBA32_AND_OR(0x3318,  0, 0x0dcf0400);
-	RCBA32_AND_OR(0x3324,  0, 0x04000000);
-	RCBA32_AND_OR(0x3368,  0, 0x00041400);
-	RCBA32_AND_OR(0x3388,  0, 0x3f8ddbff);
-	RCBA32_AND_OR(0x33ac,  0, 0x00007001);
-	RCBA32_AND_OR(0x33b0,  0, 0x00181900);
-	RCBA32_AND_OR(0x33c0,  0, 0x00060A00);
-	RCBA32_AND_OR(0x33d0,  0, 0x06200840);
-	RCBA32_AND_OR(0x3a28,  0, 0x01010101);
-	RCBA32_AND_OR(0x3a2c,  0, 0x04040404);
-	RCBA32_AND_OR(0x2b1c,  0, 0x03808033);
-	RCBA32_AND_OR(0x2b34,  0, 0x80000009);
-	RCBA32_AND_OR(0x3348,  0, 0x022ddfff);
-	RCBA32_AND_OR(0x334c,  0, 0x00000001);
-	RCBA32_AND_OR(0x3358,  0, 0x0001c000);
-	RCBA32_AND_OR(0x3380,  0, 0x3f8ddbff);
-	RCBA32_AND_OR(0x3384,  0, 0x0001c7e1);
-	RCBA32_AND_OR(0x338c,  0, 0x0001c7e1);
-	RCBA32_AND_OR(0x3398,  0, 0x0001c000);
-	RCBA32_AND_OR(0x33a8,  0, 0x00181900);
-	RCBA32_AND_OR(0x33dc,  0, 0x00080000);
-	RCBA32_AND_OR(0x33e0,  0, 0x00000001);
-	RCBA32_AND_OR(0x3a20,  0, 0x00000404);
-	RCBA32_AND_OR(0x3a24,  0, 0x01010101);
-	RCBA32_AND_OR(0x3a30,  0, 0x01010101);
-	RCBA32_AND_OR(0x0410, ~0, 0x00000003);
-	RCBA32_AND_OR(0x2618, ~0, 0x08000000);
-	RCBA32_AND_OR(0x2300, ~0, 0x00000002);
-	RCBA32_AND_OR(0x2600, ~0, 0x00000008);
-	RCBA32_AND_OR(0x33b4,  0, 0x00007001);
-	RCBA32_AND_OR(0x3350,  0, 0x022ddfff);
-	RCBA32_AND_OR(0x3354,  0, 0x00000001);
-	RCBA32_AND_OR(0x33d4, ~0, 0x08000000); /* Power Optimizer */
-	RCBA32_AND_OR(0x33c8, ~0, 0x00000080); /* Power Optimizer */
-	RCBA32_AND_OR(0x2b10,  0, 0x0000883c); /* Power Optimizer */
-	RCBA32_AND_OR(0x2b14,  0, 0x1e0a4616); /* Power Optimizer */
-	RCBA32_AND_OR(0x2b24,  0, 0x40000005); /* Power Optimizer */
-	RCBA32_AND_OR(0x2b20,  0, 0x0005db01); /* Power Optimizer */
-	RCBA32_AND_OR(0x3a80,  0, 0x05145005);
+
+	RCBA32(0x3314) = 0x00012fff;
+	RCBA32(0x3318) = 0x0dcf0400;
+	RCBA32(0x3324) = 0x04000000;
+	RCBA32(0x3368) = 0x00041400;
+	RCBA32(0x3388) = 0x3f8ddbff;
+	RCBA32(0x33ac) = 0x00007001;
+	RCBA32(0x33b0) = 0x00181900;
+	RCBA32(0x33c0) = 0x00060A00;
+	RCBA32(0x33d0) = 0x06200840;
+	RCBA32(0x3a28) = 0x01010101;
+	RCBA32(0x3a2c) = 0x04040404;
+	RCBA32(0x2b1c) = 0x03808033;
+	RCBA32(0x2b34) = 0x80000009;
+	RCBA32(0x3348) = 0x022ddfff;
+	RCBA32(0x334c) = 0x00000001;
+	RCBA32(0x3358) = 0x0001c000;
+	RCBA32(0x3380) = 0x3f8ddbff;
+	RCBA32(0x3384) = 0x0001c7e1;
+	RCBA32(0x338c) = 0x0001c7e1;
+	RCBA32(0x3398) = 0x0001c000;
+	RCBA32(0x33a8) = 0x00181900;
+	RCBA32(0x33dc) = 0x00080000;
+	RCBA32(0x33e0) = 0x00000001;
+	RCBA32(0x3a20) = 0x00000404;
+	RCBA32(0x3a24) = 0x01010101;
+	RCBA32(0x3a30) = 0x01010101;
+
+	RCBA32_OR(0x0410, 0x00000003);
+	RCBA32_OR(0x2618, 0x08000000);
+	RCBA32_OR(0x2300, 0x00000002);
+	RCBA32_OR(0x2600, 0x00000008);
+
+	RCBA32(0x33b4) = 0x00007001;
+	RCBA32(0x3350) = 0x022ddfff;
+	RCBA32(0x3354) = 0x00000001;
+
+	/* Power Optimizer */
+	RCBA32_OR(0x33d4, 0x08000000);
+	RCBA32_OR(0x33c8, 0x00000080);
+
+	RCBA32(0x2b10) = 0x0000883c;
+	RCBA32(0x2b14) = 0x1e0a4616;
+	RCBA32(0x2b24) = 0x40000005;
+	RCBA32(0x2b20) = 0x0005db01;
+	RCBA32(0x3a80) = 0x05145005;
 
 	pci_or_config32(dev, 0xac, 1 << 21);
 
 	pch_iobp_update(0xED00015C, ~(1 << 11), 0x00003700);
-	pch_iobp_update(0xED000118, ~0UL, 0x00c00000);
-	pch_iobp_update(0xED000120, ~0UL, 0x00240000);
-	pch_iobp_update(0xCA000000, ~0UL, 0x00000009);
+	pch_iobp_update(0xED000118, ~0, 0x00c00000);
+	pch_iobp_update(0xED000120, ~0, 0x00240000);
+	pch_iobp_update(0xCA000000, ~0, 0x00000009);
 
 	/* Set RCBA CIR28 0x3A84 based on SATA port enables */
 	data = 0x00001005;
@@ -366,25 +390,6 @@ static void lpt_lp_pm_init(struct device *dev)
 	RCBA32_OR(0x33c8, (1 << 15));
 }
 
-static void enable_hpet(struct device *const dev)
-{
-	u32 reg32;
-	size_t i;
-
-	/* Assign unique bus/dev/fn for each HPET */
-	for (i = 0; i < 8; ++i)
-		pci_write_config16(dev, LPC_HnBDF(i),
-			PCH_HPET_PCI_BUS << 8 | PCH_HPET_PCI_SLOT << 3 | i);
-
-	/* Move HPET to default address 0xfed00000 and enable it */
-	reg32 = RCBA32(HPTC);
-	reg32 |= (1 << 7); // HPET Address Enable
-	reg32 &= ~(3 << 0);
-	RCBA32(HPTC) = reg32;
-	/* Read it back to stick. It's affected by posted write syndrome. */
-	RCBA32(HPTC);
-}
-
 static void enable_clock_gating(struct device *dev)
 {
 	/* LynxPoint Mobile */
@@ -392,7 +397,7 @@ static void enable_clock_gating(struct device *dev)
 	u16 reg16;
 
 	/* DMI */
-	RCBA32_AND_OR(0x2234, ~0UL, 0xf);
+	RCBA32_AND_OR(0x2234, ~0, 0xf);
 	reg16 = pci_read_config16(dev, GEN_PMCON_1);
 	reg16 |= (1 << 11) | (1 << 12) | (1 << 14);
 	reg16 |= (1 << 2); // PCI CLKRUN# Enable
@@ -401,7 +406,7 @@ static void enable_clock_gating(struct device *dev)
 
 	reg32 = RCBA32(CG);
 	reg32 |= (1 << 22); // HDA Dynamic
-	reg32 |= (1UL << 31); // LPC Dynamic
+	reg32 |= (1 << 31); // LPC Dynamic
 	reg32 |= (1 << 16); // PCIe Dynamic
 	reg32 |= (1 << 27); // HPET Dynamic
 	reg32 |= (1 << 28); // GPIO Dynamic
@@ -417,7 +422,7 @@ static void enable_lp_clock_gating(struct device *dev)
 	u16 reg16;
 
 	/* DMI */
-	RCBA32_AND_OR(0x2234, ~0UL, 0xf);
+	RCBA32_AND_OR(0x2234, ~0, 0xf);
 	reg16 = pci_read_config16(dev, GEN_PMCON_1);
 	reg16 &= ~((1 << 11) | (1 << 14));
 	reg16 |= (1 << 5) | (1 << 6) | (1 << 7) | (1 << 12) | (1 << 13);
@@ -432,7 +437,7 @@ static void enable_lp_clock_gating(struct device *dev)
 	 * RCBA + 0x2614[30:28] = 0x0
 	 * RCBA + 0x2614[26] = 1 (IF 0:2.0@0x08 >= 0x0b)
 	 */
-	RCBA32_AND_OR(0x2614, 0x8bffffff, 0x0a206500);
+	RCBA32_AND_OR(0x2614, ~0x74000000, 0x0a206500);
 
 	/* Check for LPT-LP B2 stepping and 0:31.0@0xFA > 4 */
 	struct device *const gma = pcidev_on_root(2, 0);
@@ -463,8 +468,8 @@ static void enable_lp_clock_gating(struct device *dev)
 
 	RCBA32_OR(0x38c0, 0x3c07); // SPI Dynamic
 
-	pch_iobp_update(0xCF000000, ~0UL, 0x00007001);
-	pch_iobp_update(0xCE00C000, ~1UL, 0x00000000); // bit0=0 in BWG 1.4.0
+	pch_iobp_update(0xCF000000, ~0, 0x00007001);
+	pch_iobp_update(0xCE00C000, ~1, 0x00000000); // bit0=0 in BWG 1.4.0
 }
 
 static void pch_set_acpi_mode(void)
@@ -496,11 +501,6 @@ static void pch_fixups(struct device *dev)
 static void lpc_init(struct device *dev)
 {
 	printk(BIOS_DEBUG, "pch: %s\n", __func__);
-
-	/* Set the value for PCI command register. */
-	pci_write_config16(dev, PCI_COMMAND,
-			   PCI_COMMAND_MASTER | PCI_COMMAND_SPECIAL |
-			   PCI_COMMAND_MEMORY | PCI_COMMAND_IO);
 
 	/* IO APIC initialization. */
 	pch_enable_ioapic(dev);
@@ -737,7 +737,6 @@ static unsigned long southbridge_write_acpi_tables(const struct device *device,
 						   struct acpi_rsdp *rsdp)
 {
 	unsigned long current;
-	acpi_hpet_t *hpet;
 	acpi_header_t *ssdt;
 
 	current = start;
@@ -748,13 +747,7 @@ static unsigned long southbridge_write_acpi_tables(const struct device *device,
 	/*
 	 * We explicitly add these tables later on:
 	 */
-	printk(BIOS_DEBUG, "ACPI:    * HPET\n");
-
-	hpet = (acpi_hpet_t *)current;
-	current += sizeof(acpi_hpet_t);
-	current = acpi_align_current(current);
-	acpi_create_intel_hpet(hpet);
-	acpi_add_table(rsdp, hpet);
+	current = acpi_write_hpet(device, current, rsdp);
 
 	current = acpi_align_current(current);
 

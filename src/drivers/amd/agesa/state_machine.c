@@ -276,7 +276,7 @@ int agesa_execute_state(struct sysinfo *cb, AGESA_STRUCT_NAME func)
 	if (CONFIG(AGESA_EXTRA_TIMESTAMPS) && task.ts_entry_id)
 		timestamp_add_now(task.ts_entry_id);
 
-	if (ENV_ROMSTAGE)
+	if (ENV_ROMSTAGE || ENV_BOOTBLOCK)
 		final = romstage_dispatch(cb, func, StdHeader);
 
 	if (ENV_RAMSTAGE)

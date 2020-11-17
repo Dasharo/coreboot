@@ -19,15 +19,15 @@
  * should be sufficient.  This is just for the function mapping the
  * actual stack.
  */
-#define PSP_VERSTAGE_TEMP_STACK_START	0x39000
+#define PSP_VERSTAGE_TEMP_STACK_START	0x32000
 #define PSP_VERSTAGE_TEMP_STACK_SIZE	4K
 
 /*
  * The top of the stack must be 4k aligned, so set the bottom as 4k aligned
  * and make the size a multiple of 4k
  */
-#define PSP_VERSTAGE_STACK_START	0x3B000
-#define PSP_VERSTAGE_STACK_SIZE		8K
+#define PSP_VERSTAGE_STACK_START	0x33000
+#define PSP_VERSTAGE_STACK_SIZE		40K
 
 ENTRY(_psp_vs_start)
 SECTIONS
@@ -51,16 +51,7 @@ SECTIONS
 	ALIGN_COUNTER(64)
 	_everstage = .;
 
-	ALIGN_COUNTER(64)
-	_transfer_buffer = .;
-	REGION(transfer_info, ., TRANSFER_INFO_SIZE, 4)
-	ALIGN_COUNTER(64)
-	REGION(vboot2_work, ., VB2_FIRMWARE_WORKBUF_RECOMMENDED_SIZE, 64)
-	ALIGN_COUNTER(64)
-	PRERAM_CBMEM_CONSOLE(., CONFIG_PRERAM_CBMEM_CONSOLE_SIZE)
-	TIMESTAMP(., TIMESTAMP_BUFFER_SIZE)
-	FMAP_CACHE(., FMAP_SIZE)
-	_etransfer_buffer = .;
+	#include "memlayout_transfer_buffer.inc"
 
 	PSP_VERSTAGE_TEMP_STACK_END = (PSP_VERSTAGE_TEMP_STACK_START + PSP_VERSTAGE_TEMP_STACK_SIZE );
 

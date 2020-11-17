@@ -520,7 +520,7 @@ config PCIEXP_PLUGIN_SUPPORT
 	default y
 
 config PCI_ALLOW_BUS_MASTER
-	bool "Allow PCI bus master bit to be enabled by coreboot"
+	bool "Allow coreboot to set optional PCI bus master bits"
 	default y
 	help
 	  For security reasons, bus mastering should be enabled as late as
@@ -531,6 +531,17 @@ config PCI_ALLOW_BUS_MASTER
 	  traditional behaviour for now. This is currently necessary, for
 	  instance, for libpayload based payloads as the drivers don't enable
 	  bus mastering for PCI bridges.
+
+if PCI_ALLOW_BUS_MASTER
+
+config PCI_ALLOW_BUS_MASTER_ANY_DEVICE
+	bool "Any devices"
+	default y
+	help
+	  Allow coreboot to enable PCI bus mastering for any device. The actual
+	  selection of devices depends on the various PCI drivers in coreboot.
+
+endif # PCI_ALLOW_BUS_MASTER
 
 endif # PCI
 
