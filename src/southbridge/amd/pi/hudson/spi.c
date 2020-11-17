@@ -31,11 +31,13 @@
  #define CNTRL02_EXEC_OPCODE	(1 << 0)
 #define SPI_REG_CNTRL03		0x3
  #define CNTRL03_SPIBUSY	(1 << 7)
-#define SPI_CMD_CODE		0x45
-#define SPI_TX_BYTE_COUNT	0x48
-#define SPI_RX_BYTE_COUNT	0x4b
-
-#define SPI_FIFO	0x80
+#define SPI_REG_FIFO		0xc
+#define SPI_REG_CNTRL11		0xd
+ #define CNTRL11_FIFOPTR_MASK	0x07
+#define SPI_EXT_REG_INDX	0x1e
+ #define SPI_EXT_REG_TXCOUNT	0x5
+ #define SPI_EXT_REG_RXCOUNT	0x6
+#define SPI_EXT_REG_DATA	0x1f
 
 #define AMD_SB_SPI_TX_LEN	64
 
@@ -51,6 +53,17 @@ static inline void spi_write(uint8_t reg, uint8_t val)
 	write8((void *)(spibar + reg), val);
 }
 
+static void reset_internal_fifo_pointer(void)
+{
+	uint8_t reg8;
+
+	do {
+		reg8 = spi_read(SPI_REG_CNTRL02);
+		reg8 |= CNTRL02_FIFO_RESET;
+		spi_write(SPI_REG_CNTRL02, reg8);
+	} while (spi_read(SPI_REG_CNTRL11) & CNTRL11_FIFOPTR_MASK);
+}
+
 static void execute_command(void)
 {
 	uint8_t reg8;
@@ -63,54 +76,60 @@ static void execute_command(void)
 	       (spi_read(SPI_REG_CNTRL03) & CNTRL03_SPIBUSY));
 }
 
-
 void spi_init(void)
 {
-#ifdef __SIMPLE_DEVICE__
-	pci_devfn_t dev = PCI_DEV(0, 0x14, 3);
-#else
-	const struct device *dev = pcidev_on_root(0x14, 3);
-#endif
+	struct device *dev;
 
+	dev = pcidev_on_root(0x14, 3);
 	spibar = pci_read_config32(dev, 0xA0) & ~0x1F;
 }
 
 static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 		size_t bytesout, void *din, size_t bytesin)
 {
+	/* First byte is cmd which can not being sent through FIFO. */
+	u8 cmd = *(u8 *)dout++;
 	size_t count;
-	uint8_t cmd;
-	uint8_t *bufin = din;
-	const uint8_t *bufout = dout;
 
-	/* First byte is cmd which cannot be sent through FIFO */
-	cmd = bufout[0];
-	bufout++;
 	bytesout--;
 
 	/*
 	 * Check if this is a write command attempting to transfer more bytes
-	 * than the controller can handle.  Iterations for writes are not
+	 * than the controller can handle. Iterations for writes are not
 	 * supported here because each SPI write command needs to be preceded
-	 * and followed by other SPI commands.
+	 * and followed by other SPI commands, and this sequence is controlled
+	 * by the SPI chip driver.
 	 */
-	if (bytesout + bytesin > AMD_SB_SPI_TX_LEN) {
-		printk(BIOS_ERR, "%s: FCH_SC: Too much to transfer, code error!\n", __func__);
+	if (bytesout > AMD_SB_SPI_TX_LEN) {
+		printk(BIOS_WARNING, "FCH SPI: Too much to write. Does your SPI chip driver use"
+		     " spi_crop_chunk()?\n");
 		return -1;
 	}
 
-	spi_write(SPI_CMD_CODE, cmd);
+	spi_write(SPI_EXT_REG_INDX, SPI_EXT_REG_TXCOUNT);
+	spi_write(SPI_EXT_REG_DATA, bytesout);
+	spi_write(SPI_EXT_REG_INDX, SPI_EXT_REG_RXCOUNT);
+	spi_write(SPI_EXT_REG_DATA, bytesin);
 
-	spi_write(SPI_TX_BYTE_COUNT, bytesout);
-	spi_write(SPI_RX_BYTE_COUNT, bytesin);
+	spi_write(SPI_REG_OPCODE, cmd);
 
-	for (count = 0; count < bytesout; count++)
-		spi_write(SPI_FIFO + count, bufout[count]);
+	reset_internal_fifo_pointer();
+	for (count = 0; count < bytesout; count++, dout++) {
+		spi_write(SPI_REG_FIFO, *(uint8_t *)dout);
+	}
 
+	reset_internal_fifo_pointer();
 	execute_command();
 
-	for (count = 0; count < bytesin; count++)
-		bufin[count] = spi_read(SPI_FIFO + (count + bytesout) % AMD_SB_SPI_TX_LEN);
+	reset_internal_fifo_pointer();
+	/* Skip the bytes we sent. */
+	for (count = 0; count < bytesout; count++) {
+		cmd = spi_read(SPI_REG_FIFO);
+	}
+
+	for (count = 0; count < bytesin; count++, din++) {
+		*(uint8_t *)din = spi_read(SPI_REG_FIFO);
+	}
 
 	return 0;
 }
