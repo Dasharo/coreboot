@@ -13,17 +13,21 @@ Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
 
+## [v4.12.0.7] - 2020-11-27
+### Changed
+- rebased with official coreboot repository commit 957a363
+
 ## [v4.12.0.6] - 2020-10-29
-## Changed
+### Changed
 - rebased with official coreboot repository commit 43439f6
 
-## Fixed
+### Fixed
 - the option in runtime config to reverse PCI addressing order, now not only
   mPCIe devices, but NICs are reversed as well. The WoL capable NIC should be
   the first booting in iPXE when the reverse option is enabled.
 
 ## [v4.12.0.5] - 2020-09-25
-## Changed
+### Changed
 - rebased with official coreboot repository commit da3375e
 - added apu6 build target
 
@@ -469,7 +473,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.12.0.6...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.12.0.7...develop
+[v4.12.0.7]: https://github.com/pcengines/coreboot/compare/v4.12.0.6...v4.12.0.7
 [v4.12.0.6]: https://github.com/pcengines/coreboot/compare/v4.12.0.5...v4.12.0.6
 [v4.12.0.5]: https://github.com/pcengines/coreboot/compare/v4.12.0.4...v4.12.0.5
 [v4.12.0.4]: https://github.com/pcengines/coreboot/compare/v4.12.0.3...v4.12.0.4
