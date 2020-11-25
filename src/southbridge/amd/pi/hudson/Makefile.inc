@@ -36,7 +36,6 @@ romstage-y += smbus_spd.c
 romstage-$(CONFIG_HUDSON_UART) += uart.c
 
 verstage-y += early_setup.c
-verstage-$(CONFIG_SPI_FLASH) += spi.c
 verstage-$(CONFIG_HUDSON_UART) += uart.c
 
 ramstage-y += enable_usbdebug.c
