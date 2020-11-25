@@ -40,6 +40,7 @@ const char *smbios_system_sku(void);
 
 unsigned int smbios_cpu_get_max_speed_mhz(void);
 unsigned int smbios_cpu_get_current_speed_mhz(void);
+unsigned int smbios_cpu_get_voltage(void);
 
 const char *smbios_mainboard_manufacturer(void);
 const char *smbios_mainboard_product_name(void);
@@ -56,6 +57,7 @@ const char *smbios_processor_serial_number(void);
 
 void smbios_ec_revision(uint8_t *ec_major_revision, uint8_t *ec_minor_revision);
 
+unsigned int smbios_memory_error_correction_type(struct memory_info *meminfo);
 unsigned int smbios_processor_external_clock(void);
 unsigned int smbios_processor_characteristics(void);
 struct cpuid_result;

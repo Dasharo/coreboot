@@ -4,7 +4,7 @@
 #include <arch/ioapic.h>
 #include <device/pci.h>
 #include <stdint.h>
-#include <northbridge/amd/pi/nb_common.h>
+#include <northbridge/amd/nb_common.h>
 #include <southbridge/amd/common/amd_pci_util.h>
 
 static void *smp_write_config_table(void *v)
