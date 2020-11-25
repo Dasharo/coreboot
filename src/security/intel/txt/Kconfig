@@ -13,8 +13,6 @@ config INTEL_TXT
 
 if INTEL_TXT
 
-menu "Intel"
-
 config INTEL_TXT_BIOSACM_FILE
 	string "BIOS ACM file"
 	default "3rdparty/blobs/soc/intel/skylake/biosacm.bin" if SOC_INTEL_COMMON_SKYLAKE_BASE
@@ -54,6 +52,7 @@ config INTEL_TXT_LOGGING
 
 config INTEL_TXT_BIOSACM_ALIGNMENT
 	hex
+	default 0x40000 if INTEL_CBNT_SUPPORT
 	default 0x20000 # 128 KiB
 	help
 	  Exceptions are Ivy and Sandy Bridge with 64 KiB and Purley with 256 KiB
@@ -70,7 +69,5 @@ config INTEL_TXT_CBFS_BIOS_ACM
 config INTEL_TXT_CBFS_SINIT_ACM
 	string
 	default "txt_sinit_acm.bin"
-
-endmenu # Intel
 
 endif

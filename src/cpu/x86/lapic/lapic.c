@@ -4,7 +4,7 @@
 #include <console/console.h>
 #include <smp/node.h>
 
-void do_lapic_init(void)
+void lapic_virtual_wire_mode_init(void)
 {
 	const uint32_t lvt0_mask = LAPIC_LVT_MASKED | LAPIC_LVT_LEVEL_TRIGGER |
 				LAPIC_LVT_REMOTE_IRR | LAPIC_INPUT_POLARITY |

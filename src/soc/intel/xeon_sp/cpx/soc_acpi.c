@@ -16,6 +16,7 @@
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/soc_util.h>
+#include <soc/util.h>
 
 /* TODO: Check if the common/acpi weak function can be used */
 unsigned long acpi_fill_mcfg(unsigned long current)
@@ -53,13 +54,16 @@ uint32_t soc_read_sci_irq_select(void)
 void soc_fill_fadt(acpi_fadt_t *fadt)
 {
 	/* Clear flags set by common/block/acpi/acpi.c acpi_fill_fadt() */
-	fadt->flags &=  ~(ACPI_FADT_SLEEP_BUTTON | ACPI_FADT_SEALED_CASE |
-				ACPI_FADT_S4_RTC_WAKE);
+	fadt->flags &=  ~(ACPI_FADT_SEALED_CASE | ACPI_FADT_S4_RTC_WAKE);
 }
 
 void uncore_inject_dsdt(const struct device *device)
 {
 	struct iiostack_resource stack_info = {0};
+
+	/* Only add RTxx entries once. */
+	if (device->bus->secondary != 0)
+		return;
 
 	get_iiostack_info(&stack_info);
 

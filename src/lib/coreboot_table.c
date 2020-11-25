@@ -12,6 +12,7 @@
 #include <boardid.h>
 #include <device/device.h>
 #include <fmap.h>
+#include <fw_config.h>
 #include <stdlib.h>
 #include <cbfs.h>
 #include <cbmem.h>
@@ -213,33 +214,14 @@ static void lb_vbnv(struct lb_header *header)
 __weak uint32_t board_id(void) { return UNDEFINED_STRAPPING_ID; }
 __weak uint32_t ram_code(void) { return UNDEFINED_STRAPPING_ID; }
 __weak uint32_t sku_id(void) { return UNDEFINED_STRAPPING_ID; }
-
-static void lb_board_id(struct lb_header *header)
-{
-	struct lb_strapping_id  *rec;
-	uint32_t bid = board_id();
-
-	if (bid == UNDEFINED_STRAPPING_ID)
-		return;
-
-	rec = (struct lb_strapping_id *)lb_new_record(header);
-
-	rec->tag = LB_TAG_BOARD_ID;
-	rec->size = sizeof(*rec);
-	rec->id_code = bid;
-
-	printk(BIOS_INFO, "Board ID: %d\n", bid);
-}
+__weak uint64_t fw_config_get(void) { return UNDEFINED_FW_CONFIG; }
 
 static void lb_boot_media_params(struct lb_header *header)
 {
 	struct lb_boot_media_params *bmp;
 	const struct region_device *boot_dev;
-	struct region_device cbfs_dev;
-
-	boot_device_init();
-
-	if (cbfs_boot_region_device(&cbfs_dev))
+	const struct cbfs_boot_device *cbd = cbfs_get_boot_device(false);
+	if (!cbd)
 		return;
 
 	boot_dev = boot_device_ro();
@@ -250,45 +232,11 @@ static void lb_boot_media_params(struct lb_header *header)
 	bmp->tag = LB_TAG_BOOT_MEDIA_PARAMS;
 	bmp->size = sizeof(*bmp);
 
-	bmp->cbfs_offset = region_device_offset(&cbfs_dev);
-	bmp->cbfs_size = region_device_sz(&cbfs_dev);
+	bmp->cbfs_offset = region_device_offset(&cbd->rdev);
+	bmp->cbfs_size = region_device_sz(&cbd->rdev);
 	bmp->boot_media_size = region_device_sz(boot_dev);
 
 	bmp->fmap_offset = get_fmap_flash_offset();
-}
-
-static void lb_ram_code(struct lb_header *header)
-{
-	struct lb_strapping_id *rec;
-	uint32_t code = ram_code();
-
-	if (code == UNDEFINED_STRAPPING_ID)
-		return;
-
-	rec = (struct lb_strapping_id *)lb_new_record(header);
-
-	rec->tag = LB_TAG_RAM_CODE;
-	rec->size = sizeof(*rec);
-	rec->id_code = code;
-
-	printk(BIOS_INFO, "RAM code: %d\n", code);
-}
-
-static void lb_sku_id(struct lb_header *header)
-{
-	struct lb_strapping_id *rec;
-	uint32_t sid = sku_id();
-
-	if (sid == UNDEFINED_STRAPPING_ID)
-		return;
-
-	rec = (struct lb_strapping_id *)lb_new_record(header);
-
-	rec->tag = LB_TAG_SKU_ID;
-	rec->size = sizeof(*rec);
-	rec->id_code = sid;
-
-	printk(BIOS_INFO, "SKU ID: %d\n", sid);
 }
 
 static void lb_mmc_info(struct lb_header *header)
@@ -369,6 +317,24 @@ static struct lb_mainboard *lb_mainboard(struct lb_header *header)
 		mainboard_part_number, strlen(mainboard_part_number) + 1);
 
 	return mainboard;
+}
+
+static struct lb_board_config *lb_board_config(struct lb_header *header)
+{
+	struct lb_record *rec;
+	struct lb_board_config *config;
+	rec = lb_new_record(header);
+	config = (struct lb_board_config *)rec;
+
+	config->tag = LB_TAG_BOARD_CONFIG;
+	config->size = sizeof(*config);
+
+	config->board_id = board_id();
+	config->ram_code = ram_code();
+	config->sku_id = sku_id();
+	config->fw_config = pack_lb64(fw_config_get());
+
+	return config;
 }
 
 #if CONFIG(USE_OPTION_TABLE)
@@ -537,11 +503,6 @@ static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 	lb_vbnv(head);
 #endif
 
-	/* Add strapping IDs if available */
-	lb_board_id(head);
-	lb_ram_code(head);
-	lb_sku_id(head);
-
 	/* Pass mmc early init status */
 	lb_mmc_info(head);
 
@@ -563,6 +524,9 @@ static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 #endif
 
 	lb_boot_media_params(head);
+
+	/* Board configuration information (including straps) */
+	lb_board_config(head);
 
 	/* Add architecture records. */
 	lb_arch_add_records(head);

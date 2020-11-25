@@ -491,18 +491,6 @@ config MMCONF_SUPPORT
 	bool
 	default !NO_MMCONF_SUPPORT
 
-config HYPERTRANSPORT_PLUGIN_SUPPORT
-	bool
-	default n
-
-config HT_CHAIN_UNITID_BASE
-	int
-	default 0
-
-config HT_CHAIN_END_UNITID_BASE
-	int
-	default 0
-
 config PCIX_PLUGIN_SUPPORT
 	bool
 	default y
@@ -520,7 +508,7 @@ config PCIEXP_PLUGIN_SUPPORT
 	default y
 
 config PCI_ALLOW_BUS_MASTER
-	bool "Allow PCI bus master bit to be enabled by coreboot"
+	bool "Allow coreboot to set optional PCI bus master bits"
 	default y
 	help
 	  For security reasons, bus mastering should be enabled as late as
@@ -531,6 +519,28 @@ config PCI_ALLOW_BUS_MASTER
 	  traditional behaviour for now. This is currently necessary, for
 	  instance, for libpayload based payloads as the drivers don't enable
 	  bus mastering for PCI bridges.
+
+if PCI_ALLOW_BUS_MASTER
+
+config PCI_SET_BUS_MASTER_PCI_BRIDGES
+	bool "PCI bridges"
+	default y
+	help
+	  Let coreboot configure bus mastering for PCI bridges. Enabling bus
+	  mastering for a PCI bridge also allows it to forward requests from
+	  downstream devices. Currently, payloads ignore this and only enable
+	  bus mastering for the downstream device. Hence, this option is needed
+	  for compatibility until payloads are fixed.
+
+config PCI_ALLOW_BUS_MASTER_ANY_DEVICE
+	bool "Any devices"
+	default y
+	select PCI_SET_BUS_MASTER_PCI_BRIDGES
+	help
+	  Allow coreboot to enable PCI bus mastering for any device. The actual
+	  selection of devices depends on the various PCI drivers in coreboot.
+
+endif # PCI_ALLOW_BUS_MASTER
 
 endif # PCI
 

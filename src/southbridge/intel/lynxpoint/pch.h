@@ -120,7 +120,6 @@ void disable_gpe(u32 mask);
 void pch_enable(struct device *dev);
 void pch_disable_devfn(struct device *dev);
 void pch_log_state(void);
-void acpi_create_intel_hpet(acpi_hpet_t * hpet);
 void acpi_create_serialio_ssdt(acpi_header_t *ssdt);
 
 void enable_usb_bar(void);
@@ -168,7 +167,7 @@ void mainboard_config_rcba(void);
 #define GEN_PMCON_2		0xa2
 #define GEN_PMCON_3		0xa4
 #define PMIR			0xac
-#define  PMIR_CF9LOCK		(1UL << 31)
+#define  PMIR_CF9LOCK		(1 << 31)
 #define  PMIR_CF9GR		(1 << 20)
 
 /* GEN_PMCON_3 bits */
@@ -216,50 +215,10 @@ void mainboard_config_rcba(void);
 /* PCI Configuration Space (D31:F2): SATA */
 #define PCH_SATA_DEV		PCI_DEV(0, 0x1f, 2)
 #define PCH_SATA2_DEV		PCI_DEV(0, 0x1f, 5)
-#define INTR_LN			0x3c
+
 #define IDE_TIM_PRI		0x40	/* IDE timings, primary */
 #define   IDE_DECODE_ENABLE	(1 << 15)
-#define   IDE_SITRE		(1 << 14)
-#define   IDE_ISP_5_CLOCKS	(0 << 12)
-#define   IDE_ISP_4_CLOCKS	(1 << 12)
-#define   IDE_ISP_3_CLOCKS	(2 << 12)
-#define   IDE_RCT_4_CLOCKS	(0 <<  8)
-#define   IDE_RCT_3_CLOCKS	(1 <<  8)
-#define   IDE_RCT_2_CLOCKS	(2 <<  8)
-#define   IDE_RCT_1_CLOCKS	(3 <<  8)
-#define   IDE_DTE1		(1 <<  7)
-#define   IDE_PPE1		(1 <<  6)
-#define   IDE_IE1		(1 <<  5)
-#define   IDE_TIME1		(1 <<  4)
-#define   IDE_DTE0		(1 <<  3)
-#define   IDE_PPE0		(1 <<  2)
-#define   IDE_IE0		(1 <<  1)
-#define   IDE_TIME0		(1 <<  0)
 #define IDE_TIM_SEC		0x42	/* IDE timings, secondary */
-
-#define IDE_SDMA_CNT		0x48	/* Synchronous DMA control */
-#define   IDE_SSDE1		(1 <<  3)
-#define   IDE_SSDE0		(1 <<  2)
-#define   IDE_PSDE1		(1 <<  1)
-#define   IDE_PSDE0		(1 <<  0)
-
-#define IDE_SDMA_TIM		0x4a
-
-#define IDE_CONFIG		0x54	/* IDE I/O Configuration Register */
-#define   SIG_MODE_SEC_NORMAL	(0 << 18)
-#define   SIG_MODE_SEC_TRISTATE	(1 << 18)
-#define   SIG_MODE_SEC_DRIVELOW	(2 << 18)
-#define   SIG_MODE_PRI_NORMAL	(0 << 16)
-#define   SIG_MODE_PRI_TRISTATE	(1 << 16)
-#define   SIG_MODE_PRI_DRIVELOW	(2 << 16)
-#define   FAST_SCB1		(1 << 15)
-#define   FAST_SCB0		(1 << 14)
-#define   FAST_PCB1		(1 << 13)
-#define   FAST_PCB0		(1 << 12)
-#define   SCB1			(1 <<  3)
-#define   SCB0			(1 <<  2)
-#define   PCB1			(1 <<  1)
-#define   PCB0			(1 <<  0)
 
 #define SATA_SIRI		0xa0 /* SATA Indexed Register Index */
 #define SATA_SIRD		0xa4 /* SATA Indexed Register Data */
@@ -268,10 +227,10 @@ void mainboard_config_rcba(void);
 /* SATA IOBP Registers */
 #define SATA_IOBP_SP0G3IR	0xea000151
 #define SATA_IOBP_SP1G3IR	0xea000051
-#define SATA_IOBP_SP0DTLE_DATA	0xea002550
-#define SATA_IOBP_SP0DTLE_EDGE	0xea002554
-#define SATA_IOBP_SP1DTLE_DATA	0xea002750
-#define SATA_IOBP_SP1DTLE_EDGE	0xea002754
+#define SATA_IOBP_SP0DTLE_DATA	0xea002750
+#define SATA_IOBP_SP0DTLE_EDGE	0xea002754
+#define SATA_IOBP_SP1DTLE_DATA	0xea002550
+#define SATA_IOBP_SP1DTLE_EDGE	0xea002554
 
 #define SATA_DTLE_MASK		0xF
 #define SATA_DTLE_DATA_SHIFT	24
@@ -316,7 +275,7 @@ void mainboard_config_rcba(void);
 #define  XHCI_USB3_PORTSC_WRC	(1 << 19)	/* Warm Reset Complete */
 #define  XHCI_USB3_PORTSC_LWS	(1 << 16)	/* Link Write Strobe */
 #define  XHCI_USB3_PORTSC_PED	(1 << 1)	/* Port Enabled/Disabled */
-#define  XHCI_USB3_PORTSC_WPR	(1UL << 31)	/* Warm Port Reset */
+#define  XHCI_USB3_PORTSC_WPR	(1 << 31)	/* Warm Port Reset */
 #define  XHCI_USB3_PORTSC_PLS	(0xf << 5)	/* Port Link State */
 #define   XHCI_PLSR_DISABLED	(4 << 5)	/* Port is disabled */
 #define   XHCI_PLSR_RXDETECT	(5 << 5)	/* Port is disconnected */
@@ -409,7 +368,7 @@ void mainboard_config_rcba(void);
 #define RPFN		0x0404	/* 32bit */
 
 /* Root Port configuratinon space hide */
-#define RPFN_HIDE(port)         (1UL << (((port) * 4) + 3))
+#define RPFN_HIDE(port)         (1 << (((port) * 4) + 3))
 /* Get the function number assigned to a Root Port */
 #define RPFN_FNGET(reg,port)    (((reg) >> ((port) * 4)) & 7)
 /* Set the function number for a Root Port */

@@ -71,6 +71,8 @@ config VARIANT_DIR
 	default "vilboz" if BOARD_GOOGLE_VILBOZ
 	default "woomax" if BOARD_GOOGLE_WOOMAX
 	default "dirinboz" if BOARD_GOOGLE_DIRINBOZ
+	default "shuboz" if BOARD_GOOGLE_SHUBOZ
+	default "gumboz" if BOARD_GOOGLE_GUMBOZ
 
 config MAINBOARD_PART_NUMBER
 	string
@@ -82,6 +84,8 @@ config MAINBOARD_PART_NUMBER
 	default "Vilboz" if BOARD_GOOGLE_VILBOZ
 	default "Woomax" if BOARD_GOOGLE_WOOMAX
 	default "Dirinboz" if BOARD_GOOGLE_DIRINBOZ
+	default "Shuboz" if BOARD_GOOGLE_SHUBOZ
+	default "Gumboz" if BOARD_GOOGLE_GUMBOZ
 
 config DEVICETREE
 	string
@@ -96,10 +100,6 @@ config MAINBOARD_FAMILY
 	string
 	default "Google_Zork"
 
-config MAX_CPUS
-	int
-	default 8
-
 config ONBOARD_VGA_IS_PRIMARY
 	bool
 	default y
@@ -107,6 +107,7 @@ config ONBOARD_VGA_IS_PRIMARY
 config VBOOT
 	select EC_GOOGLE_CHROMEEC_SWITCHES
 	select VBOOT_LID_SWITCH
+	select VBOOT_STARTS_BEFORE_BOOTBLOCK
 
 config VBOOT_VBNV_OFFSET
 	hex
@@ -131,7 +132,7 @@ config DRIVER_TPM_I2C_ADDR
 config PICASSO_FW_A_POSITION
 	hex
 	default 0xFF012040
-	depends on VBOOT_SLOTS_RW_AB && VBOOT_STARTS_BEFORE_BOOTBLOCK
+	depends on VBOOT_SLOTS_RW_AB
 	help
 	  Location of the AMD firmware in the RW_A region. This is the
 	  start of the RW-A region + 64 bytes for the cbfs header.
@@ -139,7 +140,7 @@ config PICASSO_FW_A_POSITION
 config PICASSO_FW_B_POSITION
 	hex
 	default 0xFF312040
-	depends on VBOOT_SLOTS_RW_AB && VBOOT_STARTS_BEFORE_BOOTBLOCK
+	depends on VBOOT_SLOTS_RW_AB
 	help
 	  Location of the AMD firmware in the RW_B region. This is the
 	  start of the RW-A region + 64 bytes for the cbfs header.
@@ -227,21 +228,21 @@ config VARIANT_MIN_BOARD_ID_WIFI_POWER_ACTIVE_LOW
 	  Minimum board version where the variant starts supporting
 	  active low power enable for WiFi.
 
-config VBOOT_STARTS_BEFORE_BOOTBLOCK
-	bool "PSP verstage"
-	default y if VBOOT
+config VARIANT_HAS_FPMCU
+	bool
+	default y if BOARD_GOOGLE_BERKNIP
+	default y if BOARD_GOOGLE_MORPHIUS
+	default n
 	help
-	  Firmware verification happens before the main processor is brought
-	  online.
+	  Select y if any SKU of the board has a fingerprint sensor
 
-config VBOOT_STARTS_IN_BOOTBLOCK
-	bool "X86 verstage (in bootblock)"
-	depends on  VBOOT && ! VBOOT_STARTS_BEFORE_BOOTBLOCK
-	select VBOOT_SEPARATE_VERSTAGE
+config VARIANT_MAX_BOARD_ID_BROKEN_FMPCU_POWER
+	int
+	default 4 if BOARD_GOOGLE_MORPHIUS
+	default 3 if BOARD_GOOGLE_BERKNIP
+	default 0
 	help
-	  Firmware verification happens during the end of or right after the
-	  bootblock. This implies that a static VBOOT2_WORK() buffer must be
-	  allocated in memlayout.
+	  Last board version that needs the extra delay for FPMCU init.
 
 config EFS_SPI_READ_MODE
 	int
@@ -265,5 +266,6 @@ config CHROMEOS_WIFI_SAR
 	select SAR_ENABLE
 	select USE_SAR
 	select GEO_SAR_ENABLE
+	select HAVE_REGULATORY_DOMAIN if BOARD_GOOGLE_VILBOZ
 
 endif # BOARD_GOOGLE_BASEBOARD_TREMBYLE || BOARD_GOOGLE_BASEBOARD_DALBOZ

@@ -19,7 +19,6 @@
 #include <device/pci_ids.h>
 #include <device/pcix.h>
 #include <device/pciexp.h>
-#include <device/hypertransport.h>
 #include <pc80/i8259.h>
 #include <security/vboot/vbnv.h>
 #include <timestamp.h>
@@ -542,7 +541,8 @@ static void pci_set_resource(struct device *dev, struct resource *resource)
 			dev->command |= PCI_COMMAND_MEMORY;
 		if (resource->flags & IORESOURCE_IO)
 			dev->command |= PCI_COMMAND_IO;
-		if (resource->flags & IORESOURCE_PCI_BRIDGE)
+		if (resource->flags & IORESOURCE_PCI_BRIDGE &&
+		    CONFIG(PCI_SET_BUS_MASTER_PCI_BRIDGES))
 			dev->command |= PCI_COMMAND_MASTER;
 	}
 
@@ -861,19 +861,6 @@ static struct device_operations *get_pci_bridge_ops(struct device *dev)
 		return &default_pcix_ops_bus;
 	}
 #endif
-#if CONFIG(HYPERTRANSPORT_PLUGIN_SUPPORT)
-	unsigned int htpos = 0;
-	while ((htpos = pci_find_next_capability(dev, PCI_CAP_ID_HT, htpos))) {
-		u16 flags;
-		flags = pci_read_config16(dev, htpos + PCI_CAP_FLAGS);
-		if ((flags >> 13) == 1) {
-			/* Host or Secondary Interface */
-			printk(BIOS_DEBUG, "%s subordinate bus HT\n",
-			       dev_path(dev));
-			return &default_ht_ops_bus;
-		}
-	}
-#endif
 #if CONFIG(PCIEXP_PLUGIN_SUPPORT)
 	unsigned int pciexpos;
 	pciexpos = pci_find_capability(dev, PCI_CAP_ID_PCIE);
@@ -953,11 +940,14 @@ static void set_pci_ops(struct device *dev)
 		if ((driver->vendor == dev->vendor) &&
 		    device_id_match(driver, dev->device)) {
 			dev->ops = (struct device_operations *)driver->ops;
-			printk(BIOS_SPEW, "%s [%04x/%04x] %sops\n",
-			       dev_path(dev), driver->vendor, driver->device,
-			       (driver->ops->scan_bus ? "bus " : ""));
-			return;
+			break;
 		}
+	}
+
+	if (dev->ops) {
+		printk(BIOS_SPEW, "%s [%04x/%04x] %sops\n", dev_path(dev),
+		       driver->vendor, driver->device, (driver->ops->scan_bus ? "bus " : ""));
+		return;
 	}
 
 	/* If I don't have a specific driver use the default operations. */
@@ -1128,7 +1118,8 @@ struct device *pci_probe_dev(struct device *dev, struct bus *bus,
 	dev->class = class >> 8;
 
 	/* Architectural/System devices always need to be bus masters. */
-	if ((dev->class >> 16) == PCI_BASE_CLASS_SYSTEM)
+	if ((dev->class >> 16) == PCI_BASE_CLASS_SYSTEM &&
+	    CONFIG(PCI_ALLOW_BUS_MASTER_ANY_DEVICE))
 		dev->command |= PCI_COMMAND_MASTER;
 
 	/*
@@ -1648,21 +1639,3 @@ void pci_dev_disable_bus_master(const struct device *dev)
 	pci_update_config16(dev, PCI_COMMAND, ~PCI_COMMAND_MASTER, 0x0);
 }
 #endif
-
-bool pci_dev_is_wake_source(const struct device *dev)
-{
-	unsigned int pm_cap;
-	uint16_t pmcs;
-
-	if (dev->path.type != DEVICE_PATH_PCI)
-		return false;
-
-	pm_cap = pci_find_capability(dev, PCI_CAP_ID_PM);
-	if (!pm_cap)
-		return false;
-
-	pmcs = pci_read_config16(dev, pm_cap + PCI_PM_CTRL);
-
-	/* PCI Device is a wake source if PME_ENABLE and PME_STATUS are set in PMCS register. */
-	return (pmcs & PCI_PM_CTRL_PME_ENABLE) && (pmcs & PCI_PM_CTRL_PME_STATUS);
-}

@@ -59,7 +59,7 @@ chip soc/intel/jasperlake
 			.tdp_pl2_override = 20,
 	}"
 
-	register "tcc_offset" = "5"    # TCC of 95C
+	register "tcc_offset" = "10"    # TCC of 95C
 
 	device domain 0 on
 		device pci 04.0 on
@@ -113,7 +113,7 @@ chip soc/intel/jasperlake
 			chip drivers/i2c/hid
 				register "generic.hid" = ""GDIX0000""
 				register "generic.desc" = ""Goodix Touchscreen""
-				register "generic.irq" = "ACPI_IRQ_EDGE_LOW(GPP_D4_IRQ)"
+				register "generic.irq" = "ACPI_IRQ_LEVEL_LOW(GPP_D4_IRQ)"
 				register "generic.probed" = "1"
 				register "generic.reset_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D5)"

@@ -24,10 +24,28 @@ config AMD_LPC_DEBUG_CARD
 	select PICASSO_LPC_IOMUX
 	select SUPERIO_SMSC_SIO1036
 	help
-	  AMD's debug card contains an SMSC SIO1036 device which provides
-	  an I/O-based UART in the system.  This feature is not compatible with
-	  CONFIG_HUDSON_UART enabling the memory-mapped UART in the chipset.
-	  Note that Kconfig does not currently enforce this restriction.
+	  AMD's debug card contains an SMSC SIO1036 device which provides an
+	  I/O-mapped UART in the system. This is mutually exclusive with
+	  PICASSO_CONSOLE_UART which selects the SoC's integrated memory-mapped
+	  UART for coreboot console output.
+
+choice
+	prompt "SMSC/Microchip 1036 SuperIO config address"
+	depends on SUPERIO_SMSC_SIO1036
+	default SMSC_SIO1036_BASE_164E
+
+config SMSC_SIO1036_BASE_4E
+	bool "0x4e/0x4d base address"
+
+config SMSC_SIO1036_BASE_164E
+	bool "0x164e/0x164d base address"
+
+endchoice
+
+config SUPERIO_ADDR_BASE
+	hex
+	default 0x4e 	if SMSC_SIO1036_BASE_4E
+	default 0x164e 	if SMSC_SIO1036_BASE_164E
 
 config CBFS_SIZE
 	hex
@@ -52,10 +70,6 @@ config DEVICETREE
 	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
-config MAX_CPUS
-	int
-	default 8
-
 config ONBOARD_VGA_IS_PRIMARY
 	bool
 	default y
@@ -76,6 +90,9 @@ config MANDOLIN_MCHP_FW_FILE
 	depends on MANDOLIN_HAVE_MCHP_FW
 	default "3rdparty/blobs/mainboard/amd/mandolin/EC_mandolin.bin" if BOARD_AMD_MANDOLIN
 	default "3rdparty/blobs/mainboard/amd/mandolin/EC_cereme.bin" if BOARD_AMD_CEREME
+	help
+	  The EC firmware blob is usually the first 128kByte of the stock
+	  firmware image.
 
 if !AMD_LPC_DEBUG_CARD
 choice

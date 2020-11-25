@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <arch/io.h>
+#include <console/console.h>
 #include <device/pci_ops.h>
 #include <device/smbus_host.h>
 #include <northbridge/intel/ironlake/ironlake.h>
@@ -33,7 +34,7 @@ void ibexpeak_setup_bars(void)
 
 	pci_write_config32(PCI_DEV(0, 0x1f, 0), PMBASE, DEFAULT_PMBASE | 1);
 	/* Enable ACPI BAR */
-	pci_write_config8(PCI_DEV(0, 0x1f, 0), 0x44 /* ACPI_CNTL */, 0x80);
+	pci_write_config8(PCH_LPC_DEV, ACPI_CNTL, ACPI_EN);
 
 	printk(BIOS_DEBUG, " done.\n");
 

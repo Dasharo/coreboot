@@ -35,7 +35,8 @@ COREBOOT_EXPORTS += KERNELVERSION
 # Basic component discovery
 MAINBOARDDIR=$(call strip_quotes,$(CONFIG_MAINBOARD_DIR))
 VARIANT_DIR:=$(call strip_quotes,$(CONFIG_VARIANT_DIR))
-COREBOOT_EXPORTS += MAINBOARDDIR VARIANT_DIR
+CARRIER_DIR:=$(call strip_quotes,$(CONFIG_CARRIER_DIR))
+COREBOOT_EXPORTS += MAINBOARDDIR VARIANT_DIR CARRIER_DIR
 
 ## Final build results, which CBFSTOOL uses to create the final
 ## rom image file, are placed under $(objcbfs).
@@ -83,7 +84,7 @@ subdirs-y += src/superio
 subdirs-y += $(wildcard src/drivers/*) $(wildcard src/drivers/*/*) $(wildcard src/drivers/*/*/*)
 subdirs-y += src/cpu src/vendorcode
 subdirs-y += util/cbfstool util/sconfig util/nvramtool util/pgtblgen util/amdfwtool
-subdirs-y += util/futility util/marvell util/bincfg util/supermicro
+subdirs-y += util/futility util/marvell util/bincfg util/supermicro util/qemu
 subdirs-y += $(wildcard src/arch/*)
 subdirs-y += src/mainboard/$(MAINBOARDDIR)
 subdirs-y += src/security
@@ -732,6 +733,16 @@ TXTIBB :=
 
 endif
 
+ifeq ($(CONFIG_INTEL_CBNT_SUPPORT),y)
+
+CBNTIBB := --cbnt
+
+else
+
+CBNTIBB :=
+
+endif # CONFIG_INTEL_CBNT_SUPPORT
+
 ifeq ($(CONFIG_COMPRESS_BOOTBLOCK),y)
 
 $(objcbfs)/bootblock.lz4: $(objcbfs)/bootblock.elf $(objutil)/cbfstool/cbfs-compression-tool
@@ -1063,6 +1074,7 @@ $(obj)/fmap.fmap: $(obj)/fmap.fmd $(FMAPTOOL)
 ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
 TS_OPTIONS := -j $(CONFIG_INTEL_TOP_SWAP_BOOTBLOCK_SIZE)
 endif
+
 ifneq ($(CONFIG_UPDATE_IMAGE),y)
 $(obj)/coreboot.pre: $(objcbfs)/bootblock.bin $$(prebuilt-files) $(CBFSTOOL) $(IFITTOOL) $$(cpu_ucode_cbfs_file) $(obj)/fmap.fmap $(obj)/fmap.desc
 	$(CBFSTOOL) $@.tmp create -M $(obj)/fmap.fmap -r $(shell cat $(obj)/fmap.desc)
@@ -1072,6 +1084,7 @@ ifeq ($(CONFIG_ARCH_X86),y)
 		-n bootblock \
 		-t bootblock \
 		$(TXTIBB) \
+		$(CBNTIBB) \
 		-b -$(call file-size,$(objcbfs)/bootblock.bin) $(cbfs-autogen-attributes) \
 		$(TS_OPTIONS)
 else # ifeq ($(CONFIG_ARCH_X86),y)
@@ -1122,22 +1135,6 @@ $(obj)/coreboot.rom: $(obj)/coreboot.pre $(RAMSTAGE) $(CBFSTOOL) $$(INTERMEDIATE
 # file (filled with \377 = 0xff) and copy the CBFS image over it.
 	dd if=/dev/zero bs=$(call _toint,$(CONFIG_ROM_SIZE)) count=1 2> /dev/null | tr '\000' '\377' > $@.tmp
 	dd if=$(obj)/coreboot.pre of=$@.tmp bs=8192 conv=notrunc 2> /dev/null
-ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),)
-ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),0)
-ifneq ($(CONFIG_UPDATE_IMAGE),y)
-	@printf "    SeaBIOS    Wait up to $(CONFIG_SEABIOS_PS2_TIMEOUT) ms for PS/2 keyboard controller initialization\n"
-	$(CBFSTOOL) $@.tmp add-int -i $(CONFIG_SEABIOS_PS2_TIMEOUT) -n etc/ps2-keyboard-spinup
-endif
-endif
-endif
-ifeq ($(CONFIG_SEABIOS_ADD_SERCON_PORT_FILE),y)
-	@printf "    SeaBIOS    Add sercon-port file\n"
-	$(CBFSTOOL) $@.tmp add-int -i $(CONFIG_SEABIOS_SERCON_PORT_ADDR) -n etc/sercon-port
-endif
-ifeq ($(CONFIG_SEABIOS_THREAD_OPTIONROMS),y)
-	@printf "    SeaBIOS    Thread optionroms\n"
-	$(CBFSTOOL) $@.tmp add-int -i 2 -n etc/threads
-endif
 ifeq ($(CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE),y)
 ifneq ($(CONFIG_UPDATE_IMAGE),y) # never update the bootblock
 ifeq ($(CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_HEADER),y)

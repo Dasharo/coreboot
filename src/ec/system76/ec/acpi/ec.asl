@@ -35,7 +35,7 @@ Device (\_SB.PCI0.LPCB.EC0)
 	Method (_REG, 2, Serialized)  // _REG: Region Availability
 	{
 		Debug = Concatenate("EC: _REG", Concatenate(ToHexString(Arg0), Concatenate(" ", ToHexString(Arg1))))
-		If (((Arg0 == 0x03) && (Arg1 == One))) {
+		If ((Arg0 == 0x03) && (Arg1 == One)) {
 			// Enable hardware touchpad lock, airplane mode, and keyboard backlight keys
 			ECOS = 1
 
@@ -227,4 +227,8 @@ Device (\_SB.PCI0.LPCB.EC0)
 			Debug = Concatenate("EC: Other: ", ToHexString(Local0))
 		}
 	}
+
+	#if CONFIG(EC_SYSTEM76_EC_BAT_THRESHOLDS)
+	#include "battery_thresholds.asl"
+	#endif
 }

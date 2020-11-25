@@ -99,19 +99,24 @@ typedef struct acpi_gen_regaddr {
 	u32 addrh;		/* Register address, high 32 bits */
 } __packed acpi_addr_t;
 
-#define ACPI_ADDRESS_SPACE_MEMORY	   0	/* System memory */
-#define ACPI_ADDRESS_SPACE_IO		   1	/* System I/O */
-#define ACPI_ADDRESS_SPACE_PCI		   2	/* PCI config space */
-#define ACPI_ADDRESS_SPACE_EC		   3	/* Embedded controller */
-#define ACPI_ADDRESS_SPACE_SMBUS	   4	/* SMBus */
-#define ACPI_ADDRESS_SPACE_PCC		0x0A	/* Platform Comm. Channel */
-#define ACPI_ADDRESS_SPACE_FIXED	0x7f	/* Functional fixed hardware */
-#define  ACPI_FFIXEDHW_VENDOR_INTEL	   1	/* Intel */
-#define  ACPI_FFIXEDHW_CLASS_HLT	   0	/* C1 Halt */
-#define  ACPI_FFIXEDHW_CLASS_IO_HLT	   1	/* C1 I/O then Halt */
-#define  ACPI_FFIXEDHW_CLASS_MWAIT	   2	/* MWAIT Native C-state */
-#define  ACPI_FFIXEDHW_FLAG_HW_COORD	   1	/* Hardware Coordination bit */
-#define  ACPI_FFIXEDHW_FLAG_BM_STS	   2	/* BM_STS avoidance bit */
+#define ACPI_ADDRESS_SPACE_MEMORY		0	/* System memory */
+#define ACPI_ADDRESS_SPACE_IO			1	/* System I/O */
+#define ACPI_ADDRESS_SPACE_PCI			2	/* PCI config space */
+#define ACPI_ADDRESS_SPACE_EC			3	/* Embedded controller */
+#define ACPI_ADDRESS_SPACE_SMBUS		4	/* SMBus */
+#define ACPI_ADDRESS_SPACE_CMOS			5	/* SystemCMOS */
+#define ACPI_ADDRESS_SPACE_PCI_BAR_TARGET	6	/* PciBarTarget */
+#define ACPI_ADDRESS_SPACE_IPMI			7	/* IPMI */
+#define ACPI_ADDRESS_SPACE_GENERAL_PURPOSE_IO	8	/* GeneralPurposeIO */
+#define ACPI_ADDRESS_SPACE_GENERIC_SERIAL_BUS	9	/* GenericSerialBus  */
+#define ACPI_ADDRESS_SPACE_PCC			0x0A	/* Platform Comm. Channel */
+#define ACPI_ADDRESS_SPACE_FIXED		0x7f	/* Functional fixed hardware */
+#define  ACPI_FFIXEDHW_VENDOR_INTEL		1	/* Intel */
+#define  ACPI_FFIXEDHW_CLASS_HLT		0	/* C1 Halt */
+#define  ACPI_FFIXEDHW_CLASS_IO_HLT		1	/* C1 I/O then Halt */
+#define  ACPI_FFIXEDHW_CLASS_MWAIT		2	/* MWAIT Native C-state */
+#define  ACPI_FFIXEDHW_FLAG_HW_COORD		1	/* Hardware Coordination bit */
+#define  ACPI_FFIXEDHW_FLAG_BM_STS		2	/* BM_STS avoidance bit */
 /* 0x80-0xbf: Reserved */
 /* 0xc0-0xff: OEM defined */
 
@@ -1056,6 +1061,7 @@ unsigned long acpi_create_hest_error_source(acpi_hest_t *hest,
 void __noreturn acpi_resume(void *wake_vec);
 void mainboard_suspend_resume(void);
 void *acpi_find_wakeup_vector(void);
+int acpi_handoff_wakeup_s3(void);
 
 /* ACPI_Sn assignments are defined to always equal the sleep state numbers */
 enum {
@@ -1083,6 +1089,8 @@ static inline int acpi_sleep_from_pm1(uint32_t pm1_cnt)
 }
 #endif
 
+uint8_t acpi_get_preferred_pm_profile(void);
+
 /* Returns ACPI_Sx values. */
 int acpi_get_sleep_type(void);
 
@@ -1101,24 +1109,16 @@ static inline int acpi_s3_resume_allowed(void)
 	return CONFIG(HAVE_ACPI_RESUME);
 }
 
-#if CONFIG(HAVE_ACPI_RESUME)
-
-#if ENV_ROMSTAGE_OR_BEFORE
 static inline int acpi_is_wakeup_s3(void)
 {
-	return (acpi_get_sleep_type() == ACPI_S3);
-}
-#else
-int acpi_is_wakeup(void);
-int acpi_is_wakeup_s3(void);
-int acpi_is_wakeup_s4(void);
-#endif
+	if (!acpi_s3_resume_allowed())
+		return 0;
 
-#else
-static inline int acpi_is_wakeup(void) { return 0; }
-static inline int acpi_is_wakeup_s3(void) { return 0; }
-static inline int acpi_is_wakeup_s4(void) { return 0; }
-#endif
+	if (ENV_ROMSTAGE_OR_BEFORE)
+		return (acpi_get_sleep_type() == ACPI_S3);
+
+	return acpi_handoff_wakeup_s3();
+}
 
 static inline uintptr_t acpi_align_current(uintptr_t current)
 {

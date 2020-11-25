@@ -26,6 +26,31 @@
 extern struct fru_info_str fru_strings;
 static char slot_id_str[SLOT_ID_LEN];
 
+/* Override SMBIOS type 16 error correction type. */
+unsigned int smbios_memory_error_correction_type(struct memory_info *meminfo)
+{
+	const struct SystemMemoryMapHob *hob;
+
+	hob = get_system_memory_map();
+	assert(hob != NULL);
+
+	switch (hob->RasModesEnabled) {
+	case CH_INDEPENDENT:
+		return MEMORY_ARRAY_ECC_SINGLE_BIT;
+	case FULL_MIRROR_1LM:
+	case PARTIAL_MIRROR_1LM:
+	case FULL_MIRROR_2LM:
+	case PARTIAL_MIRROR_2LM:
+		return MEMORY_ARRAY_ECC_MULTI_BIT;
+	case RK_SPARE:
+		return MEMORY_ARRAY_ECC_SINGLE_BIT;
+	case CH_LOCKSTEP:
+		return MEMORY_ARRAY_ECC_SINGLE_BIT;
+	default:
+		return MEMORY_ARRAY_ECC_MULTI_BIT;
+	}
+}
+
 /*
  * Update SMBIOS type 0 ec version.
  * In deltalake, BMC version is used to represent ec version.
@@ -57,6 +82,18 @@ const char *smbios_mainboard_location_in_chassis(void)
 	}
 	snprintf(slot_id_str, SLOT_ID_LEN, "%d", slot_id);
 	return slot_id_str;
+}
+
+/*
+ * Override SMBIOS type 4 cpu voltage.
+ * BIT7 will set to 1 after value return. If BIT7 is set to 1, the remaining seven
+ * bits of this field are set to contain the processor's current voltage times 10.
+ */
+unsigned int smbios_cpu_get_voltage(void)
+{
+	/* This will return 1.6V which is expected value for Delta Lake
+	   10h = (1.6 * 10) = 16 */
+	return 0x10;
 }
 
 /* System Slot Socket, Stack, Type and Data bus width Information */

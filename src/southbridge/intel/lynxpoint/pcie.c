@@ -645,9 +645,9 @@ static void pch_pcie_early(struct device *dev)
 		pci_and_config32(dev, 0x338, ~(1 << 26));
 	}
 
-	/* Enable LTR in Root Port. */
-	pci_or_config32(dev, 0x64, 1 << 11);
-	pci_update_config32(dev, 0x68, ~(1 << 10), (1 << 10));
+	/* Enable LTR in Root Port. Disable OBFF. */
+	pci_update_config32(dev, 0x64, ~(3 << 18), 1 << 11);
+	pci_update_config16(dev, 0x68, ~(3 << 13), 1 << 10);
 
 	pci_update_config32(dev, 0x318, ~(0xffff << 16), (0x1414 << 16));
 
@@ -749,10 +749,20 @@ static struct device_operations device_ops = {
 };
 
 static const unsigned short pci_device_ids[] = {
-	/* Lynxpoint Mobile */
-	0x8c10, 0x8c12, 0x8c14, 0x8c16, 0x8c18, 0x8c1a, 0x8c1c, 0x8c1e,
-	/* Lynxpoint Low Power */
-	0x9c10, 0x9c12, 0x9c14, 0x9c16, 0x9c18, 0x9c1a,
+	PCI_DEVICE_ID_INTEL_LPT_H_PCIE_RP1,
+	PCI_DEVICE_ID_INTEL_LPT_H_PCIE_RP2,
+	PCI_DEVICE_ID_INTEL_LPT_H_PCIE_RP3,
+	PCI_DEVICE_ID_INTEL_LPT_H_PCIE_RP4,
+	PCI_DEVICE_ID_INTEL_LPT_H_PCIE_RP5,
+	PCI_DEVICE_ID_INTEL_LPT_H_PCIE_RP6,
+	PCI_DEVICE_ID_INTEL_LPT_H_PCIE_RP7,
+	PCI_DEVICE_ID_INTEL_LPT_H_PCIE_RP8,
+	PCI_DEVICE_ID_INTEL_LPT_LP_PCIE_RP1,
+	PCI_DEVICE_ID_INTEL_LPT_LP_PCIE_RP2,
+	PCI_DEVICE_ID_INTEL_LPT_LP_PCIE_RP3,
+	PCI_DEVICE_ID_INTEL_LPT_LP_PCIE_RP4,
+	PCI_DEVICE_ID_INTEL_LPT_LP_PCIE_RP5,
+	PCI_DEVICE_ID_INTEL_LPT_LP_PCIE_RP6,
 	0
 };
 

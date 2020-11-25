@@ -242,6 +242,9 @@ struct soc_intel_tigerlake_config {
 	/* Probe CLKREQ# signal before enabling CLKREQ# based power management.*/
 	uint8_t PcieRpClkReqDetect[CONFIG_MAX_ROOT_PORTS];
 
+	/* Enable PCIe Precision Time Measurement for Root Ports (disabled by default) */
+	uint8_t PciePtm[CONFIG_MAX_ROOT_PORTS];
+
 	/* PCIe RP L1 substate */
 	enum L1_substates_control {
 		L1_SS_FSP_DEFAULT,
@@ -261,7 +264,6 @@ struct soc_intel_tigerlake_config {
 
 	/* Gfx related */
 	uint8_t IgdDvmt50PreAlloc;
-	uint8_t InternalGfx;
 	uint8_t SkipExtGfxScan;
 
 	uint32_t GraphicsConfigPtr;
