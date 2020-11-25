@@ -2,18 +2,10 @@
 
 #include <stdint.h>
 #include <arch/bootblock.h>
-#include <acpi/acpi.h>
-#include <arch/io.h>
 #include <amdblocks/acpimmio.h>
 #include <device/pci_ops.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
 
-int acpi_get_sleep_type(void)
-{
-	u16 tmp = inw(ACPI_PM1_CNT_BLK);
-	tmp = ((tmp & (7 << 10)) >> 10);
-	return (int)tmp;
-}
 /*
  * Enable 4MB (LPC) ROM access at 0xFFC00000 - 0xFFFFFFFF.
  *

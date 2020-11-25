@@ -10,9 +10,6 @@ ramstage-y += state_machine.c
 
 bootblock-y += bootblock.c
 bootblock-y += cache_as_ram.S
-bootblock-y += state_machine.c
-bootblock-y += def_callouts.c
-bootblock-y += eventlog.c
 
 postcar-y += exit_car.S
 
