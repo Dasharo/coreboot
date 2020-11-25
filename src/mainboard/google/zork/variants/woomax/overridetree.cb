@@ -16,9 +16,9 @@ chip soc/amd/picasso
 	register "stapm_time_constant_s" = "200"
 	register "sustained_power_limit_mW" = "15000"
 
-	register "telemetry_vddcr_vdd_slope_mA" = "102586"
+	register "telemetry_vddcr_vdd_slope_mA" = "101070"
 	register "telemetry_vddcr_vdd_offset" = "0"
-	register "telemetry_vddcr_soc_slope_mA" = "26967"
+	register "telemetry_vddcr_soc_slope_mA" = "24560"
 	register "telemetry_vddcr_soc_offset" = "0"
 
 	# End : OPN Performance Configuration
@@ -30,7 +30,7 @@ chip soc/amd/picasso
 		.tx_pre_emp_amp_tune = 0x03,
 		.tx_pre_emp_pulse_tune = 0x0,
 		.tx_rise_tune = 0x1,
-		.rx_vref_tune = 0xf,
+		.tx_vref_tune = 0xf,
 		.tx_hsxv_tune = 0x3,
 		.tx_res_tune = 0x01,
 	}"
@@ -42,7 +42,7 @@ chip soc/amd/picasso
 		.tx_pre_emp_amp_tune = 0x03,
 		.tx_pre_emp_pulse_tune = 0x0,
 		.tx_rise_tune = 0x1,
-		.rx_vref_tune = 0xf,
+		.tx_vref_tune = 0xf,
 		.tx_hsxv_tune = 0x3,
 		.tx_res_tune = 0x01,
 	}"

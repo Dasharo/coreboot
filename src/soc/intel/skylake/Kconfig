@@ -55,6 +55,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_GPIO_PADCFG_PADTOL
 	select SOC_INTEL_COMMON_BLOCK_GSPI
 	select SOC_INTEL_COMMON_BLOCK_HDA
+	select SOC_INTEL_COMMON_BLOCK_PMC_DISCOVERABLE
 	select SOC_INTEL_COMMON_BLOCK_SA
 	select SOC_INTEL_COMMON_BLOCK_SCS
 	select SOC_INTEL_COMMON_BLOCK_SGX
@@ -159,6 +160,12 @@ config SKYLAKE_SOC_PCH_H
 	default n
 	help
 	  Choose this option if you have a PCH-H chipset.
+
+config NHLT_DMIC_1CH
+	bool
+	default n
+	help
+	  Include DSP firmware settings for 1 channel DMIC array.
 
 config NHLT_DMIC_2CH
 	bool

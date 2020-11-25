@@ -58,22 +58,10 @@ static void sata_init(struct device *dev)
 
 	/* Set Interrupt Line */
 	/* Interrupt Pin is set by D31IP.PIP */
-	pci_write_config8(dev, INTR_LN, 0x0a);
+	pci_write_config8(dev, PCI_INTERRUPT_LINE, 0x0a);
 
-	/* Set timings */
-	pci_write_config16(dev, IDE_TIM_PRI, IDE_DECODE_ENABLE |
-			IDE_ISP_3_CLOCKS | IDE_RCT_1_CLOCKS |
-			IDE_PPE0 | IDE_IE0 | IDE_TIME0);
-	pci_write_config16(dev, IDE_TIM_SEC, IDE_DECODE_ENABLE |
-			IDE_ISP_5_CLOCKS | IDE_RCT_4_CLOCKS);
-
-	/* Sync DMA */
-	pci_write_config16(dev, IDE_SDMA_CNT, IDE_PSDE0);
-	pci_write_config16(dev, IDE_SDMA_TIM, 0x0001);
-
-	/* Set IDE I/O Configuration */
-	reg32 = SIG_MODE_PRI_NORMAL | FAST_PCB1 | FAST_PCB0 | PCB1 | PCB0;
-	pci_write_config32(dev, IDE_CONFIG, reg32);
+	pci_write_config16(dev, IDE_TIM_PRI, IDE_DECODE_ENABLE);
+	pci_write_config16(dev, IDE_TIM_SEC, IDE_DECODE_ENABLE);
 
 	/* for AHCI, Port Enable is managed in memory mapped space */
 	pci_update_config16(dev, 0x92, ~0x3f, 0x8000 | config->sata_port_map);
@@ -226,9 +214,22 @@ static struct device_operations sata_ops = {
 };
 
 static const unsigned short pci_device_ids[] = {
-	0x8c00, 0x8c02, 0x8c04, 0x8c06, 0x8c08, 0x8c0e, /* Desktop */
-	0x8c01, 0x8c03, 0x8c05, 0x8c07, 0x8c09, 0x8c0f, /* Mobile */
-	0x9c03, 0x9c05, 0x9c07, 0x9c0f,                 /* Low Power */
+	PCI_DEVICE_ID_INTEL_LPT_H_DESKTOP_SATA_IDE,
+	PCI_DEVICE_ID_INTEL_LPT_H_DESKTOP_SATA_AHCI,
+	PCI_DEVICE_ID_INTEL_LPT_H_DESKTOP_SATA_RAID_1,
+	PCI_DEVICE_ID_INTEL_LPT_H_DESKTOP_SATA_RAID_PREM,
+	PCI_DEVICE_ID_INTEL_LPT_H_DESKTOP_SATA_IDE_P45,
+	PCI_DEVICE_ID_INTEL_LPT_H_DESKTOP_SATA_RAID_2,
+	PCI_DEVICE_ID_INTEL_LPT_H_MOBILE_SATA_IDE,
+	PCI_DEVICE_ID_INTEL_LPT_H_MOBILE_SATA_AHCI,
+	PCI_DEVICE_ID_INTEL_LPT_H_MOBILE_SATA_RAID_1,
+	PCI_DEVICE_ID_INTEL_LPT_H_MOBILE_SATA_RAID_PREM,
+	PCI_DEVICE_ID_INTEL_LPT_H_MOBILE_SATA_IDE_P45,
+	PCI_DEVICE_ID_INTEL_LPT_H_MOBILE_SATA_RAID_2,
+	PCI_DEVICE_ID_INTEL_LPT_LP_SATA_AHCI,
+	PCI_DEVICE_ID_INTEL_LPT_LP_SATA_RAID_1,
+	PCI_DEVICE_ID_INTEL_LPT_LP_SATA_RAID_PREM,
+	PCI_DEVICE_ID_INTEL_LPT_LP_SATA_RAID_2,
 	0
 };
 

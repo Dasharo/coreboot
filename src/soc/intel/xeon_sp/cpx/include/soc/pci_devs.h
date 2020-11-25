@@ -102,17 +102,19 @@
 #define  PCH_DEVFN_LPC          _PCH_DEVFN(LPC, 0)
 #define  PCH_DEVFN_P2SB         _PCH_DEVFN(LPC, 1)
 #define  PCH_DEVFN_PMC          _PCH_DEVFN(LPC, 2)
+#define  PCH_DEVFN_SMBUS        _PCH_DEVFN(LPC, 4)
 #define  PCH_DEVFN_SPI          _PCH_DEVFN(LPC, 5)
 #define  PCH_DEV_LPC            _PCH_DEV(LPC, 0)
 #define  PCH_DEV_P2SB           _PCH_DEV(LPC, 1)
 #define  PCH_DEV_PMC            _PCH_DEV(LPC, 2)
+#define  PCH_DEV_SMBUS          _PCH_DEV(LPC, 4)
 #define  PCH_DEV_SPI            _PCH_DEV(LPC, 5)
 
 #define HPET_BUS_NUM            0x0
 #define HPET_DEV_NUM            PCH_DEV_SLOT_LPC
 #define HPET0_FUNC_NUM          0x00
 
-#define PCH_IOAPIC_BUS_NUMBER   0x00
+#define PCH_IOAPIC_BUS_NUMBER   0xF0
 #define PCH_IOAPIC_DEV_NUM      0x1F
 #define PCH_IOAPIC_FUNC_NUM     0x00
 

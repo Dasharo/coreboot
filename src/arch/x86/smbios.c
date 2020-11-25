@@ -463,6 +463,12 @@ static int get_socket_type(void)
 	return 0x02; /* Unknown */
 }
 
+unsigned int __weak smbios_memory_error_correction_type(struct memory_info *meminfo)
+{
+	return meminfo->ecc_capable ?
+		MEMORY_ARRAY_ECC_SINGLE_BIT : MEMORY_ARRAY_ECC_NONE;
+}
+
 unsigned int __weak smbios_processor_external_clock(void)
 {
 	return 0; /* Unknown */
@@ -491,6 +497,12 @@ unsigned int __weak smbios_cache_sram_type(void)
 unsigned int __weak smbios_cache_conf_operation_mode(u8 level)
 {
 	return SMBIOS_CACHE_OP_MODE_UNKNOWN; /* Unknown */
+}
+
+/* Returns the processor voltage in 100mV units */
+unsigned int __weak smbios_cpu_get_voltage(void)
+{
+	return 0; /* Unknown */
 }
 
 static size_t get_number_of_caches(struct cpuid_result res_deterministic_cache)
@@ -595,6 +607,7 @@ static int smbios_write_type3(unsigned long *current, int handle)
 
 static int smbios_write_type4(unsigned long *current, int handle)
 {
+	unsigned int cpu_voltage;
 	struct cpuid_result res;
 	struct smbios_type4 *t = (struct smbios_type4 *)*current;
 	int len = sizeof(struct smbios_type4);
@@ -686,6 +699,9 @@ static int smbios_write_type4(unsigned long *current, int handle)
 		}
 	}
 	t->processor_characteristics = characteristics | smbios_processor_characteristics();
+	cpu_voltage = smbios_cpu_get_voltage();
+	if (cpu_voltage > 0)
+		t->voltage = 0x80 | cpu_voltage;
 
 	*current += len;
 	return len;
@@ -1025,8 +1041,7 @@ static int smbios_write_type16(unsigned long *current, int *handle)
 
 	t->location = MEMORY_ARRAY_LOCATION_SYSTEM_BOARD;
 	t->use = MEMORY_ARRAY_USE_SYSTEM;
-	t->memory_error_correction = meminfo->ecc_capable ?
-				MEMORY_ARRAY_ECC_SINGLE_BIT : MEMORY_ARRAY_ECC_NONE;
+	t->memory_error_correction = smbios_memory_error_correction_type(meminfo);
 
 	/* no error information handle available */
 	t->memory_error_information_handle = 0xFFFE;
