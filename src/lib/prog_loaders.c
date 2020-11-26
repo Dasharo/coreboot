@@ -35,6 +35,7 @@
 #include <fmap.h>
 #include <security/tpm/tspi.h>
 #include <security/vboot/vbnv.h>
+#include <drivers/spi/spi_flash_internal.h>
 
 /* Only can represent up to 1 byte less than size_t. */
 const struct mem_region_device addrspace_32bit =
@@ -46,7 +47,8 @@ int prog_locate(struct prog *prog)
 
 #ifdef __RAMSTAGE__
 	u32 cbfs_type;
-	u8 sr[2];
+	u8 sr0, sr1;
+	const struct spi_flash *flash = boot_device_spi_flash();
 	uint8_t data_hash[VB2_SHA256_DIGEST_SIZE];
 	uint8_t golden_hash[VB2_SHA256_DIGEST_SIZE] = {
 		0x66, 0x76, 0x93, 0x80, 0x53, 0x47, 0x01, 0x9f,
@@ -56,14 +58,26 @@ int prog_locate(struct prog *prog)
 	};
 	void* prog_memmap;
 
-	if (spi_flash_status(boot_device_spi_flash(), sr) < 0) {
-		printk(BIOS_ERR, "Failed to read SPI status register 1\n");
+	if (flash == NULL) {
+		printk(BIOS_ALERT, "Boot device SPI flash not found\n");
 		return -1;
 	}
+
+
+	if (spi_flash_status(flash, &sr0) < 0) {
+		printk(BIOS_ALERT, "Failed to read SPI status register 0\n");
+		return -1;
+	}
+	if (spi_flash_cmd(&flash->spi, 0x35, &sr1, sizeof(sr1))) {
+		printk(BIOS_ALERT, "Failed to read SPI status register 1\n");
+		return -1;
+	}
+
 	cbfs_prepare_program_locate();
 
 	/* Check if we looking for payload and SPI flash is locked. */
-	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog))) {
+	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog)) &&
+	    ((sr0 & 0x80) == 0x80) && ((sr1 & 1) == 1))  {
 		struct region_device rdev;
 		cbfs_type = CBFS_TYPE_SELF;
 		/* Locate PSPDIR just to fill the rdev fields */
