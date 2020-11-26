@@ -97,6 +97,8 @@ function buildFW6Image {
 		echo \"/pci@i0cf8/*@17/drive@1/disk@0\" >> build/bootorder.txt && \
 		./build/cbfstool build/coreboot.rom add -f build/bootorder.txt -n bootorder -t raw && \
 		echo \"pci8086,5906.rom pci8086,5916.rom\" > build/links.txt && \
+		echo \"pci8086,1533.rom pci8086,150c.rom\" >> build/links.txt && \
+		echo \"pci8086,157b.rom pci8086,150c.rom\" >> build/links.txt && \
 		./build/cbfstool build/coreboot.rom add -f build/links.txt -n links -t raw && \
 		./build/cbfstool build/coreboot.rom print"
 
