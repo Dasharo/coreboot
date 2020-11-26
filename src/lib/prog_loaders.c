@@ -77,6 +77,8 @@ int prog_locate(struct prog *prog)
 
 	cbfs_prepare_program_locate();
 
+	printk(BIOS_DEBUG, "SPI SR0 %02x SR1 %02x\n", sr0, sr1);
+
 	/* Check if we looking for payload and SPI flash is locked. */
 	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog))
 	    && ((sr0 & 0x80) == 0x80) && ((sr1 & 1) == 1))  {
