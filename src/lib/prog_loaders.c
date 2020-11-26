@@ -45,6 +45,8 @@ int prog_locate(struct prog *prog)
 {
 	struct cbfsf file;
 
+	cbfs_prepare_program_locate();
+
 #ifdef __RAMSTAGE__
 	u32 cbfs_type;
 	u8 sr0, sr1;
@@ -76,8 +78,8 @@ int prog_locate(struct prog *prog)
 	cbfs_prepare_program_locate();
 
 	/* Check if we looking for payload and SPI flash is locked. */
-	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog)) &&
-	    ((sr0 & 0x80) == 0x80) && ((sr1 & 1) == 1))  {
+	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog))
+	    && ((sr0 & 0x80) == 0x80) && ((sr1 & 1) == 1))  {
 		struct region_device rdev;
 		cbfs_type = CBFS_TYPE_SELF;
 		/* Locate PSPDIR just to fill the rdev fields */
@@ -117,12 +119,9 @@ int prog_locate(struct prog *prog)
 
 		return 0;
 	}
-#else
-	cbfs_prepare_program_locate();
-
+#endif
 	if (cbfs_boot_locate(&file, prog_name(prog), NULL))
 		return -1;
-#endif
 
 	cbfsf_file_type(&file, &prog->cbfs_type);
 
