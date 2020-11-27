@@ -42,7 +42,15 @@
  #define SPI_EXT_REG_TXCOUNT	0x5
  #define SPI_EXT_REG_RXCOUNT	0x6
 #define SPI_EXT_REG_DATA	0x1f
-
+#define SPI_CMD_CODE		0x45
+#define SPI_CMD_TRIGGER		0x47
+#define SPI_CMD_TRIGGER_EXECUTE	0x80
+#define SPI_TX_BYTE_COUNT	0x48
+#define SPI_RX_BYTE_COUNT	0x4b
+#define SPI_STATUS		0x4c
+#define SPI_FIFO		0x80
+#define SPI_FIFO_LAST_BYTE	0xc7
+#define SPI_FIFO_DEPTH		(SPI_FIFO_LAST_BYTE - SPI_FIFO)
 #define AMD_SB_SPI_TX_LEN	64
 
 #define SPI_DEBUG_DRIVER CONFIG(DEBUG_SPI_FLASH)
@@ -87,21 +95,10 @@ static void dump_state(const char *str)
 	printk(BIOS_DEBUG, "SPI: %s\n", str);
 	printk(BIOS_DEBUG, "Cntrl0: %x\n", spi_read32(SPI_REG_CNTRL00));
 	printk(BIOS_DEBUG, "Cntrl1: %x\n", spi_read32(SPI_REG_CNTRL11));
-	printk(BIOS_DEBUG, "TxByteCount: %x\n", spi_read8(SPI_EXT_REG_TXCOUNT));
-	printk(BIOS_DEBUG, "RxByteCount: %x\n", spi_read8(SPI_EXT_REG_RXCOUNT));
+	printk(BIOS_DEBUG, "TxByteCount: %x\n", spi_read8(SPI_TX_BYTE_COUNT));
+	printk(BIOS_DEBUG, "RxByteCount: %x\n", spi_read8(SPI_RX_BYTE_COUNT));
 	printk(BIOS_DEBUG, "CmdCode: %x\n", spi_read8(SPI_REG_OPCODE));
-	hexdump((void *)(get_spibase() + SPI_REG_FIFO), AMD_SB_SPI_TX_LEN);
-}
-
-static void reset_internal_fifo_pointer(void)
-{
-	uint8_t reg8;
-
-	do {
-		reg8 = spi_read8(SPI_REG_CNTRL02);
-		reg8 |= CNTRL02_FIFO_RESET;
-		spi_write8(SPI_REG_CNTRL02, reg8);
-	} while (spi_read8(SPI_REG_CNTRL11) & CNTRL11_FIFOPTR_MASK);
+	hexdump((void *)(get_spibase() + SPI_FIFO), AMD_SB_SPI_TX_LEN);
 }
 
 static void execute_command(void)
@@ -132,15 +129,18 @@ void spi_init(void)
 static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 		size_t bytesout, void *din, size_t bytesin)
 {
-	/* First byte is cmd which can not being sent through FIFO. */
-	u8 cmd = *(u8 *)dout++;
 	size_t count;
+	u8 cmd;
+	u8 *bufin = din;
+	const u8 *bufout = dout;
+
+	/* First byte is cmd which cannot be sent through FIFO */
+	cmd = bufout[0];
+	bufout++;
+	bytesout--;
 
 	if (SPI_DEBUG_DRIVER)
-		printk(BIOS_DEBUG, "%s(%zx, %zx)\n", __func__, bytesout,
-			bytesin);
-
-	bytesout--;
+		printk(BIOS_DEBUG, "%s(%zx, %zx)\n", __func__, bytesout, bytesin);
 
 	/*
 	 * Check if this is a write command attempting to transfer more bytes
@@ -155,27 +155,18 @@ static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 		return -1;
 	}
 
-	spi_write8(SPI_EXT_REG_INDX, SPI_EXT_REG_TXCOUNT);
-	spi_write8(SPI_EXT_REG_DATA, bytesout);
-	spi_write8(SPI_EXT_REG_INDX, SPI_EXT_REG_RXCOUNT);
-	spi_write8(SPI_EXT_REG_DATA, bytesin);
+	spi_write8(SPI_CMD_CODE, cmd);
 
-	spi_write8(SPI_REG_OPCODE, cmd);
+	spi_write8(SPI_TX_BYTE_COUNT, bytesout);
+	spi_write8(SPI_RX_BYTE_COUNT, bytesin);
 
-	reset_internal_fifo_pointer();
-	for (count = 0; count < bytesout; count++, dout++)
-		spi_write8(SPI_REG_FIFO, *(uint8_t *)dout);
+	for (count = 0; count < bytesout; count++)
+		spi_write8(SPI_FIFO + count, bufout[count]);
 
-	reset_internal_fifo_pointer();
 	execute_command();
 
-	reset_internal_fifo_pointer();
-	/* Skip the bytes we sent. */
-	for (count = 0; count < bytesout; count++)
-		cmd = spi_read8(SPI_REG_FIFO);
-
-	for (count = 0; count < bytesin; count++, din++)
-		*(uint8_t *)din = spi_read8(SPI_REG_FIFO);
+	for (count = 0; count < bytesin; count++)
+		bufin[count] = spi_read8(SPI_FIFO + (count + bytesout) % SPI_FIFO_DEPTH);
 
 	return 0;
 }
