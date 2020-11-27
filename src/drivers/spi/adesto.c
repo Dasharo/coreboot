@@ -201,6 +201,7 @@ out:
 static const struct spi_flash_ops spi_flash_ops = {
 	.write = adesto_write,
 	.erase = spi_flash_cmd_erase,
+	.status = spi_flash_cmd_status,
 #if CONFIG(SPI_FLASH_NO_FAST_READ)
 	.read = spi_flash_cmd_read_slow,
 #else
@@ -234,6 +235,7 @@ int spi_flash_probe_adesto(const struct spi_slave *spi, u8 *idcode,
 	flash->size = flash->sector_size *params->sectors_per_block *
 			params->nr_blocks;
 	flash->erase_cmd = CMD_AT25DF_SE;
+	flash->status_cmd = CMD_AT25DF_RDSR;
 
 	flash->ops = &spi_flash_ops;
 

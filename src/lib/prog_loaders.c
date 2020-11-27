@@ -27,8 +27,15 @@
 #include <rmodule.h>
 #include <stage_cache.h>
 #include <symbols.h>
+#include <spi_flash.h>
 #include <timestamp.h>
 #include <fit_payload.h>
+#include <vb2_api.h>
+#include <commonlib/region.h>
+#include <fmap.h>
+#include <security/tpm/tspi.h>
+#include <security/vboot/vbnv.h>
+#include <drivers/spi/spi_flash_internal.h>
 
 /* Only can represent up to 1 byte less than size_t. */
 const struct mem_region_device addrspace_32bit =
@@ -40,6 +47,81 @@ int prog_locate(struct prog *prog)
 
 	cbfs_prepare_program_locate();
 
+#ifdef __RAMSTAGE__
+	u32 cbfs_type;
+	u8 sr0, sr1;
+	const struct spi_flash *flash = boot_device_spi_flash();
+	uint8_t data_hash[VB2_SHA256_DIGEST_SIZE];
+	uint8_t golden_hash[VB2_SHA256_DIGEST_SIZE] = {
+		0xf2, 0xf3, 0xbc, 0xa3, 0x73, 0x1f, 0x84, 0x1e,
+		0x3e, 0x06, 0x59, 0x43, 0x3c, 0xf2, 0x94, 0xf6,
+		0x2e, 0x38, 0x59, 0x95, 0xce, 0x28, 0xcd, 0xf6,
+		0x2c, 0xd1, 0x60, 0x8f, 0x04, 0xf3, 0x2b, 0x98,
+	};
+	void* prog_memmap;
+
+	if (flash == NULL) {
+		printk(BIOS_ALERT, "Boot device SPI flash not found\n");
+		return -1;
+	}
+
+
+	if (spi_flash_status(flash, &sr0) < 0) {
+		printk(BIOS_ALERT, "Failed to read SPI status register 0\n");
+		return -1;
+	}
+	if (spi_flash_cmd(&flash->spi, 0x35, &sr1, sizeof(sr1))) {
+		printk(BIOS_ALERT, "Failed to read SPI status register 1\n");
+		return -1;
+	}
+
+	cbfs_prepare_program_locate();
+
+	printk(BIOS_DEBUG, "SPI SR0 %02x SR1 %02x\n", sr0, sr1);
+
+	/* Check if we looking for payload and SPI flash is locked. */
+	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog))
+	    && ((sr0 & 0x80) == 0x80) && ((sr1 & 1) == 1))  {
+		struct region_device rdev;
+		cbfs_type = CBFS_TYPE_SELF;
+		/* Locate PSPDIR just to fill the rdev fields */
+		fmap_locate_area_as_rdev("PSPDIR", &rdev);
+		/* Update the region fields to locate modified FW_MAIN_A region */
+		rdev.region.offset=0x5a900;
+		rdev.region.size=0xc5700;
+		/* We should load UEFI payload from FW_MAIN_A now */
+		if (cbfs_locate(&file, &rdev, prog_name(prog), &cbfs_type) < 0)
+			return -1;
+		cbfsf_file_type(&file, &prog->cbfs_type);
+		cbfs_file_data(prog_rdev(prog), &file);
+		if (tpm_measure_region(prog_rdev(prog), 2, "FMAP: FW_MAIN_A CBFS: fallback/payload"))
+			return -1;
+		prog_memmap = rdev_mmap_full(prog_rdev(prog));
+                if (!prog_memmap)
+			return -1;
+                /* TODO verify SHA256sum to ensure verified boot is preserved */
+		vb2_digest_buffer((const uint8_t *)prog_memmap,
+                                  region_device_sz(prog_rdev(prog)),
+                                  VB2_HASH_SHA256, data_hash,
+                                  sizeof(data_hash));
+ 
+                rdev_munmap(prog_rdev(prog), prog_memmap);
+ 
+                if (!memcmp((const void *) golden_hash,
+                            (const void *) data_hash,
+                            VB2_SHA256_DIGEST_SIZE)) {
+			set_recovery_mode_into_vbnv(0);
+                        return 0;
+                } else {
+                        printk(BIOS_ALERT, "Failed to verify payload integrity\n");
+			hexdump(golden_hash, VB2_SHA256_DIGEST_SIZE);
+			hexdump(data_hash, VB2_SHA256_DIGEST_SIZE);
+                        return -1;
+                }
+
+		return 0;
+	}
+#endif
 	if (cbfs_boot_locate(&file, prog_name(prog), NULL))
 		return -1;
 
@@ -202,8 +284,11 @@ void payload_load(void)
 	}
 
 out:
-	if (prog_entry(payload) == NULL)
-		die_with_post_code(POST_INVALID_ROM, "Payload not loaded.\n");
+	if (prog_entry(payload) == NULL) {
+		printk(BIOS_ALERT, "Payload not loaded.\n");
+		set_recovery_mode_into_vbnv(0x03);
+		board_reset();
+	}
 }
 
 void payload_run(void)

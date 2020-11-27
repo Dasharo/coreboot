@@ -152,6 +152,6 @@ config VBOOT_VBNV_OFFSET
 
 config RO_REGION_ONLY
 	string
-	default "spd.bin AGESA" if VBOOT
+	default "spd.bin AGESA linux/payload"
 
 endif # BOARD_PCENGINES_APU2
