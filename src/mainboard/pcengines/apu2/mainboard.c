@@ -487,6 +487,8 @@ static int read_serial_from_flash(char *serial, size_t len)
 	const struct spi_flash *flash = NULL;
 	int ret;
 
+	return -1;
+
 	flash = boot_device_spi_flash();
 	if (flash == NULL) {
 		printk(BIOS_WARNING, "Can't get boot flash device\n");
