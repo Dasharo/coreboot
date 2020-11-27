@@ -139,6 +139,14 @@ static const struct adesto_spi_flash_params adesto_spi_flash_table[] = {
 		.nr_blocks		= 64,
 		.name			= "AT25DQ321",
 	},
+	{
+		.id			= 0x3217,
+		.l2_page_size		= 8,
+		.pages_per_sector	= 16,
+		.sectors_per_block	= 16,
+		.nr_blocks		= 128,
+		.name			= "AT25SF641",
+	},
 };
 
 static int adesto_write(const struct spi_flash *flash, u32 offset, size_t len,
