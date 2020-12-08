@@ -41,8 +41,6 @@
 #include <spd.h>
 #include <southbridge/amd/rs780/rs780.h>
 
-#include "cpu/amd/quadcore/quadcore.c"
-
 #define SERIAL_DEV PNP_DEV(0x2e, IT8718F_SP1)
 #define GPIO_DEV PNP_DEV(0x2e, IT8718F_GPIO)
 

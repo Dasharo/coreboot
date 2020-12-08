@@ -15,11 +15,13 @@
 #include <console/console.h>
 #include <device/pci_ops.h>
 #include <pc80/mc146818rtc.h>
+#include <cpu/amd/multicore.h>
+#include <cpu/amd/family_10h-family_15h/init_cpus.h>
+#include <northbridge/amd/amdfam10/amdfam10.h>
+
 #if CONFIG(HAVE_OPTION_TABLE)
 #include "option_table.h"
 #endif
-
-#include "cpu/amd/quadcore/quadcore_id.c"
 
 u32 get_core_num_in_bsp(u32 nodeid)
 {

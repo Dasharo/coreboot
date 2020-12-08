@@ -38,8 +38,6 @@
 #include "southbridge/amd/sb800/early_setup.c"
 #include <arch/early_variables.h>
 #include <cbmem.h>
-
-#include "cpu/amd/quadcore/quadcore.c"
 #include "spd.h"
 
 #define SERIAL_DEV PNP_DEV(0x2e, W83627HF_SP1)

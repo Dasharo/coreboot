@@ -39,8 +39,6 @@
 #include <southbridge/amd/rs780/rs780.h>
 #include <southbridge/amd/sb800/early_setup.c>
 
-#include "cpu/amd/quadcore/quadcore.c"
-
 #define SERIAL_DEV PNP_DEV(0x2e, W83627HF_SP1)
 #define CLK_DEV PNP_DEV(0x2e, W83627HF_SP1)
 

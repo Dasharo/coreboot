@@ -40,8 +40,6 @@
 #include <arch/early_variables.h>
 #include <cbmem.h>
 
-#include "cpu/amd/quadcore/quadcore.c"
-
 int spd_read_byte(unsigned int device, unsigned int address);
 
 

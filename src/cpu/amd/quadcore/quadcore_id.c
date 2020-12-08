@@ -16,6 +16,7 @@
 #include <cpu/amd/msr.h>
 #include <cpu/amd/multicore.h>
 #include <device/pci_ops.h>
+#include <northbridge/amd/amdfam10/amdfam10.h>
 
 //called by bus_cpu_scan too
 u32 read_nb_cfg_54(void)

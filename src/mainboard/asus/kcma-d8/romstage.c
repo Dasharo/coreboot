@@ -45,8 +45,6 @@
 #include <cbmem.h>
 #include <types.h>
 
-#include "cpu/amd/quadcore/quadcore.c"
-
 #define SERIAL_0_DEV PNP_DEV(0x2e, W83667HG_A_SP1)
 #define SERIAL_1_DEV PNP_DEV(0x2e, W83667HG_A_SP2)
 

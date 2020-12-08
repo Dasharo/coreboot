@@ -46,8 +46,6 @@
 #include "southbridge/broadcom/bcm5785/early_smbus.c"
 #include "southbridge/broadcom/bcm5785/early_setup.c"
 
-#include "cpu/amd/quadcore/quadcore.c"
-
 #define SERIAL_DEV PNP_DEV(0x2e, PILOT_SP1)
 #define RTC_DEV PNP_DEV(0x4e, PC87417_RTC)
 

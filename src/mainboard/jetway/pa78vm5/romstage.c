@@ -42,8 +42,6 @@
 #include <cbmem.h>
 #include <southbridge/amd/rs780/rs780.h>
 
-#include "cpu/amd/quadcore/quadcore.c"
-
 #if CONFIG_TTYS0_BASE == 0x2f8
 #define SERIAL_DEV PNP_DEV(0x2e, F71863FG_SP2)
 #else

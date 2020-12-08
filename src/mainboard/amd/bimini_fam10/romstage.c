@@ -38,8 +38,6 @@
 #include "southbridge/amd/sb800/early_setup.c"
 #include <spd.h>
 
-#include "cpu/amd/quadcore/quadcore.c"
-
 int spd_read_byte(unsigned int device, unsigned int address);
 
 

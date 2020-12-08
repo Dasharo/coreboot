@@ -39,8 +39,6 @@
 #include <cbmem.h>
 #include <southbridge/nvidia/mcp55/mcp55.h>
 
-#include "cpu/amd/quadcore/quadcore.c"
-
 #define SERIAL_DEV PNP_DEV(0x2e, W83627HF_SP1)
 
 int spd_read_byte(unsigned int device, unsigned int address);

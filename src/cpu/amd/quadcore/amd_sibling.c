@@ -22,14 +22,8 @@
 #include <cpu/amd/msr.h>
 #include <cpu/amd/model_10xxx_rev.h>
 #include <cpu/amd/amdfam10_sysconf.h>
-
-extern struct device *get_node_pci(u32 nodeid, u32 fn);
-
-#if 0
-static int first_time = 1;
-#endif
-
-#include "quadcore_id.c"
+#include <cpu/amd/multicore.h>
+#include <northbridge/amd/amdfam10/amdfam10.h>
 
 static u32 get_max_siblings(u32 nodes)
 {
