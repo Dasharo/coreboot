@@ -15,10 +15,14 @@
 
 #include <arch/cpu.h>
 #include <cpu/x86/cache.h>
+#include <cpu/x86/mtrr.h>
+#include <cpu/amd/mtrr.h>
 #include <cpu/x86/msr.h>
 #include <cpu/amd/msr.h>
+#include <cpu/amd/car.h>
+#include <cpu/amd/model_10xxx_rev.h>
 
-static __always_inline uint32_t amd_fam1x_cpu_family(void)
+uint32_t amd_fam1x_cpu_family(void)
 {
 	uint32_t family;
 
@@ -28,7 +32,6 @@ static __always_inline uint32_t amd_fam1x_cpu_family(void)
 	return family;
 }
 
-static __always_inline
 void disable_cache_as_ram_real(uint8_t skip_sharedc_config)
 {
 	msr_t msr;

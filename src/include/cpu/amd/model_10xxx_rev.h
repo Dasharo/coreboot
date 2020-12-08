@@ -17,7 +17,7 @@
 #define __CPU_AMD_MODEL_10XXX_REV_H__
 
 int init_processor_name(void);
-
+uint32_t amd_fam1x_cpu_family(void);
 /* place holder for Family 10 revision code */
 
 #endif /* __CPU_AMD_MODEL_10XXX_REV_H__ */

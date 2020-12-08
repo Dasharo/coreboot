@@ -27,7 +27,9 @@
 #include <northbridge/amd/amdht/AsPsDefs.h>
 #include <northbridge/amd/amdht/porting.h>
 #include <northbridge/amd/amdht/h3ncmn.h>
+#include <cpu/amd/car.h>
 #include <cpu/amd/family_10h-family_15h/fidvid.h>
+#include <cpu/amd/model_10xxx_rev.h>
 #include <southbridge/amd/common/reset.h>
 
 #if CONFIG(SOUTHBRIDGE_AMD_SB700)
@@ -37,8 +39,6 @@
 #if CONFIG(SOUTHBRIDGE_AMD_SB800)
 #include <southbridge/amd/sb800/sb800.h>
 #endif
-
-#include "cpu/amd/car/disable_cache_as_ram.c"
 
 #if CONFIG(PCI_IO_CFG_EXT)
 static void set_EnableCf8ExtCfg(void)
@@ -326,7 +326,7 @@ static void STOP_CAR_AND_CPU(uint8_t skip_sharedc_config, uint32_t apicid)
 	msr_t msr;
 	uint32_t family;
 
-	family = amd_fam1x_cpu_family();		// inline
+	family = amd_fam1x_cpu_family();
 
 	if (family < 0x6f) {
 		/* Family 10h or earlier */
@@ -353,7 +353,7 @@ static void STOP_CAR_AND_CPU(uint8_t skip_sharedc_config, uint32_t apicid)
 		}
 	}
 
-	disable_cache_as_ram_real(skip_sharedc_config);	// inline
+	disable_cache_as_ram_real(skip_sharedc_config);
 
 	/* Mark the core as sleeping */
 	lapic_write(LAPIC_MSG_REG, (apicid << 24) | F10_APSTATE_ASLEEP);

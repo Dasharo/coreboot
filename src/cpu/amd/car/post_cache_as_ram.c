@@ -16,15 +16,15 @@
 #include <arch/stages.h>
 #include <arch/early_variables.h>
 #include <commonlib/helpers.h>
+#include <cpu/x86/cache.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/amd/mtrr.h>
 #include <cpu/amd/car.h>
 #include <cpu/amd/msr.h>
+#include <cpu/amd/model_10xxx_rev.h>
 #include <arch/acpi.h>
 #include <program_loading.h>
 #include <romstage_handoff.h>
-
-#include "cpu/amd/car/disable_cache_as_ram.c"
 
 // For set_sysinfo_in_ram()
 #include <northbridge/amd/amdfam10/raminit.h>
@@ -118,7 +118,7 @@ asmlinkage void *post_cache_as_ram(void)
 asmlinkage void cache_as_ram_new_stack(void)
 {
 	print_car_debug("Disabling cache as RAM now\n");
-	disable_cache_as_ram_real(0);	// inline
+	disable_cache_as_ram_real(0);
 
 	disable_cache();
 	/* Enable cached access to RAM in the range 0M to CACHE_TMP_RAMTOP */
