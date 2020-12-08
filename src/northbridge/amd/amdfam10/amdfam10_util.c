@@ -21,7 +21,7 @@
 #include "raminit.h"
 #include <northbridge/amd/amdmct/amddefs.h>
 
-#if !ENV_PCI_SIMPLE_DEVICE
+#ifndef __SIMPLE_DEVICE__
 u32 Get_NB32(u32 dev, u32 reg)
 {
 	return pci_read_config32(pcidev_path_on_root(PCI_DEV2DEVFN(dev)), reg);
