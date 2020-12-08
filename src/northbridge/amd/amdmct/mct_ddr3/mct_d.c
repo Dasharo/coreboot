@@ -4268,7 +4268,7 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 	u16 Trp, Trrd, Trcd, Tras, Trc;
 	u8 Trfc[4];
 	u16 Tfaw;
-	u16 Tcwl;	/* Fam15h only */
+	u16 Tcwl = 0;	/* Fam15h only */
 	u32 DramTimingLo, DramTimingHi;
 	u8 tCK16x;
 	u16 Twtr;

@@ -18,10 +18,10 @@
 #define AMDFAM10_H
 
 #include <stdint.h>
+#include <arch/cpu.h>
 #include <device/device.h>
 #include "early_ht.h"
 
-#include "inline_helper.c"
 struct DCTStatStruc;
 struct MCTStatStruc;
 
@@ -1021,5 +1021,7 @@ unsigned long northbridge_write_acpi_tables(struct device *device,
 					    unsigned long start,
 					    struct acpi_rsdp *rsdp);
 void northbridge_acpi_write_vars(struct device *device);
+
+uint8_t is_fam15h(void);
 
 #endif /* AMDFAM10_H */
