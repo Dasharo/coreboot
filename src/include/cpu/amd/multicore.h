@@ -39,5 +39,6 @@ void wait_all_aps_started(u32 bsp_apicid);
 void wait_all_other_cores_stopped(uint32_t bsp_apicid);
 void allow_all_aps_stop(u32 bsp_apicid);
 u32 get_initial_apicid(void);
+u32 get_platform_type(void);
 
 #endif /* CPU_AMD_QUADCORE_H */

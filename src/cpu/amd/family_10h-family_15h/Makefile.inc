@@ -2,6 +2,7 @@ romstage-y += ../../x86/mtrr/earlymtrr.c
 romstage-y += ../car/post_cache_as_ram.c
 
 romstage-y += init_cpus.c
+romstage-y += fidvid.c
 
 ramstage-y += model_10xxx_init.c
 ramstage-y += processor_name.c

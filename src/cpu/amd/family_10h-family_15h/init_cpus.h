@@ -39,6 +39,11 @@ void finalize_node_setup(struct sys_info *sysinfo);
 uint32_t wait_cpu_state(uint32_t apicid, uint32_t state, uint32_t state2);
 void start_other_cores(uint32_t bsp_apicid);
 u32 get_core_num_in_bsp(u32 nodeid);
+int lapic_remote_read(int apicid, int reg, u32 *pvalue);
+BOOL AMD_CpuFindCapability(u8 node, u8 cap_count, u8 *offset);
+u32 AMD_checkLinkType(u8 node, u8 regoff);
+void for_each_ap(uint32_t bsp_apicid, uint32_t core_range, int8_t node,
+		 process_ap_t process_ap, void *gp);
 
 void update_microcode(u32 cpu_deviceid);
 

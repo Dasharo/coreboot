@@ -23,6 +23,32 @@
 #include "option_table.h"
 #endif
 
+u32 get_platform_type(void)
+{
+	u32 ret = 0;
+
+	switch (SYSTEM_TYPE) {
+	case 1:
+		ret |= AMD_PTYPE_DSK;
+		break;
+	case 2:
+		ret |= AMD_PTYPE_MOB;
+		break;
+	case 0:
+		ret |= AMD_PTYPE_SVR;
+		break;
+	default:
+		break;
+	}
+
+	/* FIXME: add UMA support. */
+
+	/* All Fam10 are multi core */
+	ret |= AMD_PTYPE_MC;
+
+	return ret;
+}
+
 u32 get_core_num_in_bsp(u32 nodeid)
 {
 	u32 dword;

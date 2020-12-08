@@ -27,7 +27,7 @@
 #include <northbridge/amd/amdht/AsPsDefs.h>
 #include <northbridge/amd/amdht/porting.h>
 #include <northbridge/amd/amdht/h3ncmn.h>
-
+#include <cpu/amd/family_10h-family_15h/fidvid.h>
 #include <southbridge/amd/common/reset.h>
 
 #if CONFIG(SOUTHBRIDGE_AMD_SB700)
@@ -142,7 +142,7 @@ uint32_t get_boot_apic_id(uint8_t node, uint32_t core) {
 //core range = 1 : core 0 only
 //core range = 2 : cores other than core0
 
-static void for_each_ap(uint32_t bsp_apicid, uint32_t core_range, int8_t node,
+void for_each_ap(uint32_t bsp_apicid, uint32_t core_range, int8_t node,
 			process_ap_t process_ap, void *gp)
 {
 	// here assume the OS don't change our apicid
@@ -202,7 +202,7 @@ static void for_each_ap(uint32_t bsp_apicid, uint32_t core_range, int8_t node,
 	}
 }
 
-static inline int lapic_remote_read(int apicid, int reg, u32 *pvalue)
+int lapic_remote_read(int apicid, int reg, u32 *pvalue)
 {
 	int timeout;
 	u32 status;
@@ -230,10 +230,6 @@ static inline int lapic_remote_read(int apicid, int reg, u32 *pvalue)
 	}
 	return result;
 }
-
-#if CONFIG(SET_FIDVID)
-static void init_fidvid_ap(u32 apicid, u32 nodeid, u32 coreid);
-#endif
 
 static __always_inline
 void print_apicid_nodeid_coreid(u32 apicid, struct node_core_id id,
@@ -774,32 +770,6 @@ static void AMD_Errata298(void)
 	}
 }
 
-static u32 get_platform_type(void)
-{
-	u32 ret = 0;
-
-	switch (SYSTEM_TYPE) {
-	case 1:
-		ret |= AMD_PTYPE_DSK;
-		break;
-	case 2:
-		ret |= AMD_PTYPE_MOB;
-		break;
-	case 0:
-		ret |= AMD_PTYPE_SVR;
-		break;
-	default:
-		break;
-	}
-
-	/* FIXME: add UMA support. */
-
-	/* All Fam10 are multi core */
-	ret |= AMD_PTYPE_MC;
-
-	return ret;
-}
-
 static void AMD_SetupPSIVID_d(u32 platform_type, u8 node)
 {
 	u32 dword;
@@ -835,7 +805,7 @@ static void AMD_SetupPSIVID_d(u32 platform_type, u8 node)
  *
  * Returns the offset of the link register.
  */
-static BOOL AMD_CpuFindCapability(u8 node, u8 cap_count, u8 *offset)
+BOOL AMD_CpuFindCapability(u8 node, u8 cap_count, u8 *offset)
 {
 	u32 reg;
 	u32 val;
@@ -875,7 +845,7 @@ static BOOL AMD_CpuFindCapability(u8 node, u8 cap_count, u8 *offset)
  *
  * Returns the link characteristic mask.
  */
-static u32 AMD_checkLinkType(u8 node, u8 regoff)
+u32 AMD_checkLinkType(u8 node, u8 regoff)
 {
 	uint32_t val;
 	uint32_t val2;
@@ -1882,7 +1852,3 @@ void finalize_node_setup(struct sys_info *sysinfo)
 	}
 #endif
 }
-
-#if CONFIG(SET_FIDVID)
-# include "fidvid.c"
-#endif

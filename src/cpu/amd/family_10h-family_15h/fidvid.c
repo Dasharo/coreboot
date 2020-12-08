@@ -88,9 +88,13 @@ b.-  prep_fid_change(...)
 
 #include <console/console.h>
 #include <cpu/amd/msr.h>
+#include <cpu/amd/multicore.h>
 #include <device/pci_ops.h>
 #include <stdint.h>
 #include <northbridge/amd/amdht/AsPsDefs.h>
+#include <northbridge/amd/amdht/ht_wrapper.h>
+#include <cpu/amd/family_10h-family_15h/init_cpus.h>
+#include <cpu/amd/family_10h-family_15h/fidvid.h>
 #include <stdlib.h>
 
 static inline void print_debug_fv(const char *str, u32 val)
@@ -861,7 +865,7 @@ static u32 init_fidvid_core(u32 nodeid, u32 coreid)
 
 }
 
-static void init_fidvid_ap(u32 apicid, u32 nodeid, u32 coreid)
+void init_fidvid_ap(u32 apicid, u32 nodeid, u32 coreid)
 {
 	u32 send;
 
