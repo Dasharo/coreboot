@@ -4,7 +4,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <intelblocks/acpi.h>
 #include <intelblocks/lpc_lib.h>
 #include <soc/pm.h>
 
@@ -154,6 +153,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_LWB_C621A_SUPER,
 	PCI_DEVICE_ID_INTEL_LWB_C627A_SUPER,
 	PCI_DEVICE_ID_INTEL_LWB_C629A_SUPER,
+	PCI_DEVICE_ID_INTEL_EMB_SUPER,
 	PCI_DEVICE_ID_INTEL_KBP_H_Q270,
 	PCI_DEVICE_ID_INTEL_KBP_H_H270,
 	PCI_DEVICE_ID_INTEL_KBP_H_Z270,

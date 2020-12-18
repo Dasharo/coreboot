@@ -74,6 +74,9 @@ enum csme_failure_reason {
 
 	/* CSE CBFS RW metadata is not found */
 	CSE_LITE_SKU_RW_METADATA_NOT_FOUND = 10,
+
+	/* CSE CBFS RW blob layout is not correct */
+	CSE_LITE_SKU_LAYOUT_MISMATCH_ERROR = 11,
 };
 
 /*
@@ -426,7 +429,6 @@ static bool cse_fix_data_failure_err(const struct cse_bp_info *cse_bp_info)
 	return cse_boot_to_rw(cse_bp_info);
 }
 
-#if CONFIG(SOC_INTEL_CSE_RW_UPDATE)
 static const struct fw_version *cse_get_bp_entry_version(enum boot_partition_id bp,
 		const struct cse_bp_info *bp_info)
 {
@@ -674,6 +676,11 @@ static enum csme_failure_reason cse_update_rw(const struct cse_bp_info *cse_bp_i
 		const void *cse_cbfs_rw, const size_t cse_blob_sz,
 		struct region_device *target_rdev)
 {
+	if (region_device_sz(target_rdev) < cse_blob_sz) {
+		printk(BIOS_ERR, "RW update does not fit. CSE RW flash region size: %zx, Update blob size:%zx\n",
+				region_device_sz(target_rdev), cse_blob_sz);
+		return CSE_LITE_SKU_LAYOUT_MISMATCH_ERROR;
+	}
 
 	if (!cse_erase_rw_region(target_rdev))
 		return CSE_LITE_SKU_FW_UPDATE_ERROR;
@@ -746,8 +753,8 @@ static uint8_t cse_fw_update(const struct cse_bp_info *cse_bp_info)
 	struct cse_rw_metadata source_metadata;
 
 	/* Read CSE CBFS RW metadata */
-	if (cbfs_boot_load_file(CONFIG_SOC_INTEL_CSE_RW_METADATA_CBFS_NAME, &source_metadata,
-			sizeof(source_metadata), CBFS_TYPE_RAW) != sizeof(source_metadata)) {
+	if (cbfs_load(CONFIG_SOC_INTEL_CSE_RW_METADATA_CBFS_NAME, &source_metadata,
+			sizeof(source_metadata)) != sizeof(source_metadata)) {
 		printk(BIOS_ERR, "cse_lite: Failed to get CSE CBFS RW metadata\n");
 		return CSE_LITE_SKU_RW_METADATA_NOT_FOUND;
 	}
@@ -767,9 +774,8 @@ static uint8_t cse_fw_update(const struct cse_bp_info *cse_bp_info)
 
 	return 0;
 }
-#endif
 
-void cse_fw_sync(void *unused)
+void cse_fw_sync(void)
 {
 	static struct get_bp_info_rsp cse_bp_info;
 
@@ -796,25 +802,15 @@ void cse_fw_sync(void *unused)
 	 * If SOC_INTEL_CSE_RW_UPDATE is defined , then trigger CSE firmware update. The driver
 	 * triggers recovery if CSE CBFS RW metadata or CSE CBFS RW blob is not available.
 	 */
-#if CONFIG(SOC_INTEL_CSE_RW_UPDATE)
-	uint8_t rv;
-	rv = cse_fw_update(&cse_bp_info.bp_info);
-	if (rv)
-		cse_trigger_recovery(rv);
-#endif
+	if (CONFIG(SOC_INTEL_CSE_RW_UPDATE)) {
+		uint8_t rv;
+		rv = cse_fw_update(&cse_bp_info.bp_info);
+		if (rv)
+			cse_trigger_recovery(rv);
+	}
 
 	if (!cse_boot_to_rw(&cse_bp_info.bp_info)) {
 		printk(BIOS_ERR, "cse_lite: Failed to switch to RW\n");
 		cse_trigger_recovery(CSE_LITE_SKU_RW_SWITCH_ERROR);
 	}
 }
-
-#if CONFIG(SOC_INTEL_TIGERLAKE) || CONFIG(SOC_INTEL_JASPERLAKE)
-/*
- * This needs to happen after the MRC cache write to avoid a 2nd
- * memory training sequence.
- */
-BOOT_STATE_INIT_ENTRY(BS_DEV_RESOURCES, BS_ON_ENTRY, cse_fw_sync, NULL);
-#else
-BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, cse_fw_sync, NULL);
-#endif

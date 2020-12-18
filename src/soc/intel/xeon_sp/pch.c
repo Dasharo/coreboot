@@ -3,6 +3,7 @@
 #include <device/pci_ops.h>
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
+#include <intelblocks/dmi.h>
 #include <intelblocks/pcr.h>
 #include <intelblocks/rtc.h>
 #include <intelblocks/p2sb.h>
@@ -11,8 +12,6 @@
 #include <soc/pmc.h>
 #include <console/console.h>
 
-#define PCR_DMI_DMICTL		0x2234
-#define  PCR_DMI_DMICTL_SRLOCK	(1 << 31)
 #define PCR_DMI_ACPIBA		0x27B4
 #define PCR_DMI_ACPIBDID	0x27B8
 #define PCR_DMI_PMBASEA		0x27AC
@@ -41,9 +40,6 @@ static void soc_config_acpibase(void)
 	reg32 = (0x3f << 18) | ACPI_BASE_ADDRESS | 1;
 	pcr_write32(PID_DMI, PCR_DMI_ACPIBA, reg32);
 	pcr_write32(PID_DMI, PCR_DMI_ACPIBDID, 0x23a8);
-
-	reg32 = pcr_read32(PID_DMI, PCR_DMI_DMICTL);
-	pcr_write32(PID_DMI, PCR_DMI_DMICTL, reg32 | PCR_DMI_DMICTL_SRLOCK);
 }
 
 void bootblock_pch_init(void)
@@ -69,4 +65,10 @@ void override_hpet_ioapic_bdf(void)
 
 	p2sb_set_ioapic_bdf(ioapic_bdf);
 	p2sb_set_hpet_bdf(hpet_bdf);
+}
+
+void pch_lock_dmictl(void)
+{
+	uint32_t reg32 = pcr_read32(PID_DMI, PCR_DMI_DMICTL);
+	pcr_write32(PID_DMI, PCR_DMI_DMICTL, reg32 | PCR_DMI_DMICTL_SRLOCK);
 }

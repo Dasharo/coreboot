@@ -87,31 +87,8 @@ struct soc_intel_skylake_config {
 	/* TCC activation offset */
 	uint32_t tcc_offset;
 
-	/* Package PL4 power limit in Watts */
-	u32 PowerLimit4;
-
 	/* Whether to ignore VT-d support of the SKU */
 	int ignore_vtd;
-
-	/*
-	 * The following fields come from FspUpdVpd.h.
-	 * These are configuration values that are passed to FSP during
-	 * MemoryInit.
-	 */
-	u64 PlatformMemorySize;
-	u8 SmramMask;
-	u8 MrcFastBoot;
-	u32 TsegSize;
-	u16 MmioSize;
-
-	/*
-	 * DDR Frequency Limit
-	 * 0(Auto), 1067, 1333, 1600, 1867, 2133, 2400
-	 */
-	u16 DdrFreqLimit;
-
-	/* Probeless Trace function */
-	u8 ProbelessTrace;
 
 	/*
 	 * System Agent dynamic frequency configuration
@@ -142,11 +119,8 @@ struct soc_intel_skylake_config {
 
 	/* SATA related */
 	enum {
-		/* Documentation and header files of Skylake FSP disagree on
-		   the values, Kaby Lake FSP (KabylakeFsp0001 on github) uses
-		   these: */
-		KBLFSP_SATA_MODE_AHCI    = 0,
-		KBLFSP_SATA_MODE_RAID    = 1,
+		SATA_AHCI    = 0,
+		SATA_RAID    = 1,
 	} SataMode;
 	u8 SataSalpSupport;
 	u8 SataPortsEnable[8];
@@ -313,12 +287,6 @@ struct soc_intel_skylake_config {
 	u8 ScsEmmcHs400RxStrobeDll1;
 	u8 ScsEmmcHs400TxDataDll;
 
-	u8 PttSwitch;
-	u8 HeciTimeouts;
-	u8 HsioMessaging;
-
-	/* Gfx related */
-	u8 IgdDvmt50PreAlloc;
 	enum {
 		Display_iGFX,
 		Display_PEG,
@@ -326,7 +294,6 @@ struct soc_intel_skylake_config {
 		Display_Auto,
 		Display_Switchable,
 	} PrimaryDisplay;
-	u8 ApertureSize;
 	u8 SkipExtGfxScan;
 	u8 ScanExtGfxForLegacyOpRom;
 
@@ -337,8 +304,7 @@ struct soc_intel_skylake_config {
 	 */
 	u32 LogoPtr;
 	u32 LogoSize;
-	u32 GraphicsConfigPtr;
-	u8 RtcLock;
+
 	/* GPIO IRQ Route  The valid values is 14 or 15*/
 	u8 GpioIrqSelect;
 	/* SCI IRQ Select  The valid values is 9, 10, 11 and 20 21, 22, 23*/
@@ -410,11 +376,6 @@ struct soc_intel_skylake_config {
 		SLP_A_MIN_ASSERT_2S   = 3,
 	} PmConfigSlpAMinAssert;
 
-	/*
-	 * This member describes whether or not the PCI ClockRun feature of PCH
-	 * should be enabled. Values 0: Disabled, 1: Enabled
-	 */
-	u8 PmConfigPciClockRun;
 	/*
 	 * SLP_X Stretching After SUS Well Power Up. Values 0: Disabled,
 	 * 1: Enabled
@@ -509,9 +470,6 @@ struct soc_intel_skylake_config {
 	 * 0b - Enabled
 	 * 1b - Disabled
 	 */
-	/* FSP 1.1 */
-	u8 FastPkgCRampDisable;
-	/* FSP 2.0 */
 	u8 FastPkgCRampDisableIa;
 	u8 FastPkgCRampDisableGt;
 	u8 FastPkgCRampDisableSa;

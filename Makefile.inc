@@ -183,9 +183,6 @@ decompressor-generic-ccopts += -D__DECOMPRESSOR__
 bootblock-generic-ccopts += -D__BOOTBLOCK__
 romstage-generic-ccopts += -D__ROMSTAGE__
 ramstage-generic-ccopts += -D__RAMSTAGE__
-ifeq ($(CONFIG_TRACE),y)
-ramstage-c-ccopts += -finstrument-functions
-endif
 ifeq ($(CONFIG_COVERAGE),y)
 ramstage-c-ccopts += -fprofile-arcs -ftest-coverage
 endif
@@ -336,9 +333,9 @@ endef
 # arg2: binary file
 cbfs-files-processor-struct= \
 	$(eval $(2): $(1) $(obj)/build.h $(KCONFIG_AUTOHEADER); \
-		printf "    CC+STRIP   $(@)\n"; \
+		printf "    CC+STRIP   $(1)\n"; \
 		$(CC_ramstage) -MMD $(CPPFLAGS_ramstage) $(CFLAGS_ramstage) $$(ramstage-c-ccopts) -include $(KCONFIG_AUTOHEADER) -MT $(2) -o $(2).tmp -c $(1) && \
-		$(OBJCOPY_ramstage) -O binary $(2).tmp $(2); \
+		$(OBJCOPY_ramstage) -O binary --set-section-flags .bss*=alloc,contents,load $(2).tmp $(2); \
 		rm -f $(2).tmp) \
 	$(eval DEPENDENCIES += $(2).d)
 
@@ -532,6 +529,12 @@ $(build_h): $$(shell $$(build_h_check))
 
 build-dirs $(objcbfs) $(objgenerated):
 	mkdir -p $(objcbfs) $(objgenerated)
+
+$(obj)/build_info:
+	@echo 'COREBOOT_VERSION: $(call strip_quotes,$(KERNELVERSION))' > $@.tmp
+	@echo 'MAINBOARD_VENDOR: $(call strip_quotes,$(CONFIG_MAINBOARD_VENDOR))' >> $@.tmp
+	@echo 'MAINBOARD_PART_NUMBER: $(call strip_quotes,$(CONFIG_MAINBOARD_PART_NUMBER))' >> $@.tmp
+	mv $@.tmp $@
 
 #######################################################################
 # Build the tools
@@ -733,16 +736,6 @@ TXTIBB :=
 
 endif
 
-ifeq ($(CONFIG_INTEL_CBNT_SUPPORT),y)
-
-CBNTIBB := --cbnt
-
-else
-
-CBNTIBB :=
-
-endif # CONFIG_INTEL_CBNT_SUPPORT
-
 ifeq ($(CONFIG_COMPRESS_BOOTBLOCK),y)
 
 $(objcbfs)/bootblock.lz4: $(objcbfs)/bootblock.elf $(objutil)/cbfstool/cbfs-compression-tool
@@ -836,6 +829,10 @@ endif
 
 # cbfs-add-cmd-for-region
 # $(call cbfs-add-cmd-for-region,file in extract_nth format,region name)
+#
+# CBFSTOOL_ADD_CMD_OPTIONS can be used by arch/SoC/mainboard to supply
+# add commands with any additional arguments for cbfstool.
+# Example: --ext-win-base <base> --ext-win-size <size>
 define cbfs-add-cmd-for-region
 	$(CBFSTOOL) $@.tmp \
 	add$(if $(filter stage,$(call extract_nth,3,$(1))),-stage)$(if \
@@ -850,8 +847,8 @@ define cbfs-add-cmd-for-region
 	-r $(2) \
 	$(if $(call extract_nth,6,$(1)),-a $(call extract_nth,6,$(file)), \
 		$(if $(call extract_nth,5,$(file)),-b $(call extract_nth,5,$(file)))) \
-		$(call extract_nth,7,$(1))
-
+		$(call extract_nth,7,$(1)) \
+	$(CBFSTOOL_ADD_CMD_OPTIONS)
 
 endef
 # Empty line before endef is necessary so cbfs-add-cmd-for-region ends in a
@@ -975,6 +972,16 @@ else
 FMAP_SMMSTORE_ENTRY :=
 endif
 
+ifeq ($(CONFIG_SPD_CACHE_IN_FMAP),y)
+FMAP_SPD_CACHE_BASE := $(call int-align, $(FMAP_CURRENT_BASE), 0x4000)
+FMAP_SPD_CACHE_SIZE := $(call int-multiply, $(CONFIG_DIMM_MAX) $(CONFIG_DIMM_SPD_SIZE))
+FMAP_SPD_CACHE_SIZE := $(call int-align, $(FMAP_SPD_CACHE_SIZE), 0x1000)
+FMAP_SPD_CACHE_ENTRY := $(CONFIG_SPD_CACHE_FMAP_NAME)@$(FMAP_SPD_CACHE_BASE) $(FMAP_SPD_CACHE_SIZE)
+FMAP_CURRENT_BASE := $(call int-add, $(FMAP_SPD_CACHE_BASE) $(FMAP_SPD_CACHE_SIZE))
+else
+FMAP_SPD_CACHE_ENTRY :=
+endif
+
 #
 # X86 FMAP region
 #
@@ -1051,6 +1058,7 @@ $(obj)/fmap.fmd: $(top)/Makefile.inc $(DEFAULT_FLASHMAP) $(obj)/config.h
 	    -e "s,##CONSOLE_ENTRY##,$(FMAP_CONSOLE_ENTRY)," \
 	    -e "s,##MRC_CACHE_ENTRY##,$(FMAP_MRC_CACHE_ENTRY)," \
 	    -e "s,##SMMSTORE_ENTRY##,$(FMAP_SMMSTORE_ENTRY)," \
+	    -e "s,##SPD_CACHE_ENTRY##,$(FMAP_SPD_CACHE_ENTRY)," \
 	    -e "s,##CBFS_BASE##,$(FMAP_CBFS_BASE)," \
 	    -e "s,##CBFS_SIZE##,$(FMAP_CBFS_SIZE)," \
 		$(DEFAULT_FLASHMAP) > $@.tmp
@@ -1084,9 +1092,9 @@ ifeq ($(CONFIG_ARCH_X86),y)
 		-n bootblock \
 		-t bootblock \
 		$(TXTIBB) \
-		$(CBNTIBB) \
 		-b -$(call file-size,$(objcbfs)/bootblock.bin) $(cbfs-autogen-attributes) \
-		$(TS_OPTIONS)
+		$(TS_OPTIONS) \
+		$(CBFSTOOL_ADD_CMD_OPTIONS)
 else # ifeq ($(CONFIG_ARCH_X86),y)
 	$(CBFSTOOL) $@.tmp write -u \
 		-r BOOTBLOCK \
@@ -1098,10 +1106,11 @@ else # ifeq ($(CONFIG_ARCH_X86),y)
 		-f $@.tmp.2 \
 		-n "header pointer" \
 		-t "cbfs header" \
-		-b -4
+		-b -4 \
+		$(CBFSTOOL_ADD_CMD_OPTIONS)
 	rm -f $@.tmp.2
 endif # ifeq ($(CONFIG_ARCH_X86),y)
-	$(CBFSTOOL) $@.tmp add-master-header $(TS_OPTIONS)
+	$(CBFSTOOL) $@.tmp add-master-header $(TS_OPTIONS) $(CBFSTOOL_ADD_CMD_OPTIONS)
 	$(prebuild-files) true
 	mv $@.tmp $@
 else # ifneq ($(CONFIG_UPDATE_IMAGE),y)
@@ -1121,8 +1130,6 @@ $(REFCODE_BLOB): $(RMODTOOL)
 	$(RMODTOOL) -i $(CONFIG_REFCODE_BLOB_FILE) -o $@
 endif
 
-FIT_ENTRY=$(call strip_quotes, $(CONFIG_INTEL_TOP_SWAP_FIT_ENTRY_FMAP_REG))
-
 ifeq ($(CONFIG_HAVE_RAMSTAGE),y)
 RAMSTAGE=$(objcbfs)/ramstage.elf
 else
@@ -1136,42 +1143,13 @@ $(obj)/coreboot.rom: $(obj)/coreboot.pre $(RAMSTAGE) $(CBFSTOOL) $$(INTERMEDIATE
 	dd if=/dev/zero bs=$(call _toint,$(CONFIG_ROM_SIZE)) count=1 2> /dev/null | tr '\000' '\377' > $@.tmp
 	dd if=$(obj)/coreboot.pre of=$@.tmp bs=8192 conv=notrunc 2> /dev/null
 ifeq ($(CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE),y)
-ifneq ($(CONFIG_UPDATE_IMAGE),y) # never update the bootblock
-ifeq ($(CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_HEADER),y)
-	@printf "    UPDATE-FIT\n"
-	$(IFITTOOL) -f $@.tmp -a -n cpu_microcode_blob.bin -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
-	-r COREBOOT
-endif
-ifeq ($(CONFIG_USE_CPU_MICROCODE_CBFS_BINS),y)
-	@printf "    UPDATE-FIT\n"
-	$(IFITTOOL) -f $@.tmp -a -n cpu_microcode_blob.bin -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
-	-r COREBOOT
-endif
+# Print final FIT table
 	$(IFITTOOL) -f $@.tmp -D -r COREBOOT
-
-# Second FIT in TOP_SWAP bootblock
+# Print final TS BOOTBLOCK FIT table
 ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
-# INTEL_TOP_SWAP_FIT_ENTRY_FMAP_REG adds a region as first ucode into the seconds bootblock
-ifneq ($(FIT_ENTRY),)
-	@printf "    UPDATE-FIT2\n"
-	$(IFITTOOL) -f $@.tmp -A -n $(FIT_ENTRY) -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
-	$(TS_OPTIONS) -r COREBOOT
-endif
-ifeq ($(CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_HEADER),y)
-	@printf "    UPDATE-FIT2\n"
-	$(IFITTOOL) -f $@.tmp -a -n cpu_microcode_blob.bin -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
-	$(TS_OPTIONS) -r COREBOOT
-endif
-ifeq ($(CONFIG_USE_CPU_MICROCODE_CBFS_BINS),y)
-	@printf "    UPDATE-FIT2\n"
-	$(IFITTOOL) -f $@.tmp -a -n cpu_microcode_blob.bin -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) \
-	$(TS_OPTIONS) -r COREBOOT
-endif
+	@printf "    TOP SWAP FIT table\n"
 	$(IFITTOOL) -f $@.tmp -D $(TS_OPTIONS) -r COREBOOT
-
-endif
-
-endif # !CONFIG_UPDATE_IMAGE
+endif # CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK
 endif # CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE
 ifeq ($(CONFIG_AGESA_UCODE_EXPERIMENTAL),y)
 	dd if=$(CONFIG_CPU_UCODE_BINARIES) of=$@.tmp bs=1 seek=6665692 count=3424 conv=notrunc 2> /dev/null
@@ -1238,6 +1216,10 @@ config-type := raw
 cbfs-files-$(CONFIG_INCLUDE_CONFIG_FILE) += revision
 revision-file := $(obj)/build.h
 revision-type := raw
+
+cbfs-files-y += build_info
+build_info-file := $(obj)/build_info
+build_info-type := raw
 
 BOOTSPLASH_SUFFIX=$(suffix $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE)))
 cbfs-files-$(CONFIG_BOOTSPLASH_IMAGE) += bootsplash$(BOOTSPLASH_SUFFIX)

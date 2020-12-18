@@ -1,7 +1,6 @@
 chip soc/intel/tigerlake
 	register "DdiPort1Hpd" = "0"
 	register "DdiPort2Hpd" = "0"
-	register "tcc_offset" = "5"     # TCC of 95
 
 	register "power_limits_config[POWER_LIMITS_U_2_CORE]" = "{
 		.tdp_pl1_override = 18,
@@ -185,6 +184,15 @@ chip soc/intel/tigerlake
 				register "wake" = "GPE0_DW2_15"
 				register "probed" = "1"
 				device i2c 15 on end
+			end
+			chip drivers/i2c/hid
+				register "generic.hid" = ""PNP0C50""
+				register "generic.desc" = ""Synaptics Touchpad""
+				register "generic.irq" = "ACPI_IRQ_WAKE_LEVEL_LOW(GPP_E15_IRQ)"
+				register "generic.wake" = "GPE0_DW2_15"
+				register "generic.probed" = "1"
+				register "hid_desc_reg_offset" = "0x20"
+				device i2c 0x2c on end
 			end
 		end
 		device ref pch_espi on

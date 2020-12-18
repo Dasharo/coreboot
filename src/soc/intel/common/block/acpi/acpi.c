@@ -13,6 +13,7 @@
 #include <cpu/intel/common/common.h>
 #include <cpu/x86/smm.h>
 #include <intelblocks/acpi.h>
+#include <intelblocks/lpc_lib.h>
 #include <intelblocks/msr.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/uart.h>
@@ -78,6 +79,9 @@ static unsigned long acpi_madt_irq_overrides(unsigned long current)
 	/* SCI */
 	current +=
 	    acpi_create_madt_irqoverride((void *)current, 0, sci, sci, flags);
+
+	/* NMI */
+	current += acpi_create_madt_lapic_nmi((acpi_madt_lapic_nmi_t *)current, 0xff, 5, 1);
 
 	return current;
 }
@@ -154,9 +158,12 @@ unsigned long southbridge_write_acpi_tables(const struct device *device,
 					    unsigned long current,
 					    struct acpi_rsdp *rsdp)
 {
-	current = acpi_write_dbg2_pci_uart(rsdp, current,
-					   uart_get_device(),
-					   ACPI_ACCESS_SIZE_DWORD_ACCESS);
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_UART)) {
+		current = acpi_write_dbg2_pci_uart(rsdp, current,
+						uart_get_device(),
+						ACPI_ACCESS_SIZE_DWORD_ACCESS);
+	}
+
 	return acpi_write_hpet(device, current, rsdp);
 }
 

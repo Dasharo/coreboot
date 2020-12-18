@@ -75,13 +75,13 @@ struct dptc_input {
  *                     |            FSP-M               |
  *                     |         (FSP_M_SIZE)           |
  *                     +--------------------------------+ FSP_M_ADDR
- *                     |                                |X86_RESET_VECTOR = ROMSTAGE_ADDR + ROMSTAGE_SIZE - 0x10
  *                     |           romstage             |
  *                     |        (ROMSTAGE_SIZE)         |
- *                     +--------------------------------+ ROMSTAGE_ADDR
+ *                     +--------------------------------+ ROMSTAGE_ADDR = BOOTBLOCK_END
+ *                     |                                | X86_RESET_VECTOR = BOOTBLOCK_END  - 0x10
  *                     |           bootblock            |
  *                     |     (C_ENV_BOOTBLOCK_SIZE)     |
- *                     +--------------------------------+ BOOTBLOCK_ADDR
+ *                     +--------------------------------+ BOOTBLOCK_ADDR = BOOTBLOCK_END - C_ENV_BOOTBLOCK_SIZE
  *                     |          Unused hole           |
  *                     |            (86KiB)             |
  *                     +--------------------------------+
@@ -195,7 +195,7 @@ static void dptc_call_alib(const char *buf_name, uint8_t *buffer, size_t size)
 
 static void acipgen_dptci(void)
 {
-	const config_t *config = config_of_soc();
+	const struct soc_amd_picasso_config *config = config_of_soc();
 
 	if (!config->dptc_enable)
 		return;

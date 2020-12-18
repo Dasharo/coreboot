@@ -350,11 +350,6 @@ const char *smbios_mainboard_serial_number(void)
 	if (!dev)
 		return serial;
 
-	/* dev->bus->secondary has 0x100 value, while it should has 0x001.
-	 * This workaround simply corrects it to be valid.
-	 */
-	dev->bus->secondary >>= 8;
-
 	/* Read in the last 3 bytes of NIC's MAC address. */
 	bar18 = pci_read_config32(dev, PCI_BASE_ADDRESS_2);
 	bar18 &= 0xFFFFFFF0;

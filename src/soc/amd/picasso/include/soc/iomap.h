@@ -3,6 +3,8 @@
 #ifndef AMD_PICASSO_IOMAP_H
 #define AMD_PICASSO_IOMAP_H
 
+#if ENV_X86
+
 /* MMIO Ranges */
 /* IO_APIC_ADDR defined in arch/x86	0xfec00000 */
 #define GNB_IO_APIC_ADDR		0xfec01000
@@ -22,6 +24,8 @@
 
 /* Reserved				0xfecd1000-0xfedc3fff */
 
+#endif /* ENV_X86 */
+
 /*
  * Picasso/Dali have I2C0 and I2C1 wired to the Sensor Fusion Hub (SFH/MP2).
  * The controllers are not directly accessible via the x86.
@@ -36,6 +40,8 @@
 #define I2C_MASTER_DEV_COUNT		4
 #define I2C_MASTER_START_INDEX		2
 #define I2C_SLAVE_DEV_COUNT		1
+
+#if ENV_X86
 
 #define APU_I2C2_BASE			0xfedc4000
 #define APU_I2C3_BASE			0xfedc5000
@@ -62,6 +68,8 @@
 
 #define FLASH_BASE_ADDR			((0xffffffff - CONFIG_ROM_SIZE) + 1)
 
+#endif /* ENV_X86 */
+
 /* I/O Ranges */
 #define ACPI_SMI_CTL_PORT		0xb2
 #define PICASSO_ACPI_IO_BASE	CONFIG_PICASSO_ACPI_IO_BASE
@@ -83,11 +91,5 @@
 #define BIOSRAM_DATA			0xcd5
 #define AB_INDX				0xcd8
 #define AB_DATA				(AB_INDX+4)
-#define SYS_RESET			0xcf9
-
-/* BiosRam Ranges at 0xfed80500 or I/O 0xcd4/0xcd5 */
-#define BIOSRAM_CBMEM_TOP		0xf0 /* 4 bytes */
-#define BIOSRAM_UMA_SIZE		0xf4 /* 4 bytes */
-#define BIOSRAM_UMA_BASE		0xf8 /* 8 bytes */
 
 #endif /* AMD_PICASSO_IOMAP_H */

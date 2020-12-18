@@ -175,7 +175,7 @@ struct soc_amd_picasso_config {
 			SD_EMMC_SD_UHS_I_SDR_104,
 			SD_EMMC_EMMC_SDR_26,
 			SD_EMMC_EMMC_SDR_52,
-			SD_EMMC_EMMC_DDR_52,
+			SD_EMMC_EMMC_DDR_104,
 			SD_EMMC_EMMC_HS200,
 			SD_EMMC_EMMC_HS400,
 			SD_EMMC_EMMC_HS300,
@@ -220,9 +220,5 @@ struct soc_amd_picasso_config {
 	/* The array index is the general purpose PCIe clock output number. */
 	enum gpp_clk_req_setting gpp_clk_config[GPP_CLK_OUTPUT_COUNT];
 };
-
-typedef struct soc_amd_picasso_config config_t;
-
-extern struct device_operations pci_domain_ops;
 
 #endif /* __PICASSO_CHIP_H__ */

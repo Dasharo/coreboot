@@ -7,8 +7,8 @@ chip soc/intel/cannonlake
 # CPU (soc/intel/cannonlake/cpu.c)
 	# Power limit
 	register "power_limits_config" = "{
-		.tdp_pl1_override = 25,
-		.tdp_pl2_override = 51,
+		.tdp_pl1_override = 15,
+		.tdp_pl2_override = 28,
 	}"
 
 	# Enable Enhanced Intel SpeedStep
@@ -172,7 +172,6 @@ chip soc/intel/cannonlake
 		device pci 16.4 off end # Management Engine Interface 3
 		device pci 16.5 off end # Management Engine Interface 4
 		device pci 17.0 on	# SATA
-			register "SataMode" = "Sata_AHCI"
 			register "SataPortsEnable[0]" = "1" # 2.5"
 			register "SataPortsEnable[2]" = "1" # m.2
 			register "satapwroptimize" = "1"

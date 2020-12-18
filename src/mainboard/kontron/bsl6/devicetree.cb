@@ -10,7 +10,6 @@ chip soc/intel/skylake
 	register "PmConfigSlpS4MinAssert"	= "SLP_S4_MIN_ASSERT_4S"
 	register "PmConfigSlpSusMinAssert"	= "SLP_SUS_MIN_ASSERT_4S"
 	register "PmConfigSlpAMinAssert"	= "SLP_A_MIN_ASSERT_2S"
-	register "PmConfigPciClockRun"		= "1"
 	register "PmConfigPwrCycDur"		= "RESET_POWER_CYCLE_4S"
 
 	# VR Settings Configuration for 2 Domains
@@ -95,7 +94,6 @@ chip soc/intel/skylake
 		device pci 16.3 off end	# Management Engine KT Redirection
 		device pci 16.4 off end	# Management Engine Interface 3
 		device pci 17.0 on	# SATA
-			register "SataMode"		= "KBLFSP_SATA_MODE_AHCI"
 			register "SataSalpSupport"	= "1"
 			register "SataPortsEnable[0]"	= "1"
 			register "SataPortsEnable[1]"	= "1"

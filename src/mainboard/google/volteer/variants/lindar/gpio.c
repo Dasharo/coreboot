@@ -16,10 +16,6 @@ static const struct pad_config override_gpio_table[] = {
 	PAD_CFG_GPO(GPP_A13, 1, DEEP),
 	/* A16 : USB_OC3# ==> USB_C0_OC_ODL */
 	PAD_CFG_NF(GPP_A16, NONE, DEEP, NF1),
-	/* A19 : DDSP_HPD1 ==> USB_C0_DP_HPD */
-	PAD_CFG_NF(GPP_A19, NONE, DEEP, NF1),
-	/* A20 : DDSP_HPD2 ==> USB_C1_DP_HPD */
-	PAD_CFG_NF(GPP_A20, NONE, DEEP, NF1),
 	/* A22 : DDPC_CTRLDATA ==> EN_PP3300_SSD */
 	PAD_CFG_GPO(GPP_A22, 1, DEEP),
 	/* A23 : I2S1_SCLK ==> I2S1_SPKR_SCLK */
@@ -113,6 +109,9 @@ static const struct pad_config override_gpio_table[] = {
 static const struct pad_config early_gpio_table[] = {
 	/* A12 : SATAXPCIE1 ==> M2_SSD_PEDET */
 	PAD_CFG_NF(GPP_A12, NONE, DEEP, NF1),
+	/* A13 : PMC_I2C_SCL ==> BT_DISABLE_L */
+	/* assert reset on reboot */
+	PAD_CFG_GPO(GPP_A13, 0, DEEP),
 	/* A17 : DDSP_HPDC ==> MEM_CH_SEL */
 	PAD_CFG_GPI(GPP_A17, NONE, DEEP),
 	/* A22 : DDPC_CTRLDATA ==> EN_PP3300_SSD */
@@ -133,6 +132,12 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_GPO(GPP_C0, 1, DEEP),
 	/* C21 : UART2_TXD ==> H1_PCH_INT_ODL */
 	PAD_CFG_GPI_APIC(GPP_C21, NONE, PLTRST, LEVEL, INVERT),
+
+	/* D16 : ISH_UART0_CTS# ==> EN_PP3300_SD */
+	PAD_CFG_GPO(GPP_D16, 1, DEEP),
+
+	/* E15 : ISH_GP6 ==> NC */
+	PAD_NC(GPP_E15, NONE),
 
 	/* H11 : SRCCLKREQ5# ==> WLAN_PERST_L */
 	PAD_CFG_GPO(GPP_H11, 1, DEEP),
