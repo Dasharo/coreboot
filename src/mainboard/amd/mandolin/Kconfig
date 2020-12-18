@@ -12,7 +12,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select AZALIA_PLUGIN_SUPPORT
 	select HAVE_ACPI_RESUME
 	select DRIVERS_UART_ACPI
-	select PICASSO_CONSOLE_UART if !AMD_LPC_DEBUG_CARD
+	select AMD_SOC_CONSOLE_UART if !AMD_LPC_DEBUG_CARD
 
 config FMDFILE
 	string
@@ -21,12 +21,12 @@ config FMDFILE
 config AMD_LPC_DEBUG_CARD
 	bool "Enable LPC-Serial debug card on the debug header"
 	default n
-	select PICASSO_LPC_IOMUX
+	select MANDOLIN_LPC
 	select SUPERIO_SMSC_SIO1036
 	help
 	  AMD's debug card contains an SMSC SIO1036 device which provides an
 	  I/O-mapped UART in the system. This is mutually exclusive with
-	  PICASSO_CONSOLE_UART which selects the SoC's integrated memory-mapped
+	  AMD_SOC_CONSOLE_UART which selects the SoC's integrated memory-mapped
 	  UART for coreboot console output.
 
 choice
@@ -111,7 +111,7 @@ config MANDOLIN_IOMUX_USE_EMMC
 endchoice
 endif # !AMD_LPC_DEBUG_CARD
 
-config PICASSO_LPC_IOMUX
+config MANDOLIN_LPC
 	bool
 	default y if MANDOLIN_IOMUX_USE_LPC
 	help

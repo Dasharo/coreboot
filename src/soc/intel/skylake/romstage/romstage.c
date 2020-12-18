@@ -173,6 +173,7 @@ static void soc_peg_init_params(FSP_M_CONFIG *m_cfg,
 	dev = pcidev_path_on_root(SA_DEVFN_PEG0); /* PEG 0:1:0 */
 	m_cfg->Peg0Enable = dev && dev->enabled;
 	if (m_cfg->Peg0Enable) {
+		m_cfg->Peg0Enable = 2;
 		m_cfg->Peg0MaxLinkWidth = config->Peg0MaxLinkWidth;
 		/* Use maximum possible link speed */
 		m_cfg->Peg0MaxLinkSpeed = 0;
@@ -186,6 +187,7 @@ static void soc_peg_init_params(FSP_M_CONFIG *m_cfg,
 	dev = pcidev_path_on_root(SA_DEVFN_PEG1); /* PEG 0:1:1 */
 	m_cfg->Peg1Enable = dev && dev->enabled;
 	if (m_cfg->Peg1Enable) {
+		m_cfg->Peg1Enable = 2;
 		m_cfg->Peg1MaxLinkWidth = config->Peg1MaxLinkWidth;
 		m_cfg->Peg1MaxLinkSpeed = 0;
 		m_cfg->Peg1PowerDownUnusedLanes = 1;
@@ -196,6 +198,7 @@ static void soc_peg_init_params(FSP_M_CONFIG *m_cfg,
 	dev = pcidev_path_on_root(SA_DEVFN_PEG2); /* PEG 0:1:2 */
 	m_cfg->Peg2Enable = dev && dev->enabled;
 	if (m_cfg->Peg2Enable) {
+		m_cfg->Peg2Enable = 2;
 		m_cfg->Peg2MaxLinkWidth = config->Peg2MaxLinkWidth;
 		m_cfg->Peg2MaxLinkSpeed = 0;
 		m_cfg->Peg2PowerDownUnusedLanes = 1;
@@ -213,12 +216,12 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->MmioSize = 0x800; /* 2GB in MB */
 	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
 	m_cfg->IedSize = CONFIG_IED_REGION_SIZE;
-	m_cfg->ProbelessTrace = config->ProbelessTrace;
+	m_cfg->ProbelessTrace = 0;
 	m_cfg->SaGv = config->SaGv;
 	m_cfg->UserBd = BOARD_TYPE_ULT_ULX;
 	m_cfg->RMT = config->Rmt;
 	m_cfg->CmdTriStateDis = config->CmdTriStateDis;
-	m_cfg->DdrFreqLimit = config->DdrFreqLimit;
+	m_cfg->DdrFreqLimit = 0;
 	m_cfg->VmxEnable = CONFIG(ENABLE_VMX);
 	m_cfg->PrmrrSize = get_valid_prmrr_size();
 	for (i = 0; i < ARRAY_SIZE(config->PcieRpEnable); i++) {

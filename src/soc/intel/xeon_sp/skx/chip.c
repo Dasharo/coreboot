@@ -45,6 +45,7 @@ static void soc_init(void *data)
 	printk(BIOS_DEBUG, "coreboot: calling fsp_silicon_init\n");
 	fsp_silicon_init(false);
 	override_hpet_ioapic_bdf();
+	pch_lock_dmictl();
 }
 
 static void soc_final(void *data)
@@ -59,8 +60,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	const struct microcode *microcode_file;
 	size_t microcode_len;
 
-	microcode_file = cbfs_boot_map_with_leak("cpu_microcode_blob.bin",
-		CBFS_TYPE_MICROCODE, &microcode_len);
+	microcode_file = cbfs_map("cpu_microcode_blob.bin", &microcode_len);
 
 	if ((microcode_file != NULL) && (microcode_len != 0)) {
 		/* Update CPU Microcode patch base address/size */

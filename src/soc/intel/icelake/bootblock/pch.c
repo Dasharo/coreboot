@@ -3,6 +3,7 @@
 #include <device/mmio.h>
 #include <device/device.h>
 #include <device/pci_ops.h>
+#include <intelblocks/dmi.h>
 #include <intelblocks/fast_spi.h>
 #include <intelblocks/gspi.h>
 #include <intelblocks/lpc_lib.h>
@@ -26,9 +27,6 @@
 #define PCR_PSFX_TO_SHDW_BAR4	0x10
 #define PCR_PSFX_TO_SHDW_PCIEN_IOEN	0x01
 #define PCR_PSFX_T0_SHDW_PCIEN	0x1C
-
-#define PCR_DMI_DMICTL		0x2234
-#define  PCR_DMI_DMICTL_SRLOCK	(1 << 31)
 
 #define PCR_DMI_ACPIBA		0x27B4
 #define PCR_DMI_ACPIBDID	0x27B8
@@ -58,10 +56,15 @@ static void soc_config_pwrmbase(void)
 
 void bootblock_pch_early_init(void)
 {
-	fast_spi_early_init(SPI_BASE_ADDRESS);
-	gspi_early_bar_init();
+	/*
+	 * Perform P2SB configuration before any another controller initialization as the
+	 * controller might want to perform PCR settings.
+	 */
 	p2sb_enable_bar();
 	p2sb_configure_hpet();
+
+	fast_spi_early_init(SPI_BASE_ADDRESS);
+	gspi_early_bar_init();
 
 	/*
 	 * Enabling PWRM Base for accessing

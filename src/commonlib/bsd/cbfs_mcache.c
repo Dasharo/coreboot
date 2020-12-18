@@ -95,7 +95,7 @@ cb_err_t cbfs_mcache_lookup(const void *mcache, size_t mcache_size, const char *
 	const void *end = mcache + mcache_size;
 	const void *current = mcache;
 
-	while (current + sizeof(uint32_t) < end) {
+	while (current + sizeof(uint32_t) <= end) {
 		const union mcache_entry *entry = current;
 
 		if (entry->magic == MCACHE_MAGIC_END)
@@ -106,8 +106,8 @@ cb_err_t cbfs_mcache_lookup(const void *mcache, size_t mcache_size, const char *
 		assert(entry->magic == MCACHE_MAGIC_FILE);
 		const uint32_t data_offset = be32toh(entry->file.h.offset);
 		const uint32_t data_length = be32toh(entry->file.h.len);
-		if (namesize <= data_offset - offsetof(union cbfs_mdata, filename) &&
-		    memcmp(name, entry->file.filename, namesize) == 0) {
+		if (namesize <= data_offset - offsetof(union cbfs_mdata, h.filename) &&
+		    memcmp(name, entry->file.h.filename, namesize) == 0) {
 			LOG("Found '%s' @%#x size %#x in mcache @%p\n",
 			    name, entry->offset, data_length, current);
 			*data_offset_out = entry->offset + data_offset;

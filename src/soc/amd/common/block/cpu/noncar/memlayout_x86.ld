@@ -10,6 +10,9 @@
 #define PSP_SHAREDMEM_DRAM_START(addr)		SYMBOL(psp_sharedmem_dram, addr)
 #define PSP_SHAREDMEM_DRAM_END(addr)		SYMBOL(epsp_sharedmem_dram, addr)
 
+BOOTBLOCK_END = CONFIG_ROMSTAGE_ADDR;
+BOOTBLOCK_ADDR = BOOTBLOCK_END - CONFIG_C_ENV_BOOTBLOCK_SIZE;
+
 /*
  *
  *                     +--------------------------------+
@@ -29,16 +32,18 @@
  *                     |            FSP-M               |
  *                     |         (FSP_M_SIZE)           |
  *                     +--------------------------------+ FSP_M_ADDR
- *                     |                                |X86_RESET_VECTOR = ROMSTAGE_ADDR + ROMSTAGE_SIZE - 0x10
  *                     |           romstage             |
  *                     |        (ROMSTAGE_SIZE)         |
- *                     +--------------------------------+ ROMSTAGE_ADDR
+ *                     +--------------------------------+ ROMSTAGE_ADDR = BOOTBLOCK_END
+ *                     |                                | X86_RESET_VECTOR = BOOTBLOCK_END - 0x10
  *                     |           bootblock            |
  *                     |     (C_ENV_BOOTBLOCK_SIZE)     |
- *                     +--------------------------------+ BOOTBLOCK_ADDR
+ *                     +--------------------------------+ BOOTBLOCK_ADDR = BOOTBLOCK_END - C_ENV_BOOTBLOCK_SIZE
  *                     |          Unused hole           |
  *                     +--------------------------------+
  *                     |     FMAP cache (FMAP_SIZE)     |
+ *                     +--------------------------------+
+ *                     | CBFS mcache (CBFS_MCACHE_SIZE) |
  *                     +--------------------------------+ PSP_SHAREDMEM_BASE + 0x40 + VB2_FIRMWARE_WORKBUF_RECOMMENDED_SIZE + PRERAM_CBMEM_CONSOLE_SIZE + 0x200
  *                     |  Early Timestamp region (512B) |
  *                     +--------------------------------+ PSP_SHAREDMEM_BASE + 0x40 + VB2_FIRMWARE_WORKBUF_RECOMMENDED_SIZE + PRERAM_CBMEM_CONSOLE_SIZE
@@ -82,9 +87,8 @@ SECTIONS
 #if CONFIG(VBOOT)
 	PSP_SHAREDMEM_DRAM_END(CONFIG_PSP_SHAREDMEM_BASE + CONFIG_PSP_SHAREDMEM_SIZE)
 #endif
-	_ = ASSERT((CONFIG_BOOTBLOCK_ADDR + CONFIG_C_ENV_BOOTBLOCK_SIZE - 0x10) == CONFIG_X86_RESET_VECTOR, "Reset vector should be -0x10 from end of bootblock");
-	_ = ASSERT(CONFIG_BOOTBLOCK_ADDR == ((CONFIG_BOOTBLOCK_ADDR + 0xFFFF) & 0xFFFF0000), "Bootblock must be 16 bit aligned");
-	BOOTBLOCK(CONFIG_BOOTBLOCK_ADDR, CONFIG_C_ENV_BOOTBLOCK_SIZE)
+	_ = ASSERT(BOOTBLOCK_END == ((BOOTBLOCK_END + 0xFFFF) & 0xFFFF0000), "Bootblock end must be 16 bit aligned");
+	BOOTBLOCK(BOOTBLOCK_ADDR, CONFIG_C_ENV_BOOTBLOCK_SIZE)
 	ROMSTAGE(CONFIG_ROMSTAGE_ADDR, CONFIG_ROMSTAGE_SIZE)
 	REGION(fspm, CONFIG_FSP_M_ADDR, CONFIG_FSP_M_SIZE, 1)
 #if CONFIG(VBOOT_SEPARATE_VERSTAGE)
@@ -98,15 +102,16 @@ SECTIONS
 
 #if ENV_BOOTBLOCK
 
-gdtptr16_offset = gdtptr16 & 0xffff;
+gdtptr_offset = gdtptr & 0xffff;
 nullidt_offset = nullidt & 0xffff;
 
 SECTIONS {
 	/* Trigger an error if I have an unusable start address */
-	_TOO_LOW = CONFIG_X86_RESET_VECTOR - 0xfff0;
+	_TOO_LOW = _X86_RESET_VECTOR - 0xfff0;
 	_bogus = ASSERT(_start16bit >= _TOO_LOW, "_start16bit too low. Please report.");
 
-	. = CONFIG_X86_RESET_VECTOR;
+	. = BOOTBLOCK_END - 0x10;
+	_X86_RESET_VECTOR = .;
 	.reset . : {
 		*(.reset);
 		. = 15;

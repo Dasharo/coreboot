@@ -58,12 +58,22 @@ chip soc/intel/tigerlake
 			},
 		},
 	}"
-	#These settings improve the USB2 Port1 eye diagram
+
+	#Disable Type-A Port A1
+	register "usb2_ports[1]" = "USB2_PORT_EMPTY"
+
+	#Disable M.2 WWAN
+	register "usb2_ports[2]" = "USB2_PORT_EMPTY"
+
+	#improve the USB2 Port1 eye diagram
+	register "usb2_ports[3]" = "USB2_PORT_SHORT(OC_SKIP)"
+
+	#lower camera driving
 	register "usb2_ports[4]" = "{
 		.enable = 1,
-		.tx_bias = 7,
-		.tx_emp_enable = 7,
-		.pre_emp_bias = 3,
+		.tx_bias = 0,
+		.tx_emp_enable = 0,
+		.pre_emp_bias = 0,
 		.pre_emp_bit = 0,
 	}"
 
@@ -92,7 +102,7 @@ chip soc/intel/tigerlake
 						.time_window_min = 28 * MSECS_PER_SEC,
 						.time_window_max = 32 * MSECS_PER_SEC,
 						.granularity = 200,},
-					.pl2 = {.min_power = 15000,
+					.pl2 = {.min_power = 51000,
 						.max_power = 51000,
 						.time_window_min = 28 * MSECS_PER_SEC,
 						.time_window_max = 32 * MSECS_PER_SEC,
@@ -158,6 +168,13 @@ chip soc/intel/tigerlake
 				device i2c 15 on end
 			end
 		end
+		device ref pch_espi on
+			chip ec/google/chromeec
+				use conn0 as mux_conn[0]
+				use conn1 as mux_conn[1]
+				device pnp 0c09.0 on end
+			end
+		end
 		device ref hda on
 			chip drivers/generic/max98357a
 				register "hid" = ""MX98357A""
@@ -175,14 +192,14 @@ chip soc/intel/tigerlake
 						register "usb2_port_number" = "9"
 						register "usb3_port_number" = "1"
 						# SBU & HSL follow CC
-						device generic 0 on end
+						device generic 0 alias conn0 on end
 					end
 					chip drivers/intel/pmc_mux/conn
 						register "usb2_port_number" = "4"
 						register "usb3_port_number" = "2"
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
-						device generic 1 on end
+						device generic 1 alias conn1 on end
 					end
 				end
 			end

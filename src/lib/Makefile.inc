@@ -47,6 +47,7 @@ bootblock-y += prog_ops.c
 bootblock-y += cbfs.c
 bootblock-$(CONFIG_GENERIC_GPIO_LIB) += gpio.c
 bootblock-y += libgcc.c
+bootblock-$(CONFIG_CBFS_VERIFICATION) += metadata_hash.c
 bootblock-$(CONFIG_GENERIC_UDELAY) += timer.c
 
 bootblock-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
@@ -140,14 +141,10 @@ ramstage-y += wrdd.c
 ramstage-$(CONFIG_CONSOLE_CBMEM) += cbmem_console.c
 ramstage-$(CONFIG_BOOTSPLASH) += bootsplash.c
 ramstage-$(CONFIG_BOOTSPLASH) += jpeg.c
-ramstage-$(CONFIG_TRACE) += trace.c
-postcar-$(CONFIG_TRACE) += trace.c
 ramstage-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
 ramstage-$(CONFIG_COVERAGE) += libgcov.c
 ramstage-y += edid.c
-ifneq ($(CONFIG_NO_EDID_FILL_FB),y)
 ramstage-y += edid_fill_fb.c
-endif
 ramstage-y += memrange.c
 ramstage-$(CONFIG_COOP_MULTITASKING) += thread.c
 ramstage-$(CONFIG_TIMER_QUEUE) += timer_queue.c
@@ -376,4 +373,4 @@ endif
 
 ramstage-y += uuid.c
 
-romstage-$(CONFIG_ROMSTAGE_SPD_SMBUS) += spd_cache.c
+romstage-$(CONFIG_SPD_CACHE_IN_FMAP) += spd_cache.c

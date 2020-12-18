@@ -9,6 +9,7 @@
 #include <rules.h>
 #include <intelblocks/msr.h>
 
+.code32
 .global bootblock_pre_c_entry
 bootblock_pre_c_entry:
 
@@ -161,6 +162,15 @@ car_init_done:
 	/* Need to align stack to 16 bytes at call instruction. Account for
 	   the two pushes below. */
 	andl	$0xfffffff0, %esp
+
+#if ENV_X86_64
+	#include <cpu/x86/64bit/entry64.inc>
+	movd	%mm2, %rdi
+	shlq	$32, %rdi
+	movd	%mm1, %rsi
+	or	%rsi, %rdi
+	movd	%mm0, %rsi
+#else
 	sub	$8, %esp
 
 	/* push TSC value to stack */
@@ -168,6 +178,7 @@ car_init_done:
 	pushl	%eax	/* tsc[63:32] */
 	movd	%mm1, %eax
 	pushl	%eax	/* tsc[31:0] */
+#endif
 
 before_carstage:
 	post_code(0x2A)
@@ -401,10 +412,29 @@ find_llc_subleaf:
 	subl	$0x01, %eax
 
 set_eviction_mask:
-	mov	%ebx, %ecx /* back up the number of ways */
+	mov	%ebx, %ecx /* back up number of ways */
 	mov	%eax, %ebx /* back up the non-eviction mask*/
+#if CONFIG(CAR_HAS_SF_MASKS)
+	mov	%ecx, %edi /* use number of ways to prepare SF mask */
 	/*
-	 * Set MSR 0xC91 IA32_L3_MASK_1 or MSR 0x1891 IA32_CR_SF_QOS_MASK_1
+	 * SF mask is programmed with the double number of bits than
+	 * the number of ways
+	 */
+	mov	$0x01, %eax
+	shl	%cl, %eax
+	shl	%cl, %eax
+	subl	$0x01, %eax /* contains SF mask */
+	/*
+	 * Program MSR 0x1891 IA32_CR_SF_QOS_MASK_1 with
+	 * total number of LLC ways
+	 */
+	movl	$IA32_CR_SF_QOS_MASK_1, %ecx
+	xorl	%edx, %edx
+	wrmsr
+	mov	%edi, %ecx /* restore number of ways */
+#endif
+	/*
+	 * Program MSR 0xC91 IA32_L3_MASK_1
 	 * This MSR contain one bit per each way of LLC
 	 * - If this bit is '0' - the way is protected from eviction
 	 * - If this bit is '1' - the way is not protected from eviction
@@ -417,26 +447,17 @@ set_eviction_mask:
 
 	xor	$~0, %eax	/* invert 32 bits */
 	and	%ecx, %eax
-#if CONFIG(USE_CAR_NEM_ENHANCED_V1)
 	movl	$IA32_L3_MASK_1, %ecx
-#elif CONFIG(USE_CAR_NEM_ENHANCED_V2)
-	movl	$IA32_CR_SF_QOS_MASK_1, %ecx
-#endif
 	xorl	%edx, %edx
 	wrmsr
-
 	/*
-	 * Set MSR 0xC92 IA32_L3_MASK_1 or MSR 0x1892 IA32_CR_SF_QOS_MASK_2
+	 * Program MSR 0xC92 IA32_L3_MASK_2
 	 * This MSR contain one bit per each way of LLC
 	 * - If this bit is '0' - the way is protected from eviction
 	 * - If this bit is '1' - the way is not protected from eviction
 	 */
 	mov	%ebx, %eax
-#if CONFIG(USE_CAR_NEM_ENHANCED_V1)
 	movl	$IA32_L3_MASK_2, %ecx
-#elif CONFIG(USE_CAR_NEM_ENHANCED_V2)
-	movl	$IA32_CR_SF_QOS_MASK_2, %ecx
-#endif
 	xorl	%edx, %edx
 	wrmsr
 	/*
@@ -457,7 +478,6 @@ set_eviction_mask:
 	movl	$0x02, %eax
 #endif
 	wrmsr
-
 	movl	$CONFIG_DCACHE_RAM_BASE, %edi
 	movl	$CONFIG_DCACHE_RAM_SIZE, %ecx
 	shr	$0x02, %ecx

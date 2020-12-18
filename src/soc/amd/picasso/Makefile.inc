@@ -2,8 +2,6 @@
 
 ifeq ($(CONFIG_SOC_AMD_PICASSO),y)
 
-subdirs-y += ../../../cpu/amd/mtrr/
-subdirs-y += ../../../cpu/x86/tsc
 subdirs-y += ../../../cpu/x86/lapic
 subdirs-y += ../../../cpu/x86/cache
 subdirs-y += ../../../cpu/x86/mtrr
@@ -11,20 +9,16 @@ subdirs-y += ../../../cpu/x86/pae
 subdirs-y += ../../../cpu/x86/smm
 subdirs-$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK) += psp_verstage
 
-bootblock-y += bootblock/pre_c.S
-bootblock-y += bootblock/bootblock.c
-bootblock-y += aoac.c
-bootblock-y += southbridge.c
+# Beware that all-y also adds the compilation unit to verstage on PSP
+all-y += config.c
+all-y += aoac.c
+
+bootblock-y += bootblock.c
+bootblock-y += early_fch.c
 bootblock-y += i2c.c
 bootblock-y += uart.c
-bootblock-$(CONFIG_PICASSO_CONSOLE_UART) += uart_console.c
-bootblock-y += monotonic_timer.c
-bootblock-y += tsc_freq.c
 bootblock-y += gpio.c
-bootblock-y += smi_util.c
-bootblock-y += config.c
 bootblock-y += reset.c
-bootblock-$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK) += bootblock/vboot_bootblock.c
 
 romstage-y += i2c.c
 romstage-y += romstage.c
@@ -32,24 +26,12 @@ romstage-y += gpio.c
 romstage-y += reset.c
 romstage-y += memmap.c
 romstage-y += uart.c
-romstage-$(CONFIG_PICASSO_CONSOLE_UART) += uart_console.c
-romstage-y += monotonic_timer.c
-romstage-y += tsc_freq.c
-romstage-y += aoac.c
-romstage-y += southbridge.c
-romstage-$(CONFIG_HAVE_SMI_HANDLER) += smi_util.c
 romstage-y += psp.c
-romstage-y += config.c
 romstage-y += mrc_cache.c
 
 verstage-y += i2c.c
-verstage-y += config.c
-verstage-y += aoac.c
 verstage_x86-y += gpio.c
 verstage_x86-y += uart.c
-verstage_x86-$(CONFIG_PICASSO_CONSOLE_UART) += uart_console.c
-verstage_x86-y += monotonic_timer.c
-verstage_x86-y += tsc_freq.c
 verstage_x86-y += reset.c
 
 ramstage-y += i2c.c
@@ -61,23 +43,17 @@ ramstage-y += mca.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += agesa_acpi.c
 ramstage-y += gpio.c
-ramstage-y += aoac.c
-ramstage-y += southbridge.c
+ramstage-y += fch.c
 ramstage-y += reset.c
 ramstage-y += acp.c
 ramstage-y += sata.c
 ramstage-y += memmap.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi.c
-ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi_util.c
 ramstage-y += uart.c
-ramstage-$(CONFIG_PICASSO_CONSOLE_UART) += uart_console.c
-ramstage-y += monotonic_timer.c
-ramstage-y += tsc_freq.c
 ramstage-y += finalize.c
 ramstage-y += soc_util.c
 ramstage-y += psp.c
 ramstage-y += fsp_params.c
-ramstage-y += config.c
 ramstage-y += update_microcode.c
 ramstage-y += graphics.c
 ramstage-y += pcie_gpp.c
@@ -85,17 +61,12 @@ ramstage-y += xhci.c
 ramstage-y += dmi.c
 
 smm-y += smihandler.c
-smm-y += smi_util.c
-smm-y += monotonic_timer.c
-smm-y += tsc_freq.c
 ifeq ($(CONFIG_DEBUG_SMI),y)
 smm-y += uart.c
-smm-$(CONFIG_PICASSO_CONSOLE_UART) += uart_console.c
 endif
 smm-y += gpio.c
 smm-y += psp.c
 smm-y += smu.c
-smm-y += config.c
 
 CPPFLAGS_common += -I$(src)/soc/amd/picasso
 CPPFLAGS_common += -I$(src)/soc/amd/picasso/include
@@ -213,7 +184,10 @@ OPT_VERSTAGE_SIG_FILE=$(call add_opt_prefix, $(PSP_VERSTAGE_SIG_FILE), --verstag
 
 OPT_PSP_APCB_FILES=$(foreach i, $(shell seq $(words $(PSP_APCB_FILES))), \
 	$(call add_opt_prefix, $(word $(i), $(PSP_APCB_FILES)), \
-	--instance $(shell printf "%x" $$(($(i)-1))) --apcb ))
+	--instance $(shell printf "%x" $$(($(i)-1))) --apcb  )   )
+OPT_PSP_APCB_FILES_BK=$(foreach i, $(shell seq $(words $(PSP_APCB_FILES))), \
+	$(call add_opt_prefix, $(word $(i), $(PSP_APCB_FILES)), \
+	--instance $(shell printf "1%x" $$(($(i)-1))) --apcb  )   )
 
 OPT_APOB_ADDR=$(call add_opt_prefix, $(PSP_APOB_BASE), --apob-base)
 OPT_PSP_BIOSBIN_FILE=$(call add_opt_prefix, $(PSP_BIOSBIN_FILE), --bios-bin)
@@ -242,6 +216,7 @@ POUND_SIGN=$(call strip_quotes, "\#")
 DEP_FILES= $(patsubst %,$(FIRMWARE_LOCATION)/%, $(shell sed -e /^$(POUND_SIGN)/d -e /^FIRMWARE_LOCATION/d $(CONFIG_AMDFW_CONFIG_FILE) | awk '{print $$2}' ))
 
 AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
+		$(OPT_PSP_APCB_FILES_BK) \
 		$(OPT_APOB_ADDR) \
 		$(OPT_PSP_BIOSBIN_FILE) \
 		$(OPT_PSP_BIOSBIN_DEST) \

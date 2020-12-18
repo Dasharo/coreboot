@@ -2,6 +2,57 @@ chip soc/intel/tigerlake
 	register "DdiPort1Hpd" = "0"
 	register "DdiPort2Hpd" = "0"
 
+	#+-------------------+---------------------------+
+	#| Field             |  Value                    |
+	#+-------------------+---------------------------+
+	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
+	#| GSPI0             | cr50 TPM. Early init is   |
+	#|                   | required to set up a BAR  |
+	#|                   | for TPM communication     |
+	#|                   | before memory is up       |
+	#| I2C0              | Audio                     |
+	#| I2C1              | Touchscreen               |
+	#| I2C2              | WLAN, SAR0                |
+	#| I2C3              | Camera, SAR1              |
+	#| I2C5              | Trackpad                  |
+	#+-------------------+---------------------------+
+	register "common_soc_config" = "{
+		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
+		.gspi[0] = {
+			.speed_mhz = 1,
+			.early_init = 1,
+		},
+		.i2c[0] = {
+			.speed = I2C_SPEED_FAST,
+		},
+		.i2c[1] = {
+			.speed = I2C_SPEED_FAST,
+		},
+		.i2c[2] = {
+			.speed = I2C_SPEED_FAST,
+		},
+		.i2c[3] = {
+			.speed = I2C_SPEED_FAST,
+		},
+		.i2c[5] = {
+			.speed = I2C_SPEED_FAST,
+			.speed_config[0] = {
+				.speed = I2C_SPEED_FAST,
+				.scl_lcnt = 163,
+				.scl_hcnt = 75,
+				.sda_hold = 36,
+			},
+		},
+	}"
+	#These settings improve the USB2 Port1 eye diagram
+	register "usb2_ports[3]" = "{
+		.enable = 1,
+		.tx_bias = USB2_BIAS_28P15MV,
+		.tx_emp_enable = USB2_PRE_EMP_ON,
+		.pre_emp_bias = USB2_BIAS_56P3MV,
+		.pre_emp_bit = USB2_HALF_BIT_PRE_EMP,
+	}"
+
 	# Acoustic settings
 	register "AcousticNoiseMitigation" = "1"
 	register "SlowSlewRate[VR_DOMAIN_IA]" = "SLEW_FAST_8"
@@ -59,7 +110,7 @@ chip soc/intel/tigerlake
 						.time_window_min = 28 * MSECS_PER_SEC,
 						.time_window_max = 32 * MSECS_PER_SEC,
 						.granularity = 200,},
-					.pl2 = {.min_power = 15000,
+					.pl2 = {.min_power = 51000,
 						.max_power = 51000,
 						.time_window_min = 28 * MSECS_PER_SEC,
 						.time_window_max = 32 * MSECS_PER_SEC,

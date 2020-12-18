@@ -1,4 +1,9 @@
 chip soc/intel/tigerlake
+	register "DdiPort1Hpd" = "0"
+	register "DdiPort2Hpd" = "0"
+	register "TcssAuxOri" = "1"
+	register "IomTypeCPortPadCfg[0]" = "0x090E000A"
+	register "IomTypeCPortPadCfg[1]" = "0x090E000D"
 	# USB Port Config
 	register "usb2_ports[0]" = "USB2_PORT_MID(OC_SKIP)"	# Type-A Port A0
 	register "usb2_ports[3]" = "USB2_PORT_MID(OC_SKIP)"	# Type-A / Type-C C1
@@ -9,6 +14,41 @@ chip soc/intel/tigerlake
 	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC1)"	# USB3/2 Type A port A0
 
 	register "SaGv" = "SaGv_Disabled"
+	#+-------------------+---------------------------+
+	#| Field             |  Value                    |
+	#+-------------------+---------------------------+
+	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
+	#| GSPI0             | cr50 TPM. Early init is   |
+	#|                   | required to set up a BAR  |
+	#|                   | for TPM communication     |
+	#|                   | before memory is up       |
+	#| GSPI1             | Fingerprint MCU           |
+	#| I2C0              | Audio                     |
+	#| I2C1              | Touchscreen               |
+	#| I2C5              | Trackpad                  |
+	#+-------------------+---------------------------+
+	register "common_soc_config" = "{
+		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
+		.gspi[0] = {
+			.speed_mhz = 1,
+			.early_init = 1,
+		},
+		.i2c[0] = {
+			.speed = I2C_SPEED_FAST,
+		},
+		.i2c[1] = {
+			.speed = I2C_SPEED_FAST,
+		},
+		.i2c[5] = {
+			.speed = I2C_SPEED_FAST,
+			.speed_config[0] = {
+				.speed = I2C_SPEED_FAST,
+				.scl_lcnt = 163,
+				.scl_hcnt = 75,
+				.sda_hold = 36,
+			},
+		},
+	}"
 	# I2C Port Config
 	register "SerialIoI2cMode" = "{
 		[PchSerialIoIndexI2C0]  = PchSerialIoPci,
@@ -69,8 +109,8 @@ chip soc/intel/tigerlake
 				# Parameter T2 >= 1ms
 				register "generic.reset_off_delay_ms" = "3"
 				register "generic.enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A8)"
-				# Parameter T1 >= 10ms
-				register "generic.enable_delay_ms" = "12"
+				# Parameter T1 >= 20ms
+				register "generic.enable_delay_ms" = "20"
 				register "generic.stop_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_E3)"
 				# Parameter T4 >= 1ms
 				register "generic.stop_off_delay_ms" = "1"
@@ -108,6 +148,34 @@ chip soc/intel/tigerlake
 				register "generic.probed" = "1"
 				register "hid_desc_reg_offset" = "0x20"
 				device i2c 0x2c on end
+			end
+		end
+		device ref pch_espi on
+			chip ec/google/chromeec
+				use conn0 as mux_conn[0]
+				use conn1 as mux_conn[1]
+				device pnp 0c09.0 on end
+			end
+		end
+		device ref pmc hidden
+			# The pmc_mux chip driver is a placeholder for the
+			# PMC.MUX device in the ACPI hierarchy.
+			chip drivers/intel/pmc_mux
+				device generic 0 on
+					chip drivers/intel/pmc_mux/conn
+						register "usb2_port_number" = "9"
+						register "usb3_port_number" = "1"
+						# SBU & HSL follows CC
+						device generic 0 alias conn0 on end
+					end
+					chip drivers/intel/pmc_mux/conn
+						register "usb2_port_number" = "4"
+						register "usb3_port_number" = "2"
+						# SBU is fixed, HSL follows CC
+						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
+						device generic 1 alias conn1 on end
+					end
+				end
 			end
 		end
 		device ref north_xhci on

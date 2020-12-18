@@ -24,12 +24,11 @@ uint64_t fw_config_get(void)
 
 	/* Look in CBFS to allow override of value. */
 	if (CONFIG(FW_CONFIG_SOURCE_CBFS)) {
-		if (cbfs_boot_load_file(CONFIG_CBFS_PREFIX "/fw_config",
-					&fw_config_value, sizeof(fw_config_value),
-					CBFS_TYPE_RAW) != sizeof(fw_config_value)) {
+		if (cbfs_load(CONFIG_CBFS_PREFIX "/fw_config", &fw_config_value,
+			      sizeof(fw_config_value)) != sizeof(fw_config_value)) {
 			printk(BIOS_WARNING, "%s: Could not get fw_config from CBFS\n",
 			       __func__);
-			fw_config_value = 0;
+			fw_config_value = UNDEFINED_FW_CONFIG;
 		} else {
 			printk(BIOS_INFO, "FW_CONFIG value from CBFS is 0x%" PRIx64 "\n",
 			       fw_config_value);
@@ -39,8 +38,10 @@ uint64_t fw_config_get(void)
 
 	/* Read the value from EC CBI. */
 	if (CONFIG(FW_CONFIG_SOURCE_CHROMEEC_CBI)) {
-		if (google_chromeec_cbi_get_fw_config(&fw_config_value))
+		if (google_chromeec_cbi_get_fw_config(&fw_config_value)) {
 			printk(BIOS_WARNING, "%s: Could not get fw_config from EC\n", __func__);
+			fw_config_value = UNDEFINED_FW_CONFIG;
+		}
 	}
 
 	printk(BIOS_INFO, "FW_CONFIG value is 0x%" PRIx64 "\n", fw_config_value);
@@ -62,6 +63,11 @@ bool fw_config_probe(const struct fw_config *match)
 	}
 
 	return false;
+}
+
+bool fw_config_is_provisioned(void)
+{
+	return fw_config_get() != UNDEFINED_FW_CONFIG;
 }
 
 #if ENV_RAMSTAGE

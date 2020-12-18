@@ -10,6 +10,7 @@
 #include <soc/infracfg.h>
 #include <soc/mcucfg.h>
 #include <soc/pll.h>
+#include <soc/wdt.h>
 
 enum mux_id {
 	TOP_AXI_SEL,
@@ -392,6 +393,10 @@ void mt_pll_init(void)
 	for (i = 0; i < ARRAY_SIZE(rates); i++)
 		pll_set_rate(&plls[rates[i].id], rates[i].rate);
 
+	/* AUDPLL Tuner Frequency Set */
+	write32(&mtk_apmixed->apll1_tuner_con0, read32(&mtk_apmixed->apll1_con2) + 1);
+	write32(&mtk_apmixed->apll2_tuner_con0, read32(&mtk_apmixed->apll2_con2) + 1);
+
 	/* xPLL Frequency Enable */
 	for (i = 0; i < APMIXED_PLL_MAX; i++) {
 		if (i == APMIXED_USBPLL)
@@ -423,6 +428,34 @@ void mt_pll_init(void)
 	/* enable infrasys DCM */
 	setbits32(&mt8192_infracfg->infra_bus_dcm_ctrl, 0x3 << 21);
 
+	/* dcm_infracfg_ao_aximem_bus_dcm */
+	clrsetbits32(&mt8192_infracfg->infra_aximem_idle_bit_en_0,
+		     INFRACFG_AO_AXIMEM_BUS_DCM_REG0_MASK,
+		     INFRACFG_AO_AXIMEM_BUS_DCM_REG0_ON);
+	/* dcm_infracfg_ao_infra_bus_dcm */
+	clrsetbits32(&mt8192_infracfg->infra_bus_dcm_ctrl,
+		     INFRACFG_AO_INFRA_BUS_DCM_REG0_MASK,
+		     INFRACFG_AO_INFRA_BUS_DCM_REG0_ON);
+	/* dcm_infracfg_ao_infra_conn_bus_dcm */
+	clrsetbits32(&mt8192_infracfg->module_sw_cg_2_set,
+		     INFRACFG_AO_INFRA_CONN_BUS_DCM_REG0_MASK,
+		     INFRACFG_AO_INFRA_CONN_BUS_DCM_REG0_ON);
+	clrsetbits32(&mt8192_infracfg->module_sw_cg_2_clr,
+		     INFRACFG_AO_INFRA_CONN_BUS_DCM_REG1_MASK,
+		     INFRACFG_AO_INFRA_CONN_BUS_DCM_REG1_ON);
+	/* dcm_infracfg_ao_infra_rx_p2p_dcm */
+	clrsetbits32(&mt8192_infracfg->p2p_rx_clk_on,
+		     INFRACFG_AO_INFRA_RX_P2P_DCM_REG0_MASK,
+		     INFRACFG_AO_INFRA_RX_P2P_DCM_REG0_ON);
+	/* dcm_infracfg_ao_peri_bus_dcm */
+	clrsetbits32(&mt8192_infracfg->peri_bus_dcm_ctrl,
+		     INFRACFG_AO_PERI_BUS_DCM_REG0_MASK,
+		     INFRACFG_AO_PERI_BUS_DCM_REG0_ON);
+	/* dcm_infracfg_ao_peri_module_dcm */
+	clrsetbits32(&mt8192_infracfg->peri_bus_dcm_ctrl,
+		     INFRACFG_AO_PERI_MODULE_DCM_REG0_MASK,
+		     INFRACFG_AO_PERI_MODULE_DCM_REG0_ON);
+
 	/* initialize SPM request */
 	setbits32(&mtk_topckgen->clk_scp_cfg_0, 0x3ff);
 	clrsetbits32(&mtk_topckgen->clk_scp_cfg_1, 0x100c, 0x3);
@@ -435,6 +468,11 @@ void mt_pll_init(void)
 
 	/* enable [14] dramc_pll104m_ck */
 	setbits32(&mtk_topckgen->clk_misc_cfg_0, 1 << 14);
+
+	/* reset CONNSYS MCU */
+	SET32_BITFIELDS(&mtk_wdt->wdt_swsysrst,
+			WDT_SWSYSRST_KEY, 0x88,
+			WDT_SWSYSRST_CONN_MCU, 0x1);
 }
 
 void mt_pll_raise_little_cpu_freq(u32 freq)
