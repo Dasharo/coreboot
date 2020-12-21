@@ -26,8 +26,6 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_B2, 1, PLTRST),
 	/* M.2 SSD_2 Reset */
 	PAD_CFG_GPO(GPP_H0, 1, PLTRST),
-	/* CAM1-IRQ */
-	PAD_CFG_GPO(GPP_B23, 1, PLTRST),
 	/* CAM_STROBE */
 	PAD_CFG_GPO(GPP_B18, 0, PLTRST),
 	/* Audio Codec INT N */
@@ -60,8 +58,6 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_C5, 1, PLTRST),
 	/* PEG_SLOT_WAKE_N */
 	PAD_CFG_GPI(GPP_A20, NONE, PLTRST),
-	/* UART_BT_WAKE_N */
-	PAD_CFG_GPI_IRQ_WAKE(GPP_E0, NONE, DEEP, LEVEL, INVERT),
 	/* CAM CONN1 CLKEN */
 	PAD_CFG_GPO(GPP_H15, 1, PLTRST),
 	/* CPU SSD2 PWREN */
@@ -72,7 +68,19 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_B4, 1, PLTRST),
 	/* M.2_PCH_SSD_PWREN */
 	PAD_CFG_GPO(GPP_D16, 1, PLTRST),
+	/* SRCCLK_OEB7 */
+	PAD_CFG_GPO(GPP_A7, 0, PLTRST),
+	/* SRCCLK_OEB6 */
+	PAD_CFG_GPO(GPP_E5, 0, PLTRST),
 
+	/* CAM1_RST */
+	PAD_CFG_GPO(GPP_R5, 1, PLTRST),
+	/* CAM2_RST */
+	PAD_CFG_GPO(GPP_E15, 1, PLTRST),
+	/* CAM1_PWR_EN */
+	PAD_CFG_GPO(GPP_B23, 1, PLTRST),
+	/* CAM2_PWR_EN */
+	PAD_CFG_GPO(GPP_E16, 1, PLTRST),
 	/* M.2_SSD_PDET_R */
 	PAD_CFG_NF(GPP_A12, NONE, DEEP, NF1),
 	/* THC0 SPI1 CLK */
@@ -134,22 +142,16 @@ static const struct pad_config gpio_table[] = {
 	/* SPI_MOSI(2) */
 	PAD_CFG_NF(GPP_D12, NONE, DEEP, NF2),
 
-	/* SPI_MIS0(0) */
-	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF1),
 	/* SPI_MIS0(1) */
 	PAD_CFG_NF(GPP_B21, NONE, DEEP, NF1),
 	/* SPI_MIS0(2) */
 	PAD_CFG_NF(GPP_D11, NONE, DEEP, NF2),
 
-	/* SPI_CLK(0) */
-	PAD_CFG_NF(GPP_B16, NONE, DEEP, NF1),
 	/* SPI_CLK(1) */
 	PAD_CFG_NF(GPP_B20, NONE, DEEP, NF1),
 	/* SPI_CLK(2) */
 	PAD_CFG_NF(GPP_D10, NONE, DEEP, NF2),
 
-	/*  SPI_CS(0, 0) */
-	PAD_CFG_NF(GPP_B15, NONE, DEEP, NF1),
 	/* SPI_CS(0, 1) */
 	PAD_CFG_NF(GPP_B14, NONE, DEEP, NF1),
 	/* SPI_CS(1, 0) */
@@ -158,34 +160,26 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_D9, NONE, DEEP, NF2),
 
 	/* I2C_SCL(0) */
-	PAD_CFG_NF(GPP_C17, NONE, DEEP, NF1),
-	/* I2C_SCL(1) */
-	PAD_CFG_NF(GPP_C19, NONE, DEEP, NF1),
-	/* I2C_SCL(2) */
 	PAD_CFG_NF(GPP_H5, NONE, DEEP, NF1),
-	/* I2C_SCL(3) */
+	/* I2C_SCL(1) */
 	PAD_CFG_NF(GPP_H7, NONE, DEEP, NF1),
+	/* I2C_SCL(2) */
+	PAD_CFG_NF(GPP_B6, NONE, DEEP, NF2),
+	/* I2C_SCL(3) */
+	PAD_CFG_NF(GPP_B8, NONE, DEEP, NF2),
 	/* I2C_SCL(5) */
-	PAD_CFG_NF(GPP_B10, NONE, DEEP, NF1),
-	/* I2C_SCL(6) */
-	PAD_CFG_NF(GPP_T1, NONE, DEEP, NF1),
-	/* I2C_SCL(7) */
-	PAD_CFG_NF(GPP_T3, NONE, DEEP, NF1),
+	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF2),
 
 	/* I2C_SDA(0) */
-	PAD_CFG_NF(GPP_C16, NONE, DEEP, NF1),
-	/* I2C_SDA(1) */
-	PAD_CFG_NF(GPP_C18, NONE, DEEP, NF1),
-	/* I2C_SDA(2) */
 	PAD_CFG_NF(GPP_H4, NONE, DEEP, NF1),
-	/* I2C_SDA(3) */
+	/* I2C_SDA(1) */
 	PAD_CFG_NF(GPP_H6, NONE, DEEP, NF1),
+	/* I2C_SDA(2) */
+	PAD_CFG_NF(GPP_B5, NONE, DEEP, NF2),
+	/* I2C_SDA(3) */
+	PAD_CFG_NF(GPP_B7, NONE, DEEP, NF2),
 	/* I2C_SDA(5) */
-	PAD_CFG_NF(GPP_B9, NONE, DEEP, NF1),
-	/* I2C_SDA(6) */
-	PAD_CFG_NF(GPP_T0, NONE, DEEP, NF1),
-	/* I2C_SDA(7) */
-	PAD_CFG_NF(GPP_T2, NONE, DEEP, NF1),
+	PAD_CFG_NF(GPP_B16, NONE, DEEP, NF2),
 
 	/* I2S0_SCLK */
 	PAD_CFG_NF(GPP_R0, NONE, DEEP, NF2),
@@ -195,15 +189,6 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_R2, NONE, DEEP, NF2),
 	/* I2S0_RXD */
 	PAD_CFG_NF(GPP_R3, NONE, DEEP, NF2),
-
-	/* I2S1_SCLK */
-	PAD_CFG_NF(GPP_A23, NONE, DEEP, NF1),
-	/* I2S1_SFRM */
-	PAD_CFG_NF(GPP_R5, NONE, DEEP, NF2),
-	/* I2S1_TXD */
-	PAD_CFG_NF(GPP_R6, NONE, DEEP, NF2),
-	/* I2S1_RXD */
-	PAD_CFG_NF(GPP_R7, NONE, DEEP, NF2),
 
 	/* I2S2_SCLK */
 	PAD_CFG_NF(GPP_A7, NONE, DEEP, NF1),
@@ -251,10 +236,6 @@ static const struct pad_config gpio_table[] = {
 
 	/* USB2 OC0 pins */
 	PAD_CFG_NF(GPP_E9, NONE, DEEP, NF1),
-	/* USB2 OC1 pins */
-	PAD_CFG_NF(GPP_A14, NONE, DEEP, NF1),
-	/* USB2 OC2 pins */
-	PAD_CFG_NF(GPP_A15, NONE, DEEP, NF1),
 	/* USB2 OC3 pins */
 	PAD_CFG_NF(GPP_A16, NONE, DEEP, NF1),
 
@@ -263,8 +244,6 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_D6, NONE, DEEP, NF1),
 	PAD_CFG_NF(GPP_D7, NONE, DEEP, NF1),
 	PAD_CFG_NF(GPP_D8, NONE, DEEP, NF1),
-	PAD_CFG_NF(GPP_H10, NONE, DEEP, NF1),
-	PAD_CFG_NF(GPP_H11, NONE, DEEP, NF1),
 	PAD_CFG_NF(GPP_H19, NONE, DEEP, NF1),
 	PAD_CFG_NF(GPP_F19, NONE, DEEP, NF1),
 

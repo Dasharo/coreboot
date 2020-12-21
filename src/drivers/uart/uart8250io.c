@@ -3,7 +3,6 @@
 #include <arch/io.h>
 #include <boot/coreboot_tables.h>
 #include <console/uart.h>
-#include <trace.h>
 #include "uart8250reg.h"
 
 #if CONFIG(BOARD_PCENGINES_APU1)
@@ -62,7 +61,6 @@ static unsigned char uart8250_rx_byte(unsigned int base_port)
 
 static void uart8250_init(unsigned int base_port, unsigned int divisor)
 {
-	DISABLE_TRACE;
 	/* Disable interrupts */
 	outb(0x0, base_port + UART8250_IER);
 	/* Enable FIFOs */
@@ -80,7 +78,6 @@ static void uart8250_init(unsigned int base_port, unsigned int divisor)
 
 	/* Set to 3 for 8N1 */
 	outb(CONFIG_TTYS0_LCS, base_port + UART8250_LCR);
-	ENABLE_TRACE;
 }
 
 static const unsigned int bases[] = { 0x3f8, 0x2f8, 0x3e8, 0x2e8 };

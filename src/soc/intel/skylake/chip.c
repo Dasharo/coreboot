@@ -26,6 +26,7 @@
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <soc/systemagent.h>
+#include <soc/usb.h>
 #include <string.h>
 
 #include "chip.h"
@@ -151,16 +152,16 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		if (config->usb2_ports[i].enable)
 			params->Usb2OverCurrentPin[i] = config->usb2_ports[i].ocpin;
 		else
-			params->Usb2OverCurrentPin[i] = 0xff;
+			params->Usb2OverCurrentPin[i] = OC_SKIP;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(config->usb3_ports); i++) {
 		params->PortUsb30Enable[i] = config->usb3_ports[i].enable;
-		if (config->usb3_ports[i].enable) {
+		if (config->usb3_ports[i].enable)
 			params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
-		} else {
-			params->Usb3OverCurrentPin[i] = 0xff;
-		}
+		else
+			params->Usb3OverCurrentPin[i] = OC_SKIP;
+
 		if (config->usb3_ports[i].tx_de_emp) {
 			params->Usb3HsioTxDeEmphEnable[i] = 1;
 			params->Usb3HsioTxDeEmph[i] =
@@ -302,7 +303,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	tconfig->PchLockDownGlobalSmi = config->LockDownConfigGlobalSmi;
 	tconfig->PchLockDownRtcLock = config->LockDownConfigRtcLock;
-	tconfig->PowerLimit4 = config->PowerLimit4;
+	tconfig->PowerLimit4 = 0;
 	/*
 	 * To disable HECI, the Psf needs to be left unlocked
 	 * by FSP till end of post sequence. Based on the devicetree
@@ -337,7 +338,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchPmSlpS4MinAssert = config->PmConfigSlpS4MinAssert;
 	params->PchPmSlpSusMinAssert = config->PmConfigSlpSusMinAssert;
 	params->PchPmSlpAMinAssert = config->PmConfigSlpAMinAssert;
-	params->PchPmLpcClockRun = config->PmConfigPciClockRun;
 	params->PchPmSlpStrchSusUp = config->PmConfigSlpStrchSusUp;
 	params->PchPmPwrBtnOverridePeriod =
 				config->PmConfigPwrBtnOverridePeriod;
@@ -433,7 +433,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	soc_irq_settings(params);
 }
 
-/* Mainboard GPIO Configuration */
+/* Mainboard FSP Configuration */
 __weak void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);

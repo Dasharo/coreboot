@@ -101,6 +101,15 @@ static void read128(u32 addr, u64 * out)
 	out[1] = ret.hi;
 }
 
+/*
+ * Ironlake memory I/O timings are located in scan chains, accessible
+ * through MCHBAR register groups. Each channel has a scan chain, and
+ * there's a global scan chain too. Each chain is broken into smaller
+ * sections of N bits, where N <= 32. Each section allows reading and
+ * writing a certain parameter. Each section contains N - 2 data bits
+ * and two additional bits: a Mask bit, and a Halt bit.
+ */
+
 /* OK */
 static void write_1d0(u32 val, u16 addr, int bits, int flag)
 {
@@ -329,8 +338,6 @@ static u32 get_580(int channel, u8 addr)
 	MCHBAR8_AND(0x580 + (channel << 10), ~1);
 	return ret;
 }
-
-const int cached_config = 0;
 
 #define NUM_CHANNELS 2
 #define NUM_SLOTS 2

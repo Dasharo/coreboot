@@ -91,7 +91,7 @@ smm_relocate_gdt:
 
 	/* gdt selector 0x18, flat code segment (64-bit) */
 	.word	0xffff, 0x0000
-	.byte	0x00, 0x9b, 0xcf, 0x00
+	.byte	0x00, 0x9b, 0xaf, 0x00
 
 	/* gdt selector 0x20 tss segment */
 	.word   0xffff, 0x0000
@@ -144,6 +144,9 @@ smm_trampoline32:
 	movl	stack_size, %eax
 	subl	%eax, %ebx /* %ebx(stack_top) - size = %ebx(stack_bottom) */
 	movl	%ebx, (%ebx)
+#if ENV_X86_64
+	movl	$0, 4(%ebx)
+#endif
 
 	/* Create stack frame by pushing a NULL stack base pointer */
 	pushl	$0x0

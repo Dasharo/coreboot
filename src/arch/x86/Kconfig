@@ -144,6 +144,13 @@ config PRERAM_CBMEM_CONSOLE_SIZE
 	help
 	  Increase this value if preram cbmem console is getting truncated
 
+config CBFS_MCACHE_SIZE
+	hex
+	depends on !NO_CBFS_MCACHE
+	default 0x2000
+	help
+	  Increase this value if you see CBFS mcache overflow warnings.
+
 config PC80_SYSTEM
 	bool
 	default y if ARCH_X86
@@ -178,10 +185,6 @@ config HPET_ADDRESS_OVERRIDE
 config HPET_ADDRESS
 	hex
 	default 0xfed00000 if !HPET_ADDRESS_OVERRIDE
-
-config ID_SECTION_OFFSET
-	hex
-	default 0x80
 
 # 64KiB default bootblock size
 config C_ENV_BOOTBLOCK_SIZE

@@ -10,6 +10,7 @@
 #include <device/device.h>
 #include <ec/google/chromeec/ec.h>
 #include <edid.h>
+#include <framebuffer_info.h>
 #include <gpio.h>
 #include <soc/ddp.h>
 #include <soc/dsi.h>
@@ -112,8 +113,7 @@ struct panel_description *get_panel_from_cbfs(struct panel_description *desc)
 		return NULL;
 
 	snprintf(cbfs_name, sizeof(cbfs_name), "panel-%s", desc->name);
-	if (cbfs_boot_load_file(cbfs_name, buffer.raw, sizeof(buffer),
-				CBFS_TYPE_STRUCT))
+	if (cbfs_load(cbfs_name, buffer.raw, sizeof(buffer)))
 		desc->s = &buffer.s;
 	else
 		printk(BIOS_ERR, "Missing %s in CBFS.\n", cbfs_name);
@@ -169,8 +169,10 @@ static bool configure_display(void)
 		return false;
 	}
 	mtk_ddp_mode_set(edid);
-	set_vbe_mode_info_valid(edid, 0);
-	set_vbe_framebuffer_orientation(panel->s->orientation);
+	struct fb_info *info = fb_new_framebuffer_info_from_edid(edid, 0);
+	if (info)
+		fb_set_orientation(info, panel->s->orientation);
+
 	return true;
 }
 

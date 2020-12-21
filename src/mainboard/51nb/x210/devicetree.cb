@@ -32,7 +32,6 @@ chip soc/intel/skylake
 	register "dptf_enable" = "0"
 
 	# FSP Configuration
-	register "ProbelessTrace" = "0"
 	register "SataSalpSupport" = "1"
 	register "SataMode" = "0"
 
@@ -47,7 +46,6 @@ chip soc/intel/skylake
 	register "IoBufferOwnership" = "0"
 	register "SsicPortEnable" = "0"
 	register "ScsEmmcHs400Enabled" = "0"
-	register "PttSwitch" = "0"
 	register "SkipExtGfxScan" = "1"
 	register "HeciEnabled" = "1"
 	register "SaGv" = "SaGv_Enabled"
@@ -57,8 +55,6 @@ chip soc/intel/skylake
 	register "PmConfigSlpAMinAssert" = "3"		# 2s
 
 	register "serirq_mode" = "SERIRQ_CONTINUOUS"
-
-	register "PmConfigPciClockRun" = "1"
 
 	# Enable Root Ports 3, 4 and 9
 	register "PcieRpEnable[2]" = "1" # Ethernet controller

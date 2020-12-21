@@ -169,7 +169,7 @@ void acpi_create_gnvs(struct global_nvs *gnvs)
 
 #if CONFIG(CONSOLE_CBMEM)
 	/* Update the mem console pointer. */
-	gnvs->cbmc = (u32)cbmem_find(CBMEM_ID_CONSOLE);
+	gnvs->cbmc = (u32)(uintptr_t)cbmem_find(CBMEM_ID_CONSOLE);
 #endif
 
 	if (CONFIG(CHROMEOS)) {
@@ -522,6 +522,9 @@ unsigned long acpi_madt_irq_overrides(unsigned long current)
 	irqovr = (void *)current;
 	current += acpi_create_madt_irqoverride(irqovr, 0, sci, sci, flags);
 
+	/* NMI */
+	current += acpi_create_madt_lapic_nmi((acpi_madt_lapic_nmi_t *)current, 0xff, 5, 1);
+
 	return current;
 }
 
@@ -554,7 +557,7 @@ void southbridge_inject_dsdt(const struct device *device)
 
 		/* Add it to DSDT.  */
 		acpigen_write_scope("\\");
-		acpigen_write_name_dword("NVSA", (u32) gnvs);
+		acpigen_write_name_dword("NVSA", (u32) (uintptr_t)gnvs);
 		acpigen_pop_len();
 	}
 }

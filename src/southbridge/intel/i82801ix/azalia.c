@@ -11,43 +11,14 @@
 #include "chip.h"
 #include "i82801ix.h"
 
-static int set_bits(void *port, u32 mask, u32 val)
-{
-	u32 reg32;
-	int count;
-
-	/* Write (val & mask) to port */
-	val &= mask;
-	reg32 = read32(port);
-	reg32 &= ~mask;
-	reg32 |= val;
-	write32(port, reg32);
-
-	/* Wait for readback of register to match what was just written to it */
-	count = 50;
-	do {
-		/* Wait 1ms based on BKDG wait time */
-		mdelay(1);
-		reg32 = read32(port);
-		reg32 &= mask;
-	} while ((reg32 != val) && --count);
-
-	/* Timeout occurred */
-	if (!count)
-		return -1;
-	return 0;
-}
-
 static int codec_detect(u8 *base)
 {
 	u32 reg32;
 
-	/* Set Bit 0 to 0 to enter reset state (BAR + 0x8)[0] */
-	if (set_bits(base + HDA_GCTL_REG, HDA_GCTL_CRST, 0) < 0)
+	if (azalia_enter_reset(base) < 0)
 		goto no_codec;
 
-	/* Set Bit 0 to 1 to exit reset state (BAR + 0x8)[0] */
-	if (set_bits(base + HDA_GCTL_REG, HDA_GCTL_CRST, HDA_GCTL_CRST) < 0)
+	if (azalia_exit_reset(base) < 0)
 		goto no_codec;
 
 	/* Read in Codec location (BAR + 0xe)[2..0] */
@@ -59,28 +30,9 @@ static int codec_detect(u8 *base)
 	return reg32;
 
 no_codec:
-	/* Codec Not found */
-	/* Put HDA back in reset (BAR + 0x8) [0] */
-	set_bits(base + HDA_GCTL_REG, 1, 0);
+	/* Codec not found, put HDA back in reset */
+	azalia_enter_reset(base);
 	printk(BIOS_DEBUG, "Azalia: No codec!\n");
-	return 0;
-}
-
-static u32 find_verb(struct device *dev, u32 viddid, const u32 **verb)
-{
-	int idx = 0;
-
-	while (idx < (cim_verb_data_size / sizeof(u32))) {
-		u32 verb_size = 4 * cim_verb_data[idx + 2];	// in u32
-		if (cim_verb_data[idx] != viddid) {
-			idx += verb_size + 3;	// skip verb + header
-			continue;
-		}
-		*verb = &cim_verb_data[idx + 3];
-		return verb_size;
-	}
-
-	/* Not all codecs need to load another verb */
 	return 0;
 }
 
@@ -156,7 +108,7 @@ static void codec_init(struct device *dev, u8 *base, int addr)
 	/* 2 */
 	reg32 = read32(base + HDA_IR_REG);
 	printk(BIOS_DEBUG, "Azalia: codec viddid: %08x\n", reg32);
-	verb_size = find_verb(dev, reg32, &verb);
+	verb_size = azalia_find_verb(cim_verb_data, cim_verb_data_size, reg32, &verb);
 
 	if (!verb_size) {
 		printk(BIOS_DEBUG, "Azalia: No verb!\n");
