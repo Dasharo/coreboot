@@ -62,8 +62,7 @@ static u8 check_knob_value(const char *s)
 	// This function locates a file in cbfs, maps it to memory and returns
 	// a void* pointer
 	//
-	boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE, CBFS_TYPE_RAW,
-						&boot_file_len);
+	boot_file = (const char *) cbfs_map(BOOTORDER_FILE, &boot_file_len);
 	if (boot_file == NULL)
 		printk(BIOS_INFO, "file [%s] not found in CBFS\n",
 			BOOTORDER_FILE);
@@ -72,7 +71,9 @@ static u8 check_knob_value(const char *s)
 	if (boot_file == NULL || boot_file_len < 4096)
 		return -1;
 
-	token = findstr( boot_file, s );
+	token = findstr(boot_file, s);
+
+	cbfs_unmap((void *)boot_file);
 
 	if (token) {
 		if (*token == '0') return 0;
@@ -438,8 +439,7 @@ u16 get_watchdog_timeout(void)
 	// This function locates a file in cbfs, maps it to memory and returns
 	// a void* pointer
 	//
-	boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE, CBFS_TYPE_RAW,
-						&boot_file_len);
+	boot_file = (const char *) cbfs_map(BOOTORDER_FILE, &boot_file_len);
 	if (boot_file == NULL)
 		printk(BIOS_INFO, "file [%s] not found in CBFS\n",
 			BOOTORDER_FILE);
@@ -449,6 +449,8 @@ u16 get_watchdog_timeout(void)
 		return -1;
 
 	timeout = (u16) strtoul(findstr(boot_file, "watchdog"), NULL, 16);
+
+	cbfs_unmap((void *)boot_file);
 
 	return timeout;
 }
