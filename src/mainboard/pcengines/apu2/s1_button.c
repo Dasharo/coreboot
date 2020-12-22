@@ -118,7 +118,7 @@ void enable_console(void)
         int knob_index;
         char *bootorder_copy;
 
-        bootorder_file = cbfs_boot_map_with_leak("bootorder", CBFS_TYPE_RAW, &fsize);
+        bootorder_file = (char *)cbfs_map("bootorder", &fsize);
 
         if (bootorder_file == NULL){
                 printk(BIOS_WARNING, "Could not mmap bootorder\n");
@@ -163,4 +163,6 @@ void enable_console(void)
         if(flash_bootorder(offset, fsize, bootorder_copy)) {
                 printk(BIOS_WARNING, "Failed to flash bootorder\n");
         }
+        free(bootorder_copy);
+        cbfs_unmap((void *)bootorder_file);
 }
