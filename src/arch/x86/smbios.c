@@ -16,9 +16,6 @@
 #include <device/pci_ids.h>
 #include <device/pci_def.h>
 #include <device/pci.h>
-#if CONFIG(CHROMEOS)
-#include <vendorcode/google/chromeos/gnvs.h>
-#endif
 #include <drivers/vpd/vpd.h>
 #include <stdlib.h>
 
@@ -330,8 +327,22 @@ static int create_smbios_type17_for_dimm(struct dimm_info *dimm,
 	t->minimum_voltage = dimm->vdd_voltage;
 	t->maximum_voltage = dimm->vdd_voltage;
 
+	/* Fill in type detail */
+	switch (dimm->mod_type) {
+	case SPD_RDIMM:
+	case SPD_MINI_RDIMM:
+		t->type_detail = MEMORY_TYPE_DETAIL_REGISTERED;
+		break;
+	case SPD_UDIMM:
+	case SPD_MINI_UDIMM:
+		t->type_detail = MEMORY_TYPE_DETAIL_UNBUFFERED;
+		break;
+	default:
+		t->type_detail = MEMORY_TYPE_DETAIL_UNKNOWN;
+		break;
+	}
 	/* Synchronous = 1 */
-	t->type_detail = MEMORY_TYPE_DETAIL_SYNCHRONOUS;
+	t->type_detail |= MEMORY_TYPE_DETAIL_SYNCHRONOUS;
 	/* no handle for error information */
 	t->memory_error_information_handle = 0xFFFE;
 	t->attributes = dimm->rank_per_dimm;
@@ -411,11 +422,12 @@ static int smbios_write_type0(unsigned long *current, int handle)
 	t->vendor = smbios_add_string(t->eos, "coreboot");
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
 
-#if CONFIG(CHROMEOS) && CONFIG(HAVE_ACPI_TABLES)
-	u32 version_offset = (u32)smbios_string_table_len(t->eos);
-	/* SMBIOS offsets start at 1 rather than 0 */
-	chromeos_get_chromeos_acpi()->vbt10 = (uintptr_t)t->eos + (version_offset - 1);
-#endif
+	if (CONFIG(CHROMEOS)) {
+		uintptr_t version_address = (uintptr_t)t->eos;
+		/* SMBIOS offsets start at 1 rather than 0 */
+		version_address += (u32)smbios_string_table_len(t->eos) - 1;
+		smbios_type0_bios_version(version_address);
+	}
 	t->bios_version = smbios_add_string(t->eos, get_bios_version());
 	uint32_t rom_size = CONFIG_ROM_SIZE;
 	rom_size = MIN(CONFIG_ROM_SIZE, 16 * MiB);

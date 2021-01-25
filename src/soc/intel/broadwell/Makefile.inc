@@ -1,6 +1,5 @@
 ifeq ($(CONFIG_SOC_INTEL_BROADWELL),y)
 
-subdirs-y += cpu
 subdirs-y += pch
 
 bootblock-y += bootblock.c

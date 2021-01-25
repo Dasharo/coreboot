@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <assert.h>
@@ -8,10 +7,10 @@
 #include <cpu/intel/turbo.h>
 #include <device/mmio.h>
 #include <device/pci.h>
+#include <intelblocks/acpi.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
 #include <soc/iomap.h>
-#include <device/mmio.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
@@ -24,17 +23,6 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *)current,
 		CONFIG_MMCONF_BASE_ADDRESS, 0, 0, 255);
 	return current;
-}
-
-void acpi_init_gnvs(struct global_nvs *gnvs)
-{
-	/* CPU core count */
-	gnvs->pcnt = dev_count_cpu();
-	printk(BIOS_DEBUG, "%s gnvs->pcnt: %d\n", __func__, gnvs->pcnt);
-
-	/* Update the mem console pointer. */
-	if (CONFIG(CONSOLE_CBMEM))
-		gnvs->cbmc = (uint32_t)cbmem_find(CBMEM_ID_CONSOLE);
 }
 
 int soc_madt_sci_irq_polarity(int sci)

@@ -7,6 +7,7 @@
 . = CONFIG_DCACHE_RAM_BASE;
 .car.data . (NOLOAD) : {
 	_car_region_start = . ;
+	. += CONFIG_FSP_M_RC_HEAP_SIZE;
 #if CONFIG(PAGING_IN_CACHE_AS_RAM)
 	/* Page table pre-allocation. CONFIG_DCACHE_RAM_BASE should be 4KiB
 	 * aligned when using this option. */
@@ -80,11 +81,23 @@
 	REGION(asan_shadow, ., _shadow_size, ARCH_POINTER_ALIGN_SIZE)
 #endif
 	_car_unallocated_start = .;
-	_car_region_end = . + CONFIG_DCACHE_RAM_SIZE - (. - _car_region_start);
+	_car_region_end = . + CONFIG_DCACHE_RAM_SIZE - (. - _car_region_start)
+			  - CONFIG_FSP_T_RESERVED_SIZE;
 }
+
+. = _car_region_start;
+.car.fspm_rc_heap . (NOLOAD) : {
+. += CONFIG_FSP_M_RC_HEAP_SIZE;
+}
+
 . = _car_region_end;
 .car.mrc_var . (NOLOAD) : {
 	. += CONFIG_DCACHE_RAM_MRC_VAR_SIZE;
+}
+
+. = _car_region_end;
+.car.fspt_reserved . (NOLOAD) : {
+	. +=  CONFIG_FSP_T_RESERVED_SIZE;
 }
 
 #if ENV_BOOTBLOCK

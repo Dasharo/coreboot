@@ -19,7 +19,6 @@
 #include <amdblocks/lpc.h>
 #include <soc/acpi.h>
 #include <soc/southbridge.h>
-#include <soc/nvs.h>
 #include <soc/iomap.h>
 
 /* Most systems should have already enabled the bridge */
@@ -100,7 +99,6 @@ static void lpc_init(struct device *dev)
 static void lpc_read_resources(struct device *dev)
 {
 	struct resource *res;
-	struct global_nvs *gnvs;
 
 	/* Get the normal pci resources of this device */
 	pci_dev_read_resources(dev);
@@ -134,10 +132,6 @@ static void lpc_read_resources(struct device *dev)
 	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 
 	compact_resources(dev);
-
-	/* Allocate ACPI NVS in CBMEM */
-	gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(struct global_nvs));
-	printk(BIOS_DEBUG, "ACPI GNVS at %p\n", gnvs);
 }
 
 static void lpc_set_resources(struct device *dev)
@@ -328,7 +322,6 @@ static struct device_operations lpc_ops = {
 	.read_resources = lpc_read_resources,
 	.set_resources = lpc_set_resources,
 	.enable_resources = lpc_enable_resources,
-	.acpi_inject_dsdt = southbridge_inject_dsdt,
 	.write_acpi_tables = southbridge_write_acpi_tables,
 	.init = lpc_init,
 	.scan_bus = scan_static_bus,

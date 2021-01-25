@@ -5,8 +5,6 @@
 #include <bootstate.h>
 #include <drivers/ipmi/ipmi_ops.h>
 #include <drivers/ocp/dmi/ocp_dmi.h>
-#include <gpio.h>
-#include <soc/lewisburg_pch_gpio_defs.h>
 #include <soc/ramstage.h>
 #include <soc/soc_util.h>
 #include <stdio.h>
@@ -215,7 +213,7 @@ static int create_smbios_type9(int *handle, unsigned long *current)
 	uint8_t characteristics_1 = 0;
 	uint8_t characteristics_2 = 0;
 	uint32_t vendor_device_id;
-	uint32_t stack_busnos[6];
+	uint8_t stack_busnos[MAX_IIO_STACK];
 	pci_devfn_t pci_dev;
 	unsigned int cap;
 	uint16_t sltcap;
@@ -223,7 +221,8 @@ static int create_smbios_type9(int *handle, unsigned long *current)
 	if (ipmi_get_pcie_config(&pcie_config) != CB_SUCCESS)
 		printk(BIOS_ERR, "Failed to get IPMI PCIe config\n");
 
-	get_stack_busnos(stack_busnos);
+	for (index = 0; index < ARRAY_SIZE(stack_busnos); index++)
+		stack_busnos[index] = get_stack_busno(index);
 
 	for (index = 0; index < ARRAY_SIZE(slotinfo); index++) {
 		if (pcie_config == PCIE_CONFIG_A) {
@@ -367,11 +366,3 @@ struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.final = mainboard_final,
 };
-
-static void pull_post_complete_pin(void *unused)
-{
-	/* Pull Low post complete pin */
-	gpio_output(GPP_B20, 0);
-}
-
-BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_BOOT, BS_ON_ENTRY, pull_post_complete_pin, NULL);

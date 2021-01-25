@@ -7,6 +7,7 @@
 #include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
+#include <intelblocks/pcie_rp.h>
 #include <soc/gpe.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
@@ -118,9 +119,12 @@ struct soc_intel_alderlake_config {
 	uint8_t PchHdaIDispLinkFrequency;
 	uint8_t PchHdaIDispCodecDisconnect;
 
-	/* PCIe Root Ports */
-	uint8_t PcieRpEnable[CONFIG_MAX_ROOT_PORTS];
-	uint8_t PcieRpHotPlug[CONFIG_MAX_ROOT_PORTS];
+	/* CPU PCIe Root Ports */
+	uint8_t CpuPcieRpEnable[CONFIG_MAX_CPU_ROOT_PORTS];
+
+	/* PCH PCIe Root Ports */
+	uint8_t PchPcieRpEnable[CONFIG_MAX_PCH_ROOT_PORTS];
+	uint8_t PcieRpHotPlug[CONFIG_MAX_PCH_ROOT_PORTS];
 	/* PCIe output clocks type to PCIe devices.
 	 * 0-23: PCH rootport, 0x70: LAN, 0x80: unspecified but in use,
 	 * 0xFF: not used */
@@ -130,21 +134,16 @@ struct soc_intel_alderlake_config {
 	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCKS];
 
 	/* Probe CLKREQ# signal before enabling CLKREQ# based power management.*/
-	uint8_t PcieRpClkReqDetect[CONFIG_MAX_ROOT_PORTS];
+	uint8_t PcieRpClkReqDetect[CONFIG_MAX_PCH_ROOT_PORTS];
 
 	/* PCIe RP L1 substate */
-	enum L1_substates_control {
-		L1_SS_FSP_DEFAULT,
-		L1_SS_DISABLED,
-		L1_SS_L1_1,
-		L1_SS_L1_2,
-	} PcieRpL1Substates[CONFIG_MAX_ROOT_PORTS];
+	enum L1_substates_control PcieRpL1Substates[CONFIG_MAX_PCH_ROOT_PORTS];
 
 	/* PCIe LTR: Enable (1) / Disable (0) */
-	uint8_t PcieRpLtrEnable[CONFIG_MAX_ROOT_PORTS];
+	uint8_t PcieRpLtrEnable[CONFIG_MAX_PCH_ROOT_PORTS];
 
 	/* PCIE RP Advanced Error Report: Enable (1) / Disable (0) */
-	uint8_t PcieRpAdvancedErrorReporting[CONFIG_MAX_ROOT_PORTS];
+	uint8_t PcieRpAdvancedErrorReporting[CONFIG_MAX_PCH_ROOT_PORTS];
 
 	/* Gfx related */
 	enum {

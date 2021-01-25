@@ -12,9 +12,6 @@
 #include <acpi/acpi.h>
 #include <acpi/acpi_gnvs.h>
 #include <cpu/x86/smm.h>
-#include <cbmem.h>
-#include <ec/google/chromeec/ec.h>
-#include <vendorcode/google/chromeos/gnvs.h>
 #include <string.h>
 #include <soc/gpio.h>
 #include <soc/iobp.h>
@@ -593,8 +590,6 @@ static void pch_lpc_add_io_resources(struct device *dev)
 
 static void pch_lpc_read_resources(struct device *dev)
 {
-	struct global_nvs *gnvs;
-
 	/* Get the normal PCI resources of this device. */
 	pci_dev_read_resources(dev);
 
@@ -603,57 +598,12 @@ static void pch_lpc_read_resources(struct device *dev)
 
 	/* Add IO resources. */
 	pch_lpc_add_io_resources(dev);
-
-	/* Allocate ACPI NVS in CBMEM */
-	gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(struct global_nvs));
-	if (!acpi_is_wakeup_s3() && gnvs)
-		memset(gnvs, 0, sizeof(struct global_nvs));
 }
 
-static void southcluster_inject_dsdt(const struct device *device)
+void soc_fill_gnvs(struct global_nvs *gnvs)
 {
-	struct global_nvs *gnvs;
-
-	gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
-	if (!gnvs) {
-		gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
-		if (gnvs)
-			memset(gnvs, 0, sizeof(*gnvs));
-	}
-
-	if (gnvs) {
-		acpi_create_gnvs(gnvs);
-
-		/* Set unknown wake source */
-		gnvs->pm1i = -1;
-
-		/* CPU core count */
-		gnvs->pcnt = dev_count_cpu();
-
-#if CONFIG(CONSOLE_CBMEM)
-		/* Update the mem console pointer. */
-		gnvs->cbmc = (u32)cbmem_find(CBMEM_ID_CONSOLE);
-#endif
-
-		if (CONFIG(CHROMEOS)) {
-			/* Initialize Verified Boot data */
-			chromeos_init_chromeos_acpi(&(gnvs->chromeos));
-			if (CONFIG(EC_GOOGLE_CHROMEEC)) {
-				gnvs->chromeos.vbt2 = google_ec_running_ro() ?
-					ACTIVE_ECFW_RO : ACTIVE_ECFW_RW;
-			} else {
-				gnvs->chromeos.vbt2 = ACTIVE_ECFW_RO;
-			}
-		}
-
-		/* And tell SMI about it */
-		apm_control(APM_CNT_GNVS_UPDATE);
-
-		/* Add it to DSDT.  */
-		acpigen_write_scope("\\");
-		acpigen_write_name_dword("NVSA", (u32) gnvs);
-		acpigen_pop_len();
-	}
+	/* Set unknown wake source */
+	gnvs->pm1i = -1;
 }
 
 static unsigned long broadwell_write_acpi_tables(const struct device *device,
@@ -672,7 +622,6 @@ static struct device_operations device_ops = {
 	.read_resources		= &pch_lpc_read_resources,
 	.set_resources		= &pci_dev_set_resources,
 	.enable_resources	= &pci_dev_enable_resources,
-	.acpi_inject_dsdt	= southcluster_inject_dsdt,
 	.write_acpi_tables      = broadwell_write_acpi_tables,
 	.init			= &lpc_init,
 	.scan_bus		= &scan_static_bus,

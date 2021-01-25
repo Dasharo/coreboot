@@ -9,6 +9,9 @@ tests-y += edid-test
 tests-y += cbmem_console-romstage-test
 tests-y += cbmem_console-ramstage-test
 tests-y += list-test
+tests-y += fmap-test
+tests-y += imd_cbmem-romstage-test
+tests-y += imd_cbmem-ramstage-test
 
 string-test-srcs += tests/lib/string-test.c
 string-test-srcs += src/lib/string.c
@@ -43,4 +46,24 @@ cbmem_console-ramstage-test-srcs += tests/stubs/console.c
 
 list-test-srcs += tests/lib/list-test.c
 list-test-srcs += src/lib/list.c
+
+fmap-test-srcs += tests/lib/fmap-test.c
+fmap-test-srcs += src/lib/fmap.c
+fmap-test-srcs += tests/stubs/console.c
+fmap-test-srcs += src/lib/boot_device.c
+fmap-test-srcs += src/commonlib/region.c
+fmap-test-cflags += -I tests/include/tests/lib/fmap
+fmap-test-cflags += -I 3rdparty/vboot/firmware/include
+
+imd_cbmem-ramstage-test-stage := ramstage
+imd_cbmem-ramstage-test-srcs += tests/lib/imd_cbmem-test.c
+imd_cbmem-ramstage-test-srcs += tests/stubs/console.c
+imd_cbmem-ramstage-test-srcs += src/lib/imd.c
+imd_cbmem-ramstage-test-mocks += cbmem_top_chipset
+
+imd_cbmem-romstage-test-stage := romstage
+imd_cbmem-romstage-test-srcs += tests/lib/imd_cbmem-test.c
+imd_cbmem-romstage-test-srcs += tests/stubs/console.c
+imd_cbmem-romstage-test-srcs += src/lib/imd.c
+imd_cbmem-romstage-test-mocks += cbmem_top_chipset
 

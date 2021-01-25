@@ -12,9 +12,9 @@
 #include <device/pci_ops.h>
 #include <arch/ioapic.h>
 #include <arch/smp/mpspec.h>
+#include <cpu/amd/cpuid.h>
 #include <cpu/amd/msr.h>
 #include <cpu/x86/smm.h>
-#include <cbmem.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <amdblocks/acpimmio.h>
@@ -393,20 +393,8 @@ unsigned long southbridge_write_acpi_tables(const struct device *device,
 	return acpi_write_hpet(device, current, rsdp);
 }
 
-void acpi_create_gnvs(struct global_nvs *gnvs)
+void soc_fill_gnvs(struct global_nvs *gnvs)
 {
-	/* Clear out GNVS. */
-	memset(gnvs, 0, sizeof(*gnvs));
-
-	if (CONFIG(CONSOLE_CBMEM))
-		gnvs->cbmc = (uintptr_t)cbmem_find(CBMEM_ID_CONSOLE);
-
-	if (CONFIG(CHROMEOS)) {
-		/* Initialize Verified Boot data */
-		chromeos_init_chromeos_acpi(&gnvs->chromeos);
-		gnvs->chromeos.vbt2 = ACTIVE_ECFW_RO;
-	}
-
 	/* Set unknown wake source */
 	gnvs->pm1i = ~0ULL;
 	gnvs->gpei = ~0ULL;
@@ -415,120 +403,49 @@ void acpi_create_gnvs(struct global_nvs *gnvs)
 	gnvs->pcnt = dev_count_cpu();
 }
 
-void southbridge_inject_dsdt(const struct device *device)
-{
-	struct global_nvs *gnvs;
-
-	gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
-
-	if (gnvs) {
-		acpi_create_gnvs(gnvs);
-
-		/* Add it to DSDT */
-		acpigen_write_scope("\\");
-		acpigen_write_name_dword("NVSA", (uintptr_t)gnvs);
-		acpigen_pop_len();
-	}
-}
-
-static void acpigen_soc_get_gpio_in_local5(uintptr_t addr)
-{
-	/*
-	 *   Store (\_SB.GPR2 (addr), Local5)
-	 * \_SB.GPR2 is used to read control byte 2 from control register.
-	 * / It is defined in gpio_lib.asl.
-	 */
-	acpigen_write_store();
-	acpigen_emit_namestring("\\_SB.GPR2");
-	acpigen_write_integer(addr);
-	acpigen_emit_byte(LOCAL5_OP);
-}
-
-static int acpigen_soc_get_gpio_val(unsigned int gpio_num, uint32_t mask)
+static int acpigen_soc_gpio_op(const char *op, unsigned int gpio_num)
 {
 	if (gpio_num >= SOC_GPIO_TOTAL_PINS) {
 		printk(BIOS_WARNING, "Warning: Pin %d should be smaller than"
 					" %d\n", gpio_num, SOC_GPIO_TOTAL_PINS);
 		return -1;
 	}
-	uintptr_t addr = gpio_get_address(gpio_num);
-
-	acpigen_soc_get_gpio_in_local5(addr);
-
-	/* If (And (Local5, mask)) */
-	acpigen_write_if_and(LOCAL5_OP, mask);
-
-	/* Store (One, Local0) */
-	acpigen_write_store_ops(ONE_OP, LOCAL0_OP);
-
-	acpigen_pop_len();	/* If */
-
-	/* Else */
-	acpigen_write_else();
-
-	/* Store (Zero, Local0) */
-	acpigen_write_store_ops(ZERO_OP, LOCAL0_OP);
-
-	acpigen_pop_len();	/* Else */
-
+	/* op (gpio_num) */
+	acpigen_emit_namestring(op);
+	acpigen_write_integer(gpio_num);
 	return 0;
 }
 
-static int acpigen_soc_set_gpio_val(unsigned int gpio_num, uint32_t val)
+static int acpigen_soc_get_gpio_state(const char *op, unsigned int gpio_num)
 {
 	if (gpio_num >= SOC_GPIO_TOTAL_PINS) {
 		printk(BIOS_WARNING, "Warning: Pin %d should be smaller than"
 					" %d\n", gpio_num, SOC_GPIO_TOTAL_PINS);
 		return -1;
 	}
-	uintptr_t addr = gpio_get_address(gpio_num);
-
-	/* Store (0x40, Local0) */
+	/* Store (op (gpio_num), Local0) */
 	acpigen_write_store();
-	acpigen_write_integer(GPIO_PIN_OUT);
+	acpigen_soc_gpio_op(op, gpio_num);
 	acpigen_emit_byte(LOCAL0_OP);
-
-	acpigen_soc_get_gpio_in_local5(addr);
-
-	if (val) {
-		/* Or (Local5, GPIO_PIN_OUT, Local5) */
-		acpigen_write_or(LOCAL5_OP, LOCAL0_OP, LOCAL5_OP);
-	} else {
-		/* Not (GPIO_PIN_OUT, Local6) */
-		acpigen_write_not(LOCAL0_OP, LOCAL6_OP);
-
-		/* And (Local5, Local6, Local5) */
-		acpigen_write_and(LOCAL5_OP, LOCAL6_OP, LOCAL5_OP);
-	}
-
-	/*
-	 *   SB.GPW2 (addr, Local5)
-	 * \_SB.GPW2 is used to write control byte in control register
-	 * / byte 2. It is defined in gpio_lib.asl.
-	 */
-	acpigen_emit_namestring("\\_SB.GPW2");
-	acpigen_write_integer(addr);
-	acpigen_emit_byte(LOCAL5_OP);
-
 	return 0;
 }
 
 int acpigen_soc_read_rx_gpio(unsigned int gpio_num)
 {
-	return acpigen_soc_get_gpio_val(gpio_num, GPIO_PIN_IN);
+	return acpigen_soc_get_gpio_state("\\_SB.GRXS", gpio_num);
 }
 
 int acpigen_soc_get_tx_gpio(unsigned int gpio_num)
 {
-	return acpigen_soc_get_gpio_val(gpio_num, GPIO_PIN_OUT);
+	return acpigen_soc_get_gpio_state("\\_SB.GTXS", gpio_num);
 }
 
 int acpigen_soc_set_tx_gpio(unsigned int gpio_num)
 {
-	return acpigen_soc_set_gpio_val(gpio_num, 1);
+	return acpigen_soc_gpio_op("\\_SB.STXS", gpio_num);
 }
 
 int acpigen_soc_clear_tx_gpio(unsigned int gpio_num)
 {
-	return acpigen_soc_set_gpio_val(gpio_num, 0);
+	return acpigen_soc_gpio_op("\\_SB.CTXS", gpio_num);
 }

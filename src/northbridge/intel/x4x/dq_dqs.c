@@ -278,7 +278,7 @@ int do_write_training(struct sysinfo *s)
 			s->dq_settings[channel][lane] = s->dqs_settings[channel][lane];
 		}
 		memset(dq_lower, 0, sizeof(dq_lower));
-			/* Start from DQS settings */
+		/* Start from DQS settings */
 		memcpy(dq_setting, s->dqs_settings[channel], sizeof(dq_setting));
 
 		if (find_dq_limit(s, channel, dq_setting, dq_lower,
@@ -525,49 +525,49 @@ static void set_rank_write_level(struct sysinfo *s, u8 channel, u8 config,
 
 	/* Is shifted by bits 2 later so u8 can be used to reduce size */
 	static const u8 emrs1_lut[8][4][4] = { /* [Config][Leveling Rank][Rank] */
-		{  /* Config 0: 2R2R */
+		{ /* Config 0: 2R2R */
 			{0x11, 0x00, 0x91, 0x00},
 			{0x00, 0x11, 0x91, 0x00},
 			{0x91, 0x00, 0x11, 0x00},
 			{0x91, 0x00, 0x00, 0x11}
 		},
-		{  // Config 1: 2R1R
+		{ /* Config 1: 2R1R */
 			{0x11, 0x00, 0x91, 0x00},
 			{0x00, 0x11, 0x91, 0x00},
 			{0x91, 0x00, 0x11, 0x00},
 			{0x00, 0x00, 0x00, 0x00}
 		},
-		{  // Config 2: 1R2R
+		{ /* Config 2: 1R2R */
 			{0x11, 0x00, 0x91, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x91, 0x00, 0x11, 0x00},
 			{0x91, 0x00, 0x00, 0x11}
 		},
-		{  // Config 3: 1R1R
+		{ /* Config 3: 1R1R */
 			{0x11, 0x00, 0x91, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x91, 0x00, 0x11, 0x00},
 			{0x00, 0x00, 0x00, 0x00}
 		},
-		{  // Config 4: 2R0R
+		{ /* Config 4: 2R0R */
 			{0x11, 0x00, 0x00, 0x00},
 			{0x00, 0x11, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00}
 		},
-		{  // Config 5: 0R2R
+		{ /* Config 5: 0R2R */
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x11, 0x00},
 			{0x00, 0x00, 0x00, 0x11}
 		},
-		{  // Config 6: 1R0R
+		{ /* Config 6: 1R0R */
 			{0x11, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00}
 		},
-		{  // Config 7: 0R1R
+		{ /* Config 7: 0R1R */
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x11, 0x00},
@@ -746,7 +746,7 @@ static enum cb_err increment_to_dqs_edge(struct sysinfo *s, u8 channel, u8 rank)
  * DDR3 uses flyby topology where the clock signal takes a different path
  * than the data signal, to allow for better signal intergrity.
  * Therefore the delay on the data signals needs to account for this.
- * This is done by by sampleling the the DQS write (tx) signal back over
+ * This is done by sampleling the DQS write (tx) signal back over
  * the DQ signal and looking for delay values where the sample transitions
  * from high to low.
  * Here the following is done:

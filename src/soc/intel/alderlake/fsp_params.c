@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <assert.h>
+#include <cbfs.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -89,6 +90,8 @@ __weak void mainboard_update_soc_chip_config(struct soc_intel_alderlake_config *
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 {
 	int i;
+	const struct microcode *microcode_file;
+	size_t microcode_len;
 	FSP_S_CONFIG *params = &supd->FspsConfig;
 
 	struct device *dev;
@@ -98,6 +101,14 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	/* Parse device tree and enable/disable Serial I/O devices */
 	parse_devicetree(params);
+
+	microcode_file = cbfs_map("cpu_microcode_blob.bin", &microcode_len);
+
+	if ((microcode_file != NULL) && (microcode_len != 0)) {
+		/* Update CPU Microcode patch base address/size */
+		params->MicrocodeRegionBase = (uint32_t)microcode_file;
+		params->MicrocodeRegionSize = (uint32_t)microcode_len;
+	}
 
 	/* Load VBT before devicetree-specific config. */
 	params->GraphicsConfigPtr = (uintptr_t)vbt_get();
@@ -259,7 +270,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* Enable Hybrid storage auto detection */
 	params->HybridStorageMode = config->HybridStorageMode;
 
-	for (i = 0; i < CONFIG_MAX_ROOT_PORTS; i++) {
+	for (i = 0; i < CONFIG_MAX_PCH_ROOT_PORTS; i++) {
 		params->PcieRpL1Substates[i] =
 			get_l1_substate_control(config->PcieRpL1Substates[i]);
 		params->PcieRpLtrEnable[i] = config->PcieRpLtrEnable[i];

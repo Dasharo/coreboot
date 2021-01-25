@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
-#include <cbmem.h>
+#include <acpi/acpi_gnvs.h>
+#include <acpi/acpi_pm.h>
+#include <bootstate.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <string.h>
@@ -11,14 +13,10 @@
 #include <soc/intel/broadwell/chip.h>
 
 /* Save bit index for PM1_STS and GPE_STS for ACPI _SWS */
-static void save_acpi_wake_source(struct global_nvs *gnvs)
+static void pm_fill_gnvs(struct global_nvs *gnvs, const struct chipset_power_state *ps)
 {
-	struct chipset_power_state *ps = cbmem_find(CBMEM_ID_POWER_STATE);
 	uint16_t pm1;
 	int gpe_reg;
-
-	if (!ps)
-		return;
 
 	pm1 = ps->pm1_sts & ps->pm1_en;
 
@@ -61,22 +59,22 @@ static void save_acpi_wake_source(struct global_nvs *gnvs)
 	       gnvs->pm1i, gnvs->gpei);
 }
 
-static void s3_resume_prepare(void)
+static void acpi_save_wake_source(void *unused)
 {
-	struct global_nvs *gnvs;
-
-	gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(struct global_nvs));
-	if (gnvs == NULL)
+	const struct chipset_power_state *ps;
+	struct global_nvs *gnvs = acpi_get_gnvs();
+	if (!gnvs)
 		return;
 
-	if (!acpi_is_wakeup_s3())
-		memset(gnvs, 0, sizeof(struct global_nvs));
-	else
-		save_acpi_wake_source(gnvs);
+	if (acpi_pm_state_for_wake(&ps) < 0)
+		return;
+
+	pm_fill_gnvs(gnvs, ps);
 }
+
+BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, acpi_save_wake_source, NULL);
 
 void broadwell_init_pre_device(void *chip_info)
 {
-	s3_resume_prepare();
 	broadwell_run_reference_code();
 }

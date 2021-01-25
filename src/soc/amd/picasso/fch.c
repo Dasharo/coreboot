@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi_gnvs.h>
+#include <acpi/acpi_pm.h>
 #include <console/console.h>
 #include <device/mmio.h>
 #include <bootstate.h>
@@ -9,8 +11,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
-#include <cbmem.h>
-#include <acpi/acpi_gnvs.h>
 #include <amdblocks/amd_pci_util.h>
 #include <amdblocks/reset.h>
 #include <amdblocks/acpimmio.h>
@@ -22,8 +22,8 @@
 #include <soc/southbridge.h>
 #include <soc/smi.h>
 #include <soc/amd_pci_int_defs.h>
+#include <soc/pci.h>
 #include <soc/pci_devs.h>
-#include <soc/nvs.h>
 #include <types.h>
 #include "chip.h"
 
@@ -89,9 +89,15 @@ const struct irq_idx_name *sb_get_apic_reg_association(size_t *size)
 void sb_clk_output_48Mhz(void)
 {
 	u32 ctrl;
+	const struct soc_amd_picasso_config *cfg;
+	cfg = config_of_soc();
 
 	ctrl = misc_read32(MISC_CLK_CNTL1);
-	ctrl |= BP_X48M0_OUTPUT_EN;
+	/* If used external clock source for I2S, disable the internal clock output */
+	if (cfg->acp_i2s_use_external_48mhz_osc && cfg->acp_pin_cfg == I2S_PINS_I2S_TDM)
+		ctrl &= ~BP_X48M0_OUTPUT_EN;
+	else
+		ctrl |= BP_X48M0_OUTPUT_EN;
 	misc_write32(MISC_CLK_CNTL1, ctrl);
 }
 
@@ -137,23 +143,6 @@ static void sb_init_acpi_ports(void)
 				PM_ACPI_RTC_EN_EN |
 				PM_ACPI_TIMER_EN_EN);
 }
-
-static void set_nvs_sws(void *unused)
-{
-	struct chipset_state *state;
-	struct global_nvs *gnvs;
-
-	state = cbmem_find(CBMEM_ID_POWER_STATE);
-	if (state == NULL)
-		return;
-	gnvs = acpi_get_gnvs();
-	if (gnvs == NULL)
-		return;
-
-	acpi_fill_gnvs(gnvs, &state->gpe_state);
-}
-
-BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, set_nvs_sws, NULL);
 
 /*
  * A-Link to AHB bridge, part of the AMBA fabric. These are internal clocks
@@ -216,12 +205,12 @@ static void gpp_clk_setup(void)
 
 void southbridge_init(void *chip_info)
 {
-	struct chipset_state *state;
+	struct chipset_power_state *state;
 
 	i2c_soc_init();
 	sb_init_acpi_ports();
 
-	state = cbmem_find(CBMEM_ID_POWER_STATE);
+	state = acpi_get_pm_state();
 	if (state) {
 		acpi_pm_gpe_add_events_print_events(&state->gpe_state);
 		gpio_add_events(&state->gpio_state);
@@ -231,6 +220,8 @@ void southbridge_init(void *chip_info)
 	al2ahb_clock_gate();
 
 	gpp_clk_setup();
+
+	sb_clk_output_48Mhz();
 }
 
 void southbridge_final(void *chip_info)
@@ -250,6 +241,9 @@ static void set_pci_irqs(void *unused)
 {
 	/* Write PCI_INTR regs 0xC00/0xC01 */
 	write_pci_int_table();
+
+	/* pirq_data is consumed by `write_pci_cfg_irqs` */
+	populate_pirq_data();
 
 	/* Write IRQs for all devicetree enabled devices */
 	write_pci_cfg_irqs();

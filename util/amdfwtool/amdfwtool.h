@@ -3,14 +3,6 @@
 #ifndef _AMD_FW_TOOL_H_
 #define _AMD_FW_TOOL_H_
 
-#if defined(__GLIBC__)
-typedef unsigned long long int uint64_t;
-typedef unsigned int uint32_t;
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-#endif
-
-
 typedef enum _amd_fw_type {
 	AMD_FW_PSP_PUBKEY = 0,
 	AMD_FW_PSP_BOOTLOADER = 1,
@@ -26,11 +18,13 @@ typedef enum _amd_fw_type {
 	AMD_PSP_FUSE_CHAIN = 11,
 	AMD_FW_PSP_SMUSCS = 95,
 	AMD_DEBUG_UNLOCK = 0x13,
+	AMD_HW_IPCFG = 0x20,
 	AMD_WRAPPED_IKEK = 0x21,
 	AMD_TOKEN_UNLOCK = 0x22,
 	AMD_SEC_GASKET = 0x24,
 	AMD_MP2_FW = 0x25,
 	AMD_DRIVER_ENTRIES = 0x28,
+	AMD_FW_KVM_IMAGE = 0x29,
 	AMD_S0I3_DRIVER = 0x2d,
 	AMD_ABL0 = 0x30,
 	AMD_ABL1 = 0x31,
@@ -41,9 +35,18 @@ typedef enum _amd_fw_type {
 	AMD_ABL6 = 0x36,
 	AMD_ABL7 = 0x37,
 	AMD_FW_PSP_WHITELIST = 0x3a,
+	AMD_VBIOS_BTLOADER = 0x3c,
 	AMD_FW_L2_PTR = 0x40,
+	AMD_FW_USB_PHY = 0x44,
+	AMD_FW_TOS_SEC_POLICY = 0x45,
+	AMD_FW_DRTM_TA = 0x47,
+	AMD_FW_KEYDB_BL = 0x50,
+	AMD_FW_KEYDB_TOS = 0x51,
 	AMD_FW_PSP_VERSTAGE = 0x52,
 	AMD_FW_VERSTAGE_SIG = 0x53,
+	AMD_RPMC_NVRAM = 0x54,
+	AMD_FW_DMCU_ERAM = 0x58,
+	AMD_FW_DMCU_ISR = 0x59,
 	AMD_FW_IMC = 0x200,	/* Large enough to be larger than the top BHD entry type. */
 	AMD_FW_GEC,
 	AMD_FW_XHCI,
@@ -52,6 +55,7 @@ typedef enum _amd_fw_type {
 } amd_fw_type;
 
 typedef enum _amd_bios_type {
+	AMD_BIOS_RTM_PUBKEY = 5,
 	AMD_BIOS_APCB = 0x60,
 	AMD_BIOS_APOB = 0x61,
 	AMD_BIOS_BIN = 0x62,

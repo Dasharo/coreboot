@@ -12,7 +12,7 @@ Name (\PICM, 0)		// IOAPIC/8259
  */
 
 External (NVSA)
-OperationRegion (GNVS, SystemMemory, NVSA, 0xf00)
+OperationRegion (GNVS, SystemMemory, NVSA, 0x1000)
 Field (GNVS, ByteAcc, NoLock, Preserve)
 {
 	/* Miscellaneous */
@@ -54,12 +54,12 @@ Field (GNVS, ByteAcc, NoLock, Preserve)
 	TMPS,	 8,	// 0x25 - Temperature Sensor ID
 	/* Processor Identification */
 	Offset (0x28),
-	APIC,	 8,	// 0x28 - APIC Enabled by coreboot
-	MPEN,	 8,	// 0x29 - Multi Processor Enable
+	,	 8,	// 0x28 -  Enabled by coreboot
+	,	 8,	// 0x29 - Multi Processor Enable
 	PCP0,	 8,	// 0x2a - PDC CPU/CORE 0
 	PCP1,	 8,	// 0x2b - PDC CPU/CORE 1
 	PPCM,	 8,	// 0x2c - Max. PPC state
-	PCNT,	 8,	// 0x2d - Processor count
+	,	 8,	// 0x2d - Processor count
 	/* Super I/O & CMOS config */
 	Offset (0x32),
 	NATP,	 8,	// 0x32 -

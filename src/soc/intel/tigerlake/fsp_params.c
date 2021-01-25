@@ -123,6 +123,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	else
 		params->D3ColdEnable = !config->TcssD3ColdDisable;
 
+	params->UsbTcPortEn = config->UsbTcPortEn;
 	params->TcssAuxOri = config->TcssAuxOri;
 	for (i = 0; i < 8; i++)
 		params->IomTypeCPortPadCfg[i] = config->IomTypeCPortPadCfg[i];
@@ -133,6 +134,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	 * delay for command completion.
 	 */
 	params->ITbtConnectTopologyTimeoutInMs = 0;
+
+	/* Disable TcColdOnUsbConnect */
+	params->DisableTccoldOnUsbConnected = 1;
 
 	/* Chipset Lockdown */
 	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT) {
@@ -159,6 +163,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 			params->Usb2OverCurrentPin[i] = config->usb2_ports[i].ocpin;
 		else
 			params->Usb2OverCurrentPin[i] = 0xff;
+
+		if (config->usb2_ports[i].type_c)
+			params->PortResetMessageEnable[i] = 1;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(config->usb3_ports); i++) {

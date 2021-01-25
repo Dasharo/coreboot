@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <cpu/intel/haswell/haswell.h>
 #include <acpi/acpi.h>
 #include <device/pci_ops.h>
 #include <stdint.h>
@@ -10,7 +11,6 @@
 #include <device/pci_ids.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <soc/acpi.h>
-#include <soc/cpu.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
@@ -461,7 +461,7 @@ static struct device_operations pci_domain_ops = {
 static struct device_operations cpu_bus_ops = {
 	.read_resources   = noop_read_resources,
 	.set_resources    = noop_set_resources,
-	.init             = &broadwell_init_cpus,
+	.init             = mp_cpu_bus_init,
 };
 
 static void broadwell_enable(struct device *dev)

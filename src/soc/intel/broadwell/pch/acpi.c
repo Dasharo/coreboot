@@ -14,13 +14,9 @@
 #include <arch/cpu.h>
 #include <cpu/x86/msr.h>
 #include <cpu/intel/turbo.h>
-#include <ec/google/chromeec/ec.h>
-#include <vendorcode/google/chromeos/gnvs.h>
 #include <soc/acpi.h>
-#include <soc/cpu.h>
 #include <soc/iomap.h>
 #include <soc/lpc.h>
-#include <soc/msr.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/systemagent.h>

@@ -16,15 +16,15 @@
 #include <cpu/x86/smm.h>
 #include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
-#include <cbmem.h>
 #include <string.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
+#include <southbridge/intel/common/hpet.h>
 #include <southbridge/intel/common/pmbase.h>
 #include <southbridge/intel/common/spi.h>
+#include <soc/nvs.h>
 
 #include "chip.h"
 #include "i82801gx.h"
-#include "nvs.h"
 
 #define NMI_OFF	0
 
@@ -269,21 +269,6 @@ static void i82801gx_rtc_init(struct device *dev)
 	cmos_init(rtc_failed);
 }
 
-static void enable_hpet(void)
-{
-	u32 reg32;
-
-	/* Move HPET to default address 0xfed00000 and enable it */
-	reg32 = RCBA32(HPTC);
-	reg32 |= (1 << 7); // HPET Address Enable
-	reg32 &= ~(3 << 0);
-	RCBA32(HPTC) = reg32;
-	/* On NM10 this only works if read back */
-	RCBA32(HPTC);
-
-	write32((u32 *)0xfed00010, read32((u32 *)0xfed00010) | 1);
-}
-
 static void enable_clock_gating(void)
 {
 	u32 reg32;
@@ -479,26 +464,10 @@ static void lpc_final(struct device *dev)
 	outb(POST_OS_BOOT, 0x80);
 }
 
-void southbridge_inject_dsdt(const struct device *dev)
+void soc_fill_gnvs(struct global_nvs *gnvs)
 {
-	struct global_nvs *gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
-
-	if (gnvs) {
-		memset(gnvs, 0, sizeof(*gnvs));
-
-		gnvs->apic = 1;
-		gnvs->mpen = 1; /* Enable Multi Processing */
-
-		acpi_create_gnvs(gnvs);
-
-		/* And tell SMI about it */
-		apm_control(APM_CNT_GNVS_UPDATE);
-
-		/* Add it to SSDT.  */
-		acpigen_write_scope("\\");
-		acpigen_write_name_dword("NVSA", (u32) gnvs);
-		acpigen_pop_len();
-	}
+	/* MPEN, Enable Multi Processing. */
+	gnvs->mpen = dev_count_cpu() > 1 ? 1 : 0;
 }
 
 static const char *lpc_acpi_name(const struct device *dev)
@@ -515,7 +484,6 @@ static struct device_operations device_ops = {
 	.read_resources		= i82801gx_lpc_read_resources,
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
-	.acpi_inject_dsdt	= southbridge_inject_dsdt,
 	.write_acpi_tables      = acpi_write_hpet,
 	.acpi_fill_ssdt		= southbridge_fill_ssdt,
 	.acpi_name		= lpc_acpi_name,

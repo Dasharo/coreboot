@@ -36,17 +36,18 @@ void iosav_run_queue(const int ch, const u8 loops, const u8 as_timer)
 	MCHBAR32(IOSAV_SEQ_CTL_ch(ch)) = loops | ((ssq_count - 1) << 18) | (as_timer << 22);
 }
 
-void iosav_run_once(const int ch)
-{
-	iosav_run_queue(ch, 1, 0);
-}
-
 void wait_for_iosav(int channel)
 {
 	while (1) {
 		if (MCHBAR32(IOSAV_STATUS_ch(channel)) & 0x50)
 			return;
 	}
+}
+
+void iosav_run_once_and_wait(const int ch)
+{
+	iosav_run_queue(ch, 1, 0);
+	wait_for_iosav(ch);
 }
 
 void iosav_write_zqcs_sequence(int channel, int slotrank, u32 gap, u32 post, u32 wrap)
@@ -93,7 +94,7 @@ void iosav_write_prea_sequence(int channel, int slotrank, u32 post, u32 wrap)
 				.data_direction = SSQ_NA,
 			},
 			.sp_cmd_addr = {
-				.address = 1024,
+				.address = 1 << 10,
 				.rowbits = 6,
 				.bank    = 0,
 				.rank    = slotrank,
@@ -215,7 +216,7 @@ void iosav_write_prea_act_read_sequence(ramctr_timing *ctrl, int channel, int sl
 				.data_direction = SSQ_NA,
 			},
 			.sp_cmd_addr = {
-				.address = 1024,
+				.address = 1 << 10,
 				.rowbits = 6,
 				.bank    = 0,
 				.rank    = slotrank,
@@ -283,7 +284,7 @@ void iosav_write_prea_act_read_sequence(ramctr_timing *ctrl, int channel, int sl
 				.data_direction = SSQ_NA,
 			},
 			.sp_cmd_addr = {
-				.address = 1024,
+				.address = 1 << 10,
 				.rowbits = 6,
 				.bank    = 0,
 				.rank    = slotrank,
@@ -571,7 +572,7 @@ void iosav_write_command_training_sequence(
 				.data_direction = SSQ_NA,
 			},
 			.sp_cmd_addr = {
-				.address = 1024,
+				.address = 1 << 10,
 				.rowbits = 6,
 				.bank    = 0,
 				.rank    = slotrank,
@@ -669,7 +670,7 @@ void iosav_write_data_write_sequence(ramctr_timing *ctrl, int channel, int slotr
 				.data_direction = SSQ_NA,
 			},
 			.sp_cmd_addr = {
-				.address = 1024,
+				.address = 1 << 10,
 				.rowbits = 6,
 				.bank    = 0,
 				.rank    = slotrank,
@@ -764,7 +765,7 @@ void iosav_write_aggressive_write_read_sequence(ramctr_timing *ctrl, int channel
 				.data_direction = SSQ_NA,
 			},
 			.sp_cmd_addr = {
-				.address = 1024,
+				.address = 1 << 10,
 				.rowbits = 6,
 				.bank    = 0,
 				.rank    = slotrank,
@@ -859,7 +860,7 @@ void iosav_write_memory_test_sequence(ramctr_timing *ctrl, int channel, int slot
 				.data_direction = SSQ_NA,
 			},
 			.sp_cmd_addr = {
-				.address = 1024,
+				.address = 1 << 10,
 				.rowbits = 6,
 				.bank    = 0,
 				.rank    = slotrank,

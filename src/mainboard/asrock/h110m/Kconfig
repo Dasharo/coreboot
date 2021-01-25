@@ -29,14 +29,6 @@ config MAINBOARD_PART_NUMBER
 	string
 	default "H110M"
 
-config MAX_CPUS
-	int
-	default 8
-
-config DEVICETREE
-	string
-	default "devicetree.cb"
-
 config PRERAM_CBMEM_CONSOLE_SIZE
 	hex
 	default 0xd00
@@ -44,10 +36,5 @@ config PRERAM_CBMEM_CONSOLE_SIZE
 config DIMM_SPD_SIZE
 	int
 	default 512 #DDR4
-
-# This is overridden if CMOS is used for configuration values.
-config MAINBOARD_POWER_ON_AFTER_POWER_FAIL
-	bool
-	default n
 
 endif

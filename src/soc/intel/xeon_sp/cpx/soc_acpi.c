@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <assert.h>
@@ -8,6 +7,7 @@
 #include <cpu/intel/turbo.h>
 #include <device/mmio.h>
 #include <device/pci.h>
+#include <intelblocks/acpi.h>
 #include <intelblocks/cpulib.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
@@ -24,13 +24,6 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *)current,
 		CONFIG_MMCONF_BASE_ADDRESS, 0, 0, 255);
 	return current;
-}
-
-void acpi_create_gnvs(struct global_nvs *gnvs)
-{
-	/* CPU core count */
-	gnvs->pcnt = dev_count_cpu();
-	printk(BIOS_DEBUG, "%s gnvs->pcnt: %d\n", __func__, gnvs->pcnt);
 }
 
 int soc_madt_sci_irq_polarity(int sci)
@@ -218,7 +211,7 @@ void soc_power_states_generation(int core, int cores_per_package)
 	     ratio >= ratio_min; ratio -= ratio_step) {
 
 		/* Calculate power at this ratio */
-		power = calculate_power(power_max, ratio_max, ratio);
+		power = common_calculate_power_ratio(power_max, ratio_max, ratio);
 		clock = ratio * CONFIG_CPU_BCLK_MHZ;
 		//clock = 1;
 		acpigen_write_PSS_package(

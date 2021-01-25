@@ -3,22 +3,11 @@
 #ifndef RAMINIT_COMMON_H
 #define RAMINIT_COMMON_H
 
+#include <cpu/intel/model_206ax/model_206ax.h>
 #include <stdint.h>
 
 #define BASEFREQ	133
 #define tDLLK		512
-
-#define IS_SANDY_CPU(x)    ((x & 0xffff0) == 0x206a0)
-#define IS_SANDY_CPU_C(x)  ((x & 0xf) == 4)
-#define IS_SANDY_CPU_D0(x) ((x & 0xf) == 5)
-#define IS_SANDY_CPU_D1(x) ((x & 0xf) == 6)
-#define IS_SANDY_CPU_D2(x) ((x & 0xf) == 7)
-
-#define IS_IVY_CPU(x)   ((x & 0xffff0) == 0x306a0)
-#define IS_IVY_CPU_C(x) ((x & 0xf) == 4)
-#define IS_IVY_CPU_K(x) ((x & 0xf) == 5)
-#define IS_IVY_CPU_D(x) ((x & 0xf) == 6)
-#define IS_IVY_CPU_E(x) ((x & 0xf) >= 8)
 
 #define NUM_CHANNELS	2
 #define NUM_SLOTRANKS	4
@@ -96,6 +85,34 @@ struct iosav_ssq {
 		};
 		u32 raw;
 	} addr_update;
+};
+
+union gdcr_rx_reg {
+	struct {
+		u32 rcven_pi_code     : 6; /* [ 5.. 0] */
+		u32                   : 2;
+		u32 rx_dqs_p_pi_code  : 7; /* [14.. 8] */
+		u32                   : 1;
+		u32 rcven_logic_delay : 3; /* [18..16] */
+		u32                   : 1;
+		u32 rx_dqs_n_pi_code  : 7; /* [26..20] */
+		u32                   : 5;
+	};
+	u32 raw;
+};
+
+union gdcr_tx_reg {
+	struct {
+		u32 tx_dq_pi_code      :  6; /* [ 5.. 0] */
+		u32                    :  2;
+		u32 tx_dqs_pi_code     :  6; /* [13.. 8] */
+		u32                    :  1;
+		u32 tx_dqs_logic_delay :  3; /* [17..15] */
+		u32                    :  1;
+		u32 tx_dq_logic_delay  :  1; /* [19..19] */
+		u32                    : 12;
+	};
+	u32 raw;
 };
 
 union gdcr_cmd_pi_coding_reg {
@@ -263,8 +280,8 @@ typedef struct ramctr_timing_st ramctr_timing;
 
 void iosav_write_sequence(const int ch, const struct iosav_ssq *seq, const unsigned int length);
 void iosav_run_queue(const int ch, const u8 loops, const u8 as_timer);
-void iosav_run_once(const int ch);
 void wait_for_iosav(int channel);
+void iosav_run_once_and_wait(const int ch);
 
 void iosav_write_zqcs_sequence(int channel, int slotrank, u32 gap, u32 post, u32 wrap);
 void iosav_write_prea_sequence(int channel, int slotrank, u32 post, u32 wrap);
@@ -321,14 +338,14 @@ struct ram_rank_timings {
 	int pi_coding;
 
 	struct ram_lane_timings {
-		/* Lane register offset 0x10 */
-		u16 timA;	/* bits  0 -  5, bits 16 - 18 */
-		u8 rising;	/* bits  8 - 14 */
-		u8 falling;	/* bits 20 - 26 */
+		/* GDCR RX timings */
+		u16 rcven;
+		u8 rx_dqs_p;
+		u8 rx_dqs_n;
 
-		/* Lane register offset 0x20 */
-		int timC;	/* bits 0 -  5, 19 */
-		u16 timB;	/* bits 8 - 13, 15 - 17 */
+		/* GDCR TX timings */
+		int tx_dq;
+		u16 tx_dqs;
 	} lanes[NUM_LANES];
 };
 
@@ -391,7 +408,7 @@ typedef struct ramctr_timing_st {
 	bool ecc_enabled;
 	int lanes;	/* active lanes: 8 or 9 */
 	int edge_offset[3];
-	int timC_offset[3];
+	int tx_dq_offset[3];
 
 	int extended_temperature_range;
 	int auto_self_refresh;
@@ -410,11 +427,17 @@ typedef struct ramctr_timing_st {
 #define FOR_ALL_POPULATED_RANKS for (slotrank = 0; slotrank < NUM_SLOTRANKS; slotrank++) if (ctrl->rankmap[channel] & (1 << slotrank))
 #define FOR_ALL_POPULATED_CHANNELS for (channel = 0; channel < NUM_CHANNELS; channel++) if (ctrl->rankmap[channel])
 #define MAX_EDGE_TIMING 71
-#define MAX_TIMC 127
-#define MAX_TIMB 511
-#define MAX_TIMA 127
+#define MAX_TX_DQ 127
+#define MAX_TX_DQS 511
+#define MAX_RCVEN 127
 #define MAX_CAS 18
 #define MIN_CAS 4
+
+/*
+ * 1 QCLK (quarter of a clock cycle) equals 64 PI (phase interpolator) ticks.
+ * Logic delay values in I/O register bitfields are expressed in QCLKs.
+ */
+#define QCLK_PI	64
 
 #define MAKE_ERR		((channel << 16) | (slotrank << 8) | 1)
 #define GET_ERR_CHANNEL(x)	(x >> 16)

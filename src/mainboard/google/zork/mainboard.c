@@ -7,7 +7,6 @@
 #include <device/mmio.h>
 #include <acpi/acpi.h>
 #include <acpi/acpigen.h>
-#include <acpi/acpi_gnvs.h>
 #include <amdblocks/amd_pci_util.h>
 #include <amdblocks/gpio_banks.h>
 #include <amdblocks/smi.h>
@@ -17,7 +16,6 @@
 #include <smbios.h>
 #include <soc/cpu.h>
 #include <soc/gpio.h>
-#include <soc/nvs.h>
 #include <soc/pci_devs.h>
 #include <soc/platform_descriptors.h>
 #include <soc/southbridge.h>
@@ -51,42 +49,30 @@ _Static_assert(sizeof(fch_pic_routing) == sizeof(fch_apic_routing),
 	"PIC and APIC FCH interrupt tables must be the same size");
 
 /*
- * This table doesn't actually perform any routing. It only populates the
- * PCI_INTERRUPT_LINE register on the PCI device with the PIC value specified
- * in fch_apic_routing. The linux kernel only looks at this field as a backup
- * if ACPI routing fails to describe the PCI routing correctly. The linux kernel
- * also uses the APIC by default, so the value coded into the registers will be
- * wrong.
- *
- * This table is also confusing because PCI Interrupt routing happens at the
- * device/slot level, not the function level.
- */
-static const struct pirq_struct mainboard_pirq_data[] = {
-	{ PCIE_GPP_0_DEVFN,	{ PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D } },
-	{ PCIE_GPP_1_DEVFN,	{ PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D } }, // Bridge 1 - Wifi
-	{ PCIE_GPP_2_DEVFN,	{ PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D } }, // Bridge 2 - SD
-	{ PCIE_GPP_3_DEVFN,	{ PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D } },
-	{ PCIE_GPP_4_DEVFN,	{ PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D } },
-	{ PCIE_GPP_5_DEVFN,	{ PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D } },
-	{ PCIE_GPP_6_DEVFN,	{ PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D } }, // Bridge 6 - NVME
-	{ PCIE_GPP_A_DEVFN,	{ PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D } },
-	{ PCIE_GPP_B_DEVFN,	{ PIRQ_A, PIRQ_B, PIRQ_C, PIRQ_D } },
-	{ SMBUS_DEVFN,	{ PIRQ_SMBUS, PIRQ_NC, PIRQ_NC, PIRQ_NC } },
-};
-
-/*
  * This controls the device -> IRQ routing.
- * The PIC values are limited to 0,1, 3 - 12, 14, 15.
+ *
+ * Hardcoded IRQs:
+ *  0: timer < soc/amd/common/acpi/lpc.asl
+ *  1: i8042 <- ec/google/chromeec/acpi/superio.asl
+ *  2: cascade
+ *  8: rtc0 <- soc/amd/common/acpi/lpc.asl
+ *  9: acpi <- soc/amd/common/acpi/lpc.asl
+ * 12: i8042 <- ec/google/chromeec/acpi/superio.asl
  */
 static const struct fch_irq_routing {
 	uint8_t intr_index;
 	uint8_t pic_irq_num;
 	uint8_t apic_irq_num;
 } fch_pirq[] = {
-	{ PIRQ_A,	6,		16 },
-	{ PIRQ_B,	6,		17 },
-	{ PIRQ_C,	14,		18 },
-	{ PIRQ_D,	15,		19 },
+	{ PIRQ_A,	6,		PIRQ_NC },
+	{ PIRQ_B,	13,		PIRQ_NC },
+	{ PIRQ_C,	14,		PIRQ_NC },
+	{ PIRQ_D,	15,		PIRQ_NC },
+	{ PIRQ_E,	15,		PIRQ_NC },
+	{ PIRQ_F,	14,		PIRQ_NC },
+	{ PIRQ_G,	13,		PIRQ_NC },
+	{ PIRQ_H,	6,		PIRQ_NC },
+
 	{ PIRQ_SCI,	9,		9 },
 	{ PIRQ_EMMC,	5,		5 },
 	{ PIRQ_GPIO,	7,		7 },
@@ -121,9 +107,6 @@ static void init_tables(void)
 static void pirq_setup(void)
 {
 	init_tables();
-
-	pirq_data_ptr = mainboard_pirq_data;
-	pirq_data_size = ARRAY_SIZE(mainboard_pirq_data);
 	intr_data_ptr = fch_apic_routing;
 	picr_data_ptr = fch_pic_routing;
 }
@@ -231,16 +214,6 @@ static void zork_enable(struct device *dev)
 
 static void mainboard_final(void *chip_info)
 {
-	struct global_nvs *gnvs;
-
-	gnvs = acpi_get_gnvs();
-
-	if (gnvs) {
-		gnvs->tmps = CTL_TDP_SENSOR_ID;
-		gnvs->tcrt = CRITICAL_TEMPERATURE;
-		gnvs->tpsv = PASSIVE_TEMPERATURE;
-	}
-
 	finalize_gpios(acpi_get_sleep_type());
 }
 

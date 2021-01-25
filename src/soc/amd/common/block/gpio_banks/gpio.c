@@ -147,23 +147,24 @@ void gpio_set(gpio_t gpio_num, int value)
 
 void gpio_input_pulldown(gpio_t gpio_num)
 {
-	gpio_setbits32(gpio_num, GPIO_PULL_MASK, GPIO_PULLDOWN_ENABLE);
+	gpio_setbits32(gpio_num, GPIO_PULL_MASK | GPIO_OUTPUT_ENABLE, GPIO_PULLDOWN_ENABLE);
 }
 
 void gpio_input_pullup(gpio_t gpio_num)
 {
-	gpio_setbits32(gpio_num, GPIO_PULL_MASK, GPIO_PULLUP_ENABLE);
+	gpio_setbits32(gpio_num, GPIO_PULL_MASK | GPIO_OUTPUT_ENABLE, GPIO_PULLUP_ENABLE);
 }
 
 void gpio_input(gpio_t gpio_num)
 {
-	gpio_and32(gpio_num, ~GPIO_OUTPUT_ENABLE);
+	gpio_and32(gpio_num, ~(GPIO_PULL_MASK | GPIO_OUTPUT_ENABLE));
 }
 
 void gpio_output(gpio_t gpio_num, int value)
 {
-	gpio_or32(gpio_num, GPIO_OUTPUT_ENABLE);
+	/* set GPIO output value before setting the direction to output to avoid glitches */
 	gpio_set(gpio_num, value);
+	gpio_or32(gpio_num, GPIO_OUTPUT_ENABLE);
 }
 
 const char *gpio_acpi_path(gpio_t gpio)
