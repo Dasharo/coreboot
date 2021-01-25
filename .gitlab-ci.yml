@@ -77,7 +77,7 @@ check_dependencies:
 
 .run_regression: &run_regression
   image:
-    name: 3mdeb/rf-docker:1.0.0
+    name: 3mdeb/rf-docker:1.1.0
     # https://docs.gitlab.com/ee/ci/docker/using_docker_images.html#overriding-the-entrypoint-of-an-image
     # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2692
     # use EMPTY ENTRYPOINT for docker >17.06

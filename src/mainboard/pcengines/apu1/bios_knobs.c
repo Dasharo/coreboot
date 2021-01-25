@@ -59,8 +59,7 @@ static u8 check_knob_value(const char *s)
 	// This function locates a file in cbfs, maps it to memory and returns
 	// a void* pointer
 	//
-	boot_file = cbfs_boot_map_with_leak(BOOTORDER_FILE, CBFS_TYPE_RAW,
-						&boot_file_len);
+	boot_file = (const char *)cbfs_map(BOOTORDER_FILE, &boot_file_len);
 	if (boot_file == NULL)
 		printk(BIOS_INFO, "file [%s] not found in CBFS\n",
 			BOOTORDER_FILE);
@@ -70,6 +69,7 @@ static u8 check_knob_value(const char *s)
 		return -1;
 
 	token = findstr( boot_file, s );
+	cbfs_unmap((void *)boot_file);
 
 	if (token) {
 		if (*token == '0') return 0;
