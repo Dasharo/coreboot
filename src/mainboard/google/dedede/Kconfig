@@ -7,6 +7,7 @@ config BOARD_GOOGLE_BASEBOARD_DEDEDE
 	select DRIVERS_I2C_GENERIC
 	select DRIVERS_I2C_GPIO_MUX
 	select DRIVERS_I2C_HID
+	select DRIVERS_I2C_SX9324
 	select DRIVERS_INTEL_DPTF
 	select DRIVERS_SPI_ACPI
 	select DRIVERS_USB_ACPI
@@ -99,6 +100,7 @@ config MAINBOARD_PART_NUMBER
 	default "Galtic" if BOARD_GOOGLE_GALTIC
 	default "Sasuke" if BOARD_GOOGLE_SASUKE
 	default "Storo" if BOARD_GOOGLE_STORO
+	default "Sasukette" if BOARD_GOOGLE_SASUKETTE
 
 config MAX_CPUS
 	int
@@ -133,5 +135,6 @@ config VARIANT_DIR
 	default "galtic" if BOARD_GOOGLE_GALTIC
 	default "sasuke" if BOARD_GOOGLE_SASUKE
 	default "storo" if BOARD_GOOGLE_STORO
+	default "sasukette" if BOARD_GOOGLE_SASUKETTE
 
 endif #BOARD_GOOGLE_BASEBOARD_DEDEDE

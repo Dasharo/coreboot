@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <soc/iomap.h>
+#include <amdblocks/gpio_defs.h>
 
 /* Get pin control MMIO address */
 Method (GPAD, 0x1)
@@ -116,4 +117,64 @@ Method (GPW3, 0x2)
 	/* Arg0 - GPIO pin control MMIO address */
 	/* Arg1 - Value for control register */
 	GPSB (Arg0, 3, Arg1)
+}
+
+/*
+ * Set GPIO Output Value
+ * Arg0 - GPIO Number
+ */
+Method (STXS, 1, Serialized)
+{
+	OperationRegion (GPDW, SystemMemory, GPAD (Arg0), 4)
+	Field (GPDW, AnyAcc, NoLock, Preserve)
+	{
+		VAL0, 32
+	}
+	VAL0 |= GPIO_OUTPUT_VALUE
+}
+
+/*
+ * Clear GPIO Output Value
+ * Arg0 - GPIO Number
+ */
+Method (CTXS, 1, Serialized)
+{
+	OperationRegion (GPDW, SystemMemory, GPAD (Arg0), 4)
+	Field (GPDW, AnyAcc, NoLock, Preserve)
+	{
+		VAL0, 32
+	}
+	VAL0 &= ~GPIO_OUTPUT_VALUE
+}
+
+/*
+ * Get GPIO Input Value
+ * Arg0 - GPIO Number
+ */
+Method (GRXS, 1, Serialized)
+{
+	OperationRegion (GPDW, SystemMemory, GPAD (Arg0), 4)
+	Field (GPDW, AnyAcc, NoLock, Preserve)
+	{
+		VAL0, 32
+	}
+	Local0 = (GPIO_INPUT_VALUE & VAL0) >> GPIO_INPUT_SHIFT
+
+	Return (Local0)
+}
+
+/*
+ * Get GPIO Output Value
+ * Arg0 - GPIO Number
+ */
+Method (GTXS, 1, Serialized)
+{
+	OperationRegion (GPDW, SystemMemory, GPAD (Arg0), 4)
+	Field (GPDW, AnyAcc, NoLock, Preserve)
+	{
+		VAL0, 32
+	}
+	Local0 = (GPIO_OUTPUT_VALUE & VAL0) >> GPIO_OUTPUT_SHIFT
+
+	Return (Local0)
 }

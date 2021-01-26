@@ -63,13 +63,12 @@ chip soc/intel/jasperlake
 	}"
 
 	register "tcc_offset" = "20"	# TCC of 85C
-	register "ImonOffset" = "1400"  # Imon Offset = 1.4
-	register "ImonSlope" = "100"    # Imon Slope = 1.0
 
 	# Enable Acoustic noise mitigation and set slew rate to 1/4
         # Rest of the parameters are 0 by default.
 	register "AcousticNoiseMitigation" = "1"
-	register "SlowSlewRate" = "1"
+	register "SlowSlewRate" = "SlewRateFastBy4"
+	register "FastPkgCRampDisable" = "1"
 
 	device domain 0 on
 		device pci 05.0 on # IPU - MIPI Camera
@@ -163,6 +162,17 @@ chip soc/intel/jasperlake
 			end
 		end #I2C 0
 		device pci 15.2 on
+                        chip drivers/generic/gpio_keys
+				register "name" = ""PENH""
+				register "gpio" = "ACPI_GPIO_INPUT_ACTIVE_LOW(GPP_C12)"
+				register "key.wakeup_route" = "WAKEUP_ROUTE_GPIO_IRQ"
+				register "key.wakeup_event_action" = "EV_ACT_DEASSERTED"
+				register "key.dev_name" = ""EJCT""
+				register "key.linux_code" = "SW_PEN_INSERTED"
+				register "key.linux_input_type" = "EV_SW"
+				register "key.label" = ""pen_eject""
+				device generic 0 on end
+			end
 			chip drivers/i2c/generic
 				register "hid" = ""ELAN0001""
 				register "desc" = ""ELAN Touchscreen""

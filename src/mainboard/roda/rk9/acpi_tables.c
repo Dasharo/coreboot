@@ -5,12 +5,10 @@
 #include <acpi/acpi_gnvs.h>
 #include <arch/smp/mpspec.h>
 #include <device/device.h>
-#include <southbridge/intel/i82801ix/nvs.h>
+#include <soc/nvs.h>
 
-void acpi_create_gnvs(struct global_nvs *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
-	gnvs->apic = 1;
-	gnvs->mpen = 1; /* Enable Multi Processing */
 
 	/* Enable both COM ports */
 	gnvs->cmap = 0x01;

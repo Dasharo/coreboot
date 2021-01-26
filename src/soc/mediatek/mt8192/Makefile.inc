@@ -2,7 +2,9 @@ ifeq ($(CONFIG_SOC_MEDIATEK_MT8192),y)
 
 bootblock-y += ../common/auxadc.c
 bootblock-y += bootblock.c
-bootblock-y += flash_controller.c
+bootblock-y += clkbuf.c srclken_rc.c
+bootblock-y += eint_event.c
+bootblock-y += ../common/flash_controller.c
 bootblock-y += ../common/gpio.c gpio.c
 bootblock-y += ../common/i2c.c i2c.c
 bootblock-y += ../common/mmu_operations.c
@@ -12,11 +14,12 @@ bootblock-y += ../common/timer.c
 bootblock-y += ../common/uart.c
 bootblock-y += ../common/wdt.c
 bootblock-y += pmif.c pmif_clk.c pmif_spi.c pmif_spmi.c
+bootblock-y += ../common/rtc.c ../common/rtc_osc_init.c rtc.c
 bootblock-y += mt6315.c
 bootblock-y += mt6359p.c
 
 verstage-y += ../common/auxadc.c
-verstage-y += flash_controller.c
+verstage-y += ../common/flash_controller.c
 verstage-y += ../common/gpio.c gpio.c
 verstage-y += ../common/i2c.c i2c.c
 verstage-$(CONFIG_SPI_FLASH) += ../common/spi.c spi.c
@@ -25,9 +28,10 @@ verstage-y += ../common/uart.c
 
 romstage-y += ../common/auxadc.c
 romstage-y += ../common/cbmem.c
-romstage-y += dramc_pi_main.c dramc_pi_basic_api.c dramc_utility.c
+romstage-y += dramc_pi_main.c dramc_pi_basic_api.c dramc_pi_calibration_api.c
+romstage-y += dramc_utility.c dramc_dvfs.c
 romstage-y += emi.c
-romstage-y += flash_controller.c
+romstage-y += ../common/flash_controller.c
 romstage-y += ../common/gpio.c gpio.c
 romstage-y += ../common/i2c.c i2c.c
 romstage-y += ../common/mmu_operations.c mmu_operations.c
@@ -40,9 +44,10 @@ romstage-y += mt6359p.c
 
 ramstage-y += ../common/auxadc.c
 ramstage-y += ../common/ddp.c ddp.c
+ramstage-y += devapc.c
 ramstage-y += dpm.c
 ramstage-y += ../common/dsi.c ../common/mtk_mipi_dphy.c
-ramstage-y += flash_controller.c
+ramstage-y += ../common/flash_controller.c
 ramstage-y += ../common/gpio.c gpio.c
 ramstage-y += ../common/i2c.c i2c.c
 ramstage-y += emi.c

@@ -77,14 +77,15 @@ PHONY+= clean-abuild coreboot check-style build-dirs build_complete
 
 #######################################################################
 # root source directories of coreboot
-subdirs-y := src/lib src/commonlib/ src/console src/device src/acpi
+subdirs-y := src/lib src/commonlib/ src/console src/device src/acpi src/superio/common
 subdirs-y += src/ec/acpi $(wildcard src/ec/*/*) $(wildcard src/southbridge/*/*)
 subdirs-y += $(wildcard src/soc/*/*) $(wildcard src/northbridge/*/*)
-subdirs-y += src/superio
+subdirs-y += $(wildcard src/superio/*) $(wildcard src/superio/*/*)
 subdirs-y += $(wildcard src/drivers/*) $(wildcard src/drivers/*/*) $(wildcard src/drivers/*/*/*)
 subdirs-y += src/cpu src/vendorcode
 subdirs-y += util/cbfstool util/sconfig util/nvramtool util/pgtblgen util/amdfwtool
 subdirs-y += util/futility util/marvell util/bincfg util/supermicro util/qemu
+subdirs-y += util/ifdtool
 subdirs-y += $(wildcard src/arch/*)
 subdirs-y += src/mainboard/$(MAINBOARDDIR)
 subdirs-y += src/security
@@ -483,7 +484,13 @@ ADAFLAGS_common += -gnatwa.eeD.HHTU.U.W.Y
 # Disable style checks for now
 ADAFLAGS_common += -gnatyN
 
-LDFLAGS_common := --gc-sections -nostdlib -nostartfiles -static --emit-relocs
+LDFLAGS_common := --gc-sections -nostdlib -nostartfiles -static
+
+# Workaround for RISC-V linker bug, merge back into above line when fixed.
+# https://sourceware.org/bugzilla/show_bug.cgi?id=27180
+ifneq ($(CONFIG_ARCH_RISCV),y)
+LDFLAGS_common += --emit-relocs
+endif
 
 ifeq ($(CONFIG_WARNINGS_ARE_ERRORS),y)
 CFLAGS_common += -Werror
@@ -520,7 +527,8 @@ build_h_exports := BUILD_TIMELESS KERNELVERSION COREBOOT_EXTRA_VERSION
 # Report new `build.ht` as dependency if `build.h` differs.
 build_h_check := \
 	export $(foreach exp,$(build_h_exports),$(exp)="$($(exp))"); \
-	util/genbuild_h/genbuild_h.sh .xcompile >$(build_h)t 2>/dev/null; \
+	util/genbuild_h/genbuild_h.sh $(xcompile) \
+		>$(build_h)t 2>/dev/null; \
 	cmp -s $(build_h)t $(build_h) >/dev/null 2>&1 || echo $(build_h)t
 
 $(build_h): $$(shell $$(build_h_check))
@@ -575,10 +583,6 @@ endif
 BINCFG:=$(objutil)/bincfg/bincfg
 
 IFDTOOL:=$(objutil)/ifdtool/ifdtool
-$(IFDTOOL):
-	@printf "    Compile IFDTOOL\n"
-	+$(MAKE) -C $(top)/util/ifdtool
-	cp -a $(top)/util/ifdtool/ifdtool $@
 
 AMDFWTOOL:=$(objutil)/amdfwtool/amdfwtool
 
@@ -982,6 +986,15 @@ else
 FMAP_SPD_CACHE_ENTRY :=
 endif
 
+ifeq ($(CONFIG_VPD),y)
+FMAP_VPD_BASE := $(call int-align, $(FMAP_CURRENT_BASE), 0x4000)
+FMAP_VPD_SIZE := $(CONFIG_VPD_FMAP_SIZE)
+FMAP_VPD_ENTRY := $(CONFIG_VPD_FMAP_NAME)@$(FMAP_VPD_BASE) $(FMAP_VPD_SIZE)
+FMAP_CURRENT_BASE := $(call int-add, $(FMAP_VPD_BASE) $(FMAP_VPD_SIZE))
+else
+FMAP_VPD_ENTRY :=
+endif
+
 #
 # X86 FMAP region
 #
@@ -1059,6 +1072,7 @@ $(obj)/fmap.fmd: $(top)/Makefile.inc $(DEFAULT_FLASHMAP) $(obj)/config.h
 	    -e "s,##MRC_CACHE_ENTRY##,$(FMAP_MRC_CACHE_ENTRY)," \
 	    -e "s,##SMMSTORE_ENTRY##,$(FMAP_SMMSTORE_ENTRY)," \
 	    -e "s,##SPD_CACHE_ENTRY##,$(FMAP_SPD_CACHE_ENTRY)," \
+	    -e "s,##VPD_ENTRY##,$(FMAP_VPD_ENTRY)," \
 	    -e "s,##CBFS_BASE##,$(FMAP_CBFS_BASE)," \
 	    -e "s,##CBFS_SIZE##,$(FMAP_CBFS_SIZE)," \
 		$(DEFAULT_FLASHMAP) > $@.tmp
@@ -1135,6 +1149,10 @@ RAMSTAGE=$(objcbfs)/ramstage.elf
 else
 RAMSTAGE=
 endif
+
+add_intermediate = \
+	$(1): $(obj)/coreboot.pre $(2) | $(INTERMEDIATE) \
+	$(eval INTERMEDIATE+=$(1)) $(eval PHONY+=$(1))
 
 $(obj)/coreboot.rom: $(obj)/coreboot.pre $(RAMSTAGE) $(CBFSTOOL) $$(INTERMEDIATE)
 	@printf "    CBFS       $(subst $(obj)/,,$(@))\n"
@@ -1242,7 +1260,7 @@ cbfs-get-segments-cmd = $(CBFSTOOL) $(obj)/coreboot.pre print -v | sed -n \
 ramstage-symbol-addr-cmd = $(OBJDUMP_ramstage) -t $(objcbfs)/ramstage.elf | \
 	sed -n '/ $(1)$$/s/^\([0-9a-fA-F]*\) .*/0x\1/p'
 
-check-ramstage-overlaps: $(obj)/coreboot.pre
+$(call add_intermediate, check-ramstage-overlaps)
 	programs=$$($(foreach file,$(check-ramstage-overlap-files), \
 		$(call cbfs-get-segments-cmd,$(file)) ; )) ; \
 	regions=$$($(foreach region,$(check-ramstage-overlap-regions), \
@@ -1268,6 +1286,4 @@ check-ramstage-overlaps: $(obj)/coreboot.pre
 	    pstart= ; pend= ; \
 	done
 
-INTERMEDIATE+=check-ramstage-overlaps
-PHONY+=check-ramstage-overlaps
 endif

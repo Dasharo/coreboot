@@ -19,6 +19,7 @@
 #include <fsp/api.h>
 #include <fsp/util.h>
 #include <intelblocks/cpulib.h>
+#include <intelblocks/gpio.h>
 #include <intelblocks/itss.h>
 #include <intelblocks/pmclib.h>
 #include <romstage_handoff.h>
@@ -27,7 +28,6 @@
 #include <soc/intel/common/vbt.h>
 #include <soc/iomap.h>
 #include <soc/itss.h>
-#include <soc/nvs.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/systemagent.h>
@@ -216,6 +216,8 @@ static void enable_dev(struct device *dev)
 		dev->ops = &pci_domain_ops;
 	else if (dev->path.type == DEVICE_PATH_CPU_CLUSTER)
 		dev->ops = &cpu_bus_ops;
+	else if (dev->path.type == DEVICE_PATH_GPIO)
+		block_gpio_enable(dev);
 }
 
 /*
@@ -314,9 +316,6 @@ static void soc_init(void *data)
 	 * hide and unhide symmetrically.
 	 */
 	p2sb_unhide();
-
-	/* Allocate ACPI NVS in CBMEM */
-	cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(struct global_nvs));
 
 	if (CONFIG(APL_SKIP_SET_POWER_LIMITS)) {
 		printk(BIOS_INFO, "Skip setting RAPL per configuration\n");

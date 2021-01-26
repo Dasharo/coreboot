@@ -7,8 +7,10 @@
 #include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
+#include <intelblocks/pcie_rp.h>
 #include <intelblocks/power_limit.h>
 #include <soc/gpe.h>
+#include <soc/gpio.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
 #include <soc/pmc.h>
@@ -246,12 +248,7 @@ struct soc_intel_tigerlake_config {
 	uint8_t PciePtm[CONFIG_MAX_ROOT_PORTS];
 
 	/* PCIe RP L1 substate */
-	enum L1_substates_control {
-		L1_SS_FSP_DEFAULT,
-		L1_SS_DISABLED,
-		L1_SS_L1_1,
-		L1_SS_L1_2,
-	} PcieRpL1Substates[CONFIG_MAX_ROOT_PORTS];
+	enum L1_substates_control PcieRpL1Substates[CONFIG_MAX_ROOT_PORTS];
 
 	/* PCIe LTR: Enable (1) / Disable (0) */
 	uint8_t PcieRpLtrEnable[CONFIG_MAX_ROOT_PORTS];
@@ -325,6 +322,13 @@ struct soc_intel_tigerlake_config {
 	/* TCSS USB */
 	uint8_t TcssXhciEn;
 	uint8_t TcssXdciEn;
+
+	/*
+	 * Specifies which Type-C Ports are enabled on the system
+	 * each bit represents a port starting at 0
+	 * Example: set value to 0x3 for ports 0 and 1 to be enabled
+	 */
+	uint8_t UsbTcPortEn;
 
 	/*
 	 * IOM Port Config

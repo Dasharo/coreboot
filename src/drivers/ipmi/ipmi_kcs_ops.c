@@ -9,8 +9,10 @@
  */
 
 #include <arch/io.h>
+#include <bootstate.h>
 #include <console/console.h>
 #include <device/device.h>
+#include <device/gpio.h>
 #include <device/pnp.h>
 #if CONFIG(HAVE_ACPI_TABLES)
 #include <acpi/acpi.h>
@@ -23,6 +25,7 @@
 #include <delay.h>
 #include <timer.h>
 #include "ipmi_kcs.h"
+#include "ipmi_supermicro_oem.h"
 #include "chip.h"
 
 /* 4 bit encoding */
@@ -31,6 +34,8 @@ static u8 ipmi_revision_minor = 0x0;
 
 static u8 bmc_revision_major = 0x0;
 static u8 bmc_revision_minor = 0x0;
+
+static struct boot_state_callback bscb_post_complete;
 
 static int ipmi_get_device_id(struct device *dev, struct ipmi_devid_rsp *rsp)
 {
@@ -72,22 +77,62 @@ static int ipmi_get_bmc_self_test_result(struct device *dev, struct ipmi_selftes
 	return 0;
 }
 
+static void bmc_set_post_complete_gpio_callback(void *arg)
+{
+	struct drivers_ipmi_config *conf = arg;
+	const struct gpio_operations *gpio_ops;
+
+	if (!conf || !conf->post_complete_gpio)
+		return;
+
+	gpio_ops = dev_get_gpio_ops(conf->gpio_dev);
+	if (!gpio_ops) {
+		printk(BIOS_WARNING, "IPMI: specified gpio device is missing gpio ops!\n");
+		return;
+	}
+
+	/* Set POST Complete pin. The `invert` field controls the polarity. */
+	gpio_ops->output(conf->post_complete_gpio, conf->post_complete_invert ^ 1);
+
+	printk(BIOS_DEBUG, "BMC: POST complete gpio set\n");
+}
+
 static void ipmi_kcs_init(struct device *dev)
 {
 	struct ipmi_devid_rsp rsp;
 	uint32_t man_id = 0, prod_id = 0;
 	struct drivers_ipmi_config *conf = dev->chip_info;
+	const struct gpio_operations *gpio_ops;
 	struct ipmi_selftest_rsp selftestrsp = {0};
 	uint8_t retry_count;
+
+	if (!conf) {
+		printk(BIOS_WARNING, "IPMI: chip_info is missing! Skip init.\n");
+		return;
+	}
+
+	if (conf->bmc_jumper_gpio) {
+		gpio_ops = dev_get_gpio_ops(conf->gpio_dev);
+		if (!gpio_ops) {
+			printk(BIOS_WARNING, "IPMI: gpio device is missing gpio ops!\n");
+		} else {
+			/* Get jumper value and set device state accordingly */
+			dev->enabled = gpio_ops->get(conf->bmc_jumper_gpio);
+			if (!dev->enabled)
+				printk(BIOS_INFO, "IPMI: Disabled by jumper\n");
+		}
+	}
 
 	if (!dev->enabled)
 		return;
 
 	printk(BIOS_DEBUG, "IPMI: PNP KCS 0x%x\n", dev->path.pnp.port);
 
-	if (!conf) {
-		printk(BIOS_WARNING, "IPMI: chip_info is missing! Skip init.\n");
-		return;
+	/* Set up boot state callback for POST_COMPLETE# */
+	if (conf->post_complete_gpio) {
+		bscb_post_complete.callback = bmc_set_post_complete_gpio_callback;
+		bscb_post_complete.arg = conf;
+		boot_state_sched_on_entry(&bscb_post_complete, BS_PAYLOAD_BOOT);
 	}
 
 	/* Get IPMI version for ACPI and SMBIOS */
@@ -167,6 +212,12 @@ static void ipmi_kcs_init(struct device *dev)
 		/* Don't write tables if communication failed */
 		dev->enabled = 0;
 	}
+
+	if (!dev->enabled)
+		return;
+
+	if (CONFIG(DRIVERS_IPMI_SUPERMICRO_OEM))
+		supermicro_ipmi_oem(dev->path.pnp.port);
 }
 
 #if CONFIG(HAVE_ACPI_TABLES)

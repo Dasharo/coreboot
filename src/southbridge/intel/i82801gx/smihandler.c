@@ -4,6 +4,7 @@
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <device/pci_def.h>
+#include <soc/nvs.h>
 #include <southbridge/intel/common/pmutil.h>
 #include "i82801gx.h"
 
@@ -15,15 +16,8 @@
 #define   G_SMRANE	(1 << 3)
 #define   C_BASE_SEG	((0 << 2) | (1 << 1) | (0 << 0))
 
-#include "nvs.h"
-
 /* While we read PMBASE dynamically in case it changed, let's initialize it with a sane value */
 u16 pmbase = DEFAULT_PMBASE;
-u8 smm_initialized = 0;
-
-/* This implementation was removed since it was invalid. There will be one shared
-   approach to set GNVS pointer into SMM without the 0xEA PM Trap mentioned above. */
-void southbridge_update_gnvs(u8 apm_cnt, int *smm_done) { }
 
 int southbridge_io_trap_handler(int smif)
 {

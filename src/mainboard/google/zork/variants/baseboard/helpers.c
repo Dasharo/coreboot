@@ -40,12 +40,15 @@ enum {
 	/* SD controller type */
 	FW_CONFIG_MASK_SD_CTRLR = 0x7,
 	FW_CONFIG_SHIFT_SD_CTRLR = 20,
-	/* SPI speed value */
-	FW_CONFIG_MASK_SPI_SPEED = 0xf,
-	FW_CONFIG_SHIFT_SPI_SPEED = 23,
+	/* SAR presence */
+	FW_CONFIG_MASK_SAR = 0x7,
+	FW_CONFIG_SHIFT_SAR = 23,
 	/* Fan information */
 	FW_CONFIG_MASK_FAN = 0x3,
 	FW_CONFIG_SHIFT_FAN = 27,
+	/* WWAN presence */
+	FW_CONFIG_MASK_WWAN = 0x1,
+	FW_CONFIG_SHIFT_WWAN = 29,
 };
 
 static int get_fw_config(uint64_t *val)
@@ -78,6 +81,11 @@ static unsigned int extract_field(uint64_t mask, int shift)
 	return (fw_config >> shift) & mask;
 }
 
+int variant_gets_sar_config(void)
+{
+	return extract_field(FW_CONFIG_MASK_SAR, FW_CONFIG_SHIFT_SAR);
+}
+
 int variant_has_emmc(void)
 {
 	return !!extract_field(FW_CONFIG_MASK_EMMC, FW_CONFIG_SHIFT_EMMC);
@@ -86,6 +94,11 @@ int variant_has_emmc(void)
 int variant_has_nvme(void)
 {
 	return !!extract_field(FW_CONFIG_MASK_NVME, FW_CONFIG_SHIFT_NVME);
+}
+
+int variant_has_wwan(void)
+{
+	return !!extract_field(FW_CONFIG_MASK_WWAN, FW_CONFIG_SHIFT_WWAN);
 }
 
 bool variant_uses_v3_schematics(void)

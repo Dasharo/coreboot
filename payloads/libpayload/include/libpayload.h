@@ -233,10 +233,14 @@ u8 i8042_data_ready_ps2(void);
 u8 i8042_data_ready_aux(void);
 
 u8 i8042_read_data_ps2(void);
+u8 i8042_peek_data_ps2(void);
 u8 i8042_read_data_aux(void);
 
 int i8042_wait_read_ps2(void);
 int i8042_wait_read_aux(void);
+
+int i8042_get_kbd_translation(void);
+int i8042_set_kbd_translation(bool xlate);
 
 /** @} */
 

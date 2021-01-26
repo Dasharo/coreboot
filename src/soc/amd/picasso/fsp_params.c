@@ -142,6 +142,29 @@ static void fsp_assign_ioapic_upds(FSP_S_CONFIG *scfg)
 	scfg->fch_ioapic_id = CONFIG_PICASSO_FCH_IOAPIC_ID;
 }
 
+static void fsp_edp_tuning_upds(FSP_S_CONFIG *scfg,
+			const struct soc_amd_picasso_config *cfg)
+{
+	if (cfg->dp_phy_override & ENABLE_EDP_TUNINGSET) {
+		scfg->DpPhyOverride = cfg->dp_phy_override;
+		scfg->DpVsPemphLevel = cfg->edp_tuningset.dp_vs_pemph_level;
+		scfg->MarginDeemPh = cfg->edp_tuningset.margin_deemph;
+		scfg->Deemph6db4 = cfg->edp_tuningset.deemph_6db4;
+		scfg->BoostAdj = cfg->edp_tuningset.boostadj;
+	}
+	if (cfg->edp_pwr_adjust_enable) {
+		scfg->pwron_digon_to_de = cfg->pwron_digon_to_de;
+		scfg->pwron_de_to_varybl = cfg->pwron_de_to_varybl;
+		scfg->pwrdown_varybloff_to_de = cfg->pwrdown_varybloff_to_de;
+		scfg->pwrdown_de_to_digoff = cfg->pwrdown_de_to_digoff;
+		scfg->pwroff_delay = cfg->pwroff_delay;
+		scfg->pwron_varybl_to_blon = cfg->pwron_varybl_to_blon;
+		scfg->pwrdown_bloff_to_varybloff = cfg->pwrdown_bloff_to_varybloff;
+		scfg->min_allowed_bl_level = cfg->min_allowed_bl_level;
+	}
+
+}
+
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 {
 	const struct soc_amd_picasso_config *cfg;
@@ -152,4 +175,5 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	fsp_fill_pcie_ddi_descriptors(scfg);
 	fsp_assign_ioapic_upds(scfg);
 	fsp_usb_oem_customization(scfg, cfg);
+	fsp_edp_tuning_upds(scfg, cfg);
 }

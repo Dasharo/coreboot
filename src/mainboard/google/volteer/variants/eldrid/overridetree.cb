@@ -66,16 +66,28 @@ chip soc/intel/tigerlake
 	register "usb2_ports[2]" = "USB2_PORT_EMPTY"
 
 	#improve the USB2 Port1 eye diagram
-	register "usb2_ports[3]" = "USB2_PORT_SHORT(OC_SKIP)"
+	register "usb2_ports[3]" = "{
+		.enable = 1,
+		.ocpin = OC_SKIP,
+		.tx_bias = USB2_BIAS_39P35MV,
+		.tx_emp_enable = USB2_DE_EMP_ON_PRE_EMP_ON,
+		.pre_emp_bias = USB2_BIAS_39P35MV,
+		.pre_emp_bit = USB2_FULL_BIT_PRE_EMP,
+		.type_c = 1,
+	}"
 
 	#lower camera driving
 	register "usb2_ports[4]" = "{
 		.enable = 1,
-		.tx_bias = 0,
-		.tx_emp_enable = 0,
-		.pre_emp_bias = 0,
-		.pre_emp_bit = 0,
+		.ocpin = OC_SKIP,
+		.tx_bias = USB2_BIAS_0MV,
+		.tx_emp_enable = USB2_EMP_OFF,
+		.pre_emp_bias = USB2_BIAS_0MV,
+		.pre_emp_bit = USB2_FULL_BIT_PRE_EMP,
 	}"
+
+	#Type-A / Type-C C0
+	register "usb2_ports[8]" = "USB2_PORT_TYPE_C(OC_SKIP)"
 
 	device domain 0 on
 		device ref dptf on
@@ -173,6 +185,14 @@ chip soc/intel/tigerlake
 				use conn0 as mux_conn[0]
 				use conn1 as mux_conn[1]
 				device pnp 0c09.0 on end
+			end
+		end
+		device ref pcie_rp9 on
+			chip soc/intel/common/block/pcie/rtd3
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B2)"
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_A11)"
+				register "srcclk_pin" = "0"
+				device generic 0 on end
 			end
 		end
 		device ref hda on

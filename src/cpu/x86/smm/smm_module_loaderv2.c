@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi_gnvs.h>
 #include <stdint.h>
 #include <string.h>
 #include <rmodule.h>
@@ -332,7 +333,7 @@ static int smm_stub_place_staggered_entry_points(char *base,
  *
  * The save state and smm stack are treated as contiguous for the number of
  * concurrent areas requested. The save state always lives at the top of the
- * the CPUS smbase (and the entry point is at offset 0x8000). This allows only a certain
+ * CPUS smbase (and the entry point is at offset 0x8000). This allows only a certain
  * number of CPUs with staggered entry points until the save state area comes
  * down far enough to overwrite/corrupt the entry code (stub code). Therefore,
  * an SMM map is created to avoid this corruption, see smm_create_map() above.
@@ -447,6 +448,7 @@ static int smm_module_setup_stub(void *smbase, size_t smm_size,
 	stub_params->runtime.smm_size = smm_size;
 	stub_params->runtime.save_state_size = params->per_cpu_save_state_size;
 	stub_params->runtime.num_cpus = params->num_concurrent_stacks;
+	stub_params->runtime.gnvs_ptr = (uintptr_t)acpi_get_gnvs();
 
 	printk(BIOS_DEBUG, "%s: stack_end = 0x%lx\n",
 		__func__, stub_params->stack_top - total_stack_size);

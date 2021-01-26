@@ -59,10 +59,14 @@ const fsp_dxio_descriptor *baseboard_get_dxio_descriptors(size_t *num);
 const fsp_ddi_descriptor *baseboard_get_ddi_descriptors(size_t *num);
 
 /* Retrieve attributes from FW_CONFIG in CBI. */
+/* Return value of SAR config. */
+int variant_gets_sar_config(void);
 /* Return 0 if non-existent, 1 if present. */
 int variant_has_emmc(void);
 /* Return 0 if non-existent, 1 if present. */
 int variant_has_nvme(void);
+/* Return 0 if non-existent, 1 if present. */
+int variant_has_wwan(void);
 
 /* Determine if booting in factory by using CROS_SKU_UNPROVISIONED. */
 int boot_is_factory_unprovisioned(void);

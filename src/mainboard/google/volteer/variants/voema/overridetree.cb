@@ -5,11 +5,26 @@ chip soc/intel/tigerlake
 	# and controller 1 channel 0 and 1.
 	register "CmdMirror" = "0x00000033"
 
-	# Disable SRCCLKREQ1# and SRCCLKREQ3#
+	register "usb2_ports[2]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# Type-A / Type-C Port 1
+	register "usb2_ports[4]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# Type-A / Type-C Port 0
+
+	register "TcssAuxOri" = "1"
+	register "IomTypeCPortPadCfg[0]" = "0x090E000A"
+	register "IomTypeCPortPadCfg[1]" = "0x090E000D"
+
+	# Disable WLAN PCIE 7
+	register "PcieRpEnable[6]" = "0"
+	register "PcieRpLtrEnable[6]" = "0"
 	register "PcieClkSrcUsage[1]" = "PCIE_CLK_NOTUSED"
+
+	# Disable SD Card PCIE 8
+	register "PcieRpEnable[7]" = "0"
+	register "PcieRpLtrEnable[7]" = "0"
+	register "PcieRpHotPlug[7]" = "0"
 	register "PcieClkSrcUsage[3]" = "PCIE_CLK_NOTUSED"
 
 	device domain 0 on
+		device ref ipu on end # IPU
 		device ref i2c0 on
 			chip drivers/i2c/generic
 				register "hid" = ""10EC5682""
@@ -81,6 +96,14 @@ chip soc/intel/tigerlake
 				device pnp 0c09.0 on end
 			end
 		end
+		device ref pcie_rp9 on
+			chip soc/intel/common/block/pcie/rtd3
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B2)"
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_A11)"
+				register "srcclk_pin" = "0"
+				device generic 0 on end
+			end
+		end
 		device ref pmc hidden
 			# The pmc_mux chip driver is a placeholder for the
 			# PMC.MUX device in the ACPI hierarchy.
@@ -89,8 +112,6 @@ chip soc/intel/tigerlake
 					chip drivers/intel/pmc_mux/conn
 						register "usb2_port_number" = "5"
 						register "usb3_port_number" = "1"
-						# SBU is fixed, HSL follows CC
-						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
 						device generic 0 alias conn0 on end
 					end
 					chip drivers/intel/pmc_mux/conn

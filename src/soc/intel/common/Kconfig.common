@@ -2,6 +2,7 @@ config SOC_INTEL_COMMON
 	bool
 	select AZALIA_PLUGIN_SUPPORT
 	select HAVE_DISPLAY_MTRRS
+	select ACPI_SOC_NVS
 	help
 	  common code for Intel SOCs
 
@@ -57,10 +58,6 @@ config MMA_BLOBS_PATH
 	depends on MMA
 	default "3rdparty/blobs/soc/intel/kabylake/mma-blobs" if SOC_INTEL_KABYLAKE
 	default "3rdparty/blobs/soc/intel/skylake/mma-blobs" if SOC_INTEL_SKYLAKE
-
-config SOC_INTEL_COMMON_ACPI
-	bool
-	default n
 
 config SOC_INTEL_COMMON_NHLT
 	bool

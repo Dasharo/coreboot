@@ -119,8 +119,13 @@
 #define   GBLRST_CAUSE0_THERMTRIP	(1 << 5)
 #define GBLRST_CAUSE1			0x1928
 
+#define SLP_S0_RES			0x193c
+
 #define CPPMVRIC			0x1B1C
 #define   XTALSDQDIS			(1 << 22)
+
+#define CPPMVRIC3			0x1E4C
+#define   USBSUSPGQDIS			(1 << 15)
 
 #define IRQ_REG				ACTL
 #define SCI_IRQ_ADJUST			0

@@ -7,8 +7,10 @@
 #include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
+#include <intelblocks/pcie_rp.h>
 #include <intelblocks/power_limit.h>
 #include <soc/gpe.h>
+#include <soc/gpio.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
 #include <soc/pmc.h>
@@ -113,12 +115,7 @@ struct soc_intel_jasperlake_config {
 	uint8_t PcieRpClkReqDetect[CONFIG_MAX_ROOT_PORTS];
 
 	/* PCIe RP L1 substate */
-	enum L1_substates_control {
-		L1_SS_FSP_DEFAULT,
-		L1_SS_DISABLED,
-		L1_SS_L1_1,
-		L1_SS_L1_2,
-	} PcieRpL1Substates[CONFIG_MAX_ROOT_PORTS];
+	enum L1_substates_control PcieRpL1Substates[CONFIG_MAX_ROOT_PORTS];
 
 	/* SMBus */
 	uint8_t SmbusEnable;
@@ -352,18 +349,23 @@ struct soc_intel_jasperlake_config {
 	uint8_t FivrSpreadSpectrum;
 
 	/*
-	 * Disable Fast Slew Rate for Deep Package C States for VR domains
+	 * Disable Fast Slew Rate for Deep Package C States for VCCIN VR domain
 	 * Disable Fast Slew Rate for Deep Package C States based on
 	 * Acoustic Noise Mitigation feature enabled.
 	 */
 	uint8_t FastPkgCRampDisable;
 
 	/*
-	 * Slew Rate configuration for Deep Package C States for VR domains
+	 * Slew Rate configuration for Deep Package C States for VCCIN VR domain
 	 * based on Acoustic Noise Mitigation feature enabled.
 	 * 0: Fast/2 ; 1: Fast/4; 2: Fast/8; 3: Fast/16
 	 */
-	uint8_t SlowSlewRate;
+	enum {
+		SlewRateFastBy2 = 0,
+		SlewRateFastBy4,
+		SlewRateFastBy8,
+		SlewRateFastBy16
+	} SlowSlewRate;
 
 	/*
 	 * Enable or Disable Acoustic Noise Mitigation feature.

@@ -793,6 +793,10 @@ static struct device *new_device_with_path(struct bus *parent,
 	case LPC:
 		new_d->path = ".type=DEVICE_PATH_LPC,{.lpc={ .addr = 0x%x }}";
 		break;
+
+	case GPIO:
+		new_d->path = ".type=DEVICE_PATH_GPIO,{.gpio={ .id = 0x%x }}";
+		break;
 	}
 
 	return new_d;
@@ -1081,18 +1085,24 @@ static void emit_dev_links(FILE *fil, struct device *ptr)
 	fprintf(fil, "\t};\n");
 }
 
-static void pass1(FILE *fil, FILE *head, struct device *ptr, struct device *next)
+static struct chip_instance *get_chip_instance(const struct device *dev)
 {
-	int pin;
-	struct chip_instance *chip_ins = ptr->chip_instance;
-	int has_children = dev_has_children(ptr);
-
+	struct chip_instance *chip_ins = dev->chip_instance;
 	/*
 	 * If the chip instance of device has base_chip_instance pointer set, then follow that
 	 * to update the chip instance for current device.
 	 */
 	if (chip_ins->base_chip_instance)
 		chip_ins = chip_ins->base_chip_instance;
+
+	return chip_ins;
+}
+
+static void pass1(FILE *fil, FILE *head, struct device *ptr, struct device *next)
+{
+	int pin;
+	struct chip_instance *chip_ins = get_chip_instance(ptr);
+	int has_children = dev_has_children(ptr);
 
 	/* Emit probe structures. */
 	if (ptr->probe && (emit_fw_config_probe(fil, ptr) < 0)) {
@@ -1205,18 +1215,27 @@ static void pass1(FILE *fil, FILE *head, struct device *ptr, struct device *next
 
 static void expose_device_names(FILE *fil, FILE *head, struct device *ptr, struct device *next)
 {
+	struct chip_instance *chip_ins = get_chip_instance(ptr);
+
 	/* Only devices on root bus here. */
 	if (ptr->bustype == PCI && ptr->parent->dev->bustype == DOMAIN) {
-		fprintf(head, "extern DEVTREE_CONST struct device *DEVTREE_CONST __pci_0_%02x_%d;\n",
+		fprintf(head, "extern DEVTREE_CONST struct device *const __pci_0_%02x_%d;\n",
 			ptr->path_a, ptr->path_b);
-		fprintf(fil, "DEVTREE_CONST struct device *DEVTREE_CONST __pci_0_%02x_%d = &%s;\n",
+		fprintf(fil, "DEVTREE_CONST struct device *const __pci_0_%02x_%d = &%s;\n",
 			ptr->path_a, ptr->path_b, ptr->name);
+
+		if (chip_ins->chip->chiph_exists) {
+			fprintf(head, "extern DEVTREE_CONST void *const __pci_0_%02x_%d_config;\n",
+				ptr->path_a, ptr->path_b);
+			fprintf(fil, "DEVTREE_CONST void *const __pci_0_%02x_%d_config = &%s_info_%d;\n",
+				ptr->path_a, ptr->path_b, chip_ins->chip->name_underscore, chip_ins->id);
+		}
 	}
 
 	if (ptr->bustype == PNP) {
-		fprintf(head, "extern DEVTREE_CONST struct device *DEVTREE_CONST __pnp_%04x_%02x;\n",
+		fprintf(head, "extern DEVTREE_CONST struct device *const __pnp_%04x_%02x;\n",
 			ptr->path_a, ptr->path_b);
-		fprintf(fil, "DEVTREE_CONST struct device *DEVTREE_CONST __pnp_%04x_%02x = &%s;\n",
+		fprintf(fil, "DEVTREE_CONST struct device *const __pnp_%04x_%02x = &%s;\n",
 			ptr->path_a, ptr->path_b, ptr->name);
 	}
 }
@@ -1529,6 +1548,12 @@ static void override_devicetree(struct bus *base_parent,
  * |                    |                                            |
  * +-----------------------------------------------------------------+
  * |                    |                                            |
+ * | smbios_slot info   | Copy SMBIOS slot information from override.|
+ * |                    | This allows variants to override PCI(e)    |
+ * |                    | slot information in SMBIOS tables.         |
+ * |                    |                                            |
+ * +-----------------------------------------------------------------+
+ * |                    |                                            |
  * | chip_instance      | Each register of chip_instance is copied   |
  * |                    | over from override device to base device:  |
  * |                    | 1. If register with same key is present in |
@@ -1638,6 +1663,12 @@ static void update_device(struct device *base_dev, struct device *override_dev)
 	 * to allow an override to remove a probe from the base device.
 	 */
 	base_dev->probe = override_dev->probe;
+
+	/* Copy SMBIOS slot information from base device */
+	base_dev->smbios_slot_type = override_dev->smbios_slot_type;
+	base_dev->smbios_slot_length = override_dev->smbios_slot_length;
+	base_dev->smbios_slot_data_width = override_dev->smbios_slot_data_width;
+	base_dev->smbios_slot_designation = override_dev->smbios_slot_designation;
 
 	/*
 	 * Update base_chip_instance member in chip instance of override tree to forward it to

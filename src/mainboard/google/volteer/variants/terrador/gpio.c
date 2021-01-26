@@ -139,7 +139,7 @@ static const struct pad_config override_gpio_table[] = {
 	/* H3  : SX_EXIT_HOLDOFF# ==> SD_PERST_L */
 	PAD_CFG_GPO(GPP_H3, 1, DEEP),
 	/* H10 : SRCCLKREQ4# ==> USB_C_MIX_RT_FORCE_PWR */
-	PAD_CFG_GPO(GPP_H10, 1, DEEP),
+	PAD_CFG_GPO(GPP_H10, 0, DEEP),
 	/* H13 : M2_SKT2_CFG1 # ==> SPKR_INT_L */
 	PAD_CFG_GPI(GPP_H13, NONE, DEEP),
 	/* H16 : DDPB_CTRLCLK ==> DDPB_HDMI_CTRLCLK */
@@ -187,6 +187,11 @@ const struct pad_config *variant_override_gpio_table(size_t *num)
 
 /* Early pad configuration in bootblock */
 static const struct pad_config early_gpio_table[] = {
+	/* C8 : UART0 RX */
+	PAD_CFG_NF(GPP_C8, NONE, DEEP, NF1),
+	/* C9 : UART0 TX */
+	PAD_CFG_NF(GPP_C9, NONE, DEEP, NF1),
+
 	/* A12 : SATAXPCIE1 ==> M2_SSD_PEDET */
 	PAD_CFG_NF(GPP_A12, NONE, DEEP, NF1),
 	/* A13 : PMC_I2C_SCL ==> BT_DISABLE_L */

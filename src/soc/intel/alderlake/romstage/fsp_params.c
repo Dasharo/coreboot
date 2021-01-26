@@ -22,12 +22,13 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	uint32_t mask = 0;
 	const struct device *dev;
 
-	/*
-	 * If IGD is enabled, set IGD stolen size to 60MB.
-	 * Otherwise, skip IGD init in FSP.
-	 */
 	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	m_cfg->InternalGfx = is_dev_enabled(dev);
+	if (!CONFIG(SOC_INTEL_DISABLE_IGD) && is_dev_enabled(dev))
+		m_cfg->InternalGfx = 1;
+	else
+		m_cfg->InternalGfx = 0;
+
+	/* If IGD is enabled, set IGD stolen size to 60MB. Otherwise, skip IGD init in FSP */
 	m_cfg->IgdDvmt50PreAlloc = m_cfg->InternalGfx ? IGD_SM_60MB : 0;
 
 	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
@@ -41,8 +42,8 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 		/* Set CpuRatio to match existing MSR value */
 		m_cfg->CpuRatio = (rdmsr(MSR_FLEX_RATIO).lo >> 8) & 0xff;
 
-	for (i = 0; i < ARRAY_SIZE(config->PcieRpEnable); i++) {
-		if (config->PcieRpEnable[i])
+	for (i = 0; i < ARRAY_SIZE(config->PchPcieRpEnable); i++) {
+		if (config->PchPcieRpEnable[i])
 			mask |= (1 << i);
 	}
 	m_cfg->PcieRpEnableMask = mask;
@@ -155,9 +156,12 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	/* Skip CPU replacement check */
 	m_cfg->SkipCpuReplacementCheck = !config->CpuReplacementCheck;
 
-	/* Skip CPU side PCIe enablement in FSP if device is disabled in devicetree */
-	dev = pcidev_path_on_root(SA_DEVFN_CPU_PCIE);
-	m_cfg->CpuPcieRpEnableMask = is_dev_enabled(dev);
+	mask = 0;
+	for (i = 0; i < ARRAY_SIZE(config->CpuPcieRpEnable); i++) {
+		if (config->CpuPcieRpEnable[i])
+			mask |= (1 << i);
+	}
+	m_cfg->CpuPcieRpEnableMask = mask;
 
 	m_cfg->TmeEnable = CONFIG(INTEL_TME);
 

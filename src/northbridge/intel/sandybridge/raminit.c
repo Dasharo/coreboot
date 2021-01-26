@@ -153,7 +153,6 @@ static void dram_find_spds_ddr3(spd_raw_data *spd, ramctr_timing *ctrl)
 	int dimms = 0, ch_dimms;
 	int channel, slot, spd_slot;
 	bool can_use_ecc = ctrl->ecc_supported;
-	dimm_info *dimm = &ctrl->info;
 
 	memset (ctrl->rankmap, 0, sizeof(ctrl->rankmap));
 
@@ -176,70 +175,74 @@ static void dram_find_spds_ddr3(spd_raw_data *spd, ramctr_timing *ctrl)
 			spd_slot = 2 * channel + slot;
 			printk(BIOS_DEBUG, "SPD probe channel%d, slot%d\n", channel, slot);
 
+			dimm_attr *const dimm = &ctrl->info.dimm[channel][slot];
+
 			/* Search for XMP profile */
-			spd_xmp_decode_ddr3(&dimm->dimm[channel][slot], spd[spd_slot],
+			spd_xmp_decode_ddr3(dimm, spd[spd_slot],
 					DDR3_XMP_PROFILE_1);
 
-			if (dimm->dimm[channel][slot].dram_type != SPD_MEMORY_TYPE_SDRAM_DDR3) {
+			if (dimm->dram_type != SPD_MEMORY_TYPE_SDRAM_DDR3) {
 				printram("No valid XMP profile found.\n");
-				spd_decode_ddr3(&dimm->dimm[channel][slot], spd[spd_slot]);
+				spd_decode_ddr3(dimm, spd[spd_slot]);
 
-			} else if (ch_dimms > dimm->dimm[channel][slot].dimms_per_channel) {
+			} else if (ch_dimms > dimm->dimms_per_channel) {
 				printram(
 				"XMP profile supports %u DIMMs, but %u DIMMs are installed.\n",
-					dimm->dimm[channel][slot].dimms_per_channel, ch_dimms);
+					dimm->dimms_per_channel, ch_dimms);
 
 				if (CONFIG(NATIVE_RAMINIT_IGNORE_XMP_MAX_DIMMS))
 					printk(BIOS_WARNING,
 						"XMP maximum DIMMs will be ignored.\n");
 				else
-					spd_decode_ddr3(&dimm->dimm[channel][slot],
-							spd[spd_slot]);
+					spd_decode_ddr3(dimm, spd[spd_slot]);
 
-			} else if (dimm->dimm[channel][slot].voltage != 1500) {
+			} else if (dimm->voltage != 1500) {
 				/* TODO: Support DDR3 voltages other than 1500mV */
 				printram("XMP profile's requested %u mV is unsupported.\n",
-						 dimm->dimm[channel][slot].voltage);
-				spd_decode_ddr3(&dimm->dimm[channel][slot], spd[spd_slot]);
+						 dimm->voltage);
+
+				if (CONFIG(NATIVE_RAMINIT_IGNORE_XMP_REQUESTED_VOLTAGE))
+					printk(BIOS_WARNING,
+						"XMP requested voltage will be ignored.\n");
+				else
+					spd_decode_ddr3(dimm, spd[spd_slot]);
 			}
 
 			/* Fill in CRC16 for MRC cache */
 			ctrl->spd_crc[channel][slot] =
 				spd_ddr3_calc_unique_crc(spd[spd_slot], sizeof(spd_raw_data));
 
-			if (dimm->dimm[channel][slot].dram_type != SPD_MEMORY_TYPE_SDRAM_DDR3) {
+			if (dimm->dram_type != SPD_MEMORY_TYPE_SDRAM_DDR3) {
 				/* Mark DIMM as invalid */
-				dimm->dimm[channel][slot].ranks   = 0;
-				dimm->dimm[channel][slot].size_mb = 0;
+				dimm->ranks   = 0;
+				dimm->size_mb = 0;
 				continue;
 			}
 
-			dram_print_spd_ddr3(&dimm->dimm[channel][slot]);
+			dram_print_spd_ddr3(dimm);
 			dimms++;
 			ctrl->rank_mirror[channel][slot * 2] = 0;
-			ctrl->rank_mirror[channel][slot * 2 + 1] =
-				dimm->dimm[channel][slot].flags.pins_mirrored;
+			ctrl->rank_mirror[channel][slot * 2 + 1] = dimm->flags.pins_mirrored;
 
-			ctrl->channel_size_mb[channel] += dimm->dimm[channel][slot].size_mb;
+			ctrl->channel_size_mb[channel] += dimm->size_mb;
 
-			if (!dimm->dimm[channel][slot].flags.is_ecc)
+			if (!dimm->flags.is_ecc)
 				can_use_ecc = false;
 
-			ctrl->auto_self_refresh &= dimm->dimm[channel][slot].flags.asr;
+			ctrl->auto_self_refresh &= dimm->flags.asr;
 
-			ctrl->extended_temperature_range &=
-				dimm->dimm[channel][slot].flags.ext_temp_refresh;
+			ctrl->extended_temperature_range &= dimm->flags.ext_temp_refresh;
 
-			ctrl->rankmap[channel] |=
-				((1 << dimm->dimm[channel][slot].ranks) - 1) << (2 * slot);
+			ctrl->rankmap[channel] |= ((1 << dimm->ranks) - 1) << (2 * slot);
 
 			printk(BIOS_DEBUG, "channel[%d] rankmap = 0x%x\n", channel,
 				ctrl->rankmap[channel]);
 		}
-		if ((ctrl->rankmap[channel] & 0x03) && (ctrl->rankmap[channel] & 0x0c)
-				&& dimm->dimm[channel][0].reference_card <= 5
-				&& dimm->dimm[channel][1].reference_card <= 5) {
 
+		const u8 rc_0 = ctrl->info.dimm[channel][0].reference_card;
+		const u8 rc_1 = ctrl->info.dimm[channel][1].reference_card;
+
+		if (ch_dimms == NUM_SLOTS && rc_0 < 6 && rc_1 < 6) {
 			const int ref_card_offset_table[6][6] = {
 				{ 0, 0, 0, 0, 2, 2 },
 				{ 0, 0, 0, 0, 2, 2 },
@@ -248,9 +251,7 @@ static void dram_find_spds_ddr3(spd_raw_data *spd, ramctr_timing *ctrl)
 				{ 2, 2, 2, 1, 0, 0 },
 				{ 2, 2, 2, 1, 0, 0 },
 			};
-			ctrl->ref_card_offset[channel] = ref_card_offset_table
-					[dimm->dimm[channel][0].reference_card]
-					[dimm->dimm[channel][1].reference_card];
+			ctrl->ref_card_offset[channel] = ref_card_offset_table[rc_0][rc_1];
 		} else {
 			ctrl->ref_card_offset[channel] = 0;
 		}
@@ -308,7 +309,7 @@ static void init_dram_ddr3(int s3resume, const u32 cpuid)
 
 	wait_txt_clear();
 
-	wrmsr(0x000002e6, (msr_t) { .lo = 0, .hi = 0 });
+	wrmsr(0x2e6, (msr_t) { .lo = 0, .hi = 0 });
 
 	const u32 sskpd = MCHBAR32(SSKPD);	// !!! = 0x00000000
 	if ((pci_read_config16(SOUTHBRIDGE, 0xa2) & 0xa0) == 0x20 && sskpd && !s3resume) {

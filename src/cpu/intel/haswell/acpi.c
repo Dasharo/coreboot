@@ -14,6 +14,24 @@
 
 #include <southbridge/intel/lynxpoint/pch.h>
 
+static int cstate_set_s0ix[3] = {
+	C_STATE_C1E,
+	C_STATE_C7S_LONG_LAT,
+	C_STATE_C10,
+};
+
+static int cstate_set_lp[3] = {
+	C_STATE_C1E,
+	C_STATE_C3,
+	C_STATE_C7S_LONG_LAT,
+};
+
+static int cstate_set_trad[3] = {
+	C_STATE_C1,
+	C_STATE_C3,
+	C_STATE_C6_LONG_LAT,
+};
+
 static int get_cores_per_package(void)
 {
 	struct cpuinfo_x86 c;
@@ -28,41 +46,6 @@ static int get_cores_per_package(void)
 	cores = result.ebx & 0xff;
 
 	return cores;
-}
-
-static void generate_cstate_entries(acpi_cstate_t *cstates,
-				   int c1, int c2, int c3)
-{
-	int cstate_count = 0;
-
-	/* Count number of active C-states */
-	if (c1 > 0)
-		++cstate_count;
-	if (c2 > 0)
-		++cstate_count;
-	if (c3 > 0)
-		++cstate_count;
-	if (!cstate_count)
-		return;
-
-	acpigen_write_package(cstate_count + 1);
-	acpigen_write_byte(cstate_count);
-
-	/* Add an entry if the level is enabled */
-	if (c1 > 0) {
-		cstates[c1].ctype = 1;
-		acpigen_write_CST_package_entry(&cstates[c1]);
-	}
-	if (c2 > 0) {
-		cstates[c2].ctype = 2;
-		acpigen_write_CST_package_entry(&cstates[c2]);
-	}
-	if (c3 > 0) {
-		cstates[c3].ctype = 3;
-		acpigen_write_CST_package_entry(&cstates[c3]);
-	}
-
-	acpigen_pop_len();
 }
 
 static acpi_tstate_t tss_table_fine[] = {
@@ -117,20 +100,29 @@ static void generate_T_state_entries(int core, int cores_per_package)
 			ARRAY_SIZE(tss_table_coarse), tss_table_coarse);
 }
 
+static bool is_s0ix_enabled(void)
+{
+	if (!haswell_is_ult())
+		return false;
+
+	const struct device *lapic = dev_find_lapic(SPEEDSTEP_APIC_MAGIC);
+
+	if (!lapic || !lapic->chip_info)
+		return false;
+
+	const struct cpu_intel_haswell_config *conf = lapic->chip_info;
+
+	return conf->s0ix_enable;
+}
+
 static void generate_C_state_entries(void)
 {
+	acpi_cstate_t map[3];
+	int *set;
+	int i;
+
 	struct cpu_info *info;
 	struct cpu_driver *cpu;
-	struct device *lapic;
-	struct cpu_intel_haswell_config *conf = NULL;
-
-	/* Find the SpeedStep CPU in the device tree using magic APIC ID */
-	lapic = dev_find_lapic(SPEEDSTEP_APIC_MAGIC);
-	if (!lapic)
-		return;
-	conf = lapic->chip_info;
-	if (!conf)
-		return;
 
 	/* Find CPU map of supported C-states */
 	info = cpu_info();
@@ -140,25 +132,20 @@ static void generate_C_state_entries(void)
 	if (!cpu || !cpu->cstates)
 		return;
 
-	acpigen_emit_byte(0x14);		/* MethodOp */
-	acpigen_write_len_f();		/* PkgLength */
-	acpigen_emit_namestring("_CST");
-	acpigen_emit_byte(0x00);		/* No Arguments */
+	if (is_s0ix_enabled())
+		set = cstate_set_s0ix;
+	else if (haswell_is_ult())
+		set = cstate_set_lp;
+	else
+		set = cstate_set_trad;
 
-	/* If running on AC power */
-	acpigen_emit_byte(0xa0);		/* IfOp */
-	acpigen_write_len_f();		/* PkgLength */
-	acpigen_emit_namestring("PWRS");
-	acpigen_emit_byte(0xa4);	/* ReturnOp */
-	generate_cstate_entries(cpu->cstates, conf->c1_acpower,
-					 conf->c2_acpower, conf->c3_acpower);
-	acpigen_pop_len();
+	for (i = 0; i < ARRAY_SIZE(map); i++) {
+		map[i] = cpu->cstates[set[i]];
+		map[i].ctype = i + 1;
+	}
 
-	/* Else on battery power */
-	acpigen_emit_byte(0xa4);	/* ReturnOp */
-	generate_cstate_entries(cpu->cstates, conf->c1_battery,
-					conf->c2_battery, conf->c3_battery);
-	acpigen_pop_len();
+	/* Generate C-state tables */
+	acpigen_write_CST_package(map, ARRAY_SIZE(map));
 }
 
 static int calculate_power(int tdp, int p1_ratio, int ratio)
@@ -209,7 +196,7 @@ static void generate_P_state_entries(int core, int cores_per_package)
 		/* Max Non-Turbo Ratio */
 		ratio_max = (msr.lo >> 8) & 0xff;
 	}
-	clock_max = ratio_max * HASWELL_BCLK;
+	clock_max = ratio_max * CPU_BCLK;
 
 	/* Calculate CPU TDP in mW */
 	msr = rdmsr(MSR_PKG_POWER_SKU_UNIT);
@@ -273,7 +260,7 @@ static void generate_P_state_entries(int core, int cores_per_package)
 
 		/* Calculate power at this ratio */
 		power = calculate_power(power_max, ratio_max, ratio);
-		clock = ratio * HASWELL_BCLK;
+		clock = ratio * CPU_BCLK;
 
 		acpigen_write_PSS_package(
 			clock,			/*MHz*/

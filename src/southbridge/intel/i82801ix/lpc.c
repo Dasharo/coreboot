@@ -15,14 +15,13 @@
 #include <acpi/acpi_gnvs.h>
 #include <cpu/x86/smm.h>
 #include <acpi/acpigen.h>
-#include <cbmem.h>
 #include <string.h>
 #include "chip.h"
 #include "i82801ix.h"
-#include "nvs.h"
 #include <southbridge/intel/common/pciehp.h>
 #include <southbridge/intel/common/pmutil.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
+#include <soc/nvs.h>
 
 #define NMI_OFF	0
 
@@ -453,22 +452,10 @@ static void i82801ix_lpc_read_resources(struct device *dev)
 	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 }
 
-void southbridge_inject_dsdt(const struct device *dev)
+void soc_fill_gnvs(struct global_nvs *gnvs)
 {
-	struct global_nvs *gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
-
-	if (gnvs) {
-		memset(gnvs, 0, sizeof(*gnvs));
-		acpi_create_gnvs(gnvs);
-
-		/* And tell SMI about it */
-		apm_control(APM_CNT_GNVS_UPDATE);
-
-		/* Add it to SSDT.  */
-		acpigen_write_scope("\\");
-		acpigen_write_name_dword("NVSA", (uintptr_t)gnvs);
-		acpigen_pop_len();
-	}
+	/* MPEN, Enable Multi Processing. */
+	gnvs->mpen = dev_count_cpu() > 1 ? 1 : 0;
 }
 
 static const char *lpc_acpi_name(const struct device *dev)
@@ -489,7 +476,6 @@ static struct device_operations device_ops = {
 	.read_resources		= i82801ix_lpc_read_resources,
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
-	.acpi_inject_dsdt	= southbridge_inject_dsdt,
 	.write_acpi_tables      = acpi_write_hpet,
 	.acpi_fill_ssdt		= southbridge_fill_ssdt,
 	.acpi_name		= lpc_acpi_name,

@@ -63,4 +63,21 @@ void generate_t_state_entries(int core, int cores_per_package);
  */
 void soc_power_states_generation(int core_id, int cores_per_package);
 
+/*
+ * Common function to calculate the power ratio for power state generation
+ */
+int common_calculate_power_ratio(int tdp, int p1_ratio, int ratio);
+
+struct madt_ioapic_info {
+	u8  id;
+	u32 addr;
+	u32 gsi_base;
+};
+
+/*
+ * Returns a table of MADT ioapic_info entries and the number of entries
+ * If the SOC doesn't implement this hook a default ioapic setting is used.
+ */
+const struct madt_ioapic_info *soc_get_ioapic_info(size_t *entries);
+
 #endif				/* _SOC_INTEL_COMMON_BLOCK_ACPI_H_ */

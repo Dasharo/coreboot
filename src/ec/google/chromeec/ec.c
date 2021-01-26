@@ -863,6 +863,11 @@ int google_chromeec_cbi_get_board_version(uint32_t *version)
 	return cbi_get_uint32(version, CBI_TAG_BOARD_VERSION);
 }
 
+int google_chromeec_cbi_get_ssfc(uint32_t *ssfc)
+{
+	return cbi_get_uint32(ssfc, CBI_TAG_SSFC);
+}
+
 static int cbi_get_string(char *buf, size_t bufsize, uint32_t tag)
 {
 	struct ec_params_get_cbi params = {
@@ -993,9 +998,24 @@ static uint16_t google_chromeec_get_uptime_info(
 
 bool google_chromeec_get_ap_watchdog_flag(void)
 {
+	int i;
 	struct ec_response_uptime_info resp;
-	return (!google_chromeec_get_uptime_info(&resp) &&
-		(resp.ec_reset_flags & EC_RESET_FLAG_AP_WATCHDOG));
+
+	if (google_chromeec_get_uptime_info(&resp))
+		return false;
+
+	if (resp.ec_reset_flags & EC_RESET_FLAG_AP_WATCHDOG)
+		return true;
+
+	/* Find the last valid entry */
+	for (i = ARRAY_SIZE(resp.recent_ap_reset) - 1; i >= 0; i--) {
+		if (resp.recent_ap_reset[i].reset_time_ms == 0)
+			continue;
+		return (resp.recent_ap_reset[i].reset_cause ==
+			CHIPSET_RESET_AP_WATCHDOG);
+	}
+
+	return false;
 }
 
 int google_chromeec_i2c_xfer(uint8_t chip, uint8_t addr, int alen,

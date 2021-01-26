@@ -4,10 +4,13 @@
 #include <acpi/acpigen.h>
 #include <cbmem.h>
 #include <console/console.h>
+#include <soc/nvs.h>
+#include <stdint.h>
 #include <string.h>
 #include <types.h>
+#include <vendorcode/google/chromeos/gnvs.h>
 
-static void *gnvs;
+static struct global_nvs *gnvs;
 
 void *acpi_get_gnvs(void)
 {
@@ -22,48 +25,47 @@ void *acpi_get_gnvs(void)
 	return NULL;
 }
 
-static void gnvs_assign_cbmc(void)
-{
-	uint32_t *gnvs_cbmc = gnvs_cbmc_ptr();
-	if (gnvs_cbmc)
-		*gnvs_cbmc = (uintptr_t)cbmem_find(CBMEM_ID_CONSOLE);
-}
+__weak void soc_fill_gnvs(struct global_nvs *gnvs_) { }
+__weak void mainboard_fill_gnvs(struct global_nvs *gnvs_) { }
 
-void *gnvs_get_or_create(void)
+void acpi_create_gnvs(void)
 {
 	size_t gnvs_size;
 
-	if (gnvs)
-		return gnvs;
+	if (cbmem_find(CBMEM_ID_ACPI_GNVS))
+		return;
 
-	gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
-	if (gnvs)
-		return gnvs;
-
-	gnvs_size = gnvs_size_of_array();
+	/* Match with OpRegion declared in global_nvs.asl. */
+	gnvs_size = sizeof(struct global_nvs);
+	if (gnvs_size < 0x100)
+		gnvs_size = 0x100;
+	if (gnvs_size > 0x1000)
+		gnvs_size = 0x2000;
+	else if (CONFIG(MAINBOARD_HAS_CHROMEOS))
+		gnvs_size = 0x1000;
 
 	gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, gnvs_size);
 	if (!gnvs)
-		return gnvs;
+		return;
 
 	memset(gnvs, 0, gnvs_size);
 
 	if (CONFIG(CONSOLE_CBMEM))
-		gnvs_assign_cbmc();
+		gnvs->cbmc = (uintptr_t)cbmem_find(CBMEM_ID_CONSOLE);
 
 	if (CONFIG(CHROMEOS))
-		gnvs_assign_chromeos();
-
-	return gnvs;
+		gnvs_assign_chromeos((u8 *)gnvs + GNVS_CHROMEOS_ACPI_OFFSET);
 }
 
-void acpi_inject_nvsa(void)
+void acpi_fill_gnvs(void)
 {
-	uintptr_t gnvs_address = (uintptr_t)acpi_get_gnvs();
-	if (!gnvs_address)
+	if (!gnvs)
 		return;
 
+	soc_fill_gnvs(gnvs);
+	mainboard_fill_gnvs(gnvs);
+
 	acpigen_write_scope("\\");
-	acpigen_write_name_dword("NVSA", gnvs_address);
+	acpigen_write_name_dword("NVSA", (uintptr_t)gnvs);
 	acpigen_pop_len();
 }

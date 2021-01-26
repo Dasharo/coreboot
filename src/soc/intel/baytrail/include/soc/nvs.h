@@ -3,8 +3,7 @@
 #ifndef _BAYTRAIL_NVS_H_
 #define _BAYTRAIL_NVS_H_
 
-#include <commonlib/helpers.h>
-#include <vendorcode/google/chromeos/gnvs.h>
+#include <stdint.h>
 #include <soc/device_nvs.h>
 
 struct __packed global_nvs {
@@ -22,7 +21,7 @@ struct __packed global_nvs {
 	u32	p80d; /* 0x0b - Debug port (IO 0x80) value */
 	u8	lids; /* 0x0f - LID state (open = 1) */
 	u8	pwrs; /* 0x10 - Power state (AC = 1) */
-	u8	pcnt; /* 0x11 - Processor Count */
+	u8	unused_was_pcnt; /* 0x11 - Processor Count */
 	u8	tpmp; /* 0x12 - TPM Present and Enabled */
 	u8	tlvl; /* 0x13 - Throttle Level */
 	u8	ppcm; /* 0x14 - Maximum P-state usable by OS */
@@ -49,12 +48,10 @@ struct __packed global_nvs {
 	u8	unused[76];
 
 	/* ChromeOS specific (0x100-0xfff) */
-	chromeos_acpi_t chromeos;
+	u8	chromeos_reserve[0xf00];
 
 	/* Baytrail LPSS (0x1000) */
 	device_nvs_t dev;
 };
-
-check_member(global_nvs, chromeos, GNVS_CHROMEOS_ACPI_OFFSET);
 
 #endif /* _BAYTRAIL_NVS_H_ */

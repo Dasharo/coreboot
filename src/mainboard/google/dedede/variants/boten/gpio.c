@@ -8,14 +8,21 @@
 /* Pad configuration in ramstage*/
 static const struct pad_config gpio_table[] = {
 	/* A10 : WWAN_EN => LTE_PWR_OFF_ODL */
-	PAD_CFG_GPO(GPP_A10, 0, PLTRST),
+	PAD_CFG_GPO(GPP_A10, 1, PWROK),
+
+	/* B7  : WWAN_SAR_DETECT_R_ODL */
+	PAD_CFG_GPO(GPP_B7, 1, DEEP),
 
 	/* C12 : AP_PEN_DET_ODL */
-	PAD_CFG_GPI_SCI(GPP_C12, UP_20K, DEEP, EDGE_SINGLE, NONE),
+	PAD_CFG_GPI_GPIO_DRIVER(GPP_C12, UP_20K, DEEP),
 	/* C18 : AP_I2C_EMR_SDA */
 	PAD_NC(GPP_C18, NONE),
 	/* C19 : AP_I2C_EMR_SCL */
 	PAD_NC(GPP_C19, NONE),
+	/* C22 : UART2_RTS_N */
+	PAD_NC(GPP_C22, NONE),
+	/* C23 : UART2_CTS_N */
+	PAD_NC(GPP_C23, NONE),
 
 	/* D12 : WCAM_RST_L */
 	PAD_NC(GPP_D12, NONE),
@@ -25,6 +32,12 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_D14, NONE),
 	/* D15 : UCAM_RST_L */
 	PAD_NC(GPP_D15, NONE),
+	/* D19 : WWAN_WLAN_COEX1 */
+	PAD_NC(GPP_D19, NONE),
+	/* D20 : WWAN_WLAN_COEX2 */
+	PAD_NC(GPP_D20, NONE),
+	/* D21 : WWAN_WLAN_COEX3 */
+	PAD_NC(GPP_D21, NONE),
 	/* D22 : AP_I2C_SUB_SDA*/
 	PAD_CFG_NF(GPP_D22, NONE, DEEP, NF1),
 	/* D23 : AP_I2C_SUB_SCL */
@@ -36,6 +49,9 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_E2, NONE),
 	/* E11 : AP_I2C_SUB_INT_ODL */
 	PAD_CFG_GPI_INT(GPP_E11, NONE, PLTRST, EDGE_BOTH),
+
+	/* G7  : SD_SDIO_WP */
+	PAD_NC(GPP_G7, NONE),
 
 	/* H6  : AP_I2C_CAM_SDA */
 	PAD_NC(GPP_H6, NONE),

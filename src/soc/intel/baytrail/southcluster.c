@@ -7,7 +7,6 @@
 #include <acpi/acpi.h>
 #include <acpi/acpi_gnvs.h>
 #include <bootstate.h>
-#include <cbmem.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <device/device.h>
@@ -20,7 +19,6 @@
 #include <soc/iomap.h>
 #include <soc/irq.h>
 #include <soc/lpc.h>
-#include <soc/nvs.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/ramstage.h>
@@ -484,33 +482,9 @@ void southcluster_enable_dev(struct device *dev)
 	}
 }
 
-static void southcluster_inject_dsdt(const struct device *device)
-{
-	struct global_nvs *gnvs;
-
-	gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
-	if (!gnvs) {
-		gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
-		if (gnvs)
-			memset(gnvs, 0, sizeof(*gnvs));
-	}
-
-	if (gnvs) {
-		acpi_create_gnvs(gnvs);
-		/* And tell SMI about it */
-		apm_control(APM_CNT_GNVS_UPDATE);
-
-		/* Add it to DSDT.  */
-		acpigen_write_scope("\\");
-		acpigen_write_name_dword("NVSA", (u32) gnvs);
-		acpigen_pop_len();
-	}
-}
-
 static struct device_operations device_ops = {
 	.read_resources		= sc_read_resources,
 	.set_resources		= pci_dev_set_resources,
-	.acpi_inject_dsdt	= southcluster_inject_dsdt,
 	.write_acpi_tables	= acpi_write_hpet,
 	.init			= sc_init,
 	.enable			= southcluster_enable_dev,

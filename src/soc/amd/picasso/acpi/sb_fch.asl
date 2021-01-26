@@ -3,6 +3,7 @@
 #include <soc/gpio.h>
 #include <soc/iomap.h>
 #include <amdblocks/acpimmio_map.h>
+#include <aoac.asl>
 
 Device (AAHB)
 {
@@ -123,17 +124,7 @@ Device (FUR0)
 		}
 	}
 
-	Name (_PR0, Package () { \_SB.AOAC.FUR0 })
-	Name (_PR2, Package () { \_SB.AOAC.FUR0 })
-	Name (_PR3, Package () { \_SB.AOAC.FUR0 })
-	Method (_PS0, 0, Serialized) {
-		Printf("FUR0._PS0")
-		\_SB.AOAC.FUR0.TDS = 1
-	}
-	Method (_PS3, 0, Serialized) {
-		Printf("FUR0._PS3")
-		\_SB.AOAC.FUR0.TDS = 3
-	}
+	AOAC_DEVICE(11, 0)
 }
 
 Device (FUR1) {
@@ -166,17 +157,7 @@ Device (FUR1) {
 		}
 	}
 
-	Name (_PR0, Package () { \_SB.AOAC.FUR1 })
-	Name (_PR2, Package () { \_SB.AOAC.FUR1 })
-	Name (_PR3, Package () { \_SB.AOAC.FUR1 })
-	Method (_PS0, 0, Serialized) {
-		Printf("FUR1._PS0")
-		\_SB.AOAC.FUR1.TDS = 1
-	}
-	Method (_PS3, 0, Serialized) {
-		Printf("FUR1._PS3")
-		\_SB.AOAC.FUR1.TDS = 3
-	}
+	AOAC_DEVICE(12, 0)
 }
 
 Device (FUR2) {
@@ -209,17 +190,7 @@ Device (FUR2) {
 		}
 	}
 
-	Name (_PR0, Package () { \_SB.AOAC.FUR2 })
-	Name (_PR2, Package () { \_SB.AOAC.FUR2 })
-	Name (_PR3, Package () { \_SB.AOAC.FUR2 })
-	Method (_PS0, 0, Serialized) {
-		Printf("FUR2._PS0")
-		\_SB.AOAC.FUR2.TDS = 1
-	}
-	Method (_PS3, 0, Serialized) {
-		Printf("FUR2._PS3")
-		\_SB.AOAC.FUR2.TDS = 3
-	}
+	AOAC_DEVICE(16, 0)
 }
 
 Device (FUR3) {
@@ -252,17 +223,7 @@ Device (FUR3) {
 		}
 	}
 
-	Name (_PR0, Package () { \_SB.AOAC.FUR3 })
-	Name (_PR2, Package () { \_SB.AOAC.FUR3 })
-	Name (_PR3, Package () { \_SB.AOAC.FUR3 })
-	Method (_PS0, 0, Serialized) {
-		Printf("FUR3._PS0")
-		\_SB.AOAC.FUR3.TDS = 1
-	}
-	Method (_PS3, 0, Serialized) {
-		Printf("FUR3._PS3")
-		\_SB.AOAC.FUR3.TDS = 3
-	}
+	AOAC_DEVICE(26, 0)
 }
 
 Device (I2C2) {
@@ -298,17 +259,7 @@ Device (I2C2) {
 		Return (0x0F)
 	}
 
-	Name (_PR0, Package () { \_SB.AOAC.I2C2 })
-	Name (_PR2, Package () { \_SB.AOAC.I2C2 })
-	Name (_PR3, Package () { \_SB.AOAC.I2C2 })
-	Method (_PS0, 0, Serialized) {
-		Printf("I2C2._PS0")
-		\_SB.AOAC.I2C2.TDS = 1
-	}
-	Method (_PS3, 0, Serialized) {
-		Printf("I2C2._PS3")
-		\_SB.AOAC.I2C2.TDS = 3
-	}
+	AOAC_DEVICE(7, 0)
 }
 
 Device (I2C3)
@@ -344,17 +295,7 @@ Device (I2C3)
 		Return (0x0F)
 	}
 
-	Name (_PR0, Package () { \_SB.AOAC.I2C3 })
-	Name (_PR2, Package () { \_SB.AOAC.I2C3 })
-	Name (_PR3, Package () { \_SB.AOAC.I2C3 })
-	Method (_PS0, 0, Serialized) {
-		Printf("I2C3._PS0")
-		\_SB.AOAC.I2C3.TDS = 1
-	}
-	Method (_PS3, 0, Serialized) {
-		Printf("I2C3._PS3")
-		\_SB.AOAC.I2C3.TDS = 3
-	}
+	AOAC_DEVICE(8, 0)
 }
 
 Device (MISC)
