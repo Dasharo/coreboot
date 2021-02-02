@@ -386,7 +386,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 	t->handle = handle;
 	t->length = len - 2;
 
-	t->vendor = smbios_add_string(t->eos, "coreboot");
+	t->vendor = smbios_add_string(t->eos, "3mdeb Embedded Systems Consulting");
 #if !CONFIG(CHROMEOS)
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
 
@@ -399,7 +399,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 #if CONFIG(HAVE_ACPI_TABLES)
 	u32 version_offset = (u32)smbios_string_table_len(t->eos);
 #endif
-	t->bios_version = smbios_add_string(t->eos, SPACES);
+	t->bios_version = smbios_add_string(t->eos, "Dasharo Firewall " COREBOOT_EXTRA_VERSION);
 
 #if CONFIG(HAVE_ACPI_TABLES)
 	/* SMBIOS offsets start at 1 rather than 0 */
