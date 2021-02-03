@@ -1,3 +1,8 @@
+## Contributing
+
+All relevant chnages to OpenPOWER Talos II should go here:
+https://github.com/InsurgoTech/coreboot
+
 coreboot README
 ===============
 
