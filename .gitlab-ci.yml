@@ -232,3 +232,11 @@ publish:apu6:
   <<: *publish_rom
   variables:
     PLATFORM: apu6
+
+regression:apu6:
+  <<: *run_regression
+  variables:
+    PLATFORM: apu6
+    CONFIG: apu6
+    RTE_IP: $RTE_IP_APU6
+    AUTOFILL: 1
