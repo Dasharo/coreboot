@@ -5,21 +5,13 @@ export SHELL := env bash
 
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
-project_git_repo=https://github.com/mrchromebox/edk2
-project_git_branch=coreboot_fb
-upstream_git_repo=https://github.com/tianocore/edk2
+project_git_repo=https://github.com/3mdeb/edk2.git
+project_git_branch=dasharo
 
-ifeq ($(CONFIG_TIANOCORE_UEFIPAYLOAD),y)
+TAG=origin/$(project_git_branch)
+
 bootloader=UefiPayloadPkg
 logo_pkg=MdeModulePkg
-build_flavor=-D BOOTLOADER=COREBOOT -D PCIE_BASE=$(CONFIG_MMCONF_BASE_ADDRESS) -DPS2_KEYBOARD_ENABLE
-TAG=upstream/master
-else
-bootloader=CorebootPayloadPkg
-logo_pkg=CorebootPayloadPkg
-# STABLE revision is MrChromebox's coreboot framebuffer (coreboot_fb) branch
-TAG=origin/$(project_git_branch)
-endif
 
 ifneq ($(CONFIG_TIANOCORE_REVISION_ID),)
 TAG=$(CONFIG_TIANOCORE_REVISION_ID)
@@ -45,15 +37,14 @@ else
 ARCH=-a IA32 -a X64 -p $(bootloader)/$(bootloader)Ia32X64.dsc
 endif
 
-BUILD_STR=-q $(ARCH) -t COREBOOT -b $(BUILD_TYPE) $(TIMER) $(TIMEOUT) $(build_flavor)
+BUILD_STR=-q $(ARCH) -t COREBOOT -b $(BUILD_TYPE) $(TIMER) $(TIMEOUT) $(build_flavor) -D NETWORK_IPXE=TRUE -D SERIAL_TERMINAL=TRUE -D BOOTLOADER=COREBOOT -D SECURE_BOOT_ENABLE=TRUE -D PS2_KEYBOARD_ENABLE=TRUE
+
 
 all: clean build
 
 $(project_dir):
 	echo "    Cloning $(project_name) from Git"
-	git clone --branch $(project_git_branch) $(project_git_repo) $(project_dir); \
-		cd $(project_dir); \
-		git remote add upstream $(upstream_git_repo)
+	git clone --branch $(project_git_branch) $(project_git_repo) $(project_dir)
 
 update: $(project_dir)
 	cd  $(project_dir); \

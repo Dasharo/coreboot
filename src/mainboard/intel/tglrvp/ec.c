@@ -7,6 +7,7 @@
 
 void mainboard_ec_init(void)
 {
+#if CONFIG(EC_GOOGLE_CHROMEEC)
 	const struct google_chromeec_event_info info = {
 		.log_events = MAINBOARD_EC_LOG_EVENTS,
 		.sci_events = MAINBOARD_EC_SCI_EVENTS,
@@ -16,4 +17,5 @@ void mainboard_ec_init(void)
 	};
 
 	google_chromeec_events_init(&info, acpi_is_wakeup_s3());
+#endif
 }

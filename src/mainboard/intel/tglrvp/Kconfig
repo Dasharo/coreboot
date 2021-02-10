@@ -1,4 +1,4 @@
-if BOARD_INTEL_TGLRVP_UP3 || BOARD_INTEL_TGLRVP_UP4
+if BOARD_INTEL_TGLRVP_UP3 || BOARD_INTEL_TGLRVP_UP3_DDR4 || BOARD_INTEL_TGLRVP_UP4
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
@@ -24,6 +24,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_HAS_TPM2
 	select MAINBOARD_HAS_SPI_TPM_CR50
 	select SPI_TPM
+	select INTEL_CAR_NEM
 
 config CHROMEOS
 	bool
@@ -42,17 +43,20 @@ config MAINBOARD_DIR
 config VARIANT_DIR
 	string
 	default "tglrvp_up3" if BOARD_INTEL_TGLRVP_UP3
+	default "tglrvp_up3_ddr4" if BOARD_INTEL_TGLRVP_UP3_DDR4
 	default "tglrvp_up4" if BOARD_INTEL_TGLRVP_UP4
 
 config GBB_HWID
 	string
 	depends on CHROMEOS
 	default "TGLRVPUP3" if BOARD_INTEL_TGLRVP_UP3
+	default "TGLRVPUP3 DDR4" if BOARD_INTEL_TGLRVP_UP3_DDR4
 	default "TGLRVPUP4" if BOARD_INTEL_TGLRVP_UP4
 
 config MAINBOARD_PART_NUMBER
 	string
 	default "tglrvpu" if BOARD_INTEL_TGLRVP_UP3
+	default "tglrvpu" if BOARD_INTEL_TGLRVP_UP3_DDR4
 	default "tglrvpy" if BOARD_INTEL_TGLRVP_UP4
 
 config MAINBOARD_FAMILY
@@ -104,7 +108,7 @@ config TGL_INTEL_EC
 endchoice
 
 config VBOOT
-	select VBOOT_LID_SWITCH
+	select VBOOT_NO_BOARD_SUPPORT
 
 config UART_FOR_CONSOLE
 	int

@@ -4,8 +4,7 @@
 #include <ec/acpi/ec.h>
 #include <ec/google/chromeec/ec.h>
 #include <stdint.h>
-
-#include "board_id.h"
+#include <baseboard/board_id.h>
 
 static uint32_t get_board_id_via_ext_ec(void)
 {

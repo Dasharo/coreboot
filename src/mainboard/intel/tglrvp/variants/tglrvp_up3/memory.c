@@ -3,6 +3,11 @@
 #include <arch/cpu.h>
 #include <baseboard/variants.h>
 #include <intelblocks/mp_init.h>
+#include <soc/meminit.h>
+
+#include <baseboard/board_id.h>
+#include "spd/spd.h"
+
 
 size_t __weak variant_memory_sku(void)
 {
@@ -61,7 +66,54 @@ static const struct lpddr4x_cfg mem_config = {
 	.ect = 1, /* Early Command Training */
 };
 
-const struct lpddr4x_cfg *__weak variant_memory_params(void)
+static uintptr_t mainboard_get_spd_index(void)
 {
-	return &mem_config;
+	uint8_t board_id = (get_board_id() & 0xFF);
+	int spd_index;
+
+	printk(BIOS_INFO, "board id is 0x%x\n", board_id);
+
+	switch (board_id) {
+	case TGL_UP3_LP4_MICRON:
+	case TGL_UP4_LP4_MICRON:
+		spd_index = SPD_ID_MICRON;
+		break;
+	case TGL_UP3_LP4_SAMSUNG:
+	case TGL_UP4_LP4_SAMSUNG:
+		spd_index = SPD_ID_SAMSUNG;
+		break;
+	case TGL_UP3_LP4_HYNIX:
+	case TGL_UP4_LP4_HYNIX:
+		spd_index = SPD_ID_HYNIX;
+		break;
+	default:
+		spd_index = SPD_ID_MICRON;
+		printk(BIOS_WARNING, "Invalid board_id 0x%x\n", board_id);
+	}
+
+	printk(BIOS_INFO, "SPD index is 0x%x\n", spd_index);
+	return spd_index;
+}
+
+static const struct ddr_memory_cfg board_mem_config = {
+	.mem_type = MEMTYPE_LPDDR4,
+	.lpddr4_cfg = &mem_config,
+
+};
+
+const struct ddr_memory_cfg  *__weak variant_memory_params(void)
+{
+	return &board_mem_config;
+}
+
+static struct spd_info spd_info = {
+	.topology = MEMORY_DOWN,
+	.md_spd_loc = SPD_CBFS,
+};
+
+
+const struct spd_info *__weak variant_spd_info(void)
+{
+	spd_info.cbfs_index = mainboard_get_spd_index();
+	return (const struct spd_info *)&spd_info;
 }
