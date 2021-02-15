@@ -391,8 +391,9 @@ static int smbios_write_type0(unsigned long *current, int handle)
 #if !CONFIG(CHROMEOS)
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
 
-	snprintf(bversion, sizeof(bversion), "%s%s", "Dasharo Firewall ", 
-		 smbios_mainboard_bios_version());
+	snprintf(bversion, sizeof(bversion),
+		 "Dasharo Firewall %s (based on coreboot %s)",
+		 coreboot_version, smbios_mainboard_bios_version());
 	t->bios_version = smbios_add_string(t->eos, bversion);
 #else
 #define SPACES \
@@ -401,8 +402,9 @@ static int smbios_write_type0(unsigned long *current, int handle)
 #if CONFIG(HAVE_ACPI_TABLES)
 	u32 version_offset = (u32)smbios_string_table_len(t->eos);
 #endif
-	snprintf(bversion, sizeof(bversion), "%s%s", "Dasharo Firewall ", 
-		 smbios_mainboard_bios_version());
+	snprintf(bversion, sizeof(bversion),
+		 "Dasharo Firewall %s (based on coreboot %s)",
+		 coreboot_version, smbios_mainboard_bios_version());
 	t->bios_version = smbios_add_string(t->eos, bversion);
 
 #if CONFIG(HAVE_ACPI_TABLES)
