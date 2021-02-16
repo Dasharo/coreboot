@@ -315,6 +315,7 @@ files_added:: $(obj)/VBLOCK_B.bin payloads/external/tianocore/tianocore/Build/UE
 	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r VBLOCK_B -f $(obj)/VBLOCK_B.bin
 	$(CBFSTOOL) $(obj)/coreboot.rom add-payload -r FW_MAIN_A -f payloads/external/tianocore/tianocore/Build/UEFIPAYLOAD.fd -n fallback/payload -c lzma
 	$(CBFSTOOL) $(obj)/coreboot.rom print -r FW_MAIN_A
+	$(CBFSTOOL) $(obj)/coreboot.rom write -u -r NVRAM -f $(top)/nvram.bin
 	@printf "    FLASHMAP Layout generated for RO, A and B partition.\n"
 	dd if=$(top)/UD_Polisy_v1.0.0.rom skip=2M bs=6M count=1 of=$(obj)/coreboot.rom \
 		seek=2M iflag=skip_bytes oflag=seek_bytes conv=notrunc  2> /dev/null
