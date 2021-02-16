@@ -1190,15 +1190,21 @@ endif # CONFIG_CBFS_VERIFICATION
 ifeq ($(CONFIG_ARCH_PPC64),y)
 	cp -r $(top)/3rdparty/sb-signing-utils/test/keys /tmp
 	@printf "    SBSIGN  $(subst $(obj)/,,$(@))\n"
-	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$(objcbfs)/bootblock.bin $(top)/$(obj)/bootblock.signed 2> /dev/null
 	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$@ $(top)/$@.signed 2> /dev/null
 	@printf "    ECC     $(subst $(obj)/,,$(@))\n"
 	$(ECCTOOL) --inject $(top)/$@.signed --output $(top)/$@.signed.ecc --p8
+ifeq ($(CONFIG_BOOTBLOCK_IN_SEEPROM),y)
+	@printf "    ECC     bootblock\n"
+	$(ECCTOOL) --inject $(top)/$(objcbfs)/bootblock.bin --output $(obj)/bootblock.ecc --p8
+else
+	@printf "    SBSIGN  bootblock\n"
+	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$(objcbfs)/bootblock.bin $(top)/$(obj)/bootblock.signed 2> /dev/null
 	$(ECCTOOL) --inject $(top)/$@ --output $(top)/$@.ecc --p8
 	@printf "    ECC     bootblock\n"
 	dd  if=$(obj)/bootblock.signed  of=$(obj)/bootblock.signed.pad  ibs=25486 conv=sync 2> /dev/null
 	$(ECCTOOL) --inject $(obj)/bootblock.signed.pad --output $(obj)/bootblock.signed.ecc --p8
 	rm $(obj)/bootblock.signed $(obj)/bootblock.signed.pad
+endif # CONFIG_BOOTBLOCK_IN_SEEPROM
 endif # CONFIG_ARCH_PPC64
 
 cbfs-files-y += $(CONFIG_CBFS_PREFIX)/romstage
