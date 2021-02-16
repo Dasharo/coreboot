@@ -2,6 +2,7 @@
 /*
  * Early initialization code for POWER8.
  */
+#include <cpu/power/spr.h>
 
 #define FIXUP_ENDIAN						   \
 	tdi   0,0,0x48;	  /* Reverse endian of b . + 8		*/ \
@@ -29,35 +30,87 @@
 .globl _start
 _start:
 	/* QEMU with hb-mode=on starts at address 0x10, while hardware at 0x0. */
+#if !CONFIG(BOOTBLOCK_IN_SEEPROM)
 	nop
 	nop
 	nop
 	nop
 	FIXUP_ENDIAN
+#endif
 
 	/* Set program priority to medium */
 	or		%r2, %r2, %r2
 
-	/* Stack */
-	lis		%r1, _estack@ha
-	addi	%r1, %r1, _estack@l
+#if CONFIG(BOOTBLOCK_IN_SEEPROM)
+	/* SBE sets HRMOR to 4G - 128M + 2M. Our bootblock is loaded 12 KB above
+	 * that address - it is used as a place for interrupt vectors in Hostboot,
+	 * but it isn't actually a part of the HBBL partition to save space in
+	 * SEEPROM. At the entry we are not loaded at the address we are linked for.
+	 *
+	 * HRMOR isn't added to the addresses, it is OR'ed with them. Because the
+	 * bit corresponding to 2M is set, address space overlaps every 2M. To be
+	 * able to use full 10M of L3 cache we must change it to something with
+	 * bigger alignment.
+	 */
 
-	/* Clear .bss section */
-	/* Curently not needed, .bss is zeroed in the file. If it were to be used,
-	 * make sure that .bss is 128B aligned (size of cache line), otherwise dcbz
-	 * will clear (part of) .opd section! */
-/*
-	lis		%r5, _bss@ha
-	addi	%r5, %r5, _bss@l
-	lis		%r6, _ebss@ha
-	addi	%r6, %r6, _ebss@l
+	lis		%r12, 0x20		/* Bit for 2M */
+	mfspr	%r11, 313		/* HRMOR */
+	li		%r10, 1
+	rotldi	%r10, %r10, 63	/* Most significant bit is "ignore HRMOR" */
+
+	/* Bit for 2M is set both in ignoreHRMOR and HRMOR, that is expected */
+	lis		%r9, ignoreHRMOR@h
+	ori		%r9, %r9, ignoreHRMOR@l
+	or		%r9, %r9, %r11
+	or		%r9, %r9, %r10
+
+	mtlr %r9
+	blr
+
+ignoreHRMOR:
+	/* Now we are at address 0x80000000F82030xx */
+	andc	%r11, %r11, %r12	/* Clear bit for 2M */
+	mtspr	SPR_HRMOR, %r11		/* Update HRMOR */
+	isync
+
+	/* We can't just "b stopIgnoringHRMOR", it would use relative offset */
+	addi	%r9, %r9, stopIgnoringHRMOR - ignoreHRMOR
+	mtlr %r9
+	blr
+
+stopIgnoringHRMOR:
+	/* Now we are at linked address */
+
+	/* L3 cache is invalid except for [2M, end of HBBL] range. Make the rest of
+	 * it valid, or embrace the checkstops. End of loaded part of HBBL is at
+	 * address 2M + 12 (see https://github.com/open-power/hostboot/blob/master/src/import/chips/p9/procedures/hwp/nest/p9_sbe_hb_structures.H#L84),
+	 * the first 4 bytes are for the jump into HBBL). */
+
+	/* Validate and initialize to zeroes the first 2M */
+	li		%r5, 0
+	lis		%r6, 0x20
 	addi	%r6, %r6, -1
 1:
 	dcbz	0, %r5
 	addi	%r5, %r5, 128
 	cmpld	cr7, %r5, %r6
 	blt		cr7, 1b
-*/
+
+	/* Validate and initialize to zeroes [end of HBBL, 10M] range */
+	ld	%r5, 12(%r12)
+	add	%r5, %r5, %r12
+	addis	%r6, %r6, 0x80		/* Add 8M = 10M - 2M */
+1:
+	dcbz	0, %r5
+	addi	%r5, %r5, 128
+	cmpld	cr7, %r5, %r6
+	blt		cr7, 1b
+
+#endif
+
+	/* Stack */
+	lis		%r1, _estack@ha
+	addi	%r1, %r1, _estack@l
 
 	/* This is tested by checkstack() just before jumping to payload */
 	LOAD_IMM64(%r3, 0xDEADBEEFDEADBEEF)

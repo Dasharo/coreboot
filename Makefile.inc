@@ -1116,6 +1116,7 @@ ifeq ($(CONFIG_ARCH_X86),y)
 		$(TS_OPTIONS) \
 		$(CBFSTOOL_ADD_CMD_OPTIONS)
 else # ifeq ($(CONFIG_ARCH_X86),y)
+ifneq ($(CONFIG_BOOTBLOCK_IN_SEEPROM),y)
 	$(CBFSTOOL) $@.tmp write -u \
 		-r BOOTBLOCK \
 		-f $(objcbfs)/bootblock.bin
@@ -1129,6 +1130,7 @@ else # ifeq ($(CONFIG_ARCH_X86),y)
 		-b -4 \
 		$(CBFSTOOL_ADD_CMD_OPTIONS)
 	rm -f $@.tmp.2
+endif # ifneq ($(CONFIG_BOOTBLOCK_IN_SEEPROM),y)
 endif # ifeq ($(CONFIG_ARCH_X86),y)
 	$(CBFSTOOL) $@.tmp add-master-header $(TS_OPTIONS) $(CBFSTOOL_ADD_CMD_OPTIONS)
 	$(prebuild-files) true
@@ -1183,15 +1185,21 @@ endif # CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE
 ifeq ($(CONFIG_ARCH_PPC64),y)
 	cp -r $(top)/3rdparty/sb-signing-utils/test/keys /tmp
 	@printf "    SBSIGN  $(subst $(obj)/,,$(@))\n"
-	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$(objcbfs)/bootblock.bin $(top)/$(obj)/bootblock.signed 2> /dev/null
 	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$@ $(top)/$@.signed 2> /dev/null
 	@printf "    ECC     $(subst $(obj)/,,$(@))\n"
 	$(ECCTOOL) --inject $(top)/$@.signed --output $(top)/$@.signed.ecc --p8
+ifeq ($(CONFIG_BOOTBLOCK_IN_SEEPROM),y)
+	@printf "    ECC     bootblock\n"
+	$(ECCTOOL) --inject $(top)/$(objcbfs)/bootblock.bin --output $(obj)/bootblock.ecc --p8
+else
+	@printf "    SBSIGN  bootblock\n"
+	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$(objcbfs)/bootblock.bin $(top)/$(obj)/bootblock.signed 2> /dev/null
 	$(ECCTOOL) --inject $(top)/$@ --output $(top)/$@.ecc --p8
 	@printf "    ECC     bootblock\n"
 	dd  if=$(obj)/bootblock.signed  of=$(obj)/bootblock.signed.pad  ibs=25486 conv=sync 2> /dev/null
 	$(ECCTOOL) --inject $(obj)/bootblock.signed.pad --output $(obj)/bootblock.signed.ecc --p8
 	rm $(obj)/bootblock.signed $(obj)/bootblock.signed.pad
+endif # CONFIG_BOOTBLOCK_IN_SEEPROM
 endif
 
 
