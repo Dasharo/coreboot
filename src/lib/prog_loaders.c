@@ -49,8 +49,6 @@ int prog_locate(struct prog *prog)
 
 #ifdef __RAMSTAGE__
 	u32 cbfs_type;
-	u8 sr0, sr1;
-	const struct spi_flash *flash = boot_device_spi_flash();
 	uint8_t data_hash[VB2_SHA256_DIGEST_SIZE];
 	uint8_t golden_hash[VB2_SHA256_DIGEST_SIZE] = {
 		0xf2, 0xf3, 0xbc, 0xa3, 0x73, 0x1f, 0x84, 0x1e,
@@ -60,28 +58,10 @@ int prog_locate(struct prog *prog)
 	};
 	void* prog_memmap;
 
-	if (flash == NULL) {
-		printk(BIOS_ALERT, "Boot device SPI flash not found\n");
-		return -1;
-	}
-
-
-	if (spi_flash_status(flash, &sr0) < 0) {
-		printk(BIOS_ALERT, "Failed to read SPI status register 0\n");
-		return -1;
-	}
-	if (spi_flash_cmd(&flash->spi, 0x35, &sr1, sizeof(sr1))) {
-		printk(BIOS_ALERT, "Failed to read SPI status register 1\n");
-		return -1;
-	}
-
 	cbfs_prepare_program_locate();
 
-	printk(BIOS_DEBUG, "SPI SR0 %02x SR1 %02x\n", sr0, sr1);
-
 	/* Check if we looking for payload and SPI flash is locked. */
-	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog))
-	    && ((sr0 & 0x80) == 0x80) && ((sr1 & 1) == 1))  {
+	if (!strcmp(CONFIG_CBFS_PREFIX "/payload", prog_name(prog))) {
 		struct region_device rdev;
 		cbfs_type = CBFS_TYPE_SELF;
 		/* Locate PSPDIR just to fill the rdev fields */
