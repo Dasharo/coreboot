@@ -8,6 +8,7 @@ function usage {
     echo -e "\tfw4b - build Protectli FW4B coreboot image"
     echo -e "\tfw6  - build Protectli FW6  coreboot image"
     echo -e "\tfw6d - build Protectli FW6D coreboot image"
+    echo -e "\tfw6e - build Protectli FW6E coreboot image"
     exit 1
 }
 
@@ -120,6 +121,8 @@ function buildFW6DImage {
 		rm protectli_blobs.zip
 	fi
 
+	version=$(git describe)
+
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:1.52 \
@@ -150,9 +153,14 @@ function buildFW6DImage {
 		./build/cbfstool build/coreboot.rom add -f build/links.txt -n links -t raw && \
 		./build/cbfstool build/coreboot.rom print"
 
-	cp build/coreboot.rom protectli_$1.rom
-	echo "Result binary placed in $PWD/protectli_$1.rom"
-	sha256sum protectli_$1.rom > protectli_$1.rom.sha256
+	cp build/coreboot.rom protectli_$1_DF_$version.rom
+	if [ $? -eq 0 ]; then
+		echo "Result binary placed in $PWD/protectli_$1_DF_$version.rom" 
+		sha256sum protectli_$1_DF_$version.rom > protectli_$1_DF_$version.rom.sha256
+	else
+		echo "Build failed!"
+		exit 1
+	fi
 }
 
 CMD="$1"
@@ -169,6 +177,9 @@ case "$CMD" in
         ;;
     "fw6d")
         buildFW6DImage "fw6d"
+        ;;
+    "fw6e")
+        buildFW6DImage "fw6e"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
