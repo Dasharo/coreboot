@@ -30,7 +30,7 @@ function buildImage {
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:1.52 \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make distclean"
 
 	cp configs/config.protectli_$1 .config
@@ -39,7 +39,7 @@ function buildImage {
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:1.52 \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make olddefconfig && make && \
 		./build/cbfstool build/coreboot.rom add-int -i 0x85 -n etc/boot-menu-key && \
 		./build/cbfstool build/coreboot.rom add-int -i 6000 -n etc/usb-time-sigatt && \
@@ -75,7 +75,7 @@ function buildFW6Image {
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:1.52 \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make distclean"
 
 	cp configs/config.protectli_$1 .config
@@ -84,7 +84,7 @@ function buildFW6Image {
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:1.52 \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make olddefconfig && make && \
 		./build/cbfstool build/coreboot.rom add-int -i 0x85 -n etc/boot-menu-key && \
 		./build/cbfstool build/coreboot.rom add-int -i 1000 -n etc/usb-time-sigatt && \
@@ -125,7 +125,7 @@ function buildFW6DImage {
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:1.52 \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make distclean"
 
 	cp configs/config.protectli_$1 .config
@@ -134,7 +134,7 @@ function buildFW6DImage {
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:1.52 \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make olddefconfig && make && \
 		./build/cbfstool build/coreboot.rom add-int -i 0x85 -n etc/boot-menu-key && \
 		./build/cbfstool build/coreboot.rom add-int -i 1000 -n etc/usb-time-sigatt && \
