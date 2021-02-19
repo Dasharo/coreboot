@@ -1,11 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
+#include <console/console.h>
 #include <device/pci_ops.h>
 #include <soc/lpc.h>
 #include <soc/pci_devs.h>
 #include <soc/romstage.h>
 #include <superio/ite/common/ite.h>
 #include <superio/ite/it8613e/it8613e.h>
+#include <spd_bin.h>
 
 #define SERIAL1_DEV PNP_DEV(0x2e, IT8613E_SP1)
 
@@ -22,6 +24,15 @@ void mainboard_after_memory_init(void)
 void mainboard_memory_init_params(struct romstage_params *params,
 				  MEMORY_INIT_UPD *memory_params)
 {
+	struct spd_block blk = {
+		.addr_map = { 0x50 },
+	};
+
+	get_spd_smbus(&blk);
+	if (blk.spd_array[0][0] == 0)
+		die("ERROR: SPD empty, DIMM not installed?");
+	dump_spd_info(&blk);
+
 	/*
 	 * Set SPD and memory configuration:
 	 * Memory type: 0=DimmInstalled,
@@ -30,4 +41,5 @@ void mainboard_memory_init_params(struct romstage_params *params,
 	 */
 	memory_params->PcdMemChannel0Config = 0;
 	memory_params->PcdMemChannel1Config = 2;
+	memory_params->PcdMemorySpdPtr = (uintptr_t)blk.spd_array[0];
 }
