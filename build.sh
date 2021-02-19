@@ -121,7 +121,7 @@ function buildFW6DImage {
 		rm protectli_blobs.zip
 	fi
 
-	version=$(git describe)
+	version=$(cat .coreboot-version)
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
