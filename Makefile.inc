@@ -21,11 +21,9 @@ ifeq ($(KERNELVERSION),)
 ifeq ($(BUILD_TIMELESS),1)
 KERNELVERSION := -TIMELESS--LESSTIME-
 else
-KERNELVERSION := $(strip $(if $(GIT),\
-	$(shell git describe --dirty --always || git describe),\
-	$(if $(wildcard $(top)/.coreboot-version),\
+KERNELVERSION := $(if $(wildcard $(top)/.coreboot-version),\
 		$(shell cat $(top)/.coreboot-version),\
-		coreboot-unknown$(KERNELREVISION))))
+		coreboot-unknown$(KERNELREVISION))
 endif
 endif
 COREBOOT_EXPORTS += KERNELVERSION
