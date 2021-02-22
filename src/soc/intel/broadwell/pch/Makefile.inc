@@ -1,13 +1,12 @@
 bootblock-y += bootblock.c
 
-ramstage-y += acpi.c
 ramstage-y += adsp.c
 romstage-y += early_pch.c
 ramstage-$(CONFIG_ELOG) += elog.c
 ramstage-y += finalize.c
-ramstage-y += gpio.c
-romstage-y += gpio.c
-smm-y      += gpio.c
+ramstage-y += ../../../../southbridge/intel/lynxpoint/lp_gpio.c
+romstage-y += ../../../../southbridge/intel/lynxpoint/lp_gpio.c
+smm-y      += ../../../../southbridge/intel/lynxpoint/lp_gpio.c
 ramstage-y += hda.c
 ramstage-y += iobp.c
 romstage-y += iobp.c
@@ -24,6 +23,7 @@ romstage-y += pmutil.c
 smm-y      += pmutil.c
 verstage-y += pmutil.c
 romstage-y += power_state.c
+ramstage-y += ramstage.c
 ramstage-y += sata.c
 ramstage-y += serialio.c
 ramstage-y += smbus.c

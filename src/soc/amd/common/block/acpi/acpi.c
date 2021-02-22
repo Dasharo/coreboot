@@ -3,14 +3,13 @@
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/acpi.h>
 #include <acpi/acpi.h>
-#include <acpi/acpi_gnvs.h>
+#include <acpi/acpi_pm.h>
 #include <bootmode.h>
 #include <console/console.h>
 #include <elog.h>
 #include <halt.h>
 #include <security/vboot/vboot_common.h>
 #include <soc/southbridge.h>
-#include <soc/nvs.h>
 
 void poweroff(void)
 {
@@ -106,8 +105,15 @@ void acpi_fill_pm_gpe_state(struct acpi_pm_gpe_state *state)
 	state->aligning_field = 0;
 }
 
-void acpi_pm_gpe_add_events_print_events(const struct acpi_pm_gpe_state *state)
+void acpi_pm_gpe_add_events_print_events(void)
 {
+	const struct chipset_power_state *ps;
+	const struct acpi_pm_gpe_state *state;
+
+	if (acpi_pm_state_for_elog(&ps) < 0)
+		return;
+
+	state = &ps->gpe_state;
 	log_pm1_status(state->pm1_sts);
 	print_pm1_status(state->pm1_sts);
 	log_gpe_events(state);

@@ -6,7 +6,6 @@ subdirs-y += ../../../cpu/x86/lapic
 subdirs-y += ../../../cpu/x86/cache
 subdirs-y += ../../../cpu/x86/mtrr
 subdirs-y += ../../../cpu/x86/pae
-subdirs-y += ../../../cpu/x86/smm
 subdirs-$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK) += psp_verstage
 
 # Beware that all-y also adds the compilation unit to verstage on PSP
@@ -24,9 +23,7 @@ romstage-y += i2c.c
 romstage-y += romstage.c
 romstage-y += gpio.c
 romstage-y += reset.c
-romstage-y += memmap.c
 romstage-y += uart.c
-romstage-y += psp.c
 romstage-y += mrc_cache.c
 
 verstage-y += i2c.c
@@ -47,14 +44,9 @@ ramstage-y += fch.c
 ramstage-y += reset.c
 ramstage-y += acp.c
 ramstage-y += sata.c
-ramstage-y += memmap.c
-ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi.c
 ramstage-y += uart.c
-ramstage-y += finalize.c
 ramstage-y += soc_util.c
-ramstage-y += psp.c
 ramstage-y += fsp_params.c
-ramstage-y += update_microcode.c
 ramstage-y += graphics.c
 ramstage-y += pcie_gpp.c
 ramstage-y += xhci.c
@@ -65,7 +57,6 @@ ifeq ($(CONFIG_DEBUG_SMI),y)
 smm-y += uart.c
 endif
 smm-y += gpio.c
-smm-y += psp.c
 smm-y += smu.c
 
 CPPFLAGS_common += -I$(src)/soc/amd/picasso
@@ -83,6 +74,9 @@ MAINBOARD_BLOBS_DIR:=$(top)/3rdparty/blobs/mainboard/$(MAINBOARDDIR)
 # +-----------+---------------+----------------+------------+
 # |           |  PSPDIR ADDR  |  BIOSDIR ADDR  |
 # +-----------+---------------+----------------+
+
+$(if $(CONFIG_AMD_FWM_POSITION_INDEX), ,\
+     $(error Invalid AMD firmware position index. Check if the board sets a valid ROM size))
 
 PICASSO_FWM_POSITION=$(call int-add, \
 	$(call int-subtract, 0xffffffff \
@@ -104,12 +98,6 @@ ifeq ($(CONFIG_PSP_UNLOCK_SECURE_DEBUG),y)
 PSP_SOFTFUSE_BITS += 0
 OPT_TOKEN_UNLOCK="--token-unlock"
 endif
-
-ifeq ($(CONFIG_USE_PSPSECUREOS),y)
-# types = 0x2
-OPT_PSP_USE_PSPSECUREOS="--use-pspsecureos"
-endif
-
 
 ifeq ($(CONFIG_PSP_LOAD_MP2_FW),y)
 OPT_PSP_LOAD_MP2_FW="--load-mp2-fw"
@@ -145,11 +133,6 @@ PSP_BIOSBIN_DEST=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | a
 # The flashmap section used for this is expected to be named RW_MRC_CACHE
 APOB_NV_SIZE=$(shell grep "FMAP_SECTION_RW_MRC_CACHE_SIZE" $(obj)/fmap_config.h | awk '{print $$(NF)}')
 APOB_NV_BASE=$(shell grep "FMAP_SECTION_RW_MRC_CACHE_START" $(obj)/fmap_config.h | awk '{print $$(NF)}')
-
-# type = 0x66
-PSP_UCODE_FILE1=$(FIRMWARE_LOCATION)/UcodePatch_PCO_B1.bin
-PSP_UCODE_FILE2=$(FIRMWARE_LOCATION)/UcodePatch_PCO_B0.bin
-PSP_UCODE_FILE3=$(FIRMWARE_LOCATION)/UcodePatch_RV2_A0.bin
 
 ifeq ($(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK),y)
 # type = 0x6B - PSP Shared memory location
@@ -222,7 +205,7 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_PSP_BIOSBIN_DEST) \
 		$(OPT_PSP_BIOSBIN_SIZE) \
 		$(OPT_PSP_SOFTFUSE) \
-		$(OPT_PSP_USE_PSPSECUREOS) \
+		--use-pspsecureos \
 		$(OPT_PSP_LOAD_MP2_FW) \
 		$(OPT_PSP_LOAD_S0I3_FW) \
 		$(OPT_WHITELIST_FILE) \
@@ -303,6 +286,6 @@ endif
 
 $(call strip_quotes,$(CONFIG_FSP_M_CBFS))-options := -b $(CONFIG_FSP_M_ADDR)
 
-cpu_microcode_bins += $(wildcard 3rdparty/amd_blobs/picasso/PSP/UcodePatch_*.bin)
+cpu_microcode_bins += $(wildcard ${FIRMWARE_LOCATION}/UcodePatch_*.bin)
 
 endif # ($(CONFIG_SOC_AMD_PICASSO),y)

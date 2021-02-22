@@ -12,12 +12,12 @@
 #include <cpu/x86/msr.h>
 #include <cpu/intel/common/common.h>
 #include <cpu/intel/turbo.h>
+#include <intelblocks/acpi_wake_source.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/sgx.h>
 #include <intelblocks/uart.h>
 #include <intelblocks/systemagent.h>
-#include <soc/intel/common/acpi.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
 #include <soc/iomap.h>
@@ -29,7 +29,6 @@
 #include <soc/systemagent.h>
 #include <string.h>
 #include <types.h>
-#include <wrdd.h>
 #include <device/pci_ops.h>
 
 #include "chip.h"
@@ -160,14 +159,8 @@ void soc_fill_gnvs(struct global_nvs *gnvs)
 {
 	const struct soc_intel_skylake_config *config = config_of_soc();
 
-	/* Set unknown wake source */
-	gnvs->pm1i = -1;
-
 	/* Enable DPTF based on mainboard configuration */
 	gnvs->dpte = config->dptf_enable;
-
-	/* Fill in the Wifi Region id */
-	gnvs->cid1 = wifi_regulatory_domain();
 
 	/* Set USB2/USB3 wake enable bitmaps. */
 	gnvs->u2we = config->usb2_wake_enable_bitmap;
@@ -184,7 +177,7 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 {
 	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *)current,
 					     CONFIG_MMCONF_BASE_ADDRESS, 0, 0,
-					     (CONFIG_SA_PCIEX_LENGTH >> 20) - 1);
+					     CONFIG_MMCONF_BUS_NUMBER - 1);
 	return current;
 }
 
@@ -520,19 +513,14 @@ unsigned long southbridge_write_acpi_tables(const struct device *device,
 }
 
 /* Save wake source information for calculating ACPI _SWS values */
-int soc_fill_acpi_wake(uint32_t *pm1, uint32_t **gpe0)
+int soc_fill_acpi_wake(const struct chipset_power_state *ps, uint32_t *pm1, uint32_t **gpe0)
 {
 	const struct soc_intel_skylake_config *config = config_of_soc();
-	struct chipset_power_state *ps;
 	static uint32_t gpe0_sts[GPE0_REG_MAX];
 	uint32_t pm1_en;
 	uint32_t gpe0_std;
 	int i;
 	const int last_index = GPE0_REG_MAX - 1;
-
-	ps = acpi_get_pm_state();
-	if (ps == NULL)
-		return -1;
 
 	pm1_en = ps->pm1_en;
 	gpe0_std = ps->gpe0_en[3];

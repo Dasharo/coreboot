@@ -18,8 +18,6 @@
 
 #define APM_CNT		0xb2
 #define APM_CNT_NOOP_SMI	0x00
-#define APM_CNT_CST_CONTROL	0x85
-#define APM_CNT_PST_CONTROL	0x80
 #define APM_CNT_ACPI_DISABLE	0x1e
 #define APM_CNT_ACPI_ENABLE	0xe1
 #define APM_CNT_ROUTE_ALL_XHCI	0xca
@@ -33,6 +31,7 @@
 
 /* Send cmd to APM_CNT with HAVE_SMI_HANDLER checking. */
 int apm_control(u8 cmd);
+u8 apm_get_apmc(void);
 
 void io_trap_handler(int smif);
 int southbridge_io_trap_handler(int smif);

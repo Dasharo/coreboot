@@ -34,10 +34,6 @@
  * removing said guarantees.
  */
 
-/* The file name align is not defined in CBFS spec -- only a preference by
- * (old) cbfstool. */
-#define CBFS_FILENAME_ALIGN	(16)
-
 static const char *lookup_name_by_type(const struct typedesc_t *desc, uint32_t type,
 				const char *default_value)
 {
@@ -70,7 +66,7 @@ int cbfs_parse_comp_algo(const char *name)
 size_t cbfs_calculate_file_header_size(const char *name)
 {
 	return (sizeof(struct cbfs_file) +
-		align_up(strlen(name) + 1, CBFS_FILENAME_ALIGN));
+		align_up(strlen(name) + 1, CBFS_ATTRIBUTE_ALIGN));
 }
 
 /* Only call on legacy CBFSes possessing a master header. */
@@ -658,15 +654,28 @@ static int cbfs_add_entry_at(struct cbfs_image *image,
 	len = content_offset - addr - header_size;
 	memcpy(entry, header, header_size);
 	if (len != 0) {
-		/* the header moved backwards a bit to accommodate cbfs_file
+		/*
+		 * The header moved backwards a bit to accommodate cbfs_file
 		 * alignment requirements, so patch up ->offset to still point
-		 * to file data.
+		 * to file data. Move attributes forward so the end of the
+		 * attribute list still matches the end of the metadata.
 		 */
+		uint32_t offset = ntohl(entry->offset);
+		uint32_t attrs = ntohl(entry->attributes_offset);
 		DEBUG("|..|header|content|... <use offset to create entry>\n");
-		DEBUG("before: offset=0x%x\n", ntohl(entry->offset));
-		// TODO reset expanded name buffer to 0xFF.
-		entry->offset = htonl(ntohl(entry->offset) + len);
-		DEBUG("after: offset=0x%x\n", ntohl(entry->len));
+		DEBUG("before: attr_offset=0x%x, offset=0x%x\n", attrs, offset);
+		if (attrs == 0) {
+			memset((uint8_t *)entry + offset, 0, len);
+		} else {
+			uint8_t *p = (uint8_t *)entry + attrs;
+			memmove(p + len, p, offset - attrs);
+			memset(p, 0, len);
+			attrs += len;
+			entry->attributes_offset = htonl(attrs);
+		}
+		offset += len;
+		entry->offset = htonl(offset);
+		DEBUG("after: attr_offset=0x%x, offset=0x%x\n", attrs, offset);
 	}
 
 	// Ready to fill data into entry.
@@ -1857,6 +1866,7 @@ struct cbfs_file_attribute *cbfs_add_file_attr(struct cbfs_file *header,
 					       uint32_t tag,
 					       uint32_t size)
 {
+	assert(IS_ALIGNED(size, CBFS_ATTRIBUTE_ALIGN));
 	struct cbfs_file_attribute *attr, *next;
 	next = cbfs_file_first_attr(header);
 	do {

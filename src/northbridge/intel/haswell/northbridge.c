@@ -3,7 +3,6 @@
 #include <commonlib/helpers.h>
 #include <console/console.h>
 #include <acpi/acpi.h>
-#include <stdint.h>
 #include <delay.h>
 #include <cpu/intel/haswell/haswell.h>
 #include <device/device.h>
@@ -13,49 +12,11 @@
 #include <device/pci_ops.h>
 #include <boot/tables.h>
 #include <security/intel/txt/txt_register.h>
+#include <southbridge/intel/lynxpoint/pch.h>
+#include <types.h>
 
 #include "chip.h"
 #include "haswell.h"
-
-static int get_pcie_bar(struct device *dev, unsigned int index, u32 *base, u32 *len)
-{
-	u32 pciexbar_reg, mask;
-
-	*base = 0;
-	*len = 0;
-
-	pciexbar_reg = pci_read_config32(dev, index);
-
-	if (!(pciexbar_reg & (1 << 0)))
-		return 0;
-
-	switch ((pciexbar_reg >> 1) & 3) {
-	case 0: /* 256MB */
-		mask = (1 << 31) | (1 << 30) | (1 << 29) | (1 << 28);
-		*base = pciexbar_reg & mask;
-		*len = 256 * 1024 * 1024;
-		return 1;
-	case 1: /* 128M */
-		mask = (1 << 31) | (1 << 30) | (1 << 29) | (1 << 28);
-		mask |= (1 << 27);
-		*base = pciexbar_reg & mask;
-		*len = 128 * 1024 * 1024;
-		return 1;
-	case 2: /* 64M */
-		mask = (1 << 31) | (1 << 30) | (1 << 29) | (1 << 28);
-		mask |= (1 << 27) | (1 << 26);
-		*base = pciexbar_reg & mask;
-		*len = 64 * 1024 * 1024;
-		return 1;
-	}
-
-	return 0;
-}
-
-int decode_pcie_bar(u32 *const base, u32 *const len)
-{
-	return get_pcie_bar(pcidev_on_root(0, 0), PCIEXBAR, base, len);
-}
 
 static const char *northbridge_acpi_name(const struct device *dev)
 {
@@ -126,7 +87,6 @@ struct fixed_mmio_descriptor {
 
 #define SIZE_KB(x) ((x) * 1024)
 struct fixed_mmio_descriptor mc_fixed_resources[] = {
-	{ PCIEXBAR, SIZE_KB(0),  get_pcie_bar,      "PCIEXBAR" },
 	{ MCHBAR,   SIZE_KB(32), get_bar,           "MCHBAR"   },
 	{ DMIBAR,   SIZE_KB(4),  get_bar,           "DMIBAR"   },
 	{ EPBAR,    SIZE_KB(4),  get_bar,           "EPBAR"    },
@@ -161,6 +121,8 @@ static void mc_add_fixed_mmio_resources(struct device *dev)
 		       __func__, mc_fixed_resources[i].description, index,
 		       (unsigned long)base, (unsigned long)(base + size - 1));
 	}
+
+	mmconf_resource(dev, PCIEXBAR);
 }
 
 /*
@@ -373,11 +335,6 @@ static void mc_add_dram_resources(struct device *dev, int *resource_cnt)
 	mmio_resource(dev, index++, (0xa0000 >> 10), (0xc0000 - 0xa0000) >> 10);
 	reserved_ram_resource(dev, index++, (0xc0000 >> 10), (0x100000 - 0xc0000) >> 10);
 
-#if CONFIG(CHROMEOS_RAMOOPS)
-	reserved_ram_resource(dev, index++,
-			CONFIG_CHROMEOS_RAMOOPS_RAM_START >> 10,
-			CONFIG_CHROMEOS_RAMOOPS_RAM_SIZE  >> 10);
-#endif
 	*resource_cnt = index;
 }
 
@@ -515,7 +472,7 @@ static void northbridge_topology_init(void)
 	reg32 &= ~(0xff << 16);
 	reg32 |= 1 | (1 << 16);
 	EPBAR32(EPLE1D) = reg32;
-	EPBAR64(EPLE1A) = (uintptr_t)DEFAULT_DMIBAR;
+	EPBAR64(EPLE1A) = CONFIG_FIXED_DMIBAR_MMIO_BASE;
 
 	for (unsigned int i = 0; i <= 2; i++) {
 		const struct device *const dev = pcidev_on_root(1, i);
@@ -531,7 +488,7 @@ static void northbridge_topology_init(void)
 		EPBAR32(eple_d[i]) = reg32;
 
 		pci_update_config32(dev, PEG_ESD, ~(0xff << 16), (1 << 16));
-		pci_write_config32(dev, PEG_LE1A, (uintptr_t)DEFAULT_EPBAR);
+		pci_write_config32(dev, PEG_LE1A, CONFIG_FIXED_EPBAR_MMIO_BASE);
 		pci_write_config32(dev, PEG_LE1A + 4, 0);
 		pci_update_config32(dev, PEG_LE1D, ~(0xff << 16), (1 << 16) | 1);
 
@@ -549,9 +506,9 @@ static void northbridge_topology_init(void)
 	reg32 &= ~(0xffff << 16);
 	reg32 |= 1 | (2 << 16);
 	DMIBAR32(DMILE1D) = reg32;
-	DMIBAR64(DMILE1A) = (uintptr_t)DEFAULT_RCBA;
+	DMIBAR64(DMILE1A) = CONFIG_FIXED_RCBA_MMIO_BASE;
 
-	DMIBAR64(DMILE2A) = (uintptr_t)DEFAULT_EPBAR;
+	DMIBAR64(DMILE2A) = CONFIG_FIXED_EPBAR_MMIO_BASE;
 	reg32 = DMIBAR32(DMILE2D);
 	reg32 &= ~(0xff << 16);
 	reg32 |= 1 | (1 << 16);
@@ -590,9 +547,6 @@ static void northbridge_init(struct device *dev)
 	/* Configure turbo power limits 1ms after reset complete bit. */
 	mdelay(1);
 	set_power_limits(28);
-
-	/* Set here before graphics PM init. */
-	MCHBAR32(MMIO_PAVP_MSG) = 0x00100001;
 }
 
 static struct device_operations mc_ops = {

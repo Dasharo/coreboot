@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
-#include <acpi/acpi_gnvs.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <soc/nvs.h>
@@ -9,7 +8,6 @@
 #include <southbridge/intel/bd82x6x/me.h>
 #include <southbridge/intel/common/pmbase.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
-#include <cpu/intel/model_206ax/model_206ax.h>
 #include <elog.h>
 
 /* Include EC functions */

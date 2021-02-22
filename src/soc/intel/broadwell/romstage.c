@@ -8,12 +8,12 @@
 #include <cpu/intel/haswell/haswell.h>
 #include <elog.h>
 #include <romstage_handoff.h>
-#include <soc/gpio.h>
 #include <soc/me.h>
 #include <soc/pei_data.h>
 #include <soc/pei_wrapper.h>
 #include <soc/pm.h>
 #include <soc/romstage.h>
+#include <southbridge/intel/lynxpoint/lp_gpio.h>
 #include <stdint.h>
 #include <timestamp.h>
 
@@ -50,7 +50,7 @@ void mainboard_romstage_entry(void)
 	set_max_freq();
 
 	/* Initialize GPIOs */
-	init_gpios(mainboard_gpio_config);
+	setup_pch_lp_gpios(mainboard_gpio_map);
 
 	mainboard_fill_pei_data(&pei_data);
 	mainboard_fill_spd_data(&pei_data);

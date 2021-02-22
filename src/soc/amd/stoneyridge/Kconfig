@@ -9,7 +9,6 @@ if SOC_AMD_STONEYRIDGE
 
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
-	select ACPI_AMD_HARDWARE_SLEEP_VALUES
 	select ACPI_SOC_NVS
 	select ARCH_ALL_STAGES_X86_32
 	select BOOT_DEVICE_SUPPORTS_WRITES if BOOT_DEVICE_SPI_FLASH
@@ -41,6 +40,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_AMD_COMMON_BLOCK_SATA
 	select SOC_AMD_COMMON_BLOCK_SMBUS
 	select SOC_AMD_COMMON_BLOCK_SMI
+	select SOC_AMD_COMMON_BLOCK_SMM
 	select SOC_AMD_COMMON_BLOCK_SPI
 	select SOC_AMD_COMMON_BLOCK_UART
 	select SSE2
@@ -125,11 +125,9 @@ config BOTTOMIO_POSITION
 	  ranges are present.
 
 config MMCONF_BASE_ADDRESS
-	hex
 	default 0xF8000000
 
 config MMCONF_BUS_NUMBER
-	int
 	default 64
 
 config VGA_BIOS_ID
@@ -252,13 +250,6 @@ config SERIRQ_CONTINUOUS_MODE
 	  Set this option to y for serial IRQ in continuous mode.
 	  Otherwise it is in quiet mode.
 
-config STONEYRIDGE_ACPI_IO_BASE
-	hex
-	default 0x400
-	help
-	  Base address for the ACPI registers.
-	  This value must match the hardcoded value of AGESA.
-
 config CONSOLE_UART_BASE_ADDRESS
 	depends on CONSOLE_SERIAL
 	hex
@@ -266,7 +257,7 @@ config CONSOLE_UART_BASE_ADDRESS
 
 config SMM_TSEG_SIZE
 	hex
-	default 0x800000 if SMM_TSEG && HAVE_SMI_HANDLER
+	default 0x800000 if HAVE_SMI_HANDLER
 	default 0x0
 
 config SMM_RESERVED_SIZE

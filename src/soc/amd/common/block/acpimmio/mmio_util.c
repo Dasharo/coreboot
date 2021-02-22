@@ -35,8 +35,6 @@ DECLARE_ACPIMMIO(acpimmio_smbus, SMBUS);
 DECLARE_ACPIMMIO(acpimmio_wdt, WDT);
 DECLARE_ACPIMMIO(acpimmio_hpet, HPET);
 DECLARE_ACPIMMIO(acpimmio_dpvga, DPVGA);
-DECLARE_ACPIMMIO(acpimmio_gpio1, GPIO1);
-DECLARE_ACPIMMIO(acpimmio_gpio2, GPIO2);
 DECLARE_ACPIMMIO(acpimmio_xhci_pm, XHCIPM);
 DECLARE_ACPIMMIO(acpimmio_acdc_tmr, ACDCTMR);
 #endif
@@ -74,6 +72,19 @@ void fch_enable_legacy_io(void)
 void fch_io_enable_legacy_io(void)
 {
 	pm_io_write32(PM_DECODE_EN, pm_io_read32(PM_DECODE_EN) | LEGACY_IO_EN);
+}
+
+void fch_enable_ioapic_decode(void)
+{
+	pm_write32(PM_DECODE_EN, pm_read32(PM_DECODE_EN) | FCH_IOAPIC_EN);
+}
+
+void fch_configure_hpet(void)
+{
+	uint32_t reg = pm_read32(PM_DECODE_EN);
+	reg |=  HPET_EN | HPET_MSI_EN;
+	reg &= ~HPET_WIDTH_SEL; /* 32 bit HPET */
+	pm_write32(PM_DECODE_EN, reg);
 }
 
 /* PM registers are accessed a byte at a time via CD6/CD7 */

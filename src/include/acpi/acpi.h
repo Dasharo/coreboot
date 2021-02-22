@@ -514,6 +514,8 @@ typedef struct acpi_madt_lapic_nmi {
 	u8 lint;			/* Local APIC LINT# */
 } __packed acpi_madt_lapic_nmi_t;
 
+#define ACPI_MADT_LAPIC_NMI_ALL_PROCESSORS 0xff
+
 /* MADT: I/O APIC Structure */
 typedef struct acpi_madt_ioapic {
 	u8 type;			/* Type (1) */
@@ -1118,6 +1120,10 @@ unsigned long acpi_create_hest_error_source(acpi_hest_t *hest,
 
 void acpi_create_lpit(acpi_lpit_t *lpit);
 unsigned long acpi_create_lpi_desc_ncst(acpi_lpi_desc_ncst_t *lpi_desc, uint16_t uid);
+
+/* For crashlog. */
+bool acpi_is_boot_error_src_present(void);
+void acpi_soc_fill_bert(acpi_bert_t *bert, void **region, size_t *length);
 
 /* For ACPI S3 support. */
 void __noreturn acpi_resume(void *wake_vec);

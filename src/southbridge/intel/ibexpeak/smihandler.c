@@ -8,7 +8,6 @@
 #include <cpu/x86/smm.h>
 #include <cpu/intel/em64t101_save_state.h>
 #include <cpu/intel/model_2065x/model_2065x.h>
-#include <soc/nvs.h>
 #include <southbridge/intel/common/finalize.h>
 #include <southbridge/intel/common/pmbase.h>
 #include <southbridge/intel/ibexpeak/me.h>
@@ -21,23 +20,6 @@
 #include <northbridge/intel/ironlake/ironlake.h>
 #include <southbridge/intel/common/gpio.h>
 #include <southbridge/intel/common/pmutil.h>
-
-int southbridge_io_trap_handler(int smif)
-{
-	switch (smif) {
-	case 0x32:
-		printk(BIOS_DEBUG, "OS Init\n");
-		/* gnvs->smif:
-		 *  On success, the IO Trap Handler returns 0
-		 *  On failure, the IO Trap Handler returns a value != 0
-		 */
-		gnvs->smif = 0;
-		return 1; /* IO trap handled */
-	}
-
-	/* Not handled */
-	return 0;
-}
 
 static void southbridge_gate_memory_reset_real(int offset,
 					       u16 use, u16 io, u16 lvl)
@@ -108,8 +90,6 @@ void southbridge_smi_monitor(void)
 
 	/* IOTRAP(3) SMI function call */
 	if (IOTRAP(3)) {
-		if (gnvs && gnvs->smif)
-			io_trap_handler(gnvs->smif); // call function smif
 		return;
 	}
 
@@ -148,7 +128,7 @@ void southbridge_smi_monitor(void)
 
 void southbridge_finalize_all(void)
 {
-	intel_me_finalize_smm();
+	/* TODO: Finalize ME */
 	intel_pch_finalize_smm();
 	intel_ironlake_finalize_smm();
 	intel_model_2065x_finalize_smm();

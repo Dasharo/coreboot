@@ -2,7 +2,6 @@
 
 #include <assert.h>
 #include <console/console.h>
-#include <bootstate.h>
 #include <drivers/ipmi/ipmi_ops.h>
 #include <drivers/ocp/dmi/ocp_dmi.h>
 #include <soc/ramstage.h>
@@ -320,7 +319,7 @@ void smbios_fill_dimm_locator(const struct dimm_info *dimm, struct smbios_type17
 {
 	char buf[40];
 
-	snprintf(buf, sizeof(buf), "DIMM %c0", 'A' + dimm->channel_num);
+	snprintf(buf, sizeof(buf), "DIMM_%c0", 'A' + dimm->channel_num);
 	t->device_locator = smbios_add_string(t->eos, buf);
 
 	snprintf(buf, sizeof(buf), "_Node0_Channel%d_Dimm0", dimm->channel_num);
@@ -353,13 +352,6 @@ void mainboard_silicon_init_params(FSPS_UPD *params)
 
 static void mainboard_final(void *chip_info)
 {
-	struct ppin_req req = {0};
-
-	req.cpu0_lo = xeon_sp_ppin[0].lo;
-	req.cpu0_hi = xeon_sp_ppin[0].hi;
-	/* Set PPIN to BMC */
-	if (ipmi_set_ppin(&req) != CB_SUCCESS)
-		printk(BIOS_ERR, "ipmi_set_ppin failed\n");
 }
 
 struct chip_operations mainboard_ops = {

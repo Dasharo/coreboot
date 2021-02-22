@@ -12,7 +12,6 @@
 #include <arch/ioapic.h>
 #include <acpi/acpi.h>
 #include <cpu/x86/smm.h>
-#include <string.h>
 #include "chip.h"
 #include "iobp.h"
 #include "pch.h"
@@ -20,6 +19,7 @@
 #include <southbridge/intel/common/acpi_pirq_gen.h>
 #include <southbridge/intel/common/rtc.h>
 #include <southbridge/intel/common/spi.h>
+#include <types.h>
 
 #define NMI_OFF	0
 
@@ -475,13 +475,6 @@ static void pch_set_acpi_mode(void)
 		apm_control(APM_CNT_ACPI_DISABLE);
 }
 
-static void pch_disable_smm_only_flashing(struct device *dev)
-{
-	printk(BIOS_SPEW, "Enabling BIOS updates outside of SMM... ");
-
-	pci_and_config8(dev, BIOS_CNTL, ~(1 << 5));
-}
-
 static void pch_fixups(struct device *dev)
 {
 	/* Indicate DRAM init done for MRC S3 to know it can resume */
@@ -533,8 +526,6 @@ static void lpc_init(struct device *dev)
 	/* Interrupt 9 should be level triggered (SCI) */
 	i8259_configure_irq_trigger(9, 1);
 
-	pch_disable_smm_only_flashing(dev);
-
 	pch_set_acpi_mode();
 
 	pch_fixups(dev);
@@ -557,10 +548,10 @@ static void pch_lpc_add_mmio_resources(struct device *dev)
 	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 
 	/* RCBA */
-	if ((uintptr_t)DEFAULT_RCBA < default_decode_base) {
+	if (CONFIG_FIXED_RCBA_MMIO_BASE < default_decode_base) {
 		res = new_resource(dev, RCBA);
-		res->base = (resource_t)(uintptr_t)DEFAULT_RCBA;
-		res->size = 16 * 1024;
+		res->base = (resource_t)CONFIG_FIXED_RCBA_MMIO_BASE;
+		res->size = CONFIG_RCBA_LENGTH;
 		res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED |
 			     IORESOURCE_FIXED | IORESOURCE_RESERVE;
 	}
@@ -692,7 +683,6 @@ static unsigned long southbridge_write_acpi_tables(const struct device *device,
 						   struct acpi_rsdp *rsdp)
 {
 	unsigned long current;
-	acpi_header_t *ssdt;
 
 	current = start;
 
@@ -706,12 +696,14 @@ static unsigned long southbridge_write_acpi_tables(const struct device *device,
 
 	current = acpi_align_current(current);
 
-	printk(BIOS_DEBUG, "ACPI:     * SSDT2\n");
-	ssdt = (acpi_header_t *)current;
-	acpi_create_serialio_ssdt(ssdt);
-	current += ssdt->length;
-	acpi_add_table(rsdp, ssdt);
-	current = acpi_align_current(current);
+	if (pch_is_lp()) {
+		printk(BIOS_DEBUG, "ACPI:     * SSDT2\n");
+		acpi_header_t *ssdt = (acpi_header_t *)current;
+		acpi_create_serialio_ssdt(ssdt);
+		current += ssdt->length;
+		acpi_add_table(rsdp, ssdt);
+		current = acpi_align_current(current);
+	}
 
 	printk(BIOS_DEBUG, "current = %lx\n", current);
 	return current;

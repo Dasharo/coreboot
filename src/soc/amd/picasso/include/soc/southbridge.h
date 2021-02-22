@@ -74,8 +74,10 @@
 #define   PM_LPC_AB_NO_BYPASS_EN	BIT(2)
 #define   PM_LPC_A20_EN			BIT(1)
 #define   PM_LPC_ENABLE			BIT(0)
-#define PM_USB_ENABLE			0xef
-#define   PM_USB_ALL_CONTROLLERS	0x7f
+
+#define PM1_LIMIT			16
+#define GPE0_LIMIT			32
+#define TOTAL_BITS(a)			(8 * sizeof(a))
 
 /* FCH MISC Registers 0xfed80e00 */
 #define GPP_CLK_CNTRL			0x00
@@ -137,10 +139,6 @@
 
 #define FCH_LEGACY_UART_DECODE		(ALINK_AHB_ADDRESS + 0x20) /* 0xfedc0020 */
 
-#define PM1_LIMIT			16
-#define GPE0_LIMIT			28
-#define TOTAL_BITS(a)			(8 * sizeof(a))
-
 /* SATA Controller D11F0 */
 #define SATA_MISC_CONTROL_REG		0x40
 #define SATA_MISC_SUBCLASS_WREN		BIT(0)
@@ -174,13 +172,14 @@ typedef struct aoac_devs {
 	unsigned int :4;
 } __packed aoac_devs_t;
 
+void fch_pre_init(void);
+void fch_early_init(void);
+void fch_init(void *chip_info);
+void fch_final(void *chip_info);
+
 void enable_aoac_devices(void);
 void wait_for_aoac_enabled(unsigned int dev);
 void sb_clk_output_48Mhz(void);
-void southbridge_final(void *chip_info);
-void southbridge_init(void *chip_info);
-void fch_pre_init(void);
-void fch_early_init(void);
 
 /* Initialize all the i2c buses that are marked with early init. */
 void i2c_soc_early_init(void);

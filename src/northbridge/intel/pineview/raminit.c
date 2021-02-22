@@ -535,12 +535,12 @@ static void sdram_clk_crossing(struct sysinfo *s)
 	u8 ddr_freq, fsb_freq;
 	static const u32 clkcross[2][2][4] = {
 	{
-		{0xFFFFFFFF, 0x05030305, 0x0000FFFF, 0x00000000}, /* FSB = 667, DDR = 667 */
-		{0x1F1F1F1F, 0x2A1F1FA5, 0x00000000, 0x05000002}, /* FSB = 667, DDR = 800 */
+		{0xffffffff, 0x05030305, 0x0000ffff, 0x00000000}, /* FSB = 667, DDR = 667 */
+		{0x1f1f1f1f, 0x2a1f1fa5, 0x00000000, 0x05000002}, /* FSB = 667, DDR = 800 */
 	},
 	{
-		{0x1F1F1F1F, 0x0D07070B, 0x00000000, 0x00000000}, /* FSB = 800, DDR = 667 */
-		{0xFFFFFFFF, 0x05030305, 0x0000FFFF, 0x00000000}, /* FSB = 800, DDR = 800 */
+		{0x1f1f1f1f, 0x0d07070b, 0x00000000, 0x00000000}, /* FSB = 800, DDR = 667 */
+		{0xffffffff, 0x05030305, 0x0000ffff, 0x00000000}, /* FSB = 800, DDR = 800 */
 	},
 	};
 
@@ -620,8 +620,8 @@ static void sdram_clkmode(struct sysinfo *s)
 	MCHBAR32_OR(C0STATRDCTRL, 1 << 23);
 
 	const u32 cas_to_reg[2][4] = {
-		{0x00000000, 0x00030100, 0x0C240201, 0x00000000}, /* DDR = 667 */
-		{0x00000000, 0x00030100, 0x0C240201, 0x10450302}  /* DDR = 800 */
+		{0x00000000, 0x00030100, 0x0c240201, 0x00000000}, /* DDR = 667 */
+		{0x00000000, 0x00030100, 0x0c240201, 0x10450302}  /* DDR = 800 */
 	};
 
 	MCHBAR32(C0GNT2LNCH2) = cas_to_reg[ddr_freq][s->selected_timings.CAS - 3];
@@ -916,9 +916,7 @@ static void sdram_p_dqs(struct pllparam *pll, u8 f, u8 clk)
 	reg32 |= ((u32) pll->dben[f][clk])  << (dqs + 9);
 	reg32 |= ((u32) pll->dbsel[f][clk]) << dqs;
 
-	/* FIXME: Somehow, touching this changes the binary... */
-	MCHBAR32(C0DQSRyTX1(rank)) = (MCHBAR32(0x5b4 + (rank * 4))
-				   & ~((1 << (dqs + 9)) | (1 << dqs))) | reg32;
+	MCHBAR32_AND_OR(C0DQSRyTX1(rank), ~((1 << (dqs + 9)) | (1 << dqs)), reg32);
 
 	reg32 = ((u32) pll->clkdelay[f][clk]) << ((dqs * 2) + 16);
 	MCHBAR32_AND_OR(C0DQSDQRyTX3(rank), ~((1 << (dqs * 2 + 17)) | (1 << (dqs * 2 + 16))),
@@ -942,9 +940,7 @@ static void sdram_p_dq(struct pllparam *pll, u8 f, u8 clk)
 	reg32 |= ((u32) pll->dben[f][clk])  << (dq + 9);
 	reg32 |= ((u32) pll->dbsel[f][clk]) << dq;
 
-	/* FIXME: Somehow, touching this changes the binary... */
-	MCHBAR32(C0DQRyTX1(rank)) = (MCHBAR32(0x5a4 + rank * 4)
-				  & ~((1 << (dq + 9)) | (1 << dq))) | reg32;
+	MCHBAR32_AND_OR(C0DQRyTX1(rank), ~((1 << (dq + 9)) | (1 << dq)), reg32);
 
 	reg32 = ((u32) pll->clkdelay[f][clk]) << (dq*2);
 	MCHBAR32_AND_OR(C0DQSDQRyTX3(rank), ~((1 << (dq * 2 + 1)) | (1 << (dq * 2))), reg32);
@@ -1208,14 +1204,14 @@ static void sdram_dlltiming(struct sysinfo *s)
 #define C0RCOMPCTRLx(x)	(rcompctl[(x)] + 0x00)
 #define C0RCOMPMULTx(x)	(rcompctl[(x)] + 0x04)
 #define C0RCOMPOVRx(x)	(rcompctl[(x)] + 0x06)
-#define C0RCOMPOSVx(x)	(rcompctl[(x)] + 0x0A)
-#define C0SCOMPVREFx(x)	(rcompctl[(x)] + 0x0E)
+#define C0RCOMPOSVx(x)	(rcompctl[(x)] + 0x0a)
+#define C0SCOMPVREFx(x)	(rcompctl[(x)] + 0x0e)
 #define C0SCOMPOVRx(x)	(rcompctl[(x)] + 0x10)
 #define C0SCOMPOFFx(x)	(rcompctl[(x)] + 0x12)
 #define C0DCOMPx(x)	(rcompctl[(x)] + 0x14)
 #define C0SLEWBASEx(x)	(rcompctl[(x)] + 0x16)
 #define C0SLEWPULUTx(x)	(rcompctl[(x)] + 0x18)
-#define C0SLEWPDLUTx(x)	(rcompctl[(x)] + 0x1C)
+#define C0SLEWPDLUTx(x)	(rcompctl[(x)] + 0x1c)
 #define C0DCOMPOVRx(x)	(rcompctl[(x)] + 0x20)
 #define C0DCOMPOFFx(x)	(rcompctl[(x)] + 0x24)
 
@@ -1323,7 +1319,7 @@ static void sdram_rcomp(struct sysinfo *s)
 		rcomp1 = 0x00050542;
 	}
 	if (s->selected_timings.fsb_clock == FSB_CLOCK_667MHz) {
-		rcomp2 = 0x14C42827;
+		rcomp2 = 0x14c42827;
 	} else {
 		rcomp2 = 0x19042827;
 	}
@@ -1401,7 +1397,6 @@ static void sdram_rcomp(struct sysinfo *s)
 	MCHBAR16(ZQCALCTRL) = 0x0134;
 	MCHBAR32(COMPCTRL1) = 0x4C293600;
 
-	/* FIXME: wtf did these MRC guys smoke */
 	MCHBAR8_AND_OR(COMPCTRL1 + 3, ~0x44, (1 << 6) | (1 << 2));
 	MCHBAR16_AND(XCOMPSDR0BNS, ~(1 << 13));
 	MCHBAR8_AND(XCOMPSDR0BNS,  ~(1 <<  5));

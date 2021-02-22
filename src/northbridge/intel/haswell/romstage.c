@@ -18,6 +18,7 @@
 #include <northbridge/intel/haswell/raminit.h>
 #include <southbridge/intel/lynxpoint/pch.h>
 #include <southbridge/intel/lynxpoint/me.h>
+#include <string.h>
 
 /* Copy SPD data for on-board memory */
 void __weak copy_spd(struct pei_data *peid)
@@ -50,13 +51,13 @@ void mainboard_romstage_entry(void)
 
 	struct pei_data pei_data = {
 		.pei_version		= PEI_VERSION,
-		.mchbar			= (uintptr_t)DEFAULT_MCHBAR,
-		.dmibar			= (uintptr_t)DEFAULT_DMIBAR,
-		.epbar			= DEFAULT_EPBAR,
+		.mchbar			= CONFIG_FIXED_MCHBAR_MMIO_BASE,
+		.dmibar			= CONFIG_FIXED_DMIBAR_MMIO_BASE,
+		.epbar			= CONFIG_FIXED_EPBAR_MMIO_BASE,
 		.pciexbar		= CONFIG_MMCONF_BASE_ADDRESS,
 		.smbusbar		= CONFIG_FIXED_SMBUS_IO_BASE,
 		.hpet_address		= HPET_ADDR,
-		.rcba			= (uintptr_t)DEFAULT_RCBA,
+		.rcba			= CONFIG_FIXED_RCBA_MMIO_BASE,
 		.pmbase			= DEFAULT_PMBASE,
 		.gpiobase		= DEFAULT_GPIOBASE,
 		.temp_mmio_base		= 0xfed08000,
@@ -70,7 +71,8 @@ void mainboard_romstage_entry(void)
 		.usb_xhci_on_resume	= cfg->usb_xhci_on_resume,
 	};
 
-	mainboard_fill_pei_data(&pei_data);
+	memcpy(pei_data.usb2_ports, mainboard_usb2_ports, sizeof(mainboard_usb2_ports));
+	memcpy(pei_data.usb3_ports, mainboard_usb3_ports, sizeof(mainboard_usb3_ports));
 
 	enable_lapic();
 

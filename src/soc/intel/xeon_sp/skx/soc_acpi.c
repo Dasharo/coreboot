@@ -3,7 +3,6 @@
 #include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <assert.h>
-#include <cbmem.h>
 #include <cpu/intel/turbo.h>
 #include <device/mmio.h>
 #include <device/pci.h>
@@ -16,14 +15,6 @@
 #include <soc/pm.h>
 #include <soc/soc_util.h>
 #include <soc/util.h>
-
-/* TODO: Check if the common/acpi weak function can be used */
-unsigned long acpi_fill_mcfg(unsigned long current)
-{
-	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *)current,
-		CONFIG_MMCONF_BASE_ADDRESS, 0, 0, 255);
-	return current;
-}
 
 int soc_madt_sci_irq_polarity(int sci)
 {

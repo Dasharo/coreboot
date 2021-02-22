@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <arch/cpu.h>
 #include <console/console.h>
 #include <device/pci.h>
 #include <cpu/x86/lapic.h>
@@ -10,7 +9,6 @@
 #include <cpu/intel/turbo.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/mp_init.h>
-#include <romstage_handoff.h>
 #include <soc/cpu.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
@@ -23,7 +21,7 @@
 
 static void soc_fsp_load(void)
 {
-	fsps_load(romstage_handoff_is_resume());
+	fsps_load();
 }
 
 static void configure_misc(void)
@@ -93,6 +91,8 @@ static void configure_c_states(void)
 /* All CPUs including BSP will run the following function. */
 void soc_core_init(struct device *cpu)
 {
+	config_t *cfg = config_of_soc();
+
 	/* Clear out pending MCEs */
 	/* TODO(adurbin): This should only be done on a cold boot. Also, some
 	 * of these banks are core vs package scope. For now every CPU clears
@@ -119,8 +119,10 @@ void soc_core_init(struct device *cpu)
 	/* Set energy policy */
 	set_energy_perf_bias(ENERGY_POLICY_NORMAL);
 
-	/* Enable Turbo */
-	enable_turbo();
+	if (cfg->cpu_turbo_disable)
+		disable_turbo();
+	else
+		enable_turbo();
 
 	/* Enable Vmx */
 	set_vmx_and_lock();

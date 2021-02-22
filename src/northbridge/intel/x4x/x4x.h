@@ -44,9 +44,8 @@
  * MCHBAR
  */
 
-#define MCHBAR8(x)  (*((volatile u8  *)(DEFAULT_MCHBAR + (x))))
-#define MCHBAR16(x) (*((volatile u16 *)(DEFAULT_MCHBAR + (x))))
-#define MCHBAR32(x) (*((volatile u32 *)(DEFAULT_MCHBAR + (x))))
+#include <northbridge/intel/common/fixed_bars.h>
+
 #define MCHBAR8_AND(x,  and) (MCHBAR8(x)  = MCHBAR8(x)  & (and))
 #define MCHBAR16_AND(x, and) (MCHBAR16(x) = MCHBAR16(x) & (and))
 #define MCHBAR32_AND(x, and) (MCHBAR32(x) = MCHBAR32(x) & (and))
@@ -93,10 +92,6 @@
  * DMIBAR
  */
 
-#define DMIBAR8(x)  (*((volatile u8  *)(DEFAULT_DMIBAR + (x))))
-#define DMIBAR16(x) (*((volatile u16 *)(DEFAULT_DMIBAR + (x))))
-#define DMIBAR32(x) (*((volatile u32 *)(DEFAULT_DMIBAR + (x))))
-
 #define DMIVCECH	0x000	/* 32bit */
 #define DMIPVCCAP1	0x004	/* 32bit */
 
@@ -138,10 +133,6 @@
  * EPBAR
  */
 
-#define EPBAR8(x)  (*((volatile u8  *)(DEFAULT_EPBAR + (x))))
-#define EPBAR16(x) (*((volatile u16 *)(DEFAULT_EPBAR + (x))))
-#define EPBAR32(x) (*((volatile u32 *)(DEFAULT_EPBAR + (x))))
-
 #define EPPVCCAP1	0x004	/* 32bit */
 #define EPPVCCTL	0x00c	/* 32bit */
 
@@ -172,7 +163,6 @@ void mb_pre_raminit_setup(int s3_resume);
 u32 decode_igd_memory_size(u32 gms);
 u32 decode_igd_gtt_size(u32 gsm);
 u32 decode_tseg_size(const u32 esmramc);
-int decode_pcie_bar(u32 *const base, u32 *const len);
 
 #include <device/device.h>
 struct acpi_rsdp;

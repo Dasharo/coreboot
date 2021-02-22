@@ -12,6 +12,11 @@ tests-y += list-test
 tests-y += fmap-test
 tests-y += imd_cbmem-romstage-test
 tests-y += imd_cbmem-ramstage-test
+tests-y += region_file-test
+tests-y += stack-test
+tests-y += memset-test
+tests-y += memcmp-test
+tests-y += memchr-test
 
 string-test-srcs += tests/lib/string-test.c
 string-test-srcs += src/lib/string.c
@@ -66,4 +71,20 @@ imd_cbmem-romstage-test-srcs += tests/lib/imd_cbmem-test.c
 imd_cbmem-romstage-test-srcs += tests/stubs/console.c
 imd_cbmem-romstage-test-srcs += src/lib/imd.c
 imd_cbmem-romstage-test-mocks += cbmem_top_chipset
+
+region_file-test-srcs += tests/lib/region_file-test.c
+region_file-test-srcs += src/commonlib/region.c
+region_file-test-srcs += tests/stubs/console.c
+
+stack-test-srcs += tests/lib/stack-test.c
+stack-test-srcs += src/lib/stack.c
+stack-test-srcs += tests/stubs/console.c
+
+memset-test-srcs += tests/lib/memset-test.c
+memset-test-srcs += src/lib/memset.c
+
+memcmp-test-srcs += tests/lib/memcmp-test.c
+
+memchr-test-srcs += tests/lib/memchr-test.c
+memchr-test-srcs += src/lib/memchr.c
 

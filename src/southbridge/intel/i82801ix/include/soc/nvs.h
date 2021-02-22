@@ -7,7 +7,7 @@
 
 struct __packed global_nvs {
 	/* Miscellaneous */
-	u16	osys; /* 0x00 - Operating System */
+	u16	unused_was_osys; /* 0x00 - Operating System */
 	u8	smif; /* 0x02 - SMI function call ("TRAP") */
 	u8	prm0; /* 0x03 - SMI function call parameter */
 	u8	prm1; /* 0x04 - SMI function call parameter */
@@ -19,7 +19,7 @@ struct __packed global_nvs {
 	u8	prm5; /* 0x0a - Lock function parameter */
 	u32	p80d; /* 0x0b - Debug port (IO 0x80) value */
 	u8	lids; /* 0x0f - LID state (open = 1) */
-	u8	pwrs; /* 0x10 - Power state (AC = 1) */
+	u8	unused_was_pwrs; /* 0x10 - Power state (AC = 1) */
 	u8	dbgs; /* 0x11 - Debug state */
 	u8	linx; /* 0x12 - Linux OS */
 	u8	dckn; /* 0x13 - PCIe docking state */
@@ -41,7 +41,7 @@ struct __packed global_nvs {
 	u8	rsvd3[3];
 	/* Processor Identification */
 	u8	unused_was_apic; /* 0x28 - APIC enabled */
-	u8	mpen; /* 0x29 - MP capable/enabled */
+	u8	unused_was_mpen; /* 0x29 - MP capable/enabled */
 	u8	pcp0; /* 0x2a - PDC CPU/CORE 0 */
 	u8	pcp1; /* 0x2b - PDC CPU/CORE 1 */
 	u8	ppcm; /* 0x2c - Max. PPC state */
@@ -98,6 +98,10 @@ struct __packed global_nvs {
 	u8	bten;
 
 	u32     cbmc;
+
+	/* Required for future unified acpi_save_wake_source. */
+	u32	pm1i;
+	u32	gpei;
 };
 
 #endif /* SOUTHBRIDGE_INTEL_I82801IX_NVS_H */

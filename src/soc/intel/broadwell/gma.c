@@ -476,6 +476,7 @@ static void igd_cdclk_init(struct device *dev, const int is_broadwell)
 		dpdiv = 338;
 		reg_em4 = 8;
 		reg_em5 = 225;
+		break;
 	default:
 		return;
 	}
@@ -511,16 +512,6 @@ static void igd_init(struct device *dev)
 
 	if (!CONFIG(NO_GFX_INIT))
 		pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER);
-
-	/* Wait for any configured pre-graphics delay */
-	if (!acpi_is_wakeup_s3()) {
-#if CONFIG(CHROMEOS)
-		if (display_init_required())
-			mdelay(CONFIG_PRE_GRAPHICS_DELAY);
-#else
-		mdelay(CONFIG_PRE_GRAPHICS_DELAY);
-#endif
-	}
 
 	/* Early init steps */
 	if (is_broadwell) {

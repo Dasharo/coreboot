@@ -4,7 +4,6 @@
 #include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
-#include <cbmem.h>
 #include <console/console.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
@@ -19,7 +18,6 @@
 #include <soc/pm.h>
 #include <soc/systemagent.h>
 #include <string.h>
-#include <wrdd.h>
 
 #include "chip.h"
 
@@ -41,15 +39,6 @@ enum {
 	C_STATE_C10,		/* 11 */
 	NUM_C_STATES
 };
-
-#define MWAIT_RES(state, sub_state)				\
-	{							\
-		.addrl = (((state) << 4) | (sub_state)),	\
-		.space_id = ACPI_ADDRESS_SPACE_FIXED,		\
-		.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,	\
-		.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,	\
-		.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,	\
-	}
 
 static const acpi_cstate_t cstate_map[NUM_C_STATES] = {
 	[C_STATE_C0] = {},
@@ -186,14 +175,8 @@ void soc_fill_gnvs(struct global_nvs *gnvs)
 	const struct soc_intel_cannonlake_config *config;
 	config = config_of_soc();
 
-	/* Set unknown wake source */
-	gnvs->pm1i = -1;
-
 	/* Enable DPTF based on mainboard configuration */
 	gnvs->dpte = config->dptf_enable;
-
-	/* Fill in the Wifi Region id */
-	gnvs->cid1 = wifi_regulatory_domain();
 
 	/* Set USB2/USB3 wake enable bitmaps. */
 	gnvs->u2we = config->usb2_wake_enable_bitmap;

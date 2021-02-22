@@ -12,7 +12,7 @@ DefinitionBlock(
 	0x20110725	// OEM revision
 )
 {
-	/* Some generic macros */
+	#include <acpi/dsdt_top.asl>
 	#include <soc/intel/common/acpi/platform.asl>
 
 	/* global NVS and variables */
@@ -31,9 +31,6 @@ DefinitionBlock(
 
 	/* Chipset specific sleep states */
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
-
-	/* Chrome OS specific */
-	#include <vendorcode/google/chromeos/acpi/chromeos.asl>
 
 	/* Chrome OS Embedded Controller */
 	Scope (\_SB.PCI0.LPCB)

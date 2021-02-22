@@ -259,14 +259,14 @@ EMPTY_RESOURCE_TEMPLATE_WARNING = 3150
 # Redundant offset remarks are not useful in any way and are masking useful
 # ones that might indicate an issue so it is better to hide them.
 REDUNDANT_OFFSET_REMARK = 2158
-# Ignore _HID & _ADR coexisting in Intel Lynxpoint and Broadwell ASL code.
-# See cb:38803 & cb:38802
+# Ignore _HID & _ADR coexisting in Intel Lynxpoint ASL code.
+# See cb:38802
 # "Multiple types (Device object requires either a _HID or _ADR, but not both)"
 MULTIPLE_TYPES_WARNING = 3073
 
 IASL_WARNINGS_LIST = $(EMPTY_RESOURCE_TEMPLATE_WARNING) $(REDUNDANT_OFFSET_REMARK)
 
-ifeq ($(CONFIG_SOUTHBRIDGE_INTEL_LYNXPOINT)$(CONFIG_SOC_INTEL_BROADWELL),y)
+ifeq ($(CONFIG_SOUTHBRIDGE_INTEL_LYNXPOINT),y)
 IASL_WARNINGS_LIST += $(MULTIPLE_TYPES_WARNING)
 endif
 
@@ -426,7 +426,7 @@ CFLAGS_common += -pipe -g -nostdinc -std=gnu11
 CFLAGS_common += -nostdlib -Wall -Wundef -Wstrict-prototypes -Wmissing-prototypes
 CFLAGS_common += -Wwrite-strings -Wredundant-decls -Wno-trigraphs -Wimplicit-fallthrough
 CFLAGS_common += -Wshadow -Wdate-time -Wtype-limits -Wvla
-CFLAGS_common += -Wlogical-op -Wduplicated-cond -Wdangling-else
+CFLAGS_common += -Wdangling-else
 CFLAGS_common += -fno-common -ffreestanding -fno-builtin -fomit-frame-pointer
 CFLAGS_common += -fstrict-aliasing -ffunction-sections -fdata-sections -fno-pie
 ifeq ($(CONFIG_COMPILER_GCC),y)
@@ -435,6 +435,7 @@ ifeq ($(CCC_ANALYZER_OUTPUT_FORMAT),)
 CFLAGS_common += -Wno-packed-not-aligned
 CFLAGS_common += -fconserve-stack
 CFLAGS_common += -Wnull-dereference -Wreturn-type
+CFLAGS_common += -Wlogical-op -Wduplicated-cond
 # cf. commit f69a99db (coreboot: x86: enable gc-sections)
 CFLAGS_common += -Wno-unused-but-set-variable
 endif

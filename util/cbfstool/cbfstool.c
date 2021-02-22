@@ -255,7 +255,8 @@ static int find_mmap_window(enum mmap_addr_type addr_type, unsigned int addr)
 		else
 			reg = &mmap_window_table[i].flash_space;
 
-		if (region_offset(reg) <= addr && region_end(reg) >= addr)
+		if (region_offset(reg) <= addr &&
+		   ((uint64_t)region_offset(reg) + (uint64_t)region_sz(reg) - 1) >= addr)
 			return i;
 	}
 
@@ -750,7 +751,8 @@ static int cbfs_add_component(const char *filename,
 
 	if (param.padding) {
 		const uint32_t hs = sizeof(struct cbfs_file_attribute);
-		uint32_t size = MAX(hs, param.padding);
+		uint32_t size = ALIGN_UP(MAX(hs, param.padding),
+					 CBFS_ATTRIBUTE_ALIGN);
 		INFO("Padding %d bytes\n", size);
 		struct cbfs_file_attribute *attr =
 			(struct cbfs_file_attribute *)cbfs_add_file_attr(
@@ -925,9 +927,10 @@ static int cbfstool_convert_mkstage(struct buffer *buffer, uint32_t *offset,
 
 		ret = parse_elf_to_xip_stage(buffer, &output, offset,
 						param.ignore_section);
-	} else
+	} else {
 		ret = parse_elf_to_stage(buffer, &output, param.compression,
-					 offset, param.ignore_section);
+					 param.ignore_section);
+	}
 
 	if (ret != 0)
 		return -1;

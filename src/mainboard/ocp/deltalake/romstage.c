@@ -2,11 +2,11 @@
 
 #include <console/console.h>
 #include <drivers/ipmi/ipmi_kcs.h>
+#include <drivers/ipmi/ocp/ipmi_ocp.h>
 #include <drivers/vpd/vpd.h>
 #include <fsp/api.h>
 #include <FspmUpd.h>
 #include <soc/romstage.h>
-#include <string.h>
 
 #include "chip.h"
 #include "ipmi.h"
