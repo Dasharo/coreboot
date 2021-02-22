@@ -7,6 +7,7 @@ bootblock-y += rom_media.c
 romstage-y += rom_media.c
 romstage-y += romstage.c
 romstage-y += vpd.c
+romstage-y += i2c.c
 ramstage-y += chip.c
 ramstage-y += rom_media.c
 ramstage-y += timer.c
