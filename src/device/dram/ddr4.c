@@ -248,7 +248,10 @@ int spd_decode_ddr4(struct dimm_attr_ddr4_st *dimm, spd_raw_data spd)
 	dimm->vdd_voltage = 1200;
 
 	/* calculate size */
+	/* FIXME: this is wrong for 3DS devices */
 	dimm->size_mb = cap_per_die_mbit / 8 * bus_width / sdram_width * dimm->ranks;
+
+	dimm->ecc_extension = spd[13] & SPD_ECC_8BIT;
 
 	/* make sure we have the manufacturing information block */
 	if (spd_bytes_used > 320) {
