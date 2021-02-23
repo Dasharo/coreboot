@@ -324,6 +324,8 @@ void main(void)
 
 	prepare_dimm_data();
 
+	report_istep(13,1);	// no-op
+	istep_13_2();
 
 	/* Test if SCOM still works. Maybe should check also indirect access? */
 	printk(BIOS_DEBUG, "0xF000F = %llx\n", read_scom(0xf000f));
