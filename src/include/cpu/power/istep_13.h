@@ -232,3 +232,5 @@ void ccs_add_mrs(chiplet_id_t id, mrs_cmd_t mrs, enum rank_selection ranks,
 void ccs_phy_hw_step(chiplet_id_t id, int mca_i, int rp, enum cal_config conf,
                      uint64_t step_cycles);
 void ccs_execute(chiplet_id_t id, int mca_i);
+
+void istep_13_2(void);
