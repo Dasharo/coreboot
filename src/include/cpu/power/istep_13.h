@@ -234,3 +234,4 @@ void ccs_phy_hw_step(chiplet_id_t id, int mca_i, int rp, enum cal_config conf,
 void ccs_execute(chiplet_id_t id, int mca_i);
 
 void istep_13_2(void);
+void istep_13_3(void);
