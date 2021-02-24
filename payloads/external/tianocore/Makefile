@@ -5,7 +5,7 @@ export SHELL := env bash
 
 project_name = Tianocore
 project_dir = $(CURDIR)/$(word 3,$(subst /, ,$(CONFIG_TIANOCORE_REPOSITORY)))
-project_git_repo=https://github.com/3mdeb/edk2
+project_git_repo=https://github.com/Dasharo/edk2
 project_git_branch=dasharo
 upstream_git_repo=https://github.com/tianocore/edk2
 
