@@ -120,8 +120,6 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 	params->PcdPchUsbHsicPort		= config->PcdPchUsbHsicPort;
 	params->PcdPcieRootPortSpeed		= 0;
 	params->PcdPchSsicEnable		= config->PcdPchSsicEnable;
-	params->PcdLogoPtr			= config->PcdLogoPtr;
-	params->PcdLogoSize			= config->PcdLogoSize;
 	params->PcdRtcLock			= 0;
 	params->PMIC_I2CBus			= config->PMIC_I2CBus;
 	params->ISPEnable			= config->ISPEnable;
@@ -136,11 +134,6 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 	params->I2C6Frequency			= config->I2C6Frequency;
 
 	board_silicon_USB2_override(params);
-}
-
-const struct cbmem_entry *soc_load_logo(SILICON_INIT_UPD *params)
-{
-	return fsp_load_logo(&params->PcdLogoPtr, &params->PcdLogoSize);
 }
 
 void soc_display_silicon_init_params(const SILICON_INIT_UPD *old, SILICON_INIT_UPD *new)

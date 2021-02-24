@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootsplash.h>
 #include <cbmem.h>
 #include <fsp/api.h>
 #include <acpi/acpi.h>
@@ -17,7 +18,6 @@
 #include <intelblocks/xdci.h>
 #include <intelblocks/p2sb.h>
 #include <intelpch/lockdown.h>
-#include <romstage_handoff.h>
 #include <soc/acpi.h>
 #include <soc/intel/common/vbt.h>
 #include <soc/interrupt.h>
@@ -55,7 +55,7 @@ void soc_init_pre_device(void *chip_info)
 	itss_snapshot_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
 
 	/* Perform silicon specific init. */
-	fsp_silicon_init(romstage_handoff_is_resume());
+	fsp_silicon_init();
 
 	/*
 	 * Keep the P2SB device visible so it and the other devices are
@@ -72,11 +72,6 @@ void soc_init_pre_device(void *chip_info)
 		pcie_rp_update_devicetree(pch_h_rp_groups);
 	else
 		pcie_rp_update_devicetree(pch_lp_rp_groups);
-}
-
-void soc_fsp_load(void)
-{
-	fsps_load(romstage_handoff_is_resume());
 }
 
 static struct device_operations pci_domain_ops = {
@@ -255,9 +250,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	dev = pcidev_path_on_root(PCH_DEVFN_CSE_3);
 	params->Heci3Enabled = dev && dev->enabled;
-
-	params->LogoPtr = config->LogoPtr;
-	params->LogoSize = config->LogoSize;
 
 	params->CpuConfig.Bits.VmxEnable = CONFIG(ENABLE_VMX);
 
@@ -446,7 +438,7 @@ __weak void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 }
 
 /* Handle FSP logo params */
-const struct cbmem_entry *soc_load_logo(FSPS_UPD *supd)
+void soc_load_logo(FSPS_UPD *supd)
 {
-	return fsp_load_logo(&supd->FspsConfig.LogoPtr, &supd->FspsConfig.LogoSize);
+	bmp_load_logo(&supd->FspsConfig.LogoPtr, &supd->FspsConfig.LogoSize);
 }

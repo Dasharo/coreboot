@@ -30,12 +30,12 @@ config CPU_SPECIFIC_OPTIONS
 	select INTEL_GMA_ACPI
 	select INTEL_GMA_ADD_VBT if RUN_FSP_GOP
 	select IOAPIC
+	select MP_SERVICES_PPI_V1
 	select MRC_SETTINGS_PROTECT
 	select PARALLEL_MP
 	select PARALLEL_MP_AP_WORK
 	select MICROCODE_BLOB_UNDISCLOSED
 	select PLATFORM_USES_FSP2_2
-	select FSP_PEIM_TO_PEIM_INTERFACE
 	select REG_SCRIPT
 	select PMC_GLOBAL_RESET_ENABLE_LOCK
 	select PMC_LOW_POWER_MODE_PROGRAM
@@ -146,7 +146,6 @@ config PCR_BASE_ADDRESS
 	  This option allows you to select MMIO Base Address of sideband bus.
 
 config MMCONF_BASE_ADDRESS
-	hex
 	default 0xc0000000
 
 config CPU_BCLK_MHZ
@@ -192,9 +191,6 @@ config SOC_INTEL_COMMON_LPSS_UART_CLK_N_VAL
 	hex
 	default 0x7fff
 
-config CHROMEOS
-	select CHROMEOS_RAMOOPS_DYNAMIC
-
 # Tiger Lake SoC requires at least 100us interrupt pulses in order to guarantee detection
 # in all low power states.  Cr50 TPM, if used, needs to be told to generate longer pulses.
 config TPM_CR50
@@ -210,10 +206,6 @@ config VBOOT
 	select VBOOT_STARTS_IN_BOOTBLOCK
 	select VBOOT_VBNV_CMOS
 	select VBOOT_VBNV_CMOS_BACKUP_TO_FLASH
-
-config C_ENV_BOOTBLOCK_SIZE
-	hex
-	default 0xC000
 
 config CBFS_SIZE
 	hex
@@ -262,5 +254,12 @@ config DIMMS_PER_CHANNEL
 config MRC_CHANNEL_WIDTH
 	int
 	default 16
+
+config SOC_INTEL_CRASHLOG
+	def_bool n
+	select SOC_INTEL_COMMON_BLOCK_CRASHLOG
+	select ACPI_BERT
+	help
+	  Enables CrashLog.
 
 endif

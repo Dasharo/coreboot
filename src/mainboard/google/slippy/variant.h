@@ -3,6 +3,8 @@
 #ifndef VARIANT_H
 #define VARIANT_H
 
-void variant_romstage_entry(struct pei_data *pei_data);
+#include <stdint.h>
+
+unsigned int fill_spd_for_index(uint8_t spd[], unsigned int index);
 
 #endif

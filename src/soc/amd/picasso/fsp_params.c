@@ -1,10 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <assert.h>
+#include <amdblocks/ioapic.h>
 #include <device/pci.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/platform_descriptors.h>
+#include <soc/soc_util.h>
 #include <fsp/api.h>
 #include "chip.h"
 
@@ -126,31 +128,42 @@ static void fsp_usb_oem_customization(FSP_S_CONFIG *scfg,
 		scfg->xhci_oc_pin_select |=
 			(cfg->usb_port_overcurrent_pin[i] & 0xf) << (i * 4);
 	}
+
+	if ((get_silicon_type() == SILICON_RV2) && cfg->usb3_phy_override) {
+		scfg->usb_3_phy_enable = cfg->usb3_phy_override;
+		for (i = 0; i < FSPS_UPD_RV2_USB3_PORT_COUNT; i++) {
+			memcpy(scfg->usb_3_port_phy_tune[i],
+				&cfg->usb3_phy_tune_params[i],
+				sizeof(scfg->usb_3_port_phy_tune[0]));
+		}
+		scfg->usb_3_rx_vref_ctrl = cfg->usb3_rx_vref_ctrl;
+		scfg->usb_3_rx_vref_ctrl_en = cfg->usb3_rx_vref_ctrl_en;
+		scfg->usb_3_tx_vboost_lvl = cfg->usb_3_tx_vboost_lvl;
+		scfg->usb_3_tx_vboost_lvl_en = cfg->usb_3_tx_vboost_lvl_en;
+		scfg->usb_3_rx_vref_ctrl_x = cfg->usb_3_rx_vref_ctrl_x;
+		scfg->usb_3_rx_vref_ctrl_en_x = cfg->usb_3_rx_vref_ctrl_en_x;
+		scfg->usb_3_tx_vboost_lvl_x = cfg->usb_3_tx_vboost_lvl_x;
+		scfg->usb_3_tx_vboost_lvl_en_x = cfg->usb_3_tx_vboost_lvl_en_x;
+	}
 }
 
 static void fsp_assign_ioapic_upds(FSP_S_CONFIG *scfg)
 {
-	_Static_assert(CONFIG_PICASSO_GNB_IOAPIC_ID >= CONFIG_MAX_CPUS,
-			"PICASSO_GNB_IOAPIC_ID should be >= CONFIG_MAX_CPUS!\n");
-	_Static_assert(CONFIG_PICASSO_FCH_IOAPIC_ID >= CONFIG_MAX_CPUS,
-			"PICASSO_FCH_IOAPIC_ID should be >= CONFIG_MAX_CPUS!\n");
-	_Static_assert(CONFIG_PICASSO_GNB_IOAPIC_ID != CONFIG_PICASSO_FCH_IOAPIC_ID,
-			"PICASSO_GNB_IOAPIC_ID should be != PICASSO_FCH_IOAPIC_ID!\n");
-
 	scfg->gnb_ioapic_base = GNB_IO_APIC_ADDR;
-	scfg->gnb_ioapic_id = CONFIG_PICASSO_GNB_IOAPIC_ID;
-	scfg->fch_ioapic_id = CONFIG_PICASSO_FCH_IOAPIC_ID;
+	scfg->gnb_ioapic_id = GNB_IOAPIC_ID;
+	scfg->fch_ioapic_id = FCH_IOAPIC_ID;
 }
 
 static void fsp_edp_tuning_upds(FSP_S_CONFIG *scfg,
 			const struct soc_amd_picasso_config *cfg)
 {
-	if (cfg->dp_phy_override & ENABLE_EDP_TUNINGSET) {
-		scfg->DpPhyOverride = cfg->dp_phy_override;
-		scfg->DpVsPemphLevel = cfg->edp_tuningset.dp_vs_pemph_level;
-		scfg->MarginDeemPh = cfg->edp_tuningset.margin_deemph;
-		scfg->Deemph6db4 = cfg->edp_tuningset.deemph_6db4;
-		scfg->BoostAdj = cfg->edp_tuningset.boostadj;
+	if (cfg->edp_phy_override & ENABLE_EDP_TUNINGSET) {
+		scfg->edp_phy_override = cfg->edp_phy_override;
+		scfg->edp_physel = cfg->edp_physel;
+		scfg->edp_dp_vs_pemph_level = cfg->edp_tuningset.dp_vs_pemph_level;
+		scfg->edp_margin_deemph = cfg->edp_tuningset.margin_deemph;
+		scfg->edp_deemph_6db_4 = cfg->edp_tuningset.deemph_6db4;
+		scfg->edp_boost_adj = cfg->edp_tuningset.boostadj;
 	}
 	if (cfg->edp_pwr_adjust_enable) {
 		scfg->pwron_digon_to_de = cfg->pwron_digon_to_de;

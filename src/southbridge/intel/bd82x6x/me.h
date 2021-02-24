@@ -171,6 +171,22 @@ struct mei_header {
 #define MKHI_GLOBAL_RESET	0x0b
 
 #define MKHI_FWCAPS_GET_RULE	0x02
+#define MKHI_FWCAPS_SET_RULE	0x03
+
+#define MKHI_DISABLE_RULE_ID	0x06
+
+#define CMOS_ME_STATE(state)	((state) & 0x1)
+#define CMOS_ME_CHANGED(state)	(((state) & 0x2) >> 1)
+#define CMOS_ME_STATE_NORMAL	0
+#define CMOS_ME_STATE_DISABLED	1
+#define CMOS_ME_STATE_CHANGED	2
+
+#define ME_ENABLE_TIMEOUT	20000
+
+struct me_disable {
+	u32 rule_id;
+	u16 data;
+} __packed;
 
 #define MKHI_MDES_ENABLE	0x09
 
@@ -228,6 +244,10 @@ void mei_write_dword_ptr(void *ptr, int offset);
 
 #ifndef __SIMPLE_DEVICE__
 void pci_read_dword_ptr(struct device *dev, void *ptr, int offset);
+bool enter_soft_temp_disable(void);
+void enter_soft_temp_disable_wait(void);
+void exit_soft_temp_disable(struct device *dev);
+void exit_soft_temp_disable_wait(struct device *dev);
 #endif
 
 void read_host_csr(struct mei_csr *csr);
@@ -256,7 +276,6 @@ int intel_early_me_uma_size(void);
 int intel_early_me_init_done(u8 status);
 
 void intel_me_finalize_smm(void);
-void intel_me8_finalize_smm(void);
 
 typedef struct {
 	u32       major_version  : 16;

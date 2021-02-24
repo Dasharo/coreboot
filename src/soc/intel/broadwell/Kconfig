@@ -11,12 +11,14 @@ config INTEL_LYNXPOINT_LP
 
 config SOC_SPECIFIC_OPTIONS
 	def_bool y
+	select ACPI_HAS_DEVICE_NVS
 	select ACPI_INTEL_HARDWARE_SLEEP_VALUES
 	select BOOT_DEVICE_SUPPORTS_WRITES
 	select CACHE_MRC_SETTINGS
 	select CPU_INTEL_HASWELL
 	select MRC_SETTINGS_PROTECT
 	select HAVE_SMI_HANDLER
+	select SOUTHBRIDGE_INTEL_COMMON_ACPI_MADT
 	select SOUTHBRIDGE_INTEL_COMMON_EARLY_SMBUS
 	select SOUTHBRIDGE_INTEL_COMMON_RESET
 	select SOUTHBRIDGE_INTEL_COMMON_RTC
@@ -76,12 +78,23 @@ config VBOOT
 	select VBOOT_STARTS_IN_ROMSTAGE if !BROADWELL_VBOOT_IN_BOOTBLOCK
 
 config MMCONF_BASE_ADDRESS
-	hex
 	default 0xf0000000
+
+config MMCONF_BUS_NUMBER
+	default 64
 
 config VGA_BIOS_ID
 	string
 	default "8086,0406"
+
+config FIXED_MCHBAR_MMIO_BASE
+	default 0xfed10000
+
+config FIXED_DMIBAR_MMIO_BASE
+	default 0xfed18000
+
+config FIXED_EPBAR_MMIO_BASE
+	default 0xfed19000
 
 config DCACHE_RAM_BASE
 	hex
@@ -137,15 +150,6 @@ config RO_REGION_ONLY
 	default "mrc.bin"
 
 endif # HAVE_MRC
-
-config PRE_GRAPHICS_DELAY
-	int "Graphics initialization delay in ms"
-	default 0
-	help
-	  On some systems, coreboot boots so fast that connected monitors
-	  (mostly TVs) won't be able to wake up fast enough to talk to the
-	  VBIOS. On those systems we need to wait for a bit before executing
-	  the VBIOS.
 
 config INTEL_PCH_UART_CONSOLE
 	bool "Use Serial IO UART for console"

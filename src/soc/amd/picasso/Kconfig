@@ -16,7 +16,6 @@ config CPU_SPECIFIC_OPTIONS
 	select RESET_VECTOR_IN_RAM
 	select X86_AMD_FIXED_MTRRS
 	select X86_AMD_INIT_SIPI
-	select ACPI_AMD_HARDWARE_SLEEP_VALUES
 	select ACPI_SOC_NVS
 	select DRIVERS_I2C_DESIGNWARE
 	select DRIVERS_USB_PCI_XHCI
@@ -25,26 +24,29 @@ config CPU_SPECIFIC_OPTIONS
 	select IOAPIC
 	select HAVE_ACPI_TABLES
 	select HAVE_EM100_SUPPORT
-	select SOC_AMD_COMMON_BLOCK_SPI
 	select SOC_AMD_COMMON
-	select SOC_AMD_COMMON_BLOCK_NONCAR
-	select SOC_AMD_COMMON_BLOCK_HAS_ESPI
-	select SOC_AMD_COMMON_BLOCK_IOMMU
-	select SOC_AMD_COMMON_BLOCK_ACPIMMIO
-	select SOC_AMD_COMMON_BLOCK_BANKED_GPIOS
 	select SOC_AMD_COMMON_BLOCK_ACPI
+	select SOC_AMD_COMMON_BLOCK_ACPIMMIO
 	select SOC_AMD_COMMON_BLOCK_AOAC
+	select SOC_AMD_COMMON_BLOCK_BANKED_GPIOS
+	select SOC_AMD_COMMON_BLOCK_DATA_FABRIC
 	select SOC_AMD_COMMON_BLOCK_GRAPHICS
-	select SOC_AMD_COMMON_BLOCK_LPC
-	select SOC_AMD_COMMON_BLOCK_PCI
+	select SOC_AMD_COMMON_BLOCK_HAS_ESPI
 	select SOC_AMD_COMMON_BLOCK_HDA
+	select SOC_AMD_COMMON_BLOCK_IOMMU
+	select SOC_AMD_COMMON_BLOCK_LPC
+	select SOC_AMD_COMMON_BLOCK_NONCAR
+	select SOC_AMD_COMMON_BLOCK_PCI
+	select SOC_AMD_COMMON_BLOCK_PSP_GEN2
 	select SOC_AMD_COMMON_BLOCK_SATA
 	select SOC_AMD_COMMON_BLOCK_SMBUS
 	select SOC_AMD_COMMON_BLOCK_SMI
+	select SOC_AMD_COMMON_BLOCK_SMM
 	select SOC_AMD_COMMON_BLOCK_SMU
+	select SOC_AMD_COMMON_BLOCK_SPI
 	select SOC_AMD_COMMON_BLOCK_TSC_FAM17H_19H
 	select SOC_AMD_COMMON_BLOCK_UART
-	select SOC_AMD_COMMON_BLOCK_PSP_GEN2
+	select SOC_AMD_COMMON_BLOCK_UCODE
 	select PROVIDES_ROM_SHARING
 	select BOOT_DEVICE_SUPPORTS_WRITES if BOOT_DEVICE_SPI_FLASH
 	select PARALLEL_MP
@@ -57,8 +59,9 @@ config CPU_SPECIFIC_OPTIONS
 	select FSP_COMPRESS_FSP_S_LZMA
 	select UDK_2017_BINDING
 	select HAVE_CF9_RESET
-	select SUPPORT_CPU_UCODE_IN_CBFS
-	select NO_CBFS_MCACHE if VBOOT_STARTS_BEFORE_BOOTBLOCK
+
+config SOC_AMD_COMMON_BLOCK_UCODE_SIZE
+	default 3200
 
 config FSP_M_FILE
 	string "FSP-M (memory init) binary path and filename"
@@ -180,11 +183,9 @@ config CPU_ADDR_BITS
 	default 48
 
 config MMCONF_BASE_ADDRESS
-	hex
 	default 0xF8000000
 
 config MMCONF_BUS_NUMBER
-	int
 	default 64
 
 config VERSTAGE_ADDR
@@ -240,36 +241,12 @@ config HEAP_SIZE
 	hex
 	default 0xc0000
 
-config PICASSO_FCH_IOAPIC_ID
-	hex
-	default 0x8
-	help
-	  The Picasso APU has two IOAPICs, one in the FCH and one in the
-	  northbridge.  Set this value for the intended ID to assign to the
-	  FCH IOAPIC.  The value should be >= MAX_CPUS and different from
-	  the GNB's IOAPIC_ID.
-
-config PICASSO_GNB_IOAPIC_ID
-	hex
-	default 0x9
-	help
-	  The Picasso APU has two IOAPICs, one in the FCH and one in the
-	  northbridge.  Set this value for the intended ID to assign to the
-	  GNB IOAPIC.  The value should be >= MAX_CPUS and different from
-	  the FCH's IOAPIC_ID.
-
 config SERIRQ_CONTINUOUS_MODE
 	bool
 	default n
 	help
 	  Set this option to y for serial IRQ in continuous mode.
 	  Otherwise it is in quiet mode.
-
-config PICASSO_ACPI_IO_BASE
-	hex
-	default 0x400
-	help
-	  Base address for the ACPI registers.
 
 config CONSOLE_UART_BASE_ADDRESS
 	depends on CONSOLE_SERIAL && AMD_SOC_CONSOLE_UART
@@ -281,7 +258,7 @@ config CONSOLE_UART_BASE_ADDRESS
 
 config SMM_TSEG_SIZE
 	hex
-	default 0x800000 if SMM_TSEG && HAVE_SMI_HANDLER
+	default 0x800000 if HAVE_SMI_HANDLER
 	default 0x0
 
 config SMM_RESERVED_SIZE
@@ -321,7 +298,6 @@ config ACPI_SSDT_PSD_INDEPENDENT
 	  choose to generate _PSD object to allow cores to transition together.
 
 config CHROMEOS
-	select CHROMEOS_RAMOOPS_DYNAMIC
 	select ALWAYS_LOAD_OPROM
 	select ALWAYS_RUN_OPROM
 
@@ -394,14 +370,6 @@ comment "AMD Firmware Directory Table set to location for 16MB ROM"
 config AMDFW_CONFIG_FILE
 	string
 	default "src/soc/amd/picasso/fw.cfg"
-
-config USE_PSPSECUREOS
-	bool
-	default y
-	help
-	  Include the PspSecureOs and PspTrustlet binaries in the PSP build.
-
-	  If unsure, answer 'y'
 
 config PSP_LOAD_MP2_FW
 	bool

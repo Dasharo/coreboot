@@ -54,6 +54,7 @@ const char *smbios_mainboard_location_in_chassis(void);
 const char *smbios_chassis_version(void);
 const char *smbios_chassis_serial_number(void);
 const char *smbios_processor_serial_number(void);
+u8 smbios_chassis_power_cords(void);
 
 /* This string could be filled late in payload. */
 void smbios_type0_bios_version(uintptr_t address);
@@ -828,6 +829,8 @@ enum {
 	SMBIOS_EVENTLOG_STATUS_VALID = 1, /* Bit 0 */
 	SMBIOS_EVENTLOG_STATUS_FULL  = 2, /* Bit 1 */
 };
+
+#define SMBIOS_USE_EXTENDED_MAX_CAPACITY	(1 << 31)
 
 struct smbios_type16 {
 	u8 type;

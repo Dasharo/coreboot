@@ -13,7 +13,6 @@
 
 #if CONFIG(INTEL_LYNXPOINT_LP)
 #include "lp_gpio.h"
-extern const struct pch_lp_gpio_map mainboard_gpio_map[];
 #else
 #include <southbridge/intel/common/gpio.h>
 #endif
@@ -36,7 +35,7 @@ enum pch_platform_type get_pch_platform_type(void)
 
 static void pch_enable_bars(void)
 {
-	pci_write_config32(PCH_LPC_DEV, RCBA, (uintptr_t)DEFAULT_RCBA | 1);
+	pci_write_config32(PCH_LPC_DEV, RCBA, CONFIG_FIXED_RCBA_MMIO_BASE | 1);
 
 	pci_write_config32(PCH_LPC_DEV, PMBASE, DEFAULT_PMBASE | 1);
 	/* Enable ACPI BAR */

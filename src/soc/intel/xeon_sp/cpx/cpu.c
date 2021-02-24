@@ -58,13 +58,8 @@ static void xeon_configure_mca(void)
  */
 void get_microcode_info(const void **microcode, int *parallel)
 {
-	*microcode = intel_mp_current_microcode();
+	*microcode = intel_microcode_find();
 	*parallel = 0;
-}
-
-const void *intel_mp_current_microcode(void)
-{
-	return microcode_patch;
 }
 
 static void each_cpu_init(struct device *cpu)
@@ -188,7 +183,7 @@ static const struct mp_ops mp_ops = {
 	.pre_mp_init = pre_mp_init,
 	.get_cpu_count = get_thread_count,
 	.get_smm_info = get_smm_info,
-	.pre_mp_smm_init = smm_initialize,
+	.pre_mp_smm_init = smm_southbridge_clear_state,
 	.relocation_handler = smm_relocation_handler,
 	.get_microcode_info = get_microcode_info,
 	.post_mp_init = post_mp_init,

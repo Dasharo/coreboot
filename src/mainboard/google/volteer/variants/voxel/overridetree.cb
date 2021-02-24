@@ -19,6 +19,17 @@ chip soc/intel/tigerlake
 	# Disable SRCCLKREQ1#
 	register "PcieClkSrcUsage[1]" = "PCIE_CLK_NOTUSED"
 
+	# Acoustic settings
+	register "AcousticNoiseMitigation" = "1"
+	register "SlowSlewRate[VR_DOMAIN_IA]" = "SLEW_FAST_8"
+	register "SlowSlewRate[VR_DOMAIN_GT]" = "SLEW_FAST_8"
+	register "SlowSlewRate[VR_DOMAIN_SA]" = "SLEW_FAST_8"
+	register "SlowSlewRate[VR_DOMAIN_VLCC]" = "SLEW_FAST_8"
+	register "FastPkgCRampDisable[VR_DOMAIN_IA]" = "1"
+	register "FastPkgCRampDisable[VR_DOMAIN_GT]" = "1"
+	register "FastPkgCRampDisable[VR_DOMAIN_SA]" = "1"
+	register "FastPkgCRampDisable[VR_DOMAIN_VLCC]" = "1"
+
 	device domain 0 on
 		device ref dptf on
 			chip drivers/intel/dptf
@@ -145,6 +156,19 @@ chip soc/intel/tigerlake
 				register "enable_off_delay_ms" = "1"
 				register "has_power_resource" = "1"
 				device i2c 39 on end
+			end
+			chip drivers/generic/gpio_keys
+				register "name" = ""PENH""
+				# GPP_B3 is the IRQ source, and GPP_E1 is the wake source
+				register "gpio" = "ACPI_GPIO_INPUT_ACTIVE_LOW(GPP_B3)"
+				register "key.wake_gpe" = "GPE0_DW2_01"
+				register "key.wakeup_route" = "WAKEUP_ROUTE_SCI"
+				register "key.wakeup_event_action" = "EV_ACT_DEASSERTED"
+				register "key.dev_name" = ""EJCT""
+				register "key.linux_code" = "SW_PEN_INSERTED"
+				register "key.linux_input_type" = "EV_SW"
+				register "key.label" = ""pen_eject""
+				device generic 0 on end
 			end
 		end
 		device ref i2c2 on

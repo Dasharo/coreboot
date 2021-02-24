@@ -6,14 +6,12 @@
  * Chapter number: 9
  */
 
-#include <console/console.h>
 #include <device/pci_def.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/pcr.h>
 #include <intelblocks/uart.h>
 #include <soc/iomap.h>
-#include <soc/pch.h>
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
 

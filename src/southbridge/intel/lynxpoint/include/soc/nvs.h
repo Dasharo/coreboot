@@ -7,7 +7,7 @@
 
 struct __packed global_nvs {
 	/* Miscellaneous */
-	u16	osys; /* 0x00 - Operating System */
+	u16	unused_was_osys; /* 0x00 - Operating System */
 	u8	smif; /* 0x02 - SMI function call ("TRAP") */
 	u8	prm0; /* 0x03 - SMI function call parameter */
 	u8	prm1; /* 0x04 - SMI function call parameter */
@@ -19,7 +19,7 @@ struct __packed global_nvs {
 	u8	prm5; /* 0x0a - Lock function parameter */
 	u32	p80d; /* 0x0b - Debug port (IO 0x80) value */
 	u8	lids; /* 0x0f - LID state (open = 1) */
-	u8	pwrs; /* 0x10 - Power state (AC = 1) */
+	u8	unused_was_pwrs; /* 0x10 - Power state (AC = 1) */
 	/* Thermal policy */
 	u8	tlvl; /* 0x11 - Throttle Level Limit */
 	u8	flvl; /* 0x12 - Current FAN Level */
@@ -73,6 +73,10 @@ struct __packed global_nvs {
 	u32	s0b[8]; /* 0x60 - 0x7f - BAR0 */
 	u32	s1b[8]; /* 0x80 - 0x9f - BAR1 */
 	u32	cbmc;   /* 0xa0 - 0xa3 - coreboot memconsole */
+
+	/* Required for future unified acpi_save_wake_source. */
+	u32	pm1i;
+	u32	gpei;
 };
 
 #endif /* SOUTHBRIDGE_INTEL_LYNXPOINT_NVS_H */

@@ -4,8 +4,6 @@
 #include <commonlib/helpers.h>
 #include <console/console.h>
 #include <cpu/intel/model_206ax/model_206ax.h>
-#include <string.h>
-#include <arch/cpu.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <northbridge/intel/sandybridge/chip.h>
@@ -1712,7 +1710,7 @@ static void train_write_flyby(ramctr_timing *ctrl)
 					.rank    = slotrank,
 				},
 			},
-			/* DRAM command RD */
+			/* DRAM command RDA */
 			[2] = {
 				.sp_cmd_ctrl = {
 					.command    = IOSAV_RD,

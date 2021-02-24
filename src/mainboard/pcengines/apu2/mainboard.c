@@ -6,6 +6,7 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci_def.h>
+#include <gpio.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
 #include <southbridge/amd/pi/hudson/pci_devs.h>
 #include <southbridge/amd/pi/hudson/amd_pci_int_defs.h>
@@ -133,7 +134,7 @@ static const struct pirq_struct mainboard_pirq_data[] = {
 static void pirq_setup(void)
 {
 	pirq_data_ptr = mainboard_pirq_data;
-	pirq_data_size = sizeof(mainboard_pirq_data) / sizeof(struct pirq_struct);
+	pirq_data_size = ARRAY_SIZE(mainboard_pirq_data);
 	intr_data_ptr = mainboard_intr_data;
 	picr_data_ptr = mainboard_picr_data;
 }
@@ -446,16 +447,18 @@ static void mainboard_final(void *chip_info)
 	val &= ~(1 << 27);
 	pci_write_config32(D18F3, 0x88, val);
 
-	/* Turn off LED 2 and LED 3 */
-	write_gpio(GPIO_58, 1);
-	write_gpio(GPIO_59, 1);
+	//
+	// Turn off LED 2 and LED 3
+	//
+	gpio_set(GPIO_58, 1);
+	gpio_set(GPIO_59, 1);
 
 	if (!check_console()) {
 	/*The console is disabled, check if S1 is pressed and enable if so */
 #if CONFIG(BOARD_PCENGINES_APU5)
-		if (!read_gpio(GPIO_22)) {
+		if (!gpio_get(GPIO_22)) {
 #else
-		if (!read_gpio(GPIO_32)) {
+		if (!gpio_get(GPIO_32)) {
 #endif
 			printk(BIOS_INFO, "S1 PRESSED\n");
 			enable_console();

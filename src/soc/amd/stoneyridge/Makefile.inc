@@ -8,7 +8,6 @@ subdirs-y += ../../../cpu/x86/lapic
 subdirs-y += ../../../cpu/x86/cache
 subdirs-y += ../../../cpu/x86/mtrr
 subdirs-y += ../../../cpu/x86/pae
-subdirs-y += ../../../cpu/x86/smm
 
 bootblock-y += uart.c
 bootblock-y += BiosCallOuts.c
@@ -58,11 +57,9 @@ ramstage-y += southbridge.c
 ramstage-y += northbridge.c
 ramstage-y += sata.c
 ramstage-y += memmap.c
-ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi.c
 ramstage-y += uart.c
 ramstage-y += usb.c
 ramstage-y += tsc_freq.c
-ramstage-y += finalize.c
 ramstage-y += psp.c
 
 all-y += reset.c

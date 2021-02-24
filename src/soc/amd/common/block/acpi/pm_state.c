@@ -2,6 +2,7 @@
 
 #include <acpi/acpi_gnvs.h>
 #include <acpi/acpi_pm.h>
+#include <amdblocks/acpi.h>
 #include <bootstate.h>
 #include <soc/acpi.h>
 #include <soc/nvs.h>
@@ -13,11 +14,11 @@ static int get_index_bit(uint32_t value, uint16_t limit)
 	uint16_t i;
 	uint32_t t;
 
-	if (limit >= TOTAL_BITS(uint32_t))
+	if (limit > TOTAL_BITS(uint32_t))
 		return -1;
 
 	/* get a mask of valid bits. Ex limit = 3, set bits 0-2 */
-	t = (1 << limit) - 1;
+	t = (1ULL << limit) - 1;
 	if ((value & t) == 0)
 		return -1;
 	t = 1;
@@ -29,35 +30,30 @@ static int get_index_bit(uint32_t value, uint16_t limit)
 	return i;
 }
 
-static void pm_fill_gnvs(const struct acpi_pm_gpe_state *state)
+static void pm_fill_gnvs(struct global_nvs *gnvs, const struct acpi_pm_gpe_state *state)
 {
 	int index;
-	struct global_nvs *gnvs = acpi_get_gnvs();
-	if (gnvs == NULL)
-		return;
 
 	index = get_index_bit(state->pm1_sts & state->pm1_en, PM1_LIMIT);
-	if (index < 0)
-		gnvs->pm1i = ~0ULL;
-	else
+	if (index >= 0)
 		gnvs->pm1i = index;
 
 	index = get_index_bit(state->gpe0_sts & state->gpe0_en, GPE0_LIMIT);
-	if (index < 0)
-		gnvs->gpei = ~0ULL;
-	else
+	if (index >= 0)
 		gnvs->gpei = index;
 }
 
-static void set_nvs_sws(void *unused)
+static void acpi_save_wake_source(void *unused)
 {
-	struct chipset_power_state *state;
+	const struct chipset_power_state *ps;
+	struct global_nvs *gnvs;
 
-	state = acpi_get_pm_state();
-	if (state == NULL)
+	if (acpi_reset_gnvs_for_wake(&gnvs) < 0)
+		return;
+	if (acpi_pm_state_for_wake(&ps) < 0)
 		return;
 
-	pm_fill_gnvs(&state->gpe_state);
+	pm_fill_gnvs(gnvs, &ps->gpe_state);
 }
 
-BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, set_nvs_sws, NULL);
+BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, acpi_save_wake_source, NULL);

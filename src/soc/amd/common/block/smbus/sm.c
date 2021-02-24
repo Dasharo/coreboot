@@ -1,22 +1,19 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/acpimmio.h>
+#include <amdblocks/ioapic.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <device/smbus.h>
 #include <device/smbus_host.h>
 #include <arch/ioapic.h>
-#include <soc/southbridge.h>
-
-/*
-* The southbridge enables all USB controllers by default in SMBUS Control.
-* The southbridge enables SATA by default in SMBUS Control.
-*/
 
 static void sm_init(struct device *dev)
 {
-	setup_ioapic(VIO_APIC_VADDR, CONFIG_MAX_CPUS);
+	fch_enable_ioapic_decode();
+	setup_ioapic(VIO_APIC_VADDR, FCH_IOAPIC_ID);
+	fch_configure_hpet();
 }
 
 static u32 get_sm_mmio(struct device *dev)
@@ -61,6 +58,7 @@ static int lsmbus_write_byte(struct device *dev, u8 address, u8 val)
 	device = dev->path.i2c.device;
 	return do_smbus_write_byte(get_sm_mmio(dev), device, address, val);
 }
+
 static struct smbus_bus_operations lops_smbus_bus = {
 	.recv_byte = lsmbus_recv_byte,
 	.send_byte = lsmbus_send_byte,
@@ -68,15 +66,26 @@ static struct smbus_bus_operations lops_smbus_bus = {
 	.write_byte = lsmbus_write_byte,
 };
 
+#if CONFIG(HAVE_ACPI_TABLES)
+static const char *smbus_acpi_name(const struct device *dev)
+{
+	return "SBUS";
+}
+#endif
+
 static struct device_operations smbus_ops = {
-	.read_resources = noop_read_resources,
-	.set_resources = noop_set_resources,
-	.enable_resources = pci_dev_enable_resources,
-	.init = sm_init,
-	.scan_bus = scan_smbus,
-	.ops_pci = &pci_dev_ops_pci,
-	.ops_smbus_bus = &lops_smbus_bus,
+	.read_resources		= noop_read_resources,
+	.set_resources		= noop_set_resources,
+	.enable_resources	= pci_dev_enable_resources,
+	.init			= sm_init,
+	.scan_bus		= scan_smbus,
+	.ops_pci		= &pci_dev_ops_pci,
+	.ops_smbus_bus		= &lops_smbus_bus,
+#if CONFIG(HAVE_ACPI_TABLES)
+	.acpi_name		= smbus_acpi_name,
+#endif
 };
+
 static const struct pci_driver smbus_driver __pci_driver = {
 	.ops = &smbus_ops,
 	.vendor = PCI_VENDOR_ID_AMD,

@@ -7,7 +7,7 @@
 
 struct __packed global_nvs {
 	/* Miscellaneous */
-	u16	osys; /* 0x00 - Operating System */
+	u16	unused_was_osys; /* 0x00 - Operating System */
 	u8	smif; /* 0x02 - SMI function call ("TRAP") */
 	u8	prm0; /* 0x03 - SMI function call parameter */
 	u8	prm1; /* 0x04 - SMI function call parameter */
@@ -19,7 +19,7 @@ struct __packed global_nvs {
 	u8	prm5; /* 0x0a - Lock function parameter */
 	u32	p80d; /* 0x0b - Debug port (IO 0x80) value */
 	u8	lids; /* 0x0f - LID state (open = 1) */
-	u8	pwrs; /* 0x10 - Power state (AC = 1) */
+	u8	unused_was_pwrs; /* 0x10 - Power state (AC = 1) */
 	/* Thermal policy */
 	u8	tlvl; /* 0x11 - Throttle Level Limit */
 	u8	flvl; /* 0x12 - Current FAN Level */
@@ -97,7 +97,11 @@ struct __packed global_nvs {
 	u8	rsvd11[6];
 	/* XHCI */
 	u8	xhci;
-	u8	rsvd12[65];
+
+	/* Required for future unified acpi_save_wake_source. */
+	u32	pm1i;
+	u32	gpei;
+	u8	rsvd12[57];
 
 	u8	tpiq; /* 0xf5 - trackpad IRQ value */
 	u32     cbmc;

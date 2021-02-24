@@ -38,8 +38,6 @@ config BASEBOARD_DEDEDE_LAPTOP
 	select SYSTEM_TYPE_LAPTOP
 
 config CHROMEOS
-	bool
-	default y
 	select CHROMEOS_CSE_BOARD_RESET_OVERRIDE
 	select CHROMEOS_DRAM_PART_NUMBER_IN_CBI
 	select EC_GOOGLE_CHROMEEC_SWITCHES
@@ -101,6 +99,7 @@ config MAINBOARD_PART_NUMBER
 	default "Sasuke" if BOARD_GOOGLE_SASUKE
 	default "Storo" if BOARD_GOOGLE_STORO
 	default "Sasukette" if BOARD_GOOGLE_SASUKETTE
+	default "Kracko" if BOARD_GOOGLE_KRACKO
 
 config MAX_CPUS
 	int
@@ -136,5 +135,6 @@ config VARIANT_DIR
 	default "sasuke" if BOARD_GOOGLE_SASUKE
 	default "storo" if BOARD_GOOGLE_STORO
 	default "sasukette" if BOARD_GOOGLE_SASUKETTE
+	default "kracko" if BOARD_GOOGLE_KRACKO
 
 endif #BOARD_GOOGLE_BASEBOARD_DEDEDE

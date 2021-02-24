@@ -12,16 +12,13 @@
 #include <device/pci_ops.h>
 #include <arch/ioapic.h>
 #include <acpi/acpi.h>
-#include <acpi/acpi_gnvs.h>
 #include <cpu/x86/smm.h>
 #include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
-#include <string.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
 #include <southbridge/intel/common/hpet.h>
 #include <southbridge/intel/common/pmbase.h>
 #include <southbridge/intel/common/spi.h>
-#include <soc/nvs.h>
 
 #include "chip.h"
 #include "i82801gx.h"
@@ -337,9 +334,6 @@ static void lpc_init(struct device *dev)
 	/* Configure Cx state registers */
 	i82801gx_configure_cstates(dev);
 
-	/* Set the state of the GPIO lines. */
-	//gpio_init(dev);
-
 	/* Initialize the real time clock. */
 	i82801gx_rtc_init(dev);
 
@@ -462,12 +456,6 @@ static void lpc_final(struct device *dev)
 
 	/* Indicate finalize step with post code */
 	outb(POST_OS_BOOT, 0x80);
-}
-
-void soc_fill_gnvs(struct global_nvs *gnvs)
-{
-	/* MPEN, Enable Multi Processing. */
-	gnvs->mpen = dev_count_cpu() > 1 ? 1 : 0;
 }
 
 static const char *lpc_acpi_name(const struct device *dev)

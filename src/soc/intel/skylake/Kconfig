@@ -32,7 +32,6 @@ config CPU_SPECIFIC_OPTIONS
 	select HAVE_FSP_LOGO_SUPPORT
 	select HAVE_INTEL_FSP_REPO
 	select INTEL_CAR_NEM_ENHANCED
-	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select HAVE_SMI_HANDLER
 	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select INTEL_GMA_ACPI
@@ -93,9 +92,6 @@ config CPU_INTEL_NUM_FIT_ENTRIES
 	int
 	default 10
 
-config CHROMEOS
-	select CHROMEOS_RAMOOPS_DYNAMIC
-
 config VBOOT
 	select VBOOT_SEPARATE_VERSTAGE
 	select VBOOT_MUST_REQUEST_DISPLAY
@@ -124,10 +120,6 @@ config DCACHE_BSP_STACK_SIZE
 	help
 	  The amount of anticipated stack usage in CAR by bootblock and
 	  other stages.
-
-config C_ENV_BOOTBLOCK_SIZE
-	hex
-	default 0xC000
 
 config EXCLUDE_NATIVE_SD_INTERFACE
 	bool

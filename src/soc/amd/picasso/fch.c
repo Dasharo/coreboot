@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <acpi/acpi_gnvs.h>
-#include <acpi/acpi_pm.h>
 #include <console/console.h>
 #include <device/mmio.h>
 #include <bootstate.h>
@@ -19,6 +17,7 @@
 #include <soc/acpi.h>
 #include <soc/cpu.h>
 #include <soc/i2c.h>
+#include <soc/iomap.h>
 #include <soc/southbridge.h>
 #include <soc/smi.h>
 #include <soc/amd_pci_int_defs.h>
@@ -101,7 +100,23 @@ void sb_clk_output_48Mhz(void)
 	misc_write32(MISC_CLK_CNTL1, ctrl);
 }
 
-static void sb_init_acpi_ports(void)
+static void sb_rfmux_config_override(void)
+{
+	u8 port;
+	const struct soc_amd_picasso_config *cfg;
+
+	cfg = config_of_soc();
+
+	for (port = 0; port < USB_PD_PORT_COUNT; port++) {
+		if (cfg->usb_pd_config_override[port].rfmux_override_en) {
+			write32((void *)(USB_PD_PORT_CONTROL + PD_PORT_MUX_OFFSET(port)),
+				cfg->usb_pd_config_override[port].rfmux_config
+				| USB_PD_RFMUX_OVERRIDE);
+		}
+	}
+}
+
+static void fch_init_acpi_ports(void)
 {
 	u32 reg;
 
@@ -120,9 +135,7 @@ static void sb_init_acpi_ports(void)
 		configure_smi(SMITYPE_SMI_CMD_PORT, SMI_MODE_SMI);
 
 		/* SMI on SlpTyp requires sending SMI before completion
-		 * response of the I/O write.  The BKDG also specifies
-		 * clearing ForceStpClkRetry for SMI trapping.
-		 */
+		   response of the I/O write. */
 		reg = pm_read32(PM_PCI_CTRL);
 		reg |= FORCE_SLPSTATE_RETRY;
 		pm_write32(PM_PCI_CTRL, reg);
@@ -203,18 +216,14 @@ static void gpp_clk_setup(void)
 	misc_write32(GPP_CLK_CNTRL, gpp_clk_ctl);
 }
 
-void southbridge_init(void *chip_info)
+void fch_init(void *chip_info)
 {
-	struct chipset_power_state *state;
-
 	i2c_soc_init();
-	sb_init_acpi_ports();
+	fch_init_acpi_ports();
 
-	state = acpi_get_pm_state();
-	if (state) {
-		acpi_pm_gpe_add_events_print_events(&state->gpe_state);
-		gpio_add_events(&state->gpio_state);
-	}
+	acpi_pm_gpe_add_events_print_events();
+	gpio_add_events();
+
 	acpi_clear_pm_gpe_status();
 
 	al2ahb_clock_gate();
@@ -222,9 +231,11 @@ void southbridge_init(void *chip_info)
 	gpp_clk_setup();
 
 	sb_clk_output_48Mhz();
+
+	sb_rfmux_config_override();
 }
 
-void southbridge_final(void *chip_info)
+void fch_final(void *chip_info)
 {
 	uint8_t restored_power = PM_S5_AT_POWER_RECOVERY;
 

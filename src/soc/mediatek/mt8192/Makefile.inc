@@ -36,10 +36,12 @@ romstage-y += ../common/gpio.c gpio.c
 romstage-y += ../common/i2c.c i2c.c
 romstage-y += ../common/mmu_operations.c mmu_operations.c
 romstage-y += memory.c dramc_param.c ../common/memory_test.c
+romstage-y += ../common/pll.c pll.c
 romstage-$(CONFIG_SPI_FLASH) += ../common/spi.c spi.c
 romstage-y += ../common/timer.c
 romstage-y += ../common/uart.c
 romstage-y += pmif.c pmif_clk.c pmif_spi.c pmif_spmi.c
+romstage-y += mt6315.c
 romstage-y += mt6359p.c
 
 ramstage-y += ../common/auxadc.c
@@ -76,7 +78,7 @@ mcu-firmware-files := \
 $(foreach fw, $(call strip_quotes,$(mcu-firmware-files)), \
 	  $(eval $(fw)-file := $(MT8192_BLOB_DIR)/$(fw)) \
 	  $(eval $(fw)-type := raw) \
-	  $(eval $(fw)-compression := $(CBFS_COMPRESS_FLAG)) \
+	  $(eval $(fw)-compression := LZ4) \
 	  $(if $(wildcard $($(fw)-file)), $(eval cbfs-files-y += $(fw)), ) \
 )
 

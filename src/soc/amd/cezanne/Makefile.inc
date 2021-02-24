@@ -12,25 +12,35 @@ all-y		+= aoac.c
 bootblock-y	+= bootblock.c
 bootblock-y	+= early_fch.c
 bootblock-y	+= gpio.c
-bootblock-y     += reset.c
+bootblock-y	+= reset.c
 bootblock-y	+= uart.c
 
 verstage_x86-y	+= gpio.c
-verstage_x86-y  += reset.c
+verstage_x86-y	+= reset.c
 verstage_x86-y	+= uart.c
 
 romstage-y	+= gpio.c
-romstage-y      += reset.c
+romstage-y	+= reset.c
 romstage-y	+= romstage.c
 romstage-y	+= uart.c
 
+ramstage-y	+= acpi.c
 ramstage-y	+= chip.c
-ramstage-y      += fsp_params.c
+ramstage-y	+= cpu.c
+ramstage-y	+= data_fabric.c
+ramstage-y	+= fch.c
+ramstage-y	+= fsp_params.c
 ramstage-y	+= gpio.c
-ramstage-y      += reset.c
+ramstage-y	+= pcie_gpp.c
+ramstage-y	+= reset.c
+ramstage-y	+= root_complex.c
 ramstage-y	+= uart.c
 
+smm-y		+= smihandler.c
+smm-$(CONFIG_DEBUG_SMI) += uart.c
+
 CPPFLAGS_common += -I$(src)/soc/amd/cezanne/include
+CPPFLAGS_common += -I$(src)/soc/amd/cezanne/acpi
 CPPFLAGS_common += -I$(src)/vendorcode/amd/fsp/cezanne
 
 $(call strip_quotes,$(CONFIG_FSP_M_CBFS))-options := -b $(CONFIG_FSP_M_ADDR)
@@ -44,6 +54,9 @@ MAINBOARD_BLOBS_DIR:=$(top)/3rdparty/blobs/mainboard/$(MAINBOARDDIR)
 # +-----------+---------------+----------------+------------+
 # |           |  PSPDIR ADDR  |  BIOSDIR ADDR  |
 # +-----------+---------------+----------------+
+
+$(if $(CONFIG_AMD_FWM_POSITION_INDEX), ,\
+     $(error Invalid AMD firmware position index. Check if the board sets a valid ROM size))
 
 CEZANNE_FWM_POSITION=$(call int-add, \
 	$(call int-subtract, 0xffffffff \
@@ -65,21 +78,11 @@ PSP_SOFTFUSE_BITS += 0
 OPT_TOKEN_UNLOCK="--token-unlock"
 endif
 
-ifeq ($(CONFIG_USE_PSPSECUREOS),y)
-# types = 0x2
-OPT_PSP_USE_PSPSECUREOS="--use-pspsecureos"
-endif
-
-
 ifeq ($(CONFIG_PSP_LOAD_MP2_FW),y)
 OPT_PSP_LOAD_MP2_FW="--load-mp2-fw"
 else
 # Disable MP2 firmware loading
 PSP_SOFTFUSE_BITS += 29
-endif
-
-ifeq ($(CONFIG_PSP_LOAD_S0I3_FW),y)
-OPT_PSP_LOAD_S0I3_FW="--load-s0i3"
 endif
 
 #
@@ -97,8 +100,6 @@ PSP_BIOSBIN_FILE=$(obj)/amd_biospsp.img
 PSP_ELF_FILE=$(objcbfs)/bootblock.elf
 PSP_BIOSBIN_SIZE=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | awk '{print $$5}')
 PSP_BIOSBIN_DEST=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | awk '{print $$3}')
-
-# type = 0x66
 
 # type = 0xb - See #55758 (NDA) for bit definitions.
 PSP_SOFTFUSE_BITS += 28
@@ -143,9 +144,9 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_PSP_BIOSBIN_DEST) \
 		$(OPT_PSP_BIOSBIN_SIZE) \
 		$(OPT_PSP_SOFTFUSE) \
-		$(OPT_PSP_USE_PSPSECUREOS) \
 		$(OPT_PSP_LOAD_MP2_FW) \
-		$(OPT_PSP_LOAD_S0I3_FW) \
+		--use-pspsecureos \
+		--load-s0i3 \
 		--combo-capable \
 		$(OPT_TOKEN_UNLOCK) \
 		$(OPT_EFS_SPI_READ_MODE) \
@@ -179,5 +180,7 @@ cbfs-files-y += apu/amdfw
 apu/amdfw-file := $(obj)/amdfw.rom
 apu/amdfw-position := $(CEZANNE_FWM_POSITION)
 apu/amdfw-type := raw
+
+cpu_microcode_bins += $(wildcard ${FIRMWARE_LOCATION}/UcodePatch_*.bin)
 
 endif # ($(CONFIG_SOC_AMD_CEZANNE),y)

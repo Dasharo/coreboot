@@ -105,6 +105,9 @@ struct soc_intel_tigerlake_config {
 	/* Common struct containing power limits configuration information */
 	struct soc_power_limits_config power_limits_config[POWER_LIMITS_MAX];
 
+	/* Configuration for boot TDP selection; */
+	uint8_t ConfigTdpLevel;
+
 	/* Gpio group routed to each dword of the GPE0 block. Values are
 	 * of the form PMC_GPP_[A:U] or GPD. */
 	uint8_t pmc_gpe0_dw0; /* GPE0_31_0 STS/EN */
@@ -496,6 +499,30 @@ struct soc_intel_tigerlake_config {
 	 *  - PM_CFG.SLP_LAN_MIN_ASST_WDTH
 	 */
 	uint8_t PchPmPwrCycDur;
+
+	/*
+	 * External Clock Gate
+	 * true = Mainboard design uses external clock gating
+	 * false = Mainboard design does not use external clock gating
+	 *
+	 */
+	bool external_clk_gated;
+
+	/*
+	 * External PHY Gate
+	 * true = Mainboard design uses external phy gating
+	 * false = Mainboard design does not use external phy gating
+	 *
+	 */
+	bool external_phy_gated;
+
+	/*
+	 * External Bypass Enable
+	 * true = Mainboard design uses external bypass rail
+	 * false = Mainboard design does not use external bypass rail
+	 *
+	 */
+	bool external_bypass;
 };
 
 typedef struct soc_intel_tigerlake_config config_t;

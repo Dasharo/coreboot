@@ -61,12 +61,6 @@ static acpi_cstate_t cstate_map[] = {
 
 void soc_fill_gnvs(struct global_nvs *gnvs)
 {
-	/* Set unknown wake source */
-	gnvs->pm1i = -1;
-
-	/* Top of Low Memory (start of resource allocation) */
-	gnvs->tolm = nc_read_top_of_low_memory();
-
 	/* Fill in the Wi-Fi Region ID */
 	if (CONFIG(HAVE_REGULATORY_DOMAIN))
 		gnvs->cid1 = wifi_regulatory_domain();
@@ -110,7 +104,7 @@ int acpi_sci_irq(void)
 unsigned long acpi_fill_mcfg(unsigned long current)
 {
 	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *)current,
-					     MCFG_BASE_ADDRESS, 0, 0, 255);
+			CONFIG_MMCONF_BASE_ADDRESS, 0, 0, CONFIG_MMCONF_BUS_NUMBER - 1);
 	return current;
 }
 

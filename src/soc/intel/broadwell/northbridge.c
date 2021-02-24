@@ -9,7 +9,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 #include <soc/acpi.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
@@ -372,9 +371,6 @@ static void mc_add_dram_resources(struct device *dev, int *resource_cnt)
 	reserved_ram_resource(dev, index++, (0xc0000 >> 10),
 				(0x100000 - 0xc0000) >> 10);
 
-	if (CONFIG(CHROMEOS))
-		chromeos_reserve_ram_oops(dev, index++);
-
 	*resource_cnt = index;
 }
 
@@ -472,6 +468,11 @@ static void broadwell_enable(struct device *dev)
 	} else if (dev->path.type == DEVICE_PATH_CPU_CLUSTER) {
 		dev->ops = &cpu_bus_ops;
 	}
+}
+
+static void broadwell_init_pre_device(void *chip_info)
+{
+	broadwell_run_reference_code();
 }
 
 struct chip_operations soc_intel_broadwell_ops = {

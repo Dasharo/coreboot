@@ -1470,16 +1470,6 @@ static void collect_system_info(struct raminfo *info)
 	int i;
 	unsigned int channel;
 
-	/* Wait for some bit, maybe TXT clear. */
-	while (!(read8((u8 *)0xfed40000) & (1 << 7)))
-		;
-
-	if (!info->memory_reserved_for_heci_mb) {
-		/* Wait for ME to be ready */
-		intel_early_me_init();
-		info->memory_reserved_for_heci_mb = intel_early_me_uma_size();
-	}
-
 	for (i = 0; i < 3; i++) {
 		capid0[i] = pci_read_config32(NORTHBRIDGE, CAPID0 | (i << 2));
 		printk(BIOS_DEBUG, "CAPID0[%d] = 0x%08x\n", i, capid0[i]);
@@ -1822,19 +1812,18 @@ static void setup_heci_uma(struct raminfo *info)
 	pci_read_config32(NORTHBRIDGE, DMIBAR);
 	if (info->memory_reserved_for_heci_mb) {
 		DMIBAR32(DMIVC0RCTL) &= ~0x80;
-		write32(DEFAULT_RCBA   + 0x14, read32(DEFAULT_RCBA   + 0x14) & ~0x80);
+		RCBA32(0x14) &= ~0x80;
 		DMIBAR32(DMIVC1RCTL) &= ~0x80;
-		write32(DEFAULT_RCBA   + 0x20, read32(DEFAULT_RCBA   + 0x20) & ~0x80);
+		RCBA32(0x20) &= ~0x80;
 		DMIBAR32(DMIVCPRCTL) &= ~0x80;
-		write32(DEFAULT_RCBA   + 0x30, read32(DEFAULT_RCBA   + 0x30) & ~0x80);
+		RCBA32(0x30) &= ~0x80;
 		DMIBAR32(DMIVCMRCTL) &= ~0x80;
-		write32(DEFAULT_RCBA   + 0x40, read32(DEFAULT_RCBA   + 0x40) & ~0x80);
+		RCBA32(0x40) &= ~0x80;
 
-		write32(DEFAULT_RCBA   + 0x40, 0x87000080);	// OK
+		RCBA32(0x40) = 0x87000080;	// OK
 		DMIBAR32(DMIVCMRCTL) = 0x87000080;	// OK
 
-		while ((read16(DEFAULT_RCBA + 0x46) & 2) &&
-			DMIBAR16(DMIVCMRSTS) & VCMNP)
+		while ((RCBA16(0x46) & 2) && DMIBAR16(DMIVCMRSTS) & VCMNP)
 			;
 	}
 
@@ -3667,17 +3656,17 @@ void chipset_init(const int s3resume)
 		MCHBAR32_AND_OR(0x2c44, 0, 0x1053687);
 		pci_read_config8(GMA, MSAC);	// = 0x2
 		pci_write_config8(GMA, MSAC, 0x2);
-		read8(DEFAULT_RCBA + 0x2318);
-		write8(DEFAULT_RCBA + 0x2318, 0x47);
-		read8(DEFAULT_RCBA + 0x2320);
-		write8(DEFAULT_RCBA + 0x2320, 0xfc);
+		RCBA8(0x2318);
+		RCBA8(0x2318) = 0x47;
+		RCBA8(0x2320);
+		RCBA8(0x2320) = 0xfc;
 	}
 
 	MCHBAR32_AND_OR(0x30, 0, 0x40);
 
 	pci_write_config16(NORTHBRIDGE, GGC, ggc);
-	gav(read32(DEFAULT_RCBA + 0x3428));
-	write32(DEFAULT_RCBA + 0x3428, 0x1d);
+	gav(RCBA32(0x3428));
+	RCBA32(0x3428) = 0x1d;
 }
 
 void raminit(const int s3resume, const u8 *spd_addrmap)
@@ -3714,16 +3703,18 @@ void raminit(const int s3resume, const u8 *spd_addrmap)
 	info.training.reg_178 = 0;
 	info.training.reg_10b = 0;
 
-	info.memory_reserved_for_heci_mb = 0;
+	/* Wait for some bit, maybe TXT clear. */
+	while (!(read8((u8 *)0xfed40000) & (1 << 7)))
+		;
+
+	/* Wait for ME to be ready */
+	intel_early_me_init();
+	info.memory_reserved_for_heci_mb = intel_early_me_uma_size();
 
 	/* before SPD */
 	timestamp_add_now(101);
 
 	if (!s3resume || 1) {	// possible error
-		pci_read_config8(SOUTHBRIDGE, GEN_PMCON_2);	// = 0x80
-
-		collect_system_info(&info);
-
 		memset(&info.populated_ranks, 0, sizeof(info.populated_ranks));
 
 		info.use_ecc = 1;
@@ -3771,8 +3762,7 @@ void raminit(const int s3resume, const u8 *spd_addrmap)
 					continue;
 				for (addr = 0;
 				     addr <
-				     sizeof(useful_addresses) /
-				     sizeof(useful_addresses[0]); addr++)
+				     ARRAY_SIZE(useful_addresses); addr++)
 					gav(info.
 					    spd[channel][0][useful_addresses
 							    [addr]] =
