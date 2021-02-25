@@ -236,3 +236,4 @@ void ccs_execute(chiplet_id_t id, int mca_i);
 void istep_13_2(void);
 void istep_13_3(void);
 void istep_13_4(void);
+void istep_13_6(void);
