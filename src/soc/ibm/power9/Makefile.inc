@@ -10,6 +10,7 @@ romstage-y += vpd.c
 romstage-y += istep_13_2.c
 romstage-y += istep_13_3.c
 romstage-y += istep_13_4.c
+romstage-y += istep_13_6.c
 romstage-y += i2c.c
 romstage-y += ccs.c
 ramstage-y += chip.c

@@ -328,6 +328,8 @@ void main(void)
 	istep_13_2();
 	istep_13_3();
 	istep_13_4();
+	report_istep(13,5);	// no-op
+	istep_13_6();
 
 	/* Test if SCOM still works. Maybe should check also indirect access? */
 	printk(BIOS_DEBUG, "0xF000F = %llx\n", read_scom(0xf000f));
