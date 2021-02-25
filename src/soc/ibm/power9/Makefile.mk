@@ -11,6 +11,7 @@ romstage-y += i2c.c
 romstage-y += istep_13_2.c
 romstage-y += istep_13_3.c
 romstage-y += istep_13_4.c
+romstage-y += istep_13_6.c
 romstage-y += rom_media.c
 romstage-y += romstage.c
 romstage-y += vpd.c
