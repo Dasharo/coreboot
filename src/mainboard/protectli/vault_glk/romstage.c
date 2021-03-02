@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
+
 #include <string.h>
+#include <types.h>
 #include <soc/meminit.h>
 #include <soc/romstage.h>
-#include "variants.h"
 
 #define BOARD_ID_GLK_RVP1_DDR4	0x5 /* GLK RVP1 - DDR4 */
 #define BOARD_ID_GLK_RVP2_LP4SD	0x7 /* GLK RVP2 - LP4 Solder Down */

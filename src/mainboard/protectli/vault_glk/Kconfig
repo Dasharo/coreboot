@@ -1,7 +1,9 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
 config BOARD_PROTECTLI_FW4_GEMINI_LAKE
 	def_bool n
 	select SOC_INTEL_GLK
-	select BOARD_ROMSIZE_KB_16384
+	select BOARD_ROMSIZE_KB_8192
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
 	select MAINBOARD_HAS_LPC_TPM
