@@ -8,9 +8,12 @@ config BOARD_PROTECTLI_FW4_GEMINI_LAKE
 	select HAVE_ACPI_TABLES
 	select MAINBOARD_HAS_LPC_TPM
 	select SUPERIO_ITE_IT8613E
+	select SPI_FLASH_MACRONIX
+	select INTEL_GMA_HAVE_VBT
+	select SEABIOS_ADD_SERCON_PORT_FILE if PAYLOAD_SEABIOS
+	select NEED_IFWI
 
 if BOARD_PROTECTLI_FW4_GEMINI_LAKE
-
 
 config MAINBOARD_DIR
 	string
@@ -31,5 +34,18 @@ config MAX_CPUS
 config SOC_INTEL_COMMON_BLOCK_SGX_ENABLE
 	bool
 	default y
+
+config FMDFILE
+	string
+	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd" if !VBOOT
+
+config VGA_BIOS_ID
+	string
+	default "8086,3185"
+
+config PXE_ROM_ID
+	string
+	default "8086,157b"
+
 
 endif # BOARD_PROTECTLI_FW4_GEMINI_LAKE
