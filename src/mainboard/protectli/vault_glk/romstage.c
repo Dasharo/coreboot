@@ -22,7 +22,7 @@ static const uint8_t swizzling_ch1_ddr4[] = {
 /* DDR4 specific swizzling data end*/
 
 static void fill_ddr4_params(FSP_M_CONFIG *cfg)
-{	
+{
 	cfg->Ch0_DeviceWidth = 0x00; /* Only for memor down */
 	cfg->Ch0_DramDensity = 0x00; /* Only for memor down */
 	cfg->Ch0_Mode2N = 0x00; /* Only for DDR3L */
@@ -31,7 +31,11 @@ static void fill_ddr4_params(FSP_M_CONFIG *cfg)
 	/* bit0 Rank Select Interleaving Enable ,
 	   bit1 Bank Address Hashing enabled */
 	cfg->Ch0_Option = 0x03;
-	cfg->Ch0_RankEnable = 0x00; /* Only for memory down */
+	/* bit0 enable rank 0,
+	 * bit1 enable rank 1.
+	 * This is allowed maximum, it may be trimmed down by FSP based on SPD data.
+	 */
+	cfg->Ch0_RankEnable = 0x03;
 	cfg->Ch0_TristateClk1 = 0x00;
 
 	cfg->Ch1_DeviceWidth = 0x00;
@@ -40,7 +44,7 @@ static void fill_ddr4_params(FSP_M_CONFIG *cfg)
 	cfg->Ch1_OdtConfig = 0;
 	cfg->Ch1_OdtLevels = 0;
 	cfg->Ch1_Option = 0x03;
-	cfg->Ch1_RankEnable = 0x00;
+	cfg->Ch1_RankEnable = 0x03;
 	cfg->Ch1_TristateClk1 = 0x00;
 
 	cfg->Ch2_DeviceWidth = 0x00;
@@ -49,7 +53,7 @@ static void fill_ddr4_params(FSP_M_CONFIG *cfg)
 	cfg->Ch2_OdtConfig = 0;
 	cfg->Ch2_OdtLevels = 0;
 	cfg->Ch2_Option = 0x03;
-	cfg->Ch2_RankEnable = 0x00;
+	cfg->Ch2_RankEnable = 0x03;
 	cfg->Ch2_TristateClk1 = 0x00;
 
 	cfg->Ch3_DramDensity = 0x00;
@@ -57,7 +61,7 @@ static void fill_ddr4_params(FSP_M_CONFIG *cfg)
 	cfg->Ch3_OdtConfig = 0;
 	cfg->Ch3_OdtLevels = 0;
 	cfg->Ch3_Option = 0x03;
-	cfg->Ch3_RankEnable = 0x00;
+	cfg->Ch3_RankEnable = 0x03;
 	cfg->Ch3_TristateClk1 = 0x00;
 
 	cfg->ChannelHashMask = 0x00;
