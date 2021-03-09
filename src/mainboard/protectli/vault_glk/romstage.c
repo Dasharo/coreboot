@@ -16,7 +16,7 @@ static const uint8_t swizzling_ch0_ddr4[] = {
 /* Channel 1 PHY 0 to DUnit DQ mapping */
 static const uint8_t swizzling_ch1_ddr4[] = {
 	 5,  6,  0,  2,  4,  7,  3,  1, 12, 13, 10, 11, 15, 14,  9,  8,
-	21, 22, 18, 16, 23, 21, 17, 20, 28, 30, 27, 26, 29, 24, 31, 25,
+	21, 22, 18, 16, 23, 19, 17, 20, 28, 30, 27, 26, 29, 24, 31, 25,
 };
 
 /* DDR4 specific swizzling data end*/
