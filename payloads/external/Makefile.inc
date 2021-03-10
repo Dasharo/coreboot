@@ -86,7 +86,8 @@ payloads/external/SeaBIOS/seabios/out/bios.bin.elf: $(DOTCONFIG)
 			CONFIG_DRIVERS_UART_8250MEM_32=$(CONFIG_DRIVERS_UART_8250MEM_32) \
 			CONFIG_ENABLE_HSUART=$(CONFIG_ENABLE_HSUART) \
 			CONFIG_CONSOLE_UART_BASE_ADDRESS=$(CONFIG_CONSOLE_UART_BASE_ADDRESS) \
-			CONFIG_SEABIOS_HARDWARE_IRQ=$(CONFIG_SEABIOS_HARDWARE_IRQ)
+			CONFIG_SEABIOS_HARDWARE_IRQ=$(CONFIG_SEABIOS_HARDWARE_IRQ) \
+			CONFIG_FMAP_FILE=$(shell pwd)/$(obj)/fmap_config.h
 
 payloads/external/SeaBIOS/seabios/out/vgabios.bin: payloads/external/SeaBIOS/seabios/out/bios.bin.elf
 payloads/external/SeaBIOS/seabios/.config: payloads/external/SeaBIOS/seabios/out/bios.bin.elf
