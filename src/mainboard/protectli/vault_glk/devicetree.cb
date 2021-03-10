@@ -85,6 +85,7 @@ chip soc/intel/apollolake
 
 	register "pnp_settings" = "PNP_PERF_POWER"
 	register "tcc_offset" = "5" # TCC of 95C
+	register "serirq_mode" = "SERIRQ_CONTINUOUS"
 
 	register "usb2_port[0]" = "PORT_EN(OC_SKIP)"
 	register "usb2_port[1]" = "PORT_EN(OC_SKIP)"
