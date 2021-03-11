@@ -100,7 +100,11 @@ static void fill_ddr4_params(FSP_M_CONFIG *cfg)
 	cfg->PreMemGpioTablePinNum[2] = 0;
 	cfg->PreMemGpioTablePinNum[3] = 0;
 	cfg->PreMemGpioTablePtr = 0x00000000;
-	cfg->PrimaryVideoAdaptor = 0x2; /* IGD */
+	/*
+	 * FSP headers say: 0x0:AUTO, 0x2:IGD, 0x3:PCI, but the Geminilake FSP
+	 * code says: 0x0:IGD, 0x1:PCI
+	 */
+	cfg->PrimaryVideoAdaptor = 0x0;
 	/* 
 	 * Profiles:
 	 * 0x01:LPDDR3_1333_10_12_12,
