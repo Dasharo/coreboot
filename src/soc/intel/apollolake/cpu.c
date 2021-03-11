@@ -87,6 +87,9 @@ void soc_core_init(struct device *cpu)
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE) || acpi_get_sleep_type() == ACPI_S5)
 		mca_configure();
 
+	/* Enable the local CPU apics */
+	enable_lapic_tpr();
+
 	/* Set core MSRs */
 	reg_script_run(core_msr_script);
 
@@ -101,6 +104,12 @@ void soc_core_init(struct device *cpu)
 	 * implemented in microcode.
 	*/
 	enable_pm_timer_emulation();
+
+	/* Enable Direct Cache Access */
+	configure_dca_cap();
+
+	/* Set energy policy */
+	set_energy_perf_bias(ENERGY_POLICY_NORMAL);
 
 	/* Set Max Non-Turbo ratio if RAPL is disabled. */
 	if (CONFIG(SOC_INTEL_DISABLE_POWER_LIMITS)) {
