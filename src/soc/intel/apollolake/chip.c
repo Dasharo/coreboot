@@ -732,6 +732,19 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 
 	silconfig->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_devfn_enabled(SA_DEVFN_IGD);
 
+	/* High Precision Timer options */
+	silconfig->HpetBdfValid = 1;
+	silconfig->HpetBusNumber = 0xFA;
+	silconfig->HpetDeviceNumber = 0x0F;
+	silconfig->HpetFunctionNumber = 0;
+
+	/* IO-APIC options */
+	silconfig->IoApicId = 2;
+	silconfig->IoApicBdfValid = 1;
+	silconfig->IoApicBusNumber = 0xFA;
+	silconfig->IoApicDeviceNumber = 0x1F;
+	silconfig->IoApicFunctionNumber = 0;
+
 	silconfig->PavpEnable = CONFIG(PAVP);
 
 	/* SATA config */
