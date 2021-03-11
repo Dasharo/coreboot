@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <device/device.h>
-#include <fsp/api.h>
-#include <soc/ramstage.h>
 
 static void mainboard_init(void *chip_info)
 {
@@ -16,8 +14,3 @@ struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
 	.enable_dev = mainboard_enable,
 };
-
-void mainboard_silicon_init_params(FSP_S_CONFIG *silconfig)
-{
-	silconfig->PciClockRun = 1;
-}
