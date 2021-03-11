@@ -1,9 +1,5 @@
 chip soc/intel/apollolake
 
-	device cpu_cluster 0 on
-		device lapic 0 on end
-	end
-
 	# Disable unused clkreq of PCIe root ports
 	register "pcie_rp_clkreq_pin[0]" = "CLKREQ_DISABLED"
 	register "pcie_rp_clkreq_pin[1]" = "CLKREQ_DISABLED"
@@ -102,7 +98,11 @@ chip soc/intel/apollolake
 	register "usb3_port[3]" = "PORT_EN(OC_SKIP)"		# mPCie WiFi
 	register "usb3_port[4]" = "PORT_EN(OC_SKIP)"		# LAN4
 	register "usb3_port[5]" = "PORT_EN(OC_SKIP)"		# SATA
-		
+
+
+	device cpu_cluster 0 on
+		device lapic 0 on end
+	end
 	device domain 0 on
 		device pci 00.0 on  end	# - Host Bridge
 		device pci 00.1 off end	# - DPTF
