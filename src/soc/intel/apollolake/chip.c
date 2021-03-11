@@ -715,6 +715,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	silconfig->SpiEiss			= lockdown_by_fsp;
 	silconfig->RtcLock			= lockdown_by_fsp;
 
+	/* Enable CLKRUN */
+	silconfig->PciClockRun = 1;
+
 	/* Enable Audio clk gate and power gate */
 	silconfig->HDAudioClkGate = cfg->hdaudio_clk_gate_enable;
 	silconfig->HDAudioPwrGate = cfg->hdaudio_pwr_gate_enable;
