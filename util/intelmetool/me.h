@@ -393,5 +393,6 @@ int mkhi_get_fw_version(int *major, int *minor);
 int mkhi_debug_me_memory(void *addr);
 void mei_reset(void);
 int intel_me_extend_valid(struct pci_dev *dev);
+uint32_t mkhi_global_reset(void);
 
 #endif

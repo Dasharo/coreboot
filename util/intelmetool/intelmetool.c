@@ -416,6 +416,7 @@ static void print_usage(const char *name)
 	       "   -d | --debug:         enable debug output\n"
 	       "   -m | --me             dump all me information on console\n"
 	       "   -b | --bootguard      dump bootguard state of the platform\n"
+	       "   -r | --greset         perform global reset of the platform\n"
 	       "\n");
 	exit(1);
 }
@@ -431,10 +432,11 @@ int main(int argc, char *argv[])
 		{"me", 0, 0, 'm'},
 		{"bootguard", 0, 0, 'b'},
 		{"debug", 0, 0, 'd'},
+		{"greset", 0, 0, 'r'},
 		{0, 0, 0, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "vh?smdb",
+	while ((opt = getopt_long(argc, argv, "vh?smdbr",
 				  long_options, &option_index)) != EOF) {
 		switch (opt) {
 		case 'v':
@@ -447,7 +449,8 @@ int main(int argc, char *argv[])
 			break;
 		case 'b':
 			cmd_exec = 2;
-			break;
+		case 'r':
+			cmd_exec = 4;
 			break;
 		case 'd':
 			debug = 1;
@@ -497,6 +500,8 @@ int main(int argc, char *argv[])
 		}
 	#endif
 
+	if (cmd_exec & 4)
+		mkhi_global_reset();
 	if (cmd_exec & 3)
 		dump_me_info();
 	if (cmd_exec & 2)
