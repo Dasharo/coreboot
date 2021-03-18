@@ -703,7 +703,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	silconfig->HpetFunctionNumber = 0;
 
 	/* IO-APIC options */
-	silconfig->IoApicId = 1;
+	silconfig->IoApicId = 2;
 	silconfig->IoApicBdfValid = 1;
 	silconfig->IoApicBusNumber = 0xFA;
 	silconfig->IoApicDeviceNumber = 0x1F;
