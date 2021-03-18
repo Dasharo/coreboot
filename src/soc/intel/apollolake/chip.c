@@ -672,6 +672,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	/* Disable FSP from locking access to the RTC NVRAM */
 	silconfig->RtcLock = 0;
 
+	/* Enable CLKRUN */
+	silconfig->PciClockRun = 1;
+
 	/* Enable Audio clk gate and power gate */
 	silconfig->HDAudioClkGate = cfg->hdaudio_clk_gate_enable;
 	silconfig->HDAudioPwrGate = cfg->hdaudio_pwr_gate_enable;
@@ -693,10 +696,26 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	/* Set VTD feature according to devicetree */
 	silconfig->VtdEnable = cfg->enable_vtd;
 
+	/* High Precision Timer options */
+	silconfig->HpetBdfValid = 1;
+	silconfig->HpetBusNumber = 0xFA;
+	silconfig->HpetDeviceNumber = 0x0F;
+	silconfig->HpetFunctionNumber = 0;
+
+	/* IO-APIC options */
+	silconfig->IoApicId = 2;
+	silconfig->IoApicBdfValid = 1;
+	silconfig->IoApicBusNumber = 0xFA;
+	silconfig->IoApicDeviceNumber = 0x1F;
+	silconfig->IoApicFunctionNumber = 0;
+
 	dev = pcidev_path_on_root(SA_DEVFN_IGD);
 	silconfig->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_dev_enabled(dev);
 
 	silconfig->PavpEnable = CONFIG(PAVP);
+
+	/* Legacy 8254 timer support */
+	silconfig->Timer8254ClkSetting = !CONFIG(USE_LEGACY_8254_TIMER);
 
 	mainboard_silicon_init_params(silconfig);
 }
