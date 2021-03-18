@@ -389,31 +389,12 @@ static int smbios_write_type0(unsigned long *current, int handle)
 	t->length = len - 2;
 
 	t->vendor = smbios_add_string(t->eos, "3mdeb Embedded Systems Consulting");
-#if !CONFIG(CHROMEOS)
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
 
 	snprintf(bversion, sizeof(bversion),
-		 "Dasharo Firewall %s (based on coreboot %s)",
-		 coreboot_version, smbios_mainboard_bios_version());
+		 "Dasharo Firewall%s (based on coreboot %s)",
+		 coreboot_version, get_bios_version());
 	t->bios_version = smbios_add_string(t->eos, bversion);
-#else
-#define SPACES \
-	"                                                                  "
-	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
-#if CONFIG(HAVE_ACPI_TABLES)
-	u32 version_offset = (u32)smbios_string_table_len(t->eos);
-#endif
-	snprintf(bversion, sizeof(bversion),
-		 "Dasharo Firewall %s (based on coreboot %s)",
-		 coreboot_version, smbios_mainboard_bios_version());
-	t->bios_version = smbios_add_string(t->eos, bversion);
-
-#if CONFIG(HAVE_ACPI_TABLES)
-	/* SMBIOS offsets start at 1 rather than 0 */
-	chromeos_get_chromeos_acpi()->vbt10 =
-		(u32)t->eos + (version_offset - 1);
-#endif
-#endif /* CONFIG_CHROMEOS */
 
 	if (CONFIG(CHROMEOS) && CONFIG(HAVE_ACPI_TABLES)) {
 		uintptr_t version_address = (uintptr_t)t->eos;
@@ -421,7 +402,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 		version_address += (u32)smbios_string_table_len(t->eos) - 1;
 		smbios_type0_bios_version(version_address);
 	}
-	t->bios_version = smbios_add_string(t->eos, get_bios_version());
+
 	uint32_t rom_size = CONFIG_ROM_SIZE;
 	rom_size = MIN(CONFIG_ROM_SIZE, 16 * MiB);
 	t->bios_rom_size = (rom_size / 65535) - 1;
