@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <stddef.h>
+#include <stdint.h>
 #include <console/console.h>
 #include <string.h>
 
@@ -16,7 +16,6 @@
 #define USB_HUB_PORT_POWER		8
 #define USB_HUB_C_PORT_CONNECTION	16
 #define USB_HUB_C_PORT_RESET		20
-
 
 static int hub_port_status(const char *buf, int feature)
 {
@@ -72,7 +71,6 @@ static int dbgp_hub_enable(struct ehci_dbg_port *ehci_debug, unsigned char hub_a
 		USB_REQ_CLEAR_FEATURE, USB_HUB_C_PORT_CONNECTION, port, NULL, 0);
 	if (ret < 0)
 		goto err;
-
 
 	/* Set PORT_RESET, poll for C_PORT_RESET. */
 	ret = dbgp_control_msg(ehci_debug, hub_addr,

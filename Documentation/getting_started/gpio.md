@@ -88,11 +88,6 @@ configurations together into a set of macros, e.g.,
 ```C
     /* Native function configuration */
     #define PAD_CFG_NF(pad, pull, rst, func)
-    /*
-     * Set native function with RX Level/Edge configuration and disable
-     * input/output buffer if necessary
-     */
-    #define PAD_CFG_NF_BUF_TRIG(pad, pull, rst, func, bufdis, trig)
     /* General purpose output, no pullup/down. */
     #define PAD_CFG_GPO(pad, val, rst)
     /* General purpose output, with termination specified */
@@ -134,3 +129,13 @@ If no pullup or pulldown is declared with these, they may end up "floating",
 i.e., not at logical high or logical low. This can cause problems such as
 unwanted power consumption or not reading the pin correctly, if it was intended
 to be strapped.
+
+## Pad-related known issues and workarounds
+
+### LPC_CLKRUNB blocks S0ix states when board uses eSPI
+
+When using eSPI, the pad implementing `LPC_CLKRUNB` must be set to GPIO mode.
+Other pin settings i.e. Rx path enable/disable, Tx path enable/disable, pull up
+enable/disable etc are ignored. Leaving this pin in native mode will keep the
+LPC Controller awake and prevent S0ix entry. This issues is know at least on
+Apollolake and Geminilake.

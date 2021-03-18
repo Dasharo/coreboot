@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <arch/io.h>
 #include <cbmem.h>
 #include <cf9_reset.h>
 #include <console/console.h>
@@ -15,7 +14,7 @@
 
 int i945_silicon_revision(void)
 {
-	return pci_read_config8(PCI_DEV(0, 0x00, 0), PCI_CLASS_REVISION);
+	return pci_read_config8(HOST_BRIDGE, PCI_CLASS_REVISION);
 }
 
 static void i945m_detect_chipset(void)
@@ -23,7 +22,7 @@ static void i945m_detect_chipset(void)
 	u8 reg8;
 
 	printk(BIOS_INFO, "\n");
-	reg8 = (pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe7) & 0x70) >> 4;
+	reg8 = (pci_read_config8(HOST_BRIDGE, 0xe7) & 0x70) >> 4;
 	switch (reg8) {
 	case 1:
 		printk(BIOS_INFO, "Mobile Intel(R) 82945GM/GME Express");
@@ -46,7 +45,7 @@ static void i945m_detect_chipset(void)
 	printk(BIOS_INFO, " Chipset\n");
 
 	printk(BIOS_DEBUG, "(G)MCH capable of up to FSB ");
-	reg8 = (pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe3) & 0xe0) >> 5;
+	reg8 = (pci_read_config8(HOST_BRIDGE, 0xe3) & 0xe0) >> 5;
 	switch (reg8) {
 	case 2:
 		printk(BIOS_DEBUG, "800 MHz"); /* According to 965 spec */
@@ -63,7 +62,7 @@ static void i945m_detect_chipset(void)
 	printk(BIOS_DEBUG, "\n");
 
 	printk(BIOS_DEBUG, "(G)MCH capable of ");
-	reg8 = (pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe4) & 0x07);
+	reg8 = (pci_read_config8(HOST_BRIDGE, 0xe4) & 0x07);
 	switch (reg8) {
 	case 2:
 		printk(BIOS_DEBUG, "up to DDR2-667");
@@ -89,8 +88,8 @@ static void i945_detect_chipset(void)
 
 	printk(BIOS_INFO, "\nIntel(R) ");
 
-	reg8 = ((pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe7) >> 5) & 4)
-	     | ((pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe4) >> 4) & 3);
+	reg8 = ((pci_read_config8(HOST_BRIDGE, 0xe7) >> 5) & 4)
+	     | ((pci_read_config8(HOST_BRIDGE, 0xe4) >> 4) & 3);
 	switch (reg8) {
 	case 0:
 	case 1:
@@ -116,7 +115,7 @@ static void i945_detect_chipset(void)
 	printk(BIOS_INFO, " Chipset\n");
 
 	printk(BIOS_DEBUG, "(G)MCH capable of ");
-	reg8 = (pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe4) & 0x07);
+	reg8 = (pci_read_config8(HOST_BRIDGE, 0xe4) & 0x07);
 	switch (reg8) {
 	case 0:
 	case 2:
@@ -144,10 +143,10 @@ static void i945_setup_bars(void)
 
 	printk(BIOS_DEBUG, "Setting up static northbridge registers...");
 	/* Set up all hardcoded northbridge BARs */
-	pci_write_config32(PCI_DEV(0, 0x00, 0), EPBAR, DEFAULT_EPBAR | 1);
-	pci_write_config32(PCI_DEV(0, 0x00, 0), MCHBAR, (uintptr_t)DEFAULT_MCHBAR | 1);
-	pci_write_config32(PCI_DEV(0, 0x00, 0), DMIBAR, (uintptr_t)DEFAULT_DMIBAR | 1);
-	pci_write_config32(PCI_DEV(0, 0x00, 0), X60BAR, DEFAULT_X60BAR | 1);
+	pci_write_config32(HOST_BRIDGE, EPBAR,  CONFIG_FIXED_EPBAR_MMIO_BASE  | 1);
+	pci_write_config32(HOST_BRIDGE, MCHBAR, CONFIG_FIXED_MCHBAR_MMIO_BASE | 1);
+	pci_write_config32(HOST_BRIDGE, DMIBAR, CONFIG_FIXED_DMIBAR_MMIO_BASE | 1);
+	pci_write_config32(HOST_BRIDGE, X60BAR, DEFAULT_X60BAR | 1);
 
 	/* vram size from CMOS option */
 	if (get_option(&gfxsize, "gfx_uma_size") != CB_SUCCESS)
@@ -155,25 +154,25 @@ static void i945_setup_bars(void)
 	/* make sure no invalid setting is used */
 	if (gfxsize > 6)
 		gfxsize = 2;
-	pci_write_config16(PCI_DEV(0, 0x00, 0), GGC, ((gfxsize + 1) << 4));
+	pci_write_config16(HOST_BRIDGE, GGC, ((gfxsize + 1) << 4));
 	/* TSEG 2M, This amount can easily be covered by SMRR MTRR's,
 	   which requires to have TSEG_BASE aligned to TSEG_SIZE. */
-	pci_update_config8(PCI_DEV(0, 0, 0), ESMRAMC, ~0x07, (1 << 1) | (1 << 0));
+	pci_update_config8(HOST_BRIDGE, ESMRAMC, ~0x07, (1 << 1) | (1 << 0));
 
 	/* Set C0000-FFFFF to access RAM on both reads and writes */
-	pci_write_config8(PCI_DEV(0, 0x00, 0), PAM0, 0x30);
-	pci_write_config8(PCI_DEV(0, 0x00, 0), PAM1, 0x33);
-	pci_write_config8(PCI_DEV(0, 0x00, 0), PAM2, 0x33);
-	pci_write_config8(PCI_DEV(0, 0x00, 0), PAM3, 0x33);
-	pci_write_config8(PCI_DEV(0, 0x00, 0), PAM4, 0x33);
-	pci_write_config8(PCI_DEV(0, 0x00, 0), PAM5, 0x33);
-	pci_write_config8(PCI_DEV(0, 0x00, 0), PAM6, 0x33);
+	pci_write_config8(HOST_BRIDGE, PAM0, 0x30);
+	pci_write_config8(HOST_BRIDGE, PAM1, 0x33);
+	pci_write_config8(HOST_BRIDGE, PAM2, 0x33);
+	pci_write_config8(HOST_BRIDGE, PAM3, 0x33);
+	pci_write_config8(HOST_BRIDGE, PAM4, 0x33);
+	pci_write_config8(HOST_BRIDGE, PAM5, 0x33);
+	pci_write_config8(HOST_BRIDGE, PAM6, 0x33);
 
 	printk(BIOS_DEBUG, " done.\n");
 
 	/* Wait for MCH BAR to come up */
 	printk(BIOS_DEBUG, "Waiting for MCHBAR to come up...");
-	if ((pci_read_config32(PCI_DEV(0, 0x00, 0), 0xe4) & 0x20000) == 0x00) { /* Bit 49 of CAPID0 */
+	if ((pci_read_config32(HOST_BRIDGE, 0xe4) & 0x20000) == 0x00) { /* Bit 49 of CAPID0 */
 		do {
 			reg8 = *(volatile u8 *)0xfed40000;
 		} while (!(reg8 & 0x80));
@@ -245,7 +244,7 @@ static void i945_setup_egress_port(void)
 	}
 
 	/* Is internal graphics enabled? */
-	if (pci_read_config8(PCI_DEV(0, 0x0, 0), DEVEN) & (DEVEN_D2F0 | DEVEN_D2F1))
+	if (pci_read_config8(HOST_BRIDGE, DEVEN) & (DEVEN_D2F0 | DEVEN_D2F1))
 		MCHBAR32(MMARB1) |= (1 << 17);
 
 	/* Assign Virtual Channel ID 1 to VC1 */
@@ -364,7 +363,7 @@ static void i945_setup_dmi_rcrb(void)
 		printk(BIOS_DEBUG, "timeout!\n");
 	else
 		printk(BIOS_DEBUG, "done..\n");
-#if 1
+
 	/* Enable Active State Power Management (ASPM) L0 state */
 
 	reg32 = DMIBAR32(DMILCAP);
@@ -387,7 +386,6 @@ static void i945_setup_dmi_rcrb(void)
 
 	if (activate_aspm)
 		DMIBAR32(DMILCTL) |= (3 << 0);
-#endif
 
 	/* Last but not least, some additional steps */
 	reg32 = MCHBAR32(FSBSNPCTL);
@@ -406,7 +404,7 @@ static void i945_setup_dmi_rcrb(void)
 #endif
 	DMIBAR32(0x204) = reg32;
 
-	if (pci_read_config8(PCI_DEV(0, 0x0, 0), DEVEN) & (DEVEN_D2F0 | DEVEN_D2F1)) {
+	if (pci_read_config8(HOST_BRIDGE, DEVEN) & (DEVEN_D2F0 | DEVEN_D2F1)) {
 		printk(BIOS_DEBUG, "Internal graphics: enabled\n");
 		DMIBAR32(0x200) |= (1 << 21);
 	} else {
@@ -502,7 +500,7 @@ static void i945_setup_pci_express_x16(void)
 
 	printk(BIOS_DEBUG, "Enabling PCI Express x16 Link\n");
 
-	pci_or_config16(PCI_DEV(0, 0x00, 0), DEVEN, DEVEN_D1F0);
+	pci_or_config16(HOST_BRIDGE, DEVEN, DEVEN_D1F0);
 
 	pci_and_config32(p2peg, PEGCC, ~(1 << 8));
 
@@ -601,9 +599,9 @@ static void i945_setup_pci_express_x16(void)
 	if (reg32 == 0x030000) {
 		printk(BIOS_DEBUG, "PCIe device is VGA. Disabling IGD.\n");
 		reg16 = (1 << 1);
-		pci_write_config16(PCI_DEV(0, 0x0, 0), GGC, reg16);
+		pci_write_config16(HOST_BRIDGE, GGC, reg16);
 
-		pci_and_config32(PCI_DEV(0, 0x0, 0), DEVEN, ~(DEVEN_D2F0 | DEVEN_D2F1));
+		pci_and_config32(HOST_BRIDGE, DEVEN, ~(DEVEN_D2F0 | DEVEN_D2F1));
 	}
 
 	/* Enable GPEs: PMEGPE, HPGPE, GENGPE */
@@ -699,7 +697,7 @@ disable_pciexpress_x16_link:
 		printk(BIOS_DEBUG, "ok\n");
 
 	/* Finally: Disable the PCI config header */
-	pci_and_config16(PCI_DEV(0, 0x00, 0), DEVEN, ~DEVEN_D1F0);
+	pci_and_config16(HOST_BRIDGE, DEVEN, ~DEVEN_D1F0);
 }
 
 static void i945_setup_root_complex_topology(void)
@@ -717,7 +715,7 @@ static void i945_setup_root_complex_topology(void)
 
 	EPBAR32(EPLE1D) |= (1 << 16) | (1 << 0);
 
-	EPBAR32(EPLE1A) = (uintptr_t)DEFAULT_DMIBAR;
+	EPBAR32(EPLE1A) = CONFIG_FIXED_DMIBAR_MMIO_BASE;
 
 	EPBAR32(EPLE2D) |= (1 << 16) | (1 << 0);
 
@@ -732,15 +730,15 @@ static void i945_setup_root_complex_topology(void)
 	reg32 |= (1 << 0);
 	DMIBAR32(DMILE1D) = reg32;
 
-	DMIBAR32(DMILE1A) = (uintptr_t)DEFAULT_RCBA;
+	DMIBAR32(DMILE1A) = CONFIG_FIXED_RCBA_MMIO_BASE;
 
 	DMIBAR32(DMILE2D) |= (1 << 16) | (1 << 0);
 
-	DMIBAR32(DMILE2A) = DEFAULT_EPBAR;
+	DMIBAR32(DMILE2A) = CONFIG_FIXED_EPBAR_MMIO_BASE;
 
 	/* PCI Express x16 Port Root Topology */
-	if (pci_read_config8(PCI_DEV(0, 0x00, 0), DEVEN) & DEVEN_D1F0) {
-		pci_write_config32(p2peg, LE1A, DEFAULT_EPBAR);
+	if (pci_read_config8(HOST_BRIDGE, DEVEN) & DEVEN_D1F0) {
+		pci_write_config32(p2peg, LE1A, CONFIG_FIXED_EPBAR_MMIO_BASE);
 		pci_or_config32(p2peg, LE1D, 1 << 0);
 	}
 }
@@ -753,7 +751,7 @@ static void ich7_setup_root_complex_topology(void)
 
 	RCBA32(ULD) |= (1 << 24) | (1 << 16);
 
-	RCBA32(ULBA) = (uintptr_t)DEFAULT_DMIBAR;
+	RCBA32(ULBA) = CONFIG_FIXED_DMIBAR_MMIO_BASE;
 	/* Write ESD.CID to TCID */
 	RCBA32(RP1D) |= (2 << 16);
 	RCBA32(RP2D) |= (2 << 16);
@@ -771,10 +769,6 @@ static void ich7_setup_pci_express(void)
 
 	/* Initialize slot power limit for root ports */
 	pci_write_config32(PCI_DEV(0, 0x1c, 0), 0x54, 0x00000060);
-#if 0
-	pci_write_config32(PCI_DEV(0, 0x1c, 4), 0x54, 0x00480ce0);
-	pci_write_config32(PCI_DEV(0, 0x1c, 5), 0x54, 0x00500ce0);
-#endif
 
 	pci_write_config32(PCI_DEV(0, 0x1c, 0), 0xd8, 0x00110000);
 }
@@ -782,7 +776,7 @@ static void ich7_setup_pci_express(void)
 void i945_early_initialization(void)
 {
 	/* Print some chipset specific information */
-	switch (pci_read_config32(PCI_DEV(0, 0x00, 0), 0)) {
+	switch (pci_read_config32(HOST_BRIDGE, 0)) {
 	case 0x27708086: /* 82945G/GZ/GC/P/PL */
 		i945_detect_chipset();
 		break;

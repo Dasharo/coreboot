@@ -2,7 +2,7 @@
 
 #include <device/pci_def.h>
 #include <device/device.h>
-#include <OEM.h>		/* SMBUS0_BASE_ADDRESS */
+#include <OEM.h>
 
 /* warning: Porting.h includes an open #pragma pack(1) */
 #include <Porting.h>
@@ -40,7 +40,7 @@ AGESA_STATUS AmdMemoryReadSPD (UINT32 unused1, UINTN unused2, AGESA_READ_SPD_PAR
 	if (spdAddress == 0)
 		return AGESA_ERROR;
 
-	int err = smbus_readSpd(spdAddress, (void *) info->Buffer, 128);
+	int err = smbus_readSpd(spdAddress, (void *) info->Buffer, DDR3_SPD_SIZE);
 	if (err)
 		return AGESA_ERROR;
 	return AGESA_SUCCESS;

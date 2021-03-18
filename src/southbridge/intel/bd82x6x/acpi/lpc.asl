@@ -43,14 +43,9 @@ Device (LPCB)
 		GR13,	 2,
 		GR14,	 2,
 		GR15,	 2,
-
-		Offset (0xf0),	// RCBA
-		RCEN,	1,
-		,	13,
-		RCBA,	18,
 	}
 
-	#include "irqlinks.asl"
+	#include <southbridge/intel/common/acpi/irqlinks.asl>
 
 	#include "acpi/ec.asl"
 
@@ -88,17 +83,7 @@ Device (LPCB)
 
 		Method (_STA, 0)	// Device Status
 		{
-			If (HPTE) {
-				// Note: Ancient versions of Windows don't want
-				// to see the HPET in order to work right
-				If (LGreaterEqual(OSYS, 2001)) {
-					Return (0xf)	// Enable and show device
-				} Else {
-					Return (0xb)	// Enable and don't show device
-				}
-			}
-
-			Return (0x0)	// Not enabled, don't show.
+			Return (\HPTS(HPTE))
 		}
 
 		Method (_CRS, 0, Serialized) // Current resources
@@ -173,7 +158,6 @@ Device (LPCB)
 			IO (Decode16, 0x80, 0x80, 0x1, 0x01)		// Port 80 Post
 			IO (Decode16, 0x92, 0x92, 0x1, 0x01)		// CPU Reserved
 			IO (Decode16, 0xb2, 0xb2, 0x1, 0x02)		// SWSMI
-			//IO (Decode16, 0x800, 0x800, 0x1, 0x10)		// ACPI I/O trap
 			IO (Decode16, DEFAULT_PMBASE, DEFAULT_PMBASE, 0x1, 0x80)	// ICH7-M ACPI
 			IO (Decode16, DEFAULT_GPIOBASE, DEFAULT_GPIOBASE, 0x1, 0x40)	// ICH7-M GPIO
 		})
@@ -185,8 +169,6 @@ Device (LPCB)
 		Name (_CRS, ResourceTemplate()
 		{
 			IO (Decode16, 0x70, 0x70, 1, 8)
-// Disable as Windows doesn't like it, and systems don't seem to use it.
-//			IRQNoFlags() { 8 }
 		})
 	}
 

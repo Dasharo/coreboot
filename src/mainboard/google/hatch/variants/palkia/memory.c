@@ -1,12 +1,7 @@
-/*
- *
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <baseboard/variants.h>
 #include <baseboard/gpio.h>
-#include <boardid.h>
 #include <gpio.h>
 #include <soc/cnl_memcfg_init.h>
 #include <string.h>

@@ -11,6 +11,7 @@
 #include <intelblocks/sgx.h>
 #include <intelblocks/systemagent.h>
 #include <soc/cpu.h>
+#include <soc/nvs.h>
 #include <soc/pci_devs.h>
 
 static inline uint64_t sgx_resource(uint32_t low, uint32_t high)
@@ -223,7 +224,7 @@ void sgx_configure(void *unused)
 	 * loads and to prevent simultaneous load attempts to the same core.
 	 */
 	if (!intel_ht_sibling()) {
-		const void *microcode_patch = intel_mp_current_microcode();
+		const void *microcode_patch = intel_microcode_find();
 		intel_microcode_load_unlocked(microcode_patch);
 	}
 
@@ -235,7 +236,7 @@ void sgx_configure(void *unused)
 		activate_sgx();
 }
 
-void sgx_fill_gnvs(global_nvs_t *gnvs)
+void sgx_fill_gnvs(struct global_nvs *gnvs)
 {
 	struct cpuid_result cpuid_regs;
 

@@ -13,7 +13,7 @@
 #include <southbridge/intel/i82801jx/i82801jx.h>
 #endif
 #include <string.h>
-#include "iomap.h"
+#include "raminit.h"
 #include "x4x.h"
 
 #define ME_UMA_SIZEMB 0
@@ -32,7 +32,6 @@ u32 ddr_to_mhz(u32 speed)
 
 	return mhz[speed];
 }
-
 
 static void program_crossclock(struct sysinfo *s)
 {
@@ -222,7 +221,7 @@ static void launch_dram(struct sysinfo *s)
 
 		if (s->selected_timings.mem_clk <= MEM_CLOCK_1066MHz)
 			s->nmode = 1;
-		/* 2N on DDR3 1066 with with 2 dimms per channel */
+		/* 2N on DDR3 1066 with 2 dimms per channel */
 		if ((s->selected_timings.mem_clk == MEM_CLOCK_1066MHz) &&
 			(BOTH_DIMMS_ARE_POPULATED(s->dimms, 0) ||
 				BOTH_DIMMS_ARE_POPULATED(s->dimms, 1)))
@@ -248,14 +247,18 @@ static void launch_dram(struct sysinfo *s)
 		MCHBAR32_OR(0x2c4, 0x100);
 }
 
+static void write_txdll_tap_pi(u8 ch, u16 reg, u8 tap, u8 pi)
+{
+	MCHBAR8_AND_OR(0x400 * ch + reg, ~0x7f, pi << 4 | tap);
+}
+
 static void clkset0(u8 ch, const struct dll_setting *setting)
 {
 	MCHBAR16_AND_OR(0x400*ch + 0x5a0, ~0xc440,
 		(setting->clk_delay << 14) |
 		(setting->db_sel << 6) |
 		(setting->db_en << 10));
-	MCHBAR8_AND_OR(0x400*ch + 0x581, ~0x70, setting->pi << 4);
-	MCHBAR8_AND_OR(0x400*ch + 0x581, ~0xf, setting->tap);
+	write_txdll_tap_pi(ch, 0x581, setting->tap, setting->pi);
 }
 
 static void clkset1(u8 ch, const struct dll_setting *setting)
@@ -264,8 +267,7 @@ static void clkset1(u8 ch, const struct dll_setting *setting)
 		(setting->clk_delay << 16) |
 		(setting->db_sel << 7) |
 		(setting->db_en << 11));
-	MCHBAR8_AND_OR(0x400*ch + 0x582, ~0x70, setting->pi << 4);
-	MCHBAR8_AND_OR(0x400*ch + 0x582, ~0xf, setting->tap);
+	write_txdll_tap_pi(ch, 0x582, setting->tap, setting->pi);
 }
 
 static void ctrlset0(u8 ch, const struct dll_setting *setting)
@@ -274,8 +276,7 @@ static void ctrlset0(u8 ch, const struct dll_setting *setting)
 		(setting->clk_delay << 24) |
 		(setting->db_sel << 20) |
 		(setting->db_en << 21));
-	MCHBAR8_AND_OR(0x400*ch + 0x584, ~0x70, setting->pi << 4);
-	MCHBAR8_AND_OR(0x400*ch + 0x584, ~0xf, setting->tap);
+	write_txdll_tap_pi(ch, 0x584, setting->tap, setting->pi);
 }
 
 static void ctrlset1(u8 ch, const struct dll_setting *setting)
@@ -284,28 +285,35 @@ static void ctrlset1(u8 ch, const struct dll_setting *setting)
 		(setting->clk_delay << 27) |
 		(setting->db_sel << 22) |
 		(setting->db_en << 23));
-	MCHBAR8_AND_OR(0x400*ch + 0x585, ~0x70, setting->pi << 4);
-	MCHBAR8_AND_OR(0x400*ch + 0x585, ~0xf, setting->tap);
+	write_txdll_tap_pi(ch, 0x585, setting->tap, setting->pi);
 }
 
 static void ctrlset2(u8 ch, const struct dll_setting *setting)
 {
-	MCHBAR32_AND_OR(0x400*ch + 0x598, ~0x18c00000,
+	/*
+	 * MRC uses an incorrect mask when programming this register, but
+	 * the reset default value is zero and it is only programmed once.
+	 * As it makes no difference, we can safely use the correct mask.
+	 */
+	MCHBAR32_AND_OR(0x400*ch + 0x598, ~0xf000,
 		(setting->clk_delay << 14) |
 		(setting->db_sel << 12) |
 		(setting->db_en << 13));
-	MCHBAR8_AND_OR(0x400*ch + 0x586, ~0x70, setting->pi << 4);
-	MCHBAR8_AND_OR(0x400*ch + 0x586, ~0xf, setting->tap);
+	write_txdll_tap_pi(ch, 0x586, setting->tap, setting->pi);
 }
 
 static void ctrlset3(u8 ch, const struct dll_setting *setting)
 {
-	MCHBAR32_AND_OR(0x400*ch + 0x598, ~0x18c00000,
+	/*
+	 * MRC uses an incorrect mask when programming this register, but
+	 * the reset default value is zero and it is only programmed once.
+	 * As it makes no difference, we can safely use the correct mask.
+	 */
+	MCHBAR32_AND_OR(0x400*ch + 0x598, ~0xf00,
 		(setting->clk_delay << 10) |
 		(setting->db_sel << 8) |
 		(setting->db_en << 9));
-	MCHBAR8_AND_OR(0x400*ch + 0x587, ~0x70, setting->pi << 4);
-	MCHBAR8_AND_OR(0x400*ch + 0x587, ~0xf, setting->tap);
+	write_txdll_tap_pi(ch, 0x587, setting->tap, setting->pi);
 }
 
 static void cmdset(u8 ch, const struct dll_setting *setting)
@@ -314,8 +322,7 @@ static void cmdset(u8 ch, const struct dll_setting *setting)
 	MCHBAR8_AND_OR(0x400*ch + 0x594, ~0x60,
 		(setting->db_sel << 5) |
 		(setting->db_en << 6));
-	MCHBAR8_AND_OR(0x400*ch + 0x580, ~0x70, setting->pi << 4);
-	MCHBAR8_AND_OR(0x400*ch + 0x580, ~0xf, setting->tap);
+	write_txdll_tap_pi(ch, 0x580, setting->tap, setting->pi);
 }
 
 /**
@@ -338,10 +345,7 @@ void dqsset(u8 ch, u8 lane, const struct dll_setting *setting)
 			~(0x3 << (16 + lane * 2)),
 			setting->clk_delay << (16+lane * 2));
 
-		MCHBAR8(0x400*ch + 0x520 + lane * 4 + rank) =
-			(MCHBAR8(0x400*ch + 0x520 + lane * 4) & ~0x7f) |
-			(setting->pi << 4) |
-			setting->tap;
+		write_txdll_tap_pi(ch, 0x520 + lane * 4 + rank, setting->tap, setting->pi);
 	}
 }
 
@@ -359,8 +363,7 @@ void dqset(u8 ch, u8 lane, const struct dll_setting *setting)
 		MCHBAR32_AND_OR(0x400 * ch + 0x5c8 + rank * 4,
 			~(0x3 << (lane * 2)), setting->clk_delay << (2 * lane));
 
-		MCHBAR8_AND_OR(0x400*ch + 0x500 + lane * 4 + rank, ~0x7f,
-			(setting->pi << 4) | setting->tap);
+		write_txdll_tap_pi(ch, 0x500 + lane * 4 + rank, setting->tap, setting->pi);
 	}
 }
 
@@ -400,18 +403,18 @@ static void program_timings(struct sysinfo *s)
 	adjusted_cas = s->selected_timings.CAS - 3;
 
 	u16 fsb_to_ps[3] = {
-		5000, // 800
-		3750, // 1067
-		3000  // 1333
+		5000, /*  800 */
+		3750, /* 1067 */
+		3000  /* 1333 */
 	};
 
 	u16 ddr_to_ps[6] = {
-		5000, // 400
-		3750, // 533
-		3000, // 667
-		2500, // 800
-		1875, // 1067
-		1500  // 1333
+		5000, /*  400 */
+		3750, /*  533 */
+		3000, /*  667 */
+		2500, /*  800 */
+		1875, /* 1067 */
+		1500  /* 1333 */
 	};
 
 	u16 lut1[6] = {
@@ -425,22 +428,22 @@ static void program_timings(struct sysinfo *s)
 
 	static const u8 ddr3_turnaround_tab[3][6][4] = {
 		{ /* DDR3 800 */
-			{0x9, 0x7, 0x7, 0x9},	/* CL = 5 */
+			{0x9, 0x7, 0x9, 0x7},	/* CL = 5 */
 			{0x9, 0x7, 0x8, 0x8},	/* CL = 6 */
 		},
 		{ /* DDR3 1066 */
 			{0x0, 0x0, 0x0, 0x0},	/* CL = 5 - Not supported */
-			{0x9, 0x7, 0x7, 0x9},	/* CL = 6 */
+			{0x9, 0x7, 0x9, 0x7},	/* CL = 6 */
 			{0x9, 0x7, 0x8, 0x8},	/* CL = 7 */
-			{0x9, 0x7, 0x9, 0x7}	/* CL = 8 */
+			{0x9, 0x7, 0x7, 0x9}	/* CL = 8 */
 		},
 		{ /* DDR3 1333 */
 			{0x0, 0x0, 0x0, 0x0},	/* CL = 5 - Not supported */
 			{0x0, 0x0, 0x0, 0x0},	/* CL = 6 - Not supported */
 			{0x0, 0x0, 0x0, 0x0},	/* CL = 7 - Not supported */
-			{0x9, 0x7, 0x9, 0x8},	/* CL = 8 */
-			{0x9, 0x7, 0xA, 0x7},	/* CL = 9 */
-			{0x9, 0x7, 0xB, 0x6},	/* CL = 10 */
+			{0x9, 0x7, 0x8, 0x9},	/* CL = 8 */
+			{0x9, 0x7, 0x7, 0xa},	/* CL = 9 */
+			{0x9, 0x7, 0x6, 0xb},	/* CL = 10 */
 		}
 	};
 
@@ -635,7 +638,7 @@ static void program_timings(struct sysinfo *s)
 		MCHBAR32_AND_OR(0x400*i + 0x269, ~0xfa300000, reg32);
 		MCHBAR8_AND(0x400*i + 0x271, ~0x80);
 		MCHBAR8_AND(0x400*i + 0x274, ~0x6);
-	} // END EACH POPULATED CHANNEL
+	} /* END EACH POPULATED CHANNEL */
 
 	reg16 = 0x1f << 5;
 	reg16 |= 0xe << 10;
@@ -702,19 +705,19 @@ static void program_dll(struct sysinfo *s)
 
 	udelay(1);
 	MCHBAR8_AND(0x190, ~1);
-	udelay(1); // 533ns
+	udelay(1); /* 533ns */
 	MCHBAR32_AND(0x198, ~0x11554000);
 	udelay(1);
 	MCHBAR32_AND(0x198, ~0x1455);
 	udelay(1);
 	MCHBAR8_AND(0x583, ~0x1c);
 	MCHBAR8_AND(0x983, ~0x1c);
-	udelay(1); // 533ns
+	udelay(1); /* 533ns */
 	MCHBAR8_AND(0x583, ~0x3);
 	MCHBAR8_AND(0x983, ~0x3);
-	udelay(1); // 533ns
+	udelay(1); /* 533ns */
 
-	// ME related
+	/* ME related */
 	MCHBAR32_AND_OR(0x1a0, ~0x7ffffff,
 		s->spd_type == DDR2 ? 0x551803 : 0x555801);
 
@@ -777,9 +780,7 @@ static void program_dll(struct sysinfo *s)
 					~rank2clken[r + i * 4]);
 			}
 		}
-
-		//reg8 = 0x00; // FIXME don't switch on all clocks anyway
-	} // END EACH CHANNEL
+	} /* END EACH CHANNEL */
 
 	if (s->spd_type == DDR2) {
 		MCHBAR8_OR(0x1a8, 1);
@@ -789,7 +790,7 @@ static void program_dll(struct sysinfo *s)
 		MCHBAR8_OR(0x1a8, 0x4);
 	}
 
-	// Update DLL timing
+	/* Update DLL timing */
 	MCHBAR8_AND(0x1a4, ~0x80);
 	MCHBAR8_OR(0x1a4, 0x40);
 	MCHBAR16_AND_OR(0x5f0, ~0x400, 0x400);
@@ -834,7 +835,7 @@ static void program_dll(struct sysinfo *s)
 		cmdset(i, &setting[CMD]);
 	}
 
-	// XXX if not async mode
+	/* XXX if not async mode */
 	MCHBAR16_AND(0x180, ~0x8200);
 	MCHBAR8_OR(0x180, 0x4);
 	j = 0;
@@ -894,6 +895,7 @@ static void program_dll(struct sysinfo *s)
 	if (j < 2) {
 		MCHBAR8_AND(0x1c8, ~0x1f);
 		async = 1;
+		printk(BIOS_NOTICE, "HMC failed, using async mode\n");
 	}
 
 	switch (s->selected_timings.mem_clk) {
@@ -918,9 +920,6 @@ static void program_dll(struct sysinfo *s)
 		clk = 0x1a;
 		break;
 	}
-
-	if (async != 1)
-		reg8 = MCHBAR8(0x188) & 0x1e;
 
 	MCHBAR8_AND(0x180, ~0x80);
 
@@ -1020,7 +1019,7 @@ static void select_default_dq_dqs_settings(struct sysinfo *s)
  */
 static void set_all_dq_dqs_dll_settings(struct sysinfo *s)
 {
-	// Program DQ/DQS dll settings
+	/* Program DQ/DQS dll settings */
 	int ch, lane, rank;
 
 	FOR_EACH_POPULATED_CHANNEL(s->dimms, ch) {
@@ -1038,36 +1037,36 @@ static void set_all_dq_dqs_dll_settings(struct sysinfo *s)
 static void prog_rcomp(struct sysinfo *s)
 {
 	u8 i, j, k, reg8;
-	const u32 ddr2_x32a[8] = { 0x04040404, 0x06050505, 0x09090807, 0x0D0C0B0A,
-			0x04040404, 0x08070605, 0x0C0B0A09, 0x100F0E0D };
-	const u16 ddr2_x378[6] = { 0, 0xAAAA, 0x7777, 0x7777, 0x7777, 0x7777 };
-	const u32 ddr2_x382[6] = { 0, 0x02020202, 0x02020202, 0x02020202, 0x04030303, 0x04030303 };
-	const u32 ddr2_x386[6] = { 0, 0x03020202, 0x03020202, 0x03020202, 0x05040404, 0x05040404 };
-	const u32 ddr2_x38a[6] = { 0, 0x04040303, 0x04040303, 0x04040303, 0x07070605, 0x07070605 };
-	const u32 ddr2_x38e[6] = { 0, 0x06060505, 0x06060505, 0x06060505, 0x09090808, 0x09090808 };
-	const u32 ddr2_x392[6] = { 0, 0x02020202, 0x02020202, 0x02020202, 0x03030202, 0x03030202 };
-	const u32 ddr2_x396[6] = { 0, 0x03030202, 0x03030202, 0x03030202, 0x05040303, 0x05040303 };
-	const u32 ddr2_x39a[6] = { 0, 0x04040403, 0x04040403, 0x04040403, 0x07070605, 0x07070605 };
-	const u32 ddr2_x39e[6] = { 0, 0x06060505, 0x06060505, 0x06060505, 0x08080808, 0x08080808 };
+	const u32 ddr2_x32a[8] = { 0x04040404, 0x06050505, 0x09090807, 0x0d0c0b0a,
+				   0x04040404, 0x08070605, 0x0c0b0a09, 0x100f0e0d };
+	const u16 ddr2_x378[5] = { 0xaaaa, 0x7777, 0x7777, 0x7777, 0x7777 };
+	const u32 ddr2_x382[5] = { 0x02020202, 0x02020202, 0x02020202, 0x04030303, 0x04030303 };
+	const u32 ddr2_x386[5] = { 0x03020202, 0x03020202, 0x03020202, 0x05040404, 0x05040404 };
+	const u32 ddr2_x38a[5] = { 0x04040303, 0x04040303, 0x04040303, 0x07070605, 0x07070605 };
+	const u32 ddr2_x38e[5] = { 0x06060505, 0x06060505, 0x06060505, 0x09090808, 0x09090808 };
+	const u32 ddr2_x392[5] = { 0x02020202, 0x02020202, 0x02020202, 0x03030202, 0x03030202 };
+	const u32 ddr2_x396[5] = { 0x03030202, 0x03030202, 0x03030202, 0x05040303, 0x05040303 };
+	const u32 ddr2_x39a[5] = { 0x04040403, 0x04040403, 0x04040403, 0x07070605, 0x07070605 };
+	const u32 ddr2_x39e[5] = { 0x06060505, 0x06060505, 0x06060505, 0x08080808, 0x08080808 };
 
-	const u32 ddr3_x32a[8] = {0x06060606, 0x06060606, 0x0b090807, 0x12110f0d,
-				 0x06060606, 0x08070606, 0x0d0b0a09, 0x16161511};
-	const u16 ddr3_x378[6] = {0, 0xbbbb, 0x6666, 0x6666, 0x6666, 0x6666};
-	const u32 ddr3_x382[6] = {0, 0x05050505, 0x04040404, 0x04040404, 0x34343434, 0x34343434};
-	const u32 ddr3_x386[6] = {0, 0x05050505, 0x04040404, 0x04040404, 0x34343434, 0x34343434};
-	const u32 ddr3_x38a[6] = {0, 0x06060605, 0x07060504, 0x07060504, 0x34343434, 0x34343434};
-	const u32 ddr3_x38e[6] = {0, 0x09080707, 0x09090808, 0x09090808, 0x34343434, 0x34343434};
-	const u32 ddr3_x392[6] = {0, 0x05050505, 0x04040404, 0x04040404, 0x34343434, 0x34343434};
-	const u32 ddr3_x396[6] = {0, 0x05050505, 0x04040404, 0x04040404, 0x34343434, 0x34343434};
-	const u32 ddr3_x39a[6] = {0, 0x07060606, 0x08070605, 0x08070605, 0x34343434, 0x34343434};
-	const u32 ddr3_x39e[6] = {0, 0x09090807, 0x0b0b0a09, 0x0b0b0a09, 0x34343434, 0x34343434};
+	const u32 ddr3_x32a[8] = { 0x06060606, 0x06060606, 0x0b090807, 0x12110f0d,
+				   0x06060606, 0x08070606, 0x0d0b0a09, 0x16161511 };
+	const u16 ddr3_x378[5] = { 0xbbbb, 0x6666, 0x6666, 0x6666, 0x6666 };
+	const u32 ddr3_x382[5] = { 0x05050505, 0x04040404, 0x04040404, 0x34343434, 0x34343434 };
+	const u32 ddr3_x386[5] = { 0x05050505, 0x04040404, 0x04040404, 0x34343434, 0x34343434 };
+	const u32 ddr3_x38a[5] = { 0x06060605, 0x07060504, 0x07060504, 0x34343434, 0x34343434 };
+	const u32 ddr3_x38e[5] = { 0x09080707, 0x09090808, 0x09090808, 0x34343434, 0x34343434 };
+	const u32 ddr3_x392[5] = { 0x05050505, 0x04040404, 0x04040404, 0x34343434, 0x34343434 };
+	const u32 ddr3_x396[5] = { 0x05050505, 0x04040404, 0x04040404, 0x34343434, 0x34343434 };
+	const u32 ddr3_x39a[5] = { 0x07060606, 0x08070605, 0x08070605, 0x34343434, 0x34343434 };
+	const u32 ddr3_x39e[5] = { 0x09090807, 0x0b0b0a09, 0x0b0b0a09, 0x34343434, 0x34343434 };
 
 	const u16 *x378;
 	const u32 *x32a, *x382, *x386, *x38a, *x38e;
 	const u32 *x392, *x396, *x39a, *x39e;
 
-	const u16 addr[6] = { 0x31c, 0x374, 0x3a2, 0x3d0, 0x3fe, 0x42c };
-	u8 bit[6] = { 0, 0, 1, 1, 0, 0 };
+	const u16 addr[5] = { 0x374, 0x3a2, 0x3d0, 0x3fe, 0x42c };
+	const u8 bit[5] = { 0, 1, 1, 0, 0 };
 
 	if (s->spd_type == DDR2) {
 		x32a = ddr2_x32a;
@@ -1094,46 +1093,33 @@ static void prog_rcomp(struct sysinfo *s)
 	}
 
 	FOR_EACH_POPULATED_CHANNEL(s->dimms, i) {
-		for (j = 0; j < 6; j++) {
-			if (j == 0) {
-				MCHBAR32_AND_OR(0x400*i + addr[j], ~0xff000,
-					0xaa000);
-				MCHBAR16_AND_OR(0x400*i + 0x320, ~0xffff,
-					0x6666);
-				for (k = 0; k < 8; k++) {
-					MCHBAR32_AND_OR(0x400*i + addr[j] +
-						0xe + (k << 2),
-						~0x3f3f3f3f, x32a[k]);
-					MCHBAR32_AND_OR(0x400*i + addr[j] +
-						0x2e + (k << 2),
-						~0x3f3f3f3f, x32a[k]);
-				}
-			} else {
-				MCHBAR16_AND_OR(0x400*i + addr[j],
-					~0xf000, 0xa000);
-				MCHBAR16_AND_OR(0x400*i + addr[j] + 4,
-					~0xffff, x378[j]);
-				MCHBAR32_AND_OR(0x400*i + addr[j] + 0xe,
-					~0x3f3f3f3f, x382[j]);
-				MCHBAR32_AND_OR(0x400*i + addr[j] + 0x12,
-					~0x3f3f3f3f, x386[j]);
-				MCHBAR32_AND_OR(0x400*i + addr[j] + 0x16,
-					~0x3f3f3f3f, x38a[j]);
-				MCHBAR32_AND_OR(0x400*i + addr[j] + 0x1a,
-					~0x3f3f3f3f, x38e[j]);
-				MCHBAR32_AND_OR(0x400*i + addr[j] + 0x1e,
-					~0x3f3f3f3f, x392[j]);
-				MCHBAR32_AND_OR(0x400*i + addr[j] + 0x22,
-					~0x3f3f3f3f, x396[j]);
-				MCHBAR32_AND_OR(0x400*i + addr[j] + 0x26,
-					~0x3f3f3f3f, x39a[j]);
-				MCHBAR32_AND_OR(0x400*i + addr[j] + 0x2a,
-					~0x3f3f3f3f, x39e[j]);
-			}
+		/* RCOMP data group is special, program it separately */
+		MCHBAR32_AND_OR(0x400*i + 0x31c, ~0xff000, 0xaa000);
+		MCHBAR16_AND_OR(0x400*i + 0x320, ~0xffff, 0x6666);
+		for (k = 0; k < 8; k++) {
+			MCHBAR32_AND_OR(0x400*i + 0x32a + (k << 2), ~0x3f3f3f3f, x32a[k]);
+			MCHBAR32_AND_OR(0x400*i + 0x34a + (k << 2), ~0x3f3f3f3f, x32a[k]);
+		}
+		MCHBAR8_AND_OR(0x400*i + 0x31c, ~1, 0);
+
+		/* Now program the other RCOMP groups */
+		for (j = 0; j < ARRAY_SIZE(addr); j++) {
+			MCHBAR16_AND_OR(0x400*i + addr[j] + 0, ~0xf000, 0xa000);
+			MCHBAR16_AND_OR(0x400*i + addr[j] + 4, ~0xffff, x378[j]);
+
+			MCHBAR32_AND_OR(0x400*i + addr[j] + 0x0e, ~0x3f3f3f3f, x382[j]);
+			MCHBAR32_AND_OR(0x400*i + addr[j] + 0x12, ~0x3f3f3f3f, x386[j]);
+			MCHBAR32_AND_OR(0x400*i + addr[j] + 0x16, ~0x3f3f3f3f, x38a[j]);
+			MCHBAR32_AND_OR(0x400*i + addr[j] + 0x1a, ~0x3f3f3f3f, x38e[j]);
+			MCHBAR32_AND_OR(0x400*i + addr[j] + 0x1e, ~0x3f3f3f3f, x392[j]);
+			MCHBAR32_AND_OR(0x400*i + addr[j] + 0x22, ~0x3f3f3f3f, x396[j]);
+			MCHBAR32_AND_OR(0x400*i + addr[j] + 0x26, ~0x3f3f3f3f, x39a[j]);
+			MCHBAR32_AND_OR(0x400*i + addr[j] + 0x2a, ~0x3f3f3f3f, x39e[j]);
+
+			/* Override command group strength multiplier */
 			if (s->spd_type == DDR3 &&
 				BOTH_DIMMS_ARE_POPULATED(s->dimms, i)) {
-				MCHBAR16_AND_OR(0x378 + 0x400 * i,
-					~0xffff, 0xcccc);
+				MCHBAR16_AND_OR(0x378 + 0x400 * i, ~0xffff, 0xcccc);
 			}
 			MCHBAR8_AND_OR(0x400*i + addr[j], ~1, bit[j]);
 		}
@@ -1142,7 +1128,7 @@ static void prog_rcomp(struct sysinfo *s)
 		MCHBAR8_AND_OR(0x400*i + 0x45e, ~0x3f, reg8);
 		MCHBAR8_AND_OR(0x400*i + 0x462, ~0x3f, reg8);
 		MCHBAR8_AND_OR(0x400*i + 0x466, ~0x3f, reg8);
-	} // END EACH POPULATED CHANNEL
+	} /* END EACH POPULATED CHANNEL */
 
 	MCHBAR32_AND_OR(0x134, ~0x63c00, 0x63c00);
 	MCHBAR16_AND_OR(0x174, ~0x63ff, 0x63ff);
@@ -1160,42 +1146,42 @@ static void prog_rcomp(struct sysinfo *s)
 static void program_odt(struct sysinfo *s)
 {
 	u8 i;
-	static u16 ddr2_odt[16][2] = {
-		{ 0x0000, 0x0000 }, // NC_NC
-		{ 0x0000, 0x0001 }, // x8SS_NC
-		{ 0x0000, 0x0011 }, // x8DS_NC
-		{ 0x0000, 0x0001 }, // x16SS_NC
-		{ 0x0004, 0x0000 }, // NC_x8SS
-		{ 0x0101, 0x0404 }, // x8SS_x8SS
-		{ 0x0101, 0x4444 }, // x8DS_x8SS
-		{ 0x0101, 0x0404 }, // x16SS_x8SS
-		{ 0x0044, 0x0000 }, // NC_x8DS
-		{ 0x1111, 0x0404 }, // x8SS_x8DS
-		{ 0x1111, 0x4444 }, // x8DS_x8DS
-		{ 0x1111, 0x0404 }, // x16SS_x8DS
-		{ 0x0004, 0x0000 }, // NC_x16SS
-		{ 0x0101, 0x0404 }, // x8SS_x16SS
-		{ 0x0101, 0x4444 }, // x8DS_x16SS
-		{ 0x0101, 0x0404 }, // x16SS_x16SS
+	static const u16 ddr2_odt[16][2] = {
+		{ 0x0000, 0x0000 }, /* NC_NC */
+		{ 0x0000, 0x0001 }, /* x8SS_NC */
+		{ 0x0000, 0x0011 }, /* x8DS_NC */
+		{ 0x0000, 0x0001 }, /* x16SS_NC */
+		{ 0x0004, 0x0000 }, /* NC_x8SS */
+		{ 0x0101, 0x0404 }, /* x8SS_x8SS */
+		{ 0x0101, 0x4444 }, /* x8DS_x8SS */
+		{ 0x0101, 0x0404 }, /* x16SS_x8SS */
+		{ 0x0044, 0x0000 }, /* NC_x8DS */
+		{ 0x1111, 0x0404 }, /* x8SS_x8DS */
+		{ 0x1111, 0x4444 }, /* x8DS_x8DS */
+		{ 0x1111, 0x0404 }, /* x16SS_x8DS */
+		{ 0x0004, 0x0000 }, /* NC_x16SS */
+		{ 0x0101, 0x0404 }, /* x8SS_x16SS */
+		{ 0x0101, 0x4444 }, /* x8DS_x16SS */
+		{ 0x0101, 0x0404 }, /* x16SS_x16SS */
 	};
 
 	static const u16 ddr3_odt[16][2] = {
-		{ 0x0000, 0x0000 }, // NC_NC
-		{ 0x0000, 0x0001 }, // x8SS_NC
-		{ 0x0000, 0x0021 }, // x8DS_NC
-		{ 0x0000, 0x0001 }, // x16SS_NC
-		{ 0x0004, 0x0000 }, // NC_x8SS
-		{ 0x0105, 0x0405 }, // x8SS_x8SS
-		{ 0x0105, 0x4465 }, // x8DS_x8SS
-		{ 0x0105, 0x0405 }, // x16SS_x8SS
-		{ 0x0084, 0x0000 }, // NC_x8DS
-		{ 0x1195, 0x0405 }, // x8SS_x8DS
-		{ 0x1195, 0x4465 }, // x8DS_x8DS
-		{ 0x1195, 0x0405 }, // x16SS_x8DS
-		{ 0x0004, 0x0000 }, // NC_x16SS
-		{ 0x0105, 0x0405 }, // x8SS_x16SS
-		{ 0x0105, 0x4465 }, // x8DS_x16SS
-		{ 0x0105, 0x0405 }, // x16SS_x16SS
+		{ 0x0000, 0x0000 }, /* NC_NC */
+		{ 0x0000, 0x0001 }, /* x8SS_NC */
+		{ 0x0000, 0x0021 }, /* x8DS_NC */
+		{ 0x0000, 0x0001 }, /* x16SS_NC */
+		{ 0x0004, 0x0000 }, /* NC_x8SS */
+		{ 0x0105, 0x0405 }, /* x8SS_x8SS */
+		{ 0x0105, 0x4465 }, /* x8DS_x8SS */
+		{ 0x0105, 0x0405 }, /* x16SS_x8SS */
+		{ 0x0084, 0x0000 }, /* NC_x8DS */
+		{ 0x1195, 0x0405 }, /* x8SS_x8DS */
+		{ 0x1195, 0x4465 }, /* x8DS_x8DS */
+		{ 0x1195, 0x0405 }, /* x16SS_x8DS */
+		{ 0x0004, 0x0000 }, /* NC_x16SS */
+		{ 0x0105, 0x0405 }, /* x8SS_x16SS */
+		{ 0x0105, 0x4465 }, /* x8DS_x16SS */
+		{ 0x0105, 0x0405 }, /* x16SS_x16SS */
 	};
 
 	FOR_EACH_POPULATED_CHANNEL(s->dimms, i) {
@@ -1270,14 +1256,14 @@ static void pre_jedec_memory_map(void)
 	MCHBAR8(0x110) = (2 << 5) | (3 << 3);
 	MCHBAR16(0x10e) = 0;
 	MCHBAR32(0x108) = 0;
-	pci_write_config16(PCI_DEV(0, 0, 0), D0F0_TOLUD, 0x4000);
+	pci_write_config16(HOST_BRIDGE, D0F0_TOLUD, 0x4000);
 	/* TOM(64M unit) = 1G = TOTAL_CHANNELS * RANKS_PER_CHANNEL * 128M */
-	pci_write_config16(PCI_DEV(0, 0, 0), D0F0_TOM, 0x10);
+	pci_write_config16(HOST_BRIDGE, D0F0_TOM, 0x10);
 	/* TOUUD(1M unit) = 1G = TOTAL_CHANNELS * RANKS_PER_CHANNEL * 128M */
-	pci_write_config16(PCI_DEV(0, 0, 0), D0F0_TOUUD, 0x0400);
-	pci_write_config32(PCI_DEV(0, 0, 0), D0F0_GBSM, 0x40000000);
-	pci_write_config32(PCI_DEV(0, 0, 0), D0F0_BGSM, 0x40000000);
-	pci_write_config32(PCI_DEV(0, 0, 0), D0F0_TSEG, 0x40000000);
+	pci_write_config16(HOST_BRIDGE, D0F0_TOUUD, 0x0400);
+	pci_write_config32(HOST_BRIDGE, D0F0_GBSM, 0x40000000);
+	pci_write_config32(HOST_BRIDGE, D0F0_BGSM, 0x40000000);
+	pci_write_config32(HOST_BRIDGE, D0F0_TSEG, 0x40000000);
 }
 
 u32 test_address(int channel, int rank)
@@ -1286,10 +1272,9 @@ u32 test_address(int channel, int rank)
 	return channel * 512 * MiB + rank * 128 * MiB;
 }
 
-
 /* DDR3 Rank1 Address mirror
- * swap the following pins:
- * A3<->A4, A5<->A6, A7<->A8, BA0<->BA1 */
+   swap the following pins:
+   A3<->A4, A5<->A6, A7<->A8, BA0<->BA1 */
 static u32 mirror_shift_bit(const u32 data, u8 bit)
 {
 	u32 temp0 = data, temp1 = data;
@@ -1358,12 +1343,12 @@ static void jedec_ddr2(struct sysinfo *s)
 		{EMRS2_CMD, 0x0},
 		{EMRS3_CMD, 0x0},
 		{EMRS1_CMD, 0x0},
-		{MRS_CMD, 0x100},	// DLL Reset
+		{MRS_CMD, 0x100},	/* DLL Reset */
 		{PRECHARGE_CMD, 0x0},
 		{CBR_CMD, 0x0},
 		{CBR_CMD, 0x0},
-		{MRS_CMD, 0x0},		// DLL out of reset
-		{EMRS1_CMD, 0x380},	// OCD calib default
+		{MRS_CMD, 0x0},		/* DLL out of reset */
+		{EMRS1_CMD, 0x380},	/* OCD calib default */
 		{EMRS1_CMD, 0x0}
 	};
 
@@ -1435,7 +1420,7 @@ static void jedec_ddr3(struct sysinfo *s)
 		cmd |= (1 << 1);
 		send_jedec_cmd(s, r, ch, EMRS1_CMD, cmd);
 		/* Burst type interleaved, burst length 8, Reset DLL,
-		 * Precharge PD: DLL on */
+		   Precharge PD: DLL on */
 		send_jedec_cmd(s, r, ch, MRS_CMD, (1 << 3) | (1 << 8)
 			| (1 << 12) | ((s->selected_timings.CAS - 4) << 4)
 			| ((s->selected_timings.tWR - 4) << 9));
@@ -1524,7 +1509,7 @@ static void set_dradrb(struct sysinfo *s)
 
 	u8 drbtab[10] = {0x04, 0x02, 0x08, 0x04, 0x08, 0x04, 0x10, 0x08, 0x20, 0x10};
 
-	// DRA
+	/* DRA */
 	rankpop0 = 0;
 	rankpop1 = 0;
 	FOR_EACH_POPULATED_RANK(s->dimms, ch, r) {
@@ -1568,7 +1553,7 @@ static void set_dradrb(struct sysinfo *s)
 			ONLY_DIMMB_IS_POPULATED(s->dimms, 1))
 		MCHBAR8_OR(0x660, 1);
 
-	// DRB
+	/* DRB */
 	lastrank_ch1 = 0;
 	FOR_EACH_RANK(ch, r) {
 		if (ch == 0) {
@@ -1702,13 +1687,13 @@ static void configure_mmap(struct sysinfo *s)
 			  160, 224, 352 };
 	u8 ggc2gtt[] = { 0, 1, 0, 2, 0, 0, 0, 0, 0, 2, 3, 4};
 
-	ggc = pci_read_config16(PCI_DEV(0, 0, 0), 0x52);
+	ggc = pci_read_config16(HOST_BRIDGE, 0x52);
 	gfxsize = ggc2uma[(ggc & 0xf0) >> 4];
 	gttsize = ggc2gtt[(ggc & 0xf00) >> 8];
 	/* TSEG 2M, This amount can easily be covered by SMRR MTRR's,
 	   which requires to have TSEG_BASE aligned to TSEG_SIZE. */
 	tsegsize = 2;
-	mmiosize = 0x800; // 2GB MMIO
+	mmiosize = 0x800; /* 2GB MMIO */
 	umasizem = gfxsize + gttsize + tsegsize;
 	mmiostart = 0x1000 - mmiosize + umasizem;
 	tom = s->channel_capacity[0] + s->channel_capacity[1] - ME_UMA_SIZEMB;
@@ -1733,20 +1718,20 @@ static void configure_mmap(struct sysinfo *s)
 	gttbase = gfxbase - gttsize;
 	tsegbase = gttbase - tsegsize;
 
-	pci_write_config16(PCI_DEV(0, 0, 0), 0xb0, tolud << 4);
-	pci_write_config16(PCI_DEV(0, 0, 0), 0xa0, tom >> 6);
+	pci_write_config16(HOST_BRIDGE, 0xb0, tolud << 4);
+	pci_write_config16(HOST_BRIDGE, 0xa0, tom >> 6);
 	if (reclaim) {
-		pci_write_config16(PCI_DEV(0, 0, 0), 0x98,
+		pci_write_config16(HOST_BRIDGE, 0x98,
 					(u16)(reclaimbase >> 6));
-		pci_write_config16(PCI_DEV(0, 0, 0), 0x9a,
+		pci_write_config16(HOST_BRIDGE, 0x9a,
 					(u16)(reclaimlimit >> 6));
 	}
-	pci_write_config16(PCI_DEV(0, 0, 0), 0xa2, touud);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xa4, gfxbase << 20);
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xa8, gttbase << 20);
+	pci_write_config16(HOST_BRIDGE, 0xa2, touud);
+	pci_write_config32(HOST_BRIDGE, 0xa4, gfxbase << 20);
+	pci_write_config32(HOST_BRIDGE, 0xa8, gttbase << 20);
 	/* Enable and set TSEG size to 2M */
-	pci_update_config8(PCI_DEV(0, 0, 0), D0F0_ESMRAMC, ~0x07, (1 << 1) | (1 << 0));
-	pci_write_config32(PCI_DEV(0, 0, 0), 0xac, tsegbase << 20);
+	pci_update_config8(HOST_BRIDGE, D0F0_ESMRAMC, ~0x07, (1 << 1) | (1 << 0));
+	pci_write_config32(HOST_BRIDGE, 0xac, tsegbase << 20);
 }
 
 static void set_enhanced_mode(struct sysinfo *s)
@@ -1779,8 +1764,8 @@ static void set_enhanced_mode(struct sysinfo *s)
 		MCHBAR32(0x400*ch + 0x290) = 0x4f2091c;
 	}
 
-	reg8 = pci_read_config8(PCI_DEV(0, 0, 0), 0xf0);
-	pci_write_config8(PCI_DEV(0, 0, 0), 0xf0, reg8 | 1);
+	reg8 = pci_read_config8(HOST_BRIDGE, 0xf0);
+	pci_write_config8(HOST_BRIDGE, 0xf0, reg8 | 1);
 	MCHBAR32_AND_OR(0xfa0, ~0x20002, 0x2 | (s->selected_timings.fsb_clk ==
 		FSB_CLOCK_1333MHz ? 0x20000 : 0));
 	reg32 = 0x219100c2;
@@ -1822,7 +1807,7 @@ static void set_enhanced_mode(struct sysinfo *s)
 	if (s->selected_timings.fsb_clk < FSB_CLOCK_1333MHz)
 		reg32 |= 0x20000;
 	MCHBAR32(0x20) = reg32;
-	pci_write_config8(PCI_DEV(0, 0, 0), 0xf0, reg8 & ~1);
+	pci_write_config8(HOST_BRIDGE, 0xf0, reg8 & ~1);
 }
 
 static void power_settings(struct sysinfo *s)
@@ -1895,7 +1880,7 @@ static void power_settings(struct sysinfo *s)
 	MCHBAR16(0x115) = (u16) reg1;
 	MCHBAR32_AND_OR(0x117, ~0xffffff, reg2);
 	MCHBAR8(0x124) = 0x7;
-	// not sure if dummy reads are needed
+	/* not sure if dummy reads are needed */
 	MCHBAR16_AND_OR(0x12a, 0, 0x80);
 	MCHBAR8_AND_OR(0x12c, 0, 0xa0);
 	MCHBAR16_AND(0x174, ~(1 << 15));
@@ -1904,14 +1889,14 @@ static void power_settings(struct sysinfo *s)
 	MCHBAR8_OR(0x192, 1);
 	MCHBAR8_OR(0x193, 0xf);
 	MCHBAR16_AND_OR(0x1b4, ~0x480, 0x80);
-	MCHBAR16_AND_OR(0x210, ~0x1fff, 0x3f); // | clockgatingiii
-	// non-aligned access: possible bug?
+	MCHBAR16_AND_OR(0x210, ~0x1fff, 0x3f); /* clockgating iii */
+	/* non-aligned access: possible bug? */
 	MCHBAR32_AND_OR(0x6d1, ~0xff03ff, 0x100 | clkgate);
 	MCHBAR8_AND_OR(0x212, ~0x7f, 0x7f);
 	MCHBAR32_AND_OR(0x2c0, ~0xffff0, 0xcc5f0);
 	MCHBAR8_AND_OR(0x2c4, ~0x70, 0x70);
-	// non-aligned access: possible bug?
-	MCHBAR32_AND_OR(0x2d1, ~0xffffff, 0xff2831); // | clockgatingi
+	/* non-aligned access: possible bug? */
+	MCHBAR32_AND_OR(0x2d1, ~0xffffff, 0xff2831); /* clockgating i */
 	MCHBAR32(0x2d4) = 0x40453600;
 	MCHBAR32(0x300) = 0xc0b0a08;
 	MCHBAR32(0x304) = 0x6040201;
@@ -1943,7 +1928,7 @@ static void power_settings(struct sysinfo *s)
 	MCHBAR32(0x1110) = 0x10810350 & ~0x78;
 	MCHBAR32(0x1114) = 0;
 	x592 = 0xff;
-	if (pci_read_config8(PCI_DEV(0, 0, 0), 0x8) < 3)
+	if (pci_read_config8(HOST_BRIDGE, 0x8) < 3)
 		x592 = ~0x4;
 
 	FOR_EACH_POPULATED_CHANNEL(s->dimms, ch) {
@@ -1985,30 +1970,30 @@ void do_raminit(struct sysinfo *s, int fast_boot)
 	u32 reg32;
 
 	if (s->boot_path != BOOT_PATH_WARM_RESET) {
-		// Clear self refresh
+		/* Clear self refresh */
 		MCHBAR32(PMSTS_MCHBAR) = MCHBAR32(PMSTS_MCHBAR)
 			| PMSTS_BOTH_SELFREFRESH;
 
-		// Clear host clk gate reg
+		/* Clear host clk gate reg */
 		MCHBAR32_OR(0x1c, 0xffffffff);
 
-		// Select type
+		/* Select type */
 		if (s->spd_type == DDR2)
 			MCHBAR8_AND(0x1a8, ~0x4);
 		else
 			MCHBAR8_OR(0x1a8, 0x4);
 
-		// Set freq
+		/* Set frequency */
 		MCHBAR32_AND_OR(0xc00, ~0x70,
 			(s->selected_timings.mem_clk << 4) | (1 << 10));
 
-		// Overwrite freq if chipset rejects it
+		/* Overwrite value if chipset rejects it */
 		s->selected_timings.mem_clk = (MCHBAR8(0xc00) & 0x70) >> 4;
 		if (s->selected_timings.mem_clk > (s->max_fsb + 3))
 			die("Error: DDR is faster than FSB, halt\n");
 	}
 
-	// Program clock crossing
+	/* Program clock crossing */
 	program_crossclock(s);
 	printk(BIOS_DEBUG, "Done clk crossing\n");
 
@@ -2017,31 +2002,31 @@ void do_raminit(struct sysinfo *s, int fast_boot)
 		printk(BIOS_DEBUG, "Done I/O clk\n");
 	}
 
-	// Grant to launch
+	/* Grant to launch */
 	launch_dram(s);
 	printk(BIOS_DEBUG, "Done launch\n");
 
-	// Program DRAM timings
+	/* Program DRAM timings */
 	program_timings(s);
 	printk(BIOS_DEBUG, "Done timings\n");
 
-	// Program DLL
+	/* Program DLL */
 	program_dll(s);
 	if (!fast_boot)
 		select_default_dq_dqs_settings(s);
 	set_all_dq_dqs_dll_settings(s);
 
-	// RCOMP
+	/* RCOMP */
 	if (s->boot_path != BOOT_PATH_WARM_RESET) {
 		prog_rcomp(s);
 		printk(BIOS_DEBUG, "RCOMP\n");
 	}
 
-	// ODT
+	/* ODT */
 	program_odt(s);
 	printk(BIOS_DEBUG, "Done ODT\n");
 
-	// RCOMP update
+	/* RCOMP update */
 	if (s->boot_path != BOOT_PATH_WARM_RESET) {
 		while (MCHBAR8(0x130) & 1)
 			;
@@ -2050,13 +2035,13 @@ void do_raminit(struct sysinfo *s, int fast_boot)
 
 	pre_jedec_memory_map();
 
-	// IOBUFACT
+	/* IOBUFACT */
 	if (CHANNEL_IS_POPULATED(s->dimms, 0)) {
 		MCHBAR8_AND_OR(0x5dd, ~0x3f, 0x3f);
 		MCHBAR8_OR(0x5d8, 0x7);
 	}
 	if (CHANNEL_IS_POPULATED(s->dimms, 1)) {
-		if (pci_read_config8(PCI_DEV(0, 0, 0), 0x8) < 2) {
+		if (pci_read_config8(HOST_BRIDGE, 0x8) < 2) {
 			MCHBAR8_AND_OR(0x5dd, ~0x3f, 0x3f);
 			MCHBAR8_OR(0x5d8, 1);
 		}
@@ -2075,7 +2060,7 @@ void do_raminit(struct sysinfo *s, int fast_boot)
 		udelay(500);
 	}
 
-	// Pre jedec
+	/* Pre jedec */
 	MCHBAR8_OR(0x40, 0x2);
 	FOR_EACH_POPULATED_CHANNEL(s->dimms, ch) {
 		MCHBAR32_OR(0x400*ch + 0x260, 1 << 27);
@@ -2084,7 +2069,7 @@ void do_raminit(struct sysinfo *s, int fast_boot)
 	MCHBAR16_OR(0x212, 0xf00);
 	printk(BIOS_DEBUG, "Done pre-jedec\n");
 
-	// JEDEC reset
+	/* JEDEC reset */
 	if (s->boot_path != BOOT_PATH_RESUME) {
 		if (s->spd_type == DDR2)
 			jedec_ddr2(s);
@@ -2101,7 +2086,7 @@ void do_raminit(struct sysinfo *s, int fast_boot)
 			software_ddr3_reset(s);
 	}
 
-	// After JEDEC reset
+	/* After JEDEC reset */
 	MCHBAR8_AND(0x40, ~0x2);
 	FOR_EACH_POPULATED_CHANNEL(s->dimms, ch) {
 		reg32 = (2 << 18);
@@ -2133,12 +2118,12 @@ void do_raminit(struct sysinfo *s, int fast_boot)
 
 	printk(BIOS_DEBUG, "Done post-jedec\n");
 
-	// Set DDR init complete
+	/* Set DDR init complete */
 	FOR_EACH_POPULATED_CHANNEL(s->dimms, ch) {
 		MCHBAR32_OR(0x400*ch + 0x268, 0xc0000000);
 	}
 
-	// Dummy reads
+	/* Dummy reads */
 	if (s->boot_path == BOOT_PATH_NORMAL) {
 		FOR_EACH_POPULATED_RANK(s->dimms, ch, r) {
 			for (bank = 0; bank < 4; bank++)
@@ -2147,11 +2132,11 @@ void do_raminit(struct sysinfo *s, int fast_boot)
 	}
 	printk(BIOS_DEBUG, "Done dummy reads\n");
 
-	// Receive enable
+	/* Receive enable */
 	sdram_program_receive_enable(s, fast_boot);
 	printk(BIOS_DEBUG, "Done rcven\n");
 
-	// Finish rcven
+	/* Finish rcven */
 	FOR_EACH_CHANNEL(ch) {
 		MCHBAR8_AND(0x400*ch + 0x5d8, ~0xe);
 		MCHBAR8_OR(0x400*ch + 0x5d8, 0x2);
@@ -2162,40 +2147,40 @@ void do_raminit(struct sysinfo *s, int fast_boot)
 	MCHBAR8_AND(0x5dc, ~0x80);
 	MCHBAR8_OR(0x5dc, 0x80);
 
-	// XXX tRD
+	/* XXX tRD */
 
 	if (!fast_boot) {
 		if (s->selected_timings.mem_clk > MEM_CLOCK_667MHz) {
-			if(do_write_training(s))
+			if (do_write_training(s))
 				die("DQ write training failed!");
 		}
 		if (do_read_training(s))
 			die("DQS read training failed!");
 	}
 
-	// DRADRB
+	/* DRADRB */
 	set_dradrb(s);
 	printk(BIOS_DEBUG, "Done DRADRB\n");
 
-	// Memory map
+	/* Memory map */
 	configure_mmap(s);
 	printk(BIOS_DEBUG, "Done memory map\n");
 
-	// Enhanced mode
+	/* Enhanced mode */
 	set_enhanced_mode(s);
 	printk(BIOS_DEBUG, "Done enhanced mode\n");
 
-	// Periodic RCOMP
+	/* Periodic RCOMP */
 	MCHBAR16_AND_OR(0x160, ~0xfff, 0x999);
 	MCHBAR16_OR(0x1b4, 0x3000);
 	MCHBAR8_OR(0x130, 0x82);
 	printk(BIOS_DEBUG, "Done PRCOMP\n");
 
-	// Power settings
+	/* Power settings */
 	power_settings(s);
 	printk(BIOS_DEBUG, "Done power settings\n");
 
-	// ME related
+	/* ME related */
 	/*
 	 * FIXME: This locks some registers like bit1 of GGC
 	 * and is only needed in case of ME being used.

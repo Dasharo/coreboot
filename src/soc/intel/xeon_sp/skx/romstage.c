@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <arch/romstage.h>
-#include <cbmem.h>
-#include <console/console.h>
 #include <intelblocks/rtc.h>
 #include <soc/romstage.h>
 #include <soc/soc_util.h>

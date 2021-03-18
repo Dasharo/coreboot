@@ -87,9 +87,6 @@ typedef uint32_t pte_t;
 
 static pte_t *const ttb_buff = (void *)_ttb;
 
-/* Not all boards want to use subtables and declare them in memlayout.ld. */
-DECLARE_OPTIONAL_REGION(ttb_subtables);
-
 static struct {
 	pte_t value;
 	const char *name;
@@ -118,7 +115,7 @@ static void mmu_fill_table(pte_t *table, u32 start_idx, u32 end_idx,
 
 	/* Invalidate the TLB entries. */
 	for (i = start_idx; i < end_idx; i++)
-		tlbimvaa(offset + (i << shift));
+		tlbimva(offset + (i << shift));
 	dsb();
 	isb();
 }
@@ -152,7 +149,7 @@ static pte_t *mmu_create_subtable(pte_t *pgd_entry)
 	*pgd_entry = (pte_t)(uintptr_t)table | ATTR_NEXTLEVEL;
 	dccmvac((uintptr_t)pgd_entry);
 	dsb();
-	tlbimvaa(start_addr);
+	tlbimva(start_addr);
 	dsb();
 	isb();
 

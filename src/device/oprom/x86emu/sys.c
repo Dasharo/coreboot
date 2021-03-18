@@ -64,7 +64,7 @@ static u8 *mem_ptr(u32 addr, int size)
 	u8 *retaddr = 0;
 
 	if (addr > M.mem_size - size) {
-		DB(printf("mem_ptr: address %#x out of range!\n", addr);)
+		DB(printf("%s: address %#x out of range!\n", __func__, addr);)
 		    HALT_SYS();
 	}
 	if (addr < 0x200) {
@@ -199,8 +199,6 @@ void X86API wrl(u32 addr, u32 val)
 
 	DB(if (DEBUG_MEM_TRACE())
 	   printf("%#08x 4 <- %#x\n", addr, val);)
-
-
 }
 
 /****************************************************************************

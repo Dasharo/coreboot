@@ -3,9 +3,9 @@
 #ifndef _DENVERTON_NS_NVS_H_
 #define _DENVERTON_NS_NVS_H_
 
-typedef struct global_nvs_t {
+struct __packed global_nvs {
 	/* Miscellaneous */
-	u16 osys; /* 0x00 - Operating System */
+	u16 unused_was_osys; /* 0x00 - Operating System */
 	u8 smif;  /* 0x02 - SMI function call ("TRAP") */
 	u8 prm0;  /* 0x03 - SMI function call parameter */
 	u8 prm1;  /* 0x04 - SMI function call parameter */
@@ -17,8 +17,8 @@ typedef struct global_nvs_t {
 	u8 prm5;  /* 0x0a - Lock function parameter */
 	u32 p80d; /* 0x0b - Debug port (IO 0x80) value */
 	u8 lids;  /* 0x0f - LID state (open = 1) */
-	u8 pwrs;  /* 0x10 - Power state (AC = 1) */
-	u8 pcnt;  /* 0x11 - Processor Count */
+	u8 unused_was_pwrs;  /* 0x10 - Power state (AC = 1) */
+	u8 unused_was_pcnt;  /* 0x11 - Processor Count */
 	u8 tpmp;  /* 0x12 - TPM Present and Enabled */
 	u8 tlvl;  /* 0x13 - Throttle Level */
 	u8 ppcm;  /* 0x14 - Maximum P-state usable by OS */
@@ -45,11 +45,12 @@ typedef struct global_nvs_t {
 	u64 mmiohl;	/* 0x4c - MMIO Base Limit */
 	u32 tsegb;	 /* 0x54 - TSEG Base Low */
 	u32 tsegl;	 /* 0x58 - TSEG Length/Size */
-	u8 rsvd3[164];
 
-} __packed global_nvs_t;
+	/* Required for future unified acpi_save_wake_source. */
+	u32 pm1i;
+	u32 gpei;
 
-/* Used in SMM to find the ACPI GNVS address */
-global_nvs_t *smm_get_gnvs(void);
+	u8 rsvd3[156];
+};
 
 #endif /* _DENVERTON_NS_NVS_H_ */

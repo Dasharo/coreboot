@@ -1,15 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <stddef.h>
 #include <arch/io.h>
 #include <arch/romstage.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
 #include <cbmem.h>
-#if CONFIG(EC_GOOGLE_CHROMEEC)
-#include <ec/google/chromeec/ec.h>
-#endif
 #include <elog.h>
 #include <romstage_handoff.h>
 #include <string.h>
@@ -17,7 +13,7 @@
 #include <soc/iomap.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
-#include <soc/pmc.h>
+#include <soc/pm.h>
 #include <soc/romstage.h>
 
 static struct chipset_power_state power_state;
@@ -63,7 +59,7 @@ static struct chipset_power_state *fill_power_state(void)
 }
 
 /* Return 0, 3, or 5 to indicate the previous sleep state. */
-static int chipset_prev_sleep_state(struct chipset_power_state *ps)
+static int chipset_prev_sleep_state(const struct chipset_power_state *ps)
 {
 	/* Default to S0. */
 	int prev_sleep_state = ACPI_S0;
@@ -112,12 +108,14 @@ void mainboard_romstage_entry(void)
 
 	printk(BIOS_DEBUG, "prev_sleep_state = S%d\n", prev_sleep_state);
 
-	elog_boot_notify(prev_sleep_state == ACPI_S3);
+	int s3resume = prev_sleep_state == ACPI_S3;
+
+	elog_boot_notify(s3resume);
 
 	/* Initialize RAM */
 	raminit(&mp, prev_sleep_state);
 
 	timestamp_add_now(TS_AFTER_INITRAM);
 
-	romstage_handoff_init(prev_sleep_state == ACPI_S3);
+	romstage_handoff_init(s3resume);
 }

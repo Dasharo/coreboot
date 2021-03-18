@@ -26,9 +26,12 @@ static struct acpi_dp *gpio_keys_add_child_node(
 				    key->linux_input_type);
 	if (key->label)
 		acpi_dp_add_string(dsd, "label", key->label);
-	if (key->wake) {
+
+	if (key->wakeup_route == WAKEUP_ROUTE_SCI)
+		acpigen_write_PRW(key->wake_gpe, 3);
+
+	if (key->wakeup_route != WAKEUP_ROUTE_DISABLED) {
 		acpi_dp_add_integer(dsd, "wakeup-source", 1);
-		acpigen_write_PRW(key->wake, 3);
 		acpi_dp_add_integer(dsd, "wakeup-event-action",
 					key->wakeup_event_action);
 	}
@@ -40,7 +43,7 @@ static struct acpi_dp *gpio_keys_add_child_node(
 		acpi_dp_add_integer(dsd, "debounce-interval",
 				    key->debounce_interval);
 	acpi_dp_add_gpio(dsd, "gpios", parent_path, 0, 0,
-			 config->gpio.polarity);
+			 config->gpio.active_low);
 
 	return dsd;
 }
@@ -54,7 +57,7 @@ static void gpio_keys_fill_ssdt_generator(const struct device *dev)
 	const char *drv_string = config->is_polled ? "gpio-keys-polled"
 				: "gpio-keys";
 
-	if (!dev->enabled || !scope || !path || !config->gpio.pin_count)
+	if (!scope || !path || !config->gpio.pin_count)
 		return;
 
 	/* Device */

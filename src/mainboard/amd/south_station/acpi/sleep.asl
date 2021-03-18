@@ -26,40 +26,24 @@ Method(\_PTS, 1) {
 	/* DBGO("\n") */
 
 	/* Don't allow PCIRST# to reset USB */
-	if (LEqual(Arg0,3)){
-		Store(0,URRE)
+	if (Arg0 == 3){
+		URRE = 0
 	}
 
 	/* Clear sleep SMI status flag and enable sleep SMI trap. */
-	/*Store(One, CSSM)
-	Store(One, SSEN)*/
+	/*CSSM = 1
+	SSEN = 1*/
 
 	/* On older chips, clear PciExpWakeDisEn */
-	/*if (LLessEqual(\_SB.SBRI, 0x13)) {
-	*	Store(0,\_SB.PWDE)
+	/*if (\_SB.SBRI <= 0x13) {
+	*	\_SB.PWDE = 0
 	*}
 	*/
 
 	/* Clear wake status structure. */
-	Store(0, Index(WKST,0))
-	Store(0, Index(WKST,1))
+	WKST [0] = 0
+	WKST [1] = 0
 } /* End Method(\_PTS) */
-
-/*
-*	\_BFS OEM Back From Sleep method
-*
-*	Entry:
-*		Arg0=The value of the sleeping state S1=1, S2=2
-*
-*	Exit:
-*		-none-
-*/
-Method(\_BFS, 1) {
-	/* DBGO("\\_BFS\n") */
-	/* DBGO("From S") */
-	/* DBGO(Arg0) */
-	/* DBGO(" to S0\n") */
-}
 
 /*
 *  \_WAK System Wake method
@@ -83,21 +67,21 @@ Method(\_WAK, 1) {
 	/* DBGO(" to S0\n") */
 
 	/* Re-enable HPET */
-	Store(1,HPDE)
+	HPDE = 1
 
 	/* Restore PCIRST# so it resets USB */
-	if (LEqual(Arg0,3)){
-		Store(1,URRE)
+	if (Arg0 == 3){
+		URRE = 1
 	}
 
 	/* Arbitrarily clear PciExpWakeStatus */
-	Store(PWST, Local1)
-	Store(Local1, PWST)
+	Local1 = PWST
+	PWST = Local1
 
-	/* if (DeRefOf(Index(WKST,0))) {
-	*	Store(0, Index(WKST,1))
+	/* if (DeRefOf(WKST [0])) {
+	*	WKST [1] = 0
 	* } else {
-	*	Store(Arg0, Index(WKST,1))
+	*	WKST [1] = Arg0
 	* }
 	*/
 	Return(WKST)

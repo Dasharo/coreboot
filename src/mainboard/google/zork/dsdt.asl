@@ -6,21 +6,18 @@
 #include <acpi/acpi.h>
 
 DefinitionBlock (
-	"DSDT.AML",	/* Output filename */
-	"DSDT",		/* Signature */
-	0x02,		/* DSDT Revision, needs to be 2 for 64bit */
+	"dsdt.aml",
+	"DSDT",
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x00010001	/* OEM Revision */
 	)
 {	/* Start of ASL file */
-	/* #include <arch/x86/acpi/debug.asl> */	/* as needed */
+	#include <acpi/dsdt_top.asl>
 
 	/* global NVS and variables */
 	#include <globalnvs.asl>
-
-	/* Globals for the platform */
-	#include <variant/acpi/mainboard.asl>
 
 	/* PCI IRQ mapping for the Southbridge */
 	#include <pcie.asl>
@@ -31,11 +28,8 @@ DefinitionBlock (
 	/* Contains the supported sleep states for this chipset */
 	#include <sleepstates.asl>
 
-	/* Contains the Sleep methods (WAK, PTS, GTS, etc.) */
-	#include <variant/acpi/sleep.asl>
-
 	/* Contains _SWS methods */
-	#include <acpi_wake_source.asl>
+	#include <soc/amd/common/acpi/acpi_wake_source.asl>
 
 	/* System Bus */
 	Scope(\_SB) { /* Start \_SB scope */
@@ -50,9 +44,6 @@ DefinitionBlock (
 	/* Thermal handler */
 	#include <variant/acpi/thermal.asl>
 
-	/* Chrome OS specific */
-	#include <vendorcode/google/chromeos/acpi/chromeos.asl>
-
 	/* Chrome OS Embedded Controller */
 	Scope (\_SB.PCI0.LPCB)
 	{
@@ -60,8 +51,6 @@ DefinitionBlock (
 		#include <ec/google/chromeec/acpi/superio.asl>
 		/* ACPI code for EC functions */
 		#include <ec/google/chromeec/acpi/ec.asl>
-		/* ACPI code for EC I2C Audio Tunnel */
-		#include <variant/acpi/audio.asl>
 	}
 }
 /* End of ASL file */

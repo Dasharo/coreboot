@@ -3,7 +3,6 @@
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <soc/sata.h>
-#include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -14,7 +13,6 @@ typedef struct soc_intel_braswell_config config_t;
 
 static void sata_init(struct device *dev)
 {
-	printk(BIOS_SPEW, "%s/%s (%s)\n", __FILE__, __func__, dev_name(dev));
 }
 
 static void sata_enable(struct device *dev)

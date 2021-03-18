@@ -3,14 +3,8 @@
 #ifndef GPIO_FTNS_H
 #define GPIO_FTNS_H
 
-void configure_gpio(u32 gpio, u8 iomux_ftn,  u32 setting);
-u8 read_gpio(u32 gpio);
-void write_gpio(u32 gpio, u8 value);
 int get_spd_offset(void);
 
-#define ACPIMMIO_GPIO0_BASE		0xfed81500
-#define ACPIMMIO_GPIO1_BASE		0xfed81600
-#define ACPIMMIO_GPIO2_BASE		0xfed81700
 //
 // Based on PC Engines APU2C and APU3A schematics
 // http://www.pcengines.ch/schema/apu2c.pdf
@@ -30,11 +24,5 @@ int get_spd_offset(void);
 #define GPIO_66   0x5B    // SPKR
 #define GPIO_68   0x48    // PE4_WDIS (SIMSWAP1 on APU5)
 #define GPIO_71   0x4D    // PROCHOT
-
-#define GPIO_OUTPUT_ENABLE      BIT23
-#define GPIO_OUTPUT_VALUE       BIT22
-#define GPIO_PULL_DOWN_ENABLE   BIT21
-#define GPIO_PULL_UP_ENABLE     BIT20
-#define GPIO_PIN_STS            BIT16
 
 #endif /* GPIO_FTNS_H */

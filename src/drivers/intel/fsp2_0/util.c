@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
+#include <boot/coreboot_tables.h>
 #include <device/mmio.h>
 #include <cbfs.h>
 #include <cf9_reset.h>
@@ -7,7 +8,6 @@
 #include <commonlib/fsp.h>
 #include <console/console.h>
 #include <fsp/util.h>
-#include <lib.h>
 #include <string.h>
 #include <types.h>
 
@@ -84,6 +84,9 @@ enum cb_err fsp_validate_component(struct fsp_header *hdr,
 		printk(BIOS_CRIT, "Component size bigger than cbfs file.\n");
 		return CB_ERR;
 	}
+
+	if (ENV_ROMSTAGE)
+		soc_validate_fsp_version(hdr);
 
 	return CB_SUCCESS;
 }
@@ -207,4 +210,50 @@ enum cb_err fsp_load_component(struct fsp_load_descriptor *fspld, struct fsp_hea
 	prog_segment_loaded(hdr->image_base, hdr->image_size, SEG_FINAL);
 
 	return CB_SUCCESS;
+}
+
+/* Only call this function when FSP header has been read and validated */
+void fsp_get_version(char *buf)
+{
+	struct fsp_header *hdr = &fsps_hdr;
+	union fsp_revision revision;
+
+	revision.val = hdr->fsp_revision;
+	snprintf(buf, FSP_VER_LEN, "%u.%u-%u.%u.%u.%u", (hdr->spec_version >> 4),
+		hdr->spec_version & 0xf, revision.rev.major,
+		revision.rev.minor, revision.rev.revision, revision.rev.bld_num);
+}
+
+/* Check if the signature in the UPD header matches the expected one. If it doesn't match, the
+   FSP binaries in CBFS are for a different platform than the platform code trying to use it
+   in which case the function calls die(). */
+void fsp_verify_upd_header_signature(uint64_t upd_signature, uint64_t expected_signature)
+{
+	if (upd_signature != expected_signature) {
+		/* The UPD signatures are non-zero-terminated ASCII stored as a little endian
+		   uint64_t, so this needs some casts. */
+		die_with_post_code(POST_INVALID_VENDOR_BINARY,
+			"Invalid UPD signature! FSP provided \"%8s\", expected was \"%8s\".\n",
+			(char *)&upd_signature,
+			(char *)&expected_signature);
+	}
+}
+
+/* Add FSP version to coreboot table LB_TAG_PLATFORM_BLOB_VERSION */
+void lb_string_platform_blob_version(struct lb_header *header)
+{
+	struct lb_string *rec;
+	size_t len;
+	char fsp_version[FSP_VER_LEN] = {0};
+
+	fsp_get_version(fsp_version);
+	rec = (struct lb_string *)lb_new_record(header);
+	rec->tag = LB_TAG_PLATFORM_BLOB_VERSION;
+	len = strlen(fsp_version);
+	rec->size = ALIGN_UP(sizeof(*rec) + len + 1, 8);
+	memcpy(rec->string, fsp_version, len+1);
+}
+
+__weak void soc_validate_fsp_version(const struct fsp_header *hdr)
+{
 }

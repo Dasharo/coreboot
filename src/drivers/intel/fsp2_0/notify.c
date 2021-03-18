@@ -5,6 +5,7 @@
 #include <cpu/x86/mtrr.h>
 #include <fsp/util.h>
 #include <timestamp.h>
+#include <mode_switch.h>
 
 static void fsp_notify(enum fsp_notify_phase phase)
 {
@@ -15,7 +16,7 @@ static void fsp_notify(enum fsp_notify_phase phase)
 	if (!fsps_hdr.notify_phase_entry_offset)
 		die("Notify_phase_entry_offset is zero!\n");
 
-	fspnotify = (void *) (fsps_hdr.image_base +
+	fspnotify = (void *) (uintptr_t)(fsps_hdr.image_base +
 			    fsps_hdr.notify_phase_entry_offset);
 	fsp_before_debug_notify(fspnotify, &notify_params);
 
@@ -30,7 +31,10 @@ static void fsp_notify(enum fsp_notify_phase phase)
 		post_code(POST_FSP_NOTIFY_BEFORE_END_OF_FIRMWARE);
 	}
 
-	ret = fspnotify(&notify_params);
+	if (ENV_X86_64 && CONFIG(PLATFORM_USES_FSP2_X86_32))
+		ret = protected_mode_call_1arg(fspnotify, (uintptr_t)&notify_params);
+	else
+		ret = fspnotify(&notify_params);
 
 	if (phase == AFTER_PCI_ENUM) {
 		timestamp_add_now(TS_FSP_AFTER_ENUMERATE);
@@ -57,7 +61,7 @@ static void fsp_notify(enum fsp_notify_phase phase)
 
 static void fsp_notify_dummy(void *arg)
 {
-	enum fsp_notify_phase phase = (uint32_t)arg;
+	enum fsp_notify_phase phase = (uint32_t)(uintptr_t)arg;
 
 	display_mtrrs();
 

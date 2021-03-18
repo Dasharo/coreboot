@@ -236,6 +236,9 @@ const struct pad_config * __weak variant_gpio_table(size_t *num)
 static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_NF_IOSTANDBY_IGNORE(GPIO_177, UP_20K, DEEP, NF1), /* SMB_CLK */
 	PAD_CFG_NF_IOSTANDBY_IGNORE(GPIO_178, UP_20K, DEEP, NF1), /* SMB_DATA */
+	PAD_NC(GPIO_154, NONE), /* LPC_CLKRUNB -- NC for eSPI */
+	PAD_CFG_NF_IOSSTATE_IOSTERM(GPIO_64, UP_20K, DEEP, NF1, HIZCRx1, DISPUPD),/* LPSS_UART2_RXD */
+	PAD_CFG_NF_IOSSTATE_IOSTERM(GPIO_65, UP_20K, DEEP, NF1, TxLASTRxE, DISPUPD),/* LPSS_UART2_TXD */
 };
 
 const struct pad_config * __weak
@@ -247,10 +250,6 @@ variant_early_gpio_table(size_t *num)
 
 /* GPIO settings before entering sleep. */
 static const struct pad_config sleep_gpio_table[] = {
-#if 0
-	PAD_CFG_GPO(GPIO_150, 0, DEEP),		/* NFC_RESET_ODL */
-	PAD_CFG_GPI_APIC_LOW(GPIO_20, NONE, DEEP),	/* NFC_INT_L */
-#endif
 };
 
 const struct pad_config * __weak
@@ -261,10 +260,6 @@ variant_sleep_gpio_table(size_t *num)
 }
 
 static const struct cros_gpio cros_gpios[] = {
-#if 0
-	CROS_GPIO_REC_AL(CROS_GPIO_VIRTUAL, CROS_GPIO_DEVICE_NAME),
-	CROS_GPIO_WP_AH(CROS_GPIO_VIRTUAL, CROS_GPIO_DEVICE_NAME),
-#endif
 };
 
 const struct cros_gpio * __weak variant_cros_gpios(size_t *num)

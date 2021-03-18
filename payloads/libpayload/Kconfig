@@ -79,6 +79,14 @@ config COMPILER_LLVM_CLANG
 
 endchoice
 
+config LTO
+	bool "Use link time optimization (LTO)"
+	default n
+	depends on COMPILER_GCC
+	help
+	  Compile with link time optimization. This can often decrease the
+	  final binary size, but may increase compilation time.
+
 config REMOTEGDB
 	bool "Remote GDB stub"
 	default n
@@ -334,6 +342,19 @@ config FONT_SCALE_FACTOR
 	  By default (value of 0), the scale factor is automatically
 	  calculated to ensure at least 130 columns (when possible).
 
+config CBGFX_FAST_RESAMPLE
+	bool "CBGFX: use faster (less pretty) image scaling"
+	default n
+	help
+	  When payloads use the CBGFX library to draw .BMPs on the screen,
+	  they will be resampled with an anti-aliasing filter to scale to the
+	  requested output size. The default implementation should normally be
+	  fast enough, but if desired this option can make it about 50-100%
+	  faster at the cost of quality. (It changes the 'a' parameter in the
+	  Lanczos resampling algorithm from 3 to 2.)
+
+	  Only affects .BMPs that aren't already provided at the right size.
+
 config PC_I8042
 	bool "A common PC i8042 driver"
 	default y if PC_KEYBOARD || PC_MOUSE
@@ -352,10 +373,6 @@ config PC_MOUSE
 config PC_KEYBOARD
 	bool "Allow input from a PC keyboard"
 	default y if ARCH_X86 # uses IO
-	default n
-
-config PC_KEYBOARD_AT_TRANSLATED
-	bool "AT Translation keyboard device"
 	default n
 
 config PC_KEYBOARD_LAYOUT_US

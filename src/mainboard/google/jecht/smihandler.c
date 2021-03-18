@@ -5,7 +5,7 @@
 #include <cpu/x86/smm.h>
 #include <soc/pm.h>
 #include <ec/google/chromeec/ec.h>
-#include <soc/gpio.h>
+#include <southbridge/intel/lynxpoint/lp_gpio.h>
 #include <soc/iomap.h>
 #include <soc/nvs.h>
 #include "onboard.h"
@@ -15,7 +15,7 @@ int mainboard_io_trap_handler(int smif)
 	switch (smif) {
 	case 0x99:
 		printk(BIOS_DEBUG, "Sample\n");
-		smm_get_gnvs()->smif = 0;
+		gnvs->smif = 0;
 		break;
 	default:
 		return 0;

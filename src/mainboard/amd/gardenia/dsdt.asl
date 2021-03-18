@@ -5,21 +5,18 @@
 /* DefinitionBlock Statement */
 #include <acpi/acpi.h>
 DefinitionBlock (
-	"DSDT.AML",	/* Output filename */
-	"DSDT",		/* Signature */
-	0x02,		/* DSDT Revision, needs to be 2 for 64bit */
+	"dsdt.aml",
+	"DSDT",
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x00010001	/* OEM Revision */
 	)
 {	/* Start of ASL file */
-	/* #include <arch/x86/acpi/debug.asl> */	/* as needed */
+	#include <acpi/dsdt_top.asl>
 
 	/* global NVS and variables */
 	#include <globalnvs.asl>
-
-	/* Globals for the platform */
-	#include "acpi/mainboard.asl"
 
 	/* Describe the USB Overcurrent pins */
 	#include "acpi/usb_oc.asl"

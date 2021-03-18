@@ -8,6 +8,7 @@ src := src
 srck := $(top)/util/kconfig
 obj ?= build
 override obj := $(subst $(top)/,,$(abspath $(obj)))
+xcompile ?= $(obj)/xcompile
 objutil ?= $(obj)/util
 objk := $(objutil)/kconfig
 absobj := $(abspath $(obj))
@@ -61,8 +62,6 @@ endif
 # Disable implicit/built-in rules to make Makefile errors fail fast.
 .SUFFIXES:
 
-HOSTCC := $(if $(shell type gcc 2>/dev/null),gcc,cc)
-HOSTCXX = g++
 HOSTCFLAGS := -g
 HOSTCXXFLAGS := -g
 
@@ -83,6 +82,8 @@ help_coreboot help::
 	@echo  '  distclean             - Remove build artifacts and config files'
 	@echo  '  doxygen               - Build doxygen documentation for coreboot'
 	@echo  '  doxyplatform          - Build doxygen documentation for the current platform'
+	@echo  '  sphinx                - Build sphinx documentation for coreboot'
+	@echo  '  sphinx-lint           - Build sphinx documenttion for coreboot with warnings as errors'
 	@echo  '  filelist              - Show files used in current build'
 	@echo  '  printall              - print makefile info for debugging'
 	@echo  '  gitconfig             - set up git to submit patches to coreboot'
@@ -119,13 +120,18 @@ UNIT_TEST:=1
 NOCOMPILE:=
 endif
 
-.xcompile: util/xcompile/xcompile
+$(xcompile): util/xcompile/xcompile
 	rm -f $@
 	$< $(XGCCPATH) > $@.tmp
 	\mv -f $@.tmp $@ 2> /dev/null
 	rm -f $@.tmp
 
 ifeq ($(NOCOMPILE),1)
+# We also don't use .xcompile in the no-compile situations, so
+# provide some reasonable defaults.
+HOSTCC ?= $(if $(shell type gcc 2>/dev/null),gcc,cc)
+HOSTCXX ?= g++
+
 include $(TOPLEVEL)/Makefile.inc
 include $(TOPLEVEL)/payloads/Makefile.inc
 include $(TOPLEVEL)/util/testing/Makefile.inc
@@ -141,15 +147,17 @@ ifneq ($(UNIT_TEST),1)
 include $(DOTCONFIG)
 endif
 
-# in addition to the dependency below, create the file if it doesn't exist
-# to silence stupid warnings about a file that would be generated anyway.
-$(if $(wildcard .xcompile)$(NOCOMPILE),,$(eval $(shell util/xcompile/xcompile $(XGCCPATH) > .xcompile || rm -f .xcompile)))
+# The toolchain requires xcompile to determine the ARCH_SUPPORTED, so we can't
+# wait for make to generate the file.
+$(if $(wildcard $(xcompile)),, $(shell \
+	mkdir -p $(dir $(xcompile)) && \
+	util/xcompile/xcompile $(XGCCPATH) > $(xcompile) || rm -f $(xcompile)))
 
--include .xcompile
+include $(xcompile)
 
 ifneq ($(XCOMPILE_COMPLETE),1)
-$(shell rm -f .xcompile)
-$(error .xcompile deleted because it's invalid. \
+$(shell rm -f $(xcompile))
+$(error $(xcompile) deleted because it's invalid. \
 	Restarting the build should fix that, or explain the problem)
 endif
 
@@ -419,6 +427,12 @@ cscope-project: clean-cscope $(obj)/project_filelist.txt
 cscope:
 	cscope -bR
 
+sphinx:
+	$(MAKE) -C Documentation -f Makefile.sphinx html
+
+sphinx-lint:
+	$(MAKE) SPHINXOPTS=-W -C Documentation -f Makefile.sphinx html
+
 doxy: doxygen
 doxygen:
 	$(DOXYGEN) Documentation/Doxyfile.coreboot
@@ -429,10 +443,10 @@ doxygen_simple:
 doxyplatform doxygen_platform: $(obj)/project_filelist.txt
 	echo
 	echo "Building doxygen documentation for $(CONFIG_MAINBOARD_PART_NUMBER)"
-	export DOXYGEN_OUTPUT_DIR="$(DOXYGEN_OUTPUT_DIR)/$(CONFIG_MAINBOARD_VENDOR)/$(CONFIG_MAINBOARD_PART_NUMBER)"; \
+	export DOXYGEN_OUTPUT_DIR="$$( echo $(DOXYGEN_OUTPUT_DIR)/$(call strip_quotes, $(CONFIG_MAINBOARD_VENDOR))_$(call strip_quotes, $(CONFIG_MAINBOARD_PART_NUMBER)) | sed 's|[^A-Za-z0-9/]|_|g' )"; \
 	mkdir -p "$$DOXYGEN_OUTPUT_DIR"; \
 	export DOXYFILES="$$(cat $(obj)/project_filelist.txt | grep -v '\.ld$$' | sed 's/\.aml/\.dsl/' | tr '\n' ' ')"; \
-	export DOXYGEN_PLATFORM="$(CONFIG_MAINBOARD_DIR) ($(CONFIG_MAINBOARD_PART_NUMBER)) version $(KERNELVERSION)"; \
+	export DOXYGEN_PLATFORM="$(call strip_quotes, $(CONFIG_MAINBOARD_DIR)) \($(call strip_quotes, $(CONFIG_MAINBOARD_PART_NUMBER))\) version $(KERNELVERSION)"; \
 	$(DOXYGEN) Documentation/doxygen/Doxyfile.coreboot_platform
 
 doxyclean: doxygen-clean
@@ -465,5 +479,5 @@ distclean: clean clean-ctags clean-cscope distclean-payloads distclean-utils
 	rm -rf coreboot-builds coreboot-builds-chromeos
 	rm -f abuild*.xml junit.xml* util/lint/junit.xml
 
-.PHONY: $(PHONY) clean clean-for-update clean-cscope cscope distclean doxygen doxy doxygen_simple
+.PHONY: $(PHONY) clean clean-for-update clean-cscope cscope distclean doxygen doxy doxygen_simple sphinx sphinx-lint
 .PHONY: ctags-project cscope-project clean-ctags

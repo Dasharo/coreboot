@@ -4,12 +4,13 @@
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
-	0x02,		// DSDT revision: ACPI v2.0 and up
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x20110725	// OEM revision
 )
 {
+	#include <acpi/dsdt_top.asl>
 	#include <southbridge/intel/common/acpi/platform.asl>
 
 	#include "acpi/platform.asl"
@@ -33,8 +34,6 @@ DefinitionBlock(
 	}
 
 	#include "acpi/mainboard.asl"
-
-	#include <vendorcode/google/chromeos/acpi/chromeos.asl>
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }

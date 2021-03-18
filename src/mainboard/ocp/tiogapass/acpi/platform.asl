@@ -329,23 +329,9 @@ Field (PSYS, ByteAcc, NoLock, Preserve)
 /* SMI I/O Trap */
 Method (TRAP, 1, Serialized)
 {
-	Store (Arg0, SMIF)	// SMI Function
-	Store (0, TRP0)		// Generate trap
-	Return (SMIF)		// Return value of SMI handler
-}
-
-/*
- * The _PIC method is called by the OS to choose between interrupt
- * routing via the i8259 interrupt controller or the APIC.
- *
- * _PIC is called with a parameter of 0 for i8259 configuration and
- * with a parameter of 1 for Local Apic/IOAPIC configuration.
- */
-
-Method (_PIC, 1)
-{
-	/* Remember the OS' IRQ routing choice. */
-	Store (Arg0, PICM)
+	SMIF = Arg0	// SMI Function
+	TRP0 = 0	// Generate trap
+	Return (SMIF)	// Return value of SMI handler
 }
 
 /*

@@ -197,14 +197,13 @@ static void mainboard_enable(struct device *dev)
 }
 
 struct chip_operations mainboard_ops = {
-	.name   = "smaug",
 	.enable_dev = mainboard_enable,
 };
 
 void lb_board(struct lb_header *header)
 {
-#if CONFIG(CHROMEOS)
-	lb_table_add_serialno_from_vpd(header);
-#endif
+	if (CONFIG(CHROMEOS))
+		lb_table_add_serialno_from_vpd(header);
+
 	soc_add_mtc(header);
 }

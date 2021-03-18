@@ -100,7 +100,7 @@ static void aseg_smm_relocate(void)
 
 	/* raise an SMI interrupt */
 	printk(BIOS_SPEW, "  ... raise SMI#\n");
-	outb(0x00, 0xb2);
+	apm_control(APM_CNT_NOOP_SMI);
 }
 
 static int smm_handler_copied = 0;
@@ -113,7 +113,6 @@ static void aseg_smm_install(void)
 	if (smm_handler_copied)
 		return;
 	smm_handler_copied = 1;
-
 
 	/* if we're resuming from S3, the SMM code is already in place,
 	 * so don't copy it again to keep the current SMM state */

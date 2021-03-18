@@ -4,6 +4,7 @@
 
 #include <device/resource.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 /* A memranges structure consists of a list of range_entry(s). The structure
  * is exposed so that a memranges can be used on the stack if needed. */
@@ -51,7 +52,7 @@ static inline resource_t range_entry_end(const struct range_entry *r)
 	return r->end + 1;
 }
 
-/* Return size of of memory range. */
+/* Return size of memory range. */
 static inline resource_t range_entry_size(const struct range_entry *r)
 {
 	return r->end - r->begin + 1;
@@ -80,7 +81,6 @@ static inline bool memranges_is_empty(const struct memranges *ranges)
  * ranges - memranges pointer */
 #define memranges_each_entry(r, ranges) \
 	for (r = (ranges)->entries; r != NULL; r = r->next)
-
 
 /* Initialize memranges structure providing an optional array of range_entry
  * to use as the free list. Additionally, it accepts an align parameter that

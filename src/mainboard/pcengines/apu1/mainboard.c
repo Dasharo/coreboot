@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/acpimmio.h>
-#include <AGESA.h>
-#include <AMD.h>
+
 #include <console/console.h>
 #include <device/device.h>
 #include <device/mmio.h>
@@ -11,12 +10,14 @@
 #include <southbridge/amd/common/amd_pci_util.h>
 #include <smbios.h>
 #include <string.h>
-#include <southbridge/amd/cimx/sb800/SBPLATFORM.h>
 #include <southbridge/amd/cimx/sb800/pci_devs.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
 #include <northbridge/amd/agesa/family14/pci_devs.h>
 #include <superio/nuvoton/nct5104d/nct5104d.h>
 #include "gpio_ftns.h"
+#include <AGESA.h>
+#include <AMD.h>
+#include <southbridge/amd/cimx/sb800/SBPLATFORM.h>
 
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
@@ -110,7 +111,7 @@ static const struct pirq_struct mainboard_pirq_data[] = {
 static void pirq_setup(void)
 {
 	pirq_data_ptr = mainboard_pirq_data;
-	pirq_data_size = sizeof(mainboard_pirq_data) / sizeof(struct pirq_struct);
+	pirq_data_size = ARRAY_SIZE(mainboard_pirq_data);
 	intr_data_ptr = mainboard_intr_data;
 	picr_data_ptr = mainboard_picr_data;
 }
@@ -253,6 +254,7 @@ static int mainboard_smbios_data(struct device *dev, int *handle,
 
 static void mainboard_enable(struct device *dev)
 {
+	/* Maintain this text unchanged for manufacture process. */
 	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
 
 	config_gpio_mux();
@@ -300,8 +302,8 @@ const char *smbios_mainboard_serial_number(void)
 		return serial;
 
 	/* Read in the last 3 bytes of NIC's MAC address. */
-	bar18 = pci_read_config32(dev, 0x18);
-	bar18 &= 0xFFFFFC00;
+	bar18 = pci_read_config32(dev, PCI_BASE_ADDRESS_2);
+	bar18 &= 0xFFFFFFF0;
 	for (i = 3; i < 6; i++) {
 		mac_addr <<= 8;
 		mac_addr |= read8((u8 *)bar18 + i);
@@ -362,6 +364,7 @@ const char *smbios_system_sku(void)
 
 static void mainboard_final(void *chip_info)
 {
+	/* Maintain this text unchanged for manufacture process. */
 	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Final.\n");
 
 	/*

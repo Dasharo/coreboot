@@ -1,0 +1,36 @@
+chip soc/intel/skylake
+	
+	# Enable RP 9 CLKREQ# suport
+	register "PcieRpClkReqSupport[8]" = "1"
+	# RP 9 uses CLKREQ0#
+	register "PcieRpClkReqNumber[8]" = "0"
+	
+	register "usb2_ports[6]" = "USB2_PORT_SHORT(OC_SKIP)	# TYPE-A Port
+	register "usb2_ports[9]" = "USB2_PORT_EMPTY"		# Disabled
+	device domain 0 on				
+		device pci 1f.0 on 
+			chip superio/ite/it8772f
+				register "peci_tmpin" = "3"
+				register "tmpin1_mode" = "THERMAL_RESISTOR"
+				register "tmpin2_mode" = "THERMAL_RESISTOR"
+				# FAN2 available on fan header but unused
+				device pnp 2e.0 off end # FDC
+				device pnp 2e.1 on # Serial Port 1
+					io 0x60 = 0x3f8
+					irq 0x70 = 4
+				end
+				device pnp 2e.4 on # Enviroment Controller
+					io 0x60 = 0xa40
+					io 0x62 = 0xa30
+					irq 0x70 = 9
+				end
+				device pnp 2e.5 off end # Keyboard
+				device pnp 2e.6 off end # Mouse
+				device pnp 2e.7 off end # GPIO
+				device pnp 2e.a off end # IR
+			end
+		end # LPC Interface
+
+	end
+
+end

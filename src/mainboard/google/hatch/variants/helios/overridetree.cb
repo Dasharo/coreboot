@@ -36,7 +36,7 @@ chip soc/intel/cannonlake
 			.speed = I2C_SPEED_FAST,
 			.rise_time_ns = 50,
 			.fall_time_ns = 15,
-		        .data_hold_time_ns = 330,
+			.data_hold_time_ns = 330,
 		},
 		.i2c[1] = {
 			.speed = I2C_SPEED_FAST,
@@ -60,6 +60,9 @@ chip soc/intel/cannonlake
 	}"
 
 	device domain 0 on
+		device pci 02.0 on	# Integrated Graphics Device
+			register "gfx" = "GMA_DEFAULT_PANEL(0)"
+		end
 		device pci 14.0 on
 			chip drivers/usb/acpi
 				device usb 0.0 on
@@ -122,7 +125,8 @@ chip soc/intel/cannonlake
 			chip drivers/generic/gpio_keys
 				register "name" = ""PENH""
 				register "gpio" = "ACPI_GPIO_IRQ_EDGE_BOTH(GPP_A8)"
-				register "key.wake" = "GPE0_DW0_08"
+				register "key.wake_gpe" = "GPE0_DW0_08"
+				register "key.wakeup_route" = "WAKEUP_ROUTE_SCI"
 				register "key.wakeup_event_action" = "EV_ACT_ASSERTED"
 				register "key.dev_name" = ""EJCT""
 				register "key.linux_code" = "SW_PEN_INSERTED"

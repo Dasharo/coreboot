@@ -217,7 +217,6 @@ struct cpu_device_id {
 struct cpu_driver {
 	struct device_operations *ops;
 	const struct cpu_device_id *id_table;
-	struct acpi_cstate *cstates;
 };
 
 struct cpu_driver *find_cpu_driver(struct device *cpu);
@@ -269,6 +268,12 @@ static inline void get_fms(struct cpuinfo_x86 *c, uint32_t tfms)
 
 }
 
+/* REP NOP (PAUSE) is a good thing to insert into busy-wait loops. */
+static __always_inline void cpu_relax(void)
+{
+	__asm__ __volatile__("rep;nop" : : : "memory");
+}
+
 #define asmlinkage __attribute__((regparm(0)))
 
 /*
@@ -300,7 +305,7 @@ uint32_t cpu_get_feature_flags_edx(void);
  * function will always getting called from coreboot context
  * (ESP stack pointer will always refer to coreboot).
  *
- * But with FSP_USES_MP_SERVICES_PPI implementation in coreboot this
+ * But with MP_SERVICES_PPI implementation in coreboot this
  * assumption might not be true, where FSP context (stack pointer refers
  * to FSP) will request to get cpu_index().
  *

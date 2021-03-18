@@ -14,12 +14,12 @@ static void haswell_setup_bars(void)
 {
 	printk(BIOS_DEBUG, "Setting up static northbridge registers...");
 	/* Set up all hardcoded northbridge BARs */
-	pci_write_config32(HOST_BRIDGE, EPBAR,  DEFAULT_EPBAR  | 1);
-	pci_write_config32(HOST_BRIDGE, EPBAR  + 4, (0LL + DEFAULT_EPBAR)  >> 32);
-	pci_write_config32(HOST_BRIDGE, MCHBAR, DEFAULT_MCHBAR | 1);
-	pci_write_config32(HOST_BRIDGE, MCHBAR + 4, (0LL + DEFAULT_MCHBAR) >> 32);
-	pci_write_config32(HOST_BRIDGE, DMIBAR, DEFAULT_DMIBAR | 1);
-	pci_write_config32(HOST_BRIDGE, DMIBAR + 4, (0LL + DEFAULT_DMIBAR) >> 32);
+	pci_write_config32(HOST_BRIDGE, EPBAR,  CONFIG_FIXED_EPBAR_MMIO_BASE  | 1);
+	pci_write_config32(HOST_BRIDGE, EPBAR  + 4, 0);
+	pci_write_config32(HOST_BRIDGE, MCHBAR, CONFIG_FIXED_MCHBAR_MMIO_BASE | 1);
+	pci_write_config32(HOST_BRIDGE, MCHBAR + 4, 0);
+	pci_write_config32(HOST_BRIDGE, DMIBAR, CONFIG_FIXED_DMIBAR_MMIO_BASE | 1);
+	pci_write_config32(HOST_BRIDGE, DMIBAR + 4, 0);
 
 	/* Set C0000-FFFFF to access RAM on both reads and writes */
 	pci_write_config8(HOST_BRIDGE, PAM0, 0x30);
@@ -84,13 +84,24 @@ static void start_peg2_link_training(const pci_devfn_t dev)
 	printk(BIOS_DEBUG, "Started PEG1%d link training.\n", PCI_FUNC(PCI_DEV2DEVFN(dev)));
 
 	/*
-	 * Hide the PEG device while the MRC runs. This is because the MRC makes
-	 * configurations that are not ideal if it sees a VGA device in a PEG slot,
-	 * and it locks registers preventing changes to these configurations.
+	 * The MRC will perform PCI enumeration, and if it detects a VGA
+	 * device in a PEG slot, it will disable the IGD and not reserve
+	 * any memory for it. Since the memory map is locked by the time
+	 * MRC finishes, the IGD can't be enabled afterwards. Wonderful.
+	 *
+	 * If one really wants to enable the Intel iGPU as primary, hide
+	 * all PEG devices during MRC execution. This will trick the MRC
+	 * into thinking there aren't any, and will enable the IGD. Note
+	 * that PEG AFE settings will not be programmed, which may cause
+	 * stability problems at higher PCIe link speeds. The most ideal
+	 * way to fix this problem for good is to implement native init.
 	 */
-	pci_update_config32(HOST_BRIDGE, DEVEN, ~mask, 0);
-	peg_hidden[PCI_FUNC(PCI_DEV2DEVFN(dev))] = true;
-	printk(BIOS_DEBUG, "Temporarily hiding PEG1%d.\n", PCI_FUNC(PCI_DEV2DEVFN(dev)));
+	if (CONFIG(HASWELL_HIDE_PEG_FROM_MRC)) {
+		pci_update_config32(HOST_BRIDGE, DEVEN, ~mask, 0);
+		peg_hidden[PCI_FUNC(PCI_DEV2DEVFN(dev))] = true;
+		printk(BIOS_DEBUG, "Temporarily hiding PEG1%d.\n",
+		       PCI_FUNC(PCI_DEV2DEVFN(dev)));
+	}
 }
 
 void haswell_unhide_peg(void)
@@ -135,16 +146,6 @@ static void haswell_setup_misc(void)
 	reg32 = MCHBAR32(SAPMCTL);
 	MCHBAR32(SAPMCTL) = reg32 | 1;
 
-	/* GPU RC6 workaround for sighting 366252 */
-	reg32 = MCHBAR32(SSKPD + 4);
-	reg32 |= (1UL << 31);
-	MCHBAR32(SSKPD + 4) = reg32;
-
-	/* VLW (Virtual Legacy Wire?) */
-	reg32 = MCHBAR32(0x6120);
-	reg32 &= ~(1 << 0);
-	MCHBAR32(0x6120) = reg32;
-
 	reg32 = MCHBAR32(INTRDIRCTL);
 	reg32 |= (1 << 4) | (1 << 5);
 	MCHBAR32(INTRDIRCTL) = reg32;
@@ -176,7 +177,7 @@ static void haswell_setup_iommu(void)
 			reg32 | DMAR_LCKDN | GLBIOTLBINV | GLBCTXTINV);
 }
 
-void haswell_early_initialization(int chipset_type)
+void haswell_early_initialization(void)
 {
 	/* Setup all BARs required for early PCIe and raminit */
 	haswell_setup_bars();

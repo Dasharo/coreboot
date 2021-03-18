@@ -75,7 +75,8 @@ be more frequent than was needed, so we scaled it back to twice a year.
 - [ ] Test the release from the actual release tarballs.
 - [ ] Push signed Tag to repo.
 - [ ] Announce that the release tag is done on IRC.
-- [ ] Upload release files to web server
+- [ ] Upload release files to web server.
+- [ ] Also extract the release notes and place them on the web server.
 - [ ] Upload crossgcc sources to web server.
 - [ ] Update download page to point to files, push to repo.
 - [ ] Write and publish blog post with release notes.
@@ -176,8 +177,9 @@ commit db508565d2483394b709654c57533e55eebace51 (HEAD, tag: 4.6, origin/master, 
 ...
 ````
 
-When you used the script to generate the release, a tag was generated in the tree that was downloaded.
-From the coreboot-X.Y tree, just run: `git push -f origin <TAG (X.Y)>`
+When you used the script to generate the release, a signed tag was generated in the
+tree that was downloaded. From the coreboot-X.Y tree, just run: `git push origin X.Y`.
+In case you pushed the wrong tag already, you have to force push the new one.
 
 You will need write access for tags to the coreboot git repo to do this.
 
@@ -197,16 +199,16 @@ the coreboot server, and put them in the release directory at
 ````
 
 People can now see the release tarballs on the website at
-https://www.coreboot.org/releases/
+<https://www.coreboot.org/releases/>
 
-The downloads page is the official place to download the releases from, and it needs to be updated with links to the new release tarballs and .sig files. It can be found at https://review.coreboot.org/cgit/homepage.git/tree/downloads.html
+The downloads page is the official place to download the releases from, and it needs to be updated with links to the new release tarballs and .sig files. It can be found at <https://review.coreboot.org/cgit/homepage.git/tree/downloads.html>
 
-Here is an example commit to change it: https://review.coreboot.org/#/c/19515/
+Here is an example commit to change it: <https://review.coreboot.org/c/homepage/+/19515>
 
 ## Upload crossgcc sources
 Sometimes the source files for older revisions of
 crossgcc disappear. To deal with that we maintain a mirror at
-https://www.coreboot.org/releases/crossgcc-sources/ where we host the
+<https://www.coreboot.org/releases/crossgcc-sources/> where we host the
 sources used by the crossgcc scripts that are part of coreboot releases.
 
 Run
@@ -220,7 +222,7 @@ sources. Download them yourself and copy them into the crossgcc-sources
 directory on the server.
 
 ## After the release is complete
-Post the release notes on https://blogs.coreboot.org
+Post the release notes on <https://blogs.coreboot.org>
 
 ## Making a branch
 At times we will need to create a branch, generally for patch fixes.

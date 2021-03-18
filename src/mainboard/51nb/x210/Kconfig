@@ -28,10 +28,6 @@ config MAINBOARD_DIR
 	string
 	default "51nb/x210"
 
-config MAX_CPUS
-	int
-	default 8
-
 config VGA_BIOS_ID
 	string
 	default "8086,5917"
@@ -46,7 +42,7 @@ config DIMM_SPD_SIZE
 
 config FMDFILE
 	string
-	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd"
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
 
 config NO_POST
 	default y

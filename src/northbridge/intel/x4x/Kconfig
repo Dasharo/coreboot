@@ -5,13 +5,14 @@ config NORTHBRIDGE_INTEL_X4X
 
 if NORTHBRIDGE_INTEL_X4X
 
-config NORTHBRIDGE_SPECIFIC_OPTIONS # dummy
+config NORTHBRIDGE_SPECIFIC_OPTIONS
 	def_bool y
 	select HAVE_DEBUG_RAM_SETUP
 	select VGA
 	select INTEL_GMA_ACPI
 	select CACHE_MRC_SETTINGS
 	select PARALLEL_MP
+	select BOOT_DEVICE_SPI_FLASH_NO_EARLY_WRITES
 
 config CBFS_SIZE
 	hex
@@ -22,8 +23,11 @@ config VGA_BIOS_ID
 	default "8086,2e32"
 
 config MMCONF_BASE_ADDRESS
-	hex
 	default 0xe0000000
+
+config MMCONF_BUS_NUMBER
+	int
+	default 256
 
 config SMM_RESERVED_SIZE
 	hex
@@ -32,5 +36,14 @@ config SMM_RESERVED_SIZE
 config MAX_CPUS
 	int
 	default 4
+
+config FIXED_MCHBAR_MMIO_BASE
+	default 0xfed14000
+
+config FIXED_DMIBAR_MMIO_BASE
+	default 0xfed18000
+
+config FIXED_EPBAR_MMIO_BASE
+	default 0xfed19000
 
 endif

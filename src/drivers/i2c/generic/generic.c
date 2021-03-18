@@ -57,7 +57,7 @@ void i2c_generic_fill_ssdt(const struct device *dev,
 	int reset_gpio_index = -1, enable_gpio_index = -1, irq_gpio_index = -1;
 	const char *path = acpi_device_path(dev);
 
-	if (!dev->enabled || !scope)
+	if (!scope)
 		return;
 
 	if (!config->hid) {
@@ -72,7 +72,8 @@ void i2c_generic_fill_ssdt(const struct device *dev,
 	if (config->cid)
 		acpigen_write_name_string("_CID", config->cid);
 	acpigen_write_name_integer("_UID", config->uid);
-	acpigen_write_name_string("_DDN", config->desc);
+	if (config->desc)
+		acpigen_write_name_string("_DDN", config->desc);
 	acpigen_write_STA(acpi_device_status(dev));
 
 	/* Resources */
@@ -114,16 +115,15 @@ void i2c_generic_fill_ssdt(const struct device *dev,
 		if (irq_gpio_index != -1)
 			acpi_dp_add_gpio(dsd, "irq-gpios", path,
 					 irq_gpio_index, 0,
-					 config->irq_gpio.polarity ==
-					 ACPI_GPIO_ACTIVE_LOW);
+					 config->irq_gpio.active_low);
 		if (reset_gpio_index != -1)
 			acpi_dp_add_gpio(dsd, "reset-gpios", path,
 					reset_gpio_index, 0,
-					config->reset_gpio.polarity);
+					config->reset_gpio.active_low);
 		if (enable_gpio_index != -1)
 			acpi_dp_add_gpio(dsd, "enable-gpios", path,
 					enable_gpio_index, 0,
-					config->enable_gpio.polarity);
+					config->enable_gpio.active_low);
 		/* Add generic property list */
 		acpi_dp_add_property_list(dsd, config->property_list,
 					  config->property_count);

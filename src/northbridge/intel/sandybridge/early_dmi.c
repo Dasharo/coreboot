@@ -1,12 +1,20 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <arch/cpu.h>
 #include <console/console.h>
+#include <cpu/intel/model_206ax/model_206ax.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 
-void early_init_dmi(void)
+static void dmi_recipe(void)
 {
+	const u32 cpuid = cpu_get_cpuid();
+
 	int i;
+
+	/* The DMI recipe is only needed on Ivy Bridge */
+	if (!IS_IVY_CPU(cpuid))
+		return;
 
 	for (i = 0; i < 2; i++) {
 		DMIBAR32(0x0914 + (i << 5)) |= (1 << 31);
@@ -22,7 +30,6 @@ void early_init_dmi(void)
 		DMIBAR32(0x0904 + (i << 5)) &= ~0x01c00000;
 		DMIBAR32(0x090c + (i << 5)) &= ~0x000e0000;
 	}
-
 
 	for (i = 0; i < 2; i++) {
 		DMIBAR32(0x090c + (i << 5)) &= ~0x01e00000;
@@ -157,8 +164,13 @@ void early_init_dmi(void)
 		DMIBAR32(0x0914 + (i << 5)) = 0x98200280;
 	}
 
-	DMIBAR32(0x022c);	// !!! = 0x00c26460
-	DMIBAR32(0x022c) = 0x00c2403c;
+	DMIBAR32(DMIL0SLAT);	// !!! = 0x00c26460
+	DMIBAR32(DMIL0SLAT) = 0x00c2403c;
+}
+
+void early_init_dmi(void)
+{
+	dmi_recipe();
 
 	early_pch_init_native_dmi_pre();
 

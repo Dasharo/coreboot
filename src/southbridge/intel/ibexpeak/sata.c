@@ -49,7 +49,8 @@ static void sata_init(struct device *dev)
 	/* SATA configuration */
 
 	/* Enable BARs */
-	pci_write_config16(dev, PCI_COMMAND, 0x0007);
+	pci_write_config16(dev, PCI_COMMAND,
+			   PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY | PCI_COMMAND_IO);
 
 	if (sata_mode == 0) {
 		/* AHCI */
@@ -62,18 +63,8 @@ static void sata_init(struct device *dev)
 		pci_write_config8(dev, INTR_LN, 0x0b);
 
 		/* Set timings */
-		pci_write_config16(dev, IDE_TIM_PRI, IDE_DECODE_ENABLE |
-				   IDE_ISP_5_CLOCKS | IDE_RCT_4_CLOCKS);
-		pci_write_config16(dev, IDE_TIM_SEC, IDE_DECODE_ENABLE |
-				   IDE_ISP_5_CLOCKS | IDE_RCT_4_CLOCKS);
-
-		/* Sync DMA */
-		pci_write_config16(dev, IDE_SDMA_CNT, 0);
-		pci_write_config16(dev, IDE_SDMA_TIM, 0);
-
-		/* Set IDE I/O Configuration */
-		reg32 = SIG_MODE_PRI_NORMAL;	// | FAST_PCB1 | FAST_PCB0 | PCB1 | PCB0;
-		pci_write_config32(dev, IDE_CONFIG, reg32);
+		pci_write_config16(dev, IDE_TIM_PRI, IDE_DECODE_ENABLE);
+		pci_write_config16(dev, IDE_TIM_SEC, IDE_DECODE_ENABLE);
 
 		/* for AHCI, Port Enable is managed in memory mapped space */
 		reg16 = pci_read_config16(dev, 0x92);
@@ -89,7 +80,7 @@ static void sata_init(struct device *dev)
 		pci_write_config32(dev, 0x98, 0x00590200);
 
 		/* Initialize AHCI memory-mapped space */
-		abar = (u32 *)pci_read_config32(dev, PCI_BASE_ADDRESS_5);
+		abar = (u32 *)(uintptr_t)pci_read_config32(dev, PCI_BASE_ADDRESS_5);
 		printk(BIOS_DEBUG, "ABAR: %p\n", abar);
 		/* CAP (HBA Capabilities) : enable power management */
 		reg32 = read32(abar + 0x00);
@@ -136,18 +127,8 @@ static void sata_init(struct device *dev)
 		pci_write_config8(dev, INTR_LN, 0xff);
 
 		/* Set timings */
-		pci_write_config16(dev, IDE_TIM_PRI, IDE_DECODE_ENABLE |
-				   IDE_ISP_5_CLOCKS | IDE_RCT_4_CLOCKS);
-		pci_write_config16(dev, IDE_TIM_SEC, IDE_DECODE_ENABLE |
-				   IDE_ISP_5_CLOCKS | IDE_RCT_4_CLOCKS);
-
-		/* Sync DMA */
-		pci_write_config16(dev, IDE_SDMA_CNT, 0);
-		pci_write_config16(dev, IDE_SDMA_TIM, 0);
-
-		/* Set IDE I/O Configuration */
-		reg32 = SIG_MODE_PRI_NORMAL;
-		pci_write_config32(dev, IDE_CONFIG, reg32);
+		pci_write_config16(dev, IDE_TIM_PRI, IDE_DECODE_ENABLE);
+		pci_write_config16(dev, IDE_TIM_SEC, IDE_DECODE_ENABLE);
 
 		/* Port enable */
 		reg16 = pci_read_config16(dev, 0x92);

@@ -3,11 +3,15 @@
 #include <commonlib/clamp.h>
 #include <console/console.h>
 #include <console/usb.h>
+#include <cpu/intel/model_206ax/model_206ax.h>
 #include <delay.h>
 #include <device/device.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
 #include <northbridge/intel/sandybridge/chip.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "raminit_native.h"
 #include "raminit_common.h"
 #include "raminit_tables.h"
@@ -37,6 +41,41 @@ static u32 get_FRQ(const ramctr_timing *ctrl)
 	}
 
 	die("Unsupported CPU or base frequency.");
+}
+
+/* CAS write latency. To be programmed in MR2. See DDR3 SPEC for MR2 documentation. */
+static u8 get_CWL(u32 tCK)
+{
+	/* Get CWL based on tCK using the following rule */
+	switch (tCK) {
+	case TCK_1333MHZ:
+		return 12;
+
+	case TCK_1200MHZ:
+	case TCK_1100MHZ:
+		return 11;
+
+	case TCK_1066MHZ:
+	case TCK_1000MHZ:
+		return 10;
+
+	case TCK_933MHZ:
+	case TCK_900MHZ:
+		return 9;
+
+	case TCK_800MHZ:
+	case TCK_700MHZ:
+		return 8;
+
+	case TCK_666MHZ:
+		return 7;
+
+	case TCK_533MHZ:
+		return 6;
+
+	default:
+		return 5;
+	}
 }
 
 /* Get REFI based on frequency index, tREFI = 7.8usec */
@@ -119,21 +158,67 @@ static u8 get_AONPD(u32 FRQ, u8 base_freq)
 		return frq_aonpd_map[0][FRQ - 3];
 }
 
-/* Get COMP2 based on frequency index */
-static u32 get_COMP2(u32 FRQ, u8 base_freq)
+/* Get COMP2 based on CPU generation and clock speed */
+static u32 get_COMP2(const ramctr_timing *ctrl)
 {
-	if (base_freq == 100)
-		return frq_comp2_map[1][FRQ - 7];
+	const bool is_ivybridge = IS_IVY_CPU(ctrl->cpu);
 
+	if (ctrl->tCK <= TCK_1066MHZ)
+		return is_ivybridge ? 0x0C235924 : 0x0C21410C;
+	else if (ctrl->tCK <= TCK_933MHZ)
+		return is_ivybridge ? 0x0C446964 : 0x0C42514C;
+	else if (ctrl->tCK <= TCK_800MHZ)
+		return is_ivybridge ? 0x0C6671E4 : 0x0C6369CC;
+	else if (ctrl->tCK <= TCK_666MHZ)
+		return is_ivybridge ? 0x0CA8C264 : 0x0CA57A4C;
+	else if (ctrl->tCK <= TCK_533MHZ)
+		return is_ivybridge ? 0x0CEBDB64 : 0x0CE7C34C;
 	else
-		return frq_comp2_map[0][FRQ - 3];
+		return is_ivybridge ? 0x0D6FF5E4 : 0x0D6BEDCC;
+}
+
+/* Get updated COMP1 based on CPU generation and stepping */
+static u32 get_COMP1(ramctr_timing *ctrl, const int channel)
+{
+	const union comp_ofst_1_reg orig_comp = {
+		.raw = MCHBAR32(CRCOMPOFST1_ch(channel)),
+	};
+
+	if (IS_SANDY_CPU(ctrl->cpu) && !IS_SANDY_CPU_D2(ctrl->cpu)) {
+		union comp_ofst_1_reg comp_ofst_1 = orig_comp;
+
+		comp_ofst_1.clk_odt_up = 1;
+		comp_ofst_1.clk_drv_up = 1;
+		comp_ofst_1.ctl_drv_up = 1;
+
+		return comp_ofst_1.raw;
+	}
+
+	/* Fix PCODE COMP offset bug: revert to default values */
+	union comp_ofst_1_reg comp_ofst_1 = {
+		.dq_odt_down  = 4,
+		.dq_odt_up    = 4,
+		.clk_odt_down = 4,
+		.clk_odt_up   = orig_comp.clk_odt_up,
+		.dq_drv_down  = 4,
+		.dq_drv_up    = orig_comp.dq_drv_up,
+		.clk_drv_down = 4,
+		.clk_drv_up   = orig_comp.clk_drv_up,
+		.ctl_drv_down = 4,
+		.ctl_drv_up   = orig_comp.ctl_drv_up,
+	};
+
+	if (IS_IVY_CPU(ctrl->cpu))
+		comp_ofst_1.dq_drv_up = 2;	/* 28p6 ohms */
+
+	return comp_ofst_1.raw;
 }
 
 static void normalize_tclk(ramctr_timing *ctrl, bool ref_100mhz_support)
 {
 	if (ctrl->tCK <= TCK_1200MHZ) {
 		ctrl->tCK = TCK_1200MHZ;
-		ctrl->base_freq = 100;
+		ctrl->base_freq = 133;
 	} else if (ctrl->tCK <= TCK_1100MHZ) {
 		ctrl->tCK = TCK_1100MHZ;
 		ctrl->base_freq = 100;
@@ -297,7 +382,6 @@ static void find_cas_tck(ramctr_timing *ctrl)
 	ctrl->CAS = val;
 }
 
-
 static void dram_timing(ramctr_timing *ctrl)
 {
 	/*
@@ -312,99 +396,99 @@ static void dram_timing(ramctr_timing *ctrl)
 		ctrl->edge_offset[0] = 18; //XXX: guessed
 		ctrl->edge_offset[1] = 8;
 		ctrl->edge_offset[2] = 8;
-		ctrl->timC_offset[0] = 20; //XXX: guessed
-		ctrl->timC_offset[1] = 8;
-		ctrl->timC_offset[2] = 8;
+		ctrl->tx_dq_offset[0] = 20; //XXX: guessed
+		ctrl->tx_dq_offset[1] = 8;
+		ctrl->tx_dq_offset[2] = 8;
 		ctrl->pi_coding_threshold = 10;
 
 	} else if (ctrl->tCK == TCK_1100MHZ) {
 		ctrl->edge_offset[0] = 17; //XXX: guessed
 		ctrl->edge_offset[1] = 7;
 		ctrl->edge_offset[2] = 7;
-		ctrl->timC_offset[0] = 19; //XXX: guessed
-		ctrl->timC_offset[1] = 7;
-		ctrl->timC_offset[2] = 7;
+		ctrl->tx_dq_offset[0] = 19; //XXX: guessed
+		ctrl->tx_dq_offset[1] = 7;
+		ctrl->tx_dq_offset[2] = 7;
 		ctrl->pi_coding_threshold = 13;
 
 	} else if (ctrl->tCK == TCK_1066MHZ) {
 		ctrl->edge_offset[0] = 16;
 		ctrl->edge_offset[1] = 7;
 		ctrl->edge_offset[2] = 7;
-		ctrl->timC_offset[0] = 18;
-		ctrl->timC_offset[1] = 7;
-		ctrl->timC_offset[2] = 7;
+		ctrl->tx_dq_offset[0] = 18;
+		ctrl->tx_dq_offset[1] = 7;
+		ctrl->tx_dq_offset[2] = 7;
 		ctrl->pi_coding_threshold = 13;
 
 	} else if (ctrl->tCK == TCK_1000MHZ) {
 		ctrl->edge_offset[0] = 15; //XXX: guessed
 		ctrl->edge_offset[1] = 6;
 		ctrl->edge_offset[2] = 6;
-		ctrl->timC_offset[0] = 17; //XXX: guessed
-		ctrl->timC_offset[1] = 6;
-		ctrl->timC_offset[2] = 6;
+		ctrl->tx_dq_offset[0] = 17; //XXX: guessed
+		ctrl->tx_dq_offset[1] = 6;
+		ctrl->tx_dq_offset[2] = 6;
 		ctrl->pi_coding_threshold = 13;
 
 	} else if (ctrl->tCK == TCK_933MHZ) {
 		ctrl->edge_offset[0] = 14;
 		ctrl->edge_offset[1] = 6;
 		ctrl->edge_offset[2] = 6;
-		ctrl->timC_offset[0] = 15;
-		ctrl->timC_offset[1] = 6;
-		ctrl->timC_offset[2] = 6;
+		ctrl->tx_dq_offset[0] = 15;
+		ctrl->tx_dq_offset[1] = 6;
+		ctrl->tx_dq_offset[2] = 6;
 		ctrl->pi_coding_threshold = 15;
 
 	} else if (ctrl->tCK == TCK_900MHZ) {
 		ctrl->edge_offset[0] = 14; //XXX: guessed
 		ctrl->edge_offset[1] = 6;
 		ctrl->edge_offset[2] = 6;
-		ctrl->timC_offset[0] = 15; //XXX: guessed
-		ctrl->timC_offset[1] = 6;
-		ctrl->timC_offset[2] = 6;
+		ctrl->tx_dq_offset[0] = 15; //XXX: guessed
+		ctrl->tx_dq_offset[1] = 6;
+		ctrl->tx_dq_offset[2] = 6;
 		ctrl->pi_coding_threshold = 12;
 
 	} else if (ctrl->tCK == TCK_800MHZ) {
 		ctrl->edge_offset[0] = 13;
 		ctrl->edge_offset[1] = 5;
 		ctrl->edge_offset[2] = 5;
-		ctrl->timC_offset[0] = 14;
-		ctrl->timC_offset[1] = 5;
-		ctrl->timC_offset[2] = 5;
+		ctrl->tx_dq_offset[0] = 14;
+		ctrl->tx_dq_offset[1] = 5;
+		ctrl->tx_dq_offset[2] = 5;
 		ctrl->pi_coding_threshold = 15;
 
 	} else if (ctrl->tCK == TCK_700MHZ) {
 		ctrl->edge_offset[0] = 13; //XXX: guessed
 		ctrl->edge_offset[1] = 5;
 		ctrl->edge_offset[2] = 5;
-		ctrl->timC_offset[0] = 14; //XXX: guessed
-		ctrl->timC_offset[1] = 5;
-		ctrl->timC_offset[2] = 5;
+		ctrl->tx_dq_offset[0] = 14; //XXX: guessed
+		ctrl->tx_dq_offset[1] = 5;
+		ctrl->tx_dq_offset[2] = 5;
 		ctrl->pi_coding_threshold = 16;
 
 	} else if (ctrl->tCK == TCK_666MHZ) {
 		ctrl->edge_offset[0] = 10;
 		ctrl->edge_offset[1] = 4;
 		ctrl->edge_offset[2] = 4;
-		ctrl->timC_offset[0] = 11;
-		ctrl->timC_offset[1] = 4;
-		ctrl->timC_offset[2] = 4;
+		ctrl->tx_dq_offset[0] = 11;
+		ctrl->tx_dq_offset[1] = 4;
+		ctrl->tx_dq_offset[2] = 4;
 		ctrl->pi_coding_threshold = 16;
 
 	} else if (ctrl->tCK == TCK_533MHZ) {
 		ctrl->edge_offset[0] = 8;
 		ctrl->edge_offset[1] = 3;
 		ctrl->edge_offset[2] = 3;
-		ctrl->timC_offset[0] = 9;
-		ctrl->timC_offset[1] = 3;
-		ctrl->timC_offset[2] = 3;
+		ctrl->tx_dq_offset[0] = 9;
+		ctrl->tx_dq_offset[1] = 3;
+		ctrl->tx_dq_offset[2] = 3;
 		ctrl->pi_coding_threshold = 17;
 
 	} else  { /* TCK_400MHZ */
 		ctrl->edge_offset[0] = 6;
 		ctrl->edge_offset[1] = 2;
 		ctrl->edge_offset[2] = 2;
-		ctrl->timC_offset[0] = 6;
-		ctrl->timC_offset[1] = 2;
-		ctrl->timC_offset[2] = 2;
+		ctrl->tx_dq_offset[0] = 6;
+		ctrl->tx_dq_offset[1] = 2;
+		ctrl->tx_dq_offset[2] = 2;
 		ctrl->pi_coding_threshold = 17;
 	}
 
@@ -419,42 +503,15 @@ static void dram_timing(ramctr_timing *ctrl)
 	else
 		ctrl->CWL = get_CWL(ctrl->tCK);
 
-	printk(BIOS_DEBUG, "Selected CWL latency   : %uT\n", ctrl->CWL);
-
-	/* Find tRCD */
 	ctrl->tRCD = DIV_ROUND_UP(ctrl->tRCD, ctrl->tCK);
-	printk(BIOS_DEBUG, "Selected tRCD          : %uT\n", ctrl->tRCD);
-
 	ctrl->tRP  = DIV_ROUND_UP(ctrl->tRP,  ctrl->tCK);
-	printk(BIOS_DEBUG, "Selected tRP           : %uT\n", ctrl->tRP);
-
-	/* Find tRAS */
 	ctrl->tRAS = DIV_ROUND_UP(ctrl->tRAS, ctrl->tCK);
-	printk(BIOS_DEBUG, "Selected tRAS          : %uT\n", ctrl->tRAS);
-
-	/* Find tWR */
 	ctrl->tWR  = DIV_ROUND_UP(ctrl->tWR,  ctrl->tCK);
-	printk(BIOS_DEBUG, "Selected tWR           : %uT\n", ctrl->tWR);
-
-	/* Find tFAW */
 	ctrl->tFAW = DIV_ROUND_UP(ctrl->tFAW, ctrl->tCK);
-	printk(BIOS_DEBUG, "Selected tFAW          : %uT\n", ctrl->tFAW);
-
-	/* Find tRRD */
 	ctrl->tRRD = DIV_ROUND_UP(ctrl->tRRD, ctrl->tCK);
-	printk(BIOS_DEBUG, "Selected tRRD          : %uT\n", ctrl->tRRD);
-
-	/* Find tRTP */
 	ctrl->tRTP = DIV_ROUND_UP(ctrl->tRTP, ctrl->tCK);
-	printk(BIOS_DEBUG, "Selected tRTP          : %uT\n", ctrl->tRTP);
-
-	/* Find tWTR */
 	ctrl->tWTR = DIV_ROUND_UP(ctrl->tWTR, ctrl->tCK);
-	printk(BIOS_DEBUG, "Selected tWTR          : %uT\n", ctrl->tWTR);
-
-	/* Refresh-to-Active or Refresh-to-Refresh (tRFC) */
 	ctrl->tRFC = DIV_ROUND_UP(ctrl->tRFC, ctrl->tCK);
-	printk(BIOS_DEBUG, "Selected tRFC          : %uT\n", ctrl->tRFC);
 
 	ctrl->tREFI     =     get_REFI(ctrl->FRQ, ctrl->base_freq);
 	ctrl->tMOD      =      get_MOD(ctrl->FRQ, ctrl->base_freq);
@@ -464,6 +521,17 @@ static void dram_timing(ramctr_timing *ctrl)
 	ctrl->tXPDLL    =    get_XPDLL(ctrl->FRQ, ctrl->base_freq);
 	ctrl->tXP       =       get_XP(ctrl->FRQ, ctrl->base_freq);
 	ctrl->tAONPD    =    get_AONPD(ctrl->FRQ, ctrl->base_freq);
+
+	printk(BIOS_DEBUG, "Selected CWL latency   : %uT\n", ctrl->CWL);
+	printk(BIOS_DEBUG, "Selected tRCD          : %uT\n", ctrl->tRCD);
+	printk(BIOS_DEBUG, "Selected tRP           : %uT\n", ctrl->tRP);
+	printk(BIOS_DEBUG, "Selected tRAS          : %uT\n", ctrl->tRAS);
+	printk(BIOS_DEBUG, "Selected tWR           : %uT\n", ctrl->tWR);
+	printk(BIOS_DEBUG, "Selected tFAW          : %uT\n", ctrl->tFAW);
+	printk(BIOS_DEBUG, "Selected tRRD          : %uT\n", ctrl->tRRD);
+	printk(BIOS_DEBUG, "Selected tRTP          : %uT\n", ctrl->tRTP);
+	printk(BIOS_DEBUG, "Selected tWTR          : %uT\n", ctrl->tWTR);
+	printk(BIOS_DEBUG, "Selected tRFC          : %uT\n", ctrl->tRFC);
 }
 
 static void dram_freq(ramctr_timing *ctrl)
@@ -471,7 +539,7 @@ static void dram_freq(ramctr_timing *ctrl)
 	if (ctrl->tCK > TCK_400MHZ) {
 		printk(BIOS_ERR,
 			"DRAM frequency is under lowest supported frequency (400 MHz). "
-			"Increasing to 400 MHz as last resort");
+			"Increasing to 400 MHz as last resort.\n");
 		ctrl->tCK = TCK_400MHZ;
 	}
 
@@ -479,11 +547,11 @@ static void dram_freq(ramctr_timing *ctrl)
 		u8 val2;
 		u32 reg1 = 0;
 
-		/* Step 1 - Set target PCU frequency */
+		/* Step 1 - Determine target MPLL frequency */
 		find_cas_tck(ctrl);
 
 		/*
-		 * The PLL will never lock if the required frequency is already set.
+		 * The MPLL will never lock if the requested frequency is already set.
 		 * Exit early to prevent a system hang.
 		 */
 		reg1 = MCHBAR32(MC_BIOS_DATA);
@@ -491,16 +559,16 @@ static void dram_freq(ramctr_timing *ctrl)
 		if (val2)
 			return;
 
-		/* Step 2 - Select frequency in the MCU */
+		/* Step 2 - Request MPLL frequency through the PCU */
 		reg1 = ctrl->FRQ;
 		if (ctrl->base_freq == 100)
-			reg1 |= 0x100;	/* Enable 100Mhz REF clock */
+			reg1 |= (1 << 8);	/* Use 100MHz reference clock */
 
-		reg1 |= 0x80000000;	/* set running bit */
+		reg1 |= (1 << 31);	/* Set running bit */
 		MCHBAR32(MC_BIOS_REQ) = reg1;
 		int i = 0;
-		printk(BIOS_DEBUG, "PLL busy... ");
-		while (reg1 & 0x80000000) {
+		printk(BIOS_DEBUG, "MPLL busy... ");
+		while (reg1 & (1 << 31)) {
 			udelay(10);
 			i++;
 			reg1 = MCHBAR32(MC_BIOS_REQ);
@@ -511,19 +579,17 @@ static void dram_freq(ramctr_timing *ctrl)
 		reg1 = MCHBAR32(MC_BIOS_DATA);
 		val2 = (u8) reg1;
 		if (val2 >= ctrl->FRQ) {
-			printk(BIOS_DEBUG, "MCU frequency is set at : %d MHz\n",
+			printk(BIOS_DEBUG, "MPLL frequency is set at : %d MHz\n",
 			       (1000 << 8) / ctrl->tCK);
 			return;
 		}
-		printk(BIOS_DEBUG, "PLL didn't lock. Retrying at lower frequency\n");
+		printk(BIOS_DEBUG, "MPLL didn't lock. Retrying at lower frequency\n");
 		ctrl->tCK++;
 	}
 }
 
 static void dram_ioregs(ramctr_timing *ctrl)
 {
-	u32 reg;
-
 	int channel;
 
 	/* IO clock */
@@ -549,16 +615,12 @@ static void dram_ioregs(ramctr_timing *ctrl)
 	printram("done\n");
 
 	/* Set COMP2 */
-	MCHBAR32(CRCOMPOFST2) = get_COMP2(ctrl->FRQ, ctrl->base_freq);
+	MCHBAR32(CRCOMPOFST2) = get_COMP2(ctrl);
 	printram("COMP2 done\n");
 
 	/* Set COMP1 */
 	FOR_ALL_POPULATED_CHANNELS {
-		reg = MCHBAR32(CRCOMPOFST1_ch(channel));
-		reg = (reg & ~0x00000e00) | (1 <<  9);	/* ODT */
-		reg = (reg & ~0x00e00000) | (1 << 21);	/* clk drive up */
-		reg = (reg & ~0x38000000) | (1 << 27);	/* ctl drive up */
-		MCHBAR32(CRCOMPOFST1_ch(channel)) = reg;
+		MCHBAR32(CRCOMPOFST1_ch(channel)) = get_COMP1(ctrl, channel);
 	}
 	printram("COMP1 done\n");
 
@@ -583,7 +645,7 @@ int try_init_dram_ddr3(ramctr_timing *ctrl, int fast_boot, int s3resume, int me_
 		dram_dimm_mapping(ctrl);
 	}
 
-	/* Set MC frequency */
+	/* Set MPLL frequency */
 	dram_freq(ctrl);
 
 	if (!fast_boot) {
@@ -643,7 +705,11 @@ int try_init_dram_ddr3(ramctr_timing *ctrl, int fast_boot, int s3resume, int me_
 		/* Prepare for memory training */
 		prepare_training(ctrl);
 
-		err = read_training(ctrl);
+		err = receive_enable_calibration(ctrl);
+		if (err)
+			return err;
+
+		err = read_mpr_training(ctrl);
 		if (err)
 			return err;
 
@@ -653,10 +719,6 @@ int try_init_dram_ddr3(ramctr_timing *ctrl, int fast_boot, int s3resume, int me_
 
 		printram("CP5a\n");
 
-		err = discover_edges(ctrl);
-		if (err)
-			return err;
-
 		printram("CP5b\n");
 
 		err = command_training(ctrl);
@@ -665,11 +727,11 @@ int try_init_dram_ddr3(ramctr_timing *ctrl, int fast_boot, int s3resume, int me_
 
 		printram("CP5c\n");
 
-		err = discover_edges_write(ctrl);
+		err = aggressive_read_training(ctrl);
 		if (err)
 			return err;
 
-		err = discover_timC_write(ctrl);
+		err = aggressive_write_training(ctrl);
 		if (err)
 			return err;
 
@@ -678,15 +740,10 @@ int try_init_dram_ddr3(ramctr_timing *ctrl, int fast_boot, int s3resume, int me_
 
 	set_read_write_timings(ctrl);
 
-	write_controller_mr(ctrl);
-
 	if (!s3resume) {
 		err = channel_test(ctrl);
 		if (err)
 			return err;
-
-		if (ctrl->ecc_enabled)
-			channel_scrub(ctrl);
 	}
 
 	/* Set MAD-DIMM registers */

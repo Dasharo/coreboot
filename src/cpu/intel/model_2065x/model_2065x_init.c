@@ -20,97 +20,6 @@
 #include <cpu/intel/common/common.h>
 #include <smp/node.h>
 
-/*
- * List of supported C-states in this processor
- *
- * Latencies are typical worst-case package exit time in uS
- * taken from the SandyBridge BIOS specification.
- */
-static acpi_cstate_t cstate_map[] = {
-	{	/* 0: C0 */
-	}, {	/* 1: C1 */
-		.latency = 1,
-		.power = 1000,
-		.resource = {
-			.addrl = 0x00,	/* MWAIT State 0 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 2: C1E */
-		.latency = 1,
-		.power = 1000,
-		.resource = {
-			.addrl = 0x01,	/* MWAIT State 0 Sub-state 1 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 3: C3 */
-		.latency = 63,
-		.power = 500,
-		.resource = {
-			.addrl = 0x10,	/* MWAIT State 1 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 4: C6 */
-		.latency = 87,
-		.power = 350,
-		.resource = {
-			.addrl = 0x20,	/* MWAIT State 2 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 5: C7 */
-		.latency = 90,
-		.power = 200,
-		.resource = {
-			.addrl = 0x30,	/* MWAIT State 3 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 6: C7S */
-		.latency = 90,
-		.power = 200,
-		.resource = {
-			.addrl = 0x31,	/* MWAIT State 3 Sub-state 1 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{ 0 }
-};
-
-int cpu_config_tdp_levels(void)
-{
-	msr_t platform_info;
-
-	/* Minimum CPU revision */
-	if (cpuid_eax(1) < IVB_CONFIG_TDP_MIN_CPUID)
-		return 0;
-
-	/* Bits 34:33 indicate how many levels supported */
-	platform_info = rdmsr(MSR_PLATFORM_INFO);
-	return (platform_info.hi >> 1) & 3;
-}
-
-
 static void configure_thermal_target(void)
 {
 	struct cpu_intel_model_2065x_config *conf;
@@ -147,24 +56,7 @@ static void configure_misc(void)
 	msr.lo = 0;
 	msr.hi = 0;
 	wrmsr(IA32_THERM_INTERRUPT, msr);
-
-#ifdef DISABLED
-	/* Enable package critical interrupt only */
-	msr.lo = 1 << 4;
-	msr.hi = 0;
-	wrmsr(IA32_PACKAGE_THERM_INTERRUPT, msr);
-#endif
 }
-
-static void enable_lapic_tpr(void)
-{
-	msr_t msr;
-
-	msr = rdmsr(MSR_PIC_MSG_CONTROL);
-	msr.lo &= ~(1 << 10);	/* Enable APIC TPR updates */
-	wrmsr(MSR_PIC_MSG_CONTROL, msr);
-}
-
 
 static void set_max_ratio(void)
 {
@@ -172,36 +64,13 @@ static void set_max_ratio(void)
 
 	perf_ctl.hi = 0;
 
-	/* Check for configurable TDP option */
-	if (cpu_config_tdp_levels()) {
-		/* Set to nominal TDP ratio */
-		msr = rdmsr(MSR_CONFIG_TDP_NOMINAL);
-		perf_ctl.lo = (msr.lo & 0xff) << 8;
-	} else {
-		/* Platform Info bits 15:8 give max ratio */
-		msr = rdmsr(MSR_PLATFORM_INFO);
-		perf_ctl.lo = msr.lo & 0xff00;
-	}
+	/* Platform Info bits 15:8 give max ratio */
+	msr = rdmsr(MSR_PLATFORM_INFO);
+	perf_ctl.lo = msr.lo & 0xff00;
 	wrmsr(IA32_PERF_CTL, perf_ctl);
 
-	printk(BIOS_DEBUG, "model_x06ax: frequency set to %d\n",
+	printk(BIOS_DEBUG, "model_x065x: frequency set to %d\n",
 	       ((perf_ctl.lo >> 8) & 0xff) * IRONLAKE_BCLK);
-}
-
-static void set_energy_perf_bias(u8 policy)
-{
-#ifdef DISABLED
-	msr_t msr;
-
-	/* Energy Policy is bits 3:0 */
-	msr = rdmsr(IA32_ENERGY_PERF_BIAS);
-	msr.lo &= ~0xf;
-	msr.lo |= policy & 0xf;
-	wrmsr(IA32_ENERGY_PERF_BIAS, msr);
-
-	printk(BIOS_DEBUG, "model_x06ax: energy policy set to %u\n",
-	       policy);
-#endif
 }
 
 static void configure_mca(void)
@@ -219,16 +88,13 @@ static void model_2065x_init(struct device *cpu)
 {
 	char processor_name[49];
 
-	/* Turn on caching if we haven't already */
-	x86_enable_cache();
-
 	/* Clear out pending MCEs */
 	configure_mca();
 
 	/* Print processor name */
 	fill_processor_name(processor_name);
 	printk(BIOS_INFO, "CPU: %s.\n", processor_name);
-	printk(BIOS_INFO, "CPU:lapic=%ld, boot_cpu=%d\n", lapicid(),
+	printk(BIOS_INFO, "CPU:lapic=%d, boot_cpu=%d\n", lapicid(),
 		boot_cpu());
 
 	/* Setup Page Attribute Tables (PAT) */
@@ -241,14 +107,13 @@ static void model_2065x_init(struct device *cpu)
 	/* Set virtualization based on Kconfig option */
 	set_vmx_and_lock();
 
+	set_aesni_lock();
+
 	/* Configure Enhanced SpeedStep and Thermal Sensors */
 	configure_misc();
 
 	/* Thermal throttle activation offset */
 	configure_thermal_target();
-
-	/* Set energy policy */
-	set_energy_perf_bias(ENERGY_POLICY_NORMAL);
 
 	/* Set Max Ratio */
 	set_max_ratio();
@@ -258,8 +123,6 @@ static void model_2065x_init(struct device *cpu)
 }
 
 /* MP initialization support. */
-static const void *microcode_patch;
-
 static void pre_mp_init(void)
 {
 	/* Setup MTRRs based on physical address size. */
@@ -284,9 +147,8 @@ static int get_cpu_count(void)
 
 static void get_microcode_info(const void **microcode, int *parallel)
 {
-	microcode_patch = intel_microcode_find();
-	*microcode = microcode_patch;
-	*parallel = 1;
+	*microcode = intel_microcode_find();
+	*parallel = !intel_ht_supported();
 }
 
 static void per_cpu_smm_trigger(void)
@@ -295,6 +157,7 @@ static void per_cpu_smm_trigger(void)
 	smm_relocate();
 
 	/* After SMM relocation a 2nd microcode load is required. */
+	const void *microcode_patch = intel_microcode_find();
 	intel_microcode_load_unlocked(microcode_patch);
 }
 
@@ -307,7 +170,6 @@ static void post_mp_init(void)
 	/* Lock down the SMRAM space. */
 	smm_lock();
 }
-
 
 static const struct mp_ops mp_ops = {
 	.pre_mp_init = pre_mp_init,
@@ -343,5 +205,4 @@ static const struct cpu_device_id cpu_table[] = {
 static const struct cpu_driver driver __cpu_driver = {
 	.ops      = &cpu_dev_ops,
 	.id_table = cpu_table,
-	.cstates  = cstate_map,
 };

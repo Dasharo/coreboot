@@ -14,9 +14,6 @@ config BOARD_GOOGLE_BASEBOARD_JECHT
 
 if BOARD_GOOGLE_BASEBOARD_JECHT
 
-config CHROMEOS
-	select CHROMEOS_RAMOOPS_DYNAMIC
-
 config VBOOT
 	select VBOOT_VBNV_CMOS
 
@@ -39,10 +36,6 @@ config MAINBOARD_PART_NUMBER
 	default "Rikku" if BOARD_GOOGLE_RIKKU
 	default "Tidus" if BOARD_GOOGLE_TIDUS
 
-config MAX_CPUS
-	int
-	default 8
-
 config VGA_BIOS_FILE
 	string
 	default "pci8086,0406.rom"
@@ -50,10 +43,17 @@ config VGA_BIOS_FILE
 # Override the default variant behavior, since the data.vbt is the same
 # for all variants except tidus
 config INTEL_GMA_VBT_FILE
-	default "src/mainboard/$(MAINBOARDDIR)/data.vbt" if !BOARD_GOOGLE_TIDUS
+	default "src/mainboard/\$(MAINBOARDDIR)/data.vbt" if !BOARD_GOOGLE_TIDUS
 
 config MAINBOARD_SMBIOS_MANUFACTURER
 	string
 	default "GOOGLE"
+
+config PCIEXP_AER
+	def_bool n
+
+config TIANOCORE_BOOT_TIMEOUT
+	int
+	default 5
 
 endif

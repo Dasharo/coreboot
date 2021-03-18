@@ -2,11 +2,13 @@
 
 #include <device/mmio.h>
 #include <assert.h>
-#include <boot_device.h>
+#include <commonlib/region.h>
 #include <console/console.h>
 #include <soc/clk.h>
 #include <soc/gpio.h>
 #include <soc/spi.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <symbols.h>
 
 #if defined(CONFIG_DEBUG_SPI) && CONFIG_DEBUG_SPI

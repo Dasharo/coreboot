@@ -21,15 +21,10 @@
 #include <security/vboot/vboot_common.h>
 #include <security/tpm/tspi.h>
 #include <vb2_api.h>
-#include <fsp/memory_init.h>
 #include <types.h>
+#include <mode_switch.h>
 
 static uint8_t temp_ram[CONFIG_FSP_TEMP_RAM_SIZE] __aligned(sizeof(uint64_t));
-
-/* TPM MRC hash functionality depends on vboot starting before memory init. */
-_Static_assert(!CONFIG(FSP2_0_USES_TPM_MRC_HASH) ||
-	       CONFIG(VBOOT_STARTS_IN_BOOTBLOCK),
-	       "for TPM MRC hash functionality, vboot must start in bootblock");
 
 static void save_memory_training_data(bool s3wake, uint32_t fsp_version)
 {
@@ -41,7 +36,7 @@ static void save_memory_training_data(bool s3wake, uint32_t fsp_version)
 
 	mrc_data = fsp_find_nv_storage_data(&mrc_data_size);
 	if (!mrc_data) {
-		printk(BIOS_ERR, "Couldn't find memory training data HOB.\n");
+		printk(BIOS_ERR, "ERROR: FSP_NON_VOLATILE_STORAGE_HOB missing!\n");
 		return;
 	}
 
@@ -53,10 +48,7 @@ static void save_memory_training_data(bool s3wake, uint32_t fsp_version)
 	 */
 	if (mrc_cache_stash_data(MRC_TRAINING_DATA, fsp_version, mrc_data,
 				mrc_data_size) < 0)
-		printk(BIOS_ERR, "Failed to stash MRC data\n");
-
-	if (CONFIG(FSP2_0_USES_TPM_MRC_HASH))
-		mrc_cache_update_hash(mrc_data, mrc_data_size);
+		printk(BIOS_ERR, "ERROR: Failed to stash MRC data\n");
 }
 
 static void do_fsp_post_memory_init(bool s3wake, uint32_t fsp_version)
@@ -72,8 +64,7 @@ static void do_fsp_post_memory_init(bool s3wake, uint32_t fsp_version)
 	} else if (cbmem_initialize_id_size(CBMEM_ID_FSP_RESERVED_MEMORY,
 				range_entry_size(&fsp_mem))) {
 		if (CONFIG(HAVE_ACPI_RESUME)) {
-			printk(BIOS_ERR,
-				"Failed to recover CBMEM in S3 resume.\n");
+			printk(BIOS_ERR, "ERROR: Failed to recover CBMEM in S3 resume.\n");
 			/* Failed S3 resume, reset to come up cleanly */
 			/* FIXME: A "system" reset is likely enough: */
 			full_reset();
@@ -93,45 +84,26 @@ static void do_fsp_post_memory_init(bool s3wake, uint32_t fsp_version)
 
 static void fsp_fill_mrc_cache(FSPM_ARCH_UPD *arch_upd, uint32_t fsp_version)
 {
-	struct region_device rdev;
 	void *data;
+	size_t mrc_size;
 
-	arch_upd->NvsBufferPtr = NULL;
+	arch_upd->NvsBufferPtr = 0;
 
 	if (!CONFIG(CACHE_MRC_SETTINGS))
 		return;
 
-	/*
-	 * In recovery mode, force retraining:
-	 * 1. Recovery cache is not supported, or
-	 * 2. Memory retrain switch is set.
-	 */
-	if (vboot_recovery_mode_enabled()) {
-		if (!CONFIG(HAS_RECOVERY_MRC_CACHE))
-			return;
-		if (get_recovery_mode_retrain_switch())
-			return;
-	}
-
-	if (mrc_cache_get_current(MRC_TRAINING_DATA, fsp_version, &rdev) < 0)
-		return;
-
 	/* Assume boot device is memory mapped. */
 	assert(CONFIG(BOOT_DEVICE_MEMORY_MAPPED));
-	data = rdev_mmap_full(&rdev);
 
+	data = mrc_cache_current_mmap_leak(MRC_TRAINING_DATA, fsp_version,
+					   &mrc_size);
 	if (data == NULL)
 		return;
 
-	if (CONFIG(FSP2_0_USES_TPM_MRC_HASH) &&
-	    !mrc_cache_verify_hash(data, region_device_sz(&rdev)))
-		return;
-
 	/* MRC cache found */
-	arch_upd->NvsBufferPtr = data;
+	arch_upd->NvsBufferPtr = (uintptr_t)data;
 
-	printk(BIOS_SPEW, "MRC cache found, size %zx\n",
-			region_device_sz(&rdev));
+	printk(BIOS_SPEW, "MRC cache found, size %zx\n", mrc_size);
 }
 
 static enum cb_err check_region_overlap(const struct memranges *ranges,
@@ -170,7 +142,7 @@ static enum cb_err setup_fsp_stack_frame(FSPM_ARCH_UPD *arch_upd,
 				stack_end) != CB_SUCCESS)
 		return CB_ERR;
 
-	arch_upd->StackBase = (void *)stack_begin;
+	arch_upd->StackBase = stack_begin;
 	return CB_SUCCESS;
 }
 
@@ -184,9 +156,10 @@ static enum cb_err fsp_fill_common_arch_params(FSPM_ARCH_UPD *arch_upd,
 	 * top and does not reinitialize stack pointer. The parameters passed
 	 * as StackBase and StackSize are actually for temporary RAM and HOBs
 	 * and are not related to FSP stack at all.
+	 * Non-CAR FSP 2.0 platforms pass a DRAM location for the FSP stack.
 	 */
-	if (CONFIG(FSP_USES_CB_STACK)) {
-		arch_upd->StackBase = temp_ram;
+	if (CONFIG(FSP_USES_CB_STACK) || !ENV_CACHE_AS_RAM) {
+		arch_upd->StackBase = (uintptr_t)temp_ram;
 		arch_upd->StackSize = sizeof(temp_ram);
 	} else if (setup_fsp_stack_frame(arch_upd, memmap)) {
 		return CB_ERR;
@@ -264,11 +237,26 @@ static void do_fsp_memory_init(const struct fspm_context *context, bool s3wake)
 
 	fsp_version = fsp_memory_settings_version(hdr);
 
-	upd = (FSPM_UPD *)(hdr->cfg_region_offset + hdr->image_base);
+	upd = (FSPM_UPD *)(uintptr_t)(hdr->cfg_region_offset + hdr->image_base);
 
-	if (upd->FspUpdHeader.Signature != FSPM_UPD_SIGNATURE)
-		die_with_post_code(POST_INVALID_VENDOR_BINARY,
-			"Invalid FSPM signature!\n");
+	/*
+	 * Verify UPD region size. We don't have malloc before ramstage, so we
+	 * use a static buffer for the FSP-M UPDs which is sizeof(FSPM_UPD)
+	 * bytes long, since that is the value known at compile time. If
+	 * hdr->cfg_region_size is bigger than that, not all UPD defaults will
+	 * be copied, so it'll contain random data at the end, so we just call
+	 * die() in that case. If hdr->cfg_region_size is smaller than that,
+	 * there's a mismatch between the FSP and the header, but since it will
+	 * copy the full UPD defaults to the buffer, we try to continue and
+	 * hope that there was no incompatible change in the UPDs.
+	 */
+	if (hdr->cfg_region_size > sizeof(FSPM_UPD))
+		die("FSP-M UPD size is larger than FSPM_UPD struct size.\n");
+	if (hdr->cfg_region_size < sizeof(FSPM_UPD))
+		printk(BIOS_ERR, "FSP-M UPD size is smaller than FSPM_UPD struct size. "
+				"Check if the FSP binary matches the FSP headers.\n");
+
+	fsp_verify_upd_header_signature(upd->FspUpdHeader.Signature, FSPM_UPD_SIGNATURE);
 
 	/* Copy the default values from the UPD area */
 	memcpy(&fspm_upd, upd, sizeof(fspm_upd));
@@ -277,6 +265,21 @@ static void do_fsp_memory_init(const struct fspm_context *context, bool s3wake)
 
 	/* Reserve enough memory under TOLUD to save CBMEM header */
 	arch_upd->BootLoaderTolumSize = cbmem_overhead_size();
+
+	/*
+	 * If ACPI APEI BERT region size is defined, reserve memory for it.
+	 * +------------------------+ range_entry_top(tolum)
+	 * | Other reserved regions |
+	 * | APEI BERT region       |
+	 * +------------------------+ cbmem_top()
+	 * | CBMEM IMD ROOT         |
+	 * | CBMEM IMD SMALL        |
+	 * +------------------------+ range_entry_base(tolum), TOLUM
+	 * | CBMEM FSP MEMORY       |
+	 * | Other CBMEM regions... |
+	 */
+	if (CONFIG(ACPI_BERT))
+		arch_upd->BootLoaderTolumSize += CONFIG_ACPI_BERT_SIZE;
 
 	/* Fill common settings on behalf of chipset. */
 	if (fsp_fill_common_arch_params(arch_upd, s3wake, fsp_version,
@@ -303,12 +306,18 @@ static void do_fsp_memory_init(const struct fspm_context *context, bool s3wake)
 	post_code(POST_MEM_PREINIT_PREP_END);
 
 	/* Call FspMemoryInit */
-	fsp_raminit = (void *)(hdr->image_base + hdr->memory_init_entry_offset);
+	fsp_raminit = (void *)(uintptr_t)(hdr->image_base + hdr->memory_init_entry_offset);
 	fsp_debug_before_memory_init(fsp_raminit, upd, &fspm_upd);
 
 	post_code(POST_FSP_MEMORY_INIT);
 	timestamp_add_now(TS_FSP_MEMORY_INIT_START);
-	status = fsp_raminit(&fspm_upd, fsp_get_hob_list_ptr());
+	if (ENV_X86_64 && CONFIG(PLATFORM_USES_FSP2_X86_32))
+		status = protected_mode_call_2arg(fsp_raminit,
+						  (uintptr_t)&fspm_upd,
+						  (uintptr_t)fsp_get_hob_list_ptr());
+	else
+		status = fsp_raminit(&fspm_upd, fsp_get_hob_list_ptr());
+
 	post_code(POST_FSP_MEMORY_EXIT);
 	timestamp_add_now(TS_FSP_MEMORY_INIT_END);
 

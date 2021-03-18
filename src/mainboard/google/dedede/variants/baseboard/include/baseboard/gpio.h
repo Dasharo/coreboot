@@ -1,8 +1,4 @@
-/*
- *
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #ifndef __BASEBOARD_GPIO_H__
 #define __BASEBOARD_GPIO_H__
@@ -20,6 +16,9 @@
 
 /* EC sync irq is GPP_C15_IRQ */
 #define EC_SYNC_IRQ	GPP_C15_IRQ
+
+/* EC in RW */
+#define GPIO_EC_IN_RW		GPP_C14
 
 /* Memory configuration board straps */
 #define GPIO_MEM_CONFIG_0	GPP_C0

@@ -5,11 +5,12 @@
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
-	0x02,		// DSDT revision: ACPI v2.0 and up
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x20111103	// OEM revision
 ) {
+	#include <acpi/dsdt_top.asl>
 
 Scope(\_SB)
 {

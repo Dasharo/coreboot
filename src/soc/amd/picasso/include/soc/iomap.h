@@ -1,21 +1,30 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#ifndef __SOC_PICASSO_IOMAP_H__
-#define __SOC_PICASSO_IOMAP_H__
+#ifndef AMD_PICASSO_IOMAP_H
+#define AMD_PICASSO_IOMAP_H
+
+#if ENV_X86
 
 /* MMIO Ranges */
 /* IO_APIC_ADDR defined in arch/x86	0xfec00000 */
+#define GNB_IO_APIC_ADDR		0xfec01000
 #define SPI_BASE_ADDRESS		0xfec10000
-#define ESPI_BASE_ADDRESS		0xfec20000
 
 #if CONFIG(HPET_ADDRESS_OVERRIDE)
 #error HPET address override is not allowed and must be fixed at 0xfed00000
 #endif
 #define HPET_BASE_ADDRESS		0xfed00000
 
+/* FCH AL2AHB Registers */
 #define ALINK_AHB_ADDRESS		0xfedc0000
+#define AL2AHB_CONTROL_CLK_OFFSET	0x10
+#define   AL2AHB_CLK_GATE_EN		(1 << 1)
+#define AL2AHB_CONTROL_HCLK_OFFSET	0x30
+#define   AL2AHB_HCLK_GATE_EN		(1 << 1)
 
 /* Reserved				0xfecd1000-0xfedc3fff */
+
+#endif /* ENV_X86 */
 
 /*
  * Picasso/Dali have I2C0 and I2C1 wired to the Sensor Fusion Hub (SFH/MP2).
@@ -32,6 +41,8 @@
 #define I2C_MASTER_START_INDEX		2
 #define I2C_SLAVE_DEV_COUNT		1
 
+#if ENV_X86
+
 #define APU_I2C2_BASE			0xfedc4000
 #define APU_I2C3_BASE			0xfedc5000
 #define APU_I2C4_BASE			0xfedc6000
@@ -39,7 +50,8 @@
 /* I2C parameters for lpc_read_resources */
 #define I2C_BASE_ADDRESS		APU_I2C2_BASE
 #define I2C_DEVICE_SIZE			0x00001000
-#define I2C_DEVICE_COUNT		3
+#define I2C_DEVICE_COUNT		(I2C_MASTER_DEV_COUNT \
+					 - I2C_MASTER_START_INDEX)
 
 #define APU_DMAC0_BASE			0xfedc7000
 #define APU_DMAC1_BASE			0xfedc8000
@@ -56,17 +68,18 @@
 
 #define FLASH_BASE_ADDR			((0xffffffff - CONFIG_ROM_SIZE) + 1)
 
+#endif /* ENV_X86 */
+
 /* I/O Ranges */
-#define ACPI_SMI_CTL_PORT		0xb2
-#define PICASSO_ACPI_IO_BASE	CONFIG_PICASSO_ACPI_IO_BASE
-#define  ACPI_PM_EVT_BLK	(PICASSO_ACPI_IO_BASE + 0x00)     /* 4 bytes */
+#define ACPI_IO_BASE			0x400
+#define  ACPI_PM_EVT_BLK	(ACPI_IO_BASE + 0x00)     /* 4 bytes */
 #define  ACPI_PM1_STS		(ACPI_PM_EVT_BLK + 0x00)	  /* 2 bytes */
 #define  ACPI_PM1_EN		(ACPI_PM_EVT_BLK + 0x02)	  /* 2 bytes */
-#define  ACPI_PM1_CNT_BLK	(PICASSO_ACPI_IO_BASE + 0x04)     /* 2 bytes */
-#define  ACPI_PM_TMR_BLK	(PICASSO_ACPI_IO_BASE + 0x08)     /* 4 bytes */
-#define  ACPI_CPU_CONTROL	(PICASSO_ACPI_IO_BASE + 0x0c)     /* 6 bytes */
+#define  ACPI_PM1_CNT_BLK	(ACPI_IO_BASE + 0x04)     /* 2 bytes */
+#define  ACPI_PM_TMR_BLK	(ACPI_IO_BASE + 0x08)     /* 4 bytes */
+#define  ACPI_CPU_CONTROL	(ACPI_IO_BASE + 0x10)
 /* doc says 0x14 for GPE0_BLK but FT5 only works with 0x20 */
-#define  ACPI_GPE0_BLK		(PICASSO_ACPI_IO_BASE + 0x20)     /* 8 bytes */
+#define  ACPI_GPE0_BLK		(ACPI_IO_BASE + 0x20)     /* 8 bytes */
 #define  ACPI_GPE0_STS		(ACPI_GPE0_BLK + 0x00)		  /* 4 bytes */
 #define  ACPI_GPE0_EN		(ACPI_GPE0_BLK + 0x04)		  /* 4 bytes */
 #define NCP_ERR				0xf0
@@ -77,11 +90,5 @@
 #define BIOSRAM_DATA			0xcd5
 #define AB_INDX				0xcd8
 #define AB_DATA				(AB_INDX+4)
-#define SYS_RESET			0xcf9
 
-/* BiosRam Ranges at 0xfed80500 or I/O 0xcd4/0xcd5 */
-#define BIOSRAM_CBMEM_TOP		0xf0 /* 4 bytes */
-#define BIOSRAM_UMA_SIZE		0xf4 /* 4 bytes */
-#define BIOSRAM_UMA_BASE		0xf8 /* 8 bytes */
-
-#endif /* __SOC_PICASSO_IOMAP_H__ */
+#endif /* AMD_PICASSO_IOMAP_H */

@@ -1,5 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#define PORTSCN_OFFSET 0x480
+#define PORTSCXUSB3_OFFSET 0x540
+
+#define WAKE_ON_CONNECT_DISCONNECT_ENABLE 0x6000000
+#define RO_BITS_OFF_MASK ~0x80FE0012
+
 /*
  * USB Port Wake Enable (UPWE) on usb attach/detach
  * Arg0 - Port Number
@@ -8,8 +14,7 @@
  */
 Method (UPWE, 3, Serialized)
 {
-	/* Local0 = Arg1 + ((Arg0 - 1) * 0x10) */
-	Add (Arg1, Multiply (Subtract (Arg0, 1), 0x10), Local0)
+	Local0 = Arg1 + ((Arg0 - 1) * 0x10)
 
 	/* Map ((XMEM << 16) + Local0 in PSCR */
 	OperationRegion (PSCR, SystemMemory,
@@ -18,16 +23,16 @@ Method (UPWE, 3, Serialized)
 	{
 		PSCT, 32,
 	}
-	Store(PSCT, Local0)
+	Local0 = PSCT
 	/*
 	 * And port status/control reg with RO and RWS bits
 	 * RO bits: 0, 2:3, 10:13, 24, 28:30
 	 * RWS bits: 5:9, 14:16, 25:27
 	 */
-	And (Local0, ~0x80FE0012, Local0)
+	Local0 = Local0 & RO_BITS_OFF_MASK
 	/* Set WCE and WDE bits */
-	Or (Local0, 0x6000000, Local0)
-	Store(Local0, PSCT)
+	Local0 = Local0 | WAKE_ON_CONNECT_DISCONNECT_ENABLE
+	PSCT = Local0
 }
 
 /*
@@ -38,20 +43,19 @@ Method (UPWE, 3, Serialized)
  */
 Method (UWES, 3, Serialized)
 {
-	Store (Arg0, Local0)
+	Local0 = Arg0
 
 	While (One) {
 		FindSetRightBit (Local0, Local1)
-		If (LEqual (Local1, Zero)) {
+		If (Local1 == Zero) {
 			Break
 		}
 		UPWE (Local1, Arg1, Arg2)
 		/*
 		 * Clear the lowest set bit in Local0 since it was
 		 * processed.
-		 * Local0 = Local0 & (Local0 - 1)
 		 */
-		And (Local0, Subtract (Local0, 1), Local0)
+		Local0 = Local0 & (Local0 - 1)
 	}
 }
 
@@ -65,9 +69,9 @@ Device (XHCI)
 
 	Method (_DSW, 3)
 	{
-		Store (Arg0, PMEE)
-		UWES (And (\U2WE, 0x3FF), 0x480, XMEM)
-		UWES (And (\U3WE, 0x3F), 0x540, XMEM)
+		PMEE = Arg0
+		UWES ((\U2WE & 0x3FF), PORTSCN_OFFSET, XMEM)
+		UWES ((\U3WE & 0x3F ), PORTSCXUSB3_OFFSET, XMEM)
 	}
 
 	Name (_S3D, 3)	/* D3 supported in S3 */
@@ -79,7 +83,6 @@ Device (XHCI)
 	OperationRegion (XPRT, PCI_Config, 0x00, 0x100)
 	Field (XPRT, AnyAcc, NoLock, Preserve)
 	{
-		Offset (0x0),
 		DVID, 16,	/* VENDORID */
 		Offset (0x10),
 		, 16,
@@ -114,37 +117,37 @@ Device (XHCI)
 
 	Method (_PS0, 0, Serialized)
 	{
-		If (!LEqual (^DVID, 0xFFFF)) {
-			If (!LOr (LEqual (^XMEM, 0xFFFF), LEqual (^XMEM, 0x0000))) {
+		If (^DVID != 0xFFFF) {
+			If (!((^XMEM == 0xFFFF) || (^XMEM == 0x0000))) {
 
 				/* Disable d3hot and SS link trunk clock gating */
-				Store(Zero, ^D3HE)
-				Store(Zero, ^STGE)
+				^D3HE = 0
+				^STGE = 0
 
 				/* If device is in D3, set back to D0 */
-				If (LEqual (^D0D3, 3)) {
-					Store (Zero, Local0)
-					Store (Local0, ^D0D3)
-					Store (^D0D3, Local0)
+				If (^D0D3 == 3) {
+					Local0 = 0
+					^D0D3 = Local0
+					Local0 = ^D0D3
 				}
 
 				/* Disable USB2 PHY SUS Well Power Gating */
-				Store (Zero, ^UPSW)
+				^UPSW = 0
 
 				/*
 				* Apply USB2 PHPY Power Gating workaround if needed.
 				*/
 				If (^^PMC.UWAB) {
 					/* Write to MTPMC to have PMC disable power gating */
-					Store (1, ^^PMC.MPMC)
+					^^PMC.MPMC = 1
 
 					/* Wait for PCH_PM_STS.MSG_FULL_STS to be 0 */
-					Store (10, Local0)
+					Local0 = 10
 					While (^^PMC.PMFS) {
-						If (LNot (Local0)) {
+						If (!Local0) {
 							Break
 						}
-						Decrement (Local0)
+						Local0--
 						Sleep (10)
 					}
 				}
@@ -154,33 +157,33 @@ Device (XHCI)
 
 	Method (_PS3, 0, Serialized)
 	{
-		If (!LEqual (^DVID, 0xFFFF)) {
-			If (!LOr (LEqual (^XMEM, 0xFFFF), LEqual (^XMEM, 0x0000))) {
+		If (^DVID != 0xFFFF) {
+			If (!((^XMEM == 0xFFFF) || (^XMEM == 0x0000))) {
 
 				/* Clear PME Status */
-				Store (1, ^PMES)
+				^PMES = 1
 
 				/* Enable PME */
-				Store (1, ^PMEE)
+				^PMEE= 1
 
 				/* If device is in D3, set back to D0 */
-				If (LEqual (^D0D3, 3)) {
-					Store (Zero, Local0)
-					Store (Local0, ^D0D3)
-					Store (^D0D3, Local0)
+				If (^D0D3 == 3) {
+					Local0 = 0
+					^D0D3 = Local0
+					Local0 = ^D0D3
 				}
 
 				/* Enable USB2 PHY SUS Well Power Gating in D0/D0i2/D0i3/D3 */
-				Store (3, ^UPSW)
+				^UPSW = 3
 
 				/* Enable d3hot and SS link trunk clock gating */
-				Store(One, ^D3HE)
-				Store(One, ^STGE)
+				^D3HE = 1
+				^STGE = 1
 
 				/* Now put device in D3 */
-				Store (3, Local0)
-				Store (Local0, ^D0D3)
-				Store (^D0D3, Local0)
+				Local0 = 3
+				^D0D3 = Local0
+				Local0 = ^D0D3
 
 				/*
 				* Apply USB2 PHPY Power Gating workaround if needed.
@@ -189,15 +192,15 @@ Device (XHCI)
 				*/
 				If (^^PMC.UWAB) {
 					/* Write to MTPMC to have PMC enable power gating */
-					Store (3, ^^PMC.MPMC)
+					^^PMC.MPMC = 3
 
 					/* Wait for PCH_PM_STS.MSG_FULL_STS to be 0 */
-					Store (10, Local0)
+					Local0 = 10
 					While (^^PMC.PMFS) {
-						If (LNot (Local0)) {
+						If (!Local0) {
 							Break
 						}
-						Decrement (Local0)
+						Local0--
 						Sleep (10)
 					}
 				}
@@ -221,11 +224,11 @@ Device (XHCI)
 
 			// REV: Revision 0x02 for ACPI 5.0
 			CreateField (DerefOf (Index (PCKG, Zero)), Zero, 0x07, REV)
-			Store (0x02, REV)
+			REV = 0x02
 
 			// VISI: Port visibility to user per port
 			CreateField (DerefOf (Index (PCKG, Zero)), 0x40, One, VISI)
-			Store (Arg0, VISI)
+			VISI = Arg0
 
 			Return (PCKG)
 		}

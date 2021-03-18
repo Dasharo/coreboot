@@ -14,17 +14,16 @@
 #include <acpi/acpi.h>
 #include <acpi/acpigen.h>
 #include <cpu/x86/smm.h>
-#include <cbmem.h>
 #include <string.h>
 #include "chip.h"
 #include "pch.h"
-#include "nvs.h"
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <southbridge/intel/common/pciehp.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
 #include <southbridge/intel/common/pmutil.h>
 #include <southbridge/intel/common/rtc.h>
 #include <southbridge/intel/common/spi.h>
+#include <types.h>
 
 #define NMI_OFF	0
 
@@ -42,9 +41,6 @@ static void pch_enable_ioapic(struct device *dev)
 	/* Assign unique bus/dev/fn for I/O APIC */
 	pci_write_config16(dev, LPC_IBDF,
 		PCH_IOAPIC_PCI_BUS << 8 | PCH_IOAPIC_PCI_SLOT << 3);
-
-	/* Enable ACPI I/O range decode */
-	pci_write_config8(dev, ACPI_CNTL, ACPI_EN);
 
 	set_ioapic_id(VIO_APIC_VADDR, 0x02);
 
@@ -409,13 +405,6 @@ static void pch_set_acpi_mode(void)
 	}
 }
 
-static void pch_disable_smm_only_flashing(struct device *dev)
-{
-	printk(BIOS_SPEW, "Enabling BIOS updates outside of SMM... ");
-
-	pci_and_config8(dev, BIOS_CNTL, ~(1 << 5));
-}
-
 static void pch_fixups(struct device *dev)
 {
 	/* Indicate DRAM init done for MRC S3 to know it can resume */
@@ -518,9 +507,6 @@ static void lpc_init(struct device *dev)
 	/* Print detected platform */
 	report_pch_info(dev);
 
-	/* Set the value for PCI command register. */
-	pci_write_config16(dev, PCI_COMMAND, 0x000f);
-
 	/* IO APIC initialization. */
 	pch_enable_ioapic(dev);
 
@@ -544,9 +530,6 @@ static void lpc_init(struct device *dev)
 		printk(BIOS_ERR, "Unknown Chipset: 0x%04x\n", dev->device);
 	}
 
-	/* Set the state of the GPIO lines. */
-	//gpio_init(dev);
-
 	/* Initialize the real time clock. */
 	sb_rtc_init();
 
@@ -564,8 +547,6 @@ static void lpc_init(struct device *dev)
 	/* The OS should do this? */
 	/* Interrupt 9 should be level triggered (SCI) */
 	i8259_configure_irq_trigger(9, 1);
-
-	pch_disable_smm_only_flashing(dev);
 
 	pch_set_acpi_mode();
 
@@ -647,162 +628,6 @@ static void pch_lpc_enable(struct device *dev)
 	pch_enable(dev);
 }
 
-static void southbridge_inject_dsdt(const struct device *dev)
-{
-	global_nvs_t *gnvs = cbmem_add (CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
-
-	if (gnvs) {
-		memset(gnvs, 0, sizeof(*gnvs));
-
-		acpi_create_gnvs(gnvs);
-
-		gnvs->apic = 1;
-		gnvs->mpen = 1; /* Enable Multi Processing */
-		gnvs->pcnt = dev_count_cpu();
-
-#if CONFIG(CHROMEOS)
-		chromeos_init_chromeos_acpi(&(gnvs->chromeos));
-#endif
-
-		/* And tell SMI about it */
-		smm_setup_structures(gnvs, NULL, NULL);
-
-		/* Add it to DSDT.  */
-		acpigen_write_scope("\\");
-		acpigen_write_name_dword("NVSA", (u32) gnvs);
-		acpigen_pop_len();
-	}
-}
-
-void acpi_fill_fadt(acpi_fadt_t *fadt)
-{
-	struct device *dev = pcidev_on_root(0x1f, 0);
-	config_t *chip = dev->chip_info;
-	u16 pmbase = pci_read_config16(dev, 0x40) & 0xfffe;
-	int c2_latency;
-
-
-	fadt->sci_int = 0x9;
-
-	if (permanent_smi_handler()) {
-		fadt->smi_cmd = APM_CNT;
-		fadt->acpi_enable = APM_CNT_ACPI_ENABLE;
-		fadt->acpi_disable = APM_CNT_ACPI_DISABLE;
-	}
-
-	fadt->pm1a_evt_blk = pmbase;
-	fadt->pm1b_evt_blk = 0x0;
-	fadt->pm1a_cnt_blk = pmbase + 0x4;
-	fadt->pm1b_cnt_blk = 0x0;
-	fadt->pm2_cnt_blk = pmbase + 0x50;
-	fadt->pm_tmr_blk = pmbase + 0x8;
-	fadt->gpe0_blk = pmbase + 0x20;
-	fadt->gpe1_blk = 0;
-
-	fadt->pm1_evt_len = 4;
-	fadt->pm1_cnt_len = 2;
-	fadt->pm2_cnt_len = 1;
-	fadt->pm_tmr_len = 4;
-	fadt->gpe0_blk_len = 16;
-	fadt->gpe1_blk_len = 0;
-	fadt->gpe1_base = 0;
-	c2_latency = chip->c2_latency;
-	if (!c2_latency) {
-		c2_latency = 101; /* c2 unsupported */
-	}
-	fadt->p_lvl2_lat = c2_latency;
-	fadt->p_lvl3_lat = 87;
-	/* flush_* is ignored if ACPI_FADT_WBINVD is set */
-	fadt->flush_size = 0;
-	fadt->flush_stride = 0;
-	/* P_CNT not supported */
-	fadt->duty_offset = 0;
-	fadt->duty_width = 0;
-	fadt->day_alrm = 0xd;
-	fadt->mon_alrm = 0x00;
-	fadt->century = 0x00;
-	fadt->iapc_boot_arch = ACPI_FADT_LEGACY_DEVICES | ACPI_FADT_8042;
-
-	fadt->flags = ACPI_FADT_WBINVD |
-			ACPI_FADT_C1_SUPPORTED |
-			ACPI_FADT_SLEEP_BUTTON |
-			ACPI_FADT_RESET_REGISTER |
-			ACPI_FADT_SEALED_CASE |
-			ACPI_FADT_S4_RTC_WAKE |
-			ACPI_FADT_PLATFORM_CLOCK;
-	if (chip->docking_supported) {
-		fadt->flags |= ACPI_FADT_DOCKING_SUPPORTED;
-	}
-	if (c2_latency < 100) {
-		fadt->flags |= ACPI_FADT_C2_MP_SUPPORTED;
-	}
-
-	fadt->reset_reg.space_id = 1;
-	fadt->reset_reg.bit_width = 8;
-	fadt->reset_reg.bit_offset = 0;
-	fadt->reset_reg.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->reset_reg.addrl = 0xcf9;
-	fadt->reset_reg.addrh = 0;
-
-	fadt->reset_value = 6;
-
-	fadt->x_pm1a_evt_blk.space_id = 1;
-	fadt->x_pm1a_evt_blk.bit_width = 32;
-	fadt->x_pm1a_evt_blk.bit_offset = 0;
-	fadt->x_pm1a_evt_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
-	fadt->x_pm1a_evt_blk.addrl = pmbase;
-	fadt->x_pm1a_evt_blk.addrh = 0x0;
-
-	fadt->x_pm1b_evt_blk.space_id = 1;
-	fadt->x_pm1b_evt_blk.bit_width = 0;
-	fadt->x_pm1b_evt_blk.bit_offset = 0;
-	fadt->x_pm1b_evt_blk.access_size = 0;
-	fadt->x_pm1b_evt_blk.addrl = 0x0;
-	fadt->x_pm1b_evt_blk.addrh = 0x0;
-
-	fadt->x_pm1a_cnt_blk.space_id = 1;
-	fadt->x_pm1a_cnt_blk.bit_width = 16;
-	fadt->x_pm1a_cnt_blk.bit_offset = 0;
-	fadt->x_pm1a_cnt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
-	fadt->x_pm1a_cnt_blk.addrl = pmbase + 0x4;
-	fadt->x_pm1a_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm1b_cnt_blk.space_id = 1;
-	fadt->x_pm1b_cnt_blk.bit_width = 0;
-	fadt->x_pm1b_cnt_blk.bit_offset = 0;
-	fadt->x_pm1b_cnt_blk.access_size = 0;
-	fadt->x_pm1b_cnt_blk.addrl = 0x0;
-	fadt->x_pm1b_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm2_cnt_blk.space_id = 1;
-	fadt->x_pm2_cnt_blk.bit_width = 8;
-	fadt->x_pm2_cnt_blk.bit_offset = 0;
-	fadt->x_pm2_cnt_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->x_pm2_cnt_blk.addrl = pmbase + 0x50;
-	fadt->x_pm2_cnt_blk.addrh = 0x0;
-
-	fadt->x_pm_tmr_blk.space_id = 1;
-	fadt->x_pm_tmr_blk.bit_width = 32;
-	fadt->x_pm_tmr_blk.bit_offset = 0;
-	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
-	fadt->x_pm_tmr_blk.addrl = pmbase + 0x8;
-	fadt->x_pm_tmr_blk.addrh = 0x0;
-
-	fadt->x_gpe0_blk.space_id = 1;
-	fadt->x_gpe0_blk.bit_width = 128;
-	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
-	fadt->x_gpe0_blk.addrl = pmbase + 0x20;
-	fadt->x_gpe0_blk.addrh = 0x0;
-
-	fadt->x_gpe1_blk.space_id = 1;
-	fadt->x_gpe1_blk.bit_width = 0;
-	fadt->x_gpe1_blk.bit_offset = 0;
-	fadt->x_gpe1_blk.access_size = 0;
-	fadt->x_gpe1_blk.addrl = 0x0;
-	fadt->x_gpe1_blk.addrh = 0x0;
-}
-
 static const char *lpc_acpi_name(const struct device *dev)
 {
 	return "LPCB";
@@ -850,7 +675,6 @@ static struct device_operations device_ops = {
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
 	.write_acpi_tables      = acpi_write_hpet,
-	.acpi_inject_dsdt	= southbridge_inject_dsdt,
 	.acpi_fill_ssdt		= southbridge_fill_ssdt,
 	.acpi_name		= lpc_acpi_name,
 	.init			= lpc_init,
@@ -859,7 +683,6 @@ static struct device_operations device_ops = {
 	.scan_bus		= scan_static_bus,
 	.ops_pci		= &pci_dev_ops_pci,
 };
-
 
 /* IDs for LPC device of Intel 6 Series Chipset, Intel 7 Series Chipset, and
  * Intel C200 Series Chipset

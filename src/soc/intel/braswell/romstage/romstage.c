@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cbmem.h>
-#include <stddef.h>
+#include <stdint.h>
+#include <commonlib/helpers.h>
 #include <arch/io.h>
 #include <device/mmio.h>
 #include <console/console.h>
@@ -10,7 +11,6 @@
 #include <soc/romstage.h>
 
 #include "../chip.h"
-
 
 static struct chipset_power_state power_state;
 
@@ -57,7 +57,7 @@ struct chipset_power_state *fill_power_state(void)
 }
 
 /* Return 0, 3, or 5 to indicate the previous sleep state. */
-int chipset_prev_sleep_state(struct chipset_power_state *ps)
+int chipset_prev_sleep_state(const struct chipset_power_state *ps)
 {
 	/* Default to S0. */
 	int prev_sleep_state = ACPI_S0;
@@ -83,7 +83,6 @@ int chipset_prev_sleep_state(struct chipset_power_state *ps)
 	return prev_sleep_state;
 }
 
-
 /* SOC initialization after RAM is enabled */
 void soc_after_ram_init(struct romstage_params *params)
 {
@@ -106,23 +105,22 @@ void soc_memory_init_params(struct romstage_params *params, MEMORY_INIT_UPD *upd
 	dev = pcidev_on_root(LPC_DEV, LPC_FUNC);
 
 	if (!dev) {
-		printk(BIOS_ERR,
-			"Error! Device (PCI:0:%02x.%01x) not found, soc_memory_init_params!\n",
-			LPC_DEV, LPC_FUNC);
+		printk(BIOS_ERR, "Error! Device (PCI:0:%02x.%01x) not found, %s!\n",
+			LPC_DEV, LPC_FUNC, __func__);
 		return;
 	}
 
 	config = config_of(dev);
 	printk(BIOS_DEBUG, "Updating UPD values for MemoryInit\n");
 
-	upd->PcdMrcInitTsegSize   = CONFIG(HAVE_SMI_HANDLER) ? config->PcdMrcInitTsegSize : 0;
-	upd->PcdMrcInitMmioSize   = config->PcdMrcInitMmioSize;
+	upd->PcdMrcInitTsegSize   = CONFIG_SMM_TSEG_SIZE / MiB;
+	upd->PcdMrcInitMmioSize   = 0x800;
 	upd->PcdMrcInitSpdAddr1   = config->PcdMrcInitSpdAddr1;
 	upd->PcdMrcInitSpdAddr2   = config->PcdMrcInitSpdAddr2;
 	upd->PcdIgdDvmt50PreAlloc = config->PcdIgdDvmt50PreAlloc;
-	upd->PcdApertureSize      = config->PcdApertureSize;
-	upd->PcdGttSize           = config->PcdGttSize;
-	upd->PcdLegacySegDecode   = config->PcdLegacySegDecode;
+	upd->PcdApertureSize      = 2;
+	upd->PcdGttSize           = 1;
+	upd->PcdLegacySegDecode   = 0;
 	upd->PcdDvfsEnable        = config->PcdDvfsEnable;
 	upd->PcdCaMirrorEn        = config->PcdCaMirrorEn;
 }

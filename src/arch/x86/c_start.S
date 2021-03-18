@@ -8,6 +8,7 @@
 	.section .bss, "aw", @nobits
 .global _stack
 .global _estack
+.global _stack_size
 
 /* Stack alignment is not enforced with rmodule loader, reserve one
  * extra CPU such that alignment can be enforced on entry. */
@@ -15,6 +16,7 @@
 _stack:
 .space (CONFIG_MAX_CPUS+1)*CONFIG_STACK_SIZE
 _estack:
+.set _stack_size, _estack - _stack
 #if CONFIG(COOP_MULTITASKING)
 .global thread_stacks
 thread_stacks:
@@ -91,6 +93,10 @@ _start:
 
 	andl	$0xFFFFFFF0, %esp
 
+#if CONFIG(ASAN_IN_RAMSTAGE)
+	call asan_init
+#endif
+
 #if CONFIG(GDB_WAIT)
 	call gdb_hw_init
 	call gdb_stub_breakpoint
@@ -138,10 +144,10 @@ gdtaddr:
 
 	/* This is the gdt for GCC part of coreboot.
 	 * It is different from the gdt in ASM part of coreboot
-	 * which is defined in entry32.inc
+	 * which is defined in gdt_init.S
 	 *
 	 * When the machine is initially started, we use a very simple
-	 * gdt from ROM (that in entry32.inc) which only contains those
+	 * gdt from ROM (that in gdt_init.S) which only contains those
 	 * entries we need for protected mode.
 	 *
 	 * When we're executing code from RAM, we want to do more complex
@@ -231,10 +237,4 @@ setCodeSelectorLongJump:
 	# restore rsp, it might not have been 16-byte aligned on entry
 	mov	%rdx, %rsp
 	ret
-
-	.previous
-.code64
-#else
-	.previous
-.code32
 #endif

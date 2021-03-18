@@ -1,8 +1,4 @@
-/*
- *
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #ifndef __BASEBOARD_VARIANTS_H__
 #define __BASEBOARD_VARIANTS_H__
@@ -22,7 +18,13 @@ const struct pad_config *variant_override_gpio_table(size_t *num);
 
 const struct cros_gpio *variant_cros_gpios(size_t *num);
 
-const struct lpddr4x_cfg *variant_memory_params(void);
+const struct mb_cfg *variant_memory_params(void);
 int variant_memory_sku(void);
+
+/* Modify devictree settings during ramstage. */
+void variant_devtree_update(void);
+
+/* Perform variant specific initialization early on in ramstage */
+void variant_ramstage_init(void);
 
 #endif /* __BASEBOARD_VARIANTS_H__ */

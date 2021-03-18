@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <cbmem.h>
-#include <console/console.h>
+#include <acpi/acpi_pm.h>
+#include <device/pci_type.h>
 #include <elog.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/xhci.h>
@@ -18,12 +18,16 @@ static void pch_log_gpio_gpe(u32 gpe0_sts, u32 gpe0_en, int start)
 
 	for (i = 0; i <= 31; i++) {
 		if (gpe0_sts & (1 << i))
-			elog_add_event_wake(ELOG_WAKE_SOURCE_GPIO, i + start);
+			elog_add_event_wake(ELOG_WAKE_SOURCE_GPE, i + start);
 	}
 }
 
-static void pch_log_wake_source(struct chipset_power_state *ps)
+static void pch_log_wake_source(const struct chipset_power_state *ps)
 {
+	const struct xhci_wake_info xhci_wake_info[] = {
+		{ PCH_DEVFN_XHCI, ELOG_WAKE_SOURCE_PME_XHCI },
+	};
+
 	/* Power Button */
 	if (ps->pm1_sts & PWRBTN_STS)
 		elog_add_event_wake(ELOG_WAKE_SOURCE_PWRBTN, 0);
@@ -42,7 +46,8 @@ static void pch_log_wake_source(struct chipset_power_state *ps)
 
 	/* XHCI */
 	if (ps->gpe0_sts[GPE0_A] & XHCI_PME_STS)
-		pch_xhci_update_wake_event(soc_get_xhci_usb_info());
+		xhci_update_wake_event(xhci_wake_info,
+				       ARRAY_SIZE(xhci_wake_info));
 
 	/* SMBUS Wake */
 	if (ps->gpe0_sts[GPE0_A] & SMB_WAK_STS)
@@ -59,7 +64,7 @@ static void pch_log_wake_source(struct chipset_power_state *ps)
 	pch_log_gpio_gpe(ps->gpe0_sts[GPE0_D], ps->gpe0_en[GPE0_D], 96);
 }
 
-static void pch_log_power_and_resets(struct chipset_power_state *ps)
+static void pch_log_power_and_resets(const struct chipset_power_state *ps)
 {
 	/* RTC Reset */
 	if (ps->gen_pmcon1 & RPS)
@@ -82,14 +87,10 @@ static void pch_log_power_and_resets(struct chipset_power_state *ps)
 
 void pch_log_state(void)
 {
-	struct chipset_power_state *ps = cbmem_find(CBMEM_ID_POWER_STATE);
+	const struct chipset_power_state *ps;
 
-	if (ps == NULL) {
-		printk(BIOS_ERR,
-			"Not logging power state information. "
-			"Power state not found in cbmem.\n");
+	if (acpi_pm_state_for_elog(&ps) < 0)
 		return;
-	}
 
 	/* Power and Reset */
 	pch_log_power_and_resets(ps);

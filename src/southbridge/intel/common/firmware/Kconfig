@@ -21,7 +21,7 @@ config HAVE_IFD_BIN
 
 config IFD_BIN_PATH
 	string "Path and filename of the descriptor.bin file"
-	default "3rdparty/blobs/mainboard/$(MAINBOARDDIR)/descriptor.bin"
+	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/descriptor.bin"
 	depends on HAVE_IFD_BIN
 
 config HAVE_ME_BIN
@@ -39,7 +39,7 @@ config HAVE_ME_BIN
 
 config ME_BIN_PATH
 	string "Path to management engine firmware"
-	default "3rdparty/blobs/mainboard/$(MAINBOARDDIR)/me.bin"
+	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/me.bin"
 	depends on HAVE_ME_BIN
 
 config CHECK_ME
@@ -54,6 +54,15 @@ config CHECK_ME
 	  Verify the integrity of the supplied Intel ME/TXE firmware before
 	  proceeding with the build, in order to prevent an accidental loading
 	  of a corrupted ME/TXE image.
+
+config ME_REGION_ALLOW_CPU_READ_ACCESS
+	bool "Allows HOST/CPU read access to ME region"
+	default y if SOC_INTEL_CSE_LITE_SKU
+	default n
+	help
+	 The config ensures Host has read access to the ME region if it is locked
+	 through LOCK_MANAGEMENT_ENGINE config. This config is enabled when the CSE
+	 Lite SKU is integrated.
 
 config USE_ME_CLEANER
 	bool "Strip down the Intel ME/TXE firmware"
@@ -107,7 +116,7 @@ config HAVE_GBE_BIN
 config GBE_BIN_PATH
 	string "Path to gigabit ethernet configuration"
 	depends on HAVE_GBE_BIN
-	default "3rdparty/blobs/mainboard/$(MAINBOARDDIR)/gbe.bin"
+	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/gbe.bin"
 
 config MAINBOARD_USES_IFD_EC_REGION
 	def_bool n
@@ -125,7 +134,7 @@ config HAVE_EC_BIN
 config EC_BIN_PATH
 	string "Path to EC firmware"
 	depends on HAVE_EC_BIN
-	default "3rdparty/blobs/mainboard/$(MAINBOARDDIR)/ec.bin"
+	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/ec.bin"
 
 choice
 	prompt "Protect flash regions"
@@ -145,12 +154,12 @@ config DO_NOT_TOUCH_DESCRIPTOR_REGION
 config LOCK_MANAGEMENT_ENGINE
 	bool "Lock ME/TXE section"
 	help
-	  The Intel Firmware Descriptor supports preventing write accesses
-	  from the host to the ME or TXE section in the firmware
-	  descriptor. If the section is locked, it can only be overwritten
-	  with an external SPI flash programmer. You will want this if you
-	  want to increase security of your ROM image once you are sure
-	  that the ME/TXE firmware is no longer going to change.
+	  The Intel Firmware Descriptor supports preventing write and read
+	  accesses from the host to the ME or TXE section. If the section
+	  is locked, it can only be overwritten with an external SPI flash
+	  programmer or HECI HMRFPO_ENABLE command needs to be sent to CSE
+	  before writing to the ME Section. If CSE Lite SKU is integrated,
+	  the Kconfig prevents only writing to the ME section.
 
 	  If unsure, select "Unlock flash regions".
 

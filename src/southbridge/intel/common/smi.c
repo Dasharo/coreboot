@@ -1,10 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-
 #include <device/device.h>
 #include <device/pci.h>
 #include <console/console.h>
-#include <arch/io.h>
 #include <cpu/x86/smm.h>
 #include <cpu/intel/smm_reloc.h>
 #include <southbridge/intel/common/pmbase.h>
@@ -77,25 +75,6 @@ void global_smi_enable(void)
 
 	dump_all_status();
 	smm_southbridge_enable(PWRBTN_EN | GBL_EN);
-}
-
-void smm_setup_structures(void *gnvs, void *tcg, void *smi1)
-{
-	/*
-	 * Issue SMI to set the gnvs pointer in SMM.
-	 * tcg and smi1 are unused.
-	 *
-	 * EAX = APM_CNT_GNVS_UPDATE
-	 * EBX = gnvs pointer
-	 * EDX = APM_CNT
-	 */
-	asm volatile (
-		"outb %%al, %%dx\n\t"
-		: /* ignore result */
-		: "a" (APM_CNT_GNVS_UPDATE),
-		  "b" ((uintptr_t)gnvs),
-		  "d" (APM_CNT)
-	);
 }
 
 void smm_southbridge_clear_state(void)

@@ -1,14 +1,15 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <arch/ioapic.h>
+#include <boardid.h>
 #include <soc/acpi.h>
 #include <soc/nvs.h>
+#include <soc/device_nvs.h>
 
-void acpi_create_gnvs(global_nvs_t *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
-	acpi_init_gnvs(gnvs);
-
 	/* Enable USB ports in S3 */
 	gnvs->s3u0 = 1;
 	gnvs->s3u1 = 1;
@@ -21,8 +22,11 @@ void acpi_create_gnvs(global_nvs_t *gnvs)
 	gnvs->dpte = 1;
 
 	/* Disable PMIC I2C port for ACPI for all boards except cyan */
+	struct device_nvs *dev_nvs = acpi_get_device_nvs();
 	if (!CONFIG(BOARD_GOOGLE_CYAN))
-		gnvs->dev.lpss_en[LPSS_NVS_I2C2] = 0;
+		dev_nvs->lpss_en[LPSS_NVS_I2C2] = 0;
+
+	gnvs->bdid = board_id();
 }
 
 unsigned long acpi_fill_madt(unsigned long current)

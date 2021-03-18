@@ -159,6 +159,7 @@ config VBOOT_ALWAYS_ALLOW_UDC
 
 config VBOOT_HAS_REC_HASH_SPACE
 	bool
+	default y if MRC_SAVE_HASH_IN_TPM && HAS_RECOVERY_MRC_CACHE
 	default n
 	help
 	  Set this option to indicate to vboot that recovery data hash space
@@ -181,15 +182,15 @@ config VBOOT_WIPEOUT_SUPPORTED
 
 config VBOOT_FWID_MODEL
 	string "Firmware ID model"
-	default "Google_$(CONFIG_MAINBOARD_PART_NUMBER)" if CHROMEOS
-	default "$(CONFIG_MAINBOARD_VENDOR)_$(CONFIG_MAINBOARD_PART_NUMBER)"
+	default "Google_\$(CONFIG_MAINBOARD_PART_NUMBER)" if CHROMEOS
+	default "\$(CONFIG_MAINBOARD_VENDOR)_\$(CONFIG_MAINBOARD_PART_NUMBER)"
 	help
 	  This is the first part of the FWID written to various regions of a
 	  vboot firmware image to identify its version.
 
 config VBOOT_FWID_VERSION
 	string "Firmware ID version"
-	default ".$(KERNELVERSION)"
+	default ".\$(KERNELVERSION)"
 	help
 	  This is the second part of the FWID written to various regions of a
 	  vboot firmware image to identify its version.
@@ -217,6 +218,22 @@ config RW_REGION_ONLY
 	help
 	  Add a space delimited list of filenames that should only be in the
 	  RW sections.
+
+config RWA_REGION_ONLY
+	string
+	default ""
+	depends on VBOOT_SLOTS_RW_AB
+	help
+	  Add a space-delimited list of filenames that should only be in the
+	  RW-A section.
+
+config RWB_REGION_ONLY
+	string
+	default ""
+	depends on VBOOT_SLOTS_RW_AB
+	help
+	  Add a space-delimited list of filenames that should only be in the
+	  RW-B section.
 
 config VBOOT_ENABLE_CBFS_FALLBACK
 	bool
@@ -289,8 +306,8 @@ config GBB_FLAG_ENTER_TRIGGERS_TONORM
 	bool "Return to normal boot with Enter"
 	default n
 
-config GBB_FLAG_FORCE_DEV_BOOT_LEGACY
-	bool "Allow booting to legacy in dev mode even if dev_boot_legacy=0"
+config GBB_FLAG_FORCE_DEV_BOOT_ALTFW
+	bool "Allow booting altfw in dev mode even if dev_boot_altfw=0"
 	default n
 
 config GBB_FLAG_RUNNING_FAFT
@@ -301,8 +318,8 @@ config GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
 	bool "Disable EC software sync"
 	default n
 
-config GBB_FLAG_DEFAULT_DEV_BOOT_LEGACY
-	bool "Default to booting to legacy in dev mode"
+config GBB_FLAG_DEFAULT_DEV_BOOT_ALTFW
+	bool "Default to booting altfw in dev mode"
 	default n
 
 config GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
@@ -321,28 +338,32 @@ config GBB_FLAG_DISABLE_FWMP
 	bool "Disable Firmware Management Parameters (FWMP)"
 	default n
 
+config GBB_FLAG_ENABLE_UDC
+	bool "Enable USB Device Controller"
+	default n
+
 endmenu # GBB
 
 menu "Vboot Keys"
 config VBOOT_ROOT_KEY
 	string "Root key (public)"
-	default "$(VBOOT_SOURCE)/tests/devkeys/root_key.vbpubk"
+	default "\$(VBOOT_SOURCE)/tests/devkeys/root_key.vbpubk"
 
 config VBOOT_RECOVERY_KEY
 	string "Recovery key (public)"
-	default "$(VBOOT_SOURCE)/tests/devkeys/recovery_key.vbpubk"
+	default "\$(VBOOT_SOURCE)/tests/devkeys/recovery_key.vbpubk"
 
 config VBOOT_FIRMWARE_PRIVKEY
 	string "Firmware key (private)"
-	default "$(VBOOT_SOURCE)/tests/devkeys/firmware_data_key.vbprivk"
+	default "\$(VBOOT_SOURCE)/tests/devkeys/firmware_data_key.vbprivk"
 
 config VBOOT_KERNEL_KEY
 	string "Kernel subkey (public)"
-	default "$(VBOOT_SOURCE)/tests/devkeys/kernel_subkey.vbpubk"
+	default "\$(VBOOT_SOURCE)/tests/devkeys/kernel_subkey.vbpubk"
 
 config VBOOT_KEYBLOCK
 	string "Keyblock to use for the RW regions"
-	default "$(VBOOT_SOURCE)/tests/devkeys/firmware.keyblock"
+	default "\$(VBOOT_SOURCE)/tests/devkeys/firmware.keyblock"
 
 config VBOOT_KEYBLOCK_VERSION
 	int "Keyblock version number"
@@ -351,6 +372,17 @@ config VBOOT_KEYBLOCK_VERSION
 config VBOOT_KEYBLOCK_PREAMBLE_FLAGS
 	hex "Keyblock preamble flags"
 	default 0x0
+
+config VBOOT_HASH_BLOCK_SIZE
+	hex
+	default 0x400
+	help
+	  Set the default hash size.  Generally 1k is reasonable, but in some
+	  cases it may improve hashing speed to increase the size.
+
+	  Note that this buffer is allocated in the stack.  Although the
+	  build should fail if the stack size is exceeded, it's something to
+	  be aware of when changing the size.
 
 endmenu # Keys
 endif # VBOOT

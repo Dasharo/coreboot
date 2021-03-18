@@ -6,9 +6,9 @@
 #include <fsp/util.h>
 #include <intelblocks/acpi.h>
 #include <intelblocks/cfg.h>
+#include <intelblocks/gpio.h>
 #include <intelblocks/itss.h>
 #include <intelblocks/xdci.h>
-#include <romstage_handoff.h>
 #include <soc/intel/common/vbt.h>
 #include <soc/itss.h>
 #include <soc/pci_devs.h>
@@ -75,8 +75,6 @@ const char *soc_acpi_name(const struct device *dev)
 	case PCH_DEVFN_GSPI2:	return "SPI2";
 	case PCH_DEVFN_EMMC:	return "EMMC";
 	case PCH_DEVFN_SDCARD:	return "SDXC";
-	/* Keeping ACPI device name coherent with ec.asl */
-	case PCH_DEVFN_ESPI:	return "LPCB";
 	case PCH_DEVFN_P2SB:	return "P2SB";
 	case PCH_DEVFN_PMC:	return "PMC_";
 	case PCH_DEVFN_HDA:	return "HDAS";
@@ -113,7 +111,7 @@ void soc_init_pre_device(void *chip_info)
 	itss_snapshot_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
 
 	/* Perform silicon specific init. */
-	fsp_silicon_init(romstage_handoff_is_resume());
+	fsp_silicon_init();
 
 	 /* Display FIRMWARE_VERSION_INFO_HOB */
 	fsp_display_fvi_version_hob();
@@ -146,6 +144,8 @@ static void soc_enable(struct device *dev)
 		dev->ops = &pci_domain_ops;
 	else if (dev->path.type == DEVICE_PATH_CPU_CLUSTER)
 		dev->ops = &cpu_bus_ops;
+	else if (dev->path.type == DEVICE_PATH_GPIO)
+		block_gpio_enable(dev);
 }
 
 struct chip_operations soc_intel_icelake_ops = {

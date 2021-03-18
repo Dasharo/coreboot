@@ -1,14 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-/*
-#include <acpi/acpi.h>
-DefinitionBlock ("DSDT.AML", "DSDT", 0x01, OEM_ID, ACPI_TABLE_CREATOR, 0x00010001
-		)
-	{
-		#include "routing.asl"
-	}
-*/
-
 /* Routing is in System Bus scope */
 Name(PR0, Package(){
 	/* NB devices */
@@ -18,7 +9,6 @@ Name(PR0, Package(){
 	/* Bus 0, Dev 1, Func 1 - HDMI Audio Controller */
 	Package(){0x0001FFFF, 0, INTB, 0 },
 	Package(){0x0001FFFF, 1, INTC, 0 },
-
 
 	/* Bus 0, Dev 2 Func 0,1,2,3,4,5 - PCIe Bridges */
 	Package(){0x0002FFFF, 0, INTC, 0 },
@@ -66,7 +56,6 @@ Name(APR0, Package(){
 	Package(){0x0002FFFF, 1, 0, 25 },
 	Package(){0x0002FFFF, 2, 0, 26 },
 	Package(){0x0002FFFF, 3, 0, 27 },
-
 
 	/* SB devices in APIC mode */
 	/* Bus 0, Dev 20 - F0:SMBus/ACPI,F2:HDAudio;F3:LPC;F7:SD */

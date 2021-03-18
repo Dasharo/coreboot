@@ -2,7 +2,6 @@
 
 #include <device/pci_def.h>
 #include <console/console.h>
-#include <northbridge/intel/gm45/gm45.h>
 #include "i82801ix.h"
 
 /* VC1 Port Arbitration Table */
@@ -38,7 +37,6 @@ void i82801ix_dmi_setup(void)
 	RCBA8(RCBA_BCR)   = 0x45;
 	RCBA32(RCBA_CIR6) &= ~(1 << 7);
 
-
 	/* VC1 setup for isochronous transfers: */
 
 	/* Set VC1 virtual channel id to 1. */
@@ -60,7 +58,6 @@ void i82801ix_dmi_setup(void)
 	/* Enable VC1. */
 	RCBA32(RCBA_V1CTL) |= (1 << 31);
 
-
 	/* Setup RCRB: */
 
 	/* Set component id to 2 for southbridge, northbridge has id 1. */
@@ -69,7 +66,7 @@ void i82801ix_dmi_setup(void)
 	RCBA8(RCBA_ULD + 3) = 1;
 	RCBA8(RCBA_ULD + 2) = 1;
 	/* Set target rcrb base address, i.e. DMIBAR. */
-	RCBA32(RCBA_ULBA) = (uintptr_t)DEFAULT_DMIBAR;
+	RCBA32(RCBA_ULBA) = (uintptr_t)CONFIG_FIXED_DMIBAR_MMIO_BASE;
 
 	/* Enable ASPM. */
 	if (LPC_IS_MOBILE(PCI_DEV(0, 0x1f, 0))) {

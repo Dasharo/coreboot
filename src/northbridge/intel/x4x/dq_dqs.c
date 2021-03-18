@@ -5,8 +5,8 @@
 #include <delay.h>
 #include <string.h>
 #include <types.h>
+#include "raminit.h"
 #include "x4x.h"
-#include "iomap.h"
 
 static void print_dll_setting(const struct dll_setting *dll_setting,
 			u8 default_verbose)
@@ -129,7 +129,6 @@ static int decrement_dq_dqs(const struct sysinfo *s,
 	return CB_SUCCESS;
 }
 
-
 #define WT_PATTERN_SIZE 80
 
 static const u32 write_training_schedule[WT_PATTERN_SIZE] = {
@@ -220,7 +219,7 @@ static int find_dq_limit(const struct sysinfo *s, const u8 channel,
 		expected_result == FAILING ? "failing" : "succeeding", channel);
 	memset(pass_count, 0, sizeof(pass_count));
 
-	while(succes_mask) {
+	while (succes_mask) {
 		test_result = test_dq_aligned(s, channel);
 		FOR_EACH_BYTELANE(lane) {
 			if (((test_result >> lane) & 1) != expected_result) {
@@ -279,7 +278,7 @@ int do_write_training(struct sysinfo *s)
 			s->dq_settings[channel][lane] = s->dqs_settings[channel][lane];
 		}
 		memset(dq_lower, 0, sizeof(dq_lower));
-			/* Start from DQS settings */
+		/* Start from DQS settings */
 		memcpy(dq_setting, s->dqs_settings[channel], sizeof(dq_setting));
 
 		if (find_dq_limit(s, channel, dq_setting, dq_lower,
@@ -390,7 +389,7 @@ static int rt_find_dqs_limit(struct sysinfo *s, u8 channel,
 	FOR_EACH_BYTELANE(lane)
 		rt_set_dqs(channel, lane, 0, &dqs_setting[lane]);
 
-	while(status == CB_SUCCESS) {
+	while (status == CB_SUCCESS) {
 		test_result = test_dqs_aligned(s, channel);
 		if (test_result == (expected_result == SUCCEEDING ? 0 : 0xff))
 			return CB_SUCCESS;
@@ -498,7 +497,7 @@ int do_read_training(struct sysinfo *s)
 		FOR_EACH_BYTELANE(lane) {
 			saved_dqs_center[channel][lane] /= RT_LOOPS;
 			while (saved_dqs_center[channel][lane]--) {
-				if(rt_increment_dqs(&s->rt_dqs[channel][lane])
+				if (rt_increment_dqs(&s->rt_dqs[channel][lane])
 							== CB_ERR)
 					/* Should never happen */
 					printk(BIOS_ERR,
@@ -526,49 +525,49 @@ static void set_rank_write_level(struct sysinfo *s, u8 channel, u8 config,
 
 	/* Is shifted by bits 2 later so u8 can be used to reduce size */
 	static const u8 emrs1_lut[8][4][4] = { /* [Config][Leveling Rank][Rank] */
-		{  /* Config 0: 2R2R */
+		{ /* Config 0: 2R2R */
 			{0x11, 0x00, 0x91, 0x00},
 			{0x00, 0x11, 0x91, 0x00},
 			{0x91, 0x00, 0x11, 0x00},
 			{0x91, 0x00, 0x00, 0x11}
 		},
-		{  // Config 1: 2R1R
+		{ /* Config 1: 2R1R */
 			{0x11, 0x00, 0x91, 0x00},
 			{0x00, 0x11, 0x91, 0x00},
 			{0x91, 0x00, 0x11, 0x00},
 			{0x00, 0x00, 0x00, 0x00}
 		},
-		{  // Config 2: 1R2R
+		{ /* Config 2: 1R2R */
 			{0x11, 0x00, 0x91, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x91, 0x00, 0x11, 0x00},
 			{0x91, 0x00, 0x00, 0x11}
 		},
-		{  // Config 3: 1R1R
+		{ /* Config 3: 1R1R */
 			{0x11, 0x00, 0x91, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x91, 0x00, 0x11, 0x00},
 			{0x00, 0x00, 0x00, 0x00}
 		},
-		{  // Config 4: 2R0R
+		{ /* Config 4: 2R0R */
 			{0x11, 0x00, 0x00, 0x00},
 			{0x00, 0x11, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00}
 		},
-		{  // Config 5: 0R2R
+		{ /* Config 5: 0R2R */
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x11, 0x00},
 			{0x00, 0x00, 0x00, 0x11}
 		},
-		{  // Config 6: 1R0R
+		{ /* Config 6: 1R0R */
 			{0x11, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00}
 		},
-		{  // Config 7: 0R1R
+		{ /* Config 7: 0R1R */
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x00, 0x00},
 			{0x00, 0x00, 0x11, 0x00},
@@ -747,19 +746,19 @@ static enum cb_err increment_to_dqs_edge(struct sysinfo *s, u8 channel, u8 rank)
  * DDR3 uses flyby topology where the clock signal takes a different path
  * than the data signal, to allow for better signal intergrity.
  * Therefore the delay on the data signals needs to account for this.
- * This is done by by sampleling the the DQS write (tx) signal back over
- * the DQ signal and looking for delay values where the sample transitions
+ * This is done by sampling the DQS write (tx) signal back over the DQ
+ * signal and looking for delay values where the sample transitions
  * from high to low.
  * Here the following is done:
- * - enable write levelling on the first populated rank
- * - disable output on other populated ranks
- * - start from safe DQS (tx) delays (other transitions can be
- *   found at different starting values but are generally bad)
+ * - Enable write levelling on the first populated rank.
+ * - Disable output on other populated ranks.
+ * - Start from safe DQS (tx) delays. Other transitions can be
+ *   found at different starting values but are generally bad.
  * - loop0: decrease DQS (tx) delays until low is sampled,
  *   loop1: increase DQS (tx) delays until high is sampled,
- *   That way we are sure to hit a low-high transition
- * - put all ranks in normal mode of operation again
- * - note: All ranks need to be leveled together
+ *   This way, we are sure to have hit a low-high transition.
+ * - Put all ranks in normal mode of operation again.
+ * Note: All ranks need to be leveled together.
  */
 void search_write_leveling(struct sysinfo *s)
 {
@@ -767,9 +766,9 @@ void search_write_leveling(struct sysinfo *s)
 	u8 config, rank0, rank1, lane;
 	struct dll_setting dq_setting;
 
-	u8 chanconfig_lut[16]={0, 6, 4, 6, 7, 3, 1, 3, 5, 2, 0, 2, 7, 3, 1, 3};
+	const u8 chanconfig_lut[16] = {0, 6, 4, 6, 7, 3, 1, 3, 5, 2, 0, 2, 7, 3, 1, 3};
 
-	u8 odt_force[8][4] = { /* [Config][leveling rank] */
+	const u8 odt_force[8][4] = { /* [Config][leveling rank] */
 		{0x5, 0x6, 0x5, 0x9},
 		{0x5, 0x6, 0x5, 0x0},
 		{0x5, 0x0, 0x5, 0x9},

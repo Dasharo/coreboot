@@ -110,7 +110,7 @@ Scope(\)
 
 
 	// ICH7 Root Complex Register Block. Memory Mapped through RCBA)
-	OperationRegion(RCRB, SystemMemory, DEFAULT_RCBA, 0x4000)
+	OperationRegion(RCRB, SystemMemory, CONFIG_FIXED_RCBA_MMIO_BASE, CONFIG_RCBA_LENGTH)
 	Field(RCRB, DWordAcc, Lock, Preserve)
 	{
 		// Backbone
@@ -148,7 +148,7 @@ Scope(\)
 }
 
 // 0:1b.0 High Definition Audio (Azalia)
-#include "audio.asl"
+#include <southbridge/intel/common/acpi/audio_ich.asl>
 
 // PCI Express Ports
 #include <southbridge/intel/common/acpi/pcie.asl>

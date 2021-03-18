@@ -3,9 +3,9 @@
 #define __SIMPLE_DEVICE__
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_pm.h>
 #include <arch/io.h>
 #include <device/mmio.h>
-#include <cbmem.h>
 #include <console/console.h>
 #include <cpu/x86/msr.h>
 #include <device/device.h>
@@ -178,22 +178,6 @@ int soc_prev_sleep_state(const struct chipset_power_state *ps,
 	return prev_sleep_state;
 }
 
-void enable_pm_timer_emulation(void)
-{
-	/* ACPI PM timer emulation */
-	msr_t msr;
-	/*
-	 * The derived frequency is calculated as follows:
-	 *    (CTC_FREQ * msr[63:32]) >> 32 = target frequency.
-	 * Back solve the multiplier so the 3.579545MHz ACPI timer
-	 * frequency is used.
-	 */
-	msr.hi = (3579545ULL << 32) / CTC_FREQ;
-	/* Set PM1 timer IO port and enable */
-	msr.lo = EMULATE_PM_TMR_EN | (ACPI_BASE_ADDRESS + R_ACPI_PM1_TMR);
-	wrmsr(MSR_EMULATE_PM_TIMER, msr);
-}
-
 static int rtc_failed(uint32_t gen_pmcon1)
 {
 	return !!(gen_pmcon1 & RPS);
@@ -201,12 +185,10 @@ static int rtc_failed(uint32_t gen_pmcon1)
 
 int soc_get_rtc_failed(void)
 {
-	const struct chipset_power_state *ps = cbmem_find(CBMEM_ID_POWER_STATE);
+	const struct chipset_power_state *ps;
 
-	if (!ps) {
-		printk(BIOS_ERR, "Could not find power state in cbmem, RTC init aborted\n");
+	if (acpi_pm_state_for_rtc(&ps) < 0)
 		return 1;
-	}
 
 	return rtc_failed(ps->gen_pmcon1);
 }

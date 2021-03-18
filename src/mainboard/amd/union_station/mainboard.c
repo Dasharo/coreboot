@@ -3,15 +3,13 @@
 #include <amdblocks/acpimmio.h>
 #include <console/console.h>
 #include <device/device.h>
-#include <southbridge/amd/cimx/sb800/SBPLATFORM.h>	/* Platform Specific Definitions */
+#include <southbridge/amd/cimx/sb800/SBPLATFORM.h>
 
 /**********************************************
  * Enable the dedicated functions of the board.
  **********************************************/
 static void mainboard_enable(struct device *dev)
 {
-	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
-
 	/*
 	 * Initialize ASF registers to an arbitrary address because someone
 	 * long ago set things up this way inside the SPD read code.  The

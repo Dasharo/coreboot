@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <device/device.h>
 #include <device/pci_ops.h>
 #include <drivers/intel/gma/int15.h>
@@ -17,8 +16,6 @@ void mainboard_suspend_resume(void)
 	/* Stout EC needs to be put back in ACPI mode */
 	ec_write_cmd(EC_CMD_NOTIFY_ACPI_ENTER);
 }
-
-
 
 static void mainboard_init(struct device *dev)
 {

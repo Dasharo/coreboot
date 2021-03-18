@@ -2,7 +2,7 @@
 
 #include <device/mmio.h>
 #include <device/pci_ops.h>
-#include <cbmem.h>
+#include <acpi/acpi_gnvs.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -12,7 +12,7 @@
 #include <soc/iomap.h>
 #include <soc/iosf.h>
 #include <soc/lpc.h>
-#include <soc/nvs.h>
+#include <soc/device_nvs.h>
 #include <soc/pattrs.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
@@ -53,22 +53,15 @@ static void lpe_enable_acpi_mode(struct device *dev)
 
 		REG_SCRIPT_END
 	};
-	global_nvs_t *gnvs;
-
-	/* Find ACPI NVS to update BARs */
-	gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
-	if (!gnvs) {
-		printk(BIOS_ERR, "Unable to locate Global NVS\n");
-		return;
-	}
+	struct device_nvs *dev_nvs = acpi_get_device_nvs();
 
 	/* Save BAR0, BAR1, and firmware base  to ACPI NVS */
-	assign_device_nvs(dev, &gnvs->dev.lpe_bar0, PCI_BASE_ADDRESS_0);
-	assign_device_nvs(dev, &gnvs->dev.lpe_bar1, PCI_BASE_ADDRESS_2);
-	assign_device_nvs(dev, &gnvs->dev.lpe_fw, FIRMWARE_PCI_REG_BASE);
+	assign_device_nvs(dev, &dev_nvs->lpe_bar0, PCI_BASE_ADDRESS_0);
+	assign_device_nvs(dev, &dev_nvs->lpe_bar1, PCI_BASE_ADDRESS_2);
+	assign_device_nvs(dev, &dev_nvs->lpe_fw, FIRMWARE_PCI_REG_BASE);
 
 	/* Device is enabled in ACPI mode */
-	gnvs->dev.lpe_en = 1;
+	dev_nvs->lpe_en = 1;
 
 	/* Put device in ACPI mode */
 	reg_script_run_on_dev(dev, ops);
@@ -104,7 +97,6 @@ static void setup_codec_clock(struct device *dev)
 	/* Default to always running. */
 	reg |= CLK_CTL_ON;
 
-
 	printk(BIOS_DEBUG, "LPE Audio codec clock set to %sMHz.\n", freq_str);
 
 	clk_reg = (u32 *)(PMC_BASE_ADDRESS + PLT_CLK_CTL_0);
@@ -134,12 +126,9 @@ static void lpe_stash_firmware_info(struct device *dev)
 	write32((void *)(uintptr_t)(mmio->base + FIRMWARE_REG_LENGTH_C0), res->size);
 }
 
-
 static void lpe_init(struct device *dev)
 {
 	struct soc_intel_braswell_config *config = config_of(dev);
-
-	printk(BIOS_SPEW, "%s/%s (%s)\n", __FILE__, __func__, dev_name(dev));
 
 	lpe_stash_firmware_info(dev);
 	setup_codec_clock(dev);

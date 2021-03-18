@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 export COREBOOT_DIR="../coreboot.git"
 export GIT_DIR="$COREBOOT_DIR/.git"
 CODE_GITWEB="https://review.coreboot.org/gitweb/cgit/coreboot.git/commit/?id="
@@ -442,9 +442,6 @@ EOF
 				socket_nice="—";;
 			QUALCOMM_QCS405)
 				cpu_nice="Qualcomm QCS405";
-				socket_nice="—";;
-			QUALCOMM_SDM845)
-				cpu_nice="Qualcomm SDM845";
 				socket_nice="—";;
 			ROCKCHIP_RK3288)
 				cpu_nice="Rockchip RK3288";

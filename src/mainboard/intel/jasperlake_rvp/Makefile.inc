@@ -15,9 +15,6 @@ ramstage-$(CONFIG_CHROMEOS) += chromeos.c
 ramstage-y += mainboard.c
 ramstage-y += board_id.c
 
-smm-y += smihandler.c
-
-subdirs-y += ../common
 subdirs-y += variants/baseboard
 CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)/variants/$(VARIANT_DIR)/include
 CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)/variants/baseboard/include

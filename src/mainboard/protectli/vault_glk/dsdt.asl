@@ -1,18 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <variant/ec.h>
-#include <variant/gpio.h>
-
 #include <acpi/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
-	0x02,		// DSDT revision: ACPI v2.0 and up
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x20110725	// OEM revision
 )
 {
+	#include <acpi/dsdt_top.asl>
 	/* global NVS and variables */
 	#include <soc/intel/apollolake/acpi/globalnvs.asl>
 
@@ -27,7 +25,6 @@ DefinitionBlock(
 			#include <soc/intel/apollolake/acpi/pch_hda.asl>
 		}
 	}
-
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }

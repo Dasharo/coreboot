@@ -18,83 +18,7 @@
 #include "chip.h"
 #include <cpu/intel/smm_reloc.h>
 #include <cpu/intel/common/common.h>
-
-/*
- * List of supported C-states in this processor
- *
- * Latencies are typical worst-case package exit time in uS
- * taken from the SandyBridge BIOS specification.
- */
-static acpi_cstate_t cstate_map[] = {
-	{	/* 0: C0 */
-	}, {	/* 1: C1 */
-		.latency = 1,
-		.power = 1000,
-		.resource = {
-			.addrl = 0x00,	/* MWAIT State 0 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 2: C1E */
-		.latency = 1,
-		.power = 1000,
-		.resource = {
-			.addrl = 0x01,	/* MWAIT State 0 Sub-state 1 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 3: C3 */
-		.latency = 63,
-		.power = 500,
-		.resource = {
-			.addrl = 0x10,	/* MWAIT State 1 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 4: C6 */
-		.latency = 87,
-		.power = 350,
-		.resource = {
-			.addrl = 0x20,	/* MWAIT State 2 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 5: C7 */
-		.latency = 90,
-		.power = 200,
-		.resource = {
-			.addrl = 0x30,	/* MWAIT State 3 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{	/* 6: C7S */
-		.latency = 90,
-		.power = 200,
-		.resource = {
-			.addrl = 0x31,	/* MWAIT State 3 Sub-state 1 */
-			.space_id = ACPI_ADDRESS_SPACE_FIXED,
-			.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,
-			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
-			.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,
-		}
-	},
-	{ 0 }
-};
+#include <smbios.h>
 
 /* Convert time in seconds to POWER_LIMIT_1_TIME MSR value */
 static const u8 power_limit_time_sec_to_msr[] = {
@@ -338,29 +262,6 @@ static void configure_misc(void)
 	wrmsr(IA32_PACKAGE_THERM_INTERRUPT, msr);
 }
 
-static void enable_lapic_tpr(void)
-{
-	msr_t msr;
-
-	msr = rdmsr(MSR_PIC_MSG_CONTROL);
-	msr.lo &= ~(1 << 10);	/* Enable APIC TPR updates */
-	wrmsr(MSR_PIC_MSG_CONTROL, msr);
-}
-
-static void configure_dca_cap(void)
-{
-	uint32_t feature_flag;
-	msr_t msr;
-
-	/* Check feature flag in CPUID.(EAX=1):ECX[18]==1 */
-	feature_flag = cpu_get_feature_flags_ecx();
-	if (feature_flag & CPUID_DCA) {
-		msr = rdmsr(IA32_PLATFORM_DCA_CAP);
-		msr.lo |= 1;
-		wrmsr(IA32_PLATFORM_DCA_CAP, msr);
-	}
-}
-
 static void set_max_ratio(void)
 {
 	msr_t msr, perf_ctl;
@@ -383,18 +284,23 @@ static void set_max_ratio(void)
 	       ((perf_ctl.lo >> 8) & 0xff) * SANDYBRIDGE_BCLK);
 }
 
-static void set_energy_perf_bias(u8 policy)
+unsigned int smbios_cpu_get_max_speed_mhz(void)
 {
 	msr_t msr;
+	msr = rdmsr(MSR_TURBO_RATIO_LIMIT);
+	return (msr.lo & 0xff) * SANDYBRIDGE_BCLK;
+}
 
-	/* Energy Policy is bits 3:0 */
-	msr = rdmsr(IA32_ENERGY_PERF_BIAS);
-	msr.lo &= ~0xf;
-	msr.lo |= policy & 0xf;
-	wrmsr(IA32_ENERGY_PERF_BIAS, msr);
+unsigned int smbios_cpu_get_current_speed_mhz(void)
+{
+	msr_t msr;
+	msr = rdmsr(MSR_PLATFORM_INFO);
+	return ((msr.lo >> 8) & 0xff) * SANDYBRIDGE_BCLK;
+}
 
-	printk(BIOS_DEBUG, "model_x06ax: energy policy set to %u\n",
-	       policy);
+unsigned int smbios_processor_external_clock(void)
+{
+	return SANDYBRIDGE_BCLK;
 }
 
 static void configure_mca(void)
@@ -442,9 +348,6 @@ static void model_206ax_report(void)
 static void model_206ax_init(struct device *cpu)
 {
 
-	/* Turn on caching if we haven't already */
-	x86_enable_cache();
-
 	/* Clear out pending MCEs */
 	configure_mca();
 
@@ -470,6 +373,8 @@ static void model_206ax_init(struct device *cpu)
 	/* Thermal throttle activation offset */
 	configure_thermal_target();
 
+	set_aesni_lock();
+
 	/* Enable Direct Cache Access */
 	configure_dca_cap();
 
@@ -484,8 +389,6 @@ static void model_206ax_init(struct device *cpu)
 }
 
 /* MP initialization support. */
-static const void *microcode_patch;
-
 static void pre_mp_init(void)
 {
 	/* Setup MTRRs based on physical address size. */
@@ -510,9 +413,8 @@ static int get_cpu_count(void)
 
 static void get_microcode_info(const void **microcode, int *parallel)
 {
-	microcode_patch = intel_microcode_find();
-	*microcode = microcode_patch;
-	*parallel = 1;
+	*microcode = intel_microcode_find();
+	*parallel = !intel_ht_supported();
 }
 
 static void per_cpu_smm_trigger(void)
@@ -521,6 +423,7 @@ static void per_cpu_smm_trigger(void)
 	smm_relocate();
 
 	/* After SMM relocation a 2nd microcode load is required. */
+	const void *microcode_patch = intel_microcode_find();
 	intel_microcode_load_unlocked(microcode_patch);
 }
 
@@ -533,7 +436,6 @@ static void post_mp_init(void)
 	/* Lock down the SMRAM space. */
 	smm_lock();
 }
-
 
 static const struct mp_ops mp_ops = {
 	.pre_mp_init = pre_mp_init,
@@ -573,5 +475,4 @@ static const struct cpu_device_id cpu_table[] = {
 static const struct cpu_driver driver __cpu_driver = {
 	.ops      = &cpu_dev_ops,
 	.id_table = cpu_table,
-	.cstates  = cstate_map,
 };

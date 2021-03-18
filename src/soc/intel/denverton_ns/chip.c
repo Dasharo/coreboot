@@ -43,7 +43,7 @@ static void soc_enable_dev(struct device *dev)
 
 static void soc_init(void *data)
 {
-	fsp_silicon_init(false);
+	fsp_silicon_init();
 	soc_save_dimm_info();
 }
 
@@ -84,8 +84,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	const struct microcode *microcode_file;
 	size_t microcode_len;
 
-	microcode_file = cbfs_boot_map_with_leak("cpu_microcode_blob.bin",
-		CBFS_TYPE_MICROCODE, &microcode_len);
+	microcode_file = cbfs_map("cpu_microcode_blob.bin", &microcode_len);
 
 	if ((microcode_file != NULL) && (microcode_len != 0)) {
 		/* Update CPU Microcode patch base address/size */

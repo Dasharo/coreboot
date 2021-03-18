@@ -1,31 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <arch/bootblock.h>
+#include <arch/io.h>
 #include <device/pci_ops.h>
 #include <soc/iosf.h>
 #include <soc/iomap.h>
 #include <soc/gpio.h>
 #include <soc/lpc.h>
 #include <soc/spi.h>
-#include <soc/pmc.h>
-
-static void setup_mmconfig(void)
-{
-	uint32_t reg;
-
-	/* Set up the MMCONF range. The register lives in the BUNIT. The
-	 * IO variant of the config access needs to be used initially to
-	 * properly configure as the IOSF access registers live in PCI
-	 * config space. */
-	reg = 0;
-	/* Clear the extended register. */
-	pci_io_write_config32(IOSF_PCI_DEV, MCRX_REG, reg);
-	reg = CONFIG_MMCONF_BASE_ADDRESS | 1;
-	pci_io_write_config32(IOSF_PCI_DEV, MDR_REG, reg);
-	reg = IOSF_OPCODE(IOSF_OP_WRITE_BUNIT) | IOSF_PORT(IOSF_PORT_BUNIT) |
-	      IOSF_REG(BUNIT_MMCONF_REG) | IOSF_BYTE_EN;
-	pci_io_write_config32(IOSF_PCI_DEV, MCR_REG, reg);
-}
+#include <soc/pm.h>
 
 static void program_base_addresses(void)
 {
@@ -55,10 +38,19 @@ static void program_base_addresses(void)
 	pci_write_config32(lpc_dev, GBASE, reg);
 }
 
+static void tco_disable(void)
+{
+	uint32_t reg;
+
+	reg = inl(ACPI_BASE_ADDRESS + TCO1_CNT);
+	reg |= TCO_TMR_HALT;
+	outl(reg, ACPI_BASE_ADDRESS + TCO1_CNT);
+}
+
 static void spi_init(void)
 {
-	u32 *scs = (u32 *)(SPI_BASE_ADDRESS + SCS);
-	u32 *bcr = (u32 *)(SPI_BASE_ADDRESS + BCR);
+	void *scs = (void *)(SPI_BASE_ADDRESS + SCS);
+	void *bcr = (void *)(SPI_BASE_ADDRESS + BCR);
 	uint32_t reg;
 
 	/* Disable generating SMI when setting WPD bit. */
@@ -70,15 +62,6 @@ static void spi_init(void)
 	reg = (read32(bcr) & ~SRC_MASK) | SRC_CACHE_PREFETCH | BCR_WPD;
 	reg &= ~EISS;
 	write32(bcr, reg);
-}
-
-static void tco_disable(void)
-{
-	uint32_t reg;
-
-	reg = inl(ACPI_BASE_ADDRESS + TCO1_CNT);
-	reg |= TCO_TMR_HALT;
-	outl(reg, ACPI_BASE_ADDRESS + TCO1_CNT);
 }
 
 static void byt_config_com1_and_enable(void)
@@ -94,15 +77,34 @@ static void byt_config_com1_and_enable(void)
 	score_select_func(UART_TXD_PAD, 1);
 }
 
+static void setup_mmconfig(void)
+{
+	uint32_t reg;
+
+	/*
+	 * Set up the MMCONF range. The register lives in the BUNIT. The IO variant of the
+	 * config access needs to be used initially to properly configure as the IOSF access
+	 * registers live in PCI config space.
+	 */
+	reg = 0;
+	/* Clear the extended register. */
+	pci_io_write_config32(IOSF_PCI_DEV, MCRX_REG, reg);
+	reg = CONFIG_MMCONF_BASE_ADDRESS | 1;
+	pci_io_write_config32(IOSF_PCI_DEV, MDR_REG, reg);
+	reg = IOSF_OPCODE(IOSF_OP_WRITE_BUNIT) | IOSF_PORT(IOSF_PORT_BUNIT) |
+	      IOSF_REG(BUNIT_MMCONF_REG) | IOSF_BYTE_EN;
+	pci_io_write_config32(IOSF_PCI_DEV, MCR_REG, reg);
+}
+
 /* The distinction between nb/sb/cpu is not applicable here so
    just pick the one that is called first. */
 void bootblock_early_northbridge_init(void)
 {
-	/* Allow memory-mapped PCI config access. */
+	/* Allow memory-mapped PCI config access */
 	setup_mmconfig();
 
+	/* Early chipset initialization */
 	program_base_addresses();
-
 	tco_disable();
 
 	if (CONFIG(ENABLE_BUILTIN_COM1))

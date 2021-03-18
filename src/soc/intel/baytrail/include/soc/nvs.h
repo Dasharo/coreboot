@@ -3,13 +3,11 @@
 #ifndef _BAYTRAIL_NVS_H_
 #define _BAYTRAIL_NVS_H_
 
-#include <commonlib/helpers.h>
-#include <vendorcode/google/chromeos/gnvs.h>
-#include <soc/device_nvs.h>
+#include <stdint.h>
 
-typedef struct global_nvs_t {
+struct __packed global_nvs {
 	/* Miscellaneous */
-	u16	osys; /* 0x00 - Operating System */
+	u16	unused_was_osys; /* 0x00 - Operating System */
 	u8	smif; /* 0x02 - SMI function call ("TRAP") */
 	u8	prm0; /* 0x03 - SMI function call parameter */
 	u8	prm1; /* 0x04 - SMI function call parameter */
@@ -21,13 +19,14 @@ typedef struct global_nvs_t {
 	u8	prm5; /* 0x0a - Lock function parameter */
 	u32	p80d; /* 0x0b - Debug port (IO 0x80) value */
 	u8	lids; /* 0x0f - LID state (open = 1) */
-	u8	pwrs; /* 0x10 - Power state (AC = 1) */
-	u8	pcnt; /* 0x11 - Processor Count */
+	u8	unused_was_pwrs; /* 0x10 - Power state (AC = 1) */
+	u8	unused_was_pcnt; /* 0x11 - Processor Count */
 	u8	tpmp; /* 0x12 - TPM Present and Enabled */
 	u8	tlvl; /* 0x13 - Throttle Level */
 	u8	ppcm; /* 0x14 - Maximum P-state usable by OS */
 	u32	pm1i; /* 0x15 - System Wake Source - PM1 Index */
-	u8	rsvd1[7];
+	u32	gpei; /* 0x19 - GPE Wake Source */
+	u8	rsvd1[3];
 
 	/* Device Config */
 	u8	s5u0; /* 0x20 - Enable USB0 in S5 */
@@ -44,21 +43,6 @@ typedef struct global_nvs_t {
 	u32	obsolete_cmem; /* 0x30 - CBMEM TOC */
 	u32	tolm; /* 0x34 - Top of Low Memory */
 	u32	cbmc; /* 0x38 - coreboot memconsole */
-	u8	rsvd3[120]; /* 0x3c - 0xb3 - unused */
-
-	u8	unused[76];
-
-	/* ChromeOS specific (0x100-0xfff)*/
-	chromeos_acpi_t chromeos;
-
-	/* Baytrail LPSS (0x1000) */
-	device_nvs_t dev;
-} __packed global_nvs_t;
-check_member(global_nvs_t, chromeos, GNVS_CHROMEOS_ACPI_OFFSET);
-
-void acpi_create_gnvs(global_nvs_t *gnvs);
-
-/* Used in SMM to find the ACPI GNVS address */
-global_nvs_t *smm_get_gnvs(void);
+};
 
 #endif /* _BAYTRAIL_NVS_H_ */

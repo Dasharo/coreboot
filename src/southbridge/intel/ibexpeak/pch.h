@@ -22,11 +22,10 @@
  * It does not matter where we put the SMBus I/O base, as long as we
  * keep it consistent and don't interfere with other devices.  Stage2
  * will relocate this anyways.
- * Our solution is to have SMB initialization move the I/O to SMBUS_IO_BASE
+ * Our solution is to have SMB initialization move the I/O to CONFIG_FIXED_SMBUS_IO_BASE
  * again. But handling static BARs is a generic problem that should be
  * solved in the device allocator.
  */
-#define SMBUS_IO_BASE		0x0400
 #define SMBUS_SLAVE_ADDR	0x24
 /* TODO Make sure these don't get changed by stage2 */
 #define DEFAULT_GPIOBASE	0x0480
@@ -39,13 +38,7 @@
 void pch_iobp_update(u32 address, u32 andvalue, u32 orvalue);
 void enable_usb_bar(void);
 
-#if ENV_ROMSTAGE
-int smbus_read_byte(unsigned int device, unsigned int address);
-int smbus_write_byte(unsigned int device, unsigned int address, u8 data);
-int smbus_block_read(unsigned int device, unsigned int cmd, u8 bytes, u8 *buf);
-int smbus_block_write(unsigned int device, unsigned int cmd, u8 bytes, const u8 *buf);
-#endif
-
+void ibexpeak_setup_bars(void);
 void early_pch_init(void);
 
 void early_thermal_init(void);
@@ -155,54 +148,13 @@ void pch_enable(struct device *dev);
 #define LPC_GEN3_DEC		0x8c /* LPC IF Generic Decode Range 3 */
 #define LPC_GEN4_DEC		0x90 /* LPC IF Generic Decode Range 4 */
 
-/* PCI Configuration Space (D31:F1): IDE */
-#define PCH_IDE_DEV		PCI_DEV(0, 0x1f, 1)
+/* PCI Configuration Space (D31:F2): SATA */
 #define PCH_SATA_DEV		PCI_DEV(0, 0x1f, 2)
 #define PCH_SATA2_DEV		PCI_DEV(0, 0x1f, 5)
 #define INTR_LN			0x3c
 #define IDE_TIM_PRI		0x40	/* IDE timings, primary */
 #define   IDE_DECODE_ENABLE	(1 << 15)
-#define   IDE_SITRE		(1 << 14)
-#define   IDE_ISP_5_CLOCKS	(0 << 12)
-#define   IDE_ISP_4_CLOCKS	(1 << 12)
-#define   IDE_ISP_3_CLOCKS	(2 << 12)
-#define   IDE_RCT_4_CLOCKS	(0 <<  8)
-#define   IDE_RCT_3_CLOCKS	(1 <<  8)
-#define   IDE_RCT_2_CLOCKS	(2 <<  8)
-#define   IDE_RCT_1_CLOCKS	(3 <<  8)
-#define   IDE_DTE1		(1 <<  7)
-#define   IDE_PPE1		(1 <<  6)
-#define   IDE_IE1		(1 <<  5)
-#define   IDE_TIME1		(1 <<  4)
-#define   IDE_DTE0		(1 <<  3)
-#define   IDE_PPE0		(1 <<  2)
-#define   IDE_IE0		(1 <<  1)
-#define   IDE_TIME0		(1 <<  0)
 #define IDE_TIM_SEC		0x42	/* IDE timings, secondary */
-
-#define IDE_SDMA_CNT		0x48	/* Synchronous DMA control */
-#define   IDE_SSDE1		(1 <<  3)
-#define   IDE_SSDE0		(1 <<  2)
-#define   IDE_PSDE1		(1 <<  1)
-#define   IDE_PSDE0		(1 <<  0)
-
-#define IDE_SDMA_TIM		0x4a
-
-#define IDE_CONFIG		0x54	/* IDE I/O Configuration Register */
-#define   SIG_MODE_SEC_NORMAL	(0 << 18)
-#define   SIG_MODE_SEC_TRISTATE	(1 << 18)
-#define   SIG_MODE_SEC_DRIVELOW	(2 << 18)
-#define   SIG_MODE_PRI_NORMAL	(0 << 16)
-#define   SIG_MODE_PRI_TRISTATE	(1 << 16)
-#define   SIG_MODE_PRI_DRIVELOW	(2 << 16)
-#define   FAST_SCB1		(1 << 15)
-#define   FAST_SCB0		(1 << 14)
-#define   FAST_PCB1		(1 << 13)
-#define   FAST_PCB0		(1 << 12)
-#define   SCB1			(1 <<  3)
-#define   SCB0			(1 <<  2)
-#define   PCB1			(1 <<  1)
-#define   PCB0			(1 <<  0)
 
 #define SATA_SIRI		0xa0 /* SATA Indexed Register Index */
 #define SATA_SIRD		0xa4 /* SATA Indexed Register Data */

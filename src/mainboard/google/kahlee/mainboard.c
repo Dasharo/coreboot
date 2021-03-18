@@ -7,11 +7,10 @@
 #include <acpi/acpi.h>
 #include <amdblocks/agesawrapper.h>
 #include <amdblocks/amd_pci_util.h>
-#include <cbmem.h>
+#include <amdblocks/smi.h>
 #include <baseboard/variants.h>
 #include <boardid.h>
 #include <smbios.h>
-#include <soc/nvs.h>
 #include <soc/pci_devs.h>
 #include <soc/southbridge.h>
 #include <soc/smi.h>
@@ -134,13 +133,13 @@ static void mainboard_init(void *chip_info)
 	pm_write8(PM_PCIB_CFG, pm_read8(PM_PCIB_CFG) | PM_GENINT_DISABLE);
 
 	/* Set low-power mode for BayHub eMMC bridge's PCIe clock. */
-	clrsetbits32((uint32_t *)(ACPIMMIO_MISC_BASE + GPP_CLK_CNTRL),
+	clrsetbits32(acpimmio_misc + GPP_CLK_CNTRL,
 		     GPP_CLK2_REQ_MAP_MASK,
 		     GPP_CLK2_REQ_MAP_CLK_REQ2 <<
 		     GPP_CLK2_REQ_MAP_SHIFT);
 
 	/* Same for the WiFi */
-	clrsetbits32((uint32_t *)(ACPIMMIO_MISC_BASE + GPP_CLK_CNTRL),
+	clrsetbits32(acpimmio_misc + GPP_CLK_CNTRL,
 		     GPP_CLK0_REQ_MAP_MASK,
 		     GPP_CLK0_REQ_MAP_CLK_REQ0 <<
 		     GPP_CLK0_REQ_MAP_SHIFT);
@@ -149,29 +148,12 @@ static void mainboard_init(void *chip_info)
 /*************************************************
  * Dedicated mainboard function
  *************************************************/
-static void kahlee_enable(struct device *dev)
+static void mainboard_enable(struct device *dev)
 {
-	printk(BIOS_INFO, "Mainboard "
-				CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
-
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
 
 	dev->ops->acpi_inject_dsdt = chromeos_dsdt_generator;
-}
-
-
-static void mainboard_final(void *chip_info)
-{
-	struct global_nvs_t *gnvs;
-
-	gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
-
-	if (gnvs) {
-		gnvs->tmps = CTL_TDP_SENSOR_ID;
-		gnvs->tcrt = CRITICAL_TEMPERATURE;
-		gnvs->tpsv = PASSIVE_TEMPERATURE;
-	}
 }
 
 int mainboard_get_xhci_oc_map(uint16_t *map)
@@ -191,8 +173,7 @@ void mainboard_suspend_resume(void)
 
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
-	.enable_dev = kahlee_enable,
-	.final = mainboard_final,
+	.enable_dev = mainboard_enable,
 };
 
 /* Variants may override these functions so see definitions in variants/ */

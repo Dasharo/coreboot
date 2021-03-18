@@ -118,7 +118,8 @@ romstage-y += common.c
 ramstage-y += common.c
 postcar-y += common.c
 
-romstage-$(CONFIG_FSP2_0_USES_TPM_MRC_HASH) += mrc_cache_hash_tpm.c
+romstage-$(CONFIG_MRC_SAVE_HASH_IN_TPM) += mrc_cache_hash_tpm.c
+ramstage-$(CONFIG_MRC_SAVE_HASH_IN_TPM) += mrc_cache_hash_tpm.c
 
 ifeq ($(CONFIG_VBOOT_SEPARATE_VERSTAGE),y)
 
@@ -165,13 +166,15 @@ RW_PARTITIONS += FW_MAIN_B
 endif
 
 # Return the regions a specific file should be placed in. The files listed below and the ones
-# that are specified in CONFIG_RO_REGION_ONLY are only specified in the RO region. The files
-# specified in the CONFIG_RW_REGION_ONLY are only placed in the RW regions.
+# that are specified in CONFIG_RO_REGION_ONLY, are only specified in the RO region. The files
+# specified in the CONFIG_RW_REGION_ONLY are placed in all RW regions.  Files specified
+# in CONFIG_RWA_REGION_ONLY or CONFIG_RWB_REGION_ONLY get placed only in those sections.
 # All other files will be installed into RO and RW regions
 # Use $(sort) to cut down on extra spaces that would be translated to commas
 regions-for-file = $(subst $(spc),$(comma),$(sort \
-	$(if $(filter \
-		$(if $(filter y,$(CONFIG_VBOOT_STARTS_IN_ROMSTAGE)), \
+	$(if $(value regions-for-file-$(1)), \
+		$(regions-for-file-$(1)), \
+		$(if $(filter $(if $(filter y,$(CONFIG_VBOOT_STARTS_IN_ROMSTAGE)), \
 			%/romstage,) \
 		mts \
 		%/verstage \
@@ -185,9 +188,15 @@ regions-for-file = $(subst $(spc),$(comma),$(sort \
 		$(call strip_quotes,$(CONFIG_RO_REGION_ONLY)) \
 		,$(1)),COREBOOT,\
 		$(if $(filter \
+		$(call strip_quotes,$(CONFIG_RWA_REGION_ONLY)) \
+		,$(1)), FW_MAIN_A, \
+		$(if $(filter \
+			$(call strip_quotes,$(CONFIG_RWB_REGION_ONLY)) \
+			,$(1)), FW_MAIN_B, \
+		$(if $(filter \
 			$(call strip_quotes,$(CONFIG_RW_REGION_ONLY)) \
 			,$(1)), $(RW_PARTITIONS), $(VBOOT_PARTITIONS) ) \
-		)))
+		))))))
 
 CONFIG_GBB_HWID := $(call strip_quotes,$(CONFIG_GBB_HWID))
 CONFIG_GBB_BMPFV_FILE := $(call strip_quotes,$(CONFIG_GBB_BMPFV_FILE))
@@ -209,14 +218,15 @@ GBB_FLAGS := $(call int-add, \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_FORCE_DEV_BOOT_USB),0x10) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DISABLE_FW_ROLLBACK_CHECK),0x20) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_ENTER_TRIGGERS_TONORM),0x40) \
-	$(call bool-to-mask,$(CONFIG_GBB_FLAG_FORCE_DEV_BOOT_LEGACY),0x80) \
+	$(call bool-to-mask,$(CONFIG_GBB_FLAG_FORCE_DEV_BOOT_ALTFW),0x80) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_RUNNING_FAFT),0x100) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC),0x200) \
-	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DEFAULT_DEV_BOOT_LEGACY),0x400) \
+	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DEFAULT_DEV_BOOT_ALTFW),0x400) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC),0x800) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DISABLE_LID_SHUTDOWN),0x1000) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_FORCE_MANUAL_RECOVERY),0x4000) \
 	$(call bool-to-mask,$(CONFIG_GBB_FLAG_DISABLE_FWMP),0x8000) \
+	$(call bool-to-mask,$(CONFIG_GBB_FLAG_ENABLE_UDC),0x10000) \
 	)
 
 ifneq ($(CONFIG_GBB_BMPFV_FILE),)

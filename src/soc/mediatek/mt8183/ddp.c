@@ -4,6 +4,7 @@
 #include <edid.h>
 #include <soc/addressmap.h>
 #include <soc/ddp.h>
+#include <types.h>
 
 static void disp_config_main_path_connection(void)
 {
@@ -33,7 +34,7 @@ static void ovl_bgclr_in_sel(u32 idx)
 static void enable_pq(struct disp_pq_regs *const regs, u32 width, u32 height,
 		      int enable_relay)
 {
-	write32(&regs->size, height << 16 | width);
+	write32(&regs->size, width << 16 | height);
 	if (enable_relay)
 		write32(&regs->cfg, PQ_RELAY_MODE);
 	write32(&regs->en, PQ_EN);

@@ -4,6 +4,7 @@
 #include <delay.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
+#include <device/smbus_host.h>
 #include <cf9_reset.h>
 #include <device/mmio.h>
 #include <device/device.h>
@@ -136,7 +137,7 @@ static int sdram_capabilities_max_supported_memory_frequency(void)
 	return CONFIG_MAXIMUM_SUPPORTED_FREQUENCY;
 #endif
 
-	reg32 = pci_read_config32(PCI_DEV(0, 0x00, 0), 0xe4); /* CAPID0 + 4 */
+	reg32 = pci_read_config32(HOST_BRIDGE, 0xe4); /* CAPID0 + 4 */
 	reg32 &= (7 << 0);
 
 	switch (reg32) {
@@ -160,7 +161,7 @@ static int sdram_capabilities_interleave(void)
 {
 	u32 reg32;
 
-	reg32 = pci_read_config32(PCI_DEV(0, 0x00, 0), 0xe4); /* CAPID0 + 4 */
+	reg32 = pci_read_config32(HOST_BRIDGE, 0xe4); /* CAPID0 + 4 */
 	reg32 >>= 25;
 	reg32 &= 1;
 
@@ -176,7 +177,7 @@ static int sdram_capabilities_dual_channel(void)
 {
 	u32 reg32;
 
-	reg32 = pci_read_config32(PCI_DEV(0, 0x00, 0), 0xe4); /* CAPID0 + 4 */
+	reg32 = pci_read_config32(HOST_BRIDGE, 0xe4); /* CAPID0 + 4 */
 	reg32 >>= 24;
 	reg32 &= 1;
 
@@ -187,24 +188,11 @@ static int sdram_capabilities_enhanced_addressing_xor(void)
 {
 	u8 reg8;
 
-	reg8 = pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe5); /* CAPID0 + 5 */
+	reg8 = pci_read_config8(HOST_BRIDGE, 0xe5); /* CAPID0 + 5 */
 	reg8 &= (1 << 7);
 
 	return (!reg8);
 }
-
-/* TODO check if we ever need this function */
-#if 0
-static int sdram_capabilities_MEM4G_disable(void)
-{
-	u8 reg8;
-
-	reg8 = pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe5); /* CAPID0 + 5 */
-	reg8 &= (1 << 0);
-
-	return (reg8 != 0);
-}
-#endif
 
 #define GFX_FREQUENCY_CAP_166MHZ	0x04
 #define GFX_FREQUENCY_CAP_200MHZ	0x03
@@ -215,7 +203,7 @@ static int sdram_capabilities_core_frequencies(void)
 {
 	u8 reg8;
 
-	reg8 = pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe5); /* CAPID0 + 5 */
+	reg8 = pci_read_config8(HOST_BRIDGE, 0xe5); /* CAPID0 + 5 */
 	reg8 &= (1 << 3) | (1 << 2) | (1 << 1);
 	reg8 >>= 1;
 
@@ -330,7 +318,6 @@ static void gather_common_timing(struct sys_info *sysinfo, struct timings *saved
 		printk(BIOS_DEBUG, "only Single Channel Operation.\n");
 	}
 
-
 	for (i = 0; i < (2 * DIMM_SOCKETS); i++) {
 		int device = get_dimm_spd_address(sysinfo, i), bytes_read;
 		struct dimm_attr_ddr2_st dimm_info;
@@ -443,7 +430,6 @@ static void gather_common_timing(struct sys_info *sysinfo, struct timings *saved
 			printk(BIOS_DEBUG, "DIMM %d side 1 = %d MB\n",
 				i, sysinfo->banksize[(i * 2) + 1] * 32);
 		}
-
 
 		sysinfo->rows[i] = dimm_info.row_bits;
 		sysinfo->cols[i] = dimm_info.col_bits;
@@ -1198,13 +1184,13 @@ static int sdram_program_row_boundaries(struct sys_info *sysinfo)
 
 	tolud = MIN(((4096 - pci_mmio_size) / 128) << 3, tolud);
 
-	pci_write_config8(PCI_DEV(0, 0, 0), TOLUD, tolud);
+	pci_write_config8(HOST_BRIDGE, TOLUD, tolud);
 
 	printk(BIOS_DEBUG, "C0DRB = 0x%08x\n", MCHBAR32(C0DRB0));
 	printk(BIOS_DEBUG, "C1DRB = 0x%08x\n", MCHBAR32(C1DRB0));
-	printk(BIOS_DEBUG, "TOLUD = 0x%04x\n", pci_read_config8(PCI_DEV(0, 0, 0), TOLUD));
+	printk(BIOS_DEBUG, "TOLUD = 0x%04x\n", pci_read_config8(HOST_BRIDGE, TOLUD));
 
-	pci_write_config16(PCI_DEV(0, 0, 0), TOM, tom);
+	pci_write_config16(HOST_BRIDGE, TOM, tom);
 
 	return 0;
 }
@@ -1637,7 +1623,7 @@ static void sdram_program_graphics_frequency(struct sys_info *sysinfo)
 
 	/* Gate graphics hardware for frequency change */
 	reg8 = (1 << 3) | (1 << 1); /* disable crclk, gate cdclk */
-	pci_write_config8(PCI_DEV(0, 2, 0), GCFC + 1, reg8);
+	pci_write_config8(IGD_DEV, GCFC + 1, reg8);
 
 	/* Get graphics frequency capabilities */
 	reg8 = sdram_capabilities_core_frequencies();
@@ -1663,7 +1649,7 @@ static void sdram_program_graphics_frequency(struct sys_info *sysinfo)
 
 	if (freq != CRCLK_400MHz) {
 		/* What chipset are we? Force 166MHz for GMS */
-		reg8 = (pci_read_config8(PCI_DEV(0, 0x00, 0), 0xe7) & 0x70) >> 4;
+		reg8 = (pci_read_config8(HOST_BRIDGE, 0xe7) & 0x70) >> 4;
 		if (reg8 == 2)
 			freq = CRCLK_166MHz;
 	}
@@ -1713,10 +1699,10 @@ static void sdram_program_graphics_frequency(struct sys_info *sysinfo)
 		sysinfo->clkcfg_bit7 = 0;
 
 	/* Graphics Core Render Clock */
-	pci_update_config16(PCI_DEV(0, 2, 0), GCFC, ~((7 << 0) | (1 << 13)), freq);
+	pci_update_config16(IGD_DEV, GCFC, ~((7 << 0) | (1 << 13)), freq);
 
 	/* Graphics Core Display Clock */
-	reg8 = pci_read_config8(PCI_DEV(0, 2, 0), GCFC);
+	reg8 = pci_read_config8(IGD_DEV, GCFC);
 	reg8 &= ~((1 << 7) | (7 << 4));
 
 	if (voltage == VOLTAGE_1_05) {
@@ -1726,19 +1712,19 @@ static void sdram_program_graphics_frequency(struct sys_info *sysinfo)
 		reg8 |= CDCLK_320MHz;
 		printk(BIOS_DEBUG, " Display: 320MHz\n");
 	}
-	pci_write_config8(PCI_DEV(0, 2, 0), GCFC, reg8);
+	pci_write_config8(IGD_DEV, GCFC, reg8);
 
-	reg8 = pci_read_config8(PCI_DEV(0, 2, 0), GCFC + 1);
+	reg8 = pci_read_config8(IGD_DEV, GCFC + 1);
 
 	reg8 |= (1 << 3) | (1 << 1);
-	pci_write_config8(PCI_DEV(0, 2, 0), GCFC + 1, reg8);
+	pci_write_config8(IGD_DEV, GCFC + 1, reg8);
 
 	reg8 |= 0x0f;
-	pci_write_config8(PCI_DEV(0, 2, 0), GCFC + 1, reg8);
+	pci_write_config8(IGD_DEV, GCFC + 1, reg8);
 
 	/* Ungate core render and display clocks */
 	reg8 &= 0xf0;
-	pci_write_config8(PCI_DEV(0, 2, 0), GCFC + 1, reg8);
+	pci_write_config8(IGD_DEV, GCFC + 1, reg8);
 }
 
 static void sdram_program_memory_frequency(struct sys_info *sysinfo)
@@ -2138,6 +2124,9 @@ static void sdram_power_management(struct sys_info *sysinfo)
 	int integrated_graphics = 1;
 	int i;
 
+	if (!(pci_read_config8(HOST_BRIDGE, DEVEN) & (DEVEN_D2F0 | DEVEN_D2F1)))
+		integrated_graphics = false;
+
 	reg32 = MCHBAR32(C0DRT2);
 	reg32 &= 0xffffff00;
 	/* Idle timer = 8 clocks, CKE idle timer = 16 clocks */
@@ -2252,13 +2241,6 @@ static void sdram_power_management(struct sys_info *sysinfo)
 	else
 		MCHBAR32(ECO) |= (1 << 16);
 
-#if 0
-
-	if (i945_silicon_revision() == 0)
-		MCHBAR32(FSBPMC3) &= ~(1 << 29);
-	else
-		MCHBAR32(FSBPMC3) |= (1 << 29);
-#endif
 	MCHBAR32(FSBPMC3) &= ~(1 << 29);
 
 	MCHBAR32(FSBPMC3) |= (1 << 21);
@@ -2283,23 +2265,10 @@ static void sdram_power_management(struct sys_info *sysinfo)
 		MCHBAR32(FSBPMC4) |= (1 << 4);
 	}
 
-	pci_or_config8(PCI_DEV(0, 0x0, 0), 0xfc, 1 << 4);
+	pci_or_config8(HOST_BRIDGE, 0xfc, 1 << 4);
 
-	pci_or_config8(PCI_DEV(0, 0x2, 0), 0xc1, 1 << 2);
+	pci_or_config8(IGD_DEV, 0xc1, 1 << 2);
 
-#ifdef C2_SELF_REFRESH_DISABLE
-
-	if (integrated_graphics) {
-		printk(BIOS_DEBUG, "C2 self-refresh with IGD\n");
-		MCHBAR16(MIPMC4) = 0x0468;
-		MCHBAR16(MIPMC5) = 0x046c;
-		MCHBAR16(MIPMC6) = 0x046c;
-	} else {
-		MCHBAR16(MIPMC4) = 0x6468;
-		MCHBAR16(MIPMC5) = 0x646c;
-		MCHBAR16(MIPMC6) = 0x646c;
-	}
-#else
 	if (integrated_graphics) {
 		MCHBAR16(MIPMC4) = 0x04f8;
 		MCHBAR16(MIPMC5) = 0x04fc;
@@ -2310,8 +2279,6 @@ static void sdram_power_management(struct sys_info *sysinfo)
 		MCHBAR16(MIPMC6) = 0x64fc;
 	}
 
-#endif
-
 	reg32 = MCHBAR32(PMCFG);
 	reg32 &= ~(3 << 17);
 	reg32 |= (2 << 17);
@@ -2319,10 +2286,10 @@ static void sdram_power_management(struct sys_info *sysinfo)
 
 	MCHBAR32(PMCFG) |= (1 << 4);
 
-	reg32 = MCHBAR32(0xc30);
+	reg32 = MCHBAR32(UPMC4);
 	reg32 &= 0xffffff00;
 	reg32 |= 0x01;
-	MCHBAR32(0xc30) = reg32;
+	MCHBAR32(UPMC4) = reg32;
 
 	MCHBAR32(0xb18) &= ~(1 << 21);
 }
@@ -2740,7 +2707,7 @@ void sdram_initialize(int boot_path, const u8 *spd_addresses)
 	if (CONFIG(NORTHBRIDGE_INTEL_SUBTYPE_I945GM))
 		sdram_program_graphics_frequency(&sysinfo);
 	else
-		pci_write_config16(PCI_DEV(0, 2, 0), GCFC, 0x0534);
+		pci_write_config16(IGD_DEV, GCFC, 0x0534);
 
 	/* Program System Memory Frequency */
 	sdram_program_memory_frequency(&sysinfo);

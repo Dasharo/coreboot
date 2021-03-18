@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootsplash.h>
 #include <cbmem.h>
 #include <fsp/api.h>
 #include <acpi/acpi.h>
@@ -7,6 +8,7 @@
 #include <device/device.h>
 #include <device/pci_ids.h>
 #include <fsp/util.h>
+#include <gpio.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/itss.h>
 #include <intelblocks/lpc_lib.h>
@@ -16,7 +18,6 @@
 #include <intelblocks/xdci.h>
 #include <intelblocks/p2sb.h>
 #include <intelpch/lockdown.h>
-#include <romstage_handoff.h>
 #include <soc/acpi.h>
 #include <soc/intel/common/vbt.h>
 #include <soc/interrupt.h>
@@ -26,6 +27,7 @@
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <soc/systemagent.h>
+#include <soc/usb.h>
 #include <string.h>
 
 #include "chip.h"
@@ -46,6 +48,117 @@ static const struct pcie_rp_group pch_h_rp_groups[] = {
 	{ 0 }
 };
 
+#if CONFIG(HAVE_ACPI_TABLES)
+const char *soc_acpi_name(const struct device *dev)
+{
+	if (dev->path.type == DEVICE_PATH_DOMAIN)
+		return "PCI0";
+
+	if (dev->path.type == DEVICE_PATH_USB) {
+		switch (dev->path.usb.port_type) {
+		case 0:
+			/* Root Hub */
+			return "RHUB";
+		case 2:
+			/* USB2 ports */
+			switch (dev->path.usb.port_id) {
+			case 0: return "HS01";
+			case 1: return "HS02";
+			case 2: return "HS03";
+			case 3: return "HS04";
+			case 4: return "HS05";
+			case 5: return "HS06";
+			case 6: return "HS07";
+			case 7: return "HS08";
+			case 8: return "HS09";
+			case 9: return "HS10";
+			}
+			break;
+		case 3:
+			/* USB3 ports */
+			switch (dev->path.usb.port_id) {
+			case 0: return "SS01";
+			case 1: return "SS02";
+			case 2: return "SS03";
+			case 3: return "SS04";
+			case 4: return "SS05";
+			case 5: return "SS06";
+			}
+			break;
+		}
+		return NULL;
+	}
+
+	if (dev->path.type != DEVICE_PATH_PCI)
+		return NULL;
+
+	/* Match functions 0 and 1 for possible GPUs on a secondary bus */
+	if (dev->bus && dev->bus->secondary > 0) {
+		switch (PCI_FUNC(dev->path.pci.devfn)) {
+		case 0: return "DEV0";
+		case 1: return "DEV1";
+		}
+		return NULL;
+	}
+
+	switch (dev->path.pci.devfn) {
+	case SA_DEVFN_ROOT:	return "MCHC";
+	case SA_DEVFN_PEG0:	return "PEGP";
+	case SA_DEVFN_IGD:	return "GFX0";
+	case PCH_DEVFN_ISH:	return "ISHB";
+	case PCH_DEVFN_XHCI:	return "XHCI";
+	case PCH_DEVFN_USBOTG:	return "XDCI";
+	case PCH_DEVFN_THERMAL:	return "THRM";
+	case PCH_DEVFN_CIO:	return "ICIO";
+	case PCH_DEVFN_I2C0:	return "I2C0";
+	case PCH_DEVFN_I2C1:	return "I2C1";
+	case PCH_DEVFN_I2C2:	return "I2C2";
+	case PCH_DEVFN_I2C3:	return "I2C3";
+	case PCH_DEVFN_CSE:	return "CSE1";
+	case PCH_DEVFN_CSE_2:	return "CSE2";
+	case PCH_DEVFN_CSE_IDER:	return "CSED";
+	case PCH_DEVFN_CSE_KT:	return "CSKT";
+	case PCH_DEVFN_CSE_3:	return "CSE3";
+	case PCH_DEVFN_SATA:	return "SATA";
+	case PCH_DEVFN_UART2:	return "UAR2";
+	case PCH_DEVFN_I2C4:	return "I2C4";
+	case PCH_DEVFN_I2C5:	return "I2C5";
+	case PCH_DEVFN_PCIE1:	return "RP01";
+	case PCH_DEVFN_PCIE2:	return "RP02";
+	case PCH_DEVFN_PCIE3:	return "RP03";
+	case PCH_DEVFN_PCIE4:	return "RP04";
+	case PCH_DEVFN_PCIE5:	return "RP05";
+	case PCH_DEVFN_PCIE6:	return "RP06";
+	case PCH_DEVFN_PCIE7:	return "RP07";
+	case PCH_DEVFN_PCIE8:	return "RP08";
+	case PCH_DEVFN_PCIE9:	return "RP09";
+	case PCH_DEVFN_PCIE10:	return "RP10";
+	case PCH_DEVFN_PCIE11:	return "RP11";
+	case PCH_DEVFN_PCIE12:	return "RP12";
+	case PCH_DEVFN_PCIE13:	return "RP13";
+	case PCH_DEVFN_PCIE14:	return "RP14";
+	case PCH_DEVFN_PCIE15:	return "RP15";
+	case PCH_DEVFN_PCIE16:	return "RP16";
+	case PCH_DEVFN_UART0:	return "UAR0";
+	case PCH_DEVFN_UART1:	return "UAR1";
+	case PCH_DEVFN_GSPI0:	return "SPI0";
+	case PCH_DEVFN_GSPI1:	return "SPI1";
+	case PCH_DEVFN_EMMC:	return "EMMC";
+	case PCH_DEVFN_SDIO:	return "SDIO";
+	case PCH_DEVFN_SDCARD:	return "SDXC";
+	case PCH_DEVFN_P2SB:	return "P2SB";
+	case PCH_DEVFN_PMC:	return "PMC_";
+	case PCH_DEVFN_HDA:	return "HDAS";
+	case PCH_DEVFN_SMBUS:	return "SBUS";
+	case PCH_DEVFN_SPI:	return "FSPI";
+	case PCH_DEVFN_GBE:	return "IGBE";
+	case PCH_DEVFN_TRACEHUB:return "THUB";
+	}
+
+	return NULL;
+}
+#endif
+
 void soc_init_pre_device(void *chip_info)
 {
 	/* Snapshot the current GPIO IRQ polarities. FSP is setting a
@@ -53,7 +166,7 @@ void soc_init_pre_device(void *chip_info)
 	itss_snapshot_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
 
 	/* Perform silicon specific init. */
-	fsp_silicon_init(romstage_handoff_is_resume());
+	fsp_silicon_init();
 
 	/*
 	 * Keep the P2SB device visible so it and the other devices are
@@ -70,11 +183,6 @@ void soc_init_pre_device(void *chip_info)
 		pcie_rp_update_devicetree(pch_h_rp_groups);
 	else
 		pcie_rp_update_devicetree(pch_lp_rp_groups);
-}
-
-void soc_fsp_load(void)
-{
-	fsps_load(romstage_handoff_is_resume());
 }
 
 static struct device_operations pci_domain_ops = {
@@ -102,6 +210,8 @@ static void soc_enable(struct device *dev)
 		dev->ops = &pci_domain_ops;
 	else if (dev->path.type == DEVICE_PATH_CPU_CLUSTER)
 		dev->ops = &cpu_bus_ops;
+	else if (dev->path.type == DEVICE_PATH_GPIO)
+		block_gpio_enable(dev);
 }
 
 struct chip_operations soc_intel_skylake_ops = {
@@ -139,8 +249,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
 		params->PortUsb20Enable[i] =
 				config->usb2_ports[i].enable;
-		params->Usb2OverCurrentPin[i] =
-				config->usb2_ports[i].ocpin;
 		params->Usb2AfePetxiset[i] =
 				config->usb2_ports[i].pre_emp_bias;
 		params->Usb2AfeTxiset[i] =
@@ -149,11 +257,20 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 				config->usb2_ports[i].tx_emp_enable;
 		params->Usb2AfePehalfbit[i] =
 				config->usb2_ports[i].pre_emp_bit;
+
+		if (config->usb2_ports[i].enable)
+			params->Usb2OverCurrentPin[i] = config->usb2_ports[i].ocpin;
+		else
+			params->Usb2OverCurrentPin[i] = OC_SKIP;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(config->usb3_ports); i++) {
 		params->PortUsb30Enable[i] = config->usb3_ports[i].enable;
-		params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
+		if (config->usb3_ports[i].enable)
+			params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
+		else
+			params->Usb3OverCurrentPin[i] = OC_SKIP;
+
 		if (config->usb3_ports[i].tx_de_emp) {
 			params->Usb3HsioTxDeEmphEnable[i] = 1;
 			params->Usb3HsioTxDeEmph[i] =
@@ -166,14 +283,30 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		}
 	}
 
-	memcpy(params->SataPortsEnable, config->SataPortsEnable,
-	       sizeof(params->SataPortsEnable));
-	memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
-	       sizeof(params->SataPortsDevSlp));
-	memcpy(params->SataPortsHotPlug, config->SataPortsHotPlug,
-	       sizeof(params->SataPortsHotPlug));
-	memcpy(params->SataPortsSpinUp, config->SataPortsSpinUp,
-	       sizeof(params->SataPortsSpinUp));
+	dev = pcidev_path_on_root(PCH_DEVFN_SATA);
+	params->SataEnable = dev && dev->enabled;
+	if (params->SataEnable) {
+		memcpy(params->SataPortsEnable, config->SataPortsEnable,
+				sizeof(params->SataPortsEnable));
+		memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
+				sizeof(params->SataPortsDevSlp));
+		memcpy(params->SataPortsHotPlug, config->SataPortsHotPlug,
+				sizeof(params->SataPortsHotPlug));
+		memcpy(params->SataPortsSpinUp, config->SataPortsSpinUp,
+				sizeof(params->SataPortsSpinUp));
+
+		params->SataSalpSupport = config->SataSalpSupport;
+		params->SataMode = config->SataMode;
+		params->SataSpeedLimit = config->SataSpeedLimit;
+		/*
+		 * For unknown reasons FSP skips writing some essential SATA init registers
+		 * (SIR) when SataPwrOptEnable=0. This results in link errors, "unaligned
+		 * write" errors and others. Enabling this option solves these problems.
+		 */
+		params->SataPwrOptEnable = 1;
+		tconfig->SataTestMode = config->SataTestMode;
+	}
+
 	memcpy(params->PcieRpClkReqSupport, config->PcieRpClkReqSupport,
 	       sizeof(params->PcieRpClkReqSupport));
 	memcpy(params->PcieRpClkReqNumber, config->PcieRpClkReqNumber,
@@ -187,8 +320,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	       sizeof(params->PcieRpHotPlug));
 	for (i = 0; i < CONFIG_MAX_ROOT_PORTS; i++) {
 		params->PcieRpMaxPayload[i] = config->PcieRpMaxPayload[i];
-		if (config->PcieRpAspm[i])
-			params->PcieRpAspm[i] = config->PcieRpAspm[i] - 1;
+		if (config->pcie_rp_aspm[i])
+			params->PcieRpAspm[i] = config->pcie_rp_aspm[i] - 1;
+		if (config->pcie_rp_l1substates[i])
+			params->PcieRpL1Substates[i] = config->pcie_rp_l1substates[i] - 1;
 	}
 
 	/*
@@ -208,17 +343,24 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
 	/* Legacy 8254 timer support */
-	params->Early8254ClockGatingEnable = !CONFIG_USE_LEGACY_8254_TIMER;
+	params->Early8254ClockGatingEnable = !CONFIG(USE_LEGACY_8254_TIMER);
+
+	params->EnableTcoTimer = CONFIG(USE_PM_ACPI_TIMER);
 
 	memcpy(params->SerialIoDevMode, config->SerialIoDevMode,
 	       sizeof(params->SerialIoDevMode));
 
-	params->PchCio2Enable = config->Cio2Enable;
-	params->SaImguEnable = config->SaImguEnable;
-	params->Heci3Enabled = config->Heci3Enabled;
+	dev = pcidev_path_on_root(PCH_DEVFN_CIO);
+	params->PchCio2Enable = dev && dev->enabled;
 
-	params->LogoPtr = config->LogoPtr;
-	params->LogoSize = config->LogoSize;
+	dev = pcidev_path_on_root(SA_DEVFN_IMGU);
+	params->SaImguEnable = dev && dev->enabled;
+
+	dev = pcidev_path_on_root(SA_DEVFN_CHAP);
+	tconfig->ChapDeviceEnable = dev && dev->enabled;
+
+	dev = pcidev_path_on_root(PCH_DEVFN_CSE_3);
+	params->Heci3Enabled = dev && dev->enabled;
 
 	params->CpuConfig.Bits.VmxEnable = CONFIG(ENABLE_VMX);
 
@@ -226,18 +368,22 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchPmWoWlanDeepSxEnable = config->PchPmWoWlanDeepSxEnable;
 	params->PchPmLanWakeFromDeepSx = config->WakeConfigPcieWakeFromDeepSx;
 
-	params->PchLanEnable = config->EnableLan;
-	if (config->EnableLan) {
+	dev = pcidev_path_on_root(PCH_DEVFN_GBE);
+	params->PchLanEnable = dev && dev->enabled;
+	if (params->PchLanEnable) {
 		params->PchLanLtrEnable = config->EnableLanLtr;
 		params->PchLanK1OffEnable = config->EnableLanK1Off;
 		params->PchLanClkReqSupported = config->LanClkReqSupported;
 		params->PchLanClkReqNumber = config->LanClkReqNumber;
 	}
-	params->SataSalpSupport = config->SataSalpSupport;
 	params->SsicPortEnable = config->SsicPortEnable;
-	params->ScsEmmcEnabled = config->ScsEmmcEnabled;
+
+	dev = pcidev_path_on_root(PCH_DEVFN_EMMC);
+	params->ScsEmmcEnabled = dev && dev->enabled;
 	params->ScsEmmcHs400Enabled = config->ScsEmmcHs400Enabled;
-	params->ScsSdCardEnabled = config->ScsSdCardEnabled;
+
+	dev = pcidev_path_on_root(PCH_DEVFN_SDCARD);
+	params->ScsSdCardEnabled = dev && dev->enabled;
 
 	if (!!params->ScsEmmcHs400Enabled && !!config->EmmcHs400DllNeed) {
 		params->PchScsEmmcHs400DllDataValid =
@@ -250,29 +396,23 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	/* If ISH is enabled, enable ISH elements */
 	dev = pcidev_path_on_root(PCH_DEVFN_ISH);
-	params->PchIshEnable = dev ? dev->enabled : 0;
+	params->PchIshEnable = dev && dev->enabled;
 
-	params->PchHdaEnable = config->EnableAzalia;
+	dev = pcidev_path_on_root(PCH_DEVFN_HDA);
+	params->PchHdaEnable = dev && dev->enabled;
+
 	params->PchHdaVcType = config->PchHdaVcType;
 	params->PchHdaIoBufferOwnership = config->IoBufferOwnership;
 	params->PchHdaDspEnable = config->DspEnable;
-	params->Device4Enable = config->Device4Enable;
-	params->SataEnable = config->EnableSata;
-	params->SataMode = config->SataMode;
-	params->SataSpeedLimit = config->SataSpeedLimit;
-	params->EnableTcoTimer = !config->PmTimerDisabled;
 
-	/*
-	 * For unknown reasons FSP skips writing some essential SATA init registers (SIR) when
-	 * SataPwrOptEnable=0. This results in link errors, "unaligned write" errors and others.
-	 * Enabling this option solves these problems.
-	 */
-	params->SataPwrOptEnable = 1;
+	dev = pcidev_path_on_root(SA_DEVFN_TS);
+	params->Device4Enable = dev && dev->enabled;
+	dev = pcidev_path_on_root(PCH_DEVFN_THERMAL);
+	params->PchThermalDeviceEnable = dev && dev->enabled;
 
 	tconfig->PchLockDownGlobalSmi = config->LockDownConfigGlobalSmi;
 	tconfig->PchLockDownRtcLock = config->LockDownConfigRtcLock;
-	tconfig->PowerLimit4 = config->PowerLimit4;
-	tconfig->SataTestMode = config->SataTestMode;
+	tconfig->PowerLimit4 = 0;
 	/*
 	 * To disable HECI, the Psf needs to be left unlocked
 	 * by FSP till end of post sequence. Based on the devicetree
@@ -293,16 +433,11 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		 */
 		params->SpiFlashCfgLockDown = 0;
 	}
-	/* only replacing preexisting subsys ID defaults when non-zero */
-	if (CONFIG_SUBSYSTEM_VENDOR_ID != 0) {
-		params->DefaultSvid = CONFIG_SUBSYSTEM_VENDOR_ID;
-		params->PchSubSystemVendorId = CONFIG_SUBSYSTEM_VENDOR_ID;
-	}
-
-	if (CONFIG_SUBSYSTEM_DEVICE_ID != 0) {
-		params->DefaultSid = CONFIG_SUBSYSTEM_DEVICE_ID;
-		params->PchSubSystemId = CONFIG_SUBSYSTEM_DEVICE_ID;
-	}
+	/* FSP should let coreboot set subsystem IDs, which are read/write-once */
+	params->DefaultSvid = 0;
+	params->PchSubSystemVendorId = 0;
+	params->DefaultSid = 0;
+	params->PchSubSystemId = 0;
 
 	params->PchPmWolEnableOverride = config->WakeConfigWolEnableOverride;
 	params->PchPmPcieWakeFromDeepSx = config->WakeConfigPcieWakeFromDeepSx;
@@ -312,7 +447,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchPmSlpS4MinAssert = config->PmConfigSlpS4MinAssert;
 	params->PchPmSlpSusMinAssert = config->PmConfigSlpSusMinAssert;
 	params->PchPmSlpAMinAssert = config->PmConfigSlpAMinAssert;
-	params->PchPmLpcClockRun = config->PmConfigPciClockRun;
 	params->PchPmSlpStrchSusUp = config->PmConfigSlpStrchSusUp;
 	params->PchPmPwrBtnOverridePeriod =
 				config->PmConfigPwrBtnOverridePeriod;
@@ -324,7 +458,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchSirqEnable = config->serirq_mode != SERIRQ_OFF;
 	params->PchSirqMode = config->serirq_mode == SERIRQ_CONTINUOUS;
 
-	params->CpuConfig.Bits.SkipMpInit = !CONFIG_USE_INTEL_FSP_MP_INIT;
+	params->CpuConfig.Bits.SkipMpInit = !CONFIG(USE_INTEL_FSP_MP_INIT);
 
 	for (i = 0; i < ARRAY_SIZE(config->i2c_voltage); i++)
 		params->SerialIoI2cVoltage[i] = config->i2c_voltage[i];
@@ -334,7 +468,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	/* Show SPI controller if enabled in devicetree.cb */
 	dev = pcidev_path_on_root(PCH_DEVFN_SPI);
-	params->ShowSpiController = dev ? dev->enabled : 0;
+	params->ShowSpiController = dev && dev->enabled;
 
 	/* Enable xDCI controller if enabled in devicetree and allowed */
 	dev = pcidev_path_on_root(PCH_DEVFN_USBOTG);
@@ -348,7 +482,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	/* Enable or disable Gaussian Mixture Model in devicetree */
 	dev = pcidev_path_on_root(SA_DEVFN_GMM);
-	params->GmmEnable = dev ? dev->enabled : 0;
+	params->GmmEnable = dev && dev->enabled;
 
 	/*
 	 * Send VR specific mailbox commands:
@@ -403,17 +537,19 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	else
 		params->PeiGraphicsPeimInit = 0;
 
+	params->PavpEnable = CONFIG(PAVP);
+
 	soc_irq_settings(params);
 }
 
-/* Mainboard GPIO Configuration */
+/* Mainboard FSP Configuration */
 __weak void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
 }
 
 /* Handle FSP logo params */
-const struct cbmem_entry *soc_load_logo(FSPS_UPD *supd)
+void soc_load_logo(FSPS_UPD *supd)
 {
-	return fsp_load_logo(&supd->FspsConfig.LogoPtr, &supd->FspsConfig.LogoSize);
+	bmp_load_logo(&supd->FspsConfig.LogoPtr, &supd->FspsConfig.LogoSize);
 }

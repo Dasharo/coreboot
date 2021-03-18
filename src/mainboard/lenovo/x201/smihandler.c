@@ -3,7 +3,6 @@
 #include <arch/io.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
-#include <southbridge/intel/ibexpeak/nvs.h>
 #include <southbridge/intel/common/pmutil.h>
 #include <northbridge/intel/ironlake/ironlake.h>
 #include <ec/acpi/ec.h>
@@ -23,7 +22,7 @@ static void mainboard_smi_handle_ec_sci(void)
 		return;
 
 	event = ec_query();
-	printk(BIOS_DEBUG, "EC event %02x\n", event);
+	printk(BIOS_DEBUG, "EC event %#02x\n", event);
 
 	switch (event) {
 	case 0x18:

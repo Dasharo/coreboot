@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <southbridge/intel/bd82x6x/nvs.h>
-#include <ec/google/chromeec/ec.h>
-#include <vendorcode/google/chromeos/gnvs.h>
+#include <acpi/acpi_gnvs.h>
+#include <soc/nvs.h>
 #include "thermal.h"
 
-void acpi_create_gnvs(global_nvs_t *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
 	/* Disable USB ports in S3 by default */
 	gnvs->s3u0 = 0;
@@ -14,11 +13,6 @@ void acpi_create_gnvs(global_nvs_t *gnvs)
 	/* Disable USB ports in S5 by default */
 	gnvs->s5u0 = 0;
 	gnvs->s5u1 = 0;
-
-#if CONFIG(CHROMEOS)
-	gnvs->chromeos.vbt2 = google_ec_running_ro() ?
-		ACTIVE_ECFW_RO : ACTIVE_ECFW_RW;
-#endif
 
 	gnvs->tmps = CTDP_SENSOR_ID;
 

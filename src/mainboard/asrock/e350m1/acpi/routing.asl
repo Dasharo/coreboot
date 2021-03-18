@@ -1,14 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-/*
-#include <acpi/acpi.h>
-DefinitionBlock ("DSDT.AML", "DSDT", 0x01, OEM_ID, ACPI_TABLE_CREATOR, 0x00010001
-		)
-	{
-		#include "routing.asl"
-	}
-*/
-
 /* Routing is in System Bus scope */
 Scope(\_SB) {
 	Name(PR0, Package(){
@@ -298,14 +289,14 @@ Scope(\_SB) {
 		Package(){0x0000FFFF, 3, 0, 16 },
 	})
 
-	Name(PSa, Package(){
+	Name(PSA, Package(){
 		/* PCIe slot - Hooked to PCIe slot 10 */
 		Package(){0x0000FFFF, 0, INTD, 0 },
 		Package(){0x0000FFFF, 1, INTA, 0 },
 		Package(){0x0000FFFF, 2, INTB, 0 },
 		Package(){0x0000FFFF, 3, INTC, 0 },
 	})
-	Name(APSa, Package(){
+	Name(APSA, Package(){
 		/* PCIe slot - Hooked to PCIe slot 10 */
 		Package(){0x0000FFFF, 0, 0, 18 },
 		Package(){0x0000FFFF, 1, 0, 19 },

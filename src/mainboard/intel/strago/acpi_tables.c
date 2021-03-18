@@ -1,19 +1,17 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <arch/ioapic.h>
 #include <device/device.h>
 #include <soc/acpi.h>
 #include <soc/iomap.h>
 #include <soc/nvs.h>
-#include <types.h>
-#include <boardid.h>
+#include <soc/device_nvs.h>
 #include "onboard.h"
 
-void acpi_create_gnvs(global_nvs_t *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
-	acpi_init_gnvs(gnvs);
-
 	/* Enable USB ports in S3 */
 	gnvs->s3u0 = 1;
 	gnvs->s3u1 = 1;
@@ -26,7 +24,8 @@ void acpi_create_gnvs(global_nvs_t *gnvs)
 	gnvs->dpte = 1;
 
 	/* PMIC is configured in I2C1, hidden it from OS */
-	gnvs->dev.lpss_en[LPSS_NVS_I2C2] = 0;
+	struct device_nvs *dev_nvs = acpi_get_device_nvs();
+	dev_nvs->lpss_en[LPSS_NVS_I2C2] = 0;
 }
 
 unsigned long acpi_fill_madt(unsigned long current)

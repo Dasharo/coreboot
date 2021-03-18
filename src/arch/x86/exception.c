@@ -180,8 +180,6 @@ static uint32_t gdb_stub_registers[NUM_REGS];
 #define GDB_EXC_SOFTWARE       149 /* Software generated exception */
 #define GDB_EXC_BREAKPOINT     150 /* Breakpoint */
 
-
-
 static unsigned char exception_to_signal[] = {
 	[0]  = GDB_SIGFPE,  /* divide by zero */
 	[1]  = GDB_SIGTRAP, /* debug exception */
@@ -221,7 +219,6 @@ static unsigned char exception_to_signal[] = {
 static const char hexchars[] = "0123456789abcdef";
 static char in_buffer[BUFMAX];
 static char out_buffer[BUFMAX];
-
 
 static inline void stub_putc(int ch)
 {
@@ -283,7 +280,6 @@ static void copy_to_hex(char *buf, void *addr, unsigned long count)
 	*buf = 0;
 }
 
-
 /* convert the hex array pointed to by buf into binary to be placed in mem */
 /* return a pointer to the character AFTER the last byte written */
 static void copy_from_hex(void *addr, char *buf, unsigned long count)
@@ -297,7 +293,6 @@ static void copy_from_hex(void *addr, char *buf, unsigned long count)
 		*mem++ = ch;
 	}
 }
-
 
 /* scan for the sequence $<data>#<checksum>	*/
 
@@ -489,12 +484,38 @@ void x86_exception(struct eregs *info)
 		put_packet(out_buffer);
 	}
 #else /* !CONFIG_GDB_STUB */
-#define MDUMP_SIZE 0x80
+
 	int logical_processor = 0;
 
 #if ENV_RAMSTAGE
 	logical_processor = cpu_index();
 #endif
+	u8 *code;
+#ifdef __x86_64__
+#define MDUMP_SIZE 0x100
+	printk(BIOS_EMERG,
+		"CPU Index %d - APIC %d Unexpected Exception:\n"
+		"%lld @ %02llx:%016llx - Halting\n"
+		"Code: %lld rflags: %016llx cr2: %016llx\n"
+		"rax: %016llx rbx: %016llx\n"
+		"rcx: %016llx rdx: %016llx\n"
+		"rdi: %016llx rsi: %016llx\n"
+		"rbp: %016llx rsp: %016llx\n"
+		"r08: %016llx r09: %016llx\n"
+		"r10: %016llx r11: %016llx\n"
+		"r12: %016llx r13: %016llx\n"
+		"r14: %016llx r15: %016llx\n",
+		logical_processor, (unsigned int)lapicid(),
+		info->vector, info->cs, info->rip,
+		info->error_code, info->rflags, read_cr2(),
+		info->rax, info->rbx, info->rcx, info->rdx,
+		info->rdi, info->rsi, info->rbp, info->rsp,
+		info->r8, info->r9, info->r10, info->r11,
+		info->r12, info->r13, info->r14, info->r15);
+	code = (u8 *)((uintptr_t)info->rip - (MDUMP_SIZE >> 2));
+#else
+#define MDUMP_SIZE 0x80
+
 	printk(BIOS_EMERG,
 		"CPU Index %d - APIC %d Unexpected Exception:"
 		"%d @ %02x:%08x - Halting\n"
@@ -506,7 +527,8 @@ void x86_exception(struct eregs *info)
 		info->error_code, info->eflags, read_cr2(),
 		info->eax, info->ebx, info->ecx, info->edx,
 		info->edi, info->esi, info->ebp, info->esp);
-	u8 *code = (u8 *)((uintptr_t)info->eip - (MDUMP_SIZE >> 1));
+	code = (u8 *)((uintptr_t)info->eip - (MDUMP_SIZE >> 1));
+#endif
 	/* Align to 8-byte boundary please, and print eight bytes per row.
 	 * This is done to make DRAM burst timing/reordering errors more
 	 * evident from the looking at the dump */
@@ -517,7 +539,18 @@ void x86_exception(struct eregs *info)
 			printk(BIOS_EMERG, "\n%p:\t", code + i);
 		printk(BIOS_EMERG, "%.2x ", code[i]);
 	}
-	die("");
+
+	/* Align to 4-byte boundary and up the stack. */
+	u32 *ptr = (u32 *)(ALIGN_DOWN((uintptr_t)info->esp, sizeof(u32)) + MDUMP_SIZE - 4);
+	for (i = 0; i < MDUMP_SIZE / sizeof(u32); ++i, --ptr) {
+		printk(BIOS_EMERG, "\n%p:\t0x%08x", ptr, *ptr);
+		if ((uintptr_t)ptr == info->ebp)
+			printk(BIOS_EMERG, " <-ebp");
+		else if ((uintptr_t)ptr == info->esp)
+			printk(BIOS_EMERG, " <-esp");
+	}
+
+	die("\n");
 #endif
 }
 

@@ -10,7 +10,6 @@ subdirs-y += ../../../cpu/x86/tsc
 subdirs-y += ../../../cpu/intel/common
 
 bootblock-y += bootblock/bootblock.c
-bootblock-y += bootblock/cpu.c
 bootblock-y += bootblock/pch.c
 bootblock-y += pmutil.c
 bootblock-y += bootblock/report_platform.c
@@ -36,6 +35,7 @@ ramstage-y += cpu.c
 ramstage-y += elog.c
 ramstage-y += finalize.c
 ramstage-y += fsp_params.c
+ramstage-y += graphics.c
 ramstage-y += gspi.c
 ramstage-y += i2c.c
 ramstage-y += lockdown.c
@@ -46,7 +46,6 @@ ramstage-y += p2sb.c
 ramstage-y += pmc.c
 ramstage-y += pmutil.c
 ramstage-y += reset.c
-ramstage-y += smmrelocate.c
 ramstage-y += spi.c
 ramstage-y += systemagent.c
 ramstage-y += uart.c
@@ -107,7 +106,9 @@ else ifeq ($(CONFIG_SOC_INTEL_WHISKEYLAKE),y)
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-8e-0b
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-8e-0c
 else ifeq ($(CONFIG_SOC_INTEL_COMETLAKE),y)
-ifneq ($(CONFIG_SOC_INTEL_CANNONLAKE_PCH_H),y)
+ifeq ($(CONFIG_SOC_INTEL_CANNONLAKE_PCH_H),y)
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-a5-02
+else
 # Missing 06-a6-01
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-8e-0c
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-a6-00

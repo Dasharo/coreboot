@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <stddef.h>
+#include <stdint.h>
 #include <acpi/acpi.h>
 #include <assert.h>
 #include <cbfs.h>
@@ -17,8 +17,6 @@
 #include <soc/iosf.h>
 #include <soc/pci_devs.h>
 #include <soc/romstage.h>
-#include <ec/google/chromeec/ec.h>
-#include <ec/google/chromeec/ec_commands.h>
 #include <security/vboot/vboot_common.h>
 
 uintptr_t smbus_base(void)
@@ -36,7 +34,7 @@ int smbus_enable_iobar(uintptr_t base)
 	pci_write_config32(smbus_dev, PCI_BASE_ADDRESS_4, reg);
 	/* Enable decode of I/O space. */
 	reg = pci_read_config16(smbus_dev, PCI_COMMAND);
-	reg |= 0x1;
+	reg |= PCI_COMMAND_IO;
 	pci_write_config16(smbus_dev, PCI_COMMAND, reg);
 	/* Enable Host Controller */
 	reg = pci_read_config8(smbus_dev, 0x40);
@@ -115,11 +113,15 @@ static void print_dram_info(void *dram_data)
 	populate_smbios_tables(dram_data, speed, num_channels);
 }
 
+#define SPD_SIZE 256
+static u8 spd_buf[NUM_CHANNELS][SPD_SIZE];
+
 void raminit(struct mrc_params *mp, int prev_sleep_state)
 {
 	int ret;
 	mrc_wrapper_entry_t mrc_entry;
-	struct region_device rdev;
+	size_t i;
+	size_t mrc_size;
 
 	/* Fill in default entries. */
 	mp->version = MRC_PARAMS_VER;
@@ -127,16 +129,21 @@ void raminit(struct mrc_params *mp, int prev_sleep_state)
 	mp->prev_sleep_state = prev_sleep_state;
 	mp->rmt_enabled = CONFIG(MRC_RMT);
 
+	int s3resume = prev_sleep_state == ACPI_S3;
+
 	/* Default to 2GiB IO hole. */
 	if (!mp->io_hole_mb)
 		mp->io_hole_mb = 2048;
 
-	if (!mrc_cache_get_current(MRC_TRAINING_DATA, 0, &rdev)) {
-		mp->saved_data_size = region_device_sz(&rdev);
-		mp->saved_data = rdev_mmap_full(&rdev);
-		/* Assume boot device is memory mapped. */
-		assert(CONFIG(BOOT_DEVICE_MEMORY_MAPPED));
-	} else if (prev_sleep_state == ACPI_S3) {
+	/* Assume boot device is memory mapped. */
+	assert(CONFIG(BOOT_DEVICE_MEMORY_MAPPED));
+
+	mp->saved_data = mrc_cache_current_mmap_leak(MRC_TRAINING_DATA,
+						     0,
+						     &mrc_size);
+	if (mp->saved_data) {
+		mp->saved_data_size = mrc_size;
+	} else if (s3resume) {
 		/* If waking from S3 and no cache then. */
 		printk(BIOS_DEBUG, "No MRC cache found in S3 resume path.\n");
 		post_code(POST_RESUME_FAILURE);
@@ -146,7 +153,7 @@ void raminit(struct mrc_params *mp, int prev_sleep_state)
 	}
 
 	/* Determine if mrc.bin is in the cbfs. */
-	if (cbfs_boot_map_with_leak("mrc.bin", CBFS_TYPE_MRC, NULL) == NULL) {
+	if (cbfs_map("mrc.bin", NULL) == NULL) {
 		printk(BIOS_DEBUG, "Couldn't find mrc.bin\n");
 		return;
 	}
@@ -158,19 +165,28 @@ void raminit(struct mrc_params *mp, int prev_sleep_state)
 	 */
 	mrc_entry = (void *)(uintptr_t)CONFIG_MRC_BIN_ADDRESS;
 
-	if (mp->mainboard.dram_info_location == DRAM_INFO_SPD_SMBUS)
+	if (mp->mainboard.dram_info_location == DRAM_INFO_SPD_SMBUS) {
+		/* Workaround for broken SMBus support in the MRC */
 		enable_smbus();
+		mp->mainboard.dram_info_location = DRAM_INFO_SPD_MEM;
+		for (i = 0; i < NUM_CHANNELS; ++i) {
+			if (mp->mainboard.spd_addrs[i]) {
+				i2c_eeprom_read(mp->mainboard.spd_addrs[i],
+					0, SPD_SIZE, spd_buf[i]);
+				/* NOTE: MRC looks for Channel 1 SPD at array
+					index 1 */
+				mp->mainboard.dram_data[i] = spd_buf;
+			}
+		}
+	}
 
 	ret = mrc_entry(mp);
 
-	if (prev_sleep_state != ACPI_S3) {
-		cbmem_initialize_empty();
-	} else if (cbmem_initialize()) {
-	#if CONFIG(HAVE_ACPI_RESUME)
-		printk(BIOS_DEBUG, "Failed to recover CBMEM in S3 resume.\n");
+	int cbmem_was_initted = !cbmem_recovery(s3resume);
+	if (s3resume && !cbmem_was_initted) {
 		/* Failed S3 resume, reset to come up cleanly */
+		printk(BIOS_CRIT, "Failed to recover CBMEM in S3 resume.\n");
 		system_reset();
-	#endif
 	}
 
 	print_dram_info(mp->mainboard.dram_data[0]);

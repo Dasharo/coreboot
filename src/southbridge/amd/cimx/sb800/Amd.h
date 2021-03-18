@@ -83,7 +83,6 @@ typedef struct _AMD_CONFIG_PARAMS {
   IN OUT   unsigned int          Reserved[2];      ///< This space is reserved for future use.
 } AMD_CONFIG_PARAMS;
 
-
 /// AGESA Binary module header structure
 typedef struct _AMD_IMAGE_HEADER {
   IN       unsigned int  Signature;                          ///< Binary Signature
@@ -124,10 +123,6 @@ typedef struct _AMD_MODULE_HEADER {
 //   14:12   Function (3-bits)
 //   11:00   Offset  (12-bits)
 
-#if 0
-#define MAKE_SBDFO(Seg, Bus, Dev, Fun, Off) ((((unsigned int) (Seg)) << 28) | (((unsigned int) (Bus)) << 20) | \
-                   (((unsigned int) (Dev)) << 15) | (((unsigned int) (Fun)) << 12) | ((unsigned int) (Off)))
-#endif
 #define ILLEGAL_SBDFO 0xFFFFFFFF
 
 /// CPUID data received registers format

@@ -4,12 +4,13 @@
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
-	0x02,		// DSDT revision: ACPI v2.0 and up
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x20110725	// OEM revision
 )
 {
+	#include <acpi/dsdt_top.asl>
 	#include "acpi/platform.asl"
 
 	// Thermal handler
@@ -24,7 +25,7 @@ DefinitionBlock(
 	Scope (\_SB) {
 		Device (PCI0)
 		{
-			#include <northbridge/intel/haswell/acpi/haswell.asl>
+			#include <northbridge/intel/haswell/acpi/hostbridge.asl>
 			#include <southbridge/intel/lynxpoint/acpi/pch.asl>
 
 			#include <drivers/intel/gma/acpi/default_brightness_levels.asl>
@@ -41,9 +42,6 @@ DefinitionBlock(
 
 	// Mainboard specific
 	#include "acpi/mainboard.asl"
-
-	// Chrome OS specific
-	#include <vendorcode/google/chromeos/acpi/chromeos.asl>
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }

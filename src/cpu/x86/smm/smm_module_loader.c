@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <string.h>
+#include <acpi/acpi_gnvs.h>
 #include <rmodule.h>
 #include <cpu/x86/smm.h>
 #include <commonlib/helpers.h>
@@ -208,6 +209,12 @@ static int smm_module_setup_stub(void *smbase, size_t smm_size,
 	smm_stub_size = rmodule_memory_size(&smm_stub);
 	stub_entry_offset = rmodule_entry_offset(&smm_stub);
 
+	if (smm_stub_size > params->per_cpu_save_state_size) {
+		printk(BIOS_ERR, "SMM Module: SMM stub size larger than save state size\n");
+		printk(BIOS_ERR, "SMM Module: Staggered entry points will overlap stub\n");
+		return -1;
+	}
+
 	/* Assume the stub is always small enough to live within upper half of
 	 * SMRAM region after the save state space has been allocated. */
 	smm_stub_loc = &base[SMM_ENTRY_OFFSET];
@@ -261,6 +268,7 @@ static int smm_module_setup_stub(void *smbase, size_t smm_size,
 	stub_params->runtime.smm_size = smm_size;
 	stub_params->runtime.save_state_size = params->per_cpu_save_state_size;
 	stub_params->runtime.num_cpus = params->num_concurrent_stacks;
+	stub_params->runtime.gnvs_ptr = (uintptr_t)acpi_get_gnvs();
 
 	/* Initialize the APIC id to CPU number table to be 1:1 */
 	for (i = 0; i < params->num_concurrent_stacks; i++)

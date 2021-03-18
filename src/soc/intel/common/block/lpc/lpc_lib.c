@@ -2,14 +2,19 @@
 
 #define __SIMPLE_DEVICE__
 
+#include <arch/ioapic.h>
 #include <assert.h>
 #include <console/console.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
+#include <intelblocks/itss.h>
 #include <intelblocks/lpc_lib.h>
+#include <intelblocks/pcr.h>
 #include <lib.h>
 #include "lpc_def.h"
+#include <soc/irq.h>
 #include <soc/pci_devs.h>
+#include <soc/pcr_ids.h>
 
 uint16_t lpc_enable_fixed_io_ranges(uint16_t io_enables)
 {
@@ -18,6 +23,8 @@ uint16_t lpc_enable_fixed_io_ranges(uint16_t io_enables)
 	reg_io_enables = pci_read_config16(PCH_DEV_LPC, LPC_IO_ENABLES);
 	io_enables |= reg_io_enables;
 	pci_write_config16(PCH_DEV_LPC, LPC_IO_ENABLES, io_enables);
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_LPC_MIRROR_TO_DMI))
+		pcr_write16(PID_DMI, PCR_DMI_LPCIOE, io_enables);
 
 	return io_enables;
 }
@@ -34,6 +41,8 @@ uint16_t lpc_set_fixed_io_ranges(uint16_t io_ranges, uint16_t mask)
 	reg_io_ranges = lpc_get_fixed_io_decode() & ~mask;
 	io_ranges |= reg_io_ranges & mask;
 	pci_write_config16(PCH_DEV_LPC, LPC_IO_DECODE, io_ranges);
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_LPC_MIRROR_TO_DMI))
+		pcr_write16(PID_DMI, PCR_DMI_LPCIOD, io_ranges);
 
 	return io_ranges;
 }
@@ -55,14 +64,6 @@ static int find_unused_pmio_window(void)
 	}
 
 	return -1;
-}
-
-void lpc_close_pmio_windows(void)
-{
-	size_t i;
-
-	for (i = 0; i < LPC_NUM_GENERIC_IO_RANGES; i++)
-		pci_write_config32(PCH_DEV_LPC, LPC_GENERIC_IO_RANGE(i), 0);
 }
 
 void lpc_open_pmio_window(uint16_t base, uint16_t size)
@@ -110,6 +111,8 @@ void lpc_open_pmio_window(uint16_t base, uint16_t size)
 		lgir_reg_offset = LPC_GENERIC_IO_RANGE(lgir_reg_num);
 
 		pci_write_config32(PCH_DEV_LPC, lgir_reg_offset, lgir);
+		if (CONFIG(SOC_INTEL_COMMON_BLOCK_LPC_MIRROR_TO_DMI))
+			pcr_write32(PID_DMI, PCR_DMI_LPCLGIR1 + lgir_reg_num * 4, lgir);
 
 		printk(BIOS_DEBUG,
 		       "LPC: Opened IO window LGIR%d: base %llx size %x\n",
@@ -143,28 +146,8 @@ void lpc_open_mmio_window(uintptr_t base, size_t size)
 	lgmr = (base & LPC_LGMR_ADDR_MASK) | LPC_LGMR_EN;
 
 	pci_write_config32(PCH_DEV_LPC, LPC_GENERIC_MEM_RANGE, lgmr);
-}
-
-bool lpc_fits_fixed_mmio_window(uintptr_t base, size_t size)
-{
-	resource_t res_end, range_end;
-	const struct lpc_mmio_range *range;
-	const struct lpc_mmio_range *lpc_fixed_mmio_ranges =
-		soc_get_fixed_mmio_ranges();
-
-	for (range = lpc_fixed_mmio_ranges; range->size; range++) {
-		range_end = range->base + range->size;
-		res_end = base + size;
-
-		if ((base >= range->base) && (res_end <= range_end)) {
-			printk(BIOS_DEBUG,
-			       "Resource %lx size %zx fits in fixed window"
-			       " %lx size %zx\n",
-			       base, size, range->base, range->size);
-			return true;
-		}
-	}
-	return false;
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_LPC_MIRROR_TO_DMI))
+		pcr_write32(PID_DMI, PCR_DMI_LPCGMR, lgmr);
 }
 
 /*
@@ -236,21 +219,22 @@ void lpc_set_serirq_mode(enum serirq_mode mode)
 	pci_write_config8(dev, LPC_SERIRQ_CTL, scnt);
 }
 
-
 void lpc_io_setup_comm_a_b(void)
 {
 	/* ComA Range 3F8h-3FFh [2:0] */
 	uint16_t com_ranges = LPC_IOD_COMA_RANGE;
 	uint16_t com_enable = LPC_IOE_COMA_EN;
+	uint16_t com_mask   = LPC_IOD_COMA_RANGE_MASK;
 
 	/* ComB Range 2F8h-2FFh [6:4] */
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_LPC_COMB_ENABLE)) {
 		com_ranges |= LPC_IOD_COMB_RANGE;
 		com_enable |= LPC_IOE_COMB_EN;
+		com_mask   |= LPC_IOD_COMB_RANGE_MASK;
 	}
 
 	/* Setup I/O Decode Range Register for LPC */
-	pci_write_config16(PCH_DEV_LPC, LPC_IO_DECODE, com_ranges);
+	lpc_set_fixed_io_ranges(com_ranges, com_mask);
 	/* Enable ComA and ComB Port */
 	lpc_enable_fixed_io_ranges(com_enable);
 }
@@ -261,26 +245,21 @@ static void lpc_set_gen_decode_range(
 	size_t i;
 
 	/* Set in PCI generic decode range registers */
-	for (i = 0; i < LPC_NUM_GENERIC_IO_RANGES; i++)
-		pci_write_config32(PCH_DEV_LPC, LPC_GENERIC_IO_RANGE(i),
-			gen_io_dec[i]);
+	for (i = 0; i < LPC_NUM_GENERIC_IO_RANGES; i++) {
+		pci_write_config32(PCH_DEV_LPC, LPC_GENERIC_IO_RANGE(i), gen_io_dec[i]);
+		if (CONFIG(SOC_INTEL_COMMON_BLOCK_LPC_MIRROR_TO_DMI))
+			pcr_write32(PID_DMI, PCR_DMI_LPCLGIR1 + i * 4, gen_io_dec[i]);
+	}
 }
 
 void pch_enable_lpc(void)
 {
-	/* Lookup device tree in romstage */
-	const struct device *dev;
 	uint32_t gen_io_dec[LPC_NUM_GENERIC_IO_RANGES];
 
-	dev = pcidev_on_root(PCH_DEV_SLOT_LPC, 0);
-	if (!dev)
-		return;
-
-	soc_get_gen_io_dec_range(dev, gen_io_dec);
+	soc_get_gen_io_dec_range(gen_io_dec);
 	lpc_set_gen_decode_range(gen_io_dec);
-	soc_setup_dmi_pcr_io_dec(gen_io_dec);
 	if (ENV_PAYLOAD_LOADER)
-		soc_pch_pirq_init(dev);
+		pch_pirq_init();
 }
 
 void lpc_enable_pci_clk_cntl(void)
@@ -292,4 +271,113 @@ void lpc_disable_clkrun(void)
 {
 	const uint8_t pcctl = pci_read_config8(PCH_DEV_LPC, LPC_PCCTL);
 	pci_write_config8(PCH_DEV_LPC, LPC_PCCTL, pcctl & ~LPC_PCCTL_CLKRUN_EN);
+}
+
+/* Enable PCH IOAPIC */
+void pch_enable_ioapic(void)
+{
+	uint32_t reg32;
+	/* PCH-LP has 120 redirection entries */
+	const int redir_entries = 120;
+
+	set_ioapic_id((void *)IO_APIC_ADDR, 0x02);
+
+	/* affirm full set of redirection table entries ("write once") */
+	reg32 = io_apic_read((void *)IO_APIC_ADDR, 0x01);
+
+	reg32 &= ~0x00ff0000;
+	reg32 |= (redir_entries - 1) << 16;
+
+	io_apic_write((void *)IO_APIC_ADDR, 0x01, reg32);
+
+	/*
+	 * Select Boot Configuration register (0x03) and
+	 * use Processor System Bus (0x01) to deliver interrupts.
+	 */
+	io_apic_write((void *)IO_APIC_ADDR, 0x03, 0x01);
+}
+
+/*
+ * PIRQ[n]_ROUT[3:0] - PIRQ Routing Control
+ * 0x00 - 0000 = Reserved
+ * 0x01 - 0001 = Reserved
+ * 0x02 - 0010 = Reserved
+ * 0x03 - 0011 = IRQ3
+ * 0x04 - 0100 = IRQ4
+ * 0x05 - 0101 = IRQ5
+ * 0x06 - 0110 = IRQ6
+ * 0x07 - 0111 = IRQ7
+ * 0x08 - 1000 = Reserved
+ * 0x09 - 1001 = IRQ9
+ * 0x0A - 1010 = IRQ10
+ * 0x0B - 1011 = IRQ11
+ * 0x0C - 1100 = IRQ12
+ * 0x0D - 1101 = Reserved
+ * 0x0E - 1110 = IRQ14
+ * 0x0F - 1111 = IRQ15
+ * PIRQ[n]_ROUT[7] - PIRQ Routing Control
+ * 0x80 - The PIRQ is not routed.
+ */
+void pch_pirq_init(void)
+{
+	const struct device *irq_dev;
+	uint8_t pch_interrupt_routing[MAX_PXRC_CONFIG];
+
+	pch_interrupt_routing[0] = PCH_IRQ11;
+	pch_interrupt_routing[1] = PCH_IRQ10;
+	pch_interrupt_routing[2] = PCH_IRQ11;
+	pch_interrupt_routing[3] = PCH_IRQ11;
+	pch_interrupt_routing[4] = PCH_IRQ11;
+	pch_interrupt_routing[5] = PCH_IRQ11;
+	pch_interrupt_routing[6] = PCH_IRQ11;
+	pch_interrupt_routing[7] = PCH_IRQ11;
+
+	itss_irq_init(pch_interrupt_routing);
+
+	for (irq_dev = all_devices; irq_dev; irq_dev = irq_dev->next) {
+		uint8_t int_pin = 0, int_line = 0;
+
+		if (!irq_dev->enabled || irq_dev->path.type != DEVICE_PATH_PCI)
+			continue;
+
+		int_pin = pci_read_config8(PCI_BDF(irq_dev), PCI_INTERRUPT_PIN);
+
+		switch (int_pin) {
+		case 1: /* INTA# */
+			int_line = PCH_IRQ11;
+			break;
+		case 2: /* INTB# */
+			int_line = PCH_IRQ10;
+			break;
+		case 3: /* INTC# */
+			int_line = PCH_IRQ11;
+			break;
+		case 4: /* INTD# */
+			int_line = PCH_IRQ11;
+			break;
+		}
+
+		if (!int_line)
+			continue;
+
+		pci_write_config8(PCI_BDF(irq_dev), PCI_INTERRUPT_LINE, int_line);
+	}
+}
+
+#define PPI_PORT_B 0x61
+#define  SERR_DIS  (1 << 2)
+#define CMOS_NMI   0x70
+#define  NMI_DIS   (1 << 7)
+
+/* LPC MISC programming */
+void pch_misc_init(void)
+{
+	uint8_t reg8;
+
+	/* Setup NMI on errors, disable SERR */
+	reg8 = (inb(PPI_PORT_B)) & 0xf0;
+	outb((reg8 | SERR_DIS), PPI_PORT_B);
+
+	/* Disable NMI sources */
+	outb(NMI_DIS, CMOS_NMI);
 }

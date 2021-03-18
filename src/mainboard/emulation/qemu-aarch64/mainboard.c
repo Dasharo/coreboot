@@ -1,20 +1,13 @@
-/*
- *
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
-#include <cbmem.h>
 #include <ramdetect.h>
 #include <symbols.h>
 #include <device/device.h>
 #include <bootmem.h>
 
-extern u8 _secram[], _esecram[];
-
 void bootmem_platform_add_ranges(void)
 {
-	bootmem_add_range((uintptr_t)_secram, REGION_SIZE(secram), BM_MEM_BL31);
+	bootmem_add_range((uintptr_t)_bl31, REGION_SIZE(bl31), BM_MEM_BL31);
 }
 
 static void mainboard_enable(struct device *dev)
@@ -24,7 +17,6 @@ static void mainboard_enable(struct device *dev)
 }
 
 struct chip_operations mainboard_ops = {
-	.name = "qemu_aarch64",
 	.enable_dev = mainboard_enable,
 };
 

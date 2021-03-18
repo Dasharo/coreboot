@@ -14,99 +14,101 @@
 
 #include <southbridge/intel/lynxpoint/pch.h>
 
-static int get_cores_per_package(void)
-{
-	struct cpuinfo_x86 c;
-	struct cpuid_result result;
-	int cores = 1;
-
-	get_fms(&c, cpuid_eax(1));
-	if (c.x86 != 6)
-		return 1;
-
-	result = cpuid_ext(0xb, 1);
-	cores = result.ebx & 0xff;
-
-	return cores;
-}
-
-static void generate_cstate_entries(acpi_cstate_t *cstates,
-				   int c1, int c2, int c3)
-{
-	int cstate_count = 0;
-
-	/* Count number of active C-states */
-	if (c1 > 0)
-		++cstate_count;
-	if (c2 > 0)
-		++cstate_count;
-	if (c3 > 0)
-		++cstate_count;
-	if (!cstate_count)
-		return;
-
-	acpigen_write_package(cstate_count + 1);
-	acpigen_write_byte(cstate_count);
-
-	/* Add an entry if the level is enabled */
-	if (c1 > 0) {
-		cstates[c1].ctype = 1;
-		acpigen_write_CST_package_entry(&cstates[c1]);
-	}
-	if (c2 > 0) {
-		cstates[c2].ctype = 2;
-		acpigen_write_CST_package_entry(&cstates[c2]);
-	}
-	if (c3 > 0) {
-		cstates[c3].ctype = 3;
-		acpigen_write_CST_package_entry(&cstates[c3]);
+#define MWAIT_RES(state, sub_state)                         \
+	{                                                   \
+		.addrl = (((state) << 4) | (sub_state)),    \
+		.space_id = ACPI_ADDRESS_SPACE_FIXED,       \
+		.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,    \
+		.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,    \
+		.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD, \
 	}
 
-	acpigen_pop_len();
-}
+static acpi_cstate_t cstate_map[NUM_C_STATES] = {
+	[C_STATE_C0] = { },
+	[C_STATE_C1] = {
+		.latency = 0,
+		.power = 1000,
+		.resource = MWAIT_RES(0, 0),
+	},
+	[C_STATE_C1E] = {
+		.latency = 0,
+		.power = 1000,
+		.resource = MWAIT_RES(0, 1),
+	},
+	[C_STATE_C3] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(0),
+		.power = 900,
+		.resource = MWAIT_RES(1, 0),
+	},
+	[C_STATE_C6_SHORT_LAT] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(1),
+		.power = 800,
+		.resource = MWAIT_RES(2, 0),
+	},
+	[C_STATE_C6_LONG_LAT] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(2),
+		.power = 800,
+		.resource = MWAIT_RES(2, 1),
+	},
+	[C_STATE_C7_SHORT_LAT] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(1),
+		.power = 700,
+		.resource = MWAIT_RES(3, 0),
+	},
+	[C_STATE_C7_LONG_LAT] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(2),
+		.power = 700,
+		.resource = MWAIT_RES(3, 1),
+	},
+	[C_STATE_C7S_SHORT_LAT] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(1),
+		.power = 700,
+		.resource = MWAIT_RES(3, 2),
+	},
+	[C_STATE_C7S_LONG_LAT] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(2),
+		.power = 700,
+		.resource = MWAIT_RES(3, 3),
+	},
+	[C_STATE_C8] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(3),
+		.power = 600,
+		.resource = MWAIT_RES(4, 0),
+	},
+	[C_STATE_C9] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(4),
+		.power = 500,
+		.resource = MWAIT_RES(5, 0),
+	},
+	[C_STATE_C10] = {
+		.latency = C_STATE_LATENCY_FROM_LAT_REG(5),
+		.power = 400,
+		.resource = MWAIT_RES(6, 0),
+	},
+};
 
-static void generate_C_state_entries(void)
+static const int cstate_set_s0ix[3] = {
+	C_STATE_C1E,
+	C_STATE_C7S_LONG_LAT,
+	C_STATE_C10,
+};
+
+static const int cstate_set_lp[3] = {
+	C_STATE_C1E,
+	C_STATE_C3,
+	C_STATE_C7S_LONG_LAT,
+};
+
+static const int cstate_set_trad[3] = {
+	C_STATE_C1,
+	C_STATE_C3,
+	C_STATE_C6_LONG_LAT,
+};
+
+static int get_logical_cores_per_package(void)
 {
-	struct cpu_info *info;
-	struct cpu_driver *cpu;
-	struct device *lapic;
-	struct cpu_intel_haswell_config *conf = NULL;
-
-	/* Find the SpeedStep CPU in the device tree using magic APIC ID */
-	lapic = dev_find_lapic(SPEEDSTEP_APIC_MAGIC);
-	if (!lapic)
-		return;
-	conf = lapic->chip_info;
-	if (!conf)
-		return;
-
-	/* Find CPU map of supported C-states */
-	info = cpu_info();
-	if (!info)
-		return;
-	cpu = find_cpu_driver(info->cpu);
-	if (!cpu || !cpu->cstates)
-		return;
-
-	acpigen_emit_byte(0x14);		/* MethodOp */
-	acpigen_write_len_f();		/* PkgLength */
-	acpigen_emit_namestring("_CST");
-	acpigen_emit_byte(0x00);		/* No Arguments */
-
-	/* If running on AC power */
-	acpigen_emit_byte(0xa0);		/* IfOp */
-	acpigen_write_len_f();		/* PkgLength */
-	acpigen_emit_namestring("PWRS");
-	acpigen_emit_byte(0xa4);	/* ReturnOp */
-	generate_cstate_entries(cpu->cstates, conf->c1_acpower,
-					 conf->c2_acpower, conf->c3_acpower);
-	acpigen_pop_len();
-
-	/* Else on battery power */
-	acpigen_emit_byte(0xa4);	/* ReturnOp */
-	generate_cstate_entries(cpu->cstates, conf->c1_battery,
-					conf->c2_battery, conf->c3_battery);
-	acpigen_pop_len();
+	msr_t msr = rdmsr(MSR_CORE_THREAD_COUNT);
+	return msr.lo & 0xffff;
 }
 
 static acpi_tstate_t tss_table_fine[] = {
@@ -161,6 +163,47 @@ static void generate_T_state_entries(int core, int cores_per_package)
 			ARRAY_SIZE(tss_table_coarse), tss_table_coarse);
 }
 
+static bool is_s0ix_enabled(void)
+{
+	if (!haswell_is_ult())
+		return false;
+
+	const struct device *lapic = dev_find_lapic(SPEEDSTEP_APIC_MAGIC);
+
+	if (!lapic || !lapic->chip_info)
+		return false;
+
+	const struct cpu_intel_haswell_config *conf = lapic->chip_info;
+
+	return conf->s0ix_enable;
+}
+
+static void generate_C_state_entries(void)
+{
+	acpi_cstate_t acpi_cstate_map[3] = {0};
+
+	const int *acpi_cstates;
+
+	if (is_s0ix_enabled())
+		acpi_cstates = cstate_set_s0ix;
+	else if (haswell_is_ult())
+		acpi_cstates = cstate_set_lp;
+	else
+		acpi_cstates = cstate_set_trad;
+
+	/* Count number of active C-states */
+	int count = 0;
+
+	for (int i = 0; i < ARRAY_SIZE(acpi_cstate_map); i++) {
+		if (acpi_cstates[i] > 0 && acpi_cstates[i] < ARRAY_SIZE(cstate_map)) {
+			acpi_cstate_map[count] = cstate_map[acpi_cstates[i]];
+			acpi_cstate_map[count].ctype = i + 1;
+			count++;
+		}
+	}
+	acpigen_write_CST_package(acpi_cstate_map, count);
+}
+
 static int calculate_power(int tdp, int p1_ratio, int ratio)
 {
 	u32 m;
@@ -209,7 +252,7 @@ static void generate_P_state_entries(int core, int cores_per_package)
 		/* Max Non-Turbo Ratio */
 		ratio_max = (msr.lo >> 8) & 0xff;
 	}
-	clock_max = ratio_max * HASWELL_BCLK;
+	clock_max = ratio_max * CPU_BCLK;
 
 	/* Calculate CPU TDP in mW */
 	msr = rdmsr(MSR_PKG_POWER_SKU_UNIT);
@@ -273,7 +316,7 @@ static void generate_P_state_entries(int core, int cores_per_package)
 
 		/* Calculate power at this ratio */
 		power = calculate_power(power_max, ratio_max, ratio);
-		clock = ratio * HASWELL_BCLK;
+		clock = ratio * CPU_BCLK;
 
 		acpigen_write_PSS_package(
 			clock,			/*MHz*/
@@ -292,7 +335,7 @@ void generate_cpu_entries(const struct device *device)
 {
 	int coreID, cpuID, pcontrol_blk = get_pmbase(), plen = 6;
 	int totalcores = dev_count_cpu();
-	int cores_per_package = get_cores_per_package();
+	int cores_per_package = get_logical_cores_per_package();
 	int numcpus = totalcores/cores_per_package;
 
 	printk(BIOS_DEBUG, "Found %d CPU(s) with %d core(s) each.\n",
@@ -307,19 +350,19 @@ void generate_cpu_entries(const struct device *device)
 
 			/* Generate processor \_SB.CPUx */
 			acpigen_write_processor(
-				(cpuID-1)*cores_per_package+coreID-1,
+				(cpuID - 1) * cores_per_package+coreID - 1,
 				pcontrol_blk, plen);
 
 			/* Generate P-state tables */
 			generate_P_state_entries(
-				coreID-1, cores_per_package);
+				coreID - 1, cores_per_package);
 
 			/* Generate C-state tables */
 			generate_C_state_entries();
 
 			/* Generate T-state tables */
 			generate_T_state_entries(
-				cpuID-1, cores_per_package);
+				cpuID - 1, cores_per_package);
 
 			acpigen_pop_len();
 		}

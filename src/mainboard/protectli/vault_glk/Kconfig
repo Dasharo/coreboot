@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 config BOARD_PROTECTLI_FW4_GEMINI_LAKE
 	def_bool n
 	select SOC_INTEL_GLK
@@ -9,6 +10,25 @@ config BOARD_PROTECTLI_FW4_GEMINI_LAKE
 if BOARD_PROTECTLI_FW4_GEMINI_LAKE
 
 
+=======
+## SPDX-License-Identifier: GPL-2.0-only
+
+config BOARD_PROTECTLI_FW4_GEMINI_LAKE
+	def_bool n
+	select SOC_INTEL_GEMINILAKE
+	select BOARD_ROMSIZE_KB_8192
+	select HAVE_ACPI_RESUME
+	select HAVE_ACPI_TABLES
+	select MAINBOARD_HAS_LPC_TPM
+	select SUPERIO_ITE_IT8613E
+	select SPI_FLASH_MACRONIX
+	select INTEL_GMA_HAVE_VBT
+	select SEABIOS_ADD_SERCON_PORT_FILE if PAYLOAD_SEABIOS
+	select NEED_IFWI
+
+if BOARD_PROTECTLI_FW4_GEMINI_LAKE
+
+>>>>>>> glk_mem_train
 config MAINBOARD_DIR
 	string
 	default "protectli/vault_glk"
@@ -29,4 +49,20 @@ config SOC_INTEL_COMMON_BLOCK_SGX_ENABLE
 	bool
 	default y
 
+<<<<<<< HEAD
+=======
+config FMDFILE
+	string
+	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd" if !VBOOT
+
+config VGA_BIOS_ID
+	string
+	default "8086,3185"
+
+config PXE_ROM_ID
+	string
+	default "8086,157b"
+
+
+>>>>>>> glk_mem_train
 endif # BOARD_PROTECTLI_FW4_GEMINI_LAKE

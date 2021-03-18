@@ -7,6 +7,8 @@
 #include <acpi/acpigen_usb.h>
 #include <console/console.h>
 #include <drivers/usb/acpi/chip.h>
+#include <drivers/intel/usb4/retimer/retimer.h>
+#include <ec/google/common/dptf.h>
 
 #include "chip.h"
 #include "ec.h"
@@ -14,14 +16,6 @@
 
 #define GOOGLE_CHROMEEC_USBC_DEVICE_HID		"GOOG0014"
 #define GOOGLE_CHROMEEC_USBC_DEVICE_NAME	"USBC"
-
-/* Avoid adding a false dependency on an SoC or intel/common */
-extern const struct device *soc_get_pmc_mux_device(int port_number);
-
-__weak const struct device *soc_get_pmc_mux_device(int port_number)
-{
-	return NULL;
-}
 
 const char *google_chromeec_acpi_name(const struct device *dev)
 {
@@ -120,35 +114,18 @@ static const char *port_location_to_str(enum ec_pd_port_location port_location)
 static struct usb_pd_port_caps port_caps;
 static void add_port_location(struct acpi_dp *dsd, int port_number)
 {
-	acpi_dp_add_string(dsd, "port-location",
-			   port_location_to_str(port_caps.port_location));
-}
-
-static int con_id_to_match;
-
-/* A callback to match a port's connector for dev_find_matching_device_on_bus */
-static bool match_connector(DEVTREE_CONST struct device *dev)
-{
-	if (CONFIG(DRIVERS_INTEL_PMC)) {
-		extern struct chip_operations drivers_intel_pmc_mux_con_ops;
-
-		return (dev->chip_ops == &drivers_intel_pmc_mux_con_ops &&
-			dev->path.type == DEVICE_PATH_GENERIC &&
-			dev->path.generic.id == con_id_to_match);
-	}
-
-	return false;
+	acpi_dp_add_string(dsd, "port-location", port_location_to_str(port_caps.port_location));
 }
 
 static void fill_ssdt_typec_device(const struct device *dev)
 {
+	struct ec_google_chromeec_config *config = dev->chip_info;
 	int rv;
-	int i, num_ports;
+	int i;
+	unsigned int num_ports;
 	struct device *usb2_port;
 	struct device *usb3_port;
 	struct device *usb4_port;
-	const struct device *mux;
-	const struct device *con;
 
 	if (google_chromeec_get_num_pd_ports(&num_ports))
 		return;
@@ -164,32 +141,24 @@ static void fill_ssdt_typec_device(const struct device *dev)
 		if (rv)
 			continue;
 
-		/* Get the MUX device, and find the matching connector on its bus */
-		con = NULL;
-		mux = soc_get_pmc_mux_device(i);
-		if (mux) {
-			con_id_to_match = i;
-			con = dev_find_matching_device_on_bus(mux->link_list, match_connector);
-		}
-
 		usb2_port = NULL;
 		usb3_port = NULL;
 		usb4_port = NULL;
 		get_usb_port_references(i, &usb2_port, &usb3_port, &usb4_port);
 
-		struct typec_connector_class_config config = {
+		struct typec_connector_class_config typec_config = {
 			.power_role = port_caps.power_role_cap,
 			.try_power_role = port_caps.try_power_role_cap,
 			.data_role = port_caps.data_role_cap,
 			.usb2_port = usb2_port,
 			.usb3_port = usb3_port,
 			.usb4_port = usb4_port,
-			.orientation_switch = con,
-			.usb_role_switch = con,
-			.mode_switch = con,
+			.orientation_switch = config->mux_conn[i],
+			.usb_role_switch = config->mux_conn[i],
+			.mode_switch = config->mux_conn[i],
 		};
 
-		acpigen_write_typec_connector(&config, i, add_port_location);
+		acpigen_write_typec_connector(&typec_config, i, add_port_location);
 	}
 
 	acpigen_pop_len(); /* Device GOOGLE_CHROMEEC_USBC_DEVICE_NAME */
@@ -241,11 +210,56 @@ static void fill_ssdt_ps2_keyboard(const struct device *dev)
 				 !!(keybd.capabilities & KEYBD_CAP_SCRNLOCK_KEY));
 }
 
+static const char *ec_acpi_name(const struct device *dev)
+{
+	return "EC0";
+}
+
+static struct device_operations ec_ops = {
+	.acpi_name	= ec_acpi_name,
+};
+
 void google_chromeec_fill_ssdt_generator(const struct device *dev)
 {
-	if (!dev->enabled)
-		return;
+	struct device_path path;
+	struct device *ec;
+
+	/* Set up a minimal EC0 device to pass to the DPTF helpers */
+	path.type = DEVICE_PATH_GENERIC;
+	path.generic.id = 0;
+	ec = alloc_find_dev(dev->bus, &path);
+	ec->ops = &ec_ops;
+
+	if (CONFIG(DRIVERS_INTEL_DPTF))
+		ec_fill_dptf_helpers(ec);
 
 	fill_ssdt_typec_device(dev);
 	fill_ssdt_ps2_keyboard(dev);
+}
+
+const char *ec_retimer_fw_update_path(void)
+{
+	return "\\_SB_.PCI0.LPCB.EC0_.RFWU";
+}
+
+void ec_retimer_fw_update(void *arg)
+{
+	const char *RFWU = ec_retimer_fw_update_path();
+
+	/*
+	 * Get information to set retimer info from Arg3[0]
+	 * Local0 = DeRefOf (Arg3[0])
+	 */
+	acpigen_get_package_op_element(ARG3_OP, 0, LOCAL0_OP);
+
+	/*
+	 * Write the EC RAM for Retimer Upgrade
+	 * RFWU = LOCAL0
+	 */
+	acpigen_write_store();
+	acpigen_emit_byte(LOCAL0_OP);
+	acpigen_emit_namestring(RFWU);
+
+	/* Return (Zero) */
+	acpigen_write_return_integer(0);
 }

@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
 #include <device/mmio.h>
 #include <arch/smp/mpspec.h>
-#include <cbmem.h>
 #include <console/console.h>
+#include <device/device.h>
 #include <device/pci_ops.h>
-#include <ec/google/chromeec/ec.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/acpi.h>
@@ -19,7 +19,6 @@
 #include <soc/soc_chip.h>
 #include <soc/systemagent.h>
 #include <string.h>
-#include <wrdd.h>
 
 /*
  * List of supported C-states in this processor.
@@ -39,15 +38,6 @@ enum {
 	C_STATE_C10,		/* 11 */
 	NUM_C_STATES
 };
-
-#define MWAIT_RES(state, sub_state)				\
-	{							\
-		.addrl = (((state) << 4) | (sub_state)),	\
-		.space_id = ACPI_ADDRESS_SPACE_FIXED,		\
-		.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,	\
-		.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,	\
-		.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,	\
-	}
 
 static const acpi_cstate_t cstate_map[NUM_C_STATES] = {
 	[C_STATE_C0] = {},
@@ -163,7 +153,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 
 	fadt->pm_tmr_blk = pmbase + PM1_TMR;
 	fadt->pm_tmr_len = 4;
-	fadt->x_pm_tmr_blk.space_id = 1;
+	fadt->x_pm_tmr_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm_tmr_blk.bit_width = fadt->pm_tmr_len * 8;
 	fadt->x_pm_tmr_blk.bit_offset = 0;
 	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
@@ -186,7 +176,7 @@ static unsigned long soc_fill_dmar(unsigned long current)
 	uint64_t gfxvtbar = MCHBAR64(GFXVTBAR) & VTBAR_MASK;
 	bool gfxvten = MCHBAR32(GFXVTBAR) & VTBAR_ENABLED;
 
-	if (igfx_dev && igfx_dev->enabled && gfxvtbar && gfxvten) {
+	if (is_dev_enabled(igfx_dev) && gfxvtbar && gfxvten) {
 		unsigned long tmp = current;
 
 		current += acpi_create_dmar_drhd(current, 0, 0, gfxvtbar);
@@ -199,7 +189,7 @@ static unsigned long soc_fill_dmar(unsigned long current)
 	uint64_t ipuvtbar = MCHBAR64(IPUVTBAR) & VTBAR_MASK;
 	bool ipuvten = MCHBAR32(IPUVTBAR) & VTBAR_ENABLED;
 
-	if (ipu_dev && ipu_dev->enabled && ipuvtbar && ipuvten) {
+	if (is_dev_enabled(ipu_dev) && ipuvtbar && ipuvten) {
 		unsigned long tmp = current;
 
 		current += acpi_create_dmar_drhd(current, 0, 0, ipuvtbar);
@@ -272,35 +262,12 @@ unsigned long sa_write_acpi_tables(const struct device *dev, unsigned long curre
 	return current;
 }
 
-void acpi_create_gnvs(struct global_nvs_t *gnvs)
+void soc_fill_gnvs(struct global_nvs *gnvs)
 {
 	config_t *config = config_of_soc();
 
-	/* Set unknown wake source */
-	gnvs->pm1i = -1;
-
-	/* CPU core count */
-	gnvs->pcnt = dev_count_cpu();
-
-	if (CONFIG(CONSOLE_CBMEM))
-		/* Update the mem console pointer. */
-		gnvs->cbmc = (uintptr_t)cbmem_find(CBMEM_ID_CONSOLE);
-
-	if (CONFIG(CHROMEOS)) {
-		/* Initialize Verified Boot data */
-		chromeos_init_chromeos_acpi(&(gnvs->chromeos));
-		if (CONFIG(EC_GOOGLE_CHROMEEC)) {
-			gnvs->chromeos.vbt2 = google_ec_running_ro() ?
-				ACTIVE_ECFW_RO : ACTIVE_ECFW_RW;
-		} else
-			gnvs->chromeos.vbt2 = ACTIVE_ECFW_RO;
-	}
-
 	/* Enable DPTF based on mainboard configuration */
 	gnvs->dpte = config->dptf_enable;
-
-	/* Fill in the Wifi Region id */
-	gnvs->cid1 = wifi_regulatory_domain();
 
 	/* Set USB2/USB3 wake enable bitmaps. */
 	gnvs->u2we = config->usb2_wake_enable_bitmap;
@@ -328,41 +295,4 @@ uint32_t acpi_fill_soc_wake(uint32_t generic_pm1_en,
 int soc_madt_sci_irq_polarity(int sci)
 {
 	return MP_IRQ_POLARITY_HIGH;
-}
-
-static int acpigen_soc_gpio_op(const char *op, unsigned int gpio_num)
-{
-	/* op (gpio_num) */
-	acpigen_emit_namestring(op);
-	acpigen_write_integer(gpio_num);
-	return 0;
-}
-
-static int acpigen_soc_get_gpio_state(const char *op, unsigned int gpio_num)
-{
-	/* Store (op (gpio_num), Local0) */
-	acpigen_write_store();
-	acpigen_soc_gpio_op(op, gpio_num);
-	acpigen_emit_byte(LOCAL0_OP);
-	return 0;
-}
-
-int acpigen_soc_read_rx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_get_gpio_state("\\_SB.PCI0.GRXS", gpio_num);
-}
-
-int acpigen_soc_get_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_get_gpio_state("\\_SB.PCI0.GTXS", gpio_num);
-}
-
-int acpigen_soc_set_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_gpio_op("\\_SB.PCI0.STXS", gpio_num);
-}
-
-int acpigen_soc_clear_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_gpio_op("\\_SB.PCI0.CTXS", gpio_num);
 }

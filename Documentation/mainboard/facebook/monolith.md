@@ -2,7 +2,7 @@
 
 This page describes how to run coreboot on the Facebook Monolith.
 
-Please note: the coreboot implementation for this boards is in its
+Please note: the coreboot implementation for this board is in its
 Beta state and isn't fully tested yet.
 
 ## Required blobs
@@ -41,8 +41,8 @@ These can be extracted from the original flash image as follows:
 00003000:006FFFFF me
 00001000:00002fff gbe
 ```
-3) Use `ifdtool -n <layout_file> <flash_image>` to resize the *bios* region from the default 6MB
-   to 9 MB, this is required to create sufficient space for LinuxBoot.
+3) Use `ifdtool -n <layout_file> <flash_image>` to resize the *bios* region from the default 6 MiB
+   to 9 MiB, this is required to create sufficient space for LinuxBoot.
    NOTE: Please make sure only the firmware descriptor (*fd*) region is changed. Older versions
    	 of the ifdtool corrupt the *me* region.
 4) Use `ifdtool -x <resized_flash_image>` to extract the components.
@@ -104,7 +104,7 @@ solution. Wires need to be connected to be able to flash using an external progr
 - SMBus
 - Initialization with FSP
 - SeaBIOS payload (commit a5cab58e9a3fb6e168aba919c5669bea406573b4)
-- TianoCore payload (commit a5cab58e9a3fb6e168aba919c5669bea406573b4)
+- TianoCore payload (commit 860a8d95c2ee89c9916d6e11230f246afa1cd629)
 - LinuxBoot (kernel kernel-4_19_97) (uroot commit 9c9db9dbd6b532f5f91a511a0de885c6562aadd7)
 - eMMC
 

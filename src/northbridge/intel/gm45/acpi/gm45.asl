@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include "hostbridge.asl"
-#include "../gm45.h"
-#include <southbridge/intel/common/rcba.h>
+#include <southbridge/intel/i82801ix/i82801ix.h>
 
 /* PCI Device Resource Consumption */
 Device (PDRC)
@@ -12,22 +11,12 @@ Device (PDRC)
 
 	// This does not seem to work correctly yet - set values statically for
 	// now.
-
-	//Name (PDRS, ResourceTemplate() {
-	//	Memory32Fixed(ReadWrite, 0x00000000, 0x00004000, RCRB) // RCBA
-	//	Memory32Fixed(ReadWrite, 0x00000000, 0x00004000, MCHB) // MCHBAR
-	//	Memory32Fixed(ReadWrite, 0x00000000, 0x00001000, DMIB) // DMIBAR
-	//	Memory32Fixed(ReadWrite, 0x00000000, 0x00001000, EGPB) // EPBAR
-	//	Memory32Fixed(ReadWrite, 0x00000000, 0x00000000, PCIE) // PCIE BAR
-	//	Memory32Fixed(ReadWrite, 0xfed20000, 0x00070000, ICHB) // Misc ICH
-	//})
-
 	Name (PDRS, ResourceTemplate() {
-		Memory32Fixed(ReadWrite, DEFAULT_RCBA, 0x00004000)
-		Memory32Fixed(ReadWrite, DEFAULT_MCHBAR,   0x00004000)
-		Memory32Fixed(ReadWrite, DEFAULT_DMIBAR,   0x00001000)
-		Memory32Fixed(ReadWrite, DEFAULT_EPBAR,    0x00001000)
-		Memory32Fixed(ReadWrite, CONFIG_MMCONF_BASE_ADDRESS, 0x04000000)
+		Memory32Fixed(ReadWrite, CONFIG_FIXED_RCBA_MMIO_BASE, CONFIG_RCBA_LENGTH)
+		Memory32Fixed(ReadWrite, CONFIG_FIXED_MCHBAR_MMIO_BASE, 0x00004000)
+		Memory32Fixed(ReadWrite, CONFIG_FIXED_DMIBAR_MMIO_BASE, 0x00001000)
+		Memory32Fixed(ReadWrite, CONFIG_FIXED_EPBAR_MMIO_BASE,  0x00001000)
+		Memory32Fixed(ReadWrite, CONFIG_MMCONF_BASE_ADDRESS, CONFIG_MMCONF_LENGTH)
 		Memory32Fixed(ReadWrite, 0xfed20000, 0x00020000) // Misc ICH
 		Memory32Fixed(ReadWrite, 0xfed40000, 0x00005000) // Misc ICH
 		Memory32Fixed(ReadWrite, 0xfed45000, 0x0004b000) // Misc ICH
@@ -36,27 +25,12 @@ Device (PDRC)
 	// Current Resource Settings
 	Method (_CRS, 0, Serialized)
 	{
-		//CreateDwordField(PDRS, ^RCRB._BAS, RBR0)
-		//ShiftLeft(\_SB.PCI0.LPCB.RCBA, 14, RBR0)
-
-		//CreateDwordField(PDRS, ^MCHB._BAS, MBR0)
-		//ShiftLeft(\_SB.PCI0.MCHC.MHBR, 14, MBR0)
-
-		//CreateDwordField(PDRS, ^DMIB._BAS, DBR0)
-		//ShiftLeft(\_SB.PCI0.MCHC.DMBR, 12, DBR0)
-
-		//CreateDwordField(PDRS, ^EGPB._BAS, EBR0)
-		//ShiftLeft(\_SB.PCI0.MCHC.EPBR, 12, EBR0)
-
-		//CreateDwordField(PDRS, ^PCIE._BAS, PBR0)
-		//ShiftLeft(\_SB.PCI0.MCHC.PXBR, 26, PBR0)
-
-		//CreateDwordField(PDRS, ^PCIE._LEN, PSZ0)
-		//ShiftLeft(0x10000000, \_SB.PCI0.MCHC.PXSZ, PSZ0)
-
 		Return(PDRS)
 	}
 }
 
 // PCIe graphics port 0:1.0
 #include "peg.asl"
+
+// Integrated graphics 0:2.0
+#include <drivers/intel/gma/acpi/gfx.asl>

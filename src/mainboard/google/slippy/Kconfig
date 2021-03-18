@@ -1,7 +1,6 @@
 config BOARD_GOOGLE_BASEBOARD_SLIPPY
 	def_bool n
 	select SYSTEM_TYPE_LAPTOP
-	select CPU_INTEL_HASWELL
 	select NORTHBRIDGE_INTEL_HASWELL
 	select SOUTHBRIDGE_INTEL_LYNXPOINT
 	select INTEL_LYNXPOINT_LP
@@ -18,6 +17,7 @@ config BOARD_GOOGLE_BASEBOARD_SLIPPY
 	select MAINBOARD_HAS_LIBGFXINIT
 	select INTEL_GMA_HAVE_VBT
 	select DRIVERS_I2C_RTD2132 if BOARD_GOOGLE_LEON
+	select HAVE_SPD_IN_CBFS
 
 if BOARD_GOOGLE_BASEBOARD_SLIPPY
 
@@ -50,7 +50,7 @@ config MAINBOARD_FAMILY
 
 config OVERRIDE_DEVICETREE
 	string
-	default "variants/$(CONFIG_VARIANT_DIR)/overridetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config VGA_BIOS_FILE
 	string
@@ -59,10 +59,13 @@ config VGA_BIOS_FILE
 # Override the default variant behavior, since the data.vbt is the same
 # for all variants.
 config INTEL_GMA_VBT_FILE
-	default "src/mainboard/$(MAINBOARDDIR)/data.vbt"
+	default "src/mainboard/\$(MAINBOARDDIR)/data.vbt"
 
 config MAINBOARD_SMBIOS_MANUFACTURER
 	string
 	default "GOOGLE"
+
+config ENABLE_DDR_2X_REFRESH
+	default y if BOARD_GOOGLE_FALCO
 
 endif # BOARD_GOOGLE_BASEBOARD_SLIPPY

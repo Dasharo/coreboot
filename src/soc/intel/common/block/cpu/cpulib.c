@@ -1,14 +1,35 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
 #include <acpi/acpigen.h>
 #include <console/console.h>
 #include <cpu/intel/turbo.h>
+#include <cpu/intel/common/common.h>
 #include <cpu/x86/msr.h>
 #include <arch/cpu.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/fast_spi.h>
 #include <intelblocks/msr.h>
-#include <stdint.h>
+#include <soc/soc_chip.h>
+#include <types.h>
+
+#define CPUID_EXTENDED_CPU_TOPOLOGY 0x0b
+#define CPUID_EXTENDED_CPU_TOPOLOGY_V2 0x1f
+#define LEVEL_TYPE_CORE 2
+#define LEVEL_TYPE_SMT 1
+
+#define CPUID_CPU_TOPOLOGY(x, val) \
+	(((val) >> CPUID_CPU_TOPOLOGY_##x##_SHIFT) & CPUID_CPU_TOPOLOGY_##x##_MASK)
+
+#define CPUID_CPU_TOPOLOGY_LEVEL_TYPE_SHIFT 0x8
+#define CPUID_CPU_TOPOLOGY_LEVEL_TYPE_MASK 0xff
+#define CPUID_CPU_TOPOLOGY_LEVEL(res) CPUID_CPU_TOPOLOGY(LEVEL_TYPE, (res).ecx)
+
+#define CPUID_CPU_TOPOLOGY_LEVEL_BITS_SHIFT 0x0
+#define CPUID_CPU_TOPOLOGY_LEVEL_BITS_MASK 0x1f
+#define CPUID_CPU_TOPOLOGY_THREAD_BITS(res) CPUID_CPU_TOPOLOGY(LEVEL_BITS, (res).eax)
+#define CPUID_CPU_TOPOLOGY_CORE_BITS(res, threadbits) \
+	((CPUID_CPU_TOPOLOGY(LEVEL_BITS, (res).eax)) - threadbits)
 
 /*
  * Set PERF_CTL MSR (0x199) P_Req with
@@ -254,6 +275,39 @@ uint32_t cpu_get_max_ratio(void)
 	return ratio_max;
 }
 
+void configure_tcc_thermal_target(void)
+{
+	const config_t *conf = config_of_soc();
+	msr_t msr;
+
+	if (!conf->tcc_offset)
+		return;
+
+	/* Set TCC activation offset */
+	msr = rdmsr(MSR_PLATFORM_INFO);
+	if ((msr.lo & BIT(30))) {
+		msr = rdmsr(MSR_TEMPERATURE_TARGET);
+		msr.lo &= ~(0xf << 24);
+		msr.lo |= (conf->tcc_offset & 0xf) << 24;
+		wrmsr(MSR_TEMPERATURE_TARGET, msr);
+	}
+
+	/*
+	 * SoCs prior to Comet Lake/Cannon Lake do not support the time window
+	 * bits, so return early.
+	 */
+	if (CONFIG(SOC_INTEL_APOLLOLAKE) || CONFIG(SOC_INTEL_SKYLAKE) ||
+	    CONFIG(SOC_INTEL_KABYLAKE) || CONFIG(SOC_INTEL_BRASWELL) ||
+	    CONFIG(SOC_INTEL_BROADWELL))
+		return;
+
+	/* Time Window Tau Bits [6:0] */
+	msr = rdmsr(MSR_TEMPERATURE_TARGET);
+	msr.lo &= ~0x7f;
+	msr.lo |= 0xe6; /* setting 100ms thermal time window */
+	wrmsr(MSR_TEMPERATURE_TARGET, msr);
+}
+
 uint32_t cpu_get_bus_clock(void)
 {
 	/* CPU bus clock is set by default here to 100MHz.
@@ -303,19 +357,17 @@ void mca_configure(void)
 
 void cpu_lt_lock_memory(void *unused)
 {
-	msr_set_bit(MSR_LT_CONTROL, LT_CONTROL_LOCK_BIT);
+	msr_set(MSR_LT_CONTROL, LT_CONTROL_LOCK);
 }
 
-int get_prmrr_size(void)
+int get_valid_prmrr_size(void)
 {
 	msr_t msr;
 	int i;
 	int valid_size;
 
-	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_PRMRR_DISABLED)) {
-		printk(BIOS_DEBUG, "PRMRR disabled by config.\n");
+	if (!CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
 		return 0;
-	}
 
 	msr = rdmsr(MSR_PRMRR_VALID_CONFIG);
 	if (!msr.lo) {
@@ -335,14 +387,65 @@ int get_prmrr_size(void)
 			valid_size = 0;
 	}
 
-	/* die if we could not find a valid size within the limit */
-	if (!valid_size)
-		die("Unsupported PRMRR size limit %i MiB, check your config!\n",
+	if (!valid_size) {
+		printk(BIOS_WARNING, "Unsupported PRMRR size of %i MiB, check your config!\n",
 			CONFIG_SOC_INTEL_COMMON_BLOCK_SGX_PRMRR_SIZE);
+		return 0;
+	}
 
 	printk(BIOS_DEBUG, "PRMRR size set to %i MiB\n", valid_size);
 
 	valid_size *= MiB;
 
 	return valid_size;
+}
+
+/* Get number of bits for core ID and SMT ID */
+static void get_cpu_core_thread_bits(uint32_t *core_bits, uint32_t *thread_bits)
+{
+	struct cpuid_result cpuid_regs;
+	int level_num, cpu_id_op = 0;
+	const uint32_t cpuid_max_func = cpuid_get_max_func();
+
+	/* Assert if extended CPU topology not supported */
+	assert(cpuid_max_func >= CPUID_EXTENDED_CPU_TOPOLOGY);
+
+	/* Check for extended CPU topology CPUID support */
+	if (cpuid_max_func >= CPUID_EXTENDED_CPU_TOPOLOGY_V2)
+		cpu_id_op = CPUID_EXTENDED_CPU_TOPOLOGY_V2;
+	else if (cpuid_max_func >= CPUID_EXTENDED_CPU_TOPOLOGY)
+		cpu_id_op = CPUID_EXTENDED_CPU_TOPOLOGY;
+
+	*core_bits = level_num = 0;
+	cpuid_regs = cpuid_ext(cpu_id_op, level_num);
+
+	/* Sub-leaf index 0 enumerates SMT level, if not assert */
+	assert(CPUID_CPU_TOPOLOGY_LEVEL(cpuid_regs) == LEVEL_TYPE_SMT);
+
+	*thread_bits = CPUID_CPU_TOPOLOGY_THREAD_BITS(cpuid_regs);
+	do {
+		level_num++;
+		cpuid_regs = cpuid_ext(cpu_id_op, level_num);
+		if (CPUID_CPU_TOPOLOGY_LEVEL(cpuid_regs) == LEVEL_TYPE_CORE) {
+			*core_bits = CPUID_CPU_TOPOLOGY_CORE_BITS(cpuid_regs, *thread_bits);
+			break;
+		}
+	/* Stop when level type is invalid i.e 0 */
+	} while (CPUID_CPU_TOPOLOGY_LEVEL(cpuid_regs));
+}
+
+void get_cpu_topology_from_apicid(uint32_t apicid, uint8_t *package,
+		uint8_t *core, uint8_t *thread)
+{
+
+	uint32_t core_bits, thread_bits;
+
+	get_cpu_core_thread_bits(&core_bits, &thread_bits);
+
+	if (package)
+		*package = apicid >> (thread_bits + core_bits);
+	if (core)
+		*core = (apicid  >> thread_bits) & ((1 << core_bits) - 1);
+	if (thread)
+		*thread = apicid  & ((1 << thread_bits) - 1);
 }

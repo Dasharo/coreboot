@@ -1,20 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <acpi/acpi.h>
-#include <device/device.h>
-#include <cpu/x86/msr.h>
-
-#include <intelblocks/acpi.h>
-#include <soc/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <soc/nvs.h>
 
-extern const unsigned char AmlCode[];
-
-void acpi_create_gnvs(global_nvs_t *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
-	acpi_init_gnvs(gnvs);
-
 	/* Disable USB ports in S5 */
 	gnvs->s5u0 = 0;
 	gnvs->s5u1 = 0;

@@ -1,0 +1,4 @@
+config SOC_AMD_COMMON_BLOCK_SMU
+	bool
+	help
+	  Select this option to add functions to communicate with the SMU to the build.

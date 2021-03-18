@@ -2,11 +2,14 @@
 
 #define __SIMPLE_DEVICE__
 
+#include <assert.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <intelblocks/systemagent.h>
+#include <security/intel/txt/txt_platform.h>
+#include <security/intel/txt/txt_register.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/systemagent.h>
@@ -26,18 +29,18 @@ void bootblock_systemagent_early_init(void)
 	pci_io_write_config32(SA_DEV_ROOT, PCIEXBAR + 4, reg);
 
 	/* Get PCI Express Region Length */
-	switch (CONFIG_SA_PCIEX_LENGTH) {
-	case 256 * MiB:
+	switch (CONFIG_MMCONF_BUS_NUMBER) {
+	case 256:
 		pciexbar_length = PCIEXBAR_LENGTH_256MB;
 		break;
-	case 128 * MiB:
+	case 128:
 		pciexbar_length = PCIEXBAR_LENGTH_128MB;
 		break;
-	case 64 * MiB:
+	case 64:
 		pciexbar_length = PCIEXBAR_LENGTH_64MB;
 		break;
 	default:
-		pciexbar_length = PCIEXBAR_LENGTH_256MB;
+		dead_code();
 	}
 	reg = CONFIG_MMCONF_BASE_ADDRESS | (pciexbar_length << 1)
 				| PCIEXBAR_PCIEXBAREN;
@@ -93,8 +96,8 @@ void sa_set_mch_bar(const struct sa_mmio_descriptor *fixed_set_resources,
 		base = fixed_set_resources[i].base;
 		index = fixed_set_resources[i].index;
 		if (base >> 32)
-			write32((void *)(MCH_BASE_ADDRESS + index + 4), base >> 32);
-		write32((void *)(MCH_BASE_ADDRESS + index), (base & 0xffffffff) | 1);
+			write32((void *)(uintptr_t)(MCH_BASE_ADDRESS + index + 4), base >> 32);
+		write32((void *)(uintptr_t)(MCH_BASE_ADDRESS + index), (base & 0xffffffff) | 1);
 	}
 }
 
@@ -144,4 +147,9 @@ uintptr_t sa_get_tseg_base(void)
 size_t sa_get_tseg_size(void)
 {
 	return sa_get_gsm_base() - sa_get_tseg_base();
+}
+
+union dpr_register txt_get_chipset_dpr(void)
+{
+	return (union dpr_register) { .raw = pci_read_config32(SA_DEV_ROOT, DPR) };
 }

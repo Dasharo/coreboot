@@ -8,7 +8,7 @@
 #include <device/device.h>
 #include <boot/tables.h>
 #include <acpi/acpi.h>
-#include <northbridge/intel/x4x/iomap.h>
+#include <northbridge/intel/x4x/memmap.h>
 #include <northbridge/intel/x4x/chip.h>
 #include <northbridge/intel/x4x/x4x.h>
 #include <cpu/intel/smm_reloc.h>
@@ -20,7 +20,6 @@ static void mch_domain_read_resources(struct device *dev)
 	u8 index;
 	u64 tom, touud;
 	u32 tomk, tolud, delta_cbmem;
-	u32 pcie_config_base, pcie_config_size;
 	u32 uma_sizek = 0;
 
 	const u32 top32memk = 4 * (GiB / KiB);
@@ -111,12 +110,7 @@ static void mch_domain_read_resources(struct device *dev)
 				top32memk - (DEFAULT_HECIBAR >> 10),
 				IORESOURCE_RESERVE);
 
-	if (decode_pciebar(&pcie_config_base, &pcie_config_size)) {
-		printk(BIOS_DEBUG, "Adding PCIe config bar base=0x%08x "
-		       "size=0x%x\n", pcie_config_base, pcie_config_size);
-		fixed_mem_resource(dev, index++, pcie_config_base >> 10,
-			pcie_config_size >> 10, IORESOURCE_RESERVE);
-	}
+	mmconf_resource(dev, index++);
 }
 
 static void mch_domain_set_resources(struct device *dev)

@@ -4,9 +4,6 @@
 
 #include <arch/header.ld>
 
-#define REGION_START(name, addr)	SYMBOL(name, addr)
-#define REGION_END(name, addr)		SYMBOL(e##name, addr)
-
 SECTIONS
 {
 	REGION(oc_imem, 0x08600000, 32K, 0)
@@ -20,7 +17,8 @@ SECTIONS
 	/* This includes bootblock image, can be reused after bootblock starts */
 /*	UBER_SBL(0x0A0C0000, 48K) */
 
-	PRERAM_CBFS_CACHE(0x0A0C0000, 92K)
+	PRERAM_CBFS_CACHE(0x0A0C0000, 84K)
+	CBFS_MCACHE(0x0A0ED800, 8K)
 	FMAP_CACHE(0x0A0EF800, 2K)
 
 	TTB(0x0A0F0000, 16K)

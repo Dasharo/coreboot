@@ -1,6 +1,5 @@
 config BOARD_GOOGLE_BASEBOARD_BELTINO
 	def_bool n
-	select CPU_INTEL_HASWELL
 	select NORTHBRIDGE_INTEL_HASWELL
 	select SOUTHBRIDGE_INTEL_LYNXPOINT
 	select INTEL_LYNXPOINT_LP
@@ -51,10 +50,20 @@ config VGA_BIOS_FILE
 # Override the default variant behavior, since the data.vbt is the same
 # for all variants except monroe
 config INTEL_GMA_VBT_FILE
-	default "src/mainboard/$(MAINBOARDDIR)/data.vbt" if !BOARD_GOOGLE_MONROE
+	default "src/mainboard/\$(MAINBOARDDIR)/data.vbt" if !BOARD_GOOGLE_MONROE
 
 config MAINBOARD_SMBIOS_MANUFACTURER
 	string
 	default "GOOGLE"
+
+config ENABLE_DDR_2X_REFRESH
+	default y
+
+config PCIEXP_AER
+	def_bool n
+
+config TIANOCORE_BOOT_TIMEOUT
+	int
+	default 5
 
 endif # BOARD_GOOGLE_BASEBOARD_BELTINO

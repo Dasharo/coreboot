@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <device/mmio.h>
-#include <cpu/x86/msr.h>
 #include <bootstate.h>
 #include <console/console.h>
 #include <amdblocks/psp.h>
@@ -51,7 +50,7 @@ void psp_print_cmd_status(int cmd_status, struct mbox_buffer_header *header)
 		printk(BIOS_DEBUG, "buffer status=0x%x ", rd_resp_sts(header));
 
 	if (cmd_status)
-		printk(BIOS_DEBUG, "%s\n", status_to_string(cmd_status));
+		printk(BIOS_WARNING, "%s\n", status_to_string(cmd_status));
 	else
 		printk(BIOS_DEBUG, "OK\n");
 }

@@ -20,13 +20,12 @@ static const struct soc_amd_gpio gpio_set_stage_reset[] = {
 };
 
 static const struct soc_amd_gpio gpio_set_stage_ram[] = {
-#if CONFIG(HAVE_S3_SUPPORT)
+#if CONFIG(HAVE_ACPI_RESUME)
 	/* PCIE_WAKE - default, do not program */
 
 	/* DEVSLP1 */
 	PAD_NF(GPIO_70, DEVSLP1, PULL_UP),
 	/* WLAND */
-	PAD_SCI(GPIO_137, PULL_UP, LEVEL_LOW),
 	PAD_WAKE(GPIO_137, PULL_UP, LEVEL_LOW, S3),
 #else
 	/* PCIE_WAKE */
@@ -35,7 +34,7 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 
 	/* WLAND - default as GPIO, do not program */
 
-#endif /* HAVE_S3_SUPPORT */
+#endif /* HAVE_ACPI_RESUME */
 	/* BLINK - reselect GPIO OUTPUT HIGH to force BLINK */
 	PAD_GPO(GPIO_11, HIGH),
 };

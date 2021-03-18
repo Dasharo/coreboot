@@ -154,8 +154,8 @@ REG8_MASK FchHudson2InitEnvHwAcpiPciTable[] =
   // SMBUS Device (Bus 0, Dev 20, Func 0)
   //
   {0x00, SMBUS_BUS_DEV_FUN, 0},
-  {FCH_CFG_REG10, 0X00, (FCH_VERSION & 0xFF)},                ///Program the version information
-  {FCH_CFG_REG11, 0X00, (FCH_VERSION >> 8)},
+  {FCH_CFG_REG10, 0x00, (FCH_VERSION & 0xFF)},                ///Program the version information
+  {FCH_CFG_REG11, 0x00, (FCH_VERSION >> 8)},
   {0xFF, 0xFF, 0xFF},
 };
 
@@ -211,7 +211,8 @@ ProgramFchEnvHwAcpiPciReg (
   //
   //Early post initialization of pci config space
   //
-  ProgramPciByteTable ((REG8_MASK*) (&FchHudson2InitEnvHwAcpiPciTable[0]), sizeof (FchHudson2InitEnvHwAcpiPciTable) / sizeof (REG8_MASK), StdHeader);
+  ProgramPciByteTable ((REG8_MASK*) (&FchHudson2InitEnvHwAcpiPciTable[0]),
+                       ARRAY_SIZE(FchHudson2InitEnvHwAcpiPciTable), StdHeader);
 
   if ( LocalCfgPtr->Smbus.SmbusSsid != 0 ) {
     RwPci ((SMBUS_BUS_DEV_FUN << 16) + FCH_CFG_REG2C, AccessWidth32, 0x00, LocalCfgPtr->Smbus.SmbusSsid, StdHeader);

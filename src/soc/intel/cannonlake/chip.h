@@ -5,12 +5,12 @@
 
 #include <intelblocks/cfg.h>
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <drivers/intel/gma/gma.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/power_limit.h>
 #include <stdint.h>
-#include <soc/gpio.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
@@ -79,24 +79,6 @@ struct soc_intel_cannonlake_config {
 	/* TCC activation offset */
 	uint32_t tcc_offset;
 
-	uint64_t PlatformMemorySize;
-	uint8_t SmramMask;
-	uint8_t MrcFastBoot;
-	uint32_t TsegSize;
-	uint16_t MmioSize;
-
-	/* DDR Frequency Limit. Maximum Memory Frequency Selections in Mhz.
-	 * Options : 1067, 1333, 1600, 1867, 2133, 2400, 2667, 2933, 0(Auto) */
-	uint16_t DdrFreqLimit;
-
-	/* SAGV Low Frequency Selections in Mhz.
-	 * Options : 1067, 1333, 1600, 1867, 2133, 2400, 2667, 2933, 0(Auto) */
-	uint16_t FreqSaGvLow;
-
-	/* SAGV Mid Frequency Selections in Mhz.
-	 * Options : 1067, 1333, 1600, 1867, 2133, 2400, 2667, 2933, 0(Auto) */
-	uint16_t FreqSaGvMid;
-
 	/* System Agent dynamic frequency support. Only effects ULX/ULT CPUs.
 	 * For CNL, options are as following
 	 * When enabled, memory will be training at three different frequencies.
@@ -107,13 +89,9 @@ struct soc_intel_cannonlake_config {
 	enum {
 		SaGv_Disabled,
 		SaGv_FixedLow,
-#if !CONFIG(SOC_INTEL_CANNONLAKE_ALTERNATE_HEADERS)
-		SaGv_FixedMid,
-#endif
 		SaGv_FixedHigh,
 		SaGv_Enabled,
 	} SaGv;
-
 
 	/* Rank Margin Tool. 1:Enable, 0:Disable */
 	uint8_t RMT;
@@ -121,7 +99,6 @@ struct soc_intel_cannonlake_config {
 	/* USB related */
 	struct usb2_port_config usb2_ports[16];
 	struct usb3_port_config usb3_ports[10];
-	uint8_t SsicPortEnable;
 	/* Wake Enable Bitmap for USB2 ports */
 	uint16_t usb2_wake_enable_bitmap;
 	/* Wake Enable Bitmap for USB3 ports */
@@ -131,8 +108,8 @@ struct soc_intel_cannonlake_config {
 
 	/* SATA related */
 	enum {
-		Sata_AHCI,
-		Sata_RAID,
+		SATA_AHCI,
+		SATA_RAID,
 	} SataMode;
 
 	/* SATA devslp pad reset configuration */
@@ -147,6 +124,7 @@ struct soc_intel_cannonlake_config {
 	uint8_t SataPortsEnable[8];
 	uint8_t SataPortsDevSlp[8];
 	uint8_t SataPortsDevSlpResetConfig[8];
+	uint8_t SataPortsHotPlug[8];
 
 	/* Enable/Disable SLP_S0 with GBE Support. 0: disable, 1: enable */
 	uint8_t SlpS0WithGbeSupport;
@@ -184,6 +162,8 @@ struct soc_intel_cannonlake_config {
 	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCKS];
 	/* PCIe LTR(Latency Tolerance Reporting) mechanism */
 	uint8_t PcieRpLtrEnable[CONFIG_MAX_ROOT_PORTS];
+	/* Implemented as slot or built-in? */
+	uint8_t PcieRpSlotImplemented[CONFIG_MAX_ROOT_PORTS];
 	/* Enable/Disable HotPlug support for Root Port */
 	uint8_t PcieRpHotPlug[CONFIG_MAX_ROOT_PORTS];
 
@@ -221,28 +201,13 @@ struct soc_intel_cannonlake_config {
 	/* Enable/disable SD card write protect pin configuration on CML */
 	uint8_t ScsSdCardWpPinEnabled;
 
-	/* Integrated Sensor */
-	uint8_t PchIshEnable;
-
 	/* Heci related */
-	uint8_t Heci3Enabled;
 	uint8_t DisableHeciRetry;
 
 	/* Gfx related */
-	uint8_t IgdDvmt50PreAlloc;
-	uint8_t InternalGfx;
 	uint8_t SkipExtGfxScan;
 
-	uint32_t GraphicsConfigPtr;
 	uint8_t Device4Enable;
-
-	/* GPIO IRQ Select. The valid value is 14 or 15 */
-	uint8_t GpioIrqRoute;
-	/* SCI IRQ Select. The valid value is 9, 10, 11, 20, 21, 22, 23 */
-	uint8_t SciIrqSelect;
-	/* TCO IRQ Select. The valid value is 9, 10, 11, 20, 21, 22, 23 */
-	uint8_t TcoIrqSelect;
-	uint8_t TcoIrqEnable;
 
 	/* CPU PL2/4 Config
 	 * Performance: Maximum PLs for maximum performance.
@@ -254,15 +219,10 @@ struct soc_intel_cannonlake_config {
 	 * 0 = System Agent, 1 = IA Core, 2 = Ring,
 	 * 3 = GT unsliced,  4 = GT sliced */
 	struct vr_config domain_vr_config[NUM_VR_DOMAINS];
-	/* HeciEnabled decides the state of Heci1 at end of boot
-	 * Setting to 0 (default) disables Heci1 and hides the device from OS */
-	uint8_t HeciEnabled;
 
 	/* Enables support for Teton Glacier hybrid storage device */
 	uint8_t TetonGlacierMode;
 
-	/* Intel Speed Shift Technology */
-	uint8_t speed_shift_enable;
 	/* Enable VR specific mailbox command
 	 * 00b - no VR specific cmd sent
 	 * 01b - VR mailbox cmd specifically for the MPS IMPV8 VR will be sent
@@ -275,8 +235,6 @@ struct soc_intel_cannonlake_config {
 
 	/* Enable C6 DRAM */
 	uint8_t enable_c6dram;
-
-	uint8_t PmTimerDisabled;
 
 	/*
 	 * SLP_S3 Minimum Assertion Width Policy
@@ -313,6 +271,23 @@ struct soc_intel_cannonlake_config {
 	 *  4 = 2s
 	 */
 	uint8_t PchPmSlpAMinAssert;
+
+	/*
+	 * PCH PM Reset Power Cycle Duration
+	 *  0 = 4s
+	 *  1 = 1s
+	 *  2 = 2s
+	 *  3 = 3s
+	 *  4 = 4s (default)
+	 *
+	 * NOTE: Duration programmed in the PchPmPwrCycDur should never be smaller than the
+	 * stretch duration programmed in the following registers -
+	 *  - GEN_PMCON_A.SLP_S3_MIN_ASST_WDTH (PchPmSlpS3MinAssert)
+	 *  - GEN_PMCON_A.S4MAW (PchPmSlpS4MinAssert)
+	 *  - PM_CFG.SLP_A_MIN_ASST_WDTH (PchPmSlpAMinAssert)
+	 *  - PM_CFG.SLP_LAN_MIN_ASST_WDTH
+	 */
+	uint8_t PchPmPwrCycDur;
 
 	/*
 	 * SerialIO device mode selection:
@@ -460,6 +435,13 @@ struct soc_intel_cannonlake_config {
 	 * Only override CPU flex ratio if don't want to boot with non-turbo max.
 	 */
 	uint8_t cpu_ratio_override;
+
+	struct i915_gpu_panel_config panel_cfg;
+
+	struct i915_gpu_controller_info gfx;
+
+	/* Disable CPU Turbo in IA32_MISC_ENABLE */
+	bool cpu_turbo_disable;
 };
 
 typedef struct soc_intel_cannonlake_config config_t;

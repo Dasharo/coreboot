@@ -46,6 +46,12 @@ config MAINBOARD_FORCE_NATIVE_VGA_INIT
 	  Selected by mainboards / chipsets whose graphics driver can't or
 	  shouldn't be disabled.
 
+config VGA_ROM_RUN_DEFAULT
+	def_bool n
+	help
+	  Selected by mainboards whose graphics initialization depends on VGA OpROM.
+	  coreboot needs to load/execute legacy VGA OpROM in order to initialize GFX.
+
 config MAINBOARD_HAS_LIBGFXINIT
 	def_bool n
 	help
@@ -54,8 +60,8 @@ config MAINBOARD_HAS_LIBGFXINIT
 
 choice
 	prompt "Graphics initialization"
-	default NO_GFX_INIT if VGA_BIOS && PAYLOAD_SEABIOS
-	default VGA_ROM_RUN if VGA_BIOS
+	default NO_GFX_INIT if VGA_ROM_RUN_DEFAULT && PAYLOAD_SEABIOS
+	default VGA_ROM_RUN if VGA_ROM_RUN_DEFAULT
 	default MAINBOARD_DO_NATIVE_VGA_INIT
 	default MAINBOARD_USE_LIBGFXINIT
 	default RUN_FSP_GOP if INTEL_GMA_HAVE_VBT
@@ -110,6 +116,16 @@ config NO_GFX_INIT
 	  initialize graphics or if pre-boot graphics are not required.
 
 endchoice
+
+config PRE_GRAPHICS_DELAY_MS
+	int "Graphics initialization delay in ms"
+	default 0
+	depends on VGA_ROM_RUN
+	help
+	  On some systems, coreboot boots so fast that connected monitors
+	  (mostly TVs) won't be able to wake up fast enough to talk to the
+	  VBIOS. On those systems we need to wait for a bit before executing
+	  the VBIOS.
 
 config ONBOARD_VGA_IS_PRIMARY
 	bool "Use onboard VGA as primary video device"
@@ -491,18 +507,6 @@ config MMCONF_SUPPORT
 	bool
 	default !NO_MMCONF_SUPPORT
 
-config HYPERTRANSPORT_PLUGIN_SUPPORT
-	bool
-	default n
-
-config HT_CHAIN_UNITID_BASE
-	int
-	default 0
-
-config HT_CHAIN_END_UNITID_BASE
-	int
-	default 0
-
 config PCIX_PLUGIN_SUPPORT
 	bool
 	default y
@@ -518,6 +522,57 @@ config AZALIA_PLUGIN_SUPPORT
 config PCIEXP_PLUGIN_SUPPORT
 	bool
 	default y
+
+config MMCONF_BASE_ADDRESS
+	hex
+	depends on MMCONF_SUPPORT
+
+config MMCONF_BUS_NUMBER
+	int
+	depends on MMCONF_SUPPORT
+
+config MMCONF_LENGTH
+	hex
+	depends on MMCONF_SUPPORT
+	default 0x04000000 if MMCONF_BUS_NUMBER = 64
+	default 0x08000000 if MMCONF_BUS_NUMBER = 128
+	default 0x10000000 if MMCONF_BUS_NUMBER = 256
+	default 0x0
+
+config PCI_ALLOW_BUS_MASTER
+	bool "Allow coreboot to set optional PCI bus master bits"
+	default y
+	help
+	  For security reasons, bus mastering should be enabled as late as
+	  possible. In coreboot, it's usually not necessary and payloads
+	  should only enable it for devices they use. Since not all payloads
+	  enable bus mastering properly yet, this option gives some sort of
+	  "backwards compatibility" and is enabled by default to keep the
+	  traditional behaviour for now. This is currently necessary, for
+	  instance, for libpayload based payloads as the drivers don't enable
+	  bus mastering for PCI bridges.
+
+if PCI_ALLOW_BUS_MASTER
+
+config PCI_SET_BUS_MASTER_PCI_BRIDGES
+	bool "PCI bridges"
+	default y
+	help
+	  Let coreboot configure bus mastering for PCI bridges. Enabling bus
+	  mastering for a PCI bridge also allows it to forward requests from
+	  downstream devices. Currently, payloads ignore this and only enable
+	  bus mastering for the downstream device. Hence, this option is needed
+	  for compatibility until payloads are fixed.
+
+config PCI_ALLOW_BUS_MASTER_ANY_DEVICE
+	bool "Any devices"
+	default y
+	select PCI_SET_BUS_MASTER_PCI_BRIDGES
+	help
+	  Allow coreboot to enable PCI bus mastering for any device. The actual
+	  selection of devices depends on the various PCI drivers in coreboot.
+
+endif # PCI_ALLOW_BUS_MASTER
 
 endif # PCI
 
@@ -650,6 +705,9 @@ config SUBSYSTEM_VENDOR_ID
 	  This config option will override the devicetree settings for
 	  PCI Subsystem Vendor ID.
 
+	  Note: This option is not meant for a board's Kconfig; use the
+	  devicetree setting `subsystemid` instead.
+
 config SUBSYSTEM_DEVICE_ID
 	hex "Override PCI Subsystem Device ID"
 	depends on PCI
@@ -658,9 +716,13 @@ config SUBSYSTEM_DEVICE_ID
 	  This config option will override the devicetree settings for
 	  PCI Subsystem Device ID.
 
+	  Note: This option is not meant for a board's Kconfig; use the
+	  devicetree setting `subsystemid` instead.
+
 config VGA_BIOS
 	bool "Add a VGA BIOS image"
 	depends on ARCH_X86
+	select VGA_ROM_RUN_DEFAULT
 	help
 	  Select this option if you have a VGA BIOS image that you would
 	  like to add to your ROM.
@@ -779,10 +841,10 @@ config INTEL_GMA_ADD_VBT
 config INTEL_GMA_VBT_FILE
 	string "VBT binary path and filename"
 	depends on INTEL_GMA_ADD_VBT
-	default "src/mainboard/$(MAINBOARDDIR)/variants/$(VARIANT_DIR)/data.vbt" \
+	default "src/mainboard/\$(MAINBOARDDIR)/variants/\$(VARIANT_DIR)/data.vbt" \
 		if INTEL_GMA_HAVE_VBT && VARIANT_DIR != ""
-	default "src/mainboard/$(MAINBOARDDIR)/data.vbt" if INTEL_GMA_HAVE_VBT
-	default "3rdparty/blobs/mainboard/$(MAINBOARDDIR)/vbt.bin"
+	default "src/mainboard/\$(MAINBOARDDIR)/data.vbt" if INTEL_GMA_HAVE_VBT
+	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/vbt.bin"
 	help
 	  The path and filename of the VBT binary.
 

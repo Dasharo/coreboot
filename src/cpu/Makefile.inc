@@ -1,7 +1,6 @@
 ################################################################################
 ## Subdirectories
 ################################################################################
-subdirs-y += allwinner
 subdirs-y += amd
 subdirs-y += armltd
 subdirs-y += intel
@@ -14,9 +13,7 @@ $(eval $(call create_class_compiler,cpu_microcode,x86_32))
 ## Rules for building the microcode blob in CBFS
 ################################################################################
 
-ifneq ($(CONFIG_CPU_MICROCODE_MULTIPLE_FILES), y)
 cbfs-files-$(CONFIG_USE_CPU_MICROCODE_CBFS_BINS) += cpu_microcode_blob.bin
-endif
 
 ifeq ($(CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_HEADER),y)
 cbfs-files-y  += cpu_microcode_blob.bin

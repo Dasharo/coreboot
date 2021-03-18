@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+chip soc/amd/cezanne
+
+	device domain 0 on
+		device ref gpp_bridge_a on  # Internal GPP Bridge 0 to Bus A
+			device ref gfx on end # Internal GPU (GFX)
+			device ref xhci_0 on end # USB 3.1 (USB0)
+			device ref xhci_1 on end # USB 3.1 (USB1)
+		end
+	end
+
+end

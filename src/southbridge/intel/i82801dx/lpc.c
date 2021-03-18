@@ -119,7 +119,7 @@ static void i82801dx_power_options(struct device *dev)
 			state = "undefined";
 	}
 
-	reg8 &= ~(1 << 3);	/* minimum asssertion is 1 to 2 RTCCLK */
+	reg8 &= ~(1 << 3);	/* minimum assertion is 1 to 2 RTCCLK */
 
 	pci_write_config8(dev, GEN_PMCON_3, reg8);
 	printk(BIOS_INFO, "Set power %s after power failure.\n", state);
@@ -252,9 +252,6 @@ static void enable_hpet(struct device *dev)
 
 static void lpc_init(struct device *dev)
 {
-	/* Set the value for PCI command register. */
-	pci_write_config16(dev, PCI_COMMAND, 0x000f);
-
 	i82801dx_enable_acpi(dev);
 	/* IO APIC initialization. */
 	i82801dx_enable_ioapic(dev);

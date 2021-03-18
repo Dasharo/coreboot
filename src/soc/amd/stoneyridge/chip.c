@@ -6,7 +6,6 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <drivers/i2c/designware/dw_i2c.h>
-#include <romstage_handoff.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
 #include <soc/northbridge.h>
@@ -82,12 +81,8 @@ const char *soc_acpi_name(const struct device *dev)
 		return "PBR8";
 	case EHCI1_DEVFN:
 		return "EHC0";
-	case LPC_DEVFN:
-		return "LPCB";
 	case SD_DEVFN:
 		return "SDCN";
-	case SMBUS_DEVFN:
-		return "SBUS";
 	case XHCI_DEVFN:
 		return "XHC0";
 	default:
@@ -95,7 +90,7 @@ const char *soc_acpi_name(const struct device *dev)
 	}
 };
 
-struct device_operations pci_domain_ops = {
+static struct device_operations pci_domain_ops = {
 	.read_resources	  = domain_read_resources,
 	.set_resources	  = pci_domain_set_resources,
 	.enable_resources = domain_enable_resources,
@@ -106,26 +101,31 @@ struct device_operations pci_domain_ops = {
 static void enable_dev(struct device *dev)
 {
 	/* Set the operations if it is a special bus type */
-	if (dev->path.type == DEVICE_PATH_DOMAIN)
+	switch (dev->path.type) {
+	case DEVICE_PATH_DOMAIN:
 		dev->ops = &pci_domain_ops;
-	else if (dev->path.type == DEVICE_PATH_CPU_CLUSTER)
+		break;
+	case DEVICE_PATH_CPU_CLUSTER:
 		dev->ops = &cpu_bus_ops;
-	else if (dev->path.type == DEVICE_PATH_PCI)
-		sb_enable(dev);
-	else if (dev->path.type == DEVICE_PATH_MMIO)
+		break;
+	case DEVICE_PATH_MMIO:
 		if (i2c_acpi_name(dev) != NULL)
 			dev->ops = &stoneyridge_i2c_mmio_ops;
+		break;
+	default:
+		break;
+	}
 }
 
 static void soc_init(void *chip_info)
 {
-	southbridge_init(chip_info);
+	fch_init(chip_info);
 	setup_bsp_ramtop();
 }
 
 static void soc_final(void *chip_info)
 {
-	southbridge_final(chip_info);
+	fch_final(chip_info);
 	fam15_finalize(chip_info);
 }
 
@@ -138,9 +138,7 @@ struct chip_operations soc_amd_stoneyridge_ops = {
 
 static void earliest_ramstage(void *unused)
 {
-	int s3_resume = acpi_s3_resume_allowed() &&
-			romstage_handoff_is_resume();
-	if (!s3_resume) {
+	if (!acpi_is_wakeup_s3()) {
 		post_code(0x46);
 		if (CONFIG(SOC_AMD_PSP_SELECTABLE_SMU_FW))
 			psp_load_named_blob(BLOB_SMU_FW2, "smu_fw2");

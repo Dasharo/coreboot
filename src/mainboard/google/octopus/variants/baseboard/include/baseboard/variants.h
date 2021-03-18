@@ -10,6 +10,7 @@
 
 /* The next set of functions return the gpio table and fill in the number of
  * entries for each table. */
+const struct pad_config *mainboard_early_bootblock_gpio_table(size_t *num);
 const struct pad_config *variant_base_gpio_table(size_t *num);
 const struct pad_config *variant_override_gpio_table(size_t *num);
 const struct pad_config *variant_early_gpio_table(size_t *num);
@@ -49,5 +50,9 @@ bool no_touchscreen_sku(uint32_t sku_id);
 
 /* allow each variants to customize smi sleep flow. */
 void variant_smi_sleep(u8 slp_typ);
+
+/* LTE power off sequence:
+ * GPIO_161 -> 30ms -> GPIO_117 -> 100ms -> GPIO_67 */
+void power_off_lte_module(void);
 
 #endif /* BASEBOARD_VARIANTS_H */

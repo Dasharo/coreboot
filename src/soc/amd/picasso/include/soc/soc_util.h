@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#ifndef __PICASSO_SOC_UTIL_H__
-#define __PICASSO_SOC_UTIL_H__
+#ifndef AMD_PICASSO_SOC_UTIL_H
+#define AMD_PICASSO_SOC_UTIL_H
 
 #include <types.h>
 
@@ -34,9 +34,9 @@ void print_silicon_type(void);
 void print_soc_type(void);
 
 /* function to determine the connectivity feature set */
-bool soc_is_dali(void);
+bool soc_is_reduced_io_sku(void);
 
 /* function to determine the iGPU type */
 bool soc_is_raven2(void);
 
-#endif /* __PICASSO_SOC_UTIL_H__ */
+#endif /* AMD_PICASSO_SOC_UTIL_H */

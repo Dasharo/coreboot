@@ -3,17 +3,15 @@
 /* DefinitionBlock Statement */
 #include <acpi/acpi.h>
 DefinitionBlock (
-	"DSDT.AML",	/* Output filename */
-	"DSDT",		/* Signature */
-	0x02,		/* DSDT Revision, needs to be 2 for 64bit */
+	"dsdt.aml",
+	"DSDT",
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x00010001	/* OEM Revision */
 	)
 {	/* Start of ASL file */
-	/* #include <arch/x86/acpi/debug.asl> */	/* Include global debug methods if needed */
-
-	#include "acpi/mainboard.asl"
+	#include <acpi/dsdt_top.asl>
 
 	#include <cpu/amd/agesa/family14/acpi/cpu.asl>
 
@@ -43,5 +41,6 @@ DefinitionBlock (
 	#include "acpi/sleep.asl"
 
 	#include "acpi/gpe.asl"
+	#include "acpi/usb_oc.asl"
 }
 /* End of ASL file */

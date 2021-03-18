@@ -1,20 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <string.h>
 #include <console/console.h>
 #include <acpi/acpi.h>
 #include <device/device.h>
-#include <southbridge/intel/i82801gx/nvs.h>
 
 #include "mainboard.h"
-
-void acpi_create_gnvs(global_nvs_t *gnvs)
-{
-	/* Enable COM port(s) */
-	gnvs->cmap = 0x01;
-	gnvs->cmbp = 0x00;
-}
 
 static long acpi_create_ecdt(acpi_ecdt_t * ecdt)
 {
@@ -44,7 +35,7 @@ static long acpi_create_ecdt(acpi_ecdt_t * ecdt)
 	ecdt->ec_control.addrl = 0x66;
 	ecdt->ec_control.addrh = 0;
 
-	ecdt->ec_data.space_id = ACPI_ADDRESS_SPACE_IO;	/* Memory */
+	ecdt->ec_data.space_id = ACPI_ADDRESS_SPACE_IO;
 	ecdt->ec_data.bit_width = 8;
 	ecdt->ec_data.bit_offset = 0;
 	ecdt->ec_data.addrl = 0x62;

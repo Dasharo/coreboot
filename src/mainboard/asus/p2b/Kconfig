@@ -7,7 +7,6 @@ config BASE_ASUS_P2B_D
 	select SDRAMPWR_4DIMM
 	select HAVE_MP_TABLE
 	select IOAPIC
-	select SMP
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
@@ -49,7 +48,7 @@ config VARIANT_DIR
 
 config OVERRIDE_DEVICETREE
 	string
-	default "variants/$(CONFIG_VARIANT_DIR)/overridetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config IRQ_SLOT_COUNT
 	int

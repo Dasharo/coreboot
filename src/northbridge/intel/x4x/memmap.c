@@ -4,7 +4,6 @@
 
 #include <cbmem.h>
 #include <commonlib/helpers.h>
-#include <stdint.h>
 #include <arch/romstage.h>
 #include <device/pci_ops.h>
 #include <device/pci_def.h>
@@ -14,6 +13,7 @@
 #include <northbridge/intel/x4x/x4x.h>
 #include <program_loading.h>
 #include <cpu/intel/smm_reloc.h>
+#include <types.h>
 
 /** Decodes used Graphics Mode Select (GMS) to kilobytes. */
 u32 decode_igd_memory_size(const u32 gms)
@@ -57,57 +57,16 @@ u32 decode_tseg_size(const u32 esmramc)
 	}
 }
 
-u8 decode_pciebar(u32 *const base, u32 *const len)
-{
-	*base = 0;
-	*len = 0;
-	const pci_devfn_t dev = PCI_DEV(0, 0, 0);
-	u32 pciexbar = 0;
-	u32 pciexbar_reg;
-	u32 reg32;
-	int max_buses;
-	const struct {
-		u16 num_buses;
-		u32 addr_mask;
-	} busmask[] = {
-		{256, 0xf0000000},
-		{128, 0xf8000000},
-		{64,  0xfc000000},
-		{0,   0},
-	};
-
-	pciexbar_reg = pci_read_config32(dev, D0F0_PCIEXBAR_LO);
-
-	if (!(pciexbar_reg & 1)) {
-		printk(BIOS_WARNING, "WARNING: MMCONF not set\n");
-		return 0;
-	}
-
-	reg32 = (pciexbar_reg >> 1) & 3;
-	pciexbar = pciexbar_reg & busmask[reg32].addr_mask;
-	max_buses = busmask[reg32].num_buses;
-
-	if (!pciexbar) {
-		printk(BIOS_WARNING, "WARNING: pciexbar invalid\n");
-		return 0;
-	}
-
-	*base = pciexbar;
-	*len = max_buses << 20;
-	return 1;
-}
-
 static size_t northbridge_get_tseg_size(void)
 {
-	const u8 esmramc = pci_read_config8(PCI_DEV(0, 0, 0), D0F0_ESMRAMC);
+	const u8 esmramc = pci_read_config8(HOST_BRIDGE, D0F0_ESMRAMC);
 	return decode_tseg_size(esmramc);
 }
 
 static uintptr_t northbridge_get_tseg_base(void)
 {
-	return pci_read_config32(PCI_DEV(0, 0, 0), D0F0_TSEG);
+	return pci_read_config32(HOST_BRIDGE, D0F0_TSEG);
 }
-
 
 /* Depending of UMA and TSEG configuration, TSEG might start at any
  * 1 MiB alignment. As this may cause very greedy MTRR setup, push

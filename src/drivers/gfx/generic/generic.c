@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpigen.h>
-#include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -106,7 +105,7 @@ static void gfx_fill_ssdt_generator(const struct device *dev)
 
 	const char *scope = acpi_device_scope(dev);
 
-	if (!scope || !dev->enabled)
+	if (!scope)
 		return;
 
 	acpigen_write_scope(scope);

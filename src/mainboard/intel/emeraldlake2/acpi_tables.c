@@ -1,19 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <device/device.h>
-#include <vendorcode/google/chromeos/gnvs.h>
-#include <southbridge/intel/bd82x6x/nvs.h>
+#include <soc/nvs.h>
 
 #include "thermal.h"
 
-static global_nvs_t *gnvs_;
-
-void acpi_create_gnvs(global_nvs_t *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
-	gnvs_ = gnvs;
-
 	/* Enable USB ports in S3 */
 	gnvs->s3u0 = 1;
 	gnvs->s3u1 = 1;
@@ -48,7 +43,4 @@ void acpi_create_gnvs(global_nvs_t *gnvs)
 	gnvs->tcrt = CRITICAL_TEMPERATURE;
 	gnvs->tpsv = PASSIVE_TEMPERATURE;
 	gnvs->tmax = MAX_TEMPERATURE;
-
-	// Stumpy has no arms^H^H^H^HEC.
-	gnvs->chromeos.vbt2 = ACTIVE_ECFW_RO;
 }

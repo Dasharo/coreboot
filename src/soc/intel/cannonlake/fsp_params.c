@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootsplash.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <device/device.h>
@@ -8,6 +9,7 @@
 #include <fsp/util.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/power_limit.h>
+#include <intelblocks/pmclib.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
 #include <soc/intel/common/vbt.h>
@@ -142,16 +144,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* Load VBT before devicetree-specific config. */
 	params->GraphicsConfigPtr = (uintptr_t)vbt_get();
 
-	/* Set USB OC pin to 0 first */
-	for (i = 0; i < ARRAY_SIZE(params->Usb2OverCurrentPin); i++) {
-		params->Usb2OverCurrentPin[i] = 0;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(params->Usb3OverCurrentPin); i++) {
-		params->Usb3OverCurrentPin[i] = 0;
-	}
-
-	mainboard_silicon_init_params(params);
+	mainboard_silicon_init_params(supd);
 
 	const struct soc_power_limits_config *soc_config;
 	soc_config = &config->power_limits_config;
@@ -172,11 +165,14 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	else {
 		params->SataEnable = dev->enabled;
 		params->SataMode = config->SataMode;
+		params->SataPwrOptEnable = config->satapwroptimize;
 		params->SataSalpSupport = config->SataSalpSupport;
 		memcpy(params->SataPortsEnable, config->SataPortsEnable,
 			sizeof(params->SataPortsEnable));
 		memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
 			sizeof(params->SataPortsDevSlp));
+		memcpy(params->SataPortsHotPlug, config->SataPortsHotPlug,
+			sizeof(params->SataPortsHotPlug));
 #if CONFIG(SOC_INTEL_COMETLAKE)
 		memcpy(params->SataPortsDevSlpResetConfig,
 			config->SataPortsDevSlpResetConfig,
@@ -250,18 +246,24 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
 	/* Legacy 8254 timer support */
-	params->Enable8254ClockGating = !CONFIG_USE_LEGACY_8254_TIMER;
-	params->Enable8254ClockGatingOnS3 = !CONFIG_USE_LEGACY_8254_TIMER;
+	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
+	params->Enable8254ClockGatingOnS3 = !CONFIG(USE_LEGACY_8254_TIMER);
+
+	params->EnableTcoTimer = CONFIG(USE_PM_ACPI_TIMER);
 
 	/* USB */
 	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
 		params->PortUsb20Enable[i] = config->usb2_ports[i].enable;
-		params->Usb2OverCurrentPin[i] = config->usb2_ports[i].ocpin;
 		params->Usb2AfePetxiset[i] = config->usb2_ports[i].pre_emp_bias;
 		params->Usb2AfeTxiset[i] = config->usb2_ports[i].tx_bias;
 		params->Usb2AfePredeemp[i] =
 			config->usb2_ports[i].tx_emp_enable;
 		params->Usb2AfePehalfbit[i] = config->usb2_ports[i].pre_emp_bit;
+
+		if (config->usb2_ports[i].enable)
+			params->Usb2OverCurrentPin[i] = config->usb2_ports[i].ocpin;
+		else
+			params->Usb2OverCurrentPin[i] = 0xff;
 	}
 
 	if (config->PchUsb2PhySusPgDisable)
@@ -269,7 +271,11 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	for (i = 0; i < ARRAY_SIZE(config->usb3_ports); i++) {
 		params->PortUsb30Enable[i] = config->usb3_ports[i].enable;
-		params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
+		if (config->usb3_ports[i].enable) {
+			params->Usb3OverCurrentPin[i] = config->usb3_ports[i].ocpin;
+		} else {
+			params->Usb3OverCurrentPin[i] = 0xff;
+		}
 		if (config->usb3_ports[i].tx_de_emp) {
 			params->Usb3HsioTxDeEmphEnable[i] = 1;
 			params->Usb3HsioTxDeEmph[i] =
@@ -279,6 +285,36 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 			params->Usb3HsioTxDownscaleAmpEnable[i] = 1;
 			params->Usb3HsioTxDownscaleAmp[i] =
 				config->usb3_ports[i].tx_downscale_amp;
+		}
+#if CONFIG(SOC_INTEL_COMETLAKE)
+		if (config->usb3_ports[i].gen2_tx_rate0_uniq_tran_enable) {
+			params->Usb3HsioTxRate0UniqTranEnable[i] = 1;
+			params->Usb3HsioTxRate0UniqTran[i] =
+				config->usb3_ports[i].gen2_tx_rate0_uniq_tran;
+		}
+		if (config->usb3_ports[i].gen2_tx_rate1_uniq_tran_enable) {
+			params->Usb3HsioTxRate1UniqTranEnable[i] = 1;
+			params->Usb3HsioTxRate1UniqTran[i] =
+				config->usb3_ports[i].gen2_tx_rate1_uniq_tran;
+		}
+		if (config->usb3_ports[i].gen2_tx_rate2_uniq_tran_enable) {
+			params->Usb3HsioTxRate2UniqTranEnable[i] = 1;
+			params->Usb3HsioTxRate2UniqTran[i] =
+				config->usb3_ports[i].gen2_tx_rate2_uniq_tran;
+		}
+		if (config->usb3_ports[i].gen2_tx_rate3_uniq_tran_enable) {
+			params->Usb3HsioTxRate3UniqTranEnable[i] = 1;
+			params->Usb3HsioTxRate3UniqTran[i] =
+				config->usb3_ports[i].gen2_tx_rate3_uniq_tran;
+		}
+#endif
+		if (config->usb3_ports[i].gen2_rx_tuning_enable) {
+			params->PchUsbHsioRxTuningEnable[i] =
+				config->usb3_ports[i].gen2_rx_tuning_enable;
+			params->PchUsbHsioRxTuningParameters[i] =
+				config->usb3_ports[i].gen2_rx_tuning_params;
+			params->PchUsbHsioFilterSel[i] =
+				config->usb3_ports[i].gen2_rx_filter_sel;
 		}
 	}
 
@@ -294,7 +330,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* Set Debug serial port */
 	params->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;
 #if !CONFIG(SOC_INTEL_COMETLAKE)
-	params->SerialIoEnableDebugUartAfterPost = CONFIG_INTEL_LPSS_UART_FOR_CONSOLE;
+	params->SerialIoEnableDebugUartAfterPost = CONFIG(INTEL_LPSS_UART_FOR_CONSOLE);
 #endif
 
 	/* Enable CNVi Wifi if enabled in device tree */
@@ -314,6 +350,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	for (i = 0; i < ARRAY_SIZE(config->PcieClkSrcUsage); i++) {
 		if (config->PcieClkSrcUsage[i] == 0)
 			config->PcieClkSrcUsage[i] = PCIE_CLK_NOTUSED;
+		else if (config->PcieClkSrcUsage[i] == PCIE_CLK_RP0)
+			config->PcieClkSrcUsage[i] = 0;
 	}
 	memcpy(params->PcieClkSrcUsage, config->PcieClkSrcUsage,
 	       sizeof(config->PcieClkSrcUsage));
@@ -322,19 +360,20 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	memcpy(params->PcieRpAdvancedErrorReporting,
 		config->PcieRpAdvancedErrorReporting,
-		sizeof(params->PcieRpAdvancedErrorReporting));
+		sizeof(config->PcieRpAdvancedErrorReporting));
 
 	memcpy(params->PcieRpLtrEnable, config->PcieRpLtrEnable,
 	       sizeof(config->PcieRpLtrEnable));
+	memcpy(params->PcieRpSlotImplemented, config->PcieRpSlotImplemented,
+	       sizeof(config->PcieRpSlotImplemented));
 	memcpy(params->PcieRpHotPlug, config->PcieRpHotPlug,
-	       sizeof(params->PcieRpHotPlug));
+	       sizeof(config->PcieRpHotPlug));
 
 	for (i = 0; i < CONFIG_MAX_ROOT_PORTS; i++) {
 		params->PcieRpMaxPayload[i] = config->PcieRpMaxPayload[i];
 		if (config->PcieRpAspm[i])
 			params->PcieRpAspm[i] = config->PcieRpAspm[i] - 1;
 	};
-
 
 	/* eMMC and SD */
 	dev = pcidev_path_on_root(PCH_DEVFN_EMMC);
@@ -370,9 +409,11 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	else
 		params->ScsUfsEnabled = dev->enabled;
 
-	params->Heci3Enabled = config->Heci3Enabled;
+	dev = pcidev_path_on_root(PCH_DEVFN_CSE_3);
+	params->Heci3Enabled = is_dev_enabled(dev);
 #if !CONFIG(HECI_DISABLE_USING_SMM)
-	params->Heci1Disabled = !config->HeciEnabled;
+	dev = pcidev_path_on_root(PCH_DEVFN_CSE);
+	params->Heci1Disabled = !is_dev_enabled(dev);
 #endif
 	params->Device4Enable = config->Device4Enable;
 
@@ -396,12 +437,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->FastPkgCRampDisableSa = config->FastPkgCRampDisableSa;
 	params->FastPkgCRampDisableFivr = config->FastPkgCRampDisableFivr;
 
-	/* Power Optimizer */
-	params->SataPwrOptEnable = config->satapwroptimize;
-
-	/* Disable PCH ACPI timer */
-	params->EnableTcoTimer = !config->PmTimerDisabled;
-
 	/* Apply minimum assertion width settings if non-zero */
 	if (config->PchPmSlpS3MinAssert)
 		params->PchPmSlpS3MinAssert = config->PchPmSlpS3MinAssert;
@@ -411,6 +446,13 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->PchPmSlpSusMinAssert = config->PchPmSlpSusMinAssert;
 	if (config->PchPmSlpAMinAssert)
 		params->PchPmSlpAMinAssert = config->PchPmSlpAMinAssert;
+
+#if CONFIG(SOC_INTEL_COMETLAKE)
+	if (config->PchPmPwrCycDur)
+		params->PchPmPwrCycDur = get_pm_pwr_cyc_dur(config->PchPmSlpS4MinAssert,
+				config->PchPmSlpS3MinAssert, config->PchPmSlpAMinAssert,
+				config->PchPmPwrCycDur);
+#endif
 
 	/* Set TccActivationOffset */
 	tconfig->TccActivationOffset = config->tcc_offset;
@@ -483,10 +525,59 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->PeiGraphicsPeimInit = 1;
 	else
 		params->PeiGraphicsPeimInit = 0;
+
+	params->PavpEnable = CONFIG(PAVP);
+
+	/*
+	 * Prevent FSP from programming write-once subsystem IDs by providing
+	 * a custom SSID table. Must have at least one entry for the FSP to
+	 * use the table.
+	 */
+	struct svid_ssid_init_entry {
+		union {
+			struct {
+				uint64_t reg:12;	/* Register offset */
+				uint64_t function:3;
+				uint64_t device:5;
+				uint64_t bus:8;
+				uint64_t :4;
+				uint64_t segment:16;
+				uint64_t :16;
+			};
+			uint64_t segbusdevfuncregister;
+		};
+		struct {
+			uint16_t svid;
+			uint16_t ssid;
+		};
+		uint32_t reserved;
+	};
+
+	/*
+	 * The xHCI and HDA devices have RW/L rather than RW/O registers for
+	 * subsystem IDs and so must be written before FspSiliconInit locks
+	 * them with their default values.
+	 */
+	const pci_devfn_t devfn_table[] = { PCH_DEVFN_XHCI, PCH_DEVFN_HDA };
+	static struct svid_ssid_init_entry ssid_table[ARRAY_SIZE(devfn_table)];
+
+	for (i = 0; i < ARRAY_SIZE(devfn_table); i++) {
+		ssid_table[i].reg	= PCI_SUBSYSTEM_VENDOR_ID;
+		ssid_table[i].device	= PCI_SLOT(devfn_table[i]);
+		ssid_table[i].function	= PCI_FUNC(devfn_table[i]);
+		dev = pcidev_path_on_root(devfn_table[i]);
+		if (dev) {
+			ssid_table[i].svid = dev->subsystem_vendor;
+			ssid_table[i].ssid = dev->subsystem_device;
+		}
+	}
+
+	params->SiSsidTablePtr = (uintptr_t)ssid_table;
+	params->SiNumberOfSsidTableEntry = ARRAY_SIZE(ssid_table);
 }
 
 /* Mainboard GPIO Configuration */
-__weak void mainboard_silicon_init_params(FSP_S_CONFIG *params)
+__weak void mainboard_silicon_init_params(FSPS_UPD *supd)
 {
 	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
 }
@@ -499,7 +590,7 @@ const pci_devfn_t *soc_lpss_controllers_list(size_t *size)
 }
 
 /* Handle FSP logo params */
-const struct cbmem_entry *soc_load_logo(FSPS_UPD *supd)
+void soc_load_logo(FSPS_UPD *supd)
 {
-	return fsp_load_logo(&supd->FspsConfig.LogoPtr, &supd->FspsConfig.LogoSize);
+	bmp_load_logo(&supd->FspsConfig.LogoPtr, &supd->FspsConfig.LogoSize);
 }

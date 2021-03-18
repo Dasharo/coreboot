@@ -1,7 +1,4 @@
-/*
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 OperationRegion (PXCS, SystemMemory, BASE(_ADR), 0x800)
 Field (PXCS, AnyAcc, NoLock, Preserve)
@@ -64,7 +61,7 @@ Field (PXCS, AnyAcc, NoLock, WriteAsZeros)
  */
 Method (_DSM, 4, Serialized)
 {
-	Return (Buffer() {0x00})
+	Return (Buffer() { 0x00 })
 }
 
 Device (PXSX)
@@ -79,10 +76,14 @@ Device (PXSX)
 
 Method (_DSW, 3)
 {
-	C2PM (Arg0, Arg1, Arg2, DCPM)
 	/* If entering Sx (Arg1 > 1), need to skip TCSS D3Cold & TBT RTD3/D3Cold. */
-	\_SB.PCI0.TDM0.SD3C = Arg1
-	\_SB.PCI0.TDM1.SD3C = Arg1
+	If ((TUID == 0) || (TUID == 1)) {
+		\_SB.PCI0.TDM0.SD3C = Arg1
+	} Else {
+		\_SB.PCI0.TDM1.SD3C = Arg1
+	}
+
+	C2PM (Arg0, Arg1, Arg2, DCPM)
 }
 
 Method (_PRW, 0)
@@ -143,18 +144,6 @@ Method (D3CX, 0, Serialized)
 		Local1 = L23R
 	}
 	STAT = 0x1
-
-	/* Wait for LA = 1 */
-	Local0 = 0
-	Local1 = LASX
-	While (Local1 == 0) {
-		If (Local0 > 20) {
-			Break
-		}
-		Sleep(5)
-		Local0++
-		Local1 = LASX
-	}
 }
 
 /*
@@ -195,34 +184,6 @@ Method (_PS0, 0, Serialized)
 	If (PMEX == 1) {
 		PMEX = 0  /* Disable Power Management SCI */
 	}
-	Sleep(100)  /* Wait for 100ms before return to OS starts any DS activities. */
-	If ((TUID == 0) || (TUID == 1)) {
-		If (\_SB.PCI0.TDM0.WACT == 1) {
-			/*
-			 * Indicate other thread's _PS0 to wait the response.
-			 */
-			\_SB.PCI0.TDM0.WACT = 2
-			\_SB.PCI0.TDM0.WFCC (10)  /* Wait for command complete. */
-			\_SB.PCI0.TDM0.WACT = 0
-		} ElseIf (\_SB.PCI0.TDM0.WACT == 2) {
-			While (\_SB.PCI0.TDM0.WACT != 0) {
-				Sleep (5)
-			}
-		}
-	} Else {
-		If (\_SB.PCI0.TDM1.WACT == 1) {
-			/*
-			 * Indicate other thread's _PS0 to wait the response.
-			 */
-			\_SB.PCI0.TDM1.WACT = 2
-			\_SB.PCI0.TDM1.WFCC (10)  /* Wait for command complete. */
-			\_SB.PCI0.TDM1.WACT = 0
-		} ElseIf (\_SB.PCI0.TDM1.WACT == 2) {
-			While (\_SB.PCI0.TDM1.WACT != 0) {
-				Sleep (5)
-			}
-		}
-	}
 }
 
 Method (_PS3, 0, Serialized)
@@ -245,30 +206,6 @@ Method (_PS3, 0, Serialized)
 	}
 }
 
-Method (_DSD, 0) {
-	Return (
-		Package () {
-			/* acpi_pci_bridge_d3 at ../drivers/pci/pci-acpi.c */
-			ToUUID("6211E2C0-58A3-4AF3-90E1-927A4E0C55A4"),
-			Package ()
-			{
-				Package (2) { "HotPlugSupportInD3", 1 },
-			},
-
-			/* pci_acpi_set_untrusted at ../drivers/pci/pci-acpi.c */
-			ToUUID("EFCC06CC-73AC-4BC3-BFF0-76143807C389"),
-			Package () {
-				Package (2) { "ExternalFacingPort", 1 },  /* TBT/CIO port */
-				/*
-				 * UID of the TBT RP on platform, range is: 0, 1 ...,
-				 * (NumOfTBTRP - 1).
-				 */
-				Package (2) { "UID", TUID },
-			}
-		}
-	)
-}
-
 Method (_S0W, 0x0, NotSerialized)
 {
 	Return (0x4)
@@ -276,20 +213,12 @@ Method (_S0W, 0x0, NotSerialized)
 
 Method (_PR0)
 {
-	If ((TUID == 0) || (TUID == 1)) {
-		Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT0 })
-	} Else {
-		Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT1 })
-	}
+	Return (Package() { \_SB.PCI0.D3C })
 }
 
 Method (_PR3)
 {
-	If ((TUID == 0) || (TUID == 1)) {
-		Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT0 })
-	} Else {
-		Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT1 })
-	}
+	Return (Package() { \_SB.PCI0.D3C })
 }
 
 /*

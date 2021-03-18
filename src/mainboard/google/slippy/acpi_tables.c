@@ -1,16 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <device/device.h>
-#include <vendorcode/google/chromeos/gnvs.h>
-#include <ec/google/chromeec/ec.h>
 #include <southbridge/intel/lynxpoint/pch.h>
-#include <southbridge/intel/lynxpoint/nvs.h>
+#include <soc/nvs.h>
 
 #include "thermal.h"
 
-void acpi_create_gnvs(global_nvs_t *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
 	/* Enable USB ports in S3 */
 	gnvs->s3u0 = 1;
@@ -22,12 +20,6 @@ void acpi_create_gnvs(global_nvs_t *gnvs)
 
 	/* TPM Present */
 	gnvs->tpmp = 1;
-
-
-#if CONFIG(CHROMEOS)
-	gnvs->chromeos.vbt2 = google_ec_running_ro() ?
-		ACTIVE_ECFW_RO : ACTIVE_ECFW_RW;
-#endif
 
 	gnvs->tmps = TEMPERATURE_SENSOR_ID;
 	gnvs->tcrt = CRITICAL_TEMPERATURE;

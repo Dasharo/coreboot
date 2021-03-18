@@ -6,9 +6,11 @@
  * Chapter number: 3
  */
 
+#include <console/console.h>
 #include <device/device.h>
 #include <delay.h>
 #include <device/pci.h>
+#include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <intelblocks/power_limit.h>
 #include <intelblocks/systemagent.h>
@@ -25,7 +27,7 @@
 void soc_add_fixed_mmio_resources(struct device *dev, int *index)
 {
 	static const struct sa_mmio_descriptor soc_fixed_resources[] = {
-		{ PCIEXBAR, CONFIG_MMCONF_BASE_ADDRESS, CONFIG_SA_PCIEX_LENGTH,
+		{ PCIEXBAR, CONFIG_MMCONF_BASE_ADDRESS, CONFIG_MMCONF_LENGTH,
 				"PCIEXBAR" },
 		{ MCHBAR, MCH_BASE_ADDRESS, MCH_BASE_SIZE, "MCHBAR" },
 		{ DMIBAR, DMI_BASE_ADDRESS, DMI_BASE_SIZE, "DMIBAR" },
@@ -53,7 +55,13 @@ void soc_add_fixed_mmio_resources(struct device *dev, int *index)
 void soc_systemagent_init(struct device *dev)
 {
 	struct soc_power_limits_config *soc_config;
+	struct device *sa;
+	uint16_t sa_pci_id;
 	config_t *config;
+
+	/* Get System Agent PCI ID */
+	sa = pcidev_path_on_root(SA_DEVFN_ROOT);
+	sa_pci_id = sa ? pci_read_config16(sa, PCI_DEVICE_ID) : 0xFFFF;
 
 	/* Enable Power Aware Interrupt Routing */
 	enable_power_aware_intr();
@@ -64,7 +72,30 @@ void soc_systemagent_init(struct device *dev)
 	/* Configure turbo power limits 1ms after reset complete bit */
 	mdelay(1);
 	config = config_of_soc();
-	soc_config = &config->power_limits_config;
+
+	/*
+	 * Choose a power limits configuration based on the SoC SKU,
+	 * differentiated here based on SA PCI ID.
+	 */
+	switch (sa_pci_id) {
+	case PCI_DEVICE_ID_INTEL_TGL_ID_U_2_2:
+		soc_config = &config->power_limits_config[POWER_LIMITS_U_2_CORE];
+		break;
+	case PCI_DEVICE_ID_INTEL_TGL_ID_U_4_2:
+		soc_config = &config->power_limits_config[POWER_LIMITS_U_4_CORE];
+		break;
+	case PCI_DEVICE_ID_INTEL_TGL_ID_Y_2_2:
+		soc_config = &config->power_limits_config[POWER_LIMITS_Y_2_CORE];
+		break;
+	case PCI_DEVICE_ID_INTEL_TGL_ID_Y_4_2:
+		soc_config = &config->power_limits_config[POWER_LIMITS_Y_4_CORE];
+		break;
+	default:
+		printk(BIOS_ERR, "TGL: unknown SA ID: 0x%4x, skipping power limits "
+		       "configuration\n", sa_pci_id);
+		return;
+	}
+
 	set_power_limits(MOBILE_SKU_PL1_TIME_SEC, soc_config);
 }
 

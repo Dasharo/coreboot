@@ -4,13 +4,14 @@
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
-	0x02,		// DSDT revision: ACPI v2.0 and up
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x20110725	// OEM revision
 )
 {
-	#include <soc/intel/skylake/acpi/platform.asl>
+	#include <acpi/dsdt_top.asl>
+	#include <soc/intel/common/block/acpi/acpi/platform.asl>
 
 	// global NVS and variables
 	#include <soc/intel/skylake/acpi/globalnvs.asl>
@@ -35,13 +36,5 @@ DefinitionBlock(
 	#include "acpi/ipu_mainboard.asl"
 	#include "acpi/mipi_camera.asl"
 
-#if CONFIG(CHROMEOS)
-	// Chrome OS specific
-	#include <vendorcode/google/chromeos/acpi/chromeos.asl>
-#endif
-
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
-
-	// Mainboard specific
-	#include "acpi/mainboard.asl"
 }

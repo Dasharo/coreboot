@@ -9,6 +9,7 @@
 #include <arch/cpu.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
+#include <cpu/intel/microcode.h>
 #include <cpu/x86/msr.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -17,8 +18,6 @@
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
 #include <string.h>
-
-#define BIOS_SIGN_ID	0x8B
 
 static struct {
 	u32 cpuid;
@@ -32,12 +31,10 @@ static struct {
 	u16 mchid;
 	const char *name;
 } mch_table[] = {
-	{ PCI_DEVICE_ID_INTEL_TGL_ID_U, "Tigerlake-U-4-2" },
-	{ PCI_DEVICE_ID_INTEL_TGL_ID_U_1, "Tigerlake-U-4-3e" },
 	{ PCI_DEVICE_ID_INTEL_TGL_ID_U_2_2, "Tigerlake-U-2-2" },
-	{ PCI_DEVICE_ID_INTEL_TGL_ID_Y, "Tigerlake-Y-4-2" },
-	{ PCI_DEVICE_ID_INTEL_JSL_EHL, "Jasperlake Elkhartlake" },
-	{ PCI_DEVICE_ID_INTEL_EHL_ID_1, "Elkhartlake-1" },
+	{ PCI_DEVICE_ID_INTEL_TGL_ID_U_4_2, "Tigerlake-U-4-2" },
+	{ PCI_DEVICE_ID_INTEL_TGL_ID_Y_2_2, "Tigerlake-Y-2-2" },
+	{ PCI_DEVICE_ID_INTEL_TGL_ID_Y_4_2, "Tigerlake-Y-4-2" },
 };
 
 static struct {
@@ -76,11 +73,6 @@ static struct {
 	{ PCI_DEVICE_ID_INTEL_TGP_ESPI_24, "Tigerlake-Base SKU" },
 	{ PCI_DEVICE_ID_INTEL_TGP_ESPI_25, "Tigerlake-Base SKU" },
 	{ PCI_DEVICE_ID_INTEL_TGP_ESPI_26, "Tigerlake-Base SKU" },
-	{ PCI_DEVICE_ID_INTEL_MCC_ESPI_0, "Elkhartlake-0" },
-	{ PCI_DEVICE_ID_INTEL_MCC_ESPI_1, "Elkhartlake-1" },
-	{ PCI_DEVICE_ID_INTEL_MCC_BASE_ESPI, "Elkhartlake Base" },
-	{ PCI_DEVICE_ID_INTEL_MCC_PREMIUM_ESPI, "Elkhartlake Premium" },
-	{ PCI_DEVICE_ID_INTEL_MCC_SUPER_ESPI, "Elkhartlake Super" },
 };
 
 static struct {
@@ -91,12 +83,7 @@ static struct {
 	{ PCI_DEVICE_ID_INTEL_TGL_GT2_ULT, "Tigerlake U GT2" },
 	{ PCI_DEVICE_ID_INTEL_TGL_GT2_ULX, "Tigerlake Y GT2" },
 	{ PCI_DEVICE_ID_INTEL_TGL_GT3_ULT, "Tigerlake U GT3" },
-	{ PCI_DEVICE_ID_INTEL_EHL_GT1_1, "Elkhartlake GT1 1" },
-	{ PCI_DEVICE_ID_INTEL_EHL_GT2_1, "Elkhartlake GT2 1" },
-	{ PCI_DEVICE_ID_INTEL_EHL_GT1_2, "Elkhartlake GT1 2" },
-	{ PCI_DEVICE_ID_INTEL_EHL_GT2_2, "Elkhartlake GT2 2" },
-	{ PCI_DEVICE_ID_INTEL_EHL_GT1_3, "Elkhartlake GT1 3" },
-	{ PCI_DEVICE_ID_INTEL_EHL_GT2_3, "Elkhartlake GT2 3" },
+	{ PCI_DEVICE_ID_INTEL_TGL_GT2_ULT_1, "Tigerlake U GT2 1" },
 };
 
 static inline uint8_t get_dev_revision(pci_devfn_t dev)
@@ -116,7 +103,6 @@ static void report_cpu_info(void)
 	const char cpu_not_found[] = "Platform info not available";
 	const char *cpu_name = cpu_not_found; /* 48 bytes are reported */
 	int vt, txt, aes;
-	msr_t microcode_ver;
 	static const char *const mode[] = {"NOT ", ""};
 	const char *cpu_type = "Unknown";
 	u32 p[13];
@@ -141,11 +127,7 @@ static void report_cpu_info(void)
 			cpu_name++;
 	}
 
-	microcode_ver.lo = 0;
-	microcode_ver.hi = 0;
-	wrmsr(BIOS_SIGN_ID, microcode_ver);
 	cpu_id = cpu_get_cpuid();
-	microcode_ver = rdmsr(BIOS_SIGN_ID);
 
 	/* Look for string to match the name */
 	for (i = 0; i < ARRAY_SIZE(cpu_table); i++) {
@@ -157,7 +139,7 @@ static void report_cpu_info(void)
 
 	printk(BIOS_DEBUG, "CPU: %s\n", cpu_name);
 	printk(BIOS_DEBUG, "CPU: ID %x, %s, ucode: %08x\n",
-	       cpu_id, cpu_type, microcode_ver.hi);
+	       cpu_id, cpu_type, get_current_microcode_rev());
 
 	cpu_feature_flag = cpu_get_feature_flags_ecx();
 	aes = (cpu_feature_flag & CPUID_AES) ? 1 : 0;

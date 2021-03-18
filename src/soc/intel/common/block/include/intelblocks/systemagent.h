@@ -18,10 +18,10 @@
 #define TOLUD	0xbc /* Top of Low Used Memory */
 
 /* MCHBAR */
-#define MCHBAR8(x)	(*(volatile u8 *)(MCH_BASE_ADDRESS + x))
-#define MCHBAR16(x)	(*(volatile u16 *)(MCH_BASE_ADDRESS + x))
-#define MCHBAR32(x)	(*(volatile u32 *)(MCH_BASE_ADDRESS + x))
-#define MCHBAR64(x)	(*(volatile u64 *)(MCH_BASE_ADDRESS + x))
+#define MCHBAR8(x)	(*(volatile u8 *)(uintptr_t)(MCH_BASE_ADDRESS + x))
+#define MCHBAR16(x)	(*(volatile u16 *)(uintptr_t)(MCH_BASE_ADDRESS + x))
+#define MCHBAR32(x)	(*(volatile u32 *)(uintptr_t)(MCH_BASE_ADDRESS + x))
+#define MCHBAR64(x)	(*(volatile u64 *)(uintptr_t)(MCH_BASE_ADDRESS + x))
 
 /* Perform System Agent Initialization during Bootblock phase */
 void bootblock_systemagent_early_init(void);
@@ -71,7 +71,7 @@ uintptr_t sa_get_tseg_base(void);
 /* API to get TSEG size */
 size_t sa_get_tseg_size(void);
 /* Fill MMIO resource above 4GB into GNVS */
-void sa_fill_gnvs(global_nvs_t *gnvs);
+void sa_fill_gnvs(struct global_nvs *gnvs);
 /*
  * SoC overrides
  *

@@ -1,18 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #define ENABLE_TPM
-#undef  ENABLE_FDC	// There is no Floppy for this laptop
 
 #include <acpi/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
-	0x02,		// DSDT revision: ACPI v2.0 and up
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x20090419	// OEM revision
 )
 {
+	#include <acpi/dsdt_top.asl>
 	#include <southbridge/intel/common/acpi/platform.asl>
 
 	#include "acpi/platform.asl"

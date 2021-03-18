@@ -9,8 +9,8 @@
  * It will be returned before starting the ramstage.
  * SRAM_L2C and SRAM can be cached, but only SRAM is DMA-able.
  */
-#define SRAM_L2C_START(addr) SYMBOL(sram_l2c, addr)
-#define SRAM_L2C_END(addr) SYMBOL(esram_l2c, addr)
+#define SRAM_L2C_START(addr) REGION_START(sram_l2c, addr)
+#define SRAM_L2C_END(addr) REGION_END(sram_l2c, addr)
 
 #define DRAM_DMA(addr, size) \
 	REGION(dram_dma, addr, size, 4K) \
@@ -30,7 +30,8 @@ SECTIONS
 	FMAP_CACHE(0x00103800, 2K)
 	PRERAM_CBMEM_CONSOLE(0x00104000, 12K)
 	WATCHDOG_TOMBSTONE(0x00107000, 4)
-	PRERAM_CBFS_CACHE(0x00107004, 16K - 4)
+	PRERAM_CBFS_CACHE(0x00107004, 8K - 4)
+	CBFS_MCACHE(0x00109000, 8K)
 	TIMESTAMP(0x0010B000, 4K)
 	ROMSTAGE(0x0010C000, 92K)
 	STACK(0x00124000, 16K)

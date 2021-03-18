@@ -1,8 +1,4 @@
-/*
- *
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <acpi/acpi.h>
 #include <baseboard/gpio.h>
@@ -45,6 +41,10 @@ static const struct pad_config gpio_table[] = {
 	/* C23 : UART2_CTS# ==> NC */
 	PAD_NC(GPP_C23, NONE),
 
+	/* D4  : USI_BASE_REPORT_EN */
+	PAD_CFG_GPO(GPP_D4, 0, DEEP),
+	/* D10  : GPP_D10 ==> EN_PP3300_DX_BASE_TOUCHSCREEN */
+	PAD_CFG_GPO(GPP_D10, 0, DEEP),
 	/* D16 : USI_INT_L */
 	PAD_CFG_GPI_APIC(GPP_D16, NONE, PLTRST, LEVEL, INVERT),
 
@@ -118,6 +118,10 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF1),
 	/* B18 : H1_SLAVE_SPI_MOSI_R */
 	PAD_CFG_NF(GPP_B18, NONE, DEEP, NF1),
+	/* C8  : UART_PCH_RX_DEBUG_TX */
+	PAD_CFG_NF(GPP_C8, NONE, DEEP, NF1),
+	/* C9  : UART_PCH_TX_DEBUG_RX */
+	PAD_CFG_NF(GPP_C9, NONE, DEEP, NF1),
 	/* C14 : BT_DISABLE_L */
 	PAD_CFG_GPO(GPP_C14, 0, DEEP),
 	/* PCH_WP_OD */

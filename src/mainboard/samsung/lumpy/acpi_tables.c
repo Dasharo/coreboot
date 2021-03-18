@@ -1,22 +1,15 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <device/device.h>
 #include <ec/acpi/ec.h>
-#if CONFIG(CHROMEOS)
-#include <vendorcode/google/chromeos/gnvs.h>
-#endif
-#include <southbridge/intel/bd82x6x/nvs.h>
+#include <soc/nvs.h>
 
 #include "thermal.h"
 
-static global_nvs_t *gnvs_;
-
-void acpi_create_gnvs(global_nvs_t *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
-	gnvs_ = gnvs;
-
 	/*
 	 * Disable 3G in suspend by default.
 	 * Provide option to enable for http://crosbug.com/p/7925
@@ -51,5 +44,6 @@ void acpi_create_gnvs(global_nvs_t *gnvs)
 	gnvs->tmax = MAX_TEMPERATURE;
 	gnvs->flvl = 5;
 
-	gnvs->chromeos.vbt2 = ec_read(0xcb) ? ACTIVE_ECFW_RW : ACTIVE_ECFW_RO;
+	if (CONFIG(CHROMEOS) && ec_read(0xcb))
+		gnvs_set_ecfw_rw();
 }

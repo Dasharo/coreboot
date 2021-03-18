@@ -16,7 +16,6 @@ all-y += spi.c
 all-y += uart.c
 
 bootblock-y += bootblock/bootblock.c
-bootblock-y += bootblock/cpu.c
 bootblock-y += bootblock/pch.c
 bootblock-y += bootblock/report_platform.c
 bootblock-y += espi.c
@@ -40,10 +39,10 @@ ramstage-y += lockdown.c
 ramstage-y += p2sb.c
 ramstage-y += pmc.c
 ramstage-y += reset.c
-ramstage-y += smmrelocate.c
 ramstage-y += systemagent.c
 ramstage-y += sd.c
 ramstage-y += me.c
+ramstage-y += xhci.c
 
 smm-y += gpio.c
 smm-y += p2sb.c
@@ -51,6 +50,8 @@ smm-y += pmc.c
 smm-y += pmutil.c
 smm-y += smihandler.c
 smm-y += uart.c
+smm-y += elog.c
+smm-y += xhci.c
 
 verstage-y += gpio.c
 

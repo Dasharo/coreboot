@@ -3,6 +3,8 @@
 
 #include <commonlib/coreboot_tables.h>
 #include <stddef.h>
+#include <stdint.h>
+
 /* function prototypes for building the coreboot table */
 
 /*
@@ -38,5 +40,8 @@ void lb_table_add_macs_from_vpd(struct lb_header *header);
 void lb_table_add_serialno_from_vpd(struct lb_header *header);
 
 struct lb_record *lb_new_record(struct lb_header *header);
+
+/* Add VBOOT VBNV offsets. */
+void lb_table_add_vbnv_cmos(struct lb_header *header);
 
 #endif /* COREBOOT_TABLES_H */

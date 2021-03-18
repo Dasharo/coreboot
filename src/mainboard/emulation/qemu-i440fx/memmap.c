@@ -3,6 +3,8 @@
 #include <cbmem.h>
 #include <arch/io.h>
 #include <arch/romstage.h>
+#include <console/console.h>
+#include <cpu/x86/smm.h>
 #include "memory.h"
 #include "fw_cfg.h"
 
@@ -44,8 +46,15 @@ void *cbmem_top_chipset(void)
 	uintptr_t top = 0;
 
 	top = fw_cfg_tolud();
-	if (!top)
+	if (!top) {
+		printk(BIOS_WARNING, "QEMU: Falling back to RAM info in CMOS\n");
 		top = (uintptr_t)qemu_get_memory_size() * 1024;
+	}
+
+	if (CONFIG(BOARD_EMULATION_QEMU_X86_Q35)) {
+		size_t smm_size;
+		smm_region(&top, &smm_size);
+	}
 
 	return (void *)top;
 }

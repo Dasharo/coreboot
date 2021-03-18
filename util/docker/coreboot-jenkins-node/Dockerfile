@@ -13,13 +13,21 @@
 #          Because we're piping the contents of the dockerfile into the
 #          docker build command, the 'COPY' keyword isn't valid.
 
+FROM coreboot/coreboot-sdk:{{SDK_VERSION}} AS zephyr-sdk
+USER root
+RUN wget -O zephyr.run https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.3/zephyr-sdk-0.11.3-setup.run
+RUN chmod +x ./zephyr.run
+RUN ./zephyr.run -- -d /opt/zephyr-sdk
+
 FROM coreboot/coreboot-sdk:{{SDK_VERSION}}
 MAINTAINER Martin Roth <martin@coreboot.org>
 USER root
 
 RUN apt-get -y update && \
 	apt-get -y install \
+	parallel \
 	meson ninja-build \
+	sdcc \
 	lua5.3 liblua5.3-dev default-jre-headless openssh-server && \
 	apt-get clean
 
@@ -35,13 +43,13 @@ RUN mkdir /var/run/sshd && \
 	chmod 0755 /var/run/sshd && \
 	/usr/bin/ssh-keygen -A
 
-# Create /cb-build as a tmpfs directory to build in
+# Create tmpfs directories to build in
 RUN mkdir /cb-build && \
 	chown coreboot:coreboot /cb-build && \
-	echo "tmpfs /cb-build tmpfs rw,mode=1777 0 0" > /etc/fstab && \
-	mkdir -p /home/coreboot/slave-root/workspace && \
-	chown -R coreboot:coreboot /home/coreboot/slave-root && \
-	echo "tmpfs /home/coreboot/slave-root/workspace tmpfs rw,mode=1777 0 0" >> /etc/fstab && \
+	echo "tmpfs /cb-build tmpfs rw,mode=1777,noatime 0 0" > /etc/fstab && \
+	mkdir -p /home/coreboot/node-root/workspace && \
+	chown -R coreboot:coreboot /home/coreboot/node-root && \
+	echo "tmpfs /home/coreboot/node-root/workspace tmpfs rw,mode=1777,strictatime,atime 0 0" >> /etc/fstab && \
 	chown coreboot:coreboot /home/coreboot/.ccache && \
 	echo "tmpfs /home/coreboot/.ccache tmpfs rw,mode=1777 0 0" >> /etc/fstab
 
@@ -51,10 +59,27 @@ RUN gcc -o /usr/sbin/encapsulate /tmp/encapsulate.c && \
 	chown root /usr/sbin/encapsulate && \
 	chmod +s /usr/sbin/encapsulate
 
+COPY --from=zephyr-sdk /opt/zephyr-sdk /opt/zephyr-sdk
+
+RUN apt-get update && \
+	apt-get install -y python3-pip pykwalify python3-yaml \
+		python3-pyelftools python3-jsonschema python3-colorama \
+		python3-pyrsistent python3-setuptools swig && \
+	apt-get clean
+
+RUN mkdir /tmp/b && cd /tmp/b && \
+	git clone https://git.kernel.org/pub/scm/utils/dtc/dtc.git dtc && \
+	git clone https://chromium.googlesource.com/chromiumos/third_party/u-boot -b chromeos-v2020.10-rc1 u-boot && \
+	(cd dtc && make install_pylibfdt PREFIX=/usr/local) && \
+	(cd u-boot/tools/dtoc && python3 setup.py install) && \
+	(cd u-boot/tools/patman && python3 setup.py install) && \
+	(cd u-boot/tools/binman && python3 setup.py install) && \
+	cd / && rm -rf /tmp/b
+
 VOLUME /data/cache
 ENTRYPOINT mount /cb-build && \
-	mount /home/coreboot/slave-root/workspace && \
-	chown -R coreboot:coreboot /home/coreboot/slave-root && \
+	mount /home/coreboot/node-root/workspace && \
+	chown -R coreboot:coreboot /home/coreboot/node-root && \
 	mount /home/coreboot/.ccache && \
 	chown coreboot:coreboot /home/coreboot/.ccache && \
 	/usr/sbin/sshd -p 49151 -D

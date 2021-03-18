@@ -2,14 +2,15 @@
 
 #include <device/mmio.h>
 #include <device/pci_ops.h>
-#include <cbmem.h>
+#include <acpi/acpi_gnvs.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
+#include <soc/nvs.h>
 #include "chip.h"
+#include "iobp.h"
 #include "pch.h"
-#include "nvs.h"
 
 /* Enable clock in PCI mode */
 static void serialio_enable_clock(struct resource *bar0)
@@ -118,7 +119,7 @@ static void serialio_init_once(int acpi_mode)
 {
 	if (acpi_mode) {
 		/* Enable ACPI IRQ for IRQ13, IRQ7, IRQ6, IRQ5 in RCBA. */
-		RCBA32_OR(ACPIIRQEN, (1 << 13)|(1 << 7)|(1 << 6)|(1 << 5));
+		RCBA32_OR(ACPIIRQEN, (1 << 13) | (1 << 7) | (1 << 6) | (1 << 5));
 	}
 
 	/* Program IOBP CB000154h[12,9:8,4:0] = 1001100011111b. */
@@ -128,9 +129,20 @@ static void serialio_init_once(int acpi_mode)
 	pch_iobp_update(0xcb000180, ~0x0000003f, 0x0000003f);
 }
 
+static void update_bars(int sio_index, u32 bar0, u32 bar1)
+{
+	/* Find ACPI NVS to update BARs */
+	struct global_nvs *gnvs = acpi_get_gnvs();
+	if (!gnvs)
+		return;
+
+	gnvs->s0b[sio_index] = bar0;
+	gnvs->s1b[sio_index] = bar1;
+}
+
 static void serialio_init(struct device *dev)
 {
-	struct southbridge_intel_lynxpoint_config *config = dev->chip_info;
+	struct southbridge_intel_lynxpoint_config *config = config_of(dev);
 	struct resource *bar0, *bar1;
 	int sio_index = -1;
 
@@ -151,51 +163,51 @@ static void serialio_init(struct device *dev)
 		serialio_enable_clock(bar0);
 
 	switch (dev->path.pci.devfn) {
-	case PCI_DEVFN(21, 0): /* SDMA */
+	case PCH_DEVFN_SDMA: /* SDMA */
 		sio_index = SIO_ID_SDMA;
 		serialio_init_once(config->sio_acpi_mode);
 		serialio_d21_mode(sio_index, SIO_PIN_INTB,
 				  config->sio_acpi_mode);
 		break;
-	case PCI_DEVFN(21, 1): /* I2C0 */
+	case PCH_DEVFN_I2C0: /* I2C0 */
 		sio_index = SIO_ID_I2C0;
 		serialio_d21_ltr(bar0);
 		serialio_i2c_voltage_sel(bar0, config->sio_i2c0_voltage);
 		serialio_d21_mode(sio_index, SIO_PIN_INTC,
 				  config->sio_acpi_mode);
 		break;
-	case PCI_DEVFN(21, 2): /* I2C1 */
+	case PCH_DEVFN_I2C1: /* I2C1 */
 		sio_index = SIO_ID_I2C1;
 		serialio_d21_ltr(bar0);
 		serialio_i2c_voltage_sel(bar0, config->sio_i2c1_voltage);
 		serialio_d21_mode(sio_index, SIO_PIN_INTC,
 				  config->sio_acpi_mode);
 		break;
-	case PCI_DEVFN(21, 3): /* SPI0 */
+	case PCH_DEVFN_SPI0: /* SPI0 */
 		sio_index = SIO_ID_SPI0;
 		serialio_d21_ltr(bar0);
 		serialio_d21_mode(sio_index, SIO_PIN_INTC,
 				  config->sio_acpi_mode);
 		break;
-	case PCI_DEVFN(21, 4): /* SPI1 */
+	case PCH_DEVFN_SPI1: /* SPI1 */
 		sio_index = SIO_ID_SPI1;
 		serialio_d21_ltr(bar0);
 		serialio_d21_mode(sio_index, SIO_PIN_INTC,
 				  config->sio_acpi_mode);
 		break;
-	case PCI_DEVFN(21, 5): /* UART0 */
+	case PCH_DEVFN_UART0: /* UART0 */
 		sio_index = SIO_ID_UART0;
 		serialio_d21_ltr(bar0);
 		serialio_d21_mode(sio_index, SIO_PIN_INTD,
 				  config->sio_acpi_mode);
 		break;
-	case PCI_DEVFN(21, 6): /* UART1 */
+	case PCH_DEVFN_UART1: /* UART1 */
 		sio_index = SIO_ID_UART1;
 		serialio_d21_ltr(bar0);
 		serialio_d21_mode(sio_index, SIO_PIN_INTD,
 				  config->sio_acpi_mode);
 		break;
-	case PCI_DEVFN(23, 0): /* SDIO */
+	case PCH_DEVFN_SDIO: /* SDIO */
 		sio_index = SIO_ID_SDIO;
 		serialio_d23_ltr(bar0);
 		serialio_d23_mode(config->sio_acpi_mode);
@@ -204,20 +216,9 @@ static void serialio_init(struct device *dev)
 		return;
 	}
 
-	if (config->sio_acpi_mode) {
-		global_nvs_t *gnvs;
-
-		/* Find ACPI NVS to update BARs */
-		gnvs = (global_nvs_t *)cbmem_find(CBMEM_ID_ACPI_GNVS);
-		if (!gnvs) {
-			printk(BIOS_ERR, "Unable to locate Global NVS\n");
-			return;
-		}
-
-		/* Save BAR0 and BAR1 to ACPI NVS */
-		gnvs->s0b[sio_index] = (u32)bar0->base;
-		gnvs->s1b[sio_index] = (u32)bar1->base;
-	}
+	/* Save BAR0 and BAR1 to ACPI NVS */
+	if (config->sio_acpi_mode)
+		update_bars(sio_index, (u32)bar0->base, (u32)bar1->base);
 }
 
 static struct device_operations device_ops = {
@@ -229,14 +230,14 @@ static struct device_operations device_ops = {
 };
 
 static const unsigned short pci_device_ids[] = {
-	0x9c60, /* 0:15.0 - SDMA */
-	0x9c61, /* 0:15.1 - I2C0 */
-	0x9c62, /* 0:15.2 - I2C1 */
-	0x9c65, /* 0:15.3 - SPI0 */
-	0x9c66, /* 0:15.4 - SPI1 */
-	0x9c63, /* 0:15.5 - UART0 */
-	0x9c64, /* 0:15.6 - UART1 */
-	0x9c35, /* 0:17.0 - SDIO */
+	PCI_DEVICE_ID_INTEL_LPT_LP_SDMA,
+	PCI_DEVICE_ID_INTEL_LPT_LP_I2C0,
+	PCI_DEVICE_ID_INTEL_LPT_LP_I2C1,
+	PCI_DEVICE_ID_INTEL_LPT_LP_GSPI0,
+	PCI_DEVICE_ID_INTEL_LPT_LP_GSPI1,
+	PCI_DEVICE_ID_INTEL_LPT_LP_UART0,
+	PCI_DEVICE_ID_INTEL_LPT_LP_UART1,
+	PCI_DEVICE_ID_INTEL_LPT_LP_SD,
 	0
 };
 

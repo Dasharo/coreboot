@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <arch/cpu.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -21,63 +20,15 @@
 #include <soc/cpu.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
-#include <soc/pm.h>
 #include <soc/ramstage.h>
 #include <soc/systemagent.h>
 
 #include "chip.h"
 
-static void configure_thermal_target(void)
-{
-	config_t *conf = config_of_soc();
-	msr_t msr;
-
-
-	/* Set TCC activation offset if supported */
-	msr = rdmsr(MSR_PLATFORM_INFO);
-	if ((msr.lo & (1 << 30)) && conf->tcc_offset) {
-		msr = rdmsr(MSR_TEMPERATURE_TARGET);
-		msr.lo &= ~(0xf << 24); /* Bits 27:24 */
-		msr.lo |= (conf->tcc_offset & 0xf) << 24;
-		wrmsr(MSR_TEMPERATURE_TARGET, msr);
-	}
-	msr = rdmsr(MSR_TEMPERATURE_TARGET);
-	msr.lo &= ~0x7f; /* Bits 6:0 */
-	msr.lo |= 0xe6; /* setting 100ms thermal time window */
-	wrmsr(MSR_TEMPERATURE_TARGET, msr);
-}
-
-static void configure_isst(void)
-{
-	config_t *conf = config_of_soc();
-	msr_t msr;
-
-
-	if (conf->speed_shift_enable) {
-		/*
-		* Kernel driver checks CPUID.06h:EAX[Bit 7] to determine if HWP
-		  is supported or not. coreboot needs to configure MSR 0x1AA
-		  which is then reflected in the CPUID register.
-		*/
-		msr = rdmsr(MSR_MISC_PWR_MGMT);
-		msr.lo |= MISC_PWR_MGMT_ISST_EN; /* Enable Speed Shift */
-		msr.lo |= MISC_PWR_MGMT_ISST_EN_INT; /* Enable Interrupt */
-		msr.lo |= MISC_PWR_MGMT_ISST_EN_EPP; /* Enable EPP */
-		wrmsr(MSR_MISC_PWR_MGMT, msr);
-	} else {
-		msr = rdmsr(MSR_MISC_PWR_MGMT);
-		msr.lo &= ~MISC_PWR_MGMT_ISST_EN; /* Disable Speed Shift */
-		msr.lo &= ~MISC_PWR_MGMT_ISST_EN_INT; /* Disable Interrupt */
-		msr.lo &= ~MISC_PWR_MGMT_ISST_EN_EPP; /* Disable EPP */
-		wrmsr(MSR_MISC_PWR_MGMT, msr);
-	}
-}
-
 static void configure_misc(void)
 {
 	config_t *conf = config_of_soc();
 	msr_t msr;
-
 
 	msr = rdmsr(IA32_MISC_ENABLE);
 	msr.lo |= (1 << 0);	/* Fast String enable */
@@ -103,48 +54,6 @@ static void configure_misc(void)
 	msr.lo &= ~POWER_CTL_C1E_MASK;	/* Disable C1E */
 	msr.lo |= (1 << 23);	/* Lock it */
 	wrmsr(MSR_POWER_CTL, msr);
-}
-
-static void enable_lapic_tpr(void)
-{
-	msr_t msr;
-
-	msr = rdmsr(MSR_PIC_MSG_CONTROL);
-	msr.lo &= ~(1 << 10);	/* Enable APIC TPR updates */
-	wrmsr(MSR_PIC_MSG_CONTROL, msr);
-}
-
-static void configure_dca_cap(void)
-{
-	uint32_t feature_flag;
-	msr_t msr;
-
-	/* Check feature flag in CPUID.(EAX=1):ECX[18]==1 */
-	feature_flag = cpu_get_feature_flags_ecx();
-	if (feature_flag & CPUID_DCA) {
-		msr = rdmsr(IA32_PLATFORM_DCA_CAP);
-		msr.lo |= 1;
-		wrmsr(IA32_PLATFORM_DCA_CAP, msr);
-	}
-}
-
-static void set_energy_perf_bias(u8 policy)
-{
-	msr_t msr;
-	int ecx;
-
-	/* Determine if energy efficient policy is supported. */
-	ecx = cpuid_ecx(0x6);
-	if (!(ecx & (1 << 3)))
-		return;
-
-	/* Energy Policy is bits 3:0 */
-	msr = rdmsr(IA32_ENERGY_PERF_BIAS);
-	msr.lo &= ~0xf;
-	msr.lo |= policy & 0xf;
-	wrmsr(IA32_ENERGY_PERF_BIAS, msr);
-
-	printk(BIOS_DEBUG, "cpu: energy policy set to %u\n", policy);
 }
 
 static void configure_c_states(void)
@@ -185,49 +94,13 @@ static void configure_c_states(void)
 	wrmsr(MSR_C_STATE_LATENCY_CONTROL_5, msr);
 }
 
-/*
- * The emulated ACPI timer allows disabling of the ACPI timer
- * (PM1_TMR) to have no impart on the system.
- */
-static void enable_pm_timer_emulation(void)
-{
-	/* ACPI PM timer emulation */
-	msr_t msr;
-	/*
-	 * The derived frequency is calculated as follows:
-	 *    (CTC_FREQ * msr[63:32]) >> 32 = target frequency.
-	 * Back solve the multiplier so the 3.579545MHz ACPI timer
-	 * frequency is used.
-	 */
-	msr.hi = (3579545ULL << 32) / CTC_FREQ;
-	/* Set PM1 timer IO port and enable */
-	msr.lo = (EMULATE_DELAY_VALUE << EMULATE_DELAY_OFFSET_VALUE) |
-			EMULATE_PM_TMR_EN | (ACPI_BASE_ADDRESS + PM1_TMR);
-	wrmsr(MSR_EMULATE_PM_TIMER, msr);
-}
-
-/*
- * Lock AES-NI (MSR_FEATURE_CONFIG) to prevent unintended disabling
- * as suggested in Intel document 325384-070US.
- */
-static void cpu_lock_aesni(void)
-{
-	msr_t msr;
-
-	/* Only run once per core as specified in the MSR datasheet */
-	if (intel_ht_sibling())
-		return;
-
-	msr = rdmsr(MSR_FEATURE_CONFIG);
-	if ((msr.lo & 1) == 0) {
-		msr.lo |= 1;
-		wrmsr(MSR_FEATURE_CONFIG, msr);
-	}
-}
-
 /* All CPUs including BSP will run the following function. */
 void soc_core_init(struct device *cpu)
 {
+	/* Configure Core PRMRR for SGX. */
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
+		prmrr_core_configure();
+
 	/* Clear out pending MCEs */
 	/* TODO(adurbin): This should only be done on a cold boot. Also, some
 	 * of these banks are core vs package scope. For now every CPU clears
@@ -244,11 +117,7 @@ void soc_core_init(struct device *cpu)
 	/* Configure Enhanced SpeedStep and Thermal Sensors */
 	configure_misc();
 
-	/* Configure Intel Speed Shift */
-	configure_isst();
-
-	/* Lock AES-NI MSR */
-	cpu_lock_aesni();
+	set_aesni_lock();
 
 	/* Enable ACPI Timer Emulation via MSR 0x121 */
 	enable_pm_timer_emulation();
@@ -260,7 +129,8 @@ void soc_core_init(struct device *cpu)
 	set_energy_perf_bias(ENERGY_POLICY_NORMAL);
 
 	/* Enable Turbo */
-	enable_turbo();
+	if (!CONFIG(BOARD_PROTECTLI_FW6D) && !CONFIG(BOARD_PROTECTLI_FW6E))
+		enable_turbo();
 
 	/* Configure Core PRMRR for SGX. */
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
@@ -271,6 +141,18 @@ static void per_cpu_smm_trigger(void)
 {
 	/* Relocate the SMM handler. */
 	smm_relocate();
+}
+
+void smm_lock(void)
+{
+	struct device *sa_dev = pcidev_path_on_root(SA_DEVFN_ROOT);
+	/*
+	 * LOCK the SMM memory window and enable normal SMM.
+	 * After running this function, only a full reset can
+	 * make the SMM registers writable again.
+	 */
+	printk(BIOS_DEBUG, "Locking SMM.\n");
+	pci_write_config8(sa_dev, SMRAM, D_LCK | G_SMRAME | C_BASE_SEG);
 }
 
 static void vmx_configure(void *unused)
@@ -311,6 +193,11 @@ static void post_mp_init(void)
 		printk(BIOS_CRIT, "CRITICAL ERROR: MP post init failed\n");
 }
 
+static void soc_fsp_load(void)
+{
+	fsps_load();
+}
+
 static const struct mp_ops mp_ops = {
 	/*
 	 * Skip Pre MP init MTRR programming as MTRRs are mirrored from BSP,
@@ -333,7 +220,7 @@ void soc_init_cpus(struct bus *cpu_bus)
 		printk(BIOS_ERR, "MP initialization failure.\n");
 
 	/* Thermal throttle activation offset */
-	configure_thermal_target();
+	configure_tcc_thermal_target();
 }
 
 int soc_skip_ucode_update(u32 current_patch_id, u32 new_patch_id)

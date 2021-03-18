@@ -6,8 +6,8 @@
 #include <device/pci_ids.h>
 #include <reg_script.h>
 
+#include <soc/device_nvs.h>
 #include <soc/iosf.h>
-#include <soc/nvs.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include "chip.h"
@@ -52,5 +52,5 @@ static struct device_operations device_ops = {
 static const struct pci_driver southcluster __pci_driver = {
 	.ops		= &device_ops,
 	.vendor		= PCI_VENDOR_ID_INTEL,
-	.device		= MMC_DEVID,
+	.device		= MMC45_DEVID,
 };

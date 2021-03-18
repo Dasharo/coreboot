@@ -7,7 +7,6 @@
 #include <device/mmio.h>
 #include <device/pci_type.h>
 
-
 /* By not assigning this to CONFIG_MMCONF_BASE_ADDRESS here we
  * prevent some sub-optimal constant folding. */
 extern u8 *const pci_mmconf;
@@ -100,6 +99,10 @@ uint32_t *pci_mmio_config32_addr(pci_devfn_t dev, uint16_t reg)
 
 #if CONFIG_MMCONF_BASE_ADDRESS == 0
 #error "CONFIG_MMCONF_BASE_ADDRESS undefined!"
+#endif
+
+#if CONFIG_MMCONF_BUS_NUMBER * MiB != CONFIG_MMCONF_LENGTH
+#error "CONFIG_MMCONF_LENGTH does not correspond with CONFIG_MMCONF_BUS_NUMBER!"
 #endif
 
 /* Avoid name collisions as different stages have different signature

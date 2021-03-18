@@ -47,19 +47,14 @@ void nuvoton_pnp_exit_conf_state(pnp_devfn_t dev)
 /* Bring up early serial debugging output before the RAM is initialized. */
 void nuvoton_enable_serial(pnp_devfn_t dev, u16 iobase)
 {
+	if (!CONFIG(CONSOLE_SERIAL))
+		return;
+
 	nuvoton_pnp_enter_conf_state(dev);
 
-	if (CONFIG(SUPERIO_NUVOTON_NCT5539D_COM_A))
+	if (CONFIG(SUPERIO_NUVOTON_COMMON_COM_A))
 		/* Route COM A to GPIO8 pin group */
-		pnp_write_config(dev, 0x2a, 0x40);
-
-	if (CONFIG(SUPERIO_NUVOTON_NCT6776_COM_A))
-		/* Route COM A to GPIO8 pin group */
-		pnp_write_config(dev, 0x2a, 0x40);
-
-	if (CONFIG(SUPERIO_NUVOTON_NCT6791D_COM_A))
-		/* Route COM A to GPIO8 pin group */
-		pnp_write_config(dev, 0x2a, 0x00);
+		pnp_unset_and_set_config(dev, 0x2a, 1 << 7, 0);
 
 	pnp_set_logical_device(dev);
 	pnp_set_enable(dev, 0);

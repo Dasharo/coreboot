@@ -26,37 +26,21 @@ Method(\_PTS, 1) {
 	/* DBGO("\n") */
 
 	/* Clear sleep SMI status flag and enable sleep SMI trap. */
-	/*Store(One, CSSM)
-	Store(One, SSEN)*/
+	/*CSSM = 1
+	SSEN = 1*/
 
 	/* On older chips, clear PciExpWakeDisEn */
-	/*if (LLessEqual(\_SB.SBRI, 0x13)) {
-	*	Store(0,\_SB.PWDE)
+	/*if (\_SB.SBRI <= 0x13) {
+	*	\_SB.PWDE = 0
 	*}
 	*/
 
 	/* Clear wake status structure. */
-	Store(0, Index(WKST,0))
-	Store(0, Index(WKST,1))
+	WKST [0] = 0
+	WKST [1] = 0
 
-	Store (0x07, UPWS)
+	UPWS = 0x07
 } /* End Method(\_PTS) */
-
-/*
-*	\_BFS OEM Back From Sleep method
-*
-*	Entry:
-*		Arg0=The value of the sleeping state S1=1, S2=2
-*
-*	Exit:
-*		-none-
-*/
-Method(\_BFS, 1) {
-	/* DBGO("\\_BFS\n") */
-	/* DBGO("From S") */
-	/* DBGO(Arg0) */
-	/* DBGO(" to S0\n") */
-}
 
 /*
 *  \_WAK System Wake method
@@ -80,6 +64,6 @@ Method(\_WAK, 1) {
 	/* DBGO(" to S0\n") */
 
 	/* clear USB wake up signal */
-	Store(1, USBS)
+	USBS = 1
 	Return(WKST)
 } /* End Method(\_WAK) */

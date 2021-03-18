@@ -9,8 +9,17 @@
 #define SUPERIO_SHOW_LPT
 
 #include <acpi/acpi.h>
-DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
+
+DefinitionBlock (
+	"dsdt.aml",
+	"DSDT",
+	ACPI_DSDT_REV_2,
+	OEM_ID,
+	ACPI_TABLE_CREATOR,
+	1
+	)
 {
+	#include <acpi/dsdt_top.asl>
 	/* \_SB scope defining the main processor is generated in SSDT. */
 
 	OperationRegion(X80, SystemIO, 0x80, 1)
@@ -59,23 +68,23 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 	Method (\_PTS, 1, NotSerialized)
 	{
 		/* Disable fan, blink power LED, if not turning off */
-		If (LNotEqual (Arg0, 0x05))
+		If (Arg0 != 0x05)
 		{
-		    Store (Zero, FANM)
-		    Store (Zero, PLED)
+		    FANM = 0
+		    PLED = 0
 		}
 
 		/* Arms SMI for device 12 */
-		Store (One, TO12)
+		TO12 = 1
 		/* Put out a POST code */
-		Or (Arg0, 0xF0, P80)
+		P80 = Arg0 | 0xF0
 	}
 
 	Method (\_WAK, 1, NotSerialized)
 	{
 		/* Re-enable fan, stop power led blinking */
-		Store (One, FANM)
-		Store (One, PLED)
+		FANM = 1
+		PLED = 1
 		/* wake OK */
 		Return(Package(0x02){0x00, 0x00})
 	}
@@ -204,10 +213,10 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 					CreateWordField (BUF1, _Y07._MIN, SBLO)
 					CreateWordField (BUF1, _Y07._MAX, SBRL)
 
-					And (\_SB.PCI0.PX43.PM00, 0xFFFE, PMLO)
-					And (\_SB.PCI0.PX43.SB00, 0xFFFE, SBLO)
-					Store (PMLO, PMRL)
-					Store (SBLO, SBRL)
+					PMLO = \_SB.PCI0.PX43.PM00 & 0xFFFE
+					SBLO = \_SB.PCI0.PX43.SB00 & 0xFFFE
+					PMRL = PMLO
+					SBRL = SBLO
 					Return (BUF1)
 					}
 				}
@@ -238,13 +247,13 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, OEM_ID, ACPI_TABLE_CREATOR, 1)
 	{
 		Method (_MSG, 1, NotSerialized)
 		{
-			If (LEqual (Arg0, Zero))
+			If (Arg0 == 0)
 			{
-				Store (One, MSG0)
+				MSG0 = 1
 			}
 			Else
 			{
-				Store (Zero, MSG0)
+				MSG0 = 0
 			}
 		}
 	}

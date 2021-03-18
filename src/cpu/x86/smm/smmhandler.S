@@ -8,6 +8,7 @@
  */
 
 #include <cpu/x86/lapic_def.h>
+#include <cpu/x86/msr.h>
 
 /*
  * +--------------------------------+ 0xaffff
@@ -41,6 +42,14 @@
  */
 
 #define SMM_HANDLER_OFFSET 0x0000
+
+#if defined(__x86_64__)
+.bss
+ia32efer_backup_eax:
+.long 0
+ia32efer_backup_edx:
+.long 0
+#endif
 
 /* initially SMM is some sort of real mode. Let gcc know
  * how to treat the SMM handler stub
@@ -156,14 +165,36 @@ untampered_lapic:
 	addl	$SMM_STACK_SIZE, %ebx
 	movl	%ebx, %esp
 
-	/* Get SMM revision */
-	movl	$0xa8000 + 0x7efc, %ebx	/* core 0 address */
-	subl	%ebp, %ebx		/* subtract core X offset */
-	movl	(%ebx), %eax
-	pushl	%eax
+#if defined(__x86_64__)
+	/* Backup IA32_EFER. Preserves ebx. */
+	movl	$(IA32_EFER), %ecx
+	rdmsr
+	movl	%eax, ia32efer_backup_eax
+	movl	%edx, ia32efer_backup_edx
 
-	/* Call 32bit C handler */
+	/* Enable long mode. Preserves ebx. */
+#include <cpu/x86/64bit/entry64.inc>
+
+#endif
+	/* Call C handler */
 	call	smi_handler
+
+#if defined(__x86_64__)
+	/*
+	 * The only reason to go back to protected mode is that RSM doesn't restore
+	 * MSR registers and MSR IA32_EFER was modified by entering long mode.
+	 * Drop to protected mode to safely operate on the IA32_EFER MSR.
+	 */
+
+	/* Disable long mode. */
+	#include <cpu/x86/64bit/exit32.inc>
+
+	/* Restore IA32_EFER as RSM doesn't restore MSRs. */
+	movl	$(IA32_EFER), %ecx
+	movl	ia32efer_backup_eax, %eax
+	movl	ia32efer_backup_edx, %edx
+	wrmsr
+#endif
 
 	/* To return, just do rsm. It will "clean up" protected mode */
 	rsm
@@ -190,6 +221,9 @@ smm_gdt:
 	.word	0xffff, 0x0000
 	.byte	0x00, 0x93, 0xcf, 0x00
 
+	/* gdt selector 0x18, flat code segment (64-bit) */
+	.word   0xffff, 0x0000
+	.byte   0x00, 0x9b, 0xaf, 0x00
 smm_gdt_end:
 
 

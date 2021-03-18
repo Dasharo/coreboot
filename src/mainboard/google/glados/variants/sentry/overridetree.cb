@@ -1,7 +1,5 @@
 chip soc/intel/skylake
 
-	register "ScsSdCardEnabled" = "2"
-
 	register "usb2_ports[0]" = "USB2_PORT_TYPE_C(OC0)"	# Type-C Port 1
 	register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC1)"	# Type-C Port 2
 	register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)"	# Bluetooth
@@ -18,7 +16,7 @@ chip soc/intel/skylake
 	register "i2c_voltage[0]" = "I2C_VOLTAGE_3V3"
 
 	# Use default SD card detect GPIO configuration
-	register "sdcard_cd_gpio_default" = "GPP_A7"
+	register "sdcard_cd_gpio" = "GPP_A7"
 
 	device domain 0 on
 		device pci 15.0 on

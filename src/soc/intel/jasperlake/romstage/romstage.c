@@ -7,6 +7,7 @@
 #include <intelblocks/cfg.h>
 #include <intelblocks/cse.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/smbus.h>
 #include <memory_info.h>
 #include <soc/intel/common/smbios.h>
 #include <soc/iomap.h>
@@ -19,12 +20,6 @@
 {	\
 	0xd4, 0x71, 0x20, 0x9b, 0x54, 0xb0, 0x0c, 0x4e,	\
 	0x8d, 0x09, 0x11, 0xcf, 0x8b, 0x9f, 0x03, 0x23	\
-}
-
-bool __weak mainboard_get_dram_part_num(const char **part_num, size_t *len)
-{
-	/* Default weak implementation, no need to override part number. */
-	return false;
 }
 
 /* Save the DIMM information for SMBIOS table 17 */
@@ -42,7 +37,7 @@ static void save_dimm_info(void)
 			FSP_SMBIOS_MEMORY_INFO_GUID;
 	const uint8_t *serial_num;
 	const char *dram_part_num = NULL;
-	size_t dram_part_num_len;
+	size_t dram_part_num_len = 0;
 	bool is_dram_part_overridden = false;
 
 	/* Locate the memory info HOB, presence validated by raminit */
@@ -66,8 +61,11 @@ static void save_dimm_info(void)
 	memset(mem_info, 0, sizeof(*mem_info));
 
 	/* Allow mainboard to override DRAM part number. */
-	is_dram_part_overridden = mainboard_get_dram_part_num(&dram_part_num,
-							&dram_part_num_len);
+	dram_part_num = mainboard_get_dram_part_num();
+	if (dram_part_num) {
+		dram_part_num_len = strlen(dram_part_num);
+		is_dram_part_overridden = true;
+	}
 
 	/* Save available DIMM information */
 	index = 0;
@@ -130,14 +128,24 @@ void mainboard_romstage_entry(void)
 
 	/* Program MCHBAR, DMIBAR, GDXBAR and EDRAMBAR */
 	systemagent_early_init();
-	/* Program PCH init */
-	pch_init();
+	/* Program SMBus base address and enable it */
+	smbus_common_init();
 	/* initialize Heci interface */
 	heci_init(HECI1_BASE_ADDRESS);
 
 	s3wake = pmc_fill_power_state(ps) == ACPI_S3;
 	fsp_memory_init(s3wake);
 	pmc_set_disb();
-	if (!s3wake)
+	if (!s3wake) {
+
+		/*
+		 * cse_fw_sync() must be called after DRAM initialization as
+		 * HMRFPO_ENABLE HECI command (which is used by cse_fw_sync())
+		 * is expected to be executed after DRAM initialization.
+		 */
+		if (CONFIG(SOC_INTEL_CSE_LITE_SKU))
+			cse_fw_sync();
+
 		save_dimm_info();
+	}
 }

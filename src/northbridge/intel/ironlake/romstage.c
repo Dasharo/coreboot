@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <arch/io.h>
 #include <stdint.h>
 #include <console/console.h>
 #include <cf9_reset.h>
@@ -17,12 +18,12 @@
 #include <southbridge/intel/ibexpeak/pch.h>
 #include <southbridge/intel/ibexpeak/me.h>
 
-/* Platform has no romstage entry point under mainboard directory,
+/*
+ * Platform has no romstage entry point under mainboard directory,
  * so this one is named with prefix mainboard.
  */
 void mainboard_romstage_entry(void)
 {
-	u32 reg32;
 	int s3resume = 0;
 	u8 spd_addrmap[4] = {};
 
@@ -57,14 +58,6 @@ void mainboard_romstage_entry(void)
 	timestamp_add_now(TS_AFTER_INITRAM);
 
 	intel_early_me_status();
-
-	if (s3resume) {
-		/* Clear SLP_TYPE. This will break stage2 but
-		 * we care for that when we get there.
-		 */
-		reg32 = inl(DEFAULT_PMBASE + 0x04);
-		outl(reg32 & ~(7 << 10), DEFAULT_PMBASE + 0x04);
-	}
 
 	romstage_handoff_init(s3resume);
 }

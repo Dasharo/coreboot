@@ -1,0 +1,21 @@
+chip soc/intel/skylake
+	
+	register "usb2_ports[6]" = "USB2_PORT_EMPTY"		# Disabled
+	register "usb2_ports[9]" = "USB2_PORT_SHORT(OC_SKIP)"	# mPCIe slot
+	device domain 0 on
+		device pci 1f.0 on
+			chip superio/ite/it8613e
+				device pnp 2e.0 off end
+				device pnp 2e.1 on
+					io 0x60 = 0x3f8
+					irq 0x70 = 4
+				end
+				device pnp 2e.4 off end # Enviroment Controller
+				device pnp 2e.5 off end # Keyboard
+				device pnp 2e.6 off end # Mouse
+				device pnp 2e.7 off end # GPIO
+				device pnp 2e.a off end # CIR
+			end
+		end
+	end
+end

@@ -7,14 +7,12 @@
 #include <southbridge/intel/common/pmutil.h>
 #include "i82801ix.h"
 
-#include "nvs.h"
+#include <soc/nvs.h>
 
-/* GNVS needs to be updated by an 0xEA PM Trap (B2) after it has been located
- * by coreboot.
- */
-global_nvs_t *gnvs = (global_nvs_t *)0x0;
-void *tcg = (void *)0x0;
-void *smi1 = (void *)0x0;
+#if !CONFIG(SMM_TSEG)
+/* For qemu/x86-q35 to build properly. */
+struct global_nvs *gnvs;
+#endif
 
 int southbridge_io_trap_handler(int smif)
 {
@@ -33,14 +31,6 @@ int southbridge_io_trap_handler(int smif)
 	return 0;
 }
 
-void southbridge_update_gnvs(u8 apm_cnt, int *smm_done)
-{
-	gnvs = *(global_nvs_t **)0x500;
-	tcg  = *(void **)0x504;
-	smi1 = *(void **)0x508;
-	*smm_done = 1;
-}
-
 void southbridge_smi_monitor(void)
 {
 #define IOTRAP(x) (trap_sts & (1 << x))
@@ -56,7 +46,6 @@ void southbridge_smi_monitor(void)
 		if (trap_cycle & (1 << i))
 			mask |= (0xff << ((i - 16) << 3));
 	}
-
 
 	/* IOTRAP(3) SMI function call */
 	if (IOTRAP(3)) {

@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
-
 #ifndef _SOC_CHIP_H_
 #define _SOC_CHIP_H_
 
 #include <stdint.h>
 #include <intelblocks/cfg.h>
+#include <soc/acpi.h>
+#include <soc/gpio.h>
 #include <soc/irq.h>
 
 struct soc_intel_xeon_sp_skx_config {
@@ -37,6 +38,7 @@ struct soc_intel_xeon_sp_skx_config {
 	 * 6h = PIRQG#
 	 * 7h = PIRQH#
 	 */
+
 	uint16_t ir00_routing;
 	uint16_t ir01_routing;
 	uint16_t ir02_routing;
@@ -69,6 +71,11 @@ struct soc_intel_xeon_sp_skx_config {
 	uint32_t gen2_dec;
 	uint32_t gen3_dec;
 	uint32_t gen4_dec;
+
+	/* TCC activation offset */
+	uint32_t tcc_offset;
+
+	enum acpi_cstate_mode cstate_states;
 };
 
 typedef struct soc_intel_xeon_sp_skx_config config_t;

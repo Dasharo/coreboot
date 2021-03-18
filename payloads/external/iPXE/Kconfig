@@ -1,5 +1,3 @@
-##
-##
 ## SPDX-License-Identifier: GPL-2.0-only
 
 config PXE
@@ -111,6 +109,13 @@ config PXE_HAS_HTTPS
 	help
 	  Enable HTTPS protocol, which allows you to encrypt all communication
 	  with a web server and to verify the server's identity
+
+config PXE_CUSTOM_BUILD_ID
+	string "iPXE custom build_id variable"
+	default "12345678"
+	help
+	  This option allows user to customize build_id for reproducible builds.
+	  It is 32-bit hexadecimal number without "0x" prefix.
 
 endmenu
 endif

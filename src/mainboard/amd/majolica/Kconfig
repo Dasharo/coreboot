@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+if BOARD_AMD_MAJOLICA
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select BOARD_ROMSIZE_KB_16384
+	select SOC_AMD_CEZANNE
+	select AMD_SOC_CONSOLE_UART
+	select MAINBOARD_HAS_CHROMEOS
+
+config FMDFILE
+	string
+	default "src/mainboard/amd/majolica/chromeos.fmd" if CHROMEOS
+	default "src/mainboard/amd/majolica/board.fmd"
+
+config MAINBOARD_DIR
+	default "amd/majolica"
+
+config MAINBOARD_PART_NUMBER
+	default "MAJOLICA"
+
+config AMD_FWM_POSITION_INDEX
+	int
+	default 3 if CHROMEOS
+	default 4
+	help
+	  TODO: might need to be adapted for better placement of files in cbfs
+
+config MAJOLICA_HAVE_MCHP_FW
+	bool "Have Microchip EC firmware?"
+	default n
+
+config MAJOLICA_MCHP_FW_FILE
+	string
+	depends on MAJOLICA_HAVE_MCHP_FW
+	default "3rdparty/blobs/mainboard/amd/majolica/EC_majolica.bin"
+	help
+	  The EC firmware blob is usually the first 128kByte of the stock
+	  firmware image.
+
+config VBOOT
+	select VBOOT_NO_BOARD_SUPPORT
+	select VBOOT_SEPARATE_VERSTAGE
+	select VBOOT_STARTS_IN_BOOTBLOCK
+
+config VBOOT_VBNV_OFFSET
+	hex
+	default 0x2A
+
+config CHROMEOS
+	# Use default libpayload config
+	select LP_DEFCONFIG_OVERRIDE if PAYLOAD_DEPTHCHARGE
+
+endif # BOARD_AMD_MAJOLICA

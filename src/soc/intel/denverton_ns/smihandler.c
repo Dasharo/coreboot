@@ -10,15 +10,12 @@
 #include <cpu/intel/em64t100_save_state.h>
 #include <device/pci_def.h>
 #include <intelblocks/fast_spi.h>
+#include <smmstore.h>
 #include <spi-generic.h>
 #include <soc/iomap.h>
 #include <soc/soc_util.h>
 #include <soc/pm.h>
 #include <soc/nvs.h>
-
-/* GNVS needs to be set by coreboot initiating a software SMI. */
-static global_nvs_t *gnvs;
-static int smm_initialized;
 
 int southbridge_io_trap_handler(int smif)
 {
@@ -37,9 +34,10 @@ int southbridge_io_trap_handler(int smif)
 	return 0;
 }
 
-void southbridge_smi_set_eos(void) { enable_smi(EOS); }
-
-global_nvs_t *smm_get_gnvs(void) { return gnvs; }
+void southbridge_smi_set_eos(void)
+{
+	enable_smi(EOS);
+}
 
 static void busmaster_disable_on_bus(int bus)
 {
@@ -198,53 +196,44 @@ static void finalize(void)
 		fast_spi_init();
 }
 
+static void southbridge_smi_store(void)
+{
+	u8 sub_command, ret;
+	em64t100_smm_state_save_area_t *io_smi =
+		smi_apmc_find_state_save(APM_CNT_SMMSTORE);
+	uint32_t reg_ebx;
+
+	if (!io_smi)
+		return;
+	/* Command and return value in EAX */
+	sub_command = (io_smi->rax >> 8) & 0xff;
+
+	/* Parameter buffer in EBX */
+	reg_ebx = io_smi->rbx;
+
+	/* drivers/smmstore/smi.c */
+	ret = smmstore_exec(sub_command, (void *)reg_ebx);
+	io_smi->rax = ret;
+}
+
 static void southbridge_smi_apmc(void)
 {
 	uint8_t reg8;
-	em64t100_smm_state_save_area_t *state;
 
-	/* Emulate B2 register as the FADT / Linux expects it */
-
-	reg8 = inb(APM_CNT);
+	reg8 = apm_get_apmc();
 	switch (reg8) {
-	case APM_CNT_CST_CONTROL:
-		/* Calling this function seems to cause
-		 * some kind of race condition in Linux
-		 * and causes a kernel oops
-		 */
-		printk(BIOS_DEBUG, "C-state control\n");
-		break;
-	case APM_CNT_PST_CONTROL:
-		/* Calling this function seems to cause
-		 * some kind of race condition in Linux
-		 * and causes a kernel oops
-		 */
-		printk(BIOS_DEBUG, "P-state control\n");
-		break;
 	case APM_CNT_ACPI_DISABLE:
 		disable_pm1_control(SCI_EN);
-		printk(BIOS_DEBUG, "SMI#: ACPI disabled.\n");
 		break;
 	case APM_CNT_ACPI_ENABLE:
 		enable_pm1_control(SCI_EN);
-		printk(BIOS_DEBUG, "SMI#: ACPI enabled.\n");
 		break;
 	case APM_CNT_FINALIZE:
 		finalize();
 		break;
-	case APM_CNT_GNVS_UPDATE:
-		if (smm_initialized) {
-			printk(BIOS_DEBUG,
-			       "SMI#: SMM structures already initialized!\n");
-			return;
-		}
-		state = smi_apmc_find_state_save(reg8);
-		if (state) {
-			/* EBX in the state save contains the GNVS pointer */
-			gnvs = (global_nvs_t *)((uint32_t)state->rbx);
-			smm_initialized = 1;
-			printk(BIOS_DEBUG, "SMI#: Setting GNVS to %p\n", gnvs);
-		}
+	case APM_CNT_SMMSTORE:
+		if (CONFIG(SMMSTORE))
+			southbridge_smi_store();
 		break;
 	}
 

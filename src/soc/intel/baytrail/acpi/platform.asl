@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <soc/intel/baytrail/acpi/device_nvs.asl>
 #include <southbridge/intel/common/acpi/platform.asl>
 
-/* The _PTS method (Prepare To Sleep) is called before the OS is
+/*
+ * The _PTS method (Prepare To Sleep) is called before the OS is
  * entering a sleep state. The sleep state number is passed in Arg0
  */
 

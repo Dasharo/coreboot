@@ -7,11 +7,10 @@
  * It does not matter where we put the SMBus I/O base, as long as we
  * keep it consistent and don't interfere with other devices.  Stage2
  * will relocate this anyways.
- * Our solution is to have SMB initialization move the I/O to SMBUS_IO_BASE
+ * Our solution is to have SMB initialization move the I/O to CONFIG_FIXED_SMBUS_IO_BASE
  * again. But handling static BARs is a generic problem that should be
  * solved in the device allocator.
  */
-#define SMBUS_IO_BASE		0x0400
 /* TODO Make sure these don't get changed by stage2 */
 #define DEFAULT_GPIOBASE	0x0480
 #define DEFAULT_PMBASE		0x0500
@@ -28,15 +27,7 @@ void i82801gx_lpc_setup(void);
 void i82801gx_setup_bars(void);
 void i82801gx_early_init(void);
 
-#if ENV_ROMSTAGE
-int smbus_read_byte(unsigned int device, unsigned int address);
-int i2c_eeprom_read(unsigned int device, unsigned int cmd, unsigned int bytes,
-		u8 *buf);
-int smbus_block_read(unsigned int device, unsigned int cmd, u8 bytes, u8 *buf);
-int smbus_block_write(unsigned int device, unsigned int cmd, u8 bytes,
-		const u8 *buf);
 void ich7_setup_cir(void);
-#endif
 
 #define MAINBOARD_POWER_OFF	0
 #define MAINBOARD_POWER_ON	1

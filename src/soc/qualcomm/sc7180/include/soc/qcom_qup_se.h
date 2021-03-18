@@ -3,12 +3,11 @@
 #ifndef __SOC_QCOM_QUP_SE_H__
 #define __SOC_QCOM_QUP_SE_H__
 
-#include <console/console.h>
 #include <device/mmio.h>
 #include <gpio.h>
 #include <soc/addressmap.h>
-#include <stdint.h>
 #include <timer.h>
+#include <types.h>
 
 #define GENMASK(h, l)	(BIT(h + 1) - BIT(l))
 

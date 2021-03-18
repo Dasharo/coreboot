@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+config BOARD_GOOGLE_BASEBOARD_GUYBRUSH
+	def_bool n
+
+if BOARD_GOOGLE_BASEBOARD_GUYBRUSH
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select AMD_SOC_CONSOLE_UART
+	select BOARD_ROMSIZE_KB_16384
+	select FW_CONFIG
+	select MAINBOARD_HAS_CHROMEOS
+	select SOC_AMD_CEZANNE
+	select SOC_AMD_COMMON_BLOCK_USE_ESPI
+
+config CHROMEOS
+	select EC_GOOGLE_CHROMEEC
+	select EC_GOOGLE_CHROMEEC_ESPI
+	select EC_GOOGLE_CHROMEEC_SWITCHES
+
+config VBOOT
+	select VBOOT_SEPARATE_VERSTAGE
+	select VBOOT_STARTS_IN_BOOTBLOCK
+
+config FMDFILE
+	string
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos.fmd"
+
+config MAINBOARD_DIR
+	string
+	default "google/guybrush"
+
+config MAINBOARD_PART_NUMBER
+	string
+	default "Guybrush" if BOARD_GOOGLE_GUYBRUSH
+
+config AMD_FWM_POSITION_INDEX
+	int
+	default 3
+	help
+	  TODO: might need to be adapted for better placement of files in cbfs
+
+config VARIANT_DIR
+	string
+	default "guybrush" if BOARD_GOOGLE_GUYBRUSH
+
+config DEVICETREE
+	string
+	default "variants/baseboard/devicetree.cb"
+
+config OVERRIDE_DEVICETREE
+	string
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
+
+config MAINBOARD_FAMILY
+	string
+	default "Google_Guybrush"
+
+config GPIO_SIGN_OF_LIFE
+	def_bool n
+	help
+	  Enable toggling GPIO 31 as a sign of life on Guybrush
+
+	  TODO: Remove this option when board is booting
+
+endif # BOARD_GOOGLE_BASEBOARD_GUYBRUSH

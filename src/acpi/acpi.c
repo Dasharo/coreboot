@@ -23,6 +23,7 @@
 #include <commonlib/helpers.h>
 #include <cpu/cpu.h>
 #include <cbfs.h>
+#include <types.h>
 #include <version.h>
 #include <commonlib/sort.h>
 
@@ -468,7 +469,7 @@ void acpi_create_ssdt_generator(acpi_header_t *ssdt, const char *oem_table_id)
 	{
 		struct device *dev;
 		for (dev = all_devices; dev; dev = dev->next)
-			if (dev->ops && dev->ops->acpi_fill_ssdt)
+			if (dev->enabled && dev->ops && dev->ops->acpi_fill_ssdt)
 				dev->ops->acpi_fill_ssdt(dev);
 		current = (unsigned long) acpigen_get_current();
 	}
@@ -752,7 +753,7 @@ void acpi_create_hpet(acpi_hpet_t *hpet)
 	header->revision = get_acpi_table_revision(HPET);
 
 	/* Fill out HPET address. */
-	addr->space_id = 0; /* Memory */
+	addr->space_id = ACPI_ADDRESS_SPACE_MEMORY;
 	addr->bit_width = 64;
 	addr->bit_offset = 0;
 	addr->addrl = CONFIG_HPET_ADDRESS & 0xffffffff;
@@ -876,6 +877,35 @@ void acpi_create_ivrs(acpi_ivrs_t *ivrs,
 	/* (Re)calculate length and checksum. */
 	header->length = current - (unsigned long)ivrs;
 	header->checksum = acpi_checksum((void *)ivrs, header->length);
+}
+
+void acpi_create_crat(struct acpi_crat_header *crat,
+		      unsigned long (*acpi_fill_crat)(struct acpi_crat_header *crat_struct,
+		      unsigned long current))
+{
+	acpi_header_t *header = &(crat->header);
+	unsigned long current = (unsigned long)crat + sizeof(struct acpi_crat_header);
+
+	memset((void *)crat, 0, sizeof(struct acpi_crat_header));
+
+	if (!header)
+		return;
+
+	/* Fill out header fields. */
+	memcpy(header->signature, "CRAT", 4);
+	memcpy(header->oem_id, OEM_ID, 6);
+	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
+	memcpy(header->asl_compiler_id, ASLC, 4);
+
+	header->asl_compiler_revision = asl_revision;
+	header->length = sizeof(struct acpi_crat_header);
+	header->revision = get_acpi_table_revision(CRAT);
+
+	current = acpi_fill_crat(crat, current);
+
+	/* (Re)calculate length and checksum. */
+	header->length = current - (unsigned long)crat;
+	header->checksum = acpi_checksum((void *)crat, header->length);
 }
 
 unsigned long acpi_write_hpet(const struct device *device, unsigned long current,
@@ -1219,6 +1249,7 @@ void acpi_write_bert(acpi_bert_t *bert, uintptr_t region, size_t length)
 	header->checksum = acpi_checksum((void *)bert, header->length);
 }
 
+__weak void arch_fill_fadt(acpi_fadt_t *fadt) { }
 __weak void soc_fill_fadt(acpi_fadt_t *fadt) { }
 __weak void mainboard_fill_fadt(acpi_fadt_t *fadt) { }
 
@@ -1250,14 +1281,9 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	/* should be 0 ACPI 3.0 */
 	fadt->reserved = 0;
 
-	if (CONFIG(SYSTEM_TYPE_CONVERTIBLE) ||
-	    CONFIG(SYSTEM_TYPE_LAPTOP))
-		fadt->preferred_pm_profile = PM_MOBILE;
-	else if (CONFIG(SYSTEM_TYPE_DETACHABLE) ||
-		 CONFIG(SYSTEM_TYPE_TABLET))
-		fadt->preferred_pm_profile = PM_TABLET;
-	else
-		fadt->preferred_pm_profile = PM_DESKTOP;
+	fadt->preferred_pm_profile = acpi_get_preferred_pm_profile();
+
+	arch_fill_fadt(fadt);
 
 	acpi_fill_fadt(fadt);
 
@@ -1267,6 +1293,52 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 	header->checksum =
 	    acpi_checksum((void *) fadt, header->length);
 }
+
+void acpi_create_lpit(acpi_lpit_t *lpit)
+{
+	acpi_header_t *header = &(lpit->header);
+	unsigned long current = (unsigned long)lpit + sizeof(acpi_lpit_t);
+
+	memset((void *)lpit, 0, sizeof(acpi_lpit_t));
+
+	if (!header)
+		return;
+
+	/* Fill out header fields. */
+	memcpy(header->signature, "LPIT", 4);
+	memcpy(header->oem_id, OEM_ID, 6);
+	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
+	memcpy(header->asl_compiler_id, ASLC, 4);
+
+	header->asl_compiler_revision = asl_revision;
+	header->revision = get_acpi_table_revision(LPIT);
+	header->oem_revision = 42;
+	header->length = sizeof(acpi_lpit_t);
+
+	current = acpi_fill_lpit(current);
+
+	/* (Re)calculate length and checksum. */
+	header->length = current - (unsigned long)lpit;
+	header->checksum = acpi_checksum((void *)lpit, header->length);
+}
+
+unsigned long acpi_create_lpi_desc_ncst(acpi_lpi_desc_ncst_t *lpi_desc, uint16_t uid)
+{
+	memset(lpi_desc, 0, sizeof(acpi_lpi_desc_ncst_t));
+	lpi_desc->header.length = sizeof(acpi_lpi_desc_ncst_t);
+	lpi_desc->header.type = ACPI_LPI_DESC_TYPE_NATIVE_CSTATE;
+	lpi_desc->header.uid = uid;
+
+	return lpi_desc->header.length;
+}
+
+/* BERT helpers */
+bool __weak acpi_is_boot_error_src_present(void)
+{
+	return false;
+}
+
+__weak void acpi_soc_fill_bert(acpi_bert_t *bert, void **region, size_t *length) {}
 
 unsigned long __weak fw_cfg_acpi_tables(unsigned long start)
 {
@@ -1288,6 +1360,8 @@ unsigned long write_acpi_tables(unsigned long start)
 	acpi_tcpa_t *tcpa;
 	acpi_tpm2_t *tpm2;
 	acpi_madt_t *madt;
+	acpi_lpit_t *lpit;
+	acpi_bert_t *bert;
 	struct device *dev;
 	unsigned long fw;
 	size_t slic_size, dsdt_size;
@@ -1344,9 +1418,7 @@ unsigned long write_acpi_tables(unsigned long start)
 		return fw;
 	}
 
-	dsdt_file = cbfs_boot_map_with_leak(
-				     CONFIG_CBFS_PREFIX "/dsdt.aml",
-				     CBFS_TYPE_RAW, &dsdt_size);
+	dsdt_file = cbfs_map(CONFIG_CBFS_PREFIX "/dsdt.aml", &dsdt_size);
 	if (!dsdt_file) {
 		printk(BIOS_ERR, "No DSDT file, skipping ACPI tables\n");
 		return current;
@@ -1359,12 +1431,12 @@ unsigned long write_acpi_tables(unsigned long start)
 		return current;
 	}
 
-	slic_file = cbfs_boot_map_with_leak(CONFIG_CBFS_PREFIX "/slic",
-				     CBFS_TYPE_RAW, &slic_size);
+	slic_file = cbfs_map(CONFIG_CBFS_PREFIX "/slic", &slic_size);
 	if (slic_file
 	    && (slic_file->length > slic_size
 		|| slic_file->length < sizeof(acpi_header_t)
-		|| memcmp(slic_file->signature, "SLIC", 4) != 0)) {
+		|| (memcmp(slic_file->signature, "SLIC", 4) != 0
+		    && memcmp(slic_file->signature, "MSDM", 4) != 0))) {
 		slic_file = 0;
 	}
 
@@ -1410,6 +1482,10 @@ unsigned long write_acpi_tables(unsigned long start)
 		current += sizeof(acpi_header_t);
 
 		acpigen_set_current((char *) current);
+
+		if (CONFIG(ACPI_SOC_NVS))
+			acpi_fill_gnvs();
+
 		for (dev = all_devices; dev; dev = dev->next)
 			if (dev->ops && dev->ops->acpi_inject_dsdt)
 				dev->ops->acpi_inject_dsdt(dev);
@@ -1484,6 +1560,18 @@ unsigned long write_acpi_tables(unsigned long start)
 		}
 	}
 
+	if (CONFIG(ACPI_LPIT)) {
+		printk(BIOS_DEBUG, "ACPI:     * LPIT\n");
+
+		lpit = (acpi_lpit_t *)current;
+		acpi_create_lpit(lpit);
+		if (lpit->header.length >= sizeof(acpi_lpit_t)) {
+			current += lpit->header.length;
+			current = acpi_align_current(current);
+			acpi_add_table(rsdp, lpit);
+		}
+	}
+
 	printk(BIOS_DEBUG, "ACPI:    * MADT\n");
 
 	madt = (acpi_madt_t *) current;
@@ -1492,7 +1580,22 @@ unsigned long write_acpi_tables(unsigned long start)
 		current += madt->header.length;
 		acpi_add_table(rsdp, madt);
 	}
+
 	current = acpi_align_current(current);
+
+	if (acpi_is_boot_error_src_present()) {
+		void *region;
+		size_t size;
+		printk(BIOS_DEBUG, "ACPI:    * BERT\n");
+		bert = (acpi_bert_t *) current;
+		acpi_soc_fill_bert(bert, &region, &size);
+		acpi_write_bert(bert, (uintptr_t)region, size);
+		if (bert->header.length >= sizeof(acpi_bert_t)) {
+			current += bert->header.length;
+			acpi_add_table(rsdp, bert);
+		}
+		current = acpi_align_current(current);
+	}
 
 	printk(BIOS_DEBUG, "current = %lx\n", current);
 
@@ -1537,7 +1640,7 @@ void *acpi_find_wakeup_vector(void)
 	void *wake_vec;
 	int i;
 
-	if (!acpi_is_wakeup())
+	if (!acpi_is_wakeup_s3())
 		return NULL;
 
 	printk(BIOS_DEBUG, "Trying to find the wakeup vector...\n");
@@ -1623,7 +1726,7 @@ int get_acpi_table_revision(enum acpi_tables table)
 	case VFCT: /* ACPI 2.0/3.0/4.0: 1 */
 		return 1;
 	case IVRS:
-		return IVRS_FORMAT_FIXED;
+		return IVRS_FORMAT_MIXED;
 	case DBG2:
 		return 0;
 	case FACS: /* ACPI 2.0/3.0: 1, ACPI 4.0 upto 6.3: 2 */
@@ -1640,6 +1743,10 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 5;
 	case BERT:
 		return 1;
+	case CRAT:
+		return 1;
+	case LPIT: /* ACPI 5.1 up to 6.3: 0 */
+		return 0;
 	default:
 		return -1;
 	}

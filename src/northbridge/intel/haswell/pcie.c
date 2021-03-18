@@ -7,12 +7,6 @@
 #include <device/pci_ids.h>
 #include <assert.h>
 
-static void pcie_disable(struct device *dev)
-{
-	printk(BIOS_INFO, "%s: Disabling device\n", dev_path(dev));
-	dev->enabled = 0;
-}
-
 #if CONFIG(HAVE_ACPI_TABLES)
 static const char *pcie_acpi_name(const struct device *dev)
 {
@@ -53,7 +47,6 @@ static struct device_operations device_ops = {
 	.enable_resources	= pci_bus_enable_resources,
 	.scan_bus		= pciexp_scan_bridge,
 	.reset_bus		= pci_bus_reset,
-	.disable		= pcie_disable,
 	.init			= pci_dev_init,
 	.ops_pci		= &pci_dev_ops_pci,
 #if CONFIG(HAVE_ACPI_TABLES)
@@ -61,7 +54,10 @@ static struct device_operations device_ops = {
 #endif
 };
 
-static const unsigned short pci_device_ids[] = { 0x0c01, 0x0c05, 0x0c09, 0x0c0d, 0 };
+static const unsigned short pci_device_ids[] = {
+	0x0c01, 0x0c05, 0x0c09, 0x0c0d,
+	0x0d01, 0x0d05, 0x0d09, /* Crystal Well */
+	0 };
 
 static const struct pci_driver pch_pcie __pci_driver = {
 	.ops		= &device_ops,

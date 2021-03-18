@@ -12,7 +12,6 @@
 #include <drivers/intel/gma/opregion.h>
 #include <drivers/intel/gma/libgfxinit.h>
 #include <pc80/vga.h>
-#include <types.h>
 
 #include "chip.h"
 #include "drivers/intel/gma/i915_reg.h"
@@ -72,7 +71,7 @@ static struct device_operations gma_func0_ops = {
 	.acpi_fill_ssdt		= gma_generate_ssdt,
 	.init			= gma_func0_init,
 	.ops_pci		= &pci_dev_ops_pci,
-	.disable		= gma_func0_disable,
+	.vga_disable		= gma_func0_disable,
 	.acpi_name		= gma_acpi_name,
 };
 

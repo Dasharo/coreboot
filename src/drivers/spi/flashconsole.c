@@ -2,7 +2,6 @@
 
 #include <commonlib/helpers.h>
 #include <commonlib/region.h>
-#include <boot_device.h>
 #include <fmap.h>
 #include <console/console.h>
 #include <console/flash.h>
@@ -75,7 +74,8 @@ void flashconsole_tx_byte(unsigned char c)
 
 	size_t region_size = region_device_sz(rdev_ptr);
 
-	line_buffer[line_offset++] = c;
+	if (line_offset < LINE_BUFFER_SIZE)
+		line_buffer[line_offset++] = c;
 
 	if (line_offset >= LINE_BUFFER_SIZE ||
 	    offset + line_offset >= region_size || c == '\n') {

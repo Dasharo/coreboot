@@ -15,6 +15,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_FORCE_NATIVE_VGA_INIT if !CHROMEOS
 	select MAINBOARD_HAS_LPC_TPM
 	select MAINBOARD_HAS_CHROMEOS
+	select SOUTHBRIDGE_INTEL_COMMON_ACPI_MADT
 
 config VBOOT
 	select VBOOT_MUST_REQUEST_DISPLAY
@@ -29,8 +30,17 @@ config VBOOT
 
 config FMDFILE
 	string
-	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/vboot-rwa-16M.fmd" if VBOOT_SLOTS_RW_A && !VBOOT_SLOTS_RW_AB
-	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/vboot-rwab-16M.fmd" if VBOOT_SLOTS_RW_AB
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa-16M.fmd" if VBOOT_SLOTS_RW_A && !VBOOT_SLOTS_RW_AB
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab-16M.fmd" if VBOOT_SLOTS_RW_AB
+
+if ARCH_BOOTBLOCK_X86_64
+# Need to install page tables in DRAM as the virtual MMU has problems translating paging
+# request when the page table resides in emulated ROM. This causes undefined behaviour
+# when handling data requests, as well as fetching and decoding instructions
+# Real hardware didn't show any problems until now.
+config ARCH_X86_64_PGTBL_LOC
+	default 0x8000
+endif
 
 if VBOOT
 
@@ -52,8 +62,11 @@ config MAINBOARD_PART_NUMBER
 	default "QEMU x86 q35/ich9"
 
 config MMCONF_BASE_ADDRESS
-	hex
 	default 0xb0000000
+
+config MMCONF_BUS_NUMBER
+	int
+	default 256
 
 # fw_cfg tables can be larger than the default when TPM is enabled
 config MAX_ACPI_TABLE_SIZE_KB
@@ -75,10 +88,6 @@ config DCACHE_RAM_SIZE
 config HAVE_INTEL_FIRMWARE
 	bool
 	default n
-
-config C_ENV_BOOTBLOCK_SIZE
-	hex
-	default 0x4000
 
 config DCACHE_BSP_STACK_SIZE
 	hex

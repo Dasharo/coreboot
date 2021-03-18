@@ -29,33 +29,10 @@ config CHROMEOS_RAMOOPS
 	bool "Reserve space for Chrome OS ramoops"
 	default y
 
-config CHROMEOS_RAMOOPS_DYNAMIC
-	bool "Allocate RAM oops buffer in cbmem"
-	default n
-	depends on CHROMEOS_RAMOOPS && HAVE_ACPI_TABLES
-
-config CHROMEOS_RAMOOPS_NON_ACPI
-	bool "Allocate RAM oops buffer in cbmem passed through cb tables to payload"
-	default y if !HAVE_ACPI_TABLES
-	depends on CHROMEOS_RAMOOPS && !HAVE_ACPI_TABLES
-
-config CHROMEOS_RAMOOPS_RAM_START
-	hex "Physical address of preserved RAM"
-	default 0x00f00000
-	depends on CHROMEOS_RAMOOPS && !CHROMEOS_RAMOOPS_DYNAMIC
-
 config CHROMEOS_RAMOOPS_RAM_SIZE
 	hex "Size of preserved RAM"
 	default 0x00100000
 	depends on CHROMEOS_RAMOOPS
-
-config NO_TPM_RESUME
-	bool
-	default n
-	help
-	  On some boards the TPM stays powered up in S3. On those
-	  boards, booting Windows will break if the TPM resume command
-	  is sent during an S3 resume.
 
 config HAVE_REGULATORY_DOMAIN
 	bool "Add regulatory domain methods"
@@ -91,6 +68,24 @@ config CHROMEOS_DSM_CALIB
 	  stored in VPD. Enable this config to read and parse these VPD values and write them
 	  to ACPI DSD table in device driver. These parameters will be applied by kernel driver
 	  through device property at boot.
+
+config CHROMEOS_CSE_BOARD_RESET_OVERRIDE
+	bool
+	default n
+	depends on SOC_INTEL_CSE_LITE_SKU
+	help
+	  On some boards that run old firmware version in cr50, Embedded Controller (EC) needs
+	  to trigger the cold reset of Application Processor (AP) when CSE jumps from RO to RW
+	  so that cr50 resets the TPM state. This is required on boards where the cr50 firmware
+	  does not understand the new cr50 strap config (applicable only to boards using strap
+	  config 0xe). Enabling this config will help to override the default global reset.
+
+config CHROMEOS_DRAM_PART_NUMBER_IN_CBI
+	def_bool n
+	depends on EC_GOOGLE_CHROMEEC
+	help
+	  Some boards declare the DRAM part number in the CBI instead of the SPD.  This option
+	  allows those boards to declare that their DRAM part number is stored in the CBI.
 
 endif # CHROMEOS
 endmenu

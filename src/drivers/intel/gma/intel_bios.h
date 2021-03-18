@@ -206,8 +206,8 @@ struct old_child_dev_config {
 } __packed;
 
 /* This one contains field offsets that are known to be common for all BDB
- * versions. Notice that the meaning of the contents contents may still change,
- * but at least the offsets are consistent. */
+ * versions. Notice that the meaning of the contents may still change, but
+ * at least the offsets are consistent. */
 struct common_child_dev_config {
 	u16 handle;
 	u16 device_type;
@@ -395,7 +395,6 @@ struct bdb_sdvo_lvds_options {
 	u8 panel_misc_bits_3;
 	u8 panel_misc_bits_4;
 } __packed;
-
 
 #define BDB_DRIVER_FEATURE_NO_LVDS		0
 #define BDB_DRIVER_FEATURE_INT_LVDS		1

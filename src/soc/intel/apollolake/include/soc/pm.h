@@ -120,7 +120,7 @@
 
 #define GPE0_REG_MAX		4
 #define GPE0_REG_SIZE		32
-#define GPE0_STS(x)		(0x20 + (x * 4))
+#define GPE0_STS(x)		(0x20 + ((x) * 4))
 #define  GPE0_A			0
 #define  GPE0_B			1
 #define  GPE0_C			2
@@ -136,7 +136,7 @@
 #define   BATLOW_STS		(1 << 10)
 #define   PCIE_GPE_STS		(1 << 9)
 #define   SWGPE_STS		(1 << 2)
-#define GPE0_EN(x)		(0x30 + (x * 4))
+#define GPE0_EN(x)		(0x30 + ((x) * 4))
 #define   ESPI_EN		(1 << 20) /* This bit is present in GLK */
 #define   SATA_PME_EN		(1 << 17)
 #define   SMB_WAK_EN		(1 << 16)
@@ -177,7 +177,7 @@
 #define  GPE0_DWX_MASK		0xf
 #define GPE0_DW_SHIFT(x)	(4 + 4*(x))
 
-#if CONFIG(SOC_INTEL_GLK)
+#if CONFIG(SOC_INTEL_GEMINILAKE)
 #define PMC_GPE_AUDIO_31_0	9
 #define PMC_GPE_N_95_64		8
 #define PMC_GPE_N_63_32		7
@@ -233,8 +233,6 @@ struct chipset_power_state {
 } __packed;
 
 void pch_log_state(void);
-
-void enable_pm_timer_emulation(void);
 
 /* STM Support */
 uint16_t get_pmbase(void);

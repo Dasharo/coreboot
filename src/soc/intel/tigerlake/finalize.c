@@ -6,7 +6,6 @@
  * Chapter number: 4, 29
  */
 
-#include <arch/io.h>
 #include <device/mmio.h>
 #include <bootstate.h>
 #include <console/console.h>
@@ -15,9 +14,9 @@
 #include <device/pci.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/pcr.h>
+#include <intelblocks/pmclib.h>
 #include <intelblocks/tco.h>
 #include <intelblocks/thermal.h>
-#include <reg_script.h>
 #include <spi-generic.h>
 #include <soc/p2sb.h>
 #include <soc/pci_devs.h>
@@ -29,10 +28,7 @@
 
 static void pch_finalize(void)
 {
-	uint32_t reg32;
-	uint8_t *pmcbase;
 	config_t *config;
-	uint8_t reg8;
 
 	/* TCO Lock down */
 	tco_lockdown();
@@ -51,21 +47,23 @@ static void pch_finalize(void)
 	 * returns NULL for PCH_DEV_PMC device.
 	 */
 	config = config_of_soc();
-	pmcbase = pmc_mmio_regs();
-	if (config->PmTimerDisabled) {
-		reg8 = read8(pmcbase + PCH_PWRM_ACPI_TMR_CTL);
-		reg8 |= (1 << 1);
-		write8(pmcbase + PCH_PWRM_ACPI_TMR_CTL, reg8);
-	}
-
-	/* Disable XTAL shutdown qualification for low power idle. */
-	if (config->s0ix_enable) {
-		reg32 = read32(pmcbase + CPPMVRIC);
-		reg32 |= XTALSDQDIS;
-		write32(pmcbase + CPPMVRIC, reg32);
-	}
+	if (config->PmTimerDisabled)
+		pmc_disable_acpi_timer();
 
 	pmc_clear_pmcon_sts();
+}
+
+static void tbt_finalize(void)
+{
+	int i;
+	const struct device *dev;
+
+	/* Disable Thunderbolt PCIe root ports bus master */
+	for (i = 0; i < NUM_TBT_FUNCTIONS; i++) {
+		dev = pcidev_path_on_root(SA_DEVFN_TBT(i));
+		if (dev)
+			pci_dev_disable_bus_master(dev);
+	}
 }
 
 static void soc_finalize(void *unused)
@@ -74,6 +72,7 @@ static void soc_finalize(void *unused)
 
 	pch_finalize();
 	apm_control(APM_CNT_FINALIZE);
+	tbt_finalize();
 
 	/* Indicate finalize step with post code */
 	post_code(POST_OS_BOOT);

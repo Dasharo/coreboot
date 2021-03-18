@@ -22,25 +22,8 @@ static struct device_operations cpu_bus_ops = {
 	.init             = soc_init_cpus
 };
 
-
 static void enable_dev(struct device *dev)
 {
-	printk(BIOS_SPEW, "----------\n%s/%s (%s), type: %d\n", __FILE__, __func__,
-			dev_name(dev), dev->path.type);
-
-	printk(BIOS_SPEW, "vendor: 0x%04x. device: 0x%04x\n",
-			pci_read_config16(dev, PCI_VENDOR_ID),
-			pci_read_config16(dev, PCI_DEVICE_ID));
-
-	printk(BIOS_SPEW, "class: 0x%02x %s\nsubclass: 0x%02x %s\n"
-			"prog: 0x%02x\nrevision: 0x%02x\n",
-			pci_read_config16(dev, PCI_CLASS_DEVICE) >> 8,
-			get_pci_class_name(dev),
-			pci_read_config16(dev, PCI_CLASS_DEVICE) & 0xff,
-			get_pci_subclass_name(dev),
-			pci_read_config8(dev, PCI_CLASS_PROG),
-			pci_read_config8(dev, PCI_REVISION_ID));
-
 	/* Set the operations if it is a special bus type */
 	if (dev->path.type == DEVICE_PATH_DOMAIN) {
 		dev->ops = &pci_domain_ops;
@@ -67,8 +50,8 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 	struct soc_intel_braswell_config *config;
 
 	if (!dev) {
-		printk(BIOS_ERR, "Error! Device (%s) not found, soc_silicon_init_params!\n",
-			dev_path(dev));
+		printk(BIOS_ERR, "Error! Device (%s) not found, %s!\n",
+			dev_path(dev), __func__);
 		return;
 	}
 
@@ -98,9 +81,9 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 	params->ChvSvidConfig			= config->ChvSvidConfig;
 	params->DptfDisable			= config->DptfDisable;
 	params->PcdEmmcMode			= config->PcdEmmcMode;
-	params->PcdUsb3ClkSsc			= config->PcdUsb3ClkSsc;
-	params->PcdDispClkSsc			= config->PcdDispClkSsc;
-	params->PcdSataClkSsc			= config->PcdSataClkSsc;
+	params->PcdUsb3ClkSsc			= 1;
+	params->PcdDispClkSsc			= 1;
+	params->PcdSataClkSsc			= 1;
 
 	params->Usb2Port0PerPortPeTxiSet	= config->Usb2Port0PerPortPeTxiSet;
 	params->Usb2Port0PerPortTxiSet		= config->Usb2Port0PerPortTxiSet;
@@ -132,14 +115,12 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 	params->Usb3Lane2Ow2tapgen2deemph3p5	= config->Usb3Lane2Ow2tapgen2deemph3p5;
 	params->Usb3Lane3Ow2tapgen2deemph3p5	= config->Usb3Lane3Ow2tapgen2deemph3p5;
 
-	params->PcdSataInterfaceSpeed		= config->PcdSataInterfaceSpeed;
+	params->PcdSataInterfaceSpeed		= 3;
 	params->PcdPchUsbSsicPort		= config->PcdPchUsbSsicPort;
 	params->PcdPchUsbHsicPort		= config->PcdPchUsbHsicPort;
-	params->PcdPcieRootPortSpeed		= config->PcdPcieRootPortSpeed;
+	params->PcdPcieRootPortSpeed		= 0;
 	params->PcdPchSsicEnable		= config->PcdPchSsicEnable;
-	params->PcdLogoPtr			= config->PcdLogoPtr;
-	params->PcdLogoSize			= config->PcdLogoSize;
-	params->PcdRtcLock			= config->PcdRtcLock;
+	params->PcdRtcLock			= 0;
 	params->PMIC_I2CBus			= config->PMIC_I2CBus;
 	params->ISPEnable			= config->ISPEnable;
 	params->ISPPciDevConfig			= config->ISPPciDevConfig;
@@ -153,11 +134,6 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 	params->I2C6Frequency			= config->I2C6Frequency;
 
 	board_silicon_USB2_override(params);
-}
-
-const struct cbmem_entry *soc_load_logo(SILICON_INIT_UPD *params)
-{
-	return fsp_load_logo(&params->PcdLogoPtr, &params->PcdLogoSize);
 }
 
 void soc_display_silicon_init_params(const SILICON_INIT_UPD *old, SILICON_INIT_UPD *new)
@@ -314,7 +290,6 @@ void soc_display_silicon_init_params(const SILICON_INIT_UPD *old, SILICON_INIT_U
 /* Called at BS_DEV_INIT_CHIPS time -- very early. Just after BS_PRE_DEVICE. */
 static void soc_init(void *chip_info)
 {
-	printk(BIOS_SPEW, "%s/%s\n", __FILE__, __func__);
 	soc_init_pre_device(chip_info);
 }
 

@@ -13,6 +13,7 @@
 #include <drivers/intel/pmc_mux/chip.h>
 #include <intelblocks/pmc.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/pmc_ipc.h>
 #include <intelblocks/rtc.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
@@ -77,8 +78,6 @@ static void pmc_init(struct device *dev)
 	pmc_set_power_failure_state(true);
 	pmc_gpe_init();
 
-	pmc_set_acpi_mode();
-
 	config_deep_s3(config->deep_s3_enable_ac, config->deep_s3_enable_dc);
 	config_deep_s5(config->deep_s5_enable_ac, config->deep_s5_enable_dc);
 	config_deep_sx(config->deep_sx_config);
@@ -101,8 +100,13 @@ static void soc_pmc_read_resources(struct device *dev)
 
 static void soc_pmc_fill_ssdt(const struct device *dev)
 {
-	acpigen_write_scope(acpi_device_scope(dev));
-	acpigen_write_device(acpi_device_name(dev));
+	const char *scope = acpi_device_scope(dev);
+	const char *name = acpi_device_name(dev);
+	if (!scope || !name)
+		return;
+
+	acpigen_write_scope(scope);
+	acpigen_write_device(name);
 
 	acpigen_write_name_string("_HID", PMC_HID);
 	acpigen_write_name_string("_DDN", "Intel(R) Tiger Lake IPC Controller");
@@ -116,6 +120,10 @@ static void soc_pmc_fill_ssdt(const struct device *dev)
 	acpigen_write_mem32fixed(1, PCH_PWRM_BASE_ADDRESS, PCH_PWRM_BASE_SIZE);
 	acpigen_write_resourcetemplate_footer();
 
+	/* Define IPC Write Method */
+	if (CONFIG(PMC_IPC_ACPI_INTERFACE))
+		pmc_ipc_acpi_fill_ssdt();
+
 	acpigen_pop_len(); /* PMC Device */
 	acpigen_pop_len(); /* Scope */
 
@@ -123,28 +131,24 @@ static void soc_pmc_fill_ssdt(const struct device *dev)
 	       dev_path(dev));
 }
 
-/* By default, TGL uses the PMC MUX for all ports, so port_number is unused */
-const struct device *soc_get_pmc_mux_device(int port_number)
+static void soc_acpi_mode_init(struct device *dev)
 {
-	const struct device *pmc;
-	struct device *child;
-
-	child = NULL;
-	pmc = pcidev_path_on_root(PCH_DEVFN_PMC);
-	if (!pmc || !pmc->link_list)
-		return NULL;
-
-	while ((child = dev_bus_each_child(pmc->link_list, child)) != NULL)
-		if (child->chip_ops == &drivers_intel_pmc_mux_ops)
-			break;
-
-	/* child will either be the correct device or NULL if not found */
-	return child;
+	/*
+	 * pmc_set_acpi_mode() should be delayed until BS_DEV_INIT in order
+	 * to ensure the ordering does not break the assumptions that other
+	 * drivers make about ACPI mode (e.g. Chrome EC). Since it disables
+	 * ACPI mode, other drivers may take different actions based on this
+	 * (e.g. Chrome EC will flush any pending hostevent bits). Because
+	 * TGL has its PMC device available for device_operations, it can be
+	 * done from the "ops->init" callback.
+	 */
+	pmc_set_acpi_mode();
 }
 
 struct device_operations pmc_ops = {
 	.read_resources	  = soc_pmc_read_resources,
 	.set_resources	  = noop_set_resources,
+	.init		  = soc_acpi_mode_init,
 	.enable		  = pmc_init,
 #if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_fill_ssdt	  = soc_pmc_fill_ssdt,

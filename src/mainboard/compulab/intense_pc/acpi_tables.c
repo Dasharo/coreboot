@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <southbridge/intel/bd82x6x/nvs.h>
+#include <acpi/acpi_gnvs.h>
+#include <soc/nvs.h>
 
 /* FIXME: check this function.  */
-void acpi_create_gnvs(global_nvs_t *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
 	gnvs->tcrt = 100;
 	gnvs->tpsv = 90;

@@ -2,9 +2,9 @@
 
 #include <bootblock_common.h>
 #include <stdint.h>
+#include <device/pnp_def.h>
 #include <device/pnp_ops.h>
 #include <device/pci_ops.h>
-#include <cpu/x86/msr.h>
 #include <device/pci_def.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <northbridge/intel/sandybridge/raminit.h>
@@ -36,7 +36,7 @@ void bootblock_mainboard_early_init(void)
 	const pnp_devfn_t dev = PNP_DEV(0x2e, 0x9);
 	pnp_enter_conf_state(dev);
 	pnp_write_config(dev, 0x29, 0x02); /* Pins 119, 120 are GPIO21, 20 */
-	pnp_write_config(dev, 0x30, 0x03); /* Enable GPIO2+3 */
+	pnp_write_config(dev, PNP_IDX_EN, 0x03); /* Enable GPIO2+3 */
 	pnp_write_config(dev, 0x2a, 0x01); /* Pins 62, 63, 65, 66 are
 					      GPIO27, 26, 25, 24 */
 	pnp_write_config(dev, 0x2c, 0xc3); /* Pin 90 is GPIO32,
@@ -47,7 +47,8 @@ void bootblock_mainboard_early_init(void)
 	/* Values can only be changed, when devices are enabled. */
 	pnp_write_config(dev, 0xe3, 0xdd); /* GPIO2 bits 1, 5 are output */
 	pnp_write_config(dev, 0xe4, (dis_bl_inv << 5) | (lvds_3v << 1)); /* GPIO2 bits 1, 5 */
-	pnp_write_config(dev, 0xf3, 0x40); /* Disable suspend LED during normal operation */
+	/* Disable suspend LED during normal operation */
+	pnp_write_config(dev, PNP_IDX_MSC3, 0x40);
 	pnp_exit_conf_state(dev);
 }
 
@@ -55,15 +56,15 @@ void mainboard_fill_pei_data(struct pei_data *pei_data)
 {
 	struct pei_data pei_data_template = {
 		.pei_version = PEI_VERSION,
-		.mchbar = (uintptr_t)DEFAULT_MCHBAR,
-		.dmibar = (uintptr_t)DEFAULT_DMIBAR,
-		.epbar = DEFAULT_EPBAR,
+		.mchbar = CONFIG_FIXED_MCHBAR_MMIO_BASE,
+		.dmibar = CONFIG_FIXED_DMIBAR_MMIO_BASE,
+		.epbar = CONFIG_FIXED_EPBAR_MMIO_BASE,
 		.pciexbar = CONFIG_MMCONF_BASE_ADDRESS,
-		.smbusbar = SMBUS_IO_BASE,
+		.smbusbar = CONFIG_FIXED_SMBUS_IO_BASE,
 		.wdbbar = 0x4000000,
 		.wdbsize = 0x1000,
 		.hpet_address = CONFIG_HPET_ADDRESS,
-		.rcba = (uintptr_t)DEFAULT_RCBABASE,
+		.rcba = (uintptr_t)DEFAULT_RCBA,
 		.pmbase = DEFAULT_PMBASE,
 		.gpiobase = DEFAULT_GPIOBASE,
 		.thermalbase = 0xfed08000,
@@ -74,14 +75,6 @@ void mainboard_fill_pei_data(struct pei_data *pei_data)
 		.ec_present = 1,
 		.gbe_enable = 1,
 		.ddr3lv_support = 0,
-		/*
-		 * 0 = leave channel enabled
-		 * 1 = disable dimm 0 on channel
-		 * 2 = disable dimm 1 on channel
-		 * 3 = disable dimm 0+1 on channel
-		 */
-		.dimm_channel0_disabled = 2,
-		.dimm_channel1_disabled = 2,
 		.max_ddr3_freq = 1600,
 		.usb_port_config = {
 			 /* enabled   USB oc pin    length */

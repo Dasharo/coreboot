@@ -16,11 +16,9 @@
 #if !defined(__ASSEMBLER__)
 
 #include <device/device.h>
-#include "chip.h"
 
 void i82801dx_enable(struct device *dev);
 void i82801dx_early_init(void);
-int smbus_read_byte(unsigned int device, unsigned int address);
 void aseg_smm_lock(void);
 
 #endif
@@ -47,8 +45,6 @@ void aseg_smm_lock(void);
 
 /* IDE_TIM bits */
 #define IDE_DECODE_ENABLE	(1 << 15)
-
-
 
 #define PCI_DMA_CFG     0x90
 #define SERIRQ_CNTL     0x64
@@ -94,9 +90,6 @@ void aseg_smm_lock(void);
 #define PCI_MAST_STS    0x82
 
 #define RTC_FAILED      (1 <<2)
-
-
-#define SMBUS_IO_BASE 0x1000
 
 #define PM1_STS		0x00
 #define   WAK_STS	(1 << 15)

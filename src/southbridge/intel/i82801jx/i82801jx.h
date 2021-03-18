@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#ifndef SOUTHBRIDGE_INTEL_I82801GX_I82801JX_H
-#define SOUTHBRIDGE_INTEL_I82801GX_I82801JX_H
+#ifndef SOUTHBRIDGE_INTEL_I82801JX_I82801JX_H
+#define SOUTHBRIDGE_INTEL_I82801JX_I82801JX_H
 
 #define DEFAULT_TBAR		((u8 *)0xfed1b000)
 
@@ -11,34 +11,7 @@
 #define DEFAULT_TCOBASE		(DEFAULT_PMBASE + 0x60)
 #define DEFAULT_GPIOBASE	0x00000580
 
-
 #define APM_CNT		0xb2
-
-#define PM1_STS		0x00
-#define   PWRBTN_STS	(1 <<  8)
-#define   RTC_STS	(1 << 10)
-#define PM1_EN		0x02
-#define   PWRBTN_EN	(1 <<  8)
-#define   GBL_EN	(1 <<  5)
-#define PM1_CNT		0x04
-#define   SCI_EN	(1 << 0)
-#define PM_LV2		0x14
-#define PM_LV3		0x15
-#define PM_LV4		0x16
-#define PM_LV5		0x17
-#define PM_LV6		0x18
-#define GPE0_STS	0x20
-#define SMI_EN		0x30
-#define   PERIODIC_EN	(1 << 14)
-#define   TCO_EN	(1 << 13)
-#define   APMC_EN	(1 <<  5)
-#define   BIOS_EN	(1 <<  2)
-#define   EOS		(1 <<  1)
-#define   GBL_SMI_EN	(1 <<  0)
-#define SMI_STS		0x34
-#define ALT_GP_SMI_EN	0x38
-#define ALT_GP_SMI_STS	0x3a
-
 
 #define GP_IO_USE_SEL	0x00
 #define GP_IO_SEL	0x04
@@ -56,8 +29,6 @@
 #define MAINBOARD_POWER_KEEP	2
 
 /* D31:F0 LPC bridge */
-#define D31F0_PMBASE		0x40
-#define PMBASE		D31F0_PMBASE
 #define D31F0_ACPI_CNTL		0x44
 #define ACPI_CNTL		D31F0_ACPI_CNTL
 #define D31F0_GPIO_BASE		0x48
@@ -87,18 +58,10 @@
 #define D31F0_GEN2_DEC		0x88
 #define D31F0_GEN3_DEC		0x8c
 #define D31F0_GEN4_DEC		0x90
-#define D31F0_GEN_PMCON_1	0xa0
-#define D31F0_GEN_PMCON_3	0xa4
 #define D31F0_C5_EXIT_TIMING	0xa8
 #define D31F0_CxSTATE_CNF	0xa9
 #define D31F0_C4TIMING_CNT	0xaa
 #define D31F0_GPIO_ROUT		0xb8
-
-/* GEN_PMCON_3 bits */
-#define RTC_BATTERY_DEAD	(1 << 2)
-#define RTC_POWER_FAILED	(1 << 1)
-#define SLEEP_AFTER_POWER_FAIL	(1 << 0)
-
 
 /* D31:F2 SATA */
 #define D31F2_IDE_TIM_PRI	0x40
@@ -106,17 +69,12 @@
 #define D31F2_SIDX		0xa0
 #define D31F2_SDAT		0xa4
 
-
 /* D30:F0 PCI-to-PCI bridge */
 #define D30F0_SMLT		0x1b
-
 
 /* D28:F0-5 PCIe root ports */
 #define D28Fx_XCAP		0x42
 #define D28Fx_SLCAP		0x54
-
-
-#define SMBUS_IO_BASE		0x0400
 
 /* PCI Configuration Space (D31:F3): SMBus */
 #define SMB_BASE		0x20
@@ -199,25 +157,10 @@
 #define FD_SD		(1 <<  3) /* SMBus */
 #define FD_SAD1		(1 <<  2) /* SATA #1 */
 
-
 #ifndef __ACPI__
 
 #include <device/pci_ops.h>
 
-static inline int lpc_is_mobile(const u16 devid)
-{
-	return (devid == 0x2917) || (devid == 0x2919);
-}
-#define LPC_IS_MOBILE(dev) lpc_is_mobile(pci_read_config16(dev, PCI_DEVICE_ID))
-
-#if ENV_ROMSTAGE
-int smbus_read_byte(unsigned int device, unsigned int address);
-int i2c_eeprom_read(unsigned int device, unsigned int cmd, unsigned int bytes,
-		u8 *buf);
-int smbus_block_read(unsigned int device, unsigned int cmd, u8 bytes, u8 *buf);
-int smbus_block_write(unsigned int device, unsigned int cmd, u8 bytes,
-		const u8 *buf);
-#endif
 void i82801jx_lpc_setup(void);
 void i82801jx_setup_bars(void);
 void i82801jx_early_init(void);

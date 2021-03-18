@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootstate.h>
 #include <console/console.h>
 #include <device/mmio.h>
 #include <device/device.h>
@@ -8,10 +9,13 @@
 #include <hwilib.h>
 #include <i210.h>
 #include <intelblocks/cpulib.h>
+#include <intelblocks/fast_spi.h>
 #include <intelblocks/systemagent.h>
 #include <soc/pci_devs.h>
+#include <soc/ramstage.h>
 #include <string.h>
 #include <timer.h>
+#include <timestamp.h>
 #include <baseboard/variants.h>
 #include <types.h>
 
@@ -23,51 +27,6 @@
 #define BIOS_MAILBOX_INTERFACE		0x7084
 #define  RUN_BUSY_STS			(1 << 31)
 
-/*
- * SPI Opcode Menu setup for SPIBAR lock down
- * should support most common flash chips.
- */
-#define SPI_OPMENU_0 0x01 /* WRSR: Write Status Register */
-#define SPI_OPTYPE_0 0x01 /* Write, no address */
-
-#define SPI_OPMENU_1 0x02 /* PP: Page Program */
-#define SPI_OPTYPE_1 0x03 /* Write, address required */
-
-#define SPI_OPMENU_2 0x03 /* READ: Read Data */
-#define SPI_OPTYPE_2 0x02 /* Read, address required */
-
-#define SPI_OPMENU_3 0x05 /* RDSR: Read Status Register */
-#define SPI_OPTYPE_3 0x00 /* Read, no address */
-
-#define SPI_OPMENU_4 0x20 /* SE20: Sector Erase 0x20 */
-#define SPI_OPTYPE_4 0x03 /* Write, address required */
-
-#define SPI_OPMENU_5 0x9f /* RDID: Read ID */
-#define SPI_OPTYPE_5 0x00 /* Read, no address */
-
-#define SPI_OPMENU_6 0xd8 /* BED8: Block Erase 0xd8 */
-#define SPI_OPTYPE_6 0x03 /* Write, address required */
-
-#define SPI_OPMENU_7 0x0b /* FAST: Fast Read */
-#define SPI_OPTYPE_7 0x02 /* Read, address required */
-
-#define SPI_OPMENU_UPPER ((SPI_OPMENU_7 << 24) | (SPI_OPMENU_6 << 16) | \
-			  (SPI_OPMENU_5 << 8) | SPI_OPMENU_4)
-#define SPI_OPMENU_LOWER ((SPI_OPMENU_3 << 24) | (SPI_OPMENU_2 << 16) | \
-			  (SPI_OPMENU_1 << 8) | SPI_OPMENU_0)
-
-#define SPI_OPTYPE	((SPI_OPTYPE_7 << 14) | (SPI_OPTYPE_6 << 12) | \
-			 (SPI_OPTYPE_5 << 10) | (SPI_OPTYPE_4 << 8) | \
-			 (SPI_OPTYPE_3 << 6) | (SPI_OPTYPE_2 << 4) | \
-			 (SPI_OPTYPE_1 << 2) | (SPI_OPTYPE_0))
-
-#define SPI_OPPREFIX	((0x50 << 8) | 0x06) /* EWSR and WREN */
-
-#define SPIBAR_OFFSET		0x3800
-#define SPI_REG_PREOP_OPTYPE	0xa4
-#define SPI_REG_OPMENU_L	0xa8
-#define SPI_REG_OPMENU_H	0xac
-
 #define SD_CAP_BYP		0x810
 #define  SD_CAP_BYP_EN		0x5A
 #define SD_CAP_BYP_REG1		0x814
@@ -77,17 +36,15 @@
  * @param  mac  Buffer to the MAC address to check
  * @return 0    if address is not valid, otherwise 1
  */
-static uint8_t is_mac_adr_valid(uint8_t mac[6])
+static uint8_t is_mac_adr_valid(uint8_t mac[MAC_ADDR_LEN])
 {
-	uint8_t buf[6];
-
-	memset(buf, 0, sizeof(buf));
-	if (!memcmp(buf, mac, sizeof(buf)))
-		return 0;
-	memset(buf, 0xff, sizeof(buf));
-	if (!memcmp(buf, mac, sizeof(buf)))
-		return 0;
-	return 1;
+	for (size_t i = 0; i < MAC_ADDR_LEN; i++) {
+		if (mac[i] != 0x00 && mac[i] != 0xff)
+			return 1;
+		if (mac[i] != mac[0])
+			return 1;
+	}
+	return 0;
 }
 
 /** \brief This function will search for a MAC address which can be assigned
@@ -96,7 +53,7 @@ static uint8_t is_mac_adr_valid(uint8_t mac[6])
  * @param  mac     buffer where to store the MAC address
  * @return cb_err  CB_ERR or CB_SUCCESS
  */
-enum cb_err mainboard_get_mac_address(struct device *dev, uint8_t mac[6])
+enum cb_err mainboard_get_mac_address(struct device *dev, uint8_t mac[MAC_ADDR_LEN])
 {
 	struct bus *parent = dev->bus;
 	uint8_t buf[16], mapping[16], i = 0, chain_len = 0;
@@ -129,19 +86,18 @@ enum cb_err mainboard_get_mac_address(struct device *dev, uint8_t mac[6])
 	/* Open main hwinfo block */
 	if (hwilib_find_blocks("hwinfo.hex") != CB_SUCCESS)
 		return CB_ERR;
-	/* Now try to find a valid MAC address in hwinfo for this mapping.*/
+	/* Now try to find a valid MAC address in hwinfo for this mapping. */
 	for (i = 0; i < MAX_NUM_MAPPINGS; i++) {
-		if ((hwilib_get_field(XMac1Mapping + i, buf, 16) == 16) &&
-			!(memcmp(buf, mapping, chain_len + 4))) {
-		/* There is a matching mapping available, get MAC address. */
-			if ((hwilib_get_field(XMac1 + i, mac, 6) == 6) &&
-			    (is_mac_adr_valid(mac))) {
-				return CB_SUCCESS;
-			} else {
-				return CB_ERR;
-			}
-		} else
+		if (hwilib_get_field(XMac1Mapping + i, buf, 16) != 16)
 			continue;
+		if (memcmp(buf, mapping, chain_len + 4))
+			continue;
+		/* There is a matching mapping available, get MAC address. */
+		if (hwilib_get_field(XMac1 + i, mac, MAC_ADDR_LEN) == MAC_ADDR_LEN) {
+			if (is_mac_adr_valid(mac))
+				return CB_SUCCESS;
+		}
+		return CB_ERR;
 	}
 	/* No MAC address found for */
 	return CB_ERR;
@@ -218,6 +174,29 @@ static void config_pmic_imon(void)
 	printk(BIOS_DEBUG, "PMIC: Configure PMIC IMON - End\n");
 }
 
+void mainboard_silicon_init_params(FSP_S_CONFIG *silconfig)
+{
+	printk(BIOS_DEBUG, "MAINBOARD: %s/%s called\n", __FILE__, __func__);
+
+	/* Disable CPU power states (C-states) */
+	silconfig->EnableCx = 0;
+
+	/* Set max Pkg Cstate to PkgC0C1 */
+	silconfig->PkgCStateLimit = 0;
+
+	/* Disable PCIe Transmitter Half Swing for all RPs */
+	memset(silconfig->PcieRpTransmitterHalfSwing, 0,
+			sizeof(silconfig->PcieRpTransmitterHalfSwing));
+
+	/* Disable PCI Express Active State Power Management for all RPs */
+	memset(silconfig->PcieRpAspm, 0,
+			sizeof(silconfig->PcieRpAspm));
+
+	/* Disable PCI Express L1 Substate for all RPs */
+	memset(silconfig->PcieRpL1Substates, 0,
+			sizeof(silconfig->PcieRpL1Substates));
+}
+
 static void mainboard_init(void *chip_info)
 {
 	const struct pad_config *pads;
@@ -231,9 +210,7 @@ static void mainboard_init(void *chip_info)
 
 static void mainboard_final(void *chip_info)
 {
-	uint16_t cmd = 0;
 	struct device *dev = NULL;
-	void *spi_base = NULL;
 
 	/* Do board specific things */
 	variant_mainboard_final();
@@ -241,19 +218,10 @@ static void mainboard_final(void *chip_info)
 	/* Set Master Enable for on-board PCI device. */
 	dev = dev_find_device(PCI_VENDOR_ID_SIEMENS, 0x403f, 0);
 	if (dev) {
-		cmd = pci_read_config16(dev, PCI_COMMAND);
-		cmd |= PCI_COMMAND_MASTER;
-		pci_write_config16(dev, PCI_COMMAND, cmd);
+		pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER);
 	}
 	/* Set up SPI OPCODE menu before the controller is locked. */
-	dev = PCH_DEV_SPI;
-	spi_base = (void *)pci_read_config32(dev, PCI_BASE_ADDRESS_0);
-	if (!spi_base)
-		return;
-	write32((spi_base + SPI_REG_PREOP_OPTYPE),
-			((SPI_OPTYPE << 16) | SPI_OPPREFIX));
-	write32((spi_base + SPI_REG_OPMENU_L), SPI_OPMENU_LOWER);
-	write32((spi_base + SPI_REG_OPMENU_H), SPI_OPMENU_UPPER);
+	fast_spi_set_opcode_menu();
 
 	/* Set SD-Card speed to HS mode only. */
 	dev = pcidev_path_on_root(PCH_DEVFN_SDCARD);
@@ -280,3 +248,33 @@ struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
 	.final = mainboard_final,
 };
+
+static void wait_for_legacy_dev(void *unused)
+{
+	uint32_t legacy_delay, us_since_boot;
+	struct stopwatch sw;
+
+	if (CONFIG(BOARD_SIEMENS_MC_APL4))
+		return;
+
+	/* Open main hwinfo block. */
+	if (hwilib_find_blocks("hwinfo.hex") != CB_SUCCESS)
+		return;
+
+	/* Get legacy delay parameter from hwinfo. */
+	if (hwilib_get_field(LegacyDelay, (uint8_t *) &legacy_delay,
+			      sizeof(legacy_delay)) != sizeof(legacy_delay))
+		return;
+
+	us_since_boot = get_us_since_boot();
+	/* No need to wait if the time since boot is already long enough.*/
+	if (us_since_boot > legacy_delay)
+		return;
+	stopwatch_init_msecs_expire(&sw, (legacy_delay - us_since_boot) / 1000);
+	printk(BIOS_NOTICE, "Wait remaining %d of %d us for legacy devices...",
+			legacy_delay - us_since_boot, legacy_delay);
+	stopwatch_wait_until_expired(&sw);
+	printk(BIOS_NOTICE, "done!\n");
+}
+
+BOOT_STATE_INIT_ENTRY(BS_DEV_ENUMERATE, BS_ON_ENTRY, wait_for_legacy_dev, NULL);

@@ -1,9 +1,7 @@
-bootblock-y += bootblock.c
-bootblock-y += gpio.c
+# SPDX-License-Identifier: GPL-2.0-only
 
-romstage-y += memory.c
+bootblock-y += bootblock.c
+
+romstage-y += romstage.c
 
 ramstage-y += mainboard.c
-ramstage-y += gpio.c
-
-smm-y += gpio.c

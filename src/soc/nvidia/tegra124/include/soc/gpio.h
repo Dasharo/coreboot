@@ -4,8 +4,7 @@
 #define __SOC_NVIDIA_TEGRA124_GPIO_H__
 
 #include <soc/nvidia/tegra/gpio.h>
-#include <soc/pinmux.h>	/* for pinmux constants in GPIO macro */
-#include <stdint.h>
+#include <soc/pinmux.h>
 
 /* GPIO index constants. */
 

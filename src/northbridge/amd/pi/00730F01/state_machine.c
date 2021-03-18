@@ -1,13 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <amdblocks/biosram.h>
+
 #include "Porting.h"
 #include "AGESA.h"
 
-#include <cbmem.h>
 #include <device/device.h>
 #include <northbridge/amd/agesa/state_machine.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
-#include <northbridge/amd/pi/nb_common.h>
+#include <northbridge/amd/nb_common.h>
 
 void platform_BeforeInitReset(struct sysinfo *cb, AMD_RESET_PARAMS *Reset)
 {
@@ -35,7 +36,6 @@ void platform_AfterInitPost(struct sysinfo *cb, AMD_POST_PARAMS *Post)
 	else
 		backup_top_of_low_cacheable(Post->MemConfig.Sub4GCacheTop);
 }
-
 
 void platform_BeforeInitEnv(struct sysinfo *cb, AMD_ENV_PARAMS *Env)
 {

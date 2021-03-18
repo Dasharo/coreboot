@@ -12,9 +12,9 @@ size_t ulzman(const void *src, size_t srcn, void *dst, size_t dstn);
 
 /* Defined in src/lib/ramtest.c */
 /* Assumption is 32-bit addressable UC memory. */
-void ram_check(unsigned long start, unsigned long stop);
-int ram_check_nodie(unsigned long start, unsigned long stop);
-int ram_check_noprint_nodie(unsigned long start, unsigned long stop);
+void ram_check(uintptr_t start);
+int ram_check_nodie(uintptr_t start);
+int ram_check_noprint_nodie(uintptr_t start);
 void quick_ram_check_or_die(uintptr_t dst);
 
 /* Defined in primitive_memtest.c */
@@ -40,10 +40,14 @@ void hexdump32(char LEVEL, const void *d, size_t len);
  *
  * Defined in src/lib/hexstrtobin.c
  * Ignores non-hex characters in the string.
+ * Ignores the last hex character if the number of hex characters in the string
+ * is odd.
  * Returns the number of bytes that have been put in the buffer.
  */
 size_t hexstrtobin(const char *str, uint8_t *buf, size_t len);
 
+/* Population Count: number of bits that are one */
+static inline int popcnt(u32 x) { return __builtin_popcount(x); }
 /* Count Leading Zeroes: clz(0) == 32, clz(0xf) == 28, clz(1 << 31) == 0 */
 static inline int clz(u32 x) { return x ? __builtin_clz(x) : sizeof(x) * 8; }
 /* Integer binary logarithm (rounding down): log2(0) == -1, log2(5) == 2 */
@@ -53,5 +57,10 @@ static inline int __ffs(u32 x) { return log2(x & (u32)(-(s32)x)); }
 
 /* Integer binary logarithm (rounding up): log2_ceil(0) == -1, log2(5) == 3 */
 static inline int log2_ceil(u32 x) { return (x == 0) ? -1 : log2(x * 2 - 1); }
+
+static inline int popcnt64(u64 x) { return __builtin_popcountll(x); }
+static inline int clz64(u64 x) { return x ? __builtin_clzll(x) : sizeof(x) * 8; }
+static inline int log2_64(u64 x) { return sizeof(x) * 8 - clz64(x) - 1; }
+static inline int __ffs64(u64 x) { return log2_64(x & (u64)(-(s64)x)); }
 
 #endif /* __LIB_H__ */

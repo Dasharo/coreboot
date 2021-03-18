@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <cpu/x86/smm.h>
@@ -12,18 +13,11 @@
 #include <intelblocks/acpi.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
+#include <soc/nvs.h>
 #include <soc/soc_util.h>
 #include <soc/pmc.h>
 #include <soc/systemagent.h>
-
-#define MWAIT_RES(state, sub_state)                         \
-	{                                                   \
-		.addrl = (((state) << 4) | (sub_state)),    \
-		.space_id = ACPI_ADDRESS_SPACE_FIXED,       \
-		.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,    \
-		.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,    \
-		.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD, \
-	}
+#include <soc/pci_devs.h>
 
 #define CSTATE_RES(address_space, width, offset, address)		\
 	{								\
@@ -57,18 +51,10 @@ static acpi_cstate_t cstate_map[] = {
 	}
 };
 
-void acpi_init_gnvs(global_nvs_t *gnvs)
+void soc_fill_gnvs(struct global_nvs *gnvs)
 {
-	/* CPU core count */
-	gnvs->pcnt = dev_count_cpu();
-
 	/* Top of Low Memory (start of resource allocation) */
 	gnvs->tolm = (uintptr_t)cbmem_top();
-
-#if CONFIG(CONSOLE_CBMEM)
-	/* Update the mem console pointer. */
-	gnvs->cbmc = (u32)cbmem_find(CBMEM_ID_CONSOLE);
-#endif
 
 	/* MMIO Low/High & TSEG base and length */
 	gnvs->mmiob = (u32)get_top_of_low_memory();
@@ -120,19 +106,14 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	/* Power Control */
 	fadt->pm2_cnt_blk = pmbase + PM2_CNT;
 	fadt->pm_tmr_blk = pmbase + PM1_TMR;
-	fadt->gpe1_blk = 0;
 
 	/* Control Registers - Length */
 	fadt->pm2_cnt_len = 1;
 	fadt->pm_tmr_len = 4;
 	fadt->gpe0_blk_len = 8;
-	fadt->gpe1_blk_len = 0;
-	fadt->gpe1_base = 0;
 
 	fadt->p_lvl2_lat = ACPI_FADT_C2_NOT_SUPPORTED;
 	fadt->p_lvl3_lat = ACPI_FADT_C3_NOT_SUPPORTED;
-	fadt->flush_size = 0;   /* set to 0 if WBINVD is 1 in flags */
-	fadt->flush_stride = 0; /* set to 0 if WBINVD is 1 in flags */
 	fadt->duty_offset = 1;
 	fadt->duty_width = 0;
 
@@ -142,34 +123,18 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->century = 0x00;
 	fadt->iapc_boot_arch = ACPI_FADT_LEGACY_DEVICES | ACPI_FADT_8042;
 
-	fadt->flags = ACPI_FADT_WBINVD | ACPI_FADT_C1_SUPPORTED |
-		      ACPI_FADT_C2_MP_SUPPORTED | ACPI_FADT_SLEEP_BUTTON |
-		      ACPI_FADT_RESET_REGISTER | ACPI_FADT_SLEEP_TYPE |
-		      ACPI_FADT_S4_RTC_WAKE | ACPI_FADT_PLATFORM_CLOCK;
-
-	/* Reset Register */
-	fadt->reset_reg.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->reset_reg.bit_width = 8;
-	fadt->reset_reg.bit_offset = 0;
-	fadt->reset_reg.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
-	fadt->reset_reg.addrl = 0xCF9;
-	fadt->reset_reg.addrh = 0x00;
-	fadt->reset_value = 6;
+	fadt->flags |= ACPI_FADT_WBINVD | ACPI_FADT_C1_SUPPORTED |
+		       ACPI_FADT_C2_MP_SUPPORTED | ACPI_FADT_SLEEP_BUTTON |
+		       ACPI_FADT_SLEEP_TYPE | ACPI_FADT_S4_RTC_WAKE |
+		       ACPI_FADT_PLATFORM_CLOCK;
 
 	/* PM1 Status & PM1 Enable */
 	fadt->x_pm1a_evt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm1a_evt_blk.bit_width = 32;
 	fadt->x_pm1a_evt_blk.bit_offset = 0;
-	fadt->x_pm1a_evt_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_pm1a_evt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
 	fadt->x_pm1a_evt_blk.addrl = fadt->pm1a_evt_blk;
 	fadt->x_pm1a_evt_blk.addrh = 0x00;
-
-	fadt->x_pm1b_evt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm1b_evt_blk.bit_width = 0;
-	fadt->x_pm1b_evt_blk.bit_offset = 0;
-	fadt->x_pm1b_evt_blk.access_size = 0;
-	fadt->x_pm1b_evt_blk.addrl = fadt->pm1b_evt_blk;
-	fadt->x_pm1b_evt_blk.addrh = 0x00;
 
 	/* PM1 Control Registers */
 	fadt->x_pm1a_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
@@ -178,13 +143,6 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_pm1a_cnt_blk.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS;
 	fadt->x_pm1a_cnt_blk.addrl = fadt->pm1a_cnt_blk;
 	fadt->x_pm1a_cnt_blk.addrh = 0x00;
-
-	fadt->x_pm1b_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_pm1b_cnt_blk.bit_width = 0;
-	fadt->x_pm1b_cnt_blk.bit_offset = 0;
-	fadt->x_pm1b_cnt_blk.access_size = 0;
-	fadt->x_pm1b_cnt_blk.addrl = fadt->pm1b_cnt_blk;
-	fadt->x_pm1b_cnt_blk.addrh = 0x00;
 
 	/* PM2 Control Registers */
 	fadt->x_pm2_cnt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
@@ -206,16 +164,9 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_gpe0_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_gpe0_blk.bit_width = 64; /* EventStatus + EventEnable */
 	fadt->x_gpe0_blk.bit_offset = 0;
-	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
+	fadt->x_gpe0_blk.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
 	fadt->x_gpe0_blk.addrl = fadt->gpe0_blk;
 	fadt->x_gpe0_blk.addrh = 0x00;
-
-	fadt->x_gpe1_blk.space_id = ACPI_ADDRESS_SPACE_IO;
-	fadt->x_gpe1_blk.bit_width = 0;
-	fadt->x_gpe1_blk.bit_offset = 0;
-	fadt->x_gpe1_blk.access_size = 0;
-	fadt->x_gpe1_blk.addrl = fadt->gpe1_blk;
-	fadt->x_gpe1_blk.addrh = 0x00;
 }
 
 static acpi_tstate_t denverton_tss_table[] = {
@@ -278,27 +229,55 @@ unsigned long southcluster_write_acpi_tables(const struct device *device,
 	return current;
 }
 
-void southcluster_inject_dsdt(const struct device *device)
+__weak void acpi_create_serialio_ssdt(acpi_header_t *ssdt) {}
+
+static unsigned long acpi_fill_dmar(unsigned long current)
 {
-	global_nvs_t *gnvs;
+	uint64_t vtbar;
+	unsigned long tmp = current;
 
-	gnvs = cbmem_find(CBMEM_ID_ACPI_GNVS);
-	if (!gnvs) {
-		gnvs = cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(*gnvs));
-		if (gnvs)
-			memset(gnvs, 0, sizeof(*gnvs));
-	}
+	vtbar = read64((void *)(DEFAULT_MCHBAR + MCH_VTBAR_OFFSET)) & MCH_VTBAR_MASK;
+	printk(BIOS_DEBUG, "DEFVTBAR:0x%llx\n", vtbar);
+	if (!vtbar)
+		return current;
 
-	if (gnvs) {
-		acpi_create_gnvs(gnvs);
-		/* And tell SMI about it */
-		smm_setup_structures(gnvs, NULL, NULL);
+	current += acpi_create_dmar_drhd(current,
+			DRHD_INCLUDE_PCI_ALL, 0, vtbar);
 
-		/* Add it to DSDT.  */
-		acpigen_write_scope("\\");
-		acpigen_write_name_dword("NVSA", (u32)gnvs);
-		acpigen_pop_len();
-	}
+	current += acpi_create_dmar_ds_ioapic(current,
+			2, PCH_IOAPIC_PCI_BUS, PCH_IOAPIC_PCI_SLOT, 0);
+	current += acpi_create_dmar_ds_msi_hpet(current,
+			0, PCH_HPET_PCI_BUS, PCH_HPET_PCI_SLOT, 0);
+
+	acpi_dmar_drhd_fixup(tmp, current);
+
+	/* Create RMRR; see "VTD PLATFORM CONFIGURATION" in FSP log */
+	tmp = current;
+	current += acpi_create_dmar_rmrr(current, 0,
+					 RMRR_USB_BASE_ADDRESS,
+					 RMRR_USB_LIMIT_ADDRESS);
+	current += acpi_create_dmar_ds_pci(current,
+			0, XHCI_DEV, XHCI_FUNC);
+	acpi_dmar_rmrr_fixup(tmp, current);
+
+	return current;
 }
 
-__weak void acpi_create_serialio_ssdt(acpi_header_t *ssdt) {}
+unsigned long systemagent_write_acpi_tables(const struct device *dev,
+					    unsigned long current,
+					    struct acpi_rsdp *const rsdp)
+{
+	/* Create DMAR table only if we have VT-d capability. */
+	const u32 capid0_a = pci_read_config32(dev, CAPID0_A);
+	if (capid0_a & VTD_DISABLE)
+		return current;
+
+	acpi_dmar_t *const dmar = (acpi_dmar_t *)current;
+	printk(BIOS_DEBUG, "ACPI:    * DMAR\n");
+	acpi_create_dmar(dmar, DMAR_INTR_REMAP, acpi_fill_dmar);
+	current += dmar->header.length;
+	current = acpi_align_current(current);
+	acpi_add_table(rsdp, dmar);
+
+	return current;
+}

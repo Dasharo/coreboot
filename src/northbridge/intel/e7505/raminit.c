@@ -16,15 +16,14 @@
 #include <arch/io.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
+#include <device/smbus_host.h>
 #include <lib.h>
 #include <commonlib/helpers.h>
 #include <console/console.h>
-#include <cpu/x86/msr.h>
 #include <assert.h>
 #include <spd.h>
 #include <sdram_mode.h>
 #include <timestamp.h>
-#include <southbridge/intel/i82801dx/i82801dx.h>
 
 #include "raminit.h"
 #include "e7505.h"
@@ -93,7 +92,7 @@ static const uint32_t refresh_rate_map[] = {
 	1, 7, 2, 1, 1, 3
 };
 
-#define MAX_SPD_REFRESH_RATE ((sizeof(refresh_rate_map) / sizeof(uint32_t)) - 1)
+#define MAX_SPD_REFRESH_RATE (ARRAY_SIZE(refresh_rate_map) - 1)
 
 // SPD parameters that must match for dual-channel operation
 static const uint8_t dual_channel_parameters[] = {
@@ -243,7 +242,6 @@ static void mchtest_control(mchtst_cc cmd)
 	};
 	pci_write_config32(MCHDEV, MCHTST, dword);
 }
-
 
 /**
  *

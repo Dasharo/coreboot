@@ -32,8 +32,6 @@ static const struct reg_script core_msr_script[] = {
 
 static void soc_core_init(struct device *cpu)
 {
-	printk(BIOS_SPEW, "%s/%s (%s)\n",
-			__FILE__, __func__, dev_name(cpu));
 	printk(BIOS_DEBUG, "Init Braswell core.\n");
 
 	/* Enable the local cpu apics */
@@ -72,7 +70,6 @@ static const struct cpu_driver driver __cpu_driver = {
 	.ops      = &cpu_dev_ops,
 	.id_table = cpu_table,
 };
-
 
 /*
  * MP and SMM loading initialization.
@@ -155,7 +152,7 @@ static void get_microcode_info(const void **microcode, int *parallel)
 	const struct pattrs *pattrs = pattrs_get();
 
 	*microcode = pattrs->microcode_patch;
-	*parallel = 1;
+	*parallel = !intel_ht_supported();
 }
 
 static void per_cpu_smm_trigger(void)
@@ -207,8 +204,6 @@ static const struct mp_ops mp_ops = {
 void soc_init_cpus(struct device *dev)
 {
 	struct bus *cpu_bus = dev->link_list;
-
-	printk(BIOS_SPEW, "%s/%s (%s)\n", __FILE__, __func__, dev_name(dev));
 
 	if (mp_init_with_smm(cpu_bus, &mp_ops))
 		printk(BIOS_ERR, "MP initialization failure.\n");

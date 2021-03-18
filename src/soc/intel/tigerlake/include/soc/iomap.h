@@ -12,9 +12,6 @@
 /*
  * Memory-mapped I/O registers.
  */
-#define MCFG_BASE_ADDRESS	CONFIG_MMCONF_BASE_ADDRESS
-#define MCFG_BASE_SIZE		0x4000000
-
 #define PCH_PRESERVED_BASE_ADDRESS	0xfc800000
 #define PCH_PRESERVED_BASE_SIZE	0x02000000
 
@@ -53,7 +50,7 @@
 #define GFXVT_BASE_ADDRESS	0xfed90000
 #define GFXVT_BASE_SIZE		0x1000
 
-#define IPUVT_BASE_ADDRESS      0xfed92000
+#define IPUVT_BASE_ADDRESS	0xfed92000
 #define IPUVT_BASE_SIZE		0x1000
 
 #define VTVC0_BASE_ADDRESS	0xfed91000
@@ -84,6 +81,8 @@
 #define EARLY_I2C_BASE_ADDRESS	0xfe020000
 #define EARLY_I2C_BASE(x)	(EARLY_I2C_BASE_ADDRESS + (0x2000 * (x)))
 
+#define IOM_BASE_ADDRESS	0xfbc10000
+#define IOM_BASE_SIZE		0x1600
 
 /*
  * I/O port address space

@@ -1,0 +1,13 @@
+config SOC_AMD_COMMON
+	bool
+	help
+	  common code blocks for AMD SOCs
+
+if SOC_AMD_COMMON
+
+config SOC_AMD_PI
+	bool
+
+source "src/soc/amd/common/block/*/Kconfig"
+
+endif # SOC_AMD_COMMON

@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootstate.h>
-#include <cbmem.h>
 #include <console/console.h>
 #include <stdint.h>
 #include <elog.h>
@@ -17,11 +16,11 @@ static void pch_log_gpio_gpe(u32 gpe0_sts, u32 gpe0_en, int start)
 
 	for (i = 0; i <= 31; i++) {
 		if (gpe0_sts & (1 << i))
-			elog_add_event_wake(ELOG_WAKE_SOURCE_GPIO, i + start);
+			elog_add_event_wake(ELOG_WAKE_SOURCE_GPE, i + start);
 	}
 }
 
-static void pch_log_wake_source(struct chipset_power_state *ps)
+static void pch_log_wake_source(const struct chipset_power_state *ps)
 {
 	/* Power Button */
 	if (ps->pm1_sts & PWRBTN_STS)
@@ -55,7 +54,7 @@ static void pch_log_wake_source(struct chipset_power_state *ps)
 	pch_log_gpio_gpe(ps->gpe0_sts[GPE_STD], ps->gpe0_en[GPE_STD], 96);
 }
 
-static void pch_log_power_and_resets(struct chipset_power_state *ps)
+static void pch_log_power_and_resets(const struct chipset_power_state *ps)
 {
 	/* Thermal Trip */
 	if (ps->gblrst_cause[0] & GBLRST_CAUSE0_THERMTRIP)

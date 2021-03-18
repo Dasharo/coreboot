@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <console/console.h>
+#include <romstage_handoff.h>
 #include <southbridge/intel/common/pmclib.h>
-#include <northbridge/intel/x4x/x4x.h>
 #include <arch/romstage.h>
 
 #if CONFIG(SOUTHBRIDGE_INTEL_I82801JX)
@@ -10,6 +10,9 @@
 #elif CONFIG(SOUTHBRIDGE_INTEL_I82801GX)
 #include <southbridge/intel/i82801gx/i82801gx.h>
 #endif
+
+#include "raminit.h"
+#include "x4x.h"
 
 __weak void mb_pre_raminit_setup(int s3_resume)
 {
@@ -40,7 +43,8 @@ void mainboard_romstage_entry(void)
 	mb_get_spd_map(spd_addr_map);
 	sdram_initialize(boot_path, spd_addr_map);
 
-	x4x_late_init(s3_resume);
-
+	x4x_late_init();
 	printk(BIOS_DEBUG, "x4x late init complete\n");
+
+	romstage_handoff_init(s3_resume);
 }

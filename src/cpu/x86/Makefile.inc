@@ -1,9 +1,16 @@
 subdirs-y += pae
+
+all-$(CONFIG_ARCH_ALL_STAGES_X86_64) += 64bit/mode_switch.S
+
 subdirs-$(CONFIG_PARALLEL_MP) += name
 ramstage-$(CONFIG_PARALLEL_MP) += mp_init.c
 ramstage-y += backup_default_smm.c
 
 subdirs-$(CONFIG_CPU_INTEL_COMMON_SMM) += ../intel/smm
+
+bootblock-y += entry32.S
+bootblock-y += entry16.S
+bootblock-y += reset16.S
 
 additional-dirs += $(obj)/cpu/x86
 

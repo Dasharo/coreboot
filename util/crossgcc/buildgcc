@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 # shellcheck disable=SC2030,SC2031,SC2059
 # The above line must be directly after the shebang line.
 # Disables these warnings:
@@ -33,20 +33,20 @@ BOOTSTRAP=0
 THREADS=1
 
 # GCC toolchain version numbers
-GMP_VERSION=6.1.2
-MPFR_VERSION=4.0.2
-MPC_VERSION=1.1.0
+GMP_VERSION=6.2.0
+MPFR_VERSION=4.1.0
+MPC_VERSION=1.2.0
 GCC_VERSION=8.3.0
 GCC_AUTOCONF_VERSION=2.69
-BINUTILS_VERSION=2.33.1
+BINUTILS_VERSION=2.35.1
 GDB_VERSION=9.2
-IASL_VERSION=20200110
-PYTHON_VERSION=3.8.1
+IASL_VERSION=20200925
+PYTHON_VERSION=3.8.5
 EXPAT_VERSION=2.2.9
 # CLANG version number
-CLANG_VERSION=9.0.0
-CMAKE_VERSION=3.16.2
-NASM_VERSION=2.14.02
+CLANG_VERSION=11.0.0
+CMAKE_VERSION=3.18.1
+NASM_VERSION=2.15.05
 
 # GCC toolchain archive locations
 # These are sanitized by the jenkins toolchain test builder, so if
@@ -62,16 +62,16 @@ IASL_ARCHIVE="https://acpica.org/sites/acpica/files/acpica-unix2-${IASL_VERSION}
 PYTHON_ARCHIVE="https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz"
 EXPAT_ARCHIVE="https://downloads.sourceforge.net/sourceforge/expat/expat-${EXPAT_VERSION}.tar.bz2"
 # CLANG toolchain archive locations
-LLVM_ARCHIVE="https://releases.llvm.org/${CLANG_VERSION}/llvm-${CLANG_VERSION}.src.tar.xz"
-CFE_ARCHIVE="https://releases.llvm.org/${CLANG_VERSION}/cfe-${CLANG_VERSION}.src.tar.xz"
-CRT_ARCHIVE="https://releases.llvm.org/${CLANG_VERSION}/compiler-rt-${CLANG_VERSION}.src.tar.xz"
-CTE_ARCHIVE="https://releases.llvm.org/${CLANG_VERSION}/clang-tools-extra-${CLANG_VERSION}.src.tar.xz"
-CMAKE_ARCHIVE="https://cmake.org/files/v3.16/cmake-${CMAKE_VERSION}.tar.gz"
+LLVM_ARCHIVE="https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/llvm-${CLANG_VERSION}.src.tar.xz"
+CLANG_ARCHIVE="https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/clang-${CLANG_VERSION}.src.tar.xz"
+CRT_ARCHIVE="https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/compiler-rt-${CLANG_VERSION}.src.tar.xz"
+CTE_ARCHIVE="https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/clang-tools-extra-${CLANG_VERSION}.src.tar.xz"
+CMAKE_ARCHIVE="https://cmake.org/files/v3.18/cmake-${CMAKE_VERSION}.tar.gz"
 NASM_ARCHIVE="https://www.nasm.us/pub/nasm/releasebuilds/${NASM_VERSION}/nasm-${NASM_VERSION}.tar.bz2"
 
 ALL_ARCHIVES="$GMP_ARCHIVE $MPFR_ARCHIVE $MPC_ARCHIVE \
 	$GCC_ARCHIVE $BINUTILS_ARCHIVE $GDB_ARCHIVE $IASL_ARCHIVE \
-	$PYTHON_ARCHIVE $EXPAT_ARCHIVE $LLVM_ARCHIVE $CFE_ARCHIVE \
+	$PYTHON_ARCHIVE $EXPAT_ARCHIVE $LLVM_ARCHIVE $CLANG_ARCHIVE \
 	$CRT_ARCHIVE $CTE_ARCHIVE $CMAKE_ARCHIVE $NASM_ARCHIVE"
 
 # GCC toolchain directories
@@ -88,7 +88,7 @@ PYTHON_DIR="Python-${PYTHON_VERSION}"
 EXPAT_DIR="expat-${EXPAT_VERSION}"
 # CLANG toolchain directories
 LLVM_DIR="llvm-${CLANG_VERSION}.src"
-CFE_DIR="cfe-${CLANG_VERSION}.src"
+CLANG_DIR="clang-${CLANG_VERSION}.src"
 CRT_DIR="compiler-rt-${CLANG_VERSION}.src"
 CTE_DIR="clang-tools-extra-${CLANG_VERSION}.src"
 CMAKE_DIR="cmake-${CMAKE_VERSION}"
@@ -777,6 +777,7 @@ build_cross_GCC() {
 		--with-pkgversion="coreboot toolchain v$CROSSGCC_VERSION $CROSSGCC_DATE" \
 		&& \
 	mkdir -p gcc/$TARGETARCH && \
+	rm -f "gcc/$TARGETARCH/$GCC_VERSION" && \
 	ln -s "$DESTDIR$TARGETDIR/$TARGETARCH/bin" "gcc/$TARGETARCH/$GCC_VERSION" && \
 	$MAKE $JOBS CFLAGS_FOR_BUILD="$HOSTCFLAGS" all-gcc && \
 	$MAKE install-gcc DESTDIR="$DESTDIR" || touch .failed
@@ -843,15 +844,15 @@ build_IASL() {
 	test "$UNAME" = "Cygwin" && HOST="_CYGWIN"
 	HOST="$HOST" CFLAGS="$CFLAGS" \
 	OPT_CFLAGS="-O -D_FORTIFY_SOURCE=2 -D COREBOOT_TOOLCHAIN_VERSION='\"coreboot toolchain v$CROSSGCC_VERSION $CROSSGCC_DATE\"' " \
-	$MAKE $JOBS CC="$(hostcc host)" iasl acpibin acpidump acpiexec acpihelp acpinames acpisrc acpixtract
-	rm -f "$DESTDIR$TARGETDIR/bin/{iasl,acpibin,acpidump,acpiexec,acpihelp,acpinames,acpisrc,acpixtract}" || touch "$RDIR/.failed"
-	cp bin/{iasl,acpibin,acpidump,acpiexec,acpihelp,acpinames,acpisrc,acpixtract} "$DESTDIR$TARGETDIR/bin" || touch "$RDIR/.failed"
+	$MAKE $JOBS CC="$(hostcc host)" iasl acpibin acpidump acpiexec acpihelp acpisrc acpixtract
+	rm -f "$DESTDIR$TARGETDIR/bin/{iasl,acpibin,acpidump,acpiexec,acpihelp,acpisrc,acpixtract}" || touch "$RDIR/.failed"
+	cp bin/{iasl,acpibin,acpidump,acpiexec,acpihelp,acpisrc,acpixtract} "$DESTDIR$TARGETDIR/bin" || touch "$RDIR/.failed"
 }
 
 build_LLVM() {
 
 	cd .. || exit 1
-	ln -sf "$PWD/$CFE_DIR"  "$LLVM_DIR/tools/clang"
+	ln -sf "$PWD/$CLANG_DIR"  "$LLVM_DIR/tools/clang"
 	ln -sf "$PWD/$CTE_DIR"  "$LLVM_DIR/tools/clang/tools/extra"
 	ln -sf "$PWD/$CRT_DIR"  "$LLVM_DIR/projects/compiler-rt"
 	cd - || exit 1
@@ -863,8 +864,8 @@ build_LLVM() {
 	$MAKE $JOBS || touch .failed
 	$MAKE install || touch .failed
 
-	cp -a ../$CFE_DIR/tools/scan-build/* "$DESTDIR$TARGETDIR/bin"
-	cp -a ../$CFE_DIR/tools/scan-view/* "$DESTDIR$TARGETDIR/bin"
+	cp -a ../$CLANG_DIR/tools/scan-build/* "$DESTDIR$TARGETDIR/bin"
+	cp -a ../$CLANG_DIR/tools/scan-view/* "$DESTDIR$TARGETDIR/bin"
 
 	# create symlinks to work around broken --print-librt-file-name
 	# when used with -target.
@@ -1014,7 +1015,7 @@ case "$PACKAGE" in
 	CLANG|clang)
 		NAME="LLVM clang"
 		LLVM_VERSION=${CLANG_VERSION}
-		PACKAGES="CMAKE LLVM CFE CRT CTE"
+		PACKAGES="CMAKE LLVM CLANG CRT CTE"
 		CMAKE=${DESTDIR}${TARGETDIR}/bin/cmake
 		;;
 	IASL|iasl)
@@ -1057,7 +1058,7 @@ if searchtool wget "GNU" nofail > /dev/null; then
 	download_showing_percentage() {
 		url=$1
 		printf "... ${red}  0%%"
-		wget "$url" 2>&1 | while read -r line; do
+		wget --tries=3 "$url" 2>&1 | while read -r line; do
 			echo "$line" | grep -o "[0-9]\+%" | awk '{printf("\b\b\b\b%4s", $1)}'
 		done
 		printf "${NC}... "
@@ -1066,7 +1067,7 @@ elif searchtool curl "^curl " > /dev/null; then
 	download_showing_percentage() {
 		url=$1
 		echo
-		curl -#OL "$url"
+		curl -O --progress-bar --location --retry 3 "$url"
 	}
 fi
 
@@ -1178,32 +1179,24 @@ if [ -z "${LANGUAGES}" ]; then
 		LANGUAGES="${DEFAULT_LANGUAGES}"
 	fi
 fi
+if [ "$BOOTSTRAP" != 1 ] && \
+	{ [ "$(hostcc_major)" -lt 4 ] || \
+	{ [ "$(hostcc_major)" -eq 4 ] && \
+	[ "$(hostcc_minor)" -lt 9 ] ; } ; }
+then
+	printf "\n${red}WARNING${NC}\n"
+	printf "Building coreboot requires a host compiler newer than 4.9.x while\n"
+	printf "yours is $(hostcc_version).\n"
+	printf "Enabling bootstrapping to provide a sufficiently new compiler:\n"
+	printf "This will take significantly longer than a usual build.\n"
+	printf "Alternatively you can abort now and update your host compiler.\n"
+	timeout 15
+	BOOTSTRAP=1
+fi
 if ada_requested; then
-	if have_gnat; then
-		if [ "$BOOTSTRAP" != 1 ] && \
-			{ [ "$(hostcc_major)" -lt 4 ] || \
-			{ [ "$(hostcc_major)" -eq 4 ] && \
-			[ "$(hostcc_minor)" -lt 9 ] ; } ; }
-		then
-			printf "\n${red}WARNING${NC}\n"
-			printf "Building the Ada compiler (GNAT $(buildcc_version)) with a host compiler older\n"
-			printf "than 4.9.x (yours $(hostcc_version)) requires bootstrapping. This will take\n"
-			printf "significantly longer than a usual build. You can abort and update\n"
-			printf "your host GNAT or disable Ada support with BUILD_LANGUAGES=c (or\n"
-			printf "\`-l c\` in case you invoke \`buildgcc\` directly).\n"
-			timeout 15
-			BOOTSTRAP=1
-		fi
-	else
+	if ! have_gnat; then
 		please_install gnat gcc-ada
 		exit 1
-	fi
-else
-	if [ "$(hostcc_major)" -lt 4 ] && [ "$BOOTSTRAP" != 1 ]; then
-		printf "\n${red}WARNING${NC}\n"
-		printf "Building GCC $(buildcc_version) with a very old host compiler ($(hostcc_version)).\n"
-		printf "Bootstrapping (-b) is recommended.\n"
-		timeout 10
 	fi
 fi
 fi # GCC
@@ -1225,7 +1218,7 @@ export PATH=$DESTDIR$TARGETDIR/bin:$PATH
 
 # Download, unpack, patch and build all packages
 
-printf "Downloading and verifing tarballs ...\n"
+printf "Downloading and verifying tarballs ...\n"
 mkdir -p tarballs
 for P in $PACKAGES; do
 	download "$P" || exit "$?"

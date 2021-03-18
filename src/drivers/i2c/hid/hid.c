@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpigen_dsm.h>
+#include <acpi/acpi_device.h>
+#include <assert.h>
 #include <device/device.h>
 #include <string.h>
 #include "chip.h"
@@ -28,6 +30,10 @@ static void i2c_hid_fill_ssdt_generator(const struct device *dev)
 static const char *i2c_hid_acpi_name(const struct device *dev)
 {
 	static char name[5];
+	struct drivers_i2c_hid_config *config = dev->chip_info;
+	if (config->generic.name)
+		return config->generic.name;
+
 	snprintf(name, sizeof(name), "H%03.3X", dev->path.i2c.device);
 	name[4] = '\0';
 	return name;
@@ -62,6 +68,18 @@ static void i2c_hid_enable(struct device *dev)
 			dev->enabled = 0;
 			return;
 		}
+	}
+
+	/*
+	 * Ensure that I2C HID devices use level triggered interrupts as per ACPI
+	 * I2C HID requirement. Check interrupt and GPIO interrupt.
+	 */
+	if ((!config->generic.irq_gpio.pin_count &&
+	      config->generic.irq.mode != ACPI_IRQ_LEVEL_TRIGGERED) ||
+	    (config->generic.irq_gpio.pin_count &&
+	     config->generic.irq_gpio.irq.mode != ACPI_IRQ_LEVEL_TRIGGERED)) {
+		printk(BIOS_ERR, "%s IRQ is not level triggered.\n", config->generic.hid);
+		BUG();
 	}
 
 	dev->ops = &i2c_hid_ops;

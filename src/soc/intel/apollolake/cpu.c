@@ -9,6 +9,7 @@
 #include <cpu/x86/mp.h>
 #include <cpu/intel/microcode.h>
 #include <cpu/intel/turbo.h>
+#include <cpu/intel/common/common.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/smm.h>
@@ -23,14 +24,13 @@
 #include <intelblocks/msr.h>
 #include <intelblocks/sgx.h>
 #include <reg_script.h>
-#include <romstage_handoff.h>
 #include <soc/cpu.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 
 static const struct reg_script core_msr_script[] = {
-#if !CONFIG(SOC_INTEL_GLK)
+#if !CONFIG(SOC_INTEL_GEMINILAKE)
 	/* Enable C-state and IO/MWAIT redirect */
 	REG_MSR_WRITE(MSR_PKG_CST_CONFIG_CONTROL,
 		(PKG_C_STATE_LIMIT_C2_MASK | CORE_C_STATE_LIMIT_C10_MASK
@@ -43,17 +43,15 @@ static const struct reg_script core_msr_script[] = {
 #endif
 	/* Disable C1E */
 	REG_MSR_RMW(MSR_POWER_CTL, ~POWER_CTL_C1E_MASK, 0),
-	/*
-	 * Enable and Lock the Advanced Encryption Standard (AES-NI)
-	 * feature register
-	 */
-	REG_MSR_RMW(MSR_FEATURE_CONFIG, ~FEATURE_CONFIG_RESERVED_MASK,
-		FEATURE_CONFIG_LOCK),
 	REG_SCRIPT_END
 };
 
 void soc_core_init(struct device *cpu)
 {
+	/* Configure Core PRMRR for SGX. */
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
+		prmrr_core_configure();
+
 	/* Clear out pending MCEs */
 	/* TODO(adurbin): Some of these banks are core vs package
 			  scope. For now every CPU clears every bank. */
@@ -62,16 +60,15 @@ void soc_core_init(struct device *cpu)
 
 	/* Set core MSRs */
 	reg_script_run(core_msr_script);
+
+	set_aesni_lock();
+
 	/*
 	 * Enable ACPI PM timer emulation, which also lets microcode know
 	 * location of ACPI_BASE_ADDRESS. This also enables other features
 	 * implemented in microcode.
 	*/
 	enable_pm_timer_emulation();
-
-	/* Configure Core PRMRR for SGX. */
-	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
-		prmrr_core_configure();
 
 	/* Set Max Non-Turbo ratio if RAPL is disabled. */
 	if (CONFIG(APL_SKIP_SET_POWER_LIMITS)) {
@@ -142,7 +139,7 @@ static struct smm_relocation_attrs relo_attrs;
 static void pre_mp_init(void)
 {
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_CPU_MPINIT)) {
-		fsps_load(romstage_handoff_is_resume());
+		fsps_load();
 		return;
 	}
 	x86_setup_mtrrs_with_detect();

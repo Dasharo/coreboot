@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#ifndef __AMDBLOCKS_ESPI_H__
-#define __AMDBLOCKS_ESPI_H__
+#ifndef AMD_BLOCK_ESPI_H
+#define AMD_BLOCK_ESPI_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -43,14 +43,11 @@
 #define  ESPI_OOB_CH_EN				(1 << 1)
 #define  ESPI_FLASH_CH_EN			(1 << 0)
 
-/*
- * Virtual wire interrupt polarity. If the interrupt is active level high or active falling
- * edge, then controller expects its bit to be cleared in ESPI_RXVW_POLARITY whereas if the
- * interrupt is active level low or active rising edge, then its bit needs to be set in
- * ESPI_RXVW_POLARITY.
- */
-#define ESPI_VW_IRQ_LEVEL_HIGH(x)		(0 << (x))
-#define ESPI_VW_IRQ_LEVEL_LOW(x)		(1 << (x))
+/* Virtual wire interrupt polarity. eSPI interrupts are active level high signals. The
+   polarity register inverts the incoming signal if the associated bit with the irq is
+   0. */
+#define ESPI_VW_IRQ_LEVEL_HIGH(x)		(1 << (x))
+#define ESPI_VW_IRQ_LEVEL_LOW(x)		(0 << (x))
 #define ESPI_VW_IRQ_EDGE_HIGH(x)		(1 << (x))
 #define ESPI_VW_IRQ_EDGE_LOW(x)			(0 << (x))
 
@@ -121,4 +118,4 @@ void espi_update_static_bar(uintptr_t bar);
  */
 int espi_setup(void);
 
-#endif /* __AMDBLOCKS_ESPI_H__ */
+#endif /* AMD_BLOCK_ESPI_H */

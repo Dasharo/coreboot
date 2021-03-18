@@ -15,7 +15,6 @@
  * Version: 2.1.1
  */
 
-
 #include <commonlib/endian.h>
 #include <string.h>
 #include <types.h>
@@ -366,7 +365,7 @@ static int tpm_tis_i2c_recv(struct tpm_chip *chip, uint8_t *buf, size_t count)
 	/* read first 10 bytes, including tag, paramsize, and result */
 	size = recv_data(chip, buf, TPM_HEADER_SIZE);
 	if (size < TPM_HEADER_SIZE) {
-		printk(BIOS_DEBUG, "tpm_tis_i2c_recv: Unable to read header\n");
+		printk(BIOS_DEBUG, "%s: Unable to read header\n", __func__);
 		goto out;
 	}
 
@@ -380,15 +379,14 @@ static int tpm_tis_i2c_recv(struct tpm_chip *chip, uint8_t *buf, size_t count)
 	size += recv_data(chip, &buf[TPM_HEADER_SIZE],
 				expected - TPM_HEADER_SIZE);
 	if (size < expected) {
-		printk(BIOS_DEBUG, "tpm_tis_i2c_recv: Unable to "
-			"read remainder of result\n");
+		printk(BIOS_DEBUG, "%s: Unable to read remainder of result\n", __func__);
 		size = -1;
 		goto out;
 	}
 
 	wait_for_stat(chip, TPM_STS_VALID, &status);
 	if (status & TPM_STS_DATA_AVAIL) {	/* retry? */
-		printk(BIOS_DEBUG, "tpm_tis_i2c_recv: Error left over data\n");
+		printk(BIOS_DEBUG, "%s: Error left over data\n", __func__);
 		size = -1;
 		goto out;
 	}
@@ -424,11 +422,6 @@ static int tpm_tis_i2c_send(struct tpm_chip *chip, uint8_t *buf, size_t len)
 
 		if (burstcnt > (len-1-count))
 			burstcnt = len-1-count;
-
-#ifdef CONFIG_TPM_I2C_BURST_LIMITATION
-		if (burstcnt > CONFIG_TPM_I2C_BURST_LIMITATION)
-			burstcnt = CONFIG_TPM_I2C_BURST_LIMITATION;
-#endif /* CONFIG_TPM_I2C_BURST_LIMITATION */
 
 		if (iic_tpm_write(TPM_DATA_FIFO(chip->vendor.locality),
 						&(buf[count]), burstcnt) == 0)

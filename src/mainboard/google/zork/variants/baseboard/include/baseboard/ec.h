@@ -38,13 +38,17 @@
 #define MAINBOARD_EC_S3_WAKE_EVENTS \
 	(MAINBOARD_EC_S5_WAKE_EVENTS |\
 	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_KEY_PRESSED) |\
-	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_MODE_CHANGE))
+	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_MODE_CHANGE) |\
+	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_MKBP))
 
 /* Log EC wake events plus EC shutdown events */
 #define MAINBOARD_EC_LOG_EVENTS \
 	(EC_HOST_EVENT_MASK(EC_HOST_EVENT_THERMAL_SHUTDOWN) |\
 	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_BATTERY_SHUTDOWN) |\
 	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_PANIC))
+
+/* EC device events to enable and log in S3 */
+#define MAINBOARD_EC_S3_DEVICE_EVENTS 0
 
 /* Enable LID switch */
 #define EC_ENABLE_LID_SWITCH
@@ -59,8 +63,6 @@
 #define SIO_EC_MEMMAP_ENABLE	/* EC Memory Map Resources */
 #define SIO_EC_HOST_ENABLE	/* EC Host Interface Resources */
 #define SIO_EC_ENABLE_PS2K	/* Enable PS/2 Keyboard */
-#define SIO_EC_PS2K_IRQ		IRQ (Level, ActiveHigh, Exclusive) {1}
-#define SIO_EC_PS2M_IRQ		IRQ (Level, ActiveHigh, Exclusive) {12}
 
 /*
  * Enable EC sync interrupt via GPIO controller, EC_SYNC_IRQ is defined in

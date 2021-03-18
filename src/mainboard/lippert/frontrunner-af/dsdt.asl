@@ -3,42 +3,16 @@
 /* DefinitionBlock Statement */
 #include <acpi/acpi.h>
 DefinitionBlock (
-	"DSDT.AML",           /* Output filename */
-	"DSDT",                 /* Signature */
-	0x02,		/* DSDT Revision, needs to be 2 for 64bit */
+	"dsdt.aml",
+	"DSDT",
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x00010001	/* OEM Revision */
 	)
 {	/* Start of ASL file */
-	/* #include <arch/i386/acpi/debug.asl> */		/* Include global debug methods if needed */
+	#include <acpi/dsdt_top.asl>
 
-	/* Data to be patched by the BIOS during POST */
-	/* FIXME the patching is not done yet! */
-	/* Memory related values */
-	Name(LOMH, 0x0)	/* Start of unused memory in C0000-E0000 range */
-	Name(PBAD, 0x0)	/* Address of BIOS area (If TOM2 != 0, Addr >> 16) */
-	Name(PBLN, 0x0)	/* Length of BIOS area */
-
-	Name(PCBA, CONFIG_MMCONF_BASE_ADDRESS)	/* Base address of PCIe config space */
-	Name(HPBA, 0xFED00000)	/* Base address of HPET table */
-
-	/* USB overcurrent mapping pins.   */
-	Name(UOM0, 0)
-	Name(UOM1, 2)
-	Name(UOM2, 0)
-	Name(UOM3, 7)
-	Name(UOM4, 2)
-	Name(UOM5, 2)
-	Name(UOM6, 6)
-	Name(UOM7, 2)
-	Name(UOM8, 6)
-	Name(UOM9, 6)
-
-	/* Some global data */
-	Name(OSVR, 3)		/* Assume nothing. WinXp = 1, Vista = 2, Linux = 3, WinCE = 4 */
-	Name(OSV, Ones)	/* Assume nothing */
-	Name(PMOD, One)	/* Assume APIC */
 
 	/*
 	 * Processor Object
@@ -62,32 +36,6 @@ DefinitionBlock (
 		Name (_UID, 3)
 		}
 	} /* End _SB scope */
-
-	/* PIC IRQ mapping registers, C00h-C01h. */
-	OperationRegion(PRQM, SystemIO, 0x00000C00, 0x00000002)
-		Field(PRQM, ByteAcc, NoLock, Preserve) {
-		PRQI, 0x00000008,
-		PRQD, 0x00000008,  /* Offset: 1h */
-	}
-	IndexField(PRQI, PRQD, ByteAcc, NoLock, Preserve) {
-		PIRA, 0x00000008,	/* Index 0 */
-		PIRB, 0x00000008,	/* Index 1 */
-		PIRC, 0x00000008,	/* Index 2 */
-		PIRD, 0x00000008,	/* Index 3 */
-		PIRE, 0x00000008,	/* Index 4 */
-		PIRF, 0x00000008,	/* Index 5 */
-		PIRG, 0x00000008,	/* Index 6 */
-		PIRH, 0x00000008,	/* Index 7 */
-	}
-
-	/* PCI Error control register */
-	OperationRegion(PERC, SystemIO, 0x00000C14, 0x00000001)
-		Field(PERC, ByteAcc, NoLock, Preserve) {
-		SENS, 0x00000001,
-		PENS, 0x00000001,
-		SENE, 0x00000001,
-		PENE, 0x00000001,
-	}
 
 	/* Client Management index/data registers */
 	OperationRegion(CMT, SystemIO, 0x00000C50, 0x00000002)
@@ -135,8 +83,7 @@ DefinitionBlock (
 		PIOD, 0x00000008,
 	}
 	IndexField (PIOI, PIOD, ByteAcc, NoLock, Preserve) {
-		Offset(0x00),	/* MiscControl */
-		, 1,
+		    , 1,	/* MiscControl */
 		T1EE, 1,
 		T2EE, 1,
 		Offset(0x01),	/* MiscStatus */
@@ -203,10 +150,6 @@ DefinitionBlock (
 		PWMK, 1,
 		PWNS, 1,
 
-		/*	Offset(0x61), */	/*  Options_1 */
-		/*		,7,  */
-		/*		R617,1, */
-
 		Offset(0x65),	/* UsbPMControl */
 		, 4,
 		URRE, 1,
@@ -263,842 +206,19 @@ DefinitionBlock (
 		PWDA, 1,
 	}
 
-	Scope(\_SB) {
-		/* PCIe Configuration Space for 16 busses */
-		OperationRegion(PCFG, SystemMemory, PCBA, 0x01000000) /* Each bus consumes 1MB */
-			Field(PCFG, ByteAcc, NoLock, Preserve) {
-			/* Byte offsets are computed using the following technique:
-			 * ((bus number + 1) * ((device number * 8) * 4096)) + register offset
-			 * The 8 comes from 8 functions per device, and 4096 bytes per function config space
-			*/
-			Offset(0x00088024),	/* Byte offset to SATA register 24h - Bus 0, Device 17, Function 0 */
-			STB5, 32,
-			Offset(0x00098042),	/* Byte offset to OHCI0 register 42h - Bus 0, Device 19, Function 0 */
-			PT0D, 1,
-			PT1D, 1,
-			PT2D, 1,
-			PT3D, 1,
-			PT4D, 1,
-			PT5D, 1,
-			PT6D, 1,
-			PT7D, 1,
-			PT8D, 1,
-			PT9D, 1,
-			Offset(0x000A0004),	/* Byte offset to SMBUS	register 4h - Bus 0, Device 20, Function 0 */
-			SBIE, 1,
-			SBME, 1,
-			Offset(0x000A0008),	/* Byte offset to SMBUS	register 8h - Bus 0, Device 20, Function 0 */
-			SBRI, 8,
-			Offset(0x000A0014),	/* Byte offset to SMBUS	register 14h - Bus 0, Device 20, Function 0 */
-			SBB1, 32,
-			Offset(0x000A0078),	/* Byte offset to SMBUS	register 78h - Bus 0, Device 20, Function 0 */
-			,14,
-			P92E, 1,		/* Port92 decode enable */
-		}
-
-		OperationRegion(SB5, SystemMemory, STB5, 0x1000)
-			Field(SB5, AnyAcc, NoLock, Preserve){
-			/* Port 0 */
-			Offset(0x120),		/* Port 0 Task file status */
-			P0ER, 1,
-			, 2,
-			P0DQ, 1,
-			, 3,
-			P0BY, 1,
-			Offset(0x128),		/* Port 0 Serial ATA status */
-			P0DD, 4,
-			, 4,
-			P0IS, 4,
-			Offset(0x12C),		/* Port 0 Serial ATA control */
-			P0DI, 4,
-			Offset(0x130),		/* Port 0 Serial ATA error */
-			, 16,
-			P0PR, 1,
-
-			/* Port 1 */
-			offset(0x1A0),		/* Port 1 Task file status */
-			P1ER, 1,
-			, 2,
-			P1DQ, 1,
-			, 3,
-			P1BY, 1,
-			Offset(0x1A8),		/* Port 1 Serial ATA status */
-			P1DD, 4,
-			, 4,
-			P1IS, 4,
-			Offset(0x1AC),		/* Port 1 Serial ATA control */
-			P1DI, 4,
-			Offset(0x1B0),		/* Port 1 Serial ATA error */
-			, 16,
-			P1PR, 1,
-
-			/* Port 2 */
-			Offset(0x220),		/* Port 2 Task file status */
-			P2ER, 1,
-			, 2,
-			P2DQ, 1,
-			, 3,
-			P2BY, 1,
-			Offset(0x228),		/* Port 2 Serial ATA status */
-			P2DD, 4,
-			, 4,
-			P2IS, 4,
-			Offset(0x22C),		/* Port 2 Serial ATA control */
-			P2DI, 4,
-			Offset(0x230),		/* Port 2 Serial ATA error */
-			, 16,
-			P2PR, 1,
-
-			/* Port 3 */
-			Offset(0x2A0),		/* Port 3 Task file status */
-			P3ER, 1,
-			, 2,
-			P3DQ, 1,
-			, 3,
-			P3BY, 1,
-			Offset(0x2A8),		/* Port 3 Serial ATA status */
-			P3DD, 4,
-			, 4,
-			P3IS, 4,
-			Offset(0x2AC),		/* Port 3 Serial ATA control */
-			P3DI, 4,
-			Offset(0x2B0),		/* Port 3 Serial ATA error */
-			, 16,
-			P3PR, 1,
-		}
-	}
-
-
 	#include "acpi/routing.asl"
 
-	Scope(\_SB) {
-
-		Method(OSFL, 0){
-
-			if(LNotEqual(OSVR, Ones)) {Return(OSVR)}	/* OS version was already detected */
-
-			if(CondRefOf(\_OSI))
-			{
-				Store(1, OSVR)                /* Assume some form of XP */
-				if (\_OSI("Windows 2006"))      /* Vista */
-				{
-					Store(2, OSVR)
-				}
-			} else {
-				If(WCMP(\_OS,"Linux")) {
-					Store(3, OSVR)            /* Linux */
-				} Else {
-					Store(4, OSVR)            /* Gotta be WinCE */
-				}
-			}
-			Return(OSVR)
-		}
-
-		Method(_PIC, 0x01, NotSerialized)
-		{
-			If (Arg0)
-			{
-				\_SB.CIRQ()
-			}
-			Store(Arg0, PMOD)
-		}
-		Method(CIRQ, 0x00, NotSerialized){
-			Store(0, PIRA)
-			Store(0, PIRB)
-			Store(0, PIRC)
-			Store(0, PIRD)
-			Store(0, PIRE)
-			Store(0, PIRF)
-			Store(0, PIRG)
-			Store(0, PIRH)
-		}
-
-		Name(IRQB, ResourceTemplate(){
-			IRQ(Level,ActiveLow,Shared){15}
-		})
-
-		Name(IRQP, ResourceTemplate(){
-			IRQ(Level,ActiveLow,Exclusive){3, 4, 5, 7, 10, 11, 12, 15}
-		})
-
-		Name(PITF, ResourceTemplate(){
-			IRQ(Level,ActiveLow,Exclusive){9}
-		})
-
-		Device(INTA) {
-			Name(_HID, EISAID("PNP0C0F"))
-			Name(_UID, 1)
-
-			Method(_STA, 0) {
-				if (PIRA) {
-					Return(0x0B) /* sata is invisible */
-				} else {
-					Return(0x09) /* sata is disabled */
-				}
-			} /* End Method(_SB.INTA._STA) */
-
-			Method(_DIS ,0) {
-				/* DBGO("\\_SB\\LNKA\\_DIS\n") */
-				Store(0, PIRA)
-			} /* End Method(_SB.INTA._DIS) */
-
-			Method(_PRS ,0) {
-				/* DBGO("\\_SB\\LNKA\\_PRS\n") */
-				Return(IRQP)
-			} /* Method(_SB.INTA._PRS) */
-
-			Method(_CRS ,0) {
-				/* DBGO("\\_SB\\LNKA\\_CRS\n") */
-				CreateWordField(IRQB, 0x1, IRQN)
-				ShiftLeft(1, PIRA, IRQN)
-				Return(IRQB)
-			} /* Method(_SB.INTA._CRS) */
-
-			Method(_SRS, 1) {
-				/* DBGO("\\_SB\\LNKA\\_CRS\n") */
-				CreateWordField(ARG0, 1, IRQM)
-
-				/* Use lowest available IRQ */
-				FindSetRightBit(IRQM, Local0)
-				if (Local0) {
-					Decrement(Local0)
-				}
-				Store(Local0, PIRA)
-			} /* End Method(_SB.INTA._SRS) */
-		} /* End Device(INTA) */
-
-		Device(INTB) {
-			Name(_HID, EISAID("PNP0C0F"))
-			Name(_UID, 2)
-
-			Method(_STA, 0) {
-				if (PIRB) {
-					Return(0x0B) /* sata is invisible */
-				} else {
-					Return(0x09) /* sata is disabled */
-				}
-			} /* End Method(_SB.INTB._STA) */
-
-			Method(_DIS ,0) {
-				/* DBGO("\\_SB\\LNKB\\_DIS\n") */
-				Store(0, PIRB)
-			} /* End Method(_SB.INTB._DIS) */
-
-			Method(_PRS ,0) {
-				/* DBGO("\\_SB\\LNKB\\_PRS\n") */
-				Return(IRQP)
-			} /* Method(_SB.INTB._PRS) */
-
-			Method(_CRS ,0) {
-				/* DBGO("\\_SB\\LNKB\\_CRS\n") */
-				CreateWordField(IRQB, 0x1, IRQN)
-				ShiftLeft(1, PIRB, IRQN)
-				Return(IRQB)
-			} /* Method(_SB.INTB._CRS) */
-
-			Method(_SRS, 1) {
-				/* DBGO("\\_SB\\LNKB\\_CRS\n") */
-				CreateWordField(ARG0, 1, IRQM)
-
-				/* Use lowest available IRQ */
-				FindSetRightBit(IRQM, Local0)
-				if (Local0) {
-					Decrement(Local0)
-				}
-				Store(Local0, PIRB)
-			} /* End Method(_SB.INTB._SRS) */
-		} /* End Device(INTB)  */
-
-		Device(INTC) {
-			Name(_HID, EISAID("PNP0C0F"))
-			Name(_UID, 3)
-
-			Method(_STA, 0) {
-				if (PIRC) {
-					Return(0x0B) /* sata is invisible */
-				} else {
-					Return(0x09) /* sata is disabled */
-				}
-			} /* End Method(_SB.INTC._STA) */
-
-			Method(_DIS ,0) {
-				/* DBGO("\\_SB\\LNKC\\_DIS\n") */
-				Store(0, PIRC)
-			} /* End Method(_SB.INTC._DIS) */
-
-			Method(_PRS ,0) {
-				/* DBGO("\\_SB\\LNKC\\_PRS\n") */
-				Return(IRQP)
-			} /* Method(_SB.INTC._PRS) */
-
-			Method(_CRS ,0) {
-				/* DBGO("\\_SB\\LNKC\\_CRS\n") */
-				CreateWordField(IRQB, 0x1, IRQN)
-				ShiftLeft(1, PIRC, IRQN)
-				Return(IRQB)
-			} /* Method(_SB.INTC._CRS) */
-
-			Method(_SRS, 1) {
-				/* DBGO("\\_SB\\LNKC\\_CRS\n") */
-				CreateWordField(ARG0, 1, IRQM)
-
-				/* Use lowest available IRQ */
-				FindSetRightBit(IRQM, Local0)
-				if (Local0) {
-					Decrement(Local0)
-				}
-				Store(Local0, PIRC)
-			} /* End Method(_SB.INTC._SRS) */
-		} /* End Device(INTC)  */
-
-		Device(INTD) {
-			Name(_HID, EISAID("PNP0C0F"))
-			Name(_UID, 4)
-
-			Method(_STA, 0) {
-				if (PIRD) {
-					Return(0x0B) /* sata is invisible */
-				} else {
-					Return(0x09) /* sata is disabled */
-				}
-			} /* End Method(_SB.INTD._STA) */
-
-			Method(_DIS ,0) {
-				/* DBGO("\\_SB\\LNKD\\_DIS\n") */
-				Store(0, PIRD)
-			} /* End Method(_SB.INTD._DIS) */
-
-			Method(_PRS ,0) {
-				/* DBGO("\\_SB\\LNKD\\_PRS\n") */
-				Return(IRQP)
-			} /* Method(_SB.INTD._PRS) */
-
-			Method(_CRS ,0) {
-				/* DBGO("\\_SB\\LNKD\\_CRS\n") */
-				CreateWordField(IRQB, 0x1, IRQN)
-				ShiftLeft(1, PIRD, IRQN)
-				Return(IRQB)
-			} /* Method(_SB.INTD._CRS) */
-
-			Method(_SRS, 1) {
-				/* DBGO("\\_SB\\LNKD\\_CRS\n") */
-				CreateWordField(ARG0, 1, IRQM)
-
-				/* Use lowest available IRQ */
-				FindSetRightBit(IRQM, Local0)
-				if (Local0) {
-					Decrement(Local0)
-				}
-				Store(Local0, PIRD)
-			} /* End Method(_SB.INTD._SRS) */
-		} /* End Device(INTD)  */
-
-		Device(INTE) {
-			Name(_HID, EISAID("PNP0C0F"))
-			Name(_UID, 5)
-
-			Method(_STA, 0) {
-				if (PIRE) {
-					Return(0x0B) /* sata is invisible */
-				} else {
-					Return(0x09) /* sata is disabled */
-				}
-			} /* End Method(_SB.INTE._STA) */
-
-			Method(_DIS ,0) {
-				/* DBGO("\\_SB\\LNKE\\_DIS\n") */
-				Store(0, PIRE)
-			} /* End Method(_SB.INTE._DIS) */
-
-			Method(_PRS ,0) {
-				/* DBGO("\\_SB\\LNKE\\_PRS\n") */
-				Return(IRQP)
-			} /* Method(_SB.INTE._PRS) */
-
-			Method(_CRS ,0) {
-				/* DBGO("\\_SB\\LNKE\\_CRS\n") */
-				CreateWordField(IRQB, 0x1, IRQN)
-				ShiftLeft(1, PIRE, IRQN)
-				Return(IRQB)
-			} /* Method(_SB.INTE._CRS) */
-
-			Method(_SRS, 1) {
-				/* DBGO("\\_SB\\LNKE\\_CRS\n") */
-				CreateWordField(ARG0, 1, IRQM)
-
-				/* Use lowest available IRQ */
-				FindSetRightBit(IRQM, Local0)
-				if (Local0) {
-					Decrement(Local0)
-				}
-				Store(Local0, PIRE)
-			} /* End Method(_SB.INTE._SRS) */
-		} /* End Device(INTE)  */
-
-		Device(INTF) {
-			Name(_HID, EISAID("PNP0C0F"))
-			Name(_UID, 6)
-
-			Method(_STA, 0) {
-				if (PIRF) {
-					Return(0x0B) /* sata is invisible */
-				} else {
-					Return(0x09) /* sata is disabled */
-				}
-			} /* End Method(_SB.INTF._STA) */
-
-			Method(_DIS ,0) {
-				/* DBGO("\\_SB\\LNKF\\_DIS\n") */
-				Store(0, PIRF)
-			} /* End Method(_SB.INTF._DIS) */
-
-			Method(_PRS ,0) {
-				/* DBGO("\\_SB\\LNKF\\_PRS\n") */
-				Return(PITF)
-			} /* Method(_SB.INTF._PRS) */
-
-			Method(_CRS ,0) {
-				/* DBGO("\\_SB\\LNKF\\_CRS\n") */
-				CreateWordField(IRQB, 0x1, IRQN)
-				ShiftLeft(1, PIRF, IRQN)
-				Return(IRQB)
-			} /* Method(_SB.INTF._CRS) */
-
-			Method(_SRS, 1) {
-				/* DBGO("\\_SB\\LNKF\\_CRS\n") */
-				CreateWordField(ARG0, 1, IRQM)
-
-				/* Use lowest available IRQ */
-				FindSetRightBit(IRQM, Local0)
-				if (Local0) {
-					Decrement(Local0)
-				}
-				Store(Local0, PIRF)
-			} /*  End Method(_SB.INTF._SRS) */
-		} /* End Device(INTF)  */
-
-		Device(INTG) {
-			Name(_HID, EISAID("PNP0C0F"))
-			Name(_UID, 7)
-
-			Method(_STA, 0) {
-				if (PIRG) {
-					Return(0x0B) /* sata is invisible */
-				} else {
-					Return(0x09) /* sata is disabled */
-				}
-			} /* End Method(_SB.INTG._STA)  */
-
-			Method(_DIS ,0) {
-				/* DBGO("\\_SB\\LNKG\\_DIS\n") */
-				Store(0, PIRG)
-			} /* End Method(_SB.INTG._DIS)  */
-
-			Method(_PRS ,0) {
-				/* DBGO("\\_SB\\LNKG\\_PRS\n") */
-				Return(IRQP)
-			} /* Method(_SB.INTG._CRS)  */
-
-			Method(_CRS ,0) {
-				/* DBGO("\\_SB\\LNKG\\_CRS\n") */
-				CreateWordField(IRQB, 0x1, IRQN)
-				ShiftLeft(1, PIRG, IRQN)
-				Return(IRQB)
-			} /* Method(_SB.INTG._CRS)  */
-
-			Method(_SRS, 1) {
-				/* DBGO("\\_SB\\LNKG\\_CRS\n") */
-				CreateWordField(ARG0, 1, IRQM)
-
-				/* Use lowest available IRQ */
-				FindSetRightBit(IRQM, Local0)
-				if (Local0) {
-					Decrement(Local0)
-				}
-				Store(Local0, PIRG)
-			} /* End Method(_SB.INTG._SRS)  */
-		} /* End Device(INTG)  */
-
-		Device(INTH) {
-			Name(_HID, EISAID("PNP0C0F"))
-			Name(_UID, 8)
-
-			Method(_STA, 0) {
-				if (PIRH) {
-					Return(0x0B) /* sata is invisible */
-				} else {
-					Return(0x09) /* sata is disabled */
-				}
-			} /* End Method(_SB.INTH._STA)  */
-
-			Method(_DIS ,0) {
-				/* DBGO("\\_SB\\LNKH\\_DIS\n") */
-				Store(0, PIRH)
-			} /* End Method(_SB.INTH._DIS)  */
-
-			Method(_PRS ,0) {
-				/* DBGO("\\_SB\\LNKH\\_PRS\n") */
-				Return(IRQP)
-			} /* Method(_SB.INTH._CRS)  */
-
-			Method(_CRS ,0) {
-				/* DBGO("\\_SB\\LNKH\\_CRS\n") */
-				CreateWordField(IRQB, 0x1, IRQN)
-				ShiftLeft(1, PIRH, IRQN)
-				Return(IRQB)
-			} /* Method(_SB.INTH._CRS)  */
-
-			Method(_SRS, 1) {
-				/* DBGO("\\_SB\\LNKH\\_CRS\n") */
-				CreateWordField(ARG0, 1, IRQM)
-
-				/* Use lowest available IRQ */
-				FindSetRightBit(IRQM, Local0)
-				if (Local0) {
-					Decrement(Local0)
-				}
-				Store(Local0, PIRH)
-			} /* End Method(_SB.INTH._SRS)  */
-		} /* End Device(INTH)   */
-
-	}   /* End Scope(_SB)  */
-
+	#include <southbridge/amd/cimx/sb800/acpi/pcie.asl>
 
 	/* Contains the supported sleep states for this chipset */
 	#include <southbridge/amd/common/acpi/sleepstates.asl>
 
-	/* Wake status package */
-	Name(WKST,Package(){Zero, Zero})
+	/* Contains the Sleep methods (WAK, PTS, GTS, etc.) */
+	#include "acpi/sleep.asl"
 
-	/*
-	* \_PTS - Prepare to Sleep method
-	*
-	*	Entry:
-	*		Arg0=The value of the sleeping state S1=1, S2=2, etc
-	*
-	* Exit:
-	*		-none-
-	*
-	* The _PTS control method is executed at the beginning of the sleep process
-	* for S1-S5. The sleeping value is passed to the _PTS control method.  This
-	* control method may be executed a relatively long time before entering the
-	* sleep state and the OS may abort the operation without notification to
-	* the ACPI driver.  This method cannot modify the configuration or power
-	* state of any device in the system.
-	*/
-	Method(\_PTS, 1) {
-		/* DBGO("\\_PTS\n") */
-		/* DBGO("From S0 to S") */
-		/* DBGO(Arg0) */
-		/* DBGO("\n") */
+	#include "acpi/gpe.asl"
 
-		/* Don't allow PCIRST# to reset USB */
-		if (LEqual(Arg0,3)){
-			Store(0,URRE)
-		}
-
-		/* Clear sleep SMI status flag and enable sleep SMI trap. */
-		/*Store(One, CSSM)
-		Store(One, SSEN)*/
-
-		/* On older chips, clear PciExpWakeDisEn */
-		/*if (LLessEqual(\_SB.SBRI, 0x13)) {
-		*	Store(0,\_SB.PWDE)
-		*}
-		*/
-
-		/* Clear wake status structure. */
-		Store(0, Index(WKST,0))
-		Store(0, Index(WKST,1))
-	} /* End Method(\_PTS) */
-
-	/*
-	*  The following method results in a "not a valid reserved NameSeg"
-	*  warning so I have commented it out for the duration.  It isn't
-	*  used, so it could be removed.
-	*
-	*
-	*	\_GTS OEM Going To Sleep method
-	*
-	*	Entry:
-	*		Arg0=The value of the sleeping state S1=1, S2=2
-	*
-	*	Exit:
-	*		-none-
-	*
-	*  Method(\_GTS, 1) {
-	*  DBGO("\\_GTS\n")
-	*  DBGO("From S0 to S")
-	*  DBGO(Arg0)
-	*  DBGO("\n")
-	*  }
-	*/
-
-	/*
-	*	\_BFS OEM Back From Sleep method
-	*
-	*	Entry:
-	*		Arg0=The value of the sleeping state S1=1, S2=2
-	*
-	*	Exit:
-	*		-none-
-	*/
-	Method(\_BFS, 1) {
-		/* DBGO("\\_BFS\n") */
-		/* DBGO("From S") */
-		/* DBGO(Arg0) */
-		/* DBGO(" to S0\n") */
-	}
-
-	/*
-	*  \_WAK System Wake method
-	*
-	*	Entry:
-	*		Arg0=The value of the sleeping state S1=1, S2=2
-	*
-	*	Exit:
-	*		Return package of 2 DWords
-	*		Dword 1 - Status
-	*			0x00000000	wake succeeded
-	*			0x00000001	Wake was signaled but failed due to lack of power
-	*			0x00000002	Wake was signaled but failed due to thermal condition
-	*		Dword 2 - Power Supply state
-	*			if non-zero the effective S-state the power supply entered
-	*/
-	Method(\_WAK, 1) {
-		/* DBGO("\\_WAK\n") */
-		/* DBGO("From S") */
-		/* DBGO(Arg0) */
-		/* DBGO(" to S0\n") */
-
-		/* Re-enable HPET */
-		Store(1,HPDE)
-
-		/* Restore PCIRST# so it resets USB */
-		if (LEqual(Arg0,3)){
-			Store(1,URRE)
-		}
-
-		/* Arbitrarily clear PciExpWakeStatus */
-		Store(PWST, Local1)
-		Store(Local1, PWST)
-
-		/* if (DeRefOf(Index(WKST,0))) {
-		*	Store(0, Index(WKST,1))
-		* } else {
-		*	Store(Arg0, Index(WKST,1))
-		* }
-		*/
-		Return(WKST)
-	} /* End Method(\_WAK) */
-
-	Scope(\_GPE) {	/* Start Scope GPE */
-		/*  General event 0  */
-		/* Method(_L00) {
-		*	DBGO("\\_GPE\\_L00\n")
-		* }
-		*/
-
-		/*  General event 1  */
-		/* Method(_L01) {
-		*	DBGO("\\_GPE\\_L00\n")
-		* }
-		*/
-
-		/*  General event 2  */
-		/* Method(_L02) {
-		*	DBGO("\\_GPE\\_L00\n")
-		* }
-		*/
-
-		/*  General event 3  */
-		Method(_L03) {
-			/* DBGO("\\_GPE\\_L00\n") */
-			Notify(\_SB.PWRB, 0x02) /* NOTIFY_DEVICE_WAKE */
-		}
-
-		/*  General event 4  */
-		/* Method(_L04) {
-		*	DBGO("\\_GPE\\_L00\n")
-		* }
-		*/
-
-		/*  General event 5  */
-		/* Method(_L05) {
-		*	DBGO("\\_GPE\\_L00\n")
-		* }
-		*/
-
-		/*  General event 6 - Used for GPM6, moved to USB.asl */
-		/* Method(_L06) {
-		*	DBGO("\\_GPE\\_L00\n")
-		* }
-		*/
-
-		/*  General event 7 - Used for GPM7, moved to USB.asl */
-		/* Method(_L07) {
-		*	DBGO("\\_GPE\\_L07\n")
-		* }
-		*/
-
-		/*  Legacy PM event  */
-		Method(_L08) {
-			/* DBGO("\\_GPE\\_L08\n") */
-		}
-
-		/*  Temp warning (TWarn) event  */
-		Method(_L09) {
-			/* DBGO("\\_GPE\\_L09\n") */
-			/* Notify (\_TZ.TZ00, 0x80) */
-		}
-
-		/*  Reserved  */
-		/* Method(_L0A) {
-		*	DBGO("\\_GPE\\_L0A\n")
-		* }
-		*/
-
-		/*  USB controller PME#  */
-		Method(_L0B) {
-			/* DBGO("\\_GPE\\_L0B\n") */
-			Notify(\_SB.PCI0.UOH1, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.UOH2, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.UOH3, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.UOH4, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.UOH5, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.UOH6, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.UEH1, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PWRB, 0x02) /* NOTIFY_DEVICE_WAKE */
-		}
-
-		/*  AC97 controller PME#  */
-		/* Method(_L0C) {
-		*	DBGO("\\_GPE\\_L0C\n")
-		* }
-		*/
-
-		/*  OtherTherm PME#  */
-		/* Method(_L0D) {
-		*	DBGO("\\_GPE\\_L0D\n")
-		* }
-		*/
-
-		/*  GPM9 SCI event - Moved to USB.asl */
-		/* Method(_L0E) {
-		*	DBGO("\\_GPE\\_L0E\n")
-		* }
-		*/
-
-		/*  PCIe HotPlug event  */
-		/* Method(_L0F) {
-		*	DBGO("\\_GPE\\_L0F\n")
-		* }
-		*/
-
-		/*  ExtEvent0 SCI event  */
-		Method(_L10) {
-			/* DBGO("\\_GPE\\_L10\n") */
-		}
-
-
-		/*  ExtEvent1 SCI event  */
-		Method(_L11) {
-			/* DBGO("\\_GPE\\_L11\n") */
-		}
-
-		/*  PCIe PME# event  */
-		/* Method(_L12) {
-		*	DBGO("\\_GPE\\_L12\n")
-		* }
-		*/
-
-		/*  GPM0 SCI event - Moved to USB.asl */
-		/* Method(_L13) {
-		*	DBGO("\\_GPE\\_L13\n")
-		* }
-		*/
-
-		/*  GPM1 SCI event - Moved to USB.asl */
-		/* Method(_L14) {
-		*	DBGO("\\_GPE\\_L14\n")
-		* }
-		*/
-
-		/*  GPM2 SCI event - Moved to USB.asl */
-		/* Method(_L15) {
-		*	DBGO("\\_GPE\\_L15\n")
-		* }
-		*/
-
-		/*  GPM3 SCI event - Moved to USB.asl */
-		/* Method(_L16) {
-		*	DBGO("\\_GPE\\_L16\n")
-		* }
-		*/
-
-		/*  GPM8 SCI event - Moved to USB.asl */
-		/* Method(_L17) {
-		*	DBGO("\\_GPE\\_L17\n")
-		* }
-		*/
-
-		/*  GPIO0 or GEvent8 event  */
-		Method(_L18) {
-			/* DBGO("\\_GPE\\_L18\n") */
-			Notify(\_SB.PCI0.PBR2, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.PBR4, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.PBR5, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.PBR6, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.PBR7, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PWRB, 0x02) /* NOTIFY_DEVICE_WAKE */
-		}
-
-		/*  GPM4 SCI event - Moved to USB.asl */
-		/* Method(_L19) {
-		*	DBGO("\\_GPE\\_L19\n")
-		* }
-		*/
-
-		/*  GPM5 SCI event - Moved to USB.asl */
-		/* Method(_L1A) {
-		*	DBGO("\\_GPE\\_L1A\n")
-		* }
-		*/
-
-		/*  Azalia SCI event  */
-		Method(_L1B) {
-			/* DBGO("\\_GPE\\_L1B\n") */
-			Notify(\_SB.PCI0.AZHD, 0x02) /* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PWRB, 0x02) /* NOTIFY_DEVICE_WAKE */
-		}
-
-		/*  GPM6 SCI event - Reassigned to _L06 */
-		/* Method(_L1C) {
-		*	DBGO("\\_GPE\\_L1C\n")
-		* }
-		*/
-
-		/*  GPM7 SCI event - Reassigned to _L07 */
-		/* Method(_L1D) {
-		*	DBGO("\\_GPE\\_L1D\n")
-		* }
-		*/
-
-		/*  GPIO2 or GPIO66 SCI event  */
-		/* Method(_L1E) {
-		*	DBGO("\\_GPE\\_L1E\n")
-		* }
-		*/
-
-		/*  SATA SCI event - Moved to sata.asl */
-		/* Method(_L1F) {
-		*	 DBGO("\\_GPE\\_L1F\n")
-		* }
-		*/
-
-	}	/* End Scope GPE */
-
-	#include "acpi/usb.asl"
+	#include "acpi/usb_oc.asl"
 
 	/* System Bus */
 	Scope(\_SB) { /* Start \_SB scope */
@@ -1116,7 +236,7 @@ DefinitionBlock (
 			Method (_OSC, 4)
 			{
 				/* Check for PCI/PCI-X/PCIe GUID */
-				If (LEqual (Arg0, ToUUID("33DB4D5B-1FF7-401C-9657-7441C03DD766")))
+				If (Arg0 == ToUUID("33DB4D5B-1FF7-401C-9657-7441C03DD766"))
 				{
 					/* Let OS control everything */
 					Return (Arg3)
@@ -1125,7 +245,7 @@ DefinitionBlock (
 				{
 					/* Unrecognized UUID, so set bit 2 of Arg3 to 1 */
 					CreateDWordField (Arg3, 0, CDW1)
-					Or (CDW1, 4, CDW1)
+					CDW1 |= 4
 					Return (Arg3)
 				}
 			} /* End _OSC */
@@ -1134,12 +254,11 @@ DefinitionBlock (
 				Return(0)
 			}
 			Method(_STA, 0) {
-				/* DBGO("\\_SB\\PCI0\\_STA\n") */
 				Return(0x0B)     /* Status is visible */
 			}
 
 			Method(_PRT,0) {
-				If(PMOD){ Return(APR0) }   /* APIC mode */
+				If(PICM){ Return(APR0) }   /* APIC mode */
 				Return (PR0)                  /* PIC Mode */
 			} /* end _PRT */
 
@@ -1162,7 +281,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00020000)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APS2) }   /* APIC mode */
+					If(PICM){ Return(APS2) }   /* APIC mode */
 					Return (PS2)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PBR2 */
@@ -1173,7 +292,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00040000)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APS4) }   /* APIC mode */
+					If(PICM){ Return(APS4) }   /* APIC mode */
 					Return (PS4)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PBR4 */
@@ -1182,7 +301,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00050000)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APS5) }   /* APIC mode */
+					If(PICM){ Return(APS5) }   /* APIC mode */
 					Return (PS5)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PBR5 */
@@ -1191,7 +310,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00060000)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APS6) }   /* APIC mode */
+					If(PICM){ Return(APS6) }   /* APIC mode */
 					Return (PS6)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PBR6 */
@@ -1201,7 +320,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00070000)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APS7) }   /* APIC mode */
+					If(PICM){ Return(APS7) }   /* APIC mode */
 					Return (PS7)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PBR7 */
@@ -1211,7 +330,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00090000)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APS9) }   /* APIC mode */
+					If(PICM){ Return(APS9) }   /* APIC mode */
 					Return (PS9)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PBR9 */
@@ -1220,8 +339,8 @@ DefinitionBlock (
 				Name(_ADR, 0x000A0000)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APSa) }   /* APIC mode */
-					Return (PSa)                  /* PIC Mode */
+					If(PICM){ Return(APSA) }   /* APIC mode */
+					Return (PSA)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PBRa */
 
@@ -1229,7 +348,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00150000)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APE0) }   /* APIC mode */
+					If(PICM){ Return(APE0) }   /* APIC mode */
 					Return (PE0)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PE20 */
@@ -1237,7 +356,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00150001)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APE1) }   /* APIC mode */
+					If(PICM){ Return(APE1) }   /* APIC mode */
 					Return (PE1)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PE21 */
@@ -1245,7 +364,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00150002)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APE2) }   /* APIC mode */
+					If(PICM){ Return(APE2) }   /* APIC mode */
 					Return (APE2)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PE22 */
@@ -1253,7 +372,7 @@ DefinitionBlock (
 				Name(_ADR, 0x00150003)
 				Name(_PRW, Package() {0x18, 4})
 				Method(_PRT,0) {
-					If(PMOD){ Return(APE3) }   /* APIC mode */
+					If(PICM){ Return(APE3) }   /* APIC mode */
 					Return (PE3)                  /* PIC Mode */
 				} /* end _PRT */
 			} /* end PE23 */
@@ -1342,9 +461,6 @@ DefinitionBlock (
 
 			Device(LIBR) {
 				Name(_ADR, 0x00140003)
-				/* Method(_INI) {
-				*	DBGO("\\_SB\\PCI0\\LpcIsaBr\\_INI\n")
-				} */ /* End Method(_SB.SBRDG._INI) */
 
 				/* Real Time Clock Device */
 				Device(RTC0) {
@@ -1352,7 +468,6 @@ DefinitionBlock (
 					Name(_CRS, ResourceTemplate() {
 						IRQNoFlags(){8}
 						IO(Decode16,0x0070, 0x0070, 0, 2)
-						/* IO(Decode16,0x0070, 0x0070, 0, 4) */
 					})
 				} /* End Device(_SB.PCI0.LpcIsaBr.RTC0) */
 
@@ -1361,7 +476,6 @@ DefinitionBlock (
 					Name(_CRS, ResourceTemplate() {
 						IRQNoFlags(){0}
 						IO(Decode16, 0x0040, 0x0040, 0, 4)
-						/* IO(Decode16, 0x0048, 0x0048, 0, 4) */
 					})
 				} /* End Device(_SB.PCI0.LpcIsaBr.TMR) */
 
@@ -1378,8 +492,6 @@ DefinitionBlock (
 						IRQNoFlags(){2}
 						IO(Decode16,0x0020, 0x0020, 0, 2)
 						IO(Decode16,0x00A0, 0x00A0, 0, 2)
-						/* IO(Decode16, 0x00D0, 0x00D0, 0x10, 0x02) */
-						/* IO(Decode16, 0x04D0, 0x04D0, 0x10, 0x02) */
 					})
 				} /* End Device(_SB.PCI0.LpcIsaBr.PIC) */
 
@@ -1403,22 +515,6 @@ DefinitionBlock (
 						IRQNoFlags(){13}
 					})
 				} /* End Device(_SB.PCI0.LpcIsaBr.COPR) */
-#if 0
-				Device(HPTM) {
-					Name(_HID,EISAID("PNP0103"))
-					Name(CRS,ResourceTemplate()	{
-						Memory32Fixed(ReadOnly,0xFED00000, 0x00000400, HPT)	/* 1kb reserved space */
-					})
-					Method(_STA, 0) {
-						Return(0x0F) /* sata is visible */
-					}
-					Method(_CRS, 0)	{
-						CreateDwordField(CRS, ^HPT._BAS, HPBX)
-						Store(HPBA, HPBX)
-						Return(CRS)
-					}
-				} /* End Device(_SB.PCI0.LpcIsaBr.COPR) */
-#endif
 				#include "acpi/superio.asl"
 			} /* end LIBR */
 
@@ -1452,7 +548,9 @@ DefinitionBlock (
 					,, PSB0)	/* ResourceSourceIndex, ResourceSource, DescriptorName */
 
 				IO(Decode16, 0x004E, 0x004E, 1, 2)	/* SIO config regs */
+#if CONFIG(BOARD_LIPPERT_FRONTRUNNER_AF)
 				IO(Decode16, 0x0E00, 0x0E00, 1, 0x80)	/* SIO runtime regs */
+#endif
 				IO(Decode16, 0x0CF8, 0x0CF8, 1,	8)
 
 				WORDIO(ResourceProducer, MinFixed, MaxFixed, PosDecode, EntireRange,
@@ -1472,91 +570,11 @@ DefinitionBlock (
 				)
 
 				Memory32Fixed(READONLY, 0x000A0000, 0x00020000, VGAM)	/* VGA memory space */
-#if 0
-				Memory32Fixed(READONLY, 0x000C0000, 0x00020000, EMM1)	/* Assume C0000-E0000 empty */
-				Memory32Fixed(READONLY, 0x000E0000, 0x00020000, RDBS)   /* BIOS ROM area */
-
-				/* DRAM Memory from 1MB to TopMem */
-				Memory32Fixed(READWRITE, 0x00100000, 0, DMLO)	/* 1MB to TopMem */
-
-				/* BIOS space just below 4GB */
-				DWORDMemory(
-					ResourceProducer, PosDecode, MinFixed, MaxFixed, Cacheable, ReadWrite,
-					0x00,			/* Granularity */
-					0x00000000,		/* Min */
-					0x00000000,		/* Max */
-					0x00000000,		/* Translation */
-					0x00000001,		/* Max-Min, RLEN */
-					,,
-					PCBM
-				)
-
-				/* DRAM memory from 4GB to TopMem2 */
-				QWORDMemory(ResourceProducer, PosDecode, MinFixed, MaxFixed, Cacheable, ReadWrite,
-					0x00000000,		/* Granularity */
-					0x00000000,		/* Min */
-					0x00000000,		/* Max */
-					0x00000000,		/* Translation */
-					0x00000001,		/* Max-Min, RLEN */
-					,,
-					DMHI
-				)
-
-				/* BIOS space just below 16EB */
-				QWORDMemory(ResourceProducer, PosDecode, MinFixed, MaxFixed, Cacheable, ReadWrite,
-					0x00000000,		/* Granularity */
-					0x00000000,		/* Min */
-					0x00000000,		/* Max */
-					0x00000000,		/* Translation */
-					0x00000001,		/* Max-Min, RLEN */
-					,,
-					PEBM
-				)
-#endif
 				/* memory space for PCI BARs below 4GB */
 				Memory32Fixed(ReadOnly, 0x00000000, 0x00000000, MMIO)
 			}) /* End Name(_SB.PCI0.CRES) */
 
 			Method(_CRS, 0) {
-				/* DBGO("\\_SB\\PCI0\\_CRS\n") */
-#if 0
-				CreateDWordField(CRES, ^EMM1._BAS, EM1B)
-				CreateDWordField(CRES, ^EMM1._LEN, EM1L)
-				CreateDWordField(CRES, ^DMLO._BAS, DMLB)
-				CreateDWordField(CRES, ^DMLO._LEN, DMLL)
-				CreateDWordField(CRES, ^PCBM._MIN, PBMB)
-				CreateDWordField(CRES, ^PCBM._LEN, PBML)
-
-				CreateQWordField(CRES, ^DMHI._MIN, DMHB)
-				CreateQWordField(CRES, ^DMHI._LEN, DMHL)
-				CreateQWordField(CRES, ^PEBM._MIN, EBMB)
-				CreateQWordField(CRES, ^PEBM._LEN, EBML)
-
-				If(LGreater(LOMH, 0xC0000)){
-					Store(0xC0000, EM1B)	/* Hole above C0000 and below E0000 */
-					Subtract(LOMH, 0xC0000, EM1L)	/* subtract start, assumes allocation from C0000 going up */
-				}
-
-				/* Set size of memory from 1MB to TopMem */
-				Subtract(TOM1, 0x100000, DMLL)
-
-				/*
-				* If(LNotEqual(TOM2, 0x00000000)){
-				*	Store(0x100000000,DMHB)			DRAM from 4GB to TopMem2
-				*	Subtract(TOM2, 0x100000000, DMHL)
-				* }
-				*/
-
-				/* If there is no memory above 4GB, put the BIOS just below 4GB */
-				If(LEqual(TOM2, 0x00000000)){
-					Store(PBAD,PBMB)			/* Reserve the "BIOS" space */
-					Store(PBLN,PBML)
-				}
-				Else {  /* Otherwise, put the BIOS just below 16EB */
-					ShiftLeft(PBAD,16,EBMB)		/* Reserve the "BIOS" space */
-					Store(PBLN,EBML)
-				}
-#endif
 				CreateDWordField(CRES, ^MMIO._BAS, MM1B)
 				CreateDWordField(CRES, ^MMIO._LEN, MM1L)
 				/*
@@ -1567,45 +585,14 @@ DefinitionBlock (
 				 * 32bit (0x00000000 - TOM1) will wrap and give the same
 				 * result as 64bit (0x100000000 - TOM1).
 				 */
-				Store(TOM1, MM1B)
-				ShiftLeft(0x10000000, 4, Local0)
-				Subtract(Local0, TOM1, Local0)
-				Store(Local0, MM1L)
+				MM1B = TOM1
+				Local0 = 0x10000000 << 4
+				Local0 -= TOM1
+				MM1L = Local0
 
 				Return(CRES) /* note to change the Name buffer */
 			} /* end of Method(_SB.PCI0._CRS) */
 
-			/*
-			*
-			*               FIRST METHOD CALLED UPON BOOT
-			*
-			*  1. If debugging, print current OS and ACPI interpreter.
-			*  2. Get PCI Interrupt routing from ACPI VSM, this
-			*     value is based on user choice in BIOS setup.
-			*/
-			Method(_INI, 0) {
-				/* DBGO("\\_SB\\_INI\n") */
-				/* DBGO("   DSDT.ASL code from ") */
-				/* DBGO(__DATE__) */
-				/* DBGO(" ") */
-				/* DBGO(__TIME__) */
-				/* DBGO("\n   Sleep states supported: ") */
-				/* DBGO("\n") */
-				/* DBGO("   \\_OS=") */
-				/* DBGO(\_OS) */
-				/* DBGO("\n   \\_REV=") */
-				/* DBGO(\_REV) */
-				/* DBGO("\n") */
-
-				/* Determine the OS we're running on */
-				OSFL()
-
-				/* On older chips, clear PciExpWakeDisEn */
-				/*if (LLessEqual(\SBRI, 0x13)) {
-				*	Store(0,\PWDE)
-				* }
-				*/
-			} /* End Method(_SB._INI) */
 		} /* End Device(PCI0)  */
 
 		Device(PWRB) {	/* Start Power button device */
@@ -1615,14 +602,5 @@ DefinitionBlock (
 			Name(_STA, 0x0B) /* sata is invisible */
 		}
 	} /* End \_SB scope */
-
-	Scope(\_SI) {
-		Method(_SST, 1) {
-			/* DBGO("\\_SI\\_SST\n") */
-			/* DBGO("   New Indicator state: ") */
-			/* DBGO(Arg0) */
-			/* DBGO("\n") */
-		}
-	} /* End Scope SI */
 }
 /* End of ASL file */

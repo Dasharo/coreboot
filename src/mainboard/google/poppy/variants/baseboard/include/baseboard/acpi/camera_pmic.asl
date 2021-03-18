@@ -25,7 +25,7 @@ Scope (\_SB.PCI0.I2C2)
 
 		Method (PMOF, 0, Serialized) {
 			/* Make Sure all PMIC outputs are off. */
-			If (LEqual (VSIC, Zero)) {
+			If (VSIC == 0) {
 				CTXS(EN_PP3300_DX_CAM)
 			}
 		}
@@ -39,7 +39,7 @@ Scope (\_SB.PCI0.I2C2)
 			Method (_ON, 0, Serialized) {
 				PMON()
 				/* Do not reset PMIC across S3 and S0ix cycle */
-				if (Lequal (RSTO, 1)) {
+				if (RSTO == 1) {
 					CTXS(EN_CAM_PMIC_RST_L)
 					Sleep(1)
 					STXS(EN_CAM_PMIC_RST_L)
@@ -64,46 +64,45 @@ Scope (\_SB.PCI0.I2C2)
 		Name (AVB3, Zero)
 		Method (_REG, 2, NotSerialized)
 		{
-			If (LEqual (Arg0, 0x08))
+			If (Arg0 == 0x08)
 			{
 				/* Marks the availability of GeneralPurposeIO
 				 * 0x08: opregion space for GeneralPurposeIO
 				 */
-				Store (Arg1, AVGP)
+				AVGP = Arg1
 			}
-			If (LEqual (Arg0, 0xB0))
+			If (Arg0 == 0xb0)
 			{
 				/* Marks the availability of
 				 * TI_PMIC_POWER_OPREGION_ID */
-				Store (Arg1, AVB0)
+				AVB0 = Arg1
 			}
-			If (LEqual (Arg0, 0xB1))
+			If (Arg0 == 0xb1)
 			{
 				/* Marks the availability of
 				 * TI_PMIC_VR_VAL_OPREGION_ID */
-				Store (Arg1, AVB1)
+				AVB1 = Arg1
 			}
-			If (LEqual (Arg0, 0xB2))
+			If (Arg0 == 0xb2)
 			{
 				/* Marks the availability of
 				 * TI_PMIC_CLK_OPREGION_ID */
-				Store (Arg1, AVB2)
+				AVB2 = Arg1
 			}
-			If (LEqual (Arg0, 0xB3))
+			If (Arg0 == 0xb3)
 			{
 				/* Marks the availability of
 				 * TI_PMIC_CLK_FREQ_OPREGION_ID */
-				Store (Arg1, AVB3)
+				AVB3 = Arg1
 			}
-			If (LAnd (AVGP, LAnd (LAnd (AVB0, AVB1),
-							 LAnd(AVB2, AVB3))))
+			If (AVGP && AVB0 && AVB1 && AVB2 && AVB3)
 			{
 				/* Marks the availability of all opregions */
-				Store (1, AVBL)
+				AVBL = 1
 			}
 			Else
 			{
-				Store (0, AVBL)
+				AVBL = 0
 			}
 		}
 
@@ -313,76 +312,50 @@ Scope (\_SB.PCI0.I2C2)
 			PODV, 32,
 		}
 
-		/* CLE0 and CLE1 are used to determine if both the clocks
-		are enabled or disabled. */
-		Mutex (MUTC, 0)
-		Name (CLE0, 0)
-		Name (CLE1, 0)
-		Method (CLKE, 0, Serialized) {
-			/* save Acquire result so we can check for
-			Mutex acquired */
-			Store (Acquire (MUTC, 1000), Local0)
-			/* check for Mutex acquired */
-			If (LEqual (Local0, Zero)) {
-			/* Enable clocks only when a sensor is turned on and
-			both the clocks are disabled */
-				If (LNot (LOr (CLE0, CLE1))) {
-					/* Set boost clock divider */
-					BODI = 3
-					/* Set buck clock divider */
-					BUDI = 2
-					/* Set the PLL_REF_CLK cyles */
-					PSWR = 19
-					/* Set the reference crystal divider */
-					XTDV = 170
-					/* Set PLL feedback divider */
-					PLDV = 32
-					/* Set PLL output divider for HCLK_A */
-					PODV = 1
-					/* Set PLL output divider for HCLK_B */
-					PDV2 = 1
-					/* Enable clocks for both the sensors
-					 * CFG1: output selection for HCLK_A and
-					 * HCLK_B.
-					 * CFG2: set drive strength for HCLK_A
-					 * and HCLK_B.
-					 */
-					CFG2 = 5
-					CFG1 = 10
-					/* Enable PLL output, crystal oscillator
-					 * input capacitance control and set
-					 * Xtal oscillator as clock source.
-					 */
-					PCTL = 209
-					Sleep(1)
-				}
-				Release (MUTC)
-			}
-		}
-
-		/* Clocks need to be disabled only if both the sensors are
-		turned off */
-		Method (CLKD, 0, Serialized) {
-			/* save Acquire result so we can check for
-			Mutex acquired */
-			Store (Acquire (MUTC, 1000), Local0)
-			/* check for Mutex acquired */
-			If (LEqual (Local0, Zero)) {
-				If (LNot (LOr (CLE0, CLE1))) {
-					BODI = 0
-					BUDI = 0
-					PSWR = 0
-					XTDV = 0
-					PLDV = 0
-					PODV = 0
-					PDV2 = 0
-					/* Disable clocks for both the
-					sensors */
-					CFG2 = 0
-					CFG1 = 0
-					PCTL = 0
-				}
-				Release (MUTC)
+		Method (CLK, 1, Serialized) {
+			If (Arg0 == 0) {
+				BODI = 0
+				BUDI = 0
+				PSWR = 0
+				XTDV = 0
+				PLDV = 0
+				PODV = 0
+				PDV2 = 0
+				/* Disable clocks for both the
+				sensors */
+				CFG2 = 0
+				CFG1 = 0
+				PCTL = 0
+				Sleep(1)
+			} ElseIf (Arg0 == 1) {
+				/* Set boost clock divider */
+				BODI = 3
+				/* Set buck clock divider */
+				BUDI = 2
+				/* Set the PLL_REF_CLK cyles */
+				PSWR = 19
+				/* Set the reference crystal divider */
+				XTDV = 170
+				/* Set PLL feedback divider */
+				PLDV = 32
+				/* Set PLL output divider for HCLK_A */
+				PODV = 1
+				/* Set PLL output divider for HCLK_B */
+				PDV2 = 1
+				/* Enable clocks for both the sensors
+				 * CFG1: output selection for HCLK_A and
+				 * HCLK_B.
+				 * CFG2: set drive strength for HCLK_A
+				 * and HCLK_B.
+				 */
+				CFG2 = 5
+				CFG1 = 10
+				/* Enable PLL output, crystal oscillator
+				 * input capacitance control and set
+				 * Xtal oscillator as clock source.
+				 */
+				PCTL = 209
+				Sleep(1)
 			}
 		}
 
@@ -390,52 +363,78 @@ Scope (\_SB.PCI0.I2C2)
 		Name (VSIC, 0)
 		Method (DOVD, 1, Serialized) {
 			/* Turn off VSIO */
-			If (LEqual (Arg0, Zero)) {
+			If (Arg0 == 0) {
 				/* Decrement only if VSIC > 0 */
-				if (LGreater (VSIC, 0)) {
-					Decrement (VSIC)
-					If (LEqual (VSIC, Zero)) {
+				if (VSIC > 0) {
+					VSIC--
+					If (VSIC == 0) {
 						VSIO = 0
 						Sleep(1)
 						PMOF()
 					}
 				}
-			} ElseIf (LEqual (Arg0, 1)) {
+			} ElseIf (Arg0 == 1) {
 				/* Increment only if VSIC < 4 */
-				If (LLess (VSIC, 4)) {
+				If (VSIC < 4) {
 					/* Turn on VSIO */
-					If (LEqual (VSIC, Zero)) {
+					If (VSIC == 0) {
 						PMON()
 						VSIO = 3
 
-						if (LNotEqual (IOVA, 52)) {
+						if (IOVA != 52) {
 							/* Set VSIO value as
 							1.8006 V */
 							IOVA = 52
 						}
-						if (LNotEqual (SIOV, 52)) {
+						if (SIOV != 52) {
 							/* Set VSIO value as
 							1.8006 V */
 							SIOV = 52
 						}
 						Sleep(3)
 					}
-					Increment (VSIC)
+					VSIC++
 				}
 			}
 		}
 
-		/* Power resource methods for CAM0 */
-		PowerResource (OVTH, 0, 0) {
+		/* Power resource methods for both CAMs */
+		PowerResource (OVCM, 0, 0) {
 			Name (STA, 0)
 			Method (_ON, 0, Serialized) {
-				/* TODO: Read Voltage and Sleep values from Sensor Obj */
-				If (LEqual (AVBL, 1)) {
-					If (LEqual (STA, 0)) {
+				If (AVBL == 1) {
+					If (STA == 0) {
 						/* Enable VSIO regulator +
 						daisy chain */
 						DOVD(1)
 
+						CLK(1)
+						STA = 1
+					}
+				}
+			}
+			Method (_OFF, 0, Serialized) {
+				If (AVBL == 1) {
+					If (STA == 1) {
+						CLK(0)
+						Sleep(2)
+						DOVD(0)
+					}
+				}
+				STA = 0
+			}
+			Method (_STA, 0, NotSerialized) {
+				Return (STA)
+			}
+		}
+
+		/* Power resource methods for CAM0 */
+		PowerResource (OVTH, 0, 1) {
+			Name (STA, 0)
+			Method (_ON, 0, Serialized) {
+				/* TODO: Read Voltage and Sleep values from Sensor Obj */
+				If (AVBL == 1) {
+					If (STA == 0) {
 						\_SB.PCI0.I2C2.PMIC.CGP1()
 						\_SB.PCI0.I2C2.PMIC.CGP2()
 
@@ -446,9 +445,6 @@ Scope (\_SB.PCI0.I2C2)
 						/* Set CORE at 1.2V */
 						DCVA = 12
 						VDCT = 1
-
-						\_SB.PCI0.I2C2.PMIC.CLKE()
-						CLE0 = 1
 
 						/*
 						 * Wait for all regulator
@@ -470,11 +466,8 @@ Scope (\_SB.PCI0.I2C2)
 			}
 
 			Method (_OFF, 0, Serialized) {
-				If (LEqual (AVBL, 1)) {
-					If (LEqual (STA, 1)) {
-						Sleep(2)
-						CLE0 = 0
-						\_SB.PCI0.I2C2.PMIC.CLKD()
+				If (AVBL == 1) {
+					If (STA == 1) {
 						Sleep(2)
 						\_SB.PCI0.I2C2.PMIC.CRST(0)
 						Sleep(3)
@@ -482,7 +475,6 @@ Scope (\_SB.PCI0.I2C2)
 						Sleep(3)
 						VACT = 0
 						Sleep(1)
-						DOVD(0)
 					}
 				}
 				STA = 0
@@ -493,16 +485,12 @@ Scope (\_SB.PCI0.I2C2)
 		}
 
 		/* Power resource methods for CAM1 */
-		PowerResource (OVFI, 0, 0) {
+		PowerResource (OVFI, 0, 1) {
 			Name (STA, 0)
 			Method (_ON, 0, Serialized) {
 				/* TODO: Read Voltage and Sleep values from Sensor Obj */
-				If (LEqual (AVBL, 1)) {
-					If (LEqual (STA, 0)) {
-						/* Enable VSIO regulator +
-						daisy chain */
-						DOVD(1)
-
+				If (AVBL == 1) {
+					If (STA == 0) {
 						/* Set VAUX2 as 1.8006 V */
 						AX2V = 52
 						VAX2 = 1 /* Enable VAUX2 */
@@ -522,9 +510,6 @@ Scope (\_SB.PCI0.I2C2)
 						/* Wait for VDD to settle. */
 						Sleep(1)
 
-						\_SB.PCI0.I2C2.PMIC.CLKE()
-						CLE1 = 1
-
 						\_SB.PCI0.I2C2.PMIC.CGP5(1)
 						/*
 						 * Ensure 10 ms between
@@ -537,11 +522,8 @@ Scope (\_SB.PCI0.I2C2)
 			}
 
 			Method (_OFF, 0, Serialized) {
-				If (LEqual (AVBL, 1)) {
-					If (LEqual (STA, 1)) {
-						Sleep(2)
-						CLE1 = 0
-						\_SB.PCI0.I2C2.PMIC.CLKD()
+				If (AVBL == 1) {
+					If (STA == 1) {
 						Sleep(2)
 						\_SB.PCI0.I2C2.PMIC.CGP5(0)
 						Sleep(3)
@@ -551,7 +533,6 @@ Scope (\_SB.PCI0.I2C2)
 						Sleep(1)
 						VAX2 = 0
 						Sleep(1)
-						DOVD(0)
 					}
 					STA = 0
 				}
@@ -566,8 +547,8 @@ Scope (\_SB.PCI0.I2C2)
 		PowerResource (VCMP, 0, 0) {
 			Name (STA, 0)
 			Method (_ON, 0, Serialized) {
-				If (LEqual (AVBL, 1)) {
-					If (LEqual (STA, 0)) {
+				If (AVBL == 1) {
+					If (STA == 0) {
 						/* Enable VSIO regulator +
 						daisy chain */
 						DOVD(1)
@@ -584,8 +565,8 @@ Scope (\_SB.PCI0.I2C2)
 			}
 
 			Method (_OFF, 0, Serialized) {
-				If (LEqual (AVBL, 1)) {
-					If (LEqual (STA, 1)) {
+				If (AVBL == 1) {
+					If (STA == 1) {
 						VCMC = 0 /* Disable regulator */
 						Sleep(1)
 						DOVD(0) /* Disable regulator */
@@ -603,8 +584,8 @@ Scope (\_SB.PCI0.I2C2)
 		PowerResource (NVMP, 0, 0) {
 			Name (STA, 0)
 			Method (_ON, 0, Serialized) {
-				If (LEqual (AVBL, 1)) {
-					If (LEqual (STA, 0)) {
+				If (AVBL == 1) {
+					If (STA == 0) {
 						/* Enable VSIO regulator +
 						daisy chain */
 						DOVD(1)
@@ -614,8 +595,8 @@ Scope (\_SB.PCI0.I2C2)
 			}
 
 			Method (_OFF, 0, Serialized) {
-				If (LEqual (AVBL, 1)) {
-					If (LEqual (STA, 1)) {
+				If (AVBL == 1) {
+					If (STA == 1) {
 						DOVD(0) /* Disable regulator */
 						STA = 0
 					}

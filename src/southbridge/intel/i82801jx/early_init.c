@@ -5,6 +5,7 @@
 #include <device/smbus_host.h>
 #include <southbridge/intel/common/gpio.h>
 #include <southbridge/intel/common/pmbase.h>
+#include <southbridge/intel/common/pmutil.h>
 #include "i82801jx.h"
 #include "chip.h"
 
@@ -33,7 +34,6 @@ void i82801jx_lpc_setup(void)
 			   | GAMEL_LPC_EN | FDD_LPC_EN | LPT_LPC_EN
 			   | COMB_LPC_EN | COMA_LPC_EN);
 
-
 	/* Set up generic decode ranges */
 	if (!dev || !dev->chip_info)
 		return;
@@ -50,7 +50,7 @@ void i82801jx_setup_bars(void)
 	const pci_devfn_t d31f0 = PCI_DEV(0, 0x1f, 0);
 
 	/* Set up RCBA. */
-	pci_write_config32(d31f0, RCBA, (uintptr_t)DEFAULT_RCBA | 1);
+	pci_write_config32(d31f0, RCBA, CONFIG_FIXED_RCBA_MMIO_BASE | 1);
 
 	/* Set up PMBASE. */
 	pci_write_config32(d31f0, D31F0_PMBASE, DEFAULT_PMBASE | 1);

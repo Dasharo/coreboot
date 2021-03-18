@@ -48,7 +48,7 @@ void i82801gx_lpc_setup(void)
 void i82801gx_setup_bars(void)
 {
 	const pci_devfn_t d31f0 = PCI_DEV(0, 0x1f, 0);
-	pci_write_config32(d31f0, RCBA, (uint32_t)DEFAULT_RCBA | 1);
+	pci_write_config32(d31f0, RCBA, CONFIG_FIXED_RCBA_MMIO_BASE | 1);
 	pci_write_config32(d31f0, PMBASE, DEFAULT_PMBASE | 1);
 	pci_write_config8(d31f0, ACPI_CNTL, ACPI_EN);
 
@@ -61,12 +61,8 @@ void i82801gx_setup_bars(void)
 #if ENV_ROMSTAGE
 void i82801gx_early_init(void)
 {
-	uint8_t reg8;
-	uint32_t reg32;
-
 	enable_smbus();
 
-	/* Setting up Southbridge. In the northbridge code. */
 	printk(BIOS_DEBUG, "Setting up static southbridge registers...");
 	i82801gx_setup_bars();
 
@@ -84,22 +80,14 @@ void i82801gx_early_init(void)
 	pci_write_config8(PCI_DEV(0, 0x1e, 0), SMLT, 0x20);
 
 	/* reset rtc power status */
-	reg8 = pci_read_config8(PCI_DEV(0, 0x1f, 0), GEN_PMCON_3);
-	reg8 &= ~RTC_BATTERY_DEAD;
-	pci_write_config8(PCI_DEV(0, 0x1f, 0), GEN_PMCON_3, reg8);
+	pci_and_config8(PCI_DEV(0, 0x1f, 0), GEN_PMCON_3, ~RTC_BATTERY_DEAD);
 
 	/* USB transient disconnect */
-	reg8 = pci_read_config8(PCI_DEV(0, 0x1f, 0), 0xad);
-	reg8 |= (3 << 0);
-	pci_write_config8(PCI_DEV(0, 0x1f, 0), 0xad, reg8);
+	pci_or_config8(PCI_DEV(0, 0x1f, 0), 0xad, 3 << 0);
 
-	reg32 = pci_read_config32(PCI_DEV(0, 0x1d, 7), 0xfc);
-	reg32 |= (1 << 29) | (1 << 17);
-	pci_write_config32(PCI_DEV(0, 0x1d, 7), 0xfc, reg32);
+	pci_or_config32(PCI_DEV(0, 0x1d, 7), 0xfc, (1 << 29) | (1 << 17));
 
-	reg32 = pci_read_config32(PCI_DEV(0, 0x1d, 7), 0xdc);
-	reg32 |= (1 << 31) | (1 << 27);
-	pci_write_config32(PCI_DEV(0, 0x1d, 7), 0xdc, reg32);
+	pci_or_config32(PCI_DEV(0, 0x1d, 7), 0xdc, (1 << 31) | (1 << 27));
 
 	/* Enable IOAPIC */
 	RCBA8(OIC) = 0x03;

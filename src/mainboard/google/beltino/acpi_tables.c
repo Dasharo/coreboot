@@ -1,15 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <types.h>
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <device/device.h>
-#include <ec/google/chromeec/ec.h>
-#include <southbridge/intel/lynxpoint/nvs.h>
+#include <soc/nvs.h>
 #include <southbridge/intel/lynxpoint/pch.h>
-#include <vendorcode/google/chromeos/gnvs.h>
 #include <variant/thermal.h>
 
-void acpi_create_gnvs(global_nvs_t *gnvs)
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
 	/* Enable USB ports in S3 */
 	gnvs->s3u0 = 1;
@@ -21,11 +19,6 @@ void acpi_create_gnvs(global_nvs_t *gnvs)
 
 	/* TPM Present */
 	gnvs->tpmp = 1;
-
-#if CONFIG(CHROMEOS)
-	// SuperIO is always RO
-	gnvs->chromeos.vbt2 = ACTIVE_ECFW_RO;
-#endif
 
 	gnvs->f4of = FAN4_THRESHOLD_OFF;
 	gnvs->f4on = FAN4_THRESHOLD_ON;

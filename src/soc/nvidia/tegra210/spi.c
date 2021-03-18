@@ -4,7 +4,6 @@
 #include <arch/cache.h>
 #include <device/mmio.h>
 #include <assert.h>
-#include <boot_device.h>
 #include <console/console.h>
 #include <delay.h>
 #include <spi-generic.h>
@@ -320,7 +319,6 @@ static void tegra_spi_wait(struct tegra_spi_channel *spi)
 	ASSERT(spi_byte_count(spi) == dma_blk_count);
 }
 
-
 static int fifo_error(struct tegra_spi_channel *spi)
 {
 	return read32(&spi->regs->fifo_status) & SPI_FIFO_STATUS_ERR ? 1 : 0;
@@ -551,8 +549,6 @@ static void tegra_spi_dma_start(struct tegra_spi_channel *spi)
 	setbits32(&spi->regs->dma_ctl, SPI_DMA_CTL_DMA);
 	if (spi->dma_in)
 		dma_start(spi->dma_in);
-
-
 }
 
 static int tegra_spi_dma_finish(struct tegra_spi_channel *spi)
@@ -643,7 +639,7 @@ static int xfer_setup(struct tegra_spi_channel *spi, void *buf,
 	 * When we enable caching we'll need to clean/invalidate portions of
 	 * memory. So we need to be careful about memory alignment. Also, DMA
 	 * likes to operate on 4-bytes at a time on the AHB side. So for
-	 * example, if we only want to receive 1 byte, 4 bytes will be be
+	 * example, if we only want to receive 1 byte, 4 bytes will be
 	 * written in memory even if those extra 3 bytes are beyond the length
 	 * we want.
 	 *

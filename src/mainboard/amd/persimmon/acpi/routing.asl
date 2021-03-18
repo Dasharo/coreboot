@@ -1,14 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-/*
-#include <acpi/acpi.h>
-DefinitionBlock ("DSDT.AML", "DSDT", 0x01, OEM_ID, ACPI_TABLE_CREATOR, 0x00010001
-		)
-	{
-		#include "routing.asl"
-	}
-*/
-
 /* Routing is in System Bus scope */
 Scope(\_SB) {
 	Name(PR0, Package(){
@@ -49,7 +40,6 @@ Scope(\_SB) {
 		Package(){0x0007FFFF, 3, INTC, 0 },
 
 		/* Bus 0, Funct 8 - Southbridge port (normally hidden) */
-
 
 		/* SB devices */
 		/* Bus 0, Dev 17 - SATA controller */

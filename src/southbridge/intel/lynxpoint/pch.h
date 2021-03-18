@@ -34,10 +34,6 @@
  * Bus 0:Device 20:Function 0 xHCI Controller
 */
 
-/* PCH types */
-#define PCH_TYPE_LPT		0x8c
-#define PCH_TYPE_LPT_LP		0x9c
-
 /* PCH stepping values for LPC device */
 #define LPT_H_STEP_B0		0x02
 #define LPT_H_STEP_C0		0x03
@@ -51,11 +47,10 @@
  * It does not matter where we put the SMBus I/O base, as long as we
  * keep it consistent and don't interfere with other devices.  Stage2
  * will relocate this anyways.
- * Our solution is to have SMB initialization move the I/O to SMBUS_IO_BASE
+ * Our solution is to have SMB initialization move the I/O to CONFIG_FIXED_SMBUS_IO_BASE
  * again. But handling static BARs is a generic problem that should be
  * solved in the device allocator.
  */
-#define SMBUS_IO_BASE		0x0400
 #define SMBUS_SLAVE_ADDR	0x24
 
 #if CONFIG(INTEL_LYNXPOINT_LP)
@@ -74,55 +69,26 @@
 
 #ifndef __ACPI__
 
+static inline int pch_is_lp(void)
+{
+	return CONFIG(INTEL_LYNXPOINT_LP);
+}
+
+/* PCH platform types, safe for MRC consumption */
+enum pch_platform_type {
+	PCH_TYPE_MOBILE	 = 0,
+	PCH_TYPE_DESKTOP = 1, /* or server */
+	PCH_TYPE_ULT	 = 5,
+};
+
 void usb_ehci_sleep_prepare(pci_devfn_t dev, u8 slp_typ);
 void usb_ehci_disable(pci_devfn_t dev);
 void usb_xhci_sleep_prepare(pci_devfn_t dev, u8 slp_typ);
 void usb_xhci_route_all(void);
 
-/* State Machine configuration. */
-#define RCBA_REG_SIZE_MASK 0x8000
-#define   RCBA_REG_SIZE_16   0x8000
-#define   RCBA_REG_SIZE_32   0x0000
-#define RCBA_COMMAND_MASK  0x000f
-#define   RCBA_COMMAND_SET   0x0001
-#define   RCBA_COMMAND_READ  0x0002
-#define   RCBA_COMMAND_RMW   0x0003
-#define   RCBA_COMMAND_END   0x0007
-
-#define RCBA_ENCODE_COMMAND(command_, reg_, mask_, or_value_) \
-	{ .command = command_,   \
-	  .reg = reg_,           \
-	  .mask = mask_,         \
-	  .or_value = or_value_  \
-	}
-#define RCBA_SET_REG_32(reg_, value_) \
-	RCBA_ENCODE_COMMAND(RCBA_REG_SIZE_32|RCBA_COMMAND_SET, reg_, 0, value_)
-#define RCBA_READ_REG_32(reg_) \
-	RCBA_ENCODE_COMMAND(RCBA_REG_SIZE_32|RCBA_COMMAND_READ, reg_, 0, 0)
-#define RCBA_RMW_REG_32(reg_, mask_, or_) \
-	RCBA_ENCODE_COMMAND(RCBA_REG_SIZE_32|RCBA_COMMAND_RMW, reg_, mask_, or_)
-#define RCBA_SET_REG_16(reg_, value_) \
-	RCBA_ENCODE_COMMAND(RCBA_REG_SIZE_16|RCBA_COMMAND_SET, reg_, 0, value_)
-#define RCBA_READ_REG_16(reg_) \
-	RCBA_ENCODE_COMMAND(RCBA_REG_SIZE_16|RCBA_COMMAND_READ, reg_, 0, 0)
-#define RCBA_RMW_REG_16(reg_, mask_, or_) \
-	RCBA_ENCODE_COMMAND(RCBA_REG_SIZE_16|RCBA_COMMAND_RMW, reg_, mask_, or_)
-#define RCBA_END_CONFIG \
-	RCBA_ENCODE_COMMAND(RCBA_COMMAND_END, 0, 0, 0)
-
-struct rcba_config_instruction
-{
-	u16 command;
-	u16 reg;
-	u32 mask;
-	u32 or_value;
-};
-
-void pch_config_rcba(const struct rcba_config_instruction *rcba_config);
+enum pch_platform_type get_pch_platform_type(void);
 int pch_silicon_revision(void);
 int pch_silicon_id(void);
-int pch_silicon_type(void);
-int pch_is_lp(void);
 u16 get_pmbase(void);
 u16 get_gpiobase(void);
 
@@ -153,23 +119,14 @@ void disable_gpe(u32 mask);
 
 void pch_enable(struct device *dev);
 void pch_disable_devfn(struct device *dev);
-u32 pch_iobp_read(u32 address);
-void pch_iobp_write(u32 address, u32 data);
-void pch_iobp_update(u32 address, u32 andvalue, u32 orvalue);
 void pch_log_state(void);
-void acpi_create_intel_hpet(acpi_hpet_t * hpet);
 void acpi_create_serialio_ssdt(acpi_header_t *ssdt);
 
-
-#if ENV_ROMSTAGE
-int smbus_read_byte(unsigned int device, unsigned int address);
-#endif
-
 void enable_usb_bar(void);
-int early_pch_init(const void *gpio_map,
-                   const struct rcba_config_instruction *rcba_config);
+int early_pch_init(void);
 void pch_enable_lpc(void);
 void mainboard_config_superio(void);
+void mainboard_config_rcba(void);
 
 #define MAINBOARD_POWER_OFF	0
 #define MAINBOARD_POWER_ON	1
@@ -185,6 +142,17 @@ void mainboard_config_superio(void);
 #define PCH_PCS			0x84
 #define  PCH_PCS_PS_D3HOT	3
 
+/* SerialIO */
+#define PCH_DEVFN_SDMA		PCI_DEVFN(0x15, 0)
+#define PCH_DEVFN_I2C0		PCI_DEVFN(0x15, 1)
+#define PCH_DEVFN_I2C1		PCI_DEVFN(0x15, 2)
+#define PCH_DEVFN_SPI0		PCI_DEVFN(0x15, 3)
+#define PCH_DEVFN_SPI1		PCI_DEVFN(0x15, 4)
+#define PCH_DEVFN_UART0		PCI_DEVFN(0x15, 5)
+#define PCH_DEVFN_UART1		PCI_DEVFN(0x15, 6)
+
+#define PCH_DEVFN_SDIO		PCI_DEVFN(0x17, 0)
+
 #define PCH_EHCI1_DEV		PCI_DEV(0, 0x1d, 0)
 #define PCH_EHCI2_DEV		PCI_DEV(0, 0x1a, 0)
 #define PCH_XHCI_DEV		PCI_DEV(0, 0x14, 0)
@@ -199,7 +167,7 @@ void mainboard_config_superio(void);
 #define GEN_PMCON_2		0xa2
 #define GEN_PMCON_3		0xa4
 #define PMIR			0xac
-#define  PMIR_CF9LOCK		(1UL << 31)
+#define  PMIR_CF9LOCK		(1 << 31)
 #define  PMIR_CF9GR		(1 << 20)
 
 /* GEN_PMCON_3 bits */
@@ -237,61 +205,20 @@ void mainboard_config_superio(void);
 #define  COMB_LPC_EN		(1 << 1)  /* LPC_IO_DEC[6:4] */
 #define  COMA_LPC_EN		(1 << 0)  /* LPC_IO_DEC[2:0] */
 #define LPC_IBDF		0x6C /* I/O APIC bus/dev/fn */
-#define LPC_HnBDF(n)		(0x70 + n * 2) /* HPET n bus/dev/fn */
+#define LPC_HnBDF(n)		(0x70 + (n) * 2) /* HPET n bus/dev/fn */
 #define LPC_GEN1_DEC		0x84 /* LPC IF Generic Decode Range 1 */
 #define LPC_GEN2_DEC		0x88 /* LPC IF Generic Decode Range 2 */
 #define LPC_GEN3_DEC		0x8c /* LPC IF Generic Decode Range 3 */
 #define LPC_GEN4_DEC		0x90 /* LPC IF Generic Decode Range 4 */
 #define LGMR			0x98 /* LPC Generic Memory Range */
 
-/* PCI Configuration Space (D31:F1): IDE */
-#define PCH_IDE_DEV		PCI_DEV(0, 0x1f, 1)
+/* PCI Configuration Space (D31:F2): SATA */
 #define PCH_SATA_DEV		PCI_DEV(0, 0x1f, 2)
 #define PCH_SATA2_DEV		PCI_DEV(0, 0x1f, 5)
-#define INTR_LN			0x3c
+
 #define IDE_TIM_PRI		0x40	/* IDE timings, primary */
 #define   IDE_DECODE_ENABLE	(1 << 15)
-#define   IDE_SITRE		(1 << 14)
-#define   IDE_ISP_5_CLOCKS	(0 << 12)
-#define   IDE_ISP_4_CLOCKS	(1 << 12)
-#define   IDE_ISP_3_CLOCKS	(2 << 12)
-#define   IDE_RCT_4_CLOCKS	(0 <<  8)
-#define   IDE_RCT_3_CLOCKS	(1 <<  8)
-#define   IDE_RCT_2_CLOCKS	(2 <<  8)
-#define   IDE_RCT_1_CLOCKS	(3 <<  8)
-#define   IDE_DTE1		(1 <<  7)
-#define   IDE_PPE1		(1 <<  6)
-#define   IDE_IE1		(1 <<  5)
-#define   IDE_TIME1		(1 <<  4)
-#define   IDE_DTE0		(1 <<  3)
-#define   IDE_PPE0		(1 <<  2)
-#define   IDE_IE0		(1 <<  1)
-#define   IDE_TIME0		(1 <<  0)
 #define IDE_TIM_SEC		0x42	/* IDE timings, secondary */
-
-#define IDE_SDMA_CNT		0x48	/* Synchronous DMA control */
-#define   IDE_SSDE1		(1 <<  3)
-#define   IDE_SSDE0		(1 <<  2)
-#define   IDE_PSDE1		(1 <<  1)
-#define   IDE_PSDE0		(1 <<  0)
-
-#define IDE_SDMA_TIM		0x4a
-
-#define IDE_CONFIG		0x54	/* IDE I/O Configuration Register */
-#define   SIG_MODE_SEC_NORMAL	(0 << 18)
-#define   SIG_MODE_SEC_TRISTATE	(1 << 18)
-#define   SIG_MODE_SEC_DRIVELOW	(2 << 18)
-#define   SIG_MODE_PRI_NORMAL	(0 << 16)
-#define   SIG_MODE_PRI_TRISTATE	(1 << 16)
-#define   SIG_MODE_PRI_DRIVELOW	(2 << 16)
-#define   FAST_SCB1		(1 << 15)
-#define   FAST_SCB0		(1 << 14)
-#define   FAST_PCB1		(1 << 13)
-#define   FAST_PCB0		(1 << 12)
-#define   SCB1			(1 <<  3)
-#define   SCB0			(1 <<  2)
-#define   PCB1			(1 <<  1)
-#define   PCB0			(1 <<  0)
 
 #define SATA_SIRI		0xa0 /* SATA Indexed Register Index */
 #define SATA_SIRD		0xa4 /* SATA Indexed Register Data */
@@ -300,10 +227,10 @@ void mainboard_config_superio(void);
 /* SATA IOBP Registers */
 #define SATA_IOBP_SP0G3IR	0xea000151
 #define SATA_IOBP_SP1G3IR	0xea000051
-#define SATA_IOBP_SP0DTLE_DATA	0xea002550
-#define SATA_IOBP_SP0DTLE_EDGE	0xea002554
-#define SATA_IOBP_SP1DTLE_DATA	0xea002750
-#define SATA_IOBP_SP1DTLE_EDGE	0xea002754
+#define SATA_IOBP_SP0DTLE_DATA	0xea002750
+#define SATA_IOBP_SP0DTLE_EDGE	0xea002754
+#define SATA_IOBP_SP1DTLE_DATA	0xea002550
+#define SATA_IOBP_SP1DTLE_EDGE	0xea002554
 
 #define SATA_DTLE_MASK		0xF
 #define SATA_DTLE_DATA_SHIFT	24
@@ -322,7 +249,7 @@ void mainboard_config_superio(void);
 #define  EHCI_USB_CMD_RUN	(1 << 0)
 #define  EHCI_USB_CMD_PSE	(1 << 4)
 #define  EHCI_USB_CMD_ASE	(1 << 5)
-#define EHCI_PORTSC(port)	(0x64 + (port * 4))
+#define EHCI_PORTSC(port)	(0x64 + (port) * 4)
 #define  EHCI_PORTSC_ENABLED	(1 << 2)
 #define  EHCI_PORTSC_SUSPEND	(1 << 7)
 
@@ -340,7 +267,7 @@ void mainboard_config_superio(void);
 #define XHCI_USB3PDO		0xe8
 
 /* XHCI Memory Registers */
-#define XHCI_USB3_PORTSC(port)	((pch_is_lp() ? 0x510 : 0x570) + (port * 0x10))
+#define XHCI_USB3_PORTSC(port)	((pch_is_lp() ? 0x510 : 0x570) + ((port) * 0x10))
 #define  XHCI_USB3_PORTSC_CHST	(0x7f << 17)
 #define  XHCI_USB3_PORTSC_WCE	(1 << 25)	/* Wake on Connect */
 #define  XHCI_USB3_PORTSC_WDE	(1 << 26)	/* Wake on Disconnect */
@@ -348,7 +275,7 @@ void mainboard_config_superio(void);
 #define  XHCI_USB3_PORTSC_WRC	(1 << 19)	/* Warm Reset Complete */
 #define  XHCI_USB3_PORTSC_LWS	(1 << 16)	/* Link Write Strobe */
 #define  XHCI_USB3_PORTSC_PED	(1 << 1)	/* Port Enabled/Disabled */
-#define  XHCI_USB3_PORTSC_WPR	(1UL << 31)	/* Warm Port Reset */
+#define  XHCI_USB3_PORTSC_WPR	(1 << 31)	/* Warm Port Reset */
 #define  XHCI_USB3_PORTSC_PLS	(0xf << 5)	/* Port Link State */
 #define   XHCI_PLSR_DISABLED	(4 << 5)	/* Port is disabled */
 #define   XHCI_PLSR_RXDETECT	(5 << 5)	/* Port is disconnected */
@@ -408,7 +335,7 @@ void mainboard_config_superio(void);
 #define SIO_REG_PPR_GEN			0x808
 #define  SIO_REG_PPR_GEN_LTR_MODE_MASK	 (1 << 2)
 #define  SIO_REG_PPR_GEN_VOLTAGE_MASK	 (1 << 3)
-#define  SIO_REG_PPR_GEN_VOLTAGE(x)	 ((x & 1) << 3)
+#define  SIO_REG_PPR_GEN_VOLTAGE(x)	 (((x) & 1) << 3)
 #define SIO_REG_AUTO_LTR		0x814
 
 #define SIO_REG_SDIO_PPR_GEN		0x1008
@@ -437,45 +364,11 @@ void mainboard_config_superio(void);
 
 #define PMBASE		0x40
 
-#define VCH		0x0000	/* 32bit */
-#define VCAP1		0x0004	/* 32bit */
-#define VCAP2		0x0008	/* 32bit */
-#define PVC		0x000c	/* 16bit */
-#define PVS		0x000e	/* 16bit */
-
-#define V0CAP		0x0010	/* 32bit */
-#define V0CTL		0x0014	/* 32bit */
-#define V0STS		0x001a	/* 16bit */
-
-#define V1CAP		0x001c	/* 32bit */
-#define V1CTL		0x0020	/* 32bit */
-#define V1STS		0x0026	/* 16bit */
-
-#define RCTCL		0x0100	/* 32bit */
-#define ESD		0x0104	/* 32bit */
-#define ULD		0x0110	/* 32bit */
-#define ULBA		0x0118	/* 64bit */
-
-#define RP1D		0x0120	/* 32bit */
-#define RP1BA		0x0128	/* 64bit */
-#define RP2D		0x0130	/* 32bit */
-#define RP2BA		0x0138	/* 64bit */
-#define RP3D		0x0140	/* 32bit */
-#define RP3BA		0x0148	/* 64bit */
-#define RP4D		0x0150	/* 32bit */
-#define RP4BA		0x0158	/* 64bit */
-#define HDD		0x0160	/* 32bit */
-#define HDBA		0x0168	/* 64bit */
-#define RP5D		0x0170	/* 32bit */
-#define RP5BA		0x0178	/* 64bit */
-#define RP6D		0x0180	/* 32bit */
-#define RP6BA		0x0188	/* 64bit */
-
 #define RPC		0x0400	/* 32bit */
 #define RPFN		0x0404	/* 32bit */
 
 /* Root Port configuratinon space hide */
-#define RPFN_HIDE(port)         (1UL << (((port) * 4) + 3))
+#define RPFN_HIDE(port)         (1 << (((port) * 4) + 3))
 /* Get the function number assigned to a Root Port */
 #define RPFN_FNGET(reg,port)    (((reg) >> ((port) * 4)) & 7)
 /* Set the function number for a Root Port */
@@ -599,7 +492,7 @@ void mainboard_config_superio(void);
 #define PCH_DISABLE_EHCI2	(1 << 13)
 #define PCH_DISABLE_LPC		(1 << 14)
 #define PCH_DISABLE_EHCI1	(1 << 15)
-#define PCH_DISABLE_PCIE(x)	(1 << (16 + x))
+#define PCH_DISABLE_PCIE(x)	(1 << (16 + (x)))
 #define PCH_DISABLE_THERMAL	(1 << 24)
 #define PCH_DISABLE_SATA2	(1 << 25)
 #define PCH_DISABLE_XHCI	(1 << 27)
@@ -701,9 +594,9 @@ void mainboard_config_superio(void);
  */
 
 #define SPIBAR_OFFSET 0x3800
-#define SPIBAR8(x) RCBA8(x + SPIBAR_OFFSET)
-#define SPIBAR16(x) RCBA16(x + SPIBAR_OFFSET)
-#define SPIBAR32(x) RCBA32(x + SPIBAR_OFFSET)
+#define SPIBAR8(x) RCBA8((x) + SPIBAR_OFFSET)
+#define SPIBAR16(x) RCBA16((x) + SPIBAR_OFFSET)
+#define SPIBAR32(x) RCBA32((x) + SPIBAR_OFFSET)
 
 /* Reigsters within the SPIBAR */
 #define SSFC 0x91
@@ -716,13 +609,13 @@ void mainboard_config_superio(void);
 #define  SPIBAR_HSFS_FCERR          (1 << 1) /* SPI Flash Cycle Error */
 #define  SPIBAR_HSFS_FDONE          (1 << 0) /* SPI Flash Cycle Done */
 #define SPIBAR_HSFC                 0x3806   /* SPI hardware sequence control */
-#define  SPIBAR_HSFC_BYTE_COUNT(c)  (((c - 1) & 0x3f) << 8)
+#define  SPIBAR_HSFC_BYTE_COUNT(c)  ((((c) - 1) & 0x3f) << 8)
 #define  SPIBAR_HSFC_CYCLE_READ     (0 << 1) /* Read cycle */
 #define  SPIBAR_HSFC_CYCLE_WRITE    (2 << 1) /* Write cycle */
 #define  SPIBAR_HSFC_CYCLE_ERASE    (3 << 1) /* Erase cycle */
 #define  SPIBAR_HSFC_GO             (1 << 0) /* GO: start SPI transaction */
 #define SPIBAR_FADDR                0x3808   /* SPI flash address */
-#define SPIBAR_FDATA(n)             (0x3810 + (4 * n)) /* SPI flash data */
+#define SPIBAR_FDATA(n)             (0x3810 + (4 * (n))) /* SPI flash data */
 
 #endif /* __ACPI__ */
 #endif /* SOUTHBRIDGE_INTEL_LYNXPOINT_PCH_H */

@@ -3,7 +3,7 @@
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
 
-void do_lapic_init(void)
+void lapic_virtual_wire_mode_init(void)
 {
 	/* this is so interrupts work. This is very limited scope --
 	 * linux will do better later, we hope ...
@@ -47,6 +47,6 @@ void do_lapic_init(void)
 			LAPIC_DELIVERY_MODE_NMI)
 		);
 
-	printk(BIOS_DEBUG, " apic_id: 0x%02lx ", lapicid());
+	printk(BIOS_DEBUG, " apic_id: 0x%02x ", lapicid());
 	printk(BIOS_INFO, "done.\n");
 }

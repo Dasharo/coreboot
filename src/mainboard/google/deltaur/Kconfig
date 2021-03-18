@@ -22,12 +22,10 @@ config BOARD_GOOGLE_BASEBOARD_DELTAUR
 if BOARD_GOOGLE_BASEBOARD_DELTAUR
 
 config CHROMEOS
-	bool
-	default y
 	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
 	select GBB_FLAG_FORCE_DEV_SWITCH_ON
 	select GBB_FLAG_FORCE_DEV_BOOT_USB
-	select GBB_FLAG_FORCE_DEV_BOOT_LEGACY
+	select GBB_FLAG_FORCE_DEV_BOOT_ALTFW
 
 config DIMM_SPD_SIZE
 	int
@@ -47,12 +45,12 @@ config DRIVER_TPM_I2C_ADDR
 
 config FMDFILE
 	string
-	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/chromeos-gbe.fmd" if BOARD_GOOGLE_DELTAN
-	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/chromeos.fmd" if BOARD_GOOGLE_DELTAUR
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos-gbe.fmd" if BOARD_GOOGLE_DELTAN
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos.fmd" if BOARD_GOOGLE_DELTAUR
 
 config OVERRIDE_DEVICETREE
 	string
-	default "variants/$(CONFIG_VARIANT_DIR)/overridetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config POWER_OFF_ON_CR50_UPDATE
 	bool
@@ -90,7 +88,6 @@ config VARIANT_DIR
 
 config VBOOT
 	select HAS_RECOVERY_MRC_CACHE
-	select MRC_CLEAR_NORMAL_CACHE_ON_RECOVERY_RETRAIN
 	select VBOOT_LID_SWITCH
 
 endif # BOARD_GOOGLE_BASEBOARD_DELTAUR

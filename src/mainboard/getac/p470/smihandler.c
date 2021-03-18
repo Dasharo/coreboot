@@ -4,17 +4,12 @@
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <southbridge/intel/i82801gx/i82801gx.h>
-#include <southbridge/intel/i82801gx/nvs.h>
+#include <soc/nvs.h>
 #include <southbridge/intel/common/gpio.h>
 #include <ec/acpi/ec.h>
 #include "ec_oem.c"
 
 #define MAX_LCD_BRIGHTNESS 0xd8
-
-/* The southbridge SMI handler checks whether gnvs has a
- * valid pointer before calling the trap handler
- */
-extern global_nvs_t *gnvs;
 
 int mainboard_io_trap_handler(int smif)
 {

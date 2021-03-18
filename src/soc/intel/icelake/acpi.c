@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
 #include <device/mmio.h>
 #include <arch/smp/mpspec.h>
-#include <cbmem.h>
-#include <ec/google/chromeec/ec.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/acpi.h>
@@ -17,8 +16,6 @@
 #include <soc/soc_chip.h>
 #include <soc/systemagent.h>
 #include <string.h>
-#include <vendorcode/google/chromeos/gnvs.h>
-#include <wrdd.h>
 
 /*
  * List of supported C-states in this processor.
@@ -38,15 +35,6 @@ enum {
 	C_STATE_C10,		/* 11 */
 	NUM_C_STATES
 };
-
-#define MWAIT_RES(state, sub_state)				\
-	{							\
-		.addrl = (((state) << 4) | (sub_state)),	\
-		.space_id = ACPI_ADDRESS_SPACE_FIXED,		\
-		.bit_width = ACPI_FFIXEDHW_VENDOR_INTEL,	\
-		.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,	\
-		.access_size = ACPI_FFIXEDHW_FLAG_HW_COORD,	\
-	}
 
 static const acpi_cstate_t cstate_map[NUM_C_STATES] = {
 	[C_STATE_C0] = {},
@@ -162,7 +150,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 
 	fadt->pm_tmr_blk = pmbase + PM1_TMR;
 	fadt->pm_tmr_len = 4;
-	fadt->x_pm_tmr_blk.space_id = 1;
+	fadt->x_pm_tmr_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm_tmr_blk.bit_width = fadt->pm_tmr_len * 8;
 	fadt->x_pm_tmr_blk.bit_offset = 0;
 	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
@@ -178,35 +166,12 @@ uint32_t soc_read_sci_irq_select(void)
 	return read32((void *)pmc_bar + IRQ_REG);
 }
 
-void acpi_create_gnvs(struct global_nvs_t *gnvs)
+void soc_fill_gnvs(struct global_nvs *gnvs)
 {
 	config_t *config = config_of_soc();
 
-	/* Set unknown wake source */
-	gnvs->pm1i = -1;
-
-	/* CPU core count */
-	gnvs->pcnt = dev_count_cpu();
-
-	if (CONFIG(CONSOLE_CBMEM))
-		/* Update the mem console pointer. */
-		gnvs->cbmc = (uintptr_t)cbmem_find(CBMEM_ID_CONSOLE);
-
-	if (CONFIG(CHROMEOS)) {
-		/* Initialize Verified Boot data */
-		chromeos_init_chromeos_acpi(&(gnvs->chromeos));
-		if (CONFIG(EC_GOOGLE_CHROMEEC)) {
-			gnvs->chromeos.vbt2 = google_ec_running_ro() ?
-				ACTIVE_ECFW_RO : ACTIVE_ECFW_RW;
-		} else
-			gnvs->chromeos.vbt2 = ACTIVE_ECFW_RO;
-	}
-
 	/* Enable DPTF based on mainboard configuration */
 	gnvs->dpte = config->dptf_enable;
-
-	/* Fill in the Wifi Region id */
-	gnvs->cid1 = wifi_regulatory_domain();
 
 	/* Set USB2/USB3 wake enable bitmaps. */
 	gnvs->u2we = config->usb2_wake_enable_bitmap;

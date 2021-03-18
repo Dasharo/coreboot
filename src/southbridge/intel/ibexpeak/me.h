@@ -198,7 +198,6 @@ struct me_fw_version {
 	u16 recovery_hot_fix;
 } __packed;
 
-
 #define HECI_EOP_STATUS_SUCCESS       0x0
 #define HECI_EOP_PERFORM_GLOBAL_RESET 0x1
 
@@ -229,9 +228,6 @@ void intel_early_me_status(void);
 int intel_early_me_init(void);
 int intel_early_me_uma_size(void);
 int intel_early_me_init_done(u8 status);
-
-void intel_me_finalize_smm(void);
-void intel_me8_finalize_smm(void);
 
 typedef struct {
 	u32       major_version  : 16;

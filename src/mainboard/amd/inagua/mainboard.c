@@ -31,14 +31,11 @@ static void init_gpios(void)
 	gpio_100_write8(0x32, 0x48);
 }
 
-
 /**********************************************
  * Enable the dedicated functions of the board.
  **********************************************/
 static void mainboard_enable(struct device *dev)
 {
-	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
-
 	/* Inagua mainboard specific setting */
 	init_gpios();
 

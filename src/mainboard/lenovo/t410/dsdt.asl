@@ -9,18 +9,16 @@
 DefinitionBlock(
 	"dsdt.aml",
 	"DSDT",
-	0x02,		/* DSDT revision: ACPI v2.0 and up */
+	ACPI_DSDT_REV_2,
 	OEM_ID,
 	ACPI_TABLE_CREATOR,
 	0x20130325	/* OEM revision */
 )
 {
+	#include <acpi/dsdt_top.asl>
 	#include <southbridge/intel/common/acpi/platform.asl>
 
 	#include "acpi/platform.asl"
-
-	/* global NVS and variables */
-	#include <southbridge/intel/bd82x6x/acpi/globalnvs.asl>
 
 	/* General Purpose Events */
 	#include "acpi/gpe.asl"
@@ -31,6 +29,9 @@ DefinitionBlock(
 		Device (PCI0)
 		{
 			#include <northbridge/intel/ironlake/acpi/ironlake.asl>
+
+			/* TBD: Remove. */
+			Name(\XHCI, 0)
 			#include <southbridge/intel/bd82x6x/acpi/pch.asl>
 
 			#include <drivers/intel/gma/acpi/default_brightness_levels.asl>

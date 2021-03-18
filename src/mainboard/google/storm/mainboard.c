@@ -76,10 +76,9 @@ static void mainboard_init(struct device *dev)
 	 /* Functionally a 0-cost no-op if NAND is not present */
 	 board_nand_init();
 
-#if CONFIG(CHROMEOS)
 	/* Copy WIFI calibration data into CBMEM. */
-	cbmem_add_vpd_calibration_data();
-#endif
+	if (CONFIG(CHROMEOS))
+		cbmem_add_vpd_calibration_data();
 
 	/*
 	 * Make sure bootloader can issue sounds The frequency is calculated
@@ -96,7 +95,6 @@ static void mainboard_enable(struct device *dev)
 }
 
 struct chip_operations mainboard_ops = {
-	.name	= "storm",
 	.enable_dev = mainboard_enable,
 };
 
@@ -110,8 +108,7 @@ void lb_board(struct lb_header *header)
 	dma->range_start = (uintptr_t)_dma_coherent;
 	dma->range_size = REGION_SIZE(dma_coherent);
 
-#if CONFIG(CHROMEOS)
 	/* Retrieve the switch interface MAC addresses. */
-	lb_table_add_macs_from_vpd(header);
-#endif
+	if (CONFIG(CHROMEOS))
+		lb_table_add_macs_from_vpd(header);
 }

@@ -21,13 +21,8 @@
 #include "tss_internal.h"
 #include "tss_commands.h"
 
-#ifdef FOR_TEST
-#include <stdio.h>
-#define VBDEBUG(format, args...) printf(format, ## args)
-#else
 #include <console/console.h>
 #define VBDEBUG(format, args...) printk(BIOS_DEBUG, format, ## args)
-#endif
 
 static int tpm_send_receive(const uint8_t *request,
 				uint32_t request_length,
@@ -103,7 +98,6 @@ static uint32_t tlcl_send_receive_no_retry(const uint8_t *request,
 
 return result;
 }
-
 
 /* Sends a TPM command and gets a response.  Returns 0 if success or the TPM
  * error code if error. Waits for the self test to complete if needed. */
@@ -214,7 +208,7 @@ uint32_t tlcl_write(uint32_t index, const void *data, uint32_t length)
 	const int total_length =
 			kTpmRequestHeaderLength + kWriteInfoLength + length;
 
-	VBDEBUG("TPM: tlcl_write(0x%x, %d)\n", index, length);
+	VBDEBUG("TPM: %s(0x%x, %d)\n", __func__, index, length);
 	memcpy(&cmd, &tpm_nv_write_cmd, sizeof(cmd));
 	assert(total_length <= TPM_LARGE_ENOUGH_COMMAND_SIZE);
 	set_tpm_command_size(cmd.buffer, total_length);
@@ -233,7 +227,7 @@ uint32_t tlcl_read(uint32_t index, void *data, uint32_t length)
 	uint32_t result_length;
 	uint32_t result;
 
-	VBDEBUG("TPM: tlcl_read(0x%x, %d)\n", index, length);
+	VBDEBUG("TPM: %s(0x%x, %d)\n", __func__, index, length);
 	memcpy(&cmd, &tpm_nv_read_cmd, sizeof(cmd));
 	to_tpm_uint32(cmd.buffer + tpm_nv_read_cmd.index, index);
 	to_tpm_uint32(cmd.buffer + tpm_nv_read_cmd.length, length);
@@ -250,7 +244,6 @@ uint32_t tlcl_read(uint32_t index, void *data, uint32_t length)
 
 	return result;
 }
-
 
 uint32_t tlcl_assert_physical_presence(void)
 {

@@ -8,7 +8,6 @@
 #include <amdblocks/acpimmio.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
-#include <console/console.h>
 
 #include "hudson.h"
 #include "pci_devs.h"
@@ -16,7 +15,6 @@
 
 #if CONFIG(HUDSON_UART)
 
-#include <cpu/x86/msr.h>
 #include <delay.h>
 
 void configure_hudson_uart(void)
@@ -188,7 +186,7 @@ static void lpc_wideio_window(uint16_t base, uint16_t size)
 			pci_write_config32(dev, LPC_WIDEIO2_GENERIC_PORT, tmp);
 			enable_wideio(2, size);
 		} else {	/* All WIDEIO locations used*/
-			assert(0);
+			BUG();
 		}
 	}
 }

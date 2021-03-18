@@ -5,9 +5,6 @@
 
 #include <device/device.h>
 
-/* CPU types */
-#define SKYLAKE_FAMILY_ULT	0x406e0
-
 /* Latency times in units of 1024ns. */
 #define C_STATE_LATENCY_CONTROL_0_LIMIT	0x4e
 #define C_STATE_LATENCY_CONTROL_1_LIMIT	0x76
@@ -24,9 +21,6 @@
 #define C8_POWER	0xc8
 #define C9_POWER	0xc8
 #define C10_POWER	0xc8
-
-/* Common Timer Copy (CTC) frequency - 24MHz. */
-#define CTC_FREQ		24000000
 
 #define C_STATE_LATENCY_MICRO_SECONDS(limit, base) \
 	(((1 << ((base)*5)) * (limit)) / 1000)

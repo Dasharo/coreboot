@@ -12,7 +12,6 @@ Device (EC0)
 	OperationRegion (ERAM, SystemMemory, (CONFIG_EC_BASE_ADDRESS + 0x100), 0x100)
 	Field (ERAM, ByteAcc, Lock, Preserve)
 	{
-		Offset(0x00),
 		    ,   1,
 		    ,   1,
 		HKFA,   1,  // FN lock (Hotkey / FN row toggle)
@@ -128,7 +127,7 @@ Device (EC0)
 	/* Switched to AC power */
 	Method (_Q26, 0, NotSerialized)
 	{
-		Store (One, PWRS)
+		PWRS = 1
 		Notify (^AC, 0x80)
 		Notify (^BAT0, 0x80)
 		\PNOT ()
@@ -138,7 +137,7 @@ Device (EC0)
 	/* Switched to battery power */
 	Method (_Q27, 0, NotSerialized)
 	{
-		Store (Zero, PWRS)
+		PWRS = 0
 		Notify (^AC, 0x80)
 		Notify (^BAT0, 0x80)
 		\PNOT ()
@@ -148,7 +147,7 @@ Device (EC0)
 	/* Lid openend */
 	Method (_Q2A, 0, NotSerialized)
 	{
-		Store (One, LIDS)
+		LIDS = 1
 		Notify(^LID, 0x80)
 		^HKEY.MHKQ (0x5002)
 	}
@@ -156,7 +155,7 @@ Device (EC0)
 	/* Lid closed */
 	Method (_Q2B, 0, NotSerialized)
 	{
-		Store (Zero, LIDS)
+		LIDS = 0
 		Notify(^LID, 0x80)
 		^HKEY.MHKQ (0x5001)
 	}
@@ -237,7 +236,7 @@ Device (EC0)
 
 	/* FN+Esc pressed / FN row mode switch */
 	Method (_Q74, 0, NotSerialized) {
-		XOr(One, HKFA, HKFA)
+		HKFA = 1 ^ HKFA
 		^HKEY.MHKQ (0x6060)
 	}
 
@@ -271,11 +270,11 @@ Device (EC0)
 		{
 			Acquire (XDHK, 0xFFFF)
 
-			ShiftLeft (One, Decrement (Arg0), Local0)
+			Local0 = 1 << Arg0--
 			If (Arg1) {
-				Or (Local0, DHKN, DHKN)
+				DHKN |= Local0
 			} Else {
-				And (Not(Local0), DHKN, DHKN)
+				DHKN &= ~Local0
 			}
 
 			Release (XDHK)
@@ -285,7 +284,7 @@ Device (EC0)
 		{
 			Acquire (XDHK, 0xFFFF)
 
-			Store (Arg0, DHKC)
+			DHKC = Arg0
 
 			Release (XDHK)
 		}
@@ -294,11 +293,11 @@ Device (EC0)
 		{
 			Acquire (XDHK, 0xFFFF)
 
-			Store (Zero, Local0)
+			Local0 = 0
 
 			if (DHKV) {
-				Store (DHKV, Local0)
-				Store (Zero, DHKV)
+				Local0 = DHKV
+				DHKV = 0
 			}
 
 			Release (XDHK)
@@ -310,7 +309,7 @@ Device (EC0)
 		{
 			Acquire (XDHK, 0xFFFF)
 
-			Store (Arg0, DHKV)
+			DHKV = Arg0
 
 			Release (XDHK)
 
@@ -321,7 +320,7 @@ Device (EC0)
 	/* LED support for thinkpad-acpi */
 	Method (LED, 2, NotSerialized)
 	{
-		Or (Arg0, Arg1, HLCL)
+		HLCL = Arg0 | Arg1
 	}
 
 	Device (AC)

@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <acpi/acpi.h>
+#include <bootsplash.h>
 #include <bootstate.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/x86/mp.h>
-#include <cpu/x86/msr.h>
 #include <device/mmio.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -20,15 +20,14 @@
 #include <fsp/api.h>
 #include <fsp/util.h>
 #include <intelblocks/cpulib.h>
+#include <intelblocks/gpio.h>
 #include <intelblocks/itss.h>
 #include <intelblocks/pmclib.h>
-#include <romstage_handoff.h>
 #include <soc/cpu.h>
 #include <soc/heci.h>
 #include <soc/intel/common/vbt.h>
 #include <soc/iomap.h>
 #include <soc/itss.h>
-#include <soc/nvs.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/systemagent.h>
@@ -114,7 +113,7 @@ const char *soc_acpi_name(const struct device *dev)
 			case 6: return "HS07";
 			case 7: return "HS08";
 			case 8:
-				if (CONFIG(SOC_INTEL_GLK))
+				if (CONFIG(SOC_INTEL_GEMINILAKE))
 					return "HS09";
 			}
 			break;
@@ -140,9 +139,6 @@ const char *soc_acpi_name(const struct device *dev)
 	/* DSDT: acpi/northbridge.asl */
 	case SA_DEVFN_ROOT:
 		return "MCHC";
-	/* DSDT: acpi/lpc.asl */
-	case PCH_DEVFN_LPC:
-		return "LPCB";
 	/* DSDT: acpi/xhci.asl */
 	case PCH_DEVFN_XHCI:
 		return "XHCI";
@@ -220,6 +216,8 @@ static void enable_dev(struct device *dev)
 		dev->ops = &pci_domain_ops;
 	else if (dev->path.type == DEVICE_PATH_CPU_CLUSTER)
 		dev->ops = &cpu_bus_ops;
+	else if (dev->path.type == DEVICE_PATH_GPIO)
+		block_gpio_enable(dev);
 }
 
 /*
@@ -303,7 +301,7 @@ static void soc_init(void *data)
 	 */
 	gpi_clear_int_cfg();
 
-	fsp_silicon_init(romstage_handoff_is_resume());
+	fsp_silicon_init();
 
 	/* Restore GPIO IRQ polarities back to previous settings. */
 	itss_restore_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
@@ -318,9 +316,6 @@ static void soc_init(void *data)
 	 * hide and unhide symmetrically.
 	 */
 	p2sb_unhide();
-
-	/* Allocate ACPI NVS in CBMEM */
-	cbmem_add(CBMEM_ID_ACPI_GNVS, sizeof(struct global_nvs_t));
 
 	if (CONFIG(APL_SKIP_SET_POWER_LIMITS)) {
 		printk(BIOS_INFO, "Skip setting RAPL per configuration\n");
@@ -446,7 +441,7 @@ static void disable_dev(struct device *dev, FSP_S_CONFIG *silconfig)
 	case PCH_DEVFN_SMBUS:
 		silconfig->SmbusEnable = 0;
 		break;
-#if !CONFIG(SOC_INTEL_GLK)
+#if !CONFIG(SOC_INTEL_GEMINILAKE)
 	case SA_DEVFN_IPU:
 		silconfig->IpuEn = 0;
 		break;
@@ -480,7 +475,7 @@ static void parse_devicetree(FSP_S_CONFIG *silconfig)
 static void apl_fsp_silicon_init_params_cb(struct soc_intel_apollolake_config
 	*cfg, FSP_S_CONFIG *silconfig)
 {
-#if !CONFIG(SOC_INTEL_GLK) /* GLK FSP does not have these fields in FspsUpd.h yet */
+#if !CONFIG(SOC_INTEL_GEMINILAKE) /* GLK FSP does not have these fields in FspsUpd.h yet */
 	uint8_t port;
 
 	for (port = 0; port < APOLLOLAKE_USB2_PORT_MAX; port++) {
@@ -536,7 +531,7 @@ static void apl_fsp_silicon_init_params_cb(struct soc_intel_apollolake_config
 static void glk_fsp_silicon_init_params_cb(
 	struct soc_intel_apollolake_config *cfg, FSP_S_CONFIG *silconfig)
 {
-#if CONFIG(SOC_INTEL_GLK)
+#if CONFIG(SOC_INTEL_GEMINILAKE)
 	uint8_t port;
 	struct device *dev;
 
@@ -555,7 +550,7 @@ static void glk_fsp_silicon_init_params_cb(
 	}
 
 	dev = pcidev_path_on_root(SA_GLK_DEVFN_GMM);
-	silconfig->Gmm = dev ? dev->enabled : 0;
+	silconfig->Gmm = is_dev_enabled(dev);
 
 	/* On Geminilake, we need to override the default FSP PCIe de-emphasis
 	 * settings using the device tree settings. This is because PCIe
@@ -666,10 +661,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	/* Disable monitor mwait since it is broken due to a hardware bug
 	 * without a fix. Specific to Apollolake.
 	 */
-	if (!CONFIG(SOC_INTEL_GLK))
+	if (!CONFIG(SOC_INTEL_GEMINILAKE))
 		silconfig->MonitorMwaitEnable = 0;
 
-	silconfig->SkipMpInit = !CONFIG_USE_INTEL_FSP_MP_INIT;
+	silconfig->SkipMpInit = !CONFIG(USE_INTEL_FSP_MP_INIT);
 
 	/* Disable setting of EISS bit in FSP. */
 	silconfig->SpiEiss = 0;
@@ -682,7 +677,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	silconfig->HDAudioPwrGate = cfg->hdaudio_pwr_gate_enable;
 	/* BIOS config lockdown Audio clk and power gate */
 	silconfig->BiosCfgLockDown = cfg->hdaudio_bios_config_lockdown;
-	if (CONFIG(SOC_INTEL_GLK))
+	if (CONFIG(SOC_INTEL_GEMINILAKE))
 		glk_fsp_silicon_init_params_cb(cfg, silconfig);
 	else
 		apl_fsp_silicon_init_params_cb(cfg, silconfig);
@@ -693,14 +688,15 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 		dev->enabled = 0;
 	silconfig->UsbOtg = dev->enabled;
 
+	silconfig->VmxEnable = CONFIG(ENABLE_VMX);
+
 	/* Set VTD feature according to devicetree */
 	silconfig->VtdEnable = cfg->enable_vtd;
 
 	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	if (CONFIG(RUN_FSP_GOP) && dev && dev->enabled)
-		silconfig->PeiGraphicsPeimInit = 1;
-	else
-		silconfig->PeiGraphicsPeimInit = 0;
+	silconfig->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_dev_enabled(dev);
+
+	silconfig->PavpEnable = CONFIG(PAVP);
 
 	mainboard_silicon_init_params(silconfig);
 }
@@ -815,7 +811,7 @@ void platform_fsp_notify_status(enum fsp_notify_phase phase)
 		 * Override GLK xhci clock gating register(XHCLKGTEN) to
 		 * mitigate USB device suspend and resume failure.
 		 */
-		if (CONFIG(SOC_INTEL_GLK)) {
+		if (CONFIG(SOC_INTEL_GEMINILAKE)) {
 			uint32_t *cfg;
 			const struct resource *res;
 			uint32_t reg;
@@ -854,9 +850,9 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *silconfig)
 }
 
 /* Handle FSP logo params */
-const struct cbmem_entry *soc_load_logo(FSPS_UPD *supd)
+void soc_load_logo(FSPS_UPD *supd)
 {
-	return fsp_load_logo(&supd->FspsConfig.LogoPtr, &supd->FspsConfig.LogoSize);
+	bmp_load_logo(&supd->FspsConfig.LogoPtr, &supd->FspsConfig.LogoSize);
 }
 
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, spi_flash_init_cb, NULL);

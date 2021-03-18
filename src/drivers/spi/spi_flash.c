@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <assert.h>
-#include <boot_device.h>
 #include <boot/coreboot_tables.h>
+#include <commonlib/region.h>
 #include <console/console.h>
 #include <string.h>
 #include <spi-generic.h>
@@ -88,17 +88,15 @@ int spi_flash_cmd(const struct spi_slave *spi, u8 cmd, void *response, size_t le
 	return ret;
 }
 
-/* TODO: This code is quite possibly broken and overflowing stacks. Fix ASAP! */
-#pragma GCC diagnostic push
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic ignored "-Wstack-usage="
-#endif
-#pragma GCC diagnostic ignored "-Wvla"
 int spi_flash_cmd_write(const struct spi_slave *spi, const u8 *cmd,
 			size_t cmd_len, const void *data, size_t data_len)
 {
 	int ret;
-	u8 buff[cmd_len + data_len];
+	u8 buff[4 + MAX_FLASH_CMD_DATA_SIZE];
+
+	if (ARRAY_SIZE(buff) < cmd_len + data_len)
+		return -1;
+
 	memcpy(buff, cmd, cmd_len);
 	memcpy(buff + cmd_len, data, data_len);
 
@@ -110,7 +108,6 @@ int spi_flash_cmd_write(const struct spi_slave *spi, const u8 *cmd,
 
 	return ret;
 }
-#pragma GCC diagnostic pop
 
 /* Perform the read operation honoring spi controller fifo size, reissuing
  * the read command until the full request completed. */
@@ -259,6 +256,7 @@ int spi_flash_cmd_write_page_program(const struct spi_flash *flash, u32 offset,
 		byte_addr = offset % page_size;
 		chunk_len = MIN(len - actual, page_size - byte_addr);
 		chunk_len = spi_crop_chunk(&flash->spi, sizeof(cmd), chunk_len);
+		chunk_len = MIN(MAX_FLASH_CMD_DATA_SIZE, chunk_len);
 
 		spi_flash_addr(offset, cmd);
 		if (CONFIG(DEBUG_SPI_FLASH)) {
@@ -372,7 +370,6 @@ static const struct spi_flash_part_id *find_part(const struct spi_flash_vendor_i
 		[0] = id[0] & vi->match_id_mask[0],
 		[1] = id[1] & vi->match_id_mask[1],
 	};
-
 
 	for (i = 0; i < vi->nr_part_ids; i++) {
 		const struct spi_flash_part_id *part = &vi->ids[i];
@@ -664,8 +661,15 @@ void lb_spi_flash(struct lb_header *header)
 		flash->sector_size = 64 * KiB;
 		flash->erase_cmd = CMD_BLOCK_ERASE;
 	}
-}
 
+	if (!CONFIG(BOOT_DEVICE_MEMORY_MAPPED)) {
+		flash->mmap_count = 0;
+	} else {
+		struct flash_mmap_window *table = (struct flash_mmap_window *)(flash + 1);
+		flash->mmap_count = spi_flash_get_mmap_windows(table);
+		flash->size += flash->mmap_count * sizeof(*table);
+	}
+}
 
 int spi_flash_ctrlr_protect_region(const struct spi_flash *flash,
 				   const struct region *region,

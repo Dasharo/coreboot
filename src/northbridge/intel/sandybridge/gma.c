@@ -4,6 +4,7 @@
 #include <device/mmio.h>
 #include <console/console.h>
 #include <bootmode.h>
+#include <cpu/intel/model_206ax/model_206ax.h>
 #include <delay.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -16,7 +17,6 @@
 
 #include "chip.h"
 #include "sandybridge.h"
-#include "gma.h"
 
 struct gt_powermeter {
 	u16 reg;
@@ -302,6 +302,8 @@ int gtt_poll(u32 reg, u32 mask, u32 value)
 
 static void gma_pm_init_pre_vbios(struct device *dev)
 {
+	const bool is_sandy = is_sandybridge();
+
 	u32 reg32;
 
 	printk(BIOS_DEBUG, "GT Power Management Init\n");
@@ -310,7 +312,7 @@ static void gma_pm_init_pre_vbios(struct device *dev)
 	if (!gtt_res || !gtt_res->base)
 		return;
 
-	if (bridge_silicon_revision() < IVB_STEP_C0) {
+	if (is_sandy || cpu_stepping() < IVB_STEP_C0) {
 		/* 1: Enable force wake */
 		gtt_write(0xa18c, 0x00000001);
 		gtt_poll(0x130090, (1 << 0), (1 << 0));
@@ -320,14 +322,14 @@ static void gma_pm_init_pre_vbios(struct device *dev)
 		gtt_poll(0x130040, (1 << 0), (1 << 0));
 	}
 
-	if ((bridge_silicon_revision() & BASE_REV_MASK) == BASE_REV_SNB) {
+	if (is_sandy) {
 		/* 1d: Set GTT+0x42004 [15:14]=11 (SnB C1+) */
 		reg32 = gtt_read(0x42004);
 		reg32 |= (1 << 14) | (1 << 15);
 		gtt_write(0x42004, reg32);
 	}
 
-	if (bridge_silicon_revision() >= IVB_STEP_A0) {
+	if (!is_sandy) {
 		/* Display Reset Acknowledge Settings */
 		reg32 = gtt_read(0x45010);
 		reg32 |= (1 << 1) | (1 << 0);
@@ -336,7 +338,7 @@ static void gma_pm_init_pre_vbios(struct device *dev)
 
 	/* 2: Get GT SKU from GTT+0x911c[13] */
 	reg32 = gtt_read(0x911c);
-	if ((bridge_silicon_revision() & BASE_REV_MASK) == BASE_REV_SNB) {
+	if (is_sandy) {
 		if (reg32 & (1 << 13)) {
 			printk(BIOS_DEBUG, "SNB GT1 Power Meter Weights\n");
 			gtt_write_powermeter(snb_pm_gt1);
@@ -385,13 +387,12 @@ static void gma_pm_init_pre_vbios(struct device *dev)
 	reg32 = gtt_read(0xa180);
 	reg32 |= (1 << 26) | (1 << 31);
 	/* (bit 20=1 for SNB step D1+ / IVB A0+) */
-	if (bridge_silicon_revision() >= SNB_STEP_D1)
+	if (!is_sandy || cpu_stepping() >= SNB_STEP_D1)
 		reg32 |= (1 << 20);
 	gtt_write(0xa180, reg32);
 
 	/* 6a: for SnB step D2+ only */
-	if (((bridge_silicon_revision() & BASE_REV_MASK) == BASE_REV_SNB) &&
-		(bridge_silicon_revision() >= SNB_STEP_D2)) {
+	if (is_sandy && cpu_stepping() >= SNB_STEP_D2) {
 		reg32 = gtt_read(0x9400);
 		reg32 |= (1 << 7);
 		gtt_write(0x9400, reg32);
@@ -403,16 +404,16 @@ static void gma_pm_init_pre_vbios(struct device *dev)
 		gtt_poll(0x941c, (1 << 1), (0 << 1));
 	}
 
-	if ((bridge_silicon_revision() & BASE_REV_MASK) == BASE_REV_IVB) {
+	if (is_sandy) {
+		/* 6b: Clocking reset controls */
+		gtt_write(0x9424, 0x00000000);
+	} else {
 		reg32 = gtt_read(0x907c);
 		reg32 |= (1 << 16);
 		gtt_write(0x907c, reg32);
 
 		/* 6b: Clocking reset controls */
 		gtt_write(0x9424, 0x00000001);
-	} else {
-		/* 6b: Clocking reset controls */
-		gtt_write(0x9424, 0x00000000);
 	}
 
 	/* 7 */
@@ -453,18 +454,15 @@ static void gma_pm_init_pre_vbios(struct device *dev)
 	gtt_write(0xa06c, 0x000493e0); /* RP Down EI */
 	gtt_write(0xa070, 0x0000000a); /* RP Idle Hysteresis */
 
-	/* 11a: Enable Render Standby (RC6) */
-	if ((bridge_silicon_revision() & BASE_REV_MASK) == BASE_REV_IVB) {
-		/*
-		 * IvyBridge should also support DeepRenderStandby.
-		 *
-		 * Unfortunately it does not work reliably on all SKUs so
-		 * disable it here and it can be enabled by the kernel.
-		 */
-		gtt_write(0xa090, 0x88040000); /* HW RC Control */
-	} else {
-		gtt_write(0xa090, 0x88040000); /* HW RC Control */
-	}
+	/*
+	 * 11a: Enable Render Standby (RC6)
+	 *
+	 * IvyBridge should also support DeepRenderStandby.
+	 *
+	 * Unfortunately it does not work reliably on all SKUs so
+	 * disable it here and it can be enabled by the kernel.
+	 */
+	gtt_write(0xa090, 0x88040000); /* HW RC Control */
 
 	/* 12: Normal Frequency Request */
 	/* RPNFREQ_VAL comes from MCHBAR 0x5998 23:16 */
@@ -507,7 +505,7 @@ static void gma_pm_init_post_vbios(struct device *dev)
 	printk(BIOS_DEBUG, "GT Power Management Init (post VBIOS)\n");
 
 	/* 15: Deassert Force Wake */
-	if (bridge_silicon_revision() < IVB_STEP_C0) {
+	if (is_sandybridge() || cpu_stepping() < IVB_STEP_C0) {
 		gtt_write(0xa18c, gtt_read(0xa18c) & ~1);
 		gtt_poll(0x130090, (1 << 0), (0 << 0));
 	} else {
@@ -648,7 +646,7 @@ static struct device_operations gma_func0_ops = {
 	.enable_resources       = pci_dev_enable_resources,
 	.acpi_fill_ssdt		= gma_generate_ssdt,
 	.init                   = gma_func0_init,
-	.disable                = gma_func0_disable,
+	.vga_disable                = gma_func0_disable,
 	.ops_pci                = &pci_dev_ops_pci,
 	.acpi_name              = gma_acpi_name,
 };

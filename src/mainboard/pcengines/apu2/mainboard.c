@@ -6,6 +6,7 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci_def.h>
+#include <gpio.h>
 #include <southbridge/amd/pi/hudson/hudson.h>
 #include <southbridge/amd/pi/hudson/pci_devs.h>
 #include <southbridge/amd/pi/hudson/amd_pci_int_defs.h>
@@ -21,7 +22,6 @@
 #define SPD_SIZE  128
 #define PM_RTC_CONTROL	    0x56
 #define PM_S_STATE_CONTROL  0xBA
-
 
 /***********************************************************
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
@@ -114,7 +114,7 @@ static const struct pirq_struct mainboard_pirq_data[] = {
 static void pirq_setup(void)
 {
 	pirq_data_ptr = mainboard_pirq_data;
-	pirq_data_size = sizeof(mainboard_pirq_data) / sizeof(struct pirq_struct);
+	pirq_data_size = ARRAY_SIZE(mainboard_pirq_data);
 	intr_data_ptr = mainboard_intr_data;
 	picr_data_ptr = mainboard_picr_data;
 }
@@ -240,6 +240,7 @@ static int mainboard_smbios_data(struct device *dev, int *handle,
 
 static void mainboard_enable(struct device *dev)
 {
+	/* Maintain this text unchanged for manufacture process. */
 	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
 
 	config_gpio_mux();
@@ -266,8 +267,8 @@ static void mainboard_final(void *chip_info)
 	//
 	// Turn off LED 2 and LED 3
 	//
-	write_gpio(GPIO_58, 1);
-	write_gpio(GPIO_59, 1);
+	gpio_set(GPIO_58, 1);
+	gpio_set(GPIO_59, 1);
 }
 
 /*
@@ -293,7 +294,7 @@ const char *smbios_mainboard_serial_number(void)
 		return serial;
 
 	/* Read in the last 3 bytes of NIC's MAC address. */
-	bar10 = pci_read_config32(dev, 0x10);
+	bar10 = pci_read_config32(dev, PCI_BASE_ADDRESS_0);
 	bar10 &= 0xFFFE0000;
 	bar10 += 0x5400;
 	for (i = 3; i < 6; i++) {

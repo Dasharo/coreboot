@@ -1,2 +1,6 @@
 config BOARD_PROTECTLI_FW6
 	bool "FW6"
+config BOARD_PROTECTLI_FW6D
+	bool "FW6D"
+config BOARD_PROTECTLI_FW6E
+	bool "FW6E"

@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <bootmode.h>
 #include <bootstate.h>
-#include <cbmem.h>
 #include <vb2_api.h>
 #include <security/vboot/misc.h>
 #include <security/vboot/vbnv.h>
@@ -71,6 +70,10 @@ int __weak get_write_protect_state(void)
 int __weak get_recovery_mode_switch(void)
 {
 	return 0;
+}
+
+void __weak fill_lb_gpios(struct lb_gpios *gpios)
+{
 }
 
 #endif

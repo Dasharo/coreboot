@@ -104,8 +104,7 @@ static const uint8_t *locate_spd(void)
 		break;
 	}
 
-	spd_data = cbfs_boot_map_with_leak("spd.bin", CBFS_TYPE_SPD,
-						&spd_file_len);
+	spd_data = cbfs_map("spd.bin", &spd_file_len);
 	if (!spd_data)
 		die("SPD data not found.");
 	if (spd_file_len < (spd_index + 1) * 256)
@@ -117,15 +116,15 @@ void mainboard_fill_pei_data(struct pei_data *pei_data)
 {
 	struct pei_data pei_data_template = {
 		.pei_version = PEI_VERSION,
-		.mchbar = (uintptr_t)DEFAULT_MCHBAR,
-		.dmibar = (uintptr_t)DEFAULT_DMIBAR,
-		.epbar = DEFAULT_EPBAR,
+		.mchbar = CONFIG_FIXED_MCHBAR_MMIO_BASE,
+		.dmibar = CONFIG_FIXED_DMIBAR_MMIO_BASE,
+		.epbar = CONFIG_FIXED_EPBAR_MMIO_BASE,
 		.pciexbar = CONFIG_MMCONF_BASE_ADDRESS,
-		.smbusbar = SMBUS_IO_BASE,
+		.smbusbar = CONFIG_FIXED_SMBUS_IO_BASE,
 		.wdbbar = 0x4000000,
 		.wdbsize = 0x1000,
 		.hpet_address = CONFIG_HPET_ADDRESS,
-		.rcba = (uintptr_t)DEFAULT_RCBABASE,
+		.rcba = (uintptr_t)DEFAULT_RCBA,
 		.pmbase = DEFAULT_PMBASE,
 		.gpiobase = DEFAULT_GPIOBASE,
 		.thermalbase = 0xfed08000,
@@ -134,12 +133,6 @@ void mainboard_fill_pei_data(struct pei_data *pei_data)
 		.spd_addresses = { 0xa0, 0x00,0x00,0x00 },
 		.ts_addresses = { 0x30, 0x00, 0x00, 0x00 },
 		.ec_present = 1,
-		// 0 = leave channel enabled
-		// 1 = disable dimm 0 on channel
-		// 2 = disable dimm 1 on channel
-		// 3 = disable dimm 0+1 on channel
-		.dimm_channel0_disabled = 2,
-		.dimm_channel1_disabled = 2,
 		.max_ddr3_freq = 1333,
 		.usb_port_config = {
 			{ 1, 0, 0x0080 }, /* P0: Port 0      (OC0) */

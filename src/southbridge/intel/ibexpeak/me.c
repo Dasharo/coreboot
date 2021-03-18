@@ -23,10 +23,6 @@
 #include "me.h"
 #include "pch.h"
 
-#if CONFIG(CHROMEOS)
-#include <vendorcode/google/chromeos/gnvs.h>
-#endif
-
 /* Path that the BIOS should take based on ME state */
 static const char *me_bios_path_values[] __unused = {
 	[ME_NORMAL_BIOS_PATH]		= "Normal",
@@ -119,13 +115,13 @@ static inline void read_me_csr(struct mei_csr *csr)
 
 static inline void write_cb(u32 dword)
 {
-	write32(mei_base_address + (MEI_H_CB_WW/sizeof(u32)), dword);
+	write32(mei_base_address + (MEI_H_CB_WW / sizeof(u32)), dword);
 	mei_dump(NULL, dword, MEI_H_CB_WW, "WRITE");
 }
 
 static inline u32 read_cb(void)
 {
-	u32 dword = read32(mei_base_address + (MEI_ME_CB_RW/sizeof(u32)));
+	u32 dword = read32(mei_base_address + (MEI_ME_CB_RW / sizeof(u32)));
 	mei_dump(NULL, dword, MEI_ME_CB_RW, "READ");
 	return dword;
 }
@@ -261,9 +257,8 @@ static int mei_recv_msg(struct mei_header *mei, struct mkhi_header *mkhi,
 		udelay(ME_DELAY);
 	}
 	if (!n) {
-		printk(BIOS_ERR, "ME: timeout waiting for data: expected "
-		       "%u, available %u\n", expected,
-		       me.buffer_write_ptr - me.buffer_read_ptr);
+		printk(BIOS_ERR, "ME: timeout waiting for data: expected %u, available %u\n",
+		       expected, me.buffer_write_ptr - me.buffer_read_ptr);
 		return -1;
 	}
 
@@ -298,8 +293,8 @@ static int mei_recv_msg(struct mei_header *mei, struct mkhi_header *mkhi,
 
 	/* Make sure caller passed a buffer with enough space */
 	if (ndata != (rsp_bytes >> 2)) {
-		printk(BIOS_ERR, "ME: not enough room in response buffer: "
-		       "%u != %u\n", ndata, rsp_bytes >> 2);
+		printk(BIOS_ERR, "ME: not enough room in response buffer: %u != %u\n",
+		       ndata, rsp_bytes >> 2);
 		return -1;
 	}
 
@@ -326,84 +321,6 @@ static inline int mei_sendrecv(struct mei_header *mei, struct mkhi_header *mkhi,
 		return -1;
 	return 0;
 }
-
-/* Send END OF POST message to the ME */
-static int __unused mkhi_end_of_post(void)
-{
-	struct mkhi_header mkhi = {
-		.group_id	= MKHI_GROUP_ID_GEN,
-		.command	= MKHI_END_OF_POST,
-	};
-	struct mei_header mei = {
-		.is_complete	= 1,
-		.host_address	= MEI_HOST_ADDRESS,
-		.client_address	= MEI_ADDRESS_MKHI,
-		.length		= sizeof(mkhi),
-	};
-
-	/* Send request and wait for response */
-	if (mei_sendrecv(&mei, &mkhi, NULL, NULL, 0) < 0) {
-		printk(BIOS_ERR, "ME: END OF POST message failed\n");
-		return -1;
-	}
-
-	printk(BIOS_INFO, "ME: END OF POST message successful\n");
-	return 0;
-}
-
-#ifdef __SIMPLE_DEVICE__
-
-static void intel_me7_finalize_smm(void)
-{
-	struct me_hfs hfs;
-	u32 reg32;
-	u16 reg16;
-
-	mei_base_address = (u32 *)
-		(pci_read_config32(PCH_ME_DEV, PCI_BASE_ADDRESS_0) & ~0xf);
-
-	/* S3 path will have hidden this device already */
-	if (!mei_base_address || mei_base_address == (u32 *)0xfffffff0)
-		return;
-
-	/* Make sure ME is in a mode that expects EOP */
-	reg32 = pci_read_config32(PCH_ME_DEV, PCI_ME_HFS);
-	memcpy(&hfs, &reg32, sizeof(u32));
-
-	/* Abort and leave device alone if not normal mode */
-	if (hfs.fpt_bad ||
-	    hfs.working_state != ME_HFS_CWS_NORMAL ||
-	    hfs.operation_mode != ME_HFS_MODE_NORMAL)
-		return;
-
-	/* Try to send EOP command so ME stops accepting other commands */
-	mkhi_end_of_post();
-
-	/* Make sure IO is disabled */
-	reg16 = pci_read_config16(PCH_ME_DEV, PCI_COMMAND);
-	reg16 &= ~(PCI_COMMAND_MASTER |
-		   PCI_COMMAND_MEMORY | PCI_COMMAND_IO);
-	pci_write_config16(PCH_ME_DEV, PCI_COMMAND, reg16);
-
-	/* Hide the PCI device */
-	RCBA32_OR(FD2, PCH_DISABLE_MEI1);
-}
-
-void intel_me_finalize_smm(void)
-{
-	u32 did = pci_read_config32(PCH_ME_DEV, PCI_VENDOR_ID);
-	switch (did) {
-	case 0x1c3a8086:
-		intel_me7_finalize_smm();
-		break;
-	case 0x1e3a8086:
-		intel_me8_finalize_smm();
-		break;
-	default:
-		printk(BIOS_ERR, "No finalize handler for ME %08x.\n", did);
-	}
-}
-#else /* !__SIMPLE_DEVICE__ */
 
 /* Determine the path that we should take based on ME status */
 static me_bios_path intel_me_path(struct device *dev)
@@ -539,11 +456,6 @@ static int intel_me_extend_valid(struct device *dev)
 	}
 	printk(BIOS_DEBUG, "\n");
 
-#if CONFIG(CHROMEOS)
-	/* Save hash in NVS for the OS to verify */
-	chromeos_set_me_hash(extend, count);
-#endif
-
 	return 0;
 }
 
@@ -564,6 +476,10 @@ static void intel_me_init(struct device *dev)
 
 	switch (path) {
 	case ME_S3WAKE_BIOS_PATH:
+	case ME_DISABLE_BIOS_PATH:
+#if CONFIG(HIDE_MEI_ON_ERROR)
+	case ME_ERROR_BIOS_PATH:
+#endif
 		intel_me_hide(dev);
 		break;
 
@@ -582,9 +498,10 @@ static void intel_me_init(struct device *dev)
 		 */
 		break;
 
+#if !CONFIG(HIDE_MEI_ON_ERROR)
 	case ME_ERROR_BIOS_PATH:
+#endif
 	case ME_RECOVERY_BIOS_PATH:
-	case ME_DISABLE_BIOS_PATH:
 	case ME_FIRMWARE_UPDATE_BIOS_PATH:
 		break;
 	}
@@ -604,11 +521,8 @@ static const unsigned short pci_device_ids[] = {
 	0
 };
 
-
 static const struct pci_driver intel_me __pci_driver = {
 	.ops	= &device_ops,
 	.vendor	= PCI_VENDOR_ID_INTEL,
 	.devices	= pci_device_ids
 };
-
-#endif /* !__SIMPLE_DEVICE__ */

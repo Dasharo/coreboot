@@ -12,6 +12,7 @@
 #include <pc80/i8254.h>
 #include <string.h>
 #include <vbe.h>
+#include <framebuffer_info.h>
 
 /* we use x86emu's register file representation */
 #include <x86emu/regs.h>
@@ -130,7 +131,7 @@ static void setup_interrupt_handlers(void)
 	{
 		/* If the mainboard_interrupt_handler isn't called first.
 		 */
-		if(!intXX_handler[i])
+		if (!intXX_handler[i])
 		{
 			/* Now set the default functions that are actually
 			 * needed to initialize the option roms. This is
@@ -208,11 +209,6 @@ static void setup_realmode_idt(void)
 static vbe_mode_info_t mode_info;
 static int mode_info_valid;
 
-static int vbe_mode_info_valid(void)
-{
-	return mode_info_valid;
-}
-
 const vbe_mode_info_t *vbe_mode_info(void)
 {
 	if (!mode_info_valid || !mode_info.vesa.phys_base_ptr)
@@ -222,7 +218,7 @@ const vbe_mode_info_t *vbe_mode_info(void)
 
 static int vbe_check_for_failure(int ah);
 
-static void vbe_get_ctrl_info(vbe_info_block *info)
+static u8 vbe_get_ctrl_info(vbe_info_block *info)
 {
 	char *buffer = PTR_TO_REAL_MODE(__realmode_buffer);
 	u16 buffer_seg = (((unsigned long)buffer) >> 4) & 0xff00;
@@ -230,9 +226,12 @@ static void vbe_get_ctrl_info(vbe_info_block *info)
 	X86_EAX = realmode_interrupt(0x10, VESA_GET_INFO, 0x0000, 0x0000,
 			0x0000, buffer_seg, buffer_adr);
 	/* If the VBE function completed successfully, 0x0 is returned in AH */
-	if (X86_AH)
-		die("\nError: In %s function\n", __func__);
+	if (X86_AH) {
+		printk(BIOS_WARNING, "Warning: Error from VGA BIOS in %s\n", __func__);
+		return 1;
+	}
 	memcpy(info, buffer, sizeof(vbe_info_block));
+	return 0;
 }
 
 static void vbe_oprom_list_supported_mode(uint16_t *video_mode_ptr)
@@ -246,17 +245,19 @@ static void vbe_oprom_list_supported_mode(uint16_t *video_mode_ptr)
 	} while (mode != 0xffff);
 }
 
-static void vbe_oprom_supported_mode_list(void)
+static u8 vbe_oprom_supported_mode_list(void)
 {
 	uint16_t segment, offset;
 	vbe_info_block info;
 
-	vbe_get_ctrl_info(&info);
+	if (vbe_get_ctrl_info(&info))
+		return 1;
 
 	offset = info.video_mode_ptr;
 	segment = info.video_mode_ptr >> 16;
 
 	vbe_oprom_list_supported_mode((uint16_t *)((segment << 4) + offset));
+	return 0;
 }
 /*
  * EAX register is used to indicate the completion status upon return from
@@ -292,7 +293,8 @@ static int vbe_check_for_failure(int ah)
 	default:
 		printk(BIOS_DEBUG, "VBE: Unsupported video mode %x!\n",
 			CONFIG_FRAMEBUFFER_VESA_MODE);
-		vbe_oprom_supported_mode_list();
+		if (vbe_oprom_supported_mode_list())
+			printk(BIOS_WARNING, "VBE Warning: Could not get VBE mode list.\n");
 		status = -1;
 		break;
 	}
@@ -308,8 +310,10 @@ static u8 vbe_get_mode_info(vbe_mode_info_t * mi)
 	u16 buffer_adr = ((unsigned long)buffer) & 0xffff;
 	X86_EAX = realmode_interrupt(0x10, VESA_GET_MODE_INFO, 0x0000,
 			mi->video_mode, 0x0000, buffer_seg, buffer_adr);
-	if (vbe_check_for_failure(X86_AH))
-		die("\nError: In %s function\n", __func__);
+	if (vbe_check_for_failure(X86_AH)) {
+		printk(BIOS_WARNING, "VBE Warning: Error from VGA BIOS in %s\n", __func__);
+		return 1;
+	}
 	memcpy(mi->mode_info_block, buffer, sizeof(mi->mode_info_block));
 	mode_info_valid = 1;
 	return 0;
@@ -324,8 +328,10 @@ static u8 vbe_set_mode(vbe_mode_info_t * mi)
 	mi->video_mode &= ~(1 << 15);
 	X86_EAX = realmode_interrupt(0x10, VESA_SET_MODE, mi->video_mode,
 			0x0000, 0x0000, 0x0000, 0x0000);
-	if (vbe_check_for_failure(X86_AH))
-		die("\nError: In %s function\n", __func__);
+	if (vbe_check_for_failure(X86_AH)) {
+		printk(BIOS_WARNING, "VBE Warning: Error from VGA BIOS in %s\n", __func__);
+		return 1;
+	}
 	return 0;
 }
 
@@ -335,7 +341,10 @@ static u8 vbe_set_mode(vbe_mode_info_t * mi)
 void vbe_set_graphics(void)
 {
 	mode_info.video_mode = (1 << 14) | CONFIG_FRAMEBUFFER_VESA_MODE;
-	vbe_get_mode_info(&mode_info);
+	if (vbe_get_mode_info(&mode_info)) {
+		printk(BIOS_WARNING, "VBE Warning: Could not get VBE graphics mode info.\n");
+		return;
+	}
 	unsigned char *framebuffer =
 		(unsigned char *)mode_info.vesa.phys_base_ptr;
 	printk(BIOS_DEBUG, "VBE: resolution:  %dx%d@%d\n",
@@ -350,44 +359,43 @@ void vbe_set_graphics(void)
 		return;
 	}
 
-	vbe_set_mode(&mode_info);
+	if (vbe_set_mode(&mode_info)) {
+		printk(BIOS_WARNING, "VBE Warning: Could not set VBE graphics mode.\n");
+		return;
+	}
+	const struct lb_framebuffer fb = {
+		.physical_address    = mode_info.vesa.phys_base_ptr,
+		.x_resolution        = le16_to_cpu(mode_info.vesa.x_resolution),
+		.y_resolution        = le16_to_cpu(mode_info.vesa.y_resolution),
+		.bytes_per_line      = le16_to_cpu(mode_info.vesa.bytes_per_scanline),
+		.bits_per_pixel      = mode_info.vesa.bits_per_pixel,
+		.red_mask_pos        = mode_info.vesa.red_mask_pos,
+		.red_mask_size       = mode_info.vesa.red_mask_size,
+		.green_mask_pos      = mode_info.vesa.green_mask_pos,
+		.green_mask_size     = mode_info.vesa.green_mask_size,
+		.blue_mask_pos       = mode_info.vesa.blue_mask_pos,
+		.blue_mask_size      = mode_info.vesa.blue_mask_size,
+		.reserved_mask_pos   = mode_info.vesa.reserved_mask_pos,
+		.reserved_mask_size  = mode_info.vesa.reserved_mask_size,
+		.orientation         = LB_FB_ORIENTATION_NORMAL,
+	};
+
+	fb_add_framebuffer_info_ex(&fb);
 }
 
 void vbe_textmode_console(void)
 {
-	delay(2);
-	X86_EAX = realmode_interrupt(0x10, 0x0003, 0x0000, 0x0000,
-				0x0000, 0x0000, 0x0000);
-	if (vbe_check_for_failure(X86_AH))
-		die("\nError: In %s function\n", __func__);
-}
+	u8 retval = 1;
+	if (mode_info.vesa.phys_base_ptr) {
+		delay(2);
+		X86_EAX = realmode_interrupt(0x10, 0x0003, 0x0000, 0x0000,
+					0x0000, 0x0000, 0x0000);
+		if (!vbe_check_for_failure(X86_AH))
+			retval = 0;
+	}
 
-int fill_lb_framebuffer(struct lb_framebuffer *framebuffer)
-{
-	if (!vbe_mode_info_valid())
-		return -1;
-
-	framebuffer->physical_address = mode_info.vesa.phys_base_ptr;
-
-	framebuffer->x_resolution = le16_to_cpu(mode_info.vesa.x_resolution);
-	framebuffer->y_resolution = le16_to_cpu(mode_info.vesa.y_resolution);
-	framebuffer->bytes_per_line =
-				le16_to_cpu(mode_info.vesa.bytes_per_scanline);
-	framebuffer->bits_per_pixel = mode_info.vesa.bits_per_pixel;
-
-	framebuffer->red_mask_pos = mode_info.vesa.red_mask_pos;
-	framebuffer->red_mask_size = mode_info.vesa.red_mask_size;
-
-	framebuffer->green_mask_pos = mode_info.vesa.green_mask_pos;
-	framebuffer->green_mask_size = mode_info.vesa.green_mask_size;
-
-	framebuffer->blue_mask_pos = mode_info.vesa.blue_mask_pos;
-	framebuffer->blue_mask_size = mode_info.vesa.blue_mask_size;
-
-	framebuffer->reserved_mask_pos = mode_info.vesa.reserved_mask_pos;
-	framebuffer->reserved_mask_size = mode_info.vesa.reserved_mask_size;
-
-	return 0;
+	if (retval)
+		printk(BIOS_WARNING, "VBE Warning: Could not set VBE text mode.\n");
 }
 
 #endif

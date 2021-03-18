@@ -2,6 +2,8 @@
 
 #include "include/variant/gpio.h"
 #include <commonlib/helpers.h>
+#include <soc/gpio.h>
+#include <intelblocks/gpio_defs.h>
 
 /* Pad configuration in ramstage */
 static const struct pad_config gpio_table[] = {
@@ -100,11 +102,11 @@ static const struct pad_config gpio_table[] = {
 
 	PAD_NC(GPP_D4, NONE),
 
-	/* I2S2 */
-	PAD_CFG_NF(GPP_D5, NONE, DEEP, NF1),		/* M2_E_BT_PCMFRM_CRF_RST_n */
-	PAD_CFG_NF(GPP_D6, NONE, DEEP, NF1),		/* M2_E_BT_PCMOUT_CLKREQ0 */
-	PAD_CFG_NF(GPP_D7, NONE, DEEP, NF1),		/* M2_E_BT_PCMIN */
-	PAD_CFG_NF(GPP_D8, NONE, DEEP, NF1),		/* M2_E_BT_PCMCLK */
+	/* CNVi */
+	PAD_CFG_NF(GPP_D5, NONE, DEEP, NF3),		/* M2_E_BT_PCMFRM_CRF_RST_n */
+	PAD_CFG_NF(GPP_D6, NONE, DEEP, NF3),		/* M2_E_BT_PCMOUT_CLKREQ0 */
+	PAD_NC(GPP_D7, NONE),				/* M2_E_BT_PCMIN */
+	PAD_NC(GPP_D8, NONE),				/* M2_E_BT_PCMCLK */
 
 	/* ISH SPI */
 	PAD_NC(GPP_D9, NONE),
@@ -194,7 +196,7 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_K20 - CPU_CATERR_PCH_n */
 	PAD_CFG_GPI(GPP_K20, NONE, DEEP),
 	/* GPP_K21 - TPM_INT_n */
-	PAD_CFG_GPI_INT(GPP_K21, NONE, DEEP, OFF), // Trigger?
+	PAD_CFG_GPI_INT(GPP_K21, NONE, DEEP, OFF), /* Trigger? */
 	/* GPP_K22 - NC */
 	PAD_NC(GPP_K22, NONE),
 	/* GPP_K23 - NC */
@@ -387,16 +389,26 @@ const struct pad_config early_gpio_table[] = {
 
 	/* LED */
 	PAD_CFG_GPO(GPP_H5, 0, DEEP),			/* PCH_HBLED_n */
+
+	/* UART0 */
+	PAD_CFG_NF(GPP_C8, NONE, DEEP, NF1),		/* UART0_RXD */
+	PAD_CFG_NF(GPP_C9, NONE, DEEP, NF1),		/* UART0_TXD */
+
+	/* UART1 */
+	PAD_CFG_NF(GPP_C12, NONE, DEEP, NF1),		/* UART1_RXD */
+	PAD_CFG_NF(GPP_C13, NONE, DEEP, NF1),		/* UART1_TXD */
+
+	/* UART2 */
+	PAD_CFG_NF(GPP_C20, NONE, DEEP, NF1),		/* UART2_RXD */
+	PAD_CFG_NF(GPP_C21, NONE, DEEP, NF1),		/* UART2_TXD */
 };
 
-const struct pad_config *get_gpio_table(size_t *num)
+void program_gpio_pads(void)
 {
-	*num = ARRAY_SIZE(gpio_table);
-	return gpio_table;
+	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 }
 
-const struct pad_config *get_early_gpio_table(size_t *num)
+void program_early_gpio_pads(void)
 {
-	*num = ARRAY_SIZE(early_gpio_table);
-	return early_gpio_table;
+	gpio_configure_pads(early_gpio_table, ARRAY_SIZE(early_gpio_table));
 }

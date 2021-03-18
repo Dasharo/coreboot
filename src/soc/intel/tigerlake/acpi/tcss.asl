@@ -1,7 +1,4 @@
-/*
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <soc/iomap.h>
 
@@ -29,8 +26,18 @@
 #define MAILBOX_BIOS_CMD_TCSS_DEVEN_INTERFACE		0x00000015
 #define TCSS_DEVEN_MAILBOX_SUBCMD_GET_STATUS		0  /* Sub-command 0 */
 #define TCSS_DEVEN_MAILBOX_SUBCMD_TCSS_CHANGE_REQ	1  /* Sub-command 1 */
-
 #define TCSS_IOM_ACK_TIMEOUT_IN_MS			100
+
+#define MCHBAR_TCSS_DEVEN_OFFSET			0x7090
+
+#define REVISION_ID					1
+#define UNRECOGNIZED_UUID				0x4
+#define UNRECOGNIZED_REVISION				0x8
+
+#define USB_TUNNELING					0x1
+#define DISPLAY_PORT_TUNNELING				0x2
+#define PCIE_TUNNELING					0x4
+#define INTER_DOMAIN_USB4_INTERNET_PROTOCOL		0x8
 
 Scope (\_SB)
 {
@@ -125,6 +132,63 @@ Scope (\_SB)
 			}
 		}
 		Return (0)
+	}
+
+	Method (_OSC, 4, Serialized)
+	{
+		CreateDWordField (Arg3, 0, CDW1)
+		If (Arg0 == ToUUID("0811B06E-4A27-44F9-8D60-3CBBC22E7B48")) {
+			/* Platform-Wide _OSC Capabilities
+			 * Arg0: UUID = {0811B06E-4A27-44F9-8D60-3CBBC22E7B48}
+			 * Arg1: Revision ID = 1
+			 * Arg2: Count of entries (DWORD) in Arge3 (Integer): 3
+			 * Arg3: DWORD capabilities buffer:
+			 * First DWORD: The standard definition bits are used to return errors.
+			 * Second DWORD: See ACPI specification Platform-Wide _OSC Capabilities
+			 * DWORD2 table for Bits 0-17. Bit 18 is newly defined as native USB4
+			 * support. The OS sets this bit to indicate support for an OSPM-native
+			 * USB4 Connection Manager which handles USB4 connection events and
+			 * link management.
+			 */
+			If (Arg1 != REVISION_ID) {
+				CDW1 |= UNRECOGNIZED_REVISION
+			}
+			Return (Arg3)
+		} ElseIf (Arg0 == ToUUID("23A0D13A-26AB-486C-9C5F-0FFA525A575A")) {
+			/*
+			 * Operating System Capabilities for USB4
+			 * Arg0: UUID = {23A0D13A-26AB-486C-9C5F-0FFA525A575A}
+			 * Arg1: Revision ID = 1
+			 * Arg2: Count of entries (DWORD) in Arg3 (Integer): 3
+			 * Arg3: DWORD capabilities buffer:
+			 * First DWORD: The standard definition bits are used to return errors.
+			 * Second DWORD: OSPM support field for USB4, bits [31:0] reserved.
+			 * Third DWORD: OSPM control field for USB4.
+			 *       bit 0: USB tunneling
+			 *       bit 1: DisplayPort tunneling
+			 *       bit 2: PCIe tunneling
+			 *       bit 3: Inter-domain USB4 internet protocol
+			 *       bit 31:4: reserved
+			 * Return: The platform acknowledges the capabilities buffer by
+			 * returning a buffer of DWORD of the same length. Masked/Cleared bits
+			 * in the control field indicate that the platform does not permit OSPM
+			 * control of the respectively capabilities or features.
+			 */
+			CreateDWordField (Arg3, 8, CDW3)
+			Local0 = CDW3
+
+			If (Arg1 != REVISION_ID) {
+				CDW1 |= UNRECOGNIZED_REVISION
+				Return (Arg3)
+			}
+			Local0 |= USB_TUNNELING | DISPLAY_PORT_TUNNELING | PCIE_TUNNELING |
+				INTER_DOMAIN_USB4_INTERNET_PROTOCOL
+			CDW3 = Local0
+			Return (Arg3)
+		} Else {
+			CDW1 |= UNRECOGNIZED_UUID
+			Return (Arg3)
+		}
 	}
 }
 
@@ -251,6 +315,35 @@ Scope (_GPE)
 
 Scope (\_SB.PCI0)
 {
+	Device (IOM)
+	{
+		Name (_HID, "INTC1072")
+		Name (_DDN, "Intel(R) Tiger Lake Input Output Manager(IOM) driver")
+		/* IOM preserved MMIO range from 0xFBC10000 to 0xFBC11600. */
+		Name (_CRS, ResourceTemplate () {
+			Memory32Fixed (ReadWrite, IOM_BASE_ADDRESS, IOM_BASE_SIZE)
+		})
+	}
+
+	/*
+	 * Operation region defined to access the TCSS_DEVEN. Get the MCHBAR in offset
+	 * 0x48 in B0:D0:F0. TCSS device enable base address is in offset 0x7090 of MCHBAR.
+	 */
+	OperationRegion (TDEN, SystemMemory, (GMHB() + MCHBAR_TCSS_DEVEN_OFFSET), 0x4)
+	Field (TDEN, ByteAcc, NoLock, Preserve)
+	{
+		TRE0, 1,  /* PCIE0_EN */
+		TRE1, 1,  /* PCIE1_EN */
+		TRE2, 1,  /* PCIE2_EN */
+		TRE3, 1,  /* PCIE3_EN */
+		,     4,
+		THCE, 1,  /* XHCI_EN */
+		TDCE, 1,  /* XDCI_EN */
+		DME0, 1,  /* TBT_DMA0_EN */
+		DME1, 1,  /* TBT_DMA1_EN */
+		,     20
+	}
+
 	/*
 	 * Operation region defined to access the IOM REGBAR. Get the MCHBAR in offset
 	 * 0x48 in B0:D0:F0. REGBAR Base address is in offset 0x7110 of MCHBAR.
@@ -286,7 +379,7 @@ Scope (\_SB.PCI0)
 	 * Poll pCode MailBox Ready
 	 *
 	 * Return 0xFF - Timeout
-	 * 	  0x00 - Ready
+	 *	  0x00 - Ready
 	 */
 	Method (PMBY, 0)
 	{
@@ -312,13 +405,13 @@ Scope (\_SB.PCI0)
 	 * DATA[1:1] TCSS_DEVEN_REQUEST_STATUS:
 	 *	0 - IDLE. TCSS DEVEN has reached its final requested state.
 	 *	1 - In Progress. TCSS DEVEN is currently in progress of switching state
-	 *     	    according to given request (bit 0 reflects source state).
+	 *	    according to given request (bit 0 reflects source state).
 	 *
 	 * Return 0x00 - TCSS Deven in normal state
-	 * 	  0x01 - TCSS Deven is cleared by BIOS Mailbox request
-	 * 	  0x1x - TCSS Deven is in progress of switching state according to given request
-	 * 	  0xFE - Command timeout
-	 * 	  0xFF - Command corrupt
+	 *	  0x01 - TCSS Deven is cleared by BIOS Mailbox request
+	 *	  0x1x - TCSS Deven is in progress of switching state according to given request
+	 *	  0xFE - Command timeout
+	 *	  0xFF - Command corrupt
 	 */
 	Method (DSGS, 0)
 	{
@@ -424,17 +517,6 @@ Scope (\_SB.PCI0)
 	}
 
 	/*
-	 * Below is a variable to store devices connect state for TBT PCIe RP before
-	 * entering D3 cold.
-	 * Value 0 - no device connected before enter D3 cold, no need to send
-	 * CONNECT_TOPOLOGY in D3 cold exit.
-	 * Value 1 - has device connected before enter D3 cold, need to send
-	 * CONNECT_TOPOLOGY in D3 cold exit.
-	 */
-	Name (CTP0, 0)  /* Variable of device connecet status for TBT0 group. */
-	Name (CTP1, 0)  /* Variable of device connecet status for TBT1 group. */
-
-	/*
 	 * TBT Group0 ON method
 	 */
 	Method (TG0N, 0)
@@ -454,28 +536,6 @@ Scope (\_SB.PCI0)
 				If (\_SB.PCI0.TRP1.VDID != 0xFFFFFFFF) {
 					/* RP1 D3 cold exit. */
 					\_SB.PCI0.TRP1.D3CX()
-				}
-
-				/*
-				 * Need to send Connect-Topology command when TBT host
-				 * controller back to D0 from D3.
-				 */
-				If (\_SB.PCI0.TDM0.ALCT == 1) {
-					If (CTP0 == 1) {
-						/*
-						 * Send Connect-Topology command if there is
-						 * device present on PCIe RP.
-						 */
-						\_SB.PCI0.TDM0.CNTP()
-
-						/* Indicate to wait Connect-Topology command. */
-						\_SB.PCI0.TDM0.WACT = 1
-
-						/* Clear the connect states. */
-						CTP0 = 0
-					}
-					/* Disallow to send Connect-Topology command. */
-					\_SB.PCI0.TDM0.ALCT = 0
 				}
 			} Else {
 				Printf("Drop TG0N due to it is already exit D3 cold.")
@@ -500,16 +560,10 @@ Scope (\_SB.PCI0)
 
 				Printf("Push TBT RPs to D3Cold together")
 				If (\_SB.PCI0.TRP0.VDID != 0xFFFFFFFF) {
-					If (\_SB.PCI0.TRP0.PDSX == 1) {
-						CTP0 = 1
-					}
 					/* Put RP0 to D3 cold. */
 					\_SB.PCI0.TRP0.D3CE()
 				}
 				If (\_SB.PCI0.TRP1.VDID != 0xFFFFFFFF) {
-					If (\_SB.PCI0.TRP1.PDSX == 1) {
-						CTP0 = 1
-					}
 					/* Put RP1 to D3 cold. */
 					\_SB.PCI0.TRP1.D3CE()
 				}
@@ -538,28 +592,6 @@ Scope (\_SB.PCI0)
 					/* RP3 D3 cold exit. */
 					\_SB.PCI0.TRP3.D3CX()
 				}
-
-				/*
-				 * Need to send Connect-Topology command when TBT host
-				 * controller back to D0 from D3.
-				 */
-				If (\_SB.PCI0.TDM1.ALCT == 1) {
-					If (CTP1 == 1) {
-						/*
-						 * Send Connect-Topology command if there is
-						 * device present on PCIe RP.
-						 */
-						\_SB.PCI0.TDM1.CNTP()
-
-						/* Indicate to wait Connect-Topology command. */
-						\_SB.PCI0.TDM1.WACT = 1
-
-						/* Clear the connect states. */
-						CTP1 = 0
-					}
-					/* Disallow to send Connect-Topology cmd. */
-					\_SB.PCI0.TDM1.ALCT = 0
-				}
 			} Else {
 				Printf("Drop TG1N due to it is already exit D3 cold.")
 			}
@@ -583,16 +615,10 @@ Scope (\_SB.PCI0)
 
 				Printf("Push TBT RPs to D3Cold together")
 				If (\_SB.PCI0.TRP2.VDID != 0xFFFFFFFF) {
-					If (\_SB.PCI0.TRP2.PDSX == 1) {
-						CTP1 = 1
-					}
 					/* Put RP2 to D3 cold. */
 					\_SB.PCI0.TRP2.D3CE()
 				}
 				If (\_SB.PCI0.TRP3.VDID != 0xFFFFFFFF) {
-					If (\_SB.PCI0.TRP3.PDSX == 1) {
-						CTP1 = 1
-					}
 					/* Put RP3 to D3 cold */
 					\_SB.PCI0.TRP3.D3CE()
 				}
@@ -763,7 +789,11 @@ Scope (\_SB.PCI0)
 
 		Method (_STA, 0x0, NotSerialized)
 		{
-			Return (0x0F)
+			If (THCE == 1) {
+				Return (0x0F)
+			} Else {
+				Return (0x0)
+			}
 		}
 		#include "tcss_xhci.asl"
 	}
@@ -781,7 +811,11 @@ Scope (\_SB.PCI0)
 
 		Method (_STA, 0x0, NotSerialized)
 		{
-			Return (0x0F)
+			If (DME0 == 1) {
+				Return (0x0F)
+			} Else {
+				Return (0x0)
+			}
 		}
 		#include "tcss_dma.asl"
 	}
@@ -799,7 +833,11 @@ Scope (\_SB.PCI0)
 
 		Method (_STA, 0x0, NotSerialized)
 		{
-			Return (0x0F)
+			If (DME1 == 1) {
+				Return (0x0F)
+			} Else {
+				Return (0x0)
+			}
 		}
 		#include "tcss_dma.asl"
 	}
@@ -818,8 +856,13 @@ Scope (\_SB.PCI0)
 
 		Method (_STA, 0x0, NotSerialized)
 		{
-			Return (0x0F)
+			If (TRE0 == 1) {
+				Return (0x0F)
+			} Else {
+				Return (0x0)
+			}
 		}
+
 		Method (_INI)
 		{
 			LTEN = 0
@@ -843,8 +886,13 @@ Scope (\_SB.PCI0)
 
 		Method (_STA, 0x0, NotSerialized)
 		{
-			Return (0x0F)
+			If (TRE1 == 1) {
+				Return (0x0F)
+			} Else {
+				Return (0x0)
+			}
 		}
+
 		Method (_INI)
 		{
 			LTEN = 0
@@ -868,8 +916,13 @@ Scope (\_SB.PCI0)
 
 		Method (_STA, 0x0, NotSerialized)
 		{
-			Return (0x0F)
+			If (TRE2 == 1) {
+				Return (0x0F)
+			} Else {
+				Return (0x0)
+			}
 		}
+
 		Method (_INI)
 		{
 			LTEN = 0
@@ -893,8 +946,13 @@ Scope (\_SB.PCI0)
 
 		Method (_STA, 0x0, NotSerialized)
 		{
-			Return (0x0F)
+			If (TRE3 == 1) {
+				Return (0x0F)
+			} Else {
+				Return (0x0)
+			}
 		}
+
 		Method (_INI)
 		{
 			LTEN = 0
