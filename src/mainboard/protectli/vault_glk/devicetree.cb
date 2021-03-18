@@ -1,18 +1,18 @@
 chip soc/intel/apollolake
-
-	# Disable unused clkreq of PCIe root ports
-	register "pcie_rp_clkreq_pin[0]" = "CLKREQ_DISABLED"
-	register "pcie_rp_clkreq_pin[1]" = "CLKREQ_DISABLED"
-	register "pcie_rp_clkreq_pin[2]" = "CLKREQ_DISABLED"
-	register "pcie_rp_clkreq_pin[3]" = "CLKREQ_DISABLED"
+	# Assign first CLKREQ numbersto the used ports, rest don't care.
+	# FSP sets the CLKREQ despite passing PcieRpClkReqSupported as disabled
+	# So we must use the only 4 CLKREQ pins we have for the used ports
+	register "pcie_rp_clkreq_pin[0]" = "4"
+	register "pcie_rp_clkreq_pin[1]" = "5"
+	register "pcie_rp_clkreq_pin[2]" = "0"
+	register "pcie_rp_clkreq_pin[3]" = "1"
+	register "pcie_rp_clkreq_pin[4]" = "2"
+	register "pcie_rp_clkreq_pin[5]" = "3"
 
 	# GPIO for PERST_0
 	# If the Board has PERST_0 signal, assign the GPIO
 	# If the Board does not have PERST_0, assign GPIO_PRT0_UDEF
-	register "prt0_gpio" = "GPIO_163"
-
-	# GPIO for SD card detect
-	register "sdcard_cd_gpio" = "GPIO_186"
+	register "prt0_gpio" = "GPIO_PRT0_UDEF"
 
 	# EMMC TX DATA Delay 1
 	# Refer to EDS-Vol2-22.3.
@@ -46,8 +46,8 @@ chip soc/intel/apollolake
 	register "emmc_rx_strobe_cntl" = "0x0a0a"
 	register "emmc_tx_cmd_cntl" = "0x1305"
 
-	# Disable DPTF
-	register "dptf_enable" = "0"
+	register "dptf_enable" = "1"
+	register "enable_vtd" = "1"
 
 	# PL1 override: 7.5W setting gives a run-time 6W actual
 	# Set RAPL PL2 to 15W.
@@ -69,12 +69,9 @@ chip soc/intel/apollolake
 	# route, i.e., if this route changes then the affected GPE
 	# offset bits also need to be changed. This sets the PMC register
 	# GPE_CFG fields.
-	#PMC_GPE_NW_63_32 - 03
-	#PMC_GPE_N_95_64  - 08
-	#PMC_GPE_NW_31_0  - 02
-	register "gpe0_dw1" = "PMC_GPE_NW_63_32"
-	register "gpe0_dw2" = "PMC_GPE_N_95_64"
-	register "gpe0_dw3" = "PMC_GPE_NW_31_0"
+	register "gpe0_dw1" = "PMC_GPE_SCC_63_32"
+	register "gpe0_dw2" = "PMC_GPE_N_31_0"
+	register "gpe0_dw3" = "PMC_GPE_SCC_31_0"
 
 	# Minimum SLP S3 assertion width 28ms.
 	register "slp_s3_assertion_width_usecs" = "28000"
@@ -105,14 +102,14 @@ chip soc/intel/apollolake
 	end
 	device domain 0 on
 		device pci 00.0 on  end	# - Host Bridge
-		device pci 00.1 off end	# - DPTF
-		device pci 00.2 on  end	# - NPK
+		device pci 00.1 on  end	# - DPTF
+		device pci 00.2 off end	# - NPK
 		device pci 02.0 on  end	# - Gen
 		device pci 03.0 off end	# - Iunit
 		device pci 0c.0 off end # - CNVi
-		device pci 0d.0 on  end	# - P2SB
-		device pci 0d.1 on  end	# - PMC
-		device pci 0d.2 on  end	# - SPI
+		device pci 0d.0 off end	# - P2SB
+		device pci 0d.1 off end	# - PMC
+		device pci 0d.2 off end	# - SPI
 		device pci 0d.3 on  end	# - Shared SRAM
 		device pci 0e.0 off end # - Audio
 		device pci 0f.0 on  end # - Heci1
@@ -120,12 +117,12 @@ chip soc/intel/apollolake
 		device pci 0f.2 off end # - Heci3
 		device pci 11.0 off end	# - ISH
 		device pci 12.0 on  end	# - SATA
-		device pci 13.0 on  end	# - PCIe-A 0 Slot 1
-		device pci 13.1 on  end	# - PCIe-A 1
-		device pci 13.2 on  end	# - PCIe-A 2 Onboard Lan
-		device pci 13.3 on  end	# - PCIe-A 3
-		device pci 14.0 on  end # - PCIe-B 0 Slot2
-		device pci 14.1 on  end	# - PCIe-B 1 Onboard M2 Slot(Wifi/BT)
+		device pci 13.0 on  end	# - PCIe-A 0 LAN1
+		device pci 13.1 on  end	# - PCIe-A 1 LAN2
+		device pci 13.2 on  end	# - PCIe-A 2 ASMedia Switch: LAN3/WiFi
+		device pci 13.3 on  end	# - PCIe-A 3 LAN4
+		device pci 14.0 off end # - PCIe-B 0
+		device pci 14.1 off end	# - PCIe-B 1
 		device pci 15.0 on  end	# - XHCI
 		device pci 15.1 off end # - XDCI
 		device pci 16.0 off end	# - I2C 0
@@ -138,7 +135,7 @@ chip soc/intel/apollolake
 		device pci 17.3 off end # - I2C 7
 		device pci 18.0 off end	# - UART 0
 		device pci 18.1 off end	# - UART 1
-		device pci 18.2 on  end	# - UART 2
+		device pci 18.2 off end	# - UART 2
 		device pci 18.3 off end	# - UART 3
 		device pci 19.0 off end	# - SPI 0
 		device pci 19.1 off end	# - SPI 1
