@@ -123,7 +123,10 @@ function buildFW4GLKImage {
 	fi
 
 	if [ ! -d 3rdparty/fsp/GeminilakeFspBinPkg ]; then
-		wget https://cloud.3mdeb.com/index.php/s/E3wzdmKB8GELLmK/download -O GeminilakeFspBinPkg.zip
+		if [ ! -f GeminilakeFspBinPkg.zip ]; then
+			echo "Geminilake FSP package missing!"
+			exit 1
+		fi
 		unzip GeminilakeFspBinPkg.zip -d 3rdparty/fsp/
 		rm GeminilakeFspBinPkg.zip
 	fi
