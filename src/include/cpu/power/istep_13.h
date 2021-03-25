@@ -233,9 +233,73 @@ void ccs_phy_hw_step(chiplet_id_t id, int mca_i, int rp, enum cal_config conf,
                      uint64_t step_cycles);
 void ccs_execute(chiplet_id_t id, int mca_i);
 
+static inline enum ddr4_mr5_rtt_park vpd_to_rtt_park(uint8_t vpd)
+{
+	/* Fun fact: this is 240/vpd with bit order reversed */
+	switch (vpd) {
+		case 34:
+			return DDR4_MR5_RTT_PARK_RZQ_7;
+		case 40:
+			return DDR4_MR5_RTT_PARK_RZQ_6;
+		case 48:
+			return DDR4_MR5_RTT_PARK_RZQ_5;
+		case 60:
+			return DDR4_MR5_RTT_PARK_RZQ_4;
+		case 80:
+			return DDR4_MR5_RTT_PARK_RZQ_3;
+		case 120:
+			return DDR4_MR5_RTT_PARK_RZQ_2;
+		case 240:
+			return DDR4_MR5_RTT_PARK_RZQ_1;
+		default:
+			return DDR4_MR5_RTT_PARK_OFF;
+	}
+}
+
+static inline enum ddr4_mr2_rtt_wr vpd_to_rtt_wr(uint8_t vpd)
+{
+	switch (vpd) {
+		case 0:
+			return DDR4_MR2_RTT_WR_OFF;
+		case 80:
+			return DDR4_MR2_RTT_WR_RZQ_3;
+		case 120:
+			return DDR4_MR2_RTT_WR_RZQ_2;
+		case 240:
+			return DDR4_MR2_RTT_WR_RZQ_1;
+		default:
+			/* High-Z is 1 in VPD */
+			return DDR4_MR2_RTT_WR_HI_Z;
+	}
+}
+
+static inline enum ddr4_mr1_rtt_nom vpd_to_rtt_nom(uint8_t vpd)
+{
+	/* Fun fact: this is 240/vpd with bit order reversed */
+	switch (vpd) {
+		case 34:
+			return DDR4_MR1_RTT_NOM_RZQ_7;
+		case 40:
+			return DDR4_MR1_RTT_NOM_RZQ_6;
+		case 48:
+			return DDR4_MR1_RTT_NOM_RZQ_5;
+		case 60:
+			return DDR4_MR1_RTT_NOM_RZQ_4;
+		case 80:
+			return DDR4_MR1_RTT_NOM_RZQ_3;
+		case 120:
+			return DDR4_MR1_RTT_NOM_RZQ_2;
+		case 240:
+			return DDR4_MR1_RTT_NOM_RZQ_1;
+		default:
+			return DDR4_MR1_RTT_NOM_OFF;
+	}
+}
+
 void istep_13_2(void);
 void istep_13_3(void);
 void istep_13_4(void);
 void istep_13_6(void);
 void istep_13_8(void);	// TODO: takes epsilon values from 8.6 and MSS data from 7.4
 void istep_13_9(void);
+void istep_13_10(void);
