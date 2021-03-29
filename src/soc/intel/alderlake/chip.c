@@ -119,7 +119,7 @@ static void soc_fill_gpio_pm_configuration(void)
 		memcpy(value, config->gpio_pm, sizeof(uint8_t) *
 			TOTAL_GPIO_COMM);
 	else
-		memset(value, MISCCFG_ENABLE_GPIO_PM_CONFIG, sizeof(uint8_t) *
+		memset(value, MISCCFG_GPIO_PM_CONFIG_BITS, sizeof(uint8_t) *
 			TOTAL_GPIO_COMM);
 
 	gpio_pm_configure(value, TOTAL_GPIO_COMM);
@@ -127,19 +127,11 @@ static void soc_fill_gpio_pm_configuration(void)
 
 void soc_init_pre_device(void *chip_info)
 {
-	/* TODO: A bug has been filed, remove this W/A once FSP is updated */
-	/* Snapshot the current GPIO IRQ polarities. FSP is setting a
-	 * default policy that doesn't honor boards' requirements. */
-	itss_snapshot_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
-
 	/* Perform silicon specific init. */
 	fsp_silicon_init();
 
 	 /* Display FIRMWARE_VERSION_INFO_HOB */
 	fsp_display_fvi_version_hob();
-
-	/* Restore GPIO IRQ polarities back to previous settings. */
-	itss_restore_irq_polarities(GPIO_IRQ_START, GPIO_IRQ_END);
 
 	soc_fill_gpio_pm_configuration();
 

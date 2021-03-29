@@ -62,9 +62,13 @@ Device (\_SB.PCI0.LPCB.EC0)
 		}
 	}
 
+	Name (S3OS, Zero)
 	Method (PTS, 1, Serialized) {
 		Debug = Concatenate("EC: PTS: ", ToHexString(Arg0))
 		If (ECOK) {
+			// Save ECOS during sleep
+			S3OS = ECOS
+
 			// Clear wake cause
 			WFNO = Zero
 		}
@@ -73,6 +77,9 @@ Device (\_SB.PCI0.LPCB.EC0)
 	Method (WAK, 1, Serialized) {
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
 		If (ECOK) {
+			// Restore ECOS after sleep
+			ECOS = S3OS
+
 			// Set current AC state
 			^^^^AC.ACFG = ADP
 
@@ -97,6 +104,9 @@ Device (\_SB.PCI0.LPCB.EC0)
 	Method (_Q0B, 0, NotSerialized) // Screen Toggle
 	{
 		Debug = "EC: Screen Toggle"
+#if CONFIG(EC_SYSTEM76_EC_OLED)
+		Notify (^^^^S76D, 0x85)
+#endif // CONFIG(EC_SYSTEM76_EC_OLED)
 	}
 
 	Method (_Q0C, 0, NotSerialized)  // Mute

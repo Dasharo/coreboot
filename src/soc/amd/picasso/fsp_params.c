@@ -9,6 +9,7 @@
 #include <soc/soc_util.h>
 #include <fsp/api.h>
 #include "chip.h"
+#include <device/pci.h>
 
 static void fsps_update_emmc_config(FSP_S_CONFIG *scfg,
 				const struct soc_amd_picasso_config *cfg)
@@ -175,7 +176,11 @@ static void fsp_edp_tuning_upds(FSP_S_CONFIG *scfg,
 		scfg->pwrdown_bloff_to_varybloff = cfg->pwrdown_bloff_to_varybloff;
 		scfg->min_allowed_bl_level = cfg->min_allowed_bl_level;
 	}
+}
 
+static void fsp_assign_vbios_upds(FSP_S_CONFIG *scfg)
+{
+	scfg->vbios_buffer_addr = CONFIG(RUN_FSP_GOP) ? PCI_VGA_RAM_IMAGE_START : 0;
 }
 
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
@@ -189,4 +194,5 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	fsp_assign_ioapic_upds(scfg);
 	fsp_usb_oem_customization(scfg, cfg);
 	fsp_edp_tuning_upds(scfg, cfg);
+	fsp_assign_vbios_upds(scfg);
 }

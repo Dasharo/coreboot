@@ -9,12 +9,25 @@ config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select AMD_SOC_CONSOLE_UART
 	select BOARD_ROMSIZE_KB_16384
+	select DRIVERS_I2C_GENERIC
+	select DRIVERS_I2C_HID
+	select EC_GOOGLE_CHROMEEC
+	select EC_GOOGLE_CHROMEEC_BOARDID
+	select EC_GOOGLE_CHROMEEC_ESPI
+	select EC_GOOGLE_CHROMEEC_SKUID
+	select ELOG
+	select ELOG_GSMI
+	select FW_CONFIG
+	select HAVE_ACPI_RESUME
+	select HAVE_EM100_SUPPORT
+	select HAVE_SPD_IN_CBFS
 	select MAINBOARD_HAS_CHROMEOS
+	select MAINBOARD_HAS_I2C_TPM_CR50
+	select MAINBOARD_HAS_TPM2
 	select SOC_AMD_CEZANNE
+	select SOC_AMD_COMMON_BLOCK_USE_ESPI
 
 config CHROMEOS
-	select EC_GOOGLE_CHROMEEC
-	select EC_GOOGLE_CHROMEEC_ESPI
 	select EC_GOOGLE_CHROMEEC_SWITCHES
 
 config VBOOT
@@ -39,6 +52,24 @@ config AMD_FWM_POSITION_INDEX
 	help
 	  TODO: might need to be adapted for better placement of files in cbfs
 
+config DRIVER_TPM_I2C_BUS
+	hex
+	default 0x03
+
+config DRIVER_TPM_I2C_ADDR
+	hex
+	default 0x50
+
+config EFS_SPI_READ_MODE
+	int
+	default 0 if EM100 # Normal read mode
+	default 4          # Dual IO (1-2-2)
+
+config EFS_SPI_SPEED
+	int
+	default 3 if EM100 # 16.66 MHz
+	default 1          # 33.33 MHz
+
 config VARIANT_DIR
 	string
 	default "guybrush" if BOARD_GOOGLE_GUYBRUSH
@@ -54,5 +85,12 @@ config OVERRIDE_DEVICETREE
 config MAINBOARD_FAMILY
 	string
 	default "Google_Guybrush"
+
+config GPIO_SIGN_OF_LIFE
+	def_bool n
+	help
+	  Enable toggling GPIO 31 as a sign of life on Guybrush
+
+	  TODO: Remove this option when board is booting
 
 endif # BOARD_GOOGLE_BASEBOARD_GUYBRUSH

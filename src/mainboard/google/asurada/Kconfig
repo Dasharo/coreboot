@@ -12,6 +12,7 @@ config VBOOT
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
+	select RTC
 	select SOC_MEDIATEK_MT8192
 	select BOARD_ROMSIZE_KB_8192
 	select MAINBOARD_HAS_CHROMEOS
@@ -52,5 +53,9 @@ config BOOT_DEVICE_SPI_FLASH_BUS
 config EC_GOOGLE_CHROMEEC_SPI_BUS
 	hex
 	default 0x1
+
+config CONSOLE_CBMEM_BUFFER_SIZE
+	hex
+	default 0x80000
 
 endif
