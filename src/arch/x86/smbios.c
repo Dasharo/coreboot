@@ -390,10 +390,8 @@ static int smbios_write_type0(unsigned long *current, int handle)
 	t->vendor = smbios_add_string(t->eos, "3mdeb Embedded Systems Consulting");
 #if !CONFIG(CHROMEOS)
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
-
-	snprintf(bversion, sizeof(bversion),
-		 "Dasharo Firewall %s (based on coreboot %s)",
-		 coreboot_version, smbios_mainboard_bios_version());
+	snprintf(bversion, sizeof(bversion), "coreboot %s, Dasharo %s",
+		 smbios_mainboard_bios_version(), coreboot_version);
 	t->bios_version = smbios_add_string(t->eos, bversion);
 #else
 #define SPACES \
