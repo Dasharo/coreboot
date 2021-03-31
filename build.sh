@@ -115,7 +115,7 @@ function buildFW6DImage {
 		git submodule update --init --checkout
 	fi
 
-	if [ ! -d 3rdparty/blobs/mainboard/protectli ]; then
+	if [ ! -d 3rdparty/blobs/mainboard/protectli/vault_kbl/fw6d ]; then
 		wget https://cloud.3mdeb.com/index.php/s/FzF5fjqieEyQX4e/download -O protectli_blobs.zip
 		unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
 		rm protectli_blobs.zip
@@ -142,11 +142,11 @@ function buildFW6DImage {
 		echo \"Press F11 key for boot menu\" > build/message.txt &&
 		./build/cbfstool build/coreboot.rom add -f build/message.txt -n etc/boot-menu-message -t raw && \
 		echo \"/pci@i0cf8/*@17/drive@0/disk@0\" > build/bootorder.txt && \
+		echo \"/pci@i0cf8/*@17/drive@1/disk@0\" >> build/bootorder.txt && \
 		echo \"/pci@i0cf8/usb@14/usb-*@1\" >> build/bootorder.txt && \
 		echo \"/pci@i0cf8/usb@14/usb-*@2\" >> build/bootorder.txt && \
 		echo \"/pci@i0cf8/usb@14/usb-*@3\" >> build/bootorder.txt && \
 		echo \"/pci@i0cf8/usb@14/usb-*@4\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/*@17/drive@1/disk@0\" >> build/bootorder.txt && \
 		./build/cbfstool build/coreboot.rom add -f build/bootorder.txt -n bootorder -t raw && \
 		echo \"pci8086,1533.rom pci8086,1539.rom\" > build/links.txt && \
 		echo \"pci8086,157b.rom pci8086,1539.rom\" >> build/links.txt && \
