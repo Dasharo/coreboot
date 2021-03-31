@@ -68,9 +68,6 @@ static const struct pirq_struct mainboard_pirq_data[] = {
 	{SD_DEVFN,		{PIRQ_SD, PIRQ_NC, PIRQ_NC, PIRQ_NC}},		/* SD:		14.7 */
 };
 
-const u8 *picr_data = mainboard_picr_data;
-const u8 *intr_data = mainboard_intr_data;
-
 /* PIRQ Setup */
 static void pirq_setup(void)
 {
@@ -85,8 +82,6 @@ static void pirq_setup(void)
  **********************************************/
 static void mainboard_enable(struct device *dev)
 {
-	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
-
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
 }

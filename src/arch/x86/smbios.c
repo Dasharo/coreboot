@@ -283,6 +283,7 @@ static int create_smbios_type17_for_dimm(struct dimm_info *dimm,
 
 	smbios_fill_dimm_manufacturer_from_id(dimm->mod_id, t);
 	smbios_fill_dimm_serial_number(dimm, t);
+	smbios_fill_dimm_asset_tag(dimm, t);
 	smbios_fill_dimm_locator(dimm, t);
 
 	/* put '\0' in the end of data */
@@ -440,12 +441,6 @@ static int get_socket_type(void)
 		return 0x36;
 
 	return 0x02; /* Unknown */
-}
-
-unsigned int __weak smbios_memory_error_correction_type(struct memory_info *meminfo)
-{
-	return meminfo->ecc_capable ?
-		MEMORY_ARRAY_ECC_SINGLE_BIT : MEMORY_ARRAY_ECC_NONE;
 }
 
 unsigned int __weak smbios_processor_external_clock(void)
@@ -1023,7 +1018,7 @@ static int smbios_write_type16(unsigned long *current, int *handle)
 
 	t->location = MEMORY_ARRAY_LOCATION_SYSTEM_BOARD;
 	t->use = MEMORY_ARRAY_USE_SYSTEM;
-	t->memory_error_correction = smbios_memory_error_correction_type(meminfo);
+	t->memory_error_correction = meminfo->ecc_type;
 
 	/* no error information handle available */
 	t->memory_error_information_handle = 0xFFFE;

@@ -104,7 +104,6 @@ static void init_tables(void)
 /* PIRQ Setup */
 static void pirq_setup(void)
 {
-	init_tables();
 	intr_data_ptr = fch_apic_routing;
 	picr_data_ptr = fch_pic_routing;
 }
@@ -198,10 +197,9 @@ static void mainboard_fill_ssdt(const struct device *dev)
 /*************************************************
  * Dedicated mainboard function
  *************************************************/
-static void zork_enable(struct device *dev)
+static void mainboard_enable(struct device *dev)
 {
-	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
-
+	init_tables();
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
 
@@ -217,7 +215,7 @@ static void mainboard_final(void *chip_info)
 
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
-	.enable_dev = zork_enable,
+	.enable_dev = mainboard_enable,
 	.final = mainboard_final,
 };
 

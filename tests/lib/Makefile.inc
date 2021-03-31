@@ -17,6 +17,12 @@ tests-y += stack-test
 tests-y += memset-test
 tests-y += memcmp-test
 tests-y += memchr-test
+tests-y += memcpy-test
+tests-y += malloc-test
+tests-y += memmove-test
+tests-y += crc_byte-test
+tests-y += compute_ip_checksum-test
+tests-y += memrange-test
 
 string-test-srcs += tests/lib/string-test.c
 string-test-srcs += src/lib/string.c
@@ -87,4 +93,22 @@ memcmp-test-srcs += tests/lib/memcmp-test.c
 
 memchr-test-srcs += tests/lib/memchr-test.c
 memchr-test-srcs += src/lib/memchr.c
+
+memcpy-test-srcs += tests/lib/memcpy-test.c
+
+malloc-test-srcs += tests/lib/malloc-test.c
+malloc-test-srcs += tests/stubs/console.c
+
+memmove-test-srcs += tests/lib/memmove-test.c
+
+crc_byte-test-srcs += tests/lib/crc_byte-test.c
+crc_byte-test-srcs += src/lib/crc_byte.c
+
+compute_ip_checksum-test-srcs += tests/lib/compute_ip_checksum-test.c
+compute_ip_checksum-test-srcs += src/lib/compute_ip_checksum.c
+
+memrange-test-srcs += tests/lib/memrange-test.c
+memrange-test-srcs += src/lib/memrange.c
+memrange-test-srcs += tests/stubs/console.c
+memrange-test-srcs += src/device/device_util.c
 

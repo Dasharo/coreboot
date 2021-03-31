@@ -29,9 +29,12 @@
 /* High Performance Event Timer */
 #define HPET_BASE_ADDRESS            0xfed00000
 
+#define HECI1_BASE_ADDRESS	0xfed1a000
+
 #define PCH_PWRM_BASE_ADDRESS	0xfe000000
 #define PCH_PWRM_BASE_SIZE	0x10000
 
 #define P2SB_BAR                     CONFIG_PCR_BASE_ADDRESS
+#define GPIO_BASE_SIZE               0x10000
 
 #endif /* _SOC_IOMAP_H_ */

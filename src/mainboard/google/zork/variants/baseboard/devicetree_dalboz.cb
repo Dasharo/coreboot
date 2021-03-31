@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
+fw_config
+	field TOUCHPAD 26
+		option REGULAR_TOUCHPAD 1
+		option NUMPAD_TOUCHPAD 0
+	end
+end
+
 chip soc/amd/picasso
 
 	# Set FADT Configuration
@@ -58,7 +65,7 @@ chip soc/amd/picasso
 
 	# Controller0 Port0 Default
 	register "usb_2_port_tune_params[0]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -71,7 +78,7 @@ chip soc/amd/picasso
 
 	# Controller0 Port1 Default
 	register "usb_2_port_tune_params[1]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -84,7 +91,7 @@ chip soc/amd/picasso
 
 	# Controller0 Port2 Default
 	register "usb_2_port_tune_params[2]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -97,7 +104,7 @@ chip soc/amd/picasso
 
 	# Controller0 Port3 Default
 	register "usb_2_port_tune_params[3]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -110,7 +117,7 @@ chip soc/amd/picasso
 
 	# Controller1 Port0 Default
 	register "usb_2_port_tune_params[4]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x02,
@@ -123,7 +130,7 @@ chip soc/amd/picasso
 
 	# Controller1 Port1 Default
 	register "usb_2_port_tune_params[5]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x02,
@@ -394,13 +401,6 @@ chip soc/amd/picasso
 		device pci 18.5 on  end
 		device pci 18.6 on  end
 	end # domain
-
-	chip drivers/generic/max98357a
-			register "hid" = ""MX98357A""
-			register "sdmode_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_91)"
-			register "sdmode_delay" = "5"
-			device generic 0.1 on end
-	end
 
 	device mmio 0xfedc5000 on
 		chip drivers/i2c/tpm

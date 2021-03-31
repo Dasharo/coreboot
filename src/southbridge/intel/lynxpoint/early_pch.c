@@ -6,7 +6,6 @@
 #include <device/pci_def.h>
 #include <device/smbus_host.h>
 #include <southbridge/intel/common/pmbase.h>
-#include <southbridge/intel/common/pmclib.h>
 #include <elog.h>
 #include "pch.h"
 #include "chip.h"
@@ -86,14 +85,12 @@ void __weak mainboard_config_superio(void)
 {
 }
 
-int early_pch_init(void)
+void early_pch_init(void)
 {
-	int wake_from_s3;
-
 	pch_enable_bars();
 
 #if CONFIG(INTEL_LYNXPOINT_LP)
-	setup_pch_lp_gpios(mainboard_gpio_map);
+	setup_pch_lp_gpios(mainboard_lp_gpio_map);
 #else
 	setup_pch_gpios(&mainboard_gpio_map);
 #endif
@@ -113,10 +110,14 @@ int early_pch_init(void)
 
 	RCBA32_OR(FD, PCH_DISABLE_ALWAYS);
 
-	wake_from_s3 = southbridge_detect_s3_resume();
+	RCBA32(0x2088) = 0x00109000;
 
-	elog_boot_notify(wake_from_s3);
+	RCBA32_OR(0x20ac, 1 << 30);
 
-	/* Report if we are waking from s3. */
-	return wake_from_s3;
+	if (!pch_is_lp()) {
+		RCBA32_AND_OR(0x2340, ~(0xff <<  0), 0x1b <<  0);
+		RCBA32_AND_OR(0x2340, ~(0xff << 16), 0x3a << 16);
+
+		RCBA32(0x2324) = 0x00854c74;
+	}
 }
