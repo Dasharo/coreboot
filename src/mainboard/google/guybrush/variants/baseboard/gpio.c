@@ -116,8 +116,6 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	PAD_NF(GPIO_106, EMMC_SPI2_WP_L_ESPI2_D2, PULL_NONE),
 	/* ESPI1_DATA3 */
 	PAD_NF(GPIO_107, SPI2_HOLD_L_ESPI2_D3, PULL_NONE),
-	/* ESPI_ALERT_L */
-	PAD_NF(GPIO_108, ESPI_ALERT_D1, PULL_NONE),
 	/* RAM_ID_0 / DEV_BEEP_EN */
 	PAD_GPI(GPIO_109, PULL_NONE),
 	/* GPIO_110 - GPIO_112: Not available */
@@ -163,9 +161,33 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	PAD_NF(GPIO_148, I2C1_SDA, PULL_NONE),
 };
 
-/* Early GPIO configuration in bootblock */
-static const struct soc_amd_gpio bootblock_gpio_table[] = {
-	/* TODO: Fill bootblock gpio configuration */
+/* Early GPIO configuration */
+static const struct soc_amd_gpio early_gpio_table[] = {
+	/* GSC_SOC_INT_L */
+	PAD_INT(GPIO_3, PULL_NONE, EDGE_LOW, STATUS_DELIVERY),
+	/* I2C3_SCL */
+	PAD_NF(GPIO_19, I2C3_SCL, PULL_NONE),
+	/* I2C3_SDA */
+	PAD_NF(GPIO_20, I2C3_SDA, PULL_NONE),
+	/* ESPI1_DATA0 */
+	PAD_NF(GPIO_104, SPI2_DO_ESPI2_D0, PULL_NONE),
+	/* ESPI1_DATA1 */
+	PAD_NF(GPIO_105, SPI2_DI_ESPI2_D1, PULL_NONE),
+	/* ESPI1_DATA2 */
+	PAD_NF(GPIO_106, EMMC_SPI2_WP_L_ESPI2_D2, PULL_NONE),
+	/* ESPI1_DATA3 */
+	PAD_NF(GPIO_107, SPI2_HOLD_L_ESPI2_D3, PULL_NONE),
+	/* ESPI_ALERT_L */
+	PAD_NF(GPIO_108, ESPI_ALERT_D1, PULL_NONE),
+	/* UART0_RXD */
+	PAD_NF(GPIO_141, UART0_RXD, PULL_NONE),
+	/* UART0_TXD */
+	PAD_NF(GPIO_143, UART0_TXD, PULL_NONE),
+};
+
+/* GPIO configuration for sleep */
+static const struct soc_amd_gpio sleep_gpio_table[] = {
+	/* TODO: Fill sleep gpio configuration */
 };
 
 const struct soc_amd_gpio *__weak variant_base_gpio_table(size_t *size)
@@ -179,8 +201,14 @@ const struct soc_amd_gpio *__weak variant_override_gpio_table(size_t *size)
 	return NULL;
 }
 
-const struct soc_amd_gpio *__weak variant_bootblock_gpio_table(size_t *size)
+const struct soc_amd_gpio *__weak variant_early_gpio_table(size_t *size)
 {
-	*size = ARRAY_SIZE(bootblock_gpio_table);
-	return bootblock_gpio_table;
+	*size = ARRAY_SIZE(early_gpio_table);
+	return early_gpio_table;
+}
+
+const __weak struct soc_amd_gpio *variant_sleep_gpio_table(size_t *size)
+{
+	*size = ARRAY_SIZE(sleep_gpio_table);
+	return sleep_gpio_table;
 }

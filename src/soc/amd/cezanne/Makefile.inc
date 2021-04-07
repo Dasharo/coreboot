@@ -11,19 +11,23 @@ all-y		+= aoac.c
 
 bootblock-y	+= bootblock.c
 bootblock-y	+= early_fch.c
+bootblock-y	+= i2c.c
 bootblock-y	+= gpio.c
 bootblock-y	+= reset.c
 bootblock-y	+= uart.c
 
+verstage-y	+= i2c.c
 verstage_x86-y	+= gpio.c
 verstage_x86-y	+= reset.c
 verstage_x86-y	+= uart.c
 
+romstage-y	+= i2c.c
 romstage-y	+= gpio.c
 romstage-y	+= reset.c
 romstage-y	+= romstage.c
 romstage-y	+= uart.c
 
+ramstage-y	+= i2c.c
 ramstage-y	+= acpi.c
 ramstage-y	+= chip.c
 ramstage-y	+= cpu.c
@@ -35,8 +39,11 @@ ramstage-y	+= pcie_gpp.c
 ramstage-y	+= reset.c
 ramstage-y	+= root_complex.c
 ramstage-y	+= uart.c
+ramstage-y	+= xhci.c
 
+smm-y		+= gpio.c
 smm-y		+= smihandler.c
+smm-y		+= smu.c
 smm-$(CONFIG_DEBUG_SMI) += uart.c
 
 CPPFLAGS_common += -I$(src)/soc/amd/cezanne/include
@@ -85,12 +92,17 @@ else
 PSP_SOFTFUSE_BITS += 29
 endif
 
+# type = 0x3a
+ifeq ($(CONFIG_HAVE_PSP_WHITELIST_FILE),y)
+PSP_WHITELIST_FILE=$(CONFIG_PSP_WHITELIST_FILE)
+endif
+
 #
 # BIOS Directory Table items - proper ordering is managed by amdfwtool
 #
 
 # type = 0x60
-PSP_APCB_FILES=$(APCB_SOURCES) $(APCB_SOURCES_68) $(APCB_SOURCES_RECOVERY)
+PSP_APCB_FILES=$(APCB_SOURCES) $(APCB_SOURCES_RECOVERY)
 
 # type = 0x61
 PSP_APOB_BASE=$(CONFIG_PSP_APOB_DRAM_ADDRESS)
@@ -101,11 +113,16 @@ PSP_ELF_FILE=$(objcbfs)/bootblock.elf
 PSP_BIOSBIN_SIZE=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | awk '{print $$5}')
 PSP_BIOSBIN_DEST=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | awk '{print $$3}')
 
+# type = 0x63 - construct APOB NV base/size from flash map
+# The flashmap section used for this is expected to be named RW_MRC_CACHE
+APOB_NV_SIZE=$(shell awk '$$2 == "FMAP_SECTION_RW_MRC_CACHE_SIZE" {print $$3}' $(obj)/fmap_config.h)
+APOB_NV_BASE=$(shell awk '$$2 == "FMAP_SECTION_RW_MRC_CACHE_START" {print $$3}' $(obj)/fmap_config.h)
+
 # type = 0xb - See #55758 (NDA) for bit definitions.
-PSP_SOFTFUSE_BITS += 28
+PSP_SOFTFUSE_BITS += 28 6
 
 #hardcode post code to eSPI
-PSP_SOFTFUSE_BITS += 15 6
+PSP_SOFTFUSE_BITS += 15
 
 # Helper function to return a value with given bit set
 set-bit=$(call int-shift-left, 1 $(call _toint,$1))
@@ -128,11 +145,15 @@ OPT_PSP_BIOSBIN_FILE=$(call add_opt_prefix, $(PSP_BIOSBIN_FILE), --bios-bin)
 OPT_PSP_BIOSBIN_DEST=$(call add_opt_prefix, $(PSP_BIOSBIN_DEST), --bios-bin-dest)
 OPT_PSP_BIOSBIN_SIZE=$(call add_opt_prefix, $(PSP_BIOSBIN_SIZE), --bios-uncomp-size)
 
+OPT_APOB_NV_SIZE=$(call add_opt_prefix, $(APOB_NV_SIZE), --apob-nv-size)
+OPT_APOB_NV_BASE=$(call add_opt_prefix, $(APOB_NV_BASE),--apob-nv-base)
 OPT_EFS_SPI_READ_MODE=$(call add_opt_prefix, $(CONFIG_EFS_SPI_READ_MODE), --spi-read-mode)
 OPT_EFS_SPI_SPEED=$(call add_opt_prefix, $(CONFIG_EFS_SPI_SPEED), --spi-speed)
 OPT_EFS_SPI_MICRON_FLAG=$(call add_opt_prefix, $(CONFIG_EFS_SPI_MICRON_FLAG), --spi-micron-flag)
 
 OPT_PSP_SOFTFUSE=$(call add_opt_prefix, $(PSP_SOFTFUSE), --soft-fuse)
+
+OPT_WHITELIST_FILE=$(call add_opt_prefix, $(PSP_WHITELIST_FILE), --whitelist)
 
 # Add all the files listed in the config file
 POUND_SIGN=$(call strip_quotes, "\#")
@@ -149,6 +170,7 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		--load-s0i3 \
 		--combo-capable \
 		$(OPT_TOKEN_UNLOCK) \
+		$(OPT_WHITELIST_FILE) \
 		$(OPT_EFS_SPI_READ_MODE) \
 		$(OPT_EFS_SPI_SPEED) \
 		$(OPT_EFS_SPI_MICRON_FLAG) \
@@ -166,6 +188,8 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(PSP_BIOSBIN_FILE)) \
 	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
 	$(AMDFWTOOL) \
 		$(AMDFW_COMMON_ARGS) \
+		$(OPT_APOB_NV_SIZE) \
+		$(OPT_APOB_NV_BASE) \
 		--location $(shell printf "%#x" $(CEZANNE_FWM_POSITION)) \
 		--multilevel \
 		--output $@

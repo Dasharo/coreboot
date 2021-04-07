@@ -1,8 +1,4 @@
 chip soc/intel/alderlake
-	register "pmc_gpe0_dw0" = "GPP_A"
-	register "pmc_gpe0_dw1" = "GPP_E"
-	register "pmc_gpe0_dw2" = "GPP_F"
-
 	register "SaGv" = "SaGv_Disabled"
 
 	register "usb2_ports[7]" = "USB2_PORT_MID(OC_SKIP)"	# Type-A MLB Port
@@ -73,7 +69,7 @@ chip soc/intel/alderlake
 				register "desc" = ""SAR1 Proximity Sensor""
 				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_H19_IRQ)"
 				register "speed" = "I2C_SPEED_FAST"
-				register "uid" = "2"
+				register "uid" = "1"
 				register "reg_gnrl_ctrl0" = "0x16"
 				register "reg_gnrl_ctrl1" = "0x21"
 				register "reg_afe_ctrl0" = "0x00"
@@ -183,6 +179,7 @@ chip soc/intel/alderlake
 				register "sdmode_gpio" =
 						"ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A11)"
 				register "sdmode_delay" = "5"
+				device generic 0 on end
 			end
 		end
 		device ref gspi1 on
@@ -198,10 +195,33 @@ chip soc/intel/alderlake
 		end
 		device ref pch_espi on
 			chip ec/google/chromeec
+				use conn0 as mux_conn[0]
+				use conn1 as mux_conn[1]
+				use conn2 as mux_conn[2]
 				device pnp 0c09.0 on end
 			end
 		end
-		device ref pmc hidden end
+		device ref pmc hidden
+			chip drivers/intel/pmc_mux
+				device generic 0 on
+					chip drivers/intel/pmc_mux/conn
+						register "usb2_port_number" = "1"
+						register "usb3_port_number" = "1"
+						device generic 0 alias conn0 on end
+					end
+					chip drivers/intel/pmc_mux/conn
+						register "usb2_port_number" = "2"
+						register "usb3_port_number" = "2"
+						device generic 1 alias conn1 on end
+					end
+					chip drivers/intel/pmc_mux/conn
+						register "usb2_port_number" = "3"
+						register "usb3_port_number" = "3"
+						device generic 2 alias conn2 on end
+					end
+				end
+			end
+		end
 		device ref tcss_xhci on
 			chip drivers/usb/acpi
 				device ref tcss_root_hub on
@@ -273,7 +293,7 @@ chip soc/intel/alderlake
 						register "desc" = ""USB2 Bluetooth""
 						register "type" = "UPC_TYPE_INTERNAL"
 						register "reset_gpio" =
-							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F4)"
+							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D4)"
 						device ref usb2_port10 on end
 					end
 					chip drivers/usb/acpi

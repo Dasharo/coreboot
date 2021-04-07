@@ -7,6 +7,7 @@
 #include <soc/acpi.h>
 #include <string.h>
 #include <types.h>
+#include <vendorcode/google/chromeos/chromeos.h>
 
 /*
  * These arrays set up the FCH PCI_INTR registers 0xC00/0xC01.
@@ -81,7 +82,6 @@ static void init_tables(void)
 
 static void pirq_setup(void)
 {
-	init_tables();
 	intr_data_ptr = fch_apic_routing;
 	picr_data_ptr = fch_pic_routing;
 }
@@ -90,15 +90,16 @@ static void mainboard_init(void *chip_info)
 {
 }
 
-static void majolica_enable(struct device *dev)
+static void mainboard_enable(struct device *dev)
 {
-	printk(BIOS_INFO, "Mainboard " CONFIG_MAINBOARD_PART_NUMBER " Enable.\n");
-
+	init_tables();
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
+
+	dev->ops->acpi_inject_dsdt = chromeos_dsdt_generator;
 }
 
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
-	.enable_dev = majolica_enable,
+	.enable_dev = mainboard_enable,
 };

@@ -36,9 +36,24 @@ config CPU_QEMU_X86_ASEG_SMM
 	depends on !PARALLEL_MP
 	select SMM_ASEG
 
-#config CPU_QEMU_X86_TSEG_SMM
-#	bool "SMM in TSEG"
-#	select SMM_TSEG
+config CPU_QEMU_X86_TSEG_SMM
+	bool "SMM in TSEG"
+	select SMM_TSEG
+	depends on PARALLEL_MP
+
+endchoice
+
+choice
+	prompt "SMM loader"
+	default CPU_QEMU_X86_SMMLOADERV1
+	depends on SMM_TSEG
+
+config CPU_QEMU_X86_SMMLOADERV1
+	bool "smmloader v1"
+
+config CPU_QEMU_X86_SMMLOADERV2
+	bool "smmloader v2"
+	select X86_SMM_LOADER_VERSION2
 
 endchoice
 

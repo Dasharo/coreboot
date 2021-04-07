@@ -18,10 +18,10 @@ chip soc/amd/picasso
 
 	# End : OPN Performance Configuration
 
-	register "telemetry_vddcr_vdd_slope_mA" = "30518"
-	register "telemetry_vddcr_vdd_offset" = "435"
-	register "telemetry_vddcr_soc_slope_mA" = "22965"
-	register "telemetry_vddcr_soc_offset" = "165"
+	register "telemetry_vddcr_vdd_slope_mA" = "30595"
+	register "telemetry_vddcr_vdd_offset" = "77"
+	register "telemetry_vddcr_soc_slope_mA" = "24063"
+	register "telemetry_vddcr_soc_offset" = "105"
 
 	# I2C2 for touchscreen and trackpad
 
@@ -29,14 +29,15 @@ chip soc/amd/picasso
 		.speed = I2C_SPEED_FAST,
 		.rise_time_ns = 18,  /* 0 to 2.31 (3.3 * .7) */
 		.fall_time_ns = 57,  /* 2.31 to 0 */
+		.data_hold_time_ns = 335,
 	}"
 
 	# I2C3 for H1
 
 	register "i2c[3]" = "{
 		.speed = I2C_SPEED_FAST,
-		.rise_time_ns = 184, /* 0 to 1.26v (1.8 * .7) */
-		.fall_time_ns = 42,  /* 1.26v to 0 */
+		.rise_time_ns = 110, /* 0 to 1.26v (1.8 * .7) */
+		.fall_time_ns = 34,  /* 1.26v to 0 */
 		.early_init = true,
 	}"
 
@@ -59,14 +60,33 @@ chip soc/amd/picasso
 			register "disable_gpio_export_in_crs" = "1"
 			device i2c 10 on end
 		end
+		chip drivers/i2c/generic
+			register "hid" = ""ELAN0000""
+			register "desc" = ""ELAN Touchpad""
+			register "irq_gpio" = "ACPI_GPIO_IRQ_EDGE_LOW(GPIO_9)"
+			register "wake" = "GEVENT_22"
+			register "probed" = "1"
+			device i2c 15 on
+				probe TOUCHPAD REGULAR_TOUCHPAD
+			end
+		end
 		chip drivers/i2c/hid
-				register "generic.hid" = ""ELAN2702""
-				register "generic.desc" = ""ELAN Touchpad""
-				register "generic.irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPIO_9)"
-				register "generic.wake" = "GEVENT_22"
-				register "generic.probed" = "1"
-				register "hid_desc_reg_offset" = "0x01"
-				device i2c 15 on end
+			register "generic.hid" = ""ELAN2702""
+			register "generic.desc" = ""ELAN Touchpad""
+			register "generic.irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPIO_9)"
+			register "generic.wake" = "GEVENT_22"
+			register "generic.probed" = "1"
+			register "hid_desc_reg_offset" = "0x01"
+			device i2c 15 on
+				probe TOUCHPAD NUMPAD_TOUCHPAD
+			end
 		end
 	end # device
+
+	chip drivers/generic/max98357a
+			register "hid" = ""MX98357A""
+			register "sdmode_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_91)"
+			register "sdmode_delay" = "5"
+			device generic 0.1 on end
+	end
 end	# chip soc/amd/picasso

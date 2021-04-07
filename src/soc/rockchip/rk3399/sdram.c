@@ -639,7 +639,7 @@ static int data_training_ca(u32 channel, const struct rk3399_sdram_params *param
 {
 	u32 *denali_pi = rk3399_ddr_pi[channel]->denali_pi;
 	u32 *denali_phy = rk3399_ddr_publ[channel]->denali_phy;
-	u32 obs_0, obs_1, obs_2, obs_err = 0;
+	u32 obs_0, obs_1, obs_2;
 	const u32 rank_mask = get_rank_mask(channel, params);
 	u32 i, tmp;
 
@@ -668,13 +668,15 @@ static int data_training_ca(u32 channel, const struct rk3399_sdram_params *param
 			obs_0 = read32(&denali_phy[532]);
 			obs_1 = read32(&denali_phy[660]);
 			obs_2 = read32(&denali_phy[788]);
-			if (((obs_0 >> 30) & 0x3) || ((obs_1 >> 30) & 0x3)
-			    || ((obs_2 >> 30) & 0x3))
-				obs_err = 1;
-			if ((((tmp >> 11) & 0x1) == 0x1) && (((tmp >> 13) & 0x1) == 0x1)
-			    && (((tmp >> 5) & 0x1) == 0x0) && (obs_err == 0))
+			if (((obs_0 >> 30) & 0x3) ||
+			    ((obs_1 >> 30) & 0x3) ||
+			    ((obs_2 >> 30) & 0x3))
+				return -1;
+			if ((((tmp >> 11) & 0x1) == 0x1) &&
+			    (((tmp >> 13) & 0x1) == 0x1) &&
+			    (((tmp >> 5) & 0x1) == 0x0))
 				break;
-			else if ((((tmp >> 5) & 0x1) == 0x1) || (obs_err == 1))
+			else if (((tmp >> 5) & 0x1) == 0x1)
 				return -1;
 		}
 		/* clear interrupt,PI_175 PI_INT_ACK:WR:0:17 */
@@ -689,7 +691,7 @@ static int data_training_wl(u32 channel, const struct rk3399_sdram_params *param
 {
 	u32 *denali_pi = rk3399_ddr_pi[channel]->denali_pi;
 	u32 *denali_phy = rk3399_ddr_publ[channel]->denali_phy;
-	u32 obs_0, obs_1, obs_2, obs_3, obs_err = 0;
+	u32 obs_0, obs_1, obs_2, obs_3;
 	u32 rank = params->ch[channel].rank;
 	u32 i, tmp;
 
@@ -716,13 +718,16 @@ static int data_training_wl(u32 channel, const struct rk3399_sdram_params *param
 			obs_1 = read32(&denali_phy[168]);
 			obs_2 = read32(&denali_phy[296]);
 			obs_3 = read32(&denali_phy[424]);
-			if (((obs_0 >> 12) & 0x1) || ((obs_1 >> 12) & 0x1)
-			    || ((obs_2 >> 12) & 0x1) || ((obs_3 >> 12) & 0x1))
-				obs_err = 1;
-			if ((((tmp >> 10) & 0x1) == 0x1) && (((tmp >> 13) & 0x1) == 0x1)
-			    && (((tmp >> 4) & 0x1) == 0x0) && (obs_err == 0))
+			if (((obs_0 >> 12) & 0x1) ||
+			    ((obs_1 >> 12) & 0x1) ||
+			    ((obs_2 >> 12) & 0x1) ||
+			    ((obs_3 >> 12) & 0x1))
+				return -1;
+			if ((((tmp >> 10) & 0x1) == 0x1) &&
+			    (((tmp >> 13) & 0x1) == 0x1) &&
+			    (((tmp >> 4) & 0x1) == 0x0))
 				break;
-			else if ((((tmp >> 4) & 0x1) == 0x1) || (obs_err == 1))
+			else if (((tmp >> 4) & 0x1) == 0x1)
 				return -1;
 		}
 		/* clear interrupt,PI_175 PI_INT_ACK:WR:0:17 */
@@ -740,7 +745,7 @@ static int data_training_rg(u32 channel, const struct rk3399_sdram_params *param
 	u32 *denali_pi = rk3399_ddr_pi[channel]->denali_pi;
 	u32 *denali_phy = rk3399_ddr_publ[channel]->denali_phy;
 	u32 rank = params->ch[channel].rank;
-	u32 obs_0, obs_1, obs_2, obs_3, obs_err;
+	u32 obs_0, obs_1, obs_2, obs_3;
 	u32 reg_value = 0;
 	u32 i, tmp;
 
@@ -793,13 +798,16 @@ static int data_training_rg(u32 channel, const struct rk3399_sdram_params *param
 			obs_1 = read32(&denali_phy[171]);
 			obs_2 = read32(&denali_phy[299]);
 			obs_3 = read32(&denali_phy[427]);
-			if (((obs_0 >> (16 + 6)) & 0x3) || ((obs_1 >> (16 + 6)) & 0x3)
-			    || ((obs_2 >> (16 + 6)) & 0x3) || ((obs_3 >> (16 + 6)) & 0x3))
-				obs_err = 1;
-			if ((((tmp >> 9) & 0x1) == 0x1) && (((tmp >> 13) & 0x1) == 0x1)
-			    && (((tmp >> 3) & 0x1) == 0x0) && (obs_err == 0))
+			if (((obs_0 >> (16 + 6)) & 0x3) ||
+			    ((obs_1 >> (16 + 6)) & 0x3) ||
+			    ((obs_2 >> (16 + 6)) & 0x3) ||
+			    ((obs_3 >> (16 + 6)) & 0x3))
+				return -1;
+			if ((((tmp >> 9) & 0x1) == 0x1) &&
+			    (((tmp >> 13) & 0x1) == 0x1) &&
+			    (((tmp >> 3) & 0x1) == 0x0))
 				break;
-			else if ((((tmp >> 3) & 0x1) == 0x1) || (obs_err == 1))
+			else if (((tmp >> 3) & 0x1) == 0x1)
 				return -1;
 		}
 		/* clear interrupt,PI_175 PI_INT_ACK:WR:0:17 */
@@ -931,7 +939,7 @@ static int data_training(u32 channel, const struct rk3399_sdram_params *params,
 	if ((training_flag & PI_CA_TRAINING) == PI_CA_TRAINING) {
 		ret = data_training_ca(channel, params);
 		if (ret) {
-			printk(BIOS_ERR, "CA training failed\n");
+			printk(BIOS_ERR, "Channel %d CA training failed\n", channel);
 			return ret;
 		}
 	}
@@ -940,7 +948,7 @@ static int data_training(u32 channel, const struct rk3399_sdram_params *params,
 	if ((training_flag & PI_WRITE_LEVELING) == PI_WRITE_LEVELING) {
 		ret = data_training_wl(channel, params);
 		if (ret) {
-			printk(BIOS_ERR, "WL training failed\n");
+			printk(BIOS_ERR, "Channel %d WL training failed\n", channel);
 			return ret;
 		}
 	}
@@ -949,7 +957,7 @@ static int data_training(u32 channel, const struct rk3399_sdram_params *params,
 	if ((training_flag & PI_READ_GATE_TRAINING) == PI_READ_GATE_TRAINING) {
 		ret = data_training_rg(channel, params);
 		if (ret) {
-			printk(BIOS_ERR, "RG training failed\n");
+			printk(BIOS_ERR, "Channel %d RG training failed\n", channel);
 			return ret;
 		}
 	}
@@ -958,7 +966,7 @@ static int data_training(u32 channel, const struct rk3399_sdram_params *params,
 	if ((training_flag & PI_READ_LEVELING) == PI_READ_LEVELING) {
 		ret = data_training_rl(channel, params);
 		if (ret) {
-			printk(BIOS_ERR, "RL training failed\n");
+			printk(BIOS_ERR, "Channel %d RL training failed\n", channel);
 			return ret;
 		}
 	}
@@ -967,7 +975,7 @@ static int data_training(u32 channel, const struct rk3399_sdram_params *params,
 	if ((training_flag & PI_WDQ_LEVELING) == PI_WDQ_LEVELING) {
 		ret = data_training_wdql(channel, params);
 		if (ret) {
-			printk(BIOS_ERR, "WDQL training failed\n");
+			printk(BIOS_ERR, "Channel %d WDQL training failed\n", channel);
 			return ret;
 		}
 	}
@@ -1125,7 +1133,7 @@ void sdram_init(const struct rk3399_sdram_params *params)
 		 * step may fail, before that, we just reset the
 		 * system, and start again.
 		 */
-		if (pctl_cfg(channel, params) != 0) {
+		if (pctl_cfg(channel, params)) {
 			printk(BIOS_ERR, "pctl_cfg fail, reset\n");
 			board_reset();
 		}

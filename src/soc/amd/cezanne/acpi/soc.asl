@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include "globalnvs.asl"
+
 Scope(\_SB) {
 	/* global utility methods expected within the \_SB scope */
 	#include <arch/x86/acpi/globutil.asl>
@@ -14,6 +16,8 @@ Scope(\_SB) {
 } /* End \_SB scope */
 
 #include <soc/amd/common/acpi/platform.asl>
+
+#include <soc/amd/common/acpi/sleepstates.asl>
 
 /*
  * Platform Wake Notify

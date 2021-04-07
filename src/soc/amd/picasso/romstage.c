@@ -3,6 +3,7 @@
 #include <arch/cpu.h>
 #include <acpi/acpi.h>
 #include <amdblocks/acpi.h>
+#include <amdblocks/apob_cache.h>
 #include <amdblocks/memmap.h>
 #include <cbmem.h>
 #include <cpu/x86/cache.h>
@@ -14,12 +15,13 @@
 #include <program_loading.h>
 #include <elog.h>
 #include <soc/acpi.h>
-#include <soc/mrc_cache.h>
 #include <soc/pci_devs.h>
+#include <soc/romstage.h>
 #include <types.h>
 #include "chip.h"
 #include <fsp/api.h>
 
+void __weak mainboard_updm_update(FSP_M_CONFIG *mupd) {}
 static struct chipset_power_state chipset_state;
 
 static void fill_chipset_state(void)
@@ -92,7 +94,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	FSP_M_CONFIG *mcfg = &mupd->FspmConfig;
 	const struct soc_amd_picasso_config *config = config_of_soc();
 
-	mupd->FspmArchUpd.NvsBufferPtr = (uintptr_t)soc_fill_mrc_cache();
+	mupd->FspmArchUpd.NvsBufferPtr = (uintptr_t)soc_fill_apob_cache();
 
 	mcfg->pci_express_base_addr = CONFIG_MMCONF_BASE_ADDRESS;
 	mcfg->tseg_size = CONFIG_SMM_TSEG_SIZE;
@@ -139,6 +141,8 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	mcfg->telemetry_vddcr_soc_offset = config->telemetry_vddcr_soc_offset;
 	mcfg->hd_audio_enable = devtree_hda_dev_enabled();
 	mcfg->sata_enable = devtree_sata_dev_enabled();
+
+	mainboard_updm_update(mcfg);
 }
 
 asmlinkage void car_stage_entry(void)
@@ -147,15 +151,13 @@ asmlinkage void car_stage_entry(void)
 	console_init();
 
 	post_code(0x42);
-	u32 val = cpuid_eax(1);
-	printk(BIOS_DEBUG, "Family_Model: %08x\n", val);
 
 	/* Snapshot chipset state prior to any FSP call. */
 	fill_chipset_state();
 
 	post_code(0x43);
 	fsp_memory_init(acpi_is_wakeup_s3());
-	soc_update_mrc_cache();
+	soc_update_apob_cache();
 
 	memmap_stash_early_dram_usage();
 

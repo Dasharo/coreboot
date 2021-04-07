@@ -174,6 +174,8 @@ struct soc_intel_tigerlake_config {
 	uint16_t usb2_wake_enable_bitmap;
 	/* Wake Enable Bitmap for USB3 ports */
 	uint16_t usb3_wake_enable_bitmap;
+	/* PCH USB2 PHY Power Gating disable */
+	uint8_t usb2_phy_sus_pg_disable;
 
 	/*
 	 * Acoustic Noise Mitigation
@@ -316,11 +318,11 @@ struct soc_intel_tigerlake_config {
 		DEBUG_INTERFACE_TRACEHUB = (1 << 5),
 	} debug_interface_flag;
 
+	/* CNVi BT Core Enable/Disable */
+	bool CnviBtCore;
+
 	/* CNVi BT Audio Offload: Enable/Disable BT Audio Offload. */
-	enum {
-		FORCE_DISABLE,
-		FORCE_ENABLE,
-	} CnviBtAudioOffload;
+	bool CnviBtAudioOffload;
 
 	/* TCSS USB */
 	uint8_t TcssXhciEn;

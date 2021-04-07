@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <acpi/acpigen.h>
+#include <acpi/acpigen_pci.h>
 #include <arch/ioapic.h>
 #include <assert.h>
 #include <amdblocks/amd_pci_util.h>
@@ -148,7 +149,6 @@ static void acpigen_write_PRT(const struct device *dev)
 		acpigen_pop_len();
 	}
 	acpigen_pop_len(); /* Package - APIC Routing */
-	acpigen_pop_len(); /* End If */
 
 	/* Else */
 	acpigen_write_else();
