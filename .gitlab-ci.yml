@@ -65,7 +65,7 @@ check_dependencies:
     - docker
   before_script:
     - apt-get update
-    - apt-get install curl
+    - apt-get -y install curl
   script:
     - ls -al ${RELEASE_DIR}
     - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL ${UPLOADER_URL}/releases/
