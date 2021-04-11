@@ -4,6 +4,7 @@
 #include <boot_device.h>
 #include <arch/io.h>
 #include <console/console.h>
+#include <cpu/power/memd.h>
 #include <endian.h>
 #include <cbfs.h>
 #include <symbols.h>
@@ -13,6 +14,8 @@
 #define LPC_FLASH_TOP (LPC_FLASH_MIN + FW_SPACE_SIZE)
 
 #define CBFS_PARTITION_NAME "HBI"
+
+#define MEMD_PARTITION_NAME "MEMD"
 
 /* ffs_entry is not complete in included ffs.h, it lacks user data layout.
  * See https://github.com/open-power/skiboot/blob/master/libflash/ffs.h */
@@ -313,6 +316,8 @@ static ssize_t ecc_readat(const struct region_device *rd, void *b,
 	return size;
 }
 
+struct region_device_ops no_rdev_ops = {};
+
 struct region_device_ops no_ecc_rdev_ops = {
 	.mmap = mmap_helper_rdev_mmap,
 	.munmap = mmap_helper_rdev_munmap,
@@ -429,6 +434,30 @@ static void mount_part_from_pnor(const char *part_name,
 
 		break;
 	}
+}
+
+static struct mmap_helper_region_device memd_mdev = MMAP_HELPER_DEV_INIT(
+	&no_ecc_rdev_ops, 0, CONFIG_ROM_SIZE, &cbfs_cache);
+
+void memd_device_init(void)
+{
+	static int init_done;
+	if (init_done)
+		return;
+
+	mount_part_from_pnor(MEMD_PARTITION_NAME, &memd_mdev);
+
+	init_done = 1;
+}
+
+void memd_device_unmount(void)
+{
+	memd_mdev.rdev.ops = &no_rdev_ops;
+}
+
+const struct region_device *memd_device_ro(void)
+{
+	return &memd_mdev.rdev;
 }
 
 static struct mmap_helper_region_device boot_mdev = MMAP_HELPER_DEV_INIT(
