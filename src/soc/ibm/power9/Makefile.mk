@@ -8,6 +8,7 @@ bootblock-y += rom_media.c
 romstage-y += cbmem.c
 romstage-y += rom_media.c
 romstage-y += romstage.c
+romstage-y += vpd.c
 
 ramstage-y += cbmem.c
 ramstage-y += chip.c

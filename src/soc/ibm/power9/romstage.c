@@ -2,11 +2,15 @@
 
 #include <cbmem.h>
 #include <console/console.h>
+#include <cpu/power/vpd.h>
 #include <program_loading.h>
 
 void main(void)
 {
 	console_init();
 	cbmem_initialize_empty();
+
+	vpd_pnor_main();
+
 	run_ramstage();
 }
