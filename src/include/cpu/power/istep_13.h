@@ -13,6 +13,10 @@
 #define DIMMS_PER_MCS		(DIMMS_PER_MCA * MCA_PER_MCS)
 
 /* These should be in one of the SPD headers. */
+/*
+ * Note: code in 13.3 depends on width/density having values as encoded in SPD
+ * and below. Please do not change them.
+ */
 #define WIDTH_x4		0
 #define WIDTH_x8		1
 
@@ -304,3 +308,4 @@ void istep_13_8(void);	// TODO: takes epsilon values from 8.6 and MSS data from 
 void istep_13_9(void);
 void istep_13_10(void);
 void istep_13_11(void);
+void istep_13_13(void);
