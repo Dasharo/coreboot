@@ -9,8 +9,8 @@ export SHELL := env bash
 
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
-project_git_repo=https://github.com/3mdeb/edk2
-project_git_branch=coreboot-4.7.x-uefi
+project_git_repo=https://github.com/Dasharo/edk2
+project_git_branch=workstation/master
 upstream_git_repo=https://github.com/tianocore/edk2
 
 # STABLE revision is 3mdeb's coreboot uefi (coreboot-4.7.x-uefi) branch
