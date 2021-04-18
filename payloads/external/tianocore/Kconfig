@@ -108,7 +108,6 @@ config TIANOCORE_ENABLE_IPXE
 
 config TIANOCORE_SECURE_BOOT
 	bool "Enable TianoCore Secure Boot"
-	depends on SMMSTORE_V2
 	default n
 	help
 	  Enables UEFI Secure Boot image verification in TianoCore Payload.
