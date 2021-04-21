@@ -74,7 +74,7 @@ void soc_core_init(struct device *cpu)
 	*/
 	enable_pm_timer_emulation();
 
-		/* Enable Direct Cache Access */
+	/* Enable Direct Cache Access */
 	configure_dca_cap();
 
 	/* Set energy policy */
@@ -90,6 +90,9 @@ void soc_core_init(struct device *cpu)
 		/* Disable speed step */
 		cpu_set_eist(false);
 	}
+
+	/* Enable Vmx */
+	set_vmx_and_lock();
 }
 
 #if !CONFIG(SOC_INTEL_COMMON_BLOCK_CPU_MPINIT)
