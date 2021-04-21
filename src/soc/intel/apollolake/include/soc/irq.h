@@ -43,6 +43,7 @@
 #define EMMC_INT        39
 #define PMC_INT         40
 #define SDIO_INT        42
+#define ESPI_INT        43
 #define CNVI_INT        44
 
 #endif /* _SOC_IRQ_H_ */
