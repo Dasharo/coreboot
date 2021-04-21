@@ -58,6 +58,7 @@ Method(_PRT)
 		Package(){0x001DFFFF, 0, 0, UFS_INT},
 #endif
 		Package(){0x001EFFFF, 0, 0, SDIO_INT},
-		Package(){0x001FFFFF, 0, 0, SMBUS_INT},
+		Package(){0x001FFFFF, 0, 0, ESPI_INT},
+		Package(){0x001FFFFF, 1, 0, SMBUS_INT},
 	})
 }
