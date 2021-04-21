@@ -146,10 +146,7 @@ chip soc/intel/apollolake
 		device pci 1e.0 off end	# - SDIO
 		device pci 1f.0 on	# - LPC
 			chip drivers/pc80/tpm
-				register "irq_polarity" = "2"
-				device pnp 0c31.0 on
-					irq 0x70 = 10
-				end
+				device pnp 0c31.0 on end
 			end
 			chip superio/ite/it8613e 
 				device pnp 2e.0 off end 
