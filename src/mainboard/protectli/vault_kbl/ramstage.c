@@ -12,7 +12,7 @@ void mainboard_silicon_init_params(FSP_SIL_UPD *params)
 	 */
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
-	if (CONFIG(BOARD_PROTECTLI_FW6D) || CONFIG(BOARD_PROTECTLI_FW6E))
+	if (CONFIG(BOARD_PROTECTLI_FW6E))
 		params->TurboMode = 0;
 	else
 		params->TurboMode = 1;
