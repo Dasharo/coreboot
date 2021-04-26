@@ -8,6 +8,8 @@
 #include <program_loading.h>
 #include <spd_bin.h>
 #include <endian.h>
+#include <cbmem.h>
+#include <timestamp.h>
 
 /* DIMM SPD addresses */
 #define DIMM0 0x50
@@ -329,11 +331,14 @@ static void prepare_dimm_data(void)
 
 void main(void)
 {
+	timestamp_add_now(TS_START_ROMSTAGE);
+
 	console_init();
 	cbmem_initialize_empty();
 
-	vpd_pnor_main();
+	timestamp_add_now(TS_BEFORE_INITRAM);
 
+	vpd_pnor_main();
 	prepare_dimm_data();
 
 	report_istep(13, 1);	// no-op
@@ -354,6 +359,8 @@ void main(void)
 	istep_14_2();
 	istep_14_5();
 
+	timestamp_add_now(TS_AFTER_INITRAM);
+
 	/* Test if SCOM still works. Maybe should check also indirect access? */
 	printk(BIOS_DEBUG, "0xF000F = %llx\n", read_scom(0xF000F));
 
@@ -364,5 +371,6 @@ void main(void)
 	if (read_scom(0xF000F) == 0xFFFFFFFFFFFFFFFF)
 		die("SCOM stopped working, check FIRs, halting now\n");
 
+	cbmem_initialize_empty();
 	run_ramstage();
 }
