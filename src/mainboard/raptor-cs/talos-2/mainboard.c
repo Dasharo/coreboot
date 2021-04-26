@@ -11,9 +11,16 @@ static void mainboard_enable(struct device *dev)
 		die("No dev0; die\n");
 	}
 
-	/* Where does RAM live? */
-	ram_resource(dev, 0, 2048, 32768);
-	cbmem_recovery(0);
+	/*
+	 * Smallest reported to be working (but not officially supported) DIMM is
+	 * 4GB. This means that we always have at least as much available. Last
+	 * 128MB of first 4GB are reserved for hostboot/coreboot - this is mostly
+	 * dictated by HRMOR value.
+	 *
+	 * TODO: implement this properly for all RAM
+	 */
+	ram_resource(dev, 0, 0, 4 * 1024 * 1024 - 128 * 1024);
+	reserved_ram_resource(dev, 1, 4 * 1024 * 1024 - 128 * 1024, 128 * 1024);
 }
 
 struct chip_operations mainboard_ops = {
