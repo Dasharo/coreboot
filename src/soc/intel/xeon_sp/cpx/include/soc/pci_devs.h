@@ -11,6 +11,7 @@
 #define SAD_ALL_DEV			29
 #define SAD_ALL_FUNC			0
 #define SAD_ALL_PAM0123_CSR		0x40
+#define   PAM_LOCK			BIT(0)
 #define SAD_ALL_PAM456_CSR		0x44
 
 #if !defined(__SIMPLE_DEVICE__)
@@ -25,11 +26,15 @@
 #define PCU_CR0_FUN                     0
 #define PCU_DEV_CR0(bus)                                   _PCU_DEV(bus, PCU_CR0_FUN)
 #define PCU_CR0_PLATFORM_INFO                              0xa8
+#define PCU_CR0_TURBO_ACTIVATION_RATIO                     0xb0
+#define   TURBO_ACTIVATION_RATIO_LOCK                      BIT(31)
 #define PCU_CR0_P_STATE_LIMITS                             0xd8
-#define P_STATE_LIMITS_LOCK                                BIT(31)
+#define   P_STATE_LIMITS_LOCK                              BIT(31)
 #define PCU_CR0_PACKAGE_RAPL_LIMIT_LWR                     0xe8
 #define PCU_CR0_PACKAGE_RAPL_LIMIT_UPR                     (PCU_CR0_PACKAGE_RAPL_LIMIT_LWR + 4)
-#define PKG_PWR_LIM_LOCK_UPR                               BIT(31)
+#define   PKG_PWR_LIM_LOCK_UPR                             BIT(31)
+#define PCU_CR0_PMAX                                       0xf0
+#define   PMAX_LOCK                                        BIT(31)
 
 #define PCU_CR1_FUN                     1
 #define PCU_DEV_CR1(bus)                                   _PCU_DEV(bus, PCU_CR1_FUN)
@@ -60,13 +65,35 @@
 
 #define PCU_CR2_FUN                     2
 #define PCU_DEV_CR2(bus)                                   _PCU_DEV(bus, PCU_CR2_FUN)
+#define PCU_CR2_DRAM_POWER_INFO_LWR                        0xa8
+#define PCU_CR2_DRAM_POWER_INFO_UPR                        (PCU_CR2_DRAM_POWER_INFO_LWR + 4)
+#define   DRAM_POWER_INFO_LOCK_UPR                         BIT(31)
 #define PCU_CR2_DRAM_PLANE_POWER_LIMIT                     0xf0
 #define PP_PWR_LIM_LOCK                                    BIT(31)
 
 #define PCU_CR3_FUN                     3
 #define PCU_DEV_CR3(bus)                                   _PCU_DEV(bus, PCU_CR3_FUN)
 #define PCU_CR3_CONFIG_TDP_CONTROL                         0x60
-#define TDP_LOCK                                           BIT(31)
+#define   TDP_LOCK                                         BIT(31)
+#define PCU_CR3_FLEX_RATIO                                 0xa0
+#define   OC_LOCK                                          BIT(20)
+
+#if !defined(__SIMPLE_DEVICE__)
+#define _UBOX_DEV(func)		pcidev_path_on_root_debug(PCI_DEVFN(UBOX_DEV, func), __func__)
+#else
+#define _UBOX_DEV(func)		PCI_DEV(0, UBOX_DEV, func)
+#endif
+
+#define UBOX_DEV			8
+
+#define UBOX_PMON_BUS			0
+#define UBOX_PMON_DEV			8
+#define UBOX_PMON_FUNC			1
+#define UBOX_DEV_PMON			_UBOX_DEV(UBOX_PMON_FUNC)
+#define SMM_FEATURE_CONTROL		0x7c
+#define SMM_CODE_CHK_EN			BIT(2)
+#define SMM_FEATURE_CONTROL_LOCK	BIT(0)
+
 
 #define UBOX_DECS_BUS			0
 #define UBOX_DECS_DEV			8
@@ -90,6 +117,18 @@
 #define VTD_CAP_HIGH			0x0C
 #define VTD_EXT_CAP_HIGH		0x14
 #define VTD_LTDPR			0x290
+
+/* IMC Devices */
+/* Bus: B(2), Device: 9-8, Function: 0 (M2MEM) */
+#define IMC_M2MEM_DEVID			0x2066
+#define IMC_M2MEM_TIMEOUT		0x104
+#define   TIMEOUT_LOCK			BIT(1)
+
+/* UPI Devices */
+/* Bus: B(3), Device: 16,14, Function: 3 (LL_CR) */
+#define UPI_LL_CR_DEVID			0x205B
+#define UPI_LL_CR_KTIMISCMODLCK		0x300
+#define   KTIMISCMODLCK_LOCK		BIT(0)
 
 /* CPU Devices */
 #define CBDMA_DEV_NUM           0x04

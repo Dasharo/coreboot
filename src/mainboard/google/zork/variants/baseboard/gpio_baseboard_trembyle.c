@@ -16,7 +16,7 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	/* SYS_RESET_L */
 	PAD_NF(GPIO_1, SYS_RESET_L, PULL_NONE),
 	/* WIFI_PCIE_WAKE_ODL */
-	PAD_SCI(GPIO_2, PULL_NONE, EDGE_LOW),
+	PAD_NF_SCI(GPIO_2, WAKE_L, PULL_NONE, EDGE_LOW),
 	/* H1_FCH_INT_ODL */
 	PAD_INT(GPIO_3, PULL_NONE, EDGE_LOW, STATUS_DELIVERY),
 	/* PEN_DETECT_ODL */
@@ -30,7 +30,7 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	/* I2S_LRCLK - Bit banged in depthcharge */
 	PAD_NF(GPIO_8, ACP_I2S_LRCLK, PULL_NONE),
 	/* TOUCHPAD_INT_ODL */
-	PAD_SCI(GPIO_9, PULL_NONE, EDGE_LOW),
+	PAD_SCI(GPIO_9, PULL_NONE, LEVEL_LOW),
 	/* S0iX SLP - goes to EC & FPMCU */
 	PAD_GPO(GPIO_10, HIGH),
 	/* USI_INT_ODL */

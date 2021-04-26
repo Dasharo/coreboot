@@ -9,16 +9,13 @@
 #include <intelblocks/gspi.h>
 #include <intelblocks/power_limit.h>
 #include <intelblocks/pcie_rp.h>
+#include <intelblocks/tcss.h>
 #include <soc/gpe.h>
 #include <soc/pci_devs.h>
 #include <soc/pmc.h>
 #include <soc/serialio.h>
 #include <soc/usb.h>
 #include <stdint.h>
-
-#define MAX_HD_AUDIO_DMIC_LINKS 2
-#define MAX_HD_AUDIO_SNDW_LINKS 4
-#define MAX_HD_AUDIO_SSP_LINKS  6
 
 struct soc_intel_alderlake_config {
 
@@ -87,6 +84,8 @@ struct soc_intel_alderlake_config {
 	uint16_t usb2_wake_enable_bitmap;
 	/* Wake Enable Bitmap for USB3 ports */
 	uint16_t usb3_wake_enable_bitmap;
+	/* Program OC pins for TCSS */
+	struct tcss_port_config tcss_ports[MAX_TYPE_C_PORTS];
 
 	/* SATA related */
 	uint8_t SataEnable;
@@ -114,13 +113,22 @@ struct soc_intel_alderlake_config {
 
 	/* Audio related */
 	uint8_t PchHdaDspEnable;
-	uint8_t PchHdaAudioLinkHdaEnable;
-	uint8_t PchHdaAudioLinkDmicEnable[MAX_HD_AUDIO_DMIC_LINKS];
-	uint8_t PchHdaAudioLinkSspEnable[MAX_HD_AUDIO_SSP_LINKS];
-	uint8_t PchHdaAudioLinkSndwEnable[MAX_HD_AUDIO_SNDW_LINKS];
-	uint8_t PchHdaIDispLinkTmode;
-	uint8_t PchHdaIDispLinkFrequency;
-	uint8_t PchHdaIDispCodecDisconnect;
+
+	/* iDisp-Link T-Mode 0: 2T, 2: 4T, 3: 8T, 4: 16T */
+	enum {
+		HDA_TMODE_2T = 0,
+		HDA_TMODE_4T = 2,
+		HDA_TMODE_8T = 3,
+		HDA_TMODE_16T = 4,
+	} PchHdaIDispLinkTmode;
+
+	/* iDisp-Link Freq 4: 96MHz, 3: 48MHz. */
+	enum {
+		HDA_LINKFREQ_48MHZ = 3,
+		HDA_LINKFREQ_96MHZ = 4,
+	} PchHdaIDispLinkFrequency;
+
+	bool PchHdaIDispCodecEnable;
 
 	struct pcie_rp_config pch_pcie_rp[CONFIG_MAX_PCH_ROOT_PORTS];
 	struct pcie_rp_config cpu_pcie_rp[CONFIG_MAX_CPU_ROOT_PORTS];
@@ -149,7 +157,6 @@ struct soc_intel_alderlake_config {
 		IGD_SM_56MB = 0xFD,
 		IGD_SM_60MB = 0xFE,
 	} IgdDvmt50PreAlloc;
-	uint8_t InternalGfx;
 	uint8_t SkipExtGfxScan;
 
 	/* HeciEnabled decides the state of Heci1 at end of boot
@@ -163,16 +170,6 @@ struct soc_intel_alderlake_config {
 
 	/* Enable C6 DRAM */
 	uint8_t enable_c6dram;
-	/*
-	 * PRMRR size setting with below options
-	 * Disable: 0x0
-	 * 32MB: 0x2000000
-	 * 64MB: 0x4000000
-	 * 128 MB: 0x8000000
-	 * 256 MB: 0x10000000
-	 * 512 MB: 0x20000000
-	 */
-	uint32_t PrmrrSize;
 	uint8_t PmTimerDisabled;
 	/*
 	 * SerialIO device mode selection:

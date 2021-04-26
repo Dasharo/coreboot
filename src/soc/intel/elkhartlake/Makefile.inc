@@ -30,7 +30,6 @@ romstage-y += reset.c
 ramstage-y += acpi.c
 ramstage-y += chip.c
 ramstage-y += cpu.c
-ramstage-y += elog.c
 ramstage-y += espi.c
 ramstage-y += finalize.c
 ramstage-y += fsp_params.c
@@ -45,7 +44,6 @@ ramstage-y += me.c
 
 smm-y += gpio.c
 smm-y += p2sb.c
-smm-y += pmc.c
 smm-y += pmutil.c
 smm-y += smihandler.c
 smm-y += uart.c

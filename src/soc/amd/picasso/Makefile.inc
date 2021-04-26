@@ -7,6 +7,7 @@ subdirs-y += ../../../cpu/x86/cache
 subdirs-y += ../../../cpu/x86/mtrr
 subdirs-y += ../../../cpu/x86/pae
 subdirs-$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK) += psp_verstage
+subdirs-$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK) += ../common/psp_verstage
 
 # Beware that all-y also adds the compilation unit to verstage on PSP
 all-y += config.c
@@ -19,6 +20,7 @@ bootblock-y += uart.c
 bootblock-y += gpio.c
 bootblock-y += reset.c
 
+romstage-y += fsp_m_params.c
 romstage-y += i2c.c
 romstage-y += romstage.c
 romstage-y += gpio.c
@@ -45,7 +47,7 @@ ramstage-y += acp.c
 ramstage-y += sata.c
 ramstage-y += uart.c
 ramstage-y += soc_util.c
-ramstage-y += fsp_params.c
+ramstage-y += fsp_s_params.c
 ramstage-y += graphics.c
 ramstage-y += pcie_gpp.c
 ramstage-y += xhci.c
@@ -105,6 +107,9 @@ else
 PSP_SOFTFUSE_BITS += 29
 endif
 
+# Use additional Soft Fuse bits specified in Kconfig
+PSP_SOFTFUSE_BITS += $(CONFIG_PSP_SOFTFUSE_BITS)
+
 ifeq ($(CONFIG_PSP_LOAD_S0I3_FW),y)
 OPT_PSP_LOAD_S0I3_FW="--load-s0i3"
 endif
@@ -145,10 +150,9 @@ PSP_VERSTAGE_FILE=$(call strip_quotes,$(CONFIG_PSP_VERSTAGE_FILE))
 PSP_VERSTAGE_SIG_FILE=$(call strip_quotes,$(CONFIG_PSP_VERSTAGE_SIGNING_TOKEN))
 endif # CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK
 
-# type = 0xb - See #55758 (NDA) for bit definitions.
-PSP_SOFTFUSE_BITS += 28
 
 # Helper function to return a value with given bit set
+# Soft Fuse type = 0xb - See #55758 (NDA) for bit definitions.
 set-bit=$(call int-shift-left, 1 $(call _toint,$1))
 PSP_SOFTFUSE=$(shell A=$(call int-add, \
 		$(foreach bit,$(PSP_SOFTFUSE_BITS),$(call set-bit,$(bit)))); printf "0x%x" $$A)

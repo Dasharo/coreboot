@@ -11,7 +11,7 @@
 #define STARTOFTIME		1970
 #define SECDAY			86400L
 #define SECYR			(SECDAY * 365)
-#define LEAP_YEAR(year)		((year) % 4 == 0)
+#define LEAP_YEAR(year)		(((year) % 4 == 0 && (year) % 100 != 0) || (year) % 400 == 0)
 #define DAYS_IN_YEAR(a)		(LEAP_YEAR(a) ? 366 : 365)
 #define DAYS_IN_MONTH(a)	(month_days[(a) - 1])
 
@@ -22,9 +22,6 @@ static const char *const weekdays[] = {
 /* Zeller's rule */
 static int rtc_calc_weekday(struct rtc_time *tm)
 {
-	if (tm->year < 1971)
-		return -1;
-
 	/* In Zeller's rule, January and February are treated as if they
 	   are months 13 and 14 of the previous year (March is still month 3) */
 	const int zyear = ((tm->mon < 3) ? tm->year - 1 : tm->year);

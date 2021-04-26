@@ -120,7 +120,7 @@ static const struct pad_config gpio_table[] = {
 	/* D0  : ISH_GP0 ==> PCH_FP_BOOT0 */
 	PAD_NC(GPP_D0, NONE),
 	/* D1  : ISH_GP1 ==> FP_RST_ODL */
-	PAD_CFG_GPO(GPP_D1, 0, DEEP),
+	PAD_CFG_GPO(GPP_D1, 1, DEEP),
 	/* D2  : ISH_GP2 ==> EN_FP_PWR */
 	PAD_CFG_GPO(GPP_D2, 1, DEEP),
 	/* D3  : ISH_GP3 ==> WCAM_RST_L */
@@ -148,13 +148,13 @@ static const struct pad_config gpio_table[] = {
 	/* D14 : ISH_UART0_TXD ==> PCH_I2C_CAM_SCL */
 	PAD_CFG_NF(GPP_D14, NONE, DEEP, NF3),
 	/* D15 : ISH_UART0_RTS# ==> EN_WCAM_SENR_PWR */
-	PAD_CFG_GPO(GPP_D15, 1, DEEP),
+	PAD_CFG_GPO(GPP_D15, 0, DEEP),
 	/* D16 : ISH_UART0_CTS# ==> EN_WCAM_PWR */
-	PAD_CFG_GPO(GPP_D16, 1, DEEP),
+	PAD_CFG_GPO(GPP_D16, 0, DEEP),
 	/* D17 : UART1_RXD ==> SD_PE_PRSNT_L */
 	PAD_CFG_GPI(GPP_D17, NONE, DEEP),
 	/* D18 : UART1_TXD ==> SD_PE_RST_L */
-	PAD_CFG_GPO(GPP_D18, 0, DEEP),
+	PAD_CFG_GPO(GPP_D18, 1, DEEP),
 	/* D19 : I2S_MCLK1_OUT ==> I2S_MCLK_R */
 	PAD_CFG_NF(GPP_D19, NONE, DEEP, NF1),
 
@@ -191,7 +191,7 @@ static const struct pad_config gpio_table[] = {
 	/* E15 : RSVD_TP ==> PCH_WP_OD */
 	PAD_CFG_GPI_GPIO_DRIVER(GPP_E15, NONE, DEEP),
 	/* E16 : RSVD_TP ==> WWAN_RST_L */
-	PAD_CFG_GPO(GPP_E16, 0, DEEP),
+	PAD_CFG_GPO(GPP_E16, 1, DEEP),
 	/* E17 : THC0_SPI1_INT# ==> WWAN_CONFIG3 */
 	PAD_CFG_GPI(GPP_E17, NONE, DEEP),
 	/* E18 : DDP1_CTRLCLK ==> USB_C0_LSX_SOC_TX */
@@ -236,13 +236,13 @@ static const struct pad_config gpio_table[] = {
 	/* F13 : GSXDOUT ==> GSPI_PCH_DI_FPMCU_DO */
 	PAD_CFG_NF(GPP_F13, NONE, DEEP, NF4),
 	/* F14 : GSXDIN ==> TCHPAD_INT_ODL */
-	PAD_CFG_GPI_IRQ_WAKE(GPP_F14, NONE, DEEP, LEVEL, INVERT),
+	PAD_CFG_GPI_IRQ_WAKE(GPP_F14, NONE, PLTRST, LEVEL, INVERT),
 	/* F15 : GSXSRESET# ==> FPMCU_INT_L */
 	PAD_CFG_GPI_IRQ_WAKE(GPP_F15, NONE, DEEP, LEVEL, INVERT),
 	/* F16 : GSXCLK ==> GSPI_PCH_CS_FPMCU_R_L */
 	PAD_CFG_NF(GPP_F16, NONE, DEEP, NF4),
 	/* F17 : THC1_SPI2_RST# ==> EC_PCH_INT_ODL */
-	PAD_CFG_GPI_IRQ_WAKE(GPP_F17, NONE, PLTRST, LEVEL, INVERT),
+	PAD_CFG_GPI_IRQ_WAKE(GPP_F17, NONE, DEEP, LEVEL, INVERT),
 	/* F18 : THC1_SPI2_INT# ==> EC_IN_RW_OD */
 	PAD_CFG_GPI(GPP_F18, NONE, DEEP),
 	/* F19 : SRCCLKREQ6# ==> WWAN_SIM1_DET_OD */
@@ -283,7 +283,7 @@ static const struct pad_config gpio_table[] = {
 	/* H12 : I2C7_SDA ==> SD_PE_WAKE_ODL */
 	PAD_CFG_GPI(GPP_H12, NONE, DEEP),
 	/* H13 : I2C7_SCL ==> EN_PP3300_SD */
-	PAD_CFG_GPO(GPP_H13, 1, DEEP),
+	PAD_NC(GPP_H13, UP_20K),
 	/* H14 : NC */
 	PAD_NC(GPP_H14, NONE),
 	/* H15 : DDPB_CTRLCLK ==> DDIB_HDMI_CTRLCLK */
@@ -373,6 +373,17 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_NF(GPP_B7, NONE, DEEP, NF2),
 	/* B8  : ISH_12C1_SCL ==> PCH_I2C_TPM_SCL */
 	PAD_CFG_NF(GPP_B8, NONE, DEEP, NF2),
+	/*
+	 * D1  : ISH_GP1 ==> FP_RST_ODL
+	 * FP_RST_ODL comes out of reset as hi-z and does not have an external pull-down.
+	 * To ensure proper power sequencing for the FPMCU device, reset signal is driven low
+	 * early on in bootblock, followed by enabling of power. Reset signal is deasserted
+	 * later on in ramstage. Since reset signal is asserted in bootblock, it results in
+	 * FPMCU not working after a S3 resume. This is a known issue.
+	 */
+	PAD_CFG_GPO(GPP_D1, 0, DEEP),
+	/* D2  : ISH_GP2 ==> EN_FP_PWR */
+	PAD_CFG_GPO(GPP_D2, 1, DEEP),
 	/* E0  : SATAXPCIE0 ==> WWAN_PERST_L */
 	PAD_CFG_GPO(GPP_E0, 0, DEEP),
 	/* E13 : THC0_SPI1_IO2 ==> MEM_CH_SEL */
@@ -383,6 +394,8 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_NF(GPP_H10, NONE, DEEP, NF2),
 	/* H11 : UART0_TXD ==> UART_PCH_TX_DBG_RX */
 	PAD_CFG_NF(GPP_H11, NONE, DEEP, NF2),
+	/* H13 : I2C7_SCL ==> EN_PP3300_SD */
+	PAD_NC(GPP_H13, UP_20K),
 };
 
 const struct pad_config *__weak variant_gpio_table(size_t *num)

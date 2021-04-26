@@ -3,8 +3,6 @@
 #ifndef __PICASSO_CHIP_H__
 #define __PICASSO_CHIP_H__
 
-#include <stddef.h>
-#include <stdint.h>
 #include <amdblocks/chip.h>
 #include <commonlib/helpers.h>
 #include <drivers/i2c/designware/dw_i2c.h>
@@ -12,6 +10,7 @@
 #include <soc/iomap.h>
 #include <soc/southbridge.h>
 #include <arch/x86/include/arch/smp/mpspec.h> /* point from top level */
+#include <types.h>
 
 /*
   USB 2.0 PHY Parameters
@@ -143,11 +142,11 @@ struct soc_amd_picasso_config {
 
 	enum {
 		DOWNCORE_AUTO = 0,
-		DOWNCORE_1 = 1, /* Run with single core */
-		DOWNCORE_2 = 3, /* Run with two cores */
-		DOWNCORE_3 = 4, /* Run with three cores */
+		DOWNCORE_1 = 1, /* Run with 1 physical core */
+		DOWNCORE_2 = 3, /* Run with 2 physical cores */
+		DOWNCORE_3 = 4, /* Run with 3 physical cores */
 	} downcore_mode;
-	uint8_t smt_disable; /* 1=disable SMT, 0=enable SMT */
+	bool smt_disable; /* true=disable SMT on all physical cores */
 
 	/* Lower die temperature limit */
 	uint32_t thermctl_limit_degreeC;
@@ -174,6 +173,12 @@ struct soc_amd_picasso_config {
 	uint32_t telemetry_vddcr_vdd_offset;
 	uint32_t telemetry_vddcr_soc_slope_mA;
 	uint32_t telemetry_vddcr_soc_offset;
+
+	/*
+	 * HDMI 2.0 disable setting
+	 * bit0~3: disable HDMI 2.0 DDI0~3
+	*/
+	uint8_t hdmi2_disable;
 
 	struct {
 		/*

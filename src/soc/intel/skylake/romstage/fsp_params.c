@@ -112,7 +112,7 @@ static void soc_primary_gfx_config_params(FSP_M_CONFIG *m_cfg,
 	const struct device *dev;
 
 	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	m_cfg->InternalGfx = dev && dev->enabled;
+	m_cfg->InternalGfx = !CONFIG(SOC_INTEL_DISABLE_IGD) && dev && dev->enabled;
 
 	/*
 	 * If iGPU is enabled, set IGD stolen size to 64MB. The FBC
@@ -176,14 +176,10 @@ void soc_update_memory_params_for_mma(FSP_M_CONFIG *memory_cfg,
 	/* Boot media is memory mapped for Skylake and Kabylake (SPI). */
 	assert(CONFIG(BOOT_DEVICE_MEMORY_MAPPED));
 
-	memory_cfg->MmaTestContentPtr =
-			(uintptr_t) rdev_mmap_full(&mma_cfg->test_content);
-	memory_cfg->MmaTestContentSize =
-			region_device_sz(&mma_cfg->test_content);
-	memory_cfg->MmaTestConfigPtr =
-			(uintptr_t) rdev_mmap_full(&mma_cfg->test_param);
-	memory_cfg->MmaTestConfigSize =
-			region_device_sz(&mma_cfg->test_param);
+	memory_cfg->MmaTestContentPtr = (uintptr_t)mma_cfg->test_content;
+	memory_cfg->MmaTestContentSize = mma_cfg->test_content_size;
+	memory_cfg->MmaTestConfigPtr = (uintptr_t)mma_cfg->test_param;
+	memory_cfg->MmaTestConfigSize = mma_cfg->test_param_size;
 	memory_cfg->MrcFastBoot = 0x00;
 	memory_cfg->SaGv = 0x02;
 }

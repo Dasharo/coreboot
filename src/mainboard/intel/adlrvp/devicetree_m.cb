@@ -29,14 +29,14 @@ chip soc/intel/alderlake
 	register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC_SKIP)" # M.2 WWAN
 	register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC_SKIP)" # M.2 WLAN
 
+	# Enable CNVi Bluetooth
+	register "CnviBtCore" = "true"
+
 	# EC host command ranges are in 0x800-0x8ff & 0x200-0x20f
 	register "gen1_dec" = "0x00fc0801"
 	register "gen2_dec" = "0x000c0201"
 	# EC memory map range is 0x900-0x9ff
 	register "gen3_dec" = "0x00fc0901"
-	register "gen4_dec" = "0x000c0081"
-
-	register "PrmrrSize" = "0"
 
 	#Enable PCH PCIE RP 4 using CLK 5
 	register "pch_pcie_rp[PCH_RP(4)]" = "{
@@ -124,17 +124,9 @@ chip soc/intel/alderlake
 
 	# HD Audio
 	register "PchHdaDspEnable" = "1"
-	register "PchHdaAudioLinkHdaEnable" = "0"
-	register "PchHdaAudioLinkDmicEnable[0]" = "1"
-	register "PchHdaAudioLinkDmicEnable[1]" = "1"
-	register "PchHdaAudioLinkSndwEnable[0]" = "1"
-	register "PchHdaAudioLinkSndwEnable[1]" = "1"
-	# iDisp-Link T-Mode 0: 2T, 2: 4T, 3: 8T, 4: 16T
-	register "PchHdaIDispLinkTmode" = "2"
-	# iDisp-Link Freq 4: 96MHz, 3: 48MHz.
-	register "PchHdaIDispLinkFrequency" = "4"
-	# Not disconnected/enumerable
-	register "PchHdaIDispCodecDisconnect" = "0"
+	register "PchHdaIDispLinkTmode" = "HDA_TMODE_8T"
+	register "PchHdaIDispLinkFrequency" = "HDA_LINKFREQ_96MHZ"
+	register "PchHdaIDispCodecEnable" = "1"
 
 	# Intel Common SoC Config
 	register "common_soc_config" = "{
@@ -178,7 +170,6 @@ chip soc/intel/alderlake
 		device pci 0e.0 off end # VMD
 		device pci 10.0 off end
 		device pci 10.1 off end
-		device pci 10.2 on  end # CNVi: BT
 		device pci 10.6 off end # THC0
 		device pci 10.7 off end # THC1
 		device pci 11.0 off end

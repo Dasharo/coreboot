@@ -5,11 +5,18 @@ fw_config
 		option DB_PORTS_1C_LTE 2
 		option DB_PORTS_1A_HDMI 3
 		option DB_PORTS_1C_1A 4
+		option DB_PORTS_LTE_HDMI 5
 	end
         field TABLETMODE 10
                 option TABLETMODE_DISABLED 0
                 option TABLETMODE_ENABLED 1
         end
+	field AUDIO_AMP 14 16
+		option UNPROVISIONED 0
+		option MAX98360 1
+		option RT1015_I2C 2
+		option RT1015P_AUTO 3
+	end
 end
 
 chip soc/intel/jasperlake
@@ -188,6 +195,9 @@ chip soc/intel/jasperlake
 	#       - PM_CFG.SLP_A_MIN_ASST_WDTH (PchPmSlpAMinAssert)
 	#       - PM_CFG.SLP_LAN_MIN_ASST_WDTH
 	register "PchPmPwrCycDur" = "1"       # 1s
+
+	# Enable HECI
+	register "HeciEnabled" = "1"
 
 	device domain 0 on
 		device pci 00.0 on end # Host Bridge

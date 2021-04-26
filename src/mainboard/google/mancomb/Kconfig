@@ -9,19 +9,32 @@ config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select AMD_SOC_CONSOLE_UART
 	select BOARD_ROMSIZE_KB_16384
+	select DISABLE_SPI_FLASH_ROM_SHARING
+	select DRIVERS_I2C_GENERIC
+	select DRIVERS_I2C_HID
+	select EC_GOOGLE_CHROMEEC
+	select EC_GOOGLE_CHROMEEC_BOARDID
+	select EC_GOOGLE_CHROMEEC_ESPI
+	select EC_GOOGLE_CHROMEEC_SKUID
+	select ELOG
+	select ELOG_GSMI
 	select HAVE_ACPI_RESUME
 	select MAINBOARD_HAS_CHROMEOS
+	select MAINBOARD_HAS_I2C_TPM_CR50
+	select MAINBOARD_HAS_TPM2
 	select SOC_AMD_CEZANNE
 	select SOC_AMD_COMMON_BLOCK_USE_ESPI
 
 config CHROMEOS
-	select EC_GOOGLE_CHROMEEC
-	select EC_GOOGLE_CHROMEEC_ESPI
 	select EC_GOOGLE_CHROMEEC_SWITCHES
 
 config VBOOT
 	select VBOOT_SEPARATE_VERSTAGE
 	select VBOOT_STARTS_IN_BOOTBLOCK
+
+config VBOOT_VBNV_OFFSET
+	hex
+	default 0x2A
 
 config FMDFILE
 	string
@@ -40,6 +53,14 @@ config AMD_FWM_POSITION_INDEX
 	default 3
 	help
 	  TODO: might need to be adapted for better placement of files in cbfs
+
+config DRIVER_TPM_I2C_BUS
+	hex
+	default 0x03
+
+config DRIVER_TPM_I2C_ADDR
+	hex
+	default 0x50
 
 config VARIANT_DIR
 	string

@@ -35,8 +35,11 @@ chip soc/amd/cezanne
 		.oob_ch_en = 0,
 		.flash_ch_en = 0,
 
-		.vw_irq_polarity = ESPI_VW_IRQ_LEVEL_HIGH(1) | ESPI_VW_IRQ_LEVEL_HIGH(12),
+		.vw_irq_polarity = ESPI_VW_IRQ_LEVEL_HIGH(1),
 	}"
+
+	# Enable S0i3 support
+	register "s0ix_enable" = "1"
 
 	register "i2c_scl_reset" = "GPIO_I2C0_SCL | GPIO_I2C1_SCL |
 					GPIO_I2C2_SCL | GPIO_I2C3_SCL"
@@ -119,6 +122,7 @@ chip soc/amd/cezanne
 						chip drivers/usb/acpi
 							register "desc" = ""Bluetooth""
 							register "type" = "UPC_TYPE_INTERNAL"
+							register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_132)"
 							device ref usb2_port6 on end
 						end
 					end
@@ -131,6 +135,13 @@ chip soc/amd/cezanne
 				device pnp 0c09.0 on end
 			end
 		end
+
+		device ref acp on
+			chip drivers/amd/i2s_machine_dev
+				register "hid" = ""AMDI5682""
+				device generic 0.0 on end
+			end
+		end # Audio
 	end # domain
 
 	device ref i2c_3 on
@@ -141,4 +152,7 @@ chip soc/amd/cezanne
 			device i2c 50 on end
 		end
 	end
+
+	device ref uart_0 on end # UART0
+
 end	# chip soc/amd/cezanne

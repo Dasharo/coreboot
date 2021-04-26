@@ -354,7 +354,8 @@ void generate_cpu_entries(const struct device *device)
 
 		acpigen_write_CST_package(cstate_info, ARRAY_SIZE(cstate_info));
 
-		acpigen_write_CSD_package(cpu >> 1, threads_per_core, HW_ALL, 0);
+		acpigen_write_CSD_package(cpu / threads_per_core, threads_per_core,
+					  CSD_HW_ALL, 0);
 
 		acpigen_pop_len();
 	}
@@ -362,51 +363,4 @@ void generate_cpu_entries(const struct device *device)
 	acpigen_write_scope("\\");
 	acpigen_write_name_integer("PCNT", logical_cores);
 	acpigen_pop_len();
-}
-
-static int acpigen_soc_gpio_op(const char *op, unsigned int gpio_num)
-{
-	if (gpio_num >= SOC_GPIO_TOTAL_PINS) {
-		printk(BIOS_WARNING, "Warning: Pin %d should be smaller than"
-					" %d\n", gpio_num, SOC_GPIO_TOTAL_PINS);
-		return -1;
-	}
-	/* op (gpio_num) */
-	acpigen_emit_namestring(op);
-	acpigen_write_integer(gpio_num);
-	return 0;
-}
-
-static int acpigen_soc_get_gpio_state(const char *op, unsigned int gpio_num)
-{
-	if (gpio_num >= SOC_GPIO_TOTAL_PINS) {
-		printk(BIOS_WARNING, "Warning: Pin %d should be smaller than"
-					" %d\n", gpio_num, SOC_GPIO_TOTAL_PINS);
-		return -1;
-	}
-	/* Store (op (gpio_num), Local0) */
-	acpigen_write_store();
-	acpigen_soc_gpio_op(op, gpio_num);
-	acpigen_emit_byte(LOCAL0_OP);
-	return 0;
-}
-
-int acpigen_soc_read_rx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_get_gpio_state("\\_SB.GRXS", gpio_num);
-}
-
-int acpigen_soc_get_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_get_gpio_state("\\_SB.GTXS", gpio_num);
-}
-
-int acpigen_soc_set_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_gpio_op("\\_SB.STXS", gpio_num);
-}
-
-int acpigen_soc_clear_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_gpio_op("\\_SB.CTXS", gpio_num);
 }

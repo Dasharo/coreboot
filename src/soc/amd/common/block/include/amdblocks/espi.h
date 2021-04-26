@@ -13,13 +13,23 @@
 #define  ESPI_DECODE_MMIO_RANGE_EN(range)	(1 << (((range) & 3) + 12))
 #define  ESPI_DECODE_IO_RANGE_EN(range)		(1 << (((range) & 3) + 8))
 #define  ESPI_DECODE_IO_0x80_EN			(1 << 2)
-#define  ESPI_DECODE_IO_0X60_0X64_EN	        (1 << 1)
+#define  ESPI_DECODE_IO_0X60_0X64_EN		(1 << 1)
 #define  ESPI_DECODE_IO_0X2E_0X2F_EN		(1 << 0)
 
-#define ESPI_IO_RANGE_BASE(range)		(0x44 + ((range) & 3) * 2)
-#define ESPI_IO_RANGE_SIZE(range)		(0x4c + ((range) & 3))
-#define ESPI_MMIO_RANGE_BASE(range)		(0x50 + ((range) & 3) * 4)
-#define ESPI_MMIO_RANGE_SIZE(range)		(0x60 + ((range) & 3) * 2)
+#define ESPI_IO_BASE_OFFSET_REG0		0x44
+#define ESPI_IO_BASE_OFFSET_REG1		0x48
+#define ESPI_IO_RANGE_SIZE_OFFSET		0x4c
+#define ESPI_MMIO_BASE_OFFSET_REG0		0x50
+#define ESPI_MMIO_BASE_OFFSET_REG1		0x54
+#define ESPI_MMIO_BASE_OFFSET_REG2		0x58
+#define ESPI_MMIO_BASE_OFFSET_REG3		0x5C
+#define ESPI_MMIO_OFFSET_SIZE_REG0		0x60
+#define ESPI_MMIO_OFFSET_SIZE_REG1		0x64
+
+#define ESPI_IO_RANGE_BASE(range)	(ESPI_IO_BASE_OFFSET_REG0 + ((range) & 3) * 2)
+#define ESPI_IO_RANGE_SIZE(range)	(ESPI_IO_RANGE_SIZE_OFFSET + ((range) & 3))
+#define ESPI_MMIO_RANGE_BASE(range)	(ESPI_MMIO_BASE_OFFSET_REG0 + ((range) & 3) * 4)
+#define ESPI_MMIO_RANGE_SIZE(range)	(ESPI_MMIO_OFFSET_SIZE_REG0 + ((range) & 3) * 2)
 
 #define ESPI_GENERIC_IO_WIN_COUNT		4
 #define ESPI_GENERIC_IO_MAX_WIN_SIZE		0x100
@@ -99,12 +109,6 @@ int espi_open_io_window(uint16_t base, size_t size);
  * Return value: 0 = success, -1 = error.
  */
 int espi_open_mmio_window(uint32_t base, size_t size);
-
-/*
- * Configure generic and standard I/O decode windows using the espi_config structure settings
- * provided by mainboard in device tree.
- */
-void espi_configure_decodes(void);
 
 /*
  * In cases where eSPI BAR is statically provided by SoC, use that BAR instead of reading
