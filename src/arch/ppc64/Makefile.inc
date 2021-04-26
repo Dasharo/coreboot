@@ -44,8 +44,6 @@ romstage-y += \
 	$(top)/src/lib/memmove.c \
 	$(top)/src/lib/memset.c
 
-romstage-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
-
 # Build the romstage
 
 $(objcbfs)/romstage.debug: $$(romstage-objs)
@@ -74,8 +72,6 @@ ramstage-y += \
 	$(top)/src/lib/memset.c
 
 $(eval $(call create_class_compiler,rmodules,power8))
-
-ramstage-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
 
 ramstage-srcs += src/mainboard/$(MAINBOARDDIR)/mainboard.c
 
