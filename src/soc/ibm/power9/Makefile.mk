@@ -17,6 +17,7 @@ romstage-y += istep_13_9.c
 romstage-y += istep_13_10.c
 romstage-y += istep_13_11.c
 romstage-y += istep_13_13.c
+romstage-y += istep_14_1.c
 romstage-y += rom_media.c
 romstage-y += romstage.c
 romstage-y += vpd.c
