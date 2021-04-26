@@ -3,6 +3,7 @@
 #include <console/console.h>
 #include <cpu/power/vpd.h>
 #include <cpu/power/istep_13.h>
+#include <cpu/power/istep_14.h>
 #include <program_loading.h>
 #include <spd_bin.h>
 #include <endian.h>
@@ -336,6 +337,8 @@ void main(void)
 	istep_13_11();
 	report_istep(13, 12);	// optional, not yet implemented
 	istep_13_13();
+
+	istep_14_1();
 
 	/* Test if SCOM still works. Maybe should check also indirect access? */
 	printk(BIOS_DEBUG, "0xF000F = %llx\n", read_scom(0xF000F));
