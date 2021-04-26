@@ -144,7 +144,7 @@ void fast_spi_set_opcode_menu(void)
 void fast_spi_lock_bar(void)
 {
 	void *spibar = fast_spi_get_bar();
-	uint16_t hsfs = SPIBAR_HSFSTS_FLOCKDN;
+	uint16_t hsfs = SPIBAR_HSFSTS_FLOCKDN | SPIBAR_HSFSTS_PRR34_LOCKDN;
 
 	if (CONFIG(FAST_SPI_DISABLE_WRITE_STATUS))
 		hsfs |= SPIBAR_HSFSTS_WRSDIS;
@@ -385,6 +385,20 @@ void fast_spi_early_init(uintptr_t spi_base_address)
 
 	/* Initialize SPI to allow BIOS to write/erase on flash. */
 	fast_spi_init();
+}
+
+/* Clear SPI Synchronous SMI status bit and return its value. */
+bool fast_spi_clear_sync_smi_status(void)
+{
+	const uint32_t bios_cntl = pci_read_config32(PCH_DEV_SPI, SPI_BIOS_CONTROL);
+	const bool smi_asserted = bios_cntl & SPI_BIOS_CONTROL_SYNC_SS;
+	/*
+	 * Do not unconditionally write 1 to clear SYNC_SS. Hardware could set
+	 * SYNC_SS here (after we read but before we write SPI_BIOS_CONTROL),
+	 * and the event would be lost when unconditionally clearing SYNC_SS.
+	 */
+	pci_write_config32(PCH_DEV_SPI, SPI_BIOS_CONTROL, bios_cntl);
+	return smi_asserted;
 }
 
 /* Read SPI Write Protect disable status. */

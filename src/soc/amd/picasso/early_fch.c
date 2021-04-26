@@ -4,6 +4,7 @@
 #include <amdblocks/espi.h>
 #include <amdblocks/i2c.h>
 #include <amdblocks/lpc.h>
+#include <amdblocks/pmlib.h>
 #include <amdblocks/smbus.h>
 #include <amdblocks/spi.h>
 #include <console/console.h>
@@ -62,19 +63,22 @@ void fch_pre_init(void)
 
 	if (CONFIG(AMD_SOC_CONSOLE_UART))
 		set_uart_config(CONFIG_UART_FOR_CONSOLE);
+
+	/* disable the keyboard reset function before mainboard GPIO setup */
+	if (CONFIG(DISABLE_KEYBOARD_RESET_PIN))
+		fch_disable_kb_rst();
 }
 
 /* After console init */
 void fch_early_init(void)
 {
+	pm_set_power_failure_state();
 	fch_print_pmxc0_status();
 	i2c_soc_early_init();
 
 	if (CONFIG(DISABLE_SPI_FLASH_ROM_SHARING))
 		lpc_disable_spi_rom_sharing();
 
-	if (CONFIG(SOC_AMD_COMMON_BLOCK_USE_ESPI)) {
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_USE_ESPI))
 		espi_setup();
-		espi_configure_decodes();
-	}
 }

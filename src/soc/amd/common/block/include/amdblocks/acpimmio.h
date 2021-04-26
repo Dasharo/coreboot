@@ -26,6 +26,11 @@
 #define   LEGACY_DMA_IO_EN		(1 << 2)
 #define   CF9_IO_EN			(1 << 1)
 #define   LEGACY_IO_EN			(1 << 0)
+#define PM_ESPI_INTR_CTRL		0x40
+#define   PM_ESPI_DEV_INTR_MASK		0x00FFFFFF
+#define PM_RST_CTRL1			0xbe
+#define   SLPTYPE_CONTROL_EN		(1 << 5)
+#define   KBRSTEN			(1 << 4)
 #define PM_RST_STATUS			0xc0
 
 /*
@@ -84,6 +89,7 @@ void fch_disable_legacy_dma_io(void);
 void fch_io_enable_legacy_io(void);
 void fch_enable_ioapic_decode(void);
 void fch_configure_hpet(void);
+void fch_disable_kb_rst(void);
 
 /* Access PM registers using IO cycles */
 uint8_t pm_io_read8(uint8_t reg);

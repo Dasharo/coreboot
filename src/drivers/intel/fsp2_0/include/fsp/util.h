@@ -4,6 +4,7 @@
 #define _FSP2_0_UTIL_H_
 
 #include <boot/coreboot_tables.h>
+#include <cbfs.h>
 #include <commonlib/region.h>
 #include <arch/cpu.h>
 #include <fsp/api.h>
@@ -103,19 +104,15 @@ void lb_string_platform_blob_version(struct lb_header *header);
 void report_fspt_output(void);
 void soc_validate_fsp_version(const struct fsp_header *hdr);
 
-/* Fill in header and validate sanity of component within region device. */
-enum cb_err fsp_validate_component(struct fsp_header *hdr,
-					const struct region_device *rdev);
+/* Fill in header and validate a loaded FSP component. */
+enum cb_err fsp_validate_component(struct fsp_header *hdr, void *fsp_blob, size_t size);
 
 struct fsp_load_descriptor {
 	/* fsp_prog object will have region_device initialized to final
 	 * load location in memory. */
 	struct prog fsp_prog;
-	/* Fill in destination location given final load size. Return 0 on
-	 * success, < 0 on error. */
-	int (*get_destination)(const struct fsp_load_descriptor *fspld,
-			void **dest, size_t final_load_size,
-			const struct region_device *source);
+	/* CBFS allocator to place loaded FSP. NULL to map flash directly. */
+	cbfs_allocator_t alloc;
 	/* Optional argument to be utilized by get_destination() callback. */
 	void *arg;
 };

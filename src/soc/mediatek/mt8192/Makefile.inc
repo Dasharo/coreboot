@@ -2,7 +2,7 @@ ifeq ($(CONFIG_SOC_MEDIATEK_MT8192),y)
 
 bootblock-y += ../common/auxadc.c
 bootblock-y += bootblock.c
-bootblock-y += eint_event.c
+bootblock-y += ../common/eint_event.c
 bootblock-y += ../common/flash_controller.c
 bootblock-y += ../common/gpio.c gpio.c
 bootblock-y += ../common/i2c.c i2c.c
@@ -52,6 +52,7 @@ ramstage-$(CONFIG_SPI_FLASH) += ../common/spi.c spi.c
 ramstage-y += ../common/mcu.c
 ramstage-y += mcupm.c
 ramstage-y += ../common/mmu_operations.c mmu_operations.c
+ramstage-$(CONFIG_COMMONLIB_STORAGE_MMC) += ../common/msdc.c
 ramstage-y += ../common/mtcmos.c mtcmos.c
 ramstage-y += pmif.c
 ramstage-y += ../common/rtc.c rtc.c
@@ -60,7 +61,7 @@ ramstage-y += spm.c
 ramstage-y += sspm.c
 ramstage-y += ../common/timer.c
 ramstage-y += ../common/uart.c
-ramstage-y += ufs.c
+ramstage-y += ../common/ufs.c
 ramstage-y += ../common/usb.c usb.c
 
 MT8192_BLOB_DIR := 3rdparty/blobs/soc/mediatek/mt8192

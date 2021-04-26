@@ -23,6 +23,11 @@ tests-y += memmove-test
 tests-y += crc_byte-test
 tests-y += compute_ip_checksum-test
 tests-y += memrange-test
+tests-y += uuid-test
+tests-y += bootmem-test
+tests-y += dimm_info_util-test
+tests-y += coreboot_table-test
+tests-y += rtc-test
 
 string-test-srcs += tests/lib/string-test.c
 string-test-srcs += src/lib/string.c
@@ -111,4 +116,31 @@ memrange-test-srcs += tests/lib/memrange-test.c
 memrange-test-srcs += src/lib/memrange.c
 memrange-test-srcs += tests/stubs/console.c
 memrange-test-srcs += src/device/device_util.c
+
+uuid-test-srcs += tests/lib/uuid-test.c
+uuid-test-srcs += src/lib/hexstrtobin.c
+uuid-test-srcs += src/lib/uuid.c
+
+bootmem-test-srcs += tests/lib/bootmem-test.c
+bootmem-test-srcs += tests/stubs/console.c
+bootmem-test-srcs += src/device/device_util.c
+bootmem-test-srcs += src/lib/bootmem.c
+bootmem-test-srcs += src/lib/memrange.c
+
+dimm_info_util-test-srcs += tests/lib/dimm_info_util-test.c
+dimm_info_util-test-srcs += src/lib/dimm_info_util.c
+dimm_info_util-test-srcs += tests/stubs/console.c
+
+coreboot_table-test-srcs += tests/lib/coreboot_table-test.c
+coreboot_table-test-srcs += tests/stubs/console.c
+coreboot_table-test-srcs += src/lib/compute_ip_checksum.c
+coreboot_table-test-srcs += src/lib/coreboot_table.c
+coreboot_table-test-srcs += src/lib/imd_cbmem.c
+coreboot_table-test-srcs += src/lib/imd.c
+coreboot_table-test-cflags += -I src -I 3rdparty/vboot/firmware/include
+coreboot_table-test-cflags += -I tests/include/tests/lib/fmap
+coreboot_table-test-mocks += cbmem_top_chipset
+
+rtc-test-srcs += tests/lib/rtc-test.c
+rtc-test-srcs += src/lib/rtc.c
 

@@ -21,6 +21,7 @@ verstage_x86-y	+= gpio.c
 verstage_x86-y	+= reset.c
 verstage_x86-y	+= uart.c
 
+romstage-y	+= fsp_m_params.c
 romstage-y	+= i2c.c
 romstage-y	+= gpio.c
 romstage-y	+= reset.c
@@ -33,7 +34,7 @@ ramstage-y	+= chip.c
 ramstage-y	+= cpu.c
 ramstage-y	+= data_fabric.c
 ramstage-y	+= fch.c
-ramstage-y	+= fsp_params.c
+ramstage-y	+= fsp_s_params.c
 ramstage-y	+= gpio.c
 ramstage-y	+= pcie_gpp.c
 ramstage-y	+= reset.c
@@ -79,6 +80,14 @@ CEZANNE_FWM_POSITION=$(call int-add, \
 
 FIRMWARE_LOCATION=$(shell grep -e FIRMWARE_LOCATION $(CONFIG_AMDFW_CONFIG_FILE) | awk '{print $$2}')
 
+ifeq ($(CONFIG_PSP_DISABLE_POSTCODES),y)
+PSP_SOFTFUSE_BITS += 7
+endif
+
+ifeq ($(CONFIG_PSP_POSTCODES_ON_ESPI),y)
+PSP_SOFTFUSE_BITS += 15
+endif
+
 ifeq ($(CONFIG_PSP_UNLOCK_SECURE_DEBUG),y)
 # Enable secure debug unlock
 PSP_SOFTFUSE_BITS += 0
@@ -91,6 +100,9 @@ else
 # Disable MP2 firmware loading
 PSP_SOFTFUSE_BITS += 29
 endif
+
+# Use additional Soft Fuse bits specified in Kconfig
+PSP_SOFTFUSE_BITS += $(CONFIG_PSP_SOFTFUSE_BITS)
 
 # type = 0x3a
 ifeq ($(CONFIG_HAVE_PSP_WHITELIST_FILE),y)
@@ -118,13 +130,8 @@ PSP_BIOSBIN_DEST=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | a
 APOB_NV_SIZE=$(shell awk '$$2 == "FMAP_SECTION_RW_MRC_CACHE_SIZE" {print $$3}' $(obj)/fmap_config.h)
 APOB_NV_BASE=$(shell awk '$$2 == "FMAP_SECTION_RW_MRC_CACHE_START" {print $$3}' $(obj)/fmap_config.h)
 
-# type = 0xb - See #55758 (NDA) for bit definitions.
-PSP_SOFTFUSE_BITS += 28 6
-
-#hardcode post code to eSPI
-PSP_SOFTFUSE_BITS += 15
-
 # Helper function to return a value with given bit set
+# Soft Fuse type = 0xb - See #55758 (NDA) for bit definitions.
 set-bit=$(call int-shift-left, 1 $(call _toint,$1))
 PSP_SOFTFUSE=$(shell A=$(call int-add, \
 		$(foreach bit,$(PSP_SOFTFUSE_BITS),$(call set-bit,$(bit)))); printf "0x%x" $$A)

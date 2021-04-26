@@ -245,6 +245,11 @@ F:	src/mainboard/getac/p470/
 
 
 
+GIGABYTE GA-D510UD MAINBOARD
+M:	Angel Pons <th3fanbus@gmail.com>
+S:	Maintained
+F:	src/mainboard/gigabyte/ga-d510ud/
+
 GIGABYTE GA-G41M-ES2L MAINBOARD
 M:	Damien Zammit <damien@zamaudio.com>
 S:	Odd Fixes
@@ -256,11 +261,25 @@ S:	Maintained
 F:	src/mainboard/gigabyte/ga-h61m-series/
 
 
+GOOGLE BRYA MAINBOARDS
+M:	Tim Wawrzynczak <twawrzynczak@chromium.org>
+S:	Maintained
+F:	src/mainboard/google/brya/
+
+GOOGLE HATCH MAINBOARDS
+M:	Tim Wawrzynczak <twawrzynczak@chromium.org>
+S:	Maintained
+F:	src/mainboard/google/hatch/
 
 GOOGLE PANTHER MAINBOARD
 M:	Stefan Reinauer <stefan.reinauer@coreboot.org>
 S:	Supported
 F:	src/mainboard/google/panther/
+
+GOOGLE VOLTEER MAINBOARDS
+M:	Tim Wawrzynczak <twawrzynczak@chromium.org>
+S:	Maintained
+F:	src/mainboard/google/volteer/
 
 GOOGLE MAINBOARDS (Intel-based, legacy/inactive)
 M:	Matt DeVillier <MrChromebox@gmail.com>
@@ -275,6 +294,13 @@ F:	src/mainboard/google/link/
 F:	src/mainboard/google/parrot/
 F:	src/mainboard/google/slippy/
 F:	src/mainboard/google/stout/
+
+
+
+HP 280 G2 MAINBOARD
+M:	Angel Pons <th3fanbus@gmail.com>
+S:	Maintained
+F:	src/mainboard/hp/280_g2/
 
 
 
@@ -323,6 +349,14 @@ M:	Piotr Król <piotr.krol@3mdeb.com>
 M:	Michał Żygowski <michal.zygowski@3mdeb.com>
 S:	Maintained
 F:	src/mainboard/libretrend/lt1000/
+
+
+
+MSI H81M-P33 MAINBOARD
+M:	Angel Pons <th3fanbus@gmail.com>
+S:	Maintained
+F:	src/mainboard/msi/h81m-p33/
+
 
 
 OCP DELTALAKE MAINBOARD
@@ -476,6 +510,11 @@ F:	src/include/cpu/x86/
 # Embedded Controllers
 ################################################################################
 
+CHROME EC
+M:	Tim Wawrzynczak <twawrzynczak@chromium.org>
+S:	Maintained
+F:	src/ec/google/chromeec/
+
 LENOVO EC
 M:	Alexander Couzens <lynxis@fe80.eu>
 S:	Maintained
@@ -584,6 +623,11 @@ S:	Maintained
 F:	src/soc/amd/picasso/
 F:	src/vendorcode/amd/fsp/picasso/
 
+INTEL ALDERLAKE SOC
+M:	Tim Wawrzynczak <twawrzynczak@chromium.org>
+S:	Maintained
+F:	src/soc/intel/alderlake/
+
 INTEL APOLLOLAKE_SOC
 M:	Andrey Petrov <andrey.petrov@gmail.com>
 S:	Maintained
@@ -597,6 +641,11 @@ S:	Maintained
 F:	/src/soc/intel/braswell/
 F:	/src/vendorcode/intel/fsp/fsp1_1/braswell/
 
+INTEL TIGERLAKE SOC
+M:	Tim Wawrzynczak <twawrzynczak@chromium.org>
+S:	Maintained
+F:	src/soc/intel/tigerlake/
+
 INTEL Xeon Sacalable Processor Family
 M:	Jonathan Zhang <jonzhang@fb.com>
 M:	Reddy Chagam <anjaneya.chagam@intel.com>
@@ -605,7 +654,7 @@ M:	Morgan Jang <Morgan_Jang@wiwynn.com>
 M:	Ryback Hung <<Ryback.Hung@quantatw.com>
 M:	Bryant Ou <Bryant.Ou@quantatw.com>
 S:	Supported
-F:	src/soc/intel/xeon_sp
+F:	src/soc/intel/xeon_sp/
 F:	src/vendorcode/intel/fsp/fsp2_0/skylake_sp/
 F:	src/vendorcode/intel/fsp/fsp2_0/copperlake_sp/
 
@@ -727,6 +776,7 @@ F:	src/drivers/aspeed/ast2050/
 
 ACPI
 M:	Lance Zhao <lance.zhao@gmail.com>
+M:	Tim Wawrzynczak <twawrzynczak@chromium.org>
 S:	Supported
 F:	src/acpi/
 F:	src/arch/x86/acpi/

@@ -24,13 +24,21 @@
 #define SAD_ALL_DEV			29
 #define SAD_ALL_FUNC			0
 #define SAD_ALL_PAM0123_CSR		0x40
+#define   PAM_LOCK			BIT(0)
 #define SAD_ALL_PAM456_CSR		0x44
+
+#if !defined(__SIMPLE_DEVICE__)
+#define _PCU_DEV(bus, func)		pcidev_path_on_bus(bus, PCI_DEVFN(PCU_DEV, func))
+#else
+#define _PCU_DEV(bus, func)		PCI_DEV(bus, PCU_DEV, func)
+#endif
 
 #define PCU_IIO_STACK                   1
 #define PCU_DEV                         30
 #define PCU_CR1_FUN                     1
 
 #define PCU_CR0_FUN                     0
+#define PCU_DEV_CR0(bus)                _PCU_DEV(bus, PCU_CR0_FUN)
 #define PCU_CR0_PLATFORM_INFO           0xa8
 #define PCU_CR0_P_STATE_LIMITS          0xd8
 #define P_STATE_LIMITS_LOCK_SHIFT       31
@@ -40,6 +48,8 @@
 #define PCU_CR0_CURRENT_CONFIG          0xf8
 #define MAX_NON_TURBO_LIM_RATIO_SHIFT   8 /* 8:15 */
 #define MAX_NON_TURBO_LIM_RATIO_MASK    (0xff << MAX_NON_TURBO_LIM_RATIO_SHIFT)
+#define PCU_CR0_PMAX                    0xf0
+#define   PMAX_LOCK                     BIT(31)
 
 #define PCU_CR1_BIOS_MB_DATA_REG                           0x8c
 
@@ -62,6 +72,22 @@
 
 #define PCU_CR1_DESIRED_CORES_CFG2_REG                     0xa0
 #define PCU_CR1_DESIRED_CORES_CFG2_REG_LOCK_MASK           BIT(31)
+
+#if !defined(__SIMPLE_DEVICE__)
+#define _UBOX_DEV(func)		pcidev_path_on_root_debug(PCI_DEVFN(UBOX_DEV, func), __func__)
+#else
+#define _UBOX_DEV(func)		PCI_DEV(0, UBOX_DEV, func)
+#endif
+
+#define UBOX_DEV			8
+
+#define UBOX_PMON_BUS			0
+#define UBOX_PMON_DEV			8
+#define UBOX_PMON_FUNC			1
+#define UBOX_DEV_PMON			_UBOX_DEV(UBOX_PMON_FUNC)
+#define SMM_FEATURE_CONTROL		0x7c
+#define SMM_CODE_CHK_EN			BIT(2)
+#define SMM_FEATURE_CONTROL_LOCK	BIT(0)
 
 #define UBOX_DECS_BUS			0
 #define UBOX_DECS_DEV			8

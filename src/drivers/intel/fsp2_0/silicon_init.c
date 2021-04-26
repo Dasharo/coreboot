@@ -184,22 +184,16 @@ static void do_silicon_init(struct fsp_header *hdr)
 	post_code(POST_FSP_MULTI_PHASE_SI_INIT_EXIT);
 }
 
-static int fsps_get_dest(const struct fsp_load_descriptor *fspld, void **dest,
-				size_t size, const struct region_device *source)
+static void *fsps_allocator(void *arg_unused, size_t size, const union cbfs_mdata *mdata_unused)
 {
-	*dest = cbmem_add(CBMEM_ID_REFCODE, size);
-
-	if (*dest == NULL)
-		return -1;
-
-	return 0;
+	return cbmem_add(CBMEM_ID_REFCODE, size);
 }
 
 void fsps_load(void)
 {
 	struct fsp_load_descriptor fspld = {
 		.fsp_prog = PROG_INIT(PROG_REFCODE, CONFIG_FSP_S_CBFS),
-		.get_destination = fsps_get_dest,
+		.alloc = fsps_allocator,
 	};
 	struct prog *fsps = &fspld.fsp_prog;
 	static int load_done;
@@ -210,10 +204,7 @@ void fsps_load(void)
 	if (resume_from_stage_cache()) {
 		printk(BIOS_DEBUG, "Loading FSPS from stage_cache\n");
 		stage_cache_load_stage(STAGE_REFCODE, fsps);
-
-		struct region_device prog_rdev;
-		prog_chain_rdev(fsps, &prog_rdev);
-		if (fsp_validate_component(&fsps_hdr, &prog_rdev) != CB_SUCCESS)
+		if (fsp_validate_component(&fsps_hdr, prog_start(fsps), prog_size(fsps)))
 			die("On resume fsps header is invalid\n");
 		load_done = 1;
 		return;

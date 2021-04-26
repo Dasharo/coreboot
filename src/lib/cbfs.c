@@ -89,7 +89,7 @@ int cbfs_boot_locate(struct cbfsf *fh, const char *name, uint32_t *type)
 		return -1;
 
 	size_t msize = be32toh(fh->mdata.h.offset);
-	if (rdev_chain(&fh->metadata, &addrspace_32bit.rdev, (uintptr_t)&fh->mdata, msize))
+	if (rdev_chain_mem(&fh->metadata, &fh->mdata, msize))
 		return -1;
 
 	if (type) {
@@ -186,19 +186,38 @@ static inline bool cbfs_lzma_enabled(void)
 	return true;
 }
 
-size_t cbfs_load_and_decompress(const struct region_device *rdev, size_t offset, size_t in_size,
-				void *buffer, size_t buffer_size, uint32_t compression)
+static inline bool cbfs_file_hash_mismatch(const void *buffer, size_t size,
+					   const struct vb2_hash *file_hash)
 {
-	size_t out_size;
+	/* Avoid linking hash functions when verification is disabled. */
+	if (!CONFIG(CBFS_VERIFICATION))
+		return false;
+
+	/* If there is no file hash, always count that as a mismatch. */
+	if (file_hash && vb2_hash_verify(buffer, size, file_hash) == VB2_SUCCESS)
+		return false;
+
+	printk(BIOS_CRIT, "CBFS file hash mismatch!\n");
+	return true;
+}
+
+static size_t cbfs_load_and_decompress(const struct region_device *rdev, void *buffer,
+				       size_t buffer_size, uint32_t compression,
+				       const struct vb2_hash *file_hash)
+{
+	size_t in_size = region_device_sz(rdev);
+	size_t out_size = 0;
 	void *map;
 
-	DEBUG("Decompressing %zu bytes to %p with algo %d\n", buffer_size, buffer, compression);
+	DEBUG("Decompressing %zu bytes to %p with algo %d\n", in_size, buffer, compression);
 
 	switch (compression) {
 	case CBFS_COMPRESS_NONE:
 		if (buffer_size < in_size)
 			return 0;
-		if (rdev_readat(rdev, buffer, offset, in_size) != in_size)
+		if (rdev_readat(rdev, buffer, 0, in_size) != in_size)
+			return 0;
+		if (cbfs_file_hash_mismatch(buffer, in_size, file_hash))
 			return 0;
 		return in_size;
 
@@ -206,15 +225,17 @@ size_t cbfs_load_and_decompress(const struct region_device *rdev, size_t offset,
 		if (!cbfs_lz4_enabled())
 			return 0;
 
-		/* cbfs_stage_load_and_decompress() takes care of in-place LZ4 decompression by
+		/* cbfs_prog_stage_load() takes care of in-place LZ4 decompression by
 		   setting up the rdev to be in memory. */
-		map = rdev_mmap(rdev, offset, in_size);
+		map = rdev_mmap_full(rdev);
 		if (map == NULL)
 			return 0;
 
-		timestamp_add_now(TS_START_ULZ4F);
-		out_size = ulz4fn(map, in_size, buffer, buffer_size);
-		timestamp_add_now(TS_END_ULZ4F);
+		if (!cbfs_file_hash_mismatch(map, in_size, file_hash)) {
+			timestamp_add_now(TS_START_ULZ4F);
+			out_size = ulz4fn(map, in_size, buffer, buffer_size);
+			timestamp_add_now(TS_END_ULZ4F);
+		}
 
 		rdev_munmap(rdev, map);
 
@@ -223,14 +244,16 @@ size_t cbfs_load_and_decompress(const struct region_device *rdev, size_t offset,
 	case CBFS_COMPRESS_LZMA:
 		if (!cbfs_lzma_enabled())
 			return 0;
-		map = rdev_mmap(rdev, offset, in_size);
+		map = rdev_mmap_full(rdev);
 		if (map == NULL)
 			return 0;
 
-		/* Note: timestamp not useful for memory-mapped media (x86) */
-		timestamp_add_now(TS_START_ULZMA);
-		out_size = ulzman(map, in_size, buffer, buffer_size);
-		timestamp_add_now(TS_END_ULZMA);
+		if (!cbfs_file_hash_mismatch(map, in_size, file_hash)) {
+			/* Note: timestamp not useful for memory-mapped media (x86) */
+			timestamp_add_now(TS_START_ULZMA);
+			out_size = ulzman(map, in_size, buffer, buffer_size);
+			timestamp_add_now(TS_END_ULZMA);
+		}
 
 		rdev_munmap(rdev, map);
 
@@ -239,33 +262,6 @@ size_t cbfs_load_and_decompress(const struct region_device *rdev, size_t offset,
 	default:
 		return 0;
 	}
-}
-
-static size_t cbfs_stage_load_and_decompress(const struct region_device *rdev, size_t offset,
-	size_t in_size, void *buffer, size_t buffer_size, uint32_t compression)
-{
-	struct region_device rdev_src;
-
-	if (compression == CBFS_COMPRESS_LZ4) {
-		if (!cbfs_lz4_enabled())
-			return 0;
-		/* Load the compressed image to the end of the available memory area for
-		   in-place decompression. It is the responsibility of the caller to ensure that
-		   buffer_size is large enough (see compression.h, guaranteed by cbfstool for
-		   stages). */
-		void *compr_start = buffer + buffer_size - in_size;
-		if (rdev_readat(rdev, compr_start, offset, in_size) != in_size)
-			return 0;
-		/* Create a region device backed by memory. */
-		rdev_chain(&rdev_src, &addrspace_32bit.rdev, (uintptr_t)compr_start, in_size);
-
-		return cbfs_load_and_decompress(&rdev_src, 0, in_size, buffer, buffer_size,
-						compression);
-	}
-
-	/* All other algorithms can use the generic implementation. */
-	return cbfs_load_and_decompress(rdev, offset, in_size, buffer, buffer_size,
-					compression);
 }
 
 static inline int tohex4(unsigned int c)
@@ -344,11 +340,18 @@ void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
 	if (size_out)
 		*size_out = size;
 
+	const struct vb2_hash *file_hash = NULL;
+	if (CONFIG(CBFS_VERIFICATION))
+		file_hash = cbfs_file_hash(&mdata);
+
 	/* allocator == NULL means do a cbfs_map() */
 	if (allocator) {
 		loc = allocator(arg, size, &mdata);
 	} else if (compression == CBFS_COMPRESS_NONE) {
-		return rdev_mmap_full(&rdev);
+		void *mapping = rdev_mmap_full(&rdev);
+		if (!mapping || cbfs_file_hash_mismatch(mapping, size, file_hash))
+			return NULL;
+		return mapping;
 	} else if (!CBFS_CACHE_AVAILABLE) {
 		ERROR("Cannot map compressed file %s on x86\n", mdata.h.filename);
 		return NULL;
@@ -361,15 +364,14 @@ void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
 		return NULL;
 	}
 
-	size = cbfs_load_and_decompress(&rdev, 0, region_device_sz(&rdev),
-					loc, size, compression);
+	size = cbfs_load_and_decompress(&rdev, loc, size, compression, file_hash);
 	if (!size)
 		return NULL;
 
 	return loc;
 }
 
-void *_cbfs_default_allocator(void *arg, size_t size, union cbfs_mdata *unused)
+void *_cbfs_default_allocator(void *arg, size_t size, const union cbfs_mdata *unused)
 {
 	struct _cbfs_default_allocator_arg *darg = arg;
 	if (size > darg->buf_size)
@@ -377,7 +379,7 @@ void *_cbfs_default_allocator(void *arg, size_t size, union cbfs_mdata *unused)
 	return darg->buf;
 }
 
-void *_cbfs_cbmem_allocator(void *arg, size_t size, union cbfs_mdata *unused)
+void *_cbfs_cbmem_allocator(void *arg, size_t size, const union cbfs_mdata *unused)
 {
 	return cbmem_add((uintptr_t)arg, size);
 }
@@ -411,18 +413,34 @@ cb_err_t cbfs_prog_stage_load(struct prog *pstage)
 	prog_set_entry(pstage, prog_start(pstage) +
 			       be32toh(sattr->entry_offset), NULL);
 
+	const struct vb2_hash *file_hash = NULL;
+	if (CONFIG(CBFS_VERIFICATION))
+		file_hash = cbfs_file_hash(&mdata);
+
 	/* Hacky way to not load programs over read only media. The stages
 	 * that would hit this path initialize themselves. */
 	if ((ENV_BOOTBLOCK || ENV_SEPARATE_VERSTAGE) &&
 	    !CONFIG(NO_XIP_EARLY_STAGES) && CONFIG(BOOT_DEVICE_MEMORY_MAPPED)) {
 		void *mapping = rdev_mmap_full(&rdev);
 		rdev_munmap(&rdev, mapping);
+		if (cbfs_file_hash_mismatch(mapping, region_device_sz(&rdev), file_hash))
+			return CB_CBFS_HASH_MISMATCH;
 		if (mapping == prog_start(pstage))
 			return CB_SUCCESS;
 	}
 
-	size_t fsize = cbfs_stage_load_and_decompress(&rdev, 0, region_device_sz(&rdev),
-				prog_start(pstage), prog_size(pstage), compression);
+	/* LZ4 stages can be decompressed in-place to save mapping scratch space. Load the
+	   compressed data to the end of the buffer and point &rdev to that memory location. */
+	if (cbfs_lz4_enabled() && compression == CBFS_COMPRESS_LZ4) {
+		size_t in_size = region_device_sz(&rdev);
+		void *compr_start = prog_start(pstage) + prog_size(pstage) - in_size;
+		if (rdev_readat(&rdev, compr_start, 0, in_size) != in_size)
+			return CB_ERR;
+		rdev_chain_mem(&rdev, compr_start, in_size);
+	}
+
+	size_t fsize = cbfs_load_and_decompress(&rdev, prog_start(pstage), prog_size(pstage),
+						compression, file_hash);
 	if (!fsize)
 		return CB_ERR;
 

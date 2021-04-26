@@ -527,6 +527,15 @@ config AZALIA_MAX_CODECS
 	help
 	  The maximum number of codecs supported on a single HD Audio controller.
 
+config AZALIA_LOCK_DOWN_R_WO_GCAP
+	def_bool n
+	depends on AZALIA_PLUGIN_SUPPORT
+	help
+	  The GCAP register is implemented as R/WO (Read / Write Once) on some
+	  HD Audio controllers, such as Intel 6-series PCHs. Select this option
+	  to lock down the GCAP register after deasserting the controller reset
+	  bit. Locking is done by reading GCAP and writing back the read value.
+
 config PCIEXP_PLUGIN_SUPPORT
 	bool
 	default y
@@ -626,6 +635,8 @@ if PCIEXP_HOTPLUG
 
 config PCIEXP_HOTPLUG_BUSES
 	int "PCI Express Hotplug Buses"
+	default  8 if MMCONF_SUPPORT && MMCONF_BUS_NUMBER <=  64
+	default 16 if MMCONF_SUPPORT && MMCONF_BUS_NUMBER <= 128
 	default 32
 	help
 	  This is the number of buses allocated for hotplug PCI express

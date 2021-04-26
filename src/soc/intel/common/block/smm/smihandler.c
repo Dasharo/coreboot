@@ -241,8 +241,6 @@ void smihandler_southbridge_sleep(
 		break;
 	}
 
-	/* Tri-state specific GPIOS to avoid leakage during S3/S5 */
-
 	/*
 	 * Write back to the SLP register to cause the originally intended
 	 * event again. We need to set BIT13 (SLP_EN) though to make the
@@ -383,6 +381,18 @@ void smihandler_southbridge_tco(
 	const struct smm_save_state_ops *save_state_ops)
 {
 	uint32_t tco_sts = pmc_clear_tco_status();
+
+	/*
+	 * SPI synchronous SMIs are TCO SMIs, but they do not have a status
+	 * bit in the TCO_STS register. Furthermore, the TCO_STS bit in the
+	 * SMI_STS register is continually set until the SMI handler clears
+	 * the SPI synchronous SMI status bit in the SPI controller. To not
+	 * risk missing any other TCO SMIs, do not clear the TCO_STS bit in
+	 * this SMI handler invocation. If the TCO_STS bit remains set when
+	 * returning from SMM, another SMI immediately happens which clears
+	 * the TCO_STS bit and handles any pending events.
+	 */
+	fast_spi_clear_sync_smi_status();
 
 	/* Any TCO event? */
 	if (!tco_sts)

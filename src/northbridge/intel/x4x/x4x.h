@@ -46,16 +46,6 @@
 
 #include <northbridge/intel/common/fixed_bars.h>
 
-#define MCHBAR8_AND(x,  and) (MCHBAR8(x)  = MCHBAR8(x)  & (and))
-#define MCHBAR16_AND(x, and) (MCHBAR16(x) = MCHBAR16(x) & (and))
-#define MCHBAR32_AND(x, and) (MCHBAR32(x) = MCHBAR32(x) & (and))
-#define MCHBAR8_OR(x,  or) (MCHBAR8(x)  = MCHBAR8(x)  | (or))
-#define MCHBAR16_OR(x, or) (MCHBAR16(x) = MCHBAR16(x) | (or))
-#define MCHBAR32_OR(x, or) (MCHBAR32(x) = MCHBAR32(x) | (or))
-#define MCHBAR8_AND_OR(x,  and, or) (MCHBAR8(x)  = (MCHBAR8(x)  & (and)) | (or))
-#define MCHBAR16_AND_OR(x, and, or) (MCHBAR16(x) = (MCHBAR16(x) & (and)) | (or))
-#define MCHBAR32_AND_OR(x, and, or) (MCHBAR32(x) = (MCHBAR32(x) & (and)) | (or))
-
 #define CHDECMISC	0x111
 #define STACKED_MEM	(1 << 1)
 
@@ -84,7 +74,7 @@
 #define CLKCFG_FSBCLK_MASK	(7 << CLKCFG_FSBCLK_SHIFT)
 #define CLKCFG_MEMCLK_SHIFT	4
 #define CLKCFG_MEMCLK_MASK	(7 << CLKCFG_MEMCLK_SHIFT)
-#define CLKCFG_UPDATE		(1 << 12)
+#define CLKCFG_UPDATE		(1 << 10)
 
 #define SSKPD_MCHBAR		0x0c20 /* 64 bit */
 
