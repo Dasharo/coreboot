@@ -3,6 +3,7 @@
 #include <console/console.h>
 #include <cpu/power/vpd.h>
 #include <cpu/power/istep_13.h>
+#include <cpu/power/istep_14.h>
 #include <program_loading.h>
 #include <lib.h>	// hexdump
 #include <spd_bin.h>
@@ -339,6 +340,7 @@ void main(void)
 	istep_13_13();
 
 	istep_14_1();
+	istep_14_2();
 	istep_14_5();
 
 	/* Test if SCOM still works. Maybe should check also indirect access? */
