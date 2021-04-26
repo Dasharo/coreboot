@@ -14,6 +14,7 @@
 #include <cbmem.h>
 #include <arch/stages.h>
 #include <cpu/power/spr.h>
+#include <timestamp.h>
 
 void stage_entry(uintptr_t stage_arg)
 {
@@ -23,6 +24,8 @@ void stage_entry(uintptr_t stage_arg)
 
 	if (!ENV_ROMSTAGE_OR_BEFORE)
 		_cbmem_top_ptr = stage_arg;
+	else
+		timestamp_init(read_spr(SPR_TB));
 
 #if ENV_RAMSTAGE
 	hrmor = read_spr(SPR_HRMOR);
