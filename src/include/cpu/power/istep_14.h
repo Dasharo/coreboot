@@ -4,6 +4,7 @@
 #define CPU_PPC64_ISTEP_14_H
 
 void istep_14_1(void);
+void istep_14_2(void);
 void istep_14_5(void);
 
 #endif /* CPU_PPC64_ISTEP_14_H */
