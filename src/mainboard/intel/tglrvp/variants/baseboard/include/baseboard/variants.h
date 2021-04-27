@@ -16,6 +16,6 @@ const struct cros_gpio *variant_cros_gpios(size_t *num);
 
 size_t variant_memory_sku(void);
 const struct ddr_memory_cfg *variant_memory_params(void);
-const struct spd_info *variant_spd_info(void);
+const struct spd_info variant_spd_info(void);
 
 #endif /*__BASEBOARD_VARIANTS_H__ */

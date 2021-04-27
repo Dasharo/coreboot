@@ -6,7 +6,7 @@
 #include <soc/meminit.h>
 
 #include <baseboard/board_id.h>
-#include "spd/spd.h"
+#include "../../spd/spd.h"
 
 
 size_t __weak variant_memory_sku(void)
@@ -96,7 +96,7 @@ static uintptr_t mainboard_get_spd_index(void)
 }
 
 static const struct ddr_memory_cfg board_mem_config = {
-	.mem_type = MEMTYPE_LPDDR4,
+	.mem_type = MEMTYPE_LPDDR4X,
 	.lpddr4_cfg = &mem_config,
 
 };
@@ -106,14 +106,13 @@ const struct ddr_memory_cfg  *__weak variant_memory_params(void)
 	return &board_mem_config;
 }
 
-static struct spd_info spd_info = {
-	.topology = MEMORY_DOWN,
-	.md_spd_loc = SPD_CBFS,
-};
-
-
-const struct spd_info *__weak variant_spd_info(void)
+const struct spd_info __weak variant_spd_info(void)
 {
-	spd_info.cbfs_index = mainboard_get_spd_index();
-	return (const struct spd_info *)&spd_info;
+	const struct spd_info spd_info = {
+		.topology = MEMORY_DOWN,
+		.md_spd_loc = SPD_CBFS,
+		.cbfs_index = mainboard_get_spd_index(),
+	};
+
+	return spd_info;
 }

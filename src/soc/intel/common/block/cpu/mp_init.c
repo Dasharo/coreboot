@@ -30,8 +30,8 @@ __weak void soc_init_cpus(struct bus *cpu_bus)
 
 static void init_one_cpu(struct device *dev)
 {
+	intel_microcode_load_unlocked(intel_microcode_find());
 	soc_core_init(dev);
-	intel_microcode_load_unlocked(microcode_patch);
 }
 
 static struct device_operations cpu_dev_ops = {

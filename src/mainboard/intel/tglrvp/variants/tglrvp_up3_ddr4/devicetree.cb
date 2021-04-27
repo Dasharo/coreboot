@@ -16,7 +16,7 @@ chip soc/intel/tigerlake
 	register "HeciEnabled" = "1"
 
 	# FSP configuration
-	register "SaGv" = "SaGv_Enabled"
+	register "SaGv" = "SaGv_Disabled"
 	register "SmbusEnable" = "1"
 
 	register "usb2_ports[0]" = "USB2_PORT_MID(OC0)"		# Type-C Port1

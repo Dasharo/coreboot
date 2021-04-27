@@ -80,11 +80,11 @@ void fsp_debug_after_silicon_init(uint32_t status)
 	if (CONFIG(DISPLAY_FSP_CALLS_AND_STATUS))
 		printk(BIOS_SPEW, "FspSiliconInit returned 0x%08x\n", status);
 
-	/* Display the HOBs */
-	if (CONFIG(DISPLAY_HOBS))
-		fsp_display_hobs();
+	// /* Display the HOBs */
+	// if (CONFIG(DISPLAY_HOBS))
+	// 	fsp_display_hobs();
 
-	display_mtrrs();
+	// display_mtrrs();
 }
 
 /*-----------

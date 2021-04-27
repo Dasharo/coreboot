@@ -880,7 +880,7 @@ use HW.GFX.GMA.Display_Probing;
 private package GMA.Mainboard is
 
    -- FIXME: check this
-   ports : constant Port_List :=
+  
      (DP1,
       DP2,
       DP3,

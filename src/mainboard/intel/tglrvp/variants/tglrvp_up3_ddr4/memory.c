@@ -25,15 +25,15 @@ const struct ddr_memory_cfg  *__weak variant_memory_params(void)
 	return &board_mem_config;
 }
 
-static const struct spd_info spd_info = {
-	.topology = SODIMM,
-	.smbus_info[0] = {.addr_dimm0 = 0x50,
-				.addr_dimm1 = 0 },
-	.smbus_info[1] = {.addr_dimm0 = 0x52,
-				.addr_dimm1 = 0 },
-};
-
-const struct spd_info *__weak variant_spd_info(void)
+const struct spd_info __weak variant_spd_info(void)
 {	
-	return &spd_info;
+	const struct spd_info spd_info = {
+		.topology = SODIMM,
+		.smbus_info[0] = {.addr_dimm0 = 0x50,
+					.addr_dimm1 = 0 },
+		.smbus_info[1] = {.addr_dimm0 = 0x52,
+					.addr_dimm1 = 0 },
+	};
+
+	return spd_info;
 }

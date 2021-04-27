@@ -8,6 +8,7 @@
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <smbios.h>
 #include <string.h>
+//#include <soc/intel/common/reset.h>
 
 const char *smbios_system_sku(void)
 {
@@ -27,6 +28,8 @@ static void mainboard_init(void *chip_info)
 	gpio_configure_pads(pads, num);
 
 	mainboard_ec_init();
+
+	//do_global_reset();
 }
 
 static void mainboard_enable(struct device *dev)

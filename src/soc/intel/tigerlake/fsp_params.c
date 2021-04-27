@@ -89,6 +89,11 @@ __weak void mainboard_update_soc_chip_config(struct soc_intel_tigerlake_config *
 	/* Override settings per board. */
 }
 
+int soc_fsp_multi_phase_init_is_enable(void)
+{
+	return 0;
+}
+
 /* UPD parameters to be initialized before SiliconInit */
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 {
@@ -164,8 +169,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		else
 			params->Usb2OverCurrentPin[i] = 0xff;
 
-		if (config->usb2_ports[i].type_c)
-			params->PortResetMessageEnable[i] = 1;
+		//if (config->usb2_ports[i].type_c)
+		//	params->PortResetMessageEnable[i] = 1;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(config->usb3_ports); i++) {
@@ -351,7 +356,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->PchFivrExtVnnRailSxVoltage =
 			(config->ext_fivr_settings.vnn_sx_voltage_mv * 10) / 25;
 
-		params->PchFivrExtV1p05RailIccMaximum =
+		params->PchFivrExtV1p05RailIccMax =
 			config->ext_fivr_settings.v1p05_icc_max_ma;
 
 	}
@@ -373,10 +378,12 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 				config->PchPmPwrCycDur);
 
 	/* EnableMultiPhaseSiliconInit for running MultiPhaseSiInit */
-	params->EnableMultiPhaseSiliconInit = 1;
+	// params->EnableMultiPhaseSiliconInit = 1;
 
 	/* Disable C1 C-state Demotion */
 	params->C1StateAutoDemotion = 0;
+
+	params->EnableTcoTimer = CONFIG(USE_PM_ACPI_TIMER);
 
 	mainboard_silicon_init_params(params);
 }

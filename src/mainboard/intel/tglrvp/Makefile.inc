@@ -18,6 +18,8 @@ ramstage-y += ec.c
 ramstage-y += mainboard.c
 ramstage-y += board_id.c
 
+ramstage-$(CONFIG_MAINBOARD_USE_LIBGFXINIT) += gma-mainboard.ads
+
 subdirs-y += variants/baseboard
 CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)/variants/baseboard/include
 

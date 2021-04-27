@@ -160,6 +160,7 @@ static void do_silicon_init(struct fsp_header *hdr)
 	multi_phase_params.multi_phase_action = GET_NUMBER_OF_PHASES;
 	multi_phase_params.phase_index = 0;
 	multi_phase_params.multi_phase_param_ptr = &multi_phase_get_number;
+	printk(BIOS_SPEW, "FspMultiPhaseSiInit get phase number\n");
 	status = multi_phase_si_init(&multi_phase_params);
 	fsps_return_value_handler(FSP_MULTI_PHASE_SI_INIT_GET_NUMBER_OF_PHASES_API, status);
 

@@ -5,6 +5,8 @@
 #include <intelblocks/tco.h>
 #include <intelblocks/uart.h>
 #include <soc/bootblock.h>
+#include <cpu/intel/microcode.h>
+#include <console/console.h>
 
 asmlinkage void bootblock_c_entry(uint64_t base_timestamp)
 {
@@ -29,4 +31,5 @@ void bootblock_soc_init(void)
 
 	/* Programming TCO_BASE_ADDRESS and TCO Timer Halt */
 	tco_configure();
+	intel_update_microcode_from_cbfs();
 }
