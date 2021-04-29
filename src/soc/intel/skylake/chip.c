@@ -304,7 +304,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		 * write" errors and others. Enabling this option solves these problems.
 		 */
 		params->SataPwrOptEnable = 1;
-		tconfig->SataTestMode = config->SataTestMode;
+		tconfig->SataTestMode = CONFIG(ENABLE_SATA_TEST_MODE);
 	}
 
 	memcpy(params->PcieRpClkReqSupport, config->PcieRpClkReqSupport,
@@ -524,7 +524,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchIoApicBdfValid = 0;
 
 	/* Enable VT-d and X2APIC */
-	if (!config->ignore_vtd && soc_is_vtd_capable()) {
+	if (soc_is_vtd_capable()) {
 		params->VtdBaseAddress[0] = GFXVT_BASE_ADDRESS;
 		params->VtdBaseAddress[1] = VTVC0_BASE_ADDRESS;
 		params->X2ApicOptOut = 0;

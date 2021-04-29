@@ -435,6 +435,28 @@ static int start_aps(struct bus *cpu_bus, int ap_count, atomic_t *num_aps)
 
 	printk(BIOS_DEBUG, "Attempting to start %d APs\n", ap_count);
 
+	if (is_x2apic_mode()) {
+		x2apic_send_ipi(LAPIC_DM_INIT | LAPIC_INT_LEVELTRIG |
+			LAPIC_INT_ASSERT | LAPIC_DEST_ALLBUT, 0);
+		mdelay(10);
+		x2apic_send_ipi(LAPIC_DM_STARTUP | LAPIC_INT_LEVELTRIG |
+			LAPIC_DEST_ALLBUT | sipi_vector, 0);
+
+		/* Wait for CPUs to check in up to 200 us. */
+		wait_for_aps(num_aps, ap_count, 200 /* us */, 15 /* us */);
+
+		x2apic_send_ipi(LAPIC_DM_STARTUP | LAPIC_INT_LEVELTRIG |
+			LAPIC_DEST_ALLBUT | sipi_vector, 0);
+
+		/* Wait for CPUs to check in. */
+		if (wait_for_aps(num_aps, ap_count, 100000 /* 100 ms */, 50 /* us */)) {
+			printk(BIOS_ERR, "Not all APs checked in: %d/%d.\n",
+			       atomic_read(num_aps), ap_count);
+			return -1;
+		}
+		return 0;
+	}
+
 	if ((lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY)) {
 		printk(BIOS_DEBUG, "Waiting for ICR not to be busy...");
 		if (apic_wait_timeout(1000 /* 1 ms */, 50)) {
@@ -653,6 +675,11 @@ static void mp_initialize_cpu(void)
 
 void smm_initiate_relocation_parallel(void)
 {
+	if (is_x2apic_mode()) {
+		x2apic_send_ipi(LAPIC_DM_SMI | LAPIC_INT_LEVELTRIG, lapicid());
+		return;
+	}
+
 	if ((lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY)) {
 		printk(BIOS_DEBUG, "Waiting for ICR not to be busy...");
 		if (apic_wait_timeout(1000 /* 1 ms */, 50)) {
@@ -730,15 +757,10 @@ static void asmlinkage smm_do_relocation(void *arg)
 	 * the location of the new SMBASE. If using SMM modules then this
 	 * calculation needs to match that of the module loader.
 	 */
-	if (CONFIG(X86_SMM_LOADER_VERSION2)) {
-		perm_smbase = smm_get_cpu_smbase(cpu);
-		if (!perm_smbase) {
-			printk(BIOS_ERR, "%s: bad SMBASE for CPU %d\n", __func__, cpu);
-			return;
-		}
-	} else {
-		perm_smbase = mp_state.perm_smbase;
-		perm_smbase -= cpu * mp_state.smm_save_state_size;
+	perm_smbase = smm_get_cpu_smbase(cpu);
+	if (!perm_smbase) {
+		printk(BIOS_ERR, "%s: bad SMBASE for CPU %d\n", __func__, cpu);
+		return;
 	}
 
 	/* Setup code checks this callback for validity. */
@@ -769,19 +791,11 @@ static void adjust_smm_apic_id_map(struct smm_loader_params *smm_params)
 }
 
 static int install_relocation_handler(int num_cpus, size_t real_save_state_size,
-				      size_t save_state_size)
+				      size_t save_state_size, uintptr_t perm_smbase)
 {
-	int cpus = num_cpus;
-#if CONFIG(X86_SMM_LOADER_VERSION2)
-	/* Default SMRAM size is not big enough to concurrently
-	 * handle relocation for more than ~32 CPU threads
-	 * therefore, relocate 1 by 1. */
-	cpus = 1;
-#endif
-
 	struct smm_loader_params smm_params = {
 		.per_cpu_stack_size = CONFIG_SMM_STUB_STACK_SIZE,
-		.num_concurrent_stacks = cpus,
+		.num_concurrent_stacks = num_cpus,
 		.real_cpu_save_state_size = real_save_state_size,
 		.per_cpu_save_state_size = save_state_size,
 		.num_concurrent_save_states = 1,
@@ -792,7 +806,7 @@ static int install_relocation_handler(int num_cpus, size_t real_save_state_size,
 	if (mp_state.ops.adjust_smm_params != NULL)
 		mp_state.ops.adjust_smm_params(&smm_params, 0);
 
-	if (smm_setup_relocation_handler(&smm_params)) {
+	if (smm_setup_relocation_handler((void *)perm_smbase, &smm_params)) {
 		printk(BIOS_ERR, "%s: smm setup failed\n", __func__);
 		return -1;
 	}
@@ -847,9 +861,8 @@ static void load_smm_handlers(void)
 		return;
 
 	/* Install handlers. */
-	if (install_relocation_handler(mp_state.cpu_count,
-				       real_save_state_size,
-				       smm_save_state_size) < 0) {
+	if (install_relocation_handler(mp_state.cpu_count, real_save_state_size,
+				       smm_save_state_size, mp_state.perm_smbase) < 0) {
 		printk(BIOS_ERR, "Unable to install SMM relocation handler.\n");
 		smm_disable();
 	}

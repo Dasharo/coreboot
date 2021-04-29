@@ -4,7 +4,6 @@ if BOARD_AMD_BILBY
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
-	select SOC_AMD_COMMON_BLOCK_USE_ESPI
 	select SOC_AMD_PICASSO
 	select BOARD_ROMSIZE_KB_16384
 	select AZALIA_PLUGIN_SUPPORT
@@ -57,10 +56,6 @@ config MAINBOARD_PART_NUMBER
 	string
 	default "BILBY"
 
-config DEVICETREE
-	string
-	default "devicetree.cb"
-
 config ONBOARD_VGA_IS_PRIMARY
 	bool
 	default y
@@ -99,7 +94,7 @@ config VGA_BIOS_DGPU_ID
 
 config VGA_BIOS_DGPU_FILE
 	string
-	default "3rdparty/amd_blobs/picasso/Raven2GenericVbios.bin"
+	default "3rdparty/amd_blobs/picasso/PicassoGenericVbios.bin"
 
 config EFS_SPI_READ_MODE
 	int

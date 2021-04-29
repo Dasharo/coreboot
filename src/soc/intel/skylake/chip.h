@@ -78,9 +78,6 @@ struct soc_intel_skylake_config {
 	/* TCC activation offset */
 	uint32_t tcc_offset;
 
-	/* Whether to ignore VT-d support of the SKU */
-	int ignore_vtd;
-
 	/*
 	 * System Agent dynamic frequency configuration
 	 * When enabled memory will be trained at two different frequencies.
@@ -479,9 +476,6 @@ struct soc_intel_skylake_config {
 	 * 2 - VR mailbox command sent for IA/GT/SA rails.
 	 */
 	u8 IslVrCmd;
-
-	/* Enable/Disable Sata test mode */
-	u8 SataTestMode;
 
 	/* i915 struct for GMA backlight control */
 	struct i915_gpu_controller_info gfx;

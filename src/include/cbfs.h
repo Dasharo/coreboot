@@ -67,7 +67,7 @@
  * attributes). Must return a pointer to space of the requested size where the file data should
  * be loaded, or NULL to make the operation fail.
  */
-typedef void *(*cbfs_allocator_t)(void *arg, size_t size, union cbfs_mdata *mdata);
+typedef void *(*cbfs_allocator_t)(void *arg, size_t size, const union cbfs_mdata *mdata);
 
 static inline size_t cbfs_load(const char *name, void *buf, size_t size);
 static inline size_t cbfs_ro_load(const char *name, void *buf, size_t size);
@@ -165,13 +165,6 @@ void *cbfs_boot_map_optionrom(uint16_t vendor, uint16_t device);
 /* Return mapping of option ROM with revision number. Returns NULL on error. */
 void *cbfs_boot_map_optionrom_revision(uint16_t vendor, uint16_t device, uint8_t rev);
 
-/* Load |in_size| bytes from |rdev| at |offset| to the |buffer_size| bytes large |buffer|,
-   decompressing it according to |compression| in the process. Returns the decompressed file
-   size, or 0 on error. LZMA files will be mapped for decompression. LZ4 files will be
-   decompressed in-place with the buffer size requirements outlined in compression.h. */
-size_t cbfs_load_and_decompress(const struct region_device *rdev, size_t offset,
-	size_t in_size, void *buffer, size_t buffer_size, uint32_t compression);
-
 
 /**********************************************************************************************
  *                         INTERNAL HELPERS FOR INLINES, DO NOT USE.                          *
@@ -183,9 +176,9 @@ struct _cbfs_default_allocator_arg {
 	void *buf;
 	size_t buf_size;
 };
-void *_cbfs_default_allocator(void *arg, size_t size, union cbfs_mdata *unused);
+void *_cbfs_default_allocator(void *arg, size_t size, const union cbfs_mdata *unused);
 
-void *_cbfs_cbmem_allocator(void *arg, size_t size, union cbfs_mdata *unused);
+void *_cbfs_cbmem_allocator(void *arg, size_t size, const union cbfs_mdata *unused);
 
 /**********************************************************************************************
  *                                  INLINE IMPLEMENTATIONS                                    *

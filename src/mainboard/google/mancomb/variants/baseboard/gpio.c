@@ -12,7 +12,7 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	/* SYS_RESET_L */
 	PAD_NF(GPIO_1, SYS_RESET_L, PULL_NONE),
 	/* WAKE_L */
-	PAD_NF(GPIO_2, WAKE_L, PULL_NONE),
+	PAD_NF_SCI(GPIO_2, WAKE_L, PULL_NONE, EDGE_LOW),
 	/* GSC_SOC_INT_L */
 	PAD_INT(GPIO_3, PULL_NONE, EDGE_LOW, STATUS_DELIVERY),
 	/* AGPIO4 */
@@ -20,7 +20,7 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	/* AGPIO5 */
 	PAD_NC(GPIO_5),
 	/* EN_PP3300_WLAN */
-	PAD_GPO(GPIO_6, LOW),
+	PAD_GPO(GPIO_6, HIGH),
 	/* AGPIO7 */
 	PAD_NC(GPIO_7),
 	/* EN_PP3300_LAN */
@@ -53,13 +53,13 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	/* HUB_RST_L */
 	PAD_GPO(GPIO_24, LOW),
 	/* GPIO_25: Not available */
-	/* PCIE_RST0_L */
-	PAD_NF(GPIO_26, PCIE_RST_L, PULL_NONE),
+	/* TODO: change back to PCIE_RST_L when we figure out why PCIE_RST doesn't go high. */
+	PAD_GPO(GPIO_26, HIGH),
 	/* PCIE_RST1_L */
 	PAD_NF(GPIO_27, PCIE_RST1_L, PULL_NONE),
 	/* GPIO_28: Not available */
 	/* WLAN_AUX_RESET */
-	PAD_GPO(GPIO_29, HIGH),
+	PAD_GPO(GPIO_29, LOW),
 	/* ESPI_CS_L */
 	PAD_NF(GPIO_30, ESPI_CS_L, PULL_NONE),
 	/* AGPIO31 */
@@ -68,7 +68,7 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	PAD_NC(GPIO_32),
 	/* GPIO_33 - GPIO_39: Not available */
 	/* SSD_AUX_RESET_L */
-	PAD_GPO(GPIO_40, LOW),
+	PAD_GPO(GPIO_40, HIGH),
 	/* GPIO_41: Not available */
 	/* EGPIO42 */
 	PAD_NC(GPIO_42),
@@ -80,7 +80,7 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	/* AGPIO69 */
 	PAD_NC(GPIO_69),
 	/* SD_AUX_RESET_L */
-	PAD_GPO(GPIO_70, LOW),
+	PAD_GPO(GPIO_70, HIGH),
 	/* GPIO_71 - GPIO_73: Not available */
 	/* EGPIO74 */
 	PAD_NC(GPIO_74),
@@ -93,7 +93,7 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	PAD_GPI(GPIO_84, PULL_NONE),
 	/* AGPIO85 */
 	PAD_NC(GPIO_85),
-	/* SPI_CLK2 */
+	/* ESPI_SOC_CLK */
 	PAD_NF(GPIO_86, SPI_CLK, PULL_NONE),
 	/* AGPIO87 */
 	PAD_NC(GPIO_87),
@@ -108,7 +108,16 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	/* CLK_REQ0_L */
 	PAD_NF(GPIO_92, CLK_REQ0_L, PULL_NONE),
 	/* GPIO_93 - GPIO_103: Not available */
-	/* GPIO_104 - GPIO_108: eSPI configured in early stage */
+	/* ESPI1_DATA0 */
+	PAD_NF(GPIO_104, SPI2_DO_ESPI2_D0, PULL_NONE),
+	/* ESPI1_DATA1 */
+	PAD_NF(GPIO_105, SPI2_DI_ESPI2_D1, PULL_NONE),
+	/* ESPI1_DATA2 */
+	PAD_NF(GPIO_106, EMMC_SPI2_WP_L_ESPI2_D2, PULL_NONE),
+	/* ESPI1_DATA3 */
+	PAD_NF(GPIO_107, SPI2_HOLD_L_ESPI2_D3, PULL_NONE),
+	/* ESPI_ALERT_L */
+	PAD_NF(GPIO_108, ESPI_ALERT_D1, PULL_NONE),
 	/* EGPIO109 */
 	PAD_NC(GPIO_109),
 	/* GPIO_110 - GPIO_112: Not available */
@@ -129,11 +138,11 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	/* AGPIO129 */
 	PAD_NC(GPIO_129),
 	/* WLAN_DISABLE */
-	PAD_GPO(GPIO_130, HIGH),
+	PAD_GPO(GPIO_130, LOW),
 	/* CLK_REQ3_L */
 	PAD_NF(GPIO_131, CLK_REQ3_L, PULL_NONE),
 	/* BT_DISABLE */
-	PAD_GPO(GPIO_132, HIGH),
+	PAD_GPO(GPIO_132, LOW),
 	/* EGPIO140 */
 	PAD_NC(GPIO_140),
 	/* UART0_RXD */
@@ -156,6 +165,22 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 
 /* Early GPIO configuration */
 static const struct soc_amd_gpio early_gpio_table[] = {
+	/* EN_PP3300_WLAN */
+	PAD_GPO(GPIO_6, HIGH),
+	/* WLAN_DISABLE */
+	PAD_GPO(GPIO_130, LOW),
+	/* GSC_SOC_INT_L */
+	PAD_INT(GPIO_3, PULL_NONE, EDGE_LOW, STATUS_DELIVERY),
+	/* I2C3_SCL */
+	PAD_NF(GPIO_19, I2C3_SCL, PULL_NONE),
+	/* I2C3_SDA */
+	PAD_NF(GPIO_20, I2C3_SDA, PULL_NONE),
+	/* PCIE_RST0_L */
+	PAD_GPO(GPIO_26, HIGH),
+	/* ESPI_CS_L */
+	PAD_NF(GPIO_30, ESPI_CS_L, PULL_NONE),
+	/* ESPI_SOC_CLK */
+	PAD_NF(GPIO_86, SPI_CLK, PULL_NONE),
 	/* ESPI1_DATA0 */
 	PAD_NF(GPIO_104, SPI2_DO_ESPI2_D0, PULL_NONE),
 	/* ESPI1_DATA1 */
@@ -166,6 +191,15 @@ static const struct soc_amd_gpio early_gpio_table[] = {
 	PAD_NF(GPIO_107, SPI2_HOLD_L_ESPI2_D3, PULL_NONE),
 	/* ESPI_ALERT_L */
 	PAD_NF(GPIO_108, ESPI_ALERT_D1, PULL_NONE),
+	/* UART0_RXD */
+	PAD_NF(GPIO_141, UART0_RXD, PULL_NONE),
+	/* UART0_TXD */
+	PAD_NF(GPIO_143, UART0_TXD, PULL_NONE),
+};
+
+/* GPIO configuration for sleep */
+static const struct soc_amd_gpio sleep_gpio_table[] = {
+	/* TODO: Fill sleep gpio configuration */
 };
 
 const struct soc_amd_gpio *__weak variant_base_gpio_table(size_t *size)
@@ -182,4 +216,9 @@ const struct soc_amd_gpio *__weak variant_early_gpio_table(size_t *size)
 {
 	*size = ARRAY_SIZE(early_gpio_table);
 	return early_gpio_table;
+}
+const __weak struct soc_amd_gpio *variant_sleep_gpio_table(size_t *size)
+{
+	*size = ARRAY_SIZE(sleep_gpio_table);
+	return sleep_gpio_table;
 }

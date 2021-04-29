@@ -186,22 +186,21 @@ struct soc_intel_tigerlake_config {
 
 	/*
 	 * Offset 0x054B - Disable Fast Slew Rate for Deep Package
-	 * C States for VR domains. Disable Fast Slew Rate for Deep
-	 * Package C States based on Acoustic Noise Mitigation feature
-	 * enabled. The domains are IA,GT,SA,VLCC and FIVR.
+	 * C States for VCCin in VR domain. Disable Fast Slew Rate
+	 * for Deep Package C States based on Acoustic Noise
+	 * Mitigation feature enabled.
 	 * 0 - False
 	 * 1 - True
 	 */
-	uint8_t FastPkgCRampDisable[VR_DOMAIN_MAX];
+	uint8_t FastPkgCRampDisable;
 
 	/*
 	 * Offset 0x0550 - Slew Rate configuration for Deep Package
-	 * C States for VR domains. Slew Rate configuration for Deep
-	 * Package C States for VR domains based on Acoustic Noise
-	 * Mitigation feature enabled. The domains are IA,GT,SA,VLCC and FIVR.
-	 * Slew rates are defined as enum slew_rate.
+	 * C States for VCCin in VR domain. Slew Rate configuration
+	 * for Deep Package C States for VR domain based on Acoustic
+	 * Noise Mitigation feature enabled.
 	 */
-	uint8_t SlowSlewRate[VR_DOMAIN_MAX];
+	uint8_t SlowSlewRate;
 
 	/* SATA related */
 	uint8_t SataEnable;
@@ -241,10 +240,10 @@ struct soc_intel_tigerlake_config {
 	/* PCIe output clocks type to PCIe devices.
 	 * 0-23: PCH rootport, 0x70: LAN, 0x80: unspecified but in use,
 	 * 0xFF: not used */
-	uint8_t PcieClkSrcUsage[CONFIG_MAX_PCIE_CLOCKS];
+	uint8_t PcieClkSrcUsage[CONFIG_MAX_PCIE_CLOCK_SRC];
 	/* PCIe ClkReq-to-ClkSrc mapping, number of clkreq signal assigned to
 	 * clksrc. */
-	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCKS];
+	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCK_SRC];
 
 	/* Probe CLKREQ# signal before enabling CLKREQ# based power management.*/
 	uint8_t PcieRpClkReqDetect[CONFIG_MAX_ROOT_PORTS];

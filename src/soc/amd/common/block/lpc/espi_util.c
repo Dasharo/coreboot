@@ -98,6 +98,27 @@ static int espi_get_unused_io_window(void)
 	return -1;
 }
 
+static void espi_clear_decodes(void)
+{
+	unsigned int idx;
+
+	/* First turn off all enable bits, then zero base, range, and size registers */
+	/*
+	 * There is currently a bug where the SMU will lock up at times if the port80h enable
+	 * bit is cleared.  See b/183974365
+	 */
+	espi_write16(ESPI_DECODE, (espi_read16(ESPI_DECODE) & ESPI_DECODE_IO_0x80_EN));
+
+	for (idx = 0; idx < ESPI_GENERIC_IO_WIN_COUNT; idx++) {
+		espi_write16(ESPI_IO_RANGE_BASE(idx), 0);
+		espi_write8(ESPI_IO_RANGE_SIZE(idx), 0);
+	}
+	for (idx = 0; idx < ESPI_GENERIC_MMIO_WIN_COUNT; idx++) {
+		espi_write32(ESPI_MMIO_RANGE_BASE(idx), 0);
+		espi_write16(ESPI_MMIO_RANGE_SIZE(idx), 0);
+	}
+}
+
 /*
  * Returns decode enable bits for standard IO port addresses. If port address is not supported
  * by standard decode or if the size of window is not 1, then it returns -1.
@@ -277,19 +298,22 @@ static const struct espi_config *espi_get_config(void)
 	return &soc_cfg->espi_config;
 }
 
-void espi_configure_decodes(void)
+static int espi_configure_decodes(const struct espi_config *cfg)
 {
-	int i;
-	const struct espi_config *cfg = espi_get_config();
+	int i, ret;
 
 	espi_enable_decode(cfg->std_io_decode_bitmap);
 
 	for (i = 0; i < ESPI_GENERIC_IO_WIN_COUNT; i++) {
 		if (cfg->generic_io_range[i].size == 0)
 			continue;
-		espi_open_generic_io_window(cfg->generic_io_range[i].base,
-					    cfg->generic_io_range[i].size);
+		ret = espi_open_generic_io_window(cfg->generic_io_range[i].base,
+						  cfg->generic_io_range[i].size);
+		if (ret)
+			return ret;
 	}
+
+	return 0;
 }
 
 #define ESPI_DN_TX_HDR0			0x00
@@ -311,12 +335,35 @@ enum espi_cmd_type {
 #define  ESPI_VW_MAX_SIZE_SHIFT			13
 #define  ESPI_VW_MAX_SIZE_MASK			(0x3f << ESPI_VW_MAX_SIZE_SHIFT)
 
+#define ESPI_GLOBAL_CONTROL_0			0x30
+#define  ESPI_WAIT_CNT_SHIFT			24
+#define  ESPI_WAIT_CNT_MASK			(0x3F << ESPI_WAIT_CNT_SHIFT)
+#define  ESPI_WDG_CNT_SHIFT			8
+#define  ESPI_WDG_CNT_MASK			(0xFFFF << ESPI_WDG_CNT_SHIFT)
+#define  ESPI_AL_IDLE_TIMER_SHIFT		4
+#define  ESPI_AL_IDLE_TIMER_MASK		(0x7 << ESPI_AL_IDLE_TIMER_SHIFT)
+#define  ESPI_AL_STOP_EN			(1 << 3)
+#define  ESPI_PR_CLKGAT_EN			(1 << 2)
+#define  ESPI_WAIT_CHKEN			(1 << 1)
+#define  ESPI_WDG_EN				(1 << 0)
+
 #define ESPI_GLOBAL_CONTROL_1			0x34
+#define  ESPI_RGCMD_INT_MAP_SHIFT		13
+#define  ESPI_RGCMD_INT_MAP_MASK		(0x1F << ESPI_RGCMD_INT_MAP_SHIFT)
+#define    ESPI_RGCMD_INT(irq)			((irq) << ESPI_RGCMD_INT_MAP_SHIFT)
+#define    ESPI_RGCMD_INT_SMI			(0x1F << ESPI_RGCMD_INT_MAP_SHIFT)
+#define  ESPI_ERR_INT_MAP_SHIFT			8
+#define  ESPI_ERR_INT_MAP_MASK			(0x1F << ESPI_ERR_INT_MAP_SHIFT)
+#define    ESPI_ERR_INT(irq)			((irq) << ESPI_ERR_INT_MAP_SHIFT)
+#define    ESPI_ERR_INT_SMI			(0x1F << ESPI_ERR_INT_MAP_SHIFT)
 #define  ESPI_SUB_DECODE_SLV_SHIFT		3
 #define  ESPI_SUB_DECODE_SLV_MASK		(0x3 << ESPI_SUB_DECODE_SLV_SHIFT)
 #define  ESPI_SUB_DECODE_EN			(1 << 2)
+#define  ESPI_BUS_MASTER_EN			(1 << 1)
+#define  ESPI_SW_RST				(1 << 0)
 
-#define SLAVE0_INT_STS				0x70
+#define ESPI_SLAVE0_INT_EN			0x6C
+#define ESPI_SLAVE0_INT_STS			0x70
 #define  ESPI_STATUS_DNCMD_COMPLETE		(1 << 28)
 #define  ESPI_STATUS_NON_FATAL_ERROR		(1 << 6)
 #define  ESPI_STATUS_FATAL_ERROR		(1 << 5)
@@ -397,9 +444,9 @@ static int espi_wait_ready(void)
 /* Clear interrupt status register */
 static void espi_clear_status(void)
 {
-	uint32_t status = espi_read32(SLAVE0_INT_STS);
+	uint32_t status = espi_read32(ESPI_SLAVE0_INT_STS);
 	if (status)
-		espi_write32(SLAVE0_INT_STS, status);
+		espi_write32(ESPI_SLAVE0_INT_STS, status);
 }
 
 /*
@@ -412,7 +459,7 @@ static int espi_poll_status(uint32_t *status)
 
 	stopwatch_init_usecs_expire(&sw, ESPI_CMD_TIMEOUT_US);
 	do {
-		*status = espi_read32(SLAVE0_INT_STS);
+		*status = espi_read32(ESPI_SLAVE0_INT_STS);
 		if (*status)
 			return 0;
 	} while (!stopwatch_expired(&sw));
@@ -474,6 +521,8 @@ static int espi_send_command(const struct espi_cmd *cmd)
 				  status);
 		return -1;
 	}
+
+	espi_write32(ESPI_SLAVE0_INT_STS, ESPI_STATUS_DNCMD_COMPLETE);
 
 	return 0;
 }
@@ -765,6 +814,8 @@ static int espi_setup_periph_channel(const struct espi_config *mb_cfg, uint32_t 
 		slave_config &= ~slave_en_mask;
 	}
 
+	espi_show_slave_peripheral_channel_configuration(slave_config);
+
 	return espi_set_channel_configuration(slave_config, ESPI_SLAVE_PERIPH_CFG,
 					      ESPI_PERIPH_CH_EN);
 }
@@ -841,6 +892,12 @@ int espi_setup(void)
 	uint32_t slave_caps;
 	const struct espi_config *cfg = espi_get_config();
 
+	espi_write32(ESPI_GLOBAL_CONTROL_0, ESPI_AL_STOP_EN);
+	espi_write32(ESPI_GLOBAL_CONTROL_1, ESPI_RGCMD_INT(23) | ESPI_ERR_INT_SMI);
+	espi_write32(ESPI_SLAVE0_INT_EN, 0);
+	espi_clear_status();
+	espi_clear_decodes();
+
 	/*
 	 * Boot sequence: Step 1
 	 * Set correct initial configuration to talk to the slave:
@@ -915,8 +972,16 @@ int espi_setup(void)
 		return -1;
 	}
 
+	if (espi_configure_decodes(cfg) == -1) {
+		printk(BIOS_ERR, "Error: Configuring decodes failed!\n");
+		return -1;
+	}
+
 	/* Enable subtractive decode if configured */
 	espi_setup_subtractive_decode(cfg);
+
+	espi_write32(ESPI_GLOBAL_CONTROL_1,
+		     espi_read32(ESPI_GLOBAL_CONTROL_1) | ESPI_BUS_MASTER_EN);
 
 	return 0;
 }

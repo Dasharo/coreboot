@@ -32,6 +32,7 @@ romstage-y += uart.c
 ramstage-y += acpi.c
 ramstage-y += chip.c
 ramstage-y += cpu.c
+ramstage-y += dptf.c
 ramstage-y += elog.c
 ramstage-y += finalize.c
 ramstage-y += fsp_params.c
@@ -55,7 +56,6 @@ ramstage-y += xhci.c
 
 smm-y += elog.c
 smm-y += p2sb.c
-smm-y += pmc.c
 smm-y += pmutil.c
 smm-y += smihandler.c
 smm-y += uart.c

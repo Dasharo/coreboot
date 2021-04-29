@@ -4,7 +4,9 @@
 #include <console/console.h>
 #include <console/debug.h>
 #include <cpu/x86/lapic.h>
+#include <cpu/x86/mp.h>
 #include <device/pci.h>
+#include <device/pci_ids.h>
 #include <intelblocks/acpi.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/lpc_lib.h>
@@ -12,6 +14,7 @@
 #include <soc/acpi.h>
 #include <soc/chip_common.h>
 #include <soc/cpu.h>
+#include <soc/msr.h>
 #include <soc/pch.h>
 #include <soc/ramstage.h>
 #include <soc/p2sb.h>
@@ -121,6 +124,8 @@ static void set_pcu_locks(void)
 		const struct device *cr0_dev = PCU_DEV_CR0(bus);
 		pci_or_config32(cr0_dev, PCU_CR0_P_STATE_LIMITS, P_STATE_LIMITS_LOCK);
 		pci_or_config32(cr0_dev, PCU_CR0_PACKAGE_RAPL_LIMIT_UPR, PKG_PWR_LIM_LOCK_UPR);
+		pci_or_config32(cr0_dev, PCU_CR0_TURBO_ACTIVATION_RATIO, TURBO_ACTIVATION_RATIO_LOCK);
+
 
 		/* configure PCU_CR1_FUN csrs */
 		const struct device *cr1_dev = PCU_DEV_CR1(bus);
@@ -129,12 +134,44 @@ static void set_pcu_locks(void)
 		/* configure PCU_CR2_FUN csrs */
 		const struct device *cr2_dev = PCU_DEV_CR2(bus);
 		pci_or_config32(cr2_dev, PCU_CR2_DRAM_PLANE_POWER_LIMIT, PP_PWR_LIM_LOCK);
+		pci_or_config32(cr2_dev, PCU_CR2_DRAM_POWER_INFO_UPR, DRAM_POWER_INFO_LOCK_UPR);
 
 		/* configure PCU_CR3_FUN csrs */
 		const struct device *cr3_dev = PCU_DEV_CR3(bus);
 		pci_or_config32(cr3_dev, PCU_CR3_CONFIG_TDP_CONTROL, TDP_LOCK);
+		pci_or_config32(cr3_dev, PCU_CR3_FLEX_RATIO, OC_LOCK);
 	}
 
+}
+
+static void set_msr_locks(void *unused)
+{
+	/* The MSRs and CSRS have the same register layout. Use the CSRS bit definitions */
+	msr_t msr;
+
+	/* Lock Turbo */
+	msr = rdmsr(MSR_TURBO_ACTIVATION_RATIO);
+	msr.lo |= (TURBO_ACTIVATION_RATIO_LOCK);
+	wrmsr(MSR_TURBO_ACTIVATION_RATIO, msr);
+
+	/* Lock AES enable */
+	msr = rdmsr(MSR_FEATURE_CONFIG);
+	msr.lo |= FEATURE_CONFIG_LOCK;
+	wrmsr(MSR_FEATURE_CONFIG, msr);
+}
+
+static void set_imc_locks(void)
+{
+	struct device *dev = 0;
+	while ((dev = dev_find_device(PCI_VENDOR_ID_INTEL, IMC_M2MEM_DEVID, dev)))
+		pci_or_config32(dev, IMC_M2MEM_TIMEOUT, TIMEOUT_LOCK);
+}
+
+static void set_upi_locks(void)
+{
+	struct device *dev = 0;
+	while ((dev = dev_find_device(PCI_VENDOR_ID_INTEL, UPI_LL_CR_DEVID, dev)))
+		pci_or_config32(dev, UPI_LL_CR_KTIMISCMODLCK, KTIMISCMODLCK_LOCK);
 }
 
 static void chip_final(void *data)
@@ -153,7 +190,10 @@ static void chip_final(void *data)
 	uint8_t reg8 = pci_io_read_config8(PCI_DEV(0, 0, 0), 0x88);
 	pci_io_write_config8(PCI_DEV(0, 0, 0), 0x88, reg8 | (1 << 4));
 
+	mp_run_on_all_cpus(set_msr_locks, NULL);
 	set_pcu_locks();
+	set_imc_locks();
+	set_upi_locks();
 
 	p2sb_hide();
 	iio_enable_masks();
