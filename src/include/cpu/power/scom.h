@@ -86,6 +86,12 @@ typedef enum
 	EC23_CHIPLET_ID = 0x37      ///< Core23 chiplet (Quad5, EX11, C1)
 } chiplet_id_t;
 
+static const chiplet_id_t mcs_to_nest[] =
+{
+	[MC01_CHIPLET_ID] = N3_CHIPLET_ID,
+	[MC23_CHIPLET_ID] = N1_CHIPLET_ID,
+};
+
 void reset_scom_engine(void);
 
 static uint64_t read_scom_direct(uint64_t reg_address)
