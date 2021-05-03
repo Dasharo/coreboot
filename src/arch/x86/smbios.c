@@ -408,7 +408,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 	t->handle = handle;
 	t->length = len - 2;
 
-	t->vendor = smbios_add_string(t->eos, "coreboot");
+	t->vendor = smbios_add_string(t->eos, CONFIG_MAINBOARD_SMBIOS_VENDOR);
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
 
 #if CONFIG(CHROMEOS) && CONFIG(HAVE_ACPI_TABLES)

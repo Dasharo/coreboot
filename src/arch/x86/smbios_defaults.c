@@ -23,6 +23,11 @@ __weak const char *smbios_mainboard_bios_version(void)
 	return NULL;
 }
 
+__weak const char *smbios_mainboard_bios_vendor(void)
+{
+	return CONFIG_MAINBOARD_BIOS_VENDOR;
+}
+
 __weak const char *smbios_mainboard_serial_number(void)
 {
 	return CONFIG_MAINBOARD_SERIAL_NUMBER;

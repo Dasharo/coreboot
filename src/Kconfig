@@ -757,6 +757,14 @@ config SMBIOS_PROVIDED_BY_MOBO
 	bool
 	default n
 
+config MAINBOARD_BIOS_VENDOR
+	prompt "SMBIOS BIOS Vendor" if !SMBIOS_PROVIDED_BY_MOBO
+	string
+	depends on GENERATE_SMBIOS_TABLES
+	default "coreboot"
+	help
+	  The BIOS Vendor to store in SMBIOS structures.
+
 config MAINBOARD_SERIAL_NUMBER
 	prompt "SMBIOS Serial Number" if !SMBIOS_PROVIDED_BY_MOBO
 	string
