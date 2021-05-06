@@ -27,7 +27,19 @@
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
-#include <types.h>
+#include <smbios.h>
+
+unsigned int smbios_cpu_get_current_speed_mhz(void)
+{
+	msr_t msr;
+	msr = rdmsr(IA32_PERF_STATUS);
+	return ((msr.lo >> 8) & 0xff) * CONFIG_CPU_BCLK_MHZ;
+}
+
+unsigned int smbios_processor_external_clock(void)
+{
+	return CONFIG_CPU_BCLK_MHZ;
+}
 
 static const struct reg_script core_msr_script[] = {
 #if !CONFIG(SOC_INTEL_GEMINILAKE)
