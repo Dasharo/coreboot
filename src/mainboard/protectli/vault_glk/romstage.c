@@ -166,4 +166,5 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 
 void mainboard_save_dimm_info(void)
 {
+	save_ddr4_dimm_info();
 }
