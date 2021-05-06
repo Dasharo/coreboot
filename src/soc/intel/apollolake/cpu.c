@@ -28,6 +28,25 @@
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
+#include <smbios.h>
+
+unsigned int smbios_cpu_get_max_speed_mhz(void)
+{
+	/* Apollolake and Geminilake do not support turbo */
+	return smbios_cpu_get_current_speed_mhz();
+}
+
+unsigned int smbios_cpu_get_current_speed_mhz(void)
+{
+	msr_t msr;
+	msr = rdmsr(MSR_PLATFORM_INFO);
+	return ((msr.lo >> 8) & 0xff) * 100;
+}
+
+unsigned int smbios_processor_external_clock(void)
+{
+	return 100;
+}
 
 static const struct reg_script core_msr_script[] = {
 #if !CONFIG(SOC_INTEL_GEMINILAKE)
