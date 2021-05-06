@@ -5,8 +5,8 @@ export SHELL := env bash
 
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
-project_git_repo=https://github.com/mrchromebox/edk2
-project_git_branch=coreboot_fb
+project_git_repo=https://github.com/Dasharo/edk2
+project_git_branch=dasharo
 upstream_git_repo=https://github.com/tianocore/edk2
 
 ifeq ($(CONFIG_TIANOCORE_UEFIPAYLOAD),y)
@@ -45,7 +45,7 @@ else
 ARCH=-a IA32 -a X64 -p $(bootloader)/$(bootloader)Ia32X64.dsc
 endif
 
-BUILD_STR=-q $(ARCH) -t COREBOOT -b $(BUILD_TYPE) $(TIMER) $(TIMEOUT) $(build_flavor)
+BUILD_STR=-q $(ARCH) -t COREBOOT -b $(BUILD_TYPE) $(TIMER) $(TIMEOUT) $(build_flavor) -D SECURE_BOOT_ENABLE=TRUE -D SERIAL_TERMINAL=TRUE -D NETWORK_IPXE=TRUE
 
 all: clean build
 
