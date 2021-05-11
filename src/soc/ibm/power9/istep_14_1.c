@@ -690,7 +690,8 @@ void istep_14_1(void)
 				 * pausing conditions. Having it in the same program seems to
 				 * be working.
 				 */
-				add_scrub(mcs_i, mca_i*2 + dimm);
+				if (!CONFIG(SKIP_INITIAL_ECC_SCRUB))
+					add_scrub(mcs_i, mca_i*2 + dimm);
 			}
 		}
 
