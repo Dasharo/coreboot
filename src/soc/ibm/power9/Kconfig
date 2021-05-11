@@ -5,5 +5,16 @@ config CPU_IBM_POWER9
 	  Talos II platform.
 
 if CPU_IBM_POWER9
-	# nothing here yet
+
+config SKIP_INITIAL_ECC_SCRUB
+	bool "Skip initial ECC scrubbing"
+	default n
+	help
+	  Enabling this option will skip initial ECC scrubbing that is normally
+	  done right after memory is written with an initial pattern. This is
+	  not the same as clearing memory after init, ECC memory always has to
+	  be filled with any value in order to make ECC correct.
+	  Selecting this option almost halves the time needed for memory
+	  initialization (istep 14.1).
+
 endif
