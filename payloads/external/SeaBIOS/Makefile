@@ -12,6 +12,18 @@ unexport KCONFIG_SPLITCONFIG
 unexport KCONFIG_TRISTATE
 unexport KCONFIG_NEGATIVES
 
+FLASH_START=$$(grep FMAP_SECTION_FLASH_START $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+FLASH_SIZE=$$(grep FMAP_SECTION_FLASH_SIZE $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+COREBOOT_START=$$(grep FMAP_SECTION_COREBOOT_START $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+COREBOOT_SIZE=$$(grep FMAP_SECTION_COREBOOT_SIZE $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+SI_DEVICEEXT_SIZE=$$(grep FMAP_SECTION_SI_DEVICEEXT_SIZE $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+
+# For platforms without DEVICEEXT this converts "" to "0x0"
+SI_DEVICEEXT_SIZE_VAL=$$(printf '0x%X' $(SI_DEVICEEXT_SIZE))
+# For platform with COREBOOT beginning at 4G it will evaluate to 4G which will
+# be truncated to 0 in 32bit SeaBIOS code
+CBFS_LOCATION = $$((0x100000000 - $(FLASH_SIZE) + $(COREBOOT_START) - $(FLASH_START) + $(COREBOOT_SIZE) + $(SI_DEVICEEXT_SIZE_VAL)))
+
 all: build
 
 seabios:
