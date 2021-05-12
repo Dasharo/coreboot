@@ -61,7 +61,7 @@ etc/grub.cfg-required := the GRUB runtime configuration file ($(CONFIG_GRUB2_RUN
 # SeaBIOS
 
 SEABIOS_CC_OFFSET=$(if $(filter %ccache,$(HOSTCC)),2,1)
-payloads/external/SeaBIOS/seabios/out/bios.bin.elf: $(DOTCONFIG)
+payloads/external/SeaBIOS/seabios/out/bios.bin.elf: $(DOTCONFIG) $(obj)/fmap_config.h
 	$(MAKE) -C payloads/external/SeaBIOS \
 			HOSTCC="$(HOSTCC)" \
 			CC=$(word $(SEABIOS_CC_OFFSET),$(CC_x86_32)) \
