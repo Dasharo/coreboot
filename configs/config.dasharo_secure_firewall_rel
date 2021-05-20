@@ -1,4 +1,4 @@
-CONFIG_LOCALVERSION="Dasharo Secure Firewall v0.1-rc1"
+CONFIG_LOCALVERSION="Dasharo Secure Firewall v0.1-rc2"
 CONFIG_VENDOR_PCENGINES=y
 CONFIG_FMDFILE="src/mainboard/pcengines/apu2/vboot-rwa.fmd"
 CONFIG_VBOOT=y
