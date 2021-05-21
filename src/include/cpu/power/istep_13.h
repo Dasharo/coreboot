@@ -28,10 +28,15 @@
 #define PSEC_PER_NSEC		1000
 #define PSEC_PER_USEC		1000000
 
+/* Values are the same across all supported speed bins */
+static const int tMRD = 8;
+static const int tMOD = 24;
+static const int tZQinit = 1024;
+
 typedef struct {
 	bool present;
 	uint8_t mranks;
-	uint8_t log_ranks;
+	uint8_t log_ranks;	// In total, not per mrank
 	uint8_t width;
 	uint8_t density;
 	uint8_t *spd;
@@ -194,3 +199,36 @@ static inline uint64_t dp_mca_read(chiplet_id_t mcs, int dp, int mca, uint64_t s
 {
 	return mca_read(mcs, mca, scom + dp * 0x40000000000);
 }
+
+enum rank_selection {
+	NO_RANKS =		0,
+	DIMM0_RANK0 =		1 << 0,
+	DIMM0_RANK1 =		1 << 1,
+	DIMM0_ALL_RANKS = 	DIMM0_RANK0 | DIMM0_RANK1,
+	DIMM1_RANK0 =		1 << 2,
+	DIMM1_RANK1 =		1 << 3,
+	DIMM1_ALL_RANKS = 	DIMM1_RANK0 | DIMM1_RANK1,
+	BOTH_DIMMS_1R =	DIMM0_RANK0 | DIMM1_RANK0,
+	BOTH_DIMMS_2R =	DIMM0_ALL_RANKS | DIMM1_ALL_RANKS
+};
+
+enum cal_config {
+	CAL_WR_LEVEL =			PPC_BIT(48),
+	CAL_INITIAL_PAT_WR =		PPC_BIT(49),
+	CAL_DQS_ALIGN =		PPC_BIT(50),
+	CAL_RDCLK_ALIGN =		PPC_BIT(51),
+	CAL_READ_CTR =			PPC_BIT(52),
+	CAL_WRITE_CTR =		PPC_BIT(53),
+	CAL_INITIAL_COARSE_WR =	PPC_BIT(54),
+	CAL_COARSE_RD =		PPC_BIT(55),
+	CAL_CUSTOM_RD =		PPC_BIT(56),
+	CAL_CUSTOM_WR =		PPC_BIT(57)
+};
+
+void ccs_add_instruction(chiplet_id_t id, mrs_cmd_t mrs, uint8_t csn,
+                         uint8_t cke, uint16_t idles);
+void ccs_add_mrs(chiplet_id_t id, mrs_cmd_t mrs, enum rank_selection ranks,
+                 int mirror, uint16_t idles);
+void ccs_phy_hw_step(chiplet_id_t id, int mca_i, int rp, enum cal_config conf,
+                     uint64_t step_cycles);
+void ccs_execute(chiplet_id_t id, int mca_i);
