@@ -113,6 +113,12 @@ config FORCE_MPCIE2_CLK
 	help
 	  If no card is attached to mPCIe2 slot, say N.
 
+config ENABLE_IOMMU
+	bool "Force IOMMU enabling"
+	default n
+	help
+	  Enable IOMMU. This option override bios knobs IOMMU state.
+
 config FMDFILE
 	string
 	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/vboot-rw-ab.fmd" if VBOOT

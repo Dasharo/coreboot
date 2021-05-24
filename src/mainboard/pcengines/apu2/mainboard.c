@@ -394,7 +394,7 @@ static void mainboard_enable(struct device *dev)
 	iommu_dev = pcidev_on_root(0, 2);
 
 	if (iommu_dev) {
-		if (check_iommu())
+		if (check_iommu() || CONFIG(ENABLE_IOMMU))
 			iommu_dev->enabled = 1;
 		else
 			iommu_dev->enabled = 0;
