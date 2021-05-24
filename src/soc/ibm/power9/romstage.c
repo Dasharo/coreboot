@@ -103,6 +103,17 @@ static uint64_t find_min_multi_mtb(rdimm_data_t *dimm, int mtb_l, int mtb_h, uin
 	return (val0 < val1) ? mtb_ftb_to_nck(val1, 0) : mtb_ftb_to_nck(val0, 0);
 }
 
+/* https://review.coreboot.org/c/coreboot/+/52061 */
+/* DIMM SPD addresses */
+#define DIMM0                            0x50
+#define DIMM1                            0x51
+#define DIMM2                            0x52
+#define DIMM3                            0x53
+#define DIMM4                            0x54
+#define DIMM5                            0x55
+#define DIMM6                            0x56
+#define DIMM7                            0x57
+
 /* This is most of step 7 condensed into one function */
 static void prepare_dimm_data(void)
 {
