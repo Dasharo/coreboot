@@ -170,11 +170,14 @@ endif
 
 ifeq ($(CONFIG_SEABIOS_BOOTORDER_IN_FMAP),y)
 ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_FILE)),)
-$(call add_intermediate, seabios_thread_optionroms, $(CBFSTOOL))
+$(call add_intermediate, seabios_bootorder_fmap, $(CBFSTOOL))
 	@printf "    SeaBIOS    Fill bootorder region\n"
 	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f /dev/zero 2>/dev/null)
 	$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f $(CONFIG_SEABIOS_BOOTORDER_FILE)
 endif
+else
+$(call add_intermediate, seabios_clean_bootorder_fmap, $(CBFSTOOL))
+	$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f /dev/zero 2>/dev/null
 endif
 
 # Depthcharge
