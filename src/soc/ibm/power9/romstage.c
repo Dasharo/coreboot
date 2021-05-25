@@ -330,6 +330,8 @@ static void prepare_dimm_data(void)
 
 void main(void)
 {
+	init_timer();
+
 	timestamp_add_now(TS_ROMSTAGE_START);
 
 	console_init();
