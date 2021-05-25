@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/acpimmio.h>
+#include <amdblocks/lpc.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -312,6 +313,18 @@ static void hudson_lpc_enable_resources(struct device *dev)
 {
 	pci_dev_enable_resources(dev);
 	hudson_lpc_enable_childrens_resources(dev);
+}
+
+uintptr_t lpc_get_spibase(void)
+{
+	struct device *dev = pcidev_on_root(0x14, 3);
+
+	u32 base = pci_read_config32(dev, SPIROM_BASE_ADDRESS_REGISTER)	& 0xffffffc0;
+	if (!base) {
+		base = SPI_BASE_ADDRESS;
+		pci_write_config32(dev, SPIROM_BASE_ADDRESS_REGISTER, base | SPI_ROM_ENABLE);
+	}
+	return (uintptr_t)base;
 }
 
 static const char *lpc_acpi_name(const struct device *dev)
