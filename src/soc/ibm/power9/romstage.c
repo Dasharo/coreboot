@@ -336,6 +336,8 @@ void main(void)
 
 	console_init();
 
+	init_timer();
+
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
 	vpd_pnor_main();
