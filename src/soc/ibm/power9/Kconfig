@@ -6,6 +6,11 @@ config CPU_IBM_POWER9
 
 if CPU_IBM_POWER9
 
+# Doing delays with monotonic timers is suboptimal on this platform
+config GENERIC_UDELAY
+	bool
+	default n
+
 config SKIP_INITIAL_ECC_SCRUB
 	bool "Skip initial ECC scrubbing"
 	default n

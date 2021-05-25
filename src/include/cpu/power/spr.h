@@ -3,13 +3,23 @@
 
 #include <arch/byteorder.h>	// PPC_BIT()
 
+#define SPR_DEC					0x16
+#define SPR_DEC_IMPLEMENTED_BITS		56
+#define SPR_DEC_LONGEST_TIME			((1ull << (SPR_DEC_IMPLEMENTED_BITS - 1)) - 1)
+
 #define SPR_TB					0x10C
 
 #define SPR_PVR					0x11F
 #define SPR_PVR_REV_MASK			(PPC_BITMASK(52, 55) | PPC_BITMASK(60, 63))
 #define SPR_PVR_REV(maj, min)			(PPC_SHIFT((maj), 55) | PPC_SHIFT((min), 63))
 
+#define SPR_HDEC				0x136
 #define SPR_HRMOR				0x139
+
+#define SPR_LPCR				0x13E
+#define SPR_LPCR_LD				PPC_BIT(46)
+#define SPR_LPCR_HEIC				PPC_BIT(59)
+#define SPR_LPCR_HDICE				PPC_BIT(63)
 
 #define SPR_HMER				0x150
 /* Bits in HMER/HMEER */
@@ -60,6 +70,11 @@ static inline uint64_t read_msr(void)
 	uint64_t val;
 	asm volatile("mfmsr %0" : "=r"(val) :: "memory");
 	return val;
+}
+
+static inline void write_msr(uint64_t val)
+{
+	asm volatile("mtmsrd %0" :: "r"(val) : "memory");
 }
 
 static inline uint64_t pvr_revision(void)
