@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <amdblocks/acpimmio.h>
+#include <amdblocks/lpc.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 
@@ -224,7 +225,7 @@ static uintptr_t hudson_spibase(void)
 	const pci_devfn_t dev = PCI_DEV(0, 0x14, 3);
 
 	u32 base = pci_read_config32(dev, SPIROM_BASE_ADDRESS_REGISTER)
-							& 0xfffffff0;
+							& 0xffffffc0;
 	if (!base){
 		base = SPI_BASE_ADDRESS;
 		pci_write_config32(dev, SPIROM_BASE_ADDRESS_REGISTER, base
@@ -232,6 +233,11 @@ static uintptr_t hudson_spibase(void)
 		/* PCI_COMMAND_MEMORY is read-only and enabled. */
 	}
 	return (uintptr_t)base;
+}
+
+uintptr_t lpc_get_spibase(void)
+{
+	return hudson_spibase();
 }
 
 void hudson_set_spi100(u16 norm, u16 fast, u16 alt, u16 tpm)
