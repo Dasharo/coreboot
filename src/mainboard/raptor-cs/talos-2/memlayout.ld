@@ -14,9 +14,10 @@ SECTIONS
 	BOOTBLOCK(0, 32K)
 #endif
 
-	// TODO: ramstage should have stack in the last 128MB of first 4GB of RAM,
-	// in case payload needs to be loaded here
+#if !ENV_RAMSTAGE
 	STACK(0x8000, 32K)
+#endif
+
 	PRERAM_CBMEM_CONSOLE(0x10000, 128K)
 	FMAP_CACHE(0x30000, 4K)
 	CBFS_MCACHE(0x31000, 8K)
@@ -28,5 +29,10 @@ SECTIONS
 	BOOTBLOCK(0x203000, 20K)
 #endif
 
+#if !ENV_RAMSTAGE
+	RAMSTAGE(0x300000, 5M)
+#else
+	STACK(0xf8008000, 32K)
 	RAMSTAGE(0xf8300000, 5M)
+#endif
 }
