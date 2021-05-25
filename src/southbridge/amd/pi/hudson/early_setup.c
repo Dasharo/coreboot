@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <amdblocks/acpimmio.h>
+#include <amdblocks/lpc.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 
@@ -191,13 +192,13 @@ void hudson_clk_output_48Mhz(void)
 	misc_write32(FCH_MISC_REG40, ctrl);
 }
 
-static uintptr_t hudson_spibase(void)
+uintptr_t lpc_get_spibase(void)
 {
 	/* Make sure the base address is predictable */
 	const pci_devfn_t dev = PCI_DEV(0, 0x14, 3);
 
 	u32 base = pci_read_config32(dev, SPIROM_BASE_ADDRESS_REGISTER)
-							& 0xfffffff0;
+							& 0xffffffc0;
 	if (!base) {
 		base = SPI_BASE_ADDRESS;
 		pci_write_config32(dev, SPIROM_BASE_ADDRESS_REGISTER, base
@@ -209,7 +210,7 @@ static uintptr_t hudson_spibase(void)
 
 void hudson_set_spi100(u16 norm, u16 fast, u16 alt, u16 tpm)
 {
-	uintptr_t base = hudson_spibase();
+	uintptr_t base = lpc_get_spibase();
 	write16p(base + SPI100_SPEED_CONFIG,
 			(norm << SPI_NORM_SPEED_NEW_SH) |
 			(fast << SPI_FAST_SPEED_NEW_SH) |
@@ -221,7 +222,7 @@ void hudson_set_spi100(u16 norm, u16 fast, u16 alt, u16 tpm)
 
 void hudson_disable_4dw_burst(void)
 {
-	uintptr_t base = hudson_spibase();
+	uintptr_t base = lpc_get_spibase();
 	write16p(base + SPI100_HOST_PREF_CONFIG,
 		read16p(base + SPI100_HOST_PREF_CONFIG)
 				& ~SPI_RD4DW_EN_HOST);
@@ -230,7 +231,7 @@ void hudson_disable_4dw_burst(void)
 /* Hudson 1-3 only.  For Hudson 1, call with fast=1 */
 void hudson_set_readspeed(u16 norm, u16 fast)
 {
-	uintptr_t base = hudson_spibase();
+	uintptr_t base = lpc_get_spibase();
 	write16p(base + SPI_CNTRL1,
 		(read16p(base + SPI_CNTRL1)
 		& ~SPI_CNTRL1_SPEED_MASK)
@@ -240,7 +241,7 @@ void hudson_set_readspeed(u16 norm, u16 fast)
 
 void hudson_read_mode(u32 mode)
 {
-	uintptr_t base = hudson_spibase();
+	uintptr_t base = lpc_get_spibase();
 	write32p(base + SPI_CNTRL0,
 		(read32p(base + SPI_CNTRL0)
 			& ~SPI_READ_MODE_MASK) | mode);
