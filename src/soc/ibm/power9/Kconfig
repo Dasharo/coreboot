@@ -20,6 +20,11 @@ config SIGNING_KEYS_DIR
 	  correspond to options of create-container from OpenPower
 	  Signing Utils.  By default, test keys are used.
 
+# Doing delays with monotonic timers is suboptimal on this platform
+config GENERIC_UDELAY
+	bool
+	default n
+
 config SKIP_INITIAL_ECC_SCRUB
 	bool "Skip initial ECC scrubbing"
 	default n

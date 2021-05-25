@@ -22,6 +22,7 @@ romstage-y += istep_14_2.c
 romstage-y += istep_14_5.c
 romstage-y += rom_media.c
 romstage-y += romstage.c
+romstage-y += timer.c
 romstage-y += vpd.c
 
 ramstage-y += cbmem.c
