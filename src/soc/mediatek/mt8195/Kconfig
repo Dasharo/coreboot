@@ -5,6 +5,8 @@ config SOC_MEDIATEK_MT8195
 	select ARCH_VERSTAGE_ARMV8_64
 	select ARCH_ROMSTAGE_ARMV8_64
 	select ARCH_RAMSTAGE_ARMV8_64
+	select ARM64_USE_ARM_TRUSTED_FIRMWARE
+	select CACHE_MRC_SETTINGS
 	select HAVE_UART_SPECIAL
 	select SOC_MEDIATEK_COMMON
 	select CLEAR_WDT_MODE_REG
@@ -16,5 +18,18 @@ config VBOOT
 	select VBOOT_STARTS_IN_BOOTBLOCK
 	select VBOOT_SEPARATE_VERSTAGE
 	select VBOOT_RETURN_FROM_VERSTAGE
+
+config MCUPM_FIRMWARE
+	string
+	default "mcupm.bin"
+	help
+	  The file name of the MediaTek MCUPM firmware.
+
+config FLASH_DUAL_READ
+	bool
+	default y
+	help
+	  When this option is enabled, the flash controller provides the ability
+	  to dual read mode.
 
 endif

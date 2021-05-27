@@ -43,14 +43,6 @@
 #define LPT_LP_STEP_B1		0x03
 #define LPT_LP_STEP_B2		0x04
 
-/*
- * It does not matter where we put the SMBus I/O base, as long as we
- * keep it consistent and don't interfere with other devices.  Stage2
- * will relocate this anyways.
- * Our solution is to have SMB initialization move the I/O to CONFIG_FIXED_SMBUS_IO_BASE
- * again. But handling static BARs is a generic problem that should be
- * solved in the device allocator.
- */
 #define SMBUS_SLAVE_ADDR	0x24
 
 #if CONFIG(INTEL_LYNXPOINT_LP)
@@ -468,6 +460,8 @@ void mainboard_config_rcba(void);
 #define  IOBPS_WRITE	0x0700
 #define IOBPU		0x233a
 #define  IOBPU_MAGIC	0xf000
+#define  IOBP_PCICFG_READ	0x0400
+#define  IOBP_PCICFG_WRITE	0x0500
 
 #define D31IP		0x3100	/* 32bit */
 #define D31IP_TTIP	24	/* Thermal Throttle Pin */

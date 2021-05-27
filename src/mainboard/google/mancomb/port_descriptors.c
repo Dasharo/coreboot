@@ -12,6 +12,7 @@ static const fsp_dxio_descriptor mancomb_czn_dxio_descriptors[] = {
 		.end_logical_lane = 0,
 		.device_number = 2,
 		.function_number = 1,
+		.link_aspm = ASPM_L1,
 		.turn_off_unused_lanes = true,
 		.clk_req = CLK_REQ0,
 		.gpio_group_id = GPIO_29,
@@ -24,6 +25,7 @@ static const fsp_dxio_descriptor mancomb_czn_dxio_descriptors[] = {
 		.end_logical_lane = 1,
 		.device_number = 2,
 		.function_number = 2,
+		.link_aspm = ASPM_L1,
 		.turn_off_unused_lanes = true,
 		.clk_req = CLK_REQ1,
 		.gpio_group_id = GPIO_70,
@@ -36,6 +38,7 @@ static const fsp_dxio_descriptor mancomb_czn_dxio_descriptors[] = {
 		.end_logical_lane = 2,
 		.device_number = 2,
 		.function_number = 3,
+		.link_aspm = ASPM_L1,
 		.turn_off_unused_lanes = true,
 		.clk_req = CLK_REQ2,
 		.gpio_group_id = GPIO_18,
@@ -48,6 +51,7 @@ static const fsp_dxio_descriptor mancomb_czn_dxio_descriptors[] = {
 		.end_logical_lane = 7,
 		.device_number = 2,
 		.function_number = 4,
+		.link_aspm = ASPM_L1,
 		.turn_off_unused_lanes = true,
 		.clk_req = CLK_REQ3,
 		.gpio_group_id = GPIO_40,
@@ -79,8 +83,8 @@ static const fsp_dxio_descriptor mancomb_czn_dxio_descriptors[] = {
 
 /* TODO: verify the DDI table, since this is mostly an educated guess right now */
 static const fsp_ddi_descriptor mancomb_czn_ddi_descriptors[] = {
-	{ /* DDI0 - eDP */
-		.connector_type = DDI_UNUSED_TYPE,
+	{ /* DDI0 - DP */
+		.connector_type = DDI_DP,
 		.aux_index = DDI_AUX1,
 		.hdp_index = DDI_HDP1
 	},

@@ -17,6 +17,7 @@
 #include "pch.h"
 #include <acpi/acpigen.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
+#include <southbridge/intel/common/rcba_pirq.h>
 #include <southbridge/intel/common/rtc.h>
 #include <southbridge/intel/common/spi.h>
 #include <types.h>
@@ -192,7 +193,7 @@ static void pch_power_options(struct device *dev)
 	 *
 	 * If the option is not existent (Laptops), use Kconfig setting.
 	 */
-	const int pwr_on = get_int_option("power_on_after_fail",
+	const unsigned int pwr_on = get_uint_option("power_on_after_fail",
 					  CONFIG_MAINBOARD_POWER_FAILURE_STATE);
 
 	reg16 = pci_read_config16(dev, GEN_PMCON_3);
@@ -234,7 +235,7 @@ static void pch_power_options(struct device *dev)
 	outb(reg8, 0x61);
 
 	reg8 = inb(0x70);
-	const int nmi_option = get_int_option("nmi", NMI_OFF);
+	const unsigned int nmi_option = get_uint_option("nmi", NMI_OFF);
 	if (nmi_option) {
 		printk(BIOS_INFO, "NMI sources enabled.\n");
 		reg8 &= ~(1 << 7);	/* Set NMI. */
@@ -563,8 +564,6 @@ static void enable_lp_clock_gating(struct device *dev)
 	RCBA32(CG) = reg32;
 
 	RCBA32_OR(0x3434, 0x7); // LP LPC
-
-	RCBA32_AND_OR(0x333c, 0xffcfffff, 0x00c00000); // SATA
 
 	RCBA32_OR(0x38c0, 0x3c07); // SPI Dynamic
 

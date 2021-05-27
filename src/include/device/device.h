@@ -168,12 +168,6 @@ extern struct bus	*free_links;
 
 extern const char mainboard_name[];
 
-#if CONFIG(GFXUMA)
-/* IGD UMA memory */
-extern uint64_t uma_memory_base;
-extern uint64_t uma_memory_size;
-#endif
-
 /* Generic device interface functions */
 struct device *alloc_dev(struct bus *parent, struct device_path *path);
 void dev_initialize_chips(void);
@@ -197,11 +191,7 @@ void dev_set_enabled(struct device *dev, int enable);
 void disable_children(struct bus *bus);
 bool dev_is_active_bridge(struct device *dev);
 void add_more_links(struct device *dev, unsigned int total_links);
-
-static inline bool is_dev_enabled(const struct device *const dev)
-{
-	return dev && dev->enabled;
-}
+bool is_dev_enabled(const struct device *const dev);
 
 /* Option ROM helper functions */
 void run_bios(struct device *dev, unsigned long addr);

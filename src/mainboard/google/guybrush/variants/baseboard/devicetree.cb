@@ -1,6 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 chip soc/amd/cezanne
 
+	register "common_config.acp_config" = "{
+		.acp_pin_cfg = I2S_PINS_I2S_TDM,
+		.acp_i2s_wake_enable = 0,
+		.acp_pme_enable = 0,
+	}"
+
 	# eSPI Configuration
 	register "common_config.espi_config" = "{
 		.std_io_decode_bitmap = ESPI_DECODE_IO_0x80_EN | ESPI_DECODE_IO_0X60_0X64_EN,
@@ -29,7 +35,7 @@ chip soc/amd/cezanne
 		.io_mode = ESPI_IO_MODE_QUAD,
 		.op_freq_mhz = ESPI_OP_FREQ_33_MHZ,
 		.crc_check_enable = 1,
-		.dedicated_alert_pin = 1,
+		.alert_pin = ESPI_ALERT_PIN_IN_BAND,
 		.periph_ch_en = 1,
 		.vw_ch_en = 1,
 		.oob_ch_en = 0,
@@ -41,17 +47,152 @@ chip soc/amd/cezanne
 	# Enable S0i3 support
 	register "s0ix_enable" = "1"
 
+	register "system_configuration" = "2"
+
 	register "i2c_scl_reset" = "GPIO_I2C0_SCL | GPIO_I2C1_SCL |
 					GPIO_I2C2_SCL | GPIO_I2C3_SCL"
 
+	register "pspp_policy" = "DXIO_PSPP_POWERSAVE"
+
+	register "usb_phy_custom" = "1"
+	register "usb_phy" = "{
+		.Usb2PhyPort[0] = {
+			.compdstune = 3,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 6,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		.Usb2PhyPort[1] = {
+			.compdstune = 3,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 6,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		.Usb2PhyPort[2] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		.Usb2PhyPort[3] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		.Usb2PhyPort[4] = {
+			.compdstune = 3,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 6,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		.Usb2PhyPort[5] = {
+			.compdstune = 3,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 6,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		.Usb2PhyPort[6] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		.Usb2PhyPort[7] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+
+		.Usb3PhyPort[0] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		.Usb3PhyPort[1] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		.Usb3PhyPort[2] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		.Usb3PhyPort[3] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+
+		.ComboPhyStaticConfig[0] = 0,
+		.ComboPhyStaticConfig[1] = 0,
+		.Version_Major = 0xd,
+		.Version_Minor = 0x4,
+		.TableLength = 100,
+		.BatteryChargerEnable = 0,
+		.PhyP3CpmP4Support = 0,
+	}"
+
 	device domain 0 on
-		device ref gpp_bridge_0 on end # WLAN
+		device ref gpp_bridge_0 on
+			chip drivers/wifi/generic
+				register "wake" = "GEVENT_8"
+				device pci 00.0 on end
+			end
+		end # WLAN
 		device ref gpp_bridge_1 on end # SD
 		device ref gpp_bridge_2 on end # WWAN
 		device ref gpp_bridge_3 on end # NVMe
 
 		device ref gpp_bridge_a on  # Internal GPP Bridge 0 to Bus A
 			device ref gfx on end # Internal GPU (GFX)
+			device ref gfx_hda on end # GFX HD Audio Controller
 			device ref xhci_0 on # USB 3.1 (USB0)
 				chip drivers/usb/acpi
 					device ref xhci_0_root_hub on
@@ -128,20 +269,19 @@ chip soc/amd/cezanne
 					end
 				end
 			end
+			device ref acp on
+				chip drivers/amd/i2s_machine_dev
+					register "hid" = ""AMDI5682""
+					device generic 0.0 on end
+				end
+			end # Audio
 		end
 
 		device ref lpc_bridge on
 			chip ec/google/chromeec
-				device pnp 0c09.0 on end
+				device pnp 0c09.0 alias chrome_ec on end
 			end
 		end
-
-		device ref acp on
-			chip drivers/amd/i2s_machine_dev
-				register "hid" = ""AMDI5682""
-				device generic 0.0 on end
-			end
-		end # Audio
 	end # domain
 
 	device ref i2c_3 on
@@ -155,4 +295,60 @@ chip soc/amd/cezanne
 
 	device ref uart_0 on end # UART0
 
+	# See https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:src/platform/ec/baseboard/guybrush/baseboard.c;l=221
+	# for the EC configuration.
+	#
+	# EC is configured to power off the system at 105C, so add a two degree
+	# buffer so the OS can gracefully shutdown.
+	#
+	# EC is configured to assert PROCHOT at 100C. That drastically lowers
+	# performance. Instead we will tell the OS to start throttling the CPUs
+	# at 95C in hopes that we don't hit the PROCHOT limit.
+	#
+	# We set use_acpi1_thermal_zone_scope because the Chrome ec.asl
+	# performs a `Notify` to the `_\TZ` scope.
+	chip drivers/acpi/thermal_zone
+		register "description" = ""SOC""
+		use chrome_ec as temperature_controller
+		register "sensor_id" = "0"
+		register "polling_period" = "10"
+		register "critical_temperature" = "103"
+		register "passive_config.temperature" = "95"
+		register "use_acpi1_thermal_zone_scope" = "true"
+
+		device generic 0 on end
+	end
+	chip drivers/acpi/thermal_zone
+		register "description" = ""Charger""
+		use chrome_ec as temperature_controller
+		register "sensor_id" = "1"
+		register "polling_period" = "10"
+		register "critical_temperature" = "103"
+		register "passive_config.temperature" = "95"
+		register "use_acpi1_thermal_zone_scope" = "true"
+
+		device generic 1 on end
+	end
+	chip drivers/acpi/thermal_zone
+		register "description" = ""Memory""
+		use chrome_ec as temperature_controller
+		register "sensor_id" = "2"
+		register "polling_period" = "10"
+		register "critical_temperature" = "103"
+		register "passive_config.temperature" = "95"
+		register "use_acpi1_thermal_zone_scope" = "true"
+
+		device generic 2 on end
+	end
+	chip drivers/acpi/thermal_zone
+		register "description" = ""CPU""
+		use chrome_ec as temperature_controller
+		register "sensor_id" = "3"
+		register "polling_period" = "10"
+		register "critical_temperature" = "103"
+		register "passive_config.temperature" = "95"
+		register "use_acpi1_thermal_zone_scope" = "true"
+
+		device generic 3 on end
+	end
 end	# chip soc/amd/cezanne

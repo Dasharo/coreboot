@@ -23,6 +23,7 @@ static struct {
 	const char *name;
 } cpu_table[] = {
 	{ CPUID_ALDERLAKE_P_A0, "Alderlake-P A0" },
+	{ CPUID_ALDERLAKE_P_B0, "Alderlake-P B0" },
 	{ CPUID_ALDERLAKE_M_A0, "Alderlake-M A0" },
 };
 
@@ -39,6 +40,7 @@ static struct {
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_7, "Alderlake-P" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_8, "Alderlake-P" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_9, "Alderlake-P" },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_ID_1, "Alderlake-M" },
 };
 
 static struct {
@@ -98,6 +100,9 @@ static struct {
 	{ PCI_DEVICE_ID_INTEL_ADL_GT1_8, "Alderlake GT1" },
 	{ PCI_DEVICE_ID_INTEL_ADL_GT1_9, "Alderlake GT1" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_1, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_2, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_3, "Alderlake P GT2" },
 	{ PCI_DEVICE_ID_INTEL_ADL_M_GT1, "Alderlake M GT1" },
 };
 

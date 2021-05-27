@@ -183,6 +183,8 @@ static inline uint32_t inl(unsigned port)
 #define PCI_DEVICE_ID_INTEL_C627A_SUPER		0xa24b
 #define PCI_DEVICE_ID_INTEL_C629A_SUPER		0xa24c
 
+#define PCI_DEVICE_ID_INTEL_EBG		0x1b81
+
 #define PCI_DEVICE_ID_INTEL_H310		0xa303
 #define PCI_DEVICE_ID_INTEL_H370		0xa304
 #define PCI_DEVICE_ID_INTEL_Z390		0xa305
@@ -299,6 +301,7 @@ static inline uint32_t inl(unsigned port)
 #define PCI_DEVICE_ID_INTEL_CORE_CML_U2		0x9b61 /* Cometlake U (Mobile) */
 #define PCI_DEVICE_ID_INTEL_CORE_CML_U3		0x9b71 /* Cometlake U (Mobile) */
 #define PCI_DEVICE_ID_INTEL_HEWITTLAKE		0x6f00 /* Hewitt Lake */
+#define PCI_DEVICE_ID_INTEL_SAPPHIRERAPIDS_SP	0x09a2 /* Sapphire Rapids SP */
 
 
 /* Intel GPUs */

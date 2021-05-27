@@ -11,19 +11,21 @@ NVRAMTOOL:=$(objutil)/nvramtool/nvramtool
 OPTION_TABLE_H:=
 ifeq ($(CONFIG_HAVE_OPTION_TABLE),y)
 
+CMOS_LAYOUT_FILE := $(top)/$(call strip_quotes,$(CONFIG_CMOS_LAYOUT_FILE))
+
 cbfs-files-y += cmos_layout.bin
 cmos_layout.bin-file = $(obj)/cmos_layout.bin
 cmos_layout.bin-type = cmos_layout
 
-$(obj)/cmos_layout.bin: $(NVRAMTOOL) $(top)/src/mainboard/$(MAINBOARDDIR)/cmos.layout
+$(obj)/cmos_layout.bin: $(NVRAMTOOL) $(CMOS_LAYOUT_FILE)
 	@printf "    OPTION     $(subst $(obj)/,,$(@))\n"
-	$(NVRAMTOOL) -y $(top)/src/mainboard/$(MAINBOARDDIR)/cmos.layout -L $@
+	$(NVRAMTOOL) -y $(CMOS_LAYOUT_FILE) -L $@
 
 OPTION_TABLE_H:=$(obj)/option_table.h
 
-$(OPTION_TABLE_H): $(NVRAMTOOL) $(top)/src/mainboard/$(MAINBOARDDIR)/cmos.layout
+$(OPTION_TABLE_H): $(NVRAMTOOL) $(CMOS_LAYOUT_FILE)
 	@printf "    OPTION     $(subst $(obj)/,,$(@))\n"
-	$(NVRAMTOOL) -y $(top)/src/mainboard/$(MAINBOARDDIR)/cmos.layout -H $@
+	$(NVRAMTOOL) -y $(CMOS_LAYOUT_FILE) -H $@
 endif # CONFIG_HAVE_OPTION_TABLE
 
 stripped_vgabios_id = $(call strip_quotes,$(CONFIG_VGA_BIOS_ID))
@@ -91,7 +93,8 @@ else
 $(eval $(call early_x86_stage,bootblock,elf64-x86-64))
 endif
 
-bootblock-$(CONFIG_MICROCODE_UPDATE_PRE_RAM) += walkcbfs.S
+$(call src-to-obj,bootblock,$(dir)/walkcbfs.S): $(obj)/fmap_config.h
+bootblock-y += walkcbfs.S
 
 endif # CONFIG_ARCH_BOOTBLOCK_X86_32 / CONFIG_ARCH_BOOTBLOCK_X86_64
 
@@ -101,7 +104,7 @@ endif # CONFIG_ARCH_BOOTBLOCK_X86_32 / CONFIG_ARCH_BOOTBLOCK_X86_64
 
 ifeq ($(CONFIG_ARCH_VERSTAGE_X86_32)$(CONFIG_ARCH_VERSTAGE_X86_64),y)
 
-verstage-y += assembly_entry.S
+verstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += assembly_entry.S
 verstage-y += boot.c
 verstage-y += post.c
 verstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += gdt_init.S

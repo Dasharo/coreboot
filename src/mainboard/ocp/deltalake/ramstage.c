@@ -4,6 +4,8 @@
 #include <console/console.h>
 #include <drivers/ipmi/ipmi_ops.h>
 #include <drivers/ocp/dmi/ocp_dmi.h>
+#include <drivers/vpd/vpd.h>
+#include <security/intel/txt/txt.h>
 #include <soc/ramstage.h>
 #include <soc/soc_util.h>
 #include <stdio.h>
@@ -17,6 +19,7 @@
 #include <cpxsp_dl_gpio.h>
 
 #include "ipmi.h"
+#include "vpd.h"
 
 #define SLOT_ID_LEN 2
 
@@ -88,17 +91,17 @@ slot_info slotinfo[] = {
 	{CSTACK,  SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0xE8, "SSD1_M2_Data_Drive"},
 	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x10, "SSD0_M2_Boot_Drive"},
 	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x18, "BB_OCP_NIC"},
-	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "1OU_JD2_M2_3"},
-	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "1OU_JD2_M2_2"},
-	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x10, "1OU_JD1_M2_1"},
-	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x18, "1OU_JD1_M2_0"},
+	{PSTACK2, SlotTypePciExpressGen3X16, SlotDataBusWidth16X, 0x00, "1OU_OCP_NIC"},
 	{PSTACK0, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "2OU_JD1_M2_0"},
 	{PSTACK0, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "2OU_JD1_M2_1"},
+	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "2OU_JD2_M2_2"},
+	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "2OU_JD2_M2_3"},
 	{PSTACK0, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x10, "2OU_JD3_M2_4"},
 	{PSTACK0, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x18, "2OU_JD3_M2_5"},
-	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "2OU_JD2_M2_3"},
-	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "2OU_JD2_M2_2"},
-	{PSTACK2, SlotTypePciExpressGen3X16, SlotDataBusWidth16X, 0x00, "1OU_OCP_NIC"},
+	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x18, "1OU_JD1_M2_0"},
+	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x10, "1OU_JD1_M2_1"},
+	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "1OU_JD2_M2_2"},
+	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "1OU_JD2_M2_3"},
 };
 
 #define SPD_REGVID_LEN 6
@@ -214,23 +217,29 @@ static int create_smbios_type9(int *handle, unsigned long *current)
 				continue;
 		}
 		if (pcie_config == PCIE_CONFIG_B) {
-			if (index == 0 || index == 1 || index == 2 || index == 3 || index == 4
-				|| index == 5 || index == 6)
+			switch (index) {
+			case 0 ... 2:
+			case 10 ... 13:
 				printk(BIOS_INFO, "Find Config-B slot: %s\n",
 					slotinfo[index].slot_designator);
-			else
+				break;
+			default:
 				continue;
+			}
 		}
 		if (pcie_config == PCIE_CONFIG_C) {
-			if (index == 0 || index == 1 || index == 7 || index == 8 || index == 9
-				|| index == 10 || index == 11 || index == 12 || index == 13)
+			switch (index) {
+			case 0 ... 1:
+			case 3 ... 9:
 				printk(BIOS_INFO, "Find Config-C slot: %s\n",
 					slotinfo[index].slot_designator);
-			else
+				break;
+			default:
 				continue;
+			}
 		}
 		if (pcie_config == PCIE_CONFIG_D) {
-			if (index != 13)
+			if (index != 3)
 				printk(BIOS_INFO, "Find Config-D slot: %s\n",
 					slotinfo[index].slot_designator);
 			else
@@ -342,3 +351,23 @@ struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.final = mainboard_final,
 };
+
+bool skip_intel_txt_lockdown(void)
+{
+	static bool fetched_vpd = 0;
+	static uint8_t skip_txt = SKIP_INTEL_TXT_LOCKDOWN_DEFAULT;
+
+	if (fetched_vpd)
+		return (bool)skip_txt;
+
+	if (!vpd_get_bool(SKIP_INTEL_TXT_LOCKDOWN, VPD_RW_THEN_RO, &skip_txt))
+		printk(BIOS_INFO, "%s: not able to get VPD %s, default set to %d\n",
+		       __func__, SKIP_INTEL_TXT_LOCKDOWN, SKIP_INTEL_TXT_LOCKDOWN_DEFAULT);
+	else
+		printk(BIOS_DEBUG, "%s: VPD %s, got %d\n", __func__, SKIP_INTEL_TXT_LOCKDOWN,
+		       skip_txt);
+
+	fetched_vpd = 1;
+
+	return (bool)skip_txt;
+}

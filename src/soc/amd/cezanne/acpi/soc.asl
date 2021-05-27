@@ -12,10 +12,14 @@ Scope(\_SB) {
 
 	#include "pci_int_defs.asl"
 
+	#include <soc/amd/common/acpi/pci_int.asl>
+
 	#include "mmio.asl"
 
 	#include "pci0.asl"
 } /* End \_SB scope */
+
+#include <soc/amd/common/acpi/alib.asl>
 
 #include <soc/amd/common/acpi/platform.asl>
 
@@ -30,4 +34,6 @@ Scope(\_SB) {
  */
 Method (PNOT)
 {
+	/* Report AC/DC state to ALIB using WAL1() */
+	\WAL1 ()
 }

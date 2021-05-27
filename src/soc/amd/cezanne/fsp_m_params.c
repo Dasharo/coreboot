@@ -1,15 +1,40 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/apob_cache.h>
+#include <amdblocks/ioapic.h>
 #include <amdblocks/memmap.h>
 #include <assert.h>
 #include <console/uart.h>
 #include <device/device.h>
 #include <fsp/api.h>
 #include <soc/platform_descriptors.h>
+#include <soc/pci_devs.h>
 #include <string.h>
 #include <types.h>
 #include "chip.h"
+
+static const struct device_path gfx_hda_path[] = {
+	{
+		.type = DEVICE_PATH_PCI,
+		.pci.devfn = PCIE_ABC_A_DEVFN
+	},
+	{
+		.type = DEVICE_PATH_PCI,
+		.pci.devfn = GFX_HDA_DEVFN
+	},
+};
+
+static bool devtree_gfx_hda_dev_enabled(void)
+{
+	const struct device *gfx_hda_dev;
+
+	gfx_hda_dev = find_dev_nested_path(pci_root_bus(), gfx_hda_path,
+						ARRAY_SIZE(gfx_hda_path));
+	if (!gfx_hda_dev)
+		return false;
+
+	return gfx_hda_dev->enabled;
+}
 
 static void fill_dxio_descriptors(FSP_M_CONFIG *mcfg,
 			const fsp_dxio_descriptor *descs, size_t num)
@@ -50,6 +75,13 @@ static void fsp_fill_pcie_ddi_descriptors(FSP_M_CONFIG *mcfg)
 	fill_ddi_descriptors(mcfg, fsp_ddi, num_ddi);
 }
 
+static void fsp_assign_ioapic_upds(FSP_M_CONFIG *mcfg)
+{
+	mcfg->gnb_ioapic_base = GNB_IO_APIC_ADDR;
+	mcfg->gnb_ioapic_id = GNB_IOAPIC_ID;
+	mcfg->fch_ioapic_id = FCH_IOAPIC_ID;
+}
+
 void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 {
 	FSP_M_CONFIG *mcfg = &mupd->FspmConfig;
@@ -59,7 +91,6 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 
 	mcfg->pci_express_base_addr = CONFIG_MMCONF_BASE_ADDRESS;
 	mcfg->tseg_size = CONFIG_SMM_TSEG_SIZE;
-	mcfg->bert_size = CONFIG_ACPI_BERT_SIZE;
 	mcfg->serial_port_base = uart_platform_base(CONFIG_UART_FOR_CONSOLE);
 	mcfg->serial_port_use_mmio = CONFIG(DRIVERS_UART_8250MEM);
 	mcfg->serial_port_baudrate = get_uart_baudrate();
@@ -93,11 +124,13 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 
 	/* all following fields being 0 is a valid config */
 	mcfg->stapm_boost = config->stapm_boost;
-	mcfg->stapm_time_constant = config->stapm_time_constant;
+	mcfg->stapm_time_constant = config->stapm_time_constant_s;
 	mcfg->apu_only_sppt_limit = config->apu_only_sppt_limit;
-	mcfg->sustained_power_limit = config->sustained_power_limit;
-	mcfg->fast_ppt_limit = config->fast_ppt_limit;
-	mcfg->slow_ppt_limit = config->slow_ppt_limit;
+	mcfg->sustained_power_limit = config->sustained_power_limit_mW;
+	mcfg->fast_ppt_limit = config->fast_ppt_limit_mW;
+	mcfg->slow_ppt_limit = config->slow_ppt_limit_mW;
+	mcfg->slow_ppt_time_constant = config->slow_ppt_time_constant_s;
+	mcfg->thermctl_limit = config->thermctl_limit_degreeC;
 
 	/* 0 is default */
 	mcfg->smartshift_enable = config->smartshift_enable;
@@ -116,5 +149,26 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	/* S0i3 enable */
 	mcfg->s0i3_enable = config->s0ix_enable;
 
+	/* voltage regulator telemetry settings */
+	mcfg->telemetry_vddcrvddfull_scale_current =
+		config->telemetry_vddcrvddfull_scale_current_mA;
+	mcfg->telemetry_vddcrvddoffset =
+		config->telemetry_vddcrvddoffset;
+	mcfg->telemetry_vddcrsocfull_scale_current =
+		config->telemetry_vddcrsocfull_scale_current_mA;
+	mcfg->telemetry_vddcrsocOffset =
+		config->telemetry_vddcrsocoffset;
+
+	/* PCIe power vs. speed */
+	mcfg->pspp_policy = config->pspp_policy;
+
+	mcfg->enable_nb_azalia = devtree_gfx_hda_dev_enabled();
+
+	if (config->usb_phy_custom)
+		mcfg->usb_phy = (struct usb_phy_config *)&config->usb_phy;
+	else
+		mcfg->usb_phy = NULL;
+
 	fsp_fill_pcie_ddi_descriptors(mcfg);
+	fsp_assign_ioapic_upds(mcfg);
 }

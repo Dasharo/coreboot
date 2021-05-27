@@ -35,6 +35,7 @@
 #define  PAD_CFG0_TRIG_EDGE_SINGLE	(1 << 25) /* controlled by RX_INVERT*/
 #define  PAD_CFG0_TRIG_OFF		(2 << 25)
 #define  PAD_CFG0_TRIG_EDGE_BOTH	(3 << 25)
+#define PAD_CFG0_NAFVWE_ENABLE		(1 << 27)
 #define PAD_CFG0_RXRAW1_MASK		(1 << 28)
 #define PAD_CFG0_RXPADSTSEL_MASK	(1 << 29)
 #define PAD_CFG0_RESET_MASK		(3 << 30)
@@ -215,6 +216,13 @@
 		PAD_RESET(rst) | PAD_FUNC(func), PAD_PULL(pull) |		\
 		PAD_IOSSTATE(iosstate) | PAD_IOSTERM(iosterm))
 
+/* Native function configuration with "native function virtual wire
+   messaging enable (NAFVWE_ENABLE)" */
+#define PAD_CFG_NF_VWEN(pad, pull, rst, func)			\
+	_PAD_CFG_STRUCT(pad,					\
+		PAD_RESET(rst) | PAD_FUNC(func) | PAD_CFG0_NAFVWE_ENABLE,\
+		PAD_PULL(pull) | PAD_IOSSTATE(TxLASTRxE))
+
 /* General purpose output, no pullup/down. */
 #define PAD_CFG_GPO(pad, val, rst)				\
 	_PAD_CFG_STRUCT(pad,					\
@@ -293,9 +301,10 @@
 		PAD_CFG_GPI_TRIG_OWN(pad, pull, rst, trig, DRIVER)
 
 /*
- * No Connect configuration for unused pad.
+ * No Connect configuration for unconnected or unused pad.
  * Both TX and RX are disabled. RX disabling is done to avoid unnecessary
- * setting of GPI_STS. RX Level/Edge Trig Configuration set to disable
+ * setting of GPI_STS and to prevent triggering the internal logic by floating
+ * pads.
  */
 #define PAD_NC(pad, pull)					\
 	_PAD_CFG_STRUCT(pad,					\
