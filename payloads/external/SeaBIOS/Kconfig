@@ -80,6 +80,12 @@ config PAYLOAD_CONFIGFILE
 	  SeaBIOS payload.  In general, if the option is used, the default
 	  would be "$(top)/src/mainboard/$(MAINBOARDDIR)/config_seabios"
 
+config SEABIOS_BOOTORDER_IN_FMAP
+	bool "SeaBIOS bootorder file in FMAP"
+	default n
+	help
+	  Place the SeaBIOS bootorder into BOOTORDER FMAP region.
+
 config SEABIOS_BOOTORDER_FILE
 	string "SeaBIOS bootorder file"
 	default ""

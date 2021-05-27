@@ -50,7 +50,6 @@ ramstage-y += pcie.c
 ramstage-y += sata.c
 ramstage-y += sd.c
 ramstage-y += sm.c
-ramstage-$(CONFIG_SPI_FLASH) += spi.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi_util.c
 ramstage-$(CONFIG_HUDSON_UART) += uart.c
