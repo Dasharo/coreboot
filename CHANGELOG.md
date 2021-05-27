@@ -4,7 +4,7 @@ Change log for PC Engines fork of coreboot
 Releases 4.0.x are based on PC Engines 20160304 release.
 Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
-Releases 4.8.0.x/4.9.0.x are based on continuous synchronization with
+Releases 4.8.0.x/4.9.0.x and later are based on continuous synchronization with
 official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 
 ## Quick build instructions
@@ -12,6 +12,18 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.14.0.1] - 2021-05-27
+### Changed
+- rebased with official coreboot repository commit 6a936fc
+- [updated sortbootorder to v4.6.21](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4621---2021-05-27)
+- [updated SeaBIOS to rel-1.14.0.1](https://github.com/pcengines/seabios/blob/apu_support/CHANGELOG.md#rel-11401---2021-05-27)
+
+### Added
+- persistent bootorder and runtime configuration in separate FMAP region for
+  apu2-apu6 platforms
+
+### Fixed
+- inconsistent MTRRs warning in Linux
 
 ## [v4.13.0.6] - 2021-04-29
 ### Changed
@@ -496,7 +508,8 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.13.0.6...develop
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.14.0.1...develop
+[v4.14.0.1]: https://github.com/pcengines/coreboot/compare/v4.13.0.6...v4.14.0.1
 [v4.13.0.6]: https://github.com/pcengines/coreboot/compare/v4.13.0.5...v4.13.0.6
 [v4.13.0.5]: https://github.com/pcengines/coreboot/compare/v4.13.0.4...v4.13.0.5
 [v4.13.0.4]: https://github.com/pcengines/coreboot/compare/v4.13.0.3...v4.13.0.4
