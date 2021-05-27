@@ -175,9 +175,6 @@ $(call add_intermediate, seabios_bootorder_fmap, $(CBFSTOOL))
 	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f /dev/zero 2>/dev/null)
 	$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f $(CONFIG_SEABIOS_BOOTORDER_FILE)
 endif
-else
-$(call add_intermediate, seabios_clean_bootorder_fmap, $(CBFSTOOL))
-	$(CBFSTOOL) $< write -r BOOTORDER -u -i 0 -f /dev/zero 2>/dev/null
 endif
 
 # Depthcharge
