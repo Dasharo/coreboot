@@ -20,9 +20,11 @@
 #include <cbfs.h>
 #include <commonlib/cbfs.h>
 #include <commonlib/region.h>
+#include <fmap.h>
 #include "bios_knobs.h"
 
-#define BOOTORDER_FILE "bootorder"
+static char *bootorder_file = NULL;
+size_t bootorder_file_len = 0;
 
 static char * findstr(const char *s, const char *pattern)
 {
@@ -51,28 +53,41 @@ static char * findstr(const char *s, const char *pattern)
 	return NULL;
 }
 
+char *get_bootorder(void)
+{
+	struct region_device bootorder_area;
+
+	if (!bootorder_file) {
+		if (CONFIG(SEABIOS_BOOTORDER_IN_FMAP)) {
+			if (fmap_locate_area_as_rdev("BOOTORDER", &bootorder_area)) {
+				printk(BIOS_WARNING, "Could not find bootorder area\n");
+				return NULL;
+			}
+			bootorder_file_len = region_device_sz(&bootorder_area);
+			bootorder_file = rdev_mmap_full(&bootorder_area);
+		} else {
+			bootorder_file = cbfs_map("bootorder", &bootorder_file_len);
+		}
+	}
+
+	if (bootorder_file == NULL)
+		printk(BIOS_INFO, "Could not get bootorder content\n");
+	if (bootorder_file_len != 4096)
+		printk(BIOS_INFO, "Wrong bootorder size.\n");
+	if (bootorder_file == NULL || bootorder_file_len != 4096)
+		return NULL;
+
+	return bootorder_file;
+}
+
 static u8 check_knob_value(const char *s)
 {
-	const char *boot_file = NULL;
-	size_t boot_file_len = 0;
 	char * token = NULL;
 
-	//
-	// This function locates a file in cbfs, maps it to memory and returns
-	// a void* pointer
-	//
-	boot_file = (const char *) cbfs_map(BOOTORDER_FILE, &boot_file_len);
-	if (boot_file == NULL)
-		printk(BIOS_INFO, "file [%s] not found in CBFS\n",
-			BOOTORDER_FILE);
-	if (boot_file_len < 4096)
-		printk(BIOS_INFO, "Missing bootorder data.\n");
-	if (boot_file == NULL || boot_file_len < 4096)
+	if (!bootorder_file && !get_bootorder())
 		return -1;
 
-	token = findstr(boot_file, s);
-
-	cbfs_unmap((void *)boot_file);
+	token = findstr(bootorder_file, s);
 
 	if (token) {
 		if (*token == '0') return 0;
@@ -430,26 +445,12 @@ static unsigned long int strtoul(const char *ptr, char **endptr, int base)
 
 u16 get_watchdog_timeout(void)
 {
-	const char *boot_file = NULL;
-	size_t boot_file_len = 0;
 	u16 timeout;
 
-	//
-	// This function locates a file in cbfs, maps it to memory and returns
-	// a void* pointer
-	//
-	boot_file = (const char *) cbfs_map(BOOTORDER_FILE, &boot_file_len);
-	if (boot_file == NULL)
-		printk(BIOS_INFO, "file [%s] not found in CBFS\n",
-			BOOTORDER_FILE);
-	if (boot_file_len < 4096)
-		printk(BIOS_INFO, "Missing bootorder data.\n");
-	if (boot_file == NULL || boot_file_len < 4096)
+	if (!bootorder_file && !get_bootorder())
 		return -1;
 
-	timeout = (u16) strtoul(findstr(boot_file, "watchdog"), NULL, 16);
-
-	cbfs_unmap((void *)boot_file);
+	timeout = (u16) strtoul(findstr(bootorder_file, "watchdog"), NULL, 16);
 
 	return timeout;
 }

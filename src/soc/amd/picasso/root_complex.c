@@ -2,6 +2,7 @@
 
 #include <acpi/acpigen.h>
 #include <amdblocks/acpi.h>
+#include <amdblocks/alib.h>
 #include <amdblocks/memmap.h>
 #include <amdblocks/ioapic.h>
 #include <arch/ioapic.h>
@@ -17,47 +18,35 @@
 #include <soc/iomap.h>
 #include "chip.h"
 
-enum {
-	ALIB_DPTCI_FUNCTION_ID = 0xc,
-	THERMAL_CONTROL_LIMIT_ID = 0x3,
-	SUSTAINED_POWER_LIMIT_PARAM_ID = 0x5,
-	FAST_PPT_LIMIT_PARAM_ID = 0x6,
-	SLOW_PPT_LIMIT_PARAM_ID = 0x7,
-	DPTC_TOTAL_UPDATE_PARAMS = 4,
-};
-
-struct dptc_param {
-	uint8_t id;
-	uint32_t value;
-} __packed;
+#define DPTC_TOTAL_UPDATE_PARAMS	4
 
 struct dptc_input {
 	uint16_t size;
-	struct dptc_param params[DPTC_TOTAL_UPDATE_PARAMS];
+	struct alib_dptc_param params[DPTC_TOTAL_UPDATE_PARAMS];
 } __packed;
 
 #define DPTC_INPUTS(_thermctllmit, _sustained, _fast, _slow)			\
-		{								\
-			.size = sizeof(struct dptc_input),			\
-			.params = {						\
-				{						\
-					.id = THERMAL_CONTROL_LIMIT_ID,		\
-					.value = _thermctllmit,			\
-				},						\
-				{						\
-					.id = SUSTAINED_POWER_LIMIT_PARAM_ID,	\
-					.value = _sustained,			\
-				},						\
-				{						\
-					.id = FAST_PPT_LIMIT_PARAM_ID,		\
-					.value = _fast,				\
-				},						\
-				{						\
-					.id = SLOW_PPT_LIMIT_PARAM_ID,		\
-					.value = _slow,				\
-				},						\
+	{									\
+		.size = sizeof(struct dptc_input),				\
+		.params = {							\
+			{							\
+				.id = ALIB_DPTC_THERMAL_CONTROL_LIMIT_ID,	\
+				.value = _thermctllmit,				\
 			},							\
-		}
+			{							\
+				.id = ALIB_DPTC_SUSTAINED_POWER_LIMIT_ID,	\
+				.value = _sustained,				\
+			},							\
+			{							\
+				.id = ALIB_DPTC_FAST_PPT_LIMIT_ID,		\
+				.value = _fast,					\
+			},							\
+			{							\
+				.id = ALIB_DPTC_SLOW_PPT_LIMIT_ID,		\
+				.value = _slow,					\
+			},							\
+		},								\
+	}
 /*
  *
  *                     +--------------------------------+
@@ -188,18 +177,6 @@ static void root_complex_init(struct device *dev)
 	setup_ioapic((u8 *)GNB_IO_APIC_ADDR, GNB_IOAPIC_ID);
 }
 
-static void dptc_call_alib(const char *buf_name, uint8_t *buffer, size_t size)
-{
-	/* Name (buf_name, Buffer(size) {...} */
-	acpigen_write_name(buf_name);
-	acpigen_write_byte_buffer(buffer, size);
-
-	/* \_SB.ALIB(0xc, buf_name) */
-	acpigen_emit_namestring("\\_SB.ALIB");
-	acpigen_write_integer(ALIB_DPTCI_FUNCTION_ID);
-	acpigen_emit_namestring(buf_name);
-}
-
 static void acipgen_dptci(void)
 {
 	const struct soc_amd_picasso_config *config = config_of_soc();
@@ -216,27 +193,9 @@ static void acipgen_dptci(void)
 					config->sustained_power_limit_tablet_mode_mW,
 					config->fast_ppt_limit_tablet_mode_mW,
 					config->slow_ppt_limit_tablet_mode_mW);
-	/* Scope (\_SB) */
-	acpigen_write_scope("\\_SB");
 
-	/* Method(DPTC, 0, Serialized) */
-	acpigen_write_method_serialized("DPTC", 0);
-
-	/* If (LEqual ("\_SB.PCI0.LPCB.EC0.TBMD", 1)) */
-	acpigen_write_if_lequal_namestr_int("\\_SB.PCI0.LPCB.EC0.TBMD", 1);
-
-	dptc_call_alib("TABB", (uint8_t *)(void *)&tablet_mode_input,
-			sizeof(tablet_mode_input));
-
-	/* Else */
-	acpigen_write_else();
-
-	dptc_call_alib("DEFB", (uint8_t *)(void *)&default_input, sizeof(default_input));
-
-	acpigen_pop_len(); /* Else */
-
-	acpigen_pop_len(); /* Method DPTC */
-	acpigen_pop_len(); /* Scope \_SB */
+	acpigen_write_alib_dptc((uint8_t *)&default_input, sizeof(default_input),
+		(uint8_t *)&tablet_mode_input, sizeof(tablet_mode_input));
 }
 
 static void root_complex_fill_ssdt(const struct device *device)

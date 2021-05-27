@@ -6,6 +6,9 @@ fw_config
 		option DB_PORTS_1A_HDMI 3
 		option DB_PORTS_1C_1A 4
 		option DB_PORTS_LTE_HDMI 5
+		option DB_PORTS_1C_1A_LTE 6
+		option DB_PORTS_1C 7
+		option DB_PORTS_1A_HDMI_LTE 8
 	end
         field TABLETMODE 10
                 option TABLETMODE_DISABLED 0
@@ -16,6 +19,10 @@ fw_config
 		option MAX98360 1
 		option RT1015_I2C 2
 		option RT1015P_AUTO 3
+	end
+	field LTE 11
+		option LTE_ABSENT 0
+		option LTE_PRESENT 1
 	end
 end
 

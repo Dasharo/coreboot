@@ -9,6 +9,7 @@
 [submodule "vboot"]
 	path = 3rdparty/vboot
 	url = https://review.coreboot.org/vboot.git
+	branch = main
 [submodule "arm-trusted-firmware"]
 	path = 3rdparty/arm-trusted-firmware
 	url = https://review.coreboot.org/arm-trusted-firmware.git

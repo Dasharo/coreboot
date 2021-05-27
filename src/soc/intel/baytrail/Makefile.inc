@@ -3,7 +3,6 @@ ifeq ($(CONFIG_SOC_INTEL_BAYTRAIL),y)
 subdirs-y += romstage
 subdirs-y += ../../../cpu/x86/lapic
 subdirs-y += ../../../cpu/x86/mtrr
-subdirs-y += ../../../cpu/x86/smm
 subdirs-y += ../../../cpu/x86/tsc
 subdirs-y += ../../../cpu/intel/microcode
 subdirs-y += ../../../cpu/intel/turbo
@@ -49,6 +48,7 @@ ramstage-y += smm.c
 ramstage-y += southcluster.c
 ramstage-y += xhci.c
 ramstage-$(CONFIG_ELOG) += elog.c
+ramstage-$(CONFIG_VGA_ROM_RUN) += int15.c
 
 ifeq ($(CONFIG_HAVE_REFCODE_BLOB),y)
 ramstage-y += refcode.c

@@ -103,11 +103,7 @@ static void espi_clear_decodes(void)
 	unsigned int idx;
 
 	/* First turn off all enable bits, then zero base, range, and size registers */
-	/*
-	 * There is currently a bug where the SMU will lock up at times if the port80h enable
-	 * bit is cleared.  See b/183974365
-	 */
-	espi_write16(ESPI_DECODE, (espi_read16(ESPI_DECODE) & ESPI_DECODE_IO_0x80_EN));
+	espi_write16(ESPI_DECODE, 0);
 
 	for (idx = 0; idx < ESPI_GENERIC_IO_WIN_COUNT; idx++) {
 		espi_write16(ESPI_IO_RANGE_BASE(idx), 0);
@@ -375,7 +371,7 @@ enum espi_cmd_type {
 #define ESPI_RXVW_POLARITY			0xac
 
 #define ESPI_CMD_TIMEOUT_US			100
-#define ESPI_CH_READY_TIMEOUT_US		1000
+#define ESPI_CH_READY_TIMEOUT_US		10000
 
 union espi_txhdr0 {
 	uint32_t val;
@@ -423,6 +419,7 @@ struct espi_cmd {
 	union espi_txhdr1 hdr1;
 	union espi_txhdr2 hdr2;
 	union espi_txdata data;
+	uint32_t expected_status_codes;
 } __packed;
 
 /* Wait up to ESPI_CMD_TIMEOUT_US for hardware to clear DNCMD_STATUS bit. */
@@ -516,13 +513,13 @@ static int espi_send_command(const struct espi_cmd *cmd)
 		return -1;
 	}
 
-	if (status & ~ESPI_STATUS_DNCMD_COMPLETE) {
+	if (status & ~(ESPI_STATUS_DNCMD_COMPLETE | cmd->expected_status_codes)) {
 		espi_show_failure(cmd, "Error: unexpected eSPI status register bits set",
 				  status);
 		return -1;
 	}
 
-	espi_write32(ESPI_SLAVE0_INT_STS, ESPI_STATUS_DNCMD_COMPLETE);
+	espi_write32(ESPI_SLAVE0_INT_STS, status);
 
 	return 0;
 }
@@ -534,6 +531,33 @@ static int espi_send_reset(void)
 			.cmd_type = CMD_TYPE_IN_BAND_RESET,
 			.cmd_sts = 1,
 		},
+
+		/*
+		 * When performing an in-band reset the host controller and the
+		 * peripheral can have mismatched IO configs.
+		 *
+		 * i.e., The eSPI peripheral can be in IO-4 mode while, the
+		 * eSPI host will be in IO-1. This results in the peripheral
+		 * getting invalid packets and thus not responding.
+		 *
+		 * If the peripheral is alerting when we perform an in-band
+		 * reset, there is a race condition in espi_send_command.
+		 * 1) espi_send_command clears the interrupt status.
+		 * 2) eSPI host controller hardware notices the alert and sends
+		 *    a GET_STATUS.
+		 * 3) espi_send_command writes the in-band reset command.
+		 * 4) eSPI hardware enqueues the in-band reset until GET_STATUS
+		 *    is complete.
+		 * 5) GET_STATUS fails with NO_RESPONSE and sets the interrupt
+		 *    status.
+		 * 6) eSPI hardware performs in-band reset.
+		 * 7) espi_send_command checks the status and sees a
+		 *    NO_RESPONSE bit.
+		 *
+		 * As a workaround we allow the NO_RESPONSE status code when
+		 * we perform an in-band reset.
+		 */
+		.expected_status_codes = ESPI_STATUS_NO_RESPONSE,
 	};
 
 	return espi_send_command(&cmd);
@@ -687,6 +711,29 @@ static void espi_set_op_freq_config(enum espi_op_freq mb_op_freq, uint32_t slave
 	}
 }
 
+static void espi_set_alert_pin_config(enum espi_alert_pin alert_pin, uint32_t slave_caps,
+				    uint32_t *slave_config, uint32_t *ctrlr_config)
+{
+	switch (alert_pin) {
+	case ESPI_ALERT_PIN_IN_BAND:
+		*slave_config |= ESPI_SLAVE_ALERT_MODE_IO1;
+		return;
+	case ESPI_ALERT_PIN_PUSH_PULL:
+		*slave_config |= ESPI_SLAVE_ALERT_MODE_PIN | ESPI_SLAVE_PUSH_PULL_ALERT_SEL;
+		*ctrlr_config |= ESPI_ALERT_MODE;
+		return;
+	case ESPI_ALERT_PIN_OPEN_DRAIN:
+		if (!(slave_caps & ESPI_SLAVE_OPEN_DRAIN_ALERT_SUPP))
+			die("eSPI peripheral does not support open drain alert!");
+
+		*slave_config |= ESPI_SLAVE_ALERT_MODE_PIN | ESPI_SLAVE_OPEN_DRAIN_ALERT_SEL;
+		*ctrlr_config |= ESPI_ALERT_MODE;
+		return;
+	default:
+		die("Unknown espi alert config: %u!\n", alert_pin);
+	}
+}
+
 static int espi_set_general_configuration(const struct espi_config *mb_cfg, uint32_t slave_caps)
 {
 	uint32_t slave_config = 0;
@@ -697,17 +744,15 @@ static int espi_set_general_configuration(const struct espi_config *mb_cfg, uint
 		ctrlr_config |= ESPI_CRC_CHECKING_EN;
 	}
 
-	if (mb_cfg->dedicated_alert_pin) {
-		slave_config |= ESPI_SLAVE_ALERT_MODE_PIN;
-		ctrlr_config |= ESPI_ALERT_MODE;
-	}
-
+	espi_set_alert_pin_config(mb_cfg->alert_pin, slave_caps, &slave_config, &ctrlr_config);
 	espi_set_io_mode_config(mb_cfg->io_mode, slave_caps, &slave_config, &ctrlr_config);
 	espi_set_op_freq_config(mb_cfg->op_freq_mhz, slave_caps, &slave_config, &ctrlr_config);
 
 	if (CONFIG(ESPI_DEBUG))
 		printk(BIOS_INFO, "Setting general configuration: slave: 0x%x controller: 0x%x\n",
 		       slave_config, ctrlr_config);
+
+	espi_show_slave_general_configuration(slave_config);
 
 	if (espi_set_configuration(ESPI_SLAVE_GENERAL_CFG, slave_config) == -1)
 		return -1;
@@ -793,8 +838,8 @@ static int espi_setup_periph_channel(const struct espi_config *mb_cfg, uint32_t 
 {
 	uint32_t slave_config;
 	/* Peripheral channel requires BME bit to be set when enabling the channel. */
-	const uint32_t slave_en_mask = ESPI_SLAVE_CHANNEL_READY |
-					ESPI_SLAVE_PERIPH_BUS_MASTER_ENABLE;
+	const uint32_t slave_en_mask =
+		ESPI_SLAVE_CHANNEL_ENABLE | ESPI_SLAVE_PERIPH_BUS_MASTER_ENABLE;
 
 	if (espi_get_configuration(ESPI_SLAVE_PERIPH_CFG, &slave_config) == -1)
 		return -1;
@@ -866,8 +911,16 @@ static void espi_set_initial_config(const struct espi_config *mb_cfg)
 {
 	uint32_t espi_initial_mode = ESPI_OP_FREQ_16_MHZ | ESPI_IO_MODE_SINGLE;
 
-	if (mb_cfg->dedicated_alert_pin)
+	switch (mb_cfg->alert_pin) {
+	case ESPI_ALERT_PIN_IN_BAND:
+		break;
+	case ESPI_ALERT_PIN_PUSH_PULL:
+	case ESPI_ALERT_PIN_OPEN_DRAIN:
 		espi_initial_mode |= ESPI_ALERT_MODE;
+		break;
+	default:
+		die("Unknown espi alert config: %u!\n", mb_cfg->alert_pin);
+	}
 
 	espi_write32(ESPI_SLAVE0_CONFIG, espi_initial_mode);
 }
@@ -891,6 +944,8 @@ int espi_setup(void)
 {
 	uint32_t slave_caps;
 	const struct espi_config *cfg = espi_get_config();
+
+	printk(BIOS_SPEW, "Initializing ESPI.\n");
 
 	espi_write32(ESPI_GLOBAL_CONTROL_0, ESPI_AL_STOP_EN);
 	espi_write32(ESPI_GLOBAL_CONTROL_1, ESPI_RGCMD_INT(23) | ESPI_ERR_INT_SMI);
@@ -982,6 +1037,8 @@ int espi_setup(void)
 
 	espi_write32(ESPI_GLOBAL_CONTROL_1,
 		     espi_read32(ESPI_GLOBAL_CONTROL_1) | ESPI_BUS_MASTER_EN);
+
+	printk(BIOS_SPEW, "Finished initializing ESPI.\n");
 
 	return 0;
 }

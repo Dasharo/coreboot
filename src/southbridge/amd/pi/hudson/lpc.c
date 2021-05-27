@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/acpimmio.h>
+#include <amdblocks/lpc.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -326,6 +327,18 @@ unsigned long acpi_fill_mcfg(unsigned long current)
 					     0,
 					     CONFIG_MMCONF_BUS_NUMBER - 1);
 	return current;
+}
+
+uintptr_t lpc_get_spibase(void)
+{
+	struct device *dev = pcidev_on_root(0x14, 3);
+
+	u32 base = pci_read_config32(dev, SPIROM_BASE_ADDRESS_REGISTER)	& 0xffffffc0;
+	if (!base){
+		base = SPI_BASE_ADDRESS;
+		pci_write_config32(dev, SPIROM_BASE_ADDRESS_REGISTER, base | SPI_ROM_ENABLE);
+	}
+	return (uintptr_t)base;
 }
 
 static const char *lpc_acpi_name(const struct device *dev)

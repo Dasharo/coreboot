@@ -24,7 +24,7 @@
 	PAD_CFG0_TX_DISABLE | PAD_CFG0_RX_DISABLE | PAD_CFG0_MODE_MASK |\
 	PAD_CFG0_ROUTE_MASK | PAD_CFG0_RXTENCFG_MASK |			\
 	PAD_CFG0_RXINV_MASK | PAD_CFG0_PREGFRXSEL |			\
-	PAD_CFG0_TRIG_MASK | PAD_CFG0_RXRAW1_MASK |			\
+	PAD_CFG0_TRIG_MASK | PAD_CFG0_RXRAW1_MASK | PAD_CFG0_NAFVWE_ENABLE |\
 	PAD_CFG0_RXPADSTSEL_MASK | PAD_CFG0_RESET_MASK)
 
 #if CONFIG(SOC_INTEL_COMMON_BLOCK_GPIO_PADCFG_PADTOL)
@@ -763,3 +763,33 @@ static void snapshot_cleanup(void *unused)
 
 BOOT_STATE_INIT_ENTRY(BS_OS_RESUME,    BS_ON_EXIT, snapshot_cleanup, NULL);
 BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_LOAD, BS_ON_EXIT, snapshot_cleanup, NULL);
+
+bool gpio_get_vw_info(gpio_t pad, unsigned int *vw_index, unsigned int *vw_bit)
+{
+	const struct pad_community *comm;
+	unsigned int offset = 0;
+	size_t i;
+
+	comm = gpio_get_community(pad);
+	for (i = 0; i < comm->num_vw_entries; i++) {
+		if (pad >= comm->vw_entries[i].first_pad && pad <= comm->vw_entries[i].last_pad)
+			break;
+
+		offset += 1 + comm->vw_entries[i].last_pad - comm->vw_entries[i].first_pad;
+	}
+
+	if (i == comm->num_vw_entries)
+		return false;
+
+	offset += pad - comm->vw_entries[i].first_pad;
+	*vw_index = comm->vw_base + offset / 8;
+	*vw_bit = offset % 8;
+
+	return true;
+}
+
+unsigned int gpio_get_pad_cpu_portid(gpio_t pad)
+{
+	const struct pad_community *comm = gpio_get_community(pad);
+	return comm->cpu_port;
+}

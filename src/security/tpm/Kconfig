@@ -21,6 +21,11 @@ config TPM2
 		   MAINBOARD_HAS_SPI_TPM || \
 		   MAINBOARD_HAS_CRB_TPM
 
+config TPM
+	bool
+	default y
+	depends on TPM1 || TPM2
+
 config MAINBOARD_HAS_TPM1
 	bool
 
@@ -105,6 +110,14 @@ config TPM_MEASURED_BOOT
 	depends on !VBOOT_RETURN_FROM_VERSTAGE
 	help
 	  Enables measured boot (experimental)
+
+config TPM_MEASURED_BOOT_INIT_BOOTBLOCK
+	bool
+	depends on TPM_MEASURED_BOOT && !VBOOT
+	help
+	  Initialize TPM inside the bootblock instead of ramstage. This is
+	  useful with some form of hardware assisted root of trust
+	  measurement like Intel TXT/CBnT.
 
 config TPM_MEASURED_BOOT_RUNTIME_DATA
 	string "Runtime data whitelist"

@@ -7,7 +7,6 @@ subdirs-y += ../../../cpu/intel/microcode
 subdirs-y += ../../../cpu/intel/turbo
 subdirs-y += ../../../cpu/x86/lapic
 subdirs-y += ../../../cpu/x86/mtrr
-subdirs-y += ../../../cpu/x86/smm
 subdirs-y += ../../../cpu/x86/tsc
 
 bootblock-y += bootblock/bootblock.c
@@ -83,6 +82,13 @@ endif
 ifeq ($(CONFIG_MAINBOARD_SUPPORTS_KABYLAKE_CPU),y)
 # Kabylake H B0 S0
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-09
+endif
+# CoffeeLake
+ifeq ($(CONFIG_MAINBOARD_SUPPORTS_COFFEELAKE_CPU),y)
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-0a
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-0b
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-0c
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-0d
 endif
 else
 ifeq ($(CONFIG_MAINBOARD_SUPPORTS_SKYLAKE_CPU),y)

@@ -11,7 +11,6 @@
 #include <arch/ioapic.h>
 #include <acpi/acpi.h>
 #include <cpu/x86/smm.h>
-#include <soc/iobp.h>
 #include <soc/iomap.h>
 #include <soc/lpc.h>
 #include <soc/pch.h>
@@ -22,6 +21,7 @@
 #include <soc/intel/broadwell/pch/chip.h>
 #include <acpi/acpigen.h>
 #include <southbridge/intel/common/rtc.h>
+#include <southbridge/intel/lynxpoint/iobp.h>
 #include <southbridge/intel/lynxpoint/lp_gpio.h>
 
 static void pch_enable_ioapic(struct device *dev)
@@ -132,7 +132,7 @@ static void pch_power_options(struct device *dev)
 	 *
 	 * If the option is not existent (Laptops), use Kconfig setting.
 	 */
-	const int pwr_on = get_int_option("power_on_after_fail",
+	const unsigned int pwr_on = get_uint_option("power_on_after_fail",
 					  CONFIG_MAINBOARD_POWER_FAILURE_STATE);
 
 	reg16 = pci_read_config16(dev, GEN_PMCON_3);

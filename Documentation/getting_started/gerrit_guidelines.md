@@ -320,6 +320,47 @@ is criticising your code, but the whole idea is to get better code into our
 codebase. Again, this also applies in the other direction: review code,
 criticize code, but don’t make it personal.
 
+Gerrit user roles
+-----------------
+There are a few relevant roles a user can have on Gerrit:
+
+- The anonymous user can check out source code.
+- A registered user can also comment and give "+1" and "-1" code reviews.
+- A reviewer can also give "+2" code reviews.
+- A core developer can also give "-2" (that is, blocking) code reviews
+  and submit changes.
+
+Anybody can register an account on our instance, using either an
+OpenID provider or OAuth through GitHub or Google.
+
+The reviewer group is still quite open: Any core developer can add
+registered users to that group and should do so once some activity
+(commits, code reviews, and so on) has demonstrated rough knowledge
+of how we handle things.
+
+A core developer should be sufficiently well established in the
+community so that they feel comfortable when submitting good patches,
+when asking for improvements to less good patches and reasonably
+uncomfortable when -2'ing patches. They're typically the go-to
+person for _some_ part of the coreboot tree and ideally listed as its
+maintainer in our MAINTAINERS registry. To become part of this group,
+a candidate developer who already demonstrated proficiency with the
+code base as a reviewer should be nominated, by themselves or others,
+at the regular [coreboot leadership meetings](../community/forums.md)
+where a decision is made.
+
+Core developers are expected to use their privileges for the good of the
+project, which includes any of their own coreboot development but also beyond
+that. They should make sure that [ready changes] don't linger around needlessly
+just because their authors aren't well-connected with core developers but
+submit them if they went through review and generally look reasonable. They're
+also expected to help clean-up breakage as a result of their submissions.
+
+Since the project expects some activity by core developers, long-term absence
+(as in "years") can lead to removal from the group, which can easily be
+reversed after they come back.
 
 Requests for clarification and suggestions for updates to these guidelines
 should be sent to the coreboot mailing list at <coreboot@coreboot.org>.
+
+[ready changes]: https://review.coreboot.org/q/age:1d+project:coreboot+status:open+is:mergeable+label:All-Comments-Resolved%253Dok+label:Code-Review%253D2+-label:Code-Review%253C0+label:Verified%253D1+-label:Verified-1

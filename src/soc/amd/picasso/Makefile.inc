@@ -43,7 +43,6 @@ ramstage-$(CONFIG_HAVE_ACPI_TABLES) += agesa_acpi.c
 ramstage-y += gpio.c
 ramstage-y += fch.c
 ramstage-y += reset.c
-ramstage-y += acp.c
 ramstage-y += sata.c
 ramstage-y += uart.c
 ramstage-y += soc_util.c
@@ -108,7 +107,7 @@ PSP_SOFTFUSE_BITS += 29
 endif
 
 # Use additional Soft Fuse bits specified in Kconfig
-PSP_SOFTFUSE_BITS += $(CONFIG_PSP_SOFTFUSE_BITS)
+PSP_SOFTFUSE_BITS += $(call strip_quotes, $(CONFIG_PSP_SOFTFUSE_BITS))
 
 ifeq ($(CONFIG_PSP_LOAD_S0I3_FW),y)
 OPT_PSP_LOAD_S0I3_FW="--load-s0i3"

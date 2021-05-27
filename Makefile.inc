@@ -193,6 +193,8 @@ endif
 ifneq ($(UPDATED_SUBMODULES),1)
 # try to fetch non-optional submodules if the source is under git
 forgetthis:=$(if $(GIT),$(shell git submodule update --init))
+# Checkout Cmocka repository
+forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/cmocka))
 ifeq ($(CONFIG_USE_BLOBS),y)
 # These items are necessary because each has update=none in .gitmodules.  They are ignored
 # until expressly requested and enabled with --checkout
@@ -300,20 +302,10 @@ endef
 # arg1: source file
 # arg2: binary file name
 cbfs-files-processor-nvramtool= \
-	$(eval $(2): $(1) $(src)/mainboard/$(MAINBOARDDIR)/cmos.layout | $(objutil)/nvramtool/nvramtool ; \
+	$(eval $(2): $(1) $(top)/$(call strip_quotes,$(CONFIG_CMOS_LAYOUT_FILE)) | $(objutil)/nvramtool/nvramtool ; \
 		printf "    CREATE     $(2) (from $(1))\n"; \
-		$(objutil)/nvramtool/nvramtool -y $(src)/mainboard/$(MAINBOARDDIR)/cmos.layout -D $(2).tmp -p $(1) && \
+		$(objutil)/nvramtool/nvramtool -y $(top)/$(call strip_quotes,$(CONFIG_CMOS_LAYOUT_FILE)) -D $(2).tmp -p $(1) && \
 		mv $(2).tmp $(2))
-
-#######################################################################
-# Link VSA binary to ELF-ish stage
-# arg1: source file
-# arg2: binary file name
-cbfs-files-processor-vsa= \
-	$(eval $(2): $(1) ; \
-		printf "    CREATE     $(2) (from $(1))\n"; \
-		$(OBJCOPY_ramstage) --set-start 0x20 --adjust-vma 0x60000 -I binary -O elf32-i386 -B i386 $(1) $(2).tmp && \
-		$(LD_ramstage) -m elf_i386 -e 0x60020 --section-start .data=0x60000 $(2).tmp -o $(2))
 
 #######################################################################
 # Reduce a .config file to its minimal representation

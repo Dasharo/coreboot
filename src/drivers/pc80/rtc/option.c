@@ -84,7 +84,7 @@ static struct cmos_entries *find_cmos_entry(struct cmos_option_table *ct, const 
 	return NULL;
 }
 
-enum cb_err cmos_get_option(void *dest, const char *name)
+static enum cb_err cmos_get_uint_option(unsigned int *dest, const char *name)
 {
 	struct cmos_option_table *ct;
 	struct cmos_entries *ce;
@@ -99,6 +99,11 @@ enum cb_err cmos_get_option(void *dest, const char *name)
 		return CB_CMOS_OPTION_NOT_FOUND;
 	}
 
+	if (ce->config != 'e' && ce->config != 'h') {
+		printk(BIOS_ERR, "ERROR: CMOS option '%s' is not of integer type.\n", name);
+		return CB_ERR_ARG;
+	}
+
 	if (!cmos_checksum_valid(LB_CKS_RANGE_START, LB_CKS_RANGE_END, LB_CKS_LOC))
 		return CB_CMOS_CHECKSUM_INVALID;
 
@@ -106,6 +111,12 @@ enum cb_err cmos_get_option(void *dest, const char *name)
 		return CB_CMOS_ACCESS_ERROR;
 
 	return CB_SUCCESS;
+}
+
+unsigned int get_uint_option(const char *name, const unsigned int fallback)
+{
+	unsigned int value = 0;
+	return cmos_get_uint_option(&value, name) == CB_SUCCESS ? value : fallback;
 }
 
 static enum cb_err set_cmos_value(unsigned long bit, unsigned long length,
@@ -149,11 +160,10 @@ static enum cb_err set_cmos_value(unsigned long bit, unsigned long length,
 	return CB_SUCCESS;
 }
 
-enum cb_err cmos_set_option(const char *name, void *value)
+static enum cb_err cmos_set_uint_option(const char *name, unsigned int *value)
 {
 	struct cmos_option_table *ct;
 	struct cmos_entries *ce;
-	unsigned long length;
 
 	ct = get_cmos_layout();
 	if (!ct)
@@ -165,19 +175,20 @@ enum cb_err cmos_set_option(const char *name, void *value)
 		return CB_CMOS_OPTION_NOT_FOUND;
 	}
 
-	length = ce->length;
-	if (ce->config == 's') {
-		length = MAX(strlen((const char *)value) * 8, ce->length - 8);
-		/* make sure the string is null terminated */
-		if (set_cmos_value(ce->bit + ce->length - 8, 8, &(u8[]){0})
-		    != CB_SUCCESS)
-			return CB_CMOS_ACCESS_ERROR;
+	if (ce->config != 'e' && ce->config != 'h') {
+		printk(BIOS_ERR, "ERROR: CMOS option '%s' is not of integer type.\n", name);
+		return CB_ERR_ARG;
 	}
 
-	if (set_cmos_value(ce->bit, length, value) != CB_SUCCESS)
+	if (set_cmos_value(ce->bit, ce->length, value) != CB_SUCCESS)
 		return CB_CMOS_ACCESS_ERROR;
 
 	return CB_SUCCESS;
+}
+
+enum cb_err set_uint_option(const char *name, unsigned int value)
+{
+	return cmos_set_uint_option(name, &value);
 }
 
 int cmos_lb_cks_valid(void)

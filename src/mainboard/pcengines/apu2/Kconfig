@@ -115,6 +115,7 @@ config FORCE_MPCIE2_CLK
 config FMDFILE
 	string
 	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/vboot-rw-ab.fmd" if VBOOT
+	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd"
 
 config CBFS_SIZE
 	hex
@@ -153,5 +154,10 @@ config AGESA_USE_1_0_0_4_HEADER
 	  workarounds the problem, however some headers changes between blob
 	  revisions. This option removes the changes in headers introduced
 	  with AGESA 1.0.0.A to fit the 1.0.0.4 revision.
+
+# In order to avoid ASSERT on the stack overwrite during flashing bootorder
+config STACK_SIZE
+	hex
+	default 0x2000
 
 endif # BOARD_PCENGINES_APU2

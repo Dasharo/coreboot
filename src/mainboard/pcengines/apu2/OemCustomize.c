@@ -7,6 +7,8 @@
 #include <Fch/Fch.h>
 #include <amdblocks/acpimmio.h>
 
+#include "gpio_ftns.h"
+
 static const PCIe_PORT_DESCRIPTOR PortListAspm[] = {
 	{
 		0,
@@ -469,5 +471,9 @@ void board_BeforeInitPost(struct sysinfo *cb, AMD_POST_PARAMS *Post)
 	 * Disable it so AGESA will return success.
 	 */
 	Post->MemConfig.EnableBankIntlv = FALSE;
-	Post->MemConfig.EnableEccFeature = TRUE;
+	/* 4GB variants have ECC */
+	if (get_spd_offset())
+		Post->MemConfig.EnableEccFeature = TRUE;
+	else
+		Post->MemConfig.EnableEccFeature = FALSE;
 }
