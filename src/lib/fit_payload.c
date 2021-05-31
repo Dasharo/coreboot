@@ -205,7 +205,7 @@ void fit_payload(struct prog *payload, void *data)
 #if defined(CONFIG_LINUX_COMMAND_LINE)
 	fit_update_chosen(dt, (char *)CONFIG_LINUX_COMMAND_LINE);
 #endif
-	fit_update_memory(dt);
+	//~ fit_update_memory(dt);
 
 	/* Collect infos for fit_payload_arch */
 	kernel.size = config->kernel->size;
