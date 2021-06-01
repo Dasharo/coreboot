@@ -63,3 +63,29 @@ jobs:
         cp configs/config.raptor-cs-talos-2-bootblock-in-seeprom .config
         make olddefconfig
         make -j $(nproc)
+
+  build-freebsd:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        # Checkout pull request HEAD commit instead of merge commit
+        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+        ref: ${{ github.event.pull_request.head.sha }}
+        # Fetch complete history
+        fetch-depth: 0
+    - name: Checkout all submodules
+      run: git submodule update --init --recursive --checkout
+
+    - name: Build some tools in FreeBSD VM
+      id: test
+      uses: vmactions/freebsd-vm@v0.1.4
+      with:
+        usesh: true
+        mem: 2048
+        prepare: |
+          pkg install -y git gmake gcc pciutils
+        run: |
+          gmake -C util/superiotool
+          gmake -C util/cbfstool
