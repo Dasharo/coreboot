@@ -1761,10 +1761,10 @@ static void reset_tsys_adr(int mcs_i, int mca_i)
 	    [all]   0
 	    [49-55] TSYS_WRCLK = ATTR_MSS_VPD_MR_TSYS_ADR
 		  // From regs spec:
-		  // Set to ‘19’h for 2666 MT/s.
-		  // Set to ‘17’h for 2400 MT/s.
-		  // Set to ‘14’h for 2133 MT/s.
-		  // Set to ‘12’h for 1866 MT/s.
+		  // Set to '19'h for 2666 MT/s.
+		  // Set to '17'h for 2400 MT/s.
+		  // Set to '14'h for 2133 MT/s.
+		  // Set to '12'h for 1866 MT/s.
 	*/
 	/* Has the same stride as DP16. */
 	dp_mca_and_or(id, 0, mca_i, DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S0,
@@ -1785,10 +1785,10 @@ static void reset_tsys_data(int mcs_i, int mca_i)
 	    [all]   0
 	    [49-55] TSYS_WRCLK = ATTR_MSS_VPD_MR_TSYS_DATA
 		  // From regs spec:
-		  // Set to ‘12’h for 2666 MT/s.
-		  // Set to ‘10’h for 2400 MT/s.
-		  // Set to ‘0F’h for 2133 MT/s.
-		  // Set to ‘0D’h for 1866 MT/s.
+		  // Set to '12'h for 2666 MT/s.
+		  // Set to '10'h for 2400 MT/s.
+		  // Set to '0F'h for 2133 MT/s.
+		  // Set to '0D'h for 1866 MT/s.
 	*/
 	for (dp = 0; dp < 5; dp++) {
 		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WRCLK_PR_P0_0, 0,

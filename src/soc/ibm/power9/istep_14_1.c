@@ -634,7 +634,7 @@ static int mcbist_is_done(int mcs_i)
  *    - Cumulus/Centaur uses the scrub engine
  *    - Modes:
  *      - Minimal: Write-only with 0's
- *      - Standard: Write of 0’s followed by a Read
+ *      - Standard: Write of 0's followed by a Read
  *      - Medium: Write-followed by Read, 4 patterns, last of 0's
  *      - Max: Write-followed by Read, 9 patterns, last of 0's
  *    - Run on the host
