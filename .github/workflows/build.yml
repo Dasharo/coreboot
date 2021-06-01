@@ -19,18 +19,36 @@ jobs:
       options: --user 1001:1001 --workdir /home/coreboot
 
     steps:
-    - name: Checkout repository and submodules
+    - name: Checkout repository
       uses: actions/checkout@v2
       with:
-        submodules: recursive
+        # Checkout pull request HEAD commit instead of merge commit
+        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+        ref: ${{ github.event.pull_request.head.sha }}
+        # Fetch complete history
+        fetch-depth: 0
+    - name: Checkout all submodules
+      run: git submodule update --init --recursive --checkout
 
-    - name: Build
+    - name: Build information
+      run: |
+        date
+        id -u
+        git --version
+        git rev-parse --verify HEAD
+        git log -n 1
+        git log --graph --decorate --pretty=oneline --abbrev-commit -n 20
+
+    - name: Run upstream coreboot tests
+      run: make -j $(nproc) what-jenkins-does
+
+    - name: Build Talos II target (bootblock in PNOR)
       run: |
         cp configs/config.raptor-cs-talos-2 .config
         make olddefconfig
         make -j $(nproc)
 
-    - name: Save artifacts
+    - name: Save Talos II artifacts
       uses: actions/upload-artifact@v2
       with:
         name: coreboot-binary
@@ -38,3 +56,10 @@ jobs:
           build/coreboot.rom
           build/coreboot.rom.signed.ecc
         retention-days: 7
+
+    - name: Build Talos II target (bootblock in SEEPROM)
+      run: |
+        make clean
+        cp configs/config.raptor-cs-talos-2-bootblock-in-seeprom .config
+        make olddefconfig
+        make -j $(nproc)
