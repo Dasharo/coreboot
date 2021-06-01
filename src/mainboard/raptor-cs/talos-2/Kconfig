@@ -30,7 +30,9 @@ config MEMLAYOUT_LD_FILE
 
 config FMDFILE
 	string
-	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board-bootblock-in-seeprom.fmd"	if BOOTBLOCK_IN_SEEPROM
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"			if !BOOTBLOCK_IN_SEEPROM
+
 
 config MAINBOARD_DIR
 	string
