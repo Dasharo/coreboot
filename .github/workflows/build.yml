@@ -85,7 +85,7 @@ jobs:
         usesh: true
         mem: 2048
         prepare: |
-          pkg install -y git gmake gcc pciutils openssl
+          pkg install -y git gmake gcc pciutils openssl pkgconf bash
         run: |
           gmake -C util/amdfwtool
           gmake -C util/cbmem
