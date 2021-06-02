@@ -7,12 +7,13 @@ IFDTOOLCFLAGS += -I$(top)/src/commonlib/include -I$(top)/src/commonlib/bsd/inclu
 IFDTOOLCFLAGS += -I$(top)/util/cbfstool/flashmap
 IFDTOOLCFLAGS += -include $(top)/src/commonlib/bsd/include/commonlib/bsd/compiler.h
 IFDTOOLCFLAGS += -D_DEFAULT_SOURCE # for endianness converting functions
+FMAPCFLAGS     = $(IFDTOOLCFLAGS) -D_DEFAULT_SOURCE
 
 $(objutil)/ifdtool/%.o: $(top)/util/ifdtool/%.c
 	$(HOSTCC) $(IFDTOOLCFLAGS) $(HOSTCFLAGS) -c -o $@ $<
 
 $(objutil)/ifdtool/%.o: $(top)/util/cbfstool/flashmap/%.c
-	$(HOSTCC) $(IFDTOOLCFLAGS) $(HOSTCFLAGS) -c -o $@ $<
+	$(HOSTCC) $(FMAPCFLAGS) $(HOSTCFLAGS) -c -o $@ $<
 
 $(objutil)/ifdtool/ifdtool: $(addprefix $(objutil)/ifdtool/,$(ifdtoolobj))
 	printf "   IFDTOOL\n"
