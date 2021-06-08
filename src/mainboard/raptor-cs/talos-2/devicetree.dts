@@ -964,34 +964,6 @@
 		};
 	};
 
-	memory@0 {
-		phandle = <0x79>;
-		device_type = "memory";
-		reg = <0x00 0x00 0x08 0x00>;
-		ibm,chip-id = <0x00>;
-	};
-
-	memory@800000000 {
-		phandle = <0x71>;
-		device_type = "memory";
-		reg = <0x08 0x00 0x04 0x00>;
-		ibm,chip-id = <0x00>;
-	};
-
-	memory@c00000000 {
-		phandle = <0x7c>;
-		device_type = "memory";
-		reg = <0x0c 0x00 0x04 0x00>;
-		ibm,chip-id = <0x00>;
-	};
-
-	memory@1000000000 {
-		phandle = <0x74>;
-		device_type = "memory";
-		reg = <0x10 0x00 0x02 0x00>;
-		ibm,chip-id = <0x00>;
-	};
-
 	vpd {
 		phandle = <0x25>;
 		compatible = "ibm,opal-v3-vpd";
