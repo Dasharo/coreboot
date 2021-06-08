@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <assert.h>
+#include <cbfs.h>
 #include <cbmem.h>
 #include <device/device.h>
+#include <device_tree.h>
 #include <drivers/ipmi/ipmi_bt.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_18.h>
@@ -159,8 +161,35 @@ static void activate_slave_cores(void)
 	}
 }
 
+static void *load_fdt(const char *dtb_file)
+{
+	void *fdt;
+	void *fdt_rom;
+	struct device_tree *tree;
+
+	fdt_rom = cbfs_map(dtb_file, NULL);
+	if (fdt_rom == NULL)
+		die("Unable to load %s from CBFS\n", dtb_file);
+
+	tree = fdt_unflatten(fdt_rom);
+
+	fdt = malloc(dt_flat_size(tree));
+	if (fdt == NULL)
+		die("Unable to allocate memory for flat device tree\n");
+
+	dt_flatten(tree, fdt);
+	return fdt;
+}
+
 void platform_prog_run(struct prog *prog)
 {
+	void *fdt;
+
+	fdt = load_fdt("1-cpu.dtb");
+
+	/* See asm/head.S in skiboot where fdt_entry starts at offset 0x10 */
+	prog_set_entry(prog, prog_start(prog) + 0x10, fdt);
+
 	/*
 	 * Clear SMS_ATN aka EVT_ATN in BT_CTRL - Block Transfer IPMI protocol
 	 *
