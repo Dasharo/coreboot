@@ -1,0 +1,21 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+if PAYLOAD_SKIBOOT
+
+config PAYLOAD_FILE
+	default "payloads/external/skiboot/build/skiboot.uimage"
+
+config SKIBOOT_REVISION
+	string "Revision of skiboot payload"
+	default "9858186353f2203fe477f316964e03609d12fd1d" if BOARD_RAPTOR_CS_TALOS_2
+	help
+	  Revision, that skiboot repository will be checked out to, before building
+	  an image.
+
+config SKIBOOT_DEVICE_TREE
+	string "skiboot device-tree"
+	default "src/mainboard/raptor-cs/talos-2/talos_ii_device-tree_stripped.dts" if BOARD_RAPTOR_CS_TALOS_2
+	help
+	  Filename of device-tree passed to the skiboot.
+
+endif #PAYLOAD_SKIBOOT

@@ -324,3 +324,10 @@ payloads/external/Yabits/uefi/build/uefi.elf yabits:
 
 payloads/external/BOOTBOOT/bootboot/dist/bootbootcb.elf:
 	$(MAKE) -C payloads/external/BOOTBOOT all
+
+# skiboot
+
+payloads/external/skiboot/build/skiboot.uimage:
+	$(MAKE) -C payloads/external/skiboot all \
+		CONFIG_SKIBOOT_DEVICE_TREE=$(CONFIG_SKIBOOT_DEVICE_TREE) \
+		CONFIG_SKIBOOT_REVISION=$(CONFIG_SKIBOOT_REVISION)
