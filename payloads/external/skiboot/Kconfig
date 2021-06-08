@@ -7,13 +7,15 @@ config PAYLOAD_FILE
 
 config SKIBOOT_GIT_REPO
 	string "Git repository of skiboot payload"
-	default "https://github.com/open-power/skiboot"
+	default "https://github.com/open-power/skiboot" if !BOARD_RAPTOR_CS_TALOS_2
+	default "https://git.raptorcs.com/git/talos-skiboot" if BOARD_RAPTOR_CS_TALOS_2
 	help
 	  Git repository which will be used to clone skiboot.
 
 config SKIBOOT_REVISION
 	string "Revision of skiboot payload"
 	default "d93ddbd39b4eeac0bc11dacbdadea76df2996c13" if BOARD_EMULATION_QEMU_POWER9
+	default "9858186353f2203fe477f316964e03609d12fd1d" if BOARD_RAPTOR_CS_TALOS_2
 	help
 	  Revision, that skiboot repository will be checked out to, before building
 	  an image.
