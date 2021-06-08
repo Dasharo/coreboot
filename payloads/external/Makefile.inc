@@ -373,8 +373,9 @@ payloads/external/BOOTBOOT/bootboot/dist/bootbootcb.elf:
 
 # skiboot
 
-payloads/external/skiboot/build/skiboot.elf:
+payloads/external/skiboot/build/skiboot.uimage:
 	$(MAKE) -C payloads/external/skiboot all \
+		CONFIG_SKIBOOT_DEVICE_TREE=$(CONFIG_SKIBOOT_DEVICE_TREE) \
 		CONFIG_SKIBOOT_GIT_REPO=$(CONFIG_SKIBOOT_GIT_REPO) \
 		CONFIG_SKIBOOT_REVISION=$(CONFIG_SKIBOOT_REVISION)
 # COREDOOM

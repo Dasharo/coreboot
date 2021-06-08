@@ -1,0 +1,40 @@
+/dts-v1/;
+/ {
+	description = "Simple image with skiboot and FDT blob";
+	#address-cells = <1>;
+
+	images {
+		kernel {
+			description = "skiboot";
+			data = /incbin/("talos-skiboot/skiboot.lid");
+			type = "kernel";
+			arch = "powerpc";
+			compression = "none";
+			load = <0x00000>;
+			entry = <0x10>;
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		fdt-1 {
+			description = "Flattened Device Tree blob";
+			data = /incbin/("build/fdt.bin");
+			type = "flat_dt";
+			arch = "powerpc";
+			compression = "none";
+			load = <0x1000000>;
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+	};
+
+	configurations {
+		default = "conf-1";
+		conf-1 {
+			description = "Boot skiboot with FDT blob";
+			kernel = "kernel";
+			fdt = "fdt-1";
+		};
+	};
+};
