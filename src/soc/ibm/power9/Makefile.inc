@@ -42,4 +42,14 @@ ramstage-y += int_vectors.S
 ramstage-y += i2c.c
 ramstage-y += occ.c
 
+MB_DIR = src/mainboard/$(MAINBOARDDIR)
+ONECPU_DTB = 1-cpu.dtb
+
+$(obj)/%.dtb: $(MB_DIR)/%.dts
+	dtc -I dts -O dtb -o $@ -i $(MB_DIR) $<
+
+cbfs-files-y += $(ONECPU_DTB)
+$(ONECPU_DTB)-file := $(obj)/$(ONECPU_DTB)
+$(ONECPU_DTB)-type := raw
+
 endif

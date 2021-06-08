@@ -1,0 +1,636 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
+/* This is a base DT common to 1- and 2-CPU configurations */
+
+/dts-v1/;
+
+/ {
+	#address-cells = <0x02>;
+	#size-cells = <0x02>;
+	compatible = "ibm,powernv\0ibm,p9-openbmc\0rcs,talos";
+	nest-frequency = <0x00 0x6f38e680>;
+	vendor = "IBM";
+	ibm,sw-checkstop-fir = <0x5012000 0x1f>;
+	model = "T2P9D01 REV 1.00";	/* TODO: unhardcode */
+	/* TODO: system-id = "A1234567" */
+	model-name = "rcs,talos";
+
+	bmc {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		compatible = "ibm,ast2500,openbmc";
+
+		sensors {
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+
+			sensor@1 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x01>;
+				ipmi-sensor-type = <0x22>;
+			};
+
+			sensor@2 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x02>;
+				ipmi-sensor-type = <0x0f>;
+			};
+
+			sensor@3 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x03>;
+				ipmi-sensor-type = <0x07>;
+				ibm,chip-id = <0x00>;
+			};
+
+			sensor@6 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x06>;
+				ipmi-sensor-type = <0x01>;
+				ibm,chip-id = <0x00>;
+			};
+
+			sensor@8 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x08>;
+				ipmi-sensor-type = <0x07>;
+				ibm,chip-id = <0x00>;
+			};
+
+			sensor@a {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x0a>;
+				ipmi-sensor-type = <0xc1>;
+			};
+
+			sensor@b {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x0b>;
+				ipmi-sensor-type = <0x0c>;
+			};
+
+			sensor@d {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x0d>;
+				ipmi-sensor-type = <0x0c>;
+			};
+
+			sensor@f {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x0f>;
+				ipmi-sensor-type = <0x0c>;
+			};
+
+			sensor@11 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x11>;
+				ipmi-sensor-type = <0x0c>;
+			};
+
+			sensor@1b {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x1b>;
+				ipmi-sensor-type = <0x01>;
+			};
+
+			sensor@1d {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x1d>;
+				ipmi-sensor-type = <0x01>;
+			};
+
+			sensor@1f {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x1f>;
+				ipmi-sensor-type = <0x01>;
+			};
+
+			sensor@21 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x21>;
+				ipmi-sensor-type = <0x01>;
+			};
+
+			sensor@8b {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x8b>;
+				ipmi-sensor-type = <0xc3>;
+			};
+
+			sensor@8c {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x8c>;
+				ipmi-sensor-type = <0xc7>;
+			};
+
+			sensor@8d {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x8d>;
+				ipmi-sensor-type = <0xc7>;
+			};
+
+			sensor@8e {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x8e>;
+				ipmi-sensor-type = <0xc7>;
+			};
+
+			sensor@8f {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x8f>;
+				ipmi-sensor-type = <0xc7>;
+			};
+
+			sensor@90 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x90>;
+				ipmi-sensor-type = <0x12>;
+			};
+
+			sensor@91 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x91>;
+				ipmi-sensor-type = <0x1f>;
+			};
+
+			sensor@92 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x92>;
+				ipmi-sensor-type = <0xc4>;
+			};
+
+			sensor@93 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x93>;
+				ipmi-sensor-type = <0xc7>;
+			};
+
+			sensor@94 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x94>;
+				ipmi-sensor-type = <0xc2>;
+			};
+
+			sensor@95 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x95>;
+				ipmi-sensor-type = <0xca>;
+			};
+
+			sensor@96 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x96>;
+				ipmi-sensor-type = <0xc8>;
+			};
+
+			sensor@97 {
+				compatible = "ibm,ipmi-sensor";
+				reg = <0x97>;
+				ipmi-sensor-type = <0xc6>;
+			};
+		};
+	};
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+	};
+
+	ibm,opal {
+
+		leds {
+			led-mode = "lightpath";
+		};
+
+		power-mgt {
+			ibm,enabled-stop-levels = <0xec000000>;
+		};
+
+	};
+
+	ibm,pcie-slots {
+		#address-cells = <0x02>;
+		#size-cells = <0x00>;
+
+		root-complex@0,0 {
+			reg = <0x00 0x00>;
+			#address-cells = <0x02>;
+			#size-cells = <0x00>;
+			compatible = "ibm,pcie-port\0ibm,pcie-root-port";
+			ibm,chip-id = <0x00>;
+			ibm,slot-label = "SLOT3";
+
+			pluggable {
+				mrw-slot-id = <0x03>;
+				lane-mask = <0xffff>;
+				ibm,slot-label = "SLOT3";
+			};
+		};
+
+		root-complex@0,1 {
+			reg = <0x00 0x01>;
+			#address-cells = <0x02>;
+			#size-cells = <0x00>;
+			compatible = "ibm,pcie-port\0ibm,pcie-root-port";
+			ibm,chip-id = <0x00>;
+			lane-mask = <0xff00>;
+			lanes-reversed = <0x1111>;
+
+			builtin {
+			};
+		};
+
+		root-complex@0,2 {
+			reg = <0x00 0x02>;
+			#address-cells = <0x02>;
+			#size-cells = <0x00>;
+			compatible = "ibm,pcie-port\0ibm,pcie-root-port";
+			ibm,chip-id = <0x00>;
+			lane-mask = <0xff>;
+
+			builtin {
+			};
+		};
+
+		root-complex@0,3 {
+			reg = <0x00 0x03>;
+			#address-cells = <0x02>;
+			#size-cells = <0x00>;
+			compatible = "ibm,pcie-port\0ibm,pcie-root-port";
+			ibm,chip-id = <0x00>;
+			ibm,slot-label = "SLOT1";
+
+			pluggable {
+				mrw-slot-id = <0x01>;
+				lane-mask = <0xff00>;
+				ibm,slot-label = "SLOT1";
+			};
+		};
+
+		root-complex@0,4 {
+			reg = <0x00 0x04>;
+			#address-cells = <0x02>;
+			#size-cells = <0x00>;
+			compatible = "ibm,pcie-port\0ibm,pcie-root-port";
+			ibm,chip-id = <0x00>;
+			lane-mask = <0xf0>;
+
+			switch-up@10b5,8725 {
+				reg = <0x10b5 0x8725>;
+				#address-cells = <0x01>;
+				#size-cells = <0x00>;
+				upstream-port = <0x00>;
+				ibm,pluggable;
+
+				down-port@a {
+					compatible = "ibm,pcie-port";
+					reg = <0x0a>;
+					ibm,pluggable;
+					ibm,slot-label = "GPU0";
+
+					builtin {
+						ibm,slot-label = "GPU0";
+					};
+				};
+
+				down-port@b {
+					compatible = "ibm,pcie-port";
+					reg = <0x0b>;
+					ibm,pluggable;
+					ibm,slot-label = "GPU1";
+
+					builtin {
+						ibm,slot-label = "GPU1";
+					};
+				};
+
+				down-port@c {
+					compatible = "ibm,pcie-port";
+					reg = <0x0c>;
+					ibm,pluggable;
+					ibm,slot-label = "GPU2";
+
+					builtin {
+						ibm,slot-label = "GPU2";
+					};
+				};
+			};
+		};
+
+		root-complex@0,5 {
+			reg = <0x00 0x05>;
+			#address-cells = <0x02>;
+			#size-cells = <0x00>;
+			compatible = "ibm,pcie-port\0ibm,pcie-root-port";
+			ibm,chip-id = <0x00>;
+			lane-mask = <0x0f>;
+
+			builtin {
+			};
+		};
+	};
+
+	lpcm-opb@6030000000000 {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		compatible = "ibm,power9-lpcm-opb\0simple-bus";
+		reg = <0x60300 0x00 0x01 0x00>;
+		ibm,chip-id = <0x00>;
+		ranges = <0x00 0x60300 0x00 0x80000000 0x80000000 0x60300 0x80000000 0x80000000>;
+
+		lpc-controller@c0012000 {
+			compatible = "ibm,power9-lpc-controller";
+			reg = <0xc0012000 0x100>;
+		};
+
+		lpc@0 {
+			#address-cells = <0x02>;
+			#size-cells = <0x01>;
+			compatible = "ibm,power9-lpc\0ibm,power8-lpc";
+			ranges = <0x00 0x00 0xe0000000 0x10000000 0x01 0x00 0xd0010000 0x10000 0x03 0x00 0xf0000000 0x10000000>;
+
+			serial@i3f8 {
+				reg = <0x01 0x3f8 0x01>;
+				compatible = "ns16550";
+				current-speed = <0x1c200>;
+				clock-frequency = <0x1c2000>;
+				interrupts = <0x04>;
+				device_type = "serial";
+			};
+		};
+
+		opb-arbiter@c0011000 {
+			compatible = "ibm,power9-lpcm-opb-arbiter";
+			reg = <0xc0011000 0x08>;
+		};
+
+		opb-master@c0010000 {
+			compatible = "ibm,power9-lpcm-opb-master";
+			reg = <0xc0010000 0x60>;
+		};
+	};
+
+	xscom@603fc00000000 {
+		ibm,chip-id = <0x00>;
+		ibm,proc-chip-id = <0x00>;
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		scom-controller;
+		compatible = "ibm,xscom\0ibm,power9-xscom";
+		reg = <0x603fc 0x00 0x08 0x00>;
+		bus-frequency = <0x00 0x1bce39a0>;
+		primary;
+
+		chiptod@40000 {
+			reg = <0x40000 0x34>;
+			compatible = "ibm,power-chiptod\0ibm,power9-chiptod";
+			primary;
+		};
+
+		i2cm@a1000 {
+			reg = <0xa1000 0x1000>;
+			compatible = "ibm,power8-i2cm\0ibm,power9-i2cm";
+			#size-cells = <0x00>;
+			#address-cells = <0x01>;
+			chip-engine# = <0x01>;
+			clock-frequency = <0x6f38e68>;
+
+			i2c-bus@0 {
+				reg = <0x00>;
+				#size-cells = <0x00>;
+				#address-cells = <0x01>;
+				compatible = "ibm,opal-i2c\0ibm,power8-i2c-port\0ibm,power9-i2c-port";
+				bus-frequency = <0xf4240>;
+
+				eeprom@50 {
+					reg = <0x50>;
+					link-id = <0x02>;
+					compatible = "atmel,24c512";
+					label = "module-vpd";
+				};
+			};
+
+			i2c-bus@2 {
+				reg = <0x02>;
+				#size-cells = <0x00>;
+				#address-cells = <0x01>;
+				compatible = "ibm,opal-i2c\0ibm,power8-i2c-port\0ibm,power9-i2c-port";
+				bus-frequency = <0xf4240>;
+
+				eeprom@50 {
+					reg = <0x50>;
+					link-id = <0x04>;
+					compatible = "atmel,24c128";
+					label = "module-vpd";
+				};
+			};
+		};
+
+		i2cm@a2000 {
+			reg = <0xa2000 0x1000>;
+			compatible = "ibm,power8-i2cm\0ibm,power9-i2cm";
+			#size-cells = <0x00>;
+			#address-cells = <0x01>;
+			chip-engine# = <0x02>;
+			clock-frequency = <0x6f38e68>;
+
+			i2c-bus@0 {
+				reg = <0x00>;
+				#size-cells = <0x00>;
+				#address-cells = <0x01>;
+				compatible = "ibm,opal-i2c\0ibm,power8-i2c-port\0ibm,power9-i2c-port";
+				bus-frequency = <0x61a80>;
+
+				eeprom@50 {
+					reg = <0x50>;
+					link-id = <0x06>;
+					compatible = "atmel,24c128";
+					label = "module-vpd";
+				};
+			};
+		};
+
+		i2cm@a3000 {
+			reg = <0xa3000 0x1000>;
+			compatible = "ibm,power8-i2cm\0ibm,power9-i2cm";
+			#size-cells = <0x00>;
+			#address-cells = <0x01>;
+			chip-engine# = <0x03>;
+			clock-frequency = <0x6f38e68>;
+
+			i2c-bus@0 {
+				reg = <0x00>;
+				#size-cells = <0x00>;
+				#address-cells = <0x01>;
+				compatible = "ibm,opal-i2c\0ibm,power8-i2c-port\0ibm,power9-i2c-port";
+				bus-frequency = <0x61a80>;
+
+				eeprom@50 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x12>;
+					reg = <0x50>;
+				};
+
+				eeprom@51 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x0c>;
+					reg = <0x51>;
+				};
+
+				eeprom@52 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x01>;
+					reg = <0x52>;
+				};
+
+				eeprom@53 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x03>;
+					reg = <0x53>;
+				};
+			};
+
+			i2c-bus@1 {
+				reg = <0x01>;
+				#size-cells = <0x00>;
+				#address-cells = <0x01>;
+				compatible = "ibm,opal-i2c\0ibm,power8-i2c-port\0ibm,power9-i2c-port";
+				bus-frequency = <0x61a80>;
+
+				eeprom@54 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x0d>;
+					reg = <0x54>;
+				};
+
+				eeprom@55 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x0e>;
+					reg = <0x55>;
+				};
+
+				eeprom@56 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x10>;
+					reg = <0x56>;
+				};
+
+				eeprom@57 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x00>;
+					reg = <0x57>;
+				};
+			};
+		};
+
+		nmmu@5012c40 {
+			compatible = "ibm,power9-nest-mmu";
+			reg = <0x5012c40 0x20>;
+		};
+
+		nx@2010000 {
+			compatible = "ibm,power9-nx";
+			reg = <0x2010000 0x4000>;
+		};
+
+		pbcq@4010c00 {
+			reg = <0x4010c00 0x100 0xd010800 0x200>;
+			compatible = "ibm,power9-pbcq";
+			ibm,pec-index = <0x00>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+			ibm,hub-id = <0x00>;
+
+			stack@0 {
+				reg = <0x00>;
+				ibm,phb-index = <0x00>;
+				compatible = "ibm,power9-phb-stack";
+				status = "okay";
+				ibm,lane-eq = <0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x77777777 0x77777777 0x77777777 0x77777777>;
+			};
+		};
+
+		pbcq@4011000 {
+			reg = <0x4011000 0x100 0xe010800 0x200>;
+			compatible = "ibm,power9-pbcq";
+			ibm,pec-index = <0x01>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+			ibm,hub-id = <0x00>;
+
+			stack@0 {
+				reg = <0x00>;
+				ibm,phb-index = <0x01>;
+				compatible = "ibm,power9-phb-stack";
+				status = "okay";
+				ibm,lane-eq = <0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x77777777 0x77777777 0x77777777 0x77777777>;
+			};
+
+			stack@1 {
+				reg = <0x01>;
+				ibm,phb-index = <0x02>;
+				compatible = "ibm,power9-phb-stack";
+				status = "okay";
+				ibm,lane-eq = <0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x77777777 0x77777777 0x77777777 0x77777777>;
+			};
+		};
+
+		pbcq@4011400 {
+			reg = <0x4011400 0x100 0xf010800 0x200>;
+			compatible = "ibm,power9-pbcq";
+			ibm,pec-index = <0x02>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+			ibm,hub-id = <0x00>;
+
+			stack@0 {
+				reg = <0x00>;
+				ibm,phb-index = <0x03>;
+				compatible = "ibm,power9-phb-stack";
+				status = "okay";
+				ibm,lane-eq = <0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x77777777 0x77777777 0x77777777 0x77777777>;
+			};
+
+			stack@1 {
+				reg = <0x01>;
+				ibm,phb-index = <0x04>;
+				compatible = "ibm,power9-phb-stack";
+				status = "okay";
+				ibm,lane-eq = <0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x77777777 0x77777777 0x77777777 0x77777777>;
+			};
+
+			stack@2 {
+				reg = <0x02>;
+				ibm,phb-index = <0x05>;
+				compatible = "ibm,power9-phb-stack";
+				status = "okay";
+				ibm,lane-eq = <0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x54545454 0x77777777 0x77777777 0x77777777 0x77777777>;
+			};
+		};
+
+		psihb@5012900 {
+			reg = <0x5012900 0x100>;
+			compatible = "ibm,power9-psihb-x\0ibm,psihb-x";
+		};
+
+		vas@3011800 {
+			reg = <0x3011800 0x300>;
+			compatible = "ibm,power9-vas-x";
+			ibm,vas-id = <0x00>;
+		};
+
+		xive@5013000 {
+			reg = <0x5013000 0x300>;
+			compatible = "ibm,power9-xive-x";
+			force-assign-bars;
+		};
+	};
+};
