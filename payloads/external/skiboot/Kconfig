@@ -14,7 +14,7 @@ config SKIBOOT_REVISION
 
 config SKIBOOT_DEVICE_TREE
 	string "skiboot device-tree"
-	default "src/mainboard/raptor-cs/talos-2/talos_ii_device-tree_stripped.dts" if BOARD_RAPTOR_CS_TALOS_2
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/devicetree.dts"
 	help
 	  Filename of device-tree passed to the skiboot.
 
