@@ -4,3 +4,4 @@ ramstage-y += power9.c
 
 bootblock-y += scom.c
 romstage-y += scom.c
+ramstage-y += scom.c
