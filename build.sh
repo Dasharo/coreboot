@@ -9,7 +9,7 @@ function usage {
     echo -e "\tfw6  - build Protectli FW6  coreboot image"
     echo -e "\tfw6d - build Protectli FW6D coreboot image"
     echo -e "\tfw6e - build Protectli FW6E coreboot image"
-    echo -e "\tfw4_glk - build Protectli FW4 GLK coreboot image"
+    echo -e "\tvp2410 - build Protectli VP2410 coreboot image"
     exit 1
 }
 
@@ -110,7 +110,7 @@ function buildFW6Image {
 	sha256sum protectli_$1.rom > protectli_$1.rom.sha256
 }
 
-function buildFW4GLKImage {
+function buildVP2410Image {
 
 	if [ ! -d 3rdparty/blobs/mainboard ]; then
 		git submodule update --init --checkout
@@ -145,19 +145,7 @@ function buildFW4GLKImage {
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
-		/bin/bash -c "make olddefconfig && make && \
-		./build/cbfstool build/coreboot.rom add-int -i 0x85 -n etc/boot-menu-key && \
-		./build/cbfstool build/coreboot.rom add-int -i 1000 -n etc/usb-time-sigatt && \
-		./build/cbfstool build/coreboot.rom add-int -i 6000 -n etc/boot-menu-wait && \
-		echo \"Press F11 key for boot menu\" > build/message.txt &&
-		./build/cbfstool build/coreboot.rom add -f build/message.txt -n etc/boot-menu-message -t raw && \
-		echo \"/pci@i0cf8/*@12/drive@0/disk@0\" > build/bootorder.txt && \
-		echo \"/pci@i0cf8/usb@15/usb-*@1\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/usb@15/usb-*@2\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/usb@15/usb-*@3\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/*@12/drive@1/disk@0\" >> build/bootorder.txt && \
-		./build/cbfstool build/coreboot.rom add -f build/bootorder.txt -n bootorder -t raw && \
-		./build/cbfstool build/coreboot.rom print"
+		/bin/bash -c "make olddefconfig && make"
 
 	cp build/coreboot.rom protectli_$1_DF_$version.rom
 	if [ $? -eq 0 ]; then
@@ -298,8 +286,8 @@ case "$CMD" in
     "fw6e")
         buildFW6DImage "fw6e"
         ;;
-    "fw4_glk")
-        buildFW4GLKImage "fw4_glk"
+    "vp2410")
+        buildVP2410Image "vp2410"
         ;;
     "fw6_cml")
         buildFW6CMLImage "fw6_cml"
