@@ -13,7 +13,6 @@
 #define LPC_FLASH_MIN (MMIO_GROUP0_CHIP0_LPC_BASE_ADDR + LPCHC_FW_SPACE)
 #define LPC_FLASH_TOP (LPC_FLASH_MIN + FW_SPACE_SIZE)
 
-/* TODO: at some point we may have to change it to a bigger partition (HBI?) */
 #define CBFS_PARTITION_NAME "HBI"
 
 #define MEMD_PARTITION_NAME "MEMD"
