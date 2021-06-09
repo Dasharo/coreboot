@@ -72,6 +72,7 @@ RUN \
 		rsync \
 		shellcheck \
 		subversion \
+		u-boot-tools \
 		unifont \
 		uuid-dev \
 		vim-common \
