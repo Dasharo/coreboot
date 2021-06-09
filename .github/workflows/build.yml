@@ -39,8 +39,12 @@ jobs:
         git log -n 1
         git log --graph --decorate --pretty=oneline --abbrev-commit -n 20
 
-    - name: Run upstream coreboot tests
-      run: make -j $(nproc) what-jenkins-does
+    # Run build for just one random x86 mainboard so we can finish the build on
+    # public runnner. Building all of them takes 4+ hours and we run out of
+    # space. This already should give us some idea if we break something in
+    # common code.
+    - name: Run upstream coreboot tests (for one mainboard)
+      run: make -j $(nproc) what-jenkins-does JENKINS_ABUILD_OPT="-t intel/glkrvp"
 
     - name: Build Talos II target (bootblock in PNOR)
       run: |
