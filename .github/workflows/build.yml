@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     container:
-      image: coreboot/coreboot-sdk:65718760fa
+      image: 3mdeb/coreboot-sdk:c0c8be290dd9
       options: --user 1001:1001 --workdir /home/coreboot
 
     steps:
