@@ -535,6 +535,24 @@ static void glk_fsp_silicon_init_params_cb(
 	uint8_t port;
 	struct device *dev;
 
+	if (cfg->usb_config_override) {
+		for (port = 0; port < APOLLOLAKE_USB2_PORT_MAX; port++) {
+			if (!cfg->usb2_port[port].enable)
+				continue;
+
+			silconfig->PortUsb20Enable[port] = 1;
+			silconfig->PortUs20bOverCurrentPin[port] = cfg->usb2_port[port].oc_pin;
+		}
+
+		for (port = 0; port < APOLLOLAKE_USB3_PORT_MAX; port++) {
+			if (!cfg->usb3_port[port].enable)
+				continue;
+
+			silconfig->PortUsb30Enable[port] = 1;
+			silconfig->PortUs30bOverCurrentPin[port] = cfg->usb3_port[port].oc_pin;
+		}
+	}
+
 	for (port = 0; port < APOLLOLAKE_USB2_PORT_MAX; port++) {
 		if (!cfg->usb2eye[port].Usb20OverrideEn)
 			continue;
