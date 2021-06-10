@@ -36,5 +36,7 @@ distclean:
 	rm -rf $(build_dir)
 
 clean:
-	$(MAKE) -C $(skiboot_dir) CROSS=powerpc64-linux-gnu- RM="rm -f" clean > /dev/null
+	if [ -d $(skiboot_dir) ]; then \
+		$(MAKE) -C $(skiboot_dir) CROSS=powerpc64-linux-gnu- RM="rm -f" clean > /dev/null; \
+	fi
 	rm -rf $(build_dir)
