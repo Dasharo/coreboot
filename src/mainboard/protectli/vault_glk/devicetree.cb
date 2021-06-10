@@ -1,9 +1,9 @@
 chip soc/intel/apollolake
-	# Assign first CLKREQ numbersto the used ports, rest don't care.
+	# Assign first CLKREQ numbers to the used ports, rest don't care.
 	# FSP sets the CLKREQ despite passing PcieRpClkReqSupported as disabled
 	# So we must use the only 4 CLKREQ pins we have for the used ports
-	register "pcie_rp_clkreq_pin[0]" = "4"
-	register "pcie_rp_clkreq_pin[1]" = "5"
+	register "pcie_rp_clkreq_pin[0]" = "CLKREQ_DISABLED"
+	register "pcie_rp_clkreq_pin[1]" = "CLKREQ_DISABLED"
 	register "pcie_rp_clkreq_pin[2]" = "0"
 	register "pcie_rp_clkreq_pin[3]" = "1"
 	register "pcie_rp_clkreq_pin[4]" = "2"
@@ -49,10 +49,13 @@ chip soc/intel/apollolake
 	register "dptf_enable" = "1"
 	register "enable_vtd" = "1"
 
-	# PL1 override: 7.5W setting gives a run-time 6W actual
-	# Set RAPL PL2 to 15W.
+	# Configure PmicPmcIpcCtrl for PMC to program PMIC PCH_PWROK delay
+	# from 100ms to 10ms.
+	# PWROKDELAY[2:0]: 000=2.5ms, 001=5.0ms, 010=10ms, 011=15ms, 100=20ms,
+	#                  101=50ms, 110=75ms, 111=100ms (default)
+	register "PmicPmcIpcCtrl" = "0x5e4302f8"
 	register "power_limits_config" = "{
-		.tdp_pl1_override = 7,
+		.tdp_pl1_override = 10,
 		.tdp_pl2_override = 15,
 	}"
 
@@ -80,22 +83,32 @@ chip soc/intel/apollolake
 	register "tcc_offset" = "5" # TCC of 95C
 	register "serirq_mode" = "SERIRQ_CONTINUOUS"
 
-	register "usb2_port[0]" = "PORT_EN(OC_SKIP)"
-	register "usb2_port[1]" = "PORT_EN(OC_SKIP)"
-	register "usb2_port[2]" = "PORT_EN(OC_SKIP)"
-	register "usb2_port[3]" = "PORT_EN(OC_SKIP)"
-	register "usb2_port[4]" = "PORT_EN(OC_SKIP)"
+	# USB configuration
+	register "usb_config_override" = "1"
+
+	# Disable compliance mode
+	register "DisableComplianceMode" = "1"
+	register "disable_xhci_lfps_pm" = "0"
+
+	# FSP UPD to modify the Integrated Filter (IF) value
+	# Set it to default value: 0x12
+	register "ModPhyIfValue" = "0x12"
+
+	register "usb2_port[0]" = "PORT_EN(OC_SKIP)"	# USB3.0 Type A
+	register "usb2_port[1]" = "PORT_EN(OC_SKIP)"	# USB3.0 Type A
+	register "usb2_port[2]" = "PORT_EN(OC_SKIP)"	# USB3.0 Type C
+	register "usb2_port[3]" = "PORT_EN(OC_SKIP)"	# M.2 WiFi
+	register "usb2_port[4]" = "PORT_EN(OC_SKIP)"	# mPCIe LTE
 	register "usb2_port[5]" = "PORT_DIS"
 	register "usb2_port[6]" = "PORT_DIS"
 	register "usb2_port[7]" = "PORT_DIS"
 
-	register "usb3_port[0]" = "PORT_EN(OC_SKIP)"		# USB3.0
-	register "usb3_port[1]" = "PORT_EN(OC_SKIP)"		# USB3.0
-	register "usb3_port[2]" = "PORT_EN(OC_SKIP)"		# Type C
-	register "usb3_port[3]" = "PORT_EN(OC_SKIP)"		# mPCie WiFi
-	register "usb3_port[4]" = "PORT_EN(OC_SKIP)"		# LAN4
-	register "usb3_port[5]" = "PORT_EN(OC_SKIP)"		# SATA
-
+	register "usb3_port[0]" = "PORT_EN(OC_SKIP)"	# USB3.0 Type A
+	register "usb3_port[1]" = "PORT_EN(OC_SKIP)"	# USB3.0 Type A
+	register "usb3_port[2]" = "PORT_EN(OC_SKIP)"	# USB3.0 Type C
+	register "usb3_port[3]" = "PORT_DIS"
+	register "usb3_port[4]" = "PORT_DIS"
+	register "usb3_port[5]" = "PORT_DIS"
 
 	device cpu_cluster 0 on
 		device lapic 0 on end
