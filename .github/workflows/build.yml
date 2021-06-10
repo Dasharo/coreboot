@@ -10,6 +10,8 @@ on:
       - talos_2_support
       - squashed_talos_2_support
       - talos_2_support_ramstage
+    tags:
+      - 'dasharo-trustworthy-computing-*'
 
 jobs:
   build:
