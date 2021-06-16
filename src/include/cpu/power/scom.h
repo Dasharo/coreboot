@@ -238,5 +238,12 @@ static inline void scom_or_for_chiplet(chiplet_id_t chiplet, uint64_t addr, uint
 	scom_and_or_for_chiplet(chiplet, addr, ~0, or);
 }
 
+static inline uint8_t get_dd(void)
+{
+	uint64_t val = read_scom(0xF000F);
+	val = ((val >> 52) & 0x0F) | ((val >> 56) & 0xF0);
+	return (uint8_t) val;
+}
+
 #endif /* __ASSEMBLER__ */
 #endif /* CPU_PPC64_SCOM_H */

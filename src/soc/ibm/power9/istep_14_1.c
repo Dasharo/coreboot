@@ -12,7 +12,7 @@ static void fir_unmask(int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int mca_i;
-	const int is_dd20 = pvr_revision() == SPR_PVR_REV(2, 0);
+	const int is_dd20 = get_dd() == 0x20;
 	/* Bits in other registers (act0, mask) are already set properly.
 	MC01.MCBIST.MBA_SCOMFIR.MCBISTFIRACT1
 		  [3]   MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC =  0 // checkstop (0,0,0)

@@ -9,10 +9,6 @@
 
 #define SPR_TB					0x10C
 
-#define SPR_PVR					0x11F
-#define SPR_PVR_REV_MASK			(PPC_BITMASK(52, 55) | PPC_BITMASK(60, 63))
-#define SPR_PVR_REV(maj, min)			(PPC_SHIFT((maj), 55) | PPC_SHIFT((min), 63))
-
 #define SPR_HDEC				0x136
 #define SPR_HRMOR				0x139
 
@@ -75,11 +71,6 @@ static inline uint64_t read_msr(void)
 static inline void write_msr(uint64_t val)
 {
 	asm volatile("mtmsrd %0" :: "r"(val) : "memory");
-}
-
-static inline uint64_t pvr_revision(void)
-{
-	return read_spr(SPR_PVR) & SPR_PVR_REV_MASK;
 }
 
 #endif /* __ASSEMBLER__ */
