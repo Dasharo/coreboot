@@ -81,10 +81,5 @@ static inline void write_msr(uint64_t val)
 	asm volatile("mtmsrd %0" :: "r"(val) : "memory");
 }
 
-static inline uint64_t pvr_revision(void)
-{
-	return read_spr(SPR_PVR) & SPR_PVR_REV_MASK;
-}
-
 #endif /* __ASSEMBLER__ */
 #endif /* CPU_PPC64_SPR_H */
