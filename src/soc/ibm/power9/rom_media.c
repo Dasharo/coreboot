@@ -406,19 +406,17 @@ static void mount_part_from_pnor(const char *part_name,
 			continue;
 
 		base = block_size * e->base;
-		/* This is size of the partition, it includes header and ECC */
+		/* This is size of the partition, it does not include header or ECC */
 		size = e->actual;
 
 		mdev->rdev.ops = &no_ecc_rdev_ops;
 
 		/* Skip PNOR partition header */
 		base += 0x1000;
-		size -= 0x1000;
 		if (e->user.data[0] & FFS_ENRY_INTEG_ECC) {
 			printk(BIOS_DEBUG, "%s partition has ECC\n", part_name);
 			mdev->rdev.ops = &ecc_rdev_ops;
 			base += 0x200;
-			size -= 0x200;
 			size = size / 9 * 8;
 		}
 
