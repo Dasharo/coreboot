@@ -28,6 +28,7 @@ romstage-y += vpd.c
 
 ramstage-y += cbmem.c
 ramstage-y += chip.c
+ramstage-y += homer.c
 ramstage-y += istep_18_11.c
 ramstage-y += istep_18_12.c
 ramstage-y += rom_media.c
