@@ -327,8 +327,12 @@ struct region_device_ops ecc_rdev_ops = {
 	.readat = ecc_readat,
 };
 
-static void mount_part_from_pnor(const char *part_name,
-                                 struct mmap_helper_region_device *mdev)
+/* TODO: move to some header */
+void mount_part_from_pnor(const char *part_name,
+                          struct mmap_helper_region_device *mdev);
+
+void mount_part_from_pnor(const char *part_name,
+                          struct mmap_helper_region_device *mdev)
 {
 	size_t base, size;
 	unsigned int i, block_size, entry_count = 0;

@@ -5,7 +5,9 @@
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
 #include <cpu/power/istep_18.h>
+
 #include "istep_13_scom.h"
+#include "chip.h"
 
 static int dt_platform_fixup(struct device_tree_fixup *fixup,
 			      struct device_tree *tree)
@@ -44,6 +46,7 @@ static inline unsigned long size_k(uint64_t reg)
 static void enable_soc_dev(struct device *dev)
 {
 	int mcs_i, idx = 0;
+	unsigned long top = 0;
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		uint64_t reg;
@@ -52,14 +55,29 @@ static void enable_soc_dev(struct device *dev)
 		/* These registers are undocumented, see istep 14.5. */
 		/* MCS_MCFGP */
 		reg = read_scom_for_chiplet(nest, 0x0501080A);
-		if (reg & PPC_BIT(0))
+		if (reg & PPC_BIT(0)) {
 			ram_resource(dev, idx++, base_k(reg), size_k(reg));
+			if (base_k(reg) + size_k(reg) > top)
+				top = base_k(reg) + size_k(reg);
+		}
 
 		/* MCS_MCFGPM */
 		reg = read_scom_for_chiplet(nest, 0x0501080C);
-		if (reg & PPC_BIT(0))
+		if (reg & PPC_BIT(0)) {
 			ram_resource(dev, idx++, base_k(reg), size_k(reg));
+			if (base_k(reg) + size_k(reg) > top)
+				top = base_k(reg) + size_k(reg);
+		}
 	}
+
+	/*
+	 * Reserve top 4M for HOMER.
+	 *
+	 * TODO: 4M per CPU, hostboot reserves always 8 * 4M.
+	 */
+	top -= 4*1024 /* * num_of_cpus */;
+	reserved_ram_resource(dev, idx++, top, 4*1024);
+	build_homer_image((void *)(top * 1024));
 
 	if (CONFIG(PAYLOAD_FIT_SUPPORT)) {
 		struct device_tree_fixup *dt_fixup;
