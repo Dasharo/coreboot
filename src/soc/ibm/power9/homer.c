@@ -122,6 +122,228 @@ static void build_spge(struct homer_st *homer, struct xip_sgpe_header *sgpe,
 	homer->qpmr.spge.header.aux_len = CACHE_SCOM_AUX_SIZE;
 }
 
+static const uint32_t _SMF = 0x5F534D46; // "_SMF"
+
+static const uint32_t ATTN_OP             = 0x00000200;
+static const uint32_t BLR_OP              = 0x4E800020;
+static const uint32_t SKIP_SPR_REST_INST  = 0x4800001C;
+static const uint32_t MR_R0_TO_R10_OP     = 0x7C0A0378;
+static const uint32_t MR_R0_TO_R21_OP     = 0x7C150378;
+static const uint32_t MR_R0_TO_R9_OP      = 0x7C090378;
+static const uint32_t MTLR_R30_OP         = 0x7FC803A6;
+static const uint32_t MFLR_R30_OP         = 0x7FC802A6;
+
+static const uint32_t init_cpureg_template[] = {
+	0x63000000, /* ori %r24, %r0, 0        */ /* |= spr, key for lookup      */
+	0x7C000278, /* xor %r0, %r0, %r0       */
+	0x64000000, /* oris %r0, %r0, 0        */ /* |= val >> 48                */
+	0x60000000, /* ori %r0, %r0, 0         */ /* |= (val >> 32) & 0x0000FFFF */
+	0x780007C6, /* rldicr %r0, %r0, 32, 31 */
+	0x64000000, /* oris %r0, %r0, 0        */ /* |= (val >> 16) & 0x0000FFFF */
+	0x60000000, /* ori %r0, %r0, 0         */ /* |= val & 0x0000FFFF         */
+	0x7C0003A6, /* mtspr 0, %r0            */ /* |= spr, encoded             */
+};
+
+/*
+ * These SPRs are not described in PowerISA 3.0B.
+ * MSR is not SPR, but self restore code treats it this way.
+ */
+#define SPR_USPRG0				0x1F0
+#define SPR_USPRG1				0x1F1
+#define SPR_URMOR				0x1F9
+#define SPR_SMFCTRL				0x1FF
+#define SPR_LDBAR				0x352
+#define SPR_HID					0x3F0
+#define SPR_MSR					0x7D0
+
+static void add_init_cpureg_entry(uint32_t *base, uint16_t spr, uint64_t val,
+                                  int init)
+{
+	while ((*base != (init_cpureg_template[0] | spr)) && *base != BLR_OP)
+		base++;
+
+	/* Must change next instruction from attn to blr when adding new entry. */
+	if (*base == BLR_OP)
+		*(base + ARRAY_SIZE(init_cpureg_template)) = BLR_OP;
+
+	memcpy(base, init_cpureg_template, sizeof(init_cpureg_template));
+	base[0] |= spr;
+
+	if (init) {
+		base[1] = SKIP_SPR_REST_INST;
+	} else {
+		base[2] |= (val >> 48) & 0xFFFF;
+		base[3] |= (val >> 32) & 0xFFFF;
+		base[5] |= (val >> 16) & 0xFFFF;
+		base[6] |=  val        & 0xFFFF;
+	}
+
+	/* Few exceptions are handled differently. */
+	if (spr == SPR_MSR) {
+		base[7] = MR_R0_TO_R21_OP;
+	} else if (spr == SPR_HRMOR) {
+		base[7] = MR_R0_TO_R10_OP;
+	} else if (spr == SPR_URMOR) {
+		base[7] = MR_R0_TO_R9_OP;
+	} else {
+		base[7] |= ((spr & 0x1F) << 16) | ((spr & 0x3E) << 6);
+	}
+}
+
+static const uint32_t init_save_self_template[] = {
+	0x60000000, /* ori %r0, %r0, 0         */ /* |= i */
+	0x3BFF0020, /* addi %r31, %r31, 0x20   */
+	0x60000000, /* nop (ori %r0, %r0, 0)   */
+};
+
+/* Honestly, I have no idea why saving uses different key than restoring... */
+static void add_init_save_self_entry(uint32_t **ptr, int i)
+{
+	memcpy(*ptr, init_save_self_template, sizeof(init_save_self_template));
+	*ptr += ARRAY_SIZE(init_save_self_template);
+}
+
+static const uint16_t thread_sprs[] = {
+	SPR_CIABR,
+	SPR_DAWR,
+	SPR_DAWRX,
+	SPR_HSPRG0,
+	SPR_LDBAR,
+	SPR_LPCR,
+	SPR_PSSCR,
+	SPR_MSR,
+	SPR_SMFCTRL,
+	SPR_USPRG0,
+	SPR_USPRG1,
+};
+
+static const uint16_t core_sprs[] = {
+	SPR_HRMOR,
+	SPR_HID,
+	SPR_HMEER,
+	SPR_PMCR,
+	SPR_PTCR,
+	SPR_URMOR,
+};
+
+static void build_self_restore(struct homer_st *homer,
+                               struct xip_restore_header *rest, uint8_t dd)
+{
+	/* Assumptions: SMT4 only, SMF available but disabled. */
+	size_t size;
+	uint32_t *ptr;
+
+	/*
+	 * Data in XIP has its first 256 bytes zeroed, reserved for header, so even
+	 * though this is exe part of self restore region, we should copy it to
+	 * header's address.
+	 */
+	size = copy_section(&homer->cpmr.header, &rest->self, rest, dd);
+
+	/* Now, overwrite header. */
+	size = copy_section(&homer->cpmr.header, &rest->cpmr, rest, dd);
+	assert(size <= sizeof(struct cpmr_header));
+
+	/*
+	 * According to comment in p9_hcode_image_build.C it is for Nimbus >= DD22.
+	 * Earlier versions do things differently. For now die(), implement if
+	 * needed.
+	 *
+	 * If _SMF doesn't exist:
+	 * - fill memory from (CPMR + 8k + 256) for 192k with ATTN
+	 * - starting from the beginning of that region change instruction at every
+	 *   2k bytes into BLR
+	 *
+	 * If _SMF exists:
+	 * - fill CPMR.core_self_restore with ATTN instructions
+	 * - for every core:
+	 *   - change every thread's restore first instruction (at 0, 512, 1024,
+	 *     1536 bytes) to BLR
+	 *   - change core's restore first instruction (at 3k) to BLR
+	 */
+	if (*(uint32_t *)&homer->cpmr.exe[0x1300 - sizeof(struct cpmr_header)] !=
+	    _SMF)
+		die("No _SMF magic number in self restore region\n");
+
+	ptr = (uint32_t *)homer->cpmr.core_self_restore;
+	for (size = 0; size < (96 * KiB) / sizeof(uint32_t); size++) {
+		ptr[size] = ATTN_OP;
+	}
+
+	/*
+	 * This loop combines two functions from hostboot:
+	 * initSelfRestoreRegion() and initSelfSaveRestoreEntries(). The second one
+	 * writes only sections for functional cores, code below does it for all.
+	 * This will take more time, but we don't have an easy and fast way of
+	 * checking which cores are functional yet.
+	 */
+	for (int core = 0; core < MAX_CORES; core++) {
+		struct smf_core_self_restore *csr = &homer->cpmr.core_self_restore[core];
+		uint32_t *csa = csr->core_save_area;
+
+		for (int thread = 0; thread < 4; thread++) {
+			csr->thread_restore_area[thread][0] = BLR_OP;
+			uint32_t *tsa = csr->thread_save_area[thread];
+			*tsa++ = MFLR_R30_OP;
+
+			for (int i = 0; i < ARRAY_SIZE(thread_sprs); i++) {
+				/*
+				 * Hostboot uses strange calculation for *_save_area keys.
+				 * I don't know if this is only used by hostboot and save/restore
+				 * code generated by it, or if something else (CME?) requires such
+				 * format. For now leave it as hostboot does it, we can simplify
+				 * this later.
+				 *
+				 * CIABR through MSR:       key =  0..7
+				 * SMFCTRL through USPRG1:  key = 13..15
+				 */
+				int tsa_key = i;
+				if (i > 7)
+					tsa_key += 5;
+
+				add_init_cpureg_entry(csr->thread_restore_area[thread],
+				                      thread_sprs[i], 0, 1);
+				add_init_save_self_entry(&tsa, tsa_key);
+			}
+
+			*tsa++ = MTLR_R30_OP;
+			*tsa++ = BLR_OP;
+		}
+
+		csr->core_restore_area[0] = BLR_OP;
+		*csa++ = MFLR_R30_OP;
+		for (int i = 0; i < ARRAY_SIZE(core_sprs); i++) {
+			add_init_cpureg_entry(csr->core_restore_area, core_sprs[i], 0, 1);
+			/*
+			 * HID through PTCR: key = 9..12
+			 * HRMOR and URMOR are skipped.
+			 */
+			if (core_sprs[i] != SPR_HRMOR && core_sprs[i] != SPR_URMOR)
+				add_init_save_self_entry(&csa, i + 8);
+		}
+
+		*csa++ = MTLR_R30_OP;
+		*csa++ = BLR_OP;
+	}
+
+	/* Populate CPMR header */
+	homer->cpmr.header.fused_mode_status = 0xAA;  // non-fused
+
+	/* For SMF enabled */
+#if 0
+	homer->cpmr.header.urmor_fix = 1;
+#endif
+
+	homer->cpmr.header.self_restore_ver = 2;
+	homer->cpmr.header.stop_api_ver = 2;
+
+	/*
+	 * WARNING: Hostboot filled CME header field with information whether cores
+	 * are fused or not here. However, at this point CME image is not yet
+	 * loaded, so that field will get overwritten.
+	 */
+}
+
 /*
  * This logic is for SMF disabled only!
  */
@@ -145,8 +367,16 @@ void build_homer_image(void *homer_bar)
 	/* First MB of HOMER is unused, we can write OCC image from PNOR there. */
 	rdev_readat(&mdev.rdev, homer_bar, 0, 1 * MiB);
 
+	assert(hw->magic == XIP_MAGIC_HW);
+
 	build_spge(homer, (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
 	           dd);
 
-	//~ hexdump(&homer->qpmr, sgpe->qpmr.size);
+	build_self_restore(homer,
+	                   (struct xip_restore_header *)(homer_bar + hw->restore.offset),
+	                   dd);
+
+	//build_cme(...);
+
+	//hexdump(&homer->qpmr, sgpe->qpmr.size);
 }

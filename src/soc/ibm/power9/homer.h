@@ -156,12 +156,22 @@ struct cpmr_header {
 	uint32_t quad5_pstate_offset;
 } __attribute__((packed, aligned(256)));
 
+struct smf_core_self_restore {
+	uint32_t thread_restore_area[4][512 / sizeof(uint32_t)];
+	uint32_t thread_save_area[4][256 / sizeof(uint32_t)];
+	uint32_t core_restore_area[512 / sizeof(uint32_t)];
+	uint32_t core_save_area[512 / sizeof(uint32_t)];
+};
+
+#define MAX_CORES		24
+
 struct cpmr_st {
 	struct cpmr_header header;
 	uint8_t exe[SELF_RESTORE_REGION_SIZE - sizeof(struct cpmr_header)];
-	/* This is 96kB followed by a padding in hostboot, KISS. */
-	uint8_t core_self_restore[CORE_SCOM_RESTORE_OFFSET
-                                  - SELF_RESTORE_REGION_SIZE];
+	struct smf_core_self_restore core_self_restore[MAX_CORES];
+	uint8_t pad[CORE_SCOM_RESTORE_OFFSET -
+	            (SELF_RESTORE_REGION_SIZE +
+	             MAX_CORES * sizeof(struct smf_core_self_restore))];
 	uint8_t core_scom[CORE_SCOM_RESTORE_SIZE];
 	uint8_t cme_sram_region[CME_SRAM_IMG_SIZE];
 };
