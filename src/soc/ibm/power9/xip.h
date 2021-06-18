@@ -5,6 +5,7 @@
 
 #define XIP_MAGIC_HW      (0x5849502020204857)  // "XIP   HW"
 #define XIP_MAGIC_SGPE    (0x5849502053475045)  // "XIP SGPE"
+#define XIP_MAGIC_RESTORE (0x5849502052455354)  // "XIP REST"
 
 /* All fields are big-endian */
 
@@ -62,6 +63,14 @@ struct xip_sgpe_header {
 	struct xip_section l2_bootloader;
 	struct xip_section hcode;
 	struct xip_section unused[6]; /* Pad to 15 sections. */
+	XIP_HEADER_COMMON_FIELDS_BOTTOM
+};
+
+struct xip_restore_header {
+	XIP_HEADER_COMMON_FIELDS_TOP
+	struct xip_section cpmr;
+	struct xip_section self;
+	struct xip_section unused[8]; /* Pad to 15 sections. */
 	XIP_HEADER_COMMON_FIELDS_BOTTOM
 };
 
