@@ -46,7 +46,7 @@ static inline unsigned long size_k(uint64_t reg)
 static void enable_soc_dev(struct device *dev)
 {
 	int mcs_i, idx = 0;
-	unsigned long top = 0;
+	unsigned long reserved_size, top = 0;
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		uint64_t reg;
@@ -71,12 +71,13 @@ static void enable_soc_dev(struct device *dev)
 	}
 
 	/*
-	 * Reserve top 4M for HOMER.
+	 * Reserve top 8M (OCC common area) + 4M (HOMER).
 	 *
-	 * TODO: 4M per CPU, hostboot reserves always 8 * 4M.
+	 * TODO: 8M + (4M per CPU), hostboot reserves always 8M + 8 * 4M.
 	 */
-	top -= 4*1024 /* * num_of_cpus */;
-	reserved_ram_resource(dev, idx++, top, 4*1024);
+	reserved_size = 8*1024 + 4*1024 /* * num_of_cpus */;
+	top -= reserved_size;
+	reserved_ram_resource(dev, idx++, top, reserved_size);
 	build_homer_image((void *)(top * 1024));
 
 	if (CONFIG(PAYLOAD_FIT_SUPPORT)) {

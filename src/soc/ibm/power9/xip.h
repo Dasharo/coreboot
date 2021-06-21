@@ -74,6 +74,24 @@ struct xip_restore_header {
 	XIP_HEADER_COMMON_FIELDS_BOTTOM
 };
 
+struct xip_cme_header {
+	XIP_HEADER_COMMON_FIELDS_TOP
+	struct xip_section hcode;
+	struct xip_section unused[9]; /* Pad to 15 sections. */
+	XIP_HEADER_COMMON_FIELDS_BOTTOM
+};
+
+struct xip_pgpe_header {
+	XIP_HEADER_COMMON_FIELDS_TOP
+	struct xip_section ppmr;
+	struct xip_section l1_bootloader;
+	struct xip_section l2_bootloader;
+	struct xip_section hcode;
+	struct xip_section aux_task;
+	struct xip_section unused[5]; /* Pad to 15 sections. */
+	XIP_HEADER_COMMON_FIELDS_BOTTOM
+};
+
 #define DD_CONTAINER_MAGIC 0x4444434F // "DDCO"
 
 struct dd_block {
