@@ -34,7 +34,7 @@ static size_t copy_section(void *dst, struct xip_section *section, void *base,
 	die("XIP: Can't find container for DD=%x\n", dd);
 }
 
-static void build_spge(struct homer_st *homer, struct xip_sgpe_header *sgpe,
+static void build_sgpe(struct homer_st *homer, struct xip_sgpe_header *sgpe,
                        uint8_t dd)
 {
 	struct sgpe_img_header *hdr;
@@ -84,6 +84,7 @@ static void build_spge(struct homer_st *homer, struct xip_sgpe_header *sgpe,
 	                                              sgpe.sram_image);
 	homer->qpmr.sgpe.header.img_len = size;
 	assert(size <= SGPE_SRAM_IMG_SIZE);
+	assert(size > (INT_VECTOR_SIZE + sizeof(struct sgpe_img_header)));
 
 	/* Cache SCOM region */
 	homer->qpmr.sgpe.header.scom_offset =
@@ -239,6 +240,7 @@ static void build_self_restore(struct homer_st *homer,
 	 * header's address.
 	 */
 	size = copy_section(&homer->cpmr.header, &rest->self, rest, dd);
+	assert(size > sizeof(struct cpmr_header));
 
 	/* Now, overwrite header. */
 	size = copy_section(&homer->cpmr.header, &rest->cpmr, rest, dd);
@@ -346,6 +348,97 @@ static void build_self_restore(struct homer_st *homer,
 	 */
 }
 
+static void build_cme(struct homer_st *homer, struct xip_cme_header *cme,
+                      uint8_t dd)
+{
+	size_t size;
+	struct cme_img_header *hdr;
+
+	size = copy_section(&homer->cpmr.cme_sram_region, &cme->hcode, cme, dd);
+	assert(size <= CME_SRAM_IMG_SIZE);
+	assert(size > (INT_VECTOR_SIZE + sizeof(struct cme_img_header)));
+
+	hdr = (struct cme_img_header *)
+	      &homer->cpmr.cme_sram_region[INT_VECTOR_SIZE];
+
+	hdr->hcode_offset = 0;
+	hdr->hcode_len = size;
+
+	hdr->pstate_region_offset = 0;
+	hdr->pstate_region_len = 0;
+
+	hdr->cpmr_phy_addr = (uint64_t) homer | 2 * MiB;
+	/* With SMF disabled unsecure HOMER is the same as regular one */
+	hdr->unsec_cpmr_phy_addr = hdr->cpmr_phy_addr;
+
+	hdr->common_ring_offset = hdr->hcode_offset + hdr->hcode_len;
+	hdr->common_ring_len = 0;
+
+	hdr->scom_offset = 0;
+	hdr->scom_len = CORE_SCOM_RESTORE_SIZE / MAX_CORES / 2;
+
+	hdr->core_spec_ring_offset = 0;
+	hdr->max_spec_ring_len = 0;
+}
+
+static void build_pgpe(struct homer_st *homer, struct xip_pgpe_header *pgpe,
+                       uint8_t dd)
+{
+	size_t size;
+	struct pgpe_img_header *hdr;
+
+	/* PPGE header */
+	size = copy_section(&homer->ppmr.header, &pgpe->ppmr, pgpe, dd);
+	assert(size <= PPMR_HEADER_SIZE);
+	/*
+	 * 0xFFF00000 (SRAM base) + 4k (IPC) + 60k (GPE0) + 64k (GPE1) = 0xFFF20000
+	 *
+	 * WARNING: I have no idea if this is constant or depends on PPGE version.
+	 */
+	assert(homer->ppmr.header.sram_region_start == 0xFFF20000);
+	assert(homer->ppmr.header.sram_region_size == PGPE_SRAM_IMG_SIZE +
+	                                              PGPE_AUX_TASK_SIZE +
+	                                              PGPE_OCC_SHARED_SRAM_SIZE);
+
+	/* PPGE L1 bootloader */
+	size = copy_section(homer->ppmr.l1_bootloader, &pgpe->l1_bootloader, pgpe,
+	                    dd);
+	assert(size <= GPE_BOOTLOADER_SIZE);
+	homer->ppmr.header.l1_offset = offsetof(struct ppmr_st, l1_bootloader);
+
+	/* PPGE L2 bootloader */
+	size = copy_section(homer->ppmr.l2_bootloader, &pgpe->l2_bootloader, pgpe,
+	                    dd);
+	assert(size <= GPE_BOOTLOADER_SIZE);
+	homer->ppmr.header.l2_offset = offsetof(struct ppmr_st, l2_bootloader);
+	homer->ppmr.header.l2_len = size;
+
+	/* PPGE HCODE */
+	size = copy_section(homer->ppmr.pgpe_sram_img, &pgpe->hcode, pgpe, dd);
+	assert(size <= PGPE_SRAM_IMG_SIZE);
+	assert(size > (INT_VECTOR_SIZE + sizeof(struct pgpe_img_header)));
+	homer->ppmr.header.hcode_offset = offsetof(struct ppmr_st, pgpe_sram_img);
+	homer->ppmr.header.hcode_len = size;
+
+	/* PPGE auxiliary task */
+	size = copy_section(homer->ppmr.aux_task, &pgpe->aux_task, pgpe, dd);
+	assert(size <= PGPE_AUX_TASK_SIZE);
+	homer->ppmr.header.aux_task_offset = offsetof(struct ppmr_st, aux_task);
+	homer->ppmr.header.aux_task_len = size;
+
+	/* 0x80000000 = HOMER in OCI PBA memory space */
+	homer->ppmr.header.doptrace_offset =
+	                0x80000000 + offsetof(struct homer_st, ppmr.doptrace);
+	homer->ppmr.header.doptrace_len = PGPE_DOPTRACE_SIZE;
+
+	/* Update SRAM image header */
+	hdr = (struct pgpe_img_header *)
+	      &homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE];
+
+	/* SPGE auxiliary functions */
+	hdr->aux_controls = 1 << 24;
+}
+
 /*
  * This logic is for SMF disabled only!
  */
@@ -358,6 +451,10 @@ void build_homer_image(void *homer_bar)
 
 	printk(BIOS_ERR, "DD%2.2x\n", dd);
 
+	/* HOMER must be aligned to 4M because CME HRMOR has bit for 2M set */
+	if (!IS_ALIGNED((uint64_t) homer_bar, 4 * MiB))
+		die("HOMER (%p) is not aligned to 4MB\n", homer_bar);
+
 	memset(homer_bar, 0, 4 * MiB);
 
 	/*
@@ -367,16 +464,20 @@ void build_homer_image(void *homer_bar)
 	 */
 	mount_part_from_pnor("HCODE", &mdev);
 	/* First MB of HOMER is unused, we can write OCC image from PNOR there. */
-	rdev_readat(&mdev.rdev, homer_bar, 0, 1 * MiB);
+	rdev_readat(&mdev.rdev, hw, 0, 1 * MiB);
 
 	assert(hw->magic == XIP_MAGIC_HW);
+	assert(hw->image_size <= 1 * MiB);
 
-	build_spge(homer, (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
+	build_sgpe(homer, (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
 	           dd);
 
 	build_self_restore(homer,
 	                   (struct xip_restore_header *)(homer_bar + hw->restore.offset),
 	                   dd);
 
-	//build_cme(...);
+	build_cme(homer, (struct xip_cme_header *)(homer_bar + hw->cme.offset), dd);
+
+	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
+	           dd);
 }
