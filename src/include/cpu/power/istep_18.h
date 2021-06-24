@@ -4,5 +4,6 @@
 #define CPU_PPC64_ISTEP18_H
 
 void istep_18_11(void);
+void istep_18_12(void);
 
 #endif /* CPU_PPC64_ISTEP18_H */
