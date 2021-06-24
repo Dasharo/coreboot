@@ -363,6 +363,8 @@ void main(void)
 	// istep_14_3();
 	report_istep(14,4);	// no-op
 	istep_14_5();
+	istep_18_11();
+	istep_18_12();
 
 	timestamp_add_now(TS_AFTER_INITRAM);
 
