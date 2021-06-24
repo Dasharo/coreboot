@@ -311,3 +311,5 @@ void istep_13_11(void);
 void istep_13_13(void);
 void istep_14_1(void);
 void istep_14_5(void);
+void istep_18_11(void);
+void istep_18_12(void);
