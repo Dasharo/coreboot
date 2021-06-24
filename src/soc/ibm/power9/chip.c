@@ -44,6 +44,7 @@ static void enable_soc_dev(struct device *dev)
 	}
 
 	istep_18_11();
+	istep_18_12();
 }
 
 struct chip_operations soc_ibm_power9_ops = {
