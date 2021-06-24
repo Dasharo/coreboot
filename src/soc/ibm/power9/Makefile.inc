@@ -25,5 +25,6 @@ romstage-y += timer.c
 ramstage-y += chip.c
 ramstage-y += rom_media.c
 ramstage-y += timer.c
+ramstage-y += istep_18_11.c
 
 endif
