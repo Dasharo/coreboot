@@ -2,6 +2,7 @@
 
 #include <device/device.h>
 #include <cpu/power/istep_13.h>
+#include <cpu/power/istep_18.h>
 #include "istep_13_scom.h"
 
 #define SIZE_MASK	PPC_BITMASK(13,23)
@@ -41,6 +42,8 @@ static void enable_soc_dev(struct device *dev)
 		if (reg & PPC_BIT(0))
 			ram_resource_kb(dev, idx++, base_k(reg), size_k(reg));
 	}
+
+	istep_18_11();
 }
 
 struct chip_operations soc_ibm_power9_ops = {
