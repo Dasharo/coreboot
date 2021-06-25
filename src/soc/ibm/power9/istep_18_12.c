@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 #include <console/console.h>
 #include <cpu/power/istep_18.h>
 #include <timer.h>
