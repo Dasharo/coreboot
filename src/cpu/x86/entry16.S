@@ -43,9 +43,7 @@ _start16bit:
 	cli
 	/* Save the BIST result */
 	movl	%eax, %ebp
-#if !CONFIG(NO_EARLY_BOOTBLOCK_POSTCODES)
 	post_code(POST_RESET_VECTOR_CORRECT)
-#endif
 
 	/* IMMEDIATELY invalidate the translation lookaside buffer (TLB) before
 	 * executing any further code. Even though paging is disabled we
@@ -115,10 +113,24 @@ _start16bit:
 	subw	%ax, %bx
 	lgdtl	%cs:(%bx)
 
+#if CONFIG(INTEL_CBNT_SUPPORT)
+#include <cpu/intel/msr.h>
+	movl	$MSR_BOOT_GUARD_SACM_INFO, %ecx
+	rdmsr
+	andl	$B_BOOT_GUARD_SACM_INFO_NEM_ENABLED, %eax
+	jz	1f
+	movl	%cr0, %eax
+	andl	$0x7FFAFFD1, %eax /* PG,AM,WP,NE,TS,EM,MP = 0 */
+	orl	$0x01, %eax /* PE = 1 */
+	movl	%eax, %cr0
+	jmp	2f
+#endif
+1:
 	movl	%cr0, %eax
 	andl	$0x7FFAFFD1, %eax /* PG,AM,WP,NE,TS,EM,MP = 0 */
 	orl	$0x60000001, %eax /* CD, NW, PE = 1 */
 	movl	%eax, %cr0
+2:
 
 	/* Restore BIST to %eax */
 	movl	%ebp, %eax

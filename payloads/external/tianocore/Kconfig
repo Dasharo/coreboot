@@ -53,6 +53,16 @@ config TIANOCORE_RELEASE
 
 endchoice
 
+if TIANOCORE_UEFIPAYLOAD
+
+config TIANOCORE_CBMEM_LOGGING
+	bool "Enable Tianocore logging to CBMEM"
+	help
+	  Select this option if you want to enable Tianocore logging to CBMEM.
+	  You may want to increase the default cbmem buffer size when selecting
+	  this option, especially if using a debug (vs release) build.
+	  Selecting this option will increase the payload size in CBFS by ~220KB.
+
 config TIANOCORE_BOOTSPLASH_IMAGE
 	bool "Use a custom bootsplash image"
 	help
@@ -71,6 +81,8 @@ config TIANOCORE_BOOTSPLASH_FILE
 
 	  If an absolute path is not given, the path will assumed to be
 	  relative to the coreboot root directory.
+
+endif
 
 config TIANOCORE_BOOT_TIMEOUT
 	int

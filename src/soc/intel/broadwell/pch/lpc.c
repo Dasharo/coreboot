@@ -42,12 +42,6 @@ static void pch_enable_ioapic(struct device *dev)
 	reg32 |= 0x00270000;
 
 	io_apic_write(VIO_APIC_VADDR, 0x01, reg32);
-
-	/*
-	 * Select Boot Configuration register (0x03) and
-	 * use Processor System Bus (0x01) to deliver interrupts.
-	 */
-	io_apic_write(VIO_APIC_VADDR, 0x03, 0x01);
 }
 
 static void enable_hpet(struct device *dev)
@@ -600,16 +594,30 @@ static void pch_lpc_read_resources(struct device *dev)
 	pch_lpc_add_io_resources(dev);
 }
 
+static unsigned long acpi_write_serialio_ssdt(unsigned long current, struct acpi_rsdp *rsdp)
+{
+	printk(BIOS_DEBUG, "ACPI:     * SSDT2\n");
+	acpi_header_t *ssdt = (acpi_header_t *)current;
+	acpi_create_serialio_ssdt(ssdt);
+	current += ssdt->length;
+	acpi_add_table(rsdp, ssdt);
+	return acpi_align_current(current);
+}
+
 static unsigned long broadwell_write_acpi_tables(const struct device *device,
 						 unsigned long current,
 						 struct acpi_rsdp *rsdp)
 {
-	if (CONFIG(INTEL_PCH_UART_CONSOLE))
+	if (CONFIG(SERIALIO_UART_CONSOLE)) {
 		current = acpi_write_dbg2_pci_uart(rsdp, current,
-			(CONFIG_INTEL_PCH_UART_CONSOLE_NUMBER == 1) ?
+			(CONFIG_UART_FOR_CONSOLE == 1) ?
 				PCH_DEV_UART1 : PCH_DEV_UART0,
-			ACPI_ACCESS_SIZE_BYTE_ACCESS);
-	return acpi_write_hpet(device, current, rsdp);
+			ACPI_ACCESS_SIZE_DWORD_ACCESS);
+	}
+	current = acpi_write_hpet(device, current, rsdp);
+	current = acpi_align_current(current);
+	current = acpi_write_serialio_ssdt(current, rsdp);
+	return current;
 }
 
 static struct device_operations device_ops = {

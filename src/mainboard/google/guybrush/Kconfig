@@ -16,6 +16,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select DRIVERS_GENERIC_GPIO_KEYS
 	select DRIVERS_I2C_GENERIC
 	select DRIVERS_I2C_HID
+	select DRIVERS_PCIE_RTD3_DEVICE
 	select DRIVERS_UART_ACPI
 	select DRIVERS_WIFI_GENERIC
 	select EC_GOOGLE_CHROMEEC
@@ -25,6 +26,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select ELOG
 	select ELOG_GSMI
 	select FW_CONFIG
+	select FW_CONFIG_SOURCE_CHROMEEC_CBI
 	select GOOGLE_SMBIOS_MAINBOARD_VERSION
 	select HAVE_ACPI_RESUME
 	select HAVE_EM100_SUPPORT
@@ -46,6 +48,9 @@ config VBOOT
 	select VBOOT_LID_SWITCH
 	select VBOOT_SEPARATE_VERSTAGE
 	select VBOOT_STARTS_IN_BOOTBLOCK
+
+config VBOOT_STARTS_IN_BOOTBLOCK
+	select NO_EARLY_BOOTBLOCK_POSTCODES
 
 config VBOOT_VBNV_OFFSET
 	hex
@@ -76,6 +81,10 @@ config DRIVER_TPM_I2C_BUS
 config DRIVER_TPM_I2C_ADDR
 	hex
 	default 0x50
+
+config AMDFW_CONFIG_FILE
+	string
+	default "src/mainboard/google/guybrush/variants/baseboard/amdfw.cfg"
 
 config EFS_SPI_READ_MODE
 	int

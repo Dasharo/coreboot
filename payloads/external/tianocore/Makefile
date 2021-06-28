@@ -30,9 +30,13 @@ else
 BUILD_TYPE=RELEASE
 endif
 
+ifeq ($(CONFIG_TIANOCORE_CBMEM_LOGGING),y)
+CBMEM=-D USE_CBMEM_FOR_CONSOLE=TRUE
+endif
+
 TIMEOUT=-D PLATFORM_BOOT_TIMEOUT=$(CONFIG_TIANOCORE_BOOT_TIMEOUT)
 
-BUILD_STR=-q -a IA32 -a X64 -p UefiPayloadPkg/UefiPayloadPkg.dsc -t COREBOOT -b $(BUILD_TYPE) $(TIMEOUT) $(build_flavor)
+BUILD_STR=-q -a IA32 -a X64 -p UefiPayloadPkg/UefiPayloadPkg.dsc -t COREBOOT -b $(BUILD_TYPE) $(TIMEOUT) $(build_flavor) $(CBMEM)
 
 all: clean build
 
@@ -90,7 +94,7 @@ build: update checktools
 			cat ../tools_def.txt >> $(project_dir)/Conf/tools_def.txt; \
 		fi; \
 		build $(BUILD_STR); \
-		mv $(project_dir)/Build/$(bootloader)*/*/FV/UEFIPAYLOAD.fd $(project_dir)/Build/UEFIPAYLOAD.fd; \
+		mv $(project_dir)/Build/UefiPayloadPkg*/*/FV/UEFIPAYLOAD.fd $(project_dir)/Build/UEFIPAYLOAD.fd; \
 		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true
 
 clean:

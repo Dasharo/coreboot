@@ -368,8 +368,8 @@ void pmc_clear_prsts(void)
 	/* Read PMC base address from soc */
 	pmc_bar = soc_read_pmc_base();
 
-	prsts = read32((void *)(pmc_bar + PRSTS));
-	write32((void *)(pmc_bar + PRSTS), prsts);
+	prsts = read32p(pmc_bar + PRSTS);
+	write32p(pmc_bar + PRSTS, prsts);
 
 	soc_clear_pm_registers(pmc_bar);
 }
@@ -559,7 +559,7 @@ void pmc_gpe_init(void)
 	 */
 	if (dw0 == dw1 || dw1 == dw2) {
 		printk(BIOS_INFO, "PMC: Using default GPE route.\n");
-		gpio_cfg = read32((void *)pmc_bar + GPIO_GPE_CFG);
+		gpio_cfg = read32p(pmc_bar + GPIO_GPE_CFG);
 
 		dw0 = (gpio_cfg >> GPE0_DW_SHIFT(0)) & GPE0_DWX_MASK;
 		dw1 = (gpio_cfg >> GPE0_DW_SHIFT(1)) & GPE0_DWX_MASK;
@@ -570,10 +570,10 @@ void pmc_gpe_init(void)
 		gpio_cfg |= (uint32_t) dw2 << GPE0_DW_SHIFT(2);
 	}
 
-	gpio_cfg_reg = read32((void *)pmc_bar + GPIO_GPE_CFG) & ~gpio_cfg_mask;
+	gpio_cfg_reg = read32p(pmc_bar + GPIO_GPE_CFG) & ~gpio_cfg_mask;
 	gpio_cfg_reg |= gpio_cfg & gpio_cfg_mask;
 
-	write32((void *)pmc_bar + GPIO_GPE_CFG, gpio_cfg_reg);
+	write32p(pmc_bar + GPIO_GPE_CFG, gpio_cfg_reg);
 
 	/* Set the routes in the GPIO communities as well. */
 	gpio_route_gpe(dw0, dw1, dw2);
@@ -581,31 +581,38 @@ void pmc_gpe_init(void)
 
 void pmc_set_power_failure_state(const bool target_on)
 {
-	bool on;
-
 	const unsigned int state = get_uint_option("power_on_after_fail",
 					 CONFIG_MAINBOARD_POWER_FAILURE_STATE);
 
+	/*
+	 * On the shutdown path (target_on == false), we only need to
+	 * update the register for MAINBOARD_POWER_STATE_PREVIOUS. For
+	 * all other cases, we don't write the register to avoid clob-
+	 * bering the value set on the boot path. This is necessary,
+	 * for instance, when we can't access the option backend in SMM.
+	 */
+
 	switch (state) {
 	case MAINBOARD_POWER_STATE_OFF:
+		if (!target_on)
+			break;
 		printk(BIOS_INFO, "Set power off after power failure.\n");
-		on = false;
+		pmc_soc_set_afterg3_en(false);
 		break;
 	case MAINBOARD_POWER_STATE_ON:
+		if (!target_on)
+			break;
 		printk(BIOS_INFO, "Set power on after power failure.\n");
-		on = true;
+		pmc_soc_set_afterg3_en(true);
 		break;
 	case MAINBOARD_POWER_STATE_PREVIOUS:
 		printk(BIOS_INFO, "Keep power state after power failure.\n");
-		on = target_on;
+		pmc_soc_set_afterg3_en(target_on);
 		break;
 	default:
 		printk(BIOS_WARNING, "WARNING: Unknown power-failure state: %d\n", state);
-		on = false;
 		break;
 	}
-
-	pmc_soc_set_afterg3_en(on);
 }
 
 /* This function returns the highest assertion duration of the SLP_Sx assertion widths */

@@ -78,7 +78,7 @@ enum timestamp_id {
 	TS_END_COPYVPD_RO = 551,
 	TS_END_COPYVPD_RW = 552,
 
-	/* 900-920 reserved for vendorcode extensions (900-940: AMD AGESA) */
+	/* 900-940 reserved for vendorcode extensions (900-940: AMD) */
 	TS_AGESA_INIT_RESET_START = 900,
 	TS_AGESA_INIT_RESET_DONE = 901,
 	TS_AGESA_INIT_EARLY_START = 902,
@@ -99,6 +99,10 @@ enum timestamp_id {
 	TS_AGESA_S3_LATE_DONE = 917,
 	TS_AGESA_S3_FINAL_START = 918,
 	TS_AGESA_S3_FINAL_DONE = 919,
+	TS_AMD_APOB_READ_START = 920,
+	TS_AMD_APOB_ERASE_START = 921,
+	TS_AMD_APOB_WRITE_START = 922,
+	TS_AMD_APOB_DONE = 923,
 
 	/* 940-950 reserved for vendorcode extensions (940-950: Intel ME) */
 	TS_ME_INFORM_DRAM_WAIT = 940,
@@ -119,6 +123,8 @@ enum timestamp_id {
 	TS_FSP_AFTER_END_OF_FIRMWARE = 961,
 	TS_FSP_MULTI_PHASE_SI_INIT_START = 962,
 	TS_FSP_MULTI_PHASE_SI_INIT_END = 963,
+	TS_FSP_MEMORY_INIT_LOAD = 970,
+	TS_FSP_SILICON_INIT_LOAD = 971,
 
 	/* 1000+ reserved for payloads (1000-1200: ChromeOS depthcharge) */
 
@@ -176,7 +182,7 @@ static const struct timestamp_id_to_name {
 	{ TS_CBMEM_POST,	"cbmem post" },
 	{ TS_WRITE_TABLES,	"write tables" },
 	{ TS_FINALIZE_CHIPS,	"finalize chips" },
-	{ TS_LOAD_PAYLOAD,	"load payload" },
+	{ TS_LOAD_PAYLOAD,	"starting to load payload" },
 	{ TS_ACPI_WAKE_JUMP,	"ACPI wake jump" },
 	{ TS_SELFBOOT_JUMP,	"selfboot jump" },
 	{ TS_DELAY_START,	"Forced delay start" },
@@ -220,7 +226,7 @@ static const struct timestamp_id_to_name {
 	{ TS_KERNEL_DECOMPRESSION, "starting kernel decompression/relocation" },
 	{ TS_START_KERNEL,	"jumping to kernel" },
 
-	/* AMD AGESA related timestamps */
+	/* AMD related timestamps */
 	{ TS_AGESA_INIT_RESET_START,	"calling AmdInitReset" },
 	{ TS_AGESA_INIT_RESET_DONE,	"back from AmdInitReset" },
 	{ TS_AGESA_INIT_EARLY_START,	"calling AmdInitEarly" },
@@ -241,6 +247,10 @@ static const struct timestamp_id_to_name {
 	{ TS_AGESA_S3_LATE_DONE,	"back from AmdS3LateRestore" },
 	{ TS_AGESA_S3_FINAL_START,	"calling AmdS3FinalRestore" },
 	{ TS_AGESA_S3_FINAL_DONE,	"back from AmdS3FinalRestore" },
+	{ TS_AMD_APOB_READ_START,	"starting APOB read" },
+	{ TS_AMD_APOB_ERASE_START,	"starting APOB erase" },
+	{ TS_AMD_APOB_WRITE_START,	"starting APOB write" },
+	{ TS_AMD_APOB_DONE,		"finished APOB" },
 
 	/* Intel ME related timestamps */
 	{ TS_ME_INFORM_DRAM_WAIT,	"waiting for ME acknowledgement of raminit"},
@@ -261,6 +271,10 @@ static const struct timestamp_id_to_name {
 	{ TS_FSP_BEFORE_END_OF_FIRMWARE, "calling FspNotify(EndOfFirmware)" },
 	{ TS_FSP_AFTER_END_OF_FIRMWARE,
 		"returning from FspNotify(EndOfFirmware)" },
+
+	{ TS_FSP_MEMORY_INIT_LOAD, "loading FSP-M" },
+	{ TS_FSP_SILICON_INIT_LOAD, "loading FSP-S" },
+
 	{ TS_START_POSTCAR,	"start of postcar" },
 	{ TS_END_POSTCAR,	"end of postcar" },
 };

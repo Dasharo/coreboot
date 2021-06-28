@@ -1,5 +1,6 @@
 ifeq ($(CONFIG_INTEL_CBNT_SUPPORT),y)
 
+all-y += logging.c
 ramstage-y += cmos.c
 
 # As specified in Intel Trusted Execution Technology and Boot Guard Server BIOS
@@ -35,7 +36,7 @@ $(CBNT_PROV):
 	cd 3rdparty/intel-sec-tools; \
 	GO111MODULE=on go mod download; \
 	GO111MODULE=on go mod verify; \
-	GO111MODULE=on go build -o $(top)/$@ cmd/cbnt-prov/*.go
+	GO111MODULE=on go build -o $(abspath $@) cmd/cbnt-prov/*.go
 else
 $(CBNT_PROV): $(call strip_quotes, $(CONFIG_INTEL_CBNT_PROV_EXTERNAL_BIN_PATH))
 	cp $< $@
@@ -60,7 +61,6 @@ $(obj)/bpm_unsigned.bin: $(obj)/coreboot.rom $(CBNT_PROV)
 				 --ibbflags=$(CONFIG_INTEL_CBNT_IBB_FLAGS) \
 				 --entrypoint=$(shell printf "%d" 0xfffffff0) \
 				 --ibbhash=$(PK_HASH_ALG_SHA256),$(PK_HASH_ALG_SHA1),$(PK_HASH_ALG_SHA384) \
-				 --coreboot \
 				 --sinitmin=$(CONFIG_INTEL_CBNT_SINIT_SVN) \
 				 --txtflags=0 \
 				 --powerdowninterval=$(CONFIG_INTEL_CBNT_PD_INTERVAL) \

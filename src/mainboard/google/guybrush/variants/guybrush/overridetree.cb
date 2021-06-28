@@ -33,6 +33,9 @@ end
 
 chip soc/amd/cezanne
 	device domain 0 on
+		device ref gpp_bridge_2 on
+			probe WWAN WWAN_FM350GL
+		end # WWAN
 	end # domain
 
 	register "slow_ppt_limit_mW"         = "25000"
@@ -132,6 +135,7 @@ chip soc/amd/cezanne
 			register "hid" = ""10EC1019""
 			register "desc" = ""Realtek SPK AMP L""
 			register "uid" = "0"
+			register "probed" = "1"
 			device i2c 28 on end
 		end
 		chip drivers/i2c/generic
@@ -139,6 +143,13 @@ chip soc/amd/cezanne
 			register "desc" = ""Realtek SPK AMP R""
 			register "uid" = "1"
 			device i2c 29 on end
+		end
+		chip drivers/i2c/generic
+			register "hid" = ""10EC1019""
+			register "desc" = ""Realtek SPK AMP L1""
+			register "uid" = "2"
+			register "probed" = "1"
+			device i2c 2a on end
 		end
 	end # I2C2
 
@@ -151,7 +162,9 @@ chip soc/amd/cezanne
 			register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPIO_21)"
 			register "wake" = "GEVENT_5"
 			register "uart" = "ACPI_UART_RAW_DEVICE(3000000, 64)"
-			device generic 0 on end
+			device generic 0 on
+				probe FP FP_PRESENT
+			end
 		end
 	end
 

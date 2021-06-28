@@ -36,6 +36,68 @@ static bool devtree_gfx_hda_dev_enabled(void)
 	return gfx_hda_dev->enabled;
 }
 
+static const struct device_path hda_path[] = {
+	{
+		.type = DEVICE_PATH_PCI,
+		.pci.devfn = PCIE_ABC_A_DEVFN
+	},
+	{
+		.type = DEVICE_PATH_PCI,
+		.pci.devfn = HD_AUDIO_DEVFN
+	},
+};
+
+static bool devtree_hda_dev_enabled(void)
+{
+	const struct device *hda_dev;
+
+	hda_dev = find_dev_nested_path(pci_root_bus(), hda_path, ARRAY_SIZE(hda_path));
+
+	if (!hda_dev)
+		return false;
+
+	return hda_dev->enabled;
+}
+
+static const struct device_path sata0_path[] = {
+	{
+		.type = DEVICE_PATH_PCI,
+		.pci.devfn = PCIE_GPP_B_DEVFN
+	},
+	{
+		.type = DEVICE_PATH_PCI,
+		.pci.devfn = SATA0_DEVFN
+	},
+};
+
+static const struct device_path sata1_path[] = {
+	{
+		.type = DEVICE_PATH_PCI,
+		.pci.devfn = PCIE_GPP_B_DEVFN
+	},
+	{
+		.type = DEVICE_PATH_PCI,
+		.pci.devfn = SATA1_DEVFN
+	},
+};
+
+static bool devtree_sata_dev_enabled(void)
+{
+	const struct device *ahci0_dev, *ahci1_dev;
+
+	ahci0_dev = find_dev_nested_path(pci_root_bus(), sata0_path, ARRAY_SIZE(sata0_path));
+	ahci1_dev = find_dev_nested_path(pci_root_bus(), sata1_path, ARRAY_SIZE(sata1_path));
+
+	if (!ahci0_dev || !ahci1_dev)
+		return false;
+
+	return ahci0_dev->enabled || ahci1_dev->enabled;
+}
+
+__weak void mb_pre_fspm(void)
+{
+}
+
 static void fill_dxio_descriptors(FSP_M_CONFIG *mcfg,
 			const fsp_dxio_descriptor *descs, size_t num)
 {
@@ -163,6 +225,8 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	mcfg->pspp_policy = config->pspp_policy;
 
 	mcfg->enable_nb_azalia = devtree_gfx_hda_dev_enabled();
+	mcfg->hda_enable = devtree_hda_dev_enabled();
+	mcfg->sata_enable = devtree_sata_dev_enabled();
 
 	if (config->usb_phy_custom)
 		mcfg->usb_phy = (struct usb_phy_config *)&config->usb_phy;
@@ -171,4 +235,5 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 
 	fsp_fill_pcie_ddi_descriptors(mcfg);
 	fsp_assign_ioapic_upds(mcfg);
+	mb_pre_fspm();
 }
