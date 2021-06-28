@@ -15,11 +15,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    container:
-      image: 3mdeb/coreboot-sdk:mkimage
-      options: --user 1001:1001 --workdir /home/coreboot
-
+    runs-on: [self-hosted, builder]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -46,13 +42,20 @@ jobs:
     # space. This already should give us some idea if we break something in
     # common code.
     - name: Run upstream coreboot tests (for one mainboard)
-      run: make -j $(nproc) what-jenkins-does JENKINS_ABUILD_OPT="-t intel/glkrvp"
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot 3mdeb/coreboot-sdk:mkimage << EOF
+        make -j $(nproc) what-jenkins-does JENKINS_ABUILD_OPT="-t intel/glkrvp"
+        EOF
 
     - name: Build Talos II target (bootblock in PNOR)
       run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot 3mdeb/coreboot-sdk:mkimage << EOF
         cp configs/config.raptor-cs-talos-2 .config
         make olddefconfig
         make -j $(nproc)
+        EOF
 
     - name: Save Talos II artifacts
       uses: actions/upload-artifact@v2
@@ -65,10 +68,13 @@ jobs:
 
     - name: Build Talos II target (bootblock in SEEPROM)
       run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot 3mdeb/coreboot-sdk:mkimage << EOF
         make clean
         cp configs/config.raptor-cs-talos-2-bootblock-in-seeprom .config
         make olddefconfig
         make -j $(nproc)
+        EOF
 
   build-freebsd:
     runs-on: macos-latest
