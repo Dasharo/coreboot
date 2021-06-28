@@ -2,12 +2,10 @@
 
 #include <device/mmio.h>
 #include <device/pci_ops.h>
-#include <acpi/acpi_gnvs.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <soc/device_nvs.h>
 #include <soc/pci_devs.h>
 #include <soc/pch.h>
 #include <soc/ramstage.h>
@@ -15,6 +13,7 @@
 #include <soc/serialio.h>
 #include <soc/intel/broadwell/pch/chip.h>
 #include <southbridge/intel/lynxpoint/iobp.h>
+#include <types.h>
 
 /* Set D3Hot Power State in ACPI mode */
 static void serialio_enable_d3hot(struct resource *res)
@@ -24,17 +23,17 @@ static void serialio_enable_d3hot(struct resource *res)
 	write32(res2mmio(res, PCH_PCS, 0), reg32);
 }
 
-static int serialio_uart_is_debug(struct device *dev)
+static bool serialio_uart_is_debug(struct device *dev)
 {
-#if CONFIG(INTEL_PCH_UART_CONSOLE)
-	switch (dev->path.pci.devfn) {
-	case PCH_DEVFN_UART0: /* UART0 */
-		return !!(CONFIG_INTEL_PCH_UART_CONSOLE_NUMBER == 0);
-	case PCH_DEVFN_UART1: /* UART1 */
-		return !!(CONFIG_INTEL_PCH_UART_CONSOLE_NUMBER == 1);
+	if (CONFIG(SERIALIO_UART_CONSOLE)) {
+		switch (dev->path.pci.devfn) {
+		case PCH_DEVFN_UART0:
+			return CONFIG_UART_FOR_CONSOLE == 0;
+		case PCH_DEVFN_UART1:
+			return CONFIG_UART_FOR_CONSOLE == 1;
+		}
 	}
-#endif
-	return 0;
+	return false;
 }
 
 /* Enable clock in PCI mode */
@@ -158,7 +157,7 @@ static void serialio_init(struct device *dev)
 {
 	const struct soc_intel_broadwell_pch_config *config = config_of(dev);
 	struct resource *bar0, *bar1;
-	int sio_index = -1;
+	enum pch_acpi_device dev_index = NUM_PCH_ACPI_DEVICES;
 
 	printk(BIOS_DEBUG, "Initializing Serial IO device\n");
 
@@ -177,54 +176,48 @@ static void serialio_init(struct device *dev)
 		serialio_enable_clock(bar0);
 
 	switch (dev->path.pci.devfn) {
-	case PCH_DEVFN_SDMA: /* SDMA */
-		sio_index = SIO_ID_SDMA;
+	case PCH_DEVFN_SDMA:
+		dev_index = PCH_ACPI_SDMA;
 		serialio_init_once(config->sio_acpi_mode);
-		serialio_d21_mode(sio_index, SIO_PIN_INTB,
+		serialio_d21_mode(SIO_ID_SDMA, SIO_PIN_INTB,
 				  config->sio_acpi_mode);
 		break;
-	case PCH_DEVFN_I2C0: /* I2C0 */
-		sio_index = SIO_ID_I2C0;
+	case PCH_DEVFN_I2C0:
+		dev_index = PCH_ACPI_I2C0;
 		serialio_d21_ltr(bar0);
 		serialio_i2c_voltage_sel(bar0, config->sio_i2c0_voltage);
-		serialio_d21_mode(sio_index, SIO_PIN_INTC,
-				  config->sio_acpi_mode);
+		serialio_d21_mode(SIO_ID_I2C0, SIO_PIN_INTC, config->sio_acpi_mode);
 		break;
-	case PCH_DEVFN_I2C1: /* I2C1 */
-		sio_index = SIO_ID_I2C1;
+	case PCH_DEVFN_I2C1:
+		dev_index = PCH_ACPI_I2C1;
 		serialio_d21_ltr(bar0);
 		serialio_i2c_voltage_sel(bar0, config->sio_i2c1_voltage);
-		serialio_d21_mode(sio_index, SIO_PIN_INTC,
-				  config->sio_acpi_mode);
+		serialio_d21_mode(SIO_ID_I2C1, SIO_PIN_INTC, config->sio_acpi_mode);
 		break;
-	case PCH_DEVFN_SPI0: /* SPI0 */
-		sio_index = SIO_ID_SPI0;
+	case PCH_DEVFN_SPI0:
+		dev_index = PCH_ACPI_GSPI0;
 		serialio_d21_ltr(bar0);
-		serialio_d21_mode(sio_index, SIO_PIN_INTC,
-				  config->sio_acpi_mode);
+		serialio_d21_mode(SIO_ID_SPI0, SIO_PIN_INTC, config->sio_acpi_mode);
 		break;
-	case PCH_DEVFN_SPI1: /* SPI1 */
-		sio_index = SIO_ID_SPI1;
+	case PCH_DEVFN_SPI1:
+		dev_index = PCH_ACPI_GSPI1;
 		serialio_d21_ltr(bar0);
-		serialio_d21_mode(sio_index, SIO_PIN_INTC,
-				  config->sio_acpi_mode);
+		serialio_d21_mode(SIO_ID_SPI1, SIO_PIN_INTC, config->sio_acpi_mode);
 		break;
-	case PCH_DEVFN_UART0: /* UART0 */
-		sio_index = SIO_ID_UART0;
+	case PCH_DEVFN_UART0:
+		dev_index = PCH_ACPI_UART0;
 		if (!serialio_uart_is_debug(dev))
 			serialio_d21_ltr(bar0);
-		serialio_d21_mode(sio_index, SIO_PIN_INTD,
-				  config->sio_acpi_mode);
+		serialio_d21_mode(SIO_ID_UART0, SIO_PIN_INTD, config->sio_acpi_mode);
 		break;
-	case PCH_DEVFN_UART1: /* UART1 */
-		sio_index = SIO_ID_UART1;
+	case PCH_DEVFN_UART1:
+		dev_index = PCH_ACPI_UART1;
 		if (!serialio_uart_is_debug(dev))
 			serialio_d21_ltr(bar0);
-		serialio_d21_mode(sio_index, SIO_PIN_INTD,
-				  config->sio_acpi_mode);
+		serialio_d21_mode(SIO_ID_UART1, SIO_PIN_INTD, config->sio_acpi_mode);
 		break;
-	case PCH_DEVFN_SDIO: /* SDIO */
-		sio_index = SIO_ID_SDIO;
+	case PCH_DEVFN_SDIO:
+		dev_index = PCH_ACPI_SDIO;
 		serialio_d23_ltr(bar0);
 		serialio_d23_mode(config->sio_acpi_mode);
 		break;
@@ -233,39 +226,38 @@ static void serialio_init(struct device *dev)
 	}
 
 	if (config->sio_acpi_mode) {
-		struct device_nvs *dev_nvs = acpi_get_device_nvs();
+		/* Save BAR0 and BAR1 */
+		struct pch_acpi_device_state *state = get_acpi_device_state(dev_index);
+		state->bar0 = (u32)bar0->base;
+		state->bar1 = (u32)bar1->base;
 
-		/* Save BAR0 and BAR1 to ACPI NVS */
-		dev_nvs->bar0[sio_index] = (u32)bar0->base;
-		dev_nvs->bar1[sio_index] = (u32)bar1->base;
+		if (!serialio_uart_is_debug(dev)) {
+			/* Do not enable UART if it is used as debug port */
+			state->enable = 1;
 
-		/* Do not enable UART if it is used as debug port */
-		if (!serialio_uart_is_debug(dev))
-			dev_nvs->enable[sio_index] = 1;
-
-		/* Put device in D3hot state via BAR1 */
-		if (dev->path.pci.devfn != PCH_DEVFN_SDMA)
-			serialio_enable_d3hot(bar1); /* all but SDMA */
+			/* Put device in D3hot state via BAR1 */
+			if (dev->path.pci.devfn != PCH_DEVFN_SDMA)
+				serialio_enable_d3hot(bar1); /* all but SDMA */
+		}
 	}
 }
 
-static void serialio_set_resources(struct device *dev)
+static void serialio_read_resources(struct device *dev)
 {
-	pci_dev_set_resources(dev);
+	pci_dev_read_resources(dev);
 
-#if CONFIG(INTEL_PCH_UART_CONSOLE)
-	/* Update UART base address if used for debug */
-	if (serialio_uart_is_debug(dev)) {
+	/* Set the configured UART base address for the debug port */
+	if (CONFIG(SERIALIO_UART_CONSOLE) && serialio_uart_is_debug(dev)) {
 		struct resource *res = find_resource(dev, PCI_BASE_ADDRESS_0);
-		if (res)
-			uartmem_setbaseaddr(res->base);
+		res->base = CONFIG_CONSOLE_UART_BASE_ADDRESS;
+		res->size = 0x1000;
+		res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 	}
-#endif
 }
 
 static struct device_operations device_ops = {
-	.read_resources		= &pci_dev_read_resources,
-	.set_resources		= &serialio_set_resources,
+	.read_resources		= &serialio_read_resources,
+	.set_resources		= &pci_dev_set_resources,
 	.enable_resources	= &pci_dev_enable_resources,
 	.init			= &serialio_init,
 	.ops_pci		= &pci_dev_ops_pci,

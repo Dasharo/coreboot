@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <commonlib/helpers.h>
+#include <cpu/intel/msr.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/cr.h>
 #include <cpu/x86/msr.h>
@@ -12,11 +13,87 @@
 .section .init, "ax", @progbits
 
 .code32
+
+/*
+ * macro: find_free_mtrr
+ * Clobbers: %eax, %ebx, %ecx, %edx.
+ * Returns:
+ * %ebx contains the number of freely available MTRR's.
+ *      It should be checked against 0.
+ * %ecx holds the MTRR_BASE of the free MTRR.
+ */
+.macro find_free_mtrr
+	/* Figure out how many MTRRs we have */
+	mov	$MTRR_CAP_MSR, %ecx
+	rdmsr
+	movzb	%al, %ebx		/* Number of variable MTRRs */
+
+	/* Find a free variable MTRR */
+	movl	$MTRR_PHYS_MASK(0), %ecx
+1:
+	rdmsr
+	test	$MTRR_PHYS_MASK_VALID, %eax
+	jz	2f
+	addl	$2, %ecx
+	dec	%ebx
+	jnz	1b
+2:
+	/* %ecx needs to hold the MTRR_BASE */
+	decl	%ecx
+.endm
+
+/*
+ * macro: clear_car
+ * Clears the region between CONFIG_DCACHE_RAM_BASE and
+ * CONFIG_DCACHE_RAM_BASE + CONFIG_DCACHE_RAM_SIZE to populate
+ * cachelines.
+ * Clobbers %eax, %ecx, %edi.
+ */
+.macro clear_car
+	/* Clear the cache memory region. This will also fill up the cache */
+	movl	$CONFIG_DCACHE_RAM_BASE, %edi
+	movl	$CONFIG_DCACHE_RAM_SIZE, %ecx
+	shr	$0x02, %ecx
+	xor	%eax, %eax
+	cld
+	rep	stosl
+.endm
+
+/*
+ * macro: is_bootguard_nem
+ * Checks if the Bootguard ACM has enabled non eviction mode
+ * Clobbers %eax, %ecx, %edx
+ * Returns %eax and sets/unsets zero flag
+ */
+.macro is_bootguard_nem
+#if CONFIG(SOC_INTEL_NO_BOOTGUARD_MSR)
+	xorl	%eax, %eax
+#else
+	movl	$MSR_BOOT_GUARD_SACM_INFO, %ecx
+	rdmsr
+	andl	$B_BOOT_GUARD_SACM_INFO_NEM_ENABLED, %eax
+#endif
+.endm
+
 .global bootblock_pre_c_entry
 bootblock_pre_c_entry:
 
 	post_code(0x20)
 
+/* Bootguard sets up its own CAR and needs separate handling */
+check_boot_guard:
+	is_bootguard_nem
+	jz	no_bootguard
+
+	/* Disable PBE timer */
+	movl	$MSR_BC_PBEC, %ecx
+	movl	$B_STOP_PBET, %eax
+	xorl	%edx, %edx
+	wrmsr
+
+	jmp	setup_car_mtrr
+
+no_bootguard:
 	movl	$no_reset, %esp /* return address */
 	jmp	check_mtrr /* Check if CPU properly reset */
 
@@ -36,7 +113,7 @@ clear_fixed_mtrr:
 
 	post_code(0x22)
 
-	/* Figure put how many MTRRs we have, and clear them out */
+	/* Figure out how many MTRRs we have, and clear them out */
 	mov	$MTRR_CAP_MSR, %ecx
 	rdmsr
 	movzb	%al, %ebx		/* Number of variable MTRRs */
@@ -62,6 +139,7 @@ clear_var_mtrr:
 		 MTRR_DEF_TYPE_FIX_EN), %eax
 	wrmsr
 
+setup_car_mtrr:
 	/* Configure MTRR_PHYS_MASK_HIGH for proper addressing above 4GB
 	 * based on the physical address size supported for this processor
 	 * This is based on read from CPUID EAX = 080000008h, EAX bits [7:0]
@@ -82,15 +160,18 @@ clear_var_mtrr:
 	post_code(0x24)
 
 #if ((CONFIG_DCACHE_RAM_SIZE & (CONFIG_DCACHE_RAM_SIZE - 1)) == 0)
+	find_free_mtrr
+	test	%ebx, %ebx
+	jz	.halt_forever
+
 	/* Configure CAR region as write-back (WB) */
-	mov	$MTRR_PHYS_BASE(0), %ecx
 	mov	$CONFIG_DCACHE_RAM_BASE, %eax
 	or	$MTRR_TYPE_WRBACK, %eax
 	xor	%edx,%edx
 	wrmsr
 
 	/* Configure the MTRR mask for the size region */
-	mov	$MTRR_PHYS_MASK(0), %ecx
+	inc	%ecx
 	mov	$CONFIG_DCACHE_RAM_SIZE, %eax	/* size mask */
 	dec	%eax
 	not	%eax
@@ -98,14 +179,17 @@ clear_var_mtrr:
 	movl	%esi, %edx	/* edx <- MTRR_PHYS_MASK_HIGH */
 	wrmsr
 #elif (CONFIG_DCACHE_RAM_SIZE == 768 * KiB) /* 768 KiB */
+	find_free_mtrr
+	test	%ebx, %ebx
+	jz	.halt_forever
+
 	/* Configure CAR region as write-back (WB) */
-	mov	$MTRR_PHYS_BASE(0), %ecx
 	mov	$CONFIG_DCACHE_RAM_BASE, %eax
 	or	$MTRR_TYPE_WRBACK, %eax
 	xor	%edx,%edx
 	wrmsr
 
-	mov	$MTRR_PHYS_MASK(0), %ecx
+	incl	%ecx
 	mov	$(512 * KiB), %eax	/* size mask */
 	dec	%eax
 	not	%eax
@@ -113,13 +197,16 @@ clear_var_mtrr:
 	movl	%esi, %edx	/* edx <- MTRR_PHYS_MASK_HIGH */
 	wrmsr
 
-	mov	$MTRR_PHYS_BASE(1), %ecx
+	find_free_mtrr
+	test	%ebx, %ebx
+	jz	.halt_forever
+1:
 	mov	$(CONFIG_DCACHE_RAM_BASE + 512 * KiB), %eax
 	or	$MTRR_TYPE_WRBACK, %eax
 	xor	%edx,%edx
 	wrmsr
 
-	mov	$MTRR_PHYS_MASK(1), %ecx
+	incl	%ecx
 	mov	$(256 * KiB), %eax	/* size mask */
 	dec	%eax
 	not	%eax
@@ -131,6 +218,31 @@ clear_var_mtrr:
 #endif
 	post_code(0x25)
 
+	is_bootguard_nem
+	jz	no_bootguard_car_continue
+
+	/*
+	 * With Bootguard some RO caching of the flash is already set up by
+	 * the ACM. It looks like in such a setup 'clear_car' will not properly fill
+	 * the cachelines. Fill all the CAR cachelines explicitly using sfence.
+	 * This assumes 64 bytes cachelines.
+	 */
+	movl	$CONFIG_DCACHE_RAM_BASE, %edi
+	movl	$CONFIG_DCACHE_RAM_SIZE, %ecx
+	shr	$0x06, %ecx
+	xor	%eax, %eax
+
+1:
+	movl	%eax, (%edi)
+	sfence
+	add	$64, %edi
+	loop	1b
+
+	clear_car
+
+	jmp	car_init_done
+
+no_bootguard_car_continue:
 	/* Enable variable MTRRs */
 	mov	$MTRR_DEF_TYPE_MSR, %ecx
 	rdmsr
@@ -218,13 +330,7 @@ car_nem:
 
 	post_code(0x26)
 
-	/* Clear the cache memory region. This will also fill up the cache */
-	movl	$CONFIG_DCACHE_RAM_BASE, %edi
-	movl	$CONFIG_DCACHE_RAM_SIZE, %ecx
-	shr	$0x02, %ecx
-	xor	%eax, %eax
-	cld
-	rep	stosl
+	clear_car
 
 	post_code(0x27)
 
@@ -315,13 +421,7 @@ car_cqos:
 
 	post_code(0x26)
 
-	/* Clear the cache memory region. This will also fill up the cache */
-	movl	$CONFIG_DCACHE_RAM_BASE, %edi
-	movl	$CONFIG_DCACHE_RAM_SIZE, %ecx
-	shr	$0x02, %ecx
-	xor	%eax, %eax
-	cld
-	rep	stosl
+	clear_car
 
 	post_code(0x27)
 
@@ -480,12 +580,9 @@ set_eviction_mask:
 	movl	$0x02, %eax
 #endif
 	wrmsr
-	movl	$CONFIG_DCACHE_RAM_BASE, %edi
-	movl	$CONFIG_DCACHE_RAM_SIZE, %ecx
-	shr	$0x02, %ecx
-	xor	%eax, %eax
-	cld
-	rep	stosl
+
+	clear_car
+
 	/*
 	 * Set IA32_PQR_ASSOC
 	 * At this stage we apply LLC_WAY_MASK_1 to the cache.

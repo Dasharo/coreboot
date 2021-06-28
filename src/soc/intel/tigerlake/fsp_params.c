@@ -107,8 +107,7 @@ static int get_disable_mask(struct soc_intel_tigerlake_config *config)
 		disable_mask |= LPM_S0i3_3 | LPM_S0i3_4 | LPM_S0i2_2;
 
 	/* If CNVi or ISH is used, S0i3.2/S0i3.3/S0i3.4 cannot be achieved. */
-	if (is_dev_enabled(pcidev_path_on_root(PCH_DEVFN_CNVI_WIFI)) ||
-		is_dev_enabled(pcidev_path_on_root(PCH_DEVFN_ISH)))
+	if (is_devfn_enabled(PCH_DEVFN_CNVI_WIFI) || is_devfn_enabled(PCH_DEVFN_ISH))
 		disable_mask |= LPM_S0i3_2 | LPM_S0i3_3 | LPM_S0i3_4;
 
 	return disable_mask;
@@ -131,22 +130,6 @@ static void parse_devicetree(FSP_S_CONFIG *params)
 	for (int i = 0; i < CONFIG_SOC_INTEL_UART_DEV_MAX; i++)
 		params->SerialIoUartMode[i] = config->SerialIoUartMode[i];
 }
-
-static const pci_devfn_t serial_io_dev[] = {
-	PCH_DEVFN_I2C0,
-	PCH_DEVFN_I2C1,
-	PCH_DEVFN_I2C2,
-	PCH_DEVFN_I2C3,
-	PCH_DEVFN_I2C4,
-	PCH_DEVFN_I2C5,
-	PCH_DEVFN_GSPI0,
-	PCH_DEVFN_GSPI1,
-	PCH_DEVFN_GSPI2,
-	PCH_DEVFN_GSPI3,
-	PCH_DEVFN_UART0,
-	PCH_DEVFN_UART1,
-	PCH_DEVFN_UART2
-};
 
 __weak void mainboard_update_soc_chip_config(struct soc_intel_tigerlake_config *config)
 {
@@ -172,8 +155,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->GraphicsConfigPtr = (uintptr_t)vbt_get();
 
 	/* Check if IGD is present and fill Graphics init param accordingly */
-	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_dev_enabled(dev);
+	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_devfn_enabled(SA_DEVFN_IGD);
 
 	/* Use coreboot MP PPI services if Kconfig is enabled */
 	if (CONFIG(USE_INTEL_FSP_TO_CALL_COREBOOT_PUBLISH_MP_PPI))
@@ -276,14 +258,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	/* Enable xDCI controller if enabled in devicetree and allowed */
-	dev = pcidev_path_on_root(PCH_DEVFN_USBOTG);
-	if (dev) {
-		if (!xdci_can_enable())
-			dev->enabled = 0;
-		params->XdciEnable = dev->enabled;
-	} else {
-		params->XdciEnable = 0;
-	}
+	if (!xdci_can_enable())
+		devfn_disable(pci_root_bus(), PCH_DEVFN_USBOTG);
+	params->XdciEnable = is_devfn_enabled(PCH_DEVFN_USBOTG);
 
 	/* PCH UART selection for FSP Debug */
 	params->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;
@@ -291,8 +268,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->SerialIoUartAutoFlow[CONFIG_UART_FOR_CONSOLE] = 0;
 
 	/* SATA */
-	dev = pcidev_path_on_root(PCH_DEVFN_SATA);
-	params->SataEnable = is_dev_enabled(dev);
+	params->SataEnable = is_devfn_enabled(PCH_DEVFN_SATA);
 	if (params->SataEnable) {
 		params->SataMode = config->SataMode;
 		params->SataSalpSupport = config->SataSalpSupport;
@@ -308,7 +284,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	 * LPM0-s0i2.0, LPM1-s0i2.1, LPM2-s0i2.2, LPM3-s0i3.0,
 	 * LPM4-s0i3.1, LPM5-s0i3.2, LPM6-s0i3.3, LPM7-s0i3.4
 	 */
-	params->LpmStateEnableMask = LPM_S0iX_ALL & ~get_disable_mask(config);
+	params->PmcLpmS0ixSubStateEnableMask = LPM_S0iX_ALL & ~get_disable_mask(config);
 
 	/*
 	 * Power Optimizer for DMI and SATA.
@@ -350,12 +326,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->TccActivationOffset = config->tcc_offset;
 
 	/* LAN */
-	dev = pcidev_path_on_root(PCH_DEVFN_GBE);
-	params->PchLanEnable = is_dev_enabled(dev);
+	params->PchLanEnable = is_devfn_enabled(PCH_DEVFN_GBE);
 
 	/* CNVi */
-	dev = pcidev_path_on_root(PCH_DEVFN_CNVI_WIFI);
-	params->CnviMode = is_dev_enabled(dev);
+	params->CnviMode = is_devfn_enabled(PCH_DEVFN_CNVI_WIFI);
 	params->CnviBtCore = config->CnviBtCore;
 	params->CnviBtAudioOffload = config->CnviBtAudioOffload;
 	/* Assert if CNVi BT is enabled without CNVi being enabled. */
@@ -364,15 +338,11 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	assert(params->CnviBtCore || !params->CnviBtAudioOffload);
 
 	/* VMD */
-	dev = pcidev_path_on_root(SA_DEVFN_VMD);
-	params->VmdEnable = is_dev_enabled(dev);
+	params->VmdEnable = is_devfn_enabled(SA_DEVFN_VMD);
 
 	/* THC */
-	dev = pcidev_path_on_root(PCH_DEVFN_THC0);
-	params->ThcPort0Assignment = is_dev_enabled(dev) ? THC_0 : THC_NONE;
-
-	dev =  pcidev_path_on_root(PCH_DEVFN_THC1);
-	params->ThcPort1Assignment = is_dev_enabled(dev) ? THC_1 : THC_NONE;
+	params->ThcPort0Assignment = is_devfn_enabled(PCH_DEVFN_THC0) ? THC_0 : THC_NONE;
+	params->ThcPort1Assignment = is_devfn_enabled(PCH_DEVFN_THC1) ? THC_1 : THC_NONE;
 
 	/* Legacy 8254 timer support */
 	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
@@ -482,11 +452,4 @@ void platform_fsp_multi_phase_init_cb(uint32_t phase_index)
 __weak void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
-}
-
-/* Return list of SOC LPSS controllers */
-const pci_devfn_t *soc_lpss_controllers_list(size_t *size)
-{
-	*size = ARRAY_SIZE(serial_io_dev);
-	return serial_io_dev;
 }

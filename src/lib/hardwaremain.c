@@ -24,6 +24,7 @@
 #include <timer.h>
 #include <timestamp.h>
 #include <thread.h>
+#include <vendorcode/google/chromeos/gnvs.h>
 
 static boot_state_t bs_pre_device(void *arg);
 static boot_state_t bs_dev_init_chips(void *arg);
@@ -264,6 +265,7 @@ static void bs_call_callbacks(struct boot_state *state,
 			      boot_state_sequence_t seq)
 {
 	struct boot_phase *phase = &state->phases[seq];
+	struct mono_time mt_start, mt_stop;
 
 	while (1) {
 		if (phase->callbacks != NULL) {
@@ -274,11 +276,19 @@ static void bs_call_callbacks(struct boot_state *state,
 			phase->callbacks = bscb->next;
 			bscb->next = NULL;
 
-#if CONFIG(DEBUG_BOOT_STATE)
-			printk(BIOS_DEBUG, "BS: callback (%p) @ %s.\n",
-				bscb, bscb->location);
-#endif
+			if (CONFIG(DEBUG_BOOT_STATE)) {
+				printk(BIOS_DEBUG, "BS: callback (%p) @ %s.\n",
+					bscb, bscb_location(bscb));
+				timer_monotonic_get(&mt_start);
+			}
 			bscb->callback(bscb->arg);
+			if (CONFIG(DEBUG_BOOT_STATE)) {
+				timer_monotonic_get(&mt_stop);
+				printk(BIOS_DEBUG, "BS: callback (%p) @ %s (%ld ms).\n", bscb,
+				       bscb_location(bscb),
+				       mono_time_diff_microseconds(&mt_start, &mt_stop)
+					       / USECS_PER_MSEC);
+			}
 			continue;
 		}
 
@@ -451,6 +461,9 @@ void main(void)
 	/* Initialise GNVS early. */
 	if (CONFIG(ACPI_SOC_NVS))
 		acpi_create_gnvs();
+
+	if (CONFIG(CHROMEOS_NVS))
+		chromeos_init_chromeos_acpi();
 
 	/* Schedule the static boot state entries. */
 	boot_state_schedule_static_entries();

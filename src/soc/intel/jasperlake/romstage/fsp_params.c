@@ -14,15 +14,13 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 		const struct soc_intel_jasperlake_config *config)
 {
 	unsigned int i;
-	const struct device *dev;
 	uint32_t mask = 0;
 
 	/*
 	 * If IGD is enabled, set IGD stolen size to 60MB.
 	 * Otherwise, skip IGD init in FSP.
 	 */
-	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	m_cfg->InternalGfx = !CONFIG(SOC_INTEL_DISABLE_IGD) && is_dev_enabled(dev);
+	m_cfg->InternalGfx = !CONFIG(SOC_INTEL_DISABLE_IGD) && is_devfn_enabled(SA_DEVFN_IGD);
 	m_cfg->IgdDvmt50PreAlloc = m_cfg->InternalGfx ? 0xFE : 0;
 
 	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
@@ -37,15 +35,8 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 
 	m_cfg->PcieRpEnableMask = mask;
 
-	_Static_assert(ARRAY_SIZE(m_cfg->PcieClkSrcUsage) >=
-			ARRAY_SIZE(config->PcieClkSrcUsage), "copy buffer overflow!");
-	memcpy(m_cfg->PcieClkSrcUsage, config->PcieClkSrcUsage,
-			sizeof(config->PcieClkSrcUsage));
-
-	_Static_assert(ARRAY_SIZE(m_cfg->PcieClkSrcClkReq) >=
-			ARRAY_SIZE(config->PcieClkSrcClkReq), "copy buffer overflow!");
-	memcpy(m_cfg->PcieClkSrcClkReq, config->PcieClkSrcClkReq,
-			sizeof(config->PcieClkSrcClkReq));
+	FSP_ARRAY_LOAD(m_cfg->PcieClkSrcUsage, config->PcieClkSrcUsage);
+	FSP_ARRAY_LOAD(m_cfg->PcieClkSrcClkReq, config->PcieClkSrcClkReq);
 
 	m_cfg->PrmrrSize = config->PrmrrSize;
 
@@ -60,16 +51,14 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 		DEBUG_INTERFACE_UART_8250IO : DEBUG_INTERFACE_LPSS_SERIAL_IO;
 
 	/* TraceHub configuration */
-	dev = pcidev_path_on_root(PCH_DEVFN_TRACEHUB);
-	if (is_dev_enabled(dev) && config->TraceHubMode) {
+	if (is_devfn_enabled(PCH_DEVFN_TRACEHUB) && config->TraceHubMode) {
 		m_cfg->PcdDebugInterfaceFlags |= DEBUG_INTERFACE_TRACEHUB;
 		m_cfg->PchTraceHubMode = config->TraceHubMode;
 		m_cfg->CpuTraceHubMode = config->TraceHubMode;
 	}
 
 	/* IPU configuration */
-	dev = pcidev_path_on_root(SA_DEVFN_IPU);
-	m_cfg->SaIpuEnable = is_dev_enabled(dev);
+	m_cfg->SaIpuEnable = is_devfn_enabled(SA_DEVFN_IPU);
 
 	/* Change VmxEnable UPD value according to ENABLE_VMX Kconfig */
 	m_cfg->VmxEnable = CONFIG(ENABLE_VMX);
@@ -106,26 +95,14 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->DdiPortCDdc = config->DdiPortCDdc;
 
 	/* Audio */
-	dev = pcidev_path_on_root(PCH_DEVFN_HDA);
-	m_cfg->PchHdaEnable = is_dev_enabled(dev);
+	m_cfg->PchHdaEnable = is_devfn_enabled(PCH_DEVFN_HDA);
 
 	m_cfg->PchHdaDspEnable = config->PchHdaDspEnable;
 	m_cfg->PchHdaAudioLinkHdaEnable = config->PchHdaAudioLinkHdaEnable;
 
-	_Static_assert(ARRAY_SIZE(m_cfg->PchHdaAudioLinkDmicEnable) >=
-			ARRAY_SIZE(config->PchHdaAudioLinkDmicEnable), "copy buffer overflow!");
-	memcpy(m_cfg->PchHdaAudioLinkDmicEnable, config->PchHdaAudioLinkDmicEnable,
-		sizeof(config->PchHdaAudioLinkDmicEnable));
-
-	_Static_assert(ARRAY_SIZE(m_cfg->PchHdaAudioLinkSspEnable) >=
-			ARRAY_SIZE(config->PchHdaAudioLinkSspEnable), "copy buffer overflow!");
-	memcpy(m_cfg->PchHdaAudioLinkSspEnable, config->PchHdaAudioLinkSspEnable,
-		sizeof(config->PchHdaAudioLinkSspEnable));
-
-	_Static_assert(ARRAY_SIZE(m_cfg->PchHdaAudioLinkSndwEnable) >=
-			ARRAY_SIZE(config->PchHdaAudioLinkSndwEnable), "copy buffer overflow!");
-	memcpy(m_cfg->PchHdaAudioLinkSndwEnable, config->PchHdaAudioLinkSndwEnable,
-		sizeof(config->PchHdaAudioLinkSndwEnable));
+	FSP_ARRAY_LOAD(m_cfg->PchHdaAudioLinkDmicEnable, config->PchHdaAudioLinkDmicEnable);
+	FSP_ARRAY_LOAD(m_cfg->PchHdaAudioLinkSspEnable, config->PchHdaAudioLinkSspEnable);
+	FSP_ARRAY_LOAD(m_cfg->PchHdaAudioLinkSndwEnable, config->PchHdaAudioLinkSndwEnable);
 
 	/* Skip the CPU replacement check */
 	m_cfg->SkipCpuReplacementCheck = config->SkipCpuReplacementCheck;

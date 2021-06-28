@@ -20,11 +20,6 @@ chip soc/intel/alderlake
 	# DPTF enable
 	register "dptf_enable" = "1"
 
-	register "power_limits_config" = "{
-		.tdp_pl1_override = 15,
-		.tdp_pl2_override = 55,
-	}"
-
 	# Enable heci communication
 	register "HeciEnabled" = "1"
 
@@ -68,7 +63,7 @@ chip soc/intel/alderlake
 		[PchSerialIoIndexI2C1] = PchSerialIoPci,
 		[PchSerialIoIndexI2C2] = PchSerialIoPci,
 		[PchSerialIoIndexI2C3] = PchSerialIoPci,
-		[PchSerialIoIndexI2C4] = PchSerialIoPci,
+		[PchSerialIoIndexI2C4] = PchSerialIoDisabled,
 		[PchSerialIoIndexI2C5] = PchSerialIoPci,
 	}"
 
@@ -95,13 +90,12 @@ chip soc/intel/alderlake
 	#+-------------------+---------------------------+
 	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| GSPI1             | Fingerprint MCU           |
-	#| I2C0              | Audio                     |
+	#| I2C0              | Audio and WFC             |
 	#| I2C1              | Touchscreen               |
 	#| I2C2              | SAR0                      |
 	#| I2C3              | cr50 TPM. Early init is   |
 	#|                   | required to set up a BAR  |
 	#|                   | for TPM communication     |
-	#| I2C4              | CAM                       |
 	#| I2C5              | Trackpad                  |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
@@ -119,9 +113,6 @@ chip soc/intel/alderlake
 			.early_init = 1,
 			.speed = I2C_SPEED_FAST,
 		},
-		.i2c[4] = {
-			.speed = I2C_SPEED_FAST,
-		},
 		.i2c[5] = {
 			.speed = I2C_SPEED_FAST,
 		},
@@ -130,7 +121,6 @@ chip soc/intel/alderlake
 	device domain 0 on
 		device ref igpu on end
 		device ref dtt on end
-		device ref ipu on end
 		device ref tbt_pcie_rp0 on end
 		device ref tbt_pcie_rp1 on end
 		device ref tbt_pcie_rp2 on end

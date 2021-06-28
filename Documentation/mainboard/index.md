@@ -21,7 +21,9 @@ This section contains documentation about coreboot on specific mainboards.
 - [P5Q](asus/p5q.md)
 - [P8H61-M LX](asus/p8h61-m_lx.md)
 - [P8H61-M Pro](asus/p8h61-m_pro.md)
+- [P8H77-V](asus/p8h77-v.md)
 - [P8Z77-M Pro](asus/p8z77-m_pro.md)
+- [P8Z77-V](asus/p8z77-v.md)
 
 ## Cavium
 
@@ -153,6 +155,7 @@ The boards in this section are not real mainboards, but emulators.
 
 ## Purism
 
+- [Librem 14](purism/librem_14.md)
 - [Librem Mini](purism/librem_mini.md)
 
 ## Protectli

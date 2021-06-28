@@ -25,6 +25,9 @@
 /* Get Firmware Version Command Id */
 #define MKHI_GEN_GET_FW_VERSION	0x2
 
+/* Set End-of-POST in CSE */
+#define MKHI_END_OF_POST	0xc
+
 /* Boot partition info and set boot partition info command ids */
 #define MKHI_BUP_COMMON_GET_BOOT_PARTITION_INFO	0x1c
 #define MKHI_BUP_COMMON_SET_BOOT_PARTITION_INFO	0x1d
@@ -78,6 +81,48 @@ struct fw_version {
 struct cse_rw_metadata {
 	struct fw_version version;
 	uint8_t sha256[VB2_SHA256_DIGEST_SIZE];
+};
+
+/* CSE recovery sub-error codes */
+enum csme_failure_reason {
+	/* No error */
+	CSE_NO_ERROR = 0,
+
+	/* Unspecified error */
+	CSE_ERROR_UNSPECIFIED = 1,
+
+	/* CSE fails to boot from RW */
+	CSE_LITE_SKU_RW_JUMP_ERROR = 2,
+
+	/* CSE RW boot partition access error */
+	CSE_LITE_SKU_RW_ACCESS_ERROR = 3,
+
+	/* Fails to set next boot partition as RW */
+	CSE_LITE_SKU_RW_SWITCH_ERROR = 4,
+
+	/* CSE firmware update failure */
+	CSE_LITE_SKU_FW_UPDATE_ERROR = 5,
+
+	/* Fails to communicate with CSE */
+	CSE_COMMUNICATION_ERROR = 6,
+
+	/* Fails to wipe CSE runtime data */
+	CSE_LITE_SKU_DATA_WIPE_ERROR = 7,
+
+	/* CSE RW is not found */
+	CSE_LITE_SKU_RW_BLOB_NOT_FOUND = 8,
+
+	/* CSE CBFS RW SHA-256 mismatch with the provided SHA */
+	CSE_LITE_SKU_RW_BLOB_SHA256_MISMATCH = 9,
+
+	/* CSE CBFS RW metadata is not found */
+	CSE_LITE_SKU_RW_METADATA_NOT_FOUND = 10,
+
+	/* CSE CBFS RW blob layout is not correct */
+	CSE_LITE_SKU_LAYOUT_MISMATCH_ERROR = 11,
+
+	/* Error sending EOP to CSE */
+	CSE_EOP_FAIL = 12,
 };
 
 /* set up device for use in early boot enviroument with temp bar */
@@ -240,5 +285,8 @@ void cse_fw_sync(void);
 
 /* Perform a board-specific reset sequence for CSE RO<->RW jump */
 void cse_board_reset(void);
+
+/* Trigger vboot recovery mode on a CSE error */
+void cse_trigger_vboot_recovery(enum csme_failure_reason reason);
 
 #endif // SOC_INTEL_COMMON_CSE_H

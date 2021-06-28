@@ -155,7 +155,7 @@ struct mpc_config_lintsrc {
 #define MAX_IRQ_SOURCES 128
 #define MAX_MP_BUSSES 32
 enum mp_bustype {
-	MP_BUS_ISA,
+	MP_BUS_ISA = 0,
 	MP_BUS_EISA,
 	MP_BUS_PCI,
 	MP_BUS_MCA
@@ -224,7 +224,7 @@ struct mp_exten_compatibility_address_space {
 	 */
 } __packed;
 
-void mptable_init(struct mp_config_table *mc, u32 lapic_addr);
+void mptable_init(struct mp_config_table *mc);
 void *smp_next_mpc_entry(struct mp_config_table *mc);
 void *smp_next_mpe_entry(struct mp_config_table *mc);
 
@@ -235,6 +235,10 @@ void smp_write_processor(struct mp_config_table *mc,
 void smp_write_processors(struct mp_config_table *mc);
 void smp_write_ioapic(struct mp_config_table *mc,
 	u8 id, u8 ver, void *apicaddr);
+
+/* Call smp_write_ioapic() and return IOAPIC ID field. */
+u8 smp_write_ioapic_from_hw(struct mp_config_table *mc, void *apicaddr);
+
 void smp_write_intsrc(struct mp_config_table *mc,
 	u8 irqtype, u16 irqflag, u8 srcbus, u8 srcbusirq,
 	u8 dstapic, u8 dstirq);

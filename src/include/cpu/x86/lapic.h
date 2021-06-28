@@ -8,14 +8,61 @@
 #include <halt.h>
 #include <stdint.h>
 
-static inline bool is_x2apic_mode(void)
+static __always_inline uint32_t xapic_read(unsigned int reg)
 {
-	msr_t msr;
-	msr = rdmsr(LAPIC_BASE_MSR);
-	return ((msr.lo & LAPIC_BASE_X2APIC_ENABLED) == LAPIC_BASE_X2APIC_ENABLED);
+	return read32((volatile void *)(uintptr_t)(LAPIC_DEFAULT_BASE + reg));
 }
 
-static inline void x2apic_send_ipi(uint32_t icrlow, uint32_t apicid)
+static __always_inline void xapic_write(unsigned int reg, uint32_t v)
+{
+	write32((volatile void *)(uintptr_t)(LAPIC_DEFAULT_BASE + reg), v);
+}
+
+static inline void xapic_write_atomic(unsigned long reg, uint32_t v)
+{
+	volatile uint32_t *ptr;
+
+	ptr = (volatile uint32_t *)(LAPIC_DEFAULT_BASE + reg);
+
+	asm volatile ("xchgl %0, %1\n"
+		      : "+r" (v), "+m" (*(ptr))
+		      : : "memory", "cc");
+}
+
+static __always_inline void xapic_send_ipi(uint32_t icrlow, uint32_t apicid)
+{
+	xapic_write_atomic(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(apicid));
+	xapic_write_atomic(LAPIC_ICR, icrlow);
+}
+
+static __always_inline int xapic_busy(void)
+{
+	return xapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY;
+}
+
+static __always_inline uint32_t x2apic_read(unsigned int reg)
+{
+	uint32_t value, index;
+	msr_t msr;
+
+	index = X2APIC_MSR_BASE_ADDRESS + (uint32_t)(reg >> 4);
+	msr = rdmsr(index);
+	value = msr.lo;
+	return value;
+}
+
+static __always_inline void x2apic_write(unsigned int reg, uint32_t v)
+{
+	uint32_t index;
+	msr_t msr;
+
+	index = X2APIC_MSR_BASE_ADDRESS + (uint32_t)(reg >> 4);
+	msr.hi = 0x0;
+	msr.lo = v;
+	wrmsr(index, msr);
+}
+
+static __always_inline void x2apic_send_ipi(uint32_t icrlow, uint32_t apicid)
 {
 	msr_t icr;
 	icr.hi = apicid;
@@ -23,57 +70,68 @@ static inline void x2apic_send_ipi(uint32_t icrlow, uint32_t apicid)
 	wrmsr(X2APIC_MSR_ICR_ADDRESS, icr);
 }
 
+static inline bool is_x2apic_mode(void)
+{
+	if (CONFIG(XAPIC_ONLY))
+		return false;
+
+	if (CONFIG(X2APIC_ONLY))
+		return true;
+
+	msr_t msr;
+	msr = rdmsr(LAPIC_BASE_MSR);
+	return ((msr.lo & LAPIC_BASE_X2APIC_ENABLED) == LAPIC_BASE_X2APIC_ENABLED);
+}
+
 static __always_inline uint32_t lapic_read(unsigned int reg)
 {
-	uint32_t value, index;
-	msr_t msr;
-
-	if (is_x2apic_mode()) {
-		index = X2APIC_MSR_BASE_ADDRESS + (uint32_t)(reg >> 4);
-		msr = rdmsr(index);
-		value = msr.lo;
-	} else {
-		value = read32((volatile void *)(uintptr_t)(LAPIC_DEFAULT_BASE + reg));
-	}
-	return value;
+	if (is_x2apic_mode())
+		return x2apic_read(reg);
+	else
+		return xapic_read(reg);
 }
 
 static __always_inline void lapic_write(unsigned int reg, uint32_t v)
 {
-	msr_t msr;
-	uint32_t index;
+	if (is_x2apic_mode())
+		x2apic_write(reg, v);
+	else
+		xapic_write(reg, v);
+}
+
+static __always_inline void lapic_update32(unsigned int reg, uint32_t mask, uint32_t or)
+{
 	if (is_x2apic_mode()) {
+		uint32_t index;
+		msr_t msr;
 		index = X2APIC_MSR_BASE_ADDRESS + (uint32_t)(reg >> 4);
-		msr.hi = 0x0;
-		msr.lo = v;
+		msr = rdmsr(index);
+		msr.lo &= mask;
+		msr.lo |= or;
 		wrmsr(index, msr);
 	} else {
-		write32((volatile void *)(uintptr_t)(LAPIC_DEFAULT_BASE + reg), v);
+		uint32_t value;
+		value = xapic_read(reg);
+		value &= mask;
+		value |= or;
+		xapic_write_atomic(reg, value);
 	}
 }
 
-static __always_inline void lapic_wait_icr_idle(void)
+static __always_inline void lapic_send_ipi(uint32_t icrlow, uint32_t apicid)
 {
-	do { } while (lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY);
+	if (is_x2apic_mode())
+		x2apic_send_ipi(icrlow, apicid);
+	else
+		xapic_send_ipi(icrlow, apicid);
 }
 
-static inline void enable_lapic(void)
+static __always_inline int lapic_busy(void)
 {
-	msr_t msr;
-	msr = rdmsr(LAPIC_BASE_MSR);
-	msr.hi &= 0xffffff00;
-	msr.lo &= ~LAPIC_BASE_MSR_ADDR_MASK;
-	msr.lo |= LAPIC_DEFAULT_BASE;
-	msr.lo |= LAPIC_BASE_MSR_ENABLE;
-	wrmsr(LAPIC_BASE_MSR, msr);
-}
-
-static inline void disable_lapic(void)
-{
-	msr_t msr;
-	msr = rdmsr(LAPIC_BASE_MSR);
-	msr.lo &= ~LAPIC_BASE_MSR_ENABLE;
-	wrmsr(LAPIC_BASE_MSR, msr);
+	if (is_x2apic_mode())
+		return 0;
+	else
+		return xapic_busy();
 }
 
 static __always_inline unsigned int initial_lapicid(void)
@@ -98,7 +156,7 @@ static __always_inline unsigned int lapicid(void)
 
 #if !CONFIG(AP_IN_SIPI_WAIT)
 /* If we need to go back to sipi wait, we use the long non-inlined version of
- * this function in lapic_cpu_init.c
+ * this function in lapic_cpu_stop.c
  */
 static __always_inline void stop_this_cpu(void)
 {
@@ -109,37 +167,8 @@ static __always_inline void stop_this_cpu(void)
 void stop_this_cpu(void);
 #endif
 
-static inline void lapic_write_atomic(unsigned long reg, uint32_t v)
-{
-	volatile uint32_t *ptr;
-
-	ptr = (volatile uint32_t *)(LAPIC_DEFAULT_BASE + reg);
-
-	asm volatile ("xchgl %0, %1\n"
-		      : "+r" (v), "+m" (*(ptr))
-		      : : "memory", "cc");
-}
-
-# define lapic_read_around(x) lapic_read(x)
-# define lapic_write_around(x, y) lapic_write_atomic((x), (y))
-
-void lapic_virtual_wire_mode_init(void);
-
-/* See if I need to initialize the local APIC */
-static inline int need_lapic_init(void)
-{
-	return CONFIG(SMP) || CONFIG(IOAPIC);
-}
-
-static inline void setup_lapic(void)
-{
-	if (need_lapic_init())
-		lapic_virtual_wire_mode_init();
-	else
-		disable_lapic();
-}
-
-struct device;
-int start_cpu(struct device *cpu);
+void enable_lapic(void);
+void disable_lapic(void);
+void setup_lapic(void);
 
 #endif /* CPU_X86_LAPIC_H */
