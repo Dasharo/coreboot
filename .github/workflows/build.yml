@@ -44,14 +44,14 @@ jobs:
     - name: Run upstream coreboot tests (for one mainboard)
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
-          --workdir=/home/coreboot 3mdeb/coreboot-sdk:mkimage << EOF
+          --workdir=/home/coreboot -u$(id -u):$(id -g) 3mdeb/coreboot-sdk:mkimage << EOF
         make -j $(nproc) what-jenkins-does JENKINS_ABUILD_OPT="-t intel/glkrvp"
         EOF
 
     - name: Build Talos II target (bootblock in PNOR)
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
-          --workdir=/home/coreboot 3mdeb/coreboot-sdk:mkimage << EOF
+          --workdir=/home/coreboot -u$(id -u):$(id -g) 3mdeb/coreboot-sdk:mkimage << EOF
         cp configs/config.raptor-cs-talos-2 .config
         make olddefconfig
         make -j $(nproc)
@@ -69,7 +69,7 @@ jobs:
     - name: Build Talos II target (bootblock in SEEPROM)
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
-          --workdir=/home/coreboot 3mdeb/coreboot-sdk:mkimage << EOF
+          --workdir=/home/coreboot -u$(id -u):$(id -g) 3mdeb/coreboot-sdk:mkimage << EOF
         make clean
         cp configs/config.raptor-cs-talos-2-bootblock-in-seeprom .config
         make olddefconfig
