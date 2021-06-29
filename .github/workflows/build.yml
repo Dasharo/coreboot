@@ -5,11 +5,13 @@ on:
       - talos_2_support
       - squashed_talos_2_support
       - talos_2_support_ramstage
+      - talos_2_support_payload
   pull_request:
     branches:
       - talos_2_support
       - squashed_talos_2_support
       - talos_2_support_ramstage
+      - talos_2_support_payload
     tags:
       - 'dasharo-trustworthy-computing-*'
 
