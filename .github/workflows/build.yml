@@ -66,6 +66,7 @@ jobs:
         path: |
           build/coreboot.rom
           build/coreboot.rom.signed.ecc
+          build/bootblock.signed.ecc
         retention-days: 7
 
     - name: Build Talos II target (bootblock in SEEPROM)
