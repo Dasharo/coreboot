@@ -12,7 +12,7 @@ BOOTBLOCK_BMC_LOCATION=/tmp/bootblock.signed.ecc
 BOOTBLOCK_PARTITION=HBB
 
 echo "Power off Talos II"
-ssh $TALOS_USER@$TALOS_IP obmcutil -w chassisoff > $LOG_FILE
+ssh $TALOS_USER@$TALOS_IP obmcutil -w poweroff > $LOG_FILE
 
 echo "Copy coreboot image"
 scp $COREBOOT_SOURCE $TALOS_USER@$TALOS_IP:$COREBOOT_BMC_LOCATION > $LOG_FILE
