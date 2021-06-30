@@ -22,4 +22,4 @@ ssh $TALOS pflash -f -e -P $COREBOOT_PARTITION -p $COREBOOT_BMC_LOCATION >> $LOG
 ssh $TALOS pflash -f -e -P $BOOTBLOCK_PARTITION -p $BOOTBLOCK_BMC_LOCATION >> $LOG_FILE 2>&1
 
 echo "Power on Talos II"
-ssh $TALOS obmcutil -w poweron > $LOG_FILE
+ssh $TALOS obmcutil -w poweron >> $LOG_FILE
