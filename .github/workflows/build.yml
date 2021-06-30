@@ -27,6 +27,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         # Fetch complete history
         fetch-depth: 0
+
     - name: Checkout all submodules
       run: git submodule update --init --recursive --checkout
 
@@ -78,6 +79,94 @@ jobs:
         make olddefconfig
         make -j $(nproc)
         EOF
+
+  run-on-hw:
+    runs-on: [self-hosted, builder]
+    steps:
+
+    # valid time 0-21600
+
+    # This job is supposed to run only at night time
+    # Because scheduling an event works only for default branch
+    # we'll delay it manually here
+    - name: Delay until night
+      run: |
+        NOW=$(date -d "1970-01-01 UTC $(date +%T)" +%s)
+        if [ ${NOW} -lt ${DELAY_UNTIL} ] && [ ${NOW} -gt ${LATEST_EXECUTION_START} ]
+        then
+          let DELAY=${DELAY_UNTIL}-$(date -d "1970-01-01 UTC $(date +%T)" +%s)
+          echo "Execution of this step is delayed until night, for ${DELAY} seconds"
+          sleep ${DELAY}s
+        fi
+      env:
+        # time of day in seconds
+        DELAY_UNTIL: 86400 # 12:00 AM UTC - midnight
+        LATEST_EXECUTION_START: 14400 # 4:00 AM UTC
+
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        # Checkout pull request HEAD commit instead of merge commit
+        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+        ref: ${{ github.event.pull_request.head.sha }}
+        # Fetch complete history
+        fetch-depth: 0
+
+    - name: Checkout all submodules
+      run: git submodule update --init --recursive --checkout
+
+    - name: Build Talos II target (bootblock in PNOR)
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) 3mdeb/coreboot-sdk:mkimage << EOF
+        cp configs/config.raptor-cs-talos-2 .config
+        make olddefconfig
+        make -j $(nproc)
+        EOF
+
+    - name: Generate ssh config
+      run: |
+        mkdir -p ~/.ssh
+        cat << EOF > ~/.ssh/config
+        Host *
+          StrictHostKeyChecking no
+        EOF
+        chmod 700 ~/.ssh
+        chmod 600 ~/.ssh/config
+
+    - name: Test coreboot on Talos II
+      run: |
+        eval $(ssh-agent -s)
+        echo "${TALOS_KEY}" | ssh-add -
+
+        .github/flash_talos.sh ${TALOS_USER}@${TALOS_IP}
+
+        echo "Start logging the boot process"
+        rm -f ${LOG_FILE}
+        ssh ${TALOS_USER}@${TALOS_IP} 'obmc-console-client < /dev/zero' | tee ${LOG_FILE} &
+
+        echo "Power on Talos II"
+        ssh ${TALOS_USER}@${TALOS_IP} 'obmcutil -w poweron'
+
+        echo "Sleeping for ${WAIT_SECONDS} seconds"
+        sleep ${WAIT_SECONDS}s
+
+        echo "Stop logging the boot process"
+        kill %1
+
+        echo "Power off Talos II"
+        ssh ${TALOS_USER}@${TALOS_IP} 'obmcutil poweroff'
+
+        echo Check if booting was successful
+        grep "${BOOT_SUCESSFUL_LOG}" ${LOG_FILE}
+      env:
+        LOG_FILE: booting.log
+        BOOT_SUCESSFUL_LOG: Jumping to boot code at 0x00000010
+        WAIT_SECONDS: 60
+        TALOS_USER: ${{ secrets.TALOS_USERNAME }}
+        TALOS_IP: ${{ secrets.TALOS_IP }}
+        TALOS_KEY: ${{ secrets.TALOS_KEY }}
+
 
   build-freebsd:
     runs-on: macos-latest
