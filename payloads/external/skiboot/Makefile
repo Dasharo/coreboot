@@ -8,6 +8,7 @@ skiboot_dir=$(CURDIR)/talos-skiboot
 skiboot_git_repo=https://git.raptorcs.com/git/talos-skiboot
 skiboot=$(skiboot_dir)/skiboot.lid
 uimage=$(build_dir)/skiboot.uimage
+skiboot_cross=$(or $(CROSS),powerpc64-linux-gnu-)
 
 unexport $(COREBOOT_EXPORTS)
 
@@ -22,7 +23,7 @@ $(device_tree_blob): $(build_dir) $(device_tree_source)
 	dtc -I dts -O dtb -o $(device_tree_blob) $(device_tree_source)
 
 $(skiboot): $(skiboot_dir)
-	$(MAKE) -C $(skiboot_dir) -j`nproc` CROSS=powerpc64-linux-gnu-
+	$(MAKE) -C $(skiboot_dir) -j`nproc` "CROSS=$(skiboot_cross)"
 
 $(skiboot_dir):
 	git clone $(skiboot_git_repo) $(skiboot_dir)
@@ -37,6 +38,6 @@ distclean:
 
 clean:
 	if [ -d $(skiboot_dir) ]; then \
-		$(MAKE) -C $(skiboot_dir) CROSS=powerpc64-linux-gnu- RM="rm -f" clean > /dev/null; \
+		$(MAKE) -C $(skiboot_dir) "CROSS=$(skiboot_cross)" RM="rm -f" clean > /dev/null; \
 	fi
 	rm -rf $(build_dir)
