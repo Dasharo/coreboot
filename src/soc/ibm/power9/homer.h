@@ -172,7 +172,7 @@ struct cme_img_header {
 	uint32_t hcode_offset;
 	uint32_t hcode_len;
 	uint32_t common_ring_offset;
-	uint32_t mnc_ring_ovrd_offset;
+	uint32_t cmn_ring_ovrd_offset;
 	uint32_t common_ring_len;
 	uint32_t pstate_region_offset;
 	uint32_t pstate_region_len;
