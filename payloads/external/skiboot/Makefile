@@ -11,6 +11,7 @@ device_tree_source=$(top)/$(CONFIG_SKIBOOT_DEVICE_TREE)
 device_tree_blob=$(build_dir)/fdt.bin
 skiboot=$(skiboot_dir)/skiboot.lid
 uimage=$(build_dir)/skiboot.uimage
+skiboot_cross=$(or $(CROSS),powerpc64-linux-gnu-)
 
 unexport $(COREBOOT_EXPORTS)
 
@@ -25,7 +26,7 @@ $(device_tree_blob): $(build_dir) $(device_tree_source)
 	dtc -I dts -O dtb -o $(device_tree_blob) $(device_tree_source)
 
 $(skiboot): $(skiboot_dir)
-	$(MAKE) -C $(skiboot_dir) -j`nproc` CROSS=powerpc64-linux-gnu-
+	$(MAKE) -C $(skiboot_dir) -j`nproc` "CROSS=$(skiboot_cross)"
 
 $(skiboot_dir):
 	git clone $(skiboot_git_repo) $(skiboot_dir)
