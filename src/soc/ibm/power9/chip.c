@@ -75,7 +75,7 @@ static void enable_soc_dev(struct device *dev)
 	 *
 	 * TODO: 8M + (4M per CPU), hostboot reserves always 8M + 8 * 4M.
 	 */
-	reserved_size = 8*1024 + 4*1024 /* * num_of_cpus */;
+	reserved_size = 8*1024 + 4*1024 *8 /* * num_of_cpus */;
 	top -= reserved_size;
 	reserved_ram_resource(dev, idx++, top, reserved_size);
 	build_homer_image((void *)(top * 1024));

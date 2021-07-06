@@ -7,6 +7,9 @@
 #define SPR_DEC_IMPLEMENTED_BITS		56
 #define SPR_DEC_LONGEST_TIME			((1ull << (SPR_DEC_IMPLEMENTED_BITS - 1)) - 1)
 
+#define SPR_SRR0				0x2A
+#define SPR_SRR1				0x2B
+
 #define SPR_DAWR				0xB4
 #define SPR_CIABR				0xBB
 #define SPR_DAWRX				0xBC
@@ -16,8 +19,13 @@
 #define SPR_HRMOR				0x139
 
 #define SPR_LPCR				0x13E
+#define SPR_LPCR_HVEE				PPC_BIT(17)
 #define SPR_LPCR_LD				PPC_BIT(46)
+#define SPR_LPCR_EEE				PPC_BIT(49)
+#define SPR_LPCR_DEE				PPC_BIT(50)
+#define SPR_LPCR_OEE				PPC_BIT(51)
 #define SPR_LPCR_HEIC				PPC_BIT(59)
+#define SPR_LPCR_HVICE				PPC_BIT(62)
 #define SPR_LPCR_HDICE				PPC_BIT(63)
 
 #define SPR_HMER				0x150
