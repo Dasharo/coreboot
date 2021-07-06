@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <assert.h>
+#include <cbfs.h>
 #include <commonlib/region.h>
 #include <console/console.h>
 #include <cpu/power/scom.h>
+#include <cpu/power/spr.h>
 #include <string.h>		// memset, memcpy
 #include <timer.h>
 
@@ -604,7 +606,6 @@ static void stop_gpe_init(struct homer_st *homer)
 	write_scom(0x00066010, PPC_SHIFT(4, 3));
 	write_scom(0x00066010, PPC_SHIFT(2, 3));
 
-
 	/*
 	 * Now wait for SGPE to not be halted and for the HCode to indicate to be
 	 * active.
@@ -623,7 +624,7 @@ static void stop_gpe_init(struct homer_st *homer)
 		die("Timeout while waiting for SGPE activation\n");
 }
 
-static uint64_t get_available_cores(void)
+static uint64_t get_available_cores(int *me)
 {
 	uint64_t ret = 0;
 	for (int i = 0; i < MAX_CORES; i++) {
@@ -632,6 +633,8 @@ static uint64_t get_available_cores(void)
 			printk(BIOS_SPEW, "Core %d is functional%s\n", i,
 			       (val & PPC_BIT(1)) ? "" : " and running");
 			ret |= PPC_BIT(i);
+			if (val & PPC_BIT(1) && me != NULL)
+				*me = i;
 
 			/* Might as well set multicast groups for cores */
 			if ((read_scom_for_chiplet(EC00_CHIPLET_ID + i, 0xF0001) & PPC_BITMASK(3,5))
@@ -654,6 +657,207 @@ static uint64_t get_available_cores(void)
 #define IS_EX_FUNCTIONAL(ex, cores)		(!!((cores) & PPC_BITMASK(2*(ex), 2*(ex) + 1)))
 #define IS_EQ_FUNCTIONAL(eq, cores)		(!!((cores) & PPC_BITMASK(4*(eq), 4*(eq) + 3)))
 
+/* TODO: similar is used in 13.3. Add missing parameters and make it public? */
+static void psu_command(uint8_t flags, long time)
+{
+	/* TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG */
+	if (read_scom(0x000D0060) & PPC_BIT(0))
+		die("MBOX to SBE busy, this should not happen\n");
+
+	/* https://github.com/open-power/hostboot/blob/master/src/include/usr/sbeio/sbe_psudd.H#L418 */
+	/* TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG */
+	/* REQUIRE_RESPONSE, CLASS_CORE_STATE, CMD_CONTROL_DEADMAN_LOOP, flags */
+	write_scom(0x000D0050, 0x000001000000D101 | PPC_SHIFT(flags, 31));
+
+	/* TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG */
+	write_scom(0x000D0051, time);
+
+	/* Ring the host->SBE doorbell */
+	/* TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG_OR */
+	write_scom(0x000D0062, PPC_BIT(0));
+
+	/* Wait for response */
+	/* TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG */
+	time = wait_ms(time, read_scom(0x000D0060) & PPC_BIT(0));
+
+	if (!time)
+		die("Timed out while waiting for SBE response\n");
+
+	/* Clear SBE->host doorbell */
+	/* TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG_AND */
+	write_scom(0x000D0064, ~PPC_BIT(0));
+}
+
+#define DEADMAN_LOOP_START	0x0001
+#define DEADMAN_LOOP_STOP	0x0002
+
+static void block_wakeup_int(int core, int state)
+{
+	// TP.TPCHIP.NET.PCBSLEC14.PPMC.PPM_COMMON_REGS.PPM_GPMMR		// 0x200F0100
+	/* Depending on requested state we write to SCOM1 (CLEAR) or SCOM2 (OR). */
+	uint64_t scom = state ? 0x200F0102 : 0x200F0101;
+
+	/* Register is documented, but its bits are reserved... */
+	write_scom_for_chiplet(EC00_CHIPLET_ID + core, scom, PPC_BIT(6));
+}
+
+/*
+ * TODO: check if we need to save current core/thread number. Both cores under
+ * quad are currently started, but this may be caused by re-using runtime HOMER.
+ */
+struct save_state {
+	uint64_t r1;	/* stack */
+	uint64_t r2;	/* TOC */
+	uint64_t msr;
+	uint64_t nia;
+} sstate;
+
+/*
+ * System reset vector:
+ * - read thread ID from PIR
+ * - thread != 0:
+ *   - stop
+ * - thread == 0:
+ *   - reload r1 and r2 from saved state
+ *   - move nia and msr to HSRR0/1
+ *   - return from hypervisor interrupt
+ *   - due to clobbers in inline assembly in cpu_winkle all other registers are
+ *     reloaded by compiler
+ *     - contents of vector and floating point registers are lost
+ */
+asm(
+"\
+system_reset:                          \n\
+	mfspr   4, 1023                \n\
+	extrdi. 4, 4, 2, 62            \n\
+	bne     _not_thread0           \n\
+	li      3, sstate@l            \n\
+	oris    3, 3, sstate@h         \n\
+	ld      1, 0(3)                \n\
+	ld      2, 8(3)                \n\
+	ld      4, 16(3)               \n\
+	mtspr   315, 4                 \n\
+	ld      4, 24(3)               \n\
+	mtspr   314, 4                 \n\
+	hrfid                          \n\
+_not_thread0:                          \n\
+	stop                           \n\
+	b       .                      \n\
+system_reset_end:                      \n\
+");
+
+extern uint8_t system_reset[];
+extern uint8_t system_reset_end[];
+
+static void cpu_winkle(void)
+{
+	uint64_t psscr = read_spr(SPR_PSSCR);
+	uint64_t lpcr = read_spr(SPR_LPCR);
+	/* Clear {External, Decrementer, Other} Exit Enable */
+	lpcr &= ~(SPR_LPCR_EEE | SPR_LPCR_DEE | SPR_LPCR_OEE);
+	/*
+	 * Set Hypervisor Virtualization Interrupt Conditionally Enable
+	 * and Hypervisor Virtualization Exit Enable
+	 */
+	lpcr |= SPR_LPCR_HVICE | SPR_LPCR_HVEE;
+	write_spr(SPR_LPCR, lpcr);
+	write_spr(SPR_PSSCR, 0x00000000003F00FF);
+
+	/*
+	 * Debugging aid - 0xE40 is Hypervisor Emulation Assistance vector. It is
+	 * taken when processor tries to execute unimplemented instruction. All 0s
+	 * is (and will always be) such an instruction, meaning we will get here
+	 * when processor jumps into uninitialized memory. If this instruction were
+	 * also uninitialized, processor would hit another exception and again jump
+	 * here. This time, however, it would overwrite original (H)SRR0 value with
+	 * 0xE40. Instruction below is 'b .'. This way (H)SRR0 will retain its value
+	 * - address of instruction which generated this exception. It can be then
+	 * read with pdbg.
+	 */
+	*(volatile uint32_t *)0xE40 = 0x48000000;
+
+	memcpy((void*)0x100, system_reset, system_reset_end - system_reset);
+
+	asm volatile("sync; isync" ::: "memory");
+
+	/* TODO: address depends on active core */
+	/* TODO: do we even need this? Those thread are already stopped */
+	write_scom(0x21010A9C, 0x0008080800000000);
+
+	/*
+	 * Cannot clobber:
+	 * - r1 (stack) - reloaded from sstate
+	 * - r2 (TOC aka PIC register) - reloaded from sstate
+	 * - r3 (address of sstate) - storage duration limited to block below
+	 */
+	{
+		register void *r3 asm ("r3") = &sstate;
+		asm volatile("mfmsr    0\n"
+		             "std      1, 0(%0)\n"
+		             "std      2, 8(%0)\n"
+		             "std      0, 16(%0)\n"
+		             "lnia     0\n"
+		             "__tmp_nia:"
+		             "addi     0, 0, wakey - __tmp_nia\n"
+		             "std      0, 24(%0)\n"
+		             "sync\n"
+		             "stop\n"
+		             "wakey:\n"
+		             : "+r"(r3) ::
+		             "r0", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",
+		             "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19",
+		             "r20", "r21", "r22", "r23", "r24", "r25", "r26", "r27",
+		             "r28", "r29", "r30", "r31", "memory", "cc");
+	}
+
+	write_spr(SPR_PSSCR, psscr);
+}
+
+static void istep_16_1(int this_core)
+{
+	/*
+	 * Wait time 10.5 sec, anything larger than 10737 ms can cause overflow on
+	 * SBE side of the timeout calculations.
+	 */
+	long time = 10500;
+
+	/*
+	 * This will request SBE to wake us up after we enter STOP 15. Hopefully
+	 * we will come back to the place where we were before.
+	 */
+	printk(BIOS_ERR, "Entering dead man loop\n");
+	uint64_t t1 = read_spr(SPR_TB);
+	psu_command(DEADMAN_LOOP_START, time);
+
+	/* REMOVE ME! */
+	/*
+	 * This masks FIR bit that is set by SBE when dead man timer expires, which
+	 * results in checkstop. To help with debugging it is masked here, but it
+	 * must not be in the final code!
+	 */
+	write_scom(0x0504000F, PPC_BIT(32));
+
+	uint64_t t2 = read_spr(SPR_TB);
+	block_wakeup_int(this_core, 1);
+
+	cpu_winkle();
+
+	/*
+	 * This tells SBE that we were properly awoken. Hostboot uses default
+	 * timeout of 90 seconds, but if SBE doesn't answer in 10 there is no reason
+	 * to believe it will answer at all.
+	 */
+	psu_command(DEADMAN_LOOP_STOP, time);
+	uint64_t t3 = read_spr(SPR_TB);
+
+	printk(BIOS_ERR, "Dead man loop times: %llx, %llx\n", t2-t1, t3-t1);
+	printk(BIOS_ERR, "Dead man loop times: %lldns, %lldns\n", (t2-t1)*2, (t3-t1)*2);
+	// core_checkstop_helper_hwp(..., true)
+	//     p9_core_checkstop_handler(___, true)
+	// core_checkstop_helper_homer()
+	//     p9_stop_save_scom() and others
+}
+
 /*
  * This logic is for SMF disabled only!
  */
@@ -663,13 +867,32 @@ void build_homer_image(void *homer_bar)
 	struct homer_st *homer = homer_bar;
 	struct xip_hw_header *hw = homer_bar;
 	uint8_t dd = get_dd();
-	uint64_t cores = get_available_cores();
+	int this_core = -1;
+	uint64_t cores = get_available_cores(&this_core);
+
+	if (this_core == -1)
+		die("Couldn't found active core\n");
 
 	printk(BIOS_ERR, "DD%2.2x\n", dd);
 
 	/* HOMER must be aligned to 4M because CME HRMOR has bit for 2M set */
 	if (!IS_ALIGNED((uint64_t) homer_bar, 4 * MiB))
 		die("HOMER (%p) is not aligned to 4MB\n", homer_bar);
+
+
+
+	/*
+	 * Temporarily use HOMER read from running system, until code for crafting
+	 * it from HCODE is ready.
+	 */
+	if (1) {
+
+	void *map = cbfs_map("homer", NULL);
+	memcpy(homer_bar, map, 4 * MiB);
+	cbfs_unmap(map);
+
+	} else {
+
 
 	memset(homer_bar, 0, 4 * MiB);
 
@@ -696,10 +919,29 @@ void build_homer_image(void *homer_bar)
 
 	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
 	           dd);
+	// TBD
+	}
+
+	/* Set up wakeup mode */
+	for (int i = 0; i < MAX_CORES; i++) {
+		if (!IS_EC_FUNCTIONAL(i, cores))
+			continue;
+
+		/*
+		TP.TPCHIP.NET.PCBSLEC14.PPMC.PPM_CORE_REGS.CPPM_CPMMR		// 0x200F0106
+			// These bits, when set, make core wake up in HV (not UV)
+			[3]	CPPM_CPMMR_RESERVED_2_9	= 1
+			[4]	CPPM_CPMMR_RESERVED_2_9	= 1
+		*/
+		write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F0106,
+		                       PPC_BIT(3) | PPC_BIT(4));
+	}
 
 	/* 15.2 set HOMER BAR */
 	write_scom(0x05012B00, (uint64_t)homer);
 	write_scom(0x05012B04, (4 * MiB - 1) & ~((uint64_t)MiB - 1));
+	write_scom(0x05012B02, (uint64_t)homer + 8 * 4 * MiB);		// FIXME
+	write_scom(0x05012B06, (7 * MiB - 1) & ~((uint64_t)MiB - 1));
 
 	/* 15.3 establish EX chiplet */
 	/* Multicast groups for cores were assigned in get_available_cores() */
@@ -817,6 +1059,8 @@ void build_homer_image(void *homer_bar)
 
 	// Boot the STOP GPE
 	stop_gpe_init(homer);
+
+	istep_16_1(this_core);
 
 	//hexdump(&homer->qpmr, sgpe->qpmr.size);
 }
