@@ -60,6 +60,10 @@ void istep_13_3(void)
 	 * out of order command/response pair. Just fill a buffer, send it and make
 	 * sure the receiver (SBE) gets it. If you still want to know the details,
 	 * start digging here: https://github.com/open-power/hostboot/blob/master/src/usr/scan/scandd.C#L169
+	 *
+	 * TODO: this is the only place where `putRing()` is called, but it isn't
+	 * the only place where PSU commands are used (see 16.1-16.2). Consider
+	 * making a function from this.
 	 */
 	// TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG
 	if (read_scom(PSU_SBE_DOORBELL_REG) & PPC_BIT(0))
