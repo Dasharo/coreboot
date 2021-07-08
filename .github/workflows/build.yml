@@ -2,7 +2,6 @@ name: Build coreboot for the POWER9 Talos II target
 on:
   push:
     branches:
-      - hw_test
       - talos_2_support
       - squashed_talos_2_support
       - talos_2_support_ramstage
@@ -119,24 +118,24 @@ jobs:
     needs: build
     steps:
 
-    # # valid time 0-21600
+    # valid time 0-21600
 
-    # # This job is supposed to run only at night time
-    # # Because scheduling an event works only for default branch
-    # # we'll delay it manually here
-    # - name: Delay until night
-    #   run: |
-    #     NOW=$(date -d "1970-01-01 UTC $(date +%T)" +%s)
-    #     if [ ${NOW} -lt ${DELAY_UNTIL} ] && [ ${NOW} -gt ${LATEST_EXECUTION_START} ]
-    #     then
-    #       let DELAY=${DELAY_UNTIL}-$(date -d "1970-01-01 UTC $(date +%T)" +%s)
-    #       echo "Execution of this step is delayed until night, for ${DELAY} seconds"
-    #       sleep ${DELAY}s
-    #     fi
-    #   env:
-    #     # time of day in seconds
-    #     DELAY_UNTIL: 86400 # 12:00 AM UTC - midnight
-    #     LATEST_EXECUTION_START: 14400 # 4:00 AM UTC
+    # This job is supposed to run only at night time
+    # Because scheduling an event works only for default branch
+    # we'll delay it manually here
+    - name: Delay until night
+      run: |
+        NOW=$(date -d "1970-01-01 UTC $(date +%T)" +%s)
+        if [ ${NOW} -lt ${DELAY_UNTIL} ] && [ ${NOW} -gt ${LATEST_EXECUTION_START} ]
+        then
+          let DELAY=${DELAY_UNTIL}-$(date -d "1970-01-01 UTC $(date +%T)" +%s)
+          echo "Execution of this step is delayed until night, for ${DELAY} seconds"
+          sleep ${DELAY}s
+        fi
+      env:
+        # time of day in seconds
+        DELAY_UNTIL: 86400 # 12:00 AM UTC - midnight
+        LATEST_EXECUTION_START: 14400 # 4:00 AM UTC
 
     - uses: actions/download-artifact@v2
       with:
@@ -167,9 +166,6 @@ jobs:
         echo "Start logging the boot process"
         rm -f ${LOG_FILE}
         ssh ${TALOS_USER}@${TALOS_IP} 'obmc-console-client < /dev/zero' | tee ${LOG_FILE} &
-
-        echo "Power on Talos II"
-        ssh ${TALOS_USER}@${TALOS_IP} 'obmcutil -w poweron'
 
         echo "Sleeping for ${WAIT_SECONDS} seconds"
         sleep ${WAIT_SECONDS}s
