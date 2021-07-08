@@ -119,11 +119,11 @@ jobs:
     needs: build
     steps:
 
-    # valid time 0-21600
+    # # valid time 0-21600
 
-    # This job is supposed to run only at night time
-    # Because scheduling an event works only for default branch
-    # we'll delay it manually here
+    # # This job is supposed to run only at night time
+    # # Because scheduling an event works only for default branch
+    # # we'll delay it manually here
     # - name: Delay until night
     #   run: |
     #     NOW=$(date -d "1970-01-01 UTC $(date +%T)" +%s)
@@ -133,10 +133,10 @@ jobs:
     #       echo "Execution of this step is delayed until night, for ${DELAY} seconds"
     #       sleep ${DELAY}s
     #     fi
-      env:
-        # time of day in seconds
-        DELAY_UNTIL: 86400 # 12:00 AM UTC - midnight
-        LATEST_EXECUTION_START: 14400 # 4:00 AM UTC
+    #   env:
+    #     # time of day in seconds
+    #     DELAY_UNTIL: 86400 # 12:00 AM UTC - midnight
+    #     LATEST_EXECUTION_START: 14400 # 4:00 AM UTC
 
     - uses: actions/download-artifact@v2
       with:
