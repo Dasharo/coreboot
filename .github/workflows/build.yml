@@ -115,6 +115,7 @@ jobs:
 
   run-on-hw:
     runs-on: [self-hosted, builder]
+    needs: build
     steps:
 
     # valid time 0-21600
@@ -136,26 +137,14 @@ jobs:
         DELAY_UNTIL: 86400 # 12:00 AM UTC - midnight
         LATEST_EXECUTION_START: 14400 # 4:00 AM UTC
 
-    - name: Checkout repository
-      uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
       with:
-        # Checkout pull request HEAD commit instead of merge commit
-        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
-        ref: ${{ github.event.pull_request.head.sha }}
-        # Fetch complete history
-        fetch-depth: 0
+        name: coreboot-binaries
 
-    - name: Checkout all submodules
-      run: git submodule update --init --recursive --checkout
-
-    - name: Build Talos II target (bootblock in PNOR)
+    - name: Move coreboot binaries to build directory
       run: |
-        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
-          --workdir=/home/coreboot -u$(id -u):$(id -g) 3mdeb/coreboot-sdk:mkimage << EOF
-        cp configs/config.raptor-cs-talos-2 .config
-        make olddefconfig
-        make -j $(nproc)
-        EOF
+        mkdir -p build
+        mv bootblock.signed.ecc coreboot.rom.signed.ecc build/
 
     - name: Generate ssh config
       run: |
