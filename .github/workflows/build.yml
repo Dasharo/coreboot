@@ -80,6 +80,39 @@ jobs:
         make -j $(nproc)
         EOF
 
+  build-freebsd:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        # Checkout pull request HEAD commit instead of merge commit
+        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+        ref: ${{ github.event.pull_request.head.sha }}
+        # Fetch complete history
+        fetch-depth: 0
+    - name: Checkout all submodules
+      run: git submodule update --init --recursive --checkout
+
+    - name: Build some tools in FreeBSD VM
+      id: test
+      uses: vmactions/freebsd-vm@v0.1.4
+      with:
+        usesh: true
+        mem: 2048
+        prepare: |
+          pkg install -y git gmake gcc pciutils openssl pkgconf bash
+        run: |
+          gmake -C util/amdfwtool
+          gmake -C util/cbmem
+          gmake -C util/futility
+          gmake -C util/inteltool
+          gmake -C util/intelvbttool
+          gmake -C util/nvramtool
+          gmake -C util/superiotool
+          gmake -C util/ifdtool
+          gmake -C util/cbfstool
+
   run-on-hw:
     runs-on: [self-hosted, builder]
     steps:
@@ -166,37 +199,3 @@ jobs:
         TALOS_USER: ${{ secrets.TALOS_USERNAME }}
         TALOS_IP: ${{ secrets.TALOS_IP }}
         TALOS_KEY: ${{ secrets.TALOS_KEY }}
-
-
-  build-freebsd:
-    runs-on: macos-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-      with:
-        # Checkout pull request HEAD commit instead of merge commit
-        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
-        ref: ${{ github.event.pull_request.head.sha }}
-        # Fetch complete history
-        fetch-depth: 0
-    - name: Checkout all submodules
-      run: git submodule update --init --recursive --checkout
-
-    - name: Build some tools in FreeBSD VM
-      id: test
-      uses: vmactions/freebsd-vm@v0.1.4
-      with:
-        usesh: true
-        mem: 2048
-        prepare: |
-          pkg install -y git gmake gcc pciutils openssl pkgconf bash
-        run: |
-          gmake -C util/amdfwtool
-          gmake -C util/cbmem
-          gmake -C util/futility
-          gmake -C util/inteltool
-          gmake -C util/intelvbttool
-          gmake -C util/nvramtool
-          gmake -C util/superiotool
-          gmake -C util/ifdtool
-          gmake -C util/cbfstool
