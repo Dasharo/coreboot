@@ -2,6 +2,7 @@ name: Build coreboot for the POWER9 Talos II target
 on:
   push:
     branches:
+      - hw_test
       - talos_2_support
       - squashed_talos_2_support
       - talos_2_support_ramstage
@@ -17,7 +18,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted, builder]
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -123,15 +124,15 @@ jobs:
     # This job is supposed to run only at night time
     # Because scheduling an event works only for default branch
     # we'll delay it manually here
-    - name: Delay until night
-      run: |
-        NOW=$(date -d "1970-01-01 UTC $(date +%T)" +%s)
-        if [ ${NOW} -lt ${DELAY_UNTIL} ] && [ ${NOW} -gt ${LATEST_EXECUTION_START} ]
-        then
-          let DELAY=${DELAY_UNTIL}-$(date -d "1970-01-01 UTC $(date +%T)" +%s)
-          echo "Execution of this step is delayed until night, for ${DELAY} seconds"
-          sleep ${DELAY}s
-        fi
+    # - name: Delay until night
+    #   run: |
+    #     NOW=$(date -d "1970-01-01 UTC $(date +%T)" +%s)
+    #     if [ ${NOW} -lt ${DELAY_UNTIL} ] && [ ${NOW} -gt ${LATEST_EXECUTION_START} ]
+    #     then
+    #       let DELAY=${DELAY_UNTIL}-$(date -d "1970-01-01 UTC $(date +%T)" +%s)
+    #       echo "Execution of this step is delayed until night, for ${DELAY} seconds"
+    #       sleep ${DELAY}s
+    #     fi
       env:
         # time of day in seconds
         DELAY_UNTIL: 86400 # 12:00 AM UTC - midnight
