@@ -116,6 +116,7 @@ jobs:
   run-on-hw:
     runs-on: [self-hosted, builder]
     needs: build
+    timeout-minutes: 2880 # 2 days
     steps:
 
     # valid time 0-21600
