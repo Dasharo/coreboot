@@ -140,7 +140,7 @@ struct cpmr_header {
 	uint8_t fused_mode_status;
 	uint32_t img_offset;
 	uint32_t img_len;
-	uint32_t cme_common_ring_offset;;
+	uint32_t cme_common_ring_offset;
 	uint32_t cme_common_ring_len;
 	uint32_t cme_pstate_offset;
 	uint32_t cme_pstate_len;
