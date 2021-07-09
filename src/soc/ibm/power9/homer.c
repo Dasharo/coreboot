@@ -118,11 +118,14 @@ static void build_sgpe(struct homer_st *homer, struct xip_sgpe_header *sgpe,
 	/*
 	 * 0x80000000 (HOMER in OCI PBA memory space) + 1M (QPMR offset)
 	 * + 512k (offset to aux)
+	 *
+	 * This probably is full address and not offset.
 	 */
 	hdr->aux_offset = 0x80000000 + offsetof(struct homer_st, qpmr.aux);
 	hdr->aux_len = CACHE_SCOM_AUX_SIZE;
 	homer->qpmr.sgpe.header.enable_24x7_ima = 1;
-	homer->qpmr.sgpe.header.aux_offset = offsetof(struct homer_st, qpmr.aux);
+	/* Here offset is relative to QPMR */
+	homer->qpmr.sgpe.header.aux_offset = offsetof(struct qpmr_st, aux);
 	homer->qpmr.sgpe.header.aux_len = CACHE_SCOM_AUX_SIZE;
 }
 
@@ -190,7 +193,7 @@ static void add_init_cpureg_entry(uint32_t *base, uint16_t spr, uint64_t val,
 	} else if (spr == SPR_URMOR) {
 		base[7] = MR_R0_TO_R9_OP;
 	} else {
-		base[7] |= ((spr & 0x1F) << 16) | ((spr & 0x3E) << 6);
+		base[7] |= ((spr & 0x1F) << 16) | ((spr & 0x3E0) << 6);
 	}
 }
 
@@ -204,6 +207,7 @@ static const uint32_t init_save_self_template[] = {
 static void add_init_save_self_entry(uint32_t **ptr, int i)
 {
 	memcpy(*ptr, init_save_self_template, sizeof(init_save_self_template));
+	**ptr |= i;
 	*ptr += ARRAY_SIZE(init_save_self_template);
 }
 
@@ -302,11 +306,11 @@ static void build_self_restore(struct homer_st *homer,
 				 * this later.
 				 *
 				 * CIABR through MSR:       key =  0..7
-				 * SMFCTRL through USPRG1:  key = 13..15
+				 * SMFCTRL through USPRG1:  key = 1C..1E
 				 */
 				int tsa_key = i;
 				if (i > 7)
-					tsa_key += 5;
+					tsa_key += 0x14;
 
 				add_init_cpureg_entry(csr->thread_restore_area[thread],
 				                      thread_sprs[i], 0, 1);
@@ -322,11 +326,11 @@ static void build_self_restore(struct homer_st *homer,
 		for (int i = 0; i < ARRAY_SIZE(core_sprs); i++) {
 			add_init_cpureg_entry(csr->core_restore_area, core_sprs[i], 0, 1);
 			/*
-			 * HID through PTCR: key = 9..12
+			 * HID through PTCR: key = 0x15..0x18
 			 * HRMOR and URMOR are skipped.
 			 */
 			if (core_sprs[i] != SPR_HRMOR && core_sprs[i] != SPR_URMOR)
-				add_init_save_self_entry(&csa, i + 8);
+				add_init_save_self_entry(&csa, i + 0x14);
 		}
 
 		*csa++ = MTLR_R30_OP;
@@ -371,6 +375,8 @@ static void build_cme(struct homer_st *homer, struct xip_cme_header *cme,
 	hdr->pstate_region_len = 0;
 
 	hdr->cpmr_phy_addr = (uint64_t) homer | 2 * MiB;
+	/* With SMF disabled unsecure HOMER is the same as regular one */
+	hdr->unsec_cpmr_phy_addr = hdr->cpmr_phy_addr;
 
 	hdr->common_ring_offset = hdr->hcode_offset + hdr->hcode_len;
 	hdr->common_ring_len = 0;
@@ -394,7 +400,7 @@ static void build_pgpe(struct homer_st *homer, struct xip_pgpe_header *pgpe,
 	/*
 	 * 0xFFF00000 (SRAM base) + 4k (IPC) + 60k (GPE0) + 64k (GPE1) = 0xFFF20000
 	 *
-	 * WARNING: I have no idea if this is constant or depends on SPGE version.
+	 * WARNING: I have no idea if this is constant or depends on PPGE version.
 	 */
 	assert(homer->ppmr.header.sram_region_start == 0xFFF20000);
 	assert(homer->ppmr.header.sram_region_size == PGPE_SRAM_IMG_SIZE +
@@ -437,10 +443,6 @@ static void build_pgpe(struct homer_st *homer, struct xip_pgpe_header *pgpe,
 	      &homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE];
 
 	/* SPGE auxiliary functions */
-	/*
-	 * TODO: check if it is really enabled. This comes from hostboot attributes,
-	 * but I don't know if/where those are set.
-	 */
 	hdr->aux_controls = 1 << 24;
 }
 
@@ -781,8 +783,8 @@ static void cpu_winkle(void)
 	asm volatile("sync; isync" ::: "memory");
 
 	/* TODO: address depends on active core */
-	/* TODO: do we even need this? Those thread are already stopped */
-	write_scom(0x21010A9C, 0x0008080800000000);
+	/* TODO: do we even need this? Those threads are already stopped */
+	// write_scom(0x21010A9C, 0x0008080800000000);
 
 	/*
 	 * Cannot clobber:
@@ -885,7 +887,7 @@ void build_homer_image(void *homer_bar)
 	 * Temporarily use HOMER read from running system, until code for crafting
 	 * it from HCODE is ready.
 	 */
-	if (1) {
+	if (0) {
 
 	void *map = cbfs_map("homer", NULL);
 	memcpy(homer_bar, map, 4 * MiB);
@@ -919,7 +921,46 @@ void build_homer_image(void *homer_bar)
 
 	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
 	           dd);
+
 	// TBD
+	// getPpeScanRings() for CME
+	// layoutRingsForCME()
+	// getPpeScanRings for SGPE
+	// layoutRingsForSGPE()
+
+	// buildParameterBlock();
+	// updateCpmrCmeRegion();
+
+	// Update QPMR Header area in HOMER
+	// updateQpmrHeader();
+
+	// Update PPMR Header area in HOMER
+	// updatePpmrHeader();
+
+	// Update L2 Epsilon SCOM Registers
+	// populateEpsilonL2ScomReg( pChipHomer );
+
+	// Update L3 Epsilon SCOM Registers
+	// populateEpsilonL3ScomReg( pChipHomer );
+
+	// Update L3 Refresh Timer Control SCOM Registers
+	// populateL3RefreshScomReg( pChipHomer, i_procTgt);
+
+	// Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register
+	// populateNcuRngBarScomReg( pChipHomer, i_procTgt );
+
+	// validate SRAM Image Sizes of PPE's
+	// validateSramImageSize( pChipHomer, sramImgSize );
+
+	// Update CME/SGPE Flags in respective image header.
+	// updateImageFlags( pChipHomer, i_procTgt );
+
+	// Set the Fabric IDs
+	// setFabricIds( pChipHomer, i_procTgt );
+	//	- doesn't modify anything?
+
+	// Customize magic word based on endianess
+	// customizeMagicWord( pChipHomer );
 	}
 
 	/* Set up wakeup mode */
