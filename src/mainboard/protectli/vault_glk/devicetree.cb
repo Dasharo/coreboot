@@ -91,8 +91,7 @@ chip soc/intel/apollolake
 	register "disable_xhci_lfps_pm" = "0"
 
 	# FSP UPD to modify the Integrated Filter (IF) value
-	# Set it to default value: 0x12
-	register "ModPhyIfValue" = "0x12"
+	register "ModPhyIfValue" = "0x16"
 
 	register "usb2_port[0]" = "PORT_EN(OC_SKIP)"	# USB3.0 Type A
 	register "usb2_port[1]" = "PORT_EN(OC_SKIP)"	# USB3.0 Type A
