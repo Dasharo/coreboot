@@ -44,6 +44,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *silconfig)
 	silconfig->PkgCStateUnDemotion = 0x1;
 	silconfig->Usb30Mode = 0x1;
 	silconfig->DspEnable = 0x0;
+	silconfig->UsbPdoProgramming = 0x1;
 
 	silconfig->PcieRpHotPlug[0] = 0x0;
 	silconfig->PcieRpPmSci[0] = 0x1;

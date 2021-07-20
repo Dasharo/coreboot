@@ -1,5 +1,5 @@
 Vendor name: Protectli
-Board name: VP2410
+Board name: FW6_CML
 Category: sbc
 ROM protocol: SPI
 ROM socketed: n
