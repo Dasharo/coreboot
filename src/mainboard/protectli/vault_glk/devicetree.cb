@@ -85,12 +85,8 @@ chip soc/intel/apollolake
 
 	# USB configuration
 	register "usb_config_override" = "1"
-
-	# Disable compliance mode
 	register "DisableComplianceMode" = "1"
 	register "disable_xhci_lfps_pm" = "0"
-
-	# FSP UPD to modify the Integrated Filter (IF) value
 	register "ModPhyIfValue" = "0x16"
 
 	register "usb2_port[0]" = "PORT_EN(OC_SKIP)"	# USB3.0 Type A
