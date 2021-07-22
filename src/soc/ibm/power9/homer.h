@@ -230,7 +230,7 @@ struct ppmr_header {
 	uint32_t sram_img_size;
 	uint32_t boot_prog_code;
 	uint32_t wof_table_offset;
-	uint32_t wof_teble_len;
+	uint32_t wof_table_len;
 	uint32_t aux_task_offset;
 	uint32_t aux_task_len;
 	uint32_t doptrace_offset;
@@ -264,13 +264,13 @@ struct pgpe_img_header {
 	uint32_t wof_state_address;
 	uint32_t req_active_quad_address;
 	uint32_t wof_table_addr;
-	uint32_t wof_table_length;
+	uint32_t wof_table_len;
 	uint32_t core_throttle_assert_cnt;
 	uint32_t core_throttle_deassert_cnt;
 	uint32_t aux_controls;
 	uint32_t optrace_pointer;
 	uint32_t doptrace_offset;
-	uint32_t doptrace_length;
+	uint32_t doptrace_len;
 	uint32_t wof_values_address;
 };
 
