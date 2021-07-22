@@ -8,10 +8,10 @@
 #include <fsp/api.h>
 #include <fsp/ppi/mp_service_ppi.h>
 #include <fsp/util.h>
+#include <intelblocks/irq.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
-#include <intelblocks/mp_init.h>
 #include <intelblocks/tcss.h>
 #include <soc/gpio_soc_defs.h>
 #include <soc/intel/common/vbt.h>
@@ -19,6 +19,7 @@
 #include <soc/pcie.h>
 #include <soc/ramstage.h>
 #include <soc/soc_chip.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* THC assignment definition */
@@ -29,6 +30,234 @@
 /* SATA DEVSLP idle timeout default values */
 #define DEF_DMVAL	15
 #define DEF_DITOVAL	625
+
+/*
+ * ME End of Post configuration
+ * 0 - Disable EOP.
+ * 1 - Send in PEI (Applicable for FSP in API mode)
+ * 2 - Send in DXE (Not applicable for FSP in API mode)
+ */
+enum fsp_end_of_post {
+	EOP_DISABLE = 0,
+	EOP_PEI = 1,
+	EOP_DXE = 2,
+};
+
+static const struct slot_irq_constraints irq_constraints[] = {
+	{
+		.slot = SA_DEV_SLOT_IGD,
+		.fns = {
+			/* INTERRUPT_PIN is RO/0x01 */
+			FIXED_INT_ANY_PIRQ(SA_DEVFN_IGD, PCI_INT_A),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_DPTF,
+		.fns = {
+			ANY_PIRQ(SA_DEVFN_DPTF),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_IPU,
+		.fns = {
+			/* INTERRUPT_PIN is RO/0x01, and INTERRUPT_LINE is RW,
+			   but S0ix fails when not set to 16 (b/193434192) */
+			FIXED_INT_PIRQ(SA_DEVFN_IPU, PCI_INT_A, PIRQ_A),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_CPU_6,
+		.fns = {
+			FIXED_INT_PIRQ(SA_DEVFN_CPU_PCIE6_0, PCI_INT_A, PIRQ_A),
+			FIXED_INT_PIRQ(SA_DEVFN_CPU_PCIE6_2, PCI_INT_C, PIRQ_C),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_TBT,
+		.fns = {
+			ANY_PIRQ(SA_DEVFN_TBT0),
+			ANY_PIRQ(SA_DEVFN_TBT1),
+			ANY_PIRQ(SA_DEVFN_TBT2),
+			ANY_PIRQ(SA_DEVFN_TBT3),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_GNA,
+		.fns = {
+			/* INTERRUPT_PIN is RO/0x01 */
+			FIXED_INT_ANY_PIRQ(SA_DEVFN_GNA, PCI_INT_A),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_TCSS,
+		.fns = {
+			ANY_PIRQ(SA_DEVFN_TCSS_XHCI),
+			ANY_PIRQ(SA_DEVFN_TCSS_XDCI),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO0,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_I2C6),
+			DIRECT_IRQ(PCH_DEVFN_I2C7),
+			ANY_PIRQ(PCH_DEVFN_THC0),
+			ANY_PIRQ(PCH_DEVFN_THC1),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO6,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_UART3),
+			DIRECT_IRQ(PCH_DEVFN_UART4),
+			DIRECT_IRQ(PCH_DEVFN_UART5),
+			DIRECT_IRQ(PCH_DEVFN_UART6),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_ISH,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_ISH),
+			DIRECT_IRQ(PCH_DEVFN_GSPI2),
+			ANY_PIRQ(PCH_DEVFN_UFS),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO2,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_GSPI3),
+			DIRECT_IRQ(PCH_DEVFN_GSPI4),
+			DIRECT_IRQ(PCH_DEVFN_GSPI5),
+			DIRECT_IRQ(PCH_DEVFN_GSPI6),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_XHCI,
+		.fns = {
+			ANY_PIRQ(PCH_DEVFN_XHCI),
+			DIRECT_IRQ(PCH_DEVFN_USBOTG),
+			ANY_PIRQ(PCH_DEVFN_CNVI_WIFI),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO3,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_I2C0),
+			DIRECT_IRQ(PCH_DEVFN_I2C1),
+			DIRECT_IRQ(PCH_DEVFN_I2C2),
+			DIRECT_IRQ(PCH_DEVFN_I2C3),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_CSE,
+		.fns = {
+			ANY_PIRQ(PCH_DEVFN_CSE),
+			ANY_PIRQ(PCH_DEVFN_CSE_2),
+			ANY_PIRQ(PCH_DEVFN_CSE_IDER),
+			ANY_PIRQ(PCH_DEVFN_CSE_KT),
+			ANY_PIRQ(PCH_DEVFN_CSE_3),
+			ANY_PIRQ(PCH_DEVFN_CSE_4),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SATA,
+		.fns = {
+			ANY_PIRQ(PCH_DEVFN_SATA),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO4,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_I2C4),
+			DIRECT_IRQ(PCH_DEVFN_I2C5),
+			DIRECT_IRQ(PCH_DEVFN_UART2),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_PCIE,
+		.fns = {
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE1, PCI_INT_A, PIRQ_A),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE2, PCI_INT_B, PIRQ_B),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE3, PCI_INT_C, PIRQ_C),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE4, PCI_INT_D, PIRQ_D),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE5, PCI_INT_A, PIRQ_A),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE6, PCI_INT_B, PIRQ_B),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE7, PCI_INT_C, PIRQ_C),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE8, PCI_INT_D, PIRQ_D),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_PCIE_1,
+		.fns = {
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE9,  PCI_INT_A, PIRQ_A),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE10, PCI_INT_B, PIRQ_B),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE11, PCI_INT_C, PIRQ_C),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE12, PCI_INT_D, PIRQ_D),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO5,
+		.fns = {
+			/* UART0 shares an interrupt line with TSN0, so must use
+			   a PIRQ */
+			FIXED_INT_ANY_PIRQ(PCH_DEVFN_UART0, PCI_INT_A),
+			/* UART1 shares an interrupt line with TSN1, so must use
+			   a PIRQ */
+			FIXED_INT_ANY_PIRQ(PCH_DEVFN_UART1, PCI_INT_B),
+			DIRECT_IRQ(PCH_DEVFN_GSPI0),
+			DIRECT_IRQ(PCH_DEVFN_GSPI1),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_ESPI,
+		.fns = {
+			ANY_PIRQ(PCH_DEVFN_HDA),
+			ANY_PIRQ(PCH_DEVFN_SMBUS),
+			ANY_PIRQ(PCH_DEVFN_GBE),
+			/* INTERRUPT_PIN is RO/0x01 */
+			FIXED_INT_ANY_PIRQ(PCH_DEVFN_TRACEHUB, PCI_INT_A),
+		},
+	},
+};
+
+static const SI_PCH_DEVICE_INTERRUPT_CONFIG *pci_irq_to_fsp(size_t *out_count)
+{
+	const struct pci_irq_entry *entry = get_cached_pci_irqs();
+	SI_PCH_DEVICE_INTERRUPT_CONFIG *config;
+	size_t pch_total = 0;
+	size_t cfg_count = 0;
+
+	if (!entry)
+		return NULL;
+
+	/* Count PCH devices */
+	while (entry) {
+		if (PCI_SLOT(entry->devfn) >= MIN_PCH_SLOT)
+			++pch_total;
+		entry = entry->next;
+	}
+
+	/* Convert PCH device entries to FSP format */
+	config = calloc(pch_total, sizeof(*config));
+	entry = get_cached_pci_irqs();
+	while (entry) {
+		if (PCI_SLOT(entry->devfn) < MIN_PCH_SLOT) {
+			entry = entry->next;
+			continue;
+		}
+
+		config[cfg_count].Device = PCI_SLOT(entry->devfn);
+		config[cfg_count].Function = PCI_FUNC(entry->devfn);
+		config[cfg_count].IntX = (SI_PCH_INT_PIN)entry->pin;
+		config[cfg_count].Irq = entry->irq;
+		++cfg_count;
+
+		entry = entry->next;
+	}
+
+	*out_count = cfg_count;
+
+	return config;
+}
 
 /*
  * Chip config parameter PcieRpL1Substates uses (UPD value + 1)
@@ -119,6 +348,20 @@ static void fill_fsps_tcss_params(FSP_S_CONFIG *s_cfg,
 	/* D3Hot and D3Cold for TCSS */
 	s_cfg->D3HotEnable = !config->TcssD3HotDisable;
 	s_cfg->D3ColdEnable = !config->TcssD3ColdDisable;
+
+	s_cfg->UsbTcPortEn = 0;
+	for (int i = 0; i < MAX_TYPE_C_PORTS; i++) {
+		/* TCSS xHCI --> Root Hub --> Type-C Port */
+		const struct device_path port_path[] = {
+			{.type = DEVICE_PATH_PCI, .pci.devfn = SA_DEVFN_TCSS_XHCI},
+			{.type = DEVICE_PATH_USB, .usb.port_type = 0, .usb.port_id = 0},
+			{.type = DEVICE_PATH_USB, .usb.port_type = 3, .usb.port_id = i} };
+		const struct device *port = find_dev_nested_path(pci_root_bus(), port_path,
+					ARRAY_SIZE(port_path));
+
+		if (is_dev_enabled(port))
+			s_cfg->UsbTcPortEn |= BIT(i);
+	}
 }
 
 static void fill_fsps_chipset_lockdown_params(FSP_S_CONFIG *s_cfg,
@@ -136,6 +379,9 @@ static void fill_fsps_chipset_lockdown_params(FSP_S_CONFIG *s_cfg,
 		s_cfg->PchUnlockGpioPads = 0;
 		s_cfg->RtcMemoryLock = 1;
 	}
+
+	/* coreboot will send EOP before loading payload */
+	s_cfg->EndOfPostMessage = EOP_DISABLE;
 }
 
 static void fill_fsps_xhci_params(FSP_S_CONFIG *s_cfg,
@@ -183,10 +429,7 @@ static void fill_fsps_xhci_params(FSP_S_CONFIG *s_cfg,
 static void fill_fsps_xdci_params(FSP_S_CONFIG *s_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
-	/* Enable xDCI controller if enabled in devicetree and allowed */
-	if (!xdci_can_enable())
-		devfn_disable(pci_root_bus(), PCH_DEVFN_USBOTG);
-	s_cfg->XdciEnable = is_devfn_enabled(PCH_DEVFN_USBOTG);
+	s_cfg->XdciEnable = xdci_can_enable(PCH_DEVFN_USBOTG);
 }
 
 static void fill_fsps_uart_params(FSP_S_CONFIG *s_cfg,
@@ -332,6 +575,62 @@ static void fill_fsps_misc_power_params(FSP_S_CONFIG *s_cfg,
 	s_cfg->Hwp = 1;
 	s_cfg->Cx = 1;
 	s_cfg->PsOnEnable = 1;
+	/* Enable the energy efficient turbo mode */
+	s_cfg->EnergyEfficientTurbo = 1;
+	s_cfg->PkgCStateLimit = LIMIT_AUTO;
+}
+
+static void fill_fsps_irq_params(FSP_S_CONFIG *s_cfg,
+				 const struct soc_intel_alderlake_config *config)
+{
+	if (!assign_pci_irqs(irq_constraints, ARRAY_SIZE(irq_constraints)))
+		die("ERROR: Unable to assign PCI IRQs, and no _PRT table available\n");
+
+	size_t pch_count = 0;
+	const SI_PCH_DEVICE_INTERRUPT_CONFIG *upd_irqs = pci_irq_to_fsp(&pch_count);
+
+	s_cfg->DevIntConfigPtr = (UINT32)((uintptr_t)upd_irqs);
+	s_cfg->NumOfDevIntConfig = pch_count;
+	printk(BIOS_INFO, "IRQ: Using dynamically assigned PCI IO-APIC IRQs\n");
+}
+
+static void fill_fsps_fivr_params(FSP_S_CONFIG *s_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	/* PCH FIVR settings override */
+	if (!config->ext_fivr_settings.configure_ext_fivr)
+		return;
+
+	s_cfg->PchFivrExtV1p05RailEnabledStates =
+			config->ext_fivr_settings.v1p05_enable_bitmap;
+
+	s_cfg->PchFivrExtV1p05RailSupportedVoltageStates =
+			config->ext_fivr_settings.v1p05_supported_voltage_bitmap;
+
+	s_cfg->PchFivrExtVnnRailEnabledStates =
+			config->ext_fivr_settings.vnn_enable_bitmap;
+
+	s_cfg->PchFivrExtVnnRailSupportedVoltageStates =
+			config->ext_fivr_settings.vnn_supported_voltage_bitmap;
+
+	s_cfg->PchFivrExtVnnRailSxEnabledStates =
+			config->ext_fivr_settings.vnn_enable_bitmap;
+
+	/* Convert the voltages to increments of 2.5mv */
+	s_cfg->PchFivrExtV1p05RailVoltage =
+			(config->ext_fivr_settings.v1p05_voltage_mv * 10) / 25;
+
+	s_cfg->PchFivrExtVnnRailVoltage =
+			(config->ext_fivr_settings.vnn_voltage_mv * 10) / 25;
+
+	s_cfg->PchFivrExtVnnRailSxVoltage =
+			(config->ext_fivr_settings.vnn_sx_voltage_mv * 10 / 25);
+
+	s_cfg->PchFivrExtV1p05RailIccMaximum =
+			config->ext_fivr_settings.v1p05_icc_max_ma;
+
+	s_cfg->PchFivrExtVnnRailIccMaximum =
+			config->ext_fivr_settings.vnn_icc_max_ma;
 }
 
 static void arch_silicon_init_params(FSPS_ARCH_UPD *s_arch_cfg)
@@ -367,6 +666,8 @@ static void soc_silicon_init_params(FSP_S_CONFIG *s_cfg,
 		fill_fsps_storage_params,
 		fill_fsps_pcie_params,
 		fill_fsps_misc_power_params,
+		fill_fsps_irq_params,
+		fill_fsps_fivr_params,
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(fill_fsps_params); i++)
@@ -381,7 +682,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	FSPS_ARCH_UPD *s_arch_cfg = &supd->FspsArchUpd;
 
 	config = config_of_soc();
-
 	arch_silicon_init_params(s_arch_cfg);
 	soc_silicon_init_params(s_cfg, config);
 	mainboard_silicon_init_params(s_cfg);

@@ -9,12 +9,12 @@
 #include <arch/cpu.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
+#include <cpu/intel/cpu_ids.h>
 #include <cpu/intel/microcode.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/name.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <intelblocks/mp_init.h>
 #include <soc/bootblock.h>
 #include <soc/pci_devs.h>
 
@@ -105,6 +105,7 @@ static struct {
 	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_3, "Alderlake P GT2" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_4, "Alderlake P GT2" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_5, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_6, "Alderlake P GT2" },
 	{ PCI_DEVICE_ID_INTEL_ADL_M_GT1, "Alderlake M GT1" },
 };
 

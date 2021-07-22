@@ -126,9 +126,12 @@ static void configure_sdcard(void)
 			MSDC1_GPIO_MODE1_3, MSDC1_GPIO_MODE1_VALUE);
 
 	mtk_i2c_bus_init(7);
-	mt6360_init(7);
-	mt6360_ldo_enable(MT6360_LDO3, 1);
-	mt6360_ldo_enable(MT6360_LDO5, 1);
+
+	if (CONFIG(BOARD_GOOGLE_CHERRY))
+		mt6360_init(7);
+
+	mainboard_enable_regulator(MTK_REGULATOR_VCCQ, 1);
+	mainboard_enable_regulator(MTK_REGULATOR_VCC, 1);
 }
 
 /* Set up backlight control pins as output pin and power-off by default */

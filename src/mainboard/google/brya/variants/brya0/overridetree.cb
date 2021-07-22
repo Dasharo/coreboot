@@ -36,6 +36,12 @@ chip soc/intel/alderlake
 
 	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB3/2 Type A MLB port
 
+	# FIVR configurations for brya are disabled since the board doesn't have V1p05 and Vnn
+	# bypass rails implemented.
+	register "ext_fivr_settings" = "{
+		.configure_ext_fivr = 1,
+	}"
+
 	device domain 0 on
 		device ref dtt on
 			chip drivers/intel/dptf
@@ -126,7 +132,26 @@ chip soc/intel/alderlake
 				register "cio2_lanes_used" = "{4}" # 4 CSI Camera lanes are used
 				register "cio2_lane_endpoint[0]" = ""^I2C0.CAM0""
 				register "cio2_prt[0]" = "2"
-				device generic 0 on end
+				device generic 0 on
+					# MIPI lanes are split between UFC and WFC depending on
+					# whether the UFC is USB or MIPI hence probing UFC_USB
+					probe UFC UFC_USB
+				end
+			end
+			chip drivers/intel/mipi_camera
+				register "acpi_uid" = "0x50000"
+				register "acpi_name" = ""IPU0""
+				register "device_type" = "INTEL_ACPI_CAMERA_CIO2"
+
+				register "cio2_num_ports" = "2"
+				register "cio2_lanes_used" = "{4,2}" # 4 and 2 CSI Camera lanes are used
+				register "cio2_lane_endpoint[0]" = ""^I2C0.CAM0""
+				register "cio2_lane_endpoint[1]" = ""^I2C2.CAM1""
+				register "cio2_prt[0]" = "2"
+				register "cio2_prt[1]" = "1"
+				device generic 1 on
+					probe UFC UFC_MIPI_5675
+				end
 			end
 		end
 		device ref cnvi_wifi on
@@ -140,17 +165,15 @@ chip soc/intel/alderlake
 		end
 		device ref tcss_dma0 on
 			chip drivers/intel/usb4/retimer
-				register "dfp" = "{
-					[0] = {.power_gpio = ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_E4),
-					       .group = ACPI_PLD_GROUP(1, 1),}}"
+				register "dfp[0].power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_E4)"
+				use tcss_usb3_port1 as dfp[0].typec_port
 				device generic 0 on end
 			end
 		end
 		device ref tcss_dma1 on
 			chip drivers/intel/usb4/retimer
-				register "dfp" = "{
-					[0] = {.power_gpio = ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_E4),
-					       .group = ACPI_PLD_GROUP(3, 1)}}"
+				register "dfp[0].power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_E4)"
+				use tcss_usb3_port3 as dfp[0].typec_port
 				device generic 0 on end
 			end
 		end
@@ -307,7 +330,7 @@ chip soc/intel/alderlake
 		device ref i2c2 on
 			chip drivers/i2c/sx9324
 				register "desc" = ""SAR1 Proximity Sensor""
-				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_H19_IRQ)"
+				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_B3_IRQ)"
 				register "speed" = "I2C_SPEED_FAST"
 				register "uid" = "1"
 				register "reg_gnrl_ctrl0" = "0x16"
@@ -355,7 +378,7 @@ chip soc/intel/alderlake
 			end
 			chip drivers/i2c/sx9324
 				register "desc" = ""SAR2 Proximity Sensor""
-				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_B3_IRQ)"
+				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_H19_IRQ)"
 				register "speed" = "I2C_SPEED_FAST"
 				register "uid" = "2"
 				register "reg_gnrl_ctrl0" = "0x16"
@@ -400,6 +423,49 @@ chip soc/intel/alderlake
 				register "reg_adv_ctrl19" = "0xf0"
 				register "reg_adv_ctrl20" = "0xf0"
 				device i2c 2C on end
+			end
+			chip drivers/intel/mipi_camera
+				register "acpi_hid" = ""OVTI5675""
+				register "acpi_uid" = "0"
+				register "acpi_name" = ""CAM1""
+				register "chip_name" = ""Ov 5675 Camera""
+				register "device_type" = "INTEL_ACPI_CAMERA_SENSOR"
+
+				register "ssdb.lanes_used" = "2"
+				register "ssdb.link_used" = "1"
+				register "ssdb.vcm_type" = "0x0C"
+				register "vcm_name" = ""VCM0""
+				register "num_freq_entries" = "1"
+				register "link_freq[0]" = "DEFAULT_LINK_FREQ"
+				register "remote_name" = ""IPU0""
+
+				register "has_power_resource" = "1"
+				#Controls
+				register "clk_panel.clks[0].clknum" = "IMGCLKOUT_2"
+				register "clk_panel.clks[0].freq" = "FREQ_19_2_MHZ"
+
+				register "gpio_panel.gpio[0].gpio_num" = "GPP_C3"  #PP3300_FCAM_X
+				register "gpio_panel.gpio[1].gpio_num" = "GPP_A17" #EN_UCAM_PWR
+				register "gpio_panel.gpio[2].gpio_num" = "GPP_F20" #reset
+
+				#_ON
+				register "on_seq.ops_cnt" = "5"
+				register "on_seq.ops[0]" = "SEQ_OPS_CLK_ENABLE(0, 0)"
+				register "on_seq.ops[1]" = "SEQ_OPS_GPIO_ENABLE(0, 5)"
+				register "on_seq.ops[2]" = "SEQ_OPS_GPIO_ENABLE(1, 5)"
+				register "on_seq.ops[3]" = "SEQ_OPS_GPIO_DISABLE(2, 5)"
+				register "on_seq.ops[4]" = "SEQ_OPS_GPIO_ENABLE(2, 5)"
+
+				#_OFF
+				register "off_seq.ops_cnt" = "4"
+				register "off_seq.ops[0]" = "SEQ_OPS_CLK_DISABLE(0, 0)"
+				register "off_seq.ops[1]" = "SEQ_OPS_GPIO_DISABLE(2, 0)"
+				register "off_seq.ops[2]" = "SEQ_OPS_GPIO_DISABLE(1, 0)"
+				register "off_seq.ops[3]" = "SEQ_OPS_GPIO_DISABLE(0, 0)"
+
+				device i2c 36 on
+					probe UFC UFC_MIPI_5675
+				end
 			end
 		end
 		device ref i2c3 on end
@@ -538,7 +604,9 @@ chip soc/intel/alderlake
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Camera""
 						register "type" = "UPC_TYPE_INTERNAL"
-						device ref usb2_port6 on end
+						device ref usb2_port6 on
+							probe UFC UFC_USB
+						end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Type-A Port (MLB)""

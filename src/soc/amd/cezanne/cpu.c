@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/cpu.h>
+#include <amdblocks/mca.h>
 #include <amdblocks/reset.h>
 #include <amdblocks/smm.h>
 #include <assert.h>
@@ -59,6 +60,7 @@ void mp_init_cpus(struct bus *cpu_bus)
 
 static void zen_2_3_init(struct device *dev)
 {
+	check_mca();
 	setup_lapic();
 	set_cstate_io_addr();
 

@@ -58,7 +58,7 @@ static const struct pad_config gpio_table[] = {
 	/* B2  : VRALERT# ==> M2_SSD_PLA_L */
 	PAD_CFG_GPO(GPP_B2, 1, PLTRST),
 	/* B3  : PROC_GP2 ==> SAR2_INT_L */
-	PAD_CFG_GPI_INT(GPP_B3, NONE, PLTRST, LEVEL),
+	PAD_CFG_GPI_APIC(GPP_B3, NONE, PLTRST, LEVEL, NONE),
 	/* B4  : PROC_GP3 ==> SSD_PERST_L */
 	PAD_CFG_GPO(GPP_B4, 1, DEEP),
 	/* B5  : ISH_I2C0_SDA ==> PCH_I2C_MISC_SDA */
@@ -363,6 +363,19 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPD10, NONE, DEEP, NF1),
 	/* GPD11: LANPHYC ==> WWAN_CONFIG1 */
 	PAD_CFG_GPI(GPD11, NONE, DEEP),
+
+	/* Virtual GPIO */
+	/* Put unused Cnvi BT UART lines in NC mode since we use USB mode. */
+	PAD_NC(GPP_VGPIO_6, NONE),
+	PAD_NC(GPP_VGPIO_7, NONE),
+	PAD_NC(GPP_VGPIO_8, NONE),
+	PAD_NC(GPP_VGPIO_9, NONE),
+
+	/* Put unused Cnvi UART0 lines in NC mode since we use USB mode. */
+	PAD_NC(GPP_VGPIO_18, NONE),
+	PAD_NC(GPP_VGPIO_19, NONE),
+	PAD_NC(GPP_VGPIO_20, NONE),
+	PAD_NC(GPP_VGPIO_21, NONE),
 };
 
 /* Early pad configuration in bootblock */
