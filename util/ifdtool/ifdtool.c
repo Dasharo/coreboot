@@ -190,8 +190,6 @@ static enum ich_chipset ifd1_guess_chipset(char *image, int size)
 			return CHIPSET_ICH10;
 		else if (isl <= 16)
 			return CHIPSET_5_SERIES_IBEX_PEAK;
-		else if (isl == 0x13)
-			return CHIPSET_N_J_SERIES_APOLLO_LAKE;
 		printf("Peculiar firmware descriptor, assuming Ibex Peak compatibility.\n");
 		return CHIPSET_5_SERIES_IBEX_PEAK;
 	} else if (iccriba < 0x31 && (fdb->flmap2 & 0xff) < 0x30) {
@@ -205,20 +203,23 @@ static enum ich_chipset ifd1_guess_chipset(char *image, int size)
 		return CHIPSET_9_SERIES_WILDCAT_POINT;
 	} else if (nm == 6) {
 		return CHIPSET_C620_SERIES_LEWISBURG;
-	} else {
-		return CHIPSET_100_200_SERIES_SUNRISE_POINT;
 	}
+	return CHIPSET_PCH_UNKNOWN;
 }
 
 static enum ich_chipset ifd2_platform_to_chipset(const int pindex)
 {
 	switch (pindex) {
+	case PLATFORM_APL:
+		return CHIPSET_N_J_SERIES_APOLLO_LAKE;
 	case PLATFORM_GLK:
 		return CHIPSET_N_J_SERIES_GEMINI_LAKE;
 	case PLATFORM_JSL:
 		return CHIPSET_N_SERIES_JASPER_LAKE;
 	case PLATFORM_EHL:
 		return CHIPSET_x6000_SERIES_ELKHART_LAKE;
+	case PLATFORM_SKLKBL:
+		return CHIPSET_100_200_SERIES_SUNRISE_POINT;
 	case PLATFORM_CNL:
 		return CHIPSET_300_SERIES_CANNON_POINT;
 	case PLATFORM_TGL:
@@ -242,6 +243,7 @@ static enum ich_chipset ifd2_platform_to_chipset(const int pindex)
 static int is_platform_ifd_2(void)
 {
 	static const int ifd_2_platforms[] = {
+		PLATFORM_APL,
 		PLATFORM_GLK,
 		PLATFORM_CNL,
 		PLATFORM_LBG,
@@ -250,6 +252,7 @@ static int is_platform_ifd_2(void)
 		PLATFORM_JSL,
 		PLATFORM_EHL,
 		PLATFORM_ADL,
+		PLATFORM_SKLKBL,
 	};
 	unsigned int i;
 

@@ -24,7 +24,7 @@ config CPU_SPECIFIC_OPTIONS
 	def_bool y
 	select ACPI_INTEL_HARDWARE_SLEEP_VALUES
 	select ACPI_NO_PCAT_8259
-	select ARCH_ALL_STAGES_X86_32
+	select ARCH_X86
 	select BOOT_DEVICE_SUPPORTS_WRITES
 	# CPU specific options
 	select CPU_INTEL_COMMON
@@ -112,6 +112,9 @@ config CPU_SPECIFIC_OPTIONS
 	select INTEL_GMA_ACPI
 	select INTEL_GMA_SWSMISCI
 	select HAVE_ASAN_IN_ROMSTAGE
+	# This SoC does not map SPI flash like many previous SoC. Therefore we
+	# provide a custom media driver that facilitates mapping
+	select X86_CUSTOM_BOOTMEDIA
 
 config MAX_CPUS
 	int
@@ -172,12 +175,6 @@ config DRIVERS_I2C_DESIGNWARE_CLOCK_MHZ
 config C_ENV_BOOTBLOCK_SIZE
 	hex
 	default 0x8000
-
-# This SoC does not map SPI flash like many previous SoC. Therefore we provide
-# a custom media driver that facilitates mapping
-config X86_TOP4G_BOOTMEDIA_MAP
-	bool
-	default n
 
 config ROMSTAGE_ADDR
 	hex

@@ -10,6 +10,10 @@ unsigned long smbios_write_tables(unsigned long start);
 int smbios_add_string(u8 *start, const char *str);
 int smbios_string_table_len(u8 *start);
 
+struct smbios_header;
+int smbios_full_table_len(struct smbios_header *header, u8 *str_table_start);
+void *smbios_carve_table(unsigned long start, u8 type, u8 length, u16 handle);
+
 /* Used by mainboard to add an on-board device */
 enum misc_slot_type;
 enum misc_slot_length;
@@ -276,10 +280,14 @@ struct smbios_entry30 {
 	u64 struct_table_address;
 } __packed;
 
-struct smbios_type0 {
+struct smbios_header {
 	u8 type;
 	u8 length;
 	u16 handle;
+} __packed;
+
+struct smbios_type0 {
+	struct smbios_header header;
 	u8 vendor;
 	u8 bios_version;
 	u16 bios_start_segment;
@@ -297,9 +305,7 @@ struct smbios_type0 {
 } __packed;
 
 struct smbios_type1 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 manufacturer;
 	u8 product_name;
 	u8 version;
@@ -334,9 +340,7 @@ typedef enum {
 } smbios_board_type;
 
 struct smbios_type2 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 manufacturer;
 	u8 product_name;
 	u8 version;
@@ -389,9 +393,7 @@ typedef enum {
 } smbios_enclosure_type;
 
 struct smbios_type3 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 manufacturer;
 	u8 _type;
 	u8 version;
@@ -411,9 +413,7 @@ struct smbios_type3 {
 } __packed;
 
 struct smbios_type4 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 socket_designation;
 	u8 processor_type;
 	u8 processor_family;
@@ -524,9 +524,7 @@ enum smbios_cache_associativity {
 #define SMBIOS_CACHE_OP_MODE_UNKNOWN 3
 
 struct smbios_type7 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 socket_designation;
 	u16 cache_configuration;
 	u16 max_cache_size;
@@ -640,9 +638,7 @@ struct port_information {
 };
 
 struct smbios_type8 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 internal_reference_designator;
 	u8 internal_connector_type;
 	u8 external_reference_designator;
@@ -777,9 +773,7 @@ struct slot_peer_groups {
 } __packed;
 
 struct smbios_type9 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 slot_designation;
 	u8 slot_type;
 	u8 slot_data_bus_width;
@@ -798,17 +792,13 @@ struct smbios_type9 {
 } __packed;
 
 struct smbios_type11 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 count;
 	u8 eos[2];
 } __packed;
 
 struct smbios_type15 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u16 area_length;
 	u16 header_offset;
 	u16 data_offset;
@@ -838,9 +828,7 @@ enum {
 #define SMBIOS_USE_EXTENDED_MAX_CAPACITY	(1 << 31)
 
 struct smbios_type16 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 location;
 	u8 use;
 	u8 memory_error_correction;
@@ -852,9 +840,7 @@ struct smbios_type16 {
 } __packed;
 
 struct smbios_type17 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u16 phys_memory_array_handle;
 	u16 memory_error_information_handle;
 	u16 total_width;
@@ -881,9 +867,7 @@ struct smbios_type17 {
 } __packed;
 
 struct smbios_type19 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u32 starting_address;
 	u32 ending_address;
 	u16 memory_array_handle;
@@ -894,18 +878,14 @@ struct smbios_type19 {
 } __packed;
 
 struct smbios_type32 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 reserved[6];
 	u8 boot_status;
 	u8 eos[2];
 } __packed;
 
 struct smbios_type38 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 interface_type;
 	u8 ipmi_rev;
 	u8 i2c_slave_addr;
@@ -940,9 +920,7 @@ typedef enum {
 #define SMBIOS_DEVICE_TYPE_COUNT 10
 
 struct smbios_type41 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 reference_designation;
 	u8 device_type: 7;
 	u8 device_status: 1;
@@ -955,9 +933,7 @@ struct smbios_type41 {
 } __packed;
 
 struct smbios_type127 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 eos[2];
 } __packed;
 

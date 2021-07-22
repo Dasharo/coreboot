@@ -2,11 +2,14 @@
 
 chip soc/intel/cannonlake
 	# FSP configuration
-	register "SaGv" = "SaGv_Enabled"
 	register "RMT" = "0"
 
 	register "PchHdaDspEnable" = "0"
         register "PchHdaAudioLinkHda" = "1"
+
+	register "common_soc_config" = "{
+		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
+	}"
 
 	device cpu_cluster 0 on
 		device lapic 0 on end

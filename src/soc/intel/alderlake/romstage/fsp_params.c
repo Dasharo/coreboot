@@ -6,7 +6,6 @@
 #include <device/device.h>
 #include <fsp/util.h>
 #include <intelblocks/cpulib.h>
-#include <intelblocks/mp_init.h>
 #include <intelblocks/pcie_rp.h>
 #include <soc/gpio_soc_defs.h>
 #include <soc/iomap.h>
@@ -305,10 +304,8 @@ static void fill_fspm_trace_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->PlatformDebugConsent = CONFIG_SOC_INTEL_ALDERLAKE_DEBUG_CONSENT;
 
 	/* CrashLog config */
-	if (CONFIG(SOC_INTEL_CRASHLOG)) {
-		m_cfg->CpuCrashLogDevice = 1;
-		m_cfg->CpuCrashLogEnable = 1;
-	}
+	m_cfg->CpuCrashLogDevice = CONFIG(SOC_INTEL_CRASHLOG) && is_devfn_enabled(SA_DEVFN_TMT);
+	m_cfg->CpuCrashLogEnable = m_cfg->CpuCrashLogDevice;
 }
 
 static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,

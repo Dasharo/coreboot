@@ -54,6 +54,8 @@ enum timestamp_id {
 	TS_END_POSTCAR = 101,
 	TS_DELAY_START = 110,
 	TS_DELAY_END = 111,
+	TS_READ_UCODE_START = 112,
+	TS_READ_UCODE_END = 113,
 
 	/* 500+ reserved for vendorcode extensions (500-600: google/chromeos) */
 	TS_START_COPYVER = 501,
@@ -77,6 +79,8 @@ enum timestamp_id {
 	TS_START_COPYVPD = 550,
 	TS_END_COPYVPD_RO = 551,
 	TS_END_COPYVPD_RW = 552,
+	TS_START_TPM_ENABLE_UPDATE = 553,
+	TS_END_TPM_ENABLE_UPDATE = 554,
 
 	/* 900-940 reserved for vendorcode extensions (900-940: AMD) */
 	TS_AGESA_INIT_RESET_START = 900,
@@ -107,6 +111,8 @@ enum timestamp_id {
 	/* 940-950 reserved for vendorcode extensions (940-950: Intel ME) */
 	TS_ME_INFORM_DRAM_WAIT = 940,
 	TS_ME_INFORM_DRAM_DONE = 941,
+	TS_ME_BEFORE_END_OF_POST = 942,
+	TS_ME_AFTER_END_OF_POST = 943,
 
 	/* 950+ reserved for vendorcode extensions (950-999: intel/fsp) */
 	TS_FSP_MEMORY_INIT_START = 950,
@@ -187,6 +193,8 @@ static const struct timestamp_id_to_name {
 	{ TS_SELFBOOT_JUMP,	"selfboot jump" },
 	{ TS_DELAY_START,	"Forced delay start" },
 	{ TS_DELAY_END,		"Forced delay end" },
+	{ TS_READ_UCODE_START,	"started reading uCode" },
+	{ TS_READ_UCODE_END,	"finished reading uCode" },
 
 	{ TS_START_COPYVER,	"starting to load verstage" },
 	{ TS_END_COPYVER,	"finished loading verstage" },
@@ -202,6 +210,8 @@ static const struct timestamp_id_to_name {
 	{ TS_END_TPMPCR,	"finished TPM PCR extend" },
 	{ TS_START_TPMLOCK,	"starting locking TPM" },
 	{ TS_END_TPMLOCK,	"finished locking TPM" },
+	{ TS_START_TPM_ENABLE_UPDATE, "started TPM enable update" },
+	{ TS_END_TPM_ENABLE_UPDATE, "finished TPM enable update" },
 
 	{ TS_START_COPYVPD,	"starting to load Chrome OS VPD" },
 	{ TS_END_COPYVPD_RO,	"finished loading Chrome OS VPD (RO)" },
@@ -255,6 +265,8 @@ static const struct timestamp_id_to_name {
 	/* Intel ME related timestamps */
 	{ TS_ME_INFORM_DRAM_WAIT,	"waiting for ME acknowledgement of raminit"},
 	{ TS_ME_INFORM_DRAM_DONE,	"finished waiting for ME response"},
+	{ TS_ME_BEFORE_END_OF_POST,	"before sending EOP to ME"},
+	{ TS_ME_AFTER_END_OF_POST,	"after sending EOP to ME"},
 
 	/* FSP related timestamps */
 	{ TS_FSP_MEMORY_INIT_START, "calling FspMemoryInit" },
