@@ -13,11 +13,20 @@
 #include "homer.h"
 #include "xip.h"
 
+enum operation_type {
+	COPY,
+	FIND
+};
+
 static size_t copy_section(void *dst, struct xip_section *section, void *base,
-                           uint8_t dd)
+                           uint8_t dd, enum operation_type op)
 {
 	if (!section->dd_support) {
-		memcpy(dst, base + section->offset, section->size);
+		if (op == COPY) {
+			memcpy(dst, base + section->offset, section->size);
+		} else {
+			*(void **)dst = base + section->offset;
+		}
 		return section->size;
 	}
 
@@ -27,8 +36,12 @@ static size_t copy_section(void *dst, struct xip_section *section, void *base,
 	assert(cont->magic == DD_CONTAINER_MAGIC);
 	for (i = 0; i < cont->num; i++) {
 		if (cont->blocks[i].dd == dd) {
-			memcpy(dst, (void *)cont + cont->blocks[i].offset,
-			       cont->blocks[i].size);
+			if (op == COPY) {
+				memcpy(dst, (void *)cont + cont->blocks[i].offset,
+				       cont->blocks[i].size);
+			} else {
+				*(void **)dst = (void *)cont + cont->blocks[i].offset;
+			}
 			return cont->blocks[i].size;
 		}
 	}
@@ -45,7 +58,7 @@ static void build_sgpe(struct homer_st *homer, struct xip_sgpe_header *sgpe,
 	assert(sgpe->magic == XIP_MAGIC_SGPE);
 
 	/* SGPE header */
-	size = copy_section(&homer->qpmr.sgpe.header, &sgpe->qpmr, sgpe, dd);
+	size = copy_section(&homer->qpmr.sgpe.header, &sgpe->qpmr, sgpe, dd, COPY);
 	assert(size <= sizeof(struct qpmr_header));
 
 	/*
@@ -67,21 +80,22 @@ static void build_sgpe(struct homer_st *homer, struct xip_sgpe_header *sgpe,
 
 	/* SGPE L1 bootloader */
 	size = copy_section(&homer->qpmr.sgpe.l1_bootloader, &sgpe->l1_bootloader,
-	                    sgpe, dd);
+	                    sgpe, dd, COPY);
 	homer->qpmr.sgpe.header.l1_offset = offsetof(struct qpmr_st,
 	                                             sgpe.l1_bootloader);
 	assert(size <= GPE_BOOTLOADER_SIZE);
 
 	/* SGPE L2 bootloader */
 	size = copy_section(&homer->qpmr.sgpe.l2_bootloader, &sgpe->l2_bootloader,
-	                    sgpe, dd);
+	                    sgpe, dd, COPY);
 	homer->qpmr.sgpe.header.l2_offset = offsetof(struct qpmr_st,
 	                                             sgpe.l2_bootloader);
 	homer->qpmr.sgpe.header.l2_len = size;
 	assert(size <= GPE_BOOTLOADER_SIZE);
 
 	/* SGPE HCODE */
-	size = copy_section(&homer->qpmr.sgpe.sram_image, &sgpe->hcode, sgpe, dd);
+	size = copy_section(&homer->qpmr.sgpe.sram_image, &sgpe->hcode, sgpe, dd,
+	                    COPY);
 	homer->qpmr.sgpe.header.img_offset = offsetof(struct qpmr_st,
 	                                              sgpe.sram_image);
 	homer->qpmr.sgpe.header.img_len = size;
@@ -241,11 +255,11 @@ static void build_self_restore(struct homer_st *homer,
 	 * though this is exe part of self restore region, we should copy it to
 	 * header's address.
 	 */
-	size = copy_section(&homer->cpmr.header, &rest->self, rest, dd);
+	size = copy_section(&homer->cpmr.header, &rest->self, rest, dd, COPY);
 	assert(size > sizeof(struct cpmr_header));
 
 	/* Now, overwrite header. */
-	size = copy_section(&homer->cpmr.header, &rest->cpmr, rest, dd);
+	size = copy_section(&homer->cpmr.header, &rest->cpmr, rest, dd, COPY);
 	assert(size <= sizeof(struct cpmr_header));
 
 	/*
@@ -356,7 +370,8 @@ static void build_cme(struct homer_st *homer, struct xip_cme_header *cme,
 	size_t size;
 	struct cme_img_header *hdr;
 
-	size = copy_section(&homer->cpmr.cme_sram_region, &cme->hcode, cme, dd);
+	size = copy_section(&homer->cpmr.cme_sram_region, &cme->hcode, cme, dd,
+	                    COPY);
 	assert(size <= CME_SRAM_IMG_SIZE);
 	assert(size > (INT_VECTOR_SIZE + sizeof(struct cme_img_header)));
 
@@ -390,7 +405,7 @@ static void build_pgpe(struct homer_st *homer, struct xip_pgpe_header *pgpe,
 	struct pgpe_img_header *hdr;
 
 	/* PPGE header */
-	size = copy_section(&homer->ppmr.header, &pgpe->ppmr, pgpe, dd);
+	size = copy_section(&homer->ppmr.header, &pgpe->ppmr, pgpe, dd, COPY);
 	assert(size <= PPMR_HEADER_SIZE);
 	/*
 	 * 0xFFF00000 (SRAM base) + 4k (IPC) + 60k (GPE0) + 64k (GPE1) = 0xFFF20000
@@ -404,26 +419,27 @@ static void build_pgpe(struct homer_st *homer, struct xip_pgpe_header *pgpe,
 
 	/* PPGE L1 bootloader */
 	size = copy_section(homer->ppmr.l1_bootloader, &pgpe->l1_bootloader, pgpe,
-	                    dd);
+	                    dd, COPY);
 	assert(size <= GPE_BOOTLOADER_SIZE);
 	homer->ppmr.header.l1_offset = offsetof(struct ppmr_st, l1_bootloader);
 
 	/* PPGE L2 bootloader */
 	size = copy_section(homer->ppmr.l2_bootloader, &pgpe->l2_bootloader, pgpe,
-	                    dd);
+	                    dd, COPY);
 	assert(size <= GPE_BOOTLOADER_SIZE);
 	homer->ppmr.header.l2_offset = offsetof(struct ppmr_st, l2_bootloader);
 	homer->ppmr.header.l2_len = size;
 
 	/* PPGE HCODE */
-	size = copy_section(homer->ppmr.pgpe_sram_img, &pgpe->hcode, pgpe, dd);
+	size = copy_section(homer->ppmr.pgpe_sram_img, &pgpe->hcode, pgpe, dd,
+	                    COPY);
 	assert(size <= PGPE_SRAM_IMG_SIZE);
 	assert(size > (INT_VECTOR_SIZE + sizeof(struct pgpe_img_header)));
 	homer->ppmr.header.hcode_offset = offsetof(struct ppmr_st, pgpe_sram_img);
 	homer->ppmr.header.hcode_len = size;
 
 	/* PPGE auxiliary task */
-	size = copy_section(homer->ppmr.aux_task, &pgpe->aux_task, pgpe, dd);
+	size = copy_section(homer->ppmr.aux_task, &pgpe->aux_task, pgpe, dd, COPY);
 	assert(size <= PGPE_AUX_TASK_SIZE);
 	homer->ppmr.header.aux_task_offset = offsetof(struct ppmr_st, aux_task);
 	homer->ppmr.header.aux_task_len = size;
