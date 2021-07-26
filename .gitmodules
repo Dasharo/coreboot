@@ -1,6 +1,6 @@
 [submodule "3rdparty/blobs"]
 	path = 3rdparty/blobs
-	url = ../blobs.git
+	url = https://review.coreboot.org/blobs.git
 	update = none
 	ignore = dirty
 [submodule "util/nvidia-cbootimage"]
@@ -32,7 +32,10 @@
 	url = https://review.coreboot.org/opensbi.git
 [submodule "intel-microcode"]
 	path = 3rdparty/intel-microcode
-	url = https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files.git
+	url = https://review.coreboot.org/intel-microcode.git
+	update = none
+	ignore = dirty
+	branch = main
 [submodule "3rdparty/ffs"]
 	path = 3rdparty/ffs
 	url = https://review.coreboot.org/ffs.git
