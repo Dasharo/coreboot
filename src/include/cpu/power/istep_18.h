@@ -92,7 +92,7 @@ void istep_18_12(void);
 // [0]    TX_TTYPE_4_TRIGGER: TX TTYPE-4 trigger.
 // [1-63] constant = 0
 #define PERV_TOD_TX_TTYPE_4_REG (0x00040015)
-// TOD: TX TTYPE
+// TOD: TX TTYPE
 // [0]    TX_TTYPE_5_TRIGGER: TX TTYPE-5 trigger.
 // [1-63] constant = 0
 #define PERV_TOD_TX_TTYPE_5_REG (0x00040016)
@@ -107,13 +107,13 @@ void istep_18_12(void);
 #define PERV_TOD_LOAD_TOD_MOD_REG (0x00040018)
 // TOD: Load Register TOD Incrementer: 60
 // Bit TOD and 4-bit WOF on read: Returns all 0s when the TOD is not running.
-// On write: go to wait for sync state when data bit 6) = ‘0’ (load TOD).
+// On write: go to wait for sync state when data bit 6) = '0' (load TOD).
 // Otherwise, go to stopped state (load TOD data63).
 // [0-59]  LOAD_TOD_VALUE: Internal path: load TOD value.
 // [60-63] WOF: who's-on-first (WOF) incrementer.
 #define PERV_TOD_LOAD_TOD_REG (0x00040021)
 // TOD: Start TOD Triggering Register
-// Goes to running state when data bit [02] = ‘0’.
+// Goes to running state when data bit [02] = '0'.
 // Otherwise, go to wait for sync state.
 // [0]    FSM_START_TOD_TRIGGER: FSM: Start TOD trigger.
 // [1]    REG_0X22_SPARE_01: Spares.
@@ -124,7 +124,7 @@ void istep_18_12(void);
 // TOD: FSM Register
 // [0:3]  RWX I_PATH_FSM_STATE: Internal path.
 //        TOD FSM state (TOD is running in the following states:
-//        x‘02’, x‘0A’, x‘0E’). 0000 = Error.
+//        x'02', x'0A', x'0E'). 0000 = Error.
 // [4]    ROX TOD_IS_RUNNING: TOD running indicator.
 // [5:7]  RW REG_0X24_SPARE_05_07: Spares.
 // [8:63] RO constant = 0
