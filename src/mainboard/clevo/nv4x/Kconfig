@@ -1,0 +1,120 @@
+if BOARD_CLEVO_NV4X
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select BOARD_ROMSIZE_KB_16384
+	select HAVE_ACPI_RESUME
+	select HAVE_ACPI_TABLES
+	select MAINBOARD_HAS_CHROMEOS
+	select DRIVERS_I2C_HID
+	select DRIVERS_INTEL_DPTF
+	select DRIVERS_I2C_GENERIC
+	select DRIVERS_I2C_MAX98373
+	select DRIVERS_INTEL_PMC
+	select DRIVERS_USB_ACPI
+	select DRIVERS_SPI_ACPI
+	select SOC_INTEL_TIGERLAKE
+	select SOC_INTEL_COMMON_BLOCK_DTT
+	select INTEL_LPSS_UART_FOR_CONSOLE
+	select DRIVERS_INTEL_ISH
+	select EC_ACPI
+	select HAVE_SPD_IN_CBFS
+	select SOC_INTEL_CSE_LITE_SKU
+	select MAINBOARD_HAS_TPM2
+	select MAINBOARD_HAS_SPI_TPM_CR50
+	select SPI_TPM
+
+config CHROMEOS
+	select EC_GOOGLE_CHROMEEC_SWITCHES if TGL_CHROME_EC
+	select GBB_FLAG_FORCE_MANUAL_RECOVERY
+	select HAS_RECOVERY_MRC_CACHE
+	select GBB_FLAG_FORCE_DEV_SWITCH_ON
+	select GBB_FLAG_FORCE_DEV_BOOT_USB
+	select VBOOT_EARLY_EC_SYNC
+
+config MAINBOARD_DIR
+	string
+	default "clevo/nv4x"
+
+config VARIANT_DIR
+	string
+	default "tglrvp_up3" if BOARD_INTEL_TGLRVP_UP3
+	default "tglrvp_up4" if BOARD_INTEL_TGLRVP_UP4
+
+config GBB_HWID
+	string
+	depends on CHROMEOS
+	default "TGLRVPUP3" if BOARD_INTEL_TGLRVP_UP3
+	default "TGLRVPUP4" if BOARD_INTEL_TGLRVP_UP4
+
+config MAINBOARD_PART_NUMBER
+	string
+	default "tglrvpu" if BOARD_INTEL_TGLRVP_UP3
+	default "tglrvpy" if BOARD_INTEL_TGLRVP_UP4
+
+config MAINBOARD_FAMILY
+	string
+	default "Intel_tglrvp"
+
+config MAX_CPUS
+	int
+	default 8
+
+config PCIEXP_HOTPLUG
+	default y
+
+config PCIEXP_HOTPLUG_BUSES
+	int
+	default 42
+
+config PCIEXP_HOTPLUG_MEM
+	hex
+	default 0xc200000 # 194 MiB
+
+config PCIEXP_HOTPLUG_PREFETCH_MEM
+	hex
+	default 0x1c00000 # 448 MiB
+
+config DEVICETREE
+	string
+	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
+
+config DIMM_SPD_SIZE
+	int
+	default 512
+
+choice
+	prompt "ON BOARD EC"
+	default TGL_CHROME_EC
+	help
+	  This option allows you to select the on board EC to use.
+	  Select whether the board  has Intel EC or Chrome EC
+
+config TGL_CHROME_EC
+	bool "Chrome EC"
+	select EC_GOOGLE_CHROMEEC
+	select EC_GOOGLE_CHROMEEC_LPC
+	select EC_GOOGLE_CHROMEEC_ESPI
+	select EC_GOOGLE_CHROMEEC_BOARDID
+
+config TGL_INTEL_EC
+	bool "Intel EC"
+	select EC_ACPI
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+endchoice
+
+config VBOOT
+	select VBOOT_LID_SWITCH
+
+config UART_FOR_CONSOLE
+	int
+	default 2
+
+config DRIVER_TPM_SPI_BUS
+	default 0x2
+
+config TPM_TIS_ACPI_INTERRUPT
+	int
+	default 54  # GPE0_DW1_22 (GPP_C22)
+
+endif
