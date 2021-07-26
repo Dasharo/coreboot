@@ -172,9 +172,9 @@ chip soc/intel/skylake
 	register "PcieRpLtrEnable[8]" = "1"
 
 	# Enable RP 9 CLKREQ# support
-	register "PcieRpClkReqSupport[8]" = "1"
+	#register "PcieRpClkReqSupport[8]" = "1"
 	# RP 9 uses CLKREQ0#
-	register "PcieRpClkReqNumber[8]" = "0"
+	#register "PcieRpClkReqNumber[8]" = "0"
 
 	# Clocks 0-5 for RP 1-6
 	register "PcieRpClkSrcNumber[0]" = "0"
