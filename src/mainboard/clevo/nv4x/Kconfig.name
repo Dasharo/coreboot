@@ -1,0 +1,2 @@
+config BOARD_CLEVO_NV4X
+	bool "NV4X"
