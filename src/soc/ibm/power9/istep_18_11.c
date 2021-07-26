@@ -3,7 +3,7 @@
 #include <console/console.h>
 #include <cpu/power/istep_18.h>
 
-// need to actually check the topology
+// TODO: this one will cange if we add more than one processor
 #define MDMT (1)
 
 static uint32_t calculate_topology_dealy(void)
@@ -45,7 +45,7 @@ static int64_t calculate_m_path(uint64_t value)
   {
     value &=
       ~PPC_BIT(0) & ~PPC_BIT(2) & ~PPC_BIT(13)
-      & ~PPC_BITMASK(5, 7) & ~PPC_BITMASK(9, 11) & ~PPC_BITMASK(24, 25);
+    & ~PPC_BITMASK(5, 7) & ~PPC_BITMASK(9, 11) & ~PPC_BITMASK(24, 25);
     value |= PPC_BIT(1) | PPC_BIT(8) | PPC_BITMASK(14, 15);
   }
   return value;
