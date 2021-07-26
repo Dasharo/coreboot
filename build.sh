@@ -14,6 +14,8 @@ if [ $# -le 0 ]; then
     usage
 fi
 
+PROTECTLI_BLOBS_URL="https://cloud.3mdeb.com/index.php/s/QajZKSnYieQHBqN/download"
+
 function buildImage {
 
 	if [ ! -d 3rdparty/blobs/mainboard ]; then
@@ -21,7 +23,7 @@ function buildImage {
 	fi
 
 	if [ ! -d 3rdparty/blobs/mainboard/protectli ]; then
-		wget https://cloud.3mdeb.com/index.php/s/QajZKSnYieQHBqN/download -O protectli_blobs.zip
+		wget $PROTECTLI_BLOBS_URL -O protectli_blobs.zip
 		unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
 		rm protectli_blobs.zip
 	fi
@@ -54,9 +56,13 @@ function buildImage {
 		./build/cbfstool build/coreboot.rom add -f build/bootorder.txt -n bootorder -t raw && \
 		./build/cbfstool build/coreboot.rom print"
 
-	cp build/coreboot.rom protectli_$1.rom
-	echo "Result binary placed in $PWD/protectli_$1.rom"
-	sha256sum protectli_$1.rom > protectli_$1.rom.sha256
+	local _version=$(cat configs/config.protectli_$1 | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+	local _rom_file=protectli_$1_$_version.rom
+	local _sha256_file=$_rom_file.SHA256
+
+	cp build/coreboot.rom $_rom_file
+	echo "Result binary placed in $PWD/$_rom_file"
+	sha256sum $_rom_file > $_sha256_file
 }
 
 function buildFW6Image {
@@ -66,7 +72,7 @@ function buildFW6Image {
 	fi
 
 	if [ ! -d 3rdparty/blobs/mainboard/protectli ]; then
-		wget https://cloud.3mdeb.com/index.php/s/QajZKSnYieQHBqN/download -O protectli_blobs.zip
+		wget $PROTECTLI_BLOBS_URL -O protectli_blobs.zip
 		unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
 		rm protectli_blobs.zip
 	fi
@@ -102,9 +108,13 @@ function buildFW6Image {
 		./build/cbfstool build/coreboot.rom add -f build/links.txt -n links -t raw && \
 		./build/cbfstool build/coreboot.rom print"
 
-	cp build/coreboot.rom protectli_$1.rom
-	echo "Result binary placed in $PWD/protectli_$1.rom"
-	sha256sum protectli_$1.rom > protectli_$1.rom.sha256
+	local _version=$(cat configs/config.protectli_$1 | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+	local _rom_file=protectli_$1_$_version.rom
+	local _sha256_file=$_rom_file.SHA256
+
+	cp build/coreboot.rom $_rom_file
+	echo "Result binary placed in $PWD/$_rom_file"
+	sha256sum $_rom_file > $_sha256_file
 }
 
 CMD="$1"
