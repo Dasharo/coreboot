@@ -1,4 +1,4 @@
-if BOARD_CLEVO_NV41MB || BOARD_CLEVO_NV41ME || BOARD_CLEVO_NV41MZ
+if BOARD_CLEVO_NV41MZ
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
@@ -24,35 +24,21 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_HAS_SPI_TPM_CR50
 	select SPI_TPM
 
-config CHROMEOS
-	select EC_GOOGLE_CHROMEEC_SWITCHES if TGL_CHROME_EC
-	select GBB_FLAG_FORCE_MANUAL_RECOVERY
-	select HAS_RECOVERY_MRC_CACHE
-	select GBB_FLAG_FORCE_DEV_SWITCH_ON
-	select GBB_FLAG_FORCE_DEV_BOOT_USB
-	select VBOOT_EARLY_EC_SYNC
-
 config MAINBOARD_DIR
 	string
 	default "clevo/tgl-u"
 
 config VARIANT_DIR
 	string
-	default "nv41mb" if BOARD_CLEVO_NV41MB
-	default "nv41me" if BOARD_CLEVO_NV41ME
 	default "nv41mz" if BOARD_CLEVO_NV41MZ
 
 config GBB_HWID
 	string
 	depends on CHROMEOS
-	default "NV41MB" if BOARD_CLEVO_NV41MB
-	default "NV41ME" if BOARD_CLEVO_NV41ME
 	default "NV41MZ" if BOARD_CLEVO_NV41MZ
 
 config MAINBOARD_PART_NUMBER
 	string
-	default "nv41mb" if BOARD_CLEVO_NV41MB
-	default "nv41me" if BOARD_CLEVO_NV41ME
 	default "nv41mz" if BOARD_CLEVO_NV41MZ
 
 config MAINBOARD_FAMILY
