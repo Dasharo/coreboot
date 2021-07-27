@@ -1,1 +1,1 @@
-Board name: NV41MB / NV41MB
+Board name: NV40MB / NV41MB
