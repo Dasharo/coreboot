@@ -32,11 +32,6 @@ config VARIANT_DIR
 	string
 	default "nv41mz" if BOARD_CLEVO_NV41MZ
 
-config GBB_HWID
-	string
-	depends on CHROMEOS
-	default "NV41MZ" if BOARD_CLEVO_NV41MZ
-
 config MAINBOARD_PART_NUMBER
 	string
 	default "nv41mz" if BOARD_CLEVO_NV41MZ
@@ -71,26 +66,6 @@ config DEVICETREE
 config DIMM_SPD_SIZE
 	int
 	default 512
-
-choice
-	prompt "ON BOARD EC"
-	default TGL_CHROME_EC
-	help
-	  This option allows you to select the on board EC to use.
-	  Select whether the board  has Intel EC or Chrome EC
-
-config TGL_CHROME_EC
-	bool "Chrome EC"
-	select EC_GOOGLE_CHROMEEC
-	select EC_GOOGLE_CHROMEEC_LPC
-	select EC_GOOGLE_CHROMEEC_ESPI
-	select EC_GOOGLE_CHROMEEC_BOARDID
-
-config TGL_INTEL_EC
-	bool "Intel EC"
-	select EC_ACPI
-	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
-endchoice
 
 config VBOOT
 	select VBOOT_LID_SWITCH
