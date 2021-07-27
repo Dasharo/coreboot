@@ -1,1 +1,1 @@
-Board name: NV41MZ / NV41MZ
+Board name: NV40MZ / NV41MZ
