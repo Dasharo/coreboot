@@ -1,4 +1,4 @@
-comment "NV4x"
+comment "Tiger Lake U"
 
 config BOARD_CLEVO_NV41MB
 	bool "NV41MB / NV41MB"

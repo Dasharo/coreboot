@@ -34,7 +34,7 @@ config CHROMEOS
 
 config MAINBOARD_DIR
 	string
-	default "clevo/nv4x"
+	default "clevo/tgl-u"
 
 config VARIANT_DIR
 	string
