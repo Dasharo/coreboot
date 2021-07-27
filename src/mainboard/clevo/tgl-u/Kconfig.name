@@ -1,10 +1,4 @@
 comment "Tiger Lake U"
 
-config BOARD_CLEVO_NV41MB
-	bool "NV40MB / NV41MB"
-
-config BOARD_CLEVO_NV41ME
-	bool "NV40ME / NV41ME"
-
 config BOARD_CLEVO_NV41MZ
 	bool "NV40MZ / NV41MZ"
