@@ -1,4 +1,4 @@
-if BOARD_CLEVO_NV4X
+if BOARD_CLEVO_NV41MB || BOARD_CLEVO_NV41ME || BOARD_CLEVO_NV41MZ
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
@@ -38,23 +38,26 @@ config MAINBOARD_DIR
 
 config VARIANT_DIR
 	string
-	default "tglrvp_up3" if BOARD_INTEL_TGLRVP_UP3
-	default "tglrvp_up4" if BOARD_INTEL_TGLRVP_UP4
+	default "nv41mb" if BOARD_CLEVO_NV41MB
+	default "nv41me" if BOARD_CLEVO_NV41ME
+	default "nv41mz" if BOARD_CLEVO_NV41MZ
 
 config GBB_HWID
 	string
 	depends on CHROMEOS
-	default "TGLRVPUP3" if BOARD_INTEL_TGLRVP_UP3
-	default "TGLRVPUP4" if BOARD_INTEL_TGLRVP_UP4
+	default "NV41MB" if BOARD_CLEVO_NV41MB
+	default "NV41ME" if BOARD_CLEVO_NV41ME
+	default "NV41MZ" if BOARD_CLEVO_NV41MZ
 
 config MAINBOARD_PART_NUMBER
 	string
-	default "tglrvpu" if BOARD_INTEL_TGLRVP_UP3
-	default "tglrvpy" if BOARD_INTEL_TGLRVP_UP4
+	default "nv41mb" if BOARD_CLEVO_NV41MB
+	default "nv41me" if BOARD_CLEVO_NV41ME
+	default "nv41mz" if BOARD_CLEVO_NV41MZ
 
 config MAINBOARD_FAMILY
 	string
-	default "Intel_tglrvp"
+	default "Clevo_nv4x"
 
 config MAX_CPUS
 	int
@@ -117,4 +120,4 @@ config TPM_TIS_ACPI_INTERRUPT
 	int
 	default 54  # GPE0_DW1_22 (GPP_C22)
 
-endif
+endif # BOARD_CLEVO_NV41MB
