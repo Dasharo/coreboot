@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <baseboard/ec.h>
 #include <baseboard/gpio.h>
 
 DefinitionBlock(
@@ -14,25 +15,36 @@ DefinitionBlock(
 {
 	#include <acpi/dsdt_top.asl>
 	#include <soc/intel/common/block/acpi/acpi/platform.asl>
+
+	/* global NVS and variables */
 	#include <soc/intel/common/block/acpi/acpi/globalnvs.asl>
+
+	/* CPU */
 	#include <cpu/intel/common/acpi/cpu.asl>
 
-	Device (\_SB.PCI0)
-	{
-		#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
-		#include <soc/intel/tigerlake/acpi/southbridge.asl>
-		#include <soc/intel/tigerlake/acpi/tcss.asl>
-		#include <soc/intel/common/block/acpi/acpi/ipu.asl>
-		#include <drivers/intel/gma/acpi/default_brightness_levels.asl>
+	Scope (\_SB) {
+		Device (PCI0)
+		{
+			#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
+			#include <soc/intel/tigerlake/acpi/southbridge.asl>
+			#include <soc/intel/tigerlake/acpi/tcss.asl>
+			#include <soc/intel/common/block/acpi/acpi/ipu.asl>
+		}
 	}
 
-	Scope (\_SB.PCI0.LPCB)
-	{
-		#include <drivers/pc80/pc/ps2_controller.asl>
-	}
+#if CONFIG(EC_GOOGLE_CHROMEEC)
+	/* Chrome OS Embedded Controller */
+		Scope (\_SB.PCI0.LPCB)
+		{
+			/* ACPI code for EC SuperIO functions */
+			#include <ec/google/chromeec/acpi/superio.asl>
+			/* ACPI code for EC functions */
+			#include <ec/google/chromeec/acpi/ec.asl>
+		}
+#endif
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 
-	// Mainboard specific
-	#include <acpi/mainboard.asl>
+	/* Camera */
+	#include "acpi/mipi_camera.asl"
 }

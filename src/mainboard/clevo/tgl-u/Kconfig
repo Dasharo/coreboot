@@ -1,27 +1,36 @@
-if BOARD_CLEVO_NV41MZ
+if BOARD_CLEVO_NV41MB || BOARD_CLEVO_NV41ME || BOARD_CLEVO_NV41MZ
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select BOARD_ROMSIZE_KB_16384
-	select DRIVERS_I2C_HID
-	select DRIVERS_INTEL_PMC
-	select DRIVERS_INTEL_USB4_RETIMER
+	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
-	select HAVE_CMOS_DEFAULT
-	select HAVE_OPTION_TABLE
-	select INTEL_GMA_HAVE_VBT
-	select INTEL_LPSS_UART_FOR_CONSOLE
-	select MAINBOARD_HAS_TPM2
-	select MAINBOARD_HAS_LPC_TPM
-	select NO_UART_ON_SUPERIO
-	select PCIEXP_HOTPLUG
+	select MAINBOARD_HAS_CHROMEOS
+	select DRIVERS_I2C_HID
+	select DRIVERS_INTEL_DPTF
+	select DRIVERS_I2C_GENERIC
+	select DRIVERS_I2C_MAX98373
+	select DRIVERS_INTEL_PMC
+	select DRIVERS_USB_ACPI
+	select DRIVERS_SPI_ACPI
 	select SOC_INTEL_TIGERLAKE
-	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
-	select SPD_READ_BY_WORD
-	select SYSTEM_TYPE_LAPTOP
-	select USE_OPTION_TABLE
-	select HAVE_SMI_HANDLER
-	select EC_CLEVO_IT5570
+	select SOC_INTEL_COMMON_BLOCK_DTT
+	select INTEL_LPSS_UART_FOR_CONSOLE
+	select DRIVERS_INTEL_ISH
+	select EC_ACPI
+	select HAVE_SPD_IN_CBFS
+	select SOC_INTEL_CSE_LITE_SKU
+	select MAINBOARD_HAS_TPM2
+	select MAINBOARD_HAS_SPI_TPM_CR50
+	select SPI_TPM
+
+config CHROMEOS
+	select EC_GOOGLE_CHROMEEC_SWITCHES if TGL_CHROME_EC
+	select GBB_FLAG_FORCE_MANUAL_RECOVERY
+	select HAS_RECOVERY_MRC_CACHE
+	select GBB_FLAG_FORCE_DEV_SWITCH_ON
+	select GBB_FLAG_FORCE_DEV_BOOT_USB
+	select VBOOT_EARLY_EC_SYNC
 
 config MAINBOARD_DIR
 	string
@@ -29,15 +38,26 @@ config MAINBOARD_DIR
 
 config VARIANT_DIR
 	string
+	default "nv41mb" if BOARD_CLEVO_NV41MB
+	default "nv41me" if BOARD_CLEVO_NV41ME
 	default "nv41mz" if BOARD_CLEVO_NV41MZ
+
+config GBB_HWID
+	string
+	depends on CHROMEOS
+	default "NV41MB" if BOARD_CLEVO_NV41MB
+	default "NV41ME" if BOARD_CLEVO_NV41ME
+	default "NV41MZ" if BOARD_CLEVO_NV41MZ
 
 config MAINBOARD_PART_NUMBER
 	string
+	default "nv41mb" if BOARD_CLEVO_NV41MB
+	default "nv41me" if BOARD_CLEVO_NV41ME
 	default "nv41mz" if BOARD_CLEVO_NV41MZ
 
 config MAINBOARD_FAMILY
 	string
-	default "Clevo_tgl-u"
+	default "Clevo_nv4x"
 
 config MAX_CPUS
 	int
@@ -62,13 +82,29 @@ config DEVICETREE
 	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
-config DIMM_MAX
-	int
-	default 4 # Hack to make soc code work
-
 config DIMM_SPD_SIZE
 	int
 	default 512
+
+choice
+	prompt "ON BOARD EC"
+	default TGL_CHROME_EC
+	help
+	  This option allows you to select the on board EC to use.
+	  Select whether the board  has Intel EC or Chrome EC
+
+config TGL_CHROME_EC
+	bool "Chrome EC"
+	select EC_GOOGLE_CHROMEEC
+	select EC_GOOGLE_CHROMEEC_LPC
+	select EC_GOOGLE_CHROMEEC_ESPI
+	select EC_GOOGLE_CHROMEEC_BOARDID
+
+config TGL_INTEL_EC
+	bool "Intel EC"
+	select EC_ACPI
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+endchoice
 
 config VBOOT
 	select VBOOT_LID_SWITCH
@@ -77,8 +113,11 @@ config UART_FOR_CONSOLE
 	int
 	default 2
 
-config TPM_PIRQ
-	hex
-	default 0x1C # GPP_C14
+config DRIVER_TPM_SPI_BUS
+	default 0x2
+
+config TPM_TIS_ACPI_INTERRUPT
+	int
+	default 54  # GPE0_DW1_22 (GPP_C22)
 
 endif # BOARD_CLEVO_NV41MB
