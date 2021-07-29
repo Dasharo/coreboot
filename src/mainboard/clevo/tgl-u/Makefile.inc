@@ -2,7 +2,7 @@
 
 bootblock-y += bootblock.c
 
-romstage-y += romstage_fsp_params.c
+romstage-y += memory.c
 
 ramstage-y += mainboard.c
 
