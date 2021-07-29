@@ -1,0 +1,4 @@
+comment "Tiger Lake U"
+
+config BOARD_CLEVO_NV41MZ
+	bool "NV40MZ / NV41MZ"
