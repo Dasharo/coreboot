@@ -2,6 +2,7 @@
 
 #include <acpi/acpi_pm.h>
 #include <arch/io.h>
+#include <assert.h>
 #include <bootmode.h>
 #include <device/mmio.h>
 #include <cbmem.h>
@@ -723,5 +724,30 @@ void pmc_set_acpi_mode(void)
 {
 	if (!CONFIG(NO_SMM) && !acpi_is_wakeup_s3()) {
 		apm_control(APM_CNT_ACPI_DISABLE);
+	}
+}
+
+enum pch_pmc_xtal pmc_get_xtal_freq(void)
+{
+	if (!CONFIG(SOC_INTEL_COMMON_BLOCK_PMC_EPOC))
+		dead_code();
+
+	uint32_t xtal_freq = 0;
+	const uint32_t epoc = read32p(soc_read_pmc_base() + PCH_PMC_EPOC);
+
+	/* XTAL frequency in bits 21, 20, 17 */
+	xtal_freq |= !!(epoc & (1 << 21)) << 2;
+	xtal_freq |= !!(epoc & (1 << 20)) << 1;
+	xtal_freq |= !!(epoc & (1 << 17)) << 0;
+	switch (xtal_freq) {
+	case 0:
+		return XTAL_24_MHZ;
+	case 1:
+		return XTAL_19_2_MHZ;
+	case 2:
+		return XTAL_38_4_MHZ;
+	default:
+		printk(BIOS_ERR, "Unknown EPOC XTAL frequency setting %u\n", xtal_freq);
+		return XTAL_UNKNOWN_FREQ;
 	}
 }

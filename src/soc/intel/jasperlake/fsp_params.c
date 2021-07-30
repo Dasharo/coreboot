@@ -6,7 +6,6 @@
 #include <fsp/ppi/mp_service_ppi.h>
 #include <fsp/util.h>
 #include <intelblocks/lpss.h>
-#include <intelblocks/mp_init.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
@@ -23,9 +22,9 @@
  * 2 - Send in DXE (Not applicable for FSP in API mode)
  */
 enum {
-	EOP_DISABLE,
-	EOP_PEI,
-	EOP_DXE,
+	EOP_DISABLE = 0,
+	EOP_PEI = 1,
+	EOP_DXE = 2,
 } EndOfPost;
 
 static void parse_devicetree(FSP_S_CONFIG *params)
@@ -81,8 +80,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->RtcMemoryLock = 1;
 	}
 
-	/* Enable End of Post in PEI phase */
-	params->EndOfPostMessage = EOP_PEI;
+	/* coreboot will send EOP before loading payload */
+	params->EndOfPostMessage = EOP_DISABLE;
 
 	/* Legacy 8254 timer support */
 	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
@@ -157,10 +156,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	if (params->ScsEmmcEnabled)
 		params->ScsEmmcHs400Enabled = config->ScsEmmcHs400Enabled;
 
-	/* Enable xDCI controller if enabled in devicetree and allowed */
-	if (!xdci_can_enable())
-		devfn_disable(pci_root_bus(), PCH_DEVFN_USBOTG);
-	params->XdciEnable = is_devfn_enabled(PCH_DEVFN_USBOTG);
+	params->XdciEnable = xdci_can_enable(PCH_DEVFN_USBOTG);
 
 	/* Provide correct UART number for FSP debug logs */
 	params->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;

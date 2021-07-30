@@ -6,7 +6,7 @@
 #include <fsp/ppi/mp_service_ppi.h>
 #include <fsp/util.h>
 #include <intelblocks/lpss.h>
-#include <intelblocks/mp_init.h>
+#include <intelblocks/pmclib.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
 #include <soc/intel/common/vbt.h>
@@ -57,6 +57,24 @@ static int get_l1_substate_control(enum L1_substates_control ctl)
 	if ((ctl > L1_SS_L1_2) || (ctl == L1_SS_FSP_DEFAULT))
 		ctl = L1_SS_L1_2;
 	return ctl - 1;
+}
+
+static void fill_fsps_fivr_params(FSP_S_CONFIG *s_cfg,
+		const struct soc_intel_elkhartlake_config *config)
+{
+	s_cfg->PchFivrExtV1p05RailEnabledStates = config->fivr.v1p05_state;
+	s_cfg->PchFivrExtV1p05RailSupportedVoltageStates = config->fivr.v1p05_rail;
+	s_cfg->PchFivrExtVnnRailEnabledStates = config->fivr.vnn_state;
+	s_cfg->PchFivrExtVnnRailSupportedVoltageStates = config->fivr.vnn_rail;
+	s_cfg->PchFivrExtVnnRailSxEnabledStates = config->fivr.vnn_sx_state;
+	s_cfg->PchFivrVccinAuxLowToHighCurModeVolTranTime = config->fivr.vcc_low_high_us;
+	s_cfg->PchFivrVccinAuxRetToHighCurModeVolTranTime = config->fivr.vcc_ret_high_us;
+	s_cfg->PchFivrVccinAuxRetToLowCurModeVolTranTime = config->fivr.vcc_ret_low_us;
+	s_cfg->PchFivrVccinAuxOffToHighCurModeVolTranTime = config->fivr.vcc_off_high_us;
+	/* Convert mV to number of 2.5 mV increments */
+	s_cfg->PchFivrExtVnnRailSxVoltage = (config->fivr.vnn_sx_mv * 10) / 25;
+	s_cfg->PchFivrExtV1p05RailIccMaximum = config->fivr.v1p05_icc_max_ma;
+	s_cfg->FivrSpreadSpectrum = config->fivr.spread_spectrum;
 }
 
 static void parse_devicetree(FSP_S_CONFIG *params)
@@ -180,10 +198,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->UsbClockGatingEnable = 1;
 	params->UsbPowerGatingEnable = 1;
 
-	/* Enable xDCI controller if enabled in devicetree and allowed */
-	if (!xdci_can_enable())
-		devfn_disable(pci_root_bus(), PCH_DEVFN_USBOTG);
-	params->XdciEnable = is_devfn_enabled(PCH_DEVFN_USBOTG);
+	params->XdciEnable = xdci_can_enable(PCH_DEVFN_USBOTG);
 
 	/* PCIe root ports config */
 	for (i = 0; i < CONFIG_MAX_ROOT_PORTS; i++) {
@@ -292,16 +307,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PmcV1p05PhyExtFetControlEn = 0x1;
 	params->PmcV1p05IsExtFetControlEn = 0x1;
 	/* FIVR config */
-	params->PchFivrExtV1p05RailEnabledStates = 0x1E;
-	params->PchFivrExtV1p05RailSupportedVoltageStates = 0x2;
-	params->PchFivrExtVnnRailEnabledStates = 0x1E;
-	params->PchFivrExtVnnRailSupportedVoltageStates = 0xE;
-	params->PchFivrExtVnnRailSxEnabledStates = 0x1C;
-	params->PchFivrVccinAuxLowToHighCurModeVolTranTime = 0x0C;
-	params->PchFivrVccinAuxRetToHighCurModeVolTranTime = 0x36;
-	params->PchFivrVccinAuxRetToLowCurModeVolTranTime = 0x2B;
-	params->PchFivrVccinAuxOffToHighCurModeVolTranTime = 0x0096;
-	params->FivrSpreadSpectrum = 0xF;
+	if (config->fivr.fivr_config_en) {
+		fill_fsps_fivr_params(params, config);
+	}
 
 	/* FuSa (Functional Safety) config */
 	if (!config->FuSaEnable) {
@@ -309,6 +317,40 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->GraphicFusaConfigEnable = 0;
 		params->OpioFusaConfigEnable = 0;
 		params->PsfFusaConfigEnable = 0;
+	}
+
+	/* PCH GBE config */
+	/*
+	 * Due to EHL GBE comes with time sensitive networking (TSN)
+	 * capability integrated, EHL FSP is using PchTsnEnable instead of
+	 * usual PchLanEnable flag for GBE control. Hence, force
+	 * PchLanEnable to disable to avoid it being used in the future.
+	 */
+	params->PchLanEnable = 0x0;
+	params->PchTsnEnable = is_devfn_enabled(PCH_DEVFN_GBE);
+	if (params->PchTsnEnable) {
+		params->PchTsnGbeSgmiiEnable = config->PchTsnGbeSgmiiEnable;
+		params->PchTsnGbeMultiVcEnable = config->PchTsnGbeMultiVcEnable;
+		/*
+		 * Currently EHL TSN GBE only supports link speed with 2 type of
+		 * PCH XTAL frequency: 24 MHz and 38.4 MHz.
+		 * These are the configs setup for PchTsnGbeLinkSpeed FSP-S UPD:
+		 * 0: 24MHz 2.5Gbps, 1: 24MHz 1Gbps, 2: 38.4MHz 2.5Gbps,
+		 * 3: 38.4MHz 1Gbps
+		 */
+		switch (pmc_get_xtal_freq()) {
+		case XTAL_24_MHZ:
+			params->PchTsnGbeLinkSpeed = (!!config->PchTsnGbeLinkSpeed);
+			break;
+		case XTAL_38_4_MHZ:
+			params->PchTsnGbeLinkSpeed = (!!config->PchTsnGbeLinkSpeed) + 0x2;
+			break;
+		case XTAL_19_2_MHZ:
+		default:
+			printk(BIOS_ERR, "XTAL not supported. Disabling PCH TSN GBE.\n");
+			params->PchTsnEnable = 0;
+			devfn_disable(pci_root_bus(), PCH_DEVFN_GBE);
+		}
 	}
 
 	/* Override/Fill FSP Silicon Param for mainboard */

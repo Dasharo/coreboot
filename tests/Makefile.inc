@@ -24,7 +24,7 @@ TEST_DOTCONFIG = $(testobj)/.config
 TEST_KCONFIG_AUTOHEADER := $(testobj)/config.src.h
 TEST_KCONFIG_AUTOCONFIG := $(testobj)/auto.conf
 TEST_KCONFIG_DEPENDENCIES := $(testobj)/auto.conf.cmd
-TEST_KCONFIG_SPLITCONFIG := $(testobj)/config
+TEST_KCONFIG_SPLITCONFIG := $(testobj)/config/
 TEST_KCONFIG_TRISTATE := $(testobj)/tristate.conf
 
 TEST_CFLAGS = -include $(src)/include/kconfig.h \
@@ -118,8 +118,8 @@ $($(1)-objs): TEST_CFLAGS += -I$$(dir $$($(1)-config-file)) \
 $($(1)-srcobjs): OBJCOPY_FLAGS += $$(foreach mock,$$($(1)-mocks),--globalize-symbol=$$(mock) --weaken-symbol=$$(mock))
 $($(1)-objs): $(testobj)/$(1)/%.o: $$$$*.c $$($(1)-config-file)
 	mkdir -p $$(dir $$@)
-	$(HOSTCC) $(HOSTCFLAGS) $$(TEST_CFLAGS) $($(1)-cflags)  -MMD \
-		-MT $$@ -c $$< -o $$@.orig
+	$(HOSTCC) $(HOSTCFLAGS) $$(TEST_CFLAGS) $($(1)-cflags) -MMD \
+		-MF $$(basename $$@).d -MT $$@ -c $$< -o $$@.orig
 	$(OBJCOPY) $$@.orig $$(OBJCOPY_FLAGS) $$@
 
 $($(1)-bin): $($(1)-objs) $(CMOCKA_LIB)
@@ -169,8 +169,8 @@ $(TEST_KCONFIG_AUTOHEADER): TEST_KCONFIG_FLAGS:= DOTCONFIG=$(TEST_DOTCONFIG) \
 
 $(TEST_KCONFIG_AUTOHEADER): $(TEST_DOTCONFIG) $(objutil)/kconfig/conf
 	mkdir -p $(dir $@)
-	+$(MAKE) $(TEST_KCONFIG_FLAGS) olddefconfig
-	+$(MAKE) $(TEST_KCONFIG_FLAGS) silentoldconfig
+	$(MAKE) $(TEST_KCONFIG_FLAGS) olddefconfig
+	$(MAKE) $(TEST_KCONFIG_FLAGS) syncconfig
 
 $(TEST_KCONFIG_AUTOCONFIG): $(TEST_KCONFIG_AUTOHEADER)
 	true

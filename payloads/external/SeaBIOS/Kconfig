@@ -104,22 +104,22 @@ config SEABIOS_BOOTORDER_FILE
 
 config SEABIOS_BOOTORDER_MAP_FILE
 	string "SeaBIOS bootorder_map file"
-	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_map_apu5" if BOARD_PCENGINES_APU5
-	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_map"
+	default "\$(top)/src/mainboard/\$(MAINBOARDDIR)/bootorder_map_apu5" if BOARD_PCENGINES_APU5
+	default "\$(top)/src/mainboard/\$(MAINBOARDDIR)/bootorder_map"
 	help
 	  Determine mapping of keystrokes to group of positions in bootorder
 
 config SEABIOS_BOOTORDER_DEF_FILE
 	string "SeaBIOS bootorder_def file"
-	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_def_apu5" if BOARD_PCENGINES_APU5
-	default "$(top)/src/mainboard/$(MAINBOARDDIR)/bootorder_def"
+	default "\$(top)/src/mainboard/\$(MAINBOARDDIR)/bootorder_def_apu5" if BOARD_PCENGINES_APU5
+	default "\$(top)/src/mainboard/\$(MAINBOARDDIR)/bootorder_def"
 	help
 	  Determine default boot order and default values for runtime config
 	  options e.g. usben, pxen, etc.
 
 config SEABIOS_BOOTMENU_KEY_FILE
 	string "SeaBIOS boot-menu-key file"
-	default "$(top)/src/mainboard/$(MAINBOARDDIR)/boot-menu-key"
+	default "\$(top)/src/mainboard/\$(MAINBOARDDIR)/boot-menu-key"
 	help
 	  Add SeaBIOS boot-menu-key file. From wiki:
 	  "Controls which key activates the boot menu. The value stored is the
@@ -130,7 +130,7 @@ config SEABIOS_BOOTMENU_KEY_FILE
 
 config SEABIOS_BOOTMENU_WAIT_FILE
 	string "SeaBIOS boot-menu-wait file"
-	default "$(top)/src/mainboard/$(MAINBOARDDIR)/boot-menu-wait"
+	default "\$(top)/src/mainboard/\$(MAINBOARDDIR)/boot-menu-wait"
 	help
 	  Add SeaBIOS boot-menu-wait file. From wiki:
 	  "Amount of time (in milliseconds) to wait at the boot menu prompt
@@ -140,7 +140,7 @@ config SEABIOS_BOOTMENU_WAIT_FILE
 
 config SEABIOS_BOOTMENU_MESSAGE_FILE
 	string "SeaBIOS boot-menu-message file"
-	default "$(top)/src/mainboard/$(MAINBOARDDIR)/boot-menu-message"
+	default "\$(top)/src/mainboard/\$(MAINBOARDDIR)/boot-menu-message"
 	help
 	  Customize the text boot menu message. From wiki:
 
