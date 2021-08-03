@@ -1,38 +1,41 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
+#include <console/console.h>
 #include <fsp/api.h>
+#include <soc/romstage.h>
 #include <spd_bin.h>
-#include <string.h>
+#include <soc/meminit.h>
 #include <baseboard/variants.h>
 
-static void mainboard_fill_rcomp_res_data(void *rcomp_ptr)
+static const struct mb_cfg variant_mem_config = {
+	.type = MEM_TYPE_DDR4,
+	/* no rcomp config needed for TGL-U (?) */
+	.ect = false, /* Early Command Training */
+	.ddr4_config = {
+		.dq_pins_interleaved = true,
+	}
+};
+
+static const struct mem_spd variant_spd_info = {
+	.topo = MEM_TOPO_DIMM_MODULE,
+	.smbus = {
+		[0] = { .addr_dimm[0] = 0x50, },
+		[1] = { .addr_dimm[0] = 0x52, },
+	},
+};
+
+void variant_configure_fspm(FSPM_UPD *memupd)
 {
-	const u16 RcompResistor[3] = {121, 81, 100};
-	memcpy(rcomp_ptr, RcompResistor, sizeof(RcompResistor));
-}
+	const struct mb_cfg *mem_config = &variant_mem_config;
+	const struct mem_spd *spd_info = &variant_spd_info;
+	const bool half_populated = false;
 
-static void mainboard_fill_rcomp_strength_data(void *rcomp_strength_ptr)
-{
-	const u16 RcompTarget[5] = {100, 40, 20, 20, 26};
-	memcpy(rcomp_strength_ptr, RcompTarget, sizeof(RcompTarget));
-}
+	memcfg_init(&memupd->FspmConfig, mem_config, spd_info, half_populated);
+	const uint8_t vtd = get_uint_option("vtd", 1);
+	memupd->FspmTestConfig.VtdDisable = !vtd;
 
-void variant_configure_fspm(FSPM_UPD *mupd)
-{
-	FSP_M_CONFIG *mem_cfg = &mupd->FspmConfig;
-
-	struct spd_block blk = {
-		.addr_map = {0x50, 0x52},
-	};
-
-	get_spd_smbus(&blk);
-	dump_spd_info(&blk);
-
-	mainboard_fill_rcomp_res_data(&mem_cfg->RcompResistor);
-	mainboard_fill_rcomp_strength_data(&mem_cfg->RcompTarget);
-
-	mem_cfg->DqPinsInterleaved = TRUE;
-	mem_cfg->MemorySpdDataLen = blk.len;
-	mem_cfg->MemorySpdPtr00 = (uintptr_t)blk.spd_array[0];
-	mem_cfg->MemorySpdPtr10 = (uintptr_t)blk.spd_array[1];
+	const uint8_t ht = get_uint_option("hyper_threading",
+		memupd->FspmConfig.HyperThreading);
+	memupd->FspmConfig.HyperThreading = ht;
 }
