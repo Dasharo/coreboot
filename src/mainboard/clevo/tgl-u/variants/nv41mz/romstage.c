@@ -1,10 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <assert.h>
-#include <console/console.h>
+#include <option.h>
 #include <fsp/api.h>
 #include <soc/romstage.h>
-#include <spd_bin.h>
 #include <soc/meminit.h>
 #include <baseboard/variants.h>
 
@@ -32,8 +30,9 @@ void variant_configure_fspm(FSPM_UPD *memupd)
 	const bool half_populated = false;
 
 	memcfg_init(&memupd->FspmConfig, mem_config, spd_info, half_populated);
+
 	const uint8_t vtd = get_uint_option("vtd", 1);
-	memupd->FspmTestConfig.VtdDisable = !vtd;
+	memupd->FspmConfig.VtdDisable = !vtd;
 
 	const uint8_t ht = get_uint_option("hyper_threading",
 		memupd->FspmConfig.HyperThreading);
