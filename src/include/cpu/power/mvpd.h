@@ -14,6 +14,12 @@ void mvpd_device_unmount(void);
 
 const struct region_device *mvpd_device_ro(void);
 
+/* Finds a specific keyword in MVPD partition and extracts it. *size is updated
+ * to reflect needed or used space in the buffer. */
+bool mvpd_extract_keyword(const char *record_name, const char *kwd_name,
+			  uint8_t *buf, uint32_t *size);
+
+/* Finds a specific ring in MVPD partition and extracts it */
 bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
 		       uint8_t chiplet_id, uint8_t even_odd, uint16_t ring_id,
 		       uint8_t *buf, uint32_t buf_size);
