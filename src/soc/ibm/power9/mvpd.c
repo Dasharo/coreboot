@@ -144,6 +144,36 @@ static const uint8_t *mvpd_get_keyword(const char *record_name,
 	return kwd;
 }
 
+bool mvpd_extract_keyword(const char *record_name, const char *kwd_name,
+			  uint8_t *buf, uint32_t *size)
+{
+	void *mmaped_data = NULL;
+
+	const uint8_t *kwd = NULL;
+	size_t kwd_size = 0;
+	bool copied_data = false;
+
+	mvpd_device_init();
+
+	kwd = mvpd_get_keyword(record_name, kwd_name, &kwd_size, &mmaped_data);
+	if (kwd == NULL)
+		die("Failed to find %s keyword in %s!\n", kwd_name,
+		    record_name);
+
+	if (*size >= kwd_size) {
+		memcpy(buf, kwd, kwd_size);
+		copied_data = true;
+	}
+
+	*size = kwd_size;
+
+	if (rdev_munmap(mvpd_device_ro(), mmaped_data))
+		die("Failed to unmap %s record!\n", record_name);
+
+	return copied_data;
+}
+
+/* Finds a specific ring in MVPD partition and extracts it */
 bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
 		       uint8_t chiplet_id, uint8_t even_odd, uint16_t ring_id,
 		       uint8_t *buf, uint32_t buf_size)
