@@ -6,6 +6,41 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Single bucket within #V keyword of version 3 */
+struct voltage_data {
+	uint16_t freq;		// MHz
+	uint16_t vdd_voltage;
+	uint16_t idd_current;
+	uint16_t vcs_voltage;
+	uint16_t ics_current;
+} __attribute__((__packed__));
+
+/* Single bucket within #V keyword of version 3 */
+struct voltage_bucket_data {
+	uint8_t id;
+
+	struct voltage_data nominal;
+	struct voltage_data powersave;
+	struct voltage_data turbo;
+	struct voltage_data ultra_turbo;
+	struct voltage_data powerbus;
+
+	uint16_t sort_power_normal;
+	uint16_t sort_power_turbo;
+
+	uint8_t reserved[6];
+} __attribute__((__packed__));
+
+#define VOLTAGE_DATA_VERSION 3
+#define VOLTAGE_BUCKET_COUNT 6
+
+/* #V of LRP[0-5] in MVPD */
+struct voltage_kwd {
+	uint8_t version;
+	uint8_t pnp[3];
+	struct voltage_bucket_data buckets[VOLTAGE_BUCKET_COUNT];
+} __attribute__((__packed__));
+
 struct region_device;
 
 void mvpd_device_init(void);
