@@ -32,10 +32,7 @@
 	url = https://review.coreboot.org/opensbi.git
 [submodule "intel-microcode"]
 	path = 3rdparty/intel-microcode
-	url = https://review.coreboot.org/intel-microcode.git
-	update = none
-	ignore = dirty
-	branch = main
+	url = https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files.git
 [submodule "3rdparty/ffs"]
 	path = 3rdparty/ffs
 	url = https://review.coreboot.org/ffs.git
