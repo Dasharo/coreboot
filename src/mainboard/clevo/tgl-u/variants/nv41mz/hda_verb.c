@@ -5,7 +5,7 @@
 const u32 cim_verb_data[] = {
 	/* Realtek, ALC293 */
 	0x10ec0293, /* Vendor ID */
-	0x15584019, /* Subsystem ID */
+	0x15584018, /* Subsystem ID */
 	12, /* Number of entries */
 	AZALIA_SUBVENDOR(0, 0x15584018),
 	AZALIA_PIN_CFG(0, 0x12, 0x90a60130),
@@ -19,21 +19,6 @@ const u32 cim_verb_data[] = {
 	AZALIA_PIN_CFG(0, 0x1b, 0x411111f0),
 	AZALIA_PIN_CFG(0, 0x1d, 0x41748245),
 	AZALIA_PIN_CFG(0, 0x1e, 0x411111f0),
-
-	/* Tigerlake HDMI */
-	0x80862812, /* Vendor ID */
-	0x80860101, /* Subsystem ID */
-	10, /* Number of entries */
-	AZALIA_SUBVENDOR(2, 0x80860101),
-	AZALIA_PIN_CFG(2, 0x04, 0x18560010),
-	AZALIA_PIN_CFG(2, 0x06, 0x18560010),
-	AZALIA_PIN_CFG(2, 0x08, 0x18560010),
-	AZALIA_PIN_CFG(2, 0x0a, 0x18560010),
-	AZALIA_PIN_CFG(2, 0x0b, 0x18560010),
-	AZALIA_PIN_CFG(2, 0x0c, 0x18560010),
-	AZALIA_PIN_CFG(2, 0x0d, 0x18560010),
-	AZALIA_PIN_CFG(2, 0x0e, 0x18560010),
-	AZALIA_PIN_CFG(2, 0x0f, 0x18560010),
 };
 
 const u32 pc_beep_verbs[] = {};
