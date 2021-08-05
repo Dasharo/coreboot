@@ -32,7 +32,4 @@ DefinitionBlock(
 	}
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
-
-	/* Camera */
-	#include "acpi/mipi_camera.asl"
 }
