@@ -8,10 +8,9 @@
 
 static const struct mb_cfg variant_mem_config = {
 	.type = MEM_TYPE_DDR4,
-	/* no rcomp config needed for TGL-U (?) */
 	.ect = false, /* Early Command Training */
 	.ddr4_config = {
-		.dq_pins_interleaved = true,
+		.dq_pins_interleaved = false,
 	}
 };
 
