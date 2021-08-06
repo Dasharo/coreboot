@@ -21,14 +21,17 @@ DefinitionBlock(
 	/* CPU */
 	#include <cpu/intel/common/acpi/cpu.asl>
 
-	Scope (\_SB) {
-		Device (PCI0)
-		{
-			#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
-			#include <soc/intel/tigerlake/acpi/southbridge.asl>
-			#include <soc/intel/tigerlake/acpi/tcss.asl>
-			#include <soc/intel/common/block/acpi/acpi/ipu.asl>
-		}
+	Device (\_SB.PCI0)
+	{
+		#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
+		#include <soc/intel/tigerlake/acpi/southbridge.asl>
+		#include <soc/intel/tigerlake/acpi/tcss.asl>
+		#include <soc/intel/common/block/acpi/acpi/ipu.asl>
+	}
+
+	Scope (\_SB.PCI0.LPCB)
+	{
+		#include <drivers/pc80/pc/ps2_controller.asl>
 	}
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
