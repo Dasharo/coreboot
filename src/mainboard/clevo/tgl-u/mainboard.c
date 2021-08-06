@@ -8,15 +8,6 @@
 #include <smbios.h>
 #include <string.h>
 
-const char *smbios_system_sku(void)
-{
-	static char sku_str[7] = ""; /* sku{0..255} */
-	uint32_t sku_id = 255;
-
-	snprintf(sku_str, sizeof(sku_str), "sku%u", sku_id);
-	return sku_str;
-}
-
 static void mainboard_init(void *chip_info)
 {
 	const struct pad_config *pads;
@@ -26,12 +17,6 @@ static void mainboard_init(void *chip_info)
 	gpio_configure_pads(pads, num);
 }
 
-static void mainboard_enable(struct device *dev)
-{
-
-}
-
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
-	.enable_dev = mainboard_enable,
 };
