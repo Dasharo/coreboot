@@ -10,8 +10,8 @@ chip soc/intel/tigerlake
 	}"
 
 # ACPI (soc/intel/tigerlake/acpi.c)
-	# Disable DPTF
-	register "dptf_enable" = "0"
+	# Enable DPTF
+	register "dptf_enable" = "1"
 
 	# Enable Enhanced Intel SpeedStep
 	register "eist_enable" = "1"
@@ -120,16 +120,16 @@ chip soc/intel/tigerlake
 			# PCIe PEG0 x4, Clock 0 (SSD1)
 			register "PcieClkSrcUsage[0]" = "0x40"
 			register "PcieClkSrcClkReq[0]" = "0"
-			#TODO: causes failure on resume
-			# chip soc/intel/common/block/pcie/rtd3
-			# 	register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D14)" # SSD1_PWR_DN#
-			# 	register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H0)" # GPP_H0_RTD3
-			# 	#TODO: Support disable/enable CPU RP clock
-			# 	register "srcclk_pin" = "-1" # SSD1_CLKREQ#
-			# 	device generic 0 on end
-			# end
 
-			#TODO: Hybrid storage mode?
+			chip soc/intel/common/block/pcie/rtd3
+				register "desc" = "SSD1"
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D14)" # SSD1_PWR_DN#
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H0)" # GPP_H0_RTD3
+				register "srcclk_pin" = "0" # SSD1_CLKREQ#
+				device generic 0 on end
+			end
+
+			# Disable Optane hybrid storage mode
 			register "HybridStorageMode" = "0"
 		end
 		device ref tbt_pcie_rp0 on end # J_TYPEC2
@@ -258,15 +258,14 @@ chip soc/intel/tigerlake
 			end
 		end
 		device ref i2c1 on
-			#TODO: USB-PD?
+			# USB-PD
 			register "SerialIoI2cMode[PchSerialIoIndexI2C1]" = "PchSerialIoPci"
 		end
 		device ref i2c2 on
-			#TODO: Pantone ROM?
+			# Pantone ROM
 			register "SerialIoI2cMode[PchSerialIoIndexI2C2]" = "PchSerialIoPci"
 		end
 		device ref heci1 on
-			#TODO Disable ME and HECI
 			register "HeciEnabled" = "1"
 		end
 		device ref uart2 on
@@ -305,8 +304,7 @@ chip soc/intel/tigerlake
 			register "PcieClkSrcClkReq[4]" = "4"
 			chip soc/intel/common/block/pcie/rtd3
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_F9)" # GPIO_LAN_EN
-				#TODO: should this be GPIO_LANRTD3 or LAN_PLT_RST# ?
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F7)" # GPIO_LANRTD3
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C22)" # LAN_PLT_RST
 				register "srcclk_pin" = "4" # LAN_CLKREQ#
 				device generic 0 on end
 			end
@@ -347,6 +345,8 @@ chip soc/intel/tigerlake
 		end
 		device ref hda on
 			register "PchHdaAudioLinkHdaEnable" = "1"
+			register "PchHdaAudioLinkDmicEnable[0]" = "1"
+			register "PchHdaAudioLinkDmicEnable[1]" = "1"
 		end
 		device ref smbus on
 			register "SmbusEnable" = "1"
