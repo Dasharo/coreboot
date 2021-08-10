@@ -178,6 +178,7 @@ config CPU_MICROCODE_CBFS_NONE
 config AGESA_UCODE_EXPERIMENTAL
 	bool "Add microcode patch for AMD fam16h (EXPERIMENTAL)"
 	help
+	  Include the microcode with Spectre mitigations for AMD fam16h.
 
 endchoice
 
