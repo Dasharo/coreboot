@@ -317,17 +317,7 @@ chip soc/intel/tigerlake
 			register "PcieClkSrcUsage[1]" = "10"
 			register "PcieClkSrcClkReq[1]" = "1"
 		end
-		device ref pch_espi on
-			# LPC configuration from lspci -s 1f.0 -xxx
-			# Address 0x84: Decode 0x80 - 0x8F (Port 80)
-			register "gen1_dec" = "0x000c0081"
-			# Address 0x88: Decode 0x68 - 0x6F (PMC)
-			register "gen2_dec" = "0x00040069"
-			# Address 0x8C: Decode 0xE00 - 0xEFF (AP/EC command)
-			register "gen3_dec" = "0x00fc0E01"
-			# Address 0x90: Decode 0xF00 - 0xFFF (AP/EC debug)
-			register "gen4_dec" = "0x00fc0F01"
-		end
+		device ref pch_espi on end
 		device ref p2sb on end
 		device ref pmc hidden
 			# The pmc_mux chip driver is a placeholder for the
