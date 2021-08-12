@@ -2,6 +2,7 @@
 
 #include <cpu/power/mvpd.h>
 
+#include <assert.h>
 #include <commonlib/region.h>
 #include <console/console.h>
 #include <cpu/power/vpd.h>
@@ -171,6 +172,36 @@ bool mvpd_extract_keyword(const char *record_name, const char *kwd_name,
 		die("Failed to unmap %s record!\n", record_name);
 
 	return copied_data;
+}
+
+const struct voltage_kwd *mvpd_get_voltage_data(int lrp)
+{
+	static int inited_lrp = -1;
+	static uint8_t buf[sizeof(struct voltage_kwd)];
+
+	char record_name[] = { 'L', 'R', 'P', '0' + lrp, '\0' };
+	uint32_t buf_size = sizeof(buf);
+	struct voltage_kwd *voltage = (void *)buf;
+
+	assert(lrp >= 0 && lrp < 6);
+	if (inited_lrp == lrp)
+		return voltage;
+
+	inited_lrp = -1;
+
+	if (!mvpd_extract_keyword(record_name, "#V", buf, &buf_size)) {
+		printk(BIOS_ERR, "Failed to read LRP0 record from MVPD\n");
+		return NULL;
+	}
+
+	if (voltage->version != VOLTAGE_DATA_VERSION) {
+		printk(BIOS_ERR, "Only version %d of voltage data is supported, got: %d\n",
+		       VOLTAGE_DATA_VERSION, voltage->version);
+		return NULL;
+	}
+
+	inited_lrp = lrp;
+	return voltage;
 }
 
 /* Finds a specific ring in MVPD partition and extracts it */
