@@ -874,10 +874,6 @@ static uint64_t get_available_cores(int *me)
 	return ret;
 }
 
-#define IS_EC_FUNCTIONAL(ec, cores)		(!!((cores) & PPC_BIT(ec)))
-#define IS_EX_FUNCTIONAL(ex, cores)		(!!((cores) & PPC_BITMASK(2*(ex), 2*(ex) + 1)))
-#define IS_EQ_FUNCTIONAL(eq, cores)		(!!((cores) & PPC_BITMASK(4*(eq), 4*(eq) + 3)))
-
 /* TODO: similar is used in 13.3. Add missing parameters and make it public? */
 static void psu_command(uint8_t flags, long time)
 {
@@ -1528,6 +1524,8 @@ void build_homer_image(void *homer_bar)
 			      (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
 			      cores, ring_variant);
 
+
+	build_parameter_blocks(homer, cores);
 	// buildParameterBlock();
 	// updateCpmrCmeRegion();
 
