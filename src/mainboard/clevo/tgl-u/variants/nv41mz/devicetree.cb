@@ -22,16 +22,12 @@ chip soc/intel/tigerlake
 # CPU (soc/intel/tigerlake/cpu.c)
 	# Power limits
 	register "power_limits_config[POWER_LIMITS_U_4_CORE]" = "{
-		// /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw
-		.tdp_pl1_override = 28,
-		// /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw
-		.tdp_pl2_override = 51,
+		.tdp_pl1_override = 10,
+		.tdp_pl2_override = 20,
 	}"
 	register "power_limits_config[POWER_LIMITS_U_2_CORE]" = "{
-		// /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw
-		.tdp_pl1_override = 28,
-		// /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw
-		.tdp_pl2_override = 51,
+		.tdp_pl1_override = 10,
+		.tdp_pl2_override = 20,
 	}"
 
 # Finalize (soc/intel/tigerlake/finalize.c)
@@ -133,14 +129,14 @@ chip soc/intel/tigerlake
 			# Disable Optane hybrid storage mode
 			register "HybridStorageMode" = "0"
 		end
-		device ref tbt_pcie_rp0 on end # J_TYPEC2
+		device ref tbt_pcie_rp0 on end # TBT Type-C
 		device ref gna on end
-		device ref north_xhci on # J_TYPEC2
+		device ref north_xhci on # TBT Type-C
 			register "TcssXhciEn" = "1"
 			chip drivers/usb/acpi
 				device ref tcss_root_hub on
 					chip drivers/usb/acpi
-						register "desc" = ""USB3 J_TYPEC2""
+						register "desc" = ""USB3 TBT Type-C""
 						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 						register "group" = "ACPI_PLD_GROUP(1, 1)"
 						device ref tcss_usb3_port1 on end
@@ -148,7 +144,7 @@ chip soc/intel/tigerlake
 				end
 			end
 		end
-		device ref tbt_dma0 on # J_TYPEC2
+		device ref tbt_dma0 on # TBT Type-C
 			chip drivers/intel/usb4/retimer
 				register "power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A23)"
 				device generic 0 on end
@@ -158,35 +154,35 @@ chip soc/intel/tigerlake
 		# From PCH EDS(576591)
 		device ref south_xhci on
 			# USB2
-			register "usb2_ports[0]" = "USB2_PORT_MID(OC_SKIP)" # J_USB3_2
-			register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC_SKIP)" # J_TYPEC1
-			register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)" # J_USB3_1
-			register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)" # Fingerprint
-			register "usb2_ports[5]" = "USB2_PORT_TYPE_C(OC_SKIP)" # J_TYPEC2
-			register "usb2_ports[6]" = "USB2_PORT_MID(OC_SKIP)" # Camera
-			register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)" # Bluetooth
+			register "usb2_ports[0]" = "USB2_PORT_MID(OC_SKIP)" 	# USB-A port1
+			register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC_SKIP)" 	# USB-C port2
+			register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)" 	# USB-A port3
+			register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)" 	# Finger
+			register "usb2_ports[5]" = "USB2_PORT_TYPE_C(OC_SKIP)" 	# TBT USB-C
+			register "usb2_ports[6]" = "USB2_PORT_MID(OC_SKIP)"	# CCD
+			register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# BT
 			# USB3
-			register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)" # J_USB3_2
-			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)" # J_TYPEC1 CH0
-			register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC_SKIP)" # J_USB3_1
-			register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC_SKIP)" # J_TYPEC1 CH1
+			register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-A port1
+			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-C port2 (right port, lane 0)
+			register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-A port3
+			register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-C port4 (right port, lane 1)
 			# ACPI
 			chip drivers/usb/acpi
 				device ref xhci_root_hub on
 					chip drivers/usb/acpi
-						register "desc" = ""USB2 J_USB3_2""
+						register "desc" = ""USB2 Type-A Port 1""
 						register "type" = "UPC_TYPE_A"
 						register "group" = "ACPI_PLD_GROUP(1, 2)"
 						device ref usb2_port1 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB2 J_TYPEC1""
+						register "desc" = ""USB2 Type-C Port 2""
 						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 						register "group" = "ACPI_PLD_GROUP(2, 1)"
 						device ref usb2_port2 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB2 J_USB3_1""
+						register "desc" = ""USB2 Type-A Port 3""
 						register "type" = "UPC_TYPE_A"
 						register "group" = "ACPI_PLD_GROUP(2, 2)"
 						device ref usb2_port3 on end
@@ -197,7 +193,7 @@ chip soc/intel/tigerlake
 						device ref usb2_port5 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB2 J_TYPEC2""
+						register "desc" = ""USB2 TBT Type-C""
 						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 						register "group" = "ACPI_PLD_GROUP(1, 1)"
 						device ref usb2_port6 on end
@@ -213,26 +209,26 @@ chip soc/intel/tigerlake
 						device ref usb2_port10 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB3 J_USB3_2""
+						register "desc" = ""USB3 Type-A Port 1""
 						register "type" = "UPC_TYPE_A"
 						register "group" = "ACPI_PLD_GROUP(1, 2)"
 						device ref usb3_port1 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB3 J_TYPEC1 CH0""
-						register "type" = "UPC_TYPE_A"
+						register "desc" = ""USB3 Type-C Port 2""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 						register "group" = "ACPI_PLD_GROUP(2, 1)"
 						device ref usb3_port2 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB3 J_USB3_1""
+						register "desc" = ""USB3 Type-A Port 3""
 						register "type" = "UPC_TYPE_A"
 						register "group" = "ACPI_PLD_GROUP(2, 2)"
 						device ref usb3_port3 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB3 J_TYPEC1 CH1""
-						register "type" = "UPC_TYPE_A"
+						register "desc" = ""USB3 Type-C Port 4""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 						register "group" = "ACPI_PLD_GROUP(2, 1)"
 						device ref usb3_port4 on end
 					end
