@@ -37,8 +37,6 @@ void istep_18_12(void);
 
 #define LOAD_TOD_VALUE_OFFSET (4)
 #define WOF_OFFSET (0)
-11 1111 1111
-3FF
 
 // Power Bus Electrical Round Trip Delay Control Register
 // Trip Delay Control Register
