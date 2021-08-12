@@ -25,12 +25,8 @@ static const uint32_t EPSILON_W_T1_LE[] = {   15,   16,   17,   19,   21,   33 }
 
 static bool read_voltage_data(struct powerbus_cfg *cfg)
 {
-	uint8_t buf[512];
-	uint32_t buf_size = sizeof(buf);
-	struct voltage_kwd *voltage = (void *)buf;
-
-	bool success = false;
 	int i = 0;
+	const struct voltage_kwd *voltage = NULL;
 
 	/*
 	 * ATTR_FREQ_PB_MHZ
@@ -45,20 +41,10 @@ static bool read_voltage_data(struct powerbus_cfg *cfg)
 	uint32_t freq_floor = 0;
 
 	/* Using LRP0 because frequencies are the same in all LRP records */
-	success = mvpd_extract_keyword("LRP0", "#V", buf, &buf_size);
-	if (!success) {
-		printk(BIOS_ERR, "Failed to read LRP0 record from MVPD\n");
-		return false;
-	}
-
-	if (voltage->version != VOLTAGE_DATA_VERSION) {
-		printk(BIOS_ERR, "Only version %d of voltage data is supported, got: %d\n",
-		       VOLTAGE_DATA_VERSION, voltage->version);
-		return false;
-	}
+	voltage = mvpd_get_voltage_data(0);
 
 	for (i = 0; i < VOLTAGE_BUCKET_COUNT; ++i) {
-		struct voltage_bucket_data *bucket = &voltage->buckets[i];
+		const struct voltage_bucket_data *bucket = &voltage->buckets[i];
 		if (bucket->id == 0)
 			continue;
 
