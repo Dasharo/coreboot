@@ -3,6 +3,7 @@
 #include <device/device.h>
 #include <fit.h>
 #include <cpu/power/istep_13.h>
+#include <cpu/power/istep_14.h>
 #include "istep_13_scom.h"
 
 static int dt_platform_fixup(struct device_tree_fixup *fixup,
@@ -69,6 +70,8 @@ static void enable_soc_dev(struct device *dev)
 					  &device_tree_fixups);
 		}
 	}
+	istep_18_11();
+	istep_18_12();
 }
 
 struct chip_operations soc_ibm_power9_ops = {

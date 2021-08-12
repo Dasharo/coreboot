@@ -24,7 +24,7 @@
 // D - Ring (4 bits) [50:53]
 // E - Sat ID (4 bits) [54:57]
 // F - Sat Offset (6 bits) [58:63]
-// Higher bits specify indirect address
+// Higher bits specify indirect address 
 
 #define XSCOM_ADDR_IND_FLAG		PPC_BIT(0)
 #define XSCOM_ADDR_IND_ADDR		PPC_BITMASK(11,31)
