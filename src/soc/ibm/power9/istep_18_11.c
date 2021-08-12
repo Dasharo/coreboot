@@ -27,11 +27,11 @@ static uint32_t calculate_topology_delay(void)
   uint64_t l_bus_mode_reg = read_scom(PU_PB_ELINK_DLY_0123_REG);
 
   uint32_t bus_delay =
-    (l_bus_mode_reg & PPC_BITMASK(36, 47) >> 16)
-  + (l_bus_mode_reg & PPC_BITMASK(52, 63));
+    ((l_bus_mode_reg & BUS_DELAY_47) >> 16)
+  + (l_bus_mode_reg & BUS_DELAY_63);
 
   return (uint32_t)(1 + (
-    (double)(bus_delay * 8 * 1000000)
+      (double)(bus_delay * 8 * 1000000)
     / (double)(4 * FREQ_X_MHZ * TOD_GRID_PS)));
 }
 
@@ -44,9 +44,16 @@ static int64_t calculate_m_path(uint64_t value)
   if(MDMT)
   {
     value &=
-      ~PPC_BIT(0) & ~PPC_BIT(2) & ~PPC_BIT(13)
-    & ~PPC_BITMASK(5, 7) & ~PPC_BITMASK(9, 11) & ~PPC_BITMASK(24, 25);
-    value |= PPC_BIT(1) | PPC_BIT(8) | PPC_BITMASK(14, 15);
+        ~PPC_BIT(M_PATH_0_OSC_NOT_VALID)
+      & ~PPC_BIT(M_PATH_0_STEP_ALIGN_DISABLE)
+      & ~(4 << M_PATH_0_STEP_CHECK_VALIDITY_COUNT_OFFSET)
+      & ~(7 << M_PATH_SYNC_CREATE_SPS_SELECT_OFFSET)
+      & ~(15 << M_PATH_0_STEP_CHECK_CPS_DEVIATION_OFFSET)
+      & ~(3 << M_PATH_STEP_CHECK_CPS_DEVIATION_FACTOR);
+    value |=
+        PPC_BIT(M_PATH_1_OSC_NOT_VALID)
+      | (15 << M_PATH_0_STEP_CHECK_CPS_DEVIATION_OFFSET)
+      | (3 << M_PATH_0_STEP_CHECK_VALIDITY_COUNT_OFFSET);
   }
   return value;
 }
@@ -57,7 +64,12 @@ void istep_18_11(void)
     report_istep(18,11);
     write_scom(PERV_TOD_S_PATH_CTRL_REG, PPC_BITMASK(27, 32));
     write_scom(PERV_TOD_PRI_PORT_0_CTRL_REG, calculate_topology_delay());
-    write_scom(PERV_TOD_PSS_MSS_CTRL_REG, (MDMT ? PPC_BIT(PRI_M_S_TOD_SELECT) : 0) | PPC_BIT(PRI_M_S_DRAWER_SELECT) | PPC_BIT(SEC_M_S_TOD_SELECT) | PPC_BIT(SEC_M_S_DRAWER_SELECT));
+    write_scom(
+        PERV_TOD_PSS_MSS_CTRL_REG,
+        (MDMT ? PPC_BIT(PRI_M_S_TOD_SELECT) : 0)
+      | PPC_BIT(PRI_M_S_DRAWER_SELECT)
+      | PPC_BIT(SEC_M_S_TOD_SELECT)
+      | PPC_BIT(SEC_M_S_DRAWER_SELECT));
     write_scom(PERV_TOD_SEC_PORT_1_CTRL_REG, 0);
     write_scom(PERV_TOD_PRI_PORT_1_CTRL_REG, 0);
     write_scom(PERV_TOD_M_PATH_CTRL_REG, calculate_m_path(read_scom(PERV_TOD_M_PATH_CTRL_REG)));
