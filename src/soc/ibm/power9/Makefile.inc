@@ -20,13 +20,13 @@ romstage-y += istep_14_1.c
 romstage-y += istep_14_2.c
 romstage-y += istep_14_3.c
 romstage-y += istep_14_5.c
-romstage-y += istep_18_11.c
-romstage-y += istep_18_12.c
 romstage-y += i2c.c
 romstage-y += ccs.c
 romstage-y += timer.c
 ramstage-y += chip.c
 ramstage-y += rom_media.c
 ramstage-y += timer.c
+ramstage-y += istep_18_11.c
+ramstage-y += istep_18_12.c
 
 endif
