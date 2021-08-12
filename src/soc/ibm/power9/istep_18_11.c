@@ -6,7 +6,7 @@
 // TODO: this one will cange if we add more than one processor
 #define MDMT (1)
 
-static uint32_t calculate_topology_dealy(void)
+static uint32_t calculate_topology_delay(void)
 {
   // in simple topology with one proc it is enough to assign 0
   // with multiple processors this will get more complicated
@@ -56,12 +56,12 @@ void istep_18_11(void)
     printk(BIOS_EMERG, "starting istep 18.11\n");
     report_istep(18,11);
     write_scom(PERV_TOD_S_PATH_CTRL_REG, PPC_BITMASK(27, 32));
-    write_scom(PERV_TOD_PRI_PORT_0_CTRL_REG, calculate_topology_dealy());
-    write_scom(PERV_TOD_PSS_MSS_CTRL_REG, (MDMT ? PPC_BIT(1) : 0) | PPC_BIT(2) | PPC_BITMASK(9, 10));
+    write_scom(PERV_TOD_PRI_PORT_0_CTRL_REG, calculate_topology_delay());
+    write_scom(PERV_TOD_PSS_MSS_CTRL_REG, (MDMT ? PPC_BIT(PRI_M_S_TOD_SELECT) : 0) | PPC_BIT(PRI_M_S_DRAWER_SELECT) | PPC_BIT(SEC_M_S_TOD_SELECT) | PPC_BIT(SEC_M_S_DRAWER_SELECT));
     write_scom(PERV_TOD_SEC_PORT_1_CTRL_REG, 0);
     write_scom(PERV_TOD_PRI_PORT_1_CTRL_REG, 0);
     write_scom(PERV_TOD_M_PATH_CTRL_REG, calculate_m_path(read_scom(PERV_TOD_M_PATH_CTRL_REG)));
-    write_scom(PERV_TOD_SEC_PORT_0_CTRL_REG, calculate_topology_dealy());
+    write_scom(PERV_TOD_SEC_PORT_0_CTRL_REG, calculate_topology_delay());
     write_scom(
         PERV_TOD_I_PATH_CTRL_REG,
         PPC_BITMASK(8, 11)
