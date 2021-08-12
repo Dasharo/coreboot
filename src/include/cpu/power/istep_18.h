@@ -23,6 +23,18 @@ void istep_18_12(void);
 #define SEC_M_S_TOD_SELECT (9)
 #define SEC_M_S_DRAWER_SELECT (10)
 
+#define M_PATH_0_OSC_NOT_VALID (0)
+#define M_PATH_1_OSC_NOT_VALID (1)
+#define M_PATH_0_STEP_ALIGN_DISABLE (2)
+
+#define M_PATH_STEP_CHECK_CPS_DEVIATION_FACTOR (37)
+#define M_PATH_0_STEP_CHECK_CPS_DEVIATION_OFFSET (51)
+#define M_PATH_SYNC_CREATE_SPS_SELECT_OFFSET (55)
+#define M_PATH_0_STEP_CHECK_VALIDITY_COUNT_OFFSET (47)
+
+#define BUS_DELAY_63 (PPC_BITMASK(52, 63))
+#define BUS_DELAY_47 (PPC_BITMASK(36, 47))
+
 // Power Bus Electrical Round Trip Delay Control Register
 // Trip Delay Control Register
 // [0:5]   WO_1P PB_ELINK_RT_DELAY_CTL_SET:
@@ -34,7 +46,7 @@ void istep_18_12(void);
 // [36:47] ROX Reserved.
 // [52:63] ROX Reserved.
 // Note: Documentations describes these bits as reserved however they are used
-// in Hostboot anyway.
+// to get bus_delay value.
 #define PU_PB_ELINK_DLY_0123_REG (0x0501340E)
 // Root Control 8 Register
 // [21] RW ROOT_CTRL8_21_SPARE_PLL_CONTROL:
@@ -109,10 +121,6 @@ void istep_18_12(void);
 // [2]     RW M_PATH_0_STEP_ALIGN_DISABLE: Master path-0. Indicates alignment of master path-0 step to master path-1 step is active
 //         0 = Alignment of master path-0 step to master path-1 step is active.
 //         1 = Alignment of master path-0 step to master path-1 Step is not active.
-// [4]     RW M_PATH_STEP_CREATE_DUAL_EDGE_DISABLE: For master path-01 step creation,
-//         determines whether both edges or only the rising edge of the oscillator is sampled.
-//         0 = Sample both edges of the oscillator.
-//         1 = Sample only the rising edge of the oscillator.
 // [5:7]   RW M_PATH_SYNC_CREATE_SPS_SELECT: Master path: sync create: steps per sync (SPS) select: number of STEP pulses per SYNC pulse.
 // [8:11]  RW M_PATH_0_STEP_CHECK_CPS_DEVIATION: Master path-0: step check: CPS deviation.
 // [13:15] RW M_PATH_0_STEP_CHECK_VALIDITY_COUNT: Master path-0 step check. Specifies the number of
