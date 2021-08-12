@@ -4,6 +4,7 @@
 #include <fit.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
+#include <cpu/power/istep_18.h>
 #include "istep_13_scom.h"
 
 static int dt_platform_fixup(struct device_tree_fixup *fixup,
