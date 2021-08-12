@@ -35,6 +35,11 @@ void istep_18_12(void);
 #define BUS_DELAY_63 (PPC_BITMASK(52, 63))
 #define BUS_DELAY_47 (PPC_BITMASK(36, 47))
 
+#define LOAD_TOD_VALUE_OFFSET (4)
+#define WOF_OFFSET (0)
+11 1111 1111
+3FF
+
 // Power Bus Electrical Round Trip Delay Control Register
 // Trip Delay Control Register
 // [0:5]   WO_1P PB_ELINK_RT_DELAY_CTL_SET:
