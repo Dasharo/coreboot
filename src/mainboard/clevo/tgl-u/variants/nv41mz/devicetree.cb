@@ -66,9 +66,7 @@ chip soc/intel/tigerlake
 		.vnn_sx_voltage_mv = 1050,
 	}"
 
-	# Read LPM_EN, make sure to invert the bits
-	# sudo devmem2 0xfe001c78
-	# 0x9
+	# LPM states
 	register "LpmStateDisableMask" = "
 		LPM_S0i2_1 |
 		LPM_S0i2_2 |
@@ -79,8 +77,7 @@ chip soc/intel/tigerlake
 	"
 
 	# Thermal
-	# rdmsr --bitfield 31:24 --decimal 0x1A2
-	register "tcc_offset" = "12"
+	register "tcc_offset" = "13"
 
 # PM Util (soc/intel/tigerlake/pmutil.c)
 	# GPE configuration
