@@ -35,5 +35,6 @@ ramstage-y += mvpd.c
 ramstage-y += vpd.c
 ramstage-y += tor.c
 ramstage-y += powerbus.c
+ramstage-y += pstates.c
 
 endif
