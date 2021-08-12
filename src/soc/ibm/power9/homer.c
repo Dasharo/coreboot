@@ -9,6 +9,8 @@
 #include <cpu/power/spr.h>
 #include <string.h>		// memset, memcpy
 #include <timer.h>
+#include <vendorcode/ibm/power9/pstates/p9_pstates_cmeqm.h>
+#include <vendorcode/ibm/power9/pstates/p9_pstates_occ.h>
 
 #include "chip.h"
 #include "homer.h"
@@ -705,10 +707,6 @@ static uint64_t get_available_cores(int *me)
 	return ret;
 }
 
-#define IS_EC_FUNCTIONAL(ec, cores)		(!!((cores) & PPC_BIT(ec)))
-#define IS_EX_FUNCTIONAL(ex, cores)		(!!((cores) & PPC_BITMASK(2*(ex), 2*(ex) + 1)))
-#define IS_EQ_FUNCTIONAL(eq, cores)		(!!((cores) & PPC_BITMASK(4*(eq), 4*(eq) + 3)))
-
 /* TODO: similar is used in 13.3. Add missing parameters and make it public? */
 static void psu_command(uint8_t flags, long time)
 {
@@ -1014,8 +1012,8 @@ static void layout_inst_rings_for_cme(struct homer_st *homer,
 	}
 
 	for (ex = 0; ex < MAX_CMES_PER_CHIP; ++ex) {
-		// TODO: update with sizeof(LocalPstateParmBlock) when it's defined
-		const uint32_t ex_offset = ex * (max_ex_len + ALIGN_UP(616, 32));
+		const uint32_t ex_offset =
+			ex * (max_ex_len + ALIGN_UP(sizeof(LocalPstateParmBlock), 32));
 
 		uint8_t *start = &homer->cpmr.cme_sram_region[*ring_len + ex_offset];
 		struct cme_inst_ring_list *tmp = (void *)start;
@@ -1334,7 +1332,8 @@ void build_homer_image(void *homer_bar)
 			      (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
 			      cores, ring_variant);
 
-	// buildParameterBlock();
+	build_parameter_blocks(homer, cores);
+
 	// updateCpmrCmeRegion();
 
 	// Update QPMR Header area in HOMER

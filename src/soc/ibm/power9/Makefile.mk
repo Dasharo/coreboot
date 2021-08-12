@@ -35,6 +35,7 @@ ramstage-y += istep_18_11.c
 ramstage-y += istep_18_12.c
 ramstage-y += mvpd.c
 ramstage-y += powerbus.c
+ramstage-y += pstates.c
 ramstage-y += rom_media.c
 ramstage-y += timer.c
 ramstage-y += tor.c

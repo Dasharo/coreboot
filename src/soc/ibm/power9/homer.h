@@ -3,6 +3,7 @@
 #ifndef __SOC_IBM_POWER9_HOMER_H
 #define __SOC_IBM_POWER9_HOMER_H
 
+#include <arch/byteorder.h>	// PPC_BIT(), PPC_BITMASK()
 #include <commonlib/bsd/helpers.h>
 
 /* All fields are big-endian */
@@ -320,5 +321,11 @@ struct homer_st {
 check_member(homer_st, qpmr, 1 * MiB);
 check_member(homer_st, cpmr, 2 * MiB);
 check_member(homer_st, ppmr, 3 * MiB);
+
+#define IS_EC_FUNCTIONAL(ec, cores)		(!!((cores) & PPC_BIT(ec)))
+#define IS_EX_FUNCTIONAL(ex, cores)		(!!((cores) & PPC_BITMASK(2*(ex), 2*(ex) + 1)))
+#define IS_EQ_FUNCTIONAL(eq, cores)		(!!((cores) & PPC_BITMASK(4*(eq), 4*(eq) + 3)))
+
+void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores);
 
 #endif /* __SOC_IBM_POWER9_HOMER_H */
