@@ -1526,7 +1526,7 @@ void build_homer_image(void *homer_bar)
 
 
 	build_parameter_blocks(homer, cores);
-	// buildParameterBlock();
+
 	// updateCpmrCmeRegion();
 
 	// Update QPMR Header area in HOMER
