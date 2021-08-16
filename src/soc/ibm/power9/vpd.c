@@ -257,55 +257,51 @@ static char mapping_lookup(const struct vpd_info *vpd, const uint8_t *mapping, s
 	return '\0';
 }
 
-/* Finds a keyword by its name. Retrieves its size too. Returns NULL on
- * failure. */
-static const uint8_t *find_vpd_kwd(const struct vpd_info *vpd, const char *name,
-				   size_t *size)
+const uint8_t *vpd_find_kwd(const uint8_t *record, const char *record_name,
+			    const char *kwd_name, size_t *size)
 {
-	const uint8_t *data = vpd->data;
-
 	size_t offset = 0;
 	uint16_t record_size = 0;
 
-	if (strlen(name) != VPD_KWD_NAME_LEN)
-		die("Keyword name has wrong length!\n");
+	if (strlen(kwd_name) != VPD_KWD_NAME_LEN)
+		die("Keyword name has wrong length: %s!\n", kwd_name);
 
-	memcpy(&record_size, &data[offset], sizeof(record_size));
+	memcpy(&record_size, &record[offset], sizeof(record_size));
 	offset += VPD_RECORD_SIZE_LEN;
 	record_size = le16toh(record_size);
 
 	/* Skip mandatory "RT" and one byte of record size (always 4) */
 	offset += VPD_KWD_NAME_LEN + 1;
 
-	if (memcmp(&data[offset], "MEMD", VPD_RECORD_NAME_LEN))
-		die("Failed to find MEMD record!\n");
+	if (memcmp(&record[offset], record_name, VPD_RECORD_NAME_LEN))
+		die("Expected to be working with %s record!\n", record_name);
 	offset += VPD_RECORD_NAME_LEN;
 
 	while (offset < record_size) {
 		uint16_t kwd_size = 0;
 		bool match = false;
-		const int two_byte_size = (data[offset] == '#');
+		const int two_byte_size = (record[offset] == '#');
 
 		/* This is always the last keyword */
-		if (!memcmp(&data[offset], "PF", VPD_KWD_NAME_LEN))
+		if (!memcmp(&record[offset], "PF", VPD_KWD_NAME_LEN))
 			break;
 
-		match = !memcmp(&data[offset], name, VPD_KWD_NAME_LEN);
+		match = !memcmp(&record[offset], kwd_name, VPD_KWD_NAME_LEN);
 
 		offset += VPD_KWD_NAME_LEN;
 
 		if (two_byte_size) {
-			memcpy(&kwd_size, &data[offset], sizeof(kwd_size));
+			memcpy(&kwd_size, &record[offset], sizeof(kwd_size));
 			kwd_size = le16toh(kwd_size);
 			offset += 2;
 		} else {
-			kwd_size = data[offset];
+			kwd_size = record[offset];
 			offset += 1;
 		}
 
 		if (match) {
 			*size = kwd_size;
-			return &data[offset];
+			return &record[offset];
 		}
 
 		offset += kwd_size;
@@ -331,7 +327,7 @@ static const uint8_t *find_vpd_conf(const struct vpd_info *vpd, const char *mapp
 	else
 		die("Unsupported %s mapping type\n", mapping_name);
 
-	mapping = find_vpd_kwd(vpd, mapping_name, &kwd_size);
+	mapping = vpd_find_kwd(vpd->data, "MEMD", mapping_name, &kwd_size);
 	if (!mapping)
 		die("VPD is missing %s keyword!\n", mapping_name);
 
@@ -339,7 +335,7 @@ static const uint8_t *find_vpd_conf(const struct vpd_info *vpd, const char *mapp
 	if (!conf_name[1])
 		die("Failed to find matching %s configuration!\n", mapping_name);
 
-	conf = find_vpd_kwd(vpd, conf_name, &kwd_size);
+	conf = vpd_find_kwd(vpd->data, "MEMD", conf_name, &kwd_size);
 	if (!conf)
 		die("Failed to read %s configuration!\n", mapping_name);
 
