@@ -3,6 +3,16 @@
 #ifndef __SOC_IBM_POWER9_TOR_H
 #define __SOC_IBM_POWER9_TOR_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#define UNDEFINED_RING_ID      ((uint16_t)0xFFFF)
+#define UNDEFINED_RING_VARIANT ((uint8_t)0xFF)
+#define UNDEFINED_INSTANCE_ID  ((uint8_t)0xFF)
+
+#define MAX_RING_BUF_SIZE   ((uint32_t)60000)
+#define MAX_TOR_RING_OFFSET ((uint16_t)0xFFFF)
+
 /* List of all Ring IDs as they appear in data */
 enum ring_id {
 	/* Perv Chiplet Rings */
@@ -346,5 +356,102 @@ enum ring_id {
 
 	NUM_RING_IDS = 267
 };
+
+/* Supported ring variants. Values match order in ring sections. */
+enum ring_variant {
+	RV_BASE,
+	RV_CC,
+	RV_RL,		// Kernel and user protection
+	RV_RL2,		// Kernel only protection
+	RV_RL3,		// Rugby v4
+	RV_RL4,		// Java performance
+	RV_RL5,		// Spare
+	NUM_RING_VARIANTS
+};
+
+/* List of groups of rings */
+enum ring_class {
+	RING_CLASS_NEST,       	// Common NEST rings except GPTR #G rings
+	RING_CLASS_GPTR_NEST,	// Common GPTR #G rings-NEST
+	RING_CLASS_GPTR_EQ,    	// Common GPTR #G rings-EQ
+	RING_CLASS_GPTR_EX,    	// Common GPTR #G rings-EX
+	RING_CLASS_GPTR_EC,    	// Common GPTR #G rings-EC
+	RING_CLASS_EQ,		// Common EQ rings
+	RING_CLASS_EX,		// Common EX rings
+	RING_CLASS_EC,		// Common EC rings
+	RING_CLASS_EQ_INS,     	// Instance EQ rings
+	RING_CLASS_EX_INS,     	// Instance EX rings
+	RING_CLASS_EC_INS,     	// Instance EC rings
+};
+
+/* PPE types, enum values match indices inside rings section */
+enum ppe_type {
+	PT_SBE,
+	PT_CME,
+	PT_SGPE,
+};
+
+/* Available ring access operations */
+enum ring_operation {
+	GET_RING_DATA,
+	GET_RING_PUT_INFO,
+	GET_PPE_LEVEL_RINGS,
+};
+
+/* Result of calling tor_fetch_and_insert_vpd_rings() */
+enum ring_status {
+	RING_NOT_FOUND,
+	RING_FOUND,
+	RING_REDUNDANT,
+};
+
+/* Information necessary to put a ring into a ring section */
+struct ring_put_info {
+	uint32_t chiplet_offset;	// Relative to ring section
+	uint32_t ring_slot_offset;	// Relative to ring section
+};
+
+/* Describes ring search characteristics for tor_fetch_and_insert_vpd_rings() */
+struct ring_query {
+	enum ring_id ring_id;
+	enum ring_class ring_class;
+	char kwd_name[3];		// Keyword name
+	uint8_t min_instance_id;
+	uint8_t max_instance_id;
+};
+
+/* Header of a ring section */
+struct tor_hdr {
+	uint32_t magic;		// One of TOR_MAGIC_*
+	uint8_t  version;
+	uint8_t  chip_type;
+	uint8_t  dd_level;
+	uint8_t  undefined;
+	uint32_t size;
+	uint8_t	 data[];
+} __attribute__((packed));
+
+/*
+ * Either reads ring into the buffer (on GET_RING_DATA) or treats the buffer as
+ * an instance of ring_put_info (on GET_RING_PUT_INFO)
+ */
+bool tor_access_ring(struct tor_hdr *ring_section, uint16_t ring_id,
+		     enum ppe_type ppe_type, uint8_t ring_variant,
+		     uint8_t instance_id, void *data_buf,
+		     uint32_t *data_buf_size, enum ring_operation operation);
+
+/*
+ * Extracts rings from CP00 record of MVPD and appends them to the ring section
+ * applying overlay if necessary.  All buffers must be be at least
+ * MAX_RING_BUF_SIZE bytes in length.
+ */
+void tor_fetch_and_insert_vpd_rings(struct tor_hdr *ring_section,
+				    uint32_t *ring_section_size,
+				    uint32_t max_ring_section_size,
+				    struct tor_hdr *overlays_section,
+				    enum ppe_type ppe_type,
+				    uint8_t *buf1,
+				    uint8_t *buf2,
+				    uint8_t *buf3);
 
 #endif // __SOC_IBM_POWER9_TOR_H
