@@ -324,7 +324,7 @@ chip soc/intel/tigerlake
 		device ref hda on
 			register "PchHdaAudioLinkHdaEnable" = "1"
 			register "PchHdaAudioLinkDmicEnable[0]" = "1"
-			register "PchHdaAudioLinkDmicEnable[1]" = "1"
+			register "PchHdaAudioLinkDmicEnable[1]" = "0"
 		end
 		device ref smbus on
 			register "SmbusEnable" = "1"
