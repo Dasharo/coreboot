@@ -8,6 +8,7 @@
 
 #define IDDQ_MEASUREMENTS    6
 #define MAX_QUADS_PER_CHIP   (MAX_CORES/4)
+#define MAX_CMES_PER_CHIP    (MAX_CORES/2)
 #define MAX_UT_PSTATES       64     // Oversized
 #define FREQ_STEP_KHZ        16666
 
@@ -334,15 +335,67 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	struct voltage_bucket_data *bucket = NULL;
 	struct voltage_bucket_data poundV_bucket = {};
 	PoundW_data_per_quad poundW_bucket = {};
+	char record[] = "LRP0";
+	struct cme_img_header *cme_hdr = (struct cme_img_header *)
+	           &homer->cpmr.cme_sram_region[INT_VECTOR_SIZE];
+	cme_hdr->pstate_offset = cme_hdr->core_spec_ring_offset +
+	                         cme_hdr->max_spec_ring_len;
+	cme_hdr->custom_length = ALIGN_UP(sizeof(LocalPstateParmBlock), 32) / 32 +
+	                         cme_hdr->max_spec_ring_len;
+
+	/*
+	 * OCC Pstate Parameter Block and Global Pstate Parameter Block are filled
+	 * directly in their final place as we go.
+	 *
+	 * Local Pstate Parameter Block in Hostboot uses an array with entry for
+	 * each quad (note there are two CMEs per quad, those are written with the
+	 * same entry). Nevertheless, data written to LPPB for each quad (and CME)
+	 * is identical - the only field that could have per-quad data is VID comp,
+	 * but it is filled with data for quad 0. It looks as if the code was made
+	 * with anticipation of #W v3, but that version is not yet used.
+	 *
+	 * Here, we use CME 0 on quad 0 as a template that is filled as we go. This
+	 * structure is then copied to other functional CMEs. Note that the first
+	 * CME doesn't have to be functional, but always writing to its region is
+	 * much easier than finding out proper source for memcpy later.
+	 */
 	OCCPstateParmBlock *oppb = (OCCPstateParmBlock *)homer->ppmr.occ_parm_block;
 	GlobalPstateParmBlock *gppb = (GlobalPstateParmBlock *)
 	           &homer->ppmr.pgpe_sram_img[homer->ppmr.header.hcode_len];
-	char record[] = "LRP0";
+	LocalPstateParmBlock *lppb = (LocalPstateParmBlock *)
+	           &homer->cpmr.cme_sram_region[cme_hdr->pstate_offset];
+
+	/* OPPB - constant fields */
 
 	oppb->magic = OCC_PARMSBLOCK_MAGIC; // "OCCPPB00"
 	oppb->frequency_step_khz = FREQ_STEP_KHZ;
 	oppb->wof.tdp_rdp_factor = 0; 	// ATTR_TDP_RDP_CURRENT_FACTOR 0 from talos.xml
 	oppb->nest_leakage_percent = 60; // ATTR_NEST_LEAKAGE_PERCENT from hb_temp_defaults.xml
+
+	/* FIXME: uncomment after WOF_DATA is prepared */
+	//oppb->wof.wof_enabled = 1;		// Assuming wof_init() succeeds
+	oppb->wof.tdp_rdp_factor = 0;		// ATTR_TDP_RDP_CURRENT_FACTOR from talos.xml
+	oppb->nest_leakage_percent = 60;	// ATTR_NEST_LEAKAGE_PERCENT from hb_temp_defaults.xml
+	/*
+	 * As the Vdn dimension is not supported in the WOF tables, hardcoding this
+	 * value to the OCC as non-zero to keep it happy.
+	 */
+	oppb->ceff_tdp_vdn = 1;
+
+	/* Default values are from talos.xml */
+	oppb->vdd_sysparm.loadline_uohm = 254;
+	oppb->vdd_sysparm.distloss_uohm =   0;
+	oppb->vdd_sysparm.distoffset_uv =   0;
+
+	oppb->vcs_sysparm.loadline_uohm =   0;
+	oppb->vcs_sysparm.distloss_uohm =  64;
+	oppb->vcs_sysparm.distoffset_uv =   0;
+
+	oppb->vdn_sysparm.loadline_uohm =   0;
+	oppb->vdn_sysparm.distloss_uohm =  50;
+	oppb->vdn_sysparm.distoffset_uv =   0;
+
+	/* GPPB -constant fields */
 
 	gppb->magic = PSTATE_PARMSBLOCK_MAGIC; // "PSTATE00"
 	gppb->options.options = 0;
@@ -350,10 +403,9 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 
 	/*
 	 * VpdBias External and Internal Biases for Global and Local parameter
-	 * blocks - assumed no bias, fill with 0.
+	 * blocks - assumed no bias, filled with 0. HOMER was already cleared so
+	 * no need to repeat it.
 	 */
-	memset(gppb->ext_biases, 0, sizeof(gppb->ext_biases));
-	memset(gppb->int_biases, 0, sizeof(gppb->int_biases));
 
 	/* Default values are from talos.xml */
 	gppb->vdd_sysparm.loadline_uohm = 254;
@@ -394,6 +446,17 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	gppb->avs_bus_topology.vdn_avsbus_rail = 0;
 	gppb->avs_bus_topology.vcs_avsbus_num  = 0;
 	gppb->avs_bus_topology.vcs_avsbus_rail = 1;
+
+	/* LPPB - constant fields */
+	lppb->magic = LOCAL_PARMSBLOCK_MAGIC;		// "CMEPPB00"
+
+	/* Default values are from talos.xml */
+	lppb->vdd_sysparm.loadline_uohm = 254;
+	lppb->vdd_sysparm.distloss_uohm =   0;
+	lppb->vdd_sysparm.distoffset_uv =   0;
+
+
+	/* Read and validate #V */
 
 	for (int quad = 0; quad < MAXIMUM_QUADS; quad++) {
 		if (!IS_EQ_FUNCTIONAL(quad, functional_cores))
@@ -453,16 +516,12 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	assert(poundV_bucket.id != 0);
 	struct voltage_data *vd = &poundV_bucket.nominal;
 
+
+	/* OPPB - #V data */
+
 	/* Save UltraTurbo frequency as reference */
-	update_resclk(vd[VPD_PV_ULTRA].freq * 1000);
 	oppb->frequency_max_khz = vd[VPD_PV_ULTRA].freq * 1000;
 	oppb->nest_frequency_mhz = vd[VPD_PV_POWERBUS].freq;
-
-	gppb->reference_frequency_khz = oppb->frequency_max_khz;
-	gppb->nest_frequency_mhz = oppb->nest_frequency_mhz;
-	// This is Pstate value that would be assigned to frequency of 0
-	gppb->dpll_pstate0_value = gppb->reference_frequency_khz /
-	                           gppb->frequency_step_khz;
 
 	for (int op = 0; op < NUM_OP_POINTS; op++) {
 		/* Assuming no bias */
@@ -485,7 +544,25 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 		oppb->operating_points[NOMINAL] = nom;
 	}
 
-	/* TODO: copy operating points to LPPB */
+	/* GPPB - #V data */
+
+	gppb->reference_frequency_khz = oppb->frequency_max_khz;
+	gppb->nest_frequency_mhz = oppb->nest_frequency_mhz;
+	/* This is Pstate value that would be assigned to frequency of 0 */
+	gppb->dpll_pstate0_value = gppb->reference_frequency_khz /
+	                           gppb->frequency_step_khz;
+
+	update_resclk(gppb->reference_frequency_khz);
+	memcpy(&gppb->resclk, &resclk, sizeof(ResonantClockingSetup));
+
+	/*
+	 * Global PPB VDM iVRM are set based on attributes, but all of them are by
+	 * default 0. HOMER was memset to 0, so no need to do anything more.
+	 *
+	 * For Local PPBs, VDM is explicitly set to 0 even when attributes have
+	 * different values. iVRM are still set based on attributes.
+	 */
+
 	memcpy(gppb->operating_points, oppb->operating_points,
 	       sizeof(gppb->operating_points));
 	{
@@ -516,6 +593,14 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 		}
 	}
 
+	/* LPPB - #V data */
+
+	/* LPPB has neither reference frequency nor step size, use GPPB values */
+	lppb->dpll_pstate0_value = gppb->reference_frequency_khz /
+	                           gppb->frequency_step_khz;
+	memcpy(lppb->operating_points, oppb->operating_points,
+	       sizeof(lppb->operating_points));
+	memcpy(&lppb->resclk, &resclk, sizeof(ResonantClockingSetup));
 
 	/*
 	 * #W is in CRP0, there is no CRP1..5 for other quads. Format of #W:
@@ -588,7 +673,14 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	}
 
 	check_valid_poundW(&poundW_bucket, functional_cores);
-	calculate_slopes(gppb, &poundW_bucket);
+
+
+	/* OPPB - #W data */
+
+	oppb->lac_tdp_vdd_turbo_10ma =
+	         poundW_bucket.poundw[TURBO].ivdd_tdp_ac_current_10ma;
+	oppb->lac_tdp_vdd_nominal_10ma =
+	         poundW_bucket.poundw[NOMINAL].ivdd_tdp_ac_current_10ma;
 
 	/* Calculate safe mode frequency/pstate/voltage */
 	{
@@ -617,16 +709,38 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 		/* Reverse calculation to deal with rounding caused by integer math */
 		oppb->frequency_min_khz = oppb->frequency_max_khz -
 		                          sm_pstate * oppb->frequency_step_khz;
-		gppb->safe_frequency_khz = oppb->frequency_min_khz;
 
 		assert(oppb->frequency_min_khz < oppb->frequency_max_khz);
-		/* TODO: safe mode voltage will be needed for GPPB - requires sysparams values */
-		gppb->safe_voltage_mv = calculate_sm_voltage(sm_pstate, gppb);
-		gppb->wov_underv_vmin_mv = gppb->safe_voltage_mv;
-
-		printk(BIOS_DEBUG, "Safe mode freq = %d kHZ, voltage = %d mv\n",
-		       oppb->frequency_min_khz, gppb->safe_voltage_mv);
 	}
+
+	/* GPPB - #W data */
+
+	calculate_slopes(gppb, &poundW_bucket);
+	gppb->safe_frequency_khz = oppb->frequency_min_khz;
+	gppb->safe_voltage_mv = calculate_sm_voltage(oppb->pstate_min, gppb);
+	gppb->wov_underv_vmin_mv = gppb->safe_voltage_mv;
+
+	printk(BIOS_DEBUG, "Safe mode freq = %d kHZ, voltage = %d mv\n",
+		   gppb->safe_frequency_khz, gppb->safe_voltage_mv);
+
+	/* LPPB - #W data */
+	/*
+	 * This basically repeats calculate_slopes() for LPPB. Unfortunately, the
+	 * structures aren't compatible.
+	 */
+	memcpy(lppb->vid_point_set, gppb->vid_point_set,
+	       sizeof(lppb->vid_point_set));
+	memcpy(lppb->threshold_set, gppb->threshold_set,
+	       sizeof(lppb->threshold_set));
+	memcpy(lppb->jump_value_set, gppb->jump_value_set,
+	       sizeof(lppb->jump_value_set));
+	memcpy(lppb->PsVIDCompSlopes, gppb->PsVIDCompSlopes,
+	       sizeof(lppb->PsVIDCompSlopes));
+	memcpy(lppb->PsVDMThreshSlopes, gppb->PsVDMThreshSlopes,
+	       sizeof(lppb->PsVDMThreshSlopes));
+	memcpy(lppb->PsVDMJumpSlopes, gppb->PsVDMJumpSlopes,
+	       sizeof(lppb->PsVDMJumpSlopes));
+
 
 	/*
 	 * IDDQ - can't read straight to IddqTable, see comment before spare bytes
@@ -641,231 +755,81 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 
 	check_valid_iddq(&oppb->iddq);
 
-//~ // Update P State parameter block info in HOMER
-//~ buildParameterBlock(homer, proc, ppmrHdr = homer.ppmr.header, imgType, buf1, buf1s):
-	//~ p9_pstate_parameter_block(proc, &stateSupStruct /*13K struct */, buf1, wofTableSize = buf1s):
-		//~ // Instantiate pstate object
-		//~ PlatPmPPB l_pmPPB(proc)
-			//~ - this constructor makes a local copy of attributes and prints them
+	/*
+	 * Pad was re-purposed, Hostboot developers created additional union. The
+	 * new union is in the same header file, few lines above the structure, but
+	 * the original field still uses 'uint32_t pad', instead of new type. This
+	 * leads to the following monstrosity.
+	 */
+	((GPPBOptionsPadUse *)&gppb->options.pad)->fields.good_cores_in_sort =
+	       oppb->iddq.good_normal_cores_per_sort;
 
-		//~ // -----------------------------------------------------------
-		//~ // Clear the PstateSuperStructure and install the magic number
-		//~ //----------------------------------------------------------
-		//~ memset(stateSupStruct, 0, sizeof(stateSupStruct))
+	/* TODO: WOF */
+	//~ // ----------------
+	//~ // WOF initialization
+	//~ // ----------------
+	//~ wof_init(o_buf = &homer->ppmr.wof_tables):
+		//~ - Search for proper data in WOFDATA PNOR partition
+		//~ - WOFDATA is 3M, make sure CBFS_CACHE is big enough
+		//~ - search until match is found:
+		  //~ - core count
+		  //~ - socket power (nominal, as read from #V)
+		  //~ - frequency (nominal, as read from #V)
+		  //~ - if version >= WOF_TABLE_VERSION_POWERMODE (2):
+			//~ - mode matches current mode (WOF_MODE_NOMINAL = 1) or wildcard (WOF_MODE_UNKNOWN = 0)
+		//~ - structures used:
+		  //~ - wofImageHeader_t from plat_wof_access.C
+			//~ - check magic and version
+		  //~ - wofSectionTableEntry_t from plat_wof_access.C
+		  //~ - WofTablesHeader_t from p9_pstates_common.h
+		//~ memcpy(o_buf, &WofTablesHeader_t /* for found entry */, wofSectionTableEntry_t[found_entry_idx].size)
 
-		//~ *stateSupStruct.magic = PSTATE_PARMSBLOCK_MAGIC		// 0x5053544154453030ull, PSTATE00
+		//~ // Just the header, rest needs parsing
+		//~ memcpy(homer->ppmr.wof_tables, o_buf, sizeof(WofTablesHeader_t))
 
-		//~ // ----------------
-		//~ // get Resonant clocking attributes
-		//~ // ----------------
-		//~ l_pmPPB.resclk_init():
-			//~ - assuming Resonant Clocks are enabled
-			//~ set_resclk_table_attrs():
-				//~ - reads data from p9_resclk_defines.H and writes it to attributes:
-				  //~ - ATTR_SYSTEM_RESCLK_L3_VALUE
-				  //~ - ATTR_SYSTEM_RESCLK_FREQ_REGIONS
-				  //~ - ATTR_SYSTEM_RESCLK_FREQ_REGION_INDEX
-				  //~ - ATTR_SYSTEM_RESCLK_VALUE
-				  //~ - ATTR_SYSTEM_RESCLK_L3_VOLTAGE_THRESHOLD_MV
-			//~ res_clock_setup():
-				//~ - reads data from attributes and saves it to iv_resclk_setup
-				  //~ - all of the p9_resclk_defines.H
-				  //~ - ATTR_SYSTEM_RESCLK_STEP_DELAY (= 0?)
-				  //~ - none of these is used anywhere else
-				  //~ - pstates and indices are capped at ultra turbo, but all entries are still written
+		//~ for vfrt_index in 0..((WofTablesHeader_t*)o_buf->vdn_size * (WofTablesHeader_t*)o_buf->vdd_size * ACTIVE_QUADS) -1:
+			//~ src = o_buf                  + sizeof(WofTablesHeader_t) + vfrt_index * 128 /* vRTF size */
+			//~ dst = homer->ppmr.wof_tables + sizeof(WofTablesHeader_t) + vfrt_index * sizeof(HomerVFRTLayout_t) /* 256B */
+			//~ update_vfrt (src, dst):
+				//~ - Assumption: no bias, makes this function so much easier
+				//~ // Data in src has 8B header followed by 5*24 bytes of frequency information, such that freq = value*step_size + 1GHz.
+				//~ // Data in dst has (almost) the same header followed by 5*24 bytes of Pstates.
+				//~ // Copy header
+				//~ memcpy(dst, src, 8)
+				//~ // Flip type from System to Homer
+				//~ dst.type_version |= 0x10
+				//~ assert(dst.magic = "VT")
+				//~ for idx in 0..5*24 -1:
+					//~ dst[8+idx] = freq_to_pstate(src[8+idx])		// rounded properly
 
-		//~ // ----------------
-		//~ // Initialize GPPB structure
-		//~ // ----------------
-		//~ l_pmPPB.gppb_init(&l_globalppb):
-			//~ // LHS fields are members of l_globalppb
-			//~ // This function is basically one big unnecessary memcpy...
+	/* Copy LPPB to functional CMEs */
+	for (int cme = 1; cme < MAX_CMES_PER_CHIP; cme++) {
+		if (!IS_EX_FUNCTIONAL(cme, functional_cores))
+			continue;
 
-			//~ // Struct definition in p9_pstates_pgpe.h
-			//~ vdm = {ATTR_VDM_VID_COMPARE_OVERRIDE_MV, ATTR_DPLL_VDM_RESPONSE,
-			       //~ ATTR_VDM_DROOP_SMALL_OVERRIDE, ATTR_VDM_DROOP_LARGE_OVERRIDE, ATTR_VDM_DROOP_EXTREME_OVERRIDE,
-			       //~ ATTR_VDM_OVERVOLT_OVERRIDE, ATTR_VDM_FMIN_OVERRIDE_KHZ, ATTR_VDM_FMAX_OVERRIDE_KHZ}
+		memcpy(&homer->cpmr.cme_sram_region[cme * cme_hdr->custom_length * 32 +
+		                                    cme_hdr->pstate_offset],
+		       lppb, sizeof(LocalPstateParmBlock));
+	}
 
-			//~ // Struct definition in p9_pstates_cmeqm.h
-			//~ ivrm = {ATTR_IVRM_STRENGTH_LOOKUP, ATTR_IVRM_VIN_MULTIPLIER, ATTR_IVRM_VIN_MAX_MV,
-			        //~ ATTR_IVRM_STEP_DELAY_NS, ATTR_IVRM_STABILIZATION_DELAY_NS, ATTR_IVRM_DEADZONE_MV}
+	/* Finally, update headers */
+	homer->ppmr.header.gppb_offset = homer->ppmr.header.hcode_offset +
+	                                 homer->ppmr.header.hcode_len;
+	homer->ppmr.header.gppb_len    = ALIGN_UP(sizeof(GlobalPstateParmBlock), 8);
 
-			//~ // Initialize res clk data
-			//~ resclk = iv_resclk_setup		// from res_clock_setup()
+	homer->ppmr.header.oppb_offset = offsetof(struct ppmr_st, occ_parm_block);
+	homer->ppmr.header.oppb_len    = ALIGN_UP(sizeof(OCCPstateParmBlock), 8);
 
-			//~ // Put the good_normal_cores value into the GPPB for PGPE
-			//~ // This is u8 -> u32 conversion
-			//~ options.pad = iv_iddqt.good_normal_cores_per_sort	// from get_mvpd_iddq()
+	/* Assuming >= CPMR_2.0 */
+	homer->ppmr.header.lppb_offset = 0;
+	homer->ppmr.header.lppb_len = 0;
 
-		//~ // ----------------
-		//~ // Initialize LPPB structure
-		//~ // ----------------
-		//~ // l_localppb is an array of 6 (quads per CPU)
-		//~ l_pmPPB.lppb_init(&l_localppb[0]):
-			//~ for each functional quad:
-				//~ // LHS is l_localppb[quad]
-				//~ magic = LOCAL_PARMSBLOCK_MAGIC		// 0x434d455050423030, "CMEPPB00"
+	homer->ppmr.header.pstables_offset = offsetof(struct ppmr_st, pstate_table);
+	homer->ppmr.header.pstables_len    = PSTATE_OUTPUT_TABLES_SIZE;	// 16 KiB
 
-				//~ // VpdBias External and Internal Biases for Global and Local parameter
-				//~ // block
-				//~ for each OP point:
-					//~ ext_biases[op] = iv_bias[op]		// = 0?
-					//~ int_biases[op] = iv_bias[op]
+	homer->ppmr.header.wof_table_offset = OCC_WOF_TABLES_OFFSET;
+	homer->ppmr.header.wof_table_len    = OCC_WOF_TABLES_SIZE;
 
-				//~ // Load vpd operating points - use biased values from compute_vpd_pts()
-				//~ for each OP point:
-					//~ operating_points[op].frequency_mhz  = iv_operating_points[BIASED][op].frequency_mhz
-					//~ operating_points[op].vdd_mv         = iv_operating_points[BIASED][op].vdd_mv
-					//~ operating_points[op].idd_100ma      = iv_operating_points[BIASED][op].idd_100ma
-					//~ operating_points[op].vcs_mv         = iv_operating_points[BIASED][op].vcs_mv
-					//~ operating_points[op].ics_100ma      = iv_operating_points[BIASED][op].ics_100ma
-					//~ operating_points[op].pstate         = iv_operating_points[BIASED][op].pstate
-
-				//~ // Defaul values are from talos.xml
-				//~ vdd_sysparm = {ATTR_PROC_R_LOADLINE_VDD_UOHM, ATTR_PROC_R_DISTLOSS_VDD_UOHM, ATTR_PROC_VRM_VOFFSET_VDD_UV} = {254, 0, 0}
-
-				//~ // IvrmParmBlock
-				//~ // Struct definition in p9_pstates_cmeqm.h
-				//~ ivrm = {ATTR_IVRM_STRENGTH_LOOKUP, ATTR_IVRM_VIN_MULTIPLIER, ATTR_IVRM_VIN_MAX_MV,
-						//~ ATTR_IVRM_STEP_DELAY_NS, ATTR_IVRM_STABILIZATION_DELAY_NS, ATTR_IVRM_DEADZONE_MV}
-
-				//~ // VDMParmBlock
-				//~ // WARNING: this is different than in GPPB
-				//~ memset(vdm, 0, sizeof(vdm))
-
-				//~ dpll_pstate0_value = reference_frequency_khz / frequency_step_khz
-
-				//~ resclk = iv_resclk_setup		// from res_clock_setup()
-
-				//~ // Code memcpies always from data for first quad, seems like a bug
-				//~ for each OP point:
-					//~ vid_point_set[op] = iv_vid_point_set[0][op]		// from compute_vdm_threshold_pts()
-
-				//~ threshold_set  = iv_threshold_set					// from compute_vdm_threshold_pts()
-				//~ jump_value_set = iv_jump_value_set					// from compute_vdm_threshold_pts()
-
-				//~ // Code memcpies always from data for first quad, seems like a bug
-				//~ for each Pstate segment:
-					//~ PsVIDCompSlopes[segment] = iv_PsVIDCompSlopes[0][segment]	// from compute_PsVIDCompSlopes_slopes()
-
-				//~ PsVDMThreshSlopes = iv_PsVDMThreshSlopes			// from compute_PsVDMThreshSlopes()
-				//~ PsVDMJumpSlopes   = iv_PsVDMJumpSlopes				// from compute_PsVDMJumpSlopes()
-
-		//~ // ----------------
-		//~ // WOF initialization
-		//~ // ----------------
-		//~ l_pmPPB.wof_init(o_buf /* will be homer->ppmr.wof_tables after few more memcpies */, o_size):
-			//~ - Search for proper data in WOFDATA PNOR partition
-			//~ - WOFDATA is 3M, make sure CBFS_CACHE is big enough
-			//~ - search until match is found:
-			  //~ - core count
-			  //~ - socket power (nominal, as read from #V)
-			  //~ - frequency (nominal, as read from #V)
-			  //~ - if version >= WOF_TABLE_VERSION_POWERMODE (2):
-			    //~ - mode matches current mode (WOF_MODE_NOMINAL = 1) or wildcard (WOF_MODE_UNKNOWN = 0)
-			//~ - structures used:
-			  //~ - wofImageHeader_t from plat_wof_access.C
-			    //~ - check magic and version
-			  //~ - wofSectionTableEntry_t from plat_wof_access.C
-			  //~ - WofTablesHeader_t from p9_pstates_common.h
-			//~ memcpy(o_buf, &WofTablesHeader_t /* for found entry */, wofSectionTableEntry_t[found_entry_idx].size)
-
-			//~ // Just the header, rest needs parsing
-			//~ memcpy(homer->ppmr.wof_tables, o_buf, sizeof(WofTablesHeader_t))
-
-			//~ for vfrt_index in 0..((WofTablesHeader_t*)o_buf->vdn_size * (WofTablesHeader_t*)o_buf->vdd_size * ACTIVE_QUADS) -1:
-				//~ src = o_buf                  + sizeof(WofTablesHeader_t) + vfrt_index * 128 /* vRTF size */
-				//~ dst = homer->ppmr.wof_tables + sizeof(WofTablesHeader_t) + vfrt_index * sizeof(HomerVFRTLayout_t) /* 256B */
-				//~ update_vfrt (src, dst):
-					//~ - Assumption: no bias, makes this function so much easier
-					//~ // Data in src has 8B header followed by 5*24 bytes of frequency information, such that freq = value*step_size + 1GHz.
-					//~ // Data in dst has (almost) the same header followed by 5*24 bytes of Pstates.
-					//~ // Copy header
-					//~ memcpy(dst, src, 8)
-					//~ // Flip type from System to Homer
-					//~ dst.type_version |= 0x10
-					//~ assert(dst.magic = "VT")
-					//~ for idx in 0..5*24 -1:
-						//~ dst[8+idx] = freq_to_pstate(src[8+idx])		// rounded properly
-
-		//~ // ----------------
-		//~ //Initialize OPPB structure
-		//~ // ----------------
-		//~ l_pmPPB.oppb_init(&l_occppb):
-			//~ // LHS is l_occppb, it eventually will be homer->ppmr.occ_parm_block
-			//~ magic = OCC_PARMSBLOCK_MAGIC		// 0x4f43435050423030, "OCCPPB00"
-
-			//~ wof.wof_enabled = 1		// Assuming wof_init() succeeded
-
-			//~ vdd_sysparm = {ATTR_PROC_R_LOADLINE_VDD_UOHM, ATTR_PROC_R_DISTLOSS_VDD_UOHM, ATTR_PROC_VRM_VOFFSET_VDD_UV} = {254, 0, 0}
-			//~ vcs_sysparm = {ATTR_PROC_R_LOADLINE_VCS_UOHM, ATTR_PROC_R_DISTLOSS_VCS_UOHM, ATTR_PROC_VRM_VOFFSET_VCS_UV} = {0, 64, 0}
-			//~ vdn_sysparm = {ATTR_PROC_R_LOADLINE_VDN_UOHM, ATTR_PROC_R_DISTLOSS_VDN_UOHM, ATTR_PROC_VRM_VOFFSET_VDN_UV} = {0, 50, 0}
-
-			//~ // Load vpd operating points - use biased values from compute_vpd_pts()
-			//~ for each OP point:
-				//~ operating_points[op].frequency_mhz  = iv_operating_points[BIASED][op].frequency_mhz
-				//~ operating_points[op].vdd_mv         = iv_operating_points[BIASED][op].vdd_mv
-				//~ operating_points[op].idd_100ma      = iv_operating_points[BIASED][op].idd_100ma
-				//~ operating_points[op].vcs_mv         = iv_operating_points[BIASED][op].vcs_mv
-				//~ operating_points[op].ics_100ma      = iv_operating_points[BIASED][op].ics_100ma
-				//~ operating_points[op].pstate         = iv_operating_points[BIASED][op].pstate
-
-
-			//~ // The minimum Pstate must be rounded down so that core floor constraints are not violated.
-			//~ pstate_min = freq_to_pstate(ATTR_SAFE_MODE_FREQUENCY_MHZ * 1000)	// from safe_mode_computation()
-
-			//~ frequency_min_khz = iv_reference_frequency_khz - (pstate_min * iv_frequency_step_khz)
-			//~ frequency_max_khz = iv_reference_frequency_khz
-			//~ frequency_step_khz = iv_frequency_step_khz
-
-
-			//~ // Iddq Table
-			//~ iddq = iv_iddqt				// from get_mvpd_iddq()
-
-			//~ wof.tdp_rdp_factor = ATTR_TDP_RDP_CURRENT_FACTOR		// 0 from talos.xml
-			//~ nest_leakage_percent = ATTR_NEST_LEAKAGE_PERCENT		// 60 (0x3C) from hb_temp_defaults.xml
-
-			//~ lac_tdp_vdd_turbo_10ma =
-			         //~ iv_poundW_data.poundw[TURBO].ivdd_tdp_ac_current_10ma
-			//~ lac_tdp_vdd_nominal_10ma =
-			         //~ iv_poundW_data.poundw[NOMINAL].ivdd_tdp_ac_current_10ma
-
-			//~ // As the Vdn dimension is not supported in the WOF tables,
-			//~ // hardcoding this value to the OCC as non-zero to keep it happy.
-			//~ ceff_tdp_vdn = 1;
-
-			//~ //Update nest frequency in OPPB
-			//~ nest_frequency_mhz = ATTR_FREQ_PB_MHZ				// 1866 from talos.xml
-
-	//~ // Assuming >= CPMR_2.0
-	//~ buildCmePstateInfo(homer, proc, imgType, &stateSupStruct):
-		//~ CmeHdr = &homer->cpmr.cme_sram_region[INT_VECTOR_SIZE]
-		//~ CmeHdr->pstate_offset = CmeHdr->core_spec_ring_offset + CmeHdr->max_spec_ring_len
-		//~ CmeHdr->custom_length = ROUND_UP(sizeof(LocalPstateParmBlock), 32) / 32 + CmeHdr->max_spec_ring_len
-		//~ for each functional CME:
-			//~ memcpy(&homer->cpmr.cme_sram_region[cme * CmeHdr->custom_length * 32 + CmeHdr->pstate_offset], stateSupStruct->localppb[cme/2], sizeof(LocalPstateParmBlock))
-
-	//~ memcpy(&homer->ppmr.pgpe_sram_img[homer->ppmr.header.hcode_len], stateSupStruct->globalppb, sizeof(GlobalPstateParmBlock))
-	//~ homer->ppmr.header.gppb_offset = homer->ppmr.header.hcode_offset + homer->ppmr.header.hcode_len
-	//~ homer->ppmr.header.gppb_len    = ALIGN_UP(sizeof(GlobalPstateParmBlock), 8)
-
-	//~ memcpy(&homer->ppmr.occ_parm_block, stateSupStruct->occppb, sizeof(OCCPstateParmBlock))
-	//~ homer->ppmr.header.oppb_offset = offsetof(ppmr, ppmr.occ_parm_block)
-	//~ homer->ppmr.header.oppb_len    = ALIGN_UP(sizeof(OCCPstateParmBlock), 8)
-
-	//~ // Assuming >= CPMR_2.0
-	//~ homer->ppmr.header.lppb_offset = 0
-	//~ homer->ppmr.header.lppb_len = 0
-
-	//~ homer->ppmr.header.pstables_offset = offsetof(ppmr, ppmr.pstate_table)
-	//~ homer->ppmr.header.pstables_len    = PSTATE_OUTPUT_TABLES_SIZE		// 16 KiB
-
-	//~ homer->ppmr.header.wof_table_offset = OCC_WOF_TABLES_OFFSET
-	//~ homer->ppmr.header.wof_table_len    = OCC_WOF_TABLES_SIZE
-	//~ // Instead of this memcpy write it directly to its final destination in wof_init()
-	//~ memcpy(homer->ppmr.wof_tables, o_buf/* see wof_init() */, o_size/* see wof_init() */)
-
-	//~ homer->ppmr.header.sram_img_size = homer->ppmr.header.hcode_len + homer->ppmr.header.gppb_len
-
-
+	homer->ppmr.header.sram_img_size = homer->ppmr.header.hcode_len +
+	                                   homer->ppmr.header.gppb_len;
 }
