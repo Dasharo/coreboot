@@ -11,7 +11,19 @@
 
 #include "chip.h"
 #include "homer.h"
+#include "tor.h"
 #include "xip.h"
+
+struct ring_data {
+	void *rings_buf;
+	void *work_buf1;
+	void *work_buf2;
+	void *work_buf3;
+	uint32_t rings_buf_size;
+	uint32_t work_buf1_size;
+	uint32_t work_buf2_size;
+	uint32_t work_buf3_size;
+};
 
 enum operation_type {
 	COPY,
@@ -860,11 +872,58 @@ static void istep_16_1(int this_core)
 	//     p9_stop_save_scom() and others
 }
 
+/* Extracts rings for a specific Programmable PowerPC-lite Engine */
+static void get_ppe_scan_rings(struct xip_hw_header *hw, uint8_t dd, enum ppe_type ppe,
+			       struct ring_data *ring_data)
+{
+	const uint32_t max_rings_buf_size = ring_data->rings_buf_size;
+
+	struct tor_hdr *rings;
+	struct tor_hdr *overlays;
+
+	if (dd < 0x20)
+		die("DD must be at least 0x20!");
+	if (!hw->overlays.dd_support)
+		die("Overlays must support DD!");
+
+	copy_section(&rings, &hw->rings, hw, dd, FIND);
+	copy_section(&overlays, &hw->overlays, hw, dd, FIND);
+
+	if (!tor_access_ring(rings, UNDEFINED_RING_ID, ppe, UNDEFINED_RING_VARIANT,
+			     UNDEFINED_INSTANCE_ID, ring_data->rings_buf,
+			     &ring_data->rings_buf_size, GET_PPE_LEVEL_RINGS))
+		die("Failed to access PPE level rings!");
+
+	assert(ring_data->work_buf1_size == MAX_RING_BUF_SIZE);
+	assert(ring_data->work_buf2_size == MAX_RING_BUF_SIZE);
+	assert(ring_data->work_buf3_size == MAX_RING_BUF_SIZE);
+
+	tor_fetch_and_insert_vpd_rings((struct tor_hdr *)ring_data->rings_buf,
+				       &ring_data->rings_buf_size, max_rings_buf_size,
+				       overlays, ppe,
+				       ring_data->work_buf1,
+				       ring_data->work_buf2,
+				       ring_data->work_buf3);
+}
+
 /*
  * This logic is for SMF disabled only!
  */
 void build_homer_image(void *homer_bar)
 {
+	static uint8_t rings_buf[300 * KiB];
+
+	static uint8_t work_buf1[MAX_RING_BUF_SIZE];
+	static uint8_t work_buf2[MAX_RING_BUF_SIZE];
+	static uint8_t work_buf3[MAX_RING_BUF_SIZE];
+
+	struct ring_data ring_data = {
+		.rings_buf = rings_buf, .rings_buf_size = sizeof(rings_buf),
+		.work_buf1 = work_buf1, .work_buf1_size = sizeof(work_buf1),
+		.work_buf2 = work_buf2, .work_buf2_size = sizeof(work_buf2),
+		.work_buf3 = work_buf3, .work_buf3_size = sizeof(work_buf3),
+	};
+
 	struct mmap_helper_region_device mdev = {0};
 	struct homer_st *homer = homer_bar;
 	struct xip_hw_header *hw = homer_bar;
@@ -907,11 +966,18 @@ void build_homer_image(void *homer_bar)
 	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
 	           dd);
 
-	// TBD
-	// getPpeScanRings() for CME
-	// layoutRingsForCME()
-	// getPpeScanRings for SGPE
-	// layoutRingsForSGPE()
+	get_ppe_scan_rings(hw, dd, PT_CME, &ring_data);
+
+	// TODO: layoutRingsForCME()
+
+	/* Reset buffer sizes to maximum values before reusing the structure */
+	ring_data.rings_buf_size = sizeof(rings_buf);
+	ring_data.work_buf1_size = sizeof(work_buf1);
+	ring_data.work_buf2_size = sizeof(work_buf2);
+	ring_data.work_buf3_size = sizeof(work_buf3);
+	get_ppe_scan_rings(hw, dd, PT_SGPE, &ring_data);
+
+	// TODO: layoutRingsForSGPE()
 
 	// buildParameterBlock();
 	// updateCpmrCmeRegion();
