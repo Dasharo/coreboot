@@ -7,6 +7,7 @@
 #include <arch/io.h>
 #include <console/console.h>
 #include <cpu/power/memd.h>
+#include <cpu/power/mvpd.h>
 #include <endian.h>
 #include <cbfs.h>
 #include <symbols.h>
@@ -18,6 +19,8 @@
 #define CBFS_PARTITION_NAME "HBI"
 
 #define MEMD_PARTITION_NAME "MEMD"
+
+#define MVPD_PARTITION_NAME "MVPD"
 
 /* ffs_entry is not complete in included ffs.h, it lacks user data layout.
  * See https://github.com/open-power/skiboot/blob/master/libflash/ffs.h */
@@ -460,6 +463,30 @@ void memd_device_unmount(void)
 const struct region_device *memd_device_ro(void)
 {
 	return &memd_mdev.rdev;
+}
+
+static struct mmap_helper_region_device mvpd_mdev = MMAP_HELPER_DEV_INIT(
+	&no_ecc_rdev_ops, 0, CONFIG_ROM_SIZE, &cbfs_cache);
+
+void mvpd_device_init(void)
+{
+	static int init_done;
+	if (init_done)
+		return;
+
+	mount_part_from_pnor(MVPD_PARTITION_NAME, &mvpd_mdev);
+
+	init_done = 1;
+}
+
+void mvpd_device_unmount(void)
+{
+	mvpd_mdev.rdev.ops = &no_rdev_ops;
+}
+
+const struct region_device *mvpd_device_ro(void)
+{
+	return &mvpd_mdev.rdev;
 }
 
 static struct mmap_helper_region_device boot_mdev = MMAP_HELPER_DEV_INIT(
