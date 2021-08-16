@@ -4,6 +4,7 @@
 #include <cbfs.h>
 #include <commonlib/region.h>
 #include <console/console.h>
+#include <cpu/power/mvpd.h>
 #include <cpu/power/scom.h>
 #include <cpu/power/spr.h>
 #include <string.h>		// memset, memcpy
@@ -11,6 +12,7 @@
 
 #include "chip.h"
 #include "homer.h"
+#include "tor.h"
 #include "xip.h"
 
 #include <lib.h>
@@ -885,6 +887,38 @@ static void istep_16_1(int this_core)
 	//     p9_stop_save_scom() and others
 }
 
+static void getPpeScanRings(struct xip_hw_header *hw, uint8_t dd)
+{
+	static uint8_t ppe[16 * KiB];
+
+	static uint8_t buf1[MAX_RING_BUF_SIZE];
+	static uint8_t buf2[MAX_RING_BUF_SIZE];
+	static uint8_t buf3[MAX_RING_BUF_SIZE];
+
+	uint32_t ppe_size = sizeof(ppe);
+
+	struct tor_hdr *rings;
+	struct tor_hdr *overlays;
+
+	if (dd < 20)
+		die("DD must be at least 20!");
+	if (!hw->overlays.dd_support)
+		die("Overlays must support DD!");
+
+	copy_section(&rings, &hw->rings, hw, dd, FIND);
+	copy_section(&overlays, &hw->overlays, hw, dd, FIND);
+
+	tor_access_ring(rings, EC_TIME, PT_CME, 0, ppe, &ppe_size, GET_PPE_LEVEL_RINGS);
+
+	printk(BIOS_EMERG, "original ppe_size = 0x%08x\n", ppe_size);
+
+	tor_fetch_and_insert_vpd_rings((struct tor_hdr *)ppe, &ppe_size,
+				       sizeof(ppe), overlays,
+				       PT_CME, 32, buf1, buf2, buf3);
+
+	printk(BIOS_EMERG, "new ppe_size = 0x%08x\n", ppe_size);
+}
+
 /*
  * This logic is for SMF disabled only!
  */
@@ -946,6 +980,9 @@ void build_homer_image(void *homer_bar)
 
 	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
 	           dd);
+
+	// "test" of tor_fetch_and_insert_vpd_rings()
+	getPpeScanRings(hw, dd);
 
 	// TBD
 	// getPpeScanRings() for CME
