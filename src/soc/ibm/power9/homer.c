@@ -1256,6 +1256,127 @@ static void layout_rings_for_sgpe(struct homer_st *homer,
 	}
 }
 
+static void update_headers(struct homer_st *homer, uint64_t cores)
+{
+	/*
+	 * Update CPMR Header with Scan Ring details
+	 * This function for each entry does one of:
+	 * - write constant value
+	 * - copy value form other field
+	 * - one or both of the above with arithmetic operations
+	 * Consider writing these fields in previous functions instead.
+	 */
+	struct cpmr_header *cpmr_hdr   = &homer->cpmr.header;
+	struct cme_img_header *cme_hdr = (struct cme_img_header *)
+	                                 &homer->cpmr.cme_sram_region[INT_VECTOR_SIZE];
+	cpmr_hdr->img_offset           = offsetof(struct cpmr_st, cme_sram_region) / 32;
+	cpmr_hdr->cme_pstate_offset    = offsetof(struct cpmr_st, cme_sram_region) + cme_hdr->pstate_region_offset;
+	cpmr_hdr->cme_pstate_len       = cme_hdr->pstate_region_len;
+	cpmr_hdr->img_len              = cme_hdr->hcode_len;
+	cpmr_hdr->core_scom_offset     = offsetof(struct cpmr_st, core_scom);
+	cpmr_hdr->core_scom_len        = CORE_SCOM_RESTORE_SIZE;			// 6k
+	cpmr_hdr->core_max_scom_entry  = 15;
+
+	if (cme_hdr->common_ring_len) {
+		cpmr_hdr->cme_common_ring_offset = offsetof(struct cpmr_st, cme_sram_region) +
+		                                   cme_hdr->common_ring_offset;
+		cpmr_hdr->cme_common_ring_len    = cme_hdr->common_ring_len;
+	}
+
+	if (cme_hdr->max_spec_ring_len) {
+		cpmr_hdr->core_spec_ring_offset  = ALIGN_UP(cpmr_hdr->img_offset * 32 +
+		                                            cpmr_hdr->img_len +
+		                                            cpmr_hdr->cme_pstate_len +
+		                                            cpmr_hdr->cme_common_ring_len,
+		                                            32) / 32;
+		cpmr_hdr->core_spec_ring_len     = cme_hdr->max_spec_ring_len;
+	}
+
+	cme_hdr->custom_length =
+		ALIGN_UP(cme_hdr->max_spec_ring_len * 32 + sizeof(LocalPstateParmBlock), 32) / 32;
+
+	for (int cme = 0; cme < MAX_CORES_PER_CHIP/2; cme++) {
+		/*
+		 * CME index/position is the same as EX, however this means that Pstate
+		 * offset is overwritten when there are 2 functional CMEs in one quad.
+		 * Maybe we can use "for each functional quad" instead, but maybe
+		 * 'cme * cme_hdr->custom_length' points to different data, based on
+		 * whether there is one or two functional CMEs (is that even possible?).
+		 */
+		if (!IS_EX_FUNCTIONAL(cme, cores))
+			continue;
+
+		/* Assuming >= CPMR_2.0 */
+		cpmr_hdr->quad_pstate_offset [cme/2] = cpmr_hdr->core_spec_ring_offset +
+		                                       cpmr_hdr->core_spec_ring_len +
+		                                       cme * cme_hdr->custom_length;
+	}
+
+	/* Updating CME Image header */
+	/* Assuming >= CPMR_2.0 */
+	cme_hdr->scom_offset =
+		ALIGN_UP(cme_hdr->pstate_offset * 32 + sizeof(LocalPstateParmBlock), 32) / 32;
+
+	/* Adding to it instance ring length which is already a multiple of 32B */
+	cme_hdr->scom_len = 512;
+
+	/* Timebase frequency */
+	cme_hdr->timebase_hz = powerbus_cfg()->fabric_freq * MHz / 64;
+
+	/*
+	 * Update QPMR Header area in HOMER
+	 * In Hostboot, qpmrHdr is a copy of the header, it doesn't operate on HOMER
+	 * directly until now - it fills the following fields in the copy and then
+	 * does memcpy() to HOMER. As BAR is set up in next istep, I don't see why.
+	 */
+	homer->qpmr.sgpe.header.sram_img_size =
+	              homer->qpmr.sgpe.header.img_len +
+	              homer->qpmr.sgpe.header.common_ring_len +
+	              homer->qpmr.sgpe.header.spec_ring_len;
+	homer->qpmr.sgpe.header.max_quad_restore_entry  = 255;
+	homer->qpmr.sgpe.header.build_ver               = 3;
+	struct sgpe_img_header *sgpe_hdr = (struct sgpe_img_header *)
+	                                   &homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE];
+	sgpe_hdr->scom_mem_offset = offsetof(struct homer_st, qpmr.cache_scom_region);
+
+	/* Update PPMR Header area in HOMER */
+	struct pgpe_img_header *pgpe_hdr = (struct pgpe_img_header *)
+	                                   &homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE];
+	pgpe_hdr->core_throttle_assert_cnt   = 0;
+	pgpe_hdr->core_throttle_deassert_cnt = 0;
+	pgpe_hdr->ivpr_addr                  = 0xFFF20000;	// OCC_SRAM_PGPE_BASE_ADDR
+	                                 // = homer->ppmr.header.sram_region_start
+	pgpe_hdr->gppb_sram_addr             = 0;		// set by PGPE Hcode (or not?)
+	pgpe_hdr->hcode_len                  = homer->ppmr.header.hcode_len;
+	/* FIXME: remove hardcoded HOMER in OCI PBA */
+	pgpe_hdr->gppb_mem_offset            = 0x80000000 + offsetof(struct homer_st, ppmr) +
+	                                       homer->ppmr.header.gppb_offset;
+	pgpe_hdr->gppb_len                   = homer->ppmr.header.gppb_len;
+	pgpe_hdr->gen_pstables_mem_offset    = 0x80000000 + offsetof(struct homer_st, ppmr) +
+	                                       homer->ppmr.header.pstables_offset;
+	pgpe_hdr->gen_pstables_len           = homer->ppmr.header.pstables_len;
+	pgpe_hdr->occ_pstables_sram_addr     = 0;
+	pgpe_hdr->occ_pstables_len           = 0;
+	pgpe_hdr->beacon_addr                = 0;
+	pgpe_hdr->quad_status_addr           = 0;
+	pgpe_hdr->wof_state_address          = 0;
+	pgpe_hdr->wof_values_address         = 0;
+	pgpe_hdr->req_active_quad_address    = 0;
+	pgpe_hdr->wof_table_addr             = homer->ppmr.header.wof_table_offset;
+	pgpe_hdr->wof_table_len              = homer->ppmr.header.wof_table_len;
+	pgpe_hdr->timebase_hz                = 1866 * MHz / 64;
+	pgpe_hdr->doptrace_offset            = homer->ppmr.header.doptrace_offset;
+	pgpe_hdr->doptrace_len               = homer->ppmr.header.doptrace_len;
+
+	/* Update magic numbers */
+	homer->qpmr.sgpe.header.magic = 0x51504d525f312e30;	// QPMR_1.0
+	homer->cpmr.header.magic      = 0x43504d525f322e30;	// CPMR_2.0
+	homer->ppmr.header.magic      = 0x50504d525f312e30;	// PPMR_1.0
+	sgpe_hdr->magic               = 0x534750455f312e30;	// SGPE_1.0
+	cme_hdr->magic                = 0x434d455f5f312e30;	// CME__1.0
+	pgpe_hdr->magic               = 0x504750455f312e30;	// PGPE_1.0
+}
+
 /*
  * This logic is for SMF disabled only!
  */
@@ -1334,13 +1455,7 @@ void build_homer_image(void *homer_bar)
 
 	build_parameter_blocks(homer, cores);
 
-	// updateCpmrCmeRegion();
-
-	// Update QPMR Header area in HOMER
-	// updateQpmrHeader();
-
-	// Update PPMR Header area in HOMER
-	// updatePpmrHeader();
+	update_headers(homer, cores);
 
 	// Update L2 Epsilon SCOM Registers
 	// populateEpsilonL2ScomReg( pChipHomer );
@@ -1354,8 +1469,10 @@ void build_homer_image(void *homer_bar)
 	// Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register
 	// populateNcuRngBarScomReg( pChipHomer, i_procTgt );
 
-	// Update CME/SGPE Flags in respective image header.
-	// updateImageFlags( pChipHomer, i_procTgt );
+	/* Update flag fields in image headers */
+	((struct sgpe_img_header *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE])->reserve_flags = 0x04000000;
+	((struct cme_img_header *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE])->qm_mode_flags = 0xF100;
+	((struct pgpe_img_header *)&homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE])->flags = 0xF032;
 
 	// Set the Fabric IDs
 	// setFabricIds( pChipHomer, i_procTgt );
