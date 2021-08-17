@@ -23,6 +23,7 @@ COREBOOT_URL="git@gitlab.com:3mdeb/protectli/coreboot.git"
 # using the zip with source code.
 # Can ovveride from envirnment by setting DISTCLEAN=true
 DISTCLEAN="${DISTCLEAN:-false}"
+DEBUG_BUILD="${DEBUG_BUILD:-false}"
 
 function dockerShellCmd {
 	local _cmd="$*"
@@ -58,6 +59,11 @@ function buildImage {
 	fi
 
 	cp configs/config.protectli_${_platform} .config
+
+	if [ "${DEBUG_BUILD}" = "true" ]; then
+		sed -e "s/^CONFIG_DEFAULT_CONSOLE_LOGLEVEL.*/CONFIG_DEFAULT_CONSOLE_LOGLEVEL_7=y/" -i .config
+		sed -e "s/^CONFIG_SEABIOS_DEBUG_LEVEL.*/CONFIG_SEABIOS_DEBUG_LEVEL=3/" -i .config
+	fi
 
 	echo "Building coreboot for Protectli $_platform"
 
