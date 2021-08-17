@@ -2,6 +2,7 @@
 
 #include <cpu/power/mvpd.h>
 
+#include <assert.h>
 #include <commonlib/region.h>
 #include <console/console.h>
 #include <cpu/power/vpd.h>
@@ -91,20 +92,115 @@ static struct ring_hdr *find_ring(uint8_t chiplet_id, uint16_t ring_id,
 	return NULL;
 }
 
+static const uint8_t *mvpd_get_keyword(const char *record_name,
+				       const char *kwd_name,
+				       size_t *kwd_size, void **mmaped_data)
+{
+	const struct region_device *mvpd_device = mvpd_device_ro();
+
+	uint8_t mvpd_buf[MVPD_TOC_SIZE];
+	struct mvpd_toc_entry *mvpd_toc = (struct mvpd_toc_entry *)mvpd_buf;
+
+	struct mvpd_toc_entry *toc_entry = NULL;
+	uint16_t record_offset = 0;
+	uint8_t *record_data = NULL;
+	uint16_t record_size = 0;
+
+	const uint8_t *kwd = NULL;
+
+	/* Copy all TOC at once */
+	if (rdev_readat(mvpd_device, mvpd_buf, 0,
+			sizeof(mvpd_buf)) != sizeof(mvpd_buf))
+		die("Failed to read MVPD TOC!\n");
+
+	toc_entry = find_record(mvpd_toc, record_name);
+	if (toc_entry == NULL)
+		die("Failed to find %s MVPD record!\n", record_name);
+	record_offset = le16toh(toc_entry->offset);
+
+	/* Read size of the record */
+	if (rdev_readat(mvpd_device, &record_size, record_offset,
+			sizeof(record_size)) != sizeof(record_size))
+		die("Failed to read size of %s!\n", record_name);
+
+	record_data = rdev_mmap(mvpd_device, record_offset, record_size);
+	if (!record_data)
+		die("Failed to map %s record!\n", record_name);
+
+	kwd = vpd_find_kwd(record_data, record_name, kwd_name, kwd_size);
+	if (kwd == NULL)
+		die("Failed to find %s keyword in %s!\n", kwd_name,
+		    record_name);
+
+	*mmaped_data = record_data;
+	return kwd;
+}
+
+bool mvpd_extract_keyword(const char *record_name, const char *kwd_name,
+			  uint8_t *buf, uint32_t *size)
+{
+	void *mmaped_data = NULL;
+
+	const uint8_t *kwd = NULL;
+	size_t kwd_size = 0;
+	bool copied_data = false;
+
+	mvpd_device_init();
+
+	kwd = mvpd_get_keyword(record_name, kwd_name, &kwd_size, &mmaped_data);
+	if (kwd == NULL)
+		die("Failed to find %s keyword in %s!\n", kwd_name,
+		    record_name);
+
+	if (*size >= kwd_size) {
+		memcpy(buf, kwd, kwd_size);
+		copied_data = true;
+	}
+
+	*size = kwd_size;
+
+	if (rdev_munmap(mvpd_device_ro(), mmaped_data))
+		die("Failed to unmap %s record!\n", record_name);
+
+	return copied_data;
+}
+
+const struct voltage_kwd *mvpd_get_voltage_data(int lrp)
+{
+	static int inited_lrp = -1;
+	static uint8_t buf[sizeof(struct voltage_kwd)];
+
+	char record_name[] = { 'L', 'R', 'P', '0' + lrp };
+	uint32_t buf_size = sizeof(buf);
+	struct voltage_kwd *voltage = (void *)buf;
+
+	assert(lrp >= 0 && lrp < 6);
+	if (inited_lrp == lrp)
+		return voltage;
+
+	inited_lrp = -1;
+
+	if (!mvpd_extract_keyword(record_name, "#V", buf, &buf_size)) {
+		printk(BIOS_ERR, "Failed to read LRP0 record from MVPD\n");
+		return NULL;
+	}
+
+	if (voltage->version != VOLTAGE_DATA_VERSION) {
+		printk(BIOS_ERR, "Only version %d of voltage data is supported, got: %d\n",
+		       VOLTAGE_DATA_VERSION, voltage->version);
+		return NULL;
+	}
+
+	inited_lrp = lrp;
+	return voltage;
+}
+
 /* Finds a specific ring in MVPD partition and extracts it */
 bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
 		       uint8_t chiplet_id, uint16_t ring_id, uint8_t *buf,
 		       uint32_t buf_size)
 {
-	const struct region_device *mvpd_device;
-
-	uint8_t mvpd_buf[MVPD_TOC_SIZE];
-	struct mvpd_toc_entry *mvpd_toc = (struct mvpd_toc_entry *)mvpd_buf;
-
-	struct mvpd_toc_entry *cp00 = NULL;
-	uint16_t cp00_offset = 0;
-	const uint8_t *cp00_data = NULL;
-	uint16_t cp00_size = 0;
+	void *mmaped_data = NULL;
 
 	const uint8_t *rings = NULL;
 	size_t rings_size = 0;
@@ -113,35 +209,16 @@ bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
 	uint32_t ring_size = 0;
 
 	mvpd_device_init();
-	mvpd_device = mvpd_device_ro();
 
-	/* Copy all TOC at once */
-	if (rdev_readat(mvpd_device, mvpd_buf, 0,
-			sizeof(mvpd_buf)) != sizeof(mvpd_buf))
-		die("Failed to read MVPD TOC!\n");
-
-	cp00 = find_record(mvpd_toc, record_name);
-	if (cp00 == NULL)
-		die("Failed to find %s MVPD record!\n", record_name);
-	cp00_offset = le16toh(cp00->offset);
-
-	/* Read size of the record */
-	if (rdev_readat(mvpd_device, &cp00_size, cp00_offset,
-			sizeof(cp00_size)) != sizeof(cp00_size))
-		die("Failed to read size of %s!\n", record_name);
-
-	cp00_data = rdev_mmap(mvpd_device, cp00_offset, cp00_size);
-	if (!cp00_data)
-		die("Failed to map %s record!\n", record_name);
-
-	rings = vpd_find_kwd(cp00_data, record_name, kwd_name, &rings_size);
+	rings = mvpd_get_keyword(record_name, kwd_name, &rings_size,
+				 &mmaped_data);
 	if (rings == NULL)
 		die("Failed to find %s keyword in %s!\n", kwd_name,
 		    record_name);
 
 	ring = find_ring(chiplet_id, ring_id, rings, rings_size);
 	if (ring == NULL) {
-		if (rdev_munmap(mvpd_device, (void *)cp00_data))
+		if (rdev_munmap(mvpd_device_ro(), mmaped_data))
 			die("Failed to unmap %s record!\n", record_name);
 
 		return false;
@@ -151,7 +228,7 @@ bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
 	if (buf_size >= ring_size)
 		memcpy(buf, ring, ring_size);
 
-	if (rdev_munmap(mvpd_device, (void *)cp00_data))
+	if (rdev_munmap(mvpd_device_ro(), mmaped_data))
 		die("Failed to unmap %s record!\n", record_name);
 
 	return (buf_size >= ring_size);
