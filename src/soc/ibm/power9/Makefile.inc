@@ -6,7 +6,9 @@ bootblock-y += bootblock.c
 bootblock-y += rom_media.c
 romstage-y += rom_media.c
 romstage-y += romstage.c
+romstage-y += mvpd.c
 romstage-y += vpd.c
+romstage-y += powerbus.c
 romstage-y += istep_13_2.c
 romstage-y += istep_13_3.c
 romstage-y += istep_13_4.c
@@ -34,5 +36,6 @@ ramstage-y += mvpd.c
 ramstage-y += vpd.c
 ramstage-y += tor.c
 ramstage-y += rs4.c
+ramstage-y += powerbus.c
 
 endif

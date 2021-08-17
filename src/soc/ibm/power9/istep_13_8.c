@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/powerbus.h>
 #include <cpu/power/vpd_data.h>
 #include <console/console.h>
 
 #include "istep_13_scom.h"
 
 #define ATTR_PG			0xE000000000000000ull
-#define FREQ_PB_MHZ		1866
 
 /*
  * This function was generated from initfiles. Some of the registers used here
@@ -22,6 +22,8 @@
  */
 static void p9n_mca_scom(int mcs_i, int mca_i)
 {
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
 	const int mca_mul = 0x10;
@@ -108,10 +110,15 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [32-39] = (ATTR_PROC_EPS_READ_CYCLES_T2 + 6) / 4        // REMOTE_NODAL_EPSILON
 	    [40-47] = (ATTR_PROC_EPS_READ_CYCLES_T2 + 6) / 4        // VECTOR_GROUP_EPSILON
 	 */
+	#define F(X)	(((X) + 6) / 4)
 	scom_and_or_for_chiplet(nest, 0x05010826 + mca_i * mca_mul, ~PPC_BITMASK(0,47),
-	                        PPC_SHIFT(1, 7) /* FIXME: fill the rest with non-hardcoded values*/
-	                        | PPC_SHIFT(4, 15) | PPC_SHIFT(4, 23) | PPC_SHIFT(4, 31)
-	                        | PPC_SHIFT(0x19, 39) | PPC_SHIFT(0x19, 47));
+	                        PPC_SHIFT(1, 7)
+	                        | PPC_SHIFT(F(pb_cfg->eps_r[0]), 15)
+				| PPC_SHIFT(F(pb_cfg->eps_r[1]), 23)
+				| PPC_SHIFT(F(pb_cfg->eps_r[1]), 31)
+	                        | PPC_SHIFT(F(pb_cfg->eps_r[2]), 39)
+				| PPC_SHIFT(F(pb_cfg->eps_r[2]), 47));
+	#undef F
 //~ static const uint32_t EPSILON_R_T0_LE[] = {    7,    7,    8,    8,   10,   22 };  // T0, T1
 //~ static const uint32_t EPSILON_R_T2_LE[] = {   67,   69,   71,   74,   79,  103 };  // T2
 
@@ -468,9 +475,10 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	/*
 	 * From Hostboot:
 	 *     l_def_mn_freq_ratio = 1000 * ATTR_MSS_FREQ / ATTR_FREQ_PB_MHZ;
-	 * ATTR_MSS_FREQ is in MT/s (sigh), ATTR_FREQ_PB_MHZ is 1866 MHz (from talos.xml).
+	 * ATTR_MSS_FREQ is in MT/s (sigh).
 	 */
-	uint64_t mn_freq_ratio = 1000 * mem_data.speed / FREQ_PB_MHZ;
+	uint32_t pb_freq = pb_cfg->fabric_freq;
+	uint64_t mn_freq_ratio = 1000 * mem_data.speed / pb_freq;
 	uint64_t val_to_data = mn_freq_ratio < 915 ? 3 :
 	                       mn_freq_ratio < 1150 ? 4 :
 	                       mn_freq_ratio < 1300 ? 5 : 6;
