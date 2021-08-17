@@ -7,8 +7,6 @@
 #include <string.h>		// memcpy
 
 #define IDDQ_MEASUREMENTS    6
-#define MAX_QUADS_PER_CHIP   (MAX_CORES/4)
-#define MAX_CMES_PER_CHIP    (MAX_CORES/2)
 #define MAX_UT_PSTATES       64     // Oversized
 #define FREQ_STEP_KHZ        16666
 
