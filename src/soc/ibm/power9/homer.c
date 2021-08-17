@@ -15,6 +15,7 @@
 #include "homer.h"
 #include "tor.h"
 #include "xip.h"
+#include "pstates_include/p9_pstates_cmeqm.h"
 
 #include <lib.h>
 
@@ -505,7 +506,7 @@ static void build_self_restore(struct homer_st *homer,
 	 * TODO: check if we can skip both cpureg and save_self for nonfunctional
 	 * cores
 	 */
-	for (int core = 0; core < MAX_CORES; core++) {
+	for (int core = 0; core < MAX_CORES_PER_CHIP; core++) {
 		struct smf_core_self_restore *csr = &homer->cpmr.core_self_restore[core];
 		uint32_t *csa = csr->core_save_area;
 
@@ -600,7 +601,7 @@ static void build_cme(struct homer_st *homer, struct xip_cme_header *cme,
 	hdr->common_ring_len = 0;
 
 	hdr->scom_offset = 0;
-	hdr->scom_len = CORE_SCOM_RESTORE_SIZE / MAX_CORES / 2;
+	hdr->scom_len = CORE_SCOM_RESTORE_SIZE / MAX_CORES_PER_CHIP / 2;
 
 	hdr->core_spec_ring_offset = 0;
 	hdr->max_spec_ring_len = 0;
@@ -842,19 +843,20 @@ static void stop_gpe_init(struct homer_st *homer)
 	                             !(read_scom(0x00066021) & PPC_BIT(0))));
 
 	if (!time)
-		die("Timeout while waiting for SGPE activation\n");
+		printk(BIOS_ERR, "Timeout while waiting for SGPE activation\n");
+		//~ die("Timeout while waiting for SGPE activation\n");
 }
 
 static uint64_t get_available_cores(int *me)
 {
 	uint64_t ret = 0;
-	for (int i = 0; i < MAX_CORES; i++) {
+	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
 		uint64_t val = read_scom_for_chiplet(EC00_CHIPLET_ID + i, 0xF0040);
 		if (val & PPC_BIT(0)) {
 			printk(BIOS_SPEW, "Core %d is functional%s\n", i,
 			       (val & PPC_BIT(1)) ? "" : " and running");
 			ret |= PPC_BIT(i);
-			if (val & PPC_BIT(1) && me != NULL)
+			if (((val & PPC_BIT(1)) == 0) && me != NULL)
 				*me = i;
 
 			/* Might as well set multicast groups for cores */
@@ -881,6 +883,15 @@ static void psu_command(uint8_t flags, long time)
 	if (read_scom(0x000D0060) & PPC_BIT(0))
 		die("MBOX to SBE busy, this should not happen\n");
 
+	if (read_scom(0x000D0063) & PPC_BIT(0)) {
+		printk(BIOS_ERR, "SBE to Host doorbell already active, clearing it\n");
+		write_scom(0x000D0064, ~PPC_BIT(0));
+	}
+
+	printk(BIOS_SPEW, "Buffer before response:\n");
+	for (int i=0; i<8; i++)
+		printk(BIOS_SPEW, "0x000D005%d: %16.16llx\n", i, read_scom(0x000D0050 + i));
+
 	/* https://github.com/open-power/hostboot/blob/master/src/include/usr/sbeio/sbe_psudd.H#L418 */
 	/* TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG */
 	/* REQUIRE_RESPONSE, CLASS_CORE_STATE, CMD_CONTROL_DEADMAN_LOOP, flags */
@@ -895,7 +906,7 @@ static void psu_command(uint8_t flags, long time)
 
 	/* Wait for response */
 	/* TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG */
-	time = wait_ms(time, read_scom(0x000D0060) & PPC_BIT(0));
+	time = wait_ms(time, read_scom(0x000D0063) & PPC_BIT(0));
 
 	if (!time)
 		die("Timed out while waiting for SBE response\n");
@@ -903,6 +914,10 @@ static void psu_command(uint8_t flags, long time)
 	/* Clear SBE->host doorbell */
 	/* TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG_AND */
 	write_scom(0x000D0064, ~PPC_BIT(0));
+
+	printk(BIOS_SPEW, "Buffer after response:\n");
+	for (int i=0; i<8; i++)
+		printk(BIOS_SPEW, "0x000D005%d: %16.16llx\n", i, read_scom(0x000D0050 + i));
 }
 
 #define DEADMAN_LOOP_START	0x0001
@@ -914,8 +929,12 @@ static void block_wakeup_int(int core, int state)
 	/* Depending on requested state we write to SCOM1 (CLEAR) or SCOM2 (OR). */
 	uint64_t scom = state ? 0x200F0102 : 0x200F0101;
 
+	write_scom_for_chiplet(EC00_CHIPLET_ID + core, 0x200F0108, PPC_BIT(1));
 	/* Register is documented, but its bits are reserved... */
 	write_scom_for_chiplet(EC00_CHIPLET_ID + core, scom, PPC_BIT(6));
+
+	write_scom_for_chiplet(EC00_CHIPLET_ID + core, 0x200F0107, PPC_BIT(1));
+	printk(BIOS_SPEW, "0x2%d0F0100: %16.16llx\n", core, read_scom_for_chiplet(EC00_CHIPLET_ID + core, 0x200F0100));
 }
 
 /*
@@ -924,12 +943,16 @@ static void block_wakeup_int(int core, int state)
  *
  * TODO: save and restore TB. Some time will be lost between entering and
  * exiting STOP 15, but we don't have a way of calculating it (I think).
+ *  - it seems that timer facilities are not lost, as if core is awaken before
+ *    it fully enters STOP 15. Bits 46:47 of SSR1 are 10 - see PowerISA and
+ *    23.5.9.2 State Loss and Restoration in POWER9 user's manual.
  */
 struct save_state {
 	uint64_t r1;	/* stack */
 	uint64_t r2;	/* TOC */
 	uint64_t msr;
 	uint64_t nia;
+	uint64_t pir;
 } sstate;
 
 /*
@@ -949,10 +972,11 @@ asm(
 "\
 system_reset:                          \n\
 	mfspr   4, 1023                \n\
-	extrdi. 4, 4, 2, 62            \n\
-	bne     _not_thread0           \n\
 	li      3, sstate@l            \n\
 	oris    3, 3, sstate@h         \n\
+	ld      2, 32(3)               \n\
+	cmpd    2, 4                   \n\
+	bne     _not_main_thread       \n\
 	ld      1, 0(3)                \n\
 	ld      2, 8(3)                \n\
 	ld      4, 16(3)               \n\
@@ -960,7 +984,7 @@ system_reset:                          \n\
 	ld      4, 24(3)               \n\
 	mtspr   314, 4                 \n\
 	hrfid                          \n\
-_not_thread0:                          \n\
+_not_main_thread:                  \n\
 	stop                           \n\
 	b       .                      \n\
 system_reset_end:                      \n\
@@ -998,12 +1022,6 @@ static void cpu_winkle(void)
 
 	memcpy((void*)0x100, system_reset, system_reset_end - system_reset);
 
-	asm volatile("sync; isync" ::: "memory");
-
-	/* TODO: address depends on active core */
-	/* TODO: do we even need this? Those threads are already stopped */
-	// write_scom(0x21010A9C, 0x0008080800000000);
-
 	/*
 	 * Timing facilities may be lost. During their restoration Large Decrementer
 	 * in LPCR may be initially turned off, which may (but shouldn't) result in
@@ -1011,6 +1029,16 @@ static void cpu_winkle(void)
 	 * External Interrupts just in case.
 	 */
 	sstate.msr = read_msr() & ~PPC_BIT(48);
+	sstate.pir = read_spr(SPR_PIR);
+
+	asm volatile("sync; isync" ::: "memory");
+
+	/*
+	 * It isn't enough that threads are already stopped, SBE has to see them
+	 * being stopped after DEADMAN_LOOP_START command.
+	 */
+	/* TODO: address depends on active core */
+	write_scom(0x21010A9C, 0x0008080800000000);
 
 	/*
 	 * Cannot clobber:
@@ -1064,10 +1092,19 @@ static void istep_16_1(int this_core)
 	write_scom(0x0504000F, PPC_BIT(32));
 
 	uint64_t t2 = read_spr(SPR_TB);
+	printk(BIOS_ERR, "Blocking interrupts for core %d............................\n", this_core);
 	block_wakeup_int(this_core, 1);
 
 	cpu_winkle();
 
+	printk(BIOS_SPEW, "0x2%d0F0100: %16.16llx\n", this_core, read_scom_for_chiplet(EC00_CHIPLET_ID + this_core, 0x200F0100));
+
+	/* SBE sets this doorbell bit when it finishes its part of STOP 15 wakeup */
+	wait_us(time, read_scom(0x000D0063) & PPC_BIT(2));
+	write_scom(0x000D0064, ~PPC_BIT(2));
+	wait_us(200, 0);
+
+	printk(BIOS_SPEW, "0x2%d0F0100: %16.16llx\n", this_core, read_scom_for_chiplet(EC00_CHIPLET_ID + this_core, 0x200F0100));
 	/*
 	 * This tells SBE that we were properly awoken. Hostboot uses default
 	 * timeout of 90 seconds, but if SBE doesn't answer in 10 there is no reason
@@ -1433,6 +1470,126 @@ static void layout_rings_for_sgpe(struct homer_st *homer,
 	}
 }
 
+static void update_headers(struct homer_st *homer, uint64_t cores)
+{
+	/*
+	 * Update CPMR Header with Scan Ring details
+	 * This function for each entry does one of:
+	 * - write constant value
+	 * - copy value form other field
+	 * - one or both of the above with arithmetic operations
+	 * Consider writing these fields in previous functions instead.
+	 */
+	struct cpmr_header *cpmr_hdr   = &homer->cpmr.header;
+	struct cme_img_header *cme_hdr = (struct cme_img_header *)
+	                                 &homer->cpmr.cme_sram_region[INT_VECTOR_SIZE];
+	cpmr_hdr->img_offset           = offsetof(struct cpmr_st, cme_sram_region) / 32;
+	cpmr_hdr->cme_pstate_offset    = offsetof(struct cpmr_st, cme_sram_region) + cme_hdr->pstate_region_offset;
+	cpmr_hdr->cme_pstate_len       = cme_hdr->pstate_region_len;
+	cpmr_hdr->img_len              = cme_hdr->hcode_len;
+	cpmr_hdr->core_scom_offset     = offsetof(struct cpmr_st, core_scom);
+	cpmr_hdr->core_scom_len        = CORE_SCOM_RESTORE_SIZE;			// 6k
+	cpmr_hdr->core_max_scom_entry  = 15;
+
+	if (cme_hdr->common_ring_len) {
+		cpmr_hdr->cme_common_ring_offset = offsetof(struct cpmr_st, cme_sram_region) +
+		                                   cme_hdr->common_ring_offset;
+		cpmr_hdr->cme_common_ring_len    = cme_hdr->common_ring_len;
+	}
+
+	if (cme_hdr->max_spec_ring_len) {
+		cpmr_hdr->core_spec_ring_offset  = ALIGN_UP(cpmr_hdr->img_offset * 32 +
+		                                            cpmr_hdr->img_len +
+		                                            cpmr_hdr->cme_pstate_len +
+		                                            cpmr_hdr->cme_common_ring_len,
+		                                            32) / 32;
+		cpmr_hdr->core_spec_ring_len     = cme_hdr->max_spec_ring_len;
+	}
+
+	for (int cme = 0; cme < MAX_CORES_PER_CHIP/2; cme++) {
+		/*
+		 * CME index/position is the same as EX, however this means that Pstate
+		 * offset is overwritten when there are 2 functional CMEs in one quad.
+		 * Maybe we can use "for each functional quad" instead, but maybe
+		 * 'cme * cme_hdr->custom_length' points to different data, based on
+		 * whether there is one or two functional CMEs (is that even possible?).
+		 */
+		if (!IS_EX_FUNCTIONAL(cme, cores))
+			continue;
+
+		/* Assuming >= CPMR_2.0 */
+		cpmr_hdr->quad_pstate_offset [cme/2] = cpmr_hdr->core_spec_ring_offset +
+		                                       cpmr_hdr->core_spec_ring_len +
+		                                       cme * cme_hdr->custom_length;
+	}
+
+	/* Updating CME Image header */
+	/* Assuming >= CPMR_2.0 */
+	cme_hdr->scom_offset   = cme_hdr->pstate_offset +
+	                         sizeof(LocalPstateParmBlock) / 32;
+
+	/* Adding to it instance ring length which is already a multiple of 32B */
+	cme_hdr->scom_len      = 512;
+
+	/* Timebase frequency */
+	/* FIXME: get PB frequency properly */
+	cme_hdr->timebase_hz = 1866 * MHz / 64;
+
+	/*
+	 * Update QPMR Header area in HOMER
+	 * In Hostboot, qpmrHdr is a copy of the header, it doesn't operate on HOMER
+	 * directly until now - it fills the following fields in the copy and then
+	 * does memcpy() to HOMER. As BAR is set up in next istep, I don't see why.
+	 */
+	homer->qpmr.sgpe.header.sram_img_size =
+	              homer->qpmr.sgpe.header.img_len +
+	              homer->qpmr.sgpe.header.common_ring_len +
+	              homer->qpmr.sgpe.header.spec_ring_len;
+	homer->qpmr.sgpe.header.max_quad_restore_entry  = 255;
+	homer->qpmr.sgpe.header.build_ver               = 3;
+	struct sgpe_img_header *sgpe_hdr = (struct sgpe_img_header *)
+	                                   &homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE];
+	sgpe_hdr->scom_mem_offset = offsetof(struct homer_st, qpmr.cache_scom_region);
+
+	/* Update PPMR Header area in HOMER */
+	struct pgpe_img_header *pgpe_hdr = (struct pgpe_img_header *)
+	                                   &homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE];
+	pgpe_hdr->core_throttle_assert_cnt   = 0;
+	pgpe_hdr->core_throttle_deassert_cnt = 0;
+	pgpe_hdr->ivpr_addr                  = 0xFFF20000;	// OCC_SRAM_PGPE_BASE_ADDR
+	                                 // = homer->ppmr.header.sram_region_start
+	pgpe_hdr->gppb_sram_addr             = 0;		// set by PGPE Hcode (or not?)
+	pgpe_hdr->hcode_len                  = homer->ppmr.header.hcode_len;
+	/* FIXME: remove hardcoded HOMER in OCI PBA */
+	pgpe_hdr->gppb_mem_offset            = 0x80000000 + offsetof(struct homer_st, ppmr) +
+	                                       homer->ppmr.header.gppb_offset;
+	pgpe_hdr->gppb_len                   = homer->ppmr.header.gppb_len;
+	pgpe_hdr->gen_pstables_mem_offset    = 0x80000000 + offsetof(struct homer_st, ppmr) +
+	                                       homer->ppmr.header.pstables_offset;
+	pgpe_hdr->gen_pstables_len           = homer->ppmr.header.pstables_len;
+	pgpe_hdr->occ_pstables_sram_addr     = 0;
+	pgpe_hdr->occ_pstables_len           = 0;
+	pgpe_hdr->beacon_addr                = 0;
+	pgpe_hdr->quad_status_addr           = 0;
+	pgpe_hdr->wof_state_address          = 0;
+	pgpe_hdr->wof_values_address         = 0;
+	pgpe_hdr->req_active_quad_address    = 0;
+	pgpe_hdr->wof_table_addr             = homer->ppmr.header.wof_table_offset;
+	pgpe_hdr->wof_table_len              = homer->ppmr.header.wof_table_len;
+	pgpe_hdr->timebase_hz                = 1866 * MHz / 64;
+	pgpe_hdr->doptrace_offset            = homer->ppmr.header.doptrace_offset;
+	pgpe_hdr->doptrace_len               = homer->ppmr.header.doptrace_len;
+
+	/* Update magic numbers */
+	homer->qpmr.sgpe.header.magic = 0x51504d525f312e30;	// QPMR_1.0
+	homer->cpmr.header.magic      = 0x43504d525f322e30;	// CPMR_2.0
+	homer->ppmr.header.magic      = 0x50504d525f312e30;	// PPMR_1.0
+	sgpe_hdr->magic               = 0x534750455f312e30;	// SGPE_1.0
+	cme_hdr->magic                = 0x434d455f5f312e30;	// CME__1.0
+	pgpe_hdr->magic               = 0x504750455f312e30;	// PGPE_1.0
+}
+
+
 /*
  * This logic is for SMF disabled only!
  */
@@ -1462,7 +1619,7 @@ void build_homer_image(void *homer_bar)
 	if (this_core == -1)
 		die("Couldn't found active core\n");
 
-	printk(BIOS_ERR, "DD%2.2x\n", dd);
+	printk(BIOS_ERR, "DD%2.2x, boot core: %d\n", dd, this_core);
 
 	/* HOMER must be aligned to 4M because CME HRMOR has bit for 2M set */
 	if (!IS_ALIGNED((uint64_t) homer_bar, 4 * MiB))
@@ -1524,16 +1681,9 @@ void build_homer_image(void *homer_bar)
 			      (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
 			      cores, ring_variant);
 
-
 	build_parameter_blocks(homer, cores);
 
-	// updateCpmrCmeRegion();
-
-	// Update QPMR Header area in HOMER
-	// updateQpmrHeader();
-
-	// Update PPMR Header area in HOMER
-	// updatePpmrHeader();
+	update_headers(homer, cores);
 
 	// Update L2 Epsilon SCOM Registers
 	// populateEpsilonL2ScomReg( pChipHomer );
@@ -1547,22 +1697,16 @@ void build_homer_image(void *homer_bar)
 	// Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register
 	// populateNcuRngBarScomReg( pChipHomer, i_procTgt );
 
-	// validate SRAM Image Sizes of PPE's
-	// validateSramImageSize( pChipHomer, sramImgSize );
-
 	// Update CME/SGPE Flags in respective image header.
 	// updateImageFlags( pChipHomer, i_procTgt );
 
 	// Set the Fabric IDs
 	// setFabricIds( pChipHomer, i_procTgt );
 	//	- doesn't modify anything?
-
-	// Customize magic word based on endianess
-	// customizeMagicWord( pChipHomer );
 	}
 
 	/* Set up wakeup mode */
-	for (int i = 0; i < MAX_CORES; i++) {
+	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
 		if (!IS_EC_FUNCTIONAL(i, cores))
 			continue;
 
@@ -1572,7 +1716,8 @@ void build_homer_image(void *homer_bar)
 			[3]	CPPM_CPMMR_RESERVED_2_9	= 1
 			[4]	CPPM_CPMMR_RESERVED_2_9	= 1
 		*/
-		write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F0106,
+		/* SCOM2 - OR, 0x200F0108 */
+		write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F0108,
 		                       PPC_BIT(3) | PPC_BIT(4));
 	}
 
@@ -1584,7 +1729,7 @@ void build_homer_image(void *homer_bar)
 
 	/* 15.3 establish EX chiplet */
 	/* Multicast groups for cores were assigned in get_available_cores() */
-	for (int i = 0; i < MAX_CORES/4; i++) {
+	for (int i = 0; i < MAX_QUADS_PER_CHIP; i++) {
 		if (IS_EQ_FUNCTIONAL(i, cores) &&
 		    (read_scom_for_chiplet(EP00_CHIPLET_ID + i, 0xF0001) & PPC_BITMASK(3,5))
 		    == PPC_BITMASK(3,5))
@@ -1598,7 +1743,7 @@ void build_homer_image(void *homer_bar)
 
 	/* Writing OCC QCSR */
 	uint64_t qcsr = 0;
-	for (int i = 0; i < MAX_CORES/2; i++) {
+	for (int i = 0; i < MAX_CMES_PER_CHIP; i++) {
 		if (IS_EX_FUNCTIONAL(i, cores))
 			qcsr |= PPC_BIT(i);
 	}
@@ -1607,7 +1752,7 @@ void build_homer_image(void *homer_bar)
 	/* 15.4 start STOP engine */
 
 	/* Initialize the PFET controllers */
-	for (int i = 0; i < MAX_CORES; i++) {
+	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
 		if ((i % 4) == 0 && IS_EQ_FUNCTIONAL(i/4, cores)) {
 			/*
 			TP.TPCHIP.NET.PCBSLEP03.PPMQ.PPM_COMMON_REGS.PPM_PFDLY        // 0x100F011B
@@ -1696,10 +1841,14 @@ void build_homer_image(void *homer_bar)
 	*/
 	write_scom(0x0006C18B, PPC_BIT(30));
 
+	//~ memset(homer_bar, 0, 1 * MiB);
+	//~ memset(homer_bar + 3 * MiB, 0, 1 * MiB);
+	hexdump(&homer->qpmr, 0x100);
 	// Boot the STOP GPE
 	stop_gpe_init(homer);
 
 	istep_16_1(this_core);
 
+	die("halting now.............\n");
 	//hexdump(&homer->qpmr, sgpe->qpmr.size);
 }

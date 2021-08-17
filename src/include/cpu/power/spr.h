@@ -50,6 +50,7 @@
 #define SPR_PTCR				0x1D0
 #define SPR_PSSCR				0x357
 #define SPR_PMCR				0x374
+#define SPR_PIR					0x3FF
 
 #ifndef __ASSEMBLER__
 #include <types.h>

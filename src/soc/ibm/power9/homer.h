@@ -47,6 +47,11 @@
 #define OCC_WOF_TABLES_OFFSET		(768 * KiB)
 #define PPMR_HEADER_SIZE		(1 * KiB)
 
+#define MAX_CORES_PER_CHIP		24
+#define MAX_CORES_PER_EX		2
+#define MAX_QUADS_PER_CHIP		(MAX_CORES_PER_CHIP/4)
+#define MAX_CMES_PER_CHIP		(MAX_CORES_PER_CHIP/MAX_CORES_PER_EX)
+
 /* =================== QPMR =================== */
 
 struct qpmr_header {
@@ -154,12 +159,7 @@ struct cpmr_header {
 	uint32_t core_self_restore_offset;
 	uint32_t core_self_restore_len;
 	uint32_t core_max_scom_entry;
-	uint32_t quad0_pstate_offset;
-	uint32_t quad1_pstate_offset;
-	uint32_t quad2_pstate_offset;
-	uint32_t quad3_pstate_offset;
-	uint32_t quad4_pstate_offset;
-	uint32_t quad5_pstate_offset;
+	uint32_t quad_pstate_offset[MAX_CORES_PER_CHIP/4];
 } __attribute__((packed, aligned(256)));
 
 struct smf_core_self_restore {
@@ -193,18 +193,13 @@ struct cme_img_header {
 	uint32_t custom_length;
 };
 
-#define MAX_CORES		24
-#define MAX_QUADS_PER_CHIP     	6
-#define MAX_CORES_PER_EX	2
-#define MAX_CMES_PER_CHIP	MAX_CORES/MAX_CORES_PER_EX
-
 struct cpmr_st {
 	struct cpmr_header header;
 	uint8_t exe[SELF_RESTORE_REGION_SIZE - sizeof(struct cpmr_header)];
-	struct smf_core_self_restore core_self_restore[MAX_CORES];
+	struct smf_core_self_restore core_self_restore[MAX_CORES_PER_CHIP];
 	uint8_t pad[CORE_SCOM_RESTORE_OFFSET -
 	            (SELF_RESTORE_REGION_SIZE +
-	             MAX_CORES * sizeof(struct smf_core_self_restore))];
+	             MAX_CORES_PER_CHIP * sizeof(struct smf_core_self_restore))];
 	uint8_t core_scom[CORE_SCOM_RESTORE_SIZE];
 	uint8_t cme_sram_region[CME_SRAM_IMG_SIZE];
 };
