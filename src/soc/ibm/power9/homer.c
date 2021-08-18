@@ -25,6 +25,11 @@ struct ring_data {
 	uint32_t work_buf3_size;
 };
 
+struct cme_cmn_ring_list {
+	uint16_t ring[8]; // In order: EC_FUNC, EC_GPTR, EC_TIME, EC_MODE, EC_ABST, 3 reserved
+	uint8_t payload[];
+};
+
 enum operation_type {
 	COPY,
 	FIND
@@ -906,6 +911,60 @@ static void get_ppe_scan_rings(struct xip_hw_header *hw, uint8_t dd, enum ppe_ty
 				       ring_data->work_buf3);
 }
 
+static void layout_cmn_rings_for_cme(struct homer_st *homer,
+				     struct ring_data *ring_data,
+				     enum ring_variant ring_variant,
+				     uint32_t *ring_len)
+{
+	struct cme_cmn_ring_list *tmp =
+		(void *)&homer->cpmr.cme_sram_region[*ring_len];
+	uint8_t *start = (void *)tmp;
+	uint8_t *payload = tmp->payload;
+
+	uint32_t i = 0;
+	const enum ring_id ring_ids[] = { EC_FUNC, EC_GPTR, EC_TIME, EC_MODE };
+
+	for (i = 0; i < ARRAY_SIZE(ring_ids); ++i) {
+		const enum ring_id id = ring_ids[i];
+
+		uint32_t ring_size = MAX_RING_BUF_SIZE;
+		uint8_t *ring_dst = start + ALIGN_UP(payload - start, 8);
+
+		enum ring_variant this_ring_variant = ring_variant;
+		if (id == EC_GPTR || id == EC_TIME)
+			this_ring_variant = RV_BASE;
+
+		if (!tor_access_ring(ring_data->rings_buf, id, PT_CME,
+				     this_ring_variant, EC00_CHIPLET_ID,
+				     ring_dst, &ring_size, GET_RING_DATA))
+			continue;
+
+		tmp->ring[i] = ring_dst - start;
+		payload = ring_dst + ALIGN_UP(ring_size, 8);
+	}
+
+	if (payload != tmp->payload)
+		*ring_len += payload - start;
+
+	*ring_len = ALIGN_UP(*ring_len, 8);
+}
+
+static void layout_rings_for_cme(struct homer_st *homer,
+				 struct ring_data *ring_data,
+				 enum ring_variant ring_variant)
+{
+	struct cpmr_header *cpmr_hdr = &homer->cpmr.header;
+	struct cme_img_header *cme_hdr = (void *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE];
+
+	uint32_t ring_len = cme_hdr->hcode_offset + cme_hdr->hcode_len;
+
+	assert(cpmr_hdr->magic == CPMR_VDM_PER_QUAD);
+
+	layout_cmn_rings_for_cme(homer, ring_data, ring_variant, &ring_len);
+
+	// TODO: layout_inst_rings_for_cme()
+}
+
 /*
  * This logic is for SMF disabled only!
  */
@@ -923,6 +982,7 @@ void build_homer_image(void *homer_bar)
 		.work_buf2 = work_buf2, .work_buf2_size = sizeof(work_buf2),
 		.work_buf3 = work_buf3, .work_buf3_size = sizeof(work_buf3),
 	};
+	enum ring_variant ring_variant;
 
 	struct mmap_helper_region_device mdev = {0};
 	struct homer_st *homer = homer_bar;
@@ -966,9 +1026,10 @@ void build_homer_image(void *homer_bar)
 	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
 	           dd);
 
-	get_ppe_scan_rings(hw, dd, PT_CME, &ring_data);
+	ring_variant = (dd < 0x23 ? RV_BASE : RV_RL4);
 
-	// TODO: layoutRingsForCME()
+	get_ppe_scan_rings(hw, dd, PT_CME, &ring_data);
+	layout_rings_for_cme(homer, &ring_data, ring_variant);
 
 	/* Reset buffer sizes to maximum values before reusing the structure */
 	ring_data.rings_buf_size = sizeof(rings_buf);
