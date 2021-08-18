@@ -949,8 +949,47 @@ static void layout_cmn_rings_for_cme(struct homer_st *homer,
 	*ring_len = ALIGN_UP(*ring_len, 8);
 }
 
+static void layout_inst_rings_for_cme(struct homer_st *homer,
+				      struct ring_data *ring_data,
+				      uint64_t cores,
+				      enum ring_variant ring_variant,
+				      uint32_t *ring_len)
+{
+	uint32_t max_ex_len = 0;
+
+	uint32_t ex = 0;
+
+	for (ex = 0; ex < MAX_CMES_PER_CHIP; ++ex) {
+		uint32_t i = 0;
+		uint32_t ex_len = 0;
+
+		for (i = 0; i < MAX_CORES_PER_EX; ++i) {
+			const uint32_t core = ex * MAX_CORES_PER_EX + i;
+
+			uint32_t ring_size = 0;
+
+			if (!IS_EC_FUNCTIONAL(core, cores))
+				continue;
+
+			ring_size = ring_data->work_buf1_size;
+			if (!tor_access_ring(ring_data->rings_buf, EC_REPR,
+					     PT_CME, RV_BASE,
+					     EC00_CHIPLET_ID + core,
+					     ring_data->work_buf1,
+					     &ring_size, GET_RING_DATA))
+				continue;
+
+			ex_len += ALIGN_UP(ring_size, 8);
+		}
+
+		if (ex_len > max_ex_len)
+			max_ex_len = ex_len;
+	}
+}
+
 static void layout_rings_for_cme(struct homer_st *homer,
 				 struct ring_data *ring_data,
+				 uint64_t cores,
 				 enum ring_variant ring_variant)
 {
 	struct cpmr_header *cpmr_hdr = &homer->cpmr.header;
@@ -962,7 +1001,22 @@ static void layout_rings_for_cme(struct homer_st *homer,
 
 	layout_cmn_rings_for_cme(homer, ring_data, ring_variant, &ring_len);
 
-	// TODO: layout_inst_rings_for_cme()
+	cme_hdr->common_ring_len = ring_len - (cme_hdr->hcode_offset + cme_hdr->hcode_len);
+
+	// if common ring is empty, force offset to be 0
+	if (cme_hdr->common_ring_len == 0)
+		cme_hdr->common_ring_offset = 0;
+
+	ring_len = ALIGN_UP(ring_len, 32);
+
+	layout_inst_rings_for_cme(homer, ring_data, cores, RV_BASE, &ring_len);
+
+	if (ring_len != 0) {
+		cme_hdr->max_spec_ring_len = ALIGN_UP(ring_len, 32) / 32;
+		cme_hdr->core_spec_ring_offset =
+			ALIGN_UP(cme_hdr->common_ring_offset + cme_hdr->common_ring_len, 32) /
+			32;
+	}
 }
 
 /*
@@ -1029,7 +1083,7 @@ void build_homer_image(void *homer_bar)
 	ring_variant = (dd < 0x23 ? RV_BASE : RV_RL4);
 
 	get_ppe_scan_rings(hw, dd, PT_CME, &ring_data);
-	layout_rings_for_cme(homer, &ring_data, ring_variant);
+	layout_rings_for_cme(homer, &ring_data, cores, ring_variant);
 
 	/* Reset buffer sizes to maximum values before reusing the structure */
 	ring_data.rings_buf_size = sizeof(rings_buf);
