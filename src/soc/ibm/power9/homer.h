@@ -193,6 +193,8 @@ struct cme_img_header {
 };
 
 #define MAX_CORES		24
+#define MAX_CORES_PER_EX	2
+#define MAX_CMES_PER_CHIP	(MAX_CORES / MAX_CORES_PER_EX)
 
 struct cpmr_st {
 	struct cpmr_header header;
