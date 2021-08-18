@@ -128,6 +128,8 @@ check_member(qpmr_st, aux, 512 * KiB);
 
 /* =================== CPMR =================== */
 
+#define CPMR_VDM_PER_QUAD   0x43504D525F322E30ull
+
 struct cpmr_header {
 	uint32_t attn_opcodes[2];
 	uint64_t magic;		/* "CPMR_2.0" */
