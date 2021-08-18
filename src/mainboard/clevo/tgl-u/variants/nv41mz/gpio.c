@@ -4,7 +4,7 @@
 #include <baseboard/variants.h>
 #include <commonlib/helpers.h>
 
-/* Pad configuration was generated automatically using intelp2m utility */
+/* Pad configuration in ramstage */
 static const struct pad_config gpio_table[] = {
 
 	/* ------- GPIO Community 0 ------- */
@@ -168,8 +168,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_C17, NONE, DEEP, NF1),
 	PAD_CFG_NF(GPP_C18, NONE, DEEP, NF1),
 	PAD_CFG_NF(GPP_C19, NONE, DEEP, NF1),
-	PAD_NC(GPP_C20, NONE),
-	PAD_NC(GPP_C21, NONE),
+	PAD_CFG_NF(GPP_C20, UP_20K, DEEP, NF1),
+	PAD_CFG_NF(GPP_C21, UP_20K, DEEP, NF1),
 	PAD_CFG_GPO(GPP_C22, 1, PLTRST),
 	PAD_CFG_GPI_SCI(GPP_C23, NONE, DEEP, LEVEL, INVERT),
 
@@ -239,8 +239,9 @@ static const struct pad_config gpio_table[] = {
 };
 
 /* Early pad configuration in bootblock */
-/* Leave this empty for now */
 static const struct pad_config early_gpio_table[] = {
+	PAD_CFG_NF(GPP_C20, UP_20K, DEEP, NF1), /* UART2_RXD */
+	PAD_CFG_NF(GPP_C21, UP_20K, DEEP, NF1), /* UART2_TXD */
 };
 
 const struct pad_config *variant_gpio_table(size_t *num)
