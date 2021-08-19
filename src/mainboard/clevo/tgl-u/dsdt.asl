@@ -14,11 +14,7 @@ DefinitionBlock(
 {
 	#include <acpi/dsdt_top.asl>
 	#include <soc/intel/common/block/acpi/acpi/platform.asl>
-
-	/* global NVS and variables */
 	#include <soc/intel/common/block/acpi/acpi/globalnvs.asl>
-
-	/* CPU */
 	#include <cpu/intel/common/acpi/cpu.asl>
 
 	Device (\_SB.PCI0)
@@ -32,9 +28,10 @@ DefinitionBlock(
 	Scope (\_SB.PCI0.LPCB)
 	{
 		#include <drivers/pc80/pc/ps2_controller.asl>
-		#include <ec/clevo/it5570/ec.asl>
 	}
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
+
+	// Mainboard specific
 	#include <acpi/mainboard.asl>
 }
