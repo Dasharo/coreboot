@@ -5,7 +5,7 @@
 Device (LID0)
 {
 	Name (_HID, EisaId ("PNP0C0D"))
-	Name (_PRW, Package () { 0x02 /* GPP_E2 */, 3 })
+	Name (_PRW, Package () { EC_SCI_GPI, 3 })
 
 	Method (_LID, 0, NotSerialized) {
 		DEBUG = "LID: _LID"
