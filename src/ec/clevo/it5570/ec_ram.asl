@@ -2,8 +2,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* This file is part of the coreboot project. */
 
-OperationRegion (RAM, SystemMemory, 0xFE0B0100, 0x0400)
-Field (RAM, ByteAcc, Lock, Preserve)
+OperationRegion (ERAM, SystemMemory, 0x00, 0x0400)
+Field (ERAM, ByteAcc, Lock, Preserve)
 {
 	NMSG,   8,
 	SLED,   4,
