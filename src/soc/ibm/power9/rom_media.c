@@ -10,15 +10,15 @@
 #include <cbfs.h>
 #include <symbols.h>
 #include "../../../../3rdparty/ffs/ffs/ffs.h"
+#include "wof.h"
 
 #define LPC_FLASH_MIN (MMIO_GROUP0_CHIP0_LPC_BASE_ADDR + LPCHC_FW_SPACE)
 #define LPC_FLASH_TOP (LPC_FLASH_MIN + FW_SPACE_SIZE)
 
 #define CBFS_PARTITION_NAME "HBI"
-
 #define MEMD_PARTITION_NAME "MEMD"
-
 #define MVPD_PARTITION_NAME "MVPD"
+#define WOF_PARTITION_NAME  "WOFDATA"
 
 /* ffs_entry is not complete in included ffs.h, it lacks user data layout.
  * See https://github.com/open-power/skiboot/blob/master/libflash/ffs.h */
@@ -488,6 +488,30 @@ void mvpd_device_unmount(void)
 const struct region_device *mvpd_device_ro(void)
 {
 	return &mvpd_mdev.rdev;
+}
+
+static struct mmap_helper_region_device wof_mdev = MMAP_HELPER_DEV_INIT(
+	&no_ecc_rdev_ops, 0, CONFIG_ROM_SIZE, &cbfs_cache);
+
+void wof_device_init(void)
+{
+	static int init_done;
+	if (init_done)
+		return;
+
+	mount_part_from_pnor(WOF_PARTITION_NAME, &wof_mdev);
+
+	init_done = 1;
+}
+
+void wof_device_unmount(void)
+{
+	wof_mdev.rdev.ops = &no_rdev_ops;
+}
+
+const struct region_device *wof_device_ro(void)
+{
+	return &wof_mdev.rdev;
 }
 
 static struct mmap_helper_region_device boot_mdev = MMAP_HELPER_DEV_INIT(

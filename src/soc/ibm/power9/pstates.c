@@ -1,14 +1,19 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include "homer.h"
+#include "wof.h"
+#include <commonlib/region.h>
 #include <cpu/power/mvpd.h>
 #include <assert.h>
+#include <endian.h>
 #include <lib.h>
 #include <string.h>		// memcpy
 
 #define IDDQ_MEASUREMENTS    6
 #define MAX_UT_PSTATES       64     // Oversized
 #define FREQ_STEP_KHZ        16666
+
+#define SYSTEM_VFRT_SIZE 128
 
 #include "pstates_include/p9_pstates_occ.h"
 #include "pstates_include/p9_pstates_pgpe.h"
@@ -47,6 +52,114 @@ static ResonantClockingSetup resclk =
 	{ 0, 1, 3, 2},	// L3 clock stepping array
 	580		// L3 voltage threshold
 };
+
+#define WOF_IMAGE_MAGIC_VALUE (uint32_t)0x57544948 // "WTIH"
+#define WOF_IMAGE_VERSION     (uint32_t)1
+
+#define WOF_TABLES_MAGIC_VALUE (uint32_t)0x57465448 // "WFTH"
+#define WOF_TABLES_VERSION     (uint32_t)2
+#define WOF_TABLES_MAX_VERSION WOF_TABLES_VERSION 
+
+/*
+ * WOF image:
+ *  - header (struct wof_image_hdr)
+ *  - section table
+ *  - array of WOF tables
+ *
+ * WOF table:
+ *  - wof_tables_hdr for header
+ *  - data begins with vfrt_hdr
+ */
+
+/* Top-level header for WOF */
+struct wof_image_hdr
+{
+	uint32_t magic_number;	// WOF_IMAGE_MAGIC_VALUE
+	uint8_t  version;	// WOF_IMAGE_VERSION
+	uint8_t  entry_count;	// Number of entries in section table
+	uint32_t offset;	// BE offset to section table from image start
+} __attribute__((__packed__));
+
+/* Entry of WOF's section table */
+struct wof_image_entry
+{
+	uint32_t offset;	// BE offset to section from image start
+	uint32_t size;		// BE size of the section
+} __attribute__((__packed__));
+
+/* The values of wof_tables_hdr::mode */
+enum {
+	WOF_MODE_UNKNOWN = 0,	// Matches any value
+	WOF_MODE_NOMINAL = 1,
+	WOF_MODE_TURBO   = 2
+};
+
+/* Header of WOF's section */
+struct wof_tables_hdr
+{
+	uint32_t magic_number;	// WOF_TABLES_MAGIC_VALUE
+
+	uint16_t reserved;
+	uint8_t mode;		// version 1 = 0; version 2 = 1 or 2; WOF_MODE_*
+	uint8_t version;
+
+	uint16_t vfrt_block_size;
+	uint16_t vfrt_block_header_size;
+	uint16_t vfrt_data_size;
+	uint8_t quads_active_size;
+	uint8_t core_count;
+	uint16_t vdn_start;	// CeffVdn value represented by index 0 (in 0.01%)
+	uint16_t vdn_step;	// CeffVdn step value for each CeffVdn index (in 0.01%)
+	uint16_t vdn_size;	// Number of CeffVdn indexes
+	uint16_t vdd_start;	// CeffVdd value represented by index 0 (in 0.01%)
+	uint16_t vdd_step;	// CeffVdd step value for each CeffVdd index (in 0.01%)
+	uint16_t vdd_size;	// Number of CeffVdd indexes
+	uint16_t vratio_start;	// Vratio value represented by index 0 (in 0.01%)
+	uint16_t vratio_step;	// Vratio step value for each CeffVdd index (in 0.01%)
+	uint16_t vratio_size;	// Number of Vratio indexes
+	uint16_t fratio_start;	// Fratio value represented by index 0 (in 0.01%)
+	uint16_t fratio_step;	// Fratio step value for each CeffVdd index (in 0.01%)
+	uint16_t fratio_size;	// Number of Fratio indexes
+
+	uint16_t vdn_percent[8];	// Currently unused
+
+	uint16_t socket_power_w;
+	uint16_t nest_frequency_mhz;
+	uint16_t sort_power_freq_mhz;	// Either the Nominal or Turbo #V frequency
+	uint16_t rdp_capacity;		// Regulator Design Point Capacity (in Amps)
+
+	char wof_table_source_tag[8];
+	char package_name[16];
+} __attribute__((packed, aligned(128)));
+
+#define VFRT_HDR_MAGIC   0x5654 // "VT"
+#define VFRT_HDR_VERSION 2
+
+/* Header of data within a WOF table */
+struct vfrt_hdr
+{
+	uint16_t magic_number;	// VFRT_HDR_MAGIC
+	uint16_t reserved;
+	// bits 4-7 are type: 0 -- "System", 1 -- "Homer"
+	// bits 0-3 are version: 1 -- 12 row(voltage) X 11 column(freq)
+	//                       2 -- 24 row(Voltage) X 5 column (Freq)
+	uint8_t  type_version;
+	uint8_t res_vdnId;	// Vdn assumptions
+	uint8_t vddId_QAId;	// Vdd assumptions
+	uint8_t rsvd_QAId;	// bits 0-2: Quad Active assumptions
+} __attribute__((packed));
+
+/* Data is provided in 1/24ths granularity with adjustments for integer representation  */
+#define VFRT_VRATIO_SIZE 24
+/* 5 steps down from 100% is Fratio_step sizes */
+#define VFRT_FRATIO_SIZE 5
+
+/* Form of VFRT data as stored in HOMER */
+struct homer_vfrt_entry
+{
+	struct vfrt_hdr vfrt_hdr;
+	uint8_t pstate[VFRT_FRATIO_SIZE * VFRT_VRATIO_SIZE];
+} __attribute__((packed, aligned(256)));
 
 static void copy_poundW_v2_to_v3(PoundW_data_per_quad *v3, PoundW_data *v2)
 {
@@ -324,6 +437,156 @@ static void update_resclk(int ref_freq_khz)
 	}
 }
 
+static int32_t wof_find(struct wof_image_entry *entries, uint8_t entry_count,
+			uint32_t core_count,
+			const struct voltage_bucket_data *poundV_bucket)
+{
+	const struct region_device *wof_device = wof_device_ro();
+
+	const uint16_t socket_power_w = be16toh(poundV_bucket->sort_power_turbo);
+	const uint16_t sort_power_freq_mhz = be16toh(poundV_bucket->turbo.freq);
+
+	int32_t i = 0;
+
+	for (i = 0; i < entry_count; ++i) {
+		uint8_t tbl_hdr_buf[sizeof(struct wof_tables_hdr)];
+		struct wof_tables_hdr *tbl_hdr = (void *)tbl_hdr_buf;
+		uint8_t mode = 0;
+
+		if (rdev_readat(wof_device, tbl_hdr_buf,
+				be32toh(entries[i].offset),
+				sizeof(tbl_hdr_buf)) != sizeof(tbl_hdr_buf))
+			die("Failed to read a WOF tables header!\n");
+
+		if (be32toh(tbl_hdr->magic_number) != WOF_TABLES_MAGIC_VALUE)
+			die("Incorrect magic value of WOF table header!\n");
+
+		if (tbl_hdr->version == 0 || tbl_hdr->version > WOF_TABLES_MAX_VERSION)
+			die("Unsupported version of WOF table header: %d!\n",
+			    tbl_hdr->version);
+
+		mode = (tbl_hdr->mode & 0x0f);
+		if (tbl_hdr->version >= WOF_TABLES_VERSION &&
+		    mode != WOF_MODE_UNKNOWN &&
+		    mode != WOF_MODE_TURBO)
+			continue;
+
+		if (be16toh(tbl_hdr->core_count) == core_count &&
+		    be16toh(tbl_hdr->socket_power_w) == socket_power_w &&
+		    be16toh(tbl_hdr->sort_power_freq_mhz) == sort_power_freq_mhz)
+			/* Found a suitable WOF tables entry */
+			return i;
+	}
+
+	return -1;
+}
+
+static void import_vfrt(const struct vfrt_hdr *src, struct homer_vfrt_entry *dst,
+			const OCCPstateParmBlock *oppb)
+{
+	const uint32_t ref_freq = oppb->frequency_max_khz;
+	const uint32_t freq_step = oppb->frequency_step_khz;
+
+	uint16_t i = 0;
+	uint8_t *freq = NULL;
+
+	if (be16toh(src->magic_number) != VFRT_HDR_MAGIC)
+		die("Invalid magic value of a VFRT header: %d!\n", src->magic_number);
+
+	if ((src->type_version & 0x0f) != VFRT_HDR_VERSION)
+		die("Expected VFRT header version %d, got %d!",
+		    VFRT_HDR_VERSION, (src->type_version & 0x0f));
+
+	dst->vfrt_hdr = *src;
+	/* Flip type from "System" to "Homer" */
+	dst->vfrt_hdr.type_version |= 0x10;
+
+	freq = (uint8_t *)src + sizeof(*src);
+	for (i = 0; i < VFRT_FRATIO_SIZE * VFRT_VRATIO_SIZE; ++i) {
+		const uint32_t freq_khz = freq[i]*freq_step + 1000000;
+
+		/* Round towards zero */
+		dst->pstate[i] = (ref_freq - freq_khz) / freq_step;
+	}
+}
+
+static void wof_extract(uint8_t *buf, struct wof_image_entry entry,
+			const OCCPstateParmBlock *oppb)
+{
+	const struct region_device *wof_device = wof_device_ro();
+
+	struct wof_tables_hdr *tbl_hdr = NULL;;
+
+	uint32_t i;
+
+	uint8_t *table_data = NULL;
+	uint8_t *wof_vfrt_entry = NULL;
+	struct homer_vfrt_entry *homer_vfrt_entry = NULL;
+
+	table_data = rdev_mmap(wof_device, be32toh(entry.offset), entry.size);
+	if (!table_data)
+		die("Failed to map WOF section!\n");
+
+	tbl_hdr = (void *)table_data;
+	memcpy(buf, tbl_hdr, sizeof(*tbl_hdr));
+
+	wof_vfrt_entry = table_data + sizeof(*tbl_hdr);
+	homer_vfrt_entry = (struct homer_vfrt_entry *)(buf + sizeof(*tbl_hdr));
+
+	for (i = 0; i < tbl_hdr->vdn_size * tbl_hdr->vdd_size * MAX_QUADS_PER_CHIP; ++i) {
+		import_vfrt((const struct vfrt_hdr *)wof_vfrt_entry, homer_vfrt_entry,
+			    oppb);
+
+		wof_vfrt_entry += SYSTEM_VFRT_SIZE;
+		++homer_vfrt_entry;
+	}
+
+	if (rdev_munmap(wof_device, table_data))
+		die("Failed to unmap WOF section!\n");
+}
+
+static void wof_init(uint8_t *buf, uint32_t core_count,
+		     const OCCPstateParmBlock *oppb,
+		     const struct voltage_bucket_data *poundV_bucket)
+{
+	const struct region_device *wof_device = NULL;
+
+	uint8_t hdr_buf[sizeof(struct wof_image_hdr)];
+	struct wof_image_hdr *hdr = (void *)hdr_buf;
+
+	struct wof_image_entry *entries = NULL;
+	int32_t entry_idx = 0;
+
+	wof_device_init();
+	wof_device = wof_device_ro();
+
+	if (rdev_readat(wof_device, hdr_buf, 0, sizeof(hdr_buf)) != sizeof(hdr_buf))
+		die("Failed to read WOF header!\n");
+
+	if (be32toh(hdr->magic_number) != WOF_IMAGE_MAGIC_VALUE)
+		die("Incorrect magic value of WOF header!\n");
+
+	if (hdr->version != WOF_IMAGE_VERSION)
+		die("Expected WOF header version %d, got %d!",
+		    WOF_IMAGE_VERSION, hdr->version);
+
+	entries = rdev_mmap(wof_device, be32toh(hdr->offset),
+			    hdr->entry_count*sizeof(entries));
+	if (!entries)
+		die("Failed to map section table of WOF!\n");
+
+	entry_idx = wof_find(entries, hdr->entry_count, core_count, poundV_bucket);
+	if (entry_idx == -1)
+		die("Failed to find a matching WOF tables section!\n");
+
+	wof_extract(buf, entries[entry_idx], oppb);
+
+	if (rdev_munmap(wof_device, entries))
+		die("Failed to unmap section table of WOF!\n");
+
+	wof_device_unmount();
+}
+
 /* Assumption: no bias is applied to operating points */
 void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 {
@@ -370,8 +633,7 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	oppb->wof.tdp_rdp_factor = 0; 	// ATTR_TDP_RDP_CURRENT_FACTOR 0 from talos.xml
 	oppb->nest_leakage_percent = 60; // ATTR_NEST_LEAKAGE_PERCENT from hb_temp_defaults.xml
 
-	/* FIXME: uncomment after WOF_DATA is prepared */
-	//oppb->wof.wof_enabled = 1;		// Assuming wof_init() succeeds
+	oppb->wof.wof_enabled = 1;		// Assuming wof_init() succeeds
 	oppb->wof.tdp_rdp_factor = 0;		// ATTR_TDP_RDP_CURRENT_FACTOR from talos.xml
 	oppb->nest_leakage_percent = 60;	// ATTR_NEST_LEAKAGE_PERCENT from hb_temp_defaults.xml
 	/*
@@ -762,43 +1024,10 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	((GPPBOptionsPadUse *)&gppb->options.pad)->fields.good_cores_in_sort =
 	       oppb->iddq.good_normal_cores_per_sort;
 
-	/* TODO: WOF */
-	//~ // ----------------
-	//~ // WOF initialization
-	//~ // ----------------
-	//~ wof_init(o_buf = &homer->ppmr.wof_tables):
-		//~ - Search for proper data in WOFDATA PNOR partition
-		//~ - WOFDATA is 3M, make sure CBFS_CACHE is big enough
-		//~ - search until match is found:
-		  //~ - core count
-		  //~ - socket power (nominal, as read from #V)
-		  //~ - frequency (nominal, as read from #V)
-		  //~ - if version >= WOF_TABLE_VERSION_POWERMODE (2):
-			//~ - mode matches current mode (WOF_MODE_NOMINAL = 1) or wildcard (WOF_MODE_UNKNOWN = 0)
-		//~ - structures used:
-		  //~ - wofImageHeader_t from plat_wof_access.C
-			//~ - check magic and version
-		  //~ - wofSectionTableEntry_t from plat_wof_access.C
-		  //~ - WofTablesHeader_t from p9_pstates_common.h
-		//~ memcpy(o_buf, &WofTablesHeader_t /* for found entry */, wofSectionTableEntry_t[found_entry_idx].size)
-
-		//~ // Just the header, rest needs parsing
-		//~ memcpy(homer->ppmr.wof_tables, o_buf, sizeof(WofTablesHeader_t))
-
-		//~ for vfrt_index in 0..((WofTablesHeader_t*)o_buf->vdn_size * (WofTablesHeader_t*)o_buf->vdd_size * ACTIVE_QUADS) -1:
-			//~ src = o_buf                  + sizeof(WofTablesHeader_t) + vfrt_index * 128 /* vRTF size */
-			//~ dst = homer->ppmr.wof_tables + sizeof(WofTablesHeader_t) + vfrt_index * sizeof(HomerVFRTLayout_t) /* 256B */
-			//~ update_vfrt (src, dst):
-				//~ - Assumption: no bias, makes this function so much easier
-				//~ // Data in src has 8B header followed by 5*24 bytes of frequency information, such that freq = value*step_size + 1GHz.
-				//~ // Data in dst has (almost) the same header followed by 5*24 bytes of Pstates.
-				//~ // Copy header
-				//~ memcpy(dst, src, 8)
-				//~ // Flip type from System to Homer
-				//~ dst.type_version |= 0x10
-				//~ assert(dst.magic = "VT")
-				//~ for idx in 0..5*24 -1:
-					//~ dst[8+idx] = freq_to_pstate(src[8+idx])		// rounded properly
+	wof_init(homer->ppmr.wof_tables,
+		 __builtin_popcount((uint32_t)functional_cores) +
+		 __builtin_popcount(functional_cores >> 32),
+		 oppb, &poundV_bucket);
 
 	/* Copy LPPB to functional CMEs */
 	for (int cme = 1; cme < MAX_CMES_PER_CHIP; cme++) {
