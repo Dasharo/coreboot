@@ -30,6 +30,11 @@ struct cme_cmn_ring_list {
 	uint8_t payload[];
 };
 
+struct cme_inst_ring_list {
+	uint16_t ring[4]; // In order: EC_REPR0, EC_REPR1, 2 reserved
+	uint8_t payload[];
+};
+
 enum operation_type {
 	COPY,
 	FIND
@@ -985,6 +990,46 @@ static void layout_inst_rings_for_cme(struct homer_st *homer,
 		if (ex_len > max_ex_len)
 			max_ex_len = ex_len;
 	}
+
+	if (max_ex_len > 0) {
+		max_ex_len += sizeof(struct cme_inst_ring_list);
+		max_ex_len = ALIGN_UP(max_ex_len, 32);
+	}
+
+	for (ex = 0; ex < MAX_CMES_PER_CHIP; ++ex) {
+		// TODO: update with sizeof(LocalPstateParmBlock) when it's defined
+		const uint32_t ex_offset = ex * (max_ex_len + ALIGN_UP(616, 32));
+
+		uint8_t *start = &homer->cpmr.cme_sram_region[*ring_len + ex_offset];
+		struct cme_inst_ring_list *tmp = (void *)start;
+		uint8_t *payload = tmp->payload;
+
+		uint32_t i = 0;
+
+		for (i = 0; i < MAX_CORES_PER_EX; ++i) {
+			const uint32_t core = ex * MAX_CORES_PER_EX + i;
+
+			uint32_t ring_size = MAX_RING_BUF_SIZE;
+
+			if (!IS_EC_FUNCTIONAL(core, cores))
+				continue;
+
+			if ((payload - start) % 8 != 0)
+				payload = start + ALIGN_UP(payload - start, 8);
+
+			if (!tor_access_ring(ring_data->rings_buf, EC_REPR,
+					     PT_CME, RV_BASE,
+					     EC00_CHIPLET_ID + core,
+					     payload,
+					     &ring_size, GET_RING_DATA))
+				continue;
+
+			tmp->ring[i] = payload - start;
+			payload += ALIGN_UP(ring_size, 8);
+		}
+	}
+
+	*ring_len = max_ex_len;
 }
 
 static void layout_rings_for_cme(struct homer_st *homer,
