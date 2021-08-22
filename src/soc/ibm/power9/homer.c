@@ -42,6 +42,16 @@ struct sgpe_cmn_ring_list {
 	uint8_t payload[];
 };
 
+struct sgpe_inst_ring_list {
+	/* For each quad, in order:
+	   EQ_REPR0, EX0_L3_REPR, EX1_L3_REPR, EX0_L2_REPR, EX1_L2_REPR,
+	   EX0_L3_REFR_REPR, EX1_L3_REFR_REPR, EX0_L3_REFR_TIME,
+	   EX1_L3_REFR_TIME, 3 reserved. */
+	uint16_t ring[MAX_QUADS_PER_CHIP][12];
+
+	uint8_t payload[];
+};
+
 enum operation_type {
 	COPY,
 	FIND
@@ -1162,13 +1172,90 @@ static void layout_cmn_rings_for_sgpe(struct homer_st *homer,
 		offsetof(struct qpmr_st, sgpe.sram_image) + qpmr_hdr->img_len;
 }
 
+static void layout_inst_rings_for_sgpe(struct homer_st *homer,
+				       struct ring_data *ring_data,
+				       uint64_t cores,
+				       enum ring_variant ring_variant)
+{
+	struct qpmr_header *qpmr_hdr = &homer->qpmr.sgpe.header;
+	uint32_t inst_rings_offset = qpmr_hdr->img_len + qpmr_hdr->common_ring_len;
+
+	uint8_t *start = &homer->qpmr.sgpe.sram_image[inst_rings_offset];
+	struct sgpe_inst_ring_list *tmp = (void *)start;
+	uint8_t *payload = tmp->payload;
+
+	/* It's EQ_REPR and three pairs of EX rings */
+	const enum ring_id ring_ids[] = {
+		EQ_REPR, EX_L3_REPR, EX_L3_REPR, EX_L2_REPR, EX_L2_REPR,
+		EX_L3_REFR_REPR, EX_L3_REFR_REPR, EX_L3_REFR_TIME,
+		EX_L3_REFR_TIME
+	};
+
+	uint8_t quad = 0;
+
+	for (quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		uint8_t i;
+
+		/* Skip non-functional quads */
+		if (!IS_EQ_FUNCTIONAL(quad, cores))
+			continue;
+
+		for (i = 0; i < ARRAY_SIZE(ring_ids); ++i) {
+			const enum ring_id id = ring_ids[i];
+
+			uint32_t ring_size = MAX_RING_BUF_SIZE;
+
+			/* Despite the constant, this is not a SCOM chiplet ID,
+			   it's just used as a base value */
+			uint8_t instance_id = EP00_CHIPLET_ID + quad;
+			if (i != 0) {
+				instance_id += quad;
+				if (i % 2 == 0)
+					++instance_id;
+			}
+
+			if ((payload - start) % 8 != 0)
+				payload = start + ALIGN_UP(payload - start, 8);
+
+			if (!tor_access_ring(ring_data->rings_buf, id, PT_SGPE,
+					     ring_variant, instance_id,
+					     payload, &ring_size, GET_RING_DATA))
+				continue;
+
+			tmp->ring[quad][i] = payload - start;
+			payload += ALIGN_UP(ring_size, 8);
+		}
+	}
+
+	qpmr_hdr->spec_ring_offset = qpmr_hdr->common_ring_offset + qpmr_hdr->common_ring_len;
+	qpmr_hdr->spec_ring_len = payload - start;
+}
+
 static void layout_rings_for_sgpe(struct homer_st *homer,
 				  struct ring_data *ring_data,
 				  struct xip_sgpe_header *sgpe,
 				  uint64_t cores,
 				  enum ring_variant ring_variant)
 {
+	struct qpmr_header *qpmr_hdr = &homer->qpmr.sgpe.header;
+	struct sgpe_img_header *sgpe_img_hdr =
+		(void *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE];
+
 	layout_cmn_rings_for_sgpe(homer, ring_data, ring_variant);
+	layout_inst_rings_for_sgpe(homer, ring_data, cores, RV_BASE);
+
+	if (qpmr_hdr->common_ring_len == 0) {
+		/* If quad common rings don't exist, ensure its offset in image
+		   header is zero */
+		sgpe_img_hdr->cmn_ring_occ_offset = 0;
+	}
+
+	if (qpmr_hdr->spec_ring_len > 0) {
+		sgpe_img_hdr->spec_ring_occ_offset = qpmr_hdr->img_len
+						   + qpmr_hdr->common_ring_len;
+		sgpe_img_hdr->scom_offset = sgpe_img_hdr->spec_ring_occ_offset
+					  + qpmr_hdr->spec_ring_len;
+	}
 }
 
 /*
