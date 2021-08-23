@@ -150,10 +150,7 @@ Device (EC0)
 	Method (_Q14, 0, NotSerialized) // Airplane Mode
 	{
 		Debug = "EC: Airplane Mode"
-		// Only send HIDD message when hardware airplane mode not in use
-		If (ECOS == 2) {
-			^^^^HIDD.HPEM (8)
-		}
+		^^^^HIDD.HPEM (8)
 	}
 
 	Method (_Q15, 0, NotSerialized) // Suspend Button
