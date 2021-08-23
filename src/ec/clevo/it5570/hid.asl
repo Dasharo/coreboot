@@ -15,14 +15,7 @@ Device (HIDD)
     Name (BIST, Zero)
     Method (_STA, 0, Serialized)  // _STA: Status
     {
-	If ((OSYS < 0x07DC))
-	{
-	    Return (Zero)
-	}
-	Else
-	{
-	    Return (0x0F)
-	}
+        Return (0x0F)
     }
 
     Method (_DSM, 4, Serialized)  // _DSM: Device-Specific Method
