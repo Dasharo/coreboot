@@ -12,12 +12,13 @@ Scope (\_SB) {
 	#include <ec/clevo/it5570/ac.asl>
 	#include <ec/clevo/it5570/battery.asl>
 	#include <ec/clevo/it5570/buttons.asl>
-	#include <ec/clevo/it5570/hid.asl>
 	#include <ec/clevo/it5570/lid.asl>
 
 	Scope (PCI0.LPCB) {
 		#include <ec/clevo/it5570/ec.asl>
 	}
+
+	#include "hid.asl"
 }
 
 Scope (_GPE) {
