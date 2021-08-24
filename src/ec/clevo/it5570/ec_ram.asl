@@ -190,3 +190,10 @@ Field (ERAM, ByteAcc, Lock, Preserve)
 	FBF2,   8,
 	FBF3,   8
 }
+
+OperationRegion (SIO, SystemIO, 0x2e, 0x02)
+Field (SIO, ByteAcc, Lock, Preserve)
+{
+	SIOI,   8,
+	SIOD,   8
+}
