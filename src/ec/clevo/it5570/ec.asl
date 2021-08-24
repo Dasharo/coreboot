@@ -20,6 +20,12 @@ Device (EC0)
 			0x00,               // Alignment
 			0x01,               // Length
 			)
+		IO (Decode16,
+			0x002e,             // Range Minimum
+			0x002e,             // Range Maximum
+			0x00,               // Alignment
+			0x02,               // Length
+			)
 	})
 
 	#include "ec_ram.asl"
@@ -72,6 +78,41 @@ Device (EC0)
 
 			Sleep (1000)
 		}
+	}
+
+	Method (I2ER, 1, NotSerialized)
+	{
+		SIOI = 0x2e
+		SIOD = 0x11
+		SIOI = 0x2f
+		SIOD = ((Arg0 >> 8) & 0xff)
+		SIOI = 0x2e
+		SIOD = 0x10
+		SIOI = 0x2f
+		SIOD = (Arg0 & 0xff)
+		SIOI = 0x2e
+		SIOD = 0x12
+		SIOI = 0x2f
+		Local0 = SIOD
+
+		Return (Local0)
+	}
+
+	Method (I2EW, 2, NotSerialized)
+	{
+		SIOI = 0x2e
+		SIOD = 0x11
+		SIOI = 0x2f
+		SIOD = ((Arg0 >> 8) & 0xff)
+		SIOI = 0x2e
+		SIOD = 0x10
+		SIOI = 0x2f
+		SIOD = (Arg0 & 0xff)
+		SIOI = 0x2e
+		SIOD = 0x12
+		SIOI = 0x2f
+
+		SIOD = Arg1;
 	}
 
 	Method (GKBL, 0, Serialized) // Get Keyboard LED
@@ -145,6 +186,9 @@ Device (EC0)
 	Method (_Q13, 0, NotSerialized) // Camera Toggle
 	{
 		Debug = "EC: Camera Toggle"
+		Local0 = I2ER (0x1604)
+		Local0 = Local0 ^ 0x02
+		I2EW (0x1604, Local0)
 	}
 
 	Method (_Q14, 0, NotSerialized) // Airplane Mode
