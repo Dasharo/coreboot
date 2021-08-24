@@ -172,13 +172,21 @@ Device (EC0)
 	Method (_Q11, 0, NotSerialized) // Brightness Down
 	{
 		Debug = "EC: Brightness Down"
-		^^^^HIDD.HPEM (20)
+
+		If (CondRefOf (\_SB.HIDD.HPEM))
+		{
+			\_SB.HIDD.HPEM (20)
+		}
 	}
 
 	Method (_Q12, 0, NotSerialized) // Brightness Up
 	{
 		Debug = "EC: Brightness Up"
-		^^^^HIDD.HPEM (19)
+
+		If (CondRefOf (\_SB.HIDD.HPEM))
+		{
+			\_SB.HIDD.HPEM (19)
+		}
 	}
 
 	Method (_Q13, 0, NotSerialized) // Camera Toggle
@@ -192,7 +200,11 @@ Device (EC0)
 	Method (_Q14, 0, NotSerialized) // Airplane Mode
 	{
 		Debug = "EC: Airplane Mode"
-		^^^^HIDD.HPEM (8)
+
+		If (CondRefOf (\_SB.HIDD.HPEM))
+		{
+			\_SB.HIDD.HPEM (8)
+		}
 	}
 
 	Method (_Q15, 0, NotSerialized) // Suspend Button
