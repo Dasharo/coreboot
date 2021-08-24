@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-OperationRegion (ERAM, SystemMemory, CONFIG_EC_CLEVO_IT5570_RAM_BASE, 0x400)
+OperationRegion (ERAM, EmbeddedControl, CONFIG_EC_CLEVO_IT5570_RAM_BASE, 0x400)
 Field (ERAM, ByteAcc, Lock, Preserve)
 {
 	NMSG,   8,
@@ -236,8 +236,8 @@ Field (ERAM, ByteAcc, Lock, Preserve)
 	SH33,   8,
 	SL33,   8,
 	Offset (0x2CF),
-	VER0,   8,
 	VER1,   8,
+	VER2,   8,
 	RSV1,   8,
 	RSV2,   8,
 	CCI0,   8,
