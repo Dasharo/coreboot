@@ -1,5 +1,6 @@
 config EC_CLEVO_IT5570
 	bool
+	select EC_ACPI
 	help
 	  Clevo IT5570 EC
 
