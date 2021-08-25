@@ -8,6 +8,7 @@ config EC_CLEVO_IT5570_RAM_BASE
 	depends on EC_CLEVO_IT5570
 	hex
 	default 0xfe0b0100
+	help
 	  The base of LPC window that maps the EC RAM to host memory space.
 	  This is the ACPI address for EC RAM, the address programmed to registers
 	  is always rounded to the nearest 64K.
