@@ -10,16 +10,19 @@
 #define CLEVO_EC_CMD_ENABLE_ACPI_MODE	0x90
 #define CLEVO_EC_CMD_DISABLE_ACPI_MODE	0x91
 
-int clevo_it5570_ec_smi_apmc(int apmc)
+void clevo_it5570_ec_smi_apmc(int apmc)
 {
 	switch (apmc) {
 	case APM_CNT_ACPI_ENABLE:
-		return send_ec_command(CLEVO_EC_CMD_ENABLE_ACPI_MODE);
+		send_ec_command(CLEVO_EC_CMD_ENABLE_ACPI_MODE);
+		send_ec_command(0x98);
+		ec_clr_bit(0xe8, 2);
+		break;
 	case APM_CNT_ACPI_DISABLE:
-		return send_ec_command(CLEVO_EC_CMD_DISABLE_ACPI_MODE);
+		send_ec_command(CLEVO_EC_CMD_DISABLE_ACPI_MODE);
+		break;
 	default:
 		break;
 	}
 
-	return 0;
 }
