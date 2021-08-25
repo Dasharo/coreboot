@@ -35,10 +35,10 @@ static uint8_t i2ec_direct_read(uint16_t addr)
 {
 	i2ec_depth2_write(I2EC_ADDR_H, addr >> 8);
 	i2ec_depth2_write(I2EC_ADDR_L, addr & 0xff);
-	return i2ec_depth2_read(I2EC_DATA)
+	return i2ec_depth2_read(I2EC_DATA);
 }
 
-static uint8_t i2ec_direct_write(uint16_t addr, uint8_t data)
+static void i2ec_direct_write(uint16_t addr, uint8_t data)
 {
 
 	i2ec_depth2_write(I2EC_ADDR_H, addr >> 8);
@@ -50,7 +50,7 @@ static void it5570_set_h2ram_base(struct device *dev, uint32_t addr)
 {
 	uint8_t *h2ram_base = (uint8_t *)&addr;
 
-	if (h2ram_base[3] != 0xfe || h2ram_base[3] != 0xff) {
+	if (h2ram_base[3] != 0xfe && h2ram_base[3] != 0xff) {
 		printk(BIOS_ERR, "ERROR: Invalid H2RAM memory window base\n");
 		return;
 	}
