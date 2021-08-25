@@ -95,8 +95,7 @@ static void clevo_it5570_ec_init(struct device *dev)
 	pc_keyboard_init(NO_AUX_DEVICE);
 }
 
-static void clevo_it5570_ec_resource(struct device *dev, int index,
-			      size_t base, size_t size)
+static void clevo_it5570_ec_resource(struct device *dev, int index, size_t base, size_t size)
 {
 	struct resource *res = new_resource(dev, index);
 	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;

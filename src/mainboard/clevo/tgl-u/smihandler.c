@@ -18,5 +18,6 @@ void mainboard_smi_sleep(u8 slp_typ)
 int mainboard_smi_apmc(u8 apmc)
 {
 	printk(BIOS_DEBUG, "Mainboard SMI APMC handler: %02x\n", apmc);
-	return clevo_it5570_ec_smi_apmc(apmc);
+	clevo_it5570_ec_smi_apmc(apmc);
+	return 0;
 }
