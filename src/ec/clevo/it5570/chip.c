@@ -20,7 +20,7 @@ static void i2ec_depth2_write(uint8_t index, uint8_t data)
 	outb(0x2e,0x2e);
 	outb(index, 0x2f);
 	outb(0x2f, 0x2e);
-	outb(data, 0x2f);	
+	outb(data, 0x2f);
 }
 
 static uint8_t i2ec_depth2_read(uint8_t index)
@@ -28,9 +28,8 @@ static uint8_t i2ec_depth2_read(uint8_t index)
 	outb(0x2e,0x2e);
 	outb(index, 0x2f);
 	outb(0x2f, 0x2e);
-	return inb(0x2f);	
+	return inb(0x2f);
 }
-
 
 static uint8_t i2ec_direct_read(uint16_t addr)
 {
@@ -44,10 +43,8 @@ static uint8_t i2ec_direct_write(uint16_t addr, uint8_t data)
 
 	i2ec_depth2_write(I2EC_ADDR_H, addr >> 8);
 	i2ec_depth2_write(I2EC_ADDR_L, addr & 0xff);
-
-	return i2ec_depth2_write(I2EC_DATA, data);
+	i2ec_depth2_write(I2EC_DATA, data);
 }
-
 
 static void it5570_set_h2ram_base(struct device *dev, uint32_t addr)
 {
@@ -76,7 +73,6 @@ static void it5570_set_h2ram_base(struct device *dev, uint32_t addr)
 
 	pnp_exit_conf_mode(dev);
 }
-
 
 static void clevo_it5570_ec_init(struct device *dev)
 {
