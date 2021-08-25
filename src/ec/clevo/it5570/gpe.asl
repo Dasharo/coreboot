@@ -1,6 +1,4 @@
-/* Initially copied from System76: src/mainboard/system76/cml-u/acpi */
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* This file is part of the coreboot project. */
 
 Method (_L02, 0, Serialized) {
 	Debug = Concatenate("GPE_L02: ", ToHexString(\_SB.PCI0.LPCB.EC0.WFNO))
