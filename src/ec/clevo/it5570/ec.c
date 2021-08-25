@@ -5,6 +5,8 @@
 #include <cpu/x86/smm.h>
 #include <ec/acpi/ec.h>
 
+#include "ec.h"
+
 #define CLEVO_EC_CMD_ENABLE_ACPI_MODE	0x90
 #define CLEVO_EC_CMD_DISABLE_ACPI_MODE	0x91
 
