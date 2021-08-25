@@ -2,7 +2,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* This file is part of the coreboot project. */
 
-// GPP_E2 SCI
 Method (_L02, 0, Serialized) {
 	Debug = Concatenate("GPE_L02: ", ToHexString(\_SB.PCI0.LPCB.EC0.WFNO))
 	If (\_SB.PCI0.LPCB.EC0.ECOK) {
