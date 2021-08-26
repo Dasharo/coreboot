@@ -17,10 +17,7 @@ build:
     - chmod 644 ~/.ssh/known_hosts
     - git submodule update --init --recursive --checkout
   script:
-    - cp configs/config.clevo_nv41mz .config
-    - make olddefconfig
-    - make -j $(nproc)
+    - ./build.sh
   artifacts:
-    name: coreboot
     paths:
-      - build/coreboot.rom
+      - dasharo*.tar.gz
