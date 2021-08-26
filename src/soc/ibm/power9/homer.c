@@ -14,6 +14,7 @@
 
 #include "chip.h"
 #include "homer.h"
+#include "ops.h"
 #include "tor.h"
 #include "xip.h"
 
@@ -226,16 +227,6 @@ static void build_sgpe(struct homer_st *homer, struct xip_sgpe_header *sgpe,
 }
 
 static const uint32_t _SMF = 0x5F534D46; // "_SMF"
-
-static const uint32_t ATTN_OP             = 0x00000200;
-static const uint32_t BLR_OP              = 0x4E800020;
-static const uint32_t ORI_OP              = 0x60000000;
-static const uint32_t SKIP_SPR_REST_INST  = 0x4800001C;
-static const uint32_t MR_R0_TO_R10_OP     = 0x7C0A0378;
-static const uint32_t MR_R0_TO_R21_OP     = 0x7C150378;
-static const uint32_t MR_R0_TO_R9_OP      = 0x7C090378;
-static const uint32_t MTLR_R30_OP         = 0x7FC803A6;
-static const uint32_t MFLR_R30_OP         = 0x7FC802A6;
 
 static const uint32_t init_cpureg_template[] = {
 	0x63000000, /* ori %r24, %r0, 0        */ /* |= spr, key for lookup      */
