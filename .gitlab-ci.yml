@@ -1,90 +1,12 @@
-stages:
-  - build
-  - sign
-  - upload
-
 build:
   image: coreboot/coreboot-sdk:1.52
-  stage: build
   tags:
    - local
-  variables:
-      GIT_SUBMODULE_STRATEGY: recursive
-  before_script:
-    # SSH key setup
-    - eval $(ssh-agent -s)
-    # It fails with following, because we are running as a user in container?
-    # changing permissions of '/builds/3mdeb/novacustom/coreboot.tmp/GITLAB_SSH_PRIVATE_KEY': Operation not permitted
-    # - chmod 600 $GITLAB_SSH_PRIVATE_KEY
-    - ssh-add $GITLAB_SSH_PRIVATE_KEY
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-      # update submodules
-    - git submodule update --init --recursive --checkout
-    - git config --global http.sslVerify "false"
   script:
-    - ./build.sh build
+    - cp configs/config.clevo_nv41mz .config
+    - make olddefconfig
+    - make -j $(nproc)
   artifacts:
-    name: "dasharo-novacustom-nv41mz-$CI_COMMIT_REF_NAME"
+    name: coreboot
     paths:
-      - artifacts/*
-
-sign:
-  image: coreboot/coreboot-sdk:1.52
-  stage: sign
-  tags:
-   - local
-  variables:
-      GIT_SUBMODULE_STRATEGY: recursive
-  before_script:
-    # SSH key setup
-    - eval $(ssh-agent -s)
-    # It fails with following, because we are running as a user in container?
-    # changing permissions of '/builds/3mdeb/novacustom/coreboot.tmp/GITLAB_SSH_PRIVATE_KEY': Operation not permitted
-    # - chmod 600 $GITLAB_SSH_PRIVATE_KEY
-    - ssh-add $GITLAB_SSH_PRIVATE_KEY
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-    # GPG key setup
-    - echo $GITLAB_NOVACUSTOM_GPG_PRIVATE_KEY | base64 --decode | gpg --import --no-tty --batch --yes
-  script:
-    - ./build.sh sign
-  artifacts:
-    name: "dasharo-novacustom-nv41mz-$CI_COMMIT_REF_NAME"
-    paths:
-      - artifacts/*
-
-upload:
-  image: python:3.9.7-slim
-  stage: upload
-  tags:
-   - local
-  variables:
-      GIT_SUBMODULE_STRATEGY: recursive
-  only:
-   - tags
-  before_script:
-    - apt-get update && apt-get install -y curl openssh-client git make
-    - eval $(ssh-agent -s)
-    - chmod 600 $GITLAB_SSH_PRIVATE_KEY
-    - ssh-add $GITLAB_SSH_PRIVATE_KEY
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-    - git clone --branch master git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
-    - pip install -r ./dasharo-templates/newsletter/generator/requirements.txt
-      # update submodules
-    - git submodule update --init --recursive --checkout
-    - make -C payloads/external/tianocore update
-  script:
-    - ./build.sh upload
-    - ./dasharo-templates/newsletter/generator/data.py
-  artifacts:
-    name: "dasharo-novacustom-nv41mz-$CI_COMMIT_REF_NAME"
-    paths:
-      - data.yaml
+      - build/coreboot.rom
