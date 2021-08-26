@@ -381,14 +381,19 @@ static int smbios_write_type0(unsigned long *current, int handle)
 {
 	struct smbios_type0 *t = (struct smbios_type0 *)*current;
 	int len = sizeof(struct smbios_type0);
+	char bversion[100];
 
 	memset(t, 0, sizeof(struct smbios_type0));
 	t->type = SMBIOS_BIOS_INFORMATION;
 	t->handle = handle;
 	t->length = len - 2;
 
-	t->vendor = smbios_add_string(t->eos, "coreboot");
+	t->vendor = smbios_add_string(t->eos, "3mdeb Embedded Systems Consulting");
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
+
+	snprintf(bversion, sizeof(bversion), "Dasharo %s, coreboot %s",
+		 coreboot_version, get_bios_version());
+	t->bios_version = smbios_add_string(t->eos, bversion);
 
 	if (CONFIG(CHROMEOS_NVS)) {
 		uintptr_t version_address = (uintptr_t)t->eos;
@@ -396,7 +401,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 		version_address += (u32)smbios_string_table_len(t->eos) - 1;
 		smbios_type0_bios_version(version_address);
 	}
-	t->bios_version = smbios_add_string(t->eos, get_bios_version());
+
 	uint32_t rom_size = CONFIG_ROM_SIZE;
 	rom_size = MIN(CONFIG_ROM_SIZE, 16 * MiB);
 	t->bios_rom_size = (rom_size / 65535) - 1;
