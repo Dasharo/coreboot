@@ -1,9 +1,16 @@
+stages:
+  - build
+
 build:
   image: coreboot/coreboot-sdk:1.52
+  stage: build
   tags:
    - local
   variables:
       GIT_SUBMODULE_STRATEGY: recursive
+  before_script:
+    - eval $(ssh-agent -s)
+    - ssh-add $GITLAB_SSH_PRIVATE_KEY
   script:
     - cp configs/config.clevo_nv41mz .config
     - make olddefconfig
