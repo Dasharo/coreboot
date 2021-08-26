@@ -2,6 +2,8 @@ build:
   image: coreboot/coreboot-sdk:1.52
   tags:
    - local
+  variables:
+      GIT_SUBMODULE_STRATEGY: recursive
   script:
     - cp configs/config.clevo_nv41mz .config
     - make olddefconfig
