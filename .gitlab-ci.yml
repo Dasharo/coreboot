@@ -15,6 +15,7 @@ build:
     - chmod 700 ~/.ssh
     - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
+    - git submodule update --init --recursive --checkout
   script:
     - cp configs/config.clevo_nv41mz .config
     - make olddefconfig
