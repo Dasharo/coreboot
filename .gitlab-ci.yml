@@ -9,15 +9,21 @@ build:
   variables:
       GIT_SUBMODULE_STRATEGY: recursive
   before_script:
+    # SSH key setup
     - eval $(ssh-agent -s)
     - ssh-add $GITLAB_SSH_PRIVATE_KEY
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
+    # GPG key setup
+    - echo $GITLAB_NOVACUSTOM_GPG_PRIVATE_KEY | base64 --decode | gpg --import --no-tty --batch --yes
+      # update submodules
     - git submodule update --init --recursive --checkout
   script:
-    - ./build.sh
+    - ./build.sh build
+    - ./build.sh sign
   artifacts:
+    name: "dasharo-novacustom-nv41mz-$CI_COMMIT_REF_NAME"
     paths:
-      - dasharo*.tar.gz
+      - artifacts/*
