@@ -5,8 +5,8 @@ export SHELL := env bash
 
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
-project_git_repo=https://github.com/mrchromebox/edk2
-project_git_branch=coreboot_fb
+project_git_repo=https://github.com/Dasharo/edk2
+project_git_branch=dasharo
 upstream_git_repo=https://github.com/tianocore/edk2
 
 BUILD_STR = -a IA32 -a X64 -t COREBOOT
@@ -37,6 +37,10 @@ endif
 # BOOT_MANAGER_ESCAPE		= FALSE
 ifeq ($(CONFIG_TIANOCORE_BOOT_MANAGER_ESCAPE),y)
 BUILD_STR += -D BOOT_MANAGER_ESCAPE=TRUE
+endif
+
+ifeq ($(CONFIG_TIANOCORE_ENABLE_IPXE),y)
+build_flavor+= -D NETWORK_IPXE=TRUE
 endif
 
 ifeq ($(CONFIG_TIANOCORE_ENABLE_IPXE),y)
