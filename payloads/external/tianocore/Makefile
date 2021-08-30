@@ -5,8 +5,8 @@ export SHELL := env bash
 
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
-project_git_repo=https://github.com/mrchromebox/edk2
-project_git_branch=coreboot_fb
+project_git_repo=https://github.com/Dasharo/edk2
+project_git_branch=dasharo
 upstream_git_repo=https://github.com/tianocore/edk2
 
 build_flavor=-D BOOTLOADER=COREBOOT -D PCIE_BASE=$(CONFIG_MMCONF_BASE_ADDRESS) -DPS2_KEYBOARD_ENABLE
@@ -22,7 +22,6 @@ TAG=$(CONFIG_TIANOCORE_REVISION_ID)
 endif
 
 export EDK_TOOLS_PATH=$(project_dir)/BaseTools
-
 ifeq ($(CONFIG_TIANOCORE_DEBUG),y)
 BUILD_TYPE=DEBUG
 else
@@ -33,15 +32,41 @@ ifeq ($(CONFIG_TIANOCORE_CBMEM_LOGGING),y)
 CBMEM=-D USE_CBMEM_FOR_CONSOLE=TRUE
 endif
 
-ifeq ($(CONFIG_TIANOCORE_ABOVE_4G_MEMORY),y)
-4G=-D ABOVE_4G_MEMORY=TRUE
-else
-4G=-D ABOVE_4G_MEMORY=FALSE
+ifeq ($(CONFIG_TIANOCORE_ENABLE_IPXE),y)
+build_flavor+= -D NETWORK_IPXE=TRUE
 endif
 
+ifeq ($(CONFIG_TIANOCORE_SERIAL),y)
+build_flavor+= -D SERIAL_TERMINAL=TRUE
+endif
+
+ifeq ($(CONFIG_TIANOCORE_SECURE_BOOT),y)
+build_flavor+= -D SECURE_BOOT_ENABLE=TRUE
+endif
+
+ifeq ($(CONFIG_TIANOCORE_SATA_PASSWORD),y)
+build_flavor+= -D SATA_PASSWORD_ENABLE=TRUE
+endif
+
+ifeq ($(CONFIG_TIANOCORE_OPAL_PASSWORD),y)
+build_flavor+= -D OPAL_PASSWORD_ENABLE=TRUE
+endif
+
+ifeq ($(CONFIG_TIANOCORE_TPM_ENABLE),y)
+build_flavor+= -D TPM_ENABLE=TRUE
+endif
+
+MENU_KEY=-D BOOT_MENU_KEY=$(CONFIG_TIANOCORE_BOOT_MENU_KEY)
+SETUP_KEY=-D SETUP_MENU_KEY=$(CONFIG_TIANOCORE_SETUP_MENU_KEY)
 TIMEOUT=-D PLATFORM_BOOT_TIMEOUT=$(CONFIG_TIANOCORE_BOOT_TIMEOUT)
 
-BUILD_STR=-q -a IA32 -a X64 -p UefiPayloadPkg/UefiPayloadPkg.dsc -t COREBOOT -b $(BUILD_TYPE) $(TIMEOUT) $(build_flavor) $(CBMEM) $(4G)
+ifeq ($(CONFIG_TIANOCORE_TARGET_IA32), y)
+ARCH=-a IA32 -p $(bootloader)/$(bootloader)Ia32.dsc
+else
+ARCH=-a IA32 -a X64 -p $(bootloader)/$(bootloader)Ia32X64.dsc
+endif
+
+BUILD_STR=-q $(ARCH) -t COREBOOT -b $(BUILD_TYPE) $(TIMER) $(TIMEOUT) $(MENU_KEY) $(SETUP_KEY) $(build_flavor)
 
 all: clean build
 
