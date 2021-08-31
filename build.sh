@@ -39,7 +39,9 @@ build() {
   make -j "$(nproc)"
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
-  sha256sum "${ARTIFACTS_DIR}/${FW_FILE}" > "${ARTIFACTS_DIR}/${HASH_FILE}"
+  cd "${ARTIFACTS_DIR}"
+  sha256sum "${FW_FILE}" > "${HASH_FILE}"
+  cd -
 }
 
 sign() {
