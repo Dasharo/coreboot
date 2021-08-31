@@ -269,7 +269,7 @@ const uint8_t *vpd_find_kwd(const uint8_t *record, const char *record_name,
 	uint16_t record_size = 0;
 
 	if (strlen(kwd_name) != VPD_KWD_NAME_LEN)
-		die("Keyword name has wrong length!\n");
+		die("Keyword name has wrong length: %s!\n", kwd_name);
 
 	memcpy(&record_size, &record[offset], sizeof(record_size));
 	offset += VPD_RECORD_SIZE_LEN;

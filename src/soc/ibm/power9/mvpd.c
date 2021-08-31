@@ -41,7 +41,8 @@ static bool is_end_of_rings(const uint8_t *buf_left, uint32_t len_left)
 }
 
 /* Finds specific ring by combination of chiplet and ring ids */
-static struct ring_hdr *find_ring_step(uint8_t chiplet_id, uint16_t ring_id,
+static struct ring_hdr *find_ring_step(uint8_t chiplet_id, uint8_t even_odd,
+				       uint16_t ring_id,
 				       const uint8_t **buf_left,
 				       uint32_t *len_left)
 {
@@ -55,7 +56,7 @@ static struct ring_hdr *find_ring_step(uint8_t chiplet_id, uint16_t ring_id,
 	*buf_left += be16toh(hdr->size);
 	*len_left -= be16toh(hdr->size);
 
-	switch (even_odd_mask) {
+	switch (ring_id) {
 		case EX_L3_REPR: even_odd_mask = 0x00001000; break;
 		case EX_L2_REPR: even_odd_mask = 0x00000400; break;
 		case EX_L3_REFR_TIME:
@@ -63,6 +64,8 @@ static struct ring_hdr *find_ring_step(uint8_t chiplet_id, uint16_t ring_id,
 
 		default: even_odd_mask = 0; break;
 	}
+
+	even_odd_mask >>= even_odd;
 
 	if (be16toh(hdr->ring_id) != ring_id)
 		return NULL;
@@ -75,16 +78,17 @@ static struct ring_hdr *find_ring_step(uint8_t chiplet_id, uint16_t ring_id,
 }
 
 /* Searches for a specific ring in a keyword */
-static struct ring_hdr *find_ring(uint8_t chiplet_id, uint16_t ring_id,
-				  const uint8_t *buf, uint32_t buf_len)
+static struct ring_hdr *find_ring(uint8_t chiplet_id, uint8_t even_odd,
+				  uint16_t ring_id, const uint8_t *buf,
+				  uint32_t buf_len)
 {
 	/* Skip version number */
 	--buf_len;
 	++buf;
 
 	while (!is_end_of_rings(buf, buf_len)) {
-		struct ring_hdr *ring = find_ring_step(chiplet_id, ring_id,
-						       &buf, &buf_len);
+		struct ring_hdr *ring = find_ring_step(chiplet_id, even_odd,
+						       ring_id, &buf, &buf_len);
 		if (ring != NULL)
 			return ring;
 	}
@@ -197,8 +201,8 @@ const struct voltage_kwd *mvpd_get_voltage_data(int lrp)
 
 /* Finds a specific ring in MVPD partition and extracts it */
 bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
-		       uint8_t chiplet_id, uint16_t ring_id, uint8_t *buf,
-		       uint32_t buf_size)
+		       uint8_t chiplet_id, uint8_t even_odd, uint16_t ring_id,
+		       uint8_t *buf, uint32_t buf_size)
 {
 	void *mmaped_data = NULL;
 
@@ -216,7 +220,7 @@ bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
 		die("Failed to find %s keyword in %s!\n", kwd_name,
 		    record_name);
 
-	ring = find_ring(chiplet_id, ring_id, rings, rings_size);
+	ring = find_ring(chiplet_id, even_odd, ring_id, rings, rings_size);
 	if (ring == NULL) {
 		if (rdev_munmap(mvpd_device_ro(), mmaped_data))
 			die("Failed to unmap %s record!\n", record_name);
