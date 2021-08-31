@@ -6,6 +6,11 @@ if [ $# -ne 1 ]; then
 	exit 0
 fi
 
+if [ ! -f ".config" ]; then
+	echo "File .config does not exist. Create a configuration file first."
+	exit 1
+fi
+
 path=custom_bootsplash.bmp
 cp $1 $path
 
