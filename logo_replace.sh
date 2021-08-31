@@ -28,3 +28,5 @@ fi
 
 echo "Boot logo configuration updated. Rebuild coreboot to apply changes."
 
+# to ensure tianocore gets rebuilt from scratch
+make clean
