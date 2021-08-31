@@ -64,7 +64,7 @@ bool mvpd_extract_keyword(const char *record_name, const char *kwd_name,
 
 /* Finds a specific ring in MVPD partition and extracts it */
 bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
-		       uint8_t chiplet_id, uint16_t ring_id, uint8_t *buf,
-		       uint32_t buf_size);
+		       uint8_t chiplet_id, uint8_t even_odd, uint16_t ring_id,
+		       uint8_t *buf, uint32_t buf_size);
 
 #endif /* CPU_PPC64_MVPD_H */

@@ -5,6 +5,7 @@
 #include <commonlib/region.h>
 #include <console/console.h>
 #include <cpu/power/mvpd.h>
+#include <cpu/power/powerbus.h>
 #include <cpu/power/scom.h>
 #include <cpu/power/spr.h>
 #include <string.h>		// memset, memcpy
@@ -16,6 +17,206 @@
 #include "xip.h"
 
 #include <lib.h>
+
+struct ring_data {
+	void *rings_buf;
+	void *work_buf1;
+	void *work_buf2;
+	void *work_buf3;
+	uint32_t rings_buf_size;
+	uint32_t work_buf1_size;
+	uint32_t work_buf2_size;
+	uint32_t work_buf3_size;
+};
+
+struct cme_cmn_ring_list {
+	uint16_t ring[8]; // In order: EC_FUNC, EC_GPTR, EC_TIME, EC_MODE, EC_ABST, 3 reserved
+	uint8_t payload[];
+};
+
+struct cme_inst_ring_list {
+	uint16_t ring[4]; // In order: EC_REPR0, EC_REPR1, 2 reserved
+	uint8_t payload[];
+};
+
+struct sgpe_cmn_ring_list {
+	uint16_t ring[64]; // See the list in layout_cmn_rings_for_sgpe() skipping EQ_ANA_BNDY, 3 reserved
+	uint8_t payload[];
+};
+
+struct sgpe_inst_ring_list {
+	/* For each quad, in order:
+	 * EQ_REPR0, EX0_L3_REPR, EX1_L3_REPR, EX0_L2_REPR, EX1_L2_REPR,
+	 * EX0_L3_REFR_REPR, EX1_L3_REFR_REPR, EX0_L3_REFR_TIME,
+	 * EX1_L3_REFR_TIME, 3 reserved. */
+	uint16_t ring[MAX_QUADS_PER_CHIP][12];
+
+	uint8_t payload[];
+};
+
+#define NUM_OP_POINTS         4
+#define NUM_JUMP_VALUES       4
+#define NUM_THRESHOLD_POINTS  4
+#define VPD_NUM_SLOPES_REGION 3
+
+struct vpd_operating_point {
+	uint32_t vdd_mv;
+	uint32_t vcs_mv;
+	uint32_t idd_100ma;
+	uint32_t ics_100ma;
+	uint32_t frequency_mhz;
+	uint8_t  pstate;
+	uint8_t  pad[3];
+};
+
+struct sys_power_dist {
+	/* Impedance of the load line from a processor VDD VRM to the Processor Module pins. */
+	uint32_t loadline_uohm;
+
+	/* Impedance of the VDD distribution loss sense point to the circuit. */
+	uint32_t distloss_uohm;
+
+	/* Offset voltage to apply to the rail VRM distribution to the processor module. */
+	uint32_t distoffset_uv;
+};
+
+/* Percent bias applied to VPD operating points prior to interolation in 0.5 percent (hp). */
+struct vpd_bias {
+	int8_t vdd_ext_hp;
+	int8_t vdd_int_hp;
+	int8_t vdn_ext_hp;
+	int8_t vcs_ext_hp;
+	int8_t frequency_hp;
+};
+
+#define IVRM_ARRAY_SIZE 64
+
+struct ivrm_params {
+	/* Pwidth from 0.03125 to 1.96875 in 1/32 increments at Vin=Vin_Max */
+	uint8_t strength_lookup[IVRM_ARRAY_SIZE];
+
+	/* Scaling factor for the Vin_Adder calculation */
+	uint8_t vin_multiplier[IVRM_ARRAY_SIZE];
+
+	/* Vin_Max used in Vin_Adder calculation (in millivolts) */
+	uint16_t vin_max_mv;
+
+	/* Delay between steps. Maximum: 65.536us. */
+	uint16_t step_delay_ns;
+
+	/* Stabilization delay once target voltage has been reached. Maximum: 65.536us. */
+	uint16_t stablization_delay_ns;
+
+	/* Deadzone. Maximum: 255mV. Value of 0 is interpreted as 50mV. */
+	uint8_t deadzone_mv;
+
+	/* Pad to 8B */
+	uint8_t pad;
+};
+
+#define RESCLK_FREQ_REGIONS 8
+#define RESCLK_STEPS        64
+#define RESCLK_L3_STEPS     4
+
+struct resonant_clocking {
+	/* Lower frequency of Resclk Regions */
+	uint8_t resclk_freq[RESCLK_FREQ_REGIONS];
+
+	/* Index into value array for the respective Resclk Region */
+	uint8_t resclk_index[RESCLK_FREQ_REGIONS];
+
+	/* Array containing the transition steps */
+	uint16_t steparray[RESCLK_STEPS];
+
+	/* Delay between steps. Maximum: 65.536us. */
+	uint16_t step_delay_ns;
+
+	/* L3 Clock Stepping Array */
+	uint8_t l3_steparray[RESCLK_L3_STEPS];
+
+	/* Resonant Clock Voltage Threshold. This value is used to choose the
+	 * appropriate L3 clock region setting. */
+	uint16_t l3_threshold_mv;
+};
+
+/* #W data points (version 2) */
+struct poundw_entry {
+	uint16_t ivdd_tdp_ac_current_10ma;
+	uint16_t ivdd_tdp_dc_current_10ma;
+	uint8_t  vdm_overvolt_small_thresholds;
+	uint8_t  vdm_large_extreme_thresholds;
+	uint8_t  vdm_normal_freq_drop;		// N_S and N_L Drop
+	uint8_t  vdm_normal_freq_return;	// L_S and S_N Return
+	uint8_t  vdm_vid_compare_ivid;
+	uint8_t  vdm_spare;
+};
+
+struct resistance_entry {
+	uint16_t r_package_common;
+	uint16_t r_quad;
+	uint16_t r_core;
+	uint16_t r_quad_header;
+	uint16_t r_core_header;
+};
+
+struct PoundW_data {
+	struct poundw_entry poundw[NUM_OP_POINTS];
+	struct resistance_entry resistance_data;
+	uint8_t undervolt_tested;
+	uint8_t reserved;
+	uint64_t reserved1;
+	uint8_t reserved2;
+};
+
+struct local_pstate_params {
+	/* Magic Number (the last byte of this number is the structure's version) */
+	uint64_t magic;
+
+	/* QM Flags */
+	uint16_t qmflags;
+
+	/* Operating points */
+	struct vpd_operating_point operating_points[NUM_OP_POINTS];
+
+	/* Loadlines and Distribution values for the VDD rail */
+	struct sys_power_dist vdd_sysparm;
+
+	/* External Biases */
+	struct vpd_bias ext_biases[NUM_OP_POINTS];
+
+	/* Internal Biases */
+	struct vpd_bias int_biases[NUM_OP_POINTS];
+
+	/* IVRM Data */
+	struct ivrm_params ivrm;
+
+	/* Resonant Clock Grid Management Setup */
+	struct resonant_clocking resclk;
+
+	/* VDM Data */
+	struct PoundW_data vpd_w_data;
+
+	/* DPLL pstate 0 value */
+	uint32_t dpll_pstate0_value;
+
+	/* Biased Compare VID operating points */
+	uint8_t vid_point_set[NUM_OP_POINTS];
+
+	/* Biased Threshold operation points */
+	uint8_t threshold_set[NUM_OP_POINTS][NUM_THRESHOLD_POINTS];
+
+	/* pstate-volt compare slopes */
+	int16_t PsVIDCompSlopes[VPD_NUM_SLOPES_REGION];
+
+	/* pstate-volt threshold slopes */
+	int16_t PsVDMThreshSlopes[VPD_NUM_SLOPES_REGION][NUM_THRESHOLD_POINTS];
+
+	/* Jump-value operating points */
+	uint8_t jump_value_set[NUM_OP_POINTS][NUM_JUMP_VALUES];
+
+	/* Jump-value slopes */
+	int16_t PsVDMJumpSlopes[VPD_NUM_SLOPES_REGION][NUM_JUMP_VALUES];
+};
 
 extern void mount_part_from_pnor(const char *part_name,
 				 struct mmap_helper_region_device *mdev);
@@ -887,36 +1088,353 @@ static void istep_16_1(int this_core)
 	//     p9_stop_save_scom() and others
 }
 
-static void getPpeScanRings(struct xip_hw_header *hw, uint8_t dd)
+static void get_ppe_scan_rings(struct xip_hw_header *hw, uint8_t dd,
+			       enum ppe_type ppe, struct ring_data *ring_data)
 {
-	static uint8_t ppe[16 * KiB];
-
-	static uint8_t buf1[MAX_RING_BUF_SIZE];
-	static uint8_t buf2[MAX_RING_BUF_SIZE];
-	static uint8_t buf3[MAX_RING_BUF_SIZE];
-
-	uint32_t ppe_size = sizeof(ppe);
+	const uint32_t max_rings_buf_size = ring_data->rings_buf_size;
 
 	struct tor_hdr *rings;
 	struct tor_hdr *overlays;
 
-	if (dd < 20)
-		die("DD must be at least 20!");
+	if (dd < 0x20)
+		die("DD must be at least 0x20!");
 	if (!hw->overlays.dd_support)
 		die("Overlays must support DD!");
 
 	copy_section(&rings, &hw->rings, hw, dd, FIND);
 	copy_section(&overlays, &hw->overlays, hw, dd, FIND);
 
-	tor_access_ring(rings, EC_TIME, PT_CME, 0, ppe, &ppe_size, GET_PPE_LEVEL_RINGS);
+	if (!tor_access_ring(rings, UNDEFINED_RING_ID, ppe, UNDEFINED_RING_VARIANT,
+			     UNDEFINED_INSTANCE_ID, ring_data->rings_buf,
+			     &ring_data->rings_buf_size, GET_PPE_LEVEL_RINGS))
+		die("Failed to access PPE level rings!");
 
-	printk(BIOS_EMERG, "original ppe_size = 0x%08x\n", ppe_size);
+	assert(ring_data->work_buf1_size == MAX_RING_BUF_SIZE);
+	assert(ring_data->work_buf2_size == MAX_RING_BUF_SIZE);
+	assert(ring_data->work_buf3_size == MAX_RING_BUF_SIZE);
 
-	tor_fetch_and_insert_vpd_rings((struct tor_hdr *)ppe, &ppe_size,
-				       sizeof(ppe), overlays,
-				       PT_CME, 32, buf1, buf2, buf3);
+	tor_fetch_and_insert_vpd_rings((struct tor_hdr *)ring_data->rings_buf,
+				       &ring_data->rings_buf_size, max_rings_buf_size,
+				       overlays, ppe,
+				       ring_data->work_buf1,
+				       ring_data->work_buf2,
+				       ring_data->work_buf3);
+}
 
-	printk(BIOS_EMERG, "new ppe_size = 0x%08x\n", ppe_size);
+static void layout_cmn_rings_for_cme(struct homer_st *homer,
+				     struct ring_data *ring_data,
+				     uint8_t ring_variant, uint32_t *ring_len)
+{
+	struct cme_cmn_ring_list *tmp =
+		(void *)&homer->cpmr.cme_sram_region[*ring_len];
+	uint8_t *start = (void *)tmp;
+	uint8_t *payload = tmp->payload;
+
+	uint32_t i = 0;
+	const enum ring_id ring_ids[] = { EC_FUNC, EC_GPTR, EC_TIME, EC_MODE };
+
+	for (i = 0; i < sizeof(ring_ids) / sizeof(ring_ids[0]); ++i) {
+		const enum ring_id id = ring_ids[i];
+
+		uint32_t ring_size = MAX_RING_BUF_SIZE;
+		uint8_t *ring_dst = start + ALIGN_UP(payload - start, 8);
+
+		uint8_t this_ring_variant = ring_variant;
+		if (id == EC_GPTR || id == EC_TIME)
+			this_ring_variant = RV_BASE;
+
+		if (!tor_access_ring(ring_data->rings_buf, id, PT_CME,
+				     this_ring_variant, EC00_CHIPLET_ID,
+				     ring_dst, &ring_size, GET_RING_DATA))
+			continue;
+
+		tmp->ring[i] = ring_dst - start;
+		payload = ring_dst + ALIGN_UP(ring_size, 8);
+	}
+
+	if (payload != tmp->payload)
+		*ring_len += payload - start;
+
+	*ring_len = ALIGN_UP(*ring_len, 8);
+}
+
+static void layout_inst_rings_for_cme(struct homer_st *homer,
+				      struct ring_data *ring_data,
+				      uint64_t cores,
+				      uint8_t ring_variant, uint32_t *ring_len)
+{
+	uint32_t max_ex_len = 0;
+
+	uint32_t ex = 0;
+
+	for (ex = 0; ex < MAX_CMES_PER_CHIP; ++ex) {
+		uint32_t i = 0;
+		uint32_t ex_len = 0;
+
+		for (i = 0; i < MAX_CORES_PER_EX; ++i) {
+			const uint32_t core = ex * MAX_CORES_PER_EX + i;
+
+			uint32_t ring_size = 0;
+
+			if (!IS_EC_FUNCTIONAL(core, cores))
+				continue;
+
+			ring_size = ring_data->work_buf1_size;
+			if (!tor_access_ring(ring_data->rings_buf, EC_REPR,
+					     PT_CME, RV_BASE,
+					     EC00_CHIPLET_ID + core,
+					     ring_data->work_buf1,
+					     &ring_size, GET_RING_DATA))
+			    continue;
+
+			ex_len += ALIGN_UP(ring_size, 8);
+		}
+
+		if (ex_len > max_ex_len)
+			max_ex_len = ex_len;
+	}
+
+	if (max_ex_len > 0) {
+		max_ex_len += sizeof(struct cme_inst_ring_list);
+		max_ex_len = ALIGN_UP(max_ex_len, 32);
+	}
+
+	for (ex = 0; ex < MAX_CMES_PER_CHIP; ++ex) {
+		const uint32_t ex_offset =
+			ex * (max_ex_len + ALIGN_UP(sizeof(struct local_pstate_params), 32));
+
+		uint8_t *start = &homer->cpmr.cme_sram_region[*ring_len + ex_offset];
+		struct cme_inst_ring_list *tmp = (void *)start;
+		uint8_t *payload = tmp->payload;
+
+		uint32_t i = 0;
+
+		for (i = 0; i < MAX_CORES_PER_EX; ++i) {
+			const uint32_t core = ex * MAX_CORES_PER_EX + i;
+
+			uint32_t ring_size = MAX_RING_BUF_SIZE;
+
+			if (!IS_EC_FUNCTIONAL(core, cores))
+				continue;
+
+			if ((payload - start) % 8 != 0)
+				payload = start + ALIGN_UP(payload - start, 8);
+
+			if (!tor_access_ring(ring_data->rings_buf, EC_REPR,
+					     PT_CME, RV_BASE,
+					     EC00_CHIPLET_ID + core,
+					     payload,
+					     &ring_size, GET_RING_DATA))
+			    continue;
+
+			tmp->ring[i] = payload - start;
+			payload += ALIGN_UP(ring_size, 8);
+		}
+	}
+
+	*ring_len = max_ex_len;
+}
+
+static void layout_rings_for_cme(struct homer_st *homer,
+				 struct ring_data *ring_data,
+				 uint64_t cores, uint8_t ring_variant)
+{
+	struct cpmr_header *cpmr_hdr = &homer->cpmr.header;
+	struct cme_img_header *cme_hdr =
+		(void *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE];
+
+	uint32_t ring_len = cme_hdr->hcode_offset + cme_hdr->hcode_len;
+
+	assert(be64toh(cpmr_hdr->magic) == CPMR_VDM_PER_QUAD);
+
+	layout_cmn_rings_for_cme(homer, ring_data, ring_variant, &ring_len);
+
+	cme_hdr->common_ring_len = ring_len - (cme_hdr->hcode_offset + cme_hdr->hcode_len);
+
+	// if common ring is empty, force offset to be 0
+	if (cme_hdr->common_ring_len == 0)
+		cme_hdr->common_ring_offset = 0;
+
+	ring_len = ALIGN_UP(ring_len, 32);
+
+	layout_inst_rings_for_cme(homer, ring_data, cores, RV_BASE, &ring_len);
+
+	if (ring_len != 0) {
+		cme_hdr->max_spec_ring_len = ALIGN_UP(ring_len, 32) / 32;
+		cme_hdr->core_spec_ring_offset = cpmr_hdr->cme_common_ring_offset + cpmr_hdr->cme_common_ring_len;
+	}
+}
+
+static enum ring_id resolve_eq_inex_bucket(void)
+{
+	switch (powerbus_cfg()->core_floor_ratio) {
+		case FABRIC_CORE_FLOOR_RATIO_RATIO_8_8:
+			return EQ_INEX_BUCKET_4;
+
+		case FABRIC_CORE_FLOOR_RATIO_RATIO_7_8:
+		case FABRIC_CORE_FLOOR_RATIO_RATIO_6_8:
+		case FABRIC_CORE_FLOOR_RATIO_RATIO_5_8:
+		case FABRIC_CORE_FLOOR_RATIO_RATIO_4_8:
+			return EQ_INEX_BUCKET_3;
+
+		case FABRIC_CORE_FLOOR_RATIO_RATIO_2_8:
+			return EQ_INEX_BUCKET_2;
+	}
+
+	die("Failed to resolve EQ_INEX_BUCKET_*!\n");
+}
+
+static void layout_cmn_rings_for_sgpe(struct homer_st *homer,
+				      struct ring_data *ring_data,
+				      uint8_t ring_variant)
+{
+	const enum ring_id ring_ids[] = {
+		EQ_FURE, EQ_GPTR, EQ_TIME, EQ_INEX, EX_L3_FURE, EX_L3_GPTR, EX_L3_TIME,
+		EX_L2_MODE, EX_L2_FURE, EX_L2_GPTR, EX_L2_TIME, EX_L3_REFR_FURE,
+		EX_L3_REFR_GPTR, EQ_ANA_FUNC, EQ_ANA_GPTR, EQ_DPLL_FUNC, EQ_DPLL_GPTR,
+		EQ_DPLL_MODE, EQ_ANA_BNDY_BUCKET_0, EQ_ANA_BNDY_BUCKET_1,
+		EQ_ANA_BNDY_BUCKET_2, EQ_ANA_BNDY_BUCKET_3, EQ_ANA_BNDY_BUCKET_4,
+		EQ_ANA_BNDY_BUCKET_5, EQ_ANA_BNDY_BUCKET_6, EQ_ANA_BNDY_BUCKET_7,
+		EQ_ANA_BNDY_BUCKET_8, EQ_ANA_BNDY_BUCKET_9, EQ_ANA_BNDY_BUCKET_10,
+		EQ_ANA_BNDY_BUCKET_11, EQ_ANA_BNDY_BUCKET_12, EQ_ANA_BNDY_BUCKET_13,
+		EQ_ANA_BNDY_BUCKET_14, EQ_ANA_BNDY_BUCKET_15, EQ_ANA_BNDY_BUCKET_16,
+		EQ_ANA_BNDY_BUCKET_17, EQ_ANA_BNDY_BUCKET_18, EQ_ANA_BNDY_BUCKET_19,
+		EQ_ANA_BNDY_BUCKET_20, EQ_ANA_BNDY_BUCKET_21, EQ_ANA_BNDY_BUCKET_22,
+		EQ_ANA_BNDY_BUCKET_23, EQ_ANA_BNDY_BUCKET_24, EQ_ANA_BNDY_BUCKET_25,
+		EQ_ANA_BNDY_BUCKET_L3DCC, EQ_ANA_MODE, EQ_ANA_BNDY_BUCKET_26,
+		EQ_ANA_BNDY_BUCKET_27, EQ_ANA_BNDY_BUCKET_28, EQ_ANA_BNDY_BUCKET_29,
+		EQ_ANA_BNDY_BUCKET_30, EQ_ANA_BNDY_BUCKET_31, EQ_ANA_BNDY_BUCKET_32,
+		EQ_ANA_BNDY_BUCKET_33, EQ_ANA_BNDY_BUCKET_34, EQ_ANA_BNDY_BUCKET_35,
+		EQ_ANA_BNDY_BUCKET_36, EQ_ANA_BNDY_BUCKET_37, EQ_ANA_BNDY_BUCKET_38,
+		EQ_ANA_BNDY_BUCKET_39, EQ_ANA_BNDY_BUCKET_40, EQ_ANA_BNDY_BUCKET_41
+	};
+
+	const enum ring_id eq_index_bucket_id = resolve_eq_inex_bucket();
+
+	struct qpmr_header *qpmr_hdr = &homer->qpmr.sgpe.header;
+	struct sgpe_cmn_ring_list *tmp =
+		(void *)&homer->qpmr.sgpe.sram_image[qpmr_hdr->img_len];
+	uint8_t *start = (void *)tmp;
+	uint8_t *payload = tmp->payload;
+
+	uint32_t i = 0;
+
+	for (i = 0; i < sizeof(ring_ids) / sizeof(ring_ids[0]); ++i) {
+		uint8_t this_ring_variant;
+		uint32_t ring_size = MAX_RING_BUF_SIZE;
+
+		enum ring_id id = ring_ids[i];
+		if (id == EQ_INEX)
+			id = eq_index_bucket_id;
+
+		this_ring_variant = ring_variant;
+		if (id == EQ_GPTR         || // EQ GPTR
+		    id == EQ_ANA_GPTR     ||
+		    id == EQ_DPLL_GPTR    ||
+		    id == EX_L3_GPTR      || // EX GPTR
+		    id == EX_L2_GPTR      ||
+		    id == EX_L3_REFR_GPTR ||
+		    id == EQ_TIME         || // EQ TIME
+		    id == EX_L3_TIME      || // EX TIME
+		    id == EX_L2_TIME)
+			this_ring_variant = RV_BASE;
+
+		if ((payload - start) % 8 != 0)
+			payload = start + ALIGN_UP(payload - start, 8);
+
+		if (!tor_access_ring(ring_data->rings_buf, id, PT_SGPE,
+				     this_ring_variant, EP00_CHIPLET_ID,
+				     payload, &ring_size, GET_RING_DATA))
+			continue;
+
+		tmp->ring[i] = payload - start;
+		payload += ALIGN_UP(ring_size, 8);
+	}
+
+	qpmr_hdr->common_ring_len = payload - start;
+	qpmr_hdr->common_ring_offset =
+		offsetof(struct homer_st, qpmr.sgpe.sram_image) + qpmr_hdr->img_len;
+}
+
+static void layout_inst_rings_for_sgpe(struct homer_st *homer,
+				       struct ring_data *ring_data,
+				       uint64_t cores, uint32_t ring_variant)
+{
+	struct qpmr_header *qpmr_hdr = &homer->qpmr.sgpe.header;
+	uint32_t inst_rings_offset = qpmr_hdr->img_len + qpmr_hdr->common_ring_len;
+
+	uint8_t *start = &homer->qpmr.sgpe.sram_image[inst_rings_offset];
+	struct sgpe_inst_ring_list *tmp = (void *)start;
+	uint8_t *payload = tmp->payload;
+
+	/* It's EQ_REPR and three pairs of EX rings */
+	const enum ring_id ring_ids[] = {
+		EQ_REPR, EX_L3_REPR, EX_L3_REPR, EX_L2_REPR, EX_L2_REPR,
+		EX_L3_REFR_REPR, EX_L3_REFR_REPR, EX_L3_REFR_TIME,
+		EX_L3_REFR_TIME
+	};
+
+	uint8_t quad = 0;
+
+	for (quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		uint8_t i = 0;
+
+		/* Skip non-functional quads */
+		if (!IS_EQ_FUNCTIONAL(quad, cores))
+		    continue;
+
+		for (i = 0; i < sizeof(ring_ids) / sizeof(ring_ids[0]); ++i) {
+			const enum ring_id id = ring_ids[i];
+
+			uint32_t ring_size = MAX_RING_BUF_SIZE;
+
+			/* Despite the constant, this is not an SCOM chiplet ID,
+			 * it's just used as a base value */
+			uint8_t instance_id = EP00_CHIPLET_ID + quad;
+			if (i != 0) {
+				instance_id += quad;
+				if (i % 2 == 0)
+					++instance_id;
+			}
+
+			if ((payload - start) % 8 != 0)
+				payload = start + ALIGN_UP(payload - start, 8);
+
+			if (!tor_access_ring(ring_data->rings_buf, id, PT_SGPE,
+					     ring_variant, instance_id, payload,
+					     &ring_size, GET_RING_DATA))
+				continue;
+
+			tmp->ring[quad][i] = payload - start;
+			payload += ALIGN_UP(ring_size, 8);
+		}
+	}
+
+	qpmr_hdr->spec_ring_offset = qpmr_hdr->common_ring_offset + qpmr_hdr->common_ring_len;
+	qpmr_hdr->spec_ring_len = payload - start;
+}
+
+static void layout_rings_for_sgpe(struct homer_st *homer,
+				  struct ring_data *ring_data,
+				  struct xip_sgpe_header *sgpe,
+				  uint64_t cores, uint8_t ring_variant)
+{
+	struct qpmr_header *qpmr_hdr = &homer->qpmr.sgpe.header;
+	struct sgpe_img_header *sgpe_img_hdr =
+		(void *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE];
+
+	layout_cmn_rings_for_sgpe(homer, ring_data, ring_variant);
+	layout_inst_rings_for_sgpe(homer, ring_data, cores, RV_BASE);
+
+	if (qpmr_hdr->common_ring_len == 0)
+		/* If quad common rings don't exist, ensure it's offset in image
+		 * header is zero */
+		sgpe_img_hdr->cmn_ring_occ_offset = 0;
+
+	if (qpmr_hdr->spec_ring_len > 0) {
+		sgpe_img_hdr->spec_ring_occ_offset = qpmr_hdr->img_len + qpmr_hdr->common_ring_len;
+		sgpe_img_hdr->scom_offset = sgpe_img_hdr->spec_ring_occ_offset + qpmr_hdr->spec_ring_len;
+	}
 }
 
 /*
@@ -924,6 +1442,20 @@ static void getPpeScanRings(struct xip_hw_header *hw, uint8_t dd)
  */
 void build_homer_image(void *homer_bar)
 {
+	static uint8_t rings_buf[300 * KiB];
+
+	static uint8_t work_buf1[MAX_RING_BUF_SIZE];
+	static uint8_t work_buf2[MAX_RING_BUF_SIZE];
+	static uint8_t work_buf3[MAX_RING_BUF_SIZE];
+
+	struct ring_data ring_data = {
+		.rings_buf = rings_buf, .rings_buf_size = sizeof(rings_buf),
+		.work_buf1 = work_buf1, .work_buf1_size = sizeof(work_buf1),
+		.work_buf2 = work_buf2, .work_buf2_size = sizeof(work_buf2),
+		.work_buf3 = work_buf3, .work_buf3_size = sizeof(work_buf3),
+	};
+	uint8_t ring_variant;
+
 	struct mmap_helper_region_device mdev = {0};
 	struct homer_st *homer = homer_bar;
 	struct xip_hw_header *hw = homer_bar;
@@ -981,14 +1513,20 @@ void build_homer_image(void *homer_bar)
 	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
 	           dd);
 
-	// "test" of tor_fetch_and_insert_vpd_rings()
-	getPpeScanRings(hw, dd);
+	ring_variant = (dd < 0x23 ? RV_BASE : RV_RL4);
 
-	// TBD
-	// getPpeScanRings() for CME
-	// layoutRingsForCME()
-	// getPpeScanRings for SGPE
-	// layoutRingsForSGPE()
+	get_ppe_scan_rings(hw, dd, PT_CME, &ring_data);
+	layout_rings_for_cme(homer, &ring_data, cores, ring_variant);
+
+	/* Reset buffer sizes to maximum values before reusing the structure */
+	ring_data.rings_buf_size = sizeof(rings_buf);
+	ring_data.work_buf1_size = sizeof(work_buf1);
+	ring_data.work_buf2_size = sizeof(work_buf2);
+	ring_data.work_buf3_size = sizeof(work_buf3);
+	get_ppe_scan_rings(hw, dd, PT_SGPE, &ring_data);
+	layout_rings_for_sgpe(homer, &ring_data,
+			      (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
+			      cores, ring_variant);
 
 	// buildParameterBlock();
 	// updateCpmrCmeRegion();
