@@ -3,8 +3,11 @@
 # force the shell to bash - the edksetup.sh script doesn't work with dash
 export SHELL := env bash
 
-project_name = Tianocore
-project_dir = $(CURDIR)/$(word 3,$(subst /, ,$(CONFIG_TIANOCORE_REPOSITORY)))
+project_name=Tianocore
+project_dir=$(CURDIR)/tianocore
+project_git_repo=https://github.com/mrchromebox/edk2
+project_git_branch=coreboot_fb
+upstream_git_repo=https://github.com/tianocore/edk2
 
 BUILD_STR = -a IA32 -a X64 -t COREBOOT
 ifeq ($(CONFIG_TIANOCORE_COREBOOTPAYLOAD),y)
