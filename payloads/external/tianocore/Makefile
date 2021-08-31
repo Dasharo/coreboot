@@ -5,8 +5,8 @@ export SHELL := env bash
 
 project_name=Tianocore
 project_dir=$(CURDIR)/tianocore
-project_git_repo=https://github.com/Dasharo/edk2
-project_git_branch=dasharo
+project_git_repo=https://github.com/mrchromebox/edk2
+project_git_branch=coreboot_fb
 upstream_git_repo=https://github.com/tianocore/edk2
 
 BUILD_STR = -a IA32 -a X64 -t COREBOOT
