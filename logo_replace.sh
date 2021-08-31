@@ -26,7 +26,5 @@ else
 	sed -i "/CONFIG_TIANOCORE_BOOTSPLASH_FILE/c\CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"$path\"" .config
 fi
 
-# compile on all available threads
-CPUS=$(( $(cat /proc/cpuinfo | grep processor | wc -l) + 1 ))
-make
+echo "Boot logo configuration updated. Rebuild coreboot to apply changes."
 
