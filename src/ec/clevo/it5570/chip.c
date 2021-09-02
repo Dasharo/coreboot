@@ -8,11 +8,29 @@
 #include <superio/conf_mode.h>
 #include <stdint.h>
 
-#define I2EC_ADDR_L	0x10
-#define I2EC_ADDR_H	0x11
-#define I2EC_DATA	0x12
+#define I2EC_ADDR_L			0x10
+#define I2EC_ADDR_H			0x11
+#define I2EC_DATA			0x12
 
-#define IT5570_SMFI_HRAMWC	0x105a /* Host RAM Window Control */
+#define IT5570_SMFI_LDN			0xf
+
+#define IT5570_SMFI_LPCMWBA		0xf0	/* LPC Memory Window Base Address */
+#define IT5570_SMFI_HLPCRAMBA		0xf5	/* H2RAM-HLPC Base Address */
+#define IT5570_SMFI_HLPCRAMBA_24	0xfc	/* H2RAM-HLPC Base Address */
+
+#define IT5570_SMFI_HRAMWC		0x105a	/* Host RAM Window Control */
+#define IT5570_SMFI_HRAMW0AAS		0x105d	/* Host RAM Window 0 Access Allow Size */
+
+enum {
+	H2RAM_WINDOW_16B,
+	H2RAM_WINDOW_32B,
+	H2RAM_WINDOW_64B,
+	H2RAM_WINDOW_128B,
+	H2RAM_WINDOW_256B,
+	H2RAM_WINDOW_512B,
+	H2RAM_WINDOW_1024B,
+	H2RAM_WINDOW_2048B,
+};
 
 /* Depth 2 space is always avaiable, no need for conf mode */
 static void i2ec_depth2_write(uint8_t index, uint8_t data)
@@ -54,24 +72,28 @@ static void it5570_set_h2ram_base(struct device *dev, uint32_t addr)
 		printk(BIOS_ERR, "ERROR: Invalid H2RAM memory window base\n");
 		return;
 	}
+
 	pnp_enter_conf_mode(dev);
 	pnp_set_logical_device(dev);
 
 	/* Configure LPC memory window for LGMR */
-	pnp_write_config(dev, 0xf0, h2ram_base[3]);
-	pnp_write_config(dev, 0xf1, h2ram_base[2]);
+	pnp_write_config(dev, IT5570_SMFI_LPCMWBA, h2ram_base[3]);
+	pnp_write_config(dev, IT5570_SMFI_LPCMWBA + 1, h2ram_base[2]);
 
-	/* COnfigure H2RAM-HLPC base */
-	pnp_write_config(dev, 0xf6, h2ram_base[2]);
-	pnp_write_config(dev, 0xf5, h2ram_base[1]);
-
+	/* Configure H2RAM-HLPC base */
+	pnp_write_config(dev, IT5570_SMFI_HLPCRAMBA + 1, h2ram_base[2]);
+	pnp_write_config(dev, IT5570_SMFI_HLPCRAMBA, h2ram_base[1]);
 	/* H2RAM-HLPC[24] */
-	if (h2ram_base[3] == 0xfe)
-		pnp_write_config(dev, 0xf5, 0);
-	if (h2ram_base[3] == 0xff)
-		pnp_write_config(dev, 0xf5, 1);
+	pnp_write_config(dev, IT5570_SMFI_HLPCRAMBA_24, h2ram_base[3] & 1);
 
 	pnp_exit_conf_mode(dev);
+
+	/* Set H2RAM window 0 size to 1K */
+	i2ec_direct_write(IT5570_SMFI_HRAMW0AAS,
+			  i2ec_direct_read(IT5570_SMFI_HRAMW0AAS) | H2RAM_WINDOW_1024B);
+	/* Set H2RAM through LPC Memory cycle, enable window 0 */
+	i2ec_direct_write(IT5570_SMFI_HRAMWC,
+			  (i2ec_direct_read(IT5570_SMFI_HRAMWC) & 0xef) | 1);
 }
 
 static void clevo_it5570_ec_init(struct device *dev)
@@ -79,18 +101,16 @@ static void clevo_it5570_ec_init(struct device *dev)
 	if (!dev->enabled)
 		return;
 
+	printk(BIOS_SPEW, "Clevo IT5570 EC init\n");
+
 	struct device sio_smfi = {
 		.path.type = DEVICE_PATH_PNP,
 		.path.pnp.port = 0x2e,
-		.path.pnp.device = 0xf, /* SMFI */
+		.path.pnp.device = IT5570_SMFI_LDN,
 	};
 	sio_smfi.ops->ops_pnp_mode = &pnp_conf_mode_870155_aa;
 
-
 	it5570_set_h2ram_base(&sio_smfi, CONFIG_EC_CLEVO_IT5570_RAM_BASE & 0xfffff000);
-
-	/* Set H2RAM through LPC Memory cycle */
-	i2ec_direct_write(IT5570_SMFI_HRAMWC, i2ec_direct_read(IT5570_SMFI_HRAMWC) & 0xef);
 
 	pc_keyboard_init(NO_AUX_DEVICE);
 }
@@ -106,7 +126,7 @@ static void clevo_it5570_ec_resource(struct device *dev, int index, size_t base,
 static void clevo_it5570_ec_read_resources(struct device *dev)
 {
 	/* H2RAM resource */
-	clevo_it5570_ec_resource(dev, 0, CONFIG_EC_CLEVO_IT5570_RAM_BASE, 64*KiB);
+	clevo_it5570_ec_resource(dev, 0, CONFIG_EC_CLEVO_IT5570_RAM_BASE & 0xffff0000, 64*KiB);
 }
 
 static struct device_operations ops = {
