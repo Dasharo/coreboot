@@ -36,5 +36,7 @@ ramstage-y += vpd.c
 ramstage-y += tor.c
 ramstage-y += powerbus.c
 ramstage-y += pstates.c
+ramstage-y += xive.c
+ramstage-y += int_vectors.S
 
 endif
