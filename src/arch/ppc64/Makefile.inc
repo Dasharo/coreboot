@@ -2,7 +2,7 @@
 
 ppc64_flags = -I$(src)/arch/ppc64/ -mbig-endian -mcpu=power8 -mtune=power8 -mno-pointers-to-nested-functions
 
-ppc64_asm_flags =
+ppc64_asm_flags = -Wa,--fatal-warnings
 
 ################################################################################
 ## bootblock
