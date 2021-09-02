@@ -317,9 +317,15 @@ uint8_t grey_map [] =
     /* -80mV  0x0f*/ 10
 };
 
-static uint16_t calc_slope(uint32_t y1, uint32_t y0, uint32_t x1, uint32_t x0)
+/*
+ * Hostboot has two versions of this function - one for unsigned values and one
+ * for signed. Usually we are passing smaller types, the only time uint32_t is
+ * passed is for 'vdd_mv'. As long as these voltages are below 2^31 mV (~2 MV)
+ * signed type doesn't matter.
+ */
+static int16_t calc_slope(int32_t y1, int32_t y0, int32_t x1, int32_t x0)
 {
-	uint32_t half = (x1 - x0) / 2;
+	int32_t half = (x1 - x0) / 2;
 	return (((y1 - y0) << 12) + half) / (x1 - x0);
 }
 
@@ -413,9 +419,6 @@ static void update_resclk(int ref_freq_khz)
 {
 	uint8_t prev_idx = resclk.resclk_index[0];
 	for (int i = 0; i < RESCLK_FREQ_REGIONS; i++) {
-		if (resclk_freq_mhz[i] * 1000 > ref_freq_khz)
-			break;
-
 		/* If freq == 0 round pstate down - can't have negative frequency */
 		if (resclk_freq_mhz[i] == 0) {
 			resclk.resclk_freq[i] = ref_freq_khz / FREQ_STEP_KHZ;
