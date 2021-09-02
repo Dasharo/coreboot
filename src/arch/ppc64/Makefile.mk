@@ -11,7 +11,7 @@ else ifeq ($(CONFIG_COMPILER_LLVM_CLANG),y)
 ppc64_flags += -fno-integrated-as
 endif
 
-ppc64_asm_flags =
+ppc64_asm_flags = -Wa,--fatal-warnings
 
 ################################################################################
 ## bootblock

@@ -31,6 +31,7 @@ romstage-y += vpd.c
 ramstage-y += cbmem.c
 ramstage-y += chip.c
 ramstage-y += homer.c
+ramstage-y += int_vectors.S
 ramstage-y += istep_18_11.c
 ramstage-y += istep_18_12.c
 ramstage-y += mvpd.c
@@ -40,6 +41,7 @@ ramstage-y += rom_media.c
 ramstage-y += timer.c
 ramstage-y += tor.c
 ramstage-y += vpd.c
+ramstage-y += xive.c
 
 ifeq ($(CONFIG_SIGNING_KEYS_DIR),"")
     KEYDIR = $(top)/3rdparty/open-power-signing-utils/test/keys

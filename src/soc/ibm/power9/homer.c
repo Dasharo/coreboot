@@ -946,7 +946,7 @@ static void istep_16_1(int this_core)
 	 */
 	*(volatile uint32_t *)0xE40 = 0x48000000;
 
-	/* TODO: configure_xive(this_core); */
+	configure_xive(this_core);
 
 	printk(BIOS_ERR, "XIVE configured, enabling External Interrupt\n");
 	write_msr(read_msr() | PPC_BIT(48));
