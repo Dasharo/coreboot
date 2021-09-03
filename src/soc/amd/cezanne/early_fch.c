@@ -44,7 +44,7 @@ void configure_port80_routing_early(void)
 void fch_pre_init(void)
 {
 	lpc_early_init();
-
+	fch_spi_early_init();
 	enable_acpimmio_decode_pm04();
 	fch_smbus_init();
 	fch_enable_cf9_io();
@@ -73,6 +73,7 @@ void fch_early_init(void)
 	pm_set_power_failure_state();
 	fch_print_pmxc0_status();
 	i2c_soc_early_init();
+	show_spi_speeds_and_modes();
 
 	if (CONFIG(DISABLE_SPI_FLASH_ROM_SHARING))
 		lpc_disable_spi_rom_sharing();

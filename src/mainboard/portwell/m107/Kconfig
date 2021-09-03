@@ -34,15 +34,12 @@ config ONBOARD_MEM_KINGSTON
 endchoice
 
 config MAINBOARD_DIR
-	string
 	default "portwell/m107"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "PQ7-M107"
 
 config CBFS_SIZE
-	hex
 	default 0x00600000
 
 config MRC_SETTINGS_CACHE_SIZE

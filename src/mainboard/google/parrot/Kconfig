@@ -27,11 +27,9 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "google/parrot"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Parrot"
 
 config VGA_BIOS_FILE

@@ -3,6 +3,9 @@ config SOC_INTEL_TIGERLAKE
 	help
 	  Intel Tigerlake support
 
+config SOC_INTEL_TIGERLAKE_PCH_H
+	bool
+
 if SOC_INTEL_TIGERLAKE
 
 config CPU_SPECIFIC_OPTIONS
@@ -28,13 +31,13 @@ config CPU_SPECIFIC_OPTIONS
 	select INTEL_CAR_NEM_ENHANCED if !INTEL_CAR_NEM
 	select CAR_HAS_SF_MASKS if INTEL_CAR_NEM_ENHANCED
 	select COS_MAPPED_TO_MSB if INTEL_CAR_NEM_ENHANCED
+	select SF_MASK_2WAYS_PER_BIT if INTEL_CAR_NEM_ENHANCED
 	select INTEL_GMA_ACPI
 	select INTEL_GMA_ADD_VBT if RUN_FSP_GOP
 	select IOAPIC
 	select MP_SERVICES_PPI_V1
 	select MRC_SETTINGS_PROTECT
 	select PARALLEL_MP_AP_WORK
-	select MICROCODE_BLOB_UNDISCLOSED
 	select PLATFORM_USES_FSP2_2
 	select REG_SCRIPT
 	select PMC_GLOBAL_RESET_ENABLE_LOCK
@@ -112,6 +115,7 @@ config FSP_TEMP_RAM_SIZE
 
 config CHIPSET_DEVICETREE
 	string
+	default "soc/intel/tigerlake/chipset_pch_h.cb" if SOC_INTEL_TIGERLAKE_PCH_H
 	default "soc/intel/tigerlake/chipset.cb"
 
 config EXT_BIOS_WIN_BASE
@@ -134,10 +138,12 @@ config HEAP_SIZE
 
 config MAX_ROOT_PORTS
 	int
+	default 24 if SOC_INTEL_TIGERLAKE_PCH_H
 	default 12
 
 config MAX_PCIE_CLOCK_SRC
 	int
+	default 16 if SOC_INTEL_TIGERLAKE_PCH_H
 	default 7
 
 config SMM_TSEG_SIZE
@@ -217,7 +223,6 @@ config VBOOT
 	select VBOOT_VBNV_CMOS_BACKUP_TO_FLASH
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 
 config FSP_TYPE_IOT

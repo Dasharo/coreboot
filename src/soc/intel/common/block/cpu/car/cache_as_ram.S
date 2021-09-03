@@ -499,6 +499,7 @@ find_llc_subleaf:
 	 * of RW data.
 	 */
 	movl	$0x01, %eax
+	mov	%eax, %edx /* back up data_ways in edx */
 	cmp	$CONFIG_DCACHE_RAM_SIZE, %ecx
 	jnc	set_eviction_mask
 
@@ -508,6 +509,7 @@ find_llc_subleaf:
 	 */
 	mov	$CONFIG_DCACHE_RAM_SIZE, %eax
 	div	%ecx
+	mov	%eax, %edx /* back up data_ways in edx */
 	mov	%eax, %ecx
 	movl	$0x01, %eax
 	shl	%cl, %eax
@@ -515,23 +517,61 @@ find_llc_subleaf:
 
 set_eviction_mask:
 	mov	%ebx, %edi /* back up number of ways */
-	mov	%eax, %esi /* back up the non-eviction mask*/
+	mov	%eax, %esi /* back up the non-eviction mask */
 #if CONFIG(CAR_HAS_SF_MASKS)
+	mov	%edx, %eax /* restore data_ways in eax */
 	/*
-	 * SF mask is programmed with the double number of bits than
-	 * the number of ways
+	 * Calculate SF masks 2:
+	 * 1. if CONFIG_SF_MASK_2WAYS_PER_BIT: data_ways = data_ways / 2
+	 * 2. Program MSR 0x1892 Non-Eviction Mask #2
+	 *    IA32_CR_SF_QOS_MASK_2 = ((1 << data_ways) - 1)
 	 */
-	mov	$0x01, %eax
-	mov	%edi, %ecx
+#if CONFIG(SF_MASK_2WAYS_PER_BIT)
+	cmp	$0x01, %eax /* Skip Step 1 if data_ways = 1 */
+	jz	program_sf2
+	movl	$0x01, %ecx /* Step 1 */
+	shr	%cl, %eax
+#endif
+	/* Step 2 */
+	mov	%eax, %ecx
+	movl	$0x01, %eax
 	shl	%cl, %eax
-	shl	%cl, %eax
-	subl	$0x01, %eax /* contains SF mask */
-	/*
-	 * Program MSR 0x1891 IA32_CR_SF_QOS_MASK_1 with
-	 * total number of LLC ways
-	 */
-	movl	$IA32_CR_SF_QOS_MASK_1, %ecx
+	subl	$0x01, %eax
+program_sf2:
+	mov	%eax, %ebx /* back up IA32_CR_SF_QOS_MASK_2 in ebx */
 	xorl	%edx, %edx
+	mov	$IA32_CR_SF_QOS_MASK_2, %ecx
+	wrmsr
+
+	/*
+	 * Calculate the SF Mask 1:
+	 * 1. Calcuate SFWayCnt = IA32_SF_QOS_INFO & Bit [5:0]
+	 * 2. if CONFIG_SF_MASK_2WAYS_PER_BIT: SFWayCnt = SFWayCnt / 2
+	 * 3. Set SF_MASK_1 = ((1 << SFWayCnt) - 1) - IA32_CR_SF_QOS_MASK_2
+	 */
+	mov	$IA32_SF_QOS_INFO, %ecx
+	rdmsr
+	and	$IA32_SF_WAY_COUNT_MASK, %eax /* Step 1 */
+#if CONFIG(SF_MASK_2WAYS_PER_BIT)
+	/* Assumption: skip checking SFWayCnt = 1 i.e. 1 way LLC (which is not practical) */
+	movl	$0x01, %ecx /* Step 2 */
+	shr	%cl, %eax
+#endif
+	/* Step 3 */
+	mov	%eax, %ecx
+	movl	$0x01, %eax
+	shl	%cl, %eax
+	subl	$0x01, %eax
+	sub	%ebx, %eax
+	xorl	%edx, %edx
+	movl	$IA32_CR_SF_QOS_MASK_1, %ecx
+	wrmsr
+#endif
+#if CONFIG(CAR_HAS_L3_PROTECTED_WAYS)
+	/* Set MSR 0xC85 L3_Protected_ways = ((1 << data ways) - 1) */
+	mov	%esi, %eax
+	xorl	%edx, %edx
+	mov	$IA32_L3_PROTECTED_WAYS, %ecx
 	wrmsr
 #endif
 	/*

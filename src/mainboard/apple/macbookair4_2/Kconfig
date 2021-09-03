@@ -17,11 +17,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_OPTION_TABLE
 
 config MAINBOARD_DIR
-	string
 	default "apple/macbookair4_2"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "MacBookAir4,2"
 
 config VGA_BIOS_FILE

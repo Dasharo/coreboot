@@ -12,7 +12,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select AMD_SOC_CONSOLE_UART if !AMD_LPC_DEBUG_CARD
 
 config FMDFILE
-	string
 	default "src/mainboard/amd/bilby/board.fmd"
 
 config AMD_LPC_DEBUG_CARD
@@ -45,15 +44,12 @@ config SUPERIO_ADDR_BASE
 	default 0x164e	if BILBY_SMSC_SIO1036_BASE_164E
 
 config CBFS_SIZE
-	hex
 	default 0xfef000 # Maximum size for the Bilby FMAP
 
 config MAINBOARD_DIR
-	string
 	default "amd/bilby"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "BILBY"
 
 config ONBOARD_VGA_IS_PRIMARY
@@ -96,18 +92,57 @@ config VGA_BIOS_DGPU_FILE
 	string
 	default "3rdparty/amd_blobs/picasso/PicassoGenericVbios.bin"
 
+if !EM100	# EM100 defaults in soc/amd/common/blocks/spi/Kconfig
 config EFS_SPI_READ_MODE
-	int
-	default 0 if EM100
-	default 3
+	default 3	# Quad IO (1-1-4)
 
 config EFS_SPI_SPEED
-	int
-	default 3 if EM100
-	default 0
+	default 0	# 66MHz
 
 config EFS_SPI_MICRON_FLAG
-	int
 	default 0
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 1	# 33MHz
+
+config TPM_SPI_SPEED
+	default 1	# 33MHz
+
+endif # !EM100
+
+choice
+	prompt "DDI-0 connector type"
+	default CONNECT_DP_ON_DDI_0
+
+config CONNECT_HDMI_ON_DDI_0
+	bool "Use HDMI interface"
+
+config CONNECT_DP_ON_DDI_0
+	bool "Use Displayport interface"
+endchoice
+
+config DDI0_CONNECTOR_TYPE
+	int
+	default 0 if CONNECT_DP_ON_DDI_0
+	default 4 if CONNECT_HDMI_ON_DDI_0
+
+choice
+	prompt "DDI-1 connector type"
+	default CONNECT_DP_ON_DDI_1
+
+config CONNECT_HDMI_ON_DDI_1
+	bool "Use HDMI interface"
+
+config CONNECT_DP_ON_DDI_1
+	bool "Use Displayport interface"
+endchoice
+
+config DDI1_CONNECTOR_TYPE
+	int
+	default 0 if CONNECT_DP_ON_DDI_1
+	default 4 if CONNECT_HDMI_ON_DDI_1
 
 endif # BOARD_AMD_BILBY

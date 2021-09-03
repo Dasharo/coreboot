@@ -23,11 +23,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select I945_LVDS
 
 config MAINBOARD_DIR
-	string
 	default "getac/p470"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "P470"
 
 config IRQ_SLOT_COUNT

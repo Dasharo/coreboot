@@ -23,11 +23,11 @@ end
 
 chip soc/intel/alderlake
 
+	register "SaGv" = "SaGv_Enabled"
 	# Intel Common SoC Config
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| GSPI1             | Fingerprint MCU           |
 	#| I2C0              | Audio                     |
 	#| I2C1              | Touchscreen               |
@@ -38,7 +38,6 @@ chip soc/intel/alderlake
 	#| I2C5              | Trackpad                  |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
 		},
@@ -61,6 +60,7 @@ chip soc/intel/alderlake
 	register "usb2_ports[7]" = "USB2_PORT_MID(OC_SKIP)"	# Type-A MLB Port
 	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB3/2 Type A MLB port
 	register "usb3_ports[2]" = "USB3_PORT_EMPTY"
+	register "usb2_ports[5]" = "USB2_PORT_MID(OC_SKIP)"
 
 	device domain 0 on
 		device ref dtt on
@@ -68,19 +68,6 @@ chip soc/intel/alderlake
 				## sensor information
 				register "options.tsr[0].desc" = ""DRAM""
 				register "options.tsr[1].desc" = ""Charger""
-
-				# TODO: below values are initial reference values only
-				## Active Policy
-				register "policies.active" = "{
-					[0] = {
-						.target = DPTF_CPU,
-						.thresholds = {
-								TEMP_PCT(85, 90),
-								TEMP_PCT(80, 80),
-								TEMP_PCT(75, 70),
-						}
-					}
-				}"
 
 				## Passive Policy
 				register "policies.passive" = "{
@@ -120,25 +107,6 @@ chip soc/intel/alderlake
 					[2] = {  16, 1000 },
 					[3] = {   8,  500 }
 				}"
-
-				## Fan Performance Control (Percent, Speed, Noise, Power)
-				register "controls.fan_perf" = "{
-					[0] = {  90, 6700, 220, 2200, },
-					[1] = {  80, 5800, 180, 1800, },
-					[2] = {  70, 5000, 145, 1450, },
-					[3] = {  60, 4900, 115, 1150, },
-					[4] = {  50, 3838,  90,  900, },
-					[5] = {  40, 2904,  55,  550, },
-					[6] = {  30, 2337,  30,  300, },
-					[7] = {  20, 1608,  15,  150, },
-					[8] = {  10,  800,  10,  100, },
-					[9] = {   0,    0,   0,   50, }
-				}"
-
-				## Fan options
-				register "options.fan.fine_grained_control" = "1"
-				register "options.fan.step_size" = "2"
-
 				device generic 0 on end
 			end
 		end
@@ -170,6 +138,7 @@ chip soc/intel/alderlake
 				device generic 0 on end
 			end
 		end
+		device ref pcie_rp6 off end #PCIE6 WWAN
 		device ref pcie_rp8 on
 			chip soc/intel/common/block/pcie/rtd3
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_H13)"
@@ -178,6 +147,14 @@ chip soc/intel/alderlake
 				device generic 0 on end
 			end
 		end	#PCIE8 SD card
+		device ref pcie_rp9 on
+			# Enable NVMe PCIE 9 using clk 0
+			register "pch_pcie_rp[PCH_RP(9)]" = "{
+				.clk_src = 0,
+				.clk_req = 0,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+			}"
+		end	#PCIE9-12 SSD
 		device ref i2c0 on
 			chip drivers/i2c/generic
 				register "hid" = ""10EC5682""
@@ -220,7 +197,7 @@ chip soc/intel/alderlake
 				register "generic.irq" = "ACPI_IRQ_LEVEL_LOW(GPP_C7_IRQ)"
 				register "generic.probed" = "1"
 				register "generic.reset_gpio" =
-							"ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_C1)"
+							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C1)"
 				register "generic.reset_delay_ms" = "50"
 				register "generic.enable_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_C0)"
@@ -251,7 +228,7 @@ chip soc/intel/alderlake
 		end
 		device ref hda on
 			chip drivers/generic/max98357a
-				register "hid" = ""MX98360A""
+				register "hid" = ""MX98357A""
 				register "sdmode_gpio" =
 						"ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A11)"
 				register "sdmode_delay" = "5"
@@ -275,7 +252,6 @@ chip soc/intel/alderlake
 			chip ec/google/chromeec
 				use conn0 as mux_conn[0]
 				use conn1 as mux_conn[1]
-				use conn2 as mux_conn[2]
 				device pnp 0c09.0 on end
 			end
 		end
@@ -287,15 +263,10 @@ chip soc/intel/alderlake
 						register "usb3_port_number" = "1"
 						device generic 0 alias conn0 on end
 					end
-                                        chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "2"
-						register "usb3_port_number" = "2"
-						device generic 1 alias conn1 on end
-					end
 					chip drivers/intel/pmc_mux/conn
 						register "usb2_port_number" = "3"
 						register "usb3_port_number" = "3"
-						device generic 2 alias conn2 on end
+						device generic 1 alias conn1 on end
 					end
 				end
 			end

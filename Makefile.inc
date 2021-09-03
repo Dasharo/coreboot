@@ -479,7 +479,7 @@ ADAFLAGS_common += -gnatwa.eeD.HHTU.U.W.Y
 # Disable style checks for now
 ADAFLAGS_common += -gnatyN
 
-LDFLAGS_common := --gc-sections -nostdlib -nostartfiles -static
+LDFLAGS_common := --gc-sections -nostdlib --nmagic -static
 
 # Workaround for RISC-V linker bug, merge back into above line when fixed.
 # https://sourceware.org/bugzilla/show_bug.cgi?id=27180
@@ -1250,7 +1250,8 @@ cbfs-get-segments-cmd = $(CBFSTOOL) $(obj)/coreboot.pre print -v | sed -n \
 	'\%$(1)%,\%^[^ ]\{4\}%s%    .*load: \(0x[0-9a-fA-F]*\),.*length: [0-9]*/\([0-9]*\).*%\1 \2%p'
 
 ramstage-symbol-addr-cmd = $(OBJDUMP_ramstage) -t $(objcbfs)/ramstage.elf | \
-	sed -n '/ $(1)$$/s/^\([0-9a-fA-F]*\) .*/0x\1/p'
+	sed -n '/ $(1)$$/s/^\([0-9a-fA-F]*\) .*/0x\1/p' | \
+	uniq
 
 $(call add_intermediate, check-ramstage-overlaps)
 	programs=$$($(foreach file,$(check-ramstage-overlap-files), \

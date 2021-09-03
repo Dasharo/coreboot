@@ -27,13 +27,13 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_HAS_TPM2 if VBOOT
 	select MAINBOARD_HAS_NATIVE_VGA_INIT
 	select HAVE_LINEAR_FRAMEBUFFER
+	select COMMONLIB_STORAGE
+	select COMMONLIB_STORAGE_MMC
 
 config MAINBOARD_DIR
-	string
 	default "google/cherry"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Cherry" if BOARD_GOOGLE_CHERRY
 	default "Tomato" if BOARD_GOOGLE_TOMATO
 
@@ -54,4 +54,13 @@ config BOOT_DEVICE_SPI_FLASH_BUS
 config EC_GOOGLE_CHROMEEC_SPI_BUS
 	hex
 	default 0x0
+
+config CHERRY_USE_RT1011
+	bool
+	default n
+
+config CHERRY_USE_RT1019
+	bool
+	default y if BOARD_GOOGLE_CHERRY || BOARD_GOOGLE_TOMATO
+	default n
 endif

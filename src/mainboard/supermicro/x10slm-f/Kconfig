@@ -17,15 +17,12 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_NUVOTON_NCT6776
 
 config CBFS_SIZE
-	hex
 	default 0xb00000
 
 config MAINBOARD_DIR
-	string
 	default "supermicro/x10slm-f"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "X10SLM+-F"
 
 config ENABLE_DDR_2X_REFRESH

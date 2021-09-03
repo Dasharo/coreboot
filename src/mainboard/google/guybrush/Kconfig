@@ -37,6 +37,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select PCIEXP_ASPM
 	select PCIEXP_CLK_PM
 	select PCIEXP_COMMON_CLOCK
+	select PCIEXP_L1_SUB_STATE
 	select PSP_DISABLE_POSTCODES
 	select SOC_AMD_CEZANNE
 	select SOC_AMD_COMMON_BLOCK_GRAPHICS_ATIF
@@ -65,16 +66,15 @@ config VBOOT_VBNV_OFFSET
 	default 0x2A
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos.fmd"
 
 config MAINBOARD_DIR
-	string
 	default "google/guybrush"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Guybrush" if BOARD_GOOGLE_GUYBRUSH
+	default "Nipperkin" if BOARD_GOOGLE_NIPPERKIN
+	default "Dewatt" if BOARD_GOOGLE_DEWATT
 
 config AMD_FWM_POSITION_INDEX
 	int
@@ -94,26 +94,33 @@ config AMDFW_CONFIG_FILE
 	string
 	default "src/mainboard/google/guybrush/variants/baseboard/amdfw.cfg"
 
+if !EM100	# EM100 defaults in soc/amd/common/blocks/spi/Kconfig
 config EFS_SPI_READ_MODE
-	int
-	default 0 if EM100 # Normal read mode
 	default 4          # Dual IO (1-2-2)
 
 config EFS_SPI_SPEED
-	int
-	default 3 if EM100 # 16.66 MHz
-	default 1          # 33.33 MHz
+	default 0	# 66MHz
+
+config EFS_SPI_MICRON_FLAG
+	default 0
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 0	# 66MHz
+
+endif # !EM100
 
 config VARIANT_DIR
-	string
 	default "guybrush" if BOARD_GOOGLE_GUYBRUSH
+	default "nipperkin" if BOARD_GOOGLE_NIPPERKIN
+	default "dewatt" if BOARD_GOOGLE_DEWATT
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree.cb"
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config MAINBOARD_FAMILY

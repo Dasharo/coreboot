@@ -17,11 +17,9 @@ config IRQ_SLOT_COUNT
 	default 18
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "LT1000"
 
 config MAINBOARD_DIR
-	string
 	default "libretrend/lt1000"
 
 config MAX_CPUS
@@ -41,7 +39,6 @@ config DIMM_SPD_SIZE
 	default 512
 
 config CBFS_SIZE
-	hex
 	default 0x600000
 
 config USE_PM_ACPI_TIMER

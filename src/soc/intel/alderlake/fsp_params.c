@@ -5,9 +5,11 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
+#include <device/pci_ids.h>
 #include <fsp/api.h>
 #include <fsp/ppi/mp_service_ppi.h>
 #include <fsp/util.h>
+#include <option.h>
 #include <intelblocks/irq.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/xdci.h>
@@ -21,6 +23,7 @@
 #include <soc/soc_chip.h>
 #include <stdlib.h>
 #include <string.h>
+#include <types.h>
 
 /* THC assignment definition */
 #define THC_NONE	0
@@ -30,6 +33,12 @@
 /* SATA DEVSLP idle timeout default values */
 #define DEF_DMVAL	15
 #define DEF_DITOVAL	625
+
+/* VccIn Aux Imon IccMax values in mA */
+#define MILLIAMPS_TO_AMPS         1000
+#define ICC_MAX_ID_ADL_P_3_MA     34250
+#define ICC_MAX_ID_ADL_P_5_MA     32000
+#define ICC_MAX_ID_ADL_P_7_MA     32000
 
 /*
  * ME End of Post configuration
@@ -278,6 +287,30 @@ static int get_l1_substate_control(enum L1_substates_control ctl)
 	return ctl - 1;
 }
 
+/* This function returns the VccIn Aux Imon IccMax values for ADL-P SKU's */
+static uint16_t get_vccin_aux_imon_iccmax(void)
+{
+	uint16_t mch_id = 0;
+
+	if (!mch_id) {
+		struct device *dev = pcidev_path_on_root(SA_DEVFN_ROOT);
+		mch_id = dev ? pci_read_config16(dev, PCI_DEVICE_ID) : 0xffff;
+	}
+
+	switch (mch_id) {
+	case PCI_DEVICE_ID_INTEL_ADL_P_ID_3:
+		return ICC_MAX_ID_ADL_P_3_MA;
+	case PCI_DEVICE_ID_INTEL_ADL_P_ID_5:
+		return ICC_MAX_ID_ADL_P_5_MA;
+	case PCI_DEVICE_ID_INTEL_ADL_P_ID_7:
+		return ICC_MAX_ID_ADL_P_7_MA;
+	default:
+		printk(BIOS_ERR, "Unknown MCH ID: 0x%4x, skipping VccInAuxImonIccMax config\n",
+			mch_id);
+		return 0;
+	}
+}
+
 __weak void mainboard_update_soc_chip_config(struct soc_intel_alderlake_config *config)
 {
 	/* Override settings per board. */
@@ -368,17 +401,12 @@ static void fill_fsps_chipset_lockdown_params(FSP_S_CONFIG *s_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
 	/* Chipset Lockdown */
-	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT) {
-		s_cfg->PchLockDownGlobalSmi = 0;
-		s_cfg->PchLockDownBiosInterface = 0;
-		s_cfg->PchUnlockGpioPads = 1;
-		s_cfg->RtcMemoryLock = 0;
-	} else {
-		s_cfg->PchLockDownGlobalSmi = 1;
-		s_cfg->PchLockDownBiosInterface = 1;
-		s_cfg->PchUnlockGpioPads = 0;
-		s_cfg->RtcMemoryLock = 1;
-	}
+	const bool lockdown_by_fsp = get_lockdown_config() == CHIPSET_LOCKDOWN_FSP;
+	s_cfg->PchLockDownGlobalSmi = lockdown_by_fsp;
+	s_cfg->PchLockDownBiosInterface = lockdown_by_fsp;
+	s_cfg->PchUnlockGpioPads = !lockdown_by_fsp;
+	s_cfg->RtcMemoryLock = lockdown_by_fsp;
+	s_cfg->SkipPamLock = !lockdown_by_fsp;
 
 	/* coreboot will send EOP before loading payload */
 	s_cfg->EndOfPostMessage = EOP_DISABLE;
@@ -533,8 +561,9 @@ static void fill_fsps_8254_params(FSP_S_CONFIG *s_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
 	/* Legacy 8254 timer support */
-	s_cfg->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
-	s_cfg->Enable8254ClockGatingOnS3 = !CONFIG(USE_LEGACY_8254_TIMER);
+	bool use_8254 = get_uint_option("legacy_8254_timer", CONFIG(USE_LEGACY_8254_TIMER));
+	s_cfg->Enable8254ClockGating = !use_8254;
+	s_cfg->Enable8254ClockGatingOnS3 = !use_8254;
 }
 
 static void fill_fsps_storage_params(FSP_S_CONFIG *s_cfg,
@@ -578,6 +607,13 @@ static void fill_fsps_misc_power_params(FSP_S_CONFIG *s_cfg,
 	/* Enable the energy efficient turbo mode */
 	s_cfg->EnergyEfficientTurbo = 1;
 	s_cfg->PkgCStateLimit = LIMIT_AUTO;
+
+	/* VccIn Aux Imon IccMax. Values are in 1/4 Amp increments and range is 0-512. */
+	s_cfg->VccInAuxImonIccImax = get_vccin_aux_imon_iccmax() * 4 / MILLIAMPS_TO_AMPS;
+
+	/* VrConfig Settings for IA and GT domains */
+	for (size_t i = 0; i < ARRAY_SIZE(config->domain_vr_config); i++)
+		fill_vr_domain_config(s_cfg, i, &config->domain_vr_config[i]);
 }
 
 static void fill_fsps_irq_params(FSP_S_CONFIG *s_cfg,

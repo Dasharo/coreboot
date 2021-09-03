@@ -20,11 +20,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select NO_CBFS_MCACHE
 
 config MAINBOARD_DIR
-	string
 	default "pcengines/apu1"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "apu1"
 
 config HW_MEM_HOLE_SIZEK

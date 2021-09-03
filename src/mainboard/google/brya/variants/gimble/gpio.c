@@ -47,6 +47,8 @@ static const struct pad_config override_gpio_table[] = {
 	PAD_NC(GPP_D9, NONE),
 	/* D15 : ISH_UART0_RTS# ==> NC */
 	PAD_NC(GPP_D15, NONE),
+	/* D16 : ISH_UART0_CTS# ==> EN_WCAM_PWR */
+	PAD_CFG_GPO(GPP_D16, 1, DEEP),
 	/* D17 : UART1_RXD ==> NC */
 	PAD_NC(GPP_D17, NONE),
 
@@ -103,6 +105,9 @@ static const struct pad_config override_gpio_table[] = {
 	PAD_NC(GPP_S6, NONE),
 	/* S7 : SNDW3_DATA ==> NC */
 	PAD_NC(GPP_S7, NONE),
+
+	/* GPD11: LANPHYC ==> NC */
+	PAD_NC(GPD11, NONE),
 };
 
 /* Early pad configuration in bootblock */

@@ -22,6 +22,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select DRIVERS_I2C_MAX98373
 	select FW_CONFIG if BOARD_INTEL_ADLRVP_M_EXT_EC
 	select FW_CONFIG_SOURCE_CHROMEEC_CBI if BOARD_INTEL_ADLRVP_M_EXT_EC
+	select MAINBOARD_HAS_TPM2 if BOARD_INTEL_ADLRVP_M_EXT_EC
+	select MAINBOARD_HAS_SPI_TPM_CR50 if BOARD_INTEL_ADLRVP_M_EXT_EC
+	select SPI_TPM if BOARD_INTEL_ADLRVP_M_EXT_EC
 
 config CHROMEOS
 	select GBB_FLAG_FORCE_DEV_SWITCH_ON
@@ -32,11 +35,9 @@ config CHROMEOS
 	select HAS_RECOVERY_MRC_CACHE
 
 config MAINBOARD_DIR
-	string
 	default "intel/adlrvp"
 
 config VARIANT_DIR
-	string
 	default "adlrvp_p" if BOARD_INTEL_ADLRVP_P
 	default "adlrvp_p_ext_ec" if BOARD_INTEL_ADLRVP_P_EXT_EC
 	default "adlrvp_m" if BOARD_INTEL_ADLRVP_M
@@ -49,7 +50,6 @@ config GBB_HWID
 	default "ADLRVPP"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Alder Lake Client Platform"
 
 config MAINBOARD_VENDOR
@@ -61,12 +61,10 @@ config MAINBOARD_FAMILY
 	default "Intel_adlrvp"
 
 config DEVICETREE
-	string
 	default "devicetree_m.cb" if BOARD_INTEL_ADLRVP_M || BOARD_INTEL_ADLRVP_M_EXT_EC
 	default "devicetree.cb"
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config DIMM_SPD_SIZE
@@ -96,11 +94,18 @@ endchoice
 
 config VBOOT
 	select VBOOT_LID_SWITCH
-	select VBOOT_MOCK_SECDATA
+	select VBOOT_MOCK_SECDATA if BOARD_INTEL_ADLRVP_P_EXT_EC
 	select EC_GOOGLE_CHROMEEC_SWITCHES if ADL_CHROME_EC
 	select VBOOT_EARLY_EC_SYNC if BOARD_INTEL_ADLRVP_M_EXT_EC
 
 config UART_FOR_CONSOLE
 	int
 	default 0
+
+config DRIVER_TPM_SPI_BUS
+	default 0x2 if BOARD_INTEL_ADLRVP_M_EXT_EC
+
+config TPM_TIS_ACPI_INTERRUPT
+	int
+	default 67 if BOARD_INTEL_ADLRVP_M_EXT_EC  # GPE0_DW2_3 (GPP_E3)
 endif

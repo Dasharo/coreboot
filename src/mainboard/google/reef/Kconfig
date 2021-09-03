@@ -46,11 +46,9 @@ config VBOOT
 	select VBOOT_LID_SWITCH if BASEBOARD_REEF_LAPTOP
 
 config MAINBOARD_DIR
-	string
 	default "google/reef"
 
 config VARIANT_DIR
-	string
 	default "reef" if BOARD_GOOGLE_REEF
 	default "pyro" if BOARD_GOOGLE_PYRO
 	default "sand" if BOARD_GOOGLE_SAND
@@ -59,7 +57,6 @@ config VARIANT_DIR
 	default "coral" if BOARD_GOOGLE_CORAL
 
 config DEVICETREE
-	string
 	default "variants/coral/devicetree.cb" if BOARD_GOOGLE_CORAL
 	default "variants/pyro/devicetree.cb" if BOARD_GOOGLE_PYRO
 	default "variants/sand/devicetree.cb" if BOARD_GOOGLE_SAND
@@ -67,7 +64,6 @@ config DEVICETREE
 	default "variants/baseboard/devicetree.cb"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Reef" if BOARD_GOOGLE_REEF
 	default "Pyro" if BOARD_GOOGLE_PYRO
 	default "Sand" if BOARD_GOOGLE_SAND

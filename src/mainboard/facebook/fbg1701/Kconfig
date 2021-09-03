@@ -54,15 +54,12 @@ config ONBOARD_SAMSUNG_MEM
 	  Samsung K4B8G1646D memory
 
 config MAINBOARD_DIR
-	string
 	default "facebook/fbg1701"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "FBG-1701"
 
 config CBFS_SIZE
-	hex
 	default 0x00600000
 
 config MRC_SETTINGS_CACHE_SIZE

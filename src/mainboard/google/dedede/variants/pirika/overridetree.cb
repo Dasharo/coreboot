@@ -9,9 +9,6 @@ chip soc/intel/jasperlake
 	#|                   | for TPM communication     |
 	#|                   | before memory is up       |
 	#| I2C0              | Trackpad                  |
-	#| I2C1              | Digitizer                 |
-	#| I2C2              | Touchscreen               |
-	#| I2C3              | Camera                    |
 	#| I2C4              | Audio                     |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
@@ -21,23 +18,38 @@ chip soc/intel/jasperlake
 		},
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
-		},
-		.i2c[1] = {
-			.speed = I2C_SPEED_FAST,
-		},
-		.i2c[2] = {
-			.speed = I2C_SPEED_FAST,
-		},
-		.i2c[3] = {
-			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 260,
+			.fall_time_ns = 50,
 		},
 		.i2c[4] = {
 			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 260,
+			.fall_time_ns = 50,
 		},
 	}"
 
+	register "SerialIoI2cMode" = "{
+		[PchSerialIoIndexI2C0]  = PchSerialIoPci,
+		[PchSerialIoIndexI2C1]  = PchSerialIoDisabled,
+		[PchSerialIoIndexI2C2]  = PchSerialIoDisabled,
+		[PchSerialIoIndexI2C3]  = PchSerialIoDisabled,
+		[PchSerialIoIndexI2C4]  = PchSerialIoPci,
+	}"
+
 	# USB Port Configuration
+	register "usb2_ports[2]" = "{
+		.enable = 1,
+		.ocpin = OC_SKIP,
+		.pre_emp_bias  = USB2_BIAS_28P15MV,
+		.pre_emp_bit   = USB2_HALF_BIT_PRE_EMP,
+	}"	# Type-A
 	register "usb2_ports[5]" = "USB2_PORT_MID(OC_SKIP)"     # Camera
+	register "usb2_ports[7]" = "{
+		.enable = 1,
+		.ocpin = OC_SKIP,
+		.pre_emp_bias  = USB2_BIAS_11P25MV,
+		.pre_emp_bit   = USB2_HALF_BIT_PRE_EMP,
+	}" 	# Integrated Bluetooth
 
 	register "tcc_offset" = "8"     # TCC of 97C
 

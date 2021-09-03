@@ -15,6 +15,7 @@
 #include <soc/pmc.h>
 #include <soc/serialio.h>
 #include <soc/usb.h>
+#include <soc/vr_config.h>
 #include <stdint.h>
 
 /* Types of different SKUs */
@@ -23,6 +24,7 @@ enum soc_intel_alderlake_power_limits {
 	ADL_P_POWER_LIMITS_482_CORE,
 	ADL_P_POWER_LIMITS_682_CORE,
 	ADL_M_POWER_LIMITS_282_CORE,
+	ADL_M_POWER_LIMITS_242_CORE,
 	ADL_POWER_LIMITS_COUNT
 };
 
@@ -391,6 +393,11 @@ struct soc_intel_alderlake_config {
 		/* External Icc Max for VnnSx rail in mA  */
 		int vnn_icc_max_ma;
 	} ext_fivr_settings;
+
+	/* VrConfig Settings.
+	* 0 = VR_DOMAIN_IA Core 1 = VR_DOMAIN_GT.
+	*/
+	struct vr_config domain_vr_config[NUM_VR_DOMAINS];
 };
 
 typedef struct soc_intel_alderlake_config config_t;

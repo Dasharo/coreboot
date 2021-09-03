@@ -154,11 +154,6 @@ chip soc/intel/skylake
 	# Send an extra VR mailbox command for the PS4 exit issue
 	register "SendVrMbxCmd" = "2"
 
-	# Lock Down
-	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
-	}"
-
 	register "SerialIoDevMode" = "{ \
 		[PchSerialIoIndexI2C0]  = PchSerialIoPci, \
 		[PchSerialIoIndexI2C1]  = PchSerialIoPci, \
@@ -219,7 +214,7 @@ chip soc/intel/skylake
 		device pci 1d.1 off end # PCI Express Port 10
 		device pci 1d.2 off end # PCI Express Port 11
 		device pci 1d.3 off end # PCI Express Port 12
-		device pci 1e.0 on  end # Serial IO UART0
+		device pci 1e.0 off end # Serial IO UART0
 		device pci 1e.6 off end # SDXC
 		device pci 1f.0 on # LPC
 			chip drivers/pc80/tpm

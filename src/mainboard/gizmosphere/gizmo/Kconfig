@@ -16,11 +16,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_SPD_IN_CBFS
 
 config MAINBOARD_DIR
-	string
 	default "gizmosphere/gizmo"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Gizmo"
 
 config HW_MEM_HOLE_SIZEK

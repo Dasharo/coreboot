@@ -38,7 +38,7 @@ int thread_run_until(struct thread_handle *handle, enum cb_err (*func)(void *), 
 /* Waits until the thread has terminated and returns the error code */
 enum cb_err thread_join(struct thread_handle *handle);
 
-#if ENV_RAMSTAGE && CONFIG(COOP_MULTITASKING)
+#if (ENV_RAMSTAGE || ENV_ROMSTAGE) && CONFIG(COOP_MULTITASKING)
 
 struct thread {
 	int id;
@@ -50,13 +50,6 @@ struct thread {
 	int can_yield;
 	struct thread_handle *handle;
 };
-
-void threads_initialize(void);
-/* Get the base of the thread stacks.
- * Returns pointer to CONFIG_NUM_THREADS*CONFIG_STACK_SIZE contiguous bytes
- * aligned to CONFIG_STACK_SIZE, or NULL.
- */
-void *arch_get_thread_stackbase(void);
 
 /* Return 0 on successful yield, < 0 when thread did not yield. */
 int thread_yield(void);
@@ -93,7 +86,6 @@ asmlinkage void switch_to_thread(uintptr_t new_stack, uintptr_t *saved_stack);
 void arch_prepare_thread(struct thread *t,
 			 asmlinkage void (*thread_entry)(void *), void *arg);
 #else
-static inline void threads_initialize(void) {}
 static inline int thread_yield(void)
 {
 	return -1;
