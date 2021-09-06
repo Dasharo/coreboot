@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi.h>
+#include <acpi/acpi_device.h>
+#include <acpi/acpigen.h>
 #include <arch/io.h>
+#include <cbmem.h>
 #include <commonlib/bsd/helpers.h>
 #include <console/console.h>
 #include <device/pnp.h>
@@ -31,6 +35,69 @@ enum {
 	H2RAM_WINDOW_1024B,
 	H2RAM_WINDOW_2048B,
 };
+
+/*
+ * Setting minimum length of UCSI_ACPI will ensure this region is placed out of IMD Small.
+ * Having this region out of IMD Small will prevent any memory mapping conflicts.
+ */
+#define UCSI_MIN_ALLOC_REGION_LEN	CBMEM_SM_ROOT_SIZE
+/*
+ * The UCSI fields are defined in the UCSI specification at
+ * https://www.intel.com/content/www/us/en/io/universal-serial-bus/usb-type-c-ucsi-spec.html
+ * https://www.intel.com/content/www/us/en/io/universal-serial-bus/bios-implementation-of-ucsi.html
+ */
+
+static struct fieldlist ucsi_region_fields[] = {
+	FIELDLIST_NAMESTR("VER0", 8),
+	FIELDLIST_NAMESTR("VER1", 8),
+	FIELDLIST_NAMESTR("RSV0", 8),
+	FIELDLIST_NAMESTR("RSV1", 8),
+	FIELDLIST_NAMESTR("CCI0", 8),
+	FIELDLIST_NAMESTR("CCI1", 8),
+	FIELDLIST_NAMESTR("CCI2", 8),
+	FIELDLIST_NAMESTR("CCI3", 8),
+	FIELDLIST_NAMESTR("CTL0", 8),
+	FIELDLIST_NAMESTR("CTL1", 8),
+	FIELDLIST_NAMESTR("CTL2", 8),
+	FIELDLIST_NAMESTR("CTL3", 8),
+	FIELDLIST_NAMESTR("CTL4", 8),
+	FIELDLIST_NAMESTR("CTL5", 8),
+	FIELDLIST_NAMESTR("CTL6", 8),
+	FIELDLIST_NAMESTR("CTL7", 8),
+	FIELDLIST_NAMESTR("MGI0", 8),
+	FIELDLIST_NAMESTR("MGI1", 8),
+	FIELDLIST_NAMESTR("MGI2", 8),
+	FIELDLIST_NAMESTR("MGI3", 8),
+	FIELDLIST_NAMESTR("MGI4", 8),
+	FIELDLIST_NAMESTR("MGI5", 8),
+	FIELDLIST_NAMESTR("MGI6", 8),
+	FIELDLIST_NAMESTR("MGI7", 8),
+	FIELDLIST_NAMESTR("MGI8", 8),
+	FIELDLIST_NAMESTR("MGI9", 8),
+	FIELDLIST_NAMESTR("MGIA", 8),
+	FIELDLIST_NAMESTR("MGIB", 8),
+	FIELDLIST_NAMESTR("MGIC", 8),
+	FIELDLIST_NAMESTR("MGID", 8),
+	FIELDLIST_NAMESTR("MGIE", 8),
+	FIELDLIST_NAMESTR("MGIF", 8),
+	FIELDLIST_NAMESTR("MGO0", 8),
+	FIELDLIST_NAMESTR("MGO1", 8),
+	FIELDLIST_NAMESTR("MGO2", 8),
+	FIELDLIST_NAMESTR("MGO3", 8),
+	FIELDLIST_NAMESTR("MGO4", 8),
+	FIELDLIST_NAMESTR("MGO5", 8),
+	FIELDLIST_NAMESTR("MGO6", 8),
+	FIELDLIST_NAMESTR("MGO7", 8),
+	FIELDLIST_NAMESTR("MGO8", 8),
+	FIELDLIST_NAMESTR("MGO9", 8),
+	FIELDLIST_NAMESTR("MGOA", 8),
+	FIELDLIST_NAMESTR("MGOB", 8),
+	FIELDLIST_NAMESTR("MGOC", 8),
+	FIELDLIST_NAMESTR("MGOD", 8),
+	FIELDLIST_NAMESTR("MGOE", 8),
+	FIELDLIST_NAMESTR("MGOF", 8),
+};
+static const size_t ucsi_region_len = ARRAY_SIZE(ucsi_region_fields);
 
 /* Depth 2 space is always avaiable, no need for conf mode */
 static void i2ec_depth2_write(uint8_t index, uint8_t data)
@@ -129,10 +196,46 @@ static void clevo_it5570_ec_read_resources(struct device *dev)
 	clevo_it5570_ec_resource(dev, 0, CONFIG_EC_CLEVO_IT5570_RAM_BASE & 0xffff0000, 64*KiB);
 }
 
+static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
+{
+	struct opregion opreg;
+	void *region_ptr;
+	size_t ucsi_alloc_region_len;
+
+	ucsi_alloc_region_len = ucsi_region_len < UCSI_MIN_ALLOC_REGION_LEN ?
+		UCSI_MIN_ALLOC_REGION_LEN : ucsi_region_len;
+	region_ptr = cbmem_add(CBMEM_ID_ACPI_UCSI, ucsi_alloc_region_len);
+	if (!region_ptr)
+		return;
+	memset(region_ptr, 0, ucsi_alloc_region_len);
+
+	opreg.name = "UCSM";
+	opreg.regionspace = SYSTEMMEMORY;
+	opreg.regionoffset = (uintptr_t)region_ptr;
+	opreg.regionlen = ucsi_alloc_region_len;
+
+	acpigen_write_scope(acpi_device_path_join(dev, "UCSI"));
+	acpigen_write_name("_CRS");
+	acpigen_write_resourcetemplate_header();
+	acpigen_write_mem32fixed(1, (uintptr_t)region_ptr, ucsi_region_len);
+	acpigen_write_resourcetemplate_footer();
+	acpigen_write_opregion(&opreg);
+	acpigen_write_field(opreg.name, ucsi_region_fields, ucsi_region_len,
+			    FIELD_ANYACC | FIELD_LOCK | FIELD_PRESERVE);
+	acpigen_pop_len(); /* Scope */
+}
+
+static const char *clevo_it5570_ec_acpi_name(const struct device *dev)
+{
+	return "EC0";
+}
+
 static struct device_operations ops = {
 	.init			= clevo_it5570_ec_init,
 	.read_resources		= clevo_it5570_ec_read_resources,
 	.set_resources		= noop_set_resources,
+	.acpi_fill_ssdt		= clevo_it5570_ec_fill_ssdt_generator,
+	.acpi_name		= clevo_it5570_ec_acpi_name,
 };
 
 static struct pnp_info info[] = {
