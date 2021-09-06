@@ -31,11 +31,9 @@ config VGA_BIOS_ID
 	default "8086,5917"
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config FMDFILE

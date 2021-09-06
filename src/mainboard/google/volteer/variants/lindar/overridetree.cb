@@ -175,11 +175,6 @@ chip soc/intel/tigerlake
 				end
 			end
 		end
-		# Baseboard has these on, so they must be disabled here.
-		device ref tbt_pcie_rp0 off end
-		device ref tbt_pcie_rp1 off end
-		device ref tbt_dma0 off end
-
 		device ref i2c0 on
 			chip drivers/i2c/generic
 				register "hid" = ""10EC5682""
@@ -272,6 +267,13 @@ chip soc/intel/tigerlake
 				use conn1 as mux_conn[1]
 				device pnp 0c09.0 on end
 			end
+		end
+		device ref hda on
+			probe AUDIO MAX98357_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682_SNDW
+			probe AUDIO MAX98373_ALC5682I_I2S_UP4
+			probe AUDIO MAX98360_ALC5682I_I2S
 		end
 		device ref pcie_rp9 on
 			chip soc/intel/common/block/pcie/rtd3

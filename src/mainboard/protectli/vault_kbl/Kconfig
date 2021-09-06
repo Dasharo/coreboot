@@ -26,11 +26,9 @@ config MAINBOARD_PART_NUMBER
 	default "FW6"
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config MAX_CPUS

@@ -765,8 +765,10 @@ static int smbios_write_type7_cache_parameters(unsigned long *current,
 	if (!cpu_have_cpuid())
 		return len;
 
-	if (cpu_check_deterministic_cache_cpuid_supported() == CPUID_TYPE_INVALID) {
-		printk(BIOS_DEBUG, "SMBIOS: Unknown CPU\n");
+	enum cpu_type dcache_cpuid = cpu_check_deterministic_cache_cpuid_supported();
+	if (dcache_cpuid == CPUID_TYPE_INVALID || dcache_cpuid == CPUID_COMMAND_UNSUPPORTED) {
+		printk(BIOS_DEBUG, "SMBIOS: Unknown CPU or CPU doesn't support Deterministic "
+					"Cache CPUID leaf\n");
 		return len;
 	}
 
@@ -1130,9 +1132,8 @@ static u8 smbios_get_device_type_from_dev(struct device *dev)
 	}
 }
 
-/* Generate Type41 entries from devicetree */
-static int smbios_walk_device_tree_type41(struct device *dev, int *handle,
-					  unsigned long *current)
+static int smbios_generate_type41_from_devtree(struct device *dev, int *handle,
+					       unsigned long *current)
 {
 	static u8 type41_inst_cnt[SMBIOS_DEVICE_TYPE_COUNT + 1] = {};
 
@@ -1162,9 +1163,8 @@ static int smbios_walk_device_tree_type41(struct device *dev, int *handle,
 					device_type);
 }
 
-/* Generate Type9 entries from devicetree */
-static int smbios_walk_device_tree_type9(struct device *dev, int *handle,
-					 unsigned long *current)
+static int smbios_generate_type9_from_devtree(struct device *dev, int *handle,
+					      unsigned long *current)
 {
 	enum misc_slot_usage usage;
 	enum slot_data_bus_bandwidth bandwidth;
@@ -1223,8 +1223,8 @@ static int smbios_walk_device_tree(struct device *tree, int *handle, unsigned lo
 			printk(BIOS_INFO, "%s (%s)\n", dev_path(dev), dev_name(dev));
 			len += dev->ops->get_smbios_data(dev, handle, current);
 		}
-		len += smbios_walk_device_tree_type9(dev, handle, current);
-		len += smbios_walk_device_tree_type41(dev, handle, current);
+		len += smbios_generate_type9_from_devtree(dev, handle, current);
+		len += smbios_generate_type41_from_devtree(dev, handle, current);
 	}
 	return len;
 }

@@ -32,11 +32,9 @@ config MAINBOARD_VENDOR
 	default "Protectli"
 
 config DIMM_MAX
-	int
 	default 1
 
 config DIMM_SPD_SIZE
-	int
 	default 256
 
 config MAX_CPUS

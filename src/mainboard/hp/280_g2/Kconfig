@@ -23,11 +23,9 @@ config MAINBOARD_PART_NUMBER
 	default "280 G2"
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config UART_FOR_CONSOLE
