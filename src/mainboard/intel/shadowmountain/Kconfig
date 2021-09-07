@@ -25,6 +25,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select PCIEXP_HOTPLUG
 	select SOC_INTEL_ALDERLAKE
 	select SOC_INTEL_CSE_LITE_SKU
+	select INTEL_CAR_NEM #TODO - Enable INTEL_CAR_NEM_ENHANCED
 
 config CHROMEOS
 	select GBB_FLAG_FORCE_DEV_SWITCH_ON
@@ -39,15 +40,12 @@ config VBOOT
 	select VBOOT_EARLY_EC_SYNC
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree.cb"
 
 config MAINBOARD_DIR
-	string
 	default "intel/shadowmountain"
 
 config MAINBOARD_FAMILY
@@ -55,7 +53,6 @@ config MAINBOARD_FAMILY
 	default "Intel_shadowmountain"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "shadowmountain"
 
 config PCIEXP_HOTPLUG_BUSES

@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <device/device.h>
+#include <soc/devapc.h>
 #include <soc/emi.h>
+#include <soc/hdmi.h>
 #include <soc/mcupm.h>
 #include <soc/mmu_operations.h>
 #include <soc/sspm.h>
@@ -16,9 +18,11 @@ static void soc_read_resources(struct device *dev)
 static void soc_init(struct device *dev)
 {
 	mtk_mmu_disable_l2c_sram();
+	dapc_init();
 	mcupm_init();
 	sspm_init();
 	ufs_disable_refclk();
+	hdmi_low_power_setting();
 }
 
 static struct device_operations soc_ops = {

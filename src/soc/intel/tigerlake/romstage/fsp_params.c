@@ -7,7 +7,7 @@
 #include <device/device.h>
 #include <fsp/util.h>
 #include <intelblocks/cpulib.h>
-#include <soc/gpio_soc_defs.h>
+#include <soc/gpio.h>
 #include <soc/iomap.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
@@ -29,7 +29,10 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
 	m_cfg->IedSize = CONFIG_IED_REGION_SIZE;
 	m_cfg->SaGv = config->SaGv;
-	m_cfg->UserBd = BOARD_TYPE_ULT_ULX;
+	if (CONFIG(SOC_INTEL_TIGERLAKE_PCH_H))
+		m_cfg->UserBd = BOARD_TYPE_DESKTOP;
+	else
+		m_cfg->UserBd = BOARD_TYPE_ULT_ULX;
 	m_cfg->RMT = config->RMT;
 
 	/* CpuRatio Settings */
@@ -191,7 +194,14 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->SkipCpuReplacementCheck = !config->CpuReplacementCheck;
 
 	/* Skip CPU side PCIe enablement in FSP if device is disabled in devicetree */
-	m_cfg->CpuPcieRpEnableMask = is_devfn_enabled(SA_DEVFN_CPU_PCIE);
+	m_cfg->CpuPcieRpEnableMask = 0;
+	const unsigned int cpu_pcie_devs[] = {
+		SA_DEVFN_CPU_PCIE, SA_DEVFN_PEG1, SA_DEVFN_PEG2, SA_DEVFN_PEG3,
+	};
+	for (i = 0; i < ARRAY_SIZE(cpu_pcie_devs); i++) {
+		if (is_devfn_enabled(cpu_pcie_devs[i]))
+			m_cfg->CpuPcieRpEnableMask |= 1 << i;
+	}
 
 	/* Change TmeEnable UPD value according to INTEL_TME Kconfig */
 	m_cfg->TmeEnable = CONFIG(INTEL_TME);

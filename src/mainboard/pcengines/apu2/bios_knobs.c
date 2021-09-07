@@ -452,5 +452,11 @@ u16 get_watchdog_timeout(void)
 
 	timeout = (u16) strtoul(findstr(bootorder_file, "watchdog"), NULL, 16);
 
+	if (timeout > 0 && timeout < 60) {
+		printk(BIOS_WARNING, "Watchdog timeout set too low, "
+			"increasing to 60 seconds\n");
+		timeout = 60;
+	}
+
 	return timeout;
 }

@@ -16,33 +16,32 @@ chip soc/intel/elkhartlake
 	register "HeciEnabled" = "1"
 
 	# FSP configuration
-	register "SaGv" = "SaGv_Enabled"
+	register "SaGv" = "SaGv_Disabled"
 	register "SmbusEnable" = "1"
 	register "Heci2Enable" = "1"
 
-	# Display related UPDs
-	# Enable HPD for DDI ports C
-	register "DdiPortCHpd" = "1"
-
-	# Enable DDC for DDI ports C
-	register "DdiPortCDdc" = "1"
+	# Enable IBECC for the complete memory
+	register "ibecc" = "{
+		.enable = 1,
+		.mode = IBECC_ALL
+	}"
 
 	# USB related UPDs
-	register "usb2_ports[0]" = "USB2_PORT_MID(OC3)"	# USB3/2 Type A port1
-	register "usb2_ports[1]" = "USB2_PORT_MID(OC3)"	# USB2 WWAN
-	register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)"	# USB2 Bluetooth
-	register "usb2_ports[3]" = "USB2_PORT_MID(OC3)"	# Type-C Port1
-	register "usb2_ports[4]" = "USB2_PORT_MID(OC3)"	# Type-C Port2
-	register "usb2_ports[5]" = "USB2_PORT_MID(OC_SKIP)"	# Type-C Port3
-	register "usb2_ports[6]" = "USB2_PORT_MID(OC_SKIP)"	# Type-C Port4
-	register "usb2_ports[7]" = "USB2_PORT_MID(OC_SKIP)"	# USB3/2 Type A port2
-	register "usb2_ports[8]" = "USB2_PORT_MID(OC_SKIP)"	# USB2 Type A port1
-	register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# USB2 Type A port2
+	register "usb2_ports[0]" = "USB2_PORT_SHORT(OC_SKIP)"	# USB3/2 Type A port 1
+	register "usb2_ports[1]" = "USB2_PORT_SHORT(OC_SKIP)"	# USB3/2 Type A Port 2
+	register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)"	# Onboard USB
+	register "usb2_ports[3]" = "USB2_PORT_EMPTY"		# Port is unused
+	register "usb2_ports[4]" = "USB2_PORT_EMPTY"		# Port is unused
+	register "usb2_ports[5]" = "USB2_PORT_EMPTY"		# Port is unused
+	register "usb2_ports[6]" = "USB2_PORT_EMPTY"		# Port is unused
+	register "usb2_ports[7]" = "USB2_PORT_EMPTY"		# Port is unused
+	register "usb2_ports[8]" = "USB2_PORT_EMPTY"		# Port is unused
+	register "usb2_ports[9]" = "USB2_PORT_EMPTY"		# Port is unused
 
-	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC3)"	# USB3/2 Type A port1
-	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC3)"	# USB3/2 Type A port2
-	register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC3)"	# USB3 WLAN
-	register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC3)"	# UNUSED
+	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB3/2 Type A port1
+	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB3/2 Type A port2
+	register "usb3_ports[2]" = "USB3_PORT_EMPTY"		# Port is not used
+	register "usb3_ports[3]" = "USB3_PORT_EMPTY"		# Port is not used
 
 	# Skip the CPU repalcement check
 	register "SkipCpuReplacementCheck" = "1"
@@ -57,25 +56,41 @@ chip soc/intel/elkhartlake
 	register "PcieRpEnable[6]" = "1"
 
 	register "PcieClkSrcUsage[0]" = "0x00"
-	register "PcieClkSrcUsage[1]" = "0x06"
-	register "PcieClkSrcUsage[2]" = "0x04"
+	register "PcieClkSrcUsage[1]" = "0x01"
+	register "PcieClkSrcUsage[2]" = "0x02"
 	register "PcieClkSrcUsage[3]" = "0xFF"
 	register "PcieClkSrcUsage[4]" = "0xFF"
 	register "PcieClkSrcUsage[5]" = "0xFF"
 
-	register "PcieClkSrcClkReq[0]" = "0x0"
-	register "PcieClkSrcClkReq[1]" = "0x1"
-	register "PcieClkSrcClkReq[2]" = "0x2"
-	register "PcieClkSrcClkReq[3]" = "0x3"
-	register "PcieClkSrcClkReq[4]" = "0x4"
-	register "PcieClkSrcClkReq[5]" = "0x5"
+	register "PcieClkSrcClkReq[0]" = "0xFF"
+	register "PcieClkSrcClkReq[1]" = "0xFF"
+	register "PcieClkSrcClkReq[2]" = "0xFF"
+	register "PcieClkSrcClkReq[3]" = "0xFF"
+	register "PcieClkSrcClkReq[4]" = "0xFF"
+	register "PcieClkSrcClkReq[5]" = "0xFF"
+
+	# Disable all L1 substates for PCIe root ports
+	register "PcieRpL1Substates[0]" = "L1_SS_DISABLED"
+	register "PcieRpL1Substates[1]" = "L1_SS_DISABLED"
+	register "PcieRpL1Substates[2]" = "L1_SS_DISABLED"
+	register "PcieRpL1Substates[3]" = "L1_SS_DISABLED"
+	register "PcieRpL1Substates[4]" = "L1_SS_DISABLED"
+	register "PcieRpL1Substates[5]" = "L1_SS_DISABLED"
+
+	# Disable LTR for all PCIe root ports
+	register "PcieRpLtrDisable[0]" = "true"
+	register "PcieRpLtrDisable[1]" = "true"
+	register "PcieRpLtrDisable[2]" = "true"
+	register "PcieRpLtrDisable[3]" = "true"
+	register "PcieRpLtrDisable[4]" = "true"
+	register "PcieRpLtrDisable[5]" = "true"
 
 	# Storage (SATA/SDCARD/EMMC) related UPDs
-	register "SataSalpSupport" = "1"
+	register "SataSalpSupport" = "0"
 	register "SataPortsEnable[0]" = "1"
 	register "SataPortsEnable[1]" = "1"
 	register "SataPortsDevSlp[0]" = "0"
-	register "SataPortsDevSlp[1]" = "1"
+	register "SataPortsDevSlp[1]" = "0"
 
 	register "ScsEmmcHs400Enabled" = "1"
 	register "ScsEmmcDdr50Enabled" = "1"
@@ -83,14 +98,14 @@ chip soc/intel/elkhartlake
 
 	# LPSS Serial IO (I2C/UART/GSPI) related UPDs
 	register "SerialIoI2cMode" = "{
-		[PchSerialIoIndexI2C0] = PchSerialIoPci,
-		[PchSerialIoIndexI2C1] = PchSerialIoDisabled,
-		[PchSerialIoIndexI2C2] = PchSerialIoPci,
-		[PchSerialIoIndexI2C3] = PchSerialIoPci,
+		[PchSerialIoIndexI2C0] = PchSerialIoDisabled,
+		[PchSerialIoIndexI2C1] = PchSerialIoPci,
+		[PchSerialIoIndexI2C2] = PchSerialIoDisabled,
+		[PchSerialIoIndexI2C3] = PchSerialIoDisabled,
 		[PchSerialIoIndexI2C4] = PchSerialIoPci,
 		[PchSerialIoIndexI2C5] = PchSerialIoDisabled,
-		[PchSerialIoIndexI2C6] = PchSerialIoPci,
-		[PchSerialIoIndexI2C7] = PchSerialIoPci,
+		[PchSerialIoIndexI2C6] = PchSerialIoDisabled,
+		[PchSerialIoIndexI2C7] = PchSerialIoDisabled,
 	}"
 
 	register "SerialIoI2cPadsTermination" = "{
@@ -102,30 +117,6 @@ chip soc/intel/elkhartlake
 		[PchSerialIoIndexI2C5] = 1,
 		[PchSerialIoIndexI2C6] = 1,
 		[PchSerialIoIndexI2C7] = 1,
-	}"
-
-	register "SerialIoGSpiMode" = "{
-		[PchSerialIoIndexGSPI0] = PchSerialIoDisabled,
-		[PchSerialIoIndexGSPI1] = PchSerialIoHidden,
-		[PchSerialIoIndexGSPI2] = PchSerialIoDisabled,
-	}"
-
-	register "SerialIoGSpiCsEnable" = "{
-		[PchSerialIoIndexGSPI0] = 1,
-		[PchSerialIoIndexGSPI1] = 1,
-		[PchSerialIoIndexGSPI2] = 1,
-	}"
-
-	register "SerialIoGSpiCsMode" = "{
-		[PchSerialIoIndexGSPI0] = 0,
-		[PchSerialIoIndexGSPI1] = 0,
-		[PchSerialIoIndexGSPI2] = 0,
-	}"
-
-	register "SerialIoGSpiCsState" = "{
-		[PchSerialIoIndexGSPI0] = 0,
-		[PchSerialIoIndexGSPI1] = 0,
-		[PchSerialIoIndexGSPI2] = 0,
 	}"
 
 	register "SerialIoUartMode" = "{
@@ -144,13 +135,6 @@ chip soc/intel/elkhartlake
 	register "PchTsnGbeLinkSpeed" = "Tsn_2_5_Gbps"
 	register "PchTsnGbeSgmiiEnable" = "1"
 
-	# GPIO for SD card detect
-	register "sdcard_cd_gpio" = "GPP_G5"
-
-	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
-	}"
-
 	device domain 0 on
 		device pci 00.0 on	end # Host Bridge
 		device pci 02.0 on	end # Integrated Graphics Device
@@ -158,8 +142,8 @@ chip soc/intel/elkhartlake
 		device pci 08.0 off	end # GNA
 		device pci 09.0 off	end # CPU Intel Trace Hub
 
-		device pci 10.0 on	end # I2C6
-		device pci 10.1 on	end # I2C7
+		device pci 10.0 off	end # I2C6
+		device pci 10.1 off	end # I2C7
 		device pci 10.5 on	end # Integrated Error Handler
 
 		device pci 11.0 off	end # Intel PSE UART0
@@ -171,7 +155,7 @@ chip soc/intel/elkhartlake
 		device pci 11.6 off	end # Intel PSE IS20
 		device pci 11.7 off	end # Intel PSE IS21
 
-		device pci 12.0 on	end # GSPI2
+		device pci 12.0 off	end # GSPI2
 		device pci 12.3 on	end # Management Engine UMA Access
 		device pci 12.4 on	end # Management Engine PTT DMA Controller
 		device pci 12.5 off	end # UFS0
@@ -187,10 +171,10 @@ chip soc/intel/elkhartlake
 		device pci 14.0 on	end # USB3.1 xHCI
 		device pci 14.1 off	end # USB3.1 xDCI (OTG)
 
-		device pci 15.0 on	end # I2C0
+		device pci 15.0 off	end # I2C0
 		device pci 15.1 on	end # I2C1
-		device pci 15.2 on	end # I2C2
-		device pci 15.3 on	end # I2C3
+		device pci 15.2 off	end # I2C2
+		device pci 15.3 off	end # I2C3
 
 		device pci 16.0 on	end # Management Engine Interface 1
 		device pci 16.1 on	end # Management Engine Interface 2
@@ -208,7 +192,7 @@ chip soc/intel/elkhartlake
 		device pci 18.6 off	end # Intel PSE QEP3
 
 		device pci 19.0 on	end # I2C4
-		device pci 19.1 on	end # I2C5
+		device pci 19.1 off	end # I2C5
 		device pci 19.2 on	end # UART2
 
 		device pci 1a.0 on	end # eMMC
@@ -242,17 +226,36 @@ chip soc/intel/elkhartlake
 
 		device pci 1e.0 on	end # UART0
 		device pci 1e.1 on	end # UART1
-		device pci 1e.2 on	end # GSPI0
-		device pci 1e.3 on	end # GSPI1
+		device pci 1e.2 off	end # GSPI0
+		device pci 1e.3 off	end # GSPI1
 		device pci 1e.4 on	end # PCH Time-Sensitive Networking GbE
 		device pci 1e.6 on	end # HPET
 		device pci 1e.7 on	end # IOAPIC
 
-		device pci 1f.0 on	end # eSPI Interface
+		device pci 1f.0 on	    # eSPI Interface
+			chip drivers/pc80/tpm
+				device pnp 0c31.0 on end
+			end
+		end
 		device pci 1f.1 on	end # P2SB
 		device pci 1f.2 hidden	end # Power Management Controller
 		device pci 1f.3 off	end # Intel cAVS/HDA
-		device pci 1f.4 on	end # SMBus
+		device pci 1f.4	on	    # SMBus
+			# Enable external RTC chip
+			chip drivers/i2c/rx6110sa
+				register "bus_speed" = "I2C_SPEED_STANDARD"
+				register "pmon_sampling" = "PMON_SAMPL_256_MS"
+				register "bks_on" = "0"
+				register "bks_off" = "1"
+				register "iocut_en" = "1"
+				register "set_user_date" = "1"
+				register "user_year" = "04"
+				register "user_month" = "07"
+				register "user_day" = "01"
+				register "user_weekday" = "4"
+				device i2c 0x32 on end  # RTC RX6110 SA
+			end
+		end
 		device pci 1f.5 on	end # PCH SPI (flash & TPM)
 		device pci 1f.7 off	end # PCH Intel Trace Hub
 	end

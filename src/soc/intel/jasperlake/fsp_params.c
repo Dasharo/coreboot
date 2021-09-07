@@ -5,6 +5,7 @@
 #include <fsp/api.h>
 #include <fsp/ppi/mp_service_ppi.h>
 #include <fsp/util.h>
+#include <option.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/xdci.h>
@@ -14,6 +15,7 @@
 #include <soc/ramstage.h>
 #include <soc/soc_chip.h>
 #include <string.h>
+#include <types.h>
 
 /*
  * ME End of Post configuration
@@ -68,23 +70,19 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->CpuMpPpi = (uintptr_t) mp_fill_ppi_services_data();
 
 	/* Chipset Lockdown */
-	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT) {
-		params->PchLockDownGlobalSmi = 0;
-		params->PchLockDownBiosInterface = 0;
-		params->PchUnlockGpioPads = 1;
-		params->RtcMemoryLock = 0;
-	} else {
-		params->PchLockDownGlobalSmi = 1;
-		params->PchLockDownBiosInterface = 1;
-		params->PchUnlockGpioPads = 0;
-		params->RtcMemoryLock = 1;
-	}
+	const bool lockdown_by_fsp = get_lockdown_config() == CHIPSET_LOCKDOWN_FSP;
+	params->PchLockDownGlobalSmi = lockdown_by_fsp;
+	params->PchLockDownBiosInterface = lockdown_by_fsp;
+	params->PchUnlockGpioPads = !lockdown_by_fsp;
+	params->RtcMemoryLock = lockdown_by_fsp;
+	params->SkipPamLock = !lockdown_by_fsp;
 
 	/* coreboot will send EOP before loading payload */
 	params->EndOfPostMessage = EOP_DISABLE;
 
 	/* Legacy 8254 timer support */
-	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
+	bool use_8254 = get_uint_option("legacy_8254_timer", CONFIG(USE_LEGACY_8254_TIMER));
+	params->Enable8254ClockGating = !use_8254;
 	params->Enable8254ClockGatingOnS3 = 1;
 
 	/* disable Legacy PME */
@@ -194,6 +192,12 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->PreWake = config->PreWake;
 		params->RampUp = config->RampUp;
 		params->RampDown = config->RampDown;
+	}
+
+	if (config->disable_external_bypass_vr) {
+		params->PchFivrExtV1p05RailEnabledStates = 0;
+		params->PchFivrExtVnnRailSxEnabledStates = 0;
+		params->PchFivrExtVnnRailEnabledStates = 0;
 	}
 
 	/* Override/Fill FSP Silicon Param for mainboard */

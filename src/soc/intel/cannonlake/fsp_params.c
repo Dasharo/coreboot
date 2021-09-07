@@ -7,6 +7,7 @@
 #include <device/pci.h>
 #include <fsp/api.h>
 #include <fsp/util.h>
+#include <option.h>
 #include <intelblocks/irq.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/power_limit.h>
@@ -17,6 +18,7 @@
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <string.h>
+#include <types.h>
 
 #include "chip.h"
 
@@ -72,7 +74,9 @@ static const struct slot_irq_constraints irq_constraints[] = {
 		.slot = PCH_DEV_SLOT_THERMAL,
 		.fns = {
 			ANY_PIRQ(PCH_DEVFN_THERMAL),
+#if !CONFIG(SOC_INTEL_CANNONLAKE_PCH_H)
 			ANY_PIRQ(PCH_DEVFN_UFS),
+#endif
 			DIRECT_IRQ(PCH_DEVFN_GSPI2),
 		},
 	},
@@ -120,17 +124,21 @@ static const struct slot_irq_constraints irq_constraints[] = {
 	{
 		.slot = PCH_DEV_SLOT_SIO2,
 		.fns = {
+#if !CONFIG(SOC_INTEL_CANNONLAKE_PCH_H)
 			DIRECT_IRQ(PCH_DEVFN_I2C4),
 			DIRECT_IRQ(PCH_DEVFN_I2C5),
+#endif
 			DIRECT_IRQ(PCH_DEVFN_UART2),
 		},
 	},
+#if !CONFIG(SOC_INTEL_CANNONLAKE_PCH_H)
 	{
 		.slot = PCH_DEV_SLOT_STORAGE,
 		.fns = {
 			ANY_PIRQ(PCH_DEVFN_EMMC),
 		},
 	},
+#endif
 #if CONFIG(SOC_INTEL_CANNONLAKE_PCH_H)
 	{
 		.slot = PCH_DEV_SLOT_PCIE_2,
@@ -425,8 +433,9 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
 	/* Legacy 8254 timer support */
-	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
-	params->Enable8254ClockGatingOnS3 = !CONFIG(USE_LEGACY_8254_TIMER);
+	bool use_8254 = get_uint_option("legacy_8254_timer", CONFIG(USE_LEGACY_8254_TIMER));
+	params->Enable8254ClockGating = !use_8254;
+	params->Enable8254ClockGatingOnS3 = !use_8254;
 
 	params->EnableTcoTimer = CONFIG(USE_PM_ACPI_TIMER);
 
@@ -608,6 +617,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	/* Set TccActivationOffset */
 	tconfig->TccActivationOffset = config->tcc_offset;
+	tconfig->TccOffsetClamp = config->tcc_offset > 0;
 
 	/* Unlock all GPIO pads */
 	tconfig->PchUnlockGpioPads = config->PchUnlockGpioPads;
@@ -638,35 +648,21 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 #endif
 
 	/* Chipset Lockdown */
-	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT) {
-		tconfig->PchLockDownGlobalSmi = 0;
-		tconfig->PchLockDownBiosInterface = 0;
-		params->PchLockDownBiosLock = 0;
-		params->PchLockDownRtcMemoryLock = 0;
+	const bool lockdown_by_fsp = get_lockdown_config() == CHIPSET_LOCKDOWN_FSP;
+	tconfig->PchLockDownGlobalSmi = lockdown_by_fsp;
+	tconfig->PchLockDownBiosInterface = lockdown_by_fsp;
+	params->PchLockDownBiosLock = lockdown_by_fsp;
+	params->PchLockDownRtcMemoryLock = lockdown_by_fsp;
+	tconfig->SkipPamLock = !lockdown_by_fsp;
 #if CONFIG(SOC_INTEL_COMETLAKE)
-		/*
-		 * Skip SPI Flash Lockdown from inside FSP.
-		 * Making this config "0" means FSP won't set the FLOCKDN bit
-		 * of SPIBAR + 0x04 (i.e., Bit 15 of BIOS_HSFSTS_CTL).
-		 * So, it becomes coreboot's responsibility to set this bit
-		 * before end of POST for security concerns.
-		 */
-		params->SpiFlashCfgLockDown = 0;
+	/*
+	 * Making this config "0" means FSP won't set the FLOCKDN bit
+	 * of SPIBAR + 0x04 (i.e., Bit 15 of BIOS_HSFSTS_CTL).
+	 * So, it becomes coreboot's responsibility to set this bit
+	 * before end of POST for security concerns.
+	 */
+	params->SpiFlashCfgLockDown = lockdown_by_fsp;
 #endif
-	} else {
-		tconfig->PchLockDownGlobalSmi = 1;
-		tconfig->PchLockDownBiosInterface = 1;
-		params->PchLockDownBiosLock = 1;
-		params->PchLockDownRtcMemoryLock = 1;
-#if CONFIG(SOC_INTEL_COMETLAKE)
-		/*
-		 * Enable SPI Flash Lockdown from inside FSP.
-		 * Making this config "1" means FSP will set the FLOCKDN bit
-		 * of SPIBAR + 0x04 (i.e., Bit 15 of BIOS_HSFSTS_CTL).
-		 */
-		params->SpiFlashCfgLockDown = 1;
-#endif
-	}
 
 #if !CONFIG(SOC_INTEL_COMETLAKE)
 	params->VrPowerDeliveryDesign = config->VrPowerDeliveryDesign;

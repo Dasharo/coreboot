@@ -31,6 +31,11 @@ tests-y += rtc-test
 tests-y += spd_cache-ddr3-test
 tests-y += spd_cache-ddr4-test
 tests-y += cbmem_stage_cache-test
+tests-y += libgcc-test
+tests-y += cbfs-verification-no-sha512-test
+tests-y += cbfs-verification-has-sha512-test
+tests-y += cbfs-no-verification-no-sha512-test
+tests-y += cbfs-no-verification-has-sha512-test
 
 string-test-srcs += tests/lib/string-test.c
 string-test-srcs += src/lib/string.c
@@ -72,7 +77,6 @@ fmap-test-srcs += tests/stubs/console.c
 fmap-test-srcs += src/lib/boot_device.c
 fmap-test-srcs += src/commonlib/region.c
 fmap-test-cflags += -I tests/include/tests/lib/fmap
-fmap-test-cflags += -I 3rdparty/vboot/firmware/include
 
 imd_cbmem-ramstage-test-stage := ramstage
 imd_cbmem-ramstage-test-srcs += tests/lib/imd_cbmem-test.c
@@ -140,7 +144,6 @@ coreboot_table-test-srcs += src/lib/compute_ip_checksum.c
 coreboot_table-test-srcs += src/lib/coreboot_table.c
 coreboot_table-test-srcs += src/lib/imd_cbmem.c
 coreboot_table-test-srcs += src/lib/imd.c
-coreboot_table-test-cflags += -I src -I 3rdparty/vboot/firmware/include
 coreboot_table-test-cflags += -I tests/include/tests/lib/fmap
 coreboot_table-test-mocks += cbmem_top_chipset
 
@@ -174,6 +177,34 @@ cbmem_stage_cache-test-srcs += tests/stubs/console.c
 cbmem_stage_cache-test-srcs += src/lib/cbmem_stage_cache.c
 cbmem_stage_cache-test-srcs += src/lib/imd_cbmem.c
 cbmem_stage_cache-test-srcs += src/lib/imd.c
-cbmem_stage_cache-test-cflags += -I 3rdparty/vboot/firmware/include
-cbmem_stage_cache-test-cflags += -I $(src)/commonlib/include
 cbmem_stage_cache-test-config += CONFIG_CBMEM_STAGE_CACHE=1
+
+libgcc-test-srcs += tests/lib/libgcc-test.c
+
+# CBFS varification tests are compiled with CONFIG_CBFS_VERIFICATION
+# and VB2_SUPPORT_SHA512 set and unset. Code should work with and without
+# verification and with hash structure of different sizes.
+cbfs-verification-no-sha512-test-stage := bootblock
+cbfs-verification-no-sha512-test-srcs := tests/lib/cbfs-verification-test.c \
+					tests/stubs/console.c \
+					tests/stubs/die.c \
+					tests/mock/cbfs_file_mock.c \
+					src/lib/cbfs.c \
+					src/commonlib/bsd/cbfs_private.c \
+					src/commonlib/mem_pool.c \
+					src/commonlib/region.c
+cbfs-verification-no-sha512-test-mocks += cbfs_get_boot_device cbfs_lookup
+cbfs-verification-no-sha512-test-config += CONFIG_COLLECT_TIMESTAMPS=0 \
+					CONFIG_CBFS_VERIFICATION=1 \
+					CONFIG_NO_CBFS_MCACHE=1 \
+					VB2_SUPPORT_SHA512=0
+
+$(call copy-test,cbfs-verification-no-sha512-test,cbfs-verification-has-sha512-test)
+cbfs-verification-has-sha512-test-config += VB2_SUPPORT_SHA512=1
+
+$(call copy-test,cbfs-verification-no-sha512-test,cbfs-no-verification-no-sha512-test)
+cbfs-no-verification-no-sha512-test-config += CONFIG_CBFS_VERIFICATION=0
+
+$(call copy-test,cbfs-verification-no-sha512-test,cbfs-no-verification-has-sha512-test)
+cbfs-no-verification-has-sha512-test-config += CONFIG_CBFS_VERIFICATION=0 \
+						VB2_SUPPORT_SHA512=1

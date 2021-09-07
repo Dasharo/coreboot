@@ -7,7 +7,6 @@
 #include <device/pci_def.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
-#include <soc/ramstage.h>
 #include <soc/rcba.h>
 #include <soc/serialio.h>
 #include <soc/spi.h>

@@ -12,6 +12,15 @@ official [coreboot repository](https://review.coreboot.org/cgit/coreboot.git)
 Please use [pce-fw-builder](https://github.com/pcengines/pce-fw-builder)
 
 ## [Unreleased]
+## [v4.14.0.4] - 2021-09-06
+### Changed
+- rebased with official coreboot repository commit d9f5d90
+- enabled EHCI controller by default on apu3-apu6 platforms
+- [updated sortbootorder to v4.6.22](https://github.com/pcengines/sortbootorder/blob/master/CHANGELOG.md#v4622---2021-09-06)
+
+### Added
+- safeguard against setting watchdog timeout too low
+
 ## [v4.14.0.3] - 2021-07-29
 ### Changed
 - rebased with official coreboot repository commit c049c80
@@ -516,8 +525,9 @@ redundant code which was similar for APU2/3/5 boards.
 - turn off D4 and D5 leds on boot
 - enable power on after power failure
 
-[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.14.0.3-rc1...develop
-[v4.14.0.3]: https://github.com/pcengines/coreboot/compare/v4.13.0.2...v4.14.0.3-rc1
+[Unreleased]: https://github.com/pcengines/coreboot/compare/v4.14.0.4...develop
+[v4.14.0.4]: https://github.com/pcengines/coreboot/compare/v4.13.0.3...v4.14.0.4
+[v4.14.0.3]: https://github.com/pcengines/coreboot/compare/v4.13.0.2...v4.14.0.3
 [v4.14.0.2]: https://github.com/pcengines/coreboot/compare/v4.13.0.1...v4.14.0.2
 [v4.14.0.1]: https://github.com/pcengines/coreboot/compare/v4.13.0.6...v4.14.0.1
 [v4.13.0.6]: https://github.com/pcengines/coreboot/compare/v4.13.0.5...v4.13.0.6

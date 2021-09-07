@@ -4,6 +4,7 @@
 #define _SOC_CHIP_H_
 
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <device/pci_ids.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
@@ -15,15 +16,40 @@
 #include <soc/pmc.h>
 #include <soc/serialio.h>
 #include <soc/usb.h>
+#include <soc/vr_config.h>
 #include <stdint.h>
 
 /* Types of different SKUs */
 enum soc_intel_alderlake_power_limits {
-	ADL_P_POWER_LIMITS_282_CORE,
-	ADL_P_POWER_LIMITS_482_CORE,
-	ADL_P_POWER_LIMITS_682_CORE,
-	ADL_M_POWER_LIMITS_282_CORE,
+	ADL_P_282_CORE,
+	ADL_P_482_CORE,
+	ADL_P_682_28W_CORE,
+	ADL_P_682_45W_CORE,
+	ADL_M_282_CORE,
+	ADL_M_242_CORE,
 	ADL_POWER_LIMITS_COUNT
+};
+
+/* TDP values for different SKUs */
+enum soc_intel_alderlake_cpu_tdps {
+	TDP_9W  = 9,
+	TDP_15W = 15,
+	TDP_28W = 28,
+	TDP_45W = 45
+};
+
+/* Mapping of different SKUs based on CPU ID and TDP values */
+static const struct {
+	unsigned int cpu_id;
+	enum soc_intel_alderlake_power_limits limits;
+	enum soc_intel_alderlake_cpu_tdps cpu_tdp;
+} cpuid_to_adl[] = {
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_7, ADL_P_282_CORE, TDP_15W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_5, ADL_P_482_CORE, TDP_28W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_3, ADL_P_682_28W_CORE, TDP_28W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_3, ADL_P_682_45W_CORE, TDP_45W },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_ID_1, ADL_M_282_CORE, TDP_15W },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_ID_2, ADL_M_242_CORE, TDP_9W },
 };
 
 /* Types of display ports */
@@ -391,6 +417,11 @@ struct soc_intel_alderlake_config {
 		/* External Icc Max for VnnSx rail in mA  */
 		int vnn_icc_max_ma;
 	} ext_fivr_settings;
+
+	/* VrConfig Settings.
+	* 0 = VR_DOMAIN_IA Core 1 = VR_DOMAIN_GT.
+	*/
+	struct vr_config domain_vr_config[NUM_VR_DOMAINS];
 };
 
 typedef struct soc_intel_alderlake_config config_t;

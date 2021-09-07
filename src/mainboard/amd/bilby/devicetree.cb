@@ -92,6 +92,15 @@ chip soc/amd/picasso
 		.tx_res_tune = 0x01,
 	}"
 
+	register "usb_pd_config_override[0]" = "{
+		.rfmux_override_en  = 1,
+		.rfmux_config = USB_PD_RFMUX_DP_X4_MODE,
+	}"
+	register "usb_pd_config_override[1]" = "{
+		.rfmux_override_en  = 1,
+		.rfmux_config = USB_PD_RFMUX_DP_X4_MODE,
+	}"
+
 	# USB OC pin mapping; all ports share one OC pin
 	register "usb_port_overcurrent_pin[0]" = "USB_OC_PIN_0"
 	register "usb_port_overcurrent_pin[1]" = "USB_OC_PIN_0"
@@ -99,15 +108,6 @@ chip soc/amd/picasso
 	register "usb_port_overcurrent_pin[3]" = "USB_OC_PIN_0"
 	register "usb_port_overcurrent_pin[4]" = "USB_OC_PIN_0"
 	register "usb_port_overcurrent_pin[5]" = "USB_OC_PIN_0"
-
-	# SPI Configuration
-	register "common_config.spi_config" = "{
-		.normal_speed = SPI_SPEED_33M, /* MHz */
-		.fast_speed = SPI_SPEED_66M, /* MHz */
-		.altio_speed = SPI_SPEED_33M, /* MHz */
-		.tpm_speed = SPI_SPEED_33M, /* MHz */
-		.read_mode = SPI_READ_MODE_QUAD114,
-	}"
 
 	# eSPI Configuration
 	register "common_config.espi_config" = "{
@@ -128,13 +128,13 @@ chip soc/amd/picasso
 	}"
 
 	# genral purpose PCIe clock output configuration
-	register "gpp_clk_config[0]" = "GPP_CLK_REQ"
-	register "gpp_clk_config[1]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[0]" = "GPP_CLK_OFF"
+	register "gpp_clk_config[1]" = "GPP_CLK_OFF"
 	register "gpp_clk_config[2]" = "GPP_CLK_REQ"
-	register "gpp_clk_config[3]" = "GPP_CLK_REQ"
-	register "gpp_clk_config[4]" = "GPP_CLK_REQ"
-	register "gpp_clk_config[5]" = "GPP_CLK_REQ"
-	register "gpp_clk_config[6]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[3]" = "GPP_CLK_ON"
+	register "gpp_clk_config[4]" = "GPP_CLK_ON"
+	register "gpp_clk_config[5]" = "GPP_CLK_OFF"
+	register "gpp_clk_config[6]" = "GPP_CLK_OFF"
 
 	register "pspp_policy" = "DXIO_PSPP_BALANCED"
 

@@ -31,11 +31,9 @@ config MAINBOARD_FAMILY
 	default "PRODRIVE_HERMES_SERIES"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Hermes CFL"
 
 config MAINBOARD_DIR
-	string
 	default "prodrive/hermes"
 
 config PCIEXP_L1_SUB_STATE
@@ -47,7 +45,6 @@ config PCIEXP_CLK_PM
 	default n
 
 config VARIANT_DIR
-	string
 	default "baseboard"	if BOARD_PRODRIVE_HERMES_BASEBOARD
 
 config MAX_CPUS
@@ -55,7 +52,6 @@ config MAX_CPUS
 	default 16
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config CONSOLE_POST
@@ -67,7 +63,6 @@ config POST_IO
 	default n
 
 config CBFS_SIZE
-	hex
 	default 0x900000
 
 endif # BOARD_PRODRIVE_HERMES_BASEBOARD

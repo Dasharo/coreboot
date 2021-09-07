@@ -449,8 +449,11 @@ static int start_aps(struct bus *cpu_bus, int ap_count, atomic_t *num_aps)
 
 	/* Send INIT IPI to all but self. */
 	lapic_send_ipi(LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT | LAPIC_DM_INIT, 0);
-	printk(BIOS_DEBUG, "Waiting for 10ms after sending INIT.\n");
-	mdelay(10);
+
+	if (!CONFIG(X86_AMD_INIT_SIPI)) {
+		printk(BIOS_DEBUG, "Waiting for 10ms after sending INIT.\n");
+		mdelay(10);
+	}
 
 	/* Send 1st SIPI */
 	if (lapic_busy()) {
@@ -569,7 +572,7 @@ static void init_bsp(struct bus *cpu_bus)
 	info->cpu->name = processor_name;
 
 	if (info->index != 0)
-		printk(BIOS_CRIT, "BSP index(%d) != 0!\n", info->index);
+		printk(BIOS_CRIT, "BSP index(%zd) != 0!\n", info->index);
 
 	/* Track BSP in cpu_map structures. */
 	cpu_add_map_entry(info->index);
@@ -994,7 +997,7 @@ int mp_run_on_all_aps(void (*func)(void *), void *arg, long expire_us, bool run_
 	int ap_index, bsp_index;
 
 	if (run_parallel)
-		return mp_run_on_aps(func, arg, 0, expire_us);
+		return mp_run_on_aps(func, arg, MP_RUN_ON_ALL_CPUS, expire_us);
 
 	bsp_index = cpu_index();
 

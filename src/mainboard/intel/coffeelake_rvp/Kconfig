@@ -20,11 +20,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_HAS_LPC_TPM
 
 config MAINBOARD_DIR
-	string
 	default "intel/coffeelake_rvp"
 
 config VARIANT_DIR
-	string
 	default "cfl_u" if BOARD_INTEL_COFFEELAKE_RVPU
 	default "cfl_h" if BOARD_INTEL_COFFEELAKE_RVP11
 	default "whl_u" if BOARD_INTEL_WHISKEYLAKE_RVP
@@ -32,7 +30,6 @@ config VARIANT_DIR
 	default "cml_u" if BOARD_INTEL_COMETLAKE_RVPU
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "whlrvp" if BOARD_INTEL_WHISKEYLAKE_RVP
 	default "cmlrvp" if BOARD_INTEL_COMETLAKE_RVPU
 	default "cflrvp"
@@ -57,15 +54,12 @@ config UART_FOR_CONSOLE
 	default 2
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree.cb"
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config FMDFILE
-	string
 	depends on VBOOT
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos.fmd" if BOARD_ROMSIZE_KB_16384
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos_32MB.fmd" if BOARD_ROMSIZE_KB_32768
@@ -84,7 +78,6 @@ config INCLUDE_SND_MAX98373_NHLT
 	select NHLT_MAX98373
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config VBOOT

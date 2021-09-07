@@ -1,9 +1,5 @@
 chip soc/intel/alderlake
 
-	device cpu_cluster 0 on
-		device lapic 0 on end
-	end
-
 	# GPE configuration
 	# Note that GPE events called out in ASL code rely on this
 	# route. i.e. If this route changes then the affected GPE
@@ -19,6 +15,9 @@ chip soc/intel/alderlake
 
 	# Enable CNVi BT
 	register "CnviBtCore" = "true"
+
+	# Sagv Configuration
+	register "SaGv" = "SaGv_Enabled"
 
 	register "usb2_ports[0]" = "USB2_PORT_MID(OC0)"		# Type-C Port1
 	register "usb2_ports[1]" = "USB2_PORT_MID(OC0)"		# Type-C Port2
@@ -173,7 +172,7 @@ chip soc/intel/alderlake
 
 	# HD Audio
 	register "PchHdaDspEnable" = "1"
-	register "PchHdaIDispLinkTmode" = "HDA_TMODE_4T"
+	register "PchHdaIDispLinkTmode" = "HDA_TMODE_8T"
 	register "PchHdaIDispLinkFrequency" = "HDA_LINKFREQ_96MHZ"
 	register "PchHdaIDispCodecEnable" = "1"
 
@@ -181,7 +180,6 @@ chip soc/intel/alderlake
 
 	# Intel Common SoC Config
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
 		},

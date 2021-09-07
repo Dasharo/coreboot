@@ -4,6 +4,8 @@
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
 #include <commonlib/helpers.h>
+#include <delay.h>
+#include <gpio.h>
 #include <soc/gpio.h>
 
 /* GPIO configuration in ramstage*/
@@ -31,8 +33,8 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	PAD_SCI(GPIO_9, PULL_NONE, EDGE_HIGH),
 	/* S0A3 */
 	PAD_NF(GPIO_10, S0A3, PULL_NONE),
-	/* SOC_FP_RST_L */
-	PAD_GPO(GPIO_11, HIGH),
+	/* SOC_FP_RST_L - Brought high in finalize */
+	PAD_GPO(GPIO_11, LOW),
 	/* SLP_S3_GATED */
 	PAD_GPO(GPIO_12, LOW),
 	/* GPIO_13 - GPIO_15: Not available */
@@ -58,7 +60,7 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	/* PCIE_RST0_L */
 	PAD_NFO(GPIO_26, PCIE_RST_L, HIGH),
 	/* PCIE_RST1_L */
-	PAD_NF(GPIO_27, PCIE_RST1_L, PULL_NONE),
+	PAD_NFO(GPIO_27, PCIE_RST1_L, HIGH),
 	/* GPIO_28: Not available */
 	/* WLAN_AUX_RESET (Active HIGH)*/
 	PAD_GPO(GPIO_29, LOW),
@@ -78,7 +80,7 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	/* SOC_BIOS_WP_L */
 	PAD_GPI(GPIO_67, PULL_NONE),
 	/* EN_PP3300_TCHSCR */
-	PAD_GPO(GPIO_68, LOW),
+	PAD_GPO(GPIO_68, HIGH),
 	/* SD_AUX_RESET_L */
 	PAD_GPO(GPIO_69, HIGH),
 	/* Unused TP27  */
@@ -105,7 +107,7 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 	PAD_GPI(GPIO_89, PULL_NONE),
 	/* HP_INT_ODL */
 	PAD_GPI(GPIO_90, PULL_NONE),
-	/* SD_EX_PRSNT_L */
+	/* SD_EX_PRSNT_L(Guybrush BoardID 1 only) / EC_IN_RW_OD */
 	PAD_GPI(GPIO_91, PULL_NONE),
 	/* CLK_REQ0_L */
 	PAD_NF(GPIO_92, CLK_REQ0_L, PULL_NONE),
@@ -167,6 +169,7 @@ static const struct soc_amd_gpio base_gpio_table[] = {
 
 /* Early GPIO configuration */
 static const struct soc_amd_gpio early_gpio_table[] = {
+	/* Assert all AUX reset lines */
 	/* WWAN_AUX_RESET_L */
 	PAD_GPO(GPIO_18, LOW),
 	/* WLAN_AUX_RESET (ACTIVE HIGH) */
@@ -177,8 +180,12 @@ static const struct soc_amd_gpio early_gpio_table[] = {
 	PAD_GPO(GPIO_69, LOW),
 	/* Guybrush BID>1: Unused TP27; BID==1: SD_AUX_RESET_L */
 	PAD_NC(GPIO_70),
+
+	/* Deassert PCIe Reset lines */
 	/* PCIE_RST0_L */
 	PAD_NFO(GPIO_26, PCIE_RST_L, HIGH),
+	/* PCIE_RST1_L */
+	PAD_NFO(GPIO_27, PCIE_RST1_L, HIGH),
 
 /* Power on WLAN & WWAN */
 	/* EN_PP3300_WLAN */
@@ -239,7 +246,7 @@ static const struct soc_amd_gpio early_gpio_table[] = {
  */
 
 static const struct soc_amd_gpio bootblock_gpio_table[] = {
-/* Enable WWAN & WLAN */
+	/* Enable WWAN & WLAN power, Deassert WWAN reset */
 	/* EN_PWR_WWAN_X */
 	PAD_GPO(GPIO_8, HIGH),
 	/* WWAN_RST_L */
@@ -257,7 +264,15 @@ static const struct soc_amd_gpio sleep_gpio_table[] = {
 
 /* PCIE_RST needs to be brought high before FSP-M runs */
 static const struct soc_amd_gpio pcie_gpio_table[] = {
-/* Disable all AUX_RESET lines & PCIE_RST */
+	/* Allow WWAN power to be overridden by platform */
+	/* EN_PWR_WWAN_X */
+	PAD_GPO(GPIO_8, HIGH),
+	/* WWAN_RST_L */
+	PAD_GPO(GPIO_24, HIGH),
+	/* WWAN_DISABLE */
+	PAD_GPO(GPIO_85, LOW),
+
+	/* Deassert all AUX_RESET lines & PCIE_RST */
 	/* WWAN_AUX_RESET_L */
 	PAD_GPO(GPIO_18, HIGH),
 	/* WLAN_AUX_RESET (ACTIVE HIGH) */
@@ -270,6 +285,13 @@ static const struct soc_amd_gpio pcie_gpio_table[] = {
 	PAD_NC(GPIO_70),
 	/* PCIE_RST0_L */
 	PAD_NFO(GPIO_26, PCIE_RST_L, HIGH),
+};
+
+static const struct soc_amd_gpio gpio_fp_shutdown_table[] = {
+	/* FPMCU_RST_L */
+	PAD_GPO(GPIO_11, LOW),
+	/* EN_PWR_FP */
+	PAD_GPO(GPIO_32, LOW),
 };
 
 const struct soc_amd_gpio *__weak variant_pcie_gpio_table(size_t *size)
@@ -321,6 +343,11 @@ const struct soc_amd_gpio *__weak variant_early_gpio_table(size_t *size)
 
 const __weak struct soc_amd_gpio *variant_sleep_gpio_table(size_t *size)
 {
+	if (acpi_get_sleep_type() == ACPI_S5) {
+		*size = ARRAY_SIZE(gpio_fp_shutdown_table);
+		return gpio_fp_shutdown_table;
+	}
+
 	*size = ARRAY_SIZE(sleep_gpio_table);
 	return sleep_gpio_table;
 }
@@ -329,18 +356,31 @@ __weak void variant_fpmcu_reset(void)
 {
 	if (acpi_get_sleep_type() == ACPI_S3)
 		return;
-	/*
-	 *  SOC_FP_RST_L line is pulled high when platform comes out of reset.
-	 *  So, it is required to be driven low before enabling power to
-	 *  ensure that power sequencing for the FPMCU is met.
-	 *  However, as the FPMCU is initialized only on platform reset,
-	 *  the reset line should not be asserted in case of S3 resume.
-	 */
+	/* If the system is not resuming from S3, power off the FPMCU */
 	static const struct soc_amd_gpio fpmcu_bootblock_table[] = {
 		/* SOC_FP_RST_L */
 		PAD_GPO(GPIO_11, LOW),
 		/* EN_PWR_FP */
-		PAD_GPO(GPIO_32, HIGH),
+		PAD_GPO(GPIO_32, LOW),
 	};
 	program_gpios(fpmcu_bootblock_table, ARRAY_SIZE(fpmcu_bootblock_table));
+}
+
+__weak void variant_finalize_gpios(void)
+{
+	static const struct soc_amd_gpio disable_fpmcu_table[] = {
+		/* FPMCU_RST_L */
+		PAD_NC(GPIO_11),
+		/* EN_PWR_FP */
+		PAD_NC(GPIO_32),
+	};
+
+	if (variant_has_fpmcu()) {
+		if (acpi_get_sleep_type() == ACPI_S3)
+			return;
+		/* Deassert the FPMCU reset to enable the FPMCU */
+		gpio_set(GPIO_11, 1); /* FPMCU_RST_L */
+	} else {
+		program_gpios(disable_fpmcu_table, ARRAY_SIZE(disable_fpmcu_table));
+	}
 }

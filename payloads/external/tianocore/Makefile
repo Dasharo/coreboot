@@ -14,7 +14,6 @@ build_flavor=-D BOOTLOADER=COREBOOT -D PCIE_BASE=$(CONFIG_MMCONF_BASE_ADDRESS) -
 ifeq ($(CONFIG_TIANOCORE_UPSTREAM),y)
 TAG=upstream/master
 else
-# STABLE revision is MrChromebox's UefiPayloadPkg (ueifpayloadpkg) branch
 TAG=origin/$(project_git_branch)
 endif
 

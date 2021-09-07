@@ -15,10 +15,10 @@
 #include <assert.h>
 #include <string.h>
 
-static int get_gpio_gevent(uint8_t gpio, const struct soc_amd_event *table,
+static int get_gpio_gevent(gpio_t gpio, const struct soc_amd_event *table,
 				size_t items)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < items; i++) {
 		if ((table + i)->gpio == gpio)
@@ -27,7 +27,7 @@ static int get_gpio_gevent(uint8_t gpio, const struct soc_amd_event *table,
 	return -1;
 }
 
-static void program_smi(uint32_t flags, int gevent_num)
+static void program_smi(uint32_t flags, unsigned int gevent_num)
 {
 	uint8_t level;
 
@@ -52,7 +52,7 @@ static void program_smi(uint32_t flags, int gevent_num)
  * In a similar fashion, polarity (rising/falling, hi/lo) of each GPE is
  * represented as a single bit in SMI_SCI_TRIG register.
  */
-static void program_sci(uint32_t flags, int gevent_num)
+static void program_sci(uint32_t flags, unsigned int gevent_num)
 {
 	struct sci_source sci;
 
@@ -160,16 +160,22 @@ uint16_t gpio_acpi_pin(gpio_t gpio)
 	return gpio;
 }
 
+static void set_gpio_mux(gpio_t gpio, uint8_t function)
+{
+	iomux_write8(gpio, function & AMD_GPIO_MUX_MASK);
+	iomux_read8(gpio); /* Flush posted write */
+}
+
 static void set_single_gpio(const struct soc_amd_gpio *g)
 {
 	static const struct soc_amd_event *gev_tbl;
 	static size_t gev_items;
 	int gevent_num;
-	const bool can_set_smi_flags = !(CONFIG(VBOOT_STARTS_BEFORE_BOOTBLOCK) &&
-			ENV_SEPARATE_VERSTAGE);
+	const bool can_set_smi_flags = !((CONFIG(VBOOT_STARTS_BEFORE_BOOTBLOCK) &&
+			ENV_SEPARATE_VERSTAGE) ||
+			CONFIG(SOC_AMD_COMMON_BLOCK_BANKED_GPIOS_NON_SOC_CODEBASE));
 
-	iomux_write8(g->gpio, g->function & AMD_GPIO_MUX_MASK);
-	iomux_read8(g->gpio); /* Flush posted write */
+	set_gpio_mux(g->gpio, g->function);
 
 	gpio_setbits32(g->gpio, PAD_CFG_MASK, g->control);
 	/* Clear interrupt and wake status (write 1-to-clear bits) */
@@ -262,6 +268,7 @@ static const struct soc_amd_gpio *gpio_get_config(const struct soc_amd_gpio *c,
 	}
 	return c;
 }
+
 void gpio_configure_pads_with_override(const struct soc_amd_gpio *base_cfg,
 					size_t base_num_pads,
 					const struct soc_amd_gpio *override_cfg,
@@ -303,6 +310,7 @@ static void check_gpios(uint32_t wake_stat, int bit_limit, int gpio_base,
 	for (i = 0; i < bit_limit; i++) {
 		if (!(wake_stat & BIT(i)))
 			continue;
+		/* Each wake status register bit is for 4 GPIOs that then will be checked */
 		begin = gpio_base + i * 4;
 		end = begin + 4;
 		/* There is no gpio 63. */

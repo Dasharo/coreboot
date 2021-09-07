@@ -25,12 +25,12 @@ fw_config
 	end
 	field UFC 13 14
 		option UFC_USB			0
-		option UFC_MIPI_5675		1
+		option UFC_MIPI_IMX208		1
 	end
 end
 
 chip soc/intel/alderlake
-	register "SaGv" = "SaGv_Disabled"
+	register "SaGv" = "SaGv_Enabled"
 
 	register "usb2_ports[7]" = "USB2_PORT_MID(OC_SKIP)"	# Type-A MLB Port
 
@@ -46,8 +46,10 @@ chip soc/intel/alderlake
 		device ref dtt on
 			chip drivers/intel/dptf
 				## sensor information
-				register "options.tsr[0].desc" = ""DRAM""
-				register "options.tsr[1].desc" = ""Charger""
+				register "options.tsr[0].desc" = ""DRAM_SOC""
+				register "options.tsr[1].desc" = ""Ambient""
+				register "options.tsr[2].desc" = ""Charger""
+				register "options.tsr[3].desc" = ""WWAN""
 
 				# TODO: below values are initial reference values only
 				## Active Policy
@@ -58,6 +60,18 @@ chip soc/intel/alderlake
 								TEMP_PCT(85, 90),
 								TEMP_PCT(80, 80),
 								TEMP_PCT(75, 70),
+								TEMP_PCT(70, 50),
+								TEMP_PCT(65, 30),
+						}
+					},
+					[1] = {
+						.target = DPTF_TEMP_SENSOR_1,
+						.thresholds = {
+								TEMP_PCT(50, 90),
+								TEMP_PCT(48, 70),
+								TEMP_PCT(46, 60),
+								TEMP_PCT(43, 40),
+								TEMP_PCT(40, 30),
 						}
 					}
 				}"
@@ -66,7 +80,9 @@ chip soc/intel/alderlake
 				register "policies.passive" = "{
 					[0] = DPTF_PASSIVE(CPU,         CPU,           95, 5000),
 					[1] = DPTF_PASSIVE(CPU,         TEMP_SENSOR_0, 75, 5000),
-					[2] = DPTF_PASSIVE(CHARGER,     TEMP_SENSOR_1, 75, 5000),
+					[2] = DPTF_PASSIVE(CPU,		TEMP_SENSOR_1, 75, 5000),
+					[3] = DPTF_PASSIVE(CHARGER,	TEMP_SENSOR_2, 75, 5000),
+					[4] = DPTF_PASSIVE(CPU,         TEMP_SENSOR_3, 75, 5000),
 				}"
 
 				## Critical Policy
@@ -74,6 +90,8 @@ chip soc/intel/alderlake
 					[0] = DPTF_CRITICAL(CPU,               105, SHUTDOWN),
 					[1] = DPTF_CRITICAL(TEMP_SENSOR_0,      85, SHUTDOWN),
 					[2] = DPTF_CRITICAL(TEMP_SENSOR_1,      85, SHUTDOWN),
+					[3] = DPTF_CRITICAL(TEMP_SENSOR_2,      85, SHUTDOWN),
+					[4] = DPTF_CRITICAL(TEMP_SENSOR_3,      85, SHUTDOWN),
 				}"
 
 				register "controls.power_limits" = "{
@@ -150,7 +168,7 @@ chip soc/intel/alderlake
 				register "cio2_prt[0]" = "2"
 				register "cio2_prt[1]" = "1"
 				device generic 1 on
-					probe UFC UFC_MIPI_5675
+					probe UFC UFC_MIPI_IMX208
 				end
 			end
 		end
@@ -198,6 +216,36 @@ chip soc/intel/alderlake
 				register "property_list[0].integer" = "1"
 				device i2c 1a on
 					probe AUDIO MAX98357_ALC5682I_I2S
+				end
+			end
+			chip drivers/i2c/nau8825
+				register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_A23)"
+				register "jkdet_enable" = "1"
+				register "jkdet_pull_enable" = "0"
+				register "jkdet_polarity" = "1"		# ActiveLow
+				register "vref_impedance" = "2"		# 125kOhm
+				register "micbias_voltage" = "6"	# 2.754
+				register "sar_threshold_num" = "4"
+				register "sar_threshold[0]" = "0x0c"
+				register "sar_threshold[1]" = "0x1c"
+				register "sar_threshold[2]" = "0x38"
+				register "sar_threshold[3]" = "0x60"
+				register "sar_hysteresis" = "1"
+				register "sar_voltage" = "0"		# VDDA
+				register "sar_compare_time" = "0"	# 500ns
+				register "sar_sampling_time" = "0"	# 2us
+				register "short_key_debounce" = "2"	# 100ms
+				register "jack_insert_debounce" = "7"	# 512ms
+				register "jack_eject_debounce" = "7"	# 512ms
+				device i2c 1a on
+					probe AUDIO ALC1019_NAU88L25B_I2S
+				end
+			end
+			chip drivers/generic/alc1015
+				register "hid" = ""RTL1019""
+				register "sdb" =  "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A11)"
+				device generic 1 on
+					probe AUDIO ALC1019_NAU88L25B_I2S
 				end
 			end
 			chip drivers/intel/mipi_camera
@@ -425,32 +473,29 @@ chip soc/intel/alderlake
 				device i2c 2C on end
 			end
 			chip drivers/intel/mipi_camera
-				register "acpi_hid" = ""OVTI5675""
+				register "acpi_hid" = ""INT3478""
 				register "acpi_uid" = "0"
 				register "acpi_name" = ""CAM1""
-				register "chip_name" = ""Ov 5675 Camera""
+				register "chip_name" = ""imx 208 Camera""
 				register "device_type" = "INTEL_ACPI_CAMERA_SENSOR"
 
 				register "ssdb.lanes_used" = "2"
 				register "ssdb.link_used" = "1"
-				register "ssdb.vcm_type" = "0x0C"
-				register "vcm_name" = ""VCM0""
-				register "num_freq_entries" = "1"
-				register "link_freq[0]" = "DEFAULT_LINK_FREQ"
+				register "num_freq_entries" = "2"
+				register "link_freq[0]" = "384 * MHz" # 384 MHz
+				register "link_freq[1]" = "96 * MHz" # 96 MHz
 				register "remote_name" = ""IPU0""
 
 				register "has_power_resource" = "1"
 				#Controls
-				register "clk_panel.clks[0].clknum" = "IMGCLKOUT_2"
-				register "clk_panel.clks[0].freq" = "FREQ_19_2_MHZ"
-
 				register "gpio_panel.gpio[0].gpio_num" = "GPP_C3"  #PP3300_FCAM_X
 				register "gpio_panel.gpio[1].gpio_num" = "GPP_A17" #EN_UCAM_PWR
 				register "gpio_panel.gpio[2].gpio_num" = "GPP_F20" #reset
+				register "gpio_panel.gpio[3].gpio_num" = "GPP_H21" #CLK_EN
 
 				#_ON
 				register "on_seq.ops_cnt" = "5"
-				register "on_seq.ops[0]" = "SEQ_OPS_CLK_ENABLE(0, 0)"
+				register "on_seq.ops[0]" = "SEQ_OPS_GPIO_ENABLE(3, 0)"
 				register "on_seq.ops[1]" = "SEQ_OPS_GPIO_ENABLE(0, 5)"
 				register "on_seq.ops[2]" = "SEQ_OPS_GPIO_ENABLE(1, 5)"
 				register "on_seq.ops[3]" = "SEQ_OPS_GPIO_DISABLE(2, 5)"
@@ -458,13 +503,31 @@ chip soc/intel/alderlake
 
 				#_OFF
 				register "off_seq.ops_cnt" = "4"
-				register "off_seq.ops[0]" = "SEQ_OPS_CLK_DISABLE(0, 0)"
+				register "off_seq.ops[0]" = "SEQ_OPS_GPIO_DISABLE(3, 0)"
 				register "off_seq.ops[1]" = "SEQ_OPS_GPIO_DISABLE(2, 0)"
 				register "off_seq.ops[2]" = "SEQ_OPS_GPIO_DISABLE(1, 0)"
 				register "off_seq.ops[3]" = "SEQ_OPS_GPIO_DISABLE(0, 0)"
 
-				device i2c 36 on
-					probe UFC UFC_MIPI_5675
+				device i2c 10 on
+					probe UFC UFC_MIPI_IMX208
+				end
+			end
+			chip drivers/intel/mipi_camera
+				register "acpi_hid" = ""INT3499""
+				register "acpi_uid" = "1"
+				register "acpi_name" = ""NVM1""
+				register "chip_name" = ""GT24C16S""
+				register "device_type" = "INTEL_ACPI_CAMERA_NVM"
+
+				register "pr0" = ""\\_SB.PCI0.I2C2.CAM1.PRIC""
+
+				register "nvm_size" = "0x2800"
+				register "nvm_pagesize" = "0x01"
+				register "nvm_readonly" = "0x01"
+				register "nvm_width" = "0x0E"
+
+				device i2c 50 on
+					probe UFC UFC_MIPI_IMX208
 				end
 			end
 		end

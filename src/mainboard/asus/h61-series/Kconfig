@@ -15,11 +15,9 @@ config BOARD_ASUS_H61_SERIES
 if BOARD_ASUS_H61_SERIES
 
 config MAINBOARD_DIR
-	string
 	default "asus/h61-series"
 
 config VARIANT_DIR
-	string
 	default "h61m-cs"          if BOARD_ASUS_H61M_CS
 	default "p8h61-m_lx"       if BOARD_ASUS_P8H61_M_LX
 	default "p8h61-m_lx3_r2_0" if BOARD_ASUS_P8H61_M_LX3_R2_0
@@ -27,7 +25,6 @@ config VARIANT_DIR
 	default "p8h61-m_pro_cm6630" if BOARD_ASUS_P8H61_M_PRO_CM6630
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "H61M-CS"          if BOARD_ASUS_H61M_CS
 	default "P8H61-M LX"       if BOARD_ASUS_P8H61_M_LX
 	default "P8H61-M LX3 R2.0" if BOARD_ASUS_P8H61_M_LX3_R2_0
@@ -35,7 +32,6 @@ config MAINBOARD_PART_NUMBER
 	default "P8H61-M PRO CM6630" if BOARD_ASUS_P8H61_M_PRO_CM6630
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config CMOS_DEFAULT_FILE

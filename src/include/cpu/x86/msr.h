@@ -80,22 +80,25 @@
 #define IA32_MC_ADDR(bank)		(IA32_MC0_ADDR + 4 * (bank))
 #define IA32_MC0_MISC			0x403
 #define IA32_MC_MISC(bank)		(IA32_MC0_MISC + 4 * (bank))
-#define IA32_VMX_BASIC_MSR              0x480
-#define  VMX_BASIC_HI_DUAL_MONITOR      (1UL << (49 - 32))
-#define IA32_VMX_MISC_MSR               0x485
+#define IA32_VMX_BASIC_MSR		0x480
+#define  VMX_BASIC_HI_DUAL_MONITOR	(1UL << (49 - 32))
+#define IA32_VMX_MISC_MSR		0x485
 
 #define IA32_PM_ENABLE			0x770
 #define IA32_HWP_CAPABILITIES		0x771
 #define IA32_HWP_REQUEST		0x774
 #define IA32_HWP_STATUS			0x777
+#define IA32_L3_PROTECTED_WAYS		0xc85
+#define IA32_SF_QOS_INFO		0xc87
+#define  IA32_SF_WAY_COUNT_MASK		0x3f
 #define IA32_PQR_ASSOC			0xc8f
 /* MSR bits 33:32 encode slot number 0-3 */
-#define   IA32_PQR_ASSOC_MASK	(1 << 0 | 1 << 1)
+#define  IA32_PQR_ASSOC_MASK		(1 << 0 | 1 << 1)
 #define IA32_L3_MASK_1			0xc91
 #define IA32_L3_MASK_2			0xc92
 
-#define IA32_CR_SF_QOS_MASK_1           0x1891
-#define IA32_CR_SF_QOS_MASK_2           0x1892
+#define IA32_CR_SF_QOS_MASK_1		0x1891
+#define IA32_CR_SF_QOS_MASK_2		0x1892
 
 #ifndef __ASSEMBLER__
 #include <types.h>

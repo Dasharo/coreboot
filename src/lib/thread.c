@@ -11,6 +11,16 @@
 #include <thread.h>
 #include <timer.h>
 
+/* Can't use the IS_POWER_OF_2 in _Static_assert */
+_Static_assert((CONFIG_STACK_SIZE & (CONFIG_STACK_SIZE - 1)) == 0,
+	       "`cpu_info()` requires the stack size to be a power of 2");
+
+/*
+ * struct cpu_info lives at the top of each thread's stack. `cpu_info()` locates this struct by
+ * taking the current stack pointer and masking off CONFIG_STACK_SIZE. This requires the stack
+ * to be STACK_SIZE aligned.
+ */
+static u8 thread_stacks[CONFIG_STACK_SIZE * CONFIG_NUM_THREADS] __aligned(CONFIG_STACK_SIZE);
 static bool initialized;
 
 static void idle_thread_init(void);
@@ -247,15 +257,18 @@ static void *thread_alloc_space(struct thread *t, size_t bytes)
 	return (void *)t->stack_current;
 }
 
-void threads_initialize(void)
+static void threads_initialize(void)
 {
 	int i;
 	struct thread *t;
 	u8 *stack_top;
 	struct cpu_info *ci;
-	u8 *thread_stacks;
 
-	thread_stacks = arch_get_thread_stackbase();
+	if (initialized)
+		return;
+
+	/* `cpu_info()` requires the stacks to be STACK_SIZE aligned */
+	assert(IS_ALIGNED((uintptr_t)thread_stacks, CONFIG_STACK_SIZE));
 
 	/* Initialize the BSP thread first. The cpu_info structure is assumed
 	 * to be just under the top of the stack. */
@@ -285,6 +298,9 @@ int thread_run(struct thread_handle *handle, enum cb_err (*func)(void *), void *
 	struct thread *current;
 	struct thread *t;
 
+	/* Lazy initialization */
+	threads_initialize();
+
 	current = current_thread();
 
 	if (!thread_can_yield(current)) {
@@ -312,6 +328,13 @@ int thread_run_until(struct thread_handle *handle, enum cb_err (*func)(void *), 
 	struct thread *current;
 	struct thread *t;
 	struct block_boot_state *bbs;
+
+	/* This is a ramstage specific API */
+	if (!ENV_RAMSTAGE)
+		dead_code();
+
+	/* Lazy initialization */
+	threads_initialize();
 
 	current = current_thread();
 

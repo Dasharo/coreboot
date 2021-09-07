@@ -26,6 +26,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_D14, NONE, DEEP, NF1),
 	/* D15 : WWAN_DISABLE_N */
 	PAD_CFG_GPO(GPP_D15, 1, PLTRST),
+	/* D17 : PCIE SLOT1 WAKE N */
+	PAD_CFG_GPI_IRQ_WAKE(GPP_D17, NONE, DEEP, LEVEL, INVERT),
 	/* D18 : WWAN WAKE N*/
 	PAD_CFG_GPI_IRQ_WAKE(GPP_D18, NONE, DEEP, LEVEL, INVERT),
 	/* H23 : CLKREQ5_WWAN_N */
@@ -45,6 +47,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_F5, NONE, DEEP, NF2),
 	/* F6 : GPPC_F6_CNV_PA_BLANKING */
 	PAD_CFG_NF(GPP_F6, NONE, DEEP, NF1),
+	/* F10 : GPPC_F10 X1_Slot_RESET */
+	PAD_CFG_GPO(GPP_F10, 1, PLTRST),
 	/* H8 : CNV_MFUART2_RXD */
 	PAD_CFG_NF(GPP_H8, NONE, DEEP, NF2),
 	/* H9 : CNV_MFUART2_TXD */
@@ -159,7 +163,17 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_S6, NONE, DEEP, NF2),
 
 	/* S7 : SNDW4_DATA */
-	PAD_CFG_NF(GPP_S7, NONE, DEEP, NF2)
+	PAD_CFG_NF(GPP_S7, NONE, DEEP, NF2),
+
+	/* F7  : TCH_PNL_PWR_EN */
+	PAD_CFG_GPO(GPP_F7, 1, PLTRST),
+	/* F17 : RST_N_TCH_PNL2 */
+	PAD_CFG_GPO(GPP_F17, 1, PLTRST),
+	/* F18 : INT_N_TCH_PNL2 */
+	PAD_CFG_GPI_APIC(GPP_F18, NONE, PLTRST, LEVEL, NONE),
+
+	/* E3 : H1_PCH_INT_ODL */
+	PAD_CFG_GPI_APIC(GPP_E3, NONE, PLTRST, LEVEL, INVERT)
 };
 
 void variant_configure_gpio_pads(void)

@@ -41,7 +41,6 @@ config CHROMEOS_WIFI_SAR
 	select USE_SAR
 
 config DIMM_MAX
-	int
 	default 2
 
 config DRIVER_TPM_I2C_BUS
@@ -61,7 +60,6 @@ config POWER_OFF_ON_CR50_UPDATE
 	default n
 
 config MAINBOARD_DIR
-	string
 	default "google/drallion"
 
 config MAINBOARD_FAMILY
@@ -69,7 +67,6 @@ config MAINBOARD_FAMILY
 	default "Google_Drallion" if BOARD_GOOGLE_DRALLION
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Drallion" if BOARD_GOOGLE_DRALLION
 
 config UART_FOR_CONSOLE
@@ -77,11 +74,9 @@ config UART_FOR_CONSOLE
 	default 0 if BOARD_GOOGLE_DRALLION
 
 config VARIANT_DIR
-	string
 	default "drallion" if BOARD_GOOGLE_DRALLION
 
 config DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config VBOOT
