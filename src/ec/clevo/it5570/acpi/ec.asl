@@ -44,10 +44,10 @@ Device (EC0)
 			OEM3 = OEM3 | 4
 
 			// Set current AC state
-			^^^^AC.ACFG = ADP
+			\_SB.AC.ACFG = ADP
 			// Update battery information and status
-			^^^^BAT0.UPBI()
-			^^^^BAT0.UPBS()
+			\_SB.BAT0.UPBI ()
+			\_SB.BAT0.UPBS ()
 
 			PNOT ()
 
@@ -71,15 +71,15 @@ Device (EC0)
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
 		If (ECOK) {
 			// Set current AC state
-			^^^^AC.ACFG = ADP
+			\_SB.AC.ACFG = ADP
 
 			// Update battery information and status
-			^^^^BAT0.UPBI()
-			^^^^BAT0.UPBS()
+			\_SB.BAT0.UPBI ()
+			\_SB.BAT0.UPBS ()
 
 			// Notify of changes
-			Notify(^^^^AC, Zero)
-			Notify(^^^^BAT0, Zero)
+			Notify(\_SB.AC, Zero)
+			Notify(\_SB.BAT0, Zero)
 
 			Sleep (1000)
 		}
@@ -203,9 +203,9 @@ Device (EC0)
 	{
 		Debug = "EC: Airplane Mode"
 
-		If (CondRefOf (\_SB.HIDD.HPEM))
+		If (CondRefOf (^HIDD.HPEM))
 		{
-			\_SB.HIDD.HPEM (8)
+			^HIDD.HPEM (8)
 		}
 	}
 
@@ -218,14 +218,14 @@ Device (EC0)
 	Method (_Q16, 0, NotSerialized) // AC Detect
 	{
 		Debug = "EC: AC Detect"
-		^^^^AC.ACFG = ADP
+		\_SB.AC.ACFG = ADP
 		Notify (AC, 0x80) // Status Change
 		Sleep (0x01F4)
 		If (BAT0)
 		{
-			Notify (^^^^BAT0, 0x81) // Information Change
+			Notify (\_SB.BAT0, 0x81) // Information Change
 			Sleep (0x32)
-			Notify (^^^^BAT0, 0x80) // Status Change
+			Notify (\_SB.BAT0, 0x80) // Status Change
 			Sleep (0x32)
 		}
 	}
@@ -233,13 +233,13 @@ Device (EC0)
 	Method (_Q17, 0, NotSerialized)  // BAT0 Update
 	{
 		Debug = "EC: BAT0 Update (17)"
-		Notify (^^^^BAT0, 0x81) // Information Change
+		Notify (\_SB.BAT0, 0x81) // Information Change
 	}
 
 	Method (_Q19, 0, NotSerialized)  // BAT0 Update
 	{
 		Debug = "EC: BAT0 Update (19)"
-		Notify (^^^^BAT0, 0x81) // Information Change
+		Notify (\_SB.BAT0, 0x81) // Information Change
 	}
 
 	Method (_Q1B, 0, NotSerialized) // Lid Close
@@ -306,6 +306,9 @@ Device (EC0)
 		^UCSI.CCI3 = CCI3
 		CCI0 = Zero
 		CCI3 = Zero
-		Notify (UCSI, 0x80)
+		Notify (^UCSI, 0x80)
 	}
+
+	#include "hid.asl"
+	#include "ucsi.asl"
 }
