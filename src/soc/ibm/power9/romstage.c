@@ -330,6 +330,8 @@ static void prepare_dimm_data(void)
 	}
 }
 
+void istep_10_13(void);
+
 void main(void)
 {
 	timestamp_add_now(TS_START_ROMSTAGE);
@@ -337,6 +339,8 @@ void main(void)
 	console_init();
 
 	init_timer();
+
+	istep_10_13();
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
