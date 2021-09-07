@@ -9,6 +9,7 @@ romstage-y += romstage.c
 romstage-y += mvpd.c
 romstage-y += vpd.c
 romstage-y += powerbus.c
+romstage-y += istep_10_13.c
 romstage-y += istep_13_2.c
 romstage-y += istep_13_3.c
 romstage-y += istep_13_4.c
