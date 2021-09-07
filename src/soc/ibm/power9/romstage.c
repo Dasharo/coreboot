@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <cpu/power/vpd.h>
+#include <cpu/power/istep_10.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
 #include <program_loading.h>
@@ -335,6 +336,8 @@ void main(void)
 	timestamp_add_now(TS_ROMSTAGE_START);
 
 	console_init();
+
+	istep_10_13();
 
 	timestamp_add_now(TS_INITRAM_START);
 
