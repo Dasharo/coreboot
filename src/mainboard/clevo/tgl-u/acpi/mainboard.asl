@@ -16,10 +16,7 @@ Scope (\_SB) {
 
 	Scope (PCI0.LPCB) {
 		#include <ec/clevo/it5570/acpi/ec.asl>
-		#include <ec/clevo/it5570/acpi/ucsi.asl>
 	}
-
-	#include "hid.asl"
 }
 
 Scope (_GPE) {
