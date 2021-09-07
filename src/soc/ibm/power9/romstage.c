@@ -3,6 +3,7 @@
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/power/vpd.h>
+#include <cpu/power/istep_10.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
 #include <program_loading.h>
@@ -337,6 +338,8 @@ void main(void)
 
 	console_init();
 	cbmem_initialize_empty();
+
+	istep_10_13();
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 

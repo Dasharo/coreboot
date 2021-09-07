@@ -8,6 +8,7 @@ bootblock-y += rom_media.c
 romstage-y += cbmem.c
 romstage-y += ccs.c
 romstage-y += i2c.c
+romstage-y += istep_10_13.c
 romstage-y += istep_13_2.c
 romstage-y += istep_13_3.c
 romstage-y += istep_13_4.c
