@@ -51,6 +51,9 @@ Device (EC0)
 
 			PNOT ()
 
+			// Initialize UCSI
+			^UCSI.INIT ()
+
 			// EC is now available
 			ECOK = Arg1
 		}
@@ -276,5 +279,33 @@ Device (EC0)
 		} Else {
 			Debug = Concatenate("EC: Other: ", ToHexString(Local0))
 		}
+	}
+
+	Method (_Q62, 0, NotSerialized)  // UCSI event
+	{
+		Debug = "EC: UCSI Event"
+		^UCSI.MGI0 = MGI0
+		^UCSI.MGI1 = MGI1
+		^UCSI.MGI2 = MGI2
+		^UCSI.MGI3 = MGI3
+		^UCSI.MGI4 = MGI4
+		^UCSI.MGI5 = MGI5
+		^UCSI.MGI6 = MGI6
+		^UCSI.MGI7 = MGI7
+		^UCSI.MGI8 = MGI8
+		^UCSI.MGI9 = MGI9
+		^UCSI.MGIA = MGIA
+		^UCSI.MGIB = MGIB
+		^UCSI.MGIC = MGIC
+		^UCSI.MGID = MGID
+		^UCSI.MGIE = MGIE
+		^UCSI.MGIF = MGIF
+		^UCSI.CCI0 = CCI0
+		^UCSI.CCI1 = CCI1
+		^UCSI.CCI2 = CCI2
+		^UCSI.CCI3 = CCI3
+		CCI0 = Zero
+		CCI3 = Zero
+		Notify (UCSI, 0x80)
 	}
 }
