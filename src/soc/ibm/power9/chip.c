@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <device/device.h>
+#include <drivers/ipmi/ipmi_bt.h>
+#include <program_loading.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_18.h>
 
@@ -64,6 +66,28 @@ static void enable_soc_dev(struct device *dev)
 
 	istep_18_11();
 	istep_18_12();
+}
+
+void platform_prog_run(struct prog *prog)
+{
+	/*
+	 * TODO: do what 16.2 did now, when the payload and its interrupt
+	 * vectors are already loaded
+	 */
+
+	/*
+	 * Clear SMS_ATN aka EVT_ATN in BT_CTRL - Block Transfer IPMI protocol
+	 *
+	 * BMC sends event telling us that HIOMAP (access to flash, either real or
+	 * emulated, through LPC) daemon has been started. This sets the mentioned bit.
+	 * Skiboot enables interrupts, but because those are triggered on 0->1
+	 * transition and bit is already set, they do not arrive.
+	 *
+	 * While we're at it, clear read and write pointers, in case circular buffer
+	 * rolls over.
+	 */
+	if (ipmi_bt_clear(CONFIG_BMC_BT_BASE))
+		die("ipmi_bt_clear() has failed.\n");
 }
 
 struct chip_operations soc_ibm_power9_ops = {
