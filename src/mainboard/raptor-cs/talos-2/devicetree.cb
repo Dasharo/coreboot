@@ -2,4 +2,8 @@
 
 chip soc/ibm/power9
 	device cpu_cluster 0 on end
+
+	chip drivers/ipmi
+		device pnp e4.0 on end         # IPMI BT
+	end
 end
