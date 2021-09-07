@@ -78,7 +78,7 @@ Device (UCSI)
 		{
 			Case (Zero)
 			{
-				Return (BuffeOne) { 0x07 })
+				Return (BuffeOne) { 0x0F })
 			}
 			Case (One)
 			{
