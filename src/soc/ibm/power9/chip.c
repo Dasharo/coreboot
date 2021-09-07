@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <device/device.h>
+#include <program_loading.h>
 #include <fit.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
@@ -92,6 +93,54 @@ static void enable_soc_dev(struct device *dev)
 	}
 	istep_18_11();
 	istep_18_12();
+}
+
+/*
+ * Clear SMS_ATN aka EVT_ATN in BT_CTRL - Block Transfer IPMI protocol
+ *
+ * BMC sends event telling us that HIOMAP (access to flash, either real or
+ * emulated, through LPC) daemon has been started. This sets the mentioned bit.
+ * Skiboot enables interrupts, but because those are triggered on 0->1
+ * transition and bit is already set, they do not arrive.
+ *
+ * While we're at it, clear read and write pointers, in case circular buffer
+ * rolls over.
+ *
+ * TODO: consider full BT driver implementation
+ *
+ * https://www.intel.pl/content/www/pl/pl/products/docs/servers/ipmi/ipmi-second-gen-interface-spec-v2-rev1-1.html
+ */
+static void clear_ipmi_attn(void)
+{
+	/*
+	 * First, set H_BUSY (if not set already) so BMC won't try to write new
+	 * commands while we're resetting pointers.
+	 */
+	if ((inb(0xe4) & 0x40) == 0)
+		outb(0x40, 0xe4);
+
+	/* If BMC is already in the process of writing, wait until it's done */
+	while (inb(0xe4) & 0x80);
+
+	uint8_t bt_ctrl = inb(0xe4);
+
+	printk(BIOS_SPEW, "BT_CTRL = %#2.2x\n", bt_ctrl);
+
+	/*
+	 * Clear all bits which are already set (they are either toggle bits or
+	 * write-1-to-clear) and reset buffer pointers. This also clears H_BUSY.
+	 */
+	outb(bt_ctrl | 0x03, 0xe4);
+}
+
+void platform_prog_run(struct prog *prog)
+{
+	/*
+	 * TODO: do what 16.2 did now, when the payload and its interrupt
+	 * vectors are already loaded
+	 */
+
+	clear_ipmi_attn();
 }
 
 struct chip_operations soc_ibm_power9_ops = {
