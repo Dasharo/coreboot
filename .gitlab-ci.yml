@@ -91,7 +91,7 @@ check_dependencies:
   stage: run_regression
   tags:
     - local
-  timeout: 12h
+  timeout: 24h
   script:
     - bash -x .gitlab-ci/regression.sh
   only:
