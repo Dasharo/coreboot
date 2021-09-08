@@ -13,6 +13,7 @@ typedef struct drivers_pc80_tpm_config {
 	 *  Falling Edge  3
 	 */
 	u8 irq_polarity;
+	struct acpi_irq irq;	/* Interrupt */
 
 	/* Use GPIO based interrupt instead of PIRQ */
 	struct acpi_gpio irq_gpio;
