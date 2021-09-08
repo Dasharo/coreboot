@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+/* Debug is too slow here, hits timeouts */
+#define SKIP_SCOM_DEBUG
+
 #include <cpu/power/istep_13.h>
 #include <timer.h>
 #include <endian.h>
