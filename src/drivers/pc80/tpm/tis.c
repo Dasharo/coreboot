@@ -780,6 +780,7 @@ static void lpc_tpm_set_resources(struct device *dev)
 static void lpc_tpm_fill_ssdt(const struct device *dev)
 {
 	const char *path = acpi_device_path(dev->bus->dev);
+	tpm_config_t *config = (tpm_config_t *)dev->chip_info;
 
 	if (!path) {
 		path = "\\_SB_.PCI0.LPCB";
@@ -818,13 +819,16 @@ static void lpc_tpm_fill_ssdt(const struct device *dev)
 	if (port)
 		acpigen_write_io16(port, port, 1, 2, 1);
 
-	if (CONFIG_TPM_PIRQ) {
+
+	/* Use either Interrupt() or GpioInt() */
+	if (config->irq_gpio.pin_count) {
+		acpi_device_write_gpio(&config->irq_gpio);
+	} else if (config->irq.pin) {
 		/*
 		 * PIRQ: Update interrupt vector with configured PIRQ
 		 * Active-Low Level-Triggered Shared
 		 */
-		struct acpi_irq tpm_irq_a = ACPI_IRQ_LEVEL_LOW(CONFIG_TPM_PIRQ);
-		acpi_device_write_interrupt(&tpm_irq_a);
+		acpi_device_write_interrupt(&config->irq);
 	} else if (tpm_read_int_vector(0) > 0) {
 		u8 int_vec = tpm_read_int_vector(0);
 		u8 int_pol = tpm_read_int_polarity(0);
@@ -842,7 +846,6 @@ static void lpc_tpm_fill_ssdt(const struct device *dev)
 
 		acpi_device_write_interrupt(&tpm_irq);
 	}
-
 
 	acpigen_write_resourcetemplate_footer();
 
