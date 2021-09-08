@@ -47,6 +47,12 @@
 #define OCC_WOF_TABLES_OFFSET		(768 * KiB)
 #define PPMR_HEADER_SIZE		(1 * KiB)
 
+#define SCOM_RESTORE_ENTRY_SIZE		16	// 4B pad, 4B address, 8B data
+#define QUAD_SCOM_RESTORE_REGS_PER_QUAD	256
+#define QUAD_SCOM_RESTORE_SIZE_PER_QUAD	(SCOM_RESTORE_ENTRY_SIZE*QUAD_SCOM_RESTORE_REGS_PER_QUAD)
+#define CORE_SCOM_RESTORE_REGS_PER_CORE	16
+#define CORE_SCOM_RESTORE_SIZE_PER_CORE	(SCOM_RESTORE_ENTRY_SIZE*CORE_SCOM_RESTORE_REGS_PER_CORE)
+
 #define MAX_CORES_PER_CHIP		24
 #define MAX_CORES_PER_EX		2
 #define MAX_QUADS_PER_CHIP		(MAX_CORES_PER_CHIP/4)
@@ -152,8 +158,8 @@ struct cpmr_header {
 	uint32_t cme_common_ring_len;
 	uint32_t cme_pstate_offset;
 	uint32_t cme_pstate_len;
-	uint32_t core_spec_ring_offset;
-	uint32_t core_spec_ring_len;
+	uint32_t core_spec_ring_offset;	// = real offset / 32
+	uint32_t core_spec_ring_len;	// = real length / 32
 	uint32_t core_scom_offset;
 	uint32_t core_scom_len;
 	uint32_t core_self_restore_offset;
@@ -179,9 +185,9 @@ struct cme_img_header {
 	uint32_t common_ring_len;
 	uint32_t pstate_region_offset;
 	uint32_t pstate_region_len;
-	uint32_t core_spec_ring_offset;
-	uint32_t max_spec_ring_len;
-	uint32_t scom_offset;
+	uint32_t core_spec_ring_offset;	// = real offset / 32
+	uint32_t max_spec_ring_len;	// = real length / 32
+	uint32_t scom_offset;		// = real offset / 32
 	uint32_t scom_len;
 	uint32_t mode_flags;
 	uint16_t location_id;
@@ -189,8 +195,8 @@ struct cme_img_header {
 	uint32_t timebase_hz;
 	uint64_t cpmr_phy_addr;
 	uint64_t unsec_cpmr_phy_addr;
-	uint32_t pstate_offset;
-	uint32_t custom_length;
+	uint32_t pstate_offset;		// = real offset / 32
+	uint32_t custom_length;		// = real length / 32
 };
 
 struct cpmr_st {
