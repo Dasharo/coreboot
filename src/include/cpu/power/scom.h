@@ -171,6 +171,27 @@ static inline uint64_t read_scom(uint64_t addr)
 		return read_scom_direct(addr);
 }
 
+#if CONFIG(DEBUG_SCOM) && !defined(SKIP_SCOM_DEBUG)
+#include <console/console.h>
+
+#define write_scom(x, y)                                                \
+({                                                                      \
+	uint64_t __xw = x;                                              \
+	uint64_t __yw = y;                                              \
+	printk(BIOS_SPEW, "SCOM W %16.16llX %16.16llX\n", __xw, __yw);  \
+	write_scom((__xw), (__yw));                                     \
+})
+
+#define read_scom(x)                                                    \
+({                                                                      \
+	uint64_t __xr = x;                                              \
+	uint64_t __yr = read_scom(__xr);                                \
+	printk(BIOS_SPEW, "SCOM R %16.16llX %16.16llX\n", __xr, __yr);  \
+	__yr;                                                           \
+})
+
+#endif
+
 static inline void scom_and_or(uint64_t addr, uint64_t and, uint64_t or)
 {
 	uint64_t data = read_scom(addr);

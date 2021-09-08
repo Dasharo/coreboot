@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+/* Debugging every access takes too much time */
+#define SKIP_SCOM_DEBUG
+
 #include <device/i2c_simple.h>
 #include <console/console.h>
 #include <cpu/power/scom.h>
