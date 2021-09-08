@@ -19,6 +19,35 @@
 
 #include <lib.h>
 
+#define L2_EPS_DIVIDER   1
+#define L3_EPS_DIVIDER   1
+
+#define EX_L2_RD_EPS_REG 0x10010810
+#define EX_L2_WR_EPS_REG 0x10010811
+#define EX_L3_RD_EPS_REG 0x10011829
+#define EX_L3_WR_EPS_REG 0x1001182A
+#define EX_DRAM_REF_REG  0x1001180F
+#define EX_0_NCU_DARN_BAR_REG 0x10011011
+
+#define ODD_EVEN_EX_POS  0x00000400
+
+#define MAX_EQ_SCOM_ENTRIES 31
+#define MAX_L2_SCOM_ENTRIES 16
+#define MAX_L3_SCOM_ENTRIES 16
+
+#define QUAD_BIT_POS     24
+
+#define PPC_PLACE(val, pos, len) \
+	PPC_SHIFT((val) & ((1 << ((len) + 1)) - 1), ((pos) + ((len) - 1)))
+
+/* Subsections of STOP image that contain SCOM entries */
+enum scom_section {
+	STOP_SECTION_CORE_SCOM,
+	STOP_SECTION_EQ_SCOM,
+	STOP_SECTION_L2,
+	STOP_SECTION_L3,
+};
+
 struct ring_data {
 	void *rings_buf;
 	void *work_buf1;
@@ -55,168 +84,21 @@ struct sgpe_inst_ring_list {
 	uint8_t payload[];
 };
 
-#define NUM_OP_POINTS         4
-#define NUM_JUMP_VALUES       4
-#define NUM_THRESHOLD_POINTS  4
-#define VPD_NUM_SLOPES_REGION 3
-
-struct vpd_operating_point {
-	uint32_t vdd_mv;
-	uint32_t vcs_mv;
-	uint32_t idd_100ma;
-	uint32_t ics_100ma;
-	uint32_t frequency_mhz;
-	uint8_t  pstate;
-	uint8_t  pad[3];
+struct scom_entry_t {
+	uint32_t hdr;
+	uint32_t address;
+	uint64_t data;
 };
 
-struct sys_power_dist {
-	/* Impedance of the load line from a processor VDD VRM to the Processor Module pins. */
-	uint32_t loadline_uohm;
-
-	/* Impedance of the VDD distribution loss sense point to the circuit. */
-	uint32_t distloss_uohm;
-
-	/* Offset voltage to apply to the rail VRM distribution to the processor module. */
-	uint32_t distoffset_uv;
+struct stop_cache_section_t {
+	struct scom_entry_t non_cache_area[MAX_EQ_SCOM_ENTRIES];
+	struct scom_entry_t l2_cache_area[MAX_L2_SCOM_ENTRIES];
+	struct scom_entry_t l3_cache_area[MAX_L3_SCOM_ENTRIES];
 };
 
-/* Percent bias applied to VPD operating points prior to interolation in 0.5 percent (hp). */
-struct vpd_bias {
-	int8_t vdd_ext_hp;
-	int8_t vdd_int_hp;
-	int8_t vdn_ext_hp;
-	int8_t vcs_ext_hp;
-	int8_t frequency_hp;
-};
-
-#define IVRM_ARRAY_SIZE 64
-
-struct ivrm_params {
-	/* Pwidth from 0.03125 to 1.96875 in 1/32 increments at Vin=Vin_Max */
-	uint8_t strength_lookup[IVRM_ARRAY_SIZE];
-
-	/* Scaling factor for the Vin_Adder calculation */
-	uint8_t vin_multiplier[IVRM_ARRAY_SIZE];
-
-	/* Vin_Max used in Vin_Adder calculation (in millivolts) */
-	uint16_t vin_max_mv;
-
-	/* Delay between steps. Maximum: 65.536us. */
-	uint16_t step_delay_ns;
-
-	/* Stabilization delay once target voltage has been reached. Maximum: 65.536us. */
-	uint16_t stablization_delay_ns;
-
-	/* Deadzone. Maximum: 255mV. Value of 0 is interpreted as 50mV. */
-	uint8_t deadzone_mv;
-
-	/* Pad to 8B */
-	uint8_t pad;
-};
-
-#define RESCLK_FREQ_REGIONS 8
-#define RESCLK_STEPS        64
-#define RESCLK_L3_STEPS     4
-
-struct resonant_clocking {
-	/* Lower frequency of Resclk Regions */
-	uint8_t resclk_freq[RESCLK_FREQ_REGIONS];
-
-	/* Index into value array for the respective Resclk Region */
-	uint8_t resclk_index[RESCLK_FREQ_REGIONS];
-
-	/* Array containing the transition steps */
-	uint16_t steparray[RESCLK_STEPS];
-
-	/* Delay between steps. Maximum: 65.536us. */
-	uint16_t step_delay_ns;
-
-	/* L3 Clock Stepping Array */
-	uint8_t l3_steparray[RESCLK_L3_STEPS];
-
-	/* Resonant Clock Voltage Threshold. This value is used to choose the
-	 * appropriate L3 clock region setting. */
-	uint16_t l3_threshold_mv;
-};
-
-/* #W data points (version 2) */
-struct poundw_entry {
-	uint16_t ivdd_tdp_ac_current_10ma;
-	uint16_t ivdd_tdp_dc_current_10ma;
-	uint8_t  vdm_overvolt_small_thresholds;
-	uint8_t  vdm_large_extreme_thresholds;
-	uint8_t  vdm_normal_freq_drop;		// N_S and N_L Drop
-	uint8_t  vdm_normal_freq_return;	// L_S and S_N Return
-	uint8_t  vdm_vid_compare_ivid;
-	uint8_t  vdm_spare;
-};
-
-struct resistance_entry {
-	uint16_t r_package_common;
-	uint16_t r_quad;
-	uint16_t r_core;
-	uint16_t r_quad_header;
-	uint16_t r_core_header;
-};
-
-struct PoundW_data {
-	struct poundw_entry poundw[NUM_OP_POINTS];
-	struct resistance_entry resistance_data;
-	uint8_t undervolt_tested;
-	uint8_t reserved;
-	uint64_t reserved1;
-	uint8_t reserved2;
-};
-
-struct local_pstate_params {
-	/* Magic Number (the last byte of this number is the structure's version) */
-	uint64_t magic;
-
-	/* QM Flags */
-	uint16_t qmflags;
-
-	/* Operating points */
-	struct vpd_operating_point operating_points[NUM_OP_POINTS];
-
-	/* Loadlines and Distribution values for the VDD rail */
-	struct sys_power_dist vdd_sysparm;
-
-	/* External Biases */
-	struct vpd_bias ext_biases[NUM_OP_POINTS];
-
-	/* Internal Biases */
-	struct vpd_bias int_biases[NUM_OP_POINTS];
-
-	/* IVRM Data */
-	struct ivrm_params ivrm;
-
-	/* Resonant Clock Grid Management Setup */
-	struct resonant_clocking resclk;
-
-	/* VDM Data */
-	struct PoundW_data vpd_w_data;
-
-	/* DPLL pstate 0 value */
-	uint32_t dpll_pstate0_value;
-
-	/* Biased Compare VID operating points */
-	uint8_t vid_point_set[NUM_OP_POINTS];
-
-	/* Biased Threshold operation points */
-	uint8_t threshold_set[NUM_OP_POINTS][NUM_THRESHOLD_POINTS];
-
-	/* pstate-volt compare slopes */
-	int16_t PsVIDCompSlopes[VPD_NUM_SLOPES_REGION];
-
-	/* pstate-volt threshold slopes */
-	int16_t PsVDMThreshSlopes[VPD_NUM_SLOPES_REGION][NUM_THRESHOLD_POINTS];
-
-	/* Jump-value operating points */
-	uint8_t jump_value_set[NUM_OP_POINTS][NUM_JUMP_VALUES];
-
-	/* Jump-value slopes */
-	int16_t PsVDMJumpSlopes[VPD_NUM_SLOPES_REGION][NUM_JUMP_VALUES];
+enum scom_operation {
+	SCOM_APPEND,
+	SCOM_REPLACE
 };
 
 extern void mount_part_from_pnor(const char *part_name,
@@ -351,6 +233,7 @@ static const uint32_t _SMF = 0x5F534D46; // "_SMF"
 
 static const uint32_t ATTN_OP             = 0x00000200;
 static const uint32_t BLR_OP              = 0x4E800020;
+static const uint32_t ORI_OP              = 0x60000000;
 static const uint32_t SKIP_SPR_REST_INST  = 0x4800001C;
 static const uint32_t MR_R0_TO_R10_OP     = 0x7C0A0378;
 static const uint32_t MR_R0_TO_R21_OP     = 0x7C150378;
@@ -1234,7 +1117,7 @@ static void layout_inst_rings_for_cme(struct homer_st *homer,
 
 	for (ex = 0; ex < MAX_CMES_PER_CHIP; ++ex) {
 		const uint32_t ex_offset =
-			ex * (max_ex_len + ALIGN_UP(sizeof(struct local_pstate_params), 32));
+			ex * (max_ex_len + ALIGN_UP(sizeof(LocalPstateParmBlock), 32));
 
 		uint8_t *start = &homer->cpmr.cme_sram_region[*ring_len + ex_offset];
 		struct cme_inst_ring_list *tmp = (void *)start;
@@ -1294,7 +1177,8 @@ static void layout_rings_for_cme(struct homer_st *homer,
 
 	if (ring_len != 0) {
 		cme_hdr->max_spec_ring_len = ALIGN_UP(ring_len, 32) / 32;
-		cme_hdr->core_spec_ring_offset = cpmr_hdr->cme_common_ring_offset + cpmr_hdr->cme_common_ring_len;
+		cme_hdr->core_spec_ring_offset =
+			ALIGN_UP(cme_hdr->common_ring_offset + cme_hdr->common_ring_len, 32) / 32;
 	}
 }
 
@@ -1386,7 +1270,7 @@ static void layout_cmn_rings_for_sgpe(struct homer_st *homer,
 
 	qpmr_hdr->common_ring_len = payload - start;
 	qpmr_hdr->common_ring_offset =
-		offsetof(struct homer_st, qpmr.sgpe.sram_image) + qpmr_hdr->img_len;
+		offsetof(struct qpmr_st, sgpe.sram_image) + qpmr_hdr->img_len;
 }
 
 static void layout_inst_rings_for_sgpe(struct homer_st *homer,
@@ -1470,6 +1354,230 @@ static void layout_rings_for_sgpe(struct homer_st *homer,
 	}
 }
 
+static void stop_save_scom(struct homer_st *homer, uint32_t scom_address,
+			   uint64_t scom_data, enum scom_section section,
+			   enum scom_operation operation)
+{
+	enum {
+		STOP_API_VER = 0x00,
+		SCOM_ENTRY_START = 0xDEADDEAD,
+	};
+
+	chiplet_id_t chiplet_id = (scom_address >> 24) & 0x3f;
+	uint32_t max_scom_restore_entries = 0;
+	struct stop_cache_section_t *stop_cache_scom = NULL;
+	struct scom_entry_t *scom_entry = NULL;
+	struct scom_entry_t *nop_entry = NULL;
+	struct scom_entry_t *matching_entry = NULL;
+	struct scom_entry_t *end_entry = NULL;
+	struct scom_entry_t *entry = NULL;
+	uint32_t entry_limit = 0;
+
+	if (chiplet_id >= EC00_CHIPLET_ID) {
+		uint32_t offset = (chiplet_id - EC00_CHIPLET_ID)*CORE_SCOM_RESTORE_SIZE_PER_CORE;
+		scom_entry = (struct scom_entry_t *)&homer->cpmr.core_scom[offset];
+		max_scom_restore_entries = homer->cpmr.header.core_max_scom_entry;
+	} else {
+		uint32_t offset = (chiplet_id - EP00_CHIPLET_ID)*QUAD_SCOM_RESTORE_SIZE_PER_QUAD;
+		stop_cache_scom =
+			(struct stop_cache_section_t *)&homer->qpmr.cache_scom_region[offset];
+		max_scom_restore_entries = homer->qpmr.sgpe.header.max_quad_restore_entry;
+	}
+
+	if (stop_cache_scom == NULL)
+		die("Failed to prepare for updating STOP SCOM\n");
+
+	switch (section) {
+		case STOP_SECTION_CORE_SCOM:
+			entry_limit = max_scom_restore_entries;
+			break;
+		case STOP_SECTION_EQ_SCOM:
+			scom_entry = stop_cache_scom->non_cache_area;
+			entry_limit = MAX_EQ_SCOM_ENTRIES;
+			break;
+		default:
+			die("Unhandled STOP image section.\n");
+			break;
+	}
+
+	for (uint32_t i = 0; i < entry_limit; ++i) {
+		uint32_t entry_address = scom_entry[i].address;
+		uint32_t entry_hdr = scom_entry[i].hdr;
+
+		if (entry_address == scom_address && matching_entry == NULL)
+			matching_entry = &scom_entry[i];
+
+		if ((entry_address == ORI_OP || entry_address == ATTN_OP ||
+		     entry_address == BLR_OP) && nop_entry == NULL)
+			nop_entry = &scom_entry[i];
+
+		/* If entry is either 0xDEADDEAD or has SCOM entry limit in LSB of its header,
+		 * the place is already occupied */
+		if (entry_hdr == SCOM_ENTRY_START || (entry_hdr & 0x000000ff))
+			continue;
+
+		end_entry = &scom_entry[i];
+		break;
+	}
+
+	if (matching_entry == NULL && end_entry == NULL)
+		die("Failed to find SCOM entry in STOP image.\n");
+
+	entry = end_entry;
+	if (operation == SCOM_APPEND && nop_entry != NULL)
+		entry = nop_entry;
+	else if (operation == SCOM_REPLACE && matching_entry != NULL)
+		entry = matching_entry;
+
+	if (entry == NULL)
+		die("Failed to insert SCOM entry in STOP image.\n");
+
+	entry->hdr = (0x000000ff & max_scom_restore_entries)
+		   | ((STOP_API_VER & 0x7) << 28);
+	entry->address = scom_address;
+	entry->data = scom_data;
+}
+
+static void populate_epsilon_l2_scom_reg(struct homer_st *homer)
+{
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+
+	uint32_t eps_r_t0 = pb_cfg->eps_r[0] / 8 / L2_EPS_DIVIDER + 1;
+	uint32_t eps_r_t1 = pb_cfg->eps_r[1] / 8 / L2_EPS_DIVIDER + 1;
+	uint32_t eps_r_t2 = pb_cfg->eps_r[2] / 8 / L2_EPS_DIVIDER + 1;
+
+	uint32_t eps_w_t0 = pb_cfg->eps_w[0] / 8 / L2_EPS_DIVIDER + 1;
+	uint32_t eps_w_t1 = pb_cfg->eps_w[1] / 8 / L2_EPS_DIVIDER + 1;
+
+	uint64_t eps_r = PPC_PLACE(eps_r_t0, 0, 12)
+		       | PPC_PLACE(eps_r_t1, 12, 12)
+		       | PPC_PLACE(eps_r_t2, 24, 12);
+
+	uint64_t eps_w = PPC_PLACE(eps_w_t0, 0, 12)
+		       | PPC_PLACE(eps_w_t1, 12, 12)
+		       | PPC_PLACE(L2_EPS_DIVIDER, 24, 4);
+
+	uint8_t quad = 0;
+
+	for (quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		uint32_t scom_addr;
+
+		/* Create restore entry for epsilon L2 RD register */
+
+		scom_addr = (EX_L2_RD_EPS_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, eps_r, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, eps_r, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		/* Create restore entry for epsilon L2 WR register */
+
+		scom_addr = (EX_L2_WR_EPS_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, eps_w, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, eps_w, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+	}
+}
+
+static void populate_epsilon_l3_scom_reg(struct homer_st *homer)
+{
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+
+	uint32_t eps_r_t0 = pb_cfg->eps_r[0] / 8 / L3_EPS_DIVIDER + 1;
+	uint32_t eps_r_t1 = pb_cfg->eps_r[1] / 8 / L3_EPS_DIVIDER + 1;
+	uint32_t eps_r_t2 = pb_cfg->eps_r[2] / 8 / L3_EPS_DIVIDER + 1;
+
+	uint32_t eps_w_t0 = pb_cfg->eps_w[0] / 8 / L3_EPS_DIVIDER + 1;
+	uint32_t eps_w_t1 = pb_cfg->eps_w[1] / 8 / L3_EPS_DIVIDER + 1;
+
+	uint64_t eps_r = PPC_PLACE(eps_r_t0, 0, 12)
+		       | PPC_PLACE(eps_r_t1, 12, 12)
+		       | PPC_PLACE(eps_r_t2, 24, 12);
+
+	uint64_t eps_w = PPC_PLACE(eps_w_t0, 0, 12)
+		       | PPC_PLACE(eps_w_t1, 12, 12)
+		       | PPC_PLACE(L2_EPS_DIVIDER, 30, 4);
+
+	uint8_t quad = 0;
+
+	for (quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		uint32_t scom_addr;
+
+		/* Create restore entry for epsilon L2 RD register */
+
+		scom_addr = (EX_L3_RD_EPS_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, eps_r, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, eps_r, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		/* Create restore entry for epsilon L2 WR register */
+
+		scom_addr = (EX_L3_WR_EPS_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, eps_w, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, eps_w, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+	}
+}
+
+static void populate_l3_refresh_scom_reg(struct homer_st *homer, uint8_t dd)
+{
+	uint64_t refresh_val = 0x2000000000000000ULL;
+
+	uint8_t quad = 0;
+
+	/* ATTR_CHIP_EC_FEATURE_HW408892 === (DD <= 0x20) */
+	if (powerbus_cfg()->fabric_freq >= 2000 && dd > 0x20)
+		refresh_val |= PPC_PLACE(0x2, 8, 4);
+
+	for (quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		/* Create restore entry for L3 Refresh Timer Divider register */
+
+		uint32_t scom_addr = (EX_DRAM_REF_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, refresh_val,
+			       STOP_SECTION_EQ_SCOM, SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, refresh_val,
+			       STOP_SECTION_EQ_SCOM, SCOM_APPEND);
+	}
+}
+
+static void populate_ncu_rng_bar_scom_reg(struct homer_st *homer)
+{
+	enum { NX_RANGE_BAR_ADDR_OFFSET = 0x00000302031D0000 };
+
+	uint8_t ex = 0;
+
+	uint64_t regNcuRngBarData = PPC_PLACE(0x0, 8, 5)   // system ID
+				  | PPC_PLACE(0x3, 13, 2)  // msel
+				  | PPC_PLACE(0x0, 15, 4)  // group ID
+				  | PPC_PLACE(0x0, 19, 3); // chip ID
+
+	regNcuRngBarData += NX_RANGE_BAR_ADDR_OFFSET;
+
+	for (ex = 0; ex < MAX_CMES_PER_CHIP; ++ex) {
+		/* Create restore entry for NCU RNG register */
+
+		uint32_t scom_addr = EX_0_NCU_DARN_BAR_REG
+				   | ((ex / 2) << 24)
+				   | ((ex % 2) ? 0x0400 : 0x0000);
+
+		stop_save_scom(homer, scom_addr, regNcuRngBarData,
+			       STOP_SECTION_EQ_SCOM, SCOM_REPLACE);
+	}
+}
+
 static void update_headers(struct homer_st *homer, uint64_t cores)
 {
 	/*
@@ -1506,6 +1614,9 @@ static void update_headers(struct homer_st *homer, uint64_t cores)
 		cpmr_hdr->core_spec_ring_len     = cme_hdr->max_spec_ring_len;
 	}
 
+	cme_hdr->custom_length =
+		ALIGN_UP(cme_hdr->max_spec_ring_len * 32 + sizeof(LocalPstateParmBlock), 32) / 32;
+
 	for (int cme = 0; cme < MAX_CORES_PER_CHIP/2; cme++) {
 		/*
 		 * CME index/position is the same as EX, however this means that Pstate
@@ -1525,11 +1636,11 @@ static void update_headers(struct homer_st *homer, uint64_t cores)
 
 	/* Updating CME Image header */
 	/* Assuming >= CPMR_2.0 */
-	cme_hdr->scom_offset   = cme_hdr->pstate_offset +
-	                         sizeof(LocalPstateParmBlock) / 32;
+	cme_hdr->scom_offset =
+		ALIGN_UP(cme_hdr->pstate_offset * 32 + sizeof(LocalPstateParmBlock), 32) / 32;
 
 	/* Adding to it instance ring length which is already a multiple of 32B */
-	cme_hdr->scom_len      = 512;
+	cme_hdr->scom_len = 512;
 
 	/* Timebase frequency */
 	/* FIXME: get PB frequency properly */
@@ -1685,20 +1796,19 @@ void build_homer_image(void *homer_bar)
 
 	update_headers(homer, cores);
 
-	// Update L2 Epsilon SCOM Registers
-	// populateEpsilonL2ScomReg( pChipHomer );
+	populate_epsilon_l2_scom_reg(homer);
+	populate_epsilon_l3_scom_reg(homer);
 
-	// Update L3 Epsilon SCOM Registers
-	// populateEpsilonL3ScomReg( pChipHomer );
+	/* Update L3 Refresh Timer Control SCOM Registers */
+	populate_l3_refresh_scom_reg(homer, dd);
 
-	// Update L3 Refresh Timer Control SCOM Registers
-	// populateL3RefreshScomReg( pChipHomer, i_procTgt);
+	/* Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register */
+	populate_ncu_rng_bar_scom_reg(homer);
 
-	// Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register
-	// populateNcuRngBarScomReg( pChipHomer, i_procTgt );
-
-	// Update CME/SGPE Flags in respective image header.
-	// updateImageFlags( pChipHomer, i_procTgt );
+	/* Update flag fields in image headers */
+	((struct sgpe_img_header *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE])->reserve_flags = 0x04000000;
+	((struct cme_img_header *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE])->qm_mode_flags = 0xf100;
+	((struct pgpe_img_header *)&homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE])->flags = 0xf032;
 
 	// Set the Fabric IDs
 	// setFabricIds( pChipHomer, i_procTgt );
