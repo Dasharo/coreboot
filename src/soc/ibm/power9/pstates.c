@@ -696,11 +696,11 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	gppb->wov_underv_perf_loss_thresh_pct =    5;
 	gppb->wov_underv_step_incr_pct        =    5;
 	gppb->wov_underv_step_decr_pct        =    5;
-	gppb->wov_underv_max_pct              =    0;
+	gppb->wov_underv_max_pct              =  100;
 	gppb->wov_overv_vmax_mv               = 1150;
 	gppb->wov_overv_step_incr_pct         =    5;
 	gppb->wov_overv_step_decr_pct         =    5;
-	gppb->wov_overv_max_pct               =  100;
+	gppb->wov_overv_max_pct               =    0;
 
 	/* Avs Bus topology - values come from talos.xml */
 	gppb->avs_bus_topology.vdd_avsbus_num  = 0;
