@@ -17,11 +17,23 @@
 #include "tor.h"
 #include "xip.h"
 
+#define L2_EPS_DIVIDER   1
+#define L3_EPS_DIVIDER   1
+
+#define EX_L2_RD_EPS_REG 0x10010810
+#define EX_L2_WR_EPS_REG 0x10010811
+#define EX_L3_RD_EPS_REG 0x10011829
+#define EX_L3_WR_EPS_REG 0x1001182A
+#define EX_DRAM_REF_REG  0x1001180F
 #define EX_0_NCU_DARN_BAR_REG 0x10011011
+
+#define ODD_EVEN_EX_POS  0x00000400
 
 #define MAX_EQ_SCOM_ENTRIES 31
 #define MAX_L2_SCOM_ENTRIES 16
 #define MAX_L3_SCOM_ENTRIES 16
+
+#define QUAD_BIT_POS     24
 
 #define PPC_PLACE(val, pos, len) \
 	PPC_SHIFT((val) & ((1 << ((len) + 1)) - 1), ((pos) + ((len) - 1)))
@@ -1377,6 +1389,121 @@ static void stop_save_scom(struct homer_st *homer, uint32_t scom_address,
 	entry->data = scom_data;
 }
 
+static void populate_epsilon_l2_scom_reg(struct homer_st *homer)
+{
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+
+	uint32_t eps_r_t0 = pb_cfg->eps_r[0] / 8 / L2_EPS_DIVIDER + 1;
+	uint32_t eps_r_t1 = pb_cfg->eps_r[1] / 8 / L2_EPS_DIVIDER + 1;
+	uint32_t eps_r_t2 = pb_cfg->eps_r[2] / 8 / L2_EPS_DIVIDER + 1;
+
+	uint32_t eps_w_t0 = pb_cfg->eps_w[0] / 8 / L2_EPS_DIVIDER + 1;
+	uint32_t eps_w_t1 = pb_cfg->eps_w[1] / 8 / L2_EPS_DIVIDER + 1;
+
+	uint64_t eps_r = PPC_PLACE(eps_r_t0, 0, 12)
+		       | PPC_PLACE(eps_r_t1, 12, 12)
+		       | PPC_PLACE(eps_r_t2, 24, 12);
+
+	uint64_t eps_w = PPC_PLACE(eps_w_t0, 0, 12)
+		       | PPC_PLACE(eps_w_t1, 12, 12)
+		       | PPC_PLACE(L2_EPS_DIVIDER, 24, 4);
+
+	uint8_t quad = 0;
+
+	for (quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		uint32_t scom_addr;
+
+		/* Create restore entry for epsilon L2 RD register */
+
+		scom_addr = (EX_L2_RD_EPS_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, eps_r, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, eps_r, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		/* Create restore entry for epsilon L2 WR register */
+
+		scom_addr = (EX_L2_WR_EPS_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, eps_w, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, eps_w, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+	}
+}
+
+static void populate_epsilon_l3_scom_reg(struct homer_st *homer)
+{
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+
+	uint32_t eps_r_t0 = pb_cfg->eps_r[0] / 8 / L3_EPS_DIVIDER + 1;
+	uint32_t eps_r_t1 = pb_cfg->eps_r[1] / 8 / L3_EPS_DIVIDER + 1;
+	uint32_t eps_r_t2 = pb_cfg->eps_r[2] / 8 / L3_EPS_DIVIDER + 1;
+
+	uint32_t eps_w_t0 = pb_cfg->eps_w[0] / 8 / L3_EPS_DIVIDER + 1;
+	uint32_t eps_w_t1 = pb_cfg->eps_w[1] / 8 / L3_EPS_DIVIDER + 1;
+
+	uint64_t eps_r = PPC_PLACE(eps_r_t0, 0, 12)
+		       | PPC_PLACE(eps_r_t1, 12, 12)
+		       | PPC_PLACE(eps_r_t2, 24, 12);
+
+	uint64_t eps_w = PPC_PLACE(eps_w_t0, 0, 12)
+		       | PPC_PLACE(eps_w_t1, 12, 12)
+		       | PPC_PLACE(L2_EPS_DIVIDER, 30, 4);
+
+	uint8_t quad = 0;
+
+	for (quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		uint32_t scom_addr;
+
+		/* Create restore entry for epsilon L2 RD register */
+
+		scom_addr = (EX_L3_RD_EPS_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, eps_r, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, eps_r, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		/* Create restore entry for epsilon L2 WR register */
+
+		scom_addr = (EX_L3_WR_EPS_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, eps_w, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, eps_w, STOP_SECTION_EQ_SCOM,
+			       SCOM_APPEND);
+	}
+}
+
+static void populate_l3_refresh_scom_reg(struct homer_st *homer, uint8_t dd)
+{
+	uint64_t refresh_val = 0x2000000000000000ULL;
+
+	uint8_t quad = 0;
+
+	/* ATTR_CHIP_EC_FEATURE_HW408892 === (DD <= 0x20) */
+	if (powerbus_cfg()->fabric_freq >= 2000 && dd > 0x20)
+		refresh_val |= PPC_PLACE(0x2, 8, 4);
+
+	for (quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		/* Create restore entry for L3 Refresh Timer Divider register */
+
+		uint32_t scom_addr = (EX_DRAM_REF_REG | (quad << QUAD_BIT_POS));
+		stop_save_scom(homer, scom_addr, refresh_val,
+			       STOP_SECTION_EQ_SCOM, SCOM_APPEND);
+
+		scom_addr |= ODD_EVEN_EX_POS;
+		stop_save_scom(homer, scom_addr, refresh_val,
+			       STOP_SECTION_EQ_SCOM, SCOM_APPEND);
+	}
+}
+
 static void populate_ncu_rng_bar_scom_reg(struct homer_st *homer)
 {
 	enum { NX_RANGE_BAR_ADDR_OFFSET = 0x00000302031D0000 };
@@ -1603,14 +1730,11 @@ void build_homer_image(void *homer_bar)
 
 	update_headers(homer, cores);
 
-	// Update L2 Epsilon SCOM Registers
-	// populateEpsilonL2ScomReg( pChipHomer );
+	populate_epsilon_l2_scom_reg(homer);
+	populate_epsilon_l3_scom_reg(homer);
 
-	// Update L3 Epsilon SCOM Registers
-	// populateEpsilonL3ScomReg( pChipHomer );
-
-	// Update L3 Refresh Timer Control SCOM Registers
-	// populateL3RefreshScomReg( pChipHomer, i_procTgt);
+	/* Update L3 Refresh Timer Control SCOM Registers */
+	populate_l3_refresh_scom_reg(homer, dd);
 
 	/* Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register */
 	populate_ncu_rng_bar_scom_reg(homer);
