@@ -336,11 +336,20 @@ static const uint16_t core_sprs[] = {
 };
 
 static void build_self_restore(struct homer_st *homer,
-                               struct xip_restore_header *rest, uint8_t dd)
+                               struct xip_restore_header *rest, uint8_t dd,
+                               uint64_t functional_cores)
 {
 	/* Assumptions: SMT4 only, SMF available but disabled. */
 	size_t size;
 	uint32_t *ptr;
+	const uint64_t hrmor = read_spr(SPR_HRMOR);
+	/* See cpu_winkle() */
+	const uint64_t lpcr = (read_spr(SPR_LPCR)
+	                       & ~(SPR_LPCR_EEE | SPR_LPCR_DEE | SPR_LPCR_OEE))
+	                      | (SPR_LPCR_HVICE | SPR_LPCR_HVEE);
+	const uint64_t msr = read_msr();
+	/* Clear en_attn for HID */
+	const uint64_t hid = read_spr(SPR_HID) & ~PPC_BIT(3);
 
 	/*
 	 * Data in XIP has its first 256 bytes zeroed, reserved for header, so even
@@ -376,20 +385,26 @@ static void build_self_restore(struct homer_st *homer,
 		die("No _SMF magic number in self restore region\n");
 
 	ptr = (uint32_t *)homer->cpmr.core_self_restore;
-	for (size = 0; size < (96 * KiB) / sizeof(uint32_t); size++) {
+	for (size = 0; size < (192 * KiB) / sizeof(uint32_t); size++) {
 		ptr[size] = ATTN_OP;
 	}
 
 	/*
-	 * This loop combines two functions from hostboot:
-	 * initSelfRestoreRegion() and initSelfSaveRestoreEntries(). The second one
-	 * writes only sections for functional cores, code below does it for all.
-	 * This will take more time, but makes the code easier to understand.
-	 *
-	 * TODO: check if we can skip both cpureg and save_self for nonfunctional
-	 * cores
+	 * This loop combines three functions from hostboot:
+	 * initSelfRestoreRegion(), initSelfSaveRestoreEntries() and
+	 * applyHcodeGenCpuRegs(). There is inconsistency as for calling them for
+	 * all cores vs only functional ones. As far as I can tell, cores are waken
+	 * based on OCC CCSR register, so nonfunctional ones should be skipped and
+	 * don't need any self-restore code.
 	 */
 	for (int core = 0; core < MAX_CORES_PER_CHIP; core++) {
+		/*
+		 * TODO: test if we can skip both cpureg and save_self for nonfunctional
+		 * cores
+		 */
+		if (!IS_EC_FUNCTIONAL(core, functional_cores))
+			continue;
+
 		struct smf_core_self_restore *csr = &homer->cpmr.core_self_restore[core];
 		uint32_t *csa = csr->core_save_area;
 
@@ -413,8 +428,17 @@ static void build_self_restore(struct homer_st *homer,
 				if (i > 7)
 					tsa_key += 0x14;
 
-				add_init_cpureg_entry(csr->thread_restore_area[thread],
-				                      thread_sprs[i], 0, 1);
+				if (thread_sprs[i] == SPR_LPCR) {
+					add_init_cpureg_entry(csr->thread_restore_area[thread],
+					                      thread_sprs[i], lpcr, 0);
+				} else if (thread_sprs[i] == SPR_MSR && thread == 0) {
+					/* One MSR per core, restored last so must (?) be here */
+					add_init_cpureg_entry(csr->thread_restore_area[thread],
+					                      thread_sprs[i], msr, 0);
+				} else {
+					add_init_cpureg_entry(csr->thread_restore_area[thread],
+					                      thread_sprs[i], 0, 1);
+				}
 				add_init_save_self_entry(&tsa, tsa_key);
 			}
 
@@ -425,7 +449,16 @@ static void build_self_restore(struct homer_st *homer,
 		csr->core_restore_area[0] = BLR_OP;
 		*csa++ = MFLR_R30_OP;
 		for (int i = 0; i < ARRAY_SIZE(core_sprs); i++) {
-			add_init_cpureg_entry(csr->core_restore_area, core_sprs[i], 0, 1);
+			if (core_sprs[i] == SPR_HRMOR || core_sprs[i] == SPR_URMOR) {
+				add_init_cpureg_entry(csr->core_restore_area, core_sprs[i],
+				                      hrmor, 0);
+			} else if (core_sprs[i] == SPR_HID) {
+				add_init_cpureg_entry(csr->core_restore_area, core_sprs[i],
+				                      hid, 0);
+			} else {
+				add_init_cpureg_entry(csr->core_restore_area, core_sprs[i],
+				                      0, 1);
+			}
 			/*
 			 * HID through PTCR: key = 0x15..0x18
 			 * HRMOR and URMOR are skipped.
@@ -1770,7 +1803,7 @@ void build_homer_image(void *homer_bar)
 
 	build_self_restore(homer,
 	                   (struct xip_restore_header *)(homer_bar + hw->restore.offset),
-	                   dd);
+	                   dd, cores);
 
 	build_cme(homer, (struct xip_cme_header *)(homer_bar + hw->cme.offset), dd);
 
