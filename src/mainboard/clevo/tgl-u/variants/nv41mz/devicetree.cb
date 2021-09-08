@@ -312,6 +312,10 @@ chip soc/intel/tigerlake
 			chip ec/clevo/it5570
 				device pnp 0c09.0 on end
 			end
+			chip drivers/pc80/tpm
+				register "irq_polarity" = "1"
+				device pnp 0c31.0 on end
+			end
 		end
 		device ref p2sb on end
 		device ref pmc hidden
