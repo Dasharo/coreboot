@@ -78,7 +78,7 @@ config UART_FOR_CONSOLE
 	default 2
 
 config TPM_PIRQ
-	int
+	hex
 	default 0x1C # GPP_C14
 
 endif # BOARD_CLEVO_NV41MB
