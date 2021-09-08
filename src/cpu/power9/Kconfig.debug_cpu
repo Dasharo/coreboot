@@ -1,0 +1,10 @@
+config DEBUG_SCOM
+	bool "Print SCOM accesses" if DEFAULT_CONSOLE_LOGLEVEL_8 || CONSOLE_OVERRIDE_LOGLEVEL
+	default n
+	help
+	  This option enables SCOM debug messages.
+
+	  Some accesses are time-critical or happen too often to be logged.
+	  In such cases, '#define SKIP_SCOM_DEBUG' before first inclusion of
+	  scom.h can be used to disable logging for a given file. Messages
+	  are currently suppressed for CCS, MCBIST and I2C.
