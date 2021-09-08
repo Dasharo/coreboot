@@ -3,7 +3,7 @@
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
 #include <device/device.h>
-#include <ec/ec.h>
+#include <intelblocks/lpc_lib.h>
 #include <soc/gpio.h>
 #include <smbios.h>
 #include <string.h>
@@ -15,6 +15,9 @@ static void mainboard_init(void *chip_info)
 
 	pads = variant_gpio_table(&num);
 	gpio_configure_pads(pads, num);
+
+	/* Configure MMIO window before FSP-S locks the DMI registers */
+	lpc_open_mmio_window(CONFIG_EC_CLEVO_IT5570_RAM_BASE, 0x10000);
 }
 
 struct chip_operations mainboard_ops = {
