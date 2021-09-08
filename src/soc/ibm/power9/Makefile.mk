@@ -20,6 +20,7 @@ romstage-y += istep_13_13.c
 romstage-y += istep_14_1.c
 romstage-y += istep_14_2.c
 romstage-y += istep_14_5.c
+romstage-y += mcbist.c
 romstage-y += rom_media.c
 romstage-y += romstage.c
 romstage-y += timer.c
