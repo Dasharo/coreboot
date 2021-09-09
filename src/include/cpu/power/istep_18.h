@@ -3,6 +3,9 @@
 void istep_18_11(void);
 void istep_18_12(void);
 
+/* TODO: everything is used internally only, don't define it in public header */
+/* TODO: check again if all bits are using PPC_BIT numbering */
+/* TODO: shorten names */
 #define PERV_TOD_ERROR_MASK_REG_RX_TTYPE_0 (38)
 
 #define PERV_TOD_ERROR_REG_RX_TTYPE_0 (38)
@@ -13,8 +16,10 @@ void istep_18_12(void);
 #define PERV_TOD_TX_TTYPE_REG_TRIGGER (0)
 
 #define MDMT_TOD_GRID_CYCLE_STAGING_DELAY (6)
-#define FREQ_X_MHZ (0x708)
+#define FREQ_X_MHZ (1800)
 #define TOD_GRID_PS (400)
+
+/* FIXME: P9A?! */
 #define P9A_PERV_ROOT_CTRL8_TP_PLL_CLKIN_SEL9_DC (21)
 #define PERV_TOD_M_PATH_CTRL_REG_STEP_CREATE_DUAL_EDGE_DISABLE (4)
 
@@ -27,10 +32,10 @@ void istep_18_12(void);
 #define M_PATH_1_OSC_NOT_VALID (1)
 #define M_PATH_0_STEP_ALIGN_DISABLE (2)
 
-#define M_PATH_STEP_CHECK_CPS_DEVIATION_FACTOR (37)
-#define M_PATH_0_STEP_CHECK_CPS_DEVIATION_OFFSET (51)
-#define M_PATH_SYNC_CREATE_SPS_SELECT_OFFSET (55)
-#define M_PATH_0_STEP_CHECK_VALIDITY_COUNT_OFFSET (47)
+#define M_PATH_STEP_CHECK_CPS_DEVIATION_FACTOR (25)
+#define M_PATH_0_STEP_CHECK_CPS_DEVIATION_OFFSET (11)
+#define M_PATH_SYNC_CREATE_SPS_SELECT_OFFSET (7)
+#define M_PATH_0_STEP_CHECK_VALIDITY_COUNT_OFFSET (15)
 
 #define BUS_DELAY_63 (PPC_BITMASK(52, 63))
 #define BUS_DELAY_47 (PPC_BITMASK(36, 47))
