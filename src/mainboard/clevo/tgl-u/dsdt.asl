@@ -23,6 +23,7 @@ DefinitionBlock(
 		#include <soc/intel/tigerlake/acpi/southbridge.asl>
 		#include <soc/intel/tigerlake/acpi/tcss.asl>
 		#include <soc/intel/common/block/acpi/acpi/ipu.asl>
+		#include <drivers/intel/gma/acpi/default_brightness_levels.asl>
 	}
 
 	Scope (\_SB.PCI0.LPCB)
