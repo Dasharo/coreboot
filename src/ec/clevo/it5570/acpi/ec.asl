@@ -173,9 +173,8 @@ Device (EC0)
 	{
 		Debug = "EC: Brightness Down"
 
-		If (CondRefOf (\_SB.HIDD.HPEM))
-		{
-			\_SB.HIDD.HPEM (20)
+		If (CondRefOf (\_SB.PCI0.GFX0.LCD0)) {
+			Notify (\_SB.PCI0.GFX0.LCD0, 0x87)
 		}
 	}
 
@@ -183,9 +182,8 @@ Device (EC0)
 	{
 		Debug = "EC: Brightness Up"
 
-		If (CondRefOf (\_SB.HIDD.HPEM))
-		{
-			\_SB.HIDD.HPEM (19)
+		If (CondRefOf (\_SB.PCI0.GFX0.LCD0)) {
+			Notify (\_SB.PCI0.GFX0.LCD0, 0x86)
 		}
 	}
 
