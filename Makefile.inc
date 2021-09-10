@@ -1236,6 +1236,12 @@ build_info-file := $(obj)/build_info
 build_info-type := raw
 
 BOOTSPLASH_SUFFIX=$(suffix $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE)))
+
+ifeq ($(CONFIG_BOOTSPLASH_COMPRESS_LZMA),y)
+BOOTSPLASH_SUFFIX=$(suffix $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE))).lzma
+bootsplash$(BOOTSPLASH_SUFFIX)-compression := LZMA
+endif
+
 cbfs-files-$(CONFIG_BOOTSPLASH_IMAGE) += bootsplash$(BOOTSPLASH_SUFFIX)
 bootsplash$(BOOTSPLASH_SUFFIX)-file := $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE))
 bootsplash$(BOOTSPLASH_SUFFIX)-type := bootsplash

@@ -401,6 +401,14 @@ config BOOTSPLASH_FILE
 	  The path and filename of the file to use as graphical bootsplash
 	  screen. The file format has to be jpg.
 
+config BOOTSPLASH_COMPRESS_LZMA
+	bool "Compress botsplash image with LZMA"
+	default n
+	help
+	  Select this option if you have a large bootsplash, e.g. BMP and want
+	  to compress it. A .lzma suffix will be added to CBFS file so that
+	  SeaBIOS wil lautomaticalyl decompress it.
+
 config FW_CONFIG
 	bool "Firmware Configuration Probing"
 	default n
