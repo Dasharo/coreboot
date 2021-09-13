@@ -196,9 +196,6 @@ Device (EC0)
 	Method (_Q13, 0, NotSerialized) // Camera Toggle
 	{
 		Debug = "EC: Camera Toggle"
-		Local0 = I2ER (0x1604)
-		Local0 = Local0 ^ 0x02
-		I2EW (0x1604, Local0)
 	}
 
 	Method (_Q14, 0, NotSerialized) // Airplane Mode
