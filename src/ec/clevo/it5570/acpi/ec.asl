@@ -34,16 +34,13 @@ Device (EC0)
 		Debug = Concatenate("EC: _REG", Concatenate(ToHexString(Arg0), Concatenate(" ", ToHexString(Arg1))))
 		If (((Arg0 == 0x03) && (Arg1 == One))) {
 			// Enable hardware touchpad lock, airplane mode, and keyboard backlight keys
-			ECOS = 2
+			ECOS = 1
 
 			// Enable software display brightness keys
 			WINF = 1
 
-			// Set OEM values like in stock fw
-			// TODO: Find out what they mean
-			OEM1 = 2
-			OEM2 = 7
-			OEM3 = 0x3C
+			// Enable camera toggle hotkey
+			OEM3 = OEM3 | 4
 
 			// Set current AC state
 			^^^^AC.ACFG = ADP
