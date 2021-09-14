@@ -11,8 +11,8 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_OPTION_TABLE
 	select INTEL_GMA_HAVE_VBT
 	select INTEL_LPSS_UART_FOR_CONSOLE
+	select MAINBOARD_HAS_SPI_TPM
 	select MAINBOARD_HAS_TPM2
-	select MAINBOARD_HAS_LPC_TPM
 	select NO_UART_ON_SUPERIO
 	select PCIEXP_HOTPLUG
 	select SOC_INTEL_TIGERLAKE
@@ -77,8 +77,11 @@ config UART_FOR_CONSOLE
 	int
 	default 2
 
-config TPM_PIRQ
-	hex
-	default 0x1C # GPP_C14
+config DRIVER_TPM_SPI_BUS
+	default 0x2
+
+config TPM_TIS_ACPI_INTERRUPT
+	int
+	default 54  # GPE0_DW1_22 (GPP_C22)
 
 endif # BOARD_CLEVO_NV41MB
