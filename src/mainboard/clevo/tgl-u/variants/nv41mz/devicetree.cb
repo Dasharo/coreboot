@@ -82,8 +82,8 @@ chip soc/intel/tigerlake
 
 # PM Util (soc/intel/tigerlake/pmutil.c)
 	# GPE configuration
-	register "pmc_gpe0_dw0" = "PMC_GPP_C"
-	register "pmc_gpe0_dw1" = "PMC_GPP_E"
+	register "pmc_gpe0_dw0" = "PMC_GPP_A"
+	register "pmc_gpe0_dw1" = "PMC_GPP_R"
 	register "pmc_gpe0_dw2" = "PMC_GPD"
 
 # Actual device tree
@@ -310,18 +310,10 @@ chip soc/intel/tigerlake
 			register "PcieRpLtrEnable[10]" = "1"
 			register "PcieClkSrcUsage[1]" = "10"
 			register "PcieClkSrcClkReq[1]" = "1"
-			chip drivers/wifi/generic
-				register "wake" = "GPE0_DW0_23" # GPP_C23
-				device pci 00.0 on end
-			end
 		end
 		device ref pch_espi on
 			chip ec/clevo/it5570
 				device pnp 0c09.0 on end
-			end
-			chip drivers/pc80/tpm
-				register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_C14)"
-				device pnp 0c31.0 on end
 			end
 		end
 		device ref p2sb on end
