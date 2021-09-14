@@ -33,8 +33,9 @@ Device (EC0)
 	{
 		Debug = Concatenate("EC: _REG", Concatenate(ToHexString(Arg0), Concatenate(" ", ToHexString(Arg1))))
 		If (((Arg0 == 0x03) && (Arg1 == One))) {
-			// Enable hardware touchpad lock, airplane mode, and keyboard backlight keys
-			ECOS = 1
+			// Enable hardware touchpad lock and keyboard backlight keys
+			// Enable software airplane mode key
+			ECOS = 2
 
 			// Enable software display brightness keys
 			WINF = 1
