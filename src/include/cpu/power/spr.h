@@ -14,6 +14,7 @@
 #define SPR_CIABR				0xBB
 #define SPR_DAWRX				0xBC
 #define SPR_TB					0x10C
+#define SPR_PVR					0x11F
 #define SPR_HSPRG0				0x130
 #define SPR_HDEC				0x136
 #define SPR_HRMOR				0x139
