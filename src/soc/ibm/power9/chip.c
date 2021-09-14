@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
 #include <device/device.h>
 #include <program_loading.h>
 #include <fit.h>
@@ -25,6 +26,46 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 	}
 
 	return 0;
+}
+
+static void rng_init(void)
+{
+	/*
+	 * RNG is allowed to run for M cycles (M = enough time to complete init;
+	 * recommend 1 second of time).
+	 *
+	 * The only thing that ensures this is delay between istep 10.13 and now.
+	 * 14.1 is the most time-consuming istep, its duration depends on the amount
+	 * of installed RAM under the bigger of MCBISTs (i.e. sides of CPU on the
+	 * board). This is more than enough in Hostboot.
+	 *
+	 * TODO: test if this is enough for coreboot with initial ECC scrubbing
+	 * skipped, low amount of RAM and no debug output.
+	 */
+	/* NX.PBI.PBI_RNG.NX_RNG_CFG
+	 *   [0-9]   FAIL_REG - abort if any of these bits is set
+	 *   [17]    BIST_COMPLETE - should be 1 at this point
+	 */
+	uint64_t rng_status = read_scom(0x020110E0);
+	assert(rng_status & PPC_BIT(17));
+	while (!((rng_status = read_scom(0x020110E0)) & PPC_BIT(17)));
+
+	if (rng_status & PPC_BITMASK(0, 9))
+		die("RNG initialization failed, NX_RNG_CFG = %#16.16llx\n", rng_status);
+
+	/*
+	 * Hostboot sets 'enable' bit again even though it was already set.
+	 * Following that behavior just in case.
+	 */
+	write_scom(0x020110E0, rng_status | PPC_BIT(63));
+
+	/*
+	 * This would be the place to set BARs, but it is done as part of quad SCOM
+	 * restore.
+	 */
+
+	/* Lock NX RNG configuration */
+	scom_or(0x00010005, PPC_BIT(9));
 }
 
 #define SIZE_MASK	PPC_BITMASK(13,23)
@@ -92,6 +133,7 @@ static void enable_soc_dev(struct device *dev)
 					  &device_tree_fixups);
 		}
 	}
+	rng_init();
 	istep_18_11();
 	istep_18_12();
 }
