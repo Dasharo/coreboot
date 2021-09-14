@@ -7,15 +7,223 @@
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
 #include <cpu/power/istep_18.h>
+#include <cpu/power/spr.h>
+#include <commonlib/stdlib.h>		// xzalloc
 
 #include "homer.h"
 #include "istep_13_scom.h"
 #include "chip.h"
+#include "homer.h"
+
+/*
+ * These are various definitions of the page sizes and segment sizes supported
+ * by the MMU. Values are the same as dumped from original firmware, comments
+ * are copied from Hostboot for POWER8. Compared to POWER8, POWER9 doesn't have
+ * 1M entries in segment page sizes.
+ */
+static uint32_t page_sizes[4] = { 0xc, 0x10, 0x18, 0x22 };
+static uint32_t segment_sizes[4] = { 0x1c, 0x28, 0xffffffff, 0xffffffff };
+static uint32_t segment_page_sizes[] =
+{
+	12, 0x0, 3,   /* 4k SLB page size, L,LP = 0,x1, 3 page size encodings */
+	12, 0x0,      /* 4K PTE page size, L,LP = 0,x0 */
+	16, 0x7,      /* 64K PTE page size, L,LP = 1,x7 */
+	24, 0x38,     /* 16M PTE page size, L,LP = 1,x38 */
+	16, 0x110, 2, /* 64K SLB page size, L,LP = 1,x1, 2 page size encodings*/
+	16, 0x1,      /* 64K PTE page size, L,LP = 1,x1 */
+	24, 0x8,      /* 16M PTE page size, L,LP = 1,x8 */
+	24, 0x100, 1, /* 16M SLB page size, L,LP = 1,x0, 1 page size encoding */
+	24, 0x0,      /* 16M PTE page size, L,LP = 1,x0 */
+	34, 0x120, 1, /* 16G SLB page size, L,LP = 1,x2, 1 page size encoding */
+	34, 0x3       /* 16G PTE page size, L,LP = 1,x3 */
+};
+static uint32_t radix_AP_enc[4] = { 0x0c, 0xa0000010, 0x20000015, 0x4000001e };
+
+/*
+ * Dumped from Hostboot, might need reviewing. Comment in
+ * skiboot/external/mambo/skiboot.tcl says that PAPR defines up to byte 63 (plus
+ * 2 bytes for header), but the newest version I found describes only up to byte
+ * number 23 (Revision 2.9_pre7 from June 11, 2020).
+ */
+static uint8_t pa_features[] =
+{
+	64, 0, /* Header: size and format, respectively */
+	0xf6, 0x3f, 0xc7, 0xc0, 0x80, 0xd0, 0x80, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00,
+	0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00,
+	0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80, 0x00,
+	0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
+	0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
+	0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00
+};
+
+static void fill_l3_node(struct device_tree_node *node, uint32_t phandle,
+                         uint32_t pir)
+{
+	node->phandle = phandle;
+	dt_add_u32_prop(node, "phandle", phandle);
+	dt_add_u32_prop(node, "reg", pir);
+	dt_add_string_prop(node, "device_type", "cache");
+	dt_add_bin_prop(node, "cache-unified", NULL, 0);
+	dt_add_string_prop(node, "status", "okay");
+
+	/* POWER9 Processor User's Manual, 7.3 */
+	dt_add_u32_prop(node, "d-cache-size", 10 * MiB);
+	dt_add_u32_prop(node, "d-cache-sets", 8);  /* Per Hostboot. Why not 20? */
+	dt_add_u32_prop(node, "i-cache-size", 10 * MiB);
+	dt_add_u32_prop(node, "i-cache-sets", 8);  /* Per Hostboot. Why not 20? */
+}
+
+static void fill_l2_node(struct device_tree_node *node, uint32_t phandle,
+                         uint32_t pir, uint32_t next_lvl_phandle)
+{
+	node->phandle = phandle;
+	dt_add_u32_prop(node, "phandle", phandle);
+	/* This is not a typo, "l2-cache" points to the node of L3 cache */
+	dt_add_u32_prop(node, "l2-cache", next_lvl_phandle);
+	dt_add_u32_prop(node, "reg", pir);
+	dt_add_string_prop(node, "device_type", "cache");
+	dt_add_bin_prop(node, "cache-unified", NULL, 0);
+	dt_add_string_prop(node, "status", "okay");
+
+	/* POWER9 Processor User's Manual, 6.1 */
+	dt_add_u32_prop(node, "d-cache-size", 512 * KiB);
+	dt_add_u32_prop(node, "d-cache-sets", 8);
+	dt_add_u32_prop(node, "i-cache-size", 512 * KiB);
+	dt_add_u32_prop(node, "i-cache-sets", 8);
+
+}
+
+static void fill_cpu_node(struct device_tree_node *node, uint32_t phandle,
+                          uint32_t pir, uint32_t next_lvl_phandle)
+{
+	/* Mandatory/standard properties */
+	node->phandle = phandle;
+	dt_add_u32_prop(node, "phandle", phandle);
+	dt_add_string_prop(node, "device_type", "cpu");
+	dt_add_bin_prop(node, "64-bit", NULL, 0);
+	dt_add_bin_prop(node, "32-64-bridge", NULL, 0);
+	dt_add_bin_prop(node, "graphics", NULL, 0);
+	dt_add_bin_prop(node, "general-purpose", NULL, 0);
+	dt_add_u32_prop(node, "l2-cache", next_lvl_phandle);
+
+	/*
+	 * The "status" property indicate whether the core is functional. It's
+	 * a string containing "okay" for a good core or "bad" for a non-functional
+	 * one. You can also just ommit the non-functional ones from the DT
+	 */
+	dt_add_string_prop(node, "status", "okay");
+
+	/*
+	 * This is the same value as the PIR of thread 0 of that core
+	 * (ie same as the @xx part of the node name)
+	 */
+	dt_add_u32_prop(node, "reg", pir);
+	dt_add_u32_prop(node, "ibm,pir", pir);
+
+	/* Chip ID of this core */
+	dt_add_u32_prop(node, "ibm,chip-id", 0); /* FIXME for second CPU */
+
+	/*
+	 * Interrupt server numbers (aka HW processor numbers) of all threads
+	 * on that core. This should have 4 numbers and the first one should
+	 * have the same value as the above ibm,pir and reg properties
+	 */
+	uint32_t int_srvrs[4] = {pir, pir+1, pir+2, pir+3};
+	/*
+	 * This will be added to actual FDT later, so local array on stack can't
+	 * be used.
+	 */
+	void *int_srvrs_ptr = xmalloc(sizeof(int_srvrs));
+	memcpy(int_srvrs_ptr, int_srvrs, sizeof(int_srvrs));
+	dt_add_bin_prop(node, "ibm,ppc-interrupt-server#s", int_srvrs_ptr,
+	                sizeof(int_srvrs));
+
+	/*
+	 * This is the "architected processor version" as defined in PAPR.
+	 */
+	dt_add_u32_prop(node, "cpu-version", read_spr(SPR_PVR));
+
+	/*
+	 * Page sizes and segment sizes supported by the MMU.
+	 */
+	dt_add_bin_prop(node, "ibm,processor-page-sizes", &page_sizes,
+	                sizeof(page_sizes));
+	dt_add_bin_prop(node, "ibm,processor-segment-sizes", &segment_sizes,
+	                sizeof(segment_sizes));
+	dt_add_bin_prop(node, "ibm,segment-page-sizes", &segment_page_sizes,
+	                sizeof(segment_page_sizes));
+	dt_add_bin_prop(node, "ibm,processor-radix-AP-encodings", &radix_AP_enc,
+	                sizeof(radix_AP_enc));
+
+	dt_add_bin_prop(node, "ibm,pa-features", &pa_features,
+	                sizeof(pa_features));
+
+	/* SLB size, use as-is */
+	dt_add_u32_prop(node, "ibm,slb-size", 0x20);
+
+	/* VSX support, use as-is */
+	dt_add_u32_prop(node, "ibm,vmx", 0x2);
+
+	/* DFP support, use as-is */
+	dt_add_u32_prop(node, "ibm,dfp", 0x2);
+
+	/* PURR/SPURR support, use as-is */
+	dt_add_u32_prop(node, "ibm,purr", 0x1);
+	dt_add_u32_prop(node, "ibm,spurr", 0x1);
+
+	/*
+	 * FIXME: un-hardcode. This is either nominal or safe mode frequency,
+	 * depending on whether OCC has been started successfully.
+	 */
+	uint64_t clock_freq = 2700ULL * MHz;
+	/*
+	 * Old-style core clock frequency. Only create this property if the
+	 * frequency fits in a 32-bit number. Do not create it if it doesn't.
+	 */
+	if ((clock_freq >> 32) == 0)
+		dt_add_u32_prop(node, "clock-frequency", clock_freq);
+
+	/*
+	 * Mandatory: 64-bit version of the core clock frequency, always create
+	 * this property.
+	 */
+	dt_add_u64_prop(node, "ibm,extended-clock-frequency", clock_freq);
+
+	/* Timebase freq has a fixed value, always use that */
+	dt_add_u32_prop(node, "timebase-frequency", 512 * MHz);
+	/* extended-timebase-frequency will be deprecated at some point */
+	dt_add_u64_prop(node, "ibm,extended-timebase-frequency", 512 * MHz);
+
+	/* Use as-is, values dumped from booted system */
+	dt_add_u32_prop(node, "reservation-granule-size", 0x80);
+	dt_add_u64_prop(node, "performance-monitor", 1);
+	/* POWER9 Processor User's Manual, 2.3.1 */
+	dt_add_u32_prop(node, "i-cache-size", 32 * KiB);
+	dt_add_u32_prop(node, "i-cache-sets", 8);
+	dt_add_u32_prop(node, "i-cache-block-size", 128);
+	dt_add_u32_prop(node, "i-cache-line-size", 128);	// Makes Linux happier
+	dt_add_u32_prop(node, "i-tlb-size", 0);
+	dt_add_u32_prop(node, "i-tlb-sets", 0);
+	/* POWER9 Processor User's Manual, 2.3.5 */
+	dt_add_u32_prop(node, "d-cache-size", 32 * KiB);
+	dt_add_u32_prop(node, "d-cache-sets", 8);
+	dt_add_u32_prop(node, "d-cache-block-size", 128);
+	dt_add_u32_prop(node, "d-cache-line-size", 128);	// Makes Linux happier
+	/* POWER9 Processor User's Manual, 2.3.7 */
+	dt_add_u32_prop(node, "d-tlb-size", 1024);
+	dt_add_u32_prop(node, "d-tlb-sets", 4);
+	dt_add_u32_prop(node, "tlb-size", 1024);
+	dt_add_u32_prop(node, "tlb-sets", 4);
+}
 
 static int dt_platform_fixup(struct device_tree_fixup *fixup,
 			      struct device_tree *tree)
 {
-	struct device_tree_node *node;
+	struct device_tree_node *node, *cpus;
+	uint64_t cores = read_scom(0x0006C090);
+	assert(cores != 0);
 
 	/* Memory devices are always direct children of root */
 	list_for_each(node, tree->root->children, list_node) {
@@ -24,6 +232,93 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 			dt_add_u32_prop(node, "ibm,chip-id", 0 /* FIXME for second CPU */);
 		}
 	}
+
+	/* Find "cpus" node, create if necessary */
+	cpus = dt_find_node_by_path(tree, "/cpus", NULL, NULL, 1);
+	assert(cpus != NULL);
+
+	/*
+	 * First remove all existing "cpu" nodes, then add ours.
+	 *
+	 * TODO: check if any other node relies on phandles of "cpu" or "cache"
+	 * nodes
+	 */
+	list_for_each(node, cpus->children, list_node) {
+		//~ const char *devtype = dt_find_string_prop(node, "device_type");
+		//~ if (devtype && !strcmp(devtype, "cpu"))
+			list_remove(&node->list_node);
+	}
+
+	for (int core_id = 0; core_id <= 24; core_id++) {
+		if (IS_EC_FUNCTIONAL(core_id, cores)) {
+			/*
+			 * Not sure who is the original author of this comment, it is
+			 * duplicated in Hostboot and Skiboot, and now also here. It
+			 * lacks one important piece of information: PIR is PIR value
+			 * of thread 0 of _first_ core in pair, both for L2 and L3.
+			 */
+			/*
+			 * Cache nodes. Those are siblings of the processor nodes under /cpus and
+			 * represent the various level of caches.
+			 *
+			 * The unit address (and reg property) is mostly free-for-all as long as
+			 * there is no collisions. On HDAT machines we use the following encoding
+			 * which I encourage you to also follow to limit surprises:
+			 *
+			 * L2   :  (0x20 << 24) | PIR (PIR is PIR value of thread 0 of core)
+			 * L3   :  (0x30 << 24) | PIR
+			 * L3.5 :  (0x35 << 24) | PIR
+			 *
+			 * In addition, each cache points to the next level cache via its
+			 * own "l2-cache" (or "next-level-cache") property, so the core node
+			 * points to the L2, the L2 points to the L3 etc...
+			 */
+			uint32_t pir = core_id * 4;
+			uint32_t l2_pir = (0x20 << 24) | (pir & ~7);
+			uint32_t l3_pir = (0x30 << 24) | (pir & ~7);
+			/* "/cpus/l?-cache@12345678" -> 23 characters + terminator */
+			char l2_path[24];
+			char l3_path[24];
+			snprintf(l2_path, sizeof(l2_path), "/cpus/l%d-cache@%x", 2, l2_pir);
+			snprintf(l3_path, sizeof(l3_path), "/cpus/l%d-cache@%x", 3, l3_pir);
+
+			/*
+			 * 21 for "/cpus/PowerPC,POWER9@", 4 for PIR just in case (2nd CPU),
+			 * 1 for terminator
+			 */
+			char cpu_path[26];
+			snprintf(cpu_path, sizeof(cpu_path), "/cpus/PowerPC,POWER9@%x", pir);
+
+			struct device_tree_node *l2_node =
+			       dt_find_node_by_path(tree, l2_path, NULL, NULL, 1);
+			struct device_tree_node *l3_node =
+			       dt_find_node_by_path(tree, l3_path, NULL, NULL, 1);
+			struct device_tree_node *cpu_node =
+			       dt_find_node_by_path(tree, cpu_path, NULL, NULL, 1);
+
+			/*
+			 * Cache nodes may already be created if this is the second active
+			 * core in a pair. If L3 node doesn't exist, L2 also doesn't - they
+			 * are created at the same time, no need to test both.
+			 */
+			if (!l3_node->phandle) {
+				fill_l3_node(l3_node, ++tree->max_phandle, l3_pir);
+				fill_l2_node(l2_node, ++tree->max_phandle, l2_pir,
+				             l3_node->phandle);
+			}
+
+			fill_cpu_node(cpu_node, ++tree->max_phandle, pir, l2_node->phandle);
+		}
+	}
+
+	/* Debug for Skiroot's kernel. TODO: make this a config option? */
+	node = dt_find_node_by_path(tree, "/chosen", NULL, NULL, 1);
+	dt_add_string_prop(node, "bootargs", "console=hvc0");
+
+	/* Will be created by Skiboot. TODO: remove from dts */
+	node = dt_find_node_by_path(tree, "/ibm,opal", NULL, NULL, 0);
+	if (node)
+		list_remove(&node->list_node);
 
 	return 0;
 }
