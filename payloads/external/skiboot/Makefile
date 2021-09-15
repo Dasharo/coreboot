@@ -22,7 +22,7 @@ $(device_tree_blob): $(build_dir) $(device_tree_source)
 	dtc -I dts -O dtb -o $(device_tree_blob) $(device_tree_source)
 
 $(skiboot): $(skiboot_dir)
-	$(MAKE) -C $(skiboot_dir) -j`nproc` CROSS=powerpc64-linux-gnu- DEBUG=1
+	$(MAKE) -C $(skiboot_dir) -j`nproc` CROSS=powerpc64-linux-gnu-
 
 $(skiboot_dir):
 	git clone $(skiboot_git_repo) $(skiboot_dir)
