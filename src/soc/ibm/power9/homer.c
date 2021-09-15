@@ -344,10 +344,17 @@ static void build_self_restore(struct homer_st *homer,
 	uint32_t *ptr;
 	const uint64_t hrmor = read_spr(SPR_HRMOR);
 	/* See cpu_winkle() */
-	const uint64_t lpcr = (read_spr(SPR_LPCR)
-	                       & ~(SPR_LPCR_EEE | SPR_LPCR_DEE | SPR_LPCR_OEE))
-	                      | (SPR_LPCR_HVICE | SPR_LPCR_HVEE);
-	const uint64_t msr = read_msr();
+	const uint64_t lpcr =
+	   (read_spr(SPR_LPCR)
+	    & ~(SPR_LPCR_EEE | SPR_LPCR_DEE | SPR_LPCR_OEE | SPR_LPCR_HDICE))
+	   | (SPR_LPCR_HVICE | SPR_LPCR_HVEE);
+	/*
+	 * Timing facilities may be lost. During their restoration Large Decrementer
+	 * in LPCR may be initially turned off, which may result in a spurious
+	 * Decrementer Exception. Disable External Interrupts on self-restore, they
+	 * will be re-enabled later by coreboot.
+	 */
+	const uint64_t msr = read_msr() & ~PPC_BIT(48);
 	/* Clear en_attn for HID */
 	const uint64_t hid = read_spr(SPR_HID) & ~PPC_BIT(3);
 
@@ -759,8 +766,7 @@ static void stop_gpe_init(struct homer_st *homer)
 	                             !(read_scom(0x00066021) & PPC_BIT(0))));
 
 	if (!time)
-		printk(BIOS_ERR, "Timeout while waiting for SGPE activation\n");
-		//~ die("Timeout while waiting for SGPE activation\n");
+		die("Timeout while waiting for SGPE activation\n");
 }
 
 static uint64_t get_available_cores(int *me)
@@ -861,10 +867,12 @@ struct save_state {
 
 static void cpu_winkle(void)
 {
-	uint64_t psscr = read_spr(SPR_PSSCR);
 	uint64_t lpcr = read_spr(SPR_LPCR);
-	/* Clear {External, Decrementer, Other} Exit Enable */
-	lpcr &= ~(SPR_LPCR_EEE | SPR_LPCR_DEE | SPR_LPCR_OEE);
+	/*
+	 * Clear {External, Decrementer, Other} Exit Enable and Hypervisor
+	 * Decrementer Interrupt Conditionally Enable
+	 */
+	lpcr &= ~(SPR_LPCR_EEE | SPR_LPCR_DEE | SPR_LPCR_OEE | SPR_LPCR_HDICE);
 	/*
 	 * Set Hypervisor Virtualization Interrupt Conditionally Enable
 	 * and Hypervisor Virtualization Exit Enable
@@ -872,14 +880,7 @@ static void cpu_winkle(void)
 	lpcr |= SPR_LPCR_HVICE | SPR_LPCR_HVEE;
 	write_spr(SPR_LPCR, lpcr);
 	write_spr(SPR_PSSCR, 0x00000000003F00FF);
-
-	/*
-	 * Timing facilities may be lost. During their restoration Large Decrementer
-	 * in LPCR may be initially turned off, which may (but shouldn't) result in
-	 * a spurious Decrementer Exception. As we don't have handlers, disable all
-	 * External Interrupts just in case.
-	 */
-	sstate.msr = read_msr() & ~PPC_BIT(48);
+	sstate.msr = read_msr();
 
 	/*
 	 * Cannot clobber:
@@ -909,8 +910,23 @@ static void cpu_winkle(void)
 		             "r28", "r29", "r30", "r31", "memory", "cc");
 	}
 
-	write_spr(SPR_PSSCR, psscr);
-	write_spr(SPR_LPCR, lpcr);
+	/*
+	 * Hostboot restored two additional registers at this point: LPCR and PSSCR.
+	 *
+	 * LPCR was restored from core self-restore region, coreboot won't need to
+	 * change it unless it does delays using decrementer, as it did in romstage.
+	 *
+	 * PSSCR won't be used before next 'stop' instruction, which won't happen
+	 * before new settings are written by the payload.
+	 */
+
+	/*
+	 * Timing facilities were lost, this includes DEC register. Because during
+	 * self-restore Large Decrementer was disabled for few instructions, value
+	 * of DEC is trimmed to 32 bits. Restore it to something bigger, otherwise
+	 * interrupt would arrive in ~4 seconds.
+	 */
+	write_spr(SPR_DEC, SPR_DEC_LONGEST_TIME);
 }
 
 static void istep_16_1(int this_core)
@@ -953,7 +969,7 @@ static void istep_16_1(int this_core)
 	 * results in checkstop. To help with debugging it is masked here, but it
 	 * must not be in the final code!
 	 */
-	write_scom(0x0504000F, PPC_BIT(32));
+	//write_scom(0x0504000F, PPC_BIT(32));
 
 	block_wakeup_int(this_core, 1);
 
@@ -1713,19 +1729,6 @@ void build_homer_image(void *homer_bar)
 	if (!IS_ALIGNED((uint64_t) homer_bar, 4 * MiB))
 		die("HOMER (%p) is not aligned to 4MB\n", homer_bar);
 
-	/*
-	 * Temporarily use HOMER read from running system, until code for crafting
-	 * it from HCODE is ready.
-	 */
-	if (0) {
-
-	void *map = cbfs_map("homer", NULL);
-	memcpy(homer_bar, map, 4 * MiB);
-	cbfs_unmap(map);
-
-	} else {
-
-
 	memset(homer_bar, 0, 4 * MiB);
 
 	/*
@@ -1788,7 +1791,6 @@ void build_homer_image(void *homer_bar)
 	// Set the Fabric IDs
 	// setFabricIds( pChipHomer, i_procTgt );
 	//	- doesn't modify anything?
-	}
 
 	/* Set up wakeup mode */
 	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
@@ -1935,7 +1937,4 @@ void build_homer_image(void *homer_bar)
 	stop_gpe_init(homer);
 
 	istep_16_1(this_core);
-
-	die("halting now.............\n");
-	//hexdump(&homer->qpmr, sgpe->qpmr.size);
 }
