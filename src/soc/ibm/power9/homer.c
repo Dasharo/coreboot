@@ -343,11 +343,11 @@ static void build_self_restore(struct homer_st *homer,
 	size_t size;
 	uint32_t *ptr;
 	const uint64_t hrmor = read_spr(SPR_HRMOR);
-	/* See cpu_winkle() */
+	/* See cpu_winkle(), additionally set Hypervisor Doorbell Exit Enable */
 	const uint64_t lpcr =
 	   (read_spr(SPR_LPCR)
 	    & ~(SPR_LPCR_EEE | SPR_LPCR_DEE | SPR_LPCR_OEE | SPR_LPCR_HDICE))
-	   | (SPR_LPCR_HVICE | SPR_LPCR_HVEE);
+	   | (SPR_LPCR_HVICE | SPR_LPCR_HVEE | SPR_LPCR_HDEE);
 	/*
 	 * Timing facilities may be lost. During their restoration Large Decrementer
 	 * in LPCR may be initially turned off, which may result in a spurious

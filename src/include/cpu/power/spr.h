@@ -21,6 +21,7 @@
 #define SPR_LPCR				0x13E
 #define SPR_LPCR_HVEE				PPC_BIT(17)
 #define SPR_LPCR_LD				PPC_BIT(46)
+#define SPR_LPCR_HDEE				PPC_BIT(48)
 #define SPR_LPCR_EEE				PPC_BIT(49)
 #define SPR_LPCR_DEE				PPC_BIT(50)
 #define SPR_LPCR_OEE				PPC_BIT(51)
