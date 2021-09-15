@@ -10,17 +10,8 @@ framework:
 documentation:
         name: Dasharo Compatibility
         url: https://novacustom.gitlab.io/dasharo-compatibility/
-        building_url: https://novacustom.gitlab.io/dasharo-compatibility/hardware/clevo-nv41/building/
-        flashing_url: https://novacustom.gitlab.io/dasharo-compatibility/hardware/clevo-nv41/flashing_internal/
 
 platform:
         vendor: Clevo
         model: NV41MZ
 
-tests:
-        specification: https://novacustom.gitlab.io/dasharo-compatibility/dasharo-compatibility/
-        hardware_matrix: https://novacustom.gitlab.io/dasharo-compatibility/hardware/clevo-nv41/testing_configuration/
-        results: https://docs.google.com/spreadsheets/d/1LOXY9HCu-fMitkYwX08iLsQdSNenzyU0LnMdVbZB5Do/edit#gid=0
-
-asciinema:
-        signature_verification: https://asciinema.org/a/433461
