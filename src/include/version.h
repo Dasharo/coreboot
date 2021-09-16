@@ -5,6 +5,12 @@
 extern const char mainboard_vendor[];
 extern const char mainboard_part_number[];
 
+/* Dasharo version */
+extern const char dasharo_version[];
+extern const unsigned int dasharo_major_revision;
+extern const unsigned int dasharo_minor_revision;
+extern const unsigned int dasharo_patch_revision;
+
 /* coreboot Version */
 extern const char coreboot_version[];
 extern const char coreboot_extra_version[];
