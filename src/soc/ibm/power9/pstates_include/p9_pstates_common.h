@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* IBM_PROLOG_BEGIN_TAG                                                   */
 /* This is an automatically generated prolog.                             */
 /*                                                                        */
@@ -384,7 +386,7 @@ typedef struct __attribute__((packed, aligned(128))) WofTablesHeader
     /// Nest Frequency (in MHz) used in building the WOF Tables
     uint16_t nest_frequency_mhz;
 
-    /// Core Sort Power Target Frequency (in MHz) – The #V frequency associated
+    /// Core Sort Power Target Frequency (in MHz) - The #V frequency associated
     /// with the sort power target for this table set. This will be either the
     /// Nominal or Turbo #V frequency
     uint16_t sort_power_freq_mhz;
