@@ -1,5 +1,6 @@
 Files in this directory come from talos-hostboot repo, commit a2ddbf3 [1]. No
-changes were made, other than converting '#include <...>' to '#include "..."'.
+changes were made, other than converting '#include <...>' to '#include "..."'
+and adding SPDX licence identifiers.
 
 In some cases units mentioned in comments in the bigger structure are different
 than in comments above internal structure definitions and field names. An

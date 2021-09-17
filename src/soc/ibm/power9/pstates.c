@@ -58,7 +58,7 @@ static ResonantClockingSetup resclk =
 
 #define WOF_TABLES_MAGIC_VALUE (uint32_t)0x57465448 // "WFTH"
 #define WOF_TABLES_VERSION     (uint32_t)2
-#define WOF_TABLES_MAX_VERSION WOF_TABLES_VERSION 
+#define WOF_TABLES_MAX_VERSION WOF_TABLES_VERSION
 
 /*
  * WOF image:
@@ -241,7 +241,7 @@ static void check_valid_poundW(PoundW_data_per_quad *poundW_bucket,
 			    prev_vid_compare_per_quad[quad])
 				die("VID compare per quad is decreasing for quad %d\n", quad);
 
-			prev_vid_compare_per_quad[quad] = 
+			prev_vid_compare_per_quad[quad] =
 			        poundW_bucket->poundw[op].vdm_vid_compare_per_quad[quad];
 		}
 
@@ -829,7 +829,7 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	memcpy(gppb->operating_points, oppb->operating_points,
 	       sizeof(gppb->operating_points));
 	{
-		
+
 		memcpy(gppb->operating_points_set[VPD_PT_SET_RAW], oppb->operating_points,
 			   sizeof(gppb->operating_points));
 		memcpy(gppb->operating_points_set[VPD_PT_SET_SYSP], oppb->operating_points,
