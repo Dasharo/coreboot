@@ -1,0 +1,21 @@
+# Dasharo project configuration data
+
+client:
+        name: NovaCustom
+
+framework:
+        name: coreboot
+        version: 4.14
+
+documentation:
+        name: Dasharo Compatibility
+        url: https://novacustom.gitlab.io/dasharo-compatibility/
+
+platform:
+        vendor: Clevo
+        model: NV41MZ
+
+tests:
+        specification: https://novacustom.gitlab.io/dasharo-compatibility/dasharo-compatibility/
+        hardware_matrix: https://novacustom.gitlab.io/dasharo-compatibility/hardware/clevo-nv41/testing_configuration/
+
