@@ -30,16 +30,20 @@ build:
       - artifacts/*
 
 upload:
-  image: coreboot/coreboot-sdk:1.52
+  image: coreboot/coreboot-sdk:2021-04-06_7014f8258e
   stage: upload
   tags:
    - local
   only:
    - tags
   before_script:
-    - git clone git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
-    - git checkout ui_script # TODO: Remove this after the MR gets merged
+    - eval $(ssh-agent -s)
+    - ssh-add $GITLAB_SSH_PRIVATE_KEY
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - git clone --branch ui_script git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
   script:
     - ./build.sh upload
     - ./dasharo-templates/newsletter/generator/data.py
-    - ./dasharo-templates/newsletter/generator/run.py
