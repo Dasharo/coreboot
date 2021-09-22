@@ -1,5 +1,6 @@
 stages:
   - build
+  - upload
 
 build:
   image: coreboot/coreboot-sdk:1.52
@@ -27,3 +28,18 @@ build:
     name: "dasharo-novacustom-nv41mz-$CI_COMMIT_REF_NAME"
     paths:
       - artifacts/*
+
+upload:
+  image: coreboot/coreboot-sdk:1.52
+  stage: upload
+  tags:
+   - local
+  only:
+   - tags
+  before_script:
+    - git clone git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
+    - git checkout ui_script # TODO: Remove this after the MR gets merged
+  script:
+    - ./build.sh upload
+    - ./dasharo-templates/newsletter/generator/data.py
+    - ./dasharo-templates/newsletter/generator/run.py
