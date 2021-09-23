@@ -50,7 +50,7 @@ upload:
     - chmod 700 ~/.ssh
     - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-    - git clone --branch ui_script git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
+    - git clone --branch master git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
     - pip install -r ./dasharo-templates/newsletter/generator/requirements.txt
       # update submodules
     - git submodule update --init --recursive --checkout
