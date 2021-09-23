@@ -37,7 +37,7 @@ upload:
   only:
    - tags
   before_script:
-    - apt-get install -y curl openssh-client git
+    - apt-get update && apt-get install -y curl openssh-client git
     - eval $(ssh-agent -s)
     - ssh-add $GITLAB_SSH_PRIVATE_KEY
     - mkdir -p ~/.ssh
