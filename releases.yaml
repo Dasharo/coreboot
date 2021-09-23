@@ -1,0 +1,14 @@
+releases:
+        - version: v0.1.2
+          added:
+                - Clevo NV41MZ platform support
+                - Clevo IT5570 EC support
+                - UEFI boot support
+                - Configurable boot order
+                - Configurable boot options
+                - Integrated graphics initialization for the internal LCD (eDP) and external HDMI port
+          known_issues:
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+                - description: The camera ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
