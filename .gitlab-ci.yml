@@ -37,6 +37,8 @@ upload:
   stage: upload
   tags:
    - local
+  variables:
+      GIT_SUBMODULE_STRATEGY: recursive
   only:
    - tags
   before_script:
@@ -50,6 +52,8 @@ upload:
     - chmod 644 ~/.ssh/known_hosts
     - git clone --branch ui_script git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
     - pip install -r ./dasharo-templates/newsletter/generator/requirements.txt
+      # update submodules
+    - git submodule update --init --recursive --checkout
   script:
     - ./build.sh upload
     - ./dasharo-templates/newsletter/generator/data.py
