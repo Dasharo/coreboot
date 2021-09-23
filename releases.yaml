@@ -23,6 +23,7 @@ releases:
                 - Customized setup menu keys
                 - Enabled camera on/off hotkey
                 - Support for backlight hotkey in Windows
+                - Preserve boot order settings after Dasharo update
           changed:
                 - Replaced CorebootPayloadPkg with Dasharo UEFIPayloadPkg
                 - Changed the behavior of airplane mode to match stock firmware
