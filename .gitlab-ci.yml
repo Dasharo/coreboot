@@ -53,3 +53,7 @@ upload:
   script:
     - ./build.sh upload
     - ./dasharo-templates/newsletter/generator/data.py
+  artifacts:
+    name: "dasharo-novacustom-nv41mz-$CI_COMMIT_REF_NAME"
+    paths:
+      - data.yaml
