@@ -12,7 +12,9 @@ build:
   before_script:
     # SSH key setup
     - eval $(ssh-agent -s)
-    - chmod 600 $GITLAB_SSH_PRIVATE_KEY
+    # It fails with following, because we are running as a user in container?
+    # changing permissions of '/builds/3mdeb/novacustom/coreboot.tmp/GITLAB_SSH_PRIVATE_KEY': Operation not permitted
+    # - chmod 600 $GITLAB_SSH_PRIVATE_KEY
     - ssh-add $GITLAB_SSH_PRIVATE_KEY
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
