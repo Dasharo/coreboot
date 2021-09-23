@@ -27,6 +27,9 @@ releases:
                 - Replaced CorebootPayloadPkg with Dasharo UEFIPayloadPkg
                 - Changed the behavior of airplane mode to match stock firmware
                   (now it can be disabled in software)
+          fixed:
+                - description: The camera ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
           known_issues:
                 - description: Sleep mode is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
