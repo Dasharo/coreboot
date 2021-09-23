@@ -49,7 +49,7 @@ sign() {
 upload() {
   if (git describe --exact-match --tags)
   then
-    REMOTE_DIR="/projects/novacustom/releases_test/${FW_VERSION}"
+    REMOTE_DIR="/projects/novacustom/releases/${FW_VERSION}"
     FILES="${ARTIFACTS_DIR}/*"
     curl -s -u $UPLOADER_USERNAME:$UPLOADER_PASSWORD -X MKCOL "${UPLOADER_URL}${REMOTE_DIR}"
     rm share_urls.txt && touch share_urls.txt
