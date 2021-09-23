@@ -16,14 +16,17 @@ releases:
         - version: v0.2.0
           added:
                 - UEFI Secure Boot support
-                - UEFI Shell and iPXE selectable in boot menu
+                - UEFI Shell selectable in boot menu
+                - iPXE selectable in boot menu
                 - NovaCustom boot logo
-                - Custom boot menu and setup menu keys
+                - Customized boot menu keys
+                - Customized setup menu keys
                 - Enabled camera on/off hotkey
                 - Support for backlight hotkey in Windows
           changed:
                 - Replaced CorebootPayloadPkg with Dasharo UEFIPayloadPkg
                 - Changed the behavior of airplane mode to match stock firmware
+                  (now it can be disabled in software)
           known_issues:
                 - description: Sleep mode is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
