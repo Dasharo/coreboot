@@ -1,0 +1,35 @@
+releases:
+        - version: v0.1.2
+          added:
+                - Clevo NV41MZ platform support
+                - Clevo IT5570 EC support
+                - UEFI boot support
+                - Configurable boot order
+                - Configurable boot options
+                - Integrated graphics initialization for the internal LCD (eDP) and external HDMI port
+          known_issues:
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+                - description: The camera ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
+
+        - version: v0.2.0
+          added:
+                - UEFI Secure Boot support
+                - UEFI Shell selectable in boot menu
+                - iPXE selectable in boot menu
+                - NovaCustom boot logo
+                - Customized boot menu keys
+                - Customized setup menu keys
+                - Enabled camera on/off hotkey
+                - Support for backlight hotkey in Windows
+          changed:
+                - Replaced CorebootPayloadPkg with Dasharo UEFIPayloadPkg
+                - Changed the behavior of airplane mode to match stock firmware
+                  (now it can be disabled in software)
+          fixed:
+                - description: The camera ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
+          known_issues:
+                - description: Sleep mode is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3

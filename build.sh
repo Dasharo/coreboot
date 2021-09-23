@@ -16,7 +16,7 @@ errorCheck() {
 
 usage() {
   echo "${0} command"
-  echo "Available commands: build, sign"
+  echo "Available commands: build, sign, upload"
   exit 0
 }
 
@@ -46,14 +46,36 @@ sign() {
   gpg --default-key "${GPG_FINGERPRINT}" --armor --output "${ARTIFACTS_DIR}/${SIG_FILE}" --detach-sig "${ARTIFACTS_DIR}/${HASH_FILE}"
 }
 
+upload() {
+  REMOTE_DIR="/projects/novacustom/releases/${FW_VERSION}"
+  FILES="${ARTIFACTS_DIR}/*"
+  curl -s -u $UPLOADER_USERNAME:$UPLOADER_PASSWORD -X MKCOL "${UPLOADER_URL}${REMOTE_DIR}"
+  rm share_urls.txt && touch share_urls.txt
+  for f in $FILES
+  do
+    f=$(basename $f)
+    curl -s -u $UPLOADER_USERNAME:$UPLOADER_PASSWORD -T $ARTIFACTS_DIR/$f "${UPLOADER_URL}${REMOTE_DIR}/$f"
+    f=${f/+/%2B}
+    GENERATED_URL=$(curl -s -u $UPLOADER_USERNAME:$UPLOADER_PASSWORD \
+               -X POST 'https://cloud.3mdeb.com/ocs/v2.php/apps/files_sharing/api/v1/shares' \
+               -H "OCS-APIRequest: true" \
+               -d "path=${REMOTE_DIR:1}/$f&shareType=3" | grep url | sed -e "s#</url>##" | sed -e "s#<url>##" | tr -d '[:space:]' )
+    echo $f $GENERATED_URL >> share_urls.txt
+  done
+  cat share_urls.txt
+}
+
 CMD="$1"
 
 case "$CMD" in
     "build")
         build
-	;;
+        ;;
     "sign")
         sign
+        ;;
+    "upload")
+        upload
         ;;
     *)
         echo "Invalid command: \"$CMD\""
