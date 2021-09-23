@@ -30,7 +30,7 @@ build:
       - artifacts/*
 
 upload:
-  image: coreboot/coreboot-sdk:2021-04-06_7014f8258e
+  image: python:3.9.7-slim
   stage: upload
   tags:
    - local
@@ -44,6 +44,7 @@ upload:
     - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
     - git clone --branch ui_script git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
+    - pip install -r dasharo-templates/newsletter/generator/requirements.txt
   script:
     - ./build.sh upload
     - ./dasharo-templates/newsletter/generator/data.py
