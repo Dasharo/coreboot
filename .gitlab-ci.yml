@@ -37,6 +37,7 @@ upload:
   only:
    - tags
   before_script:
+    - apt-get install -y curl openssh-client git
     - eval $(ssh-agent -s)
     - ssh-add $GITLAB_SSH_PRIVATE_KEY
     - mkdir -p ~/.ssh
@@ -45,7 +46,6 @@ upload:
     - chmod 644 ~/.ssh/known_hosts
     - git clone --branch ui_script git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
     - pip install -r ./dasharo-templates/newsletter/generator/requirements.txt
-    - apt-get install -y curl
   script:
     - ./build.sh upload
     - ./dasharo-templates/newsletter/generator/data.py
