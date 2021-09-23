@@ -33,3 +33,5 @@ releases:
           known_issues:
                 - description: Sleep mode is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
