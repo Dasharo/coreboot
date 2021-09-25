@@ -7,6 +7,7 @@
 #include <cpu/power/istep_14.h>
 #include <cpu/power/istep_18.h>
 
+#include "homer.h"
 #include "istep_13_scom.h"
 #include "chip.h"
 
@@ -133,14 +134,66 @@ static void clear_ipmi_attn(void)
 	outb(bt_ctrl | 0x03, 0xe4);
 }
 
+static void activate_slave_cores(void)
+{
+	enum { DOORBELL_MSG_TYPE = 0x0000000028000000 };
+
+	uint8_t i;
+
+	/* Read OCC CCSR written by the code earlier */
+	const uint64_t functional_cores = read_scom(0x0006C090);
+
+	/* Find and process the first core in a separate loop to slightly
+	 * simplify processing of all the other cores by removing a conditional */
+	for (i = 0; i < MAX_CORES_PER_CHIP; ++i) {
+		uint8_t thread;
+		uint64_t core_msg;
+
+		if (!IS_EC_FUNCTIONAL(i, functional_cores))
+			continue;
+
+		/* Message value for thread 0 of the current core */
+		core_msg = DOORBELL_MSG_TYPE | (i << 2);
+
+		/* Skip sending doorbell to the current thread of the current core */
+		for (thread = 1; thread < 4; ++thread) {
+			register uint64_t msg = core_msg | thread;
+			asm volatile("msgsnd %0" :: "r" (msg));
+		}
+
+		break;
+	}
+
+	for (++i; i < MAX_CORES_PER_CHIP; ++i) {
+		uint8_t thread;
+		uint64_t core_msg;
+
+		if (!IS_EC_FUNCTIONAL(i, functional_cores))
+			continue;
+
+		/* Message value for thread 0 of the i-th core */
+		core_msg = DOORBELL_MSG_TYPE | (i << 2);
+
+		for (thread = 0; thread < 4; ++thread) {
+			register uint64_t msg = core_msg | thread;
+			asm volatile("msgsnd %0" :: "r" (msg));
+		}
+	}
+}
+
 void platform_prog_run(struct prog *prog)
 {
-	/*
-	 * TODO: do what 16.2 did now, when the payload and its interrupt
-	 * vectors are already loaded
-	 */
-
 	clear_ipmi_attn();
+
+	/*
+	 * Now that the payload and its interrupt vectors are already loaded
+	 * perform 16.2.
+	 *
+	 * This MUST be done as late as possible so that none of the newly
+	 * activated threads start execution before current thread jumps into
+	 * the payload.
+	 */
+	activate_slave_cores();
 }
 
 struct chip_operations soc_ibm_power9_ops = {
