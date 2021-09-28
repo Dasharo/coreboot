@@ -155,7 +155,7 @@ function buildFW6DImage {
 
 	cp build/coreboot.rom protectli_$1_DF_$version.rom
 	if [ $? -eq 0 ]; then
-		echo "Result binary placed in $PWD/protectli_$1_DF_$version.rom" 
+		echo "Result binary placed in $PWD/protectli_$1_DF_$version.rom"
 		sha256sum protectli_$1_DF_$version.rom > protectli_$1_DF_$version.rom.sha256
 	else
 		echo "Build failed!"
