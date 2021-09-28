@@ -54,6 +54,7 @@ upload:
     - pip install -r ./dasharo-templates/newsletter/generator/requirements.txt
       # update submodules
     - git submodule update --init --recursive --checkout
+    - make -C payloads/external/tianocore update
   script:
     - ./build.sh upload
     - ./dasharo-templates/newsletter/generator/data.py
