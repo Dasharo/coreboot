@@ -1,4 +1,4 @@
-CONFIG_LOCALVERSION="v4.12.0.6"
+CONFIG_LOCALVERSION="v4.12.0.7"
 CONFIG_BOOTSPLASH_IMAGE=y
 CONFIG_COMPRESS_BOOTSPLASH=y
 CONFIG_BOOTSPLASH_FILE="$(top)/3rdparty/blobs/mainboard/protectli/vault_kbl/bootsplash.bmp"
