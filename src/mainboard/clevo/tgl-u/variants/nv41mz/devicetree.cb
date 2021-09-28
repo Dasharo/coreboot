@@ -281,9 +281,11 @@ chip soc/intel/tigerlake
 			register "PcieRpLtrEnable[4]" = "1"
 			register "PcieClkSrcUsage[2]" = "4"
 			register "PcieClkSrcClkReq[2]" = "2"
-			chip soc/intel/common/block/pcie/rtd3
+			chip drivers/gfx/nvidia/optimus
+				register "desc" = ""DGPU""
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_U5)" # DGPU_PWR_EN
 				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_U4)" # DGPU_RST#_PCH
+				register "gc6_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D2)" # DGPU_GC6
 				register "enable_delay_ms" = "16"
 				register "enable_off_delay_ms" = "4"
 				register "reset_delay_ms" = "10"
