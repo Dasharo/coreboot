@@ -12,19 +12,23 @@
 #include "chip.h"
 
 /* PCIe Root Port registers for link status and L23 control. */
-#define PCH_PCIE_CFG_SSID 0x40	  /* Subsystem ID */
 #define PCH_PCIE_CFG_LSTS 0x52	  /* Link Status Register */
 #define PCH_PCIE_CFG_SPR 0xe0	  /* Scratchpad */
 #define PCH_PCIE_CFG_RPPGEN 0xe2  /* Root Port Power Gating Enable */
 #define PCH_PCIE_CFG_LCAP_PN 0x4f /* Root Port Number */
 
 /* ACPI register names corresponding to PCIe root port registers. */
-#define ACPI_REG_PCI_SUBSYSTEM_VID "SVID"   /* Subsystem VID */
-#define ACPI_REG_PCI_SUBSYSTEM_DID "SDID"   /* Subsystem DID */
 #define ACPI_REG_PCI_LINK_ACTIVE "LASX"	   /* Link active status */
 #define ACPI_REG_PCI_L23_RDY_ENTRY "L23E"  /* L23_Rdy Entry Request */
 #define ACPI_REG_PCI_L23_RDY_DETECT "L23R" /* L23_Rdy Detect Transition */
 #define ACPI_REG_PCI_L23_SAVE_STATE "NCB7" /* Scratch bit to save L23 state */
+
+/* dGPU PCIe config space registers */
+#define PCH_PCIE_CFG_SSID 0x40	  /* Subsystem ID */
+
+/* ACPI register names corresponding to GPU port registers */
+#define ACPI_REG_PCI_SUBSYSTEM_VID "SVID"   /* Subsystem VID */
+#define ACPI_REG_PCI_SUBSYSTEM_DID "SDID"   /* Subsystem DID */
 
 /* Called from _ON to get PCIe link back to active state. */
 static void nvidia_optimus_acpi_l23_exit(void)
