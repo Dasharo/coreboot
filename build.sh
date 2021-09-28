@@ -101,6 +101,10 @@ function buildImage {
 			echo \"/pci@i0cf8/usb@14/hub@3/usb-*@2\" >> build/bootorder.txt && \
 			echo \"/pci@i0cf8/usb@14/hub@3/usb-*@3\" >> build/bootorder.txt && \
 			echo \"/pci@i0cf8/usb@14/hub@3/usb-*@4\" >> build/bootorder.txt && \
+			echo \"pci8086,1533.rom pci8086,157b.rom\" >> build/links.txt && \
+			echo \"pci8086,1538.rom pci8086,157b.rom\" >> build/links.txt && \
+			echo \"pci8086,1539.rom pci8086,157b.rom\" >> build/links.txt && \
+			./build/cbfstool build/coreboot.rom add -f build/links.txt -n links -t raw && \
 			./build/cbfstool build/coreboot.rom add -f build/bootorder.txt -n bootorder -t raw && \
 			./build/cbfstool build/coreboot.rom print"
 	fi
