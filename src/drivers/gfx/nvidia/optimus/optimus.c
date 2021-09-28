@@ -214,7 +214,7 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	acpigen_write_device("DEV0");
 	acpigen_write_name_integer("_ADR", 0x0);
 	acpigen_write_opregion(&gpu_pci_config);
-	acpigen_write_field("PCIC", gpu_fieldlist, ARRAY_SIZE(rp_fieldlist),
+	acpigen_write_field("PCIC", gpu_fieldlist, ARRAY_SIZE(gpu_fieldlist),
 			    FIELD_DWORDACC | FIELD_NOLOCK | FIELD_PRESERVE);
 	
 	acpigen_write_power_res("PWRR", 0, 0, power_res_states, ARRAY_SIZE(power_res_states));
