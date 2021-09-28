@@ -42,7 +42,7 @@ upload:
   only:
    - tags
   before_script:
-    - apt-get update && apt-get install -y curl openssh-client git
+    - apt-get update && apt-get install -y curl openssh-client git make
     - eval $(ssh-agent -s)
     - chmod 600 $GITLAB_SSH_PRIVATE_KEY
     - ssh-add $GITLAB_SSH_PRIVATE_KEY
