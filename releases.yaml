@@ -37,3 +37,18 @@ releases:
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+
+        - version: v0.2.1
+          added:
+                - Integrated graphics backlight configuration for Windows
+          changed:
+                - Updated the Video Bios Table
+          fixed:
+                - Screen brightness is stuck at 0% in the Windows Installer
+          known_issues:
+                - description: Sleep mode is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
+                - description: The camera ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
