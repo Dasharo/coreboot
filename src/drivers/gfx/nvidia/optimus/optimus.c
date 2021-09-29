@@ -141,7 +141,7 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	static const char *const power_res_states[] = {"_PR0", "_PR2", "_PR3"};
 	const struct device *parent = dev->bus->dev;
 	const char *scope = acpi_device_path(parent);
-	
+
 	/* PCH RP PCIe configuration space */
 	const struct opregion rp_pci_config = OPREGION("PXCS", PCI_CONFIG, 0, 0xff);
 	const struct fieldlist rp_fieldlist[] = {
@@ -162,8 +162,8 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	const struct opregion gpu_pci_config = OPREGION("PCIC", PCI_CONFIG, 0, 0x50);
 	const struct fieldlist gpu_fieldlist[] = {
 		FIELDLIST_OFFSET(PCH_PCIE_CFG_SSID),
-		FIELDLIST_NAMESTR(ACPI_REG_PCI_SUBSYSTEM_VID, 16),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_SUBSYSTEM_DID, 16),
+		FIELDLIST_NAMESTR(ACPI_REG_PCI_SUBSYSTEM_VID, 16),
 	};
 
 	if (!is_dev_enabled(parent)) {
@@ -220,22 +220,22 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	acpigen_write_opregion(&gpu_pci_config);
 	acpigen_write_field("PCIC", gpu_fieldlist, ARRAY_SIZE(gpu_fieldlist),
 			    FIELD_DWORDACC | FIELD_NOLOCK | FIELD_PRESERVE);
-	
+
 	acpigen_write_power_res("PWRR", 0, 0, power_res_states, ARRAY_SIZE(power_res_states));
-	
+
 	acpigen_write_name_integer("_STA", 1);
-	
+
 	acpigen_write_method_serialized("_ON", 0);
 	nvidia_optimus_acpi_subsystem_id_restore();
 	acpigen_write_name_integer("_STA", 1);
 	acpigen_pop_len(); /* Method */
-	
+
 	acpigen_write_method_serialized("_OFF", 0);
 	acpigen_write_name_integer("_STA", 1);
 	acpigen_pop_len(); /* Method */
 
 	acpigen_pop_len(); /* PowerResource */
-	
+
 	acpigen_pop_len(); /* Device */
 
 	acpigen_pop_len(); /* Scope */
