@@ -27,8 +27,7 @@
 #define PCH_PCIE_CFG_SSID 0x40	  /* Subsystem ID */
 
 /* ACPI register names corresponding to GPU port registers */
-#define ACPI_REG_PCI_SUBSYSTEM_VID "SVID"   /* Subsystem VID */
-#define ACPI_REG_PCI_SUBSYSTEM_DID "SDID"   /* Subsystem DID */
+#define ACPI_REG_PCI_SUBSYSTEM_ID "DVID"   /* Subsystem DID+VID */
 
 /* Called from _ON to get PCIe link back to active state. */
 static void nvidia_optimus_acpi_l23_exit(void)
@@ -65,8 +64,8 @@ static void nvidia_optimus_acpi_l23_entry(void)
 /* Restore the subsystem ID after _ON to ensure the windows driver works */
 static void nvidia_optimus_acpi_subsystem_id_restore(void)
 {
-	acpigen_write_store_int_to_namestr(CONFIG_SUBSYSTEM_VENDOR_ID, ACPI_REG_PCI_SUBSYSTEM_VID);
-	acpigen_write_store_int_to_namestr(CONFIG_SUBSYSTEM_DEVICE_ID, ACPI_REG_PCI_SUBSYSTEM_DID);
+	uint32_t dvid = CONFIG_SUBSYSTEM_DEVICE_ID << 16 | CONFIG_SUBSYSTEM_VENDOR_ID;
+	acpigen_write_store_int_to_namestr(dvid, ACPI_REG_PCI_SUBSYSTEM_ID);
 }
 
 static void
@@ -162,8 +161,7 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	const struct opregion gpu_pci_config = OPREGION("PCIC", PCI_CONFIG, 0, 0x50);
 	const struct fieldlist gpu_fieldlist[] = {
 		FIELDLIST_OFFSET(PCH_PCIE_CFG_SSID),
-		FIELDLIST_NAMESTR(ACPI_REG_PCI_SUBSYSTEM_DID, 16),
-		FIELDLIST_NAMESTR(ACPI_REG_PCI_SUBSYSTEM_VID, 16),
+		FIELDLIST_NAMESTR(ACPI_REG_PCI_SUBSYSTEM_ID, 32),
 	};
 
 	if (!is_dev_enabled(parent)) {
