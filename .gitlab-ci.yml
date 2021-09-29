@@ -42,7 +42,7 @@ upload:
   only:
    - tags
   before_script:
-    - apt-get update && apt-get install -y curl openssh-client git
+    - apt-get update && apt-get install -y curl openssh-client git make
     - eval $(ssh-agent -s)
     - chmod 600 $GITLAB_SSH_PRIVATE_KEY
     - ssh-add $GITLAB_SSH_PRIVATE_KEY
@@ -54,6 +54,7 @@ upload:
     - pip install -r ./dasharo-templates/newsletter/generator/requirements.txt
       # update submodules
     - git submodule update --init --recursive --checkout
+    - make -C payloads/external/tianocore update
   script:
     - ./build.sh upload
     - ./dasharo-templates/newsletter/generator/data.py
