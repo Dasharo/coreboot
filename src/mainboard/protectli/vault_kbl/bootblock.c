@@ -9,10 +9,10 @@
 #define UART_DEV PNP_DEV(0x2e, IT8613E_SP1)
 
 /* Return an id of the installed chip. */
-static int ite_read_id(void)
+static uint16_t ite_read_id(void)
 {
 	pnp_enter_conf_state(GPIO_DEV);
-	int id = (pnp_read_config(GPIO_DEV, 0x20) << 8)
+	uint16_t id = (pnp_read_config(GPIO_DEV, 0x20) << 8)
 		| pnp_read_config(GPIO_DEV, 0x21);
 	pnp_exit_conf_state(GPIO_DEV);
 	return id;
