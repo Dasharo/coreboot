@@ -34,6 +34,7 @@ struct drivers_gfx_nvidia_optimus_config {
 
 	/*
 	 * Disable the ACPI-driven L23 Ready-to-Detect transition for the root port.
+	 * maybe unneeded for optimus?
 	 */
 	bool disable_l23;
 };

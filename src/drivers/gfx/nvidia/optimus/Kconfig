@@ -4,6 +4,5 @@ config DRIVER_NVIDIA_OPTIMUS
 	depends on HAVE_ACPI_TABLES
 	select PMC_IPC_ACPI_INTERFACE
 	help
-	   When enabled, this driver will add support for ACPI controlled
-	   Runtime D3 using GPIOs for power/reset control of the device
-	   attached to a PCIe root port.
+	   NVIDIA Optimus GC6 3.0 driver for ULT platforms with a PMC IPC ACPI
+	   interface.
