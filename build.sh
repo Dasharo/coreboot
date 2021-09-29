@@ -16,7 +16,7 @@ errorCheck() {
 
 usage() {
   echo "${0} command"
-  echo "Available commands: build, sign, upload"
+  echo "Available commands: build [-l path_to_logo.bmp], sign, upload"
   exit 0
 }
 
@@ -30,12 +30,37 @@ FW_FILE="dasharo_${BOARD}_${FW_VERSION}.rom"
 HASH_FILE="${FW_FILE}.SHA256"
 SIG_FILE="${HASH_FILE}.sig"
 ARTIFACTS_DIR="artifacts"
+LOGO=""
 
 [ -z "$FW_VERSION" ] && errorExit "Failed to get FW_VERSION - CONFIG_LOCALVERSION is probably not set"
+
+replace_logo() {
+  path=custom_bootsplash.bmp
+  cp $1 $path
+
+  if [[ $(grep "CONFIG_TIANOCORE_BOOTSPLASH_IMAGE" .config; echo $?) == 1 ]]; then
+    echo "CONFIG_TIANOCORE_BOOTSPLASH_IMAGE=y" >> .config
+  else
+    sed -i "/CONFIG_TIANOCORE_BOOTSPLASH_IMAGE/c\CONFIG_TIANOCORE_BOOTSPLASH_IMAGE=y" .config
+  fi
+
+  if [[ $(grep "CONFIG_TIANOCORE_BOOTSPLASH_FILE" .config; echo $?) == 1 ]]; then
+    echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"$path\"" >> .config
+  else
+    sed -i "/CONFIG_TIANOCORE_BOOTSPLASH_FILE/c\CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"$path\"" .config
+  fi
+}
 
 build() {
   cp "${DEFCONFIG}" .config
   make olddefconfig
+  if [[ -n $LOGO ]]; then
+    echo "Building with custom logo $LOGO"
+    replace_logo $LOGO
+  else
+    echo "Building with default logo"
+  fi
+  make clean
   make -j "$(nproc)"
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
@@ -75,6 +100,19 @@ upload() {
 }
 
 CMD="$1"
+
+OPTIND=2
+while getopts "l" options; do
+  case "${options}" in
+    "l")
+      if [ -f $3 ]; then
+        LOGO=$3
+      else
+        echo "File $3 does not exist"
+      fi
+      ;;
+  esac
+done
 
 case "$CMD" in
     "build")
