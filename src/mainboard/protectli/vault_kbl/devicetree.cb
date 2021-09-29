@@ -192,9 +192,9 @@ chip soc/intel/skylake
 	register "usb2_ports[4]"  = "USB2_PORT_SHORT(OC_SKIP)"	# Type-A Port
 	register "usb2_ports[5]"  = "USB2_PORT_SHORT(OC_SKIP)"	# TYPE-A Port
 	register "usb2_ports[6]"  = "USB2_PORT_SHORT(OC_SKIP)"	# TYPE-A Port
-	register "usb2_ports[7]"  = "USB2_PORT_SHORT(OC_SKIP)"  # FW6: mPCIe, FW6D: mSATA1 slot
+	register "usb2_ports[7]"  = "USB2_PORT_SHORT(OC_SKIP)"  # FW6: mPCIe, FW6D: mSATA slot
 	register "usb2_ports[8]"  = "USB2_PORT_EMPTY"		# Disabled
-	register "usb2_ports[9]"  = "USB2_PORT_SHORT(OC_SKIP)"  # mPCIe slot, WIFI1 slot
+	register "usb2_ports[9]"  = "USB2_PORT_SHORT(OC_SKIP)"  # mPCIe slot, WIFI slot
 	register "usb2_ports[10]" = "USB2_PORT_EMPTY"		# Disabled
 	register "usb2_ports[11]" = "USB2_PORT_EMPTY"		# Disabled
 
