@@ -54,7 +54,7 @@ config MAX_CPUS
 
 config DEVICETREE
 	string
-	default "variants/baseboard/devicetree.cb"
+	default "devicetree.cb"
 
 config VGA_BIOS_ID
 	string
