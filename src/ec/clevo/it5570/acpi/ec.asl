@@ -32,7 +32,8 @@ Device (EC0)
 	Method (_REG, 2, Serialized)  // _REG: Region Availability
 	{
 		Debug = Concatenate("EC: _REG", Concatenate(ToHexString(Arg0), Concatenate(" ", ToHexString(Arg1))))
-		If (((Arg0 == 0x03) && (Arg1 == One))) {
+		If (((Arg0 == 0x03) && (Arg1 == One)))
+		{
 			// Enable hardware touchpad lock and keyboard backlight keys
 			// Enable software airplane mode key
 			ECOS = 2
@@ -61,7 +62,8 @@ Device (EC0)
 
 	Method (PTS, 1, Serialized) {
 		Debug = Concatenate("EC: PTS: ", ToHexString(Arg0))
-		If (ECOK) {
+		If (ECOK)
+		{
 			// Clear wake cause
 			WFNO = Zero
 		}
@@ -69,7 +71,8 @@ Device (EC0)
 
 	Method (WAK, 1, Serialized) {
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
-		If (ECOK) {
+		If (ECOK)
+		{
 			// Set current AC state
 			\_SB.AC.ACFG = ADP
 
@@ -123,7 +126,8 @@ Device (EC0)
 	Method (GKBL, 0, Serialized) // Get Keyboard LED
 	{
 		Local0 = 0
-		If (ECOK) {
+		If (ECOK)
+		{
 			FDAT = One
 			FCMD = 0xCA
 			Local0 = FBUF
