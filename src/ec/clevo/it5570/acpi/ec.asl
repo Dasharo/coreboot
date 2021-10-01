@@ -138,10 +138,32 @@ Device (EC0)
 
 	Method (SKBL, 1, Serialized) // Set Keyboard LED
 	{
-		If (ECOK) {
+		If (ECOK)
+		{
 			FDAT = Zero
 			FBUF = Arg0
 			FCMD = 0xCA
+		}
+	}
+
+	Method (S0IX, 1, Serialized) // S0IX Entry/Exit
+	{
+		FDAT = 0xC2
+		FBUF = Arg0
+		FCMD = 0xD2
+		Local0 = 0xFF
+		Local1 = 0xFF
+		While (Local0 != Arg0 && Local1 > Zero)
+		{
+			Sleep(50)
+			FDAT = 0xC3
+			FCMD = 0xD2
+			Local3 = FBUF
+			If (Local3 == Zero || Local3 == One)
+			{
+				Local0 = Local3
+			}
+			Local1 = Local1 - 1
 		}
 	}
 
