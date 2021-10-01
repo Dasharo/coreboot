@@ -178,6 +178,9 @@ Device (EC0)
 	Method (_Q10, 0, NotSerialized) // Switch Video Mode
 	{
 		Debug = "EC: Switch Video Mode"
+		If (CondRefOf (\_SB.PCI0.GFX0)) {
+			Notify (\_SB.PCI0.GFX0, 0x80)
+		}
 	}
 
 	Method (_Q11, 0, NotSerialized) // Brightness Down
