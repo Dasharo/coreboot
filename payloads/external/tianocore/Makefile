@@ -9,9 +9,12 @@ project_git_repo=https://github.com/Dasharo/edk2
 project_git_branch=dasharo
 upstream_git_repo=https://github.com/tianocore/edk2
 
-BUILD_STR = -a IA32 -a X64 -t COREBOOT
-ifeq ($(CONFIG_TIANOCORE_COREBOOTPAYLOAD),y)
-BUILD_STR += -p CorebootPayloadPkg/CorebootPayloadPkgIa32X64.dsc
+bootloader=UefiPayloadPkg
+logo_pkg=MdeModulePkg
+build_flavor=-D BOOTLOADER=COREBOOT -D PCIE_BASE=$(CONFIG_MMCONF_BASE_ADDRESS) -DPS2_KEYBOARD_ENABLE
+
+ifeq ($(CONFIG_TIANOCORE_UPSTREAM),y)
+TAG=upstream/master
 else
 BUILD_STR += -p UefiPayloadPkg/UefiPayloadPkg.dsc
 endif

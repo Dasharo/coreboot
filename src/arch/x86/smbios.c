@@ -293,14 +293,9 @@ static const char *get_bios_framework_string(void)
 
 static int smbios_write_type0(unsigned long *current, int handle)
 {
-	struct smbios_type0 *t = (struct smbios_type0 *)*current;
-	int len = sizeof(struct smbios_type0);
+	struct smbios_type0 *t = smbios_carve_table(*current, SMBIOS_BIOS_INFORMATION,
+                                                    sizeof(*t), handle);
 	char bversion[100];
-
-	memset(t, 0, sizeof(struct smbios_type0));
-	t->type = SMBIOS_BIOS_INFORMATION;
-	t->handle = handle;
-	t->length = len - 2;
 
 	t->vendor = smbios_add_string(t->eos, "3mdeb Embedded Systems Consulting");
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
@@ -351,7 +346,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 		t->bios_characteristics_ext2 |= BIOS_EXT2_CHARACTERISTICS_UEFI;
 	}
 
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
