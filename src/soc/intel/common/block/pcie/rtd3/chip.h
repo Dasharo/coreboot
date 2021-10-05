@@ -58,30 +58,9 @@ struct soc_intel_common_block_pcie_rtd3_config {
 	bool disable_l23;
 
 	/*
-	 * Provides L23, modPHY gating, source clock enabling methods to the device
-	 * connected root port, mainly used in the device ACPI methods such as reset.
-	 * The methods to export are following this table:
-	 *-----------------------------------------------------------------------------------*
-	 | ext_pm_support | disable_l123 | srcclk_pin |   rp_type   |     exported methods   |
-	 *----------------+--------------+------------+-------------+------------------------*
-	 |     false      |       -      |     -      |      -      | None                   |
-	 |     true       |      true    |     =0     | PCIE_RP_CPU | None                   |
-	 |     true       |      true    |     =0     | PCIE_RP_PCH | SRCK                   |
-	 |     true       |      true    |     >0     | PCIE_RP_CPU | PSD0                   |
-	 |     true       |      true    |     >0     | PCIE_RP_PCH | PSD0, SRCK             |
-	 |     true       |      false   |     =0     | PCIE_RP_CPU | L23D, LD23             |
-	 |     true       |      false   |     =0     | PCIE_RP_PCH | L23D, LD23, SRCK       |
-	 |     true       |      false   |     >0     | PCIE_RP_CPU | L23D, LD23, PSD0       |
-	 |     true       |      false   |     >0     | PCIE_RP_PCH | L23D, LD23, PSD0, SRCK |
-	 *-----------------------------------------------------------------------------------*
+	 * CPU PCIe port number has to be passed manually and handled differently
 	 */
-	enum acpi_pcie_rp_pm_emit ext_pm_support;
-
-	/*
-	 * Add support to skip _OFF and _ON execution when needed, such as reloading
-	 * the device driver.
-	 */
-	bool skip_on_off_support;
+	unsigned int cpu_pcie_clk_usage;
 };
 
 #endif /* __SOC_INTEL_COMMON_BLOCK_PCIE_RTD3_CHIP_H__ */

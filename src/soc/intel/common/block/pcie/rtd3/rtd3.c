@@ -368,33 +368,23 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		return;
 	}
 
-	const enum pcie_rp_type rp_type = soc_get_pcie_rp_type(parent);
-	pcie_rp = get_pcie_rp_pmc_idx(rp_type, parent);
-	if (pcie_rp < 0) {
-		printk(BIOS_ERR, "%s: Unknown PCIe root port\n", __func__);
-		return;
-	}
-	if (config->disable_l23) {
-		if (config->ext_pm_support & ACPI_PCIE_RP_EMIT_L23) {
-			printk(BIOS_ERR, "%s: Can not export L23 methods\n", __func__);
+	if (config->cpu_pcie_clk_usage) {
+		/* CPU PCIe port */
+		pcie_rp = config->cpu_pcie_clk_usage - 16;
+	} else {
+		/* PCH PCIe port */
+		/* Read port number of root port that this device is attached to. */
+		pcie_rp = pci_read_config8(parent, PCH_PCIE_CFG_LCAP_PN);
+		if (pcie_rp == 0 || pcie_rp > CONFIG_MAX_ROOT_PORTS) {
+			printk(BIOS_ERR, "%s: Invalid root port number: %u\n", __func__, pcie_rp);
 			return;
 		}
-	}
-	if (rp_type != PCIE_RP_PCH) {
-		if (config->ext_pm_support & ACPI_PCIE_RP_EMIT_PSD0) {
-			printk(BIOS_ERR, "%s: Can not export PSD0 method\n", __func__);
-			return;
-		}
-	}
-	if (config->srcclk_pin == 0) {
-		if (config->ext_pm_support & ACPI_PCIE_RP_EMIT_SRCK) {
-			printk(BIOS_ERR, "%s: Can not export SRCK method\n", __func__);
-			return;
-		}
+		/* Port number is 1-based, PMC IPC method expects 0-based. */
+		pcie_rp--;
 	}
 
-	printk(BIOS_INFO, "%s: Enable RTD3 for %s (%s)\n", scope, dev_path(parent),
-	       config->desc ?: dev->chip_ops->name);
+	printk(BIOS_INFO, "%s: Enable RTD3 for %s (%s) on port %u\n", scope, dev_path(parent),
+	       config->desc ?: dev->chip_ops->name, pcie_rp);
 
 	/* Create a mutex for exclusive access to the PMC registers. */
 	if (rp_type == PCIE_RP_PCH && !mutex_created) {
