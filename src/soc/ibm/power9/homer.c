@@ -6,6 +6,7 @@
 #include <console/console.h>
 #include <cpu/power/mvpd.h>
 #include <cpu/power/powerbus.h>
+#include <cpu/power/rom_media.h>
 #include <cpu/power/scom.h>
 #include <cpu/power/spr.h>
 #include <string.h>		// memset, memcpy
@@ -100,9 +101,6 @@ enum scom_operation {
 	SCOM_APPEND,
 	SCOM_REPLACE
 };
-
-extern void mount_part_from_pnor(const char *part_name,
-				 struct mmap_helper_region_device *mdev);
 
 enum operation_type {
 	COPY,
