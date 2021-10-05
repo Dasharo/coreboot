@@ -26,6 +26,9 @@
 /* Data integrity flags */
 #define FFS_ENRY_INTEG_ECC 0x8000
 
+/* Version Checking : 1 byte */
+#define FFS_VERS_SHA512 0x80
+
 enum ecc_status {
 	CLEAN=0,          //< No ECC Error was detected.
 	CORRECTED=1,      //< ECC error detected and corrected.
@@ -418,13 +421,19 @@ void mount_part_from_pnor(const char *part_name,
 
 		mdev->rdev.ops = &no_ecc_rdev_ops;
 
-		/* Skip PNOR partition header */
-		base += 0x1000;
 		if (e->user.data[0] & FFS_ENRY_INTEG_ECC) {
 			printk(BIOS_DEBUG, "%s partition has ECC\n", part_name);
 			mdev->rdev.ops = &ecc_rdev_ops;
-			base += 0x200;
 			size = size / 9 * 8;
+		}
+
+		if ((e->user.data[1] >> 24) & FFS_VERS_SHA512) {
+			/* Skip PNOR partition header */
+			base += 0x1000;
+
+			/* Possibly skip ECC of the header */
+			if (e->user.data[0] & FFS_ENRY_INTEG_ECC)
+				base += 0x200;
 		}
 
 		printk(BIOS_DEBUG, "%s is in 0x%08lx through 0x%08lx\n", part_name,
@@ -471,11 +480,6 @@ void mvpd_device_init(void)
 		return;
 
 	mount_part_from_pnor(MVPD_PARTITION_NAME, &mvpd_mdev);
-	/*
-	 * XXX: this is a workaround for unimplemented functionality in
-	 *      mount_part_from_pnor()
-	 */
-	mvpd_mdev.rdev.region.offset -= 0x1200;
 
 	init_done = 1;
 }
