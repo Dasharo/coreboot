@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <cpu/power/rom_media.h>
+
 #include <string.h>
 #include <boot_device.h>
 #include <arch/io.h>
@@ -332,10 +334,6 @@ struct region_device_ops ecc_rdev_ops = {
 	.munmap = mmap_helper_rdev_munmap,
 	.readat = ecc_readat,
 };
-
-/* TODO: move to some header */
-void mount_part_from_pnor(const char *part_name,
-                          struct mmap_helper_region_device *mdev);
 
 void mount_part_from_pnor(const char *part_name,
                           struct mmap_helper_region_device *mdev)
