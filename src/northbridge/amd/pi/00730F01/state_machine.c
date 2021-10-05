@@ -72,6 +72,8 @@ void platform_BeforeInitLate(struct sysinfo *cb, AMD_LATE_PARAMS *Late)
 	 * present AGESA_ERROR is returned, which confuses users. CDIT is not
 	 * written to the ACPI tables anyway. */
 	Late->PlatformConfig.UserOptionCdit = 0;
+
+	Late->PlatformConfig.ProcessorScopeInSb = 1;
 }
 
 void platform_AfterInitLate(struct sysinfo *cb, AMD_LATE_PARAMS *Late)
