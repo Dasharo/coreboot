@@ -83,6 +83,9 @@ chip soc/intel/tigerlake
 	# Thermal
 	register "tcc_offset" = "13"
 
+	# Enable CNVi BT
+	register "CnviBtCore" = "true"
+
 # PM Util (soc/intel/tigerlake/pmutil.c)
 	# GPE configuration
 	register "pmc_gpe0_dw0" = "PMC_GPP_C"
