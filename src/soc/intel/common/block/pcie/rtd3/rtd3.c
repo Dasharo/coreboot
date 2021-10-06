@@ -370,7 +370,7 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 
 	if (config->cpu_pcie_clk_usage) {
 		/* CPU PCIe port */
-		pcie_rp = config->cpu_pcie_clk_usage - 16;
+		pcie_rp = config->cpu_pcie_clk_usage - 40;
 	} else {
 		/* PCH PCIe port */
 		/* Read port number of root port that this device is attached to. */
