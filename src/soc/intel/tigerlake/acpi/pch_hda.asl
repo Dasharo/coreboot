@@ -8,15 +8,6 @@ Device (HDAS)
 	Name (_DDN, "Audio Controller")
 	Name (UUID, ToUUID ("A69F886E-6CEB-4594-A41F-7B5DCE24C553"))
 
-	OperationRegion (HDAR, PCI_Config, Zero, 0x0100)
-	Field (HDAR, WordAcc, NoLock, Preserve)
-	{
-		VDID, 32
-	}
-
-	/* Device is D3 wake capable */
-	Name (_S0W, 3)
-
 	/* NHLT Table Address populated from GNVS values */
 	Name (NBUF, ResourceTemplate () {
 		QWordMemory (ResourceConsumer, PosDecode, MinFixed,
@@ -24,15 +15,6 @@ Device (HDAS)
 			     0, 0, 0, 0, 1,,, NHLT, AddressRangeACPI)
 	})
 
-	Method (_PS0, 0, Serialized)  // _PS0: Power State 0
-	{
-	    S023 (Zero, One)
-	}
-
-	Method (_PS3, 0, Serialized)  // _PS3: Power State 3
-	{
-	    S023 (Zero, Zero)
-	}
 	/*
 	 * Device Specific Method
 	 * Arg0 - UUID

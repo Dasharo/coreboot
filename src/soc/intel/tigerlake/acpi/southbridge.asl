@@ -11,9 +11,6 @@
 /* PCH clock */
 #include "camera_clock_ctl.asl"
 
-/* S0ix helper for 24MHz clock */
-#include "s0ix_helper.asl"
-
 /* GPIO controller */
 #if CONFIG(SOC_INTEL_TIGERLAKE_PCH_H)
 #include "gpio_pch_h.asl"
@@ -42,11 +39,9 @@
 /* USB XHCI 0:14.0 */
 #include "xhci.asl"
 
-/* CNVi 0:14.3 */
-#include "cnvi.asl"
-
 /* PCI _OSC */
 #include <soc/intel/common/acpi/pci_osc.asl>
 
 /* GbE 0:1f.6 */
 #include <soc/intel/common/block/acpi/acpi/pch_glan.asl>
+
