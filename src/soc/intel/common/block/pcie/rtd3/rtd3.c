@@ -335,6 +335,7 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 	const char *scope = acpi_device_path(parent);
 	const struct opregion opregion = OPREGION("PXCS", PCI_CONFIG, 0, 0xff);
 	const struct fieldlist fieldlist[] = {
+		FIELDLIST_NAMESTR("VDID", 32),
 		FIELDLIST_OFFSET(PCH_PCIE_CFG_LSTS),
 		FIELDLIST_RESERVED(13),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_LINK_ACTIVE, 1),
@@ -369,7 +370,7 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 	}
 
 	if (config->cpu_pcie_clk_usage) {
-		/* CPU PCIe port */
+		/* CPU PCIe port index starts at bit24: 0x40 - 40 = 24 */
 		pcie_rp = config->cpu_pcie_clk_usage - 40;
 	} else {
 		/* PCH PCIe port */
