@@ -102,16 +102,6 @@ static void soc_pmc_fill_ssdt(const struct device *dev)
 	if (!scope || !name)
 		return;
 
-	const struct fieldlist pmc_fields[] = {
-		FIELDLIST_OFFSET(CPPMVRIC),
-		FIELDLIST_RESERVED(6),
-		 /* 24MHz Crystal Shutdown Qualification Disable (XTALSDQDIS) */
-		FIELDLIST_NAMESTR("XSQD", 1),
-	};
-	const struct opregion pmc_opregion = OPREGION("PWMR", SYSTEMMEMORY,
-						       soc_read_pmc_base(), 0xff);
-	int i;
-
 	acpigen_write_scope(scope);
 	acpigen_write_device(name);
 
@@ -126,10 +116,6 @@ static void soc_pmc_fill_ssdt(const struct device *dev)
 	acpigen_write_resourcetemplate_header();
 	acpigen_write_mem32fixed(1, PCH_PWRM_BASE_ADDRESS, PCH_PWRM_BASE_SIZE);
 	acpigen_write_resourcetemplate_footer();
-
-	acpigen_write_opregion(&pmc_opregion);
-	acpigen_write_field("PWRM", pmc_fields, ARRAY_SIZE(pmc_fields),
-			    FIELD_DWORDACC | FIELD_NOLOCK | FIELD_PRESERVE);
 
 	/* Define IPC Write Method */
 	if (CONFIG(PMC_IPC_ACPI_INTERFACE))
