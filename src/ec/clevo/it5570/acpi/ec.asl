@@ -69,8 +69,7 @@ Device (EC0)
 
 	Method (WAK, 1, Serialized) {
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
-		If (ECOK)
-		{
+		If (ECOK) {
 			// Set current AC state
 			\_SB.AC.ACFG = ADP
 
