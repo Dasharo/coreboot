@@ -58,6 +58,8 @@ releases:
                 - Support for discrete TPM
                 - USB Type-C ACPI support (UCSI)
                 - Improved runtime power management for SSD (reduces power usage while in sleep)
+          changed:
+                - Rebased on coreboot revision ae9a8447
           known_issues:
                 - description: Sleep mode is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
