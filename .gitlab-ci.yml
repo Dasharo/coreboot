@@ -1,5 +1,6 @@
 stages:
   - build
+  - sign
   - upload
 
 build:
@@ -26,6 +27,32 @@ build:
     - git submodule update --init --recursive --checkout
   script:
     - ./build.sh build
+  artifacts:
+    name: "dasharo-novacustom-nv41mz-$CI_COMMIT_REF_NAME"
+    paths:
+      - artifacts/*
+
+sign:
+  image: coreboot/coreboot-sdk:1.52
+  stage: sign
+  tags:
+   - local
+  variables:
+      GIT_SUBMODULE_STRATEGY: recursive
+  before_script:
+    # SSH key setup
+    - eval $(ssh-agent -s)
+    # It fails with following, because we are running as a user in container?
+    # changing permissions of '/builds/3mdeb/novacustom/coreboot.tmp/GITLAB_SSH_PRIVATE_KEY': Operation not permitted
+    # - chmod 600 $GITLAB_SSH_PRIVATE_KEY
+    - ssh-add $GITLAB_SSH_PRIVATE_KEY
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    # GPG key setup
+    - echo $GITLAB_NOVACUSTOM_GPG_PRIVATE_KEY | base64 --decode | gpg --import --no-tty --batch --yes
+  script:
     - ./build.sh sign
   artifacts:
     name: "dasharo-novacustom-nv41mz-$CI_COMMIT_REF_NAME"
