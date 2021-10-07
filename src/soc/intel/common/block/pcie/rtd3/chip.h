@@ -45,6 +45,11 @@ struct soc_intel_common_block_pcie_rtd3_config {
 	 * Disable the ACPI-driven L23 Ready-to-Detect transition for the root port.
 	 */
 	bool disable_l23;
+
+	/*
+	 * CPU PCIe port number has to be passed manually and handled differently
+	 */
+	unsigned int cpu_pcie_clk_usage;
 };
 
 #endif /* __SOC_INTEL_COMMON_BLOCK_PCIE_RTD3_CHIP_H__ */

@@ -101,36 +101,28 @@ extern struct device_operations pmc_ops;
 #define   PCH2CPU_TPR_CFG_LOCK		(1 << 31)
 #define   PCH2CPU_TT_EN			(1 << 26)
 
-#define PCH_PMC_EPOC			0x18EC
-#define PCH_EPOC_2LM(__epoc)		((__epoc) & 0x1)
-/* XTAL frequency in bits 21, 20, 17 */
-#define PCH_EPOC_XTAL_FREQ(__epoc)	((((__epoc) >> 19) & 0x6) | ((__epoc) >> 17 & 0x1))
-
-/**
- * enum pch_pmc_xtal - External crystal oscillator frequency.
- * @XTAL_24_MHZ: 24 MHz external crystal.
- * @XTAL_19_2_MHZ: 19.2 MHz external crystal.
- * @XTAL_38_4_MHZ: 38.4 MHz external crystal.
- */
-enum pch_pmc_xtal {
-	XTAL_24_MHZ,
-	XTAL_19_2_MHZ,
-	XTAL_38_4_MHZ,
-};
-
-/**
- * pmc_get_xtal_freq() - Return frequency of external oscillator.
- *
- * Return &enum pch_pmc_xtal corredsponding to frequency returned by PMC.
- */
-enum pch_pmc_xtal pmc_get_xtal_freq(void);
-
 #define PCH_PWRM_ACPI_TMR_CTL		0x18FC
 #define  ACPI_TIM_DIS			(1 << 1)
 #define GPIO_GPE_CFG			0x1920
 #define  GPE0_DWX_MASK			0xf
 #define  GPE0_DW_SHIFT(x)		(4*(x))
 
+#if CONFIG(SOC_INTEL_TIGERLAKE_PCH_H)
+#define PMC_GPD				0x0
+#define PMC_GPP_A			0x1
+#define PMC_GPP_R			0x2
+#define PMC_GPP_B			0x3
+#define PMC_GPP_D			0x4
+#define PMC_GPP_C			0x5
+#define PMC_GPP_S			0x6
+#define PMC_GPP_G			0x7
+#define PMC_GPP_E			0x9
+#define PMC_GPP_F			0xA
+#define PMC_GPP_H			0xB
+#define PMC_GPP_J			0xC
+#define PMC_GPP_K			0xD
+#define PMC_GPP_I			0xE
+#else
 #define  PMC_GPP_B			0x0
 #define  PMC_GPP_T			0x1
 #define  PMC_GPP_A			0x2
@@ -143,6 +135,7 @@ enum pch_pmc_xtal pmc_get_xtal_freq(void);
 #define  PMC_GPP_F			0xA
 #define  PMC_GPP_C			0xB
 #define  PMC_GPP_E			0xC
+#endif
 
 #define GBLRST_CAUSE0			0x1924
 #define   GBLRST_CAUSE0_THERMTRIP	(1 << 5)

@@ -1,5 +1,14 @@
+#ifndef _STDDEF_H
+#define _STDDEF_H
 
 #include <arch/types.h>
+
+#ifndef __WCHAR_TYPE__
+#define __WCHAR_TYPE__ int
+#endif
+#ifndef __cplusplus
+typedef __WCHAR_TYPE__ wchar_t;
+#endif
 
 #ifndef __SIZE_TYPE__
 #define __SIZE_TYPE__ unsigned long
@@ -35,3 +44,5 @@ typedef __SIZE_TYPE__ ssize_t;
 #define NSECS_PER_MSEC (NSECS_PER_SEC / MSECS_PER_SEC)
 #define NSECS_PER_USEC (NSECS_PER_SEC / USECS_PER_SEC)
 #define USECS_PER_MSEC (USECS_PER_SEC / MSECS_PER_SEC)
+
+#endif

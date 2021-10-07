@@ -9,6 +9,8 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <intelblocks/cse.h>
+#include <security/vboot/misc.h>
+#include <security/vboot/vboot_common.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/me.h>
@@ -18,13 +20,17 @@
 #define MAX_HECI_MESSAGE_RETRY_COUNT 5
 
 /* Wait up to 15 sec for HECI to get ready */
-#define HECI_DELAY_READY	(15 * 1000)
+#define HECI_DELAY_READY_MS	(15 * 1000)
 /* Wait up to 100 usec between circular buffer polls */
-#define HECI_DELAY		100
+#define HECI_DELAY_US		100
 /* Wait up to 5 sec for CSE to chew something we sent */
-#define HECI_SEND_TIMEOUT	(5 * 1000)
+#define HECI_SEND_TIMEOUT_MS	(5 * 1000)
 /* Wait up to 5 sec for CSE to blurp a reply */
-#define HECI_READ_TIMEOUT	(5 * 1000)
+#define HECI_READ_TIMEOUT_MS	(5 * 1000)
+/* Wait up to 1 ms for CSE CIP */
+#define HECI_CIP_TIMEOUT_US	1000
+/* Wait up to 5 seconds for CSE to boot from RO(BP1) */
+#define CSE_DELAY_BOOT_TO_RO_MS	(5 * 1000)
 
 #define SLOT_SIZE		sizeof(uint32_t)
 
@@ -32,6 +38,9 @@
 #define MMIO_HOST_CSR		0x04
 #define MMIO_CSE_CB_RW		0x08
 #define MMIO_CSE_CSR		0x0c
+#define MMIO_CSE_DEVIDLE	0x800
+#define  CSE_DEV_IDLE		(1 << 2)
+#define  CSE_DEV_CIP		(1 << 0)
 
 #define CSR_IE			(1 << 0)
 #define CSR_IS			(1 << 1)
@@ -55,12 +64,19 @@
 #define MEI_HDR_CSE_ADDR_START	0
 #define MEI_HDR_CSE_ADDR	(((1 << 8) - 1) << MEI_HDR_CSE_ADDR_START)
 
-/* Wait up to 5 seconds for CSE to boot from RO(BP1) */
-#define CSE_DELAY_BOOT_TO_RO (5 * 1000)
+/* Get HECI BAR 0 from PCI configuration space */
+static uintptr_t get_cse_bar(void)
+{
+	uintptr_t bar;
 
-static struct cse_device {
-	uintptr_t sec_bar;
-} cse;
+	bar = pci_read_config32(PCH_DEV_CSE, PCI_BASE_ADDRESS_0);
+	assert(bar != 0);
+	/*
+	 * Bits 31-12 are the base address as per EDS for SPI,
+	 * Don't care about 0-11 bit
+	 */
+	return bar & ~PCI_BASE_ADDRESS_MEM_ATTR_MASK;
+}
 
 /*
  * Initialize the device with provided temporary BAR. If BAR is 0 use a
@@ -77,7 +93,7 @@ void heci_init(uintptr_t tempbar)
 	u16 pcireg;
 
 	/* Assume it is already initialized, nothing else to do */
-	if (cse.sec_bar)
+	if (get_cse_bar())
 		return;
 
 	/* Use default pre-ram bar */
@@ -96,38 +112,16 @@ void heci_init(uintptr_t tempbar)
 
 	/* Enable Bus Master and MMIO Space */
 	pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY);
-
-	cse.sec_bar = tempbar;
-}
-
-/* Get HECI BAR 0 from PCI configuration space */
-static uint32_t get_cse_bar(void)
-{
-	uintptr_t bar;
-
-	bar = pci_read_config32(PCH_DEV_CSE, PCI_BASE_ADDRESS_0);
-	assert(bar != 0);
-	/*
-	 * Bits 31-12 are the base address as per EDS for SPI,
-	 * Don't care about 0-11 bit
-	 */
-	return bar & ~PCI_BASE_ADDRESS_MEM_ATTR_MASK;
 }
 
 static uint32_t read_bar(uint32_t offset)
 {
-	/* Load and cache BAR */
-	if (!cse.sec_bar)
-		cse.sec_bar = get_cse_bar();
-	return read32((void *)(cse.sec_bar + offset));
+	return read32p(get_cse_bar() + offset);
 }
 
 static void write_bar(uint32_t offset, uint32_t val)
 {
-	/* Load and cache BAR */
-	if (!cse.sec_bar)
-		cse.sec_bar = get_cse_bar();
-	return write32((void *)(cse.sec_bar + offset), val);
+	return write32p(get_cse_bar() + offset, val);
 }
 
 static uint32_t read_cse_csr(void)
@@ -188,9 +182,9 @@ static int wait_write_slots(size_t cnt)
 {
 	struct stopwatch sw;
 
-	stopwatch_init_msecs_expire(&sw, HECI_SEND_TIMEOUT);
+	stopwatch_init_msecs_expire(&sw, HECI_SEND_TIMEOUT_MS);
 	while (host_empty_slots() < cnt) {
-		udelay(HECI_DELAY);
+		udelay(HECI_DELAY_US);
 		if (stopwatch_expired(&sw)) {
 			printk(BIOS_ERR, "HECI: timeout, buffer not drained\n");
 			return 0;
@@ -203,9 +197,9 @@ static int wait_read_slots(size_t cnt)
 {
 	struct stopwatch sw;
 
-	stopwatch_init_msecs_expire(&sw, HECI_READ_TIMEOUT);
+	stopwatch_init_msecs_expire(&sw, HECI_READ_TIMEOUT_MS);
 	while (cse_filled_slots() < cnt) {
-		udelay(HECI_DELAY);
+		udelay(HECI_DELAY_US);
 		if (stopwatch_expired(&sw)) {
 			printk(BIOS_ERR, "HECI: timed out reading answer!\n");
 			return 0;
@@ -279,9 +273,9 @@ void cse_set_host_ready(void)
 uint8_t cse_wait_sec_override_mode(void)
 {
 	struct stopwatch sw;
-	stopwatch_init_msecs_expire(&sw, HECI_DELAY_READY);
+	stopwatch_init_msecs_expire(&sw, HECI_DELAY_READY_MS);
 	while (!cse_is_hfs1_com_secover_mei_msg()) {
-		udelay(HECI_DELAY);
+		udelay(HECI_DELAY_US);
 		if (stopwatch_expired(&sw)) {
 			printk(BIOS_ERR, "HECI: Timed out waiting for SEC_OVERRIDE mode!\n");
 			return 0;
@@ -299,9 +293,9 @@ uint8_t cse_wait_sec_override_mode(void)
 uint8_t cse_wait_com_soft_temp_disable(void)
 {
 	struct stopwatch sw;
-	stopwatch_init_msecs_expire(&sw, CSE_DELAY_BOOT_TO_RO);
+	stopwatch_init_msecs_expire(&sw, CSE_DELAY_BOOT_TO_RO_MS);
 	while (!cse_is_hfs1_com_soft_temp_disable()) {
-		udelay(HECI_DELAY);
+		udelay(HECI_DELAY_US);
 		if (stopwatch_expired(&sw)) {
 			printk(BIOS_ERR, "HECI: Timed out waiting for CSE to boot from RO!\n");
 			return 0;
@@ -316,9 +310,9 @@ static int wait_heci_ready(void)
 {
 	struct stopwatch sw;
 
-	stopwatch_init_msecs_expire(&sw, HECI_DELAY_READY);
+	stopwatch_init_msecs_expire(&sw, HECI_DELAY_READY_MS);
 	while (!cse_ready()) {
-		udelay(HECI_DELAY);
+		udelay(HECI_DELAY_US);
 		if (stopwatch_expired(&sw))
 			return 0;
 	}
@@ -382,7 +376,12 @@ send_one_message(uint32_t hdr, const void *buff)
 	return pend_len;
 }
 
-int
+/*
+ * Send message msg of size len to host from host_addr to cse_addr.
+ * Returns 1 on success and 0 otherwise.
+ * In case of error heci_reset() may be required.
+ */
+static int
 heci_send(const void *msg, size_t len, uint8_t host_addr, uint8_t client_addr)
 {
 	uint8_t retry;
@@ -485,7 +484,15 @@ recv_one_message(uint32_t *hdr, void *buff, size_t maxlen)
 	return recv_len;
 }
 
-int heci_receive(void *buff, size_t *maxlen)
+/*
+ * Receive message into buff not exceeding maxlen. Message is considered
+ * successfully received if a 'complete' indication is read from ME side
+ * and there was enough space in the buffer to fit that message. maxlen
+ * is updated with size of message that was received. Returns 0 on failure
+ * and 1 on success.
+ * In case of error heci_reset() may be required.
+ */
+static int heci_receive(void *buff, size_t *maxlen)
 {
 	uint8_t retry;
 	size_t left, received;
@@ -531,9 +538,10 @@ int heci_receive(void *buff, size_t *maxlen)
 	return 0;
 }
 
-int heci_send_receive(const void *snd_msg, size_t snd_sz, void *rcv_msg, size_t *rcv_sz)
+int heci_send_receive(const void *snd_msg, size_t snd_sz, void *rcv_msg, size_t *rcv_sz,
+									uint8_t cse_addr)
 {
-	if (!heci_send(snd_msg, snd_sz, BIOS_HOST_ADDR, HECI_MKHI_ADDR)) {
+	if (!heci_send(snd_msg, snd_sz, BIOS_HOST_ADDR, cse_addr)) {
 		printk(BIOS_ERR, "HECI: send Failed\n");
 		return 0;
 	}
@@ -661,7 +669,8 @@ static int cse_request_reset(enum rst_req_type rst_type)
 	if (rst_type == CSE_RESET_ONLY)
 		status = heci_send(&msg, sizeof(msg), BIOS_HOST_ADDR, HECI_MKHI_ADDR);
 	else
-		status = heci_send_receive(&msg, sizeof(msg), &reply, &reply_size);
+		status = heci_send_receive(&msg, sizeof(msg), &reply, &reply_size,
+									HECI_MKHI_ADDR);
 
 	printk(BIOS_DEBUG, "HECI: Global Reset %s!\n", status ? "success" : "failure");
 	return status;
@@ -731,7 +740,7 @@ int cse_hmrfpo_enable(void)
 	}
 
 	if (!heci_send_receive(&msg, sizeof(struct hmrfpo_enable_msg),
-				&resp, &resp_size))
+				&resp, &resp_size, HECI_MKHI_ADDR))
 		return 0;
 
 	if (resp.hdr.result) {
@@ -780,7 +789,7 @@ int cse_hmrfpo_get_status(void)
 	}
 
 	if (!heci_send_receive(&msg, sizeof(struct hmrfpo_get_status_msg),
-				&resp, &resp_size)) {
+				&resp, &resp_size, HECI_MKHI_ADDR)) {
 		printk(BIOS_ERR, "HECI: HMRFPO send/receive fail\n");
 		return -1;
 	}
@@ -845,7 +854,8 @@ void print_me_fw_version(void *unused)
 
 	heci_reset();
 
-	if (!heci_send_receive(&fw_ver_msg, sizeof(fw_ver_msg), &resp, &resp_size))
+	if (!heci_send_receive(&fw_ver_msg, sizeof(fw_ver_msg), &resp, &resp_size,
+									HECI_MKHI_ADDR))
 		goto fail;
 
 	if (resp.hdr.result)
@@ -859,23 +869,95 @@ fail:
 	printk(BIOS_DEBUG, "ME: Version: Unavailable\n");
 }
 
+void cse_trigger_vboot_recovery(enum csme_failure_reason reason)
+{
+	printk(BIOS_DEBUG, "cse: CSE status registers: HFSTS1: 0x%x, HFSTS2: 0x%x "
+	       "HFSTS3: 0x%x\n", me_read_config32(PCI_ME_HFSTS1),
+	       me_read_config32(PCI_ME_HFSTS2), me_read_config32(PCI_ME_HFSTS3));
+
+	if (CONFIG(VBOOT)) {
+		struct vb2_context *ctx = vboot_get_context();
+		if (ctx == NULL)
+			goto failure;
+		vb2api_fail(ctx, VB2_RECOVERY_INTEL_CSE_LITE_SKU, reason);
+		vboot_save_data(ctx);
+		vboot_reboot();
+	}
+failure:
+	die("cse: Failed to trigger recovery mode(recovery subcode:%d)\n", reason);
+}
+
+static bool disable_cse_idle(void)
+{
+	struct stopwatch sw;
+	uint32_t dev_idle_ctrl = read_bar(MMIO_CSE_DEVIDLE);
+	dev_idle_ctrl &= ~CSE_DEV_IDLE;
+	write_bar(MMIO_CSE_DEVIDLE, dev_idle_ctrl);
+
+	stopwatch_init_usecs_expire(&sw, HECI_CIP_TIMEOUT_US);
+	do {
+		dev_idle_ctrl = read_bar(MMIO_CSE_DEVIDLE);
+		if ((dev_idle_ctrl & CSE_DEV_CIP) == CSE_DEV_CIP)
+			return true;
+		udelay(HECI_DELAY_US);
+	} while (!stopwatch_expired(&sw));
+
+	return false;
+}
+
+static void enable_cse_idle(void)
+{
+	uint32_t dev_idle_ctrl = read_bar(MMIO_CSE_DEVIDLE);
+	dev_idle_ctrl |= CSE_DEV_IDLE;
+	write_bar(MMIO_CSE_DEVIDLE, dev_idle_ctrl);
+}
+
+enum cse_device_state get_cse_device_state(void)
+{
+	uint32_t dev_idle_ctrl = read_bar(MMIO_CSE_DEVIDLE);
+	if ((dev_idle_ctrl & CSE_DEV_IDLE) == CSE_DEV_IDLE)
+		return DEV_IDLE;
+
+	return DEV_ACTIVE;
+}
+
+static enum cse_device_state ensure_cse_active(void)
+{
+	if (!disable_cse_idle())
+		return DEV_IDLE;
+	pci_or_config32(PCH_DEV_CSE, PCI_COMMAND, PCI_COMMAND_MEMORY |
+				 PCI_COMMAND_MASTER);
+
+	return DEV_ACTIVE;
+}
+
+static void ensure_cse_idle(void)
+{
+	enable_cse_idle();
+
+	pci_and_config32(PCH_DEV_CSE, PCI_COMMAND, ~(PCI_COMMAND_MEMORY |
+				 PCI_COMMAND_MASTER));
+}
+
+bool set_cse_device_state(enum cse_device_state requested_state)
+{
+	enum cse_device_state current_state = get_cse_device_state();
+
+	if (current_state == requested_state)
+		return true;
+
+	if (requested_state == DEV_ACTIVE)
+		return ensure_cse_active() == requested_state;
+	else
+		ensure_cse_idle();
+
+	return true;
+}
+
 #if ENV_RAMSTAGE
 
-static void update_sec_bar(struct device *dev)
-{
-	cse.sec_bar = find_resource(dev, PCI_BASE_ADDRESS_0)->base;
-}
-
-static void cse_set_resources(struct device *dev)
-{
-	if (dev->path.pci.devfn == PCH_DEVFN_CSE)
-		update_sec_bar(dev);
-
-	pci_dev_set_resources(dev);
-}
-
 static struct device_operations cse_ops = {
-	.set_resources		= cse_set_resources,
+	.set_resources		= pci_dev_set_resources,
 	.read_resources		= pci_dev_read_resources,
 	.enable_resources	= pci_dev_enable_resources,
 	.init			= pci_dev_init,
@@ -894,6 +976,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CMP_CSE0,
 	PCI_DEVICE_ID_INTEL_CMP_H_CSE0,
 	PCI_DEVICE_ID_INTEL_TGL_CSE0,
+	PCI_DEVICE_ID_INTEL_TGL_H_CSE0,
 	PCI_DEVICE_ID_INTEL_MCC_CSE0,
 	PCI_DEVICE_ID_INTEL_MCC_CSE1,
 	PCI_DEVICE_ID_INTEL_MCC_CSE2,

@@ -9,6 +9,8 @@
 // echo '\_SB.PC00.LPCB.EC._GPE' | sudo tee /proc/acpi/call; sudo cat /proc/acpi/call
 
 Scope (\_SB) {
+	#include "sleep.asl"
+
 	#include <ec/clevo/it5570/acpi/ac.asl>
 	#include <ec/clevo/it5570/acpi/battery.asl>
 	#include <ec/clevo/it5570/acpi/buttons.asl>
@@ -17,6 +19,8 @@ Scope (\_SB) {
 	Scope (PCI0.LPCB) {
 		#include <ec/clevo/it5570/acpi/ec.asl>
 	}
+
+	#include "hid.asl"
 }
 
 Scope (_GPE) {

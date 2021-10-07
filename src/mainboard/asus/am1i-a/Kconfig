@@ -18,11 +18,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_HAS_LPC_TPM
 
 config MAINBOARD_DIR
-	string
 	default "asus/am1i-a"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "AM1I-A"
 
 config HW_MEM_HOLE_SIZEK

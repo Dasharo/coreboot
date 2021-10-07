@@ -39,25 +39,20 @@ config VBOOT_VBNV_OFFSET
 	default 0x82
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT
 
 config MAINBOARD_DIR
-	string
 	default "lenovo/x200"
 
 config VARIANT_DIR
-	string
 	default "x200" if BOARD_LENOVO_X200
 	default "x301" if BOARD_LENOVO_X301
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ThinkPad X200" if BOARD_LENOVO_X200
 	default "ThinkPad X301" if BOARD_LENOVO_X301
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config USBDEBUG_HCD_INDEX
@@ -65,7 +60,6 @@ config USBDEBUG_HCD_INDEX
 	default 2
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 
 config PS2K_EISAID

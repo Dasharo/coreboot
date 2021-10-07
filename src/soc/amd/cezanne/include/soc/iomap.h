@@ -31,21 +31,22 @@
 /* I2C parameters for lpc_read_resources */
 #define I2C_BASE_ADDRESS		APU_I2C2_BASE
 #define I2C_DEVICE_SIZE			0x00001000
-#define I2C_DEVICE_COUNT		(I2C_MASTER_DEV_COUNT \
-					 - I2C_MASTER_START_INDEX)
+#define I2C_DEVICE_COUNT		(I2C_MASTER_DEV_COUNT - I2C_MASTER_START_INDEX)
 
 #define APU_DMAC0_BASE			0xfedc7000
 #define APU_DMAC1_BASE			0xfedc8000
 #define APU_UART0_BASE			0xfedc9000
 #define APU_UART1_BASE			0xfedca000
 
+#define APU_EMMC_BASE			0xfedd5000
+#define APU_EMMC_CONFIG_BASE		0xfedd5800
+
 #define FLASH_BASE_ADDR			((0xffffffff - CONFIG_ROM_SIZE) + 1)
 
 #endif /* ENV_X86 */
 
 /* I/O Ranges */
-#define NCP_ERR				0x00f0
-#define ACPI_IO_BASE		0x0400
+#define ACPI_IO_BASE			0x0400
 #define  ACPI_PM_EVT_BLK		(ACPI_IO_BASE + 0x00)
 #define   ACPI_PM1_STS			(ACPI_PM_EVT_BLK + 0x00)
 #define   ACPI_PM1_EN			(ACPI_PM_EVT_BLK + 0x02)

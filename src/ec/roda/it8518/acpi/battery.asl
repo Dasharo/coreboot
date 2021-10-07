@@ -33,77 +33,75 @@ Device (BAT0)
 	Name (PBST, Package (4)
 	{
 		0x00000000,	// Battery State
-		0xFFFFFFFF,	// Battery Present Rate
-		0xFFFFFFFF,	// Battery Remaining Capacity
-		0xFFFFFFFF,	// Battery Present Voltage
+		0xffffffff,	// Battery Present Rate
+		0xffffffff,	// Battery Remaining Capacity
+		0xffffffff,	// Battery Present Voltage
 	})
 
 
 	// Battery Slot Status
 	Method (_STA, 0, Serialized)
 	{
-		Store ("-----> BAT0: _STA", Debug)
+		Printf ("-----> BAT0: _STA")
 
-		Store (0x0F, Local0)
+		Local0 = 0x0f
 
-		Store (ECPS, Local1)
-		And (Local1, 0x02, Local1)
-		If (LEqual (Local1, 0x02))
+		Local1 = ECPS & 0x02
+		If (Local1 == 0x02)
 		{
-			Store (0x1F, Local0)
+			Local0 = 0x1f
 		}
 
-		Store ("<----- BAT0: _STA", Debug)
+		Printf ("<----- BAT0: _STA")
 
 		Return (Local0)
 	}
 
 	Method (_BIF, 0, Serialized)
 	{
-		Store ("-----> BAT0: _BIF", Debug)
+		Printf ("-----> BAT0: _BIF")
 
-		Store (B0FC, Index (PBIF, 0x02))
-		Store (Divide (Multiply (B0FC, 6), 100), Index (PBIF, 0x05))
-		Store (Divide (Multiply (B0FC, 3), 100), Index (PBIF, 0x06))
+		PBIF[2] = B0FC
+		PBIF[5] = (B0FC * 6) / 100
+		PBIF[6] = (B0FC * 3) / 100
 
-		Store ("<----- BAT0: _BIF", Debug)
+		Printf ("<----- BAT0: _BIF")
 
 		Return (PBIF)
 	}
 
 	Method (_BST, 0, Serialized)
 	{
-		Store ("-----> BAT0: _BST", Debug)
+		Printf ("-----> BAT0: _BST")
 
-		Store (B0ST, Local0)
-		And (Local0, 0x40, Local0)
-		If (LEqual (Local0, 0x40))
+		Local0 = B0ST & 0x40
+		If (Local0 == 0x40)
 		{
-			If (LEqual (PWRS, 1))
+			If (PWRS == 1)
 			{
-				Store (0x00, Index (PBST, 0x00))
+				PBST[0] = 0x00
 			}
 			Else
 			{
-				Store (0x01, Index (PBST, 0x00))
+				PBST[0] = 0x01
 			}
 		}
 		Else
 		{
-			Store (0x02, Index (PBST, 0x00))
+			PBST[0] = 0x02
 		}
 
-		Store (B0AC, Local1)
-		If (LGreaterEqual (Local1, 0x8000))
+		Local1 = B0AC
+		If (Local1 >= 0x8000)
 		{
-			Subtract (0x00010000, Local1, Local1)
+			Local1 = 0x00010000 - Local1
 		}
 
-		Store (Local1, Index (PBST, 0x01))
-		Store (B0RC, Index (PBST, 0x02))
-		Store (B0VT, Index (PBST, 0x03))
+		PBST[1] = Local1
+		PBST[2] = B0RC
+		PBST[3] = B0VT
 
-		Store ("<----- BAT0: _BST", Debug)
+		Printf ("<----- BAT0: _BST")
 
 		Return (PBST)
 	}

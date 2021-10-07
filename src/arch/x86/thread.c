@@ -2,6 +2,10 @@
 
 #include <thread.h>
 
+#if ENV_X86_64
+#error COOP_MULTITASKING does not currently support x86_64
+#endif
+
 /* The stack frame looks like the following after a pushad instruction. */
 struct pushad_regs {
 	uint32_t edi; /* Offset 0x00 */
@@ -38,11 +42,4 @@ void arch_prepare_thread(struct thread *t,
 	stack -= sizeof(struct pushad_regs);
 
 	t->stack_current = stack;
-}
-
-void *arch_get_thread_stackbase(void)
-{
-	/* defined in c_start.S */
-	extern u8 thread_stacks[];
-	return &thread_stacks[0];
 }

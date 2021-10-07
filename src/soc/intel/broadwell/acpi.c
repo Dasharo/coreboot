@@ -1,16 +1,19 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
 #include <arch/ioapic.h>
 #include <arch/smp/mpspec.h>
 #include <cpu/intel/haswell/haswell.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
+#include <device/device.h>
 #include <types.h>
 #include <cpu/x86/msr.h>
 #include <cpu/intel/turbo.h>
 #include <soc/acpi.h>
+#include <soc/device_nvs.h>
 #include <soc/iomap.h>
 #include <soc/lpc.h>
 #include <soc/pci_devs.h>
@@ -69,8 +72,13 @@ static unsigned long acpi_fill_dmar(unsigned long current)
 	if (emit_igd) {
 		const unsigned long tmp = current;
 
-		current += acpi_create_dmar_rmrr(current, 0,
-				sa_get_gsm_base(), sa_get_tolud_base() - 1);
+		const struct device *sa_dev = pcidev_on_root(0, 0);
+
+		/* Bit 0 is lock bit, not part of address */
+		const u32 tolud = pci_read_config32(sa_dev, TOLUD) & ~1;
+		const u32 bgsm  = pci_read_config32(sa_dev,  BGSM) & ~1;
+
+		current += acpi_create_dmar_rmrr(current, 0, bgsm, tolud - 1);
 		current += acpi_create_dmar_ds_pci(current, 0, 2, 0);
 		acpi_dmar_rmrr_fixup(tmp, current);
 	}
@@ -95,4 +103,9 @@ unsigned long northbridge_write_acpi_tables(const struct device *const dev,
 	acpi_add_table(rsdp, dmar);
 
 	return current;
+}
+
+size_t size_of_dnvs(void)
+{
+	return sizeof(struct device_nvs);
 }

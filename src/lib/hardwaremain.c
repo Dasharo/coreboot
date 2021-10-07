@@ -5,25 +5,26 @@
  * C Bootstrap code for the coreboot
  */
 
-#include <adainit.h>
 #include <acpi/acpi.h>
 #include <acpi/acpi_gnvs.h>
+#include <adainit.h>
 #include <arch/exception.h>
+#include <boot/tables.h>
 #include <bootstate.h>
-#include <console/console.h>
-#include <console/post_codes.h>
-#include <commonlib/helpers.h>
 #include <cbmem.h>
-#include <version.h>
+#include <commonlib/console/post_codes.h>
+#include <commonlib/helpers.h>
+#include <console/console.h>
+#include <delay.h>
 #include <device/device.h>
 #include <device/pci.h>
-#include <delay.h>
-#include <stdlib.h>
-#include <boot/tables.h>
 #include <program_loading.h>
+#include <stdlib.h>
+#include <thread.h>
 #include <timer.h>
 #include <timestamp.h>
-#include <thread.h>
+#include <vendorcode/google/chromeos/gnvs.h>
+#include <version.h>
 
 static boot_state_t bs_pre_device(void *arg);
 static boot_state_t bs_dev_init_chips(void *arg);
@@ -264,6 +265,7 @@ static void bs_call_callbacks(struct boot_state *state,
 			      boot_state_sequence_t seq)
 {
 	struct boot_phase *phase = &state->phases[seq];
+	struct mono_time mt_start, mt_stop;
 
 	while (1) {
 		if (phase->callbacks != NULL) {
@@ -274,11 +276,19 @@ static void bs_call_callbacks(struct boot_state *state,
 			phase->callbacks = bscb->next;
 			bscb->next = NULL;
 
-#if CONFIG(DEBUG_BOOT_STATE)
-			printk(BIOS_DEBUG, "BS: callback (%p) @ %s.\n",
-				bscb, bscb->location);
-#endif
+			if (CONFIG(DEBUG_BOOT_STATE)) {
+				printk(BIOS_DEBUG, "BS: callback (%p) @ %s.\n",
+					bscb, bscb_location(bscb));
+				timer_monotonic_get(&mt_start);
+			}
 			bscb->callback(bscb->arg);
+			if (CONFIG(DEBUG_BOOT_STATE)) {
+				timer_monotonic_get(&mt_stop);
+				printk(BIOS_DEBUG, "BS: callback (%p) @ %s (%ld ms).\n", bscb,
+				       bscb_location(bscb),
+				       mono_time_diff_microseconds(&mt_start, &mt_stop)
+					       / USECS_PER_MSEC);
+			}
 			continue;
 		}
 
@@ -442,15 +452,17 @@ void main(void)
 	cbmem_initialize();
 
 	timestamp_add_now(TS_START_RAMSTAGE);
-	post_code(POST_ENTRY_RAMSTAGE);
+	post_code(POST_ENTRY_HARDWAREMAIN);
 
 	/* Handoff sleep type from romstage. */
 	acpi_is_wakeup_s3();
-	threads_initialize();
 
 	/* Initialise GNVS early. */
 	if (CONFIG(ACPI_SOC_NVS))
 		acpi_create_gnvs();
+
+	if (CONFIG(CHROMEOS_NVS))
+		chromeos_init_chromeos_acpi();
 
 	/* Schedule the static boot state entries. */
 	boot_state_schedule_static_entries();
@@ -505,14 +517,4 @@ int boot_state_unblock(boot_state_t state, boot_state_sequence_t seq)
 	bp->blockers--;
 
 	return 0;
-}
-
-void boot_state_current_block(void)
-{
-	boot_state_block(current_phase.state_id, current_phase.seq);
-}
-
-void boot_state_current_unblock(void)
-{
-	boot_state_unblock(current_phase.state_id, current_phase.seq);
 }

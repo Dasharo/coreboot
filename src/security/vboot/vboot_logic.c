@@ -212,15 +212,18 @@ static uint32_t extend_pcrs(struct vb2_context *ctx)
 		   vboot_extend_pcr(ctx, 1, HWID_DIGEST_PCR);
 }
 
-#define EC_EFS_BOOT_MODE_NORMAL		0x00
-#define EC_EFS_BOOT_MODE_NO_BOOT	0x01
+#define EC_EFS_BOOT_MODE_VERIFIED_RW	0x00
+#define EC_EFS_BOOT_MODE_UNTRUSTED_RO	0x01
+#define EC_EFS_BOOT_MODE_TRUSTED_RO	0x02
 
 static const char *get_boot_mode_string(uint8_t boot_mode)
 {
-	if (boot_mode == EC_EFS_BOOT_MODE_NORMAL)
-		return "NORMAL";
-	else if (boot_mode == EC_EFS_BOOT_MODE_NO_BOOT)
-		return "NO_BOOT";
+	if (boot_mode == EC_EFS_BOOT_MODE_TRUSTED_RO)
+		return "TRUSTED_RO";
+	else if (boot_mode == EC_EFS_BOOT_MODE_UNTRUSTED_RO)
+		return "UNTRUSTED_RO";
+	else if (boot_mode == EC_EFS_BOOT_MODE_VERIFIED_RW)
+		return "VERIFIED_RW";
 	else
 		return "UNDEFINED";
 }
@@ -241,20 +244,17 @@ static void check_boot_mode(struct vb2_context *ctx)
 	default:
 		printk(BIOS_ERR,
 		       "Communication error in getting Cr50 boot mode.\n");
-		if (ctx->flags & VB2_CONTEXT_RECOVERY_MODE)
-			/* Continue to boot in recovery mode */
-			return;
 		vb2api_fail(ctx, VB2_RECOVERY_CR50_BOOT_MODE, rv);
-		vboot_save_data(ctx);
-		vboot_reboot();
 		return;
 	}
 
 	printk(BIOS_INFO, "Cr50 says boot_mode is %s(0x%02x).\n",
 	       get_boot_mode_string(boot_mode), boot_mode);
 
-	if (boot_mode == EC_EFS_BOOT_MODE_NO_BOOT)
+	if (boot_mode == EC_EFS_BOOT_MODE_UNTRUSTED_RO)
 		ctx->flags |= VB2_CONTEXT_NO_BOOT;
+	else if (boot_mode == EC_EFS_BOOT_MODE_TRUSTED_RO)
+		ctx->flags |= VB2_CONTEXT_EC_TRUSTED;
 }
 
 /**
@@ -315,6 +315,20 @@ void verstage_main(void)
 	/* Mainboard/SoC always initializes display. */
 	if (!CONFIG(VBOOT_MUST_REQUEST_DISPLAY) || CONFIG(VBOOT_ALWAYS_ENABLE_DISPLAY))
 		ctx->flags |= VB2_CONTEXT_DISPLAY_INIT;
+
+	/*
+	 * Get boot mode from GSC. This allows us to refuse to boot OS
+	 * (with VB2_CONTEXT_NO_BOOT) or to switch to developer mode (with
+	 * !VB2_CONTEXT_EC_TRUSTED).
+	 *
+	 * If there is an communication error, a recovery reason will be set and
+	 * vb2api_fw_phase1 will route us to recovery mode.
+	 */
+	if (CONFIG(TPM_CR50))
+		check_boot_mode(ctx);
+
+	if (get_ec_is_trusted())
+		ctx->flags |= VB2_CONTEXT_EC_TRUSTED;
 
 	/* Do early init (set up secdata and NVRAM, load GBB) */
 	printk(BIOS_INFO, "Phase 1\n");
@@ -385,9 +399,6 @@ void verstage_main(void)
 		}
 		timestamp_add_now(TS_END_TPMPCR);
 	}
-
-	if (CONFIG(TPM_CR50))
-		check_boot_mode(ctx);
 
 	/* Lock TPM */
 

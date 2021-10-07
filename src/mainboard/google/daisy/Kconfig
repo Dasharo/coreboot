@@ -22,11 +22,9 @@ config VBOOT
 	select VBOOT_VBNV_EC
 
 config MAINBOARD_DIR
-	string
 	default "google/daisy"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Daisy"
 
 config MAX_CPUS

@@ -13,7 +13,7 @@ config VBOOT
 	bool "Verify firmware with vboot."
 	default n
 	select VBOOT_LIB
-	select VBOOT_MOCK_SECDATA if !TPM1 && !TPM2
+	select VBOOT_MOCK_SECDATA if !TPM
 	depends on 0 = 0  # Must have a 'depends on' or board overrides will break it.
 	help
 	  Enabling VBOOT will use vboot to verify the components of the firmware
@@ -235,6 +235,17 @@ config RWB_REGION_ONLY
 	  Add a space-delimited list of filenames that should only be in the
 	  RW-B section.
 
+config CBFS_MCACHE_RW_PERCENTAGE
+	int "Percentage of CBFS metadata cache used for RW CBFS"
+	depends on !NO_CBFS_MCACHE
+	default 50
+	help
+	  The amount of the CBFS_MCACHE area that's used for the RW CBFS, in
+	  percent from 0 to 100. The remaining area will be used for the RO
+	  CBFS. Default is an even 50/50 split. When VBOOT is disabled, this
+	  will automatically be 0 (meaning the whole MCACHE is used for RO).
+	  Do NOT change this value for vboot RW updates!
+
 config VBOOT_ENABLE_CBFS_FALLBACK
 	bool
 	default n
@@ -262,6 +273,14 @@ config VBOOT_EC_EFS
 	  CrosEC can support EFS: Early Firmware Selection. If it's enabled,
 	  software sync needs to also support it. This setting tells vboot to
 	  perform EFS software sync.
+
+config VBOOT_X86_SHA256_ACCELERATION
+	bool "Use sha extension for sha256 hash calculation"
+	default n
+	depends on ARCH_X86
+	help
+	  Use sha256msg1, sha256msg2, sha256rnds2 instruction to accelerate
+	  SHA hash calculation in vboot.
 
 menu "GBB configuration"
 

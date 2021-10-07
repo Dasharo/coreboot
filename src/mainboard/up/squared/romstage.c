@@ -83,7 +83,7 @@ static const uint8_t ch3_bit_swizzling[] = {
  *     0        0       2 GiB
  *     0        1       4 GiB
  *     1        0       8 GiB
- *     1        1       Reserved
+ *     1        1       8 GiB
  */
 static uint8_t get_memory_skuid(void)
 {
@@ -142,6 +142,18 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 		config->Ch3_DramDensity       = 2;
 		printk(BIOS_INFO, "MAINBOARD: Found supported memory: 8GB\n");
 		break;
+	case 3: /* 8GB */
+		config->DualRankSupportEnable = 1;
+		config->Ch0_RankEnable        = 1;
+		config->Ch0_DramDensity       = 4;
+		config->Ch1_RankEnable        = 1;
+		config->Ch1_DramDensity       = 4;
+		config->Ch2_RankEnable        = 1;
+		config->Ch2_DramDensity       = 4;
+		config->Ch3_RankEnable        = 1;
+		config->Ch3_DramDensity       = 4;
+		printk(BIOS_INFO, "MAINBOARD: Found supported memory: 8GB\n");
+		break;
 	default:
 		printk(BIOS_INFO, "MAINBOARD: No supported memory found!\n");
 		break;
@@ -156,7 +168,6 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	config->RmtCheckRun = 0x3;		// 0x0
 	config->RmtMarginCheckScaleHighThreshold = 0xC8;	// 0x0
 	config->EnhancePort8xhDecoding = 0x0;	// 0x1
-	config->PrimaryVideoAdaptor = 0x2;	// 0x0
 
 	config->Ch0_DeviceWidth = 0x1;		// 0x0
 	config->Ch0_Option = 0x3;		// 0x0

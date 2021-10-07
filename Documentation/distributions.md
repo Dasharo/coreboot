@@ -8,20 +8,13 @@ and those providing after-market firmware to extend the usefulness of devices.
 
 ## Hardware shipping with coreboot
 
-### Purism
-
-[Purism](https://www.puri.sm) sells laptops with a focus on user privacy and
-security; part of that effort is to minimize the amount of proprietary and/or
-binary code. Their laptops ship with a blob-free OS and coreboot firmware
-with a neutralized Intel Management Engine (ME) and SeaBIOS as the payload.
-
 ### ChromeOS Devices
 
 All ChromeOS devices ([Chromebooks](https://chromebookdb.com/), Chromeboxes,
 Chromebit, etc) released from 2012 onward use coreboot for their main system
 firmware. Additionally, starting with the 2013 Chromebook Pixel, the firmware
-running on the Embedded Controller (EC - a small microcontroller which provides
-functions like battery management, keyboard support, and sensor interfacing)
+running on the Embedded Controller (EC) – a small microcontroller which provides
+functions like battery management, keyboard support, and sensor interfacing –
 is open source as well.
 
 ### Libretrend
@@ -29,13 +22,26 @@ is open source as well.
 [Libretrend](https://libretrend.com) sells the Librebox, a NUC-like PC which
 ships with coreboot firmware.
 
-
 ### PC Engines APUs
 
 [PC Engines](https://pcengines.ch) designs and sells embedded PC hardware that
 ships with coreboot and support upstream maintenance for the devices through a
 third party, [3mdeb](https://3mdeb.com). They provide current and tested
 firmware binaries on [GitHub](https://pcengines.github.io).
+
+### System76
+
+[System76](https://system76.com/) manufactures Linux laptops, desktops, and
+servers. Some models are sold with [System76 Open
+Firmware](https://github.com/system76/firmware-open), an open source
+distribution of coreboot, EDK2, and System76 firmware applications.
+
+### Purism
+
+[Purism](https://www.puri.sm) sells laptops with a focus on user privacy and
+security; part of that effort is to minimize the amount of proprietary and/or
+binary code. Their laptops ship with a blob-free OS and coreboot firmware
+with a neutralized Intel Management Engine (ME) and SeaBIOS as the payload.
 
 ## After-market firmware
 

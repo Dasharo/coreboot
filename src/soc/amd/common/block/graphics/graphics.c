@@ -2,6 +2,7 @@
 
 #include <acpi/acpi_device.h>
 #include <acpi/acpigen.h>
+#include <boot/coreboot_tables.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <console/console.h>
@@ -157,7 +158,7 @@ static void graphics_dev_init(struct device *const dev)
 		struct resource *res = probe_resource(dev, PCI_BASE_ADDRESS_0);
 
 		if (res && res->base)
-			fsp_report_framebuffer_info(res->base);
+			fsp_report_framebuffer_info(res->base, LB_FB_ORIENTATION_NORMAL);
 		else
 			printk(BIOS_ERR, "%s: Unable to find resource for %s\n",
 			       __func__, dev_path(dev));
@@ -180,7 +181,8 @@ static const struct device_operations graphics_ops = {
 
 static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_ATI_FAM17H_MODEL18H_GPU,
-	PCI_DEVICE_ID_ATI_FAM19H_MODEL51H_GPU,
+	PCI_DEVICE_ID_ATI_FAM19H_MODEL51H_GPU_CEZANNE,
+	PCI_DEVICE_ID_ATI_FAM19H_MODEL51H_GPU_BARCELO,
 	0,
 };
 

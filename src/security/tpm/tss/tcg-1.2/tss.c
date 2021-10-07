@@ -215,7 +215,8 @@ uint32_t tlcl_write(uint32_t index, const void *data, uint32_t length)
 
 	to_tpm_uint32(cmd.buffer + tpm_nv_write_cmd.index, index);
 	to_tpm_uint32(cmd.buffer + tpm_nv_write_cmd.length, length);
-	memcpy(cmd.buffer + tpm_nv_write_cmd.data, data, length);
+	if (length > 0)
+		memcpy(cmd.buffer + tpm_nv_write_cmd.data, data, length);
 
 	return tlcl_send_receive(cmd.buffer, response, sizeof(response));
 }
@@ -326,9 +327,8 @@ uint32_t tlcl_get_flags(uint8_t *disable, uint8_t *deactivated,
 
 uint32_t tlcl_set_global_lock(void)
 {
-	uint32_t x;
 	VBDEBUG("TPM: Set global lock\n");
-	return tlcl_write(TPM_NV_INDEX0, (uint8_t *) &x, 0);
+	return tlcl_write(TPM_NV_INDEX0, NULL, 0);
 }
 
 uint32_t tlcl_extend(int pcr_num, const uint8_t *in_digest,

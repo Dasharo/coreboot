@@ -3,10 +3,8 @@ subdirs-y += ../../x86/name
 subdirs-y += ../../x86/cache
 subdirs-y += ../../x86/mtrr
 subdirs-y += ../../x86/lapic
-subdirs-y += ../../x86/tsc
 subdirs-y += ../../intel/turbo
 subdirs-y += ../../intel/microcode
-subdirs-y += ../../x86/smm
 subdirs-y += ../smm/gen1
 
 ramstage-y += acpi.c

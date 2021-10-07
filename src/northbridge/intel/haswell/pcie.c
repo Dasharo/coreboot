@@ -46,15 +46,30 @@ static const char *pcie_acpi_name(const struct device *dev)
 }
 #endif
 
+static const struct peg_config *get_peg_config(struct device *dev, const uint8_t func)
+{
+	static const struct peg_config default_config = { 0 };
+
+	if (!dev || !dev->chip_info)
+		return &default_config;
+
+	const struct northbridge_intel_haswell_config *config = dev->chip_info;
+
+	if (func >= ARRAY_SIZE(config->peg_cfg)) {
+		printk(BIOS_ERR, "%s: Found PEG function %u, which doesn't exist on Haswell\n",
+		       __func__, func);
+		return &default_config;
+	}
+	return &config->peg_cfg[func];
+}
+
 static void peg_enable(struct device *dev)
 {
-	const struct northbridge_intel_haswell_config *config = config_of(dev);
+	const uint8_t func = PCI_FUNC(dev->path.pci.devfn);
 
-	const uint8_t func = PCI_FUNC(PCI_BDF(dev));
+	const struct peg_config *peg_cfg = get_peg_config(dev, func);
 
-	assert(func < ARRAY_SIZE(config->peg_cfg));
-
-	const bool slot_implemented = !config->peg_cfg[func].is_onboard;
+	const bool slot_implemented = !peg_cfg->is_onboard;
 
 	if (slot_implemented) {
 		/* Default is 1, but register is R/WO and needs to be written to once */
@@ -69,7 +84,7 @@ static void peg_enable(struct device *dev)
 	/* Physical slot number (zero for ports connected to onboard devices) */
 	slotcap &= ~(0x1fff << 19);
 	if (slot_implemented) {
-		uint16_t slot_number = config->peg_cfg[func].phys_slot_number & 0x1fff;
+		uint16_t slot_number = peg_cfg->phys_slot_number & 0x1fff;
 		if (slot_number == 0) {
 			/* Slot number must be non-zero and unique */
 			slot_number = func + 1;
@@ -79,9 +94,9 @@ static void peg_enable(struct device *dev)
 
 	/* Default to 1.0 watt scale */
 	slotcap &= ~(3 << 15);
-	slotcap |= (config->peg_cfg[func].power_limit_scale & 3) << 15;
+	slotcap |= (peg_cfg->power_limit_scale & 3) << 15;
 
-	uint8_t power_limit_value = config->peg_cfg[func].power_limit_value;
+	uint8_t power_limit_value = peg_cfg->power_limit_value;
 	if (power_limit_value == 0) {
 		/* Default to 75 watts */
 		power_limit_value = 75;

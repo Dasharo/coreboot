@@ -1,0 +1,88 @@
+From 41a82fb711f3637b4b7f57756492b628058f9d5f Mon Sep 17 00:00:00 2001
+From: Harshit Sharma <harshitsharmajs@gmail.com>
+Date: Fri, 10 Jul 2020 13:06:08 -0700
+Subject: [PATCH] crossgcc: Enable GCC to get asan shadow offset at runtime
+
+Unlike Linux kernel which has a static shadow region layout, we have multiple stages in
+coreboot and thus require a different shadow offset address. Unfortunately, GCC currently
+only supports adding a static shadow offset at compile time using -fasan-shadow-offset flag.
+
+For this reason, we enable GCC to determine asan shadow offset address at runtime using a
+callback function named __asan_shadow_offset(). This supersedes the need to specify this
+address at compile time. GCC then makes use of this shadow offset to protect stack buffers
+by inserting red zones around them.
+
+Some other benefits of having this GCC patch are:
+a. We can place the shadow region in a separate linker section with all its advantages like
+   automatic fit insurance. This ensures if a platform doesn't have enough memory space to
+   hold shadow region, the build will fail. (However, if we use a fixed shadow offset on a
+   platform that actually doesn't have enough memory, it may still build without any errors.)
+b. We don't modify the memory layout compared to the current one, as we are placing the
+   shadow region at the end of the space already occupied by the program.
+c. We can be much more flexible later if needed (thinking of other stages like bootblock).
+d. Since we are appending the shadow buffer to the region already occupied, we make efficient
+   use of the limited memory available which is highly beneficial when using cache as ram.
+
+Further, we have made sure that if you compile you tree with ASan enabled but missed this
+patch, it will end up in the following compilation error:
+"invalid --param name 'asan-use-shadow-offset-callback'"
+So, you cannot accidentally enable the feature without having your compiler patched.
+
+[pgeorgi: Updated for gcc 11.1]
+
+Signed-off-by: Harshit Sharma <harshitsharmajs@gmail.com>
+Signed-off-by: Patrick Georgi <pgeorgi@google.com>
+
+diff --git a/gcc/asan.c b/gcc/asan.c
+index 235e21947..713bf994d 100644
+--- a/gcc/asan.c
++++ b/gcc/asan.c
+@@ -1389,13 +1389,28 @@ asan_emit_stack_protection (rtx base, rtx pbase, unsigned int alignb,
+   TREE_ASM_WRITTEN (decl) = 1;
+   TREE_ASM_WRITTEN (id) = 1;
+   emit_move_insn (mem, expand_normal (build_fold_addr_expr (decl)));
+-  shadow_base = expand_binop (Pmode, lshr_optab, base,
+-			      gen_int_shift_amount (Pmode, ASAN_SHADOW_SHIFT),
+-			      NULL_RTX, 1, OPTAB_DIRECT);
+-  shadow_base
+-    = plus_constant (Pmode, shadow_base,
+-		     asan_shadow_offset ()
+-		     + (base_align_bias >> ASAN_SHADOW_SHIFT));
++  if (param_asan_use_shadow_offset_callback) {
++    rtx addr, shadow_offset_rtx;
++    ret = init_one_libfunc ("__asan_shadow_offset");
++    addr = convert_memory_address (ptr_mode, base);
++    ret = emit_library_call_value (ret, NULL_RTX, LCT_NORMAL, ptr_mode,
++                                  addr, ptr_mode);
++    shadow_offset_rtx = convert_memory_address (Pmode, ret);
++    shadow_base = expand_binop (Pmode, lshr_optab, base,
++			                          gen_int_shift_amount (Pmode, ASAN_SHADOW_SHIFT),
++			                          NULL_RTX, 1, OPTAB_DIRECT);
++    shadow_base = expand_binop (Pmode, add_optab, shadow_base,
++			                          shadow_offset_rtx, NULL_RTX, 1, OPTAB_LIB_WIDEN);
++    shadow_base = plus_constant (Pmode, shadow_base,
++		                            (base_align_bias >> ASAN_SHADOW_SHIFT));
++  } else {
++    shadow_base = expand_binop (Pmode, lshr_optab, base,
++			                          gen_int_shift_amount (Pmode, ASAN_SHADOW_SHIFT),
++			                          NULL_RTX, 1, OPTAB_DIRECT);
++    shadow_base = plus_constant (Pmode, shadow_base,
++		                            asan_shadow_offset ()
++		                            + (base_align_bias >> ASAN_SHADOW_SHIFT));
++  }
+   gcc_assert (asan_shadow_set != -1
+ 	      && (ASAN_RED_ZONE_SIZE >> ASAN_SHADOW_SHIFT) == 4);
+   shadow_mem = gen_rtx_MEM (SImode, shadow_base);
+--- gcc-11.1.0/gcc/params.opt~	2021-05-11 09:02:51.897508677 +0200
++++ gcc-11.1.0/gcc/params.opt	2021-05-11 09:10:43.692610696 +0200
+@@ -50,6 +50,10 @@
+ Common Joined UInteger Var(param_asan_instrumentation_with_call_threshold) Init(7000) Param Optimization
+ Use callbacks instead of inline code if number of accesses in function becomes greater or equal to this number.
+
++-param=asan-use-shadow-offset-callback=
++Common Joined UInteger Var(param_asan_use_shadow_offset_callback) Init(0) IntegerRange(0, 1) Param Optimization
++Use shadow offset callback function at runtime instead of fixed value at compile time at the cost of runtime overhead.
++
+ -param=asan-memintrin=
+ Common Joined UInteger Var(param_asan_memintrin) Init(1) IntegerRange(0, 1) Param Optimization
+ Enable asan builtin functions protection.

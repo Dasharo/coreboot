@@ -29,11 +29,9 @@ config MEMLAYOUT_LD_FILE
 	default "src/mainboard/emulation/qemu-armv7/memlayout.ld"
 
 config MAINBOARD_DIR
-	string
 	default "emulation/qemu-armv7"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "QEMU ARMv7"
 
 config MAX_CPUS

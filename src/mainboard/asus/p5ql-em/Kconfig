@@ -18,11 +18,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select REALTEK_8168_RESET
 
 config MAINBOARD_DIR
-	string
 	default "asus/p5ql-em"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "P5QL-EM"
 
 endif # BOARD_ASUS_P5QL_EM

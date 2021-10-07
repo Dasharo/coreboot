@@ -31,16 +31,15 @@ bootblock_protected_mode_entry:
 	/* Save the BIST value */
 	movl	%eax, %ebp
 
-#if !CONFIG(NO_EARLY_BOOTBLOCK_POSTCODES)
 	post_code(POST_ENTER_PROTECTED_MODE)
-#endif
 
 	movw	$ROM_DATA_SEG, %ax
 	movw	%ax, %ds
 	movw	%ax, %es
 	movw	%ax, %ss
+	xor	%ax, %ax /* zero out the gs and fs segment index */
 	movw	%ax, %fs
-	movw	%ax, %gs
+	movw	%ax, %gs /* Will be used for cpu_info */
 
 	/* Restore the BIST value to %eax */
 	movl	%ebp, %eax

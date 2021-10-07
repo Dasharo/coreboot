@@ -13,6 +13,9 @@ chip soc/intel/tigerlake
 	# Enable DPTF
 	register "dptf_enable" = "1"
 
+	# Enable External Bypass
+	register "external_bypass" = "1"
+
 	# Enable Enhanced Intel SpeedStep
 	register "eist_enable" = "1"
 
@@ -80,6 +83,9 @@ chip soc/intel/tigerlake
 	# Thermal
 	register "tcc_offset" = "13"
 
+	# Enable CNVi BT
+	register "CnviBtCore" = "true"
+
 # PM Util (soc/intel/tigerlake/pmutil.c)
 	# GPE configuration
 	register "pmc_gpe0_dw0" = "PMC_GPP_C"
@@ -122,6 +128,7 @@ chip soc/intel/tigerlake
 				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H0)" # GPP_H0_RTD3
 				register "srcclk_pin" = "0" # SSD1_CLKREQ#
 				register "is_storage" = "1"
+				register "cpu_pcie_clk_usage" = "0x40"
 				device generic 0 on end
 			end
 
@@ -129,7 +136,6 @@ chip soc/intel/tigerlake
 			register "HybridStorageMode" = "0"
 		end
 		device ref tbt_pcie_rp0 on end # TBT Type-C
-		device ref gna on end
 		device ref north_xhci on # TBT Type-C
 			register "TcssXhciEn" = "1"
 			chip drivers/usb/acpi
@@ -145,7 +151,8 @@ chip soc/intel/tigerlake
 		end
 		device ref tbt_dma0 on # TBT Type-C
 			chip drivers/intel/usb4/retimer
-				register "power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A23)"
+				register "dfp[0].power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A23)"
+				use tcss_usb3_port1 as dfp[0].typec_port
 				device generic 0 on end
 			end
 		end

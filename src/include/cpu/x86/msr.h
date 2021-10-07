@@ -36,7 +36,7 @@
 #define SMBASE_RO_MSR			0x98
 #define  IA32_SMM_MONITOR_VALID		(1 << 0)
 #define IA32_MCG_CAP			0x179
-#define  MCG_CTL_P			(1 << 3)
+#define  MCG_CTL_P			(1 << 8)
 #define  MCA_BANKS_MASK			0xff
 #define IA32_PERF_STATUS		0x198
 #define IA32_PERF_CTL			0x199
@@ -56,7 +56,9 @@
 #define  DCA_TYPE0_EN			(1 << 0)
 #define IA32_PAT			0x277
 #define IA32_MC0_CTL			0x400
+#define IA32_MC_CTL(bank)		(IA32_MC0_CTL + 4 * (bank))
 #define IA32_MC0_STATUS			0x401
+#define IA32_MC_STATUS(bank)		(IA32_MC0_STATUS + 4 * (bank))
 #define  MCA_STATUS_HI_VAL		(1UL << (63 - 32))
 #define  MCA_STATUS_HI_OVERFLOW		(1UL << (62 - 32))
 #define  MCA_STATUS_HI_UC		(1UL << (61 - 32))
@@ -74,25 +76,29 @@
 #define  MCA_STATUS_LO_ERRCODE_EXT_SH	16
 #define  MCA_STATUS_LO_ERRCODE_EXT_MASK	(0x3f << MCA_STATUS_LO_ERRCODE_EXT_SH)
 #define  MCA_STATUS_LO_ERRCODE_MASK	(0xffff << 0)
-#define IA32_VMX_BASIC_MSR              0x480
-#define  VMX_BASIC_HI_DUAL_MONITOR      (1UL << (49 - 32))
-#define IA32_VMX_MISC_MSR               0x485
-#define MC0_ADDR			0x402
-#define MC0_MISC			0x403
-#define MC0_CTL_MASK			0xC0010044
+#define IA32_MC0_ADDR			0x402
+#define IA32_MC_ADDR(bank)		(IA32_MC0_ADDR + 4 * (bank))
+#define IA32_MC0_MISC			0x403
+#define IA32_MC_MISC(bank)		(IA32_MC0_MISC + 4 * (bank))
+#define IA32_VMX_BASIC_MSR		0x480
+#define  VMX_BASIC_HI_DUAL_MONITOR	(1UL << (49 - 32))
+#define IA32_VMX_MISC_MSR		0x485
 
 #define IA32_PM_ENABLE			0x770
 #define IA32_HWP_CAPABILITIES		0x771
 #define IA32_HWP_REQUEST		0x774
 #define IA32_HWP_STATUS			0x777
+#define IA32_L3_PROTECTED_WAYS		0xc85
+#define IA32_SF_QOS_INFO		0xc87
+#define  IA32_SF_WAY_COUNT_MASK		0x3f
 #define IA32_PQR_ASSOC			0xc8f
 /* MSR bits 33:32 encode slot number 0-3 */
-#define   IA32_PQR_ASSOC_MASK	(1 << 0 | 1 << 1)
+#define  IA32_PQR_ASSOC_MASK		(1 << 0 | 1 << 1)
 #define IA32_L3_MASK_1			0xc91
 #define IA32_L3_MASK_2			0xc92
 
-#define IA32_CR_SF_QOS_MASK_1           0x1891
-#define IA32_CR_SF_QOS_MASK_2           0x1892
+#define IA32_CR_SF_QOS_MASK_1		0x1891
+#define IA32_CR_SF_QOS_MASK_2		0x1892
 
 #ifndef __ASSEMBLER__
 #include <types.h>
@@ -154,6 +160,23 @@ static __always_inline void wrmsr(unsigned int index, msr_t msr)
 }
 
 #endif /* CONFIG_SOC_SETS_MSRS */
+
+/* Get MCA bank count from MSR */
+static inline unsigned int mca_get_bank_count(void)
+{
+	msr_t msr = rdmsr(IA32_MCG_CAP);
+	return msr.lo & MCA_BANKS_MASK;
+}
+
+/* Clear all MCA status registers */
+static inline void mca_clear_status(void)
+{
+	const unsigned int num_banks = mca_get_bank_count();
+	const msr_t msr = {.lo = 0, .hi = 0};
+
+	for (unsigned int i = 0 ; i < num_banks ; i++)
+		wrmsr(IA32_MC_STATUS(i), msr);
+}
 
 /* Helpers for interpreting MC[i]_STATUS */
 

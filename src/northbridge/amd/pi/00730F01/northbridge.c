@@ -37,33 +37,6 @@ static struct device *__f2_dev[MAX_NODE_NUMS];
 static struct device *__f4_dev[MAX_NODE_NUMS];
 static unsigned int fx_devs = 0;
 
-static void set_io_addr_reg(struct device *dev, u32 nodeid, u32 linkn, u32 reg,
-			u32 io_min, u32 io_max)
-{
-	u32 i;
-	u32 tempreg;
-	/* io range allocation */
-	tempreg = (nodeid&0xf) | ((nodeid & 0x30)<<(8-4)) | (linkn<<4) | ((io_max&0xf0)<<(12-4)); //limit
-	for (i = 0; i < node_nums; i++)
-		pci_write_config32(__f1_dev[i], reg+4, tempreg);
-	tempreg = 3 /*| (3<<4)*/ | ((io_min&0xf0)<<(12-4));	      //base :ISA and VGA ?
-	for (i = 0; i < node_nums; i++)
-		pci_write_config32(__f1_dev[i], reg, tempreg);
-}
-
-static void set_mmio_addr_reg(u32 nodeid, u32 linkn, u32 reg, u32 index, u32 mmio_min, u32 mmio_max, u32 nodes)
-{
-	u32 i;
-	u32 tempreg;
-	/* io range allocation */
-	tempreg = (nodeid&0xf) | (linkn<<4) |	 (mmio_max&0xffffff00); //limit
-	for (i = 0; i < nodes; i++)
-		pci_write_config32(__f1_dev[i], reg+4, tempreg);
-	tempreg = 3 | (nodeid & 0x30) | (mmio_min&0xffffff00);
-	for (i = 0; i < node_nums; i++)
-		pci_write_config32(__f1_dev[i], reg, tempreg);
-}
-
 static struct device *get_node_pci(u32 nodeid, u32 fn)
 {
 	return pcidev_on_root(DEV_CDB + nodeid, fn);
@@ -84,13 +57,6 @@ static void get_fx_devs(void)
 		die("Cannot find 0:0x18.[0|1]\n");
 	}
 	printk(BIOS_DEBUG, "fx_devs = 0x%x\n", fx_devs);
-}
-
-static u32 f1_read_config32(unsigned int reg)
-{
-	if (fx_devs == 0)
-		get_fx_devs();
-	return pci_read_config32(__f1_dev[0], reg);
 }
 
 static void f1_write_config32(unsigned int reg, u32 value)
@@ -152,148 +118,32 @@ static void set_vga_enable_reg(u32 nodeid, u32 linkn)
 
 }
 
-/**
- * @return
- *  @retval 2  resource does not exist, usable
- *  @retval 0  resource exists, not usable
- *  @retval 1  resource exist, resource has been allocated before
- */
-static int reg_useable(unsigned int reg, struct device *goal_dev,
-		unsigned int goal_nodeid, unsigned int goal_link)
+static void add_fixed_resources(struct device *dev, int index)
+{
+	/* Reserve everything between A segment and 1MB:
+	 *
+	 * 0xa0000 - 0xbffff: legacy VGA
+	 * 0xc0000 - 0xfffff: option ROMs and SeaBIOS (if used)
+	 */
+	mmio_resource(dev, index++, 0xa0000 >> 10, (0xc0000 - 0xa0000) >> 10);
+	reserved_ram_resource(dev, index++, 0xc0000 >> 10, (0x100000 - 0xc0000) >> 10);
+
+	if (fx_devs == 0)
+		get_fx_devs();
+
+	/* Check if CC6 save area is enabled (bit 18 CC6SaveEn)  */
+	if (pci_read_config32(__f2_dev[0], 0x118) & (1 << 18)) {
+		/* Add CC6 DRAM UC resource residing at DRAM Limit of size 16MB as per BKDG */
+		resource_t basek, limitk;
+		if (!get_dram_base_limit(0, &basek, &limitk))
+			return;
+		mmio_resource(dev, index++, limitk, 16*1024);
+	}
+}
+
+static void nb_read_resources(struct device *dev)
 {
 	struct resource *res;
-	unsigned int nodeid, link = 0;
-	int result;
-	res = 0;
-	for (nodeid = 0; !res && (nodeid < fx_devs); nodeid++) {
-		struct device *dev;
-		dev = __f0_dev[nodeid];
-		if (!dev)
-			continue;
-		for (link = 0; !res && (link < 8); link++) {
-			res = probe_resource(dev, IOINDEX(0x1000 + reg, link));
-		}
-	}
-	result = 2;
-	if (res) {
-		result = 0;
-		if ((goal_link == (link - 1)) &&
-			(goal_nodeid == (nodeid - 1)) &&
-			(res->flags <= 1)) {
-			result = 1;
-		}
-	}
-	return result;
-}
-
-static struct resource *amdfam16_find_iopair(struct device *dev,
-		unsigned int nodeid, unsigned int link)
-{
-	struct resource *resource;
-	u32 free_reg, reg;
-	resource = 0;
-	free_reg = 0;
-	for (reg = 0xc0; reg <= 0xd8; reg += 0x8) {
-		int result;
-		result = reg_useable(reg, dev, nodeid, link);
-		if (result == 1) {
-			/* I have been allocated this one */
-			break;
-		}
-		else if (result > 1) {
-			/* I have a free register pair */
-			free_reg = reg;
-		}
-	}
-	if (reg > 0xd8) {
-		reg = free_reg; // if no free, the free_reg still be 0
-	}
-
-	resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
-
-	return resource;
-}
-
-static struct resource *amdfam16_find_mempair(struct device *dev, u32 nodeid, u32 link)
-{
-	struct resource *resource;
-	u32 free_reg, reg;
-	resource = 0;
-	free_reg = 0;
-	for (reg = 0x80; reg <= 0xb8; reg += 0x8) {
-		int result;
-		result = reg_useable(reg, dev, nodeid, link);
-		if (result == 1) {
-			/* I have been allocated this one */
-			break;
-		}
-		else if (result > 1) {
-			/* I have a free register pair */
-			free_reg = reg;
-		}
-	}
-	if (reg > 0xb8) {
-		reg = free_reg;
-	}
-
-	resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
-	return resource;
-}
-
-static void amdfam16_link_read_bases(struct device *dev, u32 nodeid, u32 link)
-{
-	struct resource *resource;
-
-	/* Initialize the io space constraints on the current bus */
-	resource = amdfam16_find_iopair(dev, nodeid, link);
-	if (resource) {
-		u32 align;
-		align = log2(HT_IO_HOST_ALIGN);
-		resource->base	= 0;
-		resource->size	= 0;
-		resource->align = align;
-		resource->gran	= align;
-		resource->limit = 0xffffUL;
-		resource->flags = IORESOURCE_IO | IORESOURCE_BRIDGE;
-	}
-
-	/* Initialize the prefetchable memory constraints on the current bus */
-	resource = amdfam16_find_mempair(dev, nodeid, link);
-	if (resource) {
-		resource->base = 0;
-		resource->size = 0;
-		resource->align = log2(HT_MEM_HOST_ALIGN);
-		resource->gran = log2(HT_MEM_HOST_ALIGN);
-		resource->limit = 0xffffffffffULL;
-		resource->flags = IORESOURCE_MEM | IORESOURCE_PREFETCH;
-		resource->flags |= IORESOURCE_BRIDGE;
-	}
-
-	/* Initialize the memory constraints on the current bus */
-	resource = amdfam16_find_mempair(dev, nodeid, link);
-	if (resource) {
-		resource->base = 0;
-		resource->size = 0;
-		resource->align = log2(HT_MEM_HOST_ALIGN);
-		resource->gran = log2(HT_MEM_HOST_ALIGN);
-		resource->limit = 0xffffffffffULL;
-		resource->flags = IORESOURCE_MEM | IORESOURCE_BRIDGE;
-	}
-
-}
-
-static void read_resources(struct device *dev)
-{
-	u32 nodeid;
-	struct bus *link;
-	struct resource *res;
-
-	nodeid = amdfam16_nodeid(dev);
-	for (link = dev->link_list; link; link = link->next) {
-		if (link->children) {
-			amdfam16_link_read_bases(dev, nodeid, link->link_num);
-		}
-	}
 
 	/*
 	 * This MMCONF resource must be reserved in the PCI domain.
@@ -307,58 +157,9 @@ static void read_resources(struct device *dev)
 	res->base = IO_APIC2_ADDR;
 	res->size = 0x00001000;
 	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
+
+	add_fixed_resources(dev, 0);
 }
-
-static void set_resource(struct device *dev, struct resource *resource, u32 nodeid)
-{
-	resource_t rbase, rend;
-	unsigned int reg, link_num;
-	char buf[50];
-
-	/* Make certain the resource has actually been set */
-	if (!(resource->flags & IORESOURCE_ASSIGNED)) {
-		return;
-	}
-
-	/* If I have already stored this resource don't worry about it */
-	if (resource->flags & IORESOURCE_STORED) {
-		return;
-	}
-
-	/* Only handle PCI memory and IO resources */
-	if (!(resource->flags & (IORESOURCE_MEM | IORESOURCE_IO)))
-		return;
-
-	/* Ensure I am actually looking at a resource of function 1 */
-	if ((resource->index & 0xffff) < 0x1000) {
-		return;
-	}
-	/* Get the base address */
-	rbase = resource->base;
-
-	/* Get the limit (rounded up) */
-	rend  = resource_end(resource);
-
-	/* Get the register and link */
-	reg  = resource->index & 0xfff; // 4k
-	link_num = IOINDEX_LINK(resource->index);
-
-	if (resource->flags & IORESOURCE_IO) {
-		set_io_addr_reg(dev, nodeid, link_num, reg, rbase>>8, rend>>8);
-	}
-	else if (resource->flags & IORESOURCE_MEM) {
-		set_mmio_addr_reg(nodeid, link_num, reg, (resource->index >>24), rbase>>8, rend>>8, node_nums); // [39:8]
-	}
-	resource->flags |= IORESOURCE_STORED;
-	snprintf(buf, sizeof(buf), " <node %x link %x>",
-			nodeid, link_num);
-	report_resource_stored(dev, resource, buf);
-}
-
-/**
- * I tried to reuse the resource allocation code in set_resource()
- * but it is too difficult to deal with the resource allocation magic.
- */
 
 static void create_vga_resource(struct device *dev, unsigned int nodeid)
 {
@@ -388,27 +189,16 @@ static void create_vga_resource(struct device *dev, unsigned int nodeid)
 	set_vga_enable_reg(nodeid, sblink);
 }
 
-static void set_resources(struct device *dev)
+static void nb_set_resources(struct device *dev)
 {
 	unsigned int nodeid;
-	struct bus *bus;
-	struct resource *res;
 
 	/* Find the nodeid */
 	nodeid = amdfam16_nodeid(dev);
 
 	create_vga_resource(dev, nodeid); //TODO: do we need this?
 
-	/* Set each resource we have found */
-	for (res = dev->resource_list; res; res = res->next) {
-		set_resource(dev, res, nodeid);
-	}
-
-	for (bus = dev->link_list; bus; bus = bus->next) {
-		if (bus->children) {
-			assign_resources(bus);
-		}
-	}
+	pci_dev_set_resources(dev);
 }
 
 static void northbridge_init(struct device *dev)
@@ -850,10 +640,11 @@ static unsigned long agesa_write_acpi_tables(const struct device *device,
 }
 
 static struct device_operations northbridge_operations = {
-	.read_resources	  = read_resources,
-	.set_resources	  = set_resources,
+	.read_resources	  = nb_read_resources,
+	.set_resources	  = nb_set_resources,
 	.enable_resources = pci_dev_enable_resources,
 	.init		  = northbridge_init,
+	.ops_pci           = &pci_dev_ops_pci,
 	.acpi_fill_ssdt   = northbridge_fill_ssdt_generator,
 	.write_acpi_tables = agesa_write_acpi_tables,
 };
@@ -922,46 +713,6 @@ struct chip_operations northbridge_amd_pi_00730F01_ops = {
 	.final = fam16_finalize,
 };
 
-static void domain_read_resources(struct device *dev)
-{
-	unsigned int reg;
-
-	/* Find the already assigned resource pairs */
-	get_fx_devs();
-	for (reg = 0x80; reg <= 0xd8; reg+= 0x08) {
-		u32 base, limit;
-		base  = f1_read_config32(reg);
-		limit = f1_read_config32(reg + 0x04);
-		/* Is this register allocated? */
-		if ((base & 3) != 0) {
-			unsigned int nodeid, reg_link;
-			struct device *reg_dev;
-			if (reg < 0xc0) { // mmio
-				nodeid = (limit & 0xf) + (base&0x30);
-			} else { // io
-				nodeid =  (limit & 0xf) + ((base>>4)&0x30);
-			}
-			reg_link = (limit >> 4) & 7;
-			reg_dev = __f0_dev[nodeid];
-			if (reg_dev) {
-				/* Reserve the resource  */
-				struct resource *res;
-				res = new_resource(reg_dev, IOINDEX(0x1000 + reg, reg_link));
-				if (res) {
-					res->flags = 1;
-				}
-			}
-		}
-	}
-	/* FIXME: do we need to check extend conf space?
-	   I don't believe that much preset value */
-	pci_domain_read_resources(dev);
-}
-
-static void domain_enable_resources(struct device *dev)
-{
-}
-
 #if CONFIG_HW_MEM_HOLE_SIZEK != 0
 struct hw_mem_hole_info {
 	unsigned int hole_startk;
@@ -1008,31 +759,18 @@ static struct hw_mem_hole_info get_hw_mem_hole_info(void)
 }
 #endif
 
-static void domain_set_resources(struct device *dev)
+static void domain_read_resources(struct device *dev)
 {
 	unsigned long mmio_basek;
-	u32 pci_tolm;
 	int i, idx;
-	struct bus *link;
 #if CONFIG_HW_MEM_HOLE_SIZEK != 0
 	struct hw_mem_hole_info mem_hole;
 #endif
 
-	pci_tolm = 0xffffffffUL;
-	for (link = dev->link_list; link; link = link->next) {
-		pci_tolm = find_pci_tolm(link);
-	}
+	pci_domain_read_resources(dev);
 
-	// FIXME handle interleaved nodes. If you fix this here, please fix
-	// amdk8, too.
-	mmio_basek = pci_tolm >> 10;
-	/* Round mmio_basek to something the processor can support */
-	mmio_basek &= ~((1 << 6) -1);
-
-	// FIXME improve mtrr.c so we don't use up all of the mtrrs with a 64M
-	// MMIO hole. If you fix this here, please fix amdk8, too.
-	/* Round the mmio hole to 64M */
-	mmio_basek &= ~((64*1024) - 1);
+	/* TOP_MEM MSR is our boundary between DRAM and MMIO under 4G */
+	mmio_basek = bsp_topmem() >> 10;
 
 #if CONFIG_HW_MEM_HOLE_SIZEK != 0
 	/* if the hw mem hole is already set in raminit stage, here we will compare
@@ -1058,16 +796,19 @@ static void domain_set_resources(struct device *dev)
 
 		sizek = limitk - basek;
 
-		/* see if we need a hole from 0xa0000 to 0xbffff */
-		if ((basek < ((8*64)+(8*16))) && (sizek > ((8*64)+(16*16)))) {
-			ram_resource(dev, (idx | i), basek, ((8*64)+(8*16)) - basek);
-			idx += 0x10;
-			basek = (8*64)+(16*16);
-			sizek = limitk - ((8*64)+(16*16));
+		printk(BIOS_DEBUG, "node %d: basek=%08llx, limitk=%08llx, sizek=%08llx,\n",
+				   i, basek, limitk, sizek);
 
+		/* see if we need a hole from 0xa0000 to 0xfffff */
+		if ((basek < (0xa0000 >> 10) && (sizek > (0x100000 >> 10)))) {
+			ram_resource(dev, (idx | i), basek, (0xa0000 >> 10) - basek);
+			idx += 0x10;
+			basek = 0x100000 >> 10;
+			sizek = limitk - basek;
 		}
 
-		//printk(BIOS_DEBUG, "node %d : mmio_basek=%08lx, basek=%08llx, limitk=%08llx\n", i, mmio_basek, basek, limitk);
+		printk(BIOS_DEBUG, "node %d: basek=%08llx, limitk=%08llx, sizek=%08llx,\n",
+				   i, basek, limitk, sizek);
 
 		/* split the region to accommodate pci memory space */
 		if ((basek < 4*1024*1024) && (limitk > mmio_basek)) {
@@ -1098,12 +839,6 @@ static void domain_set_resources(struct device *dev)
 	}
 
 	add_uma_resource_below_tolm(dev, 7);
-
-	for (link = dev->link_list; link; link = link->next) {
-		if (link->children) {
-			assign_resources(link);
-		}
-	}
 }
 
 static const char *domain_acpi_name(const struct device *dev)
@@ -1116,8 +851,7 @@ static const char *domain_acpi_name(const struct device *dev)
 
 static struct device_operations pci_domain_ops = {
 	.read_resources	  = domain_read_resources,
-	.set_resources	  = domain_set_resources,
-	.enable_resources = domain_enable_resources,
+	.set_resources	  = pci_domain_set_resources,
 	.scan_bus	  = pci_domain_scan_bus,
 	.acpi_name        = domain_acpi_name,
 };

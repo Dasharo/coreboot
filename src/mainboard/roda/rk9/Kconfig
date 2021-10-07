@@ -18,15 +18,12 @@ config BOARD_SPECIFIC_OPTIONS
 	select INTEL_INT15
 
 config MAINBOARD_DIR
-	string
 	default "roda/rk9"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "RK9"
 
 config CBFS_SIZE
-	hex
 	default ROM_SIZE
 
 endif # BOARD_RODA_RK9

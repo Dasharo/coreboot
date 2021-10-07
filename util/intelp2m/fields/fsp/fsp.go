@@ -74,7 +74,7 @@ func (FieldMacros) DecodeDW0() {
 				1 << 4 | 0: "GpioDirInInvOut",
 				1 << 4 | 1: "GpioDirInInv",
 			},
-			value : dw0.GetRxInvert() << 4 | dw0.GetRXLevelEdgeConfiguration(),
+			value : dw0.GetRxInvert() << 4 | dw0.GetGPIORxTxDisableStatus(),
 		},
 
 		&field {
@@ -116,15 +116,15 @@ func (FieldMacros) DecodeDW0() {
 				2: "GpioIntLvlEdgDis",
 				3: "GpioIntBothEdge",
 			},
-			value : dw0.GetResetConfig(),
+			value : dw0.GetRXLevelEdgeConfiguration(),
 		},
 
 		&field {
 			configmap : map[uint8]string {
-				0: "GpioResetPwrGood",
-				1: "GpioResetDeep",
-				2: "GpioResetNormal",
-				3: "GpioResetResume",
+				0: "GpioResetPwrGood",	// TODO: Has multiple values (to GPP and GPD)
+				1: "GpioHostDeepReset",
+				2: "GpioPlatformReset",
+				3: "GpioResumeReset",
 			},
 			value : dw0.GetResetConfig(),
 		},

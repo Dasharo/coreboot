@@ -24,11 +24,9 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "google/rambi"
 
 config VARIANT_DIR
-	string
 	default "banjo" if BOARD_GOOGLE_BANJO
 	default "candy" if BOARD_GOOGLE_CANDY
 	default "clapper" if BOARD_GOOGLE_CLAPPER
@@ -47,7 +45,6 @@ config VARIANT_DIR
 	default "winky" if BOARD_GOOGLE_WINKY
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Banjo" if BOARD_GOOGLE_BANJO
 	default "Candy" if BOARD_GOOGLE_CANDY
 	default "Clapper" if BOARD_GOOGLE_CLAPPER
@@ -66,7 +63,6 @@ config MAINBOARD_PART_NUMBER
 	default "Winky" if BOARD_GOOGLE_WINKY
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config EC_GOOGLE_CHROMEEC_BOARDNAME

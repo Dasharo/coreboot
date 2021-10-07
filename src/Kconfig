@@ -112,7 +112,7 @@ config FMD_GENPARSER
 	  Otherwise, say N to use the provided pregenerated scanner/parser.
 
 config UTIL_GENPARSER
-	bool "Generate SCONFIG & BINCFG parser using flex and bison"
+	bool "Generate parsers for bincfg, sconfig and kconfig locally"
 	default n
 	help
 	  Enable this option if you are working on the sconfig device tree
@@ -120,12 +120,29 @@ config UTIL_GENPARSER
 
 	  Otherwise, say N to use the provided pregenerated scanner/parser.
 
+choice
+	prompt "Option backend to use"
+	default USE_MAINBOARD_SPECIFIC_OPTION_BACKEND if HAVE_MAINBOARD_SPECIFIC_OPTION_BACKEND
+	default USE_OPTION_TABLE if NVRAMCUI_SECONDARY_PAYLOAD
+
+config OPTION_BACKEND_NONE
+	bool "None"
+
 config USE_OPTION_TABLE
 	bool "Use CMOS for configuration values"
 	depends on HAVE_OPTION_TABLE
 	help
 	  Enable this option if coreboot shall read options from the "CMOS"
 	  NVRAM instead of using hard-coded values.
+
+config USE_MAINBOARD_SPECIFIC_OPTION_BACKEND
+	bool "Use mainboard-specific option backend"
+	depends on HAVE_MAINBOARD_SPECIFIC_OPTION_BACKEND
+	help
+	  Use a mainboard-specific mechanism to access runtime-configurable
+	  options.
+
+endchoice
 
 config STATIC_OPTION_TABLE
 	bool "Load default configuration values into CMOS on each boot"
@@ -674,6 +691,13 @@ config NUM_THREADS
 	help
 	  How many execution threads to cooperatively multitask with.
 
+config HAVE_MAINBOARD_SPECIFIC_OPTION_BACKEND
+	bool
+	help
+	  Selected by mainboards which implement a mainboard-specific mechanism
+	  to access the values for runtime-configurable options. For example, a
+	  custom BMC interface or an EEPROM with an externally-imposed layout.
+
 config HAVE_OPTION_TABLE
 	bool
 	default n
@@ -681,6 +705,11 @@ config HAVE_OPTION_TABLE
 	  This variable specifies whether a given board has a cmos.layout
 	  file containing NVRAM/CMOS bit definitions.
 	  It defaults to 'n' but can be selected in mainboard/*/Kconfig.
+
+config CMOS_LAYOUT_FILE
+	string
+	default "src/mainboard/\$(MAINBOARDDIR)/cmos.layout"
+	depends on HAVE_OPTION_TABLE
 
 config PCI_IO_CFG_EXT
 	bool

@@ -21,20 +21,10 @@ config BOARD_SPECIFIC_OPTIONS
 	select PCIEXP_L1_SUB_STATE
 
 config MAINBOARD_DIR
-	string
 	default "dell/optiplex_9010"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "OptiPlex 9010"
-
-config VGA_BIOS_FILE
-	string
-	default "pci8086,0162.rom"
-
-config VGA_BIOS_ID
-	string
-	default "8086,0162"
 
 config DRAM_RESET_GATE_GPIO
 	int
@@ -45,7 +35,6 @@ config USBDEBUG_HCD_INDEX
 	default 2
 
 config CBFS_SIZE
-	hex
 	default 0x600000
 
 config INCLUDE_SMSC_SCH5545_EC_FW

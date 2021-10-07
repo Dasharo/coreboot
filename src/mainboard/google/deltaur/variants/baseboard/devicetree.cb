@@ -1,9 +1,5 @@
 chip soc/intel/tigerlake
 
-	device cpu_cluster 0 on
-		device lapic 0 on end
-	end
-
 	# GPE configuration
 	# Note that GPE events called out in ASL code rely on this
 	# route. i.e. If this route changes then the affected GPE
@@ -66,7 +62,6 @@ chip soc/intel/tigerlake
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| I2C0              | Touchscreen               |
 	#| I2C1              | Touchpad                  |
 	#| I2C2              | ISH ?                     |
@@ -74,7 +69,6 @@ chip soc/intel/tigerlake
 	#| I2C5              | ISH ?                     |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
 		},

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <cpu/x86/cpu_info.S.inc>
 #include <cpu/x86/post_code.h>
 #include <arch/ram_segs.h>
 
@@ -17,14 +18,9 @@ _stack:
 .space (CONFIG_MAX_CPUS+1)*CONFIG_STACK_SIZE
 _estack:
 .set _stack_size, _estack - _stack
-#if CONFIG(COOP_MULTITASKING)
-.global thread_stacks
-thread_stacks:
-.space CONFIG_STACK_SIZE*CONFIG_NUM_THREADS
-#endif
 
 	.section ".text._start", "ax", @progbits
-#ifdef __x86_64__
+#if ENV_X86_64
 	.code64
 #else
 	.code32
@@ -32,17 +28,21 @@ thread_stacks:
 	.globl _start
 _start:
 	cli
+#if ENV_X86_64
+	movabs	$gdtaddr, %rax
+	lgdt	(%rax)
+#else
 	lgdt	%cs:gdtaddr
-#ifndef __x86_64__
 	ljmp	$RAM_CODE_SEG, $1f
 #endif
 1:	movl	$RAM_DATA_SEG, %eax
 	movl	%eax, %ds
 	movl	%eax, %es
 	movl	%eax, %ss
+	xor	%eax, %eax /* zero out the gs and fs segment index */
 	movl	%eax, %fs
-	movl	%eax, %gs
-#ifdef __x86_64__
+	movl	%eax, %gs /* Will be used for cpu_info */
+#if ENV_X86_64
 	mov	$RAM_CODE_SEG64, %ecx
 	call	SetCodeSelector
 #endif
@@ -51,12 +51,15 @@ _start:
 
 	cld
 
-#ifdef	__x86_64__
-	mov	%rdi, _cbmem_top_ptr
+#if ENV_X86_64
+	mov	%rdi, %rax
+	movabs	%rax, _cbmem_top_ptr
+	movabs	$_stack, %rdi
 #else
 	/* The return argument is at 0(%esp), the calling argument at 4(%esp) */
 	movl	4(%esp), %eax
 	movl	%eax, _cbmem_top_ptr
+	leal	_stack, %edi
 #endif
 
 	/** poison the stack. Code should not count on the
@@ -64,7 +67,6 @@ _start:
 	 * recently uncovered a bug in the broadcast SIPI
 	 * code.
 	 */
-	leal	_stack, %edi
 	movl	$_estack, %ecx
 	subl	%edi, %ecx
 	shrl	$2, %ecx   /* it is 32 bit aligned, right? */
@@ -76,20 +78,14 @@ _start:
 	movl	$_estack, %esp
 	andl	$(~(CONFIG_STACK_SIZE-1)), %esp
 
-#if CONFIG(COOP_MULTITASKING)
-	/* Push the thread pointer. */
-	push	$0
-#endif
-	/* Push the CPU index and struct CPU */
-	push	$0
-	push	$0
+	push_cpu_info
 
 	/*
 	 *	Now we are finished. Memory is up, data is copied and
 	 *	bss is cleared.   Now we call the main routine and
 	 *	let it do the rest.
 	 */
-	post_code(POST_PRE_HARDWAREMAIN)	/* post fe */
+	post_code(POST_PRE_HARDWAREMAIN)	/* post 6e */
 
 	andl	$0xFFFFFFF0, %esp
 
@@ -112,7 +108,7 @@ _start:
 
 	.globl gdb_stub_breakpoint
 gdb_stub_breakpoint:
-#ifdef __x86_64__
+#if ENV_X86_64
 	pop	%rax	/* Return address */
 	pushfl
 	push	%cs
@@ -134,7 +130,7 @@ gdb_stub_breakpoint:
 
 gdtaddr:
 	.word	gdt_end - gdt - 1
-#ifdef __x86_64__
+#if ENV_X86_64
 	.quad	gdt
 #else
 	.long	gdt		/* we know the offset */
@@ -171,7 +167,7 @@ gdt:
 
 	/* selgdt 0x18, flat data segment */
 	.word	0xffff, 0x0000
-#ifdef __x86_64__
+#if ENV_X86_64
 	.byte	0x00, 0x92, 0xcf, 0x00
 #else
 	.byte	0x00, 0x93, 0xcf, 0x00
@@ -205,7 +201,7 @@ gdt:
 					* limit
 					*/
 
-#ifdef __x86_64__
+#if ENV_X86_64
 	/* selgdt 0x48, flat x64 code segment */
 	.word	0xffff, 0x0000
 	.byte	0x00, 0x9b, 0xaf, 0x00
@@ -213,7 +209,7 @@ gdt:
 gdt_end:
 
 	.section ".text._start", "ax", @progbits
-#ifdef __x86_64__
+#if ENV_X86_64
 SetCodeSelector:
 	# save rsp because iret will align it to a 16 byte boundary
 	mov	%rsp, %rdx
@@ -226,7 +222,7 @@ SetCodeSelector:
 	push	%rsp
 	pushfq
 	push	%rcx		# cx is code segment selector from caller
-	mov	$setCodeSelectorLongJump, %rax
+	movabs	$setCodeSelectorLongJump, %rax
 	push	%rax
 
 	# the iret will continue at next instruction, with the new cs value

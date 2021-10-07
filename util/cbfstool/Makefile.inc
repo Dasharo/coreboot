@@ -89,13 +89,19 @@ amdcompobj += elfheaders.o
 amdcompobj += common.o
 amdcompobj += xdr.o
 
+elogobj :=
+elogobj := elogtool.o
+elogobj += eventlog.o
+elogobj += valstr.o
+elogobj += elog.o
+elogobj += common.o
+
 TOOLCFLAGS ?= -Werror -Wall -Wextra -Wshadow
 TOOLCFLAGS += -Wcast-qual -Wmissing-prototypes -Wredundant-decls -Wshadow
 TOOLCFLAGS += -Wstrict-prototypes -Wwrite-strings
 TOOLCFLAGS += -O2
 TOOLCPPFLAGS ?= -D_DEFAULT_SOURCE # memccpy() from string.h
 TOOLCPPFLAGS += -D_BSD_SOURCE -D_SVID_SOURCE # _DEFAULT_SOURCE for older glibc
-TOOLCPPFLAGS += -D_XOPEN_SOURCE=700 # strdup() from string.h
 TOOLCPPFLAGS += -D_GNU_SOURCE # memmem() from string.h
 TOOLCPPFLAGS += -I$(top)/util/cbfstool/flashmap
 TOOLCPPFLAGS += -I$(top)/util/cbfstool
@@ -105,6 +111,7 @@ TOOLCPPFLAGS += -include $(top)/src/commonlib/bsd/include/commonlib/bsd/compiler
 TOOLCPPFLAGS += -I$(VBOOT_SOURCE)/firmware/include
 TOOLCPPFLAGS += -I$(VBOOT_SOURCE)/firmware/2lib/include
 TOOLCPPFLAGS += -I$(VBOOT_SOURCE)/host/include
+TOOLCPPFLAGS += -I$(VBOOT_SOURCE)/host/lib/include
 # UEFI header file support. It's not pretty, but that's what we currently
 # have right now.
 TOOLCPPFLAGS += -I$(top)/src
@@ -112,6 +119,10 @@ TOOLCPPFLAGS += -I$(top)/src/vendorcode/intel/edk2/uefi_2.4/MdePkg/Include
 
 TOOLLDFLAGS ?=
 HOSTCFLAGS += -fms-extensions
+
+ifneq ($(shell uname -o 2>/dev/null), FreeBSD)
+TOOLCPPFLAGS += -D_XOPEN_SOURCE=700 # strdup() from string.h
+endif
 
 ifeq ($(shell uname -s | cut -c-7 2>/dev/null), MINGW32)
 TOOLCFLAGS += -mno-ms-bitfields
@@ -132,6 +143,7 @@ $(VBOOT_HOSTLIB):
 		CC="$(HOSTCC)" \
 		PKG_CONFIG="true" \
 		V=$(V) \
+		DEBUG= \
 		hostlib
 
 $(objutil)/cbfstool/%.o: $(objutil)/cbfstool/%.c
@@ -193,6 +205,10 @@ $(objutil)/cbfstool/cbfs-compression-tool: $(addprefix $(objutil)/cbfstool/,$(cb
 $(objutil)/cbfstool/amdcompress: $(addprefix $(objutil)/cbfstool/,$(amdcompobj))
 	printf "    HOSTCC     $(subst $(objutil)/,,$(@)) (link)\n"
 	$(HOSTCC) $(TOOLLDFLAGS) -o $@ $(addprefix $(objutil)/cbfstool/,$(amdcompobj)) -lz
+
+$(objutil)/cbfstool/elogtool: $(addprefix $(objutil)/cbfstool/,$(elogobj)) $(VBOOT_HOSTLIB)
+	printf "    HOSTCC     $(subst $(objutil)/,,$(@)) (link)\n"
+	$(HOSTCC) $(TOOLLDFLAGS) -o $@ $(addprefix $(objutil)/cbfstool/,$(elogobj)) $(VBOOT_HOSTLIB)
 
 # Yacc source is superset of header
 $(objutil)/cbfstool/fmd.o: TOOLCFLAGS += -Wno-redundant-decls

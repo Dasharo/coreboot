@@ -3,6 +3,8 @@
 ## Introduction
 General thoughts about unit testing coreboot can be found in
 [Unit testing coreboot](../technotes/2020-03-unit-testing-coreboot.md).
+Additionally, [code coverage](../technotes/2021-05-code-coverage.md) support
+is available for unit tests.
 
 This document aims to guide developers through the process of adding and writing
 unit tests for coreboot modules.
@@ -272,8 +274,8 @@ without changing the source code.
 
 coreboot unit test infrastructure supports overriding of functions at link time.
 This is as simple as adding a `name_of_function` to be mocked into
-<test_name>-mocks variable in Makefile.inc. The result is that every time the
-function is called, `wrap_name_of_function` will be called instead.
+<test_name>-mocks variable in Makefile.inc. The result is that the test's
+implementation of that function is called instead of coreboot's.
 
 ```eval_rst
 .. admonition:: i2c-test example
@@ -282,13 +284,13 @@ function is called, `wrap_name_of_function` will be called instead.
 
      i2c-test-mocks += platform_i2c_transfer
 
-   Now, dev can write own implementation of `platform_i2c_transfer` and define it
-   as `wrap_platform_i2c_transfer`. This implementation instead of accessing real
-   i2c bus, will write/read from fake structs.
+   Now, dev can write own implementation of `platform_i2c_transfer`. This
+   implementation instead of accessing real i2c bus, will write/read from
+   fake structs.
 
    .. code-block:: c
 
-     int __wrap_platform_i2c_transfer(unsigned int bus, struct i2c_msg *segments,
+     int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segments,
              int count)
      {
      }
@@ -322,13 +324,13 @@ in which mock should have particular value, or be inside a described range.
                      I2C_M_RECV_LEN, I2C_M_NOSTART};
 
              /* Flags should always be only within supported range */
-             expect_in_set_count(__wrap_platform_i2c_transfer, segments->flags,
+             expect_in_set_count(platform_i2c_transfer, segments->flags,
                      expected_flags, -1);
 
-             expect_not_value_count(__wrap_platform_i2c_transfer, segments->buf,
+             expect_not_value_count(platform_i2c_transfer, segments->buf,
                      NULL, -1);
 
-             expect_in_range_count(__wrap_platform_i2c_transfer, count, 1, INT_MAX,
+             expect_in_range_count(platform_i2c_transfer, count, 1, INT_MAX,
                      -1);
      }
 
@@ -379,6 +381,6 @@ invoking Cmocka test are described
                      cmocka_unit_test(i2c_read_field_test),
              };
 
-             return cmocka_run_group_tests(tests, NULL, NULL);
+             return cb_run_group_tests(tests, NULL, NULL);
      }
 ```

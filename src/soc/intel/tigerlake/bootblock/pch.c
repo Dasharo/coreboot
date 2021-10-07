@@ -6,10 +6,10 @@
  * Chapter number: 2, 3, 4, 27, 28
  */
 
+#include <commonlib/console/post_codes.h>
 #include <console/console.h>
-#include <console/post_codes.h>
-#include <device/mmio.h>
 #include <device/device.h>
+#include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <intelblocks/dmi.h>
 #include <intelblocks/fast_spi.h>
@@ -20,6 +20,7 @@
 #include <intelblocks/pmclib.h>
 #include <intelblocks/rtc.h>
 #include <soc/bootblock.h>
+#include <soc/soc_chip.h>
 #include <soc/espi.h>
 #include <soc/iomap.h>
 #include <soc/p2sb.h>
@@ -28,7 +29,11 @@
 #include <soc/pcr_ids.h>
 #include <soc/pm.h>
 
+#if CONFIG(SOC_INTEL_TIGERLAKE_PCH_H)
+#define PCR_PSF3_TO_SHDW_PMC_REG_BASE	0x1000
+#else
 #define PCR_PSF3_TO_SHDW_PMC_REG_BASE	0x1100
+#endif
 #define PCR_PSFX_TO_SHDW_BAR0	0
 #define PCR_PSFX_TO_SHDW_BAR1	0x4
 #define PCR_PSFX_TO_SHDW_BAR2	0x8
@@ -104,9 +109,21 @@ void pch_early_iorange_init(void)
 	uint16_t io_enables = LPC_IOE_SUPERIO_2E_2F | LPC_IOE_KBC_60_64 |
 		LPC_IOE_EC_62_66 | LPC_IOE_LGE_200;
 
-	/* IO Decode Range */
-	if (CONFIG(DRIVERS_UART_8250IO))
-		lpc_io_setup_comm_a_b();
+	const uint16_t lpc_ioe_enable_mask = LPC_IOE_COMA_EN | LPC_IOE_COMB_EN |
+					     LPC_IOE_LPT_EN | LPC_IOE_FDD_EN |
+					     LPC_IOE_LGE_200 | LPC_IOE_HGE_208 |
+					     LPC_IOE_KBC_60_64 | LPC_IOE_EC_62_66 |
+					     LPC_IOE_SUPERIO_2E_2F | LPC_IOE_EC_4E_4F;
+
+	const config_t *config = config_of_soc();
+
+	if (config->lpc_ioe) {
+		io_enables = config->lpc_ioe & lpc_ioe_enable_mask;
+	} else {
+		/* IO Decode Range */
+		if (CONFIG(DRIVERS_UART_8250IO))
+			lpc_io_setup_comm_a_b();
+	}
 
 	/* IO Decode Enable */
 	lpc_enable_fixed_io_ranges(io_enables);

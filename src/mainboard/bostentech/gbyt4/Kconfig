@@ -10,11 +10,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_ITE_IT8728F
 
 config MAINBOARD_DIR
-	string
 	default "bostentech/gbyt4"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "GBYT4-4L"
 
 config MAINBOARD_SMBIOS_MANUFACTURER

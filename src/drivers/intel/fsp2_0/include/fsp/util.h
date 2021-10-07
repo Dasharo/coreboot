@@ -15,6 +15,13 @@
 
 #define FSP_VER_LEN	30
 
+/* Macro for checking and loading array type configs into array type UPDs */
+#define FSP_ARRAY_LOAD(dst, src) \
+do { \
+	_Static_assert(ARRAY_SIZE(dst) >= ARRAY_SIZE(src), "copy buffer overflow!"); \
+	memcpy(dst, src, sizeof(src)); \
+} while (0)
+
 struct hob_header {
 	uint16_t type;
 	uint16_t length;
@@ -102,7 +109,7 @@ void fsp_get_version(char *buf);
 void fsp_verify_upd_header_signature(uint64_t upd_signature, uint64_t expected_signature);
 void lb_string_platform_blob_version(struct lb_header *header);
 void report_fspt_output(void);
-void soc_validate_fsp_version(const struct fsp_header *hdr);
+void soc_validate_fspm_header(const struct fsp_header *hdr);
 
 /* Fill in header and validate a loaded FSP component. */
 enum cb_err fsp_validate_component(struct fsp_header *hdr, void *fsp_blob, size_t size);

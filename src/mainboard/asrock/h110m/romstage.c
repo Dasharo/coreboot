@@ -22,6 +22,7 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	assert(sizeof(mem_cfg->RcompTarget)   == sizeof(rcomp_targets));
 
 	mem_cfg->DqPinsInterleaved = 1;
+	mem_cfg->CaVrefConfig = 2;
 	get_spd_smbus(&blk);
 	mem_cfg->MemorySpdDataLen = blk.len;
 	mem_cfg->MemorySpdPtr00 = (uintptr_t)blk.spd_array[0];
@@ -33,7 +34,4 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 
 	/* use virtual channel 1 for the dmi interface of the PCH */
 	mupd->FspmTestConfig.DmiVc1 = 1;
-
-	/* desktop type */
-	mem_cfg->UserBd = BOARD_TYPE_DESKTOP;
 }

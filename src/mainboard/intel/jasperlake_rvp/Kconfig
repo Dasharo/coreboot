@@ -22,15 +22,12 @@ config BOARD_SPECIFIC_OPTIONS
 	select SOC_INTEL_CSE_LITE_SKU
 
 config MAINBOARD_DIR
-	string
 	default "intel/jasperlake_rvp"
 
 config VARIANT_DIR
-	string
 	default "jslrvp" if BOARD_INTEL_JASPERLAKE_RVP || BOARD_INTEL_JASPERLAKE_RVP_EXT_EC
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "jslrvp"
 
 config MAINBOARD_FAMILY
@@ -42,11 +39,9 @@ config MAX_CPUS
 	default 8
 
 config DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config CHROMEOS
