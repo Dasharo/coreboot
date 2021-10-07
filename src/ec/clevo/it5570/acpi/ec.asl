@@ -243,6 +243,19 @@ Device (EC0)
 	Method (_Q16, 0, NotSerialized) // AC Detect
 	{
 		Debug = "EC: AC Detect"
+
+		If (MSFG)
+		{
+			FDAT = Zero
+			FBUF = 0xC1
+			FCMD = 0xD2
+			If ((FBUF & 0x80))
+			{
+				FBUF = Zero
+				Return (Zero)
+			}
+		}
+
 		\_SB.AC.ACFG = ADP
 		Notify (AC, 0x80) // Status Change
 		Sleep (0x01F4)
