@@ -266,6 +266,8 @@ Device (EC0)
 			Notify (\_SB.BAT0, 0x80) // Status Change
 			Sleep (0x32)
 		}
+
+		Return (Zero)
 	}
 
 	Method (_Q17, 0, NotSerialized)  // BAT0 Update
