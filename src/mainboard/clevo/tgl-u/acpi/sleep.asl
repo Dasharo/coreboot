@@ -44,3 +44,21 @@ Method (MS0X, 1, Serialized)
 		PGPM (0)
 	}
 }
+
+/*
+ * Display On/Off Notifications
+ * Called from \_SB.PEPD._DSM
+ */
+Method (MDSX, 1, Serialized)
+{
+	If (Arg0 == 1) {
+		/* Display On */
+		\_SB.PCI0.LPCB.EC.MSFG = Zero
+	} Else {
+		/* Display Off */
+		If ((\_SB.PCI0.LPCB.EC0.S5FG != One))
+		{
+			\_SB.PCI0.LPCB.EC0.MSFG = One
+		}
+	}
+}
