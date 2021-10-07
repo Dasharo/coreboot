@@ -9,10 +9,10 @@
 #include <device/pci_ids.h>
 #include <fsp/util.h>
 #include <gpio.h>
+#include <option.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/itss.h>
 #include <intelblocks/lpc_lib.h>
-#include <intelblocks/mp_init.h>
 #include <intelblocks/pcie_rp.h>
 #include <intelblocks/power_limit.h>
 #include <intelblocks/xdci.h>
@@ -29,6 +29,7 @@
 #include <soc/systemagent.h>
 #include <soc/usb.h>
 #include <string.h>
+#include <types.h>
 
 #include "chip.h"
 
@@ -226,7 +227,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	FSP_S_CONFIG *params = &supd->FspsConfig;
 	FSP_S_TEST_CONFIG *tconfig = &supd->FspsTestConfig;
 	struct soc_intel_skylake_config *config;
-	struct device *dev;
 	uintptr_t vbt_data = (uintptr_t)vbt_get();
 	int i;
 
@@ -283,8 +283,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		}
 	}
 
-	dev = pcidev_path_on_root(PCH_DEVFN_SATA);
-	params->SataEnable = dev && dev->enabled;
+	params->SataEnable = is_devfn_enabled(PCH_DEVFN_SATA);
 	if (params->SataEnable) {
 		memcpy(params->SataPortsEnable, config->SataPortsEnable,
 				sizeof(params->SataPortsEnable));
@@ -343,24 +342,21 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
 	/* Legacy 8254 timer support */
-	params->Early8254ClockGatingEnable = !CONFIG(USE_LEGACY_8254_TIMER);
+	bool use_8254 = get_uint_option("legacy_8254_timer", CONFIG(USE_LEGACY_8254_TIMER));
+	params->Early8254ClockGatingEnable = !use_8254;
 
 	params->EnableTcoTimer = CONFIG(USE_PM_ACPI_TIMER);
 
 	memcpy(params->SerialIoDevMode, config->SerialIoDevMode,
 	       sizeof(params->SerialIoDevMode));
 
-	dev = pcidev_path_on_root(PCH_DEVFN_CIO);
-	params->PchCio2Enable = dev && dev->enabled;
+	params->PchCio2Enable = is_devfn_enabled(PCH_DEVFN_CIO);
 
-	dev = pcidev_path_on_root(SA_DEVFN_IMGU);
-	params->SaImguEnable = dev && dev->enabled;
+	params->SaImguEnable = is_devfn_enabled(SA_DEVFN_IMGU);
 
-	dev = pcidev_path_on_root(SA_DEVFN_CHAP);
-	tconfig->ChapDeviceEnable = dev && dev->enabled;
+	tconfig->ChapDeviceEnable = is_devfn_enabled(SA_DEVFN_CHAP);
 
-	dev = pcidev_path_on_root(PCH_DEVFN_CSE_3);
-	params->Heci3Enabled = dev && dev->enabled;
+	params->Heci3Enabled = is_devfn_enabled(PCH_DEVFN_CSE_3);
 
 	params->CpuConfig.Bits.VmxEnable = CONFIG(ENABLE_VMX);
 
@@ -368,8 +364,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchPmWoWlanDeepSxEnable = config->PchPmWoWlanDeepSxEnable;
 	params->PchPmLanWakeFromDeepSx = config->WakeConfigPcieWakeFromDeepSx;
 
-	dev = pcidev_path_on_root(PCH_DEVFN_GBE);
-	params->PchLanEnable = dev && dev->enabled;
+	params->PchLanEnable = is_devfn_enabled(PCH_DEVFN_GBE);
 	if (params->PchLanEnable) {
 		params->PchLanLtrEnable = config->EnableLanLtr;
 		params->PchLanK1OffEnable = config->EnableLanK1Off;
@@ -378,12 +373,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 	params->SsicPortEnable = config->SsicPortEnable;
 
-	dev = pcidev_path_on_root(PCH_DEVFN_EMMC);
-	params->ScsEmmcEnabled = dev && dev->enabled;
+	params->ScsEmmcEnabled = is_devfn_enabled(PCH_DEVFN_EMMC);
 	params->ScsEmmcHs400Enabled = config->ScsEmmcHs400Enabled;
 
-	dev = pcidev_path_on_root(PCH_DEVFN_SDCARD);
-	params->ScsSdCardEnabled = dev && dev->enabled;
+	params->ScsSdCardEnabled = is_devfn_enabled(PCH_DEVFN_SDCARD);
 
 	if (!!params->ScsEmmcHs400Enabled && !!config->EmmcHs400DllNeed) {
 		params->PchScsEmmcHs400DllDataValid =
@@ -395,20 +388,16 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	/* If ISH is enabled, enable ISH elements */
-	dev = pcidev_path_on_root(PCH_DEVFN_ISH);
-	params->PchIshEnable = dev && dev->enabled;
+	params->PchIshEnable = is_devfn_enabled(PCH_DEVFN_ISH);
 
-	dev = pcidev_path_on_root(PCH_DEVFN_HDA);
-	params->PchHdaEnable = dev && dev->enabled;
+	params->PchHdaEnable = is_devfn_enabled(PCH_DEVFN_HDA);
 
 	params->PchHdaVcType = config->PchHdaVcType;
 	params->PchHdaIoBufferOwnership = config->IoBufferOwnership;
 	params->PchHdaDspEnable = config->DspEnable;
 
-	dev = pcidev_path_on_root(SA_DEVFN_TS);
-	params->Device4Enable = dev && dev->enabled;
-	dev = pcidev_path_on_root(PCH_DEVFN_THERMAL);
-	params->PchThermalDeviceEnable = dev && dev->enabled;
+	params->Device4Enable = is_devfn_enabled(SA_DEVFN_TS);
+	params->PchThermalDeviceEnable = is_devfn_enabled(PCH_DEVFN_THERMAL);
 
 	tconfig->PchLockDownGlobalSmi = config->LockDownConfigGlobalSmi;
 	tconfig->PchLockDownRtcLock = config->LockDownConfigRtcLock;
@@ -420,19 +409,19 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	 * do the changes and then lock it back in coreboot during finalize.
 	 */
 	tconfig->PchSbAccessUnlock = (config->HeciEnabled == 0) ? 1 : 0;
-	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT) {
-		tconfig->PchLockDownBiosInterface = 0;
-		params->PchLockDownBiosLock = 0;
-		params->PchLockDownSpiEiss = 0;
-		/*
-		 * Skip Spi Flash Lockdown from inside FSP.
-		 * Making this config "0" means FSP won't set the FLOCKDN bit
-		 * of SPIBAR + 0x04 (i.e., Bit 15 of BIOS_HSFSTS_CTL).
-		 * So, it becomes coreboot's responsibility to set this bit
-		 * before end of POST for security concerns.
-		 */
-		params->SpiFlashCfgLockDown = 0;
-	}
+
+	const bool lockdown_by_fsp = get_lockdown_config() == CHIPSET_LOCKDOWN_FSP;
+	tconfig->PchLockDownBiosInterface = lockdown_by_fsp;
+	params->PchLockDownBiosLock = lockdown_by_fsp;
+	params->PchLockDownSpiEiss = lockdown_by_fsp;
+	/*
+	 * Making this config "0" means FSP won't set the FLOCKDN bit
+	 * of SPIBAR + 0x04 (i.e., Bit 15 of BIOS_HSFSTS_CTL).
+	 * So, it becomes coreboot's responsibility to set this bit
+	 * before end of POST for security concerns.
+	 */
+	params->SpiFlashCfgLockDown = lockdown_by_fsp;
+
 	/* FSP should let coreboot set subsystem IDs, which are read/write-once */
 	params->DefaultSvid = 0;
 	params->PchSubSystemVendorId = 0;
@@ -467,22 +456,12 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		fill_vr_domain_config(params, i, &config->domain_vr_config[i]);
 
 	/* Show SPI controller if enabled in devicetree.cb */
-	dev = pcidev_path_on_root(PCH_DEVFN_SPI);
-	params->ShowSpiController = dev && dev->enabled;
+	params->ShowSpiController = is_devfn_enabled(PCH_DEVFN_SPI);
 
-	/* Enable xDCI controller if enabled in devicetree and allowed */
-	dev = pcidev_path_on_root(PCH_DEVFN_USBOTG);
-	if (dev) {
-		if (!xdci_can_enable())
-			dev->enabled = 0;
-		params->XdciEnable = dev->enabled;
-	} else {
-		params->XdciEnable = 0;
-	}
+	params->XdciEnable = xdci_can_enable(PCH_DEVFN_USBOTG);
 
 	/* Enable or disable Gaussian Mixture Model in devicetree */
-	dev = pcidev_path_on_root(SA_DEVFN_GMM);
-	params->GmmEnable = dev && dev->enabled;
+	params->GmmEnable = is_devfn_enabled(SA_DEVFN_GMM);
 
 	/*
 	 * Send VR specific mailbox commands:
@@ -531,11 +510,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		tconfig->VtdDisable = 0;
 	}
 
-	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	if (CONFIG(RUN_FSP_GOP) && dev && dev->enabled)
-		params->PeiGraphicsPeimInit = 1;
-	else
-		params->PeiGraphicsPeimInit = 0;
+	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_devfn_enabled(SA_DEVFN_IGD);
 
 	params->PavpEnable = CONFIG(PAVP);
 

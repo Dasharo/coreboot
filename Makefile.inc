@@ -302,20 +302,10 @@ endef
 # arg1: source file
 # arg2: binary file name
 cbfs-files-processor-nvramtool= \
-	$(eval $(2): $(1) $(src)/mainboard/$(MAINBOARDDIR)/cmos.layout | $(objutil)/nvramtool/nvramtool ; \
+	$(eval $(2): $(1) $(top)/$(call strip_quotes,$(CONFIG_CMOS_LAYOUT_FILE)) | $(objutil)/nvramtool/nvramtool ; \
 		printf "    CREATE     $(2) (from $(1))\n"; \
-		$(objutil)/nvramtool/nvramtool -y $(src)/mainboard/$(MAINBOARDDIR)/cmos.layout -D $(2).tmp -p $(1) && \
+		$(objutil)/nvramtool/nvramtool -y $(top)/$(call strip_quotes,$(CONFIG_CMOS_LAYOUT_FILE)) -D $(2).tmp -p $(1) && \
 		mv $(2).tmp $(2))
-
-#######################################################################
-# Link VSA binary to ELF-ish stage
-# arg1: source file
-# arg2: binary file name
-cbfs-files-processor-vsa= \
-	$(eval $(2): $(1) ; \
-		printf "    CREATE     $(2) (from $(1))\n"; \
-		$(OBJCOPY_ramstage) --set-start 0x20 --adjust-vma 0x60000 -I binary -O elf32-i386 -B i386 $(1) $(2).tmp && \
-		$(LD_ramstage) -m elf_i386 -e 0x60020 --section-start .data=0x60000 $(2).tmp -o $(2))
 
 #######################################################################
 # Reduce a .config file to its minimal representation
@@ -489,7 +479,7 @@ ADAFLAGS_common += -gnatwa.eeD.HHTU.U.W.Y
 # Disable style checks for now
 ADAFLAGS_common += -gnatyN
 
-LDFLAGS_common := --gc-sections -nostdlib -nostartfiles -static
+LDFLAGS_common := --gc-sections -nostdlib --nmagic -static
 
 # Workaround for RISC-V linker bug, merge back into above line when fixed.
 # https://sourceware.org/bugzilla/show_bug.cgi?id=27180
@@ -1100,7 +1090,7 @@ TS_OPTIONS := -j $(CONFIG_INTEL_TOP_SWAP_BOOTBLOCK_SIZE)
 endif
 
 ifneq ($(CONFIG_UPDATE_IMAGE),y)
-$(obj)/coreboot.pre: $(objcbfs)/bootblock.bin $$(prebuilt-files) $(CBFSTOOL) $(IFITTOOL) $$(cpu_ucode_cbfs_file) $(obj)/fmap.fmap $(obj)/fmap.desc
+$(obj)/coreboot.pre: $(objcbfs)/bootblock.bin $$(prebuilt-files) $(CBFSTOOL) $(obj)/fmap.fmap $(obj)/fmap.desc
 	$(CBFSTOOL) $@.tmp create -M $(obj)/fmap.fmap -r $(shell cat $(obj)/fmap.desc)
 ifeq ($(CONFIG_ARCH_X86),y)
 	$(CBFSTOOL) $@.tmp add \
@@ -1156,7 +1146,7 @@ add_intermediate = \
 	$(1): $(obj)/coreboot.pre $(2) | $(INTERMEDIATE) \
 	$(eval INTERMEDIATE+=$(1)) $(eval PHONY+=$(1))
 
-$(obj)/coreboot.rom: $(obj)/coreboot.pre $(RAMSTAGE) $(CBFSTOOL) $$(INTERMEDIATE)
+$(obj)/coreboot.rom: $(obj)/coreboot.pre $(CBFSTOOL) $(IFITTOOL) $$(INTERMEDIATE)
 	@printf "    CBFS       $(subst $(obj)/,,$(@))\n"
 # The full ROM may be larger than the CBFS part, so create an empty
 # file (filled with \377 = 0xff) and copy the CBFS image over it.
@@ -1257,7 +1247,8 @@ cbfs-get-segments-cmd = $(CBFSTOOL) $(obj)/coreboot.pre print -v | sed -n \
 	'\%$(1)%,\%^[^ ]\{4\}%s%    .*load: \(0x[0-9a-fA-F]*\),.*length: [0-9]*/\([0-9]*\).*%\1 \2%p'
 
 ramstage-symbol-addr-cmd = $(OBJDUMP_ramstage) -t $(objcbfs)/ramstage.elf | \
-	sed -n '/ $(1)$$/s/^\([0-9a-fA-F]*\) .*/0x\1/p'
+	sed -n '/ $(1)$$/s/^\([0-9a-fA-F]*\) .*/0x\1/p' | \
+	uniq
 
 $(call add_intermediate, check-ramstage-overlaps)
 	programs=$$($(foreach file,$(check-ramstage-overlap-files), \

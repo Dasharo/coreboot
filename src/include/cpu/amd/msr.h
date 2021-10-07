@@ -18,8 +18,8 @@
 #define  SMM_LOCK			(1 << 0)
 #define NB_CFG_MSR			0xC001001f
 #define FidVidStatus			0xC0010042
-#define MC1_CTL_MASK			0xC0010045
-#define MC4_CTL_MASK			0xC0010048
+#define MC0_CTL_MASK			0xC0010044
+#define MC_CTL_MASK(bank)		(MC0_CTL_MASK + (bank))
 #define MSR_INTPEND			0xC0010055
 #define MMIO_CONF_BASE			0xC0010058
 #define  MMIO_RANGE_EN			(1 << 0)
@@ -80,7 +80,6 @@
 #define S3_RESUME_EIP_MSR		0xC00110E0
 #define PSP_ADDR_MSR			0xc00110a2
 
-#define MSR_PATCH_LEVEL			0x0000008B
 #define CORE_PERF_BOOST_CTRL		0x15c
 
 #endif /* CPU_AMD_MSR_H */

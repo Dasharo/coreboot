@@ -22,6 +22,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select SOC_INTEL_CSE_LITE_SKU
 	select MAINBOARD_HAS_TPM2
 	select MAINBOARD_HAS_SPI_TPM_CR50
+	select SOC_INTEL_ENABLE_USB4_PCIE_RESOURCES
 	select SPI_TPM
 
 config CHROMEOS
@@ -33,11 +34,9 @@ config CHROMEOS
 	select VBOOT_EARLY_EC_SYNC
 
 config MAINBOARD_DIR
-	string
 	default "intel/tglrvp"
 
 config VARIANT_DIR
-	string
 	default "tglrvp_up3" if BOARD_INTEL_TGLRVP_UP3
 	default "tglrvp_up4" if BOARD_INTEL_TGLRVP_UP4
 
@@ -48,7 +47,6 @@ config GBB_HWID
 	default "TGLRVPUP4" if BOARD_INTEL_TGLRVP_UP4
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "tglrvpu" if BOARD_INTEL_TGLRVP_UP3
 	default "tglrvpy" if BOARD_INTEL_TGLRVP_UP4
 
@@ -56,31 +54,10 @@ config MAINBOARD_FAMILY
 	string
 	default "Intel_tglrvp"
 
-config MAX_CPUS
-	int
-	default 8
-
-config PCIEXP_HOTPLUG
-	default y
-
-config PCIEXP_HOTPLUG_BUSES
-	int
-	default 42
-
-config PCIEXP_HOTPLUG_MEM
-	hex
-	default 0xc200000 # 194 MiB
-
-config PCIEXP_HOTPLUG_PREFETCH_MEM
-	hex
-	default 0x1c00000 # 448 MiB
-
 config DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 choice

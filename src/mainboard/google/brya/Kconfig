@@ -1,22 +1,40 @@
 config BOARD_GOOGLE_BASEBOARD_BRYA
 	def_bool n
+	select ROMSTAGE_SPD_CBFS
+	select SYSTEM_TYPE_LAPTOP
+
+config BOARD_GOOGLE_BASEBOARD_BRASK
+	def_bool n
+
+if BOARD_GOOGLE_BASEBOARD_BRYA || BOARD_GOOGLE_BASEBOARD_BRASK
+
+config BOARD_GOOGLE_BRYA_COMMON
+	def_bool y
 	select BOARD_ROMSIZE_KB_32768
+	select DRIVERS_GENERIC_ALC1015
+	select DRIVERS_GENERIC_MAX98357A
 	select DRIVERS_I2C_GENERIC
 	select DRIVERS_I2C_HID
-	select DRIVERS_GENERIC_MAX98357A
+	select DRIVERS_I2C_NAU8825
 	select DRIVERS_I2C_SX9324
+	select DRIVERS_INTEL_DPTF
 	select DRIVERS_INTEL_PMC
+	select DRIVERS_INTEL_SOUNDWIRE
+	select DRIVERS_INTEL_USB4_RETIMER
 	select DRIVERS_SPI_ACPI
+	select DRIVERS_SOUNDWIRE_ALC5682
+	select DRIVERS_SOUNDWIRE_MAX98373
 	select DRIVERS_WIFI_GENERIC
 	select EC_GOOGLE_CHROMEEC
 	select EC_GOOGLE_CHROMEEC_ACPI_MEMMAP
 	select EC_GOOGLE_CHROMEEC_BOARDID
 	select EC_GOOGLE_CHROMEEC_ESPI
 	select EC_GOOGLE_CHROMEEC_SKUID
+	select FW_CONFIG
+	select FW_CONFIG_SOURCE_CHROMEEC_CBI
 	select GOOGLE_SMBIOS_MAINBOARD_VERSION
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
-	select HAVE_SPD_IN_CBFS
 	select INTEL_LPSS_UART_FOR_CONSOLE
 	select MAINBOARD_HAS_CHROMEOS
 	select MAINBOARD_HAS_I2C_TPM_CR50
@@ -24,23 +42,29 @@ config BOARD_GOOGLE_BASEBOARD_BRYA
 	select SOC_INTEL_ALDERLAKE
 	select SOC_INTEL_COMMON_BLOCK_PCIE_RTD3
 	select SOC_INTEL_CSE_LITE_SKU
+	select INTEL_CAR_NEM #TODO - Enable INTEL_CAR_NEM_ENHANCED
 
-if BOARD_GOOGLE_BASEBOARD_BRYA
-
-config BASEBOARD_BRYA_LAPTOP
-	def_bool n
-	select SYSTEM_TYPE_LAPTOP
+config BASEBOARD_DIR
+	string
+	default "brya" if BOARD_GOOGLE_BASEBOARD_BRYA
+	default "brask" if BOARD_GOOGLE_BASEBOARD_BRASK
 
 config CHROMEOS
 	select CHROMEOS_DRAM_PART_NUMBER_IN_CBI
 	select EC_GOOGLE_CHROMEEC_SWITCHES
-	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
 	select HAS_RECOVERY_MRC_CACHE
 	select VBOOT_LID_SWITCH
 
+config CHROMEOS_WIFI_SAR
+	bool "Enable SAR options for Chrome OS build"
+	depends on CHROMEOS
+	select DSAR_ENABLE
+	select GEO_SAR_ENABLE
+	select SAR_ENABLE
+	select USE_SAR
+
 config DEVICETREE
-	string
-	default "variants/baseboard/devicetree.cb"
+	default "variants/baseboard/\$(CONFIG_BASEBOARD_DIR)/devicetree.cb"
 
 config DRIVER_TPM_I2C_BUS
 	hex
@@ -55,31 +79,55 @@ config TPM_TIS_ACPI_INTERRUPT
 	default 13 # GPE0_DW0_13 (GPP_A13_IRQ)
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config MAINBOARD_DIR
-	string
 	default "google/brya"
 
 config MAINBOARD_FAMILY
 	string
-	default "Google_Brya0" if BOARD_GOOGLE_BRYA0
+	default "Google_Brya" if BOARD_GOOGLE_BASEBOARD_BRYA
+	default "Google_Brask" if BOARD_GOOGLE_BASEBOARD_BRASK
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Brya" if BOARD_GOOGLE_BRYA0
+	default "Brask" if BOARD_GOOGLE_BRASK
+	default "Primus" if BOARD_GOOGLE_PRIMUS
+	default "Gimble" if BOARD_GOOGLE_GIMBLE
+	default "Redrix" if BOARD_GOOGLE_REDRIX
+	default "Kano" if BOARD_GOOGLE_KANO
+	default "Taeko" if BOARD_GOOGLE_TAEKO
+	default "Felwinter" if BOARD_GOOGLE_FELWINTER
+	default "Anahera" if BOARD_GOOGLE_ANAHERA
 
 config VARIANT_DIR
-	string
 	default "brya0" if BOARD_GOOGLE_BRYA0
+	default "brask" if BOARD_GOOGLE_BRASK
+	default "primus" if BOARD_GOOGLE_PRIMUS
+	default "gimble" if BOARD_GOOGLE_GIMBLE
+	default "redrix" if BOARD_GOOGLE_REDRIX
+	default "kano" if BOARD_GOOGLE_KANO
+	default "taeko" if BOARD_GOOGLE_TAEKO
+	default "felwinter" if BOARD_GOOGLE_FELWINTER
+	default "anahera" if BOARD_GOOGLE_ANAHERA
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config UART_FOR_CONSOLE
 	int
 	default 0
 
-endif # BOARD_GOOGLE_BASEBOARD_BRYA
+config ROMSTAGE_SPD_CBFS
+	def_bool n
+	select HAVE_SPD_IN_CBFS
+
+config HAVE_WWAN_POWER_SEQUENCE
+	def_bool n
+	help
+	  Select this if the variant has a WWAN module and requires the poweroff sequence
+	  to be performed on shutdown. Must define WWAN_FCPO, WWAN_RST and WWAN_PERST GPIOs
+	  in variant.h, as well as T1_OFF_MS (time between PERST & RST) and T2_OFF_MS (time
+	  between RST and FCPO).
+
+endif # BOARD_GOOGLE_BASEBOARD_BRYA || BOARD_GOOGLE_BASEBOARD_BRASK

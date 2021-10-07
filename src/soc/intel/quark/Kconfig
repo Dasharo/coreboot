@@ -9,7 +9,7 @@ if SOC_INTEL_QUARK
 
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
-	select ARCH_ALL_STAGES_X86_32
+	select ARCH_X86
 	select NO_MMCONF_SUPPORT
 	select REG_SCRIPT
 	select PLATFORM_USES_FSP2_0
@@ -151,7 +151,6 @@ config DISPLAY_ESRAM_LAYOUT
 #####
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 	help
 	  Specify the size of the coreboot file system in the read-only (recovery)

@@ -66,7 +66,7 @@ chip soc/intel/jasperlake
 				## Passive Policy
 				register "policies.passive" = "{
 					[0] = DPTF_PASSIVE(CPU, CPU,           67, 1000),
-					[1] = DPTF_PASSIVE(CPU, TEMP_SENSOR_0, 62, 1000),
+					[1] = DPTF_PASSIVE(CHARGER, TEMP_SENSOR_0, 62, 1000),
 					[2] = DPTF_PASSIVE(CPU, TEMP_SENSOR_1, 58, 1000),
 					[3] = DPTF_PASSIVE(CPU, TEMP_SENSOR_2, 40, 1000)
 				}"
@@ -82,8 +82,8 @@ chip soc/intel/jasperlake
 				## Power Limits Control
 				register "controls.power_limits" = "{
 					.pl1 = {
-						.min_power = 4500,
-						.max_power = 7000,
+						.min_power = 6000,
+						.max_power = 6000,
 						.time_window_min = 1 * MSECS_PER_SEC,
 						.time_window_max = 1 * MSECS_PER_SEC,
 						.granularity = 200,
@@ -100,6 +100,14 @@ chip soc/intel/jasperlake
 				register "options.tsr[0].desc" = ""Charger""
 				register "options.tsr[1].desc" = ""Vcore""
 				register "options.tsr[2].desc" = ""Ambient""
+
+				## Charger Performance Control (Control, mA)
+				register "controls.charger_perf" = "{
+					[0] = {  32, 2048 },
+					[1] = {  28, 1792 },
+					[2] = {  24, 1536 },
+					[3] = {  20, 1280 }
+				}"
 
 				device generic 0 on end
 			end
@@ -136,18 +144,16 @@ chip soc/intel/jasperlake
 			end
 		end
 		device pci 15.2 on
-			chip drivers/i2c/hid
-				register "generic.hid" = ""ELAN0001""
-				register "generic.desc" = ""ELAN Touchscreen""
-				register "generic.irq" = "ACPI_IRQ_LEVEL_LOW(GPP_D4_IRQ)"
-				register "generic.probed" = "1"
-				register "generic.reset_gpio" =
-							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D5)"
-				register "generic.enable_gpio" =
-							"ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D6)"
-				register "generic.enable_delay_ms" = "7"
-				register "generic.has_power_resource" = "1"
-				register "hid_desc_reg_offset" = "0x00"
+			chip drivers/i2c/generic
+				register "hid" = ""ELAN0001""
+				register "desc" = ""ELAN Touchscreen""
+				register "irq" = "ACPI_IRQ_EDGE_LOW(GPP_D4_IRQ)"
+				register "probed" = "1"
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D5)"
+				register "reset_delay_ms" = "20"
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D6)"
+				register "enable_delay_ms" = "1"
+				register "has_power_resource" = "1"
 				device i2c 10 on end
 			end
 		end # I2C 2

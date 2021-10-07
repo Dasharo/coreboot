@@ -51,8 +51,7 @@
 /* I2C parameters for lpc_read_resources */
 #define I2C_BASE_ADDRESS		APU_I2C2_BASE
 #define I2C_DEVICE_SIZE			0x00001000
-#define I2C_DEVICE_COUNT		(I2C_MASTER_DEV_COUNT \
-					 - I2C_MASTER_START_INDEX)
+#define I2C_DEVICE_COUNT		(I2C_MASTER_DEV_COUNT - I2C_MASTER_START_INDEX)
 
 #define APU_DMAC0_BASE			0xfedc7000
 #define APU_DMAC1_BASE			0xfedc8000
@@ -83,7 +82,6 @@
 #define  ACPI_GPE0_BLK		(ACPI_IO_BASE + 0x20)     /* 8 bytes */
 #define  ACPI_GPE0_STS		(ACPI_GPE0_BLK + 0x00)		  /* 4 bytes */
 #define  ACPI_GPE0_EN		(ACPI_GPE0_BLK + 0x04)		  /* 4 bytes */
-#define NCP_ERR				0xf0
 #define SMB_BASE_ADDR			0xb00
 #define PM2_INDEX			0xcd0
 #define PM2_DATA			0xcd1

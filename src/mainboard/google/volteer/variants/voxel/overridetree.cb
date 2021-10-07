@@ -69,6 +69,26 @@ chip soc/intel/tigerlake
 				device generic 0 on end
 			end
 		end
+
+		device ref tbt_pcie_rp0 on
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_pcie_rp1 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_dma0 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+			chip drivers/intel/usb4/retimer
+				register "dfp[0].power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_H10)"
+				register "dfp[1].power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_H10)"
+				use tcss_usb3_port3 as dfp[0].typec_port
+				use tcss_usb3_port2 as dfp[1].typec_port
+				device generic 0 on end
+			end
+		end
+
 		device ref i2c0 on
 			chip drivers/i2c/generic
 				register "hid" = ""10EC5682""
@@ -167,13 +187,12 @@ chip soc/intel/tigerlake
 				register "speed" = "I2C_SPEED_FAST"
 				register "uid" = "0"
 				register "cs0_ground" = "0x0"
-				register "combined_sensors_count" = "3"
-				register "combined_sensors[0]" = "0"
-				register "combined_sensors[1]" = "1"
-				register "combined_sensors[2]" = "2"
+				register "combined_sensors_count" = "2"
+				register "combined_sensors[0]" = "1"
+				register "combined_sensors[1]" = "2"
 				register "resolution" = "SX9310_FINEST"
 				register "avg_pos_strength" = "512"
-				register "startup_sensor" = "0"
+				register "startup_sensor" = "1"
 				register "proxraw_strength" = "0"
 				device i2c 28 on end
 			end
@@ -204,6 +223,13 @@ chip soc/intel/tigerlake
 				device pnp 0c09.0 on end
 			end
 		end
+		device ref hda on
+			probe AUDIO MAX98357_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682_SNDW
+			probe AUDIO MAX98373_ALC5682I_I2S_UP4
+			probe AUDIO MAX98360_ALC5682I_I2S
+		end
 		device ref pcie_rp9 on
 			chip soc/intel/common/block/pcie/rtd3
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B2)"
@@ -211,11 +237,6 @@ chip soc/intel/tigerlake
 				register "srcclk_pin" = "0"
 				device generic 0 on end
 			end
-		end
-		# This variant has USB4/PCIe on both ports so RP0 must be enabled
-		# in order for hotplug resources to be assigned to Type-C Port C0.
-		device ref tbt_pcie_rp0 on
-			probe DB_USB USB4_GEN3
 		end
 		device ref pmc hidden
 			# The pmc_mux chip driver is a placeholder for the

@@ -3,7 +3,6 @@
 if BOARD_ELMEX_PCM205400
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "pcm205400"
 
 config VGA_BIOS_ID
@@ -28,7 +27,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select GFXUMA
 
 config MAINBOARD_DIR
-	string
 	default "elmex/pcm205400"
 
 config HW_MEM_HOLE_SIZEK

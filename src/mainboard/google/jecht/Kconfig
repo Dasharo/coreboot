@@ -18,19 +18,16 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "google/jecht"
 
 
 config VARIANT_DIR
-	string
 	default "guado" if BOARD_GOOGLE_GUADO
 	default "jecht" if BOARD_GOOGLE_JECHT
 	default "rikku" if BOARD_GOOGLE_RIKKU
 	default "tidus" if BOARD_GOOGLE_TIDUS
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Guado" if BOARD_GOOGLE_GUADO
 	default "Jecht" if BOARD_GOOGLE_JECHT
 	default "Rikku" if BOARD_GOOGLE_RIKKU

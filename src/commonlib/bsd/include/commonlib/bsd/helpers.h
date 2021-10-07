@@ -54,6 +54,9 @@
 
 #define POWER_OF_2(x)		(1ULL << (x))
 
+/* Set bits from `high` to `low` (inclusive). */
+#define GENMASK(high, low) (((~0ULL) << (low)) & (~0ULL >> (63 - (high))))
+
 #define DIV_ROUND_UP(x, y) ({ \
 	__typeof__(x) _div_local_x = (x); \
 	__typeof__(y) _div_local_y = (y); \
@@ -87,5 +90,40 @@
 
 /* Calculate size of structure member. */
 #define member_size(type, member)	(sizeof(((type *)0)->member))
+
+#define _retry_impl(attempts, condition, expr, ...)	\
+({							\
+	__typeof__(condition) _retry_ret =		\
+		(__typeof__(condition))0;		\
+	int _retry_attempts = (attempts);		\
+	do {						\
+		_retry_ret = (condition);		\
+		if (_retry_ret)				\
+			break;				\
+		if (--_retry_attempts > 0) {		\
+			expr;				\
+		} else {				\
+			break;				\
+		}					\
+	} while (1);					\
+	_retry_ret;					\
+})
+
+/*
+ * Helper macro to retry until a condition becomes true or the maximum number
+ * of attempts is reached. Two forms are supported:
+ *
+ * 1. retry(attempts, condition)
+ * 2. retry(attempts, condition, expr)
+ *
+ * @param attempts	Maximum attempts.
+ * @param condition	Condition to retry for.
+ * @param expr		Procedure to run between each evaluation to "condition".
+ *
+ * @return Condition value if it evaluates to true within the maximum attempts;
+ *	   0 otherwise.
+ */
+#define retry(attempts, condition, ...) \
+	_retry_impl(attempts, condition, __VA_ARGS__)
 
 #endif /* COMMONLIB_BSD_HELPERS_H */

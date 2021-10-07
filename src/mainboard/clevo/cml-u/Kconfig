@@ -26,11 +26,9 @@ config BOARD_CLEVO_L140CU_BASE
 if BOARD_CLEVO_CMLU_COMMON
 
 config MAINBOARD_DIR
-	string
 	default "clevo/cml-u"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "L140CU" if BOARD_CLEVO_L140CU
 
 config MAINBOARD_VERSION
@@ -38,11 +36,9 @@ config MAINBOARD_VERSION
 	default "2.1A" if BOARD_CLEVO_L140CU_BASE
 
 config DEVICETREE
-	string
-	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config CBFS_SIZE
-	hex
 	default 0xc00000 if BOARD_CLEVO_L140CU_BASE
 
 config CONSOLE_POST
@@ -58,7 +54,6 @@ config MAX_CPUS
 	default 8 if BOARD_CLEVO_L140CU_BASE
 
 config DIMM_MAX
-	int
 	default 2 if BOARD_CLEVO_L140CU_BASE
 
 config VGA_BIOS_ID
@@ -74,7 +69,6 @@ config POST_DEVICE
 	default n
 
 config VARIANT_DIR
-	string
 	default "l140cu" if BOARD_CLEVO_L140CU_BASE
 
 config SEABIOS_PS2_TIMEOUT

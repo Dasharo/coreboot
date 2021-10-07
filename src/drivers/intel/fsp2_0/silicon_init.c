@@ -29,11 +29,6 @@ void __weak platform_fsp_multi_phase_init_cb(uint32_t phase_index)
 	/* Leave for the SoC/Mainboard to implement if necessary. */
 }
 
-int __weak soc_fsp_multi_phase_init_is_enable(void)
-{
-	return 1;
-}
-
 /* FSP Specification < 2.2 has only 1 stage like FspSiliconInit. FSP specification >= 2.2
  * has multiple stages as below.
  */
@@ -77,6 +72,20 @@ static void fsps_return_value_handler(enum fsp_silicon_init_phases phases, uint3
 	}
 }
 
+bool fsp_is_multi_phase_init_enabled(void)
+{
+	return CONFIG(FSPS_USE_MULTI_PHASE_INIT) &&
+			 (fsps_hdr.multi_phase_si_init_entry_offset != 0);
+}
+
+static void fsp_fill_common_arch_params(FSPS_UPD *supd)
+{
+#if CONFIG(FSPS_HAS_ARCH_UPD)
+	FSPS_ARCH_UPD *s_arch_cfg = &supd->FspsArchUpd;
+	s_arch_cfg->EnableMultiPhaseSiliconInit = fsp_is_multi_phase_init_enabled();
+#endif
+}
+
 static void do_silicon_init(struct fsp_header *hdr)
 {
 	FSPS_UPD *upd, *supd;
@@ -106,6 +115,9 @@ static void do_silicon_init(struct fsp_header *hdr)
 
 	memcpy(upd, supd, hdr->cfg_region_size);
 
+	/* Fill common settings on behalf of chipset. */
+	if (CONFIG(FSPS_HAS_ARCH_UPD))
+		fsp_fill_common_arch_params(upd);
 	/* Give SoC/mainboard a chance to populate entries */
 	platform_fsp_silicon_init_params_cb(upd);
 
@@ -126,7 +138,7 @@ static void do_silicon_init(struct fsp_header *hdr)
 	else
 		status = silicon_init(upd);
 
-	printk(BIOS_ERR, "FSPS returned %x\n", status);
+	printk(BIOS_INFO, "FSPS returned %x\n", status);
 
 	timestamp_add_now(TS_FSP_SILICON_INIT_END);
 	post_code(POST_FSP_SILICON_EXIT);
@@ -145,7 +157,7 @@ static void do_silicon_init(struct fsp_header *hdr)
 		return;
 
 	/* Check if SoC user would like to call Multi Phase Init */
-	if (!soc_fsp_multi_phase_init_is_enable())
+	if (!fsp_is_multi_phase_init_enabled())
 		return;
 
 	/* Call MultiPhaseSiInit */
@@ -166,8 +178,8 @@ static void do_silicon_init(struct fsp_header *hdr)
 	fsps_return_value_handler(FSP_MULTI_PHASE_SI_INIT_GET_NUMBER_OF_PHASES_API, status);
 
 	/* Execute Multi Phase Execution */
-	for (int i = 1; i <= multi_phase_get_number.number_of_phases; i++) {
-		printk(BIOS_SPEW, "Executing Phase %d of FspMultiPhaseSiInit\n", i);
+	for (uint32_t i = 1; i <= multi_phase_get_number.number_of_phases; i++) {
+		printk(BIOS_SPEW, "Executing Phase %u of FspMultiPhaseSiInit\n", i);
 		/*
 		 * Give SoC/mainboard a chance to perform any operation before
 		 * Multi Phase Execution
@@ -220,6 +232,7 @@ void fsps_load(void)
 
 void fsp_silicon_init(void)
 {
+	timestamp_add_now(TS_FSP_SILICON_INIT_LOAD);
 	fsps_load();
 	do_silicon_init(&fsps_hdr);
 }

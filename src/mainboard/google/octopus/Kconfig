@@ -49,11 +49,9 @@ config CHROMEOS
 	select VBOOT_LID_SWITCH
 
 config MAINBOARD_DIR
-	string
 	default "google/octopus"
 
 config VARIANT_DIR
-	string
 	default "yorp" if BOARD_GOOGLE_YORP
 	default "phaser" if BOARD_GOOGLE_PHASER
 	default "fleex" if BOARD_GOOGLE_FLEEX
@@ -69,15 +67,12 @@ config VARIANT_DIR
 	default "foob" if BOARD_GOOGLE_FOOB
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree.cb"
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb" if !BOARD_GOOGLE_OCTOPUS
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Yorp" if BOARD_GOOGLE_YORP
 	default "Phaser" if BOARD_GOOGLE_PHASER
 	default "Fleex" if BOARD_GOOGLE_FLEEX

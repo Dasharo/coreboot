@@ -40,15 +40,12 @@ config VBOOT_VBNV_OFFSET
 	default 0x76
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT
 
 config MAINBOARD_DIR
-	string
 	default "lenovo/x60"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ThinkPad X60"
 
 config IRQ_SLOT_COUNT

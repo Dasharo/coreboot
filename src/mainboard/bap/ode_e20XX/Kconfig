@@ -17,11 +17,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_SPD_IN_CBFS
 
 config MAINBOARD_DIR
-	string
 	default "bap/ode_e20XX"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ODE_E20XX"
 
 config HW_MEM_HOLE_SIZEK
@@ -63,7 +61,6 @@ config BAP_E20_DDR3_1066
 endchoice
 
 config DIMM_SPD_SIZE
-	int
 	default 128
 
 endif # BOARD_ODE_E20XX

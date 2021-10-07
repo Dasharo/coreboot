@@ -17,7 +17,7 @@
 
 #include "chip.h"
 
-void soc_get_gen_io_dec_range(uint32_t *gen_io_dec)
+void soc_get_gen_io_dec_range(uint32_t gen_io_dec[LPC_NUM_GENERIC_IO_RANGES])
 {
 	const config_t *config = config_of_soc();
 
@@ -47,23 +47,6 @@ void lpc_soc_init(struct device *dev)
 	pch_pirq_init();
 	setup_i8259();
 	i8259_configure_irq_trigger(9, 1);
-}
-
-/* Fill up LPC IO resource structure inside SoC directory */
-void pch_lpc_soc_fill_io_resources(struct device *dev)
-{
-	/*
-	 * PMC pci device gets hidden from PCI bus due to Silicon
-	 * policy hence bind ACPI BASE aka ABASE (offset 0x20) with
-	 * LPC IO resources to ensure that ABASE falls under PCI reserved
-	 * IO memory range.
-	 *
-	 * Note: Don't add any more resource with same offset 0x20
-	 * under this device space.
-	 */
-	pch_lpc_add_new_resource(dev, PCI_BASE_ADDRESS_4,
-			ACPI_BASE_ADDRESS, ACPI_BASE_SIZE, IORESOURCE_IO |
-			IORESOURCE_ASSIGNED | IORESOURCE_FIXED);
 }
 
 #endif

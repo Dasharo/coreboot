@@ -9,25 +9,22 @@
 
 static int smbios_write_intel_wifi(struct device *dev, int *handle, unsigned long *current)
 {
+	if (dev->vendor != PCI_VENDOR_ID_INTEL)
+		return 0;
+
 	struct smbios_type_intel_wifi {
-		u8 type;
-		u8 length;
-		u16 handle;
+		struct smbios_header header;
 		u8 str;
 		u8 eos[2];
 	} __packed;
 
-	struct smbios_type_intel_wifi *t = (struct smbios_type_intel_wifi *)*current;
-	int len = sizeof(struct smbios_type_intel_wifi);
+	struct smbios_type_intel_wifi *t = smbios_carve_table(*current, 0x85,
+							      sizeof(*t), *handle);
 
-	memset(t, 0, sizeof(struct smbios_type_intel_wifi));
-	t->type = 0x85;
-	t->length = len - 2;
-	t->handle = *handle;
 	/* Intel wifi driver expects this string to be in the table 0x85. */
 	t->str = smbios_add_string(t->eos, "KHOIHGIUCCHHII");
 
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	*handle += 1;
 	return len;
@@ -35,10 +32,9 @@ static int smbios_write_intel_wifi(struct device *dev, int *handle, unsigned lon
 
 int smbios_write_wifi_pcie(struct device *dev, int *handle, unsigned long *current)
 {
-	if (dev->vendor == PCI_VENDOR_ID_INTEL)
-		return smbios_write_intel_wifi(dev, handle, current);
-
-	return 0;
+	int len = smbios_write_intel_wifi(dev, handle, current);
+	len += get_smbios_data(dev, handle, current);
+	return len;
 }
 
 int smbios_write_wifi_cnvi(struct device *dev, int *handle, unsigned long *current)

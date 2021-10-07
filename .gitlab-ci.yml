@@ -22,8 +22,8 @@ build:
     - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
       # update submodules
-    - git submodule update --init --recursive --checkout
     - git config --global http.sslVerify "false"
+    - git submodule update --init --recursive --checkout
   script:
     - ./build.sh build
   artifacts:

@@ -18,7 +18,6 @@ chip soc/intel/tigerlake
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| GSPI0             | cr50 TPM. Early init is   |
 	#|                   | required to set up a BAR  |
 	#|                   | for TPM communication     |
@@ -28,7 +27,6 @@ chip soc/intel/tigerlake
 	#| I2C5              | Trackpad                  |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.gspi[0] = {
 			.speed_mhz = 1,
 			.early_init = 1,
@@ -104,6 +102,19 @@ chip soc/intel/tigerlake
 				device generic 0 on end
 			end
 		end
+
+		device ref tbt_pcie_rp0 on
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_pcie_rp1 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_dma0 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+
 		device ref i2c0 on
 			chip drivers/i2c/generic
 				register "hid" = ""10EC5682""
@@ -198,6 +209,13 @@ chip soc/intel/tigerlake
 				device pnp 0c09.0 on end
 			end
 		end
+		device ref hda on
+			probe AUDIO MAX98357_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682_SNDW
+			probe AUDIO MAX98373_ALC5682I_I2S_UP4
+			probe AUDIO MAX98360_ALC5682I_I2S
+		end
 		device ref pcie_rp9 on
 			chip soc/intel/common/block/pcie/rtd3
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B2)"
@@ -205,11 +223,6 @@ chip soc/intel/tigerlake
 				register "srcclk_pin" = "0"
 				device generic 0 on end
 			end
-		end
-		# This variant has USB4/PCIe on both ports so RP0 must be enabled
-		# in order for hotplug resources to be assigned to Type-C Port C0.
-		device ref tbt_pcie_rp0 on
-			probe DB_USB USB4_GEN3
 		end
 		device ref pmc hidden
 			# The pmc_mux chip driver is a placeholder for the

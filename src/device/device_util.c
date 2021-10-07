@@ -152,14 +152,14 @@ const char *dev_path(const struct device *dev)
 
 	buffer[0] = '\0';
 	if (!dev) {
-		memcpy(buffer, "<null>", 7);
+		strcpy(buffer, "<null>");
 	} else {
 		switch (dev->path.type) {
 		case DEVICE_PATH_NONE:
-			memcpy(buffer, "NONE", 5);
+			strcpy(buffer, "NONE");
 			break;
 		case DEVICE_PATH_ROOT:
-			memcpy(buffer, "Root Device", 12);
+			strcpy(buffer, "Root Device");
 			break;
 		case DEVICE_PATH_PCI:
 			snprintf(buffer, sizeof(buffer),
@@ -217,14 +217,6 @@ const char *dev_path(const struct device *dev)
 		case DEVICE_PATH_MMIO:
 			snprintf(buffer, sizeof(buffer), "MMIO: %08lx",
 				 dev->path.mmio.addr);
-			break;
-		case DEVICE_PATH_ESPI:
-			snprintf(buffer, sizeof(buffer), "ESPI: %08lx",
-				 dev->path.espi.addr);
-			break;
-		case DEVICE_PATH_LPC:
-			snprintf(buffer, sizeof(buffer), "LPC: %08lx",
-				 dev->path.lpc.addr);
 			break;
 		case DEVICE_PATH_GPIO:
 			snprintf(buffer, sizeof(buffer), "GPIO: %d", dev->path.gpio.id);
@@ -450,7 +442,7 @@ static resource_t align_down(resource_t val, unsigned long gran)
  * @param resource The resource whose limit is desired.
  * @return The end.
  */
-resource_t resource_end(struct resource *resource)
+resource_t resource_end(const struct resource *resource)
 {
 	resource_t base, end;
 
@@ -476,7 +468,7 @@ resource_t resource_end(struct resource *resource)
  * @param resource The resource whose maximum is desired.
  * @return The maximum.
  */
-resource_t resource_max(struct resource *resource)
+resource_t resource_max(const struct resource *resource)
 {
 	resource_t max;
 
@@ -491,7 +483,7 @@ resource_t resource_max(struct resource *resource)
  * @param resource The resource type to decode.
  * @return TODO.
  */
-const char *resource_type(struct resource *resource)
+const char *resource_type(const struct resource *resource)
 {
 	static char buffer[RESOURCE_TYPE_MAX];
 	snprintf(buffer, sizeof(buffer), "%s%s%s%s",
@@ -513,7 +505,7 @@ const char *resource_type(struct resource *resource)
  * @param resource The resource that was just stored.
  * @param comment TODO
  */
-void report_resource_stored(struct device *dev, struct resource *resource,
+void report_resource_stored(struct device *dev, const struct resource *resource,
 			    const char *comment)
 {
 	char buf[10];
@@ -870,8 +862,8 @@ void mmconf_resource(struct device *dev, unsigned long index)
 	resource->flags = IORESOURCE_MEM | IORESOURCE_RESERVE |
 		IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_ASSIGNED;
 
-	printk(BIOS_DEBUG, "Adding PCIe enhanced config space BAR "
-			"0x%08lx-0x%08lx.\n", (unsigned long)(resource->base),
+	printk(BIOS_DEBUG, "Adding PCIe enhanced config space BAR 0x%08lx-0x%08lx.\n",
+			(unsigned long)(resource->base),
 			(unsigned long)(resource->base + resource->size));
 }
 

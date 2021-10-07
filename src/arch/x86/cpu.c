@@ -13,7 +13,7 @@
 #include <device/device.h>
 #include <smp/spinlock.h>
 
-#ifndef __x86_64__
+#if ENV_X86_32
 /* Standard macro to see if a specific flag is changeable */
 static inline int flag_is_changeable_p(uint32_t flag)
 {
@@ -136,7 +136,7 @@ static void identify_cpu(struct device *cpu)
 
 	vendor_name[0] = '\0'; /* Unset */
 
-#ifndef __x86_64__
+#if ENV_X86_32
 	/* Find the id and vendor_name */
 	if (!cpu_have_cpuid()) {
 		/* Its a 486 if we can modify the AC flag */
@@ -339,9 +339,4 @@ int cpu_index(void)
 			return i;
 	}
 	return -1;
-}
-
-uintptr_t cpu_get_lapic_addr(void)
-{
-	return LOCAL_APIC_ADDR;
 }

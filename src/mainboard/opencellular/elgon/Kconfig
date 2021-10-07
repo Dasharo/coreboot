@@ -27,7 +27,6 @@ config GBB_HWID
 	default "ELGON"
 
 config MAINBOARD_DIR
-	string
 	default "opencellular/elgon"
 
 config DRIVER_TPM_I2C_BUS
@@ -57,7 +56,6 @@ config UART_FOR_CONSOLE
 	default 0
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot.fmd" if VBOOT
 
@@ -69,7 +67,6 @@ config MAX_CPUS
 ##########################################################
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Elgon"
 
 endif

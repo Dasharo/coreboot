@@ -552,17 +552,26 @@ static void append_fw_config_probe_to_dev(struct device *dev, struct fw_config_p
 	}
 }
 
+static int check_probe_exists(struct fw_config_probe *probe, const char *field,
+			      const char *option)
+{
+	while (probe) {
+		if (!strcmp(probe->field, field) && !strcmp(probe->option, option)) {
+			return 1;
+		}
+		probe = probe->next;
+	}
+
+	return 0;
+}
+
 void add_fw_config_probe(struct bus *bus, const char *field, const char *option)
 {
 	struct fw_config_probe *probe;
 
-	probe = bus->dev->probe;
-	while (probe) {
-		if (!strcmp(probe->field, field) && !strcmp(probe->option, option)) {
-			printf("ERROR: fw_config probe %s:%s already exists\n", field, option);
-			exit(1);
-		}
-		probe = probe->next;
+	if (check_probe_exists(bus->dev->probe, field, option)) {
+		printf("ERROR: fw_config probe %s:%s already exists\n", field, option);
+		exit(1);
 	}
 
 	probe = S_ALLOC(sizeof(*probe));
@@ -869,14 +878,6 @@ static struct device *new_device_with_path(struct bus *parent,
 		new_d->path = ".type=DEVICE_PATH_MMIO,{.mmio={ .addr = 0x%x }}";
 		break;
 
-	case ESPI:
-		new_d->path = ".type=DEVICE_PATH_ESPI,{.espi={ .addr = 0x%x }}";
-		break;
-
-	case LPC:
-		new_d->path = ".type=DEVICE_PATH_LPC,{.lpc={ .addr = 0x%x }}";
-		break;
-
 	case GPIO:
 		new_d->path = ".type=DEVICE_PATH_GPIO,{.gpio={ .id = 0x%x }}";
 		break;
@@ -1087,8 +1088,16 @@ static void pass0(FILE *fil, FILE *head, struct device *ptr, struct device *next
 		return;
 	}
 
-	char *name = S_ALLOC(10);
-	sprintf(name, "_dev%d", dev_id++);
+	char *name;
+
+	if (ptr->alias) {
+		name = S_ALLOC(6 + strlen(ptr->alias));
+		sprintf(name, "_dev_%s", ptr->alias);
+	} else {
+		name = S_ALLOC(11);
+		sprintf(name, "_dev_%d", dev_id++);
+	}
+
 	ptr->name = name;
 
 	fprintf(fil, "STORAGE struct device %s;\n", ptr->name);
@@ -1105,6 +1114,29 @@ static void pass0(FILE *fil, FILE *head, struct device *ptr, struct device *next
 	fprintf(fil,
 		"DEVTREE_CONST struct device * DEVTREE_CONST last_dev = &%s;\n",
 		ptr->name);
+}
+
+static void emit_smbios_data(FILE *fil, struct device *ptr)
+{
+	fprintf(fil, "#if !DEVTREE_EARLY\n");
+	fprintf(fil, "#if CONFIG(GENERATE_SMBIOS_TABLES)\n");
+
+	/* SMBIOS types start at 1, if zero it hasn't been set */
+	if (ptr->smbios_slot_type)
+		fprintf(fil, "\t.smbios_slot_type = %s,\n",
+			ptr->smbios_slot_type);
+	if (ptr->smbios_slot_data_width)
+		fprintf(fil, "\t.smbios_slot_data_width = %s,\n",
+			ptr->smbios_slot_data_width);
+	if (ptr->smbios_slot_designation)
+		fprintf(fil, "\t.smbios_slot_designation = \"%s\",\n",
+			ptr->smbios_slot_designation);
+	if (ptr->smbios_slot_length)
+		fprintf(fil, "\t.smbios_slot_length = %s,\n",
+			ptr->smbios_slot_length);
+
+	fprintf(fil, "#endif\n");
+	fprintf(fil, "#endif\n");
 }
 
 static void emit_resources(FILE *fil, struct device *ptr)
@@ -1241,9 +1273,9 @@ static void pass1(FILE *fil, FILE *head, struct device *ptr, struct device *next
 		fprintf(fil, "\t.sibling = &%s,\n", ptr->sibling->name);
 	else
 		fprintf(fil, "\t.sibling = NULL,\n");
-	fprintf(fil, "#if !DEVTREE_EARLY\n");
 	if (ptr->probe)
 		fprintf(fil, "\t.probe_list = %s_probe_list,\n", ptr->name);
+	fprintf(fil, "#if !DEVTREE_EARLY\n");
 	for (pin = 0; pin < 4; pin++) {
 		if (ptr->pci_irq_info[pin].ioapic_irq_pin > 0)
 			fprintf(fil,
@@ -1265,29 +1297,9 @@ static void pass1(FILE *fil, FILE *head, struct device *ptr, struct device *next
 			chip_ins->chip->name_underscore, chip_ins->id);
 	if (next)
 		fprintf(fil, "\t.next=&%s,\n", next->name);
-	if (ptr->smbios_slot_type || ptr->smbios_slot_data_width ||
-	    ptr->smbios_slot_designation || ptr->smbios_slot_length) {
-		fprintf(fil, "#if !DEVTREE_EARLY\n");
-		fprintf(fil, "#if CONFIG(GENERATE_SMBIOS_TABLES)\n");
-	}
-	/* SMBIOS types start at 1, if zero it hasn't been set */
-	if (ptr->smbios_slot_type)
-		fprintf(fil, "\t.smbios_slot_type = %s,\n",
-			ptr->smbios_slot_type);
-	if (ptr->smbios_slot_data_width)
-		fprintf(fil, "\t.smbios_slot_data_width = %s,\n",
-			ptr->smbios_slot_data_width);
-	if (ptr->smbios_slot_designation)
-		fprintf(fil, "\t.smbios_slot_designation = \"%s\",\n",
-			ptr->smbios_slot_designation);
-	if (ptr->smbios_slot_length)
-		fprintf(fil, "\t.smbios_slot_length = %s,\n",
-			ptr->smbios_slot_length);
-	if (ptr->smbios_slot_type || ptr->smbios_slot_data_width ||
-	    ptr->smbios_slot_designation || ptr->smbios_slot_length) {
-		fprintf(fil, "#endif\n");
-		fprintf(fil, "#endif\n");
-	}
+
+	emit_smbios_data(fil, ptr);
+
 	fprintf(fil, "};\n");
 
 	emit_resources(fil, ptr);
@@ -1320,6 +1332,12 @@ static void expose_device_names(FILE *fil, FILE *head, struct device *ptr, struc
 			ptr->path_a, ptr->path_b);
 		fprintf(fil, "DEVTREE_CONST struct device *const __pnp_%04x_%02x = &%s;\n",
 			ptr->path_a, ptr->path_b, ptr->name);
+	}
+
+	if (ptr->alias) {
+		fprintf(head, "extern DEVTREE_CONST struct device *const %s_ptr;\n", ptr->name);
+		fprintf(fil, "DEVTREE_CONST struct device *const %s_ptr = &%s;\n",
+			ptr->name, ptr->name);
 	}
 }
 
@@ -1485,6 +1503,56 @@ static void parse_devicetree(const char *file, struct bus *parent)
 	yyparse();
 
 	fclose(filec);
+}
+
+static int device_probe_count(struct fw_config_probe *probe)
+{
+	int count = 0;
+	while (probe) {
+		probe = probe->next;
+		count++;
+	}
+
+	return count;
+}
+
+/*
+ * When overriding devices, use the following rules:
+ * 1. If probe count matches and:
+ *    a. Entire probe list matches for both devices -> Same device, override.
+ *    b. No probe entries match -> Different devices, do not override.
+ *    c. Partial list matches -> Bad device tree entries, fail build.
+ *
+ * 2. If probe counts do not match and:
+ *    a. No probe entries match -> Different devices, do not override.
+ *    b. Partial list matches -> Bad device tree entries, fail build.
+ */
+static int device_probes_match(struct device *a, struct device *b)
+{
+	struct fw_config_probe *a_probe = a->probe;
+	struct fw_config_probe *b_probe = b->probe;
+	int a_probe_count = device_probe_count(a_probe);
+	int b_probe_count = device_probe_count(b_probe);
+	int match_count = 0;
+
+	while (a_probe) {
+		if (check_probe_exists(b_probe, a_probe->field, a_probe->option))
+			match_count++;
+		a_probe = a_probe->next;
+	}
+
+	if ((a_probe_count == b_probe_count) && (a_probe_count == match_count))
+		return 1;
+
+	if (match_count) {
+		printf("ERROR: devices with overlapping probes: ");
+		printf(a->path, a->path_a, a->path_b);
+		printf(b->path, b->path_a, b->path_b);
+		printf("\n");
+		exit(1);
+	}
+
+	return 0;
 }
 
 /*
@@ -1811,7 +1879,16 @@ static void override_devicetree(struct bus *base_parent,
 		/* Look for a matching device in base tree. */
 		for (base_child = base_parent->children;
 		     base_child; base_child = base_child->sibling) {
-			if (device_match(base_child, override_child))
+			if (!device_match(base_child, override_child))
+				continue;
+			/* If base device has no probe statement, nothing else to compare. */
+			if (base_child->probe == NULL)
+				break;
+			/*
+			 * If base device has probe statements, ensure that all probe conditions
+			 * match for base and override device.
+			 */
+			if (device_probes_match(base_child, override_child))
 				break;
 		}
 
@@ -1860,6 +1937,7 @@ static void generate_outputh(FILE *f, const char *fw_conf_header, const char *de
 
 static void generate_outputc(FILE *f, const char *static_header)
 {
+	fprintf(f, "#include <boot/coreboot_tables.h>\n");
 	fprintf(f, "#include <device/device.h>\n");
 	fprintf(f, "#include <device/pci.h>\n");
 	fprintf(f, "#include <fw_config.h>\n");

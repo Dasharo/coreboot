@@ -13,26 +13,22 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_ITE_IT8772F
 	select MAINBOARD_HAS_CRB_TPM
 	select HAVE_INTEL_PTT
-	select TPM2
+	select MAINBOARD_HAS_TPM2
 
 config IRQ_SLOT_COUNT
 	int
 	default 18
 
 config MAINBOARD_DIR
-	string
 	default "protectli/vault_kbl"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "FW6"
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config MAX_CPUS
@@ -48,7 +44,6 @@ config PXE_ROM_ID
 	default "8086,150c"
 
 config CBFS_SIZE
-	hex
 	default 0x600000
 
 config USE_PM_ACPI_TIMER

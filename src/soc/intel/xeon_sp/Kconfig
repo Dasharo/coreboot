@@ -2,6 +2,7 @@
 
 source "src/soc/intel/xeon_sp/skx/Kconfig"
 source "src/soc/intel/xeon_sp/cpx/Kconfig"
+source "src/soc/intel/xeon_sp/ras/Kconfig"
 
 config XEON_SP_COMMON_BASE
 	bool
@@ -25,7 +26,7 @@ if XEON_SP_COMMON_BASE
 
 config	CPU_SPECIFIC_OPTIONS
 	def_bool y
-	select ARCH_ALL_STAGES_X86_32
+	select ARCH_X86
 	select BOOT_DEVICE_SUPPORTS_WRITES
 	select CPU_INTEL_COMMON
 	select SOC_INTEL_COMMON
@@ -35,7 +36,6 @@ config	CPU_SPECIFIC_OPTIONS
 	select FSP_M_XIP
 	select POSTCAR_STAGE
 	select IOAPIC
-	select PARALLEL_MP
 	select PARALLEL_MP_AP_WORK
 	select PMC_GLOBAL_RESET_ENABLE_LOCK
 	select INTEL_DESCRIPTOR_MODE_CAPABLE
@@ -113,5 +113,10 @@ config MMCONF_BUS_NUMBER
 config HEAP_SIZE
 	hex
 	default 0x80000
+
+config SOC_INTEL_XEON_RAS
+	bool
+	select SOC_ACPI_HEST
+	select SOC_RAS_ELOG
 
 endif ## SOC_INTEL_XEON_SP

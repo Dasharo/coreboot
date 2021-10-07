@@ -156,9 +156,13 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_pm_tmr_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm_tmr_blk.bit_width = fadt->pm_tmr_len * 8;
 	fadt->x_pm_tmr_blk.bit_offset = 0;
-	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_UNDEFINED;
+	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
 	fadt->x_pm_tmr_blk.addrl = pmbase + PM1_TMR;
 	fadt->x_pm_tmr_blk.addrh = 0x0;
+	fadt->preferred_pm_profile = PM_MOBILE;
+	fadt->p_lvl2_lat = ACPI_FADT_C2_NOT_SUPPORTED;
+	fadt->p_lvl3_lat = ACPI_FADT_C3_NOT_SUPPORTED;
+	fadt->duty_width = 0x3;	/* CLK_VAL bits 3:1 */
 
 	if (config->s0ix_enable)
 		fadt->flags |= ACPI_FADT_LOW_PWR_IDLE_S0;
@@ -166,17 +170,15 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 
 uint32_t soc_read_sci_irq_select(void)
 {
-	uintptr_t pmc_bar = soc_read_pmc_base();
-	return read32((void *)pmc_bar + IRQ_REG);
+	return read32p(soc_read_pmc_base() + IRQ_REG);
 }
 
 static unsigned long soc_fill_dmar(unsigned long current)
 {
-	const struct device *const igfx_dev = pcidev_path_on_root(SA_DEVFN_IGD);
 	uint64_t gfxvtbar = MCHBAR64(GFXVTBAR) & VTBAR_MASK;
 	bool gfxvten = MCHBAR32(GFXVTBAR) & VTBAR_ENABLED;
 
-	if (is_dev_enabled(igfx_dev) && gfxvtbar && gfxvten) {
+	if (is_devfn_enabled(SA_DEVFN_IGD) && gfxvtbar && gfxvten) {
 		unsigned long tmp = current;
 
 		current += acpi_create_dmar_drhd(current, 0, 0, gfxvtbar);

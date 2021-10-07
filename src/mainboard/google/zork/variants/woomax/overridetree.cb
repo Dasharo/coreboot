@@ -1,5 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+fw_config
+	field USB_DAUGHTERBOARD
+		option WOOMAX_DB_PICASSO 0
+		option WOOMAX_DB_DALI 1
+	end
+end
+
 chip soc/amd/picasso
 
 	# Start : OPN Performance Configuration
@@ -80,9 +87,25 @@ chip soc/amd/picasso
 		chip drivers/usb/acpi
 			device usb 3.2 off end
 		end
+
+		device ref lpc_bridge on
+			chip ec/google/chromeec
+				device ref cros_ec on
+					chip ec/google/chromeec/i2c_tunnel
+						device ref cros_ec_i2c_9 on
+							chip drivers/i2c/generic
+								device ref db_mst on
+									probe USB_DAUGHTERBOARD WOOMAX_DB_DALI
+								end
+							end
+						end
+					end
+				end
+			end
+		end
 	end # domain
 
-	device mmio 0xfedc4000 on
+	device ref i2c_2 on
 		chip drivers/i2c/generic
 			register "hid" = ""ELAN0000""
 			register "desc" = ""ELAN Touchpad""

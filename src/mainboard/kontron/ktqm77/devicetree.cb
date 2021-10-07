@@ -5,7 +5,7 @@ chip northbridge/intel/sandybridge
 	device cpu_cluster 0 on
 		chip cpu/intel/model_206ax
 			# Magic APIC ID to locate this chip
-			device lapic 0x0 on end
+			device lapic 0 on end
 			device lapic 0xacac off end
 
 			register "acpi_c1" = "1"	# ACPI(C1) = MWAIT(C1)
@@ -33,8 +33,6 @@ chip northbridge/intel/sandybridge
 
 			# Disable root port coalescing
 			register "pcie_port_coalesce" = "0"
-
-			register "c2_latency" = "101"  # c2 not supported
 
 			register "xhci_switchable_ports"	= "0x0f"
 			register "superspeed_capable_ports"	= "0x0f"

@@ -16,7 +16,9 @@ config SOUTHBRIDGE_SPECIFIC_OPTIONS
 	select HAVE_CF9_RESET_PREPARE
 	select SOC_AMD_COMMON
 	select SOC_AMD_COMMON_BLOCK_ACPIMMIO
+	select SOC_AMD_COMMON_BLOCK_ACPIMMIO_BIOSRAM
 	select SOC_AMD_COMMON_BLOCK_BANKED_GPIOS
+	select SOC_AMD_COMMON_BLOCK_BANKED_GPIOS_NON_SOC_CODEBASE
 	select SOC_AMD_COMMON_BLOCK_PCI_MMCONF
 
 config EHCI_BAR
@@ -203,18 +205,3 @@ config HUDSON_ACPI_IO_BASE
 	  This value must match the hardcoded value of AGESA.
 
 endif
-
-config HUDSON_UART
-	bool "UART controller on Kern"
-	default n
-	depends on SOUTHBRIDGE_AMD_PI_KERN
-	select DRIVERS_UART_8250MEM
-	select DRIVERS_UART_8250MEM_32
-	select NO_UART_ON_SUPERIO
-	select UART_OVERRIDE_REFCLK
-	help
-	  There are two UART controllers in Kern.
-	  The UART registers are memory-mapped. UART
-	  controller 0 registers range from FEDC_6000h
-	  to FEDC_6FFFh. UART controller 1 registers
-	  range from FEDC_8000h to FEDC_8FFFh.

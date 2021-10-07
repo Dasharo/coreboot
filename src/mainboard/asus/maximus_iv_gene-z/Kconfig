@@ -21,16 +21,10 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_USES_IFD_GBE_REGION
 
 config MAINBOARD_DIR
-	string
 	default "asus/maximus_iv_gene-z"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Maximus IV GENE-Z"
-
-config VGA_BIOS_ID
-	string
-	default "8086,0112"
 
 config USBDEBUG_HCD_INDEX
 	int

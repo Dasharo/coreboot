@@ -6,19 +6,18 @@ config ARCH_X86
 	select RELOCATABLE_MODULES
 	select HAVE_ASAN_IN_RAMSTAGE
 
+if ARCH_X86
+
 # stage selectors for x86
 
 config ARCH_BOOTBLOCK_X86_32
 	bool
-	select ARCH_X86
 
 config ARCH_VERSTAGE_X86_32
 	bool
-	select ARCH_X86
 
 config ARCH_ROMSTAGE_X86_32
 	bool
-	select ARCH_X86
 
 config ARCH_POSTCAR_X86_32
 	bool
@@ -26,10 +25,10 @@ config ARCH_POSTCAR_X86_32
 
 config ARCH_RAMSTAGE_X86_32
 	bool
-	select ARCH_X86
 
 config ARCH_ALL_STAGES_X86_32
 	bool
+	default ARCH_ALL_STAGES_X86 && !ARCH_ALL_STAGES_X86_64
 	select ARCH_BOOTBLOCK_X86_32
 	select ARCH_VERSTAGE_X86_32
 	select ARCH_ROMSTAGE_X86_32
@@ -39,15 +38,12 @@ config ARCH_ALL_STAGES_X86_32
 
 config ARCH_BOOTBLOCK_X86_64
 	bool
-	select ARCH_X86
 
 config ARCH_VERSTAGE_X86_64
 	bool
-	select ARCH_X86
 
 config ARCH_ROMSTAGE_X86_64
 	bool
-	select ARCH_X86
 
 config ARCH_POSTCAR_X86_64
 	bool
@@ -55,7 +51,6 @@ config ARCH_POSTCAR_X86_64
 
 config ARCH_RAMSTAGE_X86_64
 	bool
-	select ARCH_X86
 
 config ARCH_ALL_STAGES_X86_64
 	bool
@@ -64,7 +59,27 @@ config ARCH_ALL_STAGES_X86_64
 	select ARCH_ROMSTAGE_X86_64
 	select ARCH_RAMSTAGE_X86_64
 
-if ARCH_X86
+config ARCH_ALL_STAGES_X86
+	bool
+	default y
+
+config HAVE_EXP_X86_64_SUPPORT
+	bool
+	help
+	  Enable experimental support to build and run coreboot in 64-bit mode.
+	  When selecting this option for a new platform, it is highly advisable
+	  to provide a config file for Jenkins to build-test the 64-bit option.
+
+config USE_EXP_X86_64_SUPPORT
+	bool "[EXPERIMENTAL] Run coreboot in long (64-bit) mode"
+	depends on HAVE_EXP_X86_64_SUPPORT
+	select ARCH_ALL_STAGES_X86_64
+	help
+	  When set, most of coreboot runs in long (64-bit) mode instead of the
+	  usual protected flat (32-bit) mode. 64-bit CPUs and OSes can be used
+	  irrespective of whether coreboot runs in 32-bit or 64-bit mode. This
+	  is an experimental option: do not enable unless one wants to test it
+	  and has the means to recover a system when coreboot fails to boot.
 
 config ARCH_X86_64_PGTBL_LOC
 	hex "x86_64 page table location in CBFS"
@@ -122,11 +137,15 @@ config RAMTOP
 # Traditionally BIOS region on SPI flash boot media was memory mapped right below
 # 4G and it was the last region in the IFD. This way translation between CPU
 # address space to flash address was trivial. However some IFDs on newer SoCs
-# have BIOS region sandwiched between descriptor and other regions. Turning off
-# this option enables soc code to provide custom mmap_boot.c which can be used to
-# implement complex translation.
+# have BIOS region sandwiched between descriptor and other regions. Turning on
+# X86_CUSTOM_BOOTMEDIA disables X86_TOP4G_BOOTMEDIA_MAP which allows the
+# soc code to provide custom mmap_boot.c.
+config X86_CUSTOM_BOOTMEDIA
+	bool
+
 config X86_TOP4G_BOOTMEDIA_MAP
 	bool
+	depends on !X86_CUSTOM_BOOTMEDIA
 	default y
 
 # This is something you almost certainly don't want to mess with.
@@ -147,9 +166,10 @@ config PRERAM_CBMEM_CONSOLE_SIZE
 config CBFS_MCACHE_SIZE
 	hex
 	depends on !NO_CBFS_MCACHE
-	default 0x2000
+	default 0x4000
 	help
-	  Increase this value if you see CBFS mcache overflow warnings.
+	  Increase this value if you see CBFS mcache overflow warnings. Do NOT
+	  change this value for vboot RW updates!
 
 config PC80_SYSTEM
 	bool
@@ -170,14 +190,6 @@ config CMOS_DEFAULT_FILE
 	string
 	default "src/mainboard/\$(MAINBOARDDIR)/cmos.default"
 	depends on HAVE_CMOS_DEFAULT
-
-config IOAPIC_INTERRUPTS_ON_FSB
-	bool
-	default y if !IOAPIC_INTERRUPTS_ON_APIC_SERIAL_BUS
-
-config IOAPIC_INTERRUPTS_ON_APIC_SERIAL_BUS
-	bool
-	default n
 
 config HPET_ADDRESS_OVERRIDE
 	def_bool n

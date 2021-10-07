@@ -1,8 +1,4 @@
 chip soc/intel/cannonlake
-	# Lock Down
-	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
-	}"
 
 # CPU (soc/intel/cannonlake/cpu.c)
 	# Power limit
@@ -21,6 +17,16 @@ chip soc/intel/cannonlake
 
 	# Misc
 	register "AcousticNoiseMitigation" = "1"
+
+	register "FastPkgCRampDisableIa" = "1"
+	register "FastPkgCRampDisableGt" = "1"
+	register "FastPkgCRampDisableSa" = "1"
+	register "FastPkgCRampDisableFivr" = "1"
+
+	register "SlowSlewRateForIa" = "3"	# fast/16
+	register "SlowSlewRateForGt" = "3"	# fast/16
+	register "SlowSlewRateForSa" = "3"	# fast/16
+	register "SlowSlewRateForFivr" = "3"	# fast/16
 
 	# Power
 	register "PchPmSlpS3MinAssert" = "3"	# 50ms
@@ -221,7 +227,7 @@ chip soc/intel/cannonlake
 		device pci 1e.3 off end # GSPI #1
 		device pci 1f.0 on  end # LPC Bridge
 		device pci 1f.1 off end # P2SB
-		device pci 1f.2 off end # Power Management Controller
+		device pci 1f.2 hidden end # Power Management Controller
 		device pci 1f.3 on	# Intel HDA
 			register "PchHdaAudioLinkHda" = "1"
 		end

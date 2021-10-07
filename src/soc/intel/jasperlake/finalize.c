@@ -1,17 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <device/mmio.h>
 #include <bootstate.h>
+#include <commonlib/console/post_codes.h>
 #include <console/console.h>
-#include <console/post_codes.h>
 #include <cpu/x86/smm.h>
+#include <device/mmio.h>
 #include <device/pci.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/pcr.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/systemagent.h>
 #include <intelblocks/tco.h>
 #include <intelblocks/thermal.h>
-#include <spi-generic.h>
+#include <intelpch/lockdown.h>
 #include <soc/p2sb.h>
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
@@ -19,6 +20,7 @@
 #include <soc/smbus.h>
 #include <soc/soc_chip.h>
 #include <soc/systemagent.h>
+#include <spi-generic.h>
 
 #define CAMERA1_CLK		0x8000 /* Camera 1 Clock */
 #define CAMERA2_CLK		0x8080 /* Camera 2 Clock */
@@ -80,12 +82,19 @@ static void pch_finalize(void)
 	pmc_clear_pmcon_sts();
 }
 
+static void sa_finalize(void)
+{
+	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT)
+		sa_lock_pam();
+}
+
 static void soc_finalize(void *unused)
 {
 	printk(BIOS_DEBUG, "Finalizing chipset.\n");
 
 	pch_finalize();
 	apm_control(APM_CNT_FINALIZE);
+	sa_finalize();
 
 	/* Indicate finalize step with post code */
 	post_code(POST_OS_BOOT);

@@ -520,16 +520,17 @@ static void configure_mca(void)
 {
 	msr_t msr;
 	int i;
-	int num_banks;
+	const unsigned int num_banks = mca_get_bank_count();
 
-	msr = rdmsr(IA32_MCG_CAP);
-	num_banks = msr.lo & 0xff;
-	msr.lo = msr.hi = 0;
+	/* Enable all error reporting */
+	msr.lo = msr.hi = ~0;
+	for (i = 0; i < num_banks; i++)
+		wrmsr(IA32_MC_CTL(i), msr);
+
 	/* TODO(adurbin): This should only be done on a cold boot. Also, some
 	 * of these banks are core vs package scope. For now every CPU clears
 	 * every bank. */
-	for (i = 0; i < num_banks; i++)
-		wrmsr(IA32_MC0_STATUS + (i * 4), msr);
+	mca_clear_status();
 }
 
 /* All CPUs including BSP will run the following function. */

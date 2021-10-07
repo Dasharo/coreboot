@@ -131,18 +131,6 @@
 #define   DEBUG_PORT_ENABLE		  BIT(18)
 #define   DEBUG_PORT_MASK		(BIT(16) | BIT(17) | BIT(18))
 
-/* FCH AOAC device offsets for AOAC_DEV_D3_CTL/AOAC_DEV_D3_STATE */
-#define FCH_AOAC_DEV_CLK_GEN		0
-#define FCH_AOAC_DEV_I2C0		5
-#define FCH_AOAC_DEV_I2C1		6
-#define FCH_AOAC_DEV_I2C2		7
-#define FCH_AOAC_DEV_I2C3		8
-#define FCH_AOAC_DEV_UART0		11
-#define FCH_AOAC_DEV_UART1		12
-#define FCH_AOAC_DEV_AMBA		17
-#define FCH_AOAC_DEV_USB2		18
-#define FCH_AOAC_DEV_USB3		23
-
 #define PM1_LIMIT			16
 #define GPE0_LIMIT			28
 #define TOTAL_BITS(a)			(8 * sizeof(a))
@@ -231,7 +219,7 @@ void fch_init(void *chip_info);
 void fch_final(void *chip_info);
 
 void enable_aoac_devices(void);
-void sb_clk_output_48Mhz(u32 osc);
+void fch_clk_output_48Mhz(u32 osc);
 void sb_read_mode(u32 mode);
 void sb_set_spi100(u16 norm, u16 fast, u16 alt, u16 tpm);
 

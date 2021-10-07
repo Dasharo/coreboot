@@ -4,25 +4,25 @@ config PAYLOAD_FILE
 	string "Tianocore binary"
 	default "payloads/external/tianocore/tianocore/Build/UEFIPAYLOAD.fd"
 	help
-	  The result of a corebootPkg build
+	  The result of a UefiPayloadPkg build
 
 choice
 	prompt "Tianocore payload"
-	default TIANOCORE_COREBOOTPAYLOAD
+	default TIANOCORE_UEFIPAYLOAD
 	help
-	  Select which type of payload Tianocore will build (default is CorebootPayload)
-	  CorebootPayload: MrChromebox's customized version of Tianocore which works on most
-	  (all?) x86_64 devices
-	  UEFIPayload: Use upstream Tianocore payload from https://github.com/tianocore/edk2
-
-config TIANOCORE_COREBOOTPAYLOAD
-	bool "CorebootPayload"
-	help
-	  Select this option to build using MrChromebox's custom Tianocore tree
-	  i.e. a version of Tianocore that builds without any errors and just works.
+	  Select which type of payload Tianocore will build (default is UefiPayload)
+	  UefiPayload: MrChromebox's customized fork of Tianocore which works on most
+	  x86_64 devices
+	  Upstream: Use upstream Tianocore payload from https://github.com/tianocore/edk2
 
 config TIANOCORE_UEFIPAYLOAD
 	bool "UEFIPayload"
+	help
+	  Select this option to build using MrChromebox's custom Tianocore fork,
+	  which incorporates fixes/improvements from System 76's and 9elements' trees.
+
+config TIANOCORE_UPSTREAM
+	bool "Upstream"
 	help
 	  Select this option if you want to use upstream EDK2 to build Tianocore.
 
@@ -33,29 +33,6 @@ config TIANOCORE_REVISION_ID
 	help
 	   The commit's SHA-1 or branch name of the revision to use. Choose "upstream/master"
 	   for master branch of Tianocore release on github.
-
-choice
-	prompt "Target architecture"
-	default TIANOCORE_TARGET_X64
-	help
-	  The Tianocore coreboot Payload Package binary can be
-	  built for either only IA32 or both X64 and IA32 architectures.
-	  Select which architecture(s) to build for; default is to build
-	  for both X64 and IA32.
-
-config TIANOCORE_TARGET_IA32
-	bool "IA32"
-	help
-	  By selecting this option, the target architecture will be built
-	  for only IA32.
-
-config TIANOCORE_TARGET_X64
-	bool "X64"
-	help
-	  By selecting this option, the target architecture will be built
-	  for X64 and IA32.
-
-endchoice
 
 choice
 	prompt "Tianocore build"
@@ -76,10 +53,15 @@ config TIANOCORE_RELEASE
 
 endchoice
 
-config TIANOCORE_USE_8254_TIMER
-	bool "TianoCore 8254 Timer"
+if TIANOCORE_UEFIPAYLOAD
+
+config TIANOCORE_CBMEM_LOGGING
+	bool "Enable Tianocore logging to CBMEM"
 	help
-	  Use 8254 Timer for legacy support.
+	  Select this option if you want to enable Tianocore logging to CBMEM.
+	  You may want to increase the default cbmem buffer size when selecting
+	  this option, especially if using a debug (vs release) build.
+	  Selecting this option will increase the payload size in CBFS by ~220KB.
 
 config TIANOCORE_BOOTSPLASH_IMAGE
 	bool "Use a custom bootsplash image"
@@ -99,6 +81,19 @@ config TIANOCORE_BOOTSPLASH_FILE
 
 	  If an absolute path is not given, the path will assumed to be
 	  relative to the coreboot root directory.
+
+config TIANOCORE_ABOVE_4G_MEMORY
+	bool "Enable above 4G memory"
+	default n
+	help
+	  Select this option to enable Above 4G Decode. This will allow the
+	  payload to use all of the memory, rather than an maximum of 4G.
+
+	  Disabling this option, which will reserve memory above 4G, is
+	  useful for bootloaders that are not fully 64-bit aware such as
+	  Qubes R4.0.4 bootloader.
+
+endif
 
 config TIANOCORE_BOOT_TIMEOUT
 	int

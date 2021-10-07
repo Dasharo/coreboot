@@ -93,8 +93,9 @@ smm_trampoline32:
 	movw	%ax, %ds
 	movw	%ax, %es
 	movw	%ax, %ss
+	xor	%ax, %ax /* zero out the gs and fs segment index */
 	movw	%ax, %fs
-	movw	%ax, %gs
+	movw	%ax, %gs /* Will be used for cpu_info */
 
 	/* The CPU number is calculated by reading the initial APIC id. Since
 	 * the OS can manipulate the APIC id use the non-changing cpuid result
@@ -185,7 +186,7 @@ apicid_end:
 	/* Align stack to 16 bytes. Another 32 bytes are pushed below. */
 	andl	$0xfffffff0, %esp
 
-#ifdef __x86_64__
+#if ENV_X86_64
 	mov	%ecx, %edi
 	/* Backup IA32_EFER. Preserves ebx. */
 	movl	$(IA32_EFER), %ecx
@@ -204,13 +205,13 @@ apicid_end:
 	 *   struct arg = { c_handler_params, cpu_num, smm_runtime, canary };
 	 *   c_handler(&arg)
 	 */
-#ifdef __x86_64__
+#if ENV_X86_64
 	push	%rbx /* uintptr_t *canary */
 	push	%rcx /* size_t cpu */
 
 	mov	%rsp, %rdi	/* *arg */
 
-	movl	c_handler, %eax
+	movabs	c_handler, %eax
 	call	*%rax
 
 	/*

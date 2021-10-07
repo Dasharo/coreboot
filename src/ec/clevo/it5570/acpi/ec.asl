@@ -141,6 +141,27 @@ Device (EC0)
 		}
 	}
 
+	Method (S0IX, 1, Serialized) // S0IX Entry/Exit
+	{
+		FDAT = 0xC2
+		FBUF = Arg0
+		FCMD = 0xD2
+		Local0 = 0xFF
+		Local1 = 0xFF
+		While (Local0 != Arg0 && Local1 > Zero)
+		{
+			Sleep(50)
+			FDAT = 0xC3
+			FCMD = 0xD2
+			Local3 = FBUF
+			If (Local3 == Zero || Local3 == One)
+			{
+				Local0 = Local3
+			}
+			Local1 = Local1 - 1
+		}
+	}
+
 	Method (_Q0A, 0, NotSerialized) // Touchpad Toggle
 	{
 		Debug = "EC: Touchpad Toggle"
@@ -174,6 +195,9 @@ Device (EC0)
 	Method (_Q10, 0, NotSerialized) // Switch Video Mode
 	{
 		Debug = "EC: Switch Video Mode"
+		If (CondRefOf (\_SB.PCI0.GFX0)) {
+			Notify (\_SB.PCI0.GFX0, 0x80)
+		}
 	}
 
 	Method (_Q11, 0, NotSerialized) // Brightness Down

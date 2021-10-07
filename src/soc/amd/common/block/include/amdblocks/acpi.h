@@ -4,7 +4,7 @@
 #define AMD_BLOCK_ACPI_H
 
 #include <acpi/acpi.h>
-#include <amdblocks/gpio_banks.h>
+#include <amdblocks/gpio.h>
 #include <types.h>
 
 /* ACPI MMIO registers 0xfed80800 */
@@ -58,5 +58,8 @@ void acpi_fill_root_complex_tom(const struct device *device);
 
 uintptr_t add_agesa_fsp_acpi_table(guid_t guid, const char *name, acpi_rsdp_t *rsdp,
 				   uintptr_t current);
+
+void acpi_log_events(const struct chipset_power_state *ps);
+unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current);
 
 #endif /* AMD_BLOCK_ACPI_H */

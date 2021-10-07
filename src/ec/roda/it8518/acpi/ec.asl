@@ -6,12 +6,12 @@ Device (EC0)
 {
 	Name (_HID, EISAID ("PNP0C09"))		// ACPI Embedded Controller
 	Name (_UID, 1)
-	Name (_GPE, Add(EC_SCI_GPI, 16))	// GPE for Runtime SCI
+	Name (_GPE, EC_SCI_GPI)
 	Name (PWRS, 1)
 	Name (LIDS, 1)
 
 	// EC RAM fields
-	OperationRegion(ERAM, EmbeddedControl, 0, 0xFF)
+	OperationRegion(ERAM, EmbeddedControl, 0, 0xff)
 	Field (ERAM, ByteAcc, NoLock, Preserve)
 	{
 		Offset(0x02),		// [Configuration Space 0x2]
@@ -31,13 +31,13 @@ Device (EC0)
 		Offset (0x50),		// [Configuration Space 0x50]
 		LUXH, 8,		// Ambient Light Illuminance High
 		LUXL, 8,		// Ambient Light Illuminance Low
-		Offset (0x5B),		// [Configuration Space 0x5B]
+		Offset (0x5b),		// [Configuration Space 0x5b]
 		BRIG, 8,		// Brightness
 	} // End of ERAM
 
 	Method (_STA, 0, NotSerialized)  // _STA: Status
 	{
-		Return (0x0F)
+		Return (0x0f)
 	}
 
 	Method (_CRS, 0, NotSerialized)
@@ -51,42 +51,42 @@ Device (EC0)
 
 	Method (_REG, 2, NotSerialized)
 	{
-		Store ("-----> EC: _REG", Debug)
+		Printf ("-----> EC: _REG")
 
-		Store (0x01, ECOS)
+		ECOS = 0x01
 
-		Store ("<----- EC: _REG", Debug)
+		Printf ("<----- EC: _REG")
 	}
 
 	Method (_Q29, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q29", Debug)
+		Printf ("-----> EC: _Q29")
 
-		Store (1, PWRS)
+		PWRS = 1
 		Notify (AC, 0x80)
 		Notify (AC, 0x00)
 		Notify (BAT0, 0x00)
 		Notify (BAT0, 0x80)
 
-		Store ("<----- EC: _Q29", Debug)
+		Printf ("<----- EC: _Q29")
 	}
 
 	Method (_Q31, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q31", Debug)
+		Printf ("-----> EC: _Q31")
 
-		Store (0, PWRS)
+		PWRS = 0
 		Notify (AC, 0x80)
 		Notify (AC, 0x00)
 		Notify (BAT0, 0x00)
 		Notify (BAT0, 0x80)
 
-		Store ("<----- EC: _Q31", Debug)
+		Printf ("<----- EC: _Q31")
 	}
 
 	Method (_Q32, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q32", Debug)
+		Printf ("-----> EC: _Q32")
 
 		Sleep (2500)
 		Notify (BAT0, 0x00)
@@ -94,12 +94,12 @@ Device (EC0)
 		Notify (BAT0, 0x81)
 		Notify (BAT0, 0x82)
 
-		Store ("<----- EC: _Q32", Debug)
+		Printf ("<----- EC: _Q32")
 	}
 
 	Method (_Q33, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q33", Debug)
+		Printf ("-----> EC: _Q33")
 
 		Sleep (2500)
 		Notify (BAT0, 0x00)
@@ -107,87 +107,85 @@ Device (EC0)
 		Notify (BAT0, 0x81)
 		Notify (BAT0, 0x82)
 
-		Store ("<---- EC: _Q33", Debug)
+		Printf ("<---- EC: _Q33")
 	}
 
 	Method (_Q36, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q36", Debug)
+		Printf ("-----> EC: _Q36")
 
 		Notify (BAT0, 0x80)
 
-		Store ("<----- EC: _Q36", Debug)
+		Printf ("<----- EC: _Q36")
 	}
 
 	Method (_Q37, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q37", Debug)
+		Printf ("-----> EC: _Q37")
 
 		Notify (BAT0, 0x80)
 
-		Store ("<----- EC: _Q37", Debug)
+		Printf ("<----- EC: _Q37")
 	}
 
 	Method (_Q43, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q43", Debug)
+		Printf ("-----> EC: _Q43")
 
-		Store (BRIG, Local0)
-		Increment (Local0)
-		If (LGreater (Local0, 0xAA)) {
-			Store (0xAA, Local0)
+		Local0 = BRIG + 1
+		If (Local0 > 0xaa) {
+			Local0 = 0xaa
 		}
-		Store (Local0, BRIG)
+		BRIG = Local0
 
 		\_SB.PCI0.GFX0.INCB ()
 
-		Store ("<---- EC: _Q43", Debug)
+		Printf ("<---- EC: _Q43")
 	}
 
 	Method (_Q44, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q44", Debug)
+		Printf ("-----> EC: _Q44")
 
-		Store (BRIG, Local0)
-		Decrement (Local0)
-		If (LLess (Local0, 0xA0))
+		Local0 = BRIG - 1
+		If (Local0 < 0xa0)
 		{
-			Store (0xA0, Local0)
+			Local0 = 0xa0
 		}
-		Store (Local0, BRIG)
+		BRIG = Local0
 
 		\_SB.PCI0.GFX0.DECB ()
 
-		Store ("<---- EC: _Q44", Debug)
+		Printf ("<---- EC: _Q44")
 	}
 
 	Method (_Q45, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q45", Debug)
+		Printf ("-----> EC: _Q45")
 
-		Store (0, LIDS)
+		LIDS = 0
 		Notify (LID, 0x80)
 
-		Store ("<----- EC: _Q45", Debug)
+		Printf ("<----- EC: _Q45")
 	}
 
 	Method (_Q46, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q46", Debug)
+		Printf ("-----> EC: _Q46")
 
-		Store (1, LIDS)
+		LIDS = 1
 		Notify (LID, 0x80)
 
-		Store ("<----- EC: _Q46", Debug)
+		Printf ("<----- EC: _Q46")
 	}
 
 	Method (_Q70, 0, NotSerialized)		// _Qxx: EC Query
 	{
-		Store ("-----> EC: _Q70", Debug)
+		Printf ("-----> EC: _Q70")
 
 		Notify (ALSD, 0x80)
 
-		Store ("<----- EC: _Q70", Debug)
+		Printf ("<----- EC: _Q70")
 	}
 
 	#include "battery.asl"

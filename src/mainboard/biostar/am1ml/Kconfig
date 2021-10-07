@@ -18,11 +18,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_ITE_IT8728F
 
 config MAINBOARD_DIR
-	string
 	default "biostar/am1ml"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "AM1ML"
 
 config HW_MEM_HOLE_SIZEK

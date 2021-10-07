@@ -16,6 +16,7 @@
 #include <string.h>
 #include <acpi/acpigen.h>
 #include <assert.h>
+#include <commonlib/helpers.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/soundwire.h>
@@ -781,6 +782,13 @@ void acpigen_write_device(const char *name)
 	acpigen_emit_namestring(name);
 }
 
+void acpigen_write_thermal_zone(const char *name)
+{
+	acpigen_emit_ext_op(THERMAL_ZONE_OP);
+	acpigen_write_len_f();
+	acpigen_emit_namestring(name);
+}
+
 void acpigen_write_STA(uint8_t status)
 {
 	/*
@@ -1494,6 +1502,21 @@ void acpigen_write_if_lequal_namestr_int(const char *namestr, uint64_t val)
 	acpigen_write_integer(val);
 }
 
+/*
+ * Generates ACPI code to check at runtime if an object named `namestring`
+ * exists, and leaves the If scope open to continue execute code when this
+ * is true. NOTE: Requires matching acpigen_write_if_end().
+ *
+ * If (CondRefOf (NAME))
+ */
+void acpigen_write_if_cond_ref_of(const char *namestring)
+{
+	acpigen_write_if();
+	acpigen_emit_ext_op(COND_REFOF_OP);
+	acpigen_emit_namestring(namestring);
+	acpigen_emit_byte(ZERO_OP); /* ignore COND_REFOF_OP destination */
+}
+
 /* Closes previously opened if statement and generates ACPI code for else statement. */
 void acpigen_write_else(void)
 {
@@ -1621,6 +1644,38 @@ void acpigen_write_dsm(const char *uuid, void (**callbacks)(void *),
 	acpigen_write_dsm_uuid_arr(&id, 1);
 }
 
+/*
+ * Create a supported functions bitmask
+ * bit 0:    other functions than 0 are supported
+ * bits 1-x: function x supported
+ */
+static void acpigen_dsm_uuid_enum_functions(const struct dsm_uuid *id)
+{
+	const size_t bytes = DIV_ROUND_UP(id->count, BITS_PER_BYTE);
+	uint8_t *buffer = alloca(bytes);
+	bool set = false;
+	size_t cb_idx = 0;
+
+	memset(buffer, 0, bytes);
+
+	for (size_t i = 0; i < bytes; i++) {
+		for (size_t j = 0; j < BITS_PER_BYTE; j++) {
+			if (cb_idx >= id->count)
+				break;
+
+			if (id->callbacks[cb_idx++]) {
+				set = true;
+				buffer[i] |= BIT(j);
+			}
+		}
+	}
+
+	if (set)
+		buffer[0] |= BIT(0);
+
+	acpigen_write_return_byte_buffer(buffer, bytes);
+}
+
 static void acpigen_write_dsm_uuid(struct dsm_uuid *id)
 {
 	size_t i;
@@ -1634,7 +1689,17 @@ static void acpigen_write_dsm_uuid(struct dsm_uuid *id)
 	/* ToInteger (Arg2, Local1) */
 	acpigen_write_to_integer(ARG2_OP, LOCAL1_OP);
 
-	for (i = 0; i < id->count; i++) {
+	/* If (LEqual(Local1, 0)) */
+	{
+		acpigen_write_if_lequal_op_int(LOCAL1_OP, 0);
+		if (id->callbacks[0])
+			id->callbacks[0](id->arg);
+		else if (id->count)
+			acpigen_dsm_uuid_enum_functions(id);
+		acpigen_write_if_end();
+	}
+
+	for (i = 1; i < id->count; i++) {
 		/* If (LEqual (Local1, i)) */
 		acpigen_write_if_lequal_op_int(LOCAL1_OP, i);
 
@@ -1642,13 +1707,13 @@ static void acpigen_write_dsm_uuid(struct dsm_uuid *id)
 		if (id->callbacks[i])
 			id->callbacks[i](id->arg);
 
-		acpigen_pop_len();	/* If */
+		acpigen_write_if_end();	/* If */
 	}
 
 	/* Default case: Return (Buffer (One) { 0x0 }) */
 	acpigen_write_return_singleton_buffer(0x0);
 
-	acpigen_pop_len();	/* If (LEqual (Local0, ToUUID(uuid))) */
+	acpigen_write_if_end(); /* If (LEqual (Local0, ToUUID(uuid))) */
 
 }
 

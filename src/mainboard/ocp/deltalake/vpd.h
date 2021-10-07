@@ -46,4 +46,11 @@
 #define FSP_DIMM_FREQ "fsp_dimm_freq"
 #define FSP_DIMM_FREQ_DEFAULT 0
 
+/* Skip TXT lockdown */
+#define SKIP_INTEL_TXT_LOCKDOWN "skip_intel_txt_lockdown"
+#define SKIP_INTEL_TXT_LOCKDOWN_DEFAULT 0
+
+/* Force memory training: 0 = Disable, 1 = Enable, Default setting is 0 */
+#define MEM_TRAIN_FORCE "mem_train_force_enable"
+
 #endif

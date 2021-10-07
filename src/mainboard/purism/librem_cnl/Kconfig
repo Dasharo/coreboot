@@ -6,6 +6,7 @@ config BOARD_PURISM_BASEBOARD_LIBREM_CNL
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
 	select INTEL_GMA_HAVE_VBT
+	select MAINBOARD_HAS_LIBGFXINIT
 	select NO_UART_ON_SUPERIO
 	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
 	select SPD_CACHE_IN_FMAP
@@ -15,7 +16,6 @@ config BOARD_PURISM_BASEBOARD_LIBREM_CNL
 if BOARD_PURISM_BASEBOARD_LIBREM_CNL
 
 config MAINBOARD_DIR
-	string
 	default "purism/librem_cnl"
 
 config MAINBOARD_FAMILY
@@ -24,32 +24,26 @@ config MAINBOARD_FAMILY
 	default "Librem 14" if BOARD_PURISM_LIBREM_14
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Librem Mini" if BOARD_PURISM_LIBREM_MINI
 	default "Librem Mini v2" if BOARD_PURISM_LIBREM_MINI_V2
 	default "Librem 14" if BOARD_PURISM_LIBREM_14
 
 config VARIANT_DIR
-	string
 	default "librem_mini" if BOARD_PURISM_LIBREM_MINI || BOARD_PURISM_LIBREM_MINI_V2
 	default "librem_14" if BOARD_PURISM_LIBREM_14
 
 config DEVICETREE
-	string
-	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config CBFS_SIZE
-	hex
 	default 0x800000 if BOARD_PURISM_LIBREM_MINI
 	default 0xA00000 if BOARD_PURISM_LIBREM_MINI_V2
 	default 0x900000 if BOARD_PURISM_LIBREM_14
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config VGA_BIOS_ID

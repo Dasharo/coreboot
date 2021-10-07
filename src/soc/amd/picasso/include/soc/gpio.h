@@ -8,7 +8,7 @@
 
 #ifndef __ACPI__
 #include <soc/iomap.h>
-#include <amdblocks/gpio_banks.h>
+#include <amdblocks/gpio.h>
 #endif /* !__ACPI__ */
 
 #include <amdblocks/gpio_defs.h>
@@ -296,7 +296,5 @@
 #define GPIO_143_IOMUX_GPIOxx 1
 #define GPIO_144_IOMUX_UART1_INTR 0
 #define GPIO_144_IOMUX_GPIOxx 1
-
-#define GPIO_2_EVENT GEVENT_8
 
 #endif /* AMD_PICASSO_GPIO_H */

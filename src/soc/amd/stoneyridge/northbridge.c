@@ -26,7 +26,6 @@
 #include <soc/iomap.h>
 #include <stdint.h>
 #include <string.h>
-#include <arch/bert_storage.h>
 
 #include "chip.h"
 
@@ -229,7 +228,6 @@ static unsigned long agesa_write_acpi_tables(const struct device *device,
 	acpi_header_t *alib;
 	acpi_header_t *ivrs;
 	acpi_hest_t *hest;
-	acpi_bert_t *bert;
 
 	/* HEST */
 	current = ALIGN(current, 8);
@@ -237,26 +235,6 @@ static unsigned long agesa_write_acpi_tables(const struct device *device,
 	acpi_write_hest(hest, acpi_fill_hest);
 	acpi_add_table(rsdp, (void *)current);
 	current += hest->header.length;
-
-	/* BERT */
-	if (CONFIG(ACPI_BERT) && bert_errors_present()) {
-		/* Skip the table if no errors are present.  ACPI driver reports
-		 * a table with a 0-length region:
-		 *   BERT: [Firmware Bug]: table invalid.
-		 */
-		void *rgn;
-		size_t size;
-		bert_errors_region(&rgn, &size);
-		if (!rgn) {
-			printk(BIOS_ERR, "Error: Can't find BERT storage area\n");
-		} else {
-			current = ALIGN(current, 8);
-			bert = (acpi_bert_t *)current;
-			acpi_write_bert(bert, (uintptr_t)rgn, size);
-			acpi_add_table(rsdp, (void *)current);
-			current += bert->header.length;
-		}
-	}
 
 	current = ALIGN(current, 8);
 	printk(BIOS_DEBUG, "ACPI:    * IVRS at %lx\n", current);
@@ -362,7 +340,7 @@ void amd_initcpuio(void)
 
 	/* Non-posted: range(HPET-LAPIC) or 0xfed00000 through 0xfee00000-1 */
 	base = (HPET_BASE_ADDRESS >> 8) | MMIO_WE | MMIO_RE;
-	limit = (ALIGN_DOWN(LOCAL_APIC_ADDR - 1, 64 * KiB) >> 8) | MMIO_NP;
+	limit = (ALIGN_DOWN(LAPIC_DEFAULT_BASE - 1, 64 * KiB) >> 8) | MMIO_NP;
 	pci_write_config32(SOC_ADDR_DEV, NB_MMIO_LIMIT_LO(0), limit);
 	pci_write_config32(SOC_ADDR_DEV, NB_MMIO_BASE_LO(0), base);
 

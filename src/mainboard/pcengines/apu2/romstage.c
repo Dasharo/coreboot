@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 #include <amdblocks/acpimmio.h>
+#include <amdblocks/gpio.h>
+#include <amdblocks/gpio_defs.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
 #include <gpio.h>
@@ -28,63 +30,44 @@ void board_BeforeAgesa(struct sysinfo *cb)
 	pm_write8(0xea, 1);
 }
 
-static void pin_input(gpio_t gpio, u8 iomux_ftn)
-{
-	iomux_write8(gpio, iomux_ftn);
-	gpio_input(gpio);
-}
+const struct soc_amd_gpio gpio_common[] = {
+	PAD_GPI(GPIO_49, PULL_NONE),
+	PAD_GPI(GPIO_50, PULL_NONE),
+	PAD_GPI(GPIO_71, PULL_NONE),
+	PAD_GPO(GPIO_57, LOW),
+	PAD_GPO(GPIO_58, LOW),
+	PAD_GPO(GPIO_59, LOW),
+	PAD_GPO(GPIO_51, HIGH),
+	PAD_GPO(GPIO_55, HIGH),
+	PAD_GPO(GPIO_64, HIGH),
+	PAD_GPO(GPIO_68, HIGH),
+};
 
-static void pin_low(gpio_t gpio, u8 iomux_ftn)
-{
-	iomux_write8(gpio, iomux_ftn);
-	gpio_output(gpio, 0);
-}
+const struct soc_amd_gpio gpio_apu2[] = {
+	PAD_GPI(GPIO_32, PULL_NONE),
+};
 
-static void pin_high(gpio_t gpio, u8 iomux_ftn)
-{
-	iomux_write8(gpio, iomux_ftn);
-	gpio_output(gpio, 1);
-}
+const struct soc_amd_gpio gpio_apu34[] = {
+	PAD_GPI(GPIO_32, PULL_NONE),
+	PAD_GPO(GPIO_33, LOW),
+};
+
+const struct soc_amd_gpio gpio_apu5[] = {
+	PAD_GPI(GPIO_22, PULL_NONE),
+	PAD_GPO(GPIO_32, HIGH),
+	PAD_GPO(GPIO_33, HIGH),
+};
 
 static void early_lpc_init(void)
 {
-	//
-	// Configure output disabled, pull up/down disabled
-	//
+	gpio_configure_pads(gpio_common, ARRAY_SIZE(gpio_common));
+
+	if (CONFIG(BOARD_PCENGINES_APU2))
+		gpio_configure_pads(gpio_apu2, ARRAY_SIZE(gpio_apu2));
+
+	if (CONFIG(BOARD_PCENGINES_APU3) || CONFIG(BOARD_PCENGINES_APU4))
+		gpio_configure_pads(gpio_apu34, ARRAY_SIZE(gpio_apu34));
+
 	if (CONFIG(BOARD_PCENGINES_APU5))
-		pin_input(GPIO_22, Function0);
-
-	if (CONFIG(BOARD_PCENGINES_APU2) ||
-		CONFIG(BOARD_PCENGINES_APU3) ||
-		CONFIG(BOARD_PCENGINES_APU4)) {
-		pin_input(GPIO_32, Function0);
-	}
-
-	pin_input(GPIO_49, Function2);
-	pin_input(GPIO_50, Function2);
-	pin_input(GPIO_71, Function0);
-
-	//
-	// Configure output enabled, value low, pull up/down disabled
-	//
-	if (CONFIG(BOARD_PCENGINES_APU3) ||
-		CONFIG(BOARD_PCENGINES_APU4)) {
-		pin_low(GPIO_33, Function0);
-	}
-	pin_low(GPIO_57, Function1);
-	pin_low(GPIO_58, Function1);
-	pin_low(GPIO_59, Function3);
-
-	//
-	// Configure output enabled, value high, pull up/down disabled
-	//
-	if (CONFIG(BOARD_PCENGINES_APU5)) {
-		pin_high(GPIO_32, Function0);
-		pin_high(GPIO_33, Function0);
-	}
-
-	pin_high(GPIO_51, Function2);
-	pin_high(GPIO_55, Function3);
-	pin_high(GPIO_64, Function2);
-	pin_high(GPIO_68, Function0);
+		gpio_configure_pads(gpio_apu5, ARRAY_SIZE(gpio_apu5));
 }
