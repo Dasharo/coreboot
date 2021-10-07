@@ -4,7 +4,7 @@ stages:
   - upload
 
 build:
-  image: coreboot/coreboot-sdk:1.52
+  image: coreboot/coreboot-sdk:2021-04-06_7014f8258e
   stage: build
   tags:
    - local
@@ -21,8 +21,6 @@ build:
     - chmod 700 ~/.ssh
     - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-    # GPG key setup
-    - echo $GITLAB_NOVACUSTOM_GPG_PRIVATE_KEY | base64 --decode | gpg --import --no-tty --batch --yes
       # update submodules
     - git submodule update --init --recursive --checkout
   script:
