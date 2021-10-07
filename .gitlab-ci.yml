@@ -24,6 +24,8 @@ build:
     - echo $GITLAB_NOVACUSTOM_GPG_PRIVATE_KEY | base64 --decode | gpg --import --no-tty --batch --yes
       # update submodules
     - git submodule update --init --recursive --checkout
+    # GPG key setup
+    - echo $GITLAB_NOVACUSTOM_GPG_PRIVATE_KEY | base64 --decode | gpg --import --no-tty --batch --yes
   script:
     - ./build.sh build
     - ./build.sh sign
