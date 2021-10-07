@@ -29,6 +29,10 @@ Scope (_GPE) {
 	#include <ec/clevo/it5570/acpi/gpe.asl>
 }
 
+External (\_SB.PCI0.RP11.PXSX.VDID, FieldUnitObj)
+External (\_SB.PCI0.CNVW.VDID, FieldUnitObj)
+External (\_SB.PCI0.PMC.IPCS,MEthodObj)
+
 /* Handle Bluetooth RFkill */
 Scope (\_SB.PCI0.XHCI.RHUB.HS10)
 {
@@ -70,9 +74,9 @@ Scope (\_SB.PCI0.XHCI.RHUB.HS10)
 				})
 			}
 		}
-		If(CondRefOf(\_SB.PC00.RP11.PXSX))
+		If(CondRefOf(\_SB.PCI0.RP11.PXSX))
 		{
-			If (\_SB.PC00.RP11.PXSX.VDID != 0xFFFFFFFF)
+			If (\_SB.PCI0.RP11.PXSX.VDID != 0xFFFFFFFF)
 			{
 				Return (Package (0x01)
 				{
@@ -105,7 +109,7 @@ Scope (\_SB.PCI0.RP09)
 	OperationRegion (PXCS, PCI_Config, Zero, 0xFF)
 	Field (PXCS, AnyAcc, NoLock, Preserve)
 	{
-		VDID, 32
+		VDID, 32,
 		Offset (0x52),
 		, 13,
 		LASX, 1,

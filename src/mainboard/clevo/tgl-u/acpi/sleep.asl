@@ -53,7 +53,7 @@ Method (MDSX, 1, Serialized)
 {
 	If (Arg0 == 1) {
 		/* Display On */
-		\_SB.PCI0.LPCB.EC.MSFG = Zero
+		\_SB.PCI0.LPCB.EC0.MSFG = Zero
 	} Else {
 		/* Display Off */
 		If ((\_SB.PCI0.LPCB.EC0.S5FG != One))
