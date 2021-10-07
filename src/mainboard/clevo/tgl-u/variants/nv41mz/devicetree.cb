@@ -321,6 +321,11 @@ chip soc/intel/tigerlake
 				register "wake" = "GPE0_DW0_23" # GPP_C23
 				device pci 00.0 on end
 			end
+			chip soc/intel/common/block/pcie/rtd3
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPD9)" # GPD9_RTD3
+				register "srcclk_pin" = "1" # WLAN_CLKREQ#
+				device generic 0 on end
+			end
 		end
 		device ref pch_espi on
 			chip ec/clevo/it5570
