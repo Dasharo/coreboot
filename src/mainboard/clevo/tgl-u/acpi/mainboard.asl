@@ -64,20 +64,20 @@ Scope (\_SB.PCI0.XHCI.RHUB.HS10)
 		{
 			If (\_SB.PCI0.CNVW.VDID != 0xFFFFFFFF)
 			{
-			    Return (Package (0x01)
-			    {
-				BTPR
-			    })
+				Return (Package (0x01)
+				{
+					BTPR
+				})
 			}
 		}
 		If(CondRefOf(\_SB.PC00.RP11.PXSX))
 		{
 			If (\_SB.PC00.RP11.PXSX.VDID != 0xFFFFFFFF)
 			{
-			    Return (Package (0x01)
-			    {
-				BTPR
-			    })
+				Return (Package (0x01)
+				{
+					BTPR
+				})
 			}
 		}
 		Return (Package (0x00){})
@@ -97,4 +97,101 @@ Scope (\_SB.PCI0.XHCI.RHUB.HS10)
 	{
 		Return (GPR())
 	}
+}
+
+/* Workaround lack of reset and power GPIOs for SD CARD reader */
+Scope (\_SB.PCI0.RP09)
+{
+	OperationRegion (PXCS, PCI_Config, Zero, 0xFF)
+	Field (PXCS, AnyAcc, NoLock, Preserve)
+	{
+		VDID, 32
+		Offset (0x52),
+		, 13,
+		LASX, 1,
+		Offset (0xE0),
+		, 7,
+		NCB7, 1,
+		Offset (0xE2),
+		, 2,
+		L23E, 1,
+		L23R, 1
+	}
+	Name (_S0W, 0x04)
+	Name (_PR0, Package (0x01)
+	{
+		RTD3
+	})
+	Name (_PR3, Package (0x01)
+	{
+		RTD3
+	})
+	PowerResource (RTD3, 0x00, 0x0000)
+	{
+		Name (_STA, One)
+		Method (_ON, 0, Serialized)
+		{
+			\_SB.PCI0.PMC.IPCS (0xAC, Zero, 0x10, 0x00000008, 0x00000008, 0x00000100, 0x00000100)
+			If ((NCB7 == One))
+			{
+				L23R = One
+				Local7 = 0x14
+				While ((Local7 > Zero))
+				{
+					If ((L23R == Zero))
+					{
+					Break
+					}
+
+					Sleep (0x10)
+					Local7--
+				}
+
+				NCB7 = Zero
+				Local7 = 0x08
+				While ((Local7 > Zero))
+				{
+					If ((LASX == One))
+					{
+					Break
+					}
+
+					Sleep (0x10)
+					Local7--
+				}
+			}
+		}
+
+		Method (_OFF, 0, Serialized)
+		{
+			L23E = One
+			Local7 = 0x08
+			While ((Local7 > Zero))
+			{
+				If ((L23E == Zero))
+				{
+					Break
+				}
+
+				Sleep (0x10)
+				Local7--
+			}
+
+			NCB7 = One
+			\_SB.PCI0.PMC.IPCS (0xAC, Zero, 0x10, 0x00000008, 0x00000000, 0x00000100, 0x00000000)
+		}
+	}
+
+	Name (_DSD, Package (0x02)  // _DSD: Device-Specific Data
+	{
+	ToUUID ("6211e2c0-58a3-4af3-90e1-927a4e0c55a4"), 
+	Package (0x01)
+	{
+		Package (0x02)
+		{
+		"HotPlugSupportInD3", 
+		One
+		}
+	}
+	})
 }
