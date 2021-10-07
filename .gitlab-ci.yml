@@ -3,7 +3,7 @@ stages:
   - upload
 
 build:
-  image: coreboot/coreboot-sdk:1.52
+  image: coreboot/coreboot-sdk:2021-04-06_7014f8258e
   stage: build
   tags:
    - local
