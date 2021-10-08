@@ -212,9 +212,10 @@ static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 	opreg.name = "UCSM";
 	opreg.regionspace = SYSTEMMEMORY;
 	opreg.regionoffset = (uintptr_t)region_ptr;
-	opreg.regionlen = ucsi_alloc_region_len;
+	opreg.regionlen = ucsi_region_len;
 
 	acpigen_write_scope(acpi_device_path_join(dev, "UCSI"));
+	acpigen_write_name_integer("_ADR", 0);
 	acpigen_write_name("_CRS");
 	acpigen_write_resourcetemplate_header();
 	acpigen_write_mem32fixed(1, (uintptr_t)region_ptr, ucsi_region_len);
