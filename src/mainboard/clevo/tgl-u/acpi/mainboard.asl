@@ -38,7 +38,7 @@ Scope (\_SB.PCI0.XHCI.RHUB.HS10)
 {
 	PowerResource (BTPR, 0x00, 0x0000)
 	{
-		Method (_STA, 0, NotSerialized)  // _STA: Status
+		Method (_STA, 0, NotSerialized)
 		{
 			If ((\_SB.PCI0.GTXS(GPP_A13) == One))
 			{
@@ -50,17 +50,17 @@ Scope (\_SB.PCI0.XHCI.RHUB.HS10)
 			}
 		}
 
-		Method (_ON, 0, Serialized)  // _ON_: Power On
+		Method (_ON, 0, Serialized)
 		{
 			\_SB.PCI0.STXS (One)
 		}
 
-		Method (_OFF, 0, Serialized)  // _OFF: Power Off
+		Method (_OFF, 0, Serialized)
 		{
 			\_SB.PCI0.CTXS (GPP_A13)
 		}
 	}
-	Name (_S0W, 0x02)  // _S0W: S0 Device Wake State
+	Name (_S0W, 0x02)
 
 	Method(GPR, 0, NotSerialized)
 	{
@@ -121,7 +121,7 @@ Scope (\_SB.PCI0.RP09)
 		L23E, 1,
 		L23R, 1
 	}
-	Name (_S0W, 0x04)
+	Name (_S0W, 0x03)
 	Name (_PR0, Package (0x01)
 	{
 		RTD3
