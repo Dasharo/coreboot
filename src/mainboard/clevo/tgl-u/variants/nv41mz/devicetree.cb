@@ -137,6 +137,7 @@ chip soc/intel/tigerlake
 		end
 		device ref tbt_pcie_rp0 on end # TBT Type-C
 		device ref north_xhci on # TBT Type-C
+			register "UsbTcPortEn" = "1"
 			register "TcssXhciEn" = "1"
 			chip drivers/usb/acpi
 				device ref tcss_root_hub on
