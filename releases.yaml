@@ -58,6 +58,7 @@ releases:
                 - Support for discrete TPM
                 - USB Type-C ACPI support (UCSI)
                 - Improved runtime power management for SSD (reduces power usage while in sleep)
+                - Added partial sleep support (system saves power, but fans still spin)
           changed:
                 - Rebased on coreboot revision ae9a8447
           known_issues:
