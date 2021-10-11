@@ -64,6 +64,12 @@ static void register_reset_to_bl31(void)
 	register_bl31_aux_param(&param_reset.h);
 }
 
+/* Override hs_da_trail for ANX7625 */
+void mtk_dsi_override_phy_timing(struct mtk_phy_timing *timing)
+{
+	timing->da_hs_trail += 9;
+}
+
 /* Set up backlight control pins as output pin and power-off by default */
 static void configure_backlight_and_bridge(void)
 {
@@ -102,10 +108,6 @@ static bool configure_display(void)
 		printk(BIOS_ERR, "%s: Can't get panel's edid\n", __func__);
 		return false;
 	}
-	if (anx7625_dp_start(i2c_bus, &edid) < 0) {
-		printk(BIOS_ERR, "%s: Can't start display via ANX7625\n", __func__);
-		return false;
-	}
 
 	const char *name = edid.ascii_string;
 	if (name[0] == '\0')
@@ -122,12 +124,19 @@ static bool configure_display(void)
 	u32 mipi_dsi_flags = (MIPI_DSI_MODE_VIDEO |
 			      MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 			      MIPI_DSI_MODE_LPM |
+			      MIPI_DSI_MODE_LINE_END |
 			      MIPI_DSI_MODE_EOT_PACKET);
 
 	if (mtk_dsi_init(mipi_dsi_flags, MIPI_DSI_FMT_RGB888, 4, &edid, NULL) < 0) {
 		printk(BIOS_ERR, "%s: Failed in DSI init\n", __func__);
 		return false;
 	}
+
+	if (anx7625_dp_start(i2c_bus, &edid) < 0) {
+		printk(BIOS_ERR, "%s: Can't start display via ANX7625\n", __func__);
+		return false;
+	}
+
 	mtk_ddp_mode_set(&edid);
 	fb_new_framebuffer_info_from_edid(&edid, (uintptr_t)0);
 	return true;

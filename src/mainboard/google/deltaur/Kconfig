@@ -28,11 +28,9 @@ config CHROMEOS
 	select GBB_FLAG_FORCE_DEV_BOOT_ALTFW
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree.cb"
 
 config DRIVER_TPM_I2C_BUS
@@ -44,12 +42,10 @@ config DRIVER_TPM_I2C_ADDR
 	default 0x50
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos-gbe.fmd" if BOARD_GOOGLE_DELTAN
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos.fmd" if BOARD_GOOGLE_DELTAUR
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config POWER_OFF_ON_CR50_UPDATE
@@ -57,7 +53,6 @@ config POWER_OFF_ON_CR50_UPDATE
 	default n
 
 config MAINBOARD_DIR
-	string
 	default "google/deltaur"
 
 config MAINBOARD_FAMILY
@@ -65,13 +60,8 @@ config MAINBOARD_FAMILY
 	default "Google_Deltaur"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Deltan" if BOARD_GOOGLE_DELTAN
 	default "Deltaur" if BOARD_GOOGLE_DELTAUR
-
-config MAX_CPUS
-	int
-	default 8
 
 config TPM_TIS_ACPI_INTERRUPT
 	int
@@ -82,7 +72,6 @@ config UART_FOR_CONSOLE
 	default 2
 
 config VARIANT_DIR
-	string
 	default "deltan" if BOARD_GOOGLE_DELTAN
 	default "deltaur" if BOARD_GOOGLE_DELTAUR
 

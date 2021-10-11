@@ -10,8 +10,17 @@ endchoice
 
 source "src/mainboard/*/Kconfig"
 
+config MAINBOARD_DIR
+	string
+
+config MAINBOARD_PART_NUMBER
+	string
+
 config MAINBOARD_VENDOR
 	string "Mainboard vendor name"
+
+config VARIANT_DIR
+	string
 
 config BOARD_ROMSIZE_KB_256
 	bool

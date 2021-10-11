@@ -63,11 +63,9 @@ config CHROMEOS_WIFI_SAR
 	select USE_SAR
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree.cb"
 
 config DIMM_MAX
-	int
 	default 2
 
 config ROMSTAGE_SPD_CBFS
@@ -88,14 +86,12 @@ config UART_FOR_CONSOLE
 
 if BOARD_GOOGLE_BASEBOARD_HATCH
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos-hatch-16MiB.fmd" if BOARD_ROMSIZE_KB_16384 && CHROMEOS
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos-hatch-32MiB.fmd" if BOARD_ROMSIZE_KB_32768 && CHROMEOS
 endif
 
 if BOARD_GOOGLE_BASEBOARD_PUFF
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos-puff-16MiB.fmd" if BOARD_ROMSIZE_KB_16384 && CHROMEOS
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos-puff-32MiB.fmd" if BOARD_ROMSIZE_KB_32768 && CHROMEOS
 
@@ -105,7 +101,6 @@ config POWER_OFF_ON_CR50_UPDATE
 endif
 
 config MAINBOARD_DIR
-	string
 	default "google/hatch"
 
 config MAINBOARD_FAMILY
@@ -113,7 +108,6 @@ config MAINBOARD_FAMILY
 	default "Google_Hatch"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Akemi" if BOARD_GOOGLE_AKEMI
 	default "Dratini" if BOARD_GOOGLE_DRATINI
 	default "Duffy" if BOARD_GOOGLE_DUFFY
@@ -137,9 +131,10 @@ config MAINBOARD_PART_NUMBER
 	default "Dooly" if BOARD_GOOGLE_DOOLY
 	default "Ambassador" if BOARD_GOOGLE_AMBASSADOR
 	default "Genesis" if BOARD_GOOGLE_GENESIS
+	default "Scout" if BOARD_GOOGLE_SCOUT
+	default "Moonbuggy" if BOARD_GOOGLE_MOONBUGGY
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/helios_diskswap/overridetree.cb" if BOARD_GOOGLE_HELIOS_DISKSWAP
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
@@ -148,7 +143,6 @@ config TPM_TIS_ACPI_INTERRUPT
 	default 53 # GPE0_DW1_21 (GPP_C21)
 
 config VARIANT_DIR
-	string
 	default "akemi" if BOARD_GOOGLE_AKEMI
 	default "dratini" if BOARD_GOOGLE_DRATINI
 	default "duffy" if BOARD_GOOGLE_DUFFY
@@ -172,6 +166,8 @@ config VARIANT_DIR
 	default "dooly" if BOARD_GOOGLE_DOOLY
 	default "ambassador" if BOARD_GOOGLE_AMBASSADOR
 	default "genesis" if BOARD_GOOGLE_GENESIS
+	default "scout" if BOARD_GOOGLE_SCOUT
+	default "moonbuggy" if BOARD_GOOGLE_MOONBUGGY
 
 config VBOOT
 	select HAS_RECOVERY_MRC_CACHE

@@ -62,6 +62,9 @@
  * +---------------------------------------------------------------------------+
  * |0x1000   Serial debug bus                                                  |
  * +---------------------------------------------------------------------------+
+ * |0x1200   remote GPIO configuration registers                               |
+ * |           * contains both GPIO and MUX registers                          |
+ * +---------------------------------------------------------------------------+
  * |0x1400   DP-VGA                                                            |
  * +---------------------------------------------------------------------------+
  * |0x1500   GPIO configuration registers bank 0                               |
@@ -72,11 +75,13 @@
  * +---------------------------------------------------------------------------+
  * |0x1700   GPIO configuration registers bank 2 (following bank 1)            |
  * +---------------------------------------------------------------------------+
+ * |0x1800   GPIO configuration registers bank 3 (following bank 2)            |
+ * +---------------------------------------------------------------------------+
  * |0x1c00   xHCI Power Management registers                                   |
  * +---------------------------------------------------------------------------+
  * |0x1d00   Wake device (AC DC timer)                                         |
  * +---------------------------------------------------------------------------+
- * |0x1e00   Always On Always Connect registers                                |
+ * |0x1e00   Always On Always Connected (AOAC) registers                       |
  * +---------------------------------------------------------------------------+
  */
 
@@ -115,10 +120,9 @@
 #define ACPIMMIO_HPET_BANK		0x0c00
 #define ACPIMMIO_IOMUX_BANK		0x0d00
 #define ACPIMMIO_MISC_BANK		0x0e00
+#define ACPIMMIO_REMOTE_GPIO_BANK	0x1200
 #define ACPIMMIO_DPVGA_BANK		0x1400
 #define ACPIMMIO_GPIO0_BANK		0x1500
-#define ACPIMMIO_GPIO1_BANK		0x1600
-#define ACPIMMIO_GPIO2_BANK		0x1700
 #define ACPIMMIO_XHCIPM_BANK		0x1c00
 #define ACPIMMIO_ACDCTMR_BANK		0x1d00
 #define ACPIMMIO_AOAC_BANK		0x1e00

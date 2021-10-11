@@ -19,9 +19,12 @@ This section contains documentation about coreboot on specific mainboards.
 - [A88XM-E](asus/a88xm-e.md)
 - [F2A85-M](asus/f2a85-m.md)
 - [P5Q](asus/p5q.md)
+- [P8C WS](asus/p8c_ws.md)
 - [P8H61-M LX](asus/p8h61-m_lx.md)
 - [P8H61-M Pro](asus/p8h61-m_pro.md)
+- [P8H77-V](asus/p8h77-v.md)
 - [P8Z77-M Pro](asus/p8z77-m_pro.md)
+- [P8Z77-V](asus/p8z77-v.md)
 
 ## Cavium
 
@@ -153,6 +156,7 @@ The boards in this section are not real mainboards, but emulators.
 
 ## Purism
 
+- [Librem 14](purism/librem_14.md)
 - [Librem Mini](purism/librem_mini.md)
 
 ## Protectli
@@ -176,8 +180,15 @@ The boards in this section are not real mainboards, but emulators.
 
 ## System76
 
+- [Adder Workstation 1](system76/addw1.md)
+- [Adder Workstation 2](system76/addw2.md)
+- [Darter Pro 6](system76/darp6.md)
+- [Darter Pro 7](system76/darp7.md)
+- [Galago Pro 4](system76/galp4.md)
+- [Galago Pro 5](system76/galp5.md)
 - [Gazelle 15](system76/gaze15.md)
-- [Lemur Pro](system76/lemp9.md)
+- [Lemur Pro 9](system76/lemp9.md)
+- [Lemur Pro 10](system76/lemp10.md)
 - [Oryx Pro 5](system76/oryp5.md)
 - [Oryx Pro 6](system76/oryp6.md)
 

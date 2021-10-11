@@ -54,6 +54,11 @@ static inline size_t buffer_offset(const struct buffer *b)
 	return b->offset;
 }
 
+static inline void *buffer_end(const struct buffer *b)
+{
+	return b->data + b->size;
+}
+
 /*
  * Shrink a buffer toward the beginning of its previous space.
  * Afterward, buffer_delete() remains the means of cleaning it up. */
@@ -178,7 +183,7 @@ int parse_elf_to_stage(const struct buffer *input, struct buffer *output,
 		       struct cbfs_file_attr_stageheader *stageheader);
 /* location is TOP aligned. */
 int parse_elf_to_xip_stage(const struct buffer *input, struct buffer *output,
-			   uint32_t *location, const char *ignore_section,
+			   uint32_t location, const char *ignore_section,
 			   struct cbfs_file_attr_stageheader *stageheader);
 
 void print_supported_architectures(void);

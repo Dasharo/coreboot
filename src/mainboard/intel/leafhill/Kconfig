@@ -8,15 +8,12 @@ config BOARD_SPECIFIC_OPTIONS
 	select INTEL_LPSS_UART_FOR_CONSOLE
 
 config MAINBOARD_DIR
-	string
 	default "intel/leafhill"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Leafhill"
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/leafhill.\$(CONFIG_COREBOOT_ROMSIZE_KB).fmd"
 
 config UART_FOR_CONSOLE
@@ -46,27 +43,5 @@ config HAVE_IFD_BIN
 	bool
 	depends on NEED_IFWI
 	default y
-
-config ADD_FSP_BINARIES
-	bool "Add FSP blobs"
-	default n
-
-config FSP_M_FILE
-	string "path to FSP-M.Fv blob"
-	depends on ADD_FSP_BINARIES
-	default ""
-
-config FSP_S_FILE
-	string "path to FSP-S.Fv blob"
-	depends on ADD_FSP_BINARIES
-	default ""
-
-config FSP_S_CBFS
-	string
-	default "fsps.bin"
-
-config FSP_M_CBFS
-	string
-	default "fspm.bin"
 
 endif # BOARD_INTEL_LEAFHILL

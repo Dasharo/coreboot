@@ -6,7 +6,6 @@
 #include <device/device.h>
 #include <fsp/util.h>
 #include <intelblocks/cpulib.h>
-#include <intelblocks/mp_init.h>
 #include <intelblocks/pcie_rp.h>
 #include <soc/gpio_soc_defs.h>
 #include <soc/iomap.h>
@@ -32,6 +31,10 @@ enum vtd_base_index_type {
 	VTD_GFX,
 	VTD_IPU,
 	VTD_VTVCO,
+	VTD_TBT0,
+	VTD_TBT1,
+	VTD_TBT2,
+	VTD_TBT3,
 };
 
 static uint8_t clk_src_to_fsp(enum pcie_rp_type type, int rp_number)
@@ -60,98 +63,12 @@ static void pcie_rp_init(FSP_M_CONFIG *m_cfg, uint32_t en_mask, enum pcie_rp_typ
 	}
 }
 
-static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
+static void fill_fspm_pcie_rp_params(FSP_M_CONFIG *m_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
-	const struct device *dev;
+	/* Disable all PCIe clock sources by default. And set RP irrelevant clock. */
 	unsigned int i;
 
-	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	if (!CONFIG(SOC_INTEL_DISABLE_IGD) && is_dev_enabled(dev))
-		m_cfg->InternalGfx = 1;
-	else
-		m_cfg->InternalGfx = 0;
-
-	/* If IGD is enabled, set IGD stolen size to 60MB. Otherwise, skip IGD init in FSP */
-	m_cfg->IgdDvmt50PreAlloc = m_cfg->InternalGfx ? IGD_SM_60MB : 0;
-
-	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
-	m_cfg->SaGv = config->SaGv;
-	m_cfg->RMT = config->RMT;
-
-	/* CpuRatio Settings */
-	if (config->cpu_ratio_override)
-		m_cfg->CpuRatio = config->cpu_ratio_override;
-	else
-		/* Set CpuRatio to match existing MSR value */
-		m_cfg->CpuRatio = (rdmsr(MSR_FLEX_RATIO).lo >> 8) & 0xff;
-
-	m_cfg->PrmrrSize = get_valid_prmrr_size();
-	m_cfg->EnableC6Dram = config->enable_c6dram;
-	/* Disable BIOS Guard */
-	m_cfg->BiosGuard = 0;
-
-	/* UART Debug Log */
-	m_cfg->PcdDebugInterfaceFlags = CONFIG(DRIVERS_UART_8250IO) ?
-			DEBUG_INTERFACE_UART_8250IO : DEBUG_INTERFACE_LPSS_SERIAL_IO;
-	if (CONFIG(DRIVERS_UART_8250IO))
-		m_cfg->PcdIsaSerialUartBase = ISA_SERIAL_BASE_ADDR_3F8;
-	m_cfg->SerialIoUartDebugMode = PchSerialIoSkipInit;
-	m_cfg->SerialIoUartDebugControllerNumber = CONFIG_UART_FOR_CONSOLE;
-
-	/* DP port config */
-	m_cfg->DdiPortAConfig = config->DdiPortAConfig;
-	m_cfg->DdiPortBConfig = config->DdiPortBConfig;
-	m_cfg->DdiPortAHpd = config->DdiPortAHpd;
-	m_cfg->DdiPortBHpd = config->DdiPortBHpd;
-	m_cfg->DdiPortCHpd = config->DdiPortCHpd;
-	m_cfg->DdiPort1Hpd = config->DdiPort1Hpd;
-	m_cfg->DdiPort2Hpd = config->DdiPort2Hpd;
-	m_cfg->DdiPort3Hpd = config->DdiPort3Hpd;
-	m_cfg->DdiPort4Hpd = config->DdiPort4Hpd;
-	m_cfg->DdiPortADdc = config->DdiPortADdc;
-	m_cfg->DdiPortBDdc = config->DdiPortBDdc;
-	m_cfg->DdiPortCDdc = config->DdiPortCDdc;
-	m_cfg->DdiPort1Ddc = config->DdiPort1Ddc;
-	m_cfg->DdiPort2Ddc = config->DdiPort2Ddc;
-	m_cfg->DdiPort3Ddc = config->DdiPort3Ddc;
-	m_cfg->DdiPort4Ddc = config->DdiPort4Ddc;
-
-	/* Image clock: disable all clocks for bypassing FSP pin mux */
-	memset(m_cfg->ImguClkOutEn, 0, sizeof(m_cfg->ImguClkOutEn));
-
-	/* Enable Hyper Threading */
-	m_cfg->HyperThreading = 1;
-	/* Disable Lock PCU Thermal Management registers */
-	m_cfg->LockPTMregs = 0;
-	/* Channel Hash Mask:0x0001=BIT6 set(Minimal), 0x3FFF=BIT[19:6] set(Maximum) */
-	m_cfg->ChHashMask = 0x30CC;
-	/* Enable SMBus controller */
-	dev = pcidev_path_on_root(PCH_DEVFN_SMBUS);
-	m_cfg->SmbusEnable = is_dev_enabled(dev);
-	/* Set debug probe type */
-	m_cfg->PlatformDebugConsent = CONFIG_SOC_INTEL_ALDERLAKE_DEBUG_CONSENT;
-
-	/* Audio: HDAUDIO_LINK_MODE I2S/SNDW */
-	dev = pcidev_path_on_root(PCH_DEVFN_HDA);
-	m_cfg->PchHdaEnable = is_dev_enabled(dev);
-
-	m_cfg->PchHdaDspEnable = config->PchHdaDspEnable;
-	/*
-	 * All the PchHdaAudioLink{Hda|Dmic|Ssp|Sndw}Enable UPDs are used by FSP only to
-	 * configure GPIO pads for audio. Mainboard is expected to perform all GPIO
-	 * configuration in coreboot and hence these UPDs are set to 0 to skip FSP GPIO
-	 * configuration for audio pads.
-	 */
-	m_cfg->PchHdaAudioLinkHdaEnable = 0;
-	memset(m_cfg->PchHdaAudioLinkDmicEnable, 0, sizeof(m_cfg->PchHdaAudioLinkDmicEnable));
-	memset(m_cfg->PchHdaAudioLinkSspEnable, 0, sizeof(m_cfg->PchHdaAudioLinkSspEnable));
-	memset(m_cfg->PchHdaAudioLinkSndwEnable, 0, sizeof(m_cfg->PchHdaAudioLinkSndwEnable));
-	m_cfg->PchHdaIDispLinkTmode = config->PchHdaIDispLinkTmode;
-	m_cfg->PchHdaIDispLinkFrequency = config->PchHdaIDispLinkFrequency;
-	m_cfg->PchHdaIDispCodecDisconnect = !config->PchHdaIDispCodecEnable;
-
-	/* Disable all PCIe clock sources by default. And set RP irrelevant clock. */
 	for (i = 0; i < CONFIG_MAX_PCIE_CLOCK_SRC; i++) {
 		if (config->pcie_clk_config_flag[i] & PCIE_CLK_FREE_RUNNING)
 			m_cfg->PcieClkSrcUsage[i] = FSP_CLK_FREE_RUNNING;
@@ -162,48 +79,183 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 		m_cfg->PcieClkSrcClkReq[i] = FSP_CLK_NOTUSED;
 	}
 
-	/* PCIE ports */
+	/* Configure PCH PCIE ports */
 	m_cfg->PcieRpEnableMask = pcie_rp_enable_mask(get_pch_pcie_rp_table());
 	pcie_rp_init(m_cfg, m_cfg->PcieRpEnableMask, PCH_PCIE_RP, config->pch_pcie_rp,
 			CONFIG_MAX_PCH_ROOT_PORTS);
 
-	/* CPU PCIE ports */
+	/* Configure CPU PCIE ports */
 	m_cfg->CpuPcieRpEnableMask = pcie_rp_enable_mask(get_cpu_pcie_rp_table());
 	pcie_rp_init(m_cfg, m_cfg->CpuPcieRpEnableMask, CPU_PCIE_RP, config->cpu_pcie_rp,
 			CONFIG_MAX_CPU_ROOT_PORTS);
+}
 
-	/* ISH */
-	dev = pcidev_path_on_root(PCH_DEVFN_ISH);
-	m_cfg->PchIshEnable = is_dev_enabled(dev);
+static void fill_fspm_igd_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	unsigned int i;
+	const struct ddi_port_upds {
+		uint8_t *ddc;
+		uint8_t *hpd;
+	} ddi_port_upds[] = {
+		[DDI_PORT_A] = {&m_cfg->DdiPortADdc, &m_cfg->DdiPortAHpd},
+		[DDI_PORT_B] = {&m_cfg->DdiPortBDdc, &m_cfg->DdiPortBHpd},
+		[DDI_PORT_C] = {&m_cfg->DdiPortCDdc, &m_cfg->DdiPortCHpd},
+		[DDI_PORT_1] = {&m_cfg->DdiPort1Ddc, &m_cfg->DdiPort1Hpd},
+		[DDI_PORT_2] = {&m_cfg->DdiPort2Ddc, &m_cfg->DdiPort2Hpd},
+		[DDI_PORT_3] = {&m_cfg->DdiPort3Ddc, &m_cfg->DdiPort3Hpd},
+		[DDI_PORT_4] = {&m_cfg->DdiPort4Ddc, &m_cfg->DdiPort4Hpd},
+	};
+	m_cfg->InternalGfx = !CONFIG(SOC_INTEL_DISABLE_IGD) && is_devfn_enabled(SA_DEVFN_IGD);
+	if (m_cfg->InternalGfx) {
+		/* IGD is enabled, set IGD stolen size to 60MB. */
+		m_cfg->IgdDvmt50PreAlloc = IGD_SM_60MB;
+		/* DP port config */
+		m_cfg->DdiPortAConfig = config->DdiPortAConfig;
+		m_cfg->DdiPortBConfig = config->DdiPortBConfig;
+		for  (i = 0; i < ARRAY_SIZE(ddi_port_upds); i++) {
+			*ddi_port_upds[i].ddc = !!(config->ddi_ports_config[i] &
+								DDI_ENABLE_DDC);
+			*ddi_port_upds[i].hpd = !!(config->ddi_ports_config[i] &
+								DDI_ENABLE_HPD);
+		}
+	} else {
+		/* IGD is disabled, skip IGD init in FSP. */
+		m_cfg->IgdDvmt50PreAlloc = 0;
+		/* DP port config */
+		m_cfg->DdiPortAConfig = 0;
+		m_cfg->DdiPortBConfig = 0;
+		for  (i = 0; i < ARRAY_SIZE(ddi_port_upds); i++) {
+			*ddi_port_upds[i].ddc = 0;
+			*ddi_port_upds[i].hpd = 0;
+		}
+	}
+}
+static void fill_fspm_mrc_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	m_cfg->SaGv = config->SaGv;
+	m_cfg->RMT = config->RMT;
+	if (config->MaxDramSpeed)
+		m_cfg->DdrFreqLimit = config->MaxDramSpeed;
+}
 
+static void fill_fspm_cpu_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
+	/* CpuRatio Settings */
+	if (config->cpu_ratio_override)
+		m_cfg->CpuRatio = config->cpu_ratio_override;
+	else
+		/* Set CpuRatio to match existing MSR value */
+		m_cfg->CpuRatio = (rdmsr(MSR_FLEX_RATIO).lo >> 8) & 0xff;
+
+	m_cfg->PrmrrSize = get_valid_prmrr_size();
+	m_cfg->EnableC6Dram = config->enable_c6dram;
+	/* Enable Hyper Threading */
+	m_cfg->HyperThreading = 1;
+}
+
+static void fill_fspm_security_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	/* Disable BIOS Guard */
+	m_cfg->BiosGuard = 0;
+	m_cfg->TmeEnable = CONFIG(INTEL_TME);
+}
+
+static void fill_fspm_uart_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	/* UART Debug Log */
+	m_cfg->PcdDebugInterfaceFlags = CONFIG(DRIVERS_UART_8250IO) ?
+			DEBUG_INTERFACE_UART_8250IO : DEBUG_INTERFACE_LPSS_SERIAL_IO;
+	if (CONFIG(DRIVERS_UART_8250IO))
+		m_cfg->PcdIsaSerialUartBase = ISA_SERIAL_BASE_ADDR_3F8;
+	m_cfg->SerialIoUartDebugMode = PchSerialIoSkipInit;
+	m_cfg->SerialIoUartDebugControllerNumber = CONFIG_UART_FOR_CONSOLE;
+}
+
+static void fill_fspm_ipu_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	/* Image clock: disable all clocks for bypassing FSP pin mux */
+	memset(m_cfg->ImguClkOutEn, 0, sizeof(m_cfg->ImguClkOutEn));
+	/* IPU */
+	m_cfg->SaIpuEnable = is_devfn_enabled(SA_DEVFN_IPU);
+}
+
+static void fill_fspm_smbus_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	m_cfg->SmbusEnable = is_devfn_enabled(PCH_DEVFN_SMBUS);
+}
+
+static void fill_fspm_misc_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	/* Disable Lock PCU Thermal Management registers */
+	m_cfg->LockPTMregs = 0;
+
+	/* Skip CPU replacement check */
+	m_cfg->SkipCpuReplacementCheck = !config->CpuReplacementCheck;
+
+	/* Skip GPIO configuration from FSP */
+	m_cfg->GpioOverride = 0x1;
+}
+
+static void fill_fspm_audio_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	/* Audio: HDAUDIO_LINK_MODE I2S/SNDW */
+	m_cfg->PchHdaEnable = is_devfn_enabled(PCH_DEVFN_HDA);
+	m_cfg->PchHdaDspEnable = config->PchHdaDspEnable;
+	m_cfg->PchHdaIDispLinkTmode = config->PchHdaIDispLinkTmode;
+	m_cfg->PchHdaIDispLinkFrequency = config->PchHdaIDispLinkFrequency;
+	m_cfg->PchHdaIDispCodecDisconnect = !config->PchHdaIDispCodecEnable;
+	/*
+	 * All the PchHdaAudioLink{Hda|Dmic|Ssp|Sndw}Enable UPDs are used by FSP only to
+	 * configure GPIO pads for audio. Mainboard is expected to perform all GPIO
+	 * configuration in coreboot and hence these UPDs are set to 0 to skip FSP GPIO
+	 * configuration for audio pads.
+	 */
+	m_cfg->PchHdaAudioLinkHdaEnable = 0;
+	memset(m_cfg->PchHdaAudioLinkDmicEnable, 0, sizeof(m_cfg->PchHdaAudioLinkDmicEnable));
+	memset(m_cfg->PchHdaAudioLinkSspEnable, 0, sizeof(m_cfg->PchHdaAudioLinkSspEnable));
+	memset(m_cfg->PchHdaAudioLinkSndwEnable, 0, sizeof(m_cfg->PchHdaAudioLinkSndwEnable));
+}
+
+static void fill_fspm_ish_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	m_cfg->PchIshEnable = is_devfn_enabled(PCH_DEVFN_ISH);
+}
+
+static void fill_fspm_tcss_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
 	/* Tcss USB */
-	dev = pcidev_path_on_root(SA_DEVFN_TCSS_XHCI);
-	m_cfg->TcssXhciEn = is_dev_enabled(dev);
-
-	dev = pcidev_path_on_root(SA_DEVFN_TCSS_XDCI);
-	m_cfg->TcssXdciEn = is_dev_enabled(dev);
+	m_cfg->TcssXhciEn = is_devfn_enabled(SA_DEVFN_TCSS_XHCI);
+	m_cfg->TcssXdciEn = is_devfn_enabled(SA_DEVFN_TCSS_XDCI);
 
 	/* TCSS DMA */
-	dev = pcidev_path_on_root(SA_DEVFN_TCSS_DMA0);
-	m_cfg->TcssDma0En = is_dev_enabled(dev);
+	m_cfg->TcssDma0En = is_devfn_enabled(SA_DEVFN_TCSS_DMA0);
+	m_cfg->TcssDma1En = is_devfn_enabled(SA_DEVFN_TCSS_DMA1);
+}
 
-	dev = pcidev_path_on_root(SA_DEVFN_TCSS_DMA1);
-	m_cfg->TcssDma1En = is_dev_enabled(dev);
+static void fill_fspm_usb4_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	m_cfg->TcssItbtPcie0En = is_devfn_enabled(SA_DEVFN_TBT0);
+	m_cfg->TcssItbtPcie1En = is_devfn_enabled(SA_DEVFN_TBT1);
+	m_cfg->TcssItbtPcie2En = is_devfn_enabled(SA_DEVFN_TBT2);
+	m_cfg->TcssItbtPcie3En = is_devfn_enabled(SA_DEVFN_TBT3);
+}
 
-	/* USB4/TBT */
-	dev = pcidev_path_on_root(SA_DEVFN_TBT0);
-	m_cfg->TcssItbtPcie0En = is_dev_enabled(dev);
-
-	dev = pcidev_path_on_root(SA_DEVFN_TBT1);
-	m_cfg->TcssItbtPcie1En = is_dev_enabled(dev);
-
-	dev = pcidev_path_on_root(SA_DEVFN_TBT2);
-	m_cfg->TcssItbtPcie2En = is_dev_enabled(dev);
-
-	dev = pcidev_path_on_root(SA_DEVFN_TBT3);
-	m_cfg->TcssItbtPcie3En = is_dev_enabled(dev);
-
-	/* VT-d config */
+static void fill_fspm_vtd_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
 	m_cfg->VtdBaseAddress[VTD_GFX] = GFXVT_BASE_ADDRESS;
 	m_cfg->VtdBaseAddress[VTD_IPU] = IPUVT_BASE_ADDRESS;
 	m_cfg->VtdBaseAddress[VTD_VTVCO] = VTVC0_BASE_ADDRESS;
@@ -228,21 +280,60 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 		printk(BIOS_ERR, "ERROR: Requested VT-d, but VTVCO_BASE_ADDRESS is 0\n");
 	}
 
+	if (m_cfg->TcssDma0En || m_cfg->TcssDma1En)
+		m_cfg->VtdItbtEnable = 1;
+
+	if (m_cfg->TcssItbtPcie0En)
+		m_cfg->VtdBaseAddress[VTD_TBT0] = TBT0_BASE_ADDRESS;
+
+	if (m_cfg->TcssItbtPcie1En)
+		m_cfg->VtdBaseAddress[VTD_TBT1] = TBT1_BASE_ADDRESS;
+
+	if (m_cfg->TcssItbtPcie2En)
+		m_cfg->VtdBaseAddress[VTD_TBT2] = TBT2_BASE_ADDRESS;
+
+	if (m_cfg->TcssItbtPcie3En)
+		m_cfg->VtdBaseAddress[VTD_TBT3] = TBT3_BASE_ADDRESS;
+
 	/* Change VmxEnable UPD value according to ENABLE_VMX Kconfig */
 	m_cfg->VmxEnable = CONFIG(ENABLE_VMX);
-	/* Skip CPU replacement check */
-	m_cfg->SkipCpuReplacementCheck = !config->CpuReplacementCheck;
+}
 
-	m_cfg->TmeEnable = CONFIG(INTEL_TME);
-
-	/* Skip GPIO configuration from FSP */
-	m_cfg->GpioOverride = 0x1;
+static void fill_fspm_trace_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	/* Set debug probe type */
+	m_cfg->PlatformDebugConsent = CONFIG_SOC_INTEL_ALDERLAKE_DEBUG_CONSENT;
 
 	/* CrashLog config */
-	if (CONFIG(SOC_INTEL_CRASHLOG)) {
-		m_cfg->CpuCrashLogDevice = 1;
-		m_cfg->CpuCrashLogEnable = 1;
-	}
+	m_cfg->CpuCrashLogDevice = CONFIG(SOC_INTEL_CRASHLOG) && is_devfn_enabled(SA_DEVFN_TMT);
+	m_cfg->CpuCrashLogEnable = m_cfg->CpuCrashLogDevice;
+}
+
+static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	const void (*fill_fspm_params[])(FSP_M_CONFIG *m_cfg,
+			const struct soc_intel_alderlake_config *config) = {
+		fill_fspm_igd_params,
+		fill_fspm_mrc_params,
+		fill_fspm_cpu_params,
+		fill_fspm_security_params,
+		fill_fspm_uart_params,
+		fill_fspm_ipu_params,
+		fill_fspm_smbus_params,
+		fill_fspm_misc_params,
+		fill_fspm_audio_params,
+		fill_fspm_pcie_rp_params,
+		fill_fspm_ish_params,
+		fill_fspm_tcss_params,
+		fill_fspm_usb4_params,
+		fill_fspm_vtd_params,
+		fill_fspm_trace_params,
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(fill_fspm_params); i++)
+		fill_fspm_params[i](m_cfg, config);
 }
 
 void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
@@ -253,10 +344,10 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	config = config_of_soc();
 
 	soc_memory_init_params(m_cfg, config);
-	mainboard_memory_init_params(mupd);
+	mainboard_memory_init_params(m_cfg);
 }
 
-__weak void mainboard_memory_init_params(FSPM_UPD *mupd)
+__weak void mainboard_memory_init_params(FSP_M_CONFIG *m_cfg)
 {
 	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
 }

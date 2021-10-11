@@ -218,29 +218,26 @@ static enum cb_err locate_vbt_vbios_cbfs(struct region_device *rdev)
 	return locate_vbt_vbios(oprom, rdev);
 }
 
-/* Initialize IGD OpRegion, called from ACPI code and OS drivers */
-enum cb_err intel_gma_init_igd_opregion(void)
+/*
+ * Try to locate VBT in possible locations and return if found.
+ * VBT can be possibly in one of 3 regions:
+ *  1. Stitched directly into CBFS region as VBT
+ *  2. Part of pci8086 option ROM within CBFS
+ *  3. part of VBIOS at location 0xC0000.
+ */
+static enum cb_err find_vbt_location(struct region_device *rdev)
 {
-	igd_opregion_t *opregion;
-	struct region_device rdev;
-	optionrom_vbt_t *vbt = NULL;
-	optionrom_vbt_t *ext_vbt;
-	bool found = false;
-
-	if (acpi_is_wakeup_s3())
-		return intel_gma_restore_opregion();
-
 	/* Search for vbt.bin in CBFS. */
-	if (locate_vbt_cbfs(&rdev) == CB_SUCCESS &&
-	    vbt_validate(&rdev) == CB_SUCCESS) {
-		found = true;
+	if (locate_vbt_cbfs(rdev) == CB_SUCCESS &&
+	    vbt_validate(rdev) == CB_SUCCESS) {
 		printk(BIOS_INFO, "GMA: Found valid VBT in CBFS\n");
+		return CB_SUCCESS;
 	}
 	/* Search for pci8086,XXXX.rom in CBFS. */
-	else if (locate_vbt_vbios_cbfs(&rdev) == CB_SUCCESS &&
-		 vbt_validate(&rdev) == CB_SUCCESS) {
-		found = true;
+	else if (locate_vbt_vbios_cbfs(rdev) == CB_SUCCESS &&
+		 vbt_validate(rdev) == CB_SUCCESS) {
 		printk(BIOS_INFO, "GMA: Found valid VBT in VBIOS\n");
+		return CB_SUCCESS;
 	}
 	/*
 	 * Try to locate Intel VBIOS at 0xc0000. It might have been placed by
@@ -248,16 +245,80 @@ enum cb_err intel_gma_init_igd_opregion(void)
 	 * VBIOS on legacy platforms.
 	 * TODO: Place generated fake VBT in CBMEM and get rid of this.
 	 */
-	else if (locate_vbt_vbios((u8 *)0xc0000, &rdev) == CB_SUCCESS &&
-		 vbt_validate(&rdev) == CB_SUCCESS) {
-		found = true;
+	else if (locate_vbt_vbios((u8 *)0xc0000, rdev) == CB_SUCCESS &&
+		 vbt_validate(rdev) == CB_SUCCESS) {
 		printk(BIOS_INFO, "GMA: Found valid VBT in legacy area\n");
+		return CB_SUCCESS;
 	}
 
-	if (!found) {
-		printk(BIOS_ERR, "GMA: VBT couldn't be found\n");
+	printk(BIOS_ERR, "GMA: VBT couldn't be found\n");
+	return CB_ERR;
+}
+
+/* Function to get the IGD Opregion version */
+static struct opregion_version opregion_get_version(void)
+{
+	if (CONFIG(INTEL_GMA_OPREGION_2_1))
+		return (struct opregion_version) { .major = 2, .minor = 1 };
+
+	return (struct opregion_version) { .major = 2, .minor = 0 };
+}
+
+/*
+ * Function to determine if we need to use extended VBT region to pass
+ * VBT pointer. If VBT size > 6 KiB then we need to use extended VBT
+ * region.
+ */
+static inline bool is_ext_vbt_required(igd_opregion_t *opregion, optionrom_vbt_t *vbt)
+{
+	return (vbt->hdr_vbt_size > sizeof(opregion->vbt.gvd1));
+}
+
+/* Function to determine if the VBT uses a relative address */
+static inline bool uses_relative_vbt_addr(opregion_header_t *header)
+{
+	if (header->opver.major > 2)
+		return true;
+
+	return header->opver.major >= 2 && header->opver.minor >= 1;
+}
+
+/*
+ * Copy extended VBT at the end of opregion and fill rvda and rvds
+ * values correctly for the opregion.
+ */
+static void opregion_add_ext_vbt(igd_opregion_t *opregion, uint8_t *ext_vbt,
+				optionrom_vbt_t *vbt)
+{
+
+	opregion_header_t *header = &opregion->header;
+	/* Copy VBT into extended VBT region (at offset 8 KiB) */
+	memcpy(ext_vbt, vbt, vbt->hdr_vbt_size);
+
+	/* Fill RVDA value with relative address of the opregion buffer in case of
+	IGD Opregion version 2.1+ and physical address otherwise */
+
+	if (uses_relative_vbt_addr(header))
+		opregion->mailbox3.rvda = sizeof(*opregion);
+	else
+		opregion->mailbox3.rvda = (uintptr_t)ext_vbt;
+
+	opregion->mailbox3.rvds = vbt->hdr_vbt_size;
+}
+
+/* Initialize IGD OpRegion, called from ACPI code and OS drivers */
+enum cb_err intel_gma_init_igd_opregion(void)
+{
+	igd_opregion_t *opregion;
+	struct region_device rdev;
+	optionrom_vbt_t *vbt = NULL;
+	size_t opregion_size = sizeof(igd_opregion_t);
+
+	if (acpi_is_wakeup_s3())
+		return intel_gma_restore_opregion();
+
+	if (find_vbt_location(&rdev) != CB_SUCCESS)
 		return CB_ERR;
-	}
 
 	vbt = rdev_mmap_full(&rdev);
 	if (!vbt) {
@@ -271,32 +332,30 @@ enum cb_err intel_gma_init_igd_opregion(void)
 		return CB_ERR;
 	}
 
-	opregion = cbmem_add(CBMEM_ID_IGD_OPREGION, sizeof(*opregion));
+	if (is_ext_vbt_required(opregion, vbt))
+		opregion_size += vbt->hdr_vbt_size;
+
+	opregion = cbmem_add(CBMEM_ID_IGD_OPREGION, opregion_size);
 	if (!opregion) {
 		printk(BIOS_ERR, "GMA: Failed to add IGD OpRegion to CBMEM.\n");
 		return CB_ERR;
 	}
 
-	memset(opregion, 0, sizeof(igd_opregion_t));
+	memset(opregion, 0, opregion_size);
 
 	memcpy(&opregion->header.signature, IGD_OPREGION_SIGNATURE,
 		sizeof(opregion->header.signature));
 	memcpy(opregion->header.vbios_version, vbt->coreblock_biosbuild,
 					ARRAY_SIZE(vbt->coreblock_biosbuild));
+
+	/* Get the opregion version information */
+	opregion->header.opver = opregion_get_version();
+
 	/* Extended VBT support */
-	if (vbt->hdr_vbt_size > sizeof(opregion->vbt.gvd1)) {
-		ext_vbt = cbmem_add(CBMEM_ID_EXT_VBT, vbt->hdr_vbt_size);
-
-		if (ext_vbt == NULL) {
-			printk(BIOS_ERR,
-			       "GMA: Unable to add Ext VBT to cbmem!\n");
-			rdev_munmap(&rdev, vbt);
-			return CB_ERR;
-		}
-
-		memcpy(ext_vbt, vbt, vbt->hdr_vbt_size);
-		opregion->mailbox3.rvda = (uintptr_t)ext_vbt;
-		opregion->mailbox3.rvds = vbt->hdr_vbt_size;
+	if (is_ext_vbt_required(opregion, vbt)) {
+		/* Place extended VBT just after opregion */
+		uint8_t *ext_vbt = (uint8_t *)opregion + sizeof(*opregion);
+		opregion_add_ext_vbt(opregion, ext_vbt, vbt);
 	} else {
 		/* Raw VBT size which can fit in gvd1 */
 		memcpy(opregion->vbt.gvd1, vbt, vbt->hdr_vbt_size);
@@ -306,26 +365,6 @@ enum cb_err intel_gma_init_igd_opregion(void)
 
 	/* 8kb */
 	opregion->header.size = sizeof(igd_opregion_t) / 1024;
-
-	/*
-	 * Left-shift version field to accommodate Intel Windows driver quirk
-	 * when not using a VBIOS.
-	 * Required for Legacy boot + NGI, UEFI + NGI, and UEFI + GOP driver.
-	 *
-	 * Tested on: (platform, GPU, windows driver version)
-	 * samsung/stumpy (SNB, GT2, 9.17.10.4459)
-	 * google/link (IVB, GT2, 15.33.4653)
-	 * google/wolf (HSW, GT1, 15.40.36.4703)
-	 * google/panther (HSW, GT2, 15.40.36.4703)
-	 * google/rikku (BDW, GT1, 15.40.36.4703)
-	 * google/lulu (BDW, GT2, 15.40.36.4703)
-	 * google/chell (SKL-Y, GT2, 15.45.21.4821)
-	 * google/sentry (SKL-U, GT1, 15.45.21.4821)
-	 * purism/librem13v2 (SKL-U, GT2, 15.45.21.4821)
-	 *
-	 * No adverse effects when using VBIOS or booting Linux.
-	 */
-	opregion->header.version = IGD_OPREGION_VERSION << 24;
 
 	// FIXME We just assume we're mobile for now
 	opregion->header.mailboxes = MAILBOXES_MOBILE;

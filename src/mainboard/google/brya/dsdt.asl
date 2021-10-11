@@ -23,13 +23,14 @@ DefinitionBlock(
 
 	Scope (\_SB) {
 		#include "mainboard.asl"
-
+#if CONFIG(HAVE_WWAN_POWER_SEQUENCE)
+		#include "wwan_power.asl"
+#endif
 		Device (PCI0)
 		{
 			#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
 			#include <soc/intel/alderlake/acpi/southbridge.asl>
 			#include <soc/intel/alderlake/acpi/tcss.asl>
-			#include <soc/intel/common/block/acpi/acpi/ipu.asl>
 		}
 	}
 

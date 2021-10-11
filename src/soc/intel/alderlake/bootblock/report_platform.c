@@ -8,13 +8,14 @@
 
 #include <arch/cpu.h>
 #include <device/pci_ops.h>
+#include <commonlib/helpers.h>
 #include <console/console.h>
+#include <cpu/intel/cpu_ids.h>
 #include <cpu/intel/microcode.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/name.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <intelblocks/mp_init.h>
 #include <soc/bootblock.h>
 #include <soc/pci_devs.h>
 
@@ -22,8 +23,10 @@ static struct {
 	u32 cpuid;
 	const char *name;
 } cpu_table[] = {
-	{ CPUID_ALDERLAKE_P_A0, "Alderlake-P A0" },
-	{ CPUID_ALDERLAKE_M_A0, "Alderlake-M A0" },
+	{ CPUID_ALDERLAKE_A0, "Alderlake Platform" },
+	{ CPUID_ALDERLAKE_A1, "Alderlake Platform" },
+	{ CPUID_ALDERLAKE_A2, "Alderlake Platform" },
+	{ CPUID_ALDERLAKE_A3, "Alderlake Platform" },
 };
 
 static struct {
@@ -31,7 +34,6 @@ static struct {
 	const char *name;
 } mch_table[] = {
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_1, "Alderlake-P" },
-	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_2, "Alderlake-P" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_3, "Alderlake-P" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_4, "Alderlake-P" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_5, "Alderlake-P" },
@@ -39,6 +41,8 @@ static struct {
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_7, "Alderlake-P" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_8, "Alderlake-P" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_9, "Alderlake-P" },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_ID_1, "Alderlake-M" },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_ID_2, "Alderlake-M" },
 };
 
 static struct {
@@ -98,7 +102,15 @@ static struct {
 	{ PCI_DEVICE_ID_INTEL_ADL_GT1_8, "Alderlake GT1" },
 	{ PCI_DEVICE_ID_INTEL_ADL_GT1_9, "Alderlake GT1" },
 	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_1, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_2, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_3, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_4, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_5, "Alderlake P GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_GT2_6, "Alderlake P GT2" },
 	{ PCI_DEVICE_ID_INTEL_ADL_M_GT1, "Alderlake M GT1" },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_GT2, "Alderlake M GT2" },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_GT3, "Alderlake M GT3" },
 };
 
 static inline uint8_t get_dev_revision(pci_devfn_t dev)
@@ -109,6 +121,21 @@ static inline uint8_t get_dev_revision(pci_devfn_t dev)
 static inline uint16_t get_dev_id(pci_devfn_t dev)
 {
 	return pci_read_config16(dev, PCI_DEVICE_ID);
+}
+
+static void report_cache_info(void)
+{
+	int cache_level = CACHE_L3;
+	struct cpu_cache_info info;
+
+	if (!fill_cpu_cache_info(cache_level, &info))
+		return;
+
+	printk(BIOS_INFO, "Cache: Level %d: ", cache_level);
+	printk(BIOS_INFO, "Associativity = %zd Partitions = %zd Line Size = %zd Sets = %zd\n",
+		info.num_ways, info.physical_partitions, info.line_size, info.num_sets);
+
+	printk(BIOS_INFO, "Cache size = %ld MiB\n", get_cache_size(&info)/MiB);
 }
 
 static void report_cpu_info(void)
@@ -141,6 +168,8 @@ static void report_cpu_info(void)
 	printk(BIOS_DEBUG,
 		"CPU: AES %ssupported, TXT %ssupported, VT %ssupported\n",
 		mode[aes], mode[txt], mode[vt]);
+
+	report_cache_info();
 }
 
 static void report_mch_info(void)

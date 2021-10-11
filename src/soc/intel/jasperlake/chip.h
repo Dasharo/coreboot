@@ -13,6 +13,7 @@
 #include <soc/gpio.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
+#include <soc/pcie_modphy.h>
 #include <soc/pmc.h>
 #include <soc/serialio.h>
 #include <soc/usb.h>
@@ -85,6 +86,11 @@ struct soc_intel_jasperlake_config {
 	/* Wake Enable Bitmap for USB3 ports */
 	uint16_t usb3_wake_enable_bitmap;
 
+	/* Set the LFPS periodic sampling off time for USB3 Ports.
+	   Default value of PMCTRL_REG bits[7:4] is 9 which means periodic
+	   sampling off interval is 9ms, the range is from 0 to 15. */
+	uint8_t xhci_lfps_sampling_offtime_ms;
+
 	/* SATA related */
 	uint8_t SataMode;
 	uint8_t SataSalpSupport;
@@ -117,6 +123,9 @@ struct soc_intel_jasperlake_config {
 	/* PCIe RP L1 substate */
 	enum L1_substates_control PcieRpL1Substates[CONFIG_MAX_ROOT_PORTS];
 
+	/* PCIe ModPhy related */
+	struct pcie_modphy_config pcie_mp_cfg[CONFIG_MAX_ROOT_PORTS];
+
 	/* SMBus */
 	uint8_t SmbusEnable;
 
@@ -142,17 +151,9 @@ struct soc_intel_jasperlake_config {
 
 	/* Enable C6 DRAM */
 	uint8_t enable_c6dram;
-	/*
-	 * PRMRR size setting with below options
-	 * Disable: 0x0
-	 * 32MB: 0x2000000
-	 * 64MB: 0x4000000
-	 * 128 MB: 0x8000000
-	 * 256 MB: 0x10000000
-	 * 512 MB: 0x20000000
-	 */
-	uint32_t PrmrrSize;
+
 	uint8_t PmTimerDisabled;
+
 	/*
 	 * SerialIO device mode selection:
 	 * PchSerialIoDisabled,
@@ -393,6 +394,18 @@ struct soc_intel_jasperlake_config {
 	 * Range 0-255
 	 */
 	uint8_t RampDown;
+
+	/*
+	 * It controls below soc variables
+	 *
+	 *   PchFivrExtV1p05RailEnabledStates
+	 *   PchFivrExtVnnRailSxEnabledStates
+	 *   PchFivrExtVnnRailEnabledStates
+	 *
+	 * If your platform does not support external vnn power rail please set to 1
+	 * 1: Disabled ; 0: Enabled
+	 */
+	bool disable_external_bypass_vr;
 
 };
 

@@ -17,13 +17,11 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	PAD_GPI(GPIO_11, PULL_UP),
 	/* APU_ALS_INT# */
 	PAD_SCI(GPIO_24, PULL_UP, EDGE_LOW),
-	/* SD card detect */
-	PAD_GPI(GPIO_31, PULL_UP),
 	/* NFC IRQ */
 	PAD_INT(GPIO_69, PULL_UP, EDGE_LOW, STATUS),
 };
 
 void mainboard_program_gpios(void)
 {
-	program_gpios(gpio_set_stage_ram, ARRAY_SIZE(gpio_set_stage_ram));
+	gpio_configure_pads(gpio_set_stage_ram, ARRAY_SIZE(gpio_set_stage_ram));
 }

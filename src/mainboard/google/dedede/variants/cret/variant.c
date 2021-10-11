@@ -3,7 +3,19 @@
 #include <acpi/acpi.h>
 #include <baseboard/variants.h>
 #include <delay.h>
+#include <fw_config.h>
 #include <gpio.h>
+#include <sar.h>
+
+const char *get_wifi_sar_cbfs_filename(void)
+{
+	const char *filename = NULL;
+
+	if (fw_config_probe(FW_CONFIG(TABLETMODE, TABLETMODE_ENABLED)))
+		filename = "wifi_sar-cret.hex";
+
+	return filename;
+}
 
 static void power_off_lte_module(void)
 {

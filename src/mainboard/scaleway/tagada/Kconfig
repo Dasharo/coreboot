@@ -11,11 +11,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select UART_OVERRIDE_BAUDRATE
 
 config MAINBOARD_DIR
-	string
 	default "scaleway/tagada"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "TAGADA"
 
 config BMC_INFO_LOC

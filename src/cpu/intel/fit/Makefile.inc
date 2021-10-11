@@ -21,14 +21,18 @@ ifneq ($(CONFIG_UPDATE_IMAGE),y) # never update the bootblock
 
 ifneq ($(CONFIG_CPU_MICROCODE_CBFS_NONE),y)
 
-$(call add_intermediate, add_mcu_fit, $(IFITTOOL))
+$(call add_intermediate, add_mcu_fit, set_fit_ptr $(IFITTOOL))
 	@printf "    UPDATE-FIT Microcode\n"
 	$(IFITTOOL) -f $< -a -n cpu_microcode_blob.bin -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -r COREBOOT
 
 # Second FIT in TOP_SWAP bootblock
 ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
 
-$(call add_intermediate, add_ts_mcu_fit, $(IFITTOOL) set_fit_ptr_ts)
+$(call add_intermediate, set_ts_fit_ptr, $(IFITTOOL))
+	@printf "    UPDATE-FIT Top Swap: set FIT pointer to table\n"
+	$(IFITTOOL) -f $< -F -n intel_fit_ts -r COREBOOT $(TS_OPTIONS)
+
+$(call add_intermediate, add_ts_mcu_fit, set_ts_fit_ptr $(IFITTOOL))
 	@printf "    UPDATE-FIT Top Swap: Microcode\n"
 ifneq ($(FIT_ENTRY),)
 	$(IFITTOOL) -f $< -A -n $(FIT_ENTRY) -t 1 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) $(TS_OPTIONS) -r COREBOOT
@@ -39,11 +43,6 @@ cbfs-files-y += intel_fit_ts
 intel_fit_ts-file := fit_table.c:struct
 intel_fit_ts-type := raw
 intel_fit_ts-align := 16
-
-PHONY += set_ts_fit_ptr
-set_ts_fit_ptr: $(obj)/coreboot.pre $(IFITTOOL)
-	@printf "    UPDATE-FIT Top Swap: set FIT pointer to table\n"
-	$(IFITTOOL) -f $< -F -n intel_fit_ts -r COREBOOT -t $(TS_OPTIONS)
 
 endif # CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK
 

@@ -20,16 +20,13 @@ config BOARD_SPECIFIC_OPTIONS
 	select INTEL_GMA_HAVE_VBT
 
 config MAINBOARD_DIR
-	string
 	default "gigabyte/ga-945gcm-s2l"
 
 config VARIANT_DIR
-	string
 	default "ga-945gcm-s2l" if BOARD_GIGABYTE_GA_945GCM_S2L
 	default "ga-945gcm-s2c" if BOARD_GIGABYTE_GA_945GCM_S2C
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "GA-945GCM-S2L" if BOARD_GIGABYTE_GA_945GCM_S2L
 	default "GA-945GCM-S2C" if BOARD_GIGABYTE_GA_945GCM_S2C
 

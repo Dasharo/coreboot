@@ -21,11 +21,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_SPD_IN_CBFS
 
 config MAINBOARD_DIR
-	string
 	default "lenovo/s230u"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ThinkPad S230U (Twist)"
 
 config EC_BASE_ADDRESS

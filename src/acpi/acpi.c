@@ -26,6 +26,7 @@
 #include <types.h>
 #include <version.h>
 #include <commonlib/sort.h>
+#include <pc80/mc146818rtc.h>
 
 static acpi_rsdp_t *valid_rsdp(acpi_rsdp_t *rsdp);
 
@@ -508,6 +509,23 @@ int acpi_create_srat_mem(acpi_srat_mem_t *mem, u8 node, u32 basek, u32 sizek,
 	return mem->length;
 }
 
+int acpi_create_srat_gia_pci(acpi_srat_gia_t *gia, u32 proximity_domain,
+				u16 seg, u8 bus, u8 dev, u8 func, u32 flags)
+{
+	gia->type = ACPI_SRAT_STRUCTURE_GIA;
+	gia->length = sizeof(acpi_srat_gia_t);
+	gia->proximity_domain = proximity_domain;
+	gia->dev_handle_type = ACPI_SRAT_GIA_DEV_HANDLE_PCI;
+	/* First two bytes has segment number */
+	memcpy(gia->dev_handle, &seg, 2);
+	gia->dev_handle[2] = bus; /* Byte 2 has bus number */
+	/* Byte 3 has bits 7:3 for dev, bits 2:0 for func */
+	gia->dev_handle[3] = PCI_SLOT(dev) | PCI_FUNC(func);
+	gia->flags = flags;
+
+	return gia->length;
+}
+
 /* http://www.microsoft.com/whdc/system/sysinternals/sratdwn.mspx */
 void acpi_create_srat(acpi_srat_t *srat,
 		      unsigned long (*acpi_fill_srat)(unsigned long current))
@@ -537,6 +555,51 @@ void acpi_create_srat(acpi_srat_t *srat,
 	/* (Re)calculate length and checksum. */
 	header->length = current - (unsigned long)srat;
 	header->checksum = acpi_checksum((void *)srat, header->length);
+}
+
+int acpi_create_hmat_mpda(acpi_hmat_mpda_t *mpda, u32 initiator, u32 memory)
+{
+	memset((void *)mpda, 0, sizeof(acpi_hmat_mpda_t));
+
+	mpda->type = 0; /* Memory Proximity Domain Attributes structure */
+	mpda->length = sizeof(acpi_hmat_mpda_t);
+	/*
+	 * Proximity Domain for Attached Initiator field is valid.
+	 * Bit 1 and bit 2 are reserved since HMAT revision 2.
+	 */
+	mpda->flags = (1 << 0);
+	mpda->proximity_domain_initiator = initiator;
+	mpda->proximity_domain_memory = memory;
+
+	return mpda->length;
+}
+
+void acpi_create_hmat(acpi_hmat_t *hmat,
+		 unsigned long (*acpi_fill_hmat)(unsigned long current))
+{
+	acpi_header_t *header = &(hmat->header);
+	unsigned long current = (unsigned long)hmat + sizeof(acpi_hmat_t);
+
+	memset((void *)hmat, 0, sizeof(acpi_hmat_t));
+
+	if (!header)
+		return;
+
+	/* Fill out header fields. */
+	memcpy(header->signature, "HMAT", 4);
+	memcpy(header->oem_id, OEM_ID, 6);
+	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
+	memcpy(header->asl_compiler_id, ASLC, 4);
+
+	header->asl_compiler_revision = asl_revision;
+	header->length = sizeof(acpi_hmat_t);
+	header->revision = get_acpi_table_revision(HMAT);
+
+	current = acpi_fill_hmat(current);
+
+	/* (Re)calculate length and checksum. */
+	header->length = current - (unsigned long)hmat;
+	header->checksum = acpi_checksum((void *)hmat, header->length);
 }
 
 void acpi_create_dmar(acpi_dmar_t *dmar, enum dmar_flags flags,
@@ -911,7 +974,7 @@ void acpi_create_einj(acpi_einj_t *einj, uintptr_t addr, u8 actions)
 		printk(BIOS_DEBUG, "default_actions[%d].reg.addr is %llx\n", i,
 			default_actions[i].reg.addr);
 
-	memset((void *)einj, 0, sizeof(einj));
+	memset((void *)einj, 0, sizeof(*einj));
 
 	/* Fill out header fields. */
 	memcpy(header->signature, "EINJ", 4);
@@ -928,7 +991,7 @@ void acpi_create_einj(acpi_einj_t *einj, uintptr_t addr, u8 actions)
 	printk(BIOS_DEBUG, "%s einj->action_table = %p\n",
 		 __func__, einj->action_table);
 	memcpy((void *)einj->action_table, (void *)default_actions, sizeof(einj->action_table));
-	header->checksum = acpi_checksum((void *)einj, sizeof(einj));
+	header->checksum = acpi_checksum((void *)einj, sizeof(*einj));
 }
 
 void acpi_create_vfct(const struct device *device,
@@ -1448,6 +1511,9 @@ void acpi_create_fadt(acpi_fadt_t *fadt, acpi_facs_t *facs, void *dsdt)
 
 	fadt->preferred_pm_profile = acpi_get_preferred_pm_profile();
 
+	if (CONFIG(USE_PC_CMOS_ALTCENTURY))
+		fadt->century = RTC_CLK_ALTCENTURY;
+
 	arch_fill_fadt(fadt);
 
 	acpi_fill_fadt(fadt);
@@ -1496,14 +1562,6 @@ unsigned long acpi_create_lpi_desc_ncst(acpi_lpi_desc_ncst_t *lpi_desc, uint16_t
 
 	return lpi_desc->header.length;
 }
-
-/* BERT helpers */
-bool __weak acpi_is_boot_error_src_present(void)
-{
-	return false;
-}
-
-__weak void acpi_soc_fill_bert(acpi_bert_t *bert, void **region, size_t *length) {}
 
 unsigned long __weak fw_cfg_acpi_tables(unsigned long start)
 {
@@ -1650,6 +1708,8 @@ unsigned long write_acpi_tables(unsigned long start)
 
 		if (CONFIG(ACPI_SOC_NVS))
 			acpi_fill_gnvs();
+		if (CONFIG(CHROMEOS_NVS))
+			acpi_fill_cnvs();
 
 		for (dev = all_devices; dev; dev = dev->next)
 			if (dev->ops && dev->ops->acpi_inject_dsdt)
@@ -1748,18 +1808,19 @@ unsigned long write_acpi_tables(unsigned long start)
 
 	current = acpi_align_current(current);
 
-	if (acpi_is_boot_error_src_present()) {
+	if (CONFIG(ACPI_BERT)) {
 		void *region;
 		size_t size;
-		printk(BIOS_DEBUG, "ACPI:    * BERT\n");
 		bert = (acpi_bert_t *) current;
-		acpi_soc_fill_bert(bert, &region, &size);
-		acpi_write_bert(bert, (uintptr_t)region, size);
-		if (bert->header.length >= sizeof(acpi_bert_t)) {
-			current += bert->header.length;
-			acpi_add_table(rsdp, bert);
+		if (acpi_soc_get_bert_region(&region, &size) == CB_SUCCESS) {
+			printk(BIOS_DEBUG, "ACPI:    * BERT\n");
+			acpi_write_bert(bert, (uintptr_t)region, size);
+			if (bert->header.length >= sizeof(acpi_bert_t)) {
+				current += bert->header.length;
+				acpi_add_table(rsdp, bert);
+			}
+			current = acpi_align_current(current);
 		}
-		current = acpi_align_current(current);
 	}
 
 	printk(BIOS_DEBUG, "current = %lx\n", current);
@@ -1880,6 +1941,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 2;
 	case SRAT: /* ACPI 2.0: 1, ACPI 3.0: 2, ACPI 4.0 upto 6.3: 3 */
 		return 1; /* TODO Should probably be upgraded to 2 */
+	case HMAT: /* ACPI 6.4: 2 */
+		return 2;
 	case DMAR:
 		return 1;
 	case SLIT: /* ACPI 2.0 upto 6.3: 1 */

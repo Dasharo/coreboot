@@ -5,7 +5,7 @@ client:
 
 framework:
         name: coreboot
-        version: 4.14
+        version: ae9a8447
 
 documentation:
         name: Dasharo Compatibility

@@ -27,11 +27,9 @@ config BOARD_VARIANT_DK01
 	default n
 
 config MAINBOARD_DIR
-	string
 	default "google/gale"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "DK01" if BOARD_VARIANT_DK01
 	default "Gale"
 

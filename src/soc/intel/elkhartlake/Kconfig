@@ -8,7 +8,7 @@ if SOC_INTEL_ELKHARTLAKE
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
 	select ACPI_INTEL_HARDWARE_SLEEP_VALUES
-	select ARCH_ALL_STAGES_X86_32
+	select ARCH_X86
 	select BOOT_DEVICE_SUPPORTS_WRITES
 	select CACHE_MRC_SETTINGS
 	select CPU_INTEL_COMMON
@@ -28,11 +28,9 @@ config CPU_SPECIFIC_OPTIONS
 	select IOAPIC
 	select MP_SERVICES_PPI_V1
 	select MRC_SETTINGS_PROTECT
-	select PARALLEL_MP
 	select PARALLEL_MP_AP_WORK
 	select MICROCODE_BLOB_UNDISCLOSED
 	select PLATFORM_USES_FSP2_1
-	select REG_SCRIPT
 	select PMC_GLOBAL_RESET_ENABLE_LOCK
 	select PMC_LOW_POWER_MODE_PROGRAM
 	select SOC_INTEL_COMMON
@@ -41,6 +39,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_ACPI
 	select SOC_INTEL_COMMON_BLOCK_ACPI_GPIO
 	select SOC_INTEL_COMMON_BLOCK_ACPI_LPIT
+	select SOC_INTEL_COMMON_BLOCK_ACPI_PEP
 	select SOC_INTEL_COMMON_BLOCK_CAR
 	select SOC_INTEL_COMMON_BLOCK_CHIP_CONFIG
 	select SOC_INTEL_COMMON_BLOCK_CPU
@@ -49,10 +48,11 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_GPIO_DUAL_ROUTE_SUPPORT
 	select SOC_INTEL_COMMON_BLOCK_GSPI_VERSION_2
 	select SOC_INTEL_COMMON_BLOCK_HDA
+	select SOC_INTEL_COMMON_BLOCK_PMC_EPOC
+	select SOC_INTEL_COMMON_BLOCK_POWER_LIMIT
 	select SOC_INTEL_COMMON_BLOCK_SA
 	select SOC_INTEL_COMMON_BLOCK_SCS
 	select SOC_INTEL_COMMON_BLOCK_SMM
-	select SOC_INTEL_COMMON_BLOCK_POWER_LIMIT
 	select SOC_INTEL_COMMON_BLOCK_SMM_IO_TRAP
 	select SOC_INTEL_COMMON_FSP_RESET
 	select SOC_INTEL_COMMON_PCH_BASE
@@ -63,6 +63,7 @@ config CPU_SPECIFIC_OPTIONS
 	select UDELAY_TSC
 	select UDK_202005_BINDING
 	select DISPLAY_FSP_VERSION_INFO
+	select HAVE_INTEL_FSP_REPO
 
 config MAX_CPUS
 	int
@@ -108,6 +109,10 @@ config HEAP_SIZE
 config MAX_ROOT_PORTS
 	int
 	default 7
+
+config MAX_SATA_PORTS
+	int
+	default 2
 
 config MAX_PCIE_CLOCK_SRC
 	int
@@ -163,15 +168,15 @@ config CONSOLE_UART_BASE_ADDRESS
 	depends on INTEL_LPSS_UART_FOR_CONSOLE
 
 # Clock divider parameters for 115200 baud rate
-# Baudrate = (UART source clcok * M) /(N *16)
-# EHL UART source clock: 100MHz
+# Baudrate = (UART source clock * M) /(N *16)
+# EHL UART source clock: 120MHz
 config SOC_INTEL_COMMON_LPSS_UART_CLK_M_VAL
 	hex
-	default 0x30
+	default 0x25a
 
 config SOC_INTEL_COMMON_LPSS_UART_CLK_N_VAL
 	hex
-	default 0xc35
+	default 0x7fff
 
 config VBOOT
 	select VBOOT_SEPARATE_VERSTAGE
@@ -181,14 +186,15 @@ config VBOOT
 	select VBOOT_VBNV_CMOS_BACKUP_TO_FLASH
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 
 config FSP_HEADER_PATH
-	default "src/vendorcode/intel/fsp/fsp2_0/elkhartlake/"
+	default "3rdparty/fsp/ElkhartLakeFspBinPkg/Include/"
 
 config FSP_FD_PATH
-	default "3rdparty/fsp/ElkhartLakeFspBinPkg/Fsp.fd"
+	string
+	depends on FSP_USE_REPO
+	default "3rdparty/fsp/ElkhartLakeFspBinPkg/FspBin/FSPRel.bin"
 
 config SOC_INTEL_ELKHARTLAKE_DEBUG_CONSENT
 	int "Debug Consent for EHL"

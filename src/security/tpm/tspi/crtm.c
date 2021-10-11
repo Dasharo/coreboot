@@ -46,7 +46,23 @@ static inline int tcpa_log_available(void)
 	return 1;
 }
 
-uint32_t tspi_init_crtm(void)
+/*
+ * Initializes the Core Root of Trust for Measurements
+ * in coreboot. The initial code in a chain of trust must measure
+ * itself.
+ *
+ * Summary:
+ *  + Measures the FMAP FMAP partition.
+ *  + Measures bootblock in CBFS or BOOTBLOCK FMAP partition.
+ *  + If vboot starts in romstage, it measures the romstage
+ *    in CBFS.
+ *  + Measure the verstage if it is compiled as separate
+ *    stage.
+ *
+ * Takes the current vboot context as parameter for s3 checks.
+ * returns on success VB2_SUCCESS, else a vboot error.
+ */
+static uint32_t tspi_init_crtm(void)
 {
 	struct prog bootblock = PROG_INIT(PROG_BOOTBLOCK, "bootblock");
 
@@ -61,7 +77,7 @@ uint32_t tspi_init_crtm(void)
 
 	struct region_device fmap;
 	if (fmap_locate_area_as_rdev("FMAP", &fmap) == 0) {
-		if (tpm_measure_region(&fmap, TPM_RUNTIME_DATA_PCR, "FMAP: FMAP")) {
+		if (tpm_measure_region(&fmap, TPM_CRTM_PCR, "FMAP: FMAP")) {
 			printk(BIOS_ERR,
 			       "TSPI: Couldn't measure FMAP into CRTM!\n");
 			return VB2_ERROR_UNKNOWN;
@@ -161,6 +177,10 @@ int tspi_measure_cache_to_pcr(void)
 	int i;
 	enum vb2_hash_algorithm hash_alg;
 	struct tcpa_table *tclt = tcpa_log_init();
+
+	/* This means the table is empty. */
+	if (!tcpa_log_available())
+		return VB2_SUCCESS;
 
 	if (!tclt) {
 		printk(BIOS_WARNING, "TCPA: Log non-existent!\n");

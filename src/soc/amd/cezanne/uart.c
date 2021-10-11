@@ -1,12 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/aoac.h>
-#include <amdblocks/gpio_banks.h>
+#include <amdblocks/gpio.h>
 #include <amdblocks/uart.h>
 #include <commonlib/helpers.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/mmio.h>
+#include <soc/aoac_defs.h>
 #include <soc/gpio.h>
 #include <soc/southbridge.h>
 #include <soc/uart.h>
@@ -44,7 +45,7 @@ void set_uart_config(unsigned int idx)
 	if (idx >= ARRAY_SIZE(uart_info))
 		return;
 
-	program_gpios(uart_info[idx].mux, 2);
+	gpio_configure_pads(uart_info[idx].mux, 2);
 }
 
 static const char *uart_acpi_name(const struct device *dev)

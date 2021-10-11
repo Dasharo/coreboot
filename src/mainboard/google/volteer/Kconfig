@@ -58,15 +58,12 @@ config CHROMEOS_WIFI_SAR
 	select USE_SAR
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree.cb"
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config DRIVER_TPM_SPI_BUS
@@ -81,7 +78,6 @@ config DRIVER_TPM_I2C_ADDR
 	default 0x50
 
 config MAINBOARD_DIR
-	string
 	default "google/volteer"
 
 config MAINBOARD_FAMILY
@@ -89,7 +85,6 @@ config MAINBOARD_FAMILY
 	default "Google_Volteer"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Delbin" if BOARD_GOOGLE_DELBIN
 	default "Eldrid" if BOARD_GOOGLE_ELDRID
 	default "Halvor" if BOARD_GOOGLE_HALVOR
@@ -108,34 +103,13 @@ config MAINBOARD_PART_NUMBER
 	default "Copano" if BOARD_GOOGLE_COPANO
 	default "Collis" if BOARD_GOOGLE_COLLIS
 	default "Volet" if BOARD_GOOGLE_VOLET
-
-config MAX_CPUS
-	int
-	default 8
-
-config PCIEXP_HOTPLUG
-	default y
-
-# Reserving resources for PCIe Hotplug as per TGL BIOS Spec (doc #611569)
-# Revision 0.7.6 Section 7.2.5.1.5
-config PCIEXP_HOTPLUG_BUSES
-	int
-	default 42
-
-config PCIEXP_HOTPLUG_MEM
-	hex
-	default 0xc200000  # 194 MiB
-
-config PCIEXP_HOTPLUG_PREFETCH_MEM
-	hex
-	default 0x1c000000 # 448 MiB
+	default "Chronicler" if BOARD_GOOGLE_CHRONICLER
 
 config TPM_TIS_ACPI_INTERRUPT
 	int
 	default 21  # GPE0_DW0_21 (GPP_C21)
 
 config VARIANT_DIR
-	string
 	default "delbin" if BOARD_GOOGLE_DELBIN
 	default "eldrid" if BOARD_GOOGLE_ELDRID
 	default "halvor" if BOARD_GOOGLE_HALVOR
@@ -154,17 +128,10 @@ config VARIANT_DIR
 	default "copano" if BOARD_GOOGLE_COPANO
 	default "collis" if BOARD_GOOGLE_COLLIS
 	default "volet" if BOARD_GOOGLE_VOLET
+	default "chronicler" if BOARD_GOOGLE_CHRONICLER
 
 config VARIANT_HAS_MIPI_CAMERA
 	bool
 	default n
-
-config CBFS_MCACHE_RW_PERCENTAGE
-	int
-	default 50
-
-config CBFS_MCACHE_SIZE
-	hex
-	default 0x4000
 
 endif # BOARD_GOOGLE_BASEBOARD_VOLTEER

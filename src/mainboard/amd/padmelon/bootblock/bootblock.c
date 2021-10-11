@@ -31,7 +31,7 @@ static void enable_serial(unsigned int base_port, unsigned int io_enable)
 
 void bootblock_mainboard_early_init(void)
 {
-	sb_clk_output_48Mhz(2);
+	fch_clk_output_48Mhz(2);
 	/*
 	 * UARTs enabled by default at reset, just need RTS, CTS
 	 * and access to the IO address.
@@ -46,5 +46,5 @@ void bootblock_mainboard_init(void)
 	const struct soc_amd_gpio *gpios;
 
 	gpios = early_gpio_table(&num_gpios);
-	program_gpios(gpios, num_gpios);
+	gpio_configure_pads(gpios, num_gpios);
 }

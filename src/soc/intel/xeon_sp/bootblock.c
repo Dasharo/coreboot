@@ -8,6 +8,7 @@
 #include <console/console.h>
 #include <cpu/x86/mtrr.h>
 #include <intelblocks/lpc_lib.h>
+#include <security/intel/cbnt/cbnt.h>
 #include <soc/pci_devs.h>
 #include <soc/bootblock.h>
 #include <fsp/util.h>
@@ -62,13 +63,14 @@ void bootblock_soc_early_init(void)
 
 void bootblock_soc_init(void)
 {
-	if (CONFIG(BOOTBLOCK_CONSOLE))
-		printk(BIOS_DEBUG, "FSP TempRamInit successful...\n");
-
 	if (assembly_timestamp > bootblock_timestamp)
 		printk(BIOS_WARNING, "Invalid initial timestamp detected\n");
 
 	if (CONFIG(FSP_CAR))
 		report_fspt_output();
+
+	if (CONFIG(INTEL_CBNT_LOGGING))
+		intel_cbnt_log_registers();
+
 	bootblock_pch_init();
 }

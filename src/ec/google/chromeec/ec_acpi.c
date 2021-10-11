@@ -184,6 +184,8 @@ static const enum ps2_action_key ps2_enum_val[] = {
 	[TK_PLAY_PAUSE] = PS2_KEY_PLAY_PAUSE,
 	[TK_NEXT_TRACK] = PS2_KEY_NEXT_TRACK,
 	[TK_PREV_TRACK] = PS2_KEY_PREV_TRACK,
+	[TK_KBD_BKLIGHT_TOGGLE] = PS2_KEY_KBD_BKLIGHT_TOGGLE,
+	[TK_MICMUTE] = PS2_KEY_MICMUTE,
 };
 
 static void fill_ssdt_ps2_keyboard(const struct device *dev)
@@ -242,24 +244,15 @@ const char *ec_retimer_fw_update_path(void)
 	return "\\_SB_.PCI0.LPCB.EC0_.RFWU";
 }
 
-void ec_retimer_fw_update(void *arg)
+void ec_retimer_fw_update(uint8_t data)
 {
 	const char *RFWU = ec_retimer_fw_update_path();
 
 	/*
-	 * Get information to set retimer info from Arg3[0]
-	 * Local0 = DeRefOf (Arg3[0])
-	 */
-	acpigen_get_package_op_element(ARG3_OP, 0, LOCAL0_OP);
-
-	/*
 	 * Write the EC RAM for Retimer Upgrade
-	 * RFWU = LOCAL0
+	 * RFWU = data
 	 */
 	acpigen_write_store();
-	acpigen_emit_byte(LOCAL0_OP);
+	acpigen_write_byte(data);
 	acpigen_emit_namestring(RFWU);
-
-	/* Return (Zero) */
-	acpigen_write_return_integer(0);
 }

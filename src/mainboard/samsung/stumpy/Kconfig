@@ -25,11 +25,9 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "samsung/stumpy"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Stumpy"
 
 config VGA_BIOS_FILE

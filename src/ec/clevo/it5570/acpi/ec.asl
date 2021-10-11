@@ -44,12 +44,15 @@ Device (EC0)
 			OEM3 = OEM3 | 4
 
 			// Set current AC state
-			^^^^AC.ACFG = ADP
+			\_SB.AC.ACFG = ADP
 			// Update battery information and status
-			^^^^BAT0.UPBI()
-			^^^^BAT0.UPBS()
+			\_SB.BAT0.UPBI ()
+			\_SB.BAT0.UPBS ()
 
 			PNOT ()
+
+			// Initialize UCSI
+			^UCSI.INIT ()
 
 			// EC is now available
 			ECOK = Arg1
@@ -68,15 +71,15 @@ Device (EC0)
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
 		If (ECOK) {
 			// Set current AC state
-			^^^^AC.ACFG = ADP
+			\_SB.AC.ACFG = ADP
 
 			// Update battery information and status
-			^^^^BAT0.UPBI()
-			^^^^BAT0.UPBS()
+			\_SB.BAT0.UPBI ()
+			\_SB.BAT0.UPBS ()
 
 			// Notify of changes
-			Notify(^^^^AC, Zero)
-			Notify(^^^^BAT0, Zero)
+			Notify(\_SB.AC, Zero)
+			Notify(\_SB.BAT0, Zero)
 
 			Sleep (1000)
 		}
@@ -138,6 +141,27 @@ Device (EC0)
 		}
 	}
 
+	Method (S0IX, 1, Serialized) // S0IX Entry/Exit
+	{
+		FDAT = 0xC2
+		FBUF = Arg0
+		FCMD = 0xD2
+		Local0 = 0xFF
+		Local1 = 0xFF
+		While (Local0 != Arg0 && Local1 > Zero)
+		{
+			Sleep(50)
+			FDAT = 0xC3
+			FCMD = 0xD2
+			Local3 = FBUF
+			If (Local3 == Zero || Local3 == One)
+			{
+				Local0 = Local3
+			}
+			Local1 = Local1 - 1
+		}
+	}
+
 	Method (_Q0A, 0, NotSerialized) // Touchpad Toggle
 	{
 		Debug = "EC: Touchpad Toggle"
@@ -171,6 +195,9 @@ Device (EC0)
 	Method (_Q10, 0, NotSerialized) // Switch Video Mode
 	{
 		Debug = "EC: Switch Video Mode"
+		If (CondRefOf (\_SB.PCI0.GFX0)) {
+			Notify (\_SB.PCI0.GFX0, 0x80)
+		}
 	}
 
 	Method (_Q11, 0, NotSerialized) // Brightness Down
@@ -200,9 +227,9 @@ Device (EC0)
 	{
 		Debug = "EC: Airplane Mode"
 
-		If (CondRefOf (\_SB.HIDD.HPEM))
+		If (CondRefOf (^HIDD.HPEM))
 		{
-			\_SB.HIDD.HPEM (8)
+			^HIDD.HPEM (8)
 		}
 	}
 
@@ -215,14 +242,14 @@ Device (EC0)
 	Method (_Q16, 0, NotSerialized) // AC Detect
 	{
 		Debug = "EC: AC Detect"
-		^^^^AC.ACFG = ADP
+		\_SB.AC.ACFG = ADP
 		Notify (AC, 0x80) // Status Change
 		Sleep (0x01F4)
 		If (BAT0)
 		{
-			Notify (^^^^BAT0, 0x81) // Information Change
+			Notify (\_SB.BAT0, 0x81) // Information Change
 			Sleep (0x32)
-			Notify (^^^^BAT0, 0x80) // Status Change
+			Notify (\_SB.BAT0, 0x80) // Status Change
 			Sleep (0x32)
 		}
 	}
@@ -230,13 +257,13 @@ Device (EC0)
 	Method (_Q17, 0, NotSerialized)  // BAT0 Update
 	{
 		Debug = "EC: BAT0 Update (17)"
-		Notify (^^^^BAT0, 0x81) // Information Change
+		Notify (\_SB.BAT0, 0x81) // Information Change
 	}
 
 	Method (_Q19, 0, NotSerialized)  // BAT0 Update
 	{
 		Debug = "EC: BAT0 Update (19)"
-		Notify (^^^^BAT0, 0x81) // Information Change
+		Notify (\_SB.BAT0, 0x81) // Information Change
 	}
 
 	Method (_Q1B, 0, NotSerialized) // Lid Close
@@ -277,4 +304,35 @@ Device (EC0)
 			Debug = Concatenate("EC: Other: ", ToHexString(Local0))
 		}
 	}
+
+	Method (_Q62, 0, NotSerialized)  // UCSI event
+	{
+		Debug = "EC: UCSI Event"
+		^UCSI.MGI0 = MGI0
+		^UCSI.MGI1 = MGI1
+		^UCSI.MGI2 = MGI2
+		^UCSI.MGI3 = MGI3
+		^UCSI.MGI4 = MGI4
+		^UCSI.MGI5 = MGI5
+		^UCSI.MGI6 = MGI6
+		^UCSI.MGI7 = MGI7
+		^UCSI.MGI8 = MGI8
+		^UCSI.MGI9 = MGI9
+		^UCSI.MGIA = MGIA
+		^UCSI.MGIB = MGIB
+		^UCSI.MGIC = MGIC
+		^UCSI.MGID = MGID
+		^UCSI.MGIE = MGIE
+		^UCSI.MGIF = MGIF
+		^UCSI.CCI0 = CCI0
+		^UCSI.CCI1 = CCI1
+		^UCSI.CCI2 = CCI2
+		^UCSI.CCI3 = CCI3
+		CCI0 = Zero
+		CCI3 = Zero
+		Notify (^UCSI, 0x80)
+	}
+
+	#include "hid.asl"
+	#include "ucsi.asl"
 }
