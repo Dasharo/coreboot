@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <cpu/amd/mtrr.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/cr.h>
 #include <cpu/x86/cache.h>
@@ -131,6 +132,13 @@ skip_clflush:
 	andl	$0xfffffff0, %esp
 	call	soc_enable_mtrrs
 #else /* CONFIG_SOC_SETS_MSRS */
+#if CONFIG(X86_AMD_FIXED_MTRRS)
+	/* Allow modification of RdDram and WrDram bits */
+	mov	$SYSCFG_MSR, %ecx
+	rdmsr
+	or	$SYSCFG_MSR_MtrrFixDramModEn, %eax
+	wrmsr
+#endif
 	/* Clear variable MTRRs. */
 	pop_ebx_esi	/* ebx: Number to clear, esi: Number to set */
 	test	%ebx, %ebx
@@ -172,6 +180,12 @@ skip_clflush:
 	and	$(~(MTRR_DEF_TYPE_MASK)), %eax
 	or	$(MTRR_DEF_TYPE_EN), %eax
 	wrmsr
+#if CONFIG(X86_AMD_FIXED_MTRRS)
+	mov	$SYSCFG_MSR, %ecx
+	rdmsr
+	and	$~SYSCFG_MSR_MtrrFixDramModEn, %eax
+	wrmsr
+#endif
 #endif /* CONFIG_SOC_SETS_MSRS */
 
 	/* Align stack to 16 bytes at call instruction. */
