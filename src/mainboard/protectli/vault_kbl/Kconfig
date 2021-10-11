@@ -25,8 +25,9 @@ config MAINBOARD_DIR
 
 config VARIANT_DIR
 	string
-	default "fw6" if BOARD_PROTECTLI_FW6
-	default	"fw6d" if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
+	default	"fw6d"
+	# default "fw6" if BOARD_PROTECTLI_FW6
+	# default	"fw6d" if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
 
 config MAINBOARD_PART_NUMBER
 	string
@@ -48,8 +49,9 @@ config DIMM_SPD_SIZE
 
 config MAX_CPUS
 	int
-	default 4 if BOARD_PROTECTLI_FW6
-	default 8 if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
+	default 8
+	# default 4 if BOARD_PROTECTLI_FW6
+	# default 8 if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
 
 config DEVICETREE
 	string
@@ -57,11 +59,11 @@ config DEVICETREE
 
 config VGA_BIOS_ID
 	string
-	default "8086,5916" # if BOARD_PROTECTLI_FW6 # 8086,5906 for FW6A
-
-config VGA_BIOS_SECOND_ID
-	string
 	default "8086,5917" # if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
+
+# config VGA_BIOS_SECOND_ID
+# 	string
+# 	default "8086,5916" # if BOARD_PROTECTLI_FW6 # 8086,5906 for FW6A
 
 config PXE_ROM_ID
 	string
