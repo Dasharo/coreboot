@@ -22,8 +22,4 @@ config CDB
 	hex
 	default 0x18
 
-config XIP_ROM_SIZE
-	hex
-	default 0x80000
-
 endif

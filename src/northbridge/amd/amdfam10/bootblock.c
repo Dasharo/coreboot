@@ -12,18 +12,17 @@
  */
 
 #include <types.h>
-#include <bootblock_common.h>
-#include "northbridge/amd/amdfam10/early_ht.c"
+#include <arch/bootblock.h>
+#include <device/pci_ops.h>
 
-// For SB HT chain only
-// mmconf is not ready yet
-void set_bsp_node_CHtExtNodeCfgEn(void)
+/* For SB HT chain only, mmconf is not ready yet */
+static void set_bsp_node_CHtExtNodeCfgEn(void)
 {
-	u32 reg;
+	u32 dword;
 
 	if (CONFIG(EXT_RT_TBL_SUPPORT)) {
-		reg = pci_io_read_config32(PCI_DEV(0, 0x18, 0), 0x68);
-		reg |= BIT(27) | BIT(25);
+		dword = pci_read_config32(PCI_DEV(0, 0x18, 0), 0x68);
+		dword |= BIT(25) | BIT(27);
 		/* CHtExtNodeCfgEn: coherent link extended node configuration enable,
 		 * Nodes[31:0] will be 0xff:[31:0], Nodes[63:32] will be 0xfe:[31:0]
 		 * ---- 32 nodes now only
@@ -32,14 +31,14 @@ void set_bsp_node_CHtExtNodeCfgEn(void)
 		 */
 
 		/* CHtExtAddrEn */
-		pci_io_write_config32(PCI_DEV(0, 0x18, 0), 0x68, reg);
+		pci_write_config32(PCI_DEV(0, 0x18, 0), 0x68, dword);
 	}
 }
+
 
 void bootblock_early_northbridge_init(void) {
 	/* Nothing special needs to be done to find bus 0 */
 	/* Allow the HT devices to be found */
 	/* mov bsp to bus 0xff when > 8 nodes */
 	set_bsp_node_CHtExtNodeCfgEn();
-	enumerate_ht_chain();
 }
