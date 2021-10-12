@@ -7,8 +7,6 @@ function usage {
     echo -e "\tfw2b - build Protectli FW2B coreboot image"
     echo -e "\tfw4b - build Protectli FW4B coreboot image"
     echo -e "\tfw6  - build Protectli FW6  coreboot image"
-    # echo -e "\tfw6d - build Protectli FW6D coreboot image"
-    # echo -e "\tfw6e - build Protectli FW6E coreboot image"
     exit 1
 }
 
