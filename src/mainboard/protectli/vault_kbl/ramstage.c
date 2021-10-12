@@ -2,7 +2,7 @@
 
 #include <soc/gpio.h>
 #include <soc/ramstage.h>
-#include <mainboard/protectli/vault_kbl/gpio.h>
+#include "gpio.h"
 
 void mainboard_silicon_init_params(FSP_SIL_UPD *params)
 {
