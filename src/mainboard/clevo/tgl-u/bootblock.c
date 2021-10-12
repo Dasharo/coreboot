@@ -10,7 +10,6 @@
 
 #define DGPU_RST_N GPP_U4
 #define DGPU_PWR_EN GPP_U5
-#define DGPU_GC6 GPP_D2
 
 static void dgpu_power_enable(int onoff) {
 	printk(BIOS_DEBUG, "nvidia: DGPU power %d\n", onoff);

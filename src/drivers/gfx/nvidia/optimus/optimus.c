@@ -12,19 +12,23 @@
 #include "chip.h"
 
 /* PCIe Root Port registers for link status and L23 control. */
-#define PCH_PCIE_CFG_LSTS 0x52	  /* Link Status Register */
-#define PCH_PCIE_CFG_SPR 0xe0	  /* Scratchpad */
-#define PCH_PCIE_CFG_RPPGEN 0xe2  /* Root Port Power Gating Enable */
-#define PCH_PCIE_CFG_LCAP_PN 0x4f /* Root Port Number */
+#define PCH_PCIE_CFG_LSTS 0x52		/* Link Status Register */
+#define PCH_PCIE_CFG_SPR 0xe0		/* Scratchpad */
+#define PCH_PCIE_CFG_RPPGEN 0xe2	/* Root Port Power Gating Enable */
+#define PCH_PCIE_CFG_LCAP_PN 0x4f	/* Root Port Number */
+#define PCH_PCIE_CFG_SSID 0x40		/* Subsystem ID */
+#define PCH_PCIE_CFG_LCTL 0x50		/* Link Control Register */
+#define PCH_PCIE_CFG_LREN 0x69		/* TODO: What is this? */
+#define PCH_PCIE_CFG_PCIESTS1 0x328	/* PCIe Status 1 */
 
 /* ACPI register names corresponding to PCIe root port registers. */
 #define ACPI_REG_PCI_LINK_ACTIVE "LASX"	   /* Link active status */
 #define ACPI_REG_PCI_L23_RDY_ENTRY "L23E"  /* L23_Rdy Entry Request */
 #define ACPI_REG_PCI_L23_RDY_DETECT "L23R" /* L23_Rdy Detect Transition */
 #define ACPI_REG_PCI_L23_SAVE_STATE "NCB7" /* Scratch bit to save L23 state */
-
-/* dGPU PCIe config space registers */
-#define PCH_PCIE_CFG_SSID 0x40	  /* Subsystem ID */
+#define ACPI_REG_PCI_LINK_DISABLE "LNKD"   /* Link active status */
+#define ACPI_REG_PCI_LINK_STATUS "LNKS"    /* Link status */
+#define ACPI_REG_PCI_LREN "LREN"           /* TODO: What is this? */
 
 /* ACPI register names corresponding to GPU port registers */
 #define ACPI_REG_PCI_SUBSYSTEM_ID "DVID"   /* Subsystem DID+VID */
@@ -113,6 +117,12 @@ nvidia_optimus_acpi_method_off(int pcie_rp,
 {
 	acpigen_write_method_serialized("_OFF", 0);
 
+	/* Notify EC to stop polling the dGPU */
+	if (config->ec_notify_method) {
+		acpigen_emit_namestring(config->ec_notify_method);
+		acpigen_write_integer(0);
+	}
+
 	/* Trigger L23 ready entry flow unless disabled by config. */
 	if (!config->disable_l23)
 		nvidia_optimus_acpi_l23_entry();
@@ -137,12 +147,6 @@ nvidia_optimus_acpi_method_off(int pcie_rp,
 
 	acpigen_write_store_int_to_namestr(0, "_STA");
 
-	/* Notify EC to stop polling the dGPU */
-	if (config->ec_notify_method) {
-		acpigen_emit_namestring(config->ec_notify_method);
-		acpigen_write_integer(0);
-	}
-
 	acpigen_pop_len(); /* Method */
 }
 
@@ -153,9 +157,16 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	const struct device *parent = dev->bus->dev;
 	const char *scope = acpi_device_path(parent);
 
+	/* PCH RP memory mapped PCI configuration space address */
+	unsigned long dgba = CONFIG_MMCONF_BASE_ADDRESS | (parent->path.pci.devfn << 12);
+	printk(BIOS_ERR, "%s: dGPU RP config address: 0x%lx\n", __func__, dgba);
+
 	/* PCH RP PCIe configuration space */
-	const struct opregion rp_pci_config = OPREGION("PXCS", PCI_CONFIG, 0, 0xff);
+	const struct opregion rp_pci_config = OPREGION("PXCS", SYSTEMMEMORY, dgba, 0x1000);
 	const struct fieldlist rp_fieldlist[] = {
+		FIELDLIST_OFFSET(PCH_PCIE_CFG_LCTL),
+		FIELDLIST_RESERVED(4),
+		FIELDLIST_NAMESTR(ACPI_REG_PCI_LINK_DISABLE, 1),
 		FIELDLIST_OFFSET(PCH_PCIE_CFG_LSTS),
 		FIELDLIST_RESERVED(13),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_LINK_ACTIVE, 1),
@@ -166,6 +177,9 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 		FIELDLIST_RESERVED(2),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_L23_RDY_ENTRY, 1),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_L23_RDY_DETECT, 1),
+		FIELDLIST_OFFSET(PCH_PCIE_CFG_PCIESTS1),
+		FIELDLIST_RESERVED(19),
+		FIELDLIST_NAMESTR(ACPI_REG_PCI_LINK_STATUS, 4),
 	};
 	uint8_t pcie_rp;
 
