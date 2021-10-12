@@ -37,6 +37,11 @@ struct drivers_gfx_nvidia_optimus_config {
 	 * maybe unneeded for optimus?
 	 */
 	bool disable_l23;
+
+	/*
+	 * EC method to call on dGPU power state change
+	 */
+	const char *ec_notify_method;
 };
 
 #endif

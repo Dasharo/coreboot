@@ -291,6 +291,7 @@ chip soc/intel/tigerlake
 				register "reset_delay_ms" = "10"
 				register "reset_off_delay_ms" = "4"
 				register "srcclk_pin" = "2" # PEG_CLKREQ#
+				register "ec_notify_method" = ""\\_SB.PCI0.LPCB.EC0.DGPM""
 				device generic 0 on end
 			end
 		end

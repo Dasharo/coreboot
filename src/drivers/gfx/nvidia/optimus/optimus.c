@@ -92,11 +92,17 @@ nvidia_optimus_acpi_method_on(unsigned int pcie_rp,
 			acpigen_write_sleep(config->reset_delay_ms);
 	}
 
-	/* Trigger L23 ready exit flow unless disabld by config. */
+	/* Trigger L23 ready exit flow unless disabled by config. */
 	if (!config->disable_l23)
 		nvidia_optimus_acpi_l23_exit();
 
 	acpigen_write_store_int_to_namestr(1, "_STA");
+
+	/* Notify EC to start polling the dGPU */
+	if (config->ec_notify_method) {
+		acpigen_emit_namestring(config->ec_notify_method);
+		acpigen_write_integer(1);
+	}
 
 	acpigen_pop_len(); /* Method */
 }
@@ -130,6 +136,12 @@ nvidia_optimus_acpi_method_off(int pcie_rp,
 	}
 
 	acpigen_write_store_int_to_namestr(0, "_STA");
+
+	/* Notify EC to stop polling the dGPU */
+	if (config->ec_notify_method) {
+		acpigen_emit_namestring(config->ec_notify_method);
+		acpigen_write_integer(0);
+	}
 
 	acpigen_pop_len(); /* Method */
 }
