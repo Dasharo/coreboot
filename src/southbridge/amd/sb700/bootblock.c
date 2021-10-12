@@ -7,6 +7,10 @@
 #include <device/pci.h>
 #include <device/pci_ops.h>
 
+#if CONFIG(SOUTHBRIDGE_AMD_SR5650)
+#include <southbridge/amd/sr5650/sr5650.h>
+#endif
+
 #define SPI_BASE_ADDRESS		0xa0
 
 #define SPI_CONTROL_1			0xc
@@ -18,7 +22,7 @@ static void sb7xx_51xx_pci_port80(void)
 	pci_devfn_t dev;
 
 	/* P2P Bridge */
-	dev = pci_locate_device(PCI_ID(0x1002, 0x4384), 0);
+	dev = PCI_DEV(0, 0x14, 4);
 
 	/* Chip Control: Enable subtractive decoding */
 	byte = pci_read_config8(dev, 0x40);
@@ -50,7 +54,7 @@ static void sb7xx_51xx_pci_port80(void)
 	pci_write_config8(dev, 0x04, byte);
 
 	/* LPC controller */
-	dev = pci_locate_device(PCI_ID(0x1002, 0x439D), 0);
+	dev = PCI_DEV(0, 0x14, 3);
 
 	byte = pci_read_config8(dev, 0x4A);
 	byte &= ~(1 << 5);	/* disable lpc port 80 */
@@ -63,7 +67,7 @@ static void sb7xx_51xx_lpc_port80(void)
 	pci_devfn_t dev;
 
 	/* Enable port 80 LPC decode in pci function 3 configuration space. */
-	dev = pci_locate_device(PCI_ID(0x1002, 0x439d), 0);
+	dev = PCI_DEV(0, 0x14, 3);
 	byte = pci_read_config8(dev, 0x4a);
 	byte |= 1 << 5;		/* enable port 80 */
 	pci_write_config8(dev, 0x4a, byte);
@@ -84,11 +88,12 @@ static void sb7xx_51xx_lpc_init(void)
 	u32 reg32;
 	pci_devfn_t dev;
 
-	dev = pci_locate_device(PCI_ID(0x1002, 0x4385), 0);	/* SMBUS controller */
+	dev = PCI_DEV(0, 0x14, 0);	/* SMBUS controller */
 	/* NOTE: Set BootTimerDisable, otherwise it would keep rebooting!!
 	 * This bit has no meaning if debug strap is not enabled. So if the
 	 * board keeps rebooting and the code fails to reach here, we could
-	 * disable the debug strap first. */
+	 * disable the debug strap first.
+	 */
 	reg32 = pci_read_config32(dev, 0x4C);
 	reg32 |= 1 << 31;
 	pci_write_config32(dev, 0x4C, reg32);
@@ -98,18 +103,22 @@ static void sb7xx_51xx_lpc_init(void)
 	reg32 |= 1 << 20;
 	pci_write_config32(dev, 0x64, reg32);
 
+	if (CONFIG(SOUTHBRIDGE_AMD_SB700_DISABLE_ISA_DMA)) {
+		/* Disable LPC ISA DMA Capability */
+		reg8 = pci_read_config8(dev, 0x78);
+		reg8 &= ~(1 << 0);
+		pci_write_config8(dev, 0x78, reg8);
+	}
+
+
+	dev = PCI_DEV(0, 0x14, 3);
 	if (CONFIG(SOUTHBRIDGE_AMD_SUBTYPE_SP5100)) {
 		post_code(0x66);
-		dev = pci_locate_device(PCI_ID(0x1002, 0x439d), 0);     /* LPC Controller */
 		reg8 = pci_read_config8(dev, 0xBB);
 		reg8 |= 1 << 2 | 1 << 3 | 1 << 6 | 1 << 7;
 		reg8 &= ~(1 << 1);
 		pci_write_config8(dev, 0xBB, reg8);
 	}
-
-
-	dev = pci_locate_device(PCI_ID(0x1002, 0x439d), 0);	/* LPC Controller */
-
 	/* SB700 LPC Bridge 0x48.
 	 * Turn on all LPC IO Port decode enables
 	 */
@@ -217,6 +226,11 @@ void bootblock_early_southbridge_init(void)
 {
 	sb700_enable_rom();
 	sb700_configure_rom();
+
+#if CONFIG(SOUTHBRIDGE_AMD_SR5650)
+	sr5650_disable_pcie_bridge();
+#endif
+
 	sb7xx_51xx_lpc_init();
 
 	if (CONFIG(POST_DEVICE_LPC))

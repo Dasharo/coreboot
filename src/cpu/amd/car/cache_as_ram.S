@@ -34,9 +34,15 @@ bootblock_pre_c_entry:
  *   xmm3: Fam15h comparison value
  *   xmm4: Backup EBX
  *   xmm5: coreboot init detect
+ *   xmm6: tsc[31:0]
+ *   xmm7: tsc[63:32]
  */
 cache_as_ram_setup:
 	post_code(0xa0)
+
+	/* Save the timestamp */
+	movups	%xmm1, %xmm6
+	movups	%xmm2, %xmm7
 
 	/* Figure out the CPU family. */
 	cvtsi2sd %ebx, %xmm4
@@ -60,7 +66,7 @@ cache_as_ram_setup:
 	movl	%eax, %ebx	/* We store the status. */
 	cvtsi2sd %ebx, %xmm5
 
-	jmp_if_k8(CAR_FAM10_out_post_errata)
+	jmp_if_k8(CAR_FAM10_errata_applied)
 
 	/*
 	 * For GH, CAR need to set DRAM Base/Limit registers to direct that to node0.
@@ -115,32 +121,6 @@ CAR_FAM10_out:
 	wrmsr
 
 CAR_FAM10_errata_applied:
-
-#if CONFIG(MMCONF_SUPPORT)
-   #if (CONFIG_MMCONF_BASE_ADDRESS > 0xFFFFFFFF)
-   #error "MMCONF_BASE_ADDRESS too big"
-   #elif (CONFIG_MMCONF_BASE_ADDRESS & 0xFFFFF)
-   #error "MMCONF_BASE_ADDRESS not 1MB aligned"
-   #endif
-   #if (CONFIG_MMCONF_BUS_NUMBER & (CONFIG_MMCONF_BUS_NUMBER - 1) != 0)
-   #error "MMCONF_BUS_NUMBER not power of 2"
-   #endif
-   #if (CONFIG_MMCONF_BUS_NUMBER > 256)
-   #error "Bad MMCONF_BUS_NUMBER value"
-   #endif
-	movl	$0, %edx
-	// movl	$((CONFIG_MMCONF_BASE_ADDRESS) | (1 << 0)), %eax
-	movl	$CONFIG_MMCONF_BUS_NUMBER, %ecx
-	bsfl	%ecx, %eax	/* Get bit index */
-	/* CONFIG_MMCONF_BUS_NUMBER is zero */
-	jz	CAR_FAM10_out_post_errata
-	shl	$2, %eax
-	orl	$((CONFIG_MMCONF_BASE_ADDRESS) | (1 << 0)), %eax
-	movl	$MMIO_CONF_BASE, %ecx
-	wrmsr
-#endif
-
-CAR_FAM10_out_post_errata:
 
 	/* Fam15h APIC IDs do not depend on NB config bit 54 */
 	jmp_if_not_fam15h(skip_nb54_set)
@@ -333,18 +313,24 @@ clear_fixed_var_mtrr_out:
 	wrmsr
 
 fam15_skip_dram_mtrr_setup:
+
 	/* Enable cache for our code in Flash because we do XIP here */
 	movl	$MTRR_PHYS_BASE(1), %ecx
-	xorl	%edx, %edx
 	movl	$_program, %eax
 	andl	xip_mtrr_mask, %eax
 	orl	$MTRR_TYPE_WRPROT, %eax
 	wrmsr
+
+	/* Determine CPU_ADDR_BITS and load PHYSMASK high word to %edx. */
+	movl	$0x80000008, %eax
+	cpuid
+	movb	%al, %cl
+	sub	$32, %cl
+	movl	$1, %edx
+	shl	%cl, %edx
+	subl	$1, %edx
+
 	movl	$MTRR_PHYS_MASK(1), %ecx
-	movl	$0xff, %edx /* (1 << (CONFIG_CPU_ADDR_BITS - 32)) - 1 for K8 (CONFIG_CPU_ADDR_BITS = 40) */
-	jmp_if_k8(wbcache_post_fam10_setup)
-	movl	$0xffff, %edx /* (1 << (CONFIG_CPU_ADDR_BITS - 32)) - 1 for FAM10 (CONFIG_CPU_ADDR_BITS = 48) */
-wbcache_post_fam10_setup:
 	movl	xip_mtrr_mask, %eax
 	orl	$MTRR_PHYS_MASK_VALID, %eax
 	wrmsr
@@ -426,12 +412,16 @@ fam10_end_part1:
 
 	post_code(0xa2)
 
-	/* Clear the cache memory region. This will also fill up the cache. */
+	/* Read the range with lodsl. */
 	cld
+	movl	$CONFIG_DCACHE_RAM_BASE, %esi
+	movl	$(CONFIG_DCACHE_RAM_SIZE >> 2), %ecx
+	rep	lodsl
+
+	/* Clear the range. */
+	movl	$CONFIG_DCACHE_RAM_BASE, %edi
+	movl	$(CONFIG_DCACHE_RAM_SIZE >> 2), %ecx
 	xorl	%eax, %eax
-	movl	$_car_mtrr_start, %edi
-	movl	$_car_mtrr_size, %ecx
-	shr	$2, %ecx
 	rep	stosl
 
 	jmp_if_not_k8(CAR_skip_k8_errata_part2)
@@ -530,34 +520,29 @@ CAR_FAM10_ap_out:
 
 	post_code(0xa5)
 
-	/* Disable SSE. */
-	movl	%cr4, %eax
-	andl	$~(3 << 9), %eax
-	movl	%eax, %cr4
-
-	post_code(0xa6)
-
-	/* Restore the BIST result. */
-	movl	%ebp, %eax
-
-	/* We need to set EBP? No need. */
-	movl	%esp, %ebp
-	pushl	%ebx		/* Init detected. */
-	pushl	%eax		/* BIST */
-
 	/* Need to align stack to 16 bytes at call instruction. Account for
 	the pushes below. */
 	andl	$0xfffffff0, %esp
 	subl	$4, %esp
-	post_code(0xa7)
+
+	/* Restore the BIST result. */
+	movl	%ebp, %eax
+
+	post_code(0xa6)
 
 	/* push TSC and BIST to stack */
-	movd	%mm0, %eax
 	pushl	%eax	/* BIST */
-	movd	%mm2, %eax
+	cvtsd2si %xmm7, %eax
 	pushl	%eax	/* tsc[63:32] */
-	movd	%mm1, %eax
+	cvtsd2si %xmm6, %eax
 	pushl	%eax	/* tsc[31:0] */
+
+	post_code(0xa7)
+
+	/* Disable SSE. */
+	movl	%cr4, %eax
+	andl	$~(3 << 9), %eax
+	movl	%eax, %cr4
 
 before_c_entry:
 	post_code(0x2f)
