@@ -126,8 +126,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_D19, NONE),
 
 	/* ------- GPIO Group GPP_U (TGL UP3 only) ------- */
-	PAD_CFG_TERM_GPO(GPP_U4, 0, NONE, DEEP), /* DGPU_RST#_PCH */
-	PAD_CFG_TERM_GPO(GPP_U5, 0, NONE, DEEP), /* DGPU_PWR_EN */
+	//PAD_CFG_TERM_GPO(GPP_U4, 1, NONE, DEEP), /* DGPU_RST#_PCH */
+	//PAD_CFG_TERM_GPO(GPP_U5, 1, NONE, DEEP), /* DGPU_PWR_EN */
 
 	/* ------- GPIO Community 2 ------- */
 
