@@ -23,12 +23,6 @@ struct drivers_gfx_nvidia_optimus_config {
 	/* Delay to be inserted after device is put into reset. */
 	unsigned int reset_off_delay_ms;
 
-	/* GPIO used to detect GPU framebuffer GC6 entry */
-	struct acpi_gpio gc6_fb_en_gpio;
-
-	/* GPIO used to put GPU into GC6 state */
-	struct acpi_gpio gpu_event_gpio;
-
 	/*
 	 * SRCCLK assigned to this root port which will be turned off via PMC IPC.
 	 * If set to -1 then the clock will not be disabled in D3.

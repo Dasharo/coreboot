@@ -13,24 +13,16 @@
 
 /* PCIe Root Port registers for link status and L23 control. */
 #define PCH_PCIE_CFG_SSID 0x40		/* Subsystem ID */
-#define PCH_PCIE_CFG_CEDR 0x4A		/* TODO: What is this? */
-#define PCH_PCIE_CFG_LCAP_PN 0x4f	/* Root Port Number */
-#define PCH_PCIE_CFG_LCTL 0x50		/* Link Control Register */
-#define PCH_PCIE_CFG_LSTS 0x52		/* Link Status Register */
-#define PCH_PCIE_CFG_LREN 0x69		/* TODO: What is this? */
-#define PCH_PCIE_CFG_SPR 0xe0		/* Scratchpad */
-#define PCH_PCIE_CFG_RPPGEN 0xe2	/* Root Port Power Gating Enable */
-#define PCH_PCIE_CFG_PCIESTS1 0x328	/* PCIe Status 1 */
+#define PCH_PCIE_CFG_LSTS 0x52	  /* Link Status Register */
+#define PCH_PCIE_CFG_SPR 0xe0	  /* Scratchpad */
+#define PCH_PCIE_CFG_RPPGEN 0xe2  /* Root Port Power Gating Enable */
+#define PCH_PCIE_CFG_LCAP_PN 0x4f /* Root Port Number */
 
 /* ACPI register names corresponding to PCIe root port registers. */
 #define ACPI_REG_PCI_LINK_ACTIVE "LASX"	   /* Link active status */
 #define ACPI_REG_PCI_L23_RDY_ENTRY "L23E"  /* L23_Rdy Entry Request */
 #define ACPI_REG_PCI_L23_RDY_DETECT "L23R" /* L23_Rdy Detect Transition */
 #define ACPI_REG_PCI_L23_SAVE_STATE "NCB7" /* Scratch bit to save L23 state */
-#define ACPI_REG_PCI_LINK_DISABLE "LNKD"   /* Link active status */
-#define ACPI_REG_PCI_LREN "LREN"           /* TODO: What is this? */
-#define ACPI_REG_PCI_LINK_STATUS "LNKS"    /* Link status */
-#define ACPI_REG_PCI_CEDR "CEDR"           /* TODO: What is this? */
 
 /* ACPI register names corresponding to GPU port registers */
 #define ACPI_REG_PCI_SUBSYSTEM_ID "DVID"   /* Subsystem DID+VID */
@@ -67,85 +59,6 @@ static void nvidia_optimus_acpi_l23_entry(void)
 	acpigen_write_store_int_to_namestr(1, ACPI_REG_PCI_L23_SAVE_STATE);
 }
 
-/* Called from RP _OFF to put the GPU into GC6 state */
-static void nvidia_optimus_acpi_gc6_entry(void)
-{
-	acpigen_write_method_serialized("GC6I", 0);
-	acpigen_write_debug_string("GC6 entry start");
-
-	/* Save LREN value to LTRE */
-	acpigen_write_store();
-	acpigen_emit_namestring(ACPI_REG_PCI_LREN);
-	acpigen_emit_namestring("LTRE");
-
-	acpigen_write_debug_string("LREN saved");
-
-	/* Disable PCIe link */
-	acpigen_write_store_int_to_namestr(1, ACPI_REG_PCI_LINK_DISABLE);
-
-	acpigen_write_debug_string("GC6 entry end");
-	acpigen_pop_len(); /* Method */
-}
-
-/* Called from RP _ON to bring up the GPU from GC6 */
-static void nvidia_optimus_acpi_gc6_exit(const struct drivers_gfx_nvidia_optimus_config *config)
-{
-	acpigen_write_method_serialized("GC6O", 0);
-	acpigen_write_debug_string("GC6 exit start");
-
-	/* Enable PCIe link */
-	acpigen_write_store_int_to_namestr(0, ACPI_REG_PCI_LINK_DISABLE);
-
-	/* Wait until GC6_FB_EN asserts */
-	acpigen_write_store_int_to_op(0, LOCAL0_OP);
-	acpigen_emit_byte(WHILE_OP);
-	acpigen_write_len_f();
-	acpigen_emit_byte(LEQUAL_OP);
-	acpigen_emit_byte(LOCAL0_OP);
-	acpigen_emit_byte(ZERO_OP);
-	acpigen_write_sleep(10);
-	acpigen_get_rx_gpio(&config->gc6_fb_en_gpio);
-	acpigen_pop_len(); /* While */
-
-	acpigen_write_debug_string("FB_EN asserted");
-
-	/* Assert GPU_EVENT */
-	acpigen_enable_tx_gpio(&config->gpu_event_gpio);
-
-	acpigen_write_debug_string("deasserting EVENT");
-
-	/* Wait until GC6_FB_EN deasserts */
-	acpigen_write_store_int_to_op(1, LOCAL0_OP);
-	acpigen_emit_byte(WHILE_OP);
-	acpigen_write_len_f();
-	acpigen_emit_byte(LEQUAL_OP);
-	acpigen_emit_byte(LOCAL0_OP);
-	acpigen_emit_byte(ONE_OP);
-	acpigen_write_sleep(10);
-	acpigen_get_rx_gpio(&config->gc6_fb_en_gpio);
-	acpigen_pop_len(); /* While */
-
-	acpigen_write_debug_string("FB_EN deasserted");
-
-	/* Deassert GPU_EVENT */
-	acpigen_disable_tx_gpio(&config->gpu_event_gpio);
-
-	acpigen_write_debug_string("deasserting EVENT");
-
-	/* Restore LREN value from LTRE */
-	acpigen_write_store();
-	acpigen_emit_namestring("LTRE");
-	acpigen_emit_namestring(ACPI_REG_PCI_LREN);
-
-	/* Set CEDR to 1 */
-	acpigen_write_store_int_to_namestr(1, ACPI_REG_PCI_CEDR);
-
-	acpigen_write_debug_string("LTRE and CEDR restored");
-
-	acpigen_write_debug_string("GC6 exit end");
-	acpigen_pop_len(); /* Method */
-}
-
 /* Restore the subsystem ID after _ON to ensure the windows driver works */
 static void nvidia_optimus_acpi_subsystem_id_restore(void)
 {
@@ -158,8 +71,6 @@ nvidia_optimus_acpi_method_on(unsigned int pcie_rp,
 			 const struct drivers_gfx_nvidia_optimus_config *config)
 {
 	acpigen_write_method_serialized("_ON", 0);
-
-	acpigen_emit_namestring("GC6O");
 
 	/* Assert enable GPIO to turn on device power. */
 	if (config->enable_gpio.pin_count) {
@@ -230,8 +141,6 @@ nvidia_optimus_acpi_method_off(int pcie_rp,
 
 	acpigen_write_store_int_to_namestr(0, "_STA");
 
-	acpigen_emit_namestring("GC6I");
-
 	acpigen_pop_len(); /* Method */
 }
 
@@ -242,24 +151,12 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	const struct device *parent = dev->bus->dev;
 	const char *scope = acpi_device_path(parent);
 
-	/* PCH RP memory mapped PCI configuration space address */
-	unsigned long dgba = CONFIG_MMCONF_BASE_ADDRESS | (parent->path.pci.devfn << 12);
-	printk(BIOS_ERR, "%s: dGPU RP config address: 0x%lx\n", __func__, dgba);
-
 	/* PCH RP PCIe configuration space */
-	const struct opregion rp_pci_config = OPREGION("PXCS", SYSTEMMEMORY, dgba, 0x1000);
+	const struct opregion rp_pci_config = OPREGION("PXCS", PCI_CONFIG, 0, 0xff);
 	const struct fieldlist rp_fieldlist[] = {
-		FIELDLIST_OFFSET(PCH_PCIE_CFG_CEDR),
-		FIELDLIST_NAMESTR(ACPI_REG_PCI_CEDR, 1),
-		FIELDLIST_OFFSET(PCH_PCIE_CFG_LCTL),
-		FIELDLIST_RESERVED(4),
-		FIELDLIST_NAMESTR(ACPI_REG_PCI_LINK_DISABLE, 1),
 		FIELDLIST_OFFSET(PCH_PCIE_CFG_LSTS),
 		FIELDLIST_RESERVED(13),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_LINK_ACTIVE, 1),
-		FIELDLIST_OFFSET(PCH_PCIE_CFG_LREN),
-		FIELDLIST_RESERVED(2),
-		FIELDLIST_NAMESTR(ACPI_REG_PCI_LREN, 1),
 		FIELDLIST_OFFSET(PCH_PCIE_CFG_SPR),
 		FIELDLIST_RESERVED(7),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_L23_SAVE_STATE, 1),
@@ -267,9 +164,6 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 		FIELDLIST_RESERVED(2),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_L23_RDY_ENTRY, 1),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_L23_RDY_DETECT, 1),
-		FIELDLIST_OFFSET(PCH_PCIE_CFG_PCIESTS1),
-		FIELDLIST_RESERVED(19),
-		FIELDLIST_NAMESTR(ACPI_REG_PCI_LINK_STATUS, 4),
 	};
 	uint8_t pcie_rp;
 
@@ -322,16 +216,11 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 			    FIELD_ANYACC | FIELD_NOLOCK | FIELD_PRESERVE);
 
 	/* Root Port scope */
-	acpigen_write_name_integer("LTRE", 0x0);
-	nvidia_optimus_acpi_gc6_entry();
-	nvidia_optimus_acpi_gc6_exit(config);
-
 	acpigen_write_power_res("PWRR", 0, 0, power_res_states, ARRAY_SIZE(power_res_states));
 	acpigen_write_name_integer("_STA", 1);
 	nvidia_optimus_acpi_method_on(pcie_rp, config);
 	nvidia_optimus_acpi_method_off(pcie_rp, config);
 	acpigen_pop_len(); /* PowerResource */
-
 
 	/* GPU scope */
 	acpigen_write_device("DEV0");
