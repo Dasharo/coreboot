@@ -285,8 +285,6 @@ chip soc/intel/tigerlake
 				register "desc" = ""DGPU""
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_U5)" # DGPU_PWR_EN
 				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_U4)" # DGPU_RST#_PCH
-				register "gc6_fb_en_gpio" = "ACPI_GPIO_INPUT_ACTIVE_LOW(GPP_D2)" # GC6_FB_EN
-				register "gpu_event_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D1)" # GPU_EVENT
 				register "enable_delay_ms" = "16"
 				register "enable_off_delay_ms" = "4"
 				register "reset_delay_ms" = "10"
