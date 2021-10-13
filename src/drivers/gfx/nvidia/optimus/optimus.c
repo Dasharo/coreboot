@@ -115,7 +115,7 @@ static void nvidia_optimus_acpi_gc6_exit(const struct drivers_gfx_nvidia_optimus
 	acpigen_write_debug_string("deasserting EVENT");
 
 	/* Wait until GC6_FB_EN deasserts */
-	acpigen_write_store_int_to_op(0, LOCAL0_OP);
+	acpigen_write_store_int_to_op(1, LOCAL0_OP);
 	acpigen_emit_byte(WHILE_OP);
 	acpigen_write_len_f();
 	acpigen_emit_byte(LEQUAL_OP);
