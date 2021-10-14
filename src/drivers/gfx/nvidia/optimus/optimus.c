@@ -215,7 +215,6 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	acpigen_write_field("PXCS", rp_fieldlist, ARRAY_SIZE(rp_fieldlist),
 			    FIELD_ANYACC | FIELD_NOLOCK | FIELD_PRESERVE);
 
-	/* Root Port scope */
 	acpigen_write_power_res("PWRR", 0, 0, power_res_states, ARRAY_SIZE(power_res_states));
 	acpigen_write_name_integer("_STA", 1);
 	nvidia_optimus_acpi_method_on(pcie_rp, config);
@@ -235,11 +234,11 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 
 	acpigen_write_method_serialized("_ON", 0);
 	nvidia_optimus_acpi_subsystem_id_restore();
-	acpigen_write_name_integer("_STA", 1);
+	acpigen_write_store_int_to_namestr(1, "_STA");
 	acpigen_pop_len(); /* Method */
 
 	acpigen_write_method_serialized("_OFF", 0);
-	acpigen_write_name_integer("_STA", 1);
+	acpigen_write_store_int_to_namestr(0, "_STA");
 	acpigen_pop_len(); /* Method */
 
 	acpigen_pop_len(); /* PowerResource */
