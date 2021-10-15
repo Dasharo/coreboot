@@ -30,7 +30,6 @@ Scope (_GPE) {
 }
 
 External (\_SB.PCI0.RP11.PXSX.VDID, FieldUnitObj)
-External (\_SB.PCI0.CNVW.VDID, FieldUnitObj)
 External (\_SB.PCI0.PMC.IPCS,MEthodObj)
 
 /* Handle Bluetooth RFkill */
@@ -66,13 +65,10 @@ Scope (\_SB.PCI0.XHCI.RHUB.HS10)
 	{
 		If(CondRefOf(\_SB.PCI0.CNVW))
 		{
-			If (\_SB.PCI0.CNVW.VDID != 0xFFFFFFFF)
+			Return (Package (0x01)
 			{
-				Return (Package (0x01)
-				{
-					BTPR
-				})
-			}
+				BTPR
+			})
 		}
 		If(CondRefOf(\_SB.PCI0.RP11.PXSX))
 		{
