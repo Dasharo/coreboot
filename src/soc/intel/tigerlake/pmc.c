@@ -19,6 +19,7 @@
 #include <soc/lpm.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
+#include <soc/pmc.h>
 #include <soc/soc_chip.h>
 #include <bootstate.h>
 

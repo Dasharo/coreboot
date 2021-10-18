@@ -4,8 +4,8 @@ Device (UCSI)
 {
 	Name (_HID, EisaId ("USBC000"))
 	Name (_CID, EisaId ("PNP0CA0"))
-	Name (_UID, Zero)
-	Name (_DDN, "USB Type C")
+	Name (_UID, One)
+	Name (_DDN, "USB Type-C")
 	Name (_STA, 0xf)
 
 	/* Shared memory fields are defined in the SSDT */
