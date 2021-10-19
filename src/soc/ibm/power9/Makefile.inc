@@ -40,5 +40,6 @@ ramstage-y += powerbus.c
 ramstage-y += pstates.c
 ramstage-y += xive.c
 ramstage-y += int_vectors.S
+ramstage-y += i2c.c
 
 endif
