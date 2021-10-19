@@ -22,6 +22,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select USE_OPTION_TABLE
 	select HAVE_SMI_HANDLER
 	select EC_CLEVO_IT5570
+	select DRIVER_NVIDIA_OPTIMUS
 
 config MAINBOARD_DIR
 	string
@@ -38,6 +39,14 @@ config MAINBOARD_PART_NUMBER
 config MAINBOARD_FAMILY
 	string
 	default "Clevo_tgl-u"
+
+config SUBSYSTEM_VENDOR_ID
+	hex
+	default 0x1558
+
+config SUBSYSTEM_DEVICE_ID
+	hex
+	default 0x4018
 
 config MAX_CPUS
 	int

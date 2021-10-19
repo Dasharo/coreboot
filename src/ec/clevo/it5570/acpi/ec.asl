@@ -162,6 +162,19 @@ Device (EC0)
 		}
 	}
 
+	Method (DGPM, 1, Serialized) // Handle dGPU power state change
+	{
+		If (ECOK) {
+			If (Arg0 == 0x0) {
+				AIRP &= 0x7F
+				Debug = "EC: DGPU Off"
+			} ElseIf (Arg0 == 0x1) {
+				AIRP |= 0x80
+				Debug = "EC: DGPU On"
+			}
+		}
+	}
+
 	Method (_Q0A, 0, NotSerialized) // Touchpad Toggle
 	{
 		Debug = "EC: Touchpad Toggle"
