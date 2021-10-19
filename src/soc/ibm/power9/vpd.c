@@ -17,9 +17,6 @@
 /* Divisor used for section size in MEMD header */
 #define MEMD_SECTION_ROUNDING_DIVISOR 1000
 
-#define VPD_RECORD_SIZE_LEN  2
-#define VPD_KWD_NAME_LEN 2
-
 /* Supported mapping layout version */
 #define VPD_MAPPING_VERSION    1
 /* Size of entries in MR and MT mappings */
