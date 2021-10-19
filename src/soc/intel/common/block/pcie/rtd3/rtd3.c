@@ -335,7 +335,6 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 	const char *scope = acpi_device_path(parent);
 	const struct opregion opregion = OPREGION("PXCS", PCI_CONFIG, 0, 0xff);
 	const struct fieldlist fieldlist[] = {
-		FIELDLIST_NAMESTR("VDID", 32),
 		FIELDLIST_OFFSET(PCH_PCIE_CFG_LSTS),
 		FIELDLIST_RESERVED(13),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_LINK_ACTIVE, 1),
