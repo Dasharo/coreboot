@@ -68,3 +68,18 @@ releases:
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+        
+        - version: v0.4.0
+          added:
+                - Added full support for sleep mode (s0ix / Modern Standby)
+                - Added support for nvidia discrete graphics
+          changed:
+                - Fixed regression with non-funtional airplane mode hotkey on Windows
+          fixed:
+                - Sleep mode is not functional
+                - The camera ON/OFF switch Fn key is not functional
+          known_issues:
+                - description: Performance drop when the power adaptor is disconnected
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/5
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
