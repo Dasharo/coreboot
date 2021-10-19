@@ -218,6 +218,100 @@ static void fill_cpu_node(struct device_tree_node *node, uint32_t phandle,
 	dt_add_u32_prop(node, "tlb-sets", 4);
 }
 
+/*
+ * coreboot prepares one node with multiple "reg" entries (see fit_update_memory
+ * and functions called by it), while Skiboot expects multiple nodes, one region
+ * each. Both approaches are compliant with Devicetree Specification v0.3 so we
+ * can't say that one of them is wrong, they're just different.
+ *
+ * Probable cause for Skiboot choosing multi-node version is that it is possible
+ * to specify associativity, which may be important for NUMA systems.
+ *
+ * TODO: create these nodes from DIMM entries, when they are implemented.
+ */
+static void split_mem_node(struct device_tree *tree)
+{
+	struct device_tree_node *old_node;
+	struct device_tree_node *new_region;
+	struct device_tree_property *prop;
+	const uint32_t *reg_data = NULL;
+	size_t count, size_bytes = 0, offset = 0;
+	/*
+	 * Assume that, unless specified otherwise in "memory" node, defaults of 2
+	 * are used for address and size cells.
+	 */
+	size_t address_cells = 2, size_cells = 2;
+
+	old_node = dt_find_node_by_path(tree, "/memory", NULL, NULL, 0);
+	if (old_node == NULL)
+		die("No 'memory' node in device tree!\n");
+
+	list_remove(&old_node->list_node);
+
+	list_for_each(prop, old_node->properties, list_node) {
+		if (!strcmp("reg", prop->prop.name)) {
+			size_bytes = prop->prop.size;
+			reg_data = (uint32_t *)prop->prop.data;
+			continue;
+		}
+		if (!strcmp("#address-cells", prop->prop.name)) {
+			address_cells = *(uint32_t *)prop->prop.data;
+			continue;
+		}
+		if (!strcmp("#size-cells", prop->prop.name)) {
+			size_cells = *(uint32_t *)prop->prop.data;
+			continue;
+		}
+	}
+
+	if (reg_data == NULL)
+		die("No 'reg' property in 'memory' node\n");
+
+	if (address_cells != 2 && address_cells != 1)
+		die("'#address_cells' property in 'memory' has invalid value (%d)\n",
+		    address_cells);
+
+	if (size_cells != 2 && size_cells != 1)
+		die("'#size_cells' property in 'memory' has invalid value (%d)\n",
+		    size_cells);
+
+	count = size_bytes / (sizeof(uint32_t) * (address_cells + size_cells));
+	if (count * sizeof(uint32_t) * (address_cells + size_cells) != size_bytes)
+		die("'reg' property of 'memory' node has wrong size\n");
+
+	for (size_t i = 0; i < count; i++) {
+		/*
+		 * For newly created nodes always use 2 cells each for address and size,
+		 * regardless of sizes created by fit_update_memory. This assumes BE.
+		 */
+		union {uint32_t u32[2]; uint64_t u64;} new_addr = {};
+		union {uint32_t u32[2]; uint64_t u64;} new_size = {};
+		/* /memory@0123456789abcdef - 24 characters + null byte */
+		char path[26] = {};
+
+		if (address_cells == 1)
+			new_addr.u32[1] = reg_data[offset++];
+		else {
+			new_addr.u32[0] = reg_data[offset++];
+			new_addr.u32[1] = reg_data[offset++];
+		}
+
+		if (size_cells == 1)
+			new_size.u32[1] = reg_data[offset++];
+		else {
+			new_size.u32[0] = reg_data[offset++];
+			new_size.u32[1] = reg_data[offset++];
+		}
+
+		snprintf(path, sizeof(path), "/memory@%llx", new_addr.u64);
+		new_region = dt_find_node_by_path(tree, path, NULL, NULL, 1);
+
+		dt_add_string_prop(new_region, "device_type", (char *)"memory");
+		dt_add_reg_prop(new_region, &new_addr.u64, &new_size.u64, 1, 2, 2);
+		dt_add_u32_prop(new_region, "ibm,chip-id", 0 /* FIXME for second CPU */);
+	}
+};
+
 static int dt_platform_fixup(struct device_tree_fixup *fixup,
 			      struct device_tree *tree)
 {
@@ -225,13 +319,7 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 	uint64_t cores = read_scom(0x0006C090);
 	assert(cores != 0);
 
-	/* Memory devices are always direct children of root */
-	list_for_each(node, tree->root->children, list_node) {
-		const char *devtype = dt_find_string_prop(node, "device_type");
-		if (devtype && !strcmp(devtype, "memory")) {
-			dt_add_u32_prop(node, "ibm,chip-id", 0 /* FIXME for second CPU */);
-		}
-	}
+	split_mem_node(tree);
 
 	/* Find "cpus" node, create if necessary */
 	cpus = dt_find_node_by_path(tree, "/cpus", NULL, NULL, 1);
@@ -244,9 +332,7 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 	 * nodes
 	 */
 	list_for_each(node, cpus->children, list_node) {
-		//~ const char *devtype = dt_find_string_prop(node, "device_type");
-		//~ if (devtype && !strcmp(devtype, "cpu"))
-			list_remove(&node->list_node);
+		list_remove(&node->list_node);
 	}
 
 	for (int core_id = 0; core_id <= 24; core_id++) {
@@ -319,6 +405,9 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 	node = dt_find_node_by_path(tree, "/ibm,opal", NULL, NULL, 0);
 	if (node)
 		list_remove(&node->list_node);
+
+	node = dt_find_node_by_path(tree, "/ibm,opal/power-mgt", NULL, NULL, 1);
+	dt_add_u32_prop(node, "ibm,enabled-stop-levels", 0xec000000);
 
 	return 0;
 }
