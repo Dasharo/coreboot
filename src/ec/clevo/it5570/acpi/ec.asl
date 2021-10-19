@@ -373,6 +373,21 @@ Device (EC0)
 		Notify (^UCSI, 0x80)
 	}
 
+	Method (SFAN, 0, NotSerialized) // Set custom fan curve
+	{
+		P1F1 = 0x00
+		P1D1 = 0xFF
+		P2F1 = 0x3C
+		P2D1 = 0xFF
+		P3F1 = 0x50
+		P3D1 = 0xFF
+		P4F1 = 0x64
+		P4D1 = 0xFF
+
+		FDAT = 0x04
+		FCMD = 0xD7
+	}
+
 	#include "hid.asl"
 	#include "ucsi.asl"
 }
