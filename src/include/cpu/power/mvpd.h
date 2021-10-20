@@ -9,7 +9,7 @@
 /* Single bucket within #V keyword of version 3 */
 struct voltage_data
 {
-	uint16_t freq;
+	uint16_t freq;		// MHz
 	uint16_t vdd_voltage;
 	uint16_t idd_current;
 	uint16_t vcs_voltage;
