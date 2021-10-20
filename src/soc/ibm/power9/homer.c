@@ -4,7 +4,9 @@
 #include <cbfs.h>
 #include <commonlib/region.h>
 #include <console/console.h>
+#include <cpu/power/istep_13.h>
 #include <cpu/power/mvpd.h>
+#include <cpu/power/occ.h>
 #include <cpu/power/powerbus.h>
 #include <cpu/power/rom_media.h>
 #include <cpu/power/scom.h>
@@ -14,9 +16,11 @@
 
 #include "chip.h"
 #include "homer.h"
+#include "ops.h"
 #include "tor.h"
 #include "xip.h"
 #include "pstates_include/p9_pstates_cmeqm.h"
+#include "pstates_include/p9_pstates_occ.h"
 
 #include <lib.h>
 
@@ -47,6 +51,105 @@ enum scom_section {
 	STOP_SECTION_EQ_SCOM,
 	STOP_SECTION_L2,
 	STOP_SECTION_L3,
+};
+
+#define PHYSICAL_ADDR_MASK 0x7FFFFFFFFFFFFFFFull
+
+#define INIT_CONFIG_VALUE    0x8000000C09800000ull
+#define QPMR_PROC_CONFIG_POS 0xBFC18
+
+/* Undocumented */
+#define PU_OCB_OCI_OCCFLG2_CLEAR 0x0006C18B
+#define PU_PBAXCFG_SCOM          0x00068021
+
+#define OCC_CMD_ADDR 0x000E0000
+#define OCC_RSP_ADDR 0x000E1000
+
+#define OCC_CMD_POLL            0x00
+#define OCC_CMD_CLEAR_ERROR_LOG 0x12
+#define OCC_CMD_SET_STATE       0x20
+#define OCC_CMD_SETUP_CFG_DATA  0x21
+#define OCC_CMD_SET_POWER_CAP   0x22
+
+#define OCC_RC_SUCCESS             0x00
+#define OCC_RC_INIT_FAILURE        0xE5
+#define OCC_RC_OCC_INIT_CHECKPOINT 0xE1
+
+#define OCC_CFGDATA_FREQ_POINT    0x02
+#define OCC_CFGDATA_OCC_ROLE      0x03
+#define OCC_CFGDATA_APSS_CONFIG   0x04
+#define OCC_CFGDATA_MEM_CONFIG    0x05
+#define OCC_CFGDATA_PCAP_CONFIG   0x07
+#define OCC_CFGDATA_SYS_CONFIG    0x0F
+#define OCC_CFGDATA_TCT_CONFIG    0x13
+#define OCC_CFGDATA_AVSBUS_CONFIG 0x14
+#define OCC_CFGDATA_GPU_CONFIG    0x15
+
+struct occ_cfg_info {
+	const char *name;
+	void (*func)(struct homer_st *homer, uint8_t *data, uint16_t *size);
+};
+
+struct occ_poll_response {
+	uint8_t  status;
+	uint8_t  ext_status;
+	uint8_t  occs_present;
+	uint8_t  requested_cfg;
+	uint8_t  state;
+	uint8_t  mode;
+	uint8_t  ips_status;
+	uint8_t  error_id;
+	uint32_t error_address;
+	uint16_t error_length;
+	uint8_t  error_source;
+	uint8_t  gpu_cfg;
+	uint8_t  code_level[16];
+	uint8_t  sensor[6];
+	uint8_t  num_blocks;
+	uint8_t  version;
+	uint8_t  sensor_data[];	// 4049 bytes
+} __attribute__((packed));
+
+/* Host configuration information passed from host to OCC */
+struct occ_host_config {
+	uint32_t version;	// Version of this structure
+
+	uint32_t nest_freq;	// For computation of timebase frequency
+
+	/*
+	 * Interrupt type to the host:
+	 *  - 0x00000000 = FSI2HOST Mailbox
+	 *  - 0x00000001 = OCC interrupt line through PSIHB complex
+	 */
+	uint32_t interrupt_type;
+
+	uint32_t is_fir_master;	// If this OCC is the FIR master
+
+	/* FIR collection configuration data needed by FIR Master OCC in the
+	 * event of a checkstop */
+	uint8_t firdataConfig[3072];
+
+	uint32_t is_smf_mode;	// Whether SMF mode is enabled
+};
+
+/* Bit positions for various chiplets in host configuration vector */
+enum {
+	MCS_POS           = 1,
+	MBA_POS           = 9,	// This is actually MCA_POS
+	MEM_BUF_POS       = 17,
+	XBUS_POS          = 25,
+	PHB_POS           = 30,
+	CAPP_POS          = 37,
+	OBUS_POS          = 41,
+	ABUS_POS          = 41,
+	NVLINK_POS        = 45,
+
+	OBUS_BRICK_0_POS  = 0,
+	OBUS_BRICK_1_POS  = 1,
+	OBUS_BRICK_2_POS  = 2,
+	OBUS_BRICK_9_POS  = 9,
+	OBUS_BRICK_10_POS = 10,
+	OBUS_BRICK_11_POS = 11,
 };
 
 struct ring_data {
@@ -228,16 +331,6 @@ static void build_sgpe(struct homer_st *homer, struct xip_sgpe_header *sgpe,
 }
 
 static const uint32_t _SMF = 0x5F534D46; // "_SMF"
-
-static const uint32_t ATTN_OP             = 0x00000200;
-static const uint32_t BLR_OP              = 0x4E800020;
-static const uint32_t ORI_OP              = 0x60000000;
-static const uint32_t SKIP_SPR_REST_INST  = 0x4800001C;
-static const uint32_t MR_R0_TO_R10_OP     = 0x7C0A0378;
-static const uint32_t MR_R0_TO_R21_OP     = 0x7C150378;
-static const uint32_t MR_R0_TO_R9_OP      = 0x7C090378;
-static const uint32_t MTLR_R30_OP         = 0x7FC803A6;
-static const uint32_t MFLR_R30_OP         = 0x7FC802A6;
 
 static const uint32_t init_cpureg_template[] = {
 	0x63000000, /* ori %r24, %r0, 0        */ /* |= spr, key for lookup      */
@@ -587,6 +680,118 @@ static void build_pgpe(struct homer_st *homer, struct xip_pgpe_header *pgpe,
 	hdr->aux_controls = 1 << 24;
 }
 
+static void pba_slave_setup_runtime_phase(void)
+{
+	enum {
+		OCI_MASTER_ID_GPE2     = 0x2,
+		OCI_MASTER_ID_GPE3     = 0x3,
+		OCI_MASTER_ID_ICU      = 0x5,
+		OCI_MASTER_ID_PGPE     = OCI_MASTER_ID_GPE2,
+		OCI_MASTER_ID_SGPE     = OCI_MASTER_ID_GPE3,
+		OCI_MASTER_ID_MASK_ALL = 0x7,
+
+		PBA_READ_TTYPE_CL_RD_NC            = 0x0, /// Cache line read
+		PBA_WRITE_GATHER_TIMEOUT_2_PULSES  = 0x4,
+		PBA_READ_PREFETCH_NONE             = 0x1, /// No prefetch
+		PBA_WRITE_TTYPE_DMA_PR_WR          = 0x0, /// DMA Partial Write
+
+		/* Values for PBA Mode register fields */
+		PBA_OCI_REGION                   = 0x2,
+		PBA_BCE_OCI_TRANSACTION_64_BYTES = 0x1,
+
+		PU_PBAMODE_SCOM    = 0x00068000,
+		PU_PBASLVCTL0_SCOM = 0x00068004,
+		PU_PBASLVCTL1_SCOM = 0x00068005,
+		PU_PBASLVCTL2_SCOM = 0x00068006,
+	};
+
+	uint64_t data;
+
+	/*
+	 * Set the PBA_MODECTL register. It's not yet clear how PBA BCE
+	 * transaction size will affect performance - for now we go with the
+	 * largest size.  The HTM marker space is enabled and configured. Slave
+	 * fairness is enabled. The setting 'dis_slvmatch_order' ensures that PBA
+	 * will correctly flush write data before allowing a read of the same
+	 * address from a different master on a different slave.  The second write
+	 * buffer is enabled.
+	 */
+
+	data = 0;
+	data |= PPC_PLACE(PBA_OCI_REGION, 16, 2);                   // pba_region
+	data |= PPC_PLACE(PBA_BCE_OCI_TRANSACTION_64_BYTES, 21, 2); // bcde_ocitrans
+	data |= PPC_PLACE(PBA_BCE_OCI_TRANSACTION_64_BYTES, 23, 2); // bcue_ocitrans
+	data |= PPC_BIT(8);                                         // en_marker_ack
+	data |= PPC_PLACE(0x7, 18, 3);                              // oci_marker_space
+	data |= PPC_BIT(27);                                        // en_slv_fairness
+	data |= PPC_BIT(10);                                        // en_second_wrbuf
+
+	write_scom(PU_PBAMODE_SCOM, data);
+
+	/*
+	 * Slave 0 (SGPE STOP).  This is a read/write slave in the event that
+	 * the STOP functions needs to write to memory.
+	 */
+
+	data = 0;
+	data |= PPC_BIT(0);                                          // enable
+	data |= PPC_PLACE(OCI_MASTER_ID_SGPE, 1, 3);                 // mid_match_value
+	data |= PPC_PLACE(OCI_MASTER_ID_MASK_ALL, 5, 3);             // mid_care_mask
+	data |= PPC_PLACE(PBA_READ_TTYPE_CL_RD_NC, 15, 1);           // read_ttype
+	data |= PPC_PLACE(PBA_READ_PREFETCH_NONE, 16, 2);            // read_prefetch_ctl
+	data |= PPC_PLACE(PBA_WRITE_TTYPE_DMA_PR_WR, 8, 3);          // write_ttype
+	data |= PPC_PLACE(PBA_WRITE_GATHER_TIMEOUT_2_PULSES, 25, 3); // wr_gather_timeout
+	data |= PPC_BIT(20);                                         // buf_alloc_a
+	data |= PPC_BIT(21);                                         // buf_alloc_b
+	data |= PPC_BIT(22);                                         // buf_alloc_c
+	data |= PPC_BIT(19);                                         // buf_alloc_w
+
+	write_scom(PU_PBASLVCTL0_SCOM, data);
+
+	/*
+	 * Slave 1 (GPE 1, PPC405 booting).  This is a read/write slave.  Write gathering is
+	 * allowed, but with the shortest possible timeout.
+	 */
+
+	data = 0;
+	data |= PPC_BIT(0);                                          // enable
+	data |= PPC_PLACE(OCI_MASTER_ID_ICU, 1, 3);                  // mid_match_value
+	data |= PPC_PLACE(OCI_MASTER_ID_ICU, 5, 3);                  // mid_care_mask
+	data |= PPC_PLACE(PBA_READ_TTYPE_CL_RD_NC, 15, 1);           // read_ttype
+	data |= PPC_PLACE(PBA_READ_PREFETCH_NONE, 16, 2);            // read_prefetch_ctl
+	data |= PPC_PLACE(PBA_WRITE_TTYPE_DMA_PR_WR, 8, 3);          // write_ttype
+	data |= PPC_PLACE(PBA_WRITE_GATHER_TIMEOUT_2_PULSES, 25, 3); // wr_gather_timeout
+	data |= PPC_BIT(20);                                         // buf_alloc_a
+	data |= PPC_BIT(21);                                         // buf_alloc_b
+	data |= PPC_BIT(22);                                         // buf_alloc_c
+	data |= PPC_BIT(19);                                         // buf_alloc_w
+
+	write_scom(PU_PBASLVCTL1_SCOM, data);
+
+	/*
+	 * Slave 2 (PGPE Boot, Pstates/WOF).  This is a read/write slave.  Write gethering is
+	 * allowed, but with the shortest possible timeout. This slave is
+	 * effectively disabled soon after IPL.
+	 */
+
+	data = 0;
+	data |= PPC_BIT(0);                                          // enable
+	data |= PPC_PLACE(OCI_MASTER_ID_PGPE, 1, 3);                 // mid_match_value
+	data |= PPC_PLACE(OCI_MASTER_ID_MASK_ALL, 5, 3);             // mid_care_mask
+	data |= PPC_PLACE(PBA_READ_TTYPE_CL_RD_NC, 15, 1);           // read_ttype
+	data |= PPC_PLACE(PBA_READ_PREFETCH_NONE, 16, 2);            // read_prefetch_ctl
+	data |= PPC_PLACE(PBA_WRITE_TTYPE_DMA_PR_WR, 8, 3);          // write_ttype
+	data |= PPC_PLACE(PBA_WRITE_GATHER_TIMEOUT_2_PULSES, 25, 3); // wr_gather_timeout
+	data |= PPC_BIT(20);                                         // buf_alloc_a
+	data |= PPC_BIT(21);                                         // buf_alloc_b
+	data |= PPC_BIT(22);                                         // buf_alloc_c
+	data |= PPC_BIT(19);                                         // buf_alloc_w
+
+	write_scom(PU_PBASLVCTL2_SCOM, data);
+
+	/* Slave 3 is not modified by this function, because it is owned by SBE */
+}
+
 static void pba_reset(void)
 {
 	long time;
@@ -685,28 +890,14 @@ static void pba_reset(void)
 	write_scom(0x0501284B, PPC_BIT(38));
 
 	/*
-	*0x00068021                       // undocumented, PU_PBAXCFG_SCOM
+	*0x00068021                       // Undocumented, PU_PBAXCFG_SCOM
 	  [all] 0
 	  [2]   1   // PBAXCFG_SND_RESET?
 	  [3]   1   // PBAXCFG_RCV_RESET?
 	*/
-	write_scom(0x00068021, PPC_BIT(2) | PPC_BIT(3));
+	write_scom(PU_PBAXCFG_SCOM, PPC_BIT(2) | PPC_BIT(3));
 
-	/*
-	 * The following registers are undocumented. Their fields can be decoded
-	 * from hostboot, but the values are always the same, so why bother...
-	 */
-	/* Set the PBA_MODECTL register */
-	write_scom(0x00068000, 0x00A0BA9000000000);
-
-	/* Slave 0 (SGPE and OCC boot) */
-	write_scom(0x00068004, 0xB7005E0000000000);
-
-	/* Slave 1 (405 ICU/DCU) */
-	write_scom(0x00068005, 0xD5005E4000000000);
-
-	/* Slave 2 (PGPE Boot) */
-	write_scom(0x00068006, 0xA7005E4000000000);
+	pba_slave_setup_runtime_phase();
 }
 
 static void stop_gpe_init(struct homer_st *homer)
@@ -993,6 +1184,1326 @@ static void istep_16_1(int this_core)
 	//     p9_core_checkstop_handler(___, true)
 	// core_checkstop_helper_homer()
 	//     p9_stop_save_scom() and others
+}
+
+/* Loads OCC Image from PNOR into HOMER */
+static void load_occ_image_to_homer(struct homer_st *homer)
+{
+	struct mmap_helper_region_device mdev = {0};
+
+	/*
+	 * This will work as long as we don't call mmap(). mmap() calls
+	 * mem_poll_alloc() which doesn't check if mdev->pool is valid or at least
+	 * not NULL.
+	 */
+	mount_part_from_pnor("OCC", &mdev);
+	/*
+	 * Common OCC area is located right after HOMER image. 0x120000 is the
+	 * size of OCC partition in PNOR, last 0x2000 bytes aren't important?
+	 */
+	rdev_readat(&mdev.rdev, &homer->occ_host_area, 0, 1 * MiB);
+}
+
+/* Writes information about the host to be read by OCC */
+static void load_host_data_to_homer(struct homer_st *homer)
+{
+	enum {
+		OCC_HOST_DATA_VERSION = 0x00000090,
+		USE_PSIHB_COMPLEX = 0x00000001,
+	};
+
+	struct occ_host_config *config_data =
+		(void *)&homer->occ_host_area[HOMER_OFFSET_TO_OCC_HOST_DATA];
+
+	config_data->version = OCC_HOST_DATA_VERSION;
+	config_data->nest_freq = powerbus_cfg()->fabric_freq;
+	config_data->interrupt_type = USE_PSIHB_COMPLEX;
+	config_data->is_fir_master = false;
+	config_data->is_smf_mode = false;
+}
+
+static void load_pm_complex(struct homer_st *homer)
+{
+	/*
+	 * Hostboot resets OCC here, but we haven't started it yet, so reset
+	 * shouldn't be necessary.
+	 */
+
+	load_occ_image_to_homer(homer);
+	load_host_data_to_homer(homer);
+}
+
+static void pm_corequad_init(uint64_t cores)
+{
+	enum {
+		EQ_QPPM_QPMMR_CLEAR = 0x100F0104,
+		EQ_QPPM_ERR = 0x100F0121,
+		EQ_QPPM_ERRMSK = 0x100F0122,
+		C_CPPM_CPMMR_CLEAR = 0x200F0107,
+		C_CPPM_ERR = 0x200F0121,
+		C_CPPM_CSAR_CLEAR = 0x200F0139,
+		C_CPPM_ERRMSK = 0x200F0122,
+		DOORBELLS_COUNT = 4,
+	};
+
+	const uint64_t CME_DOORBELL_CLEAR[DOORBELLS_COUNT] = {
+		0x200F0191, 0x200F0195, 0x200F0199, 0x200F019D
+	};
+
+	/* XXX: this is supposed to be stored by pm_corequad_reset()
+	 *      ATTR_QUAD_PPM_ERRMASK and ATTR_CORE_PPM_ERRMASK.
+	 *      If there was no reset, no need to set it? */
+	uint32_t err_mask = 0;
+
+	for (int quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		chiplet_id_t quad_chiplet = EP00_CHIPLET_ID + quad;
+
+		if (!IS_EQ_FUNCTIONAL(quad, cores))
+			continue;
+
+		/*
+		 * Setup the Quad PPM Mode Register
+		 * Clear the following bits:
+		 * 0          : Force FSAFE
+		 * 1  - 11    : FSAFE
+		 * 12         : Enable FSAFE on heartbeat loss
+		 * 13         : Enable DROOP protect upon heartbeat loss
+		 * 14         : Enable PFETs upon iVRMs dropout
+		 * 18 - 19    : PCB interrupt
+		 * 20,22,24,26: InterPPM Ivrm/Aclk/Vdata/Dpll enable
+		 */
+		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_QPMMR_CLEAR,
+				       PPC_BIT(0) |
+				       PPC_BITMASK(1, 11) |
+				       PPC_BIT(12) |
+				       PPC_BIT(13) |
+				       PPC_BIT(14) |
+				       PPC_BITMASK(18, 19) |
+				       PPC_BIT(20) |
+				       PPC_BIT(22) |
+				       PPC_BIT(24) |
+				       PPC_BIT(26));
+
+		/* Clear QUAD PPM ERROR Register */
+		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_ERR, 0);
+
+		/* Restore Quad PPM Error Mask */
+		err_mask = 0xFFFFFF00; // from Hostboot's log
+		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_ERRMSK,
+				       PPC_SHIFT(err_mask, 31));
+
+		for (int core = quad * 4; core < (quad + 1) * 4; ++core) {
+			chiplet_id_t core_chiplet = EC00_CHIPLET_ID + core;
+
+			/* Clear the Core PPM CME DoorBells */
+			for (int i = 0; i < DOORBELLS_COUNT; ++i)
+				write_scom_for_chiplet(core_chiplet, CME_DOORBELL_CLEAR[i],
+						       PPC_BITMASK(0, 63));
+
+			/*
+			 * Setup Core PPM Mode register
+			 *
+			 * Clear the following bits:
+			 * 1      : PPM Write control override
+			 * 11     : Block interrupts
+			 * 12     : PPM response for CME error
+			 * 14     : enable pece
+			 * 15     : cme spwu done dis
+                         *
+			 * Other bits are Init or Reset by STOP Hcode and, thus, not touched
+			 * here:
+			 * 0      : PPM Write control
+			 * 9      : FUSED_CORE_MODE
+			 * 10     : STOP_EXIT_TYPE_SEL
+			 * 13     : WKUP_NOTIFY_SELECT
+			 */
+			write_scom_for_chiplet(core_chiplet, C_CPPM_CPMMR_CLEAR,
+					       PPC_BIT(1) |
+					       PPC_BIT(11) |
+					       PPC_BIT(12) |
+					       PPC_BIT(14) |
+					       PPC_BIT(15));
+
+			/* Clear Core PPM Errors */
+			write_scom_for_chiplet(core_chiplet, C_CPPM_ERR, 0);
+
+			/*
+			 * Clear Hcode Error Injection and other CSAR settings:
+			 * 27     : FIT_HCODE_ERROR_INJECT
+			 * 28     : ENABLE_PSTATE_REGISTRATION_INTERLOCK
+			 * 29     : DISABLE_CME_NACK_ON_PROLONGED_DROOP
+			 * 30     : PSTATE_HCODE_ERROR_INJECT
+			 * 31     : STOP_HCODE_ERROR_INJECT
+			 *
+			 * DISABLE_CME_NACK_ON_PROLONGED_DROOP is NOT cleared
+			 * as this is a persistent, characterization setting.
+			 */
+			write_scom_for_chiplet(core_chiplet, C_CPPM_CSAR_CLEAR,
+					       PPC_BIT(27) |
+					       PPC_BIT(28) |
+					       PPC_BIT(30) |
+					       PPC_BIT(31));
+
+			/* Restore CORE PPM Error Mask */
+			err_mask = 0xFFF00000; // from Hostboot's log
+			write_scom_for_chiplet(core_chiplet, C_CPPM_ERRMSK,
+					       PPC_SHIFT(err_mask, 31));
+		}
+	}
+}
+
+static void pstate_gpe_init(struct homer_st *homer, uint64_t cores)
+{
+	enum {
+		/* The following constants hold approximate values */
+		PGPE_TIMEOUT_MS  = 500,
+		PGPE_POLLTIME_MS = 20,
+		TIMEOUT_COUNT    = PGPE_TIMEOUT_MS / PGPE_POLLTIME_MS,
+
+		EQ_QPPM_QPMMR = 0x100F0103,
+
+		PU_GPE2_PPE_XIXCR    = 0x00064010,
+		PU_GPE2_PPE_XIDBGPRO = 0x00064015,
+		PU_GPE3_PPE_XIDBGPRO = 0x00066015,
+
+		PU_GPE2_GPEIVPR_SCOM    = 0x00064001,
+		PU_OCB_OCI_OCCS2_SCOM   = 0x0006C088,
+		PU_OCB_OCI_OCCFLG_SCOM2 = 0x0006C08C,
+		PU_GPE2_GPETSEL_SCOM    = 0x00064000,
+
+		/* OCC SCRATCH2 */
+		PGPE_ACTIVE                 = 0,
+		PGPE_PSTATE_PROTOCOL_ACTIVE = 1,
+
+		/* XSR */
+		HALTED_STATE = 0,
+
+		/* XCR */
+		RESUME         = 2,
+		TOGGLE_XSR_TRH = 4,
+		HARD_RESET     = 6,
+	};
+
+	uint64_t occ_scratch;
+	/* ATTR_VDD_AVSBUS_BUSNUM */
+	uint8_t avsbus_number = 0;
+	/* ATTR_VDD_AVSBUS_RAIL */
+	uint8_t avsbus_rail = 0;
+
+	uint64_t ivpr = 0x80000000 + offsetof(struct homer_st, ppmr.l1_bootloader);
+	write_scom(PU_GPE2_GPEIVPR_SCOM, ivpr << 32);
+
+	/* Set up the OCC Scratch 2 register before PGPE boot */
+	occ_scratch = read_scom(PU_OCB_OCI_OCCS2_SCOM);
+	occ_scratch &= ~PPC_BIT(PGPE_ACTIVE);
+	occ_scratch &= ~PPC_BITMASK(27, 32);
+	occ_scratch |= PPC_PLACE(avsbus_number, 27, 1);
+	occ_scratch |= PPC_PLACE(avsbus_rail, 28, 4);
+	write_scom(PU_OCB_OCI_OCCS2_SCOM, occ_scratch);
+
+	write_scom(PU_GPE2_GPETSEL_SCOM, 0x1A00000000000000);
+
+	/* OCCFLG2_PGPE_HCODE_FIT_ERR_INJ | OCCFLG2_PGPE_HCODE_PSTATE_REQ_ERR_INJ */
+	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, 0x1100000000);
+
+	printk(BIOS_ERR, "Attempting PGPE activation...\n");
+
+	write_scom(PU_GPE2_PPE_XIXCR, PPC_PLACE(HARD_RESET, 1, 3));
+	write_scom(PU_GPE2_PPE_XIXCR, PPC_PLACE(TOGGLE_XSR_TRH, 1, 3));
+	write_scom(PU_GPE2_PPE_XIXCR, PPC_PLACE(RESUME, 1, 3));
+
+	wait_ms(PGPE_POLLTIME_MS * TIMEOUT_COUNT,
+		(read_scom(PU_OCB_OCI_OCCS2_SCOM) & PPC_BIT(PGPE_ACTIVE)) ||
+		(read_scom(PU_GPE2_PPE_XIDBGPRO) & PPC_BIT(HALTED_STATE)));
+
+	if (read_scom(PU_OCB_OCI_OCCS2_SCOM) & PPC_BIT(PGPE_ACTIVE))
+		printk(BIOS_ERR, "PGPE was activated successfully\n");
+	else
+		die("Failed to activate PGPE\n");
+
+	OCCPstateParmBlock *oppb = (OCCPstateParmBlock *)homer->ppmr.occ_parm_block;
+	GlobalPstateParmBlock *gppb = (GlobalPstateParmBlock *)
+		&homer->ppmr.pgpe_sram_img[homer->ppmr.header.hcode_len];
+
+	uint32_t safe_mode_freq = oppb->frequency_min_khz / gppb->frequency_step_khz;
+
+	for (int quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		if (!IS_EQ_FUNCTIONAL(quad, cores))
+			continue;
+
+		scom_and_or_for_chiplet(EP00_CHIPLET_ID + quad, EQ_QPPM_QPMMR,
+					~PPC_BITMASK(1, 11),
+					PPC_SHIFT(safe_mode_freq, 11));
+	}
+}
+
+static void pm_pba_init(void)
+{
+	enum {
+		PU_PBACFG = 0x0501284B,
+		PU_PBAFIR = 0x05012840,
+
+		PU_PBACFG_CHSW_DIS_GROUP_SCOPE = 38,
+
+		/* These don't have corresponding attributes */
+		PBAX_DATA_TIMEOUT                = 0x0,
+		PBAX_SND_RETRY_COMMIT_OVERCOMMIT = 0x0,
+		PBAX_SND_RETRY_THRESHOLD         = 0x0,
+		PBAX_SND_TIMEOUT                 = 0x0,
+	};
+
+	uint64_t data = 0;
+	/* Assuming all these attributes have zero values */
+	uint8_t attr_pbax_groupid = 0;
+	uint8_t attr_pbax_chipid = 0;
+	uint8_t attr_pbax_broadcast_vector = 0;
+
+	/* Assuming ATTR_CHIP_EC_FEATURE_HW423589_OPTION1 == true */
+	write_scom(PU_PBACFG, PPC_BIT(PU_PBACFG_CHSW_DIS_GROUP_SCOPE));
+
+	write_scom(PU_PBAFIR, 0);
+
+	data |= PPC_PLACE(attr_pbax_groupid, 4, 4);
+	data |= PPC_PLACE(attr_pbax_chipid, 8, 3);
+	data |= PPC_PLACE(attr_pbax_broadcast_vector, 12, 8);
+	data |= PPC_PLACE(PBAX_DATA_TIMEOUT, 20, 5);
+	data |= PPC_PLACE(PBAX_SND_RETRY_COMMIT_OVERCOMMIT, 27, 1);
+	data |= PPC_PLACE(PBAX_SND_RETRY_THRESHOLD, 28, 8);
+	data |= PPC_PLACE(PBAX_SND_TIMEOUT, 36, 5);
+	write_scom(PU_PBAXCFG_SCOM, data);
+}
+
+static void pm_pstate_gpe_init(struct homer_st *homer, uint64_t cores)
+{
+	pstate_gpe_init(homer, cores);
+	pm_pba_init();
+}
+
+/* Generates host configuration vector and updates the value in HOMER */
+static void check_proc_config(struct homer_st *homer)
+{
+	uint64_t vector_value = INIT_CONFIG_VALUE;
+	uint64_t *conf_vector = (void *)((uint8_t *)&homer->qpmr + QPMR_PROC_CONFIG_POS);
+
+	int mcs_i = 0;
+
+	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
+		chiplet_id_t nest = mcs_to_nest[mcs_ids[mcs_i]];
+
+		/* MCS_MCFGP and MCS_MCFGPM registers are undocumented, see istep 14.5. */
+		if ((read_scom_for_chiplet(nest, 0x0501080A) & PPC_BIT(0)) ||
+		    (read_scom_for_chiplet(nest, 0x0501080C) & PPC_BIT(0))) {
+			uint8_t pos = MCS_POS + mcs_i;
+			*conf_vector |= PPC_BIT(pos);
+
+			/* MCS and MBA/MCA seem to have equivalent values */
+			pos = MBA_POS + mcs_i;
+			*conf_vector |= PPC_BIT(pos);
+		}
+	}
+
+	/* TODO: set configuration bits for XBUS, PHB, CAPP, OBUS when their state
+	 *       will be available */
+
+	*conf_vector = htobe64(vector_value);
+}
+
+static void pm_pss_init(void)
+{
+	enum {
+		PU_SPIPSS_ADC_CTRL_REG0 = 0x00070000,
+		PU_SPIPSS_ADC_WDATA_REG = 0x00070010,
+		PU_SPIPSS_P2S_CTRL_REG0 = 0x00070040,
+		PU_SPIPSS_P2S_WDATA_REG = 0x00070050,
+		PU_SPIPSS_100NS_REG     = 0x00070028,
+	};
+
+	/*
+	 *  0-5   frame size
+	 * 12-17  in delay
+	 */
+	scom_and_or(PU_SPIPSS_ADC_CTRL_REG0,
+		    ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
+		    PPC_SHIFT(8, 5));
+
+	/*
+	 *  0     adc_fsm_enable    = 1
+	 *  1     adc_device        = 0
+	 *  2     adc_cpol          = 0
+	 *  3     adc_cpha          = 0
+	 *  4-13  adc_clock_divider = set to 10Mhz
+	 * 14-17  adc_nr_of_frames  = 0x16 (for auto 2 mode)
+	 */
+	scom_and_or(PU_SPIPSS_ADC_CTRL_REG0 + 1, ~PPC_BITMASK(0, 17),
+		    PPC_BIT(0) | PPC_SHIFT(10, 13) | PPC_SHIFT(0x16, 17));
+
+	/*
+	 * 0-16  inter frame delay
+	 */
+	scom_and(PU_SPIPSS_ADC_CTRL_REG0 + 2, ~PPC_BITMASK(0, 16));
+
+	write_scom(PU_SPIPSS_ADC_WDATA_REG, 0);
+
+	/*
+	 *  0-5   frame size
+	 * 12-17  in delay
+	 */
+	scom_and_or(PU_SPIPSS_P2S_CTRL_REG0,
+		    ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
+		    PPC_SHIFT(8, 5));
+
+	/*
+	 *  0     p2s_fsm_enable    = 1
+	 *  1     p2s_device        = 0
+	 *  2     p2s_cpol          = 0
+	 *  3     p2s_cpha          = 0
+	 *  4-13  p2s_clock_divider = set to 10Mhz
+	 * 17     p2s_nr_of_frames  = 1 (for auto 2 mode)
+	 */
+	scom_and_or(PU_SPIPSS_P2S_CTRL_REG0 + 1,
+		    ~(PPC_BITMASK(0, 13) | PPC_BIT(17)),
+		    PPC_BIT(0) | PPC_SHIFT(10, 13) | PPC_BIT(17));
+
+	/*
+	 * 0-16  inter frame delay
+	 */
+	scom_and(PU_SPIPSS_P2S_CTRL_REG0 + 2, ~PPC_BITMASK(0, 16));
+
+	write_scom(PU_SPIPSS_P2S_WDATA_REG, 0);
+
+	/*
+	 * 0-31  100ns value
+	 */
+	scom_and_or(PU_SPIPSS_100NS_REG,
+		    PPC_BITMASK(0, 31),
+		    PPC_SHIFT(powerbus_cfg()->fabric_freq / 40, 31));
+}
+
+/* Initializes power-management and starts OCC */
+static void start_pm_complex(struct homer_st *homer, uint64_t cores)
+{
+	enum { STOP_RECOVERY_TRIGGER_ENABLE = 29 };
+
+	pm_corequad_init(cores);
+	pm_pss_init();
+	pm_occ_fir_init();
+	pm_pba_fir_init();
+	stop_gpe_init(homer);
+	pm_pstate_gpe_init(homer, cores);
+
+	check_proc_config(homer);
+	clear_occ_special_wakeups(cores);
+	special_occ_wakeup_disable(cores);
+	occ_start_from_mem();
+
+	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(STOP_RECOVERY_TRIGGER_ENABLE));
+}
+
+/* Wait for OCC to reach communications checkpoint */
+static void wait_for_occ_checkpoint(void)
+{
+	enum {
+		/* Wait up to 15 seconds for OCC to be ready (150 * 100ms = 15s) */
+		MS_BETWEEN_READ  = 100,
+		READ_RETRY_LIMIT = 150,
+
+		OCC_COMM_INIT_COMPLETE = 0x0EFF,
+		OCC_INIT_FAILURE       = 0xE000,
+
+		OCC_RSP_SRAM_ADDR = 0xFFFBF000,
+	};
+
+	uint8_t retry_count = 0;
+
+	while (retry_count++ < READ_RETRY_LIMIT) {
+		uint8_t response[8] = { 0x0 };
+		uint8_t status;
+		uint16_t checkpoint;
+
+		wait_ms(MS_BETWEEN_READ, false);
+
+		/* Read SRAM response buffer to check for OCC checkpoint */
+		readOCCSRAM(OCC_RSP_SRAM_ADDR, (uint64_t *)response, sizeof(response));
+
+		/* Pull status from response (byte 2) */
+		status = response[2];
+
+		/* Pull checkpoint from response (bytes 6-7) */
+		checkpoint = (response[6] << 8) | response[7];
+
+		if (status == OCC_RC_OCC_INIT_CHECKPOINT &&
+		    checkpoint == OCC_COMM_INIT_COMPLETE)
+			/* Success */
+			return;
+
+		if ((checkpoint & OCC_INIT_FAILURE) == OCC_INIT_FAILURE ||
+		    status == OCC_RC_INIT_FAILURE)
+			die("OCC initialization has failed\n");
+	}
+
+	die("Waiting for OCC initialization checkpoint has timed out.\n");
+}
+
+static void build_occ_cmd(struct homer_st *homer, uint8_t occ_cmd, uint8_t seq_num,
+			  const uint8_t *data, uint16_t data_len)
+{
+	uint8_t *cmd_buf = &homer->occ_host_area[OCC_CMD_ADDR];
+	uint16_t cmd_len = 0;
+	uint16_t checksum = 0;
+	uint16_t i = 0;
+
+	cmd_buf[cmd_len++] = seq_num;
+	cmd_buf[cmd_len++] = occ_cmd;
+	cmd_buf[cmd_len++] = (data_len >> 8) & 0xff;
+	cmd_buf[cmd_len++] = data_len & 0xff;
+	memcpy(&cmd_buf[cmd_len], data, data_len);
+	cmd_len += data_len;
+
+	for (i = 0; i < cmd_len; ++i)
+		checksum += cmd_buf[i];
+	cmd_buf[cmd_len++] = (checksum >> 8) & 0xff;
+	cmd_buf[cmd_len++] = checksum & 0xff;
+
+	/*
+	 * When the P8 processor writes to memory (such as the HOMER) there is
+	 * no certainty that the writes happen in order or that they have
+	 * actually completed by the time the instructions complete. 'sync'
+	 * is a memory barrier to ensure the HOMER data has actually been made
+	 * consistent with respect to memory, so that if the OCC were to read
+	 * it they would see all of the data. Otherwise, there is potential
+	 * for them to get stale or incomplete data.
+	 */
+	asm volatile("sync" ::: "memory");
+}
+
+static void wait_for_occ_response(struct homer_st *homer, uint32_t timeout_sec,
+				  uint8_t seq_num)
+{
+	enum {
+		OCC_RSP_SAMPLE_TIME_MS = 100,
+		OCC_COMMAND_IN_PROGRESS = 0xFF,
+	};
+
+	const uint8_t *rsp_buf = &homer->occ_host_area[OCC_RSP_ADDR];
+
+	int32_t timeout_ms = (timeout_sec == 0 ? OCC_RSP_SAMPLE_TIME_MS : timeout_sec * 1000);
+
+	while (timeout_ms >= 0) {
+		/*
+		 * 1. When OCC receives the command, it will set the status to
+		 *    COMMAND_IN_PROGRESS.
+		 * 2. When the response is ready OCC will update the full
+		 *    response buffer (except the status)
+		 * 3. The status field is updated last to indicate response ready
+		 *
+		 * Note: Need to check the sequence number to be sure we are
+		 *       processing the expected response
+		 */
+		if (rsp_buf[2] != OCC_COMMAND_IN_PROGRESS && rsp_buf[0] == seq_num) {
+			/*
+			 * Need an 'isync' here to ensure that previous instructions
+			 * have completed before the code continues on. This is a type
+			 * of read-barrier.  Without this the processor can do
+			 * speculative reads of the HOMER data and you can actually
+			 * get stale data as part of the instructions that happen
+			 * afterwards. Another 'weak consistency' issue.
+			 */
+			asm volatile("isync" ::: "memory");
+
+			/* OCC must have processed the command */
+			break;
+		}
+
+		if (timeout_ms > 0) {
+			/* Delay before the next check */
+			int32_t sleep_ms = OCC_RSP_SAMPLE_TIME_MS;
+			if (timeout_ms < sleep_ms)
+				sleep_ms = timeout_ms;
+
+			wait_ms(sleep_ms, false);
+			timeout_ms -= sleep_ms;
+		} else {
+			/* Time expired */
+			die("Timed out while waiting for OCC response\n");
+		}
+	}
+}
+
+static bool parse_occ_response(struct homer_st *homer, uint8_t occ_cmd,
+			       uint8_t *status, uint8_t *seq_num,
+			       uint8_t *response, uint32_t *response_len)
+{
+	uint16_t index = 0;
+	uint16_t data_len = 0;
+	uint16_t checksum = 0;
+	uint16_t i = 0;
+
+	const uint8_t *rsp_buf = &homer->occ_host_area[OCC_RSP_ADDR];
+
+	*seq_num = rsp_buf[index++];
+	index += 1; /* command */
+	*status = rsp_buf[index++];
+
+	data_len = *(uint16_t *)&rsp_buf[index];
+	index += 2;
+
+	if (data_len > 0) {
+		uint16_t copy_size = data_len;
+		if (copy_size > *response_len)
+			copy_size = *response_len;
+
+		memcpy(response, &rsp_buf[index], copy_size);
+		*response_len = copy_size;
+
+		index += data_len;
+	}
+
+	for (i = 0; i < index; ++i)
+		checksum += rsp_buf[i];
+
+	if (checksum != *(uint16_t *)&rsp_buf[index]) {
+		printk(BIOS_WARNING, "OCC response for 0x%02x has invalid checksum\n",
+		       occ_cmd);
+		return false;
+	}
+
+	if (*status != OCC_RC_SUCCESS) {
+		printk(BIOS_WARNING, "0x%02x OCC command failed with an error code: 0x%02x\n",
+		       occ_cmd, *status);
+		return false;
+	}
+
+	return true;
+}
+
+static bool write_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
+			  const uint8_t *data, uint16_t data_len,
+			  uint8_t *response, uint32_t *response_len)
+{
+	static uint8_t cmd_seq_num;
+
+	uint8_t status = 0;
+	uint8_t rsp_seq_num = 0;
+
+	++cmd_seq_num;
+	/* Do not use 0 for sequence number */
+	if (cmd_seq_num == 0)
+		++cmd_seq_num;
+
+	build_occ_cmd(homer, occ_cmd, cmd_seq_num, data, data_len);
+	/* Sender: HTMGT; command: Command Write Attention */
+	write_occ_command(0x1001000000000000);
+
+	/* Wait for OCC to process command and send response (timeout is the
+	 * same for all commands) */
+	wait_for_occ_response(homer, 20, cmd_seq_num);
+
+	if (!parse_occ_response(homer, occ_cmd, &status, &rsp_seq_num, response,
+				response_len)) {
+		/* Statuses of 0xE0-EF are reserved for OCC exceptions */
+		if ((status & 0xF0) == 0xE0)
+			printk(BIOS_WARNING,
+			       "OCC exception occurred while running 0x%02x command\n",
+			       occ_cmd);
+
+		printk(BIOS_WARNING, "Received OCC response:\n");
+		hexdump(response, *response_len);
+		printk(BIOS_WARNING, "Failed to parse OCC response\n");
+		return false;
+	}
+
+	if (rsp_seq_num != cmd_seq_num) {
+		printk(BIOS_WARNING,
+		       "Received OCC response for a wrong command while running 0x%02x\n",
+		       occ_cmd);
+		return false;
+	}
+
+	return true;
+}
+
+static void send_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
+			 const uint8_t *data, uint16_t data_len,
+			 uint8_t *response, uint32_t *response_len)
+{
+	enum { MAX_TRIES = 2 };
+
+	uint8_t i = 0;
+
+	for (i = 0; i < MAX_TRIES; ++i) {
+		if (write_occ_cmd(homer, occ_cmd, data, data_len, response, response_len))
+			break;
+
+		if (i < MAX_TRIES - 1)
+			printk(BIOS_WARNING, "Retrying running OCC command 0x%02x\n", occ_cmd);
+	}
+
+	if (i == MAX_TRIES)
+		die("Failed running OCC command 0x%02x %d times\n", occ_cmd, MAX_TRIES);
+}
+
+/* Reports OCC error to the user and clears it on OCC's side */
+static void handle_occ_error(struct homer_st *homer,
+			     const struct occ_poll_response *response)
+{
+	static uint8_t error_log_buf[4096];
+
+	uint16_t error_length = response->error_length;
+
+	const uint8_t clear_log_data[4] = {
+		0x01, // Version
+		response->error_id,
+		response->error_source,
+		0x00  // Reserved
+	};
+	uint32_t response_len = 0;
+
+	if (error_length > sizeof(error_log_buf)) {
+		printk(BIOS_WARNING, "Truncating OCC error log from %d to %ld bytes\n",
+		       error_length, sizeof(error_log_buf));
+		error_length = sizeof(error_log_buf);
+	}
+
+	readOCCSRAM(response->error_address, (uint64_t *)error_log_buf, error_length);
+
+	printk(BIOS_WARNING, "OCC error log:\n");
+	hexdump(error_log_buf, error_length);
+
+	/* Confirm to OCC that we've read the log */
+	send_occ_cmd(homer, OCC_CMD_CLEAR_ERROR_LOG,
+		     clear_log_data, sizeof(clear_log_data),
+		     NULL, &response_len);
+}
+
+static void poll_occ(struct homer_st *homer, bool flush_all_errors,
+		     struct occ_poll_response *response)
+{
+	enum { OCC_POLL_DATA_MIN_SIZE = 40 };
+
+	uint8_t max_more_errors = 10;
+	while (true) {
+		const uint8_t poll_data[1] = { 0x20 /*version*/ };
+		uint32_t response_len = sizeof(*response);
+
+		send_occ_cmd(homer, OCC_CMD_POLL, poll_data, sizeof(poll_data),
+			     (uint8_t *)response, &response_len);
+
+		if (response_len < OCC_POLL_DATA_MIN_SIZE)
+			die("Invalid data length");
+
+		if (!flush_all_errors)
+			break;
+
+		if (response->error_id == 0)
+			break;
+
+		handle_occ_error(homer, response);
+
+		--max_more_errors;
+		if (max_more_errors == 0) {
+			printk(BIOS_WARNING, "Last OCC poll response:\n");
+			hexdump(response, response_len);
+			die("Hit too many errors on polling OCC\n");
+		}
+	}
+}
+
+static void wait_for_occ_status(struct homer_st *homer, uint8_t status_bit)
+{
+	enum {
+		MAX_POLLS = 40,
+		DELAY_BETWEEN_POLLS_MS = 250,
+	};
+
+	uint8_t num_polls = 0;
+	struct occ_poll_response poll_response;
+
+	for (num_polls = 0; num_polls < MAX_POLLS; ++num_polls) {
+		poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+		if (poll_response.status & status_bit)
+			break;
+
+		if (poll_response.requested_cfg != 0x00)
+			die("OCC requests 0x%02x configuration data\n",
+			    poll_response.requested_cfg);
+
+		if (num_polls < MAX_POLLS)
+			wait_ms(DELAY_BETWEEN_POLLS_MS, false);
+	}
+
+	if (num_polls == MAX_POLLS)
+		die("Failed to wait until OCC has reached state 0x%02x\n", status_bit);
+}
+
+static void set_occ_state(struct homer_st *homer, uint8_t state)
+{
+	struct occ_poll_response poll_response;
+
+	/* Fields: version, state, reserved */
+	const uint8_t data[3] = { 0x00, state, 0x00 };
+	uint32_t response_len = 0;
+
+	/* Send poll cmd to confirm comm has been established and flush old errors */
+	poll_occ(homer, /*flush_all_errors=*/true, &poll_response);
+
+	/* Try to switch to a new state */
+	send_occ_cmd(homer, OCC_CMD_SET_STATE, data, sizeof(data), NULL, &response_len);
+
+	/* Send poll to query state of all OCC and flush any errors */
+	poll_occ(homer, /*flush_all_errors=*/true, &poll_response);
+
+	if (poll_response.state != state)
+		die("State of OCC is 0x%02x instead of 0x%02x.\n",
+		    poll_response.state, state);
+}
+
+static const struct voltage_bucket_data * get_voltage_data(void)
+{
+	const struct voltage_kwd *voltage = NULL;
+	const struct voltage_bucket_data *bucket = NULL;
+
+	uint8_t i = 0;
+
+	/* Using LRP0 because frequencies are the same in all LRP records */
+	voltage = mvpd_get_voltage_data(0);
+
+	for (i = 0; i < VOLTAGE_BUCKET_COUNT; ++i) {
+		bucket = &voltage->buckets[i];
+		if (bucket->powerbus.freq != 0)
+			break;
+	}
+
+	if (bucket == NULL)
+		die("Failed to find a valid voltage data bucket.\n");
+
+	return bucket;
+}
+
+static void get_freq_point_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_FREQ_POINT_VERSION = 0x20 };
+	OCCPstateParmBlock *oppb = (void *)homer->ppmr.occ_parm_block;
+
+	const struct voltage_bucket_data *bucket = get_voltage_data();
+
+	uint16_t index = 0;
+	uint16_t min_freq = 0;
+
+	data[index++] = OCC_CFGDATA_FREQ_POINT;
+	data[index++] = OCC_CFGDATA_FREQ_POINT_VERSION;
+
+	/* Nominal Frequency in MHz */
+	memcpy(&data[index], &bucket->nominal.freq, 2);
+	index += 2;
+
+	/* Turbo Frequency in MHz */
+	memcpy(&data[index], &bucket->turbo.freq, 2);
+	index += 2;
+
+	/* Minimum Frequency in MHz */
+	min_freq = oppb->frequency_min_khz / 1000;
+	memcpy(&data[index], &min_freq, 2);
+	index += 2;
+
+	/* Ultra Turbo Frequency in MHz */
+	memcpy(&data[index], &bucket->ultra_turbo.freq, 2);
+	index += 2;
+
+	/* Reserved (Static Power Save in PowerVM) */
+	memset(&data[index], 0, 2);
+	index += 2;
+
+	/* Reserved (FFO in PowerVM) */
+	memset(&data[index], 0, 2);
+	index += 2;
+
+	*size = index;
+}
+
+static void get_occ_role_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_ROLE_MASTER = 0x01 };
+
+	data[0] = OCC_CFGDATA_OCC_ROLE;
+	data[1] = OCC_ROLE_MASTER;
+
+	*size = 2;
+}
+
+static void get_apss_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_APSS_VERSION = 0x20 };
+
+	/* ATTR_APSS_GPIO_PORT_PINS */
+	uint8_t function[16] = { 0x0 };
+
+	/* ATTR_ADC_CHANNEL_GNDS */
+	uint8_t ground[16] = { 0x0 };
+
+	/* ATTR_ADC_CHANNEL_GAINS */
+	uint32_t gain[16] = { 0x0 };
+
+	/* ATTR_ADC_CHANNEL_OFFSETS */
+	uint32_t offset[16] = { 0x0 };
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_APSS_CONFIG;
+	data[index++] = OCC_CFGDATA_APSS_VERSION;
+	data[index++] = 0;
+	data[index++] = 0;
+
+	for (uint64_t channel = 0; channel < sizeof(function); ++channel) {
+		data[index++] = function[channel];         // ADC Channel assignment
+
+		memset(&data[index], 0, sizeof(uint32_t)); // Sensor ID
+		index += 4;
+
+		data[index++] = ground[channel];           // Ground Select
+
+		memcpy(&data[index], &gain[channel], sizeof(uint32_t));
+		index += 4;
+
+		memcpy(&data[index], &offset[channel], sizeof(uint32_t));
+		index += 4;
+	}
+
+	/* ATTR_APSS_GPIO_PORT_MODES */
+	uint8_t gpio_mode[2] = { 0x0 };
+	/* ATTR_APSS_GPIO_PORT_PINS */
+	uint8_t gpio_pin[16] = { 0x0 };
+
+	uint64_t pins_per_port = sizeof(gpio_pin) / sizeof(gpio_mode);
+	uint64_t pin_idx = 0;
+
+	for (uint64_t port = 0; port < sizeof(gpio_mode); ++port) {
+		data[index++] = gpio_mode[port];
+		data[index++] = 0;
+
+		memcpy(&data[index], gpio_pin + pin_idx, pins_per_port);
+		index += pins_per_port;
+
+		pin_idx += pins_per_port;
+	}
+
+	*size = index;
+}
+
+static void get_mem_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_MEM_CONFIG_VERSION = 0x21 };
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_MEM_CONFIG;
+	data[index++] = OCC_CFGDATA_MEM_CONFIG_VERSION;
+
+	/* If OPAL then no "Power Control Default" support */
+
+	/* Byte 3: Memory Power Control Default */
+	data[index++] = 0xFF;
+	/* Byte 4: Idle Power Memory Power Control */
+	data[index++] = 0xFF;
+
+	/* Byte 5: Number of data sets */
+	data[index++] = 0; // Monitoring is disabled
+
+	*size = index;
+}
+
+static void get_sys_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	/* TODO: all sensor IDs are zero, because we don't have IPMI messaging,
+	 *       which seems to be required to get them */
+
+	enum {
+		OCC_CFGDATA_SYS_CONFIG_VERSION = 0x21,
+
+		/* KVM or OPAL mode + single node */
+		OCC_CFGDATA_OPENPOWER_OPALVM = 0x81,
+
+		OCC_CFGDATA_NON_REDUNDANT_PS      = 0x02,
+		OCC_REPORT_THROTTLE_BELOW_NOMINAL = 0x08,
+	};
+
+	uint8_t system_type = OCC_CFGDATA_OPENPOWER_OPALVM;
+	uint16_t index = 0;
+	uint8_t i = 0;
+
+	data[index++] = OCC_CFGDATA_SYS_CONFIG;
+	data[index++] = OCC_CFGDATA_SYS_CONFIG_VERSION;
+
+	/* System Type */
+
+	/* ATTR_REPORT_THROTTLE_BELOW_NOMINAL == 0 */
+
+	/* 0 = OCC report throttling when max frequency lowered below turbo */
+	system_type &= ~OCC_REPORT_THROTTLE_BELOW_NOMINAL;
+	/* Power supply policy is redundant */
+	system_type &= ~OCC_CFGDATA_NON_REDUNDANT_PS;
+	data[index++] = system_type;
+
+	/* Processor Callout Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	/* Next 12*4 bytes are for core sensors */
+	for (i = 0; i < MAX_CORES_PER_CHIP; ++i) {
+		/* Core Temp Sensor ID */
+		memset(&data[index], 0, 4);
+		index += 4;
+
+		/* Core Frequency Sensor ID */
+		memset(&data[index], 0, 4);
+		index += 4;
+	}
+
+	/* Backplane Callout Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	/* APSS Callout Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	/* Format 21 - VRM VDD Callout Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	/* Format 21 - VRM VDD Temperature Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	*size = index;
+}
+
+static void get_thermal_ctrl_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum {
+		OCC_CFGDATA_TCT_CONFIG_VERSION = 0x20,
+
+		CFGDATA_FRU_TYPE_PROC       = 0x00,
+		CFGDATA_FRU_TYPE_MEMBUF     = 0x01,
+		CFGDATA_FRU_TYPE_DIMM       = 0x02,
+		CFGDATA_FRU_TYPE_VRM        = 0x03,
+		CFGDATA_FRU_TYPE_GPU_CORE   = 0x04,
+		CFGDATA_FRU_TYPE_GPU_MEMORY = 0x05,
+		CFGDATA_FRU_TYPE_VRM_VDD    = 0x06,
+
+		OCC_NOT_DEFINED = 0xFF,
+	};
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_TCT_CONFIG;
+	data[index++] = OCC_CFGDATA_TCT_CONFIG_VERSION;
+
+	/* Processor Core Weight, ATTR_OPEN_POWER_PROC_WEIGHT, from talos.xml */
+	data[index++] = 9;
+
+	/* Processor Quad Weight, ATTR_OPEN_POWER_QUAD_WEIGHT, from talos.xml */
+	data[index++] = 1;
+
+	/* Data sets following (proc, DIMM, etc.), and each will get a FRU type,
+	 * DVS temp, error temp and max read timeout */
+	data[index++] = 5;
+
+	/*
+	 * Note: Bytes 4 and 5 of each data set represent the PowerVM DVFS and ERROR
+	 * Resending the regular DVFS and ERROR for now.
+	 */
+
+	/* Processor */
+	data[index++] = CFGDATA_FRU_TYPE_PROC;
+	data[index++] = 85;              // DVFS, ATTR_OPEN_POWER_PROC_DVFS_TEMP_DEG_C, from talos.xml
+	data[index++] = 95;              // ERROR, ATTR_OPEN_POWER_PROC_ERROR_TEMP_DEG_C, from talos.xml
+	data[index++] = OCC_NOT_DEFINED; // PM_DVFS
+	data[index++] = OCC_NOT_DEFINED; // PM_ERROR
+	data[index++] = 5;               // ATTR_OPEN_POWER_PROC_READ_TIMEOUT_SEC, from talos.xml
+
+	/* DIMM */
+	data[index++] = CFGDATA_FRU_TYPE_DIMM;
+	data[index++] = 84;              // DVFS, ATTR_OPEN_POWER_DIMM_THROTTLE_TEMP_DEG_C, from talos.xml
+	data[index++] = 84;              // ERROR, ATTR_OPEN_POWER_DIMM_ERROR_TEMP_DEG_C, from talos.xml
+	data[index++] = OCC_NOT_DEFINED; // PM_DVFS
+	data[index++] = OCC_NOT_DEFINED; // PM_ERROR
+	data[index++] = 30;              // TIMEOUT, ATTR_OPEN_POWER_DIMM_READ_TIMEOUT_SEC, from talos.xml
+
+	/* VRM OT monitoring is disabled, because ATTR_OPEN_POWER_VRM_READ_TIMEOUT_SEC == 0 (default) */
+
+	/* GPU Cores */
+	data[index++] = CFGDATA_FRU_TYPE_GPU_CORE;
+	data[index++] = OCC_NOT_DEFINED; // DVFS
+	data[index++] = OCC_NOT_DEFINED; // ERROR, ATTR_OPEN_POWER_GPU_ERROR_TEMP_DEG_C, not set
+	data[index++] = OCC_NOT_DEFINED; // PM_DVFS
+	data[index++] = OCC_NOT_DEFINED; // PM_ERROR
+	data[index++] = OCC_NOT_DEFINED; // TIMEOUT, ATTR_OPEN_POWER_GPU_READ_TIMEOUT_SEC, default
+
+	/* GPU Memory */
+	data[index++] = CFGDATA_FRU_TYPE_GPU_MEMORY;
+	data[index++] = OCC_NOT_DEFINED; // DVFS
+	data[index++] = OCC_NOT_DEFINED; // ERROR, ATTR_OPEN_POWER_GPU_MEM_ERROR_TEMP_DEG_C, not set
+	data[index++] = OCC_NOT_DEFINED; // PM_DVFS
+	data[index++] = OCC_NOT_DEFINED; // PM_ERROR
+	data[index++] = OCC_NOT_DEFINED; // TIMEOUT, ATTR_OPEN_POWER_GPU_MEM_READ_TIMEOUT_SEC, not set
+
+	/* VRM Vdd */
+	data[index++] = CFGDATA_FRU_TYPE_VRM_VDD;
+	data[index++] = OCC_NOT_DEFINED; // DVFS, ATTR_OPEN_POWER_VRM_VDD_DVFS_TEMP_DEG_C, default
+	data[index++] = OCC_NOT_DEFINED; // ERROR, ATTR_OPEN_POWER_VRM_VDD_ERROR_TEMP_DEG_C, default
+	data[index++] = OCC_NOT_DEFINED; // PM_DVFS
+	data[index++] = OCC_NOT_DEFINED; // PM_ERROR
+	data[index++] = OCC_NOT_DEFINED; // TIMEOUT, ATTR_OPEN_POWER_VRM_VDD_READ_TIMEOUT_SEC, default
+
+	*size = index;
+}
+
+static void get_power_cap_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_PCAP_CONFIG_VERSION = 0x20 };
+
+	uint16_t index = 0;
+
+	/* Values of the following attributes were taken from Hostboot's log */
+
+	/* Minimum HARD Power Cap (ATTR_OPEN_POWER_MIN_POWER_CAP_WATTS) */
+	uint16_t min_pcap = 2000;
+
+	/* Minimum SOFT Power Cap (ATTR_OPEN_POWER_SOFT_MIN_PCAP_WATTS) */
+	uint16_t soft_pcap = 2000;
+
+	/* Quick Power Drop Power Cap (ATTR_OPEN_POWER_N_BULK_POWER_LIMIT_WATTS) */
+	uint16_t qpd_pcap = 2000;
+
+	/* System Maximum Power Cap (ATTR_OPEN_POWER_N_PLUS_ONE_HPC_BULK_POWER_LIMIT_WATTS) */
+	uint16_t max_pcap = 3000;
+
+	data[index++] = OCC_CFGDATA_PCAP_CONFIG;
+	data[index++] = OCC_CFGDATA_PCAP_CONFIG_VERSION;
+
+	memcpy(&data[index], &soft_pcap, 2);
+	index += 2;
+
+	memcpy(&data[index], &min_pcap, 2);
+	index += 2;
+
+	memcpy(&data[index], &max_pcap, 2);
+	index += 2;
+
+	memcpy(&data[index], &qpd_pcap, 2);
+	index += 2;
+
+	*size = index;
+}
+
+static void get_avs_bus_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_AVSBUS_CONFIG_VERSION = 0x01 };
+
+	/* ATTR_NO_APSS_PROC_POWER_VCS_VIO_WATTS, from talos.xml */
+	const uint16_t power_adder = 19;
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_AVSBUS_CONFIG;
+	data[index++] = OCC_CFGDATA_AVSBUS_CONFIG_VERSION;
+	data[index++] = 0;    // Vdd Bus, ATTR_VDD_AVSBUS_BUSNUM
+	data[index++] = 0;    // Vdd Rail Sel, ATTR_VDD_AVSBUS_RAIL
+	data[index++] = 0xFF; // reserved
+	data[index++] = 0xFF; // reserved
+	data[index++] = 1;    // Vdn Bus, ATTR_VDN_AVSBUS_BUSNUM, from talos.xml
+	data[index++] = 0;    // Vdn Rail sel, ATTR_VDN_AVSBUS_RAIL, from talos.xml
+
+	data[index++] = (power_adder >> 8) & 0xFF;
+	data[index++] = power_adder & 0xFF;
+
+	/* ATTR_VDD_CURRENT_OVERFLOW_WORKAROUND_ENABLE == 0 */
+
+	*size = index;
+}
+
+static void get_power_data(struct homer_st *homer, uint16_t *power_max, uint16_t *power_drop)
+{
+	const struct voltage_bucket_data *bucket = get_voltage_data();
+
+	/* All processor chips (do not have to be functional) */
+	const uint8_t num_procs = 2; // from Hostboot log
+
+	const uint16_t proc_socket_power = 250; // ATTR_PROC_SOCKET_POWER_WATTS, default
+	const uint16_t misc_power = 0; // ATTR_MISC_SYSTEM_COMPONENTS_MAX_POWER_WATTS, default
+
+	const uint16_t mem_power_min_throttles = 36; // from Hostboot log
+	const uint16_t mem_power_max_throttles = 23; // from Hostboot log
+
+	/*
+	 * Calculate Total non-GPU maximum power (Watts):
+	 *   Maximum system power excluding GPUs when CPUs are at maximum frequency
+	 *   (ultra turbo) and memory at maximum power (least throttled) plus
+	 *   everything else (fans...) excluding GPUs.
+	 */
+	*power_max = proc_socket_power * num_procs;
+	*power_max += mem_power_min_throttles + misc_power;
+
+	OCCPstateParmBlock *oppb = (void *)homer->ppmr.occ_parm_block;
+	uint16_t min_freq_mhz = oppb->frequency_min_khz / 1000;
+	const uint16_t mhz_per_watt = 28; // ATTR_PROC_MHZ_PER_WATT, from talos.xml
+	/* Drop is always calculated from Turbo to Min (not ultra) */
+	uint32_t proc_drop = (bucket->turbo.freq - min_freq_mhz) / mhz_per_watt;
+	proc_drop *= num_procs;
+	const uint16_t memory_drop = mem_power_min_throttles - mem_power_max_throttles;
+
+	*power_drop = proc_drop + memory_drop;
+}
+
+static void get_gpu_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum {
+		OCC_CFGDATA_GPU_CONFIG_VERSION = 0x01,
+		MAX_GPUS = 3,
+	};
+
+	uint16_t power_max = 0;
+	uint16_t power_drop = 0;
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_GPU_CONFIG;
+	data[index++] = OCC_CFGDATA_GPU_CONFIG_VERSION;
+
+	get_power_data(homer, &power_max, &power_drop);
+
+	memcpy(&data[index], &power_max, 2);   // Total non-GPU max power (W)
+	index += 2;
+
+	memcpy(&data[index], &power_drop, 2);  // Total proc/mem power drop (W)
+	index += 2;
+	data[index++] = 0; // reserved
+	data[index++] = 0; // reserved
+
+	/* No sensors ID.  Might require OBus or just be absent. */
+	uint32_t gpu_func_sensors[MAX_GPUS] = {0};
+	uint32_t gpu_temp_sensors[MAX_GPUS] = {0};
+	uint32_t gpu_memtemp_sensors[MAX_GPUS] = {0};
+
+	/* GPU0 */
+	memcpy(&data[index], &gpu_temp_sensors[0], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_memtemp_sensors[0], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_func_sensors[0], 4);
+	index += 4;
+
+	/* GPU1 */
+	memcpy(&data[index], &gpu_temp_sensors[1], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_memtemp_sensors[1], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_func_sensors[1], 4);
+	index += 4;
+
+	/* GPU2 */
+	memcpy(&data[index], &gpu_temp_sensors[2], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_memtemp_sensors[2], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_func_sensors[2], 4);
+	index += 4;
+
+	*size = index;
+}
+
+static void send_occ_config_data(struct homer_st *homer)
+{
+	/*
+	 * Order in which these are sent is important!
+	 * Not every order works.
+	 */
+	struct occ_cfg_info cfg_info[] = {
+		{ "System config",    &get_sys_cfg_msg_data      },
+		{ "APSS config",      &get_apss_msg_data         },
+		{ "OCC role",         &get_occ_role_msg_data     },
+		{ "Frequency points", &get_freq_point_msg_data   },
+		{ "Memory config",    &get_mem_cfg_msg_data      },
+		{ "Power cap",        &get_power_cap_msg_data    },
+		{ "Thermal control",  &get_thermal_ctrl_msg_data },
+		{ "AVS",              &get_avs_bus_cfg_msg_data  },
+		{ "GPU",              &get_gpu_msg_data          },
+	};
+
+	uint8_t i;
+
+	for (i = 0; i < ARRAY_SIZE(cfg_info); ++i) {
+		/* All our messages are short */
+		uint8_t data[256];
+		uint16_t data_len = 0;
+		uint32_t response_len = 0;
+
+		/* Poll is sent between configuration packets to flush errors */
+		struct occ_poll_response poll_response;
+
+		cfg_info[i].func(homer, data, &data_len);
+		if (data_len > sizeof(data))
+			die("Buffer for OCC data is too small!\n");
+
+		send_occ_cmd(homer, OCC_CMD_SETUP_CFG_DATA, data, data_len, NULL, &response_len);
+		poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+	}
+}
+
+static void send_occ_user_power_cap(struct homer_st *homer)
+{
+	/* No power limit */
+	const uint8_t data[2] = { 0x00, 0x00 };
+	uint32_t response_len = 0;
+	send_occ_cmd(homer, OCC_CMD_SET_POWER_CAP, data, sizeof(data), NULL, &response_len);
+}
+
+static void set_occ_active_state(struct homer_st *homer)
+{
+	enum {
+		OCC_STATUS_ACTIVE_READY = 0x01,
+		OCC_STATE_ACTIVE = 0x03,
+	};
+
+	wait_for_occ_status(homer, OCC_STATUS_ACTIVE_READY);
+	set_occ_state(homer, OCC_STATE_ACTIVE);
+}
+
+/* Moves OCC to active state */
+static void activate_occ(struct homer_st *homer)
+{
+	struct occ_poll_response poll_response;
+
+	/* Make sure OCCs are ready for communication */
+	wait_for_occ_checkpoint();
+
+	/* Send initial poll to all OCCs to establish communication */
+	poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+
+	/* Send OCC's config data */
+	send_occ_config_data(homer);
+
+	/* Set the User PCAP */
+	send_occ_user_power_cap(homer);
+
+	/* Switch for OCC to active state */
+	set_occ_active_state(homer);
+
+	/* Hostboot sets active sensors for all OCCs here, so BMC can start
+	 * communication with OCCs. */
+}
+
+static void istep_21_1(struct homer_st *homer, uint64_t cores)
+{
+	load_pm_complex(homer);
+
+	printk(BIOS_ERR, "Starting PM complex...\n");
+	start_pm_complex(homer, cores);
+	printk(BIOS_ERR, "Done starting PM complex\n");
+
+	printk(BIOS_ERR, "Activating OCC...\n");
+	activate_occ(homer);
+	printk(BIOS_ERR, "Done activating OCC\n");
 }
 
 static void get_ppe_scan_rings(struct xip_hw_header *hw, uint8_t dd,
@@ -1634,8 +3145,7 @@ static void update_headers(struct homer_st *homer, uint64_t cores)
 	cme_hdr->scom_len = 512;
 
 	/* Timebase frequency */
-	/* FIXME: get PB frequency properly */
-	cme_hdr->timebase_hz = 1866 * MHz / 64;
+	cme_hdr->timebase_hz = powerbus_cfg()->fabric_freq * MHz / 64;
 
 	/*
 	 * Update QPMR Header area in HOMER
@@ -1925,14 +3435,14 @@ void build_homer_image(void *homer_bar)
 	write_scom(0x00066000, PPC_SHIFT(0x1, 3) | PPC_SHIFT(0xA, 7));
 
 	/* Clear error injection bits
-	  *0x0006C18B                         // undocumented, PU_OCB_OCI_OCCFLG2_CLEAR
+	  *0x0006C18B                         // Undocumented, PU_OCB_OCI_OCCFLG2_CLEAR
 		[all] 0
 		[30]  1       // OCCFLG2_SGPE_HCODE_STOP_REQ_ERR_INJ
 	*/
-	write_scom(0x0006C18B, PPC_BIT(30));
+	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(30));
 
-	// Boot the STOP GPE
-	stop_gpe_init(homer);
+	/* Boot OCC here and activate SGPE at the same time */
+	istep_21_1(homer, cores);
 
 	istep_16_1(this_core);
 }

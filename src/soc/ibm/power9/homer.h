@@ -58,6 +58,9 @@
 #define MAX_QUADS_PER_CHIP		(MAX_CORES_PER_CHIP/4)
 #define MAX_CMES_PER_CHIP		(MAX_CORES_PER_CHIP/MAX_CORES_PER_EX)
 
+/* Offset from HOMER to OCC Host Data Area */
+#define HOMER_OFFSET_TO_OCC_HOST_DATA (768 * KiB)
+
 /* =================== QPMR =================== */
 
 struct qpmr_header {
