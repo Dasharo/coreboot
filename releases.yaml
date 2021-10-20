@@ -79,6 +79,8 @@ releases:
                 - Sleep mode is not functional
                 - The camera ON/OFF switch Fn key is not functional
           known_issues:
+                - description: High Nvidia GPU energy draw at idle in Windows
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/6
                 - description: Performance drop when the power adaptor is disconnected
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/5
                 - description: The touchpad ON/OFF switch Fn key is not functional
