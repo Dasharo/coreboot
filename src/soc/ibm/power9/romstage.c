@@ -11,6 +11,8 @@
 #include <cbmem.h>
 #include <timestamp.h>
 
+#include "pci.h"
+
 mcbist_data_t mem_data;
 
 static void dump_mca_data(mca_data_t *mca)
@@ -321,12 +323,16 @@ static void prepare_dimm_data(void)
 
 void main(void)
 {
+	uint8_t phb_active_mask = 0;
+	uint8_t iovalid_enable[MAX_PEC_PER_PROC] = { 0 };
+
 	init_timer();
 
 	timestamp_add_now(TS_START_ROMSTAGE);
 
 	console_init();
 
+	istep_10_10(&phb_active_mask, iovalid_enable);
 	istep_10_13();
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
