@@ -12,6 +12,8 @@
 #include <cbmem.h>
 #include <timestamp.h>
 
+#include "pci.h"
+
 /* DIMM SPD addresses */
 #define DIMM0 0x50
 #define DIMM1 0x51
@@ -332,6 +334,9 @@ static void prepare_dimm_data(void)
 
 void main(void)
 {
+	uint8_t phb_active_mask = 0;
+	uint8_t iovalid_enable[MAX_PEC_PER_PROC] = { 0 };
+
 	init_timer();
 
 	timestamp_add_now(TS_START_ROMSTAGE);
@@ -339,6 +344,7 @@ void main(void)
 	console_init();
 	cbmem_initialize_empty();
 
+	istep_10_10(&phb_active_mask, iovalid_enable);
 	istep_10_13();
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
