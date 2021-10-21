@@ -7,3 +7,12 @@ ramstage-$(CONFIG_DRIVERS_IPMI_SUPERMICRO_OEM) += supermicro_oem.c
 romstage-$(CONFIG_IPMI_KCS_ROMSTAGE) += ipmi_ops_premem.c
 romstage-$(CONFIG_IPMI_KCS_ROMSTAGE) += ipmi_kcs.c
 romstage-$(CONFIG_IPMI_KCS_ROMSTAGE) += ipmi_ops.c
+
+ramstage-$(CONFIG_IPMI_BT) += ipmi_if.c
+ramstage-$(CONFIG_IPMI_BT) += ipmi_bt.c
+ramstage-$(CONFIG_IPMI_BT) += ipmi_bt_ops.c
+ramstage-$(CONFIG_IPMI_BT) += ipmi_ops.c
+ramstage-$(CONFIG_IPMI_BT) += ipmi_fru.c
+romstage-$(CONFIG_IPMI_BT_ROMSTAGE) += ipmi_ops_premem.c
+romstage-$(CONFIG_IPMI_BT_ROMSTAGE) += ipmi_bt.c
+romstage-$(CONFIG_IPMI_BT_ROMSTAGE) += ipmi_ops.c

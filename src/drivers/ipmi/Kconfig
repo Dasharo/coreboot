@@ -53,3 +53,23 @@ config DRIVERS_IPMI_SUPERMICRO_OEM
 	  The following features are implemented:
 	  * Communicates the BIOS version to the BMC
 	  * Communicates the BIOS date to the BMC
+
+config IPMI_BT
+	bool
+	default n
+	depends on !IPMI_KCS
+
+config IPMI_BT_ROMSTAGE
+	bool
+	default n
+	depends on IPMI_BT
+	help
+	  IPMI BT support in romstage.
+
+config IPMI_BT_TIMEOUT_MS
+	int
+	default 5000
+	depends on IPMI_BT
+	help
+	  The time unit is millisecond for each IPMI BT transfer.
+	  The default is the same as for KCS as the implementation uses polling.
