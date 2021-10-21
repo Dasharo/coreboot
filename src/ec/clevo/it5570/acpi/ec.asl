@@ -373,9 +373,9 @@ Device (EC0)
 		Notify (^UCSI, 0x80)
 	}
 
-	Method (SFAN, 0, NotSerialized) // Set custom fan curve
+	Method (SFCV, 0, NotSerialized) // Set custom fan curve
 	{
-		P1F1 = 0x00
+		P1F1 = 0x0A
 		P1D1 = 0xFF
 		P2F1 = 0x3C
 		P2D1 = 0xFF
@@ -387,6 +387,46 @@ Device (EC0)
 		FDAT = 0x04
 		FCMD = 0xD7
 	}
+
+	Method (SF1C, 1, NotSerialized) // Set fan 1 to constant speed (flat curve)
+	{
+		P1F1 = 0x20
+		P1D1 = Arg0
+		P2F1 = 0x3C
+		P2D1 = Arg0
+		P3F1 = 0x46
+		P3D1 = Arg0
+		P4F1 = 0x50
+		P4D1 = Arg0
+
+		FDAT = 0x04
+		FCMD = 0xD7
+	}
+
+	Method (SF2C, 1, NotSerialized) // Set fan 2 to constant speed (flat curve)
+	{
+		P1F2 = 0x20
+		P1D2 = Arg0
+		P2F2 = 0x3C
+		P2D2 = Arg0
+		P3F2 = 0x46
+		P3D2 = Arg0
+		P4F2 = 0x50
+		P4D2 = Arg0
+
+		FDAT = 0x04
+		FCMD = 0xD7
+	}
+
+	// Get temperature
+	Method (GTMP, 1, Serialized) {
+		FDAT = One
+		FCMD = 0xC0
+		Debug = FBF1
+		Debug = FBUF
+		Debug = FDAT
+	}
+
 
 	#include "hid.asl"
 	#include "ucsi.asl"
