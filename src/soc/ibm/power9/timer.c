@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <delay.h>
+#include <timer.h>
 #include <timestamp.h>
 #include <string.h>		// memcpy
 #include <cpu/power/spr.h>
@@ -131,4 +132,14 @@ void udelay(unsigned int usec)
 
 	while (end > read_spr(SPR_TB));
 }
+#endif
+
+#if ENV_RAMSTAGE
+
+void udelay(unsigned int usec)
+{
+	/* Active, but a delay */
+	(void)wait_us(usec, false);
+}
+
 #endif
