@@ -9,6 +9,10 @@
 #include "ipmi_if.h"
 #include "chip.h"
 
+#if CONFIG(IPMI_BT)
+#include "ipmi_bt.h"
+#endif
+
 enum cb_err ipmi_premem_init(const u16 port, const u16 device)
 {
 	const struct drivers_ipmi_config *conf = NULL;
@@ -26,7 +30,8 @@ enum cb_err ipmi_premem_init(const u16 port, const u16 device)
 		printk(BIOS_ERR, "IPMI: device is not enabled\n");
 		return CB_ERR;
 	}
-	printk(BIOS_DEBUG, "IPMI: romstage PNP KCS 0x%x\n", dev->path.pnp.port);
+	printk(BIOS_DEBUG, "IPMI: romstage PNP %s 0x%x\n",
+	       CONFIG(IPMI_KCS) ? "KCS" : "BT", dev->path.pnp.port);
 	if (dev->chip_info)
 		conf = dev->chip_info;
 
@@ -48,6 +53,11 @@ enum cb_err ipmi_premem_init(const u16 port, const u16 device)
 
 	if (ipmi_process_self_test_result(dev))
 		return CB_ERR;
+
+#if CONFIG(IPMI_BT)
+	if (ipmi_bt_clear(dev->path.pnp.port))
+		return CB_ERR;
+#endif
 
 	return CB_SUCCESS;
 }
