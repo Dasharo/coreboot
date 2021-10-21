@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <device/device.h>
+#include <drivers/ipmi/ipmi_bt.h>
 #include <program_loading.h>
 #include <fit.h>
 #include <cpu/power/istep_13.h>
@@ -9,6 +10,7 @@
 #include <cpu/power/istep_18.h>
 #include <cpu/power/spr.h>
 #include <commonlib/stdlib.h>		// xzalloc
+#include <string.h>
 
 #include "homer.h"
 #include "istep_13_scom.h"
@@ -522,44 +524,6 @@ static void enable_soc_dev(struct device *dev)
 	istep_18_12();
 }
 
-/*
- * Clear SMS_ATN aka EVT_ATN in BT_CTRL - Block Transfer IPMI protocol
- *
- * BMC sends event telling us that HIOMAP (access to flash, either real or
- * emulated, through LPC) daemon has been started. This sets the mentioned bit.
- * Skiboot enables interrupts, but because those are triggered on 0->1
- * transition and bit is already set, they do not arrive.
- *
- * While we're at it, clear read and write pointers, in case circular buffer
- * rolls over.
- *
- * TODO: consider full BT driver implementation
- *
- * https://www.intel.pl/content/www/pl/pl/products/docs/servers/ipmi/ipmi-second-gen-interface-spec-v2-rev1-1.html
- */
-static void clear_ipmi_attn(void)
-{
-	/*
-	 * First, set H_BUSY (if not set already) so BMC won't try to write new
-	 * commands while we're resetting pointers.
-	 */
-	if ((inb(0xe4) & 0x40) == 0)
-		outb(0x40, 0xe4);
-
-	/* If BMC is already in the process of writing, wait until it's done */
-	while (inb(0xe4) & 0x80);
-
-	uint8_t bt_ctrl = inb(0xe4);
-
-	printk(BIOS_SPEW, "BT_CTRL = %#2.2x\n", bt_ctrl);
-
-	/*
-	 * Clear all bits which are already set (they are either toggle bits or
-	 * write-1-to-clear) and reset buffer pointers. This also clears H_BUSY.
-	 */
-	outb(bt_ctrl | 0x03, 0xe4);
-}
-
 static void activate_slave_cores(void)
 {
 	enum { DOORBELL_MSG_TYPE = 0x0000000028000000 };
@@ -609,7 +573,29 @@ static void activate_slave_cores(void)
 
 void platform_prog_run(struct prog *prog)
 {
-	clear_ipmi_attn();
+	const struct device *dev;
+
+	for (dev = all_devices; dev != NULL; dev = dev->next) {
+		if (!dev->enabled || !dev->chip_ops || !dev->chip_ops->initialized ||
+		    !dev->chip_ops->name)
+			continue;
+		if (strcmp(dev->chip_ops->name, "IPMI BT"))
+			continue;
+
+		/*
+		 * Clear SMS_ATN aka EVT_ATN in BT_CTRL - Block Transfer IPMI protocol
+		 *
+		 * BMC sends event telling us that HIOMAP (access to flash, either real or
+		 * emulated, through LPC) daemon has been started. This sets the mentioned bit.
+		 * Skiboot enables interrupts, but because those are triggered on 0->1
+		 * transition and bit is already set, they do not arrive.
+		 *
+		 * While we're at it, clear read and write pointers, in case circular buffer
+		 * rolls over.
+		 */
+		if (ipmi_bt_clear(dev->path.pnp.port))
+			die("ipmi_bt_clear() has failed.\n");
+	}
 
 	/*
 	 * Now that the payload and its interrupt vectors are already loaded
