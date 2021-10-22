@@ -80,7 +80,23 @@ config DIMM_SPD_SIZE
 	default 512
 
 config VBOOT
-	select VBOOT_LID_SWITCH
+	#select VBOOT_LID_SWITCH
+	select VBOOT_NO_BOARD_SUPPORT
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+
+config VBOOT_SLOTS_RW_A
+	default y
+
+config VBOOT_VBNV_OFFSET
+	hex
+	default 0x56
+
+config FMDFILE
+	string
+	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT
 
 config UART_FOR_CONSOLE
 	int
@@ -90,4 +106,4 @@ config TPM_PIRQ
 	hex
 	default 0x1C # GPP_C14
 
-endif # BOARD_CLEVO_NV41MB
+endif # BOARD_CLEVO_NV41MZ
