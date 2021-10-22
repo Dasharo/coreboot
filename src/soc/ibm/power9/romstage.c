@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <cpu/power/vpd.h>
+#include <cpu/power/istep_10.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
 #include <program_loading.h>
@@ -10,6 +11,8 @@
 #include <endian.h>
 #include <cbmem.h>
 #include <timestamp.h>
+
+#include "pci.h"
 
 mcbist_data_t mem_data;
 
@@ -334,12 +337,17 @@ void istep_10_13(void);
 
 void main(void)
 {
+	uint8_t phb_active_mask = 0;
+	uint8_t iovalid_enable[MAX_PEC_PER_PROC] = { 0 };
+
 	timestamp_add_now(TS_START_ROMSTAGE);
 
 	console_init();
 
 	init_timer();
 
+	istep_10_10(&phb_active_mask, iovalid_enable);
+	istep_10_12();
 	istep_10_13();
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
@@ -363,8 +371,7 @@ void main(void)
 
 	istep_14_1();
 	istep_14_2();
-	/* istep_14_3 doesn't work, probably due to missing SCOM init, skip for now. */
-	// istep_14_3();
+	istep_14_3(phb_active_mask, iovalid_enable);
 	report_istep(14,4);	// no-op
 	istep_14_5();
 
