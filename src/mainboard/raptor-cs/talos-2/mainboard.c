@@ -17,7 +17,7 @@ static void mainboard_enable(struct device *dev)
 	 * 256MB of first 4GB are reserved for hostboot/coreboot, which is also
 	 * included in device tree we are currently passing.
 	 */
-	reserved_ram_resource(dev, 0, 4 * 1024 * 1024 - 256 * 1024, 256 * 1024);
+	//reserved_ram_resource(dev, 0, 4 * 1024 * 1024 - 256 * 1024, 256 * 1024);
 }
 
 struct chip_operations mainboard_ops = {

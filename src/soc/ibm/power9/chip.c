@@ -61,11 +61,39 @@ static uint8_t pa_features[] =
 	0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00
 };
 
-static void fill_l3_node(struct device_tree_node *node, uint32_t phandle,
-                         uint32_t pir)
+static void dt_assign_new_phandle(struct device_tree *tree,
+                                  struct device_tree_node *node)
 {
+	struct device_tree_property *prop;
+	uint32_t phandle;
+
+	list_for_each(prop, node->properties, list_node) {
+		if (!strcmp("phandle", prop->prop.name)) {
+			/* Node already has phandle set, keep it */
+			return;
+		}
+	}
+
+	phandle = ++tree->max_phandle;
 	node->phandle = phandle;
 	dt_add_u32_prop(node, "phandle", phandle);
+}
+
+static void dt_fill_all_phandles(struct device_tree *tree,
+                                 struct device_tree_node *node)
+{
+	struct device_tree_node *child;
+
+	dt_assign_new_phandle(tree, node);
+
+	list_for_each(child, node->children, list_node)
+		dt_fill_all_phandles(tree, child);
+}
+
+static void fill_l3_node(struct device_tree *tree,
+                         struct device_tree_node *node, uint32_t pir)
+{
+	dt_assign_new_phandle(tree, node);
 	dt_add_u32_prop(node, "reg", pir);
 	dt_add_string_prop(node, "device_type", "cache");
 	dt_add_bin_prop(node, "cache-unified", NULL, 0);
@@ -78,11 +106,11 @@ static void fill_l3_node(struct device_tree_node *node, uint32_t phandle,
 	dt_add_u32_prop(node, "i-cache-sets", 8);  /* Per Hostboot. Why not 20? */
 }
 
-static void fill_l2_node(struct device_tree_node *node, uint32_t phandle,
-                         uint32_t pir, uint32_t next_lvl_phandle)
+static void fill_l2_node(struct device_tree *tree,
+                         struct device_tree_node *node, uint32_t pir,
+                         uint32_t next_lvl_phandle)
 {
-	node->phandle = phandle;
-	dt_add_u32_prop(node, "phandle", phandle);
+	dt_assign_new_phandle(tree, node);
 	/* This is not a typo, "l2-cache" points to the node of L3 cache */
 	dt_add_u32_prop(node, "l2-cache", next_lvl_phandle);
 	dt_add_u32_prop(node, "reg", pir);
@@ -98,12 +126,12 @@ static void fill_l2_node(struct device_tree_node *node, uint32_t phandle,
 
 }
 
-static void fill_cpu_node(struct device_tree_node *node, uint32_t phandle,
-                          uint32_t pir, uint32_t next_lvl_phandle)
+static void fill_cpu_node(struct device_tree *tree,
+                          struct device_tree_node *node, uint32_t pir,
+                          uint32_t next_lvl_phandle)
 {
 	/* Mandatory/standard properties */
-	node->phandle = phandle;
-	dt_add_u32_prop(node, "phandle", phandle);
+	dt_assign_new_phandle(tree, node);
 	dt_add_string_prop(node, "device_type", "cpu");
 	dt_add_bin_prop(node, "64-bit", NULL, 0);
 	dt_add_bin_prop(node, "32-64-bridge", NULL, 0);
@@ -114,7 +142,7 @@ static void fill_cpu_node(struct device_tree_node *node, uint32_t phandle,
 	/*
 	 * The "status" property indicate whether the core is functional. It's
 	 * a string containing "okay" for a good core or "bad" for a non-functional
-	 * one. You can also just ommit the non-functional ones from the DT
+	 * one. You can also just omit the non-functional ones from the DT
 	 */
 	dt_add_string_prop(node, "status", "okay");
 
@@ -310,28 +338,30 @@ static void split_mem_node(struct device_tree *tree)
 	}
 };
 
+/*
+ * Device tree passed to Skiboot has to have phandles set either for all nodes
+ * or none at all. Because relative phandles are set for cpu->l2_cache->l3_cache
+ * chain, only first option is possible.
+ */
 static int dt_platform_fixup(struct device_tree_fixup *fixup,
 			      struct device_tree *tree)
 {
-	struct device_tree_node *node, *cpus;
+	struct device_tree_node *cpus, *xscom;
 	uint64_t cores = read_scom(0x0006C090);
 	assert(cores != 0);
 
 	split_mem_node(tree);
 
-	/* Find "cpus" node, create if necessary */
-	cpus = dt_find_node_by_path(tree, "/cpus", NULL, NULL, 1);
-	assert(cpus != NULL);
+	/* Find xscom node, halt if not found */
+	/* TODO: is the address always the same? */
+	xscom = dt_find_node_by_path(tree, "/xscom@603fc00000000", NULL, NULL, 0);
+	if (xscom == NULL)
+		die("No 'xscom' node in device tree!\n");
 
-	/*
-	 * First remove all existing "cpu" nodes, then add ours.
-	 *
-	 * TODO: check if any other node relies on phandles of "cpu" or "cache"
-	 * nodes
-	 */
-	list_for_each(node, cpus->children, list_node) {
-		list_remove(&node->list_node);
-	}
+	/* Find "cpus" node */
+	cpus = dt_find_node_by_path(tree, "/cpus", NULL, NULL, 0);
+	if (cpus == NULL)
+		die("No 'cpus' node in device tree!\n");
 
 	for (int core_id = 0; core_id <= 24; core_id++) {
 		if (IS_EC_FUNCTIONAL(core_id, cores)) {
@@ -386,26 +416,15 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 			 * are created at the same time, no need to test both.
 			 */
 			if (!l3_node->phandle) {
-				fill_l3_node(l3_node, ++tree->max_phandle, l3_pir);
-				fill_l2_node(l2_node, ++tree->max_phandle, l2_pir,
-				             l3_node->phandle);
+				fill_l3_node(tree, l3_node, l3_pir);
+				fill_l2_node(tree, l2_node, l2_pir, l3_node->phandle);
 			}
 
-			fill_cpu_node(cpu_node, ++tree->max_phandle, pir, l2_node->phandle);
+			fill_cpu_node(tree, cpu_node, pir, l2_node->phandle);
 		}
 	}
 
-	/* Debug for Skiroot's kernel. TODO: make this a config option? */
-	node = dt_find_node_by_path(tree, "/chosen", NULL, NULL, 1);
-	dt_add_string_prop(node, "bootargs", "console=hvc0");
-
-	/* Will be created by Skiboot. TODO: remove from dts */
-	node = dt_find_node_by_path(tree, "/ibm,opal", NULL, NULL, 0);
-	if (node)
-		list_remove(&node->list_node);
-
-	node = dt_find_node_by_path(tree, "/ibm,opal/power-mgt", NULL, NULL, 1);
-	dt_add_u32_prop(node, "ibm,enabled-stop-levels", 0xec000000);
+	dt_fill_all_phandles(tree, tree->root);
 
 	return 0;
 }
