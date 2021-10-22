@@ -101,9 +101,9 @@ nvidia_optimus_acpi_method_on(unsigned int pcie_rp,
 		acpigen_write_integer(1);
 	}
 
-	acpigen_write_store_int_to_namestr(1, "_STA");
-
 	acpigen_pop_len(); /* If */
+
+	acpigen_write_store_int_to_namestr(1, "_STA");
 	acpigen_pop_len(); /* Method */
 }
 
@@ -142,21 +142,21 @@ nvidia_optimus_acpi_method_off(int pcie_rp,
 			acpigen_write_sleep(config->enable_off_delay_ms);
 	}
 
-	acpigen_write_store_int_to_namestr(0, "_STA");
-
 	acpigen_pop_len(); /* If */
+
+	acpigen_write_store_int_to_namestr(0, "_STA");
 	acpigen_pop_len(); /* Method */
 }
 
 static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 {
 	const struct drivers_gfx_nvidia_optimus_config *config = config_of(dev);
-	static const char *const power_res_states[] = {"_PR0", "_PR2", "_PR3"};
+	static const char *const power_res_states[] = {"_PR0", "_PR3"};
 	const struct device *parent = dev->bus->dev;
 	const char *scope = acpi_device_path(parent);
 
 	/* PCH RP PCIe configuration space */
-	const struct opregion rp_pci_config = OPREGION("PXCS", PCI_CONFIG, 0, 0xff);
+	const struct opregion rp_pci_config = OPREGION("PXCS", SYSTEMMEMORY, CONFIG_MMCONF_BASE_ADDRESS | (parent->path.pci.devfn << 12), 0x1000);
 	const struct fieldlist rp_fieldlist[] = {
 		FIELDLIST_OFFSET(PCH_PCIE_CFG_LSTS),
 		FIELDLIST_RESERVED(13),
