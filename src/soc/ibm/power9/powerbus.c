@@ -10,7 +10,7 @@
 #define EPSILON_MAX_VALUE 0xFFFFFFFF
 
 #define MBOX_SCRATCH_REG1 0x00050038
-#define MBOX_SCRATCH_REG6_GROUP_PUMP_MODE (1 << 23)
+#define MBOX_SCRATCH_REG6_GROUP_PUMP_MODE 23
 
 #define EPS_GUARDBAND 20
 
@@ -167,7 +167,7 @@ static void calculate_epsilons(struct powerbus_cfg *cfg)
 
 	uint64_t scratch_reg6 = read_scom(MBOX_SCRATCH_REG1 + 5);
 	/* ATTR_PROC_FABRIC_PUMP_MODE, it's either node or group pump mode */
-	bool node_pump_mode = !(scratch_reg6 & MBOX_SCRATCH_REG6_GROUP_PUMP_MODE);
+	bool node_pump_mode = !(scratch_reg6 & PPC_BIT(MBOX_SCRATCH_REG6_GROUP_PUMP_MODE));
 
 	/* Assuming that ATTR_PROC_EPS_TABLE_TYPE = EPS_TYPE_LE in talos.xml is always correct */
 

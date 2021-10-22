@@ -2,6 +2,17 @@
 
 #include <cpu/power/istep_14.h>
 #include <cpu/power/istep_13.h>
+#include <cpu/power/scom.h>
+
+#define MCS_MCMODE0 (0x5010811)
+#define MCS_MCSYNC (0x5010815)
+#define MCA_MBA_FARB3Q (0x7010916)
+
+#define MCS_MCSYNC_SYNC_GO_CH0 (16)
+#define SUPER_SYNC_BIT (14)
+#define MBA_REFRESH_SYNC_BIT (8)
+#define MCS_MCMODE0_DISABLE_MC_SYNC (27)
+#define MCS_MCMODE0_DISABLE_MC_PAIR_SYNC (28)
 
 static void thermalInit(void)
 {

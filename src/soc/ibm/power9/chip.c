@@ -15,7 +15,6 @@
 #include "homer.h"
 #include "istep_13_scom.h"
 #include "chip.h"
-#include "homer.h"
 
 /*
  * These are various definitions of the page sizes and segment sizes supported
