@@ -83,11 +83,6 @@ Scope (\_SB.PCI0.XHCI.RHUB.HS10)
 		Return (GPR())
 	}
 
-	Method (_PR2, 0, NotSerialized)
-	{
-		Return (GPR())
-	}
-
 	Method (_PR3, 0, NotSerialized)
 	{
 		Return (GPR())
