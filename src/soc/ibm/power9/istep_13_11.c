@@ -659,7 +659,7 @@ static void read_ctr_pre(int mcs_i, int mca_i, int rp,
 			[48-63] VREF_CAL_EN = 0xffff    // We already did this in reset_rd_vref() in 13.8
 		*/
 		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_EN_P0_0, 0,
-		              PPC_SHIFT(0xFFFF, 63));
+		              PPC_PLACE(0xFFFF, 48, 16));
 	}
 
 	/* This also was part of main

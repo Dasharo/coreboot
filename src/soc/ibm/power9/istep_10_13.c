@@ -36,9 +36,9 @@ void istep_10_13(void)
 	 */
 	scom_and_or_for_chiplet(N0_CHIPLET_ID, 0x020110E1,
 	                        ~(PPC_BITMASK(0, 1) | PPC_BITMASK(7, 63)),
-	                        PPC_SHIFT(1, 1) | PPC_SHIFT(2, 8) | PPC_SHIFT(1, 11)
-	                        | PPC_SHIFT(0x32, 23) | PPC_SHIFT(0x32, 35)
-	                        | PPC_SHIFT(0x32, 47) | PPC_SHIFT(0x32, 59));
+	                        PPC_PLACE(1, 0, 2) | PPC_PLACE(2, 7, 2) | PPC_PLACE(1, 9, 3)
+	                        | PPC_PLACE(0x32, 12, 12) | PPC_PLACE(0x32, 24, 12)
+	                        | PPC_PLACE(0x32, 36, 12) | PPC_PLACE(0x32, 48, 12));
 
 	/* PU_NX_RNG_ST1
 	    [0-6]   ADAPTEST_SOFT_FAIL_TH      =   2
@@ -46,8 +46,8 @@ void istep_10_13(void)
 	    [23-38] ADAPTEST_1BIT_MATCH_TH_MAX = 415
 	 */
 	scom_and_or_for_chiplet(N0_CHIPLET_ID, 0x020110E2, ~PPC_BITMASK(0, 38),
-	                        PPC_SHIFT(2, 6) | PPC_SHIFT(100, 22)
-	                        | PPC_SHIFT(415, 38));
+	                        PPC_PLACE(2, 0, 7) | PPC_PLACE(100, 7, 16)
+	                        | PPC_PLACE(415, 23, 16));
 
 	/* PU_NX_RNG_ST3
 	    [0]     SAMPTEST_RRN_ENABLE   = 1
@@ -56,15 +56,15 @@ void istep_10_13(void)
 	    [20-35] SAMPTEST_MATCH_TH_MAX = 0x988A (39,050)
 	 */
 	scom_and_or_for_chiplet(N0_CHIPLET_ID, 0x020110E8, ~PPC_BITMASK(0, 35),
-	                        PPC_BIT(0) | PPC_SHIFT(7, 3) | PPC_SHIFT(0x6D60, 19)
-	                        | PPC_SHIFT(0x988A, 35));
+	                        PPC_BIT(0) | PPC_PLACE(7, 1, 3) | PPC_PLACE(0x6D60, 4, 16)
+	                        | PPC_PLACE(0x988A, 20, 16));
 
 	/* PU_NX_RNG_RDELAY
 	    [6]     LFSR_RESEED_EN = 1
 	    [7-11]  READ_RTY_RATIO = 0x1D (1/16)
 	 */
 	scom_and_or_for_chiplet(N0_CHIPLET_ID, 0x020110E5, ~PPC_BITMASK(6, 11),
-	                        PPC_BIT(6) | PPC_SHIFT(0x1D, 11));
+	                        PPC_BIT(6) | PPC_PLACE(0x1D, 7, 5));
 
 	/* PU_NX_RNG_CFG
 	    [30-37] ST2_RESET_PERIOD     = 0x1B
@@ -79,8 +79,8 @@ void istep_10_13(void)
 	scom_and_or_for_chiplet(N0_CHIPLET_ID, 0x020110E0,
 	                        ~(PPC_BITMASK(30, 37) | PPC_BITMASK(39, 43)
 	                          | PPC_BITMASK(46, 61) | PPC_BIT(63)),
-	                        PPC_SHIFT(0x1B, 37) | PPC_BIT(40) | PPC_BIT(41)
-	                        | PPC_BIT(42) | PPC_BIT(43) | PPC_SHIFT(0x07D0, 61)
+	                        PPC_PLACE(0x1B, 30, 8) | PPC_BIT(40) | PPC_BIT(41)
+	                        | PPC_BIT(42) | PPC_BIT(43) | PPC_PLACE(0x07D0, 46, 16)
 	                        | PPC_BIT(63));
 
 	printk(BIOS_EMERG, "ending istep 10.13\n");

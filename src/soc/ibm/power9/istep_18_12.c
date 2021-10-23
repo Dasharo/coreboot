@@ -35,7 +35,7 @@ static void init_tod_node(void)
 
 		/* Chip TOD load value (move TB to TOD) */
 		write_scom(PERV_TOD_LOAD_TOD_REG,
-		           PPC_SHIFT(0x3FF, 59) | PPC_SHIFT(0xC, 63));
+		           PPC_PLACE(0x3FF, 0, 60) | PPC_PLACE(0xC, 60, 4));
 
 		/* Chip TOD start_tod (switch local Chip TOD to 'Running' state) */
 		write_scom(PERV_TOD_START_TOD_REG,

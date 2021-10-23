@@ -57,7 +57,7 @@ static void revert_mc_hb_dcbz_config(void)
 			*/
 			scom_and_or_for_chiplet(nest, 0x05010812 + i * mul,
 			                        ~(PPC_BITMASK(32, 51) | PPC_BITMASK(54, 61)),
-			                        PPC_SHIFT(0x40, 51));
+			                        PPC_PLACE(0x40, 33, 19));
 
 			/* MCS_MCPERF1 -- enable fast path
 			MCS_n_MCPERF1  // undocumented, 0x05010810, 0x05010890, 0x03010810, 0x03010890
@@ -200,23 +200,23 @@ static void fill_groups(void)
 		 */
 		if (mask & 0x80) {
 			/* MCS = 0, MCA = 0 */
-			mcfgp_regs[0][0] = PPC_BIT(0) | PPC_SHIFT(groups[i].group_size, 23) |
-			                   PPC_SHIFT(cur_ba, 47);
+			mcfgp_regs[0][0] = PPC_BIT(0) | PPC_PLACE(groups[i].group_size, 13, 11) |
+			                   PPC_PLACE(cur_ba, 24, 24);
 		}
 		if (mask & 0x40) {
 			/* MCS = 0, MCA = 1 */
-			mcfgp_regs[0][1] = PPC_BIT(0) | PPC_SHIFT(groups[i].group_size, 23) |
-			                   PPC_SHIFT(cur_ba, 47);
+			mcfgp_regs[0][1] = PPC_BIT(0) | PPC_PLACE(groups[i].group_size, 13, 11) |
+			                   PPC_PLACE(cur_ba, 24, 24);
 		}
 		if (mask & 0x08) {
 			/* MCS = 1, MCA = 0 */
-			mcfgp_regs[1][0] = PPC_BIT(0) | PPC_SHIFT(groups[i].group_size, 23) |
-			                   PPC_SHIFT(cur_ba, 47);
+			mcfgp_regs[1][0] = PPC_BIT(0) | PPC_PLACE(groups[i].group_size, 13, 11) |
+			                   PPC_PLACE(cur_ba, 24, 24);
 		}
 		if (mask & 0x04) {
 			/* MCS = 1, MCA = 1 */
-			mcfgp_regs[1][1] = PPC_BIT(0) | PPC_SHIFT(groups[i].group_size, 23) |
-			                   PPC_SHIFT(cur_ba, 47);
+			mcfgp_regs[1][1] = PPC_BIT(0) | PPC_PLACE(groups[i].group_size, 13, 11) |
+			                   PPC_PLACE(cur_ba, 24, 24);
 		}
 
 		cur_ba += groups[i].group_size + 1;
