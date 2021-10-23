@@ -42,9 +42,6 @@
 
 #define QUAD_BIT_POS     24
 
-#define PPC_PLACE(val, pos, len) \
-	PPC_SHIFT((val) & ((1 << ((len) + 1)) - 1), ((pos) + ((len) - 1)))
-
 /* Subsections of STOP image that contain SCOM entries */
 enum scom_section {
 	STOP_SECTION_CORE_SCOM,
