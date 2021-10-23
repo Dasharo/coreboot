@@ -103,8 +103,10 @@ void istep_13_2(void)
 		  [52-63] OPCG_WAIT_CYCLES =  0x20
 		*/
 		write_scom_for_chiplet(mcs_ids[i], MCSLOW_OPCG_ALIGN,
-		                       PPC_SHIFT(5, MCSLOW_OPCG_ALIGN_INOP_ALIGN) |
-		                       PPC_SHIFT(0x20, MCSLOW_OPCG_ALIGN_OPCG_WAIT_CYCLES));
+		                       PPC_PLACE(5, MCSLOW_OPCG_ALIGN_INOP_ALIGN,
+		                                 MCSLOW_OPCG_ALIGN_INOP_ALIGN_LEN) |
+		                       PPC_PLACE(0x20, MCSLOW_OPCG_ALIGN_OPCG_WAIT_CYCLES,
+		                                 MCSLOW_OPCG_ALIGN_OPCG_WAIT_CYCLES_LEN));
 
 		// scan0 flush PLL boundary ring
 		/*

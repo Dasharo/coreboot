@@ -96,7 +96,8 @@ void istep_13_4(void)
 		  [47-51] SCAN_RATIO =  3           // 4:1
 		*/
 		scom_and_or_for_chiplet(mcs_ids[i], MCSLOW_OPCG_ALIGN, ~PPC_BITMASK(47,51),
-		                        PPC_SHIFT(3, MCSLOW_OPCG_ALIGN_SCAN_RATIO));
+		                        PPC_PLACE(3, MCSLOW_OPCG_ALIGN_SCAN_RATIO,
+		                                  MCSLOW_OPCG_ALIGN_SCAN_RATIO_LEN));
 
 		// > end if
 
