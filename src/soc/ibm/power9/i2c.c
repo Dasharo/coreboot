@@ -15,8 +15,8 @@
 #define RES_ERR_REG(bus)	(0xA000C | ((bus) << 12))
 
 // CMD register
-#define LEN_SHIFT(x)		PPC_SHIFT((x), 31)
-#define ADDR_SHIFT(x)		PPC_SHIFT((x), 14)
+#define LEN_PLACE(x)		PPC_PLACE((x), 16, 16)
+#define ADDR_PLACE(x)		PPC_PLACE((x), 8, 7)
 #define READ_NOT_WRITE		0x0001000000000000
 #define START			0x8000000000000000
 #define WITH_ADDR		0x4000000000000000
@@ -127,12 +127,12 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 		 *
 		 * Use value for 400 kHz as it is the one used by Hostboot.
 		 */
-		write_scom(MODE_REG(bus), 0x0177000000000000 | PPC_SHIFT(port, 21));	// 400kHz
+		write_scom(MODE_REG(bus), 0x0177000000000000 | PPC_PLACE(port, 16, 6));	// 400kHz
 
 		write_scom(RES_ERR_REG(bus), CLEAR_ERR);
 		write_scom(CMD_REG(bus), START | stop | WITH_ADDR | read_not_write | read_cont |
-		                         ADDR_SHIFT(segment[i].slave & 0x7F) |
-		                         LEN_SHIFT(segment[i].len));
+		                         ADDR_PLACE(segment[i].slave) |
+		                         LEN_PLACE(segment[i].len));
 
 		for (len = 0; len < segment[i].len; len++, bytes_transfered++) {
 			r = read_scom(STATUS_REG(bus));

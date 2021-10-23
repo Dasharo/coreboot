@@ -49,7 +49,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [22-27] = 0x20                              // AMO_LIMIT
 	*/
 	scom_and_or_for_chiplet(nest, 0x05010823 + mca_i * mca_mul,
-	                        ~PPC_BITMASK(22,27), PPC_SHIFT(0x20, 27));
+	                        ~PPC_BITMASK(22,27), PPC_PLACE(0x20, 22, 6));
 
 	/* P9N2_MCS_PORT02_MCPERF2 (?)
 	    [0-2]   = 1                                 // PF_DROP_VALUE0
@@ -86,10 +86,10 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	                        ~(PPC_BITMASK(0,11) | PPC_BITMASK(13,18) | PPC_BITMASK(28,31)
 	                          | PPC_BITMASK(28,31) | PPC_BITMASK(50,54) | PPC_BIT(61)),
 	                        /* or */
-	                        PPC_SHIFT(1, 2) | PPC_SHIFT(3, 5) | PPC_SHIFT(5, 8)
-	                        | PPC_SHIFT(7, 11) /* PF_DROP_VALUEs */
-	                        | PPC_SHIFT(ref_blk_cfg, 15) | PPC_SHIFT(en_ref_blk, 17)
-	                        | PPC_SHIFT(0x4, 31) | PPC_SHIFT(0x1C, 54));
+	                        PPC_PLACE(1, 0, 3) | PPC_PLACE(3, 3, 3) | PPC_PLACE(5, 6, 3)
+	                        | PPC_PLACE(7, 9, 3) /* PF_DROP_VALUEs */
+	                        | PPC_PLACE(ref_blk_cfg, 13, 3) | PPC_PLACE(en_ref_blk, 16, 2)
+	                        | PPC_PLACE(0x4, 28, 4) | PPC_PLACE(0x1C, 50, 5));
 
 	/* P9N2_MCS_PORT02_MCAMOC (?)
 	    [1]     = 0                                 // FORCE_PF_DROP0
@@ -98,7 +98,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	*/
 	scom_and_or_for_chiplet(nest, 0x05010825 + mca_i * mca_mul,
 	                        ~(PPC_BIT(1) | PPC_BITMASK(4,31)),
-	                        PPC_SHIFT(0x19FFFFF, 28) | PPC_SHIFT(1, 31));
+	                        PPC_PLACE(0x19FFFFF, 4, 25) | PPC_PLACE(1, 29, 3));
 
 	/* P9N2_MCS_PORT02_MCEPSQ (?)
 	    [0-7]   = 1                                 // JITTER_EPSILON
@@ -112,12 +112,12 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	 */
 	#define F(X)	(((X) + 6) / 4)
 	scom_and_or_for_chiplet(nest, 0x05010826 + mca_i * mca_mul, ~PPC_BITMASK(0,47),
-	                        PPC_SHIFT(1, 7)
-	                        | PPC_SHIFT(F(pb_cfg->eps_r[0]), 15)
-				| PPC_SHIFT(F(pb_cfg->eps_r[1]), 23)
-				| PPC_SHIFT(F(pb_cfg->eps_r[1]), 31)
-	                        | PPC_SHIFT(F(pb_cfg->eps_r[2]), 39)
-				| PPC_SHIFT(F(pb_cfg->eps_r[2]), 47));
+	                        PPC_PLACE(1, 0, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[0]), 8, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[1]), 16, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[1]), 24, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[2]), 32, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[2]), 40, 8));
 	#undef F
 //~ static const uint32_t EPSILON_R_T0_LE[] = {    7,    7,    8,    8,   10,   22 };  // T0, T1
 //~ static const uint32_t EPSILON_R_T2_LE[] = {   67,   69,   71,   74,   79,  103 };  // T2
@@ -130,8 +130,8 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [24-33] = 64                                // BUSY_COUNTER_THRESHOLD2
 	*/
 	scom_and_or_for_chiplet(nest, 0x05010827 + mca_i * mca_mul, ~PPC_BITMASK(0,33),
-	                        PPC_BIT(0) | PPC_SHIFT(1, 3) | PPC_SHIFT(38, 13)
-	                        | PPC_SHIFT(51, 23) | PPC_SHIFT(64, 33));
+	                        PPC_BIT(0) | PPC_PLACE(1, 1, 3) | PPC_PLACE(38, 4, 10)
+	                        | PPC_PLACE(51, 14, 10) | PPC_PLACE(64, 24, 10));
 
 	/* P9N2_MCS_PORT02_MCPERF3 (?)
 	    [31] = 1                                    // ENABLE_CL0
@@ -657,7 +657,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  [48-63] = 0xffff
 		*/
 		dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_BIT_ENABLE_P0_ADR0,
-		              ~PPC_BITMASK(48, 63), PPC_SHIFT(0xFFFF, 63));
+		              ~PPC_BITMASK(48, 63), PPC_PLACE(0xFFFF, 48, 16));
 	}
 
 	/* IOM0.DDRPHY_ADR_DIFFPAIR_ENABLE_P0_ADR1 =
@@ -666,7 +666,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  [51] DI_ADR6_ADR7: 1 = Lanes 6 and 7 are a differential clock pair
 	*/
 	dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_DIFFPAIR_ENABLE_P0_ADR1,
-	              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x5000, 63));
+	              ~PPC_BITMASK(48, 63), PPC_PLACE(0x5000, 48, 16));
 
 	/* IOM0.DDRPHY_ADR_DELAY1_P0_ADR1 =
 	  [48-63] = 0x4040:
@@ -674,7 +674,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  [57-63] ADR_DELAY3 = 0x40
 	*/
 	dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_DELAY1_P0_ADR1,
-	              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x4040, 63));
+	              ~PPC_BITMASK(48, 63), PPC_PLACE(0x4040, 48, 16));
 
 	/* IOM0.DDRPHY_ADR_DELAY3_P0_ADR1 =
 	  [48-63] = 0x4040:
@@ -682,7 +682,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  [57-63] ADR_DELAY7 = 0x40
 	*/
 	dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_DELAY3_P0_ADR1,
-	              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x4040, 63));
+	              ~PPC_BITMASK(48, 63), PPC_PLACE(0x4040, 48, 16));
 
 	for (dp = 0; dp < 2; dp ++) {
 		/* IOM0.DDRPHY_ADR_DLL_VREG_CONFIG_1_P0_ADR32S{0,1} =
@@ -844,7 +844,7 @@ static void set_rank_pairs(int mcs_i, int mca_i)
 		[63]    RANK_PAIR1_SEC_V = 1: if (rank_count0 == 4)
 	*/
 	mca_and_or(id, mca_i, DDRPHY_PC_RANK_PAIR0_P0, ~PPC_BITMASK(48, 63),
-	           PPC_SHIFT(0x1537 & F[mca->dimm[0].mranks], 63));
+	           PPC_PLACE(0x1537 & F[mca->dimm[0].mranks], 48, 16));
 
 	/* IOM0.DDRPHY_PC_RANK_PAIR1_P0 =
 	    [48-63] = 0x1537 & F[rank_count1]:     // F = {0, 0xf000, 0xf0f0, 0xfff0, 0xffff}
@@ -858,7 +858,7 @@ static void set_rank_pairs(int mcs_i, int mca_i)
 		[63]    RANK_PAIR3_SEC_V = 1: if (rank_count1 == 4)
 	*/
 	mca_and_or(id, mca_i, DDRPHY_PC_RANK_PAIR1_P0, ~PPC_BITMASK(48, 63),
-	           PPC_SHIFT(0x1537 & F[mca->dimm[1].mranks], 63));
+	           PPC_PLACE(0x1537 & F[mca->dimm[1].mranks], 48, 16));
 
 	/* IOM0.DDRPHY_PC_RANK_PAIR2_P0 =
 	    [48-63] = 0
@@ -878,7 +878,7 @@ static void set_rank_pairs(int mcs_i, int mca_i)
 		[51]  CS3_INIT_CAL_VALUE = 1
 	*/
 	mca_and_or(id, mca_i, DDRPHY_PC_CSID_CFG_P0, ~PPC_BITMASK(48, 63),
-	           PPC_SHIFT(0xF000, 63));
+	           PPC_PLACE(0xF000, 48, 16));
 
 	/* IOM0.DDRPHY_PC_MIRROR_CONFIG_P0 =
 	    [all] = 0
@@ -1263,7 +1263,8 @@ static void rc_reset(int mcs_i, int mca_i)
 	      [57-58] 3                   // not documented, BURST_WINDOW?
 	*/
 	mca_and_or(id, mca_i, DDRPHY_RC_CONFIG2_P0, 0,
-	           PPC_SHIFT(8, CONSEC_PASS) | PPC_SHIFT(3, 58));
+	           PPC_PLACE(8, CONSEC_PASS, CONSEC_PASS_LEN) |
+	           PPC_PLACE(3, 57, 2));
 
 	/* IOM0.DDRPHY_RC_CONFIG3_P0
 	      [all]   0
@@ -1284,7 +1285,7 @@ static void rc_reset(int mcs_i, int mca_i)
 	uint64_t wait_time = mem_data.speed == 1866 ? 0x0804 :
 	                     mem_data.speed == 2133 ? 0x092A :
 	                     mem_data.speed == 2400 ? 0x0A50 : 0x0B74;
-	mca_and_or(id, mca_i, DDRPHY_RC_RDVREF_CONFIG0_P0, 0, PPC_SHIFT(wait_time, 63));
+	mca_and_or(id, mca_i, DDRPHY_RC_RDVREF_CONFIG0_P0, 0, PPC_PLACE(wait_time, 48, 16));
 
 	/* IOM0.DDRPHY_RC_RDVREF_CONFIG1_P0 =
 	      [all]   0

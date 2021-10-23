@@ -838,7 +838,7 @@ static void pba_reset(void)
 	*/
 	for (int sl = 0; sl < 3; sl++) {	// Fourth is owned by SBE, do not reset
 		time = wait_us(16,
-		               (write_scom(0x00068001, PPC_BIT(0) | PPC_SHIFT(sl, 2)),
+		               (write_scom(0x00068001, PPC_BIT(0) | PPC_PLACE(sl, 1, 2)),
 		                (read_scom(0x00068001) & PPC_BIT(4 + sl)) == 0));
 
 		if (!time || read_scom(0x00068001) & PPC_BIT(8 + sl))
@@ -920,7 +920,7 @@ static void stop_gpe_init(struct homer_st *homer)
 	*/
 	uint32_t ivpr = 0x80000000 + homer->qpmr.sgpe.header.l1_offset +
 	                offsetof(struct homer_st, qpmr);
-	write_scom(0x00066001, PPC_SHIFT(ivpr, 31));
+	write_scom(0x00066001, PPC_PLACE(ivpr, 0, 32));
 
 	/* Program XCR to ACTIVATE SGPE
 	TP.TPCHIP.OCC.OCI.GPE3.GPENXIXCR                          // 0x00066010
@@ -933,9 +933,9 @@ static void stop_gpe_init(struct homer_st *homer)
 	  [all] 0
 	  [1-3] PPE_XIXCR_XCR = 2     // resume
 	*/
-	write_scom(0x00066010, PPC_SHIFT(6, 3));
-	write_scom(0x00066010, PPC_SHIFT(4, 3));
-	write_scom(0x00066010, PPC_SHIFT(2, 3));
+	write_scom(0x00066010, PPC_PLACE(6, 1, 3));
+	write_scom(0x00066010, PPC_PLACE(4, 1, 3));
+	write_scom(0x00066010, PPC_PLACE(2, 1, 3));
 
 	/*
 	 * Now wait for SGPE to not be halted and for the HCode to indicate to be
@@ -999,7 +999,7 @@ static void psu_command(uint8_t flags, long time)
 	/* https://github.com/open-power/hostboot/blob/master/src/include/usr/sbeio/sbe_psudd.H#L418 */
 	/* TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG */
 	/* REQUIRE_RESPONSE, CLASS_CORE_STATE, CMD_CONTROL_DEADMAN_LOOP, flags */
-	write_scom(0x000D0050, 0x000001000000D101 | PPC_SHIFT(flags, 31));
+	write_scom(0x000D0050, 0x000001000000D101 | PPC_PLACE(flags, 24, 8));
 
 	/* TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG */
 	write_scom(0x000D0051, time);
@@ -1287,7 +1287,7 @@ static void pm_corequad_init(uint64_t cores)
 		/* Restore Quad PPM Error Mask */
 		err_mask = 0xFFFFFF00; // from Hostboot's log
 		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_ERRMSK,
-				       PPC_SHIFT(err_mask, 31));
+				       PPC_PLACE(err_mask, 0, 32));
 
 		for (int core = quad * 4; core < (quad + 1) * 4; ++core) {
 			chiplet_id_t core_chiplet = EC00_CHIPLET_ID + core;
@@ -1344,7 +1344,7 @@ static void pm_corequad_init(uint64_t cores)
 			/* Restore CORE PPM Error Mask */
 			err_mask = 0xFFF00000; // from Hostboot's log
 			write_scom_for_chiplet(core_chiplet, C_CPPM_ERRMSK,
-					       PPC_SHIFT(err_mask, 31));
+					       PPC_PLACE(err_mask, 0, 32));
 		}
 	}
 }
@@ -1430,7 +1430,7 @@ static void pstate_gpe_init(struct homer_st *homer, uint64_t cores)
 
 		scom_and_or_for_chiplet(EP00_CHIPLET_ID + quad, EQ_QPPM_QPMMR,
 					~PPC_BITMASK(1, 11),
-					PPC_SHIFT(safe_mode_freq, 11));
+					PPC_PLACE(safe_mode_freq, 1, 11));
 	}
 }
 
@@ -1521,7 +1521,7 @@ static void pm_pss_init(void)
 	 */
 	scom_and_or(PU_SPIPSS_ADC_CTRL_REG0,
 		    ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
-		    PPC_SHIFT(8, 5));
+		    PPC_PLACE(8, 0, 6));
 
 	/*
 	 *  0     adc_fsm_enable    = 1
@@ -1534,7 +1534,7 @@ static void pm_pss_init(void)
 	 * Truncating last value to 4 bits gives 0.
 	 */
 	scom_and_or(PU_SPIPSS_ADC_CTRL_REG0 + 1, ~PPC_BITMASK(0, 17),
-		    PPC_BIT(0) | PPC_SHIFT(10, 13) | PPC_SHIFT(0, 17));
+		    PPC_BIT(0) | PPC_PLACE(10, 4, 10) | PPC_PLACE(0, 14, 4));
 
 	/*
 	 * 0-16  inter frame delay
@@ -1549,7 +1549,7 @@ static void pm_pss_init(void)
 	 */
 	scom_and_or(PU_SPIPSS_P2S_CTRL_REG0,
 		    ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
-		    PPC_SHIFT(8, 5));
+		    PPC_PLACE(8, 0, 6));
 
 	/*
 	 *  0     p2s_fsm_enable    = 1
@@ -1561,7 +1561,7 @@ static void pm_pss_init(void)
 	 */
 	scom_and_or(PU_SPIPSS_P2S_CTRL_REG0 + 1,
 		    ~(PPC_BITMASK(0, 13) | PPC_BIT(17)),
-		    PPC_BIT(0) | PPC_SHIFT(10, 13) | PPC_BIT(17));
+		    PPC_BIT(0) | PPC_PLACE(10, 4, 10) | PPC_BIT(17));
 
 	/*
 	 * 0-16  inter frame delay
@@ -1575,7 +1575,7 @@ static void pm_pss_init(void)
 	 */
 	scom_and_or(PU_SPIPSS_100NS_REG,
 		    PPC_BITMASK(0, 31),
-		    PPC_SHIFT(powerbus_cfg()->fabric_freq / 40, 31));
+		    PPC_PLACE(powerbus_cfg()->fabric_freq / 40, 0, 32));
 }
 
 /* Initializes power-management and starts OCC */
@@ -3366,7 +3366,7 @@ uint64_t build_homer_image(void *homer_bar)
 				[4-7] PPM_PFDLY_POWUP_DLY = 0x9
 			*/
 			write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F011B,
-								   PPC_SHIFT(0x9, 3) | PPC_SHIFT(0x9, 7));
+					       PPC_PLACE(0x9, 0, 4) | PPC_PLACE(0x9, 4, 4));
 			/*
 			TP.TPCHIP.NET.PCBSLEC14.PPMC.PPM_COMMON_REGS.PPM_PFOF         // 0x200F011D
 				[all] 0
@@ -3374,7 +3374,7 @@ uint64_t build_homer_image(void *homer_bar)
 				[4-7] PPM_PFOFF_VCS_VOFF_SEL =  0x8
 			*/
 			write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F011D,
-								   PPC_SHIFT(0x8, 3) | PPC_SHIFT(0x8, 7));
+					       PPC_PLACE(0x8, 0, 4) | PPC_PLACE(0x8, 4, 4));
 		}
 
 		if ((i % 4) == 0 && IS_EQ_FUNCTIONAL(i/4, cores)) {
@@ -3385,7 +3385,7 @@ uint64_t build_homer_image(void *homer_bar)
 				[4-7] PPM_PFDLY_POWUP_DLY = 0x9
 			*/
 			write_scom_for_chiplet(EP00_CHIPLET_ID + i/4, 0x100F011B,
-			                       PPC_SHIFT(0x9, 3) | PPC_SHIFT(0x9, 7));
+			                       PPC_PLACE(0x9, 0, 4) | PPC_PLACE(0x9, 4, 4));
 			/*
 			TP.TPCHIP.NET.PCBSLEP03.PPMQ.PPM_COMMON_REGS.PPM_PFOF         // 0x100F011D
 				[all] 0
@@ -3393,7 +3393,7 @@ uint64_t build_homer_image(void *homer_bar)
 				[4-7] PPM_PFOFF_VCS_VOFF_SEL =  0x8
 			*/
 			write_scom_for_chiplet(EP00_CHIPLET_ID + i/4, 0x100F011D,
-			                       PPC_SHIFT(0x8, 3) | PPC_SHIFT(0x8, 7));
+			                       PPC_PLACE(0x8, 0, 4) | PPC_PLACE(0x8, 4, 4));
 		}
 	}
 
@@ -3431,7 +3431,7 @@ uint64_t build_homer_image(void *homer_bar)
 		[0-3] GPETSEL_FIT_SEL =       0x1     // FIT - fixed interval timer
 		[4-7] GPETSEL_WATCHDOG_SEL =  0xA
 	 */
-	write_scom(0x00066000, PPC_SHIFT(0x1, 3) | PPC_SHIFT(0xA, 7));
+	write_scom(0x00066000, PPC_PLACE(0x1, 0, 4) | PPC_PLACE(0xA, 4, 4));
 
 	/* Clear error injection bits
 	  *0x0006C18B                         // Undocumented, PU_OCB_OCI_OCCFLG2_CLEAR

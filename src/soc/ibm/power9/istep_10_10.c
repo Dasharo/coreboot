@@ -268,21 +268,21 @@ static void determine_lane_configs(uint8_t *phb_active_mask,
 }
 
 static uint64_t pec_val(int pec_id, uint8_t in,
-			uint32_t pec0_s, uint32_t pec0_c,
-			uint32_t pec1_s, uint32_t pec1_c,
-			uint32_t pec2_s, uint32_t pec2_c)
+			int pec0_s, int pec0_c,
+			int pec1_s, int pec1_c,
+			int pec2_s, int pec2_c)
 {
 	uint64_t out = 0;
 
 	switch (pec_id) {
 		case 0:
-			out = PPC_SHIFT(in & ((1 << pec0_c) - 1), pec0_s + pec0_c - 1);
+			out = PPC_PLACE(in, pec0_s, pec0_c);
 			break;
 		case 1:
-			out = PPC_SHIFT(in & ((1 << pec1_c) - 1), pec1_s + pec1_c - 1);
+			out = PPC_PLACE(in, pec1_s, pec1_c);
 			break;
 		case 2:
-			out = PPC_SHIFT(in & ((1 << pec2_c) - 1), pec2_s + pec2_c - 1);
+			out = PPC_PLACE(in, pec2_s, pec2_c);
 			break;
 		default:
 			die("Unknown PEC ID: %d\n", pec_id);
@@ -463,7 +463,7 @@ static void phase1(const struct lane_config_row **pec_cfgs,
 				/* RX INITGAIN */
 				scom_and_or_for_chiplet(chiplet, RX_VGA_CTRL3_REGISTER[lane],
 							~PPC_BITMASK(48, 52),
-							PPC_SHIFT(pcs_init_gain, 52));
+							PPC_PLACE(pcs_init_gain, 48, 5));
 
 				/* RX PKINIT */
 				scom_and_or_for_chiplet(chiplet, RX_LOFF_CNTL_REGISTER[lane],
@@ -520,7 +520,7 @@ static void phase1(const struct lane_config_row **pec_cfgs,
 		/* ATTR_PROC_PCIE_PCS_TX_POWER_SEQ_ENABLE = 0xFF, but field is 7 bits */
 		scom_and_or_for_chiplet(chiplet, PEC_PCS_TX_POWER_SEQ_ENABLE_REG,
 					~PPC_BITMASK(56, 62),
-					PPC_SHIFT(0x7F, 62));
+					PPC_PLACE(0x7F, 56, 7));
 
 		/* Phase1 init step 20 (RX VGA Control Register 1) */
 
