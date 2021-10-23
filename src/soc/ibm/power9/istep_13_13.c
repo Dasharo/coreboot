@@ -633,7 +633,7 @@ void istep_13_13(void)
 			*/
 			mca_and_or(id, mca_i, RECR,
 			           ~(PPC_BITMASK(6, 8) | PPC_BIT(MBSECCQ_ENABLE_TCE_CORRECTION)),
-			           PPC_SHIFT(1, MBSECCQ_READ_POINTER_DELAY) |
+			           PPC_PLACE(1, MBSECCQ_READ_POINTER_DELAY, MBSECCQ_READ_POINTER_DELAY_LEN) |
 			           PPC_BIT(MBSECCQ_ENABLE_TCE_CORRECTION));
 
 			enable_pm(mcs_i, mca_i);
@@ -710,7 +710,7 @@ void istep_13_13(void)
 			mca_and_or(id, mca_i, RECR,
 			           ~(PPC_BITMASK(0, 1) | PPC_BITMASK(29, 31)),
 			           PPC_BIT(MBSECCQ_USE_ADDRESS_HASH) |
-			           PPC_SHIFT(3, MBSECCQ_DATA_INVERSION));
+			           PPC_PLACE(3, MBSECCQ_DATA_INVERSION, MBSECCQ_DATA_INVERSION_LEN));
 
 			apply_mark_store(mcs_i, mca_i);
 		}
