@@ -47,7 +47,8 @@ static void fir_unmask(int mcs_i)
 		          (val & PPC_BITMASK(36, 41)) >> 41);
 		mca_and_or(id, mca_i, MBA_FARB0Q,
 		           ~PPC_BITMASK(48, 53),
-		           PPC_SHIFT(val, MBA_FARB0Q_CFG_RCD_PROTECTION_TIME));
+		           PPC_PLACE(val, MBA_FARB0Q_CFG_RCD_PROTECTION_TIME,
+		                     MBA_FARB0Q_CFG_RCD_PROTECTION_TIME_LEN));
 
 		/*
 		 * Due to hardware defect with DD2.0 certain errors are not handled
@@ -150,9 +151,11 @@ static void set_fifo_mode(int mcs_i, int fifo)
 			continue;
 
 		mca_and_or(id, mca_i, MBA_RRQ0Q, ~PPC_BIT(MBA_RRQ0Q_CFG_RRQ_FIFO_MODE),
-		           PPC_SHIFT(fifo, MBA_RRQ0Q_CFG_RRQ_FIFO_MODE));
+		           PPC_PLACE(fifo, MBA_RRQ0Q_CFG_RRQ_FIFO_MODE,
+		                     MBA_RRQ0Q_CFG_RRQ_FIFO_MODE_LEN));
 		mca_and_or(id, mca_i, MBA_WRQ0Q, ~PPC_BIT(MBA_WRQ0Q_CFG_WRQ_FIFO_MODE),
-		           PPC_SHIFT(fifo, MBA_WRQ0Q_CFG_WRQ_FIFO_MODE));
+		           PPC_PLACE(fifo, MBA_WRQ0Q_CFG_WRQ_FIFO_MODE,
+		                     MBA_WRQ0Q_CFG_WRQ_FIFO_MODE_LEN));
 	}
 }
 
@@ -180,7 +183,8 @@ static void load_maint_pattern(int mcs_i, const uint64_t pat[16])
 		 * [11]  AACR_ECCGEN =  1
 		 */
 		mca_write(id, mca_i, AACR,
-		          PPC_SHIFT(0x1F0, AACR_ADDRESS) | PPC_BIT(AACR_AUTOINC) |
+		          PPC_PLACE(0x1F0, AACR_ADDRESS, AACR_ADDRESS_LEN) |
+		          PPC_BIT(AACR_AUTOINC) |
 		          PPC_BIT(AACR_ECCGEN));
 
 		for (i = 0; i < 16; i++) {
@@ -318,7 +322,8 @@ static void init_mcbist(int mcs_i)
 	 * [63]    MCBCFGQ_CFG_ENABLE_HOST_ATTN =    see above
 	 */
 	write_scom_for_chiplet(id, MCBCFGQ,
-	                       PPC_SHIFT(0b10, MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE));
+	                       PPC_PLACE(0x2, MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE,
+	                                 MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE_LEN));
 
 	/*
 	 * This sets up memory parameters, mostly gaps between commands. For as fast

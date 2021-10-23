@@ -139,7 +139,8 @@ static void p9_sbe_common_clock_start_stop(chiplet_id_t id)
 	*/
 	scom_and_or_for_chiplet(id, MCSLOW_CLK_REGION,
 	                        ~(PPC_BITMASK(0,14) | PPC_BITMASK(48, 50)),
-	                        PPC_SHIFT(1, MCSLOW_CLK_REGION_CLOCK_CMD) |
+	                        PPC_PLACE(1, MCSLOW_CLK_REGION_CLOCK_CMD,
+	                                  MCSLOW_CLK_REGION_CLOCK_CMD_LEN) |
 	                        PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_SL) |
 	                        PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_NSL) |
 	                        PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_ARY) |
