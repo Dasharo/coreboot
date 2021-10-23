@@ -1529,10 +1529,12 @@ static void pm_pss_init(void)
 	 *  2     adc_cpol          = 0
 	 *  3     adc_cpha          = 0
 	 *  4-13  adc_clock_divider = set to 10Mhz
-	 * 14-17  adc_nr_of_frames  = 0x16 (for auto 2 mode)
+	 * 14-17  adc_nr_of_frames  = 0x10 (for auto 2 mode)
+	 *
+	 * Truncating last value to 4 bits gives 0.
 	 */
 	scom_and_or(PU_SPIPSS_ADC_CTRL_REG0 + 1, ~PPC_BITMASK(0, 17),
-		    PPC_BIT(0) | PPC_SHIFT(10, 13) | PPC_SHIFT(0x16, 17));
+		    PPC_BIT(0) | PPC_SHIFT(10, 13) | PPC_SHIFT(0, 17));
 
 	/*
 	 * 0-16  inter frame delay
