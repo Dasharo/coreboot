@@ -90,8 +90,9 @@ void istep_13_3(void)
 
 		// TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG
 		/* TARGET_TYPE_PERV, chiplet ID = 0x07, ring ID, RING_MODE_SET_PULSE_NSL */
-		write_scom(PSU_HOST_SBE_MBOX1_REG, 0x0002000000000004 | PPC_SHIFT(ring_id, 47) |
-		           PPC_SHIFT(mcs_ids[mcs_i], 31));
+		write_scom(PSU_HOST_SBE_MBOX1_REG, 0x0002000000000004 |
+		           PPC_PLACE(ring_id, 32, 16) |
+		           PPC_PLACE(mcs_ids[mcs_i], 24, 8));
 
 		// Ring the host->SBE doorbell
 		// TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG_OR

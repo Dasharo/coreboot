@@ -44,14 +44,14 @@ void ccs_add_instruction(chiplet_id_t id, mrs_cmd_t mrs, uint8_t csn,
 	 * [23]    A14
 	 */
 	uint64_t mrs64 = (reverse_bits(mrs) & PPC_BITMASK(0, 13)) | /* A0-A13 */
-	                 PPC_SHIFT(mrs & (1<<14), 23 + 14) |        /* A14 */
-	                 PPC_SHIFT(mrs & (1<<15), 22 + 15) |        /* A15 */
-	                 PPC_SHIFT(mrs & (1<<16), 21 + 16) |        /* A16 */
-	                 PPC_SHIFT(mrs & (1<<17), 14 + 17) |        /* A17 */
-	                 PPC_SHIFT(mrs & (1<<20), 17 + 20) |        /* BA0 */
-	                 PPC_SHIFT(mrs & (1<<21), 18 + 21) |        /* BA1 */
-	                 PPC_SHIFT(mrs & (1<<22), 19 + 22) |        /* BG0 */
-	                 PPC_SHIFT(mrs & (1<<23), 15 + 23);         /* BA1 */
+	                 PPC_PLACE(mrs >> 14, 23, 1) |              /* A14 */
+	                 PPC_PLACE(mrs >> 15, 22, 1) |              /* A15 */
+	                 PPC_PLACE(mrs >> 16, 21, 1) |              /* A16 */
+	                 PPC_PLACE(mrs >> 17, 14, 1) |              /* A17 */
+	                 PPC_PLACE(mrs >> 20, 17, 1) |              /* BA0 */
+	                 PPC_PLACE(mrs >> 21, 18, 1) |              /* BA1 */
+	                 PPC_PLACE(mrs >> 22, 19, 1) |              /* BG0 */
+	                 PPC_PLACE(mrs >> 23, 15, 1);               /* BA1 */
 
 	/* MC01.MCBIST.CCS.CCS_INST_ARR0_n
 	      [all]   0

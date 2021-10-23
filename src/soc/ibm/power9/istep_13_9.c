@@ -308,7 +308,7 @@ static void fir_unmask(int mcs_i)
  */
 #define TEST_VREF(dp, scom) \
 if ((dp_mca_read(mcs_ids[mcs_i], dp, mca_i, scom) & PPC_BITMASK(56, 62)) == \
-             PPC_SHIFT(1,62)) { \
+             PPC_PLACE(1, 56, 7)) { \
 	need_dll_workaround = true; \
 	break; \
 }
@@ -628,22 +628,22 @@ void istep_13_9(void)
 			/* Has the same stride as DP16 */
 			dp_mca_and_or(mcs_ids[mcs_i], 0, mca_i,
 			              ADR_SYSCLK_CNTRL_PR_P0_ADR32S0,
-			              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8024, 63));
+			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
 			dp_mca_and_or(mcs_ids[mcs_i], 1, mca_i,
 			              ADR_SYSCLK_CNTRL_PR_P0_ADR32S0,
-			              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8024, 63));
+			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
 
 			for (dp = 0; dp < 4; dp++) {
 				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i,
 				              DDRPHY_DP16_SYSCLK_PR0_P0_0,
-				              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8024, 63));
+				              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
 				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i,
 				              DDRPHY_DP16_SYSCLK_PR1_P0_0,
-				              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8024, 63));
+				              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
 			}
 			dp_mca_and_or(mcs_ids[mcs_i], 4, mca_i,
 						  DDRPHY_DP16_SYSCLK_PR0_P0_0,
-						  ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8024, 63));
+						  ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
 		}
 
 		/*
@@ -727,22 +727,22 @@ void istep_13_9(void)
 			/* Has the same stride as DP16 */
 			dp_mca_and_or(mcs_ids[mcs_i], 0, mca_i,
 			              ADR_SYSCLK_CNTRL_PR_P0_ADR32S0,
-			              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8020, 63));
+			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
 			dp_mca_and_or(mcs_ids[mcs_i], 1, mca_i,
 			              ADR_SYSCLK_CNTRL_PR_P0_ADR32S0,
-			              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8020, 63));
+			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
 
 			for (dp = 0; dp < 4; dp++) {
 				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i,
 				              DDRPHY_DP16_SYSCLK_PR0_P0_0,
-				              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8020, 63));
+				              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
 				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i,
 				              DDRPHY_DP16_SYSCLK_PR1_P0_0,
-				              ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8020, 63));
+				              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
 			}
 			dp_mca_and_or(mcs_ids[mcs_i], 4, mca_i,
 						  DDRPHY_DP16_SYSCLK_PR0_P0_0,
-						  ~PPC_BITMASK(48, 63), PPC_SHIFT(0x8020, 63));
+						  ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
 		}
 
 		/* Wait at least 32 dphy_nclk clock cycles */
