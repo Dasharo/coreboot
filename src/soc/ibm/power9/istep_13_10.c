@@ -426,8 +426,8 @@ void istep_13_10(void)
 		                          PPC_BIT(CCS_MODEQ_CCS_UE_DISABLE)),
 		                        PPC_BIT(CCS_MODEQ_CFG_CCS_PARITY_AFTER_CMD) |
 		                        PPC_BIT(CCS_MODEQ_COPY_CKE_TO_SPARE_CKE) |
-		                        PPC_SHIFT(0xFFFF, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT) |
-		                        PPC_SHIFT(3, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT));
+		                        PPC_PLACE(0xFFFF, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_LEN) |
+		                        PPC_PLACE(0x3, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT_LEN));
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -449,7 +449,8 @@ void istep_13_10(void)
 			           ~PPC_BIT(MBA_FARB5Q_CFG_CCS_INST_RESET_ENABLE),
 			           PPC_BIT(MBA_FARB5Q_CFG_CCS_ADDR_MUX_SEL));
 			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~PPC_BITMASK(0, 3),
-			           PPC_SHIFT(0x6, MBA_FARB5Q_CFG_DDR_DPHY_PCLK));
+			           PPC_PLACE(0x1, MBA_FARB5Q_CFG_DDR_DPHY_NCLK, MBA_FARB5Q_CFG_DDR_DPHY_NCLK_LEN) |
+			           PPC_PLACE(0x2, MBA_FARB5Q_CFG_DDR_DPHY_PCLK, MBA_FARB5Q_CFG_DDR_DPHY_PCLK_LEN));
 			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~0,
 			           PPC_BIT(MBA_FARB5Q_CFG_DDR_RESETN));
 
