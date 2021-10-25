@@ -81,7 +81,7 @@ config DIMM_SPD_SIZE
 
 config VBOOT
 	select VBOOT_NO_BOARD_SUPPORT
-	select VBOOT_VBNV_CMOS
+	select VBOOT_VBNV_FLASH
 	select GBB_FLAG_DISABLE_LID_SHUTDOWN
 	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
 	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
@@ -89,10 +89,6 @@ config VBOOT
 
 config VBOOT_SLOTS_RW_A
 	default y
-
-config VBOOT_VBNV_OFFSET
-	hex
-	default 0x56
 
 config FMDFILE
 	string
