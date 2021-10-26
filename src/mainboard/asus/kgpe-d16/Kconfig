@@ -32,14 +32,6 @@ config BOOTBLOCK_MAINBOARD_INIT
 	string
 	default "mainboard/asus/kgpe-d16/bootblock.c"
 
-config DCACHE_RAM_BASE
-	hex
-	default 0xc2000
-
-config DCACHE_RAM_SIZE
-	hex
-	default 0x1e000
-
 config APIC_ID_OFFSET
 	hex
 	default 0x0
