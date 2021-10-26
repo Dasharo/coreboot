@@ -72,13 +72,19 @@ releases:
         - version: v0.4.0
           added:
                 - Added full support for sleep mode (s0ix / Modern Standby)
-                - Added support for nvidia discrete graphics
+                - Added support for NV41MB model
+                - Added support for nvidia discrete graphics (doesn't power off in Windows yet)
           changed:
                 - Fixed regression with non-funtional airplane mode hotkey on Windows
+                - Disabled legacy 8254 timer for lower power draw
           fixed:
                 - Sleep mode is not functional
                 - The camera ON/OFF switch Fn key is not functional
           known_issues:
+                - description: Unable to download the system by using iPXE
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
                 - description: High Nvidia GPU energy draw at idle in Windows
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/6
                 - description: Performance drop when the power adaptor is disconnected
