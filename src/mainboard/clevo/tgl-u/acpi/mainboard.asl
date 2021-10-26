@@ -70,23 +70,15 @@ Scope (\_SB.PCI0.XHCI.RHUB.HS10)
 		}
 		If(CondRefOf(\_SB.PCI0.RP11.PXSX))
 		{
-			If (\_SB.PCI0.RP11.PXSX.VDID != 0xFFFFFFFF)
+			Return (Package (0x01)
 			{
-				Return (Package (0x01)
-				{
-					BTPR
-				})
-			}
+				BTPR
+			})
 		}
 		Return (Package (0x00){})
 	}
 
 	Method (_PR0, 0, NotSerialized)
-	{
-		Return (GPR())
-	}
-
-	Method (_PR2, 0, NotSerialized)
 	{
 		Return (GPR())
 	}
