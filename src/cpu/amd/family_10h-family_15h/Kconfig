@@ -30,19 +30,20 @@ config CPU_ADDR_BITS
 
 config DCACHE_RAM_BASE
 	hex
-	default 0xc4000
+	default 0x30000
 
 config DCACHE_RAM_SIZE
 	hex
-	default 0x0c000
+	default 0x20000
 
+# this also accounts for AP stacks
 config DCACHE_BSP_STACK_SIZE
 	hex
-	default 0x4000
+	default 0xc000
 
 config DCACHE_BSP_TOP_STACK_SLUSH
 	hex
-	default 0x4000 if USE_LARGE_DCACHE
+	default 0x2000 if USE_LARGE_DCACHE
 	default 0x1000
 
 config DCACHE_AP_STACK_SIZE

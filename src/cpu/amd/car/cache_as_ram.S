@@ -22,13 +22,13 @@
 
 #include <cpu/amd/car/cache_as_ram_symbols.inc>
 
-
 bootblock_pre_c_entry:
-	/* Save the BIST result. */
-	movl	%eax, %ebp
-
+	/* Save the timestamp */
+	movups	%xmm1, %xmm6
+	movups	%xmm2, %xmm7
 /*
  * XMM map:
+ *   xmm0: BIST result
  *   xmm1: CPU family
  *   xmm2: Fam10h comparison value
  *   xmm3: Fam15h comparison value
@@ -37,12 +37,9 @@ bootblock_pre_c_entry:
  *   xmm6: tsc[31:0]
  *   xmm7: tsc[63:32]
  */
+
 cache_as_ram_setup:
 	post_code(0xa0)
-
-	/* Save the timestamp */
-	movups	%xmm1, %xmm6
-	movups	%xmm2, %xmm7
 
 	/* Figure out the CPU family. */
 	cvtsi2sd %ebx, %xmm4
@@ -147,6 +144,7 @@ skip_nb54_set:
 
 	/* Determine if this is the second core to start in a compute unit; if so, clear init detect and skip MTRR init */
 	/* Busywait until the first core sets up the MTRRs */
+
 check_init_detect_1:
 	/* Check if cpu_init_detected. */
 	movl	$MTRR_DEF_TYPE_MSR, %ecx
@@ -203,105 +201,11 @@ clear_fixed_var_mtrr:
 	jmp	clear_fixed_var_mtrr
 clear_fixed_var_mtrr_out:
 
-/*
- * 0x06 is the WB IO type for a given 4k segment.
- * 0x1e is the MEM IO type for a given 4k segment (K10 and above).
- * segs is the number of 4k segments in the area of the particular
- *      register we want to use for CAR.
- * reg is the register where the IO type should be stored.
- */
-.macro extractmask segs, reg
-.if \segs <= 0
-	/*
-	 * The xorl here is superfluous because at the point of first execution
-	 * of this macro, %eax and %edx are cleared. Later invocations of this
-	 * macro will have a monotonically increasing segs parameter.
-	 */
-	xorl	\reg, \reg
-.else
-	jmp_if_k8(1f)
 
-.if \segs == 1
-	movl	$0x1e000000, \reg /* WB MEM type */
-.elseif \segs == 2
-	movl	$0x1e1e0000, \reg /* WB MEM type */
-.elseif \segs == 3
-	movl	$0x1e1e1e00, \reg /* WB MEM type */
-.elseif \segs >= 4
-	movl	$0x1e1e1e1e, \reg /* WB MEM type */
-.endif
-	jmp 2f
-1:
-.if \segs == 1
-	movl	$0x06000000, \reg /* WB IO type */
-.elseif \segs == 2
-	movl	$0x06060000, \reg /* WB IO type */
-.elseif \segs == 3
-	movl	$0x06060600, \reg /* WB IO type */
-.elseif \segs >= 4
-	movl	$0x06060606, \reg /* WB IO type */
-.endif
-2:
-.endif /* if \segs <= 0 */
-.endm
-
-/*
- * carsize is the cache size in bytes we want to use for CAR.
- * windowoffset is the 32k-aligned window into CAR size.
- */
-.macro simplemask carsize, windowoffset
-	.set gas_bug_workaround,(((\carsize - \windowoffset) >> 12) - 4)
-	extractmask gas_bug_workaround, %eax
-	.set gas_bug_workaround,(((\carsize - \windowoffset) >> 12))
-	extractmask gas_bug_workaround, %edx
-	/*
-	 * Without the gas bug workaround, the entire macro would consist
-	 * only of the two lines below:
-	 *   extractmask (((\carsize - \windowoffset) >> 12) - 4), %eax
-	 *   extractmask (((\carsize - \windowoffset) >> 12)), %edx
-	 */
-.endm
-
-#if CONFIG(CPU_AMD_MODEL_10XXX)
-  #if CONFIG_DCACHE_RAM_SIZE > 0x80000
-  #error Invalid CAR size, must be at most 128k (processor limit is 512k).
-  #endif
-#else
-  #if CONFIG_DCACHE_RAM_SIZE > 0x10000
-  #error Invalid CAR size, must be at most 64k.
-  #endif
-#endif
-#if CONFIG_DCACHE_RAM_SIZE < 0x1000
-#error Invalid CAR size, must be at least 4k. This is a processor limitation.
-#endif
-#if (CONFIG_DCACHE_RAM_SIZE & (0x1000 - 1))
-#error Invalid CAR size, is not a multiple of 4k. This is a processor limitation.
-#endif
-
-#if CONFIG_DCACHE_RAM_SIZE > 0x8000
-	/* Enable caching for 32K-64K using fixed MTRR. */
-	movl	$MTRR_FIX_4K_C0000, %ecx
-	simplemask CONFIG_DCACHE_RAM_SIZE, 0x8000
-	wrmsr
-#endif
-
-#if CONFIG_DCACHE_RAM_SIZE > 0x10000
-	/* Enable caching for 64K-96K using fixed MTRR. */
-	movl	$MTRR_FIX_4K_D0000, %ecx
-	simplemask CONFIG_DCACHE_RAM_SIZE, 0x10000
-	wrmsr
-#endif
-
-#if CONFIG_DCACHE_RAM_SIZE > 0x18000
-	/* Enable caching for 96K-128K using fixed MTRR. */
-	movl	$MTRR_FIX_4K_D8000, %ecx
-	simplemask CONFIG_DCACHE_RAM_SIZE, 0x18000
-	wrmsr
-#endif
-
-	/* Enable caching for 0-32K using fixed MTRR. */
-	movl	$MTRR_FIX_4K_C8000, %ecx
-	simplemask CONFIG_DCACHE_RAM_SIZE, 0
+	/* CAR region base 0x30000 */
+	movl	$MTRR_FIX_64K_00000, %ecx
+	movl	$0x1e000000, %eax
+	movl	$0x1e, %edx
 	wrmsr
 
 	jmp_if_fam15h(fam15_skip_dram_mtrr_setup)
@@ -315,9 +219,8 @@ clear_fixed_var_mtrr_out:
 fam15_skip_dram_mtrr_setup:
 
 	/* Enable cache for our code in Flash because we do XIP here */
-	movl	$MTRR_PHYS_BASE(1), %ecx
-	movl	$_program, %eax
-	andl	xip_mtrr_mask, %eax
+	movl	$MTRR_PHYS_BASE(0), %ecx
+	movl	$_rom_mtrr_base, %eax
 	orl	$MTRR_TYPE_WRPROT, %eax
 	wrmsr
 
@@ -330,8 +233,8 @@ fam15_skip_dram_mtrr_setup:
 	shl	%cl, %edx
 	subl	$1, %edx
 
-	movl	$MTRR_PHYS_MASK(1), %ecx
-	movl	xip_mtrr_mask, %eax
+	movl	$MTRR_PHYS_MASK(0), %ecx
+	movl	$_rom_mtrr_mask, %eax
 	orl	$MTRR_PHYS_MASK_VALID, %eax
 	wrmsr
 
@@ -381,6 +284,7 @@ fam10_mtrr_setup_complete:
 	rdmsr
 	btr	$49-32, %edx
 	wrmsr
+
 fam15_car_msr_setup_complete:
 
 	/* Enable cache. */
@@ -438,12 +342,7 @@ fam10_end_part1:
 CAR_skip_k8_errata_part2:
 
 	/* Set up the stack pointer. */
-	movl	$(CONFIG_DCACHE_RAM_BASE + CONFIG_DCACHE_RAM_SIZE), %eax
-	movl	%eax, %esp
-
-	/* Poison the lower stack boundary */
-	movl	$((CONFIG_DCACHE_RAM_BASE + CONFIG_DCACHE_RAM_SIZE) - CONFIG_DCACHE_BSP_STACK_SIZE), %eax
-	movl	$0xdeadbeef, (%eax)
+	movl	$_ecar_stack, %esp
 
 	post_code(0xa3)
 
@@ -452,8 +351,10 @@ CAR_FAM10_ap:
 	/*
 	 * Need to set stack pointer for AP.
 	 * It will be from:
-	 *   CONFIG_DCACHE_RAM_BASE + (CONFIG_DCACHE_RAM_SIZE - (CONFIG_DCACHE_BSP_STACK_SIZE + CONFIG_DCACHE_BSP_TOP_STACK_SLUSH))
-	 *   - (NodeID << CoreIDbits + CoreID) * CONFIG_DCACHE_AP_STACK_SIZE
+	 *   _ecar_stack - (0x4000 + CONFIG_DCACHE_BSP_TOP_STACK_SLUSH)
+	 *             - (NodeID << CoreIDbits + CoreID) * CONFIG_DCACHE_AP_STACK_SIZE
+	 * 0x4000 is the default BSP stack size, because CONFIG_DCACHE_BSP_STACK_SIZE
+	 * indicates whole stack region in car.ld
 	 * The spacing between the BSP stack and the top of the AP
 	 * stacks is purposefully set larger (an extra CONFIG_DCACHE_BSP_TOP_STACK_SLUSH
 	 * worth of unused space) than necessary to aid debugging when
@@ -505,10 +406,12 @@ roll_cfg:
 
 ap_apicid_ready:
 
+	/* Save the APIC ID in ecx */
+	movl	%ebx, %ecx
 	/* Calculate stack pointer using adjusted APIC ID stored in ebx */
 	movl	$CONFIG_DCACHE_AP_STACK_SIZE, %eax
 	mull	%ebx
-	movl	$(CONFIG_DCACHE_RAM_BASE + (CONFIG_DCACHE_RAM_SIZE - (CONFIG_DCACHE_BSP_STACK_SIZE + CONFIG_DCACHE_BSP_TOP_STACK_SLUSH))), %esp
+	movl	$(_ecar_stack - (0x4000 + CONFIG_DCACHE_BSP_TOP_STACK_SLUSH)), %esp
 	subl	%eax, %esp
 
 	/* Restore init detect */
@@ -516,21 +419,35 @@ ap_apicid_ready:
 
 	post_code(0xa4)
 
+	test	%ebx, %ebx
+	jz	CAR_FAM10_ap_out
+
+	/* Save the core INIT detect bit in NB scratch register */
+	movl	$1, %ebx
+	roll	%ecx, %ebx	/* one bti for each core, max 32 cores */
+
+	movl	$0x80000080, %eax
+	movw	$0xcf8, %dx
+	outl	%eax, %dx
+	movw	$0xcfc, %dx
+	inl	%dx, %eax
+	orl	%ebx, %eax
+	outl	%eax, %dx
+
 CAR_FAM10_ap_out:
 
 	post_code(0xa5)
 
-	/* Need to align stack to 16 bytes at call instruction. Account for
-	the pushes below. */
+	/* Need to align stack to 16 bytes at call instruction.
+	 * Account for the pushes below.
+	 */
 	andl	$0xfffffff0, %esp
 	subl	$4, %esp
-
-	/* Restore the BIST result. */
-	movl	%ebp, %eax
 
 	post_code(0xa6)
 
 	/* push TSC and BIST to stack */
+	cvtsd2si %xmm0, %eax
 	pushl	%eax	/* BIST */
 	cvtsd2si %xmm7, %eax
 	pushl	%eax	/* tsc[63:32] */
@@ -538,11 +455,6 @@ CAR_FAM10_ap_out:
 	pushl	%eax	/* tsc[31:0] */
 
 	post_code(0xa7)
-
-	/* Disable SSE. */
-	movl	%cr4, %eax
-	andl	$~(3 << 9), %eax
-	movl	%eax, %cr4
 
 before_c_entry:
 	post_code(0x2f)
