@@ -166,13 +166,8 @@ static void sb700_enable_rom(void)
 	dev = PCI_DEV(0, 0x14, 3);
 
 	reg8 = pci_read_config8(dev, 0x48);
-	if (CONFIG(SPI_FLASH))
-		/* Disable decode of variable LPC ROM address ranges 1 and 2. */
-		reg8 &= ~((1 << 3) | (1 << 4));
-	else
-		/* Decode variable LPC ROM address ranges 1 and 2. */
-		reg8 |= (1 << 3) | (1 << 4);
-
+	/* Decode variable LPC ROM address ranges 1 and 2. */
+	reg8 |= (1 << 3) | (1 << 4);
 	pci_write_config8(dev, 0x48, reg8);
 
 	/* LPC ROM address range 1: */
@@ -193,6 +188,11 @@ static void sb700_enable_rom(void)
 	pci_write_config16(dev, 0x6c, 0x10000 - (CONFIG_COREBOOT_ROMSIZE_KB >> 6));
 	/* Enable LPC ROM range end at 0xffff(ffff). */
 	pci_write_config16(dev, 0x6e, 0xffff);
+
+	/* Enable SPI prefetch */
+	reg8 = pci_read_config8(dev, 0xbb);
+	reg8 |= 1;
+	pci_write_config8(dev, 0x48, reg8);
 }
 
 static void sb700_configure_rom(void)
@@ -222,19 +222,33 @@ static void sb700_configure_rom(void)
 	}
 }
 
+static void sb700_enable_tpm_decoding(void)
+{
+	u8 reg8;
+	pci_devfn_t dev;
+
+	dev = PCI_DEV(0, 0x14, 3);
+
+	reg8 = pci_read_config8(dev, 0x7c);
+	reg8 |= 0x81;	/* Tpm12_en and decode 0xfed4xxxx*/
+	pci_write_config8(dev, 0x7c, reg8);
+}
+
 void bootblock_early_southbridge_init(void)
 {
 	sb700_enable_rom();
 	sb700_configure_rom();
-
-#if CONFIG(SOUTHBRIDGE_AMD_SR5650)
-	sr5650_disable_pcie_bridge();
-#endif
-
 	sb7xx_51xx_lpc_init();
 
 	if (CONFIG(POST_DEVICE_LPC))
 		sb7xx_51xx_lpc_port80();
 	if (CONFIG(POST_DEVICE_PCI_PCIE))
 		sb7xx_51xx_pci_port80();
+
+	sb700_enable_tpm_decoding();
+
+#if CONFIG(SOUTHBRIDGE_AMD_SR5650)
+	sr5650_disable_pcie_bridge();
+	enable_sr5650_dev8();
+#endif
 }

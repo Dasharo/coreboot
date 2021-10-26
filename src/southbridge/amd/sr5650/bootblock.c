@@ -20,3 +20,9 @@ void sr5650_disable_pcie_bridge(void)
 	reg = mask;
 	set_nbmisc_enable_bits(nb_dev, 0x0c, mask, reg);
 }
+
+/* enable CFG access to Dev8, which is the SB P2P Bridge */
+void enable_sr5650_dev8(void)
+{
+	set_nbmisc_enable_bits(PCI_DEV(0, 0, 0), 0x00, 1 << 6, 1 << 6);
+}
