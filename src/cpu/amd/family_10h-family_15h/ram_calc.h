@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-only */
+/*/* SPDX-License-Identifier: GPL-2.0-only */
 
 #ifndef _AMD_MODEL_10XXX_RAM_CALC_H_
 #define _AMD_MODEL_10XXX_RAM_CALC_H_
