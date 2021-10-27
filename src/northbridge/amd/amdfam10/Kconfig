@@ -9,6 +9,7 @@ config NORTHBRIDGE_AMD_AMDFAM10
 	select PCIEXP_COMMON_CLOCK
 	select PCIEXP_CLK_PM
 	select PCIEXP_L1_SUB_STATE
+	select DRIVERS_AMD_HYPERTRANSPORT
 
 if NORTHBRIDGE_AMD_AMDFAM10
 config AGP_APERTURE_SIZE
@@ -70,6 +71,20 @@ config SVI_HIGH_FREQ
 	help
 	  Select this for boards with a Voltage Regulator able to operate
 	  at 3.4 MHz in SVI mode. Ignored unless the AMD CPU is rev C3.
+
+choice
+	default SYSTEM_TYPE_SERVER
+
+config SYSTEM_TYPE_SERVER
+	bool
+
+config SYSTEM_TYPE_DESKTOP
+	bool
+
+config SYSTEM_TYPE_MOBILE
+	bool
+
+endchoice
 
 menu "HyperTransport setup"
 	#could be implemented for K8 (NORTHBRIDGE_AMD_AMDK8)

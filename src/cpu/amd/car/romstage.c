@@ -25,8 +25,7 @@ static void romstage_main(void)
 	const u32 stack_guard = 0xdeadbeef;
 	u32 *stack_base;
 	u32 size;
-	const size_t stack_size = MAX(CONFIG_DCACHE_BSP_STACK_SIZE,
-				      DCACHE_RAM_ROMSTAGE_STACK_SIZE);
+	const size_t stack_size = MAX(0x4000, DCACHE_RAM_ROMSTAGE_STACK_SIZE);
 
 	/* Size of unallocated CAR. */
 	size = ALIGN_DOWN(_car_stack_size, 16);

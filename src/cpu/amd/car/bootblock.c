@@ -7,6 +7,8 @@
 #include <cpu/amd/msr.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
+#include <program_loading.h>
+#include <smp/node.h>
 
 static uint32_t saved_bist;
 
@@ -28,6 +30,11 @@ asmlinkage void bootblock_c_entry_bist(uint64_t base_timestamp, uint32_t bist)
 
 	if (CONFIG(UDELAY_LAPIC))
 		enable_lapic();
+
+	if (!boot_cpu()) {
+		report_bist_failure(bist);
+		run_romstage();
+	}
 
 	/* Call lib/bootblock.c main */
 	bootblock_main_with_basetime(base_timestamp);

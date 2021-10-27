@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* SPDX-License-Identifier: GPL-2.0-only */
+=======
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+>>>>>>> WIP: add romstage setup for APs and southbridge
 
 #include <types.h>
 #include <arch/bootblock.h>
