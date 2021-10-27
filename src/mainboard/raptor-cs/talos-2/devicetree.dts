@@ -3,7 +3,6 @@
 /dts-v1/;
 
 / {
-	phandle = <0x01>;
 	#address-cells = <0x02>;
 	#size-cells = <0x02>;
 	compatible = "ibm,powernv\0ibm,p9-openbmc\0rcs,talos";
@@ -15,32 +14,27 @@
 	model-name = "rcs,talos";
 
 	bmc {
-		phandle = <0x02>;
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
 		compatible = "ibm,ast2500,openbmc";
 
 		sensors {
-			phandle = <0x03>;
 			#address-cells = <0x01>;
 			#size-cells = <0x00>;
 
 			sensor@1 {
-				phandle = <0x0c>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x01>;
 				ipmi-sensor-type = <0x22>;
 			};
 
 			sensor@2 {
-				phandle = <0x09>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x02>;
 				ipmi-sensor-type = <0x0f>;
 			};
 
 			sensor@3 {
-				phandle = <0x1e>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x03>;
 				ipmi-sensor-type = <0x07>;
@@ -48,7 +42,6 @@
 			};
 
 			sensor@6 {
-				phandle = <0x14>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x06>;
 				ipmi-sensor-type = <0x01>;
@@ -56,7 +49,6 @@
 			};
 
 			sensor@8 {
-				phandle = <0x15>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x08>;
 				ipmi-sensor-type = <0x07>;
@@ -64,154 +56,132 @@
 			};
 
 			sensor@a {
-				phandle = <0x0d>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x0a>;
 				ipmi-sensor-type = <0xc1>;
 			};
 
 			sensor@b {
-				phandle = <0x17>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x0b>;
 				ipmi-sensor-type = <0x0c>;
 			};
 
 			sensor@d {
-				phandle = <0x19>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x0d>;
 				ipmi-sensor-type = <0x0c>;
 			};
 
 			sensor@f {
-				phandle = <0x1b>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x0f>;
 				ipmi-sensor-type = <0x0c>;
 			};
 
 			sensor@11 {
-				phandle = <0x1d>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x11>;
 				ipmi-sensor-type = <0x0c>;
 			};
 
 			sensor@1b {
-				phandle = <0x16>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x1b>;
 				ipmi-sensor-type = <0x01>;
 			};
 
 			sensor@1d {
-				phandle = <0x18>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x1d>;
 				ipmi-sensor-type = <0x01>;
 			};
 
 			sensor@1f {
-				phandle = <0x1a>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x1f>;
 				ipmi-sensor-type = <0x01>;
 			};
 
 			sensor@21 {
-				phandle = <0x1c>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x21>;
 				ipmi-sensor-type = <0x01>;
 			};
 
 			sensor@8b {
-				phandle = <0x0f>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x8b>;
 				ipmi-sensor-type = <0xc3>;
 			};
 
 			sensor@8c {
-				phandle = <0x04>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x8c>;
 				ipmi-sensor-type = <0xc7>;
 			};
 
 			sensor@8d {
-				phandle = <0x05>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x8d>;
 				ipmi-sensor-type = <0xc7>;
 			};
 
 			sensor@8e {
-				phandle = <0x06>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x8e>;
 				ipmi-sensor-type = <0xc7>;
 			};
 
 			sensor@8f {
-				phandle = <0x07>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x8f>;
 				ipmi-sensor-type = <0xc7>;
 			};
 
 			sensor@90 {
-				phandle = <0x0a>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x90>;
 				ipmi-sensor-type = <0x12>;
 			};
 
 			sensor@91 {
-				phandle = <0x0b>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x91>;
 				ipmi-sensor-type = <0x1f>;
 			};
 
 			sensor@92 {
-				phandle = <0x10>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x92>;
 				ipmi-sensor-type = <0xc4>;
 			};
 
 			sensor@93 {
-				phandle = <0x08>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x93>;
 				ipmi-sensor-type = <0xc7>;
 			};
 
 			sensor@94 {
-				phandle = <0x0e>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x94>;
 				ipmi-sensor-type = <0xc2>;
 			};
 
 			sensor@95 {
-				phandle = <0x13>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x95>;
 				ipmi-sensor-type = <0xca>;
 			};
 
 			sensor@96 {
-				phandle = <0x12>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x96>;
 				ipmi-sensor-type = <0xc8>;
 			};
 
 			sensor@97 {
-				phandle = <0x11>;
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x97>;
 				ipmi-sensor-type = <0xc6>;
@@ -220,7 +190,6 @@
 	};
 
 	cpus {
-		phandle = <0x31>;
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
 	};
@@ -228,24 +197,20 @@
 	ibm,opal {
 
 		leds {
-			phandle = <0x30>;
 			led-mode = "lightpath";
 		};
 
 		power-mgt {
-			phandle = <0xac>;
 			ibm,enabled-stop-levels = <0xec000000>;
 		};
 
 	};
 
 	ibm,pcie-slots {
-		phandle = <0x99>;
 		#address-cells = <0x02>;
 		#size-cells = <0x00>;
 
 		root-complex@0,0 {
-			phandle = <0x9a>;
 			reg = <0x00 0x00>;
 			#address-cells = <0x02>;
 			#size-cells = <0x00>;
@@ -254,7 +219,6 @@
 			ibm,slot-label = "SLOT3";
 
 			pluggable {
-				phandle = <0x9b>;
 				mrw-slot-id = <0x03>;
 				lane-mask = <0xffff>;
 				ibm,slot-label = "SLOT3";
@@ -262,7 +226,6 @@
 		};
 
 		root-complex@0,1 {
-			phandle = <0x9c>;
 			reg = <0x00 0x01>;
 			#address-cells = <0x02>;
 			#size-cells = <0x00>;
@@ -272,12 +235,10 @@
 			lanes-reversed = <0x1111>;
 
 			builtin {
-				phandle = <0x9d>;
 			};
 		};
 
 		root-complex@0,2 {
-			phandle = <0x9e>;
 			reg = <0x00 0x02>;
 			#address-cells = <0x02>;
 			#size-cells = <0x00>;
@@ -286,12 +247,10 @@
 			lane-mask = <0xff>;
 
 			builtin {
-				phandle = <0x9f>;
 			};
 		};
 
 		root-complex@0,3 {
-			phandle = <0xa0>;
 			reg = <0x00 0x03>;
 			#address-cells = <0x02>;
 			#size-cells = <0x00>;
@@ -300,7 +259,6 @@
 			ibm,slot-label = "SLOT1";
 
 			pluggable {
-				phandle = <0xa1>;
 				mrw-slot-id = <0x01>;
 				lane-mask = <0xff00>;
 				ibm,slot-label = "SLOT1";
@@ -308,7 +266,6 @@
 		};
 
 		root-complex@0,4 {
-			phandle = <0xa2>;
 			reg = <0x00 0x04>;
 			#address-cells = <0x02>;
 			#size-cells = <0x00>;
@@ -317,7 +274,6 @@
 			lane-mask = <0xf0>;
 
 			switch-up@10b5,8725 {
-				phandle = <0xa3>;
 				reg = <0x10b5 0x8725>;
 				#address-cells = <0x01>;
 				#size-cells = <0x00>;
@@ -325,40 +281,34 @@
 				ibm,pluggable;
 
 				down-port@a {
-					phandle = <0xa4>;
 					compatible = "ibm,pcie-port";
 					reg = <0x0a>;
 					ibm,pluggable;
 					ibm,slot-label = "GPU0";
 
 					builtin {
-						phandle = <0xa5>;
 						ibm,slot-label = "GPU0";
 					};
 				};
 
 				down-port@b {
-					phandle = <0xa6>;
 					compatible = "ibm,pcie-port";
 					reg = <0x0b>;
 					ibm,pluggable;
 					ibm,slot-label = "GPU1";
 
 					builtin {
-						phandle = <0xa7>;
 						ibm,slot-label = "GPU1";
 					};
 				};
 
 				down-port@c {
-					phandle = <0xa8>;
 					compatible = "ibm,pcie-port";
 					reg = <0x0c>;
 					ibm,pluggable;
 					ibm,slot-label = "GPU2";
 
 					builtin {
-						phandle = <0xa9>;
 						ibm,slot-label = "GPU2";
 					};
 				};
@@ -366,7 +316,6 @@
 		};
 
 		root-complex@0,5 {
-			phandle = <0xaa>;
 			reg = <0x00 0x05>;
 			#address-cells = <0x02>;
 			#size-cells = <0x00>;
@@ -375,13 +324,11 @@
 			lane-mask = <0x0f>;
 
 			builtin {
-				phandle = <0xab>;
 			};
 		};
 	};
 
 	lpcm-opb@6030000000000 {
-		phandle = <0x1f>;
 		#address-cells = <0x01>;
 		#size-cells = <0x01>;
 		compatible = "ibm,power9-lpcm-opb\0simple-bus";
@@ -390,20 +337,17 @@
 		ranges = <0x00 0x60300 0x00 0x80000000 0x80000000 0x60300 0x80000000 0x80000000>;
 
 		lpc-controller@c0012000 {
-			phandle = <0x22>;
 			compatible = "ibm,power9-lpc-controller";
 			reg = <0xc0012000 0x100>;
 		};
 
 		lpc@0 {
-			phandle = <0x23>;
 			#address-cells = <0x02>;
 			#size-cells = <0x01>;
 			compatible = "ibm,power9-lpc\0ibm,power8-lpc";
 			ranges = <0x00 0x00 0xe0000000 0x10000000 0x01 0x00 0xd0010000 0x10000 0x03 0x00 0xf0000000 0x10000000>;
 
 			serial@i3f8 {
-				phandle = <0x24>;
 				reg = <0x01 0x3f8 0x01>;
 				compatible = "ns16550";
 				current-speed = <0x1c200>;
@@ -414,20 +358,17 @@
 		};
 
 		opb-arbiter@c0011000 {
-			phandle = <0x21>;
 			compatible = "ibm,power9-lpcm-opb-arbiter";
 			reg = <0xc0011000 0x08>;
 		};
 
 		opb-master@c0010000 {
-			phandle = <0x20>;
 			compatible = "ibm,power9-lpcm-opb-master";
 			reg = <0xc0010000 0x60>;
 		};
 	};
 
 	xscom@603fc00000000 {
-		phandle = <0x56>;
 		ibm,chip-id = <0x00>;
 		ibm,proc-chip-id = <0x00>;
 		#address-cells = <0x01>;
@@ -439,14 +380,12 @@
 		primary;
 
 		chiptod@40000 {
-			phandle = <0x8d>;
 			reg = <0x40000 0x34>;
 			compatible = "ibm,power-chiptod\0ibm,power9-chiptod";
 			primary;
 		};
 
 		i2cm@a1000 {
-			phandle = <0x5d>;
 			reg = <0xa1000 0x1000>;
 			compatible = "ibm,power8-i2cm\0ibm,power9-i2cm";
 			#size-cells = <0x00>;
@@ -455,7 +394,6 @@
 			clock-frequency = <0x6f38e68>;
 
 			i2c-bus@0 {
-				phandle = <0x5e>;
 				reg = <0x00>;
 				#size-cells = <0x00>;
 				#address-cells = <0x01>;
@@ -463,7 +401,6 @@
 				bus-frequency = <0xf4240>;
 
 				eeprom@50 {
-					phandle = <0x5f>;
 					reg = <0x50>;
 					link-id = <0x02>;
 					compatible = "atmel,24c512";
@@ -472,7 +409,6 @@
 			};
 
 			i2c-bus@2 {
-				phandle = <0x61>;
 				reg = <0x02>;
 				#size-cells = <0x00>;
 				#address-cells = <0x01>;
@@ -480,7 +416,6 @@
 				bus-frequency = <0xf4240>;
 
 				eeprom@50 {
-					phandle = <0x62>;
 					reg = <0x50>;
 					link-id = <0x04>;
 					compatible = "atmel,24c128";
@@ -490,7 +425,6 @@
 		};
 
 		i2cm@a2000 {
-			phandle = <0x63>;
 			reg = <0xa2000 0x1000>;
 			compatible = "ibm,power8-i2cm\0ibm,power9-i2cm";
 			#size-cells = <0x00>;
@@ -499,7 +433,6 @@
 			clock-frequency = <0x6f38e68>;
 
 			i2c-bus@0 {
-				phandle = <0x64>;
 				reg = <0x00>;
 				#size-cells = <0x00>;
 				#address-cells = <0x01>;
@@ -507,7 +440,6 @@
 				bus-frequency = <0x61a80>;
 
 				eeprom@50 {
-					phandle = <0x65>;
 					reg = <0x50>;
 					link-id = <0x06>;
 					compatible = "atmel,24c128";
@@ -517,7 +449,6 @@
 		};
 
 		i2cm@a3000 {
-			phandle = <0x59>;
 			reg = <0xa3000 0x1000>;
 			compatible = "ibm,power8-i2cm\0ibm,power9-i2cm";
 			#size-cells = <0x00>;
@@ -526,7 +457,6 @@
 			clock-frequency = <0x6f38e68>;
 
 			i2c-bus@0 {
-				phandle = <0x66>;
 				reg = <0x00>;
 				#size-cells = <0x00>;
 				#address-cells = <0x01>;
@@ -535,7 +465,6 @@
 			};
 
 			i2c-bus@1 {
-				phandle = <0x5a>;
 				reg = <0x01>;
 				#size-cells = <0x00>;
 				#address-cells = <0x01>;
@@ -545,19 +474,16 @@
 		};
 
 		nmmu@5012c40 {
-			phandle = <0x8f>;
 			compatible = "ibm,power9-nest-mmu";
 			reg = <0x5012c40 0x20>;
 		};
 
 		nx@2010000 {
-			phandle = <0x8e>;
 			compatible = "ibm,power9-nx";
 			reg = <0x2010000 0x4000>;
 		};
 
 		pbcq@4010c00 {
-			phandle = <0x90>;
 			reg = <0x4010c00 0x100 0xd010800 0x200>;
 			compatible = "ibm,power9-pbcq";
 			ibm,pec-index = <0x00>;
@@ -566,7 +492,6 @@
 			ibm,hub-id = <0x00>;
 
 			stack@0 {
-				phandle = <0x91>;
 				reg = <0x00>;
 				ibm,phb-index = <0x00>;
 				compatible = "ibm,power9-phb-stack";
@@ -576,7 +501,6 @@
 		};
 
 		pbcq@4011000 {
-			phandle = <0x92>;
 			reg = <0x4011000 0x100 0xe010800 0x200>;
 			compatible = "ibm,power9-pbcq";
 			ibm,pec-index = <0x01>;
@@ -585,7 +509,6 @@
 			ibm,hub-id = <0x00>;
 
 			stack@0 {
-				phandle = <0x93>;
 				reg = <0x00>;
 				ibm,phb-index = <0x01>;
 				compatible = "ibm,power9-phb-stack";
@@ -594,7 +517,6 @@
 			};
 
 			stack@1 {
-				phandle = <0x94>;
 				reg = <0x01>;
 				ibm,phb-index = <0x02>;
 				compatible = "ibm,power9-phb-stack";
@@ -604,7 +526,6 @@
 		};
 
 		pbcq@4011400 {
-			phandle = <0x95>;
 			reg = <0x4011400 0x100 0xf010800 0x200>;
 			compatible = "ibm,power9-pbcq";
 			ibm,pec-index = <0x02>;
@@ -613,7 +534,6 @@
 			ibm,hub-id = <0x00>;
 
 			stack@0 {
-				phandle = <0x96>;
 				reg = <0x00>;
 				ibm,phb-index = <0x03>;
 				compatible = "ibm,power9-phb-stack";
@@ -622,7 +542,6 @@
 			};
 
 			stack@1 {
-				phandle = <0x97>;
 				reg = <0x01>;
 				ibm,phb-index = <0x04>;
 				compatible = "ibm,power9-phb-stack";
@@ -631,7 +550,6 @@
 			};
 
 			stack@2 {
-				phandle = <0x98>;
 				reg = <0x02>;
 				ibm,phb-index = <0x05>;
 				compatible = "ibm,power9-phb-stack";
@@ -641,20 +559,17 @@
 		};
 
 		psihb@5012900 {
-			phandle = <0x57>;
 			reg = <0x5012900 0x100>;
 			compatible = "ibm,power9-psihb-x\0ibm,psihb-x";
 		};
 
 		vas@3011800 {
-			phandle = <0x6c>;
 			reg = <0x3011800 0x300>;
 			compatible = "ibm,power9-vas-x";
 			ibm,vas-id = <0x00>;
 		};
 
 		xive@5013000 {
-			phandle = <0x58>;
 			reg = <0x5013000 0x300>;
 			compatible = "ibm,power9-xive-x";
 			force-assign-bars;
