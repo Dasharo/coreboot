@@ -2286,7 +2286,7 @@ const struct voltage_bucket_data * get_voltage_data(void)
 /*
  * This logic is for SMF disabled only!
  */
-void build_homer_image(void *homer_bar)
+uint64_t build_homer_image(void *homer_bar)
 {
 	static uint8_t rings_buf[300 * KiB];
 
@@ -2529,4 +2529,6 @@ void build_homer_image(void *homer_bar)
 	istep_21_1(homer, cores);
 
 	istep_16_1(this_core);
+
+	return (uint64_t)get_voltage_data()->nominal.freq * MHz;
 }
