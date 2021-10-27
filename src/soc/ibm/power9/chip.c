@@ -16,6 +16,8 @@
 #include "istep_13_scom.h"
 #include "chip.h"
 
+static uint64_t nominal_freq;
+
 /*
  * These are various definitions of the page sizes and segment sizes supported
  * by the MMU. Values are the same as dumped from original firmware, comments
@@ -175,22 +177,17 @@ static void fill_cpu_node(struct device_tree_node *node, uint32_t phandle,
 	dt_add_u32_prop(node, "ibm,spurr", 0x1);
 
 	/*
-	 * FIXME: un-hardcode. This is either nominal or safe mode frequency,
-	 * depending on whether OCC has been started successfully.
-	 */
-	uint64_t clock_freq = 2700ULL * MHz;
-	/*
 	 * Old-style core clock frequency. Only create this property if the
 	 * frequency fits in a 32-bit number. Do not create it if it doesn't.
 	 */
-	if ((clock_freq >> 32) == 0)
-		dt_add_u32_prop(node, "clock-frequency", clock_freq);
+	if ((nominal_freq >> 32) == 0)
+		dt_add_u32_prop(node, "clock-frequency", nominal_freq);
 
 	/*
 	 * Mandatory: 64-bit version of the core clock frequency, always create
 	 * this property.
 	 */
-	dt_add_u64_prop(node, "ibm,extended-clock-frequency", clock_freq);
+	dt_add_u64_prop(node, "ibm,extended-clock-frequency", nominal_freq);
 
 	/* Timebase freq has a fixed value, always use that */
 	dt_add_u32_prop(node, "timebase-frequency", 512 * MHz);
@@ -506,7 +503,12 @@ static void enable_soc_dev(struct device *dev)
 	reserved_size = 8*1024 + 4*1024 *8 /* * num_of_cpus */;
 	top -= reserved_size;
 	reserved_ram_resource(dev, idx++, top, reserved_size);
-	build_homer_image((void *)(top * 1024));
+
+	/*
+	 * Assumption: OCC boots successfully or coreboot die()s, booting in safe
+	 * mode without runtime power management is not supported.
+	 */
+	nominal_freq = build_homer_image((void *)(top * 1024));
 
 	if (CONFIG(PAYLOAD_FIT_SUPPORT)) {
 		struct device_tree_fixup *dt_fixup;
