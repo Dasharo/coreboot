@@ -23,8 +23,8 @@ platform:
 
 tests:
   hardware_matrix: https://docs.dasharo.com/variants/talos_2/hardware-matrix/
-  results: https://docs.dasharo.com/variants/talos_2/test-results/
-  specification: https://docs.dasharo.com/variants/talos_2/test-results/
+  results: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
+  specification: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
 
 asciinema:
   signature_verification: https://asciinema.org/a/415457
