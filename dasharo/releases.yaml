@@ -20,7 +20,8 @@ releases:
       - Building Talos II target with bootblock in SEEPROM check
       - Building tools in FreeBSD environment check
     known_issues:
-      - description: Only one CPU core is started
+      - description: Only one CPU is started
+        url: TBD
 
   - version: v0.3.0
     added:
@@ -43,7 +44,12 @@ releases:
       - PCIe initialization
       - IPMI block transfer interface
       - Non-constant nodes in Device Tree are generated programmatically
-      - Missing parts of Device Tree describing specific unit (VPD, serial numbers)
-      - SPDs are not exposed in sysfs automatically
     known_issues:
-      - description: Only one CPU core is started
+      - description: Only one CPU is started
+        url: https://github.com/Dasharo/dasharo-issues/issues/30
+      - description: SPDs are not exposed in sysfs automatically
+        url: https://github.com/Dasharo/dasharo-issues/issues/31
+      - description: Missing parts of Device Tree describing specific unit (VPD, serial numbers)
+        url: https://github.com/Dasharo/dasharo-issues/issues/32
+      - description: Watchdog times out
+        url: https://github.com/Dasharo/dasharo-issues/issues/29

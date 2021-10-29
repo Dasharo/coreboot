@@ -1,5 +1,5 @@
 client:
-  name: Insurgo Dasharo
+  name: Insurgo
 dasharo:
   documentation:
     building_url: https://docs.dasharo.com/variants/talos_2/building-manual/
@@ -8,30 +8,30 @@ dasharo:
     url: https://docs.dasharo.com/
   framework:
     name: coreboot
-    version: TODO
+    version: 5621a1e
   platform:
     model: Talos II
     vendor: Raptor Computing Systems
 release:
   artifacts:
   - name: dasharo_talos_2_bootblock_v0.4.0.signed.ecc
-    url: https://cloud.3mdeb.com/index.php/s/54MDtRgBNEmyKo6
+    file_url: https://cloud.3mdeb.com/index.php/s/54MDtRgBNEmyKo6
+    hash: dasharo_talos_2_bootblock_v0.4.0.signed.ecc.sha256
+    hash_url: https://cloud.3mdeb.com/index.php/s/DwpWdgfZyD9StBW
+    signature: dasharo_talos_2_bootblock_v0.4.0.signed.ecc.sha256.sig
+    signature_url: https://cloud.3mdeb.com/index.php/s/5xawXEissBZN6rT
   - name: dasharo_talos_2_coreboot.rom.signed.ecc
-    url: https://cloud.3mdeb.com/index.php/s/5Pbw5EtmNimrdrj
-  - name: heads_v0.4.0.rom.signed.ecc
-    url: TBD
-  - name: bootblock_v0.4.0.SHA256
-    url: TBD
-  - name: coreboot_v0.4.0.SHA256
-    url: TBD
-  - name: heads_v0.4.0.SHA256
-    url: TBD
-  - name: bootblock_v0.4.0.SHA256.sig
-    url: TBD
-  - name: coreboot_v0.4.0.SHA256.sig
-    url: TBD
-  - name: heads_v0.4.0.SHA256.sig
-    url: TBD
+    file_url: https://cloud.3mdeb.com/index.php/s/5Pbw5EtmNimrdrj
+    hash: dasharo_talos_2_coreboot.rom.signed.ecc.sha256
+    hash_url: https://cloud.3mdeb.com/index.php/s/TNcLAz3CZo4QzeD
+    signature: dasharo_talos_2_coreboot_v0.4.0.rom.signed.ecc.sha256.sig
+    signature_url: https://cloud.3mdeb.com/index.php/s/9Fr6Kn57mP2bbwS
+  - name: zImage_v0.4.0.bundled
+    file_url: https://cloud.3mdeb.com/index.php/s/o5RE7oj4r9kFXS2
+    hash: zImage_v0.4.0.bundled.sha256
+    hash_url: https://cloud.3mdeb.com/index.php/s/FgeHfa4LzcZK6Pj
+    signature: zImage_v0.4.0.bundled.sha256.sig
+    signature_url: https://cloud.3mdeb.com/index.php/s/awNSefJrN4d2tAD
   asciinema:
     signature_verification: https://asciinema.org/a/415457
   changelog:
@@ -41,25 +41,36 @@ release:
     - PCIe initialization
     - IPMI block transfer interface
     - Non-constant nodes in Device Tree are generated programmatically
-    - Missing parts of Device Tree describing specific unit (VPD, serial numbers)
-    - SPDs are not exposed in sysfs automatically
+    known_issues:
+    - description: Only one CPU is started
+      url: https://github.com/Dasharo/dasharo-issues/issues/30
+    - description: SPDs are not exposed in sysfs automatically
+      url: https://github.com/Dasharo/dasharo-issues/issues/31
+    - description: Missing parts of Device Tree describing specific unit (VPD, serial numbers)
+      url: https://github.com/Dasharo/dasharo-issues/issues/32
+    - description: Watchdog times out
+      url: https://github.com/Dasharo/dasharo-issues/issues/29
   date:
     day: 29
     month: 10
     year: 2021
   diffstat:
-    deletions: '649'
-    files_changed: '85'
-    insertions: '13713'
+    deletions: '397'
+    files_changed: '152'
+    insertions: '27370'
   sbom:
   - name: coreboot
-    revision: TODO
-    url: https://github.com/Dasharo/coreboot/tree/raptor-cs_talos-2/rel_v0.4.0
-    version: v0.4.0
+    revision: b535763b
+    url: https://gitlab.com/insurgo/coreboot/-/tree/b535763b
+    version: 5621a1e
   - name: skiboot
     revision: '98581863'
-    url: https://git.raptorcs.com/git/talos-skiboot/tree/?id=9858186353f2203fe477f316964e03609d12fd1d
+    url: https://git.raptorcs.com/git/talos-skiboot/tree/98581863
     version: 04-16-2019
+  - name: heads
+    revision: 34c77951
+    url: https://github.com/Dasharo/heads/tree/raptor-cs_talos-2_v0.4.0
+    version: 21e50681
   tag: raptor-cs_talos-2_v0.4.0
   tests:
     hardware_matrix:
@@ -67,9 +78,9 @@ release:
     results:
       failed: 0
       not_tested: 0
-      passed: 3
-      passed_percent: 100%
-      url: https://docs.dasharo.com/variants/talos_2/test-results/
+      passed: 7
+      passed_percent: 100
+      url: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
     specification:
-      url: https://docs.dasharo.com/variants/talos_2/test-results/
+      url: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
   version: v0.4.0
