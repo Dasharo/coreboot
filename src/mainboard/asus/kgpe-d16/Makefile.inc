@@ -2,4 +2,6 @@
 
 bootblock-y += bootblock.c
 
+romstage-y += resourcemap.c
+
 ramstage-y += acpi_tables.c

@@ -1,16 +1,15 @@
 config CPU_AMD_MODEL_10XXX
 	bool
 	select ARCH_X86
-	select ARCH_BOOTBLOCK_X86_32
-	select ARCH_VERSTAGE_X86_32
-	select ARCH_ROMSTAGE_X86_32
-	select ARCH_RAMSTAGE_X86_32
 	select SSE2
 	select TSC_SYNC_LFENCE
 	select UDELAY_LAPIC
 	select LAPIC_MONOTONIC_TIMER
 	select SUPPORT_CPU_UCODE_IN_CBFS
 	select MICROCODE_BLOB_NOT_HOOKED_UP
+	select HAVE_DISPLAY_MTRRS
+	select DISPLAY_MTRRS
+	select SMM_ASEG
 
 if CPU_AMD_MODEL_10XXX
 
@@ -38,12 +37,11 @@ config DCACHE_RAM_SIZE
 # this also accounts for AP stacks
 config DCACHE_BSP_STACK_SIZE
 	hex
-	default 0xc000
+	default 0x10000
 
 config DCACHE_BSP_TOP_STACK_SLUSH
 	hex
-	default 0x2000 if USE_LARGE_DCACHE
-	default 0x1000
+	default 0x2000
 
 config DCACHE_AP_STACK_SIZE
 	hex

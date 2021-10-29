@@ -19,6 +19,7 @@
 #include <arch/cpu.h>
 #include <cpu/amd/msr.h>
 #include <console/console.h>
+#include <option.h>
 #include <types.h>
 
 #include "mcti.h"
@@ -63,7 +64,6 @@ static inline uint8_t isfam15h(void)
 u16 mctGet_NVbits(u8 index)
 {
 	u16 val = 0;
-	int nvram;
 
 	switch (index) {
 	case NV_PACK_TYPE:
@@ -100,15 +100,15 @@ u16 mctGet_NVbits(u8 index)
 	case NV_MAX_MEMCLK:
 		/* Maximum platform supported memclk */
 		val =  MEM_MAX_LOAD_FREQ;
+		u8 mem_clk = get_uint_option("max_mem_clock", 0);
+		int limit = val;
 
-		if (get_option(&nvram, "max_mem_clock") == CB_SUCCESS) {
-			int limit = val;
-			if (CONFIG(DIMM_DDR3))
-				limit = ddr3_limits[nvram & 0xf];
-			else if (CONFIG(DIMM_DDR2))
-				limit = ddr2_limits[nvram & 0x3];
-			val = min(limit, val);
-		}
+		if (CONFIG(DIMM_DDR3))
+			limit = ddr3_limits[mem_clk & 0xf];
+		else if (CONFIG(DIMM_DDR2))
+			limit = ddr2_limits[mem_clk & 0x3];
+		val = MIN(limit, val);
+
 		break;
 	case NV_MIN_MEMCLK:
 		/* Minimum platform supported memclk */
@@ -156,11 +156,7 @@ u16 mctGet_NVbits(u8 index)
 		break;
 	case NV_BankIntlv:
 		/* Bank (chip select) interleaving */
-		//val = 0;	/* disabled */
-		val = 1;	/* enabled (recommended) */
-
-		if (get_option(&nvram, "interleave_chip_selects") == CB_SUCCESS)
-			val = !!nvram;
+		val =  get_uint_option("interleave_chip_selects", 1);
 		break;
 	case NV_MemHole:
 		//val = 0;	/* Disabled */
@@ -171,12 +167,11 @@ u16 mctGet_NVbits(u8 index)
 		//val = 1;	/* Enable all memclocks */
 		break;
 	case NV_SPDCHK_RESTRT:
-		val = 0;	/* Exit current node initialization if any DIMM has SPD checksum error */
+		//val = 0;	/* Exit current node initialization if any DIMM has SPD checksum error */
 		//val = 1;	/* Ignore faulty SPD checksum (DIMM will still be disabled), continue current node initialization */
 		//val = 2;	/* Override faulty SPD checksum (DIMM will be enabled), continue current node initialization */
 
-		if (get_option(&nvram, "dimm_spd_checksum") == CB_SUCCESS)
-			val = nvram & 0x3;
+		val = get_uint_option("dimm_spd_checksum", 0) & 0x3;
 
 		if (val > 2)
 			val = 2;
@@ -187,11 +182,7 @@ u16 mctGet_NVbits(u8 index)
 		val = 1;	/* Perform dqs training */
 		break;
 	case NV_NodeIntlv:
-		val = 0;	/* Disabled (recommended) */
-		//val = 1;	/* Enable */
-
-		if (get_option(&nvram, "interleave_nodes") == CB_SUCCESS)
-			val = !!nvram;
+		val = get_uint_option("interleave_nodes", 0);
 		break;
 	case NV_BurstLen32:
 #if !CONFIG(GFXUMA)
@@ -225,38 +216,33 @@ u16 mctGet_NVbits(u8 index)
 #endif
 		break;
 	case NV_ECC:
-#if (SYSTEM_TYPE == SERVER)
-		val = 1;	/* Enable */
-#else
-		val = 0;	/* Disable */
-#endif
+		if (CONFIG(SYSTEM_TYPE_SERVER))
+			val = 1;	/* Enable */
+		else
+			val = 0;	/* Disable */
 
-		if (get_option(&nvram, "ECC_memory") == CB_SUCCESS)
-			val = !!nvram;
+		val = get_uint_option("ECC_memory", val);
 		break;
 	case NV_NBECC:
-#if (SYSTEM_TYPE == SERVER)
-		val = 1;	/* Enable */
-#else
-		val = 0;	/* Disable */
-#endif
+		if (CONFIG(SYSTEM_TYPE_SERVER))
+			val = 1;	/* Enable */
+		else
+			val = 0;	/* Disable */
+
 		break;
 	case NV_ChipKill:
-#if (SYSTEM_TYPE == SERVER)
-		val = 1;	/* Enable */
-#else
-		val = 0;	/* Disable */
-#endif
+		if (CONFIG(SYSTEM_TYPE_SERVER))
+			val = 1;	/* Enable */
+		else
+			val = 0;	/* Disable */
+
 		break;
 	case NV_ECCRedir:
 		/*
 		 * 0: Disable
 		 * 1: Enable
 		 */
-		val = 0;
-
-		if (get_option(&nvram, "ECC_redirection") == CB_SUCCESS)
-			val = !!nvram;
+		val = get_uint_option("ECC_redirection", 0);
 		break;
 	case NV_DramBKScrub:
 		/*
@@ -284,10 +270,7 @@ u16 mctGet_NVbits(u8 index)
 		 * 0x15: 42ms
 		 * 0x16: 84ms
 		 */
-		val = 0;
-
-		if ((get_option(&nvram, "ecc_scrub_rate") == CB_SUCCESS) && (nvram <= 0x16))
-			val = nvram;
+		val = get_uint_option("ecc_scrub_rate", 0);
 		break;
 	case NV_L2BKScrub:
 		val = 0;	/* Disabled - See L2Scrub in BKDG */
@@ -308,11 +291,7 @@ u16 mctGet_NVbits(u8 index)
 		break;
 	case NV_Unganged:
 		/* channel interleave is better performance than ganged mode at this time */
-		val = 1;		/* Enabled */
-		//val = 0;	/* Disabled */
-
-		if (get_option(&nvram, "interleave_memory_channels") == CB_SUCCESS)
-			val = !!nvram;
+		val = get_uint_option("interleave_memory_channels", 1);
 		break;
 	case NV_ChannelIntlv:
 		val = 5;	/* Not currently checked in mctchi_d.c */
@@ -384,7 +363,23 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
 	}
 
 	/* Set limits if needed */
-	pDCTstat->PresetmaxFreq = mct_MaxLoadFreq(max(ch1_count, ch2_count), max(highest_rank_count[0], highest_rank_count[1]), (ch1_registered || ch2_registered), (ch1_voltage | ch2_voltage), pDCTstat->PresetmaxFreq);
+	pDCTstat->PresetmaxFreq = mct_MaxLoadFreq(MAX(ch1_count, ch2_count),
+					MAX(highest_rank_count[0], highest_rank_count[1]), 
+					(ch1_registered || ch2_registered),
+					(ch1_voltage | ch2_voltage), pDCTstat->PresetmaxFreq);
+}
+
+void mctGet_DIMMAddr(struct DCTStatStruc *pDCTstat, u32 node)
+{
+	int j;
+	struct sys_info *sysinfo = get_sysinfo();
+	struct mem_controller *ctrl = &(sysinfo->ctrl[node]);
+
+	for (j = 0; j < DIMM_SOCKETS; j++) {
+		pDCTstat->DIMMAddr[j*2] = ctrl->spd_addr[j] & 0xff;
+		pDCTstat->DIMMAddr[j*2+1] = ctrl->spd_addr[DIMM_SOCKETS + j] & 0xff;
+	}
+
 }
 
 void mctAdjustAutoCycTmg_D(void)
@@ -528,11 +523,6 @@ u32 mct_AdjustSPDTimings(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDC
 
 void mctHookAfterAnyTraining(void)
 {
-}
-
-uint64_t mctGetLogicalCPUID_D(u8 node)
-{
-	return mctGetLogicalCPUID(node);
 }
 
 #if CONFIG(DIMM_DDR2)

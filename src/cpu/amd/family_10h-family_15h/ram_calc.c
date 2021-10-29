@@ -3,28 +3,14 @@
 #include <arch/cpu.h>
 #include <cpu/x86/msr.h>
 #include <cpu/amd/mtrr.h>
-
+#include <cpu/amd/common/common.h>
+#include <cpu/amd/common/nums.h>
 #include <device/pci_ops.h>
 #include <device/device.h>
 #include <device/pci.h>
-
 #include <cbmem.h>
 
 #include "ram_calc.h"
-
-static inline uint8_t is_fam15h(void)
-{
-	uint32_t family;
-
-	family = cpuid_eax(0x80000001);
-	family = ((family & 0xf00000) >> 16) | ((family & 0xf00) >> 8);
-
-	if (family >= 0x6f)
-		/* Family 15h or later */
-		return 1;
-
-	return 0;
-}
 
 uint64_t get_uma_memory_size(uint64_t topmem)
 {
@@ -53,13 +39,8 @@ uint64_t get_cc6_memory_size()
 	if (is_fam15h()) {
 		enable_cc6 = 0;
 
-#if ENV_PCI_SIMPLE_DEVICE
-		if (pci_read_config32(PCI_DEV(0, 0x18, 2), 0x118) & (0x1 << 18))
+		if (pci_read_config32(NODE_PCI(0, 2), 0x118) & (0x1 << 18))
 			enable_cc6 = 1;
-#else
-		if (pci_read_config32(pcidev_on_root(0x18, 2), 0x118) & (0x1 << 18))
-			enable_cc6 = 1;
-#endif
 
 		if (enable_cc6) {
 			/* Preserve the maximum possible CC6 save region

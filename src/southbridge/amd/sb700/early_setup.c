@@ -200,8 +200,7 @@ static void sb700_devices_por_init(void)
 	pci_devfn_t dev;
 	u8 byte;
 	uint32_t dword;
-	uint8_t nvram;
-	uint8_t sata_ahci_mode;
+	u8 sata_ahci_mode;
 
 	sata_ahci_mode = get_uint_option("sata_ahci_mode", 1);
 

@@ -108,11 +108,16 @@ UPDATE AS NEEDED
 static const uint16_t ddr2_limits[4] = {400, 333, 266, 200};
 static const uint16_t ddr3_limits[16] = {933, 800, 666, 533, 400, 333, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+#include <cpu/amd/amddefs.h>
+#include <cpu/amd/common/common.h>
+
 #if CONFIG(DIMM_DDR3)
-  #include <drivers/amd/amdmct/mct_ddr3/mct_d.h>
+  #include <drivers/amd/amdmct/mct/mct_ddr3/mct_d.h>
 #else
-  #include <drivers/amd/amdmct/mct/mct_d.h>
+  #include <drivers/amd/amdmct/mct/mct_ddr2/mct_d.h>
 #endif
+
+#include <northbridge/amd/amdfam10/raminit.h>
 
 #if CONFIG(DIMM_DDR2)
 void mctSaveDQSSigTmg_D(void);
@@ -138,7 +143,7 @@ void mctHookBeforeDramInit(void);
 void mctHookAfterDramInit(void);
 void mctHookBeforeAnyTraining(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
 void mctHookAfterAnyTraining(void);
-uint64_t mctGetLogicalCPUID_D(u8 node);
+void mctGet_DIMMAddr(struct DCTStatStruc *pDCTstat, u32 node);
 
 #if CONFIG(DIMM_DDR3)
 void vErratum372(struct DCTStatStruc *pDCTstat);

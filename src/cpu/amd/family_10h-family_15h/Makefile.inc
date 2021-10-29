@@ -1,5 +1,6 @@
 ifeq ($(CONFIG_CPU_AMD_MODEL_10XXX),y)
 
+romstage-y += defaults.c
 romstage-y += init_cpus.c
 romstage-y += fidvid.c
 

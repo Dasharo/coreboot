@@ -7,11 +7,9 @@
 #include <cpu/amd/common/nums.h>
 #include <device/device.h>
 #include <drivers/amd/amdmct/wrappers/mcti.h>
+#include <drivers/amd/hypertransport/porting.h>
 
 #include "raminit.h"
-
-struct DCTStatStruc;
-struct MCTStatStruc;
 
 /* Definitions for setup_resourcemap() variants. */
 
@@ -895,6 +893,9 @@ that are corresponding to 0x01, 0x02, 0x03, 0x05, 0x06, 0x07
 
 #define MAX_CORES_SUPPORTED 128
 
+struct DCTStatStruc;
+struct MCTStatStruc;
+
 struct link_pair_t {
 	pci_devfn_t udev;
 	u32 upos;
@@ -917,6 +918,29 @@ struct nodes_info_t {
 
 struct ht_link_config {
 	uint32_t ht_speed_limit; // Speed in MHz; 0 for autodetect (default)
+};
+
+//DDR2 REG and unbuffered : Socket F 1027 and AM3
+/* every channel have 4 DDR2 DIMM for socket F
+ *		       2 for socket M2/M3
+ *		       1 for socket s1g1
+ */
+struct mem_controller {
+	u32 node_id;
+	pci_devfn_t f0, f1, f2, f3, f4, f5;
+	/* channel0 is DCT0 --- channelA
+	 * channel1 is DCT1 --- channelB
+	 * can be ganged, a single dual-channel DCT ---> 128 bit
+	 *	 or unganged a two single-channel DCTs ---> 64bit
+	 * When the DCTs are ganged, the writes to DCT1 set of registers
+	 * (F2x1XX) are ignored and reads return all 0's
+	 * The exception is the DCT phy registers, F2x[1,0]98, F2x[1,0]9C,
+	 * and all the associated indexed registers, are still
+	 * independently accessiable
+	 */
+	/* FIXME: I will only support ganged mode for easy support */
+	u8 spd_switch_addr;
+	u8 spd_addr[DIMM_SOCKETS*2];
 };
 
 /* be careful with the alignment of sysinfo, bacause sysinfo may be shared by coreboot_car and ramstage stage. and ramstage may be running at 64bit later.*/
@@ -956,6 +980,12 @@ void mainboard_sysinfo_hook(struct sys_info *sysinfo);
 void mainboard_spd_info(struct sys_info *sysinfo);
 void mainboard_after_raminit(struct sys_info *sysinfo);
 void setup_mb_resource_map(void);
+void setup_resource_map_offset(const u32 *register_values, u32 max, u32
+		offset_pci_dev, u32 offset_io_base);
+void setup_resource_map_x_offset(const u32 *register_values, u32 max, u32
+		offset_pci_dev, u32 offset_io_base);
+void setup_resource_map_x(const u32 *register_values, u32 max);
+void setup_resource_map(const u32 *register_values, u32 max);
 
 /* reset_test.c */
 u32 cpu_init_detected(u8 nodeid);
@@ -968,12 +998,12 @@ u32 get_sblk(void);
 u8 get_sbbusn(u8 sblk);
 void set_bios_reset(void);
 
+struct sys_info *get_sysinfo(void);
+
 void southbridge_ht_init(void);
 void southbridge_early_setup(void);
 void southbridge_before_pci_init(void);
 
-bool AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list);
-
-void amdmct_cbmem_store_info(struct sys_info *sysinfo);
+BOOL AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list);
 
 #endif /* AMDFAM10_H */

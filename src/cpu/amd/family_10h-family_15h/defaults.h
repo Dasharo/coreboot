@@ -1,5 +1,6 @@
 /*/* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <stdint.h>
 #include <cpu/amd/amddefs.h>
 #include <cpu/amd/mtrr.h>
 #include <cpu/amd/msr.h>
@@ -821,3 +822,6 @@ static const struct {
 	  0x00013480, 0x0003fc80 },     /* [17:10] DCV = 0x4d,
 					       [7] DfeEn = 0x1 */
 };
+
+void cpuSetAMDMSR(u8 node_id);
+void cpuSetAMDPCI(u8 node);

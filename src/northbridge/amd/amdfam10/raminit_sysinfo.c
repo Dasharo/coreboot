@@ -2,7 +2,7 @@
 
 #include <cpu/amd/common/nums.h>
 #include <device/pci_ops.h>
-#include <northbridge/amd/amdfam10/amdfam10h.h>
+#include <northbridge/amd/amdfam10/amdfam10.h>
 
 #include "raminit.h"
 

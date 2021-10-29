@@ -1,69 +1,26 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <halt.h>
-#include <arch/cpu.h>
 #include <arch/romstage.h>
 #include <console/console.h>
-#include <cpu/x86/smm.h>
-#include <arch/symbols.h>
-#include <commonlib/helpers.h>
-#include <program_loading.h>
 #include <timestamp.h>
-
-/* If we do not have a constrained _car_stack region size, use the
-   following as a guideline for acceptable stack usage. */
-#define DCACHE_RAM_ROMSTAGE_STACK_SIZE 0x2000
-
-static struct postcar_frame early_mtrrs;
 
 void __weak mainboard_romstage_entry(void) { }
 
-static void romstage_main(void)
-{
-	int i;
-	const int num_guards = 64;
-	const u32 stack_guard = 0xdeadbeef;
-	u32 *stack_base;
-	u32 size;
-	const size_t stack_size = MAX(0x4000, DCACHE_RAM_ROMSTAGE_STACK_SIZE);
-
-	/* Size of unallocated CAR. */
-	size = ALIGN_DOWN(_car_stack_size, 16);
-
-	size = MIN(size, stack_size);
-	if (size < stack_size)
-		printk(BIOS_DEBUG, "Romstage stack size limited to 0x%x!\n",
-			size);
-
-	stack_base = (u32 *) (_ecar_stack - size);
-
-	for (i = 0; i < num_guards; i++)
-		stack_base[i] = stack_guard;
-
-	mainboard_romstage_entry();
-
-	/* Check the stack. */
-	for (i = 0; i < num_guards; i++) {
-		if (stack_base[i] == stack_guard)
-			continue;
-		printk(BIOS_DEBUG, "Smashed stack detected in romstage!\n");
-	}
-
-	if (CONFIG(SMM_TSEG))
-		smm_list_regions();
-
-	prepare_and_run_postcar(&early_mtrrs);
-	/* We do not return here. */
-}
-
 asmlinkage void car_stage_entry(void)
 {
+	uint32_t stack_pointer = 0;
 	timestamp_add_now(TS_START_ROMSTAGE);
 
 	/* Assumes the hardware was set up during the bootblock */
 	console_init();
 
-	halt();
+	asm volatile (
+		"movl %%esp, %0"
+		: "=r" (stack_pointer)
+		);
 
-	romstage_main();
+	printk(BIOS_DEBUG, "Initial stack pointer: %08x\n", stack_pointer);
+
+	mainboard_romstage_entry();
+	/* We do not return here. */
 }
