@@ -4,7 +4,7 @@ dasharo:
   documentation:
     building_url: https://docs.dasharo.com/variants/talos_2/building-manual/
     flashing_url: https://docs.dasharo.com/variants/talos_2/installation-manual/
-    name: Dasharo Compatibility
+    name: Dasharo documentation
     url: https://docs.dasharo.com/
   framework:
     name: coreboot
@@ -61,15 +61,15 @@ release:
   sbom:
   - name: coreboot
     revision: b535763b
-    url: https://gitlab.com/insurgo/coreboot/-/tree/b535763b
+    url: https://github.com/Dasharo/coreboot/tree/raptor-cs_talos-2_v0.4.0
     version: 5621a1e
   - name: skiboot
     revision: '98581863'
-    url: https://git.raptorcs.com/git/talos-skiboot/tree/98581863
+    url: https://git.raptorcs.com/git/talos-skiboot/
     version: 04-16-2019
   - name: heads
     revision: 34c77951
-    url: https://github.com/Dasharo/heads/tree/raptor-cs_talos-2_v0.4.0
+    url: https://git.raptorcs.com/git/talos-skiboot/commit/?id=9858186353f2203fe477f316964e03609d12fd1d
     version: 21e50681
   tag: raptor-cs_talos-2_v0.4.0
   tests:
