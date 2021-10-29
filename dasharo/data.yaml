@@ -18,13 +18,19 @@ release:
     url: https://cloud.3mdeb.com/index.php/s/keXDLeR3BbL6zjS
   - name: coreboot_v0.4.0.rom.signed.ecc
     url: https://cloud.3mdeb.com/index.php/s/G4CCAbsKZRLfCcr
-  - name: bootblock_v0.4.0.SHA256
+  - name: heads_v0.4.0.rom.signed.ecc
     url: TBD
-  - name: bootblock_v0.4.0.SHA256.sig
+  - name: bootblock_v0.4.0.SHA256
     url: TBD
   - name: coreboot_v0.4.0.SHA256
     url: TBD
+  - name: heads_v0.4.0.SHA256
+    url: TBD
+  - name: bootblock_v0.4.0.SHA256.sig
+    url: TBD
   - name: coreboot_v0.4.0.SHA256.sig
+    url: TBD
+  - name: heads_v0.4.0.SHA256.sig
     url: TBD
   asciinema:
     signature_verification: https://asciinema.org/a/415457
