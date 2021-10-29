@@ -1,0 +1,55 @@
+releases:
+  - version: v0.1.0
+    added:
+      - SCOM registers support
+      - RAM initialization
+      - support for reading from VPD partition
+
+  - version: v0.2.0
+    added:
+      - Flattened device-tree for skiboot
+      - Skiboot as a payload for POWER9
+      - Skiboot repository to the build system
+      - Compilation of flattened device-tree
+      - Merging of device-tree blob and skiboot image into one FIT-image
+      - Continuous Integration checks
+      - Check if upstream tests pass
+      - Linter check
+      - Bulding selected x86 platform (intel/glkrvp) check
+      - Building Talos II target with bootblock in PNOR check
+      - Building Talos II target with bootblock in SEEPROM check
+      - Building tools in FreeBSD environment check
+    known_issues:
+      - description: Only one CPU is started
+        url: TBD
+
+  - version: v0.3.0
+    added:
+      - Support generation of bundled kernel
+      - Expand @var@ placeholders in configuration files
+      - Introduce $(board_build) variable
+      - Incorporate architecture into directory layout
+      - Support for PPC64 architecture - first non-x86 target for Heads
+      - Support for the Talos 2 board
+      - Build Talos 2 board in CI
+    changed:
+      - Allow using files other than coreboot.rom for coreboot binaries
+      - Allow having multiple patches for the same version of a module
+      - Build musl-cross in parallel to speed up the build
+
+  - version: v0.4.0
+    added:
+      - OCC support
+      - XIVE support
+      - PCIe initialization
+      - IPMI block transfer interface
+      - Non-constant nodes in Device Tree are generated programmatically
+    known_issues:
+      - description: Only one CPU is started
+        url: https://github.com/Dasharo/dasharo-issues/issues/30
+      - description: SPDs are not exposed in sysfs automatically
+        url: https://github.com/Dasharo/dasharo-issues/issues/31
+      - description: Missing parts of Device Tree describing specific unit (VPD, serial numbers)
+        url: https://github.com/Dasharo/dasharo-issues/issues/32
+      - description: Watchdog times out
+        url: https://github.com/Dasharo/dasharo-issues/issues/29
