@@ -38,10 +38,12 @@ releases:
 
   - version: v0.4.0
     added:
-      - Starting Heads
       - OCC support
       - XIVE support
       - PCIe initialization
       - IPMI block transfer interface
+      - Non-constant nodes in Device Tree are generated programmatically
+      - Missing parts of Device Tree describing specific unit (VPD, serial numbers)
+      - SPDs are not exposed in sysfs automatically
     known_issues:
       - description: Only one CPU core is started
