@@ -30,7 +30,6 @@ u8 get_processor_package_type(void);
 struct node_core_id get_node_core_id(u32 nb_cfg_54);
 struct node_core_id get_node_core_id_x(void);
 u32 get_boot_apic_id(u8 node, u32 core);
-void start_other_cores(uint32_t nodeid, uint32_t cores);
 
 void set_EnableCf8ExtCfg(void);
 

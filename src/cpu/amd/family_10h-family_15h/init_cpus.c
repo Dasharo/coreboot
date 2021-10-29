@@ -12,6 +12,7 @@
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/lapic.h>
 #include <device/pci_ops.h>
+#include <drivers/amd/hypertransport/h3ncmn.h>
 #include <drivers/amd/hypertransport/ht_wrapper.h>
 #include <northbridge/amd/amdfam10/amdfam10.h>
 #include <southbridge/amd/common/reset.h>
@@ -26,7 +27,7 @@
 //core_range = 0 : all cores
 //core range = 1 : core 0 only
 //core range = 2 : cores other than core0
-void for_each_ap(uint32_t bsp_apicid, uint32_t core_range, int8_t node,
+void for_each_ap(u32 bsp_apicid, u32 core_range, int8_t node,
 		 process_ap_t process_ap, void *gp)
 {
 	// here assume the OS don't change our apicid
@@ -40,7 +41,7 @@ void for_each_ap(uint32_t bsp_apicid, uint32_t core_range, int8_t node,
 	/* get_nodes define in ht_wrapper.c */
 	nodes = get_nodes();
 
-	if (!CONFIG(LOGICAL_CPUS) || get_uint_option("multi_core", 1) != 0) {
+	if (!CONFIG(LOGICAL_CPUS) || get_uint_option("multi_core", 1) == 0) {
 		disable_siblings = 1;
 	} else {
 		disable_siblings = 0;
@@ -94,7 +95,7 @@ void print_apicid_nodeid_coreid(u32 apicid, struct node_core_id id,
 	       apicid, id.nodeid, id.coreid);
 }
 
-static uint32_t wait_cpu_state(uint32_t apicid, uint32_t state, uint32_t state2)
+static u32 wait_cpu_state(u32 apicid, u32 state, u32 state2)
 {
 	u32 readback = 0;
 	u32 timeout = 1;
@@ -156,74 +157,6 @@ void wait_all_other_cores_stopped(u32 bsp_apicid)
 	printk(BIOS_DEBUG, "\n");
 }
 
-static void start_other_core(uint32_t nodeid, uint32_t cores)
-{
-	ssize_t i;
-	uint32_t dword;
-
-	printk(BIOS_DEBUG,
-		"Start other core - nodeid: %02x  cores: %02x\n", nodeid, cores);
-
-	/* set PCI_DEV(0, 0x18+nodeid, 3), 0x44 bit 27 to redirect all MC4
-	   accesses and error logging to core0 */
-	dword = pci_read_config32(NODE_PCI(nodeid, 3), 0x44);
-	dword |= 1 << 30;	/* SyncFloodOnDramAdrParErr=1 */
-	dword |= 1 << 27;	/* NbMcaToMstCpuEn=1 */
-	dword |= 1 << 21;	/* SyncFloodOnAnyUcErr=1 */
-	dword |= 1 << 20;	/* SyncFloodOnWDT=1 */
-	dword |= 1 << 2;	/* SyncFloodOnDramUcEcc=1 */
-	pci_write_config32(NODE_PCI(nodeid, 3), 0x44, dword);
-	if (is_fam15h()) {
-		uint32_t core_activation_flags = 0;
-		uint32_t active_cores = 0;
-
-		/* Set PCI_DEV(0, 0x18+nodeid, 0),
-		 * 0x1dc bits 7:1 to start cores
-		 */
-		dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x1dc);
-		for (i = 1; i < cores + 1; i++)
-			core_activation_flags |= 1 << i;
-		/* Start the first core of each compute unit */
-		active_cores |= core_activation_flags & 0x55;
-		pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, dword
-				  | active_cores);
-
-		/* Each core shares a single set of MTRR registers with
-		 * another core in the same compute unit, therefore, it
-		 * is important that one core in each CU starts in advance
-		 * of the other in order to avoid one core stomping all over
-		 * the other core's settings.
-		 */
-
-		/* Wait for the first core of each compute unit to start... */
-		for (i = 1; i < cores + 1; i++) {
-			if (!(i & 0x1)) {
-				uint32_t ap_apicid =
-				get_boot_apic_id(nodeid, i);
-				/* Timeout */
-				wait_cpu_state(ap_apicid, F10_APSTATE_ASLEEP,
-						F10_APSTATE_ASLEEP);
-			}
-		}
-
-		/* Start the second core of each compute unit */
-		active_cores |= core_activation_flags & 0xaa;
-		pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, dword | active_cores);
-	} else {
-		// set PCI_DEV(0, 0x18+nodeid, 0), 0x68 bit 5 to start core1
-		dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x68);
-		dword |= 1 << 5;
-		pci_write_config32(NODE_PCI(nodeid, 0), 0x68, dword);
-
-		if (cores > 1) {
-			dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x168);
-			for (i = 0; i < cores - 1; i++)
-				dword |= 1 << i;
-			pci_write_config32(NODE_PCI(nodeid, 0), 0x168, dword);
-		}
-	}
-}
-
 static void enable_apic_ext_id(u32 node)
 {
 	u32 val;
@@ -237,7 +170,7 @@ static __always_inline
 void disable_cache_as_ram(uint8_t skip_sharedc_config)
 {
 	msr_t msr;
-	uint32_t family;
+	u32 family;
 
 	if (!skip_sharedc_config) {
 		/* disable cache */
@@ -304,10 +237,10 @@ void disable_cache_as_ram(uint8_t skip_sharedc_config)
 }
 
 
-static void stop_car_and_cpu(uint8_t skip_sharedc_config, uint32_t apicid)
+static void stop_car_and_cpu(uint8_t skip_sharedc_config, u32 apicid)
 {
 	msr_t msr;
-	uint32_t family;
+	u32 family;
 
 	family = get_cpu_family();
 
@@ -345,7 +278,7 @@ static void stop_car_and_cpu(uint8_t skip_sharedc_config, uint32_t apicid)
 	stop_this_cpu();
 }
 
-static void configure_fidvid(uint32_t apicid, struct node_core_id id)
+static void configure_fidvid(u32 apicid, struct node_core_id id)
 {
 	if (CONFIG(LOGICAL_CPUS) && CONFIG(SET_FIDVID_CORE0_ONLY)) {
 		if (id.coreid != 0)	// only need set fid for core0
@@ -368,174 +301,6 @@ static void configure_fidvid(uint32_t apicid, struct node_core_id id)
 
 }
 
-static void enable_memory_speed_boost(uint8_t node_id)
-{
-	msr_t msr;
-	uint32_t f3x1fc = pci_read_config32(NODE_PCI(node_id, 3), 0x1fc);
-	msr = rdmsr(FP_CFG_MSR);
-	msr.hi &= ~(0x7 << (42-32));			/* DiDtCfg4 */
-	msr.hi |= (((f3x1fc >> 17) & 0x7) << (42-32));
-	msr.hi &= ~(0x1 << (41-32));			/* DiDtCfg5 */
-	msr.hi |= (((f3x1fc >> 22) & 0x1) << (41-32));
-	msr.hi &= ~(0x1 << (40-32));			/* DiDtCfg3 */
-	msr.hi |= (((f3x1fc >> 16) & 0x1) << (40-32));
-	msr.hi &= ~(0x7 << (32-32));			/* DiDtCfg1 (1) */
-	msr.hi |= (((f3x1fc >> 11) & 0x7) << (32-32));
-	msr.lo &= ~(0x1f << 27);			/* DiDtCfg1 (2) */
-	msr.lo |= (((f3x1fc >> 6) & 0x1f) << 27);
-	msr.lo &= ~(0x3 << 25);				/* DiDtCfg2 */
-	msr.lo |= (((f3x1fc >> 14) & 0x3) << 25);
-	msr.lo &= ~(0x1f << 18);			/* DiDtCfg0 */
-	msr.lo |= (((f3x1fc >> 1) & 0x1f) << 18);
-	msr.lo &= ~(0x1 << 16);				/* DiDtMode */
-	msr.lo |= ((f3x1fc & 0x1) << 16);
-	wrmsr(FP_CFG_MSR, msr);
-
-	if (get_uint_option("experimental_memory_speed_boost", 0)) {
-		msr = rdmsr(BU_CFG3_MSR);
-		msr.lo |= (0x3 << 20);			/* PfcStrideMul = 0x3 */
-		wrmsr(BU_CFG3_MSR, msr);
-	}
-}
-
-static void enable_message_triggered_c1e(uint64_t revision)
-{
-	msr_t msr;
-	/* Set up message triggered C1E */
-	msr = rdmsr(MSR_INTPEND);
-	msr.lo &= ~0xffff;		/* IOMsgAddr = ACPI_PM_EVT_BLK */
-	msr.lo |= ACPI_PM_EVT_BLK & 0xffff;
-	msr.lo |= (0x1 << 29);		/* BmStsClrOnHltEn = 1 */
-	if (revision & AMD_DR_GT_D0) {
-		msr.lo &= ~(0x1 << 28);	/* C1eOnCmpHalt = 0 */
-		msr.lo &= ~(0x1 << 27);	/* SmiOnCmpHalt = 0 */
-	}
-	wrmsr(MSR_INTPEND, msr);
-
-	msr = rdmsr(HWCR_MSR);
-	msr.lo |= (0x1 << 12);		/* HltXSpCycEn = 1 */
-	wrmsr(HWCR_MSR, msr);
-}
-
-static void enable_cpu_c_states(void)
-{
-	if (!CONFIG(HAVE_ACPI_TABLES))
-		return;
-
-	if (get_uint_option("cpu_c_states", 0)) {
-		/* Set up the C-state base address */
-		msr_t c_state_addr_msr;
-		c_state_addr_msr = rdmsr(MSR_CSTATE_ADDRESS);
-		c_state_addr_msr.lo = ACPI_CPU_P_LVL2;
-		wrmsr(MSR_CSTATE_ADDRESS, c_state_addr_msr);
-	}
-}
-
-static void cpb_enable_disable(void)
-{
-	if (!get_uint_option("cpu_core_boost", 1)) {
-		msr_t msr;
-		/* Disable Core Performance Boost */
-		msr = rdmsr(HWCR_MSR);
-		msr.lo |= (0x1 << 25);		/* CpbDis = 1 */
-		wrmsr(HWCR_MSR, msr);
-	}
-}
-
-static void AMD_Errata298(void)
-{
-	/* Workaround for L2 Eviction May Occur during operation to
-	 * set Accessed or dirty bit.
-	 */
-
-	msr_t msr;
-	u8 i;
-	u8 affectedRev = 0;
-	u8 nodes = get_nodes();
-
-	/* For each core we need to check for a "broken" node */
-	for (i = 0; i < nodes; i++) {
-		if (get_logical_CPUID(i) & (AMD_DR_B0 | AMD_DR_B1 | AMD_DR_B2)) {
-			affectedRev = 1;
-			break;
-		}
-	}
-
-	if (affectedRev) {
-		msr = rdmsr(HWCR_MSR);
-		msr.lo |= 0x08;	/* Set TlbCacheDis bit[3] */
-		wrmsr(HWCR_MSR, msr);
-
-		msr = rdmsr(BU_CFG_MSR);
-		msr.lo |= 0x02;	/* Set TlbForceMemTypeUc bit[1] */
-		wrmsr(BU_CFG_MSR, msr);
-
-		msr = rdmsr(OSVW_ID_Length);
-		msr.lo |= 0x01;	/* OS Visible Workaround - MSR */
-		wrmsr(OSVW_ID_Length, msr);
-
-		msr = rdmsr(OSVW_Status);
-		msr.lo |= 0x01;	/* OS Visible Workaround - MSR */
-		wrmsr(OSVW_Status, msr);
-	}
-
-	if (!affectedRev && (get_logical_CPUID(0xFF) & AMD_DR_B3)) {
-		msr = rdmsr(OSVW_ID_Length);
-		msr.lo |= 0x01;	/* OS Visible Workaround - MSR */
-		wrmsr(OSVW_ID_Length, msr);
-
-	}
-}
-
-static void cpuSetAMDMSR(uint8_t node_id)
-{
-	/* This routine loads the CPU with default settings in fam10_msr_default
-	 * table . It must be run after Cache-As-RAM has been enabled, and
-	 * Hypertransport initialization has taken place.  Also note
-	 * that it is run on the current processor only, and only for the current
-	 * processor core.
-	 */
-	msr_t msr;
-	u8 i;
-	u32 platform;
-	uint64_t revision;
-
-	printk(BIOS_DEBUG, "cpuSetAMDMSR ");
-
-	revision = get_logical_CPUID(0xFF);
-	platform = get_platform_type();
-
-	for (i = 0; i < ARRAY_SIZE(fam10_msr_default); i++) {
-		if ((fam10_msr_default[i].revision & revision) &&
-		    (fam10_msr_default[i].platform & platform)) {
-			msr = rdmsr(fam10_msr_default[i].msr);
-			msr.hi &= ~fam10_msr_default[i].mask_hi;
-			msr.hi |= fam10_msr_default[i].data_hi;
-			msr.lo &= ~fam10_msr_default[i].mask_lo;
-			msr.lo |= fam10_msr_default[i].data_lo;
-			wrmsr(fam10_msr_default[i].msr, msr);
-		}
-	}
-	AMD_Errata298();
-
-	/* Revision C0 and above */
-	if (revision & AMD_OR_C0)
-		enable_memory_speed_boost(node_id);
-
-	if (CONFIG(SOUTHBRIDGE_AMD_SB700) || CONFIG(SOUTHBRIDGE_AMD_SB800)) {
-		if (revision & (AMD_DR_GT_D0 | AMD_FAM15_ALL))
-			enable_message_triggered_c1e(revision);
-
-		if (revision & (AMD_DR_Ex | AMD_FAM15_ALL))
-			enable_cpu_c_states();
-	}
-
-	if (revision & AMD_FAM15_ALL)
-		cpb_enable_disable();
-
-	printk(BIOS_DEBUG, " done\n");
-}
-
 static u32 is_core0_started(u32 nodeid)
 {
 	u32 htic;
@@ -551,41 +316,23 @@ static void wait_all_core0_started(void)
 	u32 i;
 	u32 nodes = get_nodes();
 
-	printk(BIOS_DEBUG, "core0 started: ");
 	for (i = 1; i < nodes; i++) {	// skip bsp, because it is running on bsp
 		while (!is_core0_started(i)) {
 		}
-		printk(BIOS_DEBUG, " %02x", i);
+		printk(BIOS_DEBUG, "core0 started, node %02x\n", i);
 	}
-	printk(BIOS_DEBUG, "\n");
 }
 
 
 static u32 init_cpus(struct sys_info *sysinfo)
 {
-	uint32_t bsp_apicid = 0;
-	uint32_t apicid;
-	uint32_t dword;
+	u32 bsp_apicid = 0;
+	u32 apicid;
+	u32 dword;
 	uint8_t set_mtrrs;
 	uint8_t node_count;
 	uint8_t fam15_bsp_core1_apicid;
 	struct node_core_id id;
-
-	/* Please refer to the calculations and explanation in cache_as_ram.S
-	 * before modifying these values
-	 */
-	uint32_t max_ap_stack_region_size = CONFIG_MAX_CPUS * CONFIG_DCACHE_AP_STACK_SIZE;
-	uint32_t max_bsp_stack_region_size = 0x4000 + CONFIG_DCACHE_BSP_TOP_STACK_SLUSH;
-	uint32_t bsp_stack_region_lower_boundary = (uint32_t)_ecar_stack - max_bsp_stack_region_size;
-
-	void *lower_stack_region_boundary = (void *)(bsp_stack_region_lower_boundary -
-						max_ap_stack_region_size);
-
-	if (((void*)(sysinfo + 1)) > lower_stack_region_boundary)
-		printk(BIOS_WARNING,
-			"sysinfo extends into stack region (sysinfo range: [%p,%p] lower stack region boundary: %p)\n",
-			sysinfo, sysinfo + 1, lower_stack_region_boundary);
-
 
 	/* that is from initial apicid, we need nodeid and coreid
 	   later */
@@ -601,8 +348,6 @@ static u32 init_cpus(struct sys_info *sysinfo)
 		if (CONFIG(ENABLE_APIC_EXT_ID))
 			enable_apic_ext_id(id.nodeid);
 	}
-
-	enable_lapic();
 
 	if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0)) {
 		u32 initial_apicid = get_initial_apicid();
@@ -629,6 +374,8 @@ static u32 init_cpus(struct sys_info *sysinfo)
 		print_apicid_nodeid_coreid(apicid, id, " corex: ");
 	}
 
+	printk(BIOS_DEBUG, "CPU INIT detect %08x\n", pci_read_config32(PCI_DEV(0,0,0), 0x80));
+
 	if (pci_read_config32(PCI_DEV(0,0,0), 0x80) & (1 << apicid)) {
 		print_apicid_nodeid_coreid(apicid, id,
 					   "\n\n\nINIT detected from ");
@@ -638,22 +385,24 @@ static u32 init_cpus(struct sys_info *sysinfo)
 
 	if (id.coreid == 0) {
 		//FIXME: INIT is checked above but check for more resets?
-		if (!(warm_reset_detect(id.nodeid)))	
+		if (!(warm_reset_detect(id.nodeid))) {
+			printk(BIOS_DEBUG, "Warm reset not detected, node %02d\n", id.nodeid);
 			distinguish_cpu_resets(id.nodeid); // Also indicates we are started
+		}
 	}
 
 	// Mark the core as started.
-	lapic_write(LAPIC_MSG_REG, (apicid << 24) | F10_APSTATE_STARTED);
 	printk(BIOS_DEBUG, "CPU APICID %02x start flag set\n", apicid);
+	lapic_write(LAPIC_MSG_REG, (apicid << 24) | F10_APSTATE_STARTED);
 
 	if (apicid != bsp_apicid) {
 		/* Setup each AP's cores MSRs.
 		 * This happens after HTinit.
 		 * The BSP runs this code in it's own path.
 		 */
-		update_microcode(cpuid_eax(1));
+		amd_update_microcode_from_cbfs();
 
-		cpuSetAMDMSR(id.nodeid);
+		cpuSetAMDMSR((u8)id.nodeid);
 
 		/* Set up HyperTransport probe filter support */
 		if (is_gt_rev_d()) {
@@ -705,6 +454,164 @@ static u32 init_cpus(struct sys_info *sysinfo)
 	return bsp_apicid;
 }
 
+/**
+ * void start_node(u32 node)
+ *
+ *  start the core0 in node, so it can generate HT packet to feature code.
+ *
+ * This function starts the AP nodes core0s. wait_all_core0_started() in
+ * romstage.c waits for all the AP to be finished before continuing
+ * system init.
+ */
+static void start_node(u8 node)
+{
+	u32 val;
+
+	/* Enable routing table */
+	printk(BIOS_DEBUG, "Start node %02x", node);
+
+	if (CONFIG(NORTHBRIDGE_AMD_AMDFAM10)) {
+		/* For FAM10 support, we need to set Dram base/limit for the new node */
+		pci_write_config32(NODE_PCI(node, 1), 0x44, 0);
+		pci_write_config32(NODE_PCI(node, 1), 0x40, 3);
+	}
+
+	/* Allow APs to make requests (ROM fetch) */
+	val = pci_read_config32(NODE_PCI(node, 0), 0x6c);
+	val &= ~(1 << 1);
+	pci_write_config32(NODE_PCI(node, 0), 0x6c, val);
+
+	printk(BIOS_DEBUG, " done.\n");
+}
+
+/**
+ * Copy the BSP Address Map to each AP.
+ */
+static void setup_remote_node(u8 node)
+{
+	/* There registers can be used with F1x114_x Address Map at the
+	   same time, So must set them even 32 node */
+	static const u16 pci_reg[] = {
+		/* DRAM Base/Limits Registers */
+		0x44, 0x4c, 0x54, 0x5c, 0x64, 0x6c, 0x74, 0x7c,
+		0x40, 0x48, 0x50, 0x58, 0x60, 0x68, 0x70, 0x78,
+		0x144, 0x14c, 0x154, 0x15c, 0x164, 0x16c, 0x174, 0x17c,
+		0x140, 0x148, 0x150, 0x158, 0x160, 0x168, 0x170, 0x178,
+		/* MMIO Base/Limits Registers */
+		0x84, 0x8c, 0x94, 0x9c, 0xa4, 0xac, 0xb4, 0xbc,
+		0x80, 0x88, 0x90, 0x98, 0xa0, 0xa8, 0xb0, 0xb8,
+		/* IO Base/Limits Registers */
+		0xc4, 0xcc, 0xd4, 0xdc,
+		0xc0, 0xc8, 0xd0, 0xd8,
+		/* Configuration Map Registers */
+		0xe0, 0xe4, 0xe8, 0xec,
+	};
+	u16 i;
+
+	printk(BIOS_DEBUG, "setup_remote_node: %02x", node);
+
+	/* copy the default resource map from node 0 */
+	for (i = 0; i < ARRAY_SIZE(pci_reg); i++) {
+		u32 value;
+		u16 reg;
+		reg = pci_reg[i];
+		value = pci_read_config32(NODE_PCI(0, 1), reg);
+		pci_write_config32(NODE_PCI(node, 1), reg, value);
+
+	}
+	printk(BIOS_DEBUG, " done\n");
+}
+
+static void real_start_other_core(u32 nodeid, u32 cores)
+{
+	ssize_t i;
+	u32 dword;
+
+	printk(BIOS_DEBUG,
+		"Start other core - nodeid: %02x  cores: %02x\n", nodeid, cores);
+
+	/* set PCI_DEV(0, 0x18+nodeid, 3), 0x44 bit 27 to redirect all MC4
+	   accesses and error logging to core0 */
+	dword = pci_read_config32(NODE_PCI(nodeid, 3), 0x44);
+	dword |= 1 << 30;	/* SyncFloodOnDramAdrParErr=1 */
+	dword |= 1 << 27;	/* NbMcaToMstCpuEn=1 */
+	dword |= 1 << 21;	/* SyncFloodOnAnyUcErr=1 */
+	dword |= 1 << 20;	/* SyncFloodOnWDT=1 */
+	dword |= 1 << 2;	/* SyncFloodOnDramUcEcc=1 */
+	pci_write_config32(NODE_PCI(nodeid, 3), 0x44, dword);
+	if (is_fam15h()) {
+		u32 core_activation_flags = 0;
+		u32 active_cores = 0;
+
+		/* Set PCI_DEV(0, 0x18+nodeid, 0),
+		 * 0x1dc bits 7:1 to start cores
+		 */
+		dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x1dc);
+		for (i = 1; i < cores + 1; i++)
+			core_activation_flags |= 1 << i;
+		/* Start the first core of each compute unit */
+		active_cores |= core_activation_flags & 0x55;
+		pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, dword
+				  | active_cores);
+
+		/* Each core shares a single set of MTRR registers with
+		 * another core in the same compute unit, therefore, it
+		 * is important that one core in each CU starts in advance
+		 * of the other in order to avoid one core stomping all over
+		 * the other core's settings.
+		 */
+
+		/* Wait for the first core of each compute unit to start... */
+		for (i = 1; i < cores + 1; i++) {
+			if (!(i & 0x1)) {
+				u32 ap_apicid =
+				get_boot_apic_id(nodeid, i);
+				/* Timeout */
+				wait_cpu_state(ap_apicid, F10_APSTATE_ASLEEP,
+						F10_APSTATE_ASLEEP);
+			}
+		}
+
+		/* Start the second core of each compute unit */
+		active_cores |= core_activation_flags & 0xaa;
+		pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, dword |
+				   active_cores);
+	} else {
+		// set PCI_DEV(0, 0x18+nodeid, 0), 0x68 bit 5 to start core1
+		dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x68);
+		dword |= 1 << 5;
+		pci_write_config32(NODE_PCI(nodeid, 0), 0x68, dword);
+
+		if (cores > 1) {
+			dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x168);
+			for (i = 0; i < cores - 1; i++)
+				dword |= 1 << i;
+			pci_write_config32(NODE_PCI(nodeid, 0), 0x168, dword);
+		}
+	}
+}
+
+//it is running on core0 of node0
+static void start_other_cores(u32 bsp_apicid)
+{
+	u32 nodes;
+	u32 nodeid;
+
+	// disable multi_core
+	if (get_uint_option("multi_core", 1) == 0)  {
+		printk(BIOS_DEBUG, "Skip additional core init\n");
+		return;
+	}
+
+	nodes = get_nodes();
+
+	for (nodeid = 0; nodeid < nodes; nodeid++) {
+		u32 cores = get_core_num_in_bsp(nodeid);
+		printk(BIOS_DEBUG, "init node: %02x  cores: %02x pass 1\n", nodeid, cores);
+		if (cores > 0)
+			real_start_other_core(nodeid, cores);
+	}
+}
 
 /**
  * finalize_node_setup()
@@ -746,7 +653,7 @@ static void finalize_node_setup(struct sys_info *sysinfo)
 void setup_bsp(struct sys_info *sysinfo, u8 power_on_reset)
 {
 	initialize_mca(1, power_on_reset);
-	update_microcode(cpuid_eax(1));
+	amd_update_microcode_from_cbfs();
 
 	post_code(0x33);
 
@@ -757,19 +664,21 @@ void setup_bsp(struct sys_info *sysinfo, u8 power_on_reset)
 	amd_ht_fixup(sysinfo);
 	post_code(0x35);
 
+	/* Setup any mainboard PCI settings etc. */
+	setup_mb_resource_map();
+
 	/* Setup nodes PCI space and start core 0 AP init. */
 	finalize_node_setup(sysinfo);
 
-	/* Setup any mainboard PCI settings etc. */
-	setup_mb_resource_map();
+	/* Wait for all the APs core0 started by finalize_node_setup. */
+	wait_all_core0_started();
+
 	initialize_mca(0, power_on_reset);
 	post_code(0x36);
 
-	/* Wait for all the APs core0 started by finalize_node_setup. */
-	wait_all_core0_started();
 }
 
-u32 initialize_aps(struct sys_info *sysinfo)
+u32 initialize_cores(struct sys_info *sysinfo)
 {
 	u32 bsp_apicid = 0;
 
@@ -817,6 +726,4 @@ void early_cpu_finalize(struct sys_info *sysinfo, u32 bsp_apicid)
 		printk(BIOS_DEBUG, "End FIDVIDMSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 	}
 	post_code(0x38);
-
-	init_timer(); // Need to use TMICT to synconize FID/VID
 }

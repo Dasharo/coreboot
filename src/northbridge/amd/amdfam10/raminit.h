@@ -10,25 +10,34 @@
  */
 #define DIMM_SOCKETS 4
 
-struct mem_controller {
-	u32 node_id;
-	pci_devfn_t f0, f1, f2, f3, f4, f5;
-	/* channel0 is DCT0 --- channelA
-	 * channel1 is DCT1 --- channelB
-	 * can be ganged, a single dual-channel DCT ---> 128 bit
-	 *	 or unganged a two single-channel DCTs ---> 64bit
-	 * When the DCTs are ganged, the writes to DCT1 set of registers
-	 * (F2x1XX) are ignored and reads return all 0's
-	 * The exception is the DCT phy registers, F2x[1,0]98, F2x[1,0]9C,
-	 * and all the associated indexed registers, are still
-	 * independently accessiable
-	 */
-	/* FIXME: I will only support ganged mode for easy support */
-	u8 spd_switch_addr;
-	u8 spd_addr[DIMM_SOCKETS*2];
-};
+#include <device/pci_type.h>
+#include <types.h>
+
+#include "amdfam10.h"
+
+struct sys_info;
+struct mem_controller;
+struct DCTStatStruc;
+struct MCTStatStruc;
 
 void fill_mem_ctrl(u32 controllers, struct mem_controller *ctrl_a, const u8 *spd_addr);
 void set_sysinfo_in_ram(u32 val);
+
+void activate_spd_rom(const struct mem_controller *ctrl);
+
+int mctRead_SPD(u32 smaddr, u32 reg);
+int spd_read_byte(unsigned int device, unsigned int address);
+void mctSMBhub_Init(u32 node);
+void raminit_amdmct(struct sys_info *sysinfo);
+void amdmct_cbmem_store_info(struct sys_info *sysinfo);
+
+uint16_t mct_MaxLoadFreq(uint8_t count, uint8_t highest_rank_count, uint8_t registered, uint8_t voltage, uint16_t freq);
+void Set_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg, uint32_t val);
+uint32_t Get_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg);
+uint32_t Get_NB32_index_wait_DCT(uint32_t dev, uint8_t dct, uint32_t index_reg, uint32_t index);
+void Set_NB32_index_wait_DCT(uint32_t dev, uint8_t dct, uint32_t index_reg, uint32_t index, uint32_t data);
+void fam15h_switch_dct(uint32_t dev, uint8_t dct);
+uint32_t Get_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uint32_t reg);
+void Set_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uint32_t reg, uint32_t val);
 
 #endif

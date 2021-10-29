@@ -5,23 +5,111 @@
 #include <console/console.h>
 #include <cpu/amd/microcode.h>
 #include <cpu/amd/msr.h>
+#include <cbfs.h>
 
 #define UCODE_DEBUG(fmt, args...)	\
 	do { printk(BIOS_DEBUG, "[microcode] "fmt, ##args); } while (0)
 
 #define UCODE_MAGIC			0x00414d44
 #define UCODE_SECTION_START_ID		0x00000001
-#define UCODE_MAGIC			0x00414d44
 
 #define F15H_MPB_MAX_SIZE	4096
 #define CONT_HDR		12
 
 struct id_mapping {
-	uint32_t orig_id;
-	uint16_t new_id;
+	u32 orig_id;
+	u32 new_id;
 };
 
-static u16 get_equivalent_processor_rev_id(u32 orig_id) {
+/*
+ * STRUCTURE OF A MICROCODE (UCODE) FILE
+ *	Container Header
+ *	Section Header
+ *	Microcode Header
+ *	Microcode "Blob"
+ *	Section Header
+ *	Microcode Header
+ *	Microcode "Blob"
+ *	...
+ *	...
+ *	(end of file)
+ *
+ *
+ * CONTAINER HEADER (offset 0 bytes from start of file)
+ * Total size = fixed size (12 bytes) + variable size
+ *	[0:3]  32-bit unique ID
+ *	[4:7]  don't-care
+ *	[8-11] Size (n) in bytes of variable portion of container header
+ *	[12-n] don't-care
+ *
+ * SECTION HEADER (offset += 12+n)
+ * Total size = 8 bytes
+ *	[0:3] Unique identifier signaling start of section (0x00000001)
+ *	[4:7] Total size (m) of following microcode section, including microcode header
+ *
+ * MICROCODE HEADER (offset += 8)
+ * Total size = 64 bytes
+ *	[0:3]	Data code		(32 bits)
+ *	[4:7]	Patch ID		(32 bits)
+ *	[8:9]	Microcode patch data ID (16 bits)
+ *	[10]	c patch data length	(8  bits)
+ *	[11]	init flag		(8 bits)
+ *	[12:15]	ucode patch data cksum	(32 bits)
+ *	[16:19]	nb dev ID		(32 bits)
+ *	[20:23]	sb dev ID		(32 bits)
+ *	[24:25]	Processor rev ID	(16 bits)
+ *	[26]	nb revision ID		(8 bits)
+ *	[27]	sb revision ID		(8 bits)
+ *	[28]	BIOS API revision	(8 bits)
+ *	[29-31]	Reserved 1 (array of three 8-bit values)
+ *	[32-63]	Match reg (array of eight 32-bit values)
+ *
+ * MICROCODE BLOB (offset += 64)
+ * Total size = m bytes
+ *
+ */
+
+struct container_header {
+	u32 unique_id;
+	u32 reserved1;
+	u32 header_size;
+} __packed;
+
+struct section_header {
+	u32 start_id;
+	u32 ucode_size;
+} __packed;
+
+struct microcode {
+	u32 data_code;
+	u32 patch_id;
+
+	u16 mc_patch_data_id;
+	u8 mc_patch_data_len;
+	u8 init_flag;
+
+	u32 mc_patch_data_checksum;
+
+	u32 nb_dev_id;
+	u32 sb_dev_id;
+
+	u16 processor_rev_id;
+	u8 nb_rev_id;
+	u8 sb_rev_id;
+
+	u8 bios_api_rev;
+	u8 reserved1[3];
+
+	u32 match_reg[8];
+
+	u8 m_patch_data[896];
+	u8 resv2[896];
+
+	u8 x86_code_present;
+	u8 x86_code_entry[191];
+} __packed;
+
+static u32 get_equivalent_processor_rev_id(u32 orig_id) {
 	static const struct id_mapping id_mapping_table[] = {
 		/* Family 10h */
 		{ 0x100f00, 0x1000 },
@@ -67,7 +155,7 @@ static u16 get_equivalent_processor_rev_id(u32 orig_id) {
 
 static void apply_microcode_patch(const struct microcode *m)
 {
-	uint32_t new_patch_id;
+	u32 new_patch_id;
 	msr_t msr;
 
 	msr.hi = (uint64_t)(uintptr_t)m >> 32;
@@ -88,56 +176,38 @@ static void apply_microcode_patch(const struct microcode *m)
 			new_patch_id);
 }
 
-static uint16_t get_equivalent_processor_rev_id(void)
-{
-	uint32_t cpuid_family = cpuid_eax(1);
-
-	return (uint16_t)((cpuid_family & 0xff0000) >> 8 | (cpuid_family & 0xff));
-}
-
 static void amd_update_microcode(const void *ucode,  size_t ucode_len,
-				 uint32_t equivalent_processor_rev_id)
+				 u32 equivalent_processor_rev_id)
 {
 	const struct microcode *m;
-	const uint8_t *c = ucode;
-	const uint8_t *ucode_end = (uint8_t*)ucode + ucode_len;
-	const uint8_t *cur_section_hdr;
+	const struct container_header *c_hdr;
+	const struct section_header *s_hdr;
+	const u8 *ucode_end = (u8*)ucode + ucode_len;
 
-	uint32_t container_hdr_id;
-	uint32_t container_hdr_size;
-	uint32_t blob_size;
-	uint32_t sec_hdr_id;
+	c_hdr = (const struct container_header *)ucode;
 
 	/* Container Header */
-	container_hdr_id = read32(c);
-	if (container_hdr_id != UCODE_MAGIC) {
+	if (c_hdr->unique_id != UCODE_MAGIC) {
 		UCODE_DEBUG("Invalid container header ID\n");
 		return;
 	}
 
-	container_hdr_size = read32(c + 8);
-	cur_section_hdr = c + CONT_HDR + container_hdr_size;
-
-	/* Read in first section header ID */
-	sec_hdr_id = read32(cur_section_hdr);
-	c = cur_section_hdr + 4;
+	s_hdr = (const struct section_header *)
+			((uintptr_t)ucode + CONT_HDR + c_hdr->header_size);
 
 	/* Loop through sections */
-	while (sec_hdr_id == UCODE_SECTION_START_ID &&
-		c <= (ucode_end - F15H_MPB_MAX_SIZE)) {
+	while (s_hdr->start_id == UCODE_SECTION_START_ID &&
+		(uintptr_t)&s_hdr->ucode_size  <= (uintptr_t)(ucode_end - F15H_MPB_MAX_SIZE)) {
 
-		blob_size = read32(c);
-
-		m = (struct microcode *)(c + 4);
+		m = (const struct microcode *)((uintptr_t)s_hdr + sizeof(*s_hdr));
 
 		if (m->processor_rev_id == equivalent_processor_rev_id) {
 			apply_microcode_patch(m);
 			break;
 		}
 
-		cur_section_hdr = c + 4 + blob_size;
-		sec_hdr_id = read32(cur_section_hdr);
-		c = cur_section_hdr + 4;
+		s_hdr = (const struct section_header *)
+				((uintptr_t)s_hdr + sizeof(*s_hdr) + s_hdr->ucode_size);
 	}
 }
 
@@ -150,7 +220,8 @@ void amd_update_microcode_from_cbfs(void)
 {
 	const void *ucode;
 	size_t ucode_len;
-	uint16_t equivalent_processor_rev_id = get_equivalent_processor_rev_id();
+	u32 i;
+	u32 equivalent_processor_rev_id = get_equivalent_processor_rev_id(cpuid_eax(1));
 
 	if (equivalent_processor_rev_id == 0) {
 		UCODE_DEBUG("rev id not found. Skipping microcode patch!\n");
@@ -166,10 +237,4 @@ void amd_update_microcode_from_cbfs(void)
 			amd_update_microcode(ucode, ucode_len, equivalent_processor_rev_id);
 
 	}
-}
-
-void update_microcode(u32 cpu_deviceid)
-{
-	u32 equivalent_processor_rev_id = get_equivalent_processor_rev_id(cpu_deviceid);
-	amd_update_microcode_from_cbfs(equivalent_processor_rev_id);
 }

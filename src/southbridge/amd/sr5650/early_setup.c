@@ -22,10 +22,12 @@
 #include <console/console.h>
 #include <cpu/x86/msr.h>
 #include <cpu/amd/msr.h>
-#include <option.h>
 #include <southbridge/amd/common/reset.h>
 #include <southbridge/amd/sb700/sb700.h>
 #include <northbridge/amd/amdfam10/amdfam10.h>
+#include <option.h>
+
+#include "rev.h"
 #include "sr5650.h"
 #include "cmn.h"
 
@@ -276,8 +278,6 @@ static void sr5650_htinit(void)
 			}
 			set_fam10_ext_cfg_enable_bits(cpu_f0, 0x16C, 0x3F,
 						      ls2en_set ? 0x26 : 0x14);
-
-			/* TODO: HT Buffer Allocation for Ganged Links!!! */
 		}
 	}
 
@@ -329,9 +329,6 @@ static void fam10_optimization(void)
 	val = pci_read_config32(cpu1_f3, 0x8C);
 	val |= 1 << 14;
 	pci_write_config32(cpu1_f3, 0x8C, val);
-
-	/* TODO: HT Buffer Allocation for (un)Ganged Links */
-	/* rpr Table 5-11, 5-12 */
 }
 
 /*****************************************
@@ -367,8 +364,7 @@ static void sr5650_por_misc_index_init(pci_devfn_t nb_dev)
 {
 	unsigned char iommu;
 
-	iommu = 1;
-	get_option(&iommu, "iommu");
+	iommu = get_uint_option("iommu", 1);
 
 	if (iommu) {
 		/* enable IOMMU */

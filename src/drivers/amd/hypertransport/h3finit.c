@@ -32,10 +32,12 @@
 #include <device/pci_ops.h>
 #include <console/console.h>
 #include <cpu/x86/lapic_def.h>
+#include <cpu/amd/common/common.h>
 #include <cpu/amd/msr.h>
 #include <device/pci_def.h>
 #include <northbridge/amd/amdfam10/raminit.h>
 #include <northbridge/amd/amdfam10/amdfam10.h>
+#include <option.h>
 #include <types.h>
 
 /*----------------------------------------------------------------------------
@@ -1414,11 +1416,8 @@ static void regangLinks(sMainData *pDat)
 static void detectIoLinkIsochronousCapable(sMainData *pDat)
 {
 	uint8_t i;
-	unsigned char iommu;
 	uint8_t isochronous_capable = 0;
-
-	iommu = 1;
-	get_option(&iommu, "iommu");
+	uint8_t iommu = get_uint_option("iommu", 1);
 
 	for (i = 0; i < pDat->TotalLinks*2; i += 2) {
 		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i+1].Type == PORTLIST_TYPE_IO)) {
@@ -1469,8 +1468,9 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 	u8 cbPCBBAUpstreamWidth;
 
 	cbPCBFreqLimit_NVRAM = 0xfffff;
-	if (get_option(&temp, "hypertransport_speed_limit") == CB_SUCCESS)
-		cbPCBFreqLimit_NVRAM = ht_speed_limit[temp & 0xf];
+	temp = get_uint_option("hypertransport_speed_limit", 0);
+
+	cbPCBFreqLimit_NVRAM = ht_speed_limit[temp & 0xf];
 
 	if (!is_fam15h()) {
 		/* FIXME
@@ -1488,7 +1488,7 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 		cbPCBFreqLimit = 0xfffff;		// Maximum allowed by autoconfiguration
 		if (pDat->HtBlock->ht_link_configuration)
 			cbPCBFreqLimit = ht_speed_mhz_to_hw(pDat->HtBlock->ht_link_configuration->ht_speed_limit);
-		cbPCBFreqLimit = min(cbPCBFreqLimit, cbPCBFreqLimit_NVRAM);
+		cbPCBFreqLimit = MIN(cbPCBFreqLimit, cbPCBFreqLimit_NVRAM);
 
 #if CONFIG(LIMIT_HT_DOWN_WIDTH_8)
 		cbPCBABDownstreamWidth = 8;

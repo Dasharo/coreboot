@@ -20,6 +20,8 @@
 #include <console/console.h>
 #include <device/pci_ops.h>
 #include "ht_wrapper.h"
+#include "h3ncmn.h"
+
 
 /*----------------------------------------------------------------------------
  *			TYPEDEFS, DEFINITIONS AND MACROS

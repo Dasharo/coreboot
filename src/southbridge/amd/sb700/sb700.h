@@ -5,6 +5,7 @@
 
 #include <types.h>
 #include <device/device.h>
+#include <device/pci_ops.h>
 
 /* Power management index/data registers */
 #define BIOSRAM_INDEX	0xcd4

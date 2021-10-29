@@ -2,6 +2,7 @@
 
 #include <bootblock_common.h>
 #include <arch/bootblock.h>
+#include <console/console.h>
 #include <cpu/x86/bist.h>
 #include <cpu/x86/lapic.h>
 #include <cpu/amd/msr.h>
@@ -32,7 +33,7 @@ asmlinkage void bootblock_c_entry_bist(uint64_t base_timestamp, uint32_t bist)
 		enable_lapic();
 
 	if (!boot_cpu()) {
-		report_bist_failure(bist);
+		console_init();
 		run_romstage();
 	}
 

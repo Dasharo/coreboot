@@ -28,6 +28,7 @@
 
 #include <arch/cpu.h>
 #include <device/pci.h>
+#include <cpu/amd/common/common.h>
 #include <cpu/amd/msr.h>
 #include <device/pci_def.h>
 #include <northbridge/amd/amdfam10/raminit.h>
