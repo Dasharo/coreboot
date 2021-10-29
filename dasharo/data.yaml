@@ -1,0 +1,69 @@
+client:
+  name: Insurgo Dasharo
+dasharo:
+  documentation:
+    building_url: https://docs.dasharo.com/variants/talos_2/building-manual/
+    flashing_url: https://docs.dasharo.com/variants/talos_2/installation-manual/
+    name: Dasharo Compatibility
+    url: https://docs.dasharo.com/
+  framework:
+    name: coreboot
+    version: TODO
+  platform:
+    model: Talos II
+    vendor: Raptor Computing Systems
+release:
+  artifacts:
+  - name: bootblock_v0.4.0.signed.ecc
+    url: https://cloud.3mdeb.com/index.php/s/keXDLeR3BbL6zjS
+  - name: coreboot_v0.4.0.rom.signed.ecc
+    url: https://cloud.3mdeb.com/index.php/s/G4CCAbsKZRLfCcr
+  - name: bootblock_v0.4.0.SHA256
+    url: TBD
+  - name: bootblock_v0.4.0.SHA256.sig
+    url: TBD
+  - name: coreboot_v0.4.0.SHA256
+    url: TBD
+  - name: coreboot_v0.4.0.SHA256.sig
+    url: TBD
+  asciinema:
+    signature_verification: https://asciinema.org/a/415457
+  changelog:
+    added:
+    - OCC support
+    - XIVE support
+    - PCIe initialization
+    - IPMI block transfer interface
+    - Non-constant nodes in Device Tree are generated programmatically
+    - Missing parts of Device Tree describing specific unit (VPD, serial numbers)
+    - SPDs are not exposed in sysfs automatically
+  date:
+    day: 29
+    month: 10
+    year: 2021
+  diffstat:
+    deletions: '649'
+    files_changed: '85'
+    insertions: '13713'
+  sbom:
+  - name: coreboot
+    revision: TODO
+    url: https://github.com/Dasharo/coreboot/tree/raptor-cs_talos-2/rel_v0.4.0
+    version: v0.4.0
+  - name: skiboot
+    revision: '98581863'
+    url: https://git.raptorcs.com/git/talos-skiboot/tree/?id=9858186353f2203fe477f316964e03609d12fd1d
+    version: 04-16-2019
+  tag: raptor-cs_talos-2_v0.4.0
+  tests:
+    hardware_matrix:
+      url: https://docs.dasharo.com/variants/talos_2/hardware-matrix/
+    results:
+      failed: 0
+      not_tested: 0
+      passed: 3
+      passed_percent: 100%
+      url: https://docs.dasharo.com/variants/talos_2/test-results/
+    specification:
+      url: https://docs.dasharo.com/variants/talos_2/test-results/
+  version: v0.4.0
