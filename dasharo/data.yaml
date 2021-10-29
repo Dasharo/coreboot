@@ -14,10 +14,10 @@ dasharo:
     vendor: Raptor Computing Systems
 release:
   artifacts:
-  - name: bootblock_v0.4.0.signed.ecc
-    url: https://cloud.3mdeb.com/index.php/s/keXDLeR3BbL6zjS
-  - name: coreboot_v0.4.0.rom.signed.ecc
-    url: https://cloud.3mdeb.com/index.php/s/G4CCAbsKZRLfCcr
+  - name: dasharo_talos_2_bootblock_v0.4.0.signed.ecc
+    url: https://cloud.3mdeb.com/index.php/s/54MDtRgBNEmyKo6
+  - name: dasharo_talos_2_coreboot.rom.signed.ecc
+    url: https://cloud.3mdeb.com/index.php/s/5Pbw5EtmNimrdrj
   - name: heads_v0.4.0.rom.signed.ecc
     url: TBD
   - name: bootblock_v0.4.0.SHA256
