@@ -3,23 +3,23 @@
 
 #include <arch/byteorder.h>	// PPC_BIT()
 
-#define SPR_DEC					0x16
+#define SPR_DEC					22
 #define SPR_DEC_IMPLEMENTED_BITS		56
 #define SPR_DEC_LONGEST_TIME			((1ull << (SPR_DEC_IMPLEMENTED_BITS - 1)) - 1)
 
-#define SPR_SRR0				0x2A
-#define SPR_SRR1				0x2B
+#define SPR_SRR0				26
+#define SPR_SRR1				27
 
-#define SPR_DAWR				0xB4
-#define SPR_CIABR				0xBB
-#define SPR_DAWRX				0xBC
-#define SPR_TB					0x10C
-#define SPR_PVR					0x11F
-#define SPR_HSPRG0				0x130
-#define SPR_HDEC				0x136
-#define SPR_HRMOR				0x139
+#define SPR_DAWR				180
+#define SPR_CIABR				187
+#define SPR_DAWRX				188
+#define SPR_TB					268
+#define SPR_PVR					287
+#define SPR_HSPRG0				304
+#define SPR_HDEC				310
+#define SPR_HRMOR				313
 
-#define SPR_LPCR				0x13E
+#define SPR_LPCR				318
 #define SPR_LPCR_HVEE				PPC_BIT(17)
 #define SPR_LPCR_LD				PPC_BIT(46)
 #define SPR_LPCR_HDEE				PPC_BIT(48)
@@ -30,8 +30,8 @@
 #define SPR_LPCR_HVICE				PPC_BIT(62)
 #define SPR_LPCR_HDICE				PPC_BIT(63)
 
-#define SPR_HMER				0x150
-#define SPR_HMEER				0x151
+#define SPR_HMER				336
+#define SPR_HMEER				337
 /* Bits in HMER/HMEER */
 #define SPR_HMER_MALFUNCTION_ALERT		PPC_BIT(0)
 #define SPR_HMER_PROC_RECV_DONE			PPC_BIT(2)
@@ -49,10 +49,10 @@
 #define SPR_HMER_XSCOM_STATUS			PPC_BITMASK(21,23)
 #define SPR_HMER_XSCOM_OCCUPIED			PPC_BIT(23)
 
-#define SPR_PTCR				0x1D0
-#define SPR_PSSCR				0x357
-#define SPR_PMCR				0x374
-#define SPR_PIR					0x3FF
+#define SPR_PTCR				464
+#define SPR_PSSCR				855
+#define SPR_PMCR				884
+#define SPR_PIR					1023
 
 #ifndef __ASSEMBLER__
 #include <types.h>
