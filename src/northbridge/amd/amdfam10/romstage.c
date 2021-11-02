@@ -58,6 +58,19 @@ static void recover_postcar_frame(struct postcar_frame *pcf, int s3resume)
 	}
 }
 
+static void ap_romstage_entry(void)
+{
+	printk(BIOS_WARNING, "sysinfo range: [%p,%p]\n", get_sysinfo(), get_sysinfo() + 1);
+
+	mainboard_sysinfo_hook(&sysinfo);
+
+	initialize_cores(&sysinfo);
+}
+
+static void save_ap_romstage_ptr(void)
+{
+	save_bios_ram_data((u32)ap_romstage_entry, 4, BIOSRAM_AP_ENTRY);
+}
 
 void mainboard_romstage_entry(void)
 {
@@ -66,6 +79,10 @@ void mainboard_romstage_entry(void)
 	int s3resume;
 	struct postcar_frame pcf;
 	uintptr_t top_of_ram;
+
+	save_ap_romstage_ptr();
+
+	printk(BIOS_WARNING, "sysinfo range: [%p,%p]\n", get_sysinfo(), get_sysinfo() + 1);
 
 	mainboard_sysinfo_hook(&sysinfo);
 	

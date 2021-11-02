@@ -6,10 +6,10 @@
 #include <console/console.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
-
 #if CONFIG(SOUTHBRIDGE_AMD_SR5650)
 #include <southbridge/amd/sr5650/sr5650.h>
 #endif
+#include "sb700.h"
 
 #define SPI_BASE_ADDRESS		0xa0
 
@@ -251,4 +251,26 @@ void bootblock_early_southbridge_init(void)
 	sr5650_disable_pcie_bridge();
 	enable_sr5650_dev8();
 #endif
+}
+
+void save_bios_ram_data(u32 dword, int size, int biosram_pos)
+{
+	int i;
+	for (i = 0; i < size; i++) {
+		outb(biosram_pos + i, BIOSRAM_INDEX);
+		outb((dword >> (8 * i)) & 0xff, BIOSRAM_DATA);
+	}
+}
+
+void load_bios_ram_data(u32 *dword, int size, int biosram_pos)
+{
+	u32 data = 0;
+	int i;
+	for (i = 0; i < size; i++) {
+		outb(biosram_pos + i, BIOSRAM_INDEX);
+		data &= ~(0xff << (i * 8));
+		data |= inb(BIOSRAM_DATA) << (i *8);
+	}
+
+	*dword = data;
 }

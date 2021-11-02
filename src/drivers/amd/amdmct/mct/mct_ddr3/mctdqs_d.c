@@ -50,8 +50,7 @@ static void SetupDqsPattern_D(struct MCTStatStruc *pMCTstat,
 
 static void StoreDQSDatStrucVal_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 ChipSel);
 
-#define DQS_TRAIN_DEBUG 0
-// #define PRINT_PASS_FAIL_BITMAPS 1
+#define PRINT_PASS_FAIL_BITMAPS CONFIG(DEBUG_RAM_SETUP)
 
 void print_debug_dqs(const char *str, u32 val, u8 level)
 {

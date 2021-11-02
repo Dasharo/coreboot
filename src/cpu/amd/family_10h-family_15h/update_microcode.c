@@ -229,7 +229,6 @@ void amd_update_microcode_from_cbfs(void)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(microcode_cbfs_file); i++) {
-
 			ucode = cbfs_map(microcode_cbfs_file[i], &ucode_len);
 			if (!ucode)
 				continue;

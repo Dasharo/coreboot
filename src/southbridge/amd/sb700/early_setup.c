@@ -618,31 +618,42 @@ void sb7xx_51xx_early_setup(void)
 	sb700_acpi_init();
 }
 
-int s3_save_nvram_early(u32 dword, int size, int  nvram_pos)
+void save_bios_ram_data(u32 dword, int size, int biosram_pos)
 {
 	int i;
+	for (i = 0; i < size; i++) {
+		outb(biosram_pos + i, BIOSRAM_INDEX);
+		outb((dword >> (8 * i)) & 0xff, BIOSRAM_DATA);
+	}
+}
+
+void load_bios_ram_data(u32 *dword, int size, int biosram_pos)
+{
+	u32 data = 0;
+	int i;
+	for (i = 0; i < size; i++) {
+		outb(biosram_pos + i, BIOSRAM_INDEX);
+		data &= ~(0xff << (i * 8));
+		data |= inb(BIOSRAM_DATA) << (i *8);
+	}
+
+	*dword = data;
+}
+
+int s3_save_nvram_early(u32 dword, int size, int  nvram_pos)
+{
 	printk(BIOS_DEBUG, "Writing %x of size %d to nvram pos: %d\n", dword, size, nvram_pos);
 
-	for (i = 0; i < size; i++) {
-		outb(nvram_pos, BIOSRAM_INDEX);
-		outb((dword >> (8 * i)) & 0xff, BIOSRAM_DATA);
-		nvram_pos++;
-	}
+	save_bios_ram_data(dword, size, nvram_pos);
+	nvram_pos += size;
 
 	return nvram_pos;
 }
 
 int s3_load_nvram_early(int size, u32 *old_dword, int nvram_pos)
 {
-	u32 data = *old_dword;
-	int i;
-	for (i = 0; i < size; i++) {
-		outb(nvram_pos, BIOSRAM_INDEX);
-		data &= ~(0xff << (i * 8));
-		data |= inb(BIOSRAM_DATA) << (i *8);
-		nvram_pos++;
-	}
-	*old_dword = data;
+	load_bios_ram_data(old_dword, size, nvram_pos);
+	nvram_pos += size;
 	printk(BIOS_DEBUG, "Loading %x of size %d to nvram pos:%d\n", *old_dword, size,
 		nvram_pos-size);
 	return nvram_pos;

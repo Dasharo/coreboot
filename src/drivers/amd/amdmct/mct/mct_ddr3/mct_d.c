@@ -2688,7 +2688,6 @@ restartinit:
 			node_sys_base = pDCTstat->NodeSysBase;
 			node_sys_base += (pDCTstat->NodeSysLimit + 2) & ~0x0F;
 		}
-
 		/* If the boot fails make sure training is attempted after reset */
 		set_uint_option("allow_spd_nvram_cache_restore", 0);
 

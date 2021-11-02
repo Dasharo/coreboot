@@ -349,6 +349,8 @@ static u32 init_cpus(struct sys_info *sysinfo)
 			enable_apic_ext_id(id.nodeid);
 	}
 
+	enable_lapic();
+
 	if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0)) {
 		u32 initial_apicid = get_initial_apicid();
 
@@ -546,13 +548,8 @@ static void real_start_other_core(u32 nodeid, u32 cores)
 		/* Set PCI_DEV(0, 0x18+nodeid, 0),
 		 * 0x1dc bits 7:1 to start cores
 		 */
-		dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x1dc);
 		for (i = 1; i < cores + 1; i++)
 			core_activation_flags |= 1 << i;
-		/* Start the first core of each compute unit */
-		active_cores |= core_activation_flags & 0x55;
-		pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, dword
-				  | active_cores);
 
 		/* Each core shares a single set of MTRR registers with
 		 * another core in the same compute unit, therefore, it
@@ -561,21 +558,27 @@ static void real_start_other_core(u32 nodeid, u32 cores)
 		 * the other core's settings.
 		 */
 
-		/* Wait for the first core of each compute unit to start... */
-		for (i = 1; i < cores + 1; i++) {
-			if (!(i & 0x1)) {
-				u32 ap_apicid =
-				get_boot_apic_id(nodeid, i);
-				/* Timeout */
-				wait_cpu_state(ap_apicid, F10_APSTATE_ASLEEP,
-						F10_APSTATE_ASLEEP);
-			}
+		/* Start the first core of each compute unit sequentially */
+		for (i = 2; i < cores + 1; i += 2) {
+			dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x1dc);
+			active_cores |= (dword | (core_activation_flags & (1 << i)));
+			pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, active_cores);
+			/* Wait for the first core of each compute unit to start... */
+			u32 ap_apicid =	get_boot_apic_id(nodeid, i);
+			/* Timeout */
+			wait_cpu_state(ap_apicid, F10_APSTATE_ASLEEP, F10_APSTATE_ASLEEP);
 		}
 
-		/* Start the second core of each compute unit */
-		active_cores |= core_activation_flags & 0xaa;
-		pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, dword |
-				   active_cores);
+		for (i = 1; i < cores + 1; i += 2) {
+			/* Start the first core of each compute unit sequentially */
+			dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x1dc);
+			active_cores |= (dword | (core_activation_flags & (1 << i)));
+			pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, active_cores);
+			/* Wait for the first core of each compute unit to start... */
+			u32 ap_apicid =	get_boot_apic_id(nodeid, i);
+			/* Timeout */
+			wait_cpu_state(ap_apicid, F10_APSTATE_ASLEEP, F10_APSTATE_ASLEEP);
+		}
 	} else {
 		// set PCI_DEV(0, 0x18+nodeid, 0), 0x68 bit 5 to start core1
 		dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x68);
@@ -597,7 +600,6 @@ static void start_other_cores(u32 bsp_apicid)
 	u32 nodes;
 	u32 nodeid;
 
-	// disable multi_core
 	if (get_uint_option("multi_core", 1) == 0)  {
 		printk(BIOS_DEBUG, "Skip additional core init\n");
 		return;

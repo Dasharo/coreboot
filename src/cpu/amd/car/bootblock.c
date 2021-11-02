@@ -9,6 +9,7 @@
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
 #include <program_loading.h>
+#include <southbridge/amd/sb700/sb700.h>
 #include <smp/node.h>
 
 static uint32_t saved_bist;
@@ -23,6 +24,13 @@ static void enable_pci_mmconf(void)
 	wrmsr(MMIO_CONF_BASE, mmconf);
 }
 
+static void *get_ap_entry_ptr(void)
+{
+	u32 entry;
+	load_bios_ram_data(&entry, 4, BIOSRAM_AP_ENTRY);
+	return (void *)entry;
+}
+
 asmlinkage void bootblock_c_entry_bist(uint64_t base_timestamp, uint32_t bist)
 {
 	saved_bist = bist;
@@ -33,8 +41,9 @@ asmlinkage void bootblock_c_entry_bist(uint64_t base_timestamp, uint32_t bist)
 		enable_lapic();
 
 	if (!boot_cpu()) {
-		console_init();
-		run_romstage();
+		void (*ap_romstage_entry)(void) = get_ap_entry_ptr();
+		ap_romstage_entry(); /* execution does not return */
+		halt();
 	}
 
 	/* Call lib/bootblock.c main */
