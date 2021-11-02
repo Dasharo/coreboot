@@ -16,8 +16,6 @@
 enum cb_err ipmi_premem_init(const u16 port, const u16 device)
 {
 	const struct drivers_ipmi_config *conf = NULL;
-	struct ipmi_selftest_rsp selftestrsp = {0};
-	uint8_t retry_count;
 	const struct device *dev;
 
 	/* Find IPMI PNP device from devicetree in romstage */
