@@ -5,6 +5,8 @@
 #include <cpu/power/istep_10.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
+#include <drivers/ipmi/ipmi_if.h>
+#include <drivers/ipmi/ipmi_ops.h>
 #include <program_loading.h>
 #include <spd_bin.h>
 #include <endian.h>
@@ -331,6 +333,16 @@ void main(void)
 	timestamp_add_now(TS_START_ROMSTAGE);
 
 	console_init();
+
+	if (ipmi_premem_init(CONFIG_BMC_BT_BASE, 0) != CB_SUCCESS)
+		die("Failed to initialize IPMI\n");
+
+	/*
+	 * Two minutes to load.
+	 * Not handling return code, because the function itself prints log messages
+	 * and its failure is not a critical error.
+	 */
+	(void)ipmi_init_and_start_bmc_wdt(CONFIG_BMC_BT_BASE, 120, TIMEOUT_HARD_RESET);
 
 	istep_10_10(&phb_active_mask, iovalid_enable);
 	istep_10_12();
