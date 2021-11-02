@@ -17,6 +17,8 @@
 
 #define SB700_ACPI_IO_BASE 0x800
 
+#define BIOSRAM_AP_ENTRY	0xe8
+
 #define ACPI_PM_EVT_BLK		(SB700_ACPI_IO_BASE + 0x00) /* 4 bytes */
 #define ACPI_PM1_CNT_BLK	(SB700_ACPI_IO_BASE + 0x04) /* 2 bytes */
 #define ACPI_PMA_CNT_BLK	(SB700_ACPI_IO_BASE + 0x16) /* 1 byte */
@@ -61,6 +63,9 @@ void set_lpc_sticky_ctl(bool enable);
 
 int s3_save_nvram_early(u32 dword, int size, int  nvram_pos);
 int s3_load_nvram_early(int size, u32 *old_dword, int nvram_pos);
+
+void save_bios_ram_data(u32 dword, int size, int biosram_pos);
+void load_bios_ram_data(u32 *dword, int size, int biosram_pos);
 
 void enable_fid_change_on_sb(u32 sbbusn, u32 sbdn);
 u32 get_sbdn(u32 bus);

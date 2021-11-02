@@ -205,7 +205,7 @@ clear_fixed_var_mtrr_out:
 	/* CAR region base 0x30000 */
 	movl	$MTRR_FIX_64K_00000, %ecx
 	movl	$0x1e000000, %eax
-	movl	$0x1e, %edx
+	movl	$0x1e1e, %edx
 	wrmsr
 
 	jmp_if_fam15h(fam15_skip_dram_mtrr_setup)
@@ -219,7 +219,8 @@ clear_fixed_var_mtrr_out:
 fam15_skip_dram_mtrr_setup:
 
 	/* Enable cache for our code in Flash because we do XIP here */
-	movl	$MTRR_PHYS_BASE(0), %ecx
+	movl	$MTRR_PHYS_BASE(1), %ecx
+	xorl	%edx, %edx
 	movl	$_rom_mtrr_base, %eax
 	orl	$MTRR_TYPE_WRPROT, %eax
 	wrmsr
@@ -233,7 +234,7 @@ fam15_skip_dram_mtrr_setup:
 	shl	%cl, %edx
 	subl	$1, %edx
 
-	movl	$MTRR_PHYS_MASK(0), %ecx
+	movl	$MTRR_PHYS_MASK(1), %ecx
 	movl	$_rom_mtrr_mask, %eax
 	orl	$MTRR_PHYS_MASK_VALID, %eax
 	wrmsr

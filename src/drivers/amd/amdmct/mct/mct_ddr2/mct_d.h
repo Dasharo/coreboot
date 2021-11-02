@@ -20,7 +20,7 @@
 #ifndef MCT_D_H
 #define MCT_D_H
 
-#define DQS_TRAIN_DEBUG 0
+#define DQS_TRAIN_DEBUG CONFIG(DEBUG_RAM_SETUP)
 
 #include <stdint.h>
 

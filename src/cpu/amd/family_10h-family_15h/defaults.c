@@ -253,20 +253,6 @@ static void configure_message_triggered_c1e(u8 node)
 	}
 }
 
-static void dump_link_settings(void)
-{
-	u8 i;
-	u8 j;
-	for (i = 0; i < 4; i++) {
-		for (j = 0; j < 4; j++) {
-			printk(BIOS_SPEW, "Node %d link %d: type register: %08x control register: %08x extended control sublink 0: %08x 1: %08x\n", i, j,
-				pci_read_config32(NODE_PCI(i, 0), 0x98 + (j * 0x20)), pci_read_config32(NODE_PCI(i, 0), 0x84 + (j * 0x20)),
-				pci_read_config32(NODE_PCI(i, 0), 0x170 + (j * 0x4)), pci_read_config32(NODE_PCI(i, 0), 0x180 + (j * 0x4)));
-		}
-	}
-
-}
-
 struct ht_link_state {
 	u8 link_real;
 	u8 ganged;
@@ -745,7 +731,6 @@ void cpuSetAMDPCI(u8 node)
 	AMD_SetupPSIVID_d(platform, node); 
 	configure_pci_defaults(node);
 	configure_ht_stop_tristate(node);
-	dump_link_settings();
 	set_ht_phy_defaults(node);
 
 	/* FIXME: add UMA support and programXbarToSriReg(); */

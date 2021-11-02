@@ -1,4 +1,4 @@
-debug_level=Debug
+debug_level=Spew
 multi_core=Enable
 slow_cpu=off
 compute_unit_siblings=Enable

@@ -30,6 +30,7 @@
 #include <spi_flash.h>
 #include <pc80/mc146818rtc.h>
 #include <stdint.h>
+#include <option.h>
 #include <types.h>
 
 #include <drivers/amd/amdmct/wrappers/mcti.h>
@@ -1142,7 +1143,7 @@ int8_t save_mct_information_to_nvram(void)
 	if (restored) {
 		/* Allow training bypass if DIMM configuration is unchanged on next boot */
 		nvram = 1;
-		set_option("allow_spd_nvram_cache_restore", &nvram);
+		set_uint_option("allow_spd_nvram_cache_restore", &nvram);
 
 		printk(BIOS_DEBUG, "Hardware configuration unchanged since last boot; skipping write\n");
 		free(persistent_data);
@@ -1181,7 +1182,7 @@ int8_t save_mct_information_to_nvram(void)
 
 	/* Allow training bypass if DIMM configuration is unchanged on next boot */
 	nvram = 1;
-	set_option("allow_spd_nvram_cache_restore", &nvram);
+	set_uint_option("allow_spd_nvram_cache_restore", &nvram);
 
 	return 0;
 }
