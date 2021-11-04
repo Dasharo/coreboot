@@ -28,12 +28,16 @@ static void display_mtrr_fixed_types(uint64_t msr,
 	uint32_t type;
 
 	type = msr & MTRR_DEF_TYPE_MASK;
+	if (CONFIG(X86_AMD_FIXED_MTRRS))
+		type &= 0x07;
 	base_address = starting_address;
 	next_address = base_address;
 	for (index = 0; index < 64; index += 8) {
 		next_address = starting_address + (memory_size *
 			((index >> 3) + 1));
 		next_type = (msr >> index) & MTRR_DEF_TYPE_MASK;
+		if (CONFIG(X86_AMD_FIXED_MTRRS))
+			next_type &= 0x07;
 		if (next_type != type) {
 			printk(BIOS_DEBUG, "    0x%08x - 0x%08x: %s\n",
 				base_address, next_address - 1,

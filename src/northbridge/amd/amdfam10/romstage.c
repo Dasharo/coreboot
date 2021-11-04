@@ -37,34 +37,13 @@ struct sys_info *get_sysinfo(void)
 	return &sysinfo;
 }
 
-static void recover_postcar_frame(struct postcar_frame *pcf, int s3resume)
-{
-	msr_t base, mask;
-	int i;
-
-	/* Replicate non-UC MTRRs */
-	for (i = 0; i < pcf->ctx.max_var_mtrrs; i++) {
-		mask = rdmsr(MTRR_PHYS_MASK(i));
-		base = rdmsr(MTRR_PHYS_BASE(i));
-		u32 size = ~(mask.lo & ~0xfff) + 1;
-		u8 type = base.lo & 0x7;
-		base.lo &= ~0xfff;
-
-		if (!(mask.lo & MTRR_PHYS_MASK_VALID) ||
-			(type == MTRR_TYPE_UNCACHEABLE))
-			continue;
-
-		postcar_frame_add_mtrr(pcf, base.lo, size, type);
-	}
-}
-
 static void ap_romstage_entry(void)
 {
 	printk(BIOS_WARNING, "sysinfo range: [%p,%p]\n", get_sysinfo(), get_sysinfo() + 1);
 
-	mainboard_sysinfo_hook(&sysinfo);
+	mainboard_sysinfo_hook(get_sysinfo());
 
-	initialize_cores(&sysinfo);
+	initialize_cores(get_sysinfo());
 }
 
 static void save_ap_romstage_ptr(void)
@@ -77,8 +56,8 @@ void mainboard_romstage_entry(void)
 	u8 power_on_reset = 0;
 	u32 bsp_apicid = 0;
 	int s3resume;
+	int cbmem_initted = 0;
 	struct postcar_frame pcf;
-	uintptr_t top_of_ram;
 
 	save_ap_romstage_ptr();
 
@@ -100,6 +79,8 @@ void mainboard_romstage_entry(void)
 	southbridge_early_setup();
 
 	s3resume = acpi_is_wakeup_s3();
+	printk(BIOS_WARNING, "S3 resume state: %d\n", s3resume);
+
 	mainboard_early_init(s3resume);
 
 	early_cpu_finalize(&sysinfo, bsp_apicid);
@@ -119,26 +100,22 @@ void mainboard_romstage_entry(void)
 	mainboard_after_raminit(&sysinfo);
 	post_code(0x41);
 
+	display_mtrrs();
+
 	southbridge_before_pci_init();
 
-	if (s3resume && cbmem_recovery(s3resume))
-		printk(BIOS_EMERG, "Unable to recover CBMEM\n");
-
-	halt();
-
-	romstage_handoff_init(s3resume);
+	cbmem_initted = !cbmem_recovery(s3resume);
+	romstage_handoff_init(cbmem_initted && s3resume);
 	amdmct_cbmem_store_info(&sysinfo);
-	postcar_frame_init(&pcf, 0);
-	recover_postcar_frame(&pcf, s3resume);
 
-	/*
-	 * We need to make sure ramstage will be run cached. At this point exact
-	 * location of ramstage in cbmem is not known. Instruct postcar to cache
-	 * 16 megs under cbmem top which is a safe bet to cover ramstage.
-	 */
-	top_of_ram = (uintptr_t) cbmem_top();
-	postcar_frame_add_mtrr(&pcf, top_of_ram - 16*MiB, 16*MiB, MTRR_TYPE_WRBACK);
-	/* Cache the memory-mapped boot media. */
-	postcar_frame_add_romcache(&pcf, MTRR_TYPE_WRPROT);
-	run_postcar_phase(&pcf);
+	set_sysinfo_in_ram(1);
+
+	prepare_and_run_postcar(&pcf);
+}
+
+void fill_postcar_frame(struct postcar_frame *pcf)
+{
+	/* Cache 8 MiB region below the top of RAM to cover cbmem. */
+	uintptr_t top_of_ram = (uintptr_t)cbmem_top();
+	postcar_frame_add_mtrr(pcf, top_of_ram - 8*MiB, 8*MiB, MTRR_TYPE_WRBACK);
 }
