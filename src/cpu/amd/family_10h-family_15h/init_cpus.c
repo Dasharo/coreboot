@@ -17,6 +17,7 @@
 #include <northbridge/amd/amdfam10/amdfam10.h>
 #include <southbridge/amd/common/reset.h>
 #include <southbridge/amd/sb700/sb700.h>
+#include <delay.h>
 #include <option.h>
 #include <types.h>
 
@@ -438,8 +439,9 @@ static u32 init_cpus(struct sys_info *sysinfo)
 
 		/* AP is ready, configure MTRRs and go to sleep */
 		if (set_mtrrs)
-			set_var_mtrr(0, 0x00000000, 0x01000000, MTRR_TYPE_WRBACK);
+			set_var_mtrr(0, 0x00000000, CACHE_TMP_RAMTOP, MTRR_TYPE_WRBACK);
 
+		display_mtrrs();
 		printk(BIOS_DEBUG, "Disabling CAR on AP %02x\n", apicid);
 		if (is_fam15h()) {
 			/* Only modify the MSRs on the odd cores (the last cores to finish booting) */
@@ -728,4 +730,6 @@ void early_cpu_finalize(struct sys_info *sysinfo, u32 bsp_apicid)
 		printk(BIOS_DEBUG, "End FIDVIDMSR 0xc0010071 0x%08x 0x%08x\n", msr.hi, msr.lo);
 	}
 	post_code(0x38);
+
+	init_timer();
 }

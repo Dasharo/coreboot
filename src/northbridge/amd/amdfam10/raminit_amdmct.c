@@ -541,10 +541,9 @@ void amdmct_cbmem_store_info(struct sys_info *sysinfo)
 	if (!acpi_is_wakeup_s3()) {
 		/* Allocate memory */
 		struct amdmct_memory_info *mem_info;
-		cbmem_initialize_empty_id_size(CBMEM_ID_AMDMCT_MEMINFO,
-					       sizeof(struct amdmct_memory_info));
 
-		mem_info = (struct amdmct_memory_info *)cbmem_find(CBMEM_ID_AMDMCT_MEMINFO);
+		mem_info = (struct amdmct_memory_info *)cbmem_add(CBMEM_ID_AMDMCT_MEMINFO,
+								  sizeof(*mem_info));
 		if (!mem_info)
 			return;
 
@@ -563,12 +562,12 @@ void amdmct_cbmem_store_info(struct sys_info *sysinfo)
 		mem_info->ecc_scrub_rate = mctGet_NVbits(NV_DramBKScrub);
 
 		/* Zero out invalid/unused pointers */
-#if CONFIG(DIMM_DDR3)
-		for (i = 0; i < MAX_NODES_SUPPORTED; i++) {
-			mem_info->dct_stat[i].C_MCTPtr = NULL;
-			mem_info->dct_stat[i].C_DCTPtr[0] = NULL;
-			mem_info->dct_stat[i].C_DCTPtr[1] = NULL;
+		if (CONFIG(DIMM_DDR3)) {
+			for (i = 0; i < MAX_NODES_SUPPORTED; i++) {
+				mem_info->dct_stat[i].C_MCTPtr = NULL;
+				mem_info->dct_stat[i].C_DCTPtr[0] = NULL;
+				mem_info->dct_stat[i].C_DCTPtr[1] = NULL;
+			}
 		}
-#endif
 	}
 }

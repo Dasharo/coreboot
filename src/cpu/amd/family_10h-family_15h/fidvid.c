@@ -86,6 +86,7 @@ b.-  prep_fid_change(...)
 #include <device/pci_ops.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <timer.h>
 
 #include "family_10h_15h.h"
 #include "fidvid.h"
@@ -635,48 +636,27 @@ void prep_fid_change(void)
 
 static void waitCurrentPstate(u32 target_pstate)
 {
-	msr_t initial_msr = rdmsr(TSC_MSR);
 	msr_t pstate_msr = rdmsr(PS_STS_REG);
-	msr_t tsc_msr;
-	u8 timedout;
+	struct stopwatch sw;
 
-	/* paranoia ? I fear when we run fixPsNbVidBeforeWR we can enter a
-	* P1 that is a copy of P0, therefore has the same NB DID but the
-	* TSC will count twice per tick, so we have to wait for twice the
-	* count to achieve the desired timeout. But I'm likely to
-	* misunderstand this...
-	*/
-	u32 corrected_timeout = ((pstate_msr.lo==1)
-				&& (!(rdmsr(PSTATE_1_MSR).lo & NB_DID_M_ON))) ?
-				WAIT_PSTATE_TIMEOUT*2 : WAIT_PSTATE_TIMEOUT;
-	msr_t timeout;
+	stopwatch_init_msecs_expire(&sw, 100);
 
-	timeout.lo = initial_msr.lo + corrected_timeout;
-	timeout.hi = initial_msr.hi;
-	if ( (((u32)0xffffffff) - initial_msr.lo) < corrected_timeout ) {
-		timeout.hi++;
-	}
-
-	// assuming TSC ticks at 1.25 ns per tick (800 MHz)
 	do {
 		pstate_msr = rdmsr(PS_STS_REG);
-		tsc_msr = rdmsr(TSC_MSR);
-		timedout = (tsc_msr.hi > timeout.hi)
-			|| ((tsc_msr.hi == timeout.hi) && (tsc_msr.lo > timeout.lo ));
-	} while ( (pstate_msr.lo != target_pstate) && (! timedout) );
-
-	if (pstate_msr.lo != target_pstate) {
-		msr_t limit_msr = rdmsr(PS_LIM_REG);
-		printk(BIOS_ERR, "*** APIC ID %02x: timed out waiting for P-state %01x."
+		if (stopwatch_expired(&sw)) {
+			msr_t limit_msr = rdmsr(PS_LIM_REG);
+			printk(BIOS_ERR, "*** APIC ID %02x: timed out waiting for P-state %01x."
 				 " Current P-state %01x P-state current limit"
 				 " MSRC001_0061=%08x %08x\n",
 				cpuid_ebx(0x00000001) >> 24, target_pstate, pstate_msr.lo,
 				limit_msr.hi, limit_msr.lo);
+			break;
+		}
+	} while ((pstate_msr.lo != target_pstate));
 
-		do { // should we just go on instead ?
-			pstate_msr = rdmsr(PS_STS_REG);
-		} while (pstate_msr.lo != target_pstate);
-	}
+	do { // should we just go on instead ?
+		pstate_msr = rdmsr(PS_STS_REG);
+	} while (pstate_msr.lo != target_pstate);
 }
 
 static void set_pstate(u32 nonBoostedPState) {
@@ -952,7 +932,7 @@ static void fixPsNbVidAfterWR(u32 newNbVid, u8 NbVidUpdatedAll,u8 pviMode)
 	 * should we just update cpu_vid or nothing at all ?
 	 */
 	if (pviMode) { //single plane
-	    UpdateSinglePlaneNbVid();
+		UpdateSinglePlaneNbVid();
 	}
 	/* For each core in the system, transition all cores to StartupPstate */
 	msr = rdmsr(MSR_COFVID_STS);
