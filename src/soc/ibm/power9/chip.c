@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <assert.h>
-#include <device/device.h>
 #include <drivers/ipmi/ipmi_bt.h>
 #include <program_loading.h>
 #include <fit.h>
@@ -10,7 +9,6 @@
 #include <cpu/power/istep_18.h>
 #include <cpu/power/spr.h>
 #include <commonlib/stdlib.h>		// xzalloc
-#include <string.h>
 
 #include "homer.h"
 #include "istep_13_scom.h"
@@ -593,29 +591,19 @@ static void activate_slave_cores(void)
 
 void platform_prog_run(struct prog *prog)
 {
-	const struct device *dev;
-
-	for (dev = all_devices; dev != NULL; dev = dev->next) {
-		if (!dev->enabled || !dev->chip_ops || !dev->chip_ops->initialized ||
-		    !dev->chip_ops->name)
-			continue;
-		if (strcmp(dev->chip_ops->name, "IPMI BT"))
-			continue;
-
-		/*
-		 * Clear SMS_ATN aka EVT_ATN in BT_CTRL - Block Transfer IPMI protocol
-		 *
-		 * BMC sends event telling us that HIOMAP (access to flash, either real or
-		 * emulated, through LPC) daemon has been started. This sets the mentioned bit.
-		 * Skiboot enables interrupts, but because those are triggered on 0->1
-		 * transition and bit is already set, they do not arrive.
-		 *
-		 * While we're at it, clear read and write pointers, in case circular buffer
-		 * rolls over.
-		 */
-		if (ipmi_bt_clear(dev->path.pnp.port))
-			die("ipmi_bt_clear() has failed.\n");
-	}
+	/*
+	 * Clear SMS_ATN aka EVT_ATN in BT_CTRL - Block Transfer IPMI protocol
+	 *
+	 * BMC sends event telling us that HIOMAP (access to flash, either real or
+	 * emulated, through LPC) daemon has been started. This sets the mentioned bit.
+	 * Skiboot enables interrupts, but because those are triggered on 0->1
+	 * transition and bit is already set, they do not arrive.
+	 *
+	 * While we're at it, clear read and write pointers, in case circular buffer
+	 * rolls over.
+	 */
+	if (ipmi_bt_clear(CONFIG_BMC_BT_BASE))
+		die("ipmi_bt_clear() has failed.\n");
 
 	/*
 	 * Now that the payload and its interrupt vectors are already loaded

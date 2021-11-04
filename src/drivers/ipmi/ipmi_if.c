@@ -54,7 +54,7 @@ int ipmi_process_self_test_result(const struct device *dev)
 	uint8_t retry_count = 0;
 	struct ipmi_selftest_rsp selftestrsp = {0};
 
-	struct drivers_ipmi_config *conf = dev->chip_info;
+	const struct drivers_ipmi_config *conf = dev->chip_info;
 	uint8_t retry_limit = 0;
 
 	if (conf && conf->wait_for_bmc)
