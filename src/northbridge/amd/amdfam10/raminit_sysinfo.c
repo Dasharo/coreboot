@@ -1,4 +1,4 @@
-/*/* SPDX-License-Identifier: GPL-2.0-only */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/amd/common/nums.h>
 #include <device/pci_ops.h>

@@ -1,4 +1,4 @@
-/*/* SPDX-License-Identifier: GPL-2.0-only */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #ifndef AMD_FAM10H_RAMINIT_H
 #define AMD_FAM10H_RAMINIT_H
