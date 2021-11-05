@@ -37,6 +37,8 @@ u8 pm_ioread(u8 reg);
 void pm2_iowrite(u8 reg, u8 value);
 u8 pm2_ioread(u8 reg);
 
+void set_sm_enable_bits(struct device *sm_dev, u32 reg_pos, u32 mask, u32 val);
+
 /* This shouldn't be called before set_sb700_revision() is called.
  * Once set_sb700_revision() is called, we use get_sb700_revision(),
  * the simpler one, to get the sb700 revision ID.
