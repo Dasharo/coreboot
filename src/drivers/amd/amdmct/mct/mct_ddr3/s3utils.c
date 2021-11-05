@@ -173,26 +173,16 @@ uint16_t calculate_nvram_mct_hash(void)
 	uint16_t ret;
 
 	ret = 0;
-	if (get_option(&nvram, "max_mem_clock") == CB_SUCCESS)
-		ret |= nvram & 0xf;
-	if (get_option(&nvram, "minimum_memory_voltage") == CB_SUCCESS)
-		ret |= (nvram & 0x3) << 4;
-	if (get_option(&nvram, "ECC_memory") == CB_SUCCESS)
-		ret |= (nvram & 0x1) << 6;
-	if (get_option(&nvram, "ECC_redirection") == CB_SUCCESS)
-		ret |= (nvram & 0x1) << 7;
-	if (get_option(&nvram, "ecc_scrub_rate") == CB_SUCCESS)
-		ret |= (nvram & 0x1) << 8;
-	if (get_option(&nvram, "interleave_chip_selects") == CB_SUCCESS)
-		ret |= (nvram & 0x1) << 9;
-	if (get_option(&nvram, "interleave_nodes") == CB_SUCCESS)
-		ret |= (nvram & 0x1) << 10;
-	if (get_option(&nvram, "interleave_memory_channels") == CB_SUCCESS)
-		ret |= (nvram & 0x1) << 11;
-	if (get_option(&nvram, "cpu_c_states") == CB_SUCCESS)
-		ret |= (nvram & 0x1) << 12;
-	if (get_option(&nvram, "cpu_cc6_state") == CB_SUCCESS)
-		ret |= (nvram & 0x1) << 13;
+	ret |=  get_uint_option("max_mem_clock", 0) & 0xf;
+	ret |= (get_uint_option("minimum_memory_voltage", 0) & 0x3) << 4;
+	ret |= (get_uint_option("ECC_memory", 1) & 0x1) << 6;
+	ret |= (get_uint_option("ECC_redirection", 1) & 0x1) << 7;
+	ret |= (get_uint_option("ecc_scrub_rate", 6) & 0x1) << 8;
+	ret |= (get_uint_option("interleave_chip_selects", 1) & 0x1) << 9;
+	ret |= (get_uint_option("interleave_nodes", 0) & 0x1) << 10;
+	ret |= (get_uint_option("interleave_memory_channels", 1) & 0x1) << 11;
+	ret |= (get_uint_option("cpu_c_states", 1) & 0x1) << 12;
+	ret |= (get_uint_option("cpu_cc6_state", 1) & 0x1) << 13;
 
 	return ret;
 }

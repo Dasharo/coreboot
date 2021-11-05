@@ -256,7 +256,7 @@ u16 mctGet_NVbits(u8 index)
 		 * 0x15: 42ms
 		 * 0x16: 84ms
 		 */
-		val = get_uint_option("ecc_scrub_rate", 0);
+		val = get_uint_option("ecc_scrub_rate", 6);
 		break;
 	case NV_L2BKScrub:
 		val = 0;	/* Disabled - See L2Scrub in BKDG */
