@@ -1,4 +1,4 @@
-/*/* SPDX-License-Identifier: GPL-2.0-only */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #ifndef AMDFAM10_H
 #define AMDFAM10_H

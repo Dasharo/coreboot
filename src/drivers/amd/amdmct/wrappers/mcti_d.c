@@ -1,18 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- * Copyright (C) 2015 Timothy Pearson <tpearson@raptorengineeringinc.com>, Raptor Engineering
- * Copyright (C) 2007-2008 Advanced Micro Devices, Inc.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 /* Call-backs */
 
@@ -364,7 +350,7 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
 
 	/* Set limits if needed */
 	pDCTstat->PresetmaxFreq = mct_MaxLoadFreq(MAX(ch1_count, ch2_count),
-					MAX(highest_rank_count[0], highest_rank_count[1]), 
+					MAX(highest_rank_count[0], highest_rank_count[1]),
 					(ch1_registered || ch2_registered),
 					(ch1_voltage | ch2_voltage), pDCTstat->PresetmaxFreq);
 }

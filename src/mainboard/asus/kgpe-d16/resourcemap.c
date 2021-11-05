@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <commonlib/helpers.h>
 #include <northbridge/amd/amdfam10/amdfam10.h>

@@ -1,4 +1,4 @@
-/*/* SPDX-License-Identifier: GPL-2.0-only */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 /*
  * This file initializes the CPU cores for voltage and frequency settings

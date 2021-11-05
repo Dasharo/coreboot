@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <stdint.h>
 #include <arch/cpu.h>
@@ -512,7 +512,7 @@ static void set_ht_link_to_xcs_token_counts(u8 node, u8 link, struct ht_link_sta
 	if (link_state->iolink && link_state->ganged) {
 		if (!is_dual_node(node)) {
 			link_state->probe_tok_0 = 0;
-		} else if ((sockets == 1) || (sockets == 2) || 
+		} else if ((sockets == 1) || (sockets == 2) ||
 			   ((sockets == 4) && (sockets_populated == 2))) {
 			link_state->probe_tok_0 = 0;
 		}
@@ -728,7 +728,7 @@ void cpuSetAMDPCI(u8 node)
 	platform = get_platform_type();
 
 	/* Set PSIVID offset which is not table driven */
-	AMD_SetupPSIVID_d(platform, node); 
+	AMD_SetupPSIVID_d(platform, node);
 	configure_pci_defaults(node);
 	configure_ht_stop_tristate(node);
 	set_ht_phy_defaults(node);
@@ -903,7 +903,8 @@ void cpuSetAMDMSR(u8 node_id)
 	if (revision & AMD_OR_C0)
 		enable_memory_speed_boost(node_id);
 
-	if (CONFIG(SOUTHBRIDGE_AMD_SB700) || CONFIG(SOUTHBRIDGE_AMD_SB800)) {
+	/* SB700 or SB800 */
+	if (CONFIG(SOUTHBRIDGE_AMD_SB700)) {
 		if (revision & (AMD_DR_GT_D0 | AMD_FAM15_ALL))
 			enable_message_triggered_c1e(revision);
 

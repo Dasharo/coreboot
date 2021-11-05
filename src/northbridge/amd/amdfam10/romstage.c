@@ -1,4 +1,4 @@
-/*/* SPDX-License-Identifier: GPL-2.0-only */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
 #include <arch/romstage.h>
@@ -85,7 +85,7 @@ void mainboard_romstage_entry(void)
 	printk(BIOS_WARNING, "sysinfo range: [%p,%p]\n", get_sysinfo(), get_sysinfo() + 1);
 
 	mainboard_sysinfo_hook(&sysinfo);
-	
+
 	bsp_apicid = initialize_cores(&sysinfo);
 
 	/* Setup sysinfo defaults */
