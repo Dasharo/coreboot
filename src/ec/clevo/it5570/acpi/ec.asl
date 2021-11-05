@@ -59,6 +59,22 @@ Device (EC0)
 		}
 	}
 
+	Method (UPB, 0, Serialized) {
+		Debug = "EC: UPB"
+		// Set current AC state
+		\_SB.AC.ACFG = ADP
+
+		// Update battery information and status
+		\_SB.BAT0.UPBI ()
+		\_SB.BAT0.UPBS ()
+
+		// Notify of changes
+		Notify(\_SB.AC, Zero)
+		Notify(\_SB.BAT0, Zero)
+
+		Sleep (1000)
+	}
+
 	Method (PTS, 1, Serialized) {
 		Debug = Concatenate("EC: PTS: ", ToHexString(Arg0))
 		If (ECOK) {
@@ -69,20 +85,8 @@ Device (EC0)
 
 	Method (WAK, 1, Serialized) {
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
-		If (ECOK)
-		{
-			// Set current AC state
-			\_SB.AC.ACFG = ADP
-
-			// Update battery information and status
-			\_SB.BAT0.UPBI ()
-			\_SB.BAT0.UPBS ()
-
-			// Notify of changes
-			Notify(\_SB.AC, Zero)
-			Notify(\_SB.BAT0, Zero)
-
-			Sleep (1000)
+		If (ECOK) {
+			UPB ()
 		}
 	}
 
@@ -144,6 +148,13 @@ Device (EC0)
 
 	Method (S0IX, 1, Serialized) // S0IX Entry/Exit
 	{
+		If (Arg0) {
+			Debug = "EC: S0IX Enter"
+		} Else {
+			Debug = "EC: S0IX Exit"
+			UPB ()
+		}
+
 		FDAT = 0xC2
 		FBUF = Arg0
 		FCMD = 0xD2
