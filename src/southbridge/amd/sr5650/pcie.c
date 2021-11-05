@@ -428,7 +428,7 @@ static void gpp12_cpl_buf_alloc(struct device *nb_dev, struct device *dev)
 	}
 }
 /* BTS report error without this function. But some board
- * fail to boot. Leave it here for future debug. 
+ * fail to boot. Leave it here for future debug.
  */
 
 /*

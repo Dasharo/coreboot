@@ -141,7 +141,7 @@ static void pcie_init(struct device *dev)
 
 static void sr5690_read_resource(struct device *dev)
 {
-	if (CONFIG(EXT_CONF_SUPPORT)) {
+	if (CONFIG(MMCONF_SUPPORT)) {
 		printk(BIOS_DEBUG,"%s: %s\n", __func__, dev_path(dev));
 		set_nbmisc_enable_bits(dev, 0x0, 1 << 3, 1 << 3);	/* Hide BAR3 */
 	}
@@ -166,7 +166,7 @@ static struct resource *get_cpu_mmio_resources(struct device *amd_ht_cfg_dev,
 	if (!amd_ht_cfg_dev || !amd_addr_map_dev) {
 		printk(BIOS_WARNING, "Unable to locate CPU control devices\n");
 		return NULL;
-	} 
+	}
 
 	return sr5650_retrieve_cpu_mmio_resource();
 
@@ -186,9 +186,9 @@ static void sr5690_set_resources(struct device *dev)
 
 	printk(BIOS_DEBUG,"%s %s\n", dev_path(dev), __func__);
 	/* Set IOAPIC's index to 1 and make sure no one changes it */
-	pci_write_config32(dev, 0xf8, 0x1);	
+	pci_write_config32(dev, 0xf8, 0x1);
 
-	if (!CONFIG(EXT_CONF_SUPPORT)) {
+	if (!CONFIG(MMCONF_SUPPORT)) {
 		pci_dev_set_resources(dev);
 		return;
 	}
