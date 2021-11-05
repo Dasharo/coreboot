@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/x86/post_code.h>
 #include <cpu/x86/mtrr.h>

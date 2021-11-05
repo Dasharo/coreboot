@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #ifndef __SR5650_CMN_H__
 #define __SR5650_CMN_H__

@@ -8,4 +8,3 @@ subdirs-y += ../../x86/pae
 subdirs-y += ../../x86/mtrr
 subdirs-y += ../../x86/smm
 subdirs-y += ../smm
-

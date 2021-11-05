@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #ifndef SR5650_CHIP_H
 #define SR5650_CHIP_H
