@@ -73,8 +73,6 @@ static void sb700_lpc_read_resources(struct device *dev)
 	/* Get the normal pci resources of this device */
 	pci_dev_read_resources(dev);	/* We got one for APIC, or one more for TRAP */
 
-	pci_get_resource(dev, 0xA0);	/* SPI ROM base address */
-
 	/* Add an extra subtractive resource for both memory and I/O. */
 	res = new_resource(dev, IOINDEX_SUBTRACTIVE(0, 0));
 	res->base = 0;
@@ -88,18 +86,13 @@ static void sb700_lpc_read_resources(struct device *dev)
 	res->flags = IORESOURCE_MEM | IORESOURCE_SUBTRACTIVE |
 		     IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 
+	res = new_resource(dev, IOINDEX_SUBTRACTIVE(2, 0));
+	res->base = (uintptr_t)SPI_BASE_ADDRESS;
+	res->size = 0x1000;
+	res->flags = IORESOURCE_MEM | IORESOURCE_SUBTRACTIVE |
+		     IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
+
 	compact_resources(dev);
-}
-
-static void sb700_lpc_set_resources(struct device *dev)
-{
-	struct resource *res;
-
-	pci_dev_set_resources(dev);
-
-	/* Special case. SPI Base Address. The SpiRomEnable should be set. */
-	res = find_resource(dev, 0xA0);
-	pci_write_config32(dev, 0xA0, res->base | 1 << 1);
 }
 
 /**
@@ -257,7 +250,7 @@ static struct pci_operations lops_pci = {
 
 static struct device_operations lpc_ops = {
 	.read_resources = sb700_lpc_read_resources,
-	.set_resources = sb700_lpc_set_resources,
+	.set_resources = pci_dev_set_resources,
 	.enable_resources = sb700_lpc_enable_resources,
 #if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name = lpc_acpi_name,
