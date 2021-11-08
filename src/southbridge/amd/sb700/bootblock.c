@@ -11,10 +11,9 @@
 #endif
 #include "sb700.h"
 
-#define SPI_BASE_ADDRESS		0xa0
+#define SPI_BASE_ADDRESS_REG		0xa0
 
 #define SPI_CONTROL_1			0xc
-#define TEMPORARY_SPI_BASE_ADDRESS	((void *)0xfec10000)
 
 static void sb7xx_51xx_pci_port80(void)
 {
@@ -202,23 +201,16 @@ static void sb700_configure_rom(void)
 
 	dev = PCI_DEV(0, 0x14, 3);
 
+	pci_read_config32(dev, SPI_BASE_ADDRESS_REG);
+	dword = (uintptr_t)SPI_BASE_ADDRESS & ~0x1f;
+	dword |= (0x1 << 1);	/* SpiRomEnable = 1 */
+	pci_write_config32(dev, SPI_BASE_ADDRESS_REG, dword);
+
 	if (CONFIG(SOUTHBRIDGE_AMD_SB700_33MHZ_SPI)) {
-		u32 prev_spi_cfg;
-
-		/* Temporarily set up SPI access to change SPI speed */
-		prev_spi_cfg = dword = pci_read_config32(dev, SPI_BASE_ADDRESS);
-		dword &= ~(0x7ffffff << 5);		/* SPI_BaseAddr */
-		dword |= (uintptr_t)TEMPORARY_SPI_BASE_ADDRESS & (0x7ffffff << 5);
-		dword |= (0x1 << 1);			/* SpiRomEnable = 1 */
-		pci_write_config32(dev, SPI_BASE_ADDRESS, dword);
-
-		dword = read32(TEMPORARY_SPI_BASE_ADDRESS + SPI_CONTROL_1);
+		dword = read32(SPI_BASE_ADDRESS + SPI_CONTROL_1);
 		dword &= ~(0x3 << 12);	/* NormSpeed = 0x1 */
 		dword |= (0x1 << 12);
-		write32(TEMPORARY_SPI_BASE_ADDRESS + SPI_CONTROL_1, dword);
-
-		/* Restore previous SPI access */
-		pci_write_config32(dev, SPI_BASE_ADDRESS, prev_spi_cfg);
+		write32(SPI_BASE_ADDRESS + SPI_CONTROL_1, dword);
 	}
 }
 
