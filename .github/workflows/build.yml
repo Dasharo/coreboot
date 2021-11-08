@@ -15,6 +15,13 @@ jobs:
   build:
     runs-on: [self-hosted, builder]
     steps:
+    - name: Runner information
+      run: |
+        date
+        id -u
+        id -g
+        ls -la
+
     - name: Checkout repository
       uses: actions/checkout@v2
       with:
@@ -30,10 +37,8 @@ jobs:
         git remote set-url origin https://review.coreboot.org/coreboot.git
         git fetch origin
 
-    - name: Build information
+    - name: Repository information
       run: |
-        date
-        id -u
         git --version
         git rev-parse --verify HEAD
         git log -n 1
