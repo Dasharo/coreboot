@@ -23,14 +23,14 @@ unsigned long acpi_fill_madt(unsigned long current)
 	/* Write SB700 IOAPIC, only one */
 	current += acpi_create_madt_ioapic((acpi_madt_ioapic_t *) current, apicid_sp5100,
 					   IO_APIC_ADDR, gsi_base);
-	/* IOAPIC on rs5690 */
+	/* IOAPIC on sr56x0 */
 	gsi_base += 24;		/* SB700 has 24 IOAPIC entries. */
 	dev = pcidev_on_root(0, 0);
 	if (dev) {
 		pci_write_config32(dev, 0xF8, 0x1);
 		dword = pci_read_config32(dev, 0xFC) & 0xfffffff0;
-		current += acpi_create_madt_ioapic((acpi_madt_ioapic_t *) current, apicid_sr5650,
-						   dword, gsi_base);
+		current += acpi_create_madt_ioapic((acpi_madt_ioapic_t *) current,
+						   apicid_sr5650, dword, gsi_base);
 	}
 
 	/* bus, source, gsirq, flags */

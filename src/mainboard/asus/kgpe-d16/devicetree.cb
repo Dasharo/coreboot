@@ -100,8 +100,17 @@ chip northbridge/amd/amdfam10/root_complex	# Root complex
 						chip drivers/pc80/tpm
 							device pnp 4e.0 on end		# TPM module
 						end
+						chip drivers/ipmi		# BMC KCS
+							device pnp ca2.0 on end
+						end
 					end
-					device pci 14.4 off end
+					device pci 14.4 on			# Bridge
+						device pci 1.0 on end		# VGA
+						device pci 2.0 on end		# FireWire
+						device pci 3.0 on		# Slot
+							# Slot			# PCI 0
+						end
+					end
 					device pci 14.5 on end			# USB OHCI2 0x4399
 				end
 			end
