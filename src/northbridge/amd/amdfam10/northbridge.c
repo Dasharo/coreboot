@@ -6,6 +6,10 @@
 #include <cpu/amd/family_10h-family_15h/ram_calc.h>
 #include <device/device.h>
 #include <device/pci.h>
+#include <device/pci_ids.h>
+#include <lib.h>
+#include <northbridge/amd/nb_common.h>
+#include <cpu/amd/amdfam10_sysconf.h>
 
 #include "amdfam10.h"
 
@@ -21,6 +25,490 @@ void set_pirq_router_bus(u8 bus)
 {
 	pirq_router_bus = bus;
 }
+
+#define FX_DEVS NODE_NUMS
+static struct device *__f0_dev[FX_DEVS];
+static struct device *__f1_dev[FX_DEVS];
+static struct device *__f2_dev[FX_DEVS];
+static struct device *__f4_dev[FX_DEVS];
+static unsigned int fx_devs = 0;
+
+/*
+ * Assumptions: CONFIG_CBB == 0
+ * dev_find_slot() was made static, also wouldn't work before PCI enumeration
+ */
+static void get_fx_devs(void)
+{
+	if (fx_devs)
+		return;
+
+	int i;
+	for (i = 0; i < FX_DEVS; i++) {
+		__f0_dev[i] = pcidev_on_root(CONFIG_CDB + i, 0);
+		__f1_dev[i] = pcidev_on_root(CONFIG_CDB + i, 1);
+		__f2_dev[i] = pcidev_on_root(CONFIG_CDB + i, 2);
+		__f4_dev[i] = pcidev_on_root(CONFIG_CDB + i, 4);
+		if (__f0_dev[i] != NULL && __f1_dev[i] != NULL)
+			fx_devs = i+1;
+	}
+	if (__f1_dev[0] == NULL || __f0_dev[0] == NULL || fx_devs == 0) {
+		die("Cannot find 0:0x18.[0|1]\n");
+	}
+}
+
+/*
+static u32 f1_read_config32(unsigned int reg)
+{
+	if (fx_devs == 0)
+		get_fx_devs();
+	return pci_read_config32(__f1_dev[0], reg);
+}
+*/
+
+static void f1_write_config32(unsigned int reg, u32 value)
+{
+	int i;
+	if (fx_devs == 0)
+		get_fx_devs();
+	for (i = 0; i < fx_devs; i++) {
+		struct device *dev;
+		dev = __f1_dev[i];
+		if (dev && dev->enabled) {
+			pci_write_config32(dev, reg, value);
+		}
+	}
+}
+
+static void set_vga_enable_reg(u32 nodeid, u32 linkn)
+{
+	u32 val;
+
+	val =  1 | (nodeid<<4) | (linkn<<12);
+	/* it will routing (1)mmio  0xa0000:0xbffff (2) io 0x3b0:0x3bb,
+	 0x3c0:0x3df */
+	f1_write_config32(0xf4, val);
+
+}
+
+static u32 amdfam10_nodeid(struct device *dev)
+{
+#if NODE_NUMS == 64
+	unsigned int busn;
+	busn = dev->bus->secondary;
+	if (busn != CONFIG_CBB) {
+		return (dev->path.pci.devfn >> 3) - CONFIG_CDB + 32;
+	} else {
+		return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
+	}
+
+#else
+	return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
+#endif
+}
+
+static u32 get_io_addr_index(u32 nodeid, u32 linkn)
+{
+	u32 index;
+
+	for (index = 0; index < 256; index++) {
+
+		if (index + 4 >= ARRAY_SIZE(sysconf.conf_io_addrx))
+			die("Error! Out of bounds read in %s:%s\n", __FILE__, __func__);
+
+		if (sysconf.conf_io_addrx[index+4] == 0) {
+			sysconf.conf_io_addr[index+4] =  (nodeid & 0x3f);
+			sysconf.conf_io_addrx[index+4] = 1 | ((linkn & 0x7)<<4);
+			return index;
+		 }
+	 }
+
+	 return	 0;
+}
+
+static u32 get_mmio_addr_index(u32 nodeid, u32 linkn)
+{
+	u32 index;
+
+	for (index = 0; index < 64; index++) {
+
+		if (index + 8 >= ARRAY_SIZE(sysconf.conf_mmio_addrx))
+			die("Error! Out of bounds read in %s:%s\n", __FILE__, __func__);
+
+		if (sysconf.conf_mmio_addrx[index+8] == 0) {
+			sysconf.conf_mmio_addr[index+8] = (nodeid & 0x3f);
+			sysconf.conf_mmio_addrx[index+8] = 1 | ((linkn & 0x7)<<4);
+			return index;
+		}
+	}
+
+	return 0;
+}
+
+static void store_conf_io_addr(u32 nodeid, u32 linkn, u32 reg, u32 index,
+				u32 io_min, u32 io_max)
+{
+	u32 val;
+
+	/* io range allocation */
+	index = (reg-0xc0)>>3;
+
+	val = (nodeid & 0x3f); // 6 bits used
+	sysconf.conf_io_addr[index] = val | ((io_max<<8) & 0xfffff000); //limit : with nodeid
+	val = 3 | ((linkn & 0x7)<<4); // 8 bits used
+	sysconf.conf_io_addrx[index] = val | ((io_min<<8) & 0xfffff000); // base : with enable bit
+
+	if (sysconf.io_addr_num < (index+1))
+		sysconf.io_addr_num = index+1;
+}
+
+
+static void store_conf_mmio_addr(u32 nodeid, u32 linkn, u32 reg, u32 index,
+					u32 mmio_min, u32 mmio_max)
+{
+	u32 val;
+
+	/* io range allocation */
+	index = (reg-0x80)>>3;
+
+	val = (nodeid & 0x3f); // 6 bits used
+	sysconf.conf_mmio_addr[index] = val | (mmio_max & 0xffffff00); //limit : with nodeid and linkn
+	val = 3 | ((linkn & 0x7)<<4); // 8 bits used
+	sysconf.conf_mmio_addrx[index] = val | (mmio_min & 0xffffff00); // base : with enable bit
+
+	if (sysconf.mmio_addr_num<(index+1))
+		sysconf.mmio_addr_num = index+1;
+}
+
+
+static void set_io_addr_reg(struct device *dev, u32 nodeid, u32 linkn, u32 reg,
+		     u32 io_min, u32 io_max)
+{
+	u32 i;
+	u32 tempreg;
+
+	/* io range allocation */
+	tempreg = (nodeid&0xf) | ((nodeid & 0x30)<<(8-4)) | (linkn<<4) |  ((io_max&0xf0)<<(12-4)); //limit
+	for (i = 0; i < sysconf.nodes; i++)
+		pci_write_config32(__f1_dev[i], reg+4, tempreg);
+
+	tempreg = 3 /*| (3<<4)*/ | ((io_min&0xf0)<<(12-4));	      //base :ISA and VGA ?
+	for (i = 0; i < sysconf.nodes; i++)
+		pci_write_config32(__f1_dev[i], reg, tempreg);
+}
+
+static void set_mmio_addr_reg(u32 nodeid, u32 linkn, u32 reg, u32 index, u32 mmio_min, u32 mmio_max, u32 nodes)
+{
+	u32 i;
+	u32 tempreg;
+
+	/* io range allocation */
+	tempreg = (nodeid&0xf) | (linkn<<4) |	 (mmio_max&0xffffff00); //limit
+	for (i = 0; i < nodes; i++)
+		pci_write_config32(__f1_dev[i], reg+4, tempreg);
+	tempreg = 3 | (nodeid & 0x30) | (mmio_min&0xffffff00);
+	for (i = 0; i < sysconf.nodes; i++)
+		pci_write_config32(__f1_dev[i], reg, tempreg);
+}
+
+static int reg_useable(unsigned int reg, struct device *goal_dev, unsigned int goal_nodeid,
+			unsigned int goal_link)
+{
+	struct resource *res;
+	unsigned int nodeid, link = 0;
+	int result;
+	res = 0;
+	for (nodeid = 0; !res && (nodeid < fx_devs); nodeid++) {
+		struct device *dev;
+		dev = __f0_dev[nodeid];
+		if (!dev)
+			continue;
+		for (link = 0; !res && (link < 8); link++) {
+			res = probe_resource(dev, IOINDEX(0x1000 + reg, link));
+		}
+	}
+	result = 2;
+	if (res) {
+		result = 0;
+		if (	(goal_link == (link - 1)) &&
+			(goal_nodeid == (nodeid - 1)) &&
+			(res->flags <= 1)) {
+			result = 1;
+		}
+	}
+	return result;
+}
+
+static struct resource *amdfam10_find_iopair(struct device *dev, unsigned int nodeid, unsigned int link)
+{
+	struct resource *resource;
+	u32 free_reg, reg;
+	resource = 0;
+	free_reg = 0;
+	for (reg = 0xc0; reg <= 0xd8; reg += 0x8) {
+		int result;
+		result = reg_useable(reg, dev, nodeid, link);
+		if (result == 1) {
+			/* I have been allocated this one */
+			break;
+		} else if (result > 1) {
+			/* I have a free register pair */
+			free_reg = reg;
+		}
+	}
+	if (reg > 0xd8) {
+		reg = free_reg; // if no free, the free_reg still be 0
+	}
+
+	//Ext conf space
+	if (!reg) {
+		//because of Extend conf space, we will never run out of reg,
+		// but we need one index to differ them. so same node and
+		// same link can have multi range
+		u32 index = get_io_addr_index(nodeid, link);
+		reg = 0x110 + (index<<24) + (4<<20); // index could be 0, 255
+	}
+
+		resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
+
+	return resource;
+}
+
+static struct resource *amdfam10_find_mempair(struct device *dev, u32 nodeid, u32 link)
+{
+	struct resource *resource;
+	u32 free_reg, reg;
+	resource = 0;
+	free_reg = 0;
+	for (reg = 0x80; reg <= 0xb8; reg += 0x8) {
+		int result;
+		result = reg_useable(reg, dev, nodeid, link);
+		if (result == 1) {
+			/* I have been allocated this one */
+			break;
+		} else if (result > 1) {
+			/* I have a free register pair */
+			free_reg = reg;
+		}
+	}
+	if (reg > 0xb8) {
+		reg = free_reg;
+	}
+
+	//Ext conf space
+	if (!reg) {
+		//because of Extend conf space, we will never run out of reg,
+		// but we need one index to differ them. so same node and
+		// same link can have multi range
+		u32 index = get_mmio_addr_index(nodeid, link);
+		reg = 0x110 + (index<<24) + (6<<20); // index could be 0, 63
+
+	}
+	resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
+	return resource;
+}
+
+static void amdfam10_link_read_bases(struct device *dev, u32 nodeid, u32 link)
+{
+	struct resource *resource;
+
+	/* Initialize the io space constraints on the current bus */
+	resource = amdfam10_find_iopair(dev, nodeid, link);
+	if (resource) {
+		u32 align;
+		align = log2(HT_IO_HOST_ALIGN);
+		resource->base	= 0;
+		resource->size	= 0;
+		resource->align = align;
+		resource->gran	= align;
+		resource->limit = 0xffffUL;
+		resource->flags = IORESOURCE_IO | IORESOURCE_BRIDGE;
+	}
+
+	/* Initialize the prefetchable memory constraints on the current bus */
+	resource = amdfam10_find_mempair(dev, nodeid, link);
+	if (resource) {
+		resource->base = 0;
+		resource->size = 0;
+		resource->align = log2(HT_MEM_HOST_ALIGN);
+		resource->gran = log2(HT_MEM_HOST_ALIGN);
+		resource->limit = 0xffffffffffULL;
+		resource->flags = IORESOURCE_MEM | IORESOURCE_PREFETCH;
+		resource->flags |= IORESOURCE_BRIDGE;
+	}
+
+	/* Initialize the memory constraints on the current bus */
+	resource = amdfam10_find_mempair(dev, nodeid, link);
+	if (resource) {
+		resource->base = 0;
+		resource->size = 0;
+		resource->align = log2(HT_MEM_HOST_ALIGN);
+		resource->gran = log2(HT_MEM_HOST_ALIGN);
+		resource->limit = 0xffffffffffULL;
+		resource->flags = IORESOURCE_MEM | IORESOURCE_BRIDGE;
+	}
+}
+
+
+static void amdfam10_create_vga_resource(struct device *dev, unsigned int nodeid)
+{
+	struct bus *link;
+	struct resource *res;
+
+	/* find out which link the VGA card is connected,
+	 * we only deal with the 'first' vga card */
+	for (link = dev->link_list; link; link = link->next) {
+		if (link->bridge_ctrl & PCI_BRIDGE_CTL_VGA) {
+#if CONFIG(MULTIPLE_VGA_ADAPTERS)
+			extern struct device *vga_pri; // the primary vga device, defined in device.c
+			printk(BIOS_DEBUG, "VGA: vga_pri bus num = %d bus range [%d,%d]\n", vga_pri->bus->secondary,
+				link->secondary,link->subordinate);
+			/* We need to make sure the vga_pri is under the link */
+			if ((vga_pri->bus->secondary >= link->secondary) &&
+			    (vga_pri->bus->secondary <= link->subordinate))
+#endif
+			break;
+		}
+	}
+
+	/* no VGA card installed */
+	if (link == NULL)
+		return;
+
+	printk(BIOS_DEBUG, "VGA: %s (aka node %d) link %d has VGA device\n", dev_path(dev), nodeid, link->link_num);
+	set_vga_enable_reg(nodeid, link->link_num);
+
+	/* Redirect VGA memory access to MMIO
+	 * This signals the Family 10h resource parser
+	 * to add a new MMIO mapping to the Range 11
+	 * MMIO control registers (starting at F1x1B8),
+	 * and also reserves the resource in the E820 map.
+	 */
+	res = new_resource(dev, IOINDEX(0x1000 + 0x1b8, link->link_num));
+	res->base = 0xa0000;
+	res->size = 0x20000;
+	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
+}
+
+static void amdfam10_read_resources(struct device *dev)
+{
+	get_fx_devs();
+
+	u32 nodeid;
+	struct bus *link;
+
+	nodeid = amdfam10_nodeid(dev);
+
+	amdfam10_create_vga_resource(dev, nodeid);
+
+	for (link = dev->link_list; link; link = link->next) {
+		if (link->children) {
+			amdfam10_link_read_bases(dev, nodeid, link->link_num);
+		}
+	}
+}
+
+static void amdfam10_set_resource(struct device *dev, struct resource *resource,
+				u32 nodeid)
+{
+	resource_t rbase, rend;
+	unsigned int reg, link_num;
+	char buf[50];
+
+	/* Make certain the resource has actually been set */
+	if (!(resource->flags & IORESOURCE_ASSIGNED)) {
+		return;
+	}
+
+	/* If I have already stored this resource don't worry about it */
+	if (resource->flags & IORESOURCE_STORED) {
+		return;
+	}
+
+	/* Only handle PCI memory and IO resources */
+	if (!(resource->flags & (IORESOURCE_MEM | IORESOURCE_IO)))
+		return;
+
+	/* Ensure I am actually looking at a resource of function 1 */
+	if ((resource->index & 0xffff) < 0x1000) {
+		return;
+	}
+	/* Get the base address */
+	rbase = resource->base;
+
+	/* Get the limit (rounded up) */
+	rend  = resource_end(resource);
+
+	/* Get the register and link */
+	reg  = resource->index & 0xfff; // 4k
+	link_num = IOINDEX_LINK(resource->index);
+
+	if (resource->flags & IORESOURCE_IO) {
+
+		set_io_addr_reg(dev, nodeid, link_num, reg, rbase>>8, rend>>8);
+		store_conf_io_addr(nodeid, link_num, reg, (resource->index >> 24), rbase>>8, rend>>8);
+	} else if (resource->flags & IORESOURCE_MEM) {
+		set_mmio_addr_reg(nodeid, link_num, reg, (resource->index >>24), rbase>>8, rend>>8, sysconf.nodes); // [39:8]
+		store_conf_mmio_addr(nodeid, link_num, reg, (resource->index >>24), rbase>>8, rend>>8);
+	}
+	resource->flags |= IORESOURCE_STORED;
+	snprintf(buf, sizeof(buf), " <node %x link %x>",
+		 nodeid, link_num);
+	report_resource_stored(dev, resource, buf);
+}
+
+static void amdfam10_set_resources(struct device *dev)
+{
+	unsigned int nodeid;
+	struct bus *bus;
+	struct resource *res;
+
+	/* Find the nodeid */
+	nodeid = amdfam10_nodeid(dev);
+
+	/* Set each resource we have found */
+	for (res = dev->resource_list; res; res = res->next) {
+		amdfam10_set_resource(dev, res, nodeid);
+	}
+
+	for (bus = dev->link_list; bus; bus = bus->next) {
+		if (bus->children) {
+			assign_resources(bus);
+		}
+	}
+}
+
+static void mcf0_control_init(struct device *dev)
+{
+}
+
+static struct device_operations northbridge_operations = {
+	.read_resources	  = amdfam10_read_resources,
+	.set_resources	  = amdfam10_set_resources,
+	.enable_resources = pci_bus_enable_resources,
+	.init		  = mcf0_control_init,
+//	.scan_bus	  = amdfam10_scan_chains,
+
+	.enable		  = 0,
+	.ops_pci	  = 0,
+};
+
+static const struct pci_driver mcf0_driver __pci_driver = {
+	.ops	= &northbridge_operations,
+	.vendor = PCI_VENDOR_ID_AMD,
+	.device = 0x1200,
+};
+
+static const struct pci_driver mcf0_driver_fam15_model10 __pci_driver = {
+	.ops	= &northbridge_operations,
+	.vendor = PCI_VENDOR_ID_AMD,
+	.device = 0x1400,
+};
+
+static const struct pci_driver mcf0_driver_fam15 __pci_driver = {
+	.ops	= &northbridge_operations,
+	.vendor = PCI_VENDOR_ID_AMD,
+	.device = 0x1600,
+};
 
 static void amdfam10_nb_init(void *chip_info)
 {
