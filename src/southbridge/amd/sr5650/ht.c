@@ -49,6 +49,7 @@ static const apic_device_info default_apic_device_info_t [] = {
 static void sr5690_apic_init(struct device *dev)
 {
 	u32 dword;
+	u8 apicid_sr5650;
 	const apic_device_info *entry = default_apic_device_info_t;
 
 	/* rpr6.2.(2). Write to the IOAPIC Features Enable register */
@@ -109,10 +110,22 @@ static void sr5690_apic_init(struct device *dev)
 	pci_write_config32(dev, 0xFC, dword);
 
 	pci_write_config32(dev, 0xF8, 0x1);
-	dword = pci_read_config32(dev, 0xFC) & 0xfffffff0;
+	dword = IO_APIC2_ADDR;
+	dword = (1 << 3); /* Mem_IO_Map: 1 = MMIO, 0 = IO */
+	pci_write_config32(dev, 0xFC, IO_APIC2_ADDR);
+
+	/* Upper bits of IOAPIC base */
+	pci_write_config32(dev, 0xF8, 0x2);
+	pci_write_config32(dev, 0xFC, 0);
 	/* On SR56x0/SP5100 board, the IOAPIC on SR56x0 is the
 	 * 2nd one. We need to check if it also is on your board. */
-	setup_ioapic((void *)dword, 1);
+
+	if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
+		apicid_sr5650 = 0x1;
+	else
+		apicid_sr5650 = 0x21;
+
+	setup_ioapic((void *)IO_APIC2_ADDR, apicid_sr5650);
 }
 
 static void pcie_init(struct device *dev)

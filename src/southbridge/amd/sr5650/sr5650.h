@@ -68,6 +68,7 @@ typedef struct __PCIE_CFG__ {
 
 #define	LC_STATE_RECONFIG_GPPSB		0x10
 
+#define IO_APIC2_ADDR			0xfec20000
 /* ------------------------------------------------
 * Global variable
 * ------------------------------------------------- */

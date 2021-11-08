@@ -51,13 +51,27 @@ static void sm_init(struct device *dev)
 	uint32_t power_state;
 	uint32_t enable_legacy_usb;
 	u32 nmi_option;
+	u8 io_apicid;
 
 	printk(BIOS_INFO, "sm_init().\n");
 
 	rev = get_sb700_revision(dev);
 	/* This works in a similar fashion to a memory resource, but without an enable bit */
 	ioapic_base = (void *)(pci_read_config32(dev, 0x74) & (0xffffffe0));
-	setup_ioapic(ioapic_base, 0); /* Don't rename IOAPIC ID. */
+
+	if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
+		io_apicid = 0x0; /* Don't rename IOAPIC ID. */
+	else
+		io_apicid = 0x20;
+
+	byte = pci_read_config8(dev, 0xAE);
+	if (CONFIG(ENABLE_APIC_EXT_ID))
+		byte |= 1 << 4;
+	byte |= 1 << 5;	/* ACPI_DISABLE_TIMER_IRQ_ENHANCEMENT_FOR_8254_TIMER */
+	byte |= 1 << 6;	/* Enable arbiter between APIC and PIC interrupts */
+	pci_write_config8(dev, 0xAE, byte);
+
+	setup_ioapic(ioapic_base, io_apicid);
 
 	enable_legacy_usb = get_uint_option("enable_legacy_usb", 1);
 
@@ -290,12 +304,6 @@ static void sm_init(struct device *dev)
 		dword |= 0x1;
 		pci_write_config32(dev, SB_MMIO_CFG_REG, dword);
 	}
-	byte = pci_read_config8(dev, 0xAE);
-	if (CONFIG(ENABLE_APIC_EXT_ID))
-		byte |= 1 << 4;
-	byte |= 1 << 5;	/* ACPI_DISABLE_TIMER_IRQ_ENHANCEMENT_FOR_8254_TIMER */
-	byte |= 1 << 6;	/* Enable arbiter between APIC and PIC interrupts */
-	pci_write_config8(dev, 0xAE, byte);
 
 	/* 4.11:Programming Cycle Delay for AB and BIF Clock Gating */
 	/* 4.12: Enabling AB and BIF Clock Gating */
