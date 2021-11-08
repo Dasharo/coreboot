@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
 #include <cpu/amd/family_10h-family_15h/amdfam10_sysconf.h>
 #include <cpu/amd/family_10h-family_15h/ram_calc.h>
@@ -8,8 +9,8 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <lib.h>
+#include <option.h>
 #include <northbridge/amd/nb_common.h>
-#include <cpu/amd/amdfam10_sysconf.h>
 
 #include "amdfam10.h"
 
@@ -56,14 +57,12 @@ static void get_fx_devs(void)
 	}
 }
 
-/*
 static u32 f1_read_config32(unsigned int reg)
 {
 	if (fx_devs == 0)
 		get_fx_devs();
 	return pci_read_config32(__f1_dev[0], reg);
 }
-*/
 
 static void f1_write_config32(unsigned int reg, u32 value)
 {
@@ -443,7 +442,6 @@ static void amdfam10_set_resource(struct device *dev, struct resource *resource,
 	link_num = IOINDEX_LINK(resource->index);
 
 	if (resource->flags & IORESOURCE_IO) {
-
 		set_io_addr_reg(dev, nodeid, link_num, reg, rbase>>8, rend>>8);
 		store_conf_io_addr(nodeid, link_num, reg, (resource->index >> 24), rbase>>8, rend>>8);
 	} else if (resource->flags & IORESOURCE_MEM) {
@@ -536,8 +534,131 @@ static const char *amdfam10_domain_acpi_name(const struct device *dev)
 }
 #endif
 
+static void amdfam10_domain_read_resources(struct device *dev)
+{
+	unsigned int reg;
+	msr_t tom2;
+	int idx = 7;	// value from original code
+
+	/* Find the already assigned resource pairs */
+	get_fx_devs();
+	for (reg = 0x80; reg <= 0xd8; reg+= 0x08) {
+		u32 base, limit;
+		base  = f1_read_config32(reg);
+		limit = f1_read_config32(reg + 0x04);
+		/* Is this register allocated? */
+		if ((base & 3) != 0) {
+			unsigned int nodeid, reg_link;
+			struct device *reg_dev;
+			if (reg < 0xc0) { // mmio
+				nodeid = (limit & 0xf) + (base&0x30);
+			} else { // io
+				nodeid =  (limit & 0xf) + ((base>>4)&0x30);
+			}
+			reg_link = (limit >> 4) & 7;
+			reg_dev = __f0_dev[nodeid];
+			if (reg_dev) {
+				/* Reserve the resource  */
+				struct resource *res;
+				res = new_resource(reg_dev, IOINDEX(0x1000 + reg, reg_link));
+				if (res) {
+					res->flags = 1;
+				}
+			}
+		}
+	}
+	/* FIXME: do we need to check extend conf space?
+	   I don't believe that much preset value */
+
+	pci_domain_read_resources(dev);
+
+	/* We have MMCONF_SUPPORT, create the resource window. */
+	mmconf_resource(dev, MMIO_CONF_BASE);
+
+	ram_resource(dev, idx++, 0, rdmsr(TOP_MEM).lo >> 10);
+	tom2 = rdmsr(TOP_MEM2);
+	printk(BIOS_INFO, "TOM2: %08x%08x\n", tom2.hi, tom2.lo);
+	if (tom2.hi)
+		ram_resource(dev, idx++, 4 * (GiB/KiB),
+		             ((tom2.lo >> 10) | (tom2.hi << (32 - 10))) - 4 * (GiB/KiB));
+
+	if (is_fam15h() && get_uint_option("cpu_cc6_state", 0)) {
+		uint8_t node;
+		uint8_t interleaved;
+		int8_t range;
+		uint8_t max_node;
+		uint64_t max_range_limit;
+		uint32_t dword;
+		uint32_t dword2;
+		uint64_t qword;
+		uint8_t num_nodes;
+
+		/* Find highest DRAM range (DramLimitAddr) */
+		num_nodes = 0;
+		max_node = 0;
+		interleaved = 0;
+		max_range_limit = 0;
+		struct device *node_dev;
+		for (node = 0; node < FX_DEVS; node++) {
+			node_dev = pcidev_on_root(CONFIG_CDB + node, 0);
+			/* Test for node presence */
+			if ((!node_dev) || (pci_read_config32(node_dev, PCI_VENDOR_ID) == 0xffffffff))
+				continue;
+
+			num_nodes++;
+			for (range = 0; range < 8; range++) {
+				dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
+				                          0x40 + (range * 0x8));
+				if (!(dword & 0x3))
+					continue;
+
+				if ((dword >> 8) & 0x7)
+					interleaved = 1;
+
+				dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
+				                          0x44 + (range * 0x8));
+				dword2 = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
+				                           0x144 + (range * 0x8));
+				qword = 0xffffff;
+				qword |= ((((uint64_t)dword) >> 16) & 0xffff) << 24;
+				qword |= (((uint64_t)dword2) & 0xff) << 40;
+
+				if (qword > max_range_limit) {
+					max_range_limit = qword;
+					max_node = dword & 0x7;
+				}
+			}
+		}
+
+		/* Calculate CC6 storage area size */
+		if (interleaved)
+			qword = (uint64_t)0x1000000 * num_nodes;
+		else
+			qword = 0x1000000;
+
+		/* FIXME
+		 * The BKDG appears to be incorrect as to the location of the CC6 save region
+		 * lower boundary on non-interleaved systems, causing lockups on attempted write
+		 * to the CC6 save region.
+		 *
+		 * For now, work around by allocating the maximum possible CC6 save region size.
+		 *
+		 * Determine if this is a BKDG error or a setup problem and remove this warning!
+		 */
+		qword = (0x1 << 27);
+		max_range_limit = (((uint64_t)(pci_read_config32(pcidev_on_root(CONFIG_CDB + max_node, 1),
+		                                                 0x124) & 0x1fffff)) << 27) - 1;
+
+		printk(BIOS_INFO, "Reserving CC6 save segment base: %08llx size: %08llx\n", (max_range_limit + 1), qword);
+
+		/* Reserve the CC6 save segment */
+		reserved_ram_resource(dev, idx++, (max_range_limit + 1) >> 10, qword >> 10);
+	}
+}
+
+
 static struct device_operations pci_domain_ops = {
-	.read_resources	  = pci_domain_read_resources,
+	.read_resources	  = amdfam10_domain_read_resources,
 	.set_resources	  = pci_domain_set_resources,
 	.scan_bus	  = pci_domain_scan_bus,
 #if CONFIG(HAVE_ACPI_TABLES)
