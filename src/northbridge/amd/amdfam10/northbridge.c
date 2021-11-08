@@ -1,16 +1,20 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <cpu/amd/common/nums.h>
 #include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
 #include <cpu/amd/family_10h-family_15h/amdfam10_sysconf.h>
 #include <cpu/amd/family_10h-family_15h/ram_calc.h>
+#include <cpu/x86/cache.h>
+#include <cpu/x86/lapic.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
+#include <northbridge/amd/nb_common.h>
+#include <delay.h>
 #include <lib.h>
 #include <option.h>
-#include <northbridge/amd/nb_common.h>
 
 #include "amdfam10.h"
 
@@ -669,14 +673,581 @@ static struct device_operations pci_domain_ops = {
 #endif
 };
 
+static DEVTREE_CONST struct device *dev_find_slot(unsigned int bus, unsigned int devfn)
+{
+	DEVTREE_CONST struct device *dev, *result;
+
+	result = 0;
+	for (dev = all_devices; dev; dev = dev->next) {
+		if ((dev->path.type == DEVICE_PATH_PCI) &&
+		    (dev->bus->secondary == bus) &&
+		    (dev->path.pci.devfn == devfn)) {
+			result = dev;
+			break;
+		}
+	}
+	return result;
+}
+
+static void remap_nodes_0_to_31_to_bus_255(struct device *pci_domain)
+{
+	struct device *dev_mc;
+
+	dev_mc = pcidev_on_root(CONFIG_CDB, 0); //0x00
+	if (dev_mc && dev_mc->bus) {
+		printk(BIOS_DEBUG, "%s found", dev_path(dev_mc));
+		pci_domain = dev_mc->bus->dev;
+		if (pci_domain && (pci_domain->path.type == DEVICE_PATH_DOMAIN)) {
+			printk(BIOS_DEBUG, "\n%s move to ",dev_path(dev_mc));
+			dev_mc->bus->secondary = CONFIG_CBB; // move to 0xff
+			printk(BIOS_DEBUG, "%s",dev_path(dev_mc));
+
+		} else {
+			printk(BIOS_DEBUG, " but it is not under pci_domain directly ");
+		}
+		printk(BIOS_DEBUG, "\n");
+	}
+	dev_mc = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
+	dev_mc = dev_mc ? dev_mc : pcidev_on_root(0x18, 0);
+
+	if (dev_mc && dev_mc->bus) {
+		printk(BIOS_DEBUG, "%s found\n", dev_path(dev_mc));
+		pci_domain = dev_mc->bus->dev;
+		if (pci_domain && (pci_domain->path.type == DEVICE_PATH_DOMAIN)) {
+			if ((pci_domain->link_list) &&
+			    (pci_domain->link_list->children == dev_mc)) {
+				printk(BIOS_DEBUG, "%s move to ",dev_path(dev_mc));
+				dev_mc->bus->secondary = CONFIG_CBB; // move to 0xff
+				printk(BIOS_DEBUG, "%s\n",dev_path(dev_mc));
+				while (dev_mc) {
+					printk(BIOS_DEBUG, "%s move to ",dev_path(dev_mc));
+					dev_mc->path.pci.devfn -= PCI_DEVFN(0x18,0);
+					printk(BIOS_DEBUG, "%s\n",dev_path(dev_mc));
+					dev_mc = dev_mc->sibling;
+				}
+			}
+		}
+	}
+}
+
+static void remap_bsp_lapic(struct bus *cpu_bus)
+{
+	struct device_path cpu_path;
+	struct device *cpu;
+	u32 bsp_lapic_id = lapicid();
+
+	if (bsp_lapic_id) {
+		cpu_path.type = DEVICE_PATH_APIC;
+		cpu_path.apic.apic_id = 0;
+		cpu = find_dev_path(cpu_bus, &cpu_path);
+		if (cpu)
+			cpu->path.apic.apic_id = bsp_lapic_id;
+	}
+}
+
+static unsigned int get_num_siblings(void)
+{
+	unsigned int siblings;
+	unsigned int ApicIdCoreIdSize = (cpuid_ecx(0x80000008)>>12 & 0xf);
+
+	if (ApicIdCoreIdSize) {
+		siblings = (1 << ApicIdCoreIdSize) - 1;
+	} else {
+		siblings = 3; //quad core
+	}
+
+	return siblings;
+}
+
+static void setup_cdb_links(unsigned int busn, unsigned int devn, struct bus *pbus)
+{
+	struct device *cdb_dev;
+	/* Find the cpu's pci device */
+	cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 0));
+	if (!cdb_dev) {
+		/* If I am probing things in a weird order
+			* ensure all of the cpu's pci devices are found.
+			*/
+		int fn;
+		for (fn = 0; fn <= 5; fn++) { //FBDIMM?
+			cdb_dev = pci_probe_dev(NULL, pbus,
+				PCI_DEVFN(devn, fn));
+		}
+	}
+
+
+	/* Ok, We need to set the links for that device.
+		* otherwise the device under it will not be scanned
+		*/
+	cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 0));
+	if (cdb_dev)
+		add_more_links(cdb_dev, 4);
+
+	cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 4));
+	if (cdb_dev)
+		add_more_links(cdb_dev, 4);
+}
+
+static int get_num_cores(unsigned int busn, unsigned int devn, int *cores_found,
+			 int *enable_node)
+{
+	int j;
+	struct device *cdb_dev;
+	unsigned int siblings = get_num_siblings();
+
+	*cores_found = 0; // one core
+	if (is_fam15h())
+		cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 5));
+	else
+		cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 3));
+
+	*enable_node = cdb_dev && cdb_dev->enabled;
+	if (*enable_node) {
+		if (is_fam15h()) {
+			*cores_found = pci_read_config32(cdb_dev, 0x84) & 0xff;
+		} else {
+			j = pci_read_config32(cdb_dev, 0xe8);
+			*cores_found = (j >> 12) & 3; // dev is func 3
+			if (siblings > 3)
+				*cores_found |= (j >> 13) & 4;
+		}
+		printk(BIOS_DEBUG, "  %s siblings=%d\n", dev_path(cdb_dev), *cores_found);
+	}
+
+	if (siblings > *cores_found)
+		siblings = *cores_found;
+
+	return j;
+}
+
+static uint8_t is_dual_node(void)
+{
+	uint8_t dual_node = 0;
+	uint32_t model;
+
+	model = cpuid_eax(0x80000001);
+	model = ((model & 0xf0000) >> 12) | ((model & 0xf0) >> 4);
+
+	if ((model >= 0x8) || is_fam15h()) {
+		/* Check for dual node capability */
+		if (pci_read_config32(NODE_PCI(0, 3), 0xe8) & 0x20000000)
+			dual_node = 1;
+	}
+
+	return dual_node;
+}
+
+static u32 get_apic_id(int i, int j)
+{
+	u32 apic_id;
+	uint8_t dual_node = is_dual_node();
+	uint8_t fam15h = is_fam15h();
+	unsigned int siblings = get_num_siblings();
+	// How can I get the nb_cfg_54 of every node's nb_cfg_54 in bsp???
+	unsigned int nb_cfg_54 = read_nb_cfg_54();
+
+	if (dual_node) {
+		apic_id = 0;
+		if (fam15h) {
+			apic_id |= ((i >> 1) & 0x3) << 5;			/* Node ID */
+			apic_id |= ((i & 0x1) * (siblings + 1)) + j;		/* Core ID */
+		} else {
+			if (nb_cfg_54) {
+				apic_id |= ((i >> 1) & 0x3) << 4;			/* Node ID */
+				apic_id |= ((i & 0x1) * (siblings + 1)) + j;		/* Core ID */
+			} else {
+				apic_id |= i & 0x3;					/* Node ID */
+				apic_id |= (((i & 0x1) * (siblings + 1)) + j) << 4;	/* Core ID */
+			}
+		}
+	} else {
+		if (fam15h) {
+			apic_id = 0;
+			apic_id |= (i & 0x7) << 4;	/* Node ID */
+			apic_id |= j & 0xf;		/* Core ID */
+		} else {
+			apic_id = i * (nb_cfg_54?(siblings+1):1) + j * (nb_cfg_54?1:64); // ?
+		}
+	}
+
+	if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0)) {
+		if (sysconf.enabled_apic_ext_id) {
+			if (apic_id != 0 || sysconf.lift_bsp_apicid) {
+				apic_id += sysconf.apicid_offset;
+			}
+		}
+	}
+
+	return apic_id;
+}
+
+static void sysconf_init(struct device *dev) // first node
+{
+	sysconf.sblk = (pci_read_config32(dev, 0x64) >> 8) & 7; // don't forget sublink1
+	sysconf.segbit = 0;
+	sysconf.ht_c_num = 0;
+	unsigned int ht_c_index;
+
+	for (ht_c_index = 0; ht_c_index < 32; ht_c_index++) {
+		sysconf.ht_c_conf_bus[ht_c_index] = 0;
+	}
+
+	sysconf.nodes = ((pci_read_config32(dev, 0x60)>>4) & 7) + 1;
+	if (CONFIG_MAX_PHYSICAL_CPUS > 8)
+		sysconf.nodes += (((pci_read_config32(dev, 0x160)>>4) & 7)<<3);
+
+
+	sysconf.enabled_apic_ext_id = 0;
+	sysconf.lift_bsp_apicid = 0;
+
+	/* Find the bootstrap processors apicid */
+	sysconf.bsp_apicid = lapicid();
+	sysconf.apicid_offset = sysconf.bsp_apicid;
+
+	if (CONFIG(ENABLE_APIC_EXT_ID)) {
+		if (pci_read_config32(dev, 0x68) & (HTTC_APIC_EXT_ID | HTTC_APIC_EXT_BRD_CST))
+		{
+			sysconf.enabled_apic_ext_id = 1;
+		}
+		if (sysconf.enabled_apic_ext_id && CONFIG_APIC_ID_OFFSET > 0) {
+			if (sysconf.bsp_apicid == 0) {
+				/* bsp apic id is not changed */
+				sysconf.apicid_offset = CONFIG_APIC_ID_OFFSET;
+			} else {
+				sysconf.lift_bsp_apicid = 1;
+			}
+		}
+	}
+}
+
 static void cpu_bus_scan(struct device *dev)
 {
+	struct bus *cpu_bus;
+	struct device *dev_mc;
+	struct device *pci_domain;
+	int i,j;
+	int cores_found;
+	int disable_siblings = !get_uint_option("multi_core", CONFIG(LOGICAL_CPUS));
+	uint8_t disable_cu_siblings = !get_uint_option("compute_unit_siblings", 1);
+	int enable_node;
 
+	if (CONFIG_CBB)
+		remap_nodes_0_to_31_to_bus_255(pci_domain);
+
+	dev_mc = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
+	if (!dev_mc) {
+		printk(BIOS_ERR, "%02x:%02x.0 not found", CONFIG_CBB, CONFIG_CDB);
+		die("");
+	}
+
+	sysconf_init(dev_mc);
+
+	/* Find which cpus are present */
+	cpu_bus = dev->link_list;
+	/* Always use the devicetree node with lapic_id 0 for BSP. */
+	remap_bsp_lapic(cpu_bus);
+
+	if (disable_cu_siblings)
+		printk(BIOS_DEBUG, "Disabling siblings on each compute unit as requested\n");
+
+	for (i = 0; i < sysconf.nodes; i++) {
+		unsigned int busn, devn;
+		struct bus *pbus;
+		u32 jj;
+
+		busn = CONFIG_CBB;
+		devn = CONFIG_CDB + i;
+		pbus = dev_mc->bus;
+		if (CONFIG_CBB && (NODE_NUMS > 32)) {
+			if (i >= 32) {
+				busn--;
+				devn -= 32;
+				pbus = pci_domain->link_list->next;
+			}
+		}
+
+		setup_cdb_links(busn, devn, pbus);
+		j = get_num_cores(busn, devn, &cores_found, &enable_node);
+
+		if (disable_siblings)
+			jj = 0;
+		else
+			jj = cores_found;
+
+		for (j = 0; j <=jj; j++) {
+
+			if (disable_cu_siblings && (j & 0x1))
+				continue;
+
+			struct device *cpu = add_cpu_device(cpu_bus, get_apic_id(i, j),
+							    enable_node);
+			if (cpu)
+				amd_cpu_topology(cpu, i, j);
+		}
+	}
+}
+
+static uint8_t probe_filter_prepare(uint32_t *f3x58, uint32_t *f3x5c)
+{
+	uint8_t i;
+	uint8_t pfmode = 0x0;
+	uint32_t dword;
+
+	/* Disable L3 and DRAM scrubbers and configure system for probe filter support */
+	for (i = 0; i < sysconf.nodes; i++) {
+		struct device *f2x_dev = pcidev_on_root(0x18 + i, 2);
+		struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+
+		f3x58[i] = pci_read_config32(f3x_dev, 0x58);
+		f3x5c[i] = pci_read_config32(f3x_dev, 0x5c);
+		pci_write_config32(f3x_dev, 0x58, f3x58[i] & ~((0x1f << 24) | 0x1f));
+		pci_write_config32(f3x_dev, 0x5c, f3x5c[i] & ~0x1);
+
+		dword = pci_read_config32(f2x_dev, 0x1b0);
+		dword &= ~(0x7 << 8);	/* CohPrefPrbLmt = 0x0 */
+		pci_write_config32(f2x_dev, 0x1b0, dword);
+
+		msr_t msr = rdmsr_amd(BU_CFG2_MSR);
+		msr.hi |= 1 << (42 - 32);
+		wrmsr_amd(BU_CFG2_MSR, msr);
+
+		if (is_fam15h()) {
+			uint8_t subcache_size = 0x0;
+			uint8_t pref_so_repl = 0x0;
+			uint32_t f3x1c4 = pci_read_config32(f3x_dev, 0x1c4);
+			if ((f3x1c4 & 0xffff) == 0xcccc) {
+				subcache_size = 0x1;
+				pref_so_repl = 0x2;
+				pfmode = 0x3;
+			} else {
+				pfmode = 0x2;
+			}
+
+			dword = pci_read_config32(f3x_dev, 0x1d4);
+			dword |= 0x1 << 29;	/* PFLoIndexHashEn = 0x1 */
+			dword &= ~(0x3 << 20);	/* PFPreferredSORepl = pref_so_repl */
+			dword |= (pref_so_repl & 0x3) << 20;
+			dword |= 0x1 << 17;	/* PFWayHashEn = 0x1 */
+			dword |= 0xf << 12;	/* PFSubCacheEn = 0xf */
+			dword &= ~(0x3 << 10);	/* PFSubCacheSize3 = subcache_size */
+			dword |= (subcache_size & 0x3) << 10;
+			dword &= ~(0x3 << 8);	/* PFSubCacheSize2 = subcache_size */
+			dword |= (subcache_size & 0x3) << 8;
+			dword &= ~(0x3 << 6);	/* PFSubCacheSize1 = subcache_size */
+			dword |= (subcache_size & 0x3) << 6;
+			dword &= ~(0x3 << 4);	/* PFSubCacheSize0 = subcache_size */
+			dword |= (subcache_size & 0x3) << 4;
+			dword &= ~(0x3 << 2);	/* PFWayNum = 0x2 */
+			dword |= 0x2 << 2;
+			pci_write_config32(f3x_dev, 0x1d4, dword);
+		} else {
+			pfmode = 0x2;
+
+			dword = pci_read_config32(f3x_dev, 0x1d4);
+			dword |= 0x1 << 29;	/* PFLoIndexHashEn = 0x1 */
+			dword &= ~(0x3 << 20);	/* PFPreferredSORepl = 0x2 */
+			dword |= 0x2 << 20;
+			dword |= 0xf << 12;	/* PFSubCacheEn = 0xf */
+			dword &= ~(0x3 << 10);	/* PFSubCacheSize3 = 0x0 */
+			dword &= ~(0x3 << 8);	/* PFSubCacheSize2 = 0x0 */
+			dword &= ~(0x3 << 6);	/* PFSubCacheSize1 = 0x0 */
+			dword &= ~(0x3 << 4);	/* PFSubCacheSize0 = 0x0 */
+			dword &= ~(0x3 << 2);	/* PFWayNum = 0x2 */
+			dword |= 0x2 << 2;
+			pci_write_config32(f3x_dev, 0x1d4, dword);
+		}
+	}
+
+	return pfmode;
+}
+
+static void probe_filter_enable(uint8_t pfmode)
+{
+	uint8_t i;
+	uint32_t dword;
+
+	/* Enable probe filter */
+	for (i = 0; i < sysconf.nodes; i++) {
+		struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+
+		dword = pci_read_config32(f3x_dev, 0x1c4);
+		dword |= (0x1 << 31);	/* L3TagInit = 1 */
+		pci_write_config32(f3x_dev, 0x1c4, dword);
+		do {
+		} while (pci_read_config32(f3x_dev, 0x1c4) & (0x1 << 31));
+
+		dword = pci_read_config32(f3x_dev, 0x1d4);
+		dword &= ~0x3;		/* PFMode = pfmode */
+		dword |= pfmode & 0x3;
+		pci_write_config32(f3x_dev, 0x1d4, dword);
+		do {
+		} while (!(pci_read_config32(f3x_dev, 0x1d4) & (0x1 << 19)));
+	}
+}
+
+static void enable_atm_mode(void)
+{
+	uint32_t dword;
+	uint8_t i;
+
+	printk(BIOS_DEBUG, "Enabling ATM mode\n");
+
+	/* Enable ATM mode */
+	for (i = 0; i < sysconf.nodes; i++) {
+		struct device *f0x_dev = pcidev_on_root(0x18 + i, 0);
+		struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+
+		dword = pci_read_config32(f0x_dev, 0x68);
+		dword |= (0x1 << 12);	/* ATMModeEn = 1 */
+		pci_write_config32(f0x_dev, 0x68, dword);
+
+		dword = pci_read_config32(f3x_dev, 0x1b8);
+		dword |= (0x1 << 27);	/* L3ATMModeEn = 1 */
+		pci_write_config32(f3x_dev, 0x1b8, dword);
+	}
+}
+
+static void detect_and_enable_probe_filter(struct device *dev)
+{
+	uint8_t rev_gte_d = 0;
+	uint32_t model;
+	uint8_t pfmode = 0;
+	uint8_t i;
+
+	/* Check to see if the probe filter is allowed */
+	if (!get_uint_option("probe_filter", 1))
+		return;
+
+	model = cpuid_eax(0x80000001);
+	model = ((model & 0xf0000) >> 12) | ((model & 0xf0) >> 4);
+
+	if ((model >= 0x8) || is_fam15h())
+		/* Revision D or later */
+		rev_gte_d = 1;
+
+	if (rev_gte_d && (sysconf.nodes > 1)) {
+		/* Enable the probe filter */
+	
+		uint32_t f3x58[MAX_NODES_SUPPORTED];
+		uint32_t f3x5c[MAX_NODES_SUPPORTED];
+
+		printk(BIOS_DEBUG, "Enabling probe filter\n");
+		pfmode = probe_filter_prepare(f3x58, f3x5c);
+
+		udelay(40);
+		disable_cache();
+		wbinvd();
+
+		probe_filter_enable(pfmode);
+
+		if (is_fam15h()) {
+			enable_atm_mode();
+		}
+
+		enable_cache();
+
+		/* Reenable L3 and DRAM scrubbers */
+		for (i = 0; i < sysconf.nodes; i++) {
+			struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+
+			pci_write_config32(f3x_dev, 0x58, f3x58[i]);
+			pci_write_config32(f3x_dev, 0x5c, f3x5c[i]);
+		}
+	}
+}
+
+static void detect_and_enable_cache_partitioning(struct device *dev)
+{
+	uint8_t i;
+	uint32_t dword;
+
+	if (!get_uint_option("l3_cache_partitioning", 0))
+		return;
+
+	if (is_fam15h()) {
+		printk(BIOS_DEBUG, "Enabling L3 cache partitioning\n");
+
+		uint32_t f5x80;
+		uint8_t cu_enabled;
+		uint8_t compute_unit_count = 0;
+
+		for (i = 0; i < sysconf.nodes; i++) {
+			struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+			struct device *f4x_dev = pcidev_on_root(0x18 + i, 4);
+			struct device *f5x_dev = pcidev_on_root(0x18 + i, 5);
+
+			/* Determine the number of active compute units on this node */
+			f5x80 = pci_read_config32(f5x_dev, 0x80);
+			cu_enabled = f5x80 & 0xf;
+			if (cu_enabled == 0x1)
+				compute_unit_count = 1;
+			if (cu_enabled == 0x3)
+				compute_unit_count = 2;
+			if (cu_enabled == 0x7)
+				compute_unit_count = 3;
+			if (cu_enabled == 0xf)
+				compute_unit_count = 4;
+
+			/* Disable BAN mode */
+			dword = pci_read_config32(f3x_dev, 0x1b8);
+			dword &= ~(0x7 << 19);	/* L3BanMode = 0x0 */
+			pci_write_config32(f3x_dev, 0x1b8, dword);
+
+			/* Set up cache mapping */
+			dword = pci_read_config32(f4x_dev, 0x1d4);
+			if (compute_unit_count == 1) {
+				dword |= 0xf;		/* ComputeUnit0SubCacheEn = 0xf */
+			}
+			if (compute_unit_count == 2) {
+				dword &= ~(0xf << 4);	/* ComputeUnit1SubCacheEn = 0xc */
+				dword |= (0xc << 4);
+				dword &= ~0xf;		/* ComputeUnit0SubCacheEn = 0x3 */
+				dword |= 0x3;
+			}
+			if (compute_unit_count == 3) {
+				dword &= ~(0xf << 8);	/* ComputeUnit2SubCacheEn = 0x8 */
+				dword |= (0x8 << 8);
+				dword &= ~(0xf << 4);	/* ComputeUnit1SubCacheEn = 0x4 */
+				dword |= (0x4 << 4);
+				dword &= ~0xf;		/* ComputeUnit0SubCacheEn = 0x3 */
+				dword |= 0x3;
+			}
+			if (compute_unit_count == 4) {
+				dword &= ~(0xf << 12);	/* ComputeUnit3SubCacheEn = 0x8 */
+				dword |= (0x8 << 12);
+				dword &= ~(0xf << 8);	/* ComputeUnit2SubCacheEn = 0x4 */
+				dword |= (0x4 << 8);
+				dword &= ~(0xf << 4);	/* ComputeUnit1SubCacheEn = 0x2 */
+				dword |= (0x2 << 4);
+				dword &= ~0xf;		/* ComputeUnit0SubCacheEn = 0x1 */
+				dword |= 0x1;
+			}
+			pci_write_config32(f4x_dev, 0x1d4, dword);
+
+			/* Enable cache partitioning */
+			pci_write_config32(f4x_dev, 0x1d4, dword);
+			if (compute_unit_count == 1) {
+				dword &= ~(0xf << 26);	/* MaskUpdateForComputeUnit = 0x1 */
+				dword |= (0x1 << 26);
+			} else if (compute_unit_count == 2) {
+				dword &= ~(0xf << 26);	/* MaskUpdateForComputeUnit = 0x3 */
+				dword |= (0x3 << 26);
+			} else if (compute_unit_count == 3) {
+				dword &= ~(0xf << 26);	/* MaskUpdateForComputeUnit = 0x7 */
+				dword |= (0x7 << 26);
+			} else if (compute_unit_count == 4) {
+				dword |= (0xf << 26);	/* MaskUpdateForComputeUnit = 0xf */
+			}
+			pci_write_config32(f4x_dev, 0x1d4, dword);
+		}
+	}
 }
 
 static void cpu_bus_init(struct device *dev)
 {
-
+	detect_and_enable_probe_filter(dev);
+	detect_and_enable_cache_partitioning(dev);
+	initialize_cpus(dev->link_list);
 }
 
 static struct device_operations cpu_bus_ops = {
