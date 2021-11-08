@@ -16,9 +16,6 @@
 #include "sr5650.h"
 #include "cmn.h"
 
-/*
- * extern function declaration
- */
 struct resource *sr5650_retrieve_cpu_mmio_resource()
 {
 	struct device *domain;

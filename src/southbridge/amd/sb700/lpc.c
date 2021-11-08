@@ -90,7 +90,7 @@ static void sb700_lpc_read_resources(struct device *dev)
 	res->base = (uintptr_t)SPI_BASE_ADDRESS;
 	res->size = 0x1000;
 	res->flags = IORESOURCE_MEM | IORESOURCE_SUBTRACTIVE |
-		     IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
+		     IORESOURCE_ASSIGNED | IORESOURCE_FIXED | IORESOURCE_STORED;
 
 	compact_resources(dev);
 }

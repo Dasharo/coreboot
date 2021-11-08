@@ -28,6 +28,7 @@
 #define ACPI_CPU_P_LVL2		(ACPI_CPU_CONTROL + 0x4)    /* 1 byte */
 
 #define SPI_BASE_ADDRESS		((void *)0xfec10000)
+#define HPET_BASE_ADDRESS		0xfed00000
 
 #define REV_SB700_A11	0x11
 #define REV_SB700_A12	0x12

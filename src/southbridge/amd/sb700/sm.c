@@ -427,11 +427,9 @@ static void sb700_sm_read_resources(struct device *dev)
 	/* apic */
 	res = new_resource(dev, 0x74);
 	res->base  = IO_APIC_ADDR;
-	res->size = 256 * 0x10;
-	res->limit = 0xFFFFFFFFUL;	/* res->base + res->size -1; */
-	res->align = 8;
-	res->gran = 8;
-	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
+	res->size = 0x1000;
+	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
+		     IORESOURCE_STORED;
 
 	/* SB MMIO / WDT */
 	res = new_resource(dev, SB_MMIO_CFG_REG);
@@ -443,13 +441,11 @@ static void sb700_sm_read_resources(struct device *dev)
 	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
 
 	/* HPET */
-	res = new_resource(dev, 0xB4);	/* TODO: test hpet */
+	res = new_resource(dev, 0xB4);
 	res->base  = 0xfed00000;	/* reset hpet to widely accepted address */
-	res->size = 0x400;
-	res->limit = 0xFFFFFFFFUL;	/* res->base + res->size -1; */
-	res->align = 8;
-	res->gran = 8;
-	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
+	res->size = 0x10000;
+	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
+		     IORESOURCE_STORED;
 
 	/* primary smbus */
 	res = new_resource(dev, PRIMARY_SMBUS_RESOURCE_NUMBER);
@@ -478,12 +474,9 @@ static void sb700_sm_set_resources(struct device *dev)
 	u8 byte;
 
 	pci_dev_set_resources(dev);
-	res = find_resource(dev, 0x74);
-	pci_write_config32(dev, 0x74, res->base | 1 << 3);
 
-	res = find_resource(dev, 0xB4);
 	/* Program HPET BAR Address */
-	pci_write_config32(dev, 0xB4, res->base);
+	pci_write_config32(dev, 0xB4, HPET_BASE_ADDRESS);
 
 	/* Enable decoding of HPET MMIO, enable HPET MSI */
 	byte = pci_read_config8(dev, 0x43);
