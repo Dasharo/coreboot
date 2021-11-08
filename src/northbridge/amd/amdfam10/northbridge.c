@@ -32,10 +32,6 @@ struct chip_operations northbridge_amd_amdfam10_ops = {
 	.init = amdfam10_nb_init,
 };
 
-static void amdfam10_domain_scan_bus(struct device *dev)
-{
-
-}
 #if CONFIG(GENERATE_SMBIOS_TABLES)
 static int amdfam10_get_smbios_data(struct device *dev, int *handle, unsigned long *current)
 {
@@ -55,7 +51,7 @@ static const char *amdfam10_domain_acpi_name(const struct device *dev)
 static struct device_operations pci_domain_ops = {
 	.read_resources	  = pci_domain_read_resources,
 	.set_resources	  = pci_domain_set_resources,
-	.scan_bus	  = amdfam10_domain_scan_bus,
+	.scan_bus	  = pci_domain_scan_bus,
 #if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name	  = amdfam10_domain_acpi_name,
 #endif
