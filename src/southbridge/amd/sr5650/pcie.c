@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootstate.h>
 #include <console/console.h>
+#include <cpu/amd/family_10h-family_15h/amdfam10_sysconf.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
+#include <northbridge/amd/amdfam10/amdfam10.h>
 #include <delay.h>
 
 #include "sr5650.h"
@@ -919,3 +922,113 @@ void pcie_config_misc_clk(struct device *nb_dev)
 	reg &= ~(1 << 0);
 	pci_write_config32(nb_dev, 0x4c, reg);
 }
+
+/* Need pci1234 array
+ * pci1234[0] will record sblink and bus range
+ * pci1234[i] will record ht chain i.
+ * It will keep the sequence when some ht io card is not installed.
+ *
+ *	1n: 8
+ *	2n: 7x2
+ *	3n: 6x3
+ *	4n: 5x4
+ *	5n: 4x5
+ *	6n: 3x6
+ *	7n: 2x7
+ *	8n: 1x8
+ *
+ *	8n(4x2): 8x4
+ *	16n(4x4): 16*2
+ *	20n(4x5): 20x1
+ *	32n(4x4+4x4): 16x1
+ *
+ * Total: xxx: I just want to use 32 instead, If you have more, you may need to
+ * reset HC_POSSIBLE_NUM and update ssdt.dsl (hcdn, hclk)
+ *
+ * Put all the possible ht node/link to the list tp pci1234[] in  get_bus_conf.c
+ * on MB dir. How about co-processor on socket 1 on 2 way system.
+ * or socket 2, and socket3 on 4 way system? treat that as one hc too!
+ *
+ */
+void get_pci1234(void)
+{
+
+	int i,j;
+	u32 dword;
+	struct amdfam10_sysconf_t *sysconf = get_sysconf();
+
+	dword = sysconf->sblk<<8;
+	dword |= 1;
+	sysconf->pci1234[0] = dword; // sblink
+	sysconf->hcid[0] = 0;
+
+	/* about hardcode numbering for HT_IO support
+	  set the node_id and link_id that could have ht chain in the one array,
+	  then check if is enabled.... then update final value
+	*/
+
+	//here we need to set hcdn
+	//1. hypertransport.c need to record hcdn_reg together with 0xe0, 0xe4, 0xe8, 0xec when are set
+	//2. so at the same time we need update hsdn with hcdn_reg here
+
+	for (j = 0; j < sysconf->ht_c_num; j++) {
+		u32 dwordx;
+		dwordx = sysconf->ht_c_conf_bus[j];
+		dwordx &=0xfffffffd; //keep bus num, node_id, link_num, enable bits
+		if ((dwordx & 0x7fd) == dword) { //SBLINK
+			sysconf->pci1234[0] = dwordx;
+			sysconf->hcdn[0] = sysconf->hcdn_reg[j];
+			continue;
+		}
+		if ((dwordx & 1)) {
+			// We need to find out the number of HC
+			// for exact match
+			for (i = 1; i < sysconf->hc_possible_num; i++) {
+				if ((dwordx & 0x7fc) == (sysconf->pci1234[i] & 0x7fc)) { // same node and same linkn
+					sysconf->pci1234[i] = dwordx;
+					sysconf->hcdn[i] = sysconf->hcdn_reg[j];
+					break;
+				}
+			}
+			// for 0xffc match or same node
+			for (i = 1; i < sysconf->hc_possible_num; i++) {
+				if ((dwordx & 0x7fc) == (dwordx & sysconf->pci1234[i] & 0x7fc)) {
+					sysconf->pci1234[i] = dwordx;
+					sysconf->hcdn[i] = sysconf->hcdn_reg[j];
+					break;
+				}
+			}
+		}
+	}
+
+	for (i = 1; i < sysconf->hc_possible_num; i++) {
+		if (!(sysconf->pci1234[i] & 1)) {
+			sysconf->pci1234[i] = 0;
+			sysconf->hcdn[i] = 0x20202020;
+		}
+		sysconf->hcid[i] = 0;
+	}
+}
+
+void get_default_pci1234(int mb_hc_possible)
+{
+	int i;
+	struct amdfam10_sysconf_t *sysconf = get_sysconf();
+
+	for (i = 0; i < mb_hc_possible; i++) {
+		sysconf->pci1234[i] = 0x0000ffc;
+		sysconf->hcdn[i] = 0x20202020;
+	}
+	sysconf->hc_possible_num = mb_hc_possible;
+	get_pci1234();
+}
+
+static void amd_bs_sysconf(void *arg)
+{
+	/* Prepare sysconf structures, which are used to generate IRQ,
+	 * MP and ACPI table entries.
+	 */
+	get_bus_conf();
+}
+
+BOOT_STATE_INIT_ENTRY(BS_WRITE_TABLES, BS_ON_ENTRY, amd_bs_sysconf, NULL);

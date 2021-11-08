@@ -11,17 +11,30 @@
 
 #define AMD_SB_SPI_TX_LEN 8
 
+static uintptr_t spibar;
+
 static uint32_t get_spi_bar(void)
 {
 	struct device *dev;
 
+	if (spibar)
+		return (uint32_t)spibar;
+
 	dev = pcidev_on_root(0x14, 3);
-	return pci_read_config32(dev, 0xa0) & ~0x1f;
+	printk(BIOS_DEBUG, "%s: LPC dev found\n", __func__);
+	spibar = pci_read_config32(dev, 0xa0) & ~0x1f;
+	return (uint32_t)spibar;
+}
+
+void spi_init()
+{
+	printk(BIOS_DEBUG, "%s\n", __func__);
+	spibar = get_spi_bar();
 }
 
 static void reset_internal_fifo_pointer(void)
 {
-	uint32_t spibar = get_spi_bar();
+	spibar = get_spi_bar();
 
 	do {
 		write8((void *)(spibar + 2),
@@ -31,7 +44,7 @@ static void reset_internal_fifo_pointer(void)
 
 static void execute_command(void)
 {
-	uint32_t spibar = get_spi_bar();
+	spibar = get_spi_bar();
 
 	write8((void *)(spibar + 2), read8((void *)(spibar + 2)) | 1);
 
@@ -48,7 +61,7 @@ static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 	u8 readwrite;
 	size_t count;
 
-	uint32_t spibar = get_spi_bar();
+	spibar = get_spi_bar();
 
 	bytesout--;
 

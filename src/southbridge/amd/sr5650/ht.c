@@ -176,8 +176,8 @@ static struct resource *get_cpu_mmio_resources(struct device *amd_ht_cfg_dev,
 static void sr5690_set_resources(struct device *dev)
 {
 	uint32_t reg;
-	struct device *amd_ht_cfg_dev;
-	struct device *amd_addr_map_dev;
+	struct device *amd_ht_cfg_dev = NULL;
+	struct device *amd_addr_map_dev = NULL;
 	resource_t res_base;
 	resource_t res_end;
 	uint32_t base;
