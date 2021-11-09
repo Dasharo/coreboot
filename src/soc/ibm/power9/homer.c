@@ -436,13 +436,8 @@ static void build_self_restore(struct homer_st *homer,
 	   (read_spr(SPR_LPCR)
 	    & ~(SPR_LPCR_EEE | SPR_LPCR_DEE | SPR_LPCR_OEE | SPR_LPCR_HDICE))
 	   | (SPR_LPCR_HVICE | SPR_LPCR_HVEE | SPR_LPCR_HDEE);
-	/*
-	 * Timing facilities may be lost. During their restoration Large Decrementer
-	 * in LPCR may be initially turned off, which may result in a spurious
-	 * Decrementer Exception. Disable External Interrupts on self-restore, they
-	 * will be re-enabled later by coreboot.
-	 */
-	const uint64_t msr = read_msr() & ~PPC_BIT(48);
+
+	const uint64_t msr = read_msr();
 	/* Clear en_attn for HID */
 	const uint64_t hid = read_spr(SPR_HID) & ~PPC_BIT(3);
 
@@ -1139,23 +1134,12 @@ static void istep_16_1(int this_core)
 
 	configure_xive(this_core);
 
-	printk(BIOS_ERR, "XIVE configured, enabling External Interrupt\n");
-	write_msr(read_msr() | PPC_BIT(48));
-
 	/*
 	 * This will request SBE to wake us up after we enter STOP 15. Hopefully
 	 * we will come back to the place where we were before.
 	 */
-	printk(BIOS_ERR, "Entering dead man loop\n");
+	printk(BIOS_ERR, "XIVE configured, entering dead man loop\n");
 	psu_command(DEADMAN_LOOP_START, time);
-
-	/* REMOVE ME! */
-	/*
-	 * This masks FIR bit that is set by SBE when dead man timer expires, which
-	 * results in checkstop. To help with debugging it is masked here, but it
-	 * must not be in the final code!
-	 */
-	//write_scom(0x0504000F, PPC_BIT(32));
 
 	block_wakeup_int(this_core, 1);
 
