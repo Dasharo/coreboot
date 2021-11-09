@@ -55,7 +55,7 @@ Device (EC0)
 			^UCSI.INIT ()
 
 			// Apply custom fan curve
-			SFCV ()
+			//SFCV ()
 
 			// EC is now available
 			ECOK = Arg1
@@ -90,7 +90,7 @@ Device (EC0)
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
 		If (ECOK) {
 			UPB ()
-			SFCV ()
+			//SFCV ()
 		}
 	}
 
@@ -157,7 +157,7 @@ Device (EC0)
 		} Else {
 			Debug = "EC: S0IX Exit"
 			UPB ()
-			SFCV ()
+			//SFCV ()
 		}
 
 		FDAT = 0xC2
@@ -376,59 +376,6 @@ Device (EC0)
 		CCI0 = Zero
 		CCI3 = Zero
 		Notify (^UCSI, 0x80)
-	}
-
-	Method (SFCV, 0, NotSerialized) // Set custom fan curve
-	{
-		// Fan curve: Temperature in deg C, PWM duty cycle 0-255
-		// Fan ramps: (duty2 - duty1) / (temp2 - temp1) * 2.55 * 16.0
-
-		// 40 degrees / 16% - The fan starts spinning at this temperature
-		// 60 degrees / 25%
-		// 70 degrees / 50%
-		// 80 degrees / 100%
-
-		Debug = "EC: Apply custom fan curve"
-
-		// Fan 1 curve
-		P1F1 = 0x28
-		P1D1 = 0x28
-		P2F1 = 0x3c
-		P2D1 = 0x3f
-		P3F1 = 0x46
-		P3D1 = 0x7f
-		P4F1 = 0x50
-		P4D1 = 0xff
-
-		// Fan 1 ramps
-		SH11 = 0x0
-		SL11 = 0x12
-		SH12 = 0x0
-		SL12 = 0x66
-		SH13 = 0x0
-		SL13 = 0xcc
-
-		// Fan 2 curve
-		P1F2 = 0x28
-		P1D2 = 0x28
-		P2F2 = 0x3c
-		P2D2 = 0x3f
-		P3F2 = 0x46
-		P3D2 = 0x7f
-		P4F2 = 0x50
-		P4D2 = 0xff
-
-		// Fan 2 ramps
-		SH21 = 0x0
-		SL21 = 0x12
-		SH22 = 0x0
-		SL22 = 0x66
-		SH23 = 0x0
-		SL23 = 0xcc
-
-		// Apply custom fan mode
-		FDAT = 0x04
-		FCMD = 0xD7
 	}
 
 	// Get temperature
