@@ -11,5 +11,6 @@ romstage-y += raminit_sysinfo.c
 romstage-y += setup_resource_map.c
 
 ramstage-y += northbridge.c
+ramstage-y += misc_control.c
 
 endif
