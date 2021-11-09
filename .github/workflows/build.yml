@@ -2,18 +2,14 @@ name: Build coreboot for the POWER9 Talos II target
 on:
   push:
     branches:
-      - talos_2_support
-      - squashed_talos_2_support
-      - talos_2_support_ramstage
-      - talos_2_support_payload
+      - raptor-cs_talos-2/develop
+      - raptor-cs_talos-2/release
   pull_request:
     branches:
-      - talos_2_support
-      - squashed_talos_2_support
-      - talos_2_support_ramstage
-      - talos_2_support_payload
+      - raptor-cs_talos-2/develop
+      - raptor-cs_talos-2/release
     tags:
-      - 'dasharo-trustworthy-computing-*'
+      - 'talos_2_support_payload*'
 
 jobs:
   build:
