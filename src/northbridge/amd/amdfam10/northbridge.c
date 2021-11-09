@@ -1121,7 +1121,6 @@ static void detect_and_enable_probe_filter(struct device *dev)
 
 	if (rev_gte_d && (sysconf.nodes > 1)) {
 		/* Enable the probe filter */
-	
 		uint32_t f3x58[MAX_NODES_SUPPORTED];
 		uint32_t f3x5c[MAX_NODES_SUPPORTED];
 
