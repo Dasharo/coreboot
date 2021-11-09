@@ -11,6 +11,8 @@
 #include <pc80/keyboard.h>
 #include <superio/conf_mode.h>
 #include <stdint.h>
+#include <stdio.h>
+#include "chip.h"
 
 #define I2EC_ADDR_L			0x10
 #define I2EC_ADDR_H			0x11
@@ -198,10 +200,15 @@ static void clevo_it5570_ec_read_resources(struct device *dev)
 
 static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 {
+	const struct ec_clevo_it5570_config *config = config_of(dev);
 	struct opregion opreg;
 	void *region_ptr;
 	size_t ucsi_alloc_region_len;
+	uint16_t slope;
+	uint8_t i, j;
+	char fieldname[5];
 
+	/* UCSI */
 	ucsi_alloc_region_len = ucsi_region_len < UCSI_MIN_ALLOC_REGION_LEN ?
 		UCSI_MIN_ALLOC_REGION_LEN : ucsi_region_len;
 	region_ptr = cbmem_add(CBMEM_ID_ACPI_UCSI, ucsi_alloc_region_len);
@@ -223,6 +230,37 @@ static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 	acpigen_write_opregion(&opreg);
 	acpigen_write_field(opreg.name, ucsi_region_fields, ucsi_region_len,
 			    FIELD_ANYACC | FIELD_LOCK | FIELD_PRESERVE);
+	acpigen_pop_len(); /* Scope */
+
+	/* Fan curve */
+	acpigen_write_scope(acpi_device_path(dev));
+	acpigen_write_method("SFCV", 0);
+	for (i = 0; i < config->fans; ++i) {
+		/* Curve */
+		for (j = 0; j < 4; ++j) {
+			snprintf(fieldname, 5, "P%dF%d", j+1, i+1);
+			acpigen_write_store_int_to_namestr(config->temps[j], fieldname);
+			snprintf(fieldname, 5, "P%dD%d", j+1, i+1);
+			acpigen_write_store_int_to_namestr(config->speeds[j] * 255 / 100, fieldname);
+		}
+
+		/* Ramps */
+		for (j = 0; j < 3; ++j) {
+			snprintf(fieldname, 5, "SH%d%d", i+1, j+1);
+			slope = (float)(config->speeds[j+1] - config->speeds[j])
+				/ (float)(config->temps[j+1] - config->temps[j])
+				* 2.55 * 16.0;
+			acpigen_write_store_int_to_namestr(slope >> 8, fieldname);
+			snprintf(fieldname, 5, "SL%d%d", i+1, j+1);
+			acpigen_write_store_int_to_namestr(slope & 0xFF, fieldname);
+		}
+	}
+
+	/* Enable custom fan mode */
+	acpigen_write_store_int_to_namestr(0x04, "FDAT");
+	acpigen_write_store_int_to_namestr(0xD7, "FCMD");
+
+	acpigen_pop_len(); /* Method */
 	acpigen_pop_len(); /* Scope */
 }
 
