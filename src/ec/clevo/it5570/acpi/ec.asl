@@ -54,6 +54,9 @@ Device (EC0)
 			// Initialize UCSI
 			^UCSI.INIT ()
 
+			// Apply custom fan curve
+			SFCV ()
+
 			// EC is now available
 			ECOK = Arg1
 		}
@@ -87,6 +90,7 @@ Device (EC0)
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
 		If (ECOK) {
 			UPB ()
+			SFCV ()
 		}
 	}
 
@@ -153,6 +157,7 @@ Device (EC0)
 		} Else {
 			Debug = "EC: S0IX Exit"
 			UPB ()
+			SFCV ()
 		}
 
 		FDAT = 0xC2
