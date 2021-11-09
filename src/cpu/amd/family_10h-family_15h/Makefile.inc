@@ -25,5 +25,7 @@ ramstage-y += monotonic_timer.c
 smm-y += monotonic_timer.c
 
 ramstage-y += powernow_acpi.c
+ramstage-y += processor_name.c
+ramstage-y += model_10xxx_init.c
 
 endif

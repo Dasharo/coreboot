@@ -11,3 +11,5 @@ u32 initialize_cores(struct sys_info *sysinfo);
 void setup_bsp(struct sys_info *sysinfo, u8 power_on_reset);
 void early_cpu_finalize(struct sys_info *sysinfo, u32 bsp_apicid);
 void wait_all_other_cores_stopped(u32 bsp_apicid);
+
+int init_processor_name(void);
