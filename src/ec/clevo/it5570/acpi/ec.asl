@@ -388,6 +388,8 @@ Device (EC0)
 		// 70 degrees / 50%
 		// 80 degrees / 100%
 
+		Debug = "EC: Apply custom fan curve"
+
 		// Fan 1 curve
 		P1F1 = 0x28
 		P1D1 = 0x28
