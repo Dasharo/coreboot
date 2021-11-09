@@ -1,0 +1,27 @@
+# Dasharo project configuration data
+
+client:
+        name: Immunefi
+
+framework:
+        name: dasharo
+        version: _
+        payload: seabios
+
+documentation:
+        name: Dasharo Compatibility
+        url: https://docs.dasharo.com/
+        building_url: https://docs.dasharo.com/variants/asus_kgpe_d16/building-manual/
+        flashing_url: https://docs.dasharo.com/variants/asus_kgpe_d16/setup/#flashing
+
+platform:
+        vendor: ASUS
+        model: KGPE-D16
+
+tests:
+        specification: https://docs.google.com/spreadsheets/d/1rsJECHmYrpkPSByTyt7jmMuQnExE20zW7Zk6c8oMk6E/edit#gid=0
+        hardware_matrix: _
+        results: https://docs.google.com/spreadsheets/d/1rsJECHmYrpkPSByTyt7jmMuQnExE20zW7Zk6c8oMk6E/edit#gid=0
+        
+asciinema:
+        signature_verification: _ 
