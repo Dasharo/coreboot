@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <cpu/cpu.h>
+#include <cpu/amd/common/common.h>
 #include <cpu/amd/common/nums.h>
 #include <cpu/amd/msr.h>
 #include <cpu/amd/mtrr.h>
@@ -1109,21 +1111,13 @@ static void enable_atm_mode(void)
 
 static void detect_and_enable_probe_filter(struct device *dev)
 {
-	uint8_t rev_gte_d = 0;
-	uint32_t model;
+	uint8_t rev_gte_d = is_gt_rev_d();
 	uint8_t pfmode = 0;
 	uint8_t i;
 
 	/* Check to see if the probe filter is allowed */
 	if (!get_uint_option("probe_filter", 1))
 		return;
-
-	model = cpuid_eax(0x80000001);
-	model = ((model & 0xf0000) >> 12) | ((model & 0xf0) >> 4);
-
-	if ((model >= 0x8) || is_fam15h())
-		/* Revision D or later */
-		rev_gte_d = 1;
 
 	if (rev_gte_d && (sysconf.nodes > 1)) {
 		/* Enable the probe filter */

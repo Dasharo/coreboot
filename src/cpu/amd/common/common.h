@@ -61,6 +61,22 @@ static __always_inline u32 get_cpu_family(void)
 	return family;
 }
 
+static inline uint8_t is_gt_rev_d(void)
+{
+	uint8_t rev_gte_d = 0;
+	uint32_t model;
+
+	model = cpuid_eax(0x80000001);
+	model = ((model & 0xf0000) >> 12) | ((model & 0xf0) >> 4);
+
+	if ((model >= 0x8) || is_fam15h())
+		/* Revision D or later */
+		rev_gte_d = 1;
+
+
+	return rev_gte_d;
+}
+
 static __always_inline void lapic_wait_icr_idle(void)
 {
 	do { } while (lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY);
