@@ -35,6 +35,7 @@ postcar-y += pci_ops.c
 ramstage-y += pci_ops.c
 smm-y += pci_ops.c
 
+ramstage-$(CONFIG_HYPERTRANSPORT_PLUGIN_SUPPORT) += hypertransport.c
 ramstage-$(CONFIG_PCIX_PLUGIN_SUPPORT) += pcix_device.c
 ramstage-$(CONFIG_PCIEXP_PLUGIN_SUPPORT) += pciexp_device.c
 ramstage-$(CONFIG_CARDBUS_PLUGIN_SUPPORT) += cardbus_device.c
