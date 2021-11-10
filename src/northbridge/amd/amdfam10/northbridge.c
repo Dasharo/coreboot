@@ -11,9 +11,9 @@
 #include <cpu/x86/cache.h>
 #include <cpu/x86/lapic.h>
 #include <device/device.h>
+#include <device/hypertransport.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <northbridge/amd/nb_common.h>
 #include <delay.h>
 #include <lib.h>
 #include <option.h>
@@ -33,12 +33,48 @@ void set_pirq_router_bus(u8 bus)
 	pirq_router_bus = bus;
 }
 
-#define FX_DEVS NODE_NUMS
-static struct device *__f0_dev[FX_DEVS];
-static struct device *__f1_dev[FX_DEVS];
-static struct device *__f2_dev[FX_DEVS];
-static struct device *__f4_dev[FX_DEVS];
+u8 get_pirq_router_bus(void)
+{
+	return pirq_router_bus;
+}
+
+static struct device *__f0_dev[NODE_NUMS];
+static struct device *__f1_dev[NODE_NUMS];
+static struct device *__f2_dev[NODE_NUMS];
+static struct device *__f4_dev[NODE_NUMS];
 static unsigned int fx_devs = 0;
+
+static DEVTREE_CONST struct device *dev_find_slot(unsigned int bus, unsigned int devfn)
+{
+	DEVTREE_CONST struct device *dev, *result;
+
+	result = 0;
+	for (dev = all_devices; dev; dev = dev->next) {
+		if ((dev->path.type == DEVICE_PATH_PCI) &&
+		    (dev->bus->secondary == bus) &&
+		    (dev->path.pci.devfn == devfn)) {
+			result = dev;
+			break;
+		}
+	}
+	return result;
+}
+
+static u32 amdfam10_nodeid(struct device *dev)
+{
+#if NODE_NUMS == 64
+	unsigned int busn;
+	busn = dev->bus->secondary;
+	if (busn != CONFIG_CBB) {
+		return (dev->path.pci.devfn >> 3) - CONFIG_CDB + 32;
+	} else {
+		return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
+	}
+
+#else
+	return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
+#endif
+}
 
 /*
  * Assumptions: CONFIG_CBB == 0
@@ -50,7 +86,7 @@ static void get_fx_devs(void)
 		return;
 
 	int i;
-	for (i = 0; i < FX_DEVS; i++) {
+	for (i = 0; i < NODE_NUMS; i++) {
 		__f0_dev[i] = pcidev_on_root(CONFIG_CDB + i, 0);
 		__f1_dev[i] = pcidev_on_root(CONFIG_CDB + i, 1);
 		__f2_dev[i] = pcidev_on_root(CONFIG_CDB + i, 2);
@@ -89,26 +125,305 @@ static void set_vga_enable_reg(u32 nodeid, u32 linkn)
 	u32 val;
 
 	val =  1 | (nodeid<<4) | (linkn<<12);
-	/* it will routing (1)mmio  0xa0000:0xbffff (2) io 0x3b0:0x3bb,
-	 0x3c0:0x3df */
+	/* it will route (1)mmio  0xa0000:0xbffff (2) io 0x3b0:0x3bb, 0x3c0:0x3df */
 	f1_write_config32(0xf4, val);
 
 }
 
-static u32 amdfam10_nodeid(struct device *dev)
+static u32 ht_c_key(struct bus *link)
 {
-#if NODE_NUMS == 64
-	unsigned int busn;
-	busn = dev->bus->secondary;
-	if (busn != CONFIG_CBB) {
-		return (dev->path.pci.devfn >> 3) - CONFIG_CDB + 32;
-	} else {
-		return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
+	u32 nodeid = amdfam10_nodeid(link->dev);
+	u32 linkn = link->link_num & 0x0f;
+	u32 val = (linkn << 8) | ((nodeid & 0x3f) << 2) | 3;
+	return val;
+}
+
+static u32 get_ht_c_index_by_key(u32 key)
+{
+	u32 ht_c_index = 0;
+
+	for (ht_c_index = 0; ht_c_index < 32; ht_c_index++) {
+		if ((sysconf.ht_c_conf_bus[ht_c_index] & 0xfff) == key) {
+			return ht_c_index;
+		}
 	}
 
-#else
-	return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
-#endif
+	for (ht_c_index = 0; ht_c_index < 32; ht_c_index++) {
+		if (sysconf.ht_c_conf_bus[ht_c_index] == 0) {
+			 return ht_c_index;
+		}
+	}
+
+	return	-1;
+}
+
+static u32 get_ht_c_index(struct bus *link)
+{
+	u32 val = ht_c_key(link);
+	return get_ht_c_index_by_key(val);
+}
+
+static void set_config_map_reg(struct bus *link)
+{
+	u32 tempreg;
+	u32 i;
+	u32 ht_c_index = get_ht_c_index(link);
+	u32 linkn = link->link_num & 0x0f;
+	u32 busn_min = (link->secondary >> sysconf.segbit) & 0xff;
+	u32 busn_max = (link->subordinate >> sysconf.segbit) & 0xff;
+	u32 nodeid = amdfam10_nodeid(link->dev);
+
+	tempreg = ((nodeid & 0x30) << (12-4)) | ((nodeid & 0xf) << 4) | 3;
+	tempreg |= (busn_max << 24)|(busn_min << 16)|(linkn << 8);
+
+	for (i = 0; i < sysconf.nodes; i++) {
+		struct device *dev = __f1_dev[i];
+		pci_write_config32(dev, 0xe0 + ht_c_index * 4, tempreg);
+	}
+}
+
+static void clear_config_map_reg(struct bus *link)
+{
+	u32 i;
+	u32 ht_c_index = get_ht_c_index(link);
+
+	for (i = 0; i < sysconf.nodes; i++) {
+		struct device *dev = __f1_dev[i];
+		pci_write_config32(dev, 0xe0 + ht_c_index * 4, 0);
+	}
+}
+
+static void store_ht_c_conf_bus(struct bus *link)
+{
+	u32 val = ht_c_key(link);
+	u32 ht_c_index = get_ht_c_index_by_key(val);
+
+	u32 segn = (link->subordinate >> 8) & 0x0f;
+	u32 busn_min = link->secondary & 0xff;
+	u32 busn_max = link->subordinate & 0xff;
+
+	val |= (segn << 28) | (busn_max << 20) | (busn_min << 12);
+
+	sysconf.ht_c_conf_bus[ht_c_index] = val;
+	sysconf.hcdn_reg[ht_c_index] = link->hcdn_reg;
+	sysconf.ht_c_num++;
+}
+
+typedef enum {
+	HT_ROUTE_CLOSE,
+	HT_ROUTE_SCAN,
+	HT_ROUTE_FINAL,
+} scan_state;
+
+static void ht_route_link(struct bus *link, scan_state mode)
+{
+	struct bus *parent = link->dev->bus;
+	u32 busses;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	if (mode == HT_ROUTE_SCAN) {
+		if (parent->subordinate == 0)
+			link->secondary = 0;
+		else
+			link->secondary = parent->subordinate + 1;
+
+		link->subordinate = link->secondary;
+	}
+
+	/* Configure the bus numbers for this bridge: the configuration
+	 * transactions will not be propagated by the bridge if it is
+	 * not correctly configured
+	 */
+	busses = pci_read_config32(link->dev, link->cap + 0x14);
+	busses &= ~(0xff << 8);
+	busses |= parent->secondary & 0xff;
+	if (mode == HT_ROUTE_CLOSE)
+		busses |= 0xff << 8;
+	else if (mode == HT_ROUTE_SCAN)
+		busses |= ((u32) link->secondary & 0xff) << 8;
+	else if (mode == HT_ROUTE_FINAL)
+		busses |= ((u32) link->secondary & 0xff) << 8;
+	pci_write_config32(link->dev, link->cap + 0x14, busses);
+
+	if (mode == HT_ROUTE_FINAL) {
+		if (CONFIG(HT_CHAIN_DISTRIBUTE))
+			parent->subordinate = ALIGN_UP(link->subordinate, 8) - 1;
+		else
+			parent->subordinate = link->subordinate;
+	}
+}
+
+static void amd_g34_fixup(struct bus *link, struct device *dev)
+{
+	uint32_t nodeid = amdfam10_nodeid(dev);
+	uint32_t f3xe8;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	if (is_gt_rev_d() || is_fam15h()) {
+
+		if (is_dual_node((u8)nodeid)) {
+			/* Each G34 processor contains a defective HT link.
+			 * See the BKDG Rev 3.62 section 2.7.1.5 for details.
+			 */
+			f3xe8 = pci_read_config32(NODE_PCI(nodeid, 3), 0xe8);
+			uint8_t internal_node_number = ((f3xe8 & 0xc0000000) >> 30);
+			if (internal_node_number == 0) {
+				/* Node 0 */
+				if (link->link_num == 6)	/* Link 2 Sublink 1 */
+					printk(BIOS_DEBUG, "amdfam10_scan_chain(): node %d (internal node ID %d): skipping defective HT link\n", nodeid, internal_node_number);
+			} else {
+				/* Node 1 */
+				if (link->link_num == 5)	/* Link 1 Sublink 1 */
+					printk(BIOS_DEBUG, "amdfam10_scan_chain(): node %d (internal node ID %d): skipping defective HT link\n", nodeid, internal_node_number);
+			}
+		}
+	}
+}
+
+static void amdfam10_scan_chain(struct bus *link)
+{
+	unsigned int next_unitid;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	/* See if there is an available configuration space mapping
+		* register in function 1.
+		*/
+	if (get_ht_c_index(link) >= 4)
+		return;
+
+	/* Set up the primary, secondary and subordinate bus numbers.
+		* We have no idea how many busses are behind this bridge yet,
+		* so we set the subordinate bus number to 0xff for the moment.
+		*/
+
+	ht_route_link(link, HT_ROUTE_SCAN);
+
+	/* set the config map space */
+	set_config_map_reg(link);
+
+	/* Now we can scan all of the subordinate busses i.e. the
+	 * chain on the hypertranport link
+	 */
+
+	next_unitid = hypertransport_scan_chain(link);
+
+	/* Now that nothing is overlapping it is safe to scan the children. */
+	pci_scan_bus(link, 0x00, ((next_unitid - 1) << 3) | 7);
+
+	ht_route_link(link, HT_ROUTE_FINAL);
+
+	/* We know the number of busses behind this bridge.  Set the
+	 * subordinate bus number to it's real value
+	 */
+	if (0) {
+		/* Clear the extend reg. */
+		clear_config_map_reg(link);
+	}
+
+	set_config_map_reg(link);
+
+	store_ht_c_conf_bus(link);
+}
+
+/* Do sb ht chain at first, in case s2885 put sb chain
+ * (8131/8111) on link2, but put 8151 on link0.
+ */
+static void relocate_sb_ht_chain(void)
+{
+	struct device *dev;
+	struct bus *link, *prev = NULL;
+	u8 sblink;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	dev = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
+	sblink = (pci_read_config32(dev, 0x64)>>8) & 7;
+	link = dev->link_list;
+
+	while (link) {
+		if (link->link_num == sblink) {
+			if (!prev)
+				return;
+			prev->next = link->next;
+			link->next = dev->link_list;
+			dev->link_list = link;
+			return;
+		}
+		prev = link;
+		link = link->next;
+	}
+}
+
+static void trim_ht_chain(struct device *dev)
+{
+	struct bus *link;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	/* Check for connected link. */
+	for (link = dev->link_list; link; link = link->next) {
+		link->cap = 0x80 + (link->link_num * 0x20);
+		link->ht_link_up = ht_is_non_coherent_link(link);
+	}
+}
+
+static void amdfam10_scan_chains(struct device *dev)
+{
+	struct bus *link;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	if (is_fam15h() && CONFIG(CPU_AMD_SOCKET_G34_NON_AGESA)) {
+		uint8_t current_link_number = 0;
+
+		for (link = dev->link_list; link; link = link->next) {
+			/* The following links have changed position in Fam15h G34 processors:
+			 * Fam10  Fam15
+			 * Node 0
+			 * L3 --> L1
+			 * L0 --> L3
+			 * L1 --> L2
+			 * L2 --> L0
+			 * Node 1
+			 * L0 --> L0
+			 * L1 --> L3
+			 * L2 --> L1
+			 * L3 --> L2
+			 */
+			if (link->link_num == 0)
+				link->link_num = 3;
+			else if (link->link_num == 1)
+				link->link_num = 2;
+			else if (link->link_num == 2)
+				link->link_num = 0;
+			else if (link->link_num == 3)
+				link->link_num = 1;
+			else if (link->link_num == 5)
+				link->link_num = 7;
+			else if (link->link_num == 6)
+				link->link_num = 5;
+			else if (link->link_num == 7)
+				link->link_num = 6;
+
+			current_link_number++;
+			if (current_link_number > 3)
+				current_link_number = 0;
+		}
+	}
+
+	/* Do sb ht chain at first, in case s2885 put sb chain (8131/8111) on link2, but put 8151 on link0 */
+	trim_ht_chain(dev);
+
+	for (link = dev->link_list; link; link = link->next) {
+		if (link->ht_link_up) {
+			if (CONFIG(CPU_AMD_MODEL_10XXX))
+				amd_g34_fixup(link, dev);
+			amdfam10_scan_chain(link);
+		}
+	}
 }
 
 static u32 get_io_addr_index(u32 nodeid, u32 linkn)
@@ -357,7 +672,6 @@ static void amdfam10_link_read_bases(struct device *dev, u32 nodeid, u32 link)
 static void amdfam10_create_vga_resource(struct device *dev, unsigned int nodeid)
 {
 	struct bus *link;
-	struct resource *res;
 
 	/* find out which link the VGA card is connected,
 	 * we only deal with the 'first' vga card */
@@ -381,17 +695,6 @@ static void amdfam10_create_vga_resource(struct device *dev, unsigned int nodeid
 
 	printk(BIOS_DEBUG, "VGA: %s (aka node %d) link %d has VGA device\n", dev_path(dev), nodeid, link->link_num);
 	set_vga_enable_reg(nodeid, link->link_num);
-
-	/* Redirect VGA memory access to MMIO
-	 * This signals the Family 10h resource parser
-	 * to add a new MMIO mapping to the Range 11
-	 * MMIO control registers (starting at F1x1B8),
-	 * and also reserves the resource in the E820 map.
-	 */
-	res = new_resource(dev, IOINDEX(0x1000 + 0x1b8, link->link_num));
-	res->base = 0xa0000;
-	res->size = 0x20000;
-	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 }
 
 static void amdfam10_read_resources(struct device *dev)
@@ -488,10 +791,9 @@ static void mcf0_control_init(struct device *dev)
 static struct device_operations northbridge_operations = {
 	.read_resources	  = amdfam10_read_resources,
 	.set_resources	  = amdfam10_set_resources,
-	.enable_resources = pci_bus_enable_resources,
+	.enable_resources = pci_dev_enable_resources,
 	.init		  = mcf0_control_init,
-//	.scan_bus	  = amdfam10_scan_chains,
-
+	.scan_bus	  = amdfam10_scan_chains,
 	.enable		  = 0,
 	.ops_pci	  = 0,
 };
@@ -516,6 +818,7 @@ static const struct pci_driver mcf0_driver_fam15 __pci_driver = {
 
 static void amdfam10_nb_init(void *chip_info)
 {
+	relocate_sb_ht_chain();
 }
 
 struct chip_operations northbridge_amd_amdfam10_ops = {
@@ -539,6 +842,83 @@ static const char *amdfam10_domain_acpi_name(const struct device *dev)
 	return NULL;
 }
 #endif
+
+static void reserve_cpu_cc6_storage_area(struct device *dev, int idx)
+{
+	if (!(is_fam15h() && get_uint_option("cpu_cc6_state", 1)))
+		return;
+
+	uint8_t node;
+	uint8_t interleaved;
+	int8_t range;
+	uint8_t max_node;
+	uint64_t max_range_limit;
+	uint32_t dword;
+	uint32_t dword2;
+	uint64_t qword;
+	uint8_t num_nodes;
+
+	/* Find highest DRAM range (DramLimitAddr) */
+	num_nodes = 0;
+	max_node = 0;
+	interleaved = 0;
+	max_range_limit = 0;
+	struct device *node_dev;
+	for (node = 0; node < NODE_NUMS; node++) {
+		node_dev = pcidev_on_root(CONFIG_CDB + node, 0);
+		/* Test for node presence */
+		if ((!node_dev) || (pci_read_config32(node_dev, PCI_VENDOR_ID) == 0xffffffff))
+			continue;
+
+		num_nodes++;
+		for (range = 0; range < 8; range++) {
+			dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
+							0x40 + (range * 0x8));
+			if (!(dword & 0x3))
+				continue;
+
+			if ((dword >> 8) & 0x7)
+				interleaved = 1;
+
+			dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
+							0x44 + (range * 0x8));
+			dword2 = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
+							0x144 + (range * 0x8));
+			qword = 0xffffff;
+			qword |= ((((uint64_t)dword) >> 16) & 0xffff) << 24;
+			qword |= (((uint64_t)dword2) & 0xff) << 40;
+
+			if (qword > max_range_limit) {
+				max_range_limit = qword;
+				max_node = dword & 0x7;
+			}
+		}
+	}
+
+	/* Calculate CC6 storage area size */
+	if (interleaved)
+		qword = (uint64_t)0x1000000 * num_nodes;
+	else
+		qword = 0x1000000;
+
+	/* FIXME
+		* The BKDG appears to be incorrect as to the location of the CC6 save region
+		* lower boundary on non-interleaved systems, causing lockups on attempted write
+		* to the CC6 save region.
+		*
+		* For now, work around by allocating the maximum possible CC6 save region size.
+		*
+		* Determine if this is a BKDG error or a setup problem and remove this warning!
+		*/
+	qword = (0x1 << 27);
+	max_range_limit = (((uint64_t)(pci_read_config32(pcidev_on_root(CONFIG_CDB + max_node, 1),
+								0x124) & 0x1fffff)) << 27) - 1;
+
+	printk(BIOS_INFO, "Reserving CC6 save segment base: %08llx size: %08llx\n", (max_range_limit + 1), qword);
+
+	/* Reserve the CC6 save segment */
+	reserved_ram_resource(dev, idx++, (max_range_limit + 1) >> 10, qword >> 10);
+}
 
 static void amdfam10_domain_read_resources(struct device *dev)
 {
@@ -581,92 +961,73 @@ static void amdfam10_domain_read_resources(struct device *dev)
 	/* We have MMCONF_SUPPORT, create the resource window. */
 	mmconf_resource(dev, MMIO_CONF_BASE);
 
-	ram_resource(dev, idx++, 0, rdmsr(TOP_MEM).lo >> 10);
+	ram_resource(dev, idx++, 0, 0xa0000 >> 10);
+
+	/* Reserve everything between A segment and 1MB:
+	 *
+	 * 0xa0000 - 0xbffff: legacy VGA
+	 * 0xc0000 - 0xfffff: option ROMs and SeaBIOS (if used)
+	 */
+	mmio_resource(dev, idx++, 0xa0000 >> 10, (0xc0000 - 0xa0000) >> 10);
+	reserved_ram_resource(dev, idx++, 0xc0000 >> 10, (0x100000 - 0xc0000) >> 10);
+
+	/* The rest up to TOP_MEM and TOP_MEM2 is RAM */
+	ram_resource(dev, idx++, 0x100000, rdmsr(TOP_MEM).lo >> 10);
 	tom2 = rdmsr(TOP_MEM2);
 	printk(BIOS_INFO, "TOM2: %08x%08x\n", tom2.hi, tom2.lo);
 	if (tom2.hi)
 		ram_resource(dev, idx++, 4 * (GiB/KiB),
 		             ((tom2.lo >> 10) | (tom2.hi << (32 - 10))) - 4 * (GiB/KiB));
 
-	if (is_fam15h() && get_uint_option("cpu_cc6_state", 0)) {
-		uint8_t node;
-		uint8_t interleaved;
-		int8_t range;
-		uint8_t max_node;
-		uint64_t max_range_limit;
-		uint32_t dword;
-		uint32_t dword2;
-		uint64_t qword;
-		uint8_t num_nodes;
-
-		/* Find highest DRAM range (DramLimitAddr) */
-		num_nodes = 0;
-		max_node = 0;
-		interleaved = 0;
-		max_range_limit = 0;
-		struct device *node_dev;
-		for (node = 0; node < FX_DEVS; node++) {
-			node_dev = pcidev_on_root(CONFIG_CDB + node, 0);
-			/* Test for node presence */
-			if ((!node_dev) || (pci_read_config32(node_dev, PCI_VENDOR_ID) == 0xffffffff))
-				continue;
-
-			num_nodes++;
-			for (range = 0; range < 8; range++) {
-				dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
-				                          0x40 + (range * 0x8));
-				if (!(dword & 0x3))
-					continue;
-
-				if ((dword >> 8) & 0x7)
-					interleaved = 1;
-
-				dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
-				                          0x44 + (range * 0x8));
-				dword2 = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
-				                           0x144 + (range * 0x8));
-				qword = 0xffffff;
-				qword |= ((((uint64_t)dword) >> 16) & 0xffff) << 24;
-				qword |= (((uint64_t)dword2) & 0xff) << 40;
-
-				if (qword > max_range_limit) {
-					max_range_limit = qword;
-					max_node = dword & 0x7;
-				}
-			}
-		}
-
-		/* Calculate CC6 storage area size */
-		if (interleaved)
-			qword = (uint64_t)0x1000000 * num_nodes;
-		else
-			qword = 0x1000000;
-
-		/* FIXME
-		 * The BKDG appears to be incorrect as to the location of the CC6 save region
-		 * lower boundary on non-interleaved systems, causing lockups on attempted write
-		 * to the CC6 save region.
-		 *
-		 * For now, work around by allocating the maximum possible CC6 save region size.
-		 *
-		 * Determine if this is a BKDG error or a setup problem and remove this warning!
-		 */
-		qword = (0x1 << 27);
-		max_range_limit = (((uint64_t)(pci_read_config32(pcidev_on_root(CONFIG_CDB + max_node, 1),
-		                                                 0x124) & 0x1fffff)) << 27) - 1;
-
-		printk(BIOS_INFO, "Reserving CC6 save segment base: %08llx size: %08llx\n", (max_range_limit + 1), qword);
-
-		/* Reserve the CC6 save segment */
-		reserved_ram_resource(dev, idx++, (max_range_limit + 1) >> 10, qword >> 10);
-	}
+	reserve_cpu_cc6_storage_area(dev, idx);
 }
 
+static void amdfam10_domain_scan_bus(struct device *dev)
+{
+	u32 reg;
+	int i;
+	struct bus *link;
+
+	/* Unmap all of the HT chains */
+	for (reg = 0xe0; reg <= 0xec; reg += 4) {
+		f1_write_config32(reg, 0);
+	}
+
+	for (link = dev->link_list; link; link = link->next) {
+		link->secondary = dev->bus->subordinate;
+		pci_scan_bus(link, PCI_DEVFN(CONFIG_CDB, 0), 0xff);
+		dev->bus->subordinate = link->subordinate;
+	}
+
+	/* Tune the hypertransport transaction for best performance.
+	 * Including enabling relaxed ordering if it is safe.
+	 */
+	get_fx_devs();
+	for (i = 0; i < fx_devs; i++) {
+		struct device *f0_dev;
+		f0_dev = __f0_dev[i];
+		if (f0_dev && f0_dev->enabled) {
+			u32 httc;
+			httc = pci_read_config32(f0_dev, HT_TRANSACTION_CONTROL);
+			httc &= ~HTTC_RSP_PASS_PW;
+			if (!dev->link_list->disable_relaxed_ordering) {
+				httc |= HTTC_RSP_PASS_PW;
+			}
+			printk(BIOS_SPEW, "%s passpw: %s\n",
+				dev_path(dev),
+				(!dev->link_list->disable_relaxed_ordering)?
+				"enabled":"disabled");
+			pci_write_config32(f0_dev, HT_TRANSACTION_CONTROL, httc);
+		}
+	}
+}
 
 static struct device_operations pci_domain_ops = {
 	.read_resources	  = amdfam10_domain_read_resources,
 	.set_resources	  = pci_domain_set_resources,
-	.scan_bus	  = pci_domain_scan_bus,
+	.enable_resources = NULL,
+	.init		  = NULL,
+	.scan_bus	  = amdfam10_domain_scan_bus,
 #if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name	  = amdfam10_domain_acpi_name,
 #endif
@@ -674,22 +1035,6 @@ static struct device_operations pci_domain_ops = {
 	.get_smbios_data  = amdfam10_get_smbios_data,
 #endif
 };
-
-static DEVTREE_CONST struct device *dev_find_slot(unsigned int bus, unsigned int devfn)
-{
-	DEVTREE_CONST struct device *dev, *result;
-
-	result = 0;
-	for (dev = all_devices; dev; dev = dev->next) {
-		if ((dev->path.type == DEVICE_PATH_PCI) &&
-		    (dev->bus->secondary == bus) &&
-		    (dev->path.pci.devfn == devfn)) {
-			result = dev;
-			break;
-		}
-	}
-	return result;
-}
 
 static void remap_nodes_0_to_31_to_bus_255(struct device *pci_domain)
 {
