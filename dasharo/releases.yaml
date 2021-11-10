@@ -1,10 +1,9 @@
 releases:
-        - version: v0.1.0
-          added:
+  - version: v0.1.0
+      added:
           
-          changed:
+      changed:
           
-          fixed:
+      fixed:
         
-          known_issues:
-
+      known_issues:
