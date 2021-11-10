@@ -1,10 +1,35 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/cpu.h>
+#include <cpu/amd/mtrr.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/msr.h>
 #include <console/console.h>
 #include <commonlib/bsd/helpers.h>
+
+void fixed_mtrrs_expose_amd_rwdram(void)
+{
+	msr_t syscfg;
+
+	if (!CONFIG(X86_AMD_FIXED_MTRRS))
+		return;
+
+	syscfg = rdmsr(SYSCFG_MSR);
+	syscfg.lo |= SYSCFG_MSR_MtrrFixDramModEn;
+	wrmsr(SYSCFG_MSR, syscfg);
+}
+
+void fixed_mtrrs_hide_amd_rwdram(void)
+{
+	msr_t syscfg;
+
+	if (!CONFIG(X86_AMD_FIXED_MTRRS))
+		return;
+
+	syscfg = rdmsr(SYSCFG_MSR);
+	syscfg.lo &= ~SYSCFG_MSR_MtrrFixDramModEn;
+	wrmsr(SYSCFG_MSR, syscfg);
+}
 
 /* Get first available variable MTRR.
  * Returns var# if available, else returns -1.
