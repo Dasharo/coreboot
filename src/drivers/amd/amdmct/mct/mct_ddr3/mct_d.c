@@ -3983,18 +3983,24 @@ void DCTMemClr_Sync_D(struct MCTStatStruc *pMCTstat,
 
 	/* Ensure that a memory clear operation has completed on one node */
 	if (pDCTstat->DCTSysLimit) {
-		printk(BIOS_DEBUG, "%s: Waiting for memory clear to complete", __func__);
+		printk(BIOS_DEBUG, "%s: Waiting for memory clear to complete\n", __func__);
 		do {
 			dword = Get_NB32(dev, 0x110);
-			mdelay(10);
-			printk(BIOS_DEBUG, ".");
+			if (CONFIG(CONSOLE_SERIAL)) {
+				/* Indicate the process is in progress only on serial. Delay prevents printing many dots */
+				mdelay(10);
+				printk(BIOS_DEBUG, ".");
+			}
 		} while (dword & (1 << MemClrBusy));
 
 		printk(BIOS_DEBUG, "\n");
 		do {
 			dword = Get_NB32(dev, 0x110);
-			mdelay(10);
-			printk(BIOS_DEBUG, ".");
+			if (CONFIG(CONSOLE_SERIAL)) {
+				/* Indicate the process is in progress only on serial. Delay prevents printing many dots */
+				mdelay(5);
+				printk(BIOS_DEBUG, ".");
+			}
 		} while (!(dword & (1 << Dr_MemClrStatus)));
 		printk(BIOS_DEBUG, "\n");
 	}
