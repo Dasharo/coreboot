@@ -164,6 +164,8 @@ static void _display_mtrrs(void)
 	int i;
 	int variable_mtrrs;
 
+	fixed_mtrrs_expose_amd_rwdram();
+
 	/* Display the fixed MTRRs */
 	display_mtrrcap();
 	display_mtrr_def_type();
@@ -180,6 +182,8 @@ static void _display_mtrrs(void)
 	display_4k_mtrr(MTRR_FIX_4K_F8000, 0xf8000, "IA32_MTRR_FIX4K_F8000");
 	address_bits = cpu_phys_address_size();
 	address_mask = (1ULL << address_bits) - 1;
+
+	fixed_mtrrs_hide_amd_rwdram();
 
 	/* Display the variable MTRRs */
 	variable_mtrrs = get_var_mtrr_count();

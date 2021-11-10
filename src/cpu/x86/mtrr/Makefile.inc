@@ -3,6 +3,7 @@ ramstage-y	+= mtrr.c
 romstage-y	+= earlymtrr.c
 bootblock-y	+= earlymtrr.c
 verstage_x86-y	+= earlymtrr.c
+postcar-y	+= earlymtrr.c
 
 bootblock-y	+= debug.c
 romstage-y	+= debug.c
