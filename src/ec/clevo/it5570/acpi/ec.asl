@@ -347,6 +347,11 @@ Device (EC0)
 			Debug = "EC: Color Keyboard Up"
 		} ElseIf (Local0 == 0x80) {
 			Debug = "EC: Color Keyboard Color Change"
+		} ElseIf (Local0 == 0xF3) {
+			Debug = "EC: Fan Cooling Mode Enable"
+		} ElseIf (Local0 == 0x6C) {
+			Debug = "EC: Fan Cooling Mode Disable"
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 		} Else {
 			Debug = Concatenate("EC: Other: ", ToHexString(Local0))
 		}
