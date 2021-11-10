@@ -435,14 +435,11 @@ static void sb700_sm_read_resources(struct device *dev)
 	res = new_resource(dev, SB_MMIO_CFG_REG);
 	res->base  = SB_MMIO_BASE_ADDRESS;
 	res->size = 0x1000;
-	res->limit = 0xFFFFFFFFUL;	/* res->base + res->size -1; */
-	res->align = 8;
-	res->gran = 8;
 	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
 
 	/* HPET */
 	res = new_resource(dev, 0xB4);
-	res->base  = 0xfed00000;	/* reset hpet to widely accepted address */
+	res->base  = HPET_BASE_ADDRESS;	/* reset hpet to widely accepted address */
 	res->size = 0x10000;
 	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
 		     IORESOURCE_STORED;
@@ -494,6 +491,11 @@ static void sb700_sm_set_resources(struct device *dev)
 
 	res = find_resource(dev, AUXILIARY_SMBUS_RESOURCE_NUMBER);
 	pci_write_config32(dev, AUXILIARY_SMBUS_RESOURCE_NUMBER, res->base | 1);
+
+	/* Enable SB MMIO*/
+	byte = pci_read_config8(dev, 0x9c);
+	byte |= 3;
+	pci_write_config8(dev, 0x9c, byte);
 }
 
 static struct pci_operations lops_pci = {
