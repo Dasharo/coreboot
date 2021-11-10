@@ -11,7 +11,7 @@ chip soc/intel/tigerlake
 
 # ACPI (soc/intel/tigerlake/acpi.c)
 	# Enable DPTF
-	register "dptf_enable" = "1"
+	register "dptf_enable" = "0"
 
 	# Enable External Bypass
 	register "external_bypass" = "1"
@@ -113,9 +113,6 @@ chip soc/intel/tigerlake
 
 			# ACPI brightness control
 			register "gfx" = "GMA_DEFAULT_PANEL(0)"
-		end
-		device ref dptf on
-			register "Device4Enable" = "1"
 		end
 		device ref peg on
 			# PCIe PEG0 x4, Clock 0 (SSD1)
