@@ -1,7 +1,7 @@
 # Dasharo project configuration data
 
 dasharo:
-  platform: kgpe-d16
+  platform: asus_kgpe-d16
 
 client:
   name: Immunefi

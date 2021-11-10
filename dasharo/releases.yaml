@@ -1,9 +1,9 @@
 releases:
   - version: v0.1.0
-      added:
-          
-      changed:
-          
-      fixed:
-        
-      known_issues:
+    added:
+      - C bootblock support
+      - postcar stage and no CAR global migration support
+      - separated chipset and mainboard code
+      - put non-mainboard specific romstage initialization to northirdge
+      - support for relocatable ramstage with caching in CBMEM
+    known_issues:
