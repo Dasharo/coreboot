@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+External (\_SB.PCI0.LPCB.EC0.SFCV, MethodObj)
+
 Device (EC0)
 {
 	Name (_HID, EisaId ("PNP0C09") /* Embedded Controller Device */)  // _HID: Hardware ID
@@ -55,7 +57,7 @@ Device (EC0)
 			^UCSI.INIT ()
 
 			// Apply custom fan curve
-			//SFCV ()
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 
 			// EC is now available
 			ECOK = Arg1
@@ -90,7 +92,7 @@ Device (EC0)
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
 		If (ECOK) {
 			UPB ()
-			//SFCV ()
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 		}
 	}
 
@@ -157,7 +159,7 @@ Device (EC0)
 		} Else {
 			Debug = "EC: S0IX Exit"
 			UPB ()
-			//SFCV ()
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 		}
 
 		FDAT = 0xC2
