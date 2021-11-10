@@ -233,33 +233,35 @@ static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 	acpigen_pop_len(); /* Scope */
 
 	/* Fan curve */
+	/* have the function exist even if the fan curve isn't enabled in devicetree */
 	acpigen_write_scope(acpi_device_path(dev));
 	acpigen_write_method("SFCV", 0);
-	for (i = 0; i < config->fans; ++i) {
-		/* Curve */
-		for (j = 0; j < 4; ++j) {
-			snprintf(fieldname, 5, "P%dF%d", j+1, i+1);
-			acpigen_write_store_int_to_namestr(config->temps[j], fieldname);
-			snprintf(fieldname, 5, "P%dD%d", j+1, i+1);
-			acpigen_write_store_int_to_namestr(config->speeds[j] * 255 / 100, fieldname);
+	if (config->has_custom_fan_curve) {
+		for (i = 0; i < config->fans; ++i) {
+			/* Curve */
+			for (j = 0; j < 4; ++j) {
+				snprintf(fieldname, 5, "P%dF%d", j+1, i+1);
+				acpigen_write_store_int_to_namestr(config->temps[j], fieldname);
+				snprintf(fieldname, 5, "P%dD%d", j+1, i+1);
+				acpigen_write_store_int_to_namestr(config->speeds[j] * 255 / 100, fieldname);
+			}
+
+			/* Ramps */
+			for (j = 0; j < 3; ++j) {
+				snprintf(fieldname, 5, "SH%d%d", i+1, j+1);
+				slope = (float)(config->speeds[j+1] - config->speeds[j])
+					/ (float)(config->temps[j+1] - config->temps[j])
+					* 2.55 * 16.0;
+				acpigen_write_store_int_to_namestr(slope >> 8, fieldname);
+				snprintf(fieldname, 5, "SL%d%d", i+1, j+1);
+				acpigen_write_store_int_to_namestr(slope & 0xFF, fieldname);
+			}
 		}
 
-		/* Ramps */
-		for (j = 0; j < 3; ++j) {
-			snprintf(fieldname, 5, "SH%d%d", i+1, j+1);
-			slope = (float)(config->speeds[j+1] - config->speeds[j])
-				/ (float)(config->temps[j+1] - config->temps[j])
-				* 2.55 * 16.0;
-			acpigen_write_store_int_to_namestr(slope >> 8, fieldname);
-			snprintf(fieldname, 5, "SL%d%d", i+1, j+1);
-			acpigen_write_store_int_to_namestr(slope & 0xFF, fieldname);
-		}
+		/* Enable custom fan mode */
+		acpigen_write_store_int_to_namestr(0x04, "FDAT");
+		acpigen_write_store_int_to_namestr(0xD7, "FCMD");
 	}
-
-	/* Enable custom fan mode */
-	acpigen_write_store_int_to_namestr(0x04, "FDAT");
-	acpigen_write_store_int_to_namestr(0xD7, "FCMD");
-
 	acpigen_pop_len(); /* Method */
 	acpigen_pop_len(); /* Scope */
 }
