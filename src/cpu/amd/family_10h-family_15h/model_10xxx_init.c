@@ -214,6 +214,8 @@ static void model_10xxx_init(struct device *dev)
 
 	x86_mtrr_check();
 
+	display_mtrrs();
+
 	disable_cache();
 
 	clear_mce();
