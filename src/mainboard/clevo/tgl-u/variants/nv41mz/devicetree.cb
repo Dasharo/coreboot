@@ -10,7 +10,7 @@ chip soc/intel/tigerlake
 	}"
 
 # ACPI (soc/intel/tigerlake/acpi.c)
-	# Enable DPTF
+	# Disable DPTF
 	register "dptf_enable" = "0"
 
 	# Enable External Bypass
