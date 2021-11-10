@@ -12,7 +12,6 @@ romstage-y += setup_resource_map.c
 
 ramstage-y += northbridge.c
 ramstage-y += link_control.c
-ramstage-y += misc_control.c
 ramstage-y += nb_control.c
 
 endif
