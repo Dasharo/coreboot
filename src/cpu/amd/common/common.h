@@ -5,8 +5,11 @@
 
 #include <arch/cpu.h>
 #include <device/device.h>
+#include <device/pci_ops.h>
 #include <cpu/x86/lapic.h>
 #include <types.h>
+
+#include "nums.h"
 
 #define LAPIC_MSG_REG 0x380
 #define F10_APSTATE_STARTED 0x13  // start of AP execution
@@ -75,6 +78,12 @@ static inline uint8_t is_gt_rev_d(void)
 
 
 	return rev_gte_d;
+}
+
+static __always_inline u8 is_dual_node(u8 node)
+{
+	/* Check for dual node capability */
+	return !!(pci_read_config32(NODE_PCI(node, 3), 0xe8) & 0x20000000);
 }
 
 static __always_inline void lapic_wait_icr_idle(void)

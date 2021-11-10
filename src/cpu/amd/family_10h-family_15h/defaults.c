@@ -318,12 +318,6 @@ static void set_L3FreeListCBC(u8 node)
 				(compute_unit_buffer_count << 4));
 }
 
-static u8 is_dual_node(u8 node)
-{
-	/* Check for dual node capability */
-	return !!(pci_read_config32(NODE_PCI(node, 3), 0xe8) & 0x20000000);
-}
-
 static u8 is_link_ganged(u8 node, u8 link_real)
 {
 	return !!(pci_read_config32(NODE_PCI(node, 0), (link_real << 2) + 0x170) & 0x1);

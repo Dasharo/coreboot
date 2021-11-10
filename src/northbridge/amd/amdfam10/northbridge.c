@@ -822,7 +822,7 @@ static int get_num_cores(unsigned int busn, unsigned int devn, int *cores_found,
 	return j;
 }
 
-static uint8_t is_dual_node(void)
+static uint8_t check_dual_node_cap(u8 node)
 {
 	uint8_t dual_node = 0;
 	uint32_t model;
@@ -832,7 +832,7 @@ static uint8_t is_dual_node(void)
 
 	if ((model >= 0x8) || is_fam15h()) {
 		/* Check for dual node capability */
-		if (pci_read_config32(NODE_PCI(0, 3), 0xe8) & 0x20000000)
+		if (is_dual_node(node))
 			dual_node = 1;
 	}
 
@@ -842,7 +842,7 @@ static uint8_t is_dual_node(void)
 static u32 get_apic_id(int i, int j)
 {
 	u32 apic_id;
-	uint8_t dual_node = is_dual_node();
+	uint8_t dual_node = check_dual_node_cap((u8)i);
 	uint8_t fam15h = is_fam15h();
 	unsigned int siblings = get_num_siblings();
 	// How can I get the nb_cfg_54 of every node's nb_cfg_54 in bsp???
