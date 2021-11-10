@@ -25,8 +25,9 @@ jobs:
     # go modules are read only
     # https://github.com/golang/go/issues/35615
     - name: Allow for removal of go modules
-      run: |
-        chmod u+w -R $GITHUB_WORKSPACE/go
+      run: | 
+        (test -d $GITHUB_WORKSPACE/go && chmod u+w -R $GITHUB_WORKSPACE/go)
+       
 
     - name: Checkout repository
       uses: actions/checkout@v2
