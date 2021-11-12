@@ -71,7 +71,7 @@ nvidia_optimus_acpi_method_on(unsigned int pcie_rp,
 			 const struct drivers_gfx_nvidia_optimus_config *config)
 {
 	acpigen_write_method_serialized("_ON", 0);
-	acpigen_write_if_lequal_namestr_int("_STA", 0);
+	acpigen_write_if_lequal_namestr_int("_STA", 0x5);
 
 	/* Assert enable GPIO to turn on device power. */
 	if (config->enable_gpio.pin_count) {
@@ -103,7 +103,8 @@ nvidia_optimus_acpi_method_on(unsigned int pcie_rp,
 
 	acpigen_pop_len(); /* If */
 
-	acpigen_write_store_int_to_namestr(1, "_STA");
+	nvidia_optimus_acpi_subsystem_id_restore();
+	acpigen_write_store_int_to_namestr(0xF, "_STA");
 	acpigen_pop_len(); /* Method */
 }
 
@@ -112,7 +113,7 @@ nvidia_optimus_acpi_method_off(int pcie_rp,
 			  const struct drivers_gfx_nvidia_optimus_config *config)
 {
 	acpigen_write_method_serialized("_OFF", 0);
-	acpigen_write_if_lequal_namestr_int("_STA", 1);
+	acpigen_write_if_lequal_namestr_int("_STA", 0xF);
 
 	/* Notify EC to stop polling the dGPU */
 	if (config->ec_notify_method) {
@@ -144,7 +145,7 @@ nvidia_optimus_acpi_method_off(int pcie_rp,
 
 	acpigen_pop_len(); /* If */
 
-	acpigen_write_store_int_to_namestr(0, "_STA");
+	acpigen_write_store_int_to_namestr(0x5, "_STA");
 	acpigen_pop_len(); /* Method */
 }
 
@@ -215,36 +216,25 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	if (config->desc)
 		acpigen_write_name_string("_DDN", config->desc);
 
-	acpigen_write_opregion(&rp_pci_config);
-	acpigen_write_field("PXCS", rp_fieldlist, ARRAY_SIZE(rp_fieldlist),
-			    FIELD_ANYACC | FIELD_NOLOCK | FIELD_PRESERVE);
-
-	acpigen_write_power_res("PWRR", 0, 0, power_res_states, ARRAY_SIZE(power_res_states));
-	acpigen_write_name_integer("_STA", 1);
-	nvidia_optimus_acpi_method_on(pcie_rp, config);
-	nvidia_optimus_acpi_method_off(pcie_rp, config);
-	acpigen_pop_len(); /* PowerResource */
-
 	/* GPU scope */
 	acpigen_write_device("DEV0");
 	acpigen_write_name_integer("_ADR", 0x0);
 	acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_COLD);
+
+	acpigen_write_opregion(&rp_pci_config);
+	acpigen_write_field("PXCS", rp_fieldlist, ARRAY_SIZE(rp_fieldlist),
+			    FIELD_ANYACC | FIELD_NOLOCK | FIELD_PRESERVE);
+
 	acpigen_write_opregion(&gpu_pci_config);
 	acpigen_write_field("PCIC", gpu_fieldlist, ARRAY_SIZE(gpu_fieldlist),
 			    FIELD_DWORDACC | FIELD_NOLOCK | FIELD_PRESERVE);
 
 	acpigen_write_power_res("PWRR", 0, 0, power_res_states, ARRAY_SIZE(power_res_states));
 
-	acpigen_write_name_integer("_STA", 1);
+	acpigen_write_name_integer("_STA", 0xF);
 
-	acpigen_write_method_serialized("_ON", 0);
-	nvidia_optimus_acpi_subsystem_id_restore();
-	acpigen_write_store_int_to_namestr(1, "_STA");
-	acpigen_pop_len(); /* Method */
-
-	acpigen_write_method_serialized("_OFF", 0);
-	acpigen_write_store_int_to_namestr(0, "_STA");
-	acpigen_pop_len(); /* Method */
+	nvidia_optimus_acpi_method_on(pcie_rp, config);
+	nvidia_optimus_acpi_method_off(pcie_rp, config);
 
 	acpigen_pop_len(); /* PowerResource */
 	acpigen_pop_len(); /* Device */
