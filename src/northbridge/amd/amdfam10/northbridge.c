@@ -973,7 +973,7 @@ static void amdfam10_domain_read_resources(struct device *dev)
 	reserved_ram_resource(dev, idx++, 0xc0000 >> 10, (0x100000 - 0xc0000) >> 10);
 
 	/* The rest up to TOP_MEM and TOP_MEM2 is RAM */
-	ram_resource(dev, idx++, 0x100000, rdmsr(TOP_MEM).lo >> 10);
+	ram_resource(dev, idx++, 0x100000, (rdmsr(TOP_MEM).lo >> 10) - 0x100000);
 	tom2 = rdmsr(TOP_MEM2);
 	printk(BIOS_INFO, "TOM2: %08x%08x\n", tom2.hi, tom2.lo);
 	if (tom2.hi)
