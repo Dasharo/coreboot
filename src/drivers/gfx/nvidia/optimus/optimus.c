@@ -216,6 +216,21 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	if (config->desc)
 		acpigen_write_name_string("_DDN", config->desc);
 
+	acpigen_write_power_res("PWRR", 0, 0, power_res_states, ARRAY_SIZE(power_res_states));
+
+	acpigen_write_name_integer("_STA", 1);
+
+	acpigen_write_method_serialized("_ON", 0);
+	acpigen_write_store_int_to_namestr(1, "_STA");
+	acpigen_pop_len(); /* Method */
+
+	acpigen_write_method_serialized("_OFF", 0);
+	acpigen_write_store_int_to_namestr(0, "_STA");
+	acpigen_pop_len(); /* Method */
+
+	acpigen_pop_len(); /* PowerResource */
+
+
 	/* GPU scope */
 	acpigen_write_device("DEV0");
 	acpigen_write_name_integer("_ADR", 0x0);
