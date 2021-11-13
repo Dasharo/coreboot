@@ -393,6 +393,86 @@ static void acpi_create_tpm2(acpi_tpm2_t *tpm2)
 	header->checksum = acpi_checksum((void *)tpm2, header->length);
 }
 
+static void *get_drtm_tpm_log(u32 *size)
+{
+	const struct cbmem_entry *ce;
+	const u32 drtm_default_log_len = 0x1000;
+	void *lasa;
+	ce = cbmem_entry_find(CBMEM_ID_DRTM_LOG);
+	if (ce) {
+		lasa = cbmem_entry_start(ce);
+		*size = cbmem_entry_size(ce);
+		printk(BIOS_DEBUG, "DRTM log found at %p\n", lasa);
+		return lasa;
+	}
+	lasa = cbmem_add(CBMEM_ID_DRTM_LOG, drtm_default_log_len);
+	if (!lasa) {
+		*size = 0;
+		printk(BIOS_ERR, "DRTM log creation failed\n");
+		return NULL;
+	}
+
+	printk(BIOS_DEBUG, "DRTM log created at %p\n", lasa);
+	memset(lasa, 0, drtm_default_log_len);
+
+	*size = drtm_default_log_len;
+	return lasa;
+}
+
+__weak void acpi_fill_drtm(acpi_drtm_t *drtm)
+{
+	unsigned long current;
+	drtm_validated_tables_list_t *drtm_vtl;
+	drtm_resources_t *drtm_resources;
+	drtm_dps_t *drtm_dps;
+
+	drtm->drt_flags = DRT_GAP_CODE_ON_S3_RESUME | DRT_GAP_CODE_ON_DLME_EXIT;
+
+	current = (unsigned long)drtm + sizeof(acpi_drtm_t);
+
+	/* Validated ACPI tables go first */
+	drtm_vtl = (drtm_validated_tables_list_t *)current;
+	drtm_vtl->vtl_length = 0; /* unused for now */
+	current += sizeof(drtm_vtl->vtl_length) + drtm_vtl->vtl_length;
+	drtm->header.length += sizeof(drtm_vtl->vtl_length) + drtm_vtl->vtl_length;
+
+	/* DRTM Resources List */
+	drtm_resources = (drtm_resources_t *)current;
+	drtm_resources->rl_length = 0; /* unused for now */
+	current += sizeof(drtm_resources->rl_length) + drtm_resources->rl_length;
+	drtm->header.length += sizeof(drtm_resources->rl_length) + drtm_resources->rl_length;
+
+	/* DLME Platform Specific IDs */
+	drtm_dps = (drtm_dps_t *)current;
+	drtm_dps->dps_length = 0; /* unused for now */
+	/* DPS list is 16-byte fixed size */
+	drtm->header.length += sizeof(drtm_dps_t);
+}
+
+void acpi_create_drtm_table(acpi_drtm_t *drtm)
+{
+	acpi_header_t *header = &(drtm->header);
+
+	memset((void *)drtm, 0, sizeof(acpi_drtm_t));
+
+	drtm->log_area_start = (uintptr_t)get_drtm_tpm_log(&(drtm->log_area_length));
+
+	/* Fill out header fields. */
+	memcpy(header->signature, "DRTM", 4);
+	memcpy(header->oem_id, OEM_ID, 6);
+	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
+	memcpy(header->asl_compiler_id, ASLC, 4);
+
+	header->asl_compiler_revision = asl_revision;
+	header->length = sizeof(acpi_drtm_t);
+	header->revision = get_acpi_table_revision(DRTM);
+
+	acpi_fill_drtm(drtm);
+
+	/* Calculate checksum. */
+	header->checksum = acpi_checksum((void *)drtm, header->length);
+}
+
 static void acpi_ssdt_write_cbtable(void)
 {
 	const struct cbmem_entry *cbtable;
@@ -1577,6 +1657,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 	case SRAT: /* ACPI 2.0: 1, ACPI 3.0: 2, ACPI 4.0 upto 6.3: 3 */
 		return 1; /* TODO Should probably be upgraded to 2 */
 	case DMAR:
+		return 1;
+	case DRTM:
 		return 1;
 	case SLIT: /* ACPI 2.0 upto 6.3: 1 */
 		return 1;

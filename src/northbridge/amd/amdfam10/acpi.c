@@ -330,6 +330,7 @@ unsigned long northbridge_write_acpi_tables(struct device *device,
 {
 	acpi_srat_t *srat;
 	acpi_slit_t *slit;
+	acpi_drtm_t *drtm;
 
 	/* SRAT */
 	current = ALIGN(current, 8);
@@ -346,6 +347,14 @@ unsigned long northbridge_write_acpi_tables(struct device *device,
 	acpi_create_slit(slit, acpi_fill_slit);
 	current += slit->header.length;
 	acpi_add_table(rsdp, slit);
+
+	/* DRTM */
+	current = ALIGN(current, 16);
+	printk(BIOS_DEBUG, "ACPI:   * DRTM at %lx\n", current);
+	drtm = (acpi_drtm_t *)current;
+	acpi_create_drtm_table(drtm);
+	current += drtm->header.length;
+	acpi_add_table(rsdp, drtm);
 
 	return current;
 }

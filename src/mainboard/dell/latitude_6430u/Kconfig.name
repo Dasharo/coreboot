@@ -1,0 +1,2 @@
+config BOARD_DELL_LATITUDE_6430U
+	bool "Latitude 6430U"
