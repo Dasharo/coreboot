@@ -509,7 +509,13 @@ static void sb700_devices_por_init(void)
 	pci_write_config8(dev, 0x4A, byte);
 
 	/* Enable Tpm12_en and Tpm_legacy. I don't know what is its usage and copied from CIM. */
-	pci_write_config8(dev, 0x7C, 0x05);
+	byte = pci_read_config8(dev, 0x7C);
+	byte |= (1 << 0); /* Tpm12_en */
+	byte |= (1 << 2); /* Tpm_legacy */
+	//byte |= (1 << 7); /* WiderTpmEn */
+	pci_write_config8(dev, 0x7C, byte);
+	/* Enable LPCCLK1 */
+	pci_write_config8(dev, 0x7D, 0x0a);
 
 	/* P2P Bridge, BDF:0-20-4, the configuration of the registers in this dev are copied from CIM,
 	 */

@@ -224,8 +224,8 @@ static void sr5690_set_resources(struct device *dev)
 					uint32_t sblk;
 
 					/* Remember this resource has been stored. */
-					res->flags |= IORESOURCE_STORED;
 					report_resource_stored(dev, res, " <mmconfig>");
+					res->flags |= IORESOURCE_STORED;
 
 					/* Get SBLink value (HyperTransport I/O Hub Link ID). */
 					sblk = (pci_read_config32(amd_ht_cfg_dev, 0x64) >> 8) & 0x3;
@@ -239,7 +239,7 @@ static void sr5690_set_resources(struct device *dev)
 					limit &= 0x00000048;
 					limit |= ((res_end >> 8) & 0xffffff00);
 					limit |= (sblk << 4);
-					limit |= (1 << 7);
+					//limit |= (1 << 7);
 
 					/* Configure and enable MMIO mapping */
 					printk(BIOS_INFO, "%s: %s <- index %x base %04x limit %04x\n", __func__, dev_path(amd_addr_map_dev), reg, base, limit);

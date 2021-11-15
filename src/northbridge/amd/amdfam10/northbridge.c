@@ -22,6 +22,7 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <device/hypertransport.h>
+#include <bootstate.h>
 #include <stdlib.h>
 #include <string.h>
 #include <lib.h>
@@ -1895,6 +1896,281 @@ static struct device_operations cpu_bus_ops = {
 	.scan_bus	  = cpu_bus_scan,
 };
 
+static const char *interleave_strings[] = {
+	[0] = "No",
+	[1] = "on A[12] (2 nodes)",
+	[2] = "Reserved",
+	[3] = "on A[12] and A[13] (4 nodes)",
+	[4] = "Reserved",
+	[5] = "Reserved",
+	[6] = "Reserved",
+	[7] = "on A[12], A[13], and A[14] (8 nodes)",
+};
+
+static void decode_dram_flags(u32 flags)
+{
+	if (flags & 1)
+		printk(BIOS_DEBUG, "RE, ");
+	if (flags & 2)
+		printk(BIOS_DEBUG, "WE, ");
+	printk(BIOS_DEBUG, "Interleave %s, ", interleave_strings[(flags >> 8) & 7]);
+	printk(BIOS_DEBUG, "Destination Node %d, ", (flags >> 16) & 7);
+	printk(BIOS_DEBUG, "Inerleave select %x\n", (flags >> 24) & 7);
+}
+
+static void dump_dram_mapping(u8 node)
+{
+	u64 base, limit;
+	u16 reg;
+	u32 flags;
+
+	for (reg = 0x40; reg <= 0x78; reg += 4) {
+		base = pci_read_config32(get_node_pci(node, 1), reg);
+		flags = base & 0xffff;
+		base &= 0xffff0000;
+		base <<= 8;
+		base |= ((u64)pci_read_config8(get_node_pci(node, 1), reg + 0x100) << 40);
+
+		reg += 4;
+
+		limit = pci_read_config32(get_node_pci(node, 1), reg);
+		flags |= ((limit & 0xffff) << 16);
+		limit &= 0xffff0000;
+		limit <<= 8;
+		limit |= ((u64)pci_read_config8(get_node_pci(node, 1), reg + 0x100) << 40);
+
+		printk(BIOS_DEBUG, "DRAM [0x%016llx - 0x%016llx] - flags: ", base, limit);
+		decode_dram_flags(flags);
+	}
+}
+
+static void decode_mmio_flags(u16 flags)
+{
+	if (flags & 1)
+		printk(BIOS_DEBUG, "RE, ");
+	if (flags & 2)
+		printk(BIOS_DEBUG, "WE, ");
+	if (flags & 8)
+		printk(BIOS_DEBUG, "L, ");
+	if (flags & (1 << 15))
+		printk(BIOS_DEBUG, "NP, ");
+	printk(BIOS_DEBUG, "Destination Node %d, ", (flags >> 8) & 7);
+	printk(BIOS_DEBUG, "Destination Link %d sublink %d\n", (flags >> 12) & 3,
+								(flags >> 14) & 1);
+}
+
+static void dump_mmio_mapping(u8 node)
+{
+	u64 base, limit;
+	u16 reg;
+	u16 flags;
+	u32 hi_addr = 0x180;
+
+	for (reg = 0x80; reg <= 0xb8; reg += 4) {
+		base = pci_read_config32(get_node_pci(node, 1), reg);
+		flags = base & 0xff;
+		base &= 0xffffff00;
+		base <<= 8;
+		base |= ((u64)(pci_read_config8(get_node_pci(node, 1), hi_addr) & 0xff) << 40);
+
+		reg += 4;
+
+		limit = pci_read_config32(get_node_pci(node, 1), reg);
+		flags |= ((limit & 0xff) << 8);
+		limit &= 0xffffff00;
+		limit <<= 8;
+		limit |= ((u64)(pci_read_config8(get_node_pci(node, 1), hi_addr) & 0xff0000) << 24);
+
+		hi_addr += 4;
+
+		printk(BIOS_DEBUG, "MMIO [0x%016llx - 0x%016llx] - flags: ", base, limit);
+		decode_mmio_flags(flags);
+	}
+
+	hi_addr = 0x1c0;
+	for (reg = 0x1a0; reg <= 0x1b8; reg += 4) {
+		base = pci_read_config32(get_node_pci(node, 1), reg);
+		flags = base & 0xff;
+		base &= 0xffffff00;
+		base <<= 8;
+		base |= ((u64)(pci_read_config8(get_node_pci(node, 1), hi_addr) & 0xff) << 40);
+
+		reg += 4;
+
+		limit = pci_read_config32(get_node_pci(node, 1), reg);
+		flags |= ((limit & 0xff) << 8);
+		limit &= 0xffffff00;
+		limit <<= 8;
+		limit |= ((u64)(pci_read_config8(get_node_pci(node, 1), hi_addr) & 0xff0000) << 24);
+
+		hi_addr += 4;
+
+		printk(BIOS_DEBUG, "MMIO [0x%016llx - 0x%016llx] - flags: ", base, limit);
+		decode_mmio_flags(flags);
+	}
+}
+
+static void decode_io_flags(u16 flags)
+{
+	if (flags & 1)
+		printk(BIOS_DEBUG, "RE, ");
+	if (flags & 2)
+		printk(BIOS_DEBUG, "WE, ");
+	if (flags & (1 << 4))
+		printk(BIOS_DEBUG, "VE, ");
+	if (flags & (1 << 5))
+		printk(BIOS_DEBUG, "IE, ");
+	printk(BIOS_DEBUG, "Destination Node %d, ", (flags >> 8) & 7);
+	printk(BIOS_DEBUG, "Destination Link %d sublink %d\n", (flags >> 12) & 3,
+								(flags >> 14) & 1);
+}
+
+static void dump_io_mapping(u8 node)
+{
+	u32 base, limit;
+	u16 reg;
+	u16 flags;
+
+	for (reg = 0xc0; reg <= 0xd8; reg += 4) {
+		base = pci_read_config32(get_node_pci(node, 1), reg);
+		flags = base & 0xff;
+		base &= 0x00fff000;
+
+		reg += 4;
+
+		limit = pci_read_config32(get_node_pci(node, 1), reg);
+		flags |= ((limit & 0xff) << 8);
+		limit &= 0x00fff000;
+
+		printk(BIOS_DEBUG, "IO [0x%08x - 0x%08x] - flags: ", base, limit);
+		decode_io_flags(flags);
+	}
+}
+
+
+static void decode_bus_flags(u16 flags)
+{
+	if (flags & 1)
+		printk(BIOS_DEBUG, "RE, ");
+	if (flags & 2)
+		printk(BIOS_DEBUG, "WE, ");
+	if (flags & 4)
+		printk(BIOS_DEBUG, "DCE, ");
+
+	printk(BIOS_DEBUG, "Destination Node %d, ", (flags >> 4) & 7);
+	printk(BIOS_DEBUG, "Destination Link %d sublink %d\n", (flags >> 8) & 3, (flags >> 10) & 1);
+}
+
+static void dump_config_mapping(u8 node)
+{
+	u32 bus_base, bus_limit;
+	u32 dword;
+	u16 reg;
+	u16 flags;
+
+	for (reg = 0xe0; reg <= 0xec; reg += 4) {
+		dword = pci_read_config32(get_node_pci(node, 1), reg);
+		flags = dword & 0xffff;
+		bus_base = (dword & 0x00ff0000) >> 16;
+		bus_limit = (dword & 0xff000000) >> 24;
+
+		printk(BIOS_DEBUG, "Bus [0x%02x - 0x%02x] - flags: ", bus_base, bus_limit);
+		decode_bus_flags(flags);
+	}
+}
+
+static void decode_system_dram_flags(u8 flags)
+{
+	printk(BIOS_DEBUG, "Interleave %s, ", interleave_strings[(flags >> 4) & 7]);
+	printk(BIOS_DEBUG, "Inerleave select %x\n", flags & 7);
+}
+
+static void dump_system_dram_mapping(u8 node)
+{
+	u64 base, limit;
+	u8 flags;
+
+	base = pci_read_config32(get_node_pci(node, 1), 0x120);
+	flags = (base >> 21) & 0x7;
+	base &= 0x001fffff;
+	base <<= 27;
+
+	limit = pci_read_config32(get_node_pci(node, 1), 0x124);
+	flags |= (((base >> 21) & 0x7) << 4);
+	limit &= 0x001fffff;
+	limit <<= 27;
+
+	printk(BIOS_DEBUG, "System Address DRAM [0x%016llx - 0x%016llx] - flags: ", base, limit);
+	decode_system_dram_flags(flags);
+
+}
+
+static void dump_memory_mapping(void *unused)
+{
+	u8 i = 0;
+
+	do {
+		printk(BIOS_DEBUG, "Memory and bus map for node %d:\n", i);
+		dump_dram_mapping(i);
+		dump_mmio_mapping(i);
+		dump_io_mapping(i);
+		dump_config_mapping(i);
+		dump_system_dram_mapping(i);
+		i++;
+	} while (i < 1);
+}
+
+static void fixup_memory_mapping(void *unused)
+{
+
+	u32 dword;
+	msr_t msr;
+	pci_devfn_t f1_dev;
+	struct device *f1 = get_node_pci(0, 1);
+
+	printk(BIOS_DEBUG, "%s\n", __func__);
+	/* FIXME: The platform BIOS needs to ensure the memory ranges of southbridge
+	 * legacy devices (TPM, HPET, BIOS RAM, Watchdog Timer, I/O APIC and ACPI) are
+	 * set to non-posted regions.
+	 */
+	printk(BIOS_DEBUG, "SB link is %x\n",
+		(pci_read_config32(get_node_pci(0, 0), 0x64) >> 8) & 0x7);
+
+	f1_dev = PCI_DEV(0, 18, 1);
+
+	/* Send all IO (0000-FFFF) to southbridge. */
+	dword = 0x0000f000;
+	dword |= (1 << 4);	/* Send to link 1 - NB/SB*/
+	pci_write_config32(f1, 0xc4, dword);
+	dword = 0x00000003;
+	pci_write_config32(f1, 0xc0, dword);
+
+	dword = 0;
+	pci_write_config32(f1, 0xd8, dword);
+	pci_write_config32(f1, 0xdc, dword);
+
+	/* last address before processor local APIC at FEE00000 */
+	dword = 0x00fedf00;
+	dword |= (1 << 7);	/* set NP (non-posted) bit */
+	dword |= (1 << 4);	/* Send to link 1 - NB/SB*/
+	pci_write_config32(f1, 0x84, dword);
+	/* lowest NP address is HPET at FED00000 */
+	dword = (0xfed00000 >> 8) | 3;
+	pci_write_config32(f1, 0x80, dword);
+
+	/* Map the remaining PCI hole as posted MMIO */
+	dword = 0x00fecf00;	/* last address before non-posted range */
+	dword |= (1 << 4);	/* Send to link 1 - NB/SB*/
+	pci_write_config32(f1, 0x8c, dword);
+	msr = rdmsr(TOP_MEM);
+	dword = (msr.lo >> 8) | 3;
+	pci_write_config32(f1, 0x88, dword);
+
+	dump_memory_mapping(NULL);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_DEV_ENABLE, BS_ON_EXIT, fixup_memory_mapping, NULL);
+
 static void root_complex_enable_dev(struct device *dev)
 {
 	static int done = 0;
@@ -1915,10 +2191,12 @@ static void root_complex_enable_dev(struct device *dev)
 	}
 }
 
-static void root_complex_finalize(void *chip_info) {
+static void root_complex_finalize(void *chip_info)
+{
 #if CONFIG(HAVE_ACPI_RESUME) && CONFIG(DIMM_DDR3)
 	save_mct_information_to_nvram();
 #endif
+	dump_memory_mapping(NULL);
 }
 
 struct chip_operations northbridge_amd_amdfam10_root_complex_ops = {

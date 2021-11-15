@@ -1,0 +1,25 @@
+#!ipxe
+:MENU
+menu
+item --gap -- ---------------- iPXE boot menu ----------------
+item shell          ipxe shell
+item boot           autoboot
+item tb-test        TrenchBoot test
+choose --default tb-test --timeout 3000 target && goto ${target}
+
+:boot
+autoboot
+goto MENU
+
+:tb-test
+dhcp
+kernel http://boot.3mdeb.com/tb/ipxe.lkrn
+initrd http://boot.3mdeb.com/tb/test.ipxe
+boot
+goto MENU
+
+:shell
+shell ||
+goto MENU
+
+autoboot
