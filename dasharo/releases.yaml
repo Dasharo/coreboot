@@ -6,6 +6,6 @@ releases:
     fixed:
       - Dasharo and coreboot versions are no longer swapped
 
-    known issues:
+    known_issues:
       - description: Samsung memory modules do not work properly on older FW6A/B/C (SKU6LAV20)
         url: N/A
