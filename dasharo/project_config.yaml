@@ -1,0 +1,44 @@
+dasharo:
+  platform: protectli_vault_kbl
+
+client:
+  name: Protectli
+
+framework:
+  name: coreboot
+  version: 87f9fc85
+  url_template: https://github.com/Dasharo/coreboot/commits/COMMIT_HASH
+
+components:
+  - name: seabios
+    url_template: https://github.com/Dasharo/SeaBIOS/commits/COMMIT_HASH
+    path: payloads/external/SeaBIOS/seabios
+    version: v1.0.6
+
+  - name: ipxe
+    url_template: https://github.com/ipxe/ipxe/commits/COMMIT_HASH
+    path: payloads/external/iPXE/ipxe
+    version: 2019.3 stable
+
+  - name: memtest
+    url_template: https://review.coreboot.org/plugins/gitiles/memtest86plus/+/COMMIT_HASH
+    path: payloads/external/Memtest86Plus/memtest86plus
+    version: v002
+
+documentation:
+  name: Protectli website
+  url: https://protectli.com/
+  building_url: N/A
+  flashing_url: N/A
+
+platform:
+  vendor: Protectli
+  model: FW6
+
+tests:
+  specification: N/A
+  hardware_matrix: https://cloud.3mdeb.com/index.php/s/EkaHYAQmpHSxixj
+  results: N/A
+
+asciinema:
+  signature_verification: https://asciinema.org/a/388861
