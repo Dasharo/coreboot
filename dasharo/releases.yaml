@@ -1,0 +1,11 @@
+releases:
+  - version: v1.0.12
+    added:
+      - Support for I211 Gigabit Network Connection on FW6
+
+    fixed:
+      - Dasharo and coreboot versions are no longer swapped
+
+    known issues:
+      - description: Samsung memory modules do not work properly on older FW6A/B/C (SKU6LAV20)
+        url: N/A
