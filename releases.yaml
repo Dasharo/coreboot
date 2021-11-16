@@ -91,3 +91,23 @@ releases:
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/5
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+                
+        - version: v0.5.0
+          added:
+                - vboot Verified Boot
+                - TPM Measured Boot
+                - Custom fan curve
+                - Microcode for Tiger Lake stepping 0x2
+                - Documentation for EC firmware update
+          changed:
+                - Disabled unused DPTF device
+          fixed:
+                - Performance drop when the power adaptor is disconnected
+                - High Nvidia GPU energy draw at idle in Windows
+          known_issues:
+                - description: Unable to download the system by using iPXE
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
