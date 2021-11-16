@@ -23,6 +23,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_SMI_HANDLER
 	select EC_CLEVO_IT5570
 	select DRIVER_NVIDIA_OPTIMUS
+	select TPM_MEASURED_BOOT
 
 config MAINBOARD_DIR
 	string
@@ -80,7 +81,19 @@ config DIMM_SPD_SIZE
 	default 512
 
 config VBOOT
-	select VBOOT_LID_SWITCH
+	select VBOOT_NO_BOARD_SUPPORT
+	select VBOOT_ALWAYS_ENABLE_DISPLAY
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+
+config VBOOT_SLOTS_RW_A
+	default y
+
+config FMDFILE
+	string
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
 
 config UART_FOR_CONSOLE
 	int
@@ -90,4 +103,4 @@ config TPM_PIRQ
 	hex
 	default 0x1C # GPP_C14
 
-endif # BOARD_CLEVO_NV41MB
+endif # BOARD_CLEVO_NV41MZ
