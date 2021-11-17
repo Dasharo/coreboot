@@ -27,6 +27,8 @@
 #define IT5570_SMFI_HRAMWC		0x105a	/* Host RAM Window Control */
 #define IT5570_SMFI_HRAMW0AAS		0x105d	/* Host RAM Window 0 Access Allow Size */
 
+#define IT5570_MAX_FANS			0x4	/* Maximum number of configurable fans */
+
 enum {
 	H2RAM_WINDOW_16B,
 	H2RAM_WINDOW_32B,
@@ -237,7 +239,7 @@ static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 	acpigen_write_scope(acpi_device_path(dev));
 	acpigen_write_method("SFCV", 0);
 	if (config->has_custom_fan_curve) {
-		for (i = 0; i < config->fans; ++i) {
+		for (i = 0; i < IT5570_MAX_FANS; ++i) {
 			/* Curve */
 			for (j = 0; j < 4; ++j) {
 				snprintf(fieldname, 5, "P%dF%d", j+1, i+1);

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+/* Generated in SSDT */
 External (\_SB.PCI0.LPCB.EC0.SFCV, MethodObj)
 
 Device (EC0)
@@ -383,15 +384,6 @@ Device (EC0)
 		CCI0 = Zero
 		CCI3 = Zero
 		Notify (^UCSI, 0x80)
-	}
-
-	// Get temperature
-	Method (GTMP, 1, Serialized) {
-		FDAT = One
-		FCMD = 0xC0
-		Debug = FBF1
-		Debug = FBUF
-		Debug = FDAT
 	}
 
 	#include "hid.asl"
