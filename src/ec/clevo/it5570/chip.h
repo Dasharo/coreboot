@@ -9,9 +9,6 @@ struct ec_clevo_it5570_config {
 	/* Custom fan curve enable */
 	bool has_custom_fan_curve;
 
-	/* Number of fans - all fans will have the same curve */
-	u8 fans;
-
 	/* Fan curve - temperatures in celsius and corresponding speeds (percentage) */
 	u8 temps[4];
 	u8 speeds[4];
