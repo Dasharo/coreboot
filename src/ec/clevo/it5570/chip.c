@@ -12,7 +12,6 @@
 #include <superio/conf_mode.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <assert.h>
 #include "chip.h"
 
 #define I2EC_ADDR_L			0x10
