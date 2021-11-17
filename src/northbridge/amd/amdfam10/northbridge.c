@@ -374,6 +374,7 @@ static void trim_ht_chain(struct device *dev)
 static void amdfam10_scan_chains(struct device *dev)
 {
 	struct bus *link;
+	u32 nodeid = amdfam10_nodeid(dev);
 
 	printk(BIOS_SPEW, "%s\n", __func__);
 
@@ -381,6 +382,7 @@ static void amdfam10_scan_chains(struct device *dev)
 		uint8_t current_link_number = 0;
 
 		for (link = dev->link_list; link; link = link->next) {
+			printk(BIOS_SPEW, "%s: %s [%d] === %d", __func__, dev_path(dev), current_link_number, link->link_num);
 			/* The following links have changed position in Fam15h G34 processors:
 			 * Fam10  Fam15
 			 * Node 0
@@ -394,24 +396,37 @@ static void amdfam10_scan_chains(struct device *dev)
 			 * L2 --> L1
 			 * L3 --> L2
 			 */
-			if (link->link_num == 0)
-				link->link_num = 3;
-			else if (link->link_num == 1)
-				link->link_num = 2;
-			else if (link->link_num == 2)
-				link->link_num = 0;
-			else if (link->link_num == 3)
-				link->link_num = 1;
-			else if (link->link_num == 5)
-				link->link_num = 7;
-			else if (link->link_num == 6)
-				link->link_num = 5;
-			else if (link->link_num == 7)
-				link->link_num = 6;
+			if (nodeid == 0) {
+				if (link->link_num == 0)
+					link->link_num = 3;
+				else if (link->link_num == 1)
+					link->link_num = 2;
+				else if (link->link_num == 2)
+					link->link_num = 0;
+				else if (link->link_num == 3)
+					link->link_num = 1;
+				else
+					die("%s: wrong link_num for northbridge (%d)\n",
+					    dev_path(dev), link->link_num);
+			} else if (nodeid == 1) {
+				if (link->link_num == 0)
+					link->link_num = 0;
+				else if (link->link_num == 1)
+					link->link_num = 3;
+				else if (link->link_num == 2)
+					link->link_num = 1;
+				else if (link->link_num == 3)
+					link->link_num = 2;
+				else
+					die("%s: wrong link_num for northbridge (%d)\n",
+					    dev_path(dev), link->link_num);
+			}
 
 			current_link_number++;
 			if (current_link_number > 3)
 				current_link_number = 0;
+
+			printk(BIOS_SPEW, " --> %d\n", link->link_num);
 		}
 	}
 
@@ -589,7 +604,7 @@ static struct resource *amdfam10_find_iopair(struct device *dev, unsigned int no
 		reg = 0x110 + (index<<24) + (4<<20); // index could be 0, 255
 	}
 
-		resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
+	resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
 
 	return resource;
 }
@@ -973,7 +988,7 @@ static void amdfam10_domain_read_resources(struct device *dev)
 	reserved_ram_resource(dev, idx++, 0xc0000 >> 10, (0x100000 - 0xc0000) >> 10);
 
 	/* The rest up to TOP_MEM and TOP_MEM2 is RAM */
-	ram_resource(dev, idx++, 0x100000, (rdmsr(TOP_MEM).lo >> 10) - 0x100000);
+	ram_resource(dev, idx++, 0x100000 >> 10, (rdmsr(TOP_MEM).lo - 0x100000) >> 10);
 	tom2 = rdmsr(TOP_MEM2);
 	printk(BIOS_INFO, "TOM2: %08x%08x\n", tom2.hi, tom2.lo);
 	if (tom2.hi)
