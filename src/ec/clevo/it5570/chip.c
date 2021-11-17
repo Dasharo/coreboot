@@ -184,9 +184,9 @@ static bool is_curve_valid(struct ec_clevo_it5570_fan_curve curve)
 	return true;
 }
 
-static void acpigen_write_it5570_fan_curve(struct ec_clevo_it5570_fan_curve curve, int fan)
+static void write_it5570_fan_curve(struct ec_clevo_it5570_fan_curve curve, int fan)
 {
-	uint16_t slope;
+	uint16_t ramp;
 	int j;
 	char fieldname[5];
 
@@ -201,12 +201,12 @@ static void acpigen_write_it5570_fan_curve(struct ec_clevo_it5570_fan_curve curv
 	/* Ramps */
 	for (j = 0; j < 3; ++j) {
 		snprintf(fieldname, 5, "SH%d%d", fan+1, j+1);
-		slope	= (float)(curve.speed[j+1]       - curve.speed[j])
+		ramp	= (float)(curve.speed[j+1]       - curve.speed[j])
 			/ (float)(curve.temperature[j+1] - curve.temperature[j])
 			* 2.55 * 16.0;
-		acpigen_write_store_int_to_namestr(slope >> 8, fieldname);
+		acpigen_write_store_int_to_namestr(ramp >> 8, fieldname);
 		snprintf(fieldname, 5, "SL%d%d", fan+1, j+1);
-		acpigen_write_store_int_to_namestr(slope & 0xFF, fieldname);
+		acpigen_write_store_int_to_namestr(ramp & 0xFF, fieldname);
 	}
 }
 
@@ -290,9 +290,10 @@ static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 		for (i = 0; i < IT5570_FAN_CNT; ++i) {
 			if (!is_curve_valid(config->fans[i].curve)) {
 				printk (BIOS_WARNING, "EC: Fan %d curve invalid. Using curve for fan 0.\n", i);
-				acpigen_write_it5570_fan_curve(config->fans[0].curve, i);
+				write_it5570_fan_curve(config->fans[0].curve, i);
+			} else {
+				write_it5570_fan_curve(config->fans[i].curve, i);
 			}
-			acpigen_write_it5570_fan_curve(config->fans[i].curve, i);
 		}
 
 		/* Enable custom fan mode */
