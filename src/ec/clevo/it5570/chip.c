@@ -27,8 +27,6 @@
 #define IT5570_SMFI_HRAMWC		0x105a	/* Host RAM Window Control */
 #define IT5570_SMFI_HRAMW0AAS		0x105d	/* Host RAM Window 0 Access Allow Size */
 
-#define IT5570_MAX_FANS			0x4	/* Maximum number of configurable fans */
-
 enum {
 	H2RAM_WINDOW_16B,
 	H2RAM_WINDOW_32B,
@@ -238,21 +236,21 @@ static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 	/* have the function exist even if the fan curve isn't enabled in devicetree */
 	acpigen_write_scope(acpi_device_path(dev));
 	acpigen_write_method("SFCV", 0);
-	if (config->has_custom_fan_curve) {
-		for (i = 0; i < IT5570_MAX_FANS; ++i) {
+	if (config->fans.mode == FAN_MODE_CUSTOM) {
+		for (i = 0; i < IT5570_FAN_CNT; ++i) {
 			/* Curve */
 			for (j = 0; j < 4; ++j) {
 				snprintf(fieldname, 5, "P%dF%d", j+1, i+1);
-				acpigen_write_store_int_to_namestr(config->temps[j], fieldname);
+				acpigen_write_store_int_to_namestr(config->fans.curve[j].temperature, fieldname);
 				snprintf(fieldname, 5, "P%dD%d", j+1, i+1);
-				acpigen_write_store_int_to_namestr(config->speeds[j] * 255 / 100, fieldname);
+				acpigen_write_store_int_to_namestr(config->fans.curve[j].speed * 255 / 100, fieldname);
 			}
 
 			/* Ramps */
 			for (j = 0; j < 3; ++j) {
 				snprintf(fieldname, 5, "SH%d%d", i+1, j+1);
-				slope = (float)(config->speeds[j+1] - config->speeds[j])
-					/ (float)(config->temps[j+1] - config->temps[j])
+				slope = (float)(config->fans.curve[j+1].speed - config->fans.curve[j].speed)
+					/ (float)(config->fans.curve[j+1].temperature - config->fans.curve[j].temperature)
 					* 2.55 * 16.0;
 				acpigen_write_store_int_to_namestr(slope >> 8, fieldname);
 				snprintf(fieldname, 5, "SL%d%d", i+1, j+1);
