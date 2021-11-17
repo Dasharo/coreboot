@@ -27,6 +27,8 @@
 #define IT5570_SMFI_HRAMWC		0x105a	/* Host RAM Window Control */
 #define IT5570_SMFI_HRAMW0AAS		0x105d	/* Host RAM Window 0 Access Allow Size */
 
+#define IT5570_FAN_CNT			0x3	/* Number of configurable fans */
+
 enum {
 	H2RAM_WINDOW_16B,
 	H2RAM_WINDOW_32B,

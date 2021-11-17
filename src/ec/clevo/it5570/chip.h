@@ -5,7 +5,7 @@
 
 #include <acpi/acpi_device.h>
 
-#define IT5570_FAN_CNT		0x4	/* Number of configurable fans */
+#define IT5570_FAN_CURVE_LEN	0x4	/* Number of fan curve points */
 
 enum ec_clevo_it5570_fan_mode {
 	FAN_MODE_AUTO = 0,
@@ -19,7 +19,7 @@ struct ec_clevo_it5570_curve_point {
 
 struct ec_clevo_it5570_fan_config {
 	enum ec_clevo_it5570_fan_mode mode;
-	struct ec_clevo_it5570_curve_point curve[IT5570_FAN_CNT];
+	struct ec_clevo_it5570_curve_point curve[IT5570_FAN_CURVE_LEN];
 };
 
 struct ec_clevo_it5570_config {
