@@ -8,6 +8,10 @@ Device (HDAS)
 	Name (_DDN, "Audio Controller")
 	Name (UUID, ToUUID ("A69F886E-6CEB-4594-A41F-7B5DCE24C553"))
 
+	/* Device is D3 wake capable */
+	Name (_S0W, 3)
+
+
 	/* NHLT Table Address populated from GNVS values */
 	Name (NBUF, ResourceTemplate () {
 		QWordMemory (ResourceConsumer, PosDecode, MinFixed,
