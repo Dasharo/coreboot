@@ -288,7 +288,7 @@ static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 
 		for (i = 0; i < IT5570_FAN_CNT; ++i) {
 			if (!is_curve_valid(config->fans[i].curve)) {
-				printk (BIOS_WARNING, "EC: Fan %d curve invalid. Using curve for fan 0.\n", i);
+				printk (BIOS_WARNING, "EC: Fan %d curve invalid. Using fan 0 curve.\n", i);
 				write_it5570_fan_curve(config->fans[0].curve, i);
 			} else {
 				write_it5570_fan_curve(config->fans[i].curve, i);
