@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+/* Generated in SSDT */
+External (\_SB.PCI0.LPCB.EC0.SFCV, MethodObj)
+
 Device (EC0)
 {
 	Name (_HID, EisaId ("PNP0C09") /* Embedded Controller Device */)  // _HID: Hardware ID
@@ -54,6 +57,9 @@ Device (EC0)
 			// Initialize UCSI
 			^UCSI.INIT ()
 
+			// Apply custom fan curve
+			\_SB.PCI0.LPCB.EC0.SFCV ()
+
 			// EC is now available
 			ECOK = Arg1
 		}
@@ -87,6 +93,7 @@ Device (EC0)
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
 		If (ECOK) {
 			UPB ()
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 		}
 	}
 
@@ -153,6 +160,7 @@ Device (EC0)
 		} Else {
 			Debug = "EC: S0IX Exit"
 			UPB ()
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 		}
 
 		FDAT = 0xC2
@@ -340,6 +348,11 @@ Device (EC0)
 			Debug = "EC: Color Keyboard Up"
 		} ElseIf (Local0 == 0x80) {
 			Debug = "EC: Color Keyboard Color Change"
+		} ElseIf (Local0 == 0xF3) {
+			Debug = "EC: Fan Cooling Mode Enable"
+		} ElseIf (Local0 == 0x6C) {
+			Debug = "EC: Fan Cooling Mode Disable"
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 		} Else {
 			Debug = Concatenate("EC: Other: ", ToHexString(Local0))
 		}

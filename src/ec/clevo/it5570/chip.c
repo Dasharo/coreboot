@@ -11,6 +11,8 @@
 #include <pc80/keyboard.h>
 #include <superio/conf_mode.h>
 #include <stdint.h>
+#include <stdio.h>
+#include "chip.h"
 
 #define I2EC_ADDR_L			0x10
 #define I2EC_ADDR_H			0x11
@@ -163,6 +165,50 @@ static void it5570_set_h2ram_base(struct device *dev, uint32_t addr)
 			  (i2ec_direct_read(IT5570_SMFI_HRAMWC) & 0xef) | 1);
 }
 
+static bool is_curve_valid(struct ec_clevo_it5570_fan_curve curve)
+{
+	int i;
+
+	/*
+	 * Fan curve speeds have to be non-decreasing.
+	 * Fan curve temperatures have to be increasing (to avoid division by 0).
+	 * This also covers the case when the curve is all zeroes (i.e. not configured).
+	 */
+
+	for (i = 1; i < IT5570_FAN_CURVE_LEN; ++i)
+		if (   curve.speed[i]       <  curve.speed[i-1]
+		    || curve.temperature[i] <= curve.temperature[i-1])
+			return false;
+
+	return true;
+}
+
+static void write_it5570_fan_curve(struct ec_clevo_it5570_fan_curve curve, int fan)
+{
+	uint16_t ramp;
+	int j;
+	char fieldname[5];
+
+	/* Curve points */
+	for (j = 0; j < 4; ++j) {
+		snprintf(fieldname, 5, "P%dF%d", j+1, fan+1);
+		acpigen_write_store_int_to_namestr(curve.temperature[j], fieldname);
+		snprintf(fieldname, 5, "P%dD%d", j+1, fan+1);
+		acpigen_write_store_int_to_namestr(curve.speed[j] * 255 / 100, fieldname);
+	}
+
+	/* Ramps */
+	for (j = 0; j < 3; ++j) {
+		snprintf(fieldname, 5, "SH%d%d", fan+1, j+1);
+		ramp	= (float)(curve.speed[j+1]       - curve.speed[j])
+			/ (float)(curve.temperature[j+1] - curve.temperature[j])
+			* 2.55 * 16.0;
+		acpigen_write_store_int_to_namestr(ramp >> 8, fieldname);
+		snprintf(fieldname, 5, "SL%d%d", fan+1, j+1);
+		acpigen_write_store_int_to_namestr(ramp & 0xFF, fieldname);
+	}
+}
+
 static void clevo_it5570_ec_init(struct device *dev)
 {
 	if (!dev->enabled)
@@ -198,10 +244,13 @@ static void clevo_it5570_ec_read_resources(struct device *dev)
 
 static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 {
+	const struct ec_clevo_it5570_config *config = config_of(dev);
 	struct opregion opreg;
 	void *region_ptr;
 	size_t ucsi_alloc_region_len;
+	uint8_t i;
 
+	/* UCSI */
 	ucsi_alloc_region_len = ucsi_region_len < UCSI_MIN_ALLOC_REGION_LEN ?
 		UCSI_MIN_ALLOC_REGION_LEN : ucsi_region_len;
 	region_ptr = cbmem_add(CBMEM_ID_ACPI_UCSI, ucsi_alloc_region_len);
@@ -223,6 +272,34 @@ static void clevo_it5570_ec_fill_ssdt_generator(const struct device *dev)
 	acpigen_write_opregion(&opreg);
 	acpigen_write_field(opreg.name, ucsi_region_fields, ucsi_region_len,
 			    FIELD_ANYACC | FIELD_LOCK | FIELD_PRESERVE);
+	acpigen_pop_len(); /* Scope */
+
+	/* Fan curve */
+	/* have the function exist even if the fan curve isn't enabled in devicetree */
+	acpigen_write_scope(acpi_device_path(dev));
+	acpigen_write_method("SFCV", 0);
+	if (config->fan_mode == FAN_MODE_CUSTOM) {
+		if (!is_curve_valid(config->fans[0].curve)) {
+			printk (BIOS_ERR, "EC: Fan 0 curve invalid. Check your devicetree.cb.\n");
+			acpigen_pop_len(); /* Method */
+			acpigen_pop_len(); /* Scope */
+			return;
+		}
+
+		for (i = 0; i < IT5570_FAN_CNT; ++i) {
+			if (!is_curve_valid(config->fans[i].curve)) {
+				printk (BIOS_WARNING, "EC: Fan %d curve invalid. Using fan 0 curve.\n", i);
+				write_it5570_fan_curve(config->fans[0].curve, i);
+			} else {
+				write_it5570_fan_curve(config->fans[i].curve, i);
+			}
+		}
+
+		/* Enable custom fan mode */
+		acpigen_write_store_int_to_namestr(0x04, "FDAT");
+		acpigen_write_store_int_to_namestr(0xD7, "FCMD");
+	}
+	acpigen_pop_len(); /* Method */
 	acpigen_pop_len(); /* Scope */
 }
 
