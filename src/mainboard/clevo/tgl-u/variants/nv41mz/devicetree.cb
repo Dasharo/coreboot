@@ -10,8 +10,8 @@ chip soc/intel/tigerlake
 	}"
 
 # ACPI (soc/intel/tigerlake/acpi.c)
-	# Enable DPTF
-	register "dptf_enable" = "1"
+	# Disable DPTF
+	register "dptf_enable" = "0"
 
 	# Enable External Bypass
 	register "external_bypass" = "1"
@@ -113,9 +113,6 @@ chip soc/intel/tigerlake
 
 			# ACPI brightness control
 			register "gfx" = "GMA_DEFAULT_PANEL(0)"
-		end
-		device ref dptf on
-			register "Device4Enable" = "1"
 		end
 		device ref peg on
 			# PCIe PEG0 x4, Clock 0 (SSD1)
@@ -328,6 +325,11 @@ chip soc/intel/tigerlake
 		device ref pch_espi on
 			chip ec/clevo/it5570
 				device pnp 0c09.0 on end
+				register "fan_mode" = "FAN_MODE_CUSTOM"
+				register "fans[0].curve.temperature" = "{ 40, 60, 70, 80 }"
+				register "fans[0].curve.speed" = "{ 16, 25, 50, 100 }"
+				register "fans[1].curve.temperature" = "{ 40, 60, 70, 80 }"
+				register "fans[1].curve.speed" = "{ 16, 25, 50, 100 }"
 			end
 			chip drivers/pc80/tpm
 				register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_C14)"
