@@ -43,7 +43,8 @@ entries
 466          1       e       1        cpu_cc6_state
 467          1       e       1        sata_ahci_mode
 468          1       e       1        sata_alpm
-#469          4      unused
+469          1       e       1        server_manual_fan_mode
+#470          3      unused
 473          2       e       13       dimm_spd_checksum
 475          1       e       14       probe_filter
 476          1       e       1        l3_cache_partitioning
