@@ -276,9 +276,8 @@ static void w83795_init(struct device *dev, w83795_fan_mode_t mode, u8 dts_src)
 	w83795_write(dev, W83795_REG_TEMP_CTRL1, config->temp_ctl1);
 	w83795_write(dev, W83795_REG_TEMP_CTRL2, config->temp_ctl2);
 
-
-
 	if (!get_uint_option("server_manual_fan_mode", config->server_manual_mode)) {
+		printk(BIOS_DEBUG, "Server fan control mode disabled\n");
 		/* Temperature to fan mappings */
 		w83795_write(dev, W83795_REG_TFMR(0), config->temp1_fan_select);
 		w83795_write(dev, W83795_REG_TFMR(1), config->temp2_fan_select);
@@ -322,6 +321,7 @@ static void w83795_init(struct device *dev, w83795_fan_mode_t mode, u8 dts_src)
 
 		/* Set fan full speed for server behavior */
 		w83795_write(dev, W83795_REG_DFSP, fan_pct_to_cfg_val(100));
+		printk(BIOS_DEBUG, "Server fan control mode disabled\n");
 	}
 
 	/* Set critical temperatures
