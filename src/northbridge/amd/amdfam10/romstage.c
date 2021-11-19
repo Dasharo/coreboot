@@ -118,4 +118,6 @@ void fill_postcar_frame(struct postcar_frame *pcf)
 	/* Cache 8 MiB region below the top of RAM to cover cbmem. */
 	uintptr_t top_of_ram = (uintptr_t)cbmem_top();
 	postcar_frame_add_mtrr(pcf, top_of_ram - 8*MiB, 8*MiB, MTRR_TYPE_WRBACK);
+	/* Cache the memory-mapped boot media. */
+	pcf->skip_common_mtrr = 0;
 }
