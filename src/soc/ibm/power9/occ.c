@@ -95,16 +95,16 @@ struct occ_poll_response {
 	uint8_t  sensor_data[];	// 4049 bytes
 } __attribute__((packed));
 
-static void pm_ocb_setup(uint32_t ocb_bar)
+static void pm_ocb_setup(uint8_t chip, uint32_t ocb_bar)
 {
-	write_scom(PU_OCB_PIB_OCBCSR0_OR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_MODE));
-	write_scom(PU_OCB_PIB_OCBCSR0_CLEAR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_TYPE));
-	write_scom(PU_OCB_PIB_OCBAR0, (uint64_t)ocb_bar << 32);
+	write_rscom(chip, PU_OCB_PIB_OCBCSR0_OR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_MODE));
+	write_rscom(chip, PU_OCB_PIB_OCBCSR0_CLEAR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_TYPE));
+	write_rscom(chip, PU_OCB_PIB_OCBAR0, (uint64_t)ocb_bar << 32);
 }
 
-static void check_ocb_mode(uint64_t ocb_csr_address, uint64_t ocb_shcs_address)
+static void check_ocb_mode(uint8_t chip, uint64_t ocb_csr_address, uint64_t ocb_shcs_address)
 {
-	uint64_t ocb_pib = read_scom(ocb_csr_address);
+	uint64_t ocb_pib = read_rscom(chip, ocb_csr_address);
 
 	/*
 	 * The following check for circular mode is an additional check
@@ -117,7 +117,7 @@ static void check_ocb_mode(uint64_t ocb_csr_address, uint64_t ocb_shcs_address)
 		 * anyway to let the PIB error response return occur. (That is
 		 * what will happen if this checking code were not here.)
 		 */
-		uint64_t stream_push_ctrl = read_scom(ocb_shcs_address);
+		uint64_t stream_push_ctrl = read_rscom(chip, ocb_shcs_address);
 
 		if (stream_push_ctrl & PPC_BIT(OCB_OCI_OCBSHCS0_PUSH_ENABLE)) {
 			uint8_t counter = 0;
@@ -126,7 +126,7 @@ static void check_ocb_mode(uint64_t ocb_csr_address, uint64_t ocb_shcs_address)
 				if (!(stream_push_ctrl & PPC_BIT(OCB_OCI_OCBSHCS0_PUSH_FULL)))
 					break;
 
-				stream_push_ctrl = read_scom(ocb_shcs_address);
+				stream_push_ctrl = read_rscom(chip, ocb_shcs_address);
 			}
 
 			if (counter == 4)
@@ -135,53 +135,54 @@ static void check_ocb_mode(uint64_t ocb_csr_address, uint64_t ocb_shcs_address)
 	}
 }
 
-static void put_ocb_indirect(uint32_t ocb_req_length, uint32_t oci_address,
-			     uint64_t *ocb_buffer)
+static void put_ocb_indirect(uint8_t chip, uint32_t ocb_req_length,
+			     uint32_t oci_address, uint64_t *ocb_buffer)
 {
-	write_scom(PU_OCB_PIB_OCBAR0, (uint64_t)oci_address << 32);
+	write_rscom(chip, PU_OCB_PIB_OCBAR0, (uint64_t)oci_address << 32);
 
-	check_ocb_mode(PU_OCB_PIB_OCBCSR0_RO, PU_OCB_OCI_OCBSHCS0_SCOM);
+	check_ocb_mode(chip, PU_OCB_PIB_OCBCSR0_RO, PU_OCB_OCI_OCBSHCS0_SCOM);
 
 	for (uint32_t index = 0; index < ocb_req_length; index++)
-		write_scom(PU_OCB_PIB_OCBDR0, ocb_buffer[index]);
+		write_rscom(chip, PU_OCB_PIB_OCBDR0, ocb_buffer[index]);
 }
 
-static void get_ocb_indirect(uint32_t ocb_req_length, uint32_t oci_address,
-			     uint64_t *ocb_buffer)
+static void get_ocb_indirect(uint8_t chip, uint32_t ocb_req_length,
+			     uint32_t oci_address, uint64_t *ocb_buffer)
 {
-	write_scom(PU_OCB_PIB_OCBAR0, (uint64_t)oci_address << 32);
+	write_rscom(chip, PU_OCB_PIB_OCBAR0, (uint64_t)oci_address << 32);
 	for (uint32_t loopCount = 0; loopCount < ocb_req_length; loopCount++)
-		ocb_buffer[loopCount] = read_scom(PU_OCB_PIB_OCBDR0);
+		ocb_buffer[loopCount] = read_rscom(chip, PU_OCB_PIB_OCBDR0);
 }
 
-static void write_occ_sram(uint32_t address, uint64_t *buffer, size_t data_length)
+static void write_occ_sram(uint8_t chip, uint32_t address, uint64_t *buffer, size_t data_length)
 {
-	pm_ocb_setup(address);
-	put_ocb_indirect(data_length / 8, address, buffer);
+	pm_ocb_setup(chip, address);
+	put_ocb_indirect(chip, data_length / 8, address, buffer);
 }
 
-static void read_occ_sram(uint32_t address, uint64_t *buffer, size_t data_length)
+static void read_occ_sram(uint8_t chip, uint32_t address, uint64_t *buffer, size_t data_length)
 {
-	pm_ocb_setup(address);
-	get_ocb_indirect(data_length / 8, address, buffer);
+	pm_ocb_setup(chip, address);
+	get_ocb_indirect(chip, data_length / 8, address, buffer);
 }
 
-static void write_occ_command(uint64_t write_data)
+static void write_occ_command(uint8_t chip, uint64_t write_data)
 {
-	check_ocb_mode(PU_OCB_PIB_OCBCSR1_RO, PU_OCB_OCI_OCBSHCS1_SCOM);
-	write_scom(PU_OCB_PIB_OCBDR1, write_data);
+	check_ocb_mode(chip, PU_OCB_PIB_OCBCSR1_RO, PU_OCB_OCI_OCBSHCS1_SCOM);
+	write_rscom(chip, PU_OCB_PIB_OCBDR1, write_data);
 }
 
-void clear_occ_special_wakeups(uint64_t cores)
+void clear_occ_special_wakeups(uint8_t chip, uint64_t cores)
 {
 	for (size_t i = 0; i < MAX_CORES_PER_CHIP; i += 2) {
 		if (!IS_EX_FUNCTIONAL(i, cores))
 			continue;
-		scom_and_for_chiplet(EC00_CHIPLET_ID + i, EX_PPM_SPWKUP_OCC, ~PPC_BIT(0));
+		rscom_and_for_chiplet(chip, EC00_CHIPLET_ID + i, EX_PPM_SPWKUP_OCC,
+				      ~PPC_BIT(0));
 	}
 }
 
-void special_occ_wakeup_disable(uint64_t cores)
+void special_occ_wakeup_disable(uint8_t chip, uint64_t cores)
 {
 	enum { PPM_SPWKUP_FSP = 0x200F010B };
 
@@ -189,14 +190,14 @@ void special_occ_wakeup_disable(uint64_t cores)
 		if (!IS_EC_FUNCTIONAL(i, cores))
 			continue;
 
-		write_scom_for_chiplet(EC00_CHIPLET_ID + i, PPM_SPWKUP_FSP, 0);
+		write_rscom_for_chiplet(chip, EC00_CHIPLET_ID + i, PPM_SPWKUP_FSP, 0);
 		/* This puts an inherent delay in the propagation of the reset transition */
-		(void)read_scom_for_chiplet(EC00_CHIPLET_ID + i, PPM_SPWKUP_FSP);
+		(void)read_rscom_for_chiplet(chip, EC00_CHIPLET_ID + i, PPM_SPWKUP_FSP);
 	}
 }
 
 /* Sets up boot loader in SRAM and returns 32-bit jump instruction to it */
-static uint64_t setup_memory_boot(void)
+static uint64_t setup_memory_boot(uint8_t chip)
 {
 	enum {
 		OCC_BOOT_OFFSET = 0x40,
@@ -220,12 +221,12 @@ static uint64_t setup_memory_boot(void)
 	sram_program[1] |= ppc_bctr();
 
 	/* Write to SRAM */
-	write_occ_sram(OCC_SRAM_BOOT_ADDR, sram_program, sizeof(sram_program));
+	write_occ_sram(chip, OCC_SRAM_BOOT_ADDR, sram_program, sizeof(sram_program));
 
 	return ((uint64_t)ppc_b(OCC_SRAM_BOOT_ADDR2) << 32);
 }
 
-void occ_start_from_mem(void)
+void occ_start_from_mem(uint8_t chip)
 {
 	enum {
 		OCB_PIB_OCR_CORE_RESET_BIT = 0,
@@ -238,25 +239,25 @@ void occ_start_from_mem(void)
 		PU_OCB_PIB_OCR_OR    = 0x0006D002,
 	};
 
-	write_scom(PU_OCB_PIB_OCBCSR0_OR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_MODE));
+	write_rscom(chip, PU_OCB_PIB_OCBCSR0_OR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_MODE));
 
 	/*
 	 * Set up Boot Vector Registers in SRAM:
 	 *  - set bv0-2 to all 0's (illegal instructions)
 	 *  - set bv3 to proper branch instruction
 	 */
-	write_scom(PU_SRAM_SRBV0_SCOM, 0);
-	write_scom(PU_SRAM_SRBV0_SCOM + 1, 0);
-	write_scom(PU_SRAM_SRBV0_SCOM + 2, 0);
-	write_scom(PU_SRAM_SRBV0_SCOM + 3, setup_memory_boot());
+	write_rscom(chip, PU_SRAM_SRBV0_SCOM, 0);
+	write_rscom(chip, PU_SRAM_SRBV0_SCOM + 1, 0);
+	write_rscom(chip, PU_SRAM_SRBV0_SCOM + 2, 0);
+	write_rscom(chip, PU_SRAM_SRBV0_SCOM + 3, setup_memory_boot(chip));
 
-	write_scom(PU_JTG_PIB_OJCFG_AND, ~PPC_BIT(JTG_PIB_OJCFG_DBG_HALT_BIT));
-	write_scom(PU_OCB_PIB_OCR_OR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
-	write_scom(PU_OCB_PIB_OCR_CLEAR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
+	write_rscom(chip, PU_JTG_PIB_OJCFG_AND, ~PPC_BIT(JTG_PIB_OJCFG_DBG_HALT_BIT));
+	write_rscom(chip, PU_OCB_PIB_OCR_OR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
+	write_rscom(chip, PU_OCB_PIB_OCR_CLEAR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
 }
 
 /* Wait for OCC to reach communications checkpoint */
-static void wait_for_occ_checkpoint(void)
+static void wait_for_occ_checkpoint(uint8_t chip)
 {
 	enum {
 		/* Wait up to 15 seconds for OCC to be ready (1500 * 10ms = 15s) */
@@ -279,7 +280,7 @@ static void wait_for_occ_checkpoint(void)
 		udelay(US_BETWEEN_READ);
 
 		/* Read SRAM response buffer to check for OCC checkpoint */
-		read_occ_sram(OCC_RSP_SRAM_ADDR, (uint64_t *)response, sizeof(response));
+		read_occ_sram(chip, OCC_RSP_SRAM_ADDR, (uint64_t *)response, sizeof(response));
 
 		/* Pull status from response (byte 2) */
 		status = response[2];
@@ -446,7 +447,7 @@ static bool parse_occ_response(struct homer_st *homer, uint8_t occ_cmd,
 	return true;
 }
 
-static bool write_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
+static bool write_occ_cmd(uint8_t chip, struct homer_st *homer, uint8_t occ_cmd,
 			  const uint8_t *data, uint16_t data_len,
 			  uint8_t *response, uint32_t *response_len)
 {
@@ -462,7 +463,7 @@ static bool write_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
 
 	build_occ_cmd(homer, occ_cmd, cmd_seq_num, data, data_len);
 	/* Sender: HTMGT; command: Command Write Attention */
-	write_occ_command(0x1001000000000000);
+	write_occ_command(chip, 0x1001000000000000);
 
 	/* Wait for OCC to process command and send response (timeout is the
 	   same for all commands) */
@@ -493,7 +494,7 @@ static bool write_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
 	return true;
 }
 
-static void send_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
+static void send_occ_cmd(uint8_t chip, struct homer_st *homer, uint8_t occ_cmd,
 			 const uint8_t *data, uint16_t data_len,
 			 uint8_t *response, uint32_t *response_len)
 {
@@ -502,7 +503,7 @@ static void send_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
 	uint8_t i = 0;
 
 	for (i = 0; i < MAX_TRIES; ++i) {
-		if (write_occ_cmd(homer, occ_cmd, data, data_len, response, response_len))
+		if (write_occ_cmd(chip, homer, occ_cmd, data, data_len, response, response_len))
 			break;
 
 		if (i < MAX_TRIES - 1)
@@ -514,7 +515,7 @@ static void send_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
 }
 
 /* Reports OCC error to the user and clears it on OCC's side */
-static void handle_occ_error(struct homer_st *homer,
+static void handle_occ_error(uint8_t chip, struct homer_st *homer,
 			     const struct occ_poll_response *response)
 {
 	static uint8_t error_log_buf[4096];
@@ -535,18 +536,18 @@ static void handle_occ_error(struct homer_st *homer,
 		error_length = sizeof(error_log_buf);
 	}
 
-	read_occ_sram(response->error_address, (uint64_t *)error_log_buf, error_length);
+	read_occ_sram(chip, response->error_address, (uint64_t *)error_log_buf, error_length);
 
 	printk(BIOS_WARNING, "OCC error log:\n");
 	hexdump(error_log_buf, error_length);
 
 	/* Confirm to OCC that we've read the log */
-	send_occ_cmd(homer, OCC_CMD_CLEAR_ERROR_LOG,
+	send_occ_cmd(chip, homer, OCC_CMD_CLEAR_ERROR_LOG,
 		     clear_log_data, sizeof(clear_log_data),
 		     NULL, &response_len);
 }
 
-static void poll_occ(struct homer_st *homer, bool flush_all_errors,
+static void poll_occ(uint8_t chip, struct homer_st *homer, bool flush_all_errors,
 		     struct occ_poll_response *response)
 {
 	enum { OCC_POLL_DATA_MIN_SIZE = 40 };
@@ -556,7 +557,7 @@ static void poll_occ(struct homer_st *homer, bool flush_all_errors,
 		const uint8_t poll_data[1] = { 0x20 /*version*/ };
 		uint32_t response_len = sizeof(*response);
 
-		send_occ_cmd(homer, OCC_CMD_POLL, poll_data, sizeof(poll_data),
+		send_occ_cmd(chip, homer, OCC_CMD_POLL, poll_data, sizeof(poll_data),
 			     (uint8_t *)response, &response_len);
 
 		if (response_len < OCC_POLL_DATA_MIN_SIZE)
@@ -568,7 +569,7 @@ static void poll_occ(struct homer_st *homer, bool flush_all_errors,
 		if (response->error_id == 0)
 			break;
 
-		handle_occ_error(homer, response);
+		handle_occ_error(chip, homer, response);
 
 		--max_more_errors;
 		if (max_more_errors == 0) {
@@ -1028,7 +1029,7 @@ static void get_gpu_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *si
 	*size = index;
 }
 
-static void send_occ_config_data(struct homer_st *homer)
+static void send_occ_config_data(uint8_t chip, struct homer_st *homer)
 {
 	/*
 	 * Order in which these are sent is important!
@@ -1061,21 +1062,22 @@ static void send_occ_config_data(struct homer_st *homer)
 		if (data_len > sizeof(data))
 			die("Buffer for OCC data is too small!\n");
 
-		send_occ_cmd(homer, OCC_CMD_SETUP_CFG_DATA, data, data_len, NULL,
-			     &response_len);
-		poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+		send_occ_cmd(chip, homer, OCC_CMD_SETUP_CFG_DATA, data, data_len,
+			     NULL, &response_len);
+		poll_occ(chip, homer, /*flush_all_errors=*/false, &poll_response);
 	}
 }
 
-static void send_occ_user_power_cap(struct homer_st *homer)
+static void send_occ_user_power_cap(uint8_t chip, struct homer_st *homer)
 {
 	/* No power limit */
 	const uint8_t data[2] = { 0x00, 0x00 };
 	uint32_t response_len = 0;
-	send_occ_cmd(homer, OCC_CMD_SET_POWER_CAP, data, sizeof(data), NULL, &response_len);
+	send_occ_cmd(chip, homer, OCC_CMD_SET_POWER_CAP, data, sizeof(data),
+		     NULL, &response_len);
 }
 
-static void wait_for_occ_status(struct homer_st *homer, uint8_t status_bit)
+static void wait_for_occ_status(uint8_t chip, struct homer_st *homer, uint8_t status_bit)
 {
 	enum {
 		MAX_POLLS = 200,
@@ -1086,7 +1088,7 @@ static void wait_for_occ_status(struct homer_st *homer, uint8_t status_bit)
 	struct occ_poll_response poll_response;
 
 	for (num_polls = 0; num_polls < MAX_POLLS; ++num_polls) {
-		poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+		poll_occ(chip, homer, /*flush_all_errors=*/false, &poll_response);
 		if (poll_response.status & status_bit)
 			break;
 
@@ -1103,7 +1105,7 @@ static void wait_for_occ_status(struct homer_st *homer, uint8_t status_bit)
 		die("Failed to wait until OCC has reached state 0x%02x\n", status_bit);
 }
 
-static void set_occ_state(struct homer_st *homer, uint8_t state)
+static void set_occ_state(uint8_t chip, struct homer_st *homer, uint8_t state)
 {
 	struct occ_poll_response poll_response;
 
@@ -1112,53 +1114,59 @@ static void set_occ_state(struct homer_st *homer, uint8_t state)
 	uint32_t response_len = 0;
 
 	/* Send poll cmd to confirm comm has been established and flush old errors */
-	poll_occ(homer, /*flush_all_errors=*/true, &poll_response);
+	poll_occ(chip, homer, /*flush_all_errors=*/true, &poll_response);
 
 	/* Try to switch to a new state */
-	send_occ_cmd(homer, OCC_CMD_SET_STATE, data, sizeof(data), NULL, &response_len);
+	send_occ_cmd(chip, homer, OCC_CMD_SET_STATE, data, sizeof(data), NULL, &response_len);
 
 	/* Send poll to query state of all OCC and flush any errors */
-	poll_occ(homer, /*flush_all_errors=*/true, &poll_response);
+	poll_occ(chip, homer, /*flush_all_errors=*/true, &poll_response);
 
 	if (poll_response.state != state)
 		die("State of OCC is 0x%02x instead of 0x%02x.\n", poll_response.state, state);
 }
 
-static void set_occ_active_state(struct homer_st *homer)
+static void set_occ_active_state(uint8_t chip, struct homer_st *homer)
 {
 	enum {
 		OCC_STATUS_ACTIVE_READY = 0x01,
 		OCC_STATE_ACTIVE = 0x03,
 	};
 
-	wait_for_occ_status(homer, OCC_STATUS_ACTIVE_READY);
-	set_occ_state(homer, OCC_STATE_ACTIVE);
+	wait_for_occ_status(chip, homer, OCC_STATUS_ACTIVE_READY);
+	set_occ_state(chip, homer, OCC_STATE_ACTIVE);
 }
 
-void activate_occ(struct homer_st *homer)
+void activate_occ(uint8_t chip, struct homer_st *homer, bool is_master)
 {
+	/* TODO: Hostboot performs some steps below for every OCC before moving
+	 *       to the next step (looks like performing it for master OCC
+	 *       first), so will need to loop over OCCs for some steps.
+	 *       All this after starting PM complex for every chip outside
+	 *       of this function. */
+
 	struct occ_poll_response poll_response;
 
 	/* Make sure OCCs are ready for communication */
-	wait_for_occ_checkpoint();
+	wait_for_occ_checkpoint(chip);
 
 	/* Send initial poll to all OCCs to establish communication */
-	poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+	poll_occ(chip, homer, /*flush_all_errors=*/false, &poll_response);
 
 	/* Send OCC's config data */
-	send_occ_config_data(homer);
+	send_occ_config_data(chip, homer);
 
 	/* Set the User PCAP */
-	send_occ_user_power_cap(homer);
+	send_occ_user_power_cap(chip, homer);
 
 	/* Switch for OCC to active state */
-	set_occ_active_state(homer);
+	set_occ_active_state(chip, homer);
 
 	/* Hostboot sets active sensors for all OCCs here, so BMC can start
-	   communication with OCCs. */
+	 * communication with OCCs. */
 }
 
-void pm_occ_fir_init(void)
+void pm_occ_fir_init(uint8_t chip)
 {
 	enum {
 		PERV_TP_OCC_SCOM_OCCLFIR = 0x01010800,
@@ -1251,18 +1259,18 @@ void pm_occ_fir_init(void)
 		| PPC_BIT(SRAM_WRITE_ERR)          | PPC_BIT(SRT_FSM_ERR)
 		| PPC_BIT(STOP_RCV_NOTIFY_PRD)     | PPC_BIT(C405_ECC_UE);
 
-	uint64_t mask = read_scom(PERV_TP_OCC_SCOM_OCCLFIR + MASK_INCR);
+	uint64_t mask = read_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + MASK_INCR);
 	mask &= ~action0_bits;
 	mask &= ~action1_bits;
 
-	write_scom(PERV_TP_OCC_SCOM_OCCLFIR, 0);
-	write_scom(PERV_TP_OCC_SCOM_OCCLFIR + ACTION0_INCR, action0_bits);
-	write_scom(PERV_TP_OCC_SCOM_OCCLFIR + ACTION1_INCR, action1_bits);
-	write_scom(PERV_TP_OCC_SCOM_OCCLFIR + MASK_WOR_INCR, mask);
-	write_scom(PERV_TP_OCC_SCOM_OCCLFIR + MASK_WAND_INCR, mask);
+	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR, 0);
+	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + ACTION0_INCR, action0_bits);
+	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + ACTION1_INCR, action1_bits);
+	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + MASK_WOR_INCR, mask);
+	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + MASK_WAND_INCR, mask);
 }
 
-void pm_pba_fir_init(void)
+void pm_pba_fir_init(uint8_t chip)
 {
 	enum {
 		PU_PBAFIR = 0x05012840,
@@ -1330,9 +1338,9 @@ void pm_pba_fir_init(void)
 	mask &= ~action0_bits;
 	mask &= ~action1_bits;
 
-	write_scom(PU_PBAFIR, 0);
-	write_scom(PU_PBAFIR + ACTION0_INCR, action0_bits);
-	write_scom(PU_PBAFIR + ACTION1_INCR, action1_bits);
-	write_scom(PU_PBAFIR + MASK_WOR_INCR, mask);
-	write_scom(PU_PBAFIR + MASK_WAND_INCR, mask);
+	write_rscom(chip, PU_PBAFIR, 0);
+	write_rscom(chip, PU_PBAFIR + ACTION0_INCR, action0_bits);
+	write_rscom(chip, PU_PBAFIR + ACTION1_INCR, action1_bits);
+	write_rscom(chip, PU_PBAFIR + MASK_WOR_INCR, mask);
+	write_rscom(chip, PU_PBAFIR + MASK_WAND_INCR, mask);
 }
