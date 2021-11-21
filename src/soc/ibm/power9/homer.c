@@ -1529,8 +1529,7 @@ static void istep_21_1(uint8_t chip, struct homer_st *homer, uint64_t cores)
 	printk(BIOS_ERR, "Done starting PM complex\n");
 
 	printk(BIOS_ERR, "Activating OCC...\n");
-	/* Note: only OCCs of chips connected to APSS can be masters */
-	activate_occ(chip, homer, /*is_master=*/(chip == 0));
+	activate_occ(chip, homer);
 	printk(BIOS_ERR, "Done activating OCC\n");
 }
 
