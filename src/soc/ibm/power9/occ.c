@@ -70,9 +70,16 @@ enum fir_offset {
 	ACTION1_INCR   = 7
 };
 
+struct occ_cfg_inputs {
+	struct homer_st *homer;
+	uint8_t chip;
+	bool is_master_occ;
+};
+
 struct occ_cfg_info {
 	const char *name;
-	void (*func)(struct homer_st *homer, uint8_t *data, uint16_t *size);
+	void (*func)(const struct occ_cfg_inputs *inputs, uint8_t *data, uint16_t *size);
+	bool to_master_only;
 };
 
 struct occ_poll_response {
@@ -580,13 +587,13 @@ static void poll_occ(uint8_t chip, struct homer_st *homer, bool flush_all_errors
 	}
 }
 
-static void get_freq_point_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+static void get_freq_point_msg_data(const struct occ_cfg_inputs *inputs,
+				    uint8_t *data, uint16_t *size)
 {
 	enum { OCC_CFGDATA_FREQ_POINT_VERSION = 0x20 };
-	OCCPstateParmBlock *oppb = (void *)homer->ppmr.occ_parm_block;
+	OCCPstateParmBlock *oppb = (void *)inputs->homer->ppmr.occ_parm_block;
 
-	/* TODO: don't hard-code chip number here */
-	const struct voltage_bucket_data *bucket = get_voltage_data(/*chip=*/0);
+	const struct voltage_bucket_data *bucket = get_voltage_data(inputs->chip);
 
 	uint16_t index = 0;
 	uint16_t min_freq = 0;
@@ -622,17 +629,22 @@ static void get_freq_point_msg_data(struct homer_st *homer, uint8_t *data, uint1
 	*size = index;
 }
 
-static void get_occ_role_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+static void get_occ_role_msg_data(const struct occ_cfg_inputs *inputs,
+				  uint8_t *data, uint16_t *size)
 {
-	enum { OCC_ROLE_MASTER = 0x01 };
+	enum {
+		OCC_ROLE_SLAVE  = 0x00,
+		OCC_ROLE_MASTER = 0x01,
+	};
 
 	data[0] = OCC_CFGDATA_OCC_ROLE;
-	data[1] = OCC_ROLE_MASTER;
+	data[1] = (inputs->is_master_occ ? OCC_ROLE_MASTER : OCC_ROLE_SLAVE);
 
 	*size = 2;
 }
 
-static void get_apss_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+static void get_apss_msg_data(const struct occ_cfg_inputs *inputs,
+			      uint8_t *data, uint16_t *size)
 {
 	enum { OCC_CFGDATA_APSS_VERSION = 0x20 };
 
@@ -691,7 +703,8 @@ static void get_apss_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *s
 	*size = index;
 }
 
-static void get_mem_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+static void get_mem_cfg_msg_data(const struct occ_cfg_inputs *inputs,
+				 uint8_t *data, uint16_t *size)
 {
 	enum { OCC_CFGDATA_MEM_CONFIG_VERSION = 0x21 };
 
@@ -735,7 +748,8 @@ static void add_sensor_id(uint8_t *data, uint16_t *index, uint32_t sensor_id)
 #define VRM_VDD_CALLOUT_ID		0x8C
 #define VRM_VDD_TEMP_ID			0xFF
 
-static void get_sys_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+static void get_sys_cfg_msg_data(const struct occ_cfg_inputs *inputs,
+				 uint8_t *data, uint16_t *size)
 {
 	enum {
 		OCC_CFGDATA_SYS_CONFIG_VERSION = 0x21,
@@ -791,7 +805,8 @@ static void get_sys_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t
 	*size = index;
 }
 
-static void get_thermal_ctrl_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+static void get_thermal_ctrl_msg_data(const struct occ_cfg_inputs *inputs,
+				      uint8_t *data, uint16_t *size)
 {
 	enum {
 		OCC_CFGDATA_TCT_CONFIG_VERSION = 0x20,
@@ -887,7 +902,8 @@ static void get_thermal_ctrl_msg_data(struct homer_st *homer, uint8_t *data, uin
 	*size = index;
 }
 
-static void get_power_cap_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+static void get_power_cap_msg_data(const struct occ_cfg_inputs *inputs,
+				   uint8_t *data, uint16_t *size)
 {
 	enum { OCC_CFGDATA_PCAP_CONFIG_VERSION = 0x20 };
 
@@ -925,7 +941,8 @@ static void get_power_cap_msg_data(struct homer_st *homer, uint8_t *data, uint16
 	*size = index;
 }
 
-static void get_avs_bus_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+static void get_avs_bus_cfg_msg_data(const struct occ_cfg_inputs *inputs,
+				     uint8_t *data, uint16_t *size)
 {
 	enum { OCC_CFGDATA_AVSBUS_CONFIG_VERSION = 0x01 };
 
@@ -951,10 +968,10 @@ static void get_avs_bus_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint
 	*size = index;
 }
 
-static void get_power_data(struct homer_st *homer, uint16_t *power_max, uint16_t *power_drop)
+static void get_power_data(const struct occ_cfg_inputs *inputs,
+			   uint16_t *power_max, uint16_t *power_drop)
 {
-	/* TODO: don't hard-code chip number here */
-	const struct voltage_bucket_data *bucket = get_voltage_data(/*chip=*/0);
+	const struct voltage_bucket_data *bucket = get_voltage_data(inputs->chip);
 
 	/* All processor chips (do not have to be functional) */
 	const uint8_t num_procs = 2; // from Hostboot log
@@ -974,7 +991,7 @@ static void get_power_data(struct homer_st *homer, uint16_t *power_max, uint16_t
 	*power_max = proc_socket_power * num_procs;
 	*power_max += mem_power_min_throttles + misc_power;
 
-	OCCPstateParmBlock *oppb = (void *)homer->ppmr.occ_parm_block;
+	OCCPstateParmBlock *oppb = (void *)inputs->homer->ppmr.occ_parm_block;
 	uint16_t min_freq_mhz = oppb->frequency_min_khz / 1000;
 	const uint16_t mhz_per_watt = 28; // ATTR_PROC_MHZ_PER_WATT, from talos.xml
 	/* Drop is always calculated from Turbo to Min (not ultra) */
@@ -985,7 +1002,7 @@ static void get_power_data(struct homer_st *homer, uint16_t *power_max, uint16_t
 	*power_drop = proc_drop + memory_drop;
 }
 
-static void get_gpu_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+static void get_gpu_msg_data(const struct occ_cfg_inputs *inputs, uint8_t *data, uint16_t *size)
 {
 	enum {
 		OCC_CFGDATA_GPU_CONFIG_VERSION = 0x01,
@@ -1000,7 +1017,7 @@ static void get_gpu_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *si
 	data[index++] = OCC_CFGDATA_GPU_CONFIG;
 	data[index++] = OCC_CFGDATA_GPU_CONFIG_VERSION;
 
-	get_power_data(homer, &power_max, &power_drop);
+	get_power_data(inputs, &power_max, &power_drop);
 
 	memcpy(&data[index], &power_max, 2);   // Total non-GPU max power (W)
 	index += 2;
@@ -1044,20 +1061,31 @@ static void get_gpu_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *si
 
 static void send_occ_config_data(uint8_t chip, struct homer_st *homer)
 {
+	enum {
+		TO_ALL = 0,    /* to_master_only = false */
+		TO_MASTER = 1, /* to_master_only = true */
+	};
+
 	/*
 	 * Order in which these are sent is important!
 	 * Not every order works.
 	 */
 	struct occ_cfg_info cfg_info[] = {
-		{ "System config",    &get_sys_cfg_msg_data      },
-		{ "APSS config",      &get_apss_msg_data         },
-		{ "OCC role",         &get_occ_role_msg_data     },
-		{ "Frequency points", &get_freq_point_msg_data   },
-		{ "Memory config",    &get_mem_cfg_msg_data      },
-		{ "Power cap",        &get_power_cap_msg_data    },
-		{ "Thermal control",  &get_thermal_ctrl_msg_data },
-		{ "AVS",              &get_avs_bus_cfg_msg_data  },
-		{ "GPU",              &get_gpu_msg_data          },
+		{ "System config",    &get_sys_cfg_msg_data,      TO_ALL    },
+		{ "APSS config",      &get_apss_msg_data,         TO_ALL    },
+		{ "OCC role",         &get_occ_role_msg_data,     TO_ALL    },
+		{ "Frequency points", &get_freq_point_msg_data,   TO_MASTER },
+		{ "Memory config",    &get_mem_cfg_msg_data,      TO_ALL    },
+		{ "Power cap",        &get_power_cap_msg_data,    TO_MASTER },
+		{ "Thermal control",  &get_thermal_ctrl_msg_data, TO_ALL    },
+		{ "AVS",              &get_avs_bus_cfg_msg_data,  TO_ALL    },
+		{ "GPU",              &get_gpu_msg_data,          TO_ALL    },
+	};
+
+	const struct occ_cfg_inputs inputs = {
+		.homer = homer,
+		.chip = chip,
+		.is_master_occ = (chip == 0),
 	};
 
 	uint8_t i;
@@ -1071,7 +1099,14 @@ static void send_occ_config_data(uint8_t chip, struct homer_st *homer)
 		/* Poll is sent between configuration packets to flush errors */
 		struct occ_poll_response poll_response;
 
-		cfg_info[i].func(homer, data, &data_len);
+		/*
+		 * Certain kinds of configuration data is broadcasted to slave
+		 * OCCs by the master and must not be sent to them directly
+		 */
+		if (cfg_info[i].to_master_only && !inputs.is_master_occ)
+			continue;
+
+		cfg_info[i].func(&inputs, data, &data_len);
 		if (data_len > sizeof(data))
 			die("Buffer for OCC data is too small!\n");
 
@@ -1150,7 +1185,7 @@ static void set_occ_active_state(uint8_t chip, struct homer_st *homer)
 	set_occ_state(chip, homer, OCC_STATE_ACTIVE);
 }
 
-void activate_occ(uint8_t chip, struct homer_st *homer, bool is_master)
+void activate_occ(uint8_t chip, struct homer_st *homer)
 {
 	/* TODO: Hostboot performs some steps below for every OCC before moving
 	 *       to the next step (looks like performing it for master OCC
