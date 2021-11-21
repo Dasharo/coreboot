@@ -894,7 +894,7 @@ static void pba_reset(uint8_t chip)
 	pba_slave_setup_runtime_phase(chip);
 }
 
-static void stop_gpe_init(struct homer_st *homer)
+static void stop_gpe_init(uint8_t chip, struct homer_st *homer)
 {
 	/* First check if SGPE_ACTIVE is not set in OCCFLAG register
 	if (TP.TPCHIP.OCC.OCI.OCB.OCB_OCI_OCCFLG[8] == 1):        // 0x0006C08A
@@ -902,9 +902,9 @@ static void stop_gpe_init(struct homer_st *homer)
 		[all] 0
 		[8]   1       // SGPE_ACTIVE, bits in this register are defined by OCC firmware
 	*/
-	if (read_scom(0x0006C08A) & PPC_BIT(8)) {
+	if (read_rscom(chip, 0x0006C08A) & PPC_BIT(8)) {
 		printk(BIOS_WARNING, "SGPE_ACTIVE is set in OCCFLAG register, clearing it\n");
-		write_scom(0x0006C08B, PPC_BIT(8));
+		write_rscom(chip, 0x0006C08B, PPC_BIT(8));
 	}
 
 	/*
@@ -917,7 +917,7 @@ static void stop_gpe_init(struct homer_st *homer)
 	*/
 	uint32_t ivpr = 0x80000000 + homer->qpmr.sgpe.header.l1_offset +
 	                offsetof(struct homer_st, qpmr);
-	write_scom(0x00066001, PPC_PLACE(ivpr, 0, 32));
+	write_rscom(chip, 0x00066001, PPC_PLACE(ivpr, 0, 32));
 
 	/* Program XCR to ACTIVATE SGPE
 	TP.TPCHIP.OCC.OCI.GPE3.GPENXIXCR                          // 0x00066010
@@ -930,9 +930,9 @@ static void stop_gpe_init(struct homer_st *homer)
 	  [all] 0
 	  [1-3] PPE_XIXCR_XCR = 2     // resume
 	*/
-	write_scom(0x00066010, PPC_PLACE(6, 1, 3));
-	write_scom(0x00066010, PPC_PLACE(4, 1, 3));
-	write_scom(0x00066010, PPC_PLACE(2, 1, 3));
+	write_rscom(chip, 0x00066010, PPC_PLACE(6, 1, 3));
+	write_rscom(chip, 0x00066010, PPC_PLACE(4, 1, 3));
+	write_rscom(chip, 0x00066010, PPC_PLACE(2, 1, 3));
 
 	/*
 	 * Now wait for SGPE to not be halted and for the HCode to indicate to be
@@ -945,8 +945,8 @@ static void stop_gpe_init(struct homer_st *homer)
 	  if ((TP.TPCHIP.OCC.OCI.OCB.OCB_OCI_OCCFLG[8] == 1) &&     // 0x0006C08A
 		  (TP.TPCHIP.OCC.OCI.GPE3.GPEXIXSR[0] == 0)): break     // 0x00066021
 	*/
-	long time = wait_us(125*20, ((read_scom(0x0006C08A) & PPC_BIT(8)) &&
-	                             !(read_scom(0x00066021) & PPC_BIT(0))));
+	long time = wait_us(125*20, ((read_rscom(chip, 0x0006C08A) & PPC_BIT(8)) &&
+	                             !(read_rscom(chip, 0x00066021) & PPC_BIT(0))));
 
 	if (!time)
 		die("Timeout while waiting for SGPE activation\n");
@@ -1204,7 +1204,7 @@ static void load_pm_complex(uint8_t chip, struct homer_st *homer)
 	load_host_data_to_homer(chip, homer);
 }
 
-static void pm_corequad_init(uint64_t cores)
+static void pm_corequad_init(uint8_t chip, uint64_t cores)
 {
 	enum {
 		EQ_QPPM_QPMMR_CLEAR = 0x100F0104,
@@ -1243,33 +1243,33 @@ static void pm_corequad_init(uint64_t cores)
 		 * 18 - 19    : PCB interrupt
 		 * 20,22,24,26: InterPPM Ivrm/Aclk/Vdata/Dpll enable
 		 */
-		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_QPMMR_CLEAR,
-				       PPC_BIT(0) |
-				       PPC_BITMASK(1, 11) |
-				       PPC_BIT(12) |
-				       PPC_BIT(13) |
-				       PPC_BIT(14) |
-				       PPC_BITMASK(18, 19) |
-				       PPC_BIT(20) |
-				       PPC_BIT(22) |
-				       PPC_BIT(24) |
-				       PPC_BIT(26));
+		write_rscom_for_chiplet(chip, quad_chiplet, EQ_QPPM_QPMMR_CLEAR,
+					PPC_BIT(0) |
+					PPC_BITMASK(1, 11) |
+					PPC_BIT(12) |
+					PPC_BIT(13) |
+					PPC_BIT(14) |
+					PPC_BITMASK(18, 19) |
+					PPC_BIT(20) |
+					PPC_BIT(22) |
+					PPC_BIT(24) |
+					PPC_BIT(26));
 
 		/* Clear QUAD PPM ERROR Register */
-		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_ERR, 0);
+		write_rscom_for_chiplet(chip, quad_chiplet, EQ_QPPM_ERR, 0);
 
 		/* Restore Quad PPM Error Mask */
 		err_mask = 0xFFFFFF00; // from Hostboot's log
-		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_ERRMSK,
-				       PPC_PLACE(err_mask, 0, 32));
+		write_rscom_for_chiplet(chip, quad_chiplet, EQ_QPPM_ERRMSK,
+					PPC_PLACE(err_mask, 0, 32));
 
 		for (int core = quad * 4; core < (quad + 1) * 4; ++core) {
 			chiplet_id_t core_chiplet = EC00_CHIPLET_ID + core;
 
 			/* Clear the Core PPM CME DoorBells */
 			for (int i = 0; i < DOORBELLS_COUNT; ++i)
-				write_scom_for_chiplet(core_chiplet, CME_DOORBELL_CLEAR[i],
-						       PPC_BITMASK(0, 63));
+				write_rscom_for_chiplet(chip, core_chiplet, CME_DOORBELL_CLEAR[i],
+							PPC_BITMASK(0, 63));
 
 			/*
 			 * Setup Core PPM Mode register
@@ -1288,15 +1288,15 @@ static void pm_corequad_init(uint64_t cores)
 			 * 10     : STOP_EXIT_TYPE_SEL
 			 * 13     : WKUP_NOTIFY_SELECT
 			 */
-			write_scom_for_chiplet(core_chiplet, C_CPPM_CPMMR_CLEAR,
-					       PPC_BIT(1) |
-					       PPC_BIT(11) |
-					       PPC_BIT(12) |
-					       PPC_BIT(14) |
-					       PPC_BIT(15));
+			write_rscom_for_chiplet(chip, core_chiplet, C_CPPM_CPMMR_CLEAR,
+						PPC_BIT(1) |
+						PPC_BIT(11) |
+						PPC_BIT(12) |
+						PPC_BIT(14) |
+						PPC_BIT(15));
 
 			/* Clear Core PPM Errors */
-			write_scom_for_chiplet(core_chiplet, C_CPPM_ERR, 0);
+			write_rscom_for_chiplet(chip, core_chiplet, C_CPPM_ERR, 0);
 
 			/*
 			 * Clear Hcode Error Injection and other CSAR settings:
@@ -1309,21 +1309,21 @@ static void pm_corequad_init(uint64_t cores)
 			 * DISABLE_CME_NACK_ON_PROLONGED_DROOP is NOT cleared
 			 * as this is a persistent, characterization setting.
 			 */
-			write_scom_for_chiplet(core_chiplet, C_CPPM_CSAR_CLEAR,
-					       PPC_BIT(27) |
-					       PPC_BIT(28) |
-					       PPC_BIT(30) |
-					       PPC_BIT(31));
+			write_rscom_for_chiplet(chip, core_chiplet, C_CPPM_CSAR_CLEAR,
+						PPC_BIT(27) |
+						PPC_BIT(28) |
+						PPC_BIT(30) |
+						PPC_BIT(31));
 
 			/* Restore CORE PPM Error Mask */
 			err_mask = 0xFFF00000; // from Hostboot's log
-			write_scom_for_chiplet(core_chiplet, C_CPPM_ERRMSK,
-					       PPC_PLACE(err_mask, 0, 32));
+			write_rscom_for_chiplet(chip, core_chiplet, C_CPPM_ERRMSK,
+						PPC_PLACE(err_mask, 0, 32));
 		}
 	}
 }
 
-static void pstate_gpe_init(struct homer_st *homer, uint64_t cores)
+static void pstate_gpe_init(uint8_t chip, struct homer_st *homer, uint64_t cores)
 {
 	enum {
 		/* The following constants hold approximate values */
@@ -1362,32 +1362,32 @@ static void pstate_gpe_init(struct homer_st *homer, uint64_t cores)
 	uint8_t avsbus_rail = 0;
 
 	uint64_t ivpr = 0x80000000 + offsetof(struct homer_st, ppmr.l1_bootloader);
-	write_scom(PU_GPE2_GPEIVPR_SCOM, ivpr << 32);
+	write_rscom(chip, PU_GPE2_GPEIVPR_SCOM, ivpr << 32);
 
 	/* Set up the OCC Scratch 2 register before PGPE boot */
-	occ_scratch = read_scom(PU_OCB_OCI_OCCS2_SCOM);
+	occ_scratch = read_rscom(chip, PU_OCB_OCI_OCCS2_SCOM);
 	occ_scratch &= ~PPC_BIT(PGPE_ACTIVE);
 	occ_scratch &= ~PPC_BITMASK(27, 32);
 	occ_scratch |= PPC_PLACE(avsbus_number, 27, 1);
 	occ_scratch |= PPC_PLACE(avsbus_rail, 28, 4);
-	write_scom(PU_OCB_OCI_OCCS2_SCOM, occ_scratch);
+	write_rscom(chip, PU_OCB_OCI_OCCS2_SCOM, occ_scratch);
 
-	write_scom(PU_GPE2_GPETSEL_SCOM, 0x1A00000000000000);
+	write_rscom(chip, PU_GPE2_GPETSEL_SCOM, 0x1A00000000000000);
 
 	/* OCCFLG2_PGPE_HCODE_FIT_ERR_INJ | OCCFLG2_PGPE_HCODE_PSTATE_REQ_ERR_INJ */
-	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, 0x1100000000);
+	write_rscom(chip, PU_OCB_OCI_OCCFLG2_CLEAR, 0x1100000000);
 
 	printk(BIOS_ERR, "Attempting PGPE activation...\n");
 
-	write_scom(PU_GPE2_PPE_XIXCR, PPC_PLACE(HARD_RESET, 1, 3));
-	write_scom(PU_GPE2_PPE_XIXCR, PPC_PLACE(TOGGLE_XSR_TRH, 1, 3));
-	write_scom(PU_GPE2_PPE_XIXCR, PPC_PLACE(RESUME, 1, 3));
+	write_rscom(chip, PU_GPE2_PPE_XIXCR, PPC_PLACE(HARD_RESET, 1, 3));
+	write_rscom(chip, PU_GPE2_PPE_XIXCR, PPC_PLACE(TOGGLE_XSR_TRH, 1, 3));
+	write_rscom(chip, PU_GPE2_PPE_XIXCR, PPC_PLACE(RESUME, 1, 3));
 
 	wait_ms(PGPE_POLLTIME_MS * TIMEOUT_COUNT,
-		(read_scom(PU_OCB_OCI_OCCS2_SCOM) & PPC_BIT(PGPE_ACTIVE)) ||
-		(read_scom(PU_GPE2_PPE_XIDBGPRO) & PPC_BIT(HALTED_STATE)));
+		(read_rscom(chip, PU_OCB_OCI_OCCS2_SCOM) & PPC_BIT(PGPE_ACTIVE)) ||
+		(read_rscom(chip, PU_GPE2_PPE_XIDBGPRO) & PPC_BIT(HALTED_STATE)));
 
-	if (read_scom(PU_OCB_OCI_OCCS2_SCOM) & PPC_BIT(PGPE_ACTIVE))
+	if (read_rscom(chip, PU_OCB_OCI_OCCS2_SCOM) & PPC_BIT(PGPE_ACTIVE))
 		printk(BIOS_ERR, "PGPE was activated successfully\n");
 	else
 		die("Failed to activate PGPE\n");
@@ -1402,9 +1402,9 @@ static void pstate_gpe_init(struct homer_st *homer, uint64_t cores)
 		if (!IS_EQ_FUNCTIONAL(quad, cores))
 			continue;
 
-		scom_and_or_for_chiplet(EP00_CHIPLET_ID + quad, EQ_QPPM_QPMMR,
-					~PPC_BITMASK(1, 11),
-					PPC_PLACE(safe_mode_freq, 1, 11));
+		rscom_and_or_for_chiplet(chip, EP00_CHIPLET_ID + quad, EQ_QPPM_QPMMR,
+					 ~PPC_BITMASK(1, 11),
+					 PPC_PLACE(safe_mode_freq, 1, 11));
 	}
 }
 
@@ -1430,9 +1430,9 @@ static void pm_pba_init(uint8_t chip)
 	uint8_t attr_pbax_broadcast_vector = 0;
 
 	/* Assuming ATTR_CHIP_EC_FEATURE_HW423589_OPTION1 == true */
-	write_scom(PU_PBACFG, PPC_BIT(PU_PBACFG_CHSW_DIS_GROUP_SCOPE));
+	write_rscom(chip, PU_PBACFG, PPC_BIT(PU_PBACFG_CHSW_DIS_GROUP_SCOPE));
 
-	write_scom(PU_PBAFIR, 0);
+	write_rscom(chip, PU_PBAFIR, 0);
 
 	data |= PPC_PLACE(attr_pbax_groupid, 4, 4);
 	data |= PPC_PLACE(attr_pbax_chipid, 8, 3);
@@ -1441,17 +1441,17 @@ static void pm_pba_init(uint8_t chip)
 	data |= PPC_PLACE(PBAX_SND_RETRY_COMMIT_OVERCOMMIT, 27, 1);
 	data |= PPC_PLACE(PBAX_SND_RETRY_THRESHOLD, 28, 8);
 	data |= PPC_PLACE(PBAX_SND_TIMEOUT, 36, 5);
-	write_scom(PU_PBAXCFG_SCOM, data);
+	write_rscom(chip, PU_PBAXCFG_SCOM, data);
 }
 
 static void pm_pstate_gpe_init(uint8_t chip, struct homer_st *homer, uint64_t cores)
 {
-	pstate_gpe_init(homer, cores);
+	pstate_gpe_init(chip, homer, cores);
 	pm_pba_init(chip);
 }
 
 /* Generates host configuration vector and updates the value in HOMER */
-static void check_proc_config(struct homer_st *homer)
+static void check_proc_config(uint8_t chip, struct homer_st *homer)
 {
 	uint64_t vector_value = INIT_CONFIG_VALUE;
 	uint64_t *conf_vector = (void *)((uint8_t *)&homer->qpmr + QPMR_PROC_CONFIG_POS);
@@ -1462,8 +1462,8 @@ static void check_proc_config(struct homer_st *homer)
 		chiplet_id_t nest = mcs_to_nest[mcs_ids[mcs_i]];
 
 		/* MCS_MCFGP and MCS_MCFGPM registers are undocumented, see istep 14.5. */
-		if ((read_scom_for_chiplet(nest, 0x0501080A) & PPC_BIT(0)) ||
-		    (read_scom_for_chiplet(nest, 0x0501080C) & PPC_BIT(0))) {
+		if ((read_rscom_for_chiplet(chip, nest, 0x0501080A) & PPC_BIT(0)) ||
+		    (read_rscom_for_chiplet(chip, nest, 0x0501080C) & PPC_BIT(0))) {
 			uint8_t pos = MCS_POS + mcs_i;
 			*conf_vector |= PPC_BIT(pos);
 
@@ -1493,9 +1493,9 @@ static void pm_pss_init(uint8_t chip)
 	 *  0-5   frame size
 	 * 12-17  in delay
 	 */
-	scom_and_or(PU_SPIPSS_ADC_CTRL_REG0,
-		    ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
-		    PPC_PLACE(8, 0, 6));
+	rscom_and_or(chip, PU_SPIPSS_ADC_CTRL_REG0,
+		     ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
+		     PPC_PLACE(8, 0, 6));
 
 	/*
 	 *  0     adc_fsm_enable    = 1
@@ -1507,23 +1507,23 @@ static void pm_pss_init(uint8_t chip)
 	 *
 	 * Truncating last value to 4 bits gives 0.
 	 */
-	scom_and_or(PU_SPIPSS_ADC_CTRL_REG0 + 1, ~PPC_BITMASK(0, 17),
-		    PPC_BIT(0) | PPC_PLACE(10, 4, 10) | PPC_PLACE(0, 14, 4));
+	rscom_and_or(chip, PU_SPIPSS_ADC_CTRL_REG0 + 1, ~PPC_BITMASK(0, 17),
+		     PPC_BIT(0) | PPC_PLACE(10, 4, 10) | PPC_PLACE(0, 14, 4));
 
 	/*
 	 * 0-16  inter frame delay
 	 */
-	scom_and(PU_SPIPSS_ADC_CTRL_REG0 + 2, ~PPC_BITMASK(0, 16));
+	rscom_and(chip, PU_SPIPSS_ADC_CTRL_REG0 + 2, ~PPC_BITMASK(0, 16));
 
-	write_scom(PU_SPIPSS_ADC_WDATA_REG, 0);
+	write_rscom(chip, PU_SPIPSS_ADC_WDATA_REG, 0);
 
 	/*
 	 *  0-5   frame size
 	 * 12-17  in delay
 	 */
-	scom_and_or(PU_SPIPSS_P2S_CTRL_REG0,
-		    ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
-		    PPC_PLACE(8, 0, 6));
+	rscom_and_or(chip, PU_SPIPSS_P2S_CTRL_REG0,
+		     ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
+		     PPC_PLACE(8, 0, 6));
 
 	/*
 	 *  0     p2s_fsm_enable    = 1
@@ -1533,23 +1533,23 @@ static void pm_pss_init(uint8_t chip)
 	 *  4-13  p2s_clock_divider = set to 10Mhz
 	 * 17     p2s_nr_of_frames  = 1 (for auto 2 mode)
 	 */
-	scom_and_or(PU_SPIPSS_P2S_CTRL_REG0 + 1,
-		    ~(PPC_BITMASK(0, 13) | PPC_BIT(17)),
-		    PPC_BIT(0) | PPC_PLACE(10, 4, 10) | PPC_BIT(17));
+	rscom_and_or(chip, PU_SPIPSS_P2S_CTRL_REG0 + 1,
+		     ~(PPC_BITMASK(0, 13) | PPC_BIT(17)),
+		     PPC_BIT(0) | PPC_PLACE(10, 4, 10) | PPC_BIT(17));
 
 	/*
 	 * 0-16  inter frame delay
 	 */
-	scom_and(PU_SPIPSS_P2S_CTRL_REG0 + 2, ~PPC_BITMASK(0, 16));
+	rscom_and(chip, PU_SPIPSS_P2S_CTRL_REG0 + 2, ~PPC_BITMASK(0, 16));
 
-	write_scom(PU_SPIPSS_P2S_WDATA_REG, 0);
+	write_rscom(chip, PU_SPIPSS_P2S_WDATA_REG, 0);
 
 	/*
 	 * 0-31  100ns value
 	 */
-	scom_and_or(PU_SPIPSS_100NS_REG,
-		    PPC_BITMASK(0, 31),
-		    PPC_PLACE(powerbus_cfg(chip)->fabric_freq / 40, 0, 32));
+	rscom_and_or(chip, PU_SPIPSS_100NS_REG,
+		     PPC_BITMASK(0, 31),
+		     PPC_PLACE(powerbus_cfg(chip)->fabric_freq / 40, 0, 32));
 }
 
 /* Initializes power-management and starts OCC */
@@ -1557,23 +1557,23 @@ static void start_pm_complex(uint8_t chip, struct homer_st *homer, uint64_t core
 {
 	enum { STOP_RECOVERY_TRIGGER_ENABLE = 29 };
 
-	pm_corequad_init(cores);
+	pm_corequad_init(chip, cores);
 	pm_pss_init(chip);
-	pm_occ_fir_init();
-	pm_pba_fir_init();
-	stop_gpe_init(homer);
+	pm_occ_fir_init(chip);
+	pm_pba_fir_init(chip);
+	stop_gpe_init(chip, homer);
 	pm_pstate_gpe_init(chip, homer, cores);
 
-	check_proc_config(homer);
-	clear_occ_special_wakeups(cores);
-	special_occ_wakeup_disable(cores);
-	occ_start_from_mem();
+	check_proc_config(chip, homer);
+	clear_occ_special_wakeups(chip, cores);
+	special_occ_wakeup_disable(chip, cores);
+	occ_start_from_mem(chip);
 
-	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(STOP_RECOVERY_TRIGGER_ENABLE));
+	write_rscom(chip, PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(STOP_RECOVERY_TRIGGER_ENABLE));
 }
 
 /* Wait for OCC to reach communications checkpoint */
-static void wait_for_occ_checkpoint(void)
+static void wait_for_occ_checkpoint(uint8_t chip)
 {
 	enum {
 		/* Wait up to 15 seconds for OCC to be ready (150 * 100ms = 15s) */
@@ -1596,7 +1596,7 @@ static void wait_for_occ_checkpoint(void)
 		wait_ms(MS_BETWEEN_READ, false);
 
 		/* Read SRAM response buffer to check for OCC checkpoint */
-		readOCCSRAM(OCC_RSP_SRAM_ADDR, (uint64_t *)response, sizeof(response));
+		readOCCSRAM(chip, OCC_RSP_SRAM_ADDR, (uint64_t *)response, sizeof(response));
 
 		/* Pull status from response (byte 2) */
 		status = response[2];
@@ -1749,7 +1749,7 @@ static bool parse_occ_response(struct homer_st *homer, uint8_t occ_cmd,
 	return true;
 }
 
-static bool write_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
+static bool write_occ_cmd(uint8_t chip, struct homer_st *homer, uint8_t occ_cmd,
 			  const uint8_t *data, uint16_t data_len,
 			  uint8_t *response, uint32_t *response_len)
 {
@@ -1765,7 +1765,7 @@ static bool write_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
 
 	build_occ_cmd(homer, occ_cmd, cmd_seq_num, data, data_len);
 	/* Sender: HTMGT; command: Command Write Attention */
-	write_occ_command(0x1001000000000000);
+	write_occ_command(chip, 0x1001000000000000);
 
 	/* Wait for OCC to process command and send response (timeout is the
 	 * same for all commands) */
@@ -1795,7 +1795,7 @@ static bool write_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
 	return true;
 }
 
-static void send_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
+static void send_occ_cmd(uint8_t chip, struct homer_st *homer, uint8_t occ_cmd,
 			 const uint8_t *data, uint16_t data_len,
 			 uint8_t *response, uint32_t *response_len)
 {
@@ -1804,7 +1804,7 @@ static void send_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
 	uint8_t i = 0;
 
 	for (i = 0; i < MAX_TRIES; ++i) {
-		if (write_occ_cmd(homer, occ_cmd, data, data_len, response, response_len))
+		if (write_occ_cmd(chip, homer, occ_cmd, data, data_len, response, response_len))
 			break;
 
 		if (i < MAX_TRIES - 1)
@@ -1816,7 +1816,7 @@ static void send_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
 }
 
 /* Reports OCC error to the user and clears it on OCC's side */
-static void handle_occ_error(struct homer_st *homer,
+static void handle_occ_error(uint8_t chip, struct homer_st *homer,
 			     const struct occ_poll_response *response)
 {
 	static uint8_t error_log_buf[4096];
@@ -1837,19 +1837,19 @@ static void handle_occ_error(struct homer_st *homer,
 		error_length = sizeof(error_log_buf);
 	}
 
-	readOCCSRAM(response->error_address, (uint64_t *)error_log_buf, error_length);
+	readOCCSRAM(chip, response->error_address, (uint64_t *)error_log_buf, error_length);
 
 	printk(BIOS_WARNING, "OCC error log:\n");
 	hexdump(error_log_buf, error_length);
 
 	/* Confirm to OCC that we've read the log */
-	send_occ_cmd(homer, OCC_CMD_CLEAR_ERROR_LOG,
+	send_occ_cmd(chip, homer, OCC_CMD_CLEAR_ERROR_LOG,
 		     clear_log_data, sizeof(clear_log_data),
 		     NULL, &response_len);
 }
 
-static void poll_occ(struct homer_st *homer, bool flush_all_errors,
-		     struct occ_poll_response *response)
+static void poll_occ(uint8_t chip, struct homer_st *homer,
+		     bool flush_all_errors, struct occ_poll_response *response)
 {
 	enum { OCC_POLL_DATA_MIN_SIZE = 40 };
 
@@ -1858,7 +1858,7 @@ static void poll_occ(struct homer_st *homer, bool flush_all_errors,
 		const uint8_t poll_data[1] = { 0x20 /*version*/ };
 		uint32_t response_len = sizeof(*response);
 
-		send_occ_cmd(homer, OCC_CMD_POLL, poll_data, sizeof(poll_data),
+		send_occ_cmd(chip, homer, OCC_CMD_POLL, poll_data, sizeof(poll_data),
 			     (uint8_t *)response, &response_len);
 
 		if (response_len < OCC_POLL_DATA_MIN_SIZE)
@@ -1870,7 +1870,7 @@ static void poll_occ(struct homer_st *homer, bool flush_all_errors,
 		if (response->error_id == 0)
 			break;
 
-		handle_occ_error(homer, response);
+		handle_occ_error(chip, homer, response);
 
 		--max_more_errors;
 		if (max_more_errors == 0) {
@@ -1881,7 +1881,7 @@ static void poll_occ(struct homer_st *homer, bool flush_all_errors,
 	}
 }
 
-static void wait_for_occ_status(struct homer_st *homer, uint8_t status_bit)
+static void wait_for_occ_status(uint8_t chip, struct homer_st *homer, uint8_t status_bit)
 {
 	enum {
 		MAX_POLLS = 40,
@@ -1892,7 +1892,7 @@ static void wait_for_occ_status(struct homer_st *homer, uint8_t status_bit)
 	struct occ_poll_response poll_response;
 
 	for (num_polls = 0; num_polls < MAX_POLLS; ++num_polls) {
-		poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+		poll_occ(chip, homer, /*flush_all_errors=*/false, &poll_response);
 		if (poll_response.status & status_bit)
 			break;
 
@@ -1908,7 +1908,7 @@ static void wait_for_occ_status(struct homer_st *homer, uint8_t status_bit)
 		die("Failed to wait until OCC has reached state 0x%02x\n", status_bit);
 }
 
-static void set_occ_state(struct homer_st *homer, uint8_t state)
+static void set_occ_state(uint8_t chip, struct homer_st *homer, uint8_t state)
 {
 	struct occ_poll_response poll_response;
 
@@ -1917,13 +1917,13 @@ static void set_occ_state(struct homer_st *homer, uint8_t state)
 	uint32_t response_len = 0;
 
 	/* Send poll cmd to confirm comm has been established and flush old errors */
-	poll_occ(homer, /*flush_all_errors=*/true, &poll_response);
+	poll_occ(chip, homer, /*flush_all_errors=*/true, &poll_response);
 
 	/* Try to switch to a new state */
-	send_occ_cmd(homer, OCC_CMD_SET_STATE, data, sizeof(data), NULL, &response_len);
+	send_occ_cmd(chip, homer, OCC_CMD_SET_STATE, data, sizeof(data), NULL, &response_len);
 
 	/* Send poll to query state of all OCC and flush any errors */
-	poll_occ(homer, /*flush_all_errors=*/true, &poll_response);
+	poll_occ(chip, homer, /*flush_all_errors=*/true, &poll_response);
 
 	if (poll_response.state != state)
 		die("State of OCC is 0x%02x instead of 0x%02x.\n",
@@ -2387,7 +2387,7 @@ static void get_gpu_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *si
 	*size = index;
 }
 
-static void send_occ_config_data(struct homer_st *homer)
+static void send_occ_config_data(uint8_t chip, struct homer_st *homer)
 {
 	/*
 	 * Order in which these are sent is important!
@@ -2420,49 +2420,57 @@ static void send_occ_config_data(struct homer_st *homer)
 		if (data_len > sizeof(data))
 			die("Buffer for OCC data is too small!\n");
 
-		send_occ_cmd(homer, OCC_CMD_SETUP_CFG_DATA, data, data_len, NULL, &response_len);
-		poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+		send_occ_cmd(chip, homer, OCC_CMD_SETUP_CFG_DATA, data, data_len,
+			     NULL, &response_len);
+		poll_occ(chip, homer, /*flush_all_errors=*/false, &poll_response);
 	}
 }
 
-static void send_occ_user_power_cap(struct homer_st *homer)
+static void send_occ_user_power_cap(uint8_t chip, struct homer_st *homer)
 {
 	/* No power limit */
 	const uint8_t data[2] = { 0x00, 0x00 };
 	uint32_t response_len = 0;
-	send_occ_cmd(homer, OCC_CMD_SET_POWER_CAP, data, sizeof(data), NULL, &response_len);
+	send_occ_cmd(chip, homer, OCC_CMD_SET_POWER_CAP, data, sizeof(data),
+		     NULL, &response_len);
 }
 
-static void set_occ_active_state(struct homer_st *homer)
+static void set_occ_active_state(uint8_t chip, struct homer_st *homer)
 {
 	enum {
 		OCC_STATUS_ACTIVE_READY = 0x01,
 		OCC_STATE_ACTIVE = 0x03,
 	};
 
-	wait_for_occ_status(homer, OCC_STATUS_ACTIVE_READY);
-	set_occ_state(homer, OCC_STATE_ACTIVE);
+	wait_for_occ_status(chip, homer, OCC_STATUS_ACTIVE_READY);
+	set_occ_state(chip, homer, OCC_STATE_ACTIVE);
 }
 
 /* Moves OCC to active state */
-static void activate_occ(struct homer_st *homer)
+static void activate_occ(uint8_t chip, struct homer_st *homer, bool is_master)
 {
+	/* TODO: Hostboot performs each step below for every OCC before moving
+	 *       to the next step (looks like performing it for master OCC
+	 *       first), so might need to loop over every OCC in inside each
+	 *       function below. All this after starting PM complex for every
+	 *       chip outside of this function. */
+
 	struct occ_poll_response poll_response;
 
 	/* Make sure OCCs are ready for communication */
-	wait_for_occ_checkpoint();
+	wait_for_occ_checkpoint(chip);
 
 	/* Send initial poll to all OCCs to establish communication */
-	poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+	poll_occ(chip, homer, /*flush_all_errors=*/false, &poll_response);
 
 	/* Send OCC's config data */
-	send_occ_config_data(homer);
+	send_occ_config_data(chip, homer);
 
 	/* Set the User PCAP */
-	send_occ_user_power_cap(homer);
+	send_occ_user_power_cap(chip, homer);
 
 	/* Switch for OCC to active state */
-	set_occ_active_state(homer);
+	set_occ_active_state(chip, homer);
 
 	/* Hostboot sets active sensors for all OCCs here, so BMC can start
 	 * communication with OCCs. */
@@ -2477,7 +2485,8 @@ static void istep_21_1(uint8_t chip, struct homer_st *homer, uint64_t cores)
 	printk(BIOS_ERR, "Done starting PM complex\n");
 
 	printk(BIOS_ERR, "Activating OCC...\n");
-	activate_occ(homer);
+	/* Note: only OCCs of chips connected to APSS can be masters */
+	activate_occ(chip, homer, /*is_master=*/(chip == 0));
 	printk(BIOS_ERR, "Done activating OCC\n");
 }
 
@@ -3293,15 +3302,15 @@ static void istep_15_3(uint8_t chip, uint64_t cores)
 		if (!IS_EC_FUNCTIONAL(i, cores))
 			continue;
 
-		if ((read_scom_for_chiplet(chiplet, 0xF0001) & group_mask) == group_mask)
-			scom_and_or_for_chiplet(chiplet, 0xF0001,
-			                        ~(group_mask | PPC_BITMASK(16,23)),
-			                        PPC_BITMASK(19,21));
+		if ((read_rscom_for_chiplet(chip, chiplet, 0xF0001) & group_mask) == group_mask)
+			rscom_and_or_for_chiplet(chip, chiplet, 0xF0001,
+			                         ~(group_mask | PPC_BITMASK(16,23)),
+			                         PPC_BITMASK(19,21));
 
-		if ((read_scom_for_chiplet(chiplet, 0xF0002) & group_mask) == group_mask)
-			scom_and_or_for_chiplet(chiplet, 0xF0002,
-			                        ~(group_mask | PPC_BITMASK(16,23)),
-			                        PPC_BIT(5) | PPC_BITMASK(19,21));
+		if ((read_rscom_for_chiplet(chip, chiplet, 0xF0002) & group_mask) == group_mask)
+			rscom_and_or_for_chiplet(chip, chiplet, 0xF0002,
+			                         ~(group_mask | PPC_BITMASK(16,23)),
+			                         PPC_BIT(5) | PPC_BITMASK(19,21));
 	}
 
 	for (int i = 0; i < MAX_QUADS_PER_CHIP; i++) {
