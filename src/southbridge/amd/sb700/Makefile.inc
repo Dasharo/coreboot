@@ -4,6 +4,7 @@ bootblock-y += bootblock.c
 bootblock-y += reset.c
 
 verstage-y += reset.c
+verstage-y += spi.c
 
 romstage-y += early_setup.c
 romstage-y += ramtop.c
