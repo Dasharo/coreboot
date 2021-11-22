@@ -13,10 +13,11 @@
 
 static uint32_t get_spi_bar(void)
 {
-	struct device *dev;
-
-	dev = pcidev_on_root(0x14, 3);
-	return pci_read_config32(dev, 0xa0) & ~0x1f;
+#if ENV_PCI_SIMPLE_DEVICE
+	return pci_read_config32(PCI_DEV(0, 0x14, 3), 0xa0) & ~0x1f;
+#else
+	return pci_read_config32(pcidev_on_root(0x14, 3), 0xa0) & ~0x1f;
+#endif
 }
 
 static void reset_internal_fifo_pointer(void)
