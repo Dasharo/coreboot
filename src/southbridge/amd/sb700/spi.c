@@ -15,16 +15,19 @@ static uintptr_t spibar;
 
 static uint32_t get_spi_bar(void)
 {
-	struct device *dev;
-
 	if (spibar)
 		return (uint32_t)spibar;
 
-	dev = pcidev_on_root(0x14, 3);
+#if ENV_PCI_SIMPLE_DEVICE
+	pci_devfn_t dev = PCI_DEV(0, 0x14, 3);
+#else
+	struct device *dev = pcidev_on_root(0x14, 3);
 	if (!dev)
-		printk(BIOS_ERR, "%s: LPC not dev found!\n", __func__);
+		die("%s: LPC not dev found!\n", __func__);
+#endif
 	spibar = pci_read_config32(dev, 0xa0) & ~0x1f;
 	return (uint32_t)spibar;
+
 }
 
 void spi_init()
