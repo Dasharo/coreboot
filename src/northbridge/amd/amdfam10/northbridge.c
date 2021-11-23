@@ -1152,11 +1152,11 @@ static void setup_cdb_links(unsigned int busn, unsigned int devn, struct bus *pb
 }
 
 static int get_num_cores(unsigned int busn, unsigned int devn, int *cores_found,
-			 int *enable_node)
+			 int *enable_node, unsigned int *siblings)
 {
 	int j;
 	struct device *cdb_dev;
-	unsigned int siblings = get_num_siblings();
+	*siblings = get_num_siblings();
 
 	*cores_found = 0; // one core
 	if (is_fam15h())
@@ -1171,14 +1171,14 @@ static int get_num_cores(unsigned int busn, unsigned int devn, int *cores_found,
 		} else {
 			j = pci_read_config32(cdb_dev, 0xe8);
 			*cores_found = (j >> 12) & 3; // dev is func 3
-			if (siblings > 3)
+			if (*siblings > 3)
 				*cores_found |= (j >> 13) & 4;
 		}
-		printk(BIOS_DEBUG, "  %s siblings=%d\n", dev_path(cdb_dev), *cores_found);
+		printk(BIOS_DEBUG, "  %s cores_found=%d\n", dev_path(cdb_dev), *cores_found);
 	}
 
-	if (siblings > *cores_found)
-		siblings = *cores_found;
+	if (*siblings > *cores_found)
+		*siblings = *cores_found;
 
 	return j;
 }
@@ -1200,12 +1200,11 @@ static uint8_t check_dual_node_cap(u8 node)
 	return dual_node;
 }
 
-static u32 get_apic_id(int i, int j)
+static u32 get_apic_id(int i, int j, unsigned int siblings)
 {
 	u32 apic_id;
 	uint8_t dual_node = check_dual_node_cap((u8)i);
 	uint8_t fam15h = is_fam15h();
-	unsigned int siblings = get_num_siblings();
 	// How can I get the nb_cfg_54 of every node's nb_cfg_54 in bsp???
 	unsigned int nb_cfg_54 = read_nb_cfg_54();
 
@@ -1293,6 +1292,7 @@ static void cpu_bus_scan(struct device *dev)
 	int disable_siblings = !get_uint_option("multi_core", CONFIG(LOGICAL_CPUS));
 	uint8_t disable_cu_siblings = !get_uint_option("compute_unit_siblings", 1);
 	int enable_node;
+	unsigned int siblings = 0;
 
 	if (CONFIG_CBB)
 		remap_nodes_0_to_31_to_bus_255(pci_domain);
@@ -1330,7 +1330,7 @@ static void cpu_bus_scan(struct device *dev)
 		}
 
 		setup_cdb_links(busn, devn, pbus);
-		j = get_num_cores(busn, devn, &cores_found, &enable_node);
+		j = get_num_cores(busn, devn, &cores_found, &enable_node, &siblings);
 
 		if (disable_siblings)
 			jj = 0;
@@ -1342,7 +1342,7 @@ static void cpu_bus_scan(struct device *dev)
 			if (disable_cu_siblings && (j & 0x1))
 				continue;
 
-			struct device *cpu = add_cpu_device(cpu_bus, get_apic_id(i, j),
+			struct device *cpu = add_cpu_device(cpu_bus, get_apic_id(i, j, siblings),
 							    enable_node);
 			if (cpu)
 				amd_cpu_topology(cpu, i, j);
