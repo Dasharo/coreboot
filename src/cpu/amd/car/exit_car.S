@@ -40,6 +40,7 @@ chipset_teardown_car:
 	andl	$(~SYSCFG_MSR_MtrrFixDramEn), %eax
 	wrmsr
 
+	/* INVDWBINVD = 1 */
 	movl	$HWCR_MSR, %ecx
 	rdmsr
 	orl	$(1 << 4), %eax
@@ -62,7 +63,7 @@ chipset_teardown_car:
 	/* DisSS = 0 */
 	movl	$LS_CFG_MSR, %ecx
 	rdmsr
-	orl	$(~(1 << 28)), %eax
+	andl	$(~(1 << 28)), %eax
 	wrmsr
 
 	/* DisSpecTlbRld = 0 */
@@ -76,7 +77,6 @@ chipset_teardown_car:
 	rdmsr
 	andl	$(~(1 << 8)), %eax
 	wrmsr
-
 
 	movl	$DC_CFG_MSR, %ecx
 	rdmsr
