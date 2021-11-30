@@ -381,8 +381,6 @@ Device (EC0)
 		^UCSI.CCI1 = CCI1
 		^UCSI.CCI2 = CCI2
 		^UCSI.CCI3 = CCI3
-		CCI0 = Zero
-		CCI3 = Zero
 		Notify (^UCSI, 0x80)
 	}
 
