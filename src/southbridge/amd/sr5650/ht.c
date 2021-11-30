@@ -109,20 +109,10 @@ static void sr5690_apic_init(struct device *dev)
 	pci_write_config32(dev, 0xF8, 0x9);
 	pci_write_config32(dev, 0xFC, dword);
 
-	pci_write_config32(dev, 0xF8, 0x1);
-	dword = IO_APIC2_ADDR;
-	dword = (1 << 3); /* Mem_IO_Map: 1 = MMIO, 0 = IO */
-	pci_write_config32(dev, 0xFC, IO_APIC2_ADDR);
-
-	/* Upper bits of IOAPIC base */
-	pci_write_config32(dev, 0xF8, 0x2);
-	pci_write_config32(dev, 0xFC, 0);
 	/* On SR56x0/SP5100 board, the IOAPIC on SR56x0 is the
 	 * 2nd one. We need to check if it also is on your board. */
 
 	pci_write_config32(dev, 0xF8, 0x0);
-	pci_read_config32(dev, 0xFC);
-
 	printk(BIOS_DEBUG, "IOAPIC2 features: %08x\n", pci_read_config32(dev, 0xFC));
 
 	if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
@@ -169,11 +159,10 @@ static void sr5690_read_resource(struct device *dev)
 	pci_dev_read_resources(dev);
 
 	/* IOAPIC */
-	res = new_resource(dev, 0xfc);
+	res = new_resource(dev, 0xFC);
 	res->base  = IO_APIC2_ADDR;
 	res->size = 0x1000;
-	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
-		     IORESOURCE_STORED;
+	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
 
 	compact_resources(dev);
 }
@@ -191,8 +180,37 @@ static void sr5690_set_resources(struct device *dev)
 	struct resource *res;
 
 	printk(BIOS_DEBUG,"%s %s\n", dev_path(dev), __func__);
-	/* Set IOAPIC's index to 1 and make sure no one changes it */
-	pci_write_config32(dev, 0xf8, 0x1);
+
+	/* Lower bits of IOAPIC base */
+	res = pci_get_resource(dev, 0xFC);
+	res->flags |= IORESOURCE_STORED;
+	pci_write_config32(dev, 0xF8, 0x1);
+	pci_write_config32(dev, 0xFC, res->base | (1 << 3));
+
+	/* Upper bits of IOAPIC base */
+	pci_write_config32(dev, 0xF8, 0x2);
+	pci_write_config32(dev, 0xFC, 0);
+
+	/*
+	 * FIXME:
+	 * - make use of {g,s}et_{mm,}io_addr_reg() from northbridge.c
+	 *   - or drop those FUBAR functions and use resources
+	 * - enable more than 2 nodes
+	 * - find proper place for this code (enable_resources? k8_f1 set_resources?)
+	 */
+	{
+		struct device *k8_f1;
+		u32 base_reg = ((res->base >> 8) & ~0xFFUL) | 0x03;
+		u32 limit_reg = (((res->base + res->size - 1) >> 8) & ~0xFFUL) | 0x10;
+
+		k8_f1 = pcidev_on_root(0x18, 1);
+		pci_write_config32(k8_f1, 0xA4, limit_reg);
+		pci_write_config32(k8_f1, 0xA0, base_reg);
+
+		k8_f1 = pcidev_on_root(0x19, 1);
+		pci_write_config32(k8_f1, 0xA4, limit_reg);
+		pci_write_config32(k8_f1, 0xA0, base_reg);
+	}
 
 	if (!CONFIG(MMCONF_SUPPORT)) {
 		pci_dev_set_resources(dev);
