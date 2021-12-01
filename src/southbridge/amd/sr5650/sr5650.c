@@ -16,22 +16,6 @@
 #include "sr5650.h"
 #include "cmn.h"
 
-struct resource *sr5650_retrieve_cpu_mmio_resource()
-{
-	struct device *domain;
-	struct resource *res;
-
-	for (domain = all_devices; domain; domain = domain->next) {
-		if (domain->bus->dev->path.type != DEVICE_PATH_DOMAIN)
-			continue;
-		res = probe_resource(domain->bus->dev, MMIO_CONF_BASE);
-		if (res)
-			return res;
-	}
-
-	return NULL;
-}
-
 /* extension registers */
 u32 pci_ext_read_config32(struct device *nb_dev, struct device *dev, u32 reg)
 {

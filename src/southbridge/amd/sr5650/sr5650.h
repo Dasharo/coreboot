@@ -89,7 +89,6 @@ u32 pci_ext_read_config32(struct device *nb_dev, struct device *dev, u32 reg);
 void pci_ext_write_config32(struct device *nb_dev, struct device *dev, u32 reg_pos, u32 mask,
 				u32 val);
 
-struct resource * sr5650_retrieve_cpu_mmio_resource(void);
 void enable_pcie_bar3(struct device *nb_dev);
 void disable_pcie_bar3(struct device *nb_dev);
 void init_gen2(struct device *nb_dev, struct device *dev, u8 port);
