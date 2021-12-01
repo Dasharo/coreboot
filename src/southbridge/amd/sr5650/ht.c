@@ -6,6 +6,7 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
+#include <northbridge/amd/amdfam10/amdfam10.h>
 #include "sr5650.h"
 #include "cmn.h"
 
@@ -161,10 +162,12 @@ static void sr5690_read_resource(struct device *dev)
 	/* IOAPIC */
 	res = new_resource(dev, 0xFC);
 	res->base  = IO_APIC2_ADDR;
-	res->size = 0x1000;
+	res->size  = 0x1000;
 	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
 
-	compact_resources(dev);
+	/* Needs to be written to D18F1 as well */
+	res = amdfam10_assign_new_mmio_res(IO_APIC2_ADDR, 0x1000);
+	res->flags |= IORESOURCE_FIXED;
 }
 
 /* If IOAPIC's index changes, we should replace the pci_dev_set_resource(). */

@@ -1013,4 +1013,7 @@ BOOL AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list);
 
 void dump_memory_mapping(void);
 
+struct resource *amdfam10_assign_new_io_res(resource_t base, resource_t size);
+struct resource *amdfam10_assign_new_mmio_res(resource_t base, resource_t size);
+
 #endif /* AMDFAM10_H */
