@@ -121,6 +121,54 @@ static void f1_write_config32(unsigned int reg, u32 value)
 	}
 }
 
+/* TODO: pass link/node number as an argument? */
+struct resource *amdfam10_assign_new_io_res(resource_t base, resource_t size)
+{
+	int idx;
+	struct resource *res;
+	/* D18F0 will be parsed by amdfam10_set_resources */
+	struct device *dev = __f0_dev[0];
+
+	for (idx = 0xC0; idx <= 0xD8; idx +=8) {
+		res = probe_resource(dev, idx);
+		if (!res) {
+			res = new_resource(dev, idx);
+			res->base = base;
+			res->size = size;
+			res->align = 0x0C;
+			res->gran  = 0x0C;
+			res->flags = IORESOURCE_IO | IORESOURCE_ASSIGNED;
+			return res;
+		}
+	}
+
+	die("%s: no available range registers\n", __func__);
+}
+
+struct resource *amdfam10_assign_new_mmio_res(resource_t base, resource_t size)
+{
+	int idx;
+	struct resource *res;
+	/* D18F0 will be parsed by amdfam10_set_resources */
+	struct device *dev = __f0_dev[0];
+
+	/* There are more MMIO registers at x1A0-x1B8, but these should be enough */
+	for (idx = 0x80; idx <= 0xB8; idx +=8) {
+		res = probe_resource(dev, idx);
+		if (!res) {
+			res = new_resource(dev, idx);
+			res->base  = base;
+			res->size  = size;
+			res->align = 0x10;
+			res->gran  = 0x10;
+			res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED;
+			return res;
+		}
+	}
+
+	die("%s: no available range registers\n", __func__);
+}
+
 static void set_vga_enable_reg(u32 nodeid, u32 linkn)
 {
 	u32 val;
@@ -442,245 +490,35 @@ static void amdfam10_scan_chains(struct device *dev)
 	}
 }
 
-static u32 get_io_addr_index(u32 nodeid, u32 linkn)
-{
-	u32 index;
-
-	for (index = 0; index < 256; index++) {
-
-		if (index + 4 >= ARRAY_SIZE(sysconf.conf_io_addrx))
-			die("Error! Out of bounds read in %s:%s\n", __FILE__, __func__);
-
-		if (sysconf.conf_io_addrx[index+4] == 0) {
-			sysconf.conf_io_addr[index+4] =  (nodeid & 0x3f);
-			sysconf.conf_io_addrx[index+4] = 1 | ((linkn & 0x7)<<4);
-			return index;
-		 }
-	 }
-
-	 return	 0;
-}
-
-static u32 get_mmio_addr_index(u32 nodeid, u32 linkn)
-{
-	u32 index;
-
-	for (index = 0; index < 64; index++) {
-
-		if (index + 8 >= ARRAY_SIZE(sysconf.conf_mmio_addrx))
-			die("Error! Out of bounds read in %s:%s\n", __FILE__, __func__);
-
-		if (sysconf.conf_mmio_addrx[index+8] == 0) {
-			sysconf.conf_mmio_addr[index+8] = (nodeid & 0x3f);
-			sysconf.conf_mmio_addrx[index+8] = 1 | ((linkn & 0x7)<<4);
-			return index;
-		}
-	}
-
-	return 0;
-}
-
-static void store_conf_io_addr(u32 nodeid, u32 linkn, u32 reg, u32 index,
-				u32 io_min, u32 io_max)
-{
-	u32 val;
-
-	/* io range allocation */
-	index = (reg-0xc0)>>3;
-
-	val = (nodeid & 0x3f); // 6 bits used
-	sysconf.conf_io_addr[index] = val | ((io_max<<8) & 0xfffff000); //limit : with nodeid
-	val = 3 | ((linkn & 0x7)<<4); // 8 bits used
-	sysconf.conf_io_addrx[index] = val | ((io_min<<8) & 0xfffff000); // base : with enable bit
-
-	if (sysconf.io_addr_num < (index+1))
-		sysconf.io_addr_num = index+1;
-}
-
-
-static void store_conf_mmio_addr(u32 nodeid, u32 linkn, u32 reg, u32 index,
-					u32 mmio_min, u32 mmio_max)
-{
-	u32 val;
-
-	/* io range allocation */
-	index = (reg-0x80)>>3;
-
-	val = (nodeid & 0x3f); // 6 bits used
-	sysconf.conf_mmio_addr[index] = val | (mmio_max & 0xffffff00); //limit : with nodeid and linkn
-	val = 3 | ((linkn & 0x7)<<4); // 8 bits used
-	sysconf.conf_mmio_addrx[index] = val | (mmio_min & 0xffffff00); // base : with enable bit
-
-	if (sysconf.mmio_addr_num<(index+1))
-		sysconf.mmio_addr_num = index+1;
-}
-
-
-static void set_io_addr_reg(struct device *dev, u32 nodeid, u32 linkn, u32 reg,
-		     u32 io_min, u32 io_max)
-{
-	u32 i;
-	u32 tempreg;
-
-	/* io range allocation */
-	tempreg = (nodeid&0xf) | ((nodeid & 0x30)<<(8-4)) | (linkn<<4) |  ((io_max&0xf0)<<(12-4)); //limit
-	for (i = 0; i < sysconf.nodes; i++)
-		pci_write_config32(__f1_dev[i], reg+4, tempreg);
-
-	tempreg = 3 /*| (3<<4)*/ | ((io_min&0xf0)<<(12-4));	      //base :ISA and VGA ?
-	for (i = 0; i < sysconf.nodes; i++)
-		pci_write_config32(__f1_dev[i], reg, tempreg);
-}
-
-static void set_mmio_addr_reg(u32 nodeid, u32 linkn, u32 reg, u32 index, u32 mmio_min, u32 mmio_max, u32 nodes)
-{
-	u32 i;
-	u32 tempreg;
-
-	/* io range allocation */
-	tempreg = (nodeid&0xf) | (linkn<<4) |	 (mmio_max&0xffffff00); //limit
-	for (i = 0; i < nodes; i++)
-		pci_write_config32(__f1_dev[i], reg+4, tempreg);
-	tempreg = 3 | (nodeid & 0x30) | (mmio_min&0xffffff00);
-	for (i = 0; i < sysconf.nodes; i++)
-		pci_write_config32(__f1_dev[i], reg, tempreg);
-}
-
-static int reg_useable(unsigned int reg, struct device *goal_dev, unsigned int goal_nodeid,
-			unsigned int goal_link)
-{
-	struct resource *res;
-	unsigned int nodeid, link = 0;
-	int result;
-	res = 0;
-	for (nodeid = 0; !res && (nodeid < fx_devs); nodeid++) {
-		struct device *dev;
-		dev = __f0_dev[nodeid];
-		if (!dev)
-			continue;
-		for (link = 0; !res && (link < 8); link++) {
-			res = probe_resource(dev, IOINDEX(0x1000 + reg, link));
-		}
-	}
-	result = 2;
-	if (res) {
-		result = 0;
-		if (	(goal_link == (link - 1)) &&
-			(goal_nodeid == (nodeid - 1)) &&
-			(res->flags <= 1)) {
-			result = 1;
-		}
-	}
-	return result;
-}
-
-static struct resource *amdfam10_find_iopair(struct device *dev, unsigned int nodeid, unsigned int link)
-{
-	struct resource *resource;
-	u32 free_reg, reg;
-	resource = 0;
-	free_reg = 0;
-	for (reg = 0xc0; reg <= 0xd8; reg += 0x8) {
-		int result;
-		result = reg_useable(reg, dev, nodeid, link);
-		if (result == 1) {
-			/* I have been allocated this one */
-			break;
-		} else if (result > 1) {
-			/* I have a free register pair */
-			free_reg = reg;
-		}
-	}
-	if (reg > 0xd8) {
-		reg = free_reg; // if no free, the free_reg still be 0
-	}
-
-	//Ext conf space
-	if (!reg) {
-		//because of Extend conf space, we will never run out of reg,
-		// but we need one index to differ them. so same node and
-		// same link can have multi range
-		u32 index = get_io_addr_index(nodeid, link);
-		reg = 0x110 + (index<<24) + (4<<20); // index could be 0, 255
-	}
-
-	resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
-
-	return resource;
-}
-
-static struct resource *amdfam10_find_mempair(struct device *dev, u32 nodeid, u32 link)
-{
-	struct resource *resource;
-	u32 free_reg, reg;
-	resource = 0;
-	free_reg = 0;
-	for (reg = 0x80; reg <= 0xb8; reg += 0x8) {
-		int result;
-		result = reg_useable(reg, dev, nodeid, link);
-		if (result == 1) {
-			/* I have been allocated this one */
-			break;
-		} else if (result > 1) {
-			/* I have a free register pair */
-			free_reg = reg;
-		}
-	}
-	if (reg > 0xb8) {
-		reg = free_reg;
-	}
-
-	//Ext conf space
-	if (!reg) {
-		//because of Extend conf space, we will never run out of reg,
-		// but we need one index to differ them. so same node and
-		// same link can have multi range
-		u32 index = get_mmio_addr_index(nodeid, link);
-		reg = 0x110 + (index<<24) + (6<<20); // index could be 0, 63
-
-	}
-	resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
-	return resource;
-}
-
 static void amdfam10_link_read_bases(struct device *dev, u32 nodeid, u32 link)
 {
 	struct resource *resource;
 
 	/* Initialize the io space constraints on the current bus */
-	resource = amdfam10_find_iopair(dev, nodeid, link);
+	resource = amdfam10_assign_new_io_res(0, 0);
 	if (resource) {
-		u32 align;
-		align = log2(HT_IO_HOST_ALIGN);
-		resource->base	= 0;
-		resource->size	= 0;
-		resource->align = align;
-		resource->gran	= align;
+		resource->align = log2(HT_IO_HOST_ALIGN);
+		resource->gran	= log2(HT_IO_HOST_ALIGN);
 		resource->limit = 0xffffUL;
-		resource->flags = IORESOURCE_IO | IORESOURCE_BRIDGE;
-	}
-
-	/* Initialize the prefetchable memory constraints on the current bus */
-	resource = amdfam10_find_mempair(dev, nodeid, link);
-	if (resource) {
-		resource->base = 0;
-		resource->size = 0;
-		resource->align = log2(HT_MEM_HOST_ALIGN);
-		resource->gran = log2(HT_MEM_HOST_ALIGN);
-		resource->limit = 0xffffffffffULL;
-		resource->flags = IORESOURCE_MEM | IORESOURCE_PREFETCH;
 		resource->flags |= IORESOURCE_BRIDGE;
 	}
 
-	/* Initialize the memory constraints on the current bus */
-	resource = amdfam10_find_mempair(dev, nodeid, link);
+	/* Initialize the prefetchable memory constraints on the current bus */
+	resource = amdfam10_assign_new_mmio_res(0, 0);
 	if (resource) {
-		resource->base = 0;
-		resource->size = 0;
 		resource->align = log2(HT_MEM_HOST_ALIGN);
-		resource->gran = log2(HT_MEM_HOST_ALIGN);
+		resource->gran  = log2(HT_MEM_HOST_ALIGN);
 		resource->limit = 0xffffffffffULL;
-		resource->flags = IORESOURCE_MEM | IORESOURCE_BRIDGE;
+		resource->flags |= IORESOURCE_PREFETCH | IORESOURCE_BRIDGE;
+	}
+
+	/* Initialize the memory constraints on the current bus */
+	resource = amdfam10_assign_new_mmio_res(0, 0);
+	if (resource) {
+		resource->align = log2(HT_MEM_HOST_ALIGN);
+		resource->gran  = log2(HT_MEM_HOST_ALIGN);
+		resource->limit = 0xffffffffffULL;
+		resource->flags |= IORESOURCE_BRIDGE;
 	}
 }
 
@@ -731,52 +569,56 @@ static void amdfam10_read_resources(struct device *dev)
 	}
 }
 
-static void amdfam10_set_resource(struct device *dev, struct resource *resource,
-				u32 nodeid)
+static void amdfam10_set_resource(struct device *dev, struct resource *res,
+                                  u8 nodeid /* TODO: assuming always 0 */)
 {
-	resource_t rbase, rend;
-	unsigned int reg, link_num;
+	u32 base_reg = 0, limit_reg = 0;
+	u8 sblink;
 	char buf[50];
 
-	/* Make certain the resource has actually been set */
-	if (!(resource->flags & IORESOURCE_ASSIGNED)) {
-		return;
-	}
+	if (nodeid >= sysconf.nodes)
+		die("%s: wrong node ID: %d\n", __func__, nodeid);
 
-	/* If I have already stored this resource don't worry about it */
-	if (resource->flags & IORESOURCE_STORED) {
-		return;
-	}
+	/* Get SBLink value (HyperTransport I/O Hub Link ID). */
+	sblink = (pci_read_config32(__f0_dev[nodeid], 0x64) >> 8) & 0x3;
 
-	/* Only handle PCI memory and IO resources */
-	if (!(resource->flags & (IORESOURCE_MEM | IORESOURCE_IO)))
+	/* Skip already stored resources */
+	if (res->flags & IORESOURCE_STORED)
 		return;
 
-	/* Ensure I am actually looking at a resource of function 1 */
-	if ((resource->index & 0xffff) < 0x1000) {
+	/* Skip resources that are not ranges */
+	if (res->index < 0x80 || res->index > 0xD8 || (res->index & 0x7))
 		return;
+
+	/* Skip empty resources */
+	if (res->size == 0)
+		return;
+
+	/* If resource is a range but has wrong type something bad has happened */
+	if ((res->index < 0xC0 && !(res->flags & IORESOURCE_MEM)) ||
+	    (res->index >= 0xC0 && !(res->flags & IORESOURCE_IO)))
+		die("Wrong resource type for D18F1x%X\n", res->index);
+
+	if (res->flags & IORESOURCE_MEM) {
+		base_reg = (res->base >> 8) & 0xFFFFFF00;
+		limit_reg = ((res->base + res->size - 1) >> 8) & 0xFFFFFF00;
 	}
-	/* Get the base address */
-	rbase = resource->base;
 
-	/* Get the limit (rounded up) */
-	rend  = resource_end(resource);
-
-	/* Get the register and link */
-	reg  = resource->index & 0xfff; // 4k
-	link_num = IOINDEX_LINK(resource->index);
-
-	if (resource->flags & IORESOURCE_IO) {
-		set_io_addr_reg(dev, nodeid, link_num, reg, rbase>>8, rend>>8);
-		store_conf_io_addr(nodeid, link_num, reg, (resource->index >> 24), rbase>>8, rend>>8);
-	} else if (resource->flags & IORESOURCE_MEM) {
-		set_mmio_addr_reg(nodeid, link_num, reg, (resource->index >>24), rbase>>8, rend>>8, sysconf.nodes); // [39:8]
-		store_conf_mmio_addr(nodeid, link_num, reg, (resource->index >>24), rbase>>8, rend>>8);
+	if (res->flags & IORESOURCE_IO) {
+		base_reg = res->base & 0x00FFF000;
+		limit_reg = (res->base + res->size - 1) & 0x00FFF000;
 	}
-	resource->flags |= IORESOURCE_STORED;
-	snprintf(buf, sizeof(buf), " <node %x link %x>",
-		 nodeid, link_num);
-	report_resource_stored(dev, resource, buf);
+
+	base_reg |= (1 << 1) | (1 << 0); // WE, RE
+	limit_reg |= (sblink << 4) | (nodeid << 0); // DstLink, DstNode
+
+	/* Limit must be set before RE/WE bits in base register are set */
+	f1_write_config32(res->index + 4, limit_reg);
+	f1_write_config32(res->index, base_reg);
+
+	res->flags |= IORESOURCE_STORED;
+	snprintf(buf, sizeof(buf), " <node %x link %x>", nodeid, sblink);
+	report_resource_stored(dev, res, buf);
 }
 
 static void amdfam10_set_resources(struct device *dev)
@@ -943,6 +785,10 @@ static void amdfam10_domain_read_resources(struct device *dev)
 	int idx = 7;	// value from original code
 
 	/* Find the already assigned resource pairs */
+	/*
+	 * TODO: this can be removed when all resources are accounted for and
+	 * assigned by amdfam10_assign_new_{mm,}io_res() only.
+	 */
 	get_fx_devs();
 	for (reg = 0x80; reg <= 0xd8; reg+= 0x08) {
 		u32 base, limit;
@@ -950,6 +796,11 @@ static void amdfam10_domain_read_resources(struct device *dev)
 		limit = f1_read_config32(reg + 0x04);
 		/* Is this register allocated? */
 		if ((base & 3) != 0) {
+			/*
+			 * Leaving original code as comment for reference on node numbering.
+			 * __f0_dev[nodeid] could be out-of-bounds read...
+			 */
+			/***
 			unsigned int nodeid, reg_link;
 			struct device *reg_dev;
 			if (reg < 0xc0) { // mmio
@@ -960,17 +811,41 @@ static void amdfam10_domain_read_resources(struct device *dev)
 			reg_link = (limit >> 4) & 7;
 			reg_dev = __f0_dev[nodeid];
 			if (reg_dev) {
-				/* Reserve the resource  */
+				/ * Reserve the resource  * /
 				struct resource *res;
 				res = new_resource(reg_dev, IOINDEX(0x1000 + reg, reg_link));
 				if (res) {
 					res->flags = 1;
 				}
 			}
+			***/
+
+			/*
+			 * We don't actually need base and size, index is sufficient. Keeping
+			 * them for now for reporting.
+			 */
+			struct resource *res;
+			if (probe_resource(__f0_dev[0], reg))
+				printk(BIOS_WARNING, "%s: resource with index %x already exists, overwriting\n", __func__, reg);
+
+			res = new_resource(__f0_dev[0], reg);
+			if (reg < 0xC0) {
+				res->base = ((resource_t)base & 0xFFFFFF00) << 8;
+				res->size = (((resource_t)limit & 0xFFFFFF00) << 8) - res->base;
+				res->size += 0x10000;
+				res->flags = IORESOURCE_MEM;
+			} else {
+				res->base = (resource_t)base & 0x00FFF000;
+				res->size = ((resource_t)limit & 0x00FFF000) - res->base;
+				res->size += 0x1000;
+				res->flags = IORESOURCE_IO;
+			}
+
+			/* Don't mark as assigned so allocator won't try to use those */
+			res->flags |= IORESOURCE_STORED | IORESOURCE_FIXED;
+			report_resource_stored(dev, res, " <D18F1 stored by early ramstage>");
 		}
 	}
-	/* FIXME: do we need to check extend conf space?
-	   I don't believe that much preset value */
 
 	pci_domain_read_resources(dev);
 
@@ -1003,6 +878,16 @@ static void amdfam10_domain_scan_bus(struct device *dev)
 	u32 reg;
 	int i;
 	struct bus *link;
+	struct resource *res;
+
+	/*
+	 * Access to PCI config space must be enabled before some of other devices
+	 * can read_resources().
+	 */
+	get_fx_devs();
+	res = amdfam10_assign_new_mmio_res(CONFIG_MMCONF_BASE_ADDRESS,
+	                                   CONFIG_MMCONF_LENGTH);
+	amdfam10_set_resource(dev, res, 0 /* TODO: is BSP always on node 0? */);
 
 	/* Unmap all of the HT chains */
 	for (reg = 0xe0; reg <= 0xec; reg += 4) {
@@ -1018,7 +903,6 @@ static void amdfam10_domain_scan_bus(struct device *dev)
 	/* Tune the hypertransport transaction for best performance.
 	 * Including enabling relaxed ordering if it is safe.
 	 */
-	get_fx_devs();
 	for (i = 0; i < fx_devs; i++) {
 		struct device *f0_dev;
 		f0_dev = __f0_dev[i];
@@ -1258,6 +1142,8 @@ static void sysconf_init(struct device *dev) // first node
 	if (CONFIG_MAX_PHYSICAL_CPUS > 8)
 		sysconf.nodes += (((pci_read_config32(dev, 0x160)>>4) & 7)<<3);
 
+	if (sysconf.nodes > NODE_NUMS)
+		die("Too many nodes detected\n");
 
 	sysconf.enabled_apic_ext_id = 0;
 	sysconf.lift_bsp_apicid = 0;
