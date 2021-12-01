@@ -1739,7 +1739,7 @@ static void dump_mmio_mapping(u8 node)
 	for (reg = 0x1a0; reg <= 0x1b8; reg += 4) {
 		base = pci_read_config32(__f1_dev[node], reg);
 		flags = base & 0xf;
-		base &= 0xffffff0;
+		base &= 0xffffff00;
 		base <<= 8;
 		base |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff) << 40);
 
@@ -1747,7 +1747,7 @@ static void dump_mmio_mapping(u8 node)
 
 		limit = pci_read_config32(__f1_dev[node], reg);
 		flags |= ((limit & 0xff) << 16);
-		limit &= 0xfffffff0;
+		limit &= 0xffffff00;
 		limit <<= 8;
 		limit |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff0000) << 24);
 
