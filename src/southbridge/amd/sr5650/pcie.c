@@ -255,7 +255,6 @@ void enable_pcie_bar3(struct device *nb_dev)
 	pci_write_config32(nb_dev, 0x1C, CONFIG_MMCONF_BASE_ADDRESS);	/* PCIEMiscInit */
 	pci_write_config32(nb_dev, 0x20, 0x00000000);
 	set_htiu_enable_bits(nb_dev, 0x32, 1 << 28, 1 << 28);	/* PCIEMiscInit */
-	ProgK8TempMmioBase(1, CONFIG_MMCONF_BASE_ADDRESS, TEMP_MMIO_BASE_ADDRESS);
 }
 
 /*****************************************************************
@@ -267,7 +266,6 @@ void disable_pcie_bar3(struct device *nb_dev)
 	printk(BIOS_DEBUG, "%s\n", __func__);
 	pci_write_config32(nb_dev, 0x1C, 0);	/* clear BAR3 address */
 	set_nbcfg_enable_bits(nb_dev, 0x7C, 1 << 30, 0 << 30);	/* Disable writes to the BAR3. */
-	ProgK8TempMmioBase(0, CONFIG_MMCONF_BASE_ADDRESS, TEMP_MMIO_BASE_ADDRESS);
 }
 
 /*

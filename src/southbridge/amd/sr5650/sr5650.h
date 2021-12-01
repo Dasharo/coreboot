@@ -79,7 +79,6 @@ void enable_sr5650_dev8(void);
 
 u8 PcieTrainPort(struct device *nb_dev, struct device *dev, u32 port);
 void PcieReleasePortTraining(struct device *nb_dev, struct device *dev, u32 port);
-void ProgK8TempMmioBase(u8 in_out, u32 pcie_base_add, u32 mmio_base_add);
 
 u32 nbpcie_p_read_index(struct device *dev, u32 index);
 void nbpcie_p_write_index(struct device *dev, u32 index, u32 data);
