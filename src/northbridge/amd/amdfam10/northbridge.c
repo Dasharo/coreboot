@@ -1664,7 +1664,7 @@ static void decode_dram_flags(u32 flags)
 		printk(BIOS_DEBUG, "WE, ");
 	printk(BIOS_DEBUG, "Interleave %s, ", interleave_strings[(flags >> 8) & 7]);
 	printk(BIOS_DEBUG, "Destination Node %d, ", (flags >> 16) & 7);
-	printk(BIOS_DEBUG, "Inerleave select %x\n", (flags >> 24) & 7);
+	printk(BIOS_DEBUG, "Interleave select %x\n", (flags >> 24) & 7);
 }
 
 static void dump_dram_mapping(u8 node)
@@ -1687,6 +1687,8 @@ static void dump_dram_mapping(u8 node)
 		limit &= 0xffff0000;
 		limit <<= 8;
 		limit |= ((u64)pci_read_config8(__f1_dev[node], reg + 0x100) << 40);
+		if (flags & 3)
+			limit |= 0xffffff;
 
 		printk(BIOS_DEBUG, "DRAM [0x%016llx - 0x%016llx] - flags: ", base, limit);
 		decode_dram_flags(flags);
@@ -1716,7 +1718,7 @@ static void dump_mmio_mapping(u8 node)
 
 	for (reg = 0x80; reg <= 0xb8; reg += 4) {
 		base = pci_read_config32(__f1_dev[node], reg);
-		flags = base & 0xffff;
+		flags = base & 0xff;
 		base &= 0xffffff00;
 		base <<= 8;
 		base |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff) << 40);
@@ -1724,10 +1726,12 @@ static void dump_mmio_mapping(u8 node)
 		reg += 4;
 
 		limit = pci_read_config32(__f1_dev[node], reg);
-		flags |= ((limit & 0xffff) << 16);
+		flags |= ((limit & 0xff) << 8);
 		limit &= 0xffffff00;
 		limit <<= 8;
 		limit |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff0000) << 24);
+		if (flags & 3)
+			limit |= 0xffff;
 
 		hi_addr += 4;
 
@@ -1738,7 +1742,7 @@ static void dump_mmio_mapping(u8 node)
 	hi_addr = 0x1c0;
 	for (reg = 0x1a0; reg <= 0x1b8; reg += 4) {
 		base = pci_read_config32(__f1_dev[node], reg);
-		flags = base & 0xf;
+		flags = base & 0xff;
 		base &= 0xffffff00;
 		base <<= 8;
 		base |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff) << 40);
@@ -1746,10 +1750,12 @@ static void dump_mmio_mapping(u8 node)
 		reg += 4;
 
 		limit = pci_read_config32(__f1_dev[node], reg);
-		flags |= ((limit & 0xff) << 16);
+		flags |= ((limit & 0xff) << 8);
 		limit &= 0xffffff00;
 		limit <<= 8;
 		limit |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff0000) << 24);
+		if (flags & 3)
+			limit |= 0xffff;
 
 		hi_addr += 4;
 
@@ -1788,6 +1794,8 @@ static void dump_io_mapping(u8 node)
 		limit = pci_read_config32(__f1_dev[node], reg);
 		flags |= ((limit & 0xff) << 8);
 		limit &= 0x00fff000;
+		if (flags & 3)
+			limit |= 0xfff;
 
 		printk(BIOS_DEBUG, "IO [0x%08x - 0x%08x] - flags: ", base, limit);
 		decode_io_flags(flags);
@@ -1828,7 +1836,7 @@ static void dump_config_mapping(u8 node)
 static void decode_system_dram_flags(u8 flags)
 {
 	printk(BIOS_DEBUG, "Interleave %s, ", interleave_strings[(flags >> 4) & 7]);
-	printk(BIOS_DEBUG, "Inerleave select %x\n", flags & 7);
+	printk(BIOS_DEBUG, "Interleave select %x\n", flags & 7);
 }
 
 static void dump_system_dram_mapping(u8 node)
