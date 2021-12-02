@@ -17,9 +17,6 @@ typedef unsigned char  uint8;
 #define FALSE 0
 typedef unsigned char BOOL;
 
-/* Force tight packing of structures */
-#pragma pack(1)
-
 #define CALLCONV
 
 
