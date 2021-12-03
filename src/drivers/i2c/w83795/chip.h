@@ -27,7 +27,7 @@ struct drivers_i2c_w83795_config {
 	 * - [1] server - all fans full speed, manual mode fixed values, no temp mapping
 	 * - [0] workstation - set automatic mode per devicetree settings
 	 */
-	bool server_manual_mode;
+	uint8_t server_manual_mode;
 	uint8_t fanin_ctl1;
 	uint8_t fanin_ctl2;
 
