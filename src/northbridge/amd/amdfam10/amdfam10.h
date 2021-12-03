@@ -1007,7 +1007,10 @@ void southbridge_before_pci_init(void);
 
 struct amdfam10_sysconf_t *get_sysconf(void);
 void set_pirq_router_bus(u8 bus);
+u8 get_pirq_router_bus(void);
 
 BOOL AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list);
+
+void dump_memory_mapping(void);
 
 #endif /* AMDFAM10_H */

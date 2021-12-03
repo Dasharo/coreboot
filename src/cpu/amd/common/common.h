@@ -5,8 +5,11 @@
 
 #include <arch/cpu.h>
 #include <device/device.h>
+#include <device/pci_ops.h>
 #include <cpu/x86/lapic.h>
 #include <types.h>
+
+#include "nums.h"
 
 #define LAPIC_MSG_REG 0x380
 #define F10_APSTATE_STARTED 0x13  // start of AP execution
@@ -59,6 +62,28 @@ static __always_inline u32 get_cpu_family(void)
 	family = ((family & 0xf00000) >> 16) | ((family & 0xf00) >> 8);
 
 	return family;
+}
+
+static inline uint8_t is_gt_rev_d(void)
+{
+	uint8_t rev_gte_d = 0;
+	uint32_t model;
+
+	model = cpuid_eax(0x80000001);
+	model = ((model & 0xf0000) >> 12) | ((model & 0xf0) >> 4);
+
+	if ((model >= 0x8) || is_fam15h())
+		/* Revision D or later */
+		rev_gte_d = 1;
+
+
+	return rev_gte_d;
+}
+
+static __always_inline u8 is_dual_node(u8 node)
+{
+	/* Check for dual node capability */
+	return !!(pci_read_config32(NODE_PCI(node, 3), 0xe8) & 0x20000000);
 }
 
 static __always_inline void lapic_wait_icr_idle(void)

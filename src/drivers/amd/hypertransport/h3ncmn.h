@@ -96,6 +96,5 @@ struct cNorthBridge
 } ;
 
 void newNorthBridge(u8 node, cNorthBridge *nb);
-uint8_t is_gt_rev_d(void);
 
 #endif	 /* H3NCMN_H */
