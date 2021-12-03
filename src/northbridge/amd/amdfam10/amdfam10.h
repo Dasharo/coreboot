@@ -1014,6 +1014,12 @@ u8 get_pirq_router_bus(void);
 >>>>>>> origin/asus_kgpe-d16/ramstage_southbridge
 BOOL AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list);
 
+unsigned long northbridge_write_acpi_tables(const struct device *device,
+					    unsigned long start,
+					    struct acpi_rsdp *rsdp);
+void northbridge_acpi_write_vars(const struct device *device);
+
+
 void dump_memory_mapping(void);
 
 struct resource *amdfam10_assign_new_io_res(resource_t base, resource_t size);

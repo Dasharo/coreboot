@@ -654,6 +654,10 @@ static struct device_operations northbridge_operations = {
 	.scan_bus	  = amdfam10_scan_chains,
 	.enable		  = 0,
 	.ops_pci	  = 0,
+#if CONFIG(HAVE_ACPI_TABLES)
+	.write_acpi_tables = northbridge_write_acpi_tables,
+	.acpi_fill_ssdt = northbridge_acpi_write_vars,
+#endif
 };
 
 static const struct pci_driver mcf0_driver __pci_driver = {
