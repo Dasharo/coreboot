@@ -34,18 +34,16 @@ Scope (\_SB)
 	{
 		Store (SizeOf (Arg0), Local0)
 		Store (SizeOf (Arg1), Local1)
-		If (LNot (LEqual (Local0, Local1))) { Return (Zero) }
+		If (LNotEqual (Local0, Local1)) { Return (Zero) }
 
-		Name (BUF0, Buffer (Local0) {})
-		Store (Arg0, BUF0)
-		Name (BUF1, Buffer (Local0) {})
-		Store (Arg1, BUF1)
+		ToBuffer(Arg0, Local5)
+		ToBuffer(Arg1, Local6)
 		Store (Zero, Local2)
 		While (LLess (Local2, Local0))
 		{
-			Store (DerefOf (Index (BUF0, Local2)), Local3)
-			Store (DerefOf (Index (BUF1, Local2)), Local4)
-			If (LNot (LEqual (Local3, Local4))) { Return (Zero) }
+			Store (DerefOf (Index (Local5, Local2)), Local3)
+			Store (DerefOf (Index (Local6, Local2)), Local4)
+			If (LNotEqual (Local3, Local4)) { Return (Zero) }
 
 			Increment (Local2)
 		}
@@ -53,75 +51,9 @@ Scope (\_SB)
 		Return (One)
 	}
 
-
-	Method (DADD, 2, NotSerialized)
-	{
-		Store(Arg1, Local0)
-		Store(Arg0, Local1)
-		Add(ShiftLeft(Local1,16), Local0, Local0)
-		Return (Local0)
-	}
-
-
-	Method (GHCE, 1, NotSerialized) // check if the HC enabled
-	{
-		Store (DerefOf (Index (\_SB.PCI0.HCLK, Arg0)), Local1)
-		if (LEqual (And(Local1, 0x01), 0x01)) { Return (0x0F) }
-		Else { Return (0x00) }
-	}
-
-	Method (GHCN, 1, NotSerialized) // get the node num for the HC
-	{
-		Store (0x00, Local0)
-		Store (DerefOf (Index (\_SB.PCI0.HCLK, Arg0)), Local1)
-		Store (ShiftRight(And (Local1, 0xfc), 0x02), Local0)
-		Return (Local0)
-	}
-
-	Method (GHCL, 1, NotSerialized) // get the link num on node for the HC
-	{
-		Store (0x00, Local0)
-		Store (DerefOf (Index (\_SB.PCI0.HCLK, Arg0)), Local1)
-		Store (ShiftRight(And (Local1, 0x700), 0x08), Local0)
-		Return (Local0)
-	}
-
-	Method (GHCD, 2, NotSerialized) // get the unit id base for the HT device in HC
-	{
-		Store (0x00, Local0)
-		Store (DerefOf (Index (\_SB.PCI0.HCDN, Arg0)), Local1)
-		Store (Arg1, Local2) // Arg1 could be 3, 2, 1, 0
-		Multiply (Local2, 0x08, Local2) // change to 24, 16, 8, 0
-		Store (And (ShiftRight(Local1, Local2), 0xff), Local0)
-		Return (Local0)
-	}
-
-	Method (GBUS, 2, NotSerialized)
-	{
-		Store (0x00, Local0)
-		While (LLess (Local0, 0x20)) // 32 ht links
-		{
-			Store (DerefOf (Index (\_SB.PCI0.BUSN, Local0)), Local1)
-			If (LEqual (And (Local1, 0x03), 0x03))
-			{
-				If (LEqual (Arg0, ShiftRight (And (Local1, 0xfc), 0x02)))
-				{
-					If (LOr (LEqual (Arg1, 0xFF), LEqual (Arg1, ShiftRight (And (Local1, 0x0700), 0x08))))
-					{
-						Return (ShiftRight (And (Local1, 0x000FF000), 0x0c))
-					}
-				}
-			}
-
-			Increment (Local0)
-		}
-
-		Return (0x00)
-	}
-
 	Method (GWBN, 2, Serialized)
 	{
-		Name (BUF0, ResourceTemplate ()
+		Store (ResourceTemplate ()
 		{
 			WordBusNumber (ResourceProducer, MinFixed, MaxFixed, PosDecode,
 				0x0000, // Address Space Granularity
@@ -129,10 +61,10 @@ Scope (\_SB)
 				0x0000, // Address Range Maximum
 				0x0000, // Address Translation Offset
 				0x0001,,,)
-		})
-		CreateWordField (BUF0, 0x08, BMIN)
-		CreateWordField (BUF0, 0x0A, BMAX)
-		CreateWordField (BUF0, 0x0E, BLEN)
+		}, Local2)
+		CreateWordField (Local2, 0x08, BMIN)
+		CreateWordField (Local2, 0x0A, BMAX)
+		CreateWordField (Local2, 0x0E, BLEN)
 		Store (0x00, Local0)
 		While (LLess (Local0, 0x20))
 		{
@@ -147,7 +79,7 @@ Scope (\_SB)
 						Store (ShiftRight (Local1, 0x14), BMAX)
 						Subtract (BMAX, BMIN, BLEN)
 						Increment (BLEN)
-						Return (RTAG (BUF0))
+						Return (RTAG (Local2))
 					}
 				}
 			}
@@ -155,157 +87,7 @@ Scope (\_SB)
 			Increment (Local0)
 		}
 
-		Return (RTAG (BUF0))
-	}
-
-	Method (GMEM, 2, Serialized)
-	{
-		Name (BUF0, ResourceTemplate ()
-		{
-			DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed, NonCacheable, ReadWrite,
-				0x00000000, // Address Space Granularity
-				0x00000000, // Address Range Minimum
-				0x00000000, // Address Range Maximum
-				0x00000000, // Address Translation Offset
-				0x00000001,,,
-				, AddressRangeMemory, TypeStatic)
-		})
-		CreateDWordField (BUF0, 0x0A, MMIN)
-		CreateDWordField (BUF0, 0x0E, MMAX)
-		CreateDWordField (BUF0, 0x16, MLEN)
-		Store (0x00, Local0)
-		Store (0x00, Local4)
-		Store (0x00, Local3)
-		While (LLess (Local0, 0x80)) // 0x20 links * 2(mem, prefmem) *2 (base, limit)
-		{
-			Store (DerefOf (Index (\_SB.PCI0.MMIO, Local0)), Local1)
-			Increment (Local0)
-			Store (DerefOf (Index (\_SB.PCI0.MMIO, Local0)), Local2)
-			If (LEqual (And (Local1, 0x03), 0x03))
-			{
-				If (LEqual (Arg0, And (Local2, 0x3f)))
-				{
-					If (LOr (LEqual (Arg1, 0xFF), LEqual (Arg1, ShiftRight (And (Local1, 0x70), 0x04))))
-					{
-						Store (ShiftLeft (And (Local1, 0xFFFFFF00), 0x08), MMIN)
-						Store (ShiftLeft (And (Local2, 0xFFFFFF00), 0x08), MMAX)
-						Or (MMAX, 0xFFFF, MMAX)
-						Subtract (MMAX, MMIN, MLEN)
-						Increment (MLEN)
-
-						If (Local4)
-						{
-							Concatenate (RTAG (BUF0), Local3, Local5)
-							Store (Local5, Local3)
-						}
-						Else
-						{
-							Store (RTAG (BUF0), Local3)
-						}
-
-						Increment (Local4)
-					}
-				}
-			}
-
-			Increment (Local0)
-		}
-
-		If (LNot (Local4))
-		{
-			Store (BUF0, Local3)
-		}
-
-		Return (Local3)
-	}
-
-	Method (GIOR, 2, Serialized)
-	{
-		Name (BUF0, ResourceTemplate ()
-		{
-			DWordIO (ResourceProducer, MinFixed, MaxFixed, PosDecode, EntireRange,
-				0x00000000, // Address Space Granularity
-				0x00000000, // Address Range Minimum
-				0x00000000, // Address Range Maximum
-				0x00000000, // Address Translation Offset
-				0x00000001,,,
-				, TypeStatic)
-		})
-		CreateDWordField (BUF0, 0x0A, PMIN)
-		CreateDWordField (BUF0, 0x0E, PMAX)
-		CreateDWordField (BUF0, 0x16, PLEN)
-		Store (0x00, Local0)
-		Store (0x00, Local4)
-		Store (0x00, Local3)
-		While (LLess (Local0, 0x40)) // 0x20 ht links * 2 (base, limit)
-		{
-			Store (DerefOf (Index (\_SB.PCI0.PCIO, Local0)), Local1)
-			Increment (Local0)
-			Store (DerefOf (Index (\_SB.PCI0.PCIO, Local0)), Local2)
-			If (LEqual (And (Local1, 0x03), 0x03))
-			{
-				If (LEqual (Arg0, And (Local2, 0x3f)))
-				{
-					If (LOr (LEqual (Arg1, 0xFF), LEqual (Arg1, ShiftRight (And (Local1, 0x70), 0x04))))
-					{
-						Store (And (Local1, 0x01FFF000), PMIN)
-						Store (And (Local2, 0x01FFF000), PMAX)
-						Or (PMAX, 0x0FFF, PMAX)
-						Subtract (PMAX, PMIN, PLEN)
-						Increment (PLEN)
-
-						If (Local4)
-						{
-							Concatenate (RTAG (BUF0), Local3, Local5)
-							Store (Local5, Local3)
-						}
-						Else
-						{
-							If (LGreater (PMAX, PMIN))
-							{
-								If (LOr (LAnd (LEqual (Arg1, 0xFF), LEqual (Arg0, 0x00)), LEqual (Arg1, \_SB.PCI0.SBLK)))
-								{
-									Store (0x0D00, PMIN)
-									Subtract (PMAX, PMIN, PLEN)
-									Increment (PLEN)
-								}
-
-								Store (RTAG (BUF0), Local3)
-								Increment (Local4)
-							}
-
-							If (And (Local1, 0x10))
-							{
-								Store (0x03B0, PMIN)
-								Store (0x03DF, PMAX)
-								Store (0x30, PLEN)
-
-								If (Local4)
-								{
-									Concatenate (RTAG (BUF0), Local3, Local5)
-									Store (Local5, Local3)
-								}
-								Else
-								{
-									Store (RTAG (BUF0), Local3)
-								}
-							}
-						}
-
-						Increment (Local4)
-					}
-				}
-			}
-
-			Increment (Local0)
-		}
-
-		If (LNot (Local4))
-		{
-			Store (RTAG (BUF0), Local3)
-		}
-
-		Return (Local3)
+		Return (RTAG (Local2))
 	}
 
 	Method (RTAG, 1, NotSerialized)
@@ -315,7 +97,6 @@ Scope (\_SB)
 		Subtract (Local1, 0x02, Local1)
 		Multiply (Local1, 0x08, Local1)
 		CreateField (Local0, 0x00, Local1, RETB)
-		Store (RETB, Local2)
-		Return (Local2)
+		Return (RETB)
 	}
 }

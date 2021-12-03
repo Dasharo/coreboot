@@ -203,15 +203,7 @@ void northbridge_acpi_write_vars(const struct device *device)
 
 	acpigen_write_scope(pscope);
 
-	acpigen_write_name("BUSN");
-	acpigen_write_package(HC_NUMS);
-	for (i = 0; i < HC_NUMS; i++) {
-		acpigen_write_dword(get_sysconf()->ht_c_conf_bus[i]);
-	}
-	acpigen_write_package_end();
-
-	/* vvvvvvvvv Untested vvvvvvvvv */
-
+	/* TODO: this doesn't work, try with acpigen_resource_qword() */
 	acpigen_write_name("RSRC");
 	acpigen_write_resourcetemplate_header();
 	for (i = 0x80; i <= 0xB8; i += 8) {
@@ -233,28 +225,6 @@ void northbridge_acpi_write_vars(const struct device *device)
 		}
 	}
 	acpigen_write_resourcetemplate_footer();
-
-	/* ^^^^^^^^^ Untested ^^^^^^^^^ */
-
-	/* vvvvvvvvv To be removed vvvvvvvvv */
-
-	acpigen_write_name("MMIO");
-	acpigen_write_package(HC_NUMS * 4);
-	for (i = 0; i<(HC_NUMS*2); i++) { // FIXME: change to more chain
-		acpigen_write_dword(get_sysconf()->conf_mmio_addrx[i]); //base
-		acpigen_write_dword(get_sysconf()->conf_mmio_addr[i]); //mask
-	}
-	acpigen_write_package_end();
-
-	acpigen_write_name("PCIO");
-	acpigen_write_package(HC_NUMS * 2);
-	for (i = 0; i < HC_NUMS; i++) { // FIXME: change to more chain
-		acpigen_write_dword(get_sysconf()->conf_io_addrx[i]);
-		acpigen_write_dword(get_sysconf()->conf_io_addr[i]);
-	}
-	acpigen_write_package_end();
-
-	/* ^^^^^^^^^ To be removed ^^^^^^^^^ */
 
 	acpigen_write_name_byte("SBLK", get_sysconf()->sblk);
 

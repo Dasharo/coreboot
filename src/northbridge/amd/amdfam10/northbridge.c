@@ -590,9 +590,11 @@ static void amdfam10_set_resource(struct device *dev, struct resource *res,
 	if (res->index < 0x80 || res->index > 0xD8 || (res->index & 0x7))
 		return;
 
-	/* Skip empty resources */
-	if (res->size == 0)
+	/* Mark empty resources for removal */
+	if (res->size == 0) {
+		res->flags = 0;
 		return;
+	}
 
 	/* If resource is a range but has wrong type something bad has happened */
 	if ((res->index < 0xC0 && !(res->flags & IORESOURCE_MEM)) ||
@@ -634,6 +636,9 @@ static void amdfam10_set_resources(struct device *dev)
 	for (res = dev->resource_list; res; res = res->next) {
 		amdfam10_set_resource(dev, res, nodeid);
 	}
+
+	/* Remove unused resources so ACPI generation code won't parse it */
+	compact_resources(dev);
 
 	for (bus = dev->link_list; bus; bus = bus->next) {
 		if (bus->children) {
