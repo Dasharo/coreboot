@@ -63,10 +63,10 @@ chip northbridge/amd/amdfam10/root_complex	# Root complex
 							register "fanin_ctl1" = "0xff"			# Enable monitoring of FANIN1 - FANIN8
 							register "fanin_ctl2" = "0x00"			# Connect FANIN11 - FANIN14 to alternate functions
 							register "temp_ctl1" = "0x2a"			# Enable monitoring of DTS, VSEN12, and VSEN13
-							register "temp_ctl2" = "0x01"			# Enable monitoring of TD1/TR1
+							register "temp_ctl2" = "0x3d"			# Enable monitoring of TD1, TR2 and TR3
 							register "temp_dtse" = "0x03"			# Enable DTS1 and DTS2
 							register "volt_ctl1" = "0xff"			# Enable monitoring of VSEN1 - VSEN8
-							register "volt_ctl2" = "0xf7"			# Enable monitoring of VSEN9 - VSEN11, 3VDD, 3VSB, and VBAT
+							register "volt_ctl2" = "0x7f"			# Enable monitoring of VSEN9 - VSEN11, 3VDD, 3VSB, VTT and VBAT
 							register "temp1_fan_select" = "0x03"		# Temp1 for Fan1 and Fan2
 							register "temp2_fan_select" = "0x03"		# Temp2 for Fan1 and Fan2
 							register "temp3_fan_select" = "0x00"		# All fans to manual mode (no dependence on Temp3)
