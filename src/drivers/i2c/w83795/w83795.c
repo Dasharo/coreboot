@@ -321,7 +321,7 @@ static void w83795_init(struct device *dev, w83795_fan_mode_t mode, u8 dts_src)
 
 		/* Set fan full speed for server behavior */
 		w83795_write(dev, W83795_REG_DFSP, fan_pct_to_cfg_val(100));
-		printk(BIOS_DEBUG, "Server fan control mode disabled\n");
+		printk(BIOS_DEBUG, "Server fan control mode enabled\n");
 	}
 
 	/* Set critical temperatures
