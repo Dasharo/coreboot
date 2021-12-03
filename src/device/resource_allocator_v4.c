@@ -30,9 +30,12 @@ static const char *resource2str(const struct resource *res)
 
 static bool dev_has_children(const struct device *dev)
 {
-	const struct bus *link;
+	const struct bus *link = dev->link_list;
 
-	for (link = dev->link_list; link; link = link->next)
+	if (!link)
+		return false;
+
+	for (; link; link = link->next)
 		if (link->children)
 			return true;
 
