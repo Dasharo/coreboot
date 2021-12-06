@@ -203,26 +203,21 @@ void northbridge_acpi_write_vars(const struct device *device)
 
 	acpigen_write_scope(pscope);
 
-	/* TODO: this doesn't work, try with acpigen_resource_qword() */
 	acpigen_write_name("RSRC");
 	acpigen_write_resourcetemplate_header();
+	/* MMIO */
 	for (i = 0x80; i <= 0xB8; i += 8) {
 		struct resource *res = probe_resource(device, i);
 		if (res)
-			acpigen_write_mem32fixed(0, res->base, res->size);
+			acpigen_resource_dword(0, 0xe, 1 /* R/W */, 0,
+			                       res->base, res->limit, 0, res->size);
 	}
+	/* IO */
 	for (i = 0xC0; i <= 0xD8; i += 8) {
 		struct resource *res = probe_resource(device, i);
-		if (res) {
-			resource_t base = res->base;
-			resource_t size = res->size;
-			while (size > 0) {
-				resource_t sz = size > 255 ? 255 : size;
-				acpigen_write_io16(base, base, 0, sz, 1);
-				size -= sz;
-				base += sz;
-			}
-		}
+		if (res)
+			acpigen_resource_word(1, 0xe, 3 /* ISA and non-ISA */, 0,
+			                      res->base, res->limit, 0, res->size);
 	}
 	acpigen_write_resourcetemplate_footer();
 
