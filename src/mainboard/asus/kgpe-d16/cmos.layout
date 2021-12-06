@@ -43,8 +43,8 @@ entries
 466          1       e       1        cpu_cc6_state
 467          1       e       1        sata_ahci_mode
 468          1       e       1        sata_alpm
-469          1       e       1        server_manual_fan_mode
-#470          3      unused
+469          2       e       15       w83795_fan_mode
+#471         2       unused
 473          2       e       13       dimm_spd_checksum
 475          1       e       14       probe_filter
 476          1       e       1        l3_cache_partitioning
@@ -145,6 +145,10 @@ enumerations
 13    2     Override
 14    0     Disable
 14    1     Auto
+15    0     SpeedCruise
+15    1     ThermalCruise
+15    2     SmartFan
+15    3     Manual
 
 checksums
 

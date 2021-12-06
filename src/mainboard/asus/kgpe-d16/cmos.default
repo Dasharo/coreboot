@@ -28,4 +28,4 @@ ehci_async_data_cache=Enable
 experimental_memory_speed_boost=Disable
 power_on_after_fail=On
 boot_option=Fallback
-server_manual_fan_mode=Disable
+w83795_fan_mode=ThermalCruise
