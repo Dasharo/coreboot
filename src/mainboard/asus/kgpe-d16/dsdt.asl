@@ -365,24 +365,7 @@ DefinitionBlock (
 			/* PCI Resource Settings Access */
 			Method (_CRS, 0, Serialized)
 			{
-				Store (ResourceTemplate ()
-				{
-					IO (Decode16,
-					0x0CF8,	// Address Range Minimum
-					0x0CF8,	// Address Range Maximum
-					0x01,	// Address Alignment
-					0x08,	// Address Length
-					)
-					WordIO (ResourceProducer, MinFixed, MaxFixed, PosDecode, EntireRange,
-					0x0000,	// Address Space Granularity
-					0x0000,	// Address Range Minimum
-					0x0CF7,	// Address Range Maximum
-					0x0000,	// Address Translation Offset
-					0x0CF8,	// Address Length
-					,, , TypeStatic)
-				}, Local0)
-				Concatenate (Local0, \_SB.PCI0.RSRC, Local1)
-				Return (Local1)
+				Return (\_SB.PCI0.RSRC)
 			}
 
 			/* PCI Routing Table Access */

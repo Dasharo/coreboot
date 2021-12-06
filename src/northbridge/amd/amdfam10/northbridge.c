@@ -135,6 +135,7 @@ struct resource *amdfam10_assign_new_io_res(resource_t base, resource_t size)
 			res = new_resource(dev, idx);
 			res->base = base;
 			res->size = size;
+			res->limit = base + size - 1;
 			res->align = 0x0C;
 			res->gran  = 0x0C;
 			res->flags = IORESOURCE_IO | IORESOURCE_ASSIGNED;
@@ -159,6 +160,7 @@ struct resource *amdfam10_assign_new_mmio_res(resource_t base, resource_t size)
 			res = new_resource(dev, idx);
 			res->base  = base;
 			res->size  = size;
+			res->limit = base + (size - 1);
 			res->align = 0x10;
 			res->gran  = 0x10;
 			res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED;
