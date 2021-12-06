@@ -356,7 +356,9 @@ static const struct {
 					   [4] SyncPktPropDis = 1,
 					   [3] SyncPktGenDis = 1,
 					   [2] SyncOnUcEccEn = 1 */
-
+	/* Hardware Thermal Control */
+	{ 3, 0x64, (AMD_FAM10_ALL | AMD_FAM15_ALL), AMD_PTYPE_ALL,
+	  0x00000001, 0xFFFFFFFE },	/* [0] HTCEn = 1 */
 	/* XBAR buffer settings */
 	{ 3, 0x6c, AMD_FAM10_ALL & ~(AMD_DR_Dx), AMD_PTYPE_ALL,
 	  0x00018052, 0x700780f7 },	/* IsocRspDBC = 0x0,
@@ -551,9 +553,14 @@ static const struct {
 	{ 3, 0xA0, ((AMD_FAM10_ALL | AMD_FAM15_ALL) & ~(AMD_DR_Bx)), AMD_PTYPE_ALL,
 	  0x00000800, 0x000003800 },	/* [13:11] PllLockTime = 1 */
 
-	/* Reported Temp Control Register */
+	/* Reported Temperature Control Register */
 	{ 3, 0xA4, (AMD_FAM10_ALL | AMD_FAM15_ALL), AMD_PTYPE_ALL,
-	  0x00000080, 0x00000080 },	/* [7] TempSlewDnEn = 1 */
+	  0x00000FEF, 0xFFFC0000 },	/* [17:16]CurTmpSel = 0x0,
+					 * [12:8]PerStepTimeDn = 0xf,
+					 * [7] TmpSlewDnEn = 0x1,
+					 * [6:5]TmpMaxDiffUp = 0x3,
+					 * [4:0]PerStepTimeUp = 0xf
+					 */
 
 	/* Clock Power/Timing Control 0 Register */
 	{ 3, 0xD4, (AMD_FAM10_ALL | AMD_FAM15_ALL), AMD_PTYPE_ALL,
