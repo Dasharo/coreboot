@@ -358,7 +358,10 @@ static const struct {
 					   [2] SyncOnUcEccEn = 1 */
 	/* Hardware Thermal Control */
 	{ 3, 0x64, (AMD_FAM10_ALL | AMD_FAM15_ALL), AMD_PTYPE_ALL,
-	  0x00000001, 0xFFFFFFFE },	/* [0] HTCEn = 1 */
+	  0x0A4C0001, 0xF080FFFE },	/* [27:24] HtcHystLmt = 0xa, (5 degrees)
+					 * [22:16] HtcTmpLmt = 0x38, (90 degrees)
+					 * [0] HTCEn = 1
+					 */
 	/* XBAR buffer settings */
 	{ 3, 0x6c, AMD_FAM10_ALL & ~(AMD_DR_Dx), AMD_PTYPE_ALL,
 	  0x00018052, 0x700780f7 },	/* IsocRspDBC = 0x0,
