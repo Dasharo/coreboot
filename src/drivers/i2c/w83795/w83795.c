@@ -204,6 +204,7 @@ static void w83795_init(struct device *dev, w83795_fan_mode_t mode, u8 dts_src)
 	uint8_t i;
 	uint8_t val;
 	uint16_t limit_value;
+	uint8_t fan_mode = get_uint_option("w83795_fan_mode", mode);
 
 #if CONFIG(SMBUS_HAS_AUX_CHANNELS)
 	uint8_t smbus_aux_channel_prev = smbus_get_current_channel();
@@ -276,53 +277,41 @@ static void w83795_init(struct device *dev, w83795_fan_mode_t mode, u8 dts_src)
 	w83795_write(dev, W83795_REG_TEMP_CTRL1, config->temp_ctl1);
 	w83795_write(dev, W83795_REG_TEMP_CTRL2, config->temp_ctl2);
 
-	if (!get_uint_option("server_manual_fan_mode", config->server_manual_mode)) {
-		printk(BIOS_DEBUG, "Server fan control mode disabled\n");
-		/* Temperature to fan mappings */
-		w83795_write(dev, W83795_REG_TFMR(0), config->temp1_fan_select);
-		w83795_write(dev, W83795_REG_TFMR(1), config->temp2_fan_select);
-		w83795_write(dev, W83795_REG_TFMR(2), config->temp3_fan_select);
-		w83795_write(dev, W83795_REG_TFMR(3), config->temp4_fan_select);
-		w83795_write(dev, W83795_REG_TFMR(4), config->temp5_fan_select);
-		w83795_write(dev, W83795_REG_TFMR(5), config->temp6_fan_select);
+	if (fan_mode == MANUAL_MODE) {
+		printk(BIOS_DEBUG, "Manual fan mode enabled\n");
 
-		/* Temperature data source to temperature mappings */
-		w83795_write(dev, W83795_REG_T12TSS, ((config->temp2_source_select & 0x0f) << 4) |
-						      (config->temp1_source_select & 0x0f));
-		w83795_write(dev, W83795_REG_T34TSS, ((config->temp4_source_select & 0x0f) << 4) |
-						      (config->temp3_source_select & 0x0f));
-		w83795_write(dev, W83795_REG_T56TSS, ((config->temp6_source_select & 0x0f) << 4) |
-						      (config->temp5_source_select & 0x0f));
+		/* Set fan full speed for server/manual behavior */
+		w83795_write(dev, W83795_REG_DFSP, fan_pct_to_cfg_val(100));
+	} else {
 		/* Set fan default speed */
 		w83795_write(dev, W83795_REG_DFSP, fan_pct_to_cfg_val(config->default_speed));
-	} else {
-		/* No temperature to fan mapping */
-		w83795_write(dev, W83795_REG_TFMR(0), 0);
-		w83795_write(dev, W83795_REG_TFMR(1), 0);
-		w83795_write(dev, W83795_REG_TFMR(2), 0);
-		w83795_write(dev, W83795_REG_TFMR(3), 0);
-		w83795_write(dev, W83795_REG_TFMR(4), 0);
-		w83795_write(dev, W83795_REG_TFMR(5), 0);
-
-		/* No temperature data source to temperature mappings */
-		w83795_write(dev, W83795_REG_T12TSS, 0);
-		w83795_write(dev, W83795_REG_T34TSS, 0);
-		w83795_write(dev, W83795_REG_T56TSS, 0);
-
-		/* Set initial fan speeds */
-		w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(0), fan_pct_to_cfg_val(config->fan1_duty));
-		w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(1), fan_pct_to_cfg_val(config->fan2_duty));
-		w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(2), fan_pct_to_cfg_val(config->fan3_duty));
-		w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(3), fan_pct_to_cfg_val(config->fan4_duty));
-		w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(4), fan_pct_to_cfg_val(config->fan5_duty));
-		w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(5), fan_pct_to_cfg_val(config->fan6_duty));
-		w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(6), fan_pct_to_cfg_val(config->fan7_duty));
-		w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(7), fan_pct_to_cfg_val(config->fan8_duty));
-
-		/* Set fan full speed for server behavior */
-		w83795_write(dev, W83795_REG_DFSP, fan_pct_to_cfg_val(100));
-		printk(BIOS_DEBUG, "Server fan control mode enabled\n");
 	}
+
+	/* Set initial fan speeds */
+	w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(0), fan_pct_to_cfg_val(config->fan1_duty));
+	w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(1), fan_pct_to_cfg_val(config->fan2_duty));
+	w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(2), fan_pct_to_cfg_val(config->fan3_duty));
+	w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(3), fan_pct_to_cfg_val(config->fan4_duty));
+	w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(4), fan_pct_to_cfg_val(config->fan5_duty));
+	w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(5), fan_pct_to_cfg_val(config->fan6_duty));
+	w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(6), fan_pct_to_cfg_val(config->fan7_duty));
+	w83795_write(dev, W83795_REG_FAN_MANUAL_SPEED(7), fan_pct_to_cfg_val(config->fan8_duty));
+
+	/* Temperature to fan mappings */
+	w83795_write(dev, W83795_REG_TFMR(0), config->temp1_fan_select);
+	w83795_write(dev, W83795_REG_TFMR(1), config->temp2_fan_select);
+	w83795_write(dev, W83795_REG_TFMR(2), config->temp3_fan_select);
+	w83795_write(dev, W83795_REG_TFMR(3), config->temp4_fan_select);
+	w83795_write(dev, W83795_REG_TFMR(4), config->temp5_fan_select);
+	w83795_write(dev, W83795_REG_TFMR(5), config->temp6_fan_select);
+
+	/* Temperature data source to temperature mappings */
+	w83795_write(dev, W83795_REG_T12TSS, ((config->temp2_source_select & 0x0f) << 4) |
+						(config->temp1_source_select & 0x0f));
+	w83795_write(dev, W83795_REG_T34TSS, ((config->temp4_source_select & 0x0f) << 4) |
+						(config->temp3_source_select & 0x0f));
+	w83795_write(dev, W83795_REG_T56TSS, ((config->temp6_source_select & 0x0f) << 4) |
+						(config->temp5_source_select & 0x0f));
 
 	/* Set critical temperatures
 	 * If any sensor exceeds the associated critical temperature,
@@ -417,7 +406,7 @@ static void w83795_init(struct device *dev, w83795_fan_mode_t mode, u8 dts_src)
 	w83795_write(dev, W83795_REG_TEMP_OFFSET(4), temp_to_offset_4bit(config->tr5_offset) |
 						     (temp_to_offset_4bit(config->tr6_offset) << 4));
 
-	w83795_set_fan(dev, mode);
+	w83795_set_fan(dev, fan_mode);
 
 	/* Show current fan control settings */
 	printk(BIOS_INFO, "Fan\tCTFS(celsius)\tTTTI(celsius)\n");
