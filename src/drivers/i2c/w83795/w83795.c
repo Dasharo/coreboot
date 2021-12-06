@@ -406,6 +406,10 @@ static void w83795_init(struct device *dev, w83795_fan_mode_t mode, u8 dts_src)
 	w83795_write(dev, W83795_REG_TEMP_OFFSET(4), temp_to_offset_4bit(config->tr5_offset) |
 						     (temp_to_offset_4bit(config->tr6_offset) << 4));
 
+	/* Fan stup up and step down time to 2 seconds */
+	w83795_write(dev, W83795_REG_SFOSUT, 20);
+	w83795_write(dev, W83795_REG_SFOSDT, 20);
+
 	w83795_set_fan(dev, fan_mode);
 
 	/* Show current fan control settings */

@@ -74,6 +74,10 @@
 #define W83795_REG_FAN_MANUAL_SPEED(n)	(0x210 + n)
 #define W83795_REG_DFSP			0x20C
 
+#define W83795_REG_DFSP			0x20C
+#define W83795_REG_SFOSUT		0x20D			/* Fan output step up time */
+#define W83795_REG_SFOSDT		0x20D			/* Fan output step down time */
+
 #define W83795_REG_FAN_NONSTOP(n)	(0x228 + (n))	/* Fan Nonstop Value */
 
 #define W83795_REG_FTSH(n)		(0x240 + (n) * 2)
