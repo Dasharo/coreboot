@@ -16,10 +16,10 @@ static void ide_init(struct device *dev)
 	/* Enable ide devices so the linux ide driver will work */
 	u32 dword;
 	u8 byte;
-	uint8_t sata_ahci_mode;
+	uint8_t sata_ahci_mode, ide_compat_mode;
 
-	sata_ahci_mode = 0;
 	sata_ahci_mode = get_uint_option("sata_ahci_mode", 1);
+	ide_compat_mode = get_uint_option("ide_compat_mode", 0);
 
 	conf = dev->chip_info;
 
@@ -28,6 +28,16 @@ static void ide_init(struct device *dev)
 	dword = pci_read_config32(dev, 0x70);
 	dword &= ~(1 << 16);
 	pci_write_config32(dev, 0x70, dword);
+
+	/*
+	 * Enable native PCI-mode, otherwise Linux tries to assign legacy IO
+	 * addresses which may already be assigned to different device.
+	 */
+	if (!ide_compat_mode) {
+		byte = pci_read_config8(dev, 0x9);
+		byte |= 0x5;
+		pci_write_config8(dev, 0x9, byte);
+	}
 
 	if (!sata_ahci_mode) {
 		/* Enable UDMA on all devices, it will become UDMA0 (default PIO is PIO0) */
