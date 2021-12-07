@@ -510,8 +510,11 @@ static void amdfam10_link_read_bases(struct device *dev, u32 nodeid, u32 link)
 	if (resource) {
 		resource->align = log2(HT_MEM_HOST_ALIGN);
 		resource->gran  = log2(HT_MEM_HOST_ALIGN);
+		/* Limited to 40 bits, update amdfam10_set_resource() for more */
 		resource->limit = 0xffffffffffULL;
 		resource->flags |= IORESOURCE_PREFETCH | IORESOURCE_BRIDGE;
+		if (CONFIG(PCIEXP_HOTPLUG_PREFETCH_MEM_ABOVE_4G))
+			resource->flags |= IORESOURCE_ABOVE_4G;
 	}
 
 	/* Initialize the memory constraints on the current bus */
@@ -519,6 +522,7 @@ static void amdfam10_link_read_bases(struct device *dev, u32 nodeid, u32 link)
 	if (resource) {
 		resource->align = log2(HT_MEM_HOST_ALIGN);
 		resource->gran  = log2(HT_MEM_HOST_ALIGN);
+		/* Limited to 40 bits, update amdfam10_set_resource() for more */
 		resource->limit = 0xffffffffffULL;
 		resource->flags |= IORESOURCE_BRIDGE;
 	}
@@ -603,6 +607,7 @@ static void amdfam10_set_resource(struct device *dev, struct resource *res,
 	    (res->index >= 0xC0 && !(res->flags & IORESOURCE_IO)))
 		die("Wrong resource type for D18F1x%X\n", res->index);
 
+	/* TODO: limited to 40b (1TB) for now, add MMIO Base/Limit High if needed */
 	if (res->flags & IORESOURCE_MEM) {
 		base_reg = (res->base >> 8) & 0xFFFFFF00;
 		limit_reg = ((res->base + res->size - 1) >> 8) & 0xFFFFFF00;

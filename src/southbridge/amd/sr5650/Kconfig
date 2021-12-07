@@ -15,3 +15,11 @@
 
 config SOUTHBRIDGE_AMD_SR5650
 	bool
+
+if SOUTHBRIDGE_AMD_SR5650
+# Has too many P2P bridges to use default 8K
+config PCIEXP_HOTPLUG_IO
+	hex
+	default 0x1000
+
+endif # SOUTHBRIDGE_AMD_SR5650
