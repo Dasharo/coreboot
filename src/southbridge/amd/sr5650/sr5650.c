@@ -458,7 +458,7 @@ static void sr5650_iommu_read_resources(struct device *dev)
 		res->limit = 0xFFFFFFFFUL;		/* res->base + res->size -1; */
 		res->align = 14;			/* 16k alignment */
 		res->gran = 14;
-		res->flags = IORESOURCE_MEM | IORESOURCE_RESERVE;
+		res->flags = IORESOURCE_MEM;
 	}
 
 	compact_resources(dev);

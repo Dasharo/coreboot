@@ -73,24 +73,37 @@ static void sb700_lpc_read_resources(struct device *dev)
 	/* Get the normal pci resources of this device */
 	pci_dev_read_resources(dev);	/* We got one for APIC, or one more for TRAP */
 
-	/* Add an extra subtractive resource for both memory and I/O. */
+	/*
+	 * Many IO ports in 0-0x1000 range are controlled by LPC ISA bridge.
+	 * Instead of setting each one individually, add an extra subtractive
+	 * resource for whole 0-0x1000 range.
+	 *
+	 * There are two ranges outside of 0-0x1000 controlled by PCI reg 0x4A:
+	 * 0x4700-0x470B (bit 6) and 0xFD60-0xFD6F (bit 7). To keep allocation
+	 * simpler, die() if any of those is enabled.
+	 */
+	if (pci_read_config8(dev, 0x4a) & ((1 << 6) | (1 << 7)))
+		die("IO ports outside of 0-0x1000 range enabled in LPC ISA bridge\n");
+
 	res = new_resource(dev, IOINDEX_SUBTRACTIVE(0, 0));
 	res->base = 0;
 	res->size = 0x1000;
 	res->flags = IORESOURCE_IO | IORESOURCE_SUBTRACTIVE |
 		     IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 
+	/* Flash */
 	res = new_resource(dev, IOINDEX_SUBTRACTIVE(1, 0));
-	res->base = 0xff800000;
-	res->size = 0x00800000; /* 8 MB for flash */
-	res->flags = IORESOURCE_MEM | IORESOURCE_SUBTRACTIVE |
-		     IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
+	res->base = 4ull * GiB - CONFIG_ROM_SIZE;
+	res->size = CONFIG_ROM_SIZE;
+	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED |
+		     IORESOURCE_STORED | IORESOURCE_RESERVE;
 
+	/* SPI BAR was set in bootblock_early_southbridge_init() */
 	res = new_resource(dev, IOINDEX_SUBTRACTIVE(2, 0));
 	res->base = (uintptr_t)SPI_BASE_ADDRESS;
 	res->size = 0x1000;
-	res->flags = IORESOURCE_MEM | IORESOURCE_SUBTRACTIVE |
-		     IORESOURCE_ASSIGNED | IORESOURCE_FIXED | IORESOURCE_STORED;
+	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED |
+		     IORESOURCE_STORED | IORESOURCE_RESERVE;
 
 	compact_resources(dev);
 }
@@ -130,6 +143,8 @@ static void sb700_lpc_enable_childrens_resources(struct device *dev)
 				printk(BIOS_DEBUG, "sb700 lpc decode:%s,"
 					" base=0x%08x, end=0x%08x\n",
 					dev_path(child), base, end);
+				if (end >= 0x1000)
+					die("IO ports outside of 0-0x1000 range enabled in LPC ISA bridge\n");
 				switch (base) {
 				case 0x60:	/*  KB */
 				case 0x64:	/*  MS */
@@ -167,9 +182,11 @@ static void sb700_lpc_enable_childrens_resources(struct device *dev)
 					reg_x |= (1 << 19);
 					break;
 				case 0x4700:
+					/* unreachable */
 					reg_x |= (1 << 22);
 					break;
 				case 0xfd60:
+					/* unreachable */
 					reg_x |= (1 << 23);
 					break;
 				default:
