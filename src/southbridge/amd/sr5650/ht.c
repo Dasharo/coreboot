@@ -163,7 +163,8 @@ static void sr5690_read_resource(struct device *dev)
 	res = new_resource(dev, 0xFC);
 	res->base  = IO_APIC2_ADDR;
 	res->size  = 0x1000;
-	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
+	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_RESERVE |
+	             IORESOURCE_ASSIGNED;
 
 	/* Needs to be written to D18F1 as well */
 	res = amdfam10_assign_new_mmio_res(IO_APIC2_ADDR, 0x1000);

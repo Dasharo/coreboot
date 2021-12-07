@@ -423,14 +423,15 @@ static void sb700_sm_read_resources(struct device *dev)
 	res->base  = IO_APIC_ADDR;
 	res->size = 0x1000;
 	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
-	             IORESOURCE_STORED; /* has proper value after reset -> stored */
+	             IORESOURCE_RESERVE | IORESOURCE_STORED;
 
 
 	/* HPET */
 	res = new_resource(dev, HPET_RESOURCE_NUMBER);
 	res->base  = HPET_BASE_ADDRESS;	/* reset hpet to widely accepted address */
 	res->size = 0x10000;
-	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
+	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
+	             IORESOURCE_RESERVE;
 
 	/* primary smbus */
 	res = new_resource(dev, PRIMARY_SMBUS_RESOURCE_NUMBER);
