@@ -212,7 +212,7 @@ void northbridge_acpi_write_vars(const struct device *device)
 	for (i = 0x80; i <= 0xB8; i += 8) {
 		struct resource *res = probe_resource(device, i);
 		if (res)
-			acpigen_resource_dword(0, 0xe, 1 /* R/W */, 0,
+			acpigen_resource_qword(0, 0xe, 1 /* R/W */, 0,
 			                       res->base, res->limit, 0, res->size);
 	}
 	/* IO */
