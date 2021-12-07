@@ -217,7 +217,6 @@ static u32 get_ht_c_index(struct bus *link)
 static void set_config_map_reg(struct bus *link)
 {
 	u32 tempreg;
-	u32 i;
 	u32 ht_c_index = get_ht_c_index(link);
 	u32 linkn = link->link_num & 0x0f;
 	u32 busn_min = (link->secondary >> sysconf.segbit) & 0xff;
@@ -227,21 +226,7 @@ static void set_config_map_reg(struct bus *link)
 	tempreg = ((nodeid & 0x30) << (12-4)) | ((nodeid & 0xf) << 4) | 3;
 	tempreg |= (busn_max << 24)|(busn_min << 16)|(linkn << 8);
 
-	for (i = 0; i < sysconf.nodes; i++) {
-		struct device *dev = __f1_dev[i];
-		pci_write_config32(dev, 0xe0 + ht_c_index * 4, tempreg);
-	}
-}
-
-static void clear_config_map_reg(struct bus *link)
-{
-	u32 i;
-	u32 ht_c_index = get_ht_c_index(link);
-
-	for (i = 0; i < sysconf.nodes; i++) {
-		struct device *dev = __f1_dev[i];
-		pci_write_config32(dev, 0xe0 + ht_c_index * 4, 0);
-	}
+	f1_write_config32(0xe0 + ht_c_index * 4, tempreg);
 }
 
 static void store_ht_c_conf_bus(struct bus *link)
@@ -339,23 +324,23 @@ static void amdfam10_scan_chain(struct bus *link)
 
 	printk(BIOS_SPEW, "%s\n", __func__);
 
-	/* See if there is an available configuration space mapping
-		* register in function 1.
-		*/
+	/*
+	 * See if there is an available configuration space mapping
+	 * register in function 1.
+	 */
 	if (get_ht_c_index(link) >= 4)
 		return;
 
-	/* Set up the primary, secondary and subordinate bus numbers.
-		* We have no idea how many busses are behind this bridge yet,
-		* so we set the subordinate bus number to 0xff for the moment.
-		*/
-
+	/*
+	 * Set up the primary, secondary and subordinate bus numbers.
+	 * We have no idea how many busses are behind this bridge yet,
+	 * so we set the subordinate bus number to 0xff for the moment.
+	 */
 	ht_route_link(link, HT_ROUTE_SCAN);
-
-	/* set the config map space */
 	set_config_map_reg(link);
 
-	/* Now we can scan all of the subordinate busses i.e. the
+	/*
+	 * Now we can scan all of the subordinate busses i.e. the
 	 * chain on the hypertranport link
 	 */
 
@@ -366,14 +351,10 @@ static void amdfam10_scan_chain(struct bus *link)
 
 	ht_route_link(link, HT_ROUTE_FINAL);
 
-	/* We know the number of busses behind this bridge.  Set the
+	/*
+	 * We know the number of buses behind this bridge.  Set the
 	 * subordinate bus number to it's real value
 	 */
-	if (0) {
-		/* Clear the extend reg. */
-		clear_config_map_reg(link);
-	}
-
 	set_config_map_reg(link);
 
 	store_ht_c_conf_bus(link);

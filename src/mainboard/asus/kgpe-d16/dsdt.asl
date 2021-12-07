@@ -115,7 +115,7 @@ DefinitionBlock (
 
 			Name (HCIN, 0x00)  // HC1
 
-			Name (_BBN, 0x00)
+			Name (_BBN, CONFIG_CBB)
 
 			/* Operating System Capabilities Method */
 			Method(_OSC,4)
@@ -131,7 +131,6 @@ DefinitionBlock (
 			External (HCLK)
 			External (SBDN)
 			External (HCDN)
-			External (CBST)
 
 			/* PCI Routing Tables */
 			Name (PR00, Package () {

@@ -204,10 +204,14 @@ void northbridge_acpi_write_vars(const struct device *device)
 	char pscope[] = "\\_SB.PCI0";
 	int i;
 
+	struct device *f1_dev = NULL;
+
 	acpigen_write_scope(pscope);
 
 	acpigen_write_name("RSRC");
 	acpigen_write_resourcetemplate_header();
+	/* IO access to PCI configuration space */
+	acpigen_write_io16(0xCF8, 0xCFF, 0x1, 0x8, 1);
 	/* MMIO */
 	for (i = 0x80; i <= 0xB8; i += 8) {
 		struct resource *res = probe_resource(device, i);
@@ -221,6 +225,18 @@ void northbridge_acpi_write_vars(const struct device *device)
 		if (res)
 			acpigen_resource_word(1, 0xe, 3 /* ISA and non-ISA */, 0,
 			                      res->base, res->limit, 0, res->size);
+	}
+	/* Buses */
+	f1_dev = pcidev_path_behind(device->bus, device->path.pci.devfn + 1);
+	for (i = 0xE0; i <= 0xEC; i += 4) {
+		/* Shouldn't bus numbers be a resource type? */
+		u32 dword = pci_read_config32(f1_dev, i);
+		if (dword & 3) { // writes or reads enabled
+			u8 bus_base = (dword & 0x00ff0000) >> 16;
+			u8 bus_limit = (dword & 0xff000000) >> 24;
+			acpigen_resource_word(2, 0xe, 0, 0, bus_base, bus_limit, 0,
+			                      bus_limit - bus_base + 1);
+		}
 	}
 	acpigen_write_resourcetemplate_footer();
 
@@ -261,33 +277,6 @@ void northbridge_acpi_write_vars(const struct device *device)
 		acpigen_write_dword(0x20202020);
 	}
 	acpigen_write_package_end();
-
-	acpigen_write_name_byte("CBB", CONFIG_CBB);
-
-	u8 CBST, CBB2, CBS2;
-
-	if (CONFIG_CBB == 0xff) {
-		CBST = (u8) (0x0f);
-	} else {
-		if ((get_sysconf()->pci1234[0] >> 12) & 0xff) { //sb chain on  other than bus 0
-			CBST = (u8) (0x0f);
-		} else {
-			CBST = (u8) (0x00);
-		}
-	}
-
-	acpigen_write_name_byte("CBST", CBST);
-
-	if ((CONFIG_CBB == 0xff) && (get_sysconf()->nodes > 32)) {
-		 CBS2 = 0x0f;
-		 CBB2 = (u8)(CONFIG_CBB-1);
-	} else {
-		CBS2 = 0x00;
-		CBB2 = 0x00;
-	}
-
-	acpigen_write_name_byte("CBB2", CBB2);
-	acpigen_write_name_byte("CBS2", CBS2);
 
 	acpigen_write_scope_end();
 }
