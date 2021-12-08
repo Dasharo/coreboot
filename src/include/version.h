@@ -3,6 +3,12 @@
 #ifndef VERSION_H
 #define VERSION_H
 
+/* Dasharo version */
+extern const char dasharo_version[];
+extern const unsigned int dasharo_major_revision;
+extern const unsigned int dasharo_minor_revision;
+extern const unsigned int dasharo_patch_revision;
+
 /* coreboot Version */
 extern const char coreboot_version[];
 extern const char coreboot_extra_version[];
