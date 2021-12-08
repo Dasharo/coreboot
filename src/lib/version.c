@@ -25,6 +25,22 @@
 #define COREBOOT_EXTRA_VERSION ""
 #endif
 
+#ifndef DASHARO_VERSION
+#define DASHARO_VERSION "*INVALID*"
+#endif
+
+#ifndef DASHARO_MAJOR_VERSION
+#define DASHARO_MAJOR_VERSION 0
+#endif
+
+#ifndef DASHARO_MINOR_VERSION
+#define DASHARO_MINOR_VERSION 0
+#endif
+
+#ifndef DASHARO_PATCH_VERSION
+#define DASHARO_PATCH_VERSION 0
+#endif
+
 const char mainboard_vendor[] = CONFIG_MAINBOARD_VENDOR;
 const char mainboard_part_number[] = CONFIG_MAINBOARD_PART_NUMBER;
 
