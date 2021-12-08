@@ -145,14 +145,7 @@ DefinitionBlock (
 
 			Name (HCIN, 0x00)  // HC1
 
-<<<<<<< HEAD
 			Name (_BBN, CONFIG_CBB)
-=======
-			Method (_BBN, 0, NotSerialized)
-			{
-				Return (GBUS (GHCN(HCIN), GHCL(HCIN)))
-			}
->>>>>>> origin/asus_kgpe-d16/fan_control_support
 
 			/* Operating System Capabilities Method */
 			Method(_OSC,4)
@@ -162,21 +155,12 @@ DefinitionBlock (
 			}
 
 			External (BUSN)
-<<<<<<< HEAD
-=======
-			External (MMIO)
-			External (PCIO)
->>>>>>> origin/asus_kgpe-d16/fan_control_support
 			External (RSRC)
 			External (SBLK)
 			External (TOM1)
 			External (HCLK)
 			External (SBDN)
 			External (HCDN)
-<<<<<<< HEAD
-=======
-			External (CBST)
->>>>>>> origin/asus_kgpe-d16/fan_control_support
 
 			/* PCI Routing Tables */
 			Name (PR00, Package () {
@@ -410,38 +394,7 @@ DefinitionBlock (
 			/* PCI Resource Settings Access */
 			Method (_CRS, 0, Serialized)
 			{
-<<<<<<< HEAD
 				Return (\_SB.PCI0.RSRC)
-=======
-				Name (BUF0, ResourceTemplate ()
-				{
-					IO (Decode16,
-					0x0CF8,	// Address Range Minimum
-					0x0CF8,	// Address Range Maximum
-					0x01,	// Address Alignment
-					0x08,	// Address Length
-					)
-					WordIO (ResourceProducer, MinFixed, MaxFixed, PosDecode, EntireRange,
-					0x0000,	// Address Space Granularity
-					0x0000,	// Address Range Minimum
-					0x0CF7,	// Address Range Maximum
-					0x0000,	// Address Translation Offset
-					0x0CF8,	// Address Length
-					,, , TypeStatic)
-				})
-				/* Methods below use SSDT to get actual MMIO regs
-				   The IO ports are from 0xd00, optionally an VGA,
-				   otherwise the info from MMIO is used.
-				   \_SB.GXXX(node, link)
-				 */
-				/* Concatenate (\_SB.GMEM (0x00, \_SB.PCI0.SBLK), BUF0, Local1)
-				Concatenate (\_SB.GIOR (0x00, \_SB.PCI0.SBLK), Local1, Local2)
-				Concatenate (\_SB.GWBN (0x00, \_SB.PCI0.SBLK), Local2, Local3)
-				Return (Local3) */
-				Store (\_SB.PCI0.RSRC, Local1)
-				Concatenate (Local1, BUF0, Local2)
-				Return (Local2)
->>>>>>> origin/asus_kgpe-d16/fan_control_support
 			}
 
 			/* PCI Routing Table Access */
