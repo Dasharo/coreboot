@@ -66,6 +66,24 @@ jobs:
         make -j $(nproc) what-jenkins-does JENKINS_ABUILD_OPT="-t intel/glkrvp"
         EOF
 
+    - name: Build KGPE-D16 2MB target 
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
+        make distclean
+        cp configs/config.asus_kgpe_d16 .config
+        make olddefconfig
+        make -j $(nproc)
+        EOF
+
+    - name: Save KGPE-D16 2MB artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: coreboot-binary
+        path: |
+          build/coreboot.rom
+        retention-days: 7
+
     - name: Build KGPE-D16 8MB target 
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
