@@ -12,5 +12,5 @@ releases:
       - coreboot resource allocator v4 support
       - automatic fan control
       - platform and silicon ramstage support
-      - added 8MB and 16MB SPI flash targets
+      - added 2MB, 8MB and 16MB SPI flash targets
     known_issues:
