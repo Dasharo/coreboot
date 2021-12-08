@@ -468,9 +468,20 @@ ifeq ($(CONFIG_COMPRESS_PRERAM_STAGES),y)
 CBFS_PRERAM_COMPRESS_FLAG:=LZ4
 endif
 
+strip_version = $(strip $(subst v,,$(subst ., ,$(1))))
+
 ifneq ($(CONFIG_LOCALVERSION),"")
 COREBOOT_EXTRA_VERSION := -$(call strip_quotes,$(CONFIG_LOCALVERSION))
+DASHARO_VERSION := $(call strip_quotes,$(CONFIG_LOCALVERSION))
+DASHARO_MAJOR_VERSION := $(word 1,$(call strip_version,$(DASHARO_VERSION)))
+DASHARO_MINOR_VERSION := $(word 2,$(call strip_version,$(DASHARO_VERSION)))
+DASHARO_PATCH_VERSION := $(word 3,$(call strip_version,$(DASHARO_VERSION)))
+
 COREBOOT_EXPORTS += COREBOOT_EXTRA_VERSION
+COREBOOT_EXPORTS += DASHARO_VERSION
+COREBOOT_EXPORTS += DASHARO_MAJOR_VERSION
+COREBOOT_EXPORTS += DASHARO_MINOR_VERSION
+COREBOOT_EXPORTS += DASHARO_PATCH_VERSION
 endif
 
 CPPFLAGS_common := -Isrc -Isrc/include -Isrc/commonlib/include -Isrc/commonlib/bsd/include -I$(obj)
@@ -591,7 +602,9 @@ build_h := $(obj)/build.h
 # when we call it through the `$(shell)` function. This is fragile
 # but as variables newly added to `genbuild_h.sh` would just not
 # work, we'd notice that instantly at least.
-build_h_exports := BUILD_TIMELESS KERNELVERSION COREBOOT_EXTRA_VERSION
+build_h_exports := BUILD_TIMELESS KERNELVERSION COREBOOT_EXTRA_VERSION \
+				   DASHARO_VERSION DASHARO_MAJOR_VERSION DASHARO_MINOR_VERSION \
+				   DASHARO_PATCH_VERSION
 
 # Report new `build.ht` as dependency if `build.h` differs.
 build_h_check := \
