@@ -778,7 +778,7 @@ static void reserve_cpu_cc6_storage_area(struct device *dev, int idx)
 static void amdfam10_domain_read_resources(struct device *dev)
 {
 	unsigned int reg;
-	msr_t tom2;
+	msr_t msr;
 	int idx = 7;	// value from original code
 
 	/* Find the already assigned resource pairs */
@@ -846,10 +846,25 @@ static void amdfam10_domain_read_resources(struct device *dev)
 
 	pci_domain_read_resources(dev);
 
+	/*
+	 * Because SRAT doesn't care if memory is reserved or not, add all RAM first
+	 * in two consecutive ranges (below and above MMIO hole) and reserve what
+	 * has to be reserved after that. This assumes that bootmem_init() will
+	 * carve out reserved parts from memory ranges reported to payloads.
+	 */
+	msr = rdmsr(TOP_MEM);
+	ram_resource(dev, idx++, 0, msr.lo >> 10);
+	msr = rdmsr(TOP_MEM2);
+	if (msr.hi) {
+		/* Work around ram_resource() limitations */
+		ram_resource(dev, idx, 4 * (GiB/KiB), 1);
+		struct resource *tom2 = find_resource(dev, idx);
+		tom2->size = ((((resource_t)msr.hi) << 32) | msr.lo) - 4ull * GiB;
+		idx++;
+	}
+
 	/* We have MMCONF_SUPPORT, create the resource window. */
 	mmconf_resource(dev, MMIO_CONF_BASE);
-
-	ram_resource(dev, idx++, 0, 0xa0000 >> 10);
 
 	/* Reserve everything between A segment and 1MB:
 	 *
@@ -858,14 +873,6 @@ static void amdfam10_domain_read_resources(struct device *dev)
 	 */
 	mmio_resource(dev, idx++, 0xa0000 >> 10, (0xc0000 - 0xa0000) >> 10);
 	reserved_ram_resource(dev, idx++, 0xc0000 >> 10, (0x100000 - 0xc0000) >> 10);
-
-	/* The rest up to TOP_MEM and TOP_MEM2 is RAM */
-	ram_resource(dev, idx++, 0x100000 >> 10, (rdmsr(TOP_MEM).lo - 0x100000) >> 10);
-	tom2 = rdmsr(TOP_MEM2);
-	printk(BIOS_INFO, "TOM2: %08x%08x\n", tom2.hi, tom2.lo);
-	if (tom2.hi)
-		ram_resource(dev, idx++, 4 * (GiB/KiB),
-		             ((tom2.lo >> 10) | (tom2.hi << (32 - 10))) - 4 * (GiB/KiB));
 
 	reserve_cpu_cc6_storage_area(dev, idx);
 }
