@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <cpu/amd/common/nums.h>
+#include <cpu/amd/family_10h-family_15h/amdfam10_sysconf.h>
 #include <device/device.h>
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include <drivers/amd/hypertransport/porting.h>
@@ -1004,6 +1005,12 @@ void southbridge_ht_init(void);
 void southbridge_early_setup(void);
 void southbridge_before_pci_init(void);
 
+<<<<<<< HEAD
+=======
+struct amdfam10_sysconf_t *get_sysconf(void);
+void set_pirq_router_bus(u8 bus);
+
+>>>>>>> origin/asus_kgpe-d16/ramstage_southbridge
 BOOL AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list);
 
 #endif /* AMDFAM10_H */

@@ -24,7 +24,6 @@ postcar-y += monotonic_timer.c
 ramstage-y += monotonic_timer.c
 smm-y += monotonic_timer.c
 
-#bootblock-y += xip_cache.c
-#verstage_x86-y += xip_cache.c
+ramstage-y += powernow_acpi.c
 
 endif

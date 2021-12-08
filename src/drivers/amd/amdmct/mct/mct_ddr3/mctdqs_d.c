@@ -634,7 +634,7 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *pMCTstat,
 			for (lane = 0; lane < 8; lane++) {
 				if ((!dual_rank) || (dual_rank && (Receiver & 0x1))) {
 
-#ifdef PRINT_PASS_FAIL_BITMAPS
+#if PRINT_PASS_FAIL_BITMAPS
 					for (iter = 0; iter < 64; iter++) {
 						if (dqs_read_results_array[0][lane][iter])
 							printk(BIOS_DEBUG, "+");
@@ -1516,7 +1516,7 @@ static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 				passing_dqs_delay_found[lane] = 1;
 		}
 
-#ifdef PRINT_PASS_FAIL_BITMAPS
+#if PRINT_PASS_FAIL_BITMAPS
 		for (lane = lane_start; lane < lane_end; lane++) {
 			for (write_iter = 0; write_iter < 32; write_iter++) {
 				for (read_iter = 0; read_iter < 48; read_iter++) {
@@ -1745,7 +1745,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *pMCTstat,
 					break;
 				}
 
-#ifdef PRINT_PASS_FAIL_BITMAPS
+#if PRINT_PASS_FAIL_BITMAPS
 				for (phase_delay = 0; phase_delay < 0x3ff; phase_delay++) {
 					if (dqs_results_array[phase_delay])
 						printk(BIOS_DEBUG, "+");

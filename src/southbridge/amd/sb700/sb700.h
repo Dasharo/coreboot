@@ -27,6 +27,9 @@
 #define ACPI_CPU_CONTROL	(SB700_ACPI_IO_BASE + 0x08) /* 6 bytes */
 #define ACPI_CPU_P_LVL2		(ACPI_CPU_CONTROL + 0x4)    /* 1 byte */
 
+#define SPI_BASE_ADDRESS		((void *)0xfec10000)
+#define HPET_BASE_ADDRESS		0xfed00000
+
 #define REV_SB700_A11	0x11
 #define REV_SB700_A12	0x12
 #define REV_SB700_A14	0x14
@@ -36,6 +39,8 @@ void pm_iowrite(u8 reg, u8 value);
 u8 pm_ioread(u8 reg);
 void pm2_iowrite(u8 reg, u8 value);
 u8 pm2_ioread(u8 reg);
+
+void set_sm_enable_bits(struct device *sm_dev, u32 reg_pos, u32 mask, u32 val);
 
 /* This shouldn't be called before set_sb700_revision() is called.
  * Once set_sb700_revision() is called, we use get_sb700_revision(),
