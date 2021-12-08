@@ -44,8 +44,11 @@ unsigned long acpi_create_srat_lapics(unsigned long current)
 		if (!cpu->enabled) {
 			continue;
 		}
-		printk(BIOS_DEBUG, "SRAT: lapic cpu_index=%02x, node_id=%02x, apic_id=%02x\n", cpu_index, cpu->path.apic.node_id, cpu->path.apic.apic_id);
-		current += acpi_create_srat_lapic((acpi_srat_lapic_t *)current, cpu->path.apic.node_id, cpu->path.apic.apic_id);
+		printk(BIOS_DEBUG, "SRAT: lapic cpu_index=%02x, node_id=%02x, apic_id=%02x\n",
+		       cpu_index, cpu->path.apic.node_id, cpu->path.apic.apic_id);
+		current += acpi_create_srat_lapic(
+		    (acpi_srat_lapic_t *)current,
+		    cpu->path.apic.node_id, cpu->path.apic.apic_id);
 		cpu_index++;
 	}
 	return current;
@@ -73,25 +76,14 @@ static void set_srat_mem(void *gp, struct device *dev, struct resource *res)
 	basek = resk(res->base);
 	sizek = resk(res->size);
 
-	printk(BIOS_DEBUG, "set_srat_mem: dev %s, res->index=%04lx startk=%08lx, sizek=%08lx\n",
-			dev_path(dev), res->index, basek, sizek);
-	/*
-	 * 0-640K must be on node 0
-	 * next range is from 1M---
-	 * So will cut off before 1M in the mem range
-	 */
-	if ((basek+sizek)<1024) return;
+	printk(BIOS_DEBUG, "set_srat_mem: dev %s, res->index=%04lx "
+	       "startk=%08lx, sizek=%08lx\n",
+	       dev_path(dev), res->index, basek, sizek);
 
-	if (basek < 1024) {
-		sizek -= 1024 - basek;
-		basek = 1024;
-	}
-
-	// need to figure out NV
-	if (res->index < 0xf)	/* Exclude MMIO resources, e.g. as set in northbridge.c amdfam10_domain_read_resources() */
+	if (res->index < 0xf)	/* Exclude MMIO resources */
 		state->current +=
 		    acpi_create_srat_mem((acpi_srat_mem_t *)state->current,
-		                         0 /* TODO: add support for more nodes */,
+		                         0 /* TODO: add support for more compute units */,
 		                         basek, sizek, 1);
 }
 
@@ -104,12 +96,12 @@ static unsigned long acpi_fill_srat(unsigned long current)
 
 	/* create all subteble for memory range */
 
-	/* 0-640K must be on node 0 */
-	current += acpi_create_srat_mem((acpi_srat_mem_t *)current, 0, 0, 640, 1);//enable
+	/* 0-640K must be on node 0 - is this always true for current code? */
 
 	srat_mem_state.current = current;
 	search_global_resources(
-		IORESOURCE_MEM | IORESOURCE_CACHEABLE, IORESOURCE_MEM | IORESOURCE_CACHEABLE,
+		IORESOURCE_MEM | IORESOURCE_CACHEABLE | IORESOURCE_RESERVE,
+		IORESOURCE_MEM | IORESOURCE_CACHEABLE,
 		set_srat_mem, &srat_mem_state);
 
 	current = srat_mem_state.current;
@@ -287,6 +279,12 @@ unsigned long northbridge_write_acpi_tables(const struct device *device,
 {
 	acpi_srat_t *srat;
 	acpi_slit_t *slit;
+
+	/* One set only, please */
+	static int once;
+	if (once)
+		return current;
+	once++;
 
 	/* SRAT */
 	current = ALIGN(current, 8);
