@@ -46,9 +46,9 @@ unsigned long acpi_create_srat_lapics(unsigned long current)
 		}
 		printk(BIOS_DEBUG, "SRAT: lapic cpu_index=%02x, node_id=%02x, apic_id=%02x\n",
 		       cpu_index, cpu->path.apic.node_id, cpu->path.apic.apic_id);
-		current += acpi_create_srat_lapic(
-		    (acpi_srat_lapic_t *)current,
-		    cpu->path.apic.node_id, cpu->path.apic.apic_id);
+		current += acpi_create_srat_lapic((acpi_srat_lapic_t *)current,
+						  cpu->path.apic.node_id,
+						  cpu->path.apic.apic_id);
 		cpu_index++;
 	}
 	return current;

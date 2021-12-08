@@ -28,6 +28,7 @@ fetch: $(project_dir)
 checkout: fetch
 	echo "    Checking out $(project_name) revision $(TAG-y)"
 	cd  $(project_dir); \
+		git checkout -- src/config/general.h; \
 		git checkout master; \
 		git branch -D coreboot 2>/dev/null; \
 		git checkout -b coreboot $(TAG-y)
