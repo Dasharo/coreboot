@@ -79,7 +79,7 @@ jobs:
     - name: Save KGPE-D16 2MB artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: coreboot-binary
+        name: coreboot-binary-2M
         path: |
           build/coreboot.rom
         retention-days: 7
@@ -97,7 +97,7 @@ jobs:
     - name: Save KGPE-D16 8MB artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: coreboot-binary
+        name: coreboot-binary-8M
         path: |
           build/coreboot.rom
         retention-days: 7
@@ -115,7 +115,7 @@ jobs:
     - name: Save KGPE-D16 16MB artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: coreboot-binary
+        name: coreboot-binary-16M
         path: |
           build/coreboot.rom
         retention-days: 7
