@@ -10,10 +10,11 @@
 #include <cpu/amd/family_10h-family_15h/ram_calc.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/lapic.h>
+#include <cpu/x86/mtrr.h>
 #include <device/device.h>
+#include <device/hypertransport.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
-#include <northbridge/amd/nb_common.h>
 #include <delay.h>
 #include <lib.h>
 #include <option.h>
@@ -33,12 +34,48 @@ void set_pirq_router_bus(u8 bus)
 	pirq_router_bus = bus;
 }
 
-#define FX_DEVS NODE_NUMS
-static struct device *__f0_dev[FX_DEVS];
-static struct device *__f1_dev[FX_DEVS];
-static struct device *__f2_dev[FX_DEVS];
-static struct device *__f4_dev[FX_DEVS];
+u8 get_pirq_router_bus(void)
+{
+	return pirq_router_bus;
+}
+
+static struct device *__f0_dev[NODE_NUMS];
+static struct device *__f1_dev[NODE_NUMS];
+static struct device *__f2_dev[NODE_NUMS];
+static struct device *__f4_dev[NODE_NUMS];
 static unsigned int fx_devs = 0;
+
+static DEVTREE_CONST struct device *dev_find_slot(unsigned int bus, unsigned int devfn)
+{
+	DEVTREE_CONST struct device *dev, *result;
+
+	result = 0;
+	for (dev = all_devices; dev; dev = dev->next) {
+		if ((dev->path.type == DEVICE_PATH_PCI) &&
+		    (dev->bus->secondary == bus) &&
+		    (dev->path.pci.devfn == devfn)) {
+			result = dev;
+			break;
+		}
+	}
+	return result;
+}
+
+static u32 amdfam10_nodeid(struct device *dev)
+{
+#if NODE_NUMS == 64
+	unsigned int busn;
+	busn = dev->bus->secondary;
+	if (busn != CONFIG_CBB) {
+		return (dev->path.pci.devfn >> 3) - CONFIG_CDB + 32;
+	} else {
+		return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
+	}
+
+#else
+	return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
+#endif
+}
 
 /*
  * Assumptions: CONFIG_CBB == 0
@@ -50,7 +87,7 @@ static void get_fx_devs(void)
 		return;
 
 	int i;
-	for (i = 0; i < FX_DEVS; i++) {
+	for (i = 0; i < NODE_NUMS; i++) {
 		__f0_dev[i] = pcidev_on_root(CONFIG_CDB + i, 0);
 		__f1_dev[i] = pcidev_on_root(CONFIG_CDB + i, 1);
 		__f2_dev[i] = pcidev_on_root(CONFIG_CDB + i, 2);
@@ -84,232 +121,373 @@ static void f1_write_config32(unsigned int reg, u32 value)
 	}
 }
 
+/* TODO: pass link/node number as an argument? */
+struct resource *amdfam10_assign_new_io_res(resource_t base, resource_t size)
+{
+	int idx;
+	struct resource *res;
+	/* D18F0 will be parsed by amdfam10_set_resources */
+	struct device *dev = __f0_dev[0];
+
+	for (idx = 0xC0; idx <= 0xD8; idx +=8) {
+		res = probe_resource(dev, idx);
+		if (!res) {
+			res = new_resource(dev, idx);
+			res->base = base;
+			res->size = size;
+			res->align = 0x0C;
+			res->gran  = 0x0C;
+			res->flags = IORESOURCE_IO | IORESOURCE_ASSIGNED;
+			return res;
+		}
+	}
+
+	die("%s: no available range registers\n", __func__);
+}
+
+struct resource *amdfam10_assign_new_mmio_res(resource_t base, resource_t size)
+{
+	int idx;
+	struct resource *res;
+	/* D18F0 will be parsed by amdfam10_set_resources */
+	struct device *dev = __f0_dev[0];
+
+	/* There are more MMIO registers at x1A0-x1B8, but these should be enough */
+	for (idx = 0x80; idx <= 0xB8; idx +=8) {
+		res = probe_resource(dev, idx);
+		if (!res) {
+			res = new_resource(dev, idx);
+			res->base  = base;
+			res->size  = size;
+			res->align = 0x10;
+			res->gran  = 0x10;
+			res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED;
+			return res;
+		}
+	}
+
+	die("%s: no available range registers\n", __func__);
+}
+
 static void set_vga_enable_reg(u32 nodeid, u32 linkn)
 {
 	u32 val;
 
 	val =  1 | (nodeid<<4) | (linkn<<12);
-	/* it will routing (1)mmio  0xa0000:0xbffff (2) io 0x3b0:0x3bb,
-	 0x3c0:0x3df */
+	/* it will route (1)mmio  0xa0000:0xbffff (2) io 0x3b0:0x3bb, 0x3c0:0x3df */
 	f1_write_config32(0xf4, val);
 
 }
 
-static u32 amdfam10_nodeid(struct device *dev)
+static u32 ht_c_key(struct bus *link)
 {
-#if NODE_NUMS == 64
-	unsigned int busn;
-	busn = dev->bus->secondary;
-	if (busn != CONFIG_CBB) {
-		return (dev->path.pci.devfn >> 3) - CONFIG_CDB + 32;
-	} else {
-		return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
-	}
-
-#else
-	return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
-#endif
+	u32 nodeid = amdfam10_nodeid(link->dev);
+	u32 linkn = link->link_num & 0x0f;
+	u32 val = (linkn << 8) | ((nodeid & 0x3f) << 2) | 3;
+	return val;
 }
 
-static u32 get_io_addr_index(u32 nodeid, u32 linkn)
+static u32 get_ht_c_index_by_key(u32 key)
 {
-	u32 index;
+	u32 ht_c_index = 0;
 
-	for (index = 0; index < 256; index++) {
-
-		if (index + 4 >= ARRAY_SIZE(sysconf.conf_io_addrx))
-			die("Error! Out of bounds read in %s:%s\n", __FILE__, __func__);
-
-		if (sysconf.conf_io_addrx[index+4] == 0) {
-			sysconf.conf_io_addr[index+4] =  (nodeid & 0x3f);
-			sysconf.conf_io_addrx[index+4] = 1 | ((linkn & 0x7)<<4);
-			return index;
-		 }
-	 }
-
-	 return	 0;
-}
-
-static u32 get_mmio_addr_index(u32 nodeid, u32 linkn)
-{
-	u32 index;
-
-	for (index = 0; index < 64; index++) {
-
-		if (index + 8 >= ARRAY_SIZE(sysconf.conf_mmio_addrx))
-			die("Error! Out of bounds read in %s:%s\n", __FILE__, __func__);
-
-		if (sysconf.conf_mmio_addrx[index+8] == 0) {
-			sysconf.conf_mmio_addr[index+8] = (nodeid & 0x3f);
-			sysconf.conf_mmio_addrx[index+8] = 1 | ((linkn & 0x7)<<4);
-			return index;
+	for (ht_c_index = 0; ht_c_index < 32; ht_c_index++) {
+		if ((sysconf.ht_c_conf_bus[ht_c_index] & 0xfff) == key) {
+			return ht_c_index;
 		}
 	}
 
-	return 0;
+	for (ht_c_index = 0; ht_c_index < 32; ht_c_index++) {
+		if (sysconf.ht_c_conf_bus[ht_c_index] == 0) {
+			 return ht_c_index;
+		}
+	}
+
+	return	-1;
 }
 
-static void store_conf_io_addr(u32 nodeid, u32 linkn, u32 reg, u32 index,
-				u32 io_min, u32 io_max)
+static u32 get_ht_c_index(struct bus *link)
 {
-	u32 val;
-
-	/* io range allocation */
-	index = (reg-0xc0)>>3;
-
-	val = (nodeid & 0x3f); // 6 bits used
-	sysconf.conf_io_addr[index] = val | ((io_max<<8) & 0xfffff000); //limit : with nodeid
-	val = 3 | ((linkn & 0x7)<<4); // 8 bits used
-	sysconf.conf_io_addrx[index] = val | ((io_min<<8) & 0xfffff000); // base : with enable bit
-
-	if (sysconf.io_addr_num < (index+1))
-		sysconf.io_addr_num = index+1;
+	u32 val = ht_c_key(link);
+	return get_ht_c_index_by_key(val);
 }
 
-
-static void store_conf_mmio_addr(u32 nodeid, u32 linkn, u32 reg, u32 index,
-					u32 mmio_min, u32 mmio_max)
+static void set_config_map_reg(struct bus *link)
 {
-	u32 val;
+	u32 tempreg;
+	u32 i;
+	u32 ht_c_index = get_ht_c_index(link);
+	u32 linkn = link->link_num & 0x0f;
+	u32 busn_min = (link->secondary >> sysconf.segbit) & 0xff;
+	u32 busn_max = (link->subordinate >> sysconf.segbit) & 0xff;
+	u32 nodeid = amdfam10_nodeid(link->dev);
 
-	/* io range allocation */
-	index = (reg-0x80)>>3;
+	tempreg = ((nodeid & 0x30) << (12-4)) | ((nodeid & 0xf) << 4) | 3;
+	tempreg |= (busn_max << 24)|(busn_min << 16)|(linkn << 8);
 
-	val = (nodeid & 0x3f); // 6 bits used
-	sysconf.conf_mmio_addr[index] = val | (mmio_max & 0xffffff00); //limit : with nodeid and linkn
-	val = 3 | ((linkn & 0x7)<<4); // 8 bits used
-	sysconf.conf_mmio_addrx[index] = val | (mmio_min & 0xffffff00); // base : with enable bit
-
-	if (sysconf.mmio_addr_num<(index+1))
-		sysconf.mmio_addr_num = index+1;
+	for (i = 0; i < sysconf.nodes; i++) {
+		struct device *dev = __f1_dev[i];
+		pci_write_config32(dev, 0xe0 + ht_c_index * 4, tempreg);
+	}
 }
 
-
-static void set_io_addr_reg(struct device *dev, u32 nodeid, u32 linkn, u32 reg,
-		     u32 io_min, u32 io_max)
+static void clear_config_map_reg(struct bus *link)
 {
 	u32 i;
-	u32 tempreg;
+	u32 ht_c_index = get_ht_c_index(link);
 
-	/* io range allocation */
-	tempreg = (nodeid&0xf) | ((nodeid & 0x30)<<(8-4)) | (linkn<<4) |  ((io_max&0xf0)<<(12-4)); //limit
-	for (i = 0; i < sysconf.nodes; i++)
-		pci_write_config32(__f1_dev[i], reg+4, tempreg);
-
-	tempreg = 3 /*| (3<<4)*/ | ((io_min&0xf0)<<(12-4));	      //base :ISA and VGA ?
-	for (i = 0; i < sysconf.nodes; i++)
-		pci_write_config32(__f1_dev[i], reg, tempreg);
+	for (i = 0; i < sysconf.nodes; i++) {
+		struct device *dev = __f1_dev[i];
+		pci_write_config32(dev, 0xe0 + ht_c_index * 4, 0);
+	}
 }
 
-static void set_mmio_addr_reg(u32 nodeid, u32 linkn, u32 reg, u32 index, u32 mmio_min, u32 mmio_max, u32 nodes)
+static void store_ht_c_conf_bus(struct bus *link)
 {
-	u32 i;
-	u32 tempreg;
+	u32 val = ht_c_key(link);
+	u32 ht_c_index = get_ht_c_index_by_key(val);
 
-	/* io range allocation */
-	tempreg = (nodeid&0xf) | (linkn<<4) |	 (mmio_max&0xffffff00); //limit
-	for (i = 0; i < nodes; i++)
-		pci_write_config32(__f1_dev[i], reg+4, tempreg);
-	tempreg = 3 | (nodeid & 0x30) | (mmio_min&0xffffff00);
-	for (i = 0; i < sysconf.nodes; i++)
-		pci_write_config32(__f1_dev[i], reg, tempreg);
+	u32 segn = (link->subordinate >> 8) & 0x0f;
+	u32 busn_min = link->secondary & 0xff;
+	u32 busn_max = link->subordinate & 0xff;
+
+	val |= (segn << 28) | (busn_max << 20) | (busn_min << 12);
+
+	sysconf.ht_c_conf_bus[ht_c_index] = val;
+	sysconf.hcdn_reg[ht_c_index] = link->hcdn_reg;
+	sysconf.ht_c_num++;
 }
 
-static int reg_useable(unsigned int reg, struct device *goal_dev, unsigned int goal_nodeid,
-			unsigned int goal_link)
+typedef enum {
+	HT_ROUTE_CLOSE,
+	HT_ROUTE_SCAN,
+	HT_ROUTE_FINAL,
+} scan_state;
+
+static void ht_route_link(struct bus *link, scan_state mode)
 {
-	struct resource *res;
-	unsigned int nodeid, link = 0;
-	int result;
-	res = 0;
-	for (nodeid = 0; !res && (nodeid < fx_devs); nodeid++) {
-		struct device *dev;
-		dev = __f0_dev[nodeid];
-		if (!dev)
-			continue;
-		for (link = 0; !res && (link < 8); link++) {
-			res = probe_resource(dev, IOINDEX(0x1000 + reg, link));
-		}
+	struct bus *parent = link->dev->bus;
+	u32 busses;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	if (mode == HT_ROUTE_SCAN) {
+		if (parent->subordinate == 0)
+			link->secondary = 0;
+		else
+			link->secondary = parent->subordinate + 1;
+
+		link->subordinate = link->secondary;
 	}
-	result = 2;
-	if (res) {
-		result = 0;
-		if (	(goal_link == (link - 1)) &&
-			(goal_nodeid == (nodeid - 1)) &&
-			(res->flags <= 1)) {
-			result = 1;
-		}
+
+	/* Configure the bus numbers for this bridge: the configuration
+	 * transactions will not be propagated by the bridge if it is
+	 * not correctly configured
+	 */
+	busses = pci_read_config32(link->dev, link->cap + 0x14);
+	busses &= ~(0xff << 8);
+	busses |= parent->secondary & 0xff;
+	if (mode == HT_ROUTE_CLOSE)
+		busses |= 0xff << 8;
+	else if (mode == HT_ROUTE_SCAN)
+		busses |= ((u32) link->secondary & 0xff) << 8;
+	else if (mode == HT_ROUTE_FINAL)
+		busses |= ((u32) link->secondary & 0xff) << 8;
+	pci_write_config32(link->dev, link->cap + 0x14, busses);
+
+	if (mode == HT_ROUTE_FINAL) {
+		if (CONFIG(HT_CHAIN_DISTRIBUTE))
+			parent->subordinate = ALIGN_UP(link->subordinate, 8) - 1;
+		else
+			parent->subordinate = link->subordinate;
 	}
-	return result;
 }
 
-static struct resource *amdfam10_find_iopair(struct device *dev, unsigned int nodeid, unsigned int link)
+static void amd_g34_fixup(struct bus *link, struct device *dev)
 {
-	struct resource *resource;
-	u32 free_reg, reg;
-	resource = 0;
-	free_reg = 0;
-	for (reg = 0xc0; reg <= 0xd8; reg += 0x8) {
-		int result;
-		result = reg_useable(reg, dev, nodeid, link);
-		if (result == 1) {
-			/* I have been allocated this one */
-			break;
-		} else if (result > 1) {
-			/* I have a free register pair */
-			free_reg = reg;
+	uint32_t nodeid = amdfam10_nodeid(dev);
+	uint32_t f3xe8;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	if (is_gt_rev_d() || is_fam15h()) {
+
+		if (is_dual_node((u8)nodeid)) {
+			/* Each G34 processor contains a defective HT link.
+			 * See the BKDG Rev 3.62 section 2.7.1.5 for details.
+			 */
+			f3xe8 = pci_read_config32(NODE_PCI(nodeid, 3), 0xe8);
+			uint8_t internal_node_number = ((f3xe8 & 0xc0000000) >> 30);
+			if (internal_node_number == 0) {
+				/* Node 0 */
+				if (link->link_num == 6)	/* Link 2 Sublink 1 */
+					printk(BIOS_DEBUG, "amdfam10_scan_chain(): node %d (internal node ID %d): skipping defective HT link\n", nodeid, internal_node_number);
+			} else {
+				/* Node 1 */
+				if (link->link_num == 5)	/* Link 1 Sublink 1 */
+					printk(BIOS_DEBUG, "amdfam10_scan_chain(): node %d (internal node ID %d): skipping defective HT link\n", nodeid, internal_node_number);
+			}
 		}
 	}
-	if (reg > 0xd8) {
-		reg = free_reg; // if no free, the free_reg still be 0
-	}
-
-	//Ext conf space
-	if (!reg) {
-		//because of Extend conf space, we will never run out of reg,
-		// but we need one index to differ them. so same node and
-		// same link can have multi range
-		u32 index = get_io_addr_index(nodeid, link);
-		reg = 0x110 + (index<<24) + (4<<20); // index could be 0, 255
-	}
-
-		resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
-
-	return resource;
 }
 
-static struct resource *amdfam10_find_mempair(struct device *dev, u32 nodeid, u32 link)
+static void amdfam10_scan_chain(struct bus *link)
 {
-	struct resource *resource;
-	u32 free_reg, reg;
-	resource = 0;
-	free_reg = 0;
-	for (reg = 0x80; reg <= 0xb8; reg += 0x8) {
-		int result;
-		result = reg_useable(reg, dev, nodeid, link);
-		if (result == 1) {
-			/* I have been allocated this one */
-			break;
-		} else if (result > 1) {
-			/* I have a free register pair */
-			free_reg = reg;
+	unsigned int next_unitid;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	/* See if there is an available configuration space mapping
+		* register in function 1.
+		*/
+	if (get_ht_c_index(link) >= 4)
+		return;
+
+	/* Set up the primary, secondary and subordinate bus numbers.
+		* We have no idea how many busses are behind this bridge yet,
+		* so we set the subordinate bus number to 0xff for the moment.
+		*/
+
+	ht_route_link(link, HT_ROUTE_SCAN);
+
+	/* set the config map space */
+	set_config_map_reg(link);
+
+	/* Now we can scan all of the subordinate busses i.e. the
+	 * chain on the hypertranport link
+	 */
+
+	next_unitid = hypertransport_scan_chain(link);
+
+	/* Now that nothing is overlapping it is safe to scan the children. */
+	pci_scan_bus(link, 0x00, ((next_unitid - 1) << 3) | 7);
+
+	ht_route_link(link, HT_ROUTE_FINAL);
+
+	/* We know the number of busses behind this bridge.  Set the
+	 * subordinate bus number to it's real value
+	 */
+	if (0) {
+		/* Clear the extend reg. */
+		clear_config_map_reg(link);
+	}
+
+	set_config_map_reg(link);
+
+	store_ht_c_conf_bus(link);
+}
+
+/* Do sb ht chain at first, in case s2885 put sb chain
+ * (8131/8111) on link2, but put 8151 on link0.
+ */
+static void relocate_sb_ht_chain(void)
+{
+	struct device *dev;
+	struct bus *link, *prev = NULL;
+	u8 sblink;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	dev = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
+	sblink = (pci_read_config32(dev, 0x64)>>8) & 7;
+	link = dev->link_list;
+
+	while (link) {
+		if (link->link_num == sblink) {
+			if (!prev)
+				return;
+			prev->next = link->next;
+			link->next = dev->link_list;
+			dev->link_list = link;
+			return;
+		}
+		prev = link;
+		link = link->next;
+	}
+}
+
+static void trim_ht_chain(struct device *dev)
+{
+	struct bus *link;
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	/* Check for connected link. */
+	for (link = dev->link_list; link; link = link->next) {
+		link->cap = 0x80 + (link->link_num * 0x20);
+		link->ht_link_up = ht_is_non_coherent_link(link);
+	}
+}
+
+static void amdfam10_scan_chains(struct device *dev)
+{
+	struct bus *link;
+	u32 nodeid = amdfam10_nodeid(dev);
+
+	printk(BIOS_SPEW, "%s\n", __func__);
+
+	if (is_fam15h() && CONFIG(CPU_AMD_SOCKET_G34_NON_AGESA)) {
+		uint8_t current_link_number = 0;
+
+		for (link = dev->link_list; link; link = link->next) {
+			printk(BIOS_SPEW, "%s: %s [%d] === %d", __func__, dev_path(dev), current_link_number, link->link_num);
+			/* The following links have changed position in Fam15h G34 processors:
+			 * Fam10  Fam15
+			 * Node 0
+			 * L3 --> L1
+			 * L0 --> L3
+			 * L1 --> L2
+			 * L2 --> L0
+			 * Node 1
+			 * L0 --> L0
+			 * L1 --> L3
+			 * L2 --> L1
+			 * L3 --> L2
+			 */
+			if (nodeid == 0) {
+				if (link->link_num == 0)
+					link->link_num = 3;
+				else if (link->link_num == 1)
+					link->link_num = 2;
+				else if (link->link_num == 2)
+					link->link_num = 0;
+				else if (link->link_num == 3)
+					link->link_num = 1;
+				else
+					die("%s: wrong link_num for northbridge (%d)\n",
+					    dev_path(dev), link->link_num);
+			} else if (nodeid == 1) {
+				if (link->link_num == 0)
+					link->link_num = 0;
+				else if (link->link_num == 1)
+					link->link_num = 3;
+				else if (link->link_num == 2)
+					link->link_num = 1;
+				else if (link->link_num == 3)
+					link->link_num = 2;
+				else
+					die("%s: wrong link_num for northbridge (%d)\n",
+					    dev_path(dev), link->link_num);
+			}
+
+			current_link_number++;
+			if (current_link_number > 3)
+				current_link_number = 0;
+
+			printk(BIOS_SPEW, " --> %d\n", link->link_num);
 		}
 	}
-	if (reg > 0xb8) {
-		reg = free_reg;
-	}
 
-	//Ext conf space
-	if (!reg) {
-		//because of Extend conf space, we will never run out of reg,
-		// but we need one index to differ them. so same node and
-		// same link can have multi range
-		u32 index = get_mmio_addr_index(nodeid, link);
-		reg = 0x110 + (index<<24) + (6<<20); // index could be 0, 63
+	/* Do sb ht chain at first, in case s2885 put sb chain (8131/8111) on link2, but put 8151 on link0 */
+	trim_ht_chain(dev);
 
+	for (link = dev->link_list; link; link = link->next) {
+		if (link->ht_link_up) {
+			if (CONFIG(CPU_AMD_MODEL_10XXX))
+				amd_g34_fixup(link, dev);
+			amdfam10_scan_chain(link);
+		}
 	}
-	resource = new_resource(dev, IOINDEX(0x1000 + reg, link));
-	return resource;
 }
 
 static void amdfam10_link_read_bases(struct device *dev, u32 nodeid, u32 link)
@@ -317,39 +495,30 @@ static void amdfam10_link_read_bases(struct device *dev, u32 nodeid, u32 link)
 	struct resource *resource;
 
 	/* Initialize the io space constraints on the current bus */
-	resource = amdfam10_find_iopair(dev, nodeid, link);
+	resource = amdfam10_assign_new_io_res(0, 0);
 	if (resource) {
-		u32 align;
-		align = log2(HT_IO_HOST_ALIGN);
-		resource->base	= 0;
-		resource->size	= 0;
-		resource->align = align;
-		resource->gran	= align;
+		resource->align = log2(HT_IO_HOST_ALIGN);
+		resource->gran	= log2(HT_IO_HOST_ALIGN);
 		resource->limit = 0xffffUL;
-		resource->flags = IORESOURCE_IO | IORESOURCE_BRIDGE;
-	}
-
-	/* Initialize the prefetchable memory constraints on the current bus */
-	resource = amdfam10_find_mempair(dev, nodeid, link);
-	if (resource) {
-		resource->base = 0;
-		resource->size = 0;
-		resource->align = log2(HT_MEM_HOST_ALIGN);
-		resource->gran = log2(HT_MEM_HOST_ALIGN);
-		resource->limit = 0xffffffffffULL;
-		resource->flags = IORESOURCE_MEM | IORESOURCE_PREFETCH;
 		resource->flags |= IORESOURCE_BRIDGE;
 	}
 
-	/* Initialize the memory constraints on the current bus */
-	resource = amdfam10_find_mempair(dev, nodeid, link);
+	/* Initialize the prefetchable memory constraints on the current bus */
+	resource = amdfam10_assign_new_mmio_res(0, 0);
 	if (resource) {
-		resource->base = 0;
-		resource->size = 0;
 		resource->align = log2(HT_MEM_HOST_ALIGN);
-		resource->gran = log2(HT_MEM_HOST_ALIGN);
+		resource->gran  = log2(HT_MEM_HOST_ALIGN);
 		resource->limit = 0xffffffffffULL;
-		resource->flags = IORESOURCE_MEM | IORESOURCE_BRIDGE;
+		resource->flags |= IORESOURCE_PREFETCH | IORESOURCE_BRIDGE;
+	}
+
+	/* Initialize the memory constraints on the current bus */
+	resource = amdfam10_assign_new_mmio_res(0, 0);
+	if (resource) {
+		resource->align = log2(HT_MEM_HOST_ALIGN);
+		resource->gran  = log2(HT_MEM_HOST_ALIGN);
+		resource->limit = 0xffffffffffULL;
+		resource->flags |= IORESOURCE_BRIDGE;
 	}
 }
 
@@ -357,7 +526,6 @@ static void amdfam10_link_read_bases(struct device *dev, u32 nodeid, u32 link)
 static void amdfam10_create_vga_resource(struct device *dev, unsigned int nodeid)
 {
 	struct bus *link;
-	struct resource *res;
 
 	/* find out which link the VGA card is connected,
 	 * we only deal with the 'first' vga card */
@@ -381,17 +549,6 @@ static void amdfam10_create_vga_resource(struct device *dev, unsigned int nodeid
 
 	printk(BIOS_DEBUG, "VGA: %s (aka node %d) link %d has VGA device\n", dev_path(dev), nodeid, link->link_num);
 	set_vga_enable_reg(nodeid, link->link_num);
-
-	/* Redirect VGA memory access to MMIO
-	 * This signals the Family 10h resource parser
-	 * to add a new MMIO mapping to the Range 11
-	 * MMIO control registers (starting at F1x1B8),
-	 * and also reserves the resource in the E820 map.
-	 */
-	res = new_resource(dev, IOINDEX(0x1000 + 0x1b8, link->link_num));
-	res->base = 0xa0000;
-	res->size = 0x20000;
-	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 }
 
 static void amdfam10_read_resources(struct device *dev)
@@ -412,52 +569,56 @@ static void amdfam10_read_resources(struct device *dev)
 	}
 }
 
-static void amdfam10_set_resource(struct device *dev, struct resource *resource,
-				u32 nodeid)
+static void amdfam10_set_resource(struct device *dev, struct resource *res,
+                                  u8 nodeid /* TODO: assuming always 0 */)
 {
-	resource_t rbase, rend;
-	unsigned int reg, link_num;
+	u32 base_reg = 0, limit_reg = 0;
+	u8 sblink;
 	char buf[50];
 
-	/* Make certain the resource has actually been set */
-	if (!(resource->flags & IORESOURCE_ASSIGNED)) {
-		return;
-	}
+	if (nodeid >= sysconf.nodes)
+		die("%s: wrong node ID: %d\n", __func__, nodeid);
 
-	/* If I have already stored this resource don't worry about it */
-	if (resource->flags & IORESOURCE_STORED) {
-		return;
-	}
+	/* Get SBLink value (HyperTransport I/O Hub Link ID). */
+	sblink = (pci_read_config32(__f0_dev[nodeid], 0x64) >> 8) & 0x3;
 
-	/* Only handle PCI memory and IO resources */
-	if (!(resource->flags & (IORESOURCE_MEM | IORESOURCE_IO)))
+	/* Skip already stored resources */
+	if (res->flags & IORESOURCE_STORED)
 		return;
 
-	/* Ensure I am actually looking at a resource of function 1 */
-	if ((resource->index & 0xffff) < 0x1000) {
+	/* Skip resources that are not ranges */
+	if (res->index < 0x80 || res->index > 0xD8 || (res->index & 0x7))
 		return;
+
+	/* Skip empty resources */
+	if (res->size == 0)
+		return;
+
+	/* If resource is a range but has wrong type something bad has happened */
+	if ((res->index < 0xC0 && !(res->flags & IORESOURCE_MEM)) ||
+	    (res->index >= 0xC0 && !(res->flags & IORESOURCE_IO)))
+		die("Wrong resource type for D18F1x%X\n", res->index);
+
+	if (res->flags & IORESOURCE_MEM) {
+		base_reg = (res->base >> 8) & 0xFFFFFF00;
+		limit_reg = ((res->base + res->size - 1) >> 8) & 0xFFFFFF00;
 	}
-	/* Get the base address */
-	rbase = resource->base;
 
-	/* Get the limit (rounded up) */
-	rend  = resource_end(resource);
-
-	/* Get the register and link */
-	reg  = resource->index & 0xfff; // 4k
-	link_num = IOINDEX_LINK(resource->index);
-
-	if (resource->flags & IORESOURCE_IO) {
-		set_io_addr_reg(dev, nodeid, link_num, reg, rbase>>8, rend>>8);
-		store_conf_io_addr(nodeid, link_num, reg, (resource->index >> 24), rbase>>8, rend>>8);
-	} else if (resource->flags & IORESOURCE_MEM) {
-		set_mmio_addr_reg(nodeid, link_num, reg, (resource->index >>24), rbase>>8, rend>>8, sysconf.nodes); // [39:8]
-		store_conf_mmio_addr(nodeid, link_num, reg, (resource->index >>24), rbase>>8, rend>>8);
+	if (res->flags & IORESOURCE_IO) {
+		base_reg = res->base & 0x00FFF000;
+		limit_reg = (res->base + res->size - 1) & 0x00FFF000;
 	}
-	resource->flags |= IORESOURCE_STORED;
-	snprintf(buf, sizeof(buf), " <node %x link %x>",
-		 nodeid, link_num);
-	report_resource_stored(dev, resource, buf);
+
+	base_reg |= (1 << 1) | (1 << 0); // WE, RE
+	limit_reg |= (sblink << 4) | (nodeid << 0); // DstLink, DstNode
+
+	/* Limit must be set before RE/WE bits in base register are set */
+	f1_write_config32(res->index + 4, limit_reg);
+	f1_write_config32(res->index, base_reg);
+
+	res->flags |= IORESOURCE_STORED;
+	snprintf(buf, sizeof(buf), " <node %x link %x>", nodeid, sblink);
+	report_resource_stored(dev, res, buf);
 }
 
 static void amdfam10_set_resources(struct device *dev)
@@ -488,10 +649,9 @@ static void mcf0_control_init(struct device *dev)
 static struct device_operations northbridge_operations = {
 	.read_resources	  = amdfam10_read_resources,
 	.set_resources	  = amdfam10_set_resources,
-	.enable_resources = pci_bus_enable_resources,
+	.enable_resources = pci_dev_enable_resources,
 	.init		  = mcf0_control_init,
-//	.scan_bus	  = amdfam10_scan_chains,
-
+	.scan_bus	  = amdfam10_scan_chains,
 	.enable		  = 0,
 	.ops_pci	  = 0,
 };
@@ -516,6 +676,7 @@ static const struct pci_driver mcf0_driver_fam15 __pci_driver = {
 
 static void amdfam10_nb_init(void *chip_info)
 {
+	relocate_sb_ht_chain();
 }
 
 struct chip_operations northbridge_amd_amdfam10_ops = {
@@ -540,6 +701,83 @@ static const char *amdfam10_domain_acpi_name(const struct device *dev)
 }
 #endif
 
+static void reserve_cpu_cc6_storage_area(struct device *dev, int idx)
+{
+	if (!(is_fam15h() && get_uint_option("cpu_cc6_state", 1)))
+		return;
+
+	uint8_t node;
+	uint8_t interleaved;
+	int8_t range;
+	uint8_t max_node;
+	uint64_t max_range_limit;
+	uint32_t dword;
+	uint32_t dword2;
+	uint64_t qword;
+	uint8_t num_nodes;
+
+	/* Find highest DRAM range (DramLimitAddr) */
+	num_nodes = 0;
+	max_node = 0;
+	interleaved = 0;
+	max_range_limit = 0;
+	struct device *node_dev;
+	for (node = 0; node < NODE_NUMS; node++) {
+		node_dev = pcidev_on_root(CONFIG_CDB + node, 0);
+		/* Test for node presence */
+		if ((!node_dev) || (pci_read_config32(node_dev, PCI_VENDOR_ID) == 0xffffffff))
+			continue;
+
+		num_nodes++;
+		for (range = 0; range < 8; range++) {
+			dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
+							0x40 + (range * 0x8));
+			if (!(dword & 0x3))
+				continue;
+
+			if ((dword >> 8) & 0x7)
+				interleaved = 1;
+
+			dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
+							0x44 + (range * 0x8));
+			dword2 = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
+							0x144 + (range * 0x8));
+			qword = 0xffffff;
+			qword |= ((((uint64_t)dword) >> 16) & 0xffff) << 24;
+			qword |= (((uint64_t)dword2) & 0xff) << 40;
+
+			if (qword > max_range_limit) {
+				max_range_limit = qword;
+				max_node = dword & 0x7;
+			}
+		}
+	}
+
+	/* Calculate CC6 storage area size */
+	if (interleaved)
+		qword = (uint64_t)0x1000000 * num_nodes;
+	else
+		qword = 0x1000000;
+
+	/* FIXME
+	 * The BKDG appears to be incorrect as to the location of the CC6 save region
+	 * lower boundary on non-interleaved systems, causing lockups on attempted write
+	 * to the CC6 save region.
+	 *
+	 * For now, work around by allocating the maximum possible CC6 save region size.
+	 *
+	 * Determine if this is a BKDG error or a setup problem and remove this warning!
+	 */
+	qword = (0x1 << 27);
+	max_range_limit = (((uint64_t)(pci_read_config32(pcidev_on_root(CONFIG_CDB + max_node, 1),
+								0x124) & 0x1fffff)) << 27) - 1;
+
+	printk(BIOS_INFO, "Reserving CC6 save segment base: %08llx size: %08llx\n", (max_range_limit + 1), qword);
+
+	/* Reserve the CC6 save segment */
+	reserved_ram_resource(dev, idx++, (max_range_limit + 1) >> 10, qword >> 10);
+}
+
 static void amdfam10_domain_read_resources(struct device *dev)
 {
 	unsigned int reg;
@@ -547,6 +785,10 @@ static void amdfam10_domain_read_resources(struct device *dev)
 	int idx = 7;	// value from original code
 
 	/* Find the already assigned resource pairs */
+	/*
+	 * TODO: this can be removed when all resources are accounted for and
+	 * assigned by amdfam10_assign_new_{mm,}io_res() only.
+	 */
 	get_fx_devs();
 	for (reg = 0x80; reg <= 0xd8; reg+= 0x08) {
 		u32 base, limit;
@@ -554,6 +796,11 @@ static void amdfam10_domain_read_resources(struct device *dev)
 		limit = f1_read_config32(reg + 0x04);
 		/* Is this register allocated? */
 		if ((base & 3) != 0) {
+			/*
+			 * Leaving original code as comment for reference on node numbering.
+			 * __f0_dev[nodeid] could be out-of-bounds read...
+			 */
+			/***
 			unsigned int nodeid, reg_link;
 			struct device *reg_dev;
 			if (reg < 0xc0) { // mmio
@@ -564,109 +811,123 @@ static void amdfam10_domain_read_resources(struct device *dev)
 			reg_link = (limit >> 4) & 7;
 			reg_dev = __f0_dev[nodeid];
 			if (reg_dev) {
-				/* Reserve the resource  */
+				/ * Reserve the resource  * /
 				struct resource *res;
 				res = new_resource(reg_dev, IOINDEX(0x1000 + reg, reg_link));
 				if (res) {
 					res->flags = 1;
 				}
 			}
+			***/
+
+			/*
+			 * We don't actually need base and size, index is sufficient. Keeping
+			 * them for now for reporting.
+			 */
+			struct resource *res;
+			if (probe_resource(__f0_dev[0], reg))
+				printk(BIOS_WARNING, "%s: resource with index %x already exists, overwriting\n", __func__, reg);
+
+			res = new_resource(__f0_dev[0], reg);
+			if (reg < 0xC0) {
+				res->base = ((resource_t)base & 0xFFFFFF00) << 8;
+				res->size = (((resource_t)limit & 0xFFFFFF00) << 8) - res->base;
+				res->size += 0x10000;
+				res->flags = IORESOURCE_MEM;
+			} else {
+				res->base = (resource_t)base & 0x00FFF000;
+				res->size = ((resource_t)limit & 0x00FFF000) - res->base;
+				res->size += 0x1000;
+				res->flags = IORESOURCE_IO;
+			}
+
+			/* Don't mark as assigned so allocator won't try to use those */
+			res->flags |= IORESOURCE_STORED | IORESOURCE_FIXED;
+			report_resource_stored(dev, res, " <D18F1 stored by early ramstage>");
 		}
 	}
-	/* FIXME: do we need to check extend conf space?
-	   I don't believe that much preset value */
 
 	pci_domain_read_resources(dev);
 
 	/* We have MMCONF_SUPPORT, create the resource window. */
 	mmconf_resource(dev, MMIO_CONF_BASE);
 
-	ram_resource(dev, idx++, 0, rdmsr(TOP_MEM).lo >> 10);
+	ram_resource(dev, idx++, 0, 0xa0000 >> 10);
+
+	/* Reserve everything between A segment and 1MB:
+	 *
+	 * 0xa0000 - 0xbffff: legacy VGA
+	 * 0xc0000 - 0xfffff: option ROMs and SeaBIOS (if used)
+	 */
+	mmio_resource(dev, idx++, 0xa0000 >> 10, (0xc0000 - 0xa0000) >> 10);
+	reserved_ram_resource(dev, idx++, 0xc0000 >> 10, (0x100000 - 0xc0000) >> 10);
+
+	/* The rest up to TOP_MEM and TOP_MEM2 is RAM */
+	ram_resource(dev, idx++, 0x100000 >> 10, (rdmsr(TOP_MEM).lo - 0x100000) >> 10);
 	tom2 = rdmsr(TOP_MEM2);
 	printk(BIOS_INFO, "TOM2: %08x%08x\n", tom2.hi, tom2.lo);
 	if (tom2.hi)
 		ram_resource(dev, idx++, 4 * (GiB/KiB),
 		             ((tom2.lo >> 10) | (tom2.hi << (32 - 10))) - 4 * (GiB/KiB));
 
-	if (is_fam15h() && get_uint_option("cpu_cc6_state", 0)) {
-		uint8_t node;
-		uint8_t interleaved;
-		int8_t range;
-		uint8_t max_node;
-		uint64_t max_range_limit;
-		uint32_t dword;
-		uint32_t dword2;
-		uint64_t qword;
-		uint8_t num_nodes;
-
-		/* Find highest DRAM range (DramLimitAddr) */
-		num_nodes = 0;
-		max_node = 0;
-		interleaved = 0;
-		max_range_limit = 0;
-		struct device *node_dev;
-		for (node = 0; node < FX_DEVS; node++) {
-			node_dev = pcidev_on_root(CONFIG_CDB + node, 0);
-			/* Test for node presence */
-			if ((!node_dev) || (pci_read_config32(node_dev, PCI_VENDOR_ID) == 0xffffffff))
-				continue;
-
-			num_nodes++;
-			for (range = 0; range < 8; range++) {
-				dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
-				                          0x40 + (range * 0x8));
-				if (!(dword & 0x3))
-					continue;
-
-				if ((dword >> 8) & 0x7)
-					interleaved = 1;
-
-				dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
-				                          0x44 + (range * 0x8));
-				dword2 = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
-				                           0x144 + (range * 0x8));
-				qword = 0xffffff;
-				qword |= ((((uint64_t)dword) >> 16) & 0xffff) << 24;
-				qword |= (((uint64_t)dword2) & 0xff) << 40;
-
-				if (qword > max_range_limit) {
-					max_range_limit = qword;
-					max_node = dword & 0x7;
-				}
-			}
-		}
-
-		/* Calculate CC6 storage area size */
-		if (interleaved)
-			qword = (uint64_t)0x1000000 * num_nodes;
-		else
-			qword = 0x1000000;
-
-		/* FIXME
-		 * The BKDG appears to be incorrect as to the location of the CC6 save region
-		 * lower boundary on non-interleaved systems, causing lockups on attempted write
-		 * to the CC6 save region.
-		 *
-		 * For now, work around by allocating the maximum possible CC6 save region size.
-		 *
-		 * Determine if this is a BKDG error or a setup problem and remove this warning!
-		 */
-		qword = (0x1 << 27);
-		max_range_limit = (((uint64_t)(pci_read_config32(pcidev_on_root(CONFIG_CDB + max_node, 1),
-		                                                 0x124) & 0x1fffff)) << 27) - 1;
-
-		printk(BIOS_INFO, "Reserving CC6 save segment base: %08llx size: %08llx\n", (max_range_limit + 1), qword);
-
-		/* Reserve the CC6 save segment */
-		reserved_ram_resource(dev, idx++, (max_range_limit + 1) >> 10, qword >> 10);
-	}
+	reserve_cpu_cc6_storage_area(dev, idx);
 }
 
+static void amdfam10_domain_scan_bus(struct device *dev)
+{
+	u32 reg;
+	int i;
+	struct bus *link;
+	struct resource *res;
+
+	/*
+	 * Access to PCI config space must be enabled before some of other devices
+	 * can read_resources().
+	 */
+	get_fx_devs();
+	res = amdfam10_assign_new_mmio_res(CONFIG_MMCONF_BASE_ADDRESS,
+	                                   CONFIG_MMCONF_LENGTH);
+	amdfam10_set_resource(dev, res, 0 /* TODO: is BSP always on node 0? */);
+
+	/* Unmap all of the HT chains */
+	for (reg = 0xe0; reg <= 0xec; reg += 4) {
+		f1_write_config32(reg, 0);
+	}
+
+	for (link = dev->link_list; link; link = link->next) {
+		link->secondary = dev->bus->subordinate;
+		pci_scan_bus(link, PCI_DEVFN(CONFIG_CDB, 0), 0xff);
+		dev->bus->subordinate = link->subordinate;
+	}
+
+	/* Tune the hypertransport transaction for best performance.
+	 * Including enabling relaxed ordering if it is safe.
+	 */
+	for (i = 0; i < fx_devs; i++) {
+		struct device *f0_dev;
+		f0_dev = __f0_dev[i];
+		if (f0_dev && f0_dev->enabled) {
+			u32 httc;
+			httc = pci_read_config32(f0_dev, HT_TRANSACTION_CONTROL);
+			httc &= ~HTTC_RSP_PASS_PW;
+			if (!dev->link_list->disable_relaxed_ordering) {
+				httc |= HTTC_RSP_PASS_PW;
+			}
+			printk(BIOS_SPEW, "%s passpw: %s\n",
+				dev_path(dev),
+				(!dev->link_list->disable_relaxed_ordering)?
+				"enabled":"disabled");
+			pci_write_config32(f0_dev, HT_TRANSACTION_CONTROL, httc);
+		}
+	}
+}
 
 static struct device_operations pci_domain_ops = {
 	.read_resources	  = amdfam10_domain_read_resources,
 	.set_resources	  = pci_domain_set_resources,
-	.scan_bus	  = pci_domain_scan_bus,
+	.enable_resources = NULL,
+	.init		  = NULL,
+	.scan_bus	  = amdfam10_domain_scan_bus,
 #if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name	  = amdfam10_domain_acpi_name,
 #endif
@@ -674,22 +935,6 @@ static struct device_operations pci_domain_ops = {
 	.get_smbios_data  = amdfam10_get_smbios_data,
 #endif
 };
-
-static DEVTREE_CONST struct device *dev_find_slot(unsigned int bus, unsigned int devfn)
-{
-	DEVTREE_CONST struct device *dev, *result;
-
-	result = 0;
-	for (dev = all_devices; dev; dev = dev->next) {
-		if ((dev->path.type == DEVICE_PATH_PCI) &&
-		    (dev->bus->secondary == bus) &&
-		    (dev->path.pci.devfn == devfn)) {
-			result = dev;
-			break;
-		}
-	}
-	return result;
-}
 
 static void remap_nodes_0_to_31_to_bus_255(struct device *pci_domain)
 {
@@ -791,11 +1036,11 @@ static void setup_cdb_links(unsigned int busn, unsigned int devn, struct bus *pb
 }
 
 static int get_num_cores(unsigned int busn, unsigned int devn, int *cores_found,
-			 int *enable_node)
+			 int *enable_node, unsigned int *siblings)
 {
 	int j;
 	struct device *cdb_dev;
-	unsigned int siblings = get_num_siblings();
+	*siblings = get_num_siblings();
 
 	*cores_found = 0; // one core
 	if (is_fam15h())
@@ -810,14 +1055,14 @@ static int get_num_cores(unsigned int busn, unsigned int devn, int *cores_found,
 		} else {
 			j = pci_read_config32(cdb_dev, 0xe8);
 			*cores_found = (j >> 12) & 3; // dev is func 3
-			if (siblings > 3)
+			if (*siblings > 3)
 				*cores_found |= (j >> 13) & 4;
 		}
-		printk(BIOS_DEBUG, "  %s siblings=%d\n", dev_path(cdb_dev), *cores_found);
+		printk(BIOS_DEBUG, "  %s cores_found=%d\n", dev_path(cdb_dev), *cores_found);
 	}
 
-	if (siblings > *cores_found)
-		siblings = *cores_found;
+	if (*siblings > *cores_found)
+		*siblings = *cores_found;
 
 	return j;
 }
@@ -839,12 +1084,11 @@ static uint8_t check_dual_node_cap(u8 node)
 	return dual_node;
 }
 
-static u32 get_apic_id(int i, int j)
+static u32 get_apic_id(int i, int j, unsigned int siblings)
 {
 	u32 apic_id;
 	uint8_t dual_node = check_dual_node_cap((u8)i);
 	uint8_t fam15h = is_fam15h();
-	unsigned int siblings = get_num_siblings();
 	// How can I get the nb_cfg_54 of every node's nb_cfg_54 in bsp???
 	unsigned int nb_cfg_54 = read_nb_cfg_54();
 
@@ -898,6 +1142,8 @@ static void sysconf_init(struct device *dev) // first node
 	if (CONFIG_MAX_PHYSICAL_CPUS > 8)
 		sysconf.nodes += (((pci_read_config32(dev, 0x160)>>4) & 7)<<3);
 
+	if (sysconf.nodes > NODE_NUMS)
+		die("Too many nodes detected\n");
 
 	sysconf.enabled_apic_ext_id = 0;
 	sysconf.lift_bsp_apicid = 0;
@@ -932,6 +1178,7 @@ static void cpu_bus_scan(struct device *dev)
 	int disable_siblings = !get_uint_option("multi_core", CONFIG(LOGICAL_CPUS));
 	uint8_t disable_cu_siblings = !get_uint_option("compute_unit_siblings", 1);
 	int enable_node;
+	unsigned int siblings = 0;
 
 	if (CONFIG_CBB)
 		remap_nodes_0_to_31_to_bus_255(pci_domain);
@@ -969,7 +1216,7 @@ static void cpu_bus_scan(struct device *dev)
 		}
 
 		setup_cdb_links(busn, devn, pbus);
-		j = get_num_cores(busn, devn, &cores_found, &enable_node);
+		j = get_num_cores(busn, devn, &cores_found, &enable_node, &siblings);
 
 		if (disable_siblings)
 			jj = 0;
@@ -981,7 +1228,7 @@ static void cpu_bus_scan(struct device *dev)
 			if (disable_cu_siblings && (j & 0x1))
 				continue;
 
-			struct device *cpu = add_cpu_device(cpu_bus, get_apic_id(i, j),
+			struct device *cpu = add_cpu_device(cpu_bus, get_apic_id(i, j, siblings),
 							    enable_node);
 			if (cpu)
 				amd_cpu_topology(cpu, i, j);
@@ -1284,9 +1531,248 @@ static void root_complex_enable_dev(struct device *dev)
 	}
 }
 
+static const char *interleave_strings[] = {
+	[0] = "No",
+	[1] = "on A[12] (2 nodes)",
+	[2] = "Reserved",
+	[3] = "on A[12] and A[13] (4 nodes)",
+	[4] = "Reserved",
+	[5] = "Reserved",
+	[6] = "Reserved",
+	[7] = "on A[12], A[13], and A[14] (8 nodes)",
+};
+
+static void decode_dram_flags(u32 flags)
+{
+	if (flags & 1)
+		printk(BIOS_DEBUG, "RE, ");
+	if (flags & 2)
+		printk(BIOS_DEBUG, "WE, ");
+	printk(BIOS_DEBUG, "Interleave %s, ", interleave_strings[(flags >> 8) & 7]);
+	printk(BIOS_DEBUG, "Destination Node %d, ", (flags >> 16) & 7);
+	printk(BIOS_DEBUG, "Interleave select %x\n", (flags >> 24) & 7);
+}
+
+static void dump_dram_mapping(u8 node)
+{
+	u64 base, limit;
+	u16 reg;
+	u32 flags;
+
+	for (reg = 0x40; reg <= 0x78; reg += 4) {
+		base = pci_read_config32(__f1_dev[node], reg);
+		flags = base & 0xffff;
+		base &= 0xffff0000;
+		base <<= 8;
+		base |= ((u64)pci_read_config8(__f1_dev[node], reg + 0x100) << 40);
+
+		reg += 4;
+
+		limit = pci_read_config32(__f1_dev[node], reg);
+		flags |= ((limit & 0xffff) << 16);
+		limit &= 0xffff0000;
+		limit <<= 8;
+		limit |= ((u64)pci_read_config8(__f1_dev[node], reg + 0x100) << 40);
+		if (flags & 3)
+			limit |= 0xffffff;
+
+		printk(BIOS_DEBUG, "DRAM [0x%016llx - 0x%016llx] - flags: ", base, limit);
+		decode_dram_flags(flags);
+	}
+}
+
+static void decode_mmio_flags(u16 flags)
+{
+	if (flags & 1)
+		printk(BIOS_DEBUG, "RE, ");
+	if (flags & 2)
+		printk(BIOS_DEBUG, "WE, ");
+	if (flags & 8)
+		printk(BIOS_DEBUG, "L, ");
+	if (flags & (1 << 15))
+		printk(BIOS_DEBUG, "NP, ");
+	printk(BIOS_DEBUG, "Destination Node %d, ", (flags >> 8) & 7);
+	printk(BIOS_DEBUG, "Destination Link %d sublink %d\n", (flags >> 12) & 3, (flags >> 14) & 1);
+}
+
+static void dump_mmio_mapping(u8 node)
+{
+	u64 base, limit;
+	u16 reg;
+	u16 flags;
+	u32 hi_addr = 0x180;
+
+	for (reg = 0x80; reg <= 0xb8; reg += 4) {
+		base = pci_read_config32(__f1_dev[node], reg);
+		flags = base & 0xff;
+		base &= 0xffffff00;
+		base <<= 8;
+		base |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff) << 40);
+
+		reg += 4;
+
+		limit = pci_read_config32(__f1_dev[node], reg);
+		flags |= ((limit & 0xff) << 8);
+		limit &= 0xffffff00;
+		limit <<= 8;
+		limit |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff0000) << 24);
+		if (flags & 3)
+			limit |= 0xffff;
+
+		hi_addr += 4;
+
+		printk(BIOS_DEBUG, "MMIO [0x%016llx - 0x%016llx] - flags: ", base, limit);
+		decode_mmio_flags(flags);
+	}
+
+	hi_addr = 0x1c0;
+	for (reg = 0x1a0; reg <= 0x1b8; reg += 4) {
+		base = pci_read_config32(__f1_dev[node], reg);
+		flags = base & 0xff;
+		base &= 0xffffff00;
+		base <<= 8;
+		base |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff) << 40);
+
+		reg += 4;
+
+		limit = pci_read_config32(__f1_dev[node], reg);
+		flags |= ((limit & 0xff) << 8);
+		limit &= 0xffffff00;
+		limit <<= 8;
+		limit |= ((u64)(pci_read_config8(__f1_dev[node], hi_addr) & 0xff0000) << 24);
+		if (flags & 3)
+			limit |= 0xffff;
+
+		hi_addr += 4;
+
+		printk(BIOS_DEBUG, "MMIO [0x%016llx - 0x%016llx] - flags: ", base, limit);
+		decode_mmio_flags(flags);
+	}
+}
+
+static void decode_io_flags(u32 flags)
+{
+	if (flags & 1)
+		printk(BIOS_DEBUG, "RE, ");
+	if (flags & 2)
+		printk(BIOS_DEBUG, "WE, ");
+	if (flags & (1 << 4))
+		printk(BIOS_DEBUG, "VE, ");
+	if (flags & (1 << 5))
+		printk(BIOS_DEBUG, "IE, ");
+	printk(BIOS_DEBUG, "Destination Node %d, ", (flags >> 8) & 7);
+	printk(BIOS_DEBUG, "Destination Link %d sublink %d\n", (flags >> 12) & 3, (flags >> 14) & 1);
+}
+
+static void dump_io_mapping(u8 node)
+{
+	u32 base, limit;
+	u16 reg;
+	u16 flags;
+
+	for (reg = 0xc0; reg <= 0xd8; reg += 4) {
+		base = pci_read_config32(__f1_dev[node], reg);
+		flags = base & 0xff;
+		base &= 0x00fff000;
+
+		reg += 4;
+
+		limit = pci_read_config32(__f1_dev[node], reg);
+		flags |= ((limit & 0xff) << 8);
+		limit &= 0x00fff000;
+		if (flags & 3)
+			limit |= 0xfff;
+
+		printk(BIOS_DEBUG, "IO [0x%08x - 0x%08x] - flags: ", base, limit);
+		decode_io_flags(flags);
+	}
+}
+
+static void decode_bus_flags(u16 flags)
+{
+	if (flags & 1)
+		printk(BIOS_DEBUG, "RE, ");
+	if (flags & 2)
+		printk(BIOS_DEBUG, "WE, ");
+	if (flags & 4)
+		printk(BIOS_DEBUG, "DCE, ");
+
+	printk(BIOS_DEBUG, "Destination Node %d, ", (flags >> 4) & 7);
+	printk(BIOS_DEBUG, "Destination Link %d sublink %d\n", (flags >> 8) & 3, (flags >> 10) & 1);
+}
+
+static void dump_config_mapping(u8 node)
+{
+	u32 bus_base, bus_limit;
+	u32 dword;
+	u16 reg;
+	u16 flags;
+
+	for (reg = 0xe0; reg <= 0xec; reg += 4) {
+		dword = pci_read_config32(__f1_dev[node], reg);
+		flags = dword & 0xffff;
+		bus_base = (dword & 0x00ff0000) >> 16;
+		bus_limit = (dword & 0xff000000) >> 24;
+
+		printk(BIOS_DEBUG, "Bus [0x%02x - 0x%02x] - flags: ", bus_base, bus_limit);
+		decode_bus_flags(flags);
+	}
+}
+
+static void decode_system_dram_flags(u8 flags)
+{
+	printk(BIOS_DEBUG, "Interleave %s, ", interleave_strings[(flags >> 4) & 7]);
+	printk(BIOS_DEBUG, "Interleave select %x\n", flags & 7);
+}
+
+static void dump_system_dram_mapping(u8 node)
+{
+	u64 base, limit;
+	u8 flags;
+
+	base = pci_read_config32(__f1_dev[node], 0x120);
+	flags = (base >> 21) & 0x7;
+	base &= 0x001fffff;
+	base <<= 27;
+
+	limit = pci_read_config32(__f1_dev[node], 0x124);
+	flags |= (((base >> 21) & 0x7) << 4);
+	limit &= 0x001fffff;
+	limit <<= 27;
+
+	printk(BIOS_DEBUG, "System Address DRAM [0x%016llx - 0x%016llx] - flags: ", base, limit);
+	decode_system_dram_flags(flags);
+
+}
+
+void dump_memory_mapping(void)
+{
+	u8 i;
+
+	/* Refresh fx devs because these could be remapped */
+	fx_devs = 0;
+	get_fx_devs();
+
+	if (fx_devs < sysconf.nodes) {
+		printk(BIOS_WARNING, "WARNING: Less fx devs than nodes\n");
+	}
+
+	/* Enable probe filter */
+	for (i = 0; i < sysconf.nodes; i++) {
+		printk(BIOS_DEBUG, "Memory and bus map for node %d:\n", i);
+		dump_dram_mapping(i);
+		dump_mmio_mapping(i);
+		dump_io_mapping(i);
+		dump_config_mapping(i);
+		dump_system_dram_mapping(i);
+	}
+}
+
+
 static void root_complex_finalize(void *chip_info)
 {
-
+	dump_memory_mapping();
+	display_mtrrs();
 }
 
 struct chip_operations northbridge_amd_amdfam10_root_complex_ops = {

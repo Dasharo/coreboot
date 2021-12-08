@@ -16,22 +16,6 @@
 #include "sr5650.h"
 #include "cmn.h"
 
-struct resource *sr5650_retrieve_cpu_mmio_resource()
-{
-	struct device *domain;
-	struct resource *res;
-
-	for (domain = all_devices; domain; domain = domain->next) {
-		if (domain->bus->dev->path.type != DEVICE_PATH_DOMAIN)
-			continue;
-		res = probe_resource(domain->bus->dev, MMIO_CONF_BASE);
-		if (res)
-			return res;
-	}
-
-	return NULL;
-}
-
 /* extension registers */
 u32 pci_ext_read_config32(struct device *nb_dev, struct device *dev, u32 reg)
 {
@@ -101,42 +85,6 @@ static uint32_t l1cfg_ind_read_index(struct device *nb_dev, uint32_t index)
 static void l1cfg_ind_write_index(struct device *nb_dev, uint32_t index, uint32_t data)
 {
 	nb_write_index((nb_dev), L1CFG_INDEX | (0x1 << 31), (index), (data));
-}
-
-/***********************************************************
-* To access bar3 we need to program PCI MMIO 7 in K8.
-* in_out:
-*	1: enable/enter k8 temp mmio base
-*	0: disable/restore
-***********************************************************/
-void ProgK8TempMmioBase(u8 in_out, u32 pcie_base_add, u32 mmio_base_add)
-{
-	/* K8 Function1 is address map */
-	struct device *k8_f1 = pcidev_on_root(0x18, 1);
-	struct device *k8_f0 = pcidev_on_root(0x18, 0);
-
-	if (in_out) {
-		u32 dword, sblk;
-
-		/* Get SBLink value (HyperTransport I/O Hub Link ID). */
-		dword = pci_read_config32(k8_f0, 0x64);
-		sblk = (dword >> 8) & 0x3;
-
-		/* Fill MMIO limit/base pair. */
-		pci_write_config32(k8_f1, 0xbc,
-				   (((pcie_base_add + 0x10000000 -
-				     1) >> 8) & 0xffffff00) | 0x80 | (sblk << 4));
-		pci_write_config32(k8_f1, 0xb8, (pcie_base_add >> 8) | 0x3);
-		pci_write_config32(k8_f1, 0xb4,
-				   (((mmio_base_add + 0x10000000 -
-				     1) >> 8) & 0xffffff00) | (sblk << 4));
-		pci_write_config32(k8_f1, 0xb0, (mmio_base_add >> 8) | 0x3);
-	} else {
-		pci_write_config32(k8_f1, 0xb8, 0);
-		pci_write_config32(k8_f1, 0xbc, 0);
-		pci_write_config32(k8_f1, 0xb0, 0);
-		pci_write_config32(k8_f1, 0xb4, 0);
-	}
 }
 
 void PcieReleasePortTraining(struct device *nb_dev, struct device *dev, u32 port)
@@ -522,9 +470,6 @@ static void sr5650_iommu_set_resources(struct device *dev)
 	struct resource *res;
 
 	iommu = get_uint_option("iommu", 1);
-
-	/* Get the normal pci resources of this device */
-	pci_dev_read_resources(dev);
 
 	if (iommu) {
 		/* Get the allocated range */

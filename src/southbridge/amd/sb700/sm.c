@@ -22,6 +22,7 @@
 
 #define PRIMARY_SMBUS_RESOURCE_NUMBER 0x90
 #define AUXILIARY_SMBUS_RESOURCE_NUMBER 0x58
+#define HPET_RESOURCE_NUMBER 0xb4
 
 uint8_t amd_sb700_aux_smbus = 0;
 
@@ -296,13 +297,6 @@ static void sm_init(struct device *dev)
 
 		byte |= 1 << 3;
 		pci_write_config8(dev, 0x43, byte);
-
-		/* Enable southbridge MMIO decode */
-		dword = pci_read_config32(dev, SB_MMIO_CFG_REG);
-		dword &= ~(0xffffff << 8);
-		dword |= SB_MMIO_BASE_ADDRESS;
-		dword |= 0x1;
-		pci_write_config32(dev, SB_MMIO_CFG_REG, dword);
 	}
 
 	/* 4.11:Programming Cycle Delay for AB and BIF Clock Gating */
@@ -429,23 +423,14 @@ static void sb700_sm_read_resources(struct device *dev)
 	res->base  = IO_APIC_ADDR;
 	res->size = 0x1000;
 	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
-		     IORESOURCE_STORED;
+	             IORESOURCE_STORED; /* has proper value after reset -> stored */
 
-	/* SB MMIO / WDT */
-	res = new_resource(dev, SB_MMIO_CFG_REG);
-	res->base  = SB_MMIO_BASE_ADDRESS;
-	res->size = 0x1000;
-	res->limit = 0xFFFFFFFFUL;	/* res->base + res->size -1; */
-	res->align = 8;
-	res->gran = 8;
-	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
 
 	/* HPET */
-	res = new_resource(dev, 0xB4);
-	res->base  = 0xfed00000;	/* reset hpet to widely accepted address */
+	res = new_resource(dev, HPET_RESOURCE_NUMBER);
+	res->base  = HPET_BASE_ADDRESS;	/* reset hpet to widely accepted address */
 	res->size = 0x10000;
-	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
-		     IORESOURCE_STORED;
+	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
 
 	/* primary smbus */
 	res = new_resource(dev, PRIMARY_SMBUS_RESOURCE_NUMBER);
@@ -465,6 +450,23 @@ static void sb700_sm_read_resources(struct device *dev)
 	res->gran = 8;
 	res->flags = IORESOURCE_IO | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
 
+	/*
+	 * SB MMIO / WDT
+	 *
+	 * Serial output stops working after BAR is set, before it is enabled.
+	 * Keep this resource as last so other non-fixed resources will be reported
+	 * before that happens.
+	 *
+	 * In case of any issues, assign to it base address, mark as fixed and
+	 * write address in set_resources() below.
+	 */
+	res = new_resource(dev, SB_MMIO_CFG_REG);
+	res->size = 0x1000;
+	res->limit = 0xffffffffUL;
+	res->align = 12;
+	res->gran = 12;
+	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED;
+
 	compact_resources(dev);
 }
 
@@ -475,8 +477,20 @@ static void sb700_sm_set_resources(struct device *dev)
 
 	pci_dev_set_resources(dev);
 
+	/*
+	 * Enable SB MMIO
+	 *
+	 * Keep this close to pci_dev_set_resources() to re-enable serial console
+	 * as soon as possible.
+	 */
+	byte = pci_read_config8(dev, SB_MMIO_CFG_REG);
+	byte |= 3;
+	pci_write_config8(dev, SB_MMIO_CFG_REG, byte);
+
 	/* Program HPET BAR Address */
-	pci_write_config32(dev, 0xB4, HPET_BASE_ADDRESS);
+	res = find_resource(dev, HPET_RESOURCE_NUMBER);
+	res->flags |= IORESOURCE_STORED;
+	pci_write_config32(dev, HPET_RESOURCE_NUMBER, res->base);
 
 	/* Enable decoding of HPET MMIO, enable HPET MSI */
 	byte = pci_read_config8(dev, 0x43);
@@ -490,10 +504,13 @@ static void sb700_sm_set_resources(struct device *dev)
 	pci_write_config8(dev, 0x65, byte);
 
 	res = find_resource(dev, PRIMARY_SMBUS_RESOURCE_NUMBER);
+	res->flags |= IORESOURCE_STORED;
 	pci_write_config32(dev, PRIMARY_SMBUS_RESOURCE_NUMBER, res->base | 1);
 
 	res = find_resource(dev, AUXILIARY_SMBUS_RESOURCE_NUMBER);
+	res->flags |= IORESOURCE_STORED;
 	pci_write_config32(dev, AUXILIARY_SMBUS_RESOURCE_NUMBER, res->base | 1);
+
 }
 
 static struct pci_operations lops_pci = {

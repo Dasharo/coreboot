@@ -6,6 +6,7 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
+#include <northbridge/amd/amdfam10/amdfam10.h>
 #include "sr5650.h"
 #include "cmn.h"
 
@@ -109,20 +110,10 @@ static void sr5690_apic_init(struct device *dev)
 	pci_write_config32(dev, 0xF8, 0x9);
 	pci_write_config32(dev, 0xFC, dword);
 
-	pci_write_config32(dev, 0xF8, 0x1);
-	dword = IO_APIC2_ADDR;
-	dword = (1 << 3); /* Mem_IO_Map: 1 = MMIO, 0 = IO */
-	pci_write_config32(dev, 0xFC, IO_APIC2_ADDR);
-
-	/* Upper bits of IOAPIC base */
-	pci_write_config32(dev, 0xF8, 0x2);
-	pci_write_config32(dev, 0xFC, 0);
 	/* On SR56x0/SP5100 board, the IOAPIC on SR56x0 is the
 	 * 2nd one. We need to check if it also is on your board. */
 
 	pci_write_config32(dev, 0xF8, 0x0);
-	pci_read_config32(dev, 0xFC);
-
 	printk(BIOS_DEBUG, "IOAPIC2 features: %08x\n", pci_read_config32(dev, 0xFC));
 
 	if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
@@ -169,108 +160,30 @@ static void sr5690_read_resource(struct device *dev)
 	pci_dev_read_resources(dev);
 
 	/* IOAPIC */
-	res = new_resource(dev, 0xfc);
+	res = new_resource(dev, 0xFC);
 	res->base  = IO_APIC2_ADDR;
-	res->size = 0x1000;
-	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
-		     IORESOURCE_STORED;
+	res->size  = 0x1000;
+	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
 
-	compact_resources(dev);
+	/* Needs to be written to D18F1 as well */
+	res = amdfam10_assign_new_mmio_res(IO_APIC2_ADDR, 0x1000);
+	res->flags |= IORESOURCE_FIXED;
 }
 
 /* If IOAPIC's index changes, we should replace the pci_dev_set_resource(). */
 static void sr5690_set_resources(struct device *dev)
 {
-	uint32_t reg;
-	struct device *amd_ht_cfg_dev = NULL;
-	struct device *amd_addr_map_dev = NULL;
-	resource_t res_base;
-	resource_t res_end;
-	uint32_t base;
-	uint32_t limit;
 	struct resource *res;
 
-	printk(BIOS_DEBUG,"%s %s\n", dev_path(dev), __func__);
-	/* Set IOAPIC's index to 1 and make sure no one changes it */
-	pci_write_config32(dev, 0xf8, 0x1);
+	/* Lower bits of IOAPIC base */
+	res = pci_get_resource(dev, 0xFC);
+	res->flags |= IORESOURCE_STORED;
+	pci_write_config32(dev, 0xF8, 0x1);
+	pci_write_config32(dev, 0xFC, res->base | (1 << 3));
 
-	if (!CONFIG(MMCONF_SUPPORT)) {
-		pci_dev_set_resources(dev);
-		return;
-	}
-
-	amd_ht_cfg_dev = pcidev_on_root(0x18, 0);
-	amd_addr_map_dev = pcidev_on_root(0x18, 1);
-
-	if (!amd_ht_cfg_dev || !amd_addr_map_dev)
-		die("Unable to locate CPU control devices");
-
-	res = sr5650_retrieve_cpu_mmio_resource();
-
-	if (res) {
-		res_base = res->base;		/* Get the base address */
-		res_end = resource_end(res);	/* Get the limit (rounded up) */
-	} else {
-		res_base = CONFIG_MMCONF_BASE_ADDRESS;
-		res_end = CONFIG_MMCONF_BASE_ADDRESS + CONFIG_MMCONF_LENGTH;
-	}
-
-
-	/* Set up MMCONFIG bus range */
-	/* Make BAR3 visible */
-	set_nbmisc_enable_bits(dev, 0x0, 1 << 3, 0 << 3);
-	/* Enables writes to the BAR3 register */
-	set_nbcfg_enable_bits(dev, 0x7c, 1 << 30, 1 << 30);
-	/* Program bus range = 255 busses */
-	set_nbcfg_enable_bits(dev, 0x84, 7 << 16, 0 << 16);
-	pci_write_config32(dev, 0x1c, res_base);
-
-	/* Enable MMCONFIG decoding. */
-	/* PCIEMiscInit */
-	set_htiu_enable_bits(dev, 0x32, 1 << 28, 1 << 28);
-	/* Disable writes to the BAR3 register */
-	set_nbcfg_enable_bits(dev, 0x7c, 1 << 30, 0 << 30);
-	/* Hide BAR3 */
-	set_nbmisc_enable_bits(dev, 0x0, 1 << 3, 1 << 3);
-
-	/* Set up nonposted resource in MMIO space */
-	printk(BIOS_DEBUG, "%s: %s[0x1c] base = %0llx limit = %0llx\n", __func__,
-			   dev_path(dev), res_base, res_end);
-
-	/* Locate an unused MMIO resource */
-	for (reg = 0xb8; reg >= 0x80; reg -= 8) {
-		base = pci_read_config32(amd_addr_map_dev, reg);
-		limit = pci_read_config32(amd_addr_map_dev, reg + 4);
-		if (!(base & 0x3))
-			break;	/* Unused resource found */
-	}
-
-	/* If an unused MMIO resource was available, set up the mapping */
-	if (!(base & 0x3)) {
-		uint32_t sblk;
-
-		/* Get SBLink value (HyperTransport I/O Hub Link ID). */
-		sblk = (pci_read_config32(amd_ht_cfg_dev, 0x64) >> 8) & 0x3;
-
-		/* Calculate the MMIO mapping base */
-		base &= 0x000000f0;
-		base |= ((res_base >> 8) & 0xffffff00);
-		base |= 3;
-
-		/* Calculate the MMIO mapping limit */
-		limit &= 0x00000048;
-		limit |= ((res_end >> 8) & 0xffffff00);
-		limit |= (sblk << 4);
-		limit |= (1 << 7);
-
-		/* Configure and enable MMIO mapping */
-		printk(BIOS_INFO, "%s: %s <- index %x base %04x limit %04x\n", __func__, dev_path(amd_addr_map_dev), reg, base, limit);
-		pci_write_config32(amd_addr_map_dev, reg + 4, limit);
-		pci_write_config32(amd_addr_map_dev, reg, base);
-	}
-	else {
-		printk(BIOS_WARNING, "%s: %s No free MMIO resources available\n", __func__, dev_path(dev));
-	}
+	/* Upper bits of IOAPIC base */
+	pci_write_config32(dev, 0xF8, 0x2);
+	pci_write_config32(dev, 0xFC, 0);
 
 	pci_dev_set_resources(dev);
 }

@@ -87,4 +87,12 @@ config ENABLE_APIC_EXT_ID
 	bool
 	default y
 
+config SEABIOS_ADD_SERCON_PORT_FILE
+	bool
+	default y if PAYLOAD_SEABIOS
+
+config PXE_ID
+	string
+	default "8086,10d3"
+
 endif # BOARD_ASUS_KGPE_D16

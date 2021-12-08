@@ -17,4 +17,13 @@ struct southbridge_amd_sr5650_config
 					 */
 };
 
+/*
+ * Porting.h included an open #pragma pack(1) that broke things in hard to debug
+ * ways. This struct is one of the examples, and while it won't catch all
+ * problems caused by that #pragma, hopefully it can reduce time wasted on
+ * debugging in wrong places.
+ */
+_Static_assert(sizeof(struct southbridge_amd_sr5650_config) == 12,
+               "check for bad #pragmas");
+
 #endif /* SR5650_CHIP_H */

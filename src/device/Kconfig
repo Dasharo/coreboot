@@ -507,6 +507,10 @@ config MMCONF_SUPPORT
 	bool
 	default !NO_MMCONF_SUPPORT
 
+config HYPERTRANSPORT_PLUGIN_SUPPORT
+	bool
+	default n
+
 config PCIX_PLUGIN_SUPPORT
 	bool
 	default y

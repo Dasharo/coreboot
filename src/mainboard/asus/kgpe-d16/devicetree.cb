@@ -8,112 +8,113 @@ chip northbridge/amd/amdfam10/root_complex	# Root complex
 		subsystemid 0x1043 0x8163 inherit
 		chip northbridge/amd/amdfam10		# Northbridge / RAM controller
 			register "maximum_memory_capacity" = "0x4000000000"	# 256GB
-			chip southbridge/amd/sr5650		# Primary southbridge
-				register "gpp1_configuration" = "0"	# Configuration 16:0 default
-				register "gpp2_configuration" = "1"	# Configuration 8:8
-				register "gpp3a_configuration" = "2"	# Configuration 4:1:1:0:0:0
-				register "port_enable" = "0x3f1c"	# Enable all ports except 0, 1, 5, 6, and 7
-				register "pcie_settling_time" = "1000000"	# Allow PIKE to be detected / configured
+			device pci 18.0 on end		# Link 0 == LDT 0
+			device pci 18.0 on end		# Link 1 == LDT 1
+			device pci 18.0 on end		# Link 2 == LDT 2
+			device pci 18.0 on		# Link 3 == LDT 3 [SB on link 3]
+				chip southbridge/amd/sr5650		# Primary southbridge
+					register "gpp1_configuration" = "0"	# Configuration 16:0 default
+					register "gpp2_configuration" = "1"	# Configuration 8:8
+					register "gpp3a_configuration" = "2"	# Configuration 4:1:1:0:0:0
+					register "port_enable" = "0x3f1c"	# Enable all ports except 0, 1, 5, 6, and 7
+					register "pcie_settling_time" = "1000000"	# Allow PIKE to be detected / configured
 
-				device pci 0.0 on end			# HT Root Complex 0x9600
-				device pci 0.1 on end			# CLKCONFIG
-				device pci 0.2 on end			# IOMMU
-				device pci 2.0 on			# PCIE P2P bridge 0x9603 (GPP1 Port0)
-					# Slot				# PCI E 1 / PCI E 2
+					device pci 0.0 on end			# HT Root Complex 0x9600
+					device pci 0.1 on end			# CLKCONFIG
+					device pci 0.2 on end			# IOMMU
+					device pci 2.0 on			# PCIE P2P bridge 0x9603 (GPP1 Port0)
+						# Slot				# PCI E 1 / PCI E 2
+					end
+					device pci 3.0 off end			# PCIE P2P bridge 0x960b (GPP1 Port1)
+					device pci 4.0 on			# PCIE P2P bridge 0x9604 (GPP3a Port0)
+						# PIKE SAS
+					end
+					device pci 5.0 off end			# PCIE P2P bridge 0x9605 (GPP3a Port1)
+					device pci 6.0 off end			# PCIE P2P bridge 0x9606 (GPP3a Port2)
+					device pci 7.0 off end			# PCIE P2P bridge 0x9607 (GPP3a Port3)
+					device pci 8.0 off end			# NB/SB Link P2P bridge
+					device pci 9.0 on			# Bridge (GPP3a Port4)
+						# Onboard			# NIC A
+					end
+					device pci a.0 on			# Bridge (GPP3a Port5)
+						# Onboard			# NIC B
+					end
+					device pci b.0 on			# Bridge (GPP2 Port0)
+						# Slot				# PCI E 4
+					end
+					device pci c.0 on			# Bridge (GPP2 Port1)
+						# Slot				# PCI E 5
+					end
+					device pci d.0 on			# Bridge (GPP3b Port0)
+						# Slot				# PCI E 3
+					end
 				end
-				device pci 3.0 off end			# PCIE P2P bridge 0x960b (GPP1 Port1)
-				device pci 4.0 on			# PCIE P2P bridge 0x9604 (GPP3a Port0)
-					# PIKE SAS
-				end
-				device pci 5.0 off end			# PCIE P2P bridge 0x9605 (GPP3a Port1)
-				device pci 6.0 off end			# PCIE P2P bridge 0x9606 (GPP3a Port2)
-				device pci 7.0 off end			# PCIE P2P bridge 0x9607 (GPP3a Port3)
-				device pci 8.0 off end			# NB/SB Link P2P bridge
-				device pci 9.0 on			# Bridge (GPP3a Port4)
-					# Onboard			# NIC A
-				end
-				device pci a.0 on			# Bridge (GPP3a Port5)
-					# Onboard			# NIC B
-				end
-				device pci b.0 on			# Bridge (GPP2 Port0)
-					# Slot				# PCI E 4
-				end
-				device pci c.0 on			# Bridge (GPP2 Port1)
-					# Slot				# PCI E 5
-				end
-				device pci d.0 on			# Bridge (GPP3b Port0)
-					# Slot				# PCI E 3
+				chip southbridge/amd/sb700		# Secondary southbridge
+					device pci 11.0 on end			# SATA
+					device pci 12.0 on end			# USB
+					device pci 12.1 on end			# USB
+					device pci 12.2 on end			# USB
+					device pci 13.0 on end			# USB
+					device pci 13.1 on end			# USB
+					device pci 13.2 on end			# USB
+					device pci 14.0 on end			# SM
+					device pci 14.1 on end			# IDE 0x439c
+					device pci 14.2 on end			# HDA 0x4383 (ASUS MIO add-on card)
+					device pci 14.3 on			# LPC 0x439d (SMBUS primary controller)
+						chip superio/winbond/w83667hg-a	# Super I/O
+							device pnp 2e.0 off end		# FDC; Not available on the KGPE-D16
+							device pnp 2e.1 off end		# LPT1; Not available on the KGPE-D16
+							device pnp 2e.2 on		# COM1
+								io 0x60 = 0x3f8
+								irq 0x70 = 4
+							end
+							device pnp 2e.3 on		# COM2
+								io 0x60 = 0x2f8
+								irq 0x70 = 3
+							end
+							device pnp 2e.5 on		# PS/2 keyboard & mouse
+								io 0x60 = 0x60
+								io 0x62 = 0x64
+								irq 0x70 = 1
+								irq 0x72 = 12
+							end
+							device pnp 2e.106 off end	# SPI: Not available on the KGPE-D16
+							device pnp 2e.107 off end	# GIPO6
+							device pnp 2e.207 off end	# GIPO7
+							device pnp 2e.307 off end	# GIPO8
+							device pnp 2e.407 off end	# GIPO9
+							device pnp 2e.8 off end		# WDT
+							device pnp 2e.108 off end	# GPIO 1
+							device pnp 2e.9 off end		# GPIO2
+							device pnp 2e.109 off end	# GPIO3
+							device pnp 2e.209 off end	# GPIO4
+							device pnp 2e.309 off end	# GPIO5
+							device pnp 2e.a on end		# ACPI
+							device pnp 2e.b on		# HW Monitor
+								io 0x60 = 0x290
+								# IRQ purposefully not assigned to prevent lockups
+							end
+							device pnp 2e.c off end		# PECI
+							device pnp 2e.d off end		# VID_BUSSEL
+							device pnp 2e.f off end		# GPIO_PP_OD
+						end
+						chip drivers/pc80/tpm
+							device pnp 4e.0 on end		# TPM module
+						end
+						chip drivers/ipmi		# BMC KCS
+							device pnp ca2.0 on end
+						end
+					end
+					device pci 14.4 on			# Bridge
+						device pci 1.0 on end		# VGA
+						device pci 2.0 on end		# FireWire
+						device pci 3.0 on		# Slot
+							# Slot			# PCI 0
+						end
+					end
+					device pci 14.5 on end			# USB OHCI2 0x4399
 				end
 			end
-			chip southbridge/amd/sb700		# Secondary southbridge
-				device pci 11.0 on end			# SATA
-				device pci 12.0 on end			# USB
-				device pci 12.1 on end			# USB
-				device pci 12.2 on end			# USB
-				device pci 13.0 on end			# USB
-				device pci 13.1 on end			# USB
-				device pci 13.2 on end			# USB
-				device pci 14.0 on end			# SM
-				device pci 14.1 on end			# IDE 0x439c
-				device pci 14.2 on end			# HDA 0x4383 (ASUS MIO add-on card)
-				device pci 14.3 on			# LPC 0x439d (SMBUS primary controller)
-					chip superio/winbond/w83667hg-a	# Super I/O
-						device pnp 2e.0 off end		# FDC; Not available on the KGPE-D16
-						device pnp 2e.1 off end		# LPT1; Not available on the KGPE-D16
-						device pnp 2e.2 on		# COM1
-							io 0x60 = 0x3f8
-							irq 0x70 = 4
-						end
-						device pnp 2e.3 on		# COM2
-							io 0x60 = 0x2f8
-							irq 0x70 = 3
-						end
-						device pnp 2e.5 on		# PS/2 keyboard & mouse
-							io 0x60 = 0x60
-							io 0x62 = 0x64
-							irq 0x70 = 1
-							irq 0x72 = 12
-						end
-						device pnp 2e.106 off end	# SPI: Not available on the KGPE-D16
-						device pnp 2e.107 off end	# GIPO6
-						device pnp 2e.207 off end	# GIPO7
-						device pnp 2e.307 off end	# GIPO8
-						device pnp 2e.407 off end	# GIPO9
-						device pnp 2e.8 off end		# WDT
-						device pnp 2e.108 off end	# GPIO 1
-						device pnp 2e.9 off end		# GPIO2
-						device pnp 2e.109 off end	# GPIO3
-						device pnp 2e.209 off end	# GPIO4
-						device pnp 2e.309 off end	# GPIO5
-						device pnp 2e.a on end		# ACPI
-						device pnp 2e.b on		# HW Monitor
-							io 0x60 = 0x290
-							# IRQ purposefully not assigned to prevent lockups
-						end
-						device pnp 2e.c off end		# PECI
-						device pnp 2e.d off end		# VID_BUSSEL
-						device pnp 2e.f off end		# GPIO_PP_OD
-					end
-					chip drivers/pc80/tpm
-						device pnp 4e.0 on end		# TPM module
-					end
-					chip drivers/ipmi		# BMC KCS
-						device pnp ca2.0 on end
-					end
-				end
-				device pci 14.4 on			# Bridge
-					device pci 1.0 on end		# VGA
-					device pci 2.0 on end		# FireWire
-					device pci 3.0 on		# Slot
-						# Slot			# PCI 0
-					end
-				end
-				device pci 14.5 on end			# USB OHCI2 0x4399
-			end
-			# device pci 18.0 on end		# Link 0 == LDT 0
-			# device pci 18.0 on end		# Link 1 == LDT 1
-			# device pci 18.0 on end		# Link 2 == LDT 2
-			device pci 18.0 on end		# Link 3 == LDT 3 [SB on link 3]
 			device pci 18.1 on end
 			device pci 18.2 on end
 			device pci 18.3 on end

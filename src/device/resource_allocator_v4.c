@@ -30,8 +30,16 @@ static const char *resource2str(const struct resource *res)
 
 static bool dev_has_children(const struct device *dev)
 {
-	const struct bus *bus = dev->link_list;
-	return bus && bus->children;
+	const struct bus *link = dev->link_list;
+
+	if (!link)
+		return false;
+
+	for (; link; link = link->next)
+		if (link->children)
+			return true;
+
+	return false;
 }
 
 #define res_printk(depth, str, ...)	printk(BIOS_DEBUG, "%*c"str, depth, ' ', __VA_ARGS__)
@@ -56,6 +64,9 @@ static void update_bridge_resource(const struct device *bridge, struct resource 
 	bool first_child_res = true;
 	const unsigned long type_mask = IORESOURCE_TYPE_MASK | IORESOURCE_PREFETCH;
 	struct bus *bus = bridge->link_list;
+
+	while(bus && bus->children == NULL)
+		bus = bus->next;
 
 	child_res = NULL;
 
@@ -156,6 +167,9 @@ static void compute_bridge_resources(const struct device *bridge, unsigned long 
 	struct bus *bus = bridge->link_list;
 	const unsigned long type_mask = IORESOURCE_TYPE_MASK | IORESOURCE_PREFETCH;
 
+	while(bus && bus->children == NULL)
+		bus = bus->next;
+
 	for (res = bridge->resource_list; res; res = res->next) {
 		if (!(res->flags & IORESOURCE_BRIDGE))
 			continue;
@@ -198,15 +212,21 @@ static void compute_domain_resources(const struct device *domain)
 {
 	const struct device *child;
 	const int print_depth = 1;
+	struct bus *bus = domain->link_list;
 
 	if (domain->link_list == NULL)
 		return;
 
-	for (child = domain->link_list->children; child; child = child->sibling) {
+	while(bus && bus->children == NULL)
+		bus = bus->next;
+
+	for (child = bus->children; child; child = child->sibling) {
 
 		/* Skip if this is not a bridge or has no children under it. */
-		if (!dev_has_children(child))
+		if (!dev_has_children(child)) {
+			printk(BIOS_ERR, "%s has no children, skipping\n", dev_path(child));
 			continue;
+		}
 
 		compute_bridge_resources(child, IORESOURCE_IO, print_depth);
 		compute_bridge_resources(child, IORESOURCE_MEM, print_depth);
@@ -428,6 +448,10 @@ static void avoid_fixed_resources(struct memranges *ranges, const struct device 
 	}
 
 	bus = dev->link_list;
+
+	while(bus && bus->children == NULL)
+		bus = bus->next;
+
 	if (bus == NULL)
 		return;
 
@@ -517,6 +541,9 @@ static void allocate_bridge_resources(const struct device *bridge)
 	struct device *child;
 	const unsigned long type_mask = IORESOURCE_TYPE_MASK | IORESOURCE_PREFETCH;
 
+	while(bus && bus->children == NULL)
+		bus = bus->next;
+
 	for (res = bridge->resource_list; res; res = res->next) {
 		if (!res->size)
 			continue;
@@ -571,12 +598,15 @@ static void allocate_domain_resources(const struct device *domain)
 	struct memranges ranges;
 	struct device *child;
 	const struct resource *res;
+	struct bus *bus = domain->link_list;
+	while(bus && bus->children == NULL)
+		bus = bus->next;
 
 	/* Resource type I/O */
 	res = find_domain_resource(domain, IORESOURCE_IO);
 	if (res) {
 		setup_resource_ranges(domain, res, IORESOURCE_IO, &ranges);
-		allocate_child_resources(domain->link_list, &ranges, IORESOURCE_TYPE_MASK,
+		allocate_child_resources(bus, &ranges, IORESOURCE_TYPE_MASK,
 					 IORESOURCE_IO);
 		cleanup_resource_ranges(domain, &ranges, res);
 	}
@@ -599,16 +629,16 @@ static void allocate_domain_resources(const struct device *domain)
 	res = find_domain_resource(domain, IORESOURCE_MEM);
 	if (res) {
 		setup_resource_ranges(domain, res, IORESOURCE_MEM, &ranges);
-		allocate_child_resources(domain->link_list, &ranges,
+		allocate_child_resources(bus, &ranges,
 					 IORESOURCE_TYPE_MASK | IORESOURCE_ABOVE_4G,
 					 IORESOURCE_MEM);
-		allocate_child_resources(domain->link_list, &ranges,
+		allocate_child_resources(bus, &ranges,
 					 IORESOURCE_TYPE_MASK | IORESOURCE_ABOVE_4G,
 					 IORESOURCE_MEM | IORESOURCE_ABOVE_4G);
 		cleanup_resource_ranges(domain, &ranges, res);
 	}
 
-	for (child = domain->link_list->children; child; child = child->sibling) {
+	for (child = bus->children; child; child = child->sibling) {
 		if (!dev_has_children(child))
 			continue;
 
@@ -658,11 +688,14 @@ static void allocate_domain_resources(const struct device *domain)
 void allocate_resources(const struct device *root)
 {
 	const struct device *child;
+	struct bus *bus = root->link_list;
+	while(bus && bus->children == NULL)
+		bus = bus->next;
 
-	if ((root == NULL) || (root->link_list == NULL))
+	if ((root == NULL) || (bus == NULL))
 		return;
 
-	for (child = root->link_list->children; child; child = child->sibling) {
+	for (child = bus->children; child; child = child->sibling) {
 
 		if (child->path.type != DEVICE_PATH_DOMAIN)
 			continue;
