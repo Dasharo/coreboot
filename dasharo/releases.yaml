@@ -7,3 +7,10 @@ releases:
       - put non-mainboard specific romstage initialization to northirdge
       - support for relocatable ramstage with caching in CBMEM
     known_issues:
+  - version: v0.2.0
+    added:
+      - coreboot resource allocator v4 support
+      - automatic fan control
+      - platform and silicon ramstage support
+      - added 8MB and 16MB SPI flash targets
+    known_issues:
