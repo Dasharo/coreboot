@@ -83,6 +83,11 @@ printf "#define COREBOOT_VERSION_TIMESTAMP %s\n" "${DATE}"
 printf "#define COREBOOT_ORIGIN_GIT_REVISION \"%s\"\n" "${GITREV}"
 printf "#define COREBOOT_ORIGIN_TREE_REVISION \"%s\"\n" "${TREE_REV:-0}"
 
+printf "#define DASHARO_VERSION \"%s\"\n" "$DASHARO_VERSION"
+printf "#define DASHARO_MAJOR_VERSION %d\\n" "$DASHARO_MAJOR_VERSION"
+printf "#define DASHARO_MINOR_VERSION %d\\n" "$DASHARO_MINOR_VERSION"
+printf "#define DASHARO_PATCH_VERSION %d\\n" "$DASHARO_PATCH_VERSION"
+
 printf "#define COREBOOT_EXTRA_VERSION \"%s\"\n" "${COREBOOT_EXTRA_VERSION}"
 printf "#define COREBOOT_MAJOR_VERSION %s\n" "${MAJOR_VER:-0}"
 printf "#define COREBOOT_MINOR_VERSION %s\n" "${MINOR_VER:-0}"
