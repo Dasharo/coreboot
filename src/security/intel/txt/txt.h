@@ -26,5 +26,8 @@ bool intel_txt_memory_has_secrets(void);
 void intel_txt_run_sclean(void);
 int intel_txt_run_bios_acm(const u8 input_params);
 bool intel_txt_prepare_txt_env(void);
+/* Allow platform override to skip TXT lockdown, e.g. required for RAS error injection. */
+bool skip_intel_txt_lockdown(void);
+const char *intel_txt_processor_error_type(uint8_t type);
 
 #endif /* SECURITY_INTEL_TXT_H_ */

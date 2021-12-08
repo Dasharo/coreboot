@@ -54,14 +54,12 @@ static acpi_cstate_t cstate_map[] = {
 
 uint32_t soc_read_sci_irq_select(void)
 {
-	uintptr_t pmc_bar = soc_read_pmc_base();
-	return read32((void *)pmc_bar + IRQ_REG);
+	return read32p(soc_read_pmc_base() + IRQ_REG);
 }
 
 void soc_write_sci_irq_select(uint32_t scis)
 {
-	uintptr_t pmc_bar = soc_read_pmc_base();
-	write32((void *)pmc_bar + IRQ_REG, scis);
+	write32p(soc_read_pmc_base() + IRQ_REG, scis);
 }
 
 acpi_cstate_t *soc_get_cstate_map(size_t *entries)
@@ -143,7 +141,6 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 
 static unsigned long soc_fill_dmar(unsigned long current)
 {
-	struct device *const igfx_dev = pcidev_path_on_root(SA_DEVFN_IGD);
 	uint64_t gfxvtbar = MCHBAR64(GFXVTBAR) & VTBAR_MASK;
 	uint64_t defvtbar = MCHBAR64(DEFVTBAR) & VTBAR_MASK;
 	bool gfxvten = MCHBAR32(GFXVTBAR) & VTBAR_ENABLED;
@@ -151,7 +148,7 @@ static unsigned long soc_fill_dmar(unsigned long current)
 	unsigned long tmp;
 
 	/* IGD has to be enabled, GFXVTBAR set and enabled. */
-	const bool emit_igd = is_dev_enabled(igfx_dev) && gfxvtbar && gfxvten;
+	const bool emit_igd = is_devfn_enabled(SA_DEVFN_IGD) && gfxvtbar && gfxvten;
 
 	/* First, add DRHD entries */
 	if (emit_igd) {

@@ -1,9 +1,5 @@
 chip soc/intel/alderlake
 
-	device cpu_cluster 0 on
-		device lapic 0 on end
-	end
-
 	# GPE configuration
 	# Note that GPE events called out in ASL code rely on this
 	# route. i.e. If this route changes then the affected GPE
@@ -19,6 +15,9 @@ chip soc/intel/alderlake
 
 	# Enable CNVi BT
 	register "CnviBtCore" = "true"
+
+	# Sagv Configuration
+	register "SaGv" = "SaGv_Enabled"
 
 	register "usb2_ports[0]" = "USB2_PORT_MID(OC0)"		# Type-C Port1
 	register "usb2_ports[1]" = "USB2_PORT_MID(OC0)"		# Type-C Port2
@@ -125,19 +124,15 @@ chip soc/intel/alderlake
 	# Enable EDP in PortA
 	register "DdiPortAConfig" = "1"
 	# Enable HDMI in Port B
-	register "DdiPortBDdc" = "1"
-	register "DdiPortBHpd" = "1"
+	register "ddi_ports_config" = "{
+		[DDI_PORT_B] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
+	}"
 
 	# TCSS USB3
 	register "TcssAuxOri" = "0"
 
 	register "s0ix_enable" = "1"
 	register "dptf_enable" = "1"
-
-	register "power_limits_config" = "{
-		.tdp_pl1_override = 45,
-		.tdp_pl2_override = 56,
-	}"
 
 	register "SerialIoI2cMode" = "{
 		[PchSerialIoIndexI2C0] = PchSerialIoPci,
@@ -177,7 +172,7 @@ chip soc/intel/alderlake
 
 	# HD Audio
 	register "PchHdaDspEnable" = "1"
-	register "PchHdaIDispLinkTmode" = "HDA_TMODE_4T"
+	register "PchHdaIDispLinkTmode" = "HDA_TMODE_8T"
 	register "PchHdaIDispLinkFrequency" = "HDA_LINKFREQ_96MHZ"
 	register "PchHdaIDispCodecEnable" = "1"
 
@@ -185,7 +180,6 @@ chip soc/intel/alderlake
 
 	# Intel Common SoC Config
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
 		},
@@ -203,11 +197,25 @@ chip soc/intel/alderlake
 		},
 	}"
 
+	# FIVR configurations
+	register "ext_fivr_settings" = "{
+		.configure_ext_fivr = 1,
+		.v1p05_enable_bitmap = FIVR_ENABLE_ALL_SX,
+		.vnn_enable_bitmap = FIVR_ENABLE_ALL_SX,
+		.vnn_sx_enable_bitmap = FIVR_ENABLE_ALL_SX,
+		.v1p05_supported_voltage_bitmap = FIVR_VOLTAGE_NORMAL,
+		.vnn_supported_voltage_bitmap = FIVR_VOLTAGE_NORMAL,
+		.v1p05_voltage_mv = 1050,
+		.vnn_voltage_mv = 1050,
+		.vnn_sx_voltage_mv = 1050,
+		.v1p05_icc_max_ma = 500,
+		.vnn_icc_max_ma = 500,
+	}"
+
 	device domain 0 on
-		device pci 00.0 on  end # Host Bridge
-		device pci 01.0 on  end # PEG10
-		device pci 02.0 on  end # Graphics
-		device pci 04.0 on
+		device ref pcie5 on end
+		device ref igpu on end
+		device ref dtt on
 			chip drivers/intel/dptf
 
 				## sensor information
@@ -299,94 +307,155 @@ chip soc/intel/alderlake
 				register "options.fan.fine_grained_control" = "1"
 				register "options.fan.step_size" = "2"
 
+				device generic 0 alias dptf_policy on end
+			end
+		end
+		device ref ipu on
+			chip drivers/intel/mipi_camera
+				register "acpi_uid" = "0x50000"
+				register "acpi_name" = ""IPU0""
+				register "device_type" = "INTEL_ACPI_CAMERA_CIO2"
+
+				register "cio2_num_ports" = "2"
+				register "cio2_lanes_used" = "{2,2}"
+				register "cio2_lane_endpoint[0]" = ""^I2C5.CAM1""
+				register "cio2_lane_endpoint[1]" = ""^I2C1.CAM0""
+				register "cio2_prt[0]" = "2"
+				register "cio2_prt[1]" = "1"
 				device generic 0 on end
 			end
-		end # DPTF
-		device pci 05.0 on  end # IPU
-		device pci 06.0 on  end # PEG60
-		device pci 06.2 on  end # PEG62
-		device pci 07.0 on  end # TBT_PCIe0
-		device pci 07.1 on  end # TBT_PCIe1
-		device pci 07.2 on  end # TBT_PCIe2
-		device pci 07.3 on  end # TBT_PCIe3
-		device pci 08.0 off end # GNA
-		device pci 09.0 off end # NPK
-		device pci 0a.0 off end # Crash-log SRAM
-		device pci 0d.0 on  end # USB xHCI
-		device pci 0d.1 on  end # USB xDCI (OTG)
-		device pci 0d.2 on  end # TBT DMA0
-		device pci 0d.3 on  end # TBT DMA1
-		device pci 0e.0 off end # VMD
-		device pci 10.0 off end
-		device pci 10.1 off end
-		device pci 10.6 off end # THC0
-		device pci 10.7 off end # THC1
-		device pci 11.0 off end
-		device pci 11.1 off end
-		device pci 11.2 off end
-		device pci 11.3 off end
-		device pci 11.4 off end
-		device pci 11.5 off end
-		device pci 12.0 off end # SensorHUB
-		device pci 12.5 off end
-		device pci 12.6 off end # GSPI2
-		device pci 13.0 off end # GSPI3
-		device pci 13.1 off end
-		device pci 14.0 on
+		end
+		device ref pcie4_0 on end
+		device ref pcie4_1 on end
+		device ref tbt_pcie_rp0 on end
+		device ref tbt_pcie_rp1 on end
+		device ref tbt_pcie_rp2 on end
+		device ref tbt_pcie_rp3 on end
+		device ref crashlog off end
+		device ref tcss_xhci on end
+		device ref tcss_dma0 on end
+		device ref tcss_dma1 on end
+		device ref xhci on
 			chip drivers/usb/acpi
 				register "desc" = ""Root Hub""
 				register "type" = "UPC_TYPE_HUB"
-				device usb 0.0 on
+				device ref xhci_root_hub on
 					chip drivers/usb/acpi
 						register "desc" = ""Bluetooth""
 						register "type" = "UPC_TYPE_INTERNAL"
-						device usb 2.9 on end
+						device ref usb2_port10 on end
 					end
 				end
 			end
-		end # USB3.1 xHCI
-		device pci 14.1 off end # USB3.1 xDCI
-		device pci 14.2 off end # Shared RAM
-		device pci 14.3 on
+		end
+		device ref cnvi_wifi on
 			chip drivers/wifi/generic
 				register "wake" = "GPE0_PME_B0"
 				device generic 0 on end
 			end
-		end # CNVi: WiFi
-		device pci 15.0 on  end # I2C0
-		device pci 15.1 on  end # I2C1
-		device pci 15.2 on  end # I2C2
-		device pci 15.3 on  end # I2C3
-		device pci 16.0 on  end # HECI1
-		device pci 16.1 off end # HECI2
-		device pci 16.2 off end # CSME
-		device pci 16.3 off end # CSME
-		device pci 16.4 off end # HECI3
-		device pci 16.5 off end # HECI4
-		device pci 17.0 on  end # SATA
-		device pci 19.0 off end # I2C4
-		device pci 19.1 on  end # I2C5
-		device pci 19.2 off end # UART2
-		device pci 1c.0 on  end # RP1
-		device pci 1c.1 off end # RP2
-		device pci 1c.2 on  end # RP3 # W/A to FSP issue
-		device pci 1c.3 on  end # RP4 # W/A to FSP issue
-		device pci 1c.4 on  end # RP5
-		device pci 1c.5 on  end # RP6
-		device pci 1c.6 off end # RP7
-		device pci 1c.7 on  end # RP8
-		device pci 1d.0 on  end # RP9
-		device pci 1d.1 off end # RP10
-		device pci 1d.2 on  end # RP11
-		device pci 1d.3 off end # RP12
-		device pci 1e.0 on  end # UART0
-		device pci 1e.1 off end # UART1
-		device pci 1e.2 on  end # GSPI0
-		device pci 1e.3 off end # GSPI1
-		device pci 1f.0 on  end # eSPI
-		device pci 1f.1 on  end # P2SB
-		device pci 1f.2 hidden  end # PMC
-		device pci 1f.3 on
+		end
+		device ref i2c0 on end
+		device ref i2c1 on
+			chip drivers/intel/mipi_camera
+				register "acpi_hid" = ""OVTI5675""
+				register "acpi_uid" = "0"
+				register "acpi_name" = ""CAM0""
+				register "chip_name" = ""Ov 5675 Camera""
+				register "device_type" = "INTEL_ACPI_CAMERA_SENSOR"
+
+				register "ssdb.lanes_used" = "2"
+				register "ssdb.vcm_type" = "0x0C"
+				register "vcm_name" = ""VCM0""
+				register "num_freq_entries" = "1"
+				register "link_freq[0]" = "450000000"
+				register "remote_name" = ""IPU0""
+
+				register "has_power_resource" = "1"
+				#Controls
+				register "clk_panel.clks[0].clknum" = "0" #IMGCLKOUT_0
+				register "clk_panel.clks[0].freq" = "1" #19.2 Mhz
+				register "gpio_panel.gpio[0].gpio_num" = "GPP_B23" #power_enable
+				register "gpio_panel.gpio[1].gpio_num" = "GPP_R5" #reset
+
+				#_ON
+				register "on_seq.ops_cnt" = "4"
+				register "on_seq.ops[0]" = "SEQ_OPS_CLK_ENABLE(0, 0)"
+				register "on_seq.ops[1]" = "SEQ_OPS_GPIO_ENABLE(0, 2)"
+				register "on_seq.ops[2]" = "SEQ_OPS_GPIO_DISABLE(1, 1)"
+				register "on_seq.ops[3]" = "SEQ_OPS_GPIO_ENABLE(1, 1)"
+
+				#_OFF
+				register "off_seq.ops_cnt" = "3"
+				register "off_seq.ops[0]" = "SEQ_OPS_CLK_DISABLE(0, 0)"
+				register "off_seq.ops[1]" = "SEQ_OPS_GPIO_DISABLE(1, 0)"
+				register "off_seq.ops[2]" = "SEQ_OPS_GPIO_DISABLE(0, 0)"
+
+				device i2c 36 on end
+			end
+			chip drivers/intel/mipi_camera
+				register "acpi_uid" = "3"
+				register "acpi_name" = ""VCM0""
+				register "chip_name" = ""DW AF VCM""
+				register "device_type" = "INTEL_ACPI_CAMERA_VCM"
+
+				register "pr0" = ""\\_SB.PCI0.I2C1.CAM0.PRIC""
+				register "vcm_compat" = ""dongwoon,dw9714""
+
+				device i2c 0C on end
+			end
+		end
+		device ref i2c2 on end
+		device ref i2c3 on end
+		device ref heci1 on end
+		device ref sata on end
+		device ref i2c5 on
+			chip drivers/intel/mipi_camera
+				register "acpi_hid" = ""OVTI5675""
+				register "acpi_uid" = "0"
+				register "acpi_name" = ""CAM1""
+				register "chip_name" = ""Ov 5675 Camera""
+				register "device_type" = "INTEL_ACPI_CAMERA_SENSOR"
+
+				register "ssdb.lanes_used" = "2"
+				register "num_freq_entries" = "1"
+				register "link_freq[0]" = "450000000"
+				register "remote_name" = ""IPU0""
+
+				register "has_power_resource" = "1"
+				#Controls
+				register "clk_panel.clks[0].clknum" = "1" #IMGCLKOUT_1
+				register "clk_panel.clks[0].freq" = "1" #19.2 Mhz
+				register "gpio_panel.gpio[0].gpio_num" = "GPP_E16" #power_enable
+				register "gpio_panel.gpio[1].gpio_num" = "GPP_E15" #reset
+
+				#_ON
+				register "on_seq.ops_cnt" = "4"
+				register "on_seq.ops[0]" = "SEQ_OPS_CLK_ENABLE(0, 0)"
+				register "on_seq.ops[1]" = "SEQ_OPS_GPIO_ENABLE(0, 2)"
+				register "on_seq.ops[2]" = "SEQ_OPS_GPIO_DISABLE(1, 1)"
+				register "on_seq.ops[3]" = "SEQ_OPS_GPIO_ENABLE(1, 1)"
+
+				#_OFF
+				register "off_seq.ops_cnt" = "3"
+				register "off_seq.ops[0]" = "SEQ_OPS_CLK_DISABLE(0, 0)"
+				register "off_seq.ops[1]" = "SEQ_OPS_GPIO_DISABLE(1, 0)"
+				register "off_seq.ops[2]" = "SEQ_OPS_GPIO_DISABLE(0, 0)"
+
+				device i2c 36 on end
+			end
+		end
+		device ref pcie_rp1 on end
+		device ref pcie_rp3 on end # W/A to FSP issue
+		device ref pcie_rp4 on end # W/A to FSP issue
+		device ref pcie_rp5 on end
+		device ref pcie_rp6 on end
+		device ref pcie_rp8 on end
+		device ref pcie_rp9 on end
+		device ref pcie_rp11 on end
+		device ref uart0 on end
+		device ref gspi0 on end
+		device ref p2sb on end
+		device ref hda on
 			chip drivers/intel/soundwire
 				device generic 0 on
 					chip drivers/soundwire/alc711
@@ -396,10 +465,7 @@ chip soc/intel/alderlake
 					end
 				end
 			end
-		end # Intel Audio SNDW
-		device pci 1f.4 on  end # SMBus
-		device pci 1f.5 on  end # SPI
-		device pci 1f.6 off end # GbE
-		device pci 1f.7 off end # TH
+		end
+		device ref smbus on end
 	end
 end

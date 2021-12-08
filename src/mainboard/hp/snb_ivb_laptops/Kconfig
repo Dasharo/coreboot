@@ -17,11 +17,9 @@ config BOARD_HP_SNB_IVB_LAPTOPS
 if BOARD_HP_SNB_IVB_LAPTOPS
 
 config MAINBOARD_DIR
-	string
 	default "hp/snb_ivb_laptops"
 
 config VARIANT_DIR
-	string
 	default "2560p"          if BOARD_HP_2560P
 	default "2570p"          if BOARD_HP_2570P
 	default "2760p"          if BOARD_HP_2760P
@@ -33,7 +31,6 @@ config VARIANT_DIR
 	default "revolve_810_g1" if BOARD_HP_REVOLVE_810_G1
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "EliteBook 2560p"          if BOARD_HP_2560P
 	default "EliteBook 2570p"          if BOARD_HP_2570P
 	default "EliteBook 2760p"          if BOARD_HP_2760P
@@ -45,7 +42,6 @@ config MAINBOARD_PART_NUMBER
 	default "EliteBook Revolve 810 G1" if BOARD_HP_REVOLVE_810_G1
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config VGA_BIOS_FILE

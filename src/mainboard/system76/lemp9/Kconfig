@@ -8,6 +8,8 @@ config BOARD_SPECIFIC_OPTIONS
 	select EC_SYSTEM76_EC_BAT_THRESHOLDS
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
+	select HAVE_CMOS_DEFAULT
+	select HAVE_OPTION_TABLE
 	select HAVE_SMI_HANDLER
 	select HAVE_SPD_IN_CBFS
 	select INTEL_GMA_HAVE_VBT
@@ -22,11 +24,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select USE_LEGACY_8254_TIMER # Fix failure to boot GRUB
 
 config MAINBOARD_DIR
-	string
 	default "system76/lemp9"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "lemp9"
 
 config MAINBOARD_SMBIOS_PRODUCT_NAME
@@ -38,7 +38,6 @@ config MAINBOARD_VERSION
 	default "lemp9"
 
 config CBFS_SIZE
-	hex
 	default 0xc00000
 
 config CONSOLE_POST
@@ -54,7 +53,6 @@ config MAX_CPUS
 	default 8
 
 config DIMM_MAX
-	int
 	default 2
 
 config VGA_BIOS_FILE

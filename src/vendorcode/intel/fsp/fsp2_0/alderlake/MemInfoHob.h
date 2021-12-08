@@ -27,6 +27,9 @@ extern EFI_GUID gSiMemoryPlatformDataGuid;
 #define MAX_NODE        2
 #define MAX_CH          4
 #define MAX_DIMM        2
+// Must match definitions in
+// Intel\ClientOneSiliconPkg\IpBlock\MemoryInit\Mtl\Include\MrcInterface.h
+#define HOB_MAX_SAGV_POINTS 4
 
 ///
 /// Host reset states from MRC.
@@ -129,27 +132,21 @@ typedef enum {
 //
 // Matches MrcDdrType enum in MRC
 //
-#ifndef MRC_DDR_TYPE_DDR4
-#define MRC_DDR_TYPE_DDR4     0
+#ifndef MRC_DDR_TYPE_DDR5
+#define MRC_DDR_TYPE_DDR5     1
 #endif
-#ifndef MRC_DDR_TYPE_DDR3
-#define MRC_DDR_TYPE_DDR3     1
-#endif
-#ifndef MRC_DDR_TYPE_LPDDR3
-#define MRC_DDR_TYPE_LPDDR3   2
+#ifndef MRC_DDR_TYPE_LPDDR5
+#define MRC_DDR_TYPE_LPDDR5   2
 #endif
 #ifndef MRC_DDR_TYPE_LPDDR4
 #define MRC_DDR_TYPE_LPDDR4   3
 #endif
-#ifndef MRC_DDR_TYPE_WIO2
-#define MRC_DDR_TYPE_WIO2     4
-#endif
 #ifndef MRC_DDR_TYPE_UNKNOWN
-#define MRC_DDR_TYPE_UNKNOWN  5
+#define MRC_DDR_TYPE_UNKNOWN  4
 #endif
 
-#define MAX_PROFILE_NUM     4 // number of memory profiles supported
-#define MAX_XMP_PROFILE_NUM 2 // number of XMP profiles supported
+#define MAX_PROFILE_NUM     7 // number of memory profiles supported
+#define MAX_XMP_PROFILE_NUM 5 // number of XMP profiles supported
 
 #define MAX_TRACE_REGION             5
 #define MAX_TRACE_CACHE_TYPE         2
@@ -181,6 +178,10 @@ typedef struct {
   UINT16 tWTR_S;    ///< Number of tCK cycles for the channel DIMM's minimum internal write to read command delay time for different bank groups.
   UINT16 tCCD_L;  ///< Number of tCK cycles for the channel DIMM's minimum CAS-to-CAS delay for same bank group.
 } MRC_CH_TIMING;
+
+typedef struct {
+  UINT16 tRDPRE;     ///< Read CAS to Precharge cmd delay
+} MRC_IP_TIMING;
 
 ///
 /// Memory SMBIOS & OC Memory Data Hob
@@ -224,6 +225,20 @@ typedef struct {
   UINT8    Rsvd[2];
 } PSMI_MEM_INFO;
 
+/// This data structure contains per-SaGv timing values that are considered output by the MRC.
+typedef struct {
+  UINT32        DataRate;    ///< The memory rate for the current SaGv Point in units of MT/s
+  MRC_CH_TIMING JedecTiming; ///< Timings used for this entry's corresponding SaGv Point - derived from JEDEC SPD spec
+  MRC_IP_TIMING IpTiming;    ///< Timings used for this entry's corresponding SaGv Point - IP specific
+} HOB_SAGV_TIMING_OUT;
+
+/// This data structure contains SAGV config values that are considered output by the MRC.
+typedef struct {
+  UINT32              NumSaGvPointsEnabled; ///< Count of the total number of SAGV Points enabled.
+  UINT32              SaGvPointMask;        ///< Bit mask where each bit indicates an enabled SAGV point.
+  HOB_SAGV_TIMING_OUT SaGvTiming[HOB_MAX_SAGV_POINTS];
+} HOB_SAGV_INFO;
+
 typedef struct {
   UINT8             Revision;
   UINT16            DataWidth;              ///< Data width, in bits, of this memory device
@@ -241,14 +256,28 @@ typedef struct {
   SiMrcVersion      Version;
   BOOLEAN           EccSupport;
   UINT8             MemoryProfile;
+  UINT8             IsDMBRunning;                      ///< Memory Trained with Dynamic Memory Boost (DMB)
   UINT32            TotalPhysicalMemorySize;
   UINT32            DefaultXmptCK[MAX_XMP_PROFILE_NUM];///< Stores the tCK value read from SPD XMP profiles if they exist.
-  UINT8             XmpProfileEnable;                  ///< If XMP capable DIMMs are detected, this will indicate which XMP Profiles are common among all DIMMs.
+  ///
+  /// Set of bit flags showing XMP and User Profile capability status for the DIMMs detected in system. For each bit, 1 is supported, 0 is unsupported.
+  /// Bit 0: XMP Profile 1 capability status
+  /// Bit 1: XMP Profile 2 capability status
+  /// Bit 2: XMP Profile 3 capability status
+  /// Bit 3: User Profile 4 capability status
+  /// Bit 4: User Profile 5 capability status
+  ///
+  UINT8             XmpProfileEnable;
+  UINT8             XmpConfigWarning;                  ///< If XMP capable DIMMs config support only 1DPC, but 2DPC is installed
   UINT8             Ratio;                             ///< DDR Frequency Ratio, Max Value 255
   UINT8             RefClk;
   UINT32            VddVoltage[MAX_PROFILE_NUM];
+  UINT32            VddqVoltage[MAX_PROFILE_NUM];
+  UINT32            VppVoltage[MAX_PROFILE_NUM];
   CONTROLLER_INFO   Controller[MAX_NODE];
   UINT16            Ratio_UINT16;                      ///< DDR Frequency Ratio, used for programs that require ratios higher then 255
+  UINT32            NumPopulatedChannels;              ///< Total number of memory channels populated
+  HOB_SAGV_INFO     SagvConfigInfo;                    ///< This data structure contains SAGV config values that are considered output by the MRC.
 } MEMORY_INFO_DATA_HOB;
 
 /**

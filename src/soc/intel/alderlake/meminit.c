@@ -132,31 +132,32 @@ static void mem_init_spd_upds(FSP_M_CONFIG *mem_cfg, const struct mem_channel_da
 		[6] = { &mem_cfg->MemorySpdPtr12, &mem_cfg->MemorySpdPtr13, },
 		[7] = { &mem_cfg->MemorySpdPtr14, &mem_cfg->MemorySpdPtr15, },
 	};
-	uint8_t *disable_dimm_upds[MRC_CHANNELS] = {
-		&mem_cfg->DisableDimmMc0Ch0,
-		&mem_cfg->DisableDimmMc0Ch1,
-		&mem_cfg->DisableDimmMc0Ch2,
-		&mem_cfg->DisableDimmMc0Ch3,
-		&mem_cfg->DisableDimmMc1Ch0,
-		&mem_cfg->DisableDimmMc1Ch1,
-		&mem_cfg->DisableDimmMc1Ch2,
-		&mem_cfg->DisableDimmMc1Ch3,
+	uint8_t *disable_channel_upds[MRC_CHANNELS] = {
+		&mem_cfg->DisableMc0Ch0,
+		&mem_cfg->DisableMc0Ch1,
+		&mem_cfg->DisableMc0Ch2,
+		&mem_cfg->DisableMc0Ch3,
+		&mem_cfg->DisableMc1Ch0,
+		&mem_cfg->DisableMc1Ch1,
+		&mem_cfg->DisableMc1Ch2,
+		&mem_cfg->DisableMc1Ch3,
 	};
 	size_t ch, dimm;
 
 	mem_cfg->MemorySpdDataLen = data->spd_len;
 
 	for (ch = 0; ch < MRC_CHANNELS; ch++) {
-		uint8_t *disable_dimm_ptr = disable_dimm_upds[ch];
-		*disable_dimm_ptr = 0;
+		uint8_t *disable_channel_ptr = disable_channel_upds[ch];
+		bool enable_channel = 0;
 
 		for (dimm = 0; dimm < CONFIG_DIMMS_PER_CHANNEL; dimm++) {
 			uint32_t *spd_ptr = spd_upds[ch][dimm];
 
 			*spd_ptr = data->spd[ch][dimm];
-			if (!*spd_ptr)
-				*disable_dimm_ptr |= BIT(dimm);
+			if (*spd_ptr)
+				enable_channel = 1;
 		}
+		*disable_channel_ptr = !enable_channel;
 	}
 }
 
@@ -216,6 +217,22 @@ static void mem_init_dqs_upds(FSP_M_CONFIG *mem_cfg, const struct mem_channel_da
 	mem_init_dq_dqs_upds(dqs_upds, mb_cfg->dqs_map, upd_size, data, auto_detect);
 }
 
+#define DDR5_CH_DIMM_OFFSET(ch, dimm)        ((ch) * CONFIG_DIMMS_PER_CHANNEL + (dimm))
+
+static void ddr5_fill_dimm_module_info(FSP_M_CONFIG *mem_cfg, const struct mb_cfg *mb_cfg,
+						 const struct mem_spd *spd_info)
+{
+	for (size_t ch = 0; ch < soc_mem_cfg[MEM_TYPE_DDR5].num_phys_channels; ch++) {
+		for (size_t dimm = 0; dimm < CONFIG_DIMMS_PER_CHANNEL; dimm++) {
+			size_t mrc_ch = soc_mem_cfg[MEM_TYPE_DDR5].phys_to_mrc_map[ch];
+			mem_cfg->SpdAddressTable[DDR5_CH_DIMM_OFFSET(mrc_ch, dimm)] =
+				spd_info->smbus[ch].addr_dimm[dimm] << 1;
+		}
+	}
+	mem_init_dq_upds(mem_cfg, NULL, mb_cfg, true);
+	mem_init_dqs_upds(mem_cfg, NULL, mb_cfg, true);
+}
+
 void memcfg_init(FSP_M_CONFIG *mem_cfg, const struct mb_cfg *mb_cfg,
 		 const struct mem_spd *spd_info, bool half_populated)
 {
@@ -234,9 +251,20 @@ void memcfg_init(FSP_M_CONFIG *mem_cfg, const struct mb_cfg *mb_cfg,
 
 	switch (mb_cfg->type) {
 	case MEM_TYPE_DDR4:
+		meminit_ddr(mem_cfg, &mb_cfg->ddr_config);
+		dq_dqs_auto_detect = true;
+		break;
 	case MEM_TYPE_DDR5:
 		meminit_ddr(mem_cfg, &mb_cfg->ddr_config);
 		dq_dqs_auto_detect = true;
+		/*
+		* TODO: Drop this workaround once SMBus driver in coreboot is updated to
+		* support DDR5 EEPROM reading.
+		*/
+		if (spd_info->topo == MEM_TOPO_DIMM_MODULE) {
+			ddr5_fill_dimm_module_info(mem_cfg, mb_cfg, spd_info);
+			return;
+		}
 		break;
 	case MEM_TYPE_LP4X:
 		meminit_lp4x(mem_cfg);

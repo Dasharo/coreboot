@@ -162,7 +162,6 @@ chip soc/intel/cannonlake
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| I2C0              | Touchscreen               |
 	#| I2C1              | Touchpad                  |
 	#| I2C4              | H1 TPM                    |
@@ -174,7 +173,6 @@ chip soc/intel/cannonlake
 	register "common_soc_config.pch_thermal_trip" = "77"
 
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
 			.rise_time_ns = 180,
@@ -459,7 +457,7 @@ chip soc/intel/cannonlake
 			end
 		end # LPC/eSPI
 		device pci 1f.1 on  end # P2SB
-		device pci 1f.2 on  end # Power Management Controller
+		device pci 1f.2 hidden end # Power Management Controller
 		device pci 1f.3 on  end # Intel HDA
 		device pci 1f.4 on  end # SMBus
 		device pci 1f.5 on  end # PCH SPI

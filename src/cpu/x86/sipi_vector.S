@@ -77,8 +77,9 @@ _start:
 	movw	%ax, %ds
 	movw	%ax, %es
 	movw	%ax, %ss
+	xor	%ax, %ax /* zero out the gs and fs segment index */
 	movw	%ax, %fs
-	movw	%ax, %gs
+	movw	%ax, %gs /* Will be used for cpu_info */
 
 	/* Load the Interrupt descriptor table */
 	mov	idt_ptr, %ebx
@@ -214,13 +215,13 @@ load_msr:
 	mov	%eax, %cr4
 #endif
 
-#ifdef __x86_64__
+#if ENV_X86_64
 	/* entry64.inc preserves ebx. */
 #include <cpu/x86/64bit/entry64.inc>
 
 	mov	%rsi, %rdi	/* cpu_num */
 
-	movl	c_handler, %eax
+	movabs	c_handler, %eax
 	call	*%rax
 #else
 	/* c_handler(cpu_num), preserve proper stack alignment */

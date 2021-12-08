@@ -1,9 +1,5 @@
 chip soc/intel/tigerlake
 
-	device cpu_cluster 0 on
-		device lapic 0 on end
-	end
-
 	# GPE configuration
 	# Note that GPE events called out in ASL code rely on this
 	# route. i.e. If this route changes then the affected GPE
@@ -155,7 +151,6 @@ chip soc/intel/tigerlake
 
 	# Intel Common SoC Config
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.gspi[1] = {
 			.speed_mhz = 1,
 			.early_init = 1,
@@ -195,7 +190,7 @@ chip soc/intel/tigerlake
 					.time_window_max = 32 * MSECS_PER_SEC,
 					.granularity = 200,}"
 				register "controls.power_limits.pl2" = "{
-					.min_power = 9000,
+					.min_power = 40000,
 					.max_power = 40000,
 					.time_window_min = 28 * MSECS_PER_SEC,
 					.time_window_max = 32 * MSECS_PER_SEC,

@@ -11,17 +11,16 @@
 #include <arch/ioapic.h>
 #include <acpi/acpi.h>
 #include <cpu/x86/smm.h>
-#include <soc/iobp.h>
 #include <soc/iomap.h>
 #include <soc/lpc.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
-#include <soc/ramstage.h>
 #include <soc/rcba.h>
 #include <soc/intel/broadwell/pch/chip.h>
 #include <acpi/acpigen.h>
 #include <southbridge/intel/common/rtc.h>
+#include <southbridge/intel/lynxpoint/iobp.h>
 #include <southbridge/intel/lynxpoint/lp_gpio.h>
 
 static void pch_enable_ioapic(struct device *dev)
@@ -42,12 +41,6 @@ static void pch_enable_ioapic(struct device *dev)
 	reg32 |= 0x00270000;
 
 	io_apic_write(VIO_APIC_VADDR, 0x01, reg32);
-
-	/*
-	 * Select Boot Configuration register (0x03) and
-	 * use Processor System Bus (0x01) to deliver interrupts.
-	 */
-	io_apic_write(VIO_APIC_VADDR, 0x03, 0x01);
 }
 
 static void enable_hpet(struct device *dev)
@@ -604,11 +597,12 @@ static unsigned long broadwell_write_acpi_tables(const struct device *device,
 						 unsigned long current,
 						 struct acpi_rsdp *rsdp)
 {
-	if (CONFIG(INTEL_PCH_UART_CONSOLE))
+	if (CONFIG(SERIALIO_UART_CONSOLE)) {
 		current = acpi_write_dbg2_pci_uart(rsdp, current,
-			(CONFIG_INTEL_PCH_UART_CONSOLE_NUMBER == 1) ?
+			(CONFIG_UART_FOR_CONSOLE == 1) ?
 				PCH_DEV_UART1 : PCH_DEV_UART0,
-			ACPI_ACCESS_SIZE_BYTE_ACCESS);
+			ACPI_ACCESS_SIZE_DWORD_ACCESS);
+	}
 	return acpi_write_hpet(device, current, rsdp);
 }
 

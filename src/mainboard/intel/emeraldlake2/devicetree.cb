@@ -14,7 +14,7 @@ chip northbridge/intel/sandybridge
 	device cpu_cluster 0 on
 		chip cpu/intel/model_206ax
 			# Magic APIC ID to locate this chip
-			device lapic 0x0 on end
+			device lapic 0 on end
 			device lapic 0xacac off end
 
 			register "acpi_c1" = "3"	# ACPI(C1) = MWAIT(C3)
@@ -44,8 +44,6 @@ chip northbridge/intel/sandybridge
 			register "gen2_dec" = "0x000c0181"
 			# SuperIO range is 0x700-0x73f
 			register "gen3_dec" = "0x003c0701"
-
-			register "c2_latency" = "1"
 
 			device pci 16.0 on  end	# Management Engine Interface 1
 			device pci 16.1 off end	# Management Engine Interface 2

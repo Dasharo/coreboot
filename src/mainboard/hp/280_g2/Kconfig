@@ -17,19 +17,15 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_ITE_COMMON_PRE_RAM
 
 config MAINBOARD_DIR
-	string
 	default "hp/280_g2"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "280 G2"
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config UART_FOR_CONSOLE

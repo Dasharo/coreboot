@@ -1,10 +1,7 @@
-# TODO These two options look too similar
-config PARALLEL_CPU_INIT
-	bool
-	default n
-
 config PARALLEL_MP
-	def_bool n
+	def_bool y
+	depends on !LEGACY_SMP_INIT
+	depends on SMP
 	help
 	 This option uses common MP infrastructure for bringing up APs
 	 in parallel. It additionally provides a more flexible mechanism
@@ -16,6 +13,29 @@ config PARALLEL_MP_AP_WORK
 	help
 	 Allow APs to do other work after initialization instead of going
 	 to sleep.
+
+config LEGACY_SMP_INIT
+	bool
+
+choice LAPIC_ACCESS_MODE
+	prompt "APIC operation mode"
+	default XAPIC_ONLY
+
+config XAPIC_ONLY
+	prompt "Set XAPIC mode"
+	bool
+
+config X2APIC_ONLY
+	prompt "Set X2APIC mode"
+	bool
+	depends on PARALLEL_MP
+
+config X2APIC_RUNTIME
+	prompt "Support both XAPIC and X2APIC"
+	bool
+	depends on PARALLEL_MP
+
+endchoice
 
 config UDELAY_LAPIC
 	bool
@@ -107,6 +127,7 @@ config SMM_MODULE_HEAP_SIZE
 
 config SMM_MODULE_STACK_SIZE
 	hex
+	default 0x800 if ARCH_RAMSTAGE_X86_64
 	default 0x400
 	help
 	  This option determines the size of the stack within the SMM handler
@@ -152,7 +173,9 @@ config X86_AMD_INIT_SIPI
 	help
 	  This option limits the number of SIPI signals sent during during the
 	  common AP setup.  Intel documentation specifies an INIT SIPI SIPI
-	  sequence, however this doesn't work on some AMD platforms.
+	  sequence, however this doesn't work on some AMD platforms. These
+	  newer AMD platforms don't need the 10ms wait between INIT and SIPI,
+	  so skip that too to save some time.
 
 config SOC_SETS_MSRS
 	bool

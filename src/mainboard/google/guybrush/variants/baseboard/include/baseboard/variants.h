@@ -3,7 +3,13 @@
 #ifndef __BASEBOARD_VARIANTS_H__
 #define __BASEBOARD_VARIANTS_H__
 
-#include <amdblocks/gpio_banks.h>
+#include <amdblocks/gpio.h>
+#include <soc/pci_devs.h>
+
+#define WLAN_DEVFN	PCIE_GPP_2_0_DEVFN
+#define SD_DEVFN	PCIE_GPP_2_1_DEVFN
+#define WWAN_DEVFN	PCIE_GPP_2_2_DEVFN
+#define NVME_DEVFN	PCIE_GPP_2_3_DEVFN
 
 /*
  * This function provides base GPIO configuration table. It is typically provided by
@@ -13,19 +19,33 @@
  */
 const struct soc_amd_gpio *variant_base_gpio_table(size_t *size);
 /*
- * This function allows variant to override any GPIOs that are different than the base GPIO
- * configuration provided by variant_base_gpio_table().
+ * These functions allow variants to override any GPIOs that are different than the base GPIO
+ * configuration provided without having to replace the entire file.
  */
 const struct soc_amd_gpio *variant_override_gpio_table(size_t *size);
+const struct soc_amd_gpio *variant_early_override_gpio_table(size_t *size);
+const struct soc_amd_gpio *variant_bootblock_override_gpio_table(size_t *size);
+const struct soc_amd_gpio *variant_pcie_override_gpio_table(size_t *size);
 
-/* This function provides early GPIO init in bootblock or psp. */
+/* This function provides early GPIO init in early bootblock or psp. */
 const struct soc_amd_gpio *variant_early_gpio_table(size_t *size);
+
+/* This function provides GPIO settings at the end of bootblock. */
+const struct soc_amd_gpio *variant_bootblock_gpio_table(size_t *size);
+
+/* This function provides GPIO settings before PCIe enumeration. */
+const struct soc_amd_gpio *variant_pcie_gpio_table(size_t *size);
 
 /* This function provides GPIO settings before entering sleep. */
 const struct soc_amd_gpio *variant_sleep_gpio_table(size_t *size);
 
+/* Finalize GPIOs, such as FPMCU power */
+void variant_finalize_gpios(void);
+
 void variant_fpmcu_reset(void);
 
 bool variant_has_fpmcu(void);
+
+bool variant_has_pcie_wwan(void);
 
 #endif /* __BASEBOARD_VARIANTS_H__ */

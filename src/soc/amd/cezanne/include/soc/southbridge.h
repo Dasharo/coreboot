@@ -63,6 +63,23 @@
 
 #define FCH_LEGACY_UART_DECODE		(ALINK_AHB_ADDRESS + 0x20) /* 0xfedc0020 */
 
+/* FCH MISC Registers 0xfed80e00 */
+#define GPP_CLK_CNTRL			0x00
+#define   GPP_CLK0_REQ_SHIFT		0
+#define   GPP_CLK1_REQ_SHIFT		2
+#define   GPP_CLK4_REQ_SHIFT		4
+#define   GPP_CLK2_REQ_SHIFT		6
+#define   GPP_CLK3_REQ_SHIFT		8
+#define   GPP_CLK5_REQ_SHIFT		10
+#define   GPP_CLK6_REQ_SHIFT		12
+#define     GPP_CLK_OUTPUT_COUNT	7
+#define   GPP_CLK_REQ_MASK(clk_shift)	(0x3 << (clk_shift))
+#define   GPP_CLK_REQ_ON(clk_shift)	(0x3 << (clk_shift))
+#define   GPP_CLK_REQ_EXT(clk_shift)	(0x1 << (clk_shift))
+#define   GPP_CLK_REQ_OFF(clk_shift)	(0x0 << (clk_shift))
+
+#define MISC_CLK_CNTL0			0x40 /* named MISC_CLK_CNTL1 on Picasso */
+#define   BP_X48M0_OUTPUT_EN		BIT(2) /* 1=En, unlike Hudson, Kern */
 #define MISC_I2C0_PAD_CTRL		0xd8
 #define MISC_I2C1_PAD_CTRL		0xdc
 #define MISC_I2C2_PAD_CTRL		0xe0
@@ -90,22 +107,7 @@
 #define   I2C_PAD_CTRL_SPARE0		BIT(17)
 #define   I2C_PAD_CTRL_SPARE1		BIT(18)
 
-/* FCH AOAC device offsets for AOAC_DEV_D3_CTL/AOAC_DEV_D3_STATE */
-#define FCH_AOAC_DEV_CLK_GEN		0
-#define FCH_AOAC_DEV_I2C0		5
-#define FCH_AOAC_DEV_I2C1		6
-#define FCH_AOAC_DEV_I2C2		7
-#define FCH_AOAC_DEV_I2C3		8
-#define FCH_AOAC_DEV_I2C4		9
-#define FCH_AOAC_DEV_I2C5		10
-#define FCH_AOAC_DEV_UART0		11
-#define FCH_AOAC_DEV_UART1		12
-#define FCH_AOAC_DEV_AMBA		17
-#define FCH_AOAC_DEV_ESPI		27
-
-/* IO 0xf0 NCP Error */
-#define   NCP_WARM_BOOT			(1 << 7) /* Write-once */
-
+void configure_port80_routing_early(void);
 void fch_pre_init(void);
 void fch_early_init(void);
 void fch_init(void *chip_info);

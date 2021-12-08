@@ -5,22 +5,23 @@ decompressor-y += decompressor.c
 decompressor-y += mmu.c
 decompressor-y += ../common/timer.c
 all-y += ../common/timer.c
-all-y += spi.c
-all-y += gpio.c
-all-y += qupv3_i2c.c
-all-y += qupv3_spi.c
+all-y += ../common/gpio.c
+all-y += ../common/spi.c
+all-$(CONFIG_SC7180_QSPI) += ../common/qspi.c
+all-y += ../common/qupv3_i2c.c
+all-y += ../common/qupv3_spi.c
 all-y += clock.c
-all-$(CONFIG_SC7180_QSPI) += qspi.c
+all-y += ../common/clock.c
 all-y += qcom_qup_se.c
-all-y += qupv3_config.c
+all-y += ../common/qupv3_config.c
+all-y += ../common/qup_se_handler.c
 
 ################################################################################
 bootblock-y += bootblock.c
 bootblock-y += mmu.c
-bootblock-$(CONFIG_DRIVERS_UART) += uart_bitbang.c
-
+bootblock-$(CONFIG_DRIVERS_UART) += ../common/uart_bitbang.c
 ################################################################################
-verstage-$(CONFIG_DRIVERS_UART) += qupv3_uart.c
+verstage-$(CONFIG_DRIVERS_UART) += ../common/qupv3_uart.c
 
 ################################################################################
 romstage-y += cbmem.c
@@ -30,14 +31,14 @@ romstage-y += ../common/mmu.c
 romstage-y += mmu.c
 romstage-y += usb.c
 romstage-y += carve_out.c
-romstage-$(CONFIG_DRIVERS_UART) += qupv3_uart.c
+romstage-$(CONFIG_DRIVERS_UART) += ../common/qupv3_uart.c
 
 ################################################################################
 ramstage-y += soc.c
 ramstage-y += carve_out.c
 ramstage-y += aop_load_reset.c
 ramstage-y += usb.c
-ramstage-$(CONFIG_DRIVERS_UART) += qupv3_uart.c
+ramstage-$(CONFIG_DRIVERS_UART) += ../common/qupv3_uart.c
 ramstage-$(CONFIG_MAINBOARD_DO_NATIVE_VGA_INIT) += display/dsi_phy_pll.c
 ramstage-$(CONFIG_MAINBOARD_DO_NATIVE_VGA_INIT) += display/dsi_phy.c
 ramstage-$(CONFIG_MAINBOARD_DO_NATIVE_VGA_INIT) += display/dsi.c

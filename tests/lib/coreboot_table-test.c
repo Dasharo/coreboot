@@ -264,7 +264,7 @@ void cbmem_run_init_hooks(int is_recovery)
 }
 
 extern uintptr_t _cbmem_top_ptr;
-void *__wrap_cbmem_top_chipset(void)
+void *cbmem_top_chipset(void)
 {
 	return (void *)_cbmem_top_ptr;
 }
@@ -493,5 +493,5 @@ int main(void)
 						teardown_write_tables_test),
 	};
 
-	return cmocka_run_group_tests(tests, NULL, NULL);
+	return cb_run_group_tests(tests, NULL, NULL);
 }

@@ -83,19 +83,10 @@ acpi_cstate_t *soc_get_cstate_map(size_t *entries)
 
 unsigned long acpi_fill_mcfg(unsigned long current)
 {
-	u32 pciexbar_reg;
-	int max_buses;
-
-	pciexbar_reg = get_pciebase();
-	max_buses = get_pcielength();
-
-	if (!pciexbar_reg)
-		return current;
-
-	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *)current,
-					     pciexbar_reg, 0x0, 0x0,
-					     (u8)(max_buses - 1));
-
+	/* PCI Segment Group 0, Start Bus Number 0, End Bus Number is 255 */
+	current += acpi_create_mcfg_mmconfig((void *)current,
+					     CONFIG_MMCONF_BASE_ADDRESS, 0, 0,
+					     CONFIG_MMCONF_BUS_NUMBER - 1);
 	return current;
 }
 
@@ -120,7 +111,6 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	/* RTC Registers */
 	fadt->day_alrm = 0x0D;
 	fadt->mon_alrm = 0x00;
-	fadt->century = 0x00;
 	fadt->iapc_boot_arch = ACPI_FADT_LEGACY_DEVICES | ACPI_FADT_8042;
 
 	fadt->flags |= ACPI_FADT_WBINVD | ACPI_FADT_C1_SUPPORTED |

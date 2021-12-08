@@ -2,11 +2,13 @@
 
 #include <acpi/acpi.h>
 #include <baseboard/variants.h>
+#include <console/console.h>
 #include <device/device.h>
 #include <drivers/spi/tpm/tpm.h>
 #include <ec/ec.h>
 #include <security/tpm/tss.h>
 #include <soc/soc_chip.h>
+#include <vb2_api.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 
 static void mainboard_update_soc_chip_config(void)
@@ -40,8 +42,15 @@ static void mainboard_init(void *chip_info)
 	gpio_configure_pads_with_override(base_pads, base_num,
 		override_pads, override_num);
 
+	variant_devtree_update();
+
 	if (CONFIG(BOARD_GOOGLE_BASEBOARD_DEDEDE_CR50))
 		mainboard_update_soc_chip_config();
+}
+
+void __weak variant_devtree_update(void)
+{
+	/* Override dev tree settings per board */
 }
 
 static void mainboard_dev_init(struct device *dev)

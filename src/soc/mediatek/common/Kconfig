@@ -17,7 +17,7 @@ config MEDIATEK_DRAM_DVFS
 config MEDIATEK_DRAM_DVFS_LIMIT_FREQ_CNT
 	bool
 	default y
-	select MEDIATEK_DRAM_DVFS
+	depends on MEDIATEK_DRAM_DVFS
 	help
 	  This options limit DRAM frequency calibration count from total 7 to 3,
 	  other frequency will directly use the low frequency shu result.
@@ -33,5 +33,17 @@ config CLEAR_WDT_MODE_REG
 	bool
 	help
 	  Enable this option to clear WTD mode register explicitly.
+
+config DPM_FOUR_CHANNEL
+	bool
+	default n
+	help
+	  This option enables four channel configuration for DPM.
+
+config MTK_DFD
+	bool
+	default n
+	help
+	  This option enables DFD (Design for Debug) settings.
 
 endif

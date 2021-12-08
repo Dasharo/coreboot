@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/cpu.h>
+#include <amdblocks/mca.h>
 #include <amdblocks/reset.h>
 #include <amdblocks/smm.h>
 #include <assert.h>
@@ -59,8 +60,6 @@ void mp_init_cpus(struct bus *cpu_bus)
 
 	/* pre_mp_init made the flash not cacheable. Reset to WP for performance. */
 	mtrr_use_temp_range(FLASH_BASE_ADDR, CONFIG_ROM_SIZE, MTRR_TYPE_WRPROT);
-
-	set_warm_reset_flag();
 }
 
 static void model_17_init(struct device *dev)

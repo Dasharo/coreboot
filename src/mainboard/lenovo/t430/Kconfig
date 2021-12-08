@@ -42,15 +42,12 @@ config VBOOT_VBNV_OFFSET
 	default 0x2a
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab.fmd" if VBOOT
 
 config MAINBOARD_DIR
-	string
 	default "lenovo/t430"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ThinkPad T430"
 
 config VGA_BIOS_ID

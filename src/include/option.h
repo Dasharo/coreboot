@@ -7,25 +7,23 @@
 
 void sanitize_cmos(void);
 
-enum cb_err cmos_set_uint_option(const char *name, unsigned int *value);
-enum cb_err cmos_get_uint_option(unsigned int *dest, const char *name);
+#if CONFIG(OPTION_BACKEND_NONE)
+
+static inline unsigned int get_uint_option(const char *name, const unsigned int fallback)
+{
+	return fallback;
+}
 
 static inline enum cb_err set_uint_option(const char *name, unsigned int value)
 {
-	if (CONFIG(USE_OPTION_TABLE))
-		return cmos_set_uint_option(name, &value);
-
 	return CB_CMOS_OTABLE_DISABLED;
 }
 
-static inline int get_uint_option(const char *name, const unsigned int fallback)
-{
-	if (CONFIG(USE_OPTION_TABLE)) {
-		unsigned int value = 0;
-		if (cmos_get_uint_option(&value, name) == CB_SUCCESS)
-			return value;
-	}
-	return fallback;
-}
+#else /* !OPTION_BACKEND_NONE */
+
+unsigned int get_uint_option(const char *name, const unsigned int fallback);
+enum cb_err set_uint_option(const char *name, unsigned int value);
+
+#endif /* OPTION_BACKEND_NONE? */
 
 #endif /* _OPTION_H_ */

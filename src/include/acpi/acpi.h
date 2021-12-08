@@ -71,8 +71,8 @@ enum coreboot_acpi_ids {
 
 enum acpi_tables {
 	/* Tables defined by ACPI and used by coreboot */
-	BERT, DBG2, DMAR, DSDT, EINJ, FACS, FADT, HEST, HPET, IVRS, MADT, MCFG,
-	RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT, LPIT,
+	BERT, DBG2, DMAR, DSDT, EINJ, FACS, FADT, HEST, HMAT, HPET, IVRS, MADT,
+	MCFG, RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT, LPIT,
 	/* Additional proprietary tables used by coreboot */
 	VFCT, NHLT, SPMI, CRAT
 };
@@ -208,6 +208,71 @@ typedef struct acpi_mcfg_mmconfig {
 	u8 reserved[4];
 } __packed acpi_mcfg_mmconfig_t;
 
+/*
+ * HMAT (Heterogeneous Memory Attribute Table)
+ * ACPI spec 6.4 section 5.2.27
+ */
+typedef struct acpi_hmat {
+	acpi_header_t header;
+	u32 resv;
+	/* Followed by HMAT table structure[n] */
+} __packed acpi_hmat_t;
+
+/* HMAT: Memory Proximity Domain Attributes structure */
+typedef struct acpi_hmat_mpda {
+	u16 type;			/* Type (0) */
+	u16 resv;
+	u32 length;			/* Length in bytes (40) */
+	u16 flags;
+	u16 resv1;
+	u32 proximity_domain_initiator;
+	u32 proximity_domain_memory;
+	u32 resv2;
+	u64 resv3;
+	u64 resv4;
+} __packed acpi_hmat_mpda_t;
+
+/* HMAT: System Locality Latency and Bandwidth Information structure */
+typedef struct acpi_hmat_sllbi {
+	u16 type;			/* Type (1) */
+	u16 resv;
+	u32 length;			/* Length in bytes */
+	u8 flags;
+	u8 data_type;
+	/*
+	 * Transfer size defined as a 5-biased power of 2 exponent,
+	 * when the bandwidth/latency value is achieved.
+	 */
+	u8 min_transfer_size;
+	u8 resv1;
+	u32 num_initiator_domains;
+	u32 num_target_domains;
+	u32 resv2;
+	u64 entry_base_unit;
+	/* Followed by initiator proximity domain list */
+	/* Followed by target proximity domain list */
+	/* Followed by latency / bandwidth values */
+} __packed acpi_hmat_sllbi_t;
+
+/* HMAT: Memory Side Cache Information structure */
+typedef struct acpi_hmat_msci {
+	u16 type;			/* Type (2) */
+	u16 resv;
+	u32 length;			/* Length in bytes */
+	u32 domain;			/* Proximity domain for the memory */
+	u32 resv1;
+	u64 cache_size;
+	/* Describes level, associativity, write policy, cache line size */
+	u32 cache_attributes;
+	u16 resv2;
+	/*
+	 * Number of SMBIOS handlers that contribute to the
+	 * memory side cache physical devices
+	 */
+	u16 num_handlers;
+	/* Followed by SMBIOS handlers*/
+} __packed acpi_hmat_msci_t;
+
 /* SRAT (System Resource Affinity Table) */
 typedef struct acpi_srat {
 	acpi_header_t header;
@@ -215,6 +280,10 @@ typedef struct acpi_srat {
 	u64 resv1;
 	/* Followed by static resource allocation structure[n] */
 } __packed acpi_srat_t;
+
+#define ACPI_SRAT_STRUCTURE_LAPIC 0
+#define ACPI_SRAT_STRUCTURE_MEM   1
+#define ACPI_SRAT_STRUCTURE_GIA   5
 
 /* SRAT: Processor Local APIC/SAPIC Affinity Structure */
 typedef struct acpi_srat_lapic {
@@ -244,6 +313,21 @@ typedef struct acpi_srat_mem {
 		    */
 	u32 resv2[2];
 } __packed acpi_srat_mem_t;
+
+/* SRAT: Generic Initiator Affinity Structure (ACPI spec 6.4 section 5.2.16.6) */
+typedef struct acpi_srat_gia {
+	u8 type;		/* Type (5) */
+	u8 length;		/* Length in bytes (32) */
+	u8 resv;
+	u8 dev_handle_type;	/* Device handle type */
+	u32 proximity_domain;	/*Proximity domain */
+	u8 dev_handle[16];	/* Device handle */
+	u32 flags;
+	u32 resv1;
+} __packed acpi_srat_gia_t;
+
+#define ACPI_SRAT_GIA_DEV_HANDLE_ACPI 0
+#define ACPI_SRAT_GIA_DEV_HANDLE_PCI  1
 
 /* SLIT (System Locality Distance Information Table) */
 typedef struct acpi_slit {
@@ -845,7 +929,15 @@ typedef struct acpi_hest_generic_data_v300 {
 #define ACPI_GENERROR_VALID_FRUID_TEXT		BIT(1)
 #define ACPI_GENERROR_VALID_TIMESTAMP		BIT(2)
 
-/* Generic Error Status Block */
+/*
+ * Generic Error Status Block
+ *
+ * If there is a raw data section at the end of the generic error status block after the
+ * zero or more generic error data entries, raw_data_length indicates the length of the raw
+ * section and raw_data_offset is the offset of the beginning of the raw data section from
+ * the start of the acpi_generic_error_status block it is contained in. So if raw_data_length
+ * is non-zero, raw_data_offset must be at least sizeof(acpi_generic_error_status_t).
+ */
 typedef struct acpi_generic_error_status {
 	u32 block_status;
 	u32 raw_data_offset;	/* must follow any generic entries */
@@ -1125,6 +1217,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt);
 void mainboard_fill_fadt(acpi_fadt_t *fadt);
 
 void acpi_fill_gnvs(void);
+void acpi_fill_cnvs(void);
 
 void update_ssdt(void *ssdt);
 void update_ssdtx(void *ssdtx, int i);
@@ -1153,6 +1246,12 @@ int acpi_create_madt_lx2apic_nmi(acpi_madt_lx2apic_nmi_t *lapic_nmi, u32 cpu,
 int acpi_create_srat_lapic(acpi_srat_lapic_t *lapic, u8 node, u8 apic);
 int acpi_create_srat_mem(acpi_srat_mem_t *mem, u8 node, u32 basek, u32 sizek,
 			 u32 flags);
+/*
+ * Given the Generic Initiator device's BDF, the proximity domain's ID
+ * and flag, create Generic Initiator Affinity structure in SRAT.
+ */
+int acpi_create_srat_gia_pci(acpi_srat_gia_t *gia, u32 proximity_domain,
+		u16 seg, u8 bus, u8 dev, u8 func, u32 flags);
 int acpi_create_mcfg_mmconfig(acpi_mcfg_mmconfig_t *mmconfig, u32 base,
 			      u16 seg_nr, u8 start, u8 end);
 unsigned long acpi_create_srat_lapics(unsigned long current);
@@ -1161,6 +1260,16 @@ void acpi_create_srat(acpi_srat_t *srat,
 
 void acpi_create_slit(acpi_slit_t *slit,
 		      unsigned long (*acpi_fill_slit)(unsigned long current));
+
+/*
+ * Create a Memory Proximity Domain Attributes structure for HMAT,
+ * given proximity domain for the attached initiaor, and
+ * proximimity domain for the memory.
+ */
+int acpi_create_hmat_mpda(acpi_hmat_mpda_t *mpda, u32 initiator, u32 memory);
+/* Create Heterogenous Memory Attribute Table */
+void acpi_create_hmat(acpi_hmat_t *hmat,
+		      unsigned long (*acpi_fill_hmat)(unsigned long current));
 
 void acpi_create_vfct(const struct device *device,
 		      acpi_vfct_t *vfct,
@@ -1240,9 +1349,8 @@ unsigned long acpi_create_hest_error_source(acpi_hest_t *hest,
 void acpi_create_lpit(acpi_lpit_t *lpit);
 unsigned long acpi_create_lpi_desc_ncst(acpi_lpi_desc_ncst_t *lpi_desc, uint16_t uid);
 
-/* For crashlog. */
-bool acpi_is_boot_error_src_present(void);
-void acpi_soc_fill_bert(acpi_bert_t *bert, void **region, size_t *length);
+/* chipsets that select ACPI_BERT must implement this function */
+enum cb_err acpi_soc_get_bert_region(void **region, size_t *length);
 
 /* For ACPI S3 support. */
 void __noreturn acpi_resume(void *wake_vec);

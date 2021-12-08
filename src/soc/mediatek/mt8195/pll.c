@@ -332,8 +332,8 @@ static const struct mux_sel mux_sels[] = {
 	{ .id = TOP_SCP_SEL, .sel = 7 },			/* 7: mainpll_d6_d2 */
 	{ .id = TOP_BUS_AXIMEM_SEL, .sel = 3 },			/* 3: mainpll_d5_d2 */
 	/* CLK_CFG_1 */
-	{ .id = TOP_VPP_SEL, .sel = 2 },			/* 2: mainpll_d5_d2 */
-	{ .id = TOP_ETHDR_SEL, .sel = 10 },			/* 10: mmpll_d5_d4 */
+	{ .id = TOP_VPP_SEL, .sel = 9 },			/* 9: mainpll_d4 */
+	{ .id = TOP_ETHDR_SEL, .sel = 8 },			/* 8: univpll_d6 */
 	{ .id = TOP_IPE_SEL, .sel = 8 },			/* 8: mainpll_d4_d2 */
 	{ .id = TOP_CAM_SEL, .sel = 8 },			/* 8: mainpll_d4_d2 */
 	/* CLK_CFG_2 */
@@ -469,7 +469,7 @@ static const struct mux_sel mux_sels[] = {
 	{ .id = TOP_SPINOR_SEL, .sel = 3 },			/* 3: univpll_d6_d8 */
 	/* CLK_CFG_29 */
 	{ .id = TOP_DVIO_DGI_REF_SEL, .sel = 1 },		/* 1: in_dgi_ck */
-	{ .id = TOP_SRCK_SEL, .sel = 1 },			/* 1: xtal_26m_ck */
+	{ .id = TOP_SRCK_SEL, .sel = 0 },			/* 0: ulposc_d10 */
 	/* CLK_MISC_CFG_3 */
 	{ .id = TOP_MFG_FAST_SEL, .sel = 1 },			/* 1: AD_MFGPLL_OPP_CK */
 };
@@ -638,12 +638,18 @@ void mt_pll_init(void)
 	int i;
 
 	/* enable clock square */
-	setbits32(&mtk_apmixed->ap_pll_con0, 0x4);
+	setbits32(&mtk_apmixed->ap_pll_con0, BIT(2));
 
 	udelay(PLL_CKSQ_ON_DELAY);
 
 	/* enable clock square1 low-pass filter */
-	setbits32(&mtk_apmixed->ap_pll_con0, 0x2);
+	setbits32(&mtk_apmixed->ap_pll_con0, BIT(1));
+
+	/*
+	 * BIT(3): 1 for register control; 0 for sleep control
+	 * BIT(8): 1 to enable clock square2; 0 to disable it
+	 */
+	clrbits32(&mtk_apmixed->ap_pll_con0, BIT(3) | BIT(8));
 
 	/* xPLL PWR ON */
 	for (i = 0; i < APMIXED_PLL_MAX; i++)
@@ -713,6 +719,27 @@ void mt_pll_init(void)
 	setbits32(&mt8195_infracfg_ao->infra_bus_dcm_ctrl, 0x3 << 21);
 	setbits32(&mt8195_infracfg_ao_bcrm->vdnr_dcm_top_infra_ctrl0, 0x2);
 
+	/* dcm_infracfg_ao_aximem_bus_dcm */
+	clrsetbits32(&mt8195_infracfg_ao->infra_aximem_idle_bit_en_0,
+		     INFRACFG_AO_AXIMEM_BUS_DCM_REG0_MASK,
+		     INFRACFG_AO_AXIMEM_BUS_DCM_REG0_ON);
+	/* dcm_infracfg_ao_infra_bus_dcm */
+	clrsetbits32(&mt8195_infracfg_ao->infra_bus_dcm_ctrl,
+		     INFRACFG_AO_INFRA_BUS_DCM_REG0_MASK,
+		     INFRACFG_AO_INFRA_BUS_DCM_REG0_ON);
+	/* dcm_infracfg_ao_infra_rx_p2p_dcm */
+	clrsetbits32(&mt8195_infracfg_ao->p2p_rx_clk_on,
+		     INFRACFG_AO_INFRA_RX_P2P_DCM_REG0_MASK,
+		     INFRACFG_AO_INFRA_RX_P2P_DCM_REG0_ON);
+	/* dcm_infracfg_ao_peri_bus_dcm */
+	clrsetbits32(&mt8195_infracfg_ao->peri_bus_dcm_ctrl,
+		     INFRACFG_AO_PERI_BUS_DCM_REG0_MASK,
+		     INFRACFG_AO_PERI_BUS_DCM_REG0_ON);
+	/* dcm_infracfg_ao_peri_module_dcm */
+	clrsetbits32(&mt8195_infracfg_ao->peri_bus_dcm_ctrl,
+		     INFRACFG_AO_PERI_MODULE_DCM_REG0_MASK,
+		     INFRACFG_AO_PERI_MODULE_DCM_REG0_ON);
+
 	/* initialize SPM request */
 	setbits32(&mtk_topckgen->clk_scp_cfg_0, 0x3ff);
 
@@ -771,6 +798,24 @@ void mt_pll_raise_cci_freq(u32 freq)
 
 	/* switch clock source back to ccipll */
 	clrsetbits32(&mt8195_mcucfg->bus_plldiv_cfg, MCU_MUX_MASK, MCU_MUX_SRC_PLL);
+}
+
+void mt_pll_set_tvd_pll1_freq(u32 freq)
+{
+	/* disable tvdpll frequency output */
+	clrbits32(plls[APMIXED_TVDPLL1].reg, MT8195_PLL_EN);
+
+	/* set tvdpll frequency */
+	pll_set_rate(&plls[APMIXED_TVDPLL1], freq);
+
+	/* enable tvdpll frequency output */
+	setbits32(plls[APMIXED_TVDPLL1].reg, MT8195_PLL_EN);
+	udelay(PLL_EN_DELAY);
+}
+
+void edp_mux_set_sel(u32 sel)
+{
+	mux_set_sel(&muxes[TOP_EDP_SEL], sel);
 }
 
 u32 mt_fmeter_get_freq_khz(enum fmeter_type type, u32 id)

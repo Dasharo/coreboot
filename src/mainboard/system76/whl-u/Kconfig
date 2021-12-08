@@ -9,6 +9,8 @@ config BOARD_SPECIFIC_OPTIONS
 	select EC_SYSTEM76_EC_COLOR_KEYBOARD if BOARD_SYSTEM76_DARP5
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
+	select HAVE_CMOS_DEFAULT
+	select HAVE_OPTION_TABLE
 	select INTEL_GMA_HAVE_VBT
 	select INTEL_LPSS_UART_FOR_CONSOLE
 	select MAINBOARD_HAS_LPC_TPM
@@ -22,20 +24,16 @@ config BOARD_SPECIFIC_OPTIONS
 	select SYSTEM_TYPE_LAPTOP
 
 config MAINBOARD_DIR
-	string
 	default "system76/whl-u"
 
 config VARIANT_DIR
-	string
 	default "galp3-c" if BOARD_SYSTEM76_GALP3_C
 	default "darp5" if BOARD_SYSTEM76_DARP5
 
 config OVERRIDE_DEVICETREE
-	string
-	default "variants/$(CONFIG_VARIANT_DIR)/overridetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "galp3-c" if BOARD_SYSTEM76_GALP3_C
 	default "darp5" if BOARD_SYSTEM76_DARP5
 
@@ -50,7 +48,6 @@ config MAINBOARD_VERSION
 	default "darp5" if BOARD_SYSTEM76_DARP5
 
 config CBFS_SIZE
-	hex
 	default 0xA00000
 
 config CONSOLE_POST
@@ -70,7 +67,6 @@ config MAX_CPUS
 	default 8
 
 config DIMM_MAX
-	int
 	default 2
 
 config POST_DEVICE

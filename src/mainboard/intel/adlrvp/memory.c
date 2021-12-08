@@ -13,12 +13,14 @@ static const struct mb_cfg ddr4_mem_config = {
 		.resistor = 100,
 
 		/* Baseboard Rcomp target values */
-		.targets = {40, 30, 33, 33, 30},
+		.targets = { 50, 20, 25, 25, 25 },
 	},
 
 	.ect = true, /* Early Command Training */
 
 	.UserBd = BOARD_TYPE_MOBILE,
+
+	.LpDdrDqDqsReTraining = 1,
 
 	.ddr_config = {
 		.dq_pins_interleaved = false,
@@ -75,6 +77,8 @@ static const struct mb_cfg lpddr4_mem_config = {
 		.ddr6 = { .dqs0 = 1, .dqs1 = 0 },
 		.ddr7 = { .dqs0 = 0, .dqs1 = 1 },
 	},
+
+	.LpDdrDqDqsReTraining = 1,
 
 	.ect = true, /* Early Command Training */
 
@@ -134,6 +138,8 @@ static const struct mb_cfg lp5_mem_config = {
 
 	.ect = false, /* Early Command Training */
 
+	.LpDdrDqDqsReTraining = 1,
+
 	.UserBd = BOARD_TYPE_MOBILE,
 
 	.lp5x_config = {
@@ -149,12 +155,14 @@ static const struct mb_cfg ddr5_mem_config = {
 		.resistor = 100,
 
 		/* Baseboard Rcomp target values */
-		.targets = {50, 30, 30, 30, 27},
+		.targets = { 50, 30, 30, 30, 27 },
 	},
 
 	.ect = true, /* Early Command Training */
 
 	.UserBd = BOARD_TYPE_MOBILE,
+
+	.LpDdrDqDqsReTraining = 1,
 
 	.ddr_config = {
 		.dq_pins_interleaved = false,
@@ -213,6 +221,10 @@ static const struct mb_cfg adlm_lp4_mem_config = {
 	},
 
 	.ect = true, /* Early Command Training */
+
+	.CmdMirror = 0xCC,
+
+	.LpDdrDqDqsReTraining = 1,
 
 	.UserBd = BOARD_TYPE_ULT_ULX,
 };
@@ -288,7 +300,8 @@ const struct mb_cfg *variant_memory_params(void)
 	case ADL_P_DDR4_1:
 	case ADL_P_DDR4_2:
 		return &ddr4_mem_config;
-	case ADL_P_DDR5:
+	case ADL_P_DDR5_1:
+	case ADL_P_DDR5_2:
 		return &ddr5_mem_config;
 	case ADL_P_LP5_1:
 	case ADL_P_LP5_2:

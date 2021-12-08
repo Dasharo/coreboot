@@ -168,7 +168,7 @@ pcie_rtd3_acpi_method_status(int pcie_rp,
 static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 {
 	const struct soc_intel_common_block_pcie_rtd3_config *config = config_of(dev);
-	static const char *const power_res_states[] = {"_PR0"};
+	static const char *const power_res_states[] = {"_PR0", "_PR3"};
 	const struct device *parent = dev->bus->dev;
 	const char *scope = acpi_device_path(parent);
 	const struct opregion opregion = OPREGION("PXCS", PCI_CONFIG, 0, 0xff);
@@ -206,17 +206,23 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		return;
 	}
 
-	/* Read port number of root port that this device is attached to. */
-	pcie_rp = pci_read_config8(parent, PCH_PCIE_CFG_LCAP_PN);
-	if (pcie_rp == 0 || pcie_rp > CONFIG_MAX_ROOT_PORTS) {
-		printk(BIOS_ERR, "%s: Invalid root port number: %u\n", __func__, pcie_rp);
-		return;
+	if (config->cpu_pcie_clk_usage) {
+		/* CPU PCIe port index starts at bit24: 0x40 - 40 = 24 */
+		pcie_rp = config->cpu_pcie_clk_usage - 40;
+	} else {
+		/* PCH PCIe port */
+		/* Read port number of root port that this device is attached to. */
+		pcie_rp = pci_read_config8(parent, PCH_PCIE_CFG_LCAP_PN);
+		if (pcie_rp == 0 || pcie_rp > CONFIG_MAX_ROOT_PORTS) {
+			printk(BIOS_ERR, "%s: Invalid root port number: %u\n", __func__, pcie_rp);
+			return;
+		}
+		/* Port number is 1-based, PMC IPC method expects 0-based. */
+		pcie_rp--;
 	}
-	/* Port number is 1-based, PMC IPC method expects 0-based. */
-	pcie_rp--;
 
-	printk(BIOS_INFO, "%s: Enable RTD3 for %s (%s)\n", scope, dev_path(parent),
-	       config->desc ?: dev->chip_ops->name);
+	printk(BIOS_INFO, "%s: Enable RTD3 for %s (%s) on port %u\n", scope, dev_path(parent),
+	       config->desc ?: dev->chip_ops->name, pcie_rp);
 
 	/* The RTD3 power resource is added to the root port, not the device. */
 	acpigen_write_scope(scope);
@@ -258,7 +264,7 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		acpigen_write_device(acpi_device_name(dev));
 		acpigen_write_ADR(0);
 		acpigen_write_STA(ACPI_STATUS_DEVICE_ALL_ON);
-		acpigen_write_name_integer("_S0W", 4);
+		acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_COLD);
 
 		dsd = acpi_dp_new_table("_DSD");
 		pkg = acpi_dp_new_table(PCIE_RTD3_STORAGE_UUID);

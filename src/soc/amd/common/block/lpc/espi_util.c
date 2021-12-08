@@ -17,6 +17,10 @@ void espi_update_static_bar(uintptr_t bar)
 	espi_bar = bar;
 }
 
+__weak void mb_set_up_early_espi(void)
+{
+}
+
 static uintptr_t espi_get_bar(void)
 {
 	if (ENV_X86 && !espi_bar)
@@ -371,7 +375,7 @@ enum espi_cmd_type {
 #define ESPI_RXVW_POLARITY			0xac
 
 #define ESPI_CMD_TIMEOUT_US			100
-#define ESPI_CH_READY_TIMEOUT_US		1000
+#define ESPI_CH_READY_TIMEOUT_US		10000
 
 union espi_txhdr0 {
 	uint32_t val;
@@ -419,6 +423,7 @@ struct espi_cmd {
 	union espi_txhdr1 hdr1;
 	union espi_txhdr2 hdr2;
 	union espi_txdata data;
+	uint32_t expected_status_codes;
 } __packed;
 
 /* Wait up to ESPI_CMD_TIMEOUT_US for hardware to clear DNCMD_STATUS bit. */
@@ -477,7 +482,7 @@ static int espi_send_command(const struct espi_cmd *cmd)
 	uint32_t status;
 
 	if (CONFIG(ESPI_DEBUG))
-		printk(BIOS_ERR, "eSPI cmd0-cmd2: %08x %08x %08x data: %08x.\n",
+		printk(BIOS_DEBUG, "eSPI cmd0-cmd2: %08x %08x %08x data: %08x.\n",
 		       cmd->hdr0.val, cmd->hdr1.val, cmd->hdr2.val, cmd->data.val);
 
 	if (espi_wait_ready() == -1) {
@@ -512,13 +517,13 @@ static int espi_send_command(const struct espi_cmd *cmd)
 		return -1;
 	}
 
-	if (status & ~ESPI_STATUS_DNCMD_COMPLETE) {
+	if (status & ~(ESPI_STATUS_DNCMD_COMPLETE | cmd->expected_status_codes)) {
 		espi_show_failure(cmd, "Error: unexpected eSPI status register bits set",
 				  status);
 		return -1;
 	}
 
-	espi_write32(ESPI_SLAVE0_INT_STS, ESPI_STATUS_DNCMD_COMPLETE);
+	espi_write32(ESPI_SLAVE0_INT_STS, status);
 
 	return 0;
 }
@@ -530,12 +535,39 @@ static int espi_send_reset(void)
 			.cmd_type = CMD_TYPE_IN_BAND_RESET,
 			.cmd_sts = 1,
 		},
+
+		/*
+		 * When performing an in-band reset the host controller and the
+		 * peripheral can have mismatched IO configs.
+		 *
+		 * i.e., The eSPI peripheral can be in IO-4 mode while, the
+		 * eSPI host will be in IO-1. This results in the peripheral
+		 * getting invalid packets and thus not responding.
+		 *
+		 * If the peripheral is alerting when we perform an in-band
+		 * reset, there is a race condition in espi_send_command.
+		 * 1) espi_send_command clears the interrupt status.
+		 * 2) eSPI host controller hardware notices the alert and sends
+		 *    a GET_STATUS.
+		 * 3) espi_send_command writes the in-band reset command.
+		 * 4) eSPI hardware enqueues the in-band reset until GET_STATUS
+		 *    is complete.
+		 * 5) GET_STATUS fails with NO_RESPONSE and sets the interrupt
+		 *    status.
+		 * 6) eSPI hardware performs in-band reset.
+		 * 7) espi_send_command checks the status and sees a
+		 *    NO_RESPONSE bit.
+		 *
+		 * As a workaround we allow the NO_RESPONSE status code when
+		 * we perform an in-band reset.
+		 */
+		.expected_status_codes = ESPI_STATUS_NO_RESPONSE,
 	};
 
 	return espi_send_command(&cmd);
 }
 
-static int espi_send_pltrst_deassert(const struct espi_config *mb_cfg)
+static int espi_send_pltrst(const struct espi_config *mb_cfg, bool assert)
 {
 	struct espi_cmd cmd = {
 		.hdr0 = {
@@ -545,7 +577,8 @@ static int espi_send_pltrst_deassert(const struct espi_config *mb_cfg)
 		},
 		.data = {
 			.byte0 = ESPI_VW_INDEX_SYSTEM_EVENT_3,
-			.byte1 = ESPI_VW_SIGNAL_HIGH(ESPI_VW_PLTRST),
+			.byte1 = assert ? ESPI_VW_SIGNAL_LOW(ESPI_VW_PLTRST)
+					: ESPI_VW_SIGNAL_HIGH(ESPI_VW_PLTRST),
 		},
 	};
 
@@ -810,8 +843,8 @@ static int espi_setup_periph_channel(const struct espi_config *mb_cfg, uint32_t 
 {
 	uint32_t slave_config;
 	/* Peripheral channel requires BME bit to be set when enabling the channel. */
-	const uint32_t slave_en_mask = ESPI_SLAVE_CHANNEL_READY |
-					ESPI_SLAVE_PERIPH_BUS_MASTER_ENABLE;
+	const uint32_t slave_en_mask =
+		ESPI_SLAVE_CHANNEL_ENABLE | ESPI_SLAVE_PERIPH_BUS_MASTER_ENABLE;
 
 	if (espi_get_configuration(ESPI_SLAVE_PERIPH_CFG, &slave_config) == -1)
 		return -1;
@@ -917,6 +950,8 @@ int espi_setup(void)
 	uint32_t slave_caps;
 	const struct espi_config *cfg = espi_get_config();
 
+	printk(BIOS_SPEW, "Initializing ESPI.\n");
+
 	espi_write32(ESPI_GLOBAL_CONTROL_0, ESPI_AL_STOP_EN);
 	espi_write32(ESPI_GLOBAL_CONTROL_1, ESPI_RGCMD_INT(23) | ESPI_ERR_INT_SMI);
 	espi_write32(ESPI_SLAVE0_INT_EN, 0);
@@ -976,9 +1011,15 @@ int espi_setup(void)
 		return -1;
 	}
 
+	/* Assert PLTRST# if VW channel is enabled by mainboard. */
+	if (espi_send_pltrst(cfg, true) == -1) {
+		printk(BIOS_ERR, "Error: PLTRST# assertion failed!\n");
+		return -1;
+	}
+
 	/* De-assert PLTRST# if VW channel is enabled by mainboard. */
-	if (espi_send_pltrst_deassert(cfg) == -1) {
-		printk(BIOS_ERR, "Error: PLTRST deassertion failed!\n");
+	if (espi_send_pltrst(cfg, false) == -1) {
+		printk(BIOS_ERR, "Error: PLTRST# deassertion failed!\n");
 		return -1;
 	}
 
@@ -1007,6 +1048,8 @@ int espi_setup(void)
 
 	espi_write32(ESPI_GLOBAL_CONTROL_1,
 		     espi_read32(ESPI_GLOBAL_CONTROL_1) | ESPI_BUS_MASTER_EN);
+
+	printk(BIOS_SPEW, "Finished initializing ESPI.\n");
 
 	return 0;
 }

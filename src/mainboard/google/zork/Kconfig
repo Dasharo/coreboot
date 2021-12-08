@@ -58,15 +58,12 @@ config ELOG_BOOT_COUNT_CMOS_OFFSET
 # FMDFILE is set here so that coreboot build picks up this flash map layout
 # even when CHROMEOS is not selected when building upstream.
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos.fmd"
 
 config MAINBOARD_DIR
-	string
 	default "google/zork"
 
 config VARIANT_DIR
-	string
 	default "ezkinil" if BOARD_GOOGLE_EZKINIL
 	default "morphius" if BOARD_GOOGLE_MORPHIUS
 	default "trembyle" if BOARD_GOOGLE_TREMBYLE
@@ -79,7 +76,6 @@ config VARIANT_DIR
 	default "gumboz" if BOARD_GOOGLE_GUMBOZ
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Ezkinil" if BOARD_GOOGLE_EZKINIL
 	default "Morphius" if BOARD_GOOGLE_MORPHIUS
 	default "Trembyle" if BOARD_GOOGLE_TREMBYLE
@@ -92,12 +88,10 @@ config MAINBOARD_PART_NUMBER
 	default "Gumboz" if BOARD_GOOGLE_GUMBOZ
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree_trembyle.cb" if BOARD_GOOGLE_BASEBOARD_TREMBYLE
 	default "variants/baseboard/devicetree_dalboz.cb" if BOARD_GOOGLE_BASEBOARD_DALBOZ
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config MAINBOARD_FAMILY
@@ -251,19 +245,26 @@ config VARIANT_MAX_BOARD_ID_BROKEN_FMPCU_POWER
 	help
 	  Last board version that needs the extra delay for FPMCU init.
 
+if !EM100	# EM100 defaults in soc/amd/common/blocks/spi/Kconfig
 config EFS_SPI_READ_MODE
-	int
-	default 0 if EM100 # Normal read mode
-	default 2          # Dual IO (1-1-2)
+	default 4          # Dual IO (1-2-2)
 
 config EFS_SPI_SPEED
-	int
-	default 3 if EM100 # 16.66 MHz
-	default 0          # 66.66 MHz
+	default 0	# 66MHz
 
 config EFS_SPI_MICRON_FLAG
-	int
 	default 0
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 0	# 66MHz
+
+config TPM_SPI_SPEED
+	default 0	# 66MHz
+
+endif # !EM100
 
 config CHROMEOS_WIFI_SAR
 	bool

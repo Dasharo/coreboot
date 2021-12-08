@@ -20,11 +20,9 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "google/beltino"
 
 config VARIANT_DIR
-	string
 	default "mccloud" if BOARD_GOOGLE_MCCLOUD
 	default "monroe" if BOARD_GOOGLE_MONROE
 	default "panther" if BOARD_GOOGLE_PANTHER
@@ -32,7 +30,6 @@ config VARIANT_DIR
 	default "zako" if BOARD_GOOGLE_ZAKO
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Mccloud" if BOARD_GOOGLE_MCCLOUD
 	default "Monroe" if BOARD_GOOGLE_MONROE
 	default "Panther" if BOARD_GOOGLE_PANTHER

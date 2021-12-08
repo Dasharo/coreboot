@@ -5,6 +5,7 @@ chip soc/amd/cezanne
 		.acp_pin_cfg = I2S_PINS_I2S_TDM,
 		.acp_i2s_wake_enable = 0,
 		.acp_pme_enable = 0,
+		.dmic_present = 1,
 	}"
 
 	# eSPI Configuration
@@ -35,7 +36,7 @@ chip soc/amd/cezanne
 		.io_mode = ESPI_IO_MODE_QUAD,
 		.op_freq_mhz = ESPI_OP_FREQ_33_MHZ,
 		.crc_check_enable = 1,
-		.alert_pin = ESPI_ALERT_PIN_IN_BAND,
+		.alert_pin = ESPI_ALERT_PIN_OPEN_DRAIN,
 		.periph_ch_en = 1,
 		.vw_ch_en = 1,
 		.oob_ch_en = 0,
@@ -47,43 +48,227 @@ chip soc/amd/cezanne
 	# Enable S0i3 support
 	register "s0ix_enable" = "1"
 
+	# Enable STT support
+	register "stt_control" = "1"
+	register "stt_pcb_sensor_count" = "2"
+	register "stt_min_limit" = "0"
+	register "stt_m1" = "0x0319"
+	register "stt_m2" = "0x01A0"
+	register "stt_m3" = "0"
+	register "stt_m4" = "0"
+	register "stt_m5" = "0"
+	register "stt_m6" = "0"
+	register "stt_c_apu" = "0xE99F"
+	register "stt_c_gpu" = "0"
+	register "stt_c_hs2" = "0"
+	register "stt_alpha_apu" = "0xCCD"
+	register "stt_alpha_gpu" = "0"
+	register "stt_alpha_hs2" = "0"
+	register "stt_skin_temp_apu" = "0x2D00"
+	register "stt_skin_temp_gpu" = "0"
+	register "stt_skin_temp_hs2" = "0"
+	register "stt_error_coeff" = "0xD"
+	register "stt_error_rate_coefficient" = "0x8F6"
+
 	register "system_configuration" = "2"
 
 	register "i2c_scl_reset" = "GPIO_I2C0_SCL | GPIO_I2C1_SCL |
 					GPIO_I2C2_SCL | GPIO_I2C3_SCL"
+	# I2C Pad Control RX Select Configuration
+	register "i2c_pad_ctrl_rx_sel[0]" = "I2C_PAD_CTRL_RX_SEL_3_3V" # Trackpad
+	register "i2c_pad_ctrl_rx_sel[1]" = "I2C_PAD_CTRL_RX_SEL_3_3V" # Touchscreen
+	register "i2c_pad_ctrl_rx_sel[2]" = "I2C_PAD_CTRL_RX_SEL_3_3V" # Audio/SAR
+	register "i2c_pad_ctrl_rx_sel[3]" = "I2C_PAD_CTRL_RX_SEL_1_8V" # GSC
+
+	# genral purpose PCIe clock output configuration
+	register "gpp_clk_config[0]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[1]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[2]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[3]" = "GPP_CLK_REQ"
+	register "gpp_clk_config[4]" = "GPP_CLK_OFF"
+	register "gpp_clk_config[5]" = "GPP_CLK_OFF"
+	register "gpp_clk_config[6]" = "GPP_CLK_OFF"
+
+	register "pspp_policy" = "DXIO_PSPP_BALANCED"
+
+	register "usb_phy_custom" = "1"
+	register "usb_phy" = "{
+		/* Left USB C0 Port */
+		.Usb2PhyPort[0] = {
+			.compdstune = 3,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 6,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		/* Left USB A0 Port or WWAN */
+		.Usb2PhyPort[1] = {
+			.compdstune = 3,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 6,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		/* User facing camera */
+		.Usb2PhyPort[2] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		/* World facing camera */
+		.Usb2PhyPort[3] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		/* Right USB C1 Port */
+		.Usb2PhyPort[4] = {
+			.compdstune = 3,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 6,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		/* Right USB A1 Port */
+		.Usb2PhyPort[5] = {
+			.compdstune = 5,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 9,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		/* WiFi / Bluetooth */
+		.Usb2PhyPort[6] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		/* Smart Card */
+		.Usb2PhyPort[7] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		/* Left USB C0 Port */
+		.Usb3PhyPort[0] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		/* Left USB A0 Port or WWAN */
+		.Usb3PhyPort[1] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		/* Right USB C1 Port */
+		.Usb3PhyPort[2] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		/* Right USB A1 Port */
+		.Usb3PhyPort[3] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		.ComboPhyStaticConfig[0] = 0,
+		.ComboPhyStaticConfig[1] = 0,
+		.BatteryChargerEnable = 0,
+		.PhyP3CpmP4Support = 0,
+	}"
 
 	device domain 0 on
-		device ref gpp_bridge_0 on end # WLAN
+		device ref iommu on end
+
+		device ref gpp_bridge_0 on
+			chip drivers/wifi/generic
+				register "wake" = "GEVENT_8"
+				device pci 00.0 on end
+			end
+		end # WLAN
 		device ref gpp_bridge_1 on end # SD
 		device ref gpp_bridge_2 on end # WWAN
-		device ref gpp_bridge_3 on end # NVMe
+		device ref gpp_bridge_3 on
+			# Required so the NVMe gets placed into D3 when entering S0i3.
+			chip drivers/pcie/rtd3/device
+				register "name" = ""NVME""
+				device pci 00.0 on end
+			end
+		end # NVMe
 
 		device ref gpp_bridge_a on  # Internal GPP Bridge 0 to Bus A
 			device ref gfx on end # Internal GPU (GFX)
 			device ref gfx_hda on end # GFX HD Audio Controller
+			device ref crypto on end # Crypto Coprocessor
 			device ref xhci_0 on # USB 3.1 (USB0)
 				chip drivers/usb/acpi
 					device ref xhci_0_root_hub on
 						chip drivers/usb/acpi
-							register "desc" = ""Right Type-C Port""
+							register "desc" = ""Left Type-C Port""
 							register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 							register "group" = "ACPI_PLD_GROUP(1, 1)"
 							device ref usb3_port0 on end
 						end
 						chip drivers/usb/acpi
-							register "desc" = ""Right Type-A Port""
+							register "desc" = ""Left Type-A Port""
 							register "type" = "UPC_TYPE_USB3_A"
 							register "group" = "ACPI_PLD_GROUP(1, 2)"
 							device ref usb3_port1 on end
 						end
 						chip drivers/usb/acpi
-							register "desc" = ""Right Type-C Port""
+							register "desc" = ""Left Type-C Port""
 							register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 							register "group" = "ACPI_PLD_GROUP(1, 1)"
 							device ref usb2_port0 on end
 						end
 						chip drivers/usb/acpi
-							register "desc" = ""Right Type-A Port""
+							register "desc" = ""Left Type-A Port""
 							register "type" = "UPC_TYPE_USB3_A"
 							register "group" = "ACPI_PLD_GROUP(1, 2)"
 							device ref usb2_port1 on end
@@ -105,25 +290,25 @@ chip soc/amd/cezanne
 				chip drivers/usb/acpi
 					device ref xhci_1_root_hub on
 						chip drivers/usb/acpi
-							register "desc" = ""Left Type-C Port""
+							register "desc" = ""Right Type-C Port""
 							register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 							register "group" = "ACPI_PLD_GROUP(2, 2)"
 							device ref usb3_port4 on end
 						end
 						chip drivers/usb/acpi
-							register "desc" = ""Left Type-A Port""
+							register "desc" = ""Right Type-A Port""
 							register "type" = "UPC_TYPE_USB3_A"
 							register "group" = "ACPI_PLD_GROUP(2, 1)"
 							device ref usb3_port5 on end
 						end
 						chip drivers/usb/acpi
-							register "desc" = ""Left Type-C Port""
+							register "desc" = ""Right Type-C Port""
 							register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 							register "group" = "ACPI_PLD_GROUP(2, 2)"
 							device ref usb2_port4 on end
 						end
 						chip drivers/usb/acpi
-							register "desc" = ""Left Type-A Port""
+							register "desc" = ""Right Type-A Port""
 							register "type" = "UPC_TYPE_USB3_A"
 							register "group" = "ACPI_PLD_GROUP(2, 1)"
 							device ref usb2_port5 on end
@@ -139,7 +324,7 @@ chip soc/amd/cezanne
 			end
 			device ref acp on
 				chip drivers/amd/i2s_machine_dev
-					register "hid" = ""AMDI5682""
+					register "hid" = ""AMDI1019""
 					device generic 0.0 on end
 				end
 			end # Audio
@@ -147,7 +332,7 @@ chip soc/amd/cezanne
 
 		device ref lpc_bridge on
 			chip ec/google/chromeec
-				device pnp 0c09.0 on end
+				device pnp 0c09.0 alias chrome_ec on end
 			end
 		end
 	end # domain
@@ -163,4 +348,60 @@ chip soc/amd/cezanne
 
 	device ref uart_0 on end # UART0
 
+	# See https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:src/platform/ec/baseboard/guybrush/baseboard.c;l=221
+	# for the EC configuration.
+	#
+	# EC is configured to power off the system at 105C, so add a two degree
+	# buffer so the OS can gracefully shutdown.
+	#
+	# EC is configured to assert PROCHOT at 100C. That drastically lowers
+	# performance. Instead we will tell the OS to start throttling the CPUs
+	# at 95C in hopes that we don't hit the PROCHOT limit.
+	#
+	# We set use_acpi1_thermal_zone_scope because the Chrome ec.asl
+	# performs a `Notify` to the `_\TZ` scope.
+	chip drivers/acpi/thermal_zone
+		register "description" = ""SOC""
+		use chrome_ec as temperature_controller
+		register "sensor_id" = "0"
+		register "polling_period" = "10"
+		register "critical_temperature" = "103"
+		register "passive_config.temperature" = "95"
+		register "use_acpi1_thermal_zone_scope" = "true"
+
+		device generic 0 on end
+	end
+	chip drivers/acpi/thermal_zone
+		register "description" = ""Charger""
+		use chrome_ec as temperature_controller
+		register "sensor_id" = "1"
+		register "polling_period" = "10"
+		register "critical_temperature" = "103"
+		register "passive_config.temperature" = "95"
+		register "use_acpi1_thermal_zone_scope" = "true"
+
+		device generic 1 on end
+	end
+	chip drivers/acpi/thermal_zone
+		register "description" = ""Memory""
+		use chrome_ec as temperature_controller
+		register "sensor_id" = "2"
+		register "polling_period" = "10"
+		register "critical_temperature" = "103"
+		register "passive_config.temperature" = "95"
+		register "use_acpi1_thermal_zone_scope" = "true"
+
+		device generic 2 on end
+	end
+	chip drivers/acpi/thermal_zone
+		register "description" = ""CPU""
+		use chrome_ec as temperature_controller
+		register "sensor_id" = "3"
+		register "polling_period" = "10"
+		register "critical_temperature" = "103"
+		register "passive_config.temperature" = "95"
+		register "use_acpi1_thermal_zone_scope" = "true"
+
+		device generic 3 on end
+	end
 end	# chip soc/amd/cezanne

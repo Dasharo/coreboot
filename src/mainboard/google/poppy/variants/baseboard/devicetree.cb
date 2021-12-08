@@ -150,7 +150,6 @@ chip soc/intel/skylake
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| I2C0              | Touchscreen               |
 	#| I2C1              | H1                        |
 	#| I2C2              | Camera                    |
@@ -160,7 +159,6 @@ chip soc/intel/skylake
 	#| pch_thermal_trip  | PCH Trip Temperature      |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
 			.speed_config[0] = {
@@ -238,7 +236,7 @@ chip soc/intel/skylake
 		[PchSerialIoIndexI2C5]  = PchSerialIoPci,
 		[PchSerialIoIndexSpi0]  = PchSerialIoDisabled,
 		[PchSerialIoIndexSpi1]  = PchSerialIoDisabled,
-		[PchSerialIoIndexUart0] = PchSerialIoPci,
+		[PchSerialIoIndexUart0] = PchSerialIoSkipInit,
 		[PchSerialIoIndexUart1] = PchSerialIoDisabled,
 		[PchSerialIoIndexUart2] = PchSerialIoSkipInit,
 	}"

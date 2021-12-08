@@ -16,7 +16,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select SOC_INTEL_APOLLOLAKE
 
 config MAINBOARD_DIR
-	string
 	default "kontron/mal10"
 
 # TODO: Add a new carrier boards here
@@ -36,7 +35,6 @@ config BOARD_KONTRON_T10_TNI
 endchoice
 
 config VARIANT_DIR
-	string
 	default "mal10"
 
 config CARRIER_DIR
@@ -44,15 +42,12 @@ config CARRIER_DIR
 	default "t10-tni" if BOARD_KONTRON_T10_TNI
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "COMe-mAL10"
 
 config DEVICETREE
-	string
-	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config OVERRIDE_DEVICETREE
-	string
-	default "carriers/$(CONFIG_CARRIER_DIR)/overridetree.cb"
+	default "carriers/\$(CONFIG_CARRIER_DIR)/overridetree.cb"
 
 endif

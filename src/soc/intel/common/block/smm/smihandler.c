@@ -2,12 +2,15 @@
 
 #include <arch/hlt.h>
 #include <arch/io.h>
+#include <arch/mmio.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
 #include <cpu/x86/cache.h>
+#include <cpu/x86/msr.h>
 #include <cpu/x86/smm.h>
 #include <cpu/intel/em64t100_save_state.h>
 #include <cpu/intel/em64t101_save_state.h>
+#include <cpu/intel/msr.h>
 #include <delay.h>
 #include <device/pci_def.h>
 #include <elog.h>
@@ -42,31 +45,6 @@ __weak void smihandler_soc_at_finalize(void)
 __weak int smihandler_soc_disable_busmaster(pci_devfn_t dev)
 {
 	return 1;
-}
-
-/*
- * Needs to implement the mechanism to know if an illegal attempt
- * has been made to write to the BIOS area.
- */
-static void smihandler_soc_check_illegal_access(
-	uint32_t tco_sts)
-{
-	if (!((tco_sts & (1 << 8)) && CONFIG(SPI_FLASH_SMM)
-			&& fast_spi_wpd_status()))
-		return;
-
-	/*
-	 * BWE is RW, so the SMI was caused by a
-	 * write to BWE, not by a write to the BIOS
-	 *
-	 * This is the place where we notice someone
-	 * is trying to tinker with the BIOS. We are
-	 * trying to be nice and just ignore it. A more
-	 * resolute answer would be to power down the
-	 * box.
-	 */
-	printk(BIOS_DEBUG, "Switching back to RO\n");
-	fast_spi_enable_wp();
 }
 
 /* Mainboard overrides. */
@@ -285,6 +263,20 @@ static void southbridge_smi_gsmi(
 	save_state_ops->set_reg(io_smi, RAX, ret);
 }
 
+static void set_insmm_sts(const bool enable_writes)
+{
+	msr_t msr = {
+		.lo = read32p(0xfed30880),
+		.hi = 0,
+	};
+	if (enable_writes)
+		msr.lo |= 1;
+	else
+		msr.lo &= ~1;
+
+	wrmsr(MSR_SPCL_CHIPSET_USAGE, msr);
+}
+
 static void southbridge_smi_store(
 	const struct smm_save_state_ops *save_state_ops)
 {
@@ -301,9 +293,22 @@ static void southbridge_smi_store(
 	/* Parameter buffer in EBX */
 	reg_ebx = save_state_ops->get_reg(io_smi, RBX);
 
+	const bool wp_enabled = !fast_spi_wpd_status();
+	if (wp_enabled) {
+		set_insmm_sts(true);
+		fast_spi_disable_wp();
+		/* Not clearing SPI sync SMI status here results in hangs */
+		fast_spi_clear_sync_smi_status();
+	}
+
 	/* drivers/smmstore/smi.c */
 	ret = smmstore_exec(sub_command, (void *)(uintptr_t)reg_ebx);
 	save_state_ops->set_reg(io_smi, RAX, ret);
+
+	if (wp_enabled) {
+		fast_spi_enable_wp();
+		set_insmm_sts(false);
+	}
 }
 
 static void finalize(void)
@@ -319,6 +324,18 @@ static void finalize(void)
 	if (CONFIG(SPI_FLASH_SMM))
 		/* Re-init SPI driver to handle locked BAR */
 		fast_spi_init();
+
+	if (CONFIG(BOOTMEDIA_SMM_BWP)) {
+		fast_spi_enable_wp();
+		set_insmm_sts(false);
+	}
+
+	/*
+	 * HECI is disabled in smihandler_soc_at_finalize() which also locks down the side band
+	 * interface.  Some boards may require this interface in mainboard_smi_finalize(),
+	 * therefore, this call must precede smihandler_soc_at_finalize().
+	 */
+	mainboard_smi_finalize();
 
 	/* Specific SOC SMI handler during ramstage finalize phase */
 	smihandler_soc_at_finalize();
@@ -394,11 +411,26 @@ void smihandler_southbridge_tco(
 	 */
 	fast_spi_clear_sync_smi_status();
 
+	/* If enabled, enforce SMM BIOS write protection */
+	if (CONFIG(BOOTMEDIA_SMM_BWP) && fast_spi_wpd_status()) {
+		/*
+		 * BWE is RW, so the SMI was caused by a
+		 * write to BWE, not by a write to the BIOS
+		 *
+		 * This is the place where we notice someone
+		 * is trying to tinker with the BIOS. We are
+		 * trying to be nice and just ignore it. A more
+		 * resolute answer would be to power down the
+		 * box.
+		 */
+		printk(BIOS_DEBUG, "Switching SPI back to RO\n");
+		fast_spi_enable_wp();
+		set_insmm_sts(false);
+	}
+
 	/* Any TCO event? */
 	if (!tco_sts)
 		return;
-
-	smihandler_soc_check_illegal_access(tco_sts);
 
 	if (tco_sts & TCO_TIMEOUT) { /* TIMEOUT */
 		/* Handle TCO timeout */

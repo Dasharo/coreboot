@@ -1,7 +1,6 @@
 chip soc/intel/cannonlake
 	# Lock Down
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
 			.rise_time_ns = 80,
@@ -91,6 +90,7 @@ chip soc/intel/cannonlake
 		device pci 14.3 on      # CNVi wifi
 			chip drivers/wifi/generic
 				register "wake" = "PME_B0_EN_BIT"
+				device generic 0 on end
 			end
 		end
 		device pci 14.5 off end # SDCard
@@ -167,7 +167,7 @@ chip soc/intel/cannonlake
 			end
 		end
 		device pci 1f.1 off end # P2SB
-		device pci 1f.2 off end # Power Management Controller
+		device pci 1f.2 hidden end # Power Management Controller
 		device pci 1f.3 on      # Intel HDA
 			register "PchHdaAudioLinkHda" = "1"
 			register "PchHdaAudioLinkDmic0" = "1"

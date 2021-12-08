@@ -396,11 +396,12 @@ void *map_physical(uint64_t phys_addr, size_t len);
 void unmap_physical(void *virt_addr, size_t len);
 
 unsigned int cpuid(unsigned int op);
-int print_intel_core_msrs(void);
+int print_intel_msrs(unsigned int range_start, unsigned int range_end);
 int print_mchbar(struct pci_dev *nb, struct pci_access *pacc, const char *dump_spd_file);
 int print_pmbase(struct pci_dev *sb, struct pci_access *pacc);
 int print_lpc(struct pci_dev *sb, struct pci_access *pacc);
 int print_rcba(struct pci_dev *sb);
+void print_iobp(struct pci_dev *sb, volatile uint8_t *rcba);
 int print_gpios(struct pci_dev *sb, int show_all, int show_diffs);
 const struct gpio_community *const *get_gpio_communities(struct pci_dev *const sb,
 						size_t* community_count,

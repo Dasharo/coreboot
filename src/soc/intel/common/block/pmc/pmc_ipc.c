@@ -231,6 +231,9 @@ void pmc_ipc_acpi_set_pci_clock(unsigned int pcie_rp, unsigned int clock_pin, bo
 		return;
 	}
 
+	printk(BIOS_INFO, "%s: Writing PMC method %s with data: 0x%x 0x%x 0x%x 0x%x\n", __func__,
+		method, data[0], data[1], data[2], data[3]);
+
 	/*
 	 * The PMC IPC mailbox method takes 7 arguments:
 	 *  IPCS (COMMAND, SUB_ID, SIZE, DATA0, DATA1, DATA2, DATA3)

@@ -10,8 +10,11 @@ chip soc/intel/tigerlake
 	}"
 
 # ACPI (soc/intel/tigerlake/acpi.c)
-	# Enable DPTF
-	register "dptf_enable" = "1"
+	# Disable DPTF
+	register "dptf_enable" = "0"
+
+	# Enable External Bypass
+	register "external_bypass" = "1"
 
 	# Enable Enhanced Intel SpeedStep
 	register "eist_enable" = "1"
@@ -80,10 +83,13 @@ chip soc/intel/tigerlake
 	# Thermal
 	register "tcc_offset" = "13"
 
+	# Enable CNVi BT
+	register "CnviBtCore" = "true"
+
 # PM Util (soc/intel/tigerlake/pmutil.c)
 	# GPE configuration
-	register "pmc_gpe0_dw0" = "PMC_GPP_A"
-	register "pmc_gpe0_dw1" = "PMC_GPP_R"
+	register "pmc_gpe0_dw0" = "PMC_GPP_C"
+	register "pmc_gpe0_dw1" = "PMC_GPP_E"
 	register "pmc_gpe0_dw2" = "PMC_GPD"
 
 # Actual device tree
@@ -104,9 +110,9 @@ chip soc/intel/tigerlake
 			register "DdiPortBConfig" = "0"
 			register "DdiPortBHpd" = "1"
 			register "DdiPortBDdc" = "1"
-		end
-		device ref dptf on
-			register "Device4Enable" = "1"
+
+			# ACPI brightness control
+			register "gfx" = "GMA_DEFAULT_PANEL(0)"
 		end
 		device ref peg on
 			# PCIe PEG0 x4, Clock 0 (SSD1)
@@ -119,6 +125,7 @@ chip soc/intel/tigerlake
 				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H0)" # GPP_H0_RTD3
 				register "srcclk_pin" = "0" # SSD1_CLKREQ#
 				register "is_storage" = "1"
+				register "cpu_pcie_clk_usage" = "0x40"
 				device generic 0 on end
 			end
 
@@ -126,8 +133,8 @@ chip soc/intel/tigerlake
 			register "HybridStorageMode" = "0"
 		end
 		device ref tbt_pcie_rp0 on end # TBT Type-C
-		device ref gna on end
 		device ref north_xhci on # TBT Type-C
+			register "UsbTcPortEn" = "1"
 			register "TcssXhciEn" = "1"
 			chip drivers/usb/acpi
 				device ref tcss_root_hub on
@@ -142,7 +149,8 @@ chip soc/intel/tigerlake
 		end
 		device ref tbt_dma0 on # TBT Type-C
 			chip drivers/intel/usb4/retimer
-				register "power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A23)"
+				register "dfp[0].power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A23)"
+				use tcss_usb3_port1 as dfp[0].typec_port
 				device generic 0 on end
 			end
 		end
@@ -270,7 +278,8 @@ chip soc/intel/tigerlake
 			register "PcieRpLtrEnable[4]" = "1"
 			register "PcieClkSrcUsage[2]" = "4"
 			register "PcieClkSrcClkReq[2]" = "2"
-			chip soc/intel/common/block/pcie/rtd3
+			chip drivers/gfx/nvidia/optimus
+				register "desc" = ""DGPU""
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_U5)" # DGPU_PWR_EN
 				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_U4)" # DGPU_RST#_PCH
 				register "enable_delay_ms" = "16"
@@ -278,6 +287,7 @@ chip soc/intel/tigerlake
 				register "reset_delay_ms" = "10"
 				register "reset_off_delay_ms" = "4"
 				register "srcclk_pin" = "2" # PEG_CLKREQ#
+				register "ec_notify_method" = ""\\_SB.PCI0.LPCB.EC0.DGPM""
 				device generic 0 on end
 			end
 		end
@@ -307,8 +317,25 @@ chip soc/intel/tigerlake
 			register "PcieRpLtrEnable[10]" = "1"
 			register "PcieClkSrcUsage[1]" = "10"
 			register "PcieClkSrcClkReq[1]" = "1"
+			chip drivers/wifi/generic
+				register "wake" = "GPE0_DW0_23" # GPP_C23
+				device pci 00.0 on end
+			end
 		end
-		device ref pch_espi on end
+		device ref pch_espi on
+			chip ec/clevo/it5570
+				device pnp 0c09.0 on end
+				register "fan_mode" = "FAN_MODE_CUSTOM"
+				register "fans[0].curve.temperature" = "{ 40, 60, 70, 80 }"
+				register "fans[0].curve.speed" = "{ 16, 25, 50, 100 }"
+				register "fans[1].curve.temperature" = "{ 40, 60, 70, 80 }"
+				register "fans[1].curve.speed" = "{ 16, 25, 50, 100 }"
+			end
+			chip drivers/pc80/tpm
+				register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_C14)"
+				device pnp 0c31.0 on end
+			end
+		end
 		device ref p2sb on end
 		device ref pmc hidden
 			chip drivers/intel/pmc_mux

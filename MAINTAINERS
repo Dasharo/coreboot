@@ -174,6 +174,12 @@ M:	Mike Banon <mikebdp2@gmail.com>
 S:	Maintained
 F:	src/mainboard/asus/am1i-a/
 
+ASUS H61 SERIES MAINBOARDS
+M:	Angel Pons <th3fanbus@gmail.com>
+M:	Tristan Corrick <tristan@corrick.kiwi>
+S:	Maintained
+F:	src/mainboard/asus/h61-series/
+
 ASUS MAXIMUS IV GENE-Z MAINBOARD
 M:	Tristan Corrick <tristan@corrick.kiwi>
 S:	Maintained
@@ -190,30 +196,11 @@ M:	Angel Pons <th3fanbus@gmail.com>
 S:	Maintained
 F:	src/mainboard/asus/p5qpl-am/
 
-ASUS P8H61-M LX MAINBOARD
-M:	Tristan Corrick <tristan@corrick.kiwi>
-S:	Maintained
-F:	src/mainboard/asus/p8h61-m_lx/
-
-ASUS P8H61-M LX3 R2.0 MAINBOARD
+ASUS P8Z77 SERIES MAINBOARDS
 M:	Angel Pons <th3fanbus@gmail.com>
-S:	Maintained
-F:	src/mainboard/asus/p8h61-m_lx3_r2_0/
-
-ASUS P8H61-M PRO MAINBOARD
-M:	Angel Pons <th3fanbus@gmail.com>
-S:	Maintained
-F:	src/mainboard/asus/p8h61-m_pro/
-
-ASUS P8Z77-M PRO MAINBOARD
 M:	Vlado Cibic <vladocb@protonmail.com>
 S:	Maintained
-F:	src/mainboard/asus/p8z77-m_pro/
-
-ASUS P8Z77-V LX2 MAINBOARD
-M:	Angel Pons <th3fanbus@gmail.com>
-S:	Maintained
-F:	src/mainboard/asus/p8z77-v_lx2/
+F:	src/mainboard/asus/p8z77-series/
 
 
 
@@ -279,6 +266,7 @@ F:	src/mainboard/google/panther/
 
 GOOGLE VOLTEER MAINBOARDS
 M:	Tim Wawrzynczak <twawrzynczak@chromium.org>
+M:	Nick Vaccaro <nvaccaro@chromium.org>
 S:	Maintained
 F:	src/mainboard/google/volteer/
 
@@ -370,12 +358,11 @@ F:	src/mainboard/msi/h81m-p33/
 
 
 OCP DELTALAKE MAINBOARD
-M:	Jonathan Zhang <jonzhang@fb.com>
-M:	Reddy Chagam <anjaneya.chagam@intel.com>
+M:	Arthur Heymans <arthur@aheymans.xyz>
+M:	Christian Walter <christian.walter@9elements.com>
 M:	Johnny Lin <Johnny_Lin@wiwynn.com>
-M:	Morgan Jang <Morgan_Jang@wiwynn.com>
-M:	Ryback Hung <<Ryback.Hung@quantatw.com>
-M:	Bryant Ou <Bryant.Ou@quantatw.com>
+M:	Jonathan Zhang <jonzhang@fb.com>
+M:	Tim Chu <Tim.Chu@quantatw.com>
 S:	Supported
 F:	src/mainboard/ocp/deltalake/
 
@@ -461,6 +448,7 @@ F:	src/mainboard/siemens/mc_apl1/
 
 SYSTEM76 MAINBOARDS
 M:	Jeremy Soller <jeremy@system76.com>
+M:	Tim Crawford <tcrawford@system76.com>
 S:	Maintained
 F:	src/mainboard/system76/
 
@@ -532,6 +520,7 @@ F:	src/ec/lenovo/
 
 SYSTEM76 EC
 M:	Jeremy Soller <jeremy@system76.com>
+M:	Tim Crawford <tcrawford@system76.com>
 S:	Maintained
 F:	src/ec/system76/
 
@@ -615,6 +604,7 @@ M:	Jason Glenesk <jason.glenesk@gmail.com>
 M:	Raul E Rangel <rrangel@chromium.org>
 S:	Maintained
 F:	src/soc/amd/cezanne/
+F:	src/vendorcode/amd/fsp/cezanne/
 
 AMD common SoC code
 M:	Marshall Dawson <marshalldawson3rd@gmail.com>
@@ -632,6 +622,12 @@ M:	Raul E Rangel <rrangel@chromium.org>
 S:	Maintained
 F:	src/soc/amd/picasso/
 F:	src/vendorcode/amd/fsp/picasso/
+
+AMD Stoneyridge
+M:	Marshall Dawson <marshalldawson3rd@gmail.com>
+M:	Felix Held <felix-coreboot@felixheld.de>
+S:	Odd Fixes
+F:	src/soc/amd/stoneyridge/
 
 INTEL ALDERLAKE SOC
 M:	Tim Wawrzynczak <twawrzynczak@chromium.org>
@@ -660,9 +656,9 @@ INTEL Xeon Sacalable Processor Family
 M:	Jonathan Zhang <jonzhang@fb.com>
 M:	Reddy Chagam <anjaneya.chagam@intel.com>
 M:	Johnny Lin <Johnny_Lin@wiwynn.com>
-M:	Morgan Jang <Morgan_Jang@wiwynn.com>
-M:	Ryback Hung <<Ryback.Hung@quantatw.com>
-M:	Bryant Ou <Bryant.Ou@quantatw.com>
+M:	Tim Chu <Tim.Chu@quantatw.com>
+M:	Arthur Heymans <arthur@aheymans.xyz>
+M:	Christian Walter <christian.walter@9elements.com>
 S:	Supported
 F:	src/soc/intel/xeon_sp/
 F:	src/vendorcode/intel/fsp/fsp2_0/skylake_sp/
@@ -768,11 +764,21 @@ INTELMETOOL
 M:	Christian Walter <christian.walter@9elements.com>
 F:	util/intelmetool/
 
+INTELP2M
+M:	Maxim Polyakov <max.senia.poliak@gmail.com>
+S:	Maintained
+F:	util/intelp2m/
+
 ME_CLEANER
 M:	Nicola Corna <nicola@corna.info>
 W:	https://github.com/corna/me_cleaner
 S:	Maintained
 F:	util/me_cleaner/
+
+LIVEISO
+M:	Felix Singer <felixsinger@posteo.net>
+S:	Supported
+F:	util/liveiso/
 
 ################################################################################
 # Miscellaneous
@@ -803,8 +809,11 @@ BINARY OBJECTS
 F:	3rdparty/blobs/
 
 VERIFIED BOOT
+M:	Julius Werner <jwerner@chromium.org>
+M:	Yu-Ping Wu <yupingso@google.com>
+S:	Supported
 F:	3rdparty/vboot/
-F:	src/vendorcode/google/chromeos/
+F:	src/security/vboot/
 F:	src/include/tpm.h
 F:	src/include/tpm_lite/
 
@@ -836,10 +845,6 @@ F:	src/console/
 F:	src/include/console/
 F:	src/drivers/uart/
 
-VERIFIED BOOT 2
-M:	Aaron Durbin <adurbin@chromium.org>
-F:	src/security/vboot/
-
 TPM SUPPORT
 M:	Christian Walter <christian.walter@9elements.com>
 S:	Supported
@@ -863,6 +868,12 @@ M:	Frans Hendriks <fhendriks@eltan.com>
 M:	Wim Vervoorn <wvervoorn@eltan.com>
 S:	Maintained
 F:	src/vendorcode/eltan/
+
+TAS5825M DRIVER
+M:	Jeremy Soller <jeremy@system76.com>
+M:	Tim Crawford <tcrawford@system76.com>
+S:	Maintained
+F:	src/drivers/i2c/tas5825m/
 
 TESTS
 M:	Jakub Czapiga <jacz@semihalf.com>

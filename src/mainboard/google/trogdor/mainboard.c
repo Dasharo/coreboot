@@ -1,21 +1,29 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootmode.h>
+#include <cbfs.h>
 #include <console/console.h>
 #include <delay.h>
 #include <device/device.h>
 #include <device/i2c_simple.h>
+#include <device/mmio.h>
+#include <mipi/panel.h>
 #include <drivers/ti/sn65dsi86bridge/sn65dsi86bridge.h>
+#include <edid.h>
 #include <framebuffer_info.h>
 #include <soc/display/mipi_dsi.h>
 #include <soc/display/mdssreg.h>
-#include <soc/qupv3_config.h>
-#include <soc/qupv3_i2c.h>
+#include <soc/qupv3_config_common.h>
+#include <soc/qup_se_handlers_common.h>
+#include <soc/qupv3_i2c_common.h>
+#include <soc/qcom_qup_se.h>
 #include <soc/usb.h>
+#include <types.h>
 
 #include "board.h"
+#include <soc/addressmap.h>
 
-#define BRIDGE_BUS 0x2
+#define BRIDGE_BUS QUPV3_0_SE2
 #define BRIDGE_CHIP 0x2d
 
 static struct usb_board_data usb0_board_data = {
@@ -63,7 +71,7 @@ static void load_qup_fw(void)
 	qupv3_se_fw_load_and_init(QUPV3_1_SE5, SE_PROTOCOL_I2C, MIXED);  /* Codec I2C */
 }
 
-static void configure_display(void)
+static void power_on_bridge(void)
 {
 	printk(BIOS_INFO, "%s: Bridge gpio init\n", __func__);
 
@@ -74,41 +82,137 @@ static void configure_display(void)
 	gpio_output(GPIO_EN_PP3300_DX_EDP, 1);
 }
 
-static void display_init(struct edid *edid)
+static void configure_mipi_panel(void)
+{
+	int panel_id = sku_id() >> 8;
+	gpio_output(GPIO_MIPI_1V8_ENABLE, 1);
+	mdelay(5);
+	gpio_output(GPIO_AVDD_LCD_ENABLE, 1);
+	mdelay(5);
+	gpio_output(GPIO_AVEE_LCD_ENABLE, 1);
+	mdelay(15);
+	gpio_output(GPIO_VDD_RESET_1V8, 1);
+	mdelay(15);
+	/*
+	 * In mrbland, BOE panel_id = 3, it needs 15ms delay and
+	 * do reset again according to spec(See in b/197300876).
+	 */
+	if (CONFIG(BOARD_GOOGLE_MRBLAND) && (panel_id == 3)) {
+		gpio_output(GPIO_VDD_RESET_1V8, 0);
+		mdelay(5);
+		gpio_output(GPIO_VDD_RESET_1V8, 1);
+	}
+}
+
+static struct panel_serializable_data *get_mipi_panel(enum lb_fb_orientation *orientation)
+{
+	const char *cbfs_filename = NULL;
+	int panel_id = sku_id() >> 8;
+
+	if (CONFIG(BOARD_GOOGLE_MRBLAND)) {
+		switch (panel_id) {
+		case 3:
+			cbfs_filename = "panel-BOE_TV101WUM_N53";
+			*orientation = LB_FB_ORIENTATION_LEFT_UP;
+			break;
+		case 6:
+			cbfs_filename = "panel-AUO_B101UAN08_3";
+			*orientation = LB_FB_ORIENTATION_LEFT_UP;
+			break;
+		}
+	}
+
+	if (CONFIG(BOARD_GOOGLE_WORMDINGLER)) {
+		switch (panel_id) {
+		case 0:
+			cbfs_filename = "panel-INX_P110ZZD_DF0";
+			*orientation = LB_FB_ORIENTATION_LEFT_UP;
+			break;
+		case 4:
+			cbfs_filename = "panel-BOE_TV110C9M_LL0";
+			*orientation = LB_FB_ORIENTATION_LEFT_UP;
+			break;
+		}
+	}
+
+	if (!cbfs_filename)
+		return NULL;
+
+	struct panel_serializable_data *panel = cbfs_map(cbfs_filename, NULL);
+	if (!panel) {
+		printk(BIOS_ERR, "Could not find panel data for %s!\n", cbfs_filename);
+		return NULL;
+	}
+
+	return panel;
+}
+
+static enum cb_err display_init(struct panel_serializable_data *panel)
 {
 	uint32_t dsi_bpp = 24;
 	uint32_t lanes = 4;
 
-	if (mdss_dsi_config(edid, lanes, dsi_bpp))
-		return;
+	if (mdss_dsi_config(&panel->edid, lanes, dsi_bpp))
+		return CB_ERR;
+	if (CONFIG(TROGDOR_HAS_MIPI_PANEL)) {
+		if (mdss_dsi_panel_initialize(panel->init))
+			return CB_ERR;
+	} else {
+		sn65dsi86_bridge_configure(BRIDGE_BUS, BRIDGE_CHIP, &panel->edid,
+					   lanes, dsi_bpp);
+		if (CONFIG(TROGDOR_HAS_BRIDGE_BACKLIGHT))
+			sn65dsi86_backlight_enable(BRIDGE_BUS, BRIDGE_CHIP);
+	}
 
-	sn65dsi86_bridge_configure(BRIDGE_BUS, BRIDGE_CHIP, edid, lanes, dsi_bpp);
-	if (CONFIG(TROGDOR_HAS_BRIDGE_BACKLIGHT))
-		sn65dsi86_backlight_enable(BRIDGE_BUS, BRIDGE_CHIP);
-
-	mdp_dsi_video_config(edid);
-	mdss_dsi_video_mode_config(edid, dsi_bpp);
+	mdp_dsi_video_config(&panel->edid);
+	mdss_dsi_video_mode_config(&panel->edid, dsi_bpp);
 	mdp_dsi_video_on();
+
+	return CB_SUCCESS;
 }
 
 static void display_startup(void)
 {
-	static struct edid ed;
-	enum dp_pll_clk_src ref_clk = SN65_SEL_19MHZ;
+	struct panel_serializable_data edp_panel = {0};
+	struct panel_serializable_data *panel = &edp_panel;
+	enum lb_fb_orientation orientation = LB_FB_ORIENTATION_NORMAL;
 
-	i2c_init(QUPV3_0_SE2, I2C_SPEED_FAST); /* EDP Bridge I2C */
-	if (display_init_required()) {
-		configure_display();
+	/* Always initialize this so QUP firmware is loaded for the kernel. */
+	i2c_init(BRIDGE_BUS, I2C_SPEED_FAST);
+
+	if (!display_init_required()) {
+		printk(BIOS_INFO, "Skipping display init.\n");
+		return;
+	}
+
+	if (CONFIG(TROGDOR_HAS_MIPI_PANEL)) {
+		configure_mipi_panel();
+		panel = get_mipi_panel(&orientation);
+		if (!panel)
+			return;
+	} else {
+		enum dp_pll_clk_src ref_clk = SN65_SEL_19MHZ;
+		power_on_bridge();
 		mdelay(250); /* Delay for the panel to be up */
 		sn65dsi86_bridge_init(BRIDGE_BUS, BRIDGE_CHIP, ref_clk);
-		if (sn65dsi86_bridge_read_edid(BRIDGE_BUS, BRIDGE_CHIP, &ed) < 0)
+		if (sn65dsi86_bridge_read_edid(BRIDGE_BUS, BRIDGE_CHIP, &panel->edid) < 0)
 			return;
+	}
 
-		printk(BIOS_INFO, "display init!\n");
-		display_init(&ed);
-		fb_new_framebuffer_info_from_edid(&ed, (uintptr_t)0);
-	} else
-		printk(BIOS_INFO, "Skipping display init.\n");
+	printk(BIOS_INFO, "display init!\n");
+	edid_set_framebuffer_bits_per_pixel(&panel->edid, 32, 0);
+	if (display_init(panel) == CB_SUCCESS) {
+		struct fb_info *fb = fb_new_framebuffer_info_from_edid(&panel->edid, 0);
+		fb_set_orientation(fb, orientation);
+	}
+}
+
+static void configure_sdhci(void)
+{
+	/* Program eMMC drive strength to 16/16/16 mA */
+	write32((void *)SDC1_TLMM_CFG_ADDR, 0x9FFF);
+	/* Program SD card drive strength to 16/10/10 mA */
+	write32((void *)SDC2_TLMM_CFG_ADDR, 0x1FE4);
 }
 
 static void mainboard_init(struct device *dev)
@@ -122,6 +226,7 @@ static void mainboard_init(struct device *dev)
 	qi2s_configure_gpios();
 	load_qup_fw();
 	display_startup();
+	configure_sdhci();
 }
 
 static void mainboard_enable(struct device *dev)

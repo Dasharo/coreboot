@@ -12,27 +12,13 @@
 #include <soc/acpi.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
-#include <soc/ramstage.h>
+#include <soc/refcode.h>
 #include <soc/systemagent.h>
 
 u8 systemagent_revision(void)
 {
 	struct device *sa_dev = pcidev_path_on_root(SA_DEVFN_ROOT);
 	return pci_read_config8(sa_dev, PCI_REVISION_ID);
-}
-
-uintptr_t sa_get_tolud_base(void)
-{
-	struct device *sa_dev = pcidev_path_on_root(SA_DEVFN_ROOT);
-	/* Bit 0 is lock bit, not part of address */
-	return pci_read_config32(sa_dev, TOLUD) & ~1;
-}
-
-uintptr_t sa_get_gsm_base(void)
-{
-	struct device *sa_dev = pcidev_path_on_root(SA_DEVFN_ROOT);
-	/* Bit 0 is lock bit, not part of address */
-	return pci_read_config32(sa_dev, BGSM) & ~1;
 }
 
 static int get_pcie_bar(struct device *dev, unsigned int index, u32 *base,

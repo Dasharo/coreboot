@@ -3,7 +3,6 @@ chip soc/intel/tigerlake
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| GSPI0             | cr50 TPM. Early init is   |
 	#|                   | required to set up a BAR  |
 	#|                   | for TPM communication     |
@@ -16,7 +15,6 @@ chip soc/intel/tigerlake
 	#| I2C5              | Trackpad                  |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.gspi[0] = {
 			.speed_mhz = 1,
 			.early_init = 1,
@@ -49,6 +47,22 @@ chip soc/intel/tigerlake
 	register "HybridStorageMode" = "1"
 
 	device domain 0 on
+		# Volteer reference design does not have PCIe on Type-C port C0 so it should
+		# not have hotplug resources allocated.  Marking the device hidden will ensure
+		# it is still enabled so it can participate in power management.
+		device ref tbt_pcie_rp0 hidden
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_pcie_rp1 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_dma0 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+
 		device ref ipu on end
 		device ref i2c0 on
 			chip drivers/i2c/generic
@@ -144,13 +158,12 @@ chip soc/intel/tigerlake
 				register "speed" = "I2C_SPEED_FAST"
 				register "uid" = "0"
 				register "cs0_ground" = "0x0"
-				register "combined_sensors_count" = "3"
-				register "combined_sensors[0]" = "0"
-				register "combined_sensors[1]" = "1"
-				register "combined_sensors[2]" = "2"
+				register "combined_sensors_count" = "2"
+				register "combined_sensors[0]" = "1"
+				register "combined_sensors[1]" = "2"
 				register "resolution" = "SX9310_FINEST"
 				register "avg_pos_strength" = "512"
-				register "startup_sensor" = "0"
+				register "startup_sensor" = "1"
 				register "proxraw_strength" = "0"
 				device i2c 28 on end
 			end

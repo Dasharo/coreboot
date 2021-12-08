@@ -10,6 +10,7 @@
 #include <cpu/x86/msr.h>
 #include <cpu/x86/smm.h>
 #include <device/pci_ops.h>
+#include <security/intel/cbnt/cbnt.h>
 #include <types.h>
 
 #include "txt.h"
@@ -129,6 +130,9 @@ static void init_intel_txt(void *unused)
 	printk(BIOS_INFO, "TEE-TXT: Initializing TEE...\n");
 
 	intel_txt_log_spad();
+
+	if (CONFIG(INTEL_CBNT_LOGGING))
+		intel_cbnt_log_registers();
 
 	if (CONFIG(INTEL_TXT_LOGGING)) {
 		intel_txt_log_bios_acm_error();
@@ -289,6 +293,11 @@ static void txt_initialize_heap(void)
 	push_sinit_heap(&heap_struct, NULL, 0);
 }
 
+__weak bool skip_intel_txt_lockdown(void)
+{
+	return false;
+}
+
 /**
  * Finalize the TXT device.
  *
@@ -300,6 +309,9 @@ static void txt_initialize_heap(void)
  */
 static void lockdown_intel_txt(void *unused)
 {
+	if (skip_intel_txt_lockdown())
+		return;
+
 	const uint64_t status = read64((void *)TXT_SPAD);
 
 	uint32_t txt_feature_flags = 0;

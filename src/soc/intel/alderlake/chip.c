@@ -7,6 +7,7 @@
 #include <intelblocks/acpi.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
+#include <intelblocks/irq.h>
 #include <intelblocks/itss.h>
 #include <intelblocks/pcie_rp.h>
 #include <intelblocks/xdci.h>
@@ -60,6 +61,7 @@ const char *soc_acpi_name(const struct device *dev)
 
 	switch (dev->path.pci.devfn) {
 	case SA_DEVFN_ROOT:		return "MCHC";
+	case SA_DEVFN_IGD:		return "GFX0";
 	case SA_DEVFN_TCSS_XHCI:	return "TXHC";
 	case SA_DEVFN_TCSS_XDCI:	return "TXDC";
 	case SA_DEVFN_TCSS_DMA0:	return "TDM0";
@@ -77,6 +79,8 @@ const char *soc_acpi_name(const struct device *dev)
 	case PCH_DEVFN_I2C3:		return "I2C3";
 	case PCH_DEVFN_I2C4:		return "I2C4";
 	case PCH_DEVFN_I2C5:		return "I2C5";
+	case PCH_DEVFN_I2C6:		return "I2C6";
+	case PCH_DEVFN_I2C7:		return "I2C7";
 	case PCH_DEVFN_SATA:		return "SATA";
 	case PCH_DEVFN_PCIE1:		return "RP01";
 	case PCH_DEVFN_PCIE2:		return "RP02";
@@ -137,6 +141,19 @@ void soc_init_pre_device(void *chip_info)
 	pcie_rp_update_devicetree(get_pch_pcie_rp_table());
 }
 
+static void cpu_fill_ssdt(const struct device *dev)
+{
+	if (!generate_pin_irq_map())
+		printk(BIOS_ERR, "ERROR: Failed to generate ACPI _PRT table!\n");
+
+	generate_cpu_entries(dev);
+}
+
+static void cpu_set_north_irqs(struct device *dev)
+{
+	irq_program_non_pch();
+}
+
 static struct device_operations pci_domain_ops = {
 	.read_resources   = &pci_domain_read_resources,
 	.set_resources    = &pci_domain_set_resources,
@@ -149,8 +166,9 @@ static struct device_operations pci_domain_ops = {
 static struct device_operations cpu_bus_ops = {
 	.read_resources   = noop_read_resources,
 	.set_resources    = noop_set_resources,
+	.enable_resources = cpu_set_north_irqs,
 #if CONFIG(HAVE_ACPI_TABLES)
-	.acpi_fill_ssdt   = generate_cpu_entries,
+	.acpi_fill_ssdt   = cpu_fill_ssdt,
 #endif
 };
 

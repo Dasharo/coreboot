@@ -13,12 +13,12 @@
 
 #include "chip.h"
 
-/* This table is for the initial conversion of all SCL pins to input with no pull. */
+/* Table to switch SCL pins to outputs to initially reset the I2C peripherals */
 static const struct soc_i2c_scl_pin i2c_scl_pins[] = {
-	{ PAD_GPI(I2C0_SCL_PIN, PULL_NONE), GPIO_I2C0_SCL },
-	{ PAD_GPI(I2C1_SCL_PIN, PULL_NONE), GPIO_I2C1_SCL },
-	{ PAD_GPI(I2C2_SCL_PIN, PULL_NONE), GPIO_I2C2_SCL },
-	{ PAD_GPI(I2C3_SCL_PIN, PULL_NONE), GPIO_I2C3_SCL },
+	I2C_RESET_SCL_PIN(I2C0_SCL_PIN, GPIO_I2C0_SCL),
+	I2C_RESET_SCL_PIN(I2C1_SCL_PIN, GPIO_I2C1_SCL),
+	I2C_RESET_SCL_PIN(I2C2_SCL_PIN, GPIO_I2C2_SCL),
+	I2C_RESET_SCL_PIN(I2C3_SCL_PIN, GPIO_I2C3_SCL),
 };
 
 static void reset_i2c_peripherals(void)
@@ -32,11 +32,20 @@ static void reset_i2c_peripherals(void)
 	sb_reset_i2c_peripherals(&reset_info);
 }
 
+/* Initialize port80h routing early if needed */
+void configure_port80_routing_early(void)
+{
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_USE_ESPI)) {
+		mb_set_up_early_espi();
+		espi_setup();
+	}
+}
+
 /* Before console init */
 void fch_pre_init(void)
 {
 	lpc_early_init();
-
+	fch_spi_early_init();
 	enable_acpimmio_decode_pm04();
 	fch_smbus_init();
 	fch_enable_cf9_io();
@@ -65,10 +74,11 @@ void fch_early_init(void)
 	pm_set_power_failure_state();
 	fch_print_pmxc0_status();
 	i2c_soc_early_init();
+	show_spi_speeds_and_modes();
 
 	if (CONFIG(DISABLE_SPI_FLASH_ROM_SHARING))
 		lpc_disable_spi_rom_sharing();
 
-	if (CONFIG(SOC_AMD_COMMON_BLOCK_USE_ESPI))
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_USE_ESPI) && !CONFIG(NO_EARLY_BOOTBLOCK_POSTCODES))
 		espi_setup();
 }

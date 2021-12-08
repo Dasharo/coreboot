@@ -37,7 +37,6 @@ config CHROMEOS
 	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
 
 config DIMM_MAX
-	int
 	default 2
 
 config DRIVER_TPM_I2C_BUS
@@ -57,7 +56,6 @@ config POWER_OFF_ON_CR50_UPDATE
 	default n
 
 config MAINBOARD_DIR
-	string
 	default "google/sarien"
 
 config MAINBOARD_FAMILY
@@ -66,7 +64,6 @@ config MAINBOARD_FAMILY
 	default "Google_Sarien" if BOARD_GOOGLE_SARIEN
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Arcada" if BOARD_GOOGLE_ARCADA
 	default "Sarien" if BOARD_GOOGLE_SARIEN
 
@@ -79,12 +76,10 @@ config UART_FOR_CONSOLE
 	default 2
 
 config VARIANT_DIR
-	string
 	default "arcada" if BOARD_GOOGLE_ARCADA
 	default "sarien" if BOARD_GOOGLE_SARIEN
 
 config DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config VBOOT

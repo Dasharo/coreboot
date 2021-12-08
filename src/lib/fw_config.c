@@ -50,6 +50,10 @@ uint64_t fw_config_get(void)
 
 bool fw_config_probe(const struct fw_config *match)
 {
+	/* If fw_config is not provisioned, then there is nothing to match. */
+	if (!fw_config_is_provisioned())
+		return false;
+
 	/* Compare to system value. */
 	if ((fw_config_get() & match->mask) == match->value) {
 		if (match->field_name && match->option_name)
@@ -68,6 +72,29 @@ bool fw_config_probe(const struct fw_config *match)
 bool fw_config_is_provisioned(void)
 {
 	return fw_config_get() != UNDEFINED_FW_CONFIG;
+}
+
+bool fw_config_probe_dev(const struct device *dev, const struct fw_config **matching_probe)
+{
+	const struct fw_config *probe;
+
+	if (matching_probe)
+		*matching_probe = NULL;
+
+	/* If the device does not have a probe list, then probing is not required. */
+	if (!dev->probe_list)
+		return true;
+
+	for (probe = dev->probe_list; probe && probe->mask != 0; probe++) {
+		if (!fw_config_probe(probe))
+			continue;
+
+		if (matching_probe)
+			*matching_probe = probe;
+		return true;
+	}
+
+	return false;
 }
 
 #if ENV_RAMSTAGE
@@ -111,23 +138,15 @@ static void fw_config_init(void *unused)
 
 	for (dev = all_devices; dev; dev = dev->next) {
 		const struct fw_config *probe;
-		bool match = false;
 
-		if (!dev->probe_list)
-			continue;
-
-		for (probe = dev->probe_list; probe && probe->mask != 0; probe++) {
-			if (fw_config_probe(probe)) {
-				match = true;
-				cached_configs[probe_index(probe->mask)] = probe;
-				break;
-			}
-		}
-
-		if (!match) {
+		if (!fw_config_probe_dev(dev, &probe)) {
 			printk(BIOS_INFO, "%s disabled by fw_config\n", dev_path(dev));
 			dev->enabled = 0;
+			continue;
 		}
+
+		if (probe)
+			cached_configs[probe_index(probe->mask)] = probe;
 	}
 }
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT_CHIPS, BS_ON_ENTRY, fw_config_init, NULL);

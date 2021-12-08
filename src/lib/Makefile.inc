@@ -59,6 +59,7 @@ bootblock-y += memchr.c
 bootblock-y += memcmp.c
 bootblock-y += boot_device.c
 bootblock-y += fmap.c
+bootblcok-y += rtc.c
 
 verstage-y += prog_loaders.c
 verstage-y += prog_ops.c
@@ -148,8 +149,6 @@ ramstage-$(CONFIG_COVERAGE) += libgcov.c
 ramstage-y += edid.c
 ramstage-y += edid_fill_fb.c
 ramstage-y += memrange.c
-ramstage-$(CONFIG_COOP_MULTITASKING) += thread.c
-ramstage-$(CONFIG_TIMER_QUEUE) += timer_queue.c
 ramstage-$(CONFIG_GENERIC_GPIO_LIB) += gpio.c
 ramstage-$(CONFIG_GENERIC_UDELAY) += timer.c
 ramstage-y += b64_decode.c
@@ -158,6 +157,12 @@ ramstage-y += list.c
 ramstage-$(CONFIG_FLATTENED_DEVICE_TREE) += device_tree.c
 ramstage-$(CONFIG_PAYLOAD_FIT_SUPPORT) += fit.c
 ramstage-$(CONFIG_PAYLOAD_FIT_SUPPORT) += fit_payload.c
+
+romstage-$(CONFIG_TIMER_QUEUE) += timer_queue.c
+ramstage-$(CONFIG_TIMER_QUEUE) += timer_queue.c
+
+romstage-$(CONFIG_COOP_MULTITASKING) += thread.c
+ramstage-$(CONFIG_COOP_MULTITASKING) += thread.c
 
 romstage-y += cbmem_common.c
 romstage-y += imd_cbmem.c
@@ -361,11 +366,19 @@ $(LIB_SPD_BIN): $(LIB_SPD_DEPS)
 	    (echo "HAVE_SPD_IN_CBFS is set but SPD_SOURCES is empty" && exit 1)
 	test -n "$(LIB_SPD_DEPS)" || \
 	    (echo "SPD_SOURCES is set but no SPD file was found" && exit 1)
-	for f in $(LIB_SPD_DEPS); \
-	 do for c in $$(cat $$f | grep --binary-files=text -v ^#); \
-	  do printf $$(printf '\\%o' 0x$$c); \
-	 done; \
-	done > $@
+	if [ "$(SPD_SOURCES)" = "placeholder" ]; then \
+	    printf '\0'; \
+	else \
+	    for f in $(LIB_SPD_DEPS); do \
+	        if [ ! -f $$f ]; then \
+	            echo "File not found: $$f" >&2; \
+	            exit 1; \
+	        fi; \
+	        for c in $$(cat $$f | grep --binary-files=text -v ^#); \
+	            do printf $$(printf '\\%o' 0x$$c); \
+	        done; \
+	    done; \
+	fi > $@
 
 cbfs-files-y += spd.bin
 spd.bin-file := $(LIB_SPD_BIN)

@@ -6,6 +6,7 @@
 #include <cpu/x86/cr.h>
 #include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
+#include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
 #include <lib.h>
 #include <smp/node.h>
@@ -480,10 +481,9 @@ bool intel_txt_prepare_txt_env(void)
 		* Make sure there are no uncorrectable MCE errors.
 		* Intel 64 and IA-32 Architectures Software Developer Manuals Vol 2D
 		*/
-		msr = rdmsr(IA32_MCG_CAP);
-		size_t max_mc_msr = msr.lo & MCA_BANKS_MASK;
+		size_t max_mc_msr = mca_get_bank_count();
 		for (size_t i = 0; i < max_mc_msr; i++) {
-			msr = rdmsr(IA32_MC0_STATUS + 4 * i);
+			msr = rdmsr(IA32_MC_STATUS(i));
 			if (!(msr.hi & MCA_STATUS_HI_UC))
 				continue;
 

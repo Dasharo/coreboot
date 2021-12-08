@@ -16,11 +16,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select IPMI_KCS
 
 config MAINBOARD_DIR
-	string
 	default "supermicro/x9scl"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "X9SCL/X9SCM"
 
 config USBDEBUG_HCD_INDEX
@@ -42,7 +40,6 @@ config PXE_ROM_ID
 	default "8086:10d3"
 
 config CBFS_SIZE
-	hex
 	default 0x400000
 
 #config SUPERMICRO_BOARDID

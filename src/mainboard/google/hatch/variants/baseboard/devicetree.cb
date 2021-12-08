@@ -195,12 +195,6 @@ chip soc/intel/cannonlake
 	register "gpio_pm[COMM_3]" = "0"
 	register "gpio_pm[COMM_4]" = "0"
 
-	# chipset_lockdown configuration
-	# Use below format to override value in overridetree.cb if required
-	# format:
-	# register "common_soc_config.<variable_name>" = "value"
-	register "common_soc_config.chipset_lockdown" = CHIPSET_LOCKDOWN_COREBOOT
-
 	device cpu_cluster 0 on
 		device lapic 0 on end
 	end
@@ -352,7 +346,7 @@ chip soc/intel/cannonlake
 			end
 		end # eSPI Interface
 		device pci 1f.1 on  end # P2SB
-		device pci 1f.2 on  end # Power Management Controller
+		device pci 1f.2 hidden end # Power Management Controller
 		device pci 1f.3 on  end # Intel HDA
 		device pci 1f.4 on  end # SMBus
 		device pci 1f.5 on  end # PCH SPI

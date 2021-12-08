@@ -43,15 +43,12 @@ config VBOOT_VBNV_OFFSET
 	default 0x2a
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT
 
 config MAINBOARD_DIR
-	string
 	default "lenovo/t420s"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ThinkPad T420s"
 
 config USBDEBUG_HCD_INDEX

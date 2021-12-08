@@ -13,10 +13,11 @@ ramstage-y += memmap.c pch.c lockdown.c finalize.c
 ramstage-$(CONFIG_SOC_INTEL_COMMON_BLOCK_PMC) += pmc.c pmutil.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += nb_acpi.c acpi.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smmrelocate.c
-smm-$(CONFIG_HAVE_SMI_HANDLER) += smihandler.c pmutil.c
+smm-y += smihandler.c pmutil.c
 postcar-y += spi.c
 
+subdirs-$(CONFIG_SOC_INTEL_XEON_RAS) += ras
+
 CPPFLAGS_common += -I$(src)/soc/intel/xeon_sp/include
-CPPFLAGS_common += -I$(CONFIG_FSP_HEADER_PATH)
 
 endif ## XEON_SP_COMMON_BASE

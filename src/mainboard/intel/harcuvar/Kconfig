@@ -9,11 +9,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_ACPI_TABLES
 
 config MAINBOARD_DIR
-	string
 	default "intel/harcuvar"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Harcuvar CRB"
 
 config ENABLE_FSP_MEMORY_DOWN

@@ -13,10 +13,12 @@ config CPU_SPECIFIC_OPTIONS
 	select ARCH_VERSTAGE_X86_32 if !VBOOT_STARTS_BEFORE_BOOTBLOCK
 	select ARCH_ROMSTAGE_X86_32
 	select ARCH_RAMSTAGE_X86_32
+	select ARCH_X86
 	select RESET_VECTOR_IN_RAM
 	select X86_AMD_FIXED_MTRRS
 	select X86_AMD_INIT_SIPI
 	select ACPI_SOC_NVS
+	select ADD_FSP_BINARIES if USE_AMD_BLOBS
 	select DRIVERS_I2C_DESIGNWARE
 	select DRIVERS_USB_PCI_XHCI
 	select GENERIC_GPIO_LIB
@@ -30,6 +32,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_AMD_COMMON_BLOCK_ACPIMMIO
 	select SOC_AMD_COMMON_BLOCK_ACPI_ALIB
 	select SOC_AMD_COMMON_BLOCK_ACPI_GPIO
+	select SOC_AMD_COMMON_BLOCK_ACPI_IVRS
 	select SOC_AMD_COMMON_BLOCK_AOAC
 	select SOC_AMD_COMMON_BLOCK_APOB
 	select SOC_AMD_COMMON_BLOCK_BANKED_GPIOS
@@ -40,8 +43,10 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_AMD_COMMON_BLOCK_I2C
 	select SOC_AMD_COMMON_BLOCK_IOMMU
 	select SOC_AMD_COMMON_BLOCK_LPC
+	select SOC_AMD_COMMON_BLOCK_MCAX
 	select SOC_AMD_COMMON_BLOCK_NONCAR
 	select SOC_AMD_COMMON_BLOCK_PCI
+	select SOC_AMD_COMMON_BLOCK_PCIE_GPP_DRIVER
 	select SOC_AMD_COMMON_BLOCK_PM
 	select SOC_AMD_COMMON_BLOCK_PM_CHIPSET_STATE_SAVE
 	select SOC_AMD_COMMON_BLOCK_PSP_GEN2
@@ -54,9 +59,9 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_AMD_COMMON_BLOCK_TSC_FAM17H_19H
 	select SOC_AMD_COMMON_BLOCK_UART
 	select SOC_AMD_COMMON_BLOCK_UCODE
+	select SOC_AMD_COMMON_FSP_DMI_TABLES
 	select PROVIDES_ROM_SHARING
 	select BOOT_DEVICE_SUPPORTS_WRITES if BOOT_DEVICE_SPI_FLASH
-	select PARALLEL_MP
 	select PARALLEL_MP_AP_WORK
 	select HAVE_SMI_HANDLER
 	select SSE2
@@ -67,8 +72,15 @@ config CPU_SPECIFIC_OPTIONS
 	select UDK_2017_BINDING
 	select HAVE_CF9_RESET
 
+config ARCH_ALL_STAGES_X86
+	default n
+
 config SOC_AMD_COMMON_BLOCK_UCODE_SIZE
 	default 3200
+
+config CHIPSET_DEVICETREE
+	string
+	default "soc/amd/picasso/chipset.cb"
 
 config FSP_M_FILE
 	string "FSP-M (memory init) binary path and filename"
@@ -132,6 +144,10 @@ config PRERAM_CBMEM_CONSOLE_SIZE
 	help
 	  Increase this value if preram cbmem console is getting truncated
 
+config CBFS_MCACHE_SIZE
+	hex
+	default 0x2000 if VBOOT_STARTS_BEFORE_BOOTBLOCK
+
 config C_ENV_BOOTBLOCK_SIZE
 	hex
 	default 0x10000
@@ -161,14 +177,14 @@ config FSP_M_ADDR
 
 config FSP_M_SIZE
 	hex
-	default 0x80000
+	default 0xC0000
 	help
 	  Sets the size of DRAM allocation for FSP-M in linker script.
 
 config VERSTAGE_ADDR
 	hex
 	depends on VBOOT_SEPARATE_VERSTAGE
-	default 0x2140000
+	default 0x2180000
 	help
 	  Sets the address in DRAM where verstage should be loaded if running
 	  as a separate stage on x86.
@@ -262,7 +278,7 @@ config CONSOLE_UART_BASE_ADDRESS
 	hex
 	default 0xfedc9000 if UART_FOR_CONSOLE = 0
 	default 0xfedca000 if UART_FOR_CONSOLE = 1
-	default 0xfedc3000 if UART_FOR_CONSOLE = 2
+	default 0xfedce000 if UART_FOR_CONSOLE = 2
 	default 0xfedcf000 if UART_FOR_CONSOLE = 3
 
 config SMM_TSEG_SIZE
@@ -418,7 +434,7 @@ config PSP_UNLOCK_SECURE_DEBUG
 config PSP_VERSTAGE_FILE
 	string "Specify the PSP_verstage file path"
 	depends on VBOOT_STARTS_BEFORE_BOOTBLOCK
-	default "$(obj)/psp_verstage.bin"
+	default "\$(obj)/psp_verstage.bin"
 	help
 	  Add psp_verstage file to the build & PSP Directory Table
 

@@ -176,7 +176,7 @@ void sdram_initialize(struct pei_data *pei_data)
 
 	/* Print the MRC version after executing the UEFI PEI stage */
 	u32 version = mchbar_read32(MRC_REVISION);
-	printk(BIOS_DEBUG, "MRC Version %d.%d.%d Build %d\n",
+	printk(BIOS_DEBUG, "MRC Version %u.%u.%u Build %u\n",
 		(version >> 24) & 0xff, (version >> 16) & 0xff,
 		(version >>  8) & 0xff, (version >>  0) & 0xff);
 
@@ -371,7 +371,7 @@ void perform_raminit(int s3resume)
 
 	} else {
 		printk(BIOS_ERR, "Could not parse MRC_VAR data\n");
-		hexdump32(BIOS_ERR, mrc_var, sizeof(*mrc_var) / sizeof(u32));
+		hexdump(mrc_var, sizeof(*mrc_var));
 	}
 
 	const int cbmem_was_initted = !cbmem_recovery(s3resume);

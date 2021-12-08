@@ -19,16 +19,13 @@ config BOARD_SPECIFIC_OPTIONS
 	select INTEL_LPSS_UART_FOR_CONSOLE
 
 config MAINBOARD_DIR
-	string
 	default "intel/icelake_rvp"
 
 config VARIANT_DIR
-	string
 	default "icl_u" if BOARD_INTEL_ICELAKE_RVPU
 	default "icl_y" if BOARD_INTEL_ICELAKE_RVPY
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Icelake RVP"
 
 config MAINBOARD_FAMILY
@@ -40,11 +37,9 @@ config MAX_CPUS
 	default 8
 
 config DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config VBOOT

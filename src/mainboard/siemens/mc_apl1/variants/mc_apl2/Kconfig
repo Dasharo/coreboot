@@ -5,6 +5,7 @@ config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select DRIVER_INTEL_I210
 	select DRIVERS_I2C_RX6110SA
+	select RX6110SA_DISABLE_ACPI
 	select DRIVER_SIEMENS_NC_FPGA
 	select MAINBOARD_HAS_TPM2
 	select MAINBOARD_HAS_LPC_TPM
@@ -23,7 +24,6 @@ config VBOOT
 	select GBB_FLAG_DISABLE_FWMP
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/mc_apl_vboot.fmd"
 
 endif # BOARD_SIEMENS_MC_APL2

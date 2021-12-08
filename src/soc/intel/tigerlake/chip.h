@@ -4,9 +4,11 @@
 #define _SOC_CHIP_H_
 
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <drivers/intel/gma/gma.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
+#include <intelblocks/lpc_lib.h>
 #include <intelblocks/pcie_rp.h>
 #include <intelblocks/power_limit.h>
 #include <intelblocks/tcss.h>
@@ -24,11 +26,15 @@
 #define MAX_HD_AUDIO_SSP_LINKS  6
 
 /* The first two are for TGL-U */
-#define POWER_LIMITS_U_2_CORE	0
-#define POWER_LIMITS_U_4_CORE	1
-#define POWER_LIMITS_Y_2_CORE	2
-#define POWER_LIMITS_Y_4_CORE	3
-#define POWER_LIMITS_MAX	4
+enum soc_intel_tigerlake_power_limits {
+	POWER_LIMITS_U_2_CORE,
+	POWER_LIMITS_U_4_CORE,
+	POWER_LIMITS_Y_2_CORE,
+	POWER_LIMITS_Y_4_CORE,
+	POWER_LIMITS_H_6_CORE,
+	POWER_LIMITS_H_8_CORE,
+	POWER_LIMITS_MAX
+};
 
 /*
  * Enable External V1P05 Rail in: BIT0:S0i1/S0i2,
@@ -115,6 +121,9 @@ struct soc_intel_tigerlake_config {
 	uint8_t pmc_gpe0_dw1; /* GPE0_63_32 STS/EN */
 	uint8_t pmc_gpe0_dw2; /* GPE0_95_64 STS/EN */
 
+	/* LPC fixed enables and ranges */
+	uint32_t lpc_ioe;
+
 	/* Generic IO decode ranges */
 	uint32_t gen1_dec;
 	uint32_t gen2_dec;
@@ -177,6 +186,8 @@ struct soc_intel_tigerlake_config {
 	uint16_t usb3_wake_enable_bitmap;
 	/* PCH USB2 PHY Power Gating disable */
 	uint8_t usb2_phy_sus_pg_disable;
+	/* Program OC pins for TCSS */
+	struct tcss_port_config tcss_ports[MAX_TYPE_C_PORTS];
 
 	/*
 	 * Acoustic Noise Mitigation
@@ -522,6 +533,9 @@ struct soc_intel_tigerlake_config {
 	 *
 	 */
 	bool external_bypass;
+
+	/* i915 struct for GMA backlight control */
+	struct i915_gpu_controller_info gfx;
 };
 
 typedef struct soc_intel_tigerlake_config config_t;

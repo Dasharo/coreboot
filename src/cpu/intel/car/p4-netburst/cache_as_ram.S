@@ -11,6 +11,8 @@
 .section .init
 .global bootblock_pre_c_entry
 
+#include <cpu/intel/car/cache_as_ram_symbols.inc>
+
 .code32
 _cache_as_ram_setup:
 
@@ -212,7 +214,7 @@ sipi_complete:
 
 	/* Set Cache-as-RAM base address. */
 	movl	$(MTRR_PHYS_BASE(0)), %ecx
-	movl	$_car_mtrr_start, %eax
+	movl	car_mtrr_start, %eax
 	orl	$MTRR_TYPE_WRBACK, %eax
 	xorl	%edx, %edx
 	wrmsr
@@ -220,7 +222,7 @@ sipi_complete:
 	/* Set Cache-as-RAM mask. */
 	movl	$(MTRR_PHYS_MASK(0)), %ecx
 	rdmsr
-	movl	$_car_mtrr_mask, %eax
+	movl	car_mtrr_mask, %eax
 	orl	$MTRR_PHYS_MASK_VALID, %eax
 	wrmsr
 
@@ -272,12 +274,12 @@ no_msr_11e:
 	/* Cache the whole rom to fetch microcode updates */
 	movl	$MTRR_PHYS_BASE(1), %ecx
 	xorl	%edx, %edx
-	movl	$_rom_mtrr_base, %eax
+	movl	rom_mtrr_base, %eax
 	orl	$MTRR_TYPE_WRPROT, %eax
 	wrmsr
 	movl	$MTRR_PHYS_MASK(1), %ecx
 	rdmsr
-	movl	$_rom_mtrr_mask, %eax
+	movl	rom_mtrr_mask, %eax
 	orl	$MTRR_PHYS_MASK_VALID, %eax
 	wrmsr
 
@@ -324,12 +326,12 @@ cache_rom:
 	movl	$MTRR_PHYS_BASE(1), %ecx
 	xorl	%edx, %edx
 	movl	$_program, %eax
-	andl	$_xip_mtrr_mask, %eax
+	andl	xip_mtrr_mask, %eax
 	orl	$MTRR_TYPE_WRPROT, %eax
 	wrmsr
 	movl	$MTRR_PHYS_MASK(1), %ecx
 	rdmsr
-	movl	$_xip_mtrr_mask, %eax
+	movl	xip_mtrr_mask, %eax
 	orl	$MTRR_PHYS_MASK_VALID, %eax
 	wrmsr
 
@@ -357,6 +359,16 @@ fill_cache:
 	andl	$0xfffffff0, %esp
 	subl	$4, %esp
 
+#if ENV_X86_64
+	#include <cpu/x86/64bit/entry64.inc>
+
+	movd	%mm2, %rdi
+	shlq	$32, %rdi	/* BIST */
+	movd	%mm1, %rsi
+	or	%rsi, %rdi	/* tsc[63:32] */
+	movd	%mm0, %rsi	/* tsc[31:0] */
+
+#else
 	/* push TSC and BIST to stack */
 	movd	%mm0, %eax
 	pushl	%eax	/* BIST */
@@ -364,6 +376,7 @@ fill_cache:
 	pushl	%eax	/* tsc[63:32] */
 	movd	%mm1, %eax
 	pushl	%eax	/* tsc[31:0] */
+#endif
 
 before_c_entry:
 	post_code(0x2f)

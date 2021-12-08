@@ -26,11 +26,9 @@ config MAX_CPUS
 	default 2 if BASE_ASUS_P2B_D
 
 config MAINBOARD_DIR
-	string
 	default "asus/p2b"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "P2B" if BOARD_ASUS_P2B
 	default "P2B-D" if BOARD_ASUS_P2B_D
 	default "P2B-DS" if BOARD_ASUS_P2B_DS
@@ -39,7 +37,6 @@ config MAINBOARD_PART_NUMBER
 	default "P3B-F" if BOARD_ASUS_P3B_F
 
 config VARIANT_DIR
-	string
 	default "p2b" if BOARD_ASUS_P2B
 	default "p2b-d" if BOARD_ASUS_P2B_D
 	default "p2b-ds" if BOARD_ASUS_P2B_DS
@@ -48,7 +45,6 @@ config VARIANT_DIR
 	default "p3b-f" if BOARD_ASUS_P3B_F
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config IRQ_SLOT_COUNT

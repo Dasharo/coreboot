@@ -17,7 +17,6 @@ config MAINBOARD_FAMILY
 	default "X210"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "X210"
 
 config MAINBOARD_VERSION
@@ -25,7 +24,6 @@ config MAINBOARD_VERSION
 	default "1.0"
 
 config MAINBOARD_DIR
-	string
 	default "51nb/x210"
 
 config VGA_BIOS_ID
@@ -33,15 +31,12 @@ config VGA_BIOS_ID
 	default "8086,5917"
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
 
 config NO_POST

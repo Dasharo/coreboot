@@ -19,9 +19,63 @@
 #include <soc/usb.h>
 #include <stdint.h>
 
-#define MAX_HD_AUDIO_DMIC_LINKS 2
-#define MAX_HD_AUDIO_SNDW_LINKS 4
-#define MAX_HD_AUDIO_SSP_LINKS  6
+#define MAX_HD_AUDIO_SDI_LINKS	2
+#define MAX_HD_AUDIO_DMIC_LINKS	2
+#define MAX_HD_AUDIO_SNDW_LINKS	4
+#define MAX_HD_AUDIO_SSP_LINKS	6
+
+/* Define config parameters for In-Band ECC (IBECC). */
+#define MAX_IBECC_REGIONS	8
+
+enum ibecc_mode {
+	IBECC_PER_REGION,
+	IBECC_NONE,
+	IBECC_ALL
+};
+
+struct ehl_ibecc_config {
+	bool enable;
+	bool parity_en;
+	enum ibecc_mode mode;
+	bool region_enable[MAX_IBECC_REGIONS];
+	uint16_t region_base[MAX_IBECC_REGIONS];
+	uint16_t region_mask[MAX_IBECC_REGIONS];
+};
+
+/* TSN GBE Link Speed: 0: 2.5Gbps, 1: 1Gbps */
+enum tsn_gbe_link_speed {
+	Tsn_2_5_Gbps,
+	Tsn_1_Gbps,
+};
+
+/*
+ * Enable external V1P05 Rail in: BIT0:S0i1/S0i2,
+ * BIT1:S0i3, BIT2:S3, BIT3:S4, BIT4:S5
+ * However, EHL does not support S0i1 and S0i2,
+ * hence removed the option.
+ */
+enum fivr_states {
+	FIVR_ENABLE_S0i3	= BIT(1),
+	FIVR_ENABLE_S3		= BIT(2),
+	FIVR_ENABLE_S4		= BIT(3),
+	FIVR_ENABLE_S5		= BIT(4),
+	FIVR_ENABLE_S3_S4_S5	= FIVR_ENABLE_S3 | FIVR_ENABLE_S4 | FIVR_ENABLE_S5,
+	FIVR_ENABLE_ALL_SX	= FIVR_ENABLE_S0i3 | FIVR_ENABLE_S3_S4_S5,
+};
+
+/*
+ * Enable the following for external V1p05 rail
+ * BIT1: Normal active voltage supported
+ * BIT2: Minimum active voltage supported
+ * BIT3: Minimum retention voltage supported
+ */
+enum fivr_supported_voltage {
+	FIVR_VOLTAGE_NORMAL		= BIT(1),
+	FIVR_VOLTAGE_MIN_ACTIVE		= BIT(2),
+	FIVR_VOLTAGE_MIN_RETENTION	= BIT(3),
+	FIVR_ENABLE_ALL_VOLTAGE		= FIVR_VOLTAGE_NORMAL | FIVR_VOLTAGE_MIN_ACTIVE |
+					  FIVR_VOLTAGE_MIN_RETENTION,
+};
 
 struct soc_intel_elkhartlake_config {
 
@@ -62,17 +116,26 @@ struct soc_intel_elkhartlake_config {
 
 	/* TCC activation offset */
 	uint32_t tcc_offset;
+	uint32_t tcc_offset_clamp;
 
-	/* System Agent dynamic frequency support. Only effects ULX/ULT CPUs.
-	 * When enabled memory will be training at two different frequencies.
-	 * 0:Disabled, 1:FixedPoint0, 2:FixedPoint1, 3:FixedPoint2,
-	 * 4:FixedPoint3, 5:Enabled */
+	/* Memory Thermal Throttling: Enable - Default (0) / Disable (1) */
+	bool MemoryThermalThrottlingDisable;
+
+	/* In-Band ECC (IBECC) configuration */
+	struct ehl_ibecc_config ibecc;
+
+	/* FuSa (Functional Safety): Disable - Default (0) / Enable (1) */
+	bool FuSaEnable;
+
+	/* System Agent dynamic frequency support.
+	 * When enabled memory will be trained at different frequencies.
+	 * 0:Disabled, 1:FixedPoint0(low), 2:FixedPoint1(mid), 3:FixedPoint2
+	 * (high), 4:Enabled */
 	enum {
 		SaGv_Disabled,
 		SaGv_FixedPoint0,
 		SaGv_FixedPoint1,
 		SaGv_FixedPoint2,
-		SaGv_FixedPoint3,
 		SaGv_Enabled,
 	} SaGv;
 
@@ -80,8 +143,8 @@ struct soc_intel_elkhartlake_config {
 	uint8_t RMT;
 
 	/* USB related */
-	struct usb2_port_config usb2_ports[16];
-	struct usb3_port_config usb3_ports[10];
+	struct usb2_port_config usb2_ports[10];
+	struct usb3_port_config usb3_ports[4];
 	/* Wake Enable Bitmap for USB2 ports */
 	uint16_t usb2_wake_enable_bitmap;
 	/* Wake Enable Bitmap for USB3 ports */
@@ -90,31 +153,56 @@ struct soc_intel_elkhartlake_config {
 	/* SATA related */
 	uint8_t SataMode;
 	uint8_t SataSalpSupport;
-	uint8_t SataPortsEnable[8];
-	uint8_t SataPortsDevSlp[8];
+	uint8_t SataPortsEnable[CONFIG_MAX_SATA_PORTS];
+	uint8_t SataPortsDevSlp[CONFIG_MAX_SATA_PORTS];
+	/*
+	 * Enable(0)/Disable(1) SATA Power Optimizer on PCH side.
+	 * Default 0. Setting this to 1 disables the SATA Power Optimizer.
+	 */
+	uint8_t SataPwrOptimizeDisable;
+	/*
+	 * SATA Port Enable Dito Config.
+	 * Enable DEVSLP Idle Timeout settings (DmVal, DitoVal).
+	 */
+	uint8_t SataPortsEnableDitoConfig[CONFIG_MAX_SATA_PORTS];
+	/* SataPortsDmVal is the DITO multiplier. Default is 15. */
+	uint8_t SataPortsDmVal[CONFIG_MAX_SATA_PORTS];
+	/* SataPortsDitoVal is the DEVSLP Idle Timeout, default is 625ms */
+	uint16_t SataPortsDitoVal[CONFIG_MAX_SATA_PORTS];
 
 	/* Audio related */
 	uint8_t PchHdaDspEnable;
 	uint8_t PchHdaAudioLinkHdaEnable;
+	uint8_t PchHdaSdiEnable[MAX_HD_AUDIO_SDI_LINKS];
 	uint8_t PchHdaAudioLinkDmicEnable[MAX_HD_AUDIO_DMIC_LINKS];
 	uint8_t PchHdaAudioLinkSspEnable[MAX_HD_AUDIO_SSP_LINKS];
 	uint8_t PchHdaAudioLinkSndwEnable[MAX_HD_AUDIO_SNDW_LINKS];
-	uint8_t PchHdaIDispLinkTmode;
-	uint8_t PchHdaIDispLinkFrequency;
-	uint8_t PchHdaIDispCodecDisconnect;
 
 	/* PCIe Root Ports */
 	uint8_t PcieRpEnable[CONFIG_MAX_ROOT_PORTS];
+	uint8_t PcieRpHotPlug[CONFIG_MAX_ROOT_PORTS];
+
 	/* PCIe output clocks type to PCIe devices.
 	 * 0-23: PCH rootport, 0x70: LAN, 0x80: unspecified but in use,
 	 * 0xFF: not used */
 	uint8_t PcieClkSrcUsage[CONFIG_MAX_PCIE_CLOCK_SRC];
+
 	/* PCIe ClkReq-to-ClkSrc mapping, number of clkreq signal assigned to
 	 * clksrc. */
 	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCK_SRC];
 
+	/* Enable PCIe Precision Time Measurement for Root Ports (disabled by default) */
+	uint8_t PciePtm[CONFIG_MAX_ROOT_PORTS];
+
+	/* Probe CLKREQ# signal before enabling CLKREQ# based power management.
+	 * Enable - Default (0) / Disable (1) */
+	uint8_t PcieRpClkReqDetectDisable[CONFIG_MAX_ROOT_PORTS];
+
 	/* Probe CLKREQ# signal before enabling CLKREQ# based power management.*/
-	uint8_t PcieRpClkReqDetect[CONFIG_MAX_ROOT_PORTS];
+	uint8_t PcieRpAdvancedErrorReportingDisable[CONFIG_MAX_ROOT_PORTS];
+
+	/* PCIe LTR: Enable - Default (0) / Disable (1) */
+	uint8_t PcieRpLtrDisable[CONFIG_MAX_ROOT_PORTS];
 
 	/* PCIe RP L1 substate */
 	enum L1_substates_control PcieRpL1Substates[CONFIG_MAX_ROOT_PORTS];
@@ -124,9 +212,14 @@ struct soc_intel_elkhartlake_config {
 
 	/* eMMC and SD */
 	uint8_t ScsEmmcHs400Enabled;
+	uint8_t ScsEmmcDdr50Enabled;
 
 	/* Enable if SD Card Power Enable Signal is Active High */
 	uint8_t SdCardPowerEnableActiveHigh;
+
+	/* Gfx related */
+	uint8_t Heci2Enable;
+	uint8_t Heci3Enable;
 
 	/* Gfx related */
 	uint8_t SkipExtGfxScan;
@@ -142,17 +235,9 @@ struct soc_intel_elkhartlake_config {
 
 	/* Enable C6 DRAM */
 	uint8_t enable_c6dram;
-	/*
-	 * PRMRR size setting with below options
-	 * Disable: 0x0
-	 * 32MB: 0x2000000
-	 * 64MB: 0x4000000
-	 * 128 MB: 0x8000000
-	 * 256 MB: 0x10000000
-	 * 512 MB: 0x20000000
-	 */
-	uint32_t PrmrrSize;
+
 	uint8_t PmTimerDisabled;
+
 	/*
 	 * SerialIO device mode selection:
 	 * PchSerialIoDisabled,
@@ -165,6 +250,14 @@ struct soc_intel_elkhartlake_config {
 	uint8_t SerialIoGSpiMode[CONFIG_SOC_INTEL_COMMON_BLOCK_GSPI_MAX];
 	uint8_t SerialIoUartMode[CONFIG_SOC_INTEL_UART_DEV_MAX];
 	/*
+	 * UARTn Default DMA/PIO Mode Enable(1)/Disable(0):
+	 */
+	uint8_t SerialIoUartDmaEnable[CONFIG_SOC_INTEL_UART_DEV_MAX];
+	/*
+	 * GSPIn Default Chip Enable(1)/Disable(0):
+	 */
+	uint8_t SerialIoGSpiCsEnable[CONFIG_SOC_INTEL_COMMON_BLOCK_GSPI_MAX];
+	/*
 	 * GSPIn Default Chip Select Mode:
 	 * 0:Hardware Mode,
 	 * 1:Software Mode
@@ -176,6 +269,15 @@ struct soc_intel_elkhartlake_config {
 	 * 1: High
 	 */
 	uint8_t SerialIoGSpiCsState[CONFIG_SOC_INTEL_COMMON_BLOCK_GSPI_MAX];
+	/*
+	 * SerialIo I2C Pads Termination Config:
+	 * 0x0:Hardware default,
+	 * 0x1:None,
+	 * 0x13:1kOhm weak pull-up,
+	 * 0x15:5kOhm weak pull-up,
+	 * 0x19:20kOhm weak pull-up
+	 */
+	uint8_t SerialIoI2cPadsTermination[CONFIG_SOC_INTEL_I2C_DEV_MAX];
 
 	/*
 	 * TraceHubMode config
@@ -197,10 +299,6 @@ struct soc_intel_elkhartlake_config {
 
 	/* CNVi BT Audio Offload: Enable/Disable BT Audio Offload. */
 	bool CnviBtAudioOffload;
-
-	/* Tcss */
-	uint8_t TcssXhciEn;
-	uint8_t TcssXdciEn;
 
 	/*
 	 * Override GPIO PM configuration:
@@ -271,6 +369,30 @@ struct soc_intel_elkhartlake_config {
 	 */
 	uint8_t SkipCpuReplacementCheck;
 
+	struct {
+		bool fivr_config_en;
+		enum fivr_states v1p05_state;
+		enum fivr_states vnn_state;
+		enum fivr_states vnn_sx_state;
+		enum fivr_supported_voltage v1p05_rail;
+		enum fivr_supported_voltage vnn_rail;
+		/* Icc max for V1p05 rail in mA */
+		unsigned int v1p05_icc_max_ma;
+		/* Vnn voltage in mV */
+		unsigned int vnn_sx_mv;
+		/* Transition time in microseconds: */
+		/* From low current mode voltage to high current mode voltage */
+		unsigned int vcc_low_high_us;
+		/* From retention mode voltage to high current mode voltage */
+		unsigned int vcc_ret_high_us;
+		/* From retention mode voltage to low current mode voltage */
+		unsigned int vcc_ret_low_us;
+		/* From off(0V) to high current mode voltage */
+		unsigned int vcc_off_high_us;
+		/* RFI spread spectrum, in 0.1% increment. Range: 0.0% to 10.0% (0-100). */
+		unsigned int spread_spectrum;
+	} fivr;
+
 	/*
 	 * SLP_S3 Minimum Assertion Width Policy
 	 *  1 = 60us
@@ -323,6 +445,20 @@ struct soc_intel_elkhartlake_config {
 	 *  - PM_CFG.SLP_LAN_MIN_ASST_WDTH
 	 */
 	uint8_t PchPmPwrCycDur;
+
+	/*
+	 * PCH power button override period.
+	 * Values: 0x0 - 4s, 0x1 - 6s, 0x2 - 8s, 0x3 - 10s, 0x4 - 12s, 0x5 - 14s
+	 */
+	u8 PchPmPwrBtnOverridePeriod;
+
+	/* GBE related */
+	/* PCH TSN GBE Link Speed: 0: 2.5Gbps, 1: 1Gbps */
+	enum tsn_gbe_link_speed PchTsnGbeLinkSpeed;
+	/* PCH TSN GBE SGMII Support: Disable (0) / Enable (1) */
+	bool PchTsnGbeSgmiiEnable;
+	/* PCH TSN GBE Multiple Virtual Channel: Disable (0) / Enable (1) */
+	bool PchTsnGbeMultiVcEnable;
 };
 
 typedef struct soc_intel_elkhartlake_config config_t;

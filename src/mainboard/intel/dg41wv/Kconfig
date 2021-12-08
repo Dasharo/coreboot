@@ -18,11 +18,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_HAS_LIBGFXINIT
 
 config MAINBOARD_DIR
-	string
 	default "intel/dg41wv"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "DG41WV"
 
 endif # BOARD_INTEL_DG41WV

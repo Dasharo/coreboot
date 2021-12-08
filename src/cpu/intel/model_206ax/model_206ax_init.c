@@ -172,12 +172,6 @@ static void configure_c_states(void)
 	msr.lo |= (1 << 15);	// Lock C-State MSR
 	wrmsr(MSR_PKG_CST_CONFIG_CONTROL, msr);
 
-	msr = rdmsr(MSR_PMG_IO_CAPTURE_ADDR);
-	msr.lo &= ~0x7ffff;
-	msr.lo |= (PMB0_BASE + 4);	// LVL_2 base address
-	msr.lo |= (2 << 16);		// CST Range: C7 is max C-state
-	wrmsr(MSR_PMG_IO_CAPTURE_ADDR, msr);
-
 	msr = rdmsr(MSR_MISC_PWR_MGMT);
 	msr.lo &= ~(1 << 0);	// Enable P-state HW_ALL coordination
 	wrmsr(MSR_MISC_PWR_MGMT, msr);
@@ -303,21 +297,6 @@ unsigned int smbios_processor_external_clock(void)
 	return SANDYBRIDGE_BCLK;
 }
 
-static void configure_mca(void)
-{
-	msr_t msr;
-	int i;
-	int num_banks;
-
-	msr = rdmsr(IA32_MCG_CAP);
-	num_banks = msr.lo & 0xff;
-
-	msr.lo = msr.hi = 0;
-	/* This should only be done on a cold boot */
-	for (i = 0; i < num_banks; i++)
-		wrmsr(IA32_MC0_STATUS + (i * 4), msr);
-}
-
 static void model_206ax_report(void)
 {
 	static const char *const mode[] = {"NOT ", ""};
@@ -349,7 +328,8 @@ static void model_206ax_init(struct device *cpu)
 {
 
 	/* Clear out pending MCEs */
-	configure_mca();
+	/* This should only be done on a cold boot */
+	mca_clear_status();
 
 	/* Print infos */
 	model_206ax_report();

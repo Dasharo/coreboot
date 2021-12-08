@@ -11,6 +11,7 @@ Device (HDAS)
 	/* Device is D3 wake capable */
 	Name (_S0W, 3)
 
+
 	/* NHLT Table Address populated from GNVS values */
 	Name (NBUF, ResourceTemplate () {
 		QWordMemory (ResourceConsumer, PosDecode, MinFixed,

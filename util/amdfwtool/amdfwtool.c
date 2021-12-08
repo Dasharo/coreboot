@@ -74,13 +74,6 @@
 
 #define DEFAULT_SOFT_FUSE_CHAIN "0x1"
 
-#define EMBEDDED_FW_SIGNATURE 0x55aa55aa
-#define PSP_COOKIE 0x50535024		/* 'PSP$' */
-#define PSPL2_COOKIE 0x324c5024		/* '2LP$' */
-#define PSP2_COOKIE 0x50535032		/* 'PSP2' */
-#define BDT1_COOKIE 0x44484224		/* 'DHB$ */
-#define BDT2_COOKIE 0x324c4224		/* '2LB$ */
-
 /*
  * Beginning with Family 15h Models 70h-7F, a.k.a Stoney Ridge, the PSP
  * can support an optional "combo" implementation.  If the PSP sees the
@@ -153,50 +146,50 @@ static uint32_t fletcher32(const void *data, int length)
 static void usage(void)
 {
 	printf("amdfwtool: Create AMD Firmware combination\n");
-	printf("Usage: amdfwtool [options] -f <size> -o <filename>\n");
-	printf("-x | --xhci <FILE>             Add XHCI blob\n");
-	printf("-i | --imc <FILE>              Add IMC blob\n");
-	printf("-g | --gec <FILE>              Add GEC blob\n");
+	printf("Usage: amdfwtool [options] --flashsize <size> --output <filename>\n");
+	printf("--xhci <FILE>                  Add XHCI blob\n");
+	printf("--imc <FILE>                   Add IMC blob\n");
+	printf("--gec <FILE>                   Add GEC blob\n");
 
 	printf("\nPSP options:\n");
-	printf("-A | --combo-capable           Place PSP directory pointer at Embedded Firmware\n");
+	printf("--combo-capable                Place PSP directory pointer at Embedded\n");
+	printf("                               Firmware\n");
 	printf("                               offset able to support combo directory\n");
-	printf("-M | --multilevel              Generate primary and secondary tables\n");
-	printf("-n | --nvram <FILE>            Add nvram binary\n");
-	printf("-T | --soft-fuse               Set soft fuse\n");
-	printf("-U | --token-unlock            Set token unlock\n");
-	printf("-W | --whitelist               Set if there is a whitelist\n");
-	printf("-S | --use-pspsecureos         Set if psp secure OS is needed\n");
-	printf("-p | --load-mp2-fw             Set if load MP2 firmware\n");
-	printf("-L | --load-s0i3               Set if load s0i3 firmware\n");
-	printf("-Z | --verstage <FILE>         Add verstage\n");
-	printf("-E | --verstage_sig            Add verstage signature\n");
+	printf("--multilevel                   Generate primary and secondary tables\n");
+	printf("--nvram <FILE>                 Add nvram binary\n");
+	printf("--soft-fuse                    Set soft fuse\n");
+	printf("--token-unlock                 Set token unlock\n");
+	printf("--whitelist                    Set if there is a whitelist\n");
+	printf("--use-pspsecureos              Set if psp secure OS is needed\n");
+	printf("--load-mp2-fw                  Set if load MP2 firmware\n");
+	printf("--load-s0i3                    Set if load s0i3 firmware\n");
+	printf("--verstage <FILE>              Add verstage\n");
+	printf("--verstage_sig                 Add verstage signature\n");
 	printf("\nBIOS options:\n");
-	printf("-I | --instance <number>       Sets instance field for the next BIOS\n");
+	printf("--instance <number>            Sets instance field for the next BIOS\n");
 	printf("                               firmware\n");
-	printf("-a | --apcb <FILE>             Add AGESA PSP customization block\n");
-	printf("-Q | --apob-base <HEX_VAL>     Destination for AGESA PSP output block\n");
-	printf("-F | --apob-nv-base <HEX_VAL>  Location of S3 resume data\n");
-	printf("-H | --apob-nv-size <HEX_VAL>  Size of S3 resume data\n");
-	printf("-O | --ucode <FILE>            Add microcode patch\n");
-	printf("-V | --bios-bin <FILE>         Add compressed image; auto source address\n");
-	printf("-e | --bios-bin-src <HEX_VAL>  Address in flash of source if -V not used\n");
-	printf("-v | --bios-bin-dest <HEX_VAL> Destination for uncompressed BIOS\n");
-	printf("-j | --bios-uncomp-size <HEX>  Uncompressed size of BIOS image\n");
-	printf("-o | --output <filename>       Output filename\n");
-	printf("-f | --flashsize <HEX_VAL>     ROM size in bytes\n");
+	printf("--apcb <FILE>                  Add AGESA PSP customization block\n");
+	printf("--apob-base <HEX_VAL>          Destination for AGESA PSP output block\n");
+	printf("--apob-nv-base <HEX_VAL>       Location of S3 resume data\n");
+	printf("--apob-nv-size <HEX_VAL>       Size of S3 resume data\n");
+	printf("--ucode <FILE>                 Add microcode patch\n");
+	printf("--bios-bin <FILE>              Add compressed image; auto source address\n");
+	printf("--bios-bin-src <HEX_VAL>       Address in flash of source if -V not used\n");
+	printf("--bios-bin-dest <HEX_VAL>      Destination for uncompressed BIOS\n");
+	printf("--bios-uncomp-size <HEX>       Uncompressed size of BIOS image\n");
+	printf("--output <filename>            output filename\n");
+	printf("--flashsize <HEX_VAL>          ROM size in bytes\n");
 	printf("                               size must be larger than %dKB\n",
 		MIN_ROM_KB);
 	printf("                               and must a multiple of 1024\n");
-	printf("-l | --location                Location of Directory\n");
-	printf("-q | --anywhere                Use any 64-byte aligned addr for Directory\n");
-	printf("-R | --sharedmem               Location of PSP/FW shared memory\n");
-	printf("-P | --sharedmem-size          Maximum size of the PSP/FW shared memory\n");
+	printf("--location                     Location of Directory\n");
+	printf("--anywhere                     Use any 64-byte aligned addr for Directory\n");
+	printf("--sharedmem                    Location of PSP/FW shared memory\n");
+	printf("--sharedmem-size               Maximum size of the PSP/FW shared memory\n");
 	printf("                               area\n");
-	printf("-C | --soc-name <socname>      Specify SOC name. Supported names are\n");
+	printf("--soc-name <socname>           Specify SOC name. Supported names are\n");
 	printf("                               Stoneyridge, Raven, Picasso, Renoir, Cezanne\n");
 	printf("                               or Lucienne\n");
-	printf("-h | --help                    Show this help\n");
 	printf("\nEmbedded Firmware Structure options used by the PSP:\n");
 	printf("--spi-speed <HEX_VAL>          SPI fast speed to place in EFS Table\n");
 	printf("                               0x0 66.66Mhz\n");
@@ -219,9 +212,11 @@ static void usage(void)
 	printf("                               0x1 Micron parts are always used\n");
 	printf("                               0x2 Micron parts optional, this option is only\n");
 	printf("                                   supported with RN/LCN SOC\n");
-	printf("-c | --config <config file>    Config file\n");
-	printf("-d | --debug                   Print debug message\n");
-	printf("-D | --depend                  List out the firmware files\n");
+	printf("\nGeneral options:\n");
+	printf("-c|--config <config file>      Config file\n");
+	printf("-d|--debug                     Print debug message\n");
+	printf("-l|--list                      List out the firmware files\n");
+	printf("-h|--help                      Show this help\n");
 }
 
 amd_fw_entry amd_psp_fw_table[] = {
@@ -342,113 +337,6 @@ amd_bios_entry amd_bios_table[] = {
 	{ .type = AMD_BIOS_INVALID },
 };
 
-struct second_gen_efs { /* todo: expand for Server products */
-	int gen:1; /* Client products only use bit 0 */
-	int reserved:31;
-} __attribute__((packed));
-
-#define EFS_SECOND_GEN 0
-
-typedef struct _embedded_firmware {
-	uint32_t signature; /* 0x55aa55aa */
-	uint32_t imc_entry;
-	uint32_t gec_entry;
-	uint32_t xhci_entry;
-	uint32_t psp_entry;
-	uint32_t comboable;
-	uint32_t bios0_entry; /* todo: add way to select correct entry */
-	uint32_t bios1_entry;
-	uint32_t bios2_entry;
-	struct second_gen_efs efs_gen;
-	uint32_t bios3_entry;
-	uint32_t reserved_2Ch;
-	uint32_t promontory_fw_ptr;
-	uint32_t lp_promontory_fw_ptr;
-	uint32_t reserved_38h;
-	uint32_t reserved_3Ch;
-	uint8_t spi_readmode_f15_mod_60_6f;
-	uint8_t fast_speed_new_f15_mod_60_6f;
-	uint8_t reserved_42h;
-	uint8_t spi_readmode_f17_mod_00_2f;
-	uint8_t spi_fastspeed_f17_mod_00_2f;
-	uint8_t qpr_dummy_cycle_f17_mod_00_2f;
-	uint8_t reserved_46h;
-	uint8_t spi_readmode_f17_mod_30_3f;
-	uint8_t spi_fastspeed_f17_mod_30_3f;
-	uint8_t micron_detect_f17_mod_30_3f;
-	uint8_t reserved_4Ah;
-	uint8_t reserved_4Bh;
-	uint32_t reserved_4Ch;
-} __attribute__((packed, aligned(16))) embedded_firmware;
-
-typedef struct _psp_directory_header {
-	uint32_t cookie;
-	uint32_t checksum;
-	uint32_t num_entries;
-	uint32_t additional_info;
-} __attribute__((packed, aligned(16))) psp_directory_header;
-
-typedef struct _psp_directory_entry {
-	uint8_t type;
-	uint8_t subprog;
-	uint16_t rsvd;
-	uint32_t size;
-	uint64_t addr; /* or a value in some cases */
-} __attribute__((packed)) psp_directory_entry;
-
-typedef struct _psp_directory_table {
-	psp_directory_header header;
-	psp_directory_entry entries[];
-} __attribute__((packed, aligned(16))) psp_directory_table;
-
-#define MAX_PSP_ENTRIES 0x1f
-
-typedef struct _psp_combo_header {
-	uint32_t cookie;
-	uint32_t checksum;
-	uint32_t num_entries;
-	uint32_t lookup;
-	uint64_t reserved[2];
-} __attribute__((packed, aligned(16))) psp_combo_header;
-
-typedef struct _psp_combo_entry {
-	uint32_t id_sel;
-	uint32_t id;
-	uint64_t lvl2_addr;
-} __attribute__((packed)) psp_combo_entry;
-
-typedef struct _psp_combo_directory {
-	psp_combo_header header;
-	psp_combo_entry entries[];
-} __attribute__((packed, aligned(16))) psp_combo_directory;
-
-#define MAX_COMBO_ENTRIES 1
-
-typedef struct _bios_directory_hdr {
-	uint32_t cookie;
-	uint32_t checksum;
-	uint32_t num_entries;
-	uint32_t additional_info;
-} __attribute__((packed, aligned(16))) bios_directory_hdr;
-
-typedef struct _bios_directory_entry {
-	uint8_t type;
-	uint8_t region_type;
-	int reset:1;
-	int copy:1;
-	int ro:1;
-	int compressed:1;
-	int inst:4;
-	uint8_t subprog; /* b[7:3] reserved */
-	uint32_t size;
-	uint64_t source;
-	uint64_t dest;
-} __attribute__((packed)) bios_directory_entry;
-
-typedef struct _bios_directory_table {
-	bios_directory_hdr header;
-	bios_directory_entry entries[];
-} bios_directory_table;
 
 #define MAX_BIOS_ENTRIES 0x2f
 
@@ -509,10 +397,13 @@ static void fill_dir_header(void *directory, uint32_t count, uint32_t cookie, co
 
 	if (!count)
 		return;
+	if (ctx == NULL || directory == NULL) {
+		fprintf(stderr, "Calling %s with NULL pointers\n", __func__);
+		return;
+	}
 
 	/* The table size needs to be 0x1000 aligned. So align the end of table. */
-	if (ctx != NULL)
-		ctx->current = ALIGN(ctx->current, TABLE_ALIGNMENT);
+	ctx->current = ALIGN(ctx->current, TABLE_ALIGNMENT);
 
 	switch (cookie) {
 	case PSP2_COOKIE:
@@ -648,7 +539,7 @@ static void dump_psp_firmwares(amd_fw_entry *fw_table)
 	printf("PSP firmware components:");
 	for (index = fw_table; index->type != AMD_FW_INVALID; index++) {
 		if (index->filename)
-			printf("  filename=%s\n", index->filename);
+			printf("  %2x: %s\n", index->type, index->filename);
 	}
 }
 
@@ -659,7 +550,7 @@ static void dump_bdt_firmwares(amd_bios_entry *fw_table)
 	printf("BIOS Directory Table (BDT) components:");
 	for (index = fw_table; index->type != AMD_BIOS_INVALID; index++) {
 		if (index->filename)
-			printf("  filename=%s\n", index->filename);
+			printf("  %2x: %s\n", index->type, index->filename);
 	}
 }
 
@@ -694,7 +585,8 @@ static void integrate_psp_firmwares(context *ctx,
 					psp_directory_table *pspdir,
 					psp_directory_table *pspdir2,
 					amd_fw_entry *fw_table,
-					uint32_t cookie)
+					uint32_t cookie,
+					amd_cb_config *cb_config)
 {
 	ssize_t bytes;
 	unsigned int i, count;
@@ -707,7 +599,9 @@ static void integrate_psp_firmwares(context *ctx,
 	 * 1st-level cookie may indicate level 1 or flattened.  If the caller
 	 * passes a pointer to a 2nd-level table, then assume not flat.
 	 */
-	if (cookie == PSPL2_COOKIE)
+	if (cb_config->multi_level == 0)
+		level = PSP_BOTH;
+	else if (cookie == PSPL2_COOKIE)
 		level = PSP_LVL2;
 	else if (pspdir2)
 		level = PSP_LVL1;
@@ -872,7 +766,8 @@ static void integrate_bios_firmwares(context *ctx,
 					bios_directory_table *biosdir,
 					bios_directory_table *biosdir2,
 					amd_bios_entry *fw_table,
-					uint32_t cookie)
+					uint32_t cookie,
+					amd_cb_config *cb_config)
 {
 	ssize_t bytes;
 	unsigned int i, count;
@@ -888,7 +783,9 @@ static void integrate_bios_firmwares(context *ctx,
 	 * 1st-level cookie may indicate level 1 or flattened.  If the caller
 	 * passes a pointer to a 2nd-level table, then assume not flat.
 	 */
-	if (cookie == BDT2_COOKIE)
+	if (cb_config->multi_level == 0)
+		level = BDT_BOTH;
+	else if (cookie == BDT2_COOKIE)
 		level = BDT_LVL2;
 	else if (biosdir2)
 		level = BDT_LVL1;
@@ -1042,6 +939,7 @@ static void integrate_bios_firmwares(context *ctx,
 
 	if (biosdir2) {
 		biosdir->entries[count].type = AMD_BIOS_L2_PTR;
+		biosdir->entries[count].region_type = 0;
 		biosdir->entries[count].size =
 					+ MAX_BIOS_ENTRIES
 					* sizeof(bios_directory_entry);
@@ -1068,60 +966,99 @@ static void integrate_bios_firmwares(context *ctx,
 }
 
 enum {
+	AMDFW_OPT_CONFIG =	'c',
+	AMDFW_OPT_DEBUG =	'd',
+	AMDFW_OPT_HELP =	'h',
+	AMDFW_OPT_LIST_DEPEND =	'l',
+
+	AMDFW_OPT_XHCI = 128,
+	AMDFW_OPT_IMC,
+	AMDFW_OPT_GEC,
+	AMDFW_OPT_COMBO,
+	AMDFW_OPT_MULTILEVEL,
+	AMDFW_OPT_NVRAM,
+
+	AMDFW_OPT_FUSE,
+	AMDFW_OPT_UNLOCK,
+	AMDFW_OPT_WHITELIST,
+	AMDFW_OPT_USE_PSPSECUREOS,
+	AMDFW_OPT_LOAD_MP2FW,
+	AMDFW_OPT_LOAD_S0I3,
+	AMDFW_OPT_VERSTAGE,
+	AMDFW_OPT_VERSTAGE_SIG,
+
+	AMDFW_OPT_INSTANCE,
+	AMDFW_OPT_APCB,
+	AMDFW_OPT_APOBBASE,
+	AMDFW_OPT_BIOSBIN,
+	AMDFW_OPT_BIOSBIN_SOURCE,
+	AMDFW_OPT_BIOSBIN_DEST,
+	AMDFW_OPT_BIOS_UNCOMP_SIZE,
+	AMDFW_OPT_UCODE,
+	AMDFW_OPT_APOB_NVBASE,
+	AMDFW_OPT_APOB_NVSIZE,
+
+	AMDFW_OPT_OUTPUT,
+	AMDFW_OPT_FLASHSIZE,
+	AMDFW_OPT_LOCATION,
+	AMDFW_OPT_ANYWHERE,
+	AMDFW_OPT_SHAREDMEM,
+	AMDFW_OPT_SHAREDMEM_SIZE,
+	AMDFW_OPT_SOC_NAME,
 	/* begin after ASCII characters */
 	LONGOPT_SPI_READ_MODE	= 256,
 	LONGOPT_SPI_SPEED	= 257,
 	LONGOPT_SPI_MICRON_FLAG	= 258,
 };
 
-/* Unused values: BGJKNXYbkmprstuwyz*/
-static const char *optstring  = "x:i:g:AMn:T:SPLUW:I:a:Q:V:e:v:j:O:F:"
-				"H:o:f:l:hZ:qR:C:c:E:dD";
+static char const optstring[] = {AMDFW_OPT_CONFIG, ':',
+	AMDFW_OPT_DEBUG, AMDFW_OPT_HELP, AMDFW_OPT_LIST_DEPEND
+};
 
 static struct option long_options[] = {
-	{"xhci",             required_argument, 0, 'x' },
-	{"imc",              required_argument, 0, 'i' },
-	{"gec",              required_argument, 0, 'g' },
+	{"xhci",             required_argument, 0, AMDFW_OPT_XHCI },
+	{"imc",              required_argument, 0, AMDFW_OPT_IMC },
+	{"gec",              required_argument, 0, AMDFW_OPT_GEC },
 	/* PSP Directory Table items */
-	{"combo-capable",          no_argument, 0, 'A' },
-	{"multilevel",             no_argument, 0, 'M' },
-	{"nvram",            required_argument, 0, 'n' },
-	{"soft-fuse",        required_argument, 0, 'T' },
-	{"token-unlock",           no_argument, 0, 'U' },
-	{"whitelist",        required_argument, 0, 'W' },
-	{"use-pspsecureos",        no_argument, 0, 'S' },
-	{"load-mp2-fw",            no_argument, 0, 'p' },
-	{"load-s0i3",              no_argument, 0, 'L' },
-	{"verstage",         required_argument, 0, 'Z' },
-	{"verstage_sig",     required_argument, 0, 'E' },
+	{"combo-capable",          no_argument, 0, AMDFW_OPT_COMBO },
+	{"multilevel",             no_argument, 0, AMDFW_OPT_MULTILEVEL },
+	{"nvram",            required_argument, 0, AMDFW_OPT_NVRAM },
+	{"soft-fuse",        required_argument, 0, AMDFW_OPT_FUSE },
+	{"token-unlock",           no_argument, 0, AMDFW_OPT_UNLOCK },
+	{"whitelist",        required_argument, 0, AMDFW_OPT_WHITELIST },
+	{"use-pspsecureos",        no_argument, 0, AMDFW_OPT_USE_PSPSECUREOS },
+	{"load-mp2-fw",            no_argument, 0, AMDFW_OPT_LOAD_MP2FW },
+	{"load-s0i3",              no_argument, 0, AMDFW_OPT_LOAD_S0I3 },
+	{"verstage",         required_argument, 0, AMDFW_OPT_VERSTAGE },
+	{"verstage_sig",     required_argument, 0, AMDFW_OPT_VERSTAGE_SIG },
 	/* BIOS Directory Table items */
-	{"instance",         required_argument, 0, 'I' },
-	{"apcb",             required_argument, 0, 'a' },
-	{"apob-base",        required_argument, 0, 'Q' },
-	{"bios-bin",         required_argument, 0, 'V' },
-	{"bios-bin-src",     required_argument, 0, 'e' },
-	{"bios-bin-dest",    required_argument, 0, 'v' },
-	{"bios-uncomp-size", required_argument, 0, 'j' },
-	{"ucode",            required_argument, 0, 'O' },
-	{"apob-nv-base",     required_argument, 0, 'F' },
-	{"apob-nv-size",     required_argument, 0, 'H' },
+	{"instance",         required_argument, 0, AMDFW_OPT_INSTANCE },
+	{"apcb",             required_argument, 0, AMDFW_OPT_APCB },
+	{"apob-base",        required_argument, 0, AMDFW_OPT_APOBBASE },
+	{"bios-bin",         required_argument, 0, AMDFW_OPT_BIOSBIN },
+	{"bios-bin-src",     required_argument, 0, AMDFW_OPT_BIOSBIN_SOURCE },
+	{"bios-bin-dest",    required_argument, 0, AMDFW_OPT_BIOSBIN_DEST },
+	{"bios-uncomp-size", required_argument, 0, AMDFW_OPT_BIOS_UNCOMP_SIZE },
+	{"ucode",            required_argument, 0, AMDFW_OPT_UCODE },
+	{"apob-nv-base",     required_argument, 0, AMDFW_OPT_APOB_NVBASE },
+	{"apob-nv-size",     required_argument, 0, AMDFW_OPT_APOB_NVSIZE },
 	/* Embedded Firmware Structure items*/
 	{"spi-read-mode",    required_argument, 0, LONGOPT_SPI_READ_MODE },
 	{"spi-speed",        required_argument, 0, LONGOPT_SPI_SPEED },
 	{"spi-micron-flag",  required_argument, 0, LONGOPT_SPI_MICRON_FLAG },
 	/* other */
-	{"output",           required_argument, 0, 'o' },
-	{"flashsize",        required_argument, 0, 'f' },
-	{"location",         required_argument, 0, 'l' },
-	{"anywhere",         no_argument,       0, 'q' },
-	{"sharedmem",        required_argument, 0, 'R' },
-	{"sharedmem-size",   required_argument, 0, 'P' },
-	{"soc-name",         required_argument, 0, 'C' },
+	{"output",           required_argument, 0, AMDFW_OPT_OUTPUT },
+	{"flashsize",        required_argument, 0, AMDFW_OPT_FLASHSIZE },
+	{"location",         required_argument, 0, AMDFW_OPT_LOCATION },
+	{"anywhere",         no_argument,       0, AMDFW_OPT_ANYWHERE },
+	{"sharedmem",        required_argument, 0, AMDFW_OPT_SHAREDMEM },
+	{"sharedmem-size",   required_argument, 0, AMDFW_OPT_SHAREDMEM_SIZE },
+	{"soc-name",         required_argument, 0, AMDFW_OPT_SOC_NAME },
 
-	{"config",           required_argument, 0, 'c' },
-	{"debug",            no_argument,       0, 'd' },
-	{"help",             no_argument,       0, 'h' },
-	{"depend",           no_argument,       0, 'D' },
+	{"config",           required_argument, 0, AMDFW_OPT_CONFIG },
+	{"debug",            no_argument,       0, AMDFW_OPT_DEBUG },
+	{"help",             no_argument,       0, AMDFW_OPT_HELP },
+	{"list",             no_argument,       0, AMDFW_OPT_LIST_DEPEND },
 	{NULL,               0,                 0,  0  }
 };
 
@@ -1213,6 +1150,7 @@ enum platform {
 	PLATFORM_PICASSO,
 	PLATFORM_RENOIR,
 	PLATFORM_CEZANNE,
+	PLATFORM_MENDOCINO,
 	PLATFORM_LUCIENNE,
 };
 
@@ -1250,6 +1188,7 @@ static int set_efs_table(uint8_t soc_id, embedded_firmware *amd_romsig,
 	case PLATFORM_RENOIR:
 	case PLATFORM_LUCIENNE:
 	case PLATFORM_CEZANNE:
+	case PLATFORM_MENDOCINO:
 		amd_romsig->efs_gen.gen = EFS_SECOND_GEN;
 		amd_romsig->spi_readmode_f17_mod_30_3f = efs_spi_readmode;
 		amd_romsig->spi_fastspeed_f17_mod_30_3f = efs_spi_speed;
@@ -1286,6 +1225,8 @@ static int identify_platform(char *soc_name)
 		return PLATFORM_PICASSO;
 	else if (!strcasecmp(soc_name, "Cezanne"))
 		return PLATFORM_CEZANNE;
+	else if (!strcasecmp(soc_name, "Mendocino"))
+		return PLATFORM_MENDOCINO;
 	else if (!strcasecmp(soc_name, "Renoir"))
 		return PLATFORM_RENOIR;
 	else if (!strcasecmp(soc_name, "Lucienne"))
@@ -1320,7 +1261,6 @@ int main(int argc, char **argv)
 	uint8_t efs_spi_speed = 0xff;
 	uint8_t efs_spi_micron_flag = 0xff;
 
-	int multi = 0;
 	amd_cb_config cb_config;
 	int debug = 0;
 	int list_deps = 0;
@@ -1330,6 +1270,7 @@ int main(int argc, char **argv)
 	cb_config.use_secureos = 0;
 	cb_config.load_mp2_fw = 0;
 	cb_config.s0i3 = 0;
+	cb_config.multi_level = 0;
 
 	while (1) {
 		int optindex = 0;
@@ -1340,48 +1281,48 @@ int main(int argc, char **argv)
 			break;
 
 		switch (c) {
-		case 'x':
+		case AMDFW_OPT_XHCI:
 			register_fw_filename(AMD_FW_XHCI, sub, optarg);
 			sub = instance = 0;
 			break;
-		case 'i':
+		case AMDFW_OPT_IMC:
 			register_fw_filename(AMD_FW_IMC, sub, optarg);
 			sub = instance = 0;
 			break;
-		case 'g':
+		case AMDFW_OPT_GEC:
 			register_fw_filename(AMD_FW_GEC, sub, optarg);
 			sub = instance = 0;
 			break;
-		case 'A':
+		case AMDFW_OPT_COMBO:
 			comboable = 1;
 			break;
-		case 'M':
-			multi = 1;
+		case AMDFW_OPT_MULTILEVEL:
+			cb_config.multi_level = 1;
 			break;
-		case 'U':
+		case AMDFW_OPT_UNLOCK:
 			register_fw_token_unlock();
 			cb_config.unlock_secure = 1;
 			sub = instance = 0;
 			break;
-		case 'S':
+		case AMDFW_OPT_USE_PSPSECUREOS:
 			cb_config.use_secureos = 1;
 			break;
-		case 'I':
+		case AMDFW_OPT_INSTANCE:
 			instance = strtoul(optarg, &tmp, 16);
 			break;
-		case 'p':
+		case AMDFW_OPT_LOAD_MP2FW:
 			cb_config.load_mp2_fw = 1;
 			break;
-		case 'n':
+		case AMDFW_OPT_NVRAM:
 			register_fw_filename(AMD_FW_PSP_NVRAM, sub, optarg);
 			sub = instance = 0;
 			break;
-		case 'T':
+		case AMDFW_OPT_FUSE:
 			register_fw_fuse(optarg);
 			fuse_defined = 1;
 			sub = 0;
 			break;
-		case 'a':
+		case AMDFW_OPT_APCB:
 			if ((instance & 0xF0) == 0)
 				register_bdt_data(AMD_BIOS_APCB, sub, instance & 0xF, optarg);
 			else
@@ -1389,62 +1330,62 @@ int main(int argc, char **argv)
 							instance & 0xF, optarg);
 			sub = instance = 0;
 			break;
-		case 'Q':
+		case AMDFW_OPT_APOBBASE:
 			/* APOB destination */
 			register_fw_addr(AMD_BIOS_APOB, 0, optarg, 0);
 			sub = instance = 0;
 			break;
-		case 'F':
+		case AMDFW_OPT_APOB_NVBASE:
 			/* APOB NV source */
 			register_fw_addr(AMD_BIOS_APOB_NV, optarg, 0, 0);
 			sub = instance = 0;
 			break;
-		case 'H':
+		case AMDFW_OPT_APOB_NVSIZE:
 			/* APOB NV size */
 			register_fw_addr(AMD_BIOS_APOB_NV, 0, 0, optarg);
 			sub = instance = 0;
 			break;
-		case 'V':
+		case AMDFW_OPT_BIOSBIN:
 			register_bdt_data(AMD_BIOS_BIN, sub, instance, optarg);
 			sub = instance = 0;
 			break;
-		case 'e':
+		case AMDFW_OPT_BIOSBIN_SOURCE:
 			/* BIOS source */
 			register_fw_addr(AMD_BIOS_BIN, optarg, 0, 0);
 			sub = instance = 0;
 			break;
-		case 'v':
+		case AMDFW_OPT_BIOSBIN_DEST:
 			/* BIOS destination */
 			register_fw_addr(AMD_BIOS_BIN, 0, optarg, 0);
 			sub = instance = 0;
 			break;
-		case 'j':
+		case AMDFW_OPT_BIOS_UNCOMP_SIZE:
 			/* BIOS destination size */
 			register_fw_addr(AMD_BIOS_BIN, 0, 0, optarg);
 			sub = instance = 0;
 			break;
-		case 'O':
+		case AMDFW_OPT_UCODE:
 			register_bdt_data(AMD_BIOS_UCODE, sub,
 							instance, optarg);
 			sub = instance = 0;
 			break;
-		case 'L':
+		case AMDFW_OPT_LOAD_S0I3:
 			cb_config.s0i3 = 1;
 			break;
-		case 'W':
+		case AMDFW_OPT_WHITELIST:
 			register_fw_filename(AMD_FW_PSP_WHITELIST, sub, optarg);
 			sub = instance = 0;
 			cb_config.have_whitelist = 1;
 			break;
-		case 'Z':
+		case AMDFW_OPT_VERSTAGE:
 			register_fw_filename(AMD_FW_PSP_VERSTAGE, sub, optarg);
 			sub = instance = 0;
 			break;
-		case 'E':
+		case AMDFW_OPT_VERSTAGE_SIG:
 			register_fw_filename(AMD_FW_VERSTAGE_SIG, sub, optarg);
 			sub = instance = 0;
 			break;
-		case 'C':
+		case AMDFW_OPT_SOC_NAME:
 			soc_id = identify_platform(optarg);
 			if (soc_id == PLATFORM_UNKNOWN) {
 				fprintf(stderr, "Error: Invalid SOC name specified\n\n");
@@ -1464,10 +1405,10 @@ int main(int argc, char **argv)
 			efs_spi_micron_flag = strtoull(optarg, NULL, 16);
 			sub = instance = 0;
 			break;
-		case 'o':
+		case AMDFW_OPT_OUTPUT:
 			output = optarg;
 			break;
-		case 'f':
+		case AMDFW_OPT_FLASHSIZE:
 			ctx.rom_size = (uint32_t)strtoul(optarg, &tmp, 16);
 			if (*tmp != '\0') {
 				fprintf(stderr, "Error: ROM size specified"
@@ -1475,7 +1416,7 @@ int main(int argc, char **argv)
 				retval = 1;
 			}
 			break;
-		case 'l':
+		case AMDFW_OPT_LOCATION:
 			dir_location = (uint32_t)strtoul(optarg, &tmp, 16);
 			if (*tmp != '\0') {
 				fprintf(stderr, "Error: Directory Location specified"
@@ -1483,30 +1424,30 @@ int main(int argc, char **argv)
 				retval = 1;
 			}
 			break;
-		case 'q':
+		case AMDFW_OPT_ANYWHERE:
 			any_location = 1;
 			break;
-		case 'R':
+		case AMDFW_OPT_SHAREDMEM:
 			/* shared memory destination */
 			register_fw_addr(AMD_BIOS_PSP_SHARED_MEM, 0, optarg, 0);
 			sub = instance = 0;
 			break;
-		case 'P':
+		case AMDFW_OPT_SHAREDMEM_SIZE:
 			/* shared memory size */
 			register_fw_addr(AMD_BIOS_PSP_SHARED_MEM, NULL, NULL, optarg);
 			sub = instance = 0;
 			break;
 
-		case 'c':
+		case AMDFW_OPT_CONFIG:
 			config = optarg;
 			break;
-		case 'd':
+		case AMDFW_OPT_DEBUG:
 			debug = 1;
 			break;
-		case 'h':
+		case AMDFW_OPT_HELP:
 			usage();
 			return 0;
-		case 'D':
+		case AMDFW_OPT_LIST_DEPEND:
 			list_deps = 1;
 			break;
 		default:
@@ -1629,20 +1570,20 @@ int main(int argc, char **argv)
 
 	ctx.current = ALIGN(ctx.current, 0x10000U); /* TODO: is it necessary? */
 
-	if (multi) {
+	if (cb_config.multi_level) {
 		/* Do 2nd PSP directory followed by 1st */
-		psp_directory_table *pspdir2 = new_psp_dir(&ctx, multi);
+		psp_directory_table *pspdir2 = new_psp_dir(&ctx, cb_config.multi_level);
 		integrate_psp_firmwares(&ctx, pspdir2, 0,
-						amd_psp_fw_table, PSPL2_COOKIE);
+						amd_psp_fw_table, PSPL2_COOKIE, &cb_config);
 
-		pspdir = new_psp_dir(&ctx, multi);
+		pspdir = new_psp_dir(&ctx, cb_config.multi_level);
 		integrate_psp_firmwares(&ctx, pspdir, pspdir2,
-						amd_psp_fw_table, PSP_COOKIE);
+						amd_psp_fw_table, PSP_COOKIE, &cb_config);
 	} else {
 		/* flat: PSP 1 cookie and no pointer to 2nd table */
-		pspdir = new_psp_dir(&ctx, multi);
+		pspdir = new_psp_dir(&ctx, cb_config.multi_level);
 		integrate_psp_firmwares(&ctx, pspdir, 0,
-						amd_psp_fw_table, PSP_COOKIE);
+						amd_psp_fw_table, PSP_COOKIE, &cb_config);
 	}
 
 	if (comboable)
@@ -1660,32 +1601,34 @@ int main(int argc, char **argv)
 	combo_dir->entries[0].lvl2_addr = BUFF_TO_RUN(ctx, pspdir);
 
 	combo_dir->header.lookup = 1;
-	fill_dir_header(combo_dir, 1, PSP2_COOKIE, NULL);
+	fill_dir_header(combo_dir, 1, PSP2_COOKIE, &ctx);
 #endif
 
 	if (have_bios_tables(amd_bios_table)) {
 		bios_directory_table *biosdir;
-		if (multi) {
+		if (cb_config.multi_level) {
 			/* Do 2nd level BIOS directory followed by 1st */
 			bios_directory_table *biosdir2 =
-						new_bios_dir(&ctx, multi);
+						new_bios_dir(&ctx, cb_config.multi_level);
 			integrate_bios_firmwares(&ctx, biosdir2, 0,
-						amd_bios_table, BDT2_COOKIE);
+						amd_bios_table, BDT2_COOKIE, &cb_config);
 
-			biosdir = new_bios_dir(&ctx, multi);
+			biosdir = new_bios_dir(&ctx, cb_config.multi_level);
 			integrate_bios_firmwares(&ctx, biosdir, biosdir2,
-						amd_bios_table, BDT1_COOKIE);
+						amd_bios_table, BDT1_COOKIE, &cb_config);
 		} else {
 			/* flat: BDT1 cookie and no pointer to 2nd table */
-			biosdir = new_bios_dir(&ctx, multi);
+			biosdir = new_bios_dir(&ctx, cb_config.multi_level);
 			integrate_bios_firmwares(&ctx, biosdir, 0,
-						amd_bios_table, BDT1_COOKIE);
+						amd_bios_table, BDT1_COOKIE, &cb_config);
 		}
 		switch (soc_id) {
 		case PLATFORM_RENOIR:
 		case PLATFORM_LUCIENNE:
 		case PLATFORM_CEZANNE:
 			amd_romsig->bios3_entry = BUFF_TO_RUN(ctx, biosdir);
+			break;
+		case PLATFORM_MENDOCINO:
 			break;
 		case PLATFORM_STONEYRIDGE:
 		case PLATFORM_RAVEN:

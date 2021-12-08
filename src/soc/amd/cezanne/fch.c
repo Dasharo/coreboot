@@ -3,7 +3,7 @@
 #include <amdblocks/acpi.h>
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/amd_pci_util.h>
-#include <amdblocks/gpio_banks.h>
+#include <amdblocks/gpio.h>
 #include <amdblocks/smi.h>
 #include <assert.h>
 #include <bootstate.h>
@@ -14,6 +14,7 @@
 #include <soc/i2c.h>
 #include <soc/smi.h>
 #include <soc/southbridge.h>
+#include "chip.h"
 
 /*
  * Table of APIC register index and associated IRQ name. Using IDX_XXX_NAME
@@ -72,6 +73,14 @@ const struct irq_idx_name *sb_get_apic_reg_association(size_t *size)
 	return irq_association;
 }
 
+static void fch_clk_output_48Mhz(void)
+{
+	uint32_t ctrl = misc_read32(MISC_CLK_CNTL0);
+	/* Enable BP_X48M0 Clock Output */
+	ctrl |= BP_X48M0_OUTPUT_EN;
+	misc_write32(MISC_CLK_CNTL0, ctrl);
+}
+
 static void fch_init_acpi_ports(void)
 {
 	u32 reg;
@@ -118,6 +127,48 @@ static void fch_init_resets(void)
 	pm_write16(PWR_RESET_CFG, pm_read16(PWR_RESET_CFG) | TOGGLE_ALL_PWR_GOOD);
 }
 
+/* configure the genral purpose PCIe clock outputs according to the devicetree settings */
+static void gpp_clk_setup(void)
+{
+	const struct soc_amd_cezanne_config *cfg = config_of_soc();
+
+	/* look-up table to be able to iterate over the PCIe clock output settings */
+	const uint8_t gpp_clk_shift_lut[GPP_CLK_OUTPUT_COUNT] = {
+		GPP_CLK0_REQ_SHIFT,
+		GPP_CLK1_REQ_SHIFT,
+		GPP_CLK2_REQ_SHIFT,
+		GPP_CLK3_REQ_SHIFT,
+		GPP_CLK4_REQ_SHIFT,
+		GPP_CLK5_REQ_SHIFT,
+		GPP_CLK6_REQ_SHIFT,
+	};
+
+	uint32_t gpp_clk_ctl = misc_read32(GPP_CLK_CNTRL);
+
+	for (int i = 0; i < GPP_CLK_OUTPUT_COUNT; i++) {
+		gpp_clk_ctl &= ~GPP_CLK_REQ_MASK(gpp_clk_shift_lut[i]);
+		/*
+		 * The remapping of values is done so that the default of the enum used for the
+		 * devicetree settings is the clock being enabled, so that a missing devicetree
+		 * configuration for this will result in an always active clock and not an
+		 * inactive PCIe clock output.
+		 */
+		switch (cfg->gpp_clk_config[i]) {
+		case GPP_CLK_REQ:
+			gpp_clk_ctl |= GPP_CLK_REQ_EXT(gpp_clk_shift_lut[i]);
+			break;
+		case GPP_CLK_OFF:
+			gpp_clk_ctl |= GPP_CLK_REQ_OFF(gpp_clk_shift_lut[i]);
+			break;
+		case GPP_CLK_ON:
+		default:
+			gpp_clk_ctl |= GPP_CLK_REQ_ON(gpp_clk_shift_lut[i]);
+		}
+	}
+
+	misc_write32(GPP_CLK_CNTRL, gpp_clk_ctl);
+}
+
 void fch_init(void *chip_info)
 {
 	fch_init_resets();
@@ -127,6 +178,9 @@ void fch_init(void *chip_info)
 	acpi_pm_gpe_add_events_print_events();
 	gpio_add_events();
 	acpi_clear_pm_gpe_status();
+
+	gpp_clk_setup();
+	fch_clk_output_48Mhz();
 }
 
 void fch_final(void *chip_info)

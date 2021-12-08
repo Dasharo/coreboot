@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <stdint.h>
+#include <arch/cpu.h>
 #include <cpu/amd/microcode.h>
 #include <commonlib/helpers.h>
 #include <console/console.h>
@@ -78,7 +79,7 @@ static void apply_microcode_patch(const struct microcode *m)
 	printk(BIOS_DEBUG, "microcode: patch id to apply = 0x%08x\n",
 		m->patch_id);
 
-	msr = rdmsr(MSR_PATCH_LEVEL);
+	msr = rdmsr(IA32_BIOS_SIGN_ID);
 	new_patch_id = msr.lo;
 
 	if (new_patch_id == m->patch_id)

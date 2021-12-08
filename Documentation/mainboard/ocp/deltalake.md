@@ -6,9 +6,11 @@ Delta Lake server platform.
 ## Introduction
 
 OCP Delta Lake server platform is a component of multi-host server system
-Yosemite-V3. Both were announced by Facebook and Intel in [OCP virtual summit 2020].
+Yosemite-V3. Both [Delta Lake server design spec] and [Yosemite-V3 design
+spec] were contributed to [OCP].
 
 Delta Lake server is a single socket Cooper Lake Scalable Processor (CPX-SP) server.
+Intel Cooper Lake Scalable Processor was launched in Q2 2020.
 
 Yosemite-V3 has multiple configurations. Depending on configurations, it may
 host up to 4 Delta Lake servers (blades) in one sled.
@@ -16,21 +18,30 @@ host up to 4 Delta Lake servers (blades) in one sled.
 The Yosemite-V3 system is in mass production. Facebook, Intel and partners
 jointly develop Open System Firmware (OSF) solution on Delta Lake as an alternative
 solution. The OSF solution is based on FSP/coreboot/LinuxBoot stack. The
-OSF solution reached DVT exit equivalent status.
+OSF solution reached production quality for some use cases in July, 2021.
 
-## Required blobs
+## How to build
 
-Delta Lake server OSF solution requires:
+OSF code base is public at
+https://github.com/opencomputeproject/OpenSystemFirmware
+
+Run following commands to build Delta Lake OSF image from scratch:
+    git clone https://github.com/opencomputeproject/OpenSystemFirmware.git
+    cd OpenSystemFirmware/Wiwynn/deltalake && ./download_and_build.sh
+
+The Delta Lake OSF code base leverages [osf-builder] to sync down coreboot,
+Linux kernel and u-root code from their upstream repo, and sync down needed
+binary blobs. [osf-builder] also provides the top level build system.
+
+Delta Lake server OSF solution requires following binary blobs:
 - FSP blob: The blob (Intel Cooper Lake Scalable Processor Firmware Support Package)
-  is not yet available to the public. It will be made public soon by Intel 
-  with redistributable license.
-- Microcode: Available through github.com:otcshare/Intel-Generic-Microcode.git.
-- ME binary: Ignition binary will be made public soon by Intel with
-  redistributable license.
+  can be downloaded from https://github.com/intel/FSP/tree/master/CedarIslandFspBinPkg.
+- Microcode: Available through github.com/intel/Intel-Linux-Processor-Microcode-Data-Files.
+  coreboot.org mirrors this repo and by default the correct binary is included.
+- ME binary: Ignition binary can be downloaded from
+	https://github.com/tianocore/edk2-non-osi/tree/master/Silicon/Intel/PurleySiliconBinPkg/MeFirmware
 - ACM binaries: only required for CBnT enablement. Available under NDA with Intel.
-
-## Payload
-- LinuxBoot: This is necessary only if you use LinuxBoot as coreboot payload.
+- Payload: LinuxBoot is necessary when LinuxBoot is used as the coreboot payload.
   U-root as initramfs, is used in the joint development. It can be built
   following [All about u-root].
 
@@ -63,9 +74,9 @@ VPD variables supported are:
 - systemboot_log_level: u-root package systemboot log levels, would be mapped to
   quiet/verbose in systemboot as that is all we have for now. 5 to 8 would be
   mapped to verbose, 0 to 4 and 9 would be mapped to quiet.
-- VPDs affecting coreboot are listed/documented in src/mainboard/ocp/deltalake/vpd.h.
+- VPDs affecting coreboot are listed/documented in [src/mainboard/ocp/deltalake/vpd.h].
 
-## Working features
+## Features
 The solution is developed using LinuxBoot payload with Linux kernel 5.2.9,
 and [u-root] as initramfs.
 - SMBIOS:
@@ -117,8 +128,12 @@ and [u-root] as initramfs.
 - Power button
 - localboot
 - netboot from IPv6
-- basic memory hardware error injection/detection (SMI handlers not upstreamed)
-- basic PCIe hardware error injection/detection (SMI handlers not upstreamed)
+- RAS (SMI handlers not upstreamed)
+    - EINJ/HEST
+    - error injection through ITP
+    - memory error handling
+    - PCIe error handling
+    - PCIe live error recovery (LER)
 
 ## Stress/performance tests passed
 - OS warm reboot (1000 cycles)
@@ -154,7 +169,6 @@ and [u-root] as initramfs.
 - flashrom command not able to update ME region
 - ACPI BERT table
 - PCIe hotplug through VPP (Virtual Pin Ports)
-- PCIe Live Error Recovery
 - RO_VPD region as well as other RO regions are not write protected
 - Not able to selectively enable/disable core
 
@@ -171,8 +185,12 @@ and [u-root] as initramfs.
 ```
 
 [OCP]: https://www.opencompute.org
+[Delta Lake server design spec]: https://www.opencompute.org/documents/delta-lake-1s-server-design-specification-1v05-pdf
+[Yosemite-V3 design spec]: https://www.opencompute.org/documents/ocp-yosemite-v3-platform-design-specification-1v16-pdf
+[osf-builder]: https://github.com/facebookincubator/osf-builder
 [OCP virtual summit 2020]: https://www.opencompute.org/summit/virtual-summit/schedule
 [flashrom]: https://flashrom.org/Flashrom
 [All about u-root]: https://github.com/linuxboot/book/tree/master/u-root
 [u-root]: https://u-root.org/
 [ChromeOS VPD]: https://chromium.googlesource.com/chromiumos/platform/vpd/+/master/README.md
+[src/mainboard/ocp/deltalake/vpd.h]: https://review.coreboot.org/plugins/gitiles/coreboot/+/refs/heads/master/src/mainboard/ocp/deltalake/vpd.h

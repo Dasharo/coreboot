@@ -54,6 +54,8 @@ enum timestamp_id {
 	TS_END_POSTCAR = 101,
 	TS_DELAY_START = 110,
 	TS_DELAY_END = 111,
+	TS_READ_UCODE_START = 112,
+	TS_READ_UCODE_END = 113,
 
 	/* 500+ reserved for vendorcode extensions (500-600: google/chromeos) */
 	TS_START_COPYVER = 501,
@@ -77,8 +79,10 @@ enum timestamp_id {
 	TS_START_COPYVPD = 550,
 	TS_END_COPYVPD_RO = 551,
 	TS_END_COPYVPD_RW = 552,
+	TS_START_TPM_ENABLE_UPDATE = 553,
+	TS_END_TPM_ENABLE_UPDATE = 554,
 
-	/* 900-920 reserved for vendorcode extensions (900-940: AMD AGESA) */
+	/* 900-940 reserved for vendorcode extensions (900-940: AMD) */
 	TS_AGESA_INIT_RESET_START = 900,
 	TS_AGESA_INIT_RESET_DONE = 901,
 	TS_AGESA_INIT_EARLY_START = 902,
@@ -99,10 +103,16 @@ enum timestamp_id {
 	TS_AGESA_S3_LATE_DONE = 917,
 	TS_AGESA_S3_FINAL_START = 918,
 	TS_AGESA_S3_FINAL_DONE = 919,
+	TS_AMD_APOB_READ_START = 920,
+	TS_AMD_APOB_ERASE_START = 921,
+	TS_AMD_APOB_WRITE_START = 922,
+	TS_AMD_APOB_DONE = 923,
 
 	/* 940-950 reserved for vendorcode extensions (940-950: Intel ME) */
 	TS_ME_INFORM_DRAM_WAIT = 940,
 	TS_ME_INFORM_DRAM_DONE = 941,
+	TS_ME_BEFORE_END_OF_POST = 942,
+	TS_ME_AFTER_END_OF_POST = 943,
 
 	/* 950+ reserved for vendorcode extensions (950-999: intel/fsp) */
 	TS_FSP_MEMORY_INIT_START = 950,
@@ -119,6 +129,8 @@ enum timestamp_id {
 	TS_FSP_AFTER_END_OF_FIRMWARE = 961,
 	TS_FSP_MULTI_PHASE_SI_INIT_START = 962,
 	TS_FSP_MULTI_PHASE_SI_INIT_END = 963,
+	TS_FSP_MEMORY_INIT_LOAD = 970,
+	TS_FSP_SILICON_INIT_LOAD = 971,
 
 	/* 1000+ reserved for payloads (1000-1200: ChromeOS depthcharge) */
 
@@ -176,11 +188,13 @@ static const struct timestamp_id_to_name {
 	{ TS_CBMEM_POST,	"cbmem post" },
 	{ TS_WRITE_TABLES,	"write tables" },
 	{ TS_FINALIZE_CHIPS,	"finalize chips" },
-	{ TS_LOAD_PAYLOAD,	"load payload" },
+	{ TS_LOAD_PAYLOAD,	"starting to load payload" },
 	{ TS_ACPI_WAKE_JUMP,	"ACPI wake jump" },
 	{ TS_SELFBOOT_JUMP,	"selfboot jump" },
 	{ TS_DELAY_START,	"Forced delay start" },
 	{ TS_DELAY_END,		"Forced delay end" },
+	{ TS_READ_UCODE_START,	"started reading uCode" },
+	{ TS_READ_UCODE_END,	"finished reading uCode" },
 
 	{ TS_START_COPYVER,	"starting to load verstage" },
 	{ TS_END_COPYVER,	"finished loading verstage" },
@@ -196,6 +210,8 @@ static const struct timestamp_id_to_name {
 	{ TS_END_TPMPCR,	"finished TPM PCR extend" },
 	{ TS_START_TPMLOCK,	"starting locking TPM" },
 	{ TS_END_TPMLOCK,	"finished locking TPM" },
+	{ TS_START_TPM_ENABLE_UPDATE, "started TPM enable update" },
+	{ TS_END_TPM_ENABLE_UPDATE, "finished TPM enable update" },
 
 	{ TS_START_COPYVPD,	"starting to load Chrome OS VPD" },
 	{ TS_END_COPYVPD_RO,	"finished loading Chrome OS VPD (RO)" },
@@ -220,7 +236,7 @@ static const struct timestamp_id_to_name {
 	{ TS_KERNEL_DECOMPRESSION, "starting kernel decompression/relocation" },
 	{ TS_START_KERNEL,	"jumping to kernel" },
 
-	/* AMD AGESA related timestamps */
+	/* AMD related timestamps */
 	{ TS_AGESA_INIT_RESET_START,	"calling AmdInitReset" },
 	{ TS_AGESA_INIT_RESET_DONE,	"back from AmdInitReset" },
 	{ TS_AGESA_INIT_EARLY_START,	"calling AmdInitEarly" },
@@ -241,10 +257,16 @@ static const struct timestamp_id_to_name {
 	{ TS_AGESA_S3_LATE_DONE,	"back from AmdS3LateRestore" },
 	{ TS_AGESA_S3_FINAL_START,	"calling AmdS3FinalRestore" },
 	{ TS_AGESA_S3_FINAL_DONE,	"back from AmdS3FinalRestore" },
+	{ TS_AMD_APOB_READ_START,	"starting APOB read" },
+	{ TS_AMD_APOB_ERASE_START,	"starting APOB erase" },
+	{ TS_AMD_APOB_WRITE_START,	"starting APOB write" },
+	{ TS_AMD_APOB_DONE,		"finished APOB" },
 
 	/* Intel ME related timestamps */
 	{ TS_ME_INFORM_DRAM_WAIT,	"waiting for ME acknowledgement of raminit"},
 	{ TS_ME_INFORM_DRAM_DONE,	"finished waiting for ME response"},
+	{ TS_ME_BEFORE_END_OF_POST,	"before sending EOP to ME"},
+	{ TS_ME_AFTER_END_OF_POST,	"after sending EOP to ME"},
 
 	/* FSP related timestamps */
 	{ TS_FSP_MEMORY_INIT_START, "calling FspMemoryInit" },
@@ -253,6 +275,8 @@ static const struct timestamp_id_to_name {
 	{ TS_FSP_TEMP_RAM_EXIT_END, "returning from FspTempRamExit" },
 	{ TS_FSP_SILICON_INIT_START, "calling FspSiliconInit" },
 	{ TS_FSP_SILICON_INIT_END, "returning from FspSiliconInit" },
+	{ TS_FSP_MULTI_PHASE_SI_INIT_START, "calling FspMultiPhaseSiInit" },
+	{ TS_FSP_MULTI_PHASE_SI_INIT_END, "returning from FspMultiPhaseSiInit" },
 	{ TS_FSP_BEFORE_ENUMERATE, "calling FspNotify(AfterPciEnumeration)" },
 	{ TS_FSP_AFTER_ENUMERATE,
 		 "returning from FspNotify(AfterPciEnumeration)" },
@@ -261,6 +285,10 @@ static const struct timestamp_id_to_name {
 	{ TS_FSP_BEFORE_END_OF_FIRMWARE, "calling FspNotify(EndOfFirmware)" },
 	{ TS_FSP_AFTER_END_OF_FIRMWARE,
 		"returning from FspNotify(EndOfFirmware)" },
+
+	{ TS_FSP_MEMORY_INIT_LOAD, "loading FSP-M" },
+	{ TS_FSP_SILICON_INIT_LOAD, "loading FSP-S" },
+
 	{ TS_START_POSTCAR,	"start of postcar" },
 	{ TS_END_POSTCAR,	"end of postcar" },
 };

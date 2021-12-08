@@ -14,6 +14,7 @@
 #define PID_GPIOCOM0	0x6e
 #define PID_GPIOCOM1	0x6d
 #define PID_GPIOCOM2	0x6c
+#define PID_GPIOCOM3	0x6b
 #define PID_GPIOCOM4	0x6a
 #define PID_GPIOCOM5	0x69
 
@@ -41,6 +42,10 @@
 /*
  * SPI - DMI Destination ID
  */
+#if CONFIG(SOC_INTEL_TIGERLAKE_PCH_H)
+#define SPI_DMI_DESTINATION_ID	0x23b0
+#else
 #define SPI_DMI_DESTINATION_ID	0x23a8
+#endif
 
 #endif

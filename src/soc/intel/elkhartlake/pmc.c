@@ -4,6 +4,7 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/mmio.h>
+#include <intelblocks/acpi.h>
 #include <intelblocks/pmc.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/rtc.h>
@@ -52,7 +53,7 @@ static void config_deep_sx(uint32_t deepsx_config)
 	write32(pmcbase + DSX_CFG, reg);
 }
 
-static void pmc_init(struct device *dev)
+static void soc_pmc_enable(struct device *dev)
 {
 	const config_t *config = config_of_soc();
 
@@ -79,7 +80,7 @@ static void soc_pmc_read_resources(struct device *dev)
 	res->flags = IORESOURCE_IO | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 }
 
-static void soc_acpi_mode_init(struct device *dev)
+static void soc_pmc_init(struct device *dev)
 {
 	/*
 	 * pmc_set_acpi_mode() should be delayed until BS_DEV_INIT in order
@@ -93,9 +94,18 @@ static void soc_acpi_mode_init(struct device *dev)
 	pmc_set_acpi_mode();
 }
 
+static void pmc_fill_ssdt(const struct device *dev)
+{
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_ACPI_PEP))
+		generate_acpi_power_engine();
+}
+
 struct device_operations pmc_ops = {
 	.read_resources		= soc_pmc_read_resources,
 	.set_resources		= noop_set_resources,
-	.init			= soc_acpi_mode_init,
-	.enable			= pmc_init,
+	.init			= soc_pmc_init,
+	.enable			= soc_pmc_enable,
+#if CONFIG(HAVE_ACPI_TABLES)
+	.acpi_fill_ssdt		= pmc_fill_ssdt,
+#endif
 };

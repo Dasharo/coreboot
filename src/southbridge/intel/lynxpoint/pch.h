@@ -43,14 +43,6 @@
 #define LPT_LP_STEP_B1		0x03
 #define LPT_LP_STEP_B2		0x04
 
-/*
- * It does not matter where we put the SMBus I/O base, as long as we
- * keep it consistent and don't interfere with other devices.  Stage2
- * will relocate this anyways.
- * Our solution is to have SMB initialization move the I/O to CONFIG_FIXED_SMBUS_IO_BASE
- * again. But handling static BARs is a generic problem that should be
- * solved in the device allocator.
- */
 #define SMBUS_SLAVE_ADDR	0x24
 
 #if CONFIG(INTEL_LYNXPOINT_LP)
@@ -165,6 +157,7 @@ void acpi_create_serialio_ssdt(acpi_header_t *ssdt);
 void enable_usb_bar(void);
 void early_pch_init(void);
 void pch_enable_lpc(void);
+void uart_bootblock_init(void);
 void mainboard_config_superio(void);
 void mainboard_config_rcba(void);
 
@@ -380,6 +373,9 @@ void mainboard_config_rcba(void);
 
 #define SIO_REG_PPR_CLOCK		0x800
 #define  SIO_REG_PPR_CLOCK_EN		 (1 << 0)
+#define  SIO_REG_PPR_CLOCK_UPDATE	 (1 << 31)
+#define  SIO_REG_PPR_CLOCK_M_DIV	 0x25a
+#define  SIO_REG_PPR_CLOCK_N_DIV	 0x7fff
 #define SIO_REG_PPR_RST			0x804
 #define  SIO_REG_PPR_RST_ASSERT		 0x3
 #define SIO_REG_PPR_GEN			0x808
@@ -468,6 +464,8 @@ void mainboard_config_rcba(void);
 #define  IOBPS_WRITE	0x0700
 #define IOBPU		0x233a
 #define  IOBPU_MAGIC	0xf000
+#define  IOBP_PCICFG_READ	0x0400
+#define  IOBP_PCICFG_WRITE	0x0500
 
 #define D31IP		0x3100	/* 32bit */
 #define D31IP_TTIP	24	/* Thermal Throttle Pin */

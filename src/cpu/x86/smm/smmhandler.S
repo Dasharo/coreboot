@@ -43,7 +43,7 @@
 
 #define SMM_HANDLER_OFFSET 0x0000
 
-#if defined(__x86_64__)
+#if ENV_X86_64
 .bss
 ia32efer_backup_eax:
 .long 0
@@ -123,11 +123,13 @@ untampered_lapic:
 	movw	%ax, %ds
 	movw	%ax, %es
 	movw	%ax, %ss
+	xor	%ax, %ax /* zero out the gs and fs segment index */
 	movw	%ax, %fs
-	movw	%ax, %gs
+	movw	%ax, %gs /* Will be used for cpu_info */
 
+	/* FIXME: Incompatible with X2APIC_SUPPORT. */
 	/* Get this CPU's LAPIC ID */
-	movl	$(LOCAL_APIC_ADDR | LAPIC_ID), %esi
+	movl	$(LAPIC_DEFAULT_BASE | LAPIC_ID), %esi
 	movl	(%esi), %ecx
 	shr	$24, %ecx
 
@@ -165,7 +167,7 @@ untampered_lapic:
 	addl	$SMM_STACK_SIZE, %ebx
 	movl	%ebx, %esp
 
-#if defined(__x86_64__)
+#if ENV_X86_64
 	/* Backup IA32_EFER. Preserves ebx. */
 	movl	$(IA32_EFER), %ecx
 	rdmsr
@@ -179,7 +181,7 @@ untampered_lapic:
 	/* Call C handler */
 	call	smi_handler
 
-#if defined(__x86_64__)
+#if ENV_X86_64
 	/*
 	 * The only reason to go back to protected mode is that RSM doesn't restore
 	 * MSR registers and MSR IA32_EFER was modified by entering long mode.

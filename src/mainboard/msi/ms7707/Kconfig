@@ -14,11 +14,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select SERIRQ_CONTINUOUS_MODE
 
 config MAINBOARD_DIR
-	string
 	default "msi/ms7707"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "MS-7707"
 
 config DRAM_RESET_GATE_GPIO
@@ -30,7 +28,6 @@ config USBDEBUG_HCD_INDEX # FIXME: check this
 	default 2
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 
 endif

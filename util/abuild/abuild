@@ -281,7 +281,7 @@ function update_config
 	# shellcheck disable=SC2059
 	printf "$configoptions" >> "${config_file}"
 
-	yes "" 2>/dev/null | $MAKE oldconfig "$verboseopt" "DOTCONFIG=${config_file}" "obj=${build_dir}" "objutil=$TARGET/sharedutils" &> "${build_dir}/config.log" ; \
+	$MAKE olddefconfig "$verboseopt" "DOTCONFIG=${config_file}" "obj=${build_dir}" "objutil=$TARGET/sharedutils" &> "${build_dir}/config.log" ; \
 		CONFIG_OK=$?
 	if [ $CONFIG_OK -eq 0 ]; then
 		$MAKE savedefconfig "$verboseopt" DEFCONFIG="${defconfig_file}" DOTCONFIG="${config_file}" obj="${build_dir}" objutil="$TARGET/sharedutils" &>> "${build_dir}/config.log"
@@ -316,7 +316,7 @@ function create_buildenv
 	echo "OBJUTIL=\$(BUILD)/sharedutils" >> "$MAKEFILE"
 	echo "all:" >> "$MAKEFILE"
 	echo "	@cp -a config.h config.h.bak" >> "$MAKEFILE"
-	echo "	@cd \$(TOP); \$(MAKE) oldconfig DOTCONFIG=\$(OBJ)/config.build objutil=\$(OBJUTIL) obj=\$(OBJ)" >> "$MAKEFILE"
+	echo "	@cd \$(TOP); \$(MAKE) olddefconfig DOTCONFIG=\$(OBJ)/config.build objutil=\$(OBJUTIL) obj=\$(OBJ)" >> "$MAKEFILE"
 	echo "	@tail -n+6 config.h > config.new; tail -n+6 config.h.bak > config.old" >> "$MAKEFILE"
 	echo "	@cmp -s config.new config.old && cp -a config.h.bak config.h || echo \"Config file changed\"" >> "$MAKEFILE"
 	echo "	@rm config.h.bak config.new config.old" >> "$MAKEFILE"
@@ -526,6 +526,13 @@ function build_target
 			BUILD_NAME="${config##*/}"
 			BUILD_NAME="${BUILD_NAME##config.}"
 			BUILD_NAME=$(echo "${BUILD_NAME}" | tr '[:lower:]' '[:upper:]')
+			echo $BUILD_NAME $MAINBOARD
+			# If the file in configs/ results in the same build_name as the default config
+			# append a '_' to differentiate. Otherwise the default configuration would
+			# override the results.
+			if [ "${MAINBOARD}" = "${BUILD_NAME}" ]; then
+				BUILD_NAME=${BUILD_NAME}"_"
+			fi
 			echo "Building config $BUILD_NAME"
 			build_dir=$TARGET/${BUILD_NAME}
 			build_config "$MAINBOARD" "$build_dir" "$BUILD_NAME" "$config"
@@ -724,7 +731,7 @@ while true ; do
 			shift;;
 		-B|--blobs)	shift
 			customizing="${customizing}, blobs"
-			configoptions="${configoptions}CONFIG_USE_AMD_BLOBS=y\nCONFIG_USE_QC_BLOBS=y\nCONFIG_ADD_FSP_BINARIES=y\n"
+			configoptions="${configoptions}CONFIG_USE_AMD_BLOBS=y\nCONFIG_USE_QC_BLOBS=y\nCONFIG_FSP_USE_REPO=y\n"
 			;;
 		-A|--any-toolchain)	shift
 			customizing="${customizing}, any-toolchain"
@@ -779,10 +786,6 @@ if ! mkdir -p "$TARGET"; then
 	exit 1
 fi
 
-# Generate a single xcompile for all boards
-export xcompile="${TARGET}/xcompile"
-$MAKE -C"${ROOT}" UPDATED_SUBMODULES=1 "${xcompile}" || exit 1
-
 customizing=$(echo "$customizing" | cut -c3-)
 if [ "$customizing" = "" ]; then
 	customizing="default configuration"
@@ -791,7 +794,12 @@ fi
 FAILED_BOARDS="$(realpath ${TARGET}/failed_boards)"
 PASSED_BOARDS="$(realpath ${TARGET}/passing_boards)"
 
+# Generate a single xcompile for all boards
+export xcompile="${TARGET}/xcompile"
+
 if [ "$recursive" = "false" ]; then
+	rm -f "${xcompile}"
+	$MAKE -C"${ROOT}" obj="$TARGET/temp" objutil="$TARGET/sharedutils" UPDATED_SUBMODULES=1 "${xcompile}" || exit 1
 	rm -f "$FAILED_BOARDS" "$PASSED_BOARDS"
 fi
 
@@ -831,9 +839,7 @@ build_targets()
 	# seed shared utils
 	TMPCFG=$(mktemp)
 	printf "%s" "$configoptions" > "$TMPCFG"
-	$MAKE -j "$cpus" DOTCONFIG="$TMPCFG" obj="$TARGET/temp" objutil="$TARGET/sharedutils" allnoconfig
-	printf "%s" "$configoptions" >> "$TMPCFG"
-	yes "" 2>/dev/null | $MAKE -j "$cpus" DOTCONFIG="$TMPCFG" obj="$TARGET/temp" objutil="$TARGET/sharedutils" oldconfig
+	$MAKE -j "$cpus" DOTCONFIG="$TMPCFG" obj="$TARGET/temp" objutil="$TARGET/sharedutils" olddefconfig 2>/dev/null
 	BUILDPREFIX=
 	if [ "$scanbuild" = "true" ]; then
 		scanbuild_out=$TARGET/sharedutils-scanbuild

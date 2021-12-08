@@ -18,11 +18,9 @@ config VBOOT
 	#select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "intel/emeraldlake2"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "EMERALD LAKE 2"
 
 config MAX_CPUS

@@ -9,11 +9,11 @@
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
+#include <intelblocks/irq.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/uart.h>
 #include <soc/pci_devs.h>
 #include <soc/iomap.h>
-#include <soc/irq.h>
 #include <soc/nvs.h>
 #include "chip.h"
 
@@ -127,6 +127,11 @@ static void uart_read_resources(struct device *dev)
 		res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED |
 				IORESOURCE_FIXED;
 	}
+	/* In ACPI mode mark the decoded region as reserved */
+	if (dev->hidden) {
+		struct resource *res = find_resource(dev, PCI_BASE_ADDRESS_0);
+		res->flags |= IORESOURCE_RESERVE;
+	}
 }
 
 /*
@@ -198,23 +203,13 @@ static void uart_common_enable_resources(struct device *dev)
 
 static void uart_acpi_write_irq(const struct device *dev)
 {
-	struct acpi_irq irq;
-
-	switch (dev->path.pci.devfn) {
-	case PCH_DEVFN_UART0:
-		irq = (struct acpi_irq)ACPI_IRQ_LEVEL_LOW(LPSS_UART0_IRQ);
-		break;
-	case PCH_DEVFN_UART1:
-		irq = (struct acpi_irq)ACPI_IRQ_LEVEL_LOW(LPSS_UART1_IRQ);
-		break;
-	case PCH_DEVFN_UART2:
-		irq = (struct acpi_irq)ACPI_IRQ_LEVEL_LOW(LPSS_UART2_IRQ);
-		break;
-	default:
-		return;
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_IRQ)) {
+		const int irq = get_pci_devfn_irq(dev->path.pci.devfn);
+		if (irq != INVALID_IRQ) {
+			struct acpi_irq airq = (struct acpi_irq)ACPI_IRQ_LEVEL_LOW(irq);
+			acpi_device_write_interrupt(&airq);
+		}
 	}
-
-	acpi_device_write_interrupt(&irq);
 }
 
 /*
@@ -384,6 +379,10 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_TGP_UART0,
 	PCI_DEVICE_ID_INTEL_TGP_UART1,
 	PCI_DEVICE_ID_INTEL_TGP_UART2,
+	PCI_DEVICE_ID_INTEL_TGP_H_UART0,
+	PCI_DEVICE_ID_INTEL_TGP_H_UART1,
+	PCI_DEVICE_ID_INTEL_TGP_H_UART2,
+	PCI_DEVICE_ID_INTEL_TGP_H_UART3,
 	PCI_DEVICE_ID_INTEL_MCC_UART0,
 	PCI_DEVICE_ID_INTEL_MCC_UART1,
 	PCI_DEVICE_ID_INTEL_MCC_UART2,

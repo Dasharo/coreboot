@@ -7,6 +7,7 @@
 #include <device/pci.h>
 #include <device/pci_def.h>
 #include <device/resource.h>
+#include <fw_config.h>
 
 /** Linked list of ALL devices */
 DEVTREE_CONST struct device *DEVTREE_CONST all_devices = &dev_root;
@@ -67,19 +68,6 @@ DEVTREE_CONST struct device *dev_find_path(
 		}
 	}
 	return result;
-}
-
-DEVTREE_CONST struct device *dev_find_matching_device_on_bus(const struct bus *bus,
-							match_device_fn fn)
-{
-	DEVTREE_CONST struct device *child = NULL;
-
-	while ((child = dev_bus_each_child(bus, child)) != NULL) {
-		if (fn(child))
-			break;
-	}
-
-	return child;
 }
 
 /**
@@ -155,12 +143,6 @@ static int path_eq(const struct device_path *path1,
 		break;
 	case DEVICE_PATH_MMIO:
 		equal = (path1->mmio.addr == path2->mmio.addr);
-		break;
-	case DEVICE_PATH_ESPI:
-		equal = (path1->espi.addr == path2->espi.addr);
-		break;
-	case DEVICE_PATH_LPC:
-		equal = (path1->lpc.addr == path2->lpc.addr);
 		break;
 	case DEVICE_PATH_GPIO:
 		equal = (path1->gpio.id == path2->gpio.id);
@@ -382,4 +364,23 @@ DEVTREE_CONST struct device *dev_bus_each_child(const struct bus *parent,
 		dev = prev_child->sibling;
 
 	return dev;
+}
+
+bool is_dev_enabled(const struct device *dev)
+{
+	if (!dev)
+		return false;
+
+	/* For stages with immutable device tree, first check if device is disabled because of
+	   fw_config probing. In these stages, dev->enabled does not reflect the true state of a
+	   device that uses fw_config probing. */
+	if (DEVTREE_EARLY && !fw_config_probe_dev(dev, NULL))
+		return false;
+	return dev->enabled;
+}
+
+bool is_devfn_enabled(unsigned int devfn)
+{
+	const struct device *dev = pcidev_path_on_root(devfn);
+	return is_dev_enabled(dev);
 }

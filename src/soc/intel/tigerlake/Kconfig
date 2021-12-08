@@ -3,16 +3,20 @@ config SOC_INTEL_TIGERLAKE
 	help
 	  Intel Tigerlake support
 
+config SOC_INTEL_TIGERLAKE_PCH_H
+	bool
+
 if SOC_INTEL_TIGERLAKE
 
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
 	select ACPI_INTEL_HARDWARE_SLEEP_VALUES
-	select ARCH_ALL_STAGES_X86_32
+	select ARCH_X86
 	select BOOT_DEVICE_SUPPORTS_WRITES
 	select CACHE_MRC_SETTINGS
 	select CPU_INTEL_COMMON
 	select CPU_INTEL_FIRMWARE_INTERFACE_TABLE
+	select CPU_SUPPORTS_INTEL_TME
 	select CPU_SUPPORTS_PM_TIMER_EMULATION
 	select DRIVERS_USB_ACPI
 	select FAST_SPI_SUPPORTS_EXT_BIOS_WINDOW
@@ -21,22 +25,21 @@ config CPU_SPECIFIC_OPTIONS
 	select FSP_STATUS_GLOBAL_RESET_REQUIRED_3
 	select GENERIC_GPIO_LIB
 	select HAVE_FSP_GOP
+	select HAVE_INTEL_FSP_REPO
 	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select HAVE_SMI_HANDLER
 	select IDT_IN_EVERY_STAGE
 	select INTEL_CAR_NEM_ENHANCED if !INTEL_CAR_NEM
 	select CAR_HAS_SF_MASKS if INTEL_CAR_NEM_ENHANCED
 	select COS_MAPPED_TO_MSB if INTEL_CAR_NEM_ENHANCED
+	select SF_MASK_2WAYS_PER_BIT if INTEL_CAR_NEM_ENHANCED
 	select INTEL_GMA_ACPI
 	select INTEL_GMA_ADD_VBT if RUN_FSP_GOP
 	select IOAPIC
 	select MP_SERVICES_PPI_V1
 	select MRC_SETTINGS_PROTECT
-	select PARALLEL_MP
 	select PARALLEL_MP_AP_WORK
-	select MICROCODE_BLOB_UNDISCLOSED
 	select PLATFORM_USES_FSP2_2
-	select REG_SCRIPT
 	select PMC_GLOBAL_RESET_ENABLE_LOCK
 	select PMC_LOW_POWER_MODE_PROGRAM
 	select SOC_INTEL_COMMON
@@ -45,6 +48,8 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_ACPI
 	select SOC_INTEL_COMMON_BLOCK_ACPI_GPIO
 	select SOC_INTEL_COMMON_BLOCK_ACPI_LPIT
+	select SOC_INTEL_COMMON_BLOCK_ACPI_PEP
+	select SOC_INTEL_COMMON_BLOCK_ACPI_PEP_LPM_REQ
 	select SOC_INTEL_COMMON_BLOCK_CAR
 	select SOC_INTEL_COMMON_BLOCK_CHIP_CONFIG
 	select SOC_INTEL_COMMON_BLOCK_CNVI
@@ -56,8 +61,10 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_GPIO_IOSTANDBY
 	select SOC_INTEL_COMMON_BLOCK_GSPI_VERSION_2
 	select SOC_INTEL_COMMON_BLOCK_HDA
+	select SOC_INTEL_COMMON_BLOCK_IRQ
 	select SOC_INTEL_COMMON_BLOCK_MEMINIT
 	select SOC_INTEL_COMMON_BLOCK_PCIE_RTD3
+	select SOC_INTEL_COMMON_BLOCK_PMC_EPOC
 	select SOC_INTEL_COMMON_BLOCK_SA
 	select SOC_INTEL_COMMON_BLOCK_SMM
 	select SOC_INTEL_COMMON_BLOCK_SMM_IO_TRAP
@@ -69,6 +76,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_PCH_BASE
 	select SOC_INTEL_COMMON_RESET
 	select SOC_INTEL_COMMON_BLOCK_POWER_LIMIT
+	select SOC_INTEL_CSE_SET_EOP
 	select SSE2
 	select SUPPORT_CPU_UCODE_IN_CBFS
 	select TSC_MONOTONIC_TIMER
@@ -76,6 +84,11 @@ config CPU_SPECIFIC_OPTIONS
 	select UDK_2017_BINDING
 	select DISPLAY_FSP_VERSION_INFO
 	select HECI_DISABLE_USING_SMM
+
+config MAX_CPUS
+	int
+	default 16 if SOC_INTEL_TIGERLAKE_PCH_H
+	default 8
 
 config DCACHE_RAM_BASE
 	default 0xfef00000
@@ -105,6 +118,7 @@ config FSP_TEMP_RAM_SIZE
 
 config CHIPSET_DEVICETREE
 	string
+	default "soc/intel/tigerlake/chipset_pch_h.cb" if SOC_INTEL_TIGERLAKE_PCH_H
 	default "soc/intel/tigerlake/chipset.cb"
 
 config EXT_BIOS_WIN_BASE
@@ -127,10 +141,12 @@ config HEAP_SIZE
 
 config MAX_ROOT_PORTS
 	int
+	default 24 if SOC_INTEL_TIGERLAKE_PCH_H
 	default 12
 
 config MAX_PCIE_CLOCK_SRC
 	int
+	default 16 if SOC_INTEL_TIGERLAKE_PCH_H
 	default 7
 
 config SMM_TSEG_SIZE
@@ -210,14 +226,27 @@ config VBOOT
 	select VBOOT_VBNV_CMOS_BACKUP_TO_FLASH
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 
+config FSP_TYPE_IOT
+	bool
+	default n
+	help
+	  This option allows to select FSP IOT type from 3rdparty/fsp repo
+
+config FSP_TYPE_CLIENT
+	bool
+	default !FSP_TYPE_IOT
+	help
+	  This option allows to select FSP CLIENT type from 3rdparty/fsp repo
+
 config FSP_HEADER_PATH
-	default "src/vendorcode/intel/fsp/fsp2_0/tigerlake/"
+	default "3rdparty/fsp/TigerLakeFspBinPkg/TGL_IOT/Include/" if FSP_TYPE_IOT
+	default "3rdparty/fsp/TigerLakeFspBinPkg/Client/Include/" if FSP_TYPE_CLIENT
 
 config FSP_FD_PATH
-	default "3rdparty/fsp/TigerLakeFspBinPkg/Fsp.fd"
+	default "3rdparty/fsp/TigerLakeFspBinPkg/TGL_IOT/Fsp.fd" if FSP_TYPE_IOT
+	default "3rdparty/fsp/TigerLakeFspBinPkg/Client/Fsp.fd" if FSP_TYPE_CLIENT
 
 config SOC_INTEL_TIGERLAKE_DEBUG_CONSENT
 	int "Debug Consent for TGL"
@@ -257,5 +286,35 @@ config SOC_INTEL_CRASHLOG
 	select ACPI_BERT
 	help
 	  Enables CrashLog.
+
+# Intel recommends reserving the following resources per USB4 root port,
+# from TGL BIOS Spec (doc #611569) Revision 0.7.6 Section 7.2.5.1.5
+# - 42 buses
+# - 194 MiB Non-prefetchable memory
+# - 448 MiB Prefetchable memory
+if SOC_INTEL_ENABLE_USB4_PCIE_RESOURCES
+
+config PCIEXP_HOTPLUG_BUSES
+	default 42
+
+config PCIEXP_HOTPLUG_MEM
+	default 0xc200000  # 194 MiB
+
+config PCIEXP_HOTPLUG_PREFETCH_MEM
+	default 0x1c000000 # 448 MiB
+
+endif # SOC_INTEL_ENABLE_USB4_PCIE_RESOURCES
+
+config INTEL_GMA_BCLV_OFFSET
+	default 0xc8258
+
+config INTEL_GMA_BCLV_WIDTH
+	default 32
+
+config INTEL_GMA_BCLM_OFFSET
+	default 0xc8254
+
+config INTEL_GMA_BCLM_WIDTH
+	default 32
 
 endif

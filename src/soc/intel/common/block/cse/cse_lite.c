@@ -38,46 +38,6 @@ enum boot_partition_id {
 	RW = 1
 };
 
-/* CSE recovery sub-error codes */
-enum csme_failure_reason {
-
-	/* No error */
-	CSE_LITE_SKU_NO_ERROR = 0,
-
-	/* Unspecified error */
-	CSE_LITE_SKU_UNSPECIFIED = 1,
-
-	/* CSE fails to boot from RW */
-	CSE_LITE_SKU_RW_JUMP_ERROR = 2,
-
-	/* CSE RW boot partition access error */
-	CSE_LITE_SKU_RW_ACCESS_ERROR = 3,
-
-	/* Fails to set next boot partition as RW */
-	CSE_LITE_SKU_RW_SWITCH_ERROR = 4,
-
-	/* CSE firmware update failure */
-	CSE_LITE_SKU_FW_UPDATE_ERROR = 5,
-
-	/* Fails to communicate with CSE */
-	CSE_LITE_SKU_COMMUNICATION_ERROR = 6,
-
-	/* Fails to wipe CSE runtime data */
-	CSE_LITE_SKU_DATA_WIPE_ERROR = 7,
-
-	/* CSE RW is not found */
-	CSE_LITE_SKU_RW_BLOB_NOT_FOUND = 8,
-
-	/* CSE CBFS RW SHA-256 mismatch with the provided SHA */
-	CSE_LITE_SKU_RW_BLOB_SHA256_MISMATCH = 9,
-
-	/* CSE CBFS RW metadata is not found */
-	CSE_LITE_SKU_RW_METADATA_NOT_FOUND = 10,
-
-	/* CSE CBFS RW blob layout is not correct */
-	CSE_LITE_SKU_LAYOUT_MISMATCH_ERROR = 11,
-};
-
 /*
  * Boot partition status.
  * The status is returned in response to MKHI_BUP_COMMON_GET_BOOT_PARTITION_INFO cmd.
@@ -159,29 +119,6 @@ struct get_bp_info_rsp {
 	struct mkhi_hdr hdr;
 	struct cse_bp_info bp_info;
 } __packed;
-
-static void cse_log_status_registers(void)
-{
-	printk(BIOS_DEBUG, "cse_lite: CSE status registers: HFSTS1: 0x%x, HFSTS2: 0x%x "
-			"HFSTS3: 0x%x\n", me_read_config32(PCI_ME_HFSTS1),
-			me_read_config32(PCI_ME_HFSTS2), me_read_config32(PCI_ME_HFSTS3));
-}
-
-static void cse_trigger_recovery(uint8_t rec_sub_code)
-{
-	/* Log CSE Firmware Status Registers to help debugging */
-	cse_log_status_registers();
-	if (CONFIG(VBOOT)) {
-		struct vb2_context *ctx = vboot_get_context();
-		if (ctx == NULL)
-			goto failure;
-		vb2api_fail(ctx, VB2_RECOVERY_INTEL_CSE_LITE_SKU, rec_sub_code);
-		vboot_save_data(ctx);
-		vboot_reboot();
-	}
-failure:
-	die("cse_lite: Failed to trigger recovery mode(recovery subcode:%d)\n", rec_sub_code);
-}
 
 static uint8_t cse_get_current_bp(const struct cse_bp_info *cse_bp_info)
 {
@@ -265,7 +202,8 @@ static bool cse_get_bp_info(struct get_bp_info_rsp *bp_info_rsp)
 
 	size_t resp_size = sizeof(struct get_bp_info_rsp);
 
-	if (!heci_send_receive(&info_req, sizeof(info_req), bp_info_rsp, &resp_size)) {
+	if (!heci_send_receive(&info_req, sizeof(info_req), bp_info_rsp, &resp_size,
+									HECI_MKHI_ADDR)) {
 		printk(BIOS_ERR, "cse_lite: Could not get partition info\n");
 		return false;
 	}
@@ -317,7 +255,8 @@ static bool cse_set_next_boot_partition(enum boot_partition_id bp)
 	struct mkhi_hdr switch_resp;
 	size_t sw_resp_sz = sizeof(struct mkhi_hdr);
 
-	if (!heci_send_receive(&switch_req, sizeof(switch_req), &switch_resp, &sw_resp_sz))
+	if (!heci_send_receive(&switch_req, sizeof(switch_req), &switch_resp, &sw_resp_sz,
+									HECI_MKHI_ADDR))
 		return false;
 
 	if (switch_resp.result) {
@@ -354,7 +293,7 @@ static bool cse_data_clear_request(const struct cse_bp_info *cse_bp_info)
 	size_t data_clr_rsp_sz = sizeof(data_clr_rsp);
 
 	if (!heci_send_receive(&data_clr_rq, sizeof(data_clr_rq), &data_clr_rsp,
-				&data_clr_rsp_sz)) {
+				&data_clr_rsp_sz, HECI_MKHI_ADDR)) {
 		return false;
 	}
 
@@ -687,7 +626,7 @@ static enum csme_failure_reason cse_update_rw(const struct cse_bp_info *cse_bp_i
 	if (!cse_write_rw_region(target_rdev, cse_cbfs_rw, cse_blob_sz))
 		return CSE_LITE_SKU_FW_UPDATE_ERROR;
 
-	return CSE_LITE_SKU_NO_ERROR;
+	return CSE_NO_ERROR;
 }
 
 static bool cse_prep_for_rw_update(const struct cse_bp_info *cse_bp_info,
@@ -734,7 +673,7 @@ static enum csme_failure_reason cse_trigger_fw_update(const struct cse_bp_info *
 	}
 
 	if (!cse_prep_for_rw_update(cse_bp_info, source_metadata)) {
-		rv = CSE_LITE_SKU_COMMUNICATION_ERROR;
+		rv = CSE_COMMUNICATION_ERROR;
 		goto error_exit;
 	}
 
@@ -768,9 +707,6 @@ static uint8_t cse_fw_update(const struct cse_bp_info *cse_bp_info)
 		return cse_trigger_fw_update(cse_bp_info, &source_metadata, &target_rdev);
 	}
 
-	if (!cse_is_rw_bp_status_valid(cse_bp_info))
-		return CSE_LITE_SKU_RW_JUMP_ERROR;
-
 	return 0;
 }
 
@@ -791,11 +727,11 @@ void cse_fw_sync(void)
 
 	if (!cse_get_bp_info(&cse_bp_info)) {
 		printk(BIOS_ERR, "cse_lite: Failed to get CSE boot partition info\n");
-		cse_trigger_recovery(CSE_LITE_SKU_COMMUNICATION_ERROR);
+		cse_trigger_vboot_recovery(CSE_COMMUNICATION_ERROR);
 	}
 
 	if (!cse_fix_data_failure_err(&cse_bp_info.bp_info))
-		cse_trigger_recovery(CSE_LITE_SKU_DATA_WIPE_ERROR);
+		cse_trigger_vboot_recovery(CSE_LITE_SKU_DATA_WIPE_ERROR);
 
 	/*
 	 * If SOC_INTEL_CSE_RW_UPDATE is defined , then trigger CSE firmware update. The driver
@@ -805,11 +741,14 @@ void cse_fw_sync(void)
 		uint8_t rv;
 		rv = cse_fw_update(&cse_bp_info.bp_info);
 		if (rv)
-			cse_trigger_recovery(rv);
+			cse_trigger_vboot_recovery(rv);
 	}
+
+	if (!cse_is_rw_bp_status_valid(&cse_bp_info.bp_info))
+		cse_trigger_vboot_recovery(CSE_LITE_SKU_RW_JUMP_ERROR);
 
 	if (!cse_boot_to_rw(&cse_bp_info.bp_info)) {
 		printk(BIOS_ERR, "cse_lite: Failed to switch to RW\n");
-		cse_trigger_recovery(CSE_LITE_SKU_RW_SWITCH_ERROR);
+		cse_trigger_vboot_recovery(CSE_LITE_SKU_RW_SWITCH_ERROR);
 	}
 }

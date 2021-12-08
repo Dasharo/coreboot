@@ -10,6 +10,7 @@
 #include <security/tpm/tspi.h>
 #include <security/tpm/tss.h>
 #include <security/tpm/tss/tcg-1.2/tss_structures.h>
+#include <security/tpm/tss/tcg-2.0/tss_structures.h>
 #include <vb2_api.h>
 #include <console/console.h>
 
@@ -106,6 +107,38 @@ static const TPMA_NV rw_space_attributes = {
 	.TPMA_NV_AUTHREAD = 1,
 	.TPMA_NV_PPREAD = 1,
 	.TPMA_NV_PLATFORMCREATE = 1,
+	.TPMA_NV_WRITE_STCLEAR = 1,
+};
+
+static const TPMA_NV fwmp_attr = {
+	.TPMA_NV_PLATFORMCREATE = 1,
+	.TPMA_NV_OWNERWRITE = 1,
+	.TPMA_NV_AUTHREAD = 1,
+	.TPMA_NV_PPREAD = 1,
+	.TPMA_NV_PPWRITE = 1,
+};
+
+/* Attributes for spaces that enable zero-touch enrollment (ZTE) */
+static const TPMA_NV zte_attr = {
+	.TPMA_NV_PLATFORMCREATE = 1,
+	.TPMA_NV_WRITEDEFINE = 1,
+	.TPMA_NV_AUTHWRITE = 1,
+	.TPMA_NV_AUTHREAD = 1,
+	.TPMA_NV_PPWRITE = 1,
+	.TPMA_NV_PPREAD = 1,
+	.TPMA_NV_NO_DA = 1,
+	.TPMA_NV_POLICY_DELETE = 1,
+};
+
+static const TPMA_NV zte_rma_bytes_attr = {
+	.TPMA_NV_PLATFORMCREATE = 1,
+	.TPMA_NV_BITS = 1,
+	.TPMA_NV_AUTHWRITE = 1,
+	.TPMA_NV_AUTHREAD = 1,
+	.TPMA_NV_PPWRITE = 1,
+	.TPMA_NV_PPREAD = 1,
+	.TPMA_NV_NO_DA = 1,
+	.TPMA_NV_POLICY_DELETE = 1,
 };
 
 /*
@@ -145,15 +178,12 @@ static const uint8_t pcr0_allowed_policy[] = {
 	0x50, 0xEF, 0x96, 0x98, 0x0A, 0x2B, 0x96, 0x6E, 0xA9, 0x09, 0x04,
 	0x4A, 0x01, 0xB8, 0x5F, 0xA5, 0x4A, 0x96, 0xFC, 0x59, 0x84};
 
-/* Nothing special in the TPM2 path yet. */
-static uint32_t safe_write(uint32_t index, const void *data, uint32_t length)
-{
-	return tlcl_write(index, data, length);
-}
+static const uint8_t unsatisfiable_policy[VB2_SHA256_DIGEST_SIZE] =
+	"hmwhat if RBR beat merc in 2021";
 
-static uint32_t set_space(const char *name, uint32_t index, const void *data,
-			  uint32_t length, const TPMA_NV nv_attributes,
-			  const uint8_t *nv_policy, size_t nv_policy_size)
+static uint32_t define_space(const char *name, uint32_t index, uint32_t length,
+			     const TPMA_NV nv_attributes,
+			     const uint8_t *nv_policy, size_t nv_policy_size)
 {
 	uint32_t rv;
 
@@ -172,41 +202,130 @@ static uint32_t set_space(const char *name, uint32_t index, const void *data,
 		rv = TPM_SUCCESS;
 	}
 
+	return rv;
+}
+
+/* Nothing special in the TPM2 path yet. */
+static uint32_t safe_write(uint32_t index, const void *data, uint32_t length)
+{
+	return tlcl_write(index, data, length);
+}
+
+static uint32_t setup_space(const char *name, uint32_t index, const void *data,
+			    uint32_t length, const TPMA_NV nv_attributes,
+			    const uint8_t *nv_policy, size_t nv_policy_size)
+{
+	uint32_t rv;
+
+	rv = define_space(name, index, length, nv_attributes, nv_policy,
+			  nv_policy_size);
 	if (rv != TPM_SUCCESS)
 		return rv;
 
 	return safe_write(index, data, length);
 }
 
-static uint32_t set_firmware_space(const void *firmware_blob)
+static uint32_t setup_firmware_space(struct vb2_context *ctx)
 {
-	return set_space("firmware", FIRMWARE_NV_INDEX, firmware_blob,
-			 VB2_SECDATA_FIRMWARE_SIZE, ro_space_attributes,
-			 pcr0_allowed_policy, sizeof(pcr0_allowed_policy));
+	uint32_t firmware_space_size = vb2api_secdata_firmware_create(ctx);
+
+	return setup_space("firmware", FIRMWARE_NV_INDEX,
+			   ctx->secdata_firmware, firmware_space_size,
+			   ro_space_attributes, pcr0_allowed_policy,
+			   sizeof(pcr0_allowed_policy));
 }
 
-static uint32_t set_kernel_space(const void *kernel_blob)
+static uint32_t setup_fwmp_space(struct vb2_context *ctx)
 {
-	return set_space("kernel", KERNEL_NV_INDEX, kernel_blob,
-			 VB2_SECDATA_KERNEL_SIZE, rw_space_attributes, NULL, 0);
+	uint32_t fwmp_space_size = vb2api_secdata_fwmp_create(ctx);
+
+	return setup_space("FWMP", FWMP_NV_INDEX, ctx->secdata_fwmp, fwmp_space_size,
+			   fwmp_attr, NULL, 0);
+}
+
+static uint32_t setup_kernel_space(struct vb2_context *ctx)
+{
+	uint32_t kernel_space_size = vb2api_secdata_kernel_create(ctx);
+
+	return setup_space("kernel", KERNEL_NV_INDEX, ctx->secdata_kernel,
+			    kernel_space_size, rw_space_attributes, NULL, 0);
 }
 
 static uint32_t set_mrc_hash_space(uint32_t index, const uint8_t *data)
 {
 	if (index == MRC_REC_HASH_NV_INDEX) {
-		return set_space("RO MRC Hash", index, data, HASH_NV_SIZE,
-				 ro_space_attributes, pcr0_allowed_policy,
+		return setup_space("RO MRC Hash", index, data, HASH_NV_SIZE,
+				   ro_space_attributes, pcr0_allowed_policy,
 				 sizeof(pcr0_allowed_policy));
 	} else {
-		return set_space("RW MRC Hash", index, data, HASH_NV_SIZE,
-				 rw_space_attributes, NULL, 0);
+		return setup_space("RW MRC Hash", index, data, HASH_NV_SIZE,
+				   rw_space_attributes, NULL, 0);
 	}
+}
+
+/**
+ * Set up the Zero-Touch Enrollment(ZTE) related spaces.
+ *
+ * These spaces are not used by firmware, but we do need to initialize them.
+ */
+static uint32_t setup_zte_spaces(void)
+{
+	uint32_t rv;
+	uint64_t rma_bytes_counter_default = 0;
+	uint8_t rma_sn_bits_default[16];
+	uint8_t board_id_default[12];
+
+	/* Initialize defaults:  Board ID and RMA+SN Bits must be initialized
+	 to all 0xFFs. */
+	memset(rma_sn_bits_default, 0xFF, ARRAY_SIZE(rma_sn_bits_default));
+	memset(board_id_default, 0xFF, ARRAY_SIZE(board_id_default));
+
+	/* Set up RMA + SN Bits */
+	rv = setup_space("RMA + SN Bits", ZTE_RMA_SN_BITS_INDEX,
+			 rma_sn_bits_default, sizeof(rma_sn_bits_default),
+			 zte_attr,
+			 unsatisfiable_policy, sizeof(unsatisfiable_policy));
+	if (rv != TPM_SUCCESS) {
+		VBDEBUG("%s: Failed to set up RMA + SN Bits space\n", __func__);
+		return rv;
+	}
+
+	rv = setup_space("Board ID", ZTE_BOARD_ID_NV_INDEX,
+			 board_id_default, sizeof(board_id_default),
+			 zte_attr,
+			 unsatisfiable_policy, sizeof(unsatisfiable_policy));
+	if (rv != TPM_SUCCESS) {
+		VBDEBUG("%s: Failed to set up Board ID space\n", __func__);
+		return rv;
+	}
+
+	/* Set up RMA Bytes counter */
+	rv = define_space("RMA Bytes Counter", ZTE_RMA_BYTES_COUNTER_INDEX,
+			  sizeof(rma_bytes_counter_default),
+			  zte_rma_bytes_attr,
+			  unsatisfiable_policy, sizeof(unsatisfiable_policy));
+	if (rv != TPM_SUCCESS) {
+		VBDEBUG("%s: Failed to define RMA Bytes space\n", __func__);
+		return rv;
+	}
+
+	/*
+	 * Since the RMA counter has the BITS attribute, we need to call
+	 * TPM2_NV_SetBits() in order to initialize it.
+	 */
+	rv = tlcl_set_bits(ZTE_RMA_BYTES_COUNTER_INDEX,
+			   rma_bytes_counter_default);
+	if (rv != TPM_SUCCESS) {
+		VBDEBUG("%s: Failed to init RMA Bytes counter space\n",
+			__func__);
+		return rv;
+	}
+
+	return rv;
 }
 
 static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 {
-	vb2api_secdata_kernel_create(ctx);
-
 	RETURN_ON_FAILURE(tlcl_force_clear());
 
 	/*
@@ -215,7 +334,7 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	 * indication that TPM factory initialization was successfully
 	 * completed.
 	 */
-	RETURN_ON_FAILURE(set_kernel_space(ctx->secdata_kernel));
+	RETURN_ON_FAILURE(setup_kernel_space(ctx));
 
 	/*
 	 * Define and set rec hash space, if available.  No need to
@@ -227,7 +346,18 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	if (CONFIG(VBOOT_HAS_REC_HASH_SPACE))
 		RETURN_ON_FAILURE(set_mrc_hash_space(MRC_REC_HASH_NV_INDEX, mrc_hash_data));
 
-	RETURN_ON_FAILURE(set_firmware_space(ctx->secdata_firmware));
+	/* Define and write firmware management parameters space. */
+	RETURN_ON_FAILURE(setup_fwmp_space(ctx));
+
+	/*
+	 * Define and write zero-touch enrollment (ZTE) spaces.  For Cr50 devices,
+	 * these are set up elsewhere via TPM vendor commands.
+	 */
+	if (CONFIG(CHROMEOS) && (!(CONFIG(MAINBOARD_HAS_SPI_TPM_CR50) ||
+				   CONFIG(MAINBOARD_HAS_I2C_TPM_CR50))))
+		RETURN_ON_FAILURE(setup_zte_spaces());
+
+	RETURN_ON_FAILURE(setup_firmware_space(ctx));
 
 	return TPM_SUCCESS;
 }

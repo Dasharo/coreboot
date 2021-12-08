@@ -10,6 +10,7 @@
 #include <drivers/intel/gma/i915.h>
 #include <drivers/intel/gma/libgfxinit.h>
 #include <drivers/intel/gma/opregion.h>
+#include <intelblocks/cfg.h>
 #include <intelblocks/graphics.h>
 #include <fsp/graphics.h>
 #include <soc/pci_devs.h>
@@ -57,7 +58,9 @@ static void gma_init(struct device *const dev)
 	 * Kconfig to perform GFX initialization.
 	 */
 	if (CONFIG(RUN_FSP_GOP)) {
-		fsp_report_framebuffer_info(graphics_get_memory_base());
+		const struct soc_intel_common_config *config = chip_get_common_soc_structure();
+		fsp_report_framebuffer_info(graphics_get_memory_base(),
+					    config->panel_orientation);
 		return;
 	}
 
@@ -269,6 +272,8 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CML_GT2_H_R0,
 	PCI_DEVICE_ID_INTEL_CML_GT2_H_R1,
 	PCI_DEVICE_ID_INTEL_TGL_GT0,
+	PCI_DEVICE_ID_INTEL_TGL_GT1_H_32,
+	PCI_DEVICE_ID_INTEL_TGL_GT1_H_16,
 	PCI_DEVICE_ID_INTEL_TGL_GT2_ULT,
 	PCI_DEVICE_ID_INTEL_TGL_GT2_ULX,
 	PCI_DEVICE_ID_INTEL_TGL_GT3_ULT,
@@ -277,6 +282,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_EHL_GT2_1,
 	PCI_DEVICE_ID_INTEL_EHL_GT1_2,
 	PCI_DEVICE_ID_INTEL_EHL_GT2_2,
+	PCI_DEVICE_ID_INTEL_EHL_GT1_2_1,
 	PCI_DEVICE_ID_INTEL_EHL_GT1_3,
 	PCI_DEVICE_ID_INTEL_EHL_GT2_3,
 	PCI_DEVICE_ID_INTEL_JSL_GT1,
@@ -295,8 +301,16 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_ADL_GT1_8,
 	PCI_DEVICE_ID_INTEL_ADL_GT1_9,
 	PCI_DEVICE_ID_INTEL_ADL_P_GT2,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_1,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_2,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_3,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_4,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_5,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_6,
 	PCI_DEVICE_ID_INTEL_ADL_S_GT1,
 	PCI_DEVICE_ID_INTEL_ADL_M_GT1,
+	PCI_DEVICE_ID_INTEL_ADL_M_GT2,
+	PCI_DEVICE_ID_INTEL_ADL_M_GT3,
 	0,
 };
 

@@ -32,38 +32,30 @@ config VBOOT
 	select GBB_FLAG_DISABLE_FWMP
 
 config MAINBOARD_DIR
-	string
 	default "clevo/kbl-u"
 
 config VARIANT_DIR
-	string
 	default "n13xwu" if BOARD_CLEVO_N130WU
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "N130WU" if BOARD_CLEVO_N130WU
 
 config CBFS_SIZE
-	hex
 	default 0x600000 if BOARD_CLEVO_N130WU
 
 config DEVICETREE
-	string
-	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config FMDFILE
-	string
-	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/variants/$(CONFIG_VARIANT_DIR)/fmds/vboot-ro.fmd"	if VBOOT && !VBOOT_SLOTS_RW_A
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/variants/\$(CONFIG_VARIANT_DIR)/fmds/vboot-ro.fmd"	if VBOOT && !VBOOT_SLOTS_RW_A
 	# TODO
-#	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/fmds/vboot-roa.fmd"	if VBOOT_SLOTS_RW_A && !VBOOT_SLOTS_RW_AB
-#	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/fmds/vboot-roab.fmd"	if VBOOT_SLOTS_RW_AB
+#	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/fmds/vboot-roa.fmd"	if VBOOT_SLOTS_RW_A && !VBOOT_SLOTS_RW_AB
+#	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/fmds/vboot-roab.fmd"	if VBOOT_SLOTS_RW_AB
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config VGA_BIOS_ID

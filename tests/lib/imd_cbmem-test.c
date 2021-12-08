@@ -36,7 +36,7 @@ void cbmem_run_init_hooks(int is_recovery)
 	function_called();
 }
 
-void *__wrap_cbmem_top_chipset(void)
+void *cbmem_top_chipset(void)
 {
 	return (void *)_cbmem_top_ptr;
 }
@@ -626,5 +626,5 @@ int main(void)
 				setup_teardown_test_imd_cbmem),
 	};
 
-	return cmocka_run_group_tests(tests, setup_group_imd_cbmem, teardown_group_imd_cbmem);
+	return cb_run_group_tests(tests, setup_group_imd_cbmem, teardown_group_imd_cbmem);
 }

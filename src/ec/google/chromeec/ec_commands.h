@@ -9,10 +9,6 @@
 #include <stdint.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef CHROMIUM_EC
 /*
  * CHROMIUM_EC is defined by the Makefile system of Chromium EC repository.
@@ -69,6 +65,10 @@ extern "C" {
 #endif
 
 #endif  /* __KERNEL__ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Current version of this protocol
@@ -423,6 +423,57 @@ extern "C" {
 #define EC_ACPI_MEM_USB_PORT_POWER 0x13
 
 /*
+ * USB Retimer firmware update.
+ * Read:
+ *      Result of last operation AP requested
+ * Write:
+ *      bits[3:0]: USB-C port number
+ *      bits[7:4]: Operation requested by AP
+ *
+ * NDA (no device attached) case:
+ * To update retimer firmware, AP needs set up TBT Alt mode.
+ * AP requests operations in this sequence:
+ * 1. Get port information about which ports support retimer firmware update.
+ * In the query result, each bit represents one port.
+ * 2. Get current MUX mode, it's NDA.
+ * 3. Suspend specified PD port's task.
+ * 4. AP requests EC to enter USB mode -> enter Safe mode -> enter TBT mode ->
+ * update firmware -> disconnect MUX -> resume PD task.
+ *
+ * DA (device attached) cases:
+ * Retimer firmware update is not supported in DA cases.
+ * 1. Get port information about which ports support retimer firmware update
+ * 2. Get current MUX mode, it's DA.
+ * 3. AP continues. No more retimer firmware update activities.
+ *
+ */
+#define EC_ACPI_MEM_USB_RETIMER_FW_UPDATE 0x14
+
+#define USB_RETIMER_FW_UPDATE_OP_SHIFT 4
+#define USB_RETIMER_FW_UPDATE_ERR         0xfe
+#define USB_RETIMER_FW_UPDATE_INVALID_MUX 0xff
+/* Mask to clear unused MUX bits in retimer firmware update  */
+#define USB_RETIMER_FW_UPDATE_MUX_MASK	(USB_PD_MUX_USB_ENABLED       | \
+					USB_PD_MUX_DP_ENABLED         | \
+					USB_PD_MUX_SAFE_MODE          | \
+					USB_PD_MUX_TBT_COMPAT_ENABLED | \
+					USB_PD_MUX_USB4_ENABLED)
+
+/* Retimer firmware update operations */
+#define USB_RETIMER_FW_UPDATE_QUERY_PORT 0 /* Which ports has retimer */
+#define USB_RETIMER_FW_UPDATE_SUSPEND_PD 1 /* Suspend PD port */
+#define USB_RETIMER_FW_UPDATE_RESUME_PD  2 /* Resume PD port  */
+#define USB_RETIMER_FW_UPDATE_GET_MUX    3 /* Read current USB MUX  */
+#define USB_RETIMER_FW_UPDATE_SET_USB    4 /* Set MUX to USB mode   */
+#define USB_RETIMER_FW_UPDATE_SET_SAFE   5 /* Set MUX to Safe mode  */
+#define USB_RETIMER_FW_UPDATE_SET_TBT    6 /* Set MUX to TBT mode   */
+#define USB_RETIMER_FW_UPDATE_DISCONNECT 7 /* Set MUX to disconnect */
+
+#define EC_ACPI_MEM_USB_RETIMER_PORT(x)   ((x) & 0x0f)
+#define EC_ACPI_MEM_USB_RETIMER_OP(x) \
+	(((x) & 0xf0) >> USB_RETIMER_FW_UPDATE_OP_SHIFT)
+
+/*
  * ACPI addresses 0x20 - 0xff map to EC_MEMMAP offset 0x00 - 0xdf.  This data
  * is read-only from the AP.  Added in EC_ACPI_MEM_VERSION 2.
  */
@@ -592,13 +643,13 @@ enum ec_status {
 BUILD_ASSERT(sizeof(enum ec_status) == sizeof(uint16_t));
 
 /*
- * Host event codes.  Note these are 1-based, not 0-based, because ACPI query
- * EC command uses code 0 to mean "no event pending".  We explicitly specify
- * each value in the enum listing so they won't change if we delete/insert an
- * item or rearrange the list (it needs to be stable across platforms, not
- * just within a single compiled instance).
+ * Host event codes. ACPI query EC command uses code 0 to mean "no event
+ * pending".  We explicitly specify each value in the enum listing so they won't
+ * change if we delete/insert an item or rearrange the list (it needs to be
+ * stable across platforms, not just within a single compiled instance).
  */
 enum host_event_code {
+	EC_HOST_EVENT_NONE = 0,
 	EC_HOST_EVENT_LID_CLOSED = 1,
 	EC_HOST_EVENT_LID_OPEN = 2,
 	EC_HOST_EVENT_POWER_BUTTON = 3,
@@ -1095,7 +1146,7 @@ enum ec_image {
 };
 
 /**
- * struct ec_response_get_version - Response to the get version command.
+ * struct ec_response_get_version - Response to the v0 get version command.
  * @version_string_ro: Null-terminated RO firmware version string.
  * @version_string_rw: Null-terminated RW firmware version string.
  * @reserved: Unused bytes; was previously RW-B firmware version string.
@@ -1104,8 +1155,29 @@ enum ec_image {
 struct ec_response_get_version {
 	char version_string_ro[32];
 	char version_string_rw[32];
-	char reserved[32];
+	char reserved[32];  /* Changed to cros_fwid_ro in version 1 */
 	uint32_t current_image;
+} __ec_align4;
+
+/**
+ * struct ec_response_get_version_v1 - Response to the v1 get version command.
+ *
+ * ec_response_get_version_v1 is a strict superset of ec_response_get_version.
+ * The v1 response changes the semantics of one field (reserved to cros_fwid_ro)
+ * and adds one additional field (cros_fwid_rw).
+ *
+ * @version_string_ro: Null-terminated RO firmware version string.
+ * @version_string_rw: Null-terminated RW firmware version string.
+ * @cros_fwid_ro: Null-terminated RO CrOS FWID string.
+ * @current_image: One of ec_image.
+ * @cros_fwid_rw: Null-terminated RW CrOS FWID string.
+ */
+struct ec_response_get_version_v1 {
+	char version_string_ro[32];
+	char version_string_rw[32];
+	char cros_fwid_ro[32];  /* Added in version 1 (Used to be reserved) */
+	uint32_t current_image;
+	char cros_fwid_rw[32];  /* Added in version 1 */
 } __ec_align4;
 
 /* Read test */
@@ -1772,7 +1844,15 @@ struct ec_response_flash_region_info {
 	uint32_t size;
 } __ec_align4;
 
-/* Read/write VbNvContext */
+/*
+ * Read/write VbNvContext
+ *
+ * Deprecated as of February 2021.  No current devices use VBNV in EC
+ * BBRAM anymore, so this is guaranteed to fail.
+ *
+ * TODO(b/178689388): remove from this header once no external
+ * dependencies reference these constants.
+ */
 #define EC_CMD_VBNV_CONTEXT 0x0017
 #define EC_VER_VBNV_CONTEXT 1
 #define EC_VBNV_BLOCK_SIZE 16
@@ -1894,7 +1974,13 @@ enum sysinfo_flags {
 	SYSTEM_IS_FORCE_LOCKED = BIT(1),
 	SYSTEM_JUMP_ENABLED = BIT(2),
 	SYSTEM_JUMPED_TO_CURRENT_IMAGE = BIT(3),
-	SYSTEM_REBOOT_AT_SHUTDOWN = BIT(4)
+	SYSTEM_REBOOT_AT_SHUTDOWN = BIT(4),
+	/*
+	 * Used internally. It's set when EC_HOST_EVENT_KEYBOARD_RECOVERY is
+	 * set and cleared when the system shuts down (not when the host event
+	 * flag is cleared).
+	 */
+	SYSTEM_IN_MANUAL_RECOVERY = BIT(5),
 };
 
 struct ec_response_sysinfo {
@@ -2617,6 +2703,9 @@ enum motionsensor_chip {
 	MOTIONSENSE_CHIP_LIS2DS = 23,
 	MOTIONSENSE_CHIP_BMI260 = 24,
 	MOTIONSENSE_CHIP_ICM426XX = 25,
+	MOTIONSENSE_CHIP_ICM42607 = 26,
+	MOTIONSENSE_CHIP_BMA422 = 27,
+	MOTIONSENSE_CHIP_BMI323 = 28,
 	MOTIONSENSE_CHIP_MAX,
 };
 
@@ -2714,6 +2803,8 @@ struct ec_motion_sense_activity {
 #define MOTIONSENSE_SENSOR_FLAG_WAKEUP BIT(2)
 #define MOTIONSENSE_SENSOR_FLAG_TABLET_MODE BIT(3)
 #define MOTIONSENSE_SENSOR_FLAG_ODR BIT(4)
+
+#define MOTIONSENSE_SENSOR_FLAG_BYPASS_FIFO BIT(7)
 
 /*
  * Send this value for the data element to only perform a read. If you
@@ -3732,6 +3823,9 @@ enum ec_mkbp_event {
 	/* New online calibration values are available. */
 	EC_MKBP_EVENT_ONLINE_CALIBRATION = 11,
 
+	/* Peripheral device charger event */
+	EC_MKBP_EVENT_PCHG = 12,
+
 	/* Number of MKBP events */
 	EC_MKBP_EVENT_COUNT,
 };
@@ -4188,16 +4282,55 @@ struct ec_params_i2c_write {
  * discharge the battery.
  */
 #define EC_CMD_CHARGE_CONTROL 0x0096
-#define EC_VER_CHARGE_CONTROL 1
+#define EC_VER_CHARGE_CONTROL 2
 
 enum ec_charge_control_mode {
 	CHARGE_CONTROL_NORMAL = 0,
 	CHARGE_CONTROL_IDLE,
 	CHARGE_CONTROL_DISCHARGE,
+	/* Add no more entry below. */
+	CHARGE_CONTROL_COUNT,
+};
+
+#define EC_CHARGE_MODE_TEXT { \
+	[CHARGE_CONTROL_NORMAL] = "NORMAL", \
+	[CHARGE_CONTROL_IDLE] = "IDLE", \
+	[CHARGE_CONTROL_DISCHARGE] = "DISCHARGE", \
+	}
+
+enum ec_charge_control_cmd {
+	EC_CHARGE_CONTROL_CMD_SET = 0,
+	EC_CHARGE_CONTROL_CMD_GET,
 };
 
 struct ec_params_charge_control {
 	uint32_t mode;  /* enum charge_control_mode */
+
+	/* Below are the fields added in V2. */
+	uint8_t cmd;    /* enum ec_charge_control_cmd. */
+	uint8_t reserved;
+	/*
+	 * Lower and upper thresholds for battery sustainer. This struct isn't
+	 * named to avoid tainting foreign projects' name spaces.
+	 *
+	 * If charge mode is explicitly set (e.g. DISCHARGE), battery sustainer
+	 * will be disabled. To disable battery sustainer, set mode=NORMAL,
+	 * lower=-1, upper=-1.
+	 */
+	struct {
+		int8_t lower;	/* Display SoC in percentage. */
+		int8_t upper;	/* Display SoC in percentage. */
+	} sustain_soc;
+} __ec_align4;
+
+/* Added in v2 */
+struct ec_response_charge_control {
+	uint32_t mode;  /* enum charge_control_mode */
+	struct {        /* Battery sustainer thresholds */
+		int8_t lower;
+		int8_t upper;
+	} sustain_soc;
+	uint16_t reserved;
 } __ec_align4;
 
 /*****************************************************************************/
@@ -4375,7 +4508,7 @@ struct ec_response_power_info_v1 {
 #define EC_I2C_STATUS_ERROR	(EC_I2C_STATUS_NAK | EC_I2C_STATUS_TIMEOUT)
 
 struct ec_params_i2c_passthru_msg {
-	uint16_t addr_flags;	/* I2C slave address and flags */
+	uint16_t addr_flags;	/* I2C peripheral address and flags */
 	uint16_t len;		/* Number of bytes to read or write */
 } __ec_align2;
 
@@ -5740,7 +5873,9 @@ struct ec_params_usb_pd_mux_info {
 #define USB_PD_MUX_DP_ENABLED         BIT(1) /* DP connected */
 #define USB_PD_MUX_POLARITY_INVERTED  BIT(2) /* CC line Polarity inverted */
 #define USB_PD_MUX_HPD_IRQ            BIT(3) /* HPD IRQ is asserted */
+#define USB_PD_MUX_HPD_IRQ_DEASSERTED 0      /* HPD IRQ is deasserted */
 #define USB_PD_MUX_HPD_LVL            BIT(4) /* HPD level is asserted */
+#define USB_PD_MUX_HPD_LVL_DEASSERTED 0      /* HPD level is deasserted */
 #define USB_PD_MUX_SAFE_MODE          BIT(5) /* DP is in safe mode */
 #define USB_PD_MUX_TBT_COMPAT_ENABLED BIT(6) /* TBT compat enabled */
 #define USB_PD_MUX_USB4_ENABLED       BIT(7) /* USB4 enabled */
@@ -5837,6 +5972,7 @@ enum cbi_data_tag {
 	CBI_TAG_PCB_SUPPLIER = 7,  /* uint32_t or smaller */
 	/* Second Source Factory Cache */
 	CBI_TAG_SSFC = 8,          /* uint32_t bit field */
+	CBI_TAG_REWORK_ID = 9,     /* uint64_t or smaller */
 	CBI_TAG_COUNT,
 };
 
@@ -6272,6 +6408,8 @@ enum action_key {
 	TK_PLAY_PAUSE = 15,
 	TK_NEXT_TRACK = 16,
 	TK_PREV_TRACK = 17,
+	TK_KBD_BKLIGHT_TOGGLE = 18,
+	TK_MICMUTE = 19,
 };
 
 /*
@@ -6588,6 +6726,8 @@ enum tcpc_cc_polarity {
 
 #define PD_STATUS_EVENT_SOP_DISC_DONE		BIT(0)
 #define PD_STATUS_EVENT_SOP_PRIME_DISC_DONE	BIT(1)
+#define PD_STATUS_EVENT_HARD_RESET		BIT(2)
+#define PD_STATUS_EVENT_DISCONNECTED		BIT(3)
 
 /*
  * Encode and decode for BCD revision response
@@ -6743,6 +6883,11 @@ struct ec_response_pchg {
 	uint32_t error;			/* enum pchg_error */
 	uint8_t state;			/* enum pchg_state state */
 	uint8_t battery_percentage;
+	uint8_t unused0;
+	uint8_t unused1;
+	/* Fields added in version 1 */
+	uint32_t fw_version;
+	uint32_t dropped_event_count;
 } __ec_align2;
 
 enum pchg_state {
@@ -6752,10 +6897,20 @@ enum pchg_state {
 	PCHG_STATE_INITIALIZED,
 	/* Charger is enabled and ready to detect a device. */
 	PCHG_STATE_ENABLED,
-	/* Device is detected in proximity. */
+	/* Device is in proximity. */
 	PCHG_STATE_DETECTED,
 	/* Device is being charged. */
 	PCHG_STATE_CHARGING,
+	/* Device is fully charged. It implies DETECTED (& not charging). */
+	PCHG_STATE_FULL,
+	/* In download (a.k.a. firmware update) mode */
+	PCHG_STATE_DOWNLOAD,
+	/* In download mode. Ready for receiving data. */
+	PCHG_STATE_DOWNLOADING,
+	/* Device is ready for data communication. */
+	PCHG_STATE_CONNECTED,
+	/* Put no more entry below */
+	PCHG_STATE_COUNT,
 };
 
 #define EC_PCHG_STATE_TEXT { \
@@ -6764,7 +6919,92 @@ enum pchg_state {
 	[PCHG_STATE_ENABLED] = "ENABLED", \
 	[PCHG_STATE_DETECTED] = "DETECTED", \
 	[PCHG_STATE_CHARGING] = "CHARGING", \
+	[PCHG_STATE_FULL] = "FULL", \
+	[PCHG_STATE_DOWNLOAD] = "DOWNLOAD", \
+	[PCHG_STATE_DOWNLOADING] = "DOWNLOADING", \
+	[PCHG_STATE_CONNECTED] = "CONNECTED", \
 	}
+
+/**
+ * Update firmware of peripheral chip
+ */
+#define EC_CMD_PCHG_UPDATE 0x0136
+
+/* Port number is encoded in bit[28:31]. */
+#define EC_MKBP_PCHG_PORT_SHIFT		28
+/* Utility macro for converting MKBP event to port number. */
+#define EC_MKBP_PCHG_EVENT_TO_PORT(e)	(((e) >> EC_MKBP_PCHG_PORT_SHIFT) & 0xf)
+/* Utility macro for extracting event bits. */
+#define EC_MKBP_PCHG_EVENT_MASK(e)	((e) \
+					& GENMASK(EC_MKBP_PCHG_PORT_SHIFT-1, 0))
+
+#define EC_MKBP_PCHG_UPDATE_OPENED	BIT(0)
+#define EC_MKBP_PCHG_WRITE_COMPLETE	BIT(1)
+#define EC_MKBP_PCHG_UPDATE_CLOSED	BIT(2)
+#define EC_MKBP_PCHG_UPDATE_ERROR	BIT(3)
+
+enum ec_pchg_update_cmd {
+	/* Reset chip to normal mode. */
+	EC_PCHG_UPDATE_CMD_RESET_TO_NORMAL = 0,
+	/* Reset and put a chip in update (a.k.a. download) mode. */
+	EC_PCHG_UPDATE_CMD_OPEN,
+	/* Write a block of data containing FW image. */
+	EC_PCHG_UPDATE_CMD_WRITE,
+	/* Close update session. */
+	EC_PCHG_UPDATE_CMD_CLOSE,
+	/* End of commands */
+	EC_PCHG_UPDATE_CMD_COUNT,
+};
+
+struct ec_params_pchg_update {
+	/* PCHG port number */
+	uint8_t port;
+	/* enum ec_pchg_update_cmd */
+	uint8_t cmd;
+	/* Padding */
+	uint8_t reserved0;
+	uint8_t reserved1;
+	/* Version of new firmware */
+	uint32_t version;
+	/* CRC32 of new firmware */
+	uint32_t crc32;
+	/* Address in chip memory where <data> is written to */
+	uint32_t addr;
+	/* Size of <data> */
+	uint32_t size;
+	/* Partial data of new firmware */
+	uint8_t data[];
+} __ec_align4;
+
+BUILD_ASSERT(EC_PCHG_UPDATE_CMD_COUNT
+	     < BIT(sizeof(((struct ec_params_pchg_update *)0)->cmd)*8));
+
+struct ec_response_pchg_update {
+	/* Block size */
+	uint32_t block_size;
+} __ec_align4;
+
+
+#define EC_CMD_DISPLAY_SOC 0x0137
+
+struct ec_response_display_soc {
+	int16_t display_soc;  /* Display charge in 10ths of a % (1000=100.0%) */
+	int16_t full_factor;  /* Full factor in 10ths of a % (1000=100.0%) */
+	int16_t shutdown_soc; /* Shutdown SoC in 10ths of a % (1000=100.0%) */
+} __ec_align2;
+
+
+#define EC_CMD_SET_BASE_STATE 0x0138
+
+struct ec_params_set_base_state {
+	uint8_t cmd;  /* enum ec_set_base_state_cmd */
+} __ec_align1;
+
+enum ec_set_base_state_cmd {
+	EC_SET_BASE_STATE_DETACH = 0,
+	EC_SET_BASE_STATE_ATTACH,
+	EC_SET_BASE_STATE_RESET,
+};
 
 /*****************************************************************************/
 /* The command range 0x200-0x2FF is reserved for Rotor. */
@@ -7168,7 +7408,7 @@ struct ec_response_battery_dynamic_info {
 } __ec_align2;
 
 /*
- * Control charger chip. Used to control charger chip on the slave.
+ * Control charger chip. Used to control charger chip on the peripheral.
  */
 #define EC_CMD_CHARGER_CONTROL 0x0602
 

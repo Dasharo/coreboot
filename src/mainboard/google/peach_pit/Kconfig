@@ -20,11 +20,9 @@ config VBOOT
 	select VBOOT_VBNV_EC
 
 config MAINBOARD_DIR
-	string
 	default "google/peach_pit"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Peach Pit"
 
 config DRAM_SIZE_MB

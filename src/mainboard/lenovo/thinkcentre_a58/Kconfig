@@ -18,11 +18,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_HAS_LIBGFXINIT
 
 config MAINBOARD_DIR
-	string
 	default "lenovo/thinkcentre_a58"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ThinkCentre A58"
 
 endif # BOARD_LENOVO_THINKCENTRE_A58

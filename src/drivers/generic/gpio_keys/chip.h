@@ -14,6 +14,7 @@ enum {
 
 /* Switch events type (Linux code emitted for EV_SW) */
 enum {
+	SW_MUTE_DEVICE = 0xe,
 	SW_PEN_INSERTED = 0xf,
 };
 
@@ -74,6 +75,8 @@ struct key_info {
 struct drivers_generic_gpio_keys_config {
 	/* Device name of the parent gpio-keys node */
 	const char *name;
+	/* Name of the input device - Optional */
+	const char *label;
 	/* GPIO line providing the key - Mandatory */
 	struct acpi_gpio gpio;
 	/* Is this a polled GPIO button? - Optional */

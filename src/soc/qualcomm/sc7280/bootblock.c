@@ -1,9 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootblock_common.h>
-#include <soc/mmu.h>
+#include <soc/clock.h>
+#include <soc/qspi_common.h>
+#include <soc/qupv3_config_common.h>
 
 void bootblock_soc_init(void)
 {
-	sc7280_mmu_init();
+	clock_init();
+	quadspi_init(37500 * KHz);
+	qupv3_fw_init();
 }

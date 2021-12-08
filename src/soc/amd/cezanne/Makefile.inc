@@ -13,8 +13,8 @@ all-y		+= aoac.c
 
 bootblock-y	+= bootblock.c
 bootblock-y	+= early_fch.c
-bootblock-y	+= i2c.c
 bootblock-y	+= gpio.c
+bootblock-y	+= i2c.c
 bootblock-y	+= reset.c
 bootblock-y	+= uart.c
 
@@ -24,22 +24,24 @@ verstage_x86-y	+= reset.c
 verstage_x86-y	+= uart.c
 
 romstage-y	+= fsp_m_params.c
-romstage-y	+= i2c.c
 romstage-y	+= gpio.c
+romstage-y	+= i2c.c
 romstage-y	+= reset.c
 romstage-y	+= romstage.c
 romstage-y	+= uart.c
 
-ramstage-y	+= i2c.c
 ramstage-y	+= acpi.c
 ramstage-y	+= agesa_acpi.c
 ramstage-y	+= chip.c
+ramstage-y	+= cppc.c
 ramstage-y	+= cpu.c
 ramstage-y	+= data_fabric.c
 ramstage-y	+= fch.c
 ramstage-y	+= fsp_s_params.c
 ramstage-y	+= gpio.c
-ramstage-y	+= pcie_gpp.c
+ramstage-y	+= graphics.c
+ramstage-y	+= i2c.c
+ramstage-y	+= mca.c
 ramstage-y	+= reset.c
 ramstage-y	+= root_complex.c
 ramstage-y	+= uart.c
@@ -113,7 +115,7 @@ PSP_SOFTFUSE_BITS += 29
 endif
 
 # Use additional Soft Fuse bits specified in Kconfig
-PSP_SOFTFUSE_BITS += $(CONFIG_PSP_SOFTFUSE_BITS)
+PSP_SOFTFUSE_BITS += $(call strip_quotes, $(CONFIG_PSP_SOFTFUSE_BITS))
 
 # type = 0x3a
 ifeq ($(CONFIG_HAVE_PSP_WHITELIST_FILE),y)

@@ -33,11 +33,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select COMMONLIB_STORAGE_MMC
 
 config MAINBOARD_DIR
-	string
 	default "google/asurada"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Asurada" if BOARD_GOOGLE_ASURADA
 	default "Hayato" if BOARD_GOOGLE_HAYATO
 	default "Spherion" if BOARD_GOOGLE_SPHERION

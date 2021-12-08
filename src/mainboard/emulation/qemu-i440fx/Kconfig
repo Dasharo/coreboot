@@ -44,7 +44,6 @@ config VBOOT_SLOTS_RW_A
 endif
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa-16M.fmd" if VBOOT_SLOTS_RW_A
 
 config VBOOT_VBNV_OFFSET
@@ -52,11 +51,9 @@ config VBOOT_VBNV_OFFSET
 	default 0x2c
 
 config MAINBOARD_DIR
-	string
 	default "emulation/qemu-i440fx"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "QEMU x86 i440fx/piix4"
 
 config IRQ_SLOT_COUNT

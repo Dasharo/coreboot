@@ -13,7 +13,8 @@ enum adl_boardid {
 	ADL_P_LP4_1 = 0x10,
 	ADL_P_LP4_2 = 0x11,
 	/* ADL-P DDR5 RVPs */
-	ADL_P_DDR5 = 0x12,
+	ADL_P_DDR5_1 = 0x12,
+	ADL_P_DDR5_2 = 0x16,
 	/* ADL-P LPDDR5 RVP */
 	ADL_P_LP5_1 = 0x13,
 	ADL_P_LP5_2 = 0x17,
@@ -34,4 +35,19 @@ void variant_configure_early_gpio_pads(void);
 
 size_t variant_memory_sku(void);
 const struct mb_cfg *variant_memory_params(void);
+
+/* Modify devictree settings during ramstage */
+void variant_devtree_update(void);
+struct cpu_power_limits {
+	uint16_t mchid;
+	u8 cpu_tdp;
+	unsigned int pl1_min_power;
+	unsigned int pl1_max_power;
+	unsigned int pl2_min_power;
+	unsigned int pl2_max_power;
+	unsigned int pl4_power;
+};
+/* Modify Power Limit devictree settings during ramstage */
+void variant_update_power_limits(void);
+
 #endif /*__BASEBOARD_VARIANTS_H__ */

@@ -11,9 +11,12 @@
 #include <device/mmio.h>
 #include <device/device.h>
 #include <drivers/intel/pmc_mux/chip.h>
+#include <intelblocks/acpi.h>
 #include <intelblocks/pmc.h>
+#include <intelblocks/pmc_ipc.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/rtc.h>
+#include <soc/cpu.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/soc_chip.h>
@@ -21,13 +24,6 @@
 #include <bootstate.h>
 
 #define PMC_HID		"INTC1026"
-
-enum pch_pmc_xtal pmc_get_xtal_freq(void)
-{
-	uint8_t *const pmcbase = pmc_mmio_regs();
-
-	return PCH_EPOC_XTAL_FREQ(read32(pmcbase + PCH_PMC_EPOC));
-}
 
 static void config_deep_sX(uint32_t offset, uint32_t mask, int sx, int enable)
 {
@@ -70,7 +66,7 @@ static void config_deep_sx(uint32_t deepsx_config)
 	write32(pmcbase + DSX_CFG, reg);
 }
 
-static void pmc_init(struct device *dev)
+static void soc_pmc_enable(struct device *dev)
 {
 	const config_t *config = config_of_soc();
 
@@ -121,14 +117,30 @@ static void soc_pmc_fill_ssdt(const struct device *dev)
 	acpigen_write_mem32fixed(1, PCH_PWRM_BASE_ADDRESS, PCH_PWRM_BASE_SIZE);
 	acpigen_write_resourcetemplate_footer();
 
+	/* Define IPC Write Method */
+	if (CONFIG(PMC_IPC_ACPI_INTERFACE))
+		pmc_ipc_acpi_fill_ssdt();
+
 	acpigen_pop_len(); /* PMC Device */
 	acpigen_pop_len(); /* Scope */
+
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_ACPI_PEP)) {
+		const struct soc_pmc_lpm adl_pmc_lpm = {
+			.num_substates = 8,
+			.num_req_regs = 6,
+			.lpm_ipc_offset = 0x1000,
+			.req_reg_stride = 0x30,
+			.lpm_enable_mask = get_supported_lpm_mask(),
+		};
+
+		generate_acpi_power_engine_with_lpm(&adl_pmc_lpm);
+	}
 
 	printk(BIOS_INFO, "%s: %s at %s\n", acpi_device_path(dev), dev->chip_ops->name,
 	       dev_path(dev));
 }
 
-static void soc_acpi_mode_init(struct device *dev)
+static void soc_pmc_init(struct device *dev)
 {
 	/*
 	 * pmc_set_acpi_mode() should be delayed until BS_DEV_INIT in order
@@ -153,8 +165,8 @@ BOOT_STATE_INIT_ENTRY(BS_DEV_INIT_CHIPS, BS_ON_EXIT, pm1_enable_pwrbtn_smi, NULL
 struct device_operations pmc_ops = {
 	.read_resources	  = soc_pmc_read_resources,
 	.set_resources	  = noop_set_resources,
-	.init		  = soc_acpi_mode_init,
-	.enable		  = pmc_init,
+	.init		  = soc_pmc_init,
+	.enable		  = soc_pmc_enable,
 #if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_fill_ssdt	  = soc_pmc_fill_ssdt,
 #endif

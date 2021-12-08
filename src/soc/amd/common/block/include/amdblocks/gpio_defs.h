@@ -77,6 +77,10 @@
 
 #define AMD_GPIO_MUX_MASK			0x03
 
+#define AMD_GPIO_FIRST_REMOTE_GPIO_NUMBER	256
+/* The GPIO MUX registers for the remote GPIOs are at the end of the remote GPIO bank */
+#define AMD_GPIO_REMOTE_GPIO_MUX_OFFSET		0xc0
+
 /*
  * Flags used for GPIO configuration. These provide additional information that does not go
  * directly into GPIO control register. These are stored in `flags` field in soc_amd_gpio.
@@ -208,9 +212,13 @@
 #define PAD_WAKE_ENABLE(__wake)		GPIO_WAKE_ ## __wake
 #define PAD_DEBOUNCE_CONFIG(__deb)	GPIO_DEB_ ## __deb
 
-/* Native function pad configuration */
+/* Native function pad configuration with PAD_PULL */
 #define PAD_NF(pin, func, pull)						\
 	PAD_CFG_STRUCT(pin, pin ## _IOMUX_ ## func, PAD_PULL(pull))
+
+/* Native function pad configuration with PAD_OUTPUT */
+#define PAD_NFO(pin, func, direction)						\
+	PAD_CFG_STRUCT(pin, pin ## _IOMUX_ ## func, PAD_OUTPUT(direction))
 
 /* General purpose input pad configuration */
 #define PAD_GPI(pin, pull)							\

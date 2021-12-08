@@ -46,19 +46,15 @@ config VBOOT
 	select EC_GOOGLE_CHROMEEC_SWITCHES if GLK_CHROME_EC
 
 config MAINBOARD_DIR
-	string
 	default "intel/glkrvp"
 
 config VARIANT_DIR
-	string
 	default "glkrvp" if BOARD_INTEL_GLKRVP
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree.cb"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "glkrvp" if BOARD_INTEL_GLKRVP
 
 config MAINBOARD_FAMILY

@@ -403,7 +403,7 @@ static int apic_wait_timeout(int total_delay, int delay_step)
 	int total = 0;
 	int timeout = 0;
 
-	while (lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY) {
+	while (lapic_busy()) {
 		udelay(delay_step);
 		total += delay_step;
 		if (total >= total_delay) {
@@ -435,29 +435,10 @@ static int start_aps(struct bus *cpu_bus, int ap_count, atomic_t *num_aps)
 
 	printk(BIOS_DEBUG, "Attempting to start %d APs\n", ap_count);
 
-	if (is_x2apic_mode()) {
-		x2apic_send_ipi(LAPIC_DM_INIT | LAPIC_INT_LEVELTRIG |
-			LAPIC_INT_ASSERT | LAPIC_DEST_ALLBUT, 0);
-		mdelay(10);
-		x2apic_send_ipi(LAPIC_DM_STARTUP | LAPIC_INT_LEVELTRIG |
-			LAPIC_DEST_ALLBUT | sipi_vector, 0);
+	int x2apic_mode = is_x2apic_mode();
+	printk(BIOS_DEBUG, "Starting CPUs in %s mode\n", x2apic_mode ? "x2apic" : "xapic");
 
-		/* Wait for CPUs to check in up to 200 us. */
-		wait_for_aps(num_aps, ap_count, 200 /* us */, 15 /* us */);
-
-		x2apic_send_ipi(LAPIC_DM_STARTUP | LAPIC_INT_LEVELTRIG |
-			LAPIC_DEST_ALLBUT | sipi_vector, 0);
-
-		/* Wait for CPUs to check in. */
-		if (wait_for_aps(num_aps, ap_count, 100000 /* 100 ms */, 50 /* us */)) {
-			printk(BIOS_ERR, "Not all APs checked in: %d/%d.\n",
-			       atomic_read(num_aps), ap_count);
-			return -1;
-		}
-		return 0;
-	}
-
-	if ((lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY)) {
+	if (lapic_busy()) {
 		printk(BIOS_DEBUG, "Waiting for ICR not to be busy...");
 		if (apic_wait_timeout(1000 /* 1 ms */, 50)) {
 			printk(BIOS_ERR, "timed out. Aborting.\n");
@@ -467,14 +448,15 @@ static int start_aps(struct bus *cpu_bus, int ap_count, atomic_t *num_aps)
 	}
 
 	/* Send INIT IPI to all but self. */
-	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
-	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
-			   LAPIC_DM_INIT);
-	printk(BIOS_DEBUG, "Waiting for 10ms after sending INIT.\n");
-	mdelay(10);
+	lapic_send_ipi(LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT | LAPIC_DM_INIT, 0);
 
-	/* Send 1st SIPI */
-	if ((lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY)) {
+	if (!CONFIG(X86_AMD_INIT_SIPI)) {
+		printk(BIOS_DEBUG, "Waiting for 10ms after sending INIT.\n");
+		mdelay(10);
+	}
+
+	/* Send 1st Startup IPI (SIPI) */
+	if (lapic_busy()) {
 		printk(BIOS_DEBUG, "Waiting for ICR not to be busy...");
 		if (apic_wait_timeout(1000 /* 1 ms */, 50)) {
 			printk(BIOS_ERR, "timed out. Aborting.\n");
@@ -483,9 +465,8 @@ static int start_aps(struct bus *cpu_bus, int ap_count, atomic_t *num_aps)
 		printk(BIOS_DEBUG, "done.\n");
 	}
 
-	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
-	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
-			   LAPIC_DM_STARTUP | sipi_vector);
+	lapic_send_ipi(LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT | LAPIC_DM_STARTUP | sipi_vector,
+		       0);
 	printk(BIOS_DEBUG, "Waiting for 1st SIPI to complete...");
 	if (apic_wait_timeout(10000 /* 10 ms */, 50 /* us */)) {
 		printk(BIOS_ERR, "timed out.\n");
@@ -500,7 +481,7 @@ static int start_aps(struct bus *cpu_bus, int ap_count, atomic_t *num_aps)
 		return 0;
 
 	/* Send 2nd SIPI */
-	if ((lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY)) {
+	if (lapic_busy()) {
 		printk(BIOS_DEBUG, "Waiting for ICR not to be busy...");
 		if (apic_wait_timeout(1000 /* 1 ms */, 50)) {
 			printk(BIOS_ERR, "timed out. Aborting.\n");
@@ -509,9 +490,8 @@ static int start_aps(struct bus *cpu_bus, int ap_count, atomic_t *num_aps)
 		printk(BIOS_DEBUG, "done.\n");
 	}
 
-	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(0));
-	lapic_write_around(LAPIC_ICR, LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT |
-			   LAPIC_DM_STARTUP | sipi_vector);
+	lapic_send_ipi(LAPIC_DEST_ALLBUT | LAPIC_INT_ASSERT | LAPIC_DM_STARTUP | sipi_vector,
+		       0);
 	printk(BIOS_DEBUG, "Waiting for 2nd SIPI to complete...");
 	if (apic_wait_timeout(10000 /* 10 ms */, 50 /* us */)) {
 		printk(BIOS_ERR, "timed out.\n");
@@ -592,7 +572,7 @@ static void init_bsp(struct bus *cpu_bus)
 	info->cpu->name = processor_name;
 
 	if (info->index != 0)
-		printk(BIOS_CRIT, "BSP index(%d) != 0!\n", info->index);
+		printk(BIOS_CRIT, "BSP index(%zd) != 0!\n", info->index);
 
 	/* Track BSP in cpu_map structures. */
 	cpu_add_map_entry(info->index);
@@ -675,12 +655,7 @@ static void mp_initialize_cpu(void)
 
 void smm_initiate_relocation_parallel(void)
 {
-	if (is_x2apic_mode()) {
-		x2apic_send_ipi(LAPIC_DM_SMI | LAPIC_INT_LEVELTRIG, lapicid());
-		return;
-	}
-
-	if ((lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY)) {
+	if (lapic_busy()) {
 		printk(BIOS_DEBUG, "Waiting for ICR not to be busy...");
 		if (apic_wait_timeout(1000 /* 1 ms */, 50)) {
 			printk(BIOS_DEBUG, "timed out. Aborting.\n");
@@ -689,12 +664,15 @@ void smm_initiate_relocation_parallel(void)
 		printk(BIOS_DEBUG, "done.\n");
 	}
 
-	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(lapicid()));
-	lapic_write_around(LAPIC_ICR, LAPIC_INT_ASSERT | LAPIC_DM_SMI);
-	if (apic_wait_timeout(1000 /* 1 ms */, 100 /* us */))
-		printk(BIOS_DEBUG, "SMI Relocation timed out.\n");
-	else
-		printk(BIOS_DEBUG, "Relocation complete.\n");
+	lapic_send_ipi(LAPIC_INT_ASSERT | LAPIC_DM_SMI, lapicid());
+
+	if (lapic_busy()) {
+		if (apic_wait_timeout(1000 /* 1 ms */, 100 /* us */)) {
+			printk(BIOS_DEBUG, "SMI Relocation timed out.\n");
+			return;
+		}
+	}
+	printk(BIOS_DEBUG, "Relocation complete.\n");
 }
 
 DECLARE_SPIN_LOCK(smm_relocation_lock);
@@ -736,6 +714,11 @@ static void smm_enable(void)
 		mp_state.do_smm = 1;
 }
 
+/*
+ * This code is built as part of ramstage, but it actually runs in SMM. This
+ * means that ENV_SMM is 0, but we are actually executing in the environment
+ * setup by the smm_stub.
+ */
 static void asmlinkage smm_do_relocation(void *arg)
 {
 	const struct smm_module_params *p;
@@ -1019,7 +1002,7 @@ int mp_run_on_all_aps(void (*func)(void *), void *arg, long expire_us, bool run_
 	int ap_index, bsp_index;
 
 	if (run_parallel)
-		return mp_run_on_aps(func, arg, 0, expire_us);
+		return mp_run_on_aps(func, arg, MP_RUN_ON_ALL_CPUS, expire_us);
 
 	bsp_index = cpu_index();
 

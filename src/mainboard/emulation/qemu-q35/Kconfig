@@ -4,7 +4,6 @@ config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select CPU_QEMU_X86
 	select SOUTHBRIDGE_INTEL_I82801IX
-	select IOAPIC_INTERRUPTS_ON_APIC_SERIAL_BUS
 	select HAVE_CMOS_DEFAULT
 	select HAVE_OPTION_TABLE
 #	select HAVE_PIRQ_TABLE
@@ -29,7 +28,6 @@ config VBOOT
 	select GBB_FLAG_DISABLE_FWMP
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa-16M.fmd" if VBOOT_SLOTS_RW_A && !VBOOT_SLOTS_RW_AB
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab-16M.fmd" if VBOOT_SLOTS_RW_AB
 
@@ -54,11 +52,9 @@ config VBOOT_VBNV_OFFSET
 	default 0x2c
 
 config MAINBOARD_DIR
-	string
 	default "emulation/qemu-q35"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "QEMU x86 q35/ich9"
 
 config MMCONF_BASE_ADDRESS

@@ -15,10 +15,10 @@
 
 #include "chip.h"
 
-/* This table is for the initial conversion of all SCL pins to input with no pull. */
+/* Table to switch SCL pins to outputs to initially reset the I2C peripherals */
 static const struct soc_i2c_scl_pin i2c_scl_pins[] = {
-	{ PAD_GPI(I2C2_SCL_PIN, PULL_NONE), GPIO_I2C2_SCL },
-	{ PAD_GPI(I2C3_SCL_PIN, PULL_NONE), GPIO_I2C3_SCL },
+	I2C_RESET_SCL_PIN(I2C2_SCL_PIN, GPIO_I2C2_SCL),
+	I2C_RESET_SCL_PIN(I2C3_SCL_PIN, GPIO_I2C3_SCL),
 	/* I2C4 is a peripheral device only */
 };
 
@@ -75,6 +75,7 @@ void fch_early_init(void)
 	pm_set_power_failure_state();
 	fch_print_pmxc0_status();
 	i2c_soc_early_init();
+	show_spi_speeds_and_modes();
 
 	if (CONFIG(DISABLE_SPI_FLASH_ROM_SHARING))
 		lpc_disable_spi_rom_sharing();

@@ -11,6 +11,7 @@ $(info APCB sources not found.  Skipping APCB.)
 endif
 
 romstage-y += port_descriptors.c
+romstage-y += romstage.c
 
 ramstage-y += mainboard.c
 ramstage-y += ec.c
@@ -24,4 +25,4 @@ subdirs-y += variants/$(VARIANT_DIR)
 CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)/variants/baseboard/include
 CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)/variants/$(VARIANT_DIR)/include
 
-LIB_SPD_DEPS = $(foreach f, $(SPD_SOURCES), src/mainboard/$(MAINBOARDDIR)/spd/$(f))
+LIB_SPD_DEPS = $(SPD_SOURCES)

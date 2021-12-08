@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
-#include <amdblocks/apob_cache.h>
 #include <amdblocks/memmap.h>
 #include <amdblocks/pmlib.h>
 #include <arch/cpu.h>
@@ -9,11 +8,15 @@
 #include <console/console.h>
 #include <fsp/api.h>
 #include <program_loading.h>
+#include <timestamp.h>
 #include <types.h>
 
 asmlinkage void car_stage_entry(void)
 {
+	timestamp_add_now(TS_START_ROMSTAGE);
+
 	post_code(0x40);
+
 	console_init();
 
 	post_code(0x42);
@@ -23,7 +26,6 @@ asmlinkage void car_stage_entry(void)
 
 	post_code(0x43);
 	fsp_memory_init(acpi_is_wakeup_s3());
-	soc_update_apob_cache();
 
 	memmap_stash_early_dram_usage();
 

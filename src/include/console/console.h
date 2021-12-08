@@ -3,10 +3,9 @@
 #ifndef CONSOLE_CONSOLE_H_
 #define CONSOLE_CONSOLE_H_
 
-#include <stdint.h>
-#include <arch/cpu.h>
-#include <console/post_codes.h>
+#include <commonlib/console/post_codes.h>
 #include <console/vtxprintf.h>
+#include <stdint.h>
 
 /* console.h is supposed to provide the log levels defined in here: */
 #include <commonlib/loglevel.h>
@@ -48,7 +47,7 @@ static inline int get_console_loglevel(void)
 	 ENV_LIBAGESA || (ENV_SMM && CONFIG(DEBUG_SMI)))
 
 #if __CONSOLE_ENABLE__
-asmlinkage void console_init(void);
+void console_init(void);
 int console_log_level(int msg_level);
 
 int printk(int msg_level, const char *fmt, ...) __attribute__((format(printf, 2, 3)));

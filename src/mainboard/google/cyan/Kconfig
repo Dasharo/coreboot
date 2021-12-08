@@ -33,7 +33,6 @@ config DISPLAY_SPD_DATA
 	  When enabled displays the memory configuration data.
 
 config MAINBOARD_DIR
-	string
 	default "google/cyan"
 
 config MAINBOARD_FAMILY
@@ -42,7 +41,6 @@ config MAINBOARD_FAMILY
 	default ""
 
 config VARIANT_DIR
-	string
 	default "banon" if BOARD_GOOGLE_BANON
 	default "celes" if BOARD_GOOGLE_CELES
 	default "cyan" if BOARD_GOOGLE_CYAN
@@ -56,7 +54,6 @@ config VARIANT_DIR
 	default "wizpig" if BOARD_GOOGLE_WIZPIG
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Banon" if BOARD_GOOGLE_BANON
 	default "Celes" if BOARD_GOOGLE_CELES
 	default "Cyan" if BOARD_GOOGLE_CYAN
@@ -70,11 +67,9 @@ config MAINBOARD_PART_NUMBER
 	default "Wizpig" if BOARD_GOOGLE_WIZPIG
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 
 config MAINBOARD_SMBIOS_MANUFACTURER

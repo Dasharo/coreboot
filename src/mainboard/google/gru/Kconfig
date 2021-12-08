@@ -53,7 +53,6 @@ config VBOOT
 	select VBOOT_VBNV_FLASH
 
 config MAINBOARD_DIR
-	string
 	default "google/gru"
 
 config EC_GOOGLE_CHROMEEC_SPI_BUS
@@ -86,11 +85,9 @@ config CONSOLE_SERIAL_UART_ADDRESS
 #### Update below when adding a new derivative board. ####
 ##########################################################
 config DEVICETREE
-	string
 	default "devicetree.scarlet.cb" if BOARD_GOOGLE_SCARLET
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Scarlet" if BOARD_GOOGLE_SCARLET
 	default "Bob" if BOARD_GOOGLE_BOB
 	default "Gru" if BOARD_GOOGLE_GRU

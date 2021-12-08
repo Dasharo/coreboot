@@ -13,12 +13,10 @@ config BOARD_PURISM_BASEBOARD_LIBREM_BDW
 if BOARD_PURISM_BASEBOARD_LIBREM_BDW
 
 config VARIANT_DIR
-	string
 	default "librem13v1" if BOARD_PURISM_LIBREM13_V1
 	default "librem15v2" if BOARD_PURISM_LIBREM15_V2
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config DRIVERS_UART_8250IO
@@ -34,11 +32,9 @@ config PCIEXP_AER
 	def_bool n
 
 config MAINBOARD_DIR
-	string
 	default "purism/librem_bdw"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Librem 13 v1" if BOARD_PURISM_LIBREM13_V1
 	default "Librem 15 v2" if BOARD_PURISM_LIBREM15_V2
 

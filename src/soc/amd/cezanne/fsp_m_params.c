@@ -8,9 +8,14 @@
 #include <device/device.h>
 #include <fsp/api.h>
 #include <soc/platform_descriptors.h>
+#include <soc/pci_devs.h>
 #include <string.h>
 #include <types.h>
 #include "chip.h"
+
+__weak void mb_pre_fspm(void)
+{
+}
 
 static void fill_dxio_descriptors(FSP_M_CONFIG *mcfg,
 			const fsp_dxio_descriptor *descs, size_t num)
@@ -67,7 +72,6 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 
 	mcfg->pci_express_base_addr = CONFIG_MMCONF_BASE_ADDRESS;
 	mcfg->tseg_size = CONFIG_SMM_TSEG_SIZE;
-	mcfg->bert_size = CONFIG_ACPI_BERT_SIZE;
 	mcfg->serial_port_base = uart_platform_base(CONFIG_UART_FOR_CONSOLE);
 	mcfg->serial_port_use_mmio = CONFIG(DRIVERS_UART_8250MEM);
 	mcfg->serial_port_baudrate = get_uart_baudrate();
@@ -125,6 +129,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 
 	/* S0i3 enable */
 	mcfg->s0i3_enable = config->s0ix_enable;
+	mcfg->iommu_support = is_devfn_enabled(IOMMU_DEVFN);
 
 	/* voltage regulator telemetry settings */
 	mcfg->telemetry_vddcrvddfull_scale_current =
@@ -136,6 +141,23 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	mcfg->telemetry_vddcrsocOffset =
 		config->telemetry_vddcrsocoffset;
 
+	/* PCIe power vs. speed */
+	mcfg->pspp_policy = config->pspp_policy;
+
+	mcfg->enable_nb_azalia = is_dev_enabled(DEV_PTR(gfx_hda));
+	mcfg->hda_enable = is_dev_enabled(DEV_PTR(hda));
+	mcfg->sata_enable = is_dev_enabled(DEV_PTR(sata_0)) || is_dev_enabled(DEV_PTR(sata_1));
+
+	if (config->usb_phy_custom) {
+		mcfg->usb_phy = (struct usb_phy_config *)&config->usb_phy;
+		mcfg->usb_phy->Version_Major = 0xd;
+		mcfg->usb_phy->Version_Minor = 0x6;
+		mcfg->usb_phy->TableLength = 100;
+	}
+	else
+		mcfg->usb_phy = NULL;
+
 	fsp_fill_pcie_ddi_descriptors(mcfg);
 	fsp_assign_ioapic_upds(mcfg);
+	mb_pre_fspm();
 }

@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+/* Generated in SSDT */
+External (\_SB.PCI0.LPCB.EC0.SFCV, MethodObj)
+
 Device (EC0)
 {
 	Name (_HID, EisaId ("PNP0C09") /* Embedded Controller Device */)  // _HID: Hardware ID
@@ -33,23 +36,49 @@ Device (EC0)
 	{
 		Debug = Concatenate("EC: _REG", Concatenate(ToHexString(Arg0), Concatenate(" ", ToHexString(Arg1))))
 		If (((Arg0 == 0x03) && (Arg1 == One))) {
-			// Enable hardware touchpad lock, airplane mode, and keyboard backlight keys
-			ECOS = 1
+			// Enable hardware touchpad lock and keyboard backlight keys
+			// Enable software airplane mode key
+			ECOS = 2
 
 			// Enable software display brightness keys
 			WINF = 1
 
+			// Enable camera toggle hotkey
+			OEM3 = OEM3 | 4
+
 			// Set current AC state
-			^^^^AC.ACFG = ADP
+			\_SB.AC.ACFG = ADP
 			// Update battery information and status
-			^^^^BAT0.UPBI()
-			^^^^BAT0.UPBS()
+			\_SB.BAT0.UPBI ()
+			\_SB.BAT0.UPBS ()
 
 			PNOT ()
+
+			// Initialize UCSI
+			^UCSI.INIT ()
+
+			// Apply custom fan curve
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 
 			// EC is now available
 			ECOK = Arg1
 		}
+	}
+
+	Method (UPB, 0, Serialized) {
+		Debug = "EC: UPB"
+		// Set current AC state
+		\_SB.AC.ACFG = ADP
+
+		// Update battery information and status
+		\_SB.BAT0.UPBI ()
+		\_SB.BAT0.UPBS ()
+
+		// Notify of changes
+		Notify(\_SB.AC, Zero)
+		Notify(\_SB.BAT0, Zero)
+
+		Sleep (1000)
 	}
 
 	Method (PTS, 1, Serialized) {
@@ -63,18 +92,8 @@ Device (EC0)
 	Method (WAK, 1, Serialized) {
 		Debug = Concatenate("EC: WAK: ", ToHexString(Arg0))
 		If (ECOK) {
-			// Set current AC state
-			^^^^AC.ACFG = ADP
-
-			// Update battery information and status
-			^^^^BAT0.UPBI()
-			^^^^BAT0.UPBS()
-
-			// Notify of changes
-			Notify(^^^^AC, Zero)
-			Notify(^^^^BAT0, Zero)
-
-			Sleep (1000)
+			UPB ()
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 		}
 	}
 
@@ -134,6 +153,48 @@ Device (EC0)
 		}
 	}
 
+	Method (S0IX, 1, Serialized) // S0IX Entry/Exit
+	{
+		If (Arg0) {
+			Debug = "EC: S0IX Enter"
+		} Else {
+			Debug = "EC: S0IX Exit"
+			UPB ()
+			\_SB.PCI0.LPCB.EC0.SFCV ()
+		}
+
+		FDAT = 0xC2
+		FBUF = Arg0
+		FCMD = 0xD2
+		Local0 = 0xFF
+		Local1 = 0xFF
+		While (Local0 != Arg0 && Local1 > Zero)
+		{
+			Sleep(50)
+			FDAT = 0xC3
+			FCMD = 0xD2
+			Local3 = FBUF
+			If (Local3 == Zero || Local3 == One)
+			{
+				Local0 = Local3
+			}
+			Local1 = Local1 - 1
+		}
+	}
+
+	Method (DGPM, 1, Serialized) // Handle dGPU power state change
+	{
+		If (ECOK) {
+			If (Arg0 == 0x0) {
+				AIRP &= 0x7F
+				Debug = "EC: DGPU Off"
+			} ElseIf (Arg0 == 0x1) {
+				AIRP |= 0x80
+				Debug = "EC: DGPU On"
+			}
+		}
+	}
+
 	Method (_Q0A, 0, NotSerialized) // Touchpad Toggle
 	{
 		Debug = "EC: Touchpad Toggle"
@@ -167,15 +228,17 @@ Device (EC0)
 	Method (_Q10, 0, NotSerialized) // Switch Video Mode
 	{
 		Debug = "EC: Switch Video Mode"
+		If (CondRefOf (\_SB.PCI0.GFX0)) {
+			Notify (\_SB.PCI0.GFX0, 0x80)
+		}
 	}
 
 	Method (_Q11, 0, NotSerialized) // Brightness Down
 	{
 		Debug = "EC: Brightness Down"
 
-		If (CondRefOf (\_SB.HIDD.HPEM))
-		{
-			\_SB.HIDD.HPEM (20)
+		If (CondRefOf (\_SB.PCI0.GFX0.LCD0)) {
+			Notify (\_SB.PCI0.GFX0.LCD0, 0x87)
 		}
 	}
 
@@ -183,27 +246,23 @@ Device (EC0)
 	{
 		Debug = "EC: Brightness Up"
 
-		If (CondRefOf (\_SB.HIDD.HPEM))
-		{
-			\_SB.HIDD.HPEM (19)
+		If (CondRefOf (\_SB.PCI0.GFX0.LCD0)) {
+			Notify (\_SB.PCI0.GFX0.LCD0, 0x86)
 		}
 	}
 
 	Method (_Q13, 0, NotSerialized) // Camera Toggle
 	{
 		Debug = "EC: Camera Toggle"
-		Local0 = I2ER (0x1604)
-		Local0 = Local0 ^ 0x02
-		I2EW (0x1604, Local0)
 	}
 
 	Method (_Q14, 0, NotSerialized) // Airplane Mode
 	{
 		Debug = "EC: Airplane Mode"
 
-		If (CondRefOf (\_SB.HIDD.HPEM))
+		If (CondRefOf (^HIDD.HPEM))
 		{
-			\_SB.HIDD.HPEM (8)
+			^HIDD.HPEM (8)
 		}
 	}
 
@@ -216,28 +275,43 @@ Device (EC0)
 	Method (_Q16, 0, NotSerialized) // AC Detect
 	{
 		Debug = "EC: AC Detect"
-		^^^^AC.ACFG = ADP
+
+		If (MSFG)
+		{
+			FDAT = Zero
+			FBUF = 0xC1
+			FCMD = 0xD2
+			If ((FBUF & 0x80))
+			{
+				FBUF = Zero
+				Return (Zero)
+			}
+		}
+
+		\_SB.AC.ACFG = ADP
 		Notify (AC, 0x80) // Status Change
 		Sleep (0x01F4)
 		If (BAT0)
 		{
-			Notify (^^^^BAT0, 0x81) // Information Change
+			Notify (\_SB.BAT0, 0x81) // Information Change
 			Sleep (0x32)
-			Notify (^^^^BAT0, 0x80) // Status Change
+			Notify (\_SB.BAT0, 0x80) // Status Change
 			Sleep (0x32)
 		}
+
+		Return (Zero)
 	}
 
 	Method (_Q17, 0, NotSerialized)  // BAT0 Update
 	{
 		Debug = "EC: BAT0 Update (17)"
-		Notify (^^^^BAT0, 0x81) // Information Change
+		Notify (\_SB.BAT0, 0x81) // Information Change
 	}
 
 	Method (_Q19, 0, NotSerialized)  // BAT0 Update
 	{
 		Debug = "EC: BAT0 Update (19)"
-		Notify (^^^^BAT0, 0x81) // Information Change
+		Notify (\_SB.BAT0, 0x81) // Information Change
 	}
 
 	Method (_Q1B, 0, NotSerialized) // Lid Close
@@ -274,8 +348,44 @@ Device (EC0)
 			Debug = "EC: Color Keyboard Up"
 		} ElseIf (Local0 == 0x80) {
 			Debug = "EC: Color Keyboard Color Change"
+		} ElseIf (Local0 == 0xF3) {
+			Debug = "EC: Fan Cooling Mode Enable"
+		} ElseIf (Local0 == 0x6C) {
+			Debug = "EC: Fan Cooling Mode Disable"
+			\_SB.PCI0.LPCB.EC0.SFCV ()
 		} Else {
 			Debug = Concatenate("EC: Other: ", ToHexString(Local0))
 		}
 	}
+
+	Method (_Q62, 0, NotSerialized)  // UCSI event
+	{
+		Debug = "EC: UCSI Event"
+		^UCSI.MGI0 = MGI0
+		^UCSI.MGI1 = MGI1
+		^UCSI.MGI2 = MGI2
+		^UCSI.MGI3 = MGI3
+		^UCSI.MGI4 = MGI4
+		^UCSI.MGI5 = MGI5
+		^UCSI.MGI6 = MGI6
+		^UCSI.MGI7 = MGI7
+		^UCSI.MGI8 = MGI8
+		^UCSI.MGI9 = MGI9
+		^UCSI.MGIA = MGIA
+		^UCSI.MGIB = MGIB
+		^UCSI.MGIC = MGIC
+		^UCSI.MGID = MGID
+		^UCSI.MGIE = MGIE
+		^UCSI.MGIF = MGIF
+		^UCSI.CCI0 = CCI0
+		^UCSI.CCI1 = CCI1
+		^UCSI.CCI2 = CCI2
+		^UCSI.CCI3 = CCI3
+		CCI0 = Zero
+		CCI3 = Zero
+		Notify (^UCSI, 0x80)
+	}
+
+	#include "hid.asl"
+	#include "ucsi.asl"
 }
