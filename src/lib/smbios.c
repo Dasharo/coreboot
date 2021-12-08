@@ -390,8 +390,8 @@ static int smbios_write_type0(unsigned long *current, int handle)
 	else
 		t->extended_bios_rom_size = DIV_ROUND_UP(CONFIG_ROM_SIZE, MiB);
 
-	t->system_bios_major_release = coreboot_major_revision;
-	t->system_bios_minor_release = coreboot_minor_revision;
+	t->system_bios_major_release = dasharo_major_revision;
+	t->system_bios_minor_release = dasharo_minor_revision;
 
 	smbios_ec_revision(&t->ec_major_release, &t->ec_minor_release);
 
