@@ -277,59 +277,15 @@ static int create_smbios_type17_for_dimm(struct dimm_info *dimm,
 	return smbios_full_table_len(&t->header, t->eos);
 }
 
-#define VERSION_VPD "firmware_version"
-static const char *vpd_get_bios_version(void)
+static const char *get_bios_framework_string(void)
 {
-	int size;
-	const char *s;
-	char *version;
+	if (CONFIG(PAYLOAD_SEABIOS))
+		return "coreboot+SeaBIOS";
 
-	s = vpd_find(VERSION_VPD, &size, VPD_RO);
-	if (!s) {
-		printk(BIOS_ERR, "Find version from VPD %s failed\n", VERSION_VPD);
-		return NULL;
-	}
+	if (CONFIG(PAYLOAD_TIANOCORE))
+		return "coreboot+UEFI";
 
-	version = malloc(size + 1);
-	if (!version) {
-		printk(BIOS_ERR, "Failed to malloc %d bytes for VPD version\n", size + 1);
-		return NULL;
-	}
-	memcpy(version, s, size);
-	version[size] = '\0';
-	printk(BIOS_DEBUG, "Firmware version %s from VPD %s\n", version, VERSION_VPD);
-	return version;
-}
-
-static const char *get_bios_version(void)
-{
-	const char *s;
-
-#define SPACES \
-	"                                                                  "
-
-	if (CONFIG(CHROMEOS))
-		return SPACES;
-
-	if (CONFIG(VPD_SMBIOS_VERSION)) {
-		s = vpd_get_bios_version();
-		if (s != NULL)
-			return s;
-	}
-
-	s = smbios_mainboard_bios_version();
-	if (s != NULL)
-		return s;
-
-	if (strlen(CONFIG_LOCALVERSION) != 0) {
-		printk(BIOS_DEBUG, "BIOS version set to CONFIG_LOCALVERSION: '%s'\n",
-			CONFIG_LOCALVERSION);
-		return CONFIG_LOCALVERSION;
-	}
-
-	printk(BIOS_DEBUG, "SMBIOS firmware version is set to coreboot_version: '%s'\n",
-		coreboot_version);
-	return coreboot_version;
+	return "coreboot";
 }
 
 static int smbios_write_type0(unsigned long *current, int handle)
@@ -337,8 +293,14 @@ static int smbios_write_type0(unsigned long *current, int handle)
 	struct smbios_type0 *t = smbios_carve_table(*current, SMBIOS_BIOS_INFORMATION,
 						    sizeof(*t), handle);
 
-	t->vendor = smbios_add_string(t->eos, "coreboot");
+	char bversion[100];
+
+	t->vendor = smbios_add_string(t->eos, "3mdeb Embedded Systems Consulting");
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
+
+	snprintf(bversion, sizeof(bversion), "Dasharo (%s) %s",
+		get_bios_framework_string(), dasharo_version);
+	t->bios_version = smbios_add_string(t->eos, bversion);
 
 	if (CONFIG(CHROMEOS_NVS)) {
 		uintptr_t version_address = (uintptr_t)t->eos;
@@ -346,7 +308,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 		version_address += (u32)smbios_string_table_len(t->eos) - 1;
 		smbios_type0_bios_version(version_address);
 	}
-	t->bios_version = smbios_add_string(t->eos, get_bios_version());
+
 	uint32_t rom_size = CONFIG_ROM_SIZE;
 	rom_size = MIN(CONFIG_ROM_SIZE, 16 * MiB);
 	t->bios_rom_size = (rom_size / 65535) - 1;
