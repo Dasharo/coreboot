@@ -80,10 +80,10 @@ static void sb700_lpc_read_resources(struct device *dev)
 	 *
 	 * There are two ranges outside of 0-0x1000 controlled by PCI reg 0x4A:
 	 * 0x4700-0x470B (bit 6) and 0xFD60-0xFD6F (bit 7). To keep allocation
-	 * simpler, die() if any of those is enabled.
+	 * simpler, disable them unconditionally.
 	 */
-	if (pci_read_config8(dev, 0x4a) & ((1 << 6) | (1 << 7)))
-		die("IO ports outside of 0-0x1000 range enabled in LPC ISA bridge\n");
+	pci_write_config8(dev, 0x4a,
+	                  pci_read_config8(dev, 0x4a) & ~((1 << 6) | (1 << 7)));
 
 	res = new_resource(dev, IOINDEX_SUBTRACTIVE(0, 0));
 	res->base = 0;
