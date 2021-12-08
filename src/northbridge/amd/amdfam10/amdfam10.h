@@ -1005,13 +1005,10 @@ void southbridge_ht_init(void);
 void southbridge_early_setup(void);
 void southbridge_before_pci_init(void);
 
-<<<<<<< HEAD
-=======
 struct amdfam10_sysconf_t *get_sysconf(void);
 void set_pirq_router_bus(u8 bus);
 u8 get_pirq_router_bus(void);
 
->>>>>>> origin/asus_kgpe-d16/ramstage_southbridge
 BOOL AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list);
 
 unsigned long northbridge_write_acpi_tables(const struct device *device,
