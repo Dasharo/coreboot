@@ -214,7 +214,7 @@ static void dqs_align_turn_on_refresh(int mcs_i, int mca_i)
 	*/
 	/* See note in seq_reset() in 13.8. This may not be necessary. */
 	mca_and_or(id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM0_P0, ~PPC_BITMASK(60, 63),
-	           PPC_SHIFT(9, TRFC_CYCLES));
+	           PPC_PLACE(9, TRFC_CYCLES, TRFC_CYCLES_LEN));
 
 	/* IOM0.DDRPHY_PC_INIT_CAL_CONFIG1_P0
 	    // > Hard coded settings provided by Ryan King for this workaround
@@ -228,8 +228,10 @@ static void dqs_align_turn_on_refresh(int mcs_i, int mca_i)
 	*/
 	mca_and_or(id, mca_i, DDRPHY_PC_INIT_CAL_CONFIG1_P0,
 	           ~(PPC_BITMASK(48, 55) | PPC_BITMASK(57, 63)),
-	           PPC_SHIFT(0xF, REFRESH_COUNT) | PPC_SHIFT(3, REFRESH_CONTROL) |
-	           PPC_BIT(REFRESH_ALL_RANKS) | PPC_SHIFT(0x13, REFRESH_INTERVAL));
+	           PPC_PLACE(0xF, REFRESH_COUNT, REFRESH_COUNT_LEN) |
+	           PPC_PLACE(0x3, REFRESH_CONTROL, REFRESH_CONTROL_LEN) |
+	           PPC_BIT(REFRESH_ALL_RANKS) |
+	           PPC_PLACE(0x13, REFRESH_INTERVAL, REFRESH_INTERVAL_LEN));
 }
 
 static void wr_level_pre(int mcs_i, int mca_i, int rp,
@@ -410,8 +412,8 @@ static void wr_level_post(int mcs_i, int mca_i, int rp,
 		/* 2 DIMMs -> odd vpd_idx */
 		uint64_t val = 0;
 		if (vpd_idx % 2)
-			val = PPC_SHIFT(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][0]), ODT_RD_VALUES0) |
-				  PPC_SHIFT(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][1]), ODT_RD_VALUES1);
+			val = PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][0]), ODT_RD_VALUES0, ODT_RD_VALUES0_LEN)
+			    | PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][1]), ODT_RD_VALUES1, ODT_RD_VALUES1_LEN);
 
 		mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_RD_CONFIG1_P0, 0, val);
 
@@ -423,8 +425,8 @@ static void wr_level_post(int mcs_i, int mca_i, int rp,
 			  [56-59] ODT_WR_VALUES1 = F(ATTR_MSS_VPD_MT_ODT_WR[index(MCA)][0][1])
 		*/
 		mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, 0,
-				   PPC_SHIFT(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][0]), ODT_RD_VALUES0) |
-				   PPC_SHIFT(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][1]), ODT_RD_VALUES1));
+			   PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][0]), ODT_RD_VALUES0, ODT_RD_VALUES0_LEN) |
+			   PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][1]), ODT_RD_VALUES1, ODT_RD_VALUES1_LEN));
 		#undef F
 
 		/* MR2 =               // redo the rest of the bits
@@ -659,7 +661,7 @@ static void read_ctr_pre(int mcs_i, int mca_i, int rp,
 			[48-63] VREF_CAL_EN = 0xffff    // We already did this in reset_rd_vref() in 13.8
 		*/
 		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_EN_P0_0, 0,
-		              PPC_SHIFT(0xFFFF, 63));
+		              PPC_PLACE(0xFFFF, 48, 16));
 	}
 
 	/* This also was part of main

@@ -545,7 +545,7 @@ IFWITOOL:=$(objutil)/cbfstool/ifwitool
 IFITTOOL:=$(objutil)/cbfstool/ifittool
 AMDCOMPRESS:=$(objutil)/cbfstool/amdcompress
 ECCTOOL:=$(objutil)/ffs/ecc/ecc
-SBSIGNTOOLS:=$(objutil)/sb-signing-utils
+SBSIGNTOOLS:=$(objutil)/sb-signing-utils/create-container
 
 $(obj)/cbfstool: $(CBFSTOOL)
 	cp $< $@
@@ -1162,6 +1162,8 @@ add_intermediate = \
 	$(1): $(obj)/coreboot.pre $(2) | $(INTERMEDIATE) \
 	$(eval INTERMEDIATE+=$(1)) $(eval PHONY+=$(1))
 
+KEYLOC?=/tmp/keys
+
 $(obj)/coreboot.rom: $(obj)/coreboot.pre $(RAMSTAGE) $(CBFSTOOL) $(ECCTOOL) $(SBSIGNTOOLS) $$(INTERMEDIATE)
 	@printf "    CBFS       $(subst $(obj)/,,$(@))\n"
 # The full ROM may be larger than the CBFS part, so create an empty
@@ -1185,7 +1187,8 @@ endif # CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE
 ifeq ($(CONFIG_ARCH_PPC64),y)
 	cp -r $(top)/3rdparty/sb-signing-utils/test/keys /tmp
 	@printf "    SBSIGN  $(subst $(obj)/,,$(@))\n"
-	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$@ $(top)/$@.signed 2> /dev/null
+	$(SBSIGNTOOLS) -a $(KEYLOC)/hw_key_a.key -b $(KEYLOC)/hw_key_b.key -c $(KEYLOC)/hw_key_c.key \
+	               -p $(KEYLOC)/hw_key_a.key --payload $(top)/$@ --imagefile $(top)/$@.signed
 	@printf "    ECC     $(subst $(obj)/,,$(@))\n"
 	$(ECCTOOL) --inject $(top)/$@.signed --output $(top)/$@.signed.ecc --p8
 ifeq ($(CONFIG_BOOTBLOCK_IN_SEEPROM),y)
@@ -1193,7 +1196,9 @@ ifeq ($(CONFIG_BOOTBLOCK_IN_SEEPROM),y)
 	$(ECCTOOL) --inject $(top)/$(objcbfs)/bootblock.bin --output $(obj)/bootblock.ecc --p8
 else
 	@printf "    SBSIGN  bootblock\n"
-	cd $(SBSIGNTOOLS) && ./sign-with-local-keys.sh $(top)/$(objcbfs)/bootblock.bin $(top)/$(obj)/bootblock.signed 2> /dev/null
+	$(SBSIGNTOOLS) -a $(KEYLOC)/hw_key_a.key -b $(KEYLOC)/hw_key_b.key -c $(KEYLOC)/hw_key_c.key \
+	               -p $(KEYLOC)/hw_key_a.key --payload $(top)/$(objcbfs)/bootblock.bin \
+	               --imagefile $(top)/$(obj)/bootblock.signed
 	$(ECCTOOL) --inject $(top)/$@ --output $(top)/$@.ecc --p8
 	@printf "    ECC     bootblock\n"
 	dd  if=$(obj)/bootblock.signed  of=$(obj)/bootblock.signed.pad  ibs=25486 conv=sync 2> /dev/null

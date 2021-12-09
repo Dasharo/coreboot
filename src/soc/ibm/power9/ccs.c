@@ -44,14 +44,14 @@ void ccs_add_instruction(chiplet_id_t id, mrs_cmd_t mrs, uint8_t csn,
 	 * [23]    A14
 	 */
 	uint64_t mrs64 = (reverse_bits(mrs) & PPC_BITMASK(0, 13)) | /* A0-A13 */
-	                 PPC_SHIFT(mrs & (1<<14), 23 + 14) |        /* A14 */
-	                 PPC_SHIFT(mrs & (1<<15), 22 + 15) |        /* A15 */
-	                 PPC_SHIFT(mrs & (1<<16), 21 + 16) |        /* A16 */
-	                 PPC_SHIFT(mrs & (1<<17), 14 + 17) |        /* A17 */
-	                 PPC_SHIFT(mrs & (1<<20), 17 + 20) |        /* BA0 */
-	                 PPC_SHIFT(mrs & (1<<21), 18 + 21) |        /* BA1 */
-	                 PPC_SHIFT(mrs & (1<<22), 19 + 22) |        /* BG0 */
-	                 PPC_SHIFT(mrs & (1<<23), 15 + 23);         /* BA1 */
+	                 PPC_PLACE(mrs >> 14, 23, 1) |              /* A14 */
+	                 PPC_PLACE(mrs >> 15, 22, 1) |              /* A15 */
+	                 PPC_PLACE(mrs >> 16, 21, 1) |              /* A16 */
+	                 PPC_PLACE(mrs >> 17, 14, 1) |              /* A17 */
+	                 PPC_PLACE(mrs >> 20, 17, 1) |              /* BA0 */
+	                 PPC_PLACE(mrs >> 21, 18, 1) |              /* BA1 */
+	                 PPC_PLACE(mrs >> 22, 19, 1) |              /* BG0 */
+	                 PPC_PLACE(mrs >> 23, 15, 1);               /* BA1 */
 
 	/* MC01.MCBIST.CCS.CCS_INST_ARR0_n
 	      [all]   0
@@ -66,9 +66,12 @@ void ccs_add_instruction(chiplet_id_t id, mrs_cmd_t mrs, uint8_t csn,
 	*/
 	write_scom_for_chiplet(id, CCS_INST_ARR0_00 + instr,
 	                       mrs64 | PPC_BIT(CCS_INST_ARR0_00_CCS_DDR_ACTN) |
-	                       PPC_SHIFT(cke & 0xF, CCS_INST_ARR0_00_CCS_DDR_CKE) |
-	                       PPC_SHIFT((csn >> 2) & 3, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1) |
-	                       PPC_SHIFT(csn & 3, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3));
+	                       PPC_PLACE(cke, CCS_INST_ARR0_00_CCS_DDR_CKE,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CKE_LEN) |
+	                       PPC_PLACE(csn >> 2, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_0_1_LEN) |
+	                       PPC_PLACE(csn, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_2_3_LEN));
 
 	/* MC01.MCBIST.CCS.CCS_INST_ARR1_n
 	      [all]   0
@@ -76,8 +79,10 @@ void ccs_add_instruction(chiplet_id_t id, mrs_cmd_t mrs, uint8_t csn,
 	      [59-63] CCS_INST_ARR1_00_GOTO_CMD = instr + 1
 	*/
 	write_scom_for_chiplet(id, CCS_INST_ARR1_00 + instr,
-	                       PPC_SHIFT(idles, CCS_INST_ARR1_00_IDLES) |
-	                       PPC_SHIFT(instr + 1, CCS_INST_ARR1_00_GOTO_CMD));
+	                       PPC_PLACE(idles, CCS_INST_ARR1_00_IDLES,
+	                                 CCS_INST_ARR1_00_IDLES_LEN) |
+	                       PPC_PLACE(instr + 1, CCS_INST_ARR1_00_GOTO_CMD,
+	                                 CCS_INST_ARR1_00_GOTO_CMD_LEN));
 
 	/*
 	 * For the last instruction in the stream we could decrease it by one (final
@@ -186,9 +191,12 @@ void ccs_execute(chiplet_id_t id, int mca_i)
 	*/
 	write_scom_for_chiplet(id, CCS_INST_ARR0_00 + instr,
 	                       PPC_BIT(CCS_INST_ARR0_00_CCS_DDR_ACTN) |
-	                       PPC_SHIFT(0xF, CCS_INST_ARR0_00_CCS_DDR_CKE) |
-	                       PPC_SHIFT(3, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1) |
-	                       PPC_SHIFT(3, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3));
+	                       PPC_PLACE(0xF, CCS_INST_ARR0_00_CCS_DDR_CKE,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CKE_LEN) |
+	                       PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_0_1_LEN) |
+	                       PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_2_3_LEN));
 	write_scom_for_chiplet(id, CCS_INST_ARR1_00 + instr,
 	                       PPC_BIT(CCS_INST_ARR1_00_CCS_END));
 
@@ -316,10 +324,14 @@ void ccs_phy_hw_step(chiplet_id_t id, int mca_i, int rp, enum cal_config conf,
 		[56-59] CCS_INST_ARR0_00_CCS_DDR_CAL_TYPE = 0xc
 	*/
 	write_scom_for_chiplet(id, CCS_INST_ARR0_00 + instr,
-	                       PPC_SHIFT(0xF, CCS_INST_ARR0_00_CCS_DDR_CKE) |
-	                       PPC_SHIFT(3, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1) |
-	                       PPC_SHIFT(3, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3) |
-	                       PPC_SHIFT(0xC, CCS_INST_ARR0_00_CCS_DDR_CAL_TYPE));
+	                       PPC_PLACE(0xF, CCS_INST_ARR0_00_CCS_DDR_CKE,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CKE_LEN) |
+	                       PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_0_1_LEN) |
+	                       PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_2_3_LEN) |
+	                       PPC_PLACE(0xC, CCS_INST_ARR0_00_CCS_DDR_CAL_TYPE,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CAL_TYPE_LEN));
 
 	/* MC01.MCBIST.CCS.CCS_INST_ARR1_n
 		[all]   0
@@ -328,9 +340,11 @@ void ccs_phy_hw_step(chiplet_id_t id, int mca_i, int rp, enum cal_config conf,
 		[59-63] CCS_INST_ARR1_00_GOTO_CMD =               instr + 1
 	*/
 	write_scom_for_chiplet(id, CCS_INST_ARR1_00 + instr,
-	                       PPC_SHIFT(rp, CCS_INST_ARR1_00_DDR_CAL_RANK) |
+	                       PPC_PLACE(rp, CCS_INST_ARR1_00_DDR_CAL_RANK,
+	                                 CCS_INST_ARR1_00_DDR_CAL_RANK_LEN) |
 	                       PPC_BIT(CCS_INST_ARR1_00_DDR_CALIBRATION_ENABLE) |
-	                       PPC_SHIFT(instr + 1, CCS_INST_ARR1_00_GOTO_CMD));
+	                       PPC_PLACE(instr + 1, CCS_INST_ARR1_00_GOTO_CMD,
+	                                 CCS_INST_ARR1_00_GOTO_CMD_LEN));
 
 	total_cycles += step_cycles;
 	instr++;

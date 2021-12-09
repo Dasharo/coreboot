@@ -44,13 +44,19 @@ static void calculate_m_path(void)
 		            ~(PPC_BIT(M_PATH_0_OSC_NOT_VALID) |
 		              PPC_BIT(M_PATH_0_STEP_ALIGN_DISABLE) |
 		              PPC_BIT(PERV_TOD_M_PATH_CTRL_REG_STEP_CREATE_DUAL_EDGE_DISABLE) |
-		              PPC_SHIFT(0x7, M_PATH_0_STEP_CHECK_VALIDITY_COUNT_OFFSET) |
-		              PPC_SHIFT(0x7, M_PATH_SYNC_CREATE_SPS_SELECT_OFFSET) |
-		              PPC_SHIFT(0xF, M_PATH_0_STEP_CHECK_CPS_DEVIATION_OFFSET) |
-		              PPC_SHIFT(0x3, M_PATH_STEP_CHECK_CPS_DEVIATION_FACTOR)),
+		              PPC_PLACE(0x7, M_PATH_0_STEP_CHECK_VALIDITY_COUNT_OFFSET,
+		                        M_PATH_0_STEP_CHECK_VALIDITY_COUNT_LEN) |
+		              PPC_PLACE(0x7, M_PATH_SYNC_CREATE_SPS_SELECT_OFFSET,
+		                        M_PATH_SYNC_CREATE_SPS_SELECT_LEN) |
+		              PPC_PLACE(0xF, M_PATH_0_STEP_CHECK_CPS_DEVIATION_OFFSET,
+		                        M_PATH_0_STEP_CHECK_CPS_DEVIATION_LEN) |
+		              PPC_PLACE(0x3, M_PATH_STEP_CHECK_CPS_DEVIATION_FACTOR_OFFSET,
+		                        M_PATH_STEP_CHECK_CPS_DEVIATION_FACTOR_LEN)),
 		            PPC_BIT(M_PATH_1_OSC_NOT_VALID) |
-		            PPC_SHIFT(0x8, M_PATH_0_STEP_CHECK_CPS_DEVIATION_OFFSET) |
-		            PPC_SHIFT(0x3, M_PATH_0_STEP_CHECK_VALIDITY_COUNT_OFFSET) |
+		            PPC_PLACE(0x8, M_PATH_0_STEP_CHECK_CPS_DEVIATION_OFFSET,
+		                      M_PATH_0_STEP_CHECK_CPS_DEVIATION_LEN) |
+		            PPC_PLACE(0x3, M_PATH_0_STEP_CHECK_VALIDITY_COUNT_OFFSET,
+		                      M_PATH_0_STEP_CHECK_VALIDITY_COUNT_LEN) |
 		            dual_edge_disable);
 	} else {
 		scom_and_or(PERV_TOD_M_PATH_CTRL_REG,
@@ -72,7 +78,7 @@ void istep_18_11(void)
 	 *   [26-27] REMOTE_SYNC_CHECK_CPS_DEVIATION_FACTOR = 0x3 (factor 8)
 	 *   [28-31] REMOTE_SYNC_CHECK_CPS_DEVIATION        = 0xF (93.75%)
 	 */
-	scom_or(PERV_TOD_S_PATH_CTRL_REG, PPC_SHIFT(0x3, 27) | PPC_SHIFT(0xF, 31));
+	scom_or(PERV_TOD_S_PATH_CTRL_REG, PPC_PLACE(0x3, 26, 2) | PPC_PLACE(0xF, 28, 4));
 
 	/*
 	 * Set PSS_MSS_CTRL_REG for primary configuration, assumptions:
@@ -111,10 +117,10 @@ void istep_18_11(void)
 	 *   [13-15] I_PATH_STEP_CHECK_VALIDITY_COUNT       = 0x3 (count = 8)
 	 */
 	scom_and_or(PERV_TOD_PRI_PORT_0_CTRL_REG, ~PPC_BITMASK(32, 39),
-	            PPC_SHIFT(calculate_topology_delay(), 39));
+	            PPC_PLACE(calculate_topology_delay(), 32, 8));
 	scom_and_or(PERV_TOD_I_PATH_CTRL_REG,
 	            ~(PPC_BIT(0) | PPC_BIT(1) | PPC_BITMASK(6, 11) | PPC_BITMASK(13, 15)),
-	            PPC_SHIFT(0xF, 11) | PPC_SHIFT(0x3, 15));
+	            PPC_PLACE(0xF, 8, 4) | PPC_PLACE(0x3, 13, 3));
 
 	/* Configure INIT_CHIP_CTRL_REG (primary) */
 	/*   [1-3]   I_PATH_CORE_SYNC_PERIOD_SELECT   = 0 (core sync period is 8us)
@@ -127,7 +133,7 @@ void istep_18_11(void)
 	 */
 	scom_and_or(PERV_TOD_CHIP_CTRL_REG,
 	            ~(PPC_BITMASK(1, 4) | PPC_BITMASK(7, 15) | PPC_BIT(30)),
-	            PPC_SHIFT(0x3F, 15));
+	            PPC_PLACE(0x3F, 10, 6));
 
 
 	/* TODO: test if we can skip repeated writes (M_PATH, I_PATH, CHIP) */
@@ -164,10 +170,10 @@ void istep_18_11(void)
 	 *   [13-15] I_PATH_STEP_CHECK_VALIDITY_COUNT       = 0x3 (count = 8)
 	 */
 	scom_and_or(PERV_TOD_SEC_PORT_0_CTRL_REG, ~PPC_BITMASK(32, 39),
-	            PPC_SHIFT(calculate_topology_delay(), 39));
+	            PPC_PLACE(calculate_topology_delay(), 32, 8));
 	scom_and_or(PERV_TOD_I_PATH_CTRL_REG,
 	            ~(PPC_BIT(0) | PPC_BIT(1) | PPC_BITMASK(6, 11) | PPC_BITMASK(13, 15)),
-	            PPC_SHIFT(0xF, 11) | PPC_SHIFT(0x3, 15));
+	            PPC_PLACE(0xF, 8, 4) | PPC_PLACE(0x3, 13, 3));
 
 	/* Configure INIT_CHIP_CTRL_REG (secondary) */
 	/*   [1-3]   I_PATH_CORE_SYNC_PERIOD_SELECT   = 0 (core sync period is 8us)
@@ -180,7 +186,7 @@ void istep_18_11(void)
 	 */
 	scom_and_or(PERV_TOD_CHIP_CTRL_REG,
 	            ~(PPC_BITMASK(1, 4) | PPC_BITMASK(7, 15) | PPC_BIT(30)),
-	            PPC_SHIFT(0x3F, 15));
+	            PPC_PLACE(0x3F, 10, 6));
 
 	printk(BIOS_EMERG, "ending istep 18.11\n");
 }

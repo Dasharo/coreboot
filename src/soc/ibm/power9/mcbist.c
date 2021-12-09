@@ -82,7 +82,7 @@ static void add_mcbist_test(int mcs_i, uint16_t test)
 		commit_mcbist_memreg_cache(mcs_i);
 
 	/* This assumes cache is properly cleared. */
-	mcbist_memreg_cache |= PPC_SHIFT(test, test_i*16 + 15);
+	mcbist_memreg_cache |= PPC_PLACE(test, test_i*16, 16);
 	tests++;
 }
 

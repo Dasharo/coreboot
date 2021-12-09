@@ -26,7 +26,8 @@ static void init_pecs(const uint8_t *iovalid_enable)
 
 		PEC_PBCQHWCFG_REG_PE_DISABLE_TCE_ARBITRATION = 60,
 		PEC_PBAIBHWCFG_REG_PE_PCIE_CLK_TRACE_EN = 30,
-		PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT = 42,
+		PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT = 40,
+		PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT_LEN = 3,
 		PEC_PBCQHWCFG_REG_PE_DISABLE_OOO_MODE = 0x16,
 		PEC_PBCQHWCFG_REG_PE_DISABLE_WR_SCOPE_GROUP = 42,
 		PEC_PBCQHWCFG_REG_PE_CHANNEL_STREAMING_EN = 33,
@@ -60,7 +61,7 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		 */
 		scom_and_or_for_chiplet(N2_CHIPLET_ID, pec_addr(pec, P9N2_PEC_ADDREXTMASK_REG),
 					~PPC_BITMASK(0, 6),
-					PPC_SHIFT(0, 6));
+					PPC_PLACE(0, 0, 7));
 
 		/*
 		 * Phase2 init step 1
@@ -79,13 +80,13 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		val = read_scom_for_chiplet(N2_CHIPLET_ID, pec_addr(pec, PEC_PBCQHWCFG_REG));
 		/* Set hang poll scale */
 		val &= ~PPC_BITMASK(0, 3);
-		val |= PPC_SHIFT(1, 3);
+		val |= PPC_PLACE(1, 0, 4);
 		/* Set data scale */
 		val &= ~PPC_BITMASK(4, 7);
-		val |= PPC_SHIFT(1, 7);
+		val |= PPC_PLACE(1, 4, 4);
 		/* Set hang pe scale */
 		val &= ~PPC_BITMASK(8, 11);
-		val |= PPC_SHIFT(1, 11);
+		val |= PPC_PLACE(1, 8, 4);
 		/* Disable out of order store behavior */
 		val |= PPC_BIT(22);
 		/* Enable Channel Tag streaming behavior */
@@ -117,7 +118,7 @@ static void init_pecs(const uint8_t *iovalid_enable)
 			 * fapi2::ATTR_PROC_PCIE_CACHE_INJ_MODE = 3 by default
 			 */
 			val &= ~PPC_BITMASK(34, 35);
-			val |= PPC_SHIFT(0x3, 35);
+			val |= PPC_PLACE(0x3, 34, 2);
 
 			if (dd == 0x21 || dd == 0x22 || dd == 0x23) {
 				/*
@@ -133,7 +134,7 @@ static void init_pecs(const uint8_t *iovalid_enable)
 				 * settings were optimal settings found across various workloads.
 				 */
 				val &= ~PPC_BITMASK(46, 48);
-				val |= PPC_SHIFT(0x3, 48);
+				val |= PPC_PLACE(0x3, 46, 3);
 			}
 		}
 
@@ -156,7 +157,7 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		 */
 		scom_and_or_for_chiplet(N2_CHIPLET_ID, pec_addr(pec, PEC_NESTTRC_REG),
 					~PPC_BITMASK(0, 3),
-					PPC_SHIFT(9, 3));
+					PPC_PLACE(9, 0, 4));
 
 		/*
 		 * Phase2 init step 4
@@ -177,7 +178,8 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		 */
 		val = 0;
 		val |= PPC_BIT(PEC_PBAIBHWCFG_REG_PE_PCIE_CLK_TRACE_EN);
-		val |= PPC_SHIFT(7, PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT);
+		val |= PPC_PLACE(7, PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT,
+				 PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT_LEN);
 		write_scom_for_chiplet(PCI0_CHIPLET_ID + pec, PEC_PBAIBHWCFG_REG, val);
 	}
 }
@@ -199,7 +201,7 @@ static void phb_write(uint8_t phb, uint64_t addr, uint64_t data)
 	}
 
 	addr &= ~PPC_BITMASK(54, 57);
-	addr |= PPC_SHIFT(sat_id & 0xF, 57);
+	addr |= PPC_PLACE(sat_id, 54, 4);
 
 	write_scom_for_chiplet(chiplet, addr, data);
 }
@@ -223,10 +225,10 @@ static void phb_nest_write(uint8_t phb, uint64_t addr, uint64_t data)
 	}
 
 	addr &= ~PPC_BITMASK(50, 53);
-	addr |= PPC_SHIFT(ring & 0xF, 53);
+	addr |= PPC_PLACE(ring, 50, 4);
 
 	addr &= ~PPC_BITMASK(54, 57);
-	addr |= PPC_SHIFT(sat_id & 0xF, 57);
+	addr |= PPC_PLACE(sat_id, 54, 4);
 
 	write_scom_for_chiplet(N2_CHIPLET_ID, addr, data);
 }
@@ -288,11 +290,11 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 
 	/* Determine base address of chip MMIO range */
 	uint64_t base_addr_mmio = 0;
-	base_addr_mmio |= PPC_SHIFT(0, 12); // 5 bits, ATTR_PROC_FABRIC_SYSTEM_ID
-	base_addr_mmio |= PPC_SHIFT(0, 18); // 4 bits, ATTR_PROC_EFF_FABRIC_GROUP_ID
-	base_addr_mmio |= PPC_SHIFT(0, 21); // 3 bits, ATTR_PROC_EFF_FABRIC_CHIP_ID
-	base_addr_mmio |= PPC_SHIFT(3, 14); // 2 bits, FABRIC_ADDR_MSEL,
-	                                    // nm = 0b00/01, m = 0b10, mmio = 0b11
+	base_addr_mmio |= PPC_PLACE(0, 8, 5);  // ATTR_PROC_FABRIC_SYSTEM_ID
+	base_addr_mmio |= PPC_PLACE(0, 15, 4); // ATTR_PROC_EFF_FABRIC_GROUP_ID
+	base_addr_mmio |= PPC_PLACE(0, 19, 3); // ATTR_PROC_EFF_FABRIC_CHIP_ID
+	base_addr_mmio |= PPC_PLACE(3, 13, 2); // FABRIC_ADDR_MSEL
+	                                       // nm = 0b00/01, m = 0b10, mmio = 0b11
 
 	uint8_t phb = 0;
 	for (phb = 0; phb < MAX_PHB_PER_PROC; ++phb) {

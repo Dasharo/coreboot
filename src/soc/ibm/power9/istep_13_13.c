@@ -287,17 +287,17 @@ enum mc_rank_config {
 };
 
 #define MCP0XLT0(D, M0, M1, R17, R16, R15) \
-(PPC_SHIFT((D), 39) | PPC_SHIFT((M0), 43) | PPC_SHIFT((M1), 51) | \
- PPC_SHIFT((R17), 55) | PPC_SHIFT((R16), 59) | PPC_SHIFT((R15), 63))
+(PPC_PLACE((D), 35, 5) | PPC_PLACE((M0), 41, 3) | PPC_PLACE((M1), 47, 5) | \
+ PPC_PLACE((R17), 53, 3) | PPC_PLACE((R16), 57, 3) | PPC_PLACE((R15), 61, 3))
 
 #define MCP0XLT1(S0, S1, S2, COL4, COL5, COL6, COL7) \
-(PPC_SHIFT((S0), 7) | PPC_SHIFT((S1), 15) | PPC_SHIFT((S2), 23) | \
- PPC_SHIFT((COL4), 39) | PPC_SHIFT((COL5), 47) | PPC_SHIFT((COL6), 55) | \
- PPC_SHIFT((COL7), 63))
+(PPC_PLACE((S0), 3, 5) | PPC_PLACE((S1), 11, 5) | PPC_PLACE((S2), 19, 5) | \
+ PPC_PLACE((COL4), 35, 5) | PPC_PLACE((COL5), 43, 5) | PPC_PLACE((COL6), 51, 5) | \
+ PPC_PLACE((COL7), 59, 5))
 
 #define MCP0XLT2(COL8, COL9, BA0, BA1, BG0, BG1) \
-(PPC_SHIFT((COL8), 7) | PPC_SHIFT((COL9), 15) | PPC_SHIFT((BA0), 23) | \
- PPC_SHIFT((BA1), 31) | PPC_SHIFT((BG0), 47) | PPC_SHIFT((BG1), 55))
+(PPC_PLACE((COL8), 3, 5) | PPC_PLACE((COL9), 11, 5) | PPC_PLACE((BA0), 19, 5) | \
+ PPC_PLACE((BA1), 27, 5) | PPC_PLACE((BG0), 43, 5) | PPC_PLACE((BG1), 51, 5))
 
 /*
  * xlt_tables[rank_configuration][reg_index]
@@ -633,7 +633,7 @@ void istep_13_13(void)
 			*/
 			mca_and_or(id, mca_i, RECR,
 			           ~(PPC_BITMASK(6, 8) | PPC_BIT(MBSECCQ_ENABLE_TCE_CORRECTION)),
-			           PPC_SHIFT(1, MBSECCQ_READ_POINTER_DELAY) |
+			           PPC_PLACE(1, MBSECCQ_READ_POINTER_DELAY, MBSECCQ_READ_POINTER_DELAY_LEN) |
 			           PPC_BIT(MBSECCQ_ENABLE_TCE_CORRECTION));
 
 			enable_pm(mcs_i, mca_i);
@@ -710,7 +710,7 @@ void istep_13_13(void)
 			mca_and_or(id, mca_i, RECR,
 			           ~(PPC_BITMASK(0, 1) | PPC_BITMASK(29, 31)),
 			           PPC_BIT(MBSECCQ_USE_ADDRESS_HASH) |
-			           PPC_SHIFT(3, MBSECCQ_DATA_INVERSION));
+			           PPC_PLACE(3, MBSECCQ_DATA_INVERSION, MBSECCQ_DATA_INVERSION_LEN));
 
 			apply_mark_store(mcs_i, mca_i);
 		}
