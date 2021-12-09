@@ -8,8 +8,23 @@ client:
 
 framework:
   name: coreboot
-  version: 03aef28
+  version: 4.14
+  url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
   payload: seabios
+
+components:
+    - name: SeaBIOS
+      version: rel-1.14.0
+      url_template: https://review.coreboot.org/plugins/gitiles/seabios/+/COMMIT_HASH
+      path: payloads/external/SeaBIOS/seabios
+    - name: iPXE
+      version: 2019.3
+      url_template: https://github.com/ipxe/ipxe/commit/COMMIT_HASH
+      path: payloads/external/iPXE/ipxe
+    - name: nvramcui
+      version: 4.14
+      url_template: https://github.com/Dasharo/coreboot/blob/COMMIT_HASH/payloads/nvramcui/nvramcui.c
+      path: .
 
 documentation:
   name: Dasharo Compatibility

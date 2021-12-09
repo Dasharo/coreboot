@@ -6,11 +6,13 @@ releases:
       - separated chipset and mainboard code
       - put non-mainboard specific romstage initialization to northirdge
       - support for relocatable ramstage with caching in CBMEM
-    known_issues:
+    known_issues: None
   - version: v0.2.0
     added:
       - coreboot resource allocator v4 support
-      - automatic fan control
+      - Nuvoton W83795 HW monitor driver
+      - automatic fan control with W83795
       - platform and silicon ramstage support
-      - added 2MB, 8MB and 16MB SPI flash targets
-    known_issues:
+      - 2MB, 8MB and 16MB SPI flash targets
+      - SeaBIOS, iPXE and nvramcui payloads
+    known_issues: None
