@@ -53,3 +53,21 @@ releases:
         url: https://github.com/Dasharo/dasharo-issues/issues/32
       - description: Watchdog times out
         url: https://github.com/Dasharo/dasharo-issues/issues/29
+
+  - version: v0.4.1
+    changed:
+      - Simplify memory layout
+      - Replace PPC_SHIFT with PPC_PLACE macro
+      - Change SPR numbers definitions to decimal
+      - Print signing output to terminal
+    fixed:
+      - Watchdog timing out
+      - Sporadic signing failure due to the tools not being built
+      - Building with cross compiler other than powerpc64-linux-gnu-
+    known_issues:
+      - description: Only one CPU is started
+        url: https://github.com/Dasharo/dasharo-issues/issues/30
+      - description: SPDs are not exposed in sysfs automatically
+        url: https://github.com/Dasharo/dasharo-issues/issues/31
+      - description: Missing parts of Device Tree describing specific unit (VPD, serial numbers)
+        url: https://github.com/Dasharo/dasharo-issues/issues/32
