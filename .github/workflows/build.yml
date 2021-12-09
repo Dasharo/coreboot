@@ -20,7 +20,7 @@ jobs:
     # https://github.com/golang/go/issues/35615
     - name: Allow for removal of go modules
       run: |
-        chmod u+w -R $GITHUB_WORKSPACE/go
+        (test -d $GITHUB_WORKSPACE/go && chmod u+w -R $GITHUB_WORKSPACE/go) || true
     - name: Checkout repository
       uses: actions/checkout@v2
       with:
