@@ -47,3 +47,14 @@ releases:
       - SPDs are not exposed in sysfs automatically
     known_issues:
       - description: Only one CPU core is started
+
+  - version: v0.4.1
+    changed:
+      - Simplify memlayout
+      - Replace PPC_SHIFT with PPC_PLACE macro
+      - Change SPR numbers definitions to decimal
+      - Print signing output to terminal
+    fixed:
+      - Watchdog timing out
+      - Sporadic signing failure due to the tools not being built
+      - Building with cross compiler other than powerpc64-linux-gnu-
