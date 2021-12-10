@@ -56,7 +56,7 @@ releases:
 
   - version: v0.4.1
     changed:
-      - Simplify memory layout
+      - Simplify memlayout
       - Replace PPC_SHIFT with PPC_PLACE macro
       - Change SPR numbers definitions to decimal
       - Print signing output to terminal
