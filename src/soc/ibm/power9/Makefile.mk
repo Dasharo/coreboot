@@ -7,6 +7,7 @@ bootblock-y += rom_media.c
 
 romstage-y += cbmem.c
 romstage-y += ccs.c
+romstage-y += fsi.c
 romstage-y += i2c.c
 romstage-y += istep_10_10.c
 romstage-y += istep_10_12.c
