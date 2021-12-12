@@ -13,6 +13,7 @@
 #include <cbmem.h>
 #include <timestamp.h>
 
+#include "fsi.h"
 #include "pci.h"
 
 mcbist_data_t mem_data;
@@ -325,6 +326,8 @@ static void prepare_dimm_data(void)
 
 void main(void)
 {
+	uint8_t chips;
+
 	uint8_t phb_active_mask = 0;
 	uint8_t iovalid_enable[MAX_PEC_PER_PROC] = { 0 };
 
@@ -343,6 +346,11 @@ void main(void)
 	 * and its failure is not a critical error.
 	 */
 	(void)ipmi_init_and_start_bmc_wdt(CONFIG_BMC_BT_BASE, 120, TIMEOUT_HARD_RESET);
+
+	printk(BIOS_EMERG, "Initializing FSI...\n");
+	fsi_init();
+	chips = fsi_get_present_chips();
+	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
 
 	istep_10_10(&phb_active_mask, iovalid_enable);
 	istep_10_12();
