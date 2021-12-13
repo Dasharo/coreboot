@@ -420,7 +420,7 @@ const struct voltage_kwd *mvpd_get_voltage_data(int lrp)
 	static int inited_lrp = -1;
 	static uint8_t buf[sizeof(struct voltage_kwd)];
 
-	char record_name[] = { 'L', 'R', 'P', '0' + lrp };
+	char record_name[] = { 'L', 'R', 'P', '0' + lrp, '\0' };
 	uint32_t buf_size = sizeof(buf);
 	struct voltage_kwd *voltage = (void *)buf;
 
