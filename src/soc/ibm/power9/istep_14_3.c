@@ -6,6 +6,7 @@
 #include <cpu/power/scom.h>
 
 #include "pci.h"
+#include "scratch.h"
 
 static uint64_t pec_addr(uint8_t pec, uint64_t addr)
 {
@@ -19,10 +20,6 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		PEC_PBCQHWCFG_REG = 0x4010C00,
 		PEC_NESTTRC_REG = 0x4010C03,
 		PEC_PBAIBHWCFG_REG = 0xD010800,
-
-		/* powerbus.c has these too */
-		MBOX_SCRATCH_REG1 = 0x00050038,
-		MBOX_SCRATCH_REG6_GROUP_PUMP_MODE = 23,
 
 		PEC_PBCQHWCFG_REG_PE_DISABLE_TCE_ARBITRATION = 60,
 		PEC_PBAIBHWCFG_REG_PE_PCIE_CLK_TRACE_EN = 30,

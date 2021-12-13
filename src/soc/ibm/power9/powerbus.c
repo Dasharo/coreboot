@@ -7,10 +7,9 @@
 #include <console/console.h>
 #include <stdint.h>
 
-#define EPSILON_MAX_VALUE 0xFFFFFFFF
+#include "scratch.h"
 
-#define MBOX_SCRATCH_REG1 0x00050038
-#define MBOX_SCRATCH_REG6_GROUP_PUMP_MODE 23
+#define EPSILON_MAX_VALUE 0xFFFFFFFF
 
 #define EPS_GUARDBAND 20
 
