@@ -1948,7 +1948,8 @@ static const struct voltage_bucket_data * get_voltage_data(void)
 	uint8_t i = 0;
 
 	/* Using LRP0 because frequencies are the same in all LRP records */
-	voltage = mvpd_get_voltage_data(0);
+	/* TODO: don't hard-code chip if values are not the same among them */
+	voltage = mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
 
 	for (i = 0; i < VOLTAGE_BUCKET_COUNT; ++i) {
 		bucket = &voltage->buckets[i];

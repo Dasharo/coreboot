@@ -631,7 +631,9 @@ static void tor_fetch_and_insert_vpd_ring(struct tor_hdr *ring_section,
 	uint8_t instance_id = 0;
 	struct ring_hdr *ring = NULL;
 
-	success = mvpd_extract_ring("CP00", query->kwd_name, chiplet_id, even_odd,
+	/* TODO: don't hard-code chip if values are not the same among them */
+	success = mvpd_extract_ring(/*chip=*/0, "CP00", query->kwd_name,
+				    chiplet_id, even_odd,
 				    query->ring_id, buf1, MAX_RING_BUF_SIZE);
 	if (!success) {
 		*ring_status = RING_NOT_FOUND;
