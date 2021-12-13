@@ -62,9 +62,9 @@ struct pt_record {
 
 /* Reads from a single EEPROM chip, which is deduced from offset. Returns number
  * of bytes read. */
-static int read_eeprom_chip(uint32_t offset, void *data, uint16_t len)
+static int read_eeprom_chip(uint8_t cpu, uint32_t offset, void *data, uint16_t len)
 {
-	const unsigned int bus = 1;
+	const unsigned int bus = 1 + 4 * cpu; // four I2C buses per CPU
 	uint16_t addr = 0xA0;
 	uint16_t slave = 0;
 	uint16_t actual_offset = 0;
@@ -97,7 +97,7 @@ static int read_eeprom_chip(uint32_t offset, void *data, uint16_t len)
 
 /* Reads from EEPROM handling accesses across chip boundaries (64 KiB).  Returns
  * number of bytes read. */
-static int read_eeprom(uint32_t offset, void *data, uint32_t len)
+static int read_eeprom(uint8_t cpu, uint32_t offset, void *data, uint32_t len)
 {
 	int ret_value1 = 0;
 	int ret_value2 = 0;
@@ -106,16 +106,16 @@ static int read_eeprom(uint32_t offset, void *data, uint32_t len)
 
 	assert(len != 0);
 	if (offset / EEPROM_CHIP_SIZE == (offset + len - 1) / EEPROM_CHIP_SIZE)
-		return read_eeprom_chip(offset, data, len);
+		return read_eeprom_chip(cpu, offset, data, len);
 
 	len1 = EEPROM_CHIP_SIZE - offset;
 	len2 = len - len1;
 
-	ret_value1 = read_eeprom_chip(offset, data, len1);
+	ret_value1 = read_eeprom_chip(cpu, offset, data, len1);
 	if (ret_value1 < 0)
 		return ret_value1;
 
-	ret_value2 = read_eeprom_chip(EEPROM_CHIP_SIZE, (uint8_t *)data + len1, len2);
+	ret_value2 = read_eeprom_chip(cpu, EEPROM_CHIP_SIZE, (uint8_t *)data + len1, len2);
 	if (ret_value2 < 0)
 		return ret_value2;
 
@@ -124,7 +124,7 @@ static int read_eeprom(uint32_t offset, void *data, uint32_t len)
 
 /* Finds and extracts i-th keyword (`index` specifies which one) from a record
  * in EEPROM that starts at specified offset */
-static bool eeprom_extract_kwd(uint64_t offset, uint8_t index,
+static bool eeprom_extract_kwd(uint8_t cpu, uint64_t offset, uint8_t index,
 			       const char *record_name, const char *kwd_name,
 			       uint8_t *buf, size_t *size)
 {
@@ -136,7 +136,7 @@ static bool eeprom_extract_kwd(uint64_t offset, uint8_t index,
 	if (strlen(kwd_name) != VPD_KWD_NAME_LEN)
 		die("Keyword name has wrong length: %s!\n", kwd_name);
 
-	if (read_eeprom(offset, &record_size, sizeof(record_size)) != VPD_RECORD_SIZE_LEN)
+	if (read_eeprom(cpu, offset, &record_size, sizeof(record_size)) != VPD_RECORD_SIZE_LEN)
 		die("Failed to read record size from EEPROM\n");
 
 	offset += VPD_RECORD_SIZE_LEN;
@@ -145,7 +145,7 @@ static bool eeprom_extract_kwd(uint64_t offset, uint8_t index,
 	/* Skip mandatory "RT" and one byte of keyword size (always 4) */
 	offset += VPD_KWD_NAME_LEN + 1;
 
-	if (read_eeprom(offset, name, sizeof(name)) != sizeof(name))
+	if (read_eeprom(cpu, offset, name, sizeof(name)) != sizeof(name))
 		die("Failed to read record name from EEPROM\n");
 
 	if (memcmp(name, record_name, VPD_RECORD_NAME_LEN))
@@ -158,7 +158,7 @@ static bool eeprom_extract_kwd(uint64_t offset, uint8_t index,
 		uint8_t name_buf[VPD_KWD_NAME_LEN];
 		uint16_t kwd_size = 0;
 
-		if (read_eeprom(offset, name_buf, sizeof(name_buf)) != sizeof(name_buf))
+		if (read_eeprom(cpu, offset, name_buf, sizeof(name_buf)) != sizeof(name_buf))
 			die("Failed to read keyword name from EEPROM\n");
 
 		/* This is always the last keyword */
@@ -169,13 +169,15 @@ static bool eeprom_extract_kwd(uint64_t offset, uint8_t index,
 
 		if (name_buf[0] == '#') {
 			/* This is a large (two-byte size) keyword */
-			if (read_eeprom(offset, &kwd_size, sizeof(kwd_size)) != sizeof(kwd_size))
+			if (read_eeprom(cpu, offset, &kwd_size,
+					sizeof(kwd_size)) != sizeof(kwd_size))
 				die("Failed to read large keyword size from EEPROM\n");
 			kwd_size = le16toh(kwd_size);
 			offset += 2;
 		} else {
 			uint8_t small_size;
-			if (read_eeprom(offset, &small_size, sizeof(small_size)) != sizeof(small_size))
+			if (read_eeprom(cpu, offset, &small_size,
+					sizeof(small_size)) != sizeof(small_size))
 				die("Failed to read small keyword size from EEPROM\n");
 			kwd_size = small_size;
 			offset += 1;
@@ -186,7 +188,7 @@ static bool eeprom_extract_kwd(uint64_t offset, uint8_t index,
 				die("Keyword buffer is too small: %llu instead of %llu\n",
 				    (unsigned long long)*size, (unsigned long long)kwd_size);
 
-			if (read_eeprom(offset, buf, kwd_size) != kwd_size)
+			if (read_eeprom(cpu, offset, buf, kwd_size) != kwd_size)
 				die("Failed to read keyword body from EEPROM\n");
 
 			*size = kwd_size;
@@ -199,13 +201,15 @@ static bool eeprom_extract_kwd(uint64_t offset, uint8_t index,
 	return false;
 }
 
-/* Builds MVPD partition for a single processor (64 KiB per chip) or returns an
+/* Builds MVPD partition for a single processor (up to 64 KiB) or returns an
  * already built one */
-static const uint8_t *mvpd_get(void)
+static const uint8_t *mvpd_get(uint8_t cpu)
 {
-	enum { SECTION_SIZE = 64 * KiB };
+	/* Actual size of MVPD is a bit less than 42 KiB while maximum is 64
+	 * KiB, save some memory */
+	enum { MVPD_SIZE = 42 * KiB };
 
-	static uint8_t mvpd_buf[SECTION_SIZE];
+	static uint8_t mvpd_bufs[2][MVPD_SIZE];
 
 	const char *mvpd_records[] = {
 		"CRP0", "CP00", "VINI",
@@ -214,7 +218,9 @@ static const uint8_t *mvpd_get(void)
 		"VRML", "VWML", "VER0", "MER0", "VMSC",
 	};
 
-	struct mvpd_toc_entry *toc = (void *)&mvpd_buf[0];
+	uint8_t *mvpd_buf = mvpd_bufs[cpu];
+
+	struct mvpd_toc_entry *toc = (void *)mvpd_buf;
 	uint16_t mvpd_offset = MVPD_TOC_SIZE;
 
 	uint8_t pt_buf[256];
@@ -226,11 +232,14 @@ static const uint8_t *mvpd_get(void)
 	/* Skip the ECC data + "large resource" byte (0x84) in the VHDR */
 	uint64_t offset = 12;
 
+	if (cpu >= 2)
+		die("Unsupported CPU number for MVPD query: %d.\n", cpu);
+
 	/* Partition is already constructed (filled one can't be empty) */
 	if (mvpd_buf[0] != '\0')
 		return mvpd_buf;
 
-	if (!eeprom_extract_kwd(offset, 0, "VHDR", "PT", pt_buf, &pt_size))
+	if (!eeprom_extract_kwd(cpu, offset, 0, "VHDR", "PT", pt_buf, &pt_size))
 		die("Failed to find PT keyword of VHDR record in EEPROM.\n");
 
 	if (memcmp(pt_record->record_name, "VTOC", VPD_RECORD_NAME_LEN))
@@ -249,7 +258,7 @@ static const uint8_t *mvpd_get(void)
 		uint8_t entry_count;
 
 		pt_size = sizeof(pt_buf);
-		if (!eeprom_extract_kwd(offset, i, "VTOC", "PT", pt_buf, &pt_size)) {
+		if (!eeprom_extract_kwd(cpu, offset, i, "VTOC", "PT", pt_buf, &pt_size)) {
 			if (i == 0)
 				die("Failed to find any PT keyword of VTOC record in EEPROM\n");
 			break;
@@ -272,7 +281,7 @@ static const uint8_t *mvpd_get(void)
 			if (k == ARRAY_SIZE(mvpd_records))
 				continue;
 
-			if (mvpd_offset + record_size > SECTION_SIZE)
+			if (mvpd_offset + record_size > MVPD_SIZE)
 				die("MVPD section doesn't have space for %.4s record of size %d\n",
 				    record_name, record_size);
 
@@ -283,7 +292,8 @@ static const uint8_t *mvpd_get(void)
 			toc->reserved[0] = 0x5A;
 			toc->reserved[1] = 0x5A;
 
-			if (read_eeprom(record_offset, mvpd_buf + mvpd_offset, record_size) != record_size)
+			if (read_eeprom(cpu, record_offset, mvpd_buf + mvpd_offset,
+					record_size) != record_size)
 				die("Failed to read %.4s record from EEPROM\n", record_name);
 
 			++toc;
@@ -367,11 +377,10 @@ static struct ring_hdr *find_ring(uint8_t chiplet_id, uint8_t even_odd,
 	return NULL;
 }
 
-static const uint8_t *mvpd_get_keyword(const char *record_name,
-				       const char *kwd_name,
-				       size_t *kwd_size)
+static const uint8_t *mvpd_get_keyword(uint8_t cpu, const char *record_name,
+				       const char *kwd_name, size_t *kwd_size)
 {
-	const uint8_t *mvpd = mvpd_get();
+	const uint8_t *mvpd = mvpd_get(cpu);
 	struct mvpd_toc_entry *mvpd_toc = (void *)mvpd;
 
 	struct mvpd_toc_entry *toc_entry = NULL;
@@ -400,7 +409,7 @@ bool mvpd_extract_keyword(const char *record_name, const char *kwd_name,
 	size_t kwd_size = 0;
 	bool copied_data = false;
 
-	kwd = mvpd_get_keyword(record_name, kwd_name, &kwd_size);
+	kwd = mvpd_get_keyword(/*cpu=*/0, record_name, kwd_name, &kwd_size);
 	if (kwd == NULL)
 		die("Failed to find %s keyword in %s!\n", kwd_name,
 		    record_name);
@@ -456,7 +465,7 @@ bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
 	struct ring_hdr *ring = NULL;
 	uint32_t ring_size = 0;
 
-	rings = mvpd_get_keyword(record_name, kwd_name, &rings_size);
+	rings = mvpd_get_keyword(/*cpu=*/0, record_name, kwd_name, &rings_size);
 	if (rings == NULL)
 		die("Failed to find %s keyword in %s!\n", kwd_name,
 		    record_name);
