@@ -402,14 +402,14 @@ static const uint8_t *mvpd_get_keyword(uint8_t cpu, const char *record_name,
 	return kwd;
 }
 
-bool mvpd_extract_keyword(const char *record_name, const char *kwd_name,
-			  uint8_t *buf, uint32_t *size)
+bool mvpd_extract_keyword(uint8_t chip, const char *record_name,
+			  const char *kwd_name, uint8_t *buf, uint32_t *size)
 {
 	const uint8_t *kwd = NULL;
 	size_t kwd_size = 0;
 	bool copied_data = false;
 
-	kwd = mvpd_get_keyword(/*cpu=*/0, record_name, kwd_name, &kwd_size);
+	kwd = mvpd_get_keyword(chip, record_name, kwd_name, &kwd_size);
 	if (kwd == NULL)
 		die("Failed to find %s keyword in %s!\n", kwd_name,
 		    record_name);
@@ -424,8 +424,9 @@ bool mvpd_extract_keyword(const char *record_name, const char *kwd_name,
 	return copied_data;
 }
 
-const struct voltage_kwd *mvpd_get_voltage_data(int lrp)
+const struct voltage_kwd *mvpd_get_voltage_data(uint8_t chip, int lrp)
 {
+	static int inited_chip = -1;
 	static int inited_lrp = -1;
 	static uint8_t buf[sizeof(struct voltage_kwd)];
 
@@ -434,12 +435,13 @@ const struct voltage_kwd *mvpd_get_voltage_data(int lrp)
 	struct voltage_kwd *voltage = (void *)buf;
 
 	assert(lrp >= 0 && lrp < 6);
-	if (inited_lrp == lrp)
+	if (inited_chip == chip && inited_lrp == lrp)
 		return voltage;
 
+	inited_chip = -1;
 	inited_lrp = -1;
 
-	if (!mvpd_extract_keyword(record_name, "#V", buf, &buf_size)) {
+	if (!mvpd_extract_keyword(chip, record_name, "#V", buf, &buf_size)) {
 		printk(BIOS_ERR, "Failed to read LRP0 record from MVPD\n");
 		return NULL;
 	}
@@ -450,13 +452,15 @@ const struct voltage_kwd *mvpd_get_voltage_data(int lrp)
 		return NULL;
 	}
 
+	inited_chip = chip;
 	inited_lrp = lrp;
 	return voltage;
 }
 
 /* Finds a specific ring in MVPD partition and extracts it */
-bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
-		       uint8_t chiplet_id, uint8_t even_odd, uint16_t ring_id,
+bool mvpd_extract_ring(uint8_t chip, const char *record_name,
+		       const char *kwd_name, uint8_t chiplet_id,
+		       uint8_t even_odd, uint16_t ring_id,
 		       uint8_t *buf, uint32_t buf_size)
 {
 	const uint8_t *rings = NULL;
@@ -465,7 +469,7 @@ bool mvpd_extract_ring(const char *record_name, const char *kwd_name,
 	struct ring_hdr *ring = NULL;
 	uint32_t ring_size = 0;
 
-	rings = mvpd_get_keyword(/*cpu=*/0, record_name, kwd_name, &rings_size);
+	rings = mvpd_get_keyword(chip, record_name, kwd_name, &rings_size);
 	if (rings == NULL)
 		die("Failed to find %s keyword in %s!\n", kwd_name,
 		    record_name);
