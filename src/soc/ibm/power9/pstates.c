@@ -711,7 +711,8 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 
 		record[3] = '0' + quad;
 		size = sizeof(buf);
-		if (!mvpd_extract_keyword(record, "#V", buf, &size)) {
+		/* TODO: don't hard-code chip if values are not the same among them */
+		if (!mvpd_extract_keyword(/*chip=*/0, record, "#V", buf, &size)) {
 			die("Failed to read %s record from MVPD", record);
 		}
 
@@ -873,7 +874,8 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	 * first parses/writes, then tests if bucket ID even match.
 	 */
 	size = sizeof(buf);
-	if (!mvpd_extract_keyword("CRP0", "#W", buf, &size)) {
+	/* TODO: don't hard-code chip if values are not the same among them */
+	if (!mvpd_extract_keyword(/*chip=*/0, "CRP0", "#W", buf, &size)) {
 		die("Failed to read %s record from MVPD", "CRP0");
 	}
 
@@ -995,7 +997,8 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	 * in struct definition.
 	 */
 	size = sizeof(buf);
-	if (!mvpd_extract_keyword("CRP0", "IQ", buf, &size)) {
+	/* TODO: don't hard-code chip if values are not the same among them */
+	if (!mvpd_extract_keyword(/*chip=*/0, "CRP0", "IQ", buf, &size)) {
 		die("Failed to read %s record from MVPD", "CRP0");
 	}
 	assert(size >= sizeof(IddqTable));
