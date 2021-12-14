@@ -22,11 +22,8 @@ entries
 384          1       e       4        boot_option
 388          4       h       0        reboot_counter
 393          3       r       0        unused
-#394         7       unused
-401          1       e       1        interleave_chip_selects
-402          1       e       1        interleave_nodes
-403          1       e       1        interleave_memory_channels
-404          4       e       8        max_mem_clock
+#394         6       unused
+#400         8       alt century
 408          1       e       1        multi_core
 412          4       e       6        debug_level
 416          5       e       10       ecc_scrub_rate
@@ -44,7 +41,8 @@ entries
 467          1       e       1        sata_ahci_mode
 468          1       e       1        sata_alpm
 469          2       e       15       w83795_fan_mode
-#471         2       unused
+471          1       e       1        enable_legacy_usb
+472          1       e       1        ide_compat_mode
 473          2       e       13       dimm_spd_checksum
 475          1       e       14       probe_filter
 476          1       e       1        l3_cache_partitioning
@@ -55,6 +53,13 @@ entries
 481          1       e       1        experimental_memory_speed_boost
 482          1       e       1        allow_spd_nvram_cache_restore
 483          4       h       0        maximum_p_state_limit
+487          1       e       1        interleave_chip_selects
+488          1       e       1        interleave_nodes
+489          1       e       1        interleave_memory_channels
+490          4       e       8        max_mem_clock
+#494         2       unused
+496        128       r       0        vbnv
+#624       104       unused
 728        256       h       0        user_data
 984         16       h       0        check_sum
 # Reserve the extended AMD configuration registers
