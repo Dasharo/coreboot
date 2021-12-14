@@ -29,3 +29,5 @@ experimental_memory_speed_boost=Disable
 power_on_after_fail=On
 boot_option=Fallback
 w83795_fan_mode=ThermalCruise
+ide_compat_mode=Disable
+enable_legacy_usb=Disable
