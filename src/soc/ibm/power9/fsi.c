@@ -286,7 +286,7 @@ static void basic_slave_init(void)
 	write_fsi(chip, ctrl_reg | FSI_MMODE_000, tmp);
 }
 
-void fsi_init(void)
+uint8_t fsi_init(void)
 {
 	uint8_t chips;
 	uint8_t present_slaves;
@@ -305,6 +305,8 @@ void fsi_init(void)
 	chips |= ((present_slaves & 0x40) >> 5);
 
 	fsi_i2c_init(chips);
+
+	return chips;
 }
 
 /* Polls OPB dying on error or timeout */
