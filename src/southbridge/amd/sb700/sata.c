@@ -496,8 +496,8 @@ static void sata_init(struct device *dev)
 	/* ????? why CIM does not set the AcpiGpe0BlkAddr, but use it??? */
 
 	/* word = 0x0000; */
-	/* word = pm_ioread(0x28); */
-	/* byte = pm_ioread(0x29); */
+	/* word = pmio_read(0x28); */
+	/* byte = pmio_read(0x29); */
 	/* word |= byte<<8; */
 	/* printk(BIOS_DEBUG, "AcpiGpe0Blk addr = %x\n", word); */
 	/* write32(word, 0x80000000); */
