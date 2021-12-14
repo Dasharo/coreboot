@@ -102,13 +102,16 @@ static void sb7xx_51xx_lpc_init(void)
 	reg32 |= 1 << 20;
 	pci_write_config32(dev, 0x64, reg32);
 
+	/* Enable SB I/O decodes*/
+	pci_write_config8(dev, 0x78, 0xFF);
+	//pci_write_config8(dev, 0x79, 0x45);
+
 	if (CONFIG(SOUTHBRIDGE_AMD_SB700_DISABLE_ISA_DMA)) {
 		/* Disable LPC ISA DMA Capability */
 		reg8 = pci_read_config8(dev, 0x78);
 		reg8 &= ~(1 << 0);
 		pci_write_config8(dev, 0x78, reg8);
 	}
-
 
 	dev = PCI_DEV(0, 0x14, 3);
 	if (CONFIG(SOUTHBRIDGE_AMD_SUBTYPE_SP5100)) {
@@ -132,11 +135,6 @@ static void sb7xx_51xx_lpc_init(void)
 	reg8 |= (1 << 0) | (1 << 1) | (1 << 6);
 	pci_write_config8(dev, 0x48, reg8);
 
-	/* Enable PrefetchEnSPIFromHost to speed up SPI flash read (does not affect LPC) */
-	reg8 = pci_read_config8(dev, 0xbb);
-	reg8 |= 1 << 0;
-	pci_write_config8(dev, 0xbb, reg8);
-
 	/* Super I/O, RTC */
 	reg8 = pci_read_config8(dev, 0x48);
 	/* Decode ports 0x2e-0x2f, 0x4e-0x4f (SuperI/O configuration) */
@@ -144,6 +142,10 @@ static void sb7xx_51xx_lpc_init(void)
 	/* Decode port 0x70-0x73 (RTC) */
 	reg8 |= (1 << 6);
 	pci_write_config8(dev, 0x48, reg8);
+
+	/* Enable RTC AltCentury if requested */
+	if (CONFIG(USE_PC_CMOS_ALTCENTURY))
+		pmio_write(0x7c, pmio_read(0x7c) | 0x10);
 }
 
 /*
@@ -187,17 +189,13 @@ static void sb700_enable_rom(void)
 	pci_write_config16(dev, 0x6c, 0x10000 - (CONFIG_COREBOOT_ROMSIZE_KB >> 6));
 	/* Enable LPC ROM range end at 0xffff(ffff). */
 	pci_write_config16(dev, 0x6e, 0xffff);
-
-	/* Enable SPI prefetch */
-	reg8 = pci_read_config8(dev, 0xbb);
-	reg8 |= 1;
-	pci_write_config8(dev, 0x48, reg8);
 }
 
 static void sb700_configure_rom(void)
 {
 	pci_devfn_t dev;
 	u32 dword;
+	u8 reg8;
 
 	dev = PCI_DEV(0, 0x14, 3);
 
@@ -212,6 +210,11 @@ static void sb700_configure_rom(void)
 		dword |= (0x1 << 12);
 		write32(SPI_BASE_ADDRESS + SPI_CONTROL_1, dword);
 	}
+
+	/* Enable PrefetchEnSPIFromHost to speed up SPI flash read (does not affect LPC) */
+	reg8 = pci_read_config8(dev, 0xbb);
+	reg8 |= 1 << 0;
+	pci_write_config8(dev, 0xbb, reg8);
 }
 
 static void sb700_enable_tpm_decoding(void)
