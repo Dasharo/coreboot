@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <cpu/power/vpd.h>
+#include <cpu/power/istep_8.h>
 #include <cpu/power/istep_10.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
@@ -338,6 +339,8 @@ static void prepare_dimm_data(void)
 
 void main(void)
 {
+	uint32_t chips;
+
 	uint8_t phb_active_mask = 0;
 	uint8_t iovalid_enable[MAX_PEC_PER_PROC] = { 0 };
 
@@ -358,8 +361,13 @@ void main(void)
 	(void)ipmi_init_and_start_bmc_wdt(CONFIG_BMC_BT_BASE, 120, TIMEOUT_HARD_RESET);
 
 	printk(BIOS_EMERG, "Initializing FSI...\n");
-	fsi_init();
+	chips = fsi_init();
 	printk(BIOS_EMERG, "Initialized FSI\n");
+
+	istep_8_1(chips);
+	istep_8_2(chips);
+	istep_8_3(chips);
+	istep_8_4(chips);
 
 	istep_10_10(&phb_active_mask, iovalid_enable);
 	istep_10_12();
