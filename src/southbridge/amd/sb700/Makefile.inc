@@ -2,6 +2,7 @@ ifeq ($(CONFIG_SOUTHBRIDGE_AMD_SB700),y)
 
 bootblock-y += bootblock.c
 bootblock-y += reset.c
+bootblock-y += spi.c
 
 verstage-y += reset.c
 verstage-y += spi.c
