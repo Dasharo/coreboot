@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <arch/byteorder.h>
 
 /* Base FSI address for registers of a FSI I2C master */
 #define I2C_FSI_MASTER_BASE_ADDR 0x01800
