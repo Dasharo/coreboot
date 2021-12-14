@@ -19,7 +19,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select SB_HT_CHAIN_UNITID_OFFSET_ONLY
 	select LIFT_BSP_APIC_ID
 	select BOARD_ROMSIZE_KB_2048
-	select SPI_FLASH
+	select SPI_FLASH_WINBOND
 	select MAINBOARD_HAS_LPC_TPM
 	select POWER_STATE_DEFAULT_ON_AFTER_FAILURE
 	select SYSTEM_TYPE_SERVER
@@ -31,9 +31,12 @@ config MAINBOARD_DIR
 	string
 	default "asus/kgpe-d16"
 
-config BOOTBLOCK_MAINBOARD_INIT
+config FMDFILE
 	string
-	default "mainboard/asus/kgpe-d16/bootblock.c"
+	default "" if !VBOOT
+	default "src/mainboard/asus/kgpe-d16/vboot-rwa-2M.fmd" if BOARD_ROMSIZE_KB_2048
+	default "src/mainboard/asus/kgpe-d16/vboot-rwa-8M.fmd" if BOARD_ROMSIZE_KB_8192
+	default "src/mainboard/asus/kgpe-d16/vboot-rwa-16M.fmd" if BOARD_ROMSIZE_KB_16384
 
 config APIC_ID_OFFSET
 	hex
@@ -51,6 +54,10 @@ config VBOOT
 	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
 	select GBB_FLAG_DISABLE_FWMP
 	select VBOOT_VBNV_CMOS
+
+config VBOOT_VBNV_OFFSET
+	hex
+	default 0x30
 
 config HW_MEM_HOLE_SIZEK
 	hex
@@ -96,7 +103,6 @@ config MAX_REBOOT_CNT
 config ENABLE_APIC_EXT_ID
 	bool
 	default y
-	
 
 config SEABIOS_ADD_SERCON_PORT_FILE
 	bool
