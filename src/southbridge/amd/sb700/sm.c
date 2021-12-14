@@ -85,7 +85,9 @@ static void sm_init(struct device *dev)
 
 	setup_ioapic(ioapic_base, io_apicid);
 
-	enable_legacy_usb = get_uint_option("enable_legacy_usb", 1);
+	enable_legacy_usb = get_uint_option("enable_legacy_usb", 0);
+
+	printk(BIOS_INFO, "Legacy USB %sabled\n", enable_legacy_usb ? "en" : "dis");
 
 	/* 2.10 Interrupt Routing/Filtering */
 	byte = pci_read_config8(dev, 0x62);
