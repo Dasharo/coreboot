@@ -30,28 +30,28 @@ static void usb_init(struct device *dev)
 	pci_write_config8(sm_dev, 0x68, byte);
 
 	/* RPR 6.2 Enables the USB PME Event,Enable USB resume support */
-	byte = pm_ioread(0x61);
+	byte = pmio_read(0x61);
 	byte |= 1 << 6;
-	pm_iowrite(0x61, byte);
-	byte = pm_ioread(0x65);
+	pmio_write(0x61, byte);
+	byte = pmio_read(0x65);
 	byte |= 1 << 2;
-	pm_iowrite(0x65, byte);
+	pmio_write(0x65, byte);
 
 	/* RPR 6.3 Support USB device wakeup from the S4/S5 state */
-	byte = pm_ioread(0x65);
+	byte = pmio_read(0x65);
 	byte &= ~(1 << 0);
-	pm_iowrite(0x65, byte);
+	pmio_write(0x65, byte);
 
 	/* RPR 6.5 Enable the USB controller to get reset by any software that generate a PCIRst# condition */
-	byte = pm_ioread(0x65);
+	byte = pmio_read(0x65);
 	byte |= (1 << 4);
-	pm_iowrite(0x65, byte);
+	pmio_write(0x65, byte);
 
 	/* USB_ADVANCED_SLEEP_CONTROL */
-	byte = pm_ioread(0x95);
+	byte = pmio_read(0x95);
 	byte &= ~(7 << 0);
 	byte |= 6 << 0;		/* Advanced sleep up to 6 uframes */
-	pm_iowrite(0x95, byte);
+	pmio_write(0x95, byte);
 
 	/* RPR 6.10 Disable OHCI MSI Capability. */
 	word = pci_read_config16(dev, 0x40);

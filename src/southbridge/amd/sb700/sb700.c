@@ -49,47 +49,15 @@ void set_sm_enable_bits(struct device *sm_dev, u32 reg_pos, u32 mask, u32 val)
 	}
 }
 
-static void pmio_write_index(u16 port_base, u8 reg, u8 value)
-{
-	outb(reg, port_base);
-	outb(value, port_base + 1);
-}
-
-static u8 pmio_read_index(u16 port_base, u8 reg)
-{
-	outb(reg, port_base);
-	return inb(port_base + 1);
-}
-
-void pm_iowrite(u8 reg, u8 value)
-{
-	pmio_write_index(PM_INDEX, reg, value);
-}
-
-u8 pm_ioread(u8 reg)
-{
-	return pmio_read_index(PM_INDEX, reg);
-}
-
-void pm2_iowrite(u8 reg, u8 value)
-{
-	pmio_write_index(PM2_INDEX, reg, value);
-}
-
-u8 pm2_ioread(u8 reg)
-{
-	return pmio_read_index(PM2_INDEX, reg);
-}
-
 static void set_pmio_enable_bits(struct device *sm_dev, u32 reg_pos,
 				 u32 mask, u32 val)
 {
 	u8 reg_old, reg;
-	reg = reg_old = pm_ioread(reg_pos);
+	reg = reg_old = pmio_read(reg_pos);
 	reg &= ~mask;
 	reg |= val;
 	if (reg != reg_old) {
-		pm_iowrite(reg_pos, reg);
+		pmio_write(reg_pos, reg);
 	}
 }
 
