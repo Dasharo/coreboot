@@ -4,6 +4,7 @@
 #define SB700_H
 
 #include <types.h>
+#include <arch/io.h>
 #include <device/device.h>
 #include <device/pci_ops.h>
 
@@ -35,10 +36,29 @@
 #define REV_SB700_A14	0x14
 #define REV_SB700_A15	0x15
 
-void pm_iowrite(u8 reg, u8 value);
-u8 pm_ioread(u8 reg);
-void pm2_iowrite(u8 reg, u8 value);
-u8 pm2_ioread(u8 reg);
+static inline void pmio_write(u8 reg, u8 value)
+{
+	outb(reg, PM_INDEX);
+	outb(value, PM_DATA);
+}
+
+static inline u8 pmio_read(u8 reg)
+{
+	outb(reg, PM_INDEX);
+	return inb(PM_DATA);
+}
+
+static inline void pmio2_write(u8 reg, u8 value)
+{
+	outb(reg, PM2_INDEX);
+	outb(value, PM2_DATA);
+}
+
+static inline u8 pmio2_read(u8 reg)
+{
+	outb(reg, PM_INDEX);
+	return inb(PM2_DATA);
+}
 
 void set_sm_enable_bits(struct device *sm_dev, u32 reg_pos, u32 mask, u32 val);
 

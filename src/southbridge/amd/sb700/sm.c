@@ -136,30 +136,30 @@ static void sm_init(struct device *dev)
 	 * from the S-state.
 	 */
 	/*Use 8us clock for delays in the S-state resume timing sequence.*/
-	byte = pm_ioread(0x65);
+	byte = pmio_read(0x65);
 	byte &= ~(1 << 7);
-	pm_iowrite(0x65, byte);
+	pmio_write(0x65, byte);
 	/* Delay the APIC interrupt to the CPU until the system has fully resumed from the S-state. */
-	byte = pm_ioread(0x68);
+	byte = pmio_read(0x68);
 	byte |= 1 << 2;
-	pm_iowrite(0x68, byte);
+	pmio_write(0x68, byte);
 
 	/* IRQ0From8254 */
 	byte = pci_read_config8(dev, 0x41);
 	byte &= ~(1 << 7);
 	pci_write_config8(dev, 0x41, byte);
 
-	byte = pm_ioread(0x61);
+	byte = pmio_read(0x61);
 	if (CONFIG(CPU_AMD_MODEL_10XXX))
 		byte &= ~(1 << 1);	/* Clear for non-K8 CPUs */
 	else
 		byte |= 1 << 1;		/* Set to enable NB/SB handshake during IOAPIC interrupt for AMD K8/K7 */
-	pm_iowrite(0x61, byte);
+	pmio_write(0x61, byte);
 
 	/* disable SMI */
-	byte = pm_ioread(0x53);
+	byte = pmio_read(0x53);
 	byte |= 1 << 3;
-	pm_iowrite(0x53, byte);
+	pmio_write(0x53, byte);
 
 	/* power after power fail */
 	power_state = get_uint_option("power_on_after_fail",
@@ -169,7 +169,7 @@ static void sm_init(struct device *dev)
 		power_state = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
 	}
 
-	byte = pm_ioread(0x74);
+	byte = pmio_read(0x74);
 	byte &= ~0x03;
 	if (power_state == POWER_MODE_OFF)
 		byte |= 0x0;
@@ -178,33 +178,33 @@ static void sm_init(struct device *dev)
 	else if (power_state == POWER_MODE_LAST)
 		byte |= 0x2;
 	byte |= 1 << 2;
-	pm_iowrite(0x74, byte);
+	pmio_write(0x74, byte);
 	printk(BIOS_INFO, "set power \"%s\" after power fail\n", power_mode_names[power_state]);
 
-	byte = pm_ioread(0x68);
+	byte = pmio_read(0x68);
 	byte &= ~(1 << 1);
 	/* 2.7 */
 	byte |= 1 << 2;
-	pm_iowrite(0x68, byte);
+	pmio_write(0x68, byte);
 
 	/* 2.7 */
-	byte = pm_ioread(0x65);
+	byte = pmio_read(0x65);
 	byte &= ~(1 << 7);
-	pm_iowrite(0x65, byte);
+	pmio_write(0x65, byte);
 
 	/* 2.16 */
-	byte = pm_ioread(0x55);
+	byte = pmio_read(0x55);
 	byte |= 1 << 5;
-	pm_iowrite(0x55, byte);
+	pmio_write(0x55, byte);
 
-	byte = pm_ioread(0xD7);
+	byte = pmio_read(0xD7);
 	byte |= 1 << 6 | 1 << 1;
-	pm_iowrite(0xD7, byte);
+	pmio_write(0xD7, byte);
 
 	/* 2.15 */
-	byte = pm_ioread(0x42);
+	byte = pmio_read(0x42);
 	byte &= ~(1 << 2);
-	pm_iowrite(0x42, byte);
+	pmio_write(0x42, byte);
 
 	/* Set up NMI on errors */
 	byte = inb(0x70);	/* RTC70 */
@@ -279,10 +279,10 @@ static void sm_init(struct device *dev)
 	abcfg_reg(0x10090, 1 << 8, 1 << 8);
 
 	/* Set ACPI Software clock Throttling Period to 244 us*/
-	byte = pm_ioread(0x68);
+	byte = pmio_read(0x68);
 	byte &= ~(3 << 6);
 	byte |= (2 << 6);	/* 244us */
-	pm_iowrite(0x68, byte);
+	pmio_write(0x68, byte);
 
 	if (REV_SB700_A15 == rev) {
 		u16 word;
@@ -326,14 +326,14 @@ static void sm_init(struct device *dev)
 	abcfg_reg(0x98, 1 << 16, 1 << 16);
 
 	/* 9.2: Enabling IDE Data Bus DD7 Pull Down Resistor */
-	byte = pm2_ioread(0xE5);
+	byte = pmio2_read(0xE5);
 	byte |= 1 << 2;
-	pm2_iowrite(0xE5, byte);
+	pmio2_write(0xE5, byte);
 
 	/* Enable IDE controller. */
-	byte = pm_ioread(0x59);
+	byte = pmio_read(0x59);
 	byte &= ~(1 << 1);
-	pm_iowrite(0x59, byte);
+	pmio_write(0x59, byte);
 
 	/* Enable SCI as irq9. */
 	outb(0x4, 0xC00);

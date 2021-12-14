@@ -11,18 +11,6 @@
 #include "sb700.h"
 #include "smbus.h"
 
-static void pmio_write(u8 reg, u8 value)
-{
-	outb(reg, PM_INDEX);
-	outb(value, PM_INDEX + 1);
-}
-
-static u8 pmio_read(u8 reg)
-{
-	outb(reg, PM_INDEX);
-	return inb(PM_INDEX + 1);
-}
-
 static void sb700_acpi_init(void)
 {
 	u16 word;
@@ -295,10 +283,6 @@ static void sb700_devices_por_init(void)
 
 	/* Test Mode, PCIB_SReset_En Mask is set. */
 	pci_write_config8(dev, 0x6c, 0x20);
-
-	/* IO Address Enable, CIM set 0x78 only and masked 0x79. */
-	/*pci_write_config8(dev, 0x79, 0x4F); */
-	pci_write_config8(dev, 0x78, 0xFF);
 
 	/* Set smbus iospace enable, I don't know why write 0x04 into reg5 that is reserved */
 	pci_write_config16(dev, 0x4, 0x0407);

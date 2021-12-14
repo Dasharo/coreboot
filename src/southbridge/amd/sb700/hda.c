@@ -155,9 +155,9 @@ static void hda_init(struct device *dev)
 	struct device *sm_dev;
 
 	/* Enable azalia - PM_io 0x59[3], no ac97 in sb700. */
-	byte = pm_ioread(0x59);
+	byte = pmio_read(0x59);
 	byte |= 1 << 3;
-	pm_iowrite(0x59, byte);
+	pmio_write(0x59, byte);
 
 	/* Find the SMBus */
 	sm_dev = dev_find_device(PCI_VENDOR_ID_ATI, PCI_DEVICE_ID_ATI_SB700_SM, 0);
