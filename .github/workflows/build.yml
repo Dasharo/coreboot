@@ -65,9 +65,10 @@ jobs:
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
         make -j $(nproc) what-jenkins-does JENKINS_ABUILD_OPT="-t intel/glkrvp"
+        chmod u+w -R go
         git clean -df
         cd 3rdparty/intel-sec-tools
-        git reset --hard HEAD
+        git clean -df
         cd ../..
         git status
         EOF
