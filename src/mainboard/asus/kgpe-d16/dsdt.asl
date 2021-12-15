@@ -83,8 +83,8 @@ DefinitionBlock (
 		/*  Keyboard controller PME#  */
 		Method(_L08) {
 			/* Level-Triggered GPE */
-			Notify(\_SB.PCI0.LPC.PS2K, 0x02)	/* NOTIFY_DEVICE_WAKE */
-			Notify(\_SB.PCI0.LPC.PS2M, 0x02)	/* NOTIFY_DEVICE_WAKE */
+			Notify(\_SB.PCI0.LPCB.PS2K, 0x02)	/* NOTIFY_DEVICE_WAKE */
+			Notify(\_SB.PCI0.LPCB.PS2M, 0x02)	/* NOTIFY_DEVICE_WAKE */
 			Notify(\_SB.PWRB, 0x02)			/* NOTIFY_DEVICE_WAKE */
 		}
 
@@ -448,7 +448,7 @@ DefinitionBlock (
 			}
 
 			/* 0:14.3 SP5100 LPC */
-			Device (LPC) {
+			Device (LPCB) {
 				Name (_HID, EisaId ("PNP0A05"))
 
 				/* Real Time Clock Device */
@@ -512,7 +512,7 @@ DefinitionBlock (
 						IO(Decode16, 0x0089, 0x0089, 0x01, 0x03)
 						IO(Decode16, 0x008F, 0x008F, 0x01, 0x01)
 						IO(Decode16, 0x00C0, 0x00C0, 0x10, 0x20)
-					}) /* End Name(_SB.PCI0.LpcIsaBr.MAD._CRS) */
+					}) /* End Name(_SB.PCI0.LPCBIsaBr.MAD._CRS) */
 				}
 
 				Device(COPR) {
