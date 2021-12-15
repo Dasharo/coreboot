@@ -58,5 +58,9 @@ void *cbmem_top_chipset(void)
 {
 	uint32_t topmem = rdmsr(TOP_MEM).lo;
 
-	return (void *) topmem - get_uma_memory_size(topmem) - get_cc6_memory_size();
+	/* If there is memory above 4G, CC6 storage will not be under 4G */
+	if (rdmsr(TOP_MEM2).hi != 0)
+		return (void *) topmem - get_uma_memory_size(topmem);
+	else
+		return (void *) topmem - get_uma_memory_size(topmem) - get_cc6_memory_size();
 }
