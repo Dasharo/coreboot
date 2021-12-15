@@ -66,56 +66,110 @@ jobs:
         make -j $(nproc) what-jenkins-does JENKINS_ABUILD_OPT="-t intel/glkrvp"
         EOF
 
-    - name: Build KGPE-D16 2MB target 
+    - name: Build KGPE-D16 2MB TPM 1.2 target
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
         make distclean
-        cp configs/config.asus_kgpe_d16 .config
+        cp configs/config.asus_kgpe_d16_vboot_tpm12 .config
         make olddefconfig
         make -j $(nproc)
         EOF
 
-    - name: Save KGPE-D16 2MB artifacts
+    - name: Save KGPE-D16 2MB TPM 1.2 artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: coreboot-binary-2M
+        name: coreboot-binary-2M-TPM-12
         path: |
           build/coreboot.rom
         retention-days: 7
 
-    - name: Build KGPE-D16 8MB target 
+    - name: Build KGPE-D16 8MB TPM 1.2 target 
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
         make distclean
-        cp configs/config.asus_kgpe_d16_8M .config
+        cp configs/config.asus_kgpe_d16_8M_vboot_tpm12 .config
         make olddefconfig
         make -j $(nproc)
         EOF
 
-    - name: Save KGPE-D16 8MB artifacts
+    - name: Save KGPE-D16 8MB TPM 1.2 artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: coreboot-binary-8M
+        name: coreboot-binary-8M-TPM-12
         path: |
           build/coreboot.rom
         retention-days: 7
 
-    - name: Build KGPE-D16 16MB target 
+    - name: Build KGPE-D16 16MB TPM 1.2 target
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
         make distclean
-        cp configs/config.asus_kgpe_d16_16M .config
+        cp configs/config.asus_kgpe_d16_16M_vboot_tpm12 .config
         make olddefconfig
         make -j $(nproc)
         EOF
     
-    - name: Save KGPE-D16 16MB artifacts
+    - name: Save KGPE-D16 16MB TPM 1.2 artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: coreboot-binary-16M
+        name: coreboot-binary-16M-TPM-12
+        path: |
+          build/coreboot.rom
+        retention-days: 7
+
+    - name: Build KGPE-D16 2MB TPM 2.0 target
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
+        make distclean
+        cp configs/config.asus_kgpe_d16_vboot_tpm2 .config
+        make olddefconfig
+        make -j $(nproc)
+        EOF
+
+    - name: Save KGPE-D16 2MB TPM 2.0 artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: coreboot-binary-2M-TPM-2
+        path: |
+          build/coreboot.rom
+        retention-days: 7
+
+    - name: Build KGPE-D16 8MB TPM 2.0 target 
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
+        make distclean
+        cp configs/config.asus_kgpe_d16_8M_vboot_tpm2 .config
+        make olddefconfig
+        make -j $(nproc)
+        EOF
+
+    - name: Save KGPE-D16 8MB TPM 2.0 artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: coreboot-binary-8M-TPM-2
+        path: |
+          build/coreboot.rom
+        retention-days: 7
+
+    - name: Build KGPE-D16 16MB TPM 2.0 target
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
+        make distclean
+        cp configs/config.asus_kgpe_d16_16M_vboot_tpm2 .config
+        make olddefconfig
+        make -j $(nproc)
+        EOF
+    
+    - name: Save KGPE-D16 16MB TPM 2.0 artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: coreboot-binary-16M-TPM-2
         path: |
           build/coreboot.rom
         retention-days: 7
