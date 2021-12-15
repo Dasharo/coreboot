@@ -59,11 +59,17 @@ jobs:
     # public runnner. Building all of them takes 4+ hours and we run out of
     # space. This already should give us some idea if we break something in
     # common code.
+    # FIXME: this step leaves dirty working tree
     - name: Run upstream coreboot tests (for one mainboard)
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
         make -j $(nproc) what-jenkins-does JENKINS_ABUILD_OPT="-t intel/glkrvp"
+        git clean -df
+        cd 3rdparty/intel-sec-tools
+        git reset --hard HEAD
+        cd ../..
+        git status
         EOF
 
     - name: Build KGPE-D16 2MB target 
