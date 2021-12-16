@@ -18,7 +18,6 @@
 #include <console/console.h>
 #include <program_loading.h>
 #include <cbfs.h>
-#include <commonlib/cbfs.h>
 #include <commonlib/region.h>
 #include <fmap.h>
 #include "bios_knobs.h"
