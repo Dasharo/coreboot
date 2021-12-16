@@ -333,7 +333,6 @@ static void mainboard_enable(struct device *dev)
 	if (read_ddr3_spd_from_cbfs(spd_buffer, spd_index) < 0)
 		die("No SPD data\n");
 
-
 	if (scon) {
 		if (spd_buffer[3] == 8)
 			printk(BIOS_ALERT, " ECC");
