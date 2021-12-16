@@ -335,8 +335,6 @@ static void prepare_dimm_data(void)
 	}
 }
 
-void istep_10_13(void);
-
 void main(void)
 {
 	uint8_t phb_active_mask = 0;

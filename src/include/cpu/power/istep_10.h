@@ -7,5 +7,6 @@
 
 void istep_10_10(uint8_t *phb_active_mask, uint8_t *iovalid_enable);
 void istep_10_12(void);
+void istep_10_13(void);
 
 #endif /* CPU_PPC64_ISTEP10_H */
