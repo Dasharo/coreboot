@@ -22,12 +22,18 @@
 #include <commonlib/tcpa_log_serialized.h>
 #include <commonlib/coreboot_tables.h>
 
+#include <byteswap.h>
+
 #ifdef __OpenBSD__
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define FIX_ENDIANNESS(a) (sizeof(a) == 1 ? (a) :\
+                           sizeof(a) == 2 ? __bswap_16(a) :\
+                           sizeof(a) == 4 ? __bswap_32(a) :\
+                                            __bswap_64(a))
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -116,8 +122,8 @@ static const void *map_memory(struct mapping *mapping, unsigned long long phys,
 			phys - mapping->offset);
 
 	if (v == MAP_FAILED) {
-		debug("Mapping failed %zuB of physical memory at 0x%llx.\n",
-			mapping->virt_size, phys - mapping->offset);
+		debug("Mapping failed %zuB of physical memory at 0x%llx.\n Error: %s\n",
+			mapping->virt_size, phys - mapping->offset, strerror(errno));
 		return NULL;
 	}
 
@@ -189,16 +195,19 @@ static void *aligned_memcpy(void *dest, const void *src, size_t n)
  */
 static u16 ipchcksum(const void *addr, unsigned size)
 {
+	debug("starting checksum\n");
+	debug("addr: %p\nsize: %X\n", addr, size);
 	const u16 *p = addr;
 	unsigned i, n = size / 2; /* don't expect odd sized blocks */
 	u32 sum = 0;
 
 	for (i = 0; i < n; i++)
-		sum += p[i];
+		sum += FIX_ENDIANNESS(p[i]);
 
 	sum = (sum >> 16) + (sum & 0xffff);
 	sum += (sum >> 16);
 	sum = ~sum & 0xffff;
+	debug("ending checksum\n");
 	return (u16) sum;
 }
 
@@ -384,15 +393,25 @@ static int parse_cbtable(u64 address, size_t table_size)
 			continue;
 		}
 
+		debug("\n\n---------------\n");
+		debug("Found table!\n");
+		debug("lbh->signature[4]: %s\n", lbh->signature);
+		debug("lbh->header_bytes: %lX\n", FIX_ENDIANNESS(lbh->header_bytes));
+		debug("lbh->header_checksum: %lX\n", FIX_ENDIANNESS(lbh->header_checksum));
+		debug("lbh->table_bytes: %lX\n", FIX_ENDIANNESS(lbh->table_bytes));
+		debug("lbh->table_checksum: %lX\n", FIX_ENDIANNESS(lbh->table_checksum));
+		debug("lbh->table_entries: %lX\n", FIX_ENDIANNESS(lbh->table_entries));
+		debug("---------------\n\n");
+
 		/* Map in the whole table to parse. */
-		if (!map_memory(&table_mapping, address + i + lbh->header_bytes,
-				 lbh->table_bytes)) {
+		if (!map_memory(&table_mapping, address + i + FIX_ENDIANNESS(lbh->header_bytes),
+				 FIX_ENDIANNESS(lbh->table_bytes))) {
 			debug("Couldn't map in table\n");
 			continue;
 		}
 
-		if (ipchcksum(mapping_virt(&table_mapping), lbh->table_bytes) !=
-		    lbh->table_checksum) {
+		if (ipchcksum(mapping_virt(&table_mapping), FIX_ENDIANNESS(lbh->table_bytes)) !=
+		    FIX_ENDIANNESS(lbh->table_checksum)) {
 			debug("Signature found, but wrong checksum.\n");
 			unmap_memory(&table_mapping);
 			continue;
@@ -599,6 +618,7 @@ static void dump_timestamps(int mach_readable)
 	uint64_t total_time;
 	struct mapping timestamp_mapping;
 
+	debug("timestamps.tag: %x ?= %x\n", timestamps.tag, LB_TAG_TIMESTAMPS);
 	if (timestamps.tag != LB_TAG_TIMESTAMPS) {
 		fprintf(stderr, "No timestamps found in coreboot table.\n");
 		return;
@@ -1101,7 +1121,8 @@ static void print_usage(const char *name, int exit_code)
 	exit(exit_code);
 }
 
-#if defined(__arm__) || defined(__aarch64__)
+#if defined(__arm__) || defined(__aarch64__) \
+ || defined(__ppc64__) || defined(__powerpc64__)
 static void dt_update_cells(const char *name, int *addr_cells_ptr,
 			    int *size_cells_ptr)
 {
@@ -1214,7 +1235,10 @@ static char *dt_find_compat(const char *parent, const char *compat,
 	closedir(dir);
 	return ret;
 }
-#endif /* defined(__arm__) || defined(__aarch64__) */
+#endif /* defined(__arm__) || defined(__aarch64__) \
+ || defined(__ppc64__) || defined(__powerpc64__) */
+
+
 
 int main(int argc, char** argv)
 {
@@ -1317,7 +1341,8 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-#if defined(__arm__) || defined(__aarch64__)
+#if defined(__arm__) || defined(__aarch64__) || \
+	defined(__ppc64__) || defined(__powerpc64__)
 	int addr_cells, size_cells;
 	char *coreboot_node = dt_find_compat("/proc/device-tree", "coreboot",
 					     &addr_cells, &size_cells);
@@ -1377,7 +1402,8 @@ int main(int argc, char** argv)
 		if (!parse_cbtable(possible_base_addresses[j], 0))
 			break;
 	}
-#endif
+#endif /* defined(__arm__) || defined(__aarch64__) \
+ || defined(__ppc64__) || defined(__powerpc64__) */
 
 	if (mapping_virt(&lbtable_mapping) == NULL)
 		die("Table not found.\n");
