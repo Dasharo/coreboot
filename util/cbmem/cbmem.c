@@ -230,17 +230,17 @@ static int find_cbmem_entry(uint32_t id, uint64_t *addr, size_t *size)
 		const struct lb_cbmem_entry *lbe;
 
 		lbr = (const void *)(table + offset);
-		offset += lbr->size;
+		offset += FIX_ENDIANNESS(lbr->size);
 
-		if (lbr->tag != LB_TAG_CBMEM_ENTRY)
+		if (FIX_ENDIANNESS(lbr->tag) != LB_TAG_CBMEM_ENTRY)
 			continue;
 
 		lbe = (const void *)lbr;
-		if (lbe->id != id)
+		if (FIX_ENDIANNESS(lbe->id) != id)
 			continue;
 
-		*addr = lbe->address;
-		*size = lbe->entry_size;
+		*addr = FIX_ENDIANNESS(lbe->address);
+		*size = FIX_ENDIANNESS(lbe->entry_size);
 		ret = 0;
 		break;
 	}
@@ -275,10 +275,10 @@ static struct lb_cbmem_ref parse_cbmem_ref(const struct lb_cbmem_ref *cbmem_ref)
 
 	aligned_memcpy(&ret, cbmem_ref, sizeof(ret));
 
-	if (cbmem_ref->size < sizeof(*cbmem_ref))
-		ret.cbmem_addr = (uint32_t)ret.cbmem_addr;
+	if (FIX_ENDIANNESS(cbmem_ref->size) < sizeof(*cbmem_ref))
+		ret.cbmem_addr = FIX_ENDIANNESS((uint32_t)FIX_ENDIANNESS(ret.cbmem_addr));
 
-	debug("      cbmem_addr = %" PRIx64 "\n", ret.cbmem_addr);
+	debug("      cbmem_addr = %" PRIx64 "\n", FIX_ENDIANNESS(ret.cbmem_addr));
 
 	return ret;
 }
@@ -289,14 +289,14 @@ static void parse_memory_tags(const struct lb_memory *mem)
 	int i;
 
 	/* Peel off the header size and calculate the number of entries. */
-	num_entries = (mem->size - sizeof(*mem)) / sizeof(mem->map[0]);
+	num_entries = (FIX_ENDIANNESS(mem->size) - sizeof(*mem)) / sizeof(mem->map[0]);
 
 	for (i = 0; i < num_entries; i++) {
-		if (mem->map[i].type != LB_MEM_TABLE)
+		if (FIX_ENDIANNESS(mem->map[i].type) != LB_MEM_TABLE)
 			continue;
 		debug("      LB_MEM_TABLE found.\n");
 		/* The last one found is CBMEM */
-		aligned_memcpy(&cbmem, &mem->map[i], sizeof(cbmem));
+		aligned_memcpy(&cbmem, &mem->map[i], sizeof(cbmem)); // TODO (IgorBagnucki): What happens with cbmem?
 	}
 }
 
@@ -309,10 +309,10 @@ static int parse_cbtable_entries(const struct mapping *table_mapping)
 	const void *lbtable = mapping_virt(table_mapping);
 	int forwarding_table_found = 0;
 
-	for (i = 0; i < table_size; i += lbr_p->size) {
+	for (i = 0; i < table_size; i += FIX_ENDIANNESS(lbr_p->size)) {
 		lbr_p = lbtable + i;
-		debug("  coreboot table entry 0x%02x\n", lbr_p->tag);
-		switch (lbr_p->tag) {
+		debug("  coreboot table entry 0x%02lx\n", FIX_ENDIANNESS(lbr_p->tag));
+		switch (FIX_ENDIANNESS(lbr_p->tag)) {
 		case LB_TAG_MEMORY:
 			debug("    Found memory map.\n");
 			parse_memory_tags(lbtable + i);
@@ -341,9 +341,9 @@ static int parse_cbtable_entries(const struct mapping *table_mapping)
 			 * search at the new address.
 			 */
 			struct lb_forward lbf_p =
-			    *(const struct lb_forward *)lbr_p;
+			    *(const struct lb_forward *)lbr_p; // TODO(IgorBagnucki): Should endianness be fixed here too? Probably yes
 			debug("    Found forwarding entry.\n");
-			ret = parse_cbtable(lbf_p.forward, 0);
+			ret = parse_cbtable(FIX_ENDIANNESS(lbf_p.forward), 0);
 
 			/* Assume the forwarding entry is valid. If this fails
 			 * then there's a total failure. */
@@ -435,6 +435,7 @@ static int parse_cbtable(u64 address, size_t table_size)
 		 * coreboot table mapping for future use.
 		 */
 		if (ret == 0)
+			// TODO (IgorBagnucki): check the usage of lbtable_mapping
 			lbtable_mapping = table_mapping;
 		else
 			unmap_memory(&table_mapping);
@@ -618,37 +619,36 @@ static void dump_timestamps(int mach_readable)
 	uint64_t total_time;
 	struct mapping timestamp_mapping;
 
-	debug("timestamps.tag: %x ?= %x\n", timestamps.tag, LB_TAG_TIMESTAMPS);
-	if (timestamps.tag != LB_TAG_TIMESTAMPS) {
+	if (FIX_ENDIANNESS(timestamps.tag) != LB_TAG_TIMESTAMPS) {
 		fprintf(stderr, "No timestamps found in coreboot table.\n");
 		return;
 	}
 
 	size = sizeof(*tst_p);
-	tst_p = map_memory(&timestamp_mapping, timestamps.cbmem_addr, size);
+	tst_p = map_memory(&timestamp_mapping, FIX_ENDIANNESS(timestamps.cbmem_addr), size);
 	if (!tst_p)
 		die("Unable to map timestamp header\n");
 
-	timestamp_set_tick_freq(tst_p->tick_freq_mhz);
+	timestamp_set_tick_freq(FIX_ENDIANNESS(tst_p->tick_freq_mhz));
 
 	if (!mach_readable)
-		printf("%d entries total:\n\n", tst_p->num_entries);
-	size += tst_p->num_entries * sizeof(tst_p->entries[0]);
+		printf("%ld entries total:\n\n", FIX_ENDIANNESS(tst_p->num_entries));
+	size += FIX_ENDIANNESS(tst_p->num_entries) * sizeof(tst_p->entries[0]);
 
 	unmap_memory(&timestamp_mapping);
 
-	tst_p = map_memory(&timestamp_mapping, timestamps.cbmem_addr, size);
+	tst_p = map_memory(&timestamp_mapping, FIX_ENDIANNESS(timestamps.cbmem_addr), size);
 	if (!tst_p)
 		die("Unable to map full timestamp table\n");
 
 	/* Report the base time within the table. */
 	prev_stamp = 0;
 	if (mach_readable)
-		timestamp_print_parseable_entry(0,  tst_p->base_time,
+		timestamp_print_parseable_entry(0, FIX_ENDIANNESS(tst_p->base_time),
 						prev_stamp);
 	else
-		timestamp_print_entry(0,  tst_p->base_time, prev_stamp);
-	prev_stamp = tst_p->base_time;
+		timestamp_print_entry(0, FIX_ENDIANNESS(tst_p->base_time), prev_stamp);
+	prev_stamp = FIX_ENDIANNESS(tst_p->base_time);
 
 	sorted_tst_p = malloc(size);
 	if (!sorted_tst_p)
@@ -692,13 +692,13 @@ static void dump_tcpa_log(void)
 	size_t size;
 	struct mapping tcpa_mapping;
 
-	if (tcpa_log.tag != LB_TAG_TCPA_LOG) {
+	if (FIX_ENDIANNESS(tcpa_log.tag) != LB_TAG_TCPA_LOG) {
 		fprintf(stderr, "No tcpa log found in coreboot table.\n");
 		return;
 	}
 
 	size = sizeof(*tclt_p);
-	tclt_p = map_memory(&tcpa_mapping, tcpa_log.cbmem_addr, size);
+	tclt_p = map_memory(&tcpa_mapping, FIX_ENDIANNESS(tcpa_log.cbmem_addr), size);
 	if (!tclt_p)
 		die("Unable to map tcpa log header\n");
 
@@ -706,19 +706,19 @@ static void dump_tcpa_log(void)
 
 	unmap_memory(&tcpa_mapping);
 
-	tclt_p = map_memory(&tcpa_mapping, tcpa_log.cbmem_addr, size);
+	tclt_p = map_memory(&tcpa_mapping, FIX_ENDIANNESS(tcpa_log.cbmem_addr), size);
 	if (!tclt_p)
 		die("Unable to map full tcpa log table\n");
 
 	printf("coreboot TCPA log:\n\n");
 
-	for (uint16_t i = 0; i < tclt_p->num_entries; i++) {
+	for (uint16_t i = 0; i < FIX_ENDIANNESS(tclt_p->num_entries); i++) {
 		const struct tcpa_entry *tce = &tclt_p->entries[i];
 
-		printf(" PCR-%u ", tce->pcr);
+		printf(" PCR-%lu ", FIX_ENDIANNESS(tce->pcr));
 
-		for (uint32_t j = 0; j < tce->digest_length; j++)
-			printf("%02x", tce->digest[j]);
+		for (uint32_t j = 0; j < FIX_ENDIANNESS(tce->digest_length); j++)
+			printf("%02lx", FIX_ENDIANNESS(tce->digest[j]));
 
 		printf(" %s [%s]\n", tce->digest_type, tce->name);
 	}
@@ -743,21 +743,21 @@ static void dump_console(int one_boot_only)
 	size_t size, cursor;
 	struct mapping console_mapping;
 
-	if (console.tag != LB_TAG_CBMEM_CONSOLE) {
+	if (FIX_ENDIANNESS(console.tag) != LB_TAG_CBMEM_CONSOLE) {
 		fprintf(stderr, "No console found in coreboot table.\n");
 		return;
 	}
 
 	size = sizeof(*console_p);
-	console_p = map_memory(&console_mapping, console.cbmem_addr, size);
+	console_p = map_memory(&console_mapping, FIX_ENDIANNESS(console.cbmem_addr), size);
 	if (!console_p)
 		die("Unable to map console object.\n");
 
-	cursor = console_p->cursor & CBMC_CURSOR_MASK;
-	if (!(console_p->cursor & CBMC_OVERFLOW) && cursor < console_p->size)
+	cursor = FIX_ENDIANNESS(console_p->cursor) & CBMC_CURSOR_MASK;
+	if (!(FIX_ENDIANNESS(console_p->cursor) & CBMC_OVERFLOW) && cursor < FIX_ENDIANNESS(console_p->size))
 		size = cursor;
 	else
-		size = console_p->size;
+		size = FIX_ENDIANNESS(console_p->size);
 	unmap_memory(&console_mapping);
 
 	console_c = malloc(size + 1);
@@ -767,13 +767,13 @@ static void dump_console(int one_boot_only)
 	}
 	console_c[size] = '\0';
 
-	console_p = map_memory(&console_mapping, console.cbmem_addr,
+	console_p = map_memory(&console_mapping, FIX_ENDIANNESS(console.cbmem_addr),
 		size + sizeof(*console_p));
 
 	if (!console_p)
 		die("Unable to map full console object.\n");
 
-	if (console_p->cursor & CBMC_OVERFLOW) {
+	if (FIX_ENDIANNESS(console_p->cursor) & CBMC_OVERFLOW) {
 		if (cursor >= size) {
 			printf("cbmem: ERROR: CBMEM console struct is illegal, "
 			       "output may be corrupt or out of order!\n\n");
@@ -867,12 +867,12 @@ static void hexdump(unsigned long memory, int length)
 
 static void dump_cbmem_hex(void)
 {
-	if (cbmem.type != LB_MEM_TABLE) {
+	if (FIX_ENDIANNESS(cbmem.type) != LB_MEM_TABLE) {
 		fprintf(stderr, "No coreboot CBMEM area found!\n");
 		return;
 	}
-
-	hexdump(unpack_lb64(cbmem.start), unpack_lb64(cbmem.size));
+	// TODO(IgorBagnucki): It would be nicer to use unpack_lb64()
+	hexdump((FIX_ENDIANNESS(cbmem.start.hi) << 32) | FIX_ENDIANNESS(cbmem.start.lo), (FIX_ENDIANNESS(cbmem.size.hi) << 32) | FIX_ENDIANNESS(cbmem.size.lo));
 }
 
 static void rawdump(uint64_t base, uint64_t size)
@@ -909,16 +909,17 @@ static void dump_cbmem_raw(unsigned int id)
 		const struct lb_cbmem_entry *lbe;
 
 		lbr = (const void *)(table + offset);
-		offset += lbr->size;
-
-		if (lbr->tag != LB_TAG_CBMEM_ENTRY)
+		offset += FIX_ENDIANNESS(lbr->size);
+		debug("tag: %lX, %X\n", FIX_ENDIANNESS(lbr->tag), LB_TAG_CBMEM_ENTRY);
+		if (FIX_ENDIANNESS(lbr->tag) != LB_TAG_CBMEM_ENTRY)
 			continue;
 
 		lbe = (const void *)lbr;
-		if (lbe->id == id) {
-			debug("found id for raw dump %0x", lbe->id);
-			base = lbe->address;
-			size = lbe->entry_size;
+		debug("id: %lX, %X\n", FIX_ENDIANNESS(lbe->id), id);
+		if (FIX_ENDIANNESS(lbe->id) == id) {
+			debug("found id for raw dump %0lx\n", FIX_ENDIANNESS(lbe->id));
+			base = FIX_ENDIANNESS(lbe->address);
+			size = FIX_ENDIANNESS(lbe->entry_size);
 			break;
 		}
 	}
@@ -992,13 +993,17 @@ static void dump_cbmem_toc(void)
 		const struct lb_cbmem_entry *lbe;
 
 		lbr = (const void *)(table + offset);
-		offset += lbr->size;
+		offset += FIX_ENDIANNESS(lbr->size);
 
-		if (lbr->tag != LB_TAG_CBMEM_ENTRY)
+		if (FIX_ENDIANNESS(lbr->tag) != LB_TAG_CBMEM_ENTRY)
 			continue;
 
 		lbe = (const void *)lbr;
-		cbmem_print_entry(i, lbe->id, lbe->address, lbe->entry_size);
+		cbmem_print_entry(
+			i,
+			FIX_ENDIANNESS(lbe->id),
+			FIX_ENDIANNESS(lbe->address),
+			FIX_ENDIANNESS(lbe->entry_size));
 		i++;
 	}
 }
@@ -1053,12 +1058,12 @@ static void dump_coverage(void)
 	printf("Dumping coverage data...\n");
 
 	struct file *file = (struct file *)coverage;
-	while (file && file->magic == COVERAGE_MAGIC) {
+	while (file && FIX_ENDIANNESS(file->magic) == COVERAGE_MAGIC) {
 		FILE *f;
 		char *filename;
 
-		debug(" -> %s\n", (char *)phys_to_virt(file->filename));
-		filename = strdup((char *)phys_to_virt(file->filename));
+		debug(" -> %s\n", (char *)phys_to_virt(FIX_ENDIANNESS(file->filename)));
+		filename = strdup((char *)phys_to_virt(FIX_ENDIANNESS(file->filename)));
 		if (mkpath(filename, 0755) == -1) {
 			perror("Directory for coverage data could "
 				"not be created");
@@ -1070,8 +1075,8 @@ static void dump_coverage(void)
 				filename, strerror(errno));
 			exit(1);
 		}
-		if (fwrite((void *)phys_to_virt(file->data),
-						file->len, 1, f) != 1) {
+		if (fwrite((void *)phys_to_virt(FIX_ENDIANNESS(file->data)),
+						FIX_ENDIANNESS((__uint64_t)file->len), 1, f) != 1) {
 			printf("Could not write to %s: %s\n",
 				filename, strerror(errno));
 			exit(1);
@@ -1079,8 +1084,8 @@ static void dump_coverage(void)
 		fclose(f);
 		free(filename);
 
-		if (file->next)
-			file = (struct file *)phys_to_virt(file->next);
+		if (FIX_ENDIANNESS(file->next))
+			file = (struct file *)phys_to_virt(FIX_ENDIANNESS(file->next));
 		else
 			file = NULL;
 	}
