@@ -291,6 +291,8 @@ void fsi_init(void)
 	chips = fsi_get_present_chips();
 	if (chips & 0x2)
 		init_fsi_port(/*port=*/1);
+
+	fsi_i2c_init(chips);
 }
 
 uint8_t fsi_get_present_chips(void)
