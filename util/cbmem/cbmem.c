@@ -31,13 +31,6 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-#define NEEDS_ENDIAN_SWAP (1)
-#define SWAP_ENDIAN(a) (sizeof(a) == 1 ? (a) :\
-						sizeof(a) == 2 ? __bswap_16(a) :\
-						sizeof(a) == 4 ? __bswap_32(a) :\
-										 __bswap_64(a))
-#define HANDLE_ENDIAN(a) (NEEDS_ENDIAN_SWAP == 0 ? (a) : SWAP_ENDIAN(a))
-
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -63,6 +56,35 @@ static int verbose = 0;
 /* File handle used to access /dev/mem */
 static int mem_fd;
 static struct mapping lbtable_mapping;
+
+// Endianness conversions on systems with different endianness in BIOS and in OS
+static int endian_conversion_required = 0;
+
+#define HANDLE_ENDIAN(a) (sizeof(a) == 1 ? (a) :\
+						  sizeof(a) == 2 ? handle_endian_16(a) :\
+						  sizeof(a) == 4 ? handle_endian_32(a) :\
+										   handle_endian_64(a))
+
+static inline u16 handle_endian_16(u16 value)
+{
+	if(endian_conversion_required)
+		return __bswap_16(value);
+	return value;
+}
+
+static inline u32 handle_endian_32(u32 value)
+{
+	if(endian_conversion_required)
+		return __bswap_32(value);
+	return value;
+}
+
+static inline u64 handle_endian_64(u64 value)
+{
+	if(endian_conversion_required)
+		return __bswap_64(value);
+	return value;
+}
 
 static void die(const char *msg)
 {
@@ -388,10 +410,19 @@ static int parse_cbtable(u64 address, size_t table_size)
 		struct mapping table_mapping;
 
 		lbh = buf + i;
+
 		if (memcmp(lbh->signature, "LBIO", sizeof(lbh->signature)) ||
 			!lbh->header_bytes ||
 			ipchcksum(lbh, sizeof(*lbh))) {
 			continue;
+		}
+
+		endian_conversion_required = (0x18 < lbh->header_bytes);
+		if(endian_conversion_required) {
+			debug("Endianness conversion is enabled.\n");
+		}
+		else {
+			debug("Endianness conversion is disabled.\n");
 		}
 
 		/* Map in the whole table to parse. */
