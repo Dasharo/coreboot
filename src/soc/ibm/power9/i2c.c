@@ -8,11 +8,17 @@
 #include <cpu/power/scom.h>
 #include <spd_bin.h>
 
-#define FIFO_REG(bus)		(0xA0004 | ((bus) << 12))
-#define CMD_REG(bus)		(0xA0005 | ((bus) << 12))
-#define MODE_REG(bus)		(0xA0006 | ((bus) << 12))
-#define STATUS_REG(bus)		(0xA000B | ((bus) << 12))
-#define RES_ERR_REG(bus)	(0xA000C | ((bus) << 12))
+#include "fsi.h"
+
+/* Base FSI address for registers of an FSI I2C master */
+#define I2C_HOST_MASTER_BASE_ADDR 0xA0004
+
+#define FIFO_REG		0
+#define CMD_REG			1
+#define MODE_REG		2
+#define STATUS_REG		7
+#define RESET_REG		7
+#define RES_ERR_REG		8
 
 // CMD register
 #define LEN_PLACE(x)		PPC_PLACE((x), 16, 16)
@@ -28,12 +34,17 @@
 #define CMD_COMPLETE		0x0100000000000000
 #define FIFO_COUNT_FLD		0x0000000F00000000
 #define BUSY			0x0000030000000000
+#define SCL			0x0000080000000000
+#define SDA			0x0000040000000000
 #define UNRECOVERABLE		0xFC80000000000000
-
-#define CLEAR_ERR		0x8000000000000000
 
 #define I2C_MAX_FIFO_CAPACITY	8
 #define SPD_I2C_BUS		3
+
+enum i2c_type {
+	HOST_I2C, // I2C via XSCOM (first CPU)
+	FSI_I2C,  // I2C via FSI (second CPU)
+};
 
 /* return -1 if SMBus errors otherwise return 0 */
 static int get_spd(u8 *spd, u8 addr)
@@ -82,19 +93,81 @@ void get_spd_smbus(struct spd_block *blk)
 	blk->len = SPD_PAGE_LEN_DDR4;
 }
 
+/* The four functions below use 64-bit address and data as for SCOM and do
+ * translation for FSI which is 32-bit (as is actual I2C interface). They also
+ * interpret address as register number for FSI I2C. */
+
+static void write_i2c(enum i2c_type type, uint64_t addr, uint64_t data)
+{
+	if (type == HOST_I2C)
+		write_scom(addr, data);
+	else
+		write_fsi_i2c(/*chip=*/1, addr, data >> 32, /*size=*/4);
+}
+
+static uint64_t read_i2c(enum i2c_type type, uint64_t addr)
+{
+	if (type == HOST_I2C)
+		return read_scom(addr);
+	else
+		return (uint64_t)read_fsi_i2c(/*chip=*/1, addr, /*size=*/4) << 32;
+}
+
+static void write_i2c_byte(enum i2c_type type, uint64_t addr, uint8_t data)
+{
+	if (type == HOST_I2C)
+		write_scom(addr, (uint64_t)data << 56);
+	else
+		write_fsi_i2c(/*chip=*/1, addr, (uint32_t)data << 24, /*size=*/1);
+}
+
+static uint8_t read_i2c_byte(enum i2c_type type, uint64_t addr)
+{
+	if (type == HOST_I2C)
+		return read_scom(addr) >> 56;
+	else
+		return read_fsi_i2c(/*chip=*/1, addr, /*size=*/1) >> 24;
+}
+
+/*
+ * There are 4 buses/engines, but the function accepts bus [0-7] in order to
+ * allow specifying bus of the second CPU while still following coreboot's
+ * prototype for this function. [0-3] are buses of the first CPU and [4-7] of
+ * the second one (0-3 correspondingly). However, looks like only one bus is
+ * available through FSI, because its number is never set.
+ */
 int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 			  int seg_count)
 {
+	enum { BUSES_PER_CPU = 4 };
+
 	int bytes_transfered = 0;
 	int i;
 	uint64_t r;
 
-	if (bus > 3) {
+	enum i2c_type type = HOST_I2C;
+	if (bus >= BUSES_PER_CPU) {
+		bus -= BUSES_PER_CPU;
+		type = FSI_I2C;
+	}
+
+	if (bus >= BUSES_PER_CPU) {
 		printk(BIOS_ERR, "I2C bus out of range (%d)\n", bus);
 		return -1;
 	}
 
-	write_scom(RES_ERR_REG(bus), CLEAR_ERR);
+	/* There seems to be only one engine on FSI I2C */
+	uint32_t base = (type == FSI_I2C ? 0 : I2C_HOST_MASTER_BASE_ADDR | (bus << 12));
+	/* Addition is fine, because there will be no carry in bus number bits */
+	uint32_t fifo_reg = base + FIFO_REG;
+	uint32_t cmd_reg = base + CMD_REG;
+	uint32_t mode_reg = base + MODE_REG;
+	uint32_t status_reg = base + STATUS_REG;
+	uint32_t res_err_reg = base + RES_ERR_REG;
+
+	uint64_t clear_err = (type == HOST_I2C ? PPC_BIT(0) : 0);
+
+	write_i2c(type, res_err_reg, clear_err);
 
 	for (i = 0; i < seg_count; i++) {
 		unsigned int len;
@@ -127,15 +200,17 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 		 *
 		 * Use value for 400 kHz as it is the one used by Hostboot.
 		 */
-		write_scom(MODE_REG(bus), 0x0177000000000000 | PPC_PLACE(port, 16, 6));	// 400kHz
+		write_i2c(type, mode_reg,
+			  0x0177000000000000 | PPC_PLACE(port, 16, 6));	// 400kHz
 
-		write_scom(RES_ERR_REG(bus), CLEAR_ERR);
-		write_scom(CMD_REG(bus), START | stop | WITH_ADDR | read_not_write | read_cont |
-		                         ADDR_PLACE(segment[i].slave) |
-		                         LEN_PLACE(segment[i].len));
+		write_i2c(type, res_err_reg, clear_err);
+		write_i2c(type, cmd_reg,
+			  START | stop | WITH_ADDR | read_not_write | read_cont |
+			  ADDR_PLACE(segment[i].slave) |
+			  LEN_PLACE(segment[i].len));
 
 		for (len = 0; len < segment[i].len; len++, bytes_transfered++) {
-			r = read_scom(STATUS_REG(bus));
+			r = read_i2c(type, status_reg);
 
 			if (read_not_write) {
 				/* Read */
@@ -145,11 +220,10 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 						printk(BIOS_INFO, "I2C transfer failed (0x%16.16llx)\n", r);
 						return -1;
 					}
-					r = read_scom(STATUS_REG(bus));
+					r = read_i2c(type, status_reg);
 				}
 
-				r = read_scom(FIFO_REG(bus));
-				segment[i].buf[len] = r >> 56;
+				segment[i].buf[len] = read_i2c_byte(type, fifo_reg);
 			}
 			else
 			{
@@ -159,23 +233,65 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 						printk(BIOS_INFO, "I2C transfer failed (0x%16.16llx)\n", r);
 						return -1;
 					}
-					r = read_scom(STATUS_REG(bus));
+					r = read_i2c(type, status_reg);
 				}
 
-				write_scom(FIFO_REG(bus), (uint64_t) segment[i].buf[len] << 56);
+				write_i2c_byte(type, fifo_reg, segment[i].buf[len]);
 			}
 		}
 
-		r = read_scom(STATUS_REG(bus));
+		r = read_i2c(type, status_reg);
 		while ((r & CMD_COMPLETE) == 0) {
 			if (r & UNRECOVERABLE) {
-				printk(BIOS_INFO, "I2C transfer failed (0x%16.16llx)\n", r);
+				printk(BIOS_INFO, "I2C transfer failed to complete (0x%16.16llx)\n", r);
 				return -1;
 			}
-			r = read_scom(STATUS_REG(bus));
+			r = read_i2c(type, status_reg);
 		}
 
 	}
 
 	return bytes_transfered;
+}
+
+/* Defined in fsi.h */
+void fsi_i2c_init(uint8_t chips)
+{
+	uint64_t status;
+
+	/* Nothing to do if second CPU isn't present */
+	if (!(chips & 0x02))
+		return;
+
+	/*
+	 * Sometimes I2C status looks like 0x_____8__ (i.e., SCL is set, but
+	 * not SDA), which indicates I2C hardware is in a messed up state that
+	 * it won't leave on its own.  Sending an additional STOP *before* reset
+	 * addresses this and doesn't hurt when I2C isn't broken.
+	 */
+	write_i2c(FSI_I2C, CMD_REG, STOP);
+
+	/* Reset I2C */
+	write_i2c(FSI_I2C, RESET_REG, 0);
+
+	/* Wait for SCL */
+	status = read_i2c(FSI_I2C, STATUS_REG);
+	while ((status & SCL) == 0) {
+		if (status & UNRECOVERABLE)
+			die("Unrecoverable I2C error while waiting for SCL: 0x%016x\n", status);
+		status = read_i2c(FSI_I2C, STATUS_REG);
+	}
+
+	/* Send STOP command */
+	write_i2c(FSI_I2C, CMD_REG, STOP);
+
+	status = read_i2c(FSI_I2C, STATUS_REG);
+	while ((status & CMD_COMPLETE) == 0) {
+		if (status & UNRECOVERABLE)
+			die("Unrecoverable I2C error on STOP: 0x%016x\n", status);
+		status = read_i2c(FSI_I2C, STATUS_REG);
+	}
+
+	if ((status & (SCL | SDA | BUSY)) != (SCL | SDA))
+		die("Invalid I2C state after initialization: 0x%016x\n", status);
 }

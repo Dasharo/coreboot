@@ -288,6 +288,7 @@ static void basic_slave_init(void)
 
 void fsi_init(void)
 {
+	uint8_t chips;
 	uint8_t present_slaves;
 
 	present_slaves = basic_master_init();
@@ -297,6 +298,13 @@ void fsi_init(void)
 		if (present_slaves & (0x80 >> port))
 			init_fsi_port(port);
 	}
+
+	/* First CPU is always there (it executes this code) */
+	chips = 0x01;
+	/* Status of the second CPU */
+	chips |= ((present_slaves & 0x40) >> 5);
+
+	fsi_i2c_init(chips);
 }
 
 /* Polls OPB dying on error or timeout */
