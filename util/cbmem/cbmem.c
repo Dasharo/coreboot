@@ -33,9 +33,9 @@
 
 #define NEEDS_ENDIAN_SWAP (1)
 #define SWAP_ENDIAN(a) (sizeof(a) == 1 ? (a) :\
-                        sizeof(a) == 2 ? __bswap_16(a) :\
-                        sizeof(a) == 4 ? __bswap_32(a) :\
-                                         __bswap_64(a))
+						sizeof(a) == 2 ? __bswap_16(a) :\
+						sizeof(a) == 4 ? __bswap_32(a) :\
+										 __bswap_64(a))
 #define HANDLE_ENDIAN(a) (NEEDS_ENDIAN_SWAP == 0 ? (a) : SWAP_ENDIAN(a))
 
 typedef uint8_t u8;
@@ -320,7 +320,7 @@ static int parse_cbtable_entries(const struct mapping *table_mapping)
 		case LB_TAG_TIMESTAMPS: {
 			debug("    Found timestamp table.\n");
 			timestamps =
-			    parse_cbmem_ref((struct lb_cbmem_ref *)lbr_p);
+				parse_cbmem_ref((struct lb_cbmem_ref *)lbr_p);
 			continue;
 		}
 		case LB_TAG_CBMEM_CONSOLE: {
@@ -331,7 +331,7 @@ static int parse_cbtable_entries(const struct mapping *table_mapping)
 		case LB_TAG_TCPA_LOG: {
 			debug("    Found tcpa log table.\n");
 			tcpa_log =
-			    parse_cbmem_ref((struct lb_cbmem_ref *)lbr_p);
+				parse_cbmem_ref((struct lb_cbmem_ref *)lbr_p);
 			continue;
 		}
 		case LB_TAG_FORWARD: {
@@ -341,7 +341,7 @@ static int parse_cbtable_entries(const struct mapping *table_mapping)
 			 * search at the new address.
 			 */
 			struct lb_forward lbf_p =
-			    *(const struct lb_forward *)lbr_p; // TODO(IgorBagnucki): Should endianness be fixed here too? Probably yes
+				*(const struct lb_forward *)lbr_p; // TODO(IgorBagnucki): Should endianness be fixed here too? Probably yes
 			debug("    Found forwarding entry.\n");
 			ret = parse_cbtable(HANDLE_ENDIAN(lbf_p.forward), 0);
 
@@ -388,8 +388,8 @@ static int parse_cbtable(u64 address, size_t table_size)
 
 		lbh = buf + i;
 		if (memcmp(lbh->signature, "LBIO", sizeof(lbh->signature)) ||
-		    !lbh->header_bytes ||
-		    ipchcksum(lbh, sizeof(*lbh))) {
+			!lbh->header_bytes ||
+			ipchcksum(lbh, sizeof(*lbh))) {
 			continue;
 		}
 
@@ -401,7 +401,7 @@ static int parse_cbtable(u64 address, size_t table_size)
 		}
 
 		if (ipchcksum(mapping_virt(&table_mapping), HANDLE_ENDIAN(lbh->table_bytes)) !=
-		    HANDLE_ENDIAN(lbh->table_checksum)) {
+			HANDLE_ENDIAN(lbh->table_checksum)) {
 			debug("Signature found, but wrong checksum.\n");
 			unmap_memory(&table_mapping);
 			continue;
@@ -409,7 +409,7 @@ static int parse_cbtable(u64 address, size_t table_size)
 
 		debug("Found!\n");
 
-        debug("# %X, %lX\n", lbh->header_bytes, HANDLE_ENDIAN(lbh->header_bytes));
+		debug("# %X, %lX\n", lbh->header_bytes, HANDLE_ENDIAN(lbh->header_bytes));
 
 		ret = parse_cbtable_entries(&table_mapping);
 
@@ -589,17 +589,14 @@ static uint64_t timestamp_print_entry(uint32_t id, uint64_t stamp, uint64_t prev
 
 static int compare_timestamp_entries(const void *a, const void *b)
 {
-    debug("start\n");
 	const struct timestamp_entry *tse_a = (struct timestamp_entry *)a;
 	const struct timestamp_entry *tse_b = (struct timestamp_entry *)b;
-    debug("a: %lX, b: %lX\n", HANDLE_ENDIAN(tse_a->entry_stamp), HANDLE_ENDIAN(tse_b->entry_stamp));
 
 	if (HANDLE_ENDIAN(tse_a->entry_stamp) > HANDLE_ENDIAN(tse_b->entry_stamp))
-		{debug("end 1\n");return 1;}
+		return 1;
 	else if (HANDLE_ENDIAN(tse_a->entry_stamp) < HANDLE_ENDIAN(tse_b->entry_stamp))
-		{debug("end -1\n");return -1;}
+		return -1;
 
-    debug("end 0\n");
 	return 0;
 }
 
@@ -645,17 +642,13 @@ static void dump_timestamps(int mach_readable)
 		timestamp_print_entry(0, HANDLE_ENDIAN(tst_p->base_time), prev_stamp);
 	prev_stamp = HANDLE_ENDIAN(tst_p->base_time);
 
-    debug("1\n");
 	sorted_tst_p = malloc(size);
-    debug("2\n");
 	if (!sorted_tst_p)
 		die("Failed to allocate memory");
 	aligned_memcpy(sorted_tst_p, tst_p, size);
-    debug("3\n");
 
 	qsort(&sorted_tst_p->entries[0], HANDLE_ENDIAN(sorted_tst_p->num_entries),
-	      sizeof(struct timestamp_entry), compare_timestamp_entries);
-    debug("4\n");
+		  sizeof(struct timestamp_entry), compare_timestamp_entries);
 	total_time = 0;
 	for (uint32_t i = 0; i < HANDLE_ENDIAN(sorted_tst_p->num_entries); i++) {
 		uint64_t stamp;
@@ -772,13 +765,13 @@ static void dump_console(int one_boot_only)
 	if (HANDLE_ENDIAN(console_p->cursor) & CBMC_OVERFLOW) {
 		if (cursor >= size) {
 			printf("cbmem: ERROR: CBMEM console struct is illegal, "
-			       "output may be corrupt or out of order!\n\n");
+				   "output may be corrupt or out of order!\n\n");
 			cursor = 0;
 		}
 		aligned_memcpy(console_c, console_p->body + cursor,
-			       size - cursor);
+				   size - cursor);
 		aligned_memcpy(console_c + size - cursor,
-			       console_p->body, cursor);
+				   console_p->body, cursor);
 	} else {
 		aligned_memcpy(console_c, console_p->body, size);
 	}
@@ -1093,39 +1086,39 @@ static void print_version(void)
 	printf("cbmem v%s -- ", CBMEM_VERSION);
 	printf("Copyright (C) 2012 The ChromiumOS Authors.  All rights reserved.\n\n");
 	printf(
-    "This program is free software: you can redistribute it and/or modify\n"
-    "it under the terms of the GNU General Public License as published by\n"
-    "the Free Software Foundation, version 2 of the License.\n\n"
-    "This program is distributed in the hope that it will be useful,\n"
-    "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-    "GNU General Public License for more details.\n\n");
+	"This program is free software: you can redistribute it and/or modify\n"
+	"it under the terms of the GNU General Public License as published by\n"
+	"the Free Software Foundation, version 2 of the License.\n\n"
+	"This program is distributed in the hope that it will be useful,\n"
+	"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+	"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+	"GNU General Public License for more details.\n\n");
 }
 
 static void print_usage(const char *name, int exit_code)
 {
 	printf("usage: %s [-cCltTLxVvh?]\n", name);
 	printf("\n"
-	     "   -c | --console:                   print cbmem console\n"
-	     "   -1 | --oneboot:                   print cbmem console for last boot only\n"
-	     "   -C | --coverage:                  dump coverage information\n"
-	     "   -l | --list:                      print cbmem table of contents\n"
-	     "   -x | --hexdump:                   print hexdump of cbmem area\n"
-	     "   -r | --rawdump ID:                print rawdump of specific ID (in hex) of cbtable\n"
-	     "   -t | --timestamps:                print timestamp information\n"
-	     "   -T | --parseable-timestamps:      print parseable timestamps\n"
-	     "   -L | --tcpa-log                   print TCPA log\n"
-	     "   -V | --verbose:                   verbose (debugging) output\n"
-	     "   -v | --version:                   print the version\n"
-	     "   -h | --help:                      print this help\n"
-	     "\n");
+		 "   -c | --console:                   print cbmem console\n"
+		 "   -1 | --oneboot:                   print cbmem console for last boot only\n"
+		 "   -C | --coverage:                  dump coverage information\n"
+		 "   -l | --list:                      print cbmem table of contents\n"
+		 "   -x | --hexdump:                   print hexdump of cbmem area\n"
+		 "   -r | --rawdump ID:                print rawdump of specific ID (in hex) of cbtable\n"
+		 "   -t | --timestamps:                print timestamp information\n"
+		 "   -T | --parseable-timestamps:      print parseable timestamps\n"
+		 "   -L | --tcpa-log                   print TCPA log\n"
+		 "   -V | --verbose:                   verbose (debugging) output\n"
+		 "   -v | --version:                   print the version\n"
+		 "   -h | --help:                      print this help\n"
+		 "\n");
 	exit(exit_code);
 }
 
 #if defined(__arm__) || defined(__aarch64__) \
  || defined(__ppc64__) || defined(__powerpc64__)
 static void dt_update_cells(const char *name, int *addr_cells_ptr,
-			    int *size_cells_ptr)
+				int *size_cells_ptr)
 {
 	if (*addr_cells_ptr >= 0 && *size_cells_ptr >= 0)
 		return;
@@ -1165,7 +1158,7 @@ static void dt_update_cells(const char *name, int *addr_cells_ptr,
 }
 
 static char *dt_find_compat(const char *parent, const char *compat,
-			    int *addr_cells_ptr, int *size_cells_ptr)
+				int *addr_cells_ptr, int *size_cells_ptr)
 {
 	char *ret = NULL;
 	struct dirent *entry;
@@ -1180,7 +1173,7 @@ static char *dt_find_compat(const char *parent, const char *compat,
 	while ((entry = readdir(dir))) {
 		/* We only care about compatible props or subnodes. */
 		if (entry->d_name[0] == '.' || !((entry->d_type & DT_DIR) ||
-		    !strcmp(entry->d_name, "compatible")))
+			!strcmp(entry->d_name, "compatible")))
 			continue;
 
 		/* Assemble the file name (on the stack, for speed). */
@@ -1194,7 +1187,7 @@ static char *dt_find_compat(const char *parent, const char *compat,
 		/* If it's a subnode, recurse. */
 		if (entry->d_type & DT_DIR) {
 			ret = dt_find_compat(name, compat, addr_cells_ptr,
-					     size_cells_ptr);
+						 size_cells_ptr);
 
 			/* There is only one matching node to find, abort. */
 			if (ret) {
@@ -1346,7 +1339,7 @@ int main(int argc, char** argv)
 	defined(__ppc64__) || defined(__powerpc64__)
 	int addr_cells, size_cells;
 	char *coreboot_node = dt_find_compat("/proc/device-tree", "coreboot",
-					     &addr_cells, &size_cells);
+						 &addr_cells, &size_cells);
 
 	if (!coreboot_node) {
 		fprintf(stderr, "Could not find 'coreboot' compatible node!\n");
