@@ -409,6 +409,8 @@ static int parse_cbtable(u64 address, size_t table_size)
 
 		debug("Found!\n");
 
+        debug("# %X, %lX\n", lbh->header_bytes, HANDLE_ENDIAN(lbh->header_bytes));
+
 		ret = parse_cbtable_entries(&table_mapping);
 
 		/* Table parsing failed. */
@@ -587,14 +589,17 @@ static uint64_t timestamp_print_entry(uint32_t id, uint64_t stamp, uint64_t prev
 
 static int compare_timestamp_entries(const void *a, const void *b)
 {
+    debug("start\n");
 	const struct timestamp_entry *tse_a = (struct timestamp_entry *)a;
 	const struct timestamp_entry *tse_b = (struct timestamp_entry *)b;
+    debug("a: %lX, b: %lX\n", HANDLE_ENDIAN(tse_a->entry_stamp), HANDLE_ENDIAN(tse_b->entry_stamp));
 
-	if (tse_a->entry_stamp > tse_b->entry_stamp)
-		return 1;
-	else if (tse_a->entry_stamp < tse_b->entry_stamp)
-		return -1;
+	if (HANDLE_ENDIAN(tse_a->entry_stamp) > HANDLE_ENDIAN(tse_b->entry_stamp))
+		{debug("end 1\n");return 1;}
+	else if (HANDLE_ENDIAN(tse_a->entry_stamp) < HANDLE_ENDIAN(tse_b->entry_stamp))
+		{debug("end -1\n");return -1;}
 
+    debug("end 0\n");
 	return 0;
 }
 
@@ -630,6 +635,7 @@ static void dump_timestamps(int mach_readable)
 	if (!tst_p)
 		die("Unable to map full timestamp table\n");
 
+
 	/* Report the base time within the table. */
 	prev_stamp = 0;
 	if (mach_readable)
@@ -639,37 +645,38 @@ static void dump_timestamps(int mach_readable)
 		timestamp_print_entry(0, HANDLE_ENDIAN(tst_p->base_time), prev_stamp);
 	prev_stamp = HANDLE_ENDIAN(tst_p->base_time);
 
+    debug("1\n");
 	sorted_tst_p = malloc(size);
+    debug("2\n");
 	if (!sorted_tst_p)
 		die("Failed to allocate memory");
 	aligned_memcpy(sorted_tst_p, tst_p, size);
+    debug("3\n");
 
-	qsort(&sorted_tst_p->entries[0], sorted_tst_p->num_entries,
+	qsort(&sorted_tst_p->entries[0], HANDLE_ENDIAN(sorted_tst_p->num_entries),
 	      sizeof(struct timestamp_entry), compare_timestamp_entries);
-
+    debug("4\n");
 	total_time = 0;
-	for (uint32_t i = 0; i < sorted_tst_p->num_entries; i++) {
+	for (uint32_t i = 0; i < HANDLE_ENDIAN(sorted_tst_p->num_entries); i++) {
 		uint64_t stamp;
 		const struct timestamp_entry *tse = &sorted_tst_p->entries[i];
 
 		/* Make all timestamps absolute. */
-		stamp = tse->entry_stamp + sorted_tst_p->base_time;
+		stamp = HANDLE_ENDIAN(tse->entry_stamp) + HANDLE_ENDIAN(sorted_tst_p->base_time);
 		if (mach_readable)
 			total_time +=
-				timestamp_print_parseable_entry(tse->entry_id,
+				timestamp_print_parseable_entry(HANDLE_ENDIAN(tse->entry_id),
 							stamp, prev_stamp);
 		else
-			total_time += timestamp_print_entry(tse->entry_id,
+			total_time += timestamp_print_entry(HANDLE_ENDIAN(tse->entry_id),
 							stamp, prev_stamp);
 		prev_stamp = stamp;
 	}
-
 	if (!mach_readable) {
 		printf("\nTotal Time: ");
 		print_norm(total_time);
 		printf("\n");
 	}
-
 	unmap_memory(&timestamp_mapping);
 	free(sorted_tst_p);
 }
