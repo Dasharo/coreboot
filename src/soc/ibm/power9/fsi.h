@@ -6,7 +6,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Base FSI address for registers of a FSI I2C master */
+#define I2C_FSI_MASTER_BASE_ADDR 0x01800
+
 void fsi_init(void);
+
+void fsi_i2c_init(uint8_t chips);
 
 /* This isn't meant to be used directly, see below for interface of this unit */
 uint32_t fsi_op(uint8_t chip, uint32_t addr, uint32_t data, bool is_read, uint8_t size);
@@ -51,6 +56,20 @@ static inline uint32_t read_cfam(uint8_t chip, uint32_t addr)
 static inline void write_cfam(uint8_t chip, uint32_t addr, uint32_t data)
 {
 	write_fsi(chip, cfam_addr_to_fsi(addr), data);
+}
+
+/* Operations on FSI I2C registers */
+
+static inline void write_fsi_i2c(uint8_t chip, uint8_t reg, uint32_t data, uint8_t size)
+{
+	uint32_t addr = I2C_FSI_MASTER_BASE_ADDR + reg * 4;
+	fsi_op(chip, addr, data, /*is_read=*/false, size);
+}
+
+static inline uint32_t read_fsi_i2c(uint8_t chip, uint8_t reg, uint8_t size)
+{
+	uint32_t addr = I2C_FSI_MASTER_BASE_ADDR + reg * 4;
+	return fsi_op(chip, addr, /*data=*/0, /*is_read=*/true, size);
 }
 
 #endif /* __SOC_IBM_POWER9_FSI_H */
