@@ -45,6 +45,7 @@ ramstage-y += xive.c
 ramstage-y += int_vectors.S
 ramstage-y += i2c.c
 ramstage-y += occ.c
+ramstage-y += fsi.c
 
 MB_DIR = src/mainboard/$(MAINBOARDDIR)
 ONECPU_DTB = 1-cpu.dtb
