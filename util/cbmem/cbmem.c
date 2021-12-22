@@ -289,14 +289,15 @@ static void parse_memory_tags(const struct lb_memory *mem)
 	int i;
 
 	/* Peel off the header size and calculate the number of entries. */
-	num_entries = (HANDLE_ENDIAN(mem->size) - sizeof(*mem)) / sizeof(mem->map[0]);
+	num_entries =
+		(HANDLE_ENDIAN(mem->size) - sizeof(*mem)) / sizeof(mem->map[0]);
 
 	for (i = 0; i < num_entries; i++) {
 		if (HANDLE_ENDIAN(mem->map[i].type) != LB_MEM_TABLE)
 			continue;
 		debug("      LB_MEM_TABLE found.\n");
 		/* The last one found is CBMEM */
-		aligned_memcpy(&cbmem, &mem->map[i], sizeof(cbmem)); // TODO (IgorBagnucki): What happens with cbmem?
+		aligned_memcpy(&cbmem, &mem->map[i], sizeof(cbmem));
 	}
 }
 
@@ -341,7 +342,7 @@ static int parse_cbtable_entries(const struct mapping *table_mapping)
 			 * search at the new address.
 			 */
 			struct lb_forward lbf_p =
-				*(const struct lb_forward *)lbr_p; // TODO(IgorBagnucki): Should endianness be fixed here too? Probably yes
+				*(const struct lb_forward *)lbr_p;
 			debug("    Found forwarding entry.\n");
 			ret = parse_cbtable(HANDLE_ENDIAN(lbf_p.forward), 0);
 
@@ -394,22 +395,22 @@ static int parse_cbtable(u64 address, size_t table_size)
 		}
 
 		/* Map in the whole table to parse. */
-		if (!map_memory(&table_mapping, address + i + HANDLE_ENDIAN(lbh->header_bytes),
-				 HANDLE_ENDIAN(lbh->table_bytes))) {
+		if (!map_memory(
+				&table_mapping, address + i + HANDLE_ENDIAN(lbh->header_bytes),
+				HANDLE_ENDIAN(lbh->table_bytes))) {
 			debug("Couldn't map in table\n");
 			continue;
 		}
 
-		if (ipchcksum(mapping_virt(&table_mapping), HANDLE_ENDIAN(lbh->table_bytes)) !=
-			HANDLE_ENDIAN(lbh->table_checksum)) {
+		if (ipchcksum(mapping_virt(&table_mapping),
+					HANDLE_ENDIAN(lbh->table_bytes)) !=
+					HANDLE_ENDIAN(lbh->table_checksum)) {
 			debug("Signature found, but wrong checksum.\n");
 			unmap_memory(&table_mapping);
 			continue;
 		}
 
 		debug("Found!\n");
-
-		debug("# %X, %lX\n", lbh->header_bytes, HANDLE_ENDIAN(lbh->header_bytes));
 
 		ret = parse_cbtable_entries(&table_mapping);
 
@@ -594,7 +595,8 @@ static int compare_timestamp_entries(const void *a, const void *b)
 
 	if (HANDLE_ENDIAN(tse_a->entry_stamp) > HANDLE_ENDIAN(tse_b->entry_stamp))
 		return 1;
-	else if (HANDLE_ENDIAN(tse_a->entry_stamp) < HANDLE_ENDIAN(tse_b->entry_stamp))
+	else if (HANDLE_ENDIAN(tse_a->entry_stamp) <
+			HANDLE_ENDIAN(tse_b->entry_stamp))
 		return -1;
 
 	return 0;
@@ -616,7 +618,8 @@ static void dump_timestamps(int mach_readable)
 	}
 
 	size = sizeof(*tst_p);
-	tst_p = map_memory(&timestamp_mapping, HANDLE_ENDIAN(timestamps.cbmem_addr), size);
+	tst_p = map_memory(&timestamp_mapping,
+						HANDLE_ENDIAN(timestamps.cbmem_addr), size);
 	if (!tst_p)
 		die("Unable to map timestamp header\n");
 
@@ -628,7 +631,8 @@ static void dump_timestamps(int mach_readable)
 
 	unmap_memory(&timestamp_mapping);
 
-	tst_p = map_memory(&timestamp_mapping, HANDLE_ENDIAN(timestamps.cbmem_addr), size);
+	tst_p = map_memory(&timestamp_mapping, HANDLE_ENDIAN(timestamps.cbmem_addr),
+						size);
 	if (!tst_p)
 		die("Unable to map full timestamp table\n");
 
@@ -637,7 +641,7 @@ static void dump_timestamps(int mach_readable)
 	prev_stamp = 0;
 	if (mach_readable)
 		timestamp_print_parseable_entry(0, HANDLE_ENDIAN(tst_p->base_time),
-						prev_stamp);
+										prev_stamp);
 	else
 		timestamp_print_entry(0, HANDLE_ENDIAN(tst_p->base_time), prev_stamp);
 	prev_stamp = HANDLE_ENDIAN(tst_p->base_time);
@@ -655,7 +659,8 @@ static void dump_timestamps(int mach_readable)
 		const struct timestamp_entry *tse = &sorted_tst_p->entries[i];
 
 		/* Make all timestamps absolute. */
-		stamp = HANDLE_ENDIAN(tse->entry_stamp) + HANDLE_ENDIAN(sorted_tst_p->base_time);
+		stamp = HANDLE_ENDIAN(tse->entry_stamp)
+				+ HANDLE_ENDIAN(sorted_tst_p->base_time);
 		if (mach_readable)
 			total_time +=
 				timestamp_print_parseable_entry(HANDLE_ENDIAN(tse->entry_id),
@@ -738,12 +743,14 @@ static void dump_console(int one_boot_only)
 	}
 
 	size = sizeof(*console_p);
-	console_p = map_memory(&console_mapping, HANDLE_ENDIAN(console.cbmem_addr), size);
+	console_p = map_memory(&console_mapping, HANDLE_ENDIAN(console.cbmem_addr),
+							size);
 	if (!console_p)
 		die("Unable to map console object.\n");
 
 	cursor = HANDLE_ENDIAN(console_p->cursor) & CBMC_CURSOR_MASK;
-	if (!(HANDLE_ENDIAN(console_p->cursor) & CBMC_OVERFLOW) && cursor < HANDLE_ENDIAN(console_p->size))
+	if (!(HANDLE_ENDIAN(console_p->cursor) & CBMC_OVERFLOW) &&
+			cursor < HANDLE_ENDIAN(console_p->size))
 		size = cursor;
 	else
 		size = HANDLE_ENDIAN(console_p->size);
@@ -860,8 +867,9 @@ static void dump_cbmem_hex(void)
 		fprintf(stderr, "No coreboot CBMEM area found!\n");
 		return;
 	}
-	// TODO(IgorBagnucki): It would be nicer to use unpack_lb64()
-	hexdump((HANDLE_ENDIAN(cbmem.start.hi) << 32) | HANDLE_ENDIAN(cbmem.start.lo), (HANDLE_ENDIAN(cbmem.size.hi) << 32) | HANDLE_ENDIAN(cbmem.size.lo));
+	hexdump(
+		(HANDLE_ENDIAN(cbmem.start.hi) << 32) | HANDLE_ENDIAN(cbmem.start.lo),
+		(HANDLE_ENDIAN(cbmem.size.hi) << 32) | HANDLE_ENDIAN(cbmem.size.lo));
 }
 
 static void rawdump(uint64_t base, uint64_t size)
