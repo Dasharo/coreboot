@@ -441,22 +441,16 @@ DefinitionBlock (
 				/* Real Time Clock Device */
 				Device (RTC0) {
 					Name (_HID, EisaId ("PNP0B00"))		/* AT Real Time Clock (not PIIX4 compatible) */
-					Name (BUF0, ResourceTemplate () {
+					Name (_CRS, ResourceTemplate () {
 						IO (Decode16, 0x0070, 0x0070, 0x01, 0x02)
 					})
-					Method (_CRS, 0) {
-						Return (BUF0)
-					}
 				}
 
 				Device (TMR) {		/* Timer */
 					Name (_HID, EisaId ("PNP0100"))		/* System Timer */
-					Name (BUF0, ResourceTemplate () {
+					Name (_CRS, ResourceTemplate () {
 						IO (Decode16, 0x0040, 0x0040, 0x01, 0x04)
 					})
-					Method (_CRS, 0) {
-						Return (BUF0)
-					}
 				}
 
 				Device (SPKR) {		/* Speaker */
@@ -485,7 +479,7 @@ DefinitionBlock (
 						IO (Decode16, 0x0089, 0x0089, 0x01, 0x03)
 						IO (Decode16, 0x008F, 0x008F, 0x01, 0x01)
 						IO (Decode16, 0x00C0, 0x00C0, 0x10, 0x20)
-					}) /* End Name (_SB.PCI0.LPCBIsaBr.MAD._CRS) */
+					})
 				}
 
 				Device (COPR) {
@@ -503,23 +497,17 @@ DefinitionBlock (
 				{
 					Name (_HID, EisaId ("PNP0501"))		/* UART */
 					Name (_PRW, Package () {0x03, 0x04})	/* Wake from S1-S4 */
-					Method (_STA, 0, NotSerialized)
-					{
-						Return (0x0F)			/* Always enable */
-					}
+					Name (_STA, 0x0F)			/* Always enable */
 					Name (_PRS, ResourceTemplate () {
 						StartDependentFn (0, 1) {
 							IO (Decode16, 0x3F8, 0x3F8, 0x8, 0x8)
 							IRQNoFlags () {4}
 						} EndDependentFn ()
 					})
-					Method (_CRS, 0)
-					{
-						Return (ResourceTemplate () {
-							IO (Decode16, 0x3F8, 0x3F8, 0x8, 0x8)
-							IRQNoFlags () {4}
-						})
-					}
+					Name (_CRS, ResourceTemplate () {
+						IO (Decode16, 0x3F8, 0x3F8, 0x8, 0x8)
+						IRQNoFlags () {4}
+					})
 				}
 
 				/* UART 2 */
@@ -527,23 +515,17 @@ DefinitionBlock (
 				{
 					Name (_HID, EisaId ("PNP0501"))		/* UART */
 					Name (_PRW, Package () {0x03, 0x04})	/* Wake from S1-S4 */
-					Method (_STA, 0, NotSerialized)
-					{
-						Return (0x0F)			/* Always enable */
-					}
+					Name (_STA, 0x0F)			/* Always enable */
 					Name (_PRS, ResourceTemplate () {
 						StartDependentFn (0, 1) {
 							IO (Decode16, 0x2F8, 0x2F8, 0x8, 0x8)
 							IRQNoFlags () {3}
 						} EndDependentFn ()
 					})
-					Method (_CRS, 0)
-					{
-						Return (ResourceTemplate () {
-							IO (Decode16, 0x2f8, 0x2f8, 0x8, 0x8)
-							IRQNoFlags () {3}
-						})
-					}
+					Name (_CRS, ResourceTemplate () {
+						IO (Decode16, 0x2f8, 0x2f8, 0x8, 0x8)
+						IRQNoFlags () {3}
+					})
 				}
 			}
 
@@ -551,18 +533,11 @@ DefinitionBlock (
 			Device (HPET)
 			{
 				Name (_HID, EisaId ("PNP0103"))
-				Name (CRS, ResourceTemplate ()
+				Name (_CRS, ResourceTemplate ()
 				{
 					Memory32Fixed (ReadOnly, 0xFED00000, 0x00000400)
 				})
-				Method (_STA, 0)
-				{
-					Return (0x0F)
-				}
-				Method (_CRS, 0)
-				{
-					Return (CRS)
-				}
+				Name (_STA, 0x0F)
 			}
 
 			/* 0:14.4 PCI Bridge */
