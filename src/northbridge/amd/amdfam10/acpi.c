@@ -192,7 +192,6 @@ void northbridge_acpi_write_vars(const struct device *device)
 		return;
 	ssdt_generated = 1;
 
-	msr_t msr;
 	char pscope[] = "\\_SB.PCI0";
 	int i;
 
@@ -231,44 +230,6 @@ void northbridge_acpi_write_vars(const struct device *device)
 		}
 	}
 	acpigen_write_resourcetemplate_footer();
-
-	acpigen_write_name_byte("SBLK", get_sysconf()->sblk);
-
-	msr = rdmsr(TOP_MEM);
-	acpigen_write_name_dword("TOM1", msr.lo);
-
-	msr = rdmsr(TOP_MEM2);
-	/*
-	 * Since XP only implements parts of ACPI 2.0, we can't use a qword
-	 * here.
-	 * See http://www.acpi.info/presentations/S01USMOBS169_OS%2520new.ppt
-	 * slide 22ff.
-	 * Shift value right by 20 bit to make it fit into 32bit,
-	 * giving us 1MB granularity and a limit of almost 4Exabyte of memory.
-	 */
-	acpigen_write_name_dword("TOM2", (msr.hi << 12) | msr.lo >> 20);
-
-	acpigen_write_name_dword("SBDN", get_sysconf()->sbdn);
-
-	acpigen_write_name("HCLK");
-	acpigen_write_package(HC_POSSIBLE_NUM);
-	for (i = 0; i < get_sysconf()->hc_possible_num; i++) {
-		acpigen_write_dword(get_sysconf()->pci1234[i]);
-	}
-	for (i = get_sysconf()->hc_possible_num; i < HC_POSSIBLE_NUM; i++) { // in case we set array size to other than 8
-		acpigen_write_dword(0x00000000);
-	}
-	acpigen_write_package_end();
-
-	acpigen_write_name("HCDN");
-	acpigen_write_package(HC_POSSIBLE_NUM);
-	for (i = 0; i < get_sysconf()->hc_possible_num; i++) {
-		acpigen_write_dword(get_sysconf()->hcdn[i]);
-	}
-	for (i = get_sysconf()->hc_possible_num; i < HC_POSSIBLE_NUM; i++) { // in case we set array size to other than 8
-		acpigen_write_dword(0x20202020);
-	}
-	acpigen_write_package_end();
 
 	acpigen_write_scope_end();
 }
