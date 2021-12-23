@@ -14,6 +14,9 @@
  */
 
 #include <acpi/acpi.h>
+
+#define NOTIFY_DEVICE_WAKE	0x02
+
 DefinitionBlock (
 		"DSDT.AML",	/* Output filename */
 		"DSDT",		/* Signature */
@@ -54,46 +57,46 @@ DefinitionBlock (
 		/* General event 3 */
 		Method (_L03) {
 			/* Level-Triggered GPE */
-			Notify (\_SB.PWRB, 0x02)			/* NOTIFY_DEVICE_WAKE */
+			Notify (\_SB.PWRB, NOTIFY_DEVICE_WAKE)
 		}
 
 		/* General event 4 */
 		Method (_L04) {
 			/* Level-Triggered GPE */
-			Notify (\_SB.PCI0.PBR0, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PWRB, 0x02)		/* NOTIFY_DEVICE_WAKE */
+			Notify (\_SB.PCI0.PBR0, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PWRB, NOTIFY_DEVICE_WAKE)
 		}
 
 		/* Keyboard controller PME# */
 		Method (_L08) {
 			/* Level-Triggered GPE */
-			Notify (\_SB.PCI0.LPCB.PS2K, 0x02)	/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.LPCB.PS2M, 0x02)	/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PWRB, 0x02)			/* NOTIFY_DEVICE_WAKE */
+			Notify (\_SB.PCI0.LPCB.PS2K, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.LPCB.PS2M, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PWRB, NOTIFY_DEVICE_WAKE)
 		}
 
 		/* USB controller PME# */
 		Method (_L0B) {
 			/* Level-Triggered GPE */
-			Notify (\_SB.PCI0.USB0, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.USB1, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.USB2, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.USB3, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.USB4, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.USB5, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.USB6, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PWRB, 0x02)		/* NOTIFY_DEVICE_WAKE */
+			Notify (\_SB.PCI0.USB0, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.USB1, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.USB2, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.USB3, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.USB4, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.USB5, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.USB6, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PWRB, NOTIFY_DEVICE_WAKE)
 		}
 
 		/* GPIO0 or GEvent8 event */
 		Method (_L18) {
 			/* Level-Triggered GPE */
-			Notify (\_SB.PCI0.PCE1, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.NICA, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.NICB, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.PCE4, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.PCE5, 0x02)		/* NOTIFY_DEVICE_WAKE */
-			Notify (\_SB.PCI0.PCE3, 0x02)		/* NOTIFY_DEVICE_WAKE */
+			Notify (\_SB.PCI0.PCE1, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.NICA, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.NICB, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.PCE4, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.PCE5, NOTIFY_DEVICE_WAKE)
+			Notify (\_SB.PCI0.PCE3, NOTIFY_DEVICE_WAKE)
 		}
 
 	}	/* End Scope GPE */
