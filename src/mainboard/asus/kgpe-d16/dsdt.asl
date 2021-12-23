@@ -31,9 +31,6 @@ DefinitionBlock (
 	Name (OSV, Ones)	/* Assume nothing */
 	Name (PICM, One)	/* Assume APIC */
 
-	/* HPET enable */
-	Name (HPTE, 0x1)
-
 	#include <southbridge/amd/common/acpi/sleepstates.asl>
 
 	/* The _PIC method is called by the OS to choose between interrupt
@@ -444,15 +441,8 @@ DefinitionBlock (
 					Name (BUF0, ResourceTemplate () {
 						IO (Decode16, 0x0070, 0x0070, 0x01, 0x02)
 					})
-					Name (BUF1, ResourceTemplate () {
-						IRQNoFlags () {8}
-						IO (Decode16, 0x0070, 0x0070, 0x01, 0x02)
-					})
 					Method (_CRS, 0) {
-						If (HPTE) {
-							Return (BUF0)
-						}
-						Return (BUF1)
+						Return (BUF0)
 					}
 				}
 
@@ -461,15 +451,8 @@ DefinitionBlock (
 					Name (BUF0, ResourceTemplate () {
 						IO (Decode16, 0x0040, 0x0040, 0x01, 0x04)
 					})
-					Name (BUF1, ResourceTemplate () {
-						IRQNoFlags () {0}
-						IO (Decode16, 0x0040, 0x0040, 0x01, 0x04)
-					})
 					Method (_CRS, 0) {
-						If (HPTE) {
-							Return (BUF0)
-						}
-						Return (BUF1)
+						Return (BUF0)
 					}
 				}
 
@@ -571,10 +554,7 @@ DefinitionBlock (
 				})
 				Method (_STA, 0)
 				{
-					If (HPTE) {
-						Return (0x0F)
-					}
-					Return (0x0)
+					Return (0x0F)
 				}
 				Method (_CRS, 0)
 				{
