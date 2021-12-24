@@ -7,6 +7,15 @@
 #include <stdint.h>
 #include <arch/byteorder.h>
 
+#ifdef DEBUG_FSI
+#include <console/console.h>
+#endif
+
+/*
+ * Define DEBUG_FSI before including this header to get debug prints from this
+ * unit (both FSI and CFAM)
+ */
+
 /* Base FSI address for registers of a FSI I2C master */
 #define I2C_FSI_MASTER_BASE_ADDR 0x01800
 
@@ -22,11 +31,18 @@ uint32_t fsi_op(uint8_t chip, uint32_t addr, uint32_t data, bool is_read, uint8_
 
 static inline uint32_t read_fsi(uint8_t chip, uint32_t addr)
 {
-	return fsi_op(chip, addr, /*data=*/0, /*is_read=*/true, /*size=*/4);
+	uint32_t data = fsi_op(chip, addr, /*data=*/0, /*is_read=*/true, /*size=*/4);
+#ifdef DEBUG_FSI
+	printk(BIOS_EMERG, "read_fsi(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
+#endif
+	return data;
 }
 
 static inline void write_fsi(uint8_t chip, uint32_t addr, uint32_t data)
 {
+#ifdef DEBUG_FSI
+	printk(BIOS_EMERG, "write_fsi(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
+#endif
 	(void)fsi_op(chip, addr, data, /*is_read=*/false, /*size=*/4);
 }
 
@@ -52,11 +68,18 @@ static inline uint32_t cfam_addr_to_fsi(uint32_t cfam)
 
 static inline uint32_t read_cfam(uint8_t chip, uint32_t addr)
 {
-	return read_fsi(chip, cfam_addr_to_fsi(addr));
+	uint32_t data = read_fsi(chip, cfam_addr_to_fsi(addr));
+#ifdef DEBUG_FSI
+	printk(BIOS_EMERG, "read_cfam(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
+#endif
+	return data;
 }
 
 static inline void write_cfam(uint8_t chip, uint32_t addr, uint32_t data)
 {
+#ifdef DEBUG_FSI
+	printk(BIOS_EMERG, "write_cfam(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
+#endif
 	write_fsi(chip, cfam_addr_to_fsi(addr), data);
 }
 
