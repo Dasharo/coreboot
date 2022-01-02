@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #define MDMT_TOD_GRID_CYCLE_STAGING_DELAY 6
-#define FREQ_X_MHZ 2000
 #define TOD_GRID_PS 400
 
 #define PERV_ROOT_CTRL8_TP_PLL_CLKIN_SEL9_DC 21
