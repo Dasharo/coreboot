@@ -32,6 +32,7 @@ romstage-y += istep_14_5.c
 romstage-y += mcbist.c
 romstage-y += mvpd.c
 romstage-y += powerbus.c
+romstage-y += sbeio.c
 romstage-y += rom_media.c
 romstage-y += romstage.c
 romstage-y += timer.c
