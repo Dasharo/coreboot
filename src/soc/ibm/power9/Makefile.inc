@@ -34,6 +34,7 @@ romstage-y += ccs.c
 romstage-y += mcbist.c
 romstage-y += timer.c
 romstage-y += fsi.c
+romstage-y += sbeio.c
 ramstage-y += chip.c
 ramstage-y += homer.c
 ramstage-y += rom_media.c
