@@ -11,6 +11,7 @@ void istep_8_3(uint8_t chips);
 void istep_8_4(uint8_t chips);
 void istep_8_9(uint8_t chips);
 void istep_8_10(uint8_t chips);
+void istep_8_11(uint8_t chips);
 
 /* These functions access SCOM of the second CPU using SBE IO, thus they can be
  * used only in isteps that come after 8.4 */
