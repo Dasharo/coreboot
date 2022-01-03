@@ -42,39 +42,14 @@ u8 get_pirq_router_bus(void)
 static struct device *__f0_dev[NODE_NUMS];
 static struct device *__f1_dev[NODE_NUMS];
 static struct device *__f2_dev[NODE_NUMS];
+static struct device *__f3_dev[NODE_NUMS];
 static struct device *__f4_dev[NODE_NUMS];
+static struct device *__f5_dev[NODE_NUMS];
 static unsigned int fx_devs = 0;
-
-static DEVTREE_CONST struct device *dev_find_slot(unsigned int bus, unsigned int devfn)
-{
-	DEVTREE_CONST struct device *dev, *result;
-
-	result = 0;
-	for (dev = all_devices; dev; dev = dev->next) {
-		if ((dev->path.type == DEVICE_PATH_PCI) &&
-		    (dev->bus->secondary == bus) &&
-		    (dev->path.pci.devfn == devfn)) {
-			result = dev;
-			break;
-		}
-	}
-	return result;
-}
 
 static u32 amdfam10_nodeid(struct device *dev)
 {
-#if NODE_NUMS == 64
-	unsigned int busn;
-	busn = dev->bus->secondary;
-	if (busn != CONFIG_CBB) {
-		return (dev->path.pci.devfn >> 3) - CONFIG_CDB + 32;
-	} else {
-		return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
-	}
-
-#else
-	return (dev->path.pci.devfn >> 3) - CONFIG_CDB;
-#endif
+	return PCI_SLOT(dev->path.pci.devfn) - CONFIG_CDB;
 }
 
 /*
@@ -91,7 +66,9 @@ static void get_fx_devs(void)
 		__f0_dev[i] = pcidev_on_root(CONFIG_CDB + i, 0);
 		__f1_dev[i] = pcidev_on_root(CONFIG_CDB + i, 1);
 		__f2_dev[i] = pcidev_on_root(CONFIG_CDB + i, 2);
+		__f3_dev[i] = pcidev_on_root(CONFIG_CDB + i, 3);
 		__f4_dev[i] = pcidev_on_root(CONFIG_CDB + i, 4);
+		__f5_dev[i] = pcidev_on_root(CONFIG_CDB + i, 5);
 		if (__f0_dev[i] != NULL && __f1_dev[i] != NULL)
 			fx_devs = i+1;
 	}
@@ -290,34 +267,6 @@ static void ht_route_link(struct bus *link, scan_state mode)
 	}
 }
 
-static void amd_g34_fixup(struct bus *link, struct device *dev)
-{
-	uint32_t nodeid = amdfam10_nodeid(dev);
-	uint32_t f3xe8;
-
-	printk(BIOS_SPEW, "%s\n", __func__);
-
-	if (is_gt_rev_d() || is_fam15h()) {
-
-		if (is_dual_node((u8)nodeid)) {
-			/* Each G34 processor contains a defective HT link.
-			 * See the BKDG Rev 3.62 section 2.7.1.5 for details.
-			 */
-			f3xe8 = pci_read_config32(NODE_PCI(nodeid, 3), 0xe8);
-			uint8_t internal_node_number = ((f3xe8 & 0xc0000000) >> 30);
-			if (internal_node_number == 0) {
-				/* Node 0 */
-				if (link->link_num == 6)	/* Link 2 Sublink 1 */
-					printk(BIOS_DEBUG, "amdfam10_scan_chain(): node %d (internal node ID %d): skipping defective HT link\n", nodeid, internal_node_number);
-			} else {
-				/* Node 1 */
-				if (link->link_num == 5)	/* Link 1 Sublink 1 */
-					printk(BIOS_DEBUG, "amdfam10_scan_chain(): node %d (internal node ID %d): skipping defective HT link\n", nodeid, internal_node_number);
-			}
-		}
-	}
-}
-
 static void amdfam10_scan_chain(struct bus *link)
 {
 	unsigned int next_unitid;
@@ -371,7 +320,7 @@ static void relocate_sb_ht_chain(void)
 
 	printk(BIOS_SPEW, "%s\n", __func__);
 
-	dev = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
+	dev = __f0_dev[0];
 	sblink = (pci_read_config32(dev, 0x64)>>8) & 7;
 	link = dev->link_list;
 
@@ -410,10 +359,8 @@ static void amdfam10_scan_chains(struct device *dev)
 	printk(BIOS_SPEW, "%s\n", __func__);
 
 	if (is_fam15h() && CONFIG(CPU_AMD_SOCKET_G34_NON_AGESA)) {
-		uint8_t current_link_number = 0;
-
 		for (link = dev->link_list; link; link = link->next) {
-			printk(BIOS_SPEW, "%s: %s [%d] === %d", __func__, dev_path(dev), current_link_number, link->link_num);
+			printk(BIOS_SPEW, "%s: %s === %d", __func__, dev_path(dev), link->link_num);
 			/* The following links have changed position in Fam15h G34 processors:
 			 * Fam10  Fam15
 			 * Node 0
@@ -427,6 +374,7 @@ static void amdfam10_scan_chains(struct device *dev)
 			 * L2 --> L1
 			 * L3 --> L2
 			 */
+			/* XXX: why moving children from L3 to L1 instead doesn't work? */
 			if (nodeid == 0) {
 				if (link->link_num == 0)
 					link->link_num = 3;
@@ -437,7 +385,7 @@ static void amdfam10_scan_chains(struct device *dev)
 				else if (link->link_num == 3)
 					link->link_num = 1;
 				else
-					die("%s: wrong link_num for northbridge (%d)\n",
+					die("\n%s: wrong link_num for northbridge (%d)\n",
 					    dev_path(dev), link->link_num);
 			} else if (nodeid == 1) {
 				if (link->link_num == 0)
@@ -449,13 +397,9 @@ static void amdfam10_scan_chains(struct device *dev)
 				else if (link->link_num == 3)
 					link->link_num = 2;
 				else
-					die("%s: wrong link_num for northbridge (%d)\n",
+					die("\n%s: wrong link_num for northbridge (%d)\n",
 					    dev_path(dev), link->link_num);
 			}
-
-			current_link_number++;
-			if (current_link_number > 3)
-				current_link_number = 0;
 
 			printk(BIOS_SPEW, " --> %d\n", link->link_num);
 		}
@@ -465,11 +409,8 @@ static void amdfam10_scan_chains(struct device *dev)
 	trim_ht_chain(dev);
 
 	for (link = dev->link_list; link; link = link->next) {
-		if (link->ht_link_up) {
-			if (CONFIG(CPU_AMD_MODEL_10XXX))
-				amd_g34_fixup(link, dev);
+		if (link->ht_link_up)
 			amdfam10_scan_chain(link);
-		}
 	}
 }
 
@@ -653,26 +594,17 @@ static struct device_operations northbridge_operations = {
 #endif
 };
 
+static const u16 mcf0_devs[] = {0x1200, 0x1400, 0x1600, 0};
+
 static const struct pci_driver mcf0_driver __pci_driver = {
-	.ops	= &northbridge_operations,
-	.vendor = PCI_VENDOR_ID_AMD,
-	.device = 0x1200,
-};
-
-static const struct pci_driver mcf0_driver_fam15_model10 __pci_driver = {
-	.ops	= &northbridge_operations,
-	.vendor = PCI_VENDOR_ID_AMD,
-	.device = 0x1400,
-};
-
-static const struct pci_driver mcf0_driver_fam15 __pci_driver = {
-	.ops	= &northbridge_operations,
-	.vendor = PCI_VENDOR_ID_AMD,
-	.device = 0x1600,
+	.ops     = &northbridge_operations,
+	.vendor  = PCI_VENDOR_ID_AMD,
+	.devices = mcf0_devs,
 };
 
 static void amdfam10_nb_init(void *chip_info)
 {
+	get_fx_devs();
 	relocate_sb_ht_chain();
 }
 
@@ -720,25 +652,22 @@ static void reserve_cpu_cc6_storage_area(struct device *dev, int idx)
 	max_range_limit = 0;
 	struct device *node_dev;
 	for (node = 0; node < NODE_NUMS; node++) {
-		node_dev = pcidev_on_root(CONFIG_CDB + node, 0);
+		node_dev = __f0_dev[node];
 		/* Test for node presence */
 		if ((!node_dev) || (pci_read_config32(node_dev, PCI_VENDOR_ID) == 0xffffffff))
 			continue;
 
 		num_nodes++;
 		for (range = 0; range < 8; range++) {
-			dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
-							0x40 + (range * 0x8));
+			dword = pci_read_config32(__f1_dev[node], 0x40 + (range * 0x8));
 			if (!(dword & 0x3))
 				continue;
 
 			if ((dword >> 8) & 0x7)
 				interleaved = 1;
 
-			dword = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
-							0x44 + (range * 0x8));
-			dword2 = pci_read_config32(pcidev_on_root(CONFIG_CDB + node, 1),
-							0x144 + (range * 0x8));
+			dword = pci_read_config32(__f1_dev[node], 0x44 + (range * 0x8));
+			dword2 = pci_read_config32(__f1_dev[node], 0x144 + (range * 0x8));
 			qword = 0xffffff;
 			qword |= ((((uint64_t)dword) >> 16) & 0xffff) << 24;
 			qword |= (((uint64_t)dword2) & 0xff) << 40;
@@ -766,7 +695,7 @@ static void reserve_cpu_cc6_storage_area(struct device *dev, int idx)
 	 * Determine if this is a BKDG error or a setup problem and remove this warning!
 	 */
 	qword = (0x1 << 27);
-	max_range_limit = (((uint64_t)(pci_read_config32(pcidev_on_root(CONFIG_CDB + max_node, 1),
+	max_range_limit = (((uint64_t)(pci_read_config32(__f1_dev[max_node],
 								0x124) & 0x1fffff)) << 27) - 1;
 
 	printk(BIOS_INFO, "Reserving CC6 save segment base: %08llx size: %08llx\n", (max_range_limit + 1), qword);
@@ -940,47 +869,6 @@ static struct device_operations pci_domain_ops = {
 #endif
 };
 
-static void remap_nodes_0_to_31_to_bus_255(struct device *pci_domain)
-{
-	struct device *dev_mc;
-
-	dev_mc = pcidev_on_root(CONFIG_CDB, 0); //0x00
-	if (dev_mc && dev_mc->bus) {
-		printk(BIOS_DEBUG, "%s found", dev_path(dev_mc));
-		pci_domain = dev_mc->bus->dev;
-		if (pci_domain && (pci_domain->path.type == DEVICE_PATH_DOMAIN)) {
-			printk(BIOS_DEBUG, "\n%s move to ",dev_path(dev_mc));
-			dev_mc->bus->secondary = CONFIG_CBB; // move to 0xff
-			printk(BIOS_DEBUG, "%s",dev_path(dev_mc));
-
-		} else {
-			printk(BIOS_DEBUG, " but it is not under pci_domain directly ");
-		}
-		printk(BIOS_DEBUG, "\n");
-	}
-	dev_mc = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
-	dev_mc = dev_mc ? dev_mc : pcidev_on_root(0x18, 0);
-
-	if (dev_mc && dev_mc->bus) {
-		printk(BIOS_DEBUG, "%s found\n", dev_path(dev_mc));
-		pci_domain = dev_mc->bus->dev;
-		if (pci_domain && (pci_domain->path.type == DEVICE_PATH_DOMAIN)) {
-			if ((pci_domain->link_list) &&
-			    (pci_domain->link_list->children == dev_mc)) {
-				printk(BIOS_DEBUG, "%s move to ",dev_path(dev_mc));
-				dev_mc->bus->secondary = CONFIG_CBB; // move to 0xff
-				printk(BIOS_DEBUG, "%s\n",dev_path(dev_mc));
-				while (dev_mc) {
-					printk(BIOS_DEBUG, "%s move to ",dev_path(dev_mc));
-					dev_mc->path.pci.devfn -= PCI_DEVFN(0x18,0);
-					printk(BIOS_DEBUG, "%s\n",dev_path(dev_mc));
-					dev_mc = dev_mc->sibling;
-				}
-			}
-		}
-	}
-}
-
 static void remap_bsp_lapic(struct bus *cpu_bus)
 {
 	struct device_path cpu_path;
@@ -1010,11 +898,11 @@ static unsigned int get_num_siblings(void)
 	return siblings;
 }
 
-static void setup_cdb_links(unsigned int busn, unsigned int devn, struct bus *pbus)
+static void setup_cdb_links(unsigned int node_id, struct bus *pbus)
 {
 	struct device *cdb_dev;
 	/* Find the cpu's pci device */
-	cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 0));
+	cdb_dev = __f0_dev[node_id];
 	if (!cdb_dev) {
 		/* If I am probing things in a weird order
 			* ensure all of the cpu's pci devices are found.
@@ -1022,24 +910,26 @@ static void setup_cdb_links(unsigned int busn, unsigned int devn, struct bus *pb
 		int fn;
 		for (fn = 0; fn <= 5; fn++) { //FBDIMM?
 			cdb_dev = pci_probe_dev(NULL, pbus,
-				PCI_DEVFN(devn, fn));
+				PCI_DEVFN(CONFIG_CDB + node_id, fn));
 		}
+		/* New device structures were created, need to scan again */
+		fx_devs = 0;
+		get_fx_devs();
 	}
 
-
 	/* Ok, We need to set the links for that device.
-		* otherwise the device under it will not be scanned
-		*/
-	cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 0));
+	 * otherwise the device under it will not be scanned
+	 */
+	cdb_dev = __f0_dev[node_id];
 	if (cdb_dev)
 		add_more_links(cdb_dev, 4);
 
-	cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 4));
+	cdb_dev = __f4_dev[node_id];
 	if (cdb_dev)
 		add_more_links(cdb_dev, 4);
 }
 
-static int get_num_cores(unsigned int busn, unsigned int devn, int *cores_found,
+static int get_num_cores(unsigned int node_id, int *cores_found,
 			 int *enable_node, unsigned int *siblings)
 {
 	int j;
@@ -1048,9 +938,9 @@ static int get_num_cores(unsigned int busn, unsigned int devn, int *cores_found,
 
 	*cores_found = 0; // one core
 	if (is_fam15h())
-		cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 5));
+		cdb_dev = __f5_dev[node_id];
 	else
-		cdb_dev = dev_find_slot(busn, PCI_DEVFN(devn, 3));
+		cdb_dev = __f3_dev[node_id];
 
 	*enable_node = cdb_dev && cdb_dev->enabled;
 	if (*enable_node) {
@@ -1143,8 +1033,6 @@ static void sysconf_init(struct device *dev) // first node
 	}
 
 	sysconf.nodes = ((pci_read_config32(dev, 0x60)>>4) & 7) + 1;
-	if (CONFIG_MAX_PHYSICAL_CPUS > 8)
-		sysconf.nodes += (((pci_read_config32(dev, 0x160)>>4) & 7)<<3);
 
 	if (sysconf.nodes > NODE_NUMS)
 		die("Too many nodes detected\n");
@@ -1176,7 +1064,6 @@ static void cpu_bus_scan(struct device *dev)
 {
 	struct bus *cpu_bus;
 	struct device *dev_mc;
-	struct device *pci_domain;
 	int i,j;
 	int cores_found;
 	int disable_siblings = !get_uint_option("multi_core", CONFIG(LOGICAL_CPUS));
@@ -1184,14 +1071,9 @@ static void cpu_bus_scan(struct device *dev)
 	int enable_node;
 	unsigned int siblings = 0;
 
-	if (CONFIG_CBB)
-		remap_nodes_0_to_31_to_bus_255(pci_domain);
-
-	dev_mc = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
-	if (!dev_mc) {
-		printk(BIOS_ERR, "%02x:%02x.0 not found", CONFIG_CBB, CONFIG_CDB);
-		die("");
-	}
+	/* This function makes sure that __f0_dev[0] isn't null */
+	get_fx_devs();
+	dev_mc = __f0_dev[0];
 
 	sysconf_init(dev_mc);
 
@@ -1204,23 +1086,13 @@ static void cpu_bus_scan(struct device *dev)
 		printk(BIOS_DEBUG, "Disabling siblings on each compute unit as requested\n");
 
 	for (i = 0; i < sysconf.nodes; i++) {
-		unsigned int busn, devn;
 		struct bus *pbus;
 		u32 jj;
 
-		busn = CONFIG_CBB;
-		devn = CONFIG_CDB + i;
 		pbus = dev_mc->bus;
-		if (CONFIG_CBB && (NODE_NUMS > 32)) {
-			if (i >= 32) {
-				busn--;
-				devn -= 32;
-				pbus = pci_domain->link_list->next;
-			}
-		}
 
-		setup_cdb_links(busn, devn, pbus);
-		j = get_num_cores(busn, devn, &cores_found, &enable_node, &siblings);
+		setup_cdb_links(i, pbus);
+		j = get_num_cores(i, &cores_found, &enable_node, &siblings);
 
 		if (disable_siblings)
 			jj = 0;
@@ -1248,8 +1120,8 @@ static uint8_t probe_filter_prepare(uint32_t *f3x58, uint32_t *f3x5c)
 
 	/* Disable L3 and DRAM scrubbers and configure system for probe filter support */
 	for (i = 0; i < sysconf.nodes; i++) {
-		struct device *f2x_dev = pcidev_on_root(0x18 + i, 2);
-		struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+		struct device *f2x_dev = __f2_dev[i];
+		struct device *f3x_dev = __f3_dev[i];
 
 		f3x58[i] = pci_read_config32(f3x_dev, 0x58);
 		f3x5c[i] = pci_read_config32(f3x_dev, 0x5c);
@@ -1321,7 +1193,7 @@ static void probe_filter_enable(uint8_t pfmode)
 
 	/* Enable probe filter */
 	for (i = 0; i < sysconf.nodes; i++) {
-		struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+		struct device *f3x_dev = __f3_dev[i];
 
 		dword = pci_read_config32(f3x_dev, 0x1c4);
 		dword |= (0x1 << 31);	/* L3TagInit = 1 */
@@ -1347,8 +1219,8 @@ static void enable_atm_mode(void)
 
 	/* Enable ATM mode */
 	for (i = 0; i < sysconf.nodes; i++) {
-		struct device *f0x_dev = pcidev_on_root(0x18 + i, 0);
-		struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+		struct device *f0x_dev = __f0_dev[i];
+		struct device *f3x_dev = __f3_dev[i];
 
 		dword = pci_read_config32(f0x_dev, 0x68);
 		dword |= (0x1 << 12);	/* ATMModeEn = 1 */
@@ -1392,7 +1264,7 @@ static void detect_and_enable_probe_filter(struct device *dev)
 
 		/* Reenable L3 and DRAM scrubbers */
 		for (i = 0; i < sysconf.nodes; i++) {
-			struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
+			struct device *f3x_dev = __f3_dev[i];
 
 			pci_write_config32(f3x_dev, 0x58, f3x58[i]);
 			pci_write_config32(f3x_dev, 0x5c, f3x5c[i]);
@@ -1416,9 +1288,9 @@ static void detect_and_enable_cache_partitioning(struct device *dev)
 		uint8_t compute_unit_count = 0;
 
 		for (i = 0; i < sysconf.nodes; i++) {
-			struct device *f3x_dev = pcidev_on_root(0x18 + i, 3);
-			struct device *f4x_dev = pcidev_on_root(0x18 + i, 4);
-			struct device *f5x_dev = pcidev_on_root(0x18 + i, 5);
+			struct device *f3x_dev = __f3_dev[i];
+			struct device *f4x_dev = __f4_dev[i];
+			struct device *f5x_dev = __f5_dev[i];
 
 			/* Determine the number of active compute units on this node */
 			f5x80 = pci_read_config32(f5x_dev, 0x80);
