@@ -1,9 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 Scope (\) {
-	Name (PCBA, CONFIG_MMCONF_BASE_ADDRESS)	/* Base address of PCIe config space */
-	Name (HPBA, 0xFED00000)			/* Base address of HPET table */
-
 	/* PIC IRQ mapping registers, C00h-C01h */
 	OperationRegion (PRQM, SystemIO, 0x00000C00, 0x00000002)
 	Field (PRQM, ByteAcc, NoLock, Preserve) {
@@ -36,109 +33,6 @@ Scope (\) {
 	}
 
 	Scope (\_SB) {
-		/* PCIe Configuration Space for 1 bus */
-		OperationRegion (PCFG, SystemMemory, PCBA, 0x00100000) /* Each bus consumes 1MB */
-		Field (PCFG, ByteAcc, NoLock, Preserve) {
-			/* Byte offsets are computed using the following technique:
-			 * ((device number * 8) * 4096) + register offset
-			 * The 8 comes from 8 functions per device, and 4096 bytes per function config space
-			 */
-			Offset (0x00088024),	/* Byte offset to SATA register 24h - Bus 0, Device 17, Function 0 */
-			STB5, 32,
-			Offset (0x00098042),	/* Byte offset to OHCI0 register 42h - Bus 0, Device 19, Function 0 */
-			PT0D, 1,
-			PT1D, 1,
-			PT2D, 1,
-			PT3D, 1,
-			PT4D, 1,
-			PT5D, 1,
-			PT6D, 1,
-			PT7D, 1,
-			PT8D, 1,
-			PT9D, 1,
-			Offset (0x000A0004),	/* Byte offset to SMBUS	register 4h - Bus 0, Device 20, Function 0 */
-			SBIE, 1,
-			SBME, 1,
-			Offset (0x000A0008),	/* Byte offset to SMBUS	register 8h - Bus 0, Device 20, Function 0 */
-			SBRI, 8,
-			Offset (0x000A0014),	/* Byte offset to SMBUS	register 14h - Bus 0, Device 20, Function 0 */
-			SBB1, 32,
-			Offset (0x000A0078),	/* Byte offset to SMBUS	register 78h - Bus 0, Device 20, Function 0 */
-			,14,
-			P92E, 1,		/* Port92 decode enable */
-		}
-
-		OperationRegion (SB5, SystemMemory, STB5, 0x1000)
-		Field (SB5, AnyAcc, NoLock, Preserve) {
-			/* Port 0 */
-			Offset (0x120),		/* Port 0 Task file status */
-			P0ER, 1,
-			, 2,
-			P0DQ, 1,
-			, 3,
-			P0BY, 1,
-			Offset (0x128),		/* Port 0 Serial ATA status */
-			P0DD, 4,
-			, 4,
-			P0IS, 4,
-			Offset (0x12C),		/* Port 0 Serial ATA control */
-			P0DI, 4,
-			Offset (0x130),		/* Port 0 Serial ATA error */
-			, 16,
-			P0PR, 1,
-
-			/* Port 1 */
-			Offset (0x1A0),		/* Port 1 Task file status */
-			P1ER, 1,
-			, 2,
-			P1DQ, 1,
-			, 3,
-			P1BY, 1,
-			Offset (0x1A8),		/* Port 1 Serial ATA status */
-			P1DD, 4,
-			, 4,
-			P1IS, 4,
-			Offset (0x1AC),		/* Port 1 Serial ATA control */
-			P1DI, 4,
-			Offset (0x1B0),		/* Port 1 Serial ATA error */
-			, 16,
-			P1PR, 1,
-
-			/* Port 2 */
-			Offset (0x220),		/* Port 2 Task file status */
-			P2ER, 1,
-			, 2,
-			P2DQ, 1,
-			, 3,
-			P2BY, 1,
-			Offset (0x228),		/* Port 2 Serial ATA status */
-			P2DD, 4,
-			, 4,
-			P2IS, 4,
-			Offset (0x22C),		/* Port 2 Serial ATA control */
-			P2DI, 4,
-			Offset (0x230),		/* Port 2 Serial ATA error */
-			, 16,
-			P2PR, 1,
-
-			/* Port 3 */
-			Offset (0x2A0),		/* Port 3 Task file status */
-			P3ER, 1,
-			, 2,
-			P3DQ, 1,
-			, 3,
-			P3BY, 1,
-			Offset (0x2A8),		/* Port 3 Serial ATA status */
-			P3DD, 4,
-			, 4,
-			P3IS, 4,
-			Offset (0x2AC),		/* Port 3 Serial ATA control */
-			P3DI, 4,
-			Offset (0x2B0),		/* Port 3 Serial ATA error */
-			, 16,
-			P3PR, 1,
-		}
-
 		Method (CIRQ, 0x00, NotSerialized) {
 			Store (0, PINA)
 			Store (0, PINB)
