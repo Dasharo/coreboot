@@ -77,14 +77,14 @@ static void get_fx_devs(void)
 	}
 }
 
-static u32 f1_read_config32(unsigned int reg)
+__unused static u32 f1_read_config32(unsigned int reg)
 {
 	if (fx_devs == 0)
 		get_fx_devs();
 	return pci_read_config32(__f1_dev[0], reg);
 }
 
-static void f1_write_config32(unsigned int reg, u32 value)
+__unused static void f1_write_config32(unsigned int reg, u32 value)
 {
 	int i;
 	if (fx_devs == 0)
@@ -706,72 +706,8 @@ static void reserve_cpu_cc6_storage_area(struct device *dev, int idx)
 
 static void amdfam10_domain_read_resources(struct device *dev)
 {
-	unsigned int reg;
 	msr_t msr;
 	int idx = 7;	// value from original code
-
-	/* Find the already assigned resource pairs */
-	/*
-	 * TODO: this can be removed when all resources are accounted for and
-	 * assigned by amdfam10_assign_new_{mm,}io_res() only.
-	 */
-	get_fx_devs();
-	for (reg = 0x80; reg <= 0xd8; reg+= 0x08) {
-		u32 base, limit;
-		base  = f1_read_config32(reg);
-		limit = f1_read_config32(reg + 0x04);
-		/* Is this register allocated? */
-		if ((base & 3) != 0) {
-			/*
-			 * Leaving original code as comment for reference on node numbering.
-			 * __f0_dev[nodeid] could be out-of-bounds read...
-			 */
-			/***
-			unsigned int nodeid, reg_link;
-			struct device *reg_dev;
-			if (reg < 0xc0) { // mmio
-				nodeid = (limit & 0xf) + (base&0x30);
-			} else { // io
-				nodeid =  (limit & 0xf) + ((base>>4)&0x30);
-			}
-			reg_link = (limit >> 4) & 7;
-			reg_dev = __f0_dev[nodeid];
-			if (reg_dev) {
-				/ * Reserve the resource  * /
-				struct resource *res;
-				res = new_resource(reg_dev, IOINDEX(0x1000 + reg, reg_link));
-				if (res) {
-					res->flags = 1;
-				}
-			}
-			***/
-
-			/*
-			 * We don't actually need base and size, index is sufficient. Keeping
-			 * them for now for reporting.
-			 */
-			struct resource *res;
-			if (probe_resource(__f0_dev[0], reg))
-				printk(BIOS_WARNING, "%s: resource with index %x already exists, overwriting\n", __func__, reg);
-
-			res = new_resource(__f0_dev[0], reg);
-			if (reg < 0xC0) {
-				res->base = ((resource_t)base & 0xFFFFFF00) << 8;
-				res->size = (((resource_t)limit & 0xFFFFFF00) << 8) - res->base;
-				res->size += 0x10000;
-				res->flags = IORESOURCE_MEM;
-			} else {
-				res->base = (resource_t)base & 0x00FFF000;
-				res->size = ((resource_t)limit & 0x00FFF000) - res->base;
-				res->size += 0x1000;
-				res->flags = IORESOURCE_IO;
-			}
-
-			/* Don't mark as assigned so allocator won't try to use those */
-			res->flags |= IORESOURCE_STORED | IORESOURCE_FIXED;
-			report_resource_stored(dev, res, " <D18F1 stored by early ramstage>");
-		}
-	}
 
 	pci_domain_read_resources(dev);
 
