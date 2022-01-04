@@ -68,7 +68,7 @@ release:
     version: 5621a1e
   - name: skiboot
     revision: '98581863'
-    url: https://git.raptorcs.com/git/talos-skiboot/tree/98581863
+    url: https://git.raptorcs.com/git/talos-skiboot/commit/?id=98581863
     version: 04-16-2019
   tag: raptor-cs_talos-2_v0.4.1
   tests:
