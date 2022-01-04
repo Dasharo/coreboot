@@ -9,7 +9,13 @@ client:
 framework:
   name: coreboot
   version: 5621a1e
-  payload: skiboot
+  url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
+
+components:
+- name: skiboot
+  version: 04-16-2019
+  url_template: https://git.raptorcs.com/git/talos-skiboot/tree/COMMIT_HASH
+  path: payloads/external/skiboot/talos-skiboot
 
 documentation:
   name: Dasharo Compatibility
