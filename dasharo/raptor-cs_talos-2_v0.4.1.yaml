@@ -1,0 +1,85 @@
+client:
+  name: Insurgo
+dasharo:
+  documentation:
+    building_url: https://docs.dasharo.com/variants/talos_2/building-manual/
+    flashing_url: https://docs.dasharo.com/variants/talos_2/installation-manual/
+    name: Dasharo Compatibility
+    url: https://docs.dasharo.com/
+  framework:
+    name: coreboot
+    version: 5621a1e
+  platform:
+    model: Talos II
+    name: raptor-cs_talos-2
+    vendor: Raptor Computing Systems
+release:
+  artifacts:
+  - file_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/dasharo_talos_2_bootblock_v0.4.1.signed.ecc
+    hash: sha256
+    hash_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/dasharo_talos_2_bootblock_v0.4.1.signed.ecc.sha256
+    name: dasharo_talos_2_bootblock_v0.4.1.signed.ecc
+    signature: sha256.sig
+    signature_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/dasharo_talos_2_bootblock_v0.4.1.signed.ecc.sha256.sig
+  - file_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/dasharo_talos_2_coreboot_v0.4.1.rom.signed.ecc
+    hash: sha256
+    hash_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/dasharo_talos_2_coreboot_v0.4.1.rom.signed.ecc.sha256
+    name: dasharo_talos_2_coreboot_v0.4.1.rom.signed.ecc
+    signature: sha256.sig
+    signature_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/dasharo_talos_2_coreboot_v0.4.1.rom.signed.ecc.sha256.sig
+  - file_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/dasharo_talos_2_zImage_v0.4.1.bundled
+    hash: sha256
+    hash_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/dasharo_talos_2_zImage_v0.4.1.bundled.sha256
+    name: dasharo_talos_2_zImage_v0.4.1.bundled
+    signature: sha256.sig
+    signature_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/dasharo_talos_2_zImage_v0.4.1.bundled.sha256.sig
+  asciinema:
+    signature_verification: https://asciinema.org/a/415457
+  changelog:
+    changed:
+    - Simplify memlayout
+    - Replace PPC_SHIFT with PPC_PLACE macro
+    - Change SPR numbers definitions to decimal
+    - Print signing output to terminal
+    fixed:
+    - Watchdog timing out
+    - Sporadic signing failure due to the tools not being built
+    - Building with cross compiler other than powerpc64-linux-gnu-
+    known_issues:
+    - description: Only one CPU is started
+      url: https://github.com/Dasharo/dasharo-issues/issues/30
+    - description: SPDs are not exposed in sysfs automatically
+      url: https://github.com/Dasharo/dasharo-issues/issues/31
+    - description: Missing parts of Device Tree describing specific unit (VPD, serial
+        numbers)
+      url: https://github.com/Dasharo/dasharo-issues/issues/32
+  date:
+    day: 4
+    month: 1
+    year: 2022
+  diffstat:
+    deletions: 397
+    files_changed: 154
+    insertions: 27477
+  sbom:
+  - name: coreboot
+    revision: 13b58058
+    url: https://github.com/Dasharo/coreboot/commit/13b58058
+    version: 5621a1e
+  - name: skiboot
+    revision: '98581863'
+    url: https://git.raptorcs.com/git/talos-skiboot/tree/98581863
+    version: 04-16-2019
+  tag: raptor-cs_talos-2_v0.4.1
+  tests:
+    hardware_matrix:
+      url: https://docs.dasharo.com/variants/talos_2/hardware-matrix/
+    results:
+      failed: 0
+      not_tested: 0
+      passed: 7
+      passed_percent: 100
+      url: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
+    specification:
+      url: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
+  version: v0.4.1
