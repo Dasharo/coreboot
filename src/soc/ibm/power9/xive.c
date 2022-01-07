@@ -47,16 +47,12 @@ void configure_xive(int core)
 	write_scom(0x0501290B, FSP_BAR);
 
 	/* PSI HB BAR + enable bit */
-	/* TODO: check if 2 separate writes are required */
-	write_scom(0x0501290A, PSI_HB_BAR);
 	write_scom(0x0501290A, PSI_HB_BAR | PPC_BIT(63));
 
 	/* Disable VPC Pull error */
 	scom_and(0x05013179, ~PPC_BIT(30));
 
 	/* PSI HB ESB BAR + enable bit */
-	/* TODO: check if 2 separate writes are required */
-	write_scom(0x05012916, PSI_HB_ESB_BAR);
 	write_scom(0x05012916, PSI_HB_ESB_BAR | PPC_BIT(63));
 
 	/* XIVE IC BAR + enable bit */
@@ -96,8 +92,6 @@ void configure_xive(int core)
 	eieio();
 
 	/* Route LSI to master processor */
-	/* TODO: check if 2 separate writes are required */
-	write64(hb_bar + 0x68, 0x0006030203102000);
 	write64(hb_bar + 0x68, 0x0006030203102001);
 	write64(hb_bar + 0x58, 0);
 
