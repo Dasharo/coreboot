@@ -1119,19 +1119,6 @@ static void istep_16_1(int this_core)
 	 */
 	long time = 10500;
 
-	/*
-	 * Debugging aid - 0xE40 is Hypervisor Emulation Assistance vector. It is
-	 * taken when processor tries to execute unimplemented instruction. All 0s
-	 * is (and will always be) such an instruction, meaning we will get here
-	 * when processor jumps into uninitialized memory. If this instruction were
-	 * also uninitialized, processor would hit another exception and again jump
-	 * here. This time, however, it would overwrite original HSRR0 value with
-	 * 0xE40. Instruction below is 'b .'. This way HSRR0 will retain its value
-	 * - address of instruction which generated this exception. It can be then
-	 * read with pdbg.
-	 */
-	*(volatile uint32_t *)0xE40 = 0x48000000;
-
 	configure_xive(this_core);
 
 	/*

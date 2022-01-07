@@ -11,10 +11,6 @@
 
 extern uint8_t sys_reset_int[];
 extern uint8_t sys_reset_int_end[];
-extern uint8_t ext_int[];
-extern uint8_t ext_int_end[];
-extern uint8_t hyp_virt_int[];
-extern uint8_t hyp_virt_int_end[];
 
 #define IVPE_BAR	0x0006020000000000
 #define FSP_BAR		0x0006030100000000
@@ -37,8 +33,19 @@ void configure_xive(int core)
 
 	/* Install handlers */
 	memcpy((void *)0x100, sys_reset_int, CODE_SIZE(sys_reset_int));
-	memcpy((void *)0x500, ext_int, CODE_SIZE(ext_int));
-	memcpy((void *)0xEA0, hyp_virt_int, CODE_SIZE(hyp_virt_int));
+
+	/*
+	 * Debugging aid - 0xE40 is Hypervisor Emulation Assistance vector. It is
+	 * taken when processor tries to execute unimplemented instruction. All 0s
+	 * is (and will always be) such an instruction, meaning we will get here
+	 * when processor jumps into uninitialized memory. If this instruction were
+	 * also uninitialized, processor would hit another exception and again jump
+	 * here. This time, however, it would overwrite original HSRR0 value with
+	 * 0xE40. Instruction below is 'b .'. This way HSRR0 will retain its value
+	 * - address of instruction which generated this exception. It can be then
+	 * read with pdbg.
+	 */
+	*(volatile uint32_t *)0xE40 = 0x48000000;
 
 	/* IVPE BAR + enable bit */
 	write_scom(0x05013012, IVPE_BAR | PPC_BIT(0));
