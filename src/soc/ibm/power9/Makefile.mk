@@ -40,6 +40,7 @@ romstage-y += rom_media.c
 romstage-y += romstage.c
 romstage-y += timer.c
 romstage-y += vpd.c
+romstage-y += xbus.c
 
 ramstage-y += cbmem.c
 ramstage-y += chip.c

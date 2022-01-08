@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 #include "homer.h"
-#include "sbeio.h"
+#include "xbus.h"
 
 /*
  * This code omits initialization of OBus which isn't present. It also assumes
@@ -20,53 +20,6 @@
  * unmodified or ANDed with 0, this simplifies verification that the code
  * operates correctly by comparing against Hostboot logs.
  */
-
-/* Updates address that targets XBus chiplet to use specified XBus link number.
- * Does nothing to non-XBus addresses. */
-static uint64_t xbus_addr(uint8_t xbus, uint64_t addr)
-{
-	enum {
-		XBUS_COUNT = 0x3,		// number of XBus links
-		XB_IOX_0_RING_ID = 0x3,		// IOX_0
-		XB_PBIOX_0_RING_ID = 0x6,	// PBIOX_0
-	};
-
-	uint8_t ring = (addr >> 10) & 0xF;
-	uint8_t chiplet = (addr >> 24) & 0x3F;
-
-	if (chiplet != XB_CHIPLET_ID)
-		return addr;
-
-	if (ring >= XB_IOX_0_RING_ID && ring < XB_IOX_0_RING_ID + XBUS_COUNT)
-		ring = XB_IOX_0_RING_ID + xbus;
-	else if (ring >= XB_PBIOX_0_RING_ID && ring < XB_PBIOX_0_RING_ID + XBUS_COUNT)
-		ring = XB_PBIOX_0_RING_ID + xbus;
-
-	addr &= ~PPC_BITMASK(50, 53);
-	addr |= PPC_PLACE(ring, 50, 4);
-
-	return addr;
-}
-
-void put_scom(uint8_t chip, uint64_t addr, uint64_t data)
-{
-	addr = xbus_addr(/*xbus=*/1, addr);
-
-	if (chip == 0)
-		write_scom(addr, data);
-	else
-		write_sbe_scom(chip, addr, data);
-}
-
-uint64_t get_scom(uint8_t chip, uint64_t addr)
-{
-	addr = xbus_addr(/*xbus=*/1, addr);
-
-	if (chip == 0)
-		return read_scom(addr);
-	else
-		return read_sbe_scom(chip, addr);
-}
 
 static void p9_fbc_no_hp_scom(bool is_xbus_active, uint8_t chip)
 {
