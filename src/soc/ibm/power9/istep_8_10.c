@@ -6,23 +6,7 @@
 #include <cpu/power/scom.h>
 #include <delay.h>
 
-static inline void and_scom(uint8_t chip, uint64_t addr, uint64_t mask)
-{
-	put_scom(chip, addr, get_scom(chip, addr) & mask);
-}
-
-static inline void or_scom(uint8_t chip, uint64_t addr, uint64_t mask)
-{
-	put_scom(chip, addr, get_scom(chip, addr) | mask);
-}
-
-static inline void and_or_scom(uint8_t chip, uint64_t addr, uint64_t and, uint64_t or)
-{
-	uint64_t data = get_scom(chip, addr);
-	data &= and;
-	data |= or;
-	put_scom(chip, addr, data);
-}
+#include "xbus.h"
 
 static void xbus_scom(uint8_t chip, uint8_t group)
 {
@@ -37,7 +21,7 @@ static void xbus_scom(uint8_t chip, uint8_t group)
 	 * use the offset.  Some other writes are group-specific and don't need
 	 * it either.
 	 */
-	const uint64_t offset = group * 0x2000000000;
+	const uint64_t offset = group * XBUS_LINK_GROUP_OFFSET;
 
 	int i;
 
@@ -332,7 +316,7 @@ static void set_msb_swap(uint8_t chip, int group)
 		EDIP_TX_MSBSWAP = 58,
 	};
 
-	const uint64_t offset = group * 0x2000000000;
+	const uint64_t offset = group * XBUS_LINK_GROUP_OFFSET;
 
 	/* ATTR_EI_BUS_TX_MSBSWAP seems to be 0x80 which is GROUP_0_SWAP */
 	if (group == 0)
@@ -357,7 +341,7 @@ static void xbus_scominit(int group)
 		EDIP_TX_IORESET = 0x800C9C0006010C3F,
 	};
 
-	const uint64_t offset = group * 0x2000000000;
+	const uint64_t offset = group * XBUS_LINK_GROUP_OFFSET;
 
 	/* Assert IO reset to power-up bus endpoint logic */
 	or_scom(0, EDIP_RX_IORESET + offset, PPC_BIT(52));
