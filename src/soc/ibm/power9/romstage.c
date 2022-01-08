@@ -3,6 +3,7 @@
 #include <console/console.h>
 #include <cpu/power/vpd.h>
 #include <cpu/power/istep_8.h>
+#include <cpu/power/istep_9.h>
 #include <cpu/power/istep_10.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
@@ -371,6 +372,8 @@ void main(void)
 	istep_8_9(chips);
 	istep_8_10(chips);
 	istep_8_11(chips);
+
+	istep_9_2(chips);
 
 	istep_10_10(&phb_active_mask, iovalid_enable);
 	istep_10_12();
