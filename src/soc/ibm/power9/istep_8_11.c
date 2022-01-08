@@ -6,6 +6,7 @@
 #include <cpu/power/scom.h>
 
 #include "homer.h"
+#include "xbus.h"
 
 static void xbus_enable_ridi(uint8_t chip)
 {
