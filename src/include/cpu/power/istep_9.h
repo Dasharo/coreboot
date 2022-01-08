@@ -6,5 +6,6 @@
 #include <stdint.h>
 
 void istep_9_2(uint8_t chips);
+void istep_9_4(uint8_t chips);
 
 #endif /* CPU_PPC64_ISTEP8_H */
