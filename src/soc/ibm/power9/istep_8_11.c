@@ -5,6 +5,8 @@
 #include <console/console.h>
 #include <cpu/power/scom.h>
 
+#include "xbus.h"
+
 static void xbus_enable_ridi(uint8_t chip)
 {
 	enum {
