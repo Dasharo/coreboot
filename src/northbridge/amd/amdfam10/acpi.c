@@ -76,8 +76,7 @@ static void set_srat_mem(void *gp, struct device *dev, struct resource *res)
 	basek = resk(res->base);
 	sizek = resk(res->size);
 
-	printk(BIOS_DEBUG, "set_srat_mem: dev %s, res->index=%04lx "
-	       "startk=%08lx, sizek=%08lx\n",
+	printk(BIOS_DEBUG, "set_srat_mem: dev %s, res->index=%04lx startk=%08lx, sizek=%08lx\n",
 	       dev_path(dev), res->index, basek, sizek);
 
 	if (res->index < 0xf)	/* Exclude MMIO resources */

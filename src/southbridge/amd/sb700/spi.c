@@ -101,8 +101,7 @@ static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 	 * by the SPI chip driver.
 	 */
 	if (bytesout > AMD_SB_SPI_TX_LEN) {
-		printk(BIOS_DEBUG, "AMD SPI: Too much to write. Does your SPI chip driver use"
-		     " spi_crop_chunk()?\n");
+		printk(BIOS_DEBUG, "AMD SPI: Too much to write. Does your SPI chip driver use spi_crop_chunk()?\n");
 		return -1;
 	}
 

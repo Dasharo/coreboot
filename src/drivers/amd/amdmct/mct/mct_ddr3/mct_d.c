@@ -3987,7 +3987,9 @@ void DCTMemClr_Sync_D(struct MCTStatStruc *pMCTstat,
 		do {
 			dword = Get_NB32(dev, 0x110);
 			if (CONFIG(CONSOLE_SERIAL)) {
-				/* Indicate the process is in progress only on serial. Delay prevents printing many dots */
+				/* Indicate the process is in progress only on serial.
+				 * Delay prevents printing many dots
+				 */
 				mdelay(10);
 				printk(BIOS_DEBUG, ".");
 			}
@@ -3997,7 +3999,9 @@ void DCTMemClr_Sync_D(struct MCTStatStruc *pMCTstat,
 		do {
 			dword = Get_NB32(dev, 0x110);
 			if (CONFIG(CONSOLE_SERIAL)) {
-				/* Indicate the process is in progress only on serial. Delay prevents printing many dots */
+				/* Indicate the process is in progress only on serial.
+				 * Delay prevents printing many dots
+				 */
 				mdelay(5);
 				printk(BIOS_DEBUG, ".");
 			}
@@ -4166,7 +4170,10 @@ static void SyncDCTsReady_D(struct MCTStatStruc *pMCTstat,
 			pDCTstat = pDCTstatA + Node;
 			if (pDCTstat->NodePresent) {
 				if (pDCTstat->DIMMValidDCT[0] > 0 || pDCTstat->DIMMValidDCT[1] > 0) {
-					/* re-enable phy compensation engine when dram init on both DCTs is completed. */
+					/*
+					 * re-enable phy compensation engine
+					 * when dram init on both DCTs is completed.
+					 */
 					val = Get_NB32_index_wait(pDCTstat->dev_dct, 0x98, 0x8);
 					val &= ~(1 << DisAutoComp);
 					Set_NB32_index_wait(pDCTstat->dev_dct, 0x98, 0x8, val);
@@ -4287,7 +4294,7 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 	for (i = 0; i< MAX_DIMMS_SUPPORTED; i++) {
 		LDIMM = i >> 1;
 		if (pDCTstat->DIMMValid & (1 << i)) {
-			val = pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDivisor];	/* MTB = Dividend/Divisor */
+			val = pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDivisor]; /* MTB = Dividend/Divisor */
 			MTB16x = ((pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDividend] & 0xff) << 4);
 			MTB16x /= val; /* transfer to MTB*16 */
 
@@ -5575,7 +5582,8 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 						pDCTstat->DIMMValid |= 1 << i;
 					}
 				} else {
-					printk(BIOS_WARNING, "Node %d DIMM %d: SPD checksum invalid\n", pDCTstat->Node_ID, i);
+					printk(BIOS_WARNING, "Node %d DIMM %d: SPD checksum invalid\n",
+							pDCTstat->Node_ID, i);
 					pDCTstat->DIMMSPDCSE = 1 << i;
 					if (SPDCtrl == 0) {
 						pDCTstat->ErrStatus |= 1 << SB_DIMMChkSum;

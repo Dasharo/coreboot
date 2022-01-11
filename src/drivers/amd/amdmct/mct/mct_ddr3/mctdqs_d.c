@@ -1429,8 +1429,7 @@ static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 				u16 region_center = (best_pos + (best_count / 2));
 
 				if (region_center < 16) {
-					printk(BIOS_WARNING, "TrainDQSRdWrPos: negative DQS recovery delay detected!"
-							"  Attempting to continue but your system may be unstable...\n");
+					printk(BIOS_WARNING, "TrainDQSRdWrPos: negative DQS recovery delay detected! Attempting to continue but your system may be unstable...\n");
 					region_center = 0;
 				} else {
 					region_center -= 16;
@@ -1732,8 +1731,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *pMCTstat,
 				if (!lane_training_success[lane]) {
 					if (pDCTstat->tcwl_delay[dct] >= 1) {
 						Errors |= 1 << SB_FatalError;
-						printk(BIOS_ERR, "%s: lane %d failed to train!  "
-							"Training for receiver %d on DCT %d aborted\n",
+						printk(BIOS_ERR, "%s: lane %d failed to train!  Training for receiver %d on DCT %d aborted\n",
 							__func__, lane, Receiver, dct);
 					}
 

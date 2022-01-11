@@ -297,10 +297,8 @@ void amd_ht_fixup(struct sys_info *sysinfo) {
 					f3xe8 = pci_read_config32(NODE_PCI(node, 3), 0xe8);
 					u8 internal_node_number = ((f3xe8 & 0xc0000000) >> 30);
 					printk(BIOS_DEBUG,
-					       "%s: node %d (internal node "
-					       "ID %d): disabling defective "
-					       "HT link", __func__, node,
-					       internal_node_number);
+						"%s: node %d (internal node ID %d): disabling defective HT link",
+						__func__, node, internal_node_number);
 					if (internal_node_number == 0) {
 						u8 package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0x98:0xd8) & 0x1;
 						printk(BIOS_DEBUG, " (L3 connected: %d)\n", package_link_3_connected);

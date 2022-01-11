@@ -780,15 +780,13 @@ static unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current)
 
 	struct device *nb_dev = pcidev_on_root(0, 0);
 	if (!nb_dev) {
-		printk(BIOS_WARNING, "acpi_fill_ivrs: Unable to locate SR5650 "
-				"device!  IVRS table not generated...\n");
+		printk(BIOS_WARNING, "acpi_fill_ivrs: Unable to locate SR5650 device!  IVRS table not generated...\n");
 		return (unsigned long)ivrs;
 	}
 
 	struct device *iommu_dev = pcidev_on_root(0, 2);
 	if (!iommu_dev) {
-		printk(BIOS_WARNING, "acpi_fill_ivrs: Unable to locate SR5650 "
-				"IOMMU device!  IVRS table not generated...\n");
+		printk(BIOS_WARNING, "acpi_fill_ivrs: Unable to locate SR5650 IOMMU device!  IVRS table not generated...\n");
 		return (unsigned long)ivrs;
 	}
 

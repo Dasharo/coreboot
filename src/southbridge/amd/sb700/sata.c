@@ -31,13 +31,11 @@ static int sata_drive_detect(int portnum, u16 iobar)
 			 * if the first SATA port is unpopulated and the
 			 * second SATA port is populated.
 			 */
-			printk(BIOS_DEBUG, "drive no longer selected after %i ms, "
-				"retrying init\n", i * 10);
+			printk(BIOS_DEBUG, "drive no longer selected after %i ms, retrying init\n", i * 10);
 			return 1;
 		} else {
 			if (i == 0)
-				printk(BIOS_SPEW, "drive detection not yet completed, "
-					"waiting...\n");
+				printk(BIOS_SPEW, "drive detection not yet completed, waiting...\n");
 		}
 		mdelay(10);
 		i++;
@@ -46,8 +44,9 @@ static int sata_drive_detect(int portnum, u16 iobar)
 
 		/* Detect stuck SATA controller and attempt reset */
 		if (i > 1024) {
-			printk(BIOS_DEBUG, "drive detection not done after %i ms, "
-				"resetting HBA and retrying init\n", i * 10);
+			printk(BIOS_DEBUG,
+					"drive detection not done after %i ms, resetting HBA and retrying init\n",
+					i * 10);
 			return 2;
 		}
 	}

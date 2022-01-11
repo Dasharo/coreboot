@@ -645,9 +645,8 @@ static void waitCurrentPstate(u32 target_pstate)
 		pstate_msr = rdmsr(PS_STS_REG);
 		if (stopwatch_expired(&sw)) {
 			msr_t limit_msr = rdmsr(PS_LIM_REG);
-			printk(BIOS_ERR, "*** APIC ID %02x: timed out waiting for P-state %01x."
-				 " Current P-state %01x P-state current limit"
-				 " MSRC001_0061=%08x %08x\n",
+			printk(BIOS_ERR,
+				"*** APIC ID %02x: timed out waiting for P-state %01x. Current P-state %01x P-state current limit MSRC001_0061=%08x %08x\n",
 				cpuid_ebx(0x00000001) >> 24, target_pstate, pstate_msr.lo,
 				limit_msr.hi, limit_msr.lo);
 			break;

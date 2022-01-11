@@ -555,7 +555,8 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 			base  += NextBase;
 			limit += NextBase;
 			DramSelBaseAddr += NextBase;
-			printk(BIOS_DEBUG, " Node: %02x  base: %02x  limit: %02x  BottomIO: %02x\n", Node, base, limit, BottomIO);
+			printk(BIOS_DEBUG, " Node: %02x  base: %02x  limit: %02x  BottomIO: %02x\n",
+					Node, base, limit, BottomIO);
 
 			if (_MemHoleRemap) {
 				if ((base < BottomIO) && (limit >= BottomIO)) {

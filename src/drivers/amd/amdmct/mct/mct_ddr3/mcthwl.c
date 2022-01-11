@@ -238,8 +238,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 
 			if (global_phy_training_status)
 				printk(BIOS_WARNING,
-					"%s: Uncorrectable invalid value(s) detected in second phase of write levelling; "
-					"continuing but system may be unstable!\n",
+					"%s: Uncorrectable invalid value(s) detected in second phase of write levelling; continuing but system may be unstable!\n",
 					__func__);
 
 			u8 dct;
