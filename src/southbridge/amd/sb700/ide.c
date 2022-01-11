@@ -16,7 +16,7 @@ static void ide_init(struct device *dev)
 	/* Enable ide devices so the linux ide driver will work */
 	u32 dword;
 	u8 byte;
-	uint8_t sata_ahci_mode, ide_compat_mode;
+	u8 sata_ahci_mode, ide_compat_mode;
 
 	sata_ahci_mode = get_uint_option("sata_ahci_mode", 1);
 	ide_compat_mode = get_uint_option("ide_compat_mode", 0);

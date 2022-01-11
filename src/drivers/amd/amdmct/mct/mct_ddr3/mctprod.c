@@ -7,7 +7,7 @@
 
 void mct_ExtMCTConfig_Dx(struct DCTStatStruc *pDCTstat)
 {
-	uint32_t dword;
+	u32 dword;
 
 	if (pDCTstat->LogicalCPUID & AMD_DR_Dx) {
 		dword = 0x0ce00f00 | 0x1 << 29;	/* FlushWrOnStpGnt */

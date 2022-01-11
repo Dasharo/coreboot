@@ -28,7 +28,7 @@
 //core_range = 0 : all cores
 //core range = 1 : core 0 only
 //core range = 2 : cores other than core0
-void for_each_ap(u32 bsp_apicid, u32 core_range, int8_t node,
+void for_each_ap(u32 bsp_apicid, u32 core_range, s8 node,
 		 process_ap_t process_ap, void *gp)
 {
 	// here assume the OS don't change our apicid
@@ -168,7 +168,7 @@ static void enable_apic_ext_id(u32 node)
 }
 
 static __always_inline
-void disable_cache_as_ram(uint8_t skip_sharedc_config)
+void disable_cache_as_ram(u8 skip_sharedc_config)
 {
 	msr_t msr;
 	u32 family;
@@ -238,7 +238,7 @@ void disable_cache_as_ram(uint8_t skip_sharedc_config)
 }
 
 
-static void stop_car_and_cpu(uint8_t skip_sharedc_config, u32 apicid)
+static void stop_car_and_cpu(u8 skip_sharedc_config, u32 apicid)
 {
 	msr_t msr;
 	u32 family;
@@ -333,9 +333,9 @@ static u32 init_cpus(struct sys_info *sysinfo)
 	u32 bsp_apicid = 0;
 	u32 apicid;
 	u32 dword;
-	uint8_t set_mtrrs;
-	uint8_t node_count;
-	uint8_t fam15_bsp_core1_apicid;
+	u8 set_mtrrs;
+	u8 node_count;
+	u8 fam15_bsp_core1_apicid;
 	struct node_core_id id;
 
 	/* that is from initial apicid, we need nodeid and coreid

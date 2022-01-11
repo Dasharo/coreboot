@@ -16,7 +16,7 @@
 
 #include "family_10h_15h.h"
 
-static volatile uint8_t fam15h_startup_flags[MAX_NODES_SUPPORTED][MAX_CORES_SUPPORTED] = {{ 0 }};
+static volatile u8 fam15h_startup_flags[MAX_NODES_SUPPORTED][MAX_CORES_SUPPORTED] = {{ 0 }};
 
 static void setup_smm(void)
 {
@@ -99,9 +99,9 @@ static void set_bus_unit_configuration(struct node_core_id id)
 	msr_t msr;
 
 	if (is_fam15h()) {
-		uint32_t f5x80;
-		uint8_t enabled;
-		uint8_t compute_unit_count = 0;
+		u32 f5x80;
+		u8 enabled;
+		u8 compute_unit_count = 0;
 		f5x80 = pci_read_config32(pcidev_on_root(0x18 + id.nodeid, 5), 0x80);
 		enabled = f5x80 & 0xf;
 		if (enabled == 0x1)
@@ -117,10 +117,10 @@ static void set_bus_unit_configuration(struct node_core_id id)
 		msr.lo |= (((compute_unit_count - 1) & 0x3) << 6);
 		wrmsr(BU_CFG2_MSR, msr);
 	} else {
-		uint32_t f0x60;
-		uint32_t f0x160;
-		uint8_t core_count = 0;
-		uint8_t node_count = 0;
+		u32 f0x60;
+		u32 f0x160;
+		u8 core_count = 0;
+		u8 node_count = 0;
 		f0x60 = pci_read_config32(pcidev_on_root(0x18 + id.nodeid, 0),
 									0x60);
 		core_count = (f0x60 >> 16) & 0x1f;

@@ -203,14 +203,14 @@ int init_processor_name(void)
 	ssize_t i;
 	char program_string[NAME_STRING_MAXLEN];
 	u32 *p_program_string = (u32 *)program_string;
-	uint8_t fam15h = is_fam15h();
+	u8 fam15h = is_fam15h();
 
 	/* null the string */
 	memset(program_string, 0, sizeof(program_string));
 
 	if (fam15h) {
 		/* Family 15h or later */
-		uint32_t dword;
+		u32 dword;
 		struct device *cpu_fn5_dev = pcidev_on_root(0x18, 5);
 		pci_write_config32(cpu_fn5_dev, 0x194, 0);
 		dword = pci_read_config32(cpu_fn5_dev, 0x198);

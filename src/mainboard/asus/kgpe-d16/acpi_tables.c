@@ -9,8 +9,8 @@ unsigned long acpi_fill_madt(unsigned long current)
 	struct device *dev;
 	u32 dword;
 	u32 gsi_base = 0;
-	uint32_t apicid_sp5100;
-	uint32_t apicid_sr5650;
+	u32 apicid_sp5100;
+	u32 apicid_sr5650;
 	/* create all subtables for processors */
 	current = acpi_create_madt_lapics(current);
 

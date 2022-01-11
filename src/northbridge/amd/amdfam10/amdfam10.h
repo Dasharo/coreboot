@@ -918,7 +918,7 @@ struct nodes_info_t {
 } __packed;
 
 struct ht_link_config {
-	uint32_t ht_speed_limit; // Speed in MHz; 0 for autodetect (default)
+	u32 ht_speed_limit; // Speed in MHz; 0 for autodetect (default)
 };
 
 //DDR2 REG and unbuffered : Socket F 1027 and AM3

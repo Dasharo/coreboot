@@ -17,9 +17,9 @@ void __weak activate_spd_rom(const struct mem_controller *ctrl)
 {
 }
 
-void fam15h_switch_dct(uint32_t dev, uint8_t dct)
+void fam15h_switch_dct(u32 dev, u8 dct)
 {
-	uint32_t dword;
+	u32 dword;
 
 	dword = pci_read_config32(dev, 0x10c);
 	dword &= ~0x1;
@@ -27,9 +27,9 @@ void fam15h_switch_dct(uint32_t dev, uint8_t dct)
 	pci_write_config32(dev, 0x10c, dword);
 }
 
-static inline void fam15h_switch_nb_pstate_config_reg(uint32_t dev, uint8_t nb_pstate)
+static inline void fam15h_switch_nb_pstate_config_reg(u32 dev, u8 nb_pstate)
 {
-	uint32_t dword;
+	u32 dword;
 
 	dword = pci_read_config32(dev, 0x10c);
 	dword &= ~(0x3 << 4);
@@ -37,11 +37,11 @@ static inline void fam15h_switch_nb_pstate_config_reg(uint32_t dev, uint8_t nb_p
 	pci_write_config32(dev, 0x10c, dword);
 }
 
-uint32_t Get_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg)
+u32 Get_NB32_DCT(u32 dev, u8 dct, u32 reg)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		return pci_read_config32(dev, reg);
 	} else {
@@ -49,11 +49,11 @@ uint32_t Get_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg)
 	}
 }
 
-void Set_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg, uint32_t val)
+void Set_NB32_DCT(u32 dev, u8 dct, u32 reg, u32 val)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		pci_write_config32(dev, reg, val);
 	} else {
@@ -61,11 +61,11 @@ void Set_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg, uint32_t val)
 	}
 }
 
-uint32_t Get_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uint32_t reg)
+u32 Get_NB32_DCT_NBPstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		fam15h_switch_nb_pstate_config_reg(dev_map, nb_pstate);
 		return pci_read_config32(dev, reg);
@@ -74,11 +74,11 @@ uint32_t Get_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uin
 	}
 }
 
-void Set_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uint32_t reg, uint32_t val)
+void Set_NB32_DCT_NBPstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg, u32 val)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		fam15h_switch_nb_pstate_config_reg(dev_map, nb_pstate);
 		pci_write_config32(dev, reg, val);
@@ -87,11 +87,11 @@ void Set_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uint32_
 	}
 }
 
-uint32_t Get_NB32_index_wait_DCT(uint32_t dev, uint8_t dct, uint32_t index_reg, uint32_t index)
+u32 Get_NB32_index_wait_DCT(u32 dev, u8 dct, u32 index_reg, u32 index)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		return Get_NB32_index_wait(dev, index_reg, index);
 	} else {
@@ -99,11 +99,11 @@ uint32_t Get_NB32_index_wait_DCT(uint32_t dev, uint8_t dct, uint32_t index_reg, 
 	}
 }
 
-void Set_NB32_index_wait_DCT(uint32_t dev, uint8_t dct, uint32_t index_reg, uint32_t index, uint32_t data)
+void Set_NB32_index_wait_DCT(u32 dev, u8 dct, u32 index_reg, u32 index, u32 data)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		Set_NB32_index_wait(dev, index_reg, index, data);
 	} else {
@@ -111,7 +111,7 @@ void Set_NB32_index_wait_DCT(uint32_t dev, uint8_t dct, uint32_t index_reg, uint
 	}
 }
 
-static uint16_t voltage_index_to_mv(uint8_t index)
+static u16 voltage_index_to_mv(u8 index)
 {
 	if (index & 0x8)
 		return 1150;
@@ -123,13 +123,13 @@ static uint16_t voltage_index_to_mv(uint8_t index)
 		return 1500;
 }
 
-uint16_t mct_MaxLoadFreq(uint8_t count, uint8_t highest_rank_count, uint8_t registered, uint8_t voltage, uint16_t freq)
+u16 mct_MaxLoadFreq(u8 count, u8 highest_rank_count, u8 registered, u8 voltage, u16 freq)
 {
 	/* FIXME
 	 * Mainboards need to be able to specify the maximum number of DIMMs installable per channel
 	 * For now assume a maximum of 2 DIMMs per channel can be installed
 	 */
-	uint8_t MaxDimmsInstallable = 2;
+	u8 MaxDimmsInstallable = 2;
 
 	/* Return limited maximum RAM frequency */
 	if (CONFIG(DIMM_DDR2)) {

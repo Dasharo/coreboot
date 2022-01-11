@@ -20,10 +20,10 @@
 #define NVRAM_DDR3_1066 2
 #define NVRAM_DDR3_800  3
 
-static inline uint8_t isfam15h(void)
+static inline u8 isfam15h(void)
 {
-	uint8_t fam15h = 0;
-	uint32_t family;
+	u8 fam15h = 0;
+	u32 family;
 
 	family = cpuid_eax(0x80000001);
 	family = ((family & 0xf00000) >> 16) | ((family & 0xf00) >> 8);
@@ -307,12 +307,12 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
 	/* Determine the number of installed DIMMs */
 	int ch1_count = 0;
 	int ch2_count = 0;
-	uint8_t ch1_registered = 0;
-	uint8_t ch2_registered = 0;
-	uint8_t ch1_voltage = 0;
-	uint8_t ch2_voltage = 0;
-	uint8_t highest_rank_count[2];
-	uint8_t dimm;
+	u8 ch1_registered = 0;
+	u8 ch2_registered = 0;
+	u8 ch1_voltage = 0;
+	u8 ch2_voltage = 0;
+	u8 highest_rank_count[2];
+	u8 dimm;
 	int i;
 	for (i = 0; i < 15; i = i + 2) {
 		if (pDCTstat->DIMMValid & (1 << i))

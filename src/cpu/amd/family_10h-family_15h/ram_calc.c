@@ -12,9 +12,9 @@
 
 #include "ram_calc.h"
 
-uint64_t get_uma_memory_size(uint64_t topmem)
+u64 get_uma_memory_size(u64 topmem)
 {
-	uint64_t uma_size = 0;
+	u64 uma_size = 0;
 	if (CONFIG(GFXUMA)) {
 		/* refer to UMA Size Consideration in 780 BDG. */
 		if (topmem >= 0x40000000)	/* 1GB and above system memory */
@@ -30,11 +30,11 @@ uint64_t get_uma_memory_size(uint64_t topmem)
 	return uma_size;
 }
 
-uint64_t get_cc6_memory_size()
+u64 get_cc6_memory_size()
 {
-	uint8_t enable_cc6;
+	u8 enable_cc6;
 
-	uint64_t cc6_size = 0;
+	u64 cc6_size = 0;
 
 	if (is_fam15h()) {
 		enable_cc6 = 0;
@@ -56,7 +56,7 @@ uint64_t get_cc6_memory_size()
 
 void *cbmem_top_chipset(void)
 {
-	uint32_t topmem = rdmsr(TOP_MEM).lo;
+	u32 topmem = rdmsr(TOP_MEM).lo;
 
 	/* If there is memory above 4G, CC6 storage will not be under 4G */
 	if (rdmsr(TOP_MEM2).hi != 0)

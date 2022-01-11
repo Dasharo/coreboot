@@ -7,23 +7,23 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-static uint8_t fam15h_rdimm_rc2_ibt_code(struct DCTStatStruc *pDCTstat, uint8_t dct)
+static u8 fam15h_rdimm_rc2_ibt_code(struct DCTStatStruc *pDCTstat, u8 dct)
 {
-	uint8_t MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
-	uint8_t package_type;
-	uint8_t control_code = 0;
+	u8 package_type;
+	u8 control_code = 0;
 
 	package_type = mctGet_NVbits(NV_PACK_TYPE);
-	uint16_t MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
+	u16 MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
 
 	/* Obtain number of DIMMs on channel */
-	uint8_t dimm_count = pDCTstat->MAdimms[dct];
+	u8 dimm_count = pDCTstat->MAdimms[dct];
 
 	/* FIXME
 	 * Assume there is only one register on the RDIMM for now
 	 */
-	uint8_t num_registers = 1;
+	u8 num_registers = 1;
 
 	if (package_type == PT_GR) {
 		/* Socket G34 */
@@ -125,11 +125,11 @@ static uint8_t fam15h_rdimm_rc2_ibt_code(struct DCTStatStruc *pDCTstat, uint8_t 
 	return control_code;
 }
 
-static uint16_t memclk_to_freq(uint16_t memclk) {
-	uint16_t fam10h_freq_tab[] = {0, 0, 0, 400, 533, 667, 800};
-	uint16_t fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
+static u16 memclk_to_freq(u16 memclk) {
+	u16 fam10h_freq_tab[] = {0, 0, 0, 400, 533, 667, 800};
+	u16 fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
 
-	uint16_t mem_freq = 0;
+	u16 mem_freq = 0;
 
 	if (is_fam15h()) {
 		if (memclk < 0x17) {
@@ -144,7 +144,7 @@ static uint16_t memclk_to_freq(uint16_t memclk) {
 	return mem_freq;
 }
 
-static uint8_t rc_word_chip_select_lower_bit(void) {
+static u8 rc_word_chip_select_lower_bit(void) {
 	if (is_fam15h()) {
 		return 21;
 	} else {
@@ -152,7 +152,7 @@ static uint8_t rc_word_chip_select_lower_bit(void) {
 	}
 }
 
-static uint32_t rc_word_address_to_ctl_bits(uint32_t address) {
+static u32 rc_word_address_to_ctl_bits(u32 address) {
 	if (is_fam15h()) {
 		return (((address >> 3) & 0x1) << 2) << 18 | (address & 0x7);
 	} else {
@@ -160,7 +160,7 @@ static uint32_t rc_word_address_to_ctl_bits(uint32_t address) {
 	}
 }
 
-static uint32_t rc_word_value_to_ctl_bits(uint32_t value) {
+static u32 rc_word_value_to_ctl_bits(u32 value) {
 	if (is_fam15h()) {
 		return ((value >> 2) & 0x3) << 18 | ((value & 0x3) << 3);
 	} else {
@@ -169,14 +169,14 @@ static uint32_t rc_word_value_to_ctl_bits(uint32_t value) {
 }
 
 static u32 mct_ControlRC(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, uint8_t dct, u32 MrsChipSel, u32 CtrlWordNum)
+			struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel, u32 CtrlWordNum)
 {
 	u8 Dimms, DimmNum;
 	u32 val;
-	uint8_t ddr_voltage_index;
-	uint16_t mem_freq;
-	uint8_t package_type = mctGet_NVbits(NV_PACK_TYPE);
-	uint8_t MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 ddr_voltage_index;
+	u16 mem_freq;
+	u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
 	DimmNum = (MrsChipSel >> rc_word_chip_select_lower_bit()) & 0x7;
 
@@ -271,7 +271,7 @@ static u32 mct_ControlRC(struct MCTStatStruc *pMCTstat,
 }
 
 static void mct_SendCtrlWrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, uint8_t dct, uint32_t val)
+			struct DCTStatStruc *pDCTstat, u8 dct, u32 val)
 {
 	u32 dev = pDCTstat->dev_dct;
 
@@ -285,7 +285,7 @@ static void mct_SendCtrlWrd(struct MCTStatStruc *pMCTstat,
 }
 
 void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, uint8_t dct)
+				struct DCTStatStruc *pDCTstat, u8 dct)
 {
 	u8 MrsChipSel;
 	u32 dev = pDCTstat->dev_dct;
@@ -351,13 +351,13 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
 }
 
 void FreqChgCtrlWrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, uint8_t dct)
+			struct DCTStatStruc *pDCTstat, u8 dct)
 {
 	u32 SaveSpeed = pDCTstat->DIMMAutoSpeed;
 	u32 MrsChipSel;
 	u32 dev = pDCTstat->dev_dct;
 	u32 val;
-	uint16_t mem_freq;
+	u16 mem_freq;
 
 	pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[dct];
 	if (pDCTstat->GangedMode & 1)
@@ -392,7 +392,7 @@ void FreqChgCtrlWrd(struct MCTStatStruc *pMCTstat,
 			Set_NB32_DCT(dev, dct, 0xa8, val);
 
 			/* Resend control word 10 */
-			uint8_t freq_ctl_val = 0;
+			u8 freq_ctl_val = 0;
 			mct_Wait(1600);
 			switch (mem_freq) {
 				case 333:

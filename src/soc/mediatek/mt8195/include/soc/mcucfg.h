@@ -496,7 +496,7 @@ struct mt8195_mcucfg_regs {
 	u32 rsv_3024[7];
 	u32 cpu0_dfs_cfg;
 	u32 rsv_3044[3];
-	u32 cpu0_turbo_cfg;
+	u32 cpu0urbo_cfg;
 	u32 rsv_3054[105];
 	u32 cpu0_resereved_reg;
 	u32 cpu0_resereved_reg_rd;
@@ -510,7 +510,7 @@ struct mt8195_mcucfg_regs {
 	u32 rsv_3224[7];
 	u32 cpu1_dfs_cfg;
 	u32 rsv_3244[3];
-	u32 cpu1_turbo_cfg;
+	u32 cpu1urbo_cfg;
 	u32 rsv_3254[105];
 	u32 cpu1_resereved_reg;
 	u32 cpu1_resereved_reg_rd;
@@ -524,7 +524,7 @@ struct mt8195_mcucfg_regs {
 	u32 rsv_3424[7];
 	u32 cpu2_dfs_cfg;
 	u32 rsv_3444[3];
-	u32 cpu2_turbo_cfg;
+	u32 cpu2urbo_cfg;
 	u32 rsv_3454[105];
 	u32 cpu2_resereved_reg;
 	u32 cpu2_resereved_reg_rd;
@@ -538,7 +538,7 @@ struct mt8195_mcucfg_regs {
 	u32 rsv_3624[7];
 	u32 cpu3_dfs_cfg;
 	u32 rsv_3644[3];
-	u32 cpu3_turbo_cfg;
+	u32 cpu3urbo_cfg;
 	u32 rsv_3654[105];
 	u32 cpu3_resereved_reg;
 	u32 cpu3_resereved_reg_rd;
@@ -554,7 +554,7 @@ struct mt8195_mcucfg_regs {
 	u32 rsv_3834[3];
 	u32 cpu4_dfs_cfg;
 	u32 rsv_3844[3];
-	u32 cpu4_turbo_cfg;
+	u32 cpu4urbo_cfg;
 	u32 rsv_3854[105];
 	u32 cpu4_resereved_reg;
 	u32 cpu4_resereved_reg_rd;
@@ -570,7 +570,7 @@ struct mt8195_mcucfg_regs {
 	u32 rsv_3a34[3];
 	u32 cpu5_dfs_cfg;
 	u32 rsv_3a44[3];
-	u32 cpu5_turbo_cfg;
+	u32 cpu5urbo_cfg;
 	u32 rsv_3a54[105];
 	u32 cpu5_resereved_reg;
 	u32 cpu5_resereved_reg_rd;
@@ -587,7 +587,7 @@ struct mt8195_mcucfg_regs {
 	u32 rsv_3c38[2];
 	u32 cpu6_dfs_cfg;
 	u32 rsv_3c44[3];
-	u32 cpu6_turbo_cfg;
+	u32 cpu6urbo_cfg;
 	u32 rsv_3c54[105];
 	u32 cpu6_resereved_reg;
 	u32 cpu6_resereved_reg_rd;
@@ -604,7 +604,7 @@ struct mt8195_mcucfg_regs {
 	u32 rsv_3e38[2];
 	u32 cpu7_dfs_cfg;
 	u32 rsv_3e44[3];
-	u32 cpu7_turbo_cfg;
+	u32 cpu7urbo_cfg;
 	u32 rsv_3e54[105];
 	u32 cpu7_resereved_reg;
 	u32 cpu7_resereved_reg_rd;

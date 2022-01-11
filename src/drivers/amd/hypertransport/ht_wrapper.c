@@ -52,7 +52,7 @@ static const char * event_class_string_decodes[] = {
 };
 
 typedef struct {
-	uint32_t code;
+	u32 code;
 	const char *string;
 } event_string_decode_t;
 
@@ -78,9 +78,9 @@ static const event_string_decode_t event_string_decodes[] = {
 	{ HT_EVENT_HW_HTCRC, "HT_EVENT_HW_HTCRC" }
 };
 
-static const char *event_string_decode(uint32_t event)
+static const char *event_string_decode(u32 event)
 {
-	uint32_t i;
+	u32 i;
 	for (i = 0; i < ARRAY_SIZE(event_string_decodes); i++)
 		if (event_string_decodes[i].code == event)
 			break;
@@ -95,9 +95,9 @@ static const char *event_string_decode(uint32_t event)
  */
 static void AMD_CB_EventNotify (u8 evtClass, u16 event, const u8 *pEventData0)
 {
-	uint8_t i;
-	uint8_t log_level;
-	uint8_t dump_event_detail;
+	u8 i;
+	u8 log_level;
+	u8 dump_event_detail;
 
 	printk(BIOS_DEBUG, "%s: ", __func__);
 
@@ -259,12 +259,12 @@ void amd_ht_init(struct sys_info *sysinfo)
 void amd_ht_fixup(struct sys_info *sysinfo) {
 	printk(BIOS_DEBUG, "%s\n", __func__);
 	if (CONFIG(CPU_AMD_MODEL_10XXX)) {
-		uint8_t rev_gte_d = 0;
-		uint8_t fam15h = 0;
-		uint8_t dual_node = 0;
-		uint32_t f3xe8;
-		uint32_t family;
-		uint32_t model;
+		u8 rev_gte_d = 0;
+		u8 fam15h = 0;
+		u8 dual_node = 0;
+		u32 f3xe8;
+		u32 family;
+		u32 model;
 
 		family = model = cpuid_eax(0x80000001);
 		model = ((model & 0xf0000) >> 12) | ((model & 0xf0) >> 4);
@@ -290,19 +290,19 @@ void amd_ht_fixup(struct sys_info *sysinfo) {
 				* See the Family 10h BKDG Rev 3.62 section 2.7.1.5 for details
 				* For Family 15h see the BKDG Rev. 3.14 section 2.12.1.5 for details.
 				*/
-				uint8_t node;
-				uint8_t node_count = get_nodes();
-				uint32_t dword;
+				u8 node;
+				u8 node_count = get_nodes();
+				u32 dword;
 				for (node = 0; node < node_count; node++) {
 					f3xe8 = pci_read_config32(NODE_PCI(node, 3), 0xe8);
-					uint8_t internal_node_number = ((f3xe8 & 0xc0000000) >> 30);
+					u8 internal_node_number = ((f3xe8 & 0xc0000000) >> 30);
 					printk(BIOS_DEBUG,
 					       "%s: node %d (internal node "
 					       "ID %d): disabling defective "
 					       "HT link", __func__, node,
 					       internal_node_number);
 					if (internal_node_number == 0) {
-						uint8_t package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0x98:0xd8) & 0x1;
+						u8 package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0x98:0xd8) & 0x1;
 						printk(BIOS_DEBUG, " (L3 connected: %d)\n", package_link_3_connected);
 						if (package_link_3_connected) {
 							/* Set WidthIn and WidthOut to 0 */
@@ -324,7 +324,7 @@ void amd_ht_fixup(struct sys_info *sysinfo) {
 							pci_write_config32(NODE_PCI(node, 4), (fam15h)?0x84:0xc4, dword);
 						}
 					} else if (internal_node_number == 1) {
-						uint8_t package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0xf8:0xb8) & 0x1;
+						u8 package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0xf8:0xb8) & 0x1;
 						printk(BIOS_DEBUG, " (L3 connected: %d)\n", package_link_3_connected);
 						if (package_link_3_connected) {
 							/* Set WidthIn and WidthOut to 0 */
@@ -421,9 +421,9 @@ bool AMD_CpuFindCapability(u8 node, u8 cap_count, u8 *offset)
  */
 u32 AMD_checkLinkType(u8 node, u8 regoff)
 {
-	uint32_t val;
-	uint32_t val2;
-	uint32_t linktype = 0;
+	u32 val;
+	u32 val2;
+	u32 linktype = 0;
 
 	/* Check connect, init and coherency */
 	val = pci_read_config32(NODE_PCI(node, 0), regoff + 0x18);

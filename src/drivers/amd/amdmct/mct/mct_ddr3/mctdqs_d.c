@@ -197,7 +197,7 @@ void TrainReceiverEn_D(struct MCTStatStruc *pMCTstat,
 void TrainMaxRdLatency_En_D(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstatA)
 {
-	uint8_t node;
+	u8 node;
 	struct DCTStatStruc *pDCTstat;
 
 	for (node = 0; node < MAX_NODES_SUPPORTED; node++) {
@@ -238,9 +238,9 @@ static void CalcEccDQSPos_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat,
 				u16 like, u8 scale, u8 ChipSel)
 {
-	uint8_t DQSDelay0, DQSDelay1;
+	u8 DQSDelay0, DQSDelay1;
 	int16_t delay_differential;
-	uint16_t DQSDelay;
+	u16 DQSDelay;
 
 	if (pDCTstat->Status & (1 << SB_Registered)) {
 		pDCTstat->ByteLane = 0x2;
@@ -290,10 +290,10 @@ static void CalcEccDQSPos_D(struct MCTStatStruc *pMCTstat,
 	pDCTstat->DQSDelay = (u8)DQSDelay;
 }
 
-static void read_dqs_write_data_timing_registers(uint16_t *delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+static void read_dqs_write_data_timing_registers(u16 *delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint32_t dword;
-	uint32_t mask;
+	u32 dword;
+	u32 mask;
 
 	if (is_fam15h())
 		mask = 0xff;
@@ -319,10 +319,10 @@ static void read_dqs_write_data_timing_registers(uint16_t *delay, uint32_t dev, 
 	delay[8] = dword & mask;
 }
 
-static void write_dqs_write_data_timing_registers(uint16_t *delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+static void write_dqs_write_data_timing_registers(u16 *delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint32_t dword;
-	uint32_t mask;
+	u32 dword;
+	u32 mask;
 
 	if (is_fam15h())
 		mask = 0xff;
@@ -379,22 +379,22 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *pMCTstat,
 	CRx_TYPE cr4;
 	u32 lo, hi;
 	u32 index_reg;
-	uint32_t TestAddr;
+	u32 TestAddr;
 
-	uint8_t dual_rank;
-	uint8_t iter;
-	uint8_t lane;
-	uint16_t bytelane_test_results;
-	uint16_t current_write_dqs_delay[MAX_BYTE_LANES];
-	uint16_t current_read_dqs_delay[MAX_BYTE_LANES];
-	uint16_t write_dqs_delay_stepping_done[MAX_BYTE_LANES];
-	uint8_t dqs_read_results_array[2][MAX_BYTE_LANES][64];		/* [rank][lane][step] */
-	uint8_t dqs_write_results_array[2][MAX_BYTE_LANES][128];	/* [rank][lane][step] */
+	u8 dual_rank;
+	u8 iter;
+	u8 lane;
+	u16 bytelane_test_results;
+	u16 current_write_dqs_delay[MAX_BYTE_LANES];
+	u16 current_read_dqs_delay[MAX_BYTE_LANES];
+	u16 write_dqs_delay_stepping_done[MAX_BYTE_LANES];
+	u8 dqs_read_results_array[2][MAX_BYTE_LANES][64];		/* [rank][lane][step] */
+	u8 dqs_write_results_array[2][MAX_BYTE_LANES][128];	/* [rank][lane][step] */
 
-	uint8_t last_pos = 0;
-	uint8_t cur_count = 0;
-	uint8_t best_pos = 0;
-	uint8_t best_count = 0;
+	u8 last_pos = 0;
+	u8 cur_count = 0;
+	u8 best_pos = 0;
+	u8 best_count = 0;
 
 	print_debug_dqs("\nTrainDQSRdWrPos: Node_ID ", pDCTstat->Node_ID, 0);
 	cr4 = read_cr4();
@@ -474,9 +474,9 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *pMCTstat,
 			/* 2.8.9.9.3 (DRAM Write Data Timing Loop)
 			 * Iterate over all possible DQS delay values (0x0 - 0x7f)
 			 */
-			uint8_t test_write_dqs_delay = 0;
-			uint8_t test_read_dqs_delay = 0;
-			uint8_t passing_dqs_delay_found[MAX_BYTE_LANES];
+			u8 test_write_dqs_delay = 0;
+			u8 test_read_dqs_delay = 0;
+			u8 passing_dqs_delay_found[MAX_BYTE_LANES];
 
 			/* Initialize variables */
 			for (lane = 0; lane < MAX_BYTE_LANES; lane++) {
@@ -825,31 +825,31 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *pMCTstat,
  * Algorithm detailed in the Fam15h BKDG Rev. 3.14 section 2.10.5.8.5
  */
 void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *pMCTstat,
-		struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t calc_min)
+		struct DCTStatStruc *pDCTstat, u8 dct, u8 calc_min)
 {
-	uint8_t dimm;
-	uint8_t lane;
-	uint32_t dword;
-	uint32_t dword2;
-	uint32_t max_delay;
-	uint8_t mem_clk = 0;
-	uint8_t nb_pstate;
-	uint32_t nb_clk;
-	uint32_t p = 0;
-	uint32_t n = 0;
-	uint32_t t = 0;
-	uint16_t current_phy_phase_delay[MAX_BYTE_LANES];
-	uint16_t current_read_dqs_delay[MAX_BYTE_LANES];
+	u8 dimm;
+	u8 lane;
+	u32 dword;
+	u32 dword2;
+	u32 max_delay;
+	u8 mem_clk = 0;
+	u8 nb_pstate;
+	u32 nb_clk;
+	u32 p = 0;
+	u32 n = 0;
+	u32 t = 0;
+	u16 current_phy_phase_delay[MAX_BYTE_LANES];
+	u16 current_read_dqs_delay[MAX_BYTE_LANES];
 
-	uint32_t index_reg = 0x98;
-	uint32_t dev = pDCTstat->dev_dct;
-	uint16_t fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
+	u32 index_reg = 0x98;
+	u32 dev = pDCTstat->dev_dct;
+	u16 fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
 
 #if DQS_TRAIN_DEBUG > 0
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 #endif
 
-	uint8_t lane_count;
+	u8 lane_count;
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
 	mem_clk = Get_NB32_DCT(dev, dct, 0x94) & 0x1f;
@@ -910,7 +910,7 @@ void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *pMCTstat,
 		/* 2.10.5.8.5 (10) */
 		dword = Get_NB32(pDCTstat->dev_nbctl, (0x160 + (nb_pstate * 4)));		/* Retrieve NbDid, NbFid */
 		nb_clk = (200 * (((dword >> 1) & 0x1f) + 0x4)) / (((dword >> 7) & 0x1)?2:1);
-		n = (((((uint64_t)p * 1000000000000ULL)/(((uint64_t)fam15h_freq_tab[mem_clk] * 1000000ULL) * 2)) + ((uint64_t)t)) * ((uint64_t)nb_clk * 1000)) / 1000000000ULL;
+		n = (((((u64)p * 1000000000000ULL)/(((u64)fam15h_freq_tab[mem_clk] * 1000000ULL) * 2)) + ((u64)t)) * ((u64)nb_clk * 1000)) / 1000000000ULL;
 
 		/* 2.10.5.8.5 (11) */
 		if (!calc_min)
@@ -938,10 +938,10 @@ void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *pMCTstat,
 }
 
 static void start_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t Receiver)
+				struct DCTStatStruc *pDCTstat, u8 dct, u8 Receiver)
 {
-	uint32_t dword;
-	uint32_t dev = pDCTstat->dev_dct;
+	u32 dword;
+	u32 dev = pDCTstat->dev_dct;
 
 	/* 2.10.5.7.1.1
 	 * It appears that the DCT only supports 8-beat burst length mode,
@@ -995,10 +995,10 @@ static void start_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
 }
 
 static void stop_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t Receiver)
+				struct DCTStatStruc *pDCTstat, u8 dct, u8 Receiver)
 {
-	uint32_t dword;
-	uint32_t dev = pDCTstat->dev_dct;
+	u32 dword;
+	u32 dev = pDCTstat->dev_dct;
 
 	/* 2.10.5.8.6.1.1 Send Precharge Command */
 	/* Wait 25 MEMCLKs. */
@@ -1028,11 +1028,11 @@ static void stop_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
 }
 
 void read_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, uint8_t dct,
-	uint8_t Receiver, uint8_t lane, uint8_t stop_on_error)
+	struct DCTStatStruc *pDCTstat, u8 dct,
+	u8 Receiver, u8 lane, u8 stop_on_error)
 {
-	uint32_t dword;
-	uint32_t dev = pDCTstat->dev_dct;
+	u32 dword;
+	u32 dev = pDCTstat->dev_dct;
 
 	start_dram_dqs_training_pattern_fam15(pMCTstat, pDCTstat, dct, Receiver);
 
@@ -1125,11 +1125,11 @@ void read_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
 }
 
 void write_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, uint8_t dct,
-	uint8_t Receiver, uint8_t lane, uint8_t stop_on_error)
+	struct DCTStatStruc *pDCTstat, u8 dct,
+	u8 Receiver, u8 lane, u8 stop_on_error)
 {
-	uint32_t dword;
-	uint32_t dev = pDCTstat->dev_dct;
+	u32 dword;
+	u32 dev = pDCTstat->dev_dct;
 
 	start_dram_dqs_training_pattern_fam15(pMCTstat, pDCTstat, dct, Receiver);
 
@@ -1227,43 +1227,43 @@ void write_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
 /* DQS Position Training
  * Algorithm detailed in the Fam15h BKDG Rev. 3.14 section 2.10.5.8.4
  */
-static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
+static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 				       struct DCTStatStruc *pDCTstat,
-				       uint8_t dct, uint8_t receiver_start,
-				       uint8_t receiver_end, uint8_t lane_start)
+				       u8 dct, u8 receiver_start,
+				       u8 receiver_end, u8 lane_start)
 {
-	uint8_t dimm;
-	uint8_t lane;
-	uint32_t dword;
-	uint32_t Errors;
-	uint8_t Receiver;
-	uint8_t dual_rank;
-	uint8_t write_iter;
-	uint8_t read_iter;
-	uint8_t check_antiphase;
-	uint8_t passing_read_dqs_delay_found;
-	uint8_t passing_write_dqs_delay_found;
-	uint16_t initial_write_dqs_delay[MAX_BYTE_LANES];
-	uint16_t initial_read_dqs_delay[MAX_BYTE_LANES];
-	uint16_t initial_write_data_timing[MAX_BYTE_LANES];
-	uint16_t current_write_data_delay[MAX_BYTE_LANES];
-	uint16_t current_read_dqs_delay[MAX_BYTE_LANES];
-	uint16_t current_write_dqs_delay[MAX_BYTE_LANES];
-	uint8_t passing_dqs_delay_found[MAX_BYTE_LANES];
+	u8 dimm;
+	u8 lane;
+	u32 dword;
+	u32 Errors;
+	u8 Receiver;
+	u8 dual_rank;
+	u8 write_iter;
+	u8 read_iter;
+	u8 check_antiphase;
+	u8 passing_read_dqs_delay_found;
+	u8 passing_write_dqs_delay_found;
+	u16 initial_write_dqs_delay[MAX_BYTE_LANES];
+	u16 initial_read_dqs_delay[MAX_BYTE_LANES];
+	u16 initial_write_data_timing[MAX_BYTE_LANES];
+	u16 current_write_data_delay[MAX_BYTE_LANES];
+	u16 current_read_dqs_delay[MAX_BYTE_LANES];
+	u16 current_write_dqs_delay[MAX_BYTE_LANES];
+	u8 passing_dqs_delay_found[MAX_BYTE_LANES];
 	/* [rank][lane][write step][read step + 16] */
-	uint8_t dqs_results_array[2][LANE_DIFF][32][48];
+	u8 dqs_results_array[2][LANE_DIFF][32][48];
 
-	uint8_t last_pos = 0;
-	uint8_t cur_count = 0;
-	uint8_t best_pos = 0;
-	uint8_t best_count = 0;
+	u8 last_pos = 0;
+	u8 cur_count = 0;
+	u8 best_pos = 0;
+	u8 best_count = 0;
 
-	uint32_t index_reg = 0x98;
-	uint32_t dev = pDCTstat->dev_dct;
+	u32 index_reg = 0x98;
+	u32 dev = pDCTstat->dev_dct;
 
-	uint8_t lane_end = lane_start + LANE_DIFF;
+	u8 lane_end = lane_start + LANE_DIFF;
 
-	uint8_t lane_count;
+	u8 lane_count;
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
 	/* Calculate and program MaxRdLatency */
@@ -1426,7 +1426,7 @@ static uint8_t TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 			}
 
 			if (best_count > 2) {
-				uint16_t region_center = (best_pos + (best_count / 2));
+				u16 region_center = (best_pos + (best_count / 2));
 
 				if (region_center < 16) {
 					printk(BIOS_WARNING, "TrainDQSRdWrPos: negative DQS recovery delay detected!"
@@ -1598,26 +1598,26 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *pMCTstat,
 	CRx_TYPE cr4;
 	u32 lo, hi;
 
-	uint8_t dct;
-	uint8_t prev;
-	uint8_t dimm;
-	uint8_t lane;
-	uint32_t dword;
-	uint32_t rx_en_offset;
-	uint8_t internal_lane;
-	uint8_t dct_training_success;
-	uint8_t lane_success_count;
-	uint16_t initial_phy_phase_delay[MAX_BYTE_LANES];
-	uint16_t current_phy_phase_delay[MAX_BYTE_LANES];
-	uint16_t current_read_dqs_delay[MAX_BYTE_LANES];
-	uint8_t lane_training_success[MAX_BYTE_LANES];
-	uint8_t dqs_results_array[1024];
+	u8 dct;
+	u8 prev;
+	u8 dimm;
+	u8 lane;
+	u32 dword;
+	u32 rx_en_offset;
+	u8 internal_lane;
+	u8 dct_training_success;
+	u8 lane_success_count;
+	u16 initial_phy_phase_delay[MAX_BYTE_LANES];
+	u16 current_phy_phase_delay[MAX_BYTE_LANES];
+	u16 current_read_dqs_delay[MAX_BYTE_LANES];
+	u8 lane_training_success[MAX_BYTE_LANES];
+	u8 dqs_results_array[1024];
 
-	uint16_t ren_step = 0x40;
-	uint32_t index_reg = 0x98;
-	uint32_t dev = pDCTstat->dev_dct;
+	u16 ren_step = 0x40;
+	u32 index_reg = 0x98;
+	u32 dev = pDCTstat->dev_dct;
 
-	uint8_t lane_count;
+	u8 lane_count;
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
 	print_debug_dqs("\nTrainDQSReceiverEnCyc: Node_ID ", pDCTstat->Node_ID, 0);
@@ -1724,7 +1724,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *pMCTstat,
 						break;
 				}
 
-				uint16_t phase_delay;
+				u16 phase_delay;
 				for (phase_delay = 0; phase_delay < 0x3ff; phase_delay++)
 					if (dqs_results_array[phase_delay])
 						lane_training_success[lane] = 1;
@@ -1946,7 +1946,7 @@ u8 ChipSelPresent_D(struct MCTStatStruc *pMCTstat,
 	u32 val;
 	u32 reg;
 	u32 dev = pDCTstat->dev_dct;
-	uint8_t dct = 0;
+	u8 dct = 0;
 	u8 ret = 0;
 
 	if (!pDCTstat->GangedMode)
@@ -2161,7 +2161,7 @@ u32 SetUpperFSbase(u32 addr_hi)
 	return addr_hi << 8;
 }
 
-void ResetDCTWrPtr_D(u32 dev, uint8_t dct, u32 index_reg, u32 index)
+void ResetDCTWrPtr_D(u32 dev, u8 dct, u32 index_reg, u32 index)
 {
 	u32 val;
 
@@ -2316,7 +2316,7 @@ u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *pMCTstat,
 				u8 Channel, u8 receiver, u8 *valid)
 {
 	u32 val;
-	uint8_t dct = 0;
+	u8 dct = 0;
 	u32 reg;
 	u32 dword;
 	u32 dev = pDCTstat->dev_dct;

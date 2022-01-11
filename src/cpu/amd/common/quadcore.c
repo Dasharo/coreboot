@@ -11,13 +11,13 @@
 struct node_core_id get_node_core_id(u32 nb_cfg_54)
 {
 	struct node_core_id id;
-	uint8_t apicid;
-	uint8_t fam15h = 0;
-	uint8_t rev_gte_d = 0;
-	uint8_t dual_node = 0;
-	uint32_t f3xe8;
-	uint32_t family;
-	uint32_t model;
+	u8 apicid;
+	u8 fam15h = 0;
+	u8 rev_gte_d = 0;
+	u8 dual_node = 0;
+	u32 f3xe8;
+	u32 family;
+	u32 model;
 
 	f3xe8 = pci_read_config32(NODE_PCI(0, 3), 0xe8);
 
@@ -79,8 +79,8 @@ struct node_core_id get_node_core_id(u32 nb_cfg_54)
 		 * Since the code above returns nodeid 0 even on
 		 * internal node 1 some fixup is needed...
 		 */
-		uint32_t f5x84;
-		uint8_t core_count;
+		u32 f5x84;
+		u8 core_count;
 
 		f5x84 = pci_read_config32(NODE_PCI(0, 5), 0x84);
 
@@ -96,7 +96,7 @@ struct node_core_id get_node_core_id(u32 nb_cfg_54)
 		 * Since the code above returns nodeid 0 even on
 		 * internal node 1 some fixup is needed...
 		 */
-		uint8_t core_count = (((f3xe8 & 0x00008000) >> 13) |
+		u8 core_count = (((f3xe8 & 0x00008000) >> 13) |
 				     ((f3xe8 & 0x00003000) >> 12)) + 1;
 
 		id.nodeid = id.nodeid * 2;
@@ -114,20 +114,20 @@ struct node_core_id get_node_core_id_x(void)
 	return get_node_core_id(read_nb_cfg_54());
 }
 
-uint32_t get_boot_apic_id(uint8_t node, uint32_t core)
+u32 get_boot_apic_id(u8 node, u32 core)
 {
-	uint32_t ap_apicid;
-	uint32_t nb_cfg_54;
-	uint32_t siblings;
-	uint32_t cores_found;
-	uint8_t fam15h = 0;
-	uint8_t rev_gte_d = 0;
-	uint8_t dual_node = 0;
-	uint32_t f3xe8;
-	uint32_t family;
-	uint32_t model;
+	u32 ap_apicid;
+	u32 nb_cfg_54;
+	u32 siblings;
+	u32 cores_found;
+	u8 fam15h = 0;
+	u8 rev_gte_d = 0;
+	u8 dual_node = 0;
+	u32 f3xe8;
+	u32 family;
+	u32 model;
 
-	uint32_t apic_id_core_id_size;
+	u32 apic_id_core_id_size;
 
 	/* Assume that all node are same stepping, otherwise we can use use
 	   nb_cfg_54 from bsp for all nodes */

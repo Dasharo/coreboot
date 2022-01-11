@@ -18,7 +18,7 @@
 
 #include "defaults.h"
 
-static void AMD_Errata281(u8 node, uint64_t revision, u32 platform)
+static void AMD_Errata281(u8 node, u64 revision, u32 platform)
 {
 	/* Workaround for Transaction Scheduling Conflict in
 	 * Northbridge Cross Bar.  Implement XCS Token adjustment
@@ -746,7 +746,7 @@ void cpuSetAMDPCI(u8 node)
 static void enable_memory_speed_boost(u8 node_id)
 {
 	msr_t msr;
-	uint32_t f3x1fc = pci_read_config32(NODE_PCI(node_id, 3), 0x1fc);
+	u32 f3x1fc = pci_read_config32(NODE_PCI(node_id, 3), 0x1fc);
 	msr = rdmsr(FP_CFG_MSR);
 	msr.hi &= ~(0x7 << (42-32));			/* DiDtCfg4 */
 	msr.hi |= (((f3x1fc >> 17) & 0x7) << (42-32));
@@ -773,7 +773,7 @@ static void enable_memory_speed_boost(u8 node_id)
 	}
 }
 
-static void enable_message_triggered_c1e(uint64_t revision)
+static void enable_message_triggered_c1e(u64 revision)
 {
 	msr_t msr;
 	/* Set up message triggered C1E */
@@ -873,7 +873,7 @@ void cpuSetAMDMSR(u8 node_id)
 	msr_t msr;
 	u8 i;
 	u32 platform;
-	uint64_t revision;
+	u64 revision;
 
 	printk(BIOS_DEBUG, "cpuSetAMDMSR ");
 

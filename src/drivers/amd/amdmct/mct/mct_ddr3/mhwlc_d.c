@@ -9,19 +9,19 @@
 #include "mct_d_gcc.h"
 #include "mwlc_d.h"
 
-u32 swapAddrBits_wl(struct DCTStatStruc *pDCTstat, uint8_t dct, uint32_t MRSValue);
-u32 swapBankBits(struct DCTStatStruc *pDCTstat, uint8_t dct, uint32_t MRSValue);
+u32 swapAddrBits_wl(struct DCTStatStruc *pDCTstat, u8 dct, u32 MRSValue);
+u32 swapBankBits(struct DCTStatStruc *pDCTstat, u8 dct, u32 MRSValue);
 void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 	u8 dct, u8 dimm, bool wl);
-void programODT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, uint8_t dct, u8 dimm);
-void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t pass, uint8_t nibble);
-void setWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 dimm, u8 targetAddr, uint8_t pass, uint8_t lane_count);
-void getWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 dimm, uint8_t pass, uint8_t nibble, uint8_t lane_count);
+void programODT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm);
+void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 pass, u8 nibble);
+void setWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm, u8 targetAddr, u8 pass, u8 lane_count);
+void getWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm, u8 pass, u8 nibble, u8 lane_count);
 
 #define MAX_LANE_COUNT 9
 
 /*-----------------------------------------------------------------------------
- * uint8_t AgesaHwWlPhase1(SPDStruct *SPDData,MCTStruct *MCTData, DCTStruct *DCTData,
+ * u8 AgesaHwWlPhase1(SPDStruct *SPDData,MCTStruct *MCTData, DCTStruct *DCTData,
  *                  u8 Dimm, u8 Pass)
  *
  *  Description:
@@ -38,17 +38,17 @@ void getWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 
  *       OUT
  *-----------------------------------------------------------------------------
  */
-uint8_t AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
+u8 AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		u8 dct, u8 dimm, u8 pass)
 {
 	u8 ByteLane;
 	u32 Value, Addr;
-	uint8_t nibble = 0;
-	uint8_t train_both_nibbles;
+	u8 nibble = 0;
+	u8 train_both_nibbles;
 	u16 Addl_Data_Offset, Addl_Data_Port;
 	sMCTStruct *pMCTData = pDCTstat->C_MCTPtr;
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
-	uint8_t lane_count;
+	u8 lane_count;
 
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
@@ -76,7 +76,7 @@ uint8_t AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCT
 			/* Set TrNibbleSel */
 			set_DCT_ADDR_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
 					DRAM_ADD_DCT_PHY_CONTROL_REG, 2,
-					2, (uint32_t)nibble);
+					2, (u32)nibble);
 		}
 
 		/* 2. Prepare the DIMMs for write levelization using DDR3-defined
@@ -164,13 +164,13 @@ uint8_t AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCT
 	return 0;
 }
 
-uint8_t AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
-		uint8_t dct, uint8_t dimm, uint8_t pass)
+u8 AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
+		u8 dct, u8 dimm, u8 pass)
 {
 	u8 ByteLane;
-	uint8_t status = 0;
+	u8 status = 0;
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
-	uint8_t lane_count;
+	u8 lane_count;
 
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
@@ -179,7 +179,7 @@ uint8_t AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCT
 	if (is_fam15h()) {
 		int32_t gross_diff[MAX_LANE_COUNT];
 		int32_t cgd = pDCTData->WLCriticalGrossDelayPrevPass;
-		uint8_t index = (uint8_t)(lane_count * dimm);
+		u8 index = (u8)(lane_count * dimm);
 
 		printk(BIOS_SPEW, "\toriginal critical gross delay: %d\n", cgd);
 
@@ -224,9 +224,9 @@ uint8_t AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCT
 
 		/* Compensate for occasional noise/instability causing sporadic training failure */
 		for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
-			uint8_t faulty_value_detected = 0;
-			uint16_t total_delay_seed = ((pDCTData->WLSeedGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLSeedFineDelay[index+ByteLane] & 0x1f);
-			uint16_t total_delay_phy = ((pDCTData->WLGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index+ByteLane] & 0x1f);
+			u8 faulty_value_detected = 0;
+			u16 total_delay_seed = ((pDCTData->WLSeedGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLSeedFineDelay[index+ByteLane] & 0x1f);
+			u16 total_delay_phy = ((pDCTData->WLGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index+ByteLane] & 0x1f);
 			if (pass == FirstPass) {
 				/* Allow a somewhat higher step threshold on the first pass
 				 * For the most part, as long as the phy isn't stepping
@@ -255,23 +255,23 @@ uint8_t AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCT
 	return status;
 }
 
-uint8_t AgesaHwWlPhase3(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
+u8 AgesaHwWlPhase3(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		u8 dct, u8 dimm, u8 pass)
 {
 	u8 ByteLane;
 	sMCTStruct *pMCTData = pDCTstat->C_MCTPtr;
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
-	uint8_t lane_count;
+	u8 lane_count;
 
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
 	assert(lane_count <= MAX_LANE_COUNT);
 
 	if (is_fam15h()) {
-		uint32_t dword;
+		u32 dword;
 		int32_t gross_diff[MAX_LANE_COUNT];
 		int32_t cgd = pDCTData->WLCriticalGrossDelayPrevPass;
-		uint8_t index = (uint8_t)(lane_count * dimm);
+		u8 index = (u8)(lane_count * dimm);
 
 		/* Apply offset(s) if needed */
 		if (cgd < 0) {
@@ -339,7 +339,7 @@ uint8_t AgesaHwWlPhase3(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCT
  */
 
 /*-----------------------------------------------------------------------------
- * u32 swapAddrBits_wl(struct DCTStatStruc *pDCTstat, uint8_t dct, u32 MRSValue)
+ * u32 swapAddrBits_wl(struct DCTStatStruc *pDCTstat, u8 dct, u32 MRSValue)
  *
  * Description:
  *	This function swaps the bits in MSR register value
@@ -351,7 +351,7 @@ uint8_t AgesaHwWlPhase3(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCT
  *
  * ----------------------------------------------------------------------------
  */
-u32 swapAddrBits_wl(struct DCTStatStruc *pDCTstat, uint8_t dct, uint32_t MRSValue)
+u32 swapAddrBits_wl(struct DCTStatStruc *pDCTstat, u8 dct, u32 MRSValue)
 {
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
 	u32 tempW, tempW1;
@@ -380,7 +380,7 @@ u32 swapAddrBits_wl(struct DCTStatStruc *pDCTstat, uint8_t dct, uint32_t MRSValu
 }
 
 /*-----------------------------------------------------------------------------
- *  u32 swapBankBits(struct DCTStatStruc *pDCTstat, uint8_t dct, u32 MRSValue)
+ *  u32 swapBankBits(struct DCTStatStruc *pDCTstat, u8 dct, u32 MRSValue)
  *
  *  Description:
  *       This function swaps the bits in MSR register value
@@ -392,7 +392,7 @@ u32 swapAddrBits_wl(struct DCTStatStruc *pDCTstat, uint8_t dct, uint32_t MRSValu
  *
  * ----------------------------------------------------------------------------
  */
-u32 swapBankBits(struct DCTStatStruc *pDCTstat, uint8_t dct, u32 MRSValue)
+u32 swapBankBits(struct DCTStatStruc *pDCTstat, u8 dct, u32 MRSValue)
 {
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
 	u32 tempW, tempW1;
@@ -420,11 +420,11 @@ u32 swapBankBits(struct DCTStatStruc *pDCTstat, uint8_t dct, u32 MRSValue)
 	return MRSValue;
 }
 
-static uint16_t unbuffered_dimm_nominal_termination_emrs(uint8_t number_of_dimms, uint8_t frequency_index, uint8_t rank_count, uint8_t rank)
+static u16 unbuffered_dimm_nominal_termination_emrs(u8 number_of_dimms, u8 frequency_index, u8 rank_count, u8 rank)
 {
-	uint16_t term;
+	u16 term;
 
-	uint8_t MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
 	if (number_of_dimms == 1) {
 		if (MaxDimmsInstallable < 3) {
@@ -449,11 +449,11 @@ static uint16_t unbuffered_dimm_nominal_termination_emrs(uint8_t number_of_dimms
 	return term;
 }
 
-static uint16_t unbuffered_dimm_dynamic_termination_emrs(uint8_t number_of_dimms, uint8_t frequency_index, uint8_t rank_count)
+static u16 unbuffered_dimm_dynamic_termination_emrs(u8 number_of_dimms, u8 frequency_index, u8 rank_count)
 {
-	uint16_t term;
+	u16 term;
 
-	uint8_t MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
 	if (number_of_dimms == 1) {
 		if (MaxDimmsInstallable < 3) {
@@ -487,8 +487,8 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 	u8 rank, currDimm, MemClkFreq;
 	sMCTStruct *pMCTData = pDCTstat->C_MCTPtr;
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
-	uint8_t package_type = mctGet_NVbits(NV_PACK_TYPE);
-	uint8_t number_of_dimms = pDCTData->MaxDimmsInstalled;
+	u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+	u8 number_of_dimms = pDCTData->MaxDimmsInstalled;
 
 	if (is_fam15h()) {
 		MemClkFreq = get_Bits(pDCTData, dct, pDCTData->NodeId,
@@ -571,7 +571,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 					if (number_of_dimms > 1) {
 						if (rank == 0) {
 							/* Get Rtt_WR for the current DIMM and rank */
-							uint16_t dynamic_term = unbuffered_dimm_dynamic_termination_emrs(pDCTData->MaxDimmsInstalled, MemClkFreq, pDCTData->DimmRanks[dimm]);
+							u16 dynamic_term = unbuffered_dimm_dynamic_termination_emrs(pDCTData->MaxDimmsInstalled, MemClkFreq, pDCTData->DimmRanks[dimm]);
 
 							/* Convert dynamic termination code to corresponding nominal termination code */
 							if (dynamic_term == 0x200)
@@ -909,7 +909,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
  *       OUT
  * ----------------------------------------------------------------------------
  */
-void programODT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm)
+void programODT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm)
 {
 	sMCTStruct *pMCTData = pDCTstat->C_MCTPtr;
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
@@ -922,9 +922,9 @@ void programODT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, ui
 		 */
 
 		/* Convert DIMM number to CS */
-		uint32_t dword;
-		uint8_t cs;
-		uint8_t rank = 0;
+		u32 dword;
+		u8 cs;
+		u8 rank = 0;
 
 		cs = (dimm * 2) + rank;
 
@@ -960,9 +960,9 @@ void programODT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, ui
 }
 
 #ifdef UNUSED_CODE
-static uint16_t fam15h_next_lowest_memclk_freq(uint16_t memclk_freq)
+static u16 fam15h_next_lowest_memclk_freq(u16 memclk_freq)
 {
-	uint16_t fam15h_next_lowest_freq_tab[] = {0, 0, 0, 0, 0x4, 0, 0x4, 0, 0, 0, 0x6, 0, 0, 0, 0xa, 0, 0, 0, 0xe, 0, 0, 0, 0x12};
+	u16 fam15h_next_lowest_freq_tab[] = {0, 0, 0, 0, 0x4, 0, 0x4, 0, 0, 0, 0x6, 0, 0, 0, 0xa, 0, 0, 0, 0xe, 0, 0, 0, 0x12};
 	return fam15h_next_lowest_freq_tab[memclk_freq];
 }
 #endif
@@ -981,20 +981,20 @@ static uint16_t fam15h_next_lowest_memclk_freq(uint16_t memclk_freq)
  *       OUT
  * ----------------------------------------------------------------------------
  */
-void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t pass, uint8_t nibble)
+void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 pass, u8 nibble)
 {
 	u8 ByteLane, MemClkFreq;
 	int32_t Seed_Gross;
 	int32_t Seed_Fine;
-	uint8_t Seed_PreGross;
+	u8 Seed_PreGross;
 	u32 Value, Addr;
-	uint32_t dword;
+	u32 dword;
 	u16 Addl_Data_Offset, Addl_Data_Port;
 	sMCTStruct *pMCTData = pDCTstat->C_MCTPtr;
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
-	uint16_t fam10h_freq_tab[] = {0, 0, 0, 400, 533, 667, 800};
-	uint16_t fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
-	uint8_t lane_count;
+	u16 fam10h_freq_tab[] = {0, 0, 0, 400, 533, 667, 800};
+	u16 fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
+	u8 lane_count;
 
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
@@ -1060,9 +1060,9 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, ui
 	{
 		/* Pass 1 */
 		if (is_fam15h()) {
-			uint8_t AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
-			uint8_t package_type = mctGet_NVbits(NV_PACK_TYPE);
-			uint16_t Seed_Total = 0;
+			u8 AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
+			u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+			u16 Seed_Total = 0;
 			pDCTData->WrDqsGrossDlyBaseOffset = 0x0;
 			if (package_type == PT_GR) {
 				/* Socket G34: Fam15h BKDG v3.14 Table 96 */
@@ -1121,7 +1121,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, ui
 			}
 		} else {
 			if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
-				uint8_t AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
+				u8 AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
 
 				/* The seed values below assume Pass 1 utilizes a 400MHz clock frequency (DDR3-800) */
 				if (AddrCmdPrelaunch == 0) {
@@ -1162,11 +1162,11 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, ui
 			/* Pass 2 */
 			/* From BKDG, Write Leveling Seed Value. */
 			if (is_fam15h()) {
-				uint32_t RegisterDelay;
+				u32 RegisterDelay;
 				int32_t SeedTotal[MAX_LANE_COUNT];
 				int32_t SeedTotalPreScaling[MAX_LANE_COUNT];
-				uint32_t WrDqDqsEarly;
-				uint8_t AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
+				u32 WrDqDqsEarly;
+				u8 AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
 
 				if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
 					if (AddrCmdPrelaunch)
@@ -1225,10 +1225,10 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, ui
 					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", ByteLane, ((pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[lane_count*dimm+ByteLane] & 0x1f));
 				}
 			} else {
-				uint32_t RegisterDelay;
-				uint32_t SeedTotalPreScaling;
-				uint32_t SeedTotal;
-				uint8_t AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
+				u32 RegisterDelay;
+				u32 SeedTotalPreScaling;
+				u32 SeedTotal;
+				u8 AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
 				for (ByteLane = 0; ByteLane < lane_count; ByteLane++)
 				{
 					if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
@@ -1243,7 +1243,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, ui
 						(pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] << 5)) - RegisterDelay;
 					/* SeedTotalPreScaling = (the total delay value in F2x[1, 0]9C_x[4A:30] from pass 1 of write levelization
 					training) - RegisterDelay. */
-					SeedTotal = (uint16_t) ((((uint64_t) SeedTotalPreScaling) *
+					SeedTotal = (u16) ((((u64) SeedTotalPreScaling) *
 										fam10h_freq_tab[MemClkFreq] * 100) / (fam10h_freq_tab[3] * 100));
 					Seed_Gross = SeedTotal / 32;
 					Seed_Fine = SeedTotal & 0x1f;
@@ -1305,7 +1305,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, ui
 }
 
 /*-----------------------------------------------------------------------------
- *  void setWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 Dimm, uint8_t lane_count){
+ *  void setWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 Dimm, u8 lane_count){
  *
  *  Description:
  *       This function writes the write levelization byte delay for the Phase
@@ -1325,7 +1325,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, ui
  *
  *-----------------------------------------------------------------------------
  */
-void setWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 dimm, u8 targetAddr, uint8_t pass, uint8_t lane_count)
+void setWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm, u8 targetAddr, u8 pass, u8 lane_count)
 {
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
 	u8 fineStartLoc, fineEndLoc, grossStartLoc, grossEndLoc, tempB, index, offsetAddr;
@@ -1421,7 +1421,7 @@ void setWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 
 }
 
 /*-----------------------------------------------------------------------------
- *  void getWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 Dimm, u8 Nibble, uint8_t lane_count)
+ *  void getWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 Dimm, u8 Nibble, u8 lane_count)
  *
  *  Description:
  *       This function reads the write levelization byte delay from the Phase
@@ -1439,7 +1439,7 @@ void setWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 
  *
  *-----------------------------------------------------------------------------
  */
-void getWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 dimm, uint8_t pass, uint8_t nibble, uint8_t lane_count)
+void getWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm, u8 pass, u8 nibble, u8 lane_count)
 {
 	sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
 	u8 fineStartLoc, fineEndLoc, grossStartLoc, grossEndLoc, tempB, tempB1, index;
@@ -1492,14 +1492,14 @@ void getWLByteDelay(struct DCTStatStruc *pDCTstat, uint8_t dct, u8 ByteLane, u8 
 
 	/* Nibble adjustments */
 	if (nibble == 0) {
-		pDCTData->WLFineDelay[index+ByteLane] = (uint8_t)fine;
-		pDCTData->WLGrossDelay[index+ByteLane] = (uint8_t)gross;
+		pDCTData->WLFineDelay[index+ByteLane] = (u8)fine;
+		pDCTData->WLGrossDelay[index+ByteLane] = (u8)gross;
 	} else {
-		uint32_t WLTotalDelay = ((pDCTData->WLGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index+ByteLane] & 0x1f);
+		u32 WLTotalDelay = ((pDCTData->WLGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index+ByteLane] & 0x1f);
 		WLTotalDelay += ((gross & 0x1f) << 5) | (fine & 0x1f);
 		WLTotalDelay /= 2;
-		pDCTData->WLFineDelay[index+ByteLane] = (uint8_t)(WLTotalDelay & 0x1f);
-		pDCTData->WLGrossDelay[index+ByteLane] = (uint8_t)((WLTotalDelay >> 5) & 0x1f);
+		pDCTData->WLFineDelay[index+ByteLane] = (u8)(WLTotalDelay & 0x1f);
+		pDCTData->WLGrossDelay[index+ByteLane] = (u8)((WLTotalDelay >> 5) & 0x1f);
 	}
 	printk(BIOS_SPEW, "\tLane %02x nibble %01x adjusted value (post nibble): %04x\n", ByteLane, nibble, ((pDCTData->WLGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index+ByteLane] & 0x1f));
 }

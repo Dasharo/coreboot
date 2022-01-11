@@ -123,7 +123,7 @@ static void enable_fid_change(u8 fid)
 	}
 }
 
-static void applyBoostFIDOffset(uint32_t nodeid)
+static void applyBoostFIDOffset(u32 nodeid)
 {
 	// BKDG 2.4.2.8
 	// Fam10h revision E only, but E is apparently not supported yet, therefore untested
@@ -138,8 +138,8 @@ static void applyBoostFIDOffset(uint32_t nodeid)
 		msr.lo &= ~PS_CPU_FID_MASK;
 		msr.lo |= cpuFid;
 	} else if (is_fam15h()) {
-		uint32_t dword = pci_read_config32(NODE_PCI(nodeid, 4), 0x15c);
-		uint8_t boost_count = (dword >> 2) & 0x7;
+		u32 dword = pci_read_config32(NODE_PCI(nodeid, 4), 0x15c);
+		u8 boost_count = (dword >> 2) & 0x7;
 		if (boost_count > 0) {
 			/* Enable boost */
 			dword &= ~0x3;
@@ -151,7 +151,7 @@ static void applyBoostFIDOffset(uint32_t nodeid)
 
 static void enableNbPState1(pci_devfn_t dev)
 {
-	uint64_t cpuRev =  get_logical_CPUID(0xFF);
+	u64 cpuRev =  get_logical_CPUID(0xFF);
 	if (cpuRev & AMD_FAM10_C3) {
 		u32 nbPState = (pci_read_config32(dev, 0x1F0) & NB_PSTATE_MASK);
 		if ( nbPState){
@@ -197,7 +197,7 @@ static u8 setPStateMaxVal(pci_devfn_t dev)
 static void dualPlaneOnly(pci_devfn_t dev)
 {
 	// BKDG 2.4.2.7
-	uint64_t cpuRev = get_logical_CPUID(0xff);
+	u64 cpuRev = get_logical_CPUID(0xff);
 	if ((get_processor_package_type() == AMD_PKGTYPE_AM3_2r2) &&
 	    (cpuRev & (AMD_DR_Cx | AMD_DR_Ex))) {
 		if ((pci_read_config32(dev, 0x1fc) & DUAL_PLANE_ONLY_MASK) &&
@@ -365,10 +365,10 @@ static void recalculateVsSlamTimeSettingOnCorePre(pci_devfn_t dev)
 	pci_write_config32(dev, 0xd8, dtemp);
 }
 
-static u32 nb_clk_did(uint8_t node, uint64_t cpuRev, uint8_t procPkg)
+static u32 nb_clk_did(u8 node, u64 cpuRev, u8 procPkg)
 {
-	uint8_t link0isGen3 = 0;
-	uint8_t offset;
+	u8 link0isGen3 = 0;
+	u8 offset;
 
 	if (AMD_CpuFindCapability(node, 0, &offset)) {
 		link0isGen3 = (AMD_checkLinkType(node, offset) & HTPHY_LINKTYPE_HT3);
@@ -385,7 +385,7 @@ static u32 nb_clk_did(uint8_t node, uint64_t cpuRev, uint8_t procPkg)
 
 static u32 power_up_down(int node, u8 procPkg)
 {
-	uint32_t dword = 0;
+	u32 dword = 0;
 
 	/* from CPU rev guide #41322 rev 3.74 June 2010 Table 26 */
 	u8 singleLinkFlag = ((procPkg == AMD_PKGTYPE_AM3_2r2)
@@ -399,8 +399,8 @@ static u32 power_up_down(int node, u8 procPkg)
 		 */
 		dword |= PW_STP_UP50 | PW_STP_DN50;
 	} else {
-		uint32_t dispRefModeEn = (pci_read_config32(NODE_PCI(node,0),0x68) >> 24) & 1;
-		uint32_t isocEn = 0;
+		u32 dispRefModeEn = (pci_read_config32(NODE_PCI(node,0),0x68) >> 24) & 1;
+		u32 isocEn = 0;
 		int j;
 		for (j=0; (j<4) && (!isocEn); j++ ) {
 			u8 offset;
@@ -442,7 +442,7 @@ static u32 power_up_down(int node, u8 procPkg)
 	return dword;
 }
 
-static void config_clk_power_ctrl_reg0(uint8_t node, uint64_t cpuRev, uint8_t procPkg) {
+static void config_clk_power_ctrl_reg0(u8 node, u64 cpuRev, u8 procPkg) {
 
 	pci_devfn_t dev = NODE_PCI(node, 3);
 
@@ -457,7 +457,7 @@ static void config_clk_power_ctrl_reg0(uint8_t node, uint64_t cpuRev, uint8_t pr
 	 * ClkRampHystCtl=HW default
 	 * ClkRampHystSel=1111b
 	 */
-	uint32_t dword= pci_read_config32(dev, 0xd4);
+	u32 dword= pci_read_config32(dev, 0xd4);
 	dword &= CPTC0_MASK;
 	dword |= NB_CLKDID_ALL | LNK_PLL_LOCK | CLK_RAMP_HYST_SEL_VAL;
 	dword |= (nb_clk_did(node,cpuRev,procPkg) <<  NB_CLKDID_SHIFT);
@@ -468,11 +468,11 @@ static void config_clk_power_ctrl_reg0(uint8_t node, uint64_t cpuRev, uint8_t pr
 
 }
 
-static void config_power_ctrl_misc_reg(pci_devfn_t dev, uint64_t cpuRev,
-		uint8_t procPkg)
+static void config_power_ctrl_misc_reg(pci_devfn_t dev, u64 cpuRev,
+		u8 procPkg)
 {
 	/* check PVI/SVI */
-	uint32_t dword = pci_read_config32(dev, 0xa0);
+	u32 dword = pci_read_config32(dev, 0xa0);
 
 	/* BKDG r31116 2010-04-22  2.4.1.7 step b F3xA0[VSSlamVidMod] */
 	/* PllLockTime and PsiVidEn set in ruleset in defaults.h */
@@ -503,15 +503,15 @@ static void config_power_ctrl_misc_reg(pci_devfn_t dev, uint64_t cpuRev,
 	pci_write_config32(dev, 0xa0, dword);
 }
 
-static void config_nb_syn_ptr_adj(pci_devfn_t dev, uint64_t cpuRev)
+static void config_nb_syn_ptr_adj(pci_devfn_t dev, u64 cpuRev)
 {
 	/* Note the following settings are additional from the ported
 	 * function setFidVidRegs()
 	 */
 	/* adjust FIFO between nb and core clocks to max allowed
 	   values (min latency) */
-	uint32_t nbPstate = pci_read_config32(dev,0x1f0) & NB_PSTATE_MASK;
-	uint8_t nbSynPtrAdj;
+	u32 nbPstate = pci_read_config32(dev,0x1f0) & NB_PSTATE_MASK;
+	u8 nbSynPtrAdj;
 	if ((cpuRev & (AMD_DR_Bx | AMD_DA_Cx | AMD_FAM15_ALL) )
 		|| ((cpuRev & AMD_RB_C3) && (nbPstate != 0))) {
 		nbSynPtrAdj = 5;
@@ -519,15 +519,15 @@ static void config_nb_syn_ptr_adj(pci_devfn_t dev, uint64_t cpuRev)
 		nbSynPtrAdj = 6;
 	}
 
-	uint32_t dword = pci_read_config32(dev, 0xdc);
+	u32 dword = pci_read_config32(dev, 0xdc);
 	dword &= ~NB_SYN_PTR_ADJ_MASK;
 	dword |= nbSynPtrAdj << NB_SYN_PTR_ADJ_POS;
 	/* NbsynPtrAdj set to 5 or 6 per BKDG (needs reset) */
 	pci_write_config32(dev, 0xdc, dword);
 }
 
-static void config_acpi_pwr_state_ctrl_regs(pci_devfn_t dev, uint64_t cpuRev,
-		uint8_t procPkg)
+static void config_acpi_pwr_state_ctrl_regs(pci_devfn_t dev, u64 cpuRev,
+		u8 procPkg)
 {
 	if (is_fam15h()) {
 		/* Family 15h BKDG Rev. 3.14 D18F3x80 recommended settings */
@@ -537,14 +537,14 @@ static void config_acpi_pwr_state_ctrl_regs(pci_devfn_t dev, uint64_t cpuRev,
 		pci_write_config32(dev, 0x84, 0x01e200e2);
 	} else {
 		/* step 1, chapter 2.4.2.6 of AMD Fam 10 BKDG #31116 Rev 3.48 22.4.2010 */
-		uint32_t dword;
-		uint32_t c1= 1;
+		u32 dword;
+		u32 c1= 1;
 		if (cpuRev & (AMD_DR_Bx)) {
 			// will coreboot ever enable cache scrubbing ?
 			// if it does, will it be enough to check the current state
 			// or should we configure for what we'll set up later ?
 			dword = pci_read_config32(dev, 0x58);
-			uint32_t scrubbingCache = dword &
+			u32 scrubbingCache = dword &
 						( (0x1f << 16) // DCacheScrub
 						| (0x1f << 8) ); // L2Scrub
 			if (scrubbingCache) {
@@ -555,7 +555,7 @@ static void config_acpi_pwr_state_ctrl_regs(pci_devfn_t dev, uint64_t cpuRev,
 		} else { // rev C or later
 			// same doubt as cache scrubbing: ok to check current state ?
 			dword = pci_read_config32(dev, 0xdc);
-			uint32_t cacheFlushOnHalt = dword & (7 << 16);
+			u32 cacheFlushOnHalt = dword & (7 << 16);
 			if (!cacheFlushOnHalt) {
 				c1 = 0x80;
 			}
@@ -571,7 +571,7 @@ static void config_acpi_pwr_state_ctrl_regs(pci_devfn_t dev, uint64_t cpuRev,
 		* which is easier
 		*/
 
-		uint32_t smaf001 = 0xE6;
+		u32 smaf001 = 0xE6;
 		if (cpuRev & AMD_DR_Bx ) {
 			smaf001 = 0xA6;
 		} else {
@@ -581,7 +581,7 @@ static void config_acpi_pwr_state_ctrl_regs(pci_devfn_t dev, uint64_t cpuRev,
 				}
 			}
 		}
-		uint32_t fidvidChange = 0;
+		u32 fidvidChange = 0;
 		if (((cpuRev & AMD_DA_Cx) && (procPkg & AMD_PKGTYPE_S1gX))
 			|| (cpuRev & AMD_RB_C3) ) {
 				fidvidChange = 0x0b;
@@ -606,7 +606,7 @@ void prep_fid_change(void)
 	for (i = 0; i < nodes; i++) {
 		printk(BIOS_DEBUG, "Prep FID/VID Node:%02x\n", i);
 		dev = NODE_PCI(i, 3);
-		uint64_t cpuRev = get_logical_CPUID(0xFF);
+		u64 cpuRev = get_logical_CPUID(0xFF);
 		u8 procPkg =  get_processor_package_type();
 
 		setVSRamp(dev);
@@ -661,7 +661,7 @@ static void waitCurrentPstate(u32 target_pstate)
 
 static void set_pstate(u32 nonBoostedPState) {
 	msr_t msr;
-	uint8_t skip_wait;
+	u8 skip_wait;
 
 	// Transition P0 for calling core.
 	msr = rdmsr(PS_CTL_REG);
@@ -778,7 +778,7 @@ static u32 needs_NB_COF_VID_update(void)
 	nodes = get_nodes();
 	nb_cof_vid_update = 0;
 	for (i = 0; i < nodes; i++) {
-		uint64_t cpuRev = get_logical_CPUID(i);
+		u64 cpuRev = get_logical_CPUID(i);
 		u32 nbCofVidUpdateDefined = (cpuRev & (AMD_FAM10_LT_D));
 		if (nbCofVidUpdateDefined
 		    && (pci_read_config32(NODE_PCI(i, 3), 0x1FC)

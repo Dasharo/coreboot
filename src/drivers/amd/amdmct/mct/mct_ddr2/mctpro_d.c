@@ -8,7 +8,7 @@ void EarlySampleSupport_D(void)
 
 u32 procOdtWorkaround(struct DCTStatStruc *pDCTstat, u32 dct, u32 val)
 {
-	uint64_t tmp;
+	u64 tmp;
 	tmp = pDCTstat->LogicalCPUID;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 		val &= 0x0FFFFFFF;
@@ -27,7 +27,7 @@ u32 OtherTiming_A_D(struct DCTStatStruc *pDCTstat, u32 val)
 	 * (F2x[1, 0]8C[1:0] > 00b).  Silicon Status: Fixed in Rev B
 	 * FIXME: check if this is still required.
 	 */
-	uint64_t tmp;
+	u64 tmp;
 	tmp = pDCTstat->LogicalCPUID;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 		if (!(val & (3<<12)))
@@ -39,7 +39,7 @@ u32 OtherTiming_A_D(struct DCTStatStruc *pDCTstat, u32 val)
 
 void mct_ForceAutoPrecharge_D(struct DCTStatStruc *pDCTstat, u32 dct)
 {
-	uint64_t tmp;
+	u64 tmp;
 	u32 reg;
 	u32 reg_off;
 	u32 dev;
@@ -81,7 +81,7 @@ void mct_EndDQSTraining_D(struct MCTStatStruc *pMCTstat,
 	 * FIXME: check this.
 	 */
 
-	uint64_t tmp;
+	u64 tmp;
 	u32 dev;
 	u32 reg;
 	u32 val;
@@ -128,7 +128,7 @@ void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *pMCTstat,
 	u32 index;
 	u32 reg;
 	u32 val;
-	uint64_t tmp;
+	u64 tmp;
 	u32 Channel;
 
 	tmp = pDCTstat->LogicalCPUID;
@@ -190,7 +190,7 @@ u32 Modify_D3CMP(struct DCTStatStruc *pDCTstat, u32 dct, u32 value)
 	u32 index_reg;
 	u32 index;
 	u32 val;
-	uint64_t tmp;
+	u64 tmp;
 
 	tmp = pDCTstat->LogicalCPUID;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
@@ -221,7 +221,7 @@ void SyncSetting(struct DCTStatStruc *pDCTstat)
 	 * Silicon Status: Fix TBD
 	 */
 
-	uint64_t tmp;
+	u64 tmp;
 	tmp = pDCTstat->LogicalCPUID;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 		pDCTstat->CH_ODC_CTL[1] = pDCTstat->CH_ODC_CTL[0];
@@ -262,7 +262,7 @@ u32 CheckNBCOFAutoPrechg(struct DCTStatStruc *pDCTstat, u32 dct)
 
 void mct_BeforeDramInit_D(struct DCTStatStruc *pDCTstat, u32 dct)
 {
-	uint64_t tmp;
+	u64 tmp;
 	u32 Speed;
 	u32 ch, ch_start, ch_end;
 	u32 index_reg;
@@ -313,7 +313,7 @@ u8 mct_checkFenceHoleAdjust_D(struct MCTStatStruc *pMCTstat,
 				u8 ChipSel,  u8 *result)
 {
 	u8 ByteLane;
-	uint64_t tmp;
+	u64 tmp;
 
 	tmp = pDCTstat->LogicalCPUID;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {

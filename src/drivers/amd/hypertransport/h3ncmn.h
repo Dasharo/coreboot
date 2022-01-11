@@ -80,7 +80,7 @@ struct cNorthBridge
 	/* Public Interfaces for northbridge clients, Optimization */
 	u8 (*convertBitsToWidth)(u8 value, cNorthBridge *nb);
 	u8 (*convertWidthToBits)(u8 value, cNorthBridge *nb);
-	uint32_t (*northBridgeFreqMask)(u8 node, cNorthBridge *nb);
+	u32 (*northBridgeFreqMask)(u8 node, cNorthBridge *nb);
 	void (*gatherLinkData)(sMainData *pDat, cNorthBridge *nb);
 	void (*setLinkData)(sMainData *pDat, cNorthBridge *nb);
 

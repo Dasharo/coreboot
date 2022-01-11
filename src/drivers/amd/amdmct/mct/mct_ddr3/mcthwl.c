@@ -76,12 +76,12 @@ static void DisableAutoRefresh_D(struct MCTStatStruc *pMCTstat,
 }
 
 
-static uint8_t PhyWLPass1(struct MCTStatStruc *pMCTstat,
+static u8 PhyWLPass1(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstat, u8 dct)
 {
 	u8 dimm;
 	u16 DIMMValid;
-	uint8_t status = 0;
+	u8 status = 0;
 	void *DCTPtr;
 
 	dct &= 1;
@@ -108,12 +108,12 @@ static uint8_t PhyWLPass1(struct MCTStatStruc *pMCTstat,
 	return status;
 }
 
-static uint8_t PhyWLPass2(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t final)
+static u8 PhyWLPass2(struct MCTStatStruc *pMCTstat,
+					struct DCTStatStruc *pDCTstat, u8 dct, u8 final)
 {
 	u8 dimm;
 	u16 DIMMValid;
-	uint8_t status = 0;
+	u8 status = 0;
 	void *DCTPtr;
 
 	dct &= 1;
@@ -153,9 +153,9 @@ static uint8_t PhyWLPass2(struct MCTStatStruc *pMCTstat,
 	return status;
 }
 
-static uint16_t fam15h_next_highest_memclk_freq(uint16_t memclk_freq)
+static u16 fam15h_next_highest_memclk_freq(u16 memclk_freq)
 {
-	uint16_t fam15h_next_highest_freq_tab[] = {0, 0, 0, 0, 0x6, 0, 0xa, 0, 0, 0, 0xe, 0, 0, 0, 0x12, 0, 0, 0, 0x16, 0, 0, 0, 0x16};
+	u16 fam15h_next_highest_freq_tab[] = {0, 0, 0, 0, 0x6, 0, 0xa, 0, 0, 0, 0xe, 0, 0, 0, 0x12, 0, 0, 0, 0x16, 0, 0, 0, 0x16};
 	return fam15h_next_highest_freq_tab[memclk_freq];
 }
 
@@ -163,11 +163,11 @@ static uint16_t fam15h_next_highest_memclk_freq(uint16_t memclk_freq)
  * Algorithm detailed in the Fam10h BKDG Rev. 3.62 section 2.8.9.9.1
  */
 static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA, uint8_t Node, uint8_t Pass)
+					struct DCTStatStruc *pDCTstatA, u8 Node, u8 Pass)
 {
-	uint8_t status;
-	uint8_t timeout;
-	uint16_t final_target_freq;
+	u8 status;
+	u8 timeout;
+	u16 final_target_freq;
 
 	struct DCTStatStruc *pDCTstat;
 	pDCTstat = pDCTstatA + Node;
@@ -211,7 +211,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 			 * NOTE: BIOS must program both DCTs to the same frequency.
 			 * NOTE: Fam15h steps the frequency, Fam10h slams the frequency.
 			 */
-			uint8_t global_phy_training_status = 0;
+			u8 global_phy_training_status = 0;
 			final_target_freq = pDCTstat->TargetFreq;
 
 			while (pDCTstat->Speed != final_target_freq) {
@@ -242,7 +242,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 					"continuing but system may be unstable!\n",
 					__func__);
 
-			uint8_t dct;
+			u8 dct;
 			for (dct = 0; dct < 2; dct++) {
 				sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
 				memcpy(pDCTData->WLGrossDelayFinalPass, pDCTData->WLGrossDelayPrevPass, sizeof(pDCTData->WLGrossDelayPrevPass));
@@ -258,7 +258,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 }
 
 void mct_WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA, uint8_t Pass)
+					struct DCTStatStruc *pDCTstatA, u8 Pass)
 {
 	u8 Node;
 

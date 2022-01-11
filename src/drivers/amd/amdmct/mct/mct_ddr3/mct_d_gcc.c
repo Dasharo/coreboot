@@ -98,8 +98,8 @@ void proc_CLFLUSH(u32 addr_hi)
 
 void WriteLNTestPattern(u32 addr_lo, u8 *buf_a, u32 line_num)
 {
-	uint32_t step = 16;
-	uint32_t count = line_num * 4;
+	u32 step = 16;
+	u32 count = line_num * 4;
 
 	__asm__ volatile (
 		/*prevent speculative execution of following instructions*/
@@ -129,11 +129,11 @@ u32 read32_fs(u32 addr_lo)
 	return value;
 }
 
-uint64_t read64_fs(uint32_t addr_lo)
+u64 read64_fs(u32 addr_lo)
 {
-	uint64_t value = 0;
-	uint32_t value_lo;
-	uint32_t value_hi;
+	u64 value = 0;
+	u32 value_lo;
+	u32 value_hi;
 
 	__asm__ volatile (
 		"outb %%al, $0xed\n\t"  /* _EXECFENCE */
@@ -143,7 +143,7 @@ uint64_t read64_fs(uint32_t addr_lo)
 		:"=c"(value_lo), "=d"(value_hi): "a" (addr_lo), "b" (addr_lo + 4) : "memory"
 	);
 	value |= value_lo;
-	value |= ((uint64_t)value_hi) << 32;
+	value |= ((u64)value_hi) << 32;
 	return value;
 }
 
@@ -219,9 +219,9 @@ void ReadMaxRdLat1CLTestPattern_D(u32 addr)
 
 void WriteMaxRdLat1CLTestPattern_D(u32 buf, u32 addr)
 {
-	uint32_t addr_phys = addr << 8;
-	uint32_t step = 16;
-	uint32_t count = 3 * 4;
+	u32 addr_phys = addr << 8;
+	u32 step = 16;
+	u32 count = 3 * 4;
 
 	SetUpperFSbase(addr);
 

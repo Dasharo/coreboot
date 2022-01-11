@@ -12,7 +12,7 @@
 
 #include "sb700.h"
 
-static int sata_drive_detect(int portnum, uint16_t iobar)
+static int sata_drive_detect(int portnum, u16 iobar)
 {
 	u8 byte, byte2;
 	u8 byte_prev, byte2_prev;
@@ -81,7 +81,7 @@ void __weak sb7xx_51xx_setup_sata_phys(struct device *dev)
 /* This function can be overloaded in mainboard.c */
 void __weak sb7xx_51xx_setup_sata_port_indication(void *sata_bar5)
 {
-	uint32_t dword;
+	u32 dword;
 
 	/* RPR7.9 Program Port Indication Registers */
 	dword = read32(sata_bar5 + 0xf8);
@@ -102,16 +102,16 @@ static void sata_init(struct device *dev)
 	u32 dword;
 	u8 rev_id;
 	void *sata_bar5;
-	uint16_t sata_bar0, sata_bar1, sata_bar2, sata_bar3, sata_bar4;
-	uint16_t ide_bar0, ide_bar1, ide_bar2, ide_bar3;
-	uint16_t current_bar;
+	u16 sata_bar0, sata_bar1, sata_bar2, sata_bar3, sata_bar4;
+	u16 ide_bar0, ide_bar1, ide_bar2, ide_bar3;
+	u16 current_bar;
 	int i, j, ret;
-	uint8_t sata_ahci_mode;
-	uint8_t sata_alpm_enable;
-	uint8_t port_count;
-	uint8_t max_port_count;
-	uint8_t ide_io_enabled;
-	uint8_t ide_legacy_io_enabled;
+	u8 sata_ahci_mode;
+	u8 sata_alpm_enable;
+	u8 port_count;
+	u8 max_port_count;
+	u8 ide_io_enabled;
+	u8 ide_legacy_io_enabled;
 
 	sata_ahci_mode = get_uint_option("sata_ahci_mode", 1);
 	sata_alpm_enable = get_uint_option("sata_alpm", 0);

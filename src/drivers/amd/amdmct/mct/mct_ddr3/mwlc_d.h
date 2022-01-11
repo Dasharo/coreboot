@@ -13,7 +13,7 @@
  *   14:12   Function(3-bits)
  *   11:00   Offset  (12-bits)
  */
-typedef uint32_t SBDFO;
+typedef u32 SBDFO;
 
 #define BYTESIZE 1
 #define WORDSIZE 2
@@ -126,16 +126,16 @@ typedef struct _sDCTStruct
 	u8 DctTrain;			/* Current DCT being trained */
 	u8 CurrDct;			/* Current DCT number (0 or 1) */
 	u8 DctCSPresent;		/* Current DCT CS mapping */
-	uint8_t WrDqsGrossDlyBaseOffset;
+	u8 WrDqsGrossDlyBaseOffset;
 	int32_t WLSeedGrossDelay[MAX_BYTE_LANES*MAX_LDIMMS];	/* Write Levelization Seed Gross Delay */
 								/* per byte Lane Per Logical DIMM*/
 	int32_t WLSeedFineDelay[MAX_BYTE_LANES*MAX_LDIMMS];	/* Write Levelization Seed Fine Delay */
 								/* per byte Lane Per Logical DIMM*/
 	int32_t WLSeedPreGrossDelay[MAX_BYTE_LANES*MAX_LDIMMS];	/* Write Levelization Seed Pre-Gross Delay */
 								/* per byte Lane Per Logical DIMM*/
-	uint8_t WLSeedPreGrossPrevNibble[MAX_BYTE_LANES*MAX_LDIMMS];
-	uint8_t WLSeedGrossPrevNibble[MAX_BYTE_LANES*MAX_LDIMMS];
-	uint8_t WLSeedFinePrevNibble[MAX_BYTE_LANES*MAX_LDIMMS];
+	u8 WLSeedPreGrossPrevNibble[MAX_BYTE_LANES*MAX_LDIMMS];
+	u8 WLSeedGrossPrevNibble[MAX_BYTE_LANES*MAX_LDIMMS];
+	u8 WLSeedFinePrevNibble[MAX_BYTE_LANES*MAX_LDIMMS];
 								/* per byte Lane Per Logical DIMM*/
 	u8 WLGrossDelay[MAX_BYTE_LANES*MAX_LDIMMS];		/* Write Levelization Gross Delay */
 								/* per byte Lane Per Logical DIMM*/
@@ -156,7 +156,7 @@ typedef struct _sDCTStruct
 	int32_t WLCriticalGrossDelayFirstPass;
 	int32_t WLCriticalGrossDelayPrevPass;
 	int32_t WLCriticalGrossDelayFinalPass;
-	uint16_t WLPrevMemclkFreq[MAX_TOTAL_DIMMS];
+	u16 WLPrevMemclkFreq[MAX_TOTAL_DIMMS];
 	u16 RegMan1Present;
 	u8 DimmPresent[MAX_TOTAL_DIMMS];/* Indicates which DIMMs are present */
 					/* from Total Number of DIMMs(per Node)*/
@@ -170,7 +170,7 @@ typedef struct _sDCTStruct
 					/* per byte lane */
 	u8 MaxDimmsInstalled;		/* Max Dimms Installed for current DCT */
 	u8 DimmRanks[MAX_TOTAL_DIMMS];	/* Total Number of Ranks(per Dimm) */
-	uint64_t LogicalCPUID;
+	u64 LogicalCPUID;
 	u8 WLPass;
 } __attribute__((packed, aligned(4))) sDCTStruct;
 

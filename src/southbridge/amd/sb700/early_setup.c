@@ -187,7 +187,7 @@ static void sb700_devices_por_init(void)
 {
 	pci_devfn_t dev;
 	u8 byte;
-	uint32_t dword;
+	u32 dword;
 	u8 sata_ahci_mode;
 
 	sata_ahci_mode = get_uint_option("sata_ahci_mode", 1);
@@ -392,7 +392,7 @@ static void sb700_devices_por_init(void)
 static void sb700_pmio_por_init(void)
 {
 	u8 byte;
-	uint8_t enable_c_states;
+	u8 enable_c_states;
 
 	enable_c_states = get_uint_option("cpu_c_states", 0);
 
@@ -502,7 +502,7 @@ static void sb700_pci_cfg(void)
 {
 	pci_devfn_t dev;
 	u8 byte;
-	uint8_t acpi_s1_supported = 1;
+	u8 acpi_s1_supported = 1;
 
 	/* SMBus Device, BDF:0-20-0 */
 	dev = pci_locate_device(PCI_ID(0x1002, 0x4385), 0);
@@ -573,8 +573,8 @@ static void sb700_por_init(void)
 	sb700_pmio_por_init();
 }
 
-uint16_t sb7xx_51xx_decode_last_reset(void) {
-	uint16_t reset_status = 0;
+u16 sb7xx_51xx_decode_last_reset(void) {
+	u16 reset_status = 0;
 	reset_status |= pmio_read(0x44);
 	reset_status |= (pmio_read(0x45) << 8);
 	printk(BIOS_INFO, "sb700 reset flags: %04x\n", reset_status);
@@ -645,7 +645,7 @@ int s3_load_nvram_early(int size, u32 *old_dword, int nvram_pos)
 
 void set_lpc_sticky_ctl(bool enable)
 {
-	uint8_t byte;
+	u8 byte;
 
 	byte = pmio_read(0xbb);
 	if (enable)

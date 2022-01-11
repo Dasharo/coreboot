@@ -519,7 +519,7 @@ static void sr5650_early_setup(void)
 	/*ATINB_PrepareInit */
 	get_cpu_rev();
 
-	uint8_t revno = get_nb_rev(nb_dev);
+	u8 revno = get_nb_rev(nb_dev);
 	switch (revno) {	/* PCIEMiscInit */
 	case REV_SR5650_A11:
 		printk(BIOS_INFO, "NB Revision is A11.\n");

@@ -55,8 +55,8 @@ int smbus_block_write(struct device *dev, u8 cmd, u8 bytes, const u8 *buffer);
 #endif
 
 #if CONFIG(SMBUS_HAS_AUX_CHANNELS)
-void smbus_switch_to_channel(uint8_t channel_number);
-uint8_t smbus_get_current_channel(void);
+void smbus_switch_to_channel(u8 channel_number);
+u8 smbus_get_current_channel(void);
 #endif
 
 #endif /* DEVICE_SMBUS_H */

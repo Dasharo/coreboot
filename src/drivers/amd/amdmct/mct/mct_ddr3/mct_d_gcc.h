@@ -24,7 +24,7 @@ void proc_MFENCE(void);
 void proc_CLFLUSH(u32 addr_hi);
 void WriteLNTestPattern(u32 addr_lo, u8 *buf_a, u32 line_num);
 u32 read32_fs(u32 addr_lo);
-uint64_t read64_fs(uint32_t addr_lo);
+u64 read64_fs(u32 addr_lo);
 void FlushDQSTestPattern_L9(u32 addr_lo);
 __attribute__((noinline)) void FlushDQSTestPattern_L18(u32 addr_lo);
 void ReadMaxRdLat1CLTestPattern_D(u32 addr);

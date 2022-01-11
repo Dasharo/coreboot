@@ -10,7 +10,7 @@
  */
 static const struct {
 	u32 msr;
-	uint64_t revision;
+	u64 revision;
 	u32 platform;
 	u32 data_lo;
 	u32 data_hi;
@@ -210,7 +210,7 @@ static const struct {
 static const struct {
 	u8  function;
 	u16 offset;
-	uint64_t revision;
+	u64 revision;
 	u32 platform;
 	u32 data;
 	u32 mask;
@@ -637,7 +637,7 @@ static const struct {
  */
 static const struct {
 	u16 htreg;	/* HT Phy Register index */
-	uint64_t revision;
+	u64 revision;
 	u32 platform;
 	u32 linktype;
 	u32 data;

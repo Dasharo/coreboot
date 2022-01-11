@@ -90,8 +90,8 @@ UPDATE AS NEEDED
  */
 #define MINIMUM_DRAM_BELOW_4G 0x1000000
 
-static const uint16_t ddr2_limits[4] = {400, 333, 266, 200};
-static const uint16_t ddr3_limits[16] = {933, 800, 666, 533, 400, 333, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static const u16 ddr2_limits[4] = {400, 333, 266, 200};
+static const u16 ddr3_limits[16] = {933, 800, 666, 533, 400, 333, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 #include <cpu/amd/amddefs.h>
 #include <cpu/amd/common/common.h>

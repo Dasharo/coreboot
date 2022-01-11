@@ -286,9 +286,9 @@ struct MCTStatStruc {
 				      of sub 4GB dram hole for HW remapping.*/
 	u32 Sub4GCacheTop;	/* If not zero, the 32-bit top of cacheable memory.*/
 	u32 SysLimit;		/* LIMIT[39:8] (system address)*/
-	uint32_t TSCFreq;
-	uint16_t nvram_checksum;
-	uint8_t try_ecc;
+	u32 TSCFreq;
+	u16 nvram_checksum;
+	u8 try_ecc;
 } __attribute__((packed, aligned(4)));
 
 /*=============================================================================
@@ -312,12 +312,12 @@ struct MCTStatStruc {
 #include "mwlc_d.h"		/* I have to */
 
 struct amd_spd_node_data {
-	uint8_t spd_bytes[MAX_DIMMS_SUPPORTED][256];	/* [DIMM][byte] */
-	uint8_t spd_address[MAX_DIMMS_SUPPORTED];	/* [DIMM] */
-	uint64_t spd_hash[MAX_DIMMS_SUPPORTED];		/* [DIMM] */
-	uint64_t nvram_spd_hash[MAX_DIMMS_SUPPORTED];	/* [DIMM] */
-	uint8_t nvram_spd_match;
-	uint8_t nvram_memclk[2];			/* [channel] */
+	u8 spd_bytes[MAX_DIMMS_SUPPORTED][256];	/* [DIMM][byte] */
+	u8 spd_address[MAX_DIMMS_SUPPORTED];	/* [DIMM] */
+	u64 spd_hash[MAX_DIMMS_SUPPORTED];		/* [DIMM] */
+	u64 nvram_spd_hash[MAX_DIMMS_SUPPORTED];	/* [DIMM] */
+	u8 nvram_spd_match;
+	u8 nvram_memclk[2];			/* [channel] */
 } __attribute__((packed, aligned(4)));
 
 struct DCTPersistentStatStruc {
@@ -337,9 +337,9 @@ struct DCTPersistentStatStruc {
 struct DCTStatStruc {		/* A per Node structure*/
 /* DCTStatStruct_F -  start */
 	u8 Node_ID;			/* Node ID of current controller */
-	uint8_t Internal_Node_ID;	/* Internal Node ID of the current controller */
-	uint8_t Dual_Node_Package;	/* 1 = Dual node package (G34) */
-	uint8_t stopDCT[2];		/* Set if the DCT will be stopped */
+	u8 Internal_Node_ID;	/* Internal Node ID of the current controller */
+	u8 Dual_Node_Package;	/* 1 = Dual node package (G34) */
+	u8 stopDCT[2];		/* Set if the DCT will be stopped */
 	u8 ErrCode;			/* Current error condition of Node
 		0= no error
 		1= Variance Error, DCT is running but not in an optimal configuration.
@@ -483,7 +483,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 		/* CH A byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
 		/* CH B byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
 		/* CH B byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
-	uint64_t LogicalCPUID;	/* The logical CPUID of the node*/
+	u64 LogicalCPUID;	/* The logical CPUID of the node*/
 	u16 DimmQRPresent;	/* QuadRank DIMM present?*/
 	u16 DimmTrainFail;	/* Bitmap showing which dimms failed training*/
 	u16 CSTrainFail;	/* Bitmap showing which chipselects failed training*/
@@ -567,10 +567,10 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u32 NodeSysBase;	/* for channel interleave usage */
 
 	/* Fam15h specific backup variables */
-	uint8_t SwNbPstateLoDis;
-	uint8_t NbPstateDisOnP0;
-	uint8_t NbPstateThreshold;
-	uint8_t NbPstateHi;
+	u8 SwNbPstateLoDis;
+	u8 NbPstateDisOnP0;
+	u8 NbPstateThreshold;
+	u8 NbPstateHi;
 
 	/* New for LB Support */
 	u8 NodePresent;
@@ -582,15 +582,15 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u32 dev_nbctl;
 	u8 TargetFreq;
 	u8 TargetCASL;
-	uint32_t CtrlWrd3;
-	uint32_t CtrlWrd4;
-	uint32_t CtrlWrd5;
+	u32 CtrlWrd3;
+	u32 CtrlWrd4;
+	u32 CtrlWrd5;
 	u8 DqsRdWrPos_Saved;
 	u8 DqsRcvEnGrossMax;
 	u8 DqsRcvEnGrossMin;
 	u8 WrDatGrossMax;
 	u8 WrDatGrossMin;
-	uint8_t tcwl_delay[2];
+	u8 tcwl_delay[2];
 
 	u16 RegMan1Present;	/* DIMM present bitmap of Register manufacture 1 */
 	u16 RegMan2Present;	/* DIMM present bitmap of Register manufacture 2 */
@@ -604,23 +604,23 @@ struct DCTStatStruc {		/* A per Node structure*/
 	/* struct _sDCTStruct s_C_DCT1Ptr[8]; */
 
 	/* DIMM supported voltage bitmap ([2:0]: 1.25V, 1.35V, 1.5V) */
-	uint8_t DimmSupportedVoltages[MAX_DIMMS_SUPPORTED];
-	uint32_t DimmConfiguredVoltage[MAX_DIMMS_SUPPORTED];	/* mV */
+	u8 DimmSupportedVoltages[MAX_DIMMS_SUPPORTED];
+	u32 DimmConfiguredVoltage[MAX_DIMMS_SUPPORTED];	/* mV */
 
-	uint8_t DimmRows[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmCols[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmRanks[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmBanks[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmWidth[MAX_DIMMS_SUPPORTED];
-	uint64_t DimmChipSize[MAX_DIMMS_SUPPORTED];
-	uint32_t DimmChipWidth[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmRegistered[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmLoadReduced[MAX_DIMMS_SUPPORTED];
+	u8 DimmRows[MAX_DIMMS_SUPPORTED];
+	u8 DimmCols[MAX_DIMMS_SUPPORTED];
+	u8 DimmRanks[MAX_DIMMS_SUPPORTED];
+	u8 DimmBanks[MAX_DIMMS_SUPPORTED];
+	u8 DimmWidth[MAX_DIMMS_SUPPORTED];
+	u64 DimmChipSize[MAX_DIMMS_SUPPORTED];
+	u32 DimmChipWidth[MAX_DIMMS_SUPPORTED];
+	u8 DimmRegistered[MAX_DIMMS_SUPPORTED];
+	u8 DimmLoadReduced[MAX_DIMMS_SUPPORTED];
 
-	uint64_t DimmManufacturerID[MAX_DIMMS_SUPPORTED];
+	u64 DimmManufacturerID[MAX_DIMMS_SUPPORTED];
 	char DimmPartNumber[MAX_DIMMS_SUPPORTED][SPD_PARTN_LENGTH+1];
-	uint16_t DimmRevisionNumber[MAX_DIMMS_SUPPORTED];
-	uint32_t DimmSerialNumber[MAX_DIMMS_SUPPORTED];
+	u16 DimmRevisionNumber[MAX_DIMMS_SUPPORTED];
+	u32 DimmSerialNumber[MAX_DIMMS_SUPPORTED];
 
 	struct amd_spd_node_data spd_data;
 
@@ -630,175 +630,175 @@ struct DCTStatStruc {		/* A per Node structure*/
 
 struct amd_s3_persistent_mct_channel_data {
 	/* Stage 1 (1 dword) */
-	uint32_t f2x110;
+	u32 f2x110;
 
 	/* Stage 2 (88 dwords) */
-	uint32_t f1x40;
-	uint32_t f1x44;
-	uint32_t f1x48;
-	uint32_t f1x4c;
-	uint32_t f1x50;
-	uint32_t f1x54;
-	uint32_t f1x58;
-	uint32_t f1x5c;
-	uint32_t f1x60;
-	uint32_t f1x64;
-	uint32_t f1x68;
-	uint32_t f1x6c;
-	uint32_t f1x70;
-	uint32_t f1x74;
-	uint32_t f1x78;
-	uint32_t f1x7c;
-	uint32_t f1xf0;
-	uint32_t f1x120;
-	uint32_t f1x124;
-	uint32_t f2x10c;
-	uint32_t f2x114;
-	uint32_t f2x118;
-	uint32_t f2x11c;
-	uint32_t f2x1b0;
-	uint32_t f3x44;
-	uint64_t msr0000020[16];
-	uint64_t msr00000250;
-	uint64_t msr00000258;
-	uint64_t msr0000026[8];
-	uint64_t msr000002ff;
-	uint64_t msrc0010010;
-	uint64_t msrc001001a;
-	uint64_t msrc001001d;
-	uint64_t msrc001001f;
+	u32 f1x40;
+	u32 f1x44;
+	u32 f1x48;
+	u32 f1x4c;
+	u32 f1x50;
+	u32 f1x54;
+	u32 f1x58;
+	u32 f1x5c;
+	u32 f1x60;
+	u32 f1x64;
+	u32 f1x68;
+	u32 f1x6c;
+	u32 f1x70;
+	u32 f1x74;
+	u32 f1x78;
+	u32 f1x7c;
+	u32 f1xf0;
+	u32 f1x120;
+	u32 f1x124;
+	u32 f2x10c;
+	u32 f2x114;
+	u32 f2x118;
+	u32 f2x11c;
+	u32 f2x1b0;
+	u32 f3x44;
+	u64 msr0000020[16];
+	u64 msr00000250;
+	u64 msr00000258;
+	u64 msr0000026[8];
+	u64 msr000002ff;
+	u64 msrc0010010;
+	u64 msrc001001a;
+	u64 msrc001001d;
+	u64 msrc001001f;
 
 	/* Stage 3 (21 dwords) */
-	uint32_t f2x40;
-	uint32_t f2x44;
-	uint32_t f2x48;
-	uint32_t f2x4c;
-	uint32_t f2x50;
-	uint32_t f2x54;
-	uint32_t f2x58;
-	uint32_t f2x5c;
-	uint32_t f2x60;
-	uint32_t f2x64;
-	uint32_t f2x68;
-	uint32_t f2x6c;
-	uint32_t f2x78;
-	uint32_t f2x7c;
-	uint32_t f2x80;
-	uint32_t f2x84;
-	uint32_t f2x88;
-	uint32_t f2x8c;
-	uint32_t f2x90;
-	uint32_t f2xa4;
-	uint32_t f2xa8;
+	u32 f2x40;
+	u32 f2x44;
+	u32 f2x48;
+	u32 f2x4c;
+	u32 f2x50;
+	u32 f2x54;
+	u32 f2x58;
+	u32 f2x5c;
+	u32 f2x60;
+	u32 f2x64;
+	u32 f2x68;
+	u32 f2x6c;
+	u32 f2x78;
+	u32 f2x7c;
+	u32 f2x80;
+	u32 f2x84;
+	u32 f2x88;
+	u32 f2x8c;
+	u32 f2x90;
+	u32 f2xa4;
+	u32 f2xa8;
 
 	/* Stage 4 (1 dword) */
-	uint32_t f2x94;
+	u32 f2x94;
 
 	/* Stage 6 (33 dwords) */
-	uint32_t f2x9cx0d0f0_f_8_0_0_8_4_0[9][3];	/* [lane][setting] */
-	uint32_t f2x9cx00;
-	uint32_t f2x9cx0a;
-	uint32_t f2x9cx0c;
+	u32 f2x9cx0d0f0_f_8_0_0_8_4_0[9][3];	/* [lane][setting] */
+	u32 f2x9cx00;
+	u32 f2x9cx0a;
+	u32 f2x9cx0c;
 
 	/* Stage 7 (1 dword) */
-	uint32_t f2x9cx04;
+	u32 f2x9cx04;
 
 	/* Stage 9 (2 dwords) */
-	uint32_t f2x9cx0d0fe006;
-	uint32_t f2x9cx0d0fe007;
+	u32 f2x9cx0d0fe006;
+	u32 f2x9cx0d0fe007;
 
 	/* Stage 10 (78 dwords) */
-	uint32_t f2x9cx10[12];
-	uint32_t f2x9cx20[12];
-	uint32_t f2x9cx3_0_0_3_1[4][3];		/* [dimm][setting] */
-	uint32_t f2x9cx3_0_0_7_5[4][3];		/* [dimm][setting] */
-	uint32_t f2x9cx0d;
-	uint32_t f2x9cx0d0f0_f_0_13[9];		/* [lane] */
-	uint32_t f2x9cx0d0f0_f_0_30[9];		/* [lane] */
-	uint32_t f2x9cx0d0f2_f_0_30[4];		/* [pad select] */
-	uint32_t f2x9cx0d0f8_8_4_0[2][3];	/* [offset][pad select] */
-	uint32_t f2x9cx0d0f812f;
+	u32 f2x9cx10[12];
+	u32 f2x9cx20[12];
+	u32 f2x9cx3_0_0_3_1[4][3];		/* [dimm][setting] */
+	u32 f2x9cx3_0_0_7_5[4][3];		/* [dimm][setting] */
+	u32 f2x9cx0d;
+	u32 f2x9cx0d0f0_f_0_13[9];		/* [lane] */
+	u32 f2x9cx0d0f0_f_0_30[9];		/* [lane] */
+	u32 f2x9cx0d0f2_f_0_30[4];		/* [pad select] */
+	u32 f2x9cx0d0f8_8_4_0[2][3];	/* [offset][pad select] */
+	u32 f2x9cx0d0f812f;
 
 	/* Stage 11 (24 dwords) */
-	uint32_t f2x9cx30[12];
-	uint32_t f2x9cx40[12];
+	u32 f2x9cx30[12];
+	u32 f2x9cx40[12];
 
 	/* Other (3 dwords) */
-	uint32_t f3x58;
-	uint32_t f3x5c;
-	uint32_t f3x60;
+	u32 f3x58;
+	u32 f3x5c;
+	u32 f3x60;
 
 	/* Family 15h-specific registers (91 dwords) */
-	uint32_t f2x200;
-	uint32_t f2x204;
-	uint32_t f2x208;
-	uint32_t f2x20c;
-	uint32_t f2x210[4];			/* [nb pstate] */
-	uint32_t f2x214;
-	uint32_t f2x218;
-	uint32_t f2x21c;
-	uint32_t f2x22c;
-	uint32_t f2x230;
-	uint32_t f2x234;
-	uint32_t f2x238;
-	uint32_t f2x23c;
-	uint32_t f2x240;
-	uint32_t f2x9cx0d0fe003;
-	uint32_t f2x9cx0d0fe013;
-	uint32_t f2x9cx0d0f0_8_0_1f[9];		/* [lane]*/
-	uint32_t f2x9cx0d0f201f;
-	uint32_t f2x9cx0d0f211f;
-	uint32_t f2x9cx0d0f221f;
-	uint32_t f2x9cx0d0f801f;
-	uint32_t f2x9cx0d0f811f;
-	uint32_t f2x9cx0d0f821f;
-	uint32_t f2x9cx0d0fc01f;
-	uint32_t f2x9cx0d0fc11f;
-	uint32_t f2x9cx0d0fc21f;
-	uint32_t f2x9cx0d0f4009;
-	uint32_t f2x9cx0d0f0_8_0_02[9];		/* [lane]*/
-	uint32_t f2x9cx0d0f0_8_0_06[9];		/* [lane]*/
-	uint32_t f2x9cx0d0f0_8_0_0a[9];		/* [lane]*/
-	uint32_t f2x9cx0d0f2002;
-	uint32_t f2x9cx0d0f2102;
-	uint32_t f2x9cx0d0f2202;
-	uint32_t f2x9cx0d0f8002;
-	uint32_t f2x9cx0d0f8006;
-	uint32_t f2x9cx0d0f800a;
-	uint32_t f2x9cx0d0f8102;
-	uint32_t f2x9cx0d0f8106;
-	uint32_t f2x9cx0d0f810a;
-	uint32_t f2x9cx0d0fc002;
-	uint32_t f2x9cx0d0fc006;
-	uint32_t f2x9cx0d0fc00a;
-	uint32_t f2x9cx0d0fc00e;
-	uint32_t f2x9cx0d0fc012;
-	uint32_t f2x9cx0d0f2031;
-	uint32_t f2x9cx0d0f2131;
-	uint32_t f2x9cx0d0f2231;
-	uint32_t f2x9cx0d0f8031;
-	uint32_t f2x9cx0d0f8131;
-	uint32_t f2x9cx0d0f8231;
-	uint32_t f2x9cx0d0fc031;
-	uint32_t f2x9cx0d0fc131;
-	uint32_t f2x9cx0d0fc231;
-	uint32_t f2x9cx0d0f0_0_f_31[9];		/* [lane] */
-	uint32_t f2x9cx0d0f8021;
-	uint32_t f2x9cx0d0fe00a;
+	u32 f2x200;
+	u32 f2x204;
+	u32 f2x208;
+	u32 f2x20c;
+	u32 f2x210[4];			/* [nb pstate] */
+	u32 f2x214;
+	u32 f2x218;
+	u32 f2x21c;
+	u32 f2x22c;
+	u32 f2x230;
+	u32 f2x234;
+	u32 f2x238;
+	u32 f2x23c;
+	u32 f2x240;
+	u32 f2x9cx0d0fe003;
+	u32 f2x9cx0d0fe013;
+	u32 f2x9cx0d0f0_8_0_1f[9];		/* [lane]*/
+	u32 f2x9cx0d0f201f;
+	u32 f2x9cx0d0f211f;
+	u32 f2x9cx0d0f221f;
+	u32 f2x9cx0d0f801f;
+	u32 f2x9cx0d0f811f;
+	u32 f2x9cx0d0f821f;
+	u32 f2x9cx0d0fc01f;
+	u32 f2x9cx0d0fc11f;
+	u32 f2x9cx0d0fc21f;
+	u32 f2x9cx0d0f4009;
+	u32 f2x9cx0d0f0_8_0_02[9];		/* [lane]*/
+	u32 f2x9cx0d0f0_8_0_06[9];		/* [lane]*/
+	u32 f2x9cx0d0f0_8_0_0a[9];		/* [lane]*/
+	u32 f2x9cx0d0f2002;
+	u32 f2x9cx0d0f2102;
+	u32 f2x9cx0d0f2202;
+	u32 f2x9cx0d0f8002;
+	u32 f2x9cx0d0f8006;
+	u32 f2x9cx0d0f800a;
+	u32 f2x9cx0d0f8102;
+	u32 f2x9cx0d0f8106;
+	u32 f2x9cx0d0f810a;
+	u32 f2x9cx0d0fc002;
+	u32 f2x9cx0d0fc006;
+	u32 f2x9cx0d0fc00a;
+	u32 f2x9cx0d0fc00e;
+	u32 f2x9cx0d0fc012;
+	u32 f2x9cx0d0f2031;
+	u32 f2x9cx0d0f2131;
+	u32 f2x9cx0d0f2231;
+	u32 f2x9cx0d0f8031;
+	u32 f2x9cx0d0f8131;
+	u32 f2x9cx0d0f8231;
+	u32 f2x9cx0d0fc031;
+	u32 f2x9cx0d0fc131;
+	u32 f2x9cx0d0fc231;
+	u32 f2x9cx0d0f0_0_f_31[9];		/* [lane] */
+	u32 f2x9cx0d0f8021;
+	u32 f2x9cx0d0fe00a;
 
 	/* TOTAL: 343 dwords */
 } __attribute__((packed, aligned(4)));
 
 struct amd_s3_persistent_node_data {
-	uint32_t node_present;
-	uint64_t spd_hash[MAX_DIMMS_SUPPORTED];
-	uint8_t memclk[2];
+	u32 node_present;
+	u64 spd_hash[MAX_DIMMS_SUPPORTED];
+	u8 memclk[2];
 	struct amd_s3_persistent_mct_channel_data channel[2];
 } __attribute__((packed, aligned(4)));
 
 struct amd_s3_persistent_data {
 	struct amd_s3_persistent_node_data node[MAX_NODES_SUPPORTED];
-	uint16_t nvram_checksum;
+	u16 nvram_checksum;
 } __attribute__((packed, aligned(4)));
 
 /*===============================================================================
@@ -964,8 +964,8 @@ struct amd_s3_persistent_data {
 struct amdmct_memory_info {
 	struct MCTStatStruc mct_stat;
 	struct DCTStatStruc dct_stat[MAX_NODES_SUPPORTED];
-	uint16_t ecc_enabled;
-	uint16_t ecc_scrub_rate;
+	u16 ecc_enabled;
+	u16 ecc_scrub_rate;
 } __attribute__((packed, aligned(4)));
 
 extern const u8 Table_DQSRcvEn_Offset[];
@@ -987,7 +987,7 @@ u32 SetupDqsPattern_1PassA(u8 Pass);
 u32 SetupDqsPattern_1PassB(u8 Pass);
 u8 mct_Get_Start_RcvrEnDly_1Pass(u8 Pass);
 u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat, u16 RcvrEnDly, u16 RcvrEnDlyLimit, u8 Channel, u8 Receiver, u8 Pass);
-void initialize_mca(uint8_t bsp, uint8_t suppress_errors);
+void initialize_mca(u8 bsp, u8 suppress_errors);
 void CPUMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
 void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
 u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
@@ -1016,7 +1016,7 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTs
 void InterleaveChannels_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
 void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
 
-void phyAssistedMemFnceTraining(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA, int16_t Node);
+void phyAssistedMemFnceTraining(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA, s16 Node);
 u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *pDCTstat, u8 pass);
 u8 mct_InitReceiver_D(struct DCTStatStruc *pDCTstat, u8 dct);
 void mct_Wait(u32 cycles);
@@ -1024,29 +1024,29 @@ u8 mct_RcvrRankEnabled_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDC
 u32 mct_GetRcvrSysAddr_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 channel, u8 receiver, u8 *valid);
 void mct_Read1LTestPattern_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u32 addr);
 void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void calculate_spd_hash(uint8_t *spd_data, uint64_t *spd_hash);
-int8_t load_spd_hashes_from_nvram(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-int8_t restore_mct_information_from_nvram(uint8_t training_only);
-uint16_t calculate_nvram_mct_hash(void);
+void calculate_spd_hash(u8 *spd_data, u64 *spd_hash);
+s8 load_spd_hashes_from_nvram(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+s8 restore_mct_information_from_nvram(u8 training_only);
+u16 calculate_nvram_mct_hash(void);
 
-uint32_t fam10h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, uint8_t dct);
-uint32_t fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, uint8_t dct);
-uint32_t fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, uint8_t dct);
-uint8_t fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, uint8_t dct);
-void precise_memclk_delay_fam15(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, uint8_t dct, uint32_t clocks);
+u32 fam10h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct);
+u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct);
+u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct);
+u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct);
+void precise_memclk_delay_fam15(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct, u32 clocks);
 void mct_EnableDatIntlv_D(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstat);
 void SetDllSpeedUp_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat, u8 dct);
-uint8_t get_available_lane_count(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void read_dqs_receiver_enable_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg);
-void read_dqs_write_timing_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg);
+u8 get_available_lane_count(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+void read_dqs_receiver_enable_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg);
+void read_dqs_write_timing_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg);
 void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
-		struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t enable);
-void read_dqs_read_data_timing_registers(uint16_t *delay, uint32_t dev,
-			uint8_t dct, uint8_t dimm, uint32_t index_reg);
-void write_dqs_read_data_timing_registers(uint16_t *delay, uint32_t dev,
-			uint8_t dct, uint8_t dimm, uint32_t index_reg);
+		struct DCTStatStruc *pDCTstat, u8 dct, u8 enable);
+void read_dqs_read_data_timing_registers(u16 *delay, u32 dev,
+			u8 dct, u8 dimm, u32 index_reg);
+void write_dqs_read_data_timing_registers(u16 *delay, u32 dev,
+			u8 dct, u8 dimm, u32 index_reg);
 void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat);
 void proc_IOCLFLUSH_D(u32 addr_hi);
@@ -1069,16 +1069,16 @@ u8 PlatformSpec_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat, u8 dct);
 void StartupDCT_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat, u8 dct);
-uint16_t mhz_to_memclk_config(uint16_t freq);
+u16 mhz_to_memclk_config(u16 freq);
 void SetTargetFreq(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA, uint8_t Node);
+				struct DCTStatStruc *pDCTstatA, u8 Node);
 void mct_WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA, uint8_t Pass);
-uint8_t AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat,
+				struct DCTStatStruc *pDCTstatA, u8 Pass);
+u8 AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat,
 	struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 pass);
-uint8_t AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t pass);
-uint8_t AgesaHwWlPhase3(struct MCTStatStruc *pMCTstat,
+u8 AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat,
+	struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 pass);
+u8 AgesaHwWlPhase3(struct MCTStatStruc *pMCTstat,
 	struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 pass);
 void EnableZQcalibration(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
 void DisableZQcalibration(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
@@ -1092,14 +1092,14 @@ void mct_ExtMCTConfig_Bx(struct DCTStatStruc *pDCTstat);
 void mct_ExtMCTConfig_Cx(struct DCTStatStruc *pDCTstat);
 void mct_ExtMCTConfig_Dx(struct DCTStatStruc *pDCTstat);
 u32 mct_SetDramConfigMisc2(struct DCTStatStruc *pDCTstat,
-			uint8_t dct, uint32_t misc2, uint32_t DramControl);
+			u8 dct, u32 misc2, u32 DramControl);
 
-uint8_t dct_ddr_voltage_index(struct DCTStatStruc *pDCTstat, uint8_t dct);
+u8 dct_ddr_voltage_index(struct DCTStatStruc *pDCTstat, u8 dct);
 void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, uint8_t dct);
-void precise_ndelay_fam15(struct MCTStatStruc *pMCTstat, uint32_t nanoseconds);
+				struct DCTStatStruc *pDCTstat, u8 dct);
+void precise_ndelay_fam15(struct MCTStatStruc *pMCTstat, u32 nanoseconds);
 void FreqChgCtrlWrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, uint8_t dct);
+			struct DCTStatStruc *pDCTstat, u8 dct);
 u32 mct_MR1Odt_RDimm(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel);
 void mct_DramInit_Sw_D(struct MCTStatStruc *pMCTstat,
@@ -1108,20 +1108,20 @@ void print_debug_dqs(const char *str, u32 val, u8 level);
 void print_debug_dqs_pair(const char *str, u32 val, const char *str2, u32 val2, u8 level);
 u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat);
-void ResetDCTWrPtr_D(u32 dev, uint8_t dct, u32 index_reg, u32 index);
+void ResetDCTWrPtr_D(u32 dev, u8 dct, u32 index_reg, u32 index);
 void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *pMCTstat,
-		struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t calc_min);
+		struct DCTStatStruc *pDCTstat, u8 dct, u8 calc_min);
 void write_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, uint8_t dct,
-	uint8_t Receiver, uint8_t lane, uint8_t stop_on_error);
+	struct DCTStatStruc *pDCTstat, u8 dct,
+	u8 Receiver, u8 lane, u8 stop_on_error);
 void read_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, uint8_t dct,
-	uint8_t Receiver, uint8_t lane, uint8_t stop_on_error);
-void write_dqs_receiver_enable_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg);
+	struct DCTStatStruc *pDCTstat, u8 dct,
+	u8 Receiver, u8 lane, u8 stop_on_error);
+void write_dqs_receiver_enable_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg);
 
-uint32_t fenceDynTraining_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, uint8_t dct);
-int32_t abs(int32_t val);
+u32 fenceDynTraining_D(struct MCTStatStruc *pMCTstat,
+			struct DCTStatStruc *pDCTstat, u8 dct);
+s32 abs(s32 val);
 void SetTargetWTIO_D(u32 TestAddr);
 void ResetTargetWTIO_D(void);
 u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *pMCTstat,
@@ -1139,11 +1139,11 @@ u32 mct_MR1(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel);
 u32 mct_MR2(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel);
-uint8_t fam15_rttwr(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t rank, uint8_t package_type);
-uint8_t fam15_rttnom(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t rank, uint8_t package_type);
-uint8_t fam15_dimm_dic(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t rank, uint8_t package_type);
+u8 fam15_rttwr(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type);
+u8 fam15_rttnom(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type);
+u8 fam15_dimm_dic(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type);
 u32 mct_DramTermDyn_RDimm(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat, u8 dimm);
 
-void restore_mct_data_from_save_variable(struct amd_s3_persistent_data* persistent_data, uint8_t training_only);
+void restore_mct_data_from_save_variable(struct amd_s3_persistent_data* persistent_data, u8 training_only);
 #endif

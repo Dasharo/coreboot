@@ -7,9 +7,9 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-uint8_t fam15_dimm_dic(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t rank, uint8_t package_type)
+u8 fam15_dimm_dic(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type)
 {
-	uint8_t dic;
+	u8 dic;
 
 	/* Calculate DIC based on recommendations in MR1_dct[1:0] */
 	if (pDCTstat->Status & (1 << SB_LoadReduced)) {
@@ -24,23 +24,23 @@ uint8_t fam15_dimm_dic(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm,
 	return dic;
 }
 
-uint8_t fam15_rttwr(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t rank, uint8_t package_type)
+u8 fam15_rttwr(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type)
 {
-	uint8_t term = 0;
-	uint8_t number_of_dimms = pDCTstat->MAdimms[dct];
-	uint8_t frequency_index;
-	uint8_t rank_count = pDCTstat->DimmRanks[(dimm * 2) + dct];
+	u8 term = 0;
+	u8 number_of_dimms = pDCTstat->MAdimms[dct];
+	u8 frequency_index;
+	u8 rank_count = pDCTstat->DimmRanks[(dimm * 2) + dct];
 
-	uint8_t rank_count_dimm0;
-	uint8_t rank_count_dimm1;
-	uint8_t rank_count_dimm2;
+	u8 rank_count_dimm0;
+	u8 rank_count_dimm1;
+	u8 rank_count_dimm2;
 
 	if (is_fam15h())
 		frequency_index = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
 	else
 		frequency_index = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x7;
 
-	uint8_t MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
 	if (is_fam15h()) {
 		if (pDCTstat->Status & (1 << SB_LoadReduced)) {
@@ -258,21 +258,21 @@ uint8_t fam15_rttwr(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, ui
 	return term;
 }
 
-uint8_t fam15_rttnom(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t rank, uint8_t package_type)
+u8 fam15_rttnom(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type)
 {
-	uint8_t term = 0;
-	uint8_t number_of_dimms = pDCTstat->MAdimms[dct];
-	uint8_t frequency_index;
+	u8 term = 0;
+	u8 number_of_dimms = pDCTstat->MAdimms[dct];
+	u8 frequency_index;
 
-	uint8_t rank_count_dimm0;
-	uint8_t rank_count_dimm1;
+	u8 rank_count_dimm0;
+	u8 rank_count_dimm1;
 
 	if (is_fam15h())
 		frequency_index = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
 	else
 		frequency_index = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x7;
 
-	uint8_t MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
 	if (is_fam15h()) {
 		if (pDCTstat->Status & (1 << SB_LoadReduced)) {
@@ -733,18 +733,18 @@ u32 mct_MR2(struct MCTStatStruc *pMCTstat,
 	u32 dword, ret;
 
 	/* The formula for chip select number is: CS = dimm*2+rank */
-	uint8_t dimm = MrsChipSel / 2;
-	uint8_t rank = MrsChipSel % 2;
+	u8 dimm = MrsChipSel / 2;
+	u8 rank = MrsChipSel % 2;
 
 	if (is_fam15h()) {
-		uint8_t package_type = mctGet_NVbits(NV_PACK_TYPE);
+		u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
 
 		/* FIXME: These parameters should be configurable
 		 * For now, err on the side of caution and enable automatic 2x refresh
 		 * when the DDR temperature rises above the internal limits
 		 */
-		uint8_t force_2x_self_refresh = 0;	/* ASR */
-		uint8_t auto_2x_self_refresh = 1;	/* SRT */
+		u8 force_2x_self_refresh = 0;	/* ASR */
+		u8 auto_2x_self_refresh = 1;	/* SRT */
 
 		ret = 0x80000;
 		ret |= (MrsChipSel << 21);
@@ -796,8 +796,8 @@ static u32 mct_MR3(struct MCTStatStruc *pMCTstat,
 	u32 dword, ret;
 
 	/* The formula for chip select number is: CS = dimm*2+rank */
-	uint8_t dimm = MrsChipSel / 2;
-	uint8_t rank = MrsChipSel % 2;
+	u8 dimm = MrsChipSel / 2;
+	u8 rank = MrsChipSel % 2;
 
 	if (is_fam15h()) {
 		ret = 0xc0000;
@@ -831,20 +831,20 @@ u32 mct_MR1(struct MCTStatStruc *pMCTstat,
 	u32 dword, ret;
 
 	/* The formula for chip select number is: CS = dimm*2+rank */
-	uint8_t dimm = MrsChipSel / 2;
-	uint8_t rank = MrsChipSel % 2;
+	u8 dimm = MrsChipSel / 2;
+	u8 rank = MrsChipSel % 2;
 
 	if (is_fam15h()) {
-		uint8_t package_type = mctGet_NVbits(NV_PACK_TYPE);
+		u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
 
 		/* Set defaults */
-		uint8_t qoff = 0;	/* Enable output buffers */
-		uint8_t wrlvl = 0;	/* Disable write levelling */
-		uint8_t tqds = 0;
-		uint8_t rttnom = 0;
-		uint8_t dic = 0;
-		uint8_t additive_latency = 0;
-		uint8_t dll_enable = 0;
+		u8 qoff = 0;	/* Enable output buffers */
+		u8 wrlvl = 0;	/* Disable write levelling */
+		u8 tqds = 0;
+		u8 rttnom = 0;
+		u8 dic = 0;
+		u8 additive_latency = 0;
+		u8 dll_enable = 0;
 
 		ret = 0x40000;
 		ret |= (MrsChipSel << 21);
@@ -927,21 +927,21 @@ static u32 mct_MR0(struct MCTStatStruc *pMCTstat,
 	u32 dword, ret, dword2;
 
 	/* The formula for chip select number is: CS = dimm*2+rank */
-	uint8_t dimm = MrsChipSel / 2;
-	uint8_t rank = MrsChipSel % 2;
+	u8 dimm = MrsChipSel / 2;
+	u8 rank = MrsChipSel % 2;
 
 	if (is_fam15h()) {
 		ret = 0x00000;
 		ret |= (MrsChipSel << 21);
 
 		/* Set defaults */
-		uint8_t ppd = 0;
-		uint8_t wr_ap = 0;
-		uint8_t dll_reset = 1;
-		uint8_t test_mode = 0;
-		uint8_t cas_latency = 0;
-		uint8_t read_burst_type = 1;
-		uint8_t burst_length = 0;
+		u8 ppd = 0;
+		u8 wr_ap = 0;
+		u8 dll_reset = 1;
+		u8 test_mode = 0;
+		u8 cas_latency = 0;
+		u8 read_burst_type = 1;
+		u8 burst_length = 0;
 
 		/* Obtain PchgPDModeSel */
 		dword = Get_NB32_DCT(dev, dct, 0x84);

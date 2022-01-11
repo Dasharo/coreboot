@@ -158,7 +158,7 @@ static void apply_microcode_patch(const struct microcode *m)
 	u32 new_patch_id;
 	msr_t msr;
 
-	msr.hi = (uint64_t)(uintptr_t)m >> 32;
+	msr.hi = (u64)(uintptr_t)m >> 32;
 	msr.lo = (uintptr_t)m & 0xffffffff;
 
 	wrmsr(MSR_PATCH_LOADER, msr);

@@ -516,8 +516,8 @@ void setup_mb_resource_map(void)
 	};
 
 	int max;
-	uint8_t fam15h = 0;
-	uint32_t family;
+	u8 fam15h = 0;
+	u32 family;
 
 	family = cpuid_eax(0x80000001);
 	family = ((family & 0xf00000) >> 16) | ((family & 0xf00) >> 8);

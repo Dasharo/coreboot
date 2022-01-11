@@ -66,11 +66,11 @@ static void usb_init(struct device *dev)
 
 static void usb_init2(struct device *dev)
 {
-	uint32_t dword;
+	u32 dword;
 	void *usb2_bar0;
 	struct device *sm_dev;
-	uint8_t rev;
-	uint8_t ehci_async_data_cache;
+	u8 rev;
+	u8 ehci_async_data_cache;
 
 	ehci_async_data_cache = get_uint_option("ehci_async_data_cache", 1);
 	sm_dev = pcidev_on_root(0x14, 0);

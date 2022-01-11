@@ -159,11 +159,11 @@ static void ChangeMemClk(struct MCTStatStruc *pMCTstat,
 {
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
-	uint8_t DCT0Present;
-	uint8_t DCT1Present;
-	uint32_t dword;
-	uint32_t mask;
-	uint32_t offset;
+	u8 DCT0Present;
+	u8 DCT1Present;
+	u32 dword;
+	u32 mask;
+	u32 offset;
 
 	DCT0Present = pDCTstat->DIMMValidDCT[0];
 	if (pDCTstat->GangedMode)
@@ -342,10 +342,10 @@ static void ExitSelfRefresh(struct MCTStatStruc *pMCTstat,
 }
 
 void SetTargetFreq(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA, uint8_t Node)
+					struct DCTStatStruc *pDCTstatA, u8 Node)
 {
-	uint32_t dword;
-	uint8_t package_type = mctGet_NVbits(NV_PACK_TYPE);
+	u32 dword;
+	u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
@@ -384,7 +384,7 @@ void SetTargetFreq(struct MCTStatStruc *pMCTstat,
 	ChangeMemClk(pMCTstat, pDCTstat);
 
 	if (is_fam15h()) {
-		uint8_t dct;
+		u8 dct;
 		for (dct = 0; dct < 2; dct++) {
 			if (pDCTstat->DIMMValidDCT[dct]) {
 				phyAssistedMemFnceTraining(pMCTstat, pDCTstatA, Node);

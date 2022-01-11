@@ -8,7 +8,7 @@ void __weak mainboard_romstage_entry(void) { }
 
 asmlinkage void car_stage_entry(void)
 {
-	uint32_t stack_pointer = 0;
+	u32 stack_pointer = 0;
 	timestamp_add_now(TS_START_ROMSTAGE);
 
 	/* Assumes the hardware was set up during the bootblock */

@@ -56,7 +56,7 @@ static __always_inline u8 is_fam15h(void)
 
 static __always_inline u32 get_cpu_family(void)
 {
-	uint32_t family;
+	u32 family;
 
 	family = cpuid_eax(0x80000001);
 	family = ((family & 0xf00000) >> 16) | ((family & 0xf00) >> 8);
@@ -64,19 +64,18 @@ static __always_inline u32 get_cpu_family(void)
 	return family;
 }
 
-static inline uint8_t is_gt_rev_d(void)
+static inline u8 is_gt_rev_d(void)
 {
-	uint8_t rev_gte_d = 0;
-	uint32_t model;
+	u8 rev_gte_d = 0;
+	u32 model;
 
 	model = cpuid_eax(0x80000001);
 	model = ((model & 0xf0000) >> 12) | ((model & 0xf0) >> 4);
 
-	if ((model >= 0x8) || is_fam15h())
+	if ((model >= 0x8) || is_fam15h()) {
 		/* Revision D or later */
 		rev_gte_d = 1;
-
-
+	}
 	return rev_gte_d;
 }
 

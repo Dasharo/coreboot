@@ -20,10 +20,10 @@
 
 static uintptr_t spibar;
 
-static uint32_t get_spi_bar(void)
+static u32 get_spi_bar(void)
 {
 	if (spibar)
-		return (uint32_t)spibar;
+		return (u32)spibar;
 
 #if ENV_PCI_SIMPLE_DEVICE
 	pci_devfn_t dev = PCI_DEV(0, 0x14, 3);
@@ -33,14 +33,14 @@ static uint32_t get_spi_bar(void)
 		die("%s: LPC not dev found!\n", __func__);
 #endif
 	spibar = pci_read_config32(dev, 0xa0) & ~0x1f;
-	return (uint32_t)spibar;
+	return (u32)spibar;
 
 }
 
 void spi_init()
 {
 	spibar = get_spi_bar();
-	printk(BIOS_DEBUG, "%s: SPI base %08x\n", __func__, (uint32_t)spibar);
+	printk(BIOS_DEBUG, "%s: SPI base %08x\n", __func__, (u32)spibar);
 	/* Clear SpiArbEnable */
 	write8((void *)(spibar + 2), read8((void *)(spibar + 2)) & 0xf6);
 	/* Enable DropOneClkOnRd */

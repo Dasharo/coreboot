@@ -52,7 +52,7 @@
 #define NVRAM_LIMIT_HT_SPEED_3200 0x1
 #define NVRAM_LIMIT_HT_SPEED_AUTO 0x0
 
-static const uint32_t ht_speed_limit[20] =
+static const u32 ht_speed_limit[20] =
 	{0xFFFFF, 0xFFFFF, 0x7FFFF, 0x3FFFF,
 	 0x0FFFF, 0x07FFF, 0x03FFF, 0x01FFF,
 	 0x00FFF, 0x007FF, 0x003FF, 0x001FF,
@@ -60,8 +60,8 @@ static const uint32_t ht_speed_limit[20] =
 	 0x0000F, 0x00007, 0x00003, 0x00001};
 
 static const struct ht_speed_limit_map_t {
-	uint16_t mhz;
-	uint8_t nvram;
+	u16 mhz;
+	u8 nvram;
 } ht_speed_limit_map[] = {
 	{0, NVRAM_LIMIT_HT_SPEED_AUTO},
 	{200, NVRAM_LIMIT_HT_SPEED_200},
@@ -84,7 +84,7 @@ static const struct ht_speed_limit_map_t {
 	{3200, NVRAM_LIMIT_HT_SPEED_3200},
 };
 
-static const uint32_t ht_speed_mhz_to_hw(uint16_t mhz)
+static const u32 ht_speed_mhz_to_hw(u16 mhz)
 {
 	size_t i;
 	for (i = 0; i < ARRAY_SIZE(ht_speed_limit_map); i++)
@@ -376,25 +376,25 @@ static u8 convertNodeToLink(u8 srcNode, u8 targetNode, sMainData *pDat)
  */
 static void htDiscoveryFloodFill(sMainData *pDat)
 {
-	uint8_t currentNode = 0;
-	uint8_t currentLink;
-	uint8_t currentLinkID;
+	u8 currentNode = 0;
+	u8 currentLink;
+	u8 currentLinkID;
 
 	/* NOTE
 	 * Each node inside a dual node (socket G34) processor must share
 	 * an adjacent node ID.  Alter the link scan order such that the
 	 * other internal node is always scanned first...
 	 */
-	uint8_t currentLinkScanOrder_Default[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-	uint8_t currentLinkScanOrder_G34_Fam10[8] = {1, 0, 2, 3, 4, 5, 6, 7};
-	uint8_t currentLinkScanOrder_G34_Fam15[8] = {2, 0, 1, 3, 4, 5, 6, 7};
+	u8 currentLinkScanOrder_Default[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+	u8 currentLinkScanOrder_G34_Fam10[8] = {1, 0, 2, 3, 4, 5, 6, 7};
+	u8 currentLinkScanOrder_G34_Fam15[8] = {2, 0, 1, 3, 4, 5, 6, 7};
 
-	uint8_t fam15h = 0;
-	uint8_t rev_gte_d = 0;
-	uint8_t dual_node = 0;
-	uint32_t f3xe8;
-	uint32_t family;
-	uint32_t model;
+	u8 fam15h = 0;
+	u8 rev_gte_d = 0;
+	u8 dual_node = 0;
+	u32 f3xe8;
+	u32 family;
+	u32 model;
 
 	f3xe8 = pci_read_config32(NODE_PCI(0, 3), 0xe8);
 
@@ -1401,9 +1401,9 @@ static void regangLinks(sMainData *pDat)
 
 static void detectIoLinkIsochronousCapable(sMainData *pDat)
 {
-	uint8_t i;
-	uint8_t isochronous_capable = 0;
-	uint8_t iommu = get_uint_option("iommu", 1);
+	u8 i;
+	u8 isochronous_capable = 0;
+	u8 iommu = get_uint_option("iommu", 1);
 
 	for (i = 0; i < pDat->TotalLinks*2; i += 2) {
 		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i+1].Type == PORTLIST_TYPE_IO)) {
@@ -1447,9 +1447,9 @@ static void detectIoLinkIsochronousCapable(sMainData *pDat)
 static void selectOptimalWidthAndFrequency(sMainData *pDat)
 {
 	u8 i, j;
-	uint32_t temp;
-	uint32_t cbPCBFreqLimit;
-	uint32_t cbPCBFreqLimit_NVRAM;
+	u32 temp;
+	u32 cbPCBFreqLimit;
+	u32 cbPCBFreqLimit_NVRAM;
 	u8 cbPCBABDownstreamWidth;
 	u8 cbPCBBAUpstreamWidth;
 
@@ -1527,7 +1527,7 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 		{
 			if ((j == 16) || (j == 15))
 				continue;
-			if (temp & ((uint32_t)1 << j))
+			if (temp & ((u32)1 << j))
 				break;
 		}
 
@@ -1677,7 +1677,7 @@ static void hammerSublinkFixup(sMainData *pDat)
 					{
 						if ((j == 16) || (j == 15))
 							continue;
-						if (temp & ((uint32_t)1 << k))
+						if (temp & ((u32)1 << k))
 							break;
 					}
 

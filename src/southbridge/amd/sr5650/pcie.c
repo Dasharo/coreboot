@@ -44,7 +44,7 @@ static void PciePowerOffGppPorts(struct device *nb_dev, struct device *dev, u32 
 	printk(BIOS_DEBUG, "PciePowerOffGppPorts() port %d\n", port);
 	u32 reg;
 	u32 state_save;
-	uint8_t i;
+	u8 i;
 	struct southbridge_amd_sr5650_config *cfg =
 		(struct southbridge_amd_sr5650_config *)nb_dev->chip_info;
 	u32 state = cfg->port_enable;
@@ -496,7 +496,7 @@ static void EnableLclkGating(struct device *dev)
 *****************************************/
 void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 {
-	uint8_t training_ok = 1;
+	u8 training_ok = 1;
 
 	u32 gpp_sb_sel = 0;
 	struct southbridge_amd_sr5650_config *cfg =
@@ -710,7 +710,7 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 
 		/* check port enable */
 		if (cfg->port_enable & (1 << port)) {
-			uint32_t hw_port = port;
+			u32 hw_port = port;
 			switch (cfg->gpp3a_configuration) {
 			case 0x1: /* 4:2:0:0:0:0 */
 				if (hw_port == 9)

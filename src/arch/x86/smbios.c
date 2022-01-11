@@ -334,7 +334,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 		smbios_type0_bios_version(version_address);
 	}
 
-	uint32_t rom_size = CONFIG_ROM_SIZE;
+	u32 rom_size = CONFIG_ROM_SIZE;
 	rom_size = MIN(CONFIG_ROM_SIZE, 16 * MiB);
 	t->bios_rom_size = (rom_size / 65535) - 1;
 

@@ -1264,7 +1264,7 @@ static u8 convertWidthToBits(u8 value, cNorthBridge *nb)
  *	@return  Frequency mask
  *
  ******************************************************************************/
-static uint32_t ht1NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
+static u32 ht1NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 {
 	/* only up to HT1 speeds */
 	return (HT_FREQUENCY_LIMIT_HT1_ONLY);
@@ -1285,10 +1285,10 @@ static uint32_t ht1NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
  *	@return  = Frequency mask
  *
  ******************************************************************************/
-static uint32_t fam10NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
+static u32 fam10NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 {
 	u8 nbCOF;
-	uint32_t supported;
+	u32 supported;
 
 	nbCOF = getMinNbCOF();
 	/*
@@ -1301,7 +1301,7 @@ static uint32_t fam10NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 		/* Convert frequency to bit and all less significant bits,
 		 * by setting next power of 2 and subtracting 1.
 		 */
-		supported = ((uint32_t)1 << ((nbCOF >> 1) + 2)) - 1;
+		supported = ((u32)1 << ((nbCOF >> 1) + 2)) - 1;
 	}
 	else if ((nbCOF >= 10) && (nbCOF <= 32))
 	{
@@ -1317,7 +1317,7 @@ static uint32_t fam10NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 		/* Convert frequency to bit and all less significant bits,
 		 * by setting next power of 2 and subtracting 1.
 		 */
-		supported = ((uint32_t)1 << ((nbCOF >> 1) + 2)) - 1;
+		supported = ((u32)1 << ((nbCOF >> 1) + 2)) - 1;
 	}
 	else if (nbCOF > 32)
 	{
@@ -1356,10 +1356,10 @@ static uint32_t fam10NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
  *	@return  = Frequency mask
  *
  ******************************************************************************/
-static uint32_t fam15NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
+static u32 fam15NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 {
 	u8 nbCOF;
-	uint32_t supported;
+	u32 supported;
 
 	nbCOF = getMinNbCOF();
 	/*
@@ -1372,7 +1372,7 @@ static uint32_t fam15NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 		/* Convert frequency to bit and all less significant bits,
 		 * by setting next power of 2 and subtracting 1.
 		 */
-		supported = ((uint32_t)1 << ((nbCOF >> 1) + 2)) - 1;
+		supported = ((u32)1 << ((nbCOF >> 1) + 2)) - 1;
 	}
 	else if ((nbCOF >= 10) && (nbCOF <= 32))
 	{
@@ -1386,7 +1386,7 @@ static uint32_t fam15NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 		/* Convert frequency to bit and all less significant bits,
 		 * by setting next power of 2 and subtracting 1.
 		 */
-		supported = ((uint32_t)1 << ((nbCOF >> 1) + 2)) - 1;
+		supported = ((u32)1 << ((nbCOF >> 1) + 2)) - 1;
 	}
 	else if (nbCOF > 32)
 	{

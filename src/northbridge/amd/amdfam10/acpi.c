@@ -54,7 +54,7 @@ unsigned long acpi_create_srat_lapics(unsigned long current)
 	return current;
 }
 
-static unsigned long resk(uint64_t value)
+static unsigned long resk(u64 value)
 {
 	unsigned long resultk;
 	if (value < (1ULL << 42)) {
@@ -187,7 +187,7 @@ void northbridge_acpi_write_vars(const struct device *device)
 	 * resource entries are used.
 	 * This routine prevents the SSDT table from being corrupted.
 	 */
-	static uint8_t ssdt_generated = 0;
+	static u8 ssdt_generated = 0;
 	if (ssdt_generated)
 		return;
 	ssdt_generated = 1;

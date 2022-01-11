@@ -110,7 +110,7 @@ u32 get_Bits(sDCTStruct *pDCTData,
 		u16 offset, u8 low, u8 high)
 {
 	u32 temp;
-	uint32_t dword;
+	u32 dword;
 
 	/* ASSERT(node < MAX_NODES); */
 	if (dct == BOTH_DCTS)
@@ -184,7 +184,7 @@ void set_Bits(sDCTStruct *pDCTData,
 		u16 offset, u8 low, u8 high, u32 value)
 {
 	u32 temp;
-	uint32_t dword;
+	u32 dword;
 
 	temp = value;
 

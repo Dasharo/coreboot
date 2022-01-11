@@ -311,9 +311,9 @@ struct DCTPersistentStatStruc {
 struct DCTStatStruc {		/* A per Node structure*/
 /* DCTStatStruct_F -  start */
 	u8 Node_ID;			/* Node ID of current controller*/
-	uint8_t Internal_Node_ID;	/* Internal Node ID of the current controller */
-	uint8_t Dual_Node_Package;	/* 1 = Dual node package (G34) */
-	uint8_t stopDCT;		/* Set if the DCT will be stopped */
+	u8 Internal_Node_ID;	/* Internal Node ID of the current controller */
+	u8 Dual_Node_Package;	/* 1 = Dual node package (G34) */
+	u8 stopDCT;		/* Set if the DCT will be stopped */
 	u8 ErrCode;			/* Current error condition of Node
 		0= no error
 		1= Variance Error, DCT is running but not in an optimal configuration.
@@ -456,7 +456,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 		/* CH A byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
 		/* CH B byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
 		/* CH B byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
-	uint64_t LogicalCPUID;	/* The logical CPUID of the node*/
+	u64 LogicalCPUID;	/* The logical CPUID of the node*/
 	u16 DimmQRPresent;	/* QuadRank DIMM present?*/
 	u16 DimmTrainFail;	/* Bitmap showing which dimms failed training*/
 	u16 CSTrainFail;	/* Bitmap showing which chipselects failed training*/
@@ -519,17 +519,17 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u32 dev_dct;
 	u32 dev_nbmisc;
 
-	uint8_t DimmRows[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmCols[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmRanks[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmBanks[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmWidth[MAX_DIMMS_SUPPORTED];
-	uint8_t DimmRegistered[MAX_DIMMS_SUPPORTED];
+	u8 DimmRows[MAX_DIMMS_SUPPORTED];
+	u8 DimmCols[MAX_DIMMS_SUPPORTED];
+	u8 DimmRanks[MAX_DIMMS_SUPPORTED];
+	u8 DimmBanks[MAX_DIMMS_SUPPORTED];
+	u8 DimmWidth[MAX_DIMMS_SUPPORTED];
+	u8 DimmRegistered[MAX_DIMMS_SUPPORTED];
 
-	uint64_t DimmManufacturerID[MAX_DIMMS_SUPPORTED];
+	u64 DimmManufacturerID[MAX_DIMMS_SUPPORTED];
 	char DimmPartNumber[MAX_DIMMS_SUPPORTED][SPD_PARTN_LENGTH+1];
-	uint16_t DimmRevisionNumber[MAX_DIMMS_SUPPORTED];
-	uint32_t DimmSerialNumber[MAX_DIMMS_SUPPORTED];
+	u16 DimmRevisionNumber[MAX_DIMMS_SUPPORTED];
+	u32 DimmSerialNumber[MAX_DIMMS_SUPPORTED];
 
 	/* NOTE: This must remain the last entry in this structure */
 	struct DCTPersistentStatStruc persistentData;
@@ -701,8 +701,8 @@ struct DCTStatStruc {		/* A per Node structure*/
 struct amdmct_memory_info {
 	struct MCTStatStruc mct_stat;
 	struct DCTStatStruc dct_stat[MAX_NODES_SUPPORTED];
-	uint16_t ecc_enabled;
-	uint16_t ecc_scrub_rate;
+	u16 ecc_enabled;
+	u16 ecc_scrub_rate;
 } __packed;
 
 u32 Get_NB32(u32 dev, u32 reg);

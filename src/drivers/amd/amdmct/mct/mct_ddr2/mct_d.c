@@ -221,7 +221,7 @@ restartinit:
 		pDCTstat->NodeSysBase = node_sys_base;
 
 		if (mctGet_NVbits(NV_PACK_TYPE) == PT_GR) {
-			uint32_t dword;
+			u32 dword;
 			pDCTstat->Dual_Node_Package = 1;
 
 			/* Get the internal node number */
@@ -2171,16 +2171,16 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 					if (pDCTstat->DIMMValid & (1 << i)) {
 						pDCTstat->DimmManufacturerID[i] = 0;
 						for (k = 0; k < 8; k++)
-							pDCTstat->DimmManufacturerID[i] |= ((uint64_t)mctRead_SPD(smbaddr, SPD_MANID_START + k)) << (k * 8);
+							pDCTstat->DimmManufacturerID[i] |= ((u64)mctRead_SPD(smbaddr, SPD_MANID_START + k)) << (k * 8);
 						for (k = 0; k < SPD_PARTN_LENGTH; k++)
 							pDCTstat->DimmPartNumber[i][k] = mctRead_SPD(smbaddr, SPD_PARTN_START + k);
 						pDCTstat->DimmPartNumber[i][SPD_PARTN_LENGTH] = 0;
 						pDCTstat->DimmRevisionNumber[i] = 0;
 						for (k = 0; k < 2; k++)
-							pDCTstat->DimmRevisionNumber[i] |= ((uint16_t)mctRead_SPD(smbaddr, SPD_REVNO_START + k)) << (k * 8);
+							pDCTstat->DimmRevisionNumber[i] |= ((u16)mctRead_SPD(smbaddr, SPD_REVNO_START + k)) << (k * 8);
 						pDCTstat->DimmSerialNumber[i] = 0;
 						for (k = 0; k < 4; k++)
-							pDCTstat->DimmSerialNumber[i] |= ((uint32_t)mctRead_SPD(smbaddr, SPD_SERIAL_START + k)) << (k * 8);
+							pDCTstat->DimmSerialNumber[i] |= ((u32)mctRead_SPD(smbaddr, SPD_SERIAL_START + k)) << (k * 8);
 						pDCTstat->DimmRows[i] = mctRead_SPD(smbaddr, SPD_ROWSZ) & 0xf;
 						pDCTstat->DimmCols[i] = mctRead_SPD(smbaddr, SPD_COLSZ) & 0xf;
 						pDCTstat->DimmRanks[i] = (mctRead_SPD(smbaddr, SPD_DMBANKS) & 0x7) + 1;

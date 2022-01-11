@@ -75,9 +75,9 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 	u32 val;
 	u16 nvbits;
 
-	uint32_t dword;
-	uint8_t sync_flood_on_dram_err[MAX_NODES_SUPPORTED];
-	uint8_t sync_flood_on_any_uc_err[MAX_NODES_SUPPORTED];
+	u32 dword;
+	u8 sync_flood_on_dram_err[MAX_NODES_SUPPORTED];
+	u8 sync_flood_on_any_uc_err[MAX_NODES_SUPPORTED];
 
 	mctHookBeforeECC();
 
@@ -118,8 +118,8 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 			dword &= ~(0x1 << 21);
 			Set_NB32(pDCTstat->dev_nbmisc, 0x44, dword);
 
-			uint32_t mc4_status_high = pci_read_config32(pDCTstat->dev_nbmisc, 0x4c);
-			uint32_t mc4_status_low = pci_read_config32(pDCTstat->dev_nbmisc, 0x48);
+			u32 mc4_status_high = pci_read_config32(pDCTstat->dev_nbmisc, 0x4c);
+			u32 mc4_status_low = pci_read_config32(pDCTstat->dev_nbmisc, 0x48);
 			if ((mc4_status_high & (0x1 << 31)) && (mc4_status_high != 0xffffffff)) {
 				printk(BIOS_WARNING, "WARNING: MC4 Machine Check Exception detected!\n"
 					"Signature: %08x%08x\n", mc4_status_high, mc4_status_low);
@@ -263,8 +263,8 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 
 			/* WE/RE is checked */
 			if ((val & 0x3) == 0x3) {	/* Node has dram populated */
-				uint32_t mc4_status_high = pci_read_config32(pDCTstat->dev_nbmisc, 0x4c);
-				uint32_t mc4_status_low = pci_read_config32(pDCTstat->dev_nbmisc, 0x48);
+				u32 mc4_status_high = pci_read_config32(pDCTstat->dev_nbmisc, 0x4c);
+				u32 mc4_status_low = pci_read_config32(pDCTstat->dev_nbmisc, 0x48);
 				if ((mc4_status_high & (0x1 << 31)) && (mc4_status_high != 0xffffffff)) {
 					printk(BIOS_WARNING, "WARNING: MC4 Machine Check Exception detected!\n"
 						"Signature: %08x%08x\n", mc4_status_high, mc4_status_low);

@@ -88,14 +88,14 @@ void mct_TrainRcvrEn_D(struct MCTStatStruc *pMCTstat,
 	}
 }
 
-static uint16_t fam15_receiver_enable_training_seed(struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t dimm, uint8_t rank, uint8_t package_type)
+static u16 fam15_receiver_enable_training_seed(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type)
 {
-	uint32_t dword;
-	uint16_t seed = 0;
+	u32 dword;
+	u16 seed = 0;
 
-	uint8_t MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
-	uint8_t channel = dct;
+	u8 channel = dct;
 	if (package_type == PT_GR) {
 		/* Get the internal node number */
 		dword = Get_NB32(pDCTstat->dev_nbmisc, 0xe8);
@@ -228,13 +228,13 @@ static uint16_t fam15_receiver_enable_training_seed(struct DCTStatStruc *pDCTsta
 	return seed;
 }
 
-void read_dqs_write_timing_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+void read_dqs_write_timing_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint8_t lane;
-	uint32_t dword;
+	u8 lane;
+	u32 dword;
 
 	for (lane = 0; lane < MAX_BYTE_LANES; lane++) {
-		uint32_t wdt_reg;
+		u32 wdt_reg;
 		if ((lane == 0) || (lane == 1))
 			wdt_reg = 0x30;
 		if ((lane == 2) || (lane == 3))
@@ -255,13 +255,13 @@ void read_dqs_write_timing_control_registers(uint16_t *current_total_delay, uint
 }
 
 #ifdef UNUSED_CODE
-static void write_dqs_write_timing_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+static void write_dqs_write_timing_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint8_t lane;
-	uint32_t dword;
+	u8 lane;
+	u32 dword;
 
 	for (lane = 0; lane < MAX_BYTE_LANES; lane++) {
-		uint32_t ret_reg;
+		u32 ret_reg;
 		if ((lane == 0) || (lane == 1))
 			ret_reg = 0x30;
 		if ((lane == 2) || (lane == 3))
@@ -287,13 +287,13 @@ static void write_dqs_write_timing_control_registers(uint16_t *current_total_del
 }
 #endif
 
-static void write_write_data_timing_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+static void write_write_data_timing_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint8_t lane;
-	uint32_t dword;
+	u8 lane;
+	u32 dword;
 
 	for (lane = 0; lane < MAX_BYTE_LANES; lane++) {
-		uint32_t wdt_reg;
+		u32 wdt_reg;
 
 		/* Calculate Write Data Timing register location */
 		if ((lane == 0) || (lane == 1) || (lane == 2) || (lane == 3))
@@ -326,11 +326,11 @@ static void write_write_data_timing_control_registers(uint16_t *current_total_de
 	}
 }
 
-void read_dqs_receiver_enable_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+void read_dqs_receiver_enable_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint8_t lane;
-	uint32_t mask;
-	uint32_t dword;
+	u8 lane;
+	u32 mask;
+	u32 dword;
 
 	if (is_fam15h())
 		mask = 0x3ff;
@@ -338,7 +338,7 @@ void read_dqs_receiver_enable_control_registers(uint16_t *current_total_delay, u
 		mask = 0x1ff;
 
 	for (lane = 0; lane < MAX_BYTE_LANES; lane++) {
-		uint32_t ret_reg;
+		u32 ret_reg;
 		if ((lane == 0) || (lane == 1))
 			ret_reg = 0x10;
 		if ((lane == 2) || (lane == 3))
@@ -360,11 +360,11 @@ void read_dqs_receiver_enable_control_registers(uint16_t *current_total_delay, u
 	}
 }
 
-void write_dqs_receiver_enable_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+void write_dqs_receiver_enable_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint8_t lane;
-	uint32_t mask;
-	uint32_t dword;
+	u8 lane;
+	u32 mask;
+	u32 dword;
 
 	if (is_fam15h())
 		mask = 0x3ff;
@@ -372,7 +372,7 @@ void write_dqs_receiver_enable_control_registers(uint16_t *current_total_delay, 
 		mask = 0x1ff;
 
 	for (lane = 0; lane < MAX_BYTE_LANES; lane++) {
-		uint32_t ret_reg;
+		u32 ret_reg;
 		if ((lane == 0) || (lane == 1))
 			ret_reg = 0x10;
 		if ((lane == 2) || (lane == 3))
@@ -397,13 +397,13 @@ void write_dqs_receiver_enable_control_registers(uint16_t *current_total_delay, 
 	}
 }
 
-static void read_dram_phase_recovery_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+static void read_dram_phase_recovery_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint8_t lane;
-	uint32_t dword;
+	u8 lane;
+	u32 dword;
 
 	for (lane = 0; lane < MAX_BYTE_LANES; lane++) {
-		uint32_t prc_reg;
+		u32 prc_reg;
 
 		/* Calculate DRAM Phase Recovery Control register location */
 		if ((lane == 0) || (lane == 1) || (lane == 2) || (lane == 3))
@@ -429,13 +429,13 @@ static void read_dram_phase_recovery_control_registers(uint16_t *current_total_d
 	}
 }
 
-static void write_dram_phase_recovery_control_registers(uint16_t *current_total_delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+static void write_dram_phase_recovery_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint8_t lane;
-	uint32_t dword;
+	u8 lane;
+	u32 dword;
 
 	for (lane = 0; lane < MAX_BYTE_LANES; lane++) {
-		uint32_t prc_reg;
+		u32 prc_reg;
 
 		/* Calculate DRAM Phase Recovery Control register location */
 		if ((lane == 0) || (lane == 1) || (lane == 2) || (lane == 3))
@@ -467,11 +467,11 @@ static void write_dram_phase_recovery_control_registers(uint16_t *current_total_
 	}
 }
 
-void read_dqs_read_data_timing_registers(uint16_t *delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+void read_dqs_read_data_timing_registers(u16 *delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint8_t shift;
-	uint32_t dword;
-	uint32_t mask;
+	u8 shift;
+	u32 dword;
+	u32 mask;
 
 	if (is_fam15h()) {
 		mask = 0x3e;
@@ -501,11 +501,11 @@ void read_dqs_read_data_timing_registers(uint16_t *delay, uint32_t dev, uint8_t 
 	delay[8] = (dword & mask) >> shift;
 }
 
-void write_dqs_read_data_timing_registers(uint16_t *delay, uint32_t dev, uint8_t dct, uint8_t dimm, uint32_t index_reg)
+void write_dqs_read_data_timing_registers(u16 *delay, u32 dev, u8 dct, u8 dimm, u32 index_reg)
 {
-	uint8_t shift;
-	uint32_t dword;
-	uint32_t mask;
+	u8 shift;
+	u32 dword;
+	u32 mask;
 
 	if (is_fam15h()) {
 		mask = 0x3e;
@@ -547,7 +547,7 @@ void write_dqs_read_data_timing_registers(uint16_t *delay, uint32_t dev, uint8_t
 	Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x7 | (dimm << 8), dword);
 }
 
-static uint32_t convert_testaddr_and_channel_to_address(struct DCTStatStruc *pDCTstat, uint32_t testaddr, uint8_t channel)
+static u32 convert_testaddr_and_channel_to_address(struct DCTStatStruc *pDCTstat, u32 testaddr, u8 channel)
 {
 	SetUpperFSbase(testaddr);
 	testaddr <<= 8;
@@ -585,19 +585,19 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 	msr_t msr;
 	CRx_TYPE cr4;
 
-	uint32_t dword;
-	uint8_t dimm;
-	uint8_t rank;
-	uint8_t lane;
-	uint16_t current_total_delay[MAX_BYTE_LANES];
-	uint16_t candidate_total_delay[8];
-	uint8_t data_test_pass_sr[2][8];	/* [rank][lane] */
-	uint8_t data_test_pass[8];		/* [lane] */
-	uint8_t data_test_pass_prev[8];		/* [lane] */
-	uint8_t window_det_toggle[8];
-	uint8_t trained[8];
-	uint64_t result_qword1;
-	uint64_t result_qword2;
+	u32 dword;
+	u8 dimm;
+	u8 rank;
+	u8 lane;
+	u16 current_total_delay[MAX_BYTE_LANES];
+	u16 candidate_total_delay[8];
+	u8 data_test_pass_sr[2][8];	/* [rank][lane] */
+	u8 data_test_pass[8];		/* [lane] */
+	u8 data_test_pass_prev[8];		/* [lane] */
+	u8 window_det_toggle[8];
+	u8 trained[8];
+	u64 result_qword1;
+	u64 result_qword2;
 
 	u8 valid;
 
@@ -697,7 +697,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 			 * to 1/2 MEMCLK for all lanes
 			 */
 			for (lane = 0; lane < MAX_BYTE_LANES; lane++) {
-				uint32_t rdt_reg;
+				u32 rdt_reg;
 				if ((lane == 0) || (lane == 1) || (lane == 2) || (lane == 3))
 					rdt_reg = 0x5;
 				if ((lane == 4) || (lane == 5) || (lane == 6) || (lane == 7))
@@ -768,7 +768,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 			 * 1 MEMCLK window, or if it should be discontinued if no successes occur in the first 1 MEMCLK
 			 * window.  Therefore, loop over up to 2 MEMCLK (0x80 delay steps) to be on the safe side.
 			 */
-			uint16_t current_delay_step;
+			u16 current_delay_step;
 
 			for (current_delay_step = 0; current_delay_step < 0x80; current_delay_step++) {
 				print_debug_dqs("\t\t\tTrainRcvEn541: current_delay_step ", current_delay_step, 3);
@@ -776,7 +776,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 				/* 2.8.9.9.2 (7 D)
 				* Terminate if all lanes are trained
 				*/
-				uint8_t all_lanes_trained = 1;
+				u8 all_lanes_trained = 1;
 				for (lane = 0; lane < 8; lane++)
 					if (!trained[lane])
 						all_lanes_trained = 0;
@@ -817,8 +817,8 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 					/* 2.8.9.9.2 (7 A e)
 					 * Compare both read patterns and flag passing ranks/lanes
 					 */
-					uint8_t result_lane_byte1;
-					uint8_t result_lane_byte2;
+					u8 result_lane_byte1;
+					u8 result_lane_byte2;
 					for (lane = 0; lane < 8; lane++) {
 						if (trained[lane] == 1) {
 #if DQS_TRAIN_DEBUG > 0
@@ -1025,10 +1025,10 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
  * The Fam15h BKDG Rev. 3.14 section 2.10.5.8.2 (4)
  */
 static void generate_dram_receiver_enable_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, uint8_t dct, uint8_t Receiver)
+				struct DCTStatStruc *pDCTstat, u8 dct, u8 Receiver)
 {
-	uint32_t dword;
-	uint32_t dev = pDCTstat->dev_dct;
+	u32 dword;
+	u32 dev = pDCTstat->dev_dct;
 
 	/* 2.10.5.7.1.1
 	 * It appears that the DCT only supports 8-beat burst length mode,
@@ -1160,29 +1160,29 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	CRx_TYPE cr4;
 	u32 lo, hi;
 
-	uint32_t dword;
-	uint8_t dimm;
-	uint8_t rank;
-	uint8_t lane;
-	uint8_t nibble;
-	uint8_t mem_clk;
-	uint16_t min_mem_clk;
-	uint16_t initial_seed;
-	uint8_t train_both_nibbles;
-	uint16_t current_total_delay[MAX_BYTE_LANES];
-	uint16_t nibble0_current_total_delay[MAX_BYTE_LANES];
-	uint16_t dqs_ret_pass1_total_delay[MAX_BYTE_LANES];
-	uint16_t rank0_current_total_delay[MAX_BYTE_LANES];
-	uint16_t phase_recovery_delays[MAX_BYTE_LANES];
-	uint16_t seed[MAX_BYTE_LANES];
-	uint16_t seed_gross[MAX_BYTE_LANES];
-	uint16_t seed_fine[MAX_BYTE_LANES];
-	uint16_t seed_pre_gross[MAX_BYTE_LANES];
+	u32 dword;
+	u8 dimm;
+	u8 rank;
+	u8 lane;
+	u8 nibble;
+	u8 mem_clk;
+	u16 min_mem_clk;
+	u16 initial_seed;
+	u8 train_both_nibbles;
+	u16 current_total_delay[MAX_BYTE_LANES];
+	u16 nibble0_current_total_delay[MAX_BYTE_LANES];
+	u16 dqs_ret_pass1_total_delay[MAX_BYTE_LANES];
+	u16 rank0_current_total_delay[MAX_BYTE_LANES];
+	u16 phase_recovery_delays[MAX_BYTE_LANES];
+	u16 seed[MAX_BYTE_LANES];
+	u16 seed_gross[MAX_BYTE_LANES];
+	u16 seed_fine[MAX_BYTE_LANES];
+	u16 seed_pre_gross[MAX_BYTE_LANES];
 
-	uint8_t package_type = mctGet_NVbits(NV_PACK_TYPE);
-	uint16_t fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
+	u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+	u16 fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
 
-	uint8_t lane_count;
+	u8 lane_count;
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
 	print_debug_dqs("\nTrainRcvEn: Node", pDCTstat->Node_ID, 0);
@@ -1201,8 +1201,8 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	ch_end = 2;
 
 	for (ch = ch_start; ch < ch_end; ch++) {
-		uint8_t max_rd_latency = 0x55;
-		uint8_t p_state;
+		u8 max_rd_latency = 0x55;
+		u8 p_state;
 
 		/* 2.10.5.6 */
 		fam15EnableTrainingMode(pMCTstat, pDCTstat, ch, 1);
@@ -1300,19 +1300,19 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 						initial_seed = fam15_receiver_enable_training_seed(pDCTstat, Channel, dimm, rank, package_type);
 
 						/* Adjust seed for the minimum platform supported frequency */
-						initial_seed = (uint16_t) (((((uint64_t) initial_seed) *
+						initial_seed = (u16) (((((u64) initial_seed) *
 							fam15h_freq_tab[mem_clk] * 100) / (min_mem_clk * 100)));
 
 						for (lane = 0; lane < lane_count; lane++) {
-							uint16_t wl_pass1_delay;
+							u16 wl_pass1_delay;
 							wl_pass1_delay = current_total_delay[lane];
 
 							seed[lane] = initial_seed + wl_pass1_delay;
 						}
 					} else {
-						uint8_t addr_prelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
-						uint16_t register_delay;
-						int16_t seed_prescaling;
+						u8 addr_prelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
+						u16 register_delay;
+						s16 seed_prescaling;
 
 						memcpy(current_total_delay, dqs_ret_pass1_total_delay, sizeof(current_total_delay));
 						if ((pDCTstat->Status & (1 << SB_Registered))) {
@@ -1331,7 +1331,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 
 						for (lane = 0; lane < lane_count; lane++) {
 							seed_prescaling = current_total_delay[lane] - register_delay - 0x20;
-							seed[lane] = (uint16_t) (register_delay + ((((uint64_t) seed_prescaling) * fam15h_freq_tab[mem_clk] * 100) / (min_mem_clk * 100)));
+							seed[lane] = (u16) (register_delay + ((((u64) seed_prescaling) * fam15h_freq_tab[mem_clk] * 100) / (min_mem_clk * 100)));
 						}
 					}
 
@@ -1524,10 +1524,10 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 }
 
 static void write_max_read_latency_to_registers(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, uint8_t dct, uint16_t *latency)
+				struct DCTStatStruc *pDCTstat, u8 dct, u16 *latency)
 {
-	uint32_t dword;
-	uint8_t nb_pstate;
+	u32 dword;
+	u8 nb_pstate;
 
 	for (nb_pstate = 0; nb_pstate < 2; nb_pstate++) {
 		dword = Get_NB32_DCT_NBPstate(pDCTstat->dev_dct, dct, nb_pstate, 0x210);
@@ -1557,21 +1557,21 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	CRx_TYPE cr4;
 	u32 lo, hi;
 
-	uint32_t dword;
-	uint8_t dimm;
-	uint8_t lane;
-	uint8_t mem_clk;
-	uint32_t nb_clk;
-	uint8_t nb_pstate;
-	uint16_t current_total_delay[MAX_BYTE_LANES];
-	uint16_t current_rdqs_total_delay[MAX_BYTE_LANES];
-	uint8_t current_worst_case_total_delay_dimm;
-	uint16_t current_worst_case_total_delay_value;
+	u32 dword;
+	u8 dimm;
+	u8 lane;
+	u8 mem_clk;
+	u32 nb_clk;
+	u8 nb_pstate;
+	u16 current_total_delay[MAX_BYTE_LANES];
+	u16 current_rdqs_total_delay[MAX_BYTE_LANES];
+	u8 current_worst_case_total_delay_dimm;
+	u16 current_worst_case_total_delay_value;
 
-	uint8_t lane_count;
+	u8 lane_count;
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
-	uint16_t fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
+	u16 fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
 
 	print_debug_dqs("\nTrainMaxRdLatency: Node", pDCTstat->Node_ID, 0);
 
@@ -1681,8 +1681,8 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *pMCTstat,
 		nb_clk = (200 * (((dword >> 1) & 0x1f) + 0x4)) / (((dword >> 7) & 0x1)?2:1);
 
 		pDCTstat->CH_MaxRdLat[Channel][0]++;
-		pDCTstat->CH_MaxRdLat[Channel][0] += ((((uint64_t)15 * 100000000000ULL) / ((uint64_t)fam15h_freq_tab[mem_clk] * 1000000ULL))
-							 * ((uint64_t)nb_clk * 1000)) / 1000000000ULL;
+		pDCTstat->CH_MaxRdLat[Channel][0] += ((((u64)15 * 100000000000ULL) / ((u64)fam15h_freq_tab[mem_clk] * 1000000ULL))
+							 * ((u64)nb_clk * 1000)) / 1000000000ULL;
 
 		write_max_read_latency_to_registers(pMCTstat, pDCTstat, Channel, pDCTstat->CH_MaxRdLat[Channel]);
 	}
@@ -1814,8 +1814,8 @@ static void mct_SetMaxLatency_D(struct DCTStatStruc *pDCTstat, u8 Channel, u16 D
 	u32 index_reg;
 	u32 val;
 
-	uint8_t cpu_val_n;
-	uint8_t cpu_val_p;
+	u8 cpu_val_n;
+	u8 cpu_val_p;
 
 	u16 freq_tab[] = {400, 533, 667, 800};
 
@@ -1826,7 +1826,7 @@ static void mct_SetMaxLatency_D(struct DCTStatStruc *pDCTstat, u8 Channel, u16 D
 		cpu_val_p = 29;
 	} else if (pDCTstat->LogicalCPUID & AMD_DR_Cx) {
 		/* Revision C */
-		uint8_t package_type = mctGet_NVbits(NV_PACK_TYPE);
+		u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
 		if ((package_type == PT_L1)		/* Socket F (1207) */
 			|| (package_type == PT_M2)	/* Socket AM3 */
 			|| (package_type == PT_S1)) {	/* Socket S1g <x> */
@@ -2000,7 +2000,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 	u16 EccDQSLike;
 	u8 EccDQSScale;
 	u32 val, val0, val1;
-	int16_t delay_differential;
+	s16 delay_differential;
 
 	EccDQSLike = pDCTstat->CH_EccDQSLike[Channel];
 	EccDQSScale = pDCTstat->CH_EccDQSScale[Channel];
@@ -2014,8 +2014,8 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 				val0 = p[0x2];
 				val1 = p[0x3];
 
-				delay_differential = (int16_t)val1 - (int16_t)val0;
-				delay_differential += (int16_t)val1;
+				delay_differential = (s16)val1 - (s16)val0;
+				delay_differential += (s16)val1;
 
 				val = delay_differential;
 			} else {
@@ -2071,15 +2071,15 @@ void mctSetEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 }
 
 void phyAssistedMemFnceTraining(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstatA, int16_t single_node_number)
+			struct DCTStatStruc *pDCTstatA, s16 single_node_number)
 {
 	u8 Node = 0;
 	struct DCTStatStruc *pDCTstat;
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
-	uint8_t start_node = 0;
-	uint8_t end_node = MAX_NODES_SUPPORTED;
+	u8 start_node = 0;
+	u8 end_node = MAX_NODES_SUPPORTED;
 
 	if (single_node_number >= 0) {
 		start_node = single_node_number;
@@ -2097,15 +2097,15 @@ void phyAssistedMemFnceTraining(struct MCTStatStruc *pMCTstat,
 				/* Fam15h BKDG v3.14 section 2.10.5.3.3
 				 * This picks up where InitDDRPhy left off
 				 */
-				uint8_t dct;
-				uint8_t index;
-				uint32_t dword;
-				uint32_t datc_backup;
-				uint32_t training_dword;
-				uint32_t fence2_config_dword;
-				uint32_t fence_tx_pad_config_dword;
-				uint32_t index_reg = 0x98;
-				uint32_t dev = pDCTstat->dev_dct;
+				u8 dct;
+				u8 index;
+				u32 dword;
+				u32 datc_backup;
+				u32 training_dword;
+				u32 fence2_config_dword;
+				u32 fence_tx_pad_config_dword;
+				u32 index_reg = 0x98;
+				u32 dev = pDCTstat->dev_dct;
 
 				for (dct = 0; dct < 2; dct++) {
 					if (!pDCTstat->DIMMValidDCT[dct])
@@ -2264,8 +2264,8 @@ void phyAssistedMemFnceTraining(struct MCTStatStruc *pMCTstat,
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-uint32_t fenceDynTraining_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, uint8_t dct)
+u32 fenceDynTraining_D(struct MCTStatStruc *pMCTstat,
+			struct DCTStatStruc *pDCTstat, u8 dct)
 {
 	u16 avRecValue;
 	u32 val;
