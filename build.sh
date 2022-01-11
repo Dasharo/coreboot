@@ -27,7 +27,7 @@ BOARD="clevo_nv41mz"
 DEFCONFIG="configs/config.${BOARD}"
 FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 FW_FILE="dasharo_${BOARD}_${FW_VERSION}.rom"
-HASH_FILE="${FW_FILE%.*}.SHA256"
+HASH_FILE="${FW_FILE}.SHA256"
 SIG_FILE="${HASH_FILE}.sig"
 ARTIFACTS_DIR="artifacts"
 LOGO=""
@@ -64,11 +64,15 @@ build() {
   make -j "$(nproc)"
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
-  sha256sum "${ARTIFACTS_DIR}/${FW_FILE}" > "${ARTIFACTS_DIR}/${HASH_FILE}"
+  cd "${ARTIFACTS_DIR}"
+  sha256sum "${FW_FILE}" > "${HASH_FILE}"
+  cd -
 }
 
 sign() {
-  gpg --default-key "${GPG_FINGERPRINT}" --armor --output "${ARTIFACTS_DIR}/${SIG_FILE}" --detach-sig "${ARTIFACTS_DIR}/${HASH_FILE}"
+  cd "${ARTIFACTS_DIR}"
+  gpg --default-key "${GPG_FINGERPRINT}" --armor --output "${SIG_FILE}" --detach-sig "${HASH_FILE}"
+  cd -
 }
 
 upload() {
