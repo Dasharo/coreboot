@@ -96,9 +96,9 @@
 #define print_debug_fv_8(str, val)		printk(BIOS_DEBUG, "%s%02x\n", str, val)
 #define print_debug_fv_64(str, val, val2)	printk(BIOS_DEBUG, "%s%x%x\n", str, val, val2)
 #else
-#define print_debug_fv(str, val)		do { } while(0)
-#define print_debug_fv_8(str, val)		do { } while(0)
-#define print_debug_fv_64(str, val, val2)	do { } while(0)
+#define print_debug_fv(str, val)		do { } while (0)
+#define print_debug_fv_8(str, val)		do { } while (0)
+#define print_debug_fv_64(str, val, val2)	do { } while (0)
 #endif
 
 struct fidvid_st {
