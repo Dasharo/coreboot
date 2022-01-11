@@ -14,7 +14,7 @@ framework:
 components:
 - name: skiboot
   version: 04-16-2019
-  url_template: https://git.raptorcs.com/git/talos-skiboot/tree/COMMIT_HASH
+  url_template: https://git.raptorcs.com/git/talos-skiboot/commit/?id=COMMIT_HASH
   path: payloads/external/skiboot/talos-skiboot
 
 documentation:
