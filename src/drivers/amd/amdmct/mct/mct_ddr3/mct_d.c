@@ -160,34 +160,34 @@ static const u8 Tab_BankAddr[]	= {0x3F,0x01,0x09,0x3F,0x3F,0x11,0x0A,0x19,0x12,0
 const u8 Table_DQSRcvEn_Offset[] = {0x00,0x01,0x10,0x11,0x2};
 
 /****************************************************************************
-   Describe how platform maps MemClk pins to logical DIMMs. The MemClk pins
-   are identified based on BKDG definition of Fn2x88[MemClkDis] bitmap.
-   AGESA will base on this value to disable unused MemClk to save power.
-
-   If MEMCLK_MAPPING or MEMCLK_MAPPING contains all zeroes, AGESA will use
-   default MemClkDis setting based on package type.
-
-   Example:
-   BKDG definition of Fn2x88[MemClkDis] bitmap for AM3 package is like below:
-        Bit AM3/S1g3 pin name
-        0   M[B,A]_CLK_H/L[0]
-        1   M[B,A]_CLK_H/L[1]
-        2   M[B,A]_CLK_H/L[2]
-        3   M[B,A]_CLK_H/L[3]
-        4   M[B,A]_CLK_H/L[4]
-        5   M[B,A]_CLK_H/L[5]
-        6   M[B,A]_CLK_H/L[6]
-        7   M[B,A]_CLK_H/L[7]
-
-   And platform has the following routing:
-        CS0   M[B,A]_CLK_H/L[4]
-        CS1   M[B,A]_CLK_H/L[2]
-        CS2   M[B,A]_CLK_H/L[3]
-        CS3   M[B,A]_CLK_H/L[5]
-
-   Then:
-                       ;    CS0        CS1        CS2        CS3        CS4        CS5        CS6        CS7
-   MEMCLK_MAPPING  EQU    00010000b, 00000100b, 00001000b, 00100000b, 00000000b, 00000000b, 00000000b, 00000000b
+ *  Describe how platform maps MemClk pins to logical DIMMs. The MemClk pins
+ *  are identified based on BKDG definition of Fn2x88[MemClkDis] bitmap.
+ *  AGESA will base on this value to disable unused MemClk to save power.
+ *
+ *  If MEMCLK_MAPPING or MEMCLK_MAPPING contains all zeroes, AGESA will use
+ *  default MemClkDis setting based on package type.
+ *
+ *  Example:
+ *  BKDG definition of Fn2x88[MemClkDis] bitmap for AM3 package is like below:
+ *       Bit AM3/S1g3 pin name
+ *       0   M[B,A]_CLK_H/L[0]
+ *       1   M[B,A]_CLK_H/L[1]
+ *       2   M[B,A]_CLK_H/L[2]
+ *       3   M[B,A]_CLK_H/L[3]
+ *       4   M[B,A]_CLK_H/L[4]
+ *       5   M[B,A]_CLK_H/L[5]
+ *       6   M[B,A]_CLK_H/L[6]
+ *       7   M[B,A]_CLK_H/L[7]
+ *
+ *  And platform has the following routing:
+ *       CS0   M[B,A]_CLK_H/L[4]
+ *       CS1   M[B,A]_CLK_H/L[2]
+ *       CS2   M[B,A]_CLK_H/L[3]
+ *       CS3   M[B,A]_CLK_H/L[5]
+ *
+ *  Then:
+ *                      ;    CS0        CS1        CS2        CS3        CS4        CS5        CS6        CS7
+ *  MEMCLK_MAPPING  EQU    00010000b, 00000100b, 00001000b, 00100000b, 00000000b, 00000000b, 00000000b, 00000000b
 */
 
 /* ==========================================================================================

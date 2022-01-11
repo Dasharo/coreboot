@@ -9,10 +9,10 @@
 #include "porting.h"
 
 #ifdef AMD_DEBUG_ERROR_STOP
-    /* Macro to aid debugging, causes program to halt and display the line number of the halt */
-    #define STOP_HERE ASSERT(0)
+	/* Macro to aid debugging, causes program to halt and display the line number of the halt */
+	#define STOP_HERE ASSERT(0)
 #else
-    #define STOP_HERE
+	#define STOP_HERE
 #endif
 
 void CALLCONV AmdPCIReadBits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);

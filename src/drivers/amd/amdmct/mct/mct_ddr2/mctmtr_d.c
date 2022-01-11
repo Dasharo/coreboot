@@ -191,11 +191,11 @@ static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType)
 void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 {
 /* UMA memory size may need splitting the MTRR configuration into two
-  Before training use NB_BottomIO or the physical memory size to set the MTRRs.
-  After training, add UMAMemTyping function to reconfigure the MTRRs based on
-  NV_BottomUMA (for UMA systems only).
-  This two-step process allows all memory to be cached for training
-*/
+ * Before training use NB_BottomIO or the physical memory size to set the MTRRs.
+ * After training, add UMAMemTyping function to reconfigure the MTRRs based on
+ * NV_BottomUMA (for UMA systems only).
+ * This two-step process allows all memory to be cached for training
+ */
 	u32 Bottom32bIO, Cache32bTOP;
 	u32 val;
 	u32 addr;

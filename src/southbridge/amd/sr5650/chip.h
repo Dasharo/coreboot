@@ -24,6 +24,6 @@ struct southbridge_amd_sr5650_config
  * debugging in wrong places.
  */
 _Static_assert(sizeof(struct southbridge_amd_sr5650_config) == 12,
-               "check for bad #pragmas");
+		"check for bad #pragmas");
 
 #endif /* SR5650_CHIP_H */

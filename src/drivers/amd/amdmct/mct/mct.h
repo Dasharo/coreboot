@@ -118,7 +118,7 @@
 #define SPD_COLSZ	4
 #define SPD_LBANKS	17		/* number of [logical] banks on each device*/
 #define SPD_DMBANKS	5		/* number of physical banks on dimm*/
-    #define SPDPLBit	4		/* Dram package bit*/
+	#define SPDPLBit	4		/* Dram package bit*/
 #define SPD_BANKSZ	31		/* capacity of physical bank*/
 #define SPD_DEVWIDTH	13
 #define SPD_CASLAT	18
@@ -349,8 +349,8 @@ struct DCTStatStruc {		/* A per Node structure*/
 #define SC_FatalErr		3	/* Fatal Error, MCTB has exited immediately*/
 
 /*===============================================================================
-     Local Error Status (DCTStatStruc.ErrStatus[31:0])
-  ===============================================================================*/
+	Local Error Status (DCTStatStruc.ErrStatus[31:0])
+===============================================================================*/
 #define SB_NoDimms		0
 #define SB_DIMMChkSum		1
 #define SB_DimmMismatchM	2	/* dimm module type(buffer) mismatch*/

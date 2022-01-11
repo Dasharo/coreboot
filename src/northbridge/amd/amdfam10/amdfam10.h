@@ -363,14 +363,16 @@
 #define   DODCC_ProcOdt_75_OHMS  2
 
 /*
-   for DDR2 400, 533, 667, F2x[1,0]9C_x[02:01], [03], [06:05], [07] control timing of all DIMMs
-   for DDR2 800, DDR3 800, 1067, 1333, 1600, F2x[1,0]9C_x[02:01], [03], [06:05], [07] control timing of DIMM0
-					     F2x[1,0]9C_x[102:101], [103], [106:105], [107] control timing of DIMM1
-	So Socket F with Four Logical DIMM will only support DDR2 800  ?
+ * for DDR2 400, 533, 667, F2x[1,0]9C_x[02:01], [03], [06:05], [07] control timing of all DIMMs
+ * for DDR2 800, DDR3 800, 1067, 1333, 1600, F2x[1,0]9C_x[02:01], [03], [06:05], [07] control timing of DIMM0
+ *                                           F2x[1,0]9C_x[102:101], [103], [106:105], [107] control timing of DIMM1
+ *      So Socket F with Four Logical DIMM will only support DDR2 800  ?
 */
+
 /* there are index	   +100	   ===> for DIMM1
-that are corresponding to 0x01, 0x02, 0x03, 0x05, 0x06, 0x07
+ * that are corresponding to 0x01, 0x02, 0x03, 0x05, 0x06, 0x07
 */
+
 //02/15/2006 18:37
 #define DRAM_WRITE_DATA_TIMING_CTRL_LOW 0x01
 #define  DWDTC_WrDatFineDlyByte0_SHIFT 0

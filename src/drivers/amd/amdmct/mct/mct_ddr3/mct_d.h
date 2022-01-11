@@ -959,7 +959,7 @@ struct amd_s3_persistent_data {
 #define NV_MAX_DIMMS_PER_CH	64	/* Maximum number of DIMMs per channel */
 
 /*===============================================================================
-        CBMEM storage
+	CBMEM storage
 ===============================================================================*/
 struct amdmct_memory_info {
 	struct MCTStatStruc mct_stat;

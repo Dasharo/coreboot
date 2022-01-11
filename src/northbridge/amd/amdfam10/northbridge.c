@@ -557,7 +557,7 @@ static void amdfam10_read_resources(struct device *dev)
 }
 
 static void amdfam10_set_resource(struct device *dev, struct resource *res,
-                                  u8 nodeid /* TODO: assuming always 0 */)
+				u8 nodeid /* TODO: assuming always 0 */)
 {
 	u32 base_reg = 0, limit_reg = 0;
 	u8 sblink;

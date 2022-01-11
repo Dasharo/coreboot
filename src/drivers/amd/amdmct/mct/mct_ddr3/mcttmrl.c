@@ -23,8 +23,7 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *pMCTstat,
 static void mct_setMaxRdLatTrnVal_D(struct DCTStatStruc *pDCTstat, u8 Channel,
 					u16 MaxRdLatVal);
 
-/*Warning:  These must be located so they do not cross a logical 16-bit
-   segment boundary!*/
+/*Warning:  These must be located so they do not cross a logical 16-bit segment boundary!*/
 static const u32 TestMaxRdLAtPattern_D[] = {
 	0x6E0E3FAC, 0x0C3CFF52,
 	0x4A688181, 0x49C5B613,

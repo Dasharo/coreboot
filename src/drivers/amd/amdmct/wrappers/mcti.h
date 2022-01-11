@@ -97,9 +97,9 @@ static const u16 ddr3_limits[16] = {933, 800, 666, 533, 400, 333, 0, 0, 0, 0, 0,
 #include <cpu/amd/common/common.h>
 
 #if CONFIG(DIMM_DDR3)
-  #include <drivers/amd/amdmct/mct/mct_ddr3/mct_d.h>
+	#include <drivers/amd/amdmct/mct/mct_ddr3/mct_d.h>
 #else
-  #include <drivers/amd/amdmct/mct/mct_ddr2/mct_d.h>
+	#include <drivers/amd/amdmct/mct/mct_ddr2/mct_d.h>
 #endif
 
 #include <northbridge/amd/amdfam10/raminit.h>

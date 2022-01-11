@@ -35,8 +35,7 @@ static void fenceDynTraining_D(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstat, u8 dct);
 static void mct_DisableDQSRcvEn_D(struct DCTStatStruc *pDCTstat);
 
-/* Warning:  These must be located so they do not cross a logical 16-bit
-   segment boundary! */
+/* Warning:  These must be located so they do not cross a logical 16-bit segment boundary! */
 const u32 TestPattern0_D[] = {
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,

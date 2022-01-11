@@ -27,8 +27,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 static void mct_SetMaxLatency_D(struct DCTStatStruc *pDCTstat, u8 Channel, u16 DQSRcvEnDly);
 static void mct_DisableDQSRcvEn_D(struct DCTStatStruc *pDCTstat);
 
-/* Warning:  These must be located so they do not cross a logical 16-bit
-   segment boundary! */
+/* Warning:  These must be located so they do not cross a logical 16-bit segment boundary! */
 const u32 TestPattern0_D[] = {
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,

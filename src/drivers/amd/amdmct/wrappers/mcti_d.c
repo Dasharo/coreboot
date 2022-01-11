@@ -195,9 +195,9 @@ u16 mctGet_NVbits(u8 index)
 #if !CONFIG(GFXUMA)
 		val = (CONFIG_MMCONF_BASE_ADDRESS >> 24);
 #elif CONFIG(GFXUMA)
-  #if (CONFIG_MMCONF_BASE_ADDRESS < (MAXIMUM_GFXUMA_SIZE + MINIMUM_DRAM_BELOW_4G))
-  #error "MMCONF_BASE_ADDRESS is too small"
-  #endif
+	#if (CONFIG_MMCONF_BASE_ADDRESS < (MAXIMUM_GFXUMA_SIZE + MINIMUM_DRAM_BELOW_4G))
+	#error "MMCONF_BASE_ADDRESS is too small"
+	#endif
 		val = ((CONFIG_MMCONF_BASE_ADDRESS - MAXIMUM_GFXUMA_SIZE) >> 24);
 #endif
 		break;
@@ -487,7 +487,7 @@ void vErratum414(struct DCTStatStruc *pDCTstat)
 void mctHookBeforeAnyTraining(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 {
 #if CONFIG(DIMM_DDR3)
-  /* FIXME :  as of 25.6.2010 errata 350 and 372 should apply to  ((RB|BL|DA)-C[23])|(HY-D[01])|(PH-E0) but I don't find constants for all of them */
+	/* FIXME :  as of 25.6.2010 errata 350 and 372 should apply to  ((RB|BL|DA)-C[23])|(HY-D[01])|(PH-E0) but I don't find constants for all of them */
 	if (pDCTstatA->LogicalCPUID & (AMD_DRBH_Cx | AMD_DR_Dx)) {
 		vErratum372(pDCTstatA);
 		vErratum414(pDCTstatA);
