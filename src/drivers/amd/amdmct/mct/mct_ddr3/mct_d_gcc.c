@@ -91,7 +91,7 @@ void proc_CLFLUSH(u32 addr_hi)
 		"outb	%%al, $0xed\n\t"	/* _EXECFENCE */
 		"clflush	%%fs:(%0)\n\t"
 		"mfence\n\t"
-		::"a" (addr_hi<<8)
+		::"a" (addr_hi << 8)
 	);
 }
 
@@ -163,8 +163,8 @@ void FlushDQSTestPattern_L9(u32 addr_lo)
 
 		"clflush %%fs:-128(%%ebx)\n\t"
 
-		 ::  "b" (addr_lo+128+8*64), "c"(addr_lo+128),
-		     "a"(addr_lo+128+4*64)
+		 ::  "b" (addr_lo + 128 + 8 * 64), "c"(addr_lo + 128),
+		     "a"(addr_lo + 128 + 4 * 64)
 	);
 
 }
@@ -196,9 +196,9 @@ __attribute__((noinline)) void FlushDQSTestPattern_L18(u32 addr_lo)
 		"clflush %%fs:-128(%%edx)\n\t"
 		"clflush %%fs:-64(%%edx)\n\t"
 
-		 :: "b" (addr_lo+128+8*64), "c" (addr_lo+128+12*64),
-		    "d" (addr_lo +128+16*64), "a"(addr_lo+128),
-		    "D"(addr_lo+128+4*64)
+		 :: "b" (addr_lo + 128 + 8 * 64), "c" (addr_lo + 128 + 12 * 64),
+		    "d" (addr_lo + 128 + 16 * 64), "a"(addr_lo + 128),
+		    "D"(addr_lo + 128 + 4 * 64)
 	);
 }
 
@@ -254,7 +254,7 @@ void FlushMaxRdLatTestPattern_D(u32 addr)
 		"clflush %%fs:(%%esi)\n\t"  /* +2 */
 		"mfence\n\t"
 
-		 :: "S"((addr<<8)+128)
+		 :: "S"((addr << 8) + 128)
 	);
 }
 
@@ -268,7 +268,7 @@ u32 stream_to_int(u8 *p)
 
 	for (i = 3; i >= 0; i--) {
 		val <<= 8;
-		valx = *(p+i);
+		valx = *(p + i);
 		val |= valx;
 	}
 

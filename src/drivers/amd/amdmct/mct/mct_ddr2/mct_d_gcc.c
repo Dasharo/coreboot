@@ -160,8 +160,8 @@ void FlushDQSTestPattern_L9(u32 addr_lo)
 
 		"clflush %%fs:-128(%%ebx)\n\t"
 
-		 ::  "b" (addr_lo+128+8*64), "c"(addr_lo+128),
-		     "a"(addr_lo+128+4*64)
+		 ::  "b" (addr_lo + 128 + 8 * 64), "c"(addr_lo + 128),
+		     "a"(addr_lo + 128 + 4 * 64)
 	);
 
 }
@@ -194,9 +194,9 @@ __attribute__((noinline)) void FlushDQSTestPattern_L18(u32 addr_lo)
 		"clflush %%fs:-128(%%edx)\n\t"
 		"clflush %%fs:-64(%%edx)\n\t"
 
-		 :: "b" (addr_lo+128+8*64), "c" (addr_lo+128+12*64),
-		    "d" (addr_lo +128+16*64), "a"(addr_lo+128),
-		    "D"(addr_lo+128+4*64)
+		 :: "b" (addr_lo + 128 + 8 * 64), "c" (addr_lo + 128 + 12 * 64),
+		    "d" (addr_lo + 128 + 16 * 64), "a"(addr_lo + 128),
+		    "D"(addr_lo + 128 + 4 * 64)
 	);
 }
 
@@ -229,9 +229,9 @@ void ReadL18TestPattern(u32 addr_lo)
 		"movl %%fs:-64(%%edx), %%eax\n\t"	//+17
 		"mfence\n\t"
 
-		 :: "a"(0), "b" (addr_lo+128+8*64), "c" (addr_lo+128+12*64),
-		    "d" (addr_lo +128+16*64), "S"(addr_lo+128),
-		    "D"(addr_lo+128+4*64)
+		 :: "a"(0), "b" (addr_lo + 128 + 8 * 64), "c" (addr_lo + 128 + 12 * 64),
+		    "d" (addr_lo + 128 + 16 * 64), "S"(addr_lo + 128),
+		    "D"(addr_lo + 128 + 4 * 64)
 	);
 
 }
@@ -256,8 +256,8 @@ void ReadL9TestPattern(u32 addr_lo)
 		"movl %%fs:-128(%%ebx), %%eax\n\t"	//+8
 		"mfence\n\t"
 
-		 :: "a"(0), "b" (addr_lo+128+8*64), "c"(addr_lo+128),
-		    "d"(addr_lo+128+4*64)
+		 :: "a"(0), "b" (addr_lo + 128 + 8 * 64), "c"(addr_lo + 128),
+		    "d"(addr_lo + 128 + 4 * 64)
 	);
 
 }
@@ -272,7 +272,7 @@ void ReadMaxRdLat1CLTestPattern_D(u32 addr)
 		"movl %%fs:-64(%%esi), %%eax\n\t"	//+1
 		"movl %%fs:(%%esi), %%eax\n\t"		//+2
 		"mfence\n\t"
-		 :: "a"(0), "S"((addr<<8)+128)
+		 :: "a"(0), "S"((addr << 8) + 128)
 	);
 
 }
@@ -324,7 +324,7 @@ u32 stream_to_int(u8 const *p)
 
 	for (i = 3; i >= 0; i--) {
 		val <<= 8;
-		valx = *(p+i);
+		valx = *(p + i);
 		val |= valx;
 	}
 

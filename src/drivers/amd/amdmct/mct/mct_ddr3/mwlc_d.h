@@ -36,7 +36,7 @@ typedef u32 SBDFO;
 /*MCT Max variables */
 #define MAX_ERRORS 32		/* Maximum number of Errors Reported */
 #define MAX_STATUS 32		/* Maximum number of Status variables*/
-#define MAX_BYTE_LANES (8+1)	/* Maximum number of Byte Lanes - include ECC */
+#define MAX_BYTE_LANES (8 + 1)	/* Maximum number of Byte Lanes - include ECC */
 
 #define C_MAX_DIMMS 4		/* Maximum Number of DIMMs on each DCT */
 

@@ -573,7 +573,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 	u16 CTLRMaxDelay;
 	u16 MaxDelay_CH[2];
 	u32 TestAddr0, TestAddr1, TestAddr0B, TestAddr1B;
-	u32 PatternBuffer[64+4]; /* FIXME: need increase 8? */
+	u32 PatternBuffer[64 + 4]; /* FIXME: need increase 8? */
 	u32 Errors;
 
 	u32 val;
@@ -721,8 +721,8 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 
 			TestAddr0B = TestAddr0 + (BigPagex8_RJ8 << 3);
 
-			if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, Receiver+1)) {
-				TestAddr1 = mct_GetRcvrSysAddr_D(pMCTstat, pDCTstat, Channel, Receiver+1, &valid);
+			if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, Receiver + 1)) {
+				TestAddr1 = mct_GetRcvrSysAddr_D(pMCTstat, pDCTstat, Channel, Receiver + 1, &valid);
 				if (!valid) {	/* Address not supported on current CS */
 					continue;
 				}
@@ -1271,7 +1271,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 			/* 2.10.5.8.2
 			 * Loop over all ranks
 			 */
-			if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, Receiver+1))
+			if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, Receiver + 1))
 				_2Ranks = 1;
 			else
 				_2Ranks = 0;

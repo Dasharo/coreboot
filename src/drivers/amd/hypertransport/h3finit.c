@@ -195,7 +195,7 @@ static BOOL graphIsAdjacent(u8 *graph, u8 nodeA, u8 nodeB)
 	u8 size = graph[0];
 	ASSERT(size <= MAX_NODES);
 	ASSERT((nodeA < size) && (nodeB < size));
-	return (graph[1+(nodeA*size+nodeB)*2+1] & 0x0F) == nodeB;
+	return (graph[1 + (nodeA * size + nodeB) * 2 + 1] & 0x0F) == nodeB;
 }
 
 /*----------------------------------------------------------------------------------------
@@ -221,7 +221,7 @@ static u8 graphGetRsp(u8 *graph, u8 nodeA, u8 nodeB)
 	u8 size = graph[0];
 	ASSERT(size <= MAX_NODES);
 	ASSERT((nodeA < size) && (nodeB < size));
-	return (graph[1+(nodeA*size+nodeB)*2+1] & 0xF0)>>4;
+	return (graph[1 + (nodeA * size + nodeB) * 2 + 1] & 0xF0) >> 4;
 }
 
 /*----------------------------------------------------------------------------------------
@@ -247,7 +247,7 @@ static u8 graphGetReq(u8 *graph, u8 nodeA, u8 nodeB)
 	u8 size = graph[0];
 	ASSERT(size <= MAX_NODES);
 	ASSERT((nodeA < size) && (nodeB < size));
-	return (graph[1+(nodeA*size+nodeB)*2+1] & 0x0F);
+	return (graph[1 + (nodeA * size + nodeB) * 2 + 1] & 0x0F);
 }
 
 /*----------------------------------------------------------------------------------------
@@ -270,7 +270,7 @@ static u8 graphGetBc(u8 *graph, u8 nodeA, u8 nodeB)
 	u8 size = graph[0];
 	ASSERT(size <= MAX_NODES);
 	ASSERT((nodeA < size) && (nodeB < size));
-	return graph[1+(nodeA*size+nodeB)*2];
+	return graph[1 + (nodeA * size + nodeB) * 2];
 }
 
 
@@ -303,14 +303,14 @@ static void routeFromBSP(u8 targetNode, u8 actualTarget, sMainData *pDat)
 
 	/*  Search for the link that connects targetNode to its predecessor */
 	currentPair = 0;
-	while (pDat->PortList[currentPair*2+1].NodeID != targetNode)
+	while (pDat->PortList[currentPair * 2 + 1].NodeID != targetNode)
 	{
 		currentPair++;
 		ASSERT(currentPair < pDat->TotalLinks);
 	}
 
-	predecessorNode = pDat->PortList[currentPair*2].NodeID;
-	predecessorLink = pDat->PortList[currentPair*2].Link;
+	predecessorNode = pDat->PortList[currentPair * 2].NodeID;
+	predecessorLink = pDat->PortList[currentPair * 2].Link;
 
 	/*  Recursively call self to ensure the route from the BSP to the Predecessor */
 	/*  Node is established */
@@ -340,16 +340,16 @@ static u8 convertNodeToLink(u8 srcNode, u8 targetNode, sMainData *pDat)
 	u8 targetlink = INVALID_LINK;
 	u8 k;
 
-	for (k = 0; k < pDat->TotalLinks*2; k += 2)
+	for (k = 0; k < pDat->TotalLinks * 2; k += 2)
 	{
-		if ((pDat->PortList[k+0].NodeID == srcNode) && (pDat->PortList[k+1].NodeID == targetNode))
+		if ((pDat->PortList[k + 0].NodeID == srcNode) && (pDat->PortList[k + 1].NodeID == targetNode))
 		{
-			targetlink = pDat->PortList[k+0].Link;
+			targetlink = pDat->PortList[k + 0].Link;
 			break;
 		}
-		else if ((pDat->PortList[k+1].NodeID == srcNode) && (pDat->PortList[k+0].NodeID == targetNode))
+		else if ((pDat->PortList[k + 1].NodeID == srcNode) && (pDat->PortList[k + 0].NodeID == targetNode))
 		{
-			targetlink = pDat->PortList[k+1].Link;
+			targetlink = pDat->PortList[k + 1].Link;
 			break;
 		}
 	}
@@ -431,8 +431,8 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 			/* Set path from BSP to currentNode for currentNode+1 if
 			 * currentNode+1 != MAX_NODES
 			 */
-			if (currentNode+1 != MAX_NODES)
-				routeFromBSP(currentNode, currentNode+1, pDat);
+			if (currentNode + 1 != MAX_NODES)
+				routeFromBSP(currentNode, currentNode + 1, pDat);
 
 			/* Configure currentNode to route traffic to the BSP through its
 			 * default link
@@ -479,8 +479,8 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 			linkfound = FALSE;
 			for (temp = 0; temp < pDat->TotalLinks; temp++)
 			{
-				if ((pDat->PortList[temp*2+1].NodeID == currentNode) &&
-				   (pDat->PortList[temp*2+1].Link == currentLink))
+				if ((pDat->PortList[temp * 2 + 1].NodeID == currentNode) &&
+				   (pDat->PortList[temp * 2 + 1].Link == currentLink))
 				{
 					linkfound = TRUE;
 					break;
@@ -500,12 +500,12 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 			/* Modify currentNode's routing table to use currentLink to send
 			 * traffic to currentNode+1
 			 */
-			pDat->nb->writeRoutingTable(currentNode, currentNode+1, currentLink, pDat->nb);
+			pDat->nb->writeRoutingTable(currentNode, currentNode + 1, currentLink, pDat->nb);
 
 			/* Check the northbridge of the node we just found, to make sure it is compatible
 			 * before doing anything else to it.
 			 */
-			if (!pDat->nb->isCompatible(currentNode+1, pDat->nb))
+			if (!pDat->nb->isCompatible(currentNode + 1, pDat->nb))
 			{
 				u8 nodeToKill;
 
@@ -554,14 +554,14 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 			}
 
 			/* Read token from Current+1 */
-			token = pDat->nb->readToken(currentNode+1, pDat->nb);
+			token = pDat->nb->readToken(currentNode + 1, pDat->nb);
 			ASSERT(token <= pDat->NodesDiscovered);
 			if (token == 0)
 			{
 				pDat->NodesDiscovered++;
 				ASSERT(pDat->NodesDiscovered < pDat->nb->maxNodes);
 				/* Check the capability of northbridges against the currently known configuration */
-				if (!pDat->nb->isCapable(currentNode+1, pDat, pDat->nb))
+				if (!pDat->nb->isCapable(currentNode + 1, pDat, pDat->nb))
 				{
 					u8 nodeToKill;
 
@@ -595,7 +595,7 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 				}
 
 				token = pDat->NodesDiscovered;
-				pDat->nb->writeToken(currentNode+1, token, pDat->nb);
+				pDat->nb->writeToken(currentNode + 1, token, pDat->nb);
 				/* Inform that we have discovered a node, so that logical id to
 				 * socket mapping info can be recorded.
 				 */
@@ -645,13 +645,13 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 				break;
 			}
 
-			pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_CPU;
-			pDat->PortList[pDat->TotalLinks*2].Link = currentLink;
-			pDat->PortList[pDat->TotalLinks*2].NodeID = currentNode;
+			pDat->PortList[pDat->TotalLinks * 2].Type = PORTLIST_TYPE_CPU;
+			pDat->PortList[pDat->TotalLinks * 2].Link = currentLink;
+			pDat->PortList[pDat->TotalLinks * 2].NodeID = currentNode;
 
-			pDat->PortList[pDat->TotalLinks*2+1].Type = PORTLIST_TYPE_CPU;
-			pDat->PortList[pDat->TotalLinks*2+1].Link = pDat->nb->readDefLnk(currentNode+1, pDat->nb);
-			pDat->PortList[pDat->TotalLinks*2+1].NodeID = token;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].Type = PORTLIST_TYPE_CPU;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].Link = pDat->nb->readDefLnk(currentNode + 1, pDat->nb);
+			pDat->PortList[pDat->TotalLinks * 2 + 1].NodeID = token;
 
 			pDat->TotalLinks++;
 
@@ -698,7 +698,7 @@ static BOOL isoMorph(u8 i, sMainData *pDat)
 	u8 nodecnt;
 
 	/* We have only been called if nodecnt == pSelected->size ! */
-	nodecnt = pDat->NodesDiscovered+1;
+	nodecnt = pDat->NodesDiscovered + 1;
 
 	if (i != nodecnt)
 	{
@@ -719,7 +719,7 @@ static BOOL isoMorph(u8 i, sMainData *pDat)
 			if (k != i)
 				continue;
 			pDat->Perm[i] = j;
-			if (isoMorph(i+1, pDat))
+			if (isoMorph(i + 1, pDat))
 				return TRUE;
 		}
 		return FALSE;
@@ -912,17 +912,17 @@ static void finializeCoherentInit(sMainData *pDat)
 	u8 curNode;
 
 	u8 totalCores = 0;
-	for (curNode = 0; curNode < pDat->NodesDiscovered+1; curNode++)
+	for (curNode = 0; curNode < pDat->NodesDiscovered + 1; curNode++)
 	{
 		totalCores += pDat->nb->getNumCoresOnNode(curNode, pDat->nb);
 	}
 
-	for (curNode = 0; curNode < pDat->NodesDiscovered+1; curNode++)
+	for (curNode = 0; curNode < pDat->NodesDiscovered + 1; curNode++)
 	{
-		pDat->nb->setTotalNodesAndCores(curNode, pDat->NodesDiscovered+1, totalCores, pDat->nb);
+		pDat->nb->setTotalNodesAndCores(curNode, pDat->NodesDiscovered + 1, totalCores, pDat->nb);
 	}
 
-	for (curNode = 0; curNode < pDat->NodesDiscovered+1; curNode++)
+	for (curNode = 0; curNode < pDat->NodesDiscovered + 1; curNode++)
 	{
 		pDat->nb->limitNodes(curNode, pDat->nb);
 	}
@@ -1083,25 +1083,25 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 		pSwapPtr++;
 		while (*pSwapPtr != 0xFF)
 		{
-			pDat->PortList[pDat->TotalLinks*2].NodeID = node;
+			pDat->PortList[pDat->TotalLinks * 2].NodeID = node;
 			if (depth == 0)
 			{
-				pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_CPU;
-				pDat->PortList[pDat->TotalLinks*2].Link = link;
+				pDat->PortList[pDat->TotalLinks * 2].Type = PORTLIST_TYPE_CPU;
+				pDat->PortList[pDat->TotalLinks * 2].Link = link;
 			}
 			else
 			{
-				pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_IO;
-				pDat->PortList[pDat->TotalLinks*2].Link = 1-lastLink;
-				pDat->PortList[pDat->TotalLinks*2].HostLink = link;
-				pDat->PortList[pDat->TotalLinks*2].HostDepth = depth-1;
-				pDat->PortList[pDat->TotalLinks*2].Pointer = lastSBDFO;
+				pDat->PortList[pDat->TotalLinks * 2].Type = PORTLIST_TYPE_IO;
+				pDat->PortList[pDat->TotalLinks * 2].Link = 1 - lastLink;
+				pDat->PortList[pDat->TotalLinks * 2].HostLink = link;
+				pDat->PortList[pDat->TotalLinks * 2].HostDepth = depth - 1;
+				pDat->PortList[pDat->TotalLinks * 2].Pointer = lastSBDFO;
 			}
 
-			pDat->PortList[pDat->TotalLinks*2+1].Type = PORTLIST_TYPE_IO;
-			pDat->PortList[pDat->TotalLinks*2+1].NodeID = node;
-			pDat->PortList[pDat->TotalLinks*2+1].HostLink = link;
-			pDat->PortList[pDat->TotalLinks*2+1].HostDepth = depth;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].Type = PORTLIST_TYPE_IO;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].NodeID = node;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].HostLink = link;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].HostDepth = depth;
 
 			currentPtr = MAKE_SBDFO(0, secBus, (*pSwapPtr & 0x3F), 0, 0);
 			do
@@ -1110,7 +1110,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 				ASSERT(currentPtr != ILLEGAL_SBDFO);
 				AmdPCIRead(currentPtr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
-			pDat->PortList[pDat->TotalLinks*2+1].Pointer = currentPtr;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].Pointer = currentPtr;
 			lastSBDFO = currentPtr;
 
 			/* Bit 6 indicates whether orientation override is desired.
@@ -1129,7 +1129,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 				AmdPCIReadBits(currentPtr, 26, 26, &temp);
 				lastLink = (u8)temp;
 			}
-			pDat->PortList[pDat->TotalLinks*2+1].Link = lastLink;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].Link = lastLink;
 
 			depth++;
 			pDat->TotalLinks++;
@@ -1178,22 +1178,22 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 			pDat->PortList[pDat->TotalLinks*2].NodeID = node;
 			if (depth == 0)
 			{
-				pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_CPU;
-				pDat->PortList[pDat->TotalLinks*2].Link = link;
+				pDat->PortList[pDat->TotalLinks * 2].Type = PORTLIST_TYPE_CPU;
+				pDat->PortList[pDat->TotalLinks * 2].Link = link;
 			}
 			else
 			{
-				pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_IO;
-				pDat->PortList[pDat->TotalLinks*2].Link = 1-lastLink;
-				pDat->PortList[pDat->TotalLinks*2].HostLink = link;
-				pDat->PortList[pDat->TotalLinks*2].HostDepth = depth-1;
-				pDat->PortList[pDat->TotalLinks*2].Pointer = lastSBDFO;
+				pDat->PortList[pDat->TotalLinks * 2].Type = PORTLIST_TYPE_IO;
+				pDat->PortList[pDat->TotalLinks * 2].Link = 1 - lastLink;
+				pDat->PortList[pDat->TotalLinks * 2].HostLink = link;
+				pDat->PortList[pDat->TotalLinks * 2].HostDepth = depth - 1;
+				pDat->PortList[pDat->TotalLinks * 2].Pointer = lastSBDFO;
 			}
 
-			pDat->PortList[pDat->TotalLinks*2+1].Type = PORTLIST_TYPE_IO;
-			pDat->PortList[pDat->TotalLinks*2+1].NodeID = node;
-			pDat->PortList[pDat->TotalLinks*2+1].HostLink = link;
-			pDat->PortList[pDat->TotalLinks*2+1].HostDepth = depth;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].Type = PORTLIST_TYPE_IO;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].NodeID = node;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].HostLink = link;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].HostDepth = depth;
 
 			do
 			{
@@ -1245,8 +1245,8 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 			}
 
 			AmdPCIReadBits(currentPtr, 26, 26, &temp);
-			pDat->PortList[pDat->TotalLinks*2+1].Link = (u8)temp;
-			pDat->PortList[pDat->TotalLinks*2+1].Pointer = currentPtr;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].Link = (u8)temp;
+			pDat->PortList[pDat->TotalLinks * 2 + 1].Pointer = currentPtr;
 
 			lastLink = (u8)temp;
 			lastSBDFO = currentPtr;
@@ -1330,64 +1330,64 @@ static void regangLinks(sMainData *pDat)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u8 i, j;
-	for (i = 0; i < pDat->TotalLinks*2; i += 2)
+	for (i = 0; i < pDat->TotalLinks * 2; i += 2)
 	{
 		ASSERT(pDat->PortList[i].Type < 2 && pDat->PortList[i].Link < pDat->nb->maxLinks);  /*  Data validation */
-		ASSERT(pDat->PortList[i+1].Type < 2 && pDat->PortList[i+1].Link < pDat->nb->maxLinks); /*  data validation */
-		ASSERT(!(pDat->PortList[i].Type == PORTLIST_TYPE_IO && pDat->PortList[i+1].Type == PORTLIST_TYPE_CPU));  /*  ensure src is closer to the bsp than dst */
+		ASSERT(pDat->PortList[i + 1].Type < 2 && pDat->PortList[i + 1].Link < pDat->nb->maxLinks); /*  data validation */
+		ASSERT(!(pDat->PortList[i].Type == PORTLIST_TYPE_IO && pDat->PortList[i + 1].Type == PORTLIST_TYPE_CPU));  /*  ensure src is closer to the bsp than dst */
 
 		/* Regang is false unless we pass all conditions below */
 		pDat->PortList[i].SelRegang = FALSE;
-		pDat->PortList[i+1].SelRegang = FALSE;
+		pDat->PortList[i + 1].SelRegang = FALSE;
 
-		if ((pDat->PortList[i].Type != PORTLIST_TYPE_CPU) || (pDat->PortList[i+1].Type != PORTLIST_TYPE_CPU))
+		if ((pDat->PortList[i].Type != PORTLIST_TYPE_CPU) || (pDat->PortList[i + 1].Type != PORTLIST_TYPE_CPU))
 			continue;   /*  Only process CPU to CPU links */
 
-		for (j = i+2; j < pDat->TotalLinks*2; j += 2)
+		for (j = i + 2; j < pDat->TotalLinks * 2; j += 2)
 		{
-			if ((pDat->PortList[j].Type != PORTLIST_TYPE_CPU) || (pDat->PortList[j+1].Type != PORTLIST_TYPE_CPU))
+			if ((pDat->PortList[j].Type != PORTLIST_TYPE_CPU) || (pDat->PortList[j + 1].Type != PORTLIST_TYPE_CPU))
 				continue;   /*  Only process CPU to CPU links */
 
 			if (pDat->PortList[i].NodeID != pDat->PortList[j].NodeID)
 				continue;   /*  Links must be from the same source */
 
-			if (pDat->PortList[i+1].NodeID != pDat->PortList[j+1].NodeID)
+			if (pDat->PortList[i + 1].NodeID != pDat->PortList[j + 1].NodeID)
 				continue;   /*  Link must be to the same target */
 
 			if ((pDat->PortList[i].Link & 3) != (pDat->PortList[j].Link & 3))
 				continue;   /*  Ensure same source base port */
 
-			if ((pDat->PortList[i+1].Link & 3) != (pDat->PortList[j+1].Link & 3))
+			if ((pDat->PortList[i + 1].Link & 3) != (pDat->PortList[j + 1].Link & 3))
 				continue;   /*  Ensure same destination base port */
 
-			if ((pDat->PortList[i].Link & 4) != (pDat->PortList[i+1].Link & 4))
+			if ((pDat->PortList[i].Link & 4) != (pDat->PortList[i + 1].Link & 4))
 				continue;   /*  Ensure sublink0 routes to sublink0 */
 
-			ASSERT((pDat->PortList[j].Link & 4) == (pDat->PortList[j+1].Link & 4)); /*  (therefore sublink1 routes to sublink1) */
+			ASSERT((pDat->PortList[j].Link & 4) == (pDat->PortList[j + 1].Link & 4)); /*  (therefore sublink1 routes to sublink1) */
 
 			if (pDat->HtBlock->AMD_CB_SkipRegang &&
 				pDat->HtBlock->AMD_CB_SkipRegang(pDat->PortList[i].NodeID,
 							pDat->PortList[i].Link & 0x03,
-							pDat->PortList[i+1].NodeID,
-							pDat->PortList[i+1].Link & 0x03))
+							pDat->PortList[i + 1].NodeID,
+							pDat->PortList[i + 1].Link & 0x03))
 			{
 				continue;   /*  Skip regang */
 			}
 
 
 			pDat->PortList[i].Link &= 0x03; /*  Force to point to sublink0 */
-			pDat->PortList[i+1].Link &= 0x03;
+			pDat->PortList[i + 1].Link &= 0x03;
 			pDat->PortList[i].SelRegang = TRUE; /*  Enable link reganging */
-			pDat->PortList[i+1].SelRegang = TRUE;
+			pDat->PortList[i + 1].SelRegang = TRUE;
 			pDat->PortList[i].PrvWidthOutCap = HT_WIDTH_16_BITS;
-			pDat->PortList[i+1].PrvWidthOutCap = HT_WIDTH_16_BITS;
+			pDat->PortList[i + 1].PrvWidthOutCap = HT_WIDTH_16_BITS;
 			pDat->PortList[i].PrvWidthInCap = HT_WIDTH_16_BITS;
-			pDat->PortList[i+1].PrvWidthInCap = HT_WIDTH_16_BITS;
+			pDat->PortList[i + 1].PrvWidthInCap = HT_WIDTH_16_BITS;
 
 			/*  Delete PortList[j, j+1], slow but easy to debug implementation */
 			pDat->TotalLinks--;
-			Amdmemcpy(&(pDat->PortList[j]), &(pDat->PortList[j+2]), sizeof(sPortDescriptor)*(pDat->TotalLinks*2-j));
-			Amdmemset(&(pDat->PortList[pDat->TotalLinks*2]), INVALID_LINK, sizeof(sPortDescriptor)*2);
+			Amdmemcpy(&(pDat->PortList[j]), &(pDat->PortList[j + 2]), sizeof(sPortDescriptor)*(pDat->TotalLinks * 2 - j));
+			Amdmemset(&(pDat->PortList[pDat->TotalLinks * 2]), INVALID_LINK, sizeof(sPortDescriptor) * 2);
 
 			/* //High performance, but would make debuging harder due to 'shuffling' of the records */
 			/* //Amdmemcpy(PortList[TotalPorts-2], PortList[j], SIZEOF(sPortDescriptor)*2); */
@@ -1405,15 +1405,15 @@ static void detectIoLinkIsochronousCapable(sMainData *pDat)
 	u8 isochronous_capable = 0;
 	u8 iommu = get_uint_option("iommu", 1);
 
-	for (i = 0; i < pDat->TotalLinks*2; i += 2) {
-		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i+1].Type == PORTLIST_TYPE_IO)) {
-			if ((pDat->PortList[i].PrvFeatureCap & 0x1) && (pDat->PortList[i+1].PrvFeatureCap & 0x1)) {
+	for (i = 0; i < pDat->TotalLinks * 2; i += 2) {
+		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i + 1].Type == PORTLIST_TYPE_IO)) {
+			if ((pDat->PortList[i].PrvFeatureCap & 0x1) && (pDat->PortList[i + 1].PrvFeatureCap & 0x1)) {
 				pDat->PortList[i].enable_isochronous_mode = 1;
-				pDat->PortList[i+1].enable_isochronous_mode = 1;
+				pDat->PortList[i + 1].enable_isochronous_mode = 1;
 				isochronous_capable = 1;
 			} else {
 				pDat->PortList[i].enable_isochronous_mode = 0;
-				pDat->PortList[i+1].enable_isochronous_mode = 0;
+				pDat->PortList[i + 1].enable_isochronous_mode = 0;
 			}
 		}
 	}
@@ -1421,9 +1421,9 @@ static void detectIoLinkIsochronousCapable(sMainData *pDat)
 	if (isochronous_capable && iommu) {
 		printk(BIOS_DEBUG, "Forcing HT links to isochronous mode due to enabled IOMMU\n");
 		/* Isochronous mode must be set on all links if the IOMMU is enabled */
-		for (i = 0; i < pDat->TotalLinks*2; i += 2) {
+		for (i = 0; i < pDat->TotalLinks * 2; i += 2) {
 			pDat->PortList[i].enable_isochronous_mode = 1;
-			pDat->PortList[i+1].enable_isochronous_mode = 1;
+			pDat->PortList[i + 1].enable_isochronous_mode = 1;
 		}
 	}
 }
@@ -1488,15 +1488,15 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 		cbPCBBAUpstreamWidth = 16;
 #endif
 
-		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i+1].Type == PORTLIST_TYPE_CPU))
+		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i + 1].Type == PORTLIST_TYPE_CPU))
 		{
 			if (pDat->HtBlock->AMD_CB_Cpu2CpuPCBLimits)
 			{
 				pDat->HtBlock->AMD_CB_Cpu2CpuPCBLimits(
 						pDat->PortList[i].NodeID,
 						pDat->PortList[i].Link,
-						pDat->PortList[i+1].NodeID,
-						pDat->PortList[i+1].Link,
+						pDat->PortList[i + 1].NodeID,
+						pDat->PortList[i + 1].Link,
 						&cbPCBABDownstreamWidth,
 						&cbPCBBAUpstreamWidth, &cbPCBFreqLimit
 						);
@@ -1507,9 +1507,9 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 			if (pDat->HtBlock->AMD_CB_IOPCBLimits)
 			{
 				pDat->HtBlock->AMD_CB_IOPCBLimits(
-						pDat->PortList[i+1].NodeID,
-						pDat->PortList[i+1].HostLink,
-						pDat->PortList[i+1].HostDepth,
+						pDat->PortList[i + 1].NodeID,
+						pDat->PortList[i + 1].HostLink,
+						pDat->PortList[i + 1].HostDepth,
 						&cbPCBABDownstreamWidth,
 						 &cbPCBBAUpstreamWidth, &cbPCBFreqLimit
 						);
@@ -1517,10 +1517,10 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 		}
 
 		temp = pDat->PortList[i].PrvFrequencyCap;
-		temp &= pDat->PortList[i+1].PrvFrequencyCap;
+		temp &= pDat->PortList[i + 1].PrvFrequencyCap;
 		temp &= cbPCBFreqLimit;
 		pDat->PortList[i].CompositeFrequencyCap = temp;
-		pDat->PortList[i+1].CompositeFrequencyCap = temp;
+		pDat->PortList[i + 1].CompositeFrequencyCap = temp;
 
 		ASSERT (temp != 0);
 		for (j = 19;; j--)
@@ -1532,23 +1532,23 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 		}
 
 		pDat->PortList[i].SelFrequency = j;
-		pDat->PortList[i+1].SelFrequency = j;
+		pDat->PortList[i + 1].SelFrequency = j;
 
 		temp = pDat->PortList[i].PrvWidthOutCap;
-		if (pDat->PortList[i+1].PrvWidthInCap < temp)
-			temp = pDat->PortList[i+1].PrvWidthInCap;
+		if (pDat->PortList[i + 1].PrvWidthInCap < temp)
+			temp = pDat->PortList[i + 1].PrvWidthInCap;
 		if (cbPCBABDownstreamWidth < temp)
 			temp = cbPCBABDownstreamWidth;
 		pDat->PortList[i].SelWidthOut = (u8)temp;
-		pDat->PortList[i+1].SelWidthIn = (u8)temp;
+		pDat->PortList[i + 1].SelWidthIn = (u8)temp;
 
 		temp = pDat->PortList[i].PrvWidthInCap;
-		if (pDat->PortList[i+1].PrvWidthOutCap < temp)
-			temp = pDat->PortList[i+1].PrvWidthOutCap;
+		if (pDat->PortList[i + 1].PrvWidthOutCap < temp)
+			temp = pDat->PortList[i + 1].PrvWidthOutCap;
 		if (cbPCBBAUpstreamWidth < temp)
 			temp = cbPCBBAUpstreamWidth;
 		pDat->PortList[i].SelWidthIn = (u8)temp;
-		pDat->PortList[i+1].SelWidthOut = (u8)temp;
+		pDat->PortList[i + 1].SelWidthOut = (u8)temp;
 	}
 }
 
@@ -1671,7 +1671,7 @@ static void hammerSublinkFixup(sMainData *pDat)
 					temp = temp & ~((uint32)1 << hiFreq);
 					ASSERT (temp != 0);
 					pDat->PortList[hiIndex].CompositeFrequencyCap = temp;
-					pDat->PortList[hiIndex+1].CompositeFrequencyCap = temp;
+					pDat->PortList[hiIndex + 1].CompositeFrequencyCap = temp;
 
 					for (k = 19;; k--)
 					{
@@ -1682,7 +1682,7 @@ static void hammerSublinkFixup(sMainData *pDat)
 					}
 
 					pDat->PortList[hiIndex].SelFrequency = k;
-					pDat->PortList[hiIndex+1].SelFrequency = k;
+					pDat->PortList[hiIndex + 1].SelFrequency = k;
 
 					changes = TRUE;
 				}
@@ -1738,7 +1738,7 @@ static void trafficDistribution(sMainData *pDat)
 	u8 i;
 
 	/*  Traffic Distribution is only used when there are exactly two nodes in the system */
-	if (pDat->NodesDiscovered+1 != 2)
+	if (pDat->NodesDiscovered + 1 != 2)
 		return;
 
 	links01 = 0;
@@ -1746,10 +1746,10 @@ static void trafficDistribution(sMainData *pDat)
 	linkCount = 0;
 	for (i = 0; i < pDat->TotalLinks*2; i += 2)
 	{
-		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i+1].Type == PORTLIST_TYPE_CPU))
+		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i + 1].Type == PORTLIST_TYPE_CPU))
 		{
 			links01 |= (u32)1 << pDat->PortList[i].Link;
-			links10 |= (u32)1 << pDat->PortList[i+1].Link;
+			links10 |= (u32)1 << pDat->PortList[i + 1].Link;
 			linkCount++;
 		}
 	}

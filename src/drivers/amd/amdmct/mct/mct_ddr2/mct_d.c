@@ -452,11 +452,11 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 					for (Dir = 0; Dir < 2; Dir++) {//RD/WR
 						p = pDCTstat->persistentData.CH_D_DIR_B_DQS[Channel][DIMM][Dir];
 						val = stream_to_int(p); /* CHA Read Data Timing High */
-						Set_NB32_index_wait(dev, index_reg, index+1, val);
-						val = stream_to_int(p+4); /* CHA Write Data Timing High */
-						Set_NB32_index_wait(dev, index_reg, index+2, val);
-						val = *(p+8); /* CHA Write ECC Timing */
-						Set_NB32_index_wait(dev, index_reg, index+3, val);
+						Set_NB32_index_wait(dev, index_reg, index + 1, val);
+						val = stream_to_int(p + 4); /* CHA Write Data Timing High */
+						Set_NB32_index_wait(dev, index_reg, index + 2, val);
+						val = *(p + 8); /* CHA Write ECC Timing */
+						Set_NB32_index_wait(dev, index_reg, index + 3, val);
 						index += 4;
 					}
 				}
@@ -465,7 +465,7 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 			for (Channel = 0; Channel < 2; Channel++) {
 				reg = 0x78 + Channel * 0x100;
 				val = Get_NB32(dev, reg);
-				val &= ~(0x3ff<<22);
+				val &= ~(0x3ff << 22);
 				val |= ((u32) pDCTstat->CH_MaxRdLat[Channel] << 22);
 				val &= ~(1 << DqsRcvEnTrain);
 				Set_NB32(dev, reg, val);	/* program MaxRdLatency to correspond with current delay*/
@@ -821,11 +821,11 @@ static void DCTInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTst
 	if (stopDCTflag) {
 		u32 reg_off = dct * 0x100;
 		val = 1<<DisDramInterface;
-		Set_NB32(pDCTstat->dev_dct, reg_off+0x94, val);
+		Set_NB32(pDCTstat->dev_dct, reg_off + 0x94, val);
 		/*To maximize power savings when DisDramInterface = 1b,
 		  all of the MemClkDis bits should also be set.*/
 		val = 0xFF000000;
-		Set_NB32(pDCTstat->dev_dct, reg_off+0x88, val);
+		Set_NB32(pDCTstat->dev_dct, reg_off + 0x88, val);
 	} else {
 		mct_EnDllShutdownSR(pMCTstat, pDCTstat, dct);
 	}
@@ -1685,7 +1685,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 				print_tx("DramTimingLo: val=", val);
 				if (!(pDCTstat->DIMMValid & (1 << val)))
 					/*disable memclk*/
-					DramTimingLo |= 1 << (dword+24);
+					DramTimingLo |= 1 << (dword + 24);
 				dword++;
 			}
 		}
@@ -1863,9 +1863,9 @@ static void SPDCalcWidth_D(struct MCTStatStruc *pMCTstat,
 	/* Check Symmetry of Channel A and Channel B DIMMs
 	  (must be matched for 128-bit mode).*/
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i += 2) {
-		if ((pDCTstat->DIMMValid & (1 << i)) && (pDCTstat->DIMMValid & (1<<(i+1)))) {
+		if ((pDCTstat->DIMMValid & (1 << i)) && (pDCTstat->DIMMValid & (1 << (i + 1)))) {
 			smbaddr = Get_DIMMAddress_D(pDCTstat, i);
-			smbaddr1 = Get_DIMMAddress_D(pDCTstat, i+1);
+			smbaddr1 = Get_DIMMAddress_D(pDCTstat, i + 1);
 
 			byte = mctRead_SPD(smbaddr, SPD_ROWSZ) & 0x1f;
 			byte1 = mctRead_SPD(smbaddr1, SPD_ROWSZ) & 0x1f;
@@ -2242,7 +2242,7 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 							MaxDimms <<= 1;
 						}
 						if (i < DimmSlots) {
-							pDCTstat->DimmQRPresent |= (1 << i) | (1 << (i+4));
+							pDCTstat->DimmQRPresent |= (1 << i) | (1 << (i + 4));
 						}
 						byte = 2;	/* upper two ranks of QR DIMM will be counted on another DIMM number iteration*/
 					} else if (byte == 2) {
@@ -2509,7 +2509,7 @@ u32 Get_NB32_index(u32 dev, u32 index_reg, u32 index)
 	u32 dword;
 
 	Set_NB32(dev, index_reg, index);
-	dword = Get_NB32(dev, index_reg+0x4);
+	dword = Get_NB32(dev, index_reg + 0x4);
 
 	return dword;
 }

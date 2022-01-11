@@ -25,7 +25,7 @@ u32 mct_AdjustMemClkDis_GR(struct DCTStatStruc *pDCTstat, u32 dct,
 				if (val < 8) {
 					if (!(pDCTstat->DIMMValidDCT[dct] & (1<<val))) {
 						/* disable memclk */
-						NewDramTimingLo |= (1<<(i+1));
+						NewDramTimingLo |= (1 << (i + 1));
 					}
 				}
 			}

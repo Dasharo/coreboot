@@ -93,7 +93,7 @@ static void get_fx_devs(void)
 		__f2_dev[i] = pcidev_on_root(CONFIG_CDB + i, 2);
 		__f4_dev[i] = pcidev_on_root(CONFIG_CDB + i, 4);
 		if (__f0_dev[i] != NULL && __f1_dev[i] != NULL)
-			fx_devs = i+1;
+			fx_devs = i + 1;
 	}
 	if (__f1_dev[0] == NULL || __f0_dev[0] == NULL || fx_devs == 0) {
 		die("Cannot find 0:0x18.[0|1]\n");
@@ -1116,7 +1116,7 @@ static u32 get_apic_id(int i, int j, unsigned int siblings)
 			apic_id |= (i & 0x7) << 4;	/* Node ID */
 			apic_id |= j & 0xf;		/* Core ID */
 		} else {
-			apic_id = i * (nb_cfg_54?(siblings+1):1) + j * (nb_cfg_54?1:64); // ?
+			apic_id = i * (nb_cfg_54 ? (siblings + 1) : 1) + j * (nb_cfg_54 ? 1 : 64); // ?
 		}
 	}
 

@@ -18,7 +18,7 @@ void AmdMemPCIReadBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
 	if ((highbit-lowbit) != 31)
-		*pValue &= (((u32)1 << (highbit-lowbit+1))-1);
+		*pValue &= (((u32)1 << (highbit - lowbit + 1)) - 1);
 }
 
 void AmdMemPCIWriteBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
@@ -29,7 +29,7 @@ void AmdMemPCIWriteBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
 	if ((highbit-lowbit) != 31)
-		mask = (((u32)1 << (highbit-lowbit+1))-1);
+		mask = (((u32)1 << (highbit - lowbit + 1)) - 1);
 	else
 		mask = (u32)0xFFFFFFFF;
 
@@ -119,25 +119,25 @@ u32 get_Bits(sDCTStruct *pDCTData,
 		if (is_fam15h())
 		{
 			/* Select DCT 0 */
-			AmdMemPCIRead(MAKE_SBDFO(0,0,24+node,1,0x10c), &dword);
+			AmdMemPCIRead(MAKE_SBDFO(0, 0, 24 + node, 1, 0x10c), &dword);
 			dword &= ~0x1;
-			AmdMemPCIWrite(MAKE_SBDFO(0,0,24+node,1,0x10c), &dword);
+			AmdMemPCIWrite(MAKE_SBDFO(0, 0, 24 + node, 1, 0x10c), &dword);
 		}
 
-		AmdMemPCIReadBits(MAKE_SBDFO(0,0,24+node,func,offset), high, low, &temp);
+		AmdMemPCIReadBits(MAKE_SBDFO(0, 0, 24 + node, func, offset), high, low, &temp);
 	}
 	else
 	{
 		if (is_fam15h())
 		{
 			/* Select DCT */
-			AmdMemPCIRead(MAKE_SBDFO(0,0,24+node,1,0x10c), &dword);
+			AmdMemPCIRead(MAKE_SBDFO(0, 0, 24 + node, 1, 0x10c), &dword);
 			dword &= ~0x1;
 			dword |= (dct & 0x1);
-			AmdMemPCIWrite(MAKE_SBDFO(0,0,24+node,1,0x10c), &dword);
+			AmdMemPCIWrite(MAKE_SBDFO(0, 0, 24 + node, 1, 0x10c), &dword);
 
 			/* Read from the selected DCT */
-			AmdMemPCIReadBits(MAKE_SBDFO(0,0,24+node,func,offset), high, low, &temp);
+			AmdMemPCIReadBits(MAKE_SBDFO(0, 0, 24 + node, func, offset), high, low, &temp);
 		}
 		else
 		{
@@ -145,12 +145,12 @@ u32 get_Bits(sDCTStruct *pDCTData,
 			{
 				/* Read from dct 1 */
 				offset += 0x100;
-				AmdMemPCIReadBits(MAKE_SBDFO(0,0,24+node,func,offset), high, low, &temp);
+				AmdMemPCIReadBits(MAKE_SBDFO(0, 0, 24 + node, func, offset), high, low, &temp);
 			}
 			else
 			{
 				/* Read from dct 0 */
-				AmdMemPCIReadBits(MAKE_SBDFO(0,0,24+node,func,offset), high, low, &temp);
+				AmdMemPCIReadBits(MAKE_SBDFO(0, 0, 24 + node, func, offset), high, low, &temp);
 			}
 		}
 	}
@@ -194,25 +194,25 @@ void set_Bits(sDCTStruct *pDCTData,
 		if (is_fam15h())
 		{
 			/* Select DCT 0 */
-			AmdMemPCIRead(MAKE_SBDFO(0,0,24+node,1,0x10c), &dword);
+			AmdMemPCIRead(MAKE_SBDFO(0, 0, 24 + node, 1, 0x10c), &dword);
 			dword &= ~0x1;
-			AmdMemPCIWrite(MAKE_SBDFO(0,0,24+node,1,0x10c), &dword);
+			AmdMemPCIWrite(MAKE_SBDFO(0, 0, 24 + node, 1, 0x10c), &dword);
 		}
 
-		AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+node,func,offset), high, low, &temp);
+		AmdMemPCIWriteBits(MAKE_SBDFO(0, 0, 24 + node, func, offset), high, low, &temp);
 	}
 	else
 	{
 		if (is_fam15h())
 		{
 			/* Select DCT */
-			AmdMemPCIRead(MAKE_SBDFO(0,0,24+node,1,0x10c), &dword);
+			AmdMemPCIRead(MAKE_SBDFO(0, 0, 24 + node, 1, 0x10c), &dword);
 			dword &= ~0x1;
 			dword |= (dct & 0x1);
-			AmdMemPCIWrite(MAKE_SBDFO(0,0,24+node,1,0x10c), &dword);
+			AmdMemPCIWrite(MAKE_SBDFO(0, 0, 24 + node, 1, 0x10c), &dword);
 
 			/* Write to the selected DCT */
-			AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+node,func,offset), high, low, &temp);
+			AmdMemPCIWriteBits(MAKE_SBDFO(0, 0, 24 + node, func, offset), high, low, &temp);
 		}
 		else
 		{
@@ -220,12 +220,12 @@ void set_Bits(sDCTStruct *pDCTData,
 			{
 				/* Write to dct 1 */
 				offset += 0x100;
-				AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+node,func,offset), high, low, &temp);
+				AmdMemPCIWriteBits(MAKE_SBDFO(0, 0, 24 + node, func, offset), high, low, &temp);
 			}
 			else
 			{
 				/* Write to dct 0 */
-				AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+node,func,offset), high, low, &temp);
+				AmdMemPCIWriteBits(MAKE_SBDFO(0, 0, 24 + node, func, offset), high, low, &temp);
 			}
 		}
 	}
@@ -300,7 +300,7 @@ void set_DCT_ADDR_Bits(sDCTStruct *pDCTData,
 
 	set_Bits(pDCTData, dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
 		PCI_MIN_LOW, PCI_MAX_HIGH, offset);
-	while ((get_Bits(pDCTData,dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
+	while ((get_Bits(pDCTData, dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
 			DctAccessDone, DctAccessDone)) == 0);
 
 	set_Bits(pDCTData, dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_PORT_REG,
@@ -309,7 +309,7 @@ void set_DCT_ADDR_Bits(sDCTStruct *pDCTData,
 	tempD = bitTestSet(tempD,DctAccessWrite);
 	set_Bits(pDCTData, dct, node, FUN_DCT,DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
 		PCI_MIN_LOW, PCI_MAX_HIGH, tempD);
-	while ((get_Bits(pDCTData,dct, pDCTData->NodeId, FUN_DCT,
+	while ((get_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
 			DRAM_CONTROLLER_ADD_DATA_OFFSET_REG, DctAccessDone,
 			DctAccessDone)) == 0);
 }

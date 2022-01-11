@@ -124,9 +124,9 @@ static void Get_ChannelPS_Cfg0_D(u8 MAAdimms, u8 Speed, u8 MAAload,
 		p = Table_ATC_ODC_D_Bx;
 	do {
 		if (Speed == *p) {
-			if (MAAload <= *(p+1)) {
-				*AddrTmgCTL = stream_to_int(p+2);
-				*ODC_CTL = stream_to_int(p+6);
+			if (MAAload <= *(p + 1)) {
+				*AddrTmgCTL = stream_to_int(p + 2);
+				*ODC_CTL = stream_to_int(p + 6);
 				break;
 			}
 		}

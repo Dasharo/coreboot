@@ -105,7 +105,7 @@ static void dqsTrainRcvrEn_SW(struct MCTStatStruc *pMCTstat,
 	u8 _DisableDramECC = 0, _Wrap32Dis = 0, _SSE2 = 0;
 	u8 RcvrEnDlyLimit, Final_Value, MaxDelay_CH[2];
 	u32 TestAddr0, TestAddr1, TestAddr0B, TestAddr1B;
-	u32 PatternBuffer[64+4]; /* FIXME: need increase 8? */
+	u32 PatternBuffer[64 + 4]; /* FIXME: need increase 8? */
 	u32 Errors;
 
 	u32 val;
@@ -225,8 +225,8 @@ static void dqsTrainRcvrEn_SW(struct MCTStatStruc *pMCTstat,
 
 			TestAddr0B = TestAddr0 + (BigPagex8_RJ8 << 3);
 
-			if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, Receiver+1)) {
-				TestAddr1 = mct_GetRcvrSysAddr_D(pMCTstat, pDCTstat, Channel, Receiver+1, &valid);
+			if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, Receiver + 1)) {
+				TestAddr1 = mct_GetRcvrSysAddr_D(pMCTstat, pDCTstat, Channel, Receiver + 1, &valid);
 				if (!valid) {	/* Address not supported on current CS */
 					print_t("\t\t\tAddress not supported on current CS+1\n");
 					continue;

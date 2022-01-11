@@ -140,7 +140,7 @@ static void setHtControlRegisterBits(SBDFO reg, u8 hiBit, u8 loBit, u32 *pValue)
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
 	if ((hiBit-loBit) != 31)
-		mask = (((u32)1 << (hiBit-loBit+1))-1);
+		mask = (((u32)1 << (hiBit - loBit + 1)) - 1);
 	else
 		mask = (u32)0xFFFFFFFF;
 
@@ -522,7 +522,7 @@ static u8 fam0FGetNumCoresOnNode(u8 node, cNorthBridge *nb)
 			13, 12, &temp);
 
 	/* and add one */
-	return (u8)(temp+1);
+	return (u8)(temp + 1);
 }
 
 /***************************************************************************//**
@@ -572,7 +572,7 @@ static u8 fam10GetNumCoresOnNode(u8 node, cNorthBridge *nb)
 			temp--;
 		}
 	}
-	return (u8)(temp+1);
+	return (u8)(temp + 1);
 }
 
 /***************************************************************************//**
@@ -622,7 +622,7 @@ static u8 fam15GetNumCoresOnNode(u8 node, cNorthBridge *nb)
 			temp--;
 		}
 	}
-	return (u8)(temp+1);
+	return (u8)(temp + 1);
 }
 
 /***************************************************************************//**
@@ -717,12 +717,12 @@ static void writeFullRoutingTable(u8 node, u8 target, u8 reqLink, u8 rspLink, u3
 	if (reqLink == ROUTETOSELF)
 		value |= nb->selfRouteRequestMask;
 	else
-		value |= nb->selfRouteRequestMask << (reqLink+1);
+		value |= nb->selfRouteRequestMask << (reqLink + 1);
 
 	if (rspLink == ROUTETOSELF)
 		value |= nb->selfRouteResponseMask;
 	else
-		value |= nb->selfRouteResponseMask << (rspLink+1);
+		value |= nb->selfRouteResponseMask << (rspLink + 1);
 
 	/* Allow us to accept a Broadcast ourselves, then set broadcasts for routes */
 	value |= (u32)1 << nb->broadcastSelfBit;
@@ -732,7 +732,7 @@ static void writeFullRoutingTable(u8 node, u8 target, u8 reqLink, u8 rspLink, u3
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_HTNB_FUNC_00,
-				REG_ROUTE0_0X40 + target*4), &value);
+				REG_ROUTE0_0X40 + target * 4), &value);
 #else
 	STOP_HERE;
 #endif /* HT_BUILD_NC_ONLY */
@@ -1137,12 +1137,12 @@ static void  ht3SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNod
 	 */
 	temp = ((u32)subBus << 24) + ((u32)secBus << 16) + ((u32)targetLink << 8)
 		+ ((u32)targetNode << 4) + (u32)3;
-	for (curNode = 0; curNode < pDat->NodesDiscovered+1; curNode++)
+	for (curNode = 0; curNode < pDat->NodesDiscovered + 1; curNode++)
 		AmdPCIWrite(MAKE_SBDFO(makePCISegmentFromNode(curNode),
 					makePCIBusFromNode(curNode),
 					makePCIDeviceFromNode(curNode),
 					CPU_ADDR_FUNC_01,
-					REG_ADDR_CONFIG_MAP0_1XE0 + 4*cfgMapIndex),
+					REG_ADDR_CONFIG_MAP0_1XE0 + 4 * cfgMapIndex),
 					&temp);
 }
 
@@ -1185,7 +1185,7 @@ static void ht1SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNode
 	 */
 	temp = ((u32)subBus << 24) + ((u32)secBus << 16) + ((u32)targetLink << 8)
 		+ ((u32)targetNode << 4) + (u32)3;
-	for (curNode = 0; curNode < pDat->NodesDiscovered+1; curNode++)
+	for (curNode = 0; curNode < pDat->NodesDiscovered + 1; curNode++)
 		 AmdPCIWrite(MAKE_SBDFO(makePCISegmentFromNode(curNode),
 					makePCIBusFromNode(curNode),
 					makePCIDeviceFromNode(curNode),

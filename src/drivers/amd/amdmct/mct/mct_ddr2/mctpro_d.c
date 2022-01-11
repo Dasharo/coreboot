@@ -279,7 +279,7 @@ void mct_BeforeDramInit_D(struct DCTStatStruc *pDCTstat, u32 dct)
 				ch_end = 2;
 			} else {
 				ch_start = dct;
-				ch_end = dct+1;
+				ch_end = dct + 1;
 			}
 			dev = pDCTstat->dev_dct;
 

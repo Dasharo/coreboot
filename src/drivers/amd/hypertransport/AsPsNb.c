@@ -104,5 +104,5 @@ u8 getNumOfNodeNb(void)
  */
 u8 translateNodeIdToDeviceIdNb(u8 nodeId)
 {
-	return (u8) (nodeId+PCI_DEV_BASE);
+	return (u8)(nodeId + PCI_DEV_BASE);
 }

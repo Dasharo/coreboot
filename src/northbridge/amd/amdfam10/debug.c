@@ -219,7 +219,7 @@ void dump_spd_registers(const struct mem_controller *ctrl)
 			}
 			printk(BIOS_DEBUG, "\n");
 		}
-		device = ctrl->spd_addr[i+DIMM_SOCKETS];
+		device = ctrl->spd_addr[i + DIMM_SOCKETS];
 		if (device) {
 			int j;
 			printk(BIOS_DEBUG, "dimm: %02x.1: %02x", i, device);

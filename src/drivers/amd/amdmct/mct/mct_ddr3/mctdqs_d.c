@@ -450,7 +450,7 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *pMCTstat,
 		for (; Receiver < 8; Receiver++) {
 			if ((Receiver & 0x1) == 0) {
 				/* Even rank of DIMM */
-				if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, Receiver+1))
+				if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, Receiver + 1))
 					dual_rank = 1;
 				else
 					dual_rank = 0;
@@ -1279,7 +1279,7 @@ static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 		dimm = (Receiver >> 1);
 		if ((Receiver & 0x1) == 0) {
 			/* Even rank of DIMM */
-			if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, dct, Receiver+1))
+			if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, dct, Receiver + 1))
 				dual_rank = 1;
 			else
 				dual_rank = 0;

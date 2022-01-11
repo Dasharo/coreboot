@@ -190,8 +190,8 @@ u8 AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		/* Calculate the Critical Gross Delay */
 		for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
 			/* Calculate the gross delay differential for this lane */
-			gross_diff[ByteLane] = pDCTData->WLSeedGrossDelay[index+ByteLane] + pDCTData->WLGrossDelay[index+ByteLane];
-			gross_diff[ByteLane] -= pDCTData->WLSeedPreGrossDelay[index+ByteLane];
+			gross_diff[ByteLane] = pDCTData->WLSeedGrossDelay[index + ByteLane] + pDCTData->WLGrossDelay[index + ByteLane];
+			gross_diff[ByteLane] -= pDCTData->WLSeedPreGrossDelay[index + ByteLane];
 
 			/* WrDqDqsEarly values greater than 2 are reserved */
 			if (gross_diff[ByteLane] < -2)
@@ -215,8 +215,8 @@ u8 AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			 */
 			if (pass == FirstPass) {
 				for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
-					pDCTData->WLGrossDelay[index+ByteLane] = pDCTData->WLSeedGrossDelay[index+ByteLane];
-					pDCTData->WLFineDelay[index+ByteLane] = pDCTData->WLSeedFineDelay[index+ByteLane];
+					pDCTData->WLGrossDelay[index + ByteLane] = pDCTData->WLSeedGrossDelay[index + ByteLane];
+					pDCTData->WLFineDelay[index + ByteLane] = pDCTData->WLSeedFineDelay[index + ByteLane];
 				}
 				return 0;
 			}
@@ -225,8 +225,8 @@ u8 AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		/* Compensate for occasional noise/instability causing sporadic training failure */
 		for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
 			u8 faulty_value_detected = 0;
-			u16 total_delay_seed = ((pDCTData->WLSeedGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLSeedFineDelay[index+ByteLane] & 0x1f);
-			u16 total_delay_phy = ((pDCTData->WLGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index+ByteLane] & 0x1f);
+			u16 total_delay_seed = ((pDCTData->WLSeedGrossDelay[index + ByteLane] & 0x1f) << 5) | (pDCTData->WLSeedFineDelay[index + ByteLane] & 0x1f);
+			u16 total_delay_phy = ((pDCTData->WLGrossDelay[index + ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index + ByteLane] & 0x1f);
 			if (pass == FirstPass) {
 				/* Allow a somewhat higher step threshold on the first pass
 				 * For the most part, as long as the phy isn't stepping
@@ -245,8 +245,8 @@ u8 AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			if (faulty_value_detected) {
 				printk(BIOS_INFO, "%s: overriding faulty phy value (seed: %04x phy: %04x step: %04x)\n", __func__,
 					total_delay_seed, total_delay_phy, abs(total_delay_phy - total_delay_seed));
-				pDCTData->WLGrossDelay[index+ByteLane] = pDCTData->WLSeedGrossDelay[index+ByteLane];
-				pDCTData->WLFineDelay[index+ByteLane] = pDCTData->WLSeedFineDelay[index+ByteLane];
+				pDCTData->WLGrossDelay[index + ByteLane] = pDCTData->WLSeedGrossDelay[index + ByteLane];
+				pDCTData->WLFineDelay[index + ByteLane] = pDCTData->WLSeedFineDelay[index + ByteLane];
 				status = 1;
 			}
 		}
@@ -282,14 +282,14 @@ u8 AgesaHwWlPhase3(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 
 			for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
 				/* Calculate the gross delay differential for this lane */
-				gross_diff[ByteLane] = pDCTData->WLSeedGrossDelay[index+ByteLane] + pDCTData->WLGrossDelay[index+ByteLane];
-				gross_diff[ByteLane] -= pDCTData->WLSeedPreGrossDelay[index+ByteLane];
+				gross_diff[ByteLane] = pDCTData->WLSeedGrossDelay[index + ByteLane] + pDCTData->WLGrossDelay[index + ByteLane];
+				gross_diff[ByteLane] -= pDCTData->WLSeedPreGrossDelay[index + ByteLane];
 
 				/* Prevent underflow in the presence of noise / instability */
 				if (gross_diff[ByteLane] < cgd)
 					gross_diff[ByteLane] = cgd;
 
-				pDCTData->WLGrossDelay[index+ByteLane] = (gross_diff[ByteLane] + (abs(cgd) & 0x3));
+				pDCTData->WLGrossDelay[index + ByteLane] = (gross_diff[ByteLane] + (abs(cgd) & 0x3));
 			}
 		} else {
 			dword = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0xa8);
@@ -506,10 +506,10 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		/* Program F2x[1, 0]7C[MrsChipSel[2:0]] for the current rank to be trained. */
 		if (is_fam15h())
 			set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
-				DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15, dimm*2+rank);
+				DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15, dimm * 2 + rank);
 		else
 			set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
-				DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10, dimm*2+rank);
+				DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10, dimm * 2 + rank);
 
 		/* Program F2x[1, 0]7C[MrsBank[2:0]] for the appropriate internal DRAM
 		 * register that defines the required DDR3-defined function for write
@@ -530,7 +530,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 
 		/* Retrieve normal settings of the MRS control word and clear Rtt_Nom */
 		if (is_fam15h()) {
-			tempW = mct_MR1(pMCTstat, pDCTstat, dct, dimm*2+rank) & 0xffff;
+			tempW = mct_MR1(pMCTstat, pDCTstat, dct, dimm * 2 + rank) & 0xffff;
 			tempW &= ~(0x0244);
 		} else {
 			/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
@@ -666,7 +666,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 
 		/* Retrieve normal settings of the MRS control word and clear Rtt_WR */
 		if (is_fam15h()) {
-			tempW = mct_MR2(pMCTstat, pDCTstat, dct, dimm*2+rank) & 0xffff;
+			tempW = mct_MR2(pMCTstat, pDCTstat, dct, dimm * 2 + rank) & 0xffff;
 			tempW &= ~(0x0600);
 		} else {
 			/* program MrsAddress[7,6,5:3]=SRT,ASR,CWL,
@@ -681,7 +681,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			tempW = tempW|((tempW1&0x00700000) >> 17);
 			/* workaround for DR-B0 */
 			if ((pDCTData->LogicalCPUID & AMD_DR_Bx) && (pDCTData->Status[DCT_STATUS_REGISTERED]))
-				tempW+=0x8;
+				tempW += 0x8;
 		}
 
 		/* determine Rtt_WR for WL & Normal mode */
@@ -734,10 +734,10 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 					 */
 					if (is_fam15h())
 						set_Bits(pDCTData, dct, pDCTData->NodeId,
-							FUN_DCT, DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15, currDimm*2+rank);
+							FUN_DCT, DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15, currDimm * 2 + rank);
 					else
 						set_Bits(pDCTData, dct, pDCTData->NodeId,
-							FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10, currDimm*2+rank);
+							FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10, currDimm * 2 + rank);
 
 					/* Program F2x[1, 0]7C[MrsBank[2:0]] for the appropriate internal
 					 * DRAM register that defines the required DDR3-defined function
@@ -758,7 +758,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 
 					/* Retrieve normal settings of the MRS control word and clear Rtt_Nom */
 					if (is_fam15h()) {
-						tempW = mct_MR1(pMCTstat, pDCTstat, dct, currDimm*2+rank) & 0xffff;
+						tempW = mct_MR1(pMCTstat, pDCTstat, dct, currDimm * 2 + rank) & 0xffff;
 						tempW &= ~(0x0244);
 					} else {
 						/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
@@ -841,7 +841,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 
 					/* Retrieve normal settings of the MRS control word and clear Rtt_WR */
 					if (is_fam15h()) {
-						tempW = mct_MR2(pMCTstat, pDCTstat, dct, currDimm*2+rank) & 0xffff;
+						tempW = mct_MR2(pMCTstat, pDCTstat, dct, currDimm * 2 + rank) & 0xffff;
 						tempW &= ~(0x0600);
 					} else {
 						/* program MrsAddress[7,6,5:3]=SRT,ASR,CWL,
@@ -944,8 +944,8 @@ void programODT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 		} else {
 			if ((pDCTData->DctCSPresent & 0x05) == 0x05) {
 				WrLvOdt1 = 0x03;
-			} else if (bitTest((u32)pDCTData->DctCSPresent,(u8)(dimm*2+1))) {
-				WrLvOdt1 = (u8)bitTestSet(WrLvOdt1, dimm+2);
+			} else if (bitTest((u32)pDCTData->DctCSPresent,(u8)(dimm * 2 + 1))) {
+				WrLvOdt1 = (u8)bitTestSet(WrLvOdt1, dimm + 2);
 			} else {
 				WrLvOdt1 = (u8)bitTestSet(WrLvOdt1, dimm);
 			}
@@ -1107,8 +1107,8 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 
 			/* Save seed values for later use */
 			for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
-				pDCTData->WLSeedGrossDelay[lane_count*dimm+ByteLane] = Seed_Gross;
-				pDCTData->WLSeedFineDelay[lane_count*dimm+ByteLane] = Seed_Fine;
+				pDCTData->WLSeedGrossDelay[lane_count * dimm + ByteLane] = Seed_Gross;
+				pDCTData->WLSeedFineDelay[lane_count * dimm + ByteLane] = Seed_Fine;
 
 				if (Seed_Gross == 0)
 					Seed_PreGross = 0;
@@ -1117,7 +1117,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 				else
 					Seed_PreGross = 2;
 
-				pDCTData->WLSeedPreGrossDelay[lane_count*dimm+ByteLane] = Seed_PreGross;
+				pDCTData->WLSeedPreGrossDelay[lane_count * dimm + ByteLane] = Seed_PreGross;
 			}
 		} else {
 			if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
@@ -1153,8 +1153,8 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 			 * of 01Fh. This represents a 1UI (UI=.5MEMCLK) delay and is determined
 			 * by design.
 			 */
-			pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] = Seed_Gross;
-			pDCTData->WLFineDelay[lane_count*dimm+ByteLane] = Seed_Fine;
+			pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] = Seed_Gross;
+			pDCTData->WLFineDelay[lane_count * dimm + ByteLane] = Seed_Fine;
 			printk(BIOS_SPEW, "\tLane %02x initial seed: %04x\n", ByteLane, ((Seed_Gross & 0x1f) << 5) | (Seed_Fine & 0x1f));
 		}
 	} else {
@@ -1189,8 +1189,8 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 				/* Generate new seed values */
 				for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
 					/* Calculate adjusted seed values */
-					SeedTotal[ByteLane] = (pDCTData->WLFineDelayPrevPass[lane_count*dimm+ByteLane] & 0x1f) |
-						((pDCTData->WLGrossDelayPrevPass[lane_count*dimm+ByteLane] & 0x1f) << 5);
+					SeedTotal[ByteLane] = (pDCTData->WLFineDelayPrevPass[lane_count * dimm + ByteLane] & 0x1f) |
+						((pDCTData->WLGrossDelayPrevPass[lane_count * dimm + ByteLane] & 0x1f) << 5);
 					SeedTotalPreScaling[ByteLane] = (SeedTotal[ByteLane] - RegisterDelay - (0x20 * WrDqDqsEarly));
 					SeedTotal[ByteLane] = (int32_t) (RegisterDelay + ((((int64_t) SeedTotalPreScaling[ByteLane]) *
 						fam15h_freq_tab[MemClkFreq] * 100) / (fam15h_freq_tab[pDCTData->WLPrevMemclkFreq[dimm]] * 100)));
@@ -1215,14 +1215,14 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 					Seed_PreGross = Seed_Gross;
 
 					/* Save seed values for later use */
-					pDCTData->WLSeedGrossDelay[lane_count*dimm+ByteLane] = Seed_Gross;
-					pDCTData->WLSeedFineDelay[lane_count*dimm+ByteLane] = Seed_Fine;
-					pDCTData->WLSeedPreGrossDelay[lane_count*dimm+ByteLane] = Seed_PreGross;
+					pDCTData->WLSeedGrossDelay[lane_count * dimm + ByteLane] = Seed_Gross;
+					pDCTData->WLSeedFineDelay[lane_count * dimm + ByteLane] = Seed_Fine;
+					pDCTData->WLSeedPreGrossDelay[lane_count * dimm + ByteLane] = Seed_PreGross;
 
-					pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] = Seed_PreGross;
-					pDCTData->WLFineDelay[lane_count*dimm+ByteLane] = Seed_Fine;
+					pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] = Seed_PreGross;
+					pDCTData->WLFineDelay[lane_count * dimm + ByteLane] = Seed_Fine;
 
-					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", ByteLane, ((pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[lane_count*dimm+ByteLane] & 0x1f));
+					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", ByteLane, ((pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[lane_count * dimm + ByteLane] & 0x1f));
 				}
 			} else {
 				u32 RegisterDelay;
@@ -1239,8 +1239,8 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 					} else {
 						RegisterDelay = 0;
 					}
-					SeedTotalPreScaling = ((pDCTData->WLFineDelay[lane_count*dimm+ByteLane] & 0x1f) |
-						(pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] << 5)) - RegisterDelay;
+					SeedTotalPreScaling = ((pDCTData->WLFineDelay[lane_count * dimm + ByteLane] & 0x1f) |
+						(pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] << 5)) - RegisterDelay;
 					/* SeedTotalPreScaling = (the total delay value in F2x[1, 0]9C_x[4A:30] from pass 1 of write levelization
 					training) - RegisterDelay. */
 					SeedTotal = (u16) ((((u64) SeedTotalPreScaling) *
@@ -1263,38 +1263,38 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 					Seed_Gross = SeedTotal / 32;
 					Seed_Fine = SeedTotal & 0x1f;
 
-					pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] = Seed_Gross;
-					pDCTData->WLFineDelay[lane_count*dimm+ByteLane] = Seed_Fine;
+					pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] = Seed_Gross;
+					pDCTData->WLFineDelay[lane_count * dimm + ByteLane] = Seed_Fine;
 
-					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", ByteLane, ((pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[lane_count*dimm+ByteLane] & 0x1f));
+					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", ByteLane, ((pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[lane_count * dimm + ByteLane] & 0x1f));
 				}
 			}
 
 			/* Save initial seeds for upper nibble pass */
 			for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
-				pDCTData->WLSeedPreGrossPrevNibble[lane_count*dimm+ByteLane] = pDCTData->WLSeedPreGrossDelay[lane_count*dimm+ByteLane];
-				pDCTData->WLSeedGrossPrevNibble[lane_count*dimm+ByteLane] = pDCTData->WLGrossDelay[lane_count*dimm+ByteLane];
-				pDCTData->WLSeedFinePrevNibble[lane_count*dimm+ByteLane] = pDCTData->WLFineDelay[lane_count*dimm+ByteLane];
+				pDCTData->WLSeedPreGrossPrevNibble[lane_count * dimm + ByteLane] = pDCTData->WLSeedPreGrossDelay[lane_count * dimm + ByteLane];
+				pDCTData->WLSeedGrossPrevNibble[lane_count * dimm + ByteLane] = pDCTData->WLGrossDelay[lane_count * dimm + ByteLane];
+				pDCTData->WLSeedFinePrevNibble[lane_count * dimm + ByteLane] = pDCTData->WLFineDelay[lane_count * dimm + ByteLane];
 			}
 		} else {
 			/* Restore seed values from lower nibble pass */
 			if (is_fam15h()) {
 				for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
-					pDCTData->WLSeedGrossDelay[lane_count*dimm+ByteLane] = pDCTData->WLSeedGrossPrevNibble[lane_count*dimm+ByteLane];
-					pDCTData->WLSeedFineDelay[lane_count*dimm+ByteLane] = pDCTData->WLSeedFinePrevNibble[lane_count*dimm+ByteLane];
-					pDCTData->WLSeedPreGrossDelay[lane_count*dimm+ByteLane] = pDCTData->WLSeedPreGrossPrevNibble[lane_count*dimm+ByteLane];
+					pDCTData->WLSeedGrossDelay[lane_count * dimm + ByteLane] = pDCTData->WLSeedGrossPrevNibble[lane_count * dimm + ByteLane];
+					pDCTData->WLSeedFineDelay[lane_count * dimm + ByteLane] = pDCTData->WLSeedFinePrevNibble[lane_count * dimm + ByteLane];
+					pDCTData->WLSeedPreGrossDelay[lane_count * dimm + ByteLane] = pDCTData->WLSeedPreGrossPrevNibble[lane_count * dimm + ByteLane];
 
-					pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] = pDCTData->WLSeedPreGrossPrevNibble[lane_count*dimm+ByteLane];
-					pDCTData->WLFineDelay[lane_count*dimm+ByteLane] = pDCTData->WLSeedFinePrevNibble[lane_count*dimm+ByteLane];
+					pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] = pDCTData->WLSeedPreGrossPrevNibble[lane_count * dimm + ByteLane];
+					pDCTData->WLFineDelay[lane_count * dimm + ByteLane] = pDCTData->WLSeedFinePrevNibble[lane_count * dimm + ByteLane];
 
-					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", ByteLane, ((pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[lane_count*dimm+ByteLane] & 0x1f));
+					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", ByteLane, ((pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[lane_count * dimm + ByteLane] & 0x1f));
 				}
 			} else {
 				for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
-					pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] = pDCTData->WLSeedGrossPrevNibble[lane_count*dimm+ByteLane];
-					pDCTData->WLFineDelay[lane_count*dimm+ByteLane] = pDCTData->WLSeedFinePrevNibble[lane_count*dimm+ByteLane];
+					pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] = pDCTData->WLSeedGrossPrevNibble[lane_count * dimm + ByteLane];
+					pDCTData->WLFineDelay[lane_count * dimm + ByteLane] = pDCTData->WLSeedFinePrevNibble[lane_count * dimm + ByteLane];
 
-					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", ByteLane, ((pDCTData->WLGrossDelay[lane_count*dimm+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[lane_count*dimm+ByteLane] & 0x1f));
+					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", ByteLane, ((pDCTData->WLGrossDelay[lane_count * dimm + ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[lane_count * dimm + ByteLane] & 0x1f));
 				}
 			}
 		}
@@ -1341,24 +1341,24 @@ void setWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm,
 		while (ByteLane < lane_count)
 		{
 			/* This subtract 0xC workaround might be temporary. */
-			if ((pDCTData->WLPass == 2) && (pDCTData->RegMan1Present & (1 << (dimm*2+dct)))) {
-				tempW = (pDCTData->WLGrossDelay[index+ByteLane] << 5) | pDCTData->WLFineDelay[index+ByteLane];
+			if ((pDCTData->WLPass == 2) && (pDCTData->RegMan1Present & (1 << (dimm * 2 + dct)))) {
+				tempW = (pDCTData->WLGrossDelay[index + ByteLane] << 5) | pDCTData->WLFineDelay[index + ByteLane];
 				tempW -= 0xC;
-				pDCTData->WLGrossDelay[index+ByteLane] = (u8)(tempW >> 5);
-				pDCTData->WLFineDelay[index+ByteLane] = (u8)(tempW & 0x1F);
+				pDCTData->WLGrossDelay[index + ByteLane] = (u8)(tempW >> 5);
+				pDCTData->WLFineDelay[index + ByteLane] = (u8)(tempW & 0x1F);
 			}
-			grossDelayValue = pDCTData->WLGrossDelay[index+ByteLane];
+			grossDelayValue = pDCTData->WLGrossDelay[index + ByteLane];
 			/* Adjust seed gross delay overflow (greater than 3):
 			 *      - Program seed gross delay as 2 (gross is 4 or 6) or 1 (gross is 5).
 			 *      - Keep original seed gross delay for later reference.
 			 */
 			if (grossDelayValue >= 3)
-				grossDelayValue = (grossDelayValue&1)? 1 : 2;
-			fineDelayValue = pDCTData->WLFineDelay[index+ByteLane];
+				grossDelayValue = (grossDelayValue & 1) ? 1 : 2;
+			fineDelayValue = pDCTData->WLFineDelay[index + ByteLane];
 			if (ByteLane < 4)
-				ValueLow |= ((grossDelayValue << 5) | fineDelayValue) << 8*ByteLane;
+				ValueLow |= ((grossDelayValue << 5) | fineDelayValue) << 8 * ByteLane;
 			else if (ByteLane < 8)
-				ValueHigh |= ((grossDelayValue << 5) | fineDelayValue) << 8*(ByteLane-4);
+				ValueHigh |= ((grossDelayValue << 5) | fineDelayValue) << 8 * (ByteLane - 4);
 			else
 				EccValue = ((grossDelayValue << 5) | fineDelayValue);
 			ByteLane++;
@@ -1376,21 +1376,21 @@ void setWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm,
 		 * Fam15h BKDG: Rev. 3.14 2.10.5.8.1
 		 */
 		index = (u8)(lane_count * dimm);
-		grossDelayValue = pDCTData->WLGrossDelay[index+ByteLane];
-		fineDelayValue = pDCTData->WLFineDelay[index+ByteLane];
+		grossDelayValue = pDCTData->WLGrossDelay[index + ByteLane];
+		fineDelayValue = pDCTData->WLFineDelay[index + ByteLane];
 
 		tempB = 0;
 		offsetAddr = (u8)(3 * dimm);
 		if (ByteLane < 2) {
 			tempB = (u8)(16 * ByteLane);
 			addr = DRAM_CONT_ADD_DQS_TIMING_CTRL_BL_01;
-		} else if (ByteLane <4) {
+		} else if (ByteLane < 4) {
 			tempB = (u8)(16 * ByteLane);
 			addr = DRAM_CONT_ADD_DQS_TIMING_CTRL_BL_01 + 1;
-		} else if (ByteLane <6) {
+		} else if (ByteLane < 6) {
 			tempB = (u8)(16 * ByteLane);
 			addr = DRAM_CONT_ADD_DQS_TIMING_CTRL_BL_45;
-		} else if (ByteLane <8) {
+		} else if (ByteLane < 8) {
 			tempB = (u8)(16 * ByteLane);
 			addr = DRAM_CONT_ADD_DQS_TIMING_CTRL_BL_45 + 1;
 		} else {
@@ -1409,11 +1409,11 @@ void setWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm,
 		set_DCT_ADDR_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
 				(u16)addr, grossStartLoc, grossEndLoc, (u32)grossDelayValue);
 
-		pDCTData->WLFineDelayPrevPass[index+ByteLane] = fineDelayValue;
-		pDCTData->WLGrossDelayPrevPass[index+ByteLane] = grossDelayValue;
+		pDCTData->WLFineDelayPrevPass[index + ByteLane] = fineDelayValue;
+		pDCTData->WLGrossDelayPrevPass[index + ByteLane] = grossDelayValue;
 		if (pass == FirstPass) {
-			pDCTData->WLFineDelayFirstPass[index+ByteLane] = fineDelayValue;
-			pDCTData->WLGrossDelayFirstPass[index+ByteLane] = grossDelayValue;
+			pDCTData->WLFineDelayFirstPass[index + ByteLane] = fineDelayValue;
+			pDCTData->WLGrossDelayFirstPass[index + ByteLane] = grossDelayValue;
 			pDCTData->WLCriticalGrossDelayFirstPass = pDCTData->WLCriticalGrossDelayPrevPass;
 		}
 	}
@@ -1472,15 +1472,15 @@ void getWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm,
 	/* Adjust seed gross delay overflow (greater than 3):
 	 * - Adjust the trained gross delay to the original seed gross delay.
 	 */
-	if (pDCTData->WLGrossDelay[index+ByteLane] >= 3)
+	if (pDCTData->WLGrossDelay[index + ByteLane] >= 3)
 	{
-		gross += pDCTData->WLGrossDelay[index+ByteLane];
-		if (pDCTData->WLGrossDelay[index+ByteLane] & 1)
+		gross += pDCTData->WLGrossDelay[index + ByteLane];
+		if (pDCTData->WLGrossDelay[index + ByteLane] & 1)
 			gross -= 1;
 		else
 			gross -= 2;
 	}
-	else if ((pDCTData->WLGrossDelay[index+ByteLane] == 0) && (gross == 3))
+	else if ((pDCTData->WLGrossDelay[index + ByteLane] == 0) && (gross == 3))
 	{
 		/* If seed gross delay is 0 but PRE result gross delay is 3, it is negative.
 		 * We will then round the negative number to 0.
@@ -1492,14 +1492,14 @@ void getWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm,
 
 	/* Nibble adjustments */
 	if (nibble == 0) {
-		pDCTData->WLFineDelay[index+ByteLane] = (u8)fine;
-		pDCTData->WLGrossDelay[index+ByteLane] = (u8)gross;
+		pDCTData->WLFineDelay[index + ByteLane] = (u8)fine;
+		pDCTData->WLGrossDelay[index + ByteLane] = (u8)gross;
 	} else {
-		u32 WLTotalDelay = ((pDCTData->WLGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index+ByteLane] & 0x1f);
+		u32 WLTotalDelay = ((pDCTData->WLGrossDelay[index + ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index + ByteLane] & 0x1f);
 		WLTotalDelay += ((gross & 0x1f) << 5) | (fine & 0x1f);
 		WLTotalDelay /= 2;
-		pDCTData->WLFineDelay[index+ByteLane] = (u8)(WLTotalDelay & 0x1f);
-		pDCTData->WLGrossDelay[index+ByteLane] = (u8)((WLTotalDelay >> 5) & 0x1f);
+		pDCTData->WLFineDelay[index + ByteLane] = (u8)(WLTotalDelay & 0x1f);
+		pDCTData->WLGrossDelay[index + ByteLane] = (u8)((WLTotalDelay >> 5) & 0x1f);
 	}
-	printk(BIOS_SPEW, "\tLane %02x nibble %01x adjusted value (post nibble): %04x\n", ByteLane, nibble, ((pDCTData->WLGrossDelay[index+ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index+ByteLane] & 0x1f));
+	printk(BIOS_SPEW, "\tLane %02x nibble %01x adjusted value (post nibble): %04x\n", ByteLane, nibble, ((pDCTData->WLGrossDelay[index + ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index + ByteLane] & 0x1f));
 }

@@ -3752,11 +3752,11 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 					for (Dir = 0; Dir < 2; Dir++) {/* RD/WR */
 						p = pDCTstat->CH_D_DIR_B_DQS[Channel][DIMM][Dir];
 						val = stream_to_int(p); /* CHA Read Data Timing High */
-						Set_NB32_index_wait_DCT(dev, Channel, index_reg, index+1, val);
-						val = stream_to_int(p+4); /* CHA Write Data Timing High */
-						Set_NB32_index_wait_DCT(dev, Channel, index_reg, index+2, val);
-						val = *(p+8); /* CHA Write ECC Timing */
-						Set_NB32_index_wait_DCT(dev, Channel, index_reg, index+3, val);
+						Set_NB32_index_wait_DCT(dev, Channel, index_reg, index + 1, val);
+						val = stream_to_int(p + 4); /* CHA Write Data Timing High */
+						Set_NB32_index_wait_DCT(dev, Channel, index_reg, index + 2, val);
+						val = *(p + 8); /* CHA Write ECC Timing */
+						Set_NB32_index_wait_DCT(dev, Channel, index_reg, index + 3, val);
 						index += 4;
 					}
 				}
@@ -3765,9 +3765,9 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 			for (Channel = 0; Channel < 2; Channel++) {
 				reg = 0x78;
 				val = Get_NB32_DCT(dev, Channel, reg);
-				val &= ~(0x3ff<<22);
-				val |= ((u32) pDCTstat->CH_MaxRdLat[Channel][0] << 22);
-				val &= ~(1<<DqsRcvEnTrain);
+				val &= ~(0x3ff << 22);
+				val |= ((u32)pDCTstat->CH_MaxRdLat[Channel][0] << 22);
+				val &= ~(1 << DqsRcvEnTrain);
 				Set_NB32_DCT(dev, Channel, reg, val);	/* program MaxRdLatency to correspond with current delay*/
 			}
 		}
@@ -5350,7 +5350,7 @@ static void SPDCalcWidth_D(struct MCTStatStruc *pMCTstat,
 	/* Check Symmetry of Channel A and Channel B DIMMs
 	  (must be matched for 128-bit mode).*/
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i += 2) {
-		if ((pDCTstat->DIMMValid & (1 << i)) && (pDCTstat->DIMMValid & (1<<(i+1)))) {
+		if ((pDCTstat->DIMMValid & (1 << i)) && (pDCTstat->DIMMValid & (1 << (i + 1)))) {
 			byte = pDCTstat->spd_data.spd_bytes[i][SPD_Addressing] & 0x7;
 			byte1 = pDCTstat->spd_data.spd_bytes[i + 1][SPD_Addressing] & 0x7;
 			if (byte != byte1) {
@@ -5665,7 +5665,7 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 						MaxDimms <<= 1;
 					}
 					if (i < DimmSlots) {
-						pDCTstat->DimmQRPresent |= (1 << i) | (1 << (i+4));
+						pDCTstat->DimmQRPresent |= (1 << i) | (1 << (i + 4));
 					} else {
 						pDCTstat->MAdimms[i & 1] --;
 					}
@@ -5945,7 +5945,7 @@ u32 Get_NB32_index(u32 dev, u32 index_reg, u32 index)
 	u32 dword;
 
 	Set_NB32(dev, index_reg, index);
-	dword = Get_NB32(dev, index_reg+0x4);
+	dword = Get_NB32(dev, index_reg + 0x4);
 
 	return dword;
 }

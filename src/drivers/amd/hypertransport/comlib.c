@@ -24,7 +24,7 @@ void CALLCONV AmdPCIReadBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
 	if ((highbit-lowbit) != 31)
-		*pValue &= (((u32)1 << (highbit-lowbit+1))-1);
+		*pValue &= (((u32)1 << (highbit - lowbit + 1)) - 1);
 }
 
 
@@ -36,7 +36,7 @@ void CALLCONV AmdPCIWriteBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
 	if ((highbit-lowbit) != 31)
-		mask = (((u32)1 << (highbit-lowbit+1))-1);
+		mask = (((u32)1 << (highbit - lowbit + 1)) - 1);
 	else
 		mask = (u32)0xFFFFFFFF;
 

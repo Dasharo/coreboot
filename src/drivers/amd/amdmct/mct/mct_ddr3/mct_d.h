@@ -53,16 +53,16 @@
 #define FenceTrnFinDlySeed	19
 #define EarlyArbEn	19
 
-#define PA_HOST(Node)	((((0x18+Node) << 3)+0) << 12)	/* Node 0 Host Bus function PCI Address bits [15:0]*/
-#define PA_MAP(Node)	((((0x18+Node) << 3)+1) << 12)	/* Node 0 MAP function PCI Address bits [15:0]*/
-#define PA_DCT(Node)	((((0x18+Node) << 3)+2) << 12)	/* Node 0 DCT function PCI Address bits [15:0]*/
+#define PA_HOST(Node)	((((0x18 + Node) << 3) + 0) << 12)	/* Node 0 Host Bus function PCI Address bits [15:0]*/
+#define PA_MAP(Node)	((((0x18 + Node) << 3) + 1) << 12)	/* Node 0 MAP function PCI Address bits [15:0]*/
+#define PA_DCT(Node)	((((0x18 + Node) << 3) + 2) << 12)	/* Node 0 DCT function PCI Address bits [15:0]*/
 /* #define PA_EXT_DCT	(((00 << 3)+4) << 8) */	/*Node 0 DCT extended configuration registers*/
 /* #define PA_DCTADDL	(((00 << 3)+2) << 8) */	/*Node x DCT function, Additional Registers PCI Address bits [15:0]*/
 /* #define PA_EXT_DCTADDL (((00 << 3)+5) << 8) */	/*Node x DCT function, Additional Registers PCI Address bits [15:0]*/
 
-#define PA_NBMISC(Node)	((((0x18+Node) << 3)+3) << 12)	/*Node 0 Misc PCI Address bits [15:0]*/
-#define PA_LINK(Node)	((((0x18+Node) << 3)+4) << 12)	/*Node 0 Link Control bits [15:0]*/
-#define PA_NBCTL(Node)	((((0x18+Node) << 3)+5) << 12)	/*Node 0 NB Control PCI Address bits [15:0]*/
+#define PA_NBMISC(Node)	((((0x18 + Node) << 3) + 3) << 12)	/*Node 0 Misc PCI Address bits [15:0]*/
+#define PA_LINK(Node)	((((0x18 + Node) << 3) + 4) << 12)	/*Node 0 Link Control bits [15:0]*/
+#define PA_NBCTL(Node)	((((0x18 + Node) << 3) + 5) << 12)	/*Node 0 NB Control PCI Address bits [15:0]*/
 /* #define PA_NBDEVOP	(((00 << 3)+3) << 8) */  /*Node 0 Misc PCI Address bits [15:0]*/
 
 #define DCC_EN		1		/* X:2:0x94[19]*/
@@ -271,11 +271,11 @@
 	Macros
 =============================================================================*/
 
-#define _2GB_RJ8	(2<<(30-8))
-#define _4GB_RJ8	(4<<(30-8))
-#define _4GB_RJ4	(4<<(30-4))
+#define _2GB_RJ8	(2 << (30 - 8))
+#define _4GB_RJ8	(4 << (30 - 8))
+#define _4GB_RJ4	(4 << (30 - 4))
 
-#define BigPagex8_RJ8	(1<<(17+3-8))	/*128KB * 8 >> 8 */
+#define BigPagex8_RJ8	(1 << (17 + 3 - 8))	/*128KB * 8 >> 8 */
 
 /*=============================================================================
 	Global MCT Status Structure
@@ -618,7 +618,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u8 DimmLoadReduced[MAX_DIMMS_SUPPORTED];
 
 	u64 DimmManufacturerID[MAX_DIMMS_SUPPORTED];
-	char DimmPartNumber[MAX_DIMMS_SUPPORTED][SPD_PARTN_LENGTH+1];
+	char DimmPartNumber[MAX_DIMMS_SUPPORTED][SPD_PARTN_LENGTH + 1];
 	u16 DimmRevisionNumber[MAX_DIMMS_SUPPORTED];
 	u32 DimmSerialNumber[MAX_DIMMS_SUPPORTED];
 

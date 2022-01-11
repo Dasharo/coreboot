@@ -209,7 +209,7 @@ static void dualPlaneOnly(pci_devfn_t dev)
 				wrmsr(PSTATE_4_MSR, minPstate);
 			} else {
 				msr_t msr;
-				msr.lo=0; msr.hi=0;
+				msr.lo = 0; msr.hi = 0;
 				wrmsr(PSTATE_0_MSR, rdmsr(PSTATE_4_MSR));
 				wrmsr(PSTATE_4_MSR, msr);
 			}
@@ -402,10 +402,10 @@ static u32 power_up_down(int node, u8 procPkg)
 		u32 dispRefModeEn = (pci_read_config32(NODE_PCI(node,0),0x68) >> 24) & 1;
 		u32 isocEn = 0;
 		int j;
-		for (j=0; (j<4) && (!isocEn); j++ ) {
+		for (j = 0; (j < 4) && (!isocEn); j++ ) {
 			u8 offset;
 			if (AMD_CpuFindCapability(node, j, &offset)) {
-				isocEn = (pci_read_config32(NODE_PCI(node,0),offset+4) >>12) & 1;
+				isocEn = (pci_read_config32(NODE_PCI(node, 0), offset + 4) >> 12) & 1;
 			}
 		}
 

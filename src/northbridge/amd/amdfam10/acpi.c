@@ -134,20 +134,20 @@ static unsigned long acpi_fill_slit(unsigned long current)
 	int nodes = get_sysconf()->nodes;
 	int i,j;
 
-	memset(p, 0, 8+nodes*nodes);
+	memset(p, 0, 8 + nodes * nodes);
 	*p = (u8) nodes;
 	p += 8;
 
 	for (i = 0; i < nodes; i++) {
 		for (j = 0; j < nodes; j++) {
 			if (i == j)
-				p[i*nodes+j] = 10;
+				p[i * nodes + j] = 10;
 			else
-				p[i*nodes+j] = 16;
+				p[i * nodes + j] = 16;
 		}
 	}
 
-	current += 8+nodes*nodes;
+	current += 8 + nodes * nodes;
 	return current;
 }
 
