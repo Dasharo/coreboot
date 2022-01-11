@@ -59,4 +59,4 @@
 	branch = stmpe
 [submodule "3rdparty/dasharo-blobs"]
 	path = 3rdparty/dasharo-blobs
-	url = git@github.com:Dasharo/dasharo-blobs.git
+	url = https://github.com/Dasharo/dasharo-blobs.git
