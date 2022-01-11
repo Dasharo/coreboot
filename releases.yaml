@@ -68,7 +68,7 @@ releases:
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
-        
+
         - version: v0.4.0
           added:
                 - Added full support for sleep mode (s0ix / Modern Standby)
@@ -91,7 +91,7 @@ releases:
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/5
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
-                
+
         - version: v0.5.0
           added:
                 - vboot Verified Boot
@@ -111,3 +111,19 @@ releases:
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+
+        - version: v0.5.1
+          added:
+                - Documentation for touchpad hotkey enablement on Linux
+          fixed:
+                - The touchpad ON/OFF switch Fn key is not functional
+                - Charging indicator displays wrong state if power adapter was
+                  unplugged while in sleep mode
+                - Bluetooth does not work under Windows
+          removed:
+                - Removed proprietary blobs from built coreboot images
+          known_issues:
+                - description: Unable to download the system by using iPXE
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
