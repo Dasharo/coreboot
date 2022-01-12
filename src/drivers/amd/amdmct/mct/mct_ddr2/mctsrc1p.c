@@ -56,7 +56,7 @@ static u8 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel,
 #ifdef UNUSED_CODE
 static u8 mct_AdjustFinalDQSRcvValue_1Pass(u8 val_1p, u8 val_2p)
 {
-	return (val_1p & 0xff) + ((val_2p & 0xff)<<8);
+	return (val_1p & 0xff) + ((val_2p & 0xff) << 8);
 }
 #endif
 
@@ -64,7 +64,7 @@ u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *pDCTstat, u8 pass)
 {
 	u8 ret;
 	ret = 0;
-	if ((pDCTstat->DqsRcvEn_Pass == 0xff) && (pass== FirstPass))
+	if ((pDCTstat->DqsRcvEn_Pass == 0xff) && (pass == FirstPass))
 		ret = 2;
 	return ret;
 }

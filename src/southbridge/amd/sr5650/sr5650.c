@@ -516,7 +516,7 @@ static void sr5650_nb_pci_table(struct device *nb_dev)
 
 	/* disable GFX debug. */
 	temp8 = pci_read_config8(nb_dev, 0x8d);
-	temp8 &= ~(1<<1);
+	temp8 &= ~(1 << 1);
 	pci_write_config8(nb_dev, 0x8d, temp8);
 
 	/* The system top memory in SR56X0. */
@@ -526,12 +526,12 @@ static void sr5650_nb_pci_table(struct device *nb_dev)
 	//set_htiu_enable_bits(nb_dev, 0x05, 1<<10 | 1<<9, 1<<10|1<<9);
 	set_htiu_enable_bits(nb_dev, 0x06, 1, 0x4203a202);
 	//set_htiu_enable_bits(nb_dev, 0x07, 1<<1 | 1<<2, 0x8001);
-	set_htiu_enable_bits(nb_dev, 0x15, 0, 1<<31 | 1<<30 | 1<<27);
+	set_htiu_enable_bits(nb_dev, 0x15, 0, 1 << 31 | 1 << 30 | 1 << 27);
 	set_htiu_enable_bits(nb_dev, 0x1c, 0, 0xfffe0000);
-	set_htiu_enable_bits(nb_dev, 0x0c, 0x3f, 1 | 1<<3);
-	set_htiu_enable_bits(nb_dev, 0x19, 0xfffff+(1<<31), 0x186a0+(1<<31));
-	set_htiu_enable_bits(nb_dev, 0x16, 0x3f<<10, 0x7<<10);
-	set_htiu_enable_bits(nb_dev, 0x23, 0, 1<<28);
+	set_htiu_enable_bits(nb_dev, 0x0c, 0x3f, 1 | 1 << 3);
+	set_htiu_enable_bits(nb_dev, 0x19, 0xfffff + (1 << 31), 0x186a0 + (1 << 31));
+	set_htiu_enable_bits(nb_dev, 0x16, 0x3f << 10, 0x7 << 10);
+	set_htiu_enable_bits(nb_dev, 0x23, 0, 1 << 28);
 }
 
 /***********************************************

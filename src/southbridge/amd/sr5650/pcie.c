@@ -278,9 +278,9 @@ void init_gen2(struct device *nb_dev, struct device *dev, u8 port)
 	/* for A11 (0x89 == 0) */
 	reg = 0x34;
 	if (port <= 3) {
-		val = 1<<5;
+		val = 1 << 5;
 	} else {
-		val = 1<<31;
+		val = 1 << 31;
 		if (port >= 9)
 			reg = 0x39;
 	}
@@ -289,30 +289,30 @@ void init_gen2(struct device *nb_dev, struct device *dev, u8 port)
 	switch (port) {
 		case 2:
 			reg = 0x34;
-			val = 1<<5;
+			val = 1 << 5;
 			break;
 		case 3:
 			reg = 0x22;
-			val = 1<<6;
+			val = 1 << 6;
 			break;
 		case 4:
 			reg = 0x34;
-			val = 1<<31;
+			val = 1 << 31;
 			break;
 		case 5:
 		case 6:
 			reg = 0x39;
-			val = 1<<31;
+			val = 1 << 31;
 			break;
 		case 7:
 		case 8:
 		case 9:
 			reg = 0x37;
-			val = 1<<port;
+			val = 1 << port;
 			break;
 		case 10:
 			reg = 0x22;
-			val = 1<<5;
+			val = 1 << 5;
 			break;
 		default:
 			reg = 0;
@@ -322,7 +322,7 @@ void init_gen2(struct device *nb_dev, struct device *dev, u8 port)
 	/* Enables GEN2 capability of the device */
 	set_pcie_enable_bits(dev, 0xA4, 0x1, 0x1);
 	/* Advertise the link speed to be Gen2 */
-	pci_ext_write_config32(nb_dev, dev, 0x88, 0xF0, 1<<2); /* LINK_CRTL2 */
+	pci_ext_write_config32(nb_dev, dev, 0x88, 0xF0, 1 << 2); /* LINK_CRTL2 */
 	set_nbmisc_enable_bits(nb_dev, reg, val, val);
 }
 
@@ -955,7 +955,7 @@ void get_pci1234(void)
 	u32 dword;
 	struct amdfam10_sysconf_t *sysconf = get_sysconf();
 
-	dword = sysconf->sblk<<8;
+	dword = sysconf->sblk << 8;
 	dword |= 1;
 	sysconf->pci1234[0] = dword; // sblink
 	sysconf->hcid[0] = 0;

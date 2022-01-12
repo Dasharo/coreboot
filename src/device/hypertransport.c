@@ -392,7 +392,7 @@ static unsigned int do_hypertransport_scan_chain(struct bus *bus, unsigned int m
 
 		printk(BIOS_DEBUG, "%s [%04x/%04x] %s next_unitid: %04x\n",
 		       dev_path(dev), dev->vendor, dev->device,
-		       (dev->enabled? "enabled" : "disabled"), next_unitid);
+		       (dev->enabled ? "enabled" : "disabled"), next_unitid);
 
 	} while (last_unitid != next_unitid);
 

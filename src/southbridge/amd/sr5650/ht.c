@@ -84,7 +84,7 @@ static void sr5690_apic_init(struct device *dev)
 	/* IOAPICCMISCIND:0x6, pin map of dev 2,3,4,5 */
 	dword = entry[2].pin |
 		entry[3].pin << 8 |
-		entry[4].pin << 16|
+		entry[4].pin << 16 |
 		entry[5].pin << 24;
 	pci_write_config32(dev, 0xF8, 0x6);
 	pci_write_config32(dev, 0xFC, dword);
@@ -92,7 +92,7 @@ static void sr5690_apic_init(struct device *dev)
 	/* IOAPICCMISCIND:0x7, pin map of dev 6,7,8,9 */
 	dword = entry[6].pin |
 		entry[7].pin << 8 |
-		entry[8].pin << 16|
+		entry[8].pin << 16 |
 		entry[9].pin << 24;
 	pci_write_config32(dev, 0xF8, 0x7);
 	pci_write_config32(dev, 0xFC, dword);
@@ -100,7 +100,7 @@ static void sr5690_apic_init(struct device *dev)
 	/* IOAPICCMISCIND:0x8, pin map of dev 10,11,12,13 */
 	dword = entry[10].pin |
 		entry[11].pin << 8 |
-		entry[12].pin << 16|
+		entry[12].pin << 16 |
 		entry[13].pin << 24;
 	pci_write_config32(dev, 0xF8, 0x8);
 	pci_write_config32(dev, 0xFC, dword);

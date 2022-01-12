@@ -82,16 +82,16 @@ void CPUMemTyping_D(struct MCTStatStruc *pMCTstat,
 				/* Limit */
 				/* MtrrAddr */
 	if (addr == -1)		/* ran out of MTRRs?*/
-		pMCTstat->GStatus |= 1<<GSB_MTRRshort;
+		pMCTstat->GStatus |= 1 << GSB_MTRRshort;
 
-	pMCTstat->Sub4GCacheTop = Cache32bTOP<<8;
+	pMCTstat->Sub4GCacheTop = Cache32bTOP << 8;
 
 	/*======================================================================
 	 Set TOP_MEM and TOM2 CPU registers
 	======================================================================*/
 	addr = TOP_MEM;
-	lo = Bottom32bIO<<8;
-	hi = Bottom32bIO>>24;
+	lo = Bottom32bIO << 8;
+	hi = Bottom32bIO >> 24;
 	_WRMSR(addr, lo, hi);
 	printk(BIOS_DEBUG, "\t CPUMemTyping: Bottom32bIO:%x\n", Bottom32bIO);
 	printk(BIOS_DEBUG, "\t CPUMemTyping: Bottom40bIO:%x\n", Bottom40bIO);
@@ -160,12 +160,12 @@ static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType)
 		valx += curBase;
 		if ((curBase == 0) || (*pLimit < valx)) {
 			/* flop direction to "descending" code path*/
-			valx = 1<<bsr(*pLimit - curBase);
+			valx = 1 << bsr(*pLimit - curBase);
 			curSize = valx;
 			valx += curBase;
 		}
 		curLimit = valx;		/*eax = curBase, edx = curLimit*/
-		valx = val>>24;
+		valx = val >> 24;
 		val <<= 8;
 
 		/* now program the MTRR */
@@ -237,6 +237,6 @@ void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat
 		printk(BIOS_DEBUG, "\t UMAMemTyping_D: Cache32bTOP:%x\n", Cache32bTOP);
 		SetMTRRrangeWB_D(0, &Cache32bTOP, &addr);
 		if (addr == -1)		/* ran out of MTRRs?*/
-			pMCTstat->GStatus |= 1<<GSB_MTRRshort;
+			pMCTstat->GStatus |= 1 << GSB_MTRRshort;
 	}
 }

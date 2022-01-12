@@ -219,7 +219,7 @@
 #define DUAL_PLANE_NB_VID_OFF_MASK 0x3e0000/* for CPU rev <= C */
 #define DUAL_PLANE_NB_VID_SHIFT 17/* for CPU rev <= C */
 
-#define NM_PS_REG (is_fam15h()?8:5)	/* number of P-state MSR registers */
+#define NM_PS_REG (is_fam15h() ? 8 : 5)	/* number of P-state MSR registers */
 
 /* sFidVidInit.outFlags defines */
 #define PWR_CK_OK 0			/* System board check OK */

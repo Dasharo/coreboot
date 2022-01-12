@@ -593,7 +593,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		}
 
 		/* Apply Rtt_Nom to the MRS control word */
-		tempW = tempW|tempW1;
+		tempW = tempW | tempW1;
 
 		/* All ranks of the target DIMM are set to write levelization mode. */
 		if (wl)
@@ -678,7 +678,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			if (bitTest(tempW1,18))
 			{tempW = bitTestSet(tempW, 6);}
 			/* tempW = tempW|(((tempW1 >> 20) & 0x7)<< 3); */
-			tempW = tempW|((tempW1&0x00700000) >> 17);
+			tempW = tempW | ((tempW1 & 0x00700000) >> 17);
 			/* workaround for DR-B0 */
 			if ((pDCTData->LogicalCPUID & AMD_DR_Bx) && (pDCTData->Status[DCT_STATUS_REGISTERED]))
 				tempW += 0x8;
@@ -695,7 +695,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		}
 
 		/* Apply Rtt_WR to the MRS control word */
-		tempW = tempW|tempW1;
+		tempW = tempW | tempW1;
 		tempW = swapAddrBits_wl(pDCTstat, dct, tempW);
 		if (is_fam15h())
 			set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
@@ -786,7 +786,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 					}
 
 					/* Apply Rtt_Nom to the MRS control word */
-					tempW = tempW|tempW1;
+					tempW = tempW | tempW1;
 
 					/* Program MrsAddress[5,1]=output driver impedance control (DIC) */
 					if (is_fam15h()) {
@@ -853,7 +853,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 						if (bitTest(tempW1,18))
 						{tempW = bitTestSet(tempW, 6);}
 						/* tempW = tempW|(((tempW1 >> 20) & 0x7) << 3); */
-						tempW = tempW|((tempW1&0x00700000) >> 17);
+						tempW = tempW | ((tempW1 & 0x00700000) >> 17);
 						/* workaround for DR-B0 */
 						if ((pDCTData->LogicalCPUID & AMD_DR_Bx) && (pDCTData->Status[DCT_STATUS_REGISTERED]))
 							tempW+=0x8;
@@ -870,7 +870,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 					}
 
 					/* Apply Rtt_WR to the MRS control word */
-					tempW = tempW|tempW1;
+					tempW = tempW | tempW1;
 					tempW = swapAddrBits_wl(pDCTstat, dct, tempW);
 					if (is_fam15h())
 						set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
@@ -929,7 +929,7 @@ void programODT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 		cs = (dimm * 2) + rank;
 
 		/* Fetch preprogammed ODT pattern from configuration registers */
-		dword = Get_NB32_DCT(pDCTstat->dev_dct, dct, ((cs > 3)?0x23c:0x238));
+		dword = Get_NB32_DCT(pDCTstat->dev_dct, dct, ((cs > 3) ? 0x23c : 0x238));
 		if ((cs == 7) || (cs == 3))
 			WrLvOdt1 = ((dword >> 24) & 0xf);
 		else if ((cs == 6) || (cs == 2))
@@ -1096,7 +1096,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 				Seed_Total = 0x15;
 			}
 			if (pDCTData->Status[DCT_STATUS_REGISTERED])
-				Seed_Total += ((AddrCmdPrelaunch)?0x10:0x0);
+				Seed_Total += ((AddrCmdPrelaunch) ? 0x10 : 0x0);
 
 			/* Adjust seed for the minimum platform supported frequency */
 			Seed_Total = (int32_t) (((((int64_t) Seed_Total) *

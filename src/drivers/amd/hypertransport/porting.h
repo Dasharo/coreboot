@@ -37,12 +37,12 @@ typedef struct _uint64
  */
 typedef uint32 SBDFO;
 
-#define MAKE_SBDFO(seg,bus,dev,fun,off) ((((uint32)(seg))<<28) | (((uint32)(bus))<<20) | \
-		    (((uint32)(dev))<<15) | (((uint32)(fun))<<12) | ((uint32)(off)))
-#define SBDFO_SEG(x) (((uint32)(x)>>28) & 0x0F)
-#define SBDFO_BUS(x) (((uint32)(x)>>20) & 0xFF)
-#define SBDFO_DEV(x) (((uint32)(x)>>15) & 0x1F)
-#define SBDFO_FUN(x) (((uint32)(x)>>12) & 0x07)
+#define MAKE_SBDFO(seg,bus,dev,fun,off) ((((uint32)(seg)) << 28) | (((uint32)(bus)) << 20) | \
+		    (((uint32)(dev)) << 15) | (((uint32)(fun)) << 12) | ((uint32)(off)))
+#define SBDFO_SEG(x) (((uint32)(x) >> 28) & 0x0F)
+#define SBDFO_BUS(x) (((uint32)(x) >> 20) & 0xFF)
+#define SBDFO_DEV(x) (((uint32)(x) >> 15) & 0x1F)
+#define SBDFO_FUN(x) (((uint32)(x) >> 12) & 0x07)
 #define SBDFO_OFF(x) (((uint32)(x)) & 0xFFF)
 #define ILLEGAL_SBDFO 0xFFFFFFFF
 

@@ -30,8 +30,8 @@ u32 OtherTiming_A_D(struct DCTStatStruc *pDCTstat, u32 val)
 	u64 tmp;
 	tmp = pDCTstat->LogicalCPUID;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		if (!(val & (3<<12)))
-			val |= 1<<12;
+		if (!(val & (3 << 12)))
+			val |= 1 << 12;
 	}
 	return val;
 }
@@ -52,9 +52,9 @@ void mct_ForceAutoPrecharge_D(struct DCTStatStruc *pDCTstat, u32 dct)
 			reg_off = 0x100 * dct;
 			reg = 0x90 + reg_off;	/* Dram Configuration Lo */
 			val = Get_NB32(dev, reg);
-			val |= 1<<ForceAutoPchg;
+			val |= 1 << ForceAutoPchg;
 			if (!pDCTstat->GangedMode)
-				val |= 1<<BurstLength32;
+				val |= 1 << BurstLength32;
 			Set_NB32(dev, reg, val);
 
 			reg = 0x88 + reg_off;	/* cx = Dram Timing Lo */
@@ -98,7 +98,7 @@ void mct_EndDQSTraining_D(struct MCTStatStruc *pMCTstat,
 			dev = pDCTstat->dev_dct;
 			reg = 0x11c;
 			val = Get_NB32(dev, reg);
-			val &= ~(1<<PrefDramTrainMode);
+			val &= ~(1 << PrefDramTrainMode);
 			Set_NB32(dev, reg, val);
 		}
 	}
@@ -198,7 +198,7 @@ u32 Modify_D3CMP(struct DCTStatStruc *pDCTstat, u32 dct, u32 value)
 		index_reg = 0x98 + 0x100 * dct;
 		index = 0x0D004201;
 		val = Get_NB32_index_wait(dev, index_reg, index);
-		value &= ~(1<<27);
+		value &= ~(1 << 27);
 		value |= ((val >> 10) & 1) << 27;
 	}
 	return value;

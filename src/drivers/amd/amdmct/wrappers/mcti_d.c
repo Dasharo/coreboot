@@ -460,7 +460,7 @@ void vErratum372(struct DCTStatStruc *pDCTstat)
 	int nbPstate1supported = !(msr.hi & (1 << (NB_GfxNbPstateDis -32)));
 
 	// is this the right way to check for NB pstate 1 or DDR3-1333 ?
-	if (((pDCTstat->PresetmaxFreq == 1333)||(nbPstate1supported))
+	if (((pDCTstat->PresetmaxFreq == 1333) || (nbPstate1supported))
 	    && (!pDCTstat->GangedMode)) {
 		/* DisableCf8ExtCfg */
 		msr.hi &= ~(3 << (51 - 32));

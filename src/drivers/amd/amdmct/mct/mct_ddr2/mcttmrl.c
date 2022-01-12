@@ -115,19 +115,19 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *pMCTstat,
 	u32 pattern_buf;
 
 	cr4 = read_cr4();
-	if (cr4 & (1<<9)) {		/* save the old value */
+	if (cr4 & (1 << 9)) {		/* save the old value */
 		_SSE2 = 1;
 	}
-	cr4 |= (1<<9);			/* OSFXSR enable SSE2 */
+	cr4 |= (1 << 9);		/* OSFXSR enable SSE2 */
 	write_cr4(cr4);
 
 	addr = HWCR_MSR;
 	_RDMSR(addr, &lo, &hi);
-	if (lo & (1<<17)) {		/* save the old value */
+	if (lo & (1 << 17)) {		/* save the old value */
 		_Wrap32Dis = 1;
 	}
-	lo |= (1<<17);			/* HWCR.wrap32dis */
-	lo &= ~(1<<15);			/* SSEDIS */
+	lo |= (1 << 17);		/* HWCR.wrap32dis */
+	lo &= ~(1 << 15);		/* SSEDIS */
 	/* Setting wrap32dis allows 64-bit memory references in
 	   real mode */
 	_WRMSR(addr, lo, hi);
@@ -173,12 +173,12 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *pMCTstat,
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
 		_RDMSR(addr, &lo, &hi);
-		lo &= ~(1<<17);	/* restore HWCR.wrap32dis */
+		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
 		_WRMSR(addr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
-		cr4 &= ~(1<<9);	/* restore cr4.OSFXSR */
+		cr4 &= ~(1 << 9);	/* restore cr4.OSFXSR */
 		write_cr4(cr4);
 	}
 
@@ -213,7 +213,7 @@ static void mct_setMaxRdLatTrnVal_D(struct DCTStatStruc *pDCTstat,
 	dev = pDCTstat->dev_dct;
 	reg = 0x78 + Channel * 0x100;
 	val = Get_NB32(dev, reg);
-	val &= ~(0x3ff<<22);
+	val &= ~(0x3ff << 22);
 	val |= MaxRdLatVal << 22;
 	/* program MaxRdLatency to correspond with current delay */
 	Set_NB32(dev, reg, val);

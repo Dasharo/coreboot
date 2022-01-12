@@ -832,7 +832,7 @@ static void lookupComputeAndLoadRoutingTables(sMainData *pDat)
 
 				for (k = 0; k < MAX_NODES; k++)
 				{
-					if (AbstractBcTargetNodes & ((u32)1<<k))
+					if (AbstractBcTargetNodes & ((u32)1 << k))
 					{
 						BcTargetLinks |= (u32)1 << convertNodeToLink(i, pDat->ReversePerm[k], pDat);
 					}

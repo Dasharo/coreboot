@@ -48,7 +48,7 @@ u32 bsr(u32 x)
 	u32 ret = 0;
 
 	for (i = 31; i > 0; i--) {
-		if (x & (1<<i)) {
+		if (x & (1 << i)) {
 			ret = i;
 			break;
 		}
@@ -64,7 +64,7 @@ u32 bsf(u32 x)
 	u32 ret = 32;
 
 	for (i = 0; i < 32; i++) {
-		if (x & (1<<i)) {
+		if (x & (1 << i)) {
 			ret = i;
 			break;
 		}
@@ -212,7 +212,7 @@ void ReadMaxRdLat1CLTestPattern_D(u32 addr)
 		"movl %%fs:-64(%%esi), %%eax\n\t"	/* +1 */
 		"movl %%fs:(%%esi), %%eax\n\t"		/* +2 */
 		"mfence\n\t"
-		 :: "a"(0), "S"((addr<<8)+128)
+		 :: "a"(0), "S"((addr << 8) + 128)
 	);
 
 }

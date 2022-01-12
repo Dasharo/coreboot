@@ -206,7 +206,7 @@ static void SetEccDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 			pDCTstat->Channel = channel;	/* Channel A or B */
 			pDCTstat->Direction = direction; /* Read or write */
 			CalcEccDQSPos_D(pMCTstat, pDCTstat, pDCTstat->CH_EccDQSLike[channel], pDCTstat->CH_EccDQSScale[channel], ChipSel);
-			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR? " R dqs_delay":" W dqs_delay",	pDCTstat->DQSDelay, 2);
+			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR ? " R dqs_delay":" W dqs_delay",	pDCTstat->DQSDelay, 2);
 			pDCTstat->ByteLane = 8;
 			StoreDQSDatStrucVal_D(pMCTstat, pDCTstat, ChipSel);
 			mct_SetDQSDelayCSR_D(pMCTstat, pDCTstat, ChipSel);
@@ -270,18 +270,18 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 
 	print_debug_dqs("\nTrainDQSRdWrPos: Node_ID ", pDCTstat->Node_ID, 0);
 	cr4 = read_cr4();
-	if (cr4 & (1<<9)) {
+	if (cr4 & (1 << 9)) {
 		_SSE2 = 1;
 	}
-	cr4 |= (1<<9);		/* OSFXSR enable SSE2 */
+	cr4 |= (1 << 9);	/* OSFXSR enable SSE2 */
 	write_cr4(cr4);
 
 	addr = HWCR_MSR;
 	_RDMSR(addr, &lo, &hi);
-	if (lo & (1<<17)) {
+	if (lo & (1 << 17)) {
 		_Wrap32Dis = 1;
 	}
-	lo |= (1<<17);		/* HWCR.wrap32dis */
+	lo |= (1 << 17);	/* HWCR.wrap32dis */
 	_WRMSR(addr, lo, hi);	/* allow 64-bit memory references in real mode */
 
 	/* Disable ECC correction of reads on the dram bus. */
@@ -360,12 +360,12 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
 		_RDMSR(addr, &lo, &hi);
-		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
+		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
 		_WRMSR(addr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
-		cr4 &= ~(1<<9);		/* restore cr4.OSFXSR */
+		cr4 &= ~(1 << 9);	/* restore cr4.OSFXSR */
 		write_cr4(cr4);
 	}
 
@@ -516,7 +516,7 @@ static void TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 					if (LastTest == DQS_FAIL) {
 						RnkDlySeqPassMin = DQSDelay; //start sequential run
 					}
-					if ((RnkDlySeqPassMax - RnkDlySeqPassMin)>(RnkDlyFilterMax-RnkDlyFilterMin)) {
+					if ((RnkDlySeqPassMax - RnkDlySeqPassMin) > (RnkDlyFilterMax-RnkDlyFilterMin)) {
 						RnkDlyFilterMin = RnkDlySeqPassMin;
 						RnkDlyFilterMax = RnkDlySeqPassMax;
 					}
@@ -571,7 +571,7 @@ void StoreDQSDatStrucVal_D(struct MCTStatStruc *pMCTstat,
 	u8 dn = 0;
 
 	if (pDCTstat->Status & (1 << SB_Over400MHz))
-		dn = ChipSel>>1; /* if odd or even logical DIMM */
+		dn = ChipSel >> 1; /* if odd or even logical DIMM */
 
 	pDCTstat->persistentData.CH_D_DIR_B_DQS[pDCTstat->Channel][dn][pDCTstat->Direction][pDCTstat->ByteLane] =
 					pDCTstat->DQSDelay;
@@ -592,7 +592,7 @@ static void GetDQSDatStrucVal_D(struct MCTStatStruc *pMCTstat,
 	 */
 
 	/* FindDQSDatDimmVal_D is not required since we use an array */
-	if (pDCTstat->Status & (1<<SB_Over400MHz))
+	if (pDCTstat->Status & (1 << SB_Over400MHz))
 		dn = ChipSel >> 1; /*if odd or even logical DIMM */
 
 	pDCTstat->DQSDelay =
@@ -856,7 +856,7 @@ u32 SetUpperFSbase(u32 addr_hi)
 	u32 lo, hi;
 	u32 addr;
 	lo = 0;
-	hi = addr_hi>>24;
+	hi = addr_hi >> 24;
 	addr = FS_Base;
 	_WRMSR(addr, lo, hi);
 	return addr_hi << 8;
@@ -918,17 +918,17 @@ u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *pMCTstat,
 	dev = pDCTstat->dev_dct;
 	reg = 0x90;
 	val = Get_NB32(dev, reg);
-	if (val & (1<<DimmEcEn)) {
+	if (val & (1 << DimmEcEn)) {
 		_DisableDramECC |= 0x01;
-		val &= ~(1<<DimmEcEn);
+		val &= ~(1 << DimmEcEn);
 		Set_NB32(dev, reg, val);
 	}
 	if (!pDCTstat->GangedMode) {
 		reg = 0x190;
 		val = Get_NB32(dev, reg);
-		if (val & (1<<DimmEcEn)) {
+		if (val & (1 << DimmEcEn)) {
 			_DisableDramECC |= 0x02;
-			val &= ~(1<<DimmEcEn);
+			val &= ~(1 << DimmEcEn);
 			Set_NB32(dev, reg, val);
 		}
 	}
@@ -952,13 +952,13 @@ void mct_EnableDimmEccEn_D(struct MCTStatStruc *pMCTstat,
 	if ((_DisableDramECC & 0x01) == 0x01) {
 		reg = 0x90;
 		val = Get_NB32(dev, reg);
-		val |= (1<<DimmEcEn);
+		val |= (1 << DimmEcEn);
 		Set_NB32(dev, reg, val);
 	}
 	if ((_DisableDramECC & 0x02) == 0x02) {
 		reg = 0x190;
 		val = Get_NB32(dev, reg);
-		val |= (1<<DimmEcEn);
+		val |= (1 << DimmEcEn);
 		Set_NB32(dev, reg, val);
 	}
 }

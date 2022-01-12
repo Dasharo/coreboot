@@ -448,28 +448,28 @@ static void sr5650_por_htiu_index_init(pci_devfn_t nb_dev)
 
 	cpu_f0 = PCI_DEV(0, 0x18, 0);
 
-	set_htiu_enable_bits(nb_dev, 0x1C, 0x1<<17, 0x1<<17);
-	set_htiu_enable_bits(nb_dev, 0x05, 0x1<<8,  0x1<<8);
-	set_htiu_enable_bits(nb_dev, 0x06, 0x1<<0,  0x0<<0);
-	set_htiu_enable_bits(nb_dev, 0x06, 0x1<<1,  0x1<<1);
-	set_htiu_enable_bits(nb_dev, 0x06, 0x1<<9,  0x1<<9);
-	set_htiu_enable_bits(nb_dev, 0x06, 0x1<<13, 0x1<<13);
-	set_htiu_enable_bits(nb_dev, 0x06, 0x1<<17, 0x1<<17);
-	set_htiu_enable_bits(nb_dev, 0x06, 0x3<<15, 0x3<<15);
-	set_htiu_enable_bits(nb_dev, 0x06, 0x1<<25, 0x1<<25);
-	set_htiu_enable_bits(nb_dev, 0x06, 0x1<<30, 0x1<<30);
+	set_htiu_enable_bits(nb_dev, 0x1C, 0x1 << 17, 0x1 << 17);
+	set_htiu_enable_bits(nb_dev, 0x05, 0x1 << 8,  0x1 << 8);
+	set_htiu_enable_bits(nb_dev, 0x06, 0x1 << 0,  0x0 << 0);
+	set_htiu_enable_bits(nb_dev, 0x06, 0x1 << 1,  0x1 << 1);
+	set_htiu_enable_bits(nb_dev, 0x06, 0x1 << 9,  0x1 << 9);
+	set_htiu_enable_bits(nb_dev, 0x06, 0x1 << 13, 0x1 << 13);
+	set_htiu_enable_bits(nb_dev, 0x06, 0x1 << 17, 0x1 << 17);
+	set_htiu_enable_bits(nb_dev, 0x06, 0x3 << 15, 0x3 << 15);
+	set_htiu_enable_bits(nb_dev, 0x06, 0x1 << 25, 0x1 << 25);
+	set_htiu_enable_bits(nb_dev, 0x06, 0x1 << 30, 0x1 << 30);
 
 	set_htiu_enable_bits(nb_dev, 0x07, 0x1 << 0 | 0x1 << 1 | 0x1 << 2, 0x1 << 0);
 
-	set_htiu_enable_bits(nb_dev, 0x16, 0x1<<11,  0x1<<11);
+	set_htiu_enable_bits(nb_dev, 0x16, 0x1 << 11,  0x1 << 11);
 
-	set_htiu_enable_bits(nb_dev, 0x1D, 0x1<<2,  0x1<<2);
-	set_htiu_enable_bits(nb_dev, 0x1D, 0x1<<4,  0x1<<4);
+	set_htiu_enable_bits(nb_dev, 0x1D, 0x1 << 2,  0x1 << 2);
+	set_htiu_enable_bits(nb_dev, 0x1D, 0x1 << 4,  0x1 << 4);
 
 	axindxc_reg(0x10, 1 << 9, 1 << 9);
 	set_pcie_enable_bits(nb_dev, 0x10 | 5 << 16, 1 << 9, 1 << 9);
-	set_htiu_enable_bits(nb_dev, 0x06, 0x1<<26, 0x1<<26);
-	set_htiu_enable_bits(nb_dev, 0x16, 0x1<<10, 0x1<<10);
+	set_htiu_enable_bits(nb_dev, 0x06, 0x1 << 26, 0x1 << 26);
+	set_htiu_enable_bits(nb_dev, 0x16, 0x1 << 10, 0x1 << 10);
 
 	/* Enable BIAS circuit for all lanes. */
 	//set_htiu_enable_bits(nb_dev, 0x2B, 0xF<<28, 0xF<<28);
@@ -481,7 +481,7 @@ static void sr5650_por_htiu_index_init(pci_devfn_t nb_dev)
 	/* A21 only */
 	//if (REV_SR5650_A21 == get_nb_rev(nb_dev)) {
 	if (get_nb_rev(nb_dev) > REV_SR5650_A11) {
-		set_htiu_enable_bits(nb_dev, 0x05, 0x3<<3| 1<<6 | 1<<10 | 0xFF<<12, 0x3<<3 | 1<<6 | 1<<10 | 0xFF<<12);
+		set_htiu_enable_bits(nb_dev, 0x05, 0x3 << 3| 1 << 6 | 1 << 10 | 0xFF << 12, 0x3 << 3 | 1 << 6 | 1 << 10 | 0xFF << 12);
 		set_htiu_enable_bits(nb_dev, 0x1D, 1 << 2 | 1 << 4, 0);
 	}
 }

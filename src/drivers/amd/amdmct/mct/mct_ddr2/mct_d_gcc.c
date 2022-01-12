@@ -50,7 +50,7 @@ u32 bsr(u32 x)
 	u32 ret = 0;
 
 	for (i = 31; i > 0; i--) {
-		if (x & (1<<i)) {
+		if (x & (1 << i)) {
 			ret = i;
 			break;
 		}
@@ -67,7 +67,7 @@ u32 bsf(u32 x)
 	u32 ret = 32;
 
 	for (i = 0; i < 32; i++) {
-		if (x & (1<<i)) {
+		if (x & (1 << i)) {
 			ret = i;
 			break;
 		}
@@ -94,7 +94,7 @@ void proc_CLFLUSH(u32 addr_hi)
 		"outb %%al, $0xed\n\t"	/* _EXECFENCE */
 		 "clflush %%fs:(%0)\n\t"
 		"mfence\n\t"
-		 ::"a" (addr_hi<<8)
+		 ::"a" (addr_hi << 8)
 	);
 }
 
@@ -291,7 +291,7 @@ void WriteMaxRdLat1CLTestPattern_D(u32 buf, u32 addr)
 		"loop 1b\n\t"
 		"mfence\n\t"
 
-		 :: "a" (addr<<8), "d" (16), "c" (3 * 4), "b"(buf)
+		 :: "a" (addr << 8), "d" (16), "c" (3 * 4), "b"(buf)
 	);
 }
 
@@ -310,7 +310,7 @@ void FlushMaxRdLatTestPattern_D(u32 addr)
 		"clflush %%fs:(%%esi)\n\t"  //+2
 		"mfence\n\t"
 
-		 :: "S"((addr<<8)+128)
+		 :: "S"((addr << 8) + 128)
 	);
 }
 

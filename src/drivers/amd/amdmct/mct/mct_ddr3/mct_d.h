@@ -116,7 +116,7 @@
 #define X4Dimm			12	/* func 2, offset 90h, bit 12*/
 #define UnBuffDimm		16	/* func 2, offset 90h, bit 16*/
 #define DimmEcEn		19	/* func 2, offset 90h, bit 19*/
-#define MemClkFreqVal		((is_fam15h())?7:3)	/* func 2, offset 94h, bit 3 or 7*/
+#define MemClkFreqVal		((is_fam15h()) ? 7 : 3)	/* func 2, offset 94h, bit 3 or 7*/
 #define RDqsEn			12	/* func 2, offset 94h, bit 12*/
 #define DisDramInterface	14	/* func 2, offset 94h, bit 14*/
 #define PowerDownEn		15	/* func 2, offset 94h, bit 15*/

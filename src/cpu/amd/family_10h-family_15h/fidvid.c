@@ -346,7 +346,7 @@ static void recalculateVsSlamTimeSettingOnCorePre(pci_devfn_t dev)
 		lowVoltageVid = bValue;
 
 	u8 mobileFlag = get_platform_type() & AMD_PTYPE_MOB;
-	minimumSlamTime =  (mobileFlag?2:4) * (vidTo100uV(highVoltageVid) - vidTo100uV(lowVoltageVid)); /* * 0.01 us */
+	minimumSlamTime =  (mobileFlag ? 2 : 4) * (vidTo100uV(highVoltageVid) - vidTo100uV(lowVoltageVid)); /* * 0.01 us */
 
 
 	/* Now round up to nearest register setting.
@@ -457,7 +457,7 @@ static void config_clk_power_ctrl_reg0(u8 node, u64 cpuRev, u8 procPkg) {
 	 * ClkRampHystCtl=HW default
 	 * ClkRampHystSel=1111b
 	 */
-	u32 dword= pci_read_config32(dev, 0xd4);
+	u32 dword = pci_read_config32(dev, 0xd4);
 	dword &= CPTC0_MASK;
 	dword |= NB_CLKDID_ALL | LNK_PLL_LOCK | CLK_RAMP_HYST_SEL_VAL;
 	dword |= (nb_clk_did(node,cpuRev,procPkg) <<  NB_CLKDID_SHIFT);
@@ -538,7 +538,7 @@ static void config_acpi_pwr_state_ctrl_regs(pci_devfn_t dev, u64 cpuRev,
 	} else {
 		/* step 1, chapter 2.4.2.6 of AMD Fam 10 BKDG #31116 Rev 3.48 22.4.2010 */
 		u32 dword;
-		u32 c1= 1;
+		u32 c1 = 1;
 		if (cpuRev & (AMD_DR_Bx)) {
 			// will coreboot ever enable cache scrubbing ?
 			// if it does, will it be enough to check the current state

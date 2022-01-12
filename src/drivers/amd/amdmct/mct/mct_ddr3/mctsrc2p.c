@@ -39,7 +39,7 @@ u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 		u8 max = 0;
 		u8 val;
 		u8 i;
-		u8 *p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver>>1];
+		u8 *p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
 		u8 bn;
 		bn = 8;
 
@@ -70,7 +70,7 @@ u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 
 	bn = 8;
 
-	p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver>>1];
+	p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
 
 	if (Pass == SecondPass) { /* second pass must average values */
 		/* FIXME: which byte? */
@@ -91,9 +91,9 @@ u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 			}
 		}
 		if (!valid) {
-			pDCTstat->ErrStatus |= 1<<SB_NORCVREN;
+			pDCTstat->ErrStatus |= 1 << SB_NORCVREN;
 		} else {
-			pDCTstat->DimmTrainFail &= ~(1<<(Receiver + Channel));
+			pDCTstat->DimmTrainFail &= ~(1 << (Receiver + Channel));
 		}
 	} else {
 		for (i = 0; i < bn; i++) {
@@ -103,7 +103,7 @@ u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 			val += 0x5; /* NOTE: middle value with DQSRCVEN_SAVED_GOOD_TIMES */
 			/* val += 0x02; */
 			p[i] = val;
-			pDCTstat->DimmTrainFail &= ~(1<<(Receiver + Channel));
+			pDCTstat->DimmTrainFail &= ~(1 << (Receiver + Channel));
 		}
 	}
 

@@ -19,12 +19,12 @@ typedef u32 SBDFO;
 #define WORDSIZE 2
 #define DWORDSIZE 4
 
-#define MAKE_SBDFO(seg,bus,dev,fun,off) ((((uint32)(seg))<<28) | (((uint32)(bus))<<20) | \
-		    (((uint32)(dev))<<15) | (((uint32)(fun))<<12) | ((uint32)(off)))
-#define SBDFO_SEG(x) (((uint32)(x)>>28) & 0x0F)
-#define SBDFO_BUS(x) (((uint32)(x)>>20) & 0xFF)
-#define SBDFO_DEV(x) (((uint32)(x)>>15) & 0x1F)
-#define SBDFO_FUN(x) (((uint32)(x)>>12) & 0x07)
+#define MAKE_SBDFO(seg,bus,dev,fun,off) ((((uint32)(seg)) << 28) | (((uint32)(bus)) << 20) | \
+		    (((uint32)(dev)) << 15) | (((uint32)(fun)) << 12) | ((uint32)(off)))
+#define SBDFO_SEG(x) (((uint32)(x) >> 28) & 0x0F)
+#define SBDFO_BUS(x) (((uint32)(x) >> 20) & 0xFF)
+#define SBDFO_DEV(x) (((uint32)(x) >> 15) & 0x1F)
+#define SBDFO_FUN(x) (((uint32)(x) >> 12) & 0x07)
 #define SBDFO_OFF(x) (((uint32)(x)) & 0xFFF)
 #define ILLEGAL_SBDFO 0xFFFFFFFF
 
@@ -127,31 +127,31 @@ typedef struct _sDCTStruct
 	u8 CurrDct;			/* Current DCT number (0 or 1) */
 	u8 DctCSPresent;		/* Current DCT CS mapping */
 	u8 WrDqsGrossDlyBaseOffset;
-	int32_t WLSeedGrossDelay[MAX_BYTE_LANES*MAX_LDIMMS];	/* Write Levelization Seed Gross Delay */
+	int32_t WLSeedGrossDelay[MAX_BYTE_LANES * MAX_LDIMMS];	/* Write Levelization Seed Gross Delay */
 								/* per byte Lane Per Logical DIMM*/
-	int32_t WLSeedFineDelay[MAX_BYTE_LANES*MAX_LDIMMS];	/* Write Levelization Seed Fine Delay */
+	int32_t WLSeedFineDelay[MAX_BYTE_LANES * MAX_LDIMMS];	/* Write Levelization Seed Fine Delay */
 								/* per byte Lane Per Logical DIMM*/
-	int32_t WLSeedPreGrossDelay[MAX_BYTE_LANES*MAX_LDIMMS];	/* Write Levelization Seed Pre-Gross Delay */
+	int32_t WLSeedPreGrossDelay[MAX_BYTE_LANES * MAX_LDIMMS];	/* Write Levelization Seed Pre-Gross Delay */
 								/* per byte Lane Per Logical DIMM*/
-	u8 WLSeedPreGrossPrevNibble[MAX_BYTE_LANES*MAX_LDIMMS];
-	u8 WLSeedGrossPrevNibble[MAX_BYTE_LANES*MAX_LDIMMS];
-	u8 WLSeedFinePrevNibble[MAX_BYTE_LANES*MAX_LDIMMS];
+	u8 WLSeedPreGrossPrevNibble[MAX_BYTE_LANES * MAX_LDIMMS];
+	u8 WLSeedGrossPrevNibble[MAX_BYTE_LANES * MAX_LDIMMS];
+	u8 WLSeedFinePrevNibble[MAX_BYTE_LANES * MAX_LDIMMS];
 								/* per byte Lane Per Logical DIMM*/
-	u8 WLGrossDelay[MAX_BYTE_LANES*MAX_LDIMMS];		/* Write Levelization Gross Delay */
+	u8 WLGrossDelay[MAX_BYTE_LANES * MAX_LDIMMS];		/* Write Levelization Gross Delay */
 								/* per byte Lane Per Logical DIMM*/
-	u8 WLFineDelay[MAX_BYTE_LANES*MAX_LDIMMS];		/* Write Levelization Fine Delay */
+	u8 WLFineDelay[MAX_BYTE_LANES * MAX_LDIMMS];		/* Write Levelization Fine Delay */
 								/* per byte Lane Per Logical DIMM*/
-	u8 WLGrossDelayFirstPass[MAX_BYTE_LANES*MAX_LDIMMS];	/* First-Pass Write Levelization Gross Delay */
+	u8 WLGrossDelayFirstPass[MAX_BYTE_LANES * MAX_LDIMMS];	/* First-Pass Write Levelization Gross Delay */
 								/* per byte Lane Per Logical DIMM*/
-	u8 WLFineDelayFirstPass[MAX_BYTE_LANES*MAX_LDIMMS];	/* First-Pass Write Levelization Fine Delay */
+	u8 WLFineDelayFirstPass[MAX_BYTE_LANES * MAX_LDIMMS];	/* First-Pass Write Levelization Fine Delay */
 								/* per byte Lane Per Logical DIMM*/
-	u8 WLGrossDelayPrevPass[MAX_BYTE_LANES*MAX_LDIMMS];	/* Previous Pass Write Levelization Gross Delay */
+	u8 WLGrossDelayPrevPass[MAX_BYTE_LANES * MAX_LDIMMS];	/* Previous Pass Write Levelization Gross Delay */
 								/* per byte Lane Per Logical DIMM*/
-	u8 WLFineDelayPrevPass[MAX_BYTE_LANES*MAX_LDIMMS];	/* Previous Pass Write Levelization Fine Delay */
+	u8 WLFineDelayPrevPass[MAX_BYTE_LANES * MAX_LDIMMS];	/* Previous Pass Write Levelization Fine Delay */
 								/* per byte Lane Per Logical DIMM*/
-	u8 WLGrossDelayFinalPass[MAX_BYTE_LANES*MAX_LDIMMS];	/* Final-Pass Write Levelization Gross Delay */
+	u8 WLGrossDelayFinalPass[MAX_BYTE_LANES * MAX_LDIMMS];	/* Final-Pass Write Levelization Gross Delay */
 								/* per byte Lane Per Logical DIMM*/
-	u8 WLFineDelayFinalPass[MAX_BYTE_LANES*MAX_LDIMMS];	/* Final-Pass Write Levelization Fine Delay */
+	u8 WLFineDelayFinalPass[MAX_BYTE_LANES * MAX_LDIMMS];	/* Final-Pass Write Levelization Fine Delay */
 								/* per byte Lane Per Logical DIMM*/
 	int32_t WLCriticalGrossDelayFirstPass;
 	int32_t WLCriticalGrossDelayPrevPass;

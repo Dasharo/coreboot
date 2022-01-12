@@ -209,7 +209,7 @@ static const u8 Tab_G34CLKDis[] = {0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x0
 /* FM2: Enable all the clocks for the dimms */
 static const u8 Tab_FM2CLKDis[] = {0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00};
 
-static const u8 Tab_ManualCLKDis[]= {0x10, 0x04, 0x08, 0x20, 0x00, 0x00, 0x00, 0x00};
+static const u8 Tab_ManualCLKDis[] = {0x10, 0x04, 0x08, 0x20, 0x00, 0x00, 0x00, 0x00};
 /* ========================================================================================== */
 
 static const u8 Table_Comp_Rise_Slew_20x[] = {7, 3, 2, 2, 0xFF};
@@ -3056,9 +3056,9 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 
 		lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
-		if (pDCTstat->Dimmx4Present & ((dct)?0xaa:0x55))
+		if (pDCTstat->Dimmx4Present & ((dct) ? 0xaa : 0x55))
 			x4_present = 1;
-		if (pDCTstat->Dimmx8Present & ((dct)?0xaa:0x55))
+		if (pDCTstat->Dimmx8Present & ((dct) ? 0xaa : 0x55))
 			x8_present = 1;
 		memclk_index = Get_NB32_DCT(dev, dct, 0x94) & 0x1f;
 
@@ -3847,9 +3847,9 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 					limit = pDCTstat->DCTSysLimit;
 				} else if (base == BottomIO) {
 					/* SW Node Hoist */
-					pMCTstat->GStatus |= 1<<GSB_SpIntRemapHole;
-					pDCTstat->Status |= 1<<SB_SWNodeHole;
-					pMCTstat->GStatus |= 1<<GSB_SoftHole;
+					pMCTstat->GStatus |= 1 << GSB_SpIntRemapHole;
+					pDCTstat->Status |= 1 << SB_SWNodeHole;
+					pMCTstat->GStatus |= 1 << GSB_SoftHole;
 					pMCTstat->HoleBase = base;
 					limit -= base;
 					base = _4GB_RJ8;
@@ -4206,7 +4206,7 @@ void StartupDCT_D(struct MCTStatStruc *pMCTstat,
 
 	dev = pDCTstat->dev_dct;
 	val = Get_NB32_DCT(dev, dct, 0x94);
-	if (val & (1<<MemClkFreqVal)) {
+	if (val & (1 << MemClkFreqVal)) {
 		mctHookBeforeDramInit();	/* generalized Hook */
 		if (!(pMCTstat->GStatus & (1 << GSB_EnDIMMSpareNW)))
 		    mct_DramInit(pMCTstat, pDCTstat, dct);
@@ -4291,7 +4291,7 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		Trfc[i] = 0;
 	Tfaw = 0;
 
-	for (i = 0; i< MAX_DIMMS_SUPPORTED; i++) {
+	for (i = 0; i < MAX_DIMMS_SUPPORTED; i++) {
 		LDIMM = i >> 1;
 		if (pDCTstat->DIMMValid & (1 << i)) {
 			val = pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDivisor]; /* MTB = Dividend/Divisor */
@@ -4604,30 +4604,30 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		DramTimingLo |= val;
 
 		val = pDCTstat->Trcd - Bias_TrcdT;
-		DramTimingLo |= val<<4;
+		DramTimingLo |= val << 4;
 
 		val = pDCTstat->Trp - Bias_TrpT;
 		val = mct_AdjustSPDTimings(pMCTstat, pDCTstat, val);
-		DramTimingLo |= val<<7;
+		DramTimingLo |= val << 7;
 
 		val = pDCTstat->Trtp - Bias_TrtpT;
-		DramTimingLo |= val<<10;
+		DramTimingLo |= val << 10;
 
 		val = pDCTstat->Tras - Bias_TrasT;
-		DramTimingLo |= val<<12;
+		DramTimingLo |= val << 12;
 
 		val = pDCTstat->Trc - Bias_TrcT;
-		DramTimingLo |= val<<16;
+		DramTimingLo |= val << 16;
 
 		val = pDCTstat->Trrd - Bias_TrrdT;
-		DramTimingLo |= val<<22;
+		DramTimingLo |= val << 22;
 
 		DramTimingHi = 0;	/* Dram Timing High init */
 		val = pDCTstat->Twtr - Bias_TwtrT;
-		DramTimingHi |= val<<8;
+		DramTimingHi |= val << 8;
 
 		val = 2;		/* Tref = 7.8us */
-		DramTimingHi |= val<<16;
+		DramTimingHi |= val << 16;
 
 		val = 0;
 		for (i = 4; i > 0; i--) {
@@ -4837,7 +4837,7 @@ static void SPDGetTCL_D(struct MCTStatStruc *pMCTstat,
 			   value for all modules on the memory channel (SPD byte 16). */
 			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDivisor];
 
-			MTB16x = ((pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDividend] & 0xFF)<<4);
+			MTB16x = ((pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDividend] & 0xFF) << 4);
 			MTB16x /= byte; /* transfer to MTB*16 */
 
 			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_tAAmin];
@@ -5048,7 +5048,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	DramControl |= val;	/* RdPtrInit = 6 for Cx CPU */
 
 	if (mctGet_NVbits(NV_CLKHZAltVidC3))
-		DramControl |= 1<<16; /* check */
+		DramControl |= 1 << 16; /* check */
 
 	DramControl |= 0x00002A00;
 
@@ -5146,7 +5146,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	DramTimingLo = Get_NB32_DCT(dev, dct, 0x88);
 	if (mctGet_NVbits(NV_AllMemClks) == 0) {
 		/* Special Jedec SPD diagnostic bit - "enable all clocks" */
-		if (!(pDCTstat->Status & (1<<SB_DiagClks))) {
+		if (!(pDCTstat->Status & (1 << SB_DiagClks))) {
 			const u8 *p;
 			p = Tab_ManualCLKDis;
 
@@ -5167,7 +5167,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 			dword = 0;
 			byte = 0xFF;
 			while (dword < MAX_CS_SUPPORTED) {
-				if (pDCTstat->CSPresent & (1<<dword)) {
+				if (pDCTstat->CSPresent & (1 << dword)) {
 					/* re-enable clocks for the enabled CS */
 					val = p[dword];
 					byte &= ~val;
@@ -5242,7 +5242,7 @@ static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
 		if ((pDCTstat->Status & (1 << SB_64MuxedMode)) && ChipSel >=4)
 			byte -= 3;
 
-		if (pDCTstat->DIMMValid & (1<<byte)) {
+		if (pDCTstat->DIMMValid & (1 << byte)) {
 			byte = pDCTstat->spd_data.spd_bytes[ChipSel + dct][SPD_Addressing];
 			Rows = (byte >> 3) & 0x7; /* Rows:0b = 12-bit,... */
 			Cols = byte & 0x7; /* Cols:0b = 9-bit,... */
@@ -5274,7 +5274,7 @@ static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
 				continue;
 
 			/* bit no. of CS field in address mapping reg.*/
-			dword <<= (ChipSel<<1);
+			dword <<= (ChipSel << 1);
 			BankAddrReg |= dword;
 
 			/* Mask value=(2pow(rows+cols+banks+3)-1)>>8,
@@ -5292,18 +5292,18 @@ static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
 			csMask--;
 
 			/*set ChipSelect population indicator even bits*/
-			pDCTstat->CSPresent |= (1<<ChipSel);
+			pDCTstat->CSPresent |= (1 << ChipSel);
 			if (Ranks >= 2)
 				/*set ChipSelect population indicator odd bits*/
 				pDCTstat->CSPresent |= 1 << (ChipSel + 1);
 
-			reg = 0x60+(ChipSel<<1);	/*Dram CS Mask Register */
+			reg = 0x60+(ChipSel << 1);	/*Dram CS Mask Register */
 			val = csMask;
 			val &= 0x1FF83FE0;	/* Mask out reserved bits.*/
 			Set_NB32_DCT(dev, dct, reg, val);
 		} else {
-			if (pDCTstat->DIMMSPDCSE & (1<<ChipSel))
-				pDCTstat->CSTestFail |= (1<<ChipSel);
+			if (pDCTstat->DIMMSPDCSE & (1 << ChipSel))
+				pDCTstat->CSTestFail |= (1 << ChipSel);
 		}	/* if DIMMValid*/
 	}	/* while ChipSel*/
 
@@ -5354,35 +5354,35 @@ static void SPDCalcWidth_D(struct MCTStatStruc *pMCTstat,
 			byte = pDCTstat->spd_data.spd_bytes[i][SPD_Addressing] & 0x7;
 			byte1 = pDCTstat->spd_data.spd_bytes[i + 1][SPD_Addressing] & 0x7;
 			if (byte != byte1) {
-				pDCTstat->ErrStatus |= (1<<SB_DimmMismatchO);
+				pDCTstat->ErrStatus |= (1 << SB_DimmMismatchO);
 				break;
 			}
 
 			byte =	 pDCTstat->spd_data.spd_bytes[i][SPD_Density] & 0x0f;
 			byte1 =	 pDCTstat->spd_data.spd_bytes[i + 1][SPD_Density] & 0x0f;
 			if (byte != byte1) {
-				pDCTstat->ErrStatus |= (1<<SB_DimmMismatchO);
+				pDCTstat->ErrStatus |= (1 << SB_DimmMismatchO);
 				break;
 			}
 
 			byte = pDCTstat->spd_data.spd_bytes[i][SPD_Organization] & 0x7;
 			byte1 = pDCTstat->spd_data.spd_bytes[i + 1][SPD_Organization] & 0x7;
 			if (byte != byte1) {
-				pDCTstat->ErrStatus |= (1<<SB_DimmMismatchO);
+				pDCTstat->ErrStatus |= (1 << SB_DimmMismatchO);
 				break;
 			}
 
 			byte = (pDCTstat->spd_data.spd_bytes[i][SPD_Organization] >> 3) & 0x7;
 			byte1 = (pDCTstat->spd_data.spd_bytes[i + 1][SPD_Organization] >> 3) & 0x7;
 			if (byte != byte1) {
-				pDCTstat->ErrStatus |= (1<<SB_DimmMismatchO);
+				pDCTstat->ErrStatus |= (1 << SB_DimmMismatchO);
 				break;
 			}
 
 			byte = pDCTstat->spd_data.spd_bytes[i][SPD_DMBANKS] & 7;	 /* #ranks-1 */
 			byte1 = pDCTstat->spd_data.spd_bytes[i + 1][SPD_DMBANKS] & 7;	  /* #ranks-1 */
 			if (byte != byte1) {
-				pDCTstat->ErrStatus |= (1<<SB_DimmMismatchO);
+				pDCTstat->ErrStatus |= (1 << SB_DimmMismatchO);
 				break;
 			}
 
@@ -5419,7 +5419,7 @@ static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
 			if (pMCTstat->GStatus & 1 << GSB_EnDIMMSpareNW) {
 				word = pDCTstat->CSPresent;
 				val = bsf(word);
-				word &= ~(1<<val);
+				word &= ~(1 << val);
 				if (word)
 					/* Make sure at least two chip-selects are available */
 					_DSpareEn = 1;
@@ -5590,7 +5590,7 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 						pDCTstat->ErrCode = SC_StopError;
 					} else {
 						/*if NV_SPDCHK_RESTRT is set to 1, ignore faulty SPD checksum*/
-						pDCTstat->ErrStatus |= 1<<SB_DIMMChkSum;
+						pDCTstat->ErrStatus |= 1 << SB_DIMMChkSum;
 						byte = pDCTstat->spd_data.spd_bytes[i][SPD_TYPE];
 						if (byte == JED_DDR3SDRAM)
 							pDCTstat->DIMMValid |= 1 << i;
@@ -5685,7 +5685,7 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 				if (byte == 2)
 					bytex <<= 1;	/*double Addr bus load value for dual rank DIMMs*/
 
-				j = i & (1<<0);
+				j = i & (1 << 0);
 				pDCTstat->DATAload[j] += byte;	/*number of ranks on DATA bus*/
 				pDCTstat->MAload[j] += bytex;	/*number of devices on CMD/ADDR bus*/
 				pDCTstat->MAdimms[j]++;		/*number of DIMMs on A bus */
@@ -5743,38 +5743,38 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 		if (RegDIMMPresent != 0) {
 			if ((RegDIMMPresent ^ pDCTstat->DIMMValid) !=0) {
 				/* module type DIMM mismatch (reg'ed, unbuffered) */
-				pDCTstat->ErrStatus |= 1<<SB_DimmMismatchM;
+				pDCTstat->ErrStatus |= 1 << SB_DimmMismatchM;
 				pDCTstat->ErrCode = SC_StopError;
 			} else{
 				/* all DIMMs are registered */
-				pDCTstat->Status |= 1<<SB_Registered;
+				pDCTstat->Status |= 1 << SB_Registered;
 			}
 		}
 		if (LRDIMMPresent != 0) {
 			if ((LRDIMMPresent ^ pDCTstat->DIMMValid) !=0) {
 				/* module type DIMM mismatch (reg'ed, unbuffered) */
-				pDCTstat->ErrStatus |= 1<<SB_DimmMismatchM;
+				pDCTstat->ErrStatus |= 1 << SB_DimmMismatchM;
 				pDCTstat->ErrCode = SC_StopError;
 			} else{
 				/* all DIMMs are registered */
-				pDCTstat->Status |= 1<<SB_LoadReduced;
+				pDCTstat->Status |= 1 << SB_LoadReduced;
 			}
 		}
 		if (pDCTstat->DimmECCPresent != 0) {
 			if ((pDCTstat->DimmECCPresent ^ pDCTstat->DIMMValid) == 0) {
 				/* all DIMMs are ECC capable */
-				pDCTstat->Status |= 1<<SB_ECCDIMMs;
+				pDCTstat->Status |= 1 << SB_ECCDIMMs;
 			}
 		}
 		if (pDCTstat->DimmPARPresent != 0) {
 			if ((pDCTstat->DimmPARPresent ^ pDCTstat->DIMMValid) == 0) {
 				/*all DIMMs are Parity capable */
-				pDCTstat->Status |= 1<<SB_PARDIMMs;
+				pDCTstat->Status |= 1 << SB_PARDIMMs;
 			}
 		}
 	} else {
 		/* no DIMMs present or no DIMMs that qualified. */
-		pDCTstat->ErrStatus |= 1<<SB_NoDimms;
+		pDCTstat->ErrStatus |= 1 << SB_NoDimms;
 		pDCTstat->ErrCode = SC_StopError;
 	}
 
@@ -6397,7 +6397,7 @@ static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *pDCTstat,
 	if (byte > Largest)
 		Largest = byte;
 
-	if (pDCTstat->DimmECCPresent> 0) {
+	if (pDCTstat->DimmECCPresent > 0) {
 		/*DqsRcvEn Ecc */
 		val = Get_DqsRcvEnGross_MaxMin(pDCTstat, dev, dct, index_reg, 0x12);
 		byte = val & 0xFF;
@@ -6832,11 +6832,11 @@ static void clear_legacy_Mode(struct MCTStatStruc *pMCTstat,
 	/* Clear Legacy BIOS Mode bit */
 	reg = 0x94;
 	val = Get_NB32_DCT(dev, 0, reg);
-	val &= ~(1<<LegacyBiosMode);
+	val &= ~(1 << LegacyBiosMode);
 	Set_NB32_DCT(dev, 0, reg, val);
 
 	val = Get_NB32_DCT(dev, 1, reg);
-	val &= ~(1<<LegacyBiosMode);
+	val &= ~(1 << LegacyBiosMode);
 	Set_NB32_DCT(dev, 1, reg, val);
 }
 
@@ -7767,7 +7767,7 @@ void mct_ClrClToNB_D(struct MCTStatStruc *pMCTstat,
 	msr = BU_CFG2_MSR;
 	_RDMSR(msr, &lo, &hi);
 	if (!pDCTstat->ClToNB_flag)
-		lo &= ~(1<<ClLinesToNbDis);
+		lo &= ~(1 << ClLinesToNbDis);
 	_WRMSR(msr, lo, hi);
 
 }
@@ -8028,10 +8028,10 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 
 	addr = HWCR_MSR;
 	_RDMSR(addr, &lo, &hi);
-	if (lo & (1<<17)) {		/* save the old value */
+	if (lo & (1 << 17)) {		/* save the old value */
 		wrap32dis = 1;
 	}
-	lo |= (1<<17);			/* HWCR.wrap32dis */
+	lo |= (1 << 17);		/* HWCR.wrap32dis */
 	/* Setting wrap32dis allows 64-bit memory references in 32bit mode */
 	_WRMSR(addr, lo, hi);
 
@@ -8059,7 +8059,7 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 	if (!wrap32dis) {
 		addr = HWCR_MSR;
 		_RDMSR(addr, &lo, &hi);
-		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
+		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
 		_WRMSR(addr, lo, hi);
 	}
 }

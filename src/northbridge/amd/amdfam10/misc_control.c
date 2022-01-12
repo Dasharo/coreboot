@@ -68,7 +68,7 @@ static void mcf3_set_resources(struct device *dev)
 		resource->flags |= IORESOURCE_STORED;
 
 		/* Find the size of the GART aperture */
-		gart_acr = (0<<6)|(0<<5)|(0<<4)|((resource->gran - 25) << 1)|(0<<0);
+		gart_acr = (0 << 6) | (0 << 5) | (0 << 4) | ((resource->gran - 25) << 1) | (0 << 0);
 
 		/* Get the base address */
 		gart_base = ((resource->base) >> 25) & 0x00007fff;
@@ -149,7 +149,7 @@ static void misc_control_init(struct device *dev)
 	 * This is needed for PC backwards compatibility.
 	 */
 	dword = pci_read_config32(dev, 0x44);
-	dword |= (1<<6) | (1<<25);
+	dword |= (1 << 6) | (1 << 25);
 	pci_write_config32(dev, 0x44, dword);
 
 	boost_limit = get_uint_option("maximum_p_state_limit", 0xf);

@@ -490,7 +490,7 @@ static void set_ht_link_to_xcs_token_counts(u8 node, u8 link, struct ht_link_sta
 	link_state->probe_tok_0 = ((link_state->ganged) ? 2 : 1);
 	link_state->rsp_tok_0 = ((link_state->ganged) ? 2 : 1);
 	link_state->preq_tok_0 = ((link_state->ganged) ? 2 : 1);
-	link_state->req_tok_0= ((link_state->ganged) ? 2 : 1);
+	link_state->req_tok_0 = ((link_state->ganged) ? 2 : 1);
 	link_state->free_tokens = 0;
 
 	if (link_state->iolink && link_state->ganged &&

@@ -263,7 +263,7 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 
 	/* Get PSmax's index */
 	msr = rdmsr(PS_LIM_REG);
-	Pstate_max = (u8) ((msr.lo >> PS_MAX_VAL_SHFT) & ((fam15h)?BIT_MASK_7:BIT_MASK_3));
+	Pstate_max = (u8) ((msr.lo >> PS_MAX_VAL_SHFT) & ((fam15h) ? BIT_MASK_7 : BIT_MASK_3));
 
 	/* Determine if all enabled Pstates have the same fidvid */
 	u8 i;

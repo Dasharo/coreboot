@@ -175,7 +175,7 @@ static void set_vga_enable_reg(u32 nodeid, u32 linkn)
 {
 	u32 val;
 
-	val =  1 | (nodeid<<4) | (linkn<<12);
+	val =  1 | (nodeid << 4) | (linkn << 12);
 	/* it will route (1)mmio  0xa0000:0xbffff (2) io 0x3b0:0x3bb, 0x3c0:0x3df */
 	f1_write_config32(0xf4, val);
 
@@ -224,7 +224,7 @@ static void set_config_map_reg(struct bus *link)
 	u32 nodeid = amdfam10_nodeid(link->dev);
 
 	tempreg = ((nodeid & 0x30) << (12-4)) | ((nodeid & 0xf) << 4) | 3;
-	tempreg |= (busn_max << 24)|(busn_min << 16)|(linkn << 8);
+	tempreg |= (busn_max << 24) | (busn_min << 16) | (linkn << 8);
 
 	f1_write_config32(0xe0 + ht_c_index * 4, tempreg);
 }
@@ -372,7 +372,7 @@ static void relocate_sb_ht_chain(void)
 	printk(BIOS_SPEW, "%s\n", __func__);
 
 	dev = dev_find_slot(CONFIG_CBB, PCI_DEVFN(CONFIG_CDB, 0));
-	sblink = (pci_read_config32(dev, 0x64)>>8) & 7;
+	sblink = (pci_read_config32(dev, 0x64) >> 8) & 7;
 	link = dev->link_list;
 
 	while (link) {
@@ -919,8 +919,8 @@ static void amdfam10_domain_scan_bus(struct device *dev)
 			}
 			printk(BIOS_SPEW, "%s passpw: %s\n",
 				dev_path(dev),
-				(!dev->link_list->disable_relaxed_ordering)?
-				"enabled":"disabled");
+				(!dev->link_list->disable_relaxed_ordering) ?
+				"enabled" : "disabled");
 			pci_write_config32(f0_dev, HT_TRANSACTION_CONTROL, httc);
 		}
 	}
@@ -999,7 +999,7 @@ static void remap_bsp_lapic(struct bus *cpu_bus)
 static unsigned int get_num_siblings(void)
 {
 	unsigned int siblings;
-	unsigned int ApicIdCoreIdSize = (cpuid_ecx(0x80000008)>>12 & 0xf);
+	unsigned int ApicIdCoreIdSize = (cpuid_ecx(0x80000008) >> 12 & 0xf);
 
 	if (ApicIdCoreIdSize) {
 		siblings = (1 << ApicIdCoreIdSize) - 1;
@@ -1142,9 +1142,9 @@ static void sysconf_init(struct device *dev) // first node
 		sysconf.ht_c_conf_bus[ht_c_index] = 0;
 	}
 
-	sysconf.nodes = ((pci_read_config32(dev, 0x60)>>4) & 7) + 1;
+	sysconf.nodes = ((pci_read_config32(dev, 0x60) >> 4) & 7) + 1;
 	if (CONFIG_MAX_PHYSICAL_CPUS > 8)
-		sysconf.nodes += (((pci_read_config32(dev, 0x160)>>4) & 7)<<3);
+		sysconf.nodes += (((pci_read_config32(dev, 0x160) >> 4) & 7) << 3);
 
 	if (sysconf.nodes > NODE_NUMS)
 		die("Too many nodes detected\n");

@@ -61,7 +61,7 @@ u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *pDCTstat, u8 pass)
 {
 	u8 ret;
 	ret = 0;
-	if ((pDCTstat->DqsRcvEn_Pass == 0xff) && (pass== FirstPass))
+	if ((pDCTstat->DqsRcvEn_Pass == 0xff) && (pass == FirstPass))
 		ret = 2;
 	return ret;
 }

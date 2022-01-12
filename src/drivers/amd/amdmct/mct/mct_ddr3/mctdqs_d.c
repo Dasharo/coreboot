@@ -226,7 +226,7 @@ static void SetEccDQSRdWrPos_D_Fam10(struct MCTStatStruc *pMCTstat,
 			pDCTstat->Channel = channel;	/* Channel A or B */
 			pDCTstat->Direction = direction; /* Read or write */
 			CalcEccDQSPos_D(pMCTstat, pDCTstat, pDCTstat->CH_EccDQSLike[channel], pDCTstat->CH_EccDQSScale[channel], ChipSel);
-			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR? " R dqs_delay":" W dqs_delay",	pDCTstat->DQSDelay, 2);
+			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR ? " R dqs_delay":" W dqs_delay",	pDCTstat->DQSDelay, 2);
 			pDCTstat->ByteLane = 8;
 			StoreDQSDatStrucVal_D(pMCTstat, pDCTstat, ChipSel);
 			mct_SetDQSDelayCSR_D(pMCTstat, pDCTstat, ChipSel);
@@ -398,18 +398,18 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *pMCTstat,
 
 	print_debug_dqs("\nTrainDQSRdWrPos: Node_ID ", pDCTstat->Node_ID, 0);
 	cr4 = read_cr4();
-	if (cr4 & (1<<9)) {
+	if (cr4 & (1 << 9)) {
 		_SSE2 = 1;
 	}
-	cr4 |= (1<<9);		/* OSFXSR enable SSE2 */
+	cr4 |= (1 << 9);	/* OSFXSR enable SSE2 */
 	write_cr4(cr4);
 
 	addr = HWCR_MSR;
 	_RDMSR(addr, &lo, &hi);
-	if (lo & (1<<17)) {
+	if (lo & (1 << 17)) {
 		_Wrap32Dis = 1;
 	}
-	lo |= (1<<17);		/* HWCR.wrap32dis */
+	lo |= (1 << 17);	/* HWCR.wrap32dis */
 	_WRMSR(addr, lo, hi);	/* allow 64-bit memory references in real mode */
 
 	/* Disable ECC correction of reads on the dram bus. */
@@ -805,12 +805,12 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *pMCTstat,
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
 		_RDMSR(addr, &lo, &hi);
-		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
+		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
 		_WRMSR(addr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
-		cr4 &= ~(1<<9);		/* restore cr4.OSFXSR */
+		cr4 &= ~(1 << 9);	/* restore cr4.OSFXSR */
 		write_cr4(cr4);
 	}
 
@@ -909,7 +909,7 @@ void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *pMCTstat,
 
 		/* 2.10.5.8.5 (10) */
 		dword = Get_NB32(pDCTstat->dev_nbctl, (0x160 + (nb_pstate * 4)));		/* Retrieve NbDid, NbFid */
-		nb_clk = (200 * (((dword >> 1) & 0x1f) + 0x4)) / (((dword >> 7) & 0x1)?2:1);
+		nb_clk = (200 * (((dword >> 1) & 0x1f) + 0x4)) / (((dword >> 7) & 0x1) ? 2 : 1);
 		n = (((((u64)p * 1000000000000ULL)/(((u64)fam15h_freq_tab[mem_clk] * 1000000ULL) * 2)) + ((u64)t)) * ((u64)nb_clk * 1000)) / 1000000000ULL;
 
 		/* 2.10.5.8.5 (11) */
@@ -1355,7 +1355,7 @@ static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *pMCTstat,
 					/* 2.10.5.8.4 (2 A ii)
 					 * Read the DRAM training pattern from the test address
 					 */
-					read_dram_dqs_training_pattern_fam15(pMCTstat, pDCTstat, dct, Receiver, lane, ((check_antiphase == 0)?1:0));
+					read_dram_dqs_training_pattern_fam15(pMCTstat, pDCTstat, dct, Receiver, lane, ((check_antiphase == 0) ? 1 : 0));
 
 					if (check_antiphase == 0) {
 						/* Check for early abort before analyzing per-nibble status */
@@ -1621,18 +1621,18 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *pMCTstat,
 
 	print_debug_dqs("\nTrainDQSReceiverEnCyc: Node_ID ", pDCTstat->Node_ID, 0);
 	cr4 = read_cr4();
-	if (cr4 & (1<<9)) {
+	if (cr4 & (1 << 9)) {
 		_SSE2 = 1;
 	}
-	cr4 |= (1<<9);		/* OSFXSR enable SSE2 */
+	cr4 |= (1 << 9);	/* OSFXSR enable SSE2 */
 	write_cr4(cr4);
 
 	addr = HWCR_MSR;
 	_RDMSR(addr, &lo, &hi);
-	if (lo & (1<<17)) {
+	if (lo & (1 << 17)) {
 		_Wrap32Dis = 1;
 	}
-	lo |= (1<<17);		/* HWCR.wrap32dis */
+	lo |= (1 << 17);	/* HWCR.wrap32dis */
 	_WRMSR(addr, lo, hi);	/* allow 64-bit memory references in real mode */
 
 	/* Disable ECC correction of reads on the dram bus. */
@@ -1846,12 +1846,12 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *pMCTstat,
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
 		_RDMSR(addr, &lo, &hi);
-		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
+		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
 		_WRMSR(addr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
-		cr4 &= ~(1<<9);		/* restore cr4.OSFXSR */
+		cr4 &= ~(1 << 9);	/* restore cr4.OSFXSR */
 		write_cr4(cr4);
 	}
 
@@ -1874,13 +1874,13 @@ static void SetupDqsPattern_D(struct MCTStatStruc *pMCTstat,
 	u16 i;
 
 	buf = (u32 *)(((u32)buffer + 0x10) & (0xfffffff0));
-	if (pDCTstat->Status & (1<<SB_128bitmode)) {
+	if (pDCTstat->Status & (1 << SB_128bitmode)) {
 		pDCTstat->Pattern = 1;	/* 18 cache lines, alternating qwords */
-		for (i = 0; i < 16*18; i++)
+		for (i = 0; i < 16 * 18; i++)
 			buf[i] = TestPatternJD1b_D[i];
 	} else {
 		pDCTstat->Pattern = 0;	/* 9 cache lines, sequential qwords */
-		for (i = 0; i < 16*9; i++)
+		for (i = 0; i < 16 * 9; i++)
 			buf[i] = TestPatternJD1a_D[i];
 	}
 	pDCTstat->PtrPatternBufA = (u32)buf;
@@ -1903,7 +1903,7 @@ static void StoreDQSDatStrucVal_D(struct MCTStatStruc *pMCTstat,
 	/* FindDQSDatDimmVal_D is not required since we use an array */
 	u8 dn = 0;
 
-	dn = ChipSel>>1; /* if odd or even logical DIMM */
+	dn = ChipSel >> 1; /* if odd or even logical DIMM */
 
 	pDCTstat->CH_D_DIR_B_DQS[pDCTstat->Channel][dn][pDCTstat->Direction][pDCTstat->ByteLane] =
 					pDCTstat->DQSDelay;
@@ -2153,7 +2153,7 @@ u32 SetUpperFSbase(u32 addr_hi)
 	u32 lo, hi;
 	u32 addr;
 	lo = 0;
-	hi = addr_hi>>24;
+	hi = addr_hi >> 24;
 	addr = FS_Base;
 	_WRMSR(addr, lo, hi);
 	return addr_hi << 8;
@@ -2205,16 +2205,16 @@ u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *pMCTstat,
 	dev = pDCTstat->dev_dct;
 	reg = 0x90;
 	val = Get_NB32_DCT(dev, 0, reg);
-	if (val & (1<<DimmEcEn)) {
+	if (val & (1 << DimmEcEn)) {
 		_DisableDramECC |= 0x01;
-		val &= ~(1<<DimmEcEn);
+		val &= ~(1 << DimmEcEn);
 		Set_NB32_DCT(dev, 0, reg, val);
 	}
 	if (!pDCTstat->GangedMode) {
 		val = Get_NB32_DCT(dev, 1, reg);
-		if (val & (1<<DimmEcEn)) {
+		if (val & (1 << DimmEcEn)) {
 			_DisableDramECC |= 0x02;
-			val &= ~(1<<DimmEcEn);
+			val &= ~(1 << DimmEcEn);
 			Set_NB32_DCT(dev, 1, reg, val);
 		}
 	}
@@ -2232,12 +2232,12 @@ void mct_EnableDimmEccEn_D(struct MCTStatStruc *pMCTstat,
 
 	if ((_DisableDramECC & 0x01) == 0x01) {
 		val = Get_NB32_DCT(dev, 0, 0x90);
-		val |= (1<<DimmEcEn);
+		val |= (1 << DimmEcEn);
 		Set_NB32_DCT(dev, 0, 0x90, val);
 	}
 	if ((_DisableDramECC & 0x02) == 0x02) {
 		val = Get_NB32_DCT(dev, 1, 0x90);
-		val |= (1<<DimmEcEn);
+		val |= (1 << DimmEcEn);
 		Set_NB32_DCT(dev, 1, 0x90, val);
 	}
 }
@@ -2276,12 +2276,12 @@ static void mct_SetDQSDelayCSR_D(struct MCTStatStruc *pMCTstat,
 		shift = ByteLane % 4;
 		shift <<= 3; /* get bit position of bytelane, 8 bit */
 
-		index += (ChipSel>>1) << 8;
+		index += (ChipSel >> 1) << 8;
 
 		val = Get_NB32_index_wait_DCT(dev, pDCTstat->Channel, index_reg, index);
 		if (ByteLane < 8) {
 			if (pDCTstat->Direction == DQS_WRITEDIR) {
-				dqs_delay += pDCTstat->persistentData.CH_D_B_TxDqs[pDCTstat->Channel][ChipSel>>1][ByteLane];
+				dqs_delay += pDCTstat->persistentData.CH_D_B_TxDqs[pDCTstat->Channel][ChipSel >> 1][ByteLane];
 			} else {
 				dqs_delay <<= 1;
 			}

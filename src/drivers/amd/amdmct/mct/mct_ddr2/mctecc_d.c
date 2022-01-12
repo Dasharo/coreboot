@@ -166,7 +166,7 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 					dev = pDCTstat->dev_nbmisc;
 					val = curBase << 8;
 					if (OB_ECCRedir) {
-						val |= (1<<0); /* enable redirection */
+						val |= (1 << 0); /* enable redirection */
 					}
 					Set_NB32(dev, 0x5C, val); /* Dram Scrub Addr Low */
 					val = curBase >> 24;

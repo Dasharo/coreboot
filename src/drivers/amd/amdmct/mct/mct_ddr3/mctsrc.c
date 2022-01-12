@@ -551,7 +551,7 @@ static u32 convert_testaddr_and_channel_to_address(struct DCTStatStruc *pDCTstat
 	SetUpperFSbase(testaddr);
 	testaddr <<= 8;
 
-	if ((pDCTstat->Status & (1<<SB_128bitmode)) && channel) {
+	if ((pDCTstat->Status & (1 << SB_128bitmode)) && channel) {
 		testaddr += 8;	/* second channel */
 	}
 
@@ -799,18 +799,18 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 						/* 2.8.9.9.2 (7 D)
 						 * Invert read instructions to alternate data read order on the bus
 						 */
-						proc_IOCLFLUSH_D((rank == 0)?TestAddr0B:TestAddr1B);
-						result_qword2 = read64_fs(convert_testaddr_and_channel_to_address(pDCTstat, (rank == 0)?TestAddr0B:TestAddr1B, Channel));
+						proc_IOCLFLUSH_D((rank == 0) ? TestAddr0B : TestAddr1B);
+						result_qword2 = read64_fs(convert_testaddr_and_channel_to_address(pDCTstat, (rank == 0) ? TestAddr0B : TestAddr1B, Channel));
 						write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
-						proc_IOCLFLUSH_D((rank == 0)?TestAddr0:TestAddr1);
-						result_qword1 = read64_fs(convert_testaddr_and_channel_to_address(pDCTstat, (rank == 0)?TestAddr0:TestAddr1, Channel));
+						proc_IOCLFLUSH_D((rank == 0) ? TestAddr0 : TestAddr1);
+						result_qword1 = read64_fs(convert_testaddr_and_channel_to_address(pDCTstat, (rank == 0) ? TestAddr0 : TestAddr1, Channel));
 						write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
 					} else {
-						proc_IOCLFLUSH_D((rank == 0)?TestAddr0:TestAddr1);
-						result_qword1 = read64_fs(convert_testaddr_and_channel_to_address(pDCTstat, (rank == 0)?TestAddr0:TestAddr1, Channel));
+						proc_IOCLFLUSH_D((rank == 0) ? TestAddr0 : TestAddr1);
+						result_qword1 = read64_fs(convert_testaddr_and_channel_to_address(pDCTstat, (rank == 0) ? TestAddr0 : TestAddr1, Channel));
 						write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
-						proc_IOCLFLUSH_D((rank == 0)?TestAddr0B:TestAddr1B);
-						result_qword2 = read64_fs(convert_testaddr_and_channel_to_address(pDCTstat, (rank == 0)?TestAddr0B:TestAddr1B, Channel));
+						proc_IOCLFLUSH_D((rank == 0) ? TestAddr0B : TestAddr1B);
+						result_qword2 = read64_fs(convert_testaddr_and_channel_to_address(pDCTstat, (rank == 0) ? TestAddr0B : TestAddr1B, Channel));
 						write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
 					}
 					/* 2.8.9.9.2 (7 A e)
@@ -970,12 +970,12 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 
 	if (!_Wrap32Dis) {
 		msr = rdmsr(HWCR_MSR);
-		msr.lo &= ~(1<<17);	/* restore HWCR.wrap32dis */
+		msr.lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
 		wrmsr(HWCR_MSR, msr);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
-		cr4 &= ~(1<<9);		/* restore cr4.OSFXSR */
+		cr4 &= ~(1 << 9);	/* restore cr4.OSFXSR */
 		write_cr4(cr4);
 	}
 
@@ -1002,7 +1002,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 			printk(BIOS_DEBUG, "Channel:%x\n", ChannelDTD);
 			for (ReceiverDTD = 0; ReceiverDTD < 8; ReceiverDTD+=2) {
 				printk(BIOS_DEBUG, "\t\tReceiver:%x:", ReceiverDTD);
-				p = pDCTstat->CH_D_B_RCVRDLY[ChannelDTD][ReceiverDTD>>1];
+				p = pDCTstat->CH_D_B_RCVRDLY[ChannelDTD][ReceiverDTD >> 1];
 				for (i = 0; i < 8; i++) {
 					valDTD = p[i];
 					printk(BIOS_DEBUG, " %03x", valDTD);
@@ -1473,12 +1473,12 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	if (!_Wrap32Dis) {
 		msr = HWCR_MSR;
 		_RDMSR(msr, &lo, &hi);
-		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
+		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
 		_WRMSR(msr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
-		cr4 &= ~(1<<9);		/* restore cr4.OSFXSR */
+		cr4 &= ~(1 << 9);	/* restore cr4.OSFXSR */
 		write_cr4(cr4);
 	}
 
@@ -1505,7 +1505,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 			printk(BIOS_DEBUG, "Channel:%x\n", ChannelDTD);
 			for (ReceiverDTD = 0; ReceiverDTD < 8; ReceiverDTD+=2) {
 				printk(BIOS_DEBUG, "\t\tReceiver:%x:", ReceiverDTD);
-				p = pDCTstat->CH_D_B_RCVRDLY[ChannelDTD][ReceiverDTD>>1];
+				p = pDCTstat->CH_D_B_RCVRDLY[ChannelDTD][ReceiverDTD >> 1];
 				for (i = 0; i < 8; i++) {
 					valDTD = p[i];
 					printk(BIOS_DEBUG, " %03x", valDTD);
@@ -1677,7 +1677,7 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *pMCTstat,
 			return;
 		}
 		dword = Get_NB32(pDCTstat->dev_nbctl, (0x160 + (nb_pstate * 4)));		/* Retrieve NbDid, NbFid */
-		nb_clk = (200 * (((dword >> 1) & 0x1f) + 0x4)) / (((dword >> 7) & 0x1)?2:1);
+		nb_clk = (200 * (((dword >> 1) & 0x1f) + 0x4)) / (((dword >> 7) & 0x1) ? 2 : 1);
 
 		pDCTstat->CH_MaxRdLat[Channel][0]++;
 		pDCTstat->CH_MaxRdLat[Channel][0] += ((((u64)15 * 100000000000ULL) / ((u64)fam15h_freq_tab[mem_clk] * 1000000ULL))
@@ -1693,12 +1693,12 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	if (!_Wrap32Dis) {
 		msr = HWCR_MSR;
 		_RDMSR(msr, &lo, &hi);
-		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
+		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
 		_WRMSR(msr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
-		cr4 &= ~(1<<9);		/* restore cr4.OSFXSR */
+		cr4 &= ~(1 << 9);	/* restore cr4.OSFXSR */
 		write_cr4(cr4);
 	}
 
@@ -1984,7 +1984,7 @@ void SetEccDQSRcvrEn_D(struct DCTStatStruc *pDCTstat, u8 Channel)
 	p = pDCTstat->CH_D_BC_RCVRDLY[Channel];
 	print_debug_dqs("\t\tSetEccDQSRcvrPos: Channel ", Channel,  2);
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
-		val = p[ChipSel>>1];
+		val = p[ChipSel >> 1];
 		Set_NB32_index_wait_DCT(dev, Channel, index_reg, index, val);
 		print_debug_dqs_pair("\t\tSetEccDQSRcvrPos: ChipSel ",
 					ChipSel, " rcvr_delay ",  val, 2);
@@ -2007,7 +2007,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 		if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, ChipSel)) {
 			u16 *p;
-			p = pDCTstat->CH_D_B_RCVRDLY[Channel][ChipSel>>1];
+			p = pDCTstat->CH_D_B_RCVRDLY[Channel][ChipSel >> 1];
 
 			if (pDCTstat->Status & (1 << SB_Registered)) {
 				val0 = p[0x2];
@@ -2023,7 +2023,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 				val0 = p[EccDQSLike & 0x07];
 				/* DQS Delay Value of Data Bytelane
 				 * 2nd most like ECC byte lane */
-				val1 = p[(EccDQSLike>>8) & 0x07];
+				val1 = p[(EccDQSLike >> 8) & 0x07];
 
 				if (val0 > val1) {
 					val = val0 - val1;
@@ -2041,7 +2041,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 				}
 			}
 
-			pDCTstat->CH_D_BC_RCVRDLY[Channel][ChipSel>>1] = val;
+			pDCTstat->CH_D_BC_RCVRDLY[Channel][ChipSel >> 1] = val;
 		}
 	}
 	SetEccDQSRcvrEn_D(pDCTstat, Channel);

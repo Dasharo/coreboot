@@ -44,7 +44,7 @@ u8 set_apicid_cpuid_lo(void)
 	// set the NB_CFG[54]=1; why the OS will be happy with that ???
 	msr_t msr;
 	msr = rdmsr(NB_CFG_MSR);
-	msr.hi |= (1<<(54-32)); // InitApicIdCpuIdLo
+	msr.hi |= (1 << (54 - 32)); // InitApicIdCpuIdLo
 	wrmsr(NB_CFG_MSR, msr);
 
 	return 1;

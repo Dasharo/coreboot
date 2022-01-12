@@ -1520,9 +1520,9 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 	for (i = 0; i < pDat->TotalLinks*2; i++)
 	{
 
-		ASSERT(pDat->PortList[i&0xFE].SelWidthOut == pDat->PortList[(i&0xFE)+1].SelWidthIn);
-		ASSERT(pDat->PortList[i&0xFE].SelWidthIn == pDat->PortList[(i&0xFE)+1].SelWidthOut);
-		ASSERT(pDat->PortList[i&0xFE].SelFrequency == pDat->PortList[(i&0xFE)+1].SelFrequency);
+		ASSERT(pDat->PortList[i & 0xFE].SelWidthOut == pDat->PortList[(i & 0xFE) + 1].SelWidthIn);
+		ASSERT(pDat->PortList[i & 0xFE].SelWidthIn == pDat->PortList[(i & 0xFE) + 1].SelWidthOut);
+		ASSERT(pDat->PortList[i & 0xFE].SelFrequency == pDat->PortList[(i & 0xFE) + 1].SelFrequency);
 
 		if (pDat->PortList[i].SelRegang)
 		{
@@ -1533,7 +1533,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 					makePCIBusFromNode(pDat->PortList[i].NodeID),
 					makePCIDeviceFromNode(pDat->PortList[i].NodeID),
 					CPU_HTNB_FUNC_00,
-					REG_HT_LINK_EXT_CONTROL0_0X170 + 4*pDat->PortList[i].Link),
+					REG_HT_LINK_EXT_CONTROL0_0X170 + 4 * pDat->PortList[i].Link),
 					0, 0, &temp);
 		}
 
@@ -1960,8 +1960,8 @@ static void ht1WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 	ASSERT(((((links01 & ~((u32)1 << req0)) & ~((u32)1 << rsp0))) == 0)
 		&& ((((links10 & ~((u32)1 << req1)) & ~((u32)1 << rsp1))) == 0));
 
-	route01 = (route01 & ~0x0E00) | ((u32)0x0100<<(rsp0 + 1));
-	route10 = (route10 & ~0x0E00) | ((u32)0x0100<<(rsp1 + 1));
+	route01 = (route01 & ~0x0E00) | ((u32)0x0100 << (rsp0 + 1));
+	route10 = (route10 & ~0x0E00) | ((u32)0x0100 << (rsp1 + 1));
 
 	AmdPCIWrite(MAKE_SBDFO(makePCISegmentFromNode(0),
 				makePCIBusFromNode(0),

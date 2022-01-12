@@ -96,7 +96,7 @@ static void nb_control_init(struct device *dev)
 			dword &= ~(0x7f << 5);		/* CacheFlushTmr = 0x28 */
 			dword |= (0x28 << 5);
 			dword &= ~0x1;			/* CoreCstateMode = !enable_cc6 */
-			dword |= ((enable_cc6)?0:1);
+			dword |= ((enable_cc6) ? 0 : 1);
 			pci_write_config32(dev, 0x128, dword);
 		}
 	}

@@ -820,7 +820,7 @@ static void DCTInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTst
 	}
 	if (stopDCTflag) {
 		u32 reg_off = dct * 0x100;
-		val = 1<<DisDramInterface;
+		val = 1 << DisDramInterface;
 		Set_NB32(pDCTstat->dev_dct, reg_off + 0x94, val);
 		/*To maximize power savings when DisDramInterface = 1b,
 		  all of the MemClkDis bits should also be set.*/
@@ -1004,7 +1004,7 @@ static u8 AutoCycTiming_D(struct MCTStatStruc *pMCTstat,
 	for (i = 0; i < 4; i++)
 		Trfc[i] = 0;
 
-	for (i = 0; i< MAX_DIMMS_SUPPORTED; i++) {
+	for (i = 0; i < MAX_DIMMS_SUPPORTED; i++) {
 		LDIMM = i >> 1;
 		if (pDCTstat->DIMMValid & (1 << i)) {
 			smbaddr = Get_DIMMAddress_D(pDCTstat, dct + i);
@@ -1038,7 +1038,7 @@ static u8 AutoCycTiming_D(struct MCTStatStruc *pMCTstat,
 
 			val = mctRead_SPD(smbaddr, SPD_TRC);
 			if ((val == 0) || (val == 0xFF)) {
-				pDCTstat->ErrStatus |= 1<<SB_NoTrcTrfc;
+				pDCTstat->ErrStatus |= 1 << SB_NoTrcTrfc;
 				pDCTstat->ErrCode = SC_VarianceErr;
 				val = Get_DefTrc_k_D(pDCTstat->Speed);
 			} else {
@@ -1521,7 +1521,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	DramControl = Get_NB32 (dev, 0x78 + reg_off);		/* Dram Control*/
 
 	if (mctGet_NVbits(NV_CLKHZAltVidC3))
-		DramControl |= 1<<16;
+		DramControl |= 1 << 16;
 
 	// FIXME: Add support(skip) for Ax and Cx versions
 	DramControl |= 5;	/* RdPtrInit */
@@ -1940,7 +1940,7 @@ static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
 			if (pMCTstat->GStatus & 1 << GSB_EnDIMMSpareNW) {
 				word = pDCTstat->CSPresent;
 				val = bsf(word);
-				word &= ~(1<<val);
+				word &= ~(1 << val);
 				if (word)
 					/* Make sure at least two chip-selects are available */
 					_DSpareEn = 1;
@@ -2127,7 +2127,7 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 	RegDIMMPresent = 0;
 	pDCTstat->DimmQRPresent = 0;
 
-	for (i = 0;  i< MAX_DIMMS_SUPPORTED; i++) {
+	for (i = 0;  i < MAX_DIMMS_SUPPORTED; i++) {
 		if (i >= MaxDimms)
 			break;
 
@@ -2257,7 +2257,7 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 					if (byte == 2)
 						bytex <<= 1;	/*double Addr bus load value for dual rank DIMMs*/
 
-					j = i & (1<<0);
+					j = i & (1 << 0);
 					pDCTstat->DATAload[j] += byte;	/*number of ranks on DATA bus*/
 					pDCTstat->MAload[j] += bytex;	/*number of devices on CMD/ADDR bus*/
 					pDCTstat->MAdimms[j]++;		/*number of DIMMs on A bus */
@@ -3071,7 +3071,7 @@ static u8 Get_DqsRcvEnGross_Diff(struct DCTStatStruc *pDCTstat,
 	if (byte > Largest)
 		Largest = byte;
 
-	if (pDCTstat->DimmECCPresent> 0) {
+	if (pDCTstat->DimmECCPresent > 0) {
 		/*DqsRcvEn Ecc */
 		val = Get_DqsRcvEnGross_MaxMin(pDCTstat, dev, index_reg, 0x12);
 		byte = val & 0xFF;
@@ -3263,7 +3263,7 @@ static void clear_legacy_Mode(struct MCTStatStruc *pMCTstat,
 	/* Clear Legacy BIOS Mode bit */
 	reg = 0x94;
 	val = Get_NB32(dev, reg);
-	val &= ~(1<<LegacyBiosMode);
+	val &= ~(1 << LegacyBiosMode);
 	Set_NB32(dev, reg, val);
 }
 
@@ -3834,11 +3834,11 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 
 	addr = HWCR_MSR;
 	_RDMSR(addr, &lo, &hi);
-	if (lo & (1<<17)) {		/* save the old value */
+	if (lo & (1 << 17)) {		/* save the old value */
 		wrap32dis = 1;
 	}
-	lo |= (1<<17);			/* HWCR.wrap32dis */
-	lo &= ~(1<<15);			/* SSEDIS */
+	lo |= (1 << 17);			/* HWCR.wrap32dis */
+	lo &= ~(1 << 15);			/* SSEDIS */
 	/* Setting wrap32dis allows 64-bit memory references in 32bit mode */
 	_WRMSR(addr, lo, hi);
 
@@ -3866,7 +3866,7 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 	if (!wrap32dis) {
 		addr = HWCR_MSR;
 		_RDMSR(addr, &lo, &hi);
-		lo &= ~(1<<17);		/* restore HWCR.wrap32dis */
+		lo &= ~(1 << 17);		/* restore HWCR.wrap32dis */
 		_WRMSR(addr, lo, hi);
 	}
 }

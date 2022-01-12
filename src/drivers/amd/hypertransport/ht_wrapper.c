@@ -300,53 +300,53 @@ void amd_ht_fixup(struct sys_info *sysinfo) {
 						"%s: node %d (internal node ID %d): disabling defective HT link",
 						__func__, node, internal_node_number);
 					if (internal_node_number == 0) {
-						u8 package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0x98:0xd8) & 0x1;
+						u8 package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0x98 : 0xd8) & 0x1;
 						printk(BIOS_DEBUG, " (L3 connected: %d)\n", package_link_3_connected);
 						if (package_link_3_connected) {
 							/* Set WidthIn and WidthOut to 0 */
-							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0x84:0xc4);
+							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0x84 : 0xc4);
 							dword &= ~0x77000000;
-							pci_write_config32(NODE_PCI(node, 0), (fam15h)?0x84:0xc4, dword);
+							pci_write_config32(NODE_PCI(node, 0), (fam15h) ? 0x84 : 0xc4, dword);
 							/* Set Ganged to 1 */
-							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0x170:0x178);
+							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0x170 : 0x178);
 							dword |= 0x00000001;
-							pci_write_config32(NODE_PCI(node, 0), (fam15h)?0x170:0x178, dword);
+							pci_write_config32(NODE_PCI(node, 0), (fam15h) ? 0x170 : 0x178, dword);
 						} else {
 							/* Set ConnDly to 1 */
 							dword = pci_read_config32(NODE_PCI(node, 0), 0x16c);
 							dword |= 0x00000100;
 							pci_write_config32(NODE_PCI(node, 0), 0x16c, dword);
 							/* Set TransOff and EndOfChain to 1 */
-							dword = pci_read_config32(NODE_PCI(node, 4), (fam15h)?0x84:0xc4);
+							dword = pci_read_config32(NODE_PCI(node, 4), (fam15h) ? 0x84 : 0xc4);
 							dword |= 0x000000c0;
-							pci_write_config32(NODE_PCI(node, 4), (fam15h)?0x84:0xc4, dword);
+							pci_write_config32(NODE_PCI(node, 4), (fam15h) ? 0x84 : 0xc4, dword);
 						}
 					} else if (internal_node_number == 1) {
-						u8 package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0xf8:0xb8) & 0x1;
+						u8 package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0xf8 : 0xb8) & 0x1;
 						printk(BIOS_DEBUG, " (L3 connected: %d)\n", package_link_3_connected);
 						if (package_link_3_connected) {
 							/* Set WidthIn and WidthOut to 0 */
-							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0xe4:0xa4);
+							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0xe4 : 0xa4);
 							dword &= ~0x77000000;
-							pci_write_config32(NODE_PCI(node, 0), (fam15h)?0xe4:0xa4, dword);
+							pci_write_config32(NODE_PCI(node, 0), (fam15h) ? 0xe4 : 0xa4, dword);
 							/* Set Ganged to 1 */
 							/* WARNING
 							 * The Family 15h BKDG states that 0x18c should be set,
 							 * however this is in error.  0x17c is the correct control
 							 * register (sublink 0) for these processors...
 							 */
-							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h)?0x17c:0x174);
+							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0x17c : 0x174);
 							dword |= 0x00000001;
-							pci_write_config32(NODE_PCI(node, 0), (fam15h)?0x17c:0x174, dword);
+							pci_write_config32(NODE_PCI(node, 0), (fam15h) ? 0x17c : 0x174, dword);
 						} else {
 							/* Set ConnDly to 1 */
 							dword = pci_read_config32(NODE_PCI(node, 0), 0x16c);
 							dword |= 0x00000100;
 							pci_write_config32(NODE_PCI(node, 0), 0x16c, dword);
 							/* Set TransOff and EndOfChain to 1 */
-							dword = pci_read_config32(NODE_PCI(node, 4), (fam15h)?0xe4:0xa4);
+							dword = pci_read_config32(NODE_PCI(node, 4), (fam15h) ? 0xe4 : 0xa4);
 							dword |= 0x000000c0;
-							pci_write_config32(NODE_PCI(node, 4), (fam15h)?0xe4:0xa4, dword);
+							pci_write_config32(NODE_PCI(node, 4), (fam15h) ? 0xe4 : 0xa4, dword);
 						}
 					}
 				}
@@ -361,9 +361,9 @@ u32 get_nodes(void)
 	u32 nodes;
 
 	dev = PCI_DEV(CONFIG_CBB, CONFIG_CDB, 0);
-	nodes = ((pci_read_config32(dev, 0x60)>>4) & 7);
+	nodes = ((pci_read_config32(dev, 0x60) >> 4) & 7);
 #if CONFIG_MAX_PHYSICAL_CPUS > 8
-	nodes += (((pci_read_config32(dev, 0x160)>>4) & 7)<<3);
+	nodes += (((pci_read_config32(dev, 0x160) >> 4) & 7) << 3);
 #endif
 	nodes++;
 

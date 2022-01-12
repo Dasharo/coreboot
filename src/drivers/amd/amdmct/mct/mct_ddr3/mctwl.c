@@ -452,7 +452,7 @@ static void Modify_OnDimmMirror(struct DCTStatStruc *pDCTstat, u8 dct, u8 set)
 	while (reg < 0x60) {
 		val = Get_NB32_DCT(pDCTstat->dev_dct, dct, reg);
 		if (val & (1 << CSEnable))
-			set ? (val |= 1 << onDimmMirror) : (val &= ~(1<<onDimmMirror));
+			set ? (val |= 1 << onDimmMirror) : (val &= ~(1 << onDimmMirror));
 		Set_NB32_DCT(pDCTstat->dev_dct, dct, reg, val);
 		reg += 8;
 	}

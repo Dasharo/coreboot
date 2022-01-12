@@ -851,7 +851,7 @@ u32 mct_MR1(struct MCTStatStruc *pMCTstat,
 
 		/* Determine if TQDS should be set */
 		if ((pDCTstat->Dimmx8Present & (1 << dimm))
-			&& (((dimm & 0x1)?(pDCTstat->Dimmx4Present&0x55):(pDCTstat->Dimmx4Present&0xaa)) != 0x0)
+			&& (((dimm & 0x1) ? (pDCTstat->Dimmx4Present & 0x55) : (pDCTstat->Dimmx4Present & 0xaa)) != 0x0)
 			&& (pDCTstat->Status & (1 << SB_LoadReduced)))
 			tqds = 1;
 
@@ -1144,15 +1144,15 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *pMCTstat,
 			EMRS = swapAddrBits(pDCTstat, EMRS, MrsChipSel, dct);
 			mct_SendMrsCmd(pDCTstat, dct, EMRS);
 			/* 14.Send EMRS(3). Ordinarily at this time, MrsAddress[2:0]=000b */
-			EMRS= mct_MR3(pMCTstat, pDCTstat, dct, MrsChipSel);
+			EMRS = mct_MR3(pMCTstat, pDCTstat, dct, MrsChipSel);
 			EMRS = swapAddrBits(pDCTstat, EMRS, MrsChipSel, dct);
 			mct_SendMrsCmd(pDCTstat, dct, EMRS);
 			/* 15.Send EMRS(1) */
-			EMRS= mct_MR1(pMCTstat, pDCTstat, dct, MrsChipSel);
+			EMRS = mct_MR1(pMCTstat, pDCTstat, dct, MrsChipSel);
 			EMRS = swapAddrBits(pDCTstat, EMRS, MrsChipSel, dct);
 			mct_SendMrsCmd(pDCTstat, dct, EMRS);
 			/* 16.Send MRS with MrsAddress[8]=1(reset the DLL) */
-			EMRS= mct_MR0(pMCTstat, pDCTstat, dct, MrsChipSel);
+			EMRS = mct_MR0(pMCTstat, pDCTstat, dct, MrsChipSel);
 			EMRS = swapAddrBits(pDCTstat, EMRS, MrsChipSel, dct);
 			mct_SendMrsCmd(pDCTstat, dct, EMRS);
 

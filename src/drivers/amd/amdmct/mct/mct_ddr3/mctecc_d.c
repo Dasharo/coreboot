@@ -243,7 +243,7 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 						/* Set up message triggered C1E */
 						val = pci_read_config32(pDCTstat->dev_nbmisc, 0xd4);
 						val &= ~(0x1 << 15);			/* StutterScrubEn = DRAM scrub enabled */
-						val |= (mctGet_NVbits(NV_DramBKScrub)?1:0) << 15;
+						val |= (mctGet_NVbits(NV_DramBKScrub) ? 1 : 0) << 15;
 						pci_write_config32(pDCTstat->dev_nbmisc, 0xd4, val);
 					}
 				}	/* this node has ECC enabled dram */

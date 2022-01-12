@@ -252,7 +252,7 @@ static void sm_init(struct device *dev)
 	abcfg_reg(0x10064, 9 << 17, 9 << 17);
 
 	/* 4.5 Enabling OHCI Prefetch for Performance Enhancement, A12 */
-	abcfg_reg(0x80, 1 << 0, 1<< 0);
+	abcfg_reg(0x80, 1 << 0, 1 << 0);
 
 	/* 4.6 B-Link Client's Credit Variable Settings for the Downstream Arbitration Equation */
 	/* 4.7 Enabling Additional Address Bits Checking in Downstream */
