@@ -78,7 +78,7 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
 			}
 			break;
 		default:
-			die("modtrdim.c: WTF?");
+			die("modtrdim.c: Wrong maximum value of DIMM's per channel.");
 		}
 	} else {
 		switch (mctGet_NVbits(NV_MAX_DIMMS_PER_CH)) {
@@ -114,7 +114,7 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
 			}
 			break;
 		default:
-			die("modtrdim.c: WTF?");
+			die("modtrdim.c: Wrong maximum value of DIMM's per channel.");
 		}
 	}
 	return tempW1;
@@ -203,7 +203,7 @@ u32 RttWrRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, 
 			}
 			break;
 		default:
-			die("modtrdim.c: WTF?");
+			die("modtrdim.c: Wrong maximum value of DIMM's per channel.");
 		}
 	}
 	return tempW1;
