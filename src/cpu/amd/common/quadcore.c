@@ -169,14 +169,12 @@ u32 get_boot_apic_id(u8 node, u32 core)
 		if (fam15h) {
 			ap_apicid |= ((node >> 1) & 0x3) << 5;			/* Node ID */
 			ap_apicid |= ((node & 0x1) * (siblings + 1)) + core;	/* Core ID */
+		} else if (nb_cfg_54) {
+			ap_apicid |= ((node >> 1) & 0x3) << 4;			/* Node ID */
+			ap_apicid |= ((node & 0x1) * (siblings + 1)) + core;	/* Core ID */
 		} else {
-			if (nb_cfg_54) {
-				ap_apicid |= ((node >> 1) & 0x3) << 4;			/* Node ID */
-				ap_apicid |= ((node & 0x1) * (siblings + 1)) + core;	/* Core ID */
-			} else {
-				ap_apicid |= node & 0x3;					/* Node ID */
-				ap_apicid |= (((node & 0x1) * (siblings + 1)) + core) << 4;	/* Core ID */
-			}
+			ap_apicid |= node & 0x3;				/* Node ID */
+			ap_apicid |= (((node & 0x1) * (siblings + 1)) + core) << 4;/* Core ID */
 		}
 	} else {
 		if (fam15h) {
@@ -189,7 +187,8 @@ u32 get_boot_apic_id(u8 node, u32 core)
 		}
 	}
 
-	printk(BIOS_DEBUG, "%s: using %d as APIC ID for node %d, core %d\n", __func__, ap_apicid, node, core);
+	printk(BIOS_DEBUG, "%s: using %d as APIC ID for node %d, core %d\n",
+		__func__, ap_apicid, node, core);
 
 	return ap_apicid;
 }

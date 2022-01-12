@@ -104,7 +104,8 @@ static u32 wait_cpu_state(u32 apicid, u32 state, u32 state2)
 	while (--loop > 0) {
 		if (lapic_remote_read(apicid, LAPIC_MSG_REG, &readback) != 0)
 			continue;
-		if ((readback & 0x3f) == state || (readback & 0x3f) == state2 || (readback & 0x3f) == F10_APSTATE_RESET) {
+		if ((readback & 0x3f) == state || (readback & 0x3f) == state2
+				|| (readback & 0x3f) == F10_APSTATE_RESET) {
 			timeout = 0;
 			break;	//target CPU is in stage started
 		}

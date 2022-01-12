@@ -25,12 +25,12 @@
 #if NODE_NUMS == 64
 #if ENV_PCI_SIMPLE_DEVICE
 	#define NODE_PCI(x, fn) ((x < 32) ? \
-			(PCI_DEV(CONFIG_CBB, (CONFIG_CDB + x), fn)) : \
-			(PCI_DEV((CONFIG_CBB - 1),(CONFIG_CDB + x - 32), fn)))
+		(PCI_DEV(CONFIG_CBB, (CONFIG_CDB + x), fn)) : \
+		(PCI_DEV((CONFIG_CBB - 1),(CONFIG_CDB + x - 32), fn)))
 #else
 	#define NODE_PCI(x, fn) ((x < 32) ? \
-			(pcidev_path_on_bus(CONFIG_CBB, PCI_DEVFN((CONFIG_CDB + x), fn))) : \
-			(pcidev_path_on_bus((CONFIG_CBB - 1), PCI_DEVFN((CONFIG_CDB + x - 32), fn))))
+		(pcidev_path_on_bus(CONFIG_CBB, PCI_DEVFN((CONFIG_CDB + x), fn))) : \
+		(pcidev_path_on_bus((CONFIG_CBB - 1), PCI_DEVFN((CONFIG_CDB + x - 32), fn))))
 #endif
 #else
 #if ENV_PCI_SIMPLE_DEVICE

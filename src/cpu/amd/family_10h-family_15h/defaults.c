@@ -624,23 +624,23 @@ static void setup_isochronous_ht_link(u8 node)
 	up_rsp_cbc = (dword >> 16) & 0x7;
 	up_rsp_cbc--;
 	isoc_preq_cbc++;
-	dword &= ~(0x7 << 24);			/* IsocPreqCBC = isoc_preq_cbc */
+	dword &= ~(0x7 << 24);		/* IsocPreqCBC = isoc_preq_cbc */
 	dword |= ((isoc_preq_cbc & 0x7) << 24);
-	dword &= ~(0x7 << 16);			/* UpRspCBC = up_rsp_cbc */
+	dword &= ~(0x7 << 16);		/* UpRspCBC = up_rsp_cbc */
 	dword |= ((up_rsp_cbc & 0x7) << 16);
 	pci_write_config32(NODE_PCI(node, 3), 0x70, dword);
 
 	dword = pci_read_config32(NODE_PCI(node, 3), 0x74);
 	isoc_preq_cbc = (dword >> 24) & 0x7;
 	isoc_preq_cbc++;
-	dword &= ~(0x7 << 24);			/* IsocPreqCBC = isoc_preq_cbc */
+	dword &= ~(0x7 << 24);		/* IsocPreqCBC = isoc_preq_cbc */
 	dword |= (isoc_preq_cbc & 0x7) << 24;
 	pci_write_config32(NODE_PCI(node, 3), 0x74, dword);
 
 	dword = pci_read_config32(NODE_PCI(node, 3), 0x7c);
 	xbar_to_sri_free_list_cbc = dword & 0x1f;
 	xbar_to_sri_free_list_cbc--;
-	dword &= ~0x1f;				/* Xbar2SriFreeListCBC = xbar_to_sri_free_list_cbc */
+	dword &= ~0x1f;			/* Xbar2SriFreeListCBC = xbar_to_sri_free_list_cbc */
 	dword |= xbar_to_sri_free_list_cbc & 0x1f;
 	pci_write_config32(NODE_PCI(node, 3), 0x7c, dword);
 
@@ -649,9 +649,9 @@ static void setup_isochronous_ht_link(u8 node)
 	isoc_preq_tok = (dword >> 14) & 0x3;
 	free_tok--;
 	isoc_preq_tok++;
-	dword &= ~(0xf << 20);			/* FreeTok = free_tok */
+	dword &= ~(0xf << 20);		/* FreeTok = free_tok */
 	dword |= ((free_tok & 0xf) << 20);
-	dword &= ~(0x3 << 14);			/* IsocPreqTok = isoc_preq_tok */
+	dword &= ~(0x3 << 14);		/* IsocPreqTok = isoc_preq_tok */
 	dword |= ((isoc_preq_tok & 0x3) << 14);
 	pci_write_config32(NODE_PCI(node, 3), 0x140, dword);
 }

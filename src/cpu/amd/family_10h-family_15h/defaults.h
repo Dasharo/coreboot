@@ -116,7 +116,9 @@ static const struct {
 
 	{ BU_CFG2_MSR, AMD_DRBH_Cx, AMD_PTYPE_ALL,
 	  0x00000000, 1 << (35-32),
-	  0x00000000, 1 << (35-32) },	/* Erratum 343 (set to 0 after CAR, in post_cache_as_ram()/model_10xxx_init() )  */
+	  0x00000000, 1 << (35-32) },	/* Erratum 343 (set to 0 after CAR,
+	  				 * in post_cache_as_ram() / model_10xxx_init())
+					 */
 
 	{ BU_CFG3_MSR, AMD_OR_B2, AMD_PTYPE_ALL,
 	  0x00000000, 1 << (42-32),
@@ -685,7 +687,8 @@ static const struct {
 	  0x00000040, 0x00000040 },
 
 	/* Errata 354 - Fam10 C2, C3
-	 * System software should set bit 6 of F4x1[9C,94,8C,84]_x[58:50, 48:40] for all links. */
+	 * System software should set bit 6 of F4x1[9C,94,8C,84]_x[58:50, 48:40] for all links.
+	 */
 	{ 0x40, AMD_DR_Cx, AMD_PTYPE_ALL, HTPHY_LINKTYPE_ALL,
 	  0x00000040, 0x00000040 },
 	{ 0x41, AMD_DR_Cx, AMD_PTYPE_ALL, HTPHY_LINKTYPE_ALL,

@@ -203,7 +203,9 @@ static void dualPlaneOnly(pci_devfn_t dev)
 		if ((pci_read_config32(dev, 0x1fc) & DUAL_PLANE_ONLY_MASK) &&
 		    (pci_read_config32(dev, 0xa0) & PVI_MODE)) {
 			if (cpuid_edx(0x80000007) & CPB_MASK) {
-				// revision E only, but E is apparently not supported yet, therefore untested
+				/* Revision E only, but E is apparently not supported yet,
+				 * therefore untested.
+				 */
 				msr_t minPstate = rdmsr(PSTATE_1_MSR);
 				wrmsr(PSTATE_1_MSR, rdmsr(PSTATE_4_MSR));
 				wrmsr(PSTATE_4_MSR, minPstate);
@@ -346,7 +348,8 @@ static void recalculateVsSlamTimeSettingOnCorePre(pci_devfn_t dev)
 		lowVoltageVid = bValue;
 
 	u8 mobileFlag = get_platform_type() & AMD_PTYPE_MOB;
-	minimumSlamTime =  (mobileFlag ? 2 : 4) * (vidTo100uV(highVoltageVid) - vidTo100uV(lowVoltageVid)); /* * 0.01 us */
+	minimumSlamTime = (mobileFlag ? 2 : 4)
+		* (vidTo100uV(highVoltageVid) - vidTo100uV(lowVoltageVid)); /* * 0.01 us */
 
 
 	/* Now round up to nearest register setting.
@@ -397,48 +400,46 @@ static u32 power_up_down(int node, u8 procPkg)
 		 * PowerStepUp=01000b - 50nS
 		 * PowerStepDown=01000b - 50ns
 		 */
-		dword |= PW_STP_UP50 | PW_STP_DN50;
-	} else {
-		u32 dispRefModeEn = (pci_read_config32(NODE_PCI(node,0),0x68) >> 24) & 1;
-		u32 isocEn = 0;
-		int j;
-		for (j = 0; (j < 4) && (!isocEn); j++ ) {
-			u8 offset;
-			if (AMD_CpuFindCapability(node, j, &offset)) {
-				isocEn = (pci_read_config32(NODE_PCI(node, 0), offset + 4) >> 12) & 1;
-			}
-		}
+		return dword | PW_STP_UP50 | PW_STP_DN50;
+	}
 
-		if (is_fam15h()) {
-			/* Family 15h always uses 100ns for multilink processors */
-			dword |= PW_STP_UP100 | PW_STP_DN100;
-		} else if (dispRefModeEn || isocEn) {
-			dword |= PW_STP_UP50 | PW_STP_DN50;
-		} else {
-			/* get number of cores for PowerStepUp & PowerStepDown in server
-			 * 1 core - 400nS  - 0000b
-			 * 2 cores - 200nS - 0010b
-			 * 3 cores - 133nS -> 100nS - 0011b
-			 * 4 cores - 100nS - 0011b
-			 */
-			switch (get_core_num_in_bsp(node)) {
-			case 0:
-				dword |= PW_STP_UP400 | PW_STP_DN400;
-				break;
-			case 1:
-			case 2:
-				dword |= PW_STP_UP200 | PW_STP_DN200;
-				break;
-			case 3:
-				dword |= PW_STP_UP100 | PW_STP_DN100;
-				break;
-			default:
-				dword |= PW_STP_UP100 | PW_STP_DN100;
-				break;
-			}
+	u32 dispRefModeEn = (pci_read_config32(NODE_PCI(node,0),0x68) >> 24) & 1;
+	u32 isocEn = 0;
+	for (int j = 0; (j < 4) && (!isocEn); j++) {
+		u8 offset;
+		if (AMD_CpuFindCapability(node, j, &offset)) {
+			isocEn = (pci_read_config32(NODE_PCI(node, 0), offset + 4) >> 12) & 1;
 		}
 	}
 
+	if (is_fam15h()) {
+		/* Family 15h always uses 100ns for multilink processors */
+		dword |= PW_STP_UP100 | PW_STP_DN100;
+	} else if (dispRefModeEn || isocEn) {
+		dword |= PW_STP_UP50 | PW_STP_DN50;
+	} else {
+		/* get number of cores for PowerStepUp & PowerStepDown in server
+			* 1 core - 400nS  - 0000b
+			* 2 cores - 200nS - 0010b
+			* 3 cores - 133nS -> 100nS - 0011b
+			* 4 cores - 100nS - 0011b
+			*/
+		switch (get_core_num_in_bsp(node)) {
+		case 0:
+			dword |= PW_STP_UP400 | PW_STP_DN400;
+			break;
+		case 1:
+		case 2:
+			dword |= PW_STP_UP200 | PW_STP_DN200;
+			break;
+		case 3:
+			dword |= PW_STP_UP100 | PW_STP_DN100;
+			break;
+		default:
+			dword |= PW_STP_UP100 | PW_STP_DN100;
+			break;
+		}
+	}
 	return dword;
 }
 
@@ -669,7 +670,9 @@ static void set_pstate(u32 nonBoostedPState) {
 	wrmsr(PS_CTL_REG, msr);
 
 	if (is_fam15h()) {
-		/* Do not wait for the first (even) set of cores to transition on Family 15h systems */
+		/* Do not wait for the first (even)
+		 * set of cores to transition on Family 15h systems.
+		 */
 		if ((cpuid_ebx(0x00000001) & 0x01000000))
 			skip_wait = 0;
 		else
@@ -813,8 +816,10 @@ static u32 init_fidvid_core(u32 nodeid, u32 coreid)
 		fid_max = (reg1fc &  SINGLE_PLANE_NB_FID_MASK ) >>  SINGLE_PLANE_NB_FID_SHIFT;
 
 		if (!pvimode) { /* SVI, dual power plane */
-			vid_max = vid_max - ((reg1fc &  DUAL_PLANE_NB_VID_OFF_MASK ) >>  DUAL_PLANE_NB_VID_SHIFT );
-			fid_max = fid_max +  ((reg1fc &  DUAL_PLANE_NB_FID_OFF_MASK ) >>  DUAL_PLANE_NB_FID_SHIFT );
+			vid_max = vid_max - ((reg1fc & DUAL_PLANE_NB_VID_OFF_MASK)
+						>> DUAL_PLANE_NB_VID_SHIFT);
+			fid_max = fid_max + ((reg1fc & DUAL_PLANE_NB_FID_OFF_MASK)
+						>> DUAL_PLANE_NB_FID_SHIFT);
 		}
 		/* write newNbVid to P-state Reg's NbVid always if NbVidUpdatedAll=1 */
 		fixPsNbVidBeforeWR(vid_max, coreid, dev, pvimode);
@@ -1035,7 +1040,8 @@ int init_fidvid_bsp(u32 bsp_apicid, u32 nodes)
 		 */
 		ap_apicidx.num = 0;
 
-		for_each_ap(bsp_apicid, CONFIG_SET_FIDVID_CORE_RANGE, -1, store_ap_apicid, &ap_apicidx);
+		for_each_ap(bsp_apicid, CONFIG_SET_FIDVID_CORE_RANGE,
+				-1, store_ap_apicid, &ap_apicidx);
 
 		for (i = 0; i < ap_apicidx.num; i++) {
 			init_fidvid_bsp_stage1(ap_apicidx.apicid[i], &fv);

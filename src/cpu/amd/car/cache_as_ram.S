@@ -138,11 +138,16 @@ skip_nb54_set:
 	/* Restore init detect */
 	cvtsd2si %xmm5, %ebx
 
-	/* Determine if this is the second core to start in a compute unit; if so, wait for first core start, clear init detect and skip MTRR init */
+	/* Determine if this is the second core to start in a compute unit; if so, wait for
+	 * first core start, clear init detect and skip MTRR init
+	 */
 	bt	$24, %eax
-	jnc	skip_cu_check		/* First core in the compute unit jumps to skip_cu_check */
+	jnc	skip_cu_check	/* First core in the compute unit jumps to skip_cu_check */
 
-	/* Determine if this is the second core to start in a compute unit; if so, clear init detect and skip MTRR init */
+	/* Determine if this is the second core to start in a compute unit;
+	 * if so, clear init detect and skip MTRR init
+	 */
+
 	/* Busywait until the first core sets up the MTRRs */
 
 check_init_detect_1:
