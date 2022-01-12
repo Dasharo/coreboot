@@ -21,8 +21,8 @@
 static void AMD_Errata281(u8 node, u64 revision, u32 platform)
 {
 	/* Workaround for Transaction Scheduling Conflict in
-	 * Northbridge Cross Bar.  Implement XCS Token adjustment
-	 * for ganged links.  Also, perform fix up for the mixed
+	 * Northbridge Cross Bar. Implement XCS Token adjustment
+	 * for ganged links. Also, perform fix up for the mixed
 	 * revision case.
 	 */
 
@@ -35,8 +35,7 @@ static void AMD_Errata281(u8 node, u64 revision, u32 platform)
 		/* For each node we need to check for a "broken" node */
 		if (!(revision & (AMD_DR_B0 | AMD_DR_B1))) {
 			for (i = 0; i < nodes; i++) {
-				if (get_logical_CPUID(i) &
-				    (AMD_DR_B0 | AMD_DR_B1)) {
+				if (get_logical_CPUID(i) & (AMD_DR_B0 | AMD_DR_B1)) {
 					mixed = 1;
 					break;
 				}
@@ -82,7 +81,7 @@ static void AMD_Errata281(u8 node, u64 revision, u32 platform)
 
 /**
  * AMD_SetHtPhyRegister - Use the HT link's HT Phy portal registers to update
- *   a phy setting for that link.
+ * a phy setting for that link.
  */
 static void AMD_SetHtPhyRegister(u8 node, u8 link, u8 entry)
 {
@@ -148,8 +147,8 @@ static void set_ht_phy_defaults(u8 node)
 	u32 platform = get_platform_type();
 
 	for (i = 0; i < ARRAY_SIZE(fam10_htphy_default); i++) {
-		if ((fam10_htphy_default[i].revision & revision) &&
-		    (fam10_htphy_default[i].platform & platform)) {
+		if ((fam10_htphy_default[i].revision & revision)
+			&& (fam10_htphy_default[i].platform & platform)) {
 			/* HT Phy settings either apply to both sublinks or have
 			 * separate registers for sublink zero and one, so there
 			 * will be two table entries. So, here we only loop
@@ -158,7 +157,7 @@ static void set_ht_phy_defaults(u8 node)
 			for (j = 0; j < 4; j++) {
 				if (AMD_CpuFindCapability(node, j, &offset)) {
 					if (AMD_checkLinkType(node, offset)
-					    & fam10_htphy_default[i].linktype) {
+						& fam10_htphy_default[i].linktype) {
 						AMD_SetHtPhyRegister(node, j, i);
 					}
 				} else {
@@ -205,20 +204,19 @@ static void configure_ht_stop_tristate(u8 node)
 
 static void configure_pci_defaults(u8 node)
 {
-	u8 i;
 	u32 val;
 	u64 revision = get_logical_CPUID(node);
 	u32 platform = get_platform_type();
 
-	for (i = 0; i < ARRAY_SIZE(fam10_pci_default); i++) {
-		if ((fam10_pci_default[i].revision & revision) &&
-		    (fam10_pci_default[i].platform & platform)) {
+	for (u8 i = 0; i < ARRAY_SIZE(fam10_pci_default); i++) {
+		if ((fam10_pci_default[i].revision & revision)
+				&& (fam10_pci_default[i].platform & platform)) {
 			val = pci_read_config32(NODE_PCI(node, fam10_pci_default[i].function),
 						fam10_pci_default[i].offset);
 			val &= ~fam10_pci_default[i].mask;
 			val |= fam10_pci_default[i].data;
 			pci_write_config32(NODE_PCI(node, fam10_pci_default[i].function),
-					   fam10_pci_default[i].offset, val);
+						fam10_pci_default[i].offset, val);
 		}
 	}
 }
@@ -230,8 +228,7 @@ static void configure_message_triggered_c1e(u8 node)
 	if (revision & (AMD_DR_GT_D0 | AMD_FAM15_ALL)) {
 		/* Set up message triggered C1E */
 		/* CacheFlushImmOnAllHalt = !is_fam15h() */
-		set_pci_node_reg(NODE_PCI(node, 3), 0xd4, ~BIT(14),
-				     is_fam15h() ? 0 : BIT(14));
+		set_pci_node_reg(NODE_PCI(node, 3), 0xd4, ~BIT(14), is_fam15h() ? 0 : BIT(14));
 
 		/* IgnCpuPrbEn = 1 */
 		/* CacheFlushOnHaltTmr = 0x28 */
@@ -348,7 +345,7 @@ static void write_ht_link_buf_counts(u8 node, struct ht_link_state *link_state)
 
 	dword = pci_read_config32(NODE_PCI(node, 0), (link_state->link_real * 0x20) + 0x90);
 	dword &= ~(0x1 << 31);			/* LockBc = 0x1 */
-	dword |=  (0x1 << 31);
+	dword |= (0x1 << 31);
 	dword &= ~(0x7 << 25);			/* FreeData = free_data */
 	dword |= ((link_state->free_data & 0x7) << 25);
 	dword &= ~(0x1f << 20);			/* FreeCmd = free_cmd */
@@ -493,32 +490,32 @@ static void set_ht_link_to_xcs_token_counts(u8 node, u8 link, struct ht_link_sta
 	link_state->req_tok_0 = ((link_state->ganged) ? 2 : 1);
 	link_state->free_tokens = 0;
 
-	if (link_state->iolink && link_state->ganged &&
-	    sockets == 4 && sockets_populated == 4) {
+	if (link_state->iolink && link_state->ganged
+				&& sockets == 4 && sockets_populated == 4) {
 		link_state->isoc_req_tok_0 = 2;
 	}
 
-	if (!link_state->iolink && !link_state->ganged &&
-	    sockets >= 2 && sockets_populated >= 2) {
+	if (!link_state->iolink && !link_state->ganged
+				&& sockets >= 2 && sockets_populated >= 2) {
 		link_state->isoc_req_tok_1 = 1;
 	}
 
 	if (link_state->iolink && link_state->ganged) {
 		if (!is_dual_node(node)) {
 			link_state->probe_tok_0 = 0;
-		} else if ((sockets == 1) || (sockets == 2) ||
-			   ((sockets == 4) && (sockets_populated == 2))) {
+		} else if ((sockets == 1) || (sockets == 2)
+				|| ((sockets == 4) && (sockets_populated == 2))) {
 			link_state->probe_tok_0 = 0;
 		}
 	}
 
-	if (!link_state->iolink && link_state->ganged &&
-	    ((sockets_populated == 2) && (sockets >= 2))) {
+	if (!link_state->iolink && link_state->ganged
+				&& ((sockets_populated == 2) && (sockets >= 2))) {
 		link_state->probe_tok_0 = 1;
 	}
 
-	if (!link_state->iolink && link_state->ganged && is_dual_node(node) &&
-	    (sockets == 4) && (sockets_populated == 4)) {
+	if (!link_state->iolink && link_state->ganged && is_dual_node(node)
+			&& (sockets == 4) && (sockets_populated == 4)) {
 		link_state->rsp_tok_0 = 1;
 		link_state->preq_tok_0 = 1;
 	}
@@ -694,7 +691,7 @@ static void AMD_SetupPSIVID_d(u32 platform_type, u8 node)
 
 		for (i = 4; i >= 0; i--) {
 			msr = rdmsr(PSTATE_0_MSR + i);
-			/*  Pstate valid? */
+			/* Pstate valid? */
 			if (msr.hi & BIT(31)) {
 				dword = pci_read_config32(NODE_PCI(i, 3), 0xA0);
 				dword &= ~0x7F;
@@ -710,7 +707,7 @@ void cpuSetAMDPCI(u8 node)
 {
 	/* This routine loads the CPU with default settings in fam10_pci_default
 	 * table . It must be run after Cache-As-RAM has been enabled, and
-	 * Hypertransport initialization has taken place.  Also note
+	 * Hypertransport initialization has taken place. Also note
 	 * that it is run for the first core on each node
 	 */
 	u32 platform;
@@ -732,8 +729,9 @@ void cpuSetAMDPCI(u8 node)
 	AMD_Errata281(node, revision, platform);
 
 	/* FIXME: if the dct phy doesn't init correct it needs to reset.
-	   if (revision & (AMD_DR_B2 | AMD_DR_B3))
-	   dctPhyDiag(); */
+	 * if (revision & (AMD_DR_B2 | AMD_DR_B3))
+	 * dctPhyDiag();
+	 */
 
 	configure_message_triggered_c1e(node);
 
@@ -866,7 +864,7 @@ void cpuSetAMDMSR(u8 node_id)
 {
 	/* This routine loads the CPU with default settings in fam10_msr_default
 	 * table . It must be run after Cache-As-RAM has been enabled, and
-	 * Hypertransport initialization has taken place.  Also note
+	 * Hypertransport initialization has taken place. Also note
 	 * that it is run on the current processor only, and only for the current
 	 * processor core.
 	 */
@@ -881,8 +879,8 @@ void cpuSetAMDMSR(u8 node_id)
 	platform = get_platform_type();
 
 	for (i = 0; i < ARRAY_SIZE(fam10_msr_default); i++) {
-		if ((fam10_msr_default[i].revision & revision) &&
-		    (fam10_msr_default[i].platform & platform)) {
+		if ((fam10_msr_default[i].revision & revision)
+				&& (fam10_msr_default[i].platform & platform)) {
 			msr = rdmsr(fam10_msr_default[i].msr);
 			msr.hi &= ~fam10_msr_default[i].mask_hi;
 			msr.hi |= fam10_msr_default[i].data_hi;

@@ -96,8 +96,8 @@ struct node_core_id get_node_core_id(u32 nb_cfg_54)
 		 * Since the code above returns nodeid 0 even on
 		 * internal node 1 some fixup is needed...
 		 */
-		u8 core_count = (((f3xe8 & 0x00008000) >> 13) |
-				     ((f3xe8 & 0x00003000) >> 12)) + 1;
+		u8 core_count = (((f3xe8 & 0x00008000) >> 13)
+				| ((f3xe8 & 0x00003000) >> 12)) + 1;
 
 		id.nodeid = id.nodeid * 2;
 		if (id.coreid >= core_count) {
@@ -130,7 +130,8 @@ u32 get_boot_apic_id(u8 node, u32 core)
 	u32 apic_id_core_id_size;
 
 	/* Assume that all node are same stepping, otherwise we can use use
-	   nb_cfg_54 from bsp for all nodes */
+	 * nb_cfg_54 from bsp for all nodes.
+	 */
 	nb_cfg_54 = read_nb_cfg_54();
 	f3xe8 = pci_read_config32(NODE_PCI(0, 3), 0xe8);
 

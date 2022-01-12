@@ -92,8 +92,8 @@ void print_apicid_nodeid_coreid(u32 apicid, struct node_core_id id,
 				const char *str)
 {
 	printk(BIOS_DEBUG,
-	       "%s --- { APICID = %02x NODEID = %02x COREID = %02x} ---\n", str,
-	       apicid, id.nodeid, id.coreid);
+		"%s --- { APICID = %02x NODEID = %02x COREID = %02x} ---\n", str,
+		apicid, id.nodeid, id.coreid);
 }
 
 static u32 wait_cpu_state(u32 apicid, u32 state, u32 state2)
@@ -110,10 +110,8 @@ static u32 wait_cpu_state(u32 apicid, u32 state, u32 state2)
 			break;	//target CPU is in stage started
 		}
 	}
-	if (timeout) {
-		if (readback) {
-			timeout = readback;
-		}
+	if (timeout && readback) {
+		timeout = readback;
 	}
 
 	return timeout;
@@ -339,12 +337,14 @@ static u32 init_cpus(struct sys_info *sysinfo)
 	u8 fam15_bsp_core1_apicid;
 	struct node_core_id id;
 
-	/* that is from initial apicid, we need nodeid and coreid
-	   later */
+	/* That is from initial apicid, we need nodeid and coreid
+	 * later.
+	 */
 	id = get_node_core_id_x();
 
 	/* NB_CFG MSR is shared between cores, so we need make sure
-	   core0 is done at first --- use wait_all_core0_started  */
+	 * core0 is done at first --- use wait_all_core0_started
+	 */
 	if (id.coreid == 0) {
 		/* Set InitApicIdCpuIdLo / EnableCf8ExtCfg on core0 only */
 		if (!is_fam15h())
