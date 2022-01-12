@@ -174,7 +174,7 @@ void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat,
 	 * responsibility of the CPU sub-system prior to accessing LAPIC.
 	 *
 	 * Slot Number is an external convention, and is determined by OEM with
-	 * accompanying silk screening.  OEM may choose to use Slot number
+	 * accompanying silk screening. OEM may choose to use Slot number
 	 * convention which is consistent with DIMM number conventions.
 	 * All AMD engineering
 	 * platforms do.
@@ -549,10 +549,10 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 			pDCTstat->DCTSysLimit = val;
 		}
 
-		base  = pDCTstat->DCTSysBase;
+		base = pDCTstat->DCTSysBase;
 		limit = pDCTstat->DCTSysLimit;
 		if (limit > base) {
-			base  += NextBase;
+			base += NextBase;
 			limit += NextBase;
 			DramSelBaseAddr += NextBase;
 			printk(BIOS_DEBUG, " Node: %02x  base: %02x  limit: %02x  BottomIO: %02x\n",
@@ -573,7 +573,7 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 					val = ((base + HoleSize) >> (24-8)) & 0xFF;
 					val <<= 8; /* shl 16, rol 24 */
 					val |= DramHoleBase << 24;
-					val |= 1  << DramHoleValid;
+					val |= 1 << DramHoleValid;
 					Set_NB32(devx, 0xF0, val); /* Dram Hole Address Reg */
 					pDCTstat->DCTSysLimit += HoleSize;
 					base = pDCTstat->DCTSysBase;
@@ -590,12 +590,12 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 					pDCTstat->DCTSysBase = base;
 					pDCTstat->DCTSysLimit = limit;
 				} else {
-					/* No Remapping.  Normal Contiguous mapping */
+					/* No Remapping. Normal Contiguous mapping */
 					pDCTstat->DCTSysBase = base;
 					pDCTstat->DCTSysLimit = limit;
 				}
 			} else {
-				/*No Remapping.  Normal Contiguous mapping*/
+				/*No Remapping. Normal Contiguous mapping*/
 				pDCTstat->DCTSysBase = base;
 				pDCTstat->DCTSysLimit = limit;
 			}
@@ -767,7 +767,7 @@ u8 NodePresent_D(u8 Node)
 	u32 dword;
 	u8 ret = 0;
 
-	dev = PA_HOST(Node);		/*test device/vendor id at host bridge  */
+	dev = PA_HOST(Node);		/* Test device/vendor id at host bridge. */
 	val = Get_NB32(dev, 0);
 	dword = mct_NodePresent_D();	/* FIXME: BOZO -11001022h rev for F */
 	if (val == dword) {		/* AMD Hammer Family CPU HT Configuration */
@@ -777,7 +777,7 @@ u8 NodePresent_D(u8 Node)
 		val = Get_NB32(dev, 0x60);
 		val &= 0x07;
 		dword = Node;
-		if (val  == dword)	/* current nodeID = requested nodeID ? */
+		if (val == dword)	/* current nodeID = requested nodeID ? */
 			ret = 1;
 finish:
 		;
@@ -837,7 +837,7 @@ static void SyncDCTsReady_D(struct MCTStatStruc *pMCTstat,
 {
 	/* Wait (and block further access to dram) for all DCTs to be ready,
 	 * by polling all InitDram bits and waiting for possible memory clear
-	 * operations to be complete.  Read MemClkFreqVal bit to see if
+	 * operations to be complete. Read MemClkFreqVal bit to see if
 	 * the DIMMs are present in this node.
 	 */
 

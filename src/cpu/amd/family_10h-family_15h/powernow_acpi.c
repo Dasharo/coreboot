@@ -118,11 +118,13 @@ static void write_cstates_for_core(int coreID)
 
 		if (cpu) {
 			/* TODO
-			 * Detect dual core status and skip CSD generation if dual core is disabled
+			 * Detect dual core status and skip CSD generation
+			 * if dual core is disabled
 			 */
 
 			/* Generate C state dependency entries */
-			acpigen_write_CSD_package((cpu->path.apic.apic_id >> 1) & 0x7f, 2, CSD_HW_ALL, 0);
+			acpigen_write_CSD_package((cpu->path.apic.apic_id >> 1) & 0x7f,
+						2, CSD_HW_ALL, 0);
 		}
 	}
 }
@@ -192,19 +194,28 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 
 	/*
 	 * Based on the CPU socket type, cmp_cap and pwr_lmt, get the power limit.
-	 * socket_type : 0x10 SocketF; 0x11 AM2/ASB1; 0x12 S1G1
-	 * cmp_cap : 0x0 SingleCore; 0x1 DualCore; 0x2 TripleCore; 0x3 QuadCore; 0x4 QuintupleCore; 0x5 HexCore
+	 * socket_type :
+	 *     0x10 SocketF;
+	 *     0x11 AM2/ASB1;
+	 *     0x12 S1G1
+	 * cmp_cap :
+	 *     0x0 SingleCore;
+	 *     0x1 DualCore;
+	 *     0x2 TripleCore;
+	 *     0x3 QuadCore;
+	 *     0x4 QuintupleCore;
+	 *     0x5 HexCore
 	 */
 	printk(BIOS_INFO, "Pstates algorithm ...\n");
 	fam15h = !!(get_logical_CPUID(0) & AMD_FAM15_ALL);
 	/* Get number of cores */
 	if (fam15h) {
-		cmp_cap = pci_read_config32(pcidev_on_root(0x18, 5), 0x84) &
-									  0xff;
+		cmp_cap = pci_read_config32(pcidev_on_root(0x18, 5), 0x84) & 0xff;
 	} else {
 		dtemp = pci_read_config32(pcidev_on_root(0x18, 3), 0xe8);
 		cmp_cap = (dtemp & 0x3000) >> 12;
-		if (get_logical_CPUID(0) & (AMD_FAM10_REV_D | AMD_FAM15_ALL))	/* revision D or higher */
+		if (get_logical_CPUID(0) & (AMD_FAM10_REV_D | AMD_FAM15_ALL))
+			/* revision D or higher */
 			cmp_cap |= (dtemp & 0x8000) >> 13;
 	}
 

@@ -55,7 +55,7 @@ static const struct {
 
 	{ DC_CFG_MSR, AMD_FAM10_ALL, AMD_PTYPE_SVR,
 			0x00000000, 0x00000004,
-			0x00000000, 0x0000000C },	/* Family 10h: [REQ_CTR] = 1 for Server */
+			0x00000000, 0x0000000C },/* Family 10h: [REQ_CTR] = 1 for Server */
 
 	{ DC_CFG_MSR, AMD_DR_Bx, AMD_PTYPE_SVR,
 			0x00000000, 0x00000000,
@@ -139,7 +139,9 @@ static const struct {
 
 	{ LS_CFG2_MSR, AMD_OR_C0, AMD_PTYPE_ALL,
 			1 << 14, 0x00000000,
-			1 << 14, 0x00000000},		/* C0 or above [ForceSmcCheckFlowStDis]=1 */
+			1 << 14, 0x00000000},		/* C0 or above
+							 * [ForceSmcCheckFlowStDis] = 1
+							 */
 
 	{ LS_CFG2_MSR, AMD_OR_C0, AMD_PTYPE_ALL,
 			1 << 12, 0x00000000,
@@ -147,7 +149,9 @@ static const struct {
 
 	{ OSVW_ID_Length, AMD_DR_Bx | AMD_DR_Cx | AMD_DR_Dx, AMD_PTYPE_ALL,
 			0x00000004, 0x00000000,
-			0x00000004, 0x00000000},	/* B0 or Above, OSVW_ID_Length is 0004h */
+			0x00000004, 0x00000000},	/* B0 or Above,
+							 * OSVW_ID_Length is 0004h
+							 */
 
 	{ OSVW_Status, AMD_DR_Cx | AMD_DR_Dx, AMD_PTYPE_MC,
 			0x0000000C, 0x00000000,
@@ -179,7 +183,9 @@ static const struct {
 
 	{ CPU_ID_EXT_FEATURES_MSR, AMD_DR_Dx, AMD_PTYPE_ALL,
 			0x00000000, 1 << (51 - 32),
-			0x00000000, 1 << (51 - 32)},	/* G34_PKG | C32_PKG | S1G4_PKG | ASB2_PKG */
+			0x00000000, 1 << (51 - 32)},	/* G34_PKG | C32_PKG
+							 * | S1G4_PKG | ASB2_PKG
+							 */
 
 	{ CPU_ID_EXT_FEATURES_MSR, AMD_FAM15_ALL, AMD_PTYPE_ALL,
 			0x00000000, 1 << (56 - 32),

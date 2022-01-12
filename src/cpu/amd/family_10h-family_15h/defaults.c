@@ -31,50 +31,50 @@ static void AMD_Errata281(u8 node, u64 revision, u32 platform)
 	u8 mixed = 0;
 	u8 nodes = get_nodes();
 
-	if (platform & AMD_PTYPE_SVR) {
-		/* For each node we need to check for a "broken" node */
-		if (!(revision & (AMD_DR_B0 | AMD_DR_B1))) {
-			for (i = 0; i < nodes; i++) {
-				if (get_logical_CPUID(i) & (AMD_DR_B0 | AMD_DR_B1)) {
-					mixed = 1;
-					break;
-				}
+	if (!(platform & AMD_PTYPE_SVR)) {
+		return;
+	}
+	/* For each node we need to check for a "broken" node */
+	if (!(revision & (AMD_DR_B0 | AMD_DR_B1))) {
+		for (i = 0; i < nodes; i++) {
+			if (get_logical_CPUID(i) & (AMD_DR_B0 | AMD_DR_B1)) {
+				mixed = 1;
+				break;
 			}
 		}
+	}
 
-		if ((revision & (AMD_DR_B0 | AMD_DR_B1)) || mixed) {
+	if ((revision & (AMD_DR_B0 | AMD_DR_B1)) || mixed) {
+		/* F0X68[22:21] DsNpReqLmt0 = 01b */
+		val = pci_read_config32(NODE_PCI(node, 0), 0x68);
+		val &= ~0x00600000;
+		val |= 0x00200000;
+		pci_write_config32(NODE_PCI(node, 0), 0x68, val);
 
-			/* F0X68[22:21] DsNpReqLmt0 = 01b */
-			val = pci_read_config32(NODE_PCI(node, 0), 0x68);
-			val &= ~0x00600000;
-			val |= 0x00200000;
-			pci_write_config32(NODE_PCI(node, 0), 0x68, val);
+		/* F3X6C */
+		val = pci_read_config32(NODE_PCI(node, 3), 0x6C);
+		val &= ~0x700780F7;
+		val |= 0x00010094;
+		pci_write_config32(NODE_PCI(node, 3), 0x6C, val);
 
-			/* F3X6C */
-			val = pci_read_config32(NODE_PCI(node, 3), 0x6C);
-			val &= ~0x700780F7;
-			val |= 0x00010094;
-			pci_write_config32(NODE_PCI(node, 3), 0x6C, val);
+		/* F3X7C */
+		val = pci_read_config32(NODE_PCI(node, 3), 0x7C);
+		val &= ~0x707FFF1F;
+		val |= 0x00144514;
+		pci_write_config32(NODE_PCI(node, 3), 0x7C, val);
 
-			/* F3X7C */
-			val = pci_read_config32(NODE_PCI(node, 3), 0x7C);
-			val &= ~0x707FFF1F;
-			val |= 0x00144514;
-			pci_write_config32(NODE_PCI(node, 3), 0x7C, val);
+		/* F3X144[3:0] RspTok = 0001b */
+		val = pci_read_config32(NODE_PCI(node, 3), 0x144);
+		val &= ~0x0000000F;
+		val |= 0x00000001;
+		pci_write_config32(NODE_PCI(node, 3), 0x144, val);
 
-			/* F3X144[3:0] RspTok = 0001b */
-			val = pci_read_config32(NODE_PCI(node, 3), 0x144);
-			val &= ~0x0000000F;
-			val |= 0x00000001;
-			pci_write_config32(NODE_PCI(node, 3), 0x144, val);
-
-			for (i = 0; i < 3; i++) {
-				reg = 0x148 + (i * 4);
-				val = pci_read_config32(NODE_PCI(node, 3), reg);
-				val &= ~0x000000FF;
-				val |= 0x000000DB;
-				pci_write_config32(NODE_PCI(node, 3), reg, val);
-			}
+		for (i = 0; i < 3; i++) {
+			reg = 0x148 + (i * 4);
+			val = pci_read_config32(NODE_PCI(node, 3), reg);
+			val &= ~0x000000FF;
+			val |= 0x000000DB;
+			pci_write_config32(NODE_PCI(node, 3), reg, val);
 		}
 	}
 }
@@ -557,13 +557,11 @@ static void set_sri_to_xcs_token_counts(u8 node)
 		up_rsp_tok = 0x3;
 	} else {
 		if ((sockets == 1) || ((sockets == 2) && (sockets_populated == 1))) {
-			if (probe_filter_enabled) {
+			if (probe_filter_enabled)
 				free_tok = 0x9;
-				up_rsp_tok = 0x3;
-			} else {
+			else
 				free_tok = 0xa;
-				up_rsp_tok = 0x3;
-			}
+			up_rsp_tok = 0x3;
 		} else if ((sockets == 2) && (sockets_populated == 2)) {
 			free_tok = 0xb;
 			up_rsp_tok = 0x1;

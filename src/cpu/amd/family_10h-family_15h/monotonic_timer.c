@@ -35,7 +35,8 @@ void timer_monotonic_get(struct mono_time *mt)
 
 	current_tick = rdtscll();
 	if (mono_counter.core_frequency != 0)
-		usecs_elapsed = (current_tick - mono_counter.last_value) / mono_counter.core_frequency;
+		usecs_elapsed = (current_tick - mono_counter.last_value)
+			/ mono_counter.core_frequency;
 
 	/* Update current time and tick values only if a full tick occurred. */
 	if (usecs_elapsed) {

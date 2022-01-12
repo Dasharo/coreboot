@@ -448,7 +448,9 @@ static u32 init_cpus(struct sys_info *sysinfo)
 
 		printk(BIOS_DEBUG, "Disabling CAR on AP %02x\n", apicid);
 		if (is_fam15h()) {
-			/* Only modify the MSRs on the odd cores (the last cores to finish booting) */
+			/* Only modify the MSRs on the odd cores
+			 * (the last cores to finish booting)
+			 */
 			stop_car_and_cpu(!set_mtrrs, apicid);
 		} else {
 			/* Modify MSRs on all cores */
@@ -716,7 +718,9 @@ void early_cpu_finalize(struct sys_info *sysinfo, u32 bsp_apicid)
 		printk(BIOS_DEBUG, "\nBegin FIDVID MSR 0xc0010071 0x%08x 0x%08x\n",
 			msr.hi, msr.lo);
 
-		/* FIXME: The sb fid change may survive the warm reset and only need to be done once */
+		/* FIXME: The sb fid change may survive the warm reset
+		 * and only need to be done once
+		 */
 		enable_fid_change_on_sb(sysinfo->sbbusn, sysinfo->sbdn);
 
 		post_code(0x39);

@@ -2542,14 +2542,14 @@ void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat,
 {
 	/*
 	 * Memory may be mapped contiguously all the way up to 4GB (depending on setup
-	 * options).  It is the responsibility of PCI subsystem to create an uncacheable
+	 * options). It is the responsibility of PCI subsystem to create an uncacheable
 	 * IO region below 4GB and to adjust TOP_MEM downward prior to any IO mapping or
-	 * accesses.  It is the same responsibility of the CPU sub-system prior to
+	 * accesses. It is the same responsibility of the CPU sub-system prior to
 	 * accessing LAPIC.
 	 *
 	 * Slot Number is an external convention, and is determined by OEM with accompanying
-	 * silk screening.  OEM may choose to use Slot number convention which is consistent
-	 * with DIMM number conventions.  All AMD engineering platforms do.
+	 * silk screening. OEM may choose to use Slot number convention which is consistent
+	 * with DIMM number conventions. All AMD engineering platforms do.
 	 *
 	 * Build Requirements:
 	 * 1. MCT_SEG0_START and MCT_SEG0_END macros to begin and end the code segment,
@@ -2711,7 +2711,7 @@ restartinit:
 
 		/* FIXME
 		 * Stability issues have arisen on multiple Family 15h systems
-		 * when configuration restoration is enabled.  In all cases these
+		 * when configuration restoration is enabled. In all cases these
 		 * stability issues resolved by allowing the RAM to go through a
 		 * full training cycle.
 		 *
@@ -2737,7 +2737,7 @@ restartinit:
 			}
 		}
 		if (NodesWmem == 0) {
-			printk(BIOS_ALERT, "Unable to detect valid memory on any nodes.  Halting!\n");
+			printk(BIOS_ALERT, "Unable to detect valid memory on any nodes. Halting!\n");
 			goto fatalexit;
 		}
 
@@ -3588,7 +3588,7 @@ retry_dqs_training_and_levelization:
 
 			if (pDCTstat->NodePresent) {
 				if (pDCTstat->TrainErrors & (1 << SB_FatalError)) {
-					printk(BIOS_ERR, "DIMM training FAILED!  Restarting system...");
+					printk(BIOS_ERR, "DIMM training FAILED! Restarting system...");
 					soft_reset();
 				}
 				if (pDCTstat->TrainErrors & (1 << SB_RetryConfigTrain)) {
@@ -4150,7 +4150,7 @@ static void SyncDCTsReady_D(struct MCTStatStruc *pMCTstat,
 {
 	/* Wait (and block further access to dram) for all DCTs to be ready,
 	 * by polling all InitDram bits and waiting for possible memory clear
-	 * operations to be complete.  Read MemClkFreqVal bit to see if
+	 * operations to be complete. Read MemClkFreqVal bit to see if
 	 * the DIMMs are present in this node.
 	 */
 	u8 Node;

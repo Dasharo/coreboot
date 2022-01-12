@@ -198,10 +198,10 @@ static void dualPlaneOnly(pci_devfn_t dev)
 {
 	// BKDG 2.4.2.7
 	u64 cpuRev = get_logical_CPUID(0xff);
-	if ((get_processor_package_type() == AMD_PKGTYPE_AM3_2r2) &&
-	  (cpuRev & (AMD_DR_Cx | AMD_DR_Ex))) {
-		if ((pci_read_config32(dev, 0x1fc) & DUAL_PLANE_ONLY_MASK) &&
-		  (pci_read_config32(dev, 0xa0) & PVI_MODE)) {
+	if ((get_processor_package_type() == AMD_PKGTYPE_AM3_2r2)
+			&& (cpuRev & (AMD_DR_Cx | AMD_DR_Ex))) {
+		if ((pci_read_config32(dev, 0x1fc) & DUAL_PLANE_ONLY_MASK)
+				&& (pci_read_config32(dev, 0xa0) & PVI_MODE)) {
 			if (cpuid_edx(0x80000007) & CPB_MASK) {
 				/* Revision E only, but E is apparently not supported yet,
 				 * therefore untested.
@@ -301,9 +301,9 @@ static void recalculateVsSlamTimeSettingOnCorePre(pci_devfn_t dev)
 	msr = rdmsr(PSTATE_0_MSR);
 	highVoltageVid = (u8) ((msr.lo >> PS_CPU_VID_SHFT) & 0x7F);
 	if (!(msr.hi & 0x80000000)) {
-	  printk(BIOS_ERR,"P-state info in MSRC001_0064 is invalid !!!\n");
-	  highVoltageVid = (u8) ((pci_read_config32(dev, 0x1E0)
-				   >> PS_CPU_VID_SHFT) & 0x7F);
+		printk(BIOS_ERR,"P-state info in MSRC001_0064 is invalid !!!\n");
+		highVoltageVid = (u8) ((pci_read_config32(dev, 0x1E0)
+					>> PS_CPU_VID_SHFT) & 0x7F);
 	}
 
 	/* If SVI, we only care about CPU VID.
@@ -326,7 +326,7 @@ static void recalculateVsSlamTimeSettingOnCorePre(pci_devfn_t dev)
 		printk(BIOS_ERR, "P-state info in MSR%8x is invalid !!!\n",
 			PSTATE_0_MSR + bValue);
 		lowVoltageVid = (u8) ((pci_read_config32(dev, 0x1E0+(bValue*4))
-				   >> PS_CPU_VID_SHFT) & 0x7F);
+					>> PS_CPU_VID_SHFT) & 0x7F);
 	}
 
 	/* If SVI, we only care about CPU VID.
@@ -495,7 +495,7 @@ static void config_power_ctrl_misc_reg(pci_devfn_t dev, u64 cpuRev,
 		dword |= BP_INS_TRI_EN_ON;
 	}
 
-	  /* TODO: look into C1E state and F3xA0[IdleExitEn]*/
+	/* TODO: look into C1E state and F3xA0[IdleExitEn]*/
 	#if CONFIG(SVI_HIGH_FREQ)
 	if (cpuRev & AMD_FAM10_C3) {
 		dword |= SVI_HIGH_FREQ_ON;
@@ -783,8 +783,8 @@ static u32 needs_NB_COF_VID_update(void)
 		u64 cpuRev = get_logical_CPUID(i);
 		u32 nbCofVidUpdateDefined = (cpuRev & (AMD_FAM10_LT_D));
 		if (nbCofVidUpdateDefined
-		  && (pci_read_config32(NODE_PCI(i, 3), 0x1FC)
-			& NB_COF_VID_UPDATE_MASK)) {
+				&& (pci_read_config32(NODE_PCI(i, 3), 0x1FC)
+				& NB_COF_VID_UPDATE_MASK)) {
 			nb_cof_vid_update = 1;
 			break;
 		}
@@ -893,7 +893,7 @@ static void init_fidvid_bsp_stage1(u32 ap_apicid, void *gp)
 
 	if (timeout) {
 		printk(BIOS_DEBUG, "%s: timed out reading from ap %02x\n",
-		    __func__, ap_apicid);
+			__func__, ap_apicid);
 		return;
 	}
 
@@ -1048,7 +1048,7 @@ int init_fidvid_bsp(u32 bsp_apicid, u32 nodes)
 		}
 	} else {
 		for_each_ap(bsp_apicid, CONFIG(SET_FIDVID_CORE0_ONLY), -1,
-			  init_fidvid_bsp_stage1, &fv);
+				init_fidvid_bsp_stage1, &fv);
 	}
 
 	print_debug_fv("common_fid = ", fv.common_fid);
