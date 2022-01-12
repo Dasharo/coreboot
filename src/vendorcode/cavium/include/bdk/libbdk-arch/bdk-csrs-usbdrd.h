@@ -8385,11 +8385,11 @@ union bdk_usbdrdx_uahc_portpmsc_ssx
 #if __BYTE_ORDER == __BIG_ENDIAN /* Word 0 - Big Endian */
         uint32_t reserved_17_31        : 15;
         uint32_t fla                   : 1;  /**< [ 16: 16](R/W/H) Force link PM accept. */
-        uint32_t u2imeout            : 8;  /**< [ 15:  8](R/W/H) U2 timeout. */
-        uint32_t u1imeout            : 8;  /**< [  7:  0](R/W/H) U1 timeout. */
+        uint32_t u2_timeout            : 8;  /**< [ 15:  8](R/W/H) U2 timeout. */
+        uint32_t u1_timeout            : 8;  /**< [  7:  0](R/W/H) U1 timeout. */
 #else /* Word 0 - Little Endian */
-        uint32_t u1imeout            : 8;  /**< [  7:  0](R/W/H) U1 timeout. */
-        uint32_t u2imeout            : 8;  /**< [ 15:  8](R/W/H) U2 timeout. */
+        uint32_t u1_timeout            : 8;  /**< [  7:  0](R/W/H) U1 timeout. */
+        uint32_t u2_timeout            : 8;  /**< [ 15:  8](R/W/H) U2 timeout. */
         uint32_t fla                   : 1;  /**< [ 16: 16](R/W/H) Force link PM accept. */
         uint32_t reserved_17_31        : 15;
 #endif /* Word 0 - End */

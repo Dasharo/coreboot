@@ -208,7 +208,7 @@ static void DramcCalculate_Datlat_val(DRAMC_CTX_T *p)
 //-------------------------------------------------------------------------
 
 #if ENABLE_WDQS_MODE_2
-static void WDQSMode2AcTimingEnlarge(DRAMC_CTX_T *p, U16 *u2_XRTW2W, U16 *u2_XRTR2W, U16 *u2_XRTW2R, U16 *u2RTW)
+static void WDQSMode2AcTimingEnlarge(DRAMC_CTX_T *p, U16 *u2_XRTW2W, U16 *u2_XRTR2W, U16 *u2_XRTW2R, U16 *u2_TRTW)
 {
     U16 u2XRTW2W_enlarge = 0, u2XRTR2W_enlarge = 0;
     U16 u2XRTW2R_enlarge = 0, u2TRTW_enlarge = 0;
@@ -259,7 +259,7 @@ static void WDQSMode2AcTimingEnlarge(DRAMC_CTX_T *p, U16 *u2_XRTW2W, U16 *u2_XRT
     *u2_XRTW2W += u2XRTW2W_enlarge;
     *u2_XRTR2W += u2XRTR2W_enlarge;
     *u2_XRTW2R += u2XRTW2R_enlarge;
-    *u2RTW += u2TRTW_enlarge;
+    *u2_TRTW += u2TRTW_enlarge;
 }
 #endif
 

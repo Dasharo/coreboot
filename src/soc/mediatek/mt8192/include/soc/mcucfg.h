@@ -486,7 +486,7 @@ struct mt8192_mcucfg_regs {
 	u32 reserved93[7];
 	u32 cpu0_dfs_cfg;	/* 0x3040 */
 	u32 reserved94[3];
-	u32 cpu0urbo_cfg;	/* 0x3050 */
+	u32 cpu0_turbo_cfg;	/* 0x3050 */
 	u32 reserved95[105];
 	u32 cpu0_resereved_reg;	/* 0x31f8 */
 	u32 cpu0_resereved_reg_rd;
@@ -500,7 +500,7 @@ struct mt8192_mcucfg_regs {
 	u32 reserved97[7];
 	u32 cpu1_dfs_cfg;	/* 0x3240 */
 	u32 reserved98[3];
-	u32 cpu1urbo_cfg;	/* 0x3250 */
+	u32 cpu1_turbo_cfg;	/* 0x3250 */
 	u32 reserved99[105];
 	u32 cpu1_resereved_reg;	/* 0x33f8 */
 	u32 cpu1_resereved_reg_rd;
@@ -514,7 +514,7 @@ struct mt8192_mcucfg_regs {
 	u32 reserved101[7];
 	u32 cpu2_dfs_cfg;	/* 0x3440 */
 	u32 reserved102[3];
-	u32 cpu2urbo_cfg;	/* 0x3450 */
+	u32 cpu2_turbo_cfg;	/* 0x3450 */
 	u32 reserved103[105];
 	u32 cpu2_resereved_reg;	/* 0x35f8 */
 	u32 cpu2_resereved_reg_rd;
@@ -528,7 +528,7 @@ struct mt8192_mcucfg_regs {
 	u32 reserved105[7];
 	u32 cpu3_dfs_cfg;	/* 0x3640 */
 	u32 reserved106[3];
-	u32 cpu3urbo_cfg;	/* 0x3650 */
+	u32 cpu3_turbo_cfg;	/* 0x3650 */
 	u32 reserved107[105];
 	u32 cpu3_resereved_reg;	/* 0x37f8 */
 	u32 cpu3_resereved_reg_rd;
@@ -545,7 +545,7 @@ struct mt8192_mcucfg_regs {
 	u32 reserved110[2];
 	u32 cpu4_dfs_cfg;	/* 0x3840 */
 	u32 reserved111[3];
-	u32 cpu4urbo_cfg;	/* 0x3850 */
+	u32 cpu4_turbo_cfg;	/* 0x3850 */
 	u32 reserved112[105];
 	u32 cpu4_resereved_reg;	/* 0x39f8 */
 	u32 cpu4_resereved_reg_rd;
@@ -562,7 +562,7 @@ struct mt8192_mcucfg_regs {
 	u32 reserved115[2];
 	u32 cpu5_dfs_cfg;	/* 0x3a40 */
 	u32 reserved116[3];
-	u32 cpu5urbo_cfg;	/* 0x3a50 */
+	u32 cpu5_turbo_cfg;	/* 0x3a50 */
 	u32 reserved117[105];
 	u32 cpu5_resereved_reg;	/* 0x3bf8 */
 	u32 cpu5_resereved_reg_rd;
@@ -579,7 +579,7 @@ struct mt8192_mcucfg_regs {
 	u32 reserved120[2];
 	u32 cpu6_dfs_cfg;	/* 0x3c40 */
 	u32 reserved121[3];
-	u32 cpu6urbo_cfg;	/* 0x3c50 */
+	u32 cpu6_turbo_cfg;	/* 0x3c50 */
 	u32 reserved122[105];
 	u32 cpu6_resereved_reg;	/* 0x3df8 */
 	u32 cpu6_resereved_reg_rd;
@@ -596,7 +596,7 @@ struct mt8192_mcucfg_regs {
 	u32 reserved125[2];
 	u32 cpu7_dfs_cfg;	/* 0x3e40 */
 	u32 reserved126[3];
-	u32 cpu7urbo_cfg;	/* 0x3e50 */
+	u32 cpu7_turbo_cfg;	/* 0x3e50 */
 	u32 reserved127[105];
 	u32 cpu7_resereved_reg;	/* 0x3ff8 */
 	u32 cpu7_resereved_reg_rd;
@@ -974,39 +974,39 @@ check_member(mt8192_mcucfg_regs, pikachu_event, 0x2e00);
 check_member(mt8192_mcucfg_regs, cpu0_drcc_ao_config, 0x3000);
 check_member(mt8192_mcucfg_regs, cpu0_sesv6_ao_reg0, 0x3010);
 check_member(mt8192_mcucfg_regs, cpu0_dfs_cfg, 0x3040);
-check_member(mt8192_mcucfg_regs, cpu0urbo_cfg, 0x3050);
+check_member(mt8192_mcucfg_regs, cpu0_turbo_cfg, 0x3050);
 check_member(mt8192_mcucfg_regs, cpu0_resereved_reg, 0x31f8);
 check_member(mt8192_mcucfg_regs, cpu1_sesv6_ao_reg0, 0x3210);
 check_member(mt8192_mcucfg_regs, cpu1_dfs_cfg, 0x3240);
-check_member(mt8192_mcucfg_regs, cpu1urbo_cfg, 0x3250);
+check_member(mt8192_mcucfg_regs, cpu1_turbo_cfg, 0x3250);
 check_member(mt8192_mcucfg_regs, cpu1_resereved_reg, 0x33f8);
 check_member(mt8192_mcucfg_regs, cpu2_sesv6_ao_reg0, 0x3410);
 check_member(mt8192_mcucfg_regs, cpu2_dfs_cfg, 0x3440);
-check_member(mt8192_mcucfg_regs, cpu2urbo_cfg, 0x3450);
+check_member(mt8192_mcucfg_regs, cpu2_turbo_cfg, 0x3450);
 check_member(mt8192_mcucfg_regs, cpu2_resereved_reg, 0x35f8);
 check_member(mt8192_mcucfg_regs, cpu3_sesv6_ao_reg0, 0x3610);
 check_member(mt8192_mcucfg_regs, cpu3_dfs_cfg, 0x3640);
-check_member(mt8192_mcucfg_regs, cpu3urbo_cfg, 0x3650);
+check_member(mt8192_mcucfg_regs, cpu3_turbo_cfg, 0x3650);
 check_member(mt8192_mcucfg_regs, cpu3_resereved_reg, 0x37f8);
 check_member(mt8192_mcucfg_regs, cpu4_sesv6_ao_reg0, 0x3810);
 check_member(mt8192_mcucfg_regs, cpu4_didt_reg, 0x3830);
 check_member(mt8192_mcucfg_regs, cpu4_dfs_cfg, 0x3840);
-check_member(mt8192_mcucfg_regs, cpu4urbo_cfg, 0x3850);
+check_member(mt8192_mcucfg_regs, cpu4_turbo_cfg, 0x3850);
 check_member(mt8192_mcucfg_regs, cpu4_resereved_reg, 0x39f8);
 check_member(mt8192_mcucfg_regs, cpu5_sesv6_ao_reg0, 0x3a10);
 check_member(mt8192_mcucfg_regs, cpu5_didt_reg, 0x3a30);
 check_member(mt8192_mcucfg_regs, cpu5_dfs_cfg, 0x3a40);
-check_member(mt8192_mcucfg_regs, cpu5urbo_cfg, 0x3a50);
+check_member(mt8192_mcucfg_regs, cpu5_turbo_cfg, 0x3a50);
 check_member(mt8192_mcucfg_regs, cpu5_resereved_reg, 0x3bf8);
 check_member(mt8192_mcucfg_regs, cpu6_sesv6_ao_reg0, 0x3c10);
 check_member(mt8192_mcucfg_regs, cpu6_didt_reg, 0x3c30);
 check_member(mt8192_mcucfg_regs, cpu6_dfs_cfg, 0x3c40);
-check_member(mt8192_mcucfg_regs, cpu6urbo_cfg, 0x3c50);
+check_member(mt8192_mcucfg_regs, cpu6_turbo_cfg, 0x3c50);
 check_member(mt8192_mcucfg_regs, cpu6_resereved_reg, 0x3df8);
 check_member(mt8192_mcucfg_regs, cpu7_sesv6_ao_reg0, 0x3e10);
 check_member(mt8192_mcucfg_regs, cpu7_didt_reg, 0x3e30);
 check_member(mt8192_mcucfg_regs, cpu7_dfs_cfg, 0x3e40);
-check_member(mt8192_mcucfg_regs, cpu7urbo_cfg, 0x3e50);
+check_member(mt8192_mcucfg_regs, cpu7_turbo_cfg, 0x3e50);
 check_member(mt8192_mcucfg_regs, cpu7_resereved_reg, 0x3ff8);
 check_member(mt8192_mcucfg_regs, mp0_mbist_cfg, 0x4800);
 check_member(mt8192_mcucfg_regs, mp0_l3_data_ram_delsel, 0x4840);
