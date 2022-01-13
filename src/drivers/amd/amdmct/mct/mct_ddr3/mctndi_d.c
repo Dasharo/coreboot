@@ -28,7 +28,7 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat,
 	u8 i;
 	struct DCTStatStruc *pDCTstat;
 
-	DoIntlv = mctGet_NVbits(NV_NodeIntlv);
+	DoIntlv = mctGet_NVbits(NV_NODE_INTLV);
 
 	_NdIntCap = 0;
 	HWHoleSz = 0;	/*For HW remapping, NOT Node hoisting. */
@@ -45,10 +45,10 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat,
 
 	while (DoIntlv && (Node < Nodes)) {
 		pDCTstat = pDCTstatA + Node;
-		if (pMCTstat->GStatus & (1 << GSB_SpIntRemapHole)) {
-			pMCTstat->GStatus |= 1 << GSB_HWHole;
+		if (pMCTstat->GStatus & (1 << GSB_SP_INTLV_REMAP_HOLE)) {
+			pMCTstat->GStatus |= 1 << GSB_HW_HOLE;
 			_SWHole = 0;
-		} else if (pDCTstat->Status & (1 << SB_SWNodeHole)) {
+		} else if (pDCTstat->status & (1 << SB_SW_NODE_HOLE)) {
 			_SWHole = 1;
 		} else {
 			_SWHole = 0;
@@ -60,7 +60,7 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat,
 				NodesWmem++;
 				Base &= 0xFFFF0000;	/* Base[39:8] */
 
-				if (pDCTstat->Status & (1 << SB_HWHole)) {
+				if (pDCTstat->status & (1 << SB_HW_HOLE)) {
 
 					/* to get true amount of dram,
 					 * subtract out memory hole if HW dram remapping */
@@ -75,7 +75,7 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat,
 				DctSelBase = Get_NB32(pDCTstat->dev_dct, 0x114);
 				if (DctSelBase) {
 					DctSelBase <<= 8;
-					if (pDCTstat->Status & (1 << SB_HWHole)) {
+					if (pDCTstat->status & (1 << SB_HW_HOLE)) {
 						if (DctSelBase >= 0x1000000) {
 							DctSelBase -= HWHoleSz;
 						}
@@ -92,7 +92,7 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat,
 				MemSize &= 0xFFFF0000;
 				MemSize += 0x00010000;
 				MemSize -= Base;
-				if (pDCTstat->Status & (1 << SB_HWHole)) {
+				if (pDCTstat->status & (1 << SB_HW_HOLE)) {
 					MemSize -= HWHoleSz;
 				}
 				if (Node == 0) {
@@ -119,7 +119,7 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat,
 	if (!_NdIntCap)
 		DoIntlv = 0;
 
-	if (pMCTstat->GStatus & 1 << (GSB_SpIntRemapHole)) {
+	if (pMCTstat->GStatus & 1 << (GSB_SP_INTLV_REMAP_HOLE)) {
 		HWHoleSz = pMCTstat->HoleBase;
 		if (HWHoleSz == 0) {
 			HWHoleSz = mctGet_NVbits(NV_BottomIO) & 0xFF;
@@ -168,7 +168,7 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat,
 			val |= MemSize;
 			Set_NB32(pDCTstat->dev_map, 0x124, val);
 
-			if (pMCTstat->GStatus & (1 << GSB_HWHole)) {
+			if (pMCTstat->GStatus & (1 << GSB_HW_HOLE)) {
 				HoleBase = pMCTstat->HoleBase;
 				if (Dct0MemSize >= HoleBase) {
 					val = HWHoleSz;
@@ -183,7 +183,7 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat,
 				HoleBase <<= 8;		/* DramHoleBase */
 				val |= HoleBase;
 				val |= 1 << DramMemHoistValid;
-				val |= 1 << DramHoleValid;
+				val |= 1 << DRAM_HOLE_VALID;
 				Set_NB32(pDCTstat->dev_map, 0xF0, val);
 			}
 
@@ -210,10 +210,10 @@ void InterleaveNodes_D(struct MCTStatStruc *pMCTstat,
 			Set_NB32(pDCTstat->dev_map, 0xF0, val);
 			Node++;
 		}
-		pMCTstat->GStatus = (1 << GSB_NodeIntlv);
+		pMCTstat->GStatus = (1 << GSB_Node_INTLV);
 	}
-	printk(BIOS_DEBUG, "InterleaveNodes_D: Status %x\n", pDCTstat->Status);
-	printk(BIOS_DEBUG, "InterleaveNodes_D: ErrStatus %x\n", pDCTstat->ErrStatus);
-	printk(BIOS_DEBUG, "InterleaveNodes_D: ErrCode %x\n", pDCTstat->ErrCode);
+	printk(BIOS_DEBUG, "InterleaveNodes_D: status %x\n", pDCTstat->status);
+	printk(BIOS_DEBUG, "InterleaveNodes_D: err_status %x\n", pDCTstat->err_status);
+	printk(BIOS_DEBUG, "InterleaveNodes_D: err_code %x\n", pDCTstat->err_code);
 	printk(BIOS_DEBUG, "InterleaveNodes_D: Done\n\n");
 }

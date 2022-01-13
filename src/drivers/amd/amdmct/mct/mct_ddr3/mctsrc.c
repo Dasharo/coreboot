@@ -72,8 +72,8 @@ static void SetupRcvrPattern(struct MCTStatStruc *pMCTstat,
 		buf_b[i] = p_B[i];
 	}
 
-	pDCTstat->PtrPatternBufA = (u32)buf_a;
-	pDCTstat->PtrPatternBufB = (u32)buf_b;
+	pDCTstat->ptr_pattern_buf_a = (u32)buf_a;
+	pDCTstat->ptr_pattern_buf_b = (u32)buf_b;
 }
 
 void mct_TrainRcvrEn_D(struct MCTStatStruc *pMCTstat,
@@ -104,7 +104,7 @@ static u16 fam15_receiver_enable_training_seed(struct DCTStatStruc *pDCTstat, u8
 		}
 	}
 
-	if (pDCTstat->Status & (1 << SB_Registered)) {
+	if (pDCTstat->status & (1 << SB_REGISTERED)) {
 		if (package_type == PT_GR) {
 			/* Socket G34: Fam15h BKDG v3.14 Table 99 */
 			if (MaxDimmsInstallable == 1) {
@@ -149,7 +149,7 @@ static u16 fam15_receiver_enable_training_seed(struct DCTStatStruc *pDCTstat, u8
 					seed = 0x38;
 			}
 		}
-	} else if (pDCTstat->Status & (1 << SB_LoadReduced)) {
+	} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
 		if (package_type == PT_GR) {
 			/* Socket G34: Fam15h BKDG v3.14 Table 99 */
 			if (MaxDimmsInstallable == 1) {
@@ -551,7 +551,7 @@ static u32 convert_testaddr_and_channel_to_address(struct DCTStatStruc *pDCTstat
 	SetUpperFSbase(testaddr);
 	testaddr <<= 8;
 
-	if ((pDCTstat->Status & (1 << SB_128bitmode)) && channel) {
+	if ((pDCTstat->status & (1 << SB_128_BIT_MODE)) && channel) {
 		testaddr += 8;	/* second channel */
 	}
 
@@ -600,7 +600,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 
 	u8 valid;
 
-	print_debug_dqs("\nTrainRcvEn: Node", pDCTstat->Node_ID, 0);
+	print_debug_dqs("\nTrainRcvEn: Node", pDCTstat->node_id, 0);
 	print_debug_dqs("TrainRcvEn: Pass", Pass, 0);
 
 	dev = pDCTstat->dev_dct;
@@ -619,11 +619,11 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 		Set_NB32_DCT(dev, ch, reg, val);
 	}
 
-	if (Pass == FirstPass) {
+	if (Pass == FIRST_PASS) {
 		mct_InitDQSPos4RcvrEn_D(pMCTstat, pDCTstat);
 	} else {
-		pDCTstat->DimmTrainFail = 0;
-		pDCTstat->CSTrainFail = ~pDCTstat->CSPresent;
+		pDCTstat->dimm_train_fail = 0;
+		pDCTstat->cs_train_fail = ~pDCTstat->cs_present;
 	}
 
 	cr4 = read_cr4();
@@ -651,9 +651,9 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 	dev = pDCTstat->dev_dct;
 
 	for (Channel = 0; Channel < 2; Channel++) {
-		print_debug_dqs("\tTrainRcvEn51: Node ", pDCTstat->Node_ID, 1);
+		print_debug_dqs("\tTrainRcvEn51: Node ", pDCTstat->node_id, 1);
 		print_debug_dqs("\tTrainRcvEn51: Channel ", Channel, 1);
-		pDCTstat->Channel = Channel;
+		pDCTstat->channel = Channel;
 
 		CTLRMaxDelay = 0;
 		MaxDelay_CH[Channel] = 0;
@@ -719,14 +719,14 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 				continue;
 			}
 
-			TestAddr0B = TestAddr0 + (BigPagex8_RJ8 << 3);
+			TestAddr0B = TestAddr0 + (BIG_PAGE_X8_RJ8 << 3);
 
 			if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, Receiver + 1)) {
 				TestAddr1 = mct_GetRcvrSysAddr_D(pMCTstat, pDCTstat, Channel, Receiver + 1, &valid);
 				if (!valid) {	/* Address not supported on current CS */
 					continue;
 				}
-				TestAddr1B = TestAddr1 + (BigPagex8_RJ8 << 3);
+				TestAddr1B = TestAddr1 + (BIG_PAGE_X8_RJ8 << 3);
 				_2Ranks = 1;
 			} else {
 				_2Ranks = TestAddr1 = TestAddr1B = 0;
@@ -927,11 +927,11 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 					printk(BIOS_WARNING, "TrainRcvrEn: WARNING: Lane %d of receiver %d on channel %d failed training!\n", lane, Receiver, Channel);
 
 					/* Set error flags */
-					pDCTstat->ErrStatus |= 1 << SB_NORCVREN;
-					Errors |= 1 << SB_NORCVREN;
-					pDCTstat->ErrCode = SC_FatalErr;
-					pDCTstat->CSTrainFail |= 1 << Receiver;
-					pDCTstat->DimmTrainFail |= 1 << (Receiver + Channel);
+					pDCTstat->err_status |= 1 << SB_NO_RCVR_EN;
+					Errors |= 1 << SB_NO_RCVR_EN;
+					pDCTstat->err_code = SC_FATAL_ERR;
+					pDCTstat->cs_train_fail |= 1 << Receiver;
+					pDCTstat->dimm_train_fail |= 1 << (Receiver + Channel);
 				}
 			}
 
@@ -963,7 +963,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 		mct_EnableDimmEccEn_D(pMCTstat, pDCTstat, _DisableDramECC);
 	}
 
-	if (Pass == FirstPass) {
+	if (Pass == FIRST_PASS) {
 		/*Disable DQSRcvrEn training mode */
 		mct_DisableDQSRcvEn_D(pDCTstat);
 	}
@@ -1013,9 +1013,9 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *pMCTstat,
 	}
 #endif
 
-	printk(BIOS_DEBUG, "TrainRcvrEn: Status %x\n", pDCTstat->Status);
-	printk(BIOS_DEBUG, "TrainRcvrEn: ErrStatus %x\n", pDCTstat->ErrStatus);
-	printk(BIOS_DEBUG, "TrainRcvrEn: ErrCode %x\n", pDCTstat->ErrCode);
+	printk(BIOS_DEBUG, "TrainRcvrEn: status %x\n", pDCTstat->status);
+	printk(BIOS_DEBUG, "TrainRcvrEn: err_status %x\n", pDCTstat->err_status);
+	printk(BIOS_DEBUG, "TrainRcvrEn: err_code %x\n", pDCTstat->err_code);
 	printk(BIOS_DEBUG, "TrainRcvrEn: Done\n\n");
 }
 
@@ -1067,7 +1067,7 @@ static void generate_dram_receiver_enable_training_pattern_fam15(struct MCTStatS
 
 	dword = Get_NB32_DCT(dev, dct, 0x27c);
 	dword &= ~(0xff);				/* EccMask = 0 */
-	if (pDCTstat->DimmECCPresent == 0)
+	if (pDCTstat->dimm_ecc_present == 0)
 		dword |= 0xff;				/* EccMask = 0xff */
 	Set_NB32_DCT(dev, dct, 0x27c, dword);
 
@@ -1184,13 +1184,13 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	u8 lane_count;
 	lane_count = get_available_lane_count(pMCTstat, pDCTstat);
 
-	print_debug_dqs("\nTrainRcvEn: Node", pDCTstat->Node_ID, 0);
+	print_debug_dqs("\nTrainRcvEn: Node", pDCTstat->node_id, 0);
 	print_debug_dqs("TrainRcvEn: Pass", Pass, 0);
 
 	min_mem_clk = mctGet_NVbits(NV_MIN_MEMCLK);
 
 	train_both_nibbles = 0;
-	if (pDCTstat->Dimmx4Present)
+	if (pDCTstat->dimm_x4_present)
 		if (is_fam15h())
 			train_both_nibbles = 1;
 
@@ -1215,9 +1215,9 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 		}
 	}
 
-	if (Pass != FirstPass) {
-		pDCTstat->DimmTrainFail = 0;
-		pDCTstat->CSTrainFail = ~pDCTstat->CSPresent;
+	if (Pass != FIRST_PASS) {
+		pDCTstat->dimm_train_fail = 0;
+		pDCTstat->cs_train_fail = ~pDCTstat->cs_present;
 	}
 
 	cr4 = read_cr4();
@@ -1243,9 +1243,9 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	dev = pDCTstat->dev_dct;
 
 	for (Channel = 0; Channel < 2; Channel++) {
-		print_debug_dqs("\tTrainRcvEn51: Node ", pDCTstat->Node_ID, 1);
+		print_debug_dqs("\tTrainRcvEn51: Node ", pDCTstat->node_id, 1);
 		print_debug_dqs("\tTrainRcvEn51: Channel ", Channel, 1);
-		pDCTstat->Channel = Channel;
+		pDCTstat->channel = Channel;
 
 		mem_clk = Get_NB32_DCT(dev, Channel, 0x94) & 0x1f;
 
@@ -1264,7 +1264,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 			}
 
 			/* Retrieve the total delay values from pass 1 of DQS receiver enable training */
-			if (Pass != FirstPass) {
+			if (Pass != FIRST_PASS) {
 				read_dqs_receiver_enable_control_registers(dqs_ret_pass1_total_delay, dev, Channel, dimm, index_reg);
 			}
 
@@ -1295,7 +1295,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 					/* 2.10.5.8.2.1
 					 * Generate the DQS Receiver Enable Training Seed Values
 					 */
-					if (Pass == FirstPass) {
+					if (Pass == FIRST_PASS) {
 						initial_seed = fam15_receiver_enable_training_seed(pDCTstat, Channel, dimm, rank, package_type);
 
 						/* Adjust seed for the minimum platform supported frequency */
@@ -1314,12 +1314,12 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 						s16 seed_prescaling;
 
 						memcpy(current_total_delay, dqs_ret_pass1_total_delay, sizeof(current_total_delay));
-						if ((pDCTstat->Status & (1 << SB_Registered))) {
+						if ((pDCTstat->status & (1 << SB_REGISTERED))) {
 							if (addr_prelaunch)
 								register_delay = 0x30;
 							else
 								register_delay = 0x20;
-						} else if ((pDCTstat->Status & (1 << SB_LoadReduced))) {
+						} else if ((pDCTstat->status & (1 << SB_LoadReduced))) {
 							/* TODO
 							 * Load reduced DIMM support unimplemented
 							 */
@@ -1416,7 +1416,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 					}
 
 					/* Exit nibble training if current DIMM is not x4 */
-					if ((pDCTstat->Dimmx4Present & (1 << (dimm + Channel))) == 0)
+					if ((pDCTstat->dimm_x4_present & (1 << (dimm + Channel))) == 0)
 						break;
 				}
 
@@ -1465,7 +1465,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 		mct_EnableDimmEccEn_D(pMCTstat, pDCTstat, _DisableDramECC);
 	}
 
-	if (Pass == FirstPass) {
+	if (Pass == FIRST_PASS) {
 		/*Disable DQSRcvrEn training mode */
 		mct_DisableDQSRcvEn_D(pDCTstat);
 	}
@@ -1516,9 +1516,9 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	}
 #endif
 
-	printk(BIOS_DEBUG, "TrainRcvrEn: Status %x\n", pDCTstat->Status);
-	printk(BIOS_DEBUG, "TrainRcvrEn: ErrStatus %x\n", pDCTstat->ErrStatus);
-	printk(BIOS_DEBUG, "TrainRcvrEn: ErrCode %x\n", pDCTstat->ErrCode);
+	printk(BIOS_DEBUG, "TrainRcvrEn: status %x\n", pDCTstat->status);
+	printk(BIOS_DEBUG, "TrainRcvrEn: err_status %x\n", pDCTstat->err_status);
+	printk(BIOS_DEBUG, "TrainRcvrEn: err_code %x\n", pDCTstat->err_code);
 	printk(BIOS_DEBUG, "TrainRcvrEn: Done\n\n");
 }
 
@@ -1572,7 +1572,7 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *pMCTstat,
 
 	u16 fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
 
-	print_debug_dqs("\nTrainMaxRdLatency: Node", pDCTstat->Node_ID, 0);
+	print_debug_dqs("\nTrainMaxRdLatency: Node", pDCTstat->node_id, 0);
 
 	dev = pDCTstat->dev_dct;
 	index_reg = 0x98;
@@ -1602,9 +1602,9 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	dev = pDCTstat->dev_dct;
 
 	for (Channel = 0; Channel < 2; Channel++) {
-		print_debug_dqs("\tTrainMaxRdLatency51: Node ", pDCTstat->Node_ID, 1);
+		print_debug_dqs("\tTrainMaxRdLatency51: Node ", pDCTstat->node_id, 1);
 		print_debug_dqs("\tTrainMaxRdLatency51: Channel ", Channel, 1);
-		pDCTstat->Channel = Channel;
+		pDCTstat->channel = Channel;
 
 		if (pDCTstat->DIMMValidDCT[Channel] == 0)
 			continue;
@@ -1713,9 +1713,9 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *pMCTstat,
 	}
 #endif
 
-	printk(BIOS_DEBUG, "TrainMaxRdLatency: Status %x\n", pDCTstat->Status);
-	printk(BIOS_DEBUG, "TrainMaxRdLatency: ErrStatus %x\n", pDCTstat->ErrStatus);
-	printk(BIOS_DEBUG, "TrainMaxRdLatency: ErrCode %x\n", pDCTstat->ErrCode);
+	printk(BIOS_DEBUG, "TrainMaxRdLatency: status %x\n", pDCTstat->status);
+	printk(BIOS_DEBUG, "TrainMaxRdLatency: err_status %x\n", pDCTstat->err_status);
+	printk(BIOS_DEBUG, "TrainMaxRdLatency: err_code %x\n", pDCTstat->err_code);
 	printk(BIOS_DEBUG, "TrainMaxRdLatency: Done\n\n");
 }
 
@@ -1745,7 +1745,7 @@ static void mct_DisableDQSRcvEn_D(struct DCTStatStruc *pDCTstat)
 	for (ch = 0; ch < ch_end; ch++) {
 		reg = 0x78;
 		val = Get_NB32_DCT(dev, ch, reg);
-		val &= ~(1 << DqsRcvEnTrain);
+		val &= ~(1 << DQS_RCV_EN_TRAIN);
 		Set_NB32_DCT(dev, ch, reg, val);
 	}
 }
@@ -1772,7 +1772,7 @@ void mct_SetRcvrEnDly_D(struct DCTStatStruc *pDCTstat, u16 RcvrEnDly,
 
 	if (RcvrEnDly == 0x1fe) {
 		/*set the boundary flag */
-		pDCTstat->Status |= 1 << SB_DQSRcvLimit;
+		pDCTstat->status |= 1 << SB_DQSRcvLimit;
 	}
 
 	/* DimmOffset not needed for CH_D_B_RCVRDLY array */
@@ -1819,11 +1819,11 @@ static void mct_SetMaxLatency_D(struct DCTStatStruc *pDCTstat, u8 Channel, u16 D
 	u16 freq_tab[] = {400, 533, 667, 800};
 
 	/* Set up processor-dependent values */
-	if (pDCTstat->LogicalCPUID & AMD_DR_Dx) {
+	if (pDCTstat->logical_cpuid & AMD_DR_Dx) {
 		/* Revision D and above */
 		cpu_val_n = 4;
 		cpu_val_p = 29;
-	} else if (pDCTstat->LogicalCPUID & AMD_DR_Cx) {
+	} else if (pDCTstat->logical_cpuid & AMD_DR_Cx) {
 		/* Revision C */
 		u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
 		if ((package_type == PT_L1)		/* Socket F (1207) */
@@ -1855,7 +1855,7 @@ static void mct_SetMaxLatency_D(struct DCTStatStruc *pDCTstat, u8 Channel, u16 D
 	 *  add 1 MEMCLK to the sub-total.
 	 */
 	val = Get_NB32_DCT(dev, Channel, 0x90);
-	if (!(val & (1 << UnBuffDimm)))
+	if (!(val & (1 << UN_BUFF_DIMM)))
 		SubTotal += 2;
 
 	/* If the address prelaunch is setup for 1/2 MEMCLKs then
@@ -2001,15 +2001,15 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 	u32 val, val0, val1;
 	s16 delay_differential;
 
-	EccDQSLike = pDCTstat->CH_EccDQSLike[Channel];
-	EccDQSScale = pDCTstat->CH_EccDQSScale[Channel];
+	EccDQSLike = pDCTstat->ch_ecc_dqs_like[Channel];
+	EccDQSScale = pDCTstat->ch_ecc_dqs_scale[Channel];
 
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 		if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel, ChipSel)) {
 			u16 *p;
 			p = pDCTstat->CH_D_B_RCVRDLY[Channel][ChipSel >> 1];
 
-			if (pDCTstat->Status & (1 << SB_Registered)) {
+			if (pDCTstat->status & (1 << SB_REGISTERED)) {
 				val0 = p[0x2];
 				val1 = p[0x3];
 
@@ -2062,7 +2062,7 @@ void mctSetEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat,
 		pDCTstat = pDCTstatA + Node;
 		if (!pDCTstat->NodePresent)
 			break;
-		if (pDCTstat->DCTSysLimit) {
+		if (pDCTstat->dct_sys_limit) {
 			for (i = 0; i < 2; i++)
 				CalcEccDQSRcvrEn_D(pMCTstat, pDCTstat, i);
 		}
@@ -2091,7 +2091,7 @@ void phyAssistedMemFnceTraining(struct MCTStatStruc *pMCTstat,
 		if (!pDCTstat->NodePresent)
 			continue;
 
-		if (pDCTstat->DCTSysLimit) {
+		if (pDCTstat->dct_sys_limit) {
 			if (is_fam15h()) {
 				/* Fam15h BKDG v3.14 section 2.10.5.3.3
 				 * This picks up where InitDDRPhy left off
@@ -2321,7 +2321,7 @@ u32 fenceDynTraining_D(struct MCTStatStruc *pMCTstat,
 		 * F2x[1,0]9C_x52.) .
 		 */
 		for (index = 0x50; index <= 0x52; index ++) {
-			val = (FenceTrnFinDlySeed & 0x1F);
+			val = (FENCE_TRN_FIN_DLY_SEED & 0x1F);
 			if (index != 0x52) {
 				val |= val << 8 | val << 16 | val << 24;
 			}
@@ -2366,11 +2366,11 @@ u32 fenceDynTraining_D(struct MCTStatStruc *pMCTstat,
 			avRecValue -= 3;
 		else
 		*/
-		if (pDCTstat->LogicalCPUID & AMD_DR_Dx)
+		if (pDCTstat->logical_cpuid & AMD_DR_Dx)
 			avRecValue -= 8;
-		else if (pDCTstat->LogicalCPUID & AMD_DR_Cx)
+		else if (pDCTstat->logical_cpuid & AMD_DR_Cx)
 			avRecValue -= 8;
-		else if (pDCTstat->LogicalCPUID & AMD_DR_Bx)
+		else if (pDCTstat->logical_cpuid & AMD_DR_Bx)
 			avRecValue -= 8;
 
 		val = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0C);

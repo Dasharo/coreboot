@@ -85,25 +85,25 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 	later in this procedure */
 	OB_NBECC = mctGet_NVbits(NV_NBECC);			/* MCA ECC (MCE) enable bit */
 
-	OB_ECCRedir =  mctGet_NVbits(NV_ECCRedir);		/* ECC Redirection */
+	OB_ECCRedir =  mctGet_NVbits(NV_ECC_REDIR);		/* ECC Redirection */
 
-	OB_ChipKill = mctGet_NVbits(NV_ChipKill);		/* ECC Chip-kill mode */
+	OB_ChipKill = mctGet_NVbits(NV_CHIP_KILL);		/* ECC Chip-kill mode */
 	OF_ScrubCTL = 0;					/* Scrub CTL for Dcache, L2, and dram */
 
 	if (!is_fam15h()) {
-		nvbits = mctGet_NVbits(NV_DCBKScrub);
+		nvbits = mctGet_NVbits(NV_DC_BK_SCRUB);
 		/* mct_AdjustScrub_D(pDCTstatA, &nvbits); */	/* Need not adjust */
 		OF_ScrubCTL |= (u32) nvbits << 16;
 
-		nvbits = mctGet_NVbits(NV_L2BKScrub);
+		nvbits = mctGet_NVbits(NV_L2_BK_SCRUB);
 		OF_ScrubCTL |= (u32) nvbits << 8;
 	}
 
 	nvbits = mctGet_NVbits(NV_L3BKScrub);
 	OF_ScrubCTL |= (nvbits & 0x1f) << 24;			/* L3Scrub = NV_L3BKScrub */
 
-	nvbits = mctGet_NVbits(NV_DramBKScrub);
-	OF_ScrubCTL |= nvbits;					/* DramScrub = NV_DramBKScrub */
+	nvbits = mctGet_NVbits(NV_DRAM_BK_SCRUB);
+	OF_ScrubCTL |= nvbits;					/* DramScrub = NV_DRAM_BK_SCRUB */
 
 	/* Prevent lockups on DRAM errors during ECC init */
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
@@ -146,12 +146,12 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 			if ((val & 3) == 3) {	/* Node has dram populated */
 				/* Negate 'all nodes/dimms ECC' flag if non ecc
 				   memory populated */
-				if (pDCTstat->Status & (1 << SB_ECCDIMMs)) {
+				if (pDCTstat->status & (1 << SB_ECC_DIMMS)) {
 					LDramECC = isDramECCEn_D(pDCTstat);
-					if (pDCTstat->ErrCode != SC_RunningOK) {
-						pDCTstat->Status &=  ~(1 << SB_ECCDIMMs);
+					if (pDCTstat->err_code != SC_RUNNING_OK) {
+						pDCTstat->status &=  ~(1 << SB_ECC_DIMMS);
 						if (!OB_NBECC) {
-							pDCTstat->ErrStatus |= (1 << SB_DramECCDis);
+							pDCTstat->err_status |= (1 << SB_DRAM_ECC_DIS);
 						}
 						AllECC = 0;
 						LDramECC = 0;
@@ -186,9 +186,9 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 	}
 
 	if (AllECC)
-		pMCTstat->GStatus |= 1 << GSB_ECCDIMMs;
+		pMCTstat->GStatus |= 1 << GSB_ECCDIMMS;
 	else
-		pMCTstat->GStatus &= ~(1 << GSB_ECCDIMMs);
+		pMCTstat->GStatus &= ~(1 << GSB_ECCDIMMS);
 
 	/* Program the Dram BKScrub CTL to the proper (user selected) value.*/
 	/* Reset MC4_STS. */
@@ -239,11 +239,11 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 						}
 					}
 
-					if (pDCTstat->LogicalCPUID & (AMD_DR_GT_D0 | AMD_FAM15_ALL)) {
+					if (pDCTstat->logical_cpuid & (AMD_DR_GT_D0 | AMD_FAM15_ALL)) {
 						/* Set up message triggered C1E */
 						val = pci_read_config32(pDCTstat->dev_nbmisc, 0xd4);
 						val &= ~(0x1 << 15);			/* StutterScrubEn = DRAM scrub enabled */
-						val |= (mctGet_NVbits(NV_DramBKScrub) ? 1 : 0) << 15;
+						val |= (mctGet_NVbits(NV_DRAM_BK_SCRUB) ? 1 : 0) << 15;
 						pci_write_config32(pDCTstat->dev_nbmisc, 0xd4, val);
 					}
 				}	/* this node has ECC enabled dram */
@@ -283,7 +283,7 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 		}
 	}
 
-	if (mctGet_NVbits(NV_SyncOnUnEccEn))
+	if (mctGet_NVbits(NV_SYNC_ON_UN_ECC_EN))
 		setSyncOnUnEccEn_D(pMCTstat, pDCTstatA);
 
 	mctHookAfterECC();
@@ -292,9 +292,9 @@ u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
 		pDCTstat = pDCTstatA + Node;
 		if (NodePresent_D(Node)) {
 			printk(BIOS_DEBUG, "ECCInit: Node %02x\n", Node);
-			printk(BIOS_DEBUG, "ECCInit: Status %x\n", pDCTstat->Status);
-			printk(BIOS_DEBUG, "ECCInit: ErrStatus %x\n", pDCTstat->ErrStatus);
-			printk(BIOS_DEBUG, "ECCInit: ErrCode %x\n", pDCTstat->ErrCode);
+			printk(BIOS_DEBUG, "ECCInit: status %x\n", pDCTstat->status);
+			printk(BIOS_DEBUG, "ECCInit: err_status %x\n", pDCTstat->err_status);
+			printk(BIOS_DEBUG, "ECCInit: err_code %x\n", pDCTstat->err_code);
 			printk(BIOS_DEBUG, "ECCInit: Done\n");
 		}
 	}
@@ -322,7 +322,7 @@ static void setSyncOnUnEccEn_D(struct MCTStatStruc *pMCTstat,
 					dev = pDCTstat->dev_nbmisc;
 					reg = 0x44;	/* MCA NB Configuration*/
 					val = Get_NB32(dev, reg);
-					val |= (1 << SyncOnUcEccEn);
+					val |= (1 << SYNC_ON_UC_ECC_EN);
 					Set_NB32(dev, reg, val);
 				}
 			}	/* Node has Dram*/
@@ -348,7 +348,7 @@ static u8 isDramECCEn_D(struct DCTStatStruc *pDCTstat)
 		if (pDCTstat->DIMMValidDCT[i] > 0) {
 			reg = 0x90;		/* Dram Config Low */
 			val = Get_NB32_DCT(dev, i, reg);
-			if (val & (1 << DimmEcEn)) {
+			if (val & (1 << DIMM_EC_EN)) {
 				/* set local flag 'dram ecc capable' */
 				isDimmECCEn = 1;
 				break;

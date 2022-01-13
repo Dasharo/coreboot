@@ -559,7 +559,7 @@ void amdmct_cbmem_store_info(struct sys_info *sysinfo)
 			memcpy(&mem_info->dct_stat[i], pDCTstatA, sizeof(struct DCTStatStruc));
 		}
 		mem_info->ecc_enabled = mctGet_NVbits(NV_ECC_CAP);
-		mem_info->ecc_scrub_rate = mctGet_NVbits(NV_DramBKScrub);
+		mem_info->ecc_scrub_rate = mctGet_NVbits(NV_DRAM_BK_SCRUB);
 
 		/* Zero out invalid/unused pointers */
 		if (CONFIG(DIMM_DDR3)) {

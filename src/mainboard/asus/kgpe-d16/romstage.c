@@ -238,7 +238,7 @@ void DIMMSetVoltages(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTsta
 
 		if (pDCTstat->NodePresent) {
 			for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-				if (pDCTstat->DIMMValid & (1 << dimm)) {
+				if (pDCTstat->dimm_valid & (1 << dimm)) {
 					socket_allowed_voltages &= pDCTstat->DimmSupportedVoltages[dimm];
 				}
 			}

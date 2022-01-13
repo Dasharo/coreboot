@@ -13,25 +13,25 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *pMCTstat,
 	u16 val, valx;
 
 	print_tx("dct: ", dct);
-	print_tx("Speed: ", pDCTstat->Speed);
+	print_tx("Speed: ", pDCTstat->speed);
 
-	Get_ChannelPS_Cfg0_D(pDCTstat->MAdimms[dct], pDCTstat->Speed,
-				pDCTstat->MAload[dct], pDCTstat->DATAload[dct],
-				&(pDCTstat->CH_ADDR_TMG[dct]), &(pDCTstat->CH_ODC_CTL[dct]));
+	Get_ChannelPS_Cfg0_D(pDCTstat->ma_dimms[dct], pDCTstat->speed,
+				pDCTstat->ma_load[dct], pDCTstat->data_load[dct],
+				&(pDCTstat->ch_addr_tmg[dct]), &(pDCTstat->ch_odc_ctl[dct]));
 
 
-	if (pDCTstat->MAdimms[dct] == 1)
-		pDCTstat->CH_ODC_CTL[dct] |= 0x20000000;	/* 75ohms */
+	if (pDCTstat->ma_dimms[dct] == 1)
+		pDCTstat->ch_odc_ctl[dct] |= 0x20000000;	/* 75ohms */
 	else
-		pDCTstat->CH_ODC_CTL[dct] |= 0x10000000;	/* 150ohms */
+		pDCTstat->ch_odc_ctl[dct] |= 0x10000000;	/* 150ohms */
 
-	pDCTstat->_2Tmode = 1;
+	pDCTstat->_2t_mode = 1;
 
 	/* use byte lane 4 delay for ECC lane */
-	pDCTstat->CH_EccDQSLike[0] = 0x0504;
-	pDCTstat->CH_EccDQSScale[0] = 0;	/* 100% byte lane 4 */
-	pDCTstat->CH_EccDQSLike[1] = 0x0504;
-	pDCTstat->CH_EccDQSScale[1] = 0;	/* 100% byte lane 4 */
+	pDCTstat->ch_ecc_dqs_like[0] = 0x0504;
+	pDCTstat->ch_ecc_dqs_scale[0] = 0;	/* 100% byte lane 4 */
+	pDCTstat->ch_ecc_dqs_like[1] = 0x0504;
+	pDCTstat->ch_ecc_dqs_scale[1] = 0;	/* 100% byte lane 4 */
 
 
 	/*
@@ -41,17 +41,17 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *pMCTstat,
 	/* 1) QRx4 needs to adjust CS/ODT setup time */
 	// FIXME: Add Ax support?
 	if (mctGet_NVbits(NV_MAX_DIMMS) == 4) {
-		if (pDCTstat->DimmQRPresent != 0) {
-			pDCTstat->CH_ADDR_TMG[dct] &= 0xFF00FFFF;
-			pDCTstat->CH_ADDR_TMG[dct] |= 0x00000000;
-			if (pDCTstat->MAdimms[dct] == 4) {
-				pDCTstat->CH_ADDR_TMG[dct] &= 0xFF00FFFF;
-				pDCTstat->CH_ADDR_TMG[dct] |= 0x002F0000;
-				if (pDCTstat->Speed == 3 || pDCTstat->Speed == 4) {
-					pDCTstat->CH_ADDR_TMG[dct] &= 0xFF00FFFF;
-					pDCTstat->CH_ADDR_TMG[dct] |= 0x00002F00;
-					if (pDCTstat->MAdimms[dct] == 4)
-						pDCTstat->CH_ODC_CTL[dct] = 0x00331222;
+		if (pDCTstat->dimm_qr_present != 0) {
+			pDCTstat->ch_addr_tmg[dct] &= 0xFF00FFFF;
+			pDCTstat->ch_addr_tmg[dct] |= 0x00000000;
+			if (pDCTstat->ma_dimms[dct] == 4) {
+				pDCTstat->ch_addr_tmg[dct] &= 0xFF00FFFF;
+				pDCTstat->ch_addr_tmg[dct] |= 0x002F0000;
+				if (pDCTstat->speed == 3 || pDCTstat->speed == 4) {
+					pDCTstat->ch_addr_tmg[dct] &= 0xFF00FFFF;
+					pDCTstat->ch_addr_tmg[dct] |= 0x00002F00;
+					if (pDCTstat->ma_dimms[dct] == 4)
+						pDCTstat->ch_odc_ctl[dct] = 0x00331222;
 				}
 			}
 		}
@@ -59,18 +59,18 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *pMCTstat,
 
 
 	/* 2) DRx4 (R/C-J) @ DDR667 needs to adjust CS/ODT setup time */
-	if (pDCTstat->Speed == 3 || pDCTstat->Speed == 4) {
-		val = pDCTstat->Dimmx4Present;
+	if (pDCTstat->speed == 3 || pDCTstat->speed == 4) {
+		val = pDCTstat->dimm_x4_present;
 		if (dct == 0) {
 			val &= 0x55;
 		} else {
 			val &= 0xAA;
 			val >>= 1;
 		}
-		val &= pDCTstat->DIMMValid;
+		val &= pDCTstat->dimm_valid;
 		if (val) {
 			//FIXME: skip for Ax
-			valx = pDCTstat->DimmDRPresent;
+			valx = pDCTstat->dimm_dr_present;
 			if (dct == 0) {
 				valx &= 0x55;
 			} else {
@@ -80,19 +80,19 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *pMCTstat,
 			val &= valx;
 			if (val != 0) {
 				if (mctGet_NVbits(NV_MAX_DIMMS) == 8 ||
-						pDCTstat->Speed == 3) {
-					pDCTstat->CH_ADDR_TMG[dct] &= 0xFFFF00FF;
-					pDCTstat->CH_ADDR_TMG[dct] |= 0x00002F00;
+						pDCTstat->speed == 3) {
+					pDCTstat->ch_addr_tmg[dct] &= 0xFFFF00FF;
+					pDCTstat->ch_addr_tmg[dct] |= 0x00002F00;
 				}
 			}
 		}
 	}
 
 
-	pDCTstat->CH_ODC_CTL[dct] = procOdtWorkaround(pDCTstat, dct, pDCTstat->CH_ODC_CTL[dct]);
+	pDCTstat->ch_odc_ctl[dct] = procOdtWorkaround(pDCTstat, dct, pDCTstat->ch_odc_ctl[dct]);
 
-	print_tx("CH_ODC_CTL: ", pDCTstat->CH_ODC_CTL[dct]);
-	print_tx("CH_ADDR_TMG: ", pDCTstat->CH_ADDR_TMG[dct]);
+	print_tx("CH_ODC_CTL: ", pDCTstat->ch_odc_ctl[dct]);
+	print_tx("CH_ADDR_TMG: ", pDCTstat->ch_addr_tmg[dct]);
 
 
 }
@@ -102,7 +102,7 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *pMCTstat,
  * Vendor is responsible for correct settings.
  * M2/Unbuffered 4 Slot - AMD Design Guideline.
  *===============================================================================
- * #1, BYTE, Speed (DCTStatstruc.Speed) (Secondary Key)
+ * #1, BYTE, Speed (DCTStatstruc.speed) (Secondary Key)
  * #2, BYTE, number of Address bus loads on the Channel. (Tershery Key)
  *           These must be listed in ascending order.
  *           FFh (0xFE) has special meaning of 'any', and must be listed first for each speed grade.

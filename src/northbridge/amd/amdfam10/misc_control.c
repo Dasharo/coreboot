@@ -123,7 +123,7 @@ static void misc_control_init(struct device *dev)
 
 		/* Check all slots for installed DIMMs */
 		for (slot = 0; slot < MAX_DIMMS_SUPPORTED; slot++) {
-			if (mem_info->dct_stat[node].DIMMPresent & (1 << slot)) {
+			if (mem_info->dct_stat[node].dimm_present & (1 << slot)) {
 				dimm_present = 1;
 				break;
 			}

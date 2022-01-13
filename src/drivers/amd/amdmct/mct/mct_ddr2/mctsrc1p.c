@@ -5,7 +5,7 @@
 u8 mct_checkNumberOfDqsRcvEn_1Pass(u8 pass)
 {
 	u8 ret = 1;
-	if (pass == SecondPass)
+	if (pass == SECOND_PASS)
 		ret = 0;
 
 	return ret;
@@ -42,7 +42,7 @@ static u8 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel,
 		/* get left value from DCTStatStruc.CHA_D0_B0_RCVRDLY*/
 		val = p[i];
 		/* get right value from DCTStatStruc.CHA_D0_B0_RCVRDLY_1*/
-		val += Pass1MemClkDly;
+		val += PASS_1_MEM_CLK_DLY;
 		/* write back the value to stack */
 		if (val > MaxValue)
 			MaxValue = val;
@@ -64,7 +64,7 @@ u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *pDCTstat, u8 pass)
 {
 	u8 ret;
 	ret = 0;
-	if ((pDCTstat->DqsRcvEn_Pass == 0xff) && (pass == FirstPass))
+	if ((pDCTstat->DqsRcvEn_Pass == 0xff) && (pass == FIRST_PASS))
 		ret = 2;
 	return ret;
 }

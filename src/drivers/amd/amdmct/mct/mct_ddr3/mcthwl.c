@@ -39,8 +39,8 @@ static void SetEccWrDQS_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pD
 					val >>= 16;
 				/* Save WrDqs to stack for later usage */
 				pDCTstat->persistentData.CH_D_B_TxDqs[Channel][DimmNum][ByteLane] = val & 0xFF;
-				EccDQSScale = pDCTstat->CH_EccDQSScale[Channel];
-				word = pDCTstat->CH_EccDQSLike[Channel];
+				EccDQSScale = pDCTstat->ch_ecc_dqs_scale[Channel];
+				word = pDCTstat->ch_ecc_dqs_like[Channel];
 				if ((word & 0xFF) == ByteLane) EccRef1 = val & 0xFF;
 				if (((word >> 8) & 0xFF) == ByteLane) EccRef2 = val & 0xFF;
 			}
@@ -53,11 +53,11 @@ static void EnableAutoRefresh_D(struct MCTStatStruc *pMCTstat, struct DCTStatStr
 	u32 val;
 
 	val = Get_NB32_DCT(pDCTstat->dev_dct, 0, 0x8C);
-	val &= ~(1 << DisAutoRefresh);
+	val &= ~(1 << DIS_AUTO_REFRESH);
 	Set_NB32_DCT(pDCTstat->dev_dct, 0, 0x8C, val);
 
 	val = Get_NB32_DCT(pDCTstat->dev_dct, 1, 0x8C);
-	val &= ~(1 << DisAutoRefresh);
+	val &= ~(1 << DIS_AUTO_REFRESH);
 	Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x8C, val);
 }
 
@@ -67,11 +67,11 @@ static void DisableAutoRefresh_D(struct MCTStatStruc *pMCTstat,
 	u32 val;
 
 	val = Get_NB32_DCT(pDCTstat->dev_dct, 0, 0x8C);
-	val |= 1 << DisAutoRefresh;
+	val |= 1 << DIS_AUTO_REFRESH;
 	Set_NB32_DCT(pDCTstat->dev_dct, 0, 0x8C, val);
 
 	val = Get_NB32_DCT(pDCTstat->dev_dct, 1, 0x8C);
-	val |= 1 << DisAutoRefresh;
+	val |= 1 << DIS_AUTO_REFRESH;
 	Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x8C, val);
 }
 
@@ -80,27 +80,27 @@ static u8 PhyWLPass1(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstat, u8 dct)
 {
 	u8 dimm;
-	u16 DIMMValid;
+	u16 dimm_valid;
 	u8 status = 0;
 	void *DCTPtr;
 
 	dct &= 1;
 
 	DCTPtr = (void *)(pDCTstat->C_DCTPtr[dct]);
-	pDCTstat->DIMMValid = pDCTstat->DIMMValidDCT[dct];
-	pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[dct];
+	pDCTstat->dimm_valid = pDCTstat->DIMMValidDCT[dct];
+	pDCTstat->cs_present = pDCTstat->CSPresent_DCT[dct];
 
 	if (pDCTstat->GangedMode & 1)
-		pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[0];
+		pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
 
-	if (pDCTstat->DIMMValid) {
-		DIMMValid = pDCTstat->DIMMValid;
+	if (pDCTstat->dimm_valid) {
+		dimm_valid = pDCTstat->dimm_valid;
 		PrepareC_DCT(pMCTstat, pDCTstat, dct);
 		for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm ++) {
-			if (DIMMValid & (1 << (dimm << 1))) {
-				status |= AgesaHwWlPhase1(pMCTstat, pDCTstat, dct, dimm, FirstPass);
-				status |= AgesaHwWlPhase2(pMCTstat, pDCTstat, dct, dimm, FirstPass);
-				status |= AgesaHwWlPhase3(pMCTstat, pDCTstat, dct, dimm, FirstPass);
+			if (dimm_valid & (1 << (dimm << 1))) {
+				status |= AgesaHwWlPhase1(pMCTstat, pDCTstat, dct, dimm, FIRST_PASS);
+				status |= AgesaHwWlPhase2(pMCTstat, pDCTstat, dct, dimm, FIRST_PASS);
+				status |= AgesaHwWlPhase3(pMCTstat, pDCTstat, dct, dimm, FIRST_PASS);
 			}
 		}
 	}
@@ -112,24 +112,24 @@ static u8 PhyWLPass2(struct MCTStatStruc *pMCTstat,
 					struct DCTStatStruc *pDCTstat, u8 dct, u8 final)
 {
 	u8 dimm;
-	u16 DIMMValid;
+	u16 dimm_valid;
 	u8 status = 0;
 	void *DCTPtr;
 
 	dct &= 1;
 
 	DCTPtr = (void *)&(pDCTstat->C_DCTPtr[dct]); /* todo: */
-	pDCTstat->DIMMValid = pDCTstat->DIMMValidDCT[dct];
-	pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[dct];
+	pDCTstat->dimm_valid = pDCTstat->DIMMValidDCT[dct];
+	pDCTstat->cs_present = pDCTstat->CSPresent_DCT[dct];
 
 	if (pDCTstat->GangedMode & 1)
-		pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[0];
+		pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
 
-	if (pDCTstat->DIMMValid) {
-		DIMMValid = pDCTstat->DIMMValid;
+	if (pDCTstat->dimm_valid) {
+		dimm_valid = pDCTstat->dimm_valid;
 		PrepareC_DCT(pMCTstat, pDCTstat, dct);
-		pDCTstat->Speed = pDCTstat->DIMMAutoSpeed = pDCTstat->TargetFreq;
-		pDCTstat->CASL = pDCTstat->DIMMCASL = pDCTstat->TargetCASL;
+		pDCTstat->speed = pDCTstat->dimm_auto_speed = pDCTstat->TargetFreq;
+		pDCTstat->cas_latency = pDCTstat->dimm_casl = pDCTstat->TargetCASL;
 		SPD2ndTiming(pMCTstat, pDCTstat, dct);
 		if (!is_fam15h()) {
 			ProgDramMRSReg_D(pMCTstat, pDCTstat, dct);
@@ -142,10 +142,10 @@ static u8 PhyWLPass2(struct MCTStatStruc *pMCTstat,
 		SetDllSpeedUp_D(pMCTstat, pDCTstat, dct);
 		DisableAutoRefresh_D(pMCTstat, pDCTstat);
 		for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm ++) {
-			if (DIMMValid & (1 << (dimm << 1))) {
-				status |= AgesaHwWlPhase1(pMCTstat, pDCTstat, dct, dimm, SecondPass);
-				status |= AgesaHwWlPhase2(pMCTstat, pDCTstat, dct, dimm, SecondPass);
-				status |= AgesaHwWlPhase3(pMCTstat, pDCTstat, dct, dimm, SecondPass);
+			if (dimm_valid & (1 << (dimm << 1))) {
+				status |= AgesaHwWlPhase1(pMCTstat, pDCTstat, dct, dimm, SECOND_PASS);
+				status |= AgesaHwWlPhase2(pMCTstat, pDCTstat, dct, dimm, SECOND_PASS);
+				status |= AgesaHwWlPhase3(pMCTstat, pDCTstat, dct, dimm, SECOND_PASS);
 			}
 		}
 	}
@@ -176,7 +176,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 	pDCTstat->C_DCTPtr[0] = &(pDCTstat->s_C_DCTPtr[0]);
 	pDCTstat->C_DCTPtr[1] = &(pDCTstat->s_C_DCTPtr[1]);
 
-	/* Disable auto refresh by configuring F2x[1, 0]8C[DisAutoRefresh] = 1 */
+	/* Disable auto refresh by configuring F2x[1, 0]8C[DIS_AUTO_REFRESH] = 1 */
 	DisableAutoRefresh_D(pMCTstat, pDCTstat);
 
 	/* Disable ZQ calibration short command by F2x[1,0]94[ZqcsInterval]=00b */
@@ -187,7 +187,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 		pDCTstat->DIMMValidDCT[1] = pDCTstat->DIMMValidDCT[0];
 	}
 
-	if (Pass == FirstPass) {
+	if (Pass == FIRST_PASS) {
 		timeout = 0;
 		do {
 			status = 0;
@@ -205,7 +205,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 				__func__);
 	}
 
-	if (Pass == SecondPass) {
+	if (Pass == SECOND_PASS) {
 		if (pDCTstat->TargetFreq > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
 			/* 8.Prepare the memory subsystem for the target MEMCLK frequency.
 			 * NOTE: BIOS must program both DCTs to the same frequency.
@@ -214,9 +214,9 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 			u8 global_phy_training_status = 0;
 			final_target_freq = pDCTstat->TargetFreq;
 
-			while (pDCTstat->Speed != final_target_freq) {
+			while (pDCTstat->speed != final_target_freq) {
 				if (is_fam15h())
-					pDCTstat->TargetFreq = fam15h_next_highest_memclk_freq(pDCTstat->Speed);
+					pDCTstat->TargetFreq = fam15h_next_highest_memclk_freq(pDCTstat->speed);
 				else
 					pDCTstat->TargetFreq = final_target_freq;
 				SetTargetFreq(pMCTstat, pDCTstatA, Node);

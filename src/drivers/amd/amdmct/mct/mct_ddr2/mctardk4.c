@@ -12,33 +12,33 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *pMCTstat,
 			 struct DCTStatStruc *pDCTstat, u32 dct)
 {
 	print_tx("dct: ", dct);
-	print_tx("Speed: ", pDCTstat->Speed);
+	print_tx("Speed: ", pDCTstat->speed);
 
-	Get_ChannelPS_Cfg0_D(pDCTstat->MAdimms[dct], pDCTstat->Speed,
-				pDCTstat->MAload[dct], pDCTstat->DATAload[dct],
-				&(pDCTstat->CH_ADDR_TMG[dct]), &(pDCTstat->CH_ODC_CTL[dct]),
-				&pDCTstat->_2Tmode);
+	Get_ChannelPS_Cfg0_D(pDCTstat->ma_dimms[dct], pDCTstat->speed,
+				pDCTstat->ma_load[dct], pDCTstat->data_load[dct],
+				&(pDCTstat->ch_addr_tmg[dct]), &(pDCTstat->ch_odc_ctl[dct]),
+				&pDCTstat->_2t_mode);
 
-	if (pDCTstat->MAdimms[dct] == 1)
-		pDCTstat->CH_ODC_CTL[dct] |= 0x20000000;	/* 75ohms */
+	if (pDCTstat->ma_dimms[dct] == 1)
+		pDCTstat->ch_odc_ctl[dct] |= 0x20000000;	/* 75ohms */
 	else
-		pDCTstat->CH_ODC_CTL[dct] |= 0x10000000;	/* 150ohms */
+		pDCTstat->ch_odc_ctl[dct] |= 0x10000000;	/* 150ohms */
 
 
 	/*
 	 * Overrides and/or workarounds
 	 */
-	pDCTstat->CH_ODC_CTL[dct] = procOdtWorkaround(pDCTstat, dct, pDCTstat->CH_ODC_CTL[dct]);
+	pDCTstat->ch_odc_ctl[dct] = procOdtWorkaround(pDCTstat, dct, pDCTstat->ch_odc_ctl[dct]);
 
-	print_tx("4 CH_ODC_CTL: ", pDCTstat->CH_ODC_CTL[dct]);
-	print_tx("4 CH_ADDR_TMG: ", pDCTstat->CH_ADDR_TMG[dct]);
+	print_tx("4 CH_ODC_CTL: ", pDCTstat->ch_odc_ctl[dct]);
+	print_tx("4 CH_ADDR_TMG: ", pDCTstat->ch_addr_tmg[dct]);
 }
 
 /*=============================================================================
  * Vendor is responsible for correct settings.
  * M2/Unbuffered 4 Slot - AMD Design Guideline.
  *=============================================================================
- * #1, BYTE, Speed (DCTStatstruc.Speed)
+ * #1, BYTE, Speed (DCTStatstruc.speed)
  * #2, BYTE, number of Address bus loads on the Channel.
  *     These must be listed in ascending order.
  *     FFh (-1) has special meaning of 'any', and must be listed first for

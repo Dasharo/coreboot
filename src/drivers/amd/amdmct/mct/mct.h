@@ -29,17 +29,17 @@
 					/* memory initialization (ecc and check-bits).*/
 					/* 1 = 40 ns/64 bytes.*/
 
-#define FirstPass	1		/* First pass through RcvEn training*/
-#define SecondPass	2		/* Second pass through Rcven training*/
+#define FIRST_PASS	1		/* First pass through RcvEn training*/
+#define SECOND_PASS	2		/* Second pass through Rcven training*/
 
-#define RCVREN_MARGIN	6		/* number of DLL taps to delay beyond first passing position*/
-#define MAXASYNCLATCTL_3	60	/* Max Async Latency Control value (This value will be divided by 20)*/
+#define RCVR_EN_MARGIN	6		/* number of DLL taps to delay beyond first passing position*/
+#define MAX_ASYNC_LAT_CTL_3	60	/* Max Async Latency Control value (This value will be divided by 20)*/
 #define DQS_FAIL	1
 #define DQS_PASS	0
 #define DQS_WRITEDIR	0
 #define DQS_READDIR	1
 #define MIN_DQS_WNDW	3
-#define secPassOffset	6
+#define SEC_PASS_OFFSET	6
 
 /* Node 0 Host Bus function PCI Address bits [15:0] */
 #define PA_HOST		(((24 << 3)+0) << 8)
@@ -57,59 +57,59 @@
 #define DCC_EN		1		/* X:2:0x94[19]*/
 #define ILD_Lmt		3		/* X:2:0x94[18:16]*/
 
-#define EncodedTSPD	0x00191709	/* encodes which SPD byte to get T from*/
+#define ENCODED_T_SPD	0x00191709	/* encodes which SPD byte to get T from*/
 					/* versus CL X, CL X-.5, and CL X-1*/
 
-#define Bias_TrpT	3		/* bias to convert bus clocks to bit field value*/
-#define Bias_TrrdT	2
-#define Bias_TrcdT	3
-#define Bias_TrasT	3
-#define Bias_TrcT	11
-#define Bias_TrtpT	4
-#define Bias_TwrT	3
-#define Bias_TwtrT	0
+#define BIAS_TRPT	3		/* bias to convert bus clocks to bit field value*/
+#define BIAS_TRRDT	2
+#define BIAS_TRCDT	3
+#define BIAS_TRAST	3
+#define BIAS_TRCT	11
+#define BIAS_TRTPT	4
+#define BIAS_TWRT	3
+#define BIAS_TWTRT	0
 
-#define Min_TrpT	3		/* min programmable value in busclocks*/
-#define Max_TrpT	6		/* max programmable value in busclocks*/
-#define Min_TrrdT	2
-#define Max_TrrdT	5
-#define Min_TrcdT	3
-#define Max_TrcdT	6
-#define Min_TrasT	5
-#define Max_TrasT	18
-#define Min_TrcT	11
-#define Max_TrcT	26
-#define Min_TrtpT	4
-#define Max_TrtpT	5
-#define Min_TwrT	3
-#define Max_TwrT	6
-#define Min_TwtrT	1
-#define Max_TwtrT	3
+#define MIN_TRPT	3		/* min programmable value in busclocks*/
+#define MAX_TRPT	6		/* max programmable value in busclocks*/
+#define MIN_TRRDT	2
+#define MAX_TRRDT	5
+#define MIN_TRCDT	3
+#define MAX_TRCDT	6
+#define MIN_TRAST	5
+#define MAX_TRAST	18
+#define MIN_TRCT	11
+#define MAX_TRCT	26
+#define MIN_TRTPT	4
+#define MAX_TRTPT	5
+#define MIN_TWRT	3
+#define MAX_TWRT	6
+#define MIN_TWTRT	1
+#define MAX_TWTRT	3
 
 /* common register bit names */
-#define DramHoleValid	0		/* func 1, offset F0h, bit 0 */
-#define CSEnable	0		/* func 2, offset 40h-5C, bit 0 */
-#define Spare		1		/* func 2, offset 40h-5C, bit 1 */
-#define TestFail	2		/* func 2, offset 40h-5C, bit 2 */
-#define DqsRcvEnTrain	18		/* func 2, offset 78h, bit 18 */
-#define EnDramInit	31		/* func 2, offset 7Ch, bit 31 */
-#define DisAutoRefresh	18		/* func 2, offset 8Ch, bit 18 */
-#define InitDram	0		/* func 2, offset 90h, bit 0 */
-#define BurstLength32	10		/* func 2, offset 90h, bit 10 */
-#define Width128	11		/* func 2, offset 90h, bit 11 */
-#define X4Dimm		12		/* func 2, offset 90h, bit 12 */
-#define UnBuffDimm	16		/* func 2, offset 90h, bit 16 */
-#define DimmEcEn	19		/* func 2, offset 90h, bit 19 */
-#define MemClkFreqVal	3		/* func 2, offset 94h, bit 3 */
-#define RDqsEn		12		/* func 2, offset 94h, bit 12 */
-#define DisDramInterface	14	/* func 2, offset 94h, bit 14 */
-#define DctAccessWrite	30		/* func 2, offset 98h, bit 30 */
-#define DctAccessDone	31		/* func 2, offset 98h, bit 31 */
-#define PwrSavingsEn	10		/* func 2, offset A0h, bit 10 */
-#define Mod64BitMux	4		/* func 2, offset A0h, bit 4 */
-#define DisableJitter	1		/* func 2, offset A0h, bit 1 */
-#define DramEnabled	9		/* func 2, offset A0h, bit 9 */
-#define SyncOnUcEccEn	2		/* func 3, offset 44h, bit 2 */
+#define DRAM_HOLE_VALID	0		/* func 1, offset F0h, bit 0 */
+#define CS_ENABLE	0		/* func 2, offset 40h-5C, bit 0 */
+#define SPARE		1		/* func 2, offset 40h-5C, bit 1 */
+#define TEST_FAIL	2		/* func 2, offset 40h-5C, bit 2 */
+#define DQS_RCV_EN_TRAIN	18	/* func 2, offset 78h, bit 18 */
+#define EN_DRAM_INIT	31		/* func 2, offset 7Ch, bit 31 */
+#define DIS_AUTO_REFRESH	18	/* func 2, offset 8Ch, bit 18 */
+#define INIT_DRAM	0		/* func 2, offset 90h, bit 0 */
+#define BURST_LENGTH_32	10		/* func 2, offset 90h, bit 10 */
+#define WIDTH_128	11		/* func 2, offset 90h, bit 11 */
+#define X4_DIMM		12		/* func 2, offset 90h, bit 12 */
+#define UN_BUFF_DIMM	16		/* func 2, offset 90h, bit 16 */
+#define DIMM_EC_EN	19		/* func 2, offset 90h, bit 19 */
+#define MEM_CLK_FREQ_VAL	3	/* func 2, offset 94h, bit 3 */
+#define RDQS_EN		12		/* func 2, offset 94h, bit 12 */
+#define DIS_DRAM_INTERFACE	14	/* func 2, offset 94h, bit 14 */
+#define DCT_ACCESS_WRITE	30		/* func 2, offset 98h, bit 30 */
+#define DCT_ACCESS_DONE	31		/* func 2, offset 98h, bit 31 */
+#define PWR_SAVINGS_EN	10		/* func 2, offset A0h, bit 10 */
+#define MOD_64_BIT_MUX	4		/* func 2, offset A0h, bit 4 */
+#define DISABLE_JITTER	1		/* func 2, offset A0h, bit 1 */
+#define DRAM_ENABLED	9		/* func 2, offset A0h, bit 9 */
+#define SYNC_ON_UC_ECC_EN	2		/* func 3, offset 44h, bit 2 */
 
 /*=============================================================================
 	Jedec DDR II
@@ -164,7 +164,7 @@
 #define _4GB_RJ8	(4 << (30 - 8))
 #define _4GB_RJ4	(4 << (30 - 4))
 
-#define BigPagex8_RJ8	(1 << (17 + 3 - 8))	/* 128KB * 8 >> 8 */
+#define BIG_PAGE_X8_RJ8	(1 << (17 + 3 - 8))	/* 128KB * 8 >> 8 */
 
 /*=============================================================================
 	Global MCT Status Structure
@@ -182,19 +182,19 @@ struct MCTStatStruc {
 /*These should begin at bit 0 of GStatus[31:0]*/
 
 /* Ran out of MTRRs while mapping memory*/
-#define GSB_MTRRshort	0
+#define GSB_MTRR_SHORT	0
 /* All banks of all Nodes are ECC capable*/
-#define GSB_ECCDIMMs	1
+#define GSB_ECCDIMMS	1
 /* Dram ECC requested but not enabled.*/
-#define GSB_DramECCDis	2
+#define GSB_DRAM_ECCDIS	2
 /* A Node Base gap was created*/
-#define GSB_SoftHole	3
+#define GSB_SOFT_HOLE	3
 /* A HW dram remap was created*/
-#define GSB_HWHole	4
+#define GSB_HW_HOLE	4
 /* Node Memory interleaving was enabled*/
-#define GSB_NodeIntlv	5
+#define GSB_Node_INTLV	5
 /* Special condition for Node Interleave and HW remapping*/
-#define GSB_SpIntRemapHole	16
+#define GSB_SP_INTLV_REMAP_HOLE	16
 
 
 /*===============================================================================
@@ -202,16 +202,16 @@ struct MCTStatStruc {
 ===============================================================================*/
 
 struct DCTStatStruc {		/* A per Node structure*/
-	u8 Node_ID;	/* Node ID of current controller*/
-	u8 ErrCode;	/* Current error condition of Node
+	u8 node_id;	/* Node ID of current controller*/
+	u8 err_code;	/* Current error condition of Node
 				   0= no error
 				   1= Variance Error, DCT is running
 				      but not in an optimal configuration.
 				   2= Stop Error, DCT is NOT running
 				   3= Fatal Error, DCT/MCT initialization has been halted.*/
-	u32 ErrStatus;	/* Error Status bit Field */
-	u32 Status;	/* Status bit Field*/
-	u8 DIMMAddr[8];	/* SPD address of DIMM controlled by MA0_CS_L[0,1]*/
+	u32 err_status;	/* Error Status bit Field */
+	u32 status;	/* Status bit Field*/
+	u8 dimm_addr[8];	/* SPD address of DIMM controlled by MA0_CS_L[0,1]*/
 				/* SPD address of..MB0_CS_L[0,1]*/
 				/* SPD address of..MA1_CS_L[0,1]*/
 				/* SPD address of..MB1_CS_L[0,1]*/
@@ -219,7 +219,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 				/* SPD address of..MB2_CS_L[0,1]*/
 				/* SPD address of..MA3_CS_L[0,1]*/
 				/* SPD address of..MB3_CS_L[0,1]*/
-	u16 DIMMPresent;	/* For each bit n 0..7, 1 = DIMM n is present.
+	u16 dimm_present;	/* For each bit n 0..7, 1 = DIMM n is present.
 				   DIMM#  Select Signal
 				   0	  MA0_CS_L[0,1]
 				   1	  MB0_CS_L[0,1]
@@ -230,67 +230,67 @@ struct DCTStatStruc {		/* A per Node structure*/
 				   6	  MA3_CS_L[0,1]
 				   7	  MB3_CS_L[0,1]*/
 	/* For each bit n 0..7, 1 = DIMM n is valid and is/will be configured */
-	u16 DIMMValid;
+	u16 dimm_valid;
 	/* For each bit n 0..7, 1 = DIMM n SPD checksum error */
-	u16 DIMMSPDCSE;
+	u16 dimm_spd_checksum_err;
 	/* For each bit n 0..7, 1 = DIMM n is ECC capable. */
-	u16 DimmECCPresent;
+	u16 dimm_ecc_present;
 	/* For each bit n 0..7, 1 = DIMM n is ADR/CMD Parity capable. */
-	u16 DimmPARPresent;
+	u16 dimm_parity_present;
 	/* For each bit n 0..7, 1 = DIMM n contains x4 data devices. */
-	u16 Dimmx4Present;
+	u16 dimm_x4_present;
 	/* For each bit n 0..7, 1 = DIMM n contains x8 data devices. */
-	u16 Dimmx8Present;
+	u16 dimm_x8_present;
 	/* For each bit n 0..7, 1 = DIMM n contains x16 data devices. */
-	u16 Dimmx16Present;
+	u16 dimm_x16_present;
 	/* For each bit n 0..7, 1 = DIMM n contains 1K page devices. */
-	u16 DIMM1Kpage;
+	u16 dimm_1k_page;
 	/* Number of devices loading MAA bus */
-	u8 MAload[2];
+	u8 ma_load[2];
 					/* Number of devices loading MAB bus */
-	u8 MAdimms[2];		/* Number of DIMMs loading CH A */
+	u8 ma_dimms[2];		/* Number of DIMMs loading CH A */
 					/* Number of DIMMs loading CH B */
-	u8 DATAload[2];		/* Number of ranks loading CH A DATA */
+	u8 data_load[2];		/* Number of ranks loading CH A DATA */
 					/* Number of ranks loading CH B DATA */
-	u8 DIMMAutoSpeed;		/* Max valid Mfg. Speed of DIMMs
+	u8 dimm_auto_speed;		/* Max valid Mfg. Speed of DIMMs
 					   1 = 200MHz
 					   2 = 266MHz
 					   3 = 333MHz
 					   4 = 400MHz */
-	u8 DIMMCASL;		/* Min valid Mfg. CL bitfield
+	u8 dimm_casl;		/* Min valid Mfg. CL bitfield
 					   0 = 2.0
 					   1 = 3.0
 					   2 = 4.0
 					   3 = 5.0
 					   4 = 6.0 */
-	u16 DIMMTrcd;	/* Minimax Trcd*40 (ns) of DIMMs*/
-	u16 DIMMTrp;	/* Minimax Trp*40 (ns) of DIMMs*/
-	u16 DIMMTrtp;	/* Minimax Trtp*40 (ns) of DIMMs*/
-	u16 DIMMTras;	/* Minimax Tras*40 (ns) of DIMMs*/
-	u16 DIMMTrc;	/* Minimax Trc*40 (ns) of DIMMs*/
-	u16 DIMMTwr;	/* Minimax Twr*40 (ns) of DIMMs*/
-	u16 DIMMTrrd;	/* Minimax Trrd*40 (ns) of DIMMs*/
-	u16 DIMMTwtr;	/* Minimax Twtr*40 (ns) of DIMMs*/
-	u8 Speed;		/* Bus Speed (to set Controller)
+	u16 dimm_trcd;	/* Minimax trcd*40 (ns) of DIMMs*/
+	u16 dimm_trp;	/* Minimax trp*40 (ns) of DIMMs*/
+	u16 dimm_trtp;	/* Minimax trtp*40 (ns) of DIMMs*/
+	u16 dimm_tras;	/* Minimax Tras*40 (ns) of DIMMs*/
+	u16 dimm_trc;	/* Minimax Trc*40 (ns) of DIMMs*/
+	u16 dimm_twr;	/* Minimax Twr*40 (ns) of DIMMs*/
+	u16 dimm_trrd;	/* Minimax Trrd*40 (ns) of DIMMs*/
+	u16 dimm_twtr;	/* Minimax Twtr*40 (ns) of DIMMs*/
+	u8 speed;		/* Bus Speed (to set Controller)
 				   1 = 200MHz
 				   2 = 266MHz
 				   3 = 333MHz
 				   4 = 400MHz */
-	u8 CASL;		/* CAS latency DCT setting
+	u8 cas_latency;		/* CAS latency DCT setting
 				   0 = 2.0
 				   1 = 3.0
 				   2 = 4.0
 				   3 = 5.0
 				   4 = 6.0 */
-	u8 Trcd;		/* DCT Trcd (busclocks) */
-	u8 Trp;		/* DCT Trp (busclocks) */
-	u8 Trtp;		/* DCT Trtp (busclocks) */
-	u8 Tras;		/* DCT Tras (busclocks) */
-	u8 Trc;		/* DCT Trc (busclocks) */
-	u8 Twr;		/* DCT Twr (busclocks) */
-	u8 Trrd;		/* DCT Trrd (busclocks) */
-	u8 Twtr;		/* DCT Twtr (busclocks) */
-	u8 Trfc[4];	/* DCT Logical DIMM0 Trfc
+	u8 trcd;		/* DCT trcd (busclocks) */
+	u8 trp;		/* DCT trp (busclocks) */
+	u8 trtp;		/* DCT trtp (busclocks) */
+	u8 tras;		/* DCT Tras (busclocks) */
+	u8 trc;		/* DCT Trc (busclocks) */
+	u8 twr;		/* DCT Twr (busclocks) */
+	u8 trrd;		/* DCT Trrd (busclocks) */
+	u8 twtr;		/* DCT Twtr (busclocks) */
+	u8 trfc[4];	/* DCT Logical DIMM0 Trfc
 				   0 = 75ns (for 256Mb devs)
 				   1 = 105ns (for 512Mb devs)
 				   2 = 127.5ns (for 1Gb devs)
@@ -300,43 +300,43 @@ struct DCTStatStruc {		/* A per Node structure*/
 				/* DCT Logical DIMM2 Trfc (see Trfc0 for format) */
 				/* DCT Logical DIMM3 Trfc (see Trfc0 for format) */
 	/* For each bit n 0..7, 1 = Chip-select n is present */
-	u16 CSPresent;
+	u16 cs_present;
 	/* For each bit n 0..7, 1 = Chip-select n is present but disabled */
-	u16 CSTestFail;
+	u16 cs_test_fail;
 	/* BASE[39:8] (system address) of this Node's DCTs. */
-	u32 DCTSysBase;
+	u32 dct_sys_base;
 	/* If not zero, BASE[39:8] (system address) of dram hole for HW remapping.
 	 * Dram hole exists on this Node's DCTs.
 	 */
-	u32 DCTHoleBase;
+	u32 dct_hole_base;
 	/* LIMIT[39:8] (system address) of this Node's DCTs */
-	u32 DCTSysLimit;
+	u32 dct_sys_limit;
 	/* Maximum OEM defined DDR frequency
 	 * 200 = 200MHz (DDR400)
 	 * 266 = 266MHz (DDR533)
 	 * 333 = 333MHz (DDR667)
 	 * 400 = 400MHz (DDR800)
 	 */
-	u16 PresetmaxFreq;
-	u8 _2Tmode;	/* 1T or 2T CMD mode (slow access mode)
+	u16 preset_max_freq;
+	u8 _2t_mode;	/* 1T or 2T CMD mode (slow access mode)
 				   1 = 1T
 				   2 = 2T */
-	u8 TrwtTO;		/* DCT TrwtTO (busclocks)*/
-	u8 Twrrd;		/* DCT Twrrd (busclocks)*/
-	u8 Twrwr;		/* DCT Twrwr (busclocks)*/
-	u8 Trdrd;		/* DCT Trdrd (busclocks)*/
-	u32 CH_ODC_CTL[2];	/* Output Driver Strength (see BKDG FN2:Offset 9Ch, index 00h*/
-	u32 CH_ADDR_TMG[2];	/* Address Bus Timing (see BKDG FN2:Offset 9Ch, index 04h*/
+	u8 trwt_to;		/* DCT TrwtTO (busclocks)*/
+	u8 twrrd;		/* DCT Twrrd (busclocks)*/
+	u8 twrwr;		/* DCT Twrwr (busclocks)*/
+	u8 trdrd;		/* DCT Trdrd (busclocks)*/
+	u32 ch_odc_ctl[2];	/* Output Driver Strength (see BKDG FN2:Offset 9Ch, index 00h*/
+	u32 ch_addr_tmg[2];	/* Address Bus Timing (see BKDG FN2:Offset 9Ch, index 04h*/
 				/* Output Driver Strength (see BKDG FN2:Offset 9Ch, index 20h*/
 				/* Address Bus Timing (see BKDG FN2:Offset 9Ch, index 24h*/
-	u16 CH_EccDQSLike[2];	/* CHA DQS ECC byte like...*/
-	u8 CH_EccDQSScale[2];	/* CHA DQS ECC byte scale*/
+	u16 ch_ecc_dqs_like[2];	/* CHA DQS ECC byte like...*/
+	u8 ch_ecc_dqs_scale[2];	/* CHA DQS ECC byte scale*/
 //	u8 reserved_b_1;	/* Reserved*/
 				/* CHB DQS ECC byte like...*/
 				/* CHB DQS ECC byte scale*/
 //	u8 reserved_b_2;	/*Reserved*/
-	u8 MaxAsyncLat;	/* Max Asynchronous Latency (ns)*/
-	u8 CH_B_DQS[2][2][9];	/* CHA Byte 0 - 7 and Check Write DQS Delay*/
+	u8 max_async_lat;	/* Max Asynchronous Latency (ns)*/
+	u8 ch_b_dqs[2][2][9];	/* CHA Byte 0 - 7 and Check Write DQS Delay*/
 				/* Reserved*/
 				/* CHA Byte 0 - 7 and Check Read DQS Delay*/
 				/* Reserved*/
@@ -344,128 +344,128 @@ struct DCTStatStruc {		/* A per Node structure*/
 				/* Reserved*/
 				/* CHB Byte 0 - 7 and Check Read DQS Delay*/
 				/* Reserved*/
-	u8 CH_D_RCVRDLY[2][4];	/* CHA DIMM 0 - 3 Receiver Enable Delay*/
+	u8 ch_d_rcvr_dly[2][4];	/* CHA DIMM 0 - 3 Receiver Enable Delay*/
 				/* CHB DIMM 0 - 3 Receiver Enable Delay*/
 	/* Ptr on stack to aligned DQS testing pattern*/
-	u32 PtrPatternBufA;
+	u32 ptr_pattern_buf_a;
 	/*Ptr on stack to aligned DQS testing pattern*/
-	u32 PtrPatternBufB;
+	u32 ptr_pattern_buf_b;
 	/* Current Channel (0= CH A, 1 = CH B)*/
-	u8 Channel;
+	u8 channel;
 	/* Current Byte Lane (0..7)*/
-	u8 ByteLane;
+	u8 byte_lane;
 	/* Current DQS-DQ training write direction (0 = read, 1 = write)*/
-	u8 Direction;
+	u8 direction;
 	/* Current pattern*/
-	u8 Pattern;
+	u8 pattern;
 	/* Current DQS delay value*/
-	u8 DQSDelay;
+	u8 dqs_delay;
 	/* Current Training Errors*/
-	u32 TrainErrors;
+	u32 train_errors;
 	/* RSVD */
 //	u8 reserved_b_3;
 	/* Time Stamp Counter measurement of AMC, Low dword*/
-	u32 AMC_TSC_DeltaLo;
+	u32 amc_tsc_delta_lo;
 	/* Time Stamp Counter measurement of AMC, High dword*/
-	u32 AMC_TSC_DeltaHi;
+	u32 amc_tsc_delta_hi;
 	/* CH A byte lane 0 - 7 minimum filtered window	passing DQS delay value*/
-	u8 CH_B_Dly[2][2][2][8];
-		/* CH A byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
-		/* CH B byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
-		/* CH B byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
-		/* CH A byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
-		/* CH A byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
-		/* CH B byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
-		/* CH B byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
+	u8 ch_b_dly[2][2][2][8];
+		/* CH A byte lane 0 - 7 maximum filtered window passing DQS delay value*/
+		/* CH B byte lane 0 - 7 minimum filtered window passing DQS delay value*/
+		/* CH B byte lane 0 - 7 maximum filtered window passing DQS delay value*/
+		/* CH A byte lane 0 - 7 minimum filtered window passing DQS delay value*/
+		/* CH A byte lane 0 - 7 maximum filtered window passing DQS delay value*/
+		/* CH B byte lane 0 - 7 minimum filtered window passing DQS delay value*/
+		/* CH B byte lane 0 - 7 maximum filtered window passing DQS delay value*/
 	/* The logical CPUID of the node*/
-	u32 LogicalCPUID;
-	/* Word sized general purpose field for use by host BIOS.  Scratch space.*/
-	u16 HostBiosSrvc1;
-	/* Dword sized general purpose field for use by host BIOS.  Scratch space.*/
-	u32 HostBiosSrvc2;
+	u32 logical_cpuid;
+	/* Word sized general purpose field for use by host BIOS. Scratch space.*/
+	u16 host_bios_srvc_1;
+	/* Dword sized general purpose field for use by host BIOS. Scratch space.*/
+	u32 host_bios_srvc_2;
 	/* QuadRank DIMM present?*/
-	u16 DimmQRPresent;
+	u16 dimm_qr_present;
 	/* Bitmap showing which dimms failed training*/
-	u16 DimmTrainFail;
+	u16 dimm_train_fail;
 	/* Bitmap showing which chipselects failed training*/
-	u16 CSTrainFail;
+	u16 cs_train_fail;
 	/* Bitmap indicating which Dimms have a manufactur's year code <= 2006*/
-	u16 DimmYr06;
+	u16 dimm_yr_06;
 	/* Bitmap indicating which Dimms have a manufactur's week code <= 24 of 2006 (June)*/
-	u16 DimmWk2406;
+	u16 dimm_wk_2406;
 	/* Bitmap indicating that Dual Rank Dimms are present*/
-	u16 DimmDRPresent;
+	u16 dimm_dr_present;
 	/* Bitmap indicating that Planar (1) or Stacked (0) Dimms are present.*/
-	u16 DimmPlPresent;
+	u16 dimm_pl_present;
 	/* Bitmap showing the channel information about failed Chip Selects*/
-	u16 ChannelTrainFail;
+	u16 channel_train_fail;
 	/* 0 in any bit field indicates Channel 0*/
 	/* 1 in any bit field indicates Channel 1*/
 };
 
 /*===============================================================================
-	Local Error Status Codes (DCTStatStruc.ErrCode)
+	Local Error Status Codes (DCTStatStruc.err_code)
 ===============================================================================*/
-#define SC_RunningOK		0
-#define SC_VarianceErr		1	/* Running non-optimally*/
-#define SC_StopError		2	/* Not Running*/
-#define SC_FatalErr		3	/* Fatal Error, MCTB has exited immediately*/
+#define SC_RUNNING_OK		0
+#define SC_VARIANCE_ERR		1	/* Running non-optimally*/
+#define SC_STOP_ERR		2	/* Not Running*/
+#define SC_FATAL_ERR		3	/* Fatal Error, MCTB has exited immediately*/
 
 /*===============================================================================
-	Local Error Status (DCTStatStruc.ErrStatus[31:0])
+	Local Error Status (DCTStatStruc.err_status[31:0])
 ===============================================================================*/
-#define SB_NoDimms		0
-#define SB_DIMMChkSum		1
+#define SB_NO_DIMMS		0
+#define SB_DIMM_CHKSUM		1
 /* dimm module type(buffer) mismatch*/
-#define SB_DimmMismatchM	2
+#define SB_DIMM_MISMATCH_M	2
 /* dimm CL/T mismatch*/
-#define SB_DimmMismatchT	3
+#define SB_DIMM_MISMATCH_T	3
 /* dimm organization mismatch (128-bit)*/
-#define SB_DimmMismatchO	4
+#define SB_DIMM_MISMATCH_O	4
 /* SPD missing Trc or Trfc info*/
-#define SB_NoTrcTrfc		5
+#define SB_NO_TRC_TRFC		5
 /* SPD missing byte 23 or 25*/
-#define SB_NoCycTime		6
+#define SB_NO_CYC_TIME		6
 /* Bank interleave requested but not enabled*/
-#define SB_BkIntDis		7
+#define SB_BK_INT_DIS		7
 /* Dram ECC requested but not enabled*/
-#define SB_DramECCDis		8
+#define SB_DRAM_ECC_DIS		8
 /* Online spare requested but not enabled*/
-#define SB_SpareDis		9
+#define SB_SPARE_DIS		9
 /* Running in Minimum Mode*/
-#define SB_MinimumMode		10
+#define SB_MINIMUM_MODE		10
 /* No DQS Receiver Enable pass window found*/
-#define SB_NORCVREN		11
+#define SB_NO_RCVR_EN		11
 /* DQS Rcvr En pass window CHA to CH B too large*/
-#define SB_CHA2BRCVREN		12
+#define SB_CH_A2B_RCVR_EN	12
 /* DQS Rcvr En pass window too small (far right of dynamic range)*/
-#define SB_SmallRCVR		13
+#define SB_SMALL_RCVR		13
 /* No DQS-DQ passing positions*/
-#define SB_NODQSPOS		14
+#define SB_NO_DQS_POS		14
 /* DQS-DQ passing window too small*/
-#define SB_SMALLDQS		15
+#define SB_SMALL_DQS		15
 
 /*===============================================================================
 	Local Configuration Status (DCTStatStruc.Status[31:0])
 ===============================================================================*/
 /* All DIMMs are Registered*/
-#define SB_Registered		0
+#define SB_REGISTERED		0
 /* All banks ECC capable*/
-#define SB_ECCDIMMs		1
+#define SB_ECC_DIMMS		1
 /* All banks Addr/CMD Parity capable*/
-#define SB_PARDIMMs		2
+#define SB_PAR_DIMMS		2
 /* Jedec ALL slots clock enable diag mode*/
-#define SB_DiagClks		3
+#define SB_DIAG_CLKS		3
 /* DCT in 128-bit mode operation*/
-#define SB_128bitmode		4
+#define SB_128_BIT_MODE		4
 /* DCT in 64-bit mux'ed mode.*/
-#define SB_64MuxedMode		5
+#define SB_64_MUXED_MODE		5
 /* 2T CMD timing mode is enabled.*/
-#define SB_2TMode		6
+#define SB_2T_MODE		6
 /* Remapping of Node Base on this Node to create a gap.*/
-#define SB_SWNodeHole		7
+#define SB_SW_NODE_HOLE		7
 /* Memory Hole created on this Node using HW remapping.*/
-#define SB_HWHole		8
+#define SB_HW_HOLE		8
 
 
 
@@ -501,44 +501,44 @@ struct DCTStatStruc {		/* A per Node structure*/
  * 1 = R4 (4-Rank Registered DIMMs in AMD server configuration)
  * 2 = S4 (Unbuffered SO-DIMMs)
  */
-#define NV_4RANKType		5
+#define NV_4_RANK_TYPE		5
 /* Value to set DcqBypassMax field (See Function 2, Offset 94h, [27:24] of BKDG for field definition).
  * 4 = 4 times bypass (normal for non-UMA systems)
  * 7 = 7 times bypass (normal for UMA systems)
  */
-#define NV_BYPMAX		6
+#define NV_BYP_MAX		6
 /* Value to set RdWrQByp field (See Function 2, Offset A0h, [3:2] of BKDG for field definition).
  * 2 = 8 times (normal for non-UMA systems)
  * 3 = 16 times (normal for UMA systems)
  */
-#define NV_RDWRQBYP		7
+#define NV_RD_WR_QBYP		7
 
 
 /* Dram Timing */
 /* User Memclock Mode (2-bits)
  * 0 = Auto, no user limit
- * 1 = Auto, user limit provided in NV_MemCkVal
- * 2 = Manual, user value provided in NV_MemCkVal
+ * 1 = Auto, user limit provided in NV_MEM_CK_VAL
+ * 2 = Manual, user value provided in NV_MEM_CK_VAL
  */
-#define NV_MCTUSRTMGMODE	10
+#define NV_MCT_USR_TMG_MODE	10
 /* Memory Clock Value (2-bits)
  * 0 = 200MHz
  * 1 = 266MHz
  * 2 = 333MHz
  * 3 = 400MHz
  */
-#define NV_MemCkVal		11
+#define NV_MEM_CK_VAL		11
 
 /* Dram Configuration */
 /* Dram Bank (chip-select) Interleaving (1-bits)
  * 0 = disable
  * 1 = enable
  */
-#define NV_BankIntlv		20
+#define NV_BANK_INTLV		20
 /* Turn on All DIMM clocks (1-bits)
  * 0 = normal
  * 1 = enable all memclocks*/
-#define NV_AllMemClks		21
+#define NV_ALL_MEM_CLKS		21
 /* SPD Check control bitmap (1-bits)
  * 0 = Exit current node init if any DIMM has SPD checksum error
  * 1 = Ignore faulty SPD checksums (Note: DIMM cannot be enabled)
@@ -548,17 +548,17 @@ struct DCTStatStruc {		/* A per Node structure*/
  * 0 = skip DQS training
  * 1 = perform DQS training
  */
-#define NV_DQSTrainCTL		23
+#define NV_DQS_TRAIN_CTL		23
 /* Node Memory Interleaving (1-bits)
  * 0 = disable
  * 1 = enable
  */
-#define NV_NodeIntlv		24
+#define NV_NODE_INTLV		24
 /* burstLength32 for 64-bit mode (1-bits)
  * 0 = disable (normal)
  * 1 = enable (4 beat burst when width is 64-bits)
  */
-#define NV_BurstLen32		25
+#define NV_BURST_LEN_32		25
 
 /* Dram Power */
 /* CKE based power down mode (1-bits)
@@ -575,7 +575,7 @@ struct DCTStatStruc {		/* A per Node structure*/
  * 0 = disable
  * 1 = enable
  */
-#define NV_CLKHZAltVidC3	32
+#define NV_CLK_HZ_ALT_VID_C3	32
 
 /* Memory Map/Mgt.*/
 
@@ -584,14 +584,14 @@ struct DCTStatStruc {		/* A per Node structure*/
  */
 #define NV_BottomIO		40
 /* Bottom of shared graphics dram (8-bits)
- * NV_BottomUMA[7:0]=Addr[31:24]
+ * NV_BOTTOM_UMA[7:0]=Addr[31:24]
  */
-#define NV_BottomUMA		41
+#define NV_BOTTOM_UMA		41
 /* Memory Hole Remapping (1-bits)
  * 0 = disable
  * 1 = enable
  */
-#define NV_MemHole		42
+#define NV_MEM_HOLE		42
 
 /* ECC */
 
@@ -600,30 +600,30 @@ struct DCTStatStruc {		/* A per Node structure*/
 /* ECC MCE enable*/
 #define NV_NBECC		52
 /* Chip-Kill ECC Mode enable*/
-#define NV_ChipKill		53
+#define NV_CHIP_KILL		53
 /* Dram ECC Redirection enable*/
-#define NV_ECCRedir		54
+#define NV_ECC_REDIR		54
 /* Dram ECC Background Scrubber CTL*/
-#define NV_DramBKScrub		55
+#define NV_DRAM_BK_SCRUB		55
 /* L2 ECC Background Scrubber CTL*/
-#define NV_L2BKScrub		56
+#define NV_L2_BK_SCRUB		56
 /* DCache ECC Background Scrubber CTL*/
-#define NV_DCBKScrub		57
-/* Chip Select Spare Control bit 0:
- * 0 = disable Spare
- * 1 = enable Spare
- * Chip Select Spare Control bit 1-4:
+#define NV_DC_BK_SCRUB		57
+/* Chip Select spare Control bit 0:
+ * 0 = disable spare
+ * 1 = enable spare
+ * Chip Select spare Control bit 1-4:
  * Reserved, must be zero
  */
-#define NV_CS_SpareCTL		58
+#define NV_CS_SPARE_CTL		58
 
 /* Parity Enable */
-#define NV_Parity		60
+#define NV_PARITY		60
 /* SyncOnUnEccEn control
  * 0 = disable
  * 1 = enable
  */
-#define NV_SyncOnUnEccEn	61
+#define NV_SYNC_ON_UN_ECC_EN	61
 
 
 /* global function */

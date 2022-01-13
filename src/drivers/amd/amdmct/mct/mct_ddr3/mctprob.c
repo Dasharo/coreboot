@@ -8,7 +8,7 @@ void mct_BeforeDQSTrainSamp(struct DCTStatStruc *pDCTstat)
 {
 	u32 val;
 
-	if (pDCTstat->LogicalCPUID & AMD_DR_Bx) {
+	if (pDCTstat->logical_cpuid & AMD_DR_Bx) {
 		Set_NB32(pDCTstat->dev_dct, 0x98, 0x0D004007);
 		val = Get_NB32(pDCTstat->dev_dct, 0x9C);
 		val |= 0x3FF;
@@ -25,7 +25,7 @@ void mct_BeforeDQSTrainSamp(struct DCTStatStruc *pDCTstat)
 
 void mct_ExtMCTConfig_Bx(struct DCTStatStruc *pDCTstat)
 {
-	if (pDCTstat->LogicalCPUID & (AMD_DR_Bx)) {
+	if (pDCTstat->logical_cpuid & (AMD_DR_Bx)) {
 		Set_NB32(pDCTstat->dev_dct, 0x11C, 0x0FE40FC0 | 1 << 29/* FlushWrOnStpGnt */);
 	}
 }

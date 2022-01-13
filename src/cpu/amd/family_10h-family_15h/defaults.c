@@ -80,10 +80,10 @@ static void AMD_Errata281(u8 node, u64 revision, u32 platform)
 }
 
 /**
- * AMD_SetHtPhyRegister - Use the HT link's HT Phy portal registers to update
+ * amd_set_ht_phy_register - Use the HT link's HT Phy portal registers to update
  * a phy setting for that link.
  */
-static void AMD_SetHtPhyRegister(u8 node, u8 link, u8 entry)
+static void amd_set_ht_phy_register(u8 node, u8 link, u8 entry)
 {
 	u32 phyReg;
 	u32 phyBase;
@@ -155,10 +155,10 @@ static void set_ht_phy_defaults(u8 node)
 			 * through the sublink zeros in function zero.
 			 */
 			for (j = 0; j < 4; j++) {
-				if (AMD_CpuFindCapability(node, j, &offset)) {
+				if (amd_cpu_find_capability(node, j, &offset)) {
 					if (AMD_checkLinkType(node, offset)
 						& fam10_htphy_default[i].linktype) {
-						AMD_SetHtPhyRegister(node, j, i);
+						amd_set_ht_phy_register(node, j, i);
 					}
 				} else {
 					/* No more capabilities,
@@ -287,7 +287,7 @@ struct ht_link_state {
 	u8 req_tok_0;
 };
 
-static void set_L3FreeListCBC(u8 node)
+static void set_l3_free_list_mbc(u8 node)
 {
 	u8 cu_enabled;
 	u8 compute_unit_buffer_count;
@@ -369,7 +369,7 @@ static void set_ht_link_buf_counts(u8 node, u8 link, struct ht_link_state *link_
 {
 	u8 offset;
 
-	if (!AMD_CpuFindCapability(node, link, &offset))
+	if (!amd_cpu_find_capability(node, link, &offset))
 		return;
 
 	link_state->link_real = (offset - 0x80) / 0x20;
@@ -470,7 +470,7 @@ static void set_ht_link_to_xcs_token_counts(u8 node, u8 link, struct ht_link_sta
 	u8 sockets = 2;
 	u8 sockets_populated = 2;
 
-	if (!AMD_CpuFindCapability(node, link, &offset))
+	if (!amd_cpu_find_capability(node, link, &offset))
 		return;
 
 	/* Set defaults */
@@ -592,7 +592,7 @@ static u8 check_if_isochronous_link_present(u8 node)
 	isochronous_link_present = 0;
 
 	for (link = 0; link < 4; link++) {
-		if (AMD_CpuFindCapability(node, link, &offset)) {
+		if (amd_cpu_find_capability(node, link, &offset)) {
 			isochronous = pci_read_config32(NODE_PCI(node, 0), offset + 4);
 			isochronous = (isochronous >> 12) & 0x1;
 
@@ -656,7 +656,7 @@ static void setup_ht_buffer_allocation(u8 node)
 	struct ht_link_state link_state[4];
 	u8 link;
 
-	set_L3FreeListCBC(node);
+	set_l3_free_list_mbc(node);
 
 	for (link = 0; link < 4; link++) {
 		set_ht_link_buf_counts(node, link, &link_state[link]);
@@ -673,7 +673,7 @@ static void setup_ht_buffer_allocation(u8 node)
 
 }
 
-static void AMD_SetupPSIVID_d(u32 platform_type, u8 node)
+static void amd_setup_psivid_d(u32 platform_type, u8 node)
 {
 	u32 dword;
 	int i;
@@ -717,7 +717,7 @@ void cpuSetAMDPCI(u8 node)
 	platform = get_platform_type();
 
 	/* Set PSIVID offset which is not table driven */
-	AMD_SetupPSIVID_d(platform, node);
+	amd_setup_psivid_d(platform, node);
 	configure_pci_defaults(node);
 	configure_ht_stop_tristate(node);
 	set_ht_phy_defaults(node);

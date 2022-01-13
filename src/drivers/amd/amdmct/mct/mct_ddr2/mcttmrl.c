@@ -91,7 +91,7 @@ void TrainMaxReadLatency_D(struct MCTStatStruc *pMCTstat,
 		if (!pDCTstat->NodePresent)
 			break;
 
-		if (pDCTstat->DCTSysLimit)
+		if (pDCTstat->dct_sys_limit)
 			maxRdLatencyTrain_D(pMCTstat, pDCTstat);
 	}
 }
@@ -138,9 +138,9 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *pMCTstat,
 
 	for (Channel = 0; Channel < 2; Channel++) {
 		print_debug_dqs("\tMaxRdLatencyTrain51: Channel ",Channel, 1);
-		pDCTstat->Channel = Channel;
+		pDCTstat->channel = Channel;
 
-		if ((pDCTstat->Status & (1 << SB_128bitmode)) && Channel)
+		if ((pDCTstat->status & (1 << SB_128_BIT_MODE)) && Channel)
 			break;		/*if ganged mode, skip DCT 1 */
 
 		TestAddr0 = GetMaxRdLatTestAddr_D(pMCTstat, pDCTstat, Channel, &RcvrEnDly,	 &valid);
@@ -272,7 +272,7 @@ static u32 GetMaxRdLatTestAddr_D(struct MCTStatStruc *pMCTstat,
 
 	bn = 8;
 
-	if (pDCTstat->Status & (1 << SB_128bitmode)) {
+	if (pDCTstat->status & (1 << SB_128_BIT_MODE)) {
 		ch_start = 0;
 		ch_end = 2;
 	} else {
@@ -333,7 +333,7 @@ u8 mct_GetStartMaxRdLat_D(struct MCTStatStruc *pMCTstat,
 
 	/* If registered DIMMs are being used then add 1 MEMCLK to the sub-total*/
 	val = Get_NB32(dev, 0x90 + reg_off);
-	if (!(val & (1 << UnBuffDimm)))
+	if (!(val & (1 << UN_BUFF_DIMM)))
 		SubTotal += 2;
 
 	/*If the address prelaunch is setup for 1/2 MEMCLKs then add 1,

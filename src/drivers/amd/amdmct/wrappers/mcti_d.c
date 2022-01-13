@@ -110,45 +110,45 @@ u16 mctGet_NVbits(u8 index)
 		val = 0;	/* memory bus ECC not capable */
 #endif
 		break;
-	case NV_4RANKType:
+	case NV_4_RANK_TYPE:
 		/* Quad Rank DIMM slot type */
 		val = 0;	/* normal */
 		//val = 1;	/* R4 (registered DIMMs in AMD server configuration) */
 		//val = 2;	/* S4 (Unbuffered SO-DIMMS) */
 		break;
-	case NV_BYPMAX:
+	case NV_BYP_MAX:
 #if !CONFIG(GFXUMA)
 		val = 4;
 #elif CONFIG(GFXUMA)
 		val = 7;
 #endif
 		break;
-	case NV_RDWRQBYP:
+	case NV_RD_WR_QBYP:
 #if !CONFIG(GFXUMA)
 		val = 2;
 #elif CONFIG(GFXUMA)
 		val = 3;
 #endif
 		break;
-	case NV_MCTUSRTMGMODE:
+	case NV_MCT_USR_TMG_MODE:
 		val = 0;	/* Automatic (recommended) */
 		//val = 1;	/* Limited */
 		//val = 2;	/* Manual */
 		break;
-	case NV_MemCkVal:
+	case NV_MEM_CK_VAL:
 		//val = 0;	/* 200MHz */
 		//val = 1;	/* 266MHz */
 		val = 2;	/* 333MHz */
 		break;
-	case NV_BankIntlv:
+	case NV_BANK_INTLV:
 		/* Bank (chip select) interleaving */
 		val =  get_uint_option("interleave_chip_selects", 1);
 		break;
-	case NV_MemHole:
+	case NV_MEM_HOLE:
 		//val = 0;	/* Disabled */
 		val = 1;	/* Enabled (recommended) */
 		break;
-	case NV_AllMemClks:
+	case NV_ALL_MEM_CLKS:
 		val = 0;	/* Normal (only to slots that have enabled DIMMs) */
 		//val = 1;	/* Enable all memclocks */
 		break;
@@ -163,14 +163,14 @@ u16 mctGet_NVbits(u8 index)
 			val = 2;
 
 		break;
-	case NV_DQSTrainCTL:
+	case NV_DQS_TRAIN_CTL:
 		//val = 0;	/*Skip dqs training */
 		val = 1;	/* Perform dqs training */
 		break;
-	case NV_NodeIntlv:
+	case NV_NODE_INTLV:
 		val = get_uint_option("interleave_nodes", 0);
 		break;
-	case NV_BurstLen32:
+	case NV_BURST_LEN_32:
 #if !CONFIG(GFXUMA)
 		val = 0;	/* 64 byte mode */
 #elif CONFIG(GFXUMA)
@@ -185,12 +185,12 @@ u16 mctGet_NVbits(u8 index)
 		val = 0;	/* per channel control */
 		//val = 1;	/* per chip select control */
 		break;
-	case NV_CLKHZAltVidC3:
+	case NV_CLK_HZ_ALT_VID_C3:
 		val = 0;	/* disable */
 		//val = 1;	/* enable */
 		break;
 	case NV_BottomIO:
-	case NV_BottomUMA:
+	case NV_BOTTOM_UMA:
 		/* address bits [31:24] */
 #if !CONFIG(GFXUMA)
 		val = (CONFIG_MMCONF_BASE_ADDRESS >> 24);
@@ -216,21 +216,21 @@ u16 mctGet_NVbits(u8 index)
 			val = 0;	/* Disable */
 
 		break;
-	case NV_ChipKill:
+	case NV_CHIP_KILL:
 		if (CONFIG(SYSTEM_TYPE_SERVER))
 			val = 1;	/* Enable */
 		else
 			val = 0;	/* Disable */
 
 		break;
-	case NV_ECCRedir:
+	case NV_ECC_REDIR:
 		/*
 		 * 0: Disable
 		 * 1: Enable
 		 */
 		val = get_uint_option("ECC_redirection", 0);
 		break;
-	case NV_DramBKScrub:
+	case NV_DRAM_BK_SCRUB:
 		/*
 		 * 0x00: Disabled
 		 * 0x01: 40ns
@@ -258,20 +258,20 @@ u16 mctGet_NVbits(u8 index)
 		 */
 		val = get_uint_option("ecc_scrub_rate", 6);
 		break;
-	case NV_L2BKScrub:
+	case NV_L2_BK_SCRUB:
 		val = 0;	/* Disabled - See L2Scrub in BKDG */
 		break;
 	case NV_L3BKScrub:
 		val = 0;	/* Disabled - See L3Scrub in BKDG */
 		break;
-	case NV_DCBKScrub:
+	case NV_DC_BK_SCRUB:
 		val = 0;	/* Disabled - See DcacheScrub in BKDG */
 		break;
-	case NV_CS_SpareCTL:
+	case NV_CS_SPARE_CTL:
 		val = 0;	/* Disabled */
 		//val = 1;	/* Enabled */
 		break;
-	case NV_SyncOnUnEccEn:
+	case NV_SYNC_ON_UN_ECC_EN:
 		val = 0;	/* Disabled */
 		//val = 1;	/* Enabled */
 		break;
@@ -302,7 +302,7 @@ void mctHookAfterDIMMpre(void)
 
 void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
 {
-	pDCTstat->PresetmaxFreq = mctGet_NVbits(NV_MAX_MEMCLK);
+	pDCTstat->preset_max_freq = mctGet_NVbits(NV_MAX_MEMCLK);
 
 	/* Determine the number of installed DIMMs */
 	int ch1_count = 0;
@@ -315,9 +315,9 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
 	u8 dimm;
 	int i;
 	for (i = 0; i < 15; i = i + 2) {
-		if (pDCTstat->DIMMValid & (1 << i))
+		if (pDCTstat->dimm_valid & (1 << i))
 			ch1_count++;
-		if (pDCTstat->DIMMValid & (1 << (i + 1)))
+		if (pDCTstat->dimm_valid & (1 << (i + 1)))
 			ch2_count++;
 	}
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i = i + 2) {
@@ -333,9 +333,9 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
 
 #if CONFIG(DIMM_DDR3)
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i = i + 2) {
-		if (pDCTstat->DIMMValid & (1 << i))
+		if (pDCTstat->dimm_valid & (1 << i))
 			ch1_voltage |= pDCTstat->DimmConfiguredVoltage[i];
-		if (pDCTstat->DIMMValid & (1 << (i + 1)))
+		if (pDCTstat->dimm_valid & (1 << (i + 1)))
 			ch2_voltage |= pDCTstat->DimmConfiguredVoltage[i + 1];
 	}
 #endif
@@ -349,10 +349,10 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
 	}
 
 	/* Set limits if needed */
-	pDCTstat->PresetmaxFreq = mct_MaxLoadFreq(MAX(ch1_count, ch2_count),
+	pDCTstat->preset_max_freq = mct_MaxLoadFreq(MAX(ch1_count, ch2_count),
 					MAX(highest_rank_count[0], highest_rank_count[1]),
 					(ch1_registered || ch2_registered),
-					(ch1_voltage | ch2_voltage), pDCTstat->PresetmaxFreq);
+					(ch1_voltage | ch2_voltage), pDCTstat->preset_max_freq);
 }
 
 void mctGet_DIMMAddr(struct DCTStatStruc *pDCTstat, u32 node)
@@ -362,8 +362,8 @@ void mctGet_DIMMAddr(struct DCTStatStruc *pDCTstat, u32 node)
 	struct mem_controller *ctrl = &(sysinfo->ctrl[node]);
 
 	for (j = 0; j < DIMM_SOCKETS; j++) {
-		pDCTstat->DIMMAddr[j * 2] = ctrl->spd_addr[j] & 0xff;
-		pDCTstat->DIMMAddr[j * 2 + 1] = ctrl->spd_addr[DIMM_SOCKETS + j] & 0xff;
+		pDCTstat->dimm_addr[j * 2] = ctrl->spd_addr[j] & 0xff;
+		pDCTstat->dimm_addr[j * 2 + 1] = ctrl->spd_addr[DIMM_SOCKETS + j] & 0xff;
 	}
 
 }
@@ -460,7 +460,7 @@ void vErratum372(struct DCTStatStruc *pDCTstat)
 	int nbPstate1supported = !(msr.hi & (1 << (NB_GfxNbPstateDis -32)));
 
 	// is this the right way to check for NB pstate 1 or DDR3-1333 ?
-	if (((pDCTstat->PresetmaxFreq == 1333) || (nbPstate1supported))
+	if (((pDCTstat->preset_max_freq == 1333) || (nbPstate1supported))
 	    && (!pDCTstat->GangedMode)) {
 		/* DisableCf8ExtCfg */
 		msr.hi &= ~(3 << (51 - 32));
@@ -499,7 +499,7 @@ void mctHookBeforeAnyTraining(struct MCTStatStruc *pMCTstat, struct DCTStatStruc
 u32 mct_AdjustSPDTimings(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA, u32 val)
 {
 	if (pDCTstatA->LogicalCPUID & AMD_DR_Bx) {
-		if (pDCTstatA->Status & (1 << SB_Registered)) {
+		if (pDCTstatA->status & (1 << SB_REGISTERED)) {
 			val ++;
 		}
 	}

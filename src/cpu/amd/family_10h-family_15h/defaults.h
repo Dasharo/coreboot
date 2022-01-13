@@ -367,7 +367,7 @@ static const struct {
 						 * [6] CpuErrDis = 1,
 						 * [4] SyncPktPropDis = 1,
 						 * [3] SyncPktGenDis = 1,
-						 * [2] SyncOnUcEccEn = 1
+						 * [2] SYNC_ON_UC_ECC_EN = 1
 						 */
 	/* Hardware Thermal Control */
 	{ 3, 0x64, (AMD_FAM10_ALL | AMD_FAM15_ALL), AMD_PTYPE_ALL,

@@ -249,7 +249,7 @@ static void stop_car_and_cpu(u8 skip_sharedc_config, u32 apicid)
 
 		/* Disable L2 IC to L3 connection (Only for CAR) */
 		msr = rdmsr(BU_CFG2_MSR);
-		msr.lo &= ~(1 << ClLinesToNbDis);
+		msr.lo &= ~(1 << CL_LINES_TO_NB_DIS);
 		wrmsr(BU_CFG2_MSR, msr);
 	} else {
 		/* Family 15h or later
@@ -308,7 +308,7 @@ static u32 is_core0_started(u32 nodeid)
 {
 	u32 htic;
 	htic = pci_read_config32(NODE_PCI(nodeid, 0), HT_INIT_CONTROL);
-	htic &= HTIC_ColdR_Detect;
+	htic &= HTIC_COLDR_DETECT;
 	return htic;
 }
 

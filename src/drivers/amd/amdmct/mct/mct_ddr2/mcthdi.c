@@ -12,6 +12,6 @@ void mct_DramInit_Hw_D(struct MCTStatStruc *pMCTstat,
 	/*flag for selecting HW/SW DRAM Init HW DRAM Init */
 	reg = 0x90 + 0x100 * dct; /*DRAM Configuration Low */
 	val = Get_NB32(dev, reg);
-	val |= (1 << InitDram);
+	val |= (1 << INIT_DRAM);
 	Set_NB32(dev, reg, val);
 }

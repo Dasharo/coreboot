@@ -30,8 +30,8 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 	if (DctSelIntLvAddr & 1) {
 		DctSelIntLvAddr >>= 1;
 		HoleSize = 0;
-		if ((pMCTstat->GStatus & (1 << GSB_SoftHole)) ||
-		     (pMCTstat->GStatus & (1 << GSB_HWHole))) {
+		if ((pMCTstat->GStatus & (1 << GSB_SOFT_HOLE)) ||
+		     (pMCTstat->GStatus & (1 << GSB_HW_HOLE))) {
 			if (pMCTstat->HoleBase) {
 				HoleBase = pMCTstat->HoleBase >> 8;
 				HoleSize = HoleBase & 0xFFFF0000;
@@ -42,7 +42,7 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 		while (Node < MAX_NODES_SUPPORTED) {
 			pDCTstat = pDCTstatA + Node;
 			val = Get_NB32(pDCTstat->dev_map, 0xF0);
-			if (val & (1 << DramHoleValid))
+			if (val & (1 << DRAM_HOLE_VALID))
 				HoleValid = 1;
 			if (!pDCTstat->GangedMode && pDCTstat->DIMMValidDCT[0] && pDCTstat->DIMMValidDCT[1]) {
 				DramBase = pDCTstat->NodeSysBase >> 8;
@@ -102,9 +102,9 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 				}
 			}
 			print_tx("InterleaveChannels_D: Node ", Node);
-			print_tx("InterleaveChannels_D: Status ", pDCTstat->Status);
-			print_tx("InterleaveChannels_D: ErrStatus ", pDCTstat->ErrStatus);
-			print_tx("InterleaveChannels_D: ErrCode ", pDCTstat->ErrCode);
+			print_tx("InterleaveChannels_D: status ", pDCTstat->status);
+			print_tx("InterleaveChannels_D: err_status ", pDCTstat->err_status);
+			print_tx("InterleaveChannels_D: err_code ", pDCTstat->err_code);
 			Node++;
 		}
 	}

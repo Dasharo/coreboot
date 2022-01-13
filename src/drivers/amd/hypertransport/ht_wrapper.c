@@ -371,13 +371,13 @@ u32 get_nodes(void)
 }
 
 /**
- * AMD_CpuFindCapability - Traverse PCI capability list to find host HT links.
+ * amd_cpu_find_capability - Traverse PCI capability list to find host HT links.
  *  HT Phy operations are not valid on links that aren't present, so this
  *  prevents invalid accesses.
  *
  * Returns the offset of the link register.
  */
-bool AMD_CpuFindCapability(u8 node, u8 cap_count, u8 *offset)
+bool amd_cpu_find_capability(u8 node, u8 cap_count, u8 *offset)
 {
 	u32 reg;
 	u32 val;

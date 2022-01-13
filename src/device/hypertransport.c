@@ -513,16 +513,16 @@ bool ht_is_non_coherent_link(struct bus *link)
 	u32 link_type;
 	do {
 		link_type = pci_read_config32(link->dev, link->cap + 0x18);
-	} while (link_type & ConnectionPending);
+	} while (link_type & CONNECTION_PENDING);
 
-	if (!(link_type & LinkConnected))
+	if (!(link_type & LINK_CONNECTED))
 		return false;
 
 	do {
 		link_type = pci_read_config32(link->dev, link->cap + 0x18);
-	} while (!(link_type & InitComplete));
+	} while (!(link_type & INIT_COMPLETE));
 
-	return !!(link_type & NonCoherent);
+	return !!(link_type & NON_COHERENT);
 }
 
 /** Default device operations for hypertransport bridges */

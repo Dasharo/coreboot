@@ -23,28 +23,28 @@ void PrepareC_DCT(struct MCTStatStruc *pMCTstat,
 {
 	u8 dimm;
 	u16 DimmValid;
-	u16 Dimmx8Present;
+	u16 dimm_x8_present;
 
 	dct &= 1;
 
 	pDCTstat->C_DCTPtr[dct]->DctTrain = dct;
 
 	if (dct == 1) {
-		Dimmx8Present = pDCTstat->Dimmx8Present >> 1;
+		dimm_x8_present = pDCTstat->dimm_x8_present >> 1;
 	} else
-		Dimmx8Present = pDCTstat->Dimmx8Present;
-	Dimmx8Present &= 0x55;
+		dimm_x8_present = pDCTstat->dimm_x8_present;
+	dimm_x8_present &= 0x55;
 
-	pDCTstat->C_DCTPtr[dct]->MaxDimmsInstalled = pDCTstat->MAdimms[dct];
+	pDCTstat->C_DCTPtr[dct]->MaxDimmsInstalled = pDCTstat->ma_dimms[dct];
 	DimmValid = pDCTstat->DIMMValidDCT[dct];
 
-	pDCTstat->C_DCTPtr[dct]->NodeId = pDCTstat->Node_ID;
-	pDCTstat->C_DCTPtr[dct]->LogicalCPUID = pDCTstat->LogicalCPUID;
+	pDCTstat->C_DCTPtr[dct]->NodeId = pDCTstat->node_id;
+	pDCTstat->C_DCTPtr[dct]->LogicalCPUID = pDCTstat->logical_cpuid;
 
 	for (dimm = 0; dimm < MAX_DIMMS; dimm++) {
 		if (DimmValid & (1 << (dimm << 1)))
 			pDCTstat->C_DCTPtr[dct]->DimmPresent[dimm] = 1;
-		if (Dimmx8Present & (1 << (dimm << 1)))
+		if (dimm_x8_present & (1 << (dimm << 1)))
 			pDCTstat->C_DCTPtr[dct]->DimmX8Present[dimm] = 1;
 	}
 
@@ -57,19 +57,19 @@ void PrepareC_DCT(struct MCTStatStruc *pMCTstat,
 	if (!(pDCTstat->GangedMode & (1 << 0)) && (dct == 1))
 		pDCTstat->C_DCTPtr[dct]->DctCSPresent = pDCTstat->CSPresent_DCT[0];
 
-	if (pDCTstat->Status & (1 << SB_Registered)) {
-		pDCTstat->C_DCTPtr[dct]->Status[DCT_STATUS_REGISTERED] = 1;
-		pDCTstat->C_DCTPtr[dct]->Status[DCT_STATUS_OnDimmMirror] = 0;
+	if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		pDCTstat->C_DCTPtr[dct]->status[DCT_STATUS_REGISTERED] = 1;
+		pDCTstat->C_DCTPtr[dct]->status[DCT_STATUS_OnDimmMirror] = 0;
 	} else {
 		if (pDCTstat->MirrPresU_NumRegR > 0)
-			pDCTstat->C_DCTPtr[dct]->Status[DCT_STATUS_OnDimmMirror] = 1;
-		pDCTstat->C_DCTPtr[dct]->Status[DCT_STATUS_REGISTERED] = 0;
+			pDCTstat->C_DCTPtr[dct]->status[DCT_STATUS_OnDimmMirror] = 1;
+		pDCTstat->C_DCTPtr[dct]->status[DCT_STATUS_REGISTERED] = 0;
 	}
 
-	if (pDCTstat->Status & (1 << SB_LoadReduced)) {
-		pDCTstat->C_DCTPtr[dct]->Status[DCT_STATUS_LOAD_REDUCED] = 1;
+	if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		pDCTstat->C_DCTPtr[dct]->status[DCT_STATUS_LOAD_REDUCED] = 1;
 	} else {
-		pDCTstat->C_DCTPtr[dct]->Status[DCT_STATUS_LOAD_REDUCED] = 0;
+		pDCTstat->C_DCTPtr[dct]->status[DCT_STATUS_LOAD_REDUCED] = 0;
 	}
 
 	pDCTstat->C_DCTPtr[dct]->RegMan1Present = pDCTstat->RegMan1Present;
@@ -78,9 +78,9 @@ void PrepareC_DCT(struct MCTStatStruc *pMCTstat,
 		u8  DimmRanks;
 		if (DimmValid & (1 << (dimm << 1))) {
 			DimmRanks = 1;
-			if (pDCTstat->DimmDRPresent & (1 << ((dimm << 1) + dct)))
+			if (pDCTstat->dimm_dr_present & (1 << ((dimm << 1) + dct)))
 				DimmRanks = 2;
-			else if (pDCTstat->DimmQRPresent & (1 << ((dimm << 1) + dct)))
+			else if (pDCTstat->dimm_qr_present & (1 << ((dimm << 1) + dct)))
 				DimmRanks = 4;
 		} else
 			DimmRanks = 0;
@@ -201,15 +201,15 @@ static void ChangeMemClk(struct MCTStatStruc *pMCTstat,
 		}
 	}
 
-	/* Program F2x[1, 0]94[MemClkFreqVal] = 0. */
+	/* Program F2x[1, 0]94[MEM_CLK_FREQ_VAL] = 0. */
 	if (DCT0Present) {
 		dword = Get_NB32_DCT(pDCTstat->dev_dct, 0, 0x94);
-		dword &= ~(1 << MemClkFreqVal);
+		dword &= ~(1 << MEM_CLK_FREQ_VAL);
 		Set_NB32_DCT(pDCTstat->dev_dct, 0, 0x94, dword);
 	}
 	if (DCT1Present) {
 		dword = Get_NB32_DCT(pDCTstat->dev_dct, 1, 0x94);
-		dword &= ~(1 << MemClkFreqVal);
+		dword &= ~(1 << MEM_CLK_FREQ_VAL);
 		Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x94, dword);
 	}
 
@@ -249,15 +249,15 @@ static void ChangeMemClk(struct MCTStatStruc *pMCTstat,
 		}
 	}
 
-	/* Program F2x[1, 0]94[MemClkFreqVal] = 1. */
+	/* Program F2x[1, 0]94[MEM_CLK_FREQ_VAL] = 1. */
 	if (DCT0Present) {
 		dword = Get_NB32_DCT(pDCTstat->dev_dct, 0, 0x94);
-		dword |= 1 << MemClkFreqVal;
+		dword |= 1 << MEM_CLK_FREQ_VAL;
 		Set_NB32_DCT(pDCTstat->dev_dct, 0, 0x94, dword);
 	}
 	if (DCT1Present) {
 		dword = Get_NB32_DCT(pDCTstat->dev_dct, 1, 0x94);
-		dword |= 1 << MemClkFreqVal;
+		dword |= 1 << MEM_CLK_FREQ_VAL;
 		Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x94, dword);
 	}
 
@@ -375,9 +375,9 @@ void SetTargetFreq(struct MCTStatStruc *pMCTstat,
 
 	/*
 	 * Program F2x[1,0]9C_x08[DisAutoComp]=1
-	 * Program F2x[1,0]94[MemClkFreqVal] = 0.
+	 * Program F2x[1,0]94[MEM_CLK_FREQ_VAL] = 0.
 	 * Program F2x[1,0]94[MemClkFreq] to specify the target MEMCLK frequency.
-	 * Program F2x[1,0]94[MemClkFreqVal] = 1.
+	 * Program F2x[1,0]94[MEM_CLK_FREQ_VAL] = 1.
 	 * Wait until F2x[1,0]94[FreqChgInProg]=0.
 	 * Program F2x[1,0]9C_x08[DisAutoComp]=0
 	 */
@@ -418,7 +418,7 @@ void SetTargetFreq(struct MCTStatStruc *pMCTstat,
 	/* wait for 500 MCLKs after ExitSelfRef, 500*2.5ns = 1250ns */
 	mct_Wait(250);
 
-	if (pDCTstat->Status & (1 << SB_Registered)) {
+	if (pDCTstat->status & (1 << SB_REGISTERED)) {
 		u8 DCT0Present, DCT1Present;
 
 		DCT0Present = pDCTstat->DIMMValidDCT[0];
@@ -428,11 +428,11 @@ void SetTargetFreq(struct MCTStatStruc *pMCTstat,
 			DCT1Present = pDCTstat->DIMMValidDCT[1];
 
 		if (!DCT1Present)
-			pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[0];
+			pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
 		else if (pDCTstat->GangedMode)
-			pDCTstat->CSPresent = 0;
+			pDCTstat->cs_present = 0;
 		else
-			pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[1];
+			pDCTstat->cs_present = pDCTstat->CSPresent_DCT[1];
 
 		if (pDCTstat->DIMMValidDCT[0]) {
 			FreqChgCtrlWrd(pMCTstat, pDCTstat, 0);
@@ -451,7 +451,7 @@ static void Modify_OnDimmMirror(struct DCTStatStruc *pDCTstat, u8 dct, u8 set)
 	u32 reg = 0x44;
 	while (reg < 0x60) {
 		val = Get_NB32_DCT(pDCTstat->dev_dct, dct, reg);
-		if (val & (1 << CSEnable))
+		if (val & (1 << CS_ENABLE))
 			set ? (val |= 1 << onDimmMirror) : (val &= ~(1 << onDimmMirror));
 		Set_NB32_DCT(pDCTstat->dev_dct, dct, reg, val);
 		reg += 8;
@@ -461,7 +461,7 @@ static void Modify_OnDimmMirror(struct DCTStatStruc *pDCTstat, u8 dct, u8 set)
 void Restore_OnDimmMirror(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat)
 {
-	if (pDCTstat->LogicalCPUID & (AMD_DR_Bx /* | AMD_RB_C0 */)) { /* We dont support RB-C0 now */
+	if (pDCTstat->logical_cpuid & (AMD_DR_Bx /* | AMD_RB_C0 */)) { /* We dont support RB-C0 now */
 		if (pDCTstat->MirrPresU_NumRegR & 0x55)
 			Modify_OnDimmMirror(pDCTstat, 0, 1); /* dct = 0, set */
 		if (pDCTstat->MirrPresU_NumRegR & 0xAA)
@@ -471,7 +471,7 @@ void Restore_OnDimmMirror(struct MCTStatStruc *pMCTstat,
 void Clear_OnDimmMirror(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat)
 {
-	if (pDCTstat->LogicalCPUID & (AMD_DR_Bx /* | AMD_RB_C0 */)) { /* We dont support RB-C0 now */
+	if (pDCTstat->logical_cpuid & (AMD_DR_Bx /* | AMD_RB_C0 */)) { /* We dont support RB-C0 now */
 		if (pDCTstat->MirrPresU_NumRegR & 0x55)
 			Modify_OnDimmMirror(pDCTstat, 0, 0); /* dct = 0, clear */
 		if (pDCTstat->MirrPresU_NumRegR & 0xAA)

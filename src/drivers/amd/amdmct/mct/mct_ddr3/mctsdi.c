@@ -12,7 +12,7 @@ u8 fam15_dimm_dic(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 pa
 	u8 dic;
 
 	/* Calculate DIC based on recommendations in MR1_dct[1:0] */
-	if (pDCTstat->Status & (1 << SB_LoadReduced)) {
+	if (pDCTstat->status & (1 << SB_LoadReduced)) {
 		/* TODO
 		* LRDIMM unimplemented
 		*/
@@ -27,7 +27,7 @@ u8 fam15_dimm_dic(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 pa
 u8 fam15_rttwr(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type)
 {
 	u8 term = 0;
-	u8 number_of_dimms = pDCTstat->MAdimms[dct];
+	u8 number_of_dimms = pDCTstat->ma_dimms[dct];
 	u8 frequency_index;
 	u8 rank_count = pDCTstat->DimmRanks[(dimm * 2) + dct];
 
@@ -43,11 +43,11 @@ u8 fam15_rttwr(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 packa
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
 	if (is_fam15h()) {
-		if (pDCTstat->Status & (1 << SB_LoadReduced)) {
+		if (pDCTstat->status & (1 << SB_LoadReduced)) {
 			/* TODO
 			 * LRDIMM unimplemented
 			 */
-		} else if (pDCTstat->Status & (1 << SB_Registered)) {
+		} else if (pDCTstat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			if (package_type == PT_GR) {
 				/* Socket G34: Fam15h BKDG v3.14 Table 57 */
@@ -261,7 +261,7 @@ u8 fam15_rttwr(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 packa
 u8 fam15_rttnom(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type)
 {
 	u8 term = 0;
-	u8 number_of_dimms = pDCTstat->MAdimms[dct];
+	u8 number_of_dimms = pDCTstat->ma_dimms[dct];
 	u8 frequency_index;
 
 	u8 rank_count_dimm0;
@@ -275,11 +275,11 @@ u8 fam15_rttnom(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 pack
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
 	if (is_fam15h()) {
-		if (pDCTstat->Status & (1 << SB_LoadReduced)) {
+		if (pDCTstat->status & (1 << SB_LoadReduced)) {
 			/* TODO
 			 * LRDIMM unimplemented
 			 */
-		} else if (pDCTstat->Status & (1 << SB_Registered)) {
+		} else if (pDCTstat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			if (package_type == PT_GR) {
 				/* Socket G34: Fam15h BKDG v3.14 Table 57 */
@@ -664,7 +664,7 @@ static void mct_DCTAccessDone(struct DCTStatStruc *pDCTstat, u8 dct)
 
 	do {
 		val = Get_NB32_DCT(dev, dct, 0x98);
-	} while (!(val & (1 << DctAccessDone)));
+	} while (!(val & (1 << DCT_ACCESS_DONE)));
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
@@ -674,7 +674,7 @@ static u32 swapAddrBits(struct DCTStatStruc *pDCTstat, u32 MR_register_setting, 
 	u16 word;
 	u32 ret;
 
-	if (!(pDCTstat->Status & (1 << SB_Registered))) {
+	if (!(pDCTstat->status & (1 << SB_REGISTERED))) {
 		word = pDCTstat->MirrPresU_NumRegR;
 		if (dct == 0) {
 			word &= 0x55;
@@ -850,9 +850,9 @@ u32 mct_MR1(struct MCTStatStruc *pMCTstat,
 		ret |= (MrsChipSel << 21);
 
 		/* Determine if TQDS should be set */
-		if ((pDCTstat->Dimmx8Present & (1 << dimm))
-			&& (((dimm & 0x1) ? (pDCTstat->Dimmx4Present & 0x55) : (pDCTstat->Dimmx4Present & 0xaa)) != 0x0)
-			&& (pDCTstat->Status & (1 << SB_LoadReduced)))
+		if ((pDCTstat->dimm_x8_present & (1 << dimm))
+			&& (((dimm & 0x1) ? (pDCTstat->dimm_x4_present & 0x55) : (pDCTstat->dimm_x4_present & 0xaa)) != 0x0)
+			&& (pDCTstat->status & (1 << SB_LoadReduced)))
 			tqds = 1;
 
 		/* Obtain RttNom */
@@ -888,7 +888,7 @@ u32 mct_MR1(struct MCTStatStruc *pMCTstat,
 		/* program MrsAddress[9,6,2]=nominal termination resistance of ODT (RTT):
 		 * based on F2x[1,0]84[DramTerm]
 		 */
-		if (!(pDCTstat->Status & (1 << SB_Registered))) {
+		if (!(pDCTstat->status & (1 << SB_REGISTERED))) {
 			if (dword & (1 << 9))
 				ret |= 1 << 9;
 			if (dword & (1 << 8))
@@ -899,14 +899,14 @@ u32 mct_MR1(struct MCTStatStruc *pMCTstat,
 			ret |= mct_MR1Odt_RDimm(pMCTstat, pDCTstat, dct, MrsChipSel);
 		}
 
-		/* program MrsAddress[11]=TDQS: based on F2x[1,0]94[RDqsEn] */
-		if (Get_NB32_DCT(dev, dct, 0x94) & (1 << RDqsEn)) {
+		/* program MrsAddress[11]=TDQS: based on F2x[1,0]94[RDQS_EN] */
+		if (Get_NB32_DCT(dev, dct, 0x94) & (1 << RDQS_EN)) {
 			u8 bit;
 			/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
 			bit = (ret >> 21) << 1;
 			if ((dct & 1) != 0)
 				bit ++;
-			if (pDCTstat->Dimmx8Present & (1 << bit))
+			if (pDCTstat->dimm_x8_present & (1 << bit))
 				ret |= 1 << 11;
 		}
 
@@ -1081,10 +1081,10 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *pMCTstat,
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
-	if (pDCTstat->DIMMAutoSpeed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
-		/* 3.Program F2x[1,0]7C[EnDramInit]=1 */
+	if (pDCTstat->dimm_auto_speed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+		/* 3.Program F2x[1,0]7C[EN_DRAM_INIT]=1 */
 		dword = Get_NB32_DCT(dev, dct, 0x7c);
-		dword |= 1 << EnDramInit;
+		dword |= 1 << EN_DRAM_INIT;
 		Set_NB32_DCT(dev, dct, 0x7c, dword);
 		mct_DCTAccessDone(pDCTstat, dct);
 
@@ -1108,8 +1108,8 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *pMCTstat,
 		mct_Wait(80);
 
 		/* Set up address parity */
-		if ((pDCTstat->Status & (1 << SB_Registered))
-			|| (pDCTstat->Status & (1 << SB_LoadReduced))) {
+		if ((pDCTstat->status & (1 << SB_REGISTERED))
+			|| (pDCTstat->status & (1 << SB_LoadReduced))) {
 			if (is_fam15h()) {
 				dword = Get_NB32_DCT(dev, dct, 0x90);
 				dword |= 1 << ParEn;
@@ -1119,25 +1119,25 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *pMCTstat,
 
 		/* The following steps are performed with registered DIMMs only and
 		 * must be done for each chip select pair */
-		if (pDCTstat->Status & (1 << SB_Registered))
+		if (pDCTstat->status & (1 << SB_REGISTERED))
 			mct_DramControlReg_Init_D(pMCTstat, pDCTstat, dct);
 
 		/* The following steps are performed with load reduced DIMMs only and
 		 * must be done for each DIMM */
-		// if (pDCTstat->Status & (1 << SB_LoadReduced))
+		// if (pDCTstat->status & (1 << SB_LoadReduced))
 			/* TODO
 			 * Implement LRDIMM configuration
 			 */
 	}
 
-	pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[dct];
+	pDCTstat->cs_present = pDCTstat->CSPresent_DCT[dct];
 	if (pDCTstat->GangedMode & 1)
-		pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[0];
+		pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
 
 	/* The following steps are performed once for unbuffered DIMMs and once for each
 	 * chip select on registered DIMMs: */
 	for (MrsChipSel = 0; MrsChipSel < 8; MrsChipSel++) {
-		if (pDCTstat->CSPresent & (1 << MrsChipSel)) {
+		if (pDCTstat->cs_present & (1 << MrsChipSel)) {
 			u32 EMRS;
 			/* 13.Send EMRS(2) */
 			EMRS = mct_MR2(pMCTstat, pDCTstat, dct, MrsChipSel);
@@ -1156,23 +1156,23 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *pMCTstat,
 			EMRS = swapAddrBits(pDCTstat, EMRS, MrsChipSel, dct);
 			mct_SendMrsCmd(pDCTstat, dct, EMRS);
 
-			if (pDCTstat->DIMMAutoSpeed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK)))
-				if (!(pDCTstat->Status & (1 << SB_Registered)))
+			if (pDCTstat->dimm_auto_speed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK)))
+				if (!(pDCTstat->status & (1 << SB_REGISTERED)))
 					break; /* For UDIMM, only send MR commands once per channel */
 		}
-		if (pDCTstat->LogicalCPUID & (AMD_DR_Bx/* | AMD_RB_C0 */)) /* TODO: We dont support RB_C0 now. need to be added and tested. */
-			if (!(pDCTstat->Status & (1 << SB_Registered)))
+		if (pDCTstat->logical_cpuid & (AMD_DR_Bx/* | AMD_RB_C0 */)) /* TODO: We dont support RB_C0 now. need to be added and tested. */
+			if (!(pDCTstat->status & (1 << SB_REGISTERED)))
 				MrsChipSel ++;
 	}
 
-	if (pDCTstat->DIMMAutoSpeed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+	if (pDCTstat->dimm_auto_speed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
 		/* 17.Send two ZQCL commands */
 		mct_SendZQCmd(pDCTstat, dct);
 		mct_SendZQCmd(pDCTstat, dct);
 
-		/* 18.Program F2x[1,0]7C[EnDramInit]=0 */
+		/* 18.Program F2x[1,0]7C[EN_DRAM_INIT]=0 */
 		dword = Get_NB32_DCT(dev, dct, 0x7C);
-		dword &= ~(1 << EnDramInit);
+		dword &= ~(1 << EN_DRAM_INIT);
 		Set_NB32_DCT(dev, dct, 0x7C, dword);
 		mct_DCTAccessDone(pDCTstat, dct);
 	}

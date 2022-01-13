@@ -18,7 +18,7 @@ static u8 fam15h_rdimm_rc2_ibt_code(struct DCTStatStruc *pDCTstat, u8 dct)
 	u16 MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
 
 	/* Obtain number of DIMMs on channel */
-	u8 dimm_count = pDCTstat->MAdimms[dct];
+	u8 dimm_count = pDCTstat->ma_dimms[dct];
 
 	/* FIXME
 	 * Assume there is only one register on the RDIMM for now
@@ -183,8 +183,8 @@ static u32 mct_ControlRC(struct MCTStatStruc *pMCTstat,
 	if (dct == 1)
 		DimmNum++;
 
-	mem_freq = memclk_to_freq(pDCTstat->DIMMAutoSpeed);
-	Dimms = pDCTstat->MAdimms[dct];
+	mem_freq = memclk_to_freq(pDCTstat->dimm_auto_speed);
+	Dimms = pDCTstat->ma_dimms[dct];
 
 	ddr_voltage_index = dct_ddr_voltage_index(pDCTstat, dct);
 
@@ -192,7 +192,7 @@ static u32 mct_ControlRC(struct MCTStatStruc *pMCTstat,
 	if (CtrlWordNum == 0)
 		val = 0x2;
 	else if (CtrlWordNum == 1) {
-		if (!((pDCTstat->DimmDRPresent | pDCTstat->DimmQRPresent) & (1 << DimmNum)))
+		if (!((pDCTstat->dimm_dr_present | pDCTstat->dimm_qr_present) & (1 << DimmNum)))
 			val = 0xc; /* if single rank, set DBA1 and DBA0 */
 	} else if (CtrlWordNum == 2) {
 		if (is_fam15h()) {
@@ -298,12 +298,12 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
 		mct_Wait(1200);
 	}
 
-	pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[dct];
+	pDCTstat->cs_present = pDCTstat->CSPresent_DCT[dct];
 	if (pDCTstat->GangedMode & 1)
-		pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[0];
+		pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
 
 	for (MrsChipSel = 0; MrsChipSel < 8; MrsChipSel += 2) {
-		if (pDCTstat->CSPresent & (1 << MrsChipSel)) {
+		if (pDCTstat->cs_present & (1 << MrsChipSel)) {
 			val = Get_NB32_DCT(dev, dct, 0xa8);
 			val &= ~(0xff << 8);
 
@@ -353,20 +353,20 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
 void FreqChgCtrlWrd(struct MCTStatStruc *pMCTstat,
 			struct DCTStatStruc *pDCTstat, u8 dct)
 {
-	u32 SaveSpeed = pDCTstat->DIMMAutoSpeed;
+	u32 SaveSpeed = pDCTstat->dimm_auto_speed;
 	u32 MrsChipSel;
 	u32 dev = pDCTstat->dev_dct;
 	u32 val;
 	u16 mem_freq;
 
-	pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[dct];
+	pDCTstat->cs_present = pDCTstat->CSPresent_DCT[dct];
 	if (pDCTstat->GangedMode & 1)
-		pDCTstat->CSPresent = pDCTstat->CSPresent_DCT[0];
+		pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
 
-	pDCTstat->DIMMAutoSpeed = pDCTstat->TargetFreq;
+	pDCTstat->dimm_auto_speed = pDCTstat->TargetFreq;
 	mem_freq = memclk_to_freq(pDCTstat->TargetFreq);
 	for (MrsChipSel = 0; MrsChipSel < 8; MrsChipSel += 2) {
-		if (pDCTstat->CSPresent & (1 << MrsChipSel)) {
+		if (pDCTstat->cs_present & (1 << MrsChipSel)) {
 			/* 2. Program F2x[1, 0]A8[CtrlWordCS]=bit mask for target chip selects. */
 			val = Get_NB32_DCT(dev, dct, 0xa8);
 			val &= ~(0xff << 8);
@@ -441,5 +441,5 @@ void FreqChgCtrlWrd(struct MCTStatStruc *pMCTstat,
 				mct_Wait(1600);
 		}
 	}
-	pDCTstat->DIMMAutoSpeed = SaveSpeed;
+	pDCTstat->dimm_auto_speed = SaveSpeed;
 }

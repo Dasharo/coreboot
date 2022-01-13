@@ -188,7 +188,7 @@ void TrainReceiverEn_D(struct MCTStatStruc *pMCTstat,
 /*FIXME: needed?		if (!pDCTstat->NodePresent)
 			break;
 */
-		if (pDCTstat->DCTSysLimit) {
+		if (pDCTstat->dct_sys_limit) {
 			mct_TrainRcvrEn_D(pMCTstat, pDCTstat, Pass);
 		}
 	}
@@ -203,11 +203,11 @@ static void SetEccDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 
 	for (channel = 0; channel < 2; channel++) {
 		for (direction = 0; direction < 2; direction++) {
-			pDCTstat->Channel = channel;	/* Channel A or B */
-			pDCTstat->Direction = direction; /* Read or write */
-			CalcEccDQSPos_D(pMCTstat, pDCTstat, pDCTstat->CH_EccDQSLike[channel], pDCTstat->CH_EccDQSScale[channel], ChipSel);
-			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR ? " R dqs_delay":" W dqs_delay",	pDCTstat->DQSDelay, 2);
-			pDCTstat->ByteLane = 8;
+			pDCTstat->channel = channel;	/* Channel A or B */
+			pDCTstat->direction = direction; /* Read or write */
+			CalcEccDQSPos_D(pMCTstat, pDCTstat, pDCTstat->ch_ecc_dqs_like[channel], pDCTstat->ch_ecc_dqs_scale[channel], ChipSel);
+			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR ? " R dqs_delay":" W dqs_delay",	pDCTstat->dqs_delay, 2);
+			pDCTstat->byte_lane = 8;
 			StoreDQSDatStrucVal_D(pMCTstat, pDCTstat, ChipSel);
 			mct_SetDQSDelayCSR_D(pMCTstat, pDCTstat, ChipSel);
 		}
@@ -223,13 +223,13 @@ static void CalcEccDQSPos_D(struct MCTStatStruc *pMCTstat,
 	u8 DQSDelay0, DQSDelay1;
 	u16 DQSDelay;
 
-	pDCTstat->ByteLane = like & 0xff;
+	pDCTstat->byte_lane = like & 0xff;
 	GetDQSDatStrucVal_D(pMCTstat, pDCTstat, ChipSel);
-	DQSDelay0 = pDCTstat->DQSDelay;
+	DQSDelay0 = pDCTstat->dqs_delay;
 
-	pDCTstat->ByteLane = (like >> 8) & 0xff;
+	pDCTstat->byte_lane = (like >> 8) & 0xff;
 	GetDQSDatStrucVal_D(pMCTstat, pDCTstat, ChipSel);
-	DQSDelay1 = pDCTstat->DQSDelay;
+	DQSDelay1 = pDCTstat->dqs_delay;
 
 	if (DQSDelay0 > DQSDelay1) {
 		DQSDelay = DQSDelay0 - DQSDelay1;
@@ -249,7 +249,7 @@ static void CalcEccDQSPos_D(struct MCTStatStruc *pMCTstat,
 		DQSDelay += DQSDelay1;
 	}
 
-	pDCTstat->DQSDelay = (u8)DQSDelay;
+	pDCTstat->dqs_delay = (u8)DQSDelay;
 }
 
 
@@ -268,7 +268,7 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 	CRx_TYPE cr4;
 	u32 lo, hi;
 
-	print_debug_dqs("\nTrainDQSRdWrPos: Node_ID ", pDCTstat->Node_ID, 0);
+	print_debug_dqs("\nTrainDQSRdWrPos: node_id ", pDCTstat->node_id, 0);
 	cr4 = read_cr4();
 	if (cr4 & (1 << 9)) {
 		_SSE2 = 1;
@@ -295,24 +295,24 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 	Errors = 0;
 	for (Channel = 0; Channel < 2; Channel++) {
 		print_debug_dqs("\tTrainDQSRdWrPos: 1 Channel ",Channel, 1);
-		pDCTstat->Channel = Channel;
+		pDCTstat->channel = Channel;
 
 		if (pDCTstat->DIMMValidDCT[Channel] == 0)	/* mct_BeforeTrainDQSRdWrPos_D */
 			continue;
 
 		for (DQSWrDelay = 0; DQSWrDelay < dqsWrDelay_end; DQSWrDelay++) {
-			pDCTstat->DQSDelay = DQSWrDelay;
-			pDCTstat->Direction = DQS_WRITEDIR;
+			pDCTstat->dqs_delay = DQSWrDelay;
+			pDCTstat->direction = DQS_WRITEDIR;
 			mct_SetDQSDelayAllCSR_D(pMCTstat, pDCTstat, cs_start);
 
 			print_debug_dqs("\t\tTrainDQSRdWrPos: 21 DQSWrDelay ", DQSWrDelay, 2);
 			TrainReadDQS_D(pMCTstat, pDCTstat, cs_start);
 
-			print_debug_dqs("\t\tTrainDQSRdWrPos: 22 TrainErrors ",pDCTstat->TrainErrors, 2);
-			if (pDCTstat->TrainErrors == 0) {
+			print_debug_dqs("\t\tTrainDQSRdWrPos: 22 TrainErrors ",pDCTstat->train_errors, 2);
+			if (pDCTstat->train_errors == 0) {
 					break;
 			}
-			Errors |= pDCTstat->TrainErrors;
+			Errors |= pDCTstat->train_errors;
 		}
 		if (DQSWrDelay < dqsWrDelay_end) {
 			Errors = 0;
@@ -321,7 +321,7 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 			TrainWriteDQS_D(pMCTstat, pDCTstat, cs_start);
 		}
 		print_debug_dqs("\tTrainDQSRdWrPos: 232 Errors ", Errors, 1);
-		pDCTstat->ErrStatus |= Errors;
+		pDCTstat->err_status |= Errors;
 	}
 
 #if DQS_TRAIN_DEBUG > 0
@@ -369,10 +369,10 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *pMCTstat,
 		write_cr4(cr4);
 	}
 
-	print_tx("TrainDQSRdWrPos: Status ", pDCTstat->Status);
-	print_tx("TrainDQSRdWrPos: TrainErrors ", pDCTstat->TrainErrors);
-	print_tx("TrainDQSRdWrPos: ErrStatus ", pDCTstat->ErrStatus);
-	print_tx("TrainDQSRdWrPos: ErrCode ", pDCTstat->ErrCode);
+	print_tx("TrainDQSRdWrPos: status ", pDCTstat->status);
+	print_tx("TrainDQSRdWrPos: TrainErrors ", pDCTstat->train_errors);
+	print_tx("TrainDQSRdWrPos: err_status ", pDCTstat->err_status);
+	print_tx("TrainDQSRdWrPos: err_code ", pDCTstat->err_code);
 	print_t("TrainDQSRdWrPos: Done\n");
 }
 
@@ -389,16 +389,16 @@ static void SetupDqsPattern_D(struct MCTStatStruc *pMCTstat,
 	u16 i;
 
 	buf = (u32 *)(((u32)buffer + 0x10) & (0xfffffff0));
-	if (pDCTstat->Status & (1 << SB_128bitmode)) {
-		pDCTstat->Pattern = 1;	/* 18 cache lines, alternating qwords */
+	if (pDCTstat->status & (1 << SB_128_BIT_MODE)) {
+		pDCTstat->pattern = 1;	/* 18 cache lines, alternating qwords */
 		for (i = 0; i < 16*18; i++)
 			buf[i] = TestPatternJD1b_D[i];
 	} else {
-		pDCTstat->Pattern = 0;	/* 9 cache lines, sequential qwords */
+		pDCTstat->pattern = 0;	/* 9 cache lines, sequential qwords */
 		for (i = 0; i < 16*9; i++)
 			buf[i] = TestPatternJD1a_D[i];
 	}
-	pDCTstat->PtrPatternBufA = (u32)buf;
+	pDCTstat->ptr_pattern_buf_a = (u32)buf;
 }
 
 
@@ -429,7 +429,7 @@ static void TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 	Errors = 0;
 	BanksPresent = 0;
 
-	if (pDCTstat->Direction == DQS_READDIR) {
+	if (pDCTstat->direction == DQS_READDIR) {
 		dqsDelay_end = 64;
 		mct_AdjustDelayRange_D(pMCTstat, pDCTstat, &dqsDelay_end);
 	} else {
@@ -446,13 +446,13 @@ static void TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 	for (ChipSel = cs_start; ChipSel < (cs_start + 2); ChipSel++) { /* logical register chipselects 0..7 */
 		print_debug_dqs("\t\t\t\tTrainDQSPos: 11 ChipSel ", ChipSel, 4);
 
-		if (!mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, pDCTstat->Channel, ChipSel)) {
+		if (!mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, pDCTstat->channel, ChipSel)) {
 			print_debug_dqs("\t\t\t\tmct_RcvrRankEnabled_D CS not enabled ", ChipSel, 4);
 			continue;
 		}
 
 		BanksPresent = 1;	/* flag for at least one bank is present */
-		TestAddr = mct_GetMCTSysAddr_D(pMCTstat, pDCTstat, pDCTstat->Channel, ChipSel, &valid);
+		TestAddr = mct_GetMCTSysAddr_D(pMCTstat, pDCTstat, pDCTstat->channel, ChipSel, &valid);
 		if (!valid) {
 			print_debug_dqs("\t\t\t\tAddress not supported on current CS ", TestAddr, 4);
 			continue;
@@ -461,7 +461,7 @@ static void TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 		print_debug_dqs("\t\t\t\tTrainDQSPos: 12 TestAddr ", TestAddr, 4);
 		SetUpperFSbase(TestAddr);	/* fs:eax = far ptr to target */
 
-		if (pDCTstat->Direction == DQS_READDIR) {
+		if (pDCTstat->direction == DQS_READDIR) {
 			print_debug_dqs("\t\t\t\tTrainDQSPos: 13 for read ", 0, 4);
 			WriteDQSTestPattern_D(pMCTstat, pDCTstat, TestAddr << 8);
 		}
@@ -470,16 +470,16 @@ static void TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 			print_debug_dqs("\t\t\t\t\tTrainDQSPos: 141 DQSDelay ", DQSDelay, 5);
 			if (MutualCSPassW[DQSDelay] == 0)
 				continue; //skip current delay value if other chipselects have failed all 8 bytelanes
-			pDCTstat->DQSDelay = DQSDelay;
+			pDCTstat->dqs_delay = DQSDelay;
 			mct_SetDQSDelayAllCSR_D(pMCTstat, pDCTstat, cs_start);
 			print_debug_dqs("\t\t\t\t\tTrainDQSPos: 142 MutualCSPassW ", MutualCSPassW[DQSDelay], 5);
 
-			if (pDCTstat->Direction == DQS_WRITEDIR) {
+			if (pDCTstat->direction == DQS_WRITEDIR) {
 				print_debug_dqs("\t\t\t\t\tTrainDQSPos: 143 for write", 0, 5);
 				WriteDQSTestPattern_D(pMCTstat, pDCTstat, TestAddr << 8);
 			}
 
-			print_debug_dqs("\t\t\t\t\tTrainDQSPos: 144 Pattern ", pDCTstat->Pattern, 5);
+			print_debug_dqs("\t\t\t\t\tTrainDQSPos: 144 Pattern ", pDCTstat->pattern, 5);
 			ReadDQSTestPattern_D(pMCTstat, pDCTstat, TestAddr << 8);
 			/* print_debug_dqs("\t\t\t\t\tTrainDQSPos: 145 MutualCSPassW ", MutualCSPassW[DQSDelay], 5); */
 			tmp = CompareDQSTestPattern_D(pMCTstat, pDCTstat, TestAddr << 8); /* 0 = fail, 1 = pass */
@@ -501,7 +501,7 @@ static void TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 	if (BanksPresent) {
 		for (ByteLane = 0; ByteLane < 8; ByteLane++) {
 			print_debug_dqs("\t\t\t\tTrainDQSPos: 31 ByteLane ",ByteLane, 4);
-			pDCTstat->ByteLane = ByteLane;
+			pDCTstat->byte_lane = ByteLane;
 			LastTest = DQS_FAIL;		/* Analyze the results */
 			RnkDlySeqPassMin = 0;
 			RnkDlySeqPassMax = 0;
@@ -527,16 +527,16 @@ static void TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 			}
 			print_debug_dqs("\t\t\t\tTrainDQSPos: 33 RnkDlySeqPassMax ", RnkDlySeqPassMax, 4);
 			if (RnkDlySeqPassMax == 0) {
-				Errors |= 1 << SB_NODQSPOS; /* no passing window */
+				Errors |= 1 << SB_NO_DQS_POS; /* no passing window */
 			} else {
 				print_debug_dqs_pair("\t\t\t\tTrainDQSPos: 34 RnkDlyFilter: ", RnkDlyFilterMin, " ",  RnkDlyFilterMax, 4);
 				if (((RnkDlyFilterMax - RnkDlyFilterMin) < MIN_DQS_WNDW)) {
-					Errors |= 1 << SB_SMALLDQS;
+					Errors |= 1 << SB_SMALL_DQS;
 				} else {
 					u8 middle_dqs;
 					/* mctEngDQSwindow_Save_D Not required for arrays */
 					middle_dqs = MiddleDQS_D(RnkDlyFilterMin, RnkDlyFilterMax);
-					pDCTstat->DQSDelay = middle_dqs;
+					pDCTstat->dqs_delay = middle_dqs;
 					mct_SetDQSDelayCSR_D(pMCTstat, pDCTstat, cs_start);  /* load the register with the value */
 					StoreDQSDatStrucVal_D(pMCTstat, pDCTstat, cs_start); /* store the value into the data structure */
 					print_debug_dqs("\t\t\t\tTrainDQSPos: 42 middle_dqs : ",middle_dqs, 4);
@@ -545,7 +545,7 @@ static void TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 		}
 	}
 skipLocMiddle:
-	pDCTstat->TrainErrors = Errors;
+	pDCTstat->train_errors = Errors;
 
 	print_debug_dqs("\t\t\tTrainDQSPos: Errors ", Errors, 3);
 
@@ -570,11 +570,11 @@ void StoreDQSDatStrucVal_D(struct MCTStatStruc *pMCTstat,
 	/* FindDQSDatDimmVal_D is not required since we use an array */
 	u8 dn = 0;
 
-	if (pDCTstat->Status & (1 << SB_Over400MHz))
+	if (pDCTstat->status & (1 << SB_Over400MHz))
 		dn = ChipSel >> 1; /* if odd or even logical DIMM */
 
-	pDCTstat->persistentData.CH_D_DIR_B_DQS[pDCTstat->Channel][dn][pDCTstat->Direction][pDCTstat->ByteLane] =
-					pDCTstat->DQSDelay;
+	pDCTstat->persistentData.CH_D_DIR_B_DQS[pDCTstat->channel][dn][pDCTstat->direction][pDCTstat->byte_lane] =
+					pDCTstat->dqs_delay;
 }
 
 
@@ -592,11 +592,11 @@ static void GetDQSDatStrucVal_D(struct MCTStatStruc *pMCTstat,
 	 */
 
 	/* FindDQSDatDimmVal_D is not required since we use an array */
-	if (pDCTstat->Status & (1 << SB_Over400MHz))
+	if (pDCTstat->status & (1 << SB_Over400MHz))
 		dn = ChipSel >> 1; /*if odd or even logical DIMM */
 
-	pDCTstat->DQSDelay =
-		pDCTstat->persistentData.CH_D_DIR_B_DQS[pDCTstat->Channel][dn][pDCTstat->Direction][pDCTstat->ByteLane];
+	pDCTstat->dqs_delay =
+		pDCTstat->persistentData.CH_D_DIR_B_DQS[pDCTstat->channel][dn][pDCTstat->direction][pDCTstat->byte_lane];
 }
 
 
@@ -618,7 +618,7 @@ static void TrainReadDQS_D(struct MCTStatStruc *pMCTstat,
 				u8 cs_start)
 {
 	print_debug_dqs("\t\tTrainReadPos ", 0, 2);
-	pDCTstat->Direction = DQS_READDIR;
+	pDCTstat->direction = DQS_READDIR;
 	TrainDQSPos_D(pMCTstat, pDCTstat, cs_start);
 }
 
@@ -627,7 +627,7 @@ static void TrainWriteDQS_D(struct MCTStatStruc *pMCTstat,
 				struct DCTStatStruc *pDCTstat,
 				u8 cs_start)
 {
-	pDCTstat->Direction = DQS_WRITEDIR;
+	pDCTstat->direction = DQS_WRITEDIR;
 	print_debug_dqs("\t\tTrainWritePos", 0, 2);
 	TrainDQSPos_D(pMCTstat, pDCTstat, cs_start);
 }
@@ -689,7 +689,7 @@ static void WriteDQSTestPattern_D(struct MCTStatStruc *pMCTstat,
 	 * 128	8	  N/A	-
 	 */
 
-	if (pDCTstat->Pattern == 0)
+	if (pDCTstat->pattern == 0)
 		WriteL9TestPattern_D(pDCTstat, TestAddr_lo);
 	else
 		WriteL18TestPattern_D(pDCTstat, TestAddr_lo);
@@ -743,8 +743,8 @@ static u8 CompareDQSTestPattern_D(struct MCTStatStruc *pMCTstat, struct DCTStatS
 	u32 value_test;
 	u8 pattern, channel;
 
-	pattern = pDCTstat->Pattern;
-	channel = pDCTstat->Channel;
+	pattern = pDCTstat->pattern;
+	channel = pDCTstat->channel;
 	test_buf = (u32 *)pDCTstat->PtrPatternBufA;
 
 	if (pattern && channel) {
@@ -793,7 +793,7 @@ static void FlushDQSTestPattern_D(struct DCTStatStruc *pDCTstat,
 					u32 addr_lo)
 {
 	/* Flush functions in mct_gcc.h */
-	if (pDCTstat->Pattern == 0) {
+	if (pDCTstat->pattern == 0) {
 		FlushDQSTestPattern_L9(addr_lo);
 	} else {
 		FlushDQSTestPattern_L18(addr_lo);
@@ -839,7 +839,7 @@ static void ReadDQSTestPattern_D(struct MCTStatStruc *pMCTstat,
 	 * 128	4	  18	1
 	 * 128	8	  N/A	-
 	 */
-	if (pDCTstat->Pattern == 0)
+	if (pDCTstat->pattern == 0)
 		ReadL9TestPattern(TestAddr_lo);
 	else
 		ReadL18TestPattern(TestAddr_lo);
@@ -884,13 +884,13 @@ void mct_TrainDQSPos_D(struct MCTStatStruc *pMCTstat,
 
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
 		pDCTstat = pDCTstatA + Node;
-		if (pDCTstat->DCTSysLimit) {
+		if (pDCTstat->dct_sys_limit) {
 			/* when DCT speed >= 400MHz, we only support 2 DIMMs
 			 * and we have two sets registers for DIMM0 and DIMM1 so
 			 * here we must traning DQSRd/WrPos for DIMM0 and DIMM1
 			 */
-			if (pDCTstat->Speed >= 4) {
-				pDCTstat->Status |= (1 << SB_Over400MHz);
+			if (pDCTstat->speed >= 4) {
+				pDCTstat->status |= (1 << SB_Over400MHz);
 			}
 			for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 				TrainDQSRdWrPos_D(pMCTstat, pDCTstat, ChipSel);
@@ -918,17 +918,17 @@ u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *pMCTstat,
 	dev = pDCTstat->dev_dct;
 	reg = 0x90;
 	val = Get_NB32(dev, reg);
-	if (val & (1 << DimmEcEn)) {
+	if (val & (1 << DIMM_EC_EN)) {
 		_DisableDramECC |= 0x01;
-		val &= ~(1 << DimmEcEn);
+		val &= ~(1 << DIMM_EC_EN);
 		Set_NB32(dev, reg, val);
 	}
 	if (!pDCTstat->GangedMode) {
 		reg = 0x190;
 		val = Get_NB32(dev, reg);
-		if (val & (1 << DimmEcEn)) {
+		if (val & (1 << DIMM_EC_EN)) {
 			_DisableDramECC |= 0x02;
-			val &= ~(1 << DimmEcEn);
+			val &= ~(1 << DIMM_EC_EN);
 			Set_NB32(dev, reg, val);
 		}
 	}
@@ -952,13 +952,13 @@ void mct_EnableDimmEccEn_D(struct MCTStatStruc *pMCTstat,
 	if ((_DisableDramECC & 0x01) == 0x01) {
 		reg = 0x90;
 		val = Get_NB32(dev, reg);
-		val |= (1 << DimmEcEn);
+		val |= (1 << DIMM_EC_EN);
 		Set_NB32(dev, reg, val);
 	}
 	if ((_DisableDramECC & 0x02) == 0x02) {
 		reg = 0x190;
 		val = Get_NB32(dev, reg);
-		val |= (1 << DimmEcEn);
+		val |= (1 << DIMM_EC_EN);
 		Set_NB32(dev, reg, val);
 	}
 }
@@ -969,13 +969,13 @@ static void mct_SetDQSDelayCSR_D(struct MCTStatStruc *pMCTstat,
 {
 	u8 ByteLane;
 	u32 val;
-	u32 index_reg = 0x98 + 0x100 * pDCTstat->Channel;
+	u32 index_reg = 0x98 + 0x100 * pDCTstat->channel;
 	u8 shift;
 	u32 dqs_delay = (u32)pDCTstat->DQSDelay;
 	u32 dev = pDCTstat->dev_dct;
 	u32 index;
 
-	ByteLane = pDCTstat->ByteLane;
+	ByteLane = pDCTstat->byte_lane;
 
 	/* Channel is offset */
 	if (ByteLane < 4) {
@@ -986,7 +986,7 @@ static void mct_SetDQSDelayCSR_D(struct MCTStatStruc *pMCTstat,
 		index = 3;
 	}
 
-	if (pDCTstat->Direction == DQS_READDIR) {
+	if (pDCTstat->direction == DQS_READDIR) {
 		index += 4;
 	}
 
@@ -994,7 +994,7 @@ static void mct_SetDQSDelayCSR_D(struct MCTStatStruc *pMCTstat,
 	shift = ByteLane % 4;
 	shift <<= 3; /* get bit position of bytelane, 8 bit */
 
-	if (pDCTstat->Status & (1 << SB_Over400MHz)) {
+	if (pDCTstat->status & (1 << SB_Over400MHz)) {
 		index += (ChipSel >> 1) * 0x100;	/* if logical DIMM1/DIMM3 */
 	}
 
@@ -1014,9 +1014,9 @@ static void mct_SetDQSDelayAllCSR_D(struct MCTStatStruc *pMCTstat,
 
 
 	for (ChipSel = cs_start; ChipSel < (cs_start + 2); ChipSel++) {
-		if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, pDCTstat->Channel, ChipSel)) {
+		if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, pDCTstat->channel, ChipSel)) {
 			for (ByteLane = 0; ByteLane < 8; ByteLane++) {
-				pDCTstat->ByteLane = ByteLane;
+				pDCTstat->byte_lane = ByteLane;
 				mct_SetDQSDelayCSR_D(pMCTstat, pDCTstat, ChipSel);
 			}
 		}
@@ -1076,18 +1076,18 @@ u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *pMCTstat,
 		val += dword;
 
 		/* if DCTSelBaseAddr < Hole, and eax > HoleBase, then add Hole size to test address */
-		if ((val >= pDCTstat->DCTHoleBase) && (pDCTstat->DCTHoleBase > dword)) {
-			dword = (~(pDCTstat->DCTHoleBase >> (24 - 8)) + 1) & 0xFF;
+		if ((val >= pDCTstat->dct_hole_base) && (pDCTstat->dct_hole_base > dword)) {
+			dword = (~(pDCTstat->dct_hole_base >> (24 - 8)) + 1) & 0xFF;
 			dword <<= (24 - 8);
 			val += dword;
 		}
 	} else {
 		/* sys addr = node base+local cs base */
-		val += pDCTstat->DCTSysBase;
+		val += pDCTstat->dct_sys_base;
 
 		/* New stuff */
-		if (pDCTstat->DCTHoleBase && (val >= pDCTstat->DCTHoleBase)) {
-			val -= pDCTstat->DCTSysBase;
+		if (pDCTstat->dct_hole_base && (val >= pDCTstat->dct_hole_base)) {
+			val -= pDCTstat->dct_sys_base;
 			dword = Get_NB32(pDCTstat->dev_map, 0xF0); /* get Hole Offset */
 			val += (dword & 0x0000ff00) << (24-8-8);
 		}
@@ -1101,11 +1101,11 @@ u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *pMCTstat,
 	}
 
 	/* Add a node seed */
-	val += (((1 * pDCTstat->Node_ID) << 20) >> 8);	/* Add 1MB per node to avoid aliases */
+	val += (((1 * pDCTstat->node_id) << 20) >> 8);	/* Add 1MB per node to avoid aliases */
 
 	/* HW remap disabled? */
-	if (!(pDCTstat->Status & (1 << SB_HWHole))) {
-		if (!(pDCTstat->Status & (1 << SB_SWNodeHole))) {
+	if (!(pDCTstat->status & (1 << SB_HW_HOLE))) {
+		if (!(pDCTstat->status & (1 << SB_SW_NODE_HOLE))) {
 			/* SW memhole disabled */
 			u32 lo, hi;
 			_RDMSR(TOP_MEM, &lo, &hi);
@@ -1144,8 +1144,8 @@ exitGetAddrWNoError:
 	print_debug_dqs("mct_GetMCTSysAddr_D: Channel ", Channel, 2);
 	print_debug_dqs("mct_GetMCTSysAddr_D: base_addr ", val, 2);
 	print_debug_dqs("mct_GetMCTSysAddr_D: valid ", *valid, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: status ", pDCTstat->Status, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: HoleBase ", pDCTstat->DCTHoleBase, 2);
+	print_debug_dqs("mct_GetMCTSysAddr_D: status ", pDCTstat->status, 2);
+	print_debug_dqs("mct_GetMCTSysAddr_D: HoleBase ", pDCTstat->dct_hole_base, 2);
 	print_debug_dqs("mct_GetMCTSysAddr_D: Cachetop ", pMCTstat->Sub4GCacheTop, 2);
 
 exitGetAddr:

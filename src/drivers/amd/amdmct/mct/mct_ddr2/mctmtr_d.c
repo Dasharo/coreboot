@@ -78,7 +78,7 @@ void CPUMemTyping_D(struct MCTStatStruc *pMCTstat,
 				/* Limit */
 				/* MtrrAddr */
 	if (addr == -1)		/* ran out of MTRRs?*/
-		pMCTstat->GStatus |= 1 << GSB_MTRRshort;
+		pMCTstat->GStatus |= 1 << GSB_MTRR_SHORT;
 
 	pMCTstat->Sub4GCacheTop = Cache32bTOP << 8;
 
@@ -193,7 +193,7 @@ void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat
 /* UMA memory size may need splitting the MTRR configuration into two
  * Before training use NB_BottomIO or the physical memory size to set the MTRRs.
  * After training, add UMAMemTyping function to reconfigure the MTRRs based on
- * NV_BottomUMA (for UMA systems only).
+ * NV_BOTTOM_UMA (for UMA systems only).
  * This two-step process allows all memory to be cached for training
  */
 	u32 Bottom32bIO, Cache32bTOP;
@@ -210,7 +210,7 @@ void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat
 
 	Bottom32bIO = pMCTstat->Sub4GCacheTop >> 8;
 
-	val = mctGet_NVbits(NV_BottomUMA);
+	val = mctGet_NVbits(NV_BOTTOM_UMA);
 	if (val == 0)
 		val++;
 
@@ -236,6 +236,6 @@ void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat
 		print_tx("\t UMAMemTyping_D: Cache32bTOP:", Cache32bTOP);
 		SetMTRRrangeWB_D(0, &Cache32bTOP, &addr);
 		if (addr == -1)		/* ran out of MTRRs?*/
-			pMCTstat->GStatus |= 1 << GSB_MTRRshort;
+			pMCTstat->GStatus |= 1 << GSB_MTRR_SHORT;
 	}
 }

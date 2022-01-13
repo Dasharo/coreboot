@@ -306,7 +306,7 @@ static void enableRoutingTables(u8 node, cNorthBridge *nb)
  *	@param[in]   *nb       = this northbridge
  *	@return            true - The link has the following status
  *				  linkCon = 1,		Link is connected
- *				  InitComplete = 1,	Link initialization is complete
+ *				  INIT_COMPLETE = 1,	Link initialization is complete
  *				  NC = 0,		Link is coherent
  *				  UniP-cLDT = 0,	Link is not Uniprocessor cLDT
  *				  LinkConPend = 0	Link connection is not pending
@@ -328,7 +328,7 @@ static BOOL verifyLinkIsCoherent(u8 node, u8 link, cNorthBridge *nb)
 	/*  FN0_98/A4/C4 = LDT Type Register */
 	AmdPCIRead(linkBase + HTHOST_LINK_TYPE_REG, &linkType);
 
-	/*  Verify LinkCon = 1, InitComplete = 1, NC = 0, UniP-cLDT = 0, LinkConPend = 0 */
+	/*  Verify LinkCon = 1, INIT_COMPLETE = 1, NC = 0, UniP-cLDT = 0, LinkConPend = 0 */
 	return (linkType & HTHOST_TYPE_MASK) ==  HTHOST_TYPE_COHERENT;
 #else
 	return 0;
@@ -1076,7 +1076,7 @@ static u8 readSbLink(cNorthBridge *nb)
  *	@param[in] *nb = this northbridge
  *	@return   = true - The link has the following status
  *					LinkCon = 1,     Link is connected
- *					InitComplete = 1,Link initialization is complete
+ *					INIT_COMPLETE = 1,Link initialization is complete
  *					NC = 1,          Link is coherent
  *					UniP-cLDT = 0,   Link is not Uniprocessor cLDT
  *					LinkConPend = 0  Link connection is not pending
@@ -1096,7 +1096,7 @@ static BOOL verifyLinkIsNonCoherent(u8 node, u8 link, cNorthBridge *nb)
 	/* FN0_98/A4/C4 = LDT Type Register */
 	AmdPCIRead(linkBase + HTHOST_LINK_TYPE_REG, &linkType);
 
-	/* Verify linkCon = 1, InitComplete = 1, NC = 0, UniP-cLDT = 0, LinkConPend = 0 */
+	/* Verify linkCon = 1, INIT_COMPLETE = 1, NC = 0, UniP-cLDT = 0, LinkConPend = 0 */
 	return (linkType & HTHOST_TYPE_MASK) ==  HTHOST_TYPE_NONCOHERENT;
 }
 

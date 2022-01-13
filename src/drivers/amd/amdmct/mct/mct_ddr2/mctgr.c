@@ -17,9 +17,9 @@ u32 mct_AdjustMemClkDis_GR(struct DCTStatStruc *pDCTstat, u32 dct,
 	DramTimingLo = val;
 	/* Dram Timing Low (owns Clock Enable bits) */
 	NewDramTimingLo = Get_NB32(dev, 0x88 + reg_off);
-	if (mctGet_NVbits(NV_AllMemClks) == 0) {
+	if (mctGet_NVbits(NV_ALL_MEM_CLKS) == 0) {
 		/*Special Jedec SPD diagnostic bit - "enable all clocks"*/
-		if (!(pDCTstat->Status & (1 << SB_DiagClks))) {
+		if (!(pDCTstat->Status & (1 << SB_DIAG_CLKS))) {
 			for (i = 0; i < MAX_DIMMS_SUPPORTED; i++) {
 				val = Tab_GRCLKDis[i];
 				if (val < 8) {
@@ -42,13 +42,13 @@ u32 mct_AdjustMemClkDis_GR(struct DCTStatStruc *pDCTstat, u32 dct,
 u32 mct_AdjustDramConfigLo_GR(struct DCTStatStruc *pDCTstat, u32 dct, u32 val)
 {
 	/* Greayhound format -> Griffin format */
-	/*FIXME - BurstLength32 must be 0 when F3x44[DramEccEn]=1. */
+	/*FIXME - BURST_LENGTH_32 must be 0 when F3x44[DramEccEn]=1. */
 /*
 			; mov	cx,PA_NBMISC+44h	;MCA NB Configuration
 			; call Get_NB32n_D
 			; bt eax,22				;EccEn
 			; .if (CARRY?)
-				; btr eax,BurstLength32
+				; btr eax,BURST_LENGTH_32
 			; .endif
 */
 	return val;

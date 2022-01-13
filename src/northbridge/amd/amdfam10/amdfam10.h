@@ -29,9 +29,9 @@
 
 #define NODE_ID		0x60
 #define HT_INIT_CONTROL	0x6c
-#define HTIC_ColdR_Detect	(1 << 4)
-#define HTIC_BIOSR_Detect	(1 << 5)
-#define HTIC_INIT_Detect	(1 << 6)
+#define HTIC_COLDR_DETECT	(1 << 4)
+#define HTIC_BIOSR_DETECT	(1 << 5)
+#define HTIC_INIT_DETECT	(1 << 6)
 
 /* Definitions of various FAM10 registers */
 /* Function 0 */
@@ -889,10 +889,10 @@
 /* Function 5 for FBDIMM */
 #define FBD_DRAM_TIMING_LOW
 
-#define LinkConnected	   (1 << 0)
-#define InitComplete	   (1 << 1)
-#define NonCoherent	   (1 << 2)
-#define ConnectionPending (1 << 4)
+#define LINK_CONNECTED	   (1 << 0)
+#define INIT_COMPLETE	   (1 << 1)
+#define NON_COHERENT	   (1 << 2)
+#define CONNECTION_PENDING (1 << 4)
 
 #define MAX_CORES_SUPPORTED 128
 

@@ -13,7 +13,7 @@ u32 mct_SetDramConfigMisc2(struct DCTStatStruc *pDCTstat,
 
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
-	if (pDCTstat->LogicalCPUID & AMD_FAM15_ALL) {
+	if (pDCTstat->logical_cpuid & AMD_FAM15_ALL) {
 		u8 cs_mux_45;
 		u8 cs_mux_67;
 		u32 f2x80;
@@ -57,8 +57,8 @@ u32 mct_SetDramConfigMisc2(struct DCTStatStruc *pDCTstat,
 		misc2 |= ((cs_mux_67 & 0x1) << 27);
 		misc2 &= ~(0x1 << 26);		/* CsMux45 = cs_mux_45 */
 		misc2 |= ((cs_mux_45 & 0x1) << 26);
-	} else if (pDCTstat->LogicalCPUID & (AMD_DR_Dx | AMD_DR_Cx)) {
-		if (pDCTstat->Status & (1 << SB_Registered)) {
+	} else if (pDCTstat->logical_cpuid & (AMD_DR_Dx | AMD_DR_Cx)) {
+		if (pDCTstat->Status & (1 << SB_REGISTERED)) {
 			misc2 |= 1 << SubMemclkRegDly;
 			if (mctGet_NVbits(NV_MAX_DIMMS) == 8)
 				misc2 |= 1 << Ddr3FourSocketCh;
@@ -66,7 +66,7 @@ u32 mct_SetDramConfigMisc2(struct DCTStatStruc *pDCTstat,
 				misc2 &= ~(1 << Ddr3FourSocketCh);
 		}
 
-		if (pDCTstat->LogicalCPUID & AMD_DR_Cx)
+		if (pDCTstat->logical_cpuid & AMD_DR_Cx)
 			misc2 |= 1 << OdtSwizzle;
 
 		val = DramControl;
@@ -76,7 +76,7 @@ u32 mct_SetDramConfigMisc2(struct DCTStatStruc *pDCTstat,
 		val &= 0x7;
 		misc2 &= 0xfff8ffff;
 		misc2 |= val << 16;	/* DataTxFifoWrDly */
-		if (pDCTstat->LogicalCPUID & AMD_DR_Dx)
+		if (pDCTstat->logical_cpuid & AMD_DR_Dx)
 			misc2 |= 1 << 7; /* ProgOdtEn */
 	}
 	return misc2;
@@ -86,7 +86,7 @@ void mct_ExtMCTConfig_Cx(struct DCTStatStruc *pDCTstat)
 {
 	u32 val;
 
-	if (pDCTstat->LogicalCPUID & (AMD_DR_Cx)) {
+	if (pDCTstat->logical_cpuid & (AMD_DR_Cx)) {
 		/* Revision C */
 		Set_NB32(pDCTstat->dev_dct, 0x11c, 0x0ce00fc0 | 1 << 29/* FlushWrOnStpGnt */);
 

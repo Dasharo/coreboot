@@ -17,7 +17,7 @@ u32 cpu_init_detected(u8 nodeid)
 	dev = NODE_PCI(nodeid, 0);
 	htic = pci_io_read_config32(dev, HT_INIT_CONTROL);
 
-	return !!(htic & HTIC_INIT_Detect);
+	return !!(htic & HTIC_INIT_DETECT);
 }
 
 u32 bios_reset_detected(void)
@@ -25,7 +25,7 @@ u32 bios_reset_detected(void)
 	u32 htic;
 	htic = pci_io_read_config32(PCI_DEV(CONFIG_CBB, CONFIG_CDB, 0), HT_INIT_CONTROL);
 
-	return (htic & HTIC_ColdR_Detect) && !(htic & HTIC_BIOSR_Detect);
+	return (htic & HTIC_COLDR_DETECT) && !(htic & HTIC_BIOSR_DETECT);
 }
 
 u32 cold_reset_detected(void)
@@ -33,7 +33,7 @@ u32 cold_reset_detected(void)
 	u32 htic;
 	htic = pci_io_read_config32(PCI_DEV(CONFIG_CBB, CONFIG_CDB, 0), HT_INIT_CONTROL);
 
-	return !(htic & HTIC_ColdR_Detect);
+	return !(htic & HTIC_COLDR_DETECT);
 }
 
 u32 other_reset_detected(void)	// other warm reset not started by BIOS
@@ -41,7 +41,7 @@ u32 other_reset_detected(void)	// other warm reset not started by BIOS
 	u32 htic;
 	htic = pci_io_read_config32(PCI_DEV(CONFIG_CBB, CONFIG_CDB, 0), HT_INIT_CONTROL);
 
-	return (htic & HTIC_ColdR_Detect) && (htic & HTIC_BIOSR_Detect);
+	return (htic & HTIC_COLDR_DETECT) && (htic & HTIC_BIOSR_DETECT);
 }
 
 void distinguish_cpu_resets(u8 nodeid)
@@ -50,7 +50,7 @@ void distinguish_cpu_resets(u8 nodeid)
 	pci_devfn_t device;
 	device = NODE_PCI(nodeid, 0);
 	htic = pci_io_read_config32(device, HT_INIT_CONTROL);
-	htic |= HTIC_ColdR_Detect | HTIC_BIOSR_Detect | HTIC_INIT_Detect;
+	htic |= HTIC_COLDR_DETECT | HTIC_BIOSR_DETECT | HTIC_INIT_DETECT;
 	pci_io_write_config32(device, HT_INIT_CONTROL, htic);
 }
 
@@ -60,7 +60,7 @@ u32 warm_reset_detect(u8 nodeid)
 	pci_devfn_t device;
 	device = NODE_PCI(nodeid, 0);
 	htic = pci_io_read_config32(device, HT_INIT_CONTROL);
-	return (htic & HTIC_ColdR_Detect) && !(htic & HTIC_BIOSR_Detect);
+	return (htic & HTIC_COLDR_DETECT) && !(htic & HTIC_BIOSR_DETECT);
 }
 
 void set_bios_reset(void)
@@ -76,7 +76,7 @@ void set_bios_reset(void)
 	for (i = 0; i < nodes; i++) {
 		dev = NODE_PCI(i,0);
 		htic = pci_read_config32(dev, HT_INIT_CONTROL);
-		htic &= ~HTIC_BIOSR_Detect;
+		htic &= ~HTIC_BIOSR_DETECT;
 		pci_write_config32(dev, HT_INIT_CONTROL, htic);
 	}
 }

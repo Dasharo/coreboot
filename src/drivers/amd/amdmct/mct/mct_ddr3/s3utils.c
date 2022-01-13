@@ -224,8 +224,8 @@ int8_t load_spd_hashes_from_nvram(struct MCTStatStruc *pMCTstat, struct DCTStatS
 	if (!persistent_data)
 		return -1;
 
-	memcpy(pDCTstat->spd_data.nvram_spd_hash, persistent_data->node[pDCTstat->Node_ID].spd_hash, sizeof(pDCTstat->spd_data.nvram_spd_hash));
-	memcpy(pDCTstat->spd_data.nvram_memclk, persistent_data->node[pDCTstat->Node_ID].memclk, sizeof(pDCTstat->spd_data.nvram_memclk));
+	memcpy(pDCTstat->spd_data.nvram_spd_hash, persistent_data->node[pDCTstat->node_id].spd_hash, sizeof(pDCTstat->spd_data.nvram_spd_hash));
+	memcpy(pDCTstat->spd_data.nvram_memclk, persistent_data->node[pDCTstat->node_id].memclk, sizeof(pDCTstat->spd_data.nvram_memclk));
 
 	pMCTstat->nvram_checksum = persistent_data->nvram_checksum;
 
@@ -289,7 +289,7 @@ static void copy_cbmem_spd_data_to_save_variable(struct amd_s3_persistent_data *
 
 	for (node = 0; node < MAX_NODES_SUPPORTED; node++)
 		for (channel = 0; channel < 2; channel++)
-			persistent_data->node[node].memclk[channel] = mem_info->dct_stat[node].Speed;
+			persistent_data->node[node].memclk[channel] = mem_info->dct_stat[node].speed;
 
 	persistent_data->nvram_checksum = calculate_nvram_mct_hash();
 
@@ -832,7 +832,7 @@ void restore_mct_data_from_save_variable(struct amd_s3_persistent_data *persiste
 				dword |= 0x190;
 				write_amd_dct_index_register_dct(PCI_DEV(0, 0x18 + node, 2), node, channel, 0x98, 0x0d0fe006, dword);
 
-				/* Program MemClkFreqVal = 0 */
+				/* Program MEM_CLK_FREQ_VAL = 0 */
 				dword = read_config32_dct(PCI_DEV(0, 0x18 + node, 2), node, channel, 0x94);
 				dword &= (0x1 << 7);
 				write_config32_dct(PCI_DEV(0, 0x18 + node, 2), node, channel, 0x94, dword);

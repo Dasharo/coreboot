@@ -145,8 +145,8 @@ u64 get_logical_CPUID(u32 node)
 
 u8 get_processor_package_type(void)
 {
-	u32 BrandId = cpuid_ebx(0x80000001);
-	return (u8)((BrandId >> 28) & 0x0f);
+	u32 brand_id = cpuid_ebx(0x80000001);
+	return (u8)((brand_id >> 28) & 0x0f);
 }
 
 u32 get_platform_type(void)

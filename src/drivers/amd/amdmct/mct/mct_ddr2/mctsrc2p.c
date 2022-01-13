@@ -9,7 +9,7 @@ u8 mct_checkNumberOfDqsRcvEn_Pass(u8 pass)
 u32 SetupDqsPattern_PassA(u8 Pass)
 {
 	u32 ret;
-	if (Pass == FirstPass)
+	if (Pass == FIRST_PASS)
 		ret = (u32) TestPattern1_D;
 	else
 		ret = (u32) TestPattern2_D;
@@ -21,7 +21,7 @@ u32 SetupDqsPattern_PassA(u8 Pass)
 u32 SetupDqsPattern_PassB(u8 Pass)
 {
 	u32 ret;
-	if (Pass == FirstPass)
+	if (Pass == FIRST_PASS)
 		ret = (u32) TestPattern0_D;
 	else
 		ret = (u32) TestPattern2_D;
@@ -36,7 +36,7 @@ u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 {
 	u8 RcvrEnDly;
 
-	if (Pass == FirstPass)
+	if (Pass == FIRST_PASS)
 		RcvrEnDly = 0;
 	else {
 		u8 max = 0;
@@ -54,7 +54,7 @@ u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 		}
 		RcvrEnDly = max;
 //		while (1) {; }
-//		RcvrEnDly += secPassOffset; //FIXME Why
+//		RcvrEnDly += SEC_PASS_OFFSET; //FIXME Why
 	}
 
 	return RcvrEnDly;
@@ -78,7 +78,7 @@ u8 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 
 	p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
 
-	if (Pass == SecondPass) { /* second pass must average values */
+	if (Pass == SECOND_PASS) { /* second pass must average values */
 		//FIXME: which byte?
 		p_1 = pDCTstat->B_RCVRDLY_1;
 //		p_1 = pDCTstat->persistentData.CH_D_B_RCVRDLY_1[Channel][Receiver>>1];
@@ -86,7 +86,7 @@ u8 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 			val = p[i];
 			/* left edge */
 			if (val != (RcvrEnDlyLimit - 1)) {
-				val -= Pass1MemClkDly;
+				val -= PASS_1_MEM_CLK_DLY;
 				val_1 = p_1[i];
 				val += val_1;
 				val >>= 1;
@@ -97,7 +97,7 @@ u8 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 			}
 		}
 		if (!valid) {
-			pDCTstat->ErrStatus |= 1 << SB_NORCVREN;
+			pDCTstat->err_status |= 1 << SB_NO_RCVR_EN;
 		} else {
 			pDCTstat->DimmTrainFail &= ~(1 << (Receiver + Channel));
 		}

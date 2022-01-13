@@ -24,7 +24,7 @@ void InterleaveBanks_D(struct MCTStatStruc *pMCTstat,
 	u32 val;
 	u32 val_lo, val_hi;
 
-	DoIntlv = mctGet_NVbits(NV_BankIntlv);
+	DoIntlv = mctGet_NVbits(NV_BANK_INTLV);
 	_CsIntCap = 0;
 	EnChipSels = 0;
 
@@ -35,7 +35,7 @@ void InterleaveBanks_D(struct MCTStatStruc *pMCTstat,
 	while (DoIntlv && (ChipSel < MAX_CS_SUPPORTED)) {
 		reg = 0x40+(ChipSel << 2) + reg_off;	/* Dram CS Base 0 */
 		val = Get_NB32(dev, reg);
-		if (val & (1 << CSEnable)) {
+		if (val & (1 << CS_ENABLE)) {
 			EnChipSels++;
 			reg = 0x60+((ChipSel >> 1) << 2)+reg_off; /*Dram CS Mask 0 */
 			val = Get_NB32(dev, reg);
@@ -68,14 +68,14 @@ void InterleaveBanks_D(struct MCTStatStruc *pMCTstat,
 
 	if (DoIntlv) {
 		if (!_CsIntCap) {
-			pDCTstat->ErrStatus |= 1 << SB_BkIntDis;
+			pDCTstat->err_status |= 1 << SB_BK_INT_DIS;
 			DoIntlv = 0;
 		}
 	}
 
 	if (DoIntlv) {
 		val = Tab_int_D[BankEncd];
-		if (pDCTstat->Status & (1 << SB_128bitmode))
+		if (pDCTstat->status & (1 << SB_128_BIT_MODE))
 			val++;
 
 		AddrLoMask = (EnChipSels - 1)  << val;
@@ -120,8 +120,8 @@ void InterleaveBanks_D(struct MCTStatStruc *pMCTstat,
 		print_t("InterleaveBanks_D: Banks Interleaved ");
 	}	/* DoIntlv */
 
-	print_tx("InterleaveBanks_D: Status ", pDCTstat->Status);
-	print_tx("InterleaveBanks_D: ErrStatus ", pDCTstat->ErrStatus);
-	print_tx("InterleaveBanks_D: ErrCode ", pDCTstat->ErrCode);
+	print_tx("InterleaveBanks_D: status ", pDCTstat->status);
+	print_tx("InterleaveBanks_D: err_status ", pDCTstat->err_status);
+	print_tx("InterleaveBanks_D: err_code ", pDCTstat->err_code);
 	print_t("InterleaveBanks_D: Done\n");
 }

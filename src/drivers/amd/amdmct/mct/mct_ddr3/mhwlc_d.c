@@ -61,7 +61,7 @@ u8 AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			TrDimmSelEnd, (u32)dimm);
 
 	train_both_nibbles = 0;
-	if (pDCTstat->Dimmx4Present)
+	if (pDCTstat->dimm_x4_present)
 		if (is_fam15h())
 			train_both_nibbles = 1;
 
@@ -122,7 +122,7 @@ u8 AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			Addr = 0x0D00000C;
 			AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pDCTData->NodeId),FUN_DCT,Addl_Data_Offset), 31, 0, &Addr);
 			while ((get_Bits(pDCTData,FUN_DCT,pDCTData->NodeId, FUN_DCT, Addl_Data_Offset,
-					DctAccessDone, DctAccessDone)) == 0);
+					DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 			AmdMemPCIReadBits(MAKE_SBDFO(0,0,24+(pDCTData->NodeId),FUN_DCT,Addl_Data_Port), 31, 0, &Value);
 			Value = bitTestSet(Value, 0);	/* enable WL training */
 			Value = bitTestReset(Value, 4); /* for x8 only */
@@ -131,7 +131,7 @@ u8 AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			Addr = 0x4D030F0C;
 			AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pDCTData->NodeId),FUN_DCT,Addl_Data_Offset), 31, 0, &Addr);
 			while ((get_Bits(pDCTData,FUN_DCT,pDCTData->NodeId, FUN_DCT, Addl_Data_Offset,
-					DctAccessDone, DctAccessDone)) == 0);
+					DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 		}
 
 		if (is_fam15h())
@@ -157,7 +157,7 @@ u8 AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		pDCTData->WLCriticalGrossDelayPrevPass = 0x0;
 
 		/* Exit nibble training if current DIMM is not x4 */
-		if ((pDCTstat->Dimmx4Present & (1 << (dimm + dct))) == 0)
+		if ((pDCTstat->dimm_x4_present & (1 << (dimm + dct))) == 0)
 			break;
 	}
 
@@ -206,14 +206,14 @@ u8 AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 
 		pDCTData->WLCriticalGrossDelayPrevPass = cgd;
 
-		if (pDCTstat->Speed != pDCTstat->TargetFreq) {
+		if (pDCTstat->speed != pDCTstat->TargetFreq) {
 			/* FIXME
 			 * Using the Pass 1 training values causes major phy training problems on
 			 * all Family 15h processors I tested (Pass 1 values are randomly too high,
 			 * and Pass 2 cannot lock).
 			 * Figure out why this is and fix it, then remove the bypass code below...
 			 */
-			if (pass == FirstPass) {
+			if (pass == FIRST_PASS) {
 				for (ByteLane = 0; ByteLane < lane_count; ByteLane++) {
 					pDCTData->WLGrossDelay[index + ByteLane] = pDCTData->WLSeedGrossDelay[index + ByteLane];
 					pDCTData->WLFineDelay[index + ByteLane] = pDCTData->WLSeedFineDelay[index + ByteLane];
@@ -227,7 +227,7 @@ u8 AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			u8 faulty_value_detected = 0;
 			u16 total_delay_seed = ((pDCTData->WLSeedGrossDelay[index + ByteLane] & 0x1f) << 5) | (pDCTData->WLSeedFineDelay[index + ByteLane] & 0x1f);
 			u16 total_delay_phy = ((pDCTData->WLGrossDelay[index + ByteLane] & 0x1f) << 5) | (pDCTData->WLFineDelay[index + ByteLane] & 0x1f);
-			if (pass == FirstPass) {
+			if (pass == FIRST_PASS) {
 				/* Allow a somewhat higher step threshold on the first pass
 				 * For the most part, as long as the phy isn't stepping
 				 * several clocks at once the values are probably valid.
@@ -364,7 +364,7 @@ u32 swapAddrBits_wl(struct DCTStatStruc *pDCTstat, u8 dct, u32 MRSValue)
 			FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10);
 	if (tempW1 & 1)
 	{
-		if ((pDCTData->Status[DCT_STATUS_OnDimmMirror]))
+		if ((pDCTData->status[DCT_STATUS_OnDimmMirror]))
 		{
 			/* swap A3/A4,A5/A6,A7/A8 */
 			tempW = MRSValue;
@@ -405,7 +405,7 @@ u32 swapBankBits(struct DCTStatStruc *pDCTstat, u8 dct, u32 MRSValue)
 				FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10);
 	if (tempW1 & 1)
 	{
-		if ((pDCTData->Status[DCT_STATUS_OnDimmMirror]))
+		if ((pDCTData->status[DCT_STATUS_OnDimmMirror]))
 		{
 			/* swap BA0/BA1 */
 			tempW = MRSValue;
@@ -535,7 +535,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		} else {
 			/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
 			tempW2 = get_Bits(pDCTData, dct, pDCTData->NodeId,
-					FUN_DCT, DRAM_CONFIG_HIGH, RDqsEn, RDqsEn);
+					FUN_DCT, DRAM_CONFIG_HIGH, RDQS_EN, RDQS_EN);
 			if (tempW2)
 			{
 				if (pDCTData->DimmX8Present[dimm])
@@ -564,7 +564,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			tempW1 |= ((tempW2 & 0x2) >> 1) << 6;
 			tempW1 |= ((tempW2 & 0x1) >> 0) << 2;
 		} else {
-			if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
+			if (pDCTData->status[DCT_STATUS_REGISTERED]) {
 				tempW1 = RttNomTargetRegDimm(pMCTData, pDCTData, dimm, wl, MemClkFreq, rank);
 			} else {
 				if (wl) {
@@ -680,7 +680,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 			/* tempW = tempW|(((tempW1 >> 20) & 0x7)<< 3); */
 			tempW = tempW | ((tempW1 & 0x00700000) >> 17);
 			/* workaround for DR-B0 */
-			if ((pDCTData->LogicalCPUID & AMD_DR_Bx) && (pDCTData->Status[DCT_STATUS_REGISTERED]))
+			if ((pDCTData->LogicalCPUID & AMD_DR_Bx) && (pDCTData->status[DCT_STATUS_REGISTERED]))
 				tempW += 0x8;
 		}
 
@@ -688,7 +688,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 		if (is_fam15h()) {
 			tempW1 = (fam15_rttwr(pDCTstat, dct, dimm, rank, package_type) << 9);
 		} else {
-			if (pDCTData->Status[DCT_STATUS_REGISTERED])
+			if (pDCTData->status[DCT_STATUS_REGISTERED])
 				tempW1 = RttWrRegDimm(pMCTData, pDCTData, dimm, wl, MemClkFreq, rank);
 			else
 				tempW1 = unbuffered_dimm_dynamic_termination_emrs(pDCTData->MaxDimmsInstalled, MemClkFreq, pDCTData->DimmRanks[dimm]);
@@ -763,7 +763,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 					} else {
 						/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
 						tempW2 = get_Bits(pDCTData, dct, pDCTData->NodeId,
-								FUN_DCT, DRAM_CONFIG_HIGH, RDqsEn, RDqsEn);
+								FUN_DCT, DRAM_CONFIG_HIGH, RDQS_EN, RDQS_EN);
 						if (tempW2)
 						{
 							if (pDCTData->DimmX8Present[currDimm])
@@ -779,7 +779,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 						tempW1 |= ((tempW2 & 0x2) >> 1) << 6;
 						tempW1 |= ((tempW2 & 0x1) >> 0) << 2;
 					} else {
-						if (pDCTData->Status[DCT_STATUS_REGISTERED])
+						if (pDCTData->status[DCT_STATUS_REGISTERED])
 							tempW1 = RttNomNonTargetRegDimm(pMCTData, pDCTData, currDimm, wl, MemClkFreq, rank);
 						else
 							tempW1 = unbuffered_dimm_nominal_termination_emrs(pDCTData->MaxDimmsInstalled, MemClkFreq, pDCTData->DimmRanks[currDimm], rank);
@@ -855,7 +855,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 						/* tempW = tempW|(((tempW1 >> 20) & 0x7) << 3); */
 						tempW = tempW | ((tempW1 & 0x00700000) >> 17);
 						/* workaround for DR-B0 */
-						if ((pDCTData->LogicalCPUID & AMD_DR_Bx) && (pDCTData->Status[DCT_STATUS_REGISTERED]))
+						if ((pDCTData->LogicalCPUID & AMD_DR_Bx) && (pDCTData->status[DCT_STATUS_REGISTERED]))
 							tempW+=0x8;
 					}
 
@@ -863,7 +863,7 @@ void prepareDimms(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
 					if (is_fam15h()) {
 						tempW1 = (fam15_rttwr(pDCTstat, dct, dimm, rank, package_type) << 9);
 					} else {
-						if (pDCTData->Status[DCT_STATUS_REGISTERED])
+						if (pDCTData->status[DCT_STATUS_REGISTERED])
 							tempW1 = RttWrRegDimm(pMCTData, pDCTData, currDimm, wl, MemClkFreq, rank);
 						else
 							tempW1 = unbuffered_dimm_dynamic_termination_emrs(pDCTData->MaxDimmsInstalled, MemClkFreq, pDCTData->DimmRanks[currDimm]);
@@ -939,7 +939,7 @@ void programODT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 		else if ((cs == 4) || (cs == 0))
 			WrLvOdt1 = (dword & 0xf);
 	} else {
-		if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
+		if (pDCTData->status[DCT_STATUS_REGISTERED]) {
 			WrLvOdt1 = WrLvOdtRegDimm(pMCTData, pDCTData, dimm);
 		} else {
 			if ((pDCTData->DctCSPresent & 0x05) == 0x05) {
@@ -1036,14 +1036,14 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 		Addr = 0x0D008000;
 		AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pDCTData->NodeId),FUN_DCT,Addl_Data_Offset), 31, 0, &Addr);
 		while ((get_Bits(pDCTData,FUN_DCT,pDCTData->NodeId, FUN_DCT, Addl_Data_Offset,
-				DctAccessDone, DctAccessDone)) == 0);
+				DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 		AmdMemPCIReadBits(MAKE_SBDFO(0,0,24+(pDCTData->NodeId),FUN_DCT,Addl_Data_Port), 31, 0, &Value);
 		Value = bitTestSet(Value, 12);
 		AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pDCTData->NodeId),FUN_DCT,Addl_Data_Port), 31, 0, &Value);
 		Addr = 0x4D088F00;
 		AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pDCTData->NodeId),FUN_DCT,Addl_Data_Offset), 31, 0, &Addr);
 		while ((get_Bits(pDCTData,FUN_DCT,pDCTData->NodeId, FUN_DCT, Addl_Data_Offset,
-				DctAccessDone, DctAccessDone)) == 0);
+				DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 	}
 
 	if (is_fam15h())
@@ -1066,7 +1066,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 			pDCTData->WrDqsGrossDlyBaseOffset = 0x0;
 			if (package_type == PT_GR) {
 				/* Socket G34: Fam15h BKDG v3.14 Table 96 */
-				if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
+				if (pDCTData->status[DCT_STATUS_REGISTERED]) {
 					/* TODO
 					 * Implement mainboard-specific seed and
 					 * WrDqsGrossDly base overrides.
@@ -1074,16 +1074,16 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 					 */
 					Seed_Total = 0x41;
 					pDCTData->WrDqsGrossDlyBaseOffset = 0x2;
-				} else if (pDCTData->Status[DCT_STATUS_LOAD_REDUCED]) {
+				} else if (pDCTData->status[DCT_STATUS_LOAD_REDUCED]) {
 					Seed_Total = 0x0;
 				} else {
 					Seed_Total = 0xf;
 				}
 			} else if (package_type == PT_C3) {
 				/* Socket C32: Fam15h BKDG v3.14 Table 97 */
-				if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
+				if (pDCTData->status[DCT_STATUS_REGISTERED]) {
 					Seed_Total = 0x3e;
-				} else if (pDCTData->Status[DCT_STATUS_LOAD_REDUCED]) {
+				} else if (pDCTData->status[DCT_STATUS_LOAD_REDUCED]) {
 					Seed_Total = 0x0;
 				} else {
 					Seed_Total = 0x12;
@@ -1095,7 +1095,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 				/* Socket FM2: Fam15h M10 BKDG 3.12 Table 42 */
 				Seed_Total = 0x15;
 			}
-			if (pDCTData->Status[DCT_STATUS_REGISTERED])
+			if (pDCTData->status[DCT_STATUS_REGISTERED])
 				Seed_Total += ((AddrCmdPrelaunch) ? 0x10 : 0x0);
 
 			/* Adjust seed for the minimum platform supported frequency */
@@ -1120,7 +1120,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 				pDCTData->WLSeedPreGrossDelay[lane_count * dimm + ByteLane] = Seed_PreGross;
 			}
 		} else {
-			if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
+			if (pDCTData->status[DCT_STATUS_REGISTERED]) {
 				u8 AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
 
 				/* The seed values below assume Pass 1 utilizes a 400MHz clock frequency (DDR3-800) */
@@ -1168,7 +1168,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 				u32 WrDqDqsEarly;
 				u8 AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
 
-				if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
+				if (pDCTData->status[DCT_STATUS_REGISTERED]) {
 					if (AddrCmdPrelaunch)
 						RegisterDelay = 0x30;
 					else
@@ -1231,7 +1231,7 @@ void procConfig(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8
 				u8 AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
 				for (ByteLane = 0; ByteLane < lane_count; ByteLane++)
 				{
-					if (pDCTData->Status[DCT_STATUS_REGISTERED]) {
+					if (pDCTData->status[DCT_STATUS_REGISTERED]) {
 						if (AddrCmdPrelaunch == 0)
 							RegisterDelay = 0x20;
 						else
@@ -1411,7 +1411,7 @@ void setWLByteDelay(struct DCTStatStruc *pDCTstat, u8 dct, u8 ByteLane, u8 dimm,
 
 		pDCTData->WLFineDelayPrevPass[index + ByteLane] = fineDelayValue;
 		pDCTData->WLGrossDelayPrevPass[index + ByteLane] = grossDelayValue;
-		if (pass == FirstPass) {
+		if (pass == FIRST_PASS) {
 			pDCTData->WLFineDelayFirstPass[index + ByteLane] = fineDelayValue;
 			pDCTData->WLGrossDelayFirstPass[index + ByteLane] = grossDelayValue;
 			pDCTData->WLCriticalGrossDelayFirstPass = pDCTData->WLCriticalGrossDelayPrevPass;

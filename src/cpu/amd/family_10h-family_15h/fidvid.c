@@ -32,12 +32,12 @@
  * 5.-  enableNbPState1(dev)
  *
  * 6.- 2.4.1.7
- *     a) UpdateSinglePlaneNbVid()
+ *     a) update_single_plane_nb_vid()
  *     b) setVSRamp(), called from  prep_fid_change
  *     c) prep_fid_change
  *     d) improperly, for lack of voltage regulator details?,
  *      F3xA0[PsiVidEn] in defaults.h
- *      F3xA0[PsiVid] in init_cpus.c AMD_SetupPSIVID_d (before prep_fid_change)
+ *      F3xA0[PsiVid] in init_cpus.c amd_setup_psivid_d (before prep_fid_change)
  *
  * 7.- TODO (Core Performance Boost is only available in revision E cpus, and we
  *        don't seem to support those yet, at least they don't have any
@@ -373,7 +373,7 @@ static u32 nb_clk_did(u8 node, u64 cpuRev, u8 procPkg)
 	u8 link0isGen3 = 0;
 	u8 offset;
 
-	if (AMD_CpuFindCapability(node, 0, &offset)) {
+	if (amd_cpu_find_capability(node, 0, &offset)) {
 		link0isGen3 = (AMD_checkLinkType(node, offset) & HTPHY_LINKTYPE_HT3);
 	}
 	/* FIXME: NB_CLKDID should be 101b for AMD_DA_C2 in package
@@ -407,7 +407,7 @@ static u32 power_up_down(int node, u8 procPkg)
 	u32 isocEn = 0;
 	for (int j = 0; (j < 4) && (!isocEn); j++) {
 		u8 offset;
-		if (AMD_CpuFindCapability(node, j, &offset)) {
+		if (amd_cpu_find_capability(node, j, &offset)) {
 			isocEn = (pci_read_config32(NODE_PCI(node, 0), offset + 4) >> 12) & 1;
 		}
 	}
@@ -687,7 +687,7 @@ static void set_pstate(u32 nonBoostedPState) {
 	}
 }
 
-static void UpdateSinglePlaneNbVid(void)
+static void update_single_plane_nb_vid(void)
 {
 	u32 nbVid, cpuVid;
 	u8 i;
@@ -753,7 +753,7 @@ static void fixPsNbVidBeforeWR(u32 newNbVid, u32 coreid, u32 dev, u8 pviMode)
 	wrmsr(PSTATE_0_MSR, msr);
 
 	if (pviMode)/* single plane*/
-		UpdateSinglePlaneNbVid();
+		update_single_plane_nb_vid();
 
 	// Transition to P1 for all APs and P0 for core0.
 	set_pstate(1);
@@ -829,7 +829,7 @@ static u32 init_fidvid_core(u32 nodeid, u32 coreid)
 	} else {	/* ! nb_cof_vid_update */
 		/* Use max values */
 		if (pvimode)
-			UpdateSinglePlaneNbVid();
+			update_single_plane_nb_vid();
 	}
 
 	return ((nb_cof_vid_update << 16) | (fid_max << 8));
@@ -909,7 +909,7 @@ static void fixPsNbVidAfterWR(u32 newNbVid, u8 NbVidUpdatedAll,u8 pviMode)
 {
 	msr_t msr;
 	u8 i;
-	u8 StartupPstate;
+	u8 startup_pstate;
 
 	/* BKDG 2.4.2.9.1 11-12
 	 * This function copies newNbVid to NbVid bits in P-state
@@ -936,14 +936,14 @@ static void fixPsNbVidAfterWR(u32 newNbVid, u8 NbVidUpdatedAll,u8 pviMode)
 	 * should we just update cpu_vid or nothing at all ?
 	 */
 	if (pviMode) { //single plane
-		UpdateSinglePlaneNbVid();
+		update_single_plane_nb_vid();
 	}
 	/* For each core in the system, transition all cores to StartupPstate */
 	msr = rdmsr(MSR_COFVID_STS);
-	StartupPstate = msr.hi & 0x07;
+	startup_pstate = msr.hi & 0x07;
 
 	/* Set and wait for StartupPstate to set. */
-	set_pstate(StartupPstate);
+	set_pstate(startup_pstate);
 
 }
 
@@ -954,7 +954,7 @@ void init_fidvid_stage2(u32 apicid, u32 nodeid)
 	u32 dtemp;
 	u32 nbvid;
 	u8 nb_cof_vid_update = needs_NB_COF_VID_update();
-	u8 NbVidUpdateAll;
+	u8 nb_vid_update_all;
 	u8 pvimode;
 
 	/* After warm reset finish the fid/vid setup for all cores. */
@@ -966,17 +966,17 @@ void init_fidvid_stage2(u32 apicid, u32 nodeid)
 		pvimode = (pci_read_config32(NODE_PCI(nodeid, 3), 0xA0) >> 8) & 1;
 	reg1fc = pci_read_config32(NODE_PCI(nodeid, 3), 0x1FC);
 	nbvid = (reg1fc >> 7) & 0x7F;
-	NbVidUpdateAll = (reg1fc >> 1) & 1;
+	nb_vid_update_all = (reg1fc >> 1) & 1;
 
 	if (nb_cof_vid_update) {
 		if (!pvimode) {	/* SVI */
 			nbvid = nbvid - ((reg1fc >> 17) & 0x1F);
 		}
 		/* write newNbVid to P-state Reg's NbVid if its NbDid=0 */
-		fixPsNbVidAfterWR(nbvid, NbVidUpdateAll,pvimode);
+		fixPsNbVidAfterWR(nbvid, nb_vid_update_all,pvimode);
 	} else {		/* !nb_cof_vid_update */
 		if (pvimode)
-			UpdateSinglePlaneNbVid();
+			update_single_plane_nb_vid();
 	}
 	dtemp = pci_read_config32(NODE_PCI(nodeid, 3), 0xA0);
 	dtemp &= PLLLOCK_OFF;

@@ -74,9 +74,9 @@ typedef u32 SBDFO;
 /* CPU Register definitions */
 
 /* Register Bit Location */
-#define DctAccessDone 31
-#define DctAccessWrite 30
-#define RDqsEn 12
+#define DCT_ACCESS_DONE 31
+#define DCT_ACCESS_WRITE 30
+#define RDQS_EN 12
 #define TrDimmSelStart 4
 #define TrDimmSelEnd 5
 #define WrLvTrMode 1
@@ -162,8 +162,8 @@ typedef struct _sDCTStruct
 					/* from Total Number of DIMMs(per Node)*/
 	u8 DimmX8Present[MAX_TOTAL_DIMMS];	/* Which DIMMs x8 devices */
 	u8 Status[MAX_STATUS];		/* Status for DCT0 and 1 */
-	u8 ErrCode[MAX_ERRORS];		/* Major Error codes for DCT0 and 1 */
-	u8 ErrStatus[MAX_ERRORS];	/* Minor Error codes for DCT0 and 1 */
+	u8 err_code[MAX_ERRORS];		/* Major Error codes for DCT0 and 1 */
+	u8 err_status[MAX_ERRORS];	/* Minor Error codes for DCT0 and 1 */
 	u8 DimmValid[MAX_TOTAL_DIMMS];	/* Indicates which DIMMs are valid for */
 					/* Total Number of DIMMs(per Node) */
 	u8 WLTotalDelay[MAX_BYTE_LANES];/* Write Levelization Total Delay */

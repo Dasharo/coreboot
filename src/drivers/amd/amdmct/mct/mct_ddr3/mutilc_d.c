@@ -260,11 +260,11 @@ u32 get_ADD_DCT_Bits(sDCTStruct *pDCTData,
 {
 	u32 tempD;
 	tempD = offset;
-	tempD = bitTestReset(tempD,DctAccessWrite);
+	tempD = bitTestReset(tempD,DCT_ACCESS_WRITE);
 	set_Bits(pDCTData, dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
 		PCI_MIN_LOW, PCI_MAX_HIGH, offset);
 	while ((get_Bits(pDCTData,dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
-			DctAccessDone, DctAccessDone)) == 0);
+			DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 	return (get_Bits(pDCTData, dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_PORT_REG,
 			low, high));
 }
@@ -301,17 +301,17 @@ void set_DCT_ADDR_Bits(sDCTStruct *pDCTData,
 	set_Bits(pDCTData, dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
 		PCI_MIN_LOW, PCI_MAX_HIGH, offset);
 	while ((get_Bits(pDCTData, dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
-			DctAccessDone, DctAccessDone)) == 0);
+			DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 
 	set_Bits(pDCTData, dct, node, FUN_DCT, DRAM_CONTROLLER_ADD_DATA_PORT_REG,
 		low, high, value);
 	tempD = offset;
-	tempD = bitTestSet(tempD,DctAccessWrite);
+	tempD = bitTestSet(tempD,DCT_ACCESS_WRITE);
 	set_Bits(pDCTData, dct, node, FUN_DCT,DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
 		PCI_MIN_LOW, PCI_MAX_HIGH, tempD);
 	while ((get_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
-			DRAM_CONTROLLER_ADD_DATA_OFFSET_REG, DctAccessDone,
-			DctAccessDone)) == 0);
+			DRAM_CONTROLLER_ADD_DATA_OFFSET_REG, DCT_ACCESS_DONE,
+			DCT_ACCESS_DONE)) == 0);
 }
 
 /*-------------------------------------------------

@@ -9,10 +9,10 @@ void EarlySampleSupport_D(void)
 u32 procOdtWorkaround(struct DCTStatStruc *pDCTstat, u32 dct, u32 val)
 {
 	u64 tmp;
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = pDCTstat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 		val &= 0x0FFFFFFF;
-		if (pDCTstat->MAdimms[dct] > 1)
+		if (pDCTstat->ma_dimms[dct] > 1)
 			val |= 0x10000000;
 	}
 
@@ -28,7 +28,7 @@ u32 OtherTiming_A_D(struct DCTStatStruc *pDCTstat, u32 val)
 	 * FIXME: check if this is still required.
 	 */
 	u64 tmp;
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = pDCTstat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 		if (!(val & (3 << 12)))
 			val |= 1 << 12;
@@ -45,7 +45,7 @@ void mct_ForceAutoPrecharge_D(struct DCTStatStruc *pDCTstat, u32 dct)
 	u32 dev;
 	u32 val;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = pDCTstat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 		if (CheckNBCOFAutoPrechg(pDCTstat, dct)) {
 			dev = pDCTstat->dev_dct;
@@ -54,7 +54,7 @@ void mct_ForceAutoPrecharge_D(struct DCTStatStruc *pDCTstat, u32 dct)
 			val = Get_NB32(dev, reg);
 			val |= 1 << ForceAutoPchg;
 			if (!pDCTstat->GangedMode)
-				val |= 1 << BurstLength32;
+				val |= 1 << BURST_LENGTH_32;
 			Set_NB32(dev, reg, val);
 
 			reg = 0x88 + reg_off;	/* cx = Dram Timing Lo */
@@ -93,7 +93,7 @@ void mct_EndDQSTraining_D(struct MCTStatStruc *pMCTstat,
 
 		if (!pDCTstat->NodePresent) break;
 
-		tmp = pDCTstat->LogicalCPUID;
+		tmp = pDCTstat->logical_cpuid;
 		if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 			dev = pDCTstat->dev_dct;
 			reg = 0x11c;
@@ -131,7 +131,7 @@ void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *pMCTstat,
 	u64 tmp;
 	u32 Channel;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = pDCTstat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 
 		dev = pDCTstat->dev_dct;
@@ -192,7 +192,7 @@ u32 Modify_D3CMP(struct DCTStatStruc *pDCTstat, u32 dct, u32 value)
 	u32 val;
 	u64 tmp;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = pDCTstat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 		dev = pDCTstat->dev_dct;
 		index_reg = 0x98 + 0x100 * dct;
@@ -222,10 +222,10 @@ void SyncSetting(struct DCTStatStruc *pDCTstat)
 	 */
 
 	u64 tmp;
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = pDCTstat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		pDCTstat->CH_ODC_CTL[1] = pDCTstat->CH_ODC_CTL[0];
-		pDCTstat->CH_ADDR_TMG[1] = pDCTstat->CH_ADDR_TMG[0];
+		pDCTstat->ch_odc_ctl[1] = pDCTstat->ch_odc_ctl[0];
+		pDCTstat->ch_addr_tmg[1] = pDCTstat->ch_addr_tmg[0];
 	}
 }
 
@@ -269,9 +269,9 @@ void mct_BeforeDramInit_D(struct DCTStatStruc *pDCTstat, u32 dct)
 	u32 dev;
 	u32 val;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = pDCTstat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		Speed = pDCTstat->Speed;
+		Speed = pDCTstat->speed;
 		/* MemClkFreq = 333MHz or 533MHz */
 		if ((Speed == 3) || (Speed == 2)) {
 			if (pDCTstat->GangedMode) {
@@ -315,15 +315,15 @@ u8 mct_checkFenceHoleAdjust_D(struct MCTStatStruc *pMCTstat,
 	u8 ByteLane;
 	u64 tmp;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = pDCTstat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		if (pDCTstat->Direction == DQS_WRITEDIR) {
-			if ((pDCTstat->Speed == 2) || (pDCTstat->Speed == 3)) {
+		if (pDCTstat->direction == DQS_WRITEDIR) {
+			if ((pDCTstat->speed == 2) || (pDCTstat->speed == 3)) {
 				if (DQSDelay == 13) {
 					if (*result == 0xFF) {
 						for (ByteLane = 0; ByteLane < 8; ByteLane++) {
-							pDCTstat->DQSDelay = 13;
-							pDCTstat->ByteLane = ByteLane;
+							pDCTstat->dqs_delay = 13;
+							pDCTstat->byte_lane = ByteLane;
 							/* store the value into the data structure */
 							StoreDQSDatStrucVal_D(pMCTstat, pDCTstat, ChipSel);
 						}
@@ -370,13 +370,13 @@ void mct_AdjustScrub_D(struct DCTStatStruc *pDCTstat, u16 *scrub_request) {
 
 	/* Erratum #202: disable DCache scrubber for Ax parts */
 
-	if (pDCTstat->LogicalCPUID & (AMD_DR_Ax)) {
+	if (pDCTstat->logical_cpuid & (AMD_DR_Ax)) {
 		*scrub_request = 0;
-		pDCTstat->ErrStatus |= 1 << SB_DCBKScrubDis;
+		pDCTstat->err_status |= 1 << SB_DCBKScrubDis;
 	}
 }
 
 void beforeInterleaveChannels_D(struct DCTStatStruc *pDCTstatA, u8 *enabled) {
-	if (pDCTstatA->LogicalCPUID & (AMD_DR_Ax))
+	if (pDCTstatA->logical_cpuid & (AMD_DR_Ax))
 		*enabled = 0;
 }
