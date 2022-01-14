@@ -112,7 +112,7 @@ releases:
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
 
-        - version: v0.5.1
+        - version: v1.0.0
           added:
                 - Documentation for touchpad hotkey enablement on Linux
           fixed:
