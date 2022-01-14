@@ -580,9 +580,9 @@ struct DCTStatStruc {		/* A per Node structure*/
 /* Memory Map/Mgt.*/
 
 /* Bottom of 32-bit IO space (8-bits)
- * NV_BottomIO[7:0]=Addr[31:24]
+ * NV_BOTTOM_IO[7:0]=Addr[31:24]
  */
-#define NV_BottomIO		40
+#define NV_BOTTOM_IO		40
 /* Bottom of shared graphics dram (8-bits)
  * NV_BOTTOM_UMA[7:0]=Addr[31:24]
  */
@@ -627,46 +627,46 @@ struct DCTStatStruc {		/* A per Node structure*/
 
 
 /* global function */
-u32 NodePresent(u32 Node);
-u32 Get_NB32n(struct DCTStatStruc *pDCTstat, u32 addrx);
-u32 Get_NB32(u32 addr); /* NOTE: extend addr to 32 bit for bus > 0 */
+u32 node_present(u32 Node);
+u32 get_nb32n(struct DCTStatStruc *p_dct_stat, u32 addrx);
+u32 get_nb32(u32 addr); /* NOTE: extend addr to 32 bit for bus > 0 */
 
-void K8FInterleaveBanks(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+void k8f_interleave_banks(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
-void mctInitWithWritetoCS(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+void mct_init_with_write_to_cs(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
-void mctGet_PS_Cfg(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void Get_ChannelPS_Cfg0(unsigned int MAAdimms, unsigned int Speed, unsigned int MAAload,
-		unsigned int DATAAload, unsigned int *AddrTmgCTL, unsigned int *ODC_CTL);
-void Get_ChannelPS_Cfg1(unsigned int MAAdimms, unsigned int Speed, unsigned int MAAload,
-		unsigned int *AddrTmgCTL, unsigned int *ODC_CTL, unsigned int *val);
-void Get_ChannelPS_Cfg2(unsigned int MAAdimms, unsigned int Speed, unsigned int MAAload,
-		unsigned int *AddrTmgCTL, unsigned int *ODC_CTL, unsigned int *val);
+void mct_get_ps_cfg(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void get_channel_ps_cfg_0(unsigned int maa_dimms, unsigned int Speed, unsigned int MAAload,
+		unsigned int DATAAload, unsigned int *addr_tmg_ctl, unsigned int *ODC_CTL);
+void get_channel_ps_cfg_1(unsigned int maa_dimms, unsigned int Speed, unsigned int MAAload,
+		unsigned int *addr_tmg_ctl, unsigned int *ODC_CTL, unsigned int *val);
+void get_channel_ps_cfg_2(unsigned int maa_dimms, unsigned int Speed, unsigned int MAAload,
+		unsigned int *addr_tmg_ctl, unsigned int *ODC_CTL, unsigned int *val);
 
-u8 MCTDefRet(void);
+u8 mct_def_reset(void);
 
-u32 Get_RcvrSysAddr(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
+u32 get_rcvr_sys_addr(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat,
 			u8 channel, u8 receiver, u8 *valid);
-u32 Get_MCTSysAddr(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat,
+u32 get_mct_sys_addr(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat,
 			u8 channel, u8 chipsel, u8 *valid);
-void K8FTrainReceiverEn(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA,
+void k8f_train_receiver_en(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a,
 			u8 pass);
-void K8FTrainDQSPos(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-u32 SetUpperFSbase(u32 addr_hi);
+void k8f_train_dqs_pos(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+u32 set_upper_fs_base(u32 addr_hi);
 
 
-void K8FECCInit(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
+void k8f_ecc_init(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 
-void amd_MCTInit(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
+void amd_mct_init(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 
-void K8FCPUMemTyping(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void K8FCPUMemTyping_clear(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
+void k8f_cpu_mem_typing(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void k8f_cpu_mem_typing_clear(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 
-void K8FWaitMemClrDelay(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-unsigned int K8FCalcFinalDQSRcvValue(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, unsigned int LeftRcvEn,
-					unsigned int RightRcvEn, unsigned int *valid);
+void k8f_wait_mem_clr_delay(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+unsigned int k8f_calc_final_dqs_rcv_value(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, unsigned int left_rcv_en,
+					unsigned int right_rcv_en, unsigned int *valid);
 
-void K8FGetDeltaTSCPart1(struct DCTStatStruc *pDCTstat);
-void K8FGetDeltaTSCPart2(struct DCTStatStruc *pDCTstat);
+void k8f_get_delta_tcs_part_1(struct DCTStatStruc *p_dct_stat);
+void k8f_get_delta_tcs_part_2(struct DCTStatStruc *p_dct_stat);
 #endif

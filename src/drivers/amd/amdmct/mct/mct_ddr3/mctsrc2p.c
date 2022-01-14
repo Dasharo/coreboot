@@ -27,7 +27,7 @@ u32 SetupDqsPattern_PassB(u8 Pass)
 	return ret;
 }
 
-u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
+u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
 					u8 Channel, u8 Receiver,
 					u8 Pass)
 {
@@ -39,7 +39,7 @@ u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 		u8 max = 0;
 		u8 val;
 		u8 i;
-		u8 *p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+		u8 *p = p_dct_stat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
 		u8 bn;
 		bn = 8;
 
@@ -56,7 +56,7 @@ u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 	return RcvrEnDly;
 }
 
-u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
+u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
 				u16 RcvrEnDly, u16 RcvrEnDlyLimit,
 				u8 Channel, u8 Receiver, u8 Pass)
 {
@@ -70,12 +70,12 @@ u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 
 	bn = 8;
 
-	p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+	p = p_dct_stat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
 
 	if (Pass == SECOND_PASS) { /* second pass must average values */
 		/* FIXME: which byte? */
-		p_1 = pDCTstat->B_RCVRDLY_1;
-		/* p_1 = pDCTstat->persistentData.CH_D_B_RCVRDLY_1[Channel][Receiver>>1]; */
+		p_1 = p_dct_stat->B_RCVRDLY_1;
+		/* p_1 = p_dct_stat->persistentData.CH_D_B_RCVRDLY_1[Channel][Receiver>>1]; */
 		for (i = 0; i < bn; i++) {
 			val = p[i];
 			/* left edge */
@@ -91,9 +91,9 @@ u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 			}
 		}
 		if (!valid) {
-			pDCTstat->err_status |= 1 << SB_NO_RCVR_EN;
+			p_dct_stat->err_status |= 1 << SB_NO_RCVR_EN;
 		} else {
-			pDCTstat->DimmTrainFail &= ~(1 << (Receiver + Channel));
+			p_dct_stat->DimmTrainFail &= ~(1 << (Receiver + Channel));
 		}
 	} else {
 		for (i = 0; i < bn; i++) {
@@ -103,7 +103,7 @@ u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 			val += 0x5; /* NOTE: middle value with DQSRCVEN_SAVED_GOOD_TIMES */
 			/* val += 0x02; */
 			p[i] = val;
-			pDCTstat->DimmTrainFail &= ~(1 << (Receiver + Channel));
+			p_dct_stat->DimmTrainFail &= ~(1 << (Receiver + Channel));
 		}
 	}
 

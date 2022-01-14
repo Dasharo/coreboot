@@ -7,8 +7,8 @@
 static void SetMTRRrangeWB_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr);
 static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType);
 
-void CPUMemTyping_D(struct MCTStatStruc *pMCTstat,
-			 struct DCTStatStruc *pDCTstatA)
+void CPUMemTyping_D(struct MCTStatStruc *p_mct_stat,
+			 struct DCTStatStruc *p_dct_stat_a)
 {
 	/* BSP only.  Set the fixed MTRRs for common legacy ranges.
 	 * Set TOP_MEM and TOM2.
@@ -30,13 +30,13 @@ void CPUMemTyping_D(struct MCTStatStruc *pMCTstat,
 	 *	right justified 8 bits
 	 */
 
-	val = mctGet_NVbits(NV_BottomIO);
+	val = mctGet_NVbits(NV_BOTTOM_IO);
 	if (val == 0)
 		val++;
 
 	Bottom32bIO = val << (24-8);
 
-	val = pMCTstat->SysLimit + 1;
+	val = p_mct_stat->SysLimit + 1;
 	if (val <= _4GB_RJ8) {
 		Bottom40bIO = 0;
 		if (Bottom32bIO >= val)
@@ -78,9 +78,9 @@ void CPUMemTyping_D(struct MCTStatStruc *pMCTstat,
 				/* Limit */
 				/* MtrrAddr */
 	if (addr == -1)		/* ran out of MTRRs?*/
-		pMCTstat->GStatus |= 1 << GSB_MTRR_SHORT;
+		p_mct_stat->GStatus |= 1 << GSB_MTRR_SHORT;
 
-	pMCTstat->Sub4GCacheTop = Cache32bTOP << 8;
+	p_mct_stat->Sub4GCacheTop = Cache32bTOP << 8;
 
 	/*======================================================================
 	 Set TOP_MEM and TOM2 CPU registers
@@ -188,7 +188,7 @@ static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType)
 	*pMtrrAddr = addr;
 }
 
-void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
+void UMAMemTyping_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 {
 /* UMA memory size may need splitting the MTRR configuration into two
  * Before training use NB_BottomIO or the physical memory size to set the MTRRs.
@@ -208,7 +208,7 @@ void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat
 	 * (defines dram versus IO space type)
 	 * Cache32bTOP = sub 4GB top of WB cacheable memory, right justified 8 bits */
 
-	Bottom32bIO = pMCTstat->Sub4GCacheTop >> 8;
+	Bottom32bIO = p_mct_stat->Sub4GCacheTop >> 8;
 
 	val = mctGet_NVbits(NV_BOTTOM_UMA);
 	if (val == 0)
@@ -217,7 +217,7 @@ void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat
 	val <<= (24-8);
 	if (val < Bottom32bIO) {
 		Cache32bTOP = val;
-		pMCTstat->Sub4GCacheTop = val;
+		p_mct_stat->Sub4GCacheTop = val;
 
 	/*======================================================================
 	 * Clear variable MTRR values
@@ -236,6 +236,6 @@ void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat
 		print_tx("\t UMAMemTyping_D: Cache32bTOP:", Cache32bTOP);
 		SetMTRRrangeWB_D(0, &Cache32bTOP, &addr);
 		if (addr == -1)		/* ran out of MTRRs?*/
-			pMCTstat->GStatus |= 1 << GSB_MTRR_SHORT;
+			p_mct_stat->GStatus |= 1 << GSB_MTRR_SHORT;
 	}
 }

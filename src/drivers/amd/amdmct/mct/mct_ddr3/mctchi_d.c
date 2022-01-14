@@ -5,8 +5,8 @@
 #include "mct_d_gcc.h"
 #include <console/console.h>
 
-void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstatA)
+void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat_a)
 {
 
 	u8 Node;
@@ -16,7 +16,7 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 	u32 HoleSize, HoleBase = 0;
 	u32 val, tmp;
 	u32 dct0_size, dct1_size;
-	struct DCTStatStruc *pDCTstat;
+	struct DCTStatStruc *p_dct_stat;
 
 	/* HoleValid - indicates whether the current Node contains hole.
 	 * HoleSize - indicates whether there is IO hole in the whole system
@@ -31,24 +31,24 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 	if (DctSelIntLvAddr & 1) {
 		DctSelIntLvAddr >>= 1;
 		HoleSize = 0;
-		if ((pMCTstat->GStatus & (1 << GSB_SOFT_HOLE)) ||
-		     (pMCTstat->GStatus & (1 << GSB_HW_HOLE))) {
-			if (pMCTstat->HoleBase) {
-				HoleBase = pMCTstat->HoleBase >> 8;
+		if ((p_mct_stat->GStatus & (1 << GSB_SOFT_HOLE)) ||
+		     (p_mct_stat->GStatus & (1 << GSB_HW_HOLE))) {
+			if (p_mct_stat->HoleBase) {
+				HoleBase = p_mct_stat->HoleBase >> 8;
 				HoleSize = HoleBase & 0xFFFF0000;
 				HoleSize |= ((~HoleBase) + 1) & 0xFFFF;
 			}
 		}
 		Node = 0;
 		while (Node < MAX_NODES_SUPPORTED) {
-			pDCTstat = pDCTstatA + Node;
-			val = Get_NB32(pDCTstat->dev_map, 0xF0);
+			p_dct_stat = p_dct_stat_a + Node;
+			val = get_nb32(p_dct_stat->dev_map, 0xF0);
 			if (val & (1 << DRAM_HOLE_VALID))
 				HoleValid = 1;
-			if (!pDCTstat->GangedMode && pDCTstat->DIMMValidDCT[0] && pDCTstat->DIMMValidDCT[1]) {
-				DramBase = pDCTstat->NodeSysBase >> 8;
-				dct1_size = ((pDCTstat->NodeSysLimit) + 2) >> 8;
-				dct0_size = Get_NB32(pDCTstat->dev_dct, 0x114);
+			if (!p_dct_stat->ganged_mode && p_dct_stat->dimm_valid_dct[0] && p_dct_stat->dimm_valid_dct[1]) {
+				DramBase = p_dct_stat->node_sys_base >> 8;
+				dct1_size = ((p_dct_stat->node_sys_limit) + 2) >> 8;
+				dct0_size = get_nb32(p_dct_stat->dev_dct, 0x114);
 				if (dct0_size >= 0x10000) {
 					dct0_size -= HoleSize;
 				}
@@ -73,16 +73,16 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 				if (dct1_size == 0)
 					dct0_size = 0;
 				dct0_size -= dct1_size;		/* DctSelBaseOffset = DctSelBaseAddr - Interleaved region */
-				Set_NB32(pDCTstat->dev_dct, 0x114, dct0_size);
+				Set_NB32(p_dct_stat->dev_dct, 0x114, dct0_size);
 
 				if (dct1_size == 0)
 					dct1_size = DctSelBase;
-				val = Get_NB32(pDCTstat->dev_dct, 0x110);
+				val = get_nb32(p_dct_stat->dev_dct, 0x110);
 				val &= 0x7F8;
 				val |= dct1_size;
 				val |= DctSelHi;
 				val |= (DctSelIntLvAddr << 6) & 0xFF;
-				Set_NB32(pDCTstat->dev_dct, 0x110, val);
+				Set_NB32(p_dct_stat->dev_dct, 0x110, val);
 
 				if (HoleValid) {
 					tmp = DramBase;
@@ -93,16 +93,16 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 						tmp += val;
 					}
 					tmp += HoleSize;
-					val = Get_NB32(pDCTstat->dev_map, 0xF0);	/* DramHoleOffset */
+					val = get_nb32(p_dct_stat->dev_map, 0xF0);	/* DramHoleOffset */
 					val &= 0xFFFF007F;
 					val |= (tmp & ~0xFFFF007F);
-					Set_NB32(pDCTstat->dev_map, 0xF0, val);
+					Set_NB32(p_dct_stat->dev_map, 0xF0, val);
 				}
 			}
 			printk(BIOS_DEBUG, "InterleaveChannels_D: Node %x\n", Node);
-			printk(BIOS_DEBUG, "InterleaveChannels_D: status %x\n", pDCTstat->status);
-			printk(BIOS_DEBUG, "InterleaveChannels_D: err_status %x\n", pDCTstat->err_status);
-			printk(BIOS_DEBUG, "InterleaveChannels_D: err_code %x\n", pDCTstat->err_code);
+			printk(BIOS_DEBUG, "InterleaveChannels_D: status %x\n", p_dct_stat->status);
+			printk(BIOS_DEBUG, "InterleaveChannels_D: err_status %x\n", p_dct_stat->err_status);
+			printk(BIOS_DEBUG, "InterleaveChannels_D: err_code %x\n", p_dct_stat->err_code);
 			Node++;
 		}
 	}

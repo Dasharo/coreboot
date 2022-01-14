@@ -4,16 +4,16 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-u32 mct_MR1Odt_RDimm(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel)
+u32 mct_MR1Odt_RDimm(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct, u32 MrsChipSel)
 {
-	u8 Speed = pDCTstat->speed;
+	u8 Speed = p_dct_stat->speed;
 	u32 ret;
 	u8 DimmsInstalled, DimmNum, ChipSelect;
 
 	ChipSelect = (MrsChipSel >> 20) & 0xF;
 	DimmNum = ChipSelect & 0xFE;
-	DimmsInstalled = pDCTstat->ma_dimms[dct];
+	DimmsInstalled = p_dct_stat->ma_dimms[dct];
 	if (dct == 1)
 		DimmNum ++;
 	ret = 0;
@@ -22,8 +22,8 @@ u32 mct_MR1Odt_RDimm(struct MCTStatStruc *pMCTstat,
 		if (DimmsInstalled == 1)
 			ret |= 1 << 2;
 		else {
-			if (pDCTstat->cs_present & 0xF0) {
-				if (pDCTstat->dimm_qr_present & (1 << DimmNum)) {
+			if (p_dct_stat->cs_present & 0xF0) {
+				if (p_dct_stat->dimm_qr_present & (1 << DimmNum)) {
 					if (!(ChipSelect & 1))
 						ret |= 1 << 2;
 				} else
@@ -46,15 +46,15 @@ u32 mct_MR1Odt_RDimm(struct MCTStatStruc *pMCTstat,
 	return ret;
 }
 
-u32 mct_DramTermDyn_RDimm(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dimm)
+u32 mct_DramTermDyn_RDimm(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dimm)
 {
 	u8 DimmsInstalled = dimm;
 	u32 DramTermDyn = 0;
-	u8 Speed = pDCTstat->speed;
+	u8 Speed = p_dct_stat->speed;
 
 	if (mctGet_NVbits(NV_MAX_DIMMS) == 4) {
-		if (pDCTstat->cs_present & 0xF0) {
+		if (p_dct_stat->cs_present & 0xF0) {
 			if (DimmsInstalled == 1)
 				if (Speed == 7)
 					DramTermDyn |= 1 << 10;

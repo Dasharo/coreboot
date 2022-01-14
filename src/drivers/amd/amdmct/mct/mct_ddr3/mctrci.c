@@ -7,7 +7,7 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-static u8 fam15h_rdimm_rc2_ibt_code(struct DCTStatStruc *pDCTstat, u8 dct)
+static u8 fam15h_rdimm_rc2_ibt_code(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
@@ -15,10 +15,10 @@ static u8 fam15h_rdimm_rc2_ibt_code(struct DCTStatStruc *pDCTstat, u8 dct)
 	u8 control_code = 0;
 
 	package_type = mctGet_NVbits(NV_PACK_TYPE);
-	u16 MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
+	u16 MemClkFreq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
 	/* Obtain number of DIMMs on channel */
-	u8 dimm_count = pDCTstat->ma_dimms[dct];
+	u8 dimm_count = p_dct_stat->ma_dimms[dct];
 
 	/* FIXME
 	 * Assume there is only one register on the RDIMM for now
@@ -168,8 +168,8 @@ static u32 rc_word_value_to_ctl_bits(u32 value) {
 	}
 }
 
-static u32 mct_ControlRC(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel, u32 CtrlWordNum)
+static u32 mct_ControlRC(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct, u32 MrsChipSel, u32 CtrlWordNum)
 {
 	u8 Dimms, DimmNum;
 	u32 val;
@@ -183,20 +183,20 @@ static u32 mct_ControlRC(struct MCTStatStruc *pMCTstat,
 	if (dct == 1)
 		DimmNum++;
 
-	mem_freq = memclk_to_freq(pDCTstat->dimm_auto_speed);
-	Dimms = pDCTstat->ma_dimms[dct];
+	mem_freq = memclk_to_freq(p_dct_stat->dimm_auto_speed);
+	Dimms = p_dct_stat->ma_dimms[dct];
 
-	ddr_voltage_index = dct_ddr_voltage_index(pDCTstat, dct);
+	ddr_voltage_index = dct_ddr_voltage_index(p_dct_stat, dct);
 
 	val = 0;
 	if (CtrlWordNum == 0)
 		val = 0x2;
 	else if (CtrlWordNum == 1) {
-		if (!((pDCTstat->dimm_dr_present | pDCTstat->dimm_qr_present) & (1 << DimmNum)))
+		if (!((p_dct_stat->dimm_dr_present | p_dct_stat->dimm_qr_present) & (1 << DimmNum)))
 			val = 0xc; /* if single rank, set DBA1 and DBA0 */
 	} else if (CtrlWordNum == 2) {
 		if (is_fam15h()) {
-			val = (fam15h_rdimm_rc2_ibt_code(pDCTstat, dct) & 0x1) << 2;
+			val = (fam15h_rdimm_rc2_ibt_code(p_dct_stat, dct) & 0x1) << 2;
 		} else {
 			if (package_type == PT_GR) {
 				/* Socket G34 */
@@ -214,18 +214,18 @@ static u32 mct_ControlRC(struct MCTStatStruc *pMCTstat,
 			}
 		}
 	} else if (CtrlWordNum == 3) {
-		val = (pDCTstat->CtrlWrd3 >> (DimmNum << 2)) & 0xff;
+		val = (p_dct_stat->ctrl_wrd_3 >> (DimmNum << 2)) & 0xff;
 	} else if (CtrlWordNum == 4) {
-		val = (pDCTstat->CtrlWrd4 >> (DimmNum << 2)) & 0xff;
+		val = (p_dct_stat->ctrl_wrd_4 >> (DimmNum << 2)) & 0xff;
 	} else if (CtrlWordNum == 5) {
-		val = (pDCTstat->CtrlWrd5 >> (DimmNum << 2)) & 0xff;
+		val = (p_dct_stat->ctrl_wrd_5 >> (DimmNum << 2)) & 0xff;
 	} else if (CtrlWordNum == 6) {
-		val = ((pDCTstat->spd_data.spd_bytes[DimmNum][72] & 0xf) >> (DimmNum << 2)) & 0xff;
+		val = ((p_dct_stat->spd_data.spd_bytes[DimmNum][72] & 0xf) >> (DimmNum << 2)) & 0xff;
 	} else if (CtrlWordNum == 7) {
-		val = (((pDCTstat->spd_data.spd_bytes[DimmNum][72] >> 4) & 0xf) >> (DimmNum << 2)) & 0xff;
+		val = (((p_dct_stat->spd_data.spd_bytes[DimmNum][72] >> 4) & 0xf) >> (DimmNum << 2)) & 0xff;
 	} else if (CtrlWordNum == 8) {
 		if (is_fam15h()) {
-			val = (fam15h_rdimm_rc2_ibt_code(pDCTstat, dct) & 0xe) >> 1;
+			val = (fam15h_rdimm_rc2_ibt_code(p_dct_stat, dct) & 0xe) >> 1;
 		} else {
 			if (package_type == PT_GR) {
 				/* Socket G34 */
@@ -252,13 +252,13 @@ static u32 mct_ControlRC(struct MCTStatStruc *pMCTstat,
 		else
 			val = 0x0;	/* 1.5V */
 	} else if (CtrlWordNum == 12) {
-		val = ((pDCTstat->spd_data.spd_bytes[DimmNum][75] & 0xf) >> (DimmNum << 2)) & 0xff;
+		val = ((p_dct_stat->spd_data.spd_bytes[DimmNum][75] & 0xf) >> (DimmNum << 2)) & 0xff;
 	} else if (CtrlWordNum == 13) {
-		val = (((pDCTstat->spd_data.spd_bytes[DimmNum][75] >> 4) & 0xf) >> (DimmNum << 2)) & 0xff;
+		val = (((p_dct_stat->spd_data.spd_bytes[DimmNum][75] >> 4) & 0xf) >> (DimmNum << 2)) & 0xff;
 	} else if (CtrlWordNum == 14) {
-		val = ((pDCTstat->spd_data.spd_bytes[DimmNum][76] & 0xf) >> (DimmNum << 2)) & 0xff;
+		val = ((p_dct_stat->spd_data.spd_bytes[DimmNum][76] & 0xf) >> (DimmNum << 2)) & 0xff;
 	} else if (CtrlWordNum == 15) {
-		val = (((pDCTstat->spd_data.spd_bytes[DimmNum][76] >> 4) & 0xf) >> (DimmNum << 2)) & 0xff;
+		val = (((p_dct_stat->spd_data.spd_bytes[DimmNum][76] >> 4) & 0xf) >> (DimmNum << 2)) & 0xff;
 	}
 	val &= 0xf;
 
@@ -270,25 +270,25 @@ static u32 mct_ControlRC(struct MCTStatStruc *pMCTstat,
 	return val;
 }
 
-static void mct_SendCtrlWrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct, u32 val)
+static void mct_SendCtrlWrd(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct, u32 val)
 {
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
 	val |= Get_NB32_DCT(dev, dct, 0x7c) & ~0xffffff;
-	val |= 1 << SendControlWord;
+	val |= 1 << SEND_CONTROL_WORD;
 	Set_NB32_DCT(dev, dct, 0x7c, val);
 
 	do {
 		val = Get_NB32_DCT(dev, dct, 0x7c);
-	} while (val & (1 << SendControlWord));
+	} while (val & (1 << SEND_CONTROL_WORD));
 }
 
-void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+void mct_DramControlReg_Init_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MrsChipSel;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 val, cw;
 
 	printk(BIOS_SPEW, "%s: Start\n", __func__);
@@ -298,12 +298,12 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
 		mct_Wait(1200);
 	}
 
-	pDCTstat->cs_present = pDCTstat->CSPresent_DCT[dct];
-	if (pDCTstat->GangedMode & 1)
-		pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
+	p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[dct];
+	if (p_dct_stat->ganged_mode & 1)
+		p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[0];
 
 	for (MrsChipSel = 0; MrsChipSel < 8; MrsChipSel += 2) {
-		if (pDCTstat->cs_present & (1 << MrsChipSel)) {
+		if (p_dct_stat->cs_present & (1 << MrsChipSel)) {
 			val = Get_NB32_DCT(dev, dct, 0xa8);
 			val &= ~(0xff << 8);
 
@@ -330,16 +330,16 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
 
 			if (is_fam15h()) {
 				for (cw = 0; cw <=15; cw ++) {
-					val = mct_ControlRC(pMCTstat, pDCTstat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), cw);
-					mct_SendCtrlWrd(pMCTstat, pDCTstat, dct, val);
+					val = mct_ControlRC(p_mct_stat, p_dct_stat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), cw);
+					mct_SendCtrlWrd(p_mct_stat, p_dct_stat, dct, val);
 					if ((cw == 2) || (cw == 8) || (cw == 10))
-						precise_ndelay_fam15(pMCTstat, 6000);
+						precise_ndelay_fam15(p_mct_stat, 6000);
 				}
 			} else {
 				for (cw = 0; cw <=15; cw ++) {
 					mct_Wait(1600);
-					val = mct_ControlRC(pMCTstat, pDCTstat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), cw);
-					mct_SendCtrlWrd(pMCTstat, pDCTstat, dct, val);
+					val = mct_ControlRC(p_mct_stat, p_dct_stat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), cw);
+					mct_SendCtrlWrd(p_mct_stat, p_dct_stat, dct, val);
 				}
 			}
 		}
@@ -350,23 +350,23 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
 	printk(BIOS_SPEW, "%s: Done\n", __func__);
 }
 
-void FreqChgCtrlWrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct)
+void FreqChgCtrlWrd(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
-	u32 SaveSpeed = pDCTstat->dimm_auto_speed;
+	u32 SaveSpeed = p_dct_stat->dimm_auto_speed;
 	u32 MrsChipSel;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 val;
 	u16 mem_freq;
 
-	pDCTstat->cs_present = pDCTstat->CSPresent_DCT[dct];
-	if (pDCTstat->GangedMode & 1)
-		pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
+	p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[dct];
+	if (p_dct_stat->ganged_mode & 1)
+		p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[0];
 
-	pDCTstat->dimm_auto_speed = pDCTstat->TargetFreq;
-	mem_freq = memclk_to_freq(pDCTstat->TargetFreq);
+	p_dct_stat->dimm_auto_speed = p_dct_stat->target_freq;
+	mem_freq = memclk_to_freq(p_dct_stat->target_freq);
 	for (MrsChipSel = 0; MrsChipSel < 8; MrsChipSel += 2) {
-		if (pDCTstat->cs_present & (1 << MrsChipSel)) {
+		if (p_dct_stat->cs_present & (1 << MrsChipSel)) {
 			/* 2. Program F2x[1, 0]A8[CtrlWordCS]=bit mask for target chip selects. */
 			val = Get_NB32_DCT(dev, dct, 0xa8);
 			val &= ~(0xff << 8);
@@ -415,31 +415,31 @@ void FreqChgCtrlWrd(struct MCTStatStruc *pMCTstat,
 
 			printk(BIOS_SPEW, "Preparing to send DCT %d DIMM %d RC%d: %02x (F2xA8: %08x)\n", dct, MrsChipSel >> 1, 10, freq_ctl_val, val);
 
-			mct_SendCtrlWrd(pMCTstat, pDCTstat, dct, (MrsChipSel << rc_word_chip_select_lower_bit()) | rc_word_address_to_ctl_bits(10) | rc_word_value_to_ctl_bits(freq_ctl_val));
+			mct_SendCtrlWrd(p_mct_stat, p_dct_stat, dct, (MrsChipSel << rc_word_chip_select_lower_bit()) | rc_word_address_to_ctl_bits(10) | rc_word_value_to_ctl_bits(freq_ctl_val));
 
 			if (is_fam15h())
-				precise_ndelay_fam15(pMCTstat, 6000);
+				precise_ndelay_fam15(p_mct_stat, 6000);
 			else
 				mct_Wait(1600);
 
 			/* Resend control word 2 */
-			val = mct_ControlRC(pMCTstat, pDCTstat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), 2);
-			mct_SendCtrlWrd(pMCTstat, pDCTstat, dct, val);
+			val = mct_ControlRC(p_mct_stat, p_dct_stat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), 2);
+			mct_SendCtrlWrd(p_mct_stat, p_dct_stat, dct, val);
 
 			if (is_fam15h())
-				precise_ndelay_fam15(pMCTstat, 6000);
+				precise_ndelay_fam15(p_mct_stat, 6000);
 			else
 				mct_Wait(1600);
 
 			/* Resend control word 8 */
-			val = mct_ControlRC(pMCTstat, pDCTstat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), 8);
-			mct_SendCtrlWrd(pMCTstat, pDCTstat, dct, val);
+			val = mct_ControlRC(p_mct_stat, p_dct_stat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), 8);
+			mct_SendCtrlWrd(p_mct_stat, p_dct_stat, dct, val);
 
 			if (is_fam15h())
-				precise_ndelay_fam15(pMCTstat, 6000);
+				precise_ndelay_fam15(p_mct_stat, 6000);
 			else
 				mct_Wait(1600);
 		}
 	}
-	pDCTstat->dimm_auto_speed = SaveSpeed;
+	p_dct_stat->dimm_auto_speed = SaveSpeed;
 }

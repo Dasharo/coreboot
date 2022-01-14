@@ -31,7 +31,7 @@ u32 SetupDqsPattern_1PassB(u8 pass)
 	return (u32) TestPattern0_D;
 }
 
-static u16 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel, u8 Receiver,
+static u16 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *p_dct_stat, u8 Channel, u8 Receiver,
 					u8 Pass)
 {
 	u16 i, MaxValue;
@@ -39,7 +39,7 @@ static u16 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel
 	u16 val;
 
 	MaxValue = 0;
-	p = pDCTstat->CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+	p = p_dct_stat->CH_D_B_RCVRDLY[Channel][Receiver >> 1];
 
 	for (i = 0; i < 8; i++) {
 		/* get left value from DCTStatStruc.CHA_D0_B0_RCVRDLY*/
@@ -52,24 +52,24 @@ static u16 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel
 
 		p[i] = val;
 	}
-	/* pDCTstat->DimmTrainFail &= ~(1<<Receiver+Channel); */
+	/* p_dct_stat->DimmTrainFail &= ~(1<<Receiver+Channel); */
 
 	return MaxValue;
 }
 
-u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *pDCTstat, u8 pass)
+u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *p_dct_stat, u8 pass)
 {
 	u8 ret;
 	ret = 0;
-	if ((pDCTstat->DqsRcvEn_Pass == 0xff) && (pass == FIRST_PASS))
+	if ((p_dct_stat->dqs_rcv_en_pass == 0xff) && (pass == FIRST_PASS))
 		ret = 2;
 	return ret;
 }
 
-u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
+u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
 				u16 RcvrEnDly, u16 RcvrEnDlyLimit,
 				u8 Channel, u8 Receiver, u8 Pass)
 
 {
-	return mct_Average_RcvrEnDly_1Pass(pDCTstat, Channel, Receiver, Pass);
+	return mct_Average_RcvrEnDly_1Pass(p_dct_stat, Channel, Receiver, Pass);
 }

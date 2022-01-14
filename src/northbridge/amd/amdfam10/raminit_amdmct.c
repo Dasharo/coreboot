@@ -517,13 +517,13 @@ void mctSMBhub_Init(u32 node)
 
 void raminit_amdmct(struct sys_info *sysinfo)
 {
-	struct MCTStatStruc *pMCTstat = &(sysinfo->MCTstat);
-	struct DCTStatStruc *pDCTstatA = sysinfo->DCTstatA;
+	struct MCTStatStruc *p_mct_stat = &(sysinfo->MCTstat);
+	struct DCTStatStruc *p_dct_stat_a = sysinfo->DCTstatA;
 
 	printk(BIOS_DEBUG, "raminit_amdmct begin:\n");
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
-	mctAutoInitMCT_D(pMCTstat, pDCTstatA);
+	mctAutoInitMCT_D(p_mct_stat, p_dct_stat_a);
 
 	timestamp_add_now(TS_AFTER_INITRAM);
 	printk(BIOS_DEBUG, "raminit_amdmct end:\n");
@@ -536,7 +536,7 @@ void amdmct_cbmem_store_info(struct sys_info *sysinfo)
 
 	/* Save memory info structures for use in ramstage */
 	size_t i;
-	struct DCTStatStruc *pDCTstatA = NULL;
+	struct DCTStatStruc *p_dct_stat_a = NULL;
 
 	if (!acpi_is_wakeup_s3()) {
 		/* Allocate memory */
@@ -555,8 +555,8 @@ void amdmct_cbmem_store_info(struct sys_info *sysinfo)
 		/* Copy data */
 		memcpy(&mem_info->mct_stat, &sysinfo->MCTstat, sizeof(struct MCTStatStruc));
 		for (i = 0; i < MAX_NODES_SUPPORTED; i++) {
-			pDCTstatA = sysinfo->DCTstatA + i;
-			memcpy(&mem_info->dct_stat[i], pDCTstatA, sizeof(struct DCTStatStruc));
+			p_dct_stat_a = sysinfo->DCTstatA + i;
+			memcpy(&mem_info->dct_stat[i], p_dct_stat_a, sizeof(struct DCTStatStruc));
 		}
 		mem_info->ecc_enabled = mctGet_NVbits(NV_ECC_CAP);
 		mem_info->ecc_scrub_rate = mctGet_NVbits(NV_DRAM_BK_SCRUB);
@@ -564,9 +564,9 @@ void amdmct_cbmem_store_info(struct sys_info *sysinfo)
 		/* Zero out invalid/unused pointers */
 		if (CONFIG(DIMM_DDR3)) {
 			for (i = 0; i < MAX_NODES_SUPPORTED; i++) {
-				mem_info->dct_stat[i].C_MCTPtr = NULL;
-				mem_info->dct_stat[i].C_DCTPtr[0] = NULL;
-				mem_info->dct_stat[i].C_DCTPtr[1] = NULL;
+				mem_info->dct_stat[i].c_mct_ptr = NULL;
+				mem_info->dct_stat[i].c_dct_ptr[0] = NULL;
+				mem_info->dct_stat[i].c_dct_ptr[1] = NULL;
 			}
 		}
 	}

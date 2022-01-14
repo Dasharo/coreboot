@@ -84,7 +84,7 @@ void proc_MFENCE(void)
 
 void proc_CLFLUSH(u32 addr_hi)
 {
-	SetUpperFSbase(addr_hi);
+	set_upper_fs_base(addr_hi);
 
 	__asm__ volatile (
 		/* clflush fs:[eax] */
@@ -204,7 +204,7 @@ __attribute__((noinline)) void FlushDQSTestPattern_L18(u32 addr_lo)
 
 void ReadMaxRdLat1CLTestPattern_D(u32 addr)
 {
-	SetUpperFSbase(addr);
+	set_upper_fs_base(addr);
 
 	__asm__ volatile (
 		"outb %%al, $0xed\n\t"			/* _EXECFENCE */
@@ -223,7 +223,7 @@ void WriteMaxRdLat1CLTestPattern_D(u32 buf, u32 addr)
 	u32 step = 16;
 	u32 count = 3 * 4;
 
-	SetUpperFSbase(addr);
+	set_upper_fs_base(addr);
 
 	__asm__ volatile (
 		"outb %%al, $0xed\n\t"	/* _EXECFENCE */
@@ -245,7 +245,7 @@ void FlushMaxRdLatTestPattern_D(u32 addr)
 	 * This procedure is used to ensure cache miss on the next read training.
 	 */
 
-	SetUpperFSbase(addr);
+	set_upper_fs_base(addr);
 
 	__asm__ volatile (
 		"outb %%al, $0xed\n\t"	/* _EXECFENCE */

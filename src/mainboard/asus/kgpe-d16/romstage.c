@@ -200,7 +200,7 @@ static void set_ddr3_voltage(u8 node, u8 index) {
 	printk(BIOS_DEBUG, "Node %02d DIMM voltage set to index %02x\n", node, index);
 }
 
-void DIMMSetVoltages(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
+void DIMMSetVoltages(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 {
 	/* This mainboard allows the DIMM voltage to be set per-socket.
 	 * Therefore, for each socket, iterate over all DIMMs to find the
@@ -229,23 +229,23 @@ void DIMMSetVoltages(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTsta
 
 	for (node = 0; node < MAX_NODES_SUPPORTED; node++) {
 		socket = node / 2;
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + node;
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + node;
 
 		/* reset socket_allowed_voltages before processing each socket */
 		if (!(node % 2))
 			socket_allowed_voltages = allowed_voltages;
 
-		if (pDCTstat->NodePresent) {
+		if (p_dct_stat->node_present) {
 			for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-				if (pDCTstat->dimm_valid & (1 << dimm)) {
-					socket_allowed_voltages &= pDCTstat->DimmSupportedVoltages[dimm];
+				if (p_dct_stat->dimm_valid & (1 << dimm)) {
+					socket_allowed_voltages &= p_dct_stat->dimm_supported_voltages[dimm];
 				}
 			}
 		}
 
 		/* set voltage per socket after processing last contained node */
-		if (pDCTstat->NodePresent && (node % 2)) {
+		if (p_dct_stat->node_present && (node % 2)) {
 			/* Set voltages */
 			if (socket_allowed_voltages & 0x8) {
 				set_voltage = 0x8;
@@ -262,15 +262,15 @@ void DIMMSetVoltages(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTsta
 			}
 
 			/* Save final DIMM voltages for MCT and SMBIOS use */
-			if (pDCTstat->NodePresent) {
+			if (p_dct_stat->node_present) {
 				for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-					pDCTstat->DimmConfiguredVoltage[dimm] = set_voltage;
+					p_dct_stat->DimmConfiguredVoltage[dimm] = set_voltage;
 				}
 			}
-			pDCTstat = pDCTstatA + (node - 1);
-			if (pDCTstat->NodePresent) {
+			p_dct_stat = p_dct_stat_a + (node - 1);
+			if (p_dct_stat->node_present) {
 				for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-					pDCTstat->DimmConfiguredVoltage[dimm] = set_voltage;
+					p_dct_stat->DimmConfiguredVoltage[dimm] = set_voltage;
 				}
 			}
 		}

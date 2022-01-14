@@ -291,7 +291,7 @@ struct DCTStatStruc {
 	 * 3 = 333MHz
 	 * 4 = 400MHz
 	 */
-	u8 Speed;
+	u8 speed;
 	/* CAS latency DCT setting
 	 * 0 = 2.0
 	 * 1 = 3.0
@@ -309,11 +309,11 @@ struct DCTStatStruc {
 	/* DCT Tras (busclocks) */
 	u8 tras;
 	/* DCT Trc (busclocks) */
-	u8 Trc;
+	u8 trc;
 	/* DCT Twr (busclocks) */
 	u8 twr;
 	/* DCT Trrd (busclocks) */
-	u8 Trrd;
+	u8 trrd;
 	/* DCT Twtr (busclocks) */
 	u8 twtr;
 	/* DCT Logical DIMM0 Trfc
@@ -326,29 +326,29 @@ struct DCTStatStruc {
 	/* DCT Logical DIMM1 Trfc (see Trfc0 for format) */
 	/* DCT Logical DIMM2 Trfc (see Trfc0 for format) */
 	/* DCT Logical DIMM3 Trfc (see Trfc0 for format) */
-	u8 Trfc[4];
+	u8 trfc[4];
 	/* For each bit n 0..7, 1 = Chip-select n is present */
-	u16 CSPresent;
+	u16 cs_present;
 	/* For each bit n 0..7, 1 = Chip-select n is present but disabled */
-	u16 CSTestFail;
+	u16 cs_test_fail;
 	/* BASE[39:8] (system address) of this Node's DCTs. */
-	u32 DCTSysBase;
+	u32 dct_sys_base;
 	/* If not zero, BASE[39:8] (system address) of dram hole for HW remapping.  Dram hole exists on this Node's DCTs. */
-	u32 DCTHoleBase;
+	u32 dct_hole_base;
 	/* LIMIT[39:8] (system address) of this Node's DCTs */
-	u32 DCTSysLimit;
+	u32 dct_sys_limit;
 	/* Maximum OEM defined DDR frequency
 	 * 200 = 200MHz (DDR400)
 	 * 266 = 266MHz (DDR533)
 	 * 333 = 333MHz (DDR667)
 	 * 400 = 400MHz (DDR800)
 	 */
-	u16 PresetmaxFreq;
+	u16 preset_max_freq;
 	/* 1T or 2T CMD mode (slow access mode)
 	 * 1 = 1T
 	 * 2 = 2T
 	 */
-	u8 _2Tmode;
+	u8 _2t_mode;
 	/* DCT TrwtTO (busclocks)*/
 	u8 trwt_to;
 	/* DCT Twrrd (busclocks)*/
@@ -358,15 +358,15 @@ struct DCTStatStruc {
 	/* DCT Trdrd (busclocks)*/
 	u8 trdrd;
 	/* Output Driver Strength (see BKDG FN2:Offset 9Ch, index 00h*/
-	u32 CH_ODC_CTL[2];
+	u32 ch_odc_ctl[2];
 	/* Address Bus Timing (see BKDG FN2:Offset 9Ch, index 04h*/
 	/* Output Driver Strength (see BKDG FN2:Offset 9Ch, index 20h*/
 	/* Address Bus Timing (see BKDG FN2:Offset 9Ch, index 24h*/
-	u32 CH_ADDR_TMG[2];
+	u32 ch_addr_tmg[2];
 	/* CHA DQS ECC byte like...*/
-	u16 CH_EccDQSLike[2];
+	u16 ch_ecc_dqs_like[2];
 	/* CHA DQS ECC byte scale*/
-	u8 CH_EccDQSScale[2];
+	u8 ch_ecc_dqs_scale[2];
 	/* Reserved*/
 	/* CHB DQS ECC byte like...*/
 	/* CHB DQS ECC byte scale*/
@@ -375,7 +375,7 @@ struct DCTStatStruc {
 	/*Reserved*/
 //	u8 reserved_b_2;
 	/* Max Asynchronous Latency (ns)*/
-	u8 MaxAsyncLat;
+	u8 max_async_lat;
 	/* CHA Byte 0 - 7 and Check Write DQS Delay*/
 	/* Reserved*/
 	/* CHA Byte 0 - 7 and Check Read DQS Delay*/
@@ -387,14 +387,14 @@ struct DCTStatStruc {
 	u8 ch_b_dqs[2][2][9];
 	/* CHA DIMM 0 - 3 Receiver Enable Delay*/
 	/* CHB DIMM 0 - 3 Receiver Enable Delay*/
-	u8 CH_D_RCVRDLY[2][4];
+	u8 ch_d_rcvr_dly[2][4];
 
 	/* Ptr on stack to aligned DQS testing pattern*/
 	u32 ptr_pattern_buf_a;
 	/*Ptr on stack to aligned DQS testing pattern*/
-	u32 PtrPatternBu
-	/* Current Channel (0= CH A, 1 = CH B)*/fB;
-	u8 Channel;
+	u32 ptr_pattern_bu
+	/* Current Channel (0= CH A, 1 = CH B)*/;
+	u8 channel;
 	/* Current Byte Lane (0..7)*/
 	u8 byte_lane;
 	/* Current DQS-DQ training write direction (0 = read, 1 = write)*/
@@ -402,15 +402,15 @@ struct DCTStatStruc {
 	/* Current pattern*/
 	u8 pattern;
 	/* Current DQS delay value*/
-	u8 DQSDelay;
+	u8 dqs_delay;
 	/* Current Training Errors*/
-	u32 TrainErrors;
+	u32 train_errors;
 	/* RSVD */
 //	u8 reserved_b_3;
 	/* Time Stamp Counter measurement of AMC, Low dword*/
-	u32 AMC_TSC_DeltaLo;
+	u32 amc_tsc_delta_lo;
 	/* Time Stamp Counter measurement of AMC, High dword*/
-	u32 AMC_TSC_DeltaHi;
+	u32 amc_tsc_delta_hi;
 	/* CH A byte lane 0 - 7 minimum filtered window	passing DQS delay value*/
 	/* CH A byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
 	/* CH B byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
@@ -419,13 +419,13 @@ struct DCTStatStruc {
 	/* CH A byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
 	/* CH B byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
 	/* CH B byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
-	u8 CH_B_Dly[2][2][2][8];
+	u8 ch_b_dly[2][2][2][8];
 	/* The logical CPUID of the node*/
-	u32 LogicalCPUID;
+	u32 logical_cpuid;
 	/* Word sized general purpose field for use by host BIOS.  Scratch space.*/
-	u16 HostBiosSrvc1;
+	u16 host_bios_srvc_1;
 	/* Dword sized general purpose field for use by host BIOS.  Scratch space.*/
-	u32 HostBiosSrvc2;
+	u32 host_bios_srvc_2;
 	/* QuadRank DIMM present?*/
 	u16 DimmQRPresent;
 	/* Bitmap showing which dimms failed training*/
@@ -619,9 +619,9 @@ struct DCTStatStruc {
 
 /* Memory Map/Mgt.*/
 /* Bottom of 32-bit IO space (8-bits)
- * NV_BottomIO[7:0]=Addr[31:24]
+ * NV_BOTTOM_IO[7:0]=Addr[31:24]
  */
-#define NV_BottomIO		40
+#define NV_BOTTOM_IO		40
 /* Bottom of shared graphics dram (8-bits)
  * NV_BOTTOM_UMA[7:0]=Addr[31:24]
  */
@@ -664,45 +664,45 @@ struct DCTStatStruc {
 
 
 /* global function */
-u32 NodePresent(u32 Node);
-u32 Get_NB32n(struct DCTStatStruc *pDCTstat, u32 addrx);
-u32 Get_NB32(u32 addr); /* NOTE: extend addr to 32 bit for bus > 0 */
+u32 node_present(u32 Node);
+u32 get_nb32n(struct DCTStatStruc *p_dct_stat, u32 addrx);
+u32 get_nb32(u32 addr); /* NOTE: extend addr to 32 bit for bus > 0 */
 
-void K8FInterleaveBanks(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+void k8f_interleave_banks(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
-void mctInitWithWritetoCS(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+void mct_init_with_write_to_cs(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
-void mctGet_PS_Cfg(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void Get_ChannelPS_Cfg0(unsigned int MAAdimms, unsigned int Speed, unsigned int MAAload,
-		unsigned int DATAAload, unsigned int *AddrTmgCTL, unsigned int *ODC_CTL);
-void Get_ChannelPS_Cfg1(unsigned int MAAdimms, unsigned int Speed, unsigned int MAAload,
-		unsigned int *AddrTmgCTL, unsigned int *ODC_CTL, unsigned int *val);
-void Get_ChannelPS_Cfg2(unsigned int MAAdimms, unsigned int Speed, unsigned int MAAload,
-		unsigned int *AddrTmgCTL, unsigned int *ODC_CTL, unsigned int *val);
+void mct_get_ps_cfg(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void get_channel_ps_cfg_0(unsigned int maa_dimms, unsigned int Speed, unsigned int MAAload,
+		unsigned int DATAAload, unsigned int *addr_tmg_ctl, unsigned int *ODC_CTL);
+void get_channel_ps_cfg_1(unsigned int maa_dimms, unsigned int Speed, unsigned int MAAload,
+		unsigned int *addr_tmg_ctl, unsigned int *ODC_CTL, unsigned int *val);
+void get_channel_ps_cfg_2(unsigned int maa_dimms, unsigned int Speed, unsigned int MAAload,
+		unsigned int *addr_tmg_ctl, unsigned int *ODC_CTL, unsigned int *val);
 
-u8 MCTDefRet(void);
+u8 mct_def_reset(void);
 
-u32 Get_RcvrSysAddr(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 channel,
+u32 get_rcvr_sys_addr(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 channel,
 			u8 receiver, u8 *valid);
-u32 Get_MCTSysAddr(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 channel,
+u32 get_mct_sys_addr(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 channel,
 			u8 chipsel, u8 *valid);
-void K8FTrainReceiverEn(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA, u8 pass);
-void K8FTrainDQSPos(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-u32 SetUpperFSbase(u32 addr_hi);
+void k8f_train_receiver_en(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u8 pass);
+void k8f_train_dqs_pos(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+u32 set_upper_fs_base(u32 addr_hi);
 
 
-void K8FECCInit(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
+void k8f_ecc_init(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 
-void amd_MCTInit(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
+void amd_mct_init(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 
-void K8FCPUMemTyping(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void K8FCPUMemTyping_clear(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
+void k8f_cpu_mem_typing(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void k8f_cpu_mem_typing_clear(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 
-void K8FWaitMemClrDelay(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-unsigned int K8FCalcFinalDQSRcvValue(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, unsigned int LeftRcvEn,
-				unsigned int RightRcvEn, unsigned int *valid);
+void k8f_wait_mem_clr_delay(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+unsigned int k8f_calc_final_dqs_rcv_value(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, unsigned int left_rcv_en,
+				unsigned int right_rcv_en, unsigned int *valid);
 
-void K8FGetDeltaTSCPart1(struct DCTStatStruc *pDCTstat);
-void K8FGetDeltaTSCPart2(struct DCTStatStruc *pDCTstat);
+void k8f_get_delta_tcs_part_1(struct DCTStatStruc *p_dct_stat);
+void k8f_get_delta_tcs_part_2(struct DCTStatStruc *p_dct_stat);
 #endif

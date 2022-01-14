@@ -5,19 +5,19 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-void mct_ExtMCTConfig_Dx(struct DCTStatStruc *pDCTstat)
+void mct_ExtMCTConfig_Dx(struct DCTStatStruc *p_dct_stat)
 {
 	u32 dword;
 
-	if (pDCTstat->logical_cpuid & AMD_DR_Dx) {
+	if (p_dct_stat->logical_cpuid & AMD_DR_Dx) {
 		dword = 0x0ce00f00 | 0x1 << 29;	/* FlushWrOnStpGnt */
-		if (!(pDCTstat->GangedMode))
+		if (!(p_dct_stat->ganged_mode))
 			dword |= 0x18 << 2;	/* MctWrLimit = 0x18 for unganged mode */
 		else
 			dword |= 0x10 << 2;	/* MctWrLimit = 0x10 for ganged mode */
-		Set_NB32(pDCTstat->dev_dct, 0x11c, dword);
+		Set_NB32(p_dct_stat->dev_dct, 0x11c, dword);
 
-		dword = Get_NB32(pDCTstat->dev_dct, 0x1b0);
+		dword = get_nb32(p_dct_stat->dev_dct, 0x1b0);
 		dword &= ~0x3;			/* AdapPrefMissRatio = 0x1 */
 		dword |= 0x1;
 		dword &= ~(0x3 << 2);		/* AdapPrefPositiveStep = 0x0 */
@@ -27,13 +27,13 @@ void mct_ExtMCTConfig_Dx(struct DCTStatStruc *pDCTstat)
 		dword |= (0x7 << 22);		/* PrefFourConf = 0x7 */
 		dword |= (0x7 << 25);		/* PrefFiveConf = 0x7 */
 
-		if (!(pDCTstat->GangedMode))
+		if (!(p_dct_stat->ganged_mode))
 			dword |= (0x1 << 12);	/* EnSplitDctLimits = 0x1 */
 		else
 			dword &= ~(0x1 << 12);	/* EnSplitDctLimits = 0x0 */
 
 		dword &= ~(0xf << 28);		/* DcqBwThrotWm = ... */
-		switch (pDCTstat->speed) {
+		switch (p_dct_stat->speed) {
 		case 4:
 			dword |= (0x5 << 28);	/* ...5 for DDR800 */
 			break;
@@ -47,6 +47,6 @@ void mct_ExtMCTConfig_Dx(struct DCTStatStruc *pDCTstat)
 			dword |= (0x9 << 28);	/* ...9 for DDR1600 */
 			break;
 		}
-		Set_NB32(pDCTstat->dev_dct, 0x1b0, dword);
+		Set_NB32(p_dct_stat->dev_dct, 0x1b0, dword);
 	}
 }

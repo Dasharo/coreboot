@@ -102,13 +102,13 @@
 
 /*common register bit names*/
 #define DRAM_HOLE_VALID		0	/* func 1, offset F0h, bit 0*/
-#define DramMemHoistValid	1	/* func 1, offset F0h, bit 1*/
+#define DRAM_MEM_HOIST_VALID	1	/* func 1, offset F0h, bit 1*/
 #define CS_ENABLE		0	/* func 2, offset 40h-5C, bit 0*/
 #define SPARE			1	/* func 2, offset 40h-5C, bit 1*/
 #define TEST_FAIL		2	/* func 2, offset 40h-5C, bit 2*/
 #define DQS_RCV_EN_TRAIN	18	/* func 2, offset 78h, bit 18*/
 #define EN_DRAM_INIT		31	/* func 2, offset 7Ch, bit 31*/
-#define PchgPDModeSel		23	/* func 2, offset 84h, bit 23 */
+#define PCHG_PD_MODE_SEL		23	/* func 2, offset 84h, bit 23 */
 #define DIS_AUTO_REFRESH	18	/* func 2, offset 8Ch, bit 18*/
 #define INIT_DRAM		0	/* func 2, offset 90h, bit 0*/
 #define BURST_LENGTH_32		10	/* func 2, offset 90h, bit 10*/
@@ -119,17 +119,17 @@
 #define MEM_CLK_FREQ_VAL		((is_fam15h()) ? 7 : 3)	/* func 2, offset 94h, bit 3 or 7*/
 #define RDQS_EN			12	/* func 2, offset 94h, bit 12*/
 #define DIS_DRAM_INTERFACE	14	/* func 2, offset 94h, bit 14*/
-#define PowerDownEn		15	/* func 2, offset 94h, bit 15*/
+#define POWER_DOWN_EN		15	/* func 2, offset 94h, bit 15*/
 #define DCT_ACCESS_WRITE		30	/* func 2, offset 98h, bit 30*/
 #define DCT_ACCESS_DONE		31	/* func 2, offset 98h, bit 31*/
-#define MemClrStatus		0	/* func 2, offset A0h, bit 0*/
+#define MEM_CLR_STATUS		0	/* func 2, offset A0h, bit 0*/
 #define PWR_SAVINGS_EN		10	/* func 2, offset A0h, bit 10*/
 #define MOD_64_BIT_MUX		4	/* func 2, offset A0h, bit 4*/
 #define DISABLE_JITTER		1	/* func 2, offset A0h, bit 1*/
 #define MemClrDis		1	/* func 3, offset F8h, FNC 4, bit 1*/
 #define SYNC_ON_UC_ECC_EN		2	/* func 3, offset 44h, bit 2*/
-#define Dr_MemClrStatus		10	/* func 3, offset 110h, bit 10*/
-#define MemClrBusy		9	/* func 3, offset 110h, bit 9*/
+#define DR_MEM_CLR_STATUS		10	/* func 3, offset 110h, bit 10*/
+#define MEM_CLR_BUSY		9	/* func 3, offset 110h, bit 9*/
 #define DctGangEn		4	/* func 3, offset 110h, bit 4*/
 #define MemClrInit		3	/* func 3, offset 110h, bit 3*/
 #define SendZQCmd		29	/* func 2, offset 7Ch, bit 29 */
@@ -146,7 +146,7 @@
 #define DisAutoComp		30	/* func 2, offset 9Ch, Index 8, bit 30*/
 #define DqsRcvTrEn		13	/* func 2, offset 9Ch, Index 8, bit 13*/
 #define ForceAutoPchg		23	/* func 2, offset 90h, bit 23*/
-#define ClLinesToNbDis		15	/* Bu_CFG2, bit 15*/
+#define CL_LINES_TO_NB_DIS	15	/* Bu_CFG2, bit 15*/
 #define WbEnhWsbDis_D		(48-32)
 #define PhyFenceTrEn		3	/* func 2, offset 9Ch, Index 8, bit 3 */
 #define ParEn			8	/* func 2, offset 90h, bit 8 */
@@ -163,17 +163,17 @@
 #define FreqChgInProg	21		/* func 2, offset 94h, bit 21 */
 #define ExitSelfRef	1		/* func 2, offset 90h, bit 1 */
 
-#define SubMemclkRegDly		5	/* func 2, offset A8h, bit 5 */
-#define Ddr3FourSocketCh	2	/* func 2, offset A8h, bit 2 */
-#define SendControlWord		30	/* func 2, offset 7Ch, bit 30 */
+#define SUB_MEM_CLK_REG_DLY		5	/* func 2, offset A8h, bit 5 */
+#define DDR3_FOUR_SOCKET_CH	2	/* func 2, offset A8h, bit 2 */
+#define SEND_CONTROL_WORD		30	/* func 2, offset 7Ch, bit 30 */
 
-#define NB_GfxNbPstateDis       62     /* MSRC001_001F Northbridge Configuration Register (NB_CFG) bit 62 GfxNbPstateDis disable northbridge p-state transitions */
+#define NB_GFX_NB_PSTATE_DIS       62     /* MSRC001_001F Northbridge Configuration Register (NB_CFG) bit 62 GfxNbPstateDis disable northbridge p-state transitions */
 /*=============================================================================
 	SW Initialization
 ============================================================================*/
-#define DLL_Enable	1
-#define OCD_Default	2
-#define OCD_Exit	3
+#define DLL_ENABLE	1
+#define OCD_DEFAULT	2
+#define OCD_EXIT	3
 
 /*=============================================================================
 	Jedec DDR II
@@ -330,16 +330,16 @@ struct DCTPersistentStatStruc {
 		/* CHB DIMM0 Byte 0 - 7  TxDqs */
 		/* CHB DIMM1 Byte 0 - 7  TxDqs */
 		/* CHB DIMM1 Byte 0 - 7  TxDqs */
-	u16 HostBiosSrvc1;	/* Word sized general purpose field for use by host BIOS.  Scratch space.*/
-	u32 HostBiosSrvc2;	/* Dword sized general purpose field for use by host BIOS.  Scratch space.*/
+	u16 host_bios_srvc_1;	/* Word sized general purpose field for use by host BIOS.  Scratch space.*/
+	u32 host_bios_srvc_2;	/* Dword sized general purpose field for use by host BIOS.  Scratch space.*/
 } __attribute__((packed, aligned(4)));
 
 struct DCTStatStruc {		/* A per Node structure*/
 /* DCTStatStruct_F -  start */
 	u8 node_id;			/* Node ID of current controller */
-	u8 Internal_Node_ID;	/* Internal Node ID of the current controller */
-	u8 Dual_Node_Package;	/* 1 = Dual node package (G34) */
-	u8 stopDCT[2];		/* Set if the DCT will be stopped */
+	u8 internal_node_id;	/* Internal Node ID of the current controller */
+	u8 dual_node_package;	/* 1 = Dual node package (G34) */
+	u8 stop_dtc[2];		/* Set if the DCT will be stopped */
 	u8 err_code;			/* Current error condition of Node
 		0= no error
 		1= Variance Error, DCT is running but not in an optimal configuration.
@@ -373,7 +373,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u16 dimm_x4_present;	/* For each bit n 0..7, 1 = DIMM n contains x4 data devices.*/
 	u16 dimm_x8_present;	/* For each bit n 0..7, 1 = DIMM n contains x8 data devices.*/
 	u16 dimm_x16_present;	/* For each bit n 0..7, 1 = DIMM n contains x16 data devices.*/
-	u16 DIMM2Kpage;		/* For each bit n 0..7, 1 = DIMM n contains 1K page devices.*/
+	u16 dimm_2k_page;		/* For each bit n 0..7, 1 = DIMM n contains 1K page devices.*/
 	u8 ma_load[2];		/* Number of devices loading MAA bus*/
 		/* Number of devices loading MAB bus*/
 	u8 ma_dimms[2];		/*Number of DIMMs loading CH A*/
@@ -454,7 +454,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 		/* CHA DQS ECC byte like...*/
 		/* CHA DQS ECC byte scale*/
 	u8 max_async_lat;		/* Max Asynchronous Latency (ns)*/
-	/* NOTE: Not used in Barcelona - u8 CH_D_RCVRDLY[2][4]; */
+	/* NOTE: Not used in Barcelona - u8 ch_d_rcvr_dly[2][4]; */
 		/* CHA DIMM 0 - 4 Receiver Enable Delay*/
 		/* CHB DIMM 0 - 4 Receiver Enable Delay */
 	/* NOTE: Not used in Barcelona - u8 CH_D_B_DQS[2][2][8]; */
@@ -471,8 +471,8 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u8 dqs_delay;		/* Current DQS delay value*/
 	u32 train_errors;	/* Current Training Errors*/
 
-	u32 AMC_TSC_DeltaLo;	/* Time Stamp Counter measurement of AMC, Low dword*/
-	u32 AMC_TSC_DeltaHi;	/* Time Stamp Counter measurement of AMC, High dword*/
+	u32 amc_tsc_delta_lo;	/* Time Stamp Counter measurement of AMC, Low dword*/
+	u32 amc_tsc_delta_hi;	/* Time Stamp Counter measurement of AMC, High dword*/
 	/* NOTE: Not used in Barcelona - */
 	u8 CH_D_DIR_MaxMin_B_Dly[2][2][2][8];
 		/* CH A byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
@@ -491,15 +491,15 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u16 dimm_wk_2406;		/* Bitmap indicating which Dimms have a manufactur's week code <= 24 of 2006 (June)*/
 	u16 dimm_dr_present;	/* Bitmap indicating that Dual Rank Dimms are present*/
 	u16 DimmPlPresent;	/* Bitmap indicating that Planar (1) or Stacked (0) Dimms are present.*/
-	u16 ChannelTrainFai;	/* Bitmap showing the channel information about failed Chip Selects
+	u16 channel_train_fail;	/* Bitmap showing the channel information about failed Chip Selects
 		0 in any bit field indicates Channel 0
 		1 in any bit field indicates Channel 1 */
 	u16 DIMMTfaw;		/* Minimax Tfaw*16 (ns) of DIMMs */
 	u8 Tfaw;		/* DCT Tfaw (busclocks) */
-	u16 CSUsrTestFail;	/* Chip selects excluded by user */
+	u16 cs_usr_test_fail;	/* Chip selects excluded by user */
 /* DCTStatStruct_F -  end */
 
-	u16 CH_MaxRdLat[2][2];	/* Max Read Latency (nclks) [dct][pstate] */
+	u16 ch_max_rd_lat[2][2];	/* Max Read Latency (nclks) [dct][pstate] */
 		/* Max Read Latency (ns) for DCT 1*/
 	u8 CH_D_DIR_B_DQS[2][4][2][9];	/* [A/B] [DIMM1-4] [R/W] [DQS] */
 		/* CHA DIMM0 Byte 0 - 7 and Check Write DQS Delay*/
@@ -523,18 +523,18 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u16 CH_D_BC_RCVRDLY[2][4];
 		/* CHA DIMM 0 - 4 Check Byte Receiver Enable Delay*/
 		/* CHB DIMM 0 - 4 Check Byte Receiver Enable Delay*/
-	u8 DIMMValidDCT[2];	/* DIMM# in DCT0*/
+	u8 dimm_valid_dct[2];	/* DIMM# in DCT0*/
 				/* DIMM# in DCT1*/
 	u16 CSPresent_DCT[2];	/* DCT# CS mapping */
 	u16 MirrPresU_NumRegR;	/* Address mapping from edge connect to DIMM present for unbuffered dimm
 				   Number of registers on the dimm for registered dimm */
-	u8 MaxDCTs;		/* Max number of DCTs in system*/
+	u8 max_dcts;		/* Max number of DCTs in system*/
 	/* NOTE: removed u8 DCT. Use ->dev_ for pci R/W; */	/*DCT pointer*/
-	u8 GangedMode;		/* Ganged mode enabled, 0 = disabled, 1 = enabled*/
-	u8 DRPresent;		/* Family 10 present flag, 0 = not Fam10, 1 = Fam10*/
-	u32 NodeSysLimit;	/* BASE[39:8],for DCT0+DCT1 system address*/
-	u8 WrDatGrossH;
-	u8 DqsRcvEnGrossL;
+	u8 ganged_mode;		/* Ganged mode enabled, 0 = disabled, 1 = enabled*/
+	u8 dr_present;		/* Family 10 present flag, 0 = not Fam10, 1 = Fam10*/
+	u32 node_sys_limit;	/* BASE[39:8],for DCT0+DCT1 system address*/
+	u8 wr_dat_gross_h;
+	u8 dqs_rcv_en_gross_l;
 	/* NOTE: Not used - u8 NodeSpeed */		/* Bus Speed (to set Controller) */
 		/* 1 = 200MHz */
 		/* 2 = 266MHz */
@@ -545,12 +545,12 @@ struct DCTStatStruc {		/* A per Node structure*/
 		/* 2 = 4.0 */
 		/* 3 = 5.0 */
 		/* 4 = 6.0 */
-	u8 TrwtWB;
-	u8 CurrRcvrCHADelay;	/* for keep current RcvrEnDly of chA*/
-	u16 T1000;		/* get the T1000 figure (cycle time (ns)*1K)*/
-	u8 DqsRcvEn_Pass;	/* for TrainRcvrEn byte lane pass flag*/
-	u8 DqsRcvEn_Saved;	/* for TrainRcvrEn byte lane saved flag*/
-	u8 SeedPass1Remainder;	/* for Phy assisted DQS receiver enable training*/
+	u8 trwt_wb;
+	u8 curr_rcvr_ch_a_delay;	/* for keep current RcvrEnDly of chA*/
+	u16 t1000;		/* get the t1000 figure (cycle time (ns)*1K)*/
+	u8 dqs_rcv_en_pass;	/* for TrainRcvrEn byte lane pass flag*/
+	u8 dqs_rcv_en_saved;	/* for TrainRcvrEn byte lane saved flag*/
+	u8 seed_pass_1_remainder;	/* for Phy assisted DQS receiver enable training*/
 
 	/* for second pass  - Second pass should never run for Fam10*/
 	/* NOTE: Not used for Barcelona - u8 CH_D_B_RCVRDLY_1[2][4][8]; */	/* CHA DIMM 0 Receiver Enable Delay */
@@ -563,64 +563,64 @@ struct DCTStatStruc {		/* A per Node structure*/
 		/* CHB DIMM 2 Receiver Enable Delay*/
 		/* CHB DIMM 3 Receiver Enable Delay*/
 
-	u8 ClToNB_flag;	/* is used to restore ClLinesToNbDis bit after memory */
-	u32 NodeSysBase;	/* for channel interleave usage */
+	u8 cl_to_nb_tag;	/* is used to restore ClLinesToNbDis bit after memory */
+	u32 node_sys_base;	/* for channel interleave usage */
 
 	/* Fam15h specific backup variables */
-	u8 SwNbPstateLoDis;
-	u8 NbPstateDisOnP0;
-	u8 NbPstateThreshold;
-	u8 NbPstateHi;
+	u8 sw_nb_pstate_lo_dis;
+	u8 nb_pstate_dis_on_p0;
+	u8 nb_pstate_threshold;
+	u8 nb_pstate_hi;
 
 	/* New for LB Support */
-	u8 NodePresent;
+	u8 node_present;
 	u32 dev_host;
 	u32 dev_map;
 	u32 dev_dct;
 	u32 dev_nbmisc;
 	u32 dev_link;
 	u32 dev_nbctl;
-	u8 TargetFreq;
-	u8 TargetCASL;
-	u32 CtrlWrd3;
-	u32 CtrlWrd4;
-	u32 CtrlWrd5;
-	u8 DqsRdWrPos_Saved;
-	u8 DqsRcvEnGrossMax;
-	u8 DqsRcvEnGrossMin;
-	u8 WrDatGrossMax;
-	u8 WrDatGrossMin;
+	u8 target_freq;
+	u8 target_casl;
+	u32 ctrl_wrd_3;
+	u32 ctrl_wrd_4;
+	u32 ctrl_wrd_5;
+	u8 dqs_rd_wr_pos_saved;
+	u8 dqs_rcv_en_gross_max;
+	u8 dqs_rcv_en_gross_min;
+	u8 wr_dat_gross_max;
+	u8 wr_dat_gross_min;
 	u8 tcwl_delay[2];
 
-	u16 RegMan1Present;	/* DIMM present bitmap of Register manufacture 1 */
-	u16 RegMan2Present;	/* DIMM present bitmap of Register manufacture 2 */
+	u16 reg_man_1_present;	/* DIMM present bitmap of Register manufacture 1 */
+	u16 reg_man_2_present;	/* DIMM present bitmap of Register manufacture 2 */
 
-	struct _sMCTStruct *C_MCTPtr;
-	struct _sDCTStruct *C_DCTPtr[2];
+	struct _sMCTStruct *c_mct_ptr;
+	struct _sDCTStruct *c_dct_ptr[2];
 	/* struct _sDCTStruct *C_DCT1Ptr; */
 
-	struct _sMCTStruct s_C_MCTPtr;
-	struct _sDCTStruct s_C_DCTPtr[2];
+	struct _sMCTStruct s_c_mct_ptr;
+	struct _sDCTStruct s_c_dct_ptr[2];
 	/* struct _sDCTStruct s_C_DCT1Ptr[8]; */
 
 	/* DIMM supported voltage bitmap ([2:0]: 1.25V, 1.35V, 1.5V) */
-	u8 DimmSupportedVoltages[MAX_DIMMS_SUPPORTED];
+	u8 dimm_supported_voltages[MAX_DIMMS_SUPPORTED];
 	u32 DimmConfiguredVoltage[MAX_DIMMS_SUPPORTED];	/* mV */
 
-	u8 DimmRows[MAX_DIMMS_SUPPORTED];
-	u8 DimmCols[MAX_DIMMS_SUPPORTED];
-	u8 DimmRanks[MAX_DIMMS_SUPPORTED];
-	u8 DimmBanks[MAX_DIMMS_SUPPORTED];
-	u8 DimmWidth[MAX_DIMMS_SUPPORTED];
-	u64 DimmChipSize[MAX_DIMMS_SUPPORTED];
-	u32 DimmChipWidth[MAX_DIMMS_SUPPORTED];
-	u8 DimmRegistered[MAX_DIMMS_SUPPORTED];
-	u8 DimmLoadReduced[MAX_DIMMS_SUPPORTED];
+	u8 dimm_rows[MAX_DIMMS_SUPPORTED];
+	u8 dimm_cols[MAX_DIMMS_SUPPORTED];
+	u8 dimm_ranks[MAX_DIMMS_SUPPORTED];
+	u8 dimm_banks[MAX_DIMMS_SUPPORTED];
+	u8 dimm_width[MAX_DIMMS_SUPPORTED];
+	u64 dimm_chip_size[MAX_DIMMS_SUPPORTED];
+	u32 dimm_chip_width[MAX_DIMMS_SUPPORTED];
+	u8 dimm_registered[MAX_DIMMS_SUPPORTED];
+	u8 dimm_load_reduced[MAX_DIMMS_SUPPORTED];
 
-	u64 DimmManufacturerID[MAX_DIMMS_SUPPORTED];
-	char DimmPartNumber[MAX_DIMMS_SUPPORTED][SPD_PARTN_LENGTH + 1];
-	u16 DimmRevisionNumber[MAX_DIMMS_SUPPORTED];
-	u32 DimmSerialNumber[MAX_DIMMS_SUPPORTED];
+	u64 dimm_manufacturer_id[MAX_DIMMS_SUPPORTED];
+	char dimm_part_number[MAX_DIMMS_SUPPORTED][SPD_PARTN_LENGTH + 1];
+	u16 dimm_revision_number[MAX_DIMMS_SUPPORTED];
+	u32 dimm_serial_number[MAX_DIMMS_SUPPORTED];
 
 	struct amd_spd_node_data spd_data;
 
@@ -925,8 +925,8 @@ struct amd_s3_persistent_data {
 					    1 = enable*/
 
 /*Memory Map/Mgt.*/
-#define NV_BottomIO		40	/* Bottom of 32-bit IO space (8-bits)
-					    NV_BottomIO[7:0]=Addr[31:24]*/
+#define NV_BOTTOM_IO		40	/* Bottom of 32-bit IO space (8-bits)
+					    NV_BOTTOM_IO[7:0]=Addr[31:24]*/
 #define NV_BOTTOM_UMA		41	/* Bottom of shared graphics dram (8-bits)
 					    NV_BOTTOM_UMA[7:0]=Addr[31:24]*/
 #define NV_MEM_HOLE		42	/* Memory Hole Remapping (1-bits)
@@ -973,177 +973,177 @@ extern const u32 TestPattern0_D[];
 extern const u32 TestPattern1_D[];
 extern const u32 TestPattern2_D[];
 
-u32 Get_NB32(u32 dev, u32 reg);
+u32 get_nb32(u32 dev, u32 reg);
 void Set_NB32(u32 dev, u32 reg, u32 val);
 u32 Get_NB32_index(u32 dev, u32 index_reg, u32 index);
 void Set_NB32_index(u32 dev, u32 index_reg, u32 index, u32 data);
 u32 Get_NB32_index_wait(u32 dev, u32 index_reg, u32 index);
 void Set_NB32_index_wait(u32 dev, u32 index_reg, u32 index, u32 data);
-u32 OtherTiming_A_D(struct DCTStatStruc *pDCTstat, u32 val);
-void mct_ForceAutoPrecharge_D(struct DCTStatStruc *pDCTstat, u32 dct);
-u32 Modify_D3CMP(struct DCTStatStruc *pDCTstat, u32 dct, u32 value);
+u32 OtherTiming_A_D(struct DCTStatStruc *p_dct_stat, u32 val);
+void mct_ForceAutoPrecharge_D(struct DCTStatStruc *p_dct_stat, u32 dct);
+u32 Modify_D3CMP(struct DCTStatStruc *p_dct_stat, u32 dct, u32 value);
 u8 mct_checkNumberOfDqsRcvEn_1Pass(u8 pass);
 u32 SetupDqsPattern_1PassA(u8 Pass);
 u32 SetupDqsPattern_1PassB(u8 Pass);
 u8 mct_Get_Start_RcvrEnDly_1Pass(u8 Pass);
-u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat, u16 RcvrEnDly, u16 RcvrEnDlyLimit, u8 Channel, u8 Receiver, u8 Pass);
+u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat, u16 RcvrEnDly, u16 RcvrEnDlyLimit, u8 Channel, u8 Receiver, u8 Pass);
 void initialize_mca(u8 bsp, u8 suppress_errors);
-void CPUMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-u8 ECCInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void TrainReceiverEn_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA, u8 Pass);
-void TrainMaxRdLatency_En_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void mct_TrainDQSPos_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void mctSetEccDQSRcvrEn_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void TrainMaxReadLatency_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void mct_EndDQSTraining_D(struct MCTStatStruc *pMCTstat,struct DCTStatStruc *pDCTstatA);
-void mct_SetRcvrEnDly_D(struct DCTStatStruc *pDCTstat, u16 RcvrEnDly, u8 FinalValue, u8 Channel, u8 Receiver, u32 dev, u32 index_reg, u8 Addl_Index, u8 Pass);
-void SetEccDQSRcvrEn_D(struct DCTStatStruc *pDCTstat, u8 Channel);
-void mctGet_PS_Cfg_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u32 dct);
-void InterleaveBanks_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct);
-void mct_SetDramConfigHi_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u32 dct, u32 DramConfigHi);
-void mct_DramInit_Hw_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct);
-void mct_SetClToNB_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void mct_SetWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void mct_ForceNBPState0_En_Fam15(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void mct_ForceNBPState0_Dis_Fam15(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void mct_TrainRcvrEn_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 Pass);
-void mct_EnableDimmEccEn_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 _DisableDramECC);
-u32 procOdtWorkaround(struct DCTStatStruc *pDCTstat, u32 dct, u32 val);
-void mct_BeforeDramInit_D(struct DCTStatStruc *pDCTstat, u32 dct);
-void DIMMSetVoltages(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void InterleaveNodes_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void InterleaveChannels_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+void CPUMemTyping_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void UMAMemTyping_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void TrainReceiverEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u8 Pass);
+void TrainMaxRdLatency_En_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_TrainDQSPos_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mctSetEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void TrainMaxReadLatency_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_EndDQSTraining_D(struct MCTStatStruc *p_mct_stat,struct DCTStatStruc *p_dct_stat_a);
+void mct_SetRcvrEnDly_D(struct DCTStatStruc *p_dct_stat, u16 RcvrEnDly, u8 FinalValue, u8 Channel, u8 Receiver, u32 dev, u32 index_reg, u8 Addl_Index, u8 Pass);
+void SetEccDQSRcvrEn_D(struct DCTStatStruc *p_dct_stat, u8 Channel);
+void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 dct);
+void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
+void mct_SetDramConfigHi_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 dct, u32 DramConfigHi);
+void mct_DramInit_Hw_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
+void mct_SetClToNB_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_SetWbEnhWsbDis_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_ForceNBPState0_En_Fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_ForceNBPState0_Dis_Fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_TrainRcvrEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 Pass);
+void mct_EnableDimmEccEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 _DisableDramECC);
+u32 procOdtWorkaround(struct DCTStatStruc *p_dct_stat, u32 dct, u32 val);
+void mct_BeforeDramInit_D(struct DCTStatStruc *p_dct_stat, u32 dct);
+void DIMMSetVoltages(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
-void phyAssistedMemFnceTraining(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA, s16 Node);
-u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *pDCTstat, u8 pass);
-u8 mct_InitReceiver_D(struct DCTStatStruc *pDCTstat, u8 dct);
+void phyAssistedMemFnceTraining(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, s16 Node);
+u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *p_dct_stat, u8 pass);
+u8 mct_InitReceiver_D(struct DCTStatStruc *p_dct_stat, u8 dct);
 void mct_Wait(u32 cycles);
-u8 mct_RcvrRankEnabled_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 Channel, u8 ChipSel);
-u32 mct_GetRcvrSysAddr_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 channel, u8 receiver, u8 *valid);
-void mct_Read1LTestPattern_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u32 addr);
-void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
+u8 mct_RcvrRankEnabled_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 Channel, u8 ChipSel);
+u32 mct_GetRcvrSysAddr_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 channel, u8 receiver, u8 *valid);
+void mct_Read1LTestPattern_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 addr);
+void mctAutoInitMCT_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 void calculate_spd_hash(u8 *spd_data, u64 *spd_hash);
-s8 load_spd_hashes_from_nvram(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+s8 load_spd_hashes_from_nvram(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 s8 restore_mct_information_from_nvram(u8 training_only);
 u16 calculate_nvram_mct_hash(void);
 
-u32 fam10h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct);
-u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct);
-u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct);
-u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct);
-void precise_memclk_delay_fam15(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct, u32 clocks);
-void mct_EnableDatIntlv_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat);
-void SetDllSpeedUp_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-u8 get_available_lane_count(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+u32 fam10h_address_timing_compensation_code(struct DCTStatStruc *p_dct_stat, u8 dct);
+u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *p_dct_stat, u8 dct);
+u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *p_dct_stat, u8 dct);
+u8 fam15h_slow_access_mode(struct DCTStatStruc *p_dct_stat, u8 dct);
+void precise_memclk_delay_fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct, u32 clocks);
+void mct_EnableDatIntlv_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat);
+void SetDllSpeedUp_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+u8 get_available_lane_count(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void read_dqs_receiver_enable_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg);
 void read_dqs_write_timing_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg);
-void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
-		struct DCTStatStruc *pDCTstat, u8 dct, u8 enable);
+void fam15EnableTrainingMode(struct MCTStatStruc *p_mct_stat,
+		struct DCTStatStruc *p_dct_stat, u8 dct, u8 enable);
 void read_dqs_read_data_timing_registers(u16 *delay, u32 dev,
 			u8 dct, u8 dimm, u32 index_reg);
 void write_dqs_read_data_timing_registers(u16 *delay, u32 dev,
 			u8 dct, u8 dimm, u32 index_reg);
-void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
+void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
 void proc_IOCLFLUSH_D(u32 addr_hi);
-u8 ChipSelPresent_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat,
+u8 ChipSelPresent_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat,
 				u8 Channel, u8 ChipSel);
-void mct_Write1LTestPattern_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat,
+void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat,
 				u32 TestAddr, u8 pattern);
 u8 NodePresent_D(u8 Node);
-void DCTMemClr_Init_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
-void DCTMemClr_Sync_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
-void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct);
-void ProgDramMRSReg_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-u8 PlatformSpec_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-void StartupDCT_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
+void DCTMemClr_Init_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
+void dct_mem_clr_sync_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
+void SPD2ndTiming(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct);
+void ProgDramMRSReg_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+u8 PlatformSpec_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+void startup_dct_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
 u16 mhz_to_memclk_config(u16 freq);
-void SetTargetFreq(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA, u8 Node);
-void mct_WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA, u8 Pass);
-u8 AgesaHwWlPhase1(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 pass);
-u8 AgesaHwWlPhase2(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 pass);
-u8 AgesaHwWlPhase3(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 pass);
-void EnableZQcalibration(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void DisableZQcalibration(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void PrepareC_MCT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void PrepareC_DCT(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct);
-void Restore_OnDimmMirror(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void Clear_OnDimmMirror(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
-void MCTMemClr_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
-void mct_BeforeDQSTrainSamp(struct DCTStatStruc *pDCTstat);
-void mct_ExtMCTConfig_Bx(struct DCTStatStruc *pDCTstat);
-void mct_ExtMCTConfig_Cx(struct DCTStatStruc *pDCTstat);
-void mct_ExtMCTConfig_Dx(struct DCTStatStruc *pDCTstat);
-u32 mct_SetDramConfigMisc2(struct DCTStatStruc *pDCTstat,
+void SetTargetFreq(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a, u8 Node);
+void mct_WriteLevelization_HW(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a, u8 Pass);
+u8 AgesaHwWlPhase1(struct MCTStatStruc *p_mct_stat,
+	struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 pass);
+u8 AgesaHwWlPhase2(struct MCTStatStruc *p_mct_stat,
+	struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 pass);
+u8 AgesaHwWlPhase3(struct MCTStatStruc *p_mct_stat,
+	struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 pass);
+void EnableZQcalibration(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void DisableZQcalibration(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void PrepareC_MCT(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void PrepareC_DCT(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
+void Restore_OnDimmMirror(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void Clear_OnDimmMirror(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void MCTMemClr_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_BeforeDQSTrainSamp(struct DCTStatStruc *p_dct_stat);
+void mct_ExtMCTConfig_Bx(struct DCTStatStruc *p_dct_stat);
+void mct_ExtMCTConfig_Cx(struct DCTStatStruc *p_dct_stat);
+void mct_ExtMCTConfig_Dx(struct DCTStatStruc *p_dct_stat);
+u32 mct_SetDramConfigMisc2(struct DCTStatStruc *p_dct_stat,
 			u8 dct, u32 misc2, u32 DramControl);
 
-u8 dct_ddr_voltage_index(struct DCTStatStruc *pDCTstat, u8 dct);
-void mct_DramControlReg_Init_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-void precise_ndelay_fam15(struct MCTStatStruc *pMCTstat, u32 nanoseconds);
-void FreqChgCtrlWrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct);
-u32 mct_MR1Odt_RDimm(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel);
-void mct_DramInit_Sw_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
+u8 dct_ddr_voltage_index(struct DCTStatStruc *p_dct_stat, u8 dct);
+void mct_DramControlReg_Init_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+void precise_ndelay_fam15(struct MCTStatStruc *p_mct_stat, u32 nanoseconds);
+void FreqChgCtrlWrd(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct);
+u32 mct_MR1Odt_RDimm(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct, u32 MrsChipSel);
+void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
 void print_debug_dqs(const char *str, u32 val, u8 level);
 void print_debug_dqs_pair(const char *str, u32 val, const char *str2, u32 val2, u8 level);
-u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
+u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
 void ResetDCTWrPtr_D(u32 dev, u8 dct, u32 index_reg, u32 index);
-void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *pMCTstat,
-		struct DCTStatStruc *pDCTstat, u8 dct, u8 calc_min);
-void write_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, u8 dct,
+void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *p_mct_stat,
+		struct DCTStatStruc *p_dct_stat, u8 dct, u8 calc_min);
+void write_dram_dqs_training_pattern_fam15(struct MCTStatStruc *p_mct_stat,
+	struct DCTStatStruc *p_dct_stat, u8 dct,
 	u8 Receiver, u8 lane, u8 stop_on_error);
-void read_dram_dqs_training_pattern_fam15(struct MCTStatStruc *pMCTstat,
-	struct DCTStatStruc *pDCTstat, u8 dct,
+void read_dram_dqs_training_pattern_fam15(struct MCTStatStruc *p_mct_stat,
+	struct DCTStatStruc *p_dct_stat, u8 dct,
 	u8 Receiver, u8 lane, u8 stop_on_error);
 void write_dqs_receiver_enable_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg);
 
-u32 fenceDynTraining_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct);
+u32 fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct);
 s32 abs(s32 val);
 void SetTargetWTIO_D(u32 TestAddr);
 void ResetTargetWTIO_D(void);
-u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat,
+u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat,
 				u8 Channel, u8 receiver, u8 *valid);
-void set_2t_configuration(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-u8 mct_BeforePlatformSpec(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-u8 mct_PlatformSpec(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-void InitPhyCompensation(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-u32 mct_MR1(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel);
-u32 mct_MR2(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel);
-u8 fam15_rttwr(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type);
-u8 fam15_rttnom(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type);
-u8 fam15_dimm_dic(struct DCTStatStruc *pDCTstat, u8 dct, u8 dimm, u8 rank, u8 package_type);
-u32 mct_DramTermDyn_RDimm(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dimm);
+void set_2t_configuration(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+u8 mct_BeforePlatformSpec(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+u8 mct_PlatformSpec(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+void InitPhyCompensation(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+u32 mct_MR1(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct, u32 MrsChipSel);
+u32 mct_MR2(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct, u32 MrsChipSel);
+u8 fam15_rttwr(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 package_type);
+u8 fam15_rttnom(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 package_type);
+u8 fam15_dimm_dic(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 package_type);
+u32 mct_DramTermDyn_RDimm(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dimm);
 
 void restore_mct_data_from_save_variable(struct amd_s3_persistent_data* persistent_data, u8 training_only);
 #endif

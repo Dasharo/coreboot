@@ -28,7 +28,7 @@ u8  mct_Get_Start_RcvrEnDly_1Pass(u8 pass)
 	return 0;
 }
 
-static u8 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel, u8 Receiver,
+static u8 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *p_dct_stat, u8 Channel, u8 Receiver,
 					u8 Pass)
 {
 	u8 i, MaxValue;
@@ -36,7 +36,7 @@ static u8 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel,
 	u8 val;
 
 	MaxValue = 0;
-	p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+	p = p_dct_stat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
 
 	for (i = 0; i < 8; i++) {
 		/* get left value from DCTStatStruc.CHA_D0_B0_RCVRDLY*/
@@ -60,19 +60,19 @@ static u8 mct_AdjustFinalDQSRcvValue_1Pass(u8 val_1p, u8 val_2p)
 }
 #endif
 
-u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *pDCTstat, u8 pass)
+u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *p_dct_stat, u8 pass)
 {
 	u8 ret;
 	ret = 0;
-	if ((pDCTstat->DqsRcvEn_Pass == 0xff) && (pass == FIRST_PASS))
+	if ((p_dct_stat->dqs_rcv_en_pass == 0xff) && (pass == FIRST_PASS))
 		ret = 2;
 	return ret;
 }
 
-u8 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
+u8 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
 				u8 RcvrEnDly, u8 RcvrEnDlyLimit,
 				u8 Channel, u8 Receiver, u8 Pass)
 
 {
-	return mct_Average_RcvrEnDly_1Pass(pDCTstat, Channel, Receiver, Pass);
+	return mct_Average_RcvrEnDly_1Pass(p_dct_stat, Channel, Receiver, Pass);
 }

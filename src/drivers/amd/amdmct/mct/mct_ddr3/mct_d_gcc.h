@@ -18,7 +18,7 @@ u32 bsf(u32 x);
 /* prevent speculative execution of following instructions */
 #define _EXECFENCE asm volatile ("outb %al, $0xed")
 
-u32 SetUpperFSbase(u32 addr_hi);
+u32 set_upper_fs_base(u32 addr_hi);
 
 void proc_MFENCE(void);
 void proc_CLFLUSH(u32 addr_hi);

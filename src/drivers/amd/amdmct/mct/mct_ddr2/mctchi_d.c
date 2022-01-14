@@ -2,8 +2,8 @@
 
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstatA)
+void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat_a)
 {
 
 	u8 Node;
@@ -14,7 +14,7 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 	u32 val, tmp;
 	u32 dct0_size, dct1_size;
 	u8 enabled;
-	struct DCTStatStruc *pDCTstat;
+	struct DCTStatStruc *p_dct_stat;
 
 	/* HoleValid - indicates whether the current Node contains hole.
 	 * HoleSize - indicates whether there is IO hole in the whole system
@@ -25,29 +25,29 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 	/* call back - DctSelIntLvAddr = mctGet_NVbits(NV_ChannelIntlv);*/	/* override interleave */
 	// FIXME: Check for Cx
 	DctSelIntLvAddr = mctGet_NVbits(NV_ChannelIntlv); /* typ = 5: Hash*: exclusive OR of address bits[20:16, 6]. */
-	beforeInterleaveChannels_D(pDCTstatA, &enabled);
+	beforeInterleaveChannels_D(p_dct_stat_a, &enabled);
 
 	if (DctSelIntLvAddr & 1) {
 		DctSelIntLvAddr >>= 1;
 		HoleSize = 0;
-		if ((pMCTstat->GStatus & (1 << GSB_SOFT_HOLE)) ||
-		     (pMCTstat->GStatus & (1 << GSB_HW_HOLE))) {
-			if (pMCTstat->HoleBase) {
-				HoleBase = pMCTstat->HoleBase >> 8;
+		if ((p_mct_stat->GStatus & (1 << GSB_SOFT_HOLE)) ||
+		     (p_mct_stat->GStatus & (1 << GSB_HW_HOLE))) {
+			if (p_mct_stat->HoleBase) {
+				HoleBase = p_mct_stat->HoleBase >> 8;
 				HoleSize = HoleBase & 0xFFFF0000;
 				HoleSize |= ((~HoleBase) + 1) & 0xFFFF;
 			}
 		}
 		Node = 0;
 		while (Node < MAX_NODES_SUPPORTED) {
-			pDCTstat = pDCTstatA + Node;
-			val = Get_NB32(pDCTstat->dev_map, 0xF0);
+			p_dct_stat = p_dct_stat_a + Node;
+			val = get_nb32(p_dct_stat->dev_map, 0xF0);
 			if (val & (1 << DRAM_HOLE_VALID))
 				HoleValid = 1;
-			if (!pDCTstat->GangedMode && pDCTstat->DIMMValidDCT[0] && pDCTstat->DIMMValidDCT[1]) {
-				DramBase = pDCTstat->NodeSysBase >> 8;
-				dct1_size = ((pDCTstat->NodeSysLimit) + 2) >> 8;
-				dct0_size = Get_NB32(pDCTstat->dev_dct, 0x114);
+			if (!p_dct_stat->ganged_mode && p_dct_stat->dimm_valid_dct[0] && p_dct_stat->dimm_valid_dct[1]) {
+				DramBase = p_dct_stat->node_sys_base >> 8;
+				dct1_size = ((p_dct_stat->node_sys_limit) + 2) >> 8;
+				dct0_size = get_nb32(p_dct_stat->dev_dct, 0x114);
 				if (dct0_size >= 0x10000) {
 					dct0_size -= HoleSize;
 				}
@@ -72,16 +72,16 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 				if (dct1_size == 0)
 					dct0_size = 0;
 				dct0_size -= dct1_size;		/* DctSelBaseOffset = DctSelBaseAddr - Interleaved region */
-				Set_NB32(pDCTstat->dev_dct, 0x114, dct0_size);
+				Set_NB32(p_dct_stat->dev_dct, 0x114, dct0_size);
 
 				if (dct1_size == 0)
 					dct1_size = DctSelBase;
-				val = Get_NB32(pDCTstat->dev_dct, 0x110);
+				val = get_nb32(p_dct_stat->dev_dct, 0x110);
 				val &= 0x7F8;
 				val |= dct1_size;
 				val |= DctSelHi;
 				val |= (DctSelIntLvAddr << 6) & 0xFF;
-				Set_NB32(pDCTstat->dev_dct, 0x110, val);
+				Set_NB32(p_dct_stat->dev_dct, 0x110, val);
 				print_tx("InterleaveChannels: F2x110 DRAM Controller Select Low Register = ", val);
 
 				if (HoleValid) {
@@ -93,18 +93,18 @@ void InterleaveChannels_D(struct MCTStatStruc *pMCTstat,
 						tmp += val;
 					}
 					tmp += HoleSize;
-					val = Get_NB32(pDCTstat->dev_map, 0xF0);	/* DramHoleOffset */
+					val = get_nb32(p_dct_stat->dev_map, 0xF0);	/* DramHoleOffset */
 					val &= 0xFFFF007F;
 					val |= (tmp & ~0xFFFF007F);
-					Set_NB32(pDCTstat->dev_map, 0xF0, val);
+					Set_NB32(p_dct_stat->dev_map, 0xF0, val);
 					print_tx("InterleaveChannels: F1xF0 DRAM Hole Address Register = ", val);
 
 				}
 			}
 			print_tx("InterleaveChannels_D: Node ", Node);
-			print_tx("InterleaveChannels_D: status ", pDCTstat->status);
-			print_tx("InterleaveChannels_D: err_status ", pDCTstat->err_status);
-			print_tx("InterleaveChannels_D: err_code ", pDCTstat->err_code);
+			print_tx("InterleaveChannels_D: status ", p_dct_stat->status);
+			print_tx("InterleaveChannels_D: err_status ", p_dct_stat->err_status);
+			print_tx("InterleaveChannels_D: err_code ", p_dct_stat->err_code);
 			Node++;
 		}
 	}

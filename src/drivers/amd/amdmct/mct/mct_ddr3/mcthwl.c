@@ -7,7 +7,7 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-static void SetEccWrDQS_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat)
+static void SetEccWrDQS_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat)
 {
 	u8 ByteLane, DimmNum, OddByte, Addl_Index, Channel;
 	u8 EccRef1, EccRef2, EccDQSScale;
@@ -34,13 +34,13 @@ static void SetEccWrDQS_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pD
 					Addl_Index = 0x32;
 				Addl_Index += DimmNum * 3;
 
-				val = Get_NB32_index_wait_DCT(pDCTstat->dev_dct, Channel, 0x98, Addl_Index);
+				val = Get_NB32_index_wait_DCT(p_dct_stat->dev_dct, Channel, 0x98, Addl_Index);
 				if (OddByte)
 					val >>= 16;
 				/* Save WrDqs to stack for later usage */
-				pDCTstat->persistentData.CH_D_B_TxDqs[Channel][DimmNum][ByteLane] = val & 0xFF;
-				EccDQSScale = pDCTstat->ch_ecc_dqs_scale[Channel];
-				word = pDCTstat->ch_ecc_dqs_like[Channel];
+				p_dct_stat->persistentData.CH_D_B_TxDqs[Channel][DimmNum][ByteLane] = val & 0xFF;
+				EccDQSScale = p_dct_stat->ch_ecc_dqs_scale[Channel];
+				word = p_dct_stat->ch_ecc_dqs_like[Channel];
 				if ((word & 0xFF) == ByteLane) EccRef1 = val & 0xFF;
 				if (((word >> 8) & 0xFF) == ByteLane) EccRef2 = val & 0xFF;
 			}
@@ -48,36 +48,36 @@ static void SetEccWrDQS_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pD
 	}
 }
 
-static void EnableAutoRefresh_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat)
+static void EnableAutoRefresh_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat)
 {
 	u32 val;
 
-	val = Get_NB32_DCT(pDCTstat->dev_dct, 0, 0x8C);
+	val = Get_NB32_DCT(p_dct_stat->dev_dct, 0, 0x8C);
 	val &= ~(1 << DIS_AUTO_REFRESH);
-	Set_NB32_DCT(pDCTstat->dev_dct, 0, 0x8C, val);
+	Set_NB32_DCT(p_dct_stat->dev_dct, 0, 0x8C, val);
 
-	val = Get_NB32_DCT(pDCTstat->dev_dct, 1, 0x8C);
+	val = Get_NB32_DCT(p_dct_stat->dev_dct, 1, 0x8C);
 	val &= ~(1 << DIS_AUTO_REFRESH);
-	Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x8C, val);
+	Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x8C, val);
 }
 
-static void DisableAutoRefresh_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat)
+static void DisableAutoRefresh_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat)
 {
 	u32 val;
 
-	val = Get_NB32_DCT(pDCTstat->dev_dct, 0, 0x8C);
+	val = Get_NB32_DCT(p_dct_stat->dev_dct, 0, 0x8C);
 	val |= 1 << DIS_AUTO_REFRESH;
-	Set_NB32_DCT(pDCTstat->dev_dct, 0, 0x8C, val);
+	Set_NB32_DCT(p_dct_stat->dev_dct, 0, 0x8C, val);
 
-	val = Get_NB32_DCT(pDCTstat->dev_dct, 1, 0x8C);
+	val = Get_NB32_DCT(p_dct_stat->dev_dct, 1, 0x8C);
 	val |= 1 << DIS_AUTO_REFRESH;
-	Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x8C, val);
+	Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x8C, val);
 }
 
 
-static u8 PhyWLPass1(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+static u8 PhyWLPass1(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 dimm;
 	u16 dimm_valid;
@@ -86,21 +86,21 @@ static u8 PhyWLPass1(struct MCTStatStruc *pMCTstat,
 
 	dct &= 1;
 
-	DCTPtr = (void *)(pDCTstat->C_DCTPtr[dct]);
-	pDCTstat->dimm_valid = pDCTstat->DIMMValidDCT[dct];
-	pDCTstat->cs_present = pDCTstat->CSPresent_DCT[dct];
+	DCTPtr = (void *)(p_dct_stat->c_dct_ptr[dct]);
+	p_dct_stat->dimm_valid = p_dct_stat->dimm_valid_dct[dct];
+	p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[dct];
 
-	if (pDCTstat->GangedMode & 1)
-		pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
+	if (p_dct_stat->ganged_mode & 1)
+		p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[0];
 
-	if (pDCTstat->dimm_valid) {
-		dimm_valid = pDCTstat->dimm_valid;
-		PrepareC_DCT(pMCTstat, pDCTstat, dct);
+	if (p_dct_stat->dimm_valid) {
+		dimm_valid = p_dct_stat->dimm_valid;
+		PrepareC_DCT(p_mct_stat, p_dct_stat, dct);
 		for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm ++) {
 			if (dimm_valid & (1 << (dimm << 1))) {
-				status |= AgesaHwWlPhase1(pMCTstat, pDCTstat, dct, dimm, FIRST_PASS);
-				status |= AgesaHwWlPhase2(pMCTstat, pDCTstat, dct, dimm, FIRST_PASS);
-				status |= AgesaHwWlPhase3(pMCTstat, pDCTstat, dct, dimm, FIRST_PASS);
+				status |= AgesaHwWlPhase1(p_mct_stat, p_dct_stat, dct, dimm, FIRST_PASS);
+				status |= AgesaHwWlPhase2(p_mct_stat, p_dct_stat, dct, dimm, FIRST_PASS);
+				status |= AgesaHwWlPhase3(p_mct_stat, p_dct_stat, dct, dimm, FIRST_PASS);
 			}
 		}
 	}
@@ -108,8 +108,8 @@ static u8 PhyWLPass1(struct MCTStatStruc *pMCTstat,
 	return status;
 }
 
-static u8 PhyWLPass2(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct, u8 final)
+static u8 PhyWLPass2(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct, u8 final)
 {
 	u8 dimm;
 	u16 dimm_valid;
@@ -118,34 +118,34 @@ static u8 PhyWLPass2(struct MCTStatStruc *pMCTstat,
 
 	dct &= 1;
 
-	DCTPtr = (void *)&(pDCTstat->C_DCTPtr[dct]); /* todo: */
-	pDCTstat->dimm_valid = pDCTstat->DIMMValidDCT[dct];
-	pDCTstat->cs_present = pDCTstat->CSPresent_DCT[dct];
+	DCTPtr = (void *)&(p_dct_stat->c_dct_ptr[dct]); /* todo: */
+	p_dct_stat->dimm_valid = p_dct_stat->dimm_valid_dct[dct];
+	p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[dct];
 
-	if (pDCTstat->GangedMode & 1)
-		pDCTstat->cs_present = pDCTstat->CSPresent_DCT[0];
+	if (p_dct_stat->ganged_mode & 1)
+		p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[0];
 
-	if (pDCTstat->dimm_valid) {
-		dimm_valid = pDCTstat->dimm_valid;
-		PrepareC_DCT(pMCTstat, pDCTstat, dct);
-		pDCTstat->speed = pDCTstat->dimm_auto_speed = pDCTstat->TargetFreq;
-		pDCTstat->cas_latency = pDCTstat->dimm_casl = pDCTstat->TargetCASL;
-		SPD2ndTiming(pMCTstat, pDCTstat, dct);
+	if (p_dct_stat->dimm_valid) {
+		dimm_valid = p_dct_stat->dimm_valid;
+		PrepareC_DCT(p_mct_stat, p_dct_stat, dct);
+		p_dct_stat->speed = p_dct_stat->dimm_auto_speed = p_dct_stat->target_freq;
+		p_dct_stat->cas_latency = p_dct_stat->dimm_casl = p_dct_stat->target_casl;
+		SPD2ndTiming(p_mct_stat, p_dct_stat, dct);
 		if (!is_fam15h()) {
-			ProgDramMRSReg_D(pMCTstat, pDCTstat, dct);
-			PlatformSpec_D(pMCTstat, pDCTstat, dct);
-			fenceDynTraining_D(pMCTstat, pDCTstat, dct);
+			ProgDramMRSReg_D(p_mct_stat, p_dct_stat, dct);
+			PlatformSpec_D(p_mct_stat, p_dct_stat, dct);
+			fenceDynTraining_D(p_mct_stat, p_dct_stat, dct);
 		}
-		Restore_OnDimmMirror(pMCTstat, pDCTstat);
-		StartupDCT_D(pMCTstat, pDCTstat, dct);
-		Clear_OnDimmMirror(pMCTstat, pDCTstat);
-		SetDllSpeedUp_D(pMCTstat, pDCTstat, dct);
-		DisableAutoRefresh_D(pMCTstat, pDCTstat);
+		Restore_OnDimmMirror(p_mct_stat, p_dct_stat);
+		startup_dct_d(p_mct_stat, p_dct_stat, dct);
+		Clear_OnDimmMirror(p_mct_stat, p_dct_stat);
+		SetDllSpeedUp_D(p_mct_stat, p_dct_stat, dct);
+		DisableAutoRefresh_D(p_mct_stat, p_dct_stat);
 		for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm ++) {
 			if (dimm_valid & (1 << (dimm << 1))) {
-				status |= AgesaHwWlPhase1(pMCTstat, pDCTstat, dct, dimm, SECOND_PASS);
-				status |= AgesaHwWlPhase2(pMCTstat, pDCTstat, dct, dimm, SECOND_PASS);
-				status |= AgesaHwWlPhase3(pMCTstat, pDCTstat, dct, dimm, SECOND_PASS);
+				status |= AgesaHwWlPhase1(p_mct_stat, p_dct_stat, dct, dimm, SECOND_PASS);
+				status |= AgesaHwWlPhase2(p_mct_stat, p_dct_stat, dct, dimm, SECOND_PASS);
+				status |= AgesaHwWlPhase3(p_mct_stat, p_dct_stat, dct, dimm, SECOND_PASS);
 			}
 		}
 	}
@@ -162,29 +162,29 @@ static u16 fam15h_next_highest_memclk_freq(u16 memclk_freq)
 /* Write Levelization Training
  * Algorithm detailed in the Fam10h BKDG Rev. 3.62 section 2.8.9.9.1
  */
-static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA, u8 Node, u8 Pass)
+static void WriteLevelization_HW(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a, u8 Node, u8 Pass)
 {
 	u8 status;
 	u8 timeout;
 	u16 final_target_freq;
 
-	struct DCTStatStruc *pDCTstat;
-	pDCTstat = pDCTstatA + Node;
+	struct DCTStatStruc *p_dct_stat;
+	p_dct_stat = p_dct_stat_a + Node;
 
-	pDCTstat->C_MCTPtr  = &(pDCTstat->s_C_MCTPtr);
-	pDCTstat->C_DCTPtr[0] = &(pDCTstat->s_C_DCTPtr[0]);
-	pDCTstat->C_DCTPtr[1] = &(pDCTstat->s_C_DCTPtr[1]);
+	p_dct_stat->c_mct_ptr  = &(p_dct_stat->s_c_mct_ptr);
+	p_dct_stat->c_dct_ptr[0] = &(p_dct_stat->s_c_dct_ptr[0]);
+	p_dct_stat->c_dct_ptr[1] = &(p_dct_stat->s_c_dct_ptr[1]);
 
 	/* Disable auto refresh by configuring F2x[1, 0]8C[DIS_AUTO_REFRESH] = 1 */
-	DisableAutoRefresh_D(pMCTstat, pDCTstat);
+	DisableAutoRefresh_D(p_mct_stat, p_dct_stat);
 
 	/* Disable ZQ calibration short command by F2x[1,0]94[ZqcsInterval]=00b */
-	DisableZQcalibration(pMCTstat, pDCTstat);
-	PrepareC_MCT(pMCTstat, pDCTstat);
+	DisableZQcalibration(p_mct_stat, p_dct_stat);
+	PrepareC_MCT(p_mct_stat, p_dct_stat);
 
-	if (pDCTstat->GangedMode & (1 << 0)) {
-		pDCTstat->DIMMValidDCT[1] = pDCTstat->DIMMValidDCT[0];
+	if (p_dct_stat->ganged_mode & (1 << 0)) {
+		p_dct_stat->dimm_valid_dct[1] = p_dct_stat->dimm_valid_dct[0];
 	}
 
 	if (Pass == FIRST_PASS) {
@@ -192,8 +192,8 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 		do {
 			status = 0;
 			timeout++;
-			status |= PhyWLPass1(pMCTstat, pDCTstat, 0);
-			status |= PhyWLPass1(pMCTstat, pDCTstat, 1);
+			status |= PhyWLPass1(p_mct_stat, p_dct_stat, 0);
+			status |= PhyWLPass1(p_mct_stat, p_dct_stat, 1);
 			if (status)
 				printk(BIOS_INFO,
 					"%s: Retrying write levelling due to invalid value(s) detected in first phase\n",
@@ -206,26 +206,26 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 	}
 
 	if (Pass == SECOND_PASS) {
-		if (pDCTstat->TargetFreq > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+		if (p_dct_stat->target_freq > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
 			/* 8.Prepare the memory subsystem for the target MEMCLK frequency.
 			 * NOTE: BIOS must program both DCTs to the same frequency.
 			 * NOTE: Fam15h steps the frequency, Fam10h slams the frequency.
 			 */
 			u8 global_phy_training_status = 0;
-			final_target_freq = pDCTstat->TargetFreq;
+			final_target_freq = p_dct_stat->target_freq;
 
-			while (pDCTstat->speed != final_target_freq) {
+			while (p_dct_stat->speed != final_target_freq) {
 				if (is_fam15h())
-					pDCTstat->TargetFreq = fam15h_next_highest_memclk_freq(pDCTstat->speed);
+					p_dct_stat->target_freq = fam15h_next_highest_memclk_freq(p_dct_stat->speed);
 				else
-					pDCTstat->TargetFreq = final_target_freq;
-				SetTargetFreq(pMCTstat, pDCTstatA, Node);
+					p_dct_stat->target_freq = final_target_freq;
+				SetTargetFreq(p_mct_stat, p_dct_stat_a, Node);
 				timeout = 0;
 				do {
 					status = 0;
 					timeout++;
-					status |= PhyWLPass2(pMCTstat, pDCTstat, 0, (pDCTstat->TargetFreq == final_target_freq));
-					status |= PhyWLPass2(pMCTstat, pDCTstat, 1, (pDCTstat->TargetFreq == final_target_freq));
+					status |= PhyWLPass2(p_mct_stat, p_dct_stat, 0, (p_dct_stat->target_freq == final_target_freq));
+					status |= PhyWLPass2(p_mct_stat, p_dct_stat, 1, (p_dct_stat->target_freq == final_target_freq));
 					if (status)
 						printk(BIOS_INFO,
 							"%s: Retrying write levelling due to invalid value(s) detected in last phase\n",
@@ -234,7 +234,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 				global_phy_training_status |= status;
 			}
 
-			pDCTstat->TargetFreq = final_target_freq;
+			p_dct_stat->target_freq = final_target_freq;
 
 			if (global_phy_training_status)
 				printk(BIOS_WARNING,
@@ -243,7 +243,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 
 			u8 dct;
 			for (dct = 0; dct < 2; dct++) {
-				sDCTStruct *pDCTData = pDCTstat->C_DCTPtr[dct];
+				sDCTStruct *pDCTData = p_dct_stat->c_dct_ptr[dct];
 				memcpy(pDCTData->WLGrossDelayFinalPass, pDCTData->WLGrossDelayPrevPass, sizeof(pDCTData->WLGrossDelayPrevPass));
 				memcpy(pDCTData->WLFineDelayFinalPass, pDCTData->WLFineDelayPrevPass, sizeof(pDCTData->WLFineDelayPrevPass));
 				pDCTData->WLCriticalGrossDelayFinalPass = pDCTData->WLCriticalGrossDelayPrevPass;
@@ -251,25 +251,25 @@ static void WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
 		}
 	}
 
-	SetEccWrDQS_D(pMCTstat, pDCTstat);
-	EnableAutoRefresh_D(pMCTstat, pDCTstat);
-	EnableZQcalibration(pMCTstat, pDCTstat);
+	SetEccWrDQS_D(p_mct_stat, p_dct_stat);
+	EnableAutoRefresh_D(p_mct_stat, p_dct_stat);
+	EnableZQcalibration(p_mct_stat, p_dct_stat);
 }
 
-void mct_WriteLevelization_HW(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA, u8 Pass)
+void mct_WriteLevelization_HW(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a, u8 Pass)
 {
 	u8 Node;
 
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + Node;
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + Node;
 
-		if (pDCTstat->NodePresent) {
+		if (p_dct_stat->node_present) {
 			mctSMBhub_Init(Node);
-			Clear_OnDimmMirror(pMCTstat, pDCTstat);
-			WriteLevelization_HW(pMCTstat, pDCTstatA, Node, Pass);
-			Restore_OnDimmMirror(pMCTstat, pDCTstat);
+			Clear_OnDimmMirror(p_mct_stat, p_dct_stat);
+			WriteLevelization_HW(p_mct_stat, p_dct_stat_a, Node, Pass);
+			Restore_OnDimmMirror(p_mct_stat, p_dct_stat);
 		}
 	}
 }

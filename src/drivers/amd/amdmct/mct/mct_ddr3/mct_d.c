@@ -38,121 +38,121 @@
 #include "mct_d_gcc.h"
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-static u8 ReconfigureDIMMspare_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA);
-static void DQSTiming_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA,
+static u8 reconfigure_dimm_spare_d(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a);
+static void rqs_timing_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a,
 				u8 allow_config_restore);
-static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA);
-static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA);
-static void SyncDCTsReady_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA);
-static void ClearDCT_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct);
-static u8 AutoCycTiming_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-static void GetPresetmaxF_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
-static void SPDGetTCL_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct);
-static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
+static void load_dqs_sig_tmg_regs_d(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a);
+static void ht_mem_map_init_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a);
+static void sync_dcts_ready_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a);
+static void clear_dct_d(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct);
+static u8 auto_cyc_timing(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+static void get_preset_max_f_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
+static void spd_get_tcl_d(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct);
+static u8 AutoConfig_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+static void SPDSetBanks_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+static void StitchMemory_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
 static u16 Get_Fk_D(u8 k);
-static u8 Get_DIMMAddress_D(struct DCTStatStruc *pDCTstat, u8 i);
-static void mct_preInitDCT(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
-static void mct_initDCT(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
-static void mct_DramInit(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-static void mct_SyncDCTsReady(struct DCTStatStruc *pDCTstat);
-static void Get_Trdrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct);
-static void mct_AfterGetCLT(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-static u8 mct_SPDCalcWidth(struct MCTStatStruc *pMCTstat,\
-					struct DCTStatStruc *pDCTstat, u8 dct);
-static void mct_AfterStitchMemory(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-static u8 mct_DIMMPresence(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-static void Set_OtherTiming(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-static void Get_Twrwr(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct);
-static void Get_Twrrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct);
-static void Get_TrwtTO(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct);
-static void Get_TrwtWB(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat);
-static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *pDCTstat,
+static u8 Get_DIMMAddress_D(struct DCTStatStruc *p_dct_stat, u8 i);
+static void mct_preInitDCT(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
+static void mct_initDCT(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
+static void mct_DramInit(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+static void mct_SyncDCTsReady(struct DCTStatStruc *p_dct_stat);
+static void Get_Trdrd(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct);
+static void mct_AfterGetCLT(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+static u8 mct_SPDCalcWidth(struct MCTStatStruc *p_mct_stat,\
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+static void mct_AfterStitchMemory(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+static u8 mct_DIMMPresence(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+static void Set_OtherTiming(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+static void Get_Twrwr(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct);
+static void Get_Twrrd(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct);
+static void Get_TrwtTO(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct);
+static void Get_TrwtWB(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat);
+static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *p_dct_stat,
 					u32 dev, u8 dct, u32 index_reg);
-static void Get_WrDatGross_Diff(struct DCTStatStruc *pDCTstat, u8 dct,
+static void Get_WrDatGross_Diff(struct DCTStatStruc *p_dct_stat, u8 dct,
 					u32 dev, u32 index_reg);
-static u16 Get_DqsRcvEnGross_MaxMin(struct DCTStatStruc *pDCTstat,
+static u16 Get_DqsRcvEnGross_MaxMin(struct DCTStatStruc *p_dct_stat,
 				u32 dev, u8 dct, u32 index_reg, u32 index);
-static void mct_FinalMCT_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
-static u16 Get_WrDatGross_MaxMin(struct DCTStatStruc *pDCTstat, u8 dct,
+static void mct_FinalMCT_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
+static u16 Get_WrDatGross_MaxMin(struct DCTStatStruc *p_dct_stat, u8 dct,
 				u32 dev, u32 index_reg, u32 index);
-static void mct_InitialMCT_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
-static void mct_init(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat);
-static void clear_legacy_Mode(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
-static void mct_HTMemMapExt(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA);
-static void SetCSTriState(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-static void SetCKETriState(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-static void SetODTTriState(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-static void InitDDRPhy(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
+static void mct_InitialMCT_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
+static void mct_init(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat);
+static void clear_legacy_Mode(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
+static void mct_HTMemMapExt(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a);
+static void SetCSTriState(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+static void SetCKETriState(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+static void SetODTTriState(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+static void InitDDRPhy(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
 static u32 mct_NodePresent_D(void);
-static void mct_OtherTiming(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA);
-static void mct_ResetDataStruct_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA);
-static void mct_EarlyArbEn_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-static void mct_BeforeDramInit_Prod_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-void mct_ClrClToNB_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat);
-static u8 CheckNBCOFEarlyArbEn(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat);
-void mct_ClrWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat);
-static void mct_BeforeDQSTrain_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA);
-static void AfterDramInit_D(struct DCTStatStruc *pDCTstat, u8 dct);
-static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-static u32 mct_DisDllShutdownSR(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u32 DramConfigLo, u8 dct);
-static void mct_EnDllShutdownSR(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct);
-void ChangeMemClk(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat);
+static void mct_OtherTiming(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a);
+static void mct_ResetDataStruct_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a);
+static void mct_EarlyArbEn_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+static void mct_BeforeDramInit_Prod_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+static void mct_ProgramODT_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+void mct_ClrClToNB_D(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat);
+static u8 CheckNBCOFEarlyArbEn(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat);
+void mct_ClrWbEnhWsbDis_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat);
+static void mct_BeforeDQSTrain_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a);
+static void AfterDramInit_D(struct DCTStatStruc *p_dct_stat, u8 dct);
+static void mct_ResetDLL_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+static u32 mct_DisDllShutdownSR(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u32 DramConfigLo, u8 dct);
+static void mct_EnDllShutdownSR(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct);
+void ChangeMemClk(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat);
 
-static u8 Get_Latency_Diff(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct);
-static void SyncSetting(struct DCTStatStruc *pDCTstat);
-static u8 crcCheck(struct DCTStatStruc *pDCTstat, u8 dimm);
+static u8 Get_Latency_Diff(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct);
+static void SyncSetting(struct DCTStatStruc *p_dct_stat);
+static u8 crcCheck(struct DCTStatStruc *p_dct_stat, u8 dimm);
 
-u8 is_ecc_enabled(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat);
+u8 is_ecc_enabled(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
 /*See mctAutoInitMCT header for index relationships to CL and T*/
 static const u16 Table_F_k[]	= {00,200,266,333,400,533 };
@@ -217,19 +217,19 @@ static const u8 Table_Comp_Rise_Slew_15x[] = {7, 7, 3, 2, 0xFF};
 static const u8 Table_Comp_Fall_Slew_20x[] = {7, 5, 3, 2, 0xFF};
 static const u8 Table_Comp_Fall_Slew_15x[] = {7, 7, 5, 3, 0xFF};
 
-u8 dct_ddr_voltage_index(struct DCTStatStruc *pDCTstat, u8 dct)
+u8 dct_ddr_voltage_index(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 dimm;
 	u8 ddr_voltage_index = 0;
 
 	/* If no DIMMs are present on this DCT, report 1.5V operation and skip checking the hardware */
-	if (pDCTstat->DIMMValidDCT[dct] == 0)
+	if (p_dct_stat->dimm_valid_dct[dct] == 0)
 		return 0x1;
 
 	/* Find current DDR supply voltage for this DCT */
 	for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-		if (pDCTstat->DIMMValidDCT[dct] & (1 << dimm))
-			ddr_voltage_index |= pDCTstat->DimmConfiguredVoltage[dimm];
+		if (p_dct_stat->dimm_valid_dct[dct] & (1 << dimm))
+			ddr_voltage_index |= p_dct_stat->DimmConfiguredVoltage[dimm];
 	}
 	if (ddr_voltage_index > 0x7) {
 		printk(BIOS_DEBUG, "%s: Insufficient DDR supply voltage indicated!  Configuring processor for 1.25V operation, but this attempt may fail...\n", __func__);
@@ -294,23 +294,23 @@ static inline u8 is_model10_1f(void)
 	return model101f;
 }
 
-u8 is_ecc_enabled(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat)
+u8 is_ecc_enabled(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat)
 {
 	u8 ecc_enabled = 1;
 
-	if (!pMCTstat->try_ecc)
+	if (!p_mct_stat->try_ecc)
 		ecc_enabled = 0;
 
-	if (pDCTstat->NodePresent && (pDCTstat->DIMMValidDCT[0] || pDCTstat->DIMMValidDCT[1]))
-		if (!(pDCTstat->status & (1 << SB_ECC_DIMMS)))
+	if (p_dct_stat->node_present && (p_dct_stat->dimm_valid_dct[0] || p_dct_stat->dimm_valid_dct[1]))
+		if (!(p_dct_stat->status & (1 << SB_ECC_DIMMS)))
 			ecc_enabled = 0;
 
 	return !!ecc_enabled;
 }
 
-u8 get_available_lane_count(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat)
+u8 get_available_lane_count(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat)
 {
-	if (is_ecc_enabled(pMCTstat, pDCTstat))
+	if (is_ecc_enabled(p_mct_stat, p_dct_stat))
 		return 9;
 	else
 		return 8;
@@ -324,7 +324,7 @@ u16 mhz_to_memclk_config(u16 freq)
 		return fam10h_mhz_to_memclk_config(freq) + 1;
 }
 
-u32 fam10h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct)
+u32 fam10h_address_timing_compensation_code(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
@@ -332,16 +332,16 @@ u32 fam10h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 	u32 calibration_code = 0;
 
 	package_type = mctGet_NVbits(NV_PACK_TYPE);
-	u16 MemClkFreq = (Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x7) + 1;
+	u16 MemClkFreq = (Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x7) + 1;
 
 	/* Obtain number of DIMMs on channel */
-	u8 dimm_count = pDCTstat->ma_dimms[dct];
+	u8 dimm_count = p_dct_stat->ma_dimms[dct];
 	u8 rank_count_dimm0;
 	u8 rank_count_dimm1;
 
 	if (package_type == PT_GR) {
 		/* Socket G34 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam10h BKDG Rev. 3.62 section 2.8.9.5.8 Tables 60 - 61 */
 			if (MaxDimmsInstallable == 1) {
@@ -391,7 +391,7 @@ u32 fam10h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 			/* Fam10h BKDG Rev. 3.62 section 2.8.9.5.8 Table 56 */
 			if (dimm_count == 1) {
 				/* 1 DIMM detected */
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (MemClkFreq == 0x4) {
 					/* DDR3-800 */
@@ -414,8 +414,8 @@ u32 fam10h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 				}
 			} else if (dimm_count == 2) {
 				/* 2 DIMMs detected */
-				rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-				rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+				rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (MemClkFreq == 0x4) {
 					/* DDR3-800 */
@@ -438,15 +438,15 @@ u32 fam10h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 	return calibration_code;
 }
 
-static u32 fam15h_phy_predriver_calibration_code(struct DCTStatStruc *pDCTstat, u8 dct, u8 drive_strength)
+static u32 fam15h_phy_predriver_calibration_code(struct DCTStatStruc *p_dct_stat, u8 dct, u8 drive_strength)
 {
 	u8 lrdimm = 0;
 	u8 package_type;
 	u8 ddr_voltage_index;
 	u32 calibration_code = 0;
-	u16 MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
+	u16 MemClkFreq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
-	ddr_voltage_index = dct_ddr_voltage_index(pDCTstat, dct);
+	ddr_voltage_index = dct_ddr_voltage_index(p_dct_stat, dct);
 	package_type = mctGet_NVbits(NV_PACK_TYPE);
 
 	if (!lrdimm) {
@@ -717,13 +717,13 @@ static u32 fam15h_phy_predriver_calibration_code(struct DCTStatStruc *pDCTstat, 
 	return calibration_code;
 }
 
-static u32 fam15h_phy_predriver_cmd_addr_calibration_code(struct DCTStatStruc *pDCTstat, u8 dct, u8 drive_strength)
+static u32 fam15h_phy_predriver_cmd_addr_calibration_code(struct DCTStatStruc *p_dct_stat, u8 dct, u8 drive_strength)
 {
 	u8 ddr_voltage_index;
 	u32 calibration_code = 0;
-	u16 MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
+	u16 MemClkFreq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
-	ddr_voltage_index = dct_ddr_voltage_index(pDCTstat, dct);
+	ddr_voltage_index = dct_ddr_voltage_index(p_dct_stat, dct);
 
 	if (ddr_voltage_index & 0x4) {
 		/* 1.25V */
@@ -832,13 +832,13 @@ static u32 fam15h_phy_predriver_cmd_addr_calibration_code(struct DCTStatStruc *p
 	return calibration_code;
 }
 
-static u32 fam15h_phy_predriver_clk_calibration_code(struct DCTStatStruc *pDCTstat, u8 dct, u8 drive_strength)
+static u32 fam15h_phy_predriver_clk_calibration_code(struct DCTStatStruc *p_dct_stat, u8 dct, u8 drive_strength)
 {
 	u8 ddr_voltage_index;
 	u32 calibration_code = 0;
-	u16 MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
+	u16 MemClkFreq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
-	ddr_voltage_index = dct_ddr_voltage_index(pDCTstat, dct);
+	ddr_voltage_index = dct_ddr_voltage_index(p_dct_stat, dct);
 
 	if (ddr_voltage_index & 0x4) {
 		/* 1.25V */
@@ -947,7 +947,7 @@ static u32 fam15h_phy_predriver_clk_calibration_code(struct DCTStatStruc *pDCTst
 	return calibration_code;
 }
 
-u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct)
+u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
@@ -955,20 +955,20 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 	u32 calibration_code = 0;
 
 	package_type = mctGet_NVbits(NV_PACK_TYPE);
-	u16 MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
+	u16 MemClkFreq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
 	/* Obtain number of DIMMs on channel */
-	u8 dimm_count = pDCTstat->ma_dimms[dct];
+	u8 dimm_count = p_dct_stat->ma_dimms[dct];
 	u8 rank_count_dimm0;
 	u8 rank_count_dimm1;
 
 	if (package_type == PT_GR) {
 		/* Socket G34 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 74 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (MemClkFreq == 0x4) {
 					/* DDR3-667 */
@@ -992,8 +992,8 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 					calibration_code |= 0x22 << 16;
 				}
 			} else if (MaxDimmsInstallable == 2) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-				rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+				rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
@@ -1017,8 +1017,8 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 					}
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (MemClkFreq == 0x4) {
 						/* DDR3-667 */
@@ -1042,7 +1042,7 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 				 * 3 DIMM/channel support unimplemented
 				 */
 			}
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 			/* TODO
 			 * LRDIMM support unimplemented
@@ -1085,8 +1085,8 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 					}
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (MemClkFreq == 0x4) {
 						/* DDR3-667 */
@@ -1116,11 +1116,11 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 		}
 	} else if (package_type == PT_C3) {
 		/* Socket C32 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 77 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (MemClkFreq == 0x4) {
 					/* DDR3-667 */
@@ -1141,8 +1141,8 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 					calibration_code |= 0x22 << 16;
 				}
 			} else if (MaxDimmsInstallable == 2) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-				rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+				rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
@@ -1166,8 +1166,8 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 					}
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (MemClkFreq == 0x4) {
 						/* DDR3-667 */
@@ -1191,7 +1191,7 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 				 * 3 DIMM/channel support unimplemented
 				 */
 			}
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 			/* TODO
 			 * LRDIMM support unimplemented
@@ -1231,8 +1231,8 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 					}
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (MemClkFreq == 0x4) {
 						/* DDR3-667 */
@@ -1265,7 +1265,7 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 		/* Assume UDIMM */
 		/* Fam15h Model10h BKDG Rev. 3.12 section 2.9.5.6.6 Table 32 */
 		if (MaxDimmsInstallable == 1) {
-			rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+			rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 			if (MemClkFreq == 0x4) {
 				/* DDR3-667 */
@@ -1281,8 +1281,8 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 				calibration_code = 0x30112222;
 			}
 		} else if (MaxDimmsInstallable == 2) {
-			rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-			rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+			rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+			rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 			if (dimm_count == 1) {
 				/* 1 DIMM detected */
@@ -1301,8 +1301,8 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 				}
 			} else if (dimm_count == 2) {
 				/* 2 DIMMs detected */
-				rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-				rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+				rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (MemClkFreq == 0x4) {
 					/* DDR3-667 */
@@ -1329,7 +1329,7 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct
 	return calibration_code;
 }
 
-u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dct)
+u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
@@ -1337,16 +1337,16 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 	u32 calibration_code = 0;
 
 	package_type = mctGet_NVbits(NV_PACK_TYPE);
-	u16 MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
+	u16 MemClkFreq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
 	/* Obtain number of DIMMs on channel */
-	u8 dimm_count = pDCTstat->ma_dimms[dct];
+	u8 dimm_count = p_dct_stat->ma_dimms[dct];
 	u8 rank_count_dimm0;
 	u8 rank_count_dimm1;
 
 	if (package_type == PT_GR) {
 		/* Socket G34 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 74 */
 			if (MaxDimmsInstallable == 1) {
@@ -1400,7 +1400,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 				 * 3 DIMM/channel support unimplemented
 				 */
 			}
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 			/* TODO
 			 * LRDIMM support unimplemented
@@ -1409,7 +1409,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 			/* UDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 76 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (MemClkFreq == 0x4) {
 					/* DDR3-667 */
@@ -1442,7 +1442,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (MemClkFreq == 0x4) {
 						/* DDR3-667 */
@@ -1471,8 +1471,8 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 					}
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (MemClkFreq == 0x4) {
 						/* DDR3-667 */
@@ -1500,7 +1500,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 		}
 	} else if (package_type == PT_C3) {
 		/* Socket C32 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 77 */
 			if (MaxDimmsInstallable == 1) {
@@ -1554,7 +1554,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 				 * 3 DIMM/channel support unimplemented
 				 */
 			}
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 			/* TODO
 			 * LRDIMM support unimplemented
@@ -1563,7 +1563,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 			/* UDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 76 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (MemClkFreq == 0x4) {
 					/* DDR3-667 */
@@ -1596,7 +1596,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (MemClkFreq == 0x4) {
 						/* DDR3-667 */
@@ -1625,8 +1625,8 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 					}
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (MemClkFreq == 0x4) {
 						/* DDR3-667 */
@@ -1658,7 +1658,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 		/* Fam15h Model10h BKDG Rev. 3.12 section 2.9.5.6.6 Table 32 */
 		if (dimm_count == 1) {
 			/* 1 DIMM detected */
-			rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+			rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 			if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)) {
 				/* DDR3-667 or DDR3-800 */
@@ -1685,8 +1685,8 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 
 		} else if (dimm_count == 2) {
 			/* 2 DIMMs detected */
-			rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-			rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+			rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+			rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 			if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)) {
 				/* DDR3-667 or DDR3-800 */
@@ -1718,7 +1718,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *pDCTstat, u8 dc
 	return calibration_code;
 }
 
-u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
+u8 fam15h_slow_access_mode(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
@@ -1726,20 +1726,20 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 	u32 slow_access = 0;
 
 	package_type = mctGet_NVbits(NV_PACK_TYPE);
-	u16 MemClkFreq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
+	u16 MemClkFreq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
 	/* Obtain number of DIMMs on channel */
-	u8 dimm_count = pDCTstat->ma_dimms[dct];
+	u8 dimm_count = p_dct_stat->ma_dimms[dct];
 	u8 rank_count_dimm0;
 	u8 rank_count_dimm1;
 
 	if (package_type == PT_GR) {
 		/* Socket G34 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 74 */
 			slow_access = 0;
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 75 */
 			slow_access = 0;
@@ -1747,7 +1747,7 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 			/* UDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 73 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 					|| (MemClkFreq == 0xa) | (MemClkFreq == 0xe)) {
@@ -1763,7 +1763,7 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 						|| (MemClkFreq == 0xa) | (MemClkFreq == 0xe)) {
@@ -1778,8 +1778,8 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 					}
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 						|| (MemClkFreq == 0xa)) {
@@ -1798,11 +1798,11 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 		}
 	} else if (package_type == PT_C3) {
 		/* Socket C32 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 77 */
 			slow_access = 0;
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 78 */
 			slow_access = 0;
@@ -1810,7 +1810,7 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 			/* UDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 76 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 					|| (MemClkFreq == 0xa) | (MemClkFreq == 0xe)) {
@@ -1826,7 +1826,7 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 						|| (MemClkFreq == 0xa) | (MemClkFreq == 0xe)) {
@@ -1841,8 +1841,8 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 					}
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 						|| (MemClkFreq == 0xa)) {
@@ -1864,7 +1864,7 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 		/* UDIMM */
 		/* Fam15h Model10 BKDG Rev. 3.12 section 2.9.5.6.6 Table 32 */
 		if (MaxDimmsInstallable == 1) {
-			rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+			rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 			if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 				|| (MemClkFreq == 0xa) | (MemClkFreq == 0xe)) {
@@ -1880,7 +1880,7 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 		} else if (MaxDimmsInstallable == 2) {
 			if (dimm_count == 1) {
 				/* 1 DIMM detected */
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 					|| (MemClkFreq == 0xa) | (MemClkFreq == 0xe)) {
@@ -1895,8 +1895,8 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 				}
 			} else if (dimm_count == 2) {
 				/* 2 DIMMs detected */
-				rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-				rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+				rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if ((MemClkFreq == 0x4) || (MemClkFreq == 0x6)
 					|| (MemClkFreq == 0xa)) {
@@ -1921,7 +1921,7 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *pDCTstat, u8 dct)
 	return slow_access;
 }
 
-static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
+static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
@@ -1931,17 +1931,17 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 	package_type = mctGet_NVbits(NV_PACK_TYPE);
 
 	/* Obtain number of DIMMs on channel */
-	u8 dimm_count = pDCTstat->ma_dimms[dct];
+	u8 dimm_count = p_dct_stat->ma_dimms[dct];
 	u8 rank_count_dimm0;
 	u8 rank_count_dimm1;
 
 	if (package_type == PT_GR) {
 		/* Socket G34 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.10.1 Table 104 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (rank_count_dimm0 == 1)
 					odt_tristate_code = 0xe;
@@ -1950,7 +1950,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (rank_count_dimm1 == 1)
 						odt_tristate_code = 0xd;
@@ -1958,8 +1958,8 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 						odt_tristate_code = 0x5;
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((rank_count_dimm0 == 1) && (rank_count_dimm1 == 1))
 						odt_tristate_code = 0xc;
@@ -1975,7 +1975,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 				 * 3 DIMM/channel support unimplemented
 				 */
 			}
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -1986,7 +1986,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			/* UDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.10.1 Table 103 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (rank_count_dimm0 == 1)
 					odt_tristate_code = 0xe;
@@ -1995,7 +1995,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (rank_count_dimm0 == 1)
 						odt_tristate_code = 0xd;
@@ -2003,8 +2003,8 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 						odt_tristate_code = 0x5;
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((rank_count_dimm0 == 1) && (rank_count_dimm1 == 1))
 						odt_tristate_code = 0xc;
@@ -2023,11 +2023,11 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 		}
 	} else if (package_type == PT_C3) {
 		/* Socket C32 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.10.1 Table 107 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (rank_count_dimm0 == 1)
 					odt_tristate_code = 0xe;
@@ -2036,7 +2036,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (rank_count_dimm1 == 1)
 						odt_tristate_code = 0xd;
@@ -2044,8 +2044,8 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 						odt_tristate_code = 0x5;
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((rank_count_dimm0 == 1) && (rank_count_dimm1 == 1))
 						odt_tristate_code = 0xc;
@@ -2061,7 +2061,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 				 * 3 DIMM/channel support unimplemented
 				 */
 			}
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -2072,7 +2072,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			/* UDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.10.1 Table 106 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (rank_count_dimm0 == 1)
 					odt_tristate_code = 0xe;
@@ -2081,7 +2081,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (rank_count_dimm0 == 1)
 						odt_tristate_code = 0xd;
@@ -2089,8 +2089,8 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 						odt_tristate_code = 0x5;
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((rank_count_dimm0 == 1) && (rank_count_dimm1 == 1))
 						odt_tristate_code = 0xc;
@@ -2120,7 +2120,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 	return odt_tristate_code;
 }
 
-static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
+static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
@@ -2130,17 +2130,17 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 	package_type = mctGet_NVbits(NV_PACK_TYPE);
 
 	/* Obtain number of DIMMs on channel */
-	u8 dimm_count = pDCTstat->ma_dimms[dct];
+	u8 dimm_count = p_dct_stat->ma_dimms[dct];
 	u8 rank_count_dimm0;
 	u8 rank_count_dimm1;
 
 	if (package_type == PT_GR) {
 		/* Socket G34 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.10.1 Table 104 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (rank_count_dimm0 < 4)
 					cs_tristate_code = 0xfc;
@@ -2149,7 +2149,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (rank_count_dimm1 < 4)
 						cs_tristate_code = 0xf3;
@@ -2157,8 +2157,8 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 						cs_tristate_code = 0x33;
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((rank_count_dimm0 < 4) && (rank_count_dimm1 < 4))
 						cs_tristate_code = 0xf0;
@@ -2174,7 +2174,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 				 * 3 DIMM/channel support unimplemented
 				 */
 			}
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -2185,7 +2185,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			/* UDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.10.1 Table 103 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (rank_count_dimm0 == 1)
 					cs_tristate_code = 0xfe;
@@ -2194,7 +2194,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (rank_count_dimm0 == 1)
 						cs_tristate_code = 0xfb;
@@ -2202,8 +2202,8 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 						cs_tristate_code = 0xf3;
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((rank_count_dimm0 == 1) && (rank_count_dimm1 == 1))
 						cs_tristate_code = 0xfa;
@@ -2222,11 +2222,11 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 		}
 	} else if (package_type == PT_C3) {
 		/* Socket C32 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.10.1 Table 107 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (rank_count_dimm0 < 4)
 					cs_tristate_code = 0xfc;
@@ -2235,7 +2235,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (rank_count_dimm1 < 4)
 						cs_tristate_code = 0xf3;
@@ -2243,8 +2243,8 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 						cs_tristate_code = 0x33;
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((rank_count_dimm0 < 4) && (rank_count_dimm1 < 4))
 						cs_tristate_code = 0xf0;
@@ -2260,7 +2260,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 				 * 3 DIMM/channel support unimplemented
 				 */
 			}
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -2271,7 +2271,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			/* UDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.10.1 Table 106 */
 			if (MaxDimmsInstallable == 1) {
-				rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+				rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 				if (rank_count_dimm0 == 1)
 					cs_tristate_code = 0xfe;
@@ -2280,7 +2280,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 			} else if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if (rank_count_dimm0 == 1)
 						cs_tristate_code = 0xfb;
@@ -2288,8 +2288,8 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 						cs_tristate_code = 0xf3;
 				} else if (dimm_count == 2) {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 
 					if ((rank_count_dimm0 == 1) && (rank_count_dimm1 == 1))
 						cs_tristate_code = 0xfa;
@@ -2319,8 +2319,8 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *pDCTstat, u8 dct)
 	return cs_tristate_code;
 }
 
-void set_2t_configuration(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+void set_2t_configuration(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
@@ -2329,13 +2329,13 @@ void set_2t_configuration(struct MCTStatStruc *pMCTstat,
 	u32 dword;
 
 	u8 enable_slow_access_mode = 0;
-	dev = pDCTstat->dev_dct;
+	dev = p_dct_stat->dev_dct;
 
 	if (is_fam15h()) {
-		if (pDCTstat->_2t_mode)
+		if (p_dct_stat->_2t_mode)
 			enable_slow_access_mode = 1;
 	} else {
-		if (pDCTstat->_2t_mode == 2)
+		if (p_dct_stat->_2t_mode == 2)
 			enable_slow_access_mode = 1;
 	}
 
@@ -2350,9 +2350,9 @@ void set_2t_configuration(struct MCTStatStruc *pMCTstat,
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-void precise_ndelay_fam15(struct MCTStatStruc *pMCTstat, u32 nanoseconds) {
+void precise_ndelay_fam15(struct MCTStatStruc *p_mct_stat, u32 nanoseconds) {
 	msr_t tsc_msr;
-	u64 cycle_count = (((u64)pMCTstat->TSCFreq) * nanoseconds) / 1000;
+	u64 cycle_count = (((u64)p_mct_stat->TSCFreq) * nanoseconds) / 1000;
 	u64 start_timestamp;
 	u64 current_timestamp;
 
@@ -2364,38 +2364,38 @@ void precise_ndelay_fam15(struct MCTStatStruc *pMCTstat, u32 nanoseconds) {
 	} while ((current_timestamp - start_timestamp) < cycle_count);
 }
 
-void precise_memclk_delay_fam15(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct, u32 clocks) {
+void precise_memclk_delay_fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct, u32 clocks) {
 	u16 memclk_freq;
 	u32 delay_ns;
 	u16 fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
 
-	memclk_freq = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94) & 0x1f;
+	memclk_freq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
 	if (fam15h_freq_tab[memclk_freq] == 0) {
 		printk(BIOS_DEBUG, "ERROR: precise_memclk_delay_fam15 for DCT %d (delay %d clocks) failed to obtain valid memory frequency!"
-			" (pDCTstat: %p pDCTstat->dev_dct: %08x memclk_freq: %02x)\n", dct, clocks, pDCTstat, pDCTstat->dev_dct, memclk_freq);
+			" (p_dct_stat: %p p_dct_stat->dev_dct: %08x memclk_freq: %02x)\n", dct, clocks, p_dct_stat, p_dct_stat->dev_dct, memclk_freq);
 	}
 	delay_ns = (((u64)clocks * 1000) / fam15h_freq_tab[memclk_freq]);
-	precise_ndelay_fam15(pMCTstat, delay_ns);
+	precise_ndelay_fam15(p_mct_stat, delay_ns);
 }
 
-static void read_spd_bytes(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dimm)
+static void read_spd_bytes(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dimm)
 {
 	u8 addr;
 	u16 byte;
 
-	addr = Get_DIMMAddress_D(pDCTstat, dimm);
-	pDCTstat->spd_data.spd_address[dimm] = addr;
+	addr = Get_DIMMAddress_D(p_dct_stat, dimm);
+	p_dct_stat->spd_data.spd_address[dimm] = addr;
 
 	for (byte = 0; byte < 256; byte++) {
-		pDCTstat->spd_data.spd_bytes[dimm][byte] = mctRead_SPD(addr, byte);
+		p_dct_stat->spd_data.spd_bytes[dimm][byte] = mctRead_SPD(addr, byte);
 	}
 }
 
 #ifdef DEBUG_DIMM_SPD
-static void dump_spd_bytes(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dimm)
+static void dump_spd_bytes(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dimm)
 {
 	u16 byte;
 
@@ -2407,14 +2407,14 @@ static void dump_spd_bytes(struct MCTStatStruc *pMCTstat,
 		if ((byte & 0xf) == 0x0) {
 			printk(BIOS_DEBUG, "\n%02x ", byte >> 4);
 		}
-		printk(BIOS_DEBUG, "%02x ", pDCTstat->spd_data.spd_bytes[dimm][byte]);
+		printk(BIOS_DEBUG, "%02x ", p_dct_stat->spd_data.spd_bytes[dimm][byte]);
 	}
 	printk(BIOS_DEBUG, "\n");
 }
 #endif
 
-static void set_up_cc6_storage_fam15(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 num_nodes)
+static void set_up_cc6_storage_fam15(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 num_nodes)
 {
 	u8 interleaved;
 	u8 destination_node;
@@ -2428,25 +2428,25 @@ static void set_up_cc6_storage_fam15(struct MCTStatStruc *pMCTstat,
 	u64 qword;
 
 	interleaved = 0;
-	if (pMCTstat->GStatus & (1 << GSB_Node_INTLV))
+	if (p_mct_stat->GStatus & (1 << GSB_Node_INTLV))
 		interleaved = 1;
 
 	printk(BIOS_INFO,
 		"%s: Initializing CC6 DRAM storage area for node %d"
 		" (interleaved: %d)\n",
-		 __func__, pDCTstat->node_id, interleaved);
+		 __func__, p_dct_stat->node_id, interleaved);
 
 	/* Find highest DRAM range (DramLimitAddr) */
 	max_node = 0;
 	max_range = -1;
 	max_range_limit = 0;
 	for (range = 0; range < 8; range++) {
-		dword = Get_NB32(pDCTstat->dev_map, 0x40 + (range * 0x8));
+		dword = get_nb32(p_dct_stat->dev_map, 0x40 + (range * 0x8));
 		if (!(dword & 0x3))
 			continue;
 
-		dword = Get_NB32(pDCTstat->dev_map, 0x44 + (range * 0x8));
-		dword2 = Get_NB32(pDCTstat->dev_map, 0x144 + (range * 0x8));
+		dword = get_nb32(p_dct_stat->dev_map, 0x44 + (range * 0x8));
+		dword2 = get_nb32(p_dct_stat->dev_map, 0x144 + (range * 0x8));
 		qword = 0xffffff;
 		qword |= ((((u64)dword) >> 16) & 0xffff) << 24;
 		qword |= (((u64)dword2) & 0xff) << 40;
@@ -2463,7 +2463,7 @@ static void set_up_cc6_storage_fam15(struct MCTStatStruc *pMCTstat,
 			"%s:\toriginal (node %d) max_range_limit: %16llx DRAM"
 			" limit: %16llx\n",
 			__func__, max_node, max_range_limit,
-			(((u64)(Get_NB32(pDCTstat->dev_map, 0x124)
+			(((u64)(get_nb32(p_dct_stat->dev_map, 0x124)
 				 & 0x1fffff)) << 27) | 0x7ffffff);
 
 		if (interleaved)
@@ -2477,68 +2477,68 @@ static void set_up_cc6_storage_fam15(struct MCTStatStruc *pMCTstat,
 			__func__, max_range_limit);
 
 		/* Disable the range */
-		dword = Get_NB32(pDCTstat->dev_map, 0x40 + (max_range * 0x8));
+		dword = get_nb32(p_dct_stat->dev_map, 0x40 + (max_range * 0x8));
 		byte = dword & 0x3;
 		dword &= ~(0x3);
-		Set_NB32(pDCTstat->dev_map, 0x40 + (max_range * 0x8), dword);
+		Set_NB32(p_dct_stat->dev_map, 0x40 + (max_range * 0x8), dword);
 
 		/* Store modified range */
-		dword = Get_NB32(pDCTstat->dev_map, 0x44 + (max_range * 0x8));
+		dword = get_nb32(p_dct_stat->dev_map, 0x44 + (max_range * 0x8));
 		dword &= ~(0xffff << 16);		/* DramLimit[39:24] = max_range_limit[39:24] */
 		dword |= ((max_range_limit >> 24) & 0xffff) << 16;
-		Set_NB32(pDCTstat->dev_map, 0x44 + (max_range * 0x8), dword);
+		Set_NB32(p_dct_stat->dev_map, 0x44 + (max_range * 0x8), dword);
 
-		dword = Get_NB32(pDCTstat->dev_map, 0x144 + (max_range * 0x8));
+		dword = get_nb32(p_dct_stat->dev_map, 0x144 + (max_range * 0x8));
 		dword &= ~0xff;			/* DramLimit[47:40] = max_range_limit[47:40] */
 		dword |= (max_range_limit >> 40) & 0xff;
-		Set_NB32(pDCTstat->dev_map, 0x144 + (max_range * 0x8), dword);
+		Set_NB32(p_dct_stat->dev_map, 0x144 + (max_range * 0x8), dword);
 
 		/* Reenable the range */
-		dword = Get_NB32(pDCTstat->dev_map, 0x40 + (max_range * 0x8));
+		dword = get_nb32(p_dct_stat->dev_map, 0x40 + (max_range * 0x8));
 		dword |= byte;
-		Set_NB32(pDCTstat->dev_map, 0x40 + (max_range * 0x8), dword);
+		Set_NB32(p_dct_stat->dev_map, 0x40 + (max_range * 0x8), dword);
 	}
 
 	/* Determine save state destination node */
 	if (interleaved)
-		destination_node = Get_NB32(pDCTstat->dev_host, 0x60) & 0x7;
+		destination_node = get_nb32(p_dct_stat->dev_host, 0x60) & 0x7;
 	else
 		destination_node = max_node;
 
 	/* Set save state destination node */
-	dword = Get_NB32(pDCTstat->dev_link, 0x128);
+	dword = get_nb32(p_dct_stat->dev_link, 0x128);
 	dword &= ~(0x3f << 12);				/* CoreSaveStateDestNode = destination_node */
 	dword |= (destination_node & 0x3f) << 12;
-	Set_NB32(pDCTstat->dev_link, 0x128, dword);
+	Set_NB32(p_dct_stat->dev_link, 0x128, dword);
 
 	printk(BIOS_INFO, "%s:\tTarget node: %d\n", __func__, destination_node);
 
 	printk(BIOS_INFO, "%s:\tDone\n", __func__);
 }
 
-static void lock_dram_config(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+static void lock_dram_config(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u32 dword;
 
-	dword = Get_NB32(pDCTstat->dev_dct, 0x118);
+	dword = get_nb32(p_dct_stat->dev_dct, 0x118);
 	dword |= 0x1 << 19;		/* LockDramCfg = 1 */
-	Set_NB32(pDCTstat->dev_dct, 0x118, dword);
+	Set_NB32(p_dct_stat->dev_dct, 0x118, dword);
 }
 
-static void set_cc6_save_enable(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 enable)
+static void set_cc6_save_enable(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 enable)
 {
 	u32 dword;
 
-	dword = Get_NB32(pDCTstat->dev_dct, 0x118);
+	dword = get_nb32(p_dct_stat->dev_dct, 0x118);
 	dword &= ~(0x1 << 18);		/* CC6SaveEn = enable */
 	dword |= (enable & 0x1) << 18;
-	Set_NB32(pDCTstat->dev_dct, 0x118, dword);
+	Set_NB32(p_dct_stat->dev_dct, 0x118, dword);
 }
 
-void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstatA)
+void mctAutoInitMCT_D(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat_a)
 {
 	/*
 	 * Memory may be mapped contiguously all the way up to 4GB (depending on setup
@@ -2571,7 +2571,7 @@ void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat,
 	 *
 	 * Global relationship between index values and item values:
 	 *
-	 * pDCTstat.cas_latency pDCTstat.speed
+	 * p_dct_stat.cas_latency p_dct_stat.speed
 	 * j CL(j)       k   F(k)
 	 * --------------------------
 	 * 0 2.0         -   -
@@ -2594,106 +2594,106 @@ void mctAutoInitMCT_D(struct MCTStatStruc *pMCTstat,
 restartinit:
 
 	if (!mctGet_NVbits(NV_ECC_CAP) || !mctGet_NVbits(NV_ECC))
-		pMCTstat->try_ecc = 0;
+		p_mct_stat->try_ecc = 0;
 	else
-		pMCTstat->try_ecc = 1;
+		p_mct_stat->try_ecc = 1;
 
 	mctInitMemGPIOs_A_D();		/* Set any required GPIOs*/
 	if (s3resume) {
 		printk(BIOS_DEBUG, "mctAutoInitMCT_D: mct_ForceNBPState0_En_Fam15\n");
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			struct DCTStatStruc *pDCTstat;
-			pDCTstat = pDCTstatA + Node;
+			struct DCTStatStruc *p_dct_stat;
+			p_dct_stat = p_dct_stat_a + Node;
 
-			mct_ForceNBPState0_En_Fam15(pMCTstat, pDCTstat);
+			mct_ForceNBPState0_En_Fam15(p_mct_stat, p_dct_stat);
 		}
 
 #if CONFIG(HAVE_ACPI_RESUME)
 		printk(BIOS_DEBUG, "mctAutoInitMCT_D: Restoring DCT configuration from NVRAM\n");
 		if (restore_mct_information_from_nvram(0) != 0)
 			printk(BIOS_CRIT, "%s: ERROR: Unable to restore DCT configuration from NVRAM\n", __func__);
-		pMCTstat->GStatus |= 1 << GSB_ConfigRestored;
+		p_mct_stat->GStatus |= 1 << GSB_ConfigRestored;
 #endif
 
 		if (is_fam15h()) {
 			printk(BIOS_DEBUG, "mctAutoInitMCT_D: mct_ForceNBPState0_Dis_Fam15\n");
 			for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-				struct DCTStatStruc *pDCTstat;
-				pDCTstat = pDCTstatA + Node;
+				struct DCTStatStruc *p_dct_stat;
+				p_dct_stat = p_dct_stat_a + Node;
 
-				mct_ForceNBPState0_Dis_Fam15(pMCTstat, pDCTstat);
+				mct_ForceNBPState0_Dis_Fam15(p_mct_stat, p_dct_stat);
 			}
 		}
 	} else {
 		NodesWmem = 0;
 		node_sys_base = 0;
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			struct DCTStatStruc *pDCTstat;
-			pDCTstat = pDCTstatA + Node;
+			struct DCTStatStruc *p_dct_stat;
+			p_dct_stat = p_dct_stat_a + Node;
 
 			/* Zero out data structures to avoid false detection of DIMMs */
-			memset(pDCTstat, 0, sizeof(struct DCTStatStruc));
+			memset(p_dct_stat, 0, sizeof(struct DCTStatStruc));
 
 			/* Initialize data structures */
-			pDCTstat->node_id = Node;
-			pDCTstat->dev_host = PA_HOST(Node);
-			pDCTstat->dev_map = PA_MAP(Node);
-			pDCTstat->dev_dct = PA_DCT(Node);
-			pDCTstat->dev_nbmisc = PA_NBMISC(Node);
-			pDCTstat->dev_link = PA_LINK(Node);
-			pDCTstat->dev_nbctl = PA_NBCTL(Node);
-			pDCTstat->NodeSysBase = node_sys_base;
+			p_dct_stat->node_id = Node;
+			p_dct_stat->dev_host = PA_HOST(Node);
+			p_dct_stat->dev_map = PA_MAP(Node);
+			p_dct_stat->dev_dct = PA_DCT(Node);
+			p_dct_stat->dev_nbmisc = PA_NBMISC(Node);
+			p_dct_stat->dev_link = PA_LINK(Node);
+			p_dct_stat->dev_nbctl = PA_NBCTL(Node);
+			p_dct_stat->node_sys_base = node_sys_base;
 
 			if (mctGet_NVbits(NV_PACK_TYPE) == PT_GR) {
 				u32 dword;
-				pDCTstat->Dual_Node_Package = 1;
+				p_dct_stat->dual_node_package = 1;
 
 				/* Get the internal node number */
-				dword = Get_NB32(pDCTstat->dev_nbmisc, 0xe8);
+				dword = get_nb32(p_dct_stat->dev_nbmisc, 0xe8);
 				dword = (dword >> 30) & 0x3;
-				pDCTstat->Internal_Node_ID = dword;
+				p_dct_stat->internal_node_id = dword;
 			} else {
-				pDCTstat->Dual_Node_Package = 0;
+				p_dct_stat->dual_node_package = 0;
 			}
 
 			printk(BIOS_DEBUG, "%s: mct_init Node %d\n", __func__, Node);
-			mct_init(pMCTstat, pDCTstat);
+			mct_init(p_mct_stat, p_dct_stat);
 			mctNodeIDDebugPort_D();
-			pDCTstat->NodePresent = NodePresent_D(Node);
-			if (pDCTstat->NodePresent) {
-				pDCTstat->logical_cpuid = get_logical_CPUID(Node);
+			p_dct_stat->node_present = NodePresent_D(Node);
+			if (p_dct_stat->node_present) {
+				p_dct_stat->logical_cpuid = get_logical_CPUID(Node);
 
 				printk(BIOS_DEBUG, "%s: mct_InitialMCT_D\n", __func__);
-				mct_InitialMCT_D(pMCTstat, pDCTstat);
+				mct_InitialMCT_D(p_mct_stat, p_dct_stat);
 
 				printk(BIOS_DEBUG, "%s: mctSMBhub_Init\n", __func__);
 				mctSMBhub_Init(Node);		/* Switch SMBUS crossbar to proper node */
 
 				printk(BIOS_DEBUG, "%s: mct_preInitDCT\n", __func__);
-				mct_preInitDCT(pMCTstat, pDCTstat);
+				mct_preInitDCT(p_mct_stat, p_dct_stat);
 			}
-			node_sys_base = pDCTstat->NodeSysBase;
-			node_sys_base += (pDCTstat->NodeSysLimit + 2) & ~0x0F;
+			node_sys_base = p_dct_stat->node_sys_base;
+			node_sys_base += (p_dct_stat->node_sys_limit + 2) & ~0x0F;
 		}
 		/* If the boot fails make sure training is attempted after reset */
 		set_uint_option("allow_spd_nvram_cache_restore", 0);
 
 #if CONFIG(DIMM_VOLTAGE_SET_SUPPORT)
 		printk(BIOS_DEBUG, "%s: DIMMSetVoltage\n", __func__);
-		DIMMSetVoltages(pMCTstat, pDCTstatA);	/* Set the DIMM voltages (mainboard specific) */
+		DIMMSetVoltages(p_mct_stat, p_dct_stat_a);	/* Set the DIMM voltages (mainboard specific) */
 #endif
 		if (!CONFIG(DIMM_VOLTAGE_SET_SUPPORT)) {
 			/* Assume 1.5V operation */
 			for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-				struct DCTStatStruc *pDCTstat;
-				pDCTstat = pDCTstatA + Node;
+				struct DCTStatStruc *p_dct_stat;
+				p_dct_stat = p_dct_stat_a + Node;
 
-				if (!pDCTstat->NodePresent)
+				if (!p_dct_stat->node_present)
 					continue;
 
 				for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-					if (pDCTstat->dimm_valid & (1 << dimm))
-						pDCTstat->DimmConfiguredVoltage[dimm] = 0x1;
+					if (p_dct_stat->dimm_valid & (1 << dimm))
+						p_dct_stat->DimmConfiguredVoltage[dimm] = 0x1;
 				}
 			}
 		}
@@ -2701,11 +2701,11 @@ restartinit:
 		/* If DIMM configuration has not changed since last boot restore training values */
 		allow_config_restore = 1;
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			struct DCTStatStruc *pDCTstat;
-			pDCTstat = pDCTstatA + Node;
+			struct DCTStatStruc *p_dct_stat;
+			p_dct_stat = p_dct_stat_a + Node;
 
-			if (pDCTstat->NodePresent)
-				if (!pDCTstat->spd_data.nvram_spd_match)
+			if (p_dct_stat->node_present)
+				if (!p_dct_stat->spd_data.nvram_spd_match)
 					allow_config_restore = 0;
 		}
 
@@ -2720,18 +2720,18 @@ restartinit:
 		allow_config_restore = 0;
 
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			struct DCTStatStruc *pDCTstat;
-			pDCTstat = pDCTstatA + Node;
+			struct DCTStatStruc *p_dct_stat;
+			p_dct_stat = p_dct_stat_a + Node;
 
-			if (pDCTstat->NodePresent) {
+			if (p_dct_stat->node_present) {
 				printk(BIOS_DEBUG, "%s: mctSMBhub_Init\n", __func__);
 				mctSMBhub_Init(Node);		/* Switch SMBUS crossbar to proper node*/
 
 				printk(BIOS_DEBUG, "%s: mct_initDCT\n", __func__);
-				mct_initDCT(pMCTstat, pDCTstat);
-				if (pDCTstat->err_code == SC_FATAL_ERR) {
+				mct_initDCT(p_mct_stat, p_dct_stat);
+				if (p_dct_stat->err_code == SC_FATAL_ERR) {
 					goto fatalexit;		/* any fatal errors?*/
-				} else if (pDCTstat->err_code < SC_STOP_ERR) {
+				} else if (p_dct_stat->err_code < SC_STOP_ERR) {
 					NodesWmem++;
 				}
 			}
@@ -2741,16 +2741,16 @@ restartinit:
 			goto fatalexit;
 		}
 
-		printk(BIOS_DEBUG, "mctAutoInitMCT_D: SyncDCTsReady_D\n");
-		SyncDCTsReady_D(pMCTstat, pDCTstatA);	/* Make sure DCTs are ready for accesses.*/
+		printk(BIOS_DEBUG, "mctAutoInitMCT_D: sync_dcts_ready_d\n");
+		sync_dcts_ready_d(p_mct_stat, p_dct_stat_a);	/* Make sure DCTs are ready for accesses.*/
 
-		printk(BIOS_DEBUG, "mctAutoInitMCT_D: HTMemMapInit_D\n");
-		HTMemMapInit_D(pMCTstat, pDCTstatA);	/* Map local memory into system address space.*/
+		printk(BIOS_DEBUG, "mctAutoInitMCT_D: ht_mem_map_init_d\n");
+		ht_mem_map_init_d(p_mct_stat, p_dct_stat_a);	/* Map local memory into system address space.*/
 		mctHookAfterHTMap();
 
 		if (!is_fam15h()) {
 			printk(BIOS_DEBUG, "mctAutoInitMCT_D: CPUMemTyping_D\n");
-			CPUMemTyping_D(pMCTstat, pDCTstatA);	/* Map dram into WB/UC CPU cacheability */
+			CPUMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Map dram into WB/UC CPU cacheability */
 		}
 
 		printk(BIOS_DEBUG, "mctAutoInitMCT_D: mctHookAfterCPU\n");
@@ -2762,59 +2762,59 @@ restartinit:
 		 * How to get the desired speed at this point in the code?
 		 */
 
-		printk(BIOS_DEBUG, "mctAutoInitMCT_D: DQSTiming_D\n");
-		DQSTiming_D(pMCTstat, pDCTstatA, allow_config_restore);	/* Get Receiver Enable and DQS signal timing*/
+		printk(BIOS_DEBUG, "mctAutoInitMCT_D: rqs_timing_d\n");
+		rqs_timing_d(p_mct_stat, p_dct_stat_a, allow_config_restore);	/* Get Receiver Enable and DQS signal timing*/
 
 		if (!is_fam15h()) {
 			printk(BIOS_DEBUG, "mctAutoInitMCT_D: UMAMemTyping_D\n");
-			UMAMemTyping_D(pMCTstat, pDCTstatA);	/* Fix up for UMA sizing */
+			UMAMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Fix up for UMA sizing */
 		}
 
 		if (!allow_config_restore) {
 			printk(BIOS_DEBUG, "mctAutoInitMCT_D: :OtherTiming\n");
-			mct_OtherTiming(pMCTstat, pDCTstatA);
+			mct_OtherTiming(p_mct_stat, p_dct_stat_a);
 		}
 
-		if (ReconfigureDIMMspare_D(pMCTstat, pDCTstatA)) { /* RESET# if 1st pass of DIMM spare enabled*/
+		if (reconfigure_dimm_spare_d(p_mct_stat, p_dct_stat_a)) { /* RESET# if 1st pass of DIMM spare enabled*/
 			goto restartinit;
 		}
 
-		InterleaveNodes_D(pMCTstat, pDCTstatA);
-		InterleaveChannels_D(pMCTstat, pDCTstatA);
+		InterleaveNodes_D(p_mct_stat, p_dct_stat_a);
+		InterleaveChannels_D(p_mct_stat, p_dct_stat_a);
 
 		ecc_enabled = 1;
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			struct DCTStatStruc *pDCTstat;
-			pDCTstat = pDCTstatA + Node;
+			struct DCTStatStruc *p_dct_stat;
+			p_dct_stat = p_dct_stat_a + Node;
 
-			if (pDCTstat->NodePresent)
-				if (!is_ecc_enabled(pMCTstat, pDCTstat))
+			if (p_dct_stat->node_present)
+				if (!is_ecc_enabled(p_mct_stat, p_dct_stat))
 					ecc_enabled = 0;
 		}
 
 		if (ecc_enabled) {
 			printk(BIOS_DEBUG, "mctAutoInitMCT_D: ECCInit_D\n");
-			if (!ECCInit_D(pMCTstat, pDCTstatA)) {			/* Setup ECC control and ECC check-bits*/
+			if (!ECCInit_D(p_mct_stat, p_dct_stat_a)) {			/* Setup ECC control and ECC check-bits*/
 				/* Memory was not cleared during ECC setup */
 				/* mctDoWarmResetMemClr_D(); */
 				printk(BIOS_DEBUG, "mctAutoInitMCT_D: MCTMemClr_D\n");
-				MCTMemClr_D(pMCTstat,pDCTstatA);
+				MCTMemClr_D(p_mct_stat,p_dct_stat_a);
 			}
 		}
 
 		if (is_fam15h()) {
 			printk(BIOS_DEBUG, "mctAutoInitMCT_D: CPUMemTyping_D\n");
-			CPUMemTyping_D(pMCTstat, pDCTstatA);	/* Map dram into WB/UC CPU cacheability */
+			CPUMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Map dram into WB/UC CPU cacheability */
 
 			printk(BIOS_DEBUG, "mctAutoInitMCT_D: UMAMemTyping_D\n");
-			UMAMemTyping_D(pMCTstat, pDCTstatA);	/* Fix up for UMA sizing */
+			UMAMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Fix up for UMA sizing */
 
 			printk(BIOS_DEBUG, "mctAutoInitMCT_D: mct_ForceNBPState0_Dis_Fam15\n");
 			for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-				struct DCTStatStruc *pDCTstat;
-				pDCTstat = pDCTstatA + Node;
+				struct DCTStatStruc *p_dct_stat;
+				p_dct_stat = p_dct_stat_a + Node;
 
-				mct_ForceNBPState0_Dis_Fam15(pMCTstat, pDCTstat);
+				mct_ForceNBPState0_Dis_Fam15(p_mct_stat, p_dct_stat);
 			}
 		}
 
@@ -2824,35 +2824,35 @@ restartinit:
 
 				num_nodes = 0;
 				for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-					struct DCTStatStruc *pDCTstat;
-					pDCTstat = pDCTstatA + Node;
+					struct DCTStatStruc *p_dct_stat;
+					p_dct_stat = p_dct_stat_a + Node;
 
-					if (pDCTstat->NodePresent)
+					if (p_dct_stat->node_present)
 						num_nodes++;
 				}
 
 				for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-					struct DCTStatStruc *pDCTstat;
-					pDCTstat = pDCTstatA + Node;
+					struct DCTStatStruc *p_dct_stat;
+					p_dct_stat = p_dct_stat_a + Node;
 
-					if (pDCTstat->NodePresent)
-						set_up_cc6_storage_fam15(pMCTstat, pDCTstat, num_nodes);
+					if (p_dct_stat->node_present)
+						set_up_cc6_storage_fam15(p_mct_stat, p_dct_stat, num_nodes);
 				}
 
 				for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-					struct DCTStatStruc *pDCTstat;
-					pDCTstat = pDCTstatA + Node;
+					struct DCTStatStruc *p_dct_stat;
+					p_dct_stat = p_dct_stat_a + Node;
 
-					if (pDCTstat->NodePresent) {
-						set_cc6_save_enable(pMCTstat, pDCTstat, 1);
-						lock_dram_config(pMCTstat, pDCTstat);
+					if (p_dct_stat->node_present) {
+						set_cc6_save_enable(p_mct_stat, p_dct_stat, 1);
+						lock_dram_config(p_mct_stat, p_dct_stat);
 					}
 				}
 			}
 		}
 
-		mct_FinalMCT_D(pMCTstat, pDCTstatA);
-		printk(BIOS_DEBUG, "mctAutoInitMCT_D Done: Global status: %x\n", pMCTstat->GStatus);
+		mct_FinalMCT_D(p_mct_stat, p_dct_stat_a);
+		printk(BIOS_DEBUG, "mctAutoInitMCT_D Done: Global status: %x\n", p_mct_stat->GStatus);
 	}
 
 	return;
@@ -2884,20 +2884,20 @@ void initialize_mca(u8 bsp, u8 suppress_errors) {
 	}
 }
 
-static u8 ReconfigureDIMMspare_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA)
+static u8 reconfigure_dimm_spare_d(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 ret;
 
 	if (mctGet_NVbits(NV_CS_SPARE_CTL)) {
 		if (MCT_DIMM_SPARE_NO_WARM) {
 			/* Do no warm-reset DIMM spare */
-			if (pMCTstat->GStatus & (1 << GSB_EnDIMMSpareNW)) {
-				LoadDQSSigTmgRegs_D(pMCTstat, pDCTstatA);
+			if (p_mct_stat->GStatus & (1 << GSB_EnDIMMSpareNW)) {
+				load_dqs_sig_tmg_regs_d(p_mct_stat, p_dct_stat_a);
 				ret = 0;
 			} else {
-				mct_ResetDataStruct_D(pMCTstat, pDCTstatA);
-				pMCTstat->GStatus |= 1 << GSB_EnDIMMSpareNW;
+				mct_ResetDataStruct_D(p_mct_stat, p_dct_stat_a);
+				p_mct_stat->GStatus |= 1 << GSB_EnDIMMSpareNW;
 				ret = 1;
 			}
 		} else {
@@ -2918,13 +2918,13 @@ static u8 ReconfigureDIMMspare_D(struct MCTStatStruc *pMCTstat,
  * Write Levelization Training (2.10.5.8.1)
  * DQS Receiver Enable Training (2.10.5.8.2)
  */
-void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct, u8 enable)
+void fam15EnableTrainingMode(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct, u8 enable)
 {
 	u8 index;
 	u32 dword;
 	u32 index_reg = 0x98;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
 	if (enable) {
 		/* Enable training mode */
@@ -2939,7 +2939,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		dword = Get_NB32_DCT(dev, dct, 0x94);			/* DRAM Configuration High */
 		dword &= ~(0xf << 24);					/* DcqBypassMax = 0 */
 		dword &= ~(0x1 << 22);					/* BankSwizzleMode = 0 */
-		dword &= ~(0x1 << 15);					/* PowerDownEn = 0 */
+		dword &= ~(0x1 << 15);					/* POWER_DOWN_EN = 0 */
 		dword &= ~(0x3 << 10);					/* ZqcsInterval = 0 */
 		Set_NB32_DCT(dev, dct, 0x94, dword);			/* DRAM Configuration High */
 
@@ -2963,18 +2963,18 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		dword &= ~(0x1 << 2);					/* DctSelIntLvEn = 0 */
 		Set_NB32_DCT(dev, dct, 0x110, dword);			/* DRAM Controller Select Low */
 
-		dword = Get_NB32_DCT(pDCTstat->dev_nbmisc, dct, 0x58);	/* Scrub Rate Control */
+		dword = Get_NB32_DCT(p_dct_stat->dev_nbmisc, dct, 0x58);	/* Scrub Rate Control */
 		dword &= ~(0x1f << 24);					/* L3Scrub = 0 */
 		dword &= ~(0x1f);					/* DramScrub = 0 */
-		Set_NB32_DCT(pDCTstat->dev_nbmisc, dct, 0x58, dword);	/* Scrub Rate Control */
+		Set_NB32_DCT(p_dct_stat->dev_nbmisc, dct, 0x58, dword);	/* Scrub Rate Control */
 
-		dword = Get_NB32_DCT(pDCTstat->dev_nbmisc, dct, 0x5c);	/* DRAM Scrub Address Low */
+		dword = Get_NB32_DCT(p_dct_stat->dev_nbmisc, dct, 0x5c);	/* DRAM Scrub Address Low */
 		dword &= ~(0x1);					/* ScrubReDirEn = 0 */
-		Set_NB32_DCT(pDCTstat->dev_nbmisc, dct, 0x5c, dword);	/* DRAM Scrub Address Low */
+		Set_NB32_DCT(p_dct_stat->dev_nbmisc, dct, 0x5c, dword);	/* DRAM Scrub Address Low */
 
-		dword = Get_NB32_DCT(pDCTstat->dev_nbmisc, dct, 0x1b8);	/* L3 Control 1 */
+		dword = Get_NB32_DCT(p_dct_stat->dev_nbmisc, dct, 0x1b8);	/* L3 Control 1 */
 		dword |= (0x1 << 4);					/* L3ScrbRedirDis = 1 */
-		Set_NB32_DCT(pDCTstat->dev_nbmisc, dct, 0x1b8, dword);	/* L3 Control 1 */
+		Set_NB32_DCT(p_dct_stat->dev_nbmisc, dct, 0x1b8, dword);	/* L3 Control 1 */
 
 		/* Fam15h BKDG section 2.10.5.5.1 */
 		dword = Get_NB32_DCT(dev, dct, 0x218);			/* DRAM Timing 5 */
@@ -3006,7 +3006,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		dword = Get_NB32_DCT(dev, dct, 0x21c);			/* DRAM Timing 6 */
 		dword &= ~(0x1f << 8);					/* TrwtTO = 0x16 */
 		dword |= (0x16 << 8);
-		dword &= ~(0x1f << 16);					/* TrwtWB = TrwtTO + 1 */
+		dword &= ~(0x1f << 16);					/* trwt_wb = TrwtTO + 1 */
 		dword |= ((((dword >> 8) & 0x1f) + 1) << 16);
 		Set_NB32_DCT(dev, dct, 0x21c, dword);			/* DRAM Timing 6 */
 	} else {
@@ -3051,18 +3051,18 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		 */
 		u8 dimm_event_l_pin_support = 0;
 
-		ddr_voltage_index = dct_ddr_voltage_index(pDCTstat, dct);
+		ddr_voltage_index = dct_ddr_voltage_index(p_dct_stat, dct);
 		max_dimms_installable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
 
-		lane_count = get_available_lane_count(pMCTstat, pDCTstat);
+		lane_count = get_available_lane_count(p_mct_stat, p_dct_stat);
 
-		if (pDCTstat->dimm_x4_present & ((dct) ? 0xaa : 0x55))
+		if (p_dct_stat->dimm_x4_present & ((dct) ? 0xaa : 0x55))
 			x4_present = 1;
-		if (pDCTstat->dimm_x8_present & ((dct) ? 0xaa : 0x55))
+		if (p_dct_stat->dimm_x8_present & ((dct) ? 0xaa : 0x55))
 			x8_present = 1;
 		memclk_index = Get_NB32_DCT(dev, dct, 0x94) & 0x1f;
 
-		if (pDCTstat->DIMMValidDCT[0] && pDCTstat->DIMMValidDCT[1] && mctGet_NVbits(NV_Unganged))
+		if (p_dct_stat->dimm_valid_dct[0] && p_dct_stat->dimm_valid_dct[1] && mctGet_NVbits(NV_Unganged))
 			interleave_channels = 1;
 
 		dword = Get_NB32_DCT(dev, dct, 0x240);
@@ -3084,7 +3084,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		dword = Get_NB32_DCT(dev, dct, 0x20c) & 0x1f;
 		latency_difference -= dword;
 
-		if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -3108,7 +3108,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		for (receiver = 0; receiver < 8; receiver += 2) {
 			dimm = (receiver >> 1);
 
-			if (!mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, dct, receiver))
+			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, receiver))
 				continue;
 
 			read_dqs_receiver_enable_control_registers(current_total_delay_2, dev, dct, dimm, index_reg);
@@ -3154,7 +3154,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		for (receiver = 0; receiver < 8; receiver += 2) {
 			dimm = (receiver >> 1);
 
-			if (!mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, dct, receiver))
+			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, receiver))
 				continue;
 
 			read_dqs_write_timing_control_registers(current_total_delay_2, dev, dct, dimm, index_reg);
@@ -3202,7 +3202,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		Set_NB32_DCT(dev, dct, 0xa8, dword);			/* Dram Miscellaneous 2 */
 
 		/* Configure partial power down delay */
-		dword = Get_NB32(dev, 0x244);				/* DRAM Controller Miscellaneous 3 */
+		dword = get_nb32(dev, 0x244);				/* DRAM Controller Miscellaneous 3 */
 		dword &= ~0xf;						/* PrtlChPDDynDly = 0x2 */
 		dword |= 0x2;
 		Set_NB32(dev, 0x244, dword);				/* DRAM Controller Miscellaneous 3 */
@@ -3212,8 +3212,8 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		delay2 = 0x3;
 
 		/* Family 15h BKDG Table 214 */
-		if ((pDCTstat->status & (1 << SB_REGISTERED))
-			|| (pDCTstat->status & (1 << SB_LoadReduced))) {
+		if ((p_dct_stat->status & (1 << SB_REGISTERED))
+			|| (p_dct_stat->status & (1 << SB_LoadReduced))) {
 			if (memclk_index <= 0x6) {
 				if (ddr_voltage_index < 0x4)
 					/* 1.5 or 1.35V */
@@ -3295,7 +3295,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		dword = Get_NB32_DCT(dev, dct, 0x94);			/* DRAM Configuration High */
 		dword |= (0xf << 24);					/* DcqBypassMax = 0xf */
 		dword |= (0x1 << 22);					/* BankSwizzleMode = 1 */
-		dword |= (0x1 << 15);					/* PowerDownEn = 1 */
+		dword |= (0x1 << 15);					/* POWER_DOWN_EN = 1 */
 		dword &= ~(0x3 << 10);					/* ZqcsInterval = 0x2 */
 		dword |= (0x2 << 10);
 		Set_NB32_DCT(dev, dct, 0x94, dword);			/* DRAM Configuration High */
@@ -3349,7 +3349,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		for (receiver = 0; receiver < 8; receiver += 2) {
 			dimm = (receiver >> 1);
 
-			if (!mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, dct, receiver))
+			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, receiver))
 				continue;
 
 			read_dqs_write_timing_control_registers(current_total_delay_1, dev, dct, dimm, index_reg);
@@ -3370,7 +3370,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		cdd_twrrd = (((cdd_twrrd + (1 << 6) - 1) >> 6) & 0xf);
 
 		/* Fam15h BKDG section 2.10.5.5.3 */
-		if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -3403,7 +3403,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		for (receiver = 0; receiver < 8; receiver += 2) {
 			dimm = (receiver >> 1);
 
-			if (!mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, dct, receiver))
+			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, receiver))
 				continue;
 
 			read_dqs_receiver_enable_control_registers(current_total_delay_1, dev, dct, dimm, index_reg);
@@ -3480,74 +3480,74 @@ void fam15EnableTrainingMode(struct MCTStatStruc *pMCTstat,
 		dword = Get_NB32_DCT(dev, dct, 0x21c);			/* DRAM Timing 6 */
 		dword &= ~(0x1f << 8);					/* TrwtTO = trwtto */
 		dword |= ((trwtto & 0x1f) << 8);
-		dword &= ~(0x1f << 16);					/* TrwtWB = TrwtTO + 1 */
+		dword &= ~(0x1f << 16);					/* trwt_wb = TrwtTO + 1 */
 		dword |= ((((dword >> 8) & 0x1f) + 1) << 16);
 		Set_NB32_DCT(dev, dct, 0x21c, dword);			/* DRAM Timing 6 */
 
 		/* Enable prefetchers */
-		dword = Get_NB32(dev, 0x11c);				/* Memory Controller Configuration High */
+		dword = get_nb32(dev, 0x11c);				/* Memory Controller Configuration High */
 		dword &= ~(0x1 << 13);					/* PrefIoDis = 0 */
 		dword &= ~(0x1 << 12);					/* PrefCpuDis = 0 */
 		Set_NB32(dev, 0x11c, dword);				/* Memory Controller Configuration High */
 	}
 }
 
-static void exit_training_mode_fam15(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA)
+static void exit_training_mode_fam15(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 node;
 	u8 dct;
 
 	for (node = 0; node < MAX_NODES_SUPPORTED; node++) {
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + node;
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + node;
 
-		if (pDCTstat->NodePresent)
+		if (p_dct_stat->node_present)
 			for (dct = 0; dct < 2; dct++)
-				fam15EnableTrainingMode(pMCTstat, pDCTstat, dct, 0);
+				fam15EnableTrainingMode(p_mct_stat, p_dct_stat, dct, 0);
 	}
 }
 
-static void DQSTiming_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA, u8 allow_config_restore)
+static void rqs_timing_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a, u8 allow_config_restore)
 {
 	u8 Node;
 	u8 nv_DQSTrainCTL;
 	u8 retry_requested;
 
-	if (pMCTstat->GStatus & (1 << GSB_EnDIMMSpareNW)) {
+	if (p_mct_stat->GStatus & (1 << GSB_EnDIMMSpareNW)) {
 		return;
 	}
 
 	/* Set initial TCWL offset to zero */
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
 		u8 dct;
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + Node;
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + Node;
 		for (dct = 0; dct < 2; dct++)
-			pDCTstat->tcwl_delay[dct] = 0;
+			p_dct_stat->tcwl_delay[dct] = 0;
 	}
 
 retry_dqs_training_and_levelization:
 	nv_DQSTrainCTL = !allow_config_restore;
 
-	mct_BeforeDQSTrain_D(pMCTstat, pDCTstatA);
-	phyAssistedMemFnceTraining(pMCTstat, pDCTstatA, -1);
+	mct_BeforeDQSTrain_D(p_mct_stat, p_dct_stat_a);
+	phyAssistedMemFnceTraining(p_mct_stat, p_dct_stat_a, -1);
 
 	if (is_fam15h()) {
-		struct DCTStatStruc *pDCTstat;
+		struct DCTStatStruc *p_dct_stat;
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			pDCTstat = pDCTstatA + Node;
-			if (pDCTstat->NodePresent) {
-				if (pDCTstat->DIMMValidDCT[0])
-					InitPhyCompensation(pMCTstat, pDCTstat, 0);
-				if (pDCTstat->DIMMValidDCT[1])
-					InitPhyCompensation(pMCTstat, pDCTstat, 1);
+			p_dct_stat = p_dct_stat_a + Node;
+			if (p_dct_stat->node_present) {
+				if (p_dct_stat->dimm_valid_dct[0])
+					InitPhyCompensation(p_mct_stat, p_dct_stat, 0);
+				if (p_dct_stat->dimm_valid_dct[1])
+					InitPhyCompensation(p_mct_stat, p_dct_stat, 1);
 			}
 		}
 	}
 
-	mctHookBeforeAnyTraining(pMCTstat, pDCTstatA);
+	mctHookBeforeAnyTraining(p_mct_stat, p_dct_stat_a);
 	if (!is_fam15h()) {
 		/* TODO: should be in mctHookBeforeAnyTraining */
 		_WRMSR(MTRR_FIX_4K_E0000, 0x04040404, 0x04040404);
@@ -3557,14 +3557,14 @@ retry_dqs_training_and_levelization:
 	}
 
 	if (nv_DQSTrainCTL) {
-		mct_WriteLevelization_HW(pMCTstat, pDCTstatA, FIRST_PASS);
+		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 
 		if (is_fam15h()) {
 			/* Receiver Enable Training Pass 1 */
-			TrainReceiverEn_D(pMCTstat, pDCTstatA, FIRST_PASS);
+			TrainReceiverEn_D(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 		}
 
-		mct_WriteLevelization_HW(pMCTstat, pDCTstatA, SECOND_PASS);
+		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, SECOND_PASS);
 
 		if (is_fam15h()) {
 
@@ -3573,32 +3573,32 @@ retry_dqs_training_and_levelization:
 			 * mode yields less stable training values than when run
 			 * in FIRST_PASS mode as in the HACK below.
 			 */
-			TrainReceiverEn_D(pMCTstat, pDCTstatA, FIRST_PASS);
+			TrainReceiverEn_D(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 		} else {
-			TrainReceiverEn_D(pMCTstat, pDCTstatA, FIRST_PASS);
+			TrainReceiverEn_D(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 		}
 
-		mct_TrainDQSPos_D(pMCTstat, pDCTstatA);
+		mct_TrainDQSPos_D(p_mct_stat, p_dct_stat_a);
 
 		/* Determine if DQS training requested a retrain attempt */
 		retry_requested = 0;
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			struct DCTStatStruc *pDCTstat;
-			pDCTstat = pDCTstatA + Node;
+			struct DCTStatStruc *p_dct_stat;
+			p_dct_stat = p_dct_stat_a + Node;
 
-			if (pDCTstat->NodePresent) {
-				if (pDCTstat->train_errors & (1 << SB_FatalError)) {
+			if (p_dct_stat->node_present) {
+				if (p_dct_stat->train_errors & (1 << SB_FatalError)) {
 					printk(BIOS_ERR, "DIMM training FAILED! Restarting system...");
 					soft_reset();
 				}
-				if (pDCTstat->train_errors & (1 << SB_RetryConfigTrain)) {
+				if (p_dct_stat->train_errors & (1 << SB_RetryConfigTrain)) {
 					retry_requested = 1;
 
 					/* Clear previous errors */
-					pDCTstat->train_errors &= ~(1 << SB_RetryConfigTrain);
-					pDCTstat->train_errors &= ~(1 << SB_NO_DQS_POS);
-					pDCTstat->err_status &= ~(1 << SB_RetryConfigTrain);
-					pDCTstat->err_status &= ~(1 << SB_NO_DQS_POS);
+					p_dct_stat->train_errors &= ~(1 << SB_RetryConfigTrain);
+					p_dct_stat->train_errors &= ~(1 << SB_NO_DQS_POS);
+					p_dct_stat->err_status &= ~(1 << SB_RetryConfigTrain);
+					p_dct_stat->err_status &= ~(1 << SB_NO_DQS_POS);
 				}
 			}
 		}
@@ -3608,42 +3608,42 @@ retry_dqs_training_and_levelization:
 			printk(BIOS_DEBUG, "%s: Restarting training on algorithm request\n", __func__);
 			/* Reset frequency to minimum */
 			for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-				struct DCTStatStruc *pDCTstat;
-				pDCTstat = pDCTstatA + Node;
-				if (pDCTstat->NodePresent) {
-					u8 original_target_freq = pDCTstat->TargetFreq;
-					u8 original_auto_speed = pDCTstat->dimm_auto_speed;
-					pDCTstat->TargetFreq = mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK));
-					pDCTstat->speed = pDCTstat->dimm_auto_speed = pDCTstat->TargetFreq;
-					SetTargetFreq(pMCTstat, pDCTstatA, Node);
-					pDCTstat->TargetFreq = original_target_freq;
-					pDCTstat->dimm_auto_speed = original_auto_speed;
+				struct DCTStatStruc *p_dct_stat;
+				p_dct_stat = p_dct_stat_a + Node;
+				if (p_dct_stat->node_present) {
+					u8 original_target_freq = p_dct_stat->target_freq;
+					u8 original_auto_speed = p_dct_stat->dimm_auto_speed;
+					p_dct_stat->target_freq = mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK));
+					p_dct_stat->speed = p_dct_stat->dimm_auto_speed = p_dct_stat->target_freq;
+					SetTargetFreq(p_mct_stat, p_dct_stat_a, Node);
+					p_dct_stat->target_freq = original_target_freq;
+					p_dct_stat->dimm_auto_speed = original_auto_speed;
 				}
 			}
 			/* Apply any DIMM timing changes */
 			for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-				struct DCTStatStruc *pDCTstat;
-				pDCTstat = pDCTstatA + Node;
-				if (pDCTstat->NodePresent) {
-					AutoCycTiming_D(pMCTstat, pDCTstat, 0);
-					if (!pDCTstat->GangedMode)
-						if (pDCTstat->DIMMValidDCT[1] > 0)
-							AutoCycTiming_D(pMCTstat, pDCTstat, 1);
+				struct DCTStatStruc *p_dct_stat;
+				p_dct_stat = p_dct_stat_a + Node;
+				if (p_dct_stat->node_present) {
+					auto_cyc_timing(p_mct_stat, p_dct_stat, 0);
+					if (!p_dct_stat->ganged_mode)
+						if (p_dct_stat->dimm_valid_dct[1] > 0)
+							auto_cyc_timing(p_mct_stat, p_dct_stat, 1);
 				}
 			}
 			goto retry_dqs_training_and_levelization;
 		}
 
-		TrainMaxRdLatency_En_D(pMCTstat, pDCTstatA);
+		TrainMaxRdLatency_En_D(p_mct_stat, p_dct_stat_a);
 
 		if (is_fam15h())
-			exit_training_mode_fam15(pMCTstat, pDCTstatA);
+			exit_training_mode_fam15(p_mct_stat, p_dct_stat_a);
 		else
-			mctSetEccDQSRcvrEn_D(pMCTstat, pDCTstatA);
+			mctSetEccDQSRcvrEn_D(p_mct_stat, p_dct_stat_a);
 	} else {
-		mct_WriteLevelization_HW(pMCTstat, pDCTstatA, FIRST_PASS);
+		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 
-		mct_WriteLevelization_HW(pMCTstat, pDCTstatA, SECOND_PASS);
+		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, SECOND_PASS);
 
 #if CONFIG(HAVE_ACPI_RESUME)
 		printk(BIOS_DEBUG, "mctAutoInitMCT_D: Restoring DIMM training configuration from NVRAM\n");
@@ -3652,29 +3652,29 @@ retry_dqs_training_and_levelization:
 #endif
 
 		if (is_fam15h())
-			exit_training_mode_fam15(pMCTstat, pDCTstatA);
+			exit_training_mode_fam15(p_mct_stat, p_dct_stat_a);
 
-		pMCTstat->GStatus |= 1 << GSB_ConfigRestored;
+		p_mct_stat->GStatus |= 1 << GSB_ConfigRestored;
 	}
 
 	if (is_fam15h()) {
-		struct DCTStatStruc *pDCTstat;
+		struct DCTStatStruc *p_dct_stat;
 
 		/* Switch DCT control register to DCT 0 per Erratum 505 */
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			pDCTstat = pDCTstatA + Node;
-			if (pDCTstat->NodePresent) {
-				fam15h_switch_dct(pDCTstat->dev_map, 0);
+			p_dct_stat = p_dct_stat_a + Node;
+			if (p_dct_stat->node_present) {
+				fam15h_switch_dct(p_dct_stat->dev_map, 0);
 			}
 		}
 	}
 
-	/* FIXME - currently uses calculated value	TrainMaxReadLatency_D(pMCTstat, pDCTstatA); */
+	/* FIXME - currently uses calculated value	TrainMaxReadLatency_D(p_mct_stat, p_dct_stat_a); */
 	mctHookAfterAnyTraining();
 }
 
-static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA)
+static void load_dqs_sig_tmg_regs_d(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node, Receiver, Channel, Dir, DIMM;
 	u32 dev;
@@ -3686,18 +3686,18 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 	u8 txdqs;
 
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + Node;
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + Node;
 
-		if (pDCTstat->dct_sys_limit) {
-			dev = pDCTstat->dev_dct;
+		if (p_dct_stat->dct_sys_limit) {
+			dev = p_dct_stat->dev_dct;
 			for (Channel = 0;Channel < 2; Channel++) {
 				/* there are four receiver pairs,
 				   loosely associated with chipselects.*/
 				index_reg = 0x98;
 				for (Receiver = 0; Receiver < 8; Receiver += 2) {
 					/* Set Receiver Enable Values */
-					mct_SetRcvrEnDly_D(pDCTstat,
+					mct_SetRcvrEnDly_D(p_dct_stat,
 						0, /* RcvrEnDly */
 						1, /* FinalValue, From stack */
 						Channel,
@@ -3707,7 +3707,7 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 						2); /* Pass Second Pass ? */
 					/* Restore Write levelization training data */
 					for (ByteLane = 0; ByteLane < 9; ByteLane ++) {
-						txdqs = pDCTstat->persistentData.CH_D_B_TxDqs[Channel][Receiver >> 1][ByteLane];
+						txdqs = p_dct_stat->persistentData.CH_D_B_TxDqs[Channel][Receiver >> 1][ByteLane];
 						index = Table_DQSRcvEn_Offset[ByteLane >> 1];
 						index += (Receiver >> 1) * 3 + 0x10 + 0x20; /* Addl_Index */
 						val = Get_NB32_index_wait_DCT(dev, Channel, 0x98, index);
@@ -3723,7 +3723,7 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 				}
 			}
 			for (Channel = 0; Channel < 2; Channel++) {
-				SetEccDQSRcvrEn_D(pDCTstat, Channel);
+				SetEccDQSRcvrEn_D(p_dct_stat, Channel);
 			}
 
 			for (Channel = 0; Channel < 2; Channel++) {
@@ -3743,14 +3743,14 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 					if (DIMM == 0) {
 						index = 0;	/* CHA Write Data Timing Low */
 					} else {
-						if (pDCTstat->speed >= mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+						if (p_dct_stat->speed >= mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
 							index = 0x100 * DIMM;
 						} else {
 							break;
 						}
 					}
 					for (Dir = 0; Dir < 2; Dir++) {/* RD/WR */
-						p = pDCTstat->CH_D_DIR_B_DQS[Channel][DIMM][Dir];
+						p = p_dct_stat->CH_D_DIR_B_DQS[Channel][DIMM][Dir];
 						val = stream_to_int(p); /* CHA Read Data Timing High */
 						Set_NB32_index_wait_DCT(dev, Channel, index_reg, index + 1, val);
 						val = stream_to_int(p + 4); /* CHA Write Data Timing High */
@@ -3766,7 +3766,7 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 				reg = 0x78;
 				val = Get_NB32_DCT(dev, Channel, reg);
 				val &= ~(0x3ff << 22);
-				val |= ((u32)pDCTstat->CH_MaxRdLat[Channel][0] << 22);
+				val |= ((u32)p_dct_stat->ch_max_rd_lat[Channel][0] << 22);
 				val &= ~(1 << DQS_RCV_EN_TRAIN);
 				Set_NB32_DCT(dev, Channel, reg, val);	/* program MaxRdLatency to correspond with current delay*/
 			}
@@ -3774,8 +3774,8 @@ static void LoadDQSSigTmgRegs_D(struct MCTStatStruc *pMCTstat,
 	}
 }
 
-static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA)
+static void ht_mem_map_init_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
 	u32 NextBase, BottomIO;
@@ -3786,39 +3786,39 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 	u32 base;
 	u32 limit;
 	u32 dev, devx;
-	struct DCTStatStruc *pDCTstat;
+	struct DCTStatStruc *p_dct_stat;
 
 	_MemHoleRemap = mctGet_NVbits(NV_MEM_HOLE);
 
-	if (pMCTstat->HoleBase == 0) {
-		DramHoleBase = mctGet_NVbits(NV_BottomIO);
+	if (p_mct_stat->HoleBase == 0) {
+		DramHoleBase = mctGet_NVbits(NV_BOTTOM_IO);
 	} else {
-		DramHoleBase = pMCTstat->HoleBase >> (24-8);
+		DramHoleBase = p_mct_stat->HoleBase >> (24-8);
 	}
 
 	BottomIO = DramHoleBase << (24-8);
 
 	NextBase = 0;
-	pDCTstat = pDCTstatA + 0;
-	dev = pDCTstat->dev_map;
+	p_dct_stat = p_dct_stat_a + 0;
+	dev = p_dct_stat->dev_map;
 
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		pDCTstat = pDCTstatA + Node;
-		devx = pDCTstat->dev_map;
+		p_dct_stat = p_dct_stat_a + Node;
+		devx = p_dct_stat->dev_map;
 		DramSelBaseAddr = 0;
-		if (!pDCTstat->GangedMode) {
-			DramSelBaseAddr = pDCTstat->NodeSysLimit - pDCTstat->dct_sys_limit;
-			/*In unganged mode, we must add DCT0 and DCT1 to DCTSysLimit */
-			val = pDCTstat->NodeSysLimit;
+		if (!p_dct_stat->ganged_mode) {
+			DramSelBaseAddr = p_dct_stat->node_sys_limit - p_dct_stat->dct_sys_limit;
+			/*In unganged mode, we must add DCT0 and DCT1 to dct_sys_limit */
+			val = p_dct_stat->node_sys_limit;
 			if ((val & 0xFF) == 0xFE) {
 				DramSelBaseAddr++;
 				val++;
 			}
-			pDCTstat->dct_sys_limit = val;
+			p_dct_stat->dct_sys_limit = val;
 		}
 
-		base  = pDCTstat->dct_sys_base;
-		limit = pDCTstat->dct_sys_limit;
+		base  = p_dct_stat->dct_sys_base;
+		limit = p_dct_stat->dct_sys_limit;
 		if (limit > base) {
 			base  += NextBase;
 			limit += NextBase;
@@ -3828,12 +3828,12 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 			if (_MemHoleRemap) {
 				if ((base < BottomIO) && (limit >= BottomIO)) {
 					/* HW Dram Remap */
-					pDCTstat->status |= 1 << SB_HW_HOLE;
-					pMCTstat->GStatus |= 1 << GSB_HW_HOLE;
-					pDCTstat->dct_sys_base = base;
-					pDCTstat->dct_sys_limit = limit;
-					pDCTstat->dct_hole_base = BottomIO;
-					pMCTstat->HoleBase = BottomIO;
+					p_dct_stat->status |= 1 << SB_HW_HOLE;
+					p_mct_stat->GStatus |= 1 << GSB_HW_HOLE;
+					p_dct_stat->dct_sys_base = base;
+					p_dct_stat->dct_sys_limit = limit;
+					p_dct_stat->dct_hole_base = BottomIO;
+					p_mct_stat->HoleBase = BottomIO;
 					HoleSize = _4GB_RJ8 - BottomIO; /* HoleSize[39:8] */
 					if ((DramSelBaseAddr > 0) && (DramSelBaseAddr < BottomIO))
 						base = DramSelBaseAddr;
@@ -3842,32 +3842,32 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 					val |= DramHoleBase << 24;
 					val |= 1  << DRAM_HOLE_VALID;
 					Set_NB32(devx, 0xF0, val); /* Dram Hole Address Reg */
-					pDCTstat->dct_sys_limit += HoleSize;
-					base = pDCTstat->dct_sys_base;
-					limit = pDCTstat->dct_sys_limit;
+					p_dct_stat->dct_sys_limit += HoleSize;
+					base = p_dct_stat->dct_sys_base;
+					limit = p_dct_stat->dct_sys_limit;
 				} else if (base == BottomIO) {
 					/* SW Node Hoist */
-					pMCTstat->GStatus |= 1 << GSB_SP_INTLV_REMAP_HOLE;
-					pDCTstat->status |= 1 << SB_SW_NODE_HOLE;
-					pMCTstat->GStatus |= 1 << GSB_SOFT_HOLE;
-					pMCTstat->HoleBase = base;
+					p_mct_stat->GStatus |= 1 << GSB_SP_INTLV_REMAP_HOLE;
+					p_dct_stat->status |= 1 << SB_SW_NODE_HOLE;
+					p_mct_stat->GStatus |= 1 << GSB_SOFT_HOLE;
+					p_mct_stat->HoleBase = base;
 					limit -= base;
 					base = _4GB_RJ8;
 					limit += base;
-					pDCTstat->dct_sys_base = base;
-					pDCTstat->dct_sys_limit = limit;
+					p_dct_stat->dct_sys_base = base;
+					p_dct_stat->dct_sys_limit = limit;
 				} else {
 					/* No Remapping.  Normal Contiguous mapping */
-					pDCTstat->dct_sys_base = base;
-					pDCTstat->dct_sys_limit = limit;
+					p_dct_stat->dct_sys_base = base;
+					p_dct_stat->dct_sys_limit = limit;
 				}
 			} else {
 				/*No Remapping.  Normal Contiguous mapping*/
-				pDCTstat->dct_sys_base = base;
-				pDCTstat->dct_sys_limit = limit;
+				p_dct_stat->dct_sys_base = base;
+				p_dct_stat->dct_sys_limit = limit;
 			}
 			base |= 3;		/* set WE,RE fields*/
-			pMCTstat->SysLimit = limit;
+			p_mct_stat->SysLimit = limit;
 		}
 		Set_NB32(dev, 0x40 + (Node << 3), base); /* [Node] + Dram Base 0 */
 
@@ -3876,7 +3876,7 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 		Set_NB32(dev, 0x44 + (Node << 3), val);	/* set DstNode */
 
 		printk(BIOS_DEBUG, " Node: %02x  base: %02x  limit: %02x\n", Node, base, limit);
-		limit = pDCTstat->dct_sys_limit;
+		limit = p_dct_stat->dct_sys_limit;
 		if (limit) {
 			NextBase = (limit & 0xFFFF0000) + 0x10000;
 		}
@@ -3885,14 +3885,14 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 	/* Copy dram map from Node 0 to Node 1-7 */
 	for (Node = 1; Node < MAX_NODES_SUPPORTED; Node++) {
 		u32 reg;
-		pDCTstat = pDCTstatA + Node;
-		devx = pDCTstat->dev_map;
+		p_dct_stat = p_dct_stat_a + Node;
+		devx = p_dct_stat->dev_map;
 
-		if (pDCTstat->NodePresent) {
+		if (p_dct_stat->node_present) {
 			printk(BIOS_DEBUG, " Copy dram map from Node 0 to Node %02x\n", Node);
 			reg = 0x40;		/*Dram Base 0*/
 			do {
-				val = Get_NB32(dev, reg);
+				val = get_nb32(dev, reg);
 				Set_NB32(devx, reg, val);
 				reg += 4;
 			} while (reg < 0x80);
@@ -3902,11 +3902,11 @@ static void HTMemMapInit_D(struct MCTStatStruc *pMCTstat,
 	}
 
 	/*Copy dram map to F1x120/124*/
-	mct_HTMemMapExt(pMCTstat, pDCTstatA);
+	mct_HTMemMapExt(p_mct_stat, p_dct_stat_a);
 }
 
-void MCTMemClr_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA)
+void MCTMemClr_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a)
 {
 
 	/* Initiates a memory clear operation for all node. The mem clr
@@ -3915,77 +3915,77 @@ void MCTMemClr_D(struct MCTStatStruc *pMCTstat,
 	 */
 	u8 Node;
 	u32 dword;
-	struct DCTStatStruc *pDCTstat;
+	struct DCTStatStruc *p_dct_stat;
 
 	if (!mctGet_NVbits(NV_DQS_TRAIN_CTL)) {
 		/* FIXME: callback to wrapper: mctDoWarmResetMemClr_D */
 	} else {	/* NV_DQS_TRAIN_CTL == 1 */
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			pDCTstat = pDCTstatA + Node;
+			p_dct_stat = p_dct_stat_a + Node;
 
-			if (pDCTstat->NodePresent) {
-				DCTMemClr_Init_D(pMCTstat, pDCTstat);
+			if (p_dct_stat->node_present) {
+				DCTMemClr_Init_D(p_mct_stat, p_dct_stat);
 			}
 		}
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			pDCTstat = pDCTstatA + Node;
+			p_dct_stat = p_dct_stat_a + Node;
 
-			if (pDCTstat->NodePresent) {
-				DCTMemClr_Sync_D(pMCTstat, pDCTstat);
+			if (p_dct_stat->node_present) {
+				dct_mem_clr_sync_d(p_mct_stat, p_dct_stat);
 			}
 		}
 	}
 
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		pDCTstat = pDCTstatA + Node;
+		p_dct_stat = p_dct_stat_a + Node;
 
 		/* Enable prefetchers */
-		dword = Get_NB32(pDCTstat->dev_dct, 0x11c);	/* Memory Controller Configuration High */
+		dword = get_nb32(p_dct_stat->dev_dct, 0x11c);	/* Memory Controller Configuration High */
 		dword &= ~(0x1 << 13);				/* PrefIoDis = 0 */
 		dword &= ~(0x1 << 12);				/* PrefCpuDis = 0 */
-		Set_NB32(pDCTstat->dev_dct, 0x11c, dword);	/* Memory Controller Configuration High */
+		Set_NB32(p_dct_stat->dev_dct, 0x11c, dword);	/* Memory Controller Configuration High */
 	}
 }
 
-void DCTMemClr_Init_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+void DCTMemClr_Init_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u32 val;
 	u32 dev;
 	u32 dword;
 
 	/* Initiates a memory clear operation on one node */
-	if (pDCTstat->dct_sys_limit) {
-		dev = pDCTstat->dev_dct;
+	if (p_dct_stat->dct_sys_limit) {
+		dev = p_dct_stat->dev_dct;
 
 		/* Disable prefetchers */
-		dword = Get_NB32(dev, 0x11c);		/* Memory Controller Configuration High */
+		dword = get_nb32(dev, 0x11c);		/* Memory Controller Configuration High */
 		dword |= 0x1 << 13;			/* PrefIoDis = 1 */
 		dword |= 0x1 << 12;			/* PrefCpuDis = 1 */
 		Set_NB32(dev, 0x11c, dword);		/* Memory Controller Configuration High */
 
 		do {
-			val = Get_NB32(dev, 0x110);
-		} while (val & (1 << MemClrBusy));
+			val = get_nb32(dev, 0x110);
+		} while (val & (1 << MEM_CLR_BUSY));
 
 		val |= (1 << MemClrInit);
 		Set_NB32(dev, 0x110, val);
 	}
 }
 
-void DCTMemClr_Sync_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+void dct_mem_clr_sync_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u32 dword;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
 	/* Ensure that a memory clear operation has completed on one node */
-	if (pDCTstat->dct_sys_limit) {
+	if (p_dct_stat->dct_sys_limit) {
 		printk(BIOS_DEBUG, "%s: Waiting for memory clear to complete\n", __func__);
 		do {
-			dword = Get_NB32(dev, 0x110);
+			dword = get_nb32(dev, 0x110);
 			if (CONFIG(CONSOLE_SERIAL)) {
 				/* Indicate the process is in progress only on serial.
 				 * Delay prevents printing many dots
@@ -3993,11 +3993,11 @@ void DCTMemClr_Sync_D(struct MCTStatStruc *pMCTstat,
 				mdelay(10);
 				printk(BIOS_DEBUG, ".");
 			}
-		} while (dword & (1 << MemClrBusy));
+		} while (dword & (1 << MEM_CLR_BUSY));
 
 		printk(BIOS_DEBUG, "\n");
 		do {
-			dword = Get_NB32(dev, 0x110);
+			dword = get_nb32(dev, 0x110);
 			if (CONFIG(CONSOLE_SERIAL)) {
 				/* Indicate the process is in progress only on serial.
 				 * Delay prevents printing many dots
@@ -4005,12 +4005,12 @@ void DCTMemClr_Sync_D(struct MCTStatStruc *pMCTstat,
 				mdelay(5);
 				printk(BIOS_DEBUG, ".");
 			}
-		} while (!(dword & (1 << Dr_MemClrStatus)));
+		} while (!(dword & (1 << DR_MEM_CLR_STATUS)));
 		printk(BIOS_DEBUG, "\n");
 	}
 
 	/* Enable prefetchers */
-	dword = Get_NB32(dev, 0x11c);		/* Memory Controller Configuration High */
+	dword = get_nb32(dev, 0x11c);		/* Memory Controller Configuration High */
 	dword &= ~(0x1 << 13);			/* PrefIoDis = 0 */
 	dword &= ~(0x1 << 12);			/* PrefCpuDis = 0 */
 	Set_NB32(dev, 0x11c, dword);		/* Memory Controller Configuration High */
@@ -4029,13 +4029,13 @@ u8 NodePresent_D(u8 Node)
 	u8 ret = 0;
 
 	dev = PA_HOST(Node);		/*test device/vendor id at host bridge  */
-	val = Get_NB32(dev, 0);
+	val = get_nb32(dev, 0);
 	dword = mct_NodePresent_D();	/* FIXME: BOZO -11001022h rev for F */
 	if (val == dword) {		/* AMD Hammer Family CPU HT Configuration */
 		if (oemNodePresent_D(Node, &ret))
 			goto finish;
 		/* Node ID register */
-		val = Get_NB32(dev, 0x60);
+		val = get_nb32(dev, 0x60);
 		val &= 0x07;
 		dword = Node;
 		if (val  == dword)	/* current nodeID = requested nodeID ? */
@@ -4045,7 +4045,7 @@ finish:
 	return ret;
 }
 
-static void DCTPreInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct)
+static void DCTPreInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	/*
 	 * Run DCT pre-initialization tasks
@@ -4053,23 +4053,23 @@ static void DCTPreInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDC
 	u32 dword;
 
 	/* Reset DCT registers */
-	ClearDCT_D(pMCTstat, pDCTstat, dct);
-	pDCTstat->stopDCT[dct] = 1;	/* preload flag with 'disable' */
+	clear_dct_d(p_mct_stat, p_dct_stat, dct);
+	p_dct_stat->stop_dtc[dct] = 1;	/* preload flag with 'disable' */
 
 	if (!is_fam15h()) {
 		/* Enable DDR3 support */
-		dword = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94);
+		dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94);
 		dword |= 1 << Ddr3Mode;
-		Set_NB32_DCT(pDCTstat->dev_dct, dct, 0x94, dword);
+		Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94, dword);
 	}
 
 	/* Read the SPD information into the data structures */
-	if (mct_DIMMPresence(pMCTstat, pDCTstat, dct) < SC_STOP_ERR) {
+	if (mct_DIMMPresence(p_mct_stat, p_dct_stat, dct) < SC_STOP_ERR) {
 		printk(BIOS_DEBUG, "\t\tDCTPreInit_D: mct_DIMMPresence Done\n");
 	}
 }
 
-static void DCTInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct)
+static void DCTInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	/*
 	 * Initialize DRAM on single Athlon 64/Opteron Node.
@@ -4078,15 +4078,15 @@ static void DCTInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTst
 
 	if (!is_fam15h()) {
 		/* (Re)-enable DDR3 support */
-		dword = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94);
+		dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94);
 		dword |= 1 << Ddr3Mode;
-		Set_NB32_DCT(pDCTstat->dev_dct, dct, 0x94, dword);
+		Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94, dword);
 	}
 
-	if (mct_SPDCalcWidth(pMCTstat, pDCTstat, dct) < SC_STOP_ERR) {
+	if (mct_SPDCalcWidth(p_mct_stat, p_dct_stat, dct) < SC_STOP_ERR) {
 		printk(BIOS_DEBUG, "\t\tDCTInit_D: mct_SPDCalcWidth Done\n");
-		if (AutoCycTiming_D(pMCTstat, pDCTstat, dct) < SC_STOP_ERR) {
-			printk(BIOS_DEBUG, "\t\tDCTInit_D: AutoCycTiming_D Done\n");
+		if (auto_cyc_timing(p_mct_stat, p_dct_stat, dct) < SC_STOP_ERR) {
+			printk(BIOS_DEBUG, "\t\tDCTInit_D: auto_cyc_timing Done\n");
 
 			/* SkewMemClk must be set before MEM_CLK_FREQ_VAL is set
 			 * This relies on DCTInit_D being called for DCT 1 after
@@ -4095,58 +4095,58 @@ static void DCTInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTst
 			if (is_fam15h()) {
 				/* Set memory clock skew if needed */
 				if (dct == 1) {
-					if (!pDCTstat->stopDCT[0]) {
+					if (!p_dct_stat->stop_dtc[0]) {
 						printk(BIOS_DEBUG, "\t\tDCTInit_D: enabling intra-channel clock skew\n");
-						dword = Get_NB32_index_wait_DCT(pDCTstat->dev_dct, 0, 0x98, 0x0d0fe00a);
+						dword = Get_NB32_index_wait_DCT(p_dct_stat->dev_dct, 0, 0x98, 0x0d0fe00a);
 						dword |= (0x1 << 4);				/* SkewMemClk = 1 */
-						Set_NB32_index_wait_DCT(pDCTstat->dev_dct, 0, 0x98, 0x0d0fe00a, dword);
+						Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, 0, 0x98, 0x0d0fe00a, dword);
 					}
 				}
 			}
 
-			if (AutoConfig_D(pMCTstat, pDCTstat, dct) < SC_STOP_ERR) {
+			if (AutoConfig_D(p_mct_stat, p_dct_stat, dct) < SC_STOP_ERR) {
 				printk(BIOS_DEBUG, "\t\tDCTInit_D: AutoConfig_D Done\n");
-				if (PlatformSpec_D(pMCTstat, pDCTstat, dct) < SC_STOP_ERR) {
+				if (PlatformSpec_D(p_mct_stat, p_dct_stat, dct) < SC_STOP_ERR) {
 					printk(BIOS_DEBUG, "\t\tDCTInit_D: PlatformSpec_D Done\n");
-					pDCTstat->stopDCT[dct] = 0;
+					p_dct_stat->stop_dtc[dct] = 0;
 				}
 			}
 		}
 	}
 }
 
-static void DCTFinalInit_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat, u8 dct)
+static void DCTFinalInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 dword;
 
 	/* Finalize DRAM init on a single node */
-	if (!pDCTstat->stopDCT[dct]) {
-		if (!(pMCTstat->GStatus & (1 << GSB_EnDIMMSpareNW))) {
-			printk(BIOS_DEBUG, "\t\tDCTFinalInit_D: StartupDCT_D Start\n");
-			StartupDCT_D(pMCTstat, pDCTstat, dct);
-			printk(BIOS_DEBUG, "\t\tDCTFinalInit_D: StartupDCT_D Done\n");
+	if (!p_dct_stat->stop_dtc[dct]) {
+		if (!(p_mct_stat->GStatus & (1 << GSB_EnDIMMSpareNW))) {
+			printk(BIOS_DEBUG, "\t\tDCTFinalInit_D: startup_dct_d Start\n");
+			startup_dct_d(p_mct_stat, p_dct_stat, dct);
+			printk(BIOS_DEBUG, "\t\tDCTFinalInit_D: startup_dct_d Done\n");
 		}
 	}
 
-	if (pDCTstat->stopDCT[dct]) {
+	if (p_dct_stat->stop_dtc[dct]) {
 		dword = 1 << DIS_DRAM_INTERFACE;
-		Set_NB32_DCT(pDCTstat->dev_dct, dct, 0x94, dword);
+		Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94, dword);
 
-		dword = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x90);
+		dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x90);
 		dword &= ~(1 << ParEn);
-		Set_NB32_DCT(pDCTstat->dev_dct, dct, 0x90, dword);
+		Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0x90, dword);
 
 		/* To maximize power savings when DIS_DRAM_INTERFACE = 1b,
 		 * all of the MemClkDis bits should also be set.
 		 */
-		Set_NB32_DCT(pDCTstat->dev_dct, dct, 0x88, 0xff000000);
+		Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0x88, 0xff000000);
 	} else {
-		mct_EnDllShutdownSR(pMCTstat, pDCTstat, dct);
+		mct_EnDllShutdownSR(p_mct_stat, p_dct_stat, dct);
 	}
 }
 
-static void SyncDCTsReady_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA)
+static void sync_dcts_ready_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a)
 {
 	/* Wait (and block further access to dram) for all DCTs to be ready,
 	 * by polling all INIT_DRAM bits and waiting for possible memory clear
@@ -4157,26 +4157,26 @@ static void SyncDCTsReady_D(struct MCTStatStruc *pMCTstat,
 	u32 val;
 
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + Node;
-		mct_SyncDCTsReady(pDCTstat);
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + Node;
+		mct_SyncDCTsReady(p_dct_stat);
 	}
 
 	if (!is_fam15h()) {
 		/* v6.1.3 */
 		/* re-enable phy compensation engine when dram init is completed on all nodes. */
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-			struct DCTStatStruc *pDCTstat;
-			pDCTstat = pDCTstatA + Node;
-			if (pDCTstat->NodePresent) {
-				if (pDCTstat->DIMMValidDCT[0] > 0 || pDCTstat->DIMMValidDCT[1] > 0) {
+			struct DCTStatStruc *p_dct_stat;
+			p_dct_stat = p_dct_stat_a + Node;
+			if (p_dct_stat->node_present) {
+				if (p_dct_stat->dimm_valid_dct[0] > 0 || p_dct_stat->dimm_valid_dct[1] > 0) {
 					/*
 					 * re-enable phy compensation engine
 					 * when dram init on both DCTs is completed.
 					 */
-					val = Get_NB32_index_wait(pDCTstat->dev_dct, 0x98, 0x8);
+					val = Get_NB32_index_wait(p_dct_stat->dev_dct, 0x98, 0x8);
 					val &= ~(1 << DisAutoComp);
-					Set_NB32_index_wait(pDCTstat->dev_dct, 0x98, 0x8, val);
+					Set_NB32_index_wait(p_dct_stat->dev_dct, 0x98, 0x8, val);
 				}
 			}
 		}
@@ -4186,8 +4186,8 @@ static void SyncDCTsReady_D(struct MCTStatStruc *pMCTstat,
 	mct_Wait(15000);
 }
 
-void StartupDCT_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+void startup_dct_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	/* Read MEM_CLK_FREQ_VAL bit to see if the DIMMs are present in this node.
 	 * If the DIMMs are present then set the DRAM Enable bit for this node.
@@ -4204,26 +4204,26 @@ void StartupDCT_D(struct MCTStatStruc *pMCTstat,
 	u32 val;
 	u32 dev;
 
-	dev = pDCTstat->dev_dct;
+	dev = p_dct_stat->dev_dct;
 	val = Get_NB32_DCT(dev, dct, 0x94);
 	if (val & (1 << MEM_CLK_FREQ_VAL)) {
 		mctHookBeforeDramInit();	/* generalized Hook */
-		if (!(pMCTstat->GStatus & (1 << GSB_EnDIMMSpareNW)))
-		    mct_DramInit(pMCTstat, pDCTstat, dct);
-		AfterDramInit_D(pDCTstat, dct);
+		if (!(p_mct_stat->GStatus & (1 << GSB_EnDIMMSpareNW)))
+		    mct_DramInit(p_mct_stat, p_dct_stat, dct);
+		AfterDramInit_D(p_dct_stat, dct);
 		mctHookAfterDramInit();		/* generalized Hook*/
 	}
 }
 
-static void ClearDCT_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct)
+static void clear_dct_d(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 reg_end;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 reg = 0x40;
 	u32 val = 0;
 
-	if (pMCTstat->GStatus & (1 << GSB_EnDIMMSpareNW)) {
+	if (p_mct_stat->GStatus & (1 << GSB_EnDIMMSpareNW)) {
 		reg_end = 0x78;
 	} else {
 		reg_end = 0xA4;
@@ -4233,12 +4233,12 @@ static void ClearDCT_D(struct MCTStatStruc *pMCTstat,
 		if ((reg & 0xFF) == 0x84) {
 			if (is_fam15h()) {
 				val = Get_NB32_DCT(dev, dct, reg);
-				val &= ~(0x1 << 23);	/* Clear PchgPDModeSel */
+				val &= ~(0x1 << 23);	/* Clear PCHG_PD_MODE_SEL */
 				val &= ~0x3;		/* Clear BurstCtrl */
 			}
 		}
 		if ((reg & 0xFF) == 0x90) {
-			if (pDCTstat->logical_cpuid & AMD_DR_Dx) {
+			if (p_dct_stat->logical_cpuid & AMD_DR_Dx) {
 				val = Get_NB32_DCT(dev, dct, reg); /* get DRAMConfigLow */
 				val |= 0x08000000; /* preserve value of DisDllShutdownSR for only Rev.D */
 			}
@@ -4249,13 +4249,13 @@ static void ClearDCT_D(struct MCTStatStruc *pMCTstat,
 	}
 
 	val = 0;
-	dev = pDCTstat->dev_map;
+	dev = p_dct_stat->dev_map;
 	reg = 0xF0;
 	Set_NB32(dev, reg, val);
 }
 
-void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct)
+void SPD2ndTiming(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 i;
 	u16 Twr, trtp;
@@ -4293,75 +4293,75 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i++) {
 		LDIMM = i >> 1;
-		if (pDCTstat->dimm_valid & (1 << i)) {
-			val = pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDivisor]; /* MTB = Dividend/Divisor */
-			MTB16x = ((pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDividend] & 0xff) << 4);
+		if (p_dct_stat->dimm_valid & (1 << i)) {
+			val = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_MTBDivisor]; /* MTB = Dividend/Divisor */
+			MTB16x = ((p_dct_stat->spd_data.spd_bytes[dct + i][SPD_MTBDividend] & 0xff) << 4);
 			MTB16x /= val; /* transfer to MTB*16 */
 
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_tRPmin];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tRPmin];
 			val = byte * MTB16x;
 			if (trp < val)
 				trp = val;
 
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_tRRDmin];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tRRDmin];
 			val = byte * MTB16x;
 			if (Trrd < val)
 				Trrd = val;
 
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_tRCDmin];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tRCDmin];
 			val = byte * MTB16x;
 			if (trcd < val)
 				trcd = val;
 
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_tRTPmin];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tRTPmin];
 			val = byte * MTB16x;
 			if (trtp < val)
 				trtp = val;
 
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_tWRmin];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tWRmin];
 			val = byte * MTB16x;
 			if (Twr < val)
 				Twr = val;
 
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_tWTRmin];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tWTRmin];
 			val = byte * MTB16x;
 			if (Twtr < val)
 				Twtr = val;
 
-			val = pDCTstat->spd_data.spd_bytes[dct + i][SPD_Upper_tRAS_tRC] & 0xff;
+			val = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_Upper_tRAS_tRC] & 0xff;
 			val >>= 4;
 			val <<= 8;
-			val |= pDCTstat->spd_data.spd_bytes[dct + i][SPD_tRCmin] & 0xff;
+			val |= p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tRCmin] & 0xff;
 			val *= MTB16x;
 			if (Trc < val)
 				Trc = val;
 
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_Density] & 0xf;
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_Density] & 0xf;
 			if (Trfc[LDIMM] < byte)
 				Trfc[LDIMM] = byte;
 
-			val = pDCTstat->spd_data.spd_bytes[dct + i][SPD_Upper_tRAS_tRC] & 0xf;
+			val = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_Upper_tRAS_tRC] & 0xf;
 			val <<= 8;
-			val |= (pDCTstat->spd_data.spd_bytes[dct + i][SPD_tRASmin] & 0xff);
+			val |= (p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tRASmin] & 0xff);
 			val *= MTB16x;
 			if (Tras < val)
 				Tras = val;
 
-			val = pDCTstat->spd_data.spd_bytes[dct + i][SPD_Upper_tFAW] & 0xf;
+			val = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_Upper_tFAW] & 0xf;
 			val <<= 8;
-			val |= pDCTstat->spd_data.spd_bytes[dct + i][SPD_tFAWmin] & 0xff;
+			val |= p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tFAWmin] & 0xff;
 			val *= MTB16x;
 			if (Tfaw < val)
 				Tfaw = val;
 
 			/* Determine if the DIMMs on this channel support 95°C ETR */
-			if (pDCTstat->spd_data.spd_bytes[dct + i][SPD_Thermal] & 0x1)
+			if (p_dct_stat->spd_data.spd_bytes[dct + i][SPD_Thermal] & 0x1)
 				Etr[dct] = 1;
 		}	/* Dimm Present */
 	}
 
 	/* Convert  DRAM CycleTiming values and store into DCT structure */
-	byte = pDCTstat->dimm_auto_speed;
+	byte = p_dct_stat->dimm_auto_speed;
 	if (is_fam15h()) {
 		if (byte == 0x16)
 			tCK16x = 17;
@@ -4394,7 +4394,7 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 	*/
 
 	/* Tras */
-	pDCTstat->dimm_tras = (u16)Tras;
+	p_dct_stat->dimm_tras = (u16)Tras;
 	val = Tras / tCK16x;
 	if (Tras % tCK16x) {	/* round up number of busclocks */
 		val++;
@@ -4403,10 +4403,10 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		val = MIN_TRAST;
 	else if (val > MAX_TRAST)
 		val = MAX_TRAST;
-	pDCTstat->tras = val;
+	p_dct_stat->tras = val;
 
 	/* trp */
-	pDCTstat->dimm_trp = trp;
+	p_dct_stat->dimm_trp = trp;
 	val = trp / tCK16x;
 	if (trp % tCK16x) {	/* round up number of busclocks */
 		val++;
@@ -4415,10 +4415,10 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		val = MIN_TRPT;
 	else if (val > MAX_TRPT)
 		val = MAX_TRPT;
-	pDCTstat->trp = val;
+	p_dct_stat->trp = val;
 
 	/* Trrd */
-	pDCTstat->dimm_trrd = Trrd;
+	p_dct_stat->dimm_trrd = Trrd;
 	val = Trrd / tCK16x;
 	if (Trrd % tCK16x) {	/* round up number of busclocks */
 		val++;
@@ -4427,10 +4427,10 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		val = MIN_TRRDT;
 	else if (val > MAX_TRRDT)
 		val = MAX_TRRDT;
-	pDCTstat->trrd = val;
+	p_dct_stat->trrd = val;
 
 	/* trcd */
-	pDCTstat->dimm_trcd = trcd;
+	p_dct_stat->dimm_trcd = trcd;
 	val = trcd / tCK16x;
 	if (trcd % tCK16x) {	/* round up number of busclocks */
 		val++;
@@ -4439,10 +4439,10 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		val = MIN_TRCDT;
 	else if (val > MAX_TRCDT)
 		val = MAX_TRCDT;
-	pDCTstat->trcd = val;
+	p_dct_stat->trcd = val;
 
 	/* Trc */
-	pDCTstat->dimm_trc = Trc;
+	p_dct_stat->dimm_trc = Trc;
 	val = Trc / tCK16x;
 	if (Trc % tCK16x) {	/* round up number of busclocks */
 		val++;
@@ -4451,10 +4451,10 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		val = MIN_TRCT;
 	else if (val > MAX_TRCT)
 		val = MAX_TRCT;
-	pDCTstat->trc = val;
+	p_dct_stat->trc = val;
 
 	/* trtp */
-	pDCTstat->dimm_trtp = trtp;
+	p_dct_stat->dimm_trtp = trtp;
 	val = trtp / tCK16x;
 	if (trtp % tCK16x) {
 		val ++;
@@ -4463,10 +4463,10 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		val = MIN_TRTPT;
 	else if (val > MAX_TRTPT)
 		val = MAX_TRTPT;
-	pDCTstat->trtp = val;
+	p_dct_stat->trtp = val;
 
 	/* Twr */
-	pDCTstat->dimm_twr = Twr;
+	p_dct_stat->dimm_twr = Twr;
 	val = Twr / tCK16x;
 	if (Twr % tCK16x) {	/* round up number of busclocks */
 		val++;
@@ -4475,10 +4475,10 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		val = MIN_TWRT;
 	else if (val > MAX_TWRT)
 		val = MAX_TWRT;
-	pDCTstat->twr = val;
+	p_dct_stat->twr = val;
 
 	/* Twtr */
-	pDCTstat->dimm_twtr = Twtr;
+	p_dct_stat->dimm_twtr = Twtr;
 	val = Twtr / tCK16x;
 	if (Twtr % tCK16x) {	/* round up number of busclocks */
 		val++;
@@ -4487,14 +4487,14 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		val = MIN_TWTRT;
 	else if (val > MAX_TWTRT)
 		val = MAX_TWTRT;
-	pDCTstat->twtr = val;
+	p_dct_stat->twtr = val;
 
 	/* Trfc0-Trfc3 */
 	for (i = 0; i < 4; i++)
-		pDCTstat->trfc[i] = Trfc[i];
+		p_dct_stat->trfc[i] = Trfc[i];
 
 	/* Tfaw */
-	pDCTstat->DIMMTfaw = Tfaw;
+	p_dct_stat->DIMMTfaw = Tfaw;
 	val = Tfaw / tCK16x;
 	if (Tfaw % tCK16x) {	/* round up number of busclocks */
 		val++;
@@ -4503,32 +4503,32 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		val = Min_TfawT;
 	else if (val > Max_TfawT)
 		val = Max_TfawT;
-	pDCTstat->Tfaw = val;
+	p_dct_stat->Tfaw = val;
 
 	mctAdjustAutoCycTmg_D();
 
 	if (is_fam15h()) {
 		/* Compute Tcwl (Fam15h BKDG v3.14 Table 203) */
-		if (pDCTstat->speed <= 0x6)
+		if (p_dct_stat->speed <= 0x6)
 			Tcwl = 0x5;
-		else if (pDCTstat->speed == 0xa)
+		else if (p_dct_stat->speed == 0xa)
 			Tcwl = 0x6;
-		else if (pDCTstat->speed == 0xe)
+		else if (p_dct_stat->speed == 0xe)
 			Tcwl = 0x7;
-		else if (pDCTstat->speed == 0x12)
+		else if (p_dct_stat->speed == 0x12)
 			Tcwl = 0x8;
-		else if (pDCTstat->speed == 0x16)
+		else if (p_dct_stat->speed == 0x16)
 			Tcwl = 0x9;
 		else
 			Tcwl = 0x5;	/* Power-on default */
 
 		/* Apply offset */
-		Tcwl += pDCTstat->tcwl_delay[dct];
+		Tcwl += p_dct_stat->tcwl_delay[dct];
 	}
 
 	/* Program DRAM Timing values */
 	if (is_fam15h()) {
-		dev = pDCTstat->dev_dct;
+		dev = p_dct_stat->dev_dct;
 
 		dword = Get_NB32_DCT(dev, dct, 0x8c);				/* DRAM Timing High */
 		if (Etr[dct])
@@ -4541,54 +4541,54 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 
 		dword = Get_NB32_DCT(dev, dct, 0x200);				/* DRAM Timing 0 */
 		dword &= ~(0x3f1f1f1f);
-		dword |= (pDCTstat->tras & 0x3f) << 24;				/* Tras */
-		val = pDCTstat->trp;
-		val = mct_AdjustSPDTimings(pMCTstat, pDCTstat, val);
+		dword |= (p_dct_stat->tras & 0x3f) << 24;				/* Tras */
+		val = p_dct_stat->trp;
+		val = mct_AdjustSPDTimings(p_mct_stat, p_dct_stat, val);
 		dword |= (val & 0x1f) << 16;					/* trp */
-		dword |= (pDCTstat->trcd & 0x1f) << 8;				/* trcd */
-		dword |= (pDCTstat->cas_latency & 0x1f);				/* Tcl */
+		dword |= (p_dct_stat->trcd & 0x1f) << 8;				/* trcd */
+		dword |= (p_dct_stat->cas_latency & 0x1f);				/* Tcl */
 		Set_NB32_DCT(dev, dct, 0x200, dword);				/* DRAM Timing 0 */
 
 		dword = Get_NB32_DCT(dev, dct, 0x204);				/* DRAM Timing 1 */
 		dword &= ~(0x0f3f0f3f);
-		dword |= (pDCTstat->trtp & 0xf) << 24;				/* trtp */
-		if (pDCTstat->Tfaw != 0) {
-			val = pDCTstat->Tfaw;
-			val = mct_AdjustSPDTimings(pMCTstat, pDCTstat, val);
+		dword |= (p_dct_stat->trtp & 0xf) << 24;				/* trtp */
+		if (p_dct_stat->Tfaw != 0) {
+			val = p_dct_stat->Tfaw;
+			val = mct_AdjustSPDTimings(p_mct_stat, p_dct_stat, val);
 			if ((val > 0x5) && (val < 0x2b))
 				dword |= (val & 0x3f) << 16;			/* FourActWindow */
 		}
-		dword |= (pDCTstat->trrd & 0xf) << 8;				/* Trrd */
-		dword |= (pDCTstat->trc & 0x3f);				/* Trc */
+		dword |= (p_dct_stat->trrd & 0xf) << 8;				/* Trrd */
+		dword |= (p_dct_stat->trc & 0x3f);				/* Trc */
 		Set_NB32_DCT(dev, dct, 0x204, dword);				/* DRAM Timing 1 */
 
 		/* Trfc0-Trfc3 */
 		for (i = 0; i < 4; i++)
-			if (pDCTstat->trfc[i] == 0x0)
-				pDCTstat->trfc[i] = 0x1;
+			if (p_dct_stat->trfc[i] == 0x0)
+				p_dct_stat->trfc[i] = 0x1;
 		dword = Get_NB32_DCT(dev, dct, 0x208);				/* DRAM Timing 2 */
 		dword &= ~(0x07070707);
-		dword |= (pDCTstat->trfc[3] & 0x7) << 24;			/* Trfc3 */
-		dword |= (pDCTstat->trfc[2] & 0x7) << 16;			/* Trfc2 */
-		dword |= (pDCTstat->trfc[1] & 0x7) << 8;			/* Trfc1 */
-		dword |= (pDCTstat->trfc[0] & 0x7);				/* Trfc0 */
+		dword |= (p_dct_stat->trfc[3] & 0x7) << 24;			/* Trfc3 */
+		dword |= (p_dct_stat->trfc[2] & 0x7) << 16;			/* Trfc2 */
+		dword |= (p_dct_stat->trfc[1] & 0x7) << 8;			/* Trfc1 */
+		dword |= (p_dct_stat->trfc[0] & 0x7);				/* Trfc0 */
 		Set_NB32_DCT(dev, dct, 0x208, dword);				/* DRAM Timing 2 */
 
 		dword = Get_NB32_DCT(dev, dct, 0x20c);				/* DRAM Timing 3 */
 		dword &= ~(0x00000f00);
-		dword |= (pDCTstat->twtr & 0xf) << 8;				/* Twtr */
+		dword |= (p_dct_stat->twtr & 0xf) << 8;				/* Twtr */
 		dword &= ~(0x0000001f);
 		dword |= (Tcwl & 0x1f);						/* Tcwl */
 		Set_NB32_DCT(dev, dct, 0x20c, dword);				/* DRAM Timing 3 */
 
 		dword = Get_NB32_DCT(dev, dct, 0x22c);				/* DRAM Timing 10 */
 		dword &= ~(0x0000001f);
-		dword |= (pDCTstat->twr & 0x1f);				/* Twr */
+		dword |= (p_dct_stat->twr & 0x1f);				/* Twr */
 		Set_NB32_DCT(dev, dct, 0x22c, dword);				/* DRAM Timing 10 */
 
-		if (pDCTstat->speed > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+		if (p_dct_stat->speed > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
 			/* Enable phy-assisted training mode */
-			fam15EnableTrainingMode(pMCTstat, pDCTstat, dct, 1);
+			fam15EnableTrainingMode(p_mct_stat, p_dct_stat, dct, 1);
 		}
 
 		/* Other setup (not training specific) */
@@ -4600,30 +4600,30 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		Set_NB32_DCT(dev, dct, 0x228, 0x14141414);			/* DRAM Timing 9 */
 	} else {
 		DramTimingLo = 0;	/* Dram Timing Low init */
-		val = pDCTstat->cas_latency - 4; /* pDCTstat.cas_latency to reg. definition */
+		val = p_dct_stat->cas_latency - 4; /* p_dct_stat.cas_latency to reg. definition */
 		DramTimingLo |= val;
 
-		val = pDCTstat->trcd - BIAS_TRCDT;
+		val = p_dct_stat->trcd - BIAS_TRCDT;
 		DramTimingLo |= val << 4;
 
-		val = pDCTstat->trp - BIAS_TRPT;
-		val = mct_AdjustSPDTimings(pMCTstat, pDCTstat, val);
+		val = p_dct_stat->trp - BIAS_TRPT;
+		val = mct_AdjustSPDTimings(p_mct_stat, p_dct_stat, val);
 		DramTimingLo |= val << 7;
 
-		val = pDCTstat->trtp - BIAS_TRTPT;
+		val = p_dct_stat->trtp - BIAS_TRTPT;
 		DramTimingLo |= val << 10;
 
-		val = pDCTstat->tras - BIAS_TRAST;
+		val = p_dct_stat->tras - BIAS_TRAST;
 		DramTimingLo |= val << 12;
 
-		val = pDCTstat->trc - BIAS_TRCT;
+		val = p_dct_stat->trc - BIAS_TRCT;
 		DramTimingLo |= val << 16;
 
-		val = pDCTstat->trrd - BIAS_TRRDT;
+		val = p_dct_stat->trrd - BIAS_TRRDT;
 		DramTimingLo |= val << 22;
 
 		DramTimingHi = 0;	/* Dram Timing High init */
-		val = pDCTstat->twtr - BIAS_TWTRT;
+		val = p_dct_stat->twtr - BIAS_TWTRT;
 		DramTimingHi |= val << 8;
 
 		val = 2;		/* Tref = 7.8us */
@@ -4636,14 +4636,14 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		}
 		DramTimingHi |= val << 20;
 
-		dev = pDCTstat->dev_dct;
+		dev = p_dct_stat->dev_dct;
 		/* Twr */
-		val = pDCTstat->twr;
+		val = p_dct_stat->twr;
 		if (val == 10)
 			val = 9;
 		else if (val == 12)
 			val = 10;
-		val = mct_AdjustSPDTimings(pMCTstat, pDCTstat, val);
+		val = mct_AdjustSPDTimings(p_mct_stat, p_dct_stat, val);
 		val -= BIAS_TWRT;
 		val <<= 4;
 		dword = Get_NB32_DCT(dev, dct, 0x84);
@@ -4652,8 +4652,8 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		Set_NB32_DCT(dev, dct, 0x84, dword);
 
 		/* Tfaw */
-		val = pDCTstat->Tfaw;
-		val = mct_AdjustSPDTimings(pMCTstat, pDCTstat, val);
+		val = p_dct_stat->Tfaw;
+		val = mct_AdjustSPDTimings(p_mct_stat, p_dct_stat, val);
 		val -= Bias_TfawT;
 		val >>= 1;
 		val <<= 28;
@@ -4662,29 +4662,29 @@ void SPD2ndTiming(struct MCTStatStruc *pMCTstat,
 		dword |= val;
 		Set_NB32_DCT(dev, dct, 0x94, dword);
 
-		/* dev = pDCTstat->dev_dct; */
+		/* dev = p_dct_stat->dev_dct; */
 
-		if (pDCTstat->speed > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+		if (p_dct_stat->speed > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
 			val = Get_NB32_DCT(dev, dct, 0x88);
 			val &= 0xFF000000;
 			DramTimingLo |= val;
 		}
 		Set_NB32_DCT(dev, dct, 0x88, DramTimingLo);	/*DCT Timing Low*/
 
-		if (pDCTstat->speed > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+		if (p_dct_stat->speed > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
 			DramTimingHi |= 1 << DIS_AUTO_REFRESH;
 		}
 		DramTimingHi |= 0x000018FF;
 		Set_NB32_DCT(dev, dct, 0x8c, DramTimingHi);	/*DCT Timing Hi*/
 	}
 
-	/* dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->node_id, 2)); */
+	/* dump_pci_device(PCI_DEV(0, 0x18+p_dct_stat->node_id, 2)); */
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-static u8 AutoCycTiming_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static u8 auto_cyc_timing(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	/* Initialize  DCT Timing registers as per DIMM SPD.
 	 * For primary timing (T, CL) use best case T value.
@@ -4717,41 +4717,41 @@ static u8 AutoCycTiming_D(struct MCTStatStruc *pMCTstat,
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
 	/* Get primary timing (CAS Latency and Cycle Time) */
-	if (pDCTstat->speed == 0) {
-		mctGet_MaxLoadFreq(pDCTstat);
+	if (p_dct_stat->speed == 0) {
+		mctGet_MaxLoadFreq(p_dct_stat);
 
 		/* and Factor in presets (setup options, Si cap, etc.) */
-		GetPresetmaxF_D(pMCTstat, pDCTstat);
+		get_preset_max_f_d(p_mct_stat, p_dct_stat);
 
 		/* Go get best T and CL as specified by DIMM mfgs. and OEM */
-		SPDGetTCL_D(pMCTstat, pDCTstat, dct);
+		spd_get_tcl_d(p_mct_stat, p_dct_stat, dct);
 
 		/* skip callback mctForce800to1067_D */
-		pDCTstat->speed = pDCTstat->dimm_auto_speed;
-		pDCTstat->cas_latency = pDCTstat->dimm_casl;
+		p_dct_stat->speed = p_dct_stat->dimm_auto_speed;
+		p_dct_stat->cas_latency = p_dct_stat->dimm_casl;
 
 	}
-	mct_AfterGetCLT(pMCTstat, pDCTstat, dct);
+	mct_AfterGetCLT(p_mct_stat, p_dct_stat, dct);
 
-	SPD2ndTiming(pMCTstat, pDCTstat, dct);
+	SPD2ndTiming(p_mct_stat, p_dct_stat, dct);
 
-	printk(BIOS_DEBUG, "AutoCycTiming: status %x\n", pDCTstat->status);
-	printk(BIOS_DEBUG, "AutoCycTiming: err_status %x\n", pDCTstat->err_status);
-	printk(BIOS_DEBUG, "AutoCycTiming: err_code %x\n", pDCTstat->err_code);
+	printk(BIOS_DEBUG, "AutoCycTiming: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "AutoCycTiming: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "AutoCycTiming: err_code %x\n", p_dct_stat->err_code);
 	printk(BIOS_DEBUG, "AutoCycTiming: Done\n\n");
 
 	mctHookAfterAutoCycTmg();
 
-	return pDCTstat->err_code;
+	return p_dct_stat->err_code;
 }
 
-static void GetPresetmaxF_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+static void get_preset_max_f_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	/* Get max frequency from OEM platform definition, from any user
 	 * override (limiting) of max frequency, and from any Si Revision
 	 * Specific information.  Return the least of these three in
-	 * DCTStatStruc.PresetmaxFreq.
+	 * DCTStatStruc.preset_max_freq.
 	 */
 	/* TODO: Set the proper max frequency in wrappers/mcti_d.c. */
 	u16 proposedFreq;
@@ -4776,19 +4776,19 @@ static void GetPresetmaxF_D(struct MCTStatStruc *pMCTstat,
 		if (word < proposedFreq)
 			proposedFreq = word;
 
-		word = pDCTstat->preset_max_freq;
+		word = p_dct_stat->preset_max_freq;
 		if (word > proposedFreq)
 			word = proposedFreq;
 
-		pDCTstat->preset_max_freq = word;
+		p_dct_stat->preset_max_freq = word;
 	}
 	/* Check F3xE8[DdrMaxRate] for maximum DRAM data rate support */
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-static void SPDGetTCL_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void spd_get_tcl_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	/* Find the best T and CL primary timing parameter pair, per Mfg.,
 	 * for the given set of DIMMs, and store into DCTStatStruc
@@ -4824,69 +4824,69 @@ static void SPDGetTCL_D(struct MCTStatStruc *pMCTstat,
 	}
 
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i++) {
-		if (pDCTstat->dimm_valid & (1 << i)) {
+		if (p_dct_stat->dimm_valid & (1 << i)) {
 			/* Step 1: Determine the common set of supported CAS Latency
 			 * values for all modules on the memory channel using the CAS
 			 * Latencies Supported in SPD bytes 14 and 15.
 			 */
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_CASLow];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_CASLow];
 			CASLatLow &= byte;
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_CASHigh];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_CASHigh];
 			CASLatHigh &= byte;
 			/* Step 2: Determine tAAmin(all) which is the largest tAAmin
 			   value for all modules on the memory channel (SPD byte 16). */
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDivisor];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_MTBDivisor];
 
-			MTB16x = ((pDCTstat->spd_data.spd_bytes[dct + i][SPD_MTBDividend] & 0xFF) << 4);
+			MTB16x = ((p_dct_stat->spd_data.spd_bytes[dct + i][SPD_MTBDividend] & 0xFF) << 4);
 			MTB16x /= byte; /* transfer to MTB*16 */
 
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_tAAmin];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tAAmin];
 			if (tAAmin16x < byte * MTB16x)
 				tAAmin16x = byte * MTB16x;
 			/* Step 3: Determine tCKmin(all) which is the largest tCKmin
 			   value for all modules on the memory channel (SPD byte 12). */
-			byte = pDCTstat->spd_data.spd_bytes[dct + i][SPD_tCKmin];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_tCKmin];
 
 			if (tCKmin16x < byte * MTB16x)
 				tCKmin16x = byte * MTB16x;
 		}
 	}
 	/* calculate tCKproposed16x (proposed clock period in ns * 16) */
-	tCKproposed16x =  16000 / pDCTstat->preset_max_freq;
+	tCKproposed16x =  16000 / p_dct_stat->preset_max_freq;
 	if (tCKmin16x > tCKproposed16x)
 		tCKproposed16x = tCKmin16x;
 
 	/* TODO: get user manual tCK16x(Freq.) and overwrite current tCKproposed16x if manual. */
 	if (is_fam15h()) {
 		if (tCKproposed16x == 17)
-			pDCTstat->TargetFreq = 0x16;
+			p_dct_stat->target_freq = 0x16;
 		else if (tCKproposed16x <= 20) {
-			pDCTstat->TargetFreq = 0x12;
+			p_dct_stat->target_freq = 0x12;
 			tCKproposed16x = 20;
 		} else if (tCKproposed16x <= 24) {
-			pDCTstat->TargetFreq = 0xe;
+			p_dct_stat->target_freq = 0xe;
 			tCKproposed16x = 24;
 		} else if (tCKproposed16x <= 30) {
-			pDCTstat->TargetFreq = 0xa;
+			p_dct_stat->target_freq = 0xa;
 			tCKproposed16x = 30;
 		} else if (tCKproposed16x <= 40) {
-			pDCTstat->TargetFreq = 0x6;
+			p_dct_stat->target_freq = 0x6;
 			tCKproposed16x = 40;
 		} else {
-			pDCTstat->TargetFreq = 0x4;
+			p_dct_stat->target_freq = 0x4;
 			tCKproposed16x = 48;
 		}
 	} else {
 		if (tCKproposed16x == 20)
-			pDCTstat->TargetFreq = 7;
+			p_dct_stat->target_freq = 7;
 		else if (tCKproposed16x <= 24) {
-			pDCTstat->TargetFreq = 6;
+			p_dct_stat->target_freq = 6;
 			tCKproposed16x = 24;
 		} else if (tCKproposed16x <= 30) {
-			pDCTstat->TargetFreq = 5;
+			p_dct_stat->target_freq = 5;
 			tCKproposed16x = 30;
 		} else {
-			pDCTstat->TargetFreq = 4;
+			p_dct_stat->target_freq = 4;
 			tCKproposed16x = 40;
 		}
 	}
@@ -4956,55 +4956,55 @@ static void SPDGetTCL_D(struct MCTStatStruc *pMCTstat,
 		}
 
 		if (tCKproposed16x != min_frequency_tck16x) {
-			if (pMCTstat->GStatus & (1 << GSB_EnDIMMSpareNW)) {
-				pDCTstat->dimm_auto_speed = byte;
-				pDCTstat->dimm_casl = bytex;
+			if (p_mct_stat->GStatus & (1 << GSB_EnDIMMSpareNW)) {
+				p_dct_stat->dimm_auto_speed = byte;
+				p_dct_stat->dimm_casl = bytex;
 				break;
 			} else {
-				pDCTstat->TargetCASL = bytex;
+				p_dct_stat->target_casl = bytex;
 				tCKproposed16x = min_frequency_tck16x;
 			}
 		} else {
-			pDCTstat->dimm_auto_speed = byte;
-			pDCTstat->dimm_casl = bytex;
+			p_dct_stat->dimm_auto_speed = byte;
+			p_dct_stat->dimm_casl = bytex;
 			break;
 		}
 	}
 
-	printk(BIOS_DEBUG, "SPDGetTCL_D: dimm_casl %x\n", pDCTstat->dimm_casl);
-	printk(BIOS_DEBUG, "SPDGetTCL_D: dimm_auto_speed %x\n", pDCTstat->dimm_auto_speed);
+	printk(BIOS_DEBUG, "spd_get_tcl_d: dimm_casl %x\n", p_dct_stat->dimm_casl);
+	printk(BIOS_DEBUG, "spd_get_tcl_d: dimm_auto_speed %x\n", p_dct_stat->dimm_auto_speed);
 
-	printk(BIOS_DEBUG, "SPDGetTCL_D: status %x\n", pDCTstat->status);
-	printk(BIOS_DEBUG, "SPDGetTCL_D: err_status %x\n", pDCTstat->err_status);
-	printk(BIOS_DEBUG, "SPDGetTCL_D: err_code %x\n", pDCTstat->err_code);
-	printk(BIOS_DEBUG, "SPDGetTCL_D: Done\n\n");
+	printk(BIOS_DEBUG, "spd_get_tcl_d: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "spd_get_tcl_d: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "spd_get_tcl_d: err_code %x\n", p_dct_stat->err_code);
+	printk(BIOS_DEBUG, "spd_get_tcl_d: Done\n\n");
 }
 
-u8 PlatformSpec_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+u8 PlatformSpec_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	if (!is_fam15h()) {
-		mctGet_PS_Cfg_D(pMCTstat, pDCTstat, dct);
+		mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, dct);
 
-		if (pDCTstat->GangedMode == 1) {
-			mctGet_PS_Cfg_D(pMCTstat, pDCTstat, 1);
-			mct_BeforePlatformSpec(pMCTstat, pDCTstat, 1);
+		if (p_dct_stat->ganged_mode == 1) {
+			mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, 1);
+			mct_BeforePlatformSpec(p_mct_stat, p_dct_stat, 1);
 		}
 
-		set_2t_configuration(pMCTstat, pDCTstat, dct);
+		set_2t_configuration(p_mct_stat, p_dct_stat, dct);
 
-		mct_BeforePlatformSpec(pMCTstat, pDCTstat, dct);
-		mct_PlatformSpec(pMCTstat, pDCTstat, dct);
-		if (pDCTstat->dimm_auto_speed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK)))
-			InitPhyCompensation(pMCTstat, pDCTstat, dct);
+		mct_BeforePlatformSpec(p_mct_stat, p_dct_stat, dct);
+		mct_PlatformSpec(p_mct_stat, p_dct_stat, dct);
+		if (p_dct_stat->dimm_auto_speed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK)))
+			InitPhyCompensation(p_mct_stat, p_dct_stat, dct);
 	}
 	mctHookAfterPSCfg();
 
-	return pDCTstat->err_code;
+	return p_dct_stat->err_code;
 }
 
-static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static u8 AutoConfig_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 DramControl, DramTimingLo, status;
 	u32 DramConfigLo, DramConfigHi, DramConfigMisc, DramConfigMisc2;
@@ -5021,18 +5021,18 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	DramConfigMisc2 = 0;
 
 	/* set bank addressing and Masks, plus CS pops */
-	SPDSetBanks_D(pMCTstat, pDCTstat, dct);
-	if (pDCTstat->err_code == SC_STOP_ERR)
+	SPDSetBanks_D(p_mct_stat, p_dct_stat, dct);
+	if (p_dct_stat->err_code == SC_STOP_ERR)
 		goto AutoConfig_exit;
 
 	/* map chip-selects into local address space */
-	StitchMemory_D(pMCTstat, pDCTstat, dct);
-	InterleaveBanks_D(pMCTstat, pDCTstat, dct);
+	StitchMemory_D(p_mct_stat, p_dct_stat, dct);
+	InterleaveBanks_D(p_mct_stat, p_dct_stat, dct);
 
 	/* temp image of status (for convenience). RO usage! */
-	status = pDCTstat->status;
+	status = p_dct_stat->status;
 
-	dev = pDCTstat->dev_dct;
+	dev = p_dct_stat->dev_dct;
 
 	/* Build Dram Control Register Value */
 	DramConfigMisc2 = Get_NB32_DCT(dev, dct, 0xa8);		/* Dram Miscellaneous 2 */
@@ -5040,7 +5040,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 
 	/* FIXME: Skip mct_checkForDxSupport */
 	/* REV_CALL mct_DoRdPtrInit if not Dx */
-	if (pDCTstat->logical_cpuid & AMD_DR_Bx)
+	if (p_dct_stat->logical_cpuid & AMD_DR_Bx)
 		val = 5;
 	else
 		val = 6;
@@ -5060,7 +5060,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	word = dct;
 	dword = X4_DIMM;
 	while (word < 8) {
-		if (pDCTstat->dimm_x4_present & (1 << word))
+		if (p_dct_stat->dimm_x4_present & (1 << word))
 			DramConfigLo |= 1 << dword;	/* X4_DIMM[3:0] */
 		word++;
 		word++;
@@ -5082,24 +5082,24 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 			if (mctGet_NVbits(NV_ECC))
 				DramConfigLo |= 1 << DIMM_EC_EN;
 
-	DramConfigLo = mct_DisDllShutdownSR(pMCTstat, pDCTstat, DramConfigLo, dct);
+	DramConfigLo = mct_DisDllShutdownSR(p_mct_stat, p_dct_stat, DramConfigLo, dct);
 
 	/* Build Dram Config Hi Register Value */
 	if (is_fam15h())
 		offset = 0x0;
 	else
 		offset = 0x1;
-	dword = pDCTstat->speed;
+	dword = p_dct_stat->speed;
 	DramConfigHi |= dword - offset;	/* get MemClk encoding */
 	DramConfigHi |= 1 << MEM_CLK_FREQ_VAL;
 
 	if (!is_fam15h())
 		if (status & (1 << SB_REGISTERED))
-			if ((pDCTstat->dimm_x4_present != 0) && (pDCTstat->dimm_x8_present != 0))
+			if ((p_dct_stat->dimm_x4_present != 0) && (p_dct_stat->dimm_x8_present != 0))
 				/* set only if x8 Registered DIMMs in System*/
 				DramConfigHi |= 1 << RDQS_EN;
 
-	if (pDCTstat->logical_cpuid & AMD_FAM15_ALL) {
+	if (p_dct_stat->logical_cpuid & AMD_FAM15_ALL) {
 		DramConfigLo |= 1 << 25;	/* PendRefPaybackS3En = 1 */
 		DramConfigLo |= 1 << 24;	/* StagRefEn = 1 */
 		DramConfigHi |= 1 << 16;	/* PowerDownMode = 1 */
@@ -5118,7 +5118,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	}
 
 	/* Check for Quadrank DIMM presence */
-	if (pDCTstat->dimm_qr_present != 0) {
+	if (p_dct_stat->dimm_qr_present != 0) {
 		byte = mctGet_NVbits(NV_4_RANK_TYPE);
 		if (byte == 2)
 			DramConfigHi |= 1 << 17;	/* S4 (4-Rank SO-DIMMs) */
@@ -5132,7 +5132,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 		val = 0x0f; /* recommended setting (default) */
 	DramConfigHi |= val << 24;
 
-	if (pDCTstat->logical_cpuid & (AMD_DR_Dx | AMD_DR_Cx | AMD_DR_Bx | AMD_FAM15_ALL))
+	if (p_dct_stat->logical_cpuid & (AMD_DR_Dx | AMD_DR_Cx | AMD_DR_Bx | AMD_FAM15_ALL))
 		DramConfigHi |= 1 << DcqArbBypassEn;
 
 	/* Build MemClkDis Value from Dram Timing Lo and
@@ -5146,7 +5146,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	DramTimingLo = Get_NB32_DCT(dev, dct, 0x88);
 	if (mctGet_NVbits(NV_ALL_MEM_CLKS) == 0) {
 		/* Special Jedec SPD diagnostic bit - "enable all clocks" */
-		if (!(pDCTstat->status & (1 << SB_DIAG_CLKS))) {
+		if (!(p_dct_stat->status & (1 << SB_DIAG_CLKS))) {
 			const u8 *p;
 			p = Tab_ManualCLKDis;
 
@@ -5167,7 +5167,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 			dword = 0;
 			byte = 0xFF;
 			while (dword < MAX_CS_SUPPORTED) {
-				if (pDCTstat->cs_present & (1 << dword)) {
+				if (p_dct_stat->cs_present & (1 << dword)) {
 					/* re-enable clocks for the enabled CS */
 					val = p[dword];
 					byte &= ~val;
@@ -5179,7 +5179,7 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 		}
 	}
 
-	DramConfigMisc2 = mct_SetDramConfigMisc2(pDCTstat, dct, DramConfigMisc2, DramControl);
+	DramConfigMisc2 = mct_SetDramConfigMisc2(p_dct_stat, dct, DramConfigMisc2, DramControl);
 
 	printk(BIOS_DEBUG, "AutoConfig_D: DramControl:     %08x\n", DramControl);
 	printk(BIOS_DEBUG, "AutoConfig_D: DramTimingLo:    %08x\n", DramTimingLo);
@@ -5194,31 +5194,31 @@ static u8 AutoConfig_D(struct MCTStatStruc *pMCTstat,
 	Set_NB32_DCT(dev, dct, 0xa0, DramConfigMisc);
 	Set_NB32_DCT(dev, dct, 0xa8, DramConfigMisc2);
 	Set_NB32_DCT(dev, dct, 0x90, DramConfigLo);
-	ProgDramMRSReg_D(pMCTstat, pDCTstat, dct);
+	ProgDramMRSReg_D(p_mct_stat, p_dct_stat, dct);
 
 	if (is_fam15h())
-		InitDDRPhy(pMCTstat, pDCTstat, dct);
+		InitDDRPhy(p_mct_stat, p_dct_stat, dct);
 
 	/* Write the DRAM Configuration High register, including memory frequency change */
 	dword = Get_NB32_DCT(dev, dct, 0x94);
 	DramConfigHi |= dword;
-	mct_SetDramConfigHi_D(pMCTstat, pDCTstat, dct, DramConfigHi);
-	mct_EarlyArbEn_D(pMCTstat, pDCTstat, dct);
+	mct_SetDramConfigHi_D(p_mct_stat, p_dct_stat, dct, DramConfigHi);
+	mct_EarlyArbEn_D(p_mct_stat, p_dct_stat, dct);
 	mctHookAfterAutoCfg();
 
-	/* dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->node_id, 2)); */
+	/* dump_pci_device(PCI_DEV(0, 0x18+p_dct_stat->node_id, 2)); */
 
-	printk(BIOS_DEBUG, "AutoConfig: status %x\n", pDCTstat->status);
-	printk(BIOS_DEBUG, "AutoConfig: err_status %x\n", pDCTstat->err_status);
-	printk(BIOS_DEBUG, "AutoConfig: err_code %x\n", pDCTstat->err_code);
+	printk(BIOS_DEBUG, "AutoConfig: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "AutoConfig: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "AutoConfig: err_code %x\n", p_dct_stat->err_code);
 	printk(BIOS_DEBUG, "AutoConfig: Done\n\n");
 
 AutoConfig_exit:
-	return pDCTstat->err_code;
+	return p_dct_stat->err_code;
 }
 
-static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void SPDSetBanks_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	/* Set bank addressing, program Mask values and build a chip-select
 	 * population map. This routine programs PCI 0:24N:2x80 config register
@@ -5234,23 +5234,23 @@ static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
 	u16 word;
 	u32 dword;
 
-	dev = pDCTstat->dev_dct;
+	dev = p_dct_stat->dev_dct;
 
 	BankAddrReg = 0;
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel+=2) {
 		byte = ChipSel;
-		if ((pDCTstat->status & (1 << SB_64_MUXED_MODE)) && ChipSel >=4)
+		if ((p_dct_stat->status & (1 << SB_64_MUXED_MODE)) && ChipSel >=4)
 			byte -= 3;
 
-		if (pDCTstat->dimm_valid & (1 << byte)) {
-			byte = pDCTstat->spd_data.spd_bytes[ChipSel + dct][SPD_Addressing];
+		if (p_dct_stat->dimm_valid & (1 << byte)) {
+			byte = p_dct_stat->spd_data.spd_bytes[ChipSel + dct][SPD_Addressing];
 			Rows = (byte >> 3) & 0x7; /* Rows:0b = 12-bit,... */
 			Cols = byte & 0x7; /* Cols:0b = 9-bit,... */
 
-			byte = pDCTstat->spd_data.spd_bytes[ChipSel + dct][SPD_Density];
+			byte = p_dct_stat->spd_data.spd_bytes[ChipSel + dct][SPD_Density];
 			Banks = (byte >> 4) & 7; /* Banks:0b = 3-bit,... */
 
-			byte = pDCTstat->spd_data.spd_bytes[ChipSel + dct][SPD_Organization];
+			byte = p_dct_stat->spd_data.spd_bytes[ChipSel + dct][SPD_Organization];
 			Ranks = ((byte >> 3) & 7) + 1;
 
 			/* Configure Bank encoding
@@ -5285,60 +5285,60 @@ static void SPDSetBanks_D(struct MCTStatStruc *pMCTstat,
 			byte += 21;			/* row:12+col:9 */
 			byte -= 2;			/* 3 banks - 5 */
 
-			if (pDCTstat->status & (1 << SB_128_BIT_MODE))
+			if (p_dct_stat->status & (1 << SB_128_BIT_MODE))
 				byte++;		/* double mask size if in 128-bit mode*/
 
 			csMask |= 1 << byte;
 			csMask--;
 
 			/*set ChipSelect population indicator even bits*/
-			pDCTstat->cs_present |= (1 << ChipSel);
+			p_dct_stat->cs_present |= (1 << ChipSel);
 			if (Ranks >= 2)
 				/*set ChipSelect population indicator odd bits*/
-				pDCTstat->cs_present |= 1 << (ChipSel + 1);
+				p_dct_stat->cs_present |= 1 << (ChipSel + 1);
 
 			reg = 0x60+(ChipSel << 1);	/*Dram CS Mask Register */
 			val = csMask;
 			val &= 0x1FF83FE0;	/* Mask out reserved bits.*/
 			Set_NB32_DCT(dev, dct, reg, val);
 		} else {
-			if (pDCTstat->dimm_spd_checksum_err & (1 << ChipSel))
-				pDCTstat->cs_test_fail |= (1 << ChipSel);
+			if (p_dct_stat->dimm_spd_checksum_err & (1 << ChipSel))
+				p_dct_stat->cs_test_fail |= (1 << ChipSel);
 		}	/* if dimm_valid*/
 	}	/* while ChipSel*/
 
-	SetCSTriState(pMCTstat, pDCTstat, dct);
-	SetCKETriState(pMCTstat, pDCTstat, dct);
-	SetODTTriState(pMCTstat, pDCTstat, dct);
+	SetCSTriState(p_mct_stat, p_dct_stat, dct);
+	SetCKETriState(p_mct_stat, p_dct_stat, dct);
+	SetODTTriState(p_mct_stat, p_dct_stat, dct);
 
-	if (pDCTstat->status & (1 << SB_128_BIT_MODE)) {
-		SetCSTriState(pMCTstat, pDCTstat, 1); /* force dct1) */
-		SetCKETriState(pMCTstat, pDCTstat, 1); /* force dct1) */
-		SetODTTriState(pMCTstat, pDCTstat, 1); /* force dct1) */
+	if (p_dct_stat->status & (1 << SB_128_BIT_MODE)) {
+		SetCSTriState(p_mct_stat, p_dct_stat, 1); /* force dct1) */
+		SetCKETriState(p_mct_stat, p_dct_stat, 1); /* force dct1) */
+		SetODTTriState(p_mct_stat, p_dct_stat, 1); /* force dct1) */
 	}
 
-	word = pDCTstat->cs_present;
+	word = p_dct_stat->cs_present;
 	mctGetCS_ExcludeMap();		/* mask out specified chip-selects */
-	word ^= pDCTstat->cs_present;
-	pDCTstat->cs_test_fail |= word;	/* enable ODT to disabled DIMMs */
-	if (!pDCTstat->cs_present)
-		pDCTstat->err_code = SC_STOP_ERR;
+	word ^= p_dct_stat->cs_present;
+	p_dct_stat->cs_test_fail |= word;	/* enable ODT to disabled DIMMs */
+	if (!p_dct_stat->cs_present)
+		p_dct_stat->err_code = SC_STOP_ERR;
 
 	reg = 0x80;		/* Bank Addressing Register */
 	Set_NB32_DCT(dev, dct, reg, BankAddrReg);
 
-	pDCTstat->CSPresent_DCT[dct] = pDCTstat->cs_present;
-	/* dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->node_id, 2)); */
+	p_dct_stat->CSPresent_DCT[dct] = p_dct_stat->cs_present;
+	/* dump_pci_device(PCI_DEV(0, 0x18+p_dct_stat->node_id, 2)); */
 
-	printk(BIOS_DEBUG, "SPDSetBanks: CSPresent %x\n", pDCTstat->CSPresent_DCT[dct]);
-	printk(BIOS_DEBUG, "SPDSetBanks: status %x\n", pDCTstat->status);
-	printk(BIOS_DEBUG, "SPDSetBanks: err_status %x\n", pDCTstat->err_status);
-	printk(BIOS_DEBUG, "SPDSetBanks: err_code %x\n", pDCTstat->err_code);
+	printk(BIOS_DEBUG, "SPDSetBanks: cs_present %x\n", p_dct_stat->CSPresent_DCT[dct]);
+	printk(BIOS_DEBUG, "SPDSetBanks: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "SPDSetBanks: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "SPDSetBanks: err_code %x\n", p_dct_stat->err_code);
 	printk(BIOS_DEBUG, "SPDSetBanks: Done\n\n");
 }
 
-static void SPDCalcWidth_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+static void SPDCalcWidth_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	/* Per SPDs, check the symmetry of DIMM pairs (DIMM on Channel A
 	 *  matching with DIMM on Channel B), the overall DIMM population,
@@ -5350,39 +5350,39 @@ static void SPDCalcWidth_D(struct MCTStatStruc *pMCTstat,
 	/* Check Symmetry of Channel A and Channel B DIMMs
 	  (must be matched for 128-bit mode).*/
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i += 2) {
-		if ((pDCTstat->dimm_valid & (1 << i)) && (pDCTstat->dimm_valid & (1 << (i + 1)))) {
-			byte = pDCTstat->spd_data.spd_bytes[i][SPD_Addressing] & 0x7;
-			byte1 = pDCTstat->spd_data.spd_bytes[i + 1][SPD_Addressing] & 0x7;
+		if ((p_dct_stat->dimm_valid & (1 << i)) && (p_dct_stat->dimm_valid & (1 << (i + 1)))) {
+			byte = p_dct_stat->spd_data.spd_bytes[i][SPD_Addressing] & 0x7;
+			byte1 = p_dct_stat->spd_data.spd_bytes[i + 1][SPD_Addressing] & 0x7;
 			if (byte != byte1) {
-				pDCTstat->err_status |= (1 << SB_DIMM_MISMATCH_O);
+				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
 			}
 
-			byte =	 pDCTstat->spd_data.spd_bytes[i][SPD_Density] & 0x0f;
-			byte1 =	 pDCTstat->spd_data.spd_bytes[i + 1][SPD_Density] & 0x0f;
+			byte =	 p_dct_stat->spd_data.spd_bytes[i][SPD_Density] & 0x0f;
+			byte1 =	 p_dct_stat->spd_data.spd_bytes[i + 1][SPD_Density] & 0x0f;
 			if (byte != byte1) {
-				pDCTstat->err_status |= (1 << SB_DIMM_MISMATCH_O);
+				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
 			}
 
-			byte = pDCTstat->spd_data.spd_bytes[i][SPD_Organization] & 0x7;
-			byte1 = pDCTstat->spd_data.spd_bytes[i + 1][SPD_Organization] & 0x7;
+			byte = p_dct_stat->spd_data.spd_bytes[i][SPD_Organization] & 0x7;
+			byte1 = p_dct_stat->spd_data.spd_bytes[i + 1][SPD_Organization] & 0x7;
 			if (byte != byte1) {
-				pDCTstat->err_status |= (1 << SB_DIMM_MISMATCH_O);
+				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
 			}
 
-			byte = (pDCTstat->spd_data.spd_bytes[i][SPD_Organization] >> 3) & 0x7;
-			byte1 = (pDCTstat->spd_data.spd_bytes[i + 1][SPD_Organization] >> 3) & 0x7;
+			byte = (p_dct_stat->spd_data.spd_bytes[i][SPD_Organization] >> 3) & 0x7;
+			byte1 = (p_dct_stat->spd_data.spd_bytes[i + 1][SPD_Organization] >> 3) & 0x7;
 			if (byte != byte1) {
-				pDCTstat->err_status |= (1 << SB_DIMM_MISMATCH_O);
+				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
 			}
 
-			byte = pDCTstat->spd_data.spd_bytes[i][SPD_DMBANKS] & 7;	 /* #ranks-1 */
-			byte1 = pDCTstat->spd_data.spd_bytes[i + 1][SPD_DMBANKS] & 7;	  /* #ranks-1 */
+			byte = p_dct_stat->spd_data.spd_bytes[i][SPD_DMBANKS] & 7;	 /* #ranks-1 */
+			byte1 = p_dct_stat->spd_data.spd_bytes[i + 1][SPD_DMBANKS] & 7;	  /* #ranks-1 */
 			if (byte != byte1) {
-				pDCTstat->err_status |= (1 << SB_DIMM_MISMATCH_O);
+				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
 			}
 
@@ -5391,8 +5391,8 @@ static void SPDCalcWidth_D(struct MCTStatStruc *pMCTstat,
 
 }
 
-static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void StitchMemory_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	/* Requires that Mask values for each bank be programmed first and that
 	 * the chip-select population indicator is correctly set.
@@ -5408,7 +5408,7 @@ static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
 	u32 reg;
 	u32 val;
 
-	dev = pDCTstat->dev_dct;
+	dev = p_dct_stat->dev_dct;
 
 	_DSpareEn = 0;
 
@@ -5416,26 +5416,26 @@ static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
 	if (mctGet_NVbits(NV_CS_SPARE_CTL) & 1) {
 		if (MCT_DIMM_SPARE_NO_WARM) {
 			/* Do no warm-reset DIMM spare */
-			if (pMCTstat->GStatus & 1 << GSB_EnDIMMSpareNW) {
-				word = pDCTstat->cs_present;
+			if (p_mct_stat->GStatus & 1 << GSB_EnDIMMSpareNW) {
+				word = p_dct_stat->cs_present;
 				val = bsf(word);
 				word &= ~(1 << val);
 				if (word)
 					/* Make sure at least two chip-selects are available */
 					_DSpareEn = 1;
 				else
-					pDCTstat->err_status |= 1 << SB_SPARE_DIS;
+					p_dct_stat->err_status |= 1 << SB_SPARE_DIS;
 			}
 		} else {
 			if (!mctGet_NVbits(NV_DQS_TRAIN_CTL)) { /*DQS Training 1 = enabled, 0 = disabled */
-				word = pDCTstat->cs_present;
+				word = p_dct_stat->cs_present;
 				val = bsf(word);
 				word &= ~(1 << val);
 				if (word)
 					/* Make sure at least two chip-selects are available */
 					_DSpareEn = 1;
 				else
-					pDCTstat->err_status |= 1 << SB_SPARE_DIS;
+					p_dct_stat->err_status |= 1 << SB_SPARE_DIS;
 			}
 		}
 	}
@@ -5444,7 +5444,7 @@ static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
 	for (p = 0; p < MAX_DIMMS_SUPPORTED; p++) {
 		BiggestBank = 0;
 		for (q = 0; q < MAX_CS_SUPPORTED; q++) { /* from DIMMS to CS */
-			if (pDCTstat->cs_present & (1 << q)) {  /* bank present? */
+			if (p_dct_stat->cs_present & (1 << q)) {  /* bank present? */
 				reg  = 0x40 + (q << 2);  /* Base[q] reg.*/
 				val = Get_NB32_DCT(dev, dct, reg);
 				if (!(val & 3)) {	/* (CS_ENABLE|SPARE == 1)bank is enabled already? */
@@ -5473,12 +5473,12 @@ static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
 				val |= 1 << CS_ENABLE;	/* Bank Enable */
 			}
 			if (((reg - 0x40) >> 2) & 1) {
-				if (!(pDCTstat->status & (1 << SB_REGISTERED))) {
+				if (!(p_dct_stat->status & (1 << SB_REGISTERED))) {
 					u16  dimValid;
-					dimValid = pDCTstat->dimm_valid;
+					dimValid = p_dct_stat->dimm_valid;
 					if (dct & 1)
 						dimValid <<= 1;
-					if ((dimValid & pDCTstat->MirrPresU_NumRegR) != 0) {
+					if ((dimValid & p_dct_stat->MirrPresU_NumRegR) != 0) {
 						val |= 1 << onDimmMirror;
 					}
 				}
@@ -5492,7 +5492,7 @@ static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
 		}
 
 		/* bank present but disabled?*/
-		if (pDCTstat->cs_test_fail & (1 << p)) {
+		if (p_dct_stat->cs_test_fail & (1 << p)) {
 			/* DRAM CS Base b Address Register offset */
 			reg = (p << 2) + 0x40;
 			val = 1 << TEST_FAIL;
@@ -5501,15 +5501,15 @@ static void StitchMemory_D(struct MCTStatStruc *pMCTstat,
 	}
 
 	if (nxtcsBase) {
-		pDCTstat->dct_sys_limit = nxtcsBase - 1;
-		mct_AfterStitchMemory(pMCTstat, pDCTstat, dct);
+		p_dct_stat->dct_sys_limit = nxtcsBase - 1;
+		mct_AfterStitchMemory(p_mct_stat, p_dct_stat, dct);
 	}
 
-	/* dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->node_id, 2)); */
+	/* dump_pci_device(PCI_DEV(0, 0x18+p_dct_stat->node_id, 2)); */
 
-	printk(BIOS_DEBUG, "StitchMemory: status %x\n", pDCTstat->status);
-	printk(BIOS_DEBUG, "StitchMemory: err_status %x\n", pDCTstat->err_status);
-	printk(BIOS_DEBUG, "StitchMemory: err_code %x\n", pDCTstat->err_code);
+	printk(BIOS_DEBUG, "StitchMemory: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "StitchMemory: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "StitchMemory: err_code %x\n", p_dct_stat->err_code);
 	printk(BIOS_DEBUG, "StitchMemory: Done\n\n");
 }
 
@@ -5518,15 +5518,15 @@ static u16 Get_Fk_D(u8 k)
 	return Table_F_k[k]; /* FIXME: k or k<<1 ? */
 }
 
-static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+static u8 DIMMPresence_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	/* Check DIMMs present, verify checksum, flag SDRAM type,
 	 * build population indicator bitmaps, and preload bus loading
 	 * of DIMMs into DCTStatStruc.
 	 * MAAload = number of devices on the "A" bus.
 	 * MABload = number of devices on the "B" bus.
-	 * MAAdimms = number of DIMMs on the "A" bus slots.
+	 * maa_dimms = number of DIMMs on the "A" bus slots.
 	 * MABdimms = number of DIMMs on the "B" bus slots.
 	 * DATAAload = number of ranks on the "A" bus slots.
 	 * DATABload = number of ranks on the "B" bus slots.
@@ -5541,7 +5541,7 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 	u8 crc_status;
 
 	/* preload data structure with addrs */
-	mctGet_DIMMAddr(pDCTstat, pDCTstat->node_id);
+	mctGet_DIMMAddr(p_dct_stat, p_dct_stat->node_id);
 
 	DimmSlots = MaxDimms = mctGet_NVbits(NV_MAX_DIMMS);
 
@@ -5549,129 +5549,129 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 
 	RegDIMMPresent = 0;
 	LRDIMMPresent = 0;
-	pDCTstat->dimm_qr_present = 0;
+	p_dct_stat->dimm_qr_present = 0;
 
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i++) {
 		if (i >= MaxDimms)
 			break;
 
-		if ((pDCTstat->dimm_qr_present & (1 << i)) || (i < DimmSlots)) {
+		if ((p_dct_stat->dimm_qr_present & (1 << i)) || (i < DimmSlots)) {
 			int status;
-			smbaddr = Get_DIMMAddress_D(pDCTstat, i);
+			smbaddr = Get_DIMMAddress_D(p_dct_stat, i);
 			status = mctRead_SPD(smbaddr, SPD_ByteUse);
 			if (status >= 0) {
 				/* Verify result */
 				status = mctRead_SPD(smbaddr, SPD_ByteUse);
 			}
 			if (status >= 0) { /* SPD access is ok */
-				pDCTstat->dimm_present |= 1 << i;
-				read_spd_bytes(pMCTstat, pDCTstat, i);
+				p_dct_stat->dimm_present |= 1 << i;
+				read_spd_bytes(p_mct_stat, p_dct_stat, i);
 #ifdef DEBUG_DIMM_SPD
-				dump_spd_bytes(pMCTstat, pDCTstat, i);
+				dump_spd_bytes(p_mct_stat, p_dct_stat, i);
 #endif
-				crc_status = crcCheck(pDCTstat, i);
+				crc_status = crcCheck(p_dct_stat, i);
 				if (!crc_status) {
 					/* Try again in case there was a transient glitch */
-					read_spd_bytes(pMCTstat, pDCTstat, i);
-					crc_status = crcCheck(pDCTstat, i);
+					read_spd_bytes(p_mct_stat, p_dct_stat, i);
+					crc_status = crcCheck(p_dct_stat, i);
 				}
 				if ((crc_status) || (SPDCtrl == 2)) { /* CRC is OK */
-					byte = pDCTstat->spd_data.spd_bytes[i][SPD_TYPE];
+					byte = p_dct_stat->spd_data.spd_bytes[i][SPD_TYPE];
 					if (byte == JED_DDR3SDRAM) {
 						/*Dimm is 'Present'*/
-						pDCTstat->dimm_valid |= 1 << i;
+						p_dct_stat->dimm_valid |= 1 << i;
 					}
 				} else {
 					printk(BIOS_WARNING, "Node %d DIMM %d: SPD checksum invalid\n",
-							pDCTstat->node_id, i);
-					pDCTstat->dimm_spd_checksum_err = 1 << i;
+							p_dct_stat->node_id, i);
+					p_dct_stat->dimm_spd_checksum_err = 1 << i;
 					if (SPDCtrl == 0) {
-						pDCTstat->err_status |= 1 << SB_DIMM_CHKSUM;
-						pDCTstat->err_code = SC_STOP_ERR;
+						p_dct_stat->err_status |= 1 << SB_DIMM_CHKSUM;
+						p_dct_stat->err_code = SC_STOP_ERR;
 					} else {
 						/*if NV_SPDCHK_RESTRT is set to 1, ignore faulty SPD checksum*/
-						pDCTstat->err_status |= 1 << SB_DIMM_CHKSUM;
-						byte = pDCTstat->spd_data.spd_bytes[i][SPD_TYPE];
+						p_dct_stat->err_status |= 1 << SB_DIMM_CHKSUM;
+						byte = p_dct_stat->spd_data.spd_bytes[i][SPD_TYPE];
 						if (byte == JED_DDR3SDRAM)
-							pDCTstat->dimm_valid |= 1 << i;
+							p_dct_stat->dimm_valid |= 1 << i;
 					}
 				}
 
 				/* Zero DIMM SPD data cache if DIMM not present / valid */
-				if (!(pDCTstat->dimm_valid & (1 << i)))
-					memset(pDCTstat->spd_data.spd_bytes[i], 0, sizeof(pDCTstat->spd_data.spd_bytes[i]));
+				if (!(p_dct_stat->dimm_valid & (1 << i)))
+					memset(p_dct_stat->spd_data.spd_bytes[i], 0, sizeof(p_dct_stat->spd_data.spd_bytes[i]));
 
 				/* Get module information for SMBIOS */
-				if (pDCTstat->dimm_valid & (1 << i)) {
-					pDCTstat->DimmManufacturerID[i] = 0;
+				if (p_dct_stat->dimm_valid & (1 << i)) {
+					p_dct_stat->dimm_manufacturer_id[i] = 0;
 					for (k = 0; k < 8; k++)
-						pDCTstat->DimmManufacturerID[i] |= ((u64)pDCTstat->spd_data.spd_bytes[i][SPD_MANID_START + k]) << (k * 8);
+						p_dct_stat->dimm_manufacturer_id[i] |= ((u64)p_dct_stat->spd_data.spd_bytes[i][SPD_MANID_START + k]) << (k * 8);
 					for (k = 0; k < SPD_PARTN_LENGTH; k++)
-						pDCTstat->DimmPartNumber[i][k] = pDCTstat->spd_data.spd_bytes[i][SPD_PARTN_START + k];
-					pDCTstat->DimmPartNumber[i][SPD_PARTN_LENGTH] = 0;
-					pDCTstat->DimmRevisionNumber[i] = 0;
+						p_dct_stat->dimm_part_number[i][k] = p_dct_stat->spd_data.spd_bytes[i][SPD_PARTN_START + k];
+					p_dct_stat->dimm_part_number[i][SPD_PARTN_LENGTH] = 0;
+					p_dct_stat->dimm_revision_number[i] = 0;
 					for (k = 0; k < 2; k++)
-						pDCTstat->DimmRevisionNumber[i] |= ((u16)pDCTstat->spd_data.spd_bytes[i][SPD_REVNO_START + k]) << (k * 8);
-					pDCTstat->DimmSerialNumber[i] = 0;
+						p_dct_stat->dimm_revision_number[i] |= ((u16)p_dct_stat->spd_data.spd_bytes[i][SPD_REVNO_START + k]) << (k * 8);
+					p_dct_stat->dimm_serial_number[i] = 0;
 					for (k = 0; k < 4; k++)
-						pDCTstat->DimmSerialNumber[i] |= ((u32)pDCTstat->spd_data.spd_bytes[i][SPD_SERIAL_START + k]) << (k * 8);
-					pDCTstat->DimmRows[i] = (pDCTstat->spd_data.spd_bytes[i][SPD_Addressing] & 0x38) >> 3;
-					pDCTstat->DimmCols[i] = pDCTstat->spd_data.spd_bytes[i][SPD_Addressing] & 0x7;
-					pDCTstat->DimmRanks[i] = ((pDCTstat->spd_data.spd_bytes[i][SPD_Organization] & 0x38) >> 3) + 1;
-					pDCTstat->DimmBanks[i] = 1ULL << (((pDCTstat->spd_data.spd_bytes[i][SPD_Density] & 0x70) >> 4) + 3);
-					pDCTstat->DimmWidth[i] = 1ULL << ((pDCTstat->spd_data.spd_bytes[i][SPD_BusWidth] & 0x7) + 3);
-					pDCTstat->DimmChipSize[i] = 1ULL << ((pDCTstat->spd_data.spd_bytes[i][SPD_Density] & 0xf) + 28);
-					pDCTstat->DimmChipWidth[i] = 1ULL << ((pDCTstat->spd_data.spd_bytes[i][SPD_Organization] & 0x7) + 2);
+						p_dct_stat->dimm_serial_number[i] |= ((u32)p_dct_stat->spd_data.spd_bytes[i][SPD_SERIAL_START + k]) << (k * 8);
+					p_dct_stat->dimm_rows[i] = (p_dct_stat->spd_data.spd_bytes[i][SPD_Addressing] & 0x38) >> 3;
+					p_dct_stat->dimm_cols[i] = p_dct_stat->spd_data.spd_bytes[i][SPD_Addressing] & 0x7;
+					p_dct_stat->dimm_ranks[i] = ((p_dct_stat->spd_data.spd_bytes[i][SPD_Organization] & 0x38) >> 3) + 1;
+					p_dct_stat->dimm_banks[i] = 1ULL << (((p_dct_stat->spd_data.spd_bytes[i][SPD_Density] & 0x70) >> 4) + 3);
+					p_dct_stat->dimm_width[i] = 1ULL << ((p_dct_stat->spd_data.spd_bytes[i][SPD_BusWidth] & 0x7) + 3);
+					p_dct_stat->dimm_chip_size[i] = 1ULL << ((p_dct_stat->spd_data.spd_bytes[i][SPD_Density] & 0xf) + 28);
+					p_dct_stat->dimm_chip_width[i] = 1ULL << ((p_dct_stat->spd_data.spd_bytes[i][SPD_Organization] & 0x7) + 2);
 				}
 				/* Check supported voltage(s) */
-				pDCTstat->DimmSupportedVoltages[i] = pDCTstat->spd_data.spd_bytes[i][SPD_Voltage] & 0x7;
-				pDCTstat->DimmSupportedVoltages[i] ^= 0x1;	/* Invert LSB to convert from SPD format to internal bitmap format */
+				p_dct_stat->dimm_supported_voltages[i] = p_dct_stat->spd_data.spd_bytes[i][SPD_Voltage] & 0x7;
+				p_dct_stat->dimm_supported_voltages[i] ^= 0x1;	/* Invert LSB to convert from SPD format to internal bitmap format */
 				/* Check module type */
-				byte = pDCTstat->spd_data.spd_bytes[i][SPD_DIMMTYPE] & 0x7;
+				byte = p_dct_stat->spd_data.spd_bytes[i][SPD_DIMMTYPE] & 0x7;
 				if (byte == JED_RDIMM || byte == JED_MiniRDIMM) {
 					RegDIMMPresent |= 1 << i;
-					pDCTstat->DimmRegistered[i] = 1;
+					p_dct_stat->dimm_registered[i] = 1;
 				} else {
-					pDCTstat->DimmRegistered[i] = 0;
+					p_dct_stat->dimm_registered[i] = 0;
 				}
 				if (byte == JED_LRDIMM) {
 					LRDIMMPresent |= 1 << i;
-					pDCTstat->DimmLoadReduced[i] = 1;
+					p_dct_stat->dimm_load_reduced[i] = 1;
 				} else {
-					pDCTstat->DimmLoadReduced[i] = 0;
+					p_dct_stat->dimm_load_reduced[i] = 0;
 				}
 				/* Check ECC capable */
-				byte = pDCTstat->spd_data.spd_bytes[i][SPD_BusWidth];
+				byte = p_dct_stat->spd_data.spd_bytes[i][SPD_BusWidth];
 				if (byte & JED_ECC) {
 					/* DIMM is ECC capable */
-					pDCTstat->dimm_ecc_present |= 1 << i;
+					p_dct_stat->dimm_ecc_present |= 1 << i;
 				}
 				/* Check if x4 device */
-				devwidth = pDCTstat->spd_data.spd_bytes[i][SPD_Organization] & 0x7; /* 0:x4,1:x8,2:x16 */
+				devwidth = p_dct_stat->spd_data.spd_bytes[i][SPD_Organization] & 0x7; /* 0:x4,1:x8,2:x16 */
 				if (devwidth == 0) {
 					/* DIMM is made with x4 or x16 drams */
-					pDCTstat->dimm_x4_present |= 1 << i;
+					p_dct_stat->dimm_x4_present |= 1 << i;
 				} else if (devwidth == 1) {
-					pDCTstat->dimm_x8_present |= 1 << i;
+					p_dct_stat->dimm_x8_present |= 1 << i;
 				} else if (devwidth == 2) {
-					pDCTstat->dimm_x16_present |= 1 << i;
+					p_dct_stat->dimm_x16_present |= 1 << i;
 				}
 
-				byte = (pDCTstat->spd_data.spd_bytes[i][SPD_Organization] >> 3);
+				byte = (p_dct_stat->spd_data.spd_bytes[i][SPD_Organization] >> 3);
 				byte &= 7;
 				if (byte == 3) { /* 4ranks */
 					/* if any DIMMs are QR, we have to make two passes through DIMMs*/
-					if (pDCTstat->dimm_qr_present == 0) {
+					if (p_dct_stat->dimm_qr_present == 0) {
 						MaxDimms <<= 1;
 					}
 					if (i < DimmSlots) {
-						pDCTstat->dimm_qr_present |= (1 << i) | (1 << (i + 4));
+						p_dct_stat->dimm_qr_present |= (1 << i) | (1 << (i + 4));
 					} else {
-						pDCTstat->ma_dimms[i & 1] --;
+						p_dct_stat->ma_dimms[i & 1] --;
 					}
 					byte = 1;	/* upper two ranks of QR DIMM will be counted on another DIMM number iteration*/
 				} else if (byte == 1) { /* 2ranks */
-					pDCTstat->dimm_dr_present |= 1 << i;
+					p_dct_stat->dimm_dr_present |= 1 << i;
 				}
 				bytex = devwidth;
 				if (devwidth == 0)
@@ -5686,250 +5686,250 @@ static u8 DIMMPresence_D(struct MCTStatStruc *pMCTstat,
 					bytex <<= 1;	/*double Addr bus load value for dual rank DIMMs*/
 
 				j = i & (1 << 0);
-				pDCTstat->data_load[j] += byte;	/*number of ranks on DATA bus*/
-				pDCTstat->ma_load[j] += bytex;	/*number of devices on CMD/ADDR bus*/
-				pDCTstat->ma_dimms[j]++;		/*number of DIMMs on A bus */
+				p_dct_stat->data_load[j] += byte;	/*number of ranks on DATA bus*/
+				p_dct_stat->ma_load[j] += bytex;	/*number of devices on CMD/ADDR bus*/
+				p_dct_stat->ma_dimms[j]++;		/*number of DIMMs on A bus */
 
 				/* check address mirror support for unbuffered dimm */
 				/* check number of registers on a dimm for registered dimm */
-				byte = pDCTstat->spd_data.spd_bytes[i][SPD_AddressMirror];
+				byte = p_dct_stat->spd_data.spd_bytes[i][SPD_AddressMirror];
 				if (RegDIMMPresent & (1 << i)) {
 					if ((byte & 3) > 1)
-						pDCTstat->MirrPresU_NumRegR |= 1 << i;
+						p_dct_stat->MirrPresU_NumRegR |= 1 << i;
 				} else {
 					if ((byte & 1) == 1)
-						pDCTstat->MirrPresU_NumRegR |= 1 << i;
+						p_dct_stat->MirrPresU_NumRegR |= 1 << i;
 				}
 				/* Get byte62: Reference Raw Card information. We dont need it now. */
-				/* byte = pDCTstat->spd_data.spd_bytes[i][SPD_RefRawCard]; */
+				/* byte = p_dct_stat->spd_data.spd_bytes[i][SPD_RefRawCard]; */
 				/* Get Byte65/66 for register manufacture ID code */
-				if ((0x97 == pDCTstat->spd_data.spd_bytes[i][SPD_RegManufactureID_H]) &&
-				    (0x80 == pDCTstat->spd_data.spd_bytes[i][SPD_RegManufactureID_L])) {
-					if (0x16 == pDCTstat->spd_data.spd_bytes[i][SPD_RegManRevID])
-						pDCTstat->RegMan2Present |= 1 << i;
+				if ((0x97 == p_dct_stat->spd_data.spd_bytes[i][SPD_RegManufactureID_H]) &&
+				    (0x80 == p_dct_stat->spd_data.spd_bytes[i][SPD_RegManufactureID_L])) {
+					if (0x16 == p_dct_stat->spd_data.spd_bytes[i][SPD_RegManRevID])
+						p_dct_stat->reg_man_2_present |= 1 << i;
 					else
-						pDCTstat->RegMan1Present |= 1 << i;
+						p_dct_stat->reg_man_1_present |= 1 << i;
 				}
 				/* Get control word value for RC3 */
-				byte = pDCTstat->spd_data.spd_bytes[i][70];
-				pDCTstat->CtrlWrd3 |= ((byte >> 4) & 0xf) << (i << 2);	/* RC3 = SPD byte 70 [7:4] */
+				byte = p_dct_stat->spd_data.spd_bytes[i][70];
+				p_dct_stat->ctrl_wrd_3 |= ((byte >> 4) & 0xf) << (i << 2);	/* RC3 = SPD byte 70 [7:4] */
 				/* Get control word values for RC4 and RC5 */
-				byte = pDCTstat->spd_data.spd_bytes[i][71];
-				pDCTstat->CtrlWrd4 |= (byte & 0xf) << (i << 2);		/* RC4 = SPD byte 71 [3:0] */
-				pDCTstat->CtrlWrd5 |= ((byte >> 4) & 0xf) << (i << 2);	/* RC5 = SPD byte 71 [7:4] */
+				byte = p_dct_stat->spd_data.spd_bytes[i][71];
+				p_dct_stat->ctrl_wrd_4 |= (byte & 0xf) << (i << 2);		/* RC4 = SPD byte 71 [3:0] */
+				p_dct_stat->ctrl_wrd_5 |= ((byte >> 4) & 0xf) << (i << 2);	/* RC5 = SPD byte 71 [7:4] */
 			}
 		}
 	}
-	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_valid=%x\n", pDCTstat->dimm_valid);
-	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_present=%x\n", pDCTstat->dimm_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_valid=%x\n", p_dct_stat->dimm_valid);
+	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_present=%x\n", p_dct_stat->dimm_present);
 	printk(BIOS_DEBUG, "\t DIMMPresence: RegDIMMPresent=%x\n", RegDIMMPresent);
 	printk(BIOS_DEBUG, "\t DIMMPresence: LRDIMMPresent=%x\n", LRDIMMPresent);
-	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_ecc_present=%x\n", pDCTstat->dimm_ecc_present);
-	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_parity_present=%x\n", pDCTstat->dimm_parity_present);
-	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_x4_present=%x\n", pDCTstat->dimm_x4_present);
-	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_x8_present=%x\n", pDCTstat->dimm_x8_present);
-	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_x16_present=%x\n", pDCTstat->dimm_x16_present);
-	printk(BIOS_DEBUG, "\t DIMMPresence: DimmPlPresent=%x\n", pDCTstat->dimm_pl_present);
-	printk(BIOS_DEBUG, "\t DIMMPresence: DimmDRPresent=%x\n", pDCTstat->dimm_dr_present);
-	printk(BIOS_DEBUG, "\t DIMMPresence: DimmQRPresent=%x\n", pDCTstat->dimm_qr_present);
-	printk(BIOS_DEBUG, "\t DIMMPresence: data_load[0]=%x\n", pDCTstat->data_load[0]);
-	printk(BIOS_DEBUG, "\t DIMMPresence: ma_load[0]=%x\n", pDCTstat->ma_load[0]);
-	printk(BIOS_DEBUG, "\t DIMMPresence: ma_dimms[0]=%x\n", pDCTstat->ma_dimms[0]);
-	printk(BIOS_DEBUG, "\t DIMMPresence: data_load[1]=%x\n", pDCTstat->data_load[1]);
-	printk(BIOS_DEBUG, "\t DIMMPresence: ma_load[1]=%x\n", pDCTstat->ma_load[1]);
-	printk(BIOS_DEBUG, "\t DIMMPresence: ma_dimms[1]=%x\n", pDCTstat->ma_dimms[1]);
+	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_ecc_present=%x\n", p_dct_stat->dimm_ecc_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_parity_present=%x\n", p_dct_stat->dimm_parity_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_x4_present=%x\n", p_dct_stat->dimm_x4_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_x8_present=%x\n", p_dct_stat->dimm_x8_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_x16_present=%x\n", p_dct_stat->dimm_x16_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: DimmPlPresent=%x\n", p_dct_stat->dimm_pl_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: DimmDRPresent=%x\n", p_dct_stat->dimm_dr_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: DimmQRPresent=%x\n", p_dct_stat->dimm_qr_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: data_load[0]=%x\n", p_dct_stat->data_load[0]);
+	printk(BIOS_DEBUG, "\t DIMMPresence: ma_load[0]=%x\n", p_dct_stat->ma_load[0]);
+	printk(BIOS_DEBUG, "\t DIMMPresence: ma_dimms[0]=%x\n", p_dct_stat->ma_dimms[0]);
+	printk(BIOS_DEBUG, "\t DIMMPresence: data_load[1]=%x\n", p_dct_stat->data_load[1]);
+	printk(BIOS_DEBUG, "\t DIMMPresence: ma_load[1]=%x\n", p_dct_stat->ma_load[1]);
+	printk(BIOS_DEBUG, "\t DIMMPresence: ma_dimms[1]=%x\n", p_dct_stat->ma_dimms[1]);
 
-	if (pDCTstat->dimm_valid != 0) {	/* If any DIMMs are present...*/
+	if (p_dct_stat->dimm_valid != 0) {	/* If any DIMMs are present...*/
 		if (RegDIMMPresent != 0) {
-			if ((RegDIMMPresent ^ pDCTstat->dimm_valid) !=0) {
+			if ((RegDIMMPresent ^ p_dct_stat->dimm_valid) !=0) {
 				/* module type DIMM mismatch (reg'ed, unbuffered) */
-				pDCTstat->err_status |= 1 << SB_DIMM_MISMATCH_M;
-				pDCTstat->err_code = SC_STOP_ERR;
+				p_dct_stat->err_status |= 1 << SB_DIMM_MISMATCH_M;
+				p_dct_stat->err_code = SC_STOP_ERR;
 			} else{
 				/* all DIMMs are registered */
-				pDCTstat->status |= 1 << SB_REGISTERED;
+				p_dct_stat->status |= 1 << SB_REGISTERED;
 			}
 		}
 		if (LRDIMMPresent != 0) {
-			if ((LRDIMMPresent ^ pDCTstat->dimm_valid) !=0) {
+			if ((LRDIMMPresent ^ p_dct_stat->dimm_valid) !=0) {
 				/* module type DIMM mismatch (reg'ed, unbuffered) */
-				pDCTstat->err_status |= 1 << SB_DIMM_MISMATCH_M;
-				pDCTstat->err_code = SC_STOP_ERR;
+				p_dct_stat->err_status |= 1 << SB_DIMM_MISMATCH_M;
+				p_dct_stat->err_code = SC_STOP_ERR;
 			} else{
 				/* all DIMMs are registered */
-				pDCTstat->status |= 1 << SB_LoadReduced;
+				p_dct_stat->status |= 1 << SB_LoadReduced;
 			}
 		}
-		if (pDCTstat->dimm_ecc_present != 0) {
-			if ((pDCTstat->dimm_ecc_present ^ pDCTstat->dimm_valid) == 0) {
+		if (p_dct_stat->dimm_ecc_present != 0) {
+			if ((p_dct_stat->dimm_ecc_present ^ p_dct_stat->dimm_valid) == 0) {
 				/* all DIMMs are ECC capable */
-				pDCTstat->status |= 1 << SB_ECC_DIMMS;
+				p_dct_stat->status |= 1 << SB_ECC_DIMMS;
 			}
 		}
-		if (pDCTstat->dimm_parity_present != 0) {
-			if ((pDCTstat->dimm_parity_present ^ pDCTstat->dimm_valid) == 0) {
+		if (p_dct_stat->dimm_parity_present != 0) {
+			if ((p_dct_stat->dimm_parity_present ^ p_dct_stat->dimm_valid) == 0) {
 				/*all DIMMs are Parity capable */
-				pDCTstat->status |= 1 << SB_PAR_DIMMS;
+				p_dct_stat->status |= 1 << SB_PAR_DIMMS;
 			}
 		}
 	} else {
 		/* no DIMMs present or no DIMMs that qualified. */
-		pDCTstat->err_status |= 1 << SB_NO_DIMMS;
-		pDCTstat->err_code = SC_STOP_ERR;
+		p_dct_stat->err_status |= 1 << SB_NO_DIMMS;
+		p_dct_stat->err_code = SC_STOP_ERR;
 	}
 
-	printk(BIOS_DEBUG, "\t DIMMPresence: status %x\n", pDCTstat->status);
-	printk(BIOS_DEBUG, "\t DIMMPresence: err_status %x\n", pDCTstat->err_status);
-	printk(BIOS_DEBUG, "\t DIMMPresence: err_code %x\n", pDCTstat->err_code);
+	printk(BIOS_DEBUG, "\t DIMMPresence: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "\t DIMMPresence: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "\t DIMMPresence: err_code %x\n", p_dct_stat->err_code);
 	printk(BIOS_DEBUG, "\t DIMMPresence: Done\n\n");
 
 	mctHookAfterDIMMpre();
 
-	return pDCTstat->err_code;
+	return p_dct_stat->err_code;
 }
 
-static u8 Get_DIMMAddress_D(struct DCTStatStruc *pDCTstat, u8 i)
+static u8 Get_DIMMAddress_D(struct DCTStatStruc *p_dct_stat, u8 i)
 {
 	u8 *p;
 
-	p = pDCTstat->dimm_addr;
+	p = p_dct_stat->dimm_addr;
 	/* mct_BeforeGetDIMMAddress(); */
 	return p[i];
 }
 
-static void mct_preInitDCT(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+static void mct_preInitDCT(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u8 err_code;
 	u8 allow_config_restore;
 
 	/* Preconfigure DCT0 */
-	DCTPreInit_D(pMCTstat, pDCTstat, 0);
+	DCTPreInit_D(p_mct_stat, p_dct_stat, 0);
 
 	/* Configure DCT1 if unganged and enabled*/
-	if (!pDCTstat->GangedMode) {
-		if (pDCTstat->DIMMValidDCT[1] > 0) {
-			err_code = pDCTstat->err_code;		/* save DCT0 errors */
-			pDCTstat->err_code = 0;
-			DCTPreInit_D(pMCTstat, pDCTstat, 1);
-			if (pDCTstat->err_code == 2)		/* DCT1 is not Running */
-				pDCTstat->err_code = err_code;	/* Using DCT0 Error code to update pDCTstat.err_code */
+	if (!p_dct_stat->ganged_mode) {
+		if (p_dct_stat->dimm_valid_dct[1] > 0) {
+			err_code = p_dct_stat->err_code;		/* save DCT0 errors */
+			p_dct_stat->err_code = 0;
+			DCTPreInit_D(p_mct_stat, p_dct_stat, 1);
+			if (p_dct_stat->err_code == 2)		/* DCT1 is not Running */
+				p_dct_stat->err_code = err_code;	/* Using DCT0 Error code to update p_dct_stat.err_code */
 		}
 	}
 
 #if CONFIG(HAVE_ACPI_RESUME)
-	calculate_and_store_spd_hashes(pMCTstat, pDCTstat);
+	calculate_and_store_spd_hashes(p_mct_stat, p_dct_stat);
 
-	if (load_spd_hashes_from_nvram(pMCTstat, pDCTstat) < 0) {
-		pDCTstat->spd_data.nvram_spd_match = 0;
+	if (load_spd_hashes_from_nvram(p_mct_stat, p_dct_stat) < 0) {
+		p_dct_stat->spd_data.nvram_spd_match = 0;
 	} else {
-		compare_nvram_spd_hashes(pMCTstat, pDCTstat);
+		compare_nvram_spd_hashes(p_mct_stat, p_dct_stat);
 	}
 #else
-	pDCTstat->spd_data.nvram_spd_match = 0;
+	p_dct_stat->spd_data.nvram_spd_match = 0;
 #endif
 
 	/* Check to see if restoration of SPD data from NVRAM is allowed */
 	allow_config_restore = get_uint_option("allow_spd_nvram_cache_restore", 0);
 
 #if CONFIG(HAVE_ACPI_RESUME)
-	if (pMCTstat->nvram_checksum != calculate_nvram_mct_hash())
+	if (p_mct_stat->nvram_checksum != calculate_nvram_mct_hash())
 		allow_config_restore = 0;
 #else
 	allow_config_restore = 0;
 #endif
 
 	if (!allow_config_restore)
-		pDCTstat->spd_data.nvram_spd_match = 0;
+		p_dct_stat->spd_data.nvram_spd_match = 0;
 }
 
-static void mct_initDCT(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+static void mct_initDCT(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u32 val;
 	u8 err_code;
 
 	/* Config. DCT0 for Ganged or unganged mode */
-	DCTInit_D(pMCTstat, pDCTstat, 0);
-	DCTFinalInit_D(pMCTstat, pDCTstat, 0);
-	if (pDCTstat->err_code == SC_FATAL_ERR) {
+	DCTInit_D(p_mct_stat, p_dct_stat, 0);
+	DCTFinalInit_D(p_mct_stat, p_dct_stat, 0);
+	if (p_dct_stat->err_code == SC_FATAL_ERR) {
 		/* Do nothing goto exitDCTInit; any fatal errors? */
 	} else {
 		/* Configure DCT1 if unganged and enabled */
-		if (!pDCTstat->GangedMode) {
-			if (pDCTstat->DIMMValidDCT[1] > 0) {
-				err_code = pDCTstat->err_code;		/* save DCT0 errors */
-				pDCTstat->err_code = 0;
-				DCTInit_D(pMCTstat, pDCTstat, 1);
-				DCTFinalInit_D(pMCTstat, pDCTstat, 1);
-				if (pDCTstat->err_code == 2)		/* DCT1 is not Running */
-					pDCTstat->err_code = err_code;	/* Using DCT0 Error code to update pDCTstat.err_code */
+		if (!p_dct_stat->ganged_mode) {
+			if (p_dct_stat->dimm_valid_dct[1] > 0) {
+				err_code = p_dct_stat->err_code;		/* save DCT0 errors */
+				p_dct_stat->err_code = 0;
+				DCTInit_D(p_mct_stat, p_dct_stat, 1);
+				DCTFinalInit_D(p_mct_stat, p_dct_stat, 1);
+				if (p_dct_stat->err_code == 2)		/* DCT1 is not Running */
+					p_dct_stat->err_code = err_code;	/* Using DCT0 Error code to update p_dct_stat.err_code */
 			} else {
 				val = 1 << DIS_DRAM_INTERFACE;
-				Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x94, val);
+				Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x94, val);
 
-				val = Get_NB32_DCT(pDCTstat->dev_dct, 1, 0x90);
+				val = Get_NB32_DCT(p_dct_stat->dev_dct, 1, 0x90);
 				val &= ~(1 << ParEn);
-				Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x90, val);
+				Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x90, val);
 
 				/* To maximize power savings when DIS_DRAM_INTERFACE = 1b,
 				 * all of the MemClkDis bits should also be set.
 				 */
-				Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x88, 0xff000000);
+				Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x88, 0xff000000);
 			}
 		}
 	}
 }
 
-static void mct_DramInit(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void mct_DramInit(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
-	mct_BeforeDramInit_Prod_D(pMCTstat, pDCTstat, dct);
-	mct_DramInit_Sw_D(pMCTstat, pDCTstat, dct);
-	/* mct_DramInit_Hw_D(pMCTstat, pDCTstat, dct); */
+	mct_BeforeDramInit_Prod_D(p_mct_stat, p_dct_stat, dct);
+	mct_DramInit_Sw_D(p_mct_stat, p_dct_stat, dct);
+	/* mct_DramInit_Hw_D(p_mct_stat, p_dct_stat, dct); */
 }
 
-static u8 mct_setMode(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+static u8 mct_setMode(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u8 byte;
 	u8 bytex;
 	u32 val;
 	u32 reg;
 
-	byte = bytex = pDCTstat->dimm_valid;
+	byte = bytex = p_dct_stat->dimm_valid;
 	bytex &= 0x55;		/* CHA DIMM pop */
-	pDCTstat->DIMMValidDCT[0] = bytex;
+	p_dct_stat->dimm_valid_dct[0] = bytex;
 
 	byte &= 0xAA;		/* CHB DIMM popa */
 	byte >>= 1;
-	pDCTstat->DIMMValidDCT[1] = byte;
+	p_dct_stat->dimm_valid_dct[1] = byte;
 
 	if (byte != bytex) {
-		pDCTstat->err_status &= ~(1 << SB_DIMM_MISMATCH_O);
+		p_dct_stat->err_status &= ~(1 << SB_DIMM_MISMATCH_O);
 	} else {
 		byte = mctGet_NVbits(NV_Unganged);
 		if (byte)
-			pDCTstat->err_status |= (1 << SB_DIMM_MISMATCH_O); /* Set temp. to avoid setting of ganged mode */
+			p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O); /* Set temp. to avoid setting of ganged mode */
 
-		if ((!(pDCTstat->err_status & (1 << SB_DIMM_MISMATCH_O))) && (pDCTstat->logical_cpuid & AMD_FAM10_ALL)) {
+		if ((!(p_dct_stat->err_status & (1 << SB_DIMM_MISMATCH_O))) && (p_dct_stat->logical_cpuid & AMD_FAM10_ALL)) {
 			/* Ganged channel mode not supported on Family 15h or higher */
-			pDCTstat->GangedMode = 1;
+			p_dct_stat->ganged_mode = 1;
 			/* valid 128-bit mode population. */
-			pDCTstat->status |= 1 << SB_128_BIT_MODE;
+			p_dct_stat->status |= 1 << SB_128_BIT_MODE;
 			reg = 0x110;
-			val = Get_NB32(pDCTstat->dev_dct, reg);
+			val = get_nb32(p_dct_stat->dev_dct, reg);
 			val |= 1 << DctGangEn;
-			Set_NB32(pDCTstat->dev_dct, reg, val);
+			Set_NB32(p_dct_stat->dev_dct, reg, val);
 		}
 		if (byte)	/* NV_Unganged */
-			pDCTstat->err_status &= ~(1 << SB_DIMM_MISMATCH_O); /* Clear so that there is no DIMM mismatch error */
+			p_dct_stat->err_status &= ~(1 << SB_DIMM_MISMATCH_O); /* Clear so that there is no DIMM mismatch error */
 	}
 
-	return pDCTstat->err_code;
+	return p_dct_stat->err_code;
 }
 
-u32 Get_NB32(u32 dev, u32 reg)
+u32 get_nb32(u32 dev, u32 reg)
 {
 	return pci_read_config32(dev, reg);
 }
@@ -5945,7 +5945,7 @@ u32 Get_NB32_index(u32 dev, u32 index_reg, u32 index)
 	u32 dword;
 
 	Set_NB32(dev, index_reg, index);
-	dword = Get_NB32(dev, index_reg + 0x4);
+	dword = get_nb32(dev, index_reg + 0x4);
 
 	return dword;
 }
@@ -5963,9 +5963,9 @@ u32 Get_NB32_index_wait(u32 dev, u32 index_reg, u32 index)
 	index &= ~(1 << DCT_ACCESS_WRITE);
 	Set_NB32(dev, index_reg, index);
 	do {
-		dword = Get_NB32(dev, index_reg);
+		dword = get_nb32(dev, index_reg);
 	} while (!(dword & (1 << DCT_ACCESS_DONE)));
-	dword = Get_NB32(dev, index_reg + 0x4);
+	dword = get_nb32(dev, index_reg + 0x4);
 
 	return dword;
 }
@@ -5978,38 +5978,38 @@ void Set_NB32_index_wait(u32 dev, u32 index_reg, u32 index, u32 data)
 	index |= (1 << DCT_ACCESS_WRITE);
 	Set_NB32(dev, index_reg, index);
 	do {
-		dword = Get_NB32(dev, index_reg);
+		dword = get_nb32(dev, index_reg);
 	} while (!(dword & (1 << DCT_ACCESS_DONE)));
 
 }
 
-u8 mct_BeforePlatformSpec(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+u8 mct_BeforePlatformSpec(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
 	/* mct_checkForCxDxSupport_D */
-	if (pDCTstat->logical_cpuid & AMD_DR_GT_Bx) {
+	if (p_dct_stat->logical_cpuid & AMD_DR_GT_Bx) {
 		/* Family 10h Errata 322: Address and Command Fine Delay Values May Be Incorrect */
 		/* 1. Write 00000000h to F2x[1,0]9C_xD08E000 */
-		Set_NB32_index_wait_DCT(pDCTstat->dev_dct, dct, 0x98, 0x0D08E000, 0);
+		Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, dct, 0x98, 0x0D08E000, 0);
 		/* 2. If DRAM Configuration Register[MemClkFreq] (F2x[1,0]94[2:0]) is
 		   greater than or equal to 011b (DDR-800 and higher),
 		   then write 00000080h to F2x[1,0]9C_xD02E001,
 		   else write 00000090h to F2x[1,0]9C_xD02E001. */
-		if (pDCTstat->speed >= mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK)))
-			Set_NB32_index_wait_DCT(pDCTstat->dev_dct, dct, 0x98, 0x0D02E001, 0x80);
+		if (p_dct_stat->speed >= mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK)))
+			Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, dct, 0x98, 0x0D02E001, 0x80);
 		else
-			Set_NB32_index_wait_DCT(pDCTstat->dev_dct, dct, 0x98, 0x0D02E001, 0x90);
+			Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, dct, 0x98, 0x0D02E001, 0x90);
 	}
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 
-	return pDCTstat->err_code;
+	return p_dct_stat->err_code;
 }
 
-u8 mct_PlatformSpec(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+u8 mct_PlatformSpec(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	/* Get platform specific config/timing values from the interface layer
 	 * and program them into DCT.
@@ -6017,12 +6017,12 @@ u8 mct_PlatformSpec(struct MCTStatStruc *pMCTstat,
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 index_reg;
 	u8 i, i_start, i_end;
 
-	if (pDCTstat->GangedMode) {
-		SyncSetting(pDCTstat);
+	if (p_dct_stat->ganged_mode) {
+		SyncSetting(p_dct_stat);
 		/* mct_SetupSync_D */
 		i_start = 0;
 		i_end = 2;
@@ -6032,94 +6032,94 @@ u8 mct_PlatformSpec(struct MCTStatStruc *pMCTstat,
 	}
 	for (i = i_start; i < i_end; i++) {
 		index_reg = 0x98;
-		Set_NB32_index_wait_DCT(dev, i, index_reg, 0x00, pDCTstat->ch_odc_ctl[i]);	/* Channel A/B Output Driver Compensation Control */
-		Set_NB32_index_wait_DCT(dev, i, index_reg, 0x04, pDCTstat->ch_addr_tmg[i]);	/* Channel A/B Output Driver Compensation Control */
-		printk(BIOS_SPEW, "Programmed DCT %d timing/termination pattern %08x %08x\n", dct, pDCTstat->ch_addr_tmg[i], pDCTstat->ch_odc_ctl[i]);
+		Set_NB32_index_wait_DCT(dev, i, index_reg, 0x00, p_dct_stat->ch_odc_ctl[i]);	/* Channel A/B Output Driver Compensation Control */
+		Set_NB32_index_wait_DCT(dev, i, index_reg, 0x04, p_dct_stat->ch_addr_tmg[i]);	/* Channel A/B Output Driver Compensation Control */
+		printk(BIOS_SPEW, "Programmed DCT %d timing/termination pattern %08x %08x\n", dct, p_dct_stat->ch_addr_tmg[i], p_dct_stat->ch_odc_ctl[i]);
 	}
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 
-	return pDCTstat->err_code;
+	return p_dct_stat->err_code;
 }
 
-static void mct_SyncDCTsReady(struct DCTStatStruc *pDCTstat)
+static void mct_SyncDCTsReady(struct DCTStatStruc *p_dct_stat)
 {
 	u32 dev;
 	u32 val;
 
-	if (pDCTstat->NodePresent) {
-		dev = pDCTstat->dev_dct;
+	if (p_dct_stat->node_present) {
+		dev = p_dct_stat->dev_dct;
 
-		if ((pDCTstat->DIMMValidDCT[0]) || (pDCTstat->DIMMValidDCT[1])) {
+		if ((p_dct_stat->dimm_valid_dct[0]) || (p_dct_stat->dimm_valid_dct[1])) {
 			/* This Node has DRAM */
 			do {
-				val = Get_NB32(dev, 0x110);
+				val = get_nb32(dev, 0x110);
 			} while (!(val & (1 << DRAM_ENABLED)));
 		}
 	}	/* Node is present */
 }
 
-static void mct_AfterGetCLT(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void mct_AfterGetCLT(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
-	if (!pDCTstat->GangedMode) {
+	if (!p_dct_stat->ganged_mode) {
 		if (dct == 0) {
-			pDCTstat->dimm_valid = pDCTstat->DIMMValidDCT[dct];
-			if (pDCTstat->DIMMValidDCT[dct] == 0)
-				pDCTstat->err_code = SC_STOP_ERR;
+			p_dct_stat->dimm_valid = p_dct_stat->dimm_valid_dct[dct];
+			if (p_dct_stat->dimm_valid_dct[dct] == 0)
+				p_dct_stat->err_code = SC_STOP_ERR;
 		} else {
-			pDCTstat->cs_present = 0;
-			pDCTstat->cs_test_fail = 0;
-			pDCTstat->dimm_valid = pDCTstat->DIMMValidDCT[dct];
-			if (pDCTstat->DIMMValidDCT[dct] == 0)
-				pDCTstat->err_code = SC_STOP_ERR;
+			p_dct_stat->cs_present = 0;
+			p_dct_stat->cs_test_fail = 0;
+			p_dct_stat->dimm_valid = p_dct_stat->dimm_valid_dct[dct];
+			if (p_dct_stat->dimm_valid_dct[dct] == 0)
+				p_dct_stat->err_code = SC_STOP_ERR;
 		}
 	}
 }
 
-static u8 mct_SPDCalcWidth(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+static u8 mct_SPDCalcWidth(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 ret;
 	u32 val;
 
 	if (dct == 0) {
-		SPDCalcWidth_D(pMCTstat, pDCTstat);
-		ret = mct_setMode(pMCTstat, pDCTstat);
+		SPDCalcWidth_D(p_mct_stat, p_dct_stat);
+		ret = mct_setMode(p_mct_stat, p_dct_stat);
 	} else {
-		ret = pDCTstat->err_code;
+		ret = p_dct_stat->err_code;
 	}
 
-	if (pDCTstat->DIMMValidDCT[0] == 0) {
-		val = Get_NB32_DCT(pDCTstat->dev_dct, 0, 0x94);
+	if (p_dct_stat->dimm_valid_dct[0] == 0) {
+		val = Get_NB32_DCT(p_dct_stat->dev_dct, 0, 0x94);
 		val |= 1 << DIS_DRAM_INTERFACE;
-		Set_NB32_DCT(pDCTstat->dev_dct, 0, 0x94, val);
+		Set_NB32_DCT(p_dct_stat->dev_dct, 0, 0x94, val);
 
-		val = Get_NB32_DCT(pDCTstat->dev_dct, 0, 0x90);
+		val = Get_NB32_DCT(p_dct_stat->dev_dct, 0, 0x90);
 		val &= ~(1 << ParEn);
-		Set_NB32_DCT(pDCTstat->dev_dct, 0, 0x90, val);
+		Set_NB32_DCT(p_dct_stat->dev_dct, 0, 0x90, val);
 	}
-	if (pDCTstat->DIMMValidDCT[1] == 0) {
-		val = Get_NB32_DCT(pDCTstat->dev_dct, 1, 0x94);
+	if (p_dct_stat->dimm_valid_dct[1] == 0) {
+		val = Get_NB32_DCT(p_dct_stat->dev_dct, 1, 0x94);
 		val |= 1 << DIS_DRAM_INTERFACE;
-		Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x94, val);
+		Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x94, val);
 
-		val = Get_NB32_DCT(pDCTstat->dev_dct, 1, 0x90);
+		val = Get_NB32_DCT(p_dct_stat->dev_dct, 1, 0x90);
 		val &= ~(1 << ParEn);
-		Set_NB32_DCT(pDCTstat->dev_dct, 1, 0x90, val);
+		Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x90, val);
 	}
 
-	printk(BIOS_DEBUG, "SPDCalcWidth: status %x\n", pDCTstat->status);
-	printk(BIOS_DEBUG, "SPDCalcWidth: err_status %x\n", pDCTstat->err_status);
-	printk(BIOS_DEBUG, "SPDCalcWidth: err_code %x\n", pDCTstat->err_code);
+	printk(BIOS_DEBUG, "SPDCalcWidth: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "SPDCalcWidth: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "SPDCalcWidth: err_code %x\n", p_dct_stat->err_code);
 	printk(BIOS_DEBUG, "SPDCalcWidth: Done\n");
 	/* Disable dram interface before DRAM init */
 
 	return ret;
 }
 
-static void mct_AfterStitchMemory(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+static void mct_AfterStitchMemory(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 val;
 	u32 dword;
@@ -6129,34 +6129,34 @@ static void mct_AfterStitchMemory(struct MCTStatStruc *pMCTstat,
 	u32 DramHoleBase;
 
 	_MemHoleRemap = mctGet_NVbits(NV_MEM_HOLE);
-	DramHoleBase = mctGet_NVbits(NV_BottomIO);
+	DramHoleBase = mctGet_NVbits(NV_BOTTOM_IO);
 	DramHoleBase <<= 8;
 	/* Increase hole size so;[31:24]to[31:16]
 	 * it has granularity of 128MB shl eax,8
 	 * Set 'effective' bottom IOmov DramHoleBase,eax
 	 */
-	pMCTstat->HoleBase = (DramHoleBase & 0xFFFFF800) << 8;
+	p_mct_stat->HoleBase = (DramHoleBase & 0xFFFFF800) << 8;
 
-	/* In unganged mode, we must add DCT0 and DCT1 to DCTSysLimit */
-	if (!pDCTstat->GangedMode) {
-		dev = pDCTstat->dev_dct;
-		pDCTstat->NodeSysLimit += pDCTstat->dct_sys_limit;
+	/* In unganged mode, we must add DCT0 and DCT1 to dct_sys_limit */
+	if (!p_dct_stat->ganged_mode) {
+		dev = p_dct_stat->dev_dct;
+		p_dct_stat->node_sys_limit += p_dct_stat->dct_sys_limit;
 		/* if DCT0 and DCT1 both exist, set DctSelBaseAddr[47:27] to the top of DCT0 */
 		if (dct == 0) {
-			if (pDCTstat->DIMMValidDCT[1] > 0) {
-				dword = pDCTstat->dct_sys_limit + 1;
-				dword += pDCTstat->NodeSysBase;
+			if (p_dct_stat->dimm_valid_dct[1] > 0) {
+				dword = p_dct_stat->dct_sys_limit + 1;
+				dword += p_dct_stat->node_sys_base;
 				dword >>= 8; /* scale [39:8] to [47:27],and to F2x110[31:11] */
 				if ((dword >= DramHoleBase) && _MemHoleRemap) {
-					pMCTstat->HoleBase = (DramHoleBase & 0xFFFFF800) << 8;
-					val = pMCTstat->HoleBase;
+					p_mct_stat->HoleBase = (DramHoleBase & 0xFFFFF800) << 8;
+					val = p_mct_stat->HoleBase;
 					val >>= 16;
 					val = (((~val) & 0xFF) + 1);
 					val <<= 8;
 					dword += val;
 				}
 				reg = 0x110;
-				val = Get_NB32(dev, reg);
+				val = get_nb32(dev, reg);
 				val &= 0x7F;
 				val |= dword;
 				val |= 3;  /* Set F2x110[DctSelHiRngEn], F2x110[DctSelHi] */
@@ -6169,12 +6169,12 @@ static void mct_AfterStitchMemory(struct MCTStatStruc *pMCTstat,
 		} else {
 			/* Program the DctSelBaseAddr value to 0
 			   if DCT 0 is disabled */
-			if (pDCTstat->DIMMValidDCT[0] == 0) {
-				dword = pDCTstat->NodeSysBase;
+			if (p_dct_stat->dimm_valid_dct[0] == 0) {
+				dword = p_dct_stat->node_sys_base;
 				dword >>= 8;
 				if ((dword >= DramHoleBase) && _MemHoleRemap) {
-					pMCTstat->HoleBase = (DramHoleBase & 0xFFFFF800) << 8;
-					val = pMCTstat->HoleBase;
+					p_mct_stat->HoleBase = (DramHoleBase & 0xFFFFF800) << 8;
+					val = p_mct_stat->HoleBase;
 					val >>= 8;
 					val &= ~(0xFFFF);
 					val |= (((~val) & 0xFFFF) + 1);
@@ -6190,163 +6190,163 @@ static void mct_AfterStitchMemory(struct MCTStatStruc *pMCTstat,
 			}
 		}
 	} else {
-		pDCTstat->NodeSysLimit += pDCTstat->dct_sys_limit;
+		p_dct_stat->node_sys_limit += p_dct_stat->dct_sys_limit;
 	}
-	printk(BIOS_DEBUG, "AfterStitch pDCTstat->NodeSysBase = %x\n", pDCTstat->NodeSysBase);
-	printk(BIOS_DEBUG, "mct_AfterStitchMemory: pDCTstat->NodeSysLimit = %x\n", pDCTstat->NodeSysLimit);
+	printk(BIOS_DEBUG, "AfterStitch p_dct_stat->node_sys_base = %x\n", p_dct_stat->node_sys_base);
+	printk(BIOS_DEBUG, "mct_AfterStitchMemory: p_dct_stat->node_sys_limit = %x\n", p_dct_stat->node_sys_limit);
 }
 
-static u8 mct_DIMMPresence(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+static u8 mct_DIMMPresence(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 ret;
 
 	if (dct == 0)
-		ret = DIMMPresence_D(pMCTstat, pDCTstat);
+		ret = DIMMPresence_D(p_mct_stat, p_dct_stat);
 	else
-		ret = pDCTstat->err_code;
+		ret = p_dct_stat->err_code;
 
 	return ret;
 }
 
 /* mct_BeforeGetDIMMAddress inline in C */
 
-static void mct_OtherTiming(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA)
+static void mct_OtherTiming(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
 
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + Node;
-		if (pDCTstat->NodePresent) {
-			if (pDCTstat->DIMMValidDCT[0]) {
-				pDCTstat->dimm_valid = pDCTstat->DIMMValidDCT[0];
-				Set_OtherTiming(pMCTstat, pDCTstat, 0);
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + Node;
+		if (p_dct_stat->node_present) {
+			if (p_dct_stat->dimm_valid_dct[0]) {
+				p_dct_stat->dimm_valid = p_dct_stat->dimm_valid_dct[0];
+				Set_OtherTiming(p_mct_stat, p_dct_stat, 0);
 			}
-			if (pDCTstat->DIMMValidDCT[1] && !pDCTstat->GangedMode) {
-				pDCTstat->dimm_valid = pDCTstat->DIMMValidDCT[1];
-				Set_OtherTiming(pMCTstat, pDCTstat, 1);
+			if (p_dct_stat->dimm_valid_dct[1] && !p_dct_stat->ganged_mode) {
+				p_dct_stat->dimm_valid = p_dct_stat->dimm_valid_dct[1];
+				Set_OtherTiming(p_mct_stat, p_dct_stat, 1);
 			}
 		}	/* Node is present*/
 	}	/* while Node */
 }
 
-static void Set_OtherTiming(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void Set_OtherTiming(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 reg;
 	u32 val;
 	u32 dword;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
-	Get_DqsRcvEnGross_Diff(pDCTstat, dev, dct, 0x98);
-	Get_WrDatGross_Diff(pDCTstat, dct, dev, 0x98);
-	Get_Trdrd(pMCTstat, pDCTstat, dct);
-	Get_Twrwr(pMCTstat, pDCTstat, dct);
-	Get_Twrrd(pMCTstat, pDCTstat, dct);
-	Get_TrwtTO(pMCTstat, pDCTstat, dct);
-	Get_TrwtWB(pMCTstat, pDCTstat);
+	Get_DqsRcvEnGross_Diff(p_dct_stat, dev, dct, 0x98);
+	Get_WrDatGross_Diff(p_dct_stat, dct, dev, 0x98);
+	Get_Trdrd(p_mct_stat, p_dct_stat, dct);
+	Get_Twrwr(p_mct_stat, p_dct_stat, dct);
+	Get_Twrrd(p_mct_stat, p_dct_stat, dct);
+	Get_TrwtTO(p_mct_stat, p_dct_stat, dct);
+	Get_TrwtWB(p_mct_stat, p_dct_stat);
 
 	if (!is_fam15h()) {
 		reg = 0x8c;		/* Dram Timing Hi */
 		val = Get_NB32_DCT(dev, dct, reg);
 		val &= 0xffff0300;
-		dword = pDCTstat->trwt_to;
+		dword = p_dct_stat->trwt_to;
 		val |= dword << 4;
-		dword = pDCTstat->twrrd & 3;
+		dword = p_dct_stat->twrrd & 3;
 		val |= dword << 10;
-		dword = pDCTstat->twrwr & 3;
+		dword = p_dct_stat->twrwr & 3;
 		val |= dword << 12;
-		dword = (pDCTstat->trdrd - 0x3) & 3;
+		dword = (p_dct_stat->trdrd - 0x3) & 3;
 		val |= dword << 14;
-		dword = pDCTstat->TrwtWB;
+		dword = p_dct_stat->trwt_wb;
 		val |= dword;
 		Set_NB32_DCT(dev, dct, reg, val);
 
 		reg = 0x78;
 		val = Get_NB32_DCT(dev, dct, reg);
 		val &= 0xffffc0ff;
-		dword = pDCTstat->twrrd >> 2;
+		dword = p_dct_stat->twrrd >> 2;
 		val |= dword << 8;
-		dword = pDCTstat->twrwr >> 2;
+		dword = p_dct_stat->twrwr >> 2;
 		val |= dword << 10;
-		dword = (pDCTstat->trdrd - 0x3) >> 2;
+		dword = (p_dct_stat->trdrd - 0x3) >> 2;
 		val |= dword << 12;
 		Set_NB32_DCT(dev, dct, reg, val);
 	}
 }
 
-static void Get_Trdrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct)
+static void Get_Trdrd(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	int8_t Trdrd;
 
-	Trdrd = ((int8_t)(pDCTstat->DqsRcvEnGrossMax - pDCTstat->DqsRcvEnGrossMin) >> 1) + 1;
+	Trdrd = ((int8_t)(p_dct_stat->dqs_rcv_en_gross_max - p_dct_stat->dqs_rcv_en_gross_min) >> 1) + 1;
 	if (Trdrd > 8)
 		Trdrd = 8;
 	if (Trdrd < 3)
 		Trdrd = 3;
-	pDCTstat->trdrd = Trdrd;
+	p_dct_stat->trdrd = Trdrd;
 }
 
-static void Get_Twrwr(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct)
+static void Get_Twrwr(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	int8_t Twrwr = 0;
 
-	Twrwr = ((int8_t)(pDCTstat->WrDatGrossMax - pDCTstat->WrDatGrossMin) >> 1) + 2;
+	Twrwr = ((int8_t)(p_dct_stat->wr_dat_gross_max - p_dct_stat->wr_dat_gross_min) >> 1) + 2;
 
 	if (Twrwr < 2)
 		Twrwr = 2;
 	else if (Twrwr > 9)
 		Twrwr = 9;
 
-	pDCTstat->twrwr = Twrwr;
+	p_dct_stat->twrwr = Twrwr;
 }
 
-static void Get_Twrrd(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct)
+static void Get_Twrrd(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 LDplus1;
 	int8_t Twrrd;
 
-	LDplus1 = Get_Latency_Diff(pMCTstat, pDCTstat, dct);
+	LDplus1 = Get_Latency_Diff(p_mct_stat, p_dct_stat, dct);
 
-	Twrrd = ((int8_t)(pDCTstat->WrDatGrossMax - pDCTstat->DqsRcvEnGrossMin) >> 1) + 4 - LDplus1;
+	Twrrd = ((int8_t)(p_dct_stat->wr_dat_gross_max - p_dct_stat->dqs_rcv_en_gross_min) >> 1) + 4 - LDplus1;
 
 	if (Twrrd < 2)
 		Twrrd = 2;
 	else if (Twrrd > 10)
 		Twrrd = 10;
-	pDCTstat->twrrd = Twrrd;
+	p_dct_stat->twrrd = Twrrd;
 }
 
-static void Get_TrwtTO(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct)
+static void Get_TrwtTO(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 LDplus1;
 	int8_t TrwtTO;
 
-	LDplus1 = Get_Latency_Diff(pMCTstat, pDCTstat, dct);
+	LDplus1 = Get_Latency_Diff(p_mct_stat, p_dct_stat, dct);
 
-	TrwtTO = ((int8_t)(pDCTstat->DqsRcvEnGrossMax - pDCTstat->WrDatGrossMin) >> 1) + LDplus1;
+	TrwtTO = ((int8_t)(p_dct_stat->dqs_rcv_en_gross_max - p_dct_stat->wr_dat_gross_min) >> 1) + LDplus1;
 
-	pDCTstat->trwt_to = TrwtTO;
+	p_dct_stat->trwt_to = TrwtTO;
 }
 
-static void Get_TrwtWB(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat)
+static void Get_TrwtWB(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat)
 {
-	/* TrwtWB ensures read-to-write data-bus turnaround.
+	/* trwt_wb ensures read-to-write data-bus turnaround.
 	   This value should be one more than the programmed TrwtTO.*/
-	pDCTstat->TrwtWB = pDCTstat->trwt_to;
+	p_dct_stat->trwt_wb = p_dct_stat->trwt_to;
 }
 
-static u8 Get_Latency_Diff(struct MCTStatStruc *pMCTstat,
-			   struct DCTStatStruc *pDCTstat, u8 dct)
+static u8 Get_Latency_Diff(struct MCTStatStruc *p_mct_stat,
+			   struct DCTStatStruc *p_dct_stat, u8 dct)
 {
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 val1, val2;
 
 	val1 = Get_NB32_DCT(dev, dct, 0x88) & 0xF;
@@ -6355,7 +6355,7 @@ static u8 Get_Latency_Diff(struct MCTStatStruc *pMCTstat,
 	return val1 - val2;
 }
 
-static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *pDCTstat,
+static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *p_dct_stat,
 					u32 dev, u8 dct, u32 index_reg)
 {
 	u8 Smallest, Largest;
@@ -6366,12 +6366,12 @@ static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *pDCTstat,
 	   DqsRcvEnGrossDelay of any other DIMM is equal to the Critical
 	   Gross Delay Difference (CGDD) */
 	/* DqsRcvEn byte 1,0 */
-	val = Get_DqsRcvEnGross_MaxMin(pDCTstat, dev, dct, index_reg, 0x10);
+	val = Get_DqsRcvEnGross_MaxMin(p_dct_stat, dev, dct, index_reg, 0x10);
 	Largest = val & 0xFF;
 	Smallest = (val >> 8) & 0xFF;
 
 	/* DqsRcvEn byte 3,2 */
-	val = Get_DqsRcvEnGross_MaxMin(pDCTstat, dev, dct, index_reg, 0x11);
+	val = Get_DqsRcvEnGross_MaxMin(p_dct_stat, dev, dct, index_reg, 0x11);
 	byte = val & 0xFF;
 	bytex = (val >> 8) & 0xFF;
 	if (bytex < Smallest)
@@ -6380,7 +6380,7 @@ static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *pDCTstat,
 		Largest = byte;
 
 	/* DqsRcvEn byte 5,4 */
-	val = Get_DqsRcvEnGross_MaxMin(pDCTstat, dev, dct, index_reg, 0x20);
+	val = Get_DqsRcvEnGross_MaxMin(p_dct_stat, dev, dct, index_reg, 0x20);
 	byte = val & 0xFF;
 	bytex = (val >> 8) & 0xFF;
 	if (bytex < Smallest)
@@ -6389,7 +6389,7 @@ static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *pDCTstat,
 		Largest = byte;
 
 	/* DqsRcvEn byte 7,6 */
-	val = Get_DqsRcvEnGross_MaxMin(pDCTstat, dev, dct, index_reg, 0x21);
+	val = Get_DqsRcvEnGross_MaxMin(p_dct_stat, dev, dct, index_reg, 0x21);
 	byte = val & 0xFF;
 	bytex = (val >> 8) & 0xFF;
 	if (bytex < Smallest)
@@ -6397,9 +6397,9 @@ static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *pDCTstat,
 	if (byte > Largest)
 		Largest = byte;
 
-	if (pDCTstat->dimm_ecc_present > 0) {
+	if (p_dct_stat->dimm_ecc_present > 0) {
 		/*DqsRcvEn Ecc */
-		val = Get_DqsRcvEnGross_MaxMin(pDCTstat, dev, dct, index_reg, 0x12);
+		val = Get_DqsRcvEnGross_MaxMin(p_dct_stat, dev, dct, index_reg, 0x12);
 		byte = val & 0xFF;
 		bytex = (val >> 8) & 0xFF;
 		if (bytex < Smallest)
@@ -6408,11 +6408,11 @@ static void Get_DqsRcvEnGross_Diff(struct DCTStatStruc *pDCTstat,
 			Largest = byte;
 	}
 
-	pDCTstat->DqsRcvEnGrossMax = Largest;
-	pDCTstat->DqsRcvEnGrossMin = Smallest;
+	p_dct_stat->dqs_rcv_en_gross_max = Largest;
+	p_dct_stat->dqs_rcv_en_gross_min = Smallest;
 }
 
-static void Get_WrDatGross_Diff(struct DCTStatStruc *pDCTstat,
+static void Get_WrDatGross_Diff(struct DCTStatStruc *p_dct_stat,
 					u8 dct, u32 dev, u32 index_reg)
 {
 	u8 Smallest = 0, Largest = 0;
@@ -6421,13 +6421,13 @@ static void Get_WrDatGross_Diff(struct DCTStatStruc *pDCTstat,
 
 	/* The largest WrDatGrossDlyByte of any DIMM minus the
 	  WrDatGrossDlyByte of any other DIMM is equal to CGDD */
-	if (pDCTstat->dimm_valid & (1 << 0)) {
-		val = Get_WrDatGross_MaxMin(pDCTstat, dct, dev, index_reg, 0x01);	/* WrDatGrossDlyByte byte 0,1,2,3 for DIMM0 */
+	if (p_dct_stat->dimm_valid & (1 << 0)) {
+		val = Get_WrDatGross_MaxMin(p_dct_stat, dct, dev, index_reg, 0x01);	/* WrDatGrossDlyByte byte 0,1,2,3 for DIMM0 */
 		Largest = val & 0xFF;
 		Smallest = (val >> 8) & 0xFF;
 	}
-	if (pDCTstat->dimm_valid & (1 << 2)) {
-		val = Get_WrDatGross_MaxMin(pDCTstat, dct, dev, index_reg, 0x101);	/* WrDatGrossDlyByte byte 0,1,2,3 for DIMM1 */
+	if (p_dct_stat->dimm_valid & (1 << 2)) {
+		val = Get_WrDatGross_MaxMin(p_dct_stat, dct, dev, index_reg, 0x101);	/* WrDatGrossDlyByte byte 0,1,2,3 for DIMM1 */
 		byte = val & 0xFF;
 		bytex = (val >> 8) & 0xFF;
 		if (bytex < Smallest)
@@ -6437,9 +6437,9 @@ static void Get_WrDatGross_Diff(struct DCTStatStruc *pDCTstat,
 	}
 
 	/* If Cx, 2 more dimm need to be checked to find out the largest and smallest */
-	if (pDCTstat->logical_cpuid & AMD_DR_Cx) {
-		if (pDCTstat->dimm_valid & (1 << 4)) {
-			val = Get_WrDatGross_MaxMin(pDCTstat, dct, dev, index_reg, 0x201);	/* WrDatGrossDlyByte byte 0,1,2,3 for DIMM2 */
+	if (p_dct_stat->logical_cpuid & AMD_DR_Cx) {
+		if (p_dct_stat->dimm_valid & (1 << 4)) {
+			val = Get_WrDatGross_MaxMin(p_dct_stat, dct, dev, index_reg, 0x201);	/* WrDatGrossDlyByte byte 0,1,2,3 for DIMM2 */
 			byte = val & 0xFF;
 			bytex = (val >> 8) & 0xFF;
 			if (bytex < Smallest)
@@ -6447,8 +6447,8 @@ static void Get_WrDatGross_Diff(struct DCTStatStruc *pDCTstat,
 			if (byte > Largest)
 				Largest = byte;
 		}
-		if (pDCTstat->dimm_valid & (1 << 6)) {
-			val = Get_WrDatGross_MaxMin(pDCTstat, dct, dev, index_reg, 0x301);	/* WrDatGrossDlyByte byte 0,1,2,3 for DIMM2 */
+		if (p_dct_stat->dimm_valid & (1 << 6)) {
+			val = Get_WrDatGross_MaxMin(p_dct_stat, dct, dev, index_reg, 0x301);	/* WrDatGrossDlyByte byte 0,1,2,3 for DIMM2 */
 			byte = val & 0xFF;
 			bytex = (val >> 8) & 0xFF;
 			if (bytex < Smallest)
@@ -6458,11 +6458,11 @@ static void Get_WrDatGross_Diff(struct DCTStatStruc *pDCTstat,
 		}
 	}
 
-	pDCTstat->WrDatGrossMax = Largest;
-	pDCTstat->WrDatGrossMin = Smallest;
+	p_dct_stat->wr_dat_gross_max = Largest;
+	p_dct_stat->wr_dat_gross_min = Smallest;
 }
 
-static u16 Get_DqsRcvEnGross_MaxMin(struct DCTStatStruc *pDCTstat,
+static u16 Get_DqsRcvEnGross_MaxMin(struct DCTStatStruc *p_dct_stat,
 					u32 dev, u8 dct, u32 index_reg,
 					u32 index)
 {
@@ -6480,7 +6480,7 @@ static u16 Get_DqsRcvEnGross_MaxMin(struct DCTStatStruc *pDCTstat,
 		ecc_reg = 1;
 
 	for (i = 0; i < 8; i+=2) {
-		if (pDCTstat->dimm_valid & (1 << i)) {
+		if (p_dct_stat->dimm_valid & (1 << i)) {
 			val = Get_NB32_index_wait_DCT(dev, dct, index_reg, index);
 			val &= 0x00E000E0;
 			byte = (val >> 5) & 0xFF;
@@ -6506,7 +6506,7 @@ static u16 Get_DqsRcvEnGross_MaxMin(struct DCTStatStruc *pDCTstat,
 	return word;
 }
 
-static u16 Get_WrDatGross_MaxMin(struct DCTStatStruc *pDCTstat,
+static u16 Get_WrDatGross_MaxMin(struct DCTStatStruc *p_dct_stat,
 					u8 dct, u32 dev, u32 index_reg,
 					u32 index)
 {
@@ -6533,7 +6533,7 @@ static u16 Get_WrDatGross_MaxMin(struct DCTStatStruc *pDCTstat,
 		index++;
 	}	/*while ++i*/
 
-	if (pDCTstat->dimm_ecc_present > 0) {
+	if (p_dct_stat->dimm_ecc_present > 0) {
 		index++;
 		val = Get_NB32_index_wait_DCT(dev, dct, index_reg, index);
 		val &= 0x00000060;
@@ -6552,15 +6552,15 @@ static u16 Get_WrDatGross_MaxMin(struct DCTStatStruc *pDCTstat,
 	return word;
 }
 
-static void mct_PhyController_Config(struct MCTStatStruc *pMCTstat,
-				     struct DCTStatStruc *pDCTstat, u8 dct)
+static void mct_PhyController_Config(struct MCTStatStruc *p_mct_stat,
+				     struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 index;
 	u32 dword;
 	u32 index_reg = 0x98;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
-	if (pDCTstat->logical_cpuid & (AMD_DR_DAC2_OR_C3 | AMD_RB_C3 | AMD_FAM15_ALL)) {
+	if (p_dct_stat->logical_cpuid & (AMD_DR_DAC2_OR_C3 | AMD_RB_C3 | AMD_FAM15_ALL)) {
 		if (is_fam15h()) {
 			/* Set F2x[1, 0]98_x0D0F0F13 DllDisEarlyU and DllDisEarlyL to save power */
 			for (index = 0; index < 0x9; index++) {
@@ -6571,7 +6571,7 @@ static void mct_PhyController_Config(struct MCTStatStruc *pMCTstat,
 			}
 		}
 
-		if (pDCTstat->dimm_x4_present == 0) {
+		if (p_dct_stat->dimm_x4_present == 0) {
 			/* Set bit7 RxDqsUDllPowerDown to register F2x[1, 0]98_x0D0F0F13 for
 			 * additional power saving when x4 DIMMs are not present.
 			 */
@@ -6583,8 +6583,8 @@ static void mct_PhyController_Config(struct MCTStatStruc *pMCTstat,
 		}
 	}
 
-	if (pDCTstat->logical_cpuid & (AMD_DR_DAC2_OR_C3 | AMD_FAM15_ALL)) {
-		if (pDCTstat->dimm_ecc_present == 0) {
+	if (p_dct_stat->logical_cpuid & (AMD_DR_DAC2_OR_C3 | AMD_FAM15_ALL)) {
+		if (p_dct_stat->dimm_ecc_present == 0) {
 			/* Set bit4 PwrDn to register F2x[1, 0]98_x0D0F0830 for power saving */
 			dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f0830);
 			dword |= 1 << 4; /* BIOS should set this bit if ECC DIMMs are not present */
@@ -6594,25 +6594,25 @@ static void mct_PhyController_Config(struct MCTStatStruc *pMCTstat,
 
 }
 
-static void mct_FinalMCT_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA)
+static void mct_FinalMCT_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
-	struct DCTStatStruc *pDCTstat;
+	struct DCTStatStruc *p_dct_stat;
 	u32 val;
 
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		pDCTstat = pDCTstatA + Node;
+		p_dct_stat = p_dct_stat_a + Node;
 
-		if (pDCTstat->NodePresent) {
-			mct_PhyController_Config(pMCTstat, pDCTstat, 0);
-			mct_PhyController_Config(pMCTstat, pDCTstat, 1);
+		if (p_dct_stat->node_present) {
+			mct_PhyController_Config(p_mct_stat, p_dct_stat, 0);
+			mct_PhyController_Config(p_mct_stat, p_dct_stat, 1);
 
 			if (!is_fam15h()) {
 				/* Family 10h CPUs */
-				mct_ExtMCTConfig_Cx(pDCTstat);
-				mct_ExtMCTConfig_Bx(pDCTstat);
-				mct_ExtMCTConfig_Dx(pDCTstat);
+				mct_ExtMCTConfig_Cx(p_dct_stat);
+				mct_ExtMCTConfig_Bx(p_dct_stat);
+				mct_ExtMCTConfig_Dx(p_dct_stat);
 			} else {
 				/* Family 15h CPUs */
 				u8 enable_experimental_memory_speed_boost;
@@ -6624,9 +6624,9 @@ static void mct_FinalMCT_D(struct MCTStatStruc *pMCTstat,
 				val = 0x0ce00f00;		/* FlushWrOnStpGnt = 0x0 */
 				val |= 0x10 << 2;		/* MctWrLimit = 0x10 */
 				val |= 0x1;			/* DctWrLimit = 0x1 */
-				Set_NB32(pDCTstat->dev_dct, 0x11c, val);
+				Set_NB32(p_dct_stat->dev_dct, 0x11c, val);
 
-				val = Get_NB32(pDCTstat->dev_dct, 0x1b0);
+				val = get_nb32(p_dct_stat->dev_dct, 0x1b0);
 				val &= ~0x3;			/* AdapPrefMissRatio = 0x1 */
 				val |= 0x1;
 				val &= ~(0x3 << 2);		/* AdapPrefPositiveStep = 0x0 */
@@ -6639,12 +6639,12 @@ static void mct_FinalMCT_D(struct MCTStatStruc *pMCTstat,
 				val |= (0x7 << 22);		/* PrefFourConf = 0x7 */
 				val |= (0x7 << 25);		/* PrefFiveConf = 0x7 */
 				val &= ~(0xf << 28);		/* DcqBwThrotWm = 0x0 */
-				Set_NB32(pDCTstat->dev_dct, 0x1b0, val);
+				Set_NB32(p_dct_stat->dev_dct, 0x1b0, val);
 
 				u8 wm1;
 				u8 wm2;
 
-				switch (pDCTstat->speed) {
+				switch (p_dct_stat->speed) {
 				case 0x4:
 					wm1 = 0x3;
 					wm2 = 0x4;
@@ -6671,91 +6671,91 @@ static void mct_FinalMCT_D(struct MCTStatStruc *pMCTstat,
 					break;
 				}
 
-				val = Get_NB32(pDCTstat->dev_dct, 0x1b4);
+				val = get_nb32(p_dct_stat->dev_dct, 0x1b4);
 				val &= ~(0x3ff);
 				val |= ((wm2 & 0x1f) << 5);
 				val |= (wm1 & 0x1f);
-				Set_NB32(pDCTstat->dev_dct, 0x1b4, val);
+				Set_NB32(p_dct_stat->dev_dct, 0x1b4, val);
 			}
 		}
 	}
 
 	/* ClrClToNB_D postponed until we're done executing from ROM */
-	mct_ClrWbEnhWsbDis_D(pMCTstat, pDCTstat);
+	mct_ClrWbEnhWsbDis_D(p_mct_stat, p_dct_stat);
 
 	/* set F3x8C[DisFastTprWr] on all DR, if L3Size = 0 */
-	if (pDCTstat->logical_cpuid & AMD_DR_ALL) {
+	if (p_dct_stat->logical_cpuid & AMD_DR_ALL) {
 		if (!(cpuid_edx(0x80000006) & 0xFFFC0000)) {
-			val = Get_NB32(pDCTstat->dev_nbmisc, 0x8C);
+			val = get_nb32(p_dct_stat->dev_nbmisc, 0x8C);
 			val |= 1 << 24;
-			Set_NB32(pDCTstat->dev_nbmisc, 0x8C, val);
+			Set_NB32(p_dct_stat->dev_nbmisc, 0x8C, val);
 		}
 	}
 }
 
-void mct_ForceNBPState0_En_Fam15(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+void mct_ForceNBPState0_En_Fam15(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	/* Force the NB P-state to P0 */
 	u32 dword;
 	u32 dword2;
 
-	dword = Get_NB32(pDCTstat->dev_nbctl, 0x174);
+	dword = get_nb32(p_dct_stat->dev_nbctl, 0x174);
 	if (!(dword & 0x1)) {
-		dword = Get_NB32(pDCTstat->dev_nbctl, 0x170);
-		pDCTstat->SwNbPstateLoDis = (dword >> 14) & 0x1;
-		pDCTstat->NbPstateDisOnP0 = (dword >> 13) & 0x1;
-		pDCTstat->NbPstateThreshold = (dword >> 9) & 0x7;
-		pDCTstat->NbPstateHi = (dword >> 6) & 0x3;
+		dword = get_nb32(p_dct_stat->dev_nbctl, 0x170);
+		p_dct_stat->SwNbPstateLoDis = (dword >> 14) & 0x1;
+		p_dct_stat->NbPstateDisOnP0 = (dword >> 13) & 0x1;
+		p_dct_stat->NbPstateThreshold = (dword >> 9) & 0x7;
+		p_dct_stat->NbPstateHi = (dword >> 6) & 0x3;
 		dword &= ~(0x1 << 14);		/* SwNbPstateLoDis = 0 */
 		dword &= ~(0x1 << 13);		/* NbPstateDisOnP0 = 0 */
 		dword &= ~(0x7 << 9);		/* NbPstateThreshold = 0 */
 		dword &= ~(0x3 << 3);		/* NbPstateLo = NbPstateMaxVal */
 		dword |= ((dword & 0x3) << 3);
-		Set_NB32(pDCTstat->dev_nbctl, 0x170, dword);
+		Set_NB32(p_dct_stat->dev_nbctl, 0x170, dword);
 
 		if (!is_model10_1f()) {
 			/* Wait until CurNbPState == NbPstateLo */
 			do {
-				dword2 = Get_NB32(pDCTstat->dev_nbctl, 0x174);
+				dword2 = get_nb32(p_dct_stat->dev_nbctl, 0x174);
 			} while (((dword2 >> 19) & 0x7) != (dword & 0x3));
 		}
-		dword = Get_NB32(pDCTstat->dev_nbctl, 0x170);
+		dword = get_nb32(p_dct_stat->dev_nbctl, 0x170);
 		dword &= ~(0x3 << 6);		/* NbPstateHi = 0 */
 		dword |= (0x3 << 14);		/* SwNbPstateLoDis = 1 */
-		Set_NB32(pDCTstat->dev_nbctl, 0x170, dword);
+		Set_NB32(p_dct_stat->dev_nbctl, 0x170, dword);
 
 		if (!is_model10_1f()) {
 			/* Wait until CurNbPState == 0 */
 			do {
-				dword2 = Get_NB32(pDCTstat->dev_nbctl, 0x174);
+				dword2 = get_nb32(p_dct_stat->dev_nbctl, 0x174);
 			} while (((dword2 >> 19) & 0x7) != 0);
 		}
 	}
 }
 
-void mct_ForceNBPState0_Dis_Fam15(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+void mct_ForceNBPState0_Dis_Fam15(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	/* Restore normal NB P-state functionailty */
 	u32 dword;
 
-	dword = Get_NB32(pDCTstat->dev_nbctl, 0x174);
+	dword = get_nb32(p_dct_stat->dev_nbctl, 0x174);
 	if (!(dword & 0x1)) {
-		dword = Get_NB32(pDCTstat->dev_nbctl, 0x170);
+		dword = get_nb32(p_dct_stat->dev_nbctl, 0x170);
 		dword &= ~(0x1 << 14);					/* SwNbPstateLoDis*/
-		dword |= ((pDCTstat->SwNbPstateLoDis & 0x1) << 14);
+		dword |= ((p_dct_stat->SwNbPstateLoDis & 0x1) << 14);
 		dword &= ~(0x1 << 13);					/* NbPstateDisOnP0 */
-		dword |= ((pDCTstat->NbPstateDisOnP0 & 0x1) << 13);
+		dword |= ((p_dct_stat->NbPstateDisOnP0 & 0x1) << 13);
 		dword &= ~(0x7 << 9);					/* NbPstateThreshold */
-		dword |= ((pDCTstat->NbPstateThreshold & 0x7) << 9);
+		dword |= ((p_dct_stat->NbPstateThreshold & 0x7) << 9);
 		dword &= ~(0x3 << 6);					/* NbPstateHi */
-		dword |= ((pDCTstat->NbPstateHi & 0x3) << 3);
-		Set_NB32(pDCTstat->dev_nbctl, 0x170, dword);
+		dword |= ((p_dct_stat->NbPstateHi & 0x3) << 3);
+		Set_NB32(p_dct_stat->dev_nbctl, 0x170, dword);
 	}
 }
 
-static void mct_InitialMCT_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat)
+static void mct_InitialMCT_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat)
 {
 	if (is_fam15h()) {
 		msr_t p0_state_msr;
@@ -6765,25 +6765,25 @@ static void mct_InitialMCT_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc 
 		u8 boost_states;
 
 		/* Retrieve the number of boost states */
-		boost_states = (Get_NB32(pDCTstat->dev_link, 0x15c) >> 2) & 0x7;
+		boost_states = (get_nb32(p_dct_stat->dev_link, 0x15c) >> 2) & 0x7;
 
 		/* Retrieve and store the TSC frequency (P0 COF) */
 		p0_state_msr = rdmsr(PSTATE_0_MSR + boost_states);
 		cpu_fid = p0_state_msr.lo & 0x3f;
 		cpu_did = (p0_state_msr.lo >> 6) & 0x7;
 		cpu_divisor = (0x1 << cpu_did);
-		pMCTstat->TSCFreq = (100 * (cpu_fid + 0x10)) / cpu_divisor;
+		p_mct_stat->TSCFreq = (100 * (cpu_fid + 0x10)) / cpu_divisor;
 
 		printk(BIOS_DEBUG, "mct_InitialMCT_D: mct_ForceNBPState0_En_Fam15\n");
-		mct_ForceNBPState0_En_Fam15(pMCTstat, pDCTstat);
+		mct_ForceNBPState0_En_Fam15(p_mct_stat, p_dct_stat);
 	} else {
 		/* K10 BKDG v3.62 section 2.8.9.2 */
 		printk(BIOS_DEBUG, "mct_InitialMCT_D: clear_legacy_Mode\n");
-		clear_legacy_Mode(pMCTstat, pDCTstat);
+		clear_legacy_Mode(p_mct_stat, p_dct_stat);
 
 		/* Northbridge configuration */
-		mct_SetClToNB_D(pMCTstat, pDCTstat);
-		mct_SetWbEnhWsbDis_D(pMCTstat, pDCTstat);
+		mct_SetClToNB_D(p_mct_stat, p_dct_stat);
+		mct_SetWbEnhWsbDis_D(p_mct_stat, p_dct_stat);
 	}
 }
 
@@ -6802,32 +6802,32 @@ static u32 mct_NodePresent_D(void)
 	return val;
 }
 
-static void mct_init(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat)
+static void mct_init(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat)
 {
 	u32 lo, hi;
 	u32 addr;
 
-	pDCTstat->GangedMode = 0;
-	pDCTstat->DRPresent = 1;
+	p_dct_stat->ganged_mode = 0;
+	p_dct_stat->dr_present = 1;
 
 	/* enable extend PCI configuration access */
 	addr = NB_CFG_MSR;
 	_RDMSR(addr, &lo, &hi);
 	if (hi & (1 << (46-32))) {
-		pDCTstat->status |= 1 << SB_ExtConfig;
+		p_dct_stat->status |= 1 << SB_ExtConfig;
 	} else {
 		hi |= 1 << (46-32);
 		_WRMSR(addr, lo, hi);
 	}
 }
 
-static void clear_legacy_Mode(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+static void clear_legacy_Mode(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u32 reg;
 	u32 val;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
 	/* Clear Legacy BIOS Mode bit */
 	reg = 0x94;
@@ -6840,8 +6840,8 @@ static void clear_legacy_Mode(struct MCTStatStruc *pMCTstat,
 	Set_NB32_DCT(dev, 1, reg, val);
 }
 
-static void mct_HTMemMapExt(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA)
+static void mct_HTMemMapExt(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
 	u32 Drambase, Dramlimit;
@@ -6850,46 +6850,46 @@ static void mct_HTMemMapExt(struct MCTStatStruc *pMCTstat,
 	u32 dev;
 	u32 devx;
 	u32 dword;
-	struct DCTStatStruc *pDCTstat;
+	struct DCTStatStruc *p_dct_stat;
 
-	pDCTstat = pDCTstatA + 0;
-	dev = pDCTstat->dev_map;
+	p_dct_stat = p_dct_stat_a + 0;
+	dev = p_dct_stat->dev_map;
 
 	/* Copy dram map from F1x40/44,F1x48/4c,
 	  to F1x120/124(Node0),F1x120/124(Node1),...*/
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		pDCTstat = pDCTstatA + Node;
-		devx = pDCTstat->dev_map;
+		p_dct_stat = p_dct_stat_a + Node;
+		devx = p_dct_stat->dev_map;
 
 		/* get base/limit from Node0 */
 		reg = 0x40 + (Node << 3);		/* Node0/Dram Base 0 */
-		val = Get_NB32(dev, reg);
+		val = get_nb32(dev, reg);
 		Drambase = val >> (16 + 3);
 
 		reg = 0x44 + (Node << 3);		/* Node0/Dram Base 0 */
-		val = Get_NB32(dev, reg);
+		val = get_nb32(dev, reg);
 		Dramlimit = val >> (16 + 3);
 
 		/* set base/limit to F1x120/124 per Node */
-		if (pDCTstat->NodePresent) {
+		if (p_dct_stat->node_present) {
 			reg = 0x120;		/* F1x120,DramBase[47:27] */
-			val = Get_NB32(devx, reg);
+			val = get_nb32(devx, reg);
 			val &= 0xFFE00000;
 			val |= Drambase;
 			Set_NB32(devx, reg, val);
 
 			reg = 0x124;
-			val = Get_NB32(devx, reg);
+			val = get_nb32(devx, reg);
 			val &= 0xFFE00000;
 			val |= Dramlimit;
 			Set_NB32(devx, reg, val);
 
-			if (pMCTstat->GStatus & (1 << GSB_HW_HOLE)) {
+			if (p_mct_stat->GStatus & (1 << GSB_HW_HOLE)) {
 				reg = 0xF0;
-				val = Get_NB32(devx, reg);
-				val |= (1 << DramMemHoistValid);
+				val = get_nb32(devx, reg);
+				val |= (1 << DRAM_MEM_HOIST_VALID);
 				val &= ~(0xFF << 24);
-				dword = (pMCTstat->HoleBase >> (24 - 8)) & 0xFF;
+				dword = (p_mct_stat->HoleBase >> (24 - 8)) & 0xFF;
 				dword <<= 24;
 				val |= dword;
 				Set_NB32(devx, reg, val);
@@ -6899,24 +6899,24 @@ static void mct_HTMemMapExt(struct MCTStatStruc *pMCTstat,
 	}
 }
 
-static void SetCSTriState(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void SetCSTriState(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 val;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 index_reg = 0x98;
 	u16 word;
 
 	if (is_fam15h()) {
-		word = fam15h_cs_tristate_enable_code(pDCTstat, dct);
+		word = fam15h_cs_tristate_enable_code(p_dct_stat, dct);
 	} else {
 		/* Tri-state unused chipselects when motherboard
 		termination is available */
 
 		/* FIXME: skip for Ax */
 
-		word = pDCTstat->cs_present;
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		word = p_dct_stat->cs_present;
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			word |= (word & 0x55) << 1;
 		}
 		word = (~word) & 0xff;
@@ -6928,8 +6928,8 @@ static void SetCSTriState(struct MCTStatStruc *pMCTstat,
 	Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0000000c, val);
 }
 
-static void SetCKETriState(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void SetCKETriState(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 val;
 	u32 dev;
@@ -6940,8 +6940,8 @@ static void SetCKETriState(struct MCTStatStruc *pMCTstat,
 
 	/* FIXME: skip for Ax */
 
-	dev = pDCTstat->dev_dct;
-	word = pDCTstat->cs_present;
+	dev = p_dct_stat->dev_dct;
+	word = p_dct_stat->cs_present;
 
 	val = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0000000c);
 	val &= ~(0x3 << 12);
@@ -6952,8 +6952,8 @@ static void SetCKETriState(struct MCTStatStruc *pMCTstat,
 	Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0000000c, val);
 }
 
-static void SetODTTriState(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void SetODTTriState(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 val;
 	u32 dev;
@@ -6961,28 +6961,28 @@ static void SetODTTriState(struct MCTStatStruc *pMCTstat,
 	u8 cs;
 	u8 odt;
 
-	dev = pDCTstat->dev_dct;
+	dev = p_dct_stat->dev_dct;
 
 	if (is_fam15h()) {
-		odt = fam15h_odt_tristate_enable_code(pDCTstat, dct);
+		odt = fam15h_odt_tristate_enable_code(p_dct_stat, dct);
 	} else {
 		/* FIXME: skip for Ax */
 
 		/* Tri-state unused ODTs when motherboard termination is available */
 		odt = 0x0f;	/* ODT tri-state setting */
 
-		if (pDCTstat->status & (1 <<SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 <<SB_REGISTERED)) {
 			for (cs = 0; cs < 8; cs += 2) {
-				if (pDCTstat->cs_present & (1 << cs)) {
+				if (p_dct_stat->cs_present & (1 << cs)) {
 					odt &= ~(1 << (cs / 2));
 					if (mctGet_NVbits(NV_4_RANK_TYPE) != 0) { /* quad-rank capable platform */
-						if (pDCTstat->cs_present & (1 << (cs + 1)))
+						if (p_dct_stat->cs_present & (1 << (cs + 1)))
 							odt &= ~(4 << (cs / 2));
 					}
 				}
 			}
 		} else {		/* AM3 package */
-			val = ~(pDCTstat->cs_present);
+			val = ~(p_dct_stat->cs_present);
 			odt = val & 9;	/* swap bits 1 and 2 */
 			if (val & (1 << 1))
 				odt |= 1 << 2;
@@ -6998,20 +6998,20 @@ static void SetODTTriState(struct MCTStatStruc *pMCTstat,
 }
 
 /* Family 15h */
-static void InitDDRPhy(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+static void InitDDRPhy(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 index;
 	u32 dword;
 	u8 ddr_voltage_index;
 	u8 amd_voltage_level_index = 0;
 	u32 index_reg = 0x98;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
 	/* Find current DDR supply voltage for this DCT */
-	ddr_voltage_index = dct_ddr_voltage_index(pDCTstat, dct);
+	ddr_voltage_index = dct_ddr_voltage_index(p_dct_stat, dct);
 
 	/* Fam15h BKDG v3.14 section 2.10.5.3
 	 * The remainder of the Phy Initialization algorithm picks up in phyAssistedMemFnceTraining
@@ -7070,12 +7070,12 @@ static void InitDDRPhy(struct MCTStatStruc *pMCTstat,
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-void InitPhyCompensation(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+void InitPhyCompensation(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 i;
 	u32 index_reg = 0x98;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 valx = 0;
 	u8 index;
 	u32 dword;
@@ -7102,7 +7102,7 @@ void InitPhyCompensation(struct MCTStatStruc *pMCTstat,
 		/* Determine TxPreP/TxPreN for data lanes (Stage 1) */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000000);
 		drive_strength = (dword >> 20) & 0x7;	/* DqsDrvStren */
-		tx_pre = fam15h_phy_predriver_calibration_code(pDCTstat, dct, drive_strength);
+		tx_pre = fam15h_phy_predriver_calibration_code(p_dct_stat, dct, drive_strength);
 
 		/* Program TxPreP/TxPreN for data lanes (Stage 1) */
 		for (index = 0; index < 0x9; index++) {
@@ -7115,7 +7115,7 @@ void InitPhyCompensation(struct MCTStatStruc *pMCTstat,
 		/* Determine TxPreP/TxPreN for data lanes (Stage 2) */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000000);
 		drive_strength = (dword >> 16) & 0x7;	/* DataDrvStren */
-		tx_pre = fam15h_phy_predriver_calibration_code(pDCTstat, dct, drive_strength);
+		tx_pre = fam15h_phy_predriver_calibration_code(p_dct_stat, dct, drive_strength);
 
 		/* Program TxPreP/TxPreN for data lanes (Stage 2) */
 		for (index = 0; index < 0x9; index++) {
@@ -7134,7 +7134,7 @@ void InitPhyCompensation(struct MCTStatStruc *pMCTstat,
 		/* Determine TxPreP/TxPreN for command/address lines (Stage 1) */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000000);
 		drive_strength = (dword >> 4) & 0x7;	/* CsOdtDrvStren */
-		tx_pre = fam15h_phy_predriver_cmd_addr_calibration_code(pDCTstat, dct, drive_strength);
+		tx_pre = fam15h_phy_predriver_cmd_addr_calibration_code(p_dct_stat, dct, drive_strength);
 
 		/* Program TxPreP/TxPreN for command/address lines (Stage 1) */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f8006);
@@ -7153,7 +7153,7 @@ void InitPhyCompensation(struct MCTStatStruc *pMCTstat,
 		/* Determine TxPreP/TxPreN for command/address lines (Stage 2) */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000000);
 		drive_strength = (dword >> 8) & 0x7;	/* AddrCmdDrvStren */
-		tx_pre = fam15h_phy_predriver_cmd_addr_calibration_code(pDCTstat, dct, drive_strength);
+		tx_pre = fam15h_phy_predriver_cmd_addr_calibration_code(p_dct_stat, dct, drive_strength);
 
 		/* Program TxPreP/TxPreN for command/address lines (Stage 2) */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f8106);
@@ -7188,7 +7188,7 @@ void InitPhyCompensation(struct MCTStatStruc *pMCTstat,
 		/* Determine TxPreP/TxPreN for command/address lines (Stage 3) */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000000);
 		drive_strength = (dword >> 0) & 0x7;	/* CkeDrvStren */
-		tx_pre = fam15h_phy_predriver_cmd_addr_calibration_code(pDCTstat, dct, drive_strength);
+		tx_pre = fam15h_phy_predriver_cmd_addr_calibration_code(p_dct_stat, dct, drive_strength);
 
 		/* Program TxPreP/TxPreN for command/address lines (Stage 3) */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0fc002);
@@ -7199,7 +7199,7 @@ void InitPhyCompensation(struct MCTStatStruc *pMCTstat,
 		/* Determine TxPreP/TxPreN for clock lines */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000000);
 		drive_strength = (dword >> 12) & 0x7;	/* ClkDrvStren */
-		tx_pre = fam15h_phy_predriver_clk_calibration_code(pDCTstat, dct, drive_strength);
+		tx_pre = fam15h_phy_predriver_clk_calibration_code(p_dct_stat, dct, drive_strength);
 
 		/* Program TxPreP/TxPreN for clock lines */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0f2002);
@@ -7265,15 +7265,15 @@ void InitPhyCompensation(struct MCTStatStruc *pMCTstat,
 	printk(BIOS_DEBUG, "%s: DCT %d: Done\n", __func__, dct);
 }
 
-static void mct_EarlyArbEn_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+static void mct_EarlyArbEn_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
 	if (!is_fam15h()) {
 		u32 reg;
 		u32 val;
-		u32 dev = pDCTstat->dev_dct;
+		u32 dev = p_dct_stat->dev_dct;
 
 		/* GhEnhancement #18429 modified by askar: For low NB CLK :
 		* Memclk ratio, the DCT may need to arbitrate early to avoid
@@ -7284,9 +7284,9 @@ static void mct_EarlyArbEn_D(struct MCTStatStruc *pMCTstat,
 		reg = 0x78;
 		val = Get_NB32_DCT(dev, dct, reg);
 
-		if (pDCTstat->logical_cpuid & (AMD_DR_Cx | AMD_DR_Dx))
+		if (p_dct_stat->logical_cpuid & (AMD_DR_Cx | AMD_DR_Dx))
 			val |= (1 << EARLY_ARB_EN);
-		else if (CheckNBCOFEarlyArbEn(pMCTstat, pDCTstat))
+		else if (CheckNBCOFEarlyArbEn(p_mct_stat, p_dct_stat))
 			val |= (1 << EARLY_ARB_EN);
 
 		Set_NB32_DCT(dev, dct, reg, val);
@@ -7295,14 +7295,14 @@ static void mct_EarlyArbEn_D(struct MCTStatStruc *pMCTstat,
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-static u8 CheckNBCOFEarlyArbEn(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat)
+static u8 CheckNBCOFEarlyArbEn(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat)
 {
 	u32 reg;
 	u32 val;
 	u32 tmp;
 	u32 rem;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32  hi, lo;
 	u8 NbDid = 0;
 
@@ -7325,9 +7325,9 @@ static u8 CheckNBCOFEarlyArbEn(struct MCTStatStruc *pMCTstat,
 		val <<= 1;
 	tmp = val;
 
-	dev = pDCTstat->dev_nbmisc;
+	dev = p_dct_stat->dev_nbmisc;
 	reg = 0xD4;
-	val = Get_NB32(dev, reg);
+	val = get_nb32(dev, reg);
 	val &= 0x1F;
 	val += 3;
 	val *= 3;
@@ -7347,37 +7347,37 @@ static u8 CheckNBCOFEarlyArbEn(struct MCTStatStruc *pMCTstat,
 	}
 }
 
-static void mct_ResetDataStruct_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA)
+static void mct_ResetDataStruct_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
-	struct DCTStatStruc *pDCTstat;
+	struct DCTStatStruc *p_dct_stat;
 
 	/* Initialize Data structures by clearing all entries to 0 */
-	memset(pMCTstat, 0, sizeof(*pMCTstat));
+	memset(p_mct_stat, 0, sizeof(*p_mct_stat));
 
 	for (Node = 0; Node < 8; Node++) {
-		pDCTstat = pDCTstatA + Node;
-		memset(pDCTstat, 0, sizeof(*pDCTstat) - sizeof(pDCTstat->persistentData));
+		p_dct_stat = p_dct_stat_a + Node;
+		memset(p_dct_stat, 0, sizeof(*p_dct_stat) - sizeof(p_dct_stat->persistentData));
 	}
 }
 
-static void mct_BeforeDramInit_Prod_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+static void mct_BeforeDramInit_Prod_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
-	mct_ProgramODT_D(pMCTstat, pDCTstat, dct);
+	mct_ProgramODT_D(p_mct_stat, p_dct_stat, dct);
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+static void mct_ProgramODT_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 i;
 	u32 dword;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
@@ -7385,7 +7385,7 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 
 	if (is_fam15h()) {
 		/* Obtain number of DIMMs on channel */
-		u8 dimm_count = pDCTstat->ma_dimms[dct];
+		u8 dimm_count = p_dct_stat->ma_dimms[dct];
 		u8 rank_count_dimm0;
 		u8 rank_count_dimm1;
 		u32 odt_pattern_0;
@@ -7398,17 +7398,17 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 		u8 read_odt_delay;
 
 		/* NOTE
-		 * Rank count per DIMM and DCT is encoded by pDCTstat->DimmRanks[(<dimm number> * 2) + dct]
+		 * Rank count per DIMM and DCT is encoded by p_dct_stat->dimm_ranks[(<dimm number> * 2) + dct]
 		 */
 
 		/* Select appropriate ODT pattern for installed DIMMs
 		 * Refer to the Fam15h BKDG Rev. 3.14, page 149 onwards
 		 */
-		if (pDCTstat->status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 					if (rank_count_dimm1 == 1) {
 						odt_pattern_0 = 0x00000000;
 						odt_pattern_1 = 0x00000000;
@@ -7433,8 +7433,8 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 					}
 				} else {
 					/* 2 DIMMs detected */
-					rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + dct];
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 					if ((rank_count_dimm0 < 4) && (rank_count_dimm1 < 4)) {
 						odt_pattern_0 = 0x00000000;
 						odt_pattern_1 = 0x01010202;
@@ -7472,7 +7472,7 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 				odt_pattern_2 = 0x00000000;
 				odt_pattern_3 = 0x00000000;
 			}
-		} else if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* TODO
 			 * Load reduced dimms UNIMPLEMENTED
 			 */
@@ -7484,7 +7484,7 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 			if (MaxDimmsInstallable == 2) {
 				if (dimm_count == 1) {
 					/* 1 DIMM detected */
-					rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + dct];
+					rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + dct];
 					if (rank_count_dimm1 == 1) {
 						odt_pattern_0 = 0x00000000;
 						odt_pattern_1 = 0x00000000;
@@ -7520,7 +7520,7 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 			}
 		}
 
-		if (pDCTstat->status & (1 << SB_LoadReduced)) {
+		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
 			/* TODO
 			 * Load reduced dimms UNIMPLEMENTED
 			 */
@@ -7560,8 +7560,8 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 		Set_NB32_DCT(dev, dct, 0x240, dword);
 
 		printk(BIOS_SPEW, "Programmed DCT %d ODT pattern %08x %08x %08x %08x\n", dct, odt_pattern_0, odt_pattern_1, odt_pattern_2, odt_pattern_3);
-	} else if (pDCTstat->logical_cpuid & AMD_DR_Dx) {
-		if (pDCTstat->speed == 3)
+	} else if (p_dct_stat->logical_cpuid & AMD_DR_Dx) {
+		if (p_dct_stat->speed == 3)
 			dword = 0x00000800;
 		else
 			dword = 0x00000000;
@@ -7571,7 +7571,7 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 			Set_NB32_DCT(dev, i, 0x98, 0x4D040F30);
 
 			/* Obtain number of DIMMs on channel */
-			u8 dimm_count = pDCTstat->ma_dimms[i];
+			u8 dimm_count = p_dct_stat->ma_dimms[i];
 			u8 rank_count_dimm0;
 			u8 rank_count_dimm1;
 			u32 odt_pattern_0;
@@ -7582,11 +7582,11 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 			/* Select appropriate ODT pattern for installed DIMMs
 			 * Refer to the Fam10h BKDG Rev. 3.62, page 120 onwards
 			 */
-			if (pDCTstat->status & (1 << SB_REGISTERED)) {
+			if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 				if (MaxDimmsInstallable == 2) {
 					if (dimm_count == 1) {
 						/* 1 DIMM detected */
-						rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + i];
+						rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + i];
 						if (rank_count_dimm1 == 1) {
 							odt_pattern_0 = 0x00000000;
 							odt_pattern_1 = 0x00000000;
@@ -7611,8 +7611,8 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 						}
 					} else {
 						/* 2 DIMMs detected */
-						rank_count_dimm0 = pDCTstat->DimmRanks[(0 * 2) + i];
-						rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + i];
+						rank_count_dimm0 = p_dct_stat->dimm_ranks[(0 * 2) + i];
+						rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + i];
 						if ((rank_count_dimm0 < 4) && (rank_count_dimm1 < 4)) {
 							odt_pattern_0 = 0x00000000;
 							odt_pattern_1 = 0x01010202;
@@ -7654,7 +7654,7 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 				if (MaxDimmsInstallable == 2) {
 					if (dimm_count == 1) {
 						/* 1 DIMM detected */
-						rank_count_dimm1 = pDCTstat->DimmRanks[(1 * 2) + i];
+						rank_count_dimm1 = p_dct_stat->dimm_ranks[(1 * 2) + i];
 						if (rank_count_dimm1 == 1) {
 							odt_pattern_0 = 0x00000000;
 							odt_pattern_1 = 0x00000000;
@@ -7703,13 +7703,13 @@ static void mct_ProgramODT_D(struct MCTStatStruc *pMCTstat,
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-static void mct_EnDllShutdownSR(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+static void mct_EnDllShutdownSR(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
-	u32 dev = pDCTstat->dev_dct, val;
+	u32 dev = p_dct_stat->dev_dct, val;
 
 	/* Write 0000_07D0h to register F2x[1, 0]98_x4D0FE006 */
-	if (pDCTstat->logical_cpuid & (AMD_DR_DAC2_OR_C3)) {
+	if (p_dct_stat->logical_cpuid & (AMD_DR_DAC2_OR_C3)) {
 		Set_NB32_DCT(dev, dct, 0x9C, 0x1C);
 		Set_NB32_DCT(dev, dct, 0x98, 0x4D0FE006);
 		Set_NB32_DCT(dev, dct, 0x9C, 0x13D);
@@ -7721,13 +7721,13 @@ static void mct_EnDllShutdownSR(struct MCTStatStruc *pMCTstat,
 	}
 }
 
-static u32 mct_DisDllShutdownSR(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u32 DramConfigLo, u8 dct)
+static u32 mct_DisDllShutdownSR(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u32 DramConfigLo, u8 dct)
 {
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
 	/* Write 0000_07D0h to register F2x[1, 0]98_x4D0FE006 */
-	if (pDCTstat->logical_cpuid & (AMD_DR_DAC2_OR_C3)) {
+	if (p_dct_stat->logical_cpuid & (AMD_DR_DAC2_OR_C3)) {
 		Set_NB32_DCT(dev, dct, 0x9C, 0x7D0);
 		Set_NB32_DCT(dev, dct, 0x98, 0x4D0FE006);
 		Set_NB32_DCT(dev, dct, 0x9C, 0x190);
@@ -7739,14 +7739,14 @@ static u32 mct_DisDllShutdownSR(struct MCTStatStruc *pMCTstat,
 	return DramConfigLo;
 }
 
-void mct_SetClToNB_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat)
+void mct_SetClToNB_D(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat)
 {
 	u32 lo, hi;
 	u32 msr;
 
 	/* FIXME: Maybe check the CPUID? - not for now. */
-	/* pDCTstat->LogicalCPUID; */
+	/* p_dct_stat->logical_cpuid; */
 
 	msr = BU_CFG2_MSR;
 	_RDMSR(msr, &lo, &hi);
@@ -7754,32 +7754,32 @@ void mct_SetClToNB_D(struct MCTStatStruc *pMCTstat,
 	_WRMSR(msr, lo, hi);
 }
 
-void mct_ClrClToNB_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat)
+void mct_ClrClToNB_D(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat)
 {
 
 	u32 lo, hi;
 	u32 msr;
 
 	/* FIXME: Maybe check the CPUID? - not for now. */
-	/* pDCTstat->LogicalCPUID; */
+	/* p_dct_stat->logical_cpuid; */
 
 	msr = BU_CFG2_MSR;
 	_RDMSR(msr, &lo, &hi);
-	if (!pDCTstat->ClToNB_flag)
+	if (!p_dct_stat->cl_to_nb_tag)
 		lo &= ~(1 << CL_LINES_TO_NB_DIS);
 	_WRMSR(msr, lo, hi);
 
 }
 
-void mct_SetWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+void mct_SetWbEnhWsbDis_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u32 lo, hi;
 	u32 msr;
 
 	/* FIXME: Maybe check the CPUID? - not for now. */
-	/* pDCTstat->LogicalCPUID; */
+	/* p_dct_stat->logical_cpuid; */
 
 	msr = BU_CFG_MSR;
 	_RDMSR(msr, &lo, &hi);
@@ -7787,14 +7787,14 @@ void mct_SetWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat,
 	_WRMSR(msr, lo, hi);
 }
 
-void mct_ClrWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+void mct_ClrWbEnhWsbDis_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u32 lo, hi;
 	u32 msr;
 
 	/* FIXME: Maybe check the CPUID? - not for now. */
-	/* pDCTstat->LogicalCPUID; */
+	/* p_dct_stat->logical_cpuid; */
 
 	msr = BU_CFG_MSR;
 	_RDMSR(msr, &lo, &hi);
@@ -7802,8 +7802,8 @@ void mct_ClrWbEnhWsbDis_D(struct MCTStatStruc *pMCTstat,
 	_WRMSR(msr, lo, hi);
 }
 
-void ProgDramMRSReg_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+void ProgDramMRSReg_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 DramMRS, dword;
 	u8 byte;
@@ -7812,9 +7812,9 @@ void ProgDramMRSReg_D(struct MCTStatStruc *pMCTstat,
 
 	/* Set chip select CKE control mode */
 	if (mctGet_NVbits(NV_CKE_CTL)) {
-		if (pDCTstat->cs_present == 3) {
+		if (p_dct_stat->cs_present == 3) {
 			u16 word;
-			word = pDCTstat->dimm_spd_checksum_err;
+			word = p_dct_stat->dimm_spd_checksum_err;
 			if (dct == 0)
 				word &= 0b01010100;
 			else
@@ -7825,7 +7825,7 @@ void ProgDramMRSReg_D(struct MCTStatStruc *pMCTstat,
 	}
 
 	if (is_fam15h()) {
-		DramMRS |= (0x1 << 23);		/* PchgPDModeSel = 1 */
+		DramMRS |= (0x1 << 23);		/* PCHG_PD_MODE_SEL = 1 */
 	} else {
 		/*
 		DRAM MRS Register
@@ -7833,41 +7833,41 @@ void ProgDramMRSReg_D(struct MCTStatStruc *pMCTstat,
 		*/
 		DramMRS |= 1 << 2;
 		/* Dram nominal termination: */
-		byte = pDCTstat->ma_dimms[dct];
-		if (!(pDCTstat->status & (1 << SB_REGISTERED))) {
+		byte = p_dct_stat->ma_dimms[dct];
+		if (!(p_dct_stat->status & (1 << SB_REGISTERED))) {
 			DramMRS |= 1 << 7; /* 60 ohms */
 			if (byte & 2) {
-				if (pDCTstat->speed < 6)
+				if (p_dct_stat->speed < 6)
 					DramMRS |= 1 << 8; /* 40 ohms */
 				else
 					DramMRS |= 1 << 9; /* 30 ohms */
 			}
 		}
 		/* Dram dynamic termination: Disable(1DIMM), 120ohm(>=2DIMM) */
-		if (!(pDCTstat->status & (1 << SB_REGISTERED))) {
+		if (!(p_dct_stat->status & (1 << SB_REGISTERED))) {
 			if (byte >= 2) {
-				if (pDCTstat->speed == 7)
+				if (p_dct_stat->speed == 7)
 					DramMRS |= 1 << 10;
 				else
 					DramMRS |= 1 << 11;
 			}
 		} else {
-			DramMRS |= mct_DramTermDyn_RDimm(pMCTstat, pDCTstat, byte);
+			DramMRS |= mct_DramTermDyn_RDimm(p_mct_stat, p_dct_stat, byte);
 		}
 
 		/* Qoff = 0, output buffers enabled */
 		/* Tcwl */
-		DramMRS |= (pDCTstat->speed - 4) << 20;
+		DramMRS |= (p_dct_stat->speed - 4) << 20;
 		/* ASR = 1, auto self refresh */
 		/* SRT = 0 */
 		DramMRS |= 1 << 18;
 	}
 
 	/* burst length control */
-	if (pDCTstat->status & (1 << SB_128_BIT_MODE))
+	if (p_dct_stat->status & (1 << SB_128_BIT_MODE))
 		DramMRS |= 1 << 1;
 
-	dword = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x84);
+	dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x84);
 	if (is_fam15h()) {
 		dword &= ~0x00800003;
 		dword |= DramMRS;
@@ -7875,11 +7875,11 @@ void ProgDramMRSReg_D(struct MCTStatStruc *pMCTstat,
 		dword &= ~0x00fc2f8f;
 		dword |= DramMRS;
 	}
-	Set_NB32_DCT(pDCTstat->dev_dct, dct, 0x84, dword);
+	Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0x84, dword);
 }
 
-void mct_SetDramConfigHi_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u32 dct, u32 DramConfigHi)
+void mct_SetDramConfigHi_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u32 dct, u32 DramConfigHi)
 {
 	/* Bug#15114: Comp. update interrupted by Freq. change can cause
 	 * subsequent update to be invalid during any MemClk frequency change:
@@ -7908,7 +7908,7 @@ void mct_SetDramConfigHi_D(struct MCTStatStruc *pMCTstat,
 	 *   Silicon status: Fixed in DR-B0
 	 */
 
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 index_reg = 0x98;
 	u32 index;
 
@@ -7922,10 +7922,10 @@ void mct_SetDramConfigHi_D(struct MCTStatStruc *pMCTstat,
 		 */
 
 		/* Program D18F2x9C_x0D0F_E006_dct[1:0][PllLockTime] = 0x190 */
-		dword = Get_NB32_index_wait_DCT(pDCTstat->dev_dct, dct, index_reg, 0x0d0fe006);
+		dword = Get_NB32_index_wait_DCT(p_dct_stat->dev_dct, dct, index_reg, 0x0d0fe006);
 		dword &= ~(0x0000ffff);
 		dword |= 0x00000190;
-		Set_NB32_index_wait_DCT(pDCTstat->dev_dct, dct, index_reg, 0x0d0fe006, dword);
+		Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, dct, index_reg, 0x0d0fe006, dword);
 
 		dword = Get_NB32_DCT(dev, dct, 0x94);
 		dword &= ~(1 << MEM_CLK_FREQ_VAL);
@@ -7935,10 +7935,10 @@ void mct_SetDramConfigHi_D(struct MCTStatStruc *pMCTstat,
 		dword &= ~(1 << MEM_CLK_FREQ_VAL);
 		Set_NB32_DCT(dev, dct, 0x94, dword);
 
-		mctGet_PS_Cfg_D(pMCTstat, pDCTstat, dct);
-		set_2t_configuration(pMCTstat, pDCTstat, dct);
-		mct_BeforePlatformSpec(pMCTstat, pDCTstat, dct);
-		mct_PlatformSpec(pMCTstat, pDCTstat, dct);
+		mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, dct);
+		set_2t_configuration(p_mct_stat, p_dct_stat, dct);
+		mct_BeforePlatformSpec(p_mct_stat, p_dct_stat, dct);
+		mct_PlatformSpec(p_mct_stat, p_dct_stat, dct);
 	} else {
 		index = 0x08;
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, index);
@@ -7957,30 +7957,30 @@ void mct_SetDramConfigHi_D(struct MCTStatStruc *pMCTstat,
 		/* Wait until F2x[1, 0]94[FreqChgInProg]=0. */
 		do {
 			printk(BIOS_DEBUG, "*");
-			dword = Get_NB32_DCT(pDCTstat->dev_dct, dct, 0x94);
+			dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94);
 		} while (dword & (1 << FreqChgInProg));
 		printk(BIOS_DEBUG, "\n");
 
 		/* Program D18F2x9C_x0D0F_E006_dct[1:0][PllLockTime] = 0xf */
-		dword = Get_NB32_index_wait_DCT(pDCTstat->dev_dct, dct, index_reg, 0x0d0fe006);
+		dword = Get_NB32_index_wait_DCT(p_dct_stat->dev_dct, dct, index_reg, 0x0d0fe006);
 		dword &= ~(0x0000ffff);
 		dword |= 0x0000000f;
-		Set_NB32_index_wait_DCT(pDCTstat->dev_dct, dct, index_reg, 0x0d0fe006, dword);
+		Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, dct, index_reg, 0x0d0fe006, dword);
 	}
 
 	/* Clear MC4 error status */
-	pci_write_config32(pDCTstat->dev_nbmisc, 0x48, 0x0);
-	pci_write_config32(pDCTstat->dev_nbmisc, 0x4c, 0x0);
+	pci_write_config32(p_dct_stat->dev_nbmisc, 0x48, 0x0);
+	pci_write_config32(p_dct_stat->dev_nbmisc, 0x4c, 0x0);
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-static void mct_BeforeDQSTrain_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstatA)
+static void mct_BeforeDQSTrain_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat_a)
 {
 	if (!is_fam15h()) {
 		u8 Node;
-		struct DCTStatStruc *pDCTstat;
+		struct DCTStatStruc *p_dct_stat;
 
 		/* Errata 178
 		 *
@@ -7994,30 +7994,30 @@ static void mct_BeforeDQSTrain_D(struct MCTStatStruc *pMCTstat,
 		 * Solution: At least, set WrDqs fine delay to be 0 for DDR3 training.
 		 */
 		for (Node = 0; Node < 8; Node++) {
-			pDCTstat = pDCTstatA + Node;
+			p_dct_stat = p_dct_stat_a + Node;
 
-			if (pDCTstat->NodePresent) {
-				mct_BeforeDQSTrainSamp(pDCTstat); /* only Bx */
-				mct_ResetDLL_D(pMCTstat, pDCTstat, 0);
-				mct_ResetDLL_D(pMCTstat, pDCTstat, 1);
+			if (p_dct_stat->node_present) {
+				mct_BeforeDQSTrainSamp(p_dct_stat); /* only Bx */
+				mct_ResetDLL_D(p_mct_stat, p_dct_stat, 0);
+				mct_ResetDLL_D(p_mct_stat, p_dct_stat, 1);
 			}
 		}
 	}
 }
 
 /* Erratum 350 */
-static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat, u8 dct)
+static void mct_ResetDLL_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 Receiver;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 addr;
 	u32 lo, hi;
 	u8 wrap32dis = 0;
 	u8 valid = 0;
 
 	/* Skip reset DLL for B3 */
-	if (pDCTstat->logical_cpuid & AMD_DR_B3) {
+	if (p_dct_stat->logical_cpuid & AMD_DR_B3) {
 		return;
 	}
 
@@ -8035,14 +8035,14 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 	/* Setting wrap32dis allows 64-bit memory references in 32bit mode */
 	_WRMSR(addr, lo, hi);
 
-	pDCTstat->channel = dct;
-	Receiver = mct_InitReceiver_D(pDCTstat, dct);
+	p_dct_stat->channel = dct;
+	Receiver = mct_InitReceiver_D(p_dct_stat, dct);
 	/* there are four receiver pairs, loosely associated with chipselects.*/
 	for (; Receiver < 8; Receiver += 2) {
-		if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, dct, Receiver)) {
-			addr = mct_GetRcvrSysAddr_D(pMCTstat, pDCTstat, dct, Receiver, &valid);
+		if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, Receiver)) {
+			addr = mct_GetRcvrSysAddr_D(p_mct_stat, p_dct_stat, dct, Receiver, &valid);
 			if (valid) {
-				mct_Read1LTestPattern_D(pMCTstat, pDCTstat, addr);	/* cache fills */
+				mct_Read1LTestPattern_D(p_mct_stat, p_dct_stat, addr);	/* cache fills */
 
 				/* Write 0000_8000h to register F2x[1,0]9C_xD080F0C */
 				Set_NB32_index_wait_DCT(dev, dct, 0x98, 0xD080F0C, 0x00008000);
@@ -8064,36 +8064,36 @@ static void mct_ResetDLL_D(struct MCTStatStruc *pMCTstat,
 	}
 }
 
-void mct_EnableDatIntlv_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat)
+void mct_EnableDatIntlv_D(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat)
 {
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 val;
 
 	/*  Enable F2x110[DctDatIntlv] */
 	/* Call back not required mctHookBeforeDatIntlv_D() */
 	/* FIXME Skip for Ax */
-	if (!pDCTstat->GangedMode) {
-		val = Get_NB32(dev, 0x110);
+	if (!p_dct_stat->ganged_mode) {
+		val = get_nb32(dev, 0x110);
 		val |= 1 << 5;			/* DctDatIntlv */
 		Set_NB32(dev, 0x110, val);
 
 		/* FIXME Skip for Cx */
-		dev = pDCTstat->dev_nbmisc;
-		val = Get_NB32(dev, 0x8C);	/* NB Configuration Hi */
+		dev = p_dct_stat->dev_nbmisc;
+		val = get_nb32(dev, 0x8C);	/* NB Configuration Hi */
 		val |= 1 << (36-32);		/* DisDatMask */
 		Set_NB32(dev, 0x8C, val);
 	}
 }
 
-void SetDllSpeedUp_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct)
+void SetDllSpeedUp_D(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	if (!is_fam15h()) {
 		u32 val;
-		u32 dev = pDCTstat->dev_dct;
+		u32 dev = p_dct_stat->dev_dct;
 
-		if (pDCTstat->speed >= mhz_to_memclk_config(800)) { /* DDR1600 and above */
+		if (p_dct_stat->speed >= mhz_to_memclk_config(800)) { /* DDR1600 and above */
 			/* Set bit13 PowerDown to register F2x[1, 0]98_x0D080F10 */
 			Set_NB32_DCT(dev, dct, 0x98, 0x0D080F10);
 			val = Get_NB32_DCT(dev, dct, 0x9C);
@@ -8125,7 +8125,7 @@ void SetDllSpeedUp_D(struct MCTStatStruc *pMCTstat,
 	}
 }
 
-static void SyncSetting(struct DCTStatStruc *pDCTstat)
+static void SyncSetting(struct DCTStatStruc *p_dct_stat)
 {
 	/* set F2x78[ChSetupSync] when F2x[1, 0]9C_x04[AddrCmdSetup, CsOdtSetup,
 	 * CkeSetup] setups for one DCT are all 0s and at least one of the setups,
@@ -8133,27 +8133,27 @@ static void SyncSetting(struct DCTStatStruc *pDCTstat)
 	 * controller is 1
 	 */
 	u32 cha, chb;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 	u32 val;
 
-	cha = pDCTstat->ch_addr_tmg[0] & 0x0202020;
-	chb = pDCTstat->ch_addr_tmg[1] & 0x0202020;
+	cha = p_dct_stat->ch_addr_tmg[0] & 0x0202020;
+	chb = p_dct_stat->ch_addr_tmg[1] & 0x0202020;
 
 	if ((cha != chb) && ((cha == 0) || (chb == 0))) {
-		val = Get_NB32(dev, 0x78);
+		val = get_nb32(dev, 0x78);
 		val |= 1 << ChSetupSync;
 		Set_NB32(dev, 0x78, val);
 	}
 }
 
-static void AfterDramInit_D(struct DCTStatStruc *pDCTstat, u8 dct) {
+static void AfterDramInit_D(struct DCTStatStruc *p_dct_stat, u8 dct) {
 
 	u32 val;
-	u32 dev = pDCTstat->dev_dct;
+	u32 dev = p_dct_stat->dev_dct;
 
-	if (pDCTstat->logical_cpuid & (AMD_DR_B2 | AMD_DR_B3)) {
+	if (p_dct_stat->logical_cpuid & (AMD_DR_B2 | AMD_DR_B3)) {
 		mct_Wait(10000);	/* Wait 50 us*/
-		val = Get_NB32(dev, 0x110);
+		val = get_nb32(dev, 0x110);
 		if (!(val & (1 << DRAM_ENABLED))) {
 			/* If 50 us expires while DramEnable =0 then do the following */
 			val = Get_NB32_DCT(dev, dct, 0x90);
@@ -8162,7 +8162,7 @@ static void AfterDramInit_D(struct DCTStatStruc *pDCTstat, u8 dct) {
 
 			val = Get_NB32_index_wait_DCT(dev, dct, 0x98, 0x05);	/* Perform dummy CSR read to F2x09C_x05 */
 
-			if (pDCTstat->GangedMode) {
+			if (p_dct_stat->ganged_mode) {
 				val = Get_NB32_DCT(dev, dct, 0x90);
 				val |= 1 << WIDTH_128;		/* Program WIDTH_128 = 0 */
 				Set_NB32_DCT(dev, dct, 0x90, val);
@@ -8192,12 +8192,12 @@ static void AfterDramInit_D(struct DCTStatStruc *pDCTstat, u8 dct) {
  *  1010	001111	16	3	10	4GB
  *  1011	010111	16	3	11	8GB
  */
-u8 crcCheck(struct DCTStatStruc *pDCTstat, u8 dimm)
+u8 crcCheck(struct DCTStatStruc *p_dct_stat, u8 dimm)
 {
-	u16 crc_calc = spd_ddr3_calc_crc(pDCTstat->spd_data.spd_bytes[dimm],
-		sizeof(pDCTstat->spd_data.spd_bytes[dimm]));
-	u16 checksum_spd = pDCTstat->spd_data.spd_bytes[dimm][SPD_byte_127] << 8
-		| pDCTstat->spd_data.spd_bytes[dimm][SPD_byte_126];
+	u16 crc_calc = spd_ddr3_calc_crc(p_dct_stat->spd_data.spd_bytes[dimm],
+		sizeof(p_dct_stat->spd_data.spd_bytes[dimm]));
+	u16 checksum_spd = p_dct_stat->spd_data.spd_bytes[dimm][SPD_byte_127] << 8
+		| p_dct_stat->spd_data.spd_bytes[dimm][SPD_byte_126];
 
 	return crc_calc == checksum_spd;
 }

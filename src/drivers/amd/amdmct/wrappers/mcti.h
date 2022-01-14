@@ -111,7 +111,7 @@ u8 mctSetNodeBoundary_D(void);
 #endif
 u16 mctGet_NVbits(u8 index);
 void mctHookAfterDIMMpre(void);
-void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat);
+void mctGet_MaxLoadFreq(struct DCTStatStruc *p_dct_stat);
 void mctAdjustAutoCycTmg_D(void);
 void mctHookAfterAutoCycTmg(void);
 void mctGetCS_ExcludeMap(void);
@@ -126,14 +126,14 @@ void mctNodeIDDebugPort_D(void);
 void mctWarmReset_D(void);
 void mctHookBeforeDramInit(void);
 void mctHookAfterDramInit(void);
-void mctHookBeforeAnyTraining(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA);
+void mctHookBeforeAnyTraining(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 void mctHookAfterAnyTraining(void);
-void mctGet_DIMMAddr(struct DCTStatStruc *pDCTstat, u32 node);
+void mctGet_DIMMAddr(struct DCTStatStruc *p_dct_stat, u32 node);
 
 #if CONFIG(DIMM_DDR3)
-void vErratum372(struct DCTStatStruc *pDCTstat);
-void vErratum414(struct DCTStatStruc *pDCTstat);
-u32 mct_AdjustSPDTimings(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA, u32 val);
+void vErratum372(struct DCTStatStruc *p_dct_stat);
+void vErratum414(struct DCTStatStruc *p_dct_stat);
+u32 mct_AdjustSPDTimings(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u32 val);
 #endif
 
 #endif

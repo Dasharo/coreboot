@@ -14,8 +14,8 @@
 
 static const u8 Tab_int_D[] = {6,7,7,8,8,8,8,8,9,9,8,9};
 
-void InterleaveBanks_D(struct MCTStatStruc *pMCTstat,
-			struct DCTStatStruc *pDCTstat, u8 dct)
+void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat,
+			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 ChipSel, EnChipSels;
 	u32 AddrLoMask, AddrHiMask;
@@ -32,7 +32,7 @@ void InterleaveBanks_D(struct MCTStatStruc *pMCTstat,
 	_CsIntCap = 0;
 	EnChipSels = 0;
 
-	dev = pDCTstat->dev_dct;
+	dev = p_dct_stat->dev_dct;
 
 	ChipSel = 0;		/* Find out if current configuration is capable */
 	while (DoIntlv && (ChipSel < MAX_CS_SUPPORTED)) {
@@ -71,14 +71,14 @@ void InterleaveBanks_D(struct MCTStatStruc *pMCTstat,
 
 	if (DoIntlv) {
 		if (!_CsIntCap) {
-			pDCTstat->err_status |= 1 << SB_BK_INT_DIS;
+			p_dct_stat->err_status |= 1 << SB_BK_INT_DIS;
 			DoIntlv = 0;
 		}
 	}
 
 	if (DoIntlv) {
 		val = Tab_int_D[BankEncd];
-		if (pDCTstat->status & (1 << SB_128_BIT_MODE))
+		if (p_dct_stat->status & (1 << SB_128_BIT_MODE))
 			val++;
 
 		AddrLoMask = (EnChipSels - 1) << val;
@@ -122,10 +122,10 @@ void InterleaveBanks_D(struct MCTStatStruc *pMCTstat,
 		}
 	}	/* DoIntlv */
 
-	/* dump_pci_device(PCI_DEV(0, 0x18+pDCTstat->node_id, 2)); */
+	/* dump_pci_device(PCI_DEV(0, 0x18+p_dct_stat->node_id, 2)); */
 
-	printk(BIOS_DEBUG, "InterleaveBanks_D: status %x\n", pDCTstat->status);
-	printk(BIOS_DEBUG, "InterleaveBanks_D: err_status %x\n", pDCTstat->err_status);
-	printk(BIOS_DEBUG, "InterleaveBanks_D: err_code %x\n", pDCTstat->err_code);
+	printk(BIOS_DEBUG, "InterleaveBanks_D: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "InterleaveBanks_D: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "InterleaveBanks_D: err_code %x\n", p_dct_stat->err_code);
 	printk(BIOS_DEBUG, "InterleaveBanks_D: Done\n\n");
 }

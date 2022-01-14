@@ -189,7 +189,7 @@ u16 mctGet_NVbits(u8 index)
 		val = 0;	/* disable */
 		//val = 1;	/* enable */
 		break;
-	case NV_BottomIO:
+	case NV_BOTTOM_IO:
 	case NV_BOTTOM_UMA:
 		/* address bits [31:24] */
 #if !CONFIG(GFXUMA)
@@ -300,9 +300,9 @@ void mctHookAfterDIMMpre(void)
 }
 
 
-void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
+void mctGet_MaxLoadFreq(struct DCTStatStruc *p_dct_stat)
 {
-	pDCTstat->preset_max_freq = mctGet_NVbits(NV_MAX_MEMCLK);
+	p_dct_stat->preset_max_freq = mctGet_NVbits(NV_MAX_MEMCLK);
 
 	/* Determine the number of installed DIMMs */
 	int ch1_count = 0;
@@ -315,15 +315,15 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
 	u8 dimm;
 	int i;
 	for (i = 0; i < 15; i = i + 2) {
-		if (pDCTstat->dimm_valid & (1 << i))
+		if (p_dct_stat->dimm_valid & (1 << i))
 			ch1_count++;
-		if (pDCTstat->dimm_valid & (1 << (i + 1)))
+		if (p_dct_stat->dimm_valid & (1 << (i + 1)))
 			ch2_count++;
 	}
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i = i + 2) {
-		if (pDCTstat->DimmRegistered[i])
+		if (p_dct_stat->dimm_registered[i])
 			ch1_registered = 1;
-		if (pDCTstat->DimmRegistered[i + 1])
+		if (p_dct_stat->dimm_registered[i + 1])
 			ch2_registered = 1;
 	}
 	if (CONFIG(DEBUG_RAM_SETUP)) {
@@ -333,37 +333,37 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *pDCTstat)
 
 #if CONFIG(DIMM_DDR3)
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i = i + 2) {
-		if (pDCTstat->dimm_valid & (1 << i))
-			ch1_voltage |= pDCTstat->DimmConfiguredVoltage[i];
-		if (pDCTstat->dimm_valid & (1 << (i + 1)))
-			ch2_voltage |= pDCTstat->DimmConfiguredVoltage[i + 1];
+		if (p_dct_stat->dimm_valid & (1 << i))
+			ch1_voltage |= p_dct_stat->DimmConfiguredVoltage[i];
+		if (p_dct_stat->dimm_valid & (1 << (i + 1)))
+			ch2_voltage |= p_dct_stat->DimmConfiguredVoltage[i + 1];
 	}
 #endif
 
 	for (i = 0; i < 2; i++) {
 		highest_rank_count[i] = 0x0;
 		for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-			if (pDCTstat->DimmRanks[dimm] > highest_rank_count[i])
-				highest_rank_count[i] = pDCTstat->DimmRanks[dimm];
+			if (p_dct_stat->dimm_ranks[dimm] > highest_rank_count[i])
+				highest_rank_count[i] = p_dct_stat->dimm_ranks[dimm];
 		}
 	}
 
 	/* Set limits if needed */
-	pDCTstat->preset_max_freq = mct_MaxLoadFreq(MAX(ch1_count, ch2_count),
+	p_dct_stat->preset_max_freq = mct_MaxLoadFreq(MAX(ch1_count, ch2_count),
 					MAX(highest_rank_count[0], highest_rank_count[1]),
 					(ch1_registered || ch2_registered),
-					(ch1_voltage | ch2_voltage), pDCTstat->preset_max_freq);
+					(ch1_voltage | ch2_voltage), p_dct_stat->preset_max_freq);
 }
 
-void mctGet_DIMMAddr(struct DCTStatStruc *pDCTstat, u32 node)
+void mctGet_DIMMAddr(struct DCTStatStruc *p_dct_stat, u32 node)
 {
 	int j;
 	struct sys_info *sysinfo = get_sysinfo();
 	struct mem_controller *ctrl = &(sysinfo->ctrl[node]);
 
 	for (j = 0; j < DIMM_SOCKETS; j++) {
-		pDCTstat->dimm_addr[j * 2] = ctrl->spd_addr[j] & 0xff;
-		pDCTstat->dimm_addr[j * 2 + 1] = ctrl->spd_addr[DIMM_SOCKETS + j] & 0xff;
+		p_dct_stat->dimm_addr[j * 2] = ctrl->spd_addr[j] & 0xff;
+		p_dct_stat->dimm_addr[j * 2 + 1] = ctrl->spd_addr[DIMM_SOCKETS + j] & 0xff;
 	}
 
 }
@@ -453,53 +453,53 @@ void mctHookAfterDramInit(void)
 }
 
 #if CONFIG(DIMM_DDR3)
-void vErratum372(struct DCTStatStruc *pDCTstat)
+void vErratum372(struct DCTStatStruc *p_dct_stat)
 {
 	msr_t msr = rdmsr(NB_CFG_MSR);
 
-	int nbPstate1supported = !(msr.hi & (1 << (NB_GfxNbPstateDis -32)));
+	int nbPstate1supported = !(msr.hi & (1 << (NB_GFX_NB_PSTATE_DIS -32)));
 
 	// is this the right way to check for NB pstate 1 or DDR3-1333 ?
-	if (((pDCTstat->preset_max_freq == 1333) || (nbPstate1supported))
-	    && (!pDCTstat->GangedMode)) {
+	if (((p_dct_stat->preset_max_freq == 1333) || (nbPstate1supported))
+	    && (!p_dct_stat->ganged_mode)) {
 		/* DisableCf8ExtCfg */
 		msr.hi &= ~(3 << (51 - 32));
 		wrmsr(NB_CFG_MSR, msr);
 	}
 }
 
-void vErratum414(struct DCTStatStruc *pDCTstat)
+void vErratum414(struct DCTStatStruc *p_dct_stat)
 {
 	int dct = 0;
 	for (; dct < 2 ; dct++) {
-		int dRAMConfigHi = Get_NB32(pDCTstat->dev_dct,0x94 + (0x100 * dct));
-		int powerDown =  dRAMConfigHi & (1 << PowerDownEn);
+		int dRAMConfigHi = get_nb32(p_dct_stat->dev_dct,0x94 + (0x100 * dct));
+		int powerDown =  dRAMConfigHi & (1 << POWER_DOWN_EN);
 		int ddr3 = dRAMConfigHi & (1 << Ddr3Mode);
-		int dRAMMRS = Get_NB32(pDCTstat->dev_dct,0x84 + (0x100 * dct));
-		int pchgPDModeSel = dRAMMRS & (1 << PchgPDModeSel);
+		int dRAMMRS = get_nb32(p_dct_stat->dev_dct,0x84 + (0x100 * dct));
+		int pchgPDModeSel = dRAMMRS & (1 << PCHG_PD_MODE_SEL);
 		if (powerDown && ddr3 && pchgPDModeSel)
-			Set_NB32(pDCTstat->dev_dct,0x84 + (0x100 * dct), dRAMMRS & ~(1 << PchgPDModeSel));
+			Set_NB32(p_dct_stat->dev_dct,0x84 + (0x100 * dct), dRAMMRS & ~(1 << PCHG_PD_MODE_SEL));
 	}
 }
 #endif
 
 
-void mctHookBeforeAnyTraining(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
+void mctHookBeforeAnyTraining(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 {
 #if CONFIG(DIMM_DDR3)
 	/* FIXME :  as of 25.6.2010 errata 350 and 372 should apply to  ((RB|BL|DA)-C[23])|(HY-D[01])|(PH-E0) but I don't find constants for all of them */
-	if (pDCTstatA->LogicalCPUID & (AMD_DRBH_Cx | AMD_DR_Dx)) {
-		vErratum372(pDCTstatA);
-		vErratum414(pDCTstatA);
+	if (p_dct_stat_a->logical_cpuid & (AMD_DRBH_Cx | AMD_DR_Dx)) {
+		vErratum372(p_dct_stat_a);
+		vErratum414(p_dct_stat_a);
 	}
 #endif
 }
 
 #if CONFIG(DIMM_DDR3)
-u32 mct_AdjustSPDTimings(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA, u32 val)
+u32 mct_AdjustSPDTimings(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u32 val)
 {
-	if (pDCTstatA->LogicalCPUID & AMD_DR_Bx) {
-		if (pDCTstatA->status & (1 << SB_REGISTERED)) {
+	if (p_dct_stat_a->logical_cpuid & AMD_DR_Bx) {
+		if (p_dct_stat_a->status & (1 << SB_REGISTERED)) {
 			val ++;
 		}
 	}

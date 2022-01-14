@@ -3,35 +3,35 @@
 #include <stdint.h>
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-static void Get_ChannelPS_Cfg0_D(u8 MAAdimms, u8 Speed, u8 MAAload,
-				u8 DATAAload, u32 *AddrTmgCTL, u32 *ODC_CTL,
+static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
+				u8 DATAAload, u32 *addr_tmg_ctl, u32 *ODC_CTL,
 				u8 *CMDmode);
 
 
-void mctGet_PS_Cfg_D(struct MCTStatStruc *pMCTstat,
-			 struct DCTStatStruc *pDCTstat, u32 dct)
+void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat,
+			 struct DCTStatStruc *p_dct_stat, u32 dct)
 {
 	print_tx("dct: ", dct);
-	print_tx("Speed: ", pDCTstat->speed);
+	print_tx("Speed: ", p_dct_stat->speed);
 
-	Get_ChannelPS_Cfg0_D(pDCTstat->ma_dimms[dct], pDCTstat->speed,
-				pDCTstat->ma_load[dct], pDCTstat->data_load[dct],
-				&(pDCTstat->ch_addr_tmg[dct]), &(pDCTstat->ch_odc_ctl[dct]),
-				&pDCTstat->_2t_mode);
+	Get_ChannelPS_Cfg0_D(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
+				p_dct_stat->ma_load[dct], p_dct_stat->data_load[dct],
+				&(p_dct_stat->ch_addr_tmg[dct]), &(p_dct_stat->ch_odc_ctl[dct]),
+				&p_dct_stat->_2t_mode);
 
-	if (pDCTstat->ma_dimms[dct] == 1)
-		pDCTstat->ch_odc_ctl[dct] |= 0x20000000;	/* 75ohms */
+	if (p_dct_stat->ma_dimms[dct] == 1)
+		p_dct_stat->ch_odc_ctl[dct] |= 0x20000000;	/* 75ohms */
 	else
-		pDCTstat->ch_odc_ctl[dct] |= 0x10000000;	/* 150ohms */
+		p_dct_stat->ch_odc_ctl[dct] |= 0x10000000;	/* 150ohms */
 
 
 	/*
 	 * Overrides and/or workarounds
 	 */
-	pDCTstat->ch_odc_ctl[dct] = procOdtWorkaround(pDCTstat, dct, pDCTstat->ch_odc_ctl[dct]);
+	p_dct_stat->ch_odc_ctl[dct] = procOdtWorkaround(p_dct_stat, dct, p_dct_stat->ch_odc_ctl[dct]);
 
-	print_tx("4 CH_ODC_CTL: ", pDCTstat->ch_odc_ctl[dct]);
-	print_tx("4 CH_ADDR_TMG: ", pDCTstat->ch_addr_tmg[dct]);
+	print_tx("4 ch_odc_ctl: ", p_dct_stat->ch_odc_ctl[dct]);
+	print_tx("4 ch_addr_tmg: ", p_dct_stat->ch_addr_tmg[dct]);
 }
 
 /*=============================================================================
@@ -65,58 +65,58 @@ static const u8 Table_ATC_ODC_D_Bx[] = {
 };
 
 
-static void Get_ChannelPS_Cfg0_D(u8 MAAdimms, u8 Speed, u8 MAAload,
-				u8 DATAAload, u32 *AddrTmgCTL, u32 *ODC_CTL,
+static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
+				u8 DATAAload, u32 *addr_tmg_ctl, u32 *ODC_CTL,
 				u8 *CMDmode)
 {
 	u8 const *p;
 
-	*AddrTmgCTL = 0;
+	*addr_tmg_ctl = 0;
 	*ODC_CTL = 0;
 	*CMDmode = 1;
 
 	// FIXME: add Ax support
-	if (MAAdimms == 0) {
+	if (maa_dimms == 0) {
 		*ODC_CTL = 0x00111222;
 		if (Speed == 3)
-			*AddrTmgCTL = 0x00202220;
+			*addr_tmg_ctl = 0x00202220;
 		else if (Speed == 2)
-			*AddrTmgCTL = 0x002F2F00;
+			*addr_tmg_ctl = 0x002F2F00;
 		else if (Speed == 1)
-			*AddrTmgCTL = 0x002F2F00;
+			*addr_tmg_ctl = 0x002F2F00;
 		else if (Speed == 4)
-			*AddrTmgCTL = 0x00202520;
+			*addr_tmg_ctl = 0x00202520;
 		else if (Speed == 5)
-			*AddrTmgCTL = 0x002F2020;
+			*addr_tmg_ctl = 0x002F2020;
 		else
-			*AddrTmgCTL = 0x002F2F2F;
-	} else if (MAAdimms == 1) {
+			*addr_tmg_ctl = 0x002F2F2F;
+	} else if (maa_dimms == 1) {
 		if (Speed == 4) {
 			*CMDmode = 2;
-			*AddrTmgCTL = 0x00202520;
+			*addr_tmg_ctl = 0x00202520;
 			*ODC_CTL = 0x00113222;
 		} else if (Speed == 5) {
 			*CMDmode = 2;
-			*AddrTmgCTL = 0x002F2020;
+			*addr_tmg_ctl = 0x002F2020;
 			*ODC_CTL = 0x00113222;
 		} else {
 			*CMDmode = 1;
 			*ODC_CTL = 0x00111222;
 			if (Speed == 3) {
-				*AddrTmgCTL = 0x00202220;
+				*addr_tmg_ctl = 0x00202220;
 			} else if (Speed == 2) {
 				if (MAAload == 4)
-					*AddrTmgCTL = 0x002B2F00;
+					*addr_tmg_ctl = 0x002B2F00;
 				else if (MAAload == 16)
-					*AddrTmgCTL = 0x002B2F00;
+					*addr_tmg_ctl = 0x002B2F00;
 				else if (MAAload == 8)
-					*AddrTmgCTL = 0x002F2F00;
+					*addr_tmg_ctl = 0x002F2F00;
 				else
-					*AddrTmgCTL = 0x002F2F00;
+					*addr_tmg_ctl = 0x002F2F00;
 			} else if (Speed == 1) {
-				*AddrTmgCTL = 0x002F2F00;
+				*addr_tmg_ctl = 0x002F2F00;
 			} else {
-				*AddrTmgCTL = 0x002F2F2F;
+				*addr_tmg_ctl = 0x002F2F2F;
 			}
 		}
 	} else {
@@ -125,7 +125,7 @@ static void Get_ChannelPS_Cfg0_D(u8 MAAdimms, u8 Speed, u8 MAAload,
 	do {
 		if (Speed == *p) {
 			if (MAAload <= *(p + 1)) {
-				*AddrTmgCTL = stream_to_int(p + 2);
+				*addr_tmg_ctl = stream_to_int(p + 2);
 				*ODC_CTL = stream_to_int(p + 6);
 				break;
 			}

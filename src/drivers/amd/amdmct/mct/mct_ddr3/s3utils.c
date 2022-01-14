@@ -216,7 +216,7 @@ static struct amd_s3_persistent_data *map_s3nv_in_nvram(void)
 	return persistent_data;
 }
 
-int8_t load_spd_hashes_from_nvram(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat)
+int8_t load_spd_hashes_from_nvram(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat)
 {
 	struct amd_s3_persistent_data *persistent_data;
 
@@ -224,10 +224,10 @@ int8_t load_spd_hashes_from_nvram(struct MCTStatStruc *pMCTstat, struct DCTStatS
 	if (!persistent_data)
 		return -1;
 
-	memcpy(pDCTstat->spd_data.nvram_spd_hash, persistent_data->node[pDCTstat->node_id].spd_hash, sizeof(pDCTstat->spd_data.nvram_spd_hash));
-	memcpy(pDCTstat->spd_data.nvram_memclk, persistent_data->node[pDCTstat->node_id].memclk, sizeof(pDCTstat->spd_data.nvram_memclk));
+	memcpy(p_dct_stat->spd_data.nvram_spd_hash, persistent_data->node[p_dct_stat->node_id].spd_hash, sizeof(p_dct_stat->spd_data.nvram_spd_hash));
+	memcpy(p_dct_stat->spd_data.nvram_memclk, persistent_data->node[p_dct_stat->node_id].memclk, sizeof(p_dct_stat->spd_data.nvram_memclk));
 
-	pMCTstat->nvram_checksum = persistent_data->nvram_checksum;
+	p_mct_stat->nvram_checksum = persistent_data->nvram_checksum;
 
 	return 0;
 }
@@ -1177,24 +1177,24 @@ int8_t restore_mct_information_from_nvram(u8 training_only)
 	return 0;
 }
 
-void calculate_and_store_spd_hashes(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+void calculate_and_store_spd_hashes(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u8 dimm;
 
 	for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-		calculate_spd_hash(pDCTstat->spd_data.spd_bytes[dimm], &pDCTstat->spd_data.spd_hash[dimm]);
+		calculate_spd_hash(p_dct_stat->spd_data.spd_bytes[dimm], &p_dct_stat->spd_data.spd_hash[dimm]);
 	}
 }
 
-void compare_nvram_spd_hashes(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+void compare_nvram_spd_hashes(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	u8 dimm;
 
-	pDCTstat->spd_data.nvram_spd_match = 1;
+	p_dct_stat->spd_data.nvram_spd_match = 1;
 	for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-		if (pDCTstat->spd_data.spd_hash[dimm] != pDCTstat->spd_data.nvram_spd_hash[dimm])
-			pDCTstat->spd_data.nvram_spd_match = 0;
+		if (p_dct_stat->spd_data.spd_hash[dimm] != p_dct_stat->spd_data.nvram_spd_hash[dimm])
+			p_dct_stat->spd_data.nvram_spd_match = 0;
 	}
 }

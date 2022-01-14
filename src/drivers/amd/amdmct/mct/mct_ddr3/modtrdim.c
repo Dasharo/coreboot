@@ -31,9 +31,9 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
 		case 2:
 			/* 2 dimms per channel */
 			if (pDCTData->MaxDimmsInstalled == 1) {
-				if ((pDCTData->DimmRanks[dimm] == 2) && (rank == 0)) {
+				if ((pDCTData->dimm_ranks[dimm] == 2) && (rank == 0)) {
 					tempW1 = 0x00;	/* Rtt_Nom = OFF */
-				} else if (pDCTData->DimmRanks[dimm] == 4) {
+				} else if (pDCTData->dimm_ranks[dimm] == 4) {
 					if (rank == 1) {
 						tempW1 = 0x00;	/* Rtt_Nom = OFF on second and forth rank of QR dimm */
 					} else {
@@ -47,9 +47,9 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
 					tempW1 = 0x04;	/* Rtt_Nom = 60 ohms */
 				}
 			} else if (pDCTData->MaxDimmsInstalled == 2) {
-				if (((pDCTData->DimmRanks[dimm] == 2) || (pDCTData->DimmRanks[dimm] == 4)) && (rank == 1)) {
+				if (((pDCTData->dimm_ranks[dimm] == 2) || (pDCTData->dimm_ranks[dimm] == 4)) && (rank == 1)) {
 					tempW1 = 0x00;	/* Rtt_Nom = OFF */
-				} else if ((pDCTData->DimmRanks[dimm] == 4) || (pDCTData->DctCSPresent & 0xF0)) {
+				} else if ((pDCTData->dimm_ranks[dimm] == 4) || (pDCTData->DctCSPresent & 0xF0)) {
 					if (MemClkFreq == 3) {
 						tempW1 = 0x40;	/* Rtt_Nom = 120 ohms */
 					} else {
@@ -68,7 +68,7 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
 			/* 3 dimms per channel */
 			/* QR not supported in this case on L1 package. */
 			if (pDCTData->MaxDimmsInstalled == 1) {
-				if ((pDCTData->DimmRanks[dimm] == 2) && (rank == 1)) {
+				if ((pDCTData->dimm_ranks[dimm] == 2) && (rank == 1)) {
 					tempW1 = 0x00;	/* Rtt_Nom = OFF */
 				} else {
 					tempW1 = 0x04;	/* Rtt_Nom = 60 ohms */
@@ -84,9 +84,9 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
 		switch (mctGet_NVbits(NV_MAX_DIMMS_PER_CH)) {
 		case 2:
 			/* 2 dimms per channel */
-			if ((pDCTData->DimmRanks[dimm] == 4) && (rank == 1)) {
+			if ((pDCTData->dimm_ranks[dimm] == 4) && (rank == 1)) {
 				tempW1 = 0x00;	/* Rtt_Nom = OFF */
-			} else if ((pDCTData->MaxDimmsInstalled == 1) || (pDCTData->DimmRanks[dimm] == 4)) {
+			} else if ((pDCTData->MaxDimmsInstalled == 1) || (pDCTData->dimm_ranks[dimm] == 4)) {
 				tempW1 = 0x04;	/* Rtt_Nom = 60 ohms */
 			} else {
 				if (pDCTData->DctCSPresent & 0xF0) {
@@ -137,7 +137,7 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
  */
 u32 RttNomNonTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank)
 {
-	if ((wl) && (mctGet_NVbits(NV_MAX_DIMMS_PER_CH) == 2) && (pDCTData->DimmRanks[dimm] == 2) && (rank == 1)) {
+	if ((wl) && (mctGet_NVbits(NV_MAX_DIMMS_PER_CH) == 2) && (pDCTData->dimm_ranks[dimm] == 2) && (rank == 1)) {
 		return 0x00;	/* for non-target dimm during WL, the second rank of a DR dimm need to have Rtt_Nom = OFF */
 	} else {
 		return RttNomTargetRegDimm (pMCTData, pDCTData, dimm, FALSE, MemClkFreq, rank);	/* otherwise, the same as target dimm in normal mode. */
@@ -170,7 +170,7 @@ u32 RttWrRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, 
 		switch (mctGet_NVbits(NV_MAX_DIMMS_PER_CH)) {
 		case 2:
 			if (pDCTData->MaxDimmsInstalled == 1) {
-				if (pDCTData->DimmRanks[dimm] != 4) {
+				if (pDCTData->dimm_ranks[dimm] != 4) {
 					tempW1 = 0x00;
 				} else {
 					if (MemClkFreq == 6) {
@@ -180,7 +180,7 @@ u32 RttWrRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, 
 					}
 				}
 			} else {
-				if ((pDCTData->DimmRanks[dimm] == 4) || (pDCTData->DctCSPresent & 0xF0)) {
+				if ((pDCTData->dimm_ranks[dimm] == 4) || (pDCTData->DctCSPresent & 0xF0)) {
 					if (MemClkFreq == 3) {
 						tempW1 = 0x400;	/* Rtt_WR = 120 ohms */
 					} else {
@@ -233,13 +233,13 @@ u8 WrLvOdtRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm)
 		i += 2;
 	}
 	if (mctGet_NVbits(NV_MAX_DIMMS_PER_CH) == 2) {
-		if ((pDCTData->DimmRanks[dimm] == 4) && (pDCTData->MaxDimmsInstalled != 1)) {
+		if ((pDCTData->dimm_ranks[dimm] == 4) && (pDCTData->MaxDimmsInstalled != 1)) {
 			if (dimm >= 2) {
 				WrLvOdt1 = (u8)bitTestReset (WrLvOdt1, (dimm - 2));
 			} else {
 				WrLvOdt1 = (u8)bitTestReset (WrLvOdt1, (dimm + 2));
 			}
-		} else if ((pDCTData->DimmRanks[dimm] == 2) && (pDCTData->MaxDimmsInstalled == 1)) {
+		} else if ((pDCTData->dimm_ranks[dimm] == 2) && (pDCTData->MaxDimmsInstalled == 1)) {
 			/* the case for one DR on a 2 dimms per channel is special */
 			WrLvOdt1 = 0x8;
 		}

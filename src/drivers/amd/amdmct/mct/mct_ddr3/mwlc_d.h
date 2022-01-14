@@ -157,7 +157,7 @@ typedef struct _sDCTStruct
 	int32_t WLCriticalGrossDelayPrevPass;
 	int32_t WLCriticalGrossDelayFinalPass;
 	u16 WLPrevMemclkFreq[MAX_TOTAL_DIMMS];
-	u16 RegMan1Present;
+	u16 reg_man_1_present;
 	u8 DimmPresent[MAX_TOTAL_DIMMS];/* Indicates which DIMMs are present */
 					/* from Total Number of DIMMs(per Node)*/
 	u8 DimmX8Present[MAX_TOTAL_DIMMS];	/* Which DIMMs x8 devices */
@@ -169,8 +169,8 @@ typedef struct _sDCTStruct
 	u8 WLTotalDelay[MAX_BYTE_LANES];/* Write Levelization Total Delay */
 					/* per byte lane */
 	u8 MaxDimmsInstalled;		/* Max Dimms Installed for current DCT */
-	u8 DimmRanks[MAX_TOTAL_DIMMS];	/* Total Number of Ranks(per Dimm) */
-	u64 LogicalCPUID;
+	u8 dimm_ranks[MAX_TOTAL_DIMMS];	/* Total Number of Ranks(per Dimm) */
+	u64 logical_cpuid;
 	u8 WLPass;
 } __attribute__((packed, aligned(4))) sDCTStruct;
 
