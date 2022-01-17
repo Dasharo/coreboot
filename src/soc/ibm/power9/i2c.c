@@ -278,7 +278,8 @@ void fsi_i2c_init(uint8_t chips)
 	status = read_i2c(FSI_I2C, STATUS_REG);
 	while ((status & SCL) == 0) {
 		if (status & UNRECOVERABLE)
-			die("Unrecoverable I2C error while waiting for SCL: 0x%016x\n", status);
+			die("Unrecoverable I2C error while waiting for SCL: 0x%016llx\n",
+			    status);
 		status = read_i2c(FSI_I2C, STATUS_REG);
 	}
 
@@ -288,10 +289,10 @@ void fsi_i2c_init(uint8_t chips)
 	status = read_i2c(FSI_I2C, STATUS_REG);
 	while ((status & CMD_COMPLETE) == 0) {
 		if (status & UNRECOVERABLE)
-			die("Unrecoverable I2C error on STOP: 0x%016x\n", status);
+			die("Unrecoverable I2C error on STOP: 0x%016llx\n", status);
 		status = read_i2c(FSI_I2C, STATUS_REG);
 	}
 
 	if ((status & (SCL | SDA | BUSY)) != (SCL | SDA))
-		die("Invalid I2C state after initialization: 0x%016x\n", status);
+		die("Invalid I2C state after initialization: 0x%016llx\n", status);
 }
