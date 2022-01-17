@@ -24,6 +24,8 @@ uint8_t fsi_init(void);
 
 void fsi_i2c_init(uint8_t chips);
 
+void fsi_reset_pib2opb(uint8_t chip);
+
 /* This isn't meant to be used directly, see below for interface of this unit */
 uint32_t fsi_op(uint8_t chip, uint32_t addr, uint32_t data, bool is_read, uint8_t size);
 
