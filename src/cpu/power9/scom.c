@@ -4,6 +4,9 @@
 #include <cpu/power/spr.h>		// HMER
 #include <console/console.h>
 
+#define XSCOM_ADDR_IND_ADDR			PPC_BITMASK(11,31)
+#define XSCOM_ADDR_IND_DATA			PPC_BITMASK(48,63)
+
 #define XSCOM_DATA_IND_READ			PPC_BIT(0)
 #define XSCOM_DATA_IND_COMPLETE			PPC_BIT(32)
 #define XSCOM_DATA_IND_ERR			PPC_BITMASK(33,35)
@@ -14,6 +17,79 @@
 #define XSCOM_RCVED_STAT_REG			0x00090018
 #define XSCOM_LOG_REG				0x00090012
 #define XSCOM_ERR_REG				0x00090013
+
+static void reset_scom_engine(void)
+{
+	/*
+	 * With cross-CPU SCOM accesses, first register should be cleared on the
+	 * executing CPU, the other two on target CPU. In that case it may be
+	 * necessary to do the remote writes in assembly directly to skip checking
+	 * HMER and possibly end in a loop.
+	 */
+	write_scom_direct(XSCOM_RCVED_STAT_REG, 0);
+	write_scom_direct(XSCOM_LOG_REG, 0);
+	write_scom_direct(XSCOM_ERR_REG, 0);
+	clear_hmer();
+	eieio();
+}
+
+uint64_t read_scom_direct(uint64_t reg_address)
+{
+	uint64_t val;
+	uint64_t hmer = 0;
+	do {
+		/*
+		 * Clearing HMER on every SCOM access seems to slow down CCS up
+		 * to a point where it starts hitting timeout on "less ideal"
+		 * DIMMs for write centering. Clear it only if this do...while
+		 * executes more than once.
+		 */
+		if ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED)
+			clear_hmer();
+
+		eieio();
+		asm volatile(
+			"ldcix %0, %1, %2":
+			"=r"(val):
+			"b"(MMIO_GROUP0_CHIP0_SCOM_BASE_ADDR),
+			"r"(reg_address << 3));
+		eieio();
+		hmer = read_hmer();
+	} while ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED);
+
+	if (hmer & SPR_HMER_XSCOM_STATUS) {
+		reset_scom_engine();
+		/*
+		 * All F's are returned in case of error, but code polls for a set bit
+		 * after changes that can make such error appear (e.g. clock settings).
+		 * Return 0 so caller won't have to test for all F's in that case.
+		 */
+		return 0;
+	}
+	return val;
+}
+
+void write_scom_direct(uint64_t reg_address, uint64_t data)
+{
+	uint64_t hmer = 0;
+	do {
+		/* See comment in read_scom_direct() */
+		if ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED)
+			clear_hmer();
+
+		eieio();
+		asm volatile(
+			"stdcix %0, %1, %2"::
+			"r"(data),
+			"b"(MMIO_GROUP0_CHIP0_SCOM_BASE_ADDR),
+			"r"(reg_address << 3));
+		eieio();
+		hmer = read_hmer();
+	} while ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED);
+
+	if (hmer & SPR_HMER_XSCOM_STATUS)
+		reset_scom_engine();
+}
 
 void write_scom_indirect(uint64_t reg_address, uint64_t value)
 {
@@ -60,20 +136,4 @@ uint64_t read_scom_indirect(uint64_t reg_address)
 	}
 
 	return data & XSCOM_DATA_IND_DATA;
-}
-
-/* This function should be rarely called, don't make it inlined */
-void reset_scom_engine(void)
-{
-	/*
-	 * With cross-CPU SCOM accesses, first register should be cleared on the
-	 * executing CPU, the other two on target CPU. In that case it may be
-	 * necessary to do the remote writes in assembly directly to skip checking
-	 * HMER and possibly end in a loop.
-	 */
-	write_scom_direct(XSCOM_RCVED_STAT_REG, 0);
-	write_scom_direct(XSCOM_LOG_REG, 0);
-	write_scom_direct(XSCOM_ERR_REG, 0);
-	clear_hmer();
-	eieio();
 }

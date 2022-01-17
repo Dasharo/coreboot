@@ -27,13 +27,10 @@
 // Higher bits specify indirect address
 
 #define XSCOM_ADDR_IND_FLAG		PPC_BIT(0)
-#define XSCOM_ADDR_IND_ADDR		PPC_BITMASK(11,31)
-#define XSCOM_ADDR_IND_DATA		PPC_BITMASK(48,63)
 
 #ifndef __ASSEMBLER__
 #include <types.h>
 #include <arch/io.h>
-#include <cpu/power/spr.h>
 
 // TODO: these are probably specific to POWER9
 typedef enum
@@ -92,65 +89,8 @@ static const chiplet_id_t mcs_to_nest[] =
 	[MC23_CHIPLET_ID] = N1_CHIPLET_ID,
 };
 
-void reset_scom_engine(void);
-
-static uint64_t read_scom_direct(uint64_t reg_address)
-{
-	uint64_t val;
-	uint64_t hmer = 0;
-	do {
-		/*
-		 * Clearing HMER on every SCOM access seems to slow down CCS up
-		 * to a point where it starts hitting timeout on "less ideal"
-		 * DIMMs for write centering. Clear it only if this do...while
-		 * executes more than once.
-		 */
-		if ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED)
-			clear_hmer();
-
-		eieio();
-		asm volatile(
-			"ldcix %0, %1, %2":
-			"=r"(val):
-			"b"(MMIO_GROUP0_CHIP0_SCOM_BASE_ADDR),
-			"r"(reg_address << 3));
-		eieio();
-		hmer = read_hmer();
-	} while ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED);
-
-	if (hmer & SPR_HMER_XSCOM_STATUS) {
-		reset_scom_engine();
-		/*
-		 * All F's are returned in case of error, but code polls for a set bit
-		 * after changes that can make such error appear (e.g. clock settings).
-		 * Return 0 so caller won't have to test for all F's in that case.
-		 */
-		return 0;
-	}
-	return val;
-}
-
-static void write_scom_direct(uint64_t reg_address, uint64_t data)
-{
-	uint64_t hmer = 0;
-	do {
-		/* See comment in read_scom_direct() */
-		if ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED)
-			clear_hmer();
-
-		eieio();
-		asm volatile(
-			"stdcix %0, %1, %2"::
-			"r"(data),
-			"b"(MMIO_GROUP0_CHIP0_SCOM_BASE_ADDR),
-			"r"(reg_address << 3));
-		eieio();
-		hmer = read_hmer();
-	} while ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED);
-
-	if (hmer & SPR_HMER_XSCOM_STATUS)
-		reset_scom_engine();
-}
+uint64_t read_scom_direct(uint64_t reg_address);
+void write_scom_direct(uint64_t reg_address, uint64_t data);
 
 uint64_t read_scom_indirect(uint64_t reg_address);
 void write_scom_indirect(uint64_t reg_address, uint64_t data);
