@@ -30,13 +30,10 @@
 // Higher bits specify indirect address
 
 #define XSCOM_ADDR_IND_FLAG		PPC_BIT(0)
-#define XSCOM_ADDR_IND_ADDR		PPC_BITMASK(11, 31)
-#define XSCOM_ADDR_IND_DATA		PPC_BITMASK(48, 63)
 
 #ifndef __ASSEMBLER__
 #include <types.h>
 #include <arch/io.h>
-#include <cpu/power/spr.h>
 
 // TODO: these are probably specific to POWER9
 typedef enum {
@@ -93,8 +90,6 @@ static const chiplet_id_t mcs_to_nest[] =
 	[MC01_CHIPLET_ID] = N3_CHIPLET_ID,
 	[MC23_CHIPLET_ID] = N1_CHIPLET_ID,
 };
-
-void reset_scom_engine(void);
 
 uint64_t read_scom_direct(uint64_t reg_address);
 void write_scom_direct(uint64_t reg_address, uint64_t data);
