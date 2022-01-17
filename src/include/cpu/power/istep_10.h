@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 
+void istep_10_1(uint8_t chips);
 void istep_10_10(uint8_t *phb_active_mask, uint8_t *iovalid_enable);
 void istep_10_12(void);
 void istep_10_13(void);
