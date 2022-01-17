@@ -72,10 +72,10 @@ enum {
 				 OPB_STAT_ERR_MFSI),
 };
 
-static void reset_pib2opb(void)
+void fsi_reset_pib2opb(uint8_t chip)
 {
-	write_scom(FSI2OPB_OFFSET_0 | OPB_REG_RES, 0x8000000000000000);
-	write_scom(FSI2OPB_OFFSET_0 | OPB_REG_STAT, 0x8000000000000000);
+	write_rscom(chip, FSI2OPB_OFFSET_0 | OPB_REG_RES, 0x8000000000000000);
+	write_rscom(chip, FSI2OPB_OFFSET_0 | OPB_REG_STAT, 0x8000000000000000);
 }
 
 static void cleanup_port_maeb_error(uint8_t port)
@@ -171,7 +171,7 @@ static uint8_t basic_master_init(void)
 	uint8_t present_slaves;
 
 	/* Cleanup any initial error states */
-	reset_pib2opb();
+	fsi_reset_pib2opb(chip);
 
 	/* Ensure we don't have any errors before we even start */
 	tmp = read_scom(FSI2OPB_OFFSET_0 | OPB_REG_STAT);
