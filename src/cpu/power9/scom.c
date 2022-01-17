@@ -18,7 +18,7 @@
 #define XSCOM_LOG_REG				0x00090012
 #define XSCOM_ERR_REG				0x00090013
 
-static void reset_scom_engine(void)
+static void reset_scom_engine(uint8_t chip)
 {
 	/*
 	 * With cross-CPU SCOM accesses, first register should be cleared on the
@@ -26,14 +26,14 @@ static void reset_scom_engine(void)
 	 * necessary to do the remote writes in assembly directly to skip checking
 	 * HMER and possibly end in a loop.
 	 */
-	write_scom_direct(XSCOM_RCVED_STAT_REG, 0);
-	write_scom_direct(XSCOM_LOG_REG, 0);
-	write_scom_direct(XSCOM_ERR_REG, 0);
+	write_scom_direct(0, XSCOM_RCVED_STAT_REG, 0);
+	write_scom_direct(chip, XSCOM_LOG_REG, 0);
+	write_scom_direct(chip, XSCOM_ERR_REG, 0);
 	clear_hmer();
 	eieio();
 }
 
-uint64_t read_scom_direct(uint64_t reg_address)
+uint64_t read_scom_direct(uint8_t chip, uint64_t reg_address)
 {
 	uint64_t val;
 	uint64_t hmer = 0;
@@ -51,14 +51,14 @@ uint64_t read_scom_direct(uint64_t reg_address)
 		asm volatile(
 			"ldcix %0, %1, %2":
 			"=r"(val):
-			"b"(MMIO_GROUP0_CHIP0_SCOM_BASE_ADDR),
+			"b"(MMIO_GROUP0_CHIP0_SCOM_BASE_ADDR + chip * MMIO_GROUP_SIZE ),
 			"r"(reg_address << 3));
 		eieio();
 		hmer = read_hmer();
 	} while ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED);
 
 	if (hmer & SPR_HMER_XSCOM_STATUS) {
-		reset_scom_engine();
+		reset_scom_engine(chip);
 		/*
 		 * All F's are returned in case of error, but code polls for a set bit
 		 * after changes that can make such error appear (e.g. clock settings).
@@ -69,7 +69,7 @@ uint64_t read_scom_direct(uint64_t reg_address)
 	return val;
 }
 
-void write_scom_direct(uint64_t reg_address, uint64_t data)
+void write_scom_direct(uint8_t chip, uint64_t reg_address, uint64_t data)
 {
 	uint64_t hmer = 0;
 	do {
@@ -81,17 +81,17 @@ void write_scom_direct(uint64_t reg_address, uint64_t data)
 		asm volatile(
 			"stdcix %0, %1, %2"::
 			"r"(data),
-			"b"(MMIO_GROUP0_CHIP0_SCOM_BASE_ADDR),
+			"b"(MMIO_GROUP0_CHIP0_SCOM_BASE_ADDR + chip * MMIO_GROUP_SIZE ),
 			"r"(reg_address << 3));
 		eieio();
 		hmer = read_hmer();
 	} while ((hmer & SPR_HMER_XSCOM_STATUS) == SPR_HMER_XSCOM_OCCUPIED);
 
 	if (hmer & SPR_HMER_XSCOM_STATUS)
-		reset_scom_engine();
+		reset_scom_engine(chip);
 }
 
-void write_scom_indirect(uint64_t reg_address, uint64_t value)
+void write_scom_indirect(uint8_t chip, uint64_t reg_address, uint64_t value)
 {
 	uint64_t addr;
 	uint64_t data;
@@ -99,10 +99,10 @@ void write_scom_indirect(uint64_t reg_address, uint64_t value)
 	data = reg_address & XSCOM_ADDR_IND_ADDR;
 	data |= value & XSCOM_ADDR_IND_DATA;
 
-	write_scom_direct(addr, data);
+	write_scom_direct(chip, addr, data);
 
 	for (int retries = 0; retries < XSCOM_IND_MAX_RETRIES; ++retries) {
-		data = read_scom_direct(addr);
+		data = read_scom_direct(chip, addr);
 		if((data & XSCOM_DATA_IND_COMPLETE) && ((data & XSCOM_DATA_IND_ERR) == 0)) {
 			return;
 		}
@@ -114,17 +114,17 @@ void write_scom_indirect(uint64_t reg_address, uint64_t value)
 	}
 }
 
-uint64_t read_scom_indirect(uint64_t reg_address)
+uint64_t read_scom_indirect(uint8_t chip, uint64_t reg_address)
 {
 	uint64_t addr;
 	uint64_t data;
 	addr = reg_address & 0x7FFFFFFF;
 	data = XSCOM_DATA_IND_READ | (reg_address & XSCOM_ADDR_IND_ADDR);
 
-	write_scom_direct(addr, data);
+	write_scom_direct(chip, addr, data);
 
 	for (int retries = 0; retries < XSCOM_IND_MAX_RETRIES; ++retries) {
-		data = read_scom_direct(addr);
+		data = read_scom_direct(chip, addr);
 		if((data & XSCOM_DATA_IND_COMPLETE) && ((data & XSCOM_DATA_IND_ERR) == 0)) {
 			break;
 		}
