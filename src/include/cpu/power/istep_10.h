@@ -9,7 +9,7 @@ struct pci_info;
 
 void istep_10_1(uint8_t chips);
 void istep_10_10(uint8_t chips, struct pci_info *pci_info);
-void istep_10_12(void);
+void istep_10_12(uint8_t chips);
 void istep_10_13(void);
 
 #endif /* CPU_PPC64_ISTEP10_H */
