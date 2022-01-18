@@ -5,6 +5,7 @@
 #include <console/console.h>
 #include <cpu/power/scom.h>
 
+#include "homer.h"
 #include "pci.h"
 #include "scratch.h"
 
@@ -13,7 +14,7 @@ static uint64_t pec_addr(uint8_t pec, uint64_t addr)
 	return addr + pec*0x400;
 }
 
-static void init_pecs(const uint8_t *iovalid_enable)
+static void init_pecs(uint8_t chip, const uint8_t *iovalid_enable)
 {
 	enum {
 		P9N2_PEC_ADDREXTMASK_REG = 0x4010C05,
@@ -42,7 +43,7 @@ static void init_pecs(const uint8_t *iovalid_enable)
 	bool node_pump_mode = false;
 	uint8_t dd = get_dd();
 
-	scratch_reg6 = read_scom(MBOX_SCRATCH_REG1 + 5);
+	scratch_reg6 = read_rscom(chip, MBOX_SCRATCH_REG1 + 5);
 
 	/* ATTR_PROC_FABRIC_PUMP_MODE, it's either node or group pump mode */
 	node_pump_mode = !(scratch_reg6 & PPC_BIT(MBOX_SCRATCH_REG6_GROUP_PUMP_MODE));
@@ -56,9 +57,10 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		 * ATTR_FABRIC_ADDR_EXTENSION_GROUP_ID = 0
 		 * ATTR_FABRIC_ADDR_EXTENSION_CHIP_ID = 0
 		 */
-		scom_and_or_for_chiplet(N2_CHIPLET_ID, pec_addr(pec, P9N2_PEC_ADDREXTMASK_REG),
-					~PPC_BITMASK(0, 6),
-					PPC_PLACE(0, 0, 7));
+		rscom_and_or_for_chiplet(chip, N2_CHIPLET_ID,
+					 pec_addr(pec, P9N2_PEC_ADDREXTMASK_REG),
+					 ~PPC_BITMASK(0, 6),
+					 PPC_PLACE(0, 0, 7));
 
 		/*
 		 * Phase2 init step 1
@@ -74,7 +76,8 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		 * if HW423589_option1, set Disable Group Scope (r/w) and Use Vg(sys) at Vg scope
 		 */
 
-		val = read_scom_for_chiplet(N2_CHIPLET_ID, pec_addr(pec, PEC_PBCQHWCFG_REG));
+		val = read_rscom_for_chiplet(chip, N2_CHIPLET_ID,
+					     pec_addr(pec, PEC_PBCQHWCFG_REG));
 		/* Set hang poll scale */
 		val &= ~PPC_BITMASK(0, 3);
 		val |= PPC_PLACE(1, 0, 4);
@@ -138,7 +141,8 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		if (pec == 1 || (pec == 2 && iovalid_enable[pec] != 0x4))
 			val |= PPC_BIT(PEC_PBCQHWCFG_REG_PE_DISABLE_TCE_ARBITRATION);
 
-		write_scom_for_chiplet(N2_CHIPLET_ID, pec_addr(pec, PEC_PBCQHWCFG_REG), val);
+		write_rscom_for_chiplet(chip, N2_CHIPLET_ID, pec_addr(pec, PEC_PBCQHWCFG_REG),
+					val);
 
 		/*
 		 * Phase2 init step 2
@@ -152,9 +156,9 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		 * Set bits 00:03 = 0b1001 Enable trace, and select
 		 *                         inbound operations with addr information
 		 */
-		scom_and_or_for_chiplet(N2_CHIPLET_ID, pec_addr(pec, PEC_NESTTRC_REG),
-					~PPC_BITMASK(0, 3),
-					PPC_PLACE(9, 0, 4));
+		rscom_and_or_for_chiplet(chip, N2_CHIPLET_ID, pec_addr(pec, PEC_NESTTRC_REG),
+					 ~PPC_BITMASK(0, 3),
+					 PPC_PLACE(9, 0, 4));
 
 		/*
 		 * Phase2 init step 4
@@ -177,12 +181,12 @@ static void init_pecs(const uint8_t *iovalid_enable)
 		val |= PPC_BIT(PEC_PBAIBHWCFG_REG_PE_PCIE_CLK_TRACE_EN);
 		val |= PPC_PLACE(7, PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT,
 				 PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT_LEN);
-		write_scom_for_chiplet(PCI0_CHIPLET_ID + pec, PEC_PBAIBHWCFG_REG, val);
+		write_rscom_for_chiplet(chip, PCI0_CHIPLET_ID + pec, PEC_PBAIBHWCFG_REG, val);
 	}
 }
 
 /* See src/import/chips/p9/common/scominfo/p9_scominfo.C in Hostboot */
-static void phb_write(uint8_t phb, uint64_t addr, uint64_t data)
+static void phb_write(uint8_t chip, uint8_t phb, uint64_t addr, uint64_t data)
 {
 	chiplet_id_t chiplet;
 	uint8_t sat_id = (addr >> 6) & 0xF;
@@ -200,11 +204,11 @@ static void phb_write(uint8_t phb, uint64_t addr, uint64_t data)
 	addr &= ~PPC_BITMASK(54, 57);
 	addr |= PPC_PLACE(sat_id, 54, 4);
 
-	write_scom_for_chiplet(chiplet, addr, data);
+	write_rscom_for_chiplet(chip, chiplet, addr, data);
 }
 
 /* See src/import/chips/p9/common/scominfo/p9_scominfo.C in Hostboot */
-static void phb_nest_write(uint8_t phb, uint64_t addr, uint64_t data)
+static void phb_nest_write(uint8_t chip, uint8_t phb, uint64_t addr, uint64_t data)
 {
 	enum { N2_PCIS0_0_RING_ID = 0x3 };
 
@@ -227,10 +231,10 @@ static void phb_nest_write(uint8_t phb, uint64_t addr, uint64_t data)
 	addr &= ~PPC_BITMASK(54, 57);
 	addr |= PPC_PLACE(sat_id, 54, 4);
 
-	write_scom_for_chiplet(N2_CHIPLET_ID, addr, data);
+	write_rscom_for_chiplet(chip, N2_CHIPLET_ID, addr, data);
 }
 
-static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
+static void init_phbs(uint8_t chip, uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 {
 	enum {
 		PHB_CERR_RPT0_REG = 0x4010C4A,
@@ -277,26 +281,30 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 	};
 
 	/* ATTR_PROC_PCIE_MMIO_BAR0_BASE_ADDR_OFFSET */
-	uint64_t mmio_bar0_offsets[MAX_PHB_PER_PROC] = { 0 };
+	const uint64_t mmio_bar0_offsets[MAX_PHB_PER_PROC] = { 0 };
 	/* ATTR_PROC_PCIE_MMIO_BAR1_BASE_ADDR_OFFSET */
-	uint64_t mmio_bar1_offsets[MAX_PHB_PER_PROC] = { 0 };
+	const uint64_t mmio_bar1_offsets[MAX_PHB_PER_PROC] = { 0 };
 	/* ATTR_PROC_PCIE_REGISTER_BAR_BASE_ADDR_OFFSET */
-	uint64_t register_bar_offsets[MAX_PHB_PER_PROC] = { 0 };
+	const uint64_t register_bar_offsets[MAX_PHB_PER_PROC] = { 0 };
 	/* ATTR_PROC_PCIE_BAR_SIZE */
-	uint64_t bar_sizes[3] = { 0 };
+	const uint64_t bar_sizes[3] = { 0 };
 
-	/* Determine base address of chip MMIO range */
+	/*
+	 * Determine base address of chip MMIO range.
+	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
+	 * when chip ID is actually a group ID and "chip ID" field is zero.
+	 */
 	uint64_t base_addr_mmio = 0;
-	base_addr_mmio |= PPC_PLACE(0, 8, 5);  // ATTR_PROC_FABRIC_SYSTEM_ID
-	base_addr_mmio |= PPC_PLACE(0, 15, 4); // ATTR_PROC_EFF_FABRIC_GROUP_ID
-	base_addr_mmio |= PPC_PLACE(0, 19, 3); // ATTR_PROC_EFF_FABRIC_CHIP_ID
-	base_addr_mmio |= PPC_PLACE(3, 13, 2); // FABRIC_ADDR_MSEL
-	                                       // nm = 0b00/01, m = 0b10, mmio = 0b11
+	base_addr_mmio |= PPC_PLACE(0, 8, 5);     // ATTR_PROC_FABRIC_SYSTEM_ID
+	base_addr_mmio |= PPC_PLACE(chip, 15, 4); // ATTR_PROC_EFF_FABRIC_GROUP_ID
+	base_addr_mmio |= PPC_PLACE(0, 19, 3);    // ATTR_PROC_EFF_FABRIC_CHIP_ID
+	base_addr_mmio |= PPC_PLACE(3, 13, 2);    // FABRIC_ADDR_MSEL
+	                                          // nm = 0b00/01, m = 0b10, mmio = 0b11
 
 	uint8_t phb = 0;
 	for (phb = 0; phb < MAX_PHB_PER_PROC; ++phb) {
 		/* BAR enable attribute (ATTR_PROC_PCIE_BAR_ENABLE) */
-		uint8_t bar_enables[3] = { 0 };
+		const uint8_t bar_enables[3] = { 0 };
 
 		uint64_t val = 0;
 		uint64_t mmio0_bar = base_addr_mmio;
@@ -314,7 +322,7 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 * 0xFFFFFFFF_FFFFFFFF
 		 * Clear any spurious cerr_rpt0 bits (cerr_rpt0)
 		 */
-		phb_nest_write(phb, PHB_CERR_RPT0_REG, PPC_BITMASK(0, 63));
+		phb_nest_write(chip, phb, PHB_CERR_RPT0_REG, PPC_BITMASK(0, 63));
 
 		/*
 		 * Phase2 init step 12_b (yes, out of order)
@@ -322,7 +330,7 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 * 0xFFFFFFFF_FFFFFFFF
 		 * Clear any spurious cerr_rpt1 bits (cerr_rpt1)
 		 */
-		phb_nest_write(phb, PHB_CERR_RPT1_REG, PPC_BITMASK(0, 63));
+		phb_nest_write(chip, phb, PHB_CERR_RPT1_REG, PPC_BITMASK(0, 63));
 
 		/*
 		 * Phase2 init step 7_c
@@ -331,7 +339,7 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 * Clear any spurious FIR
 		 * bits (NFIR)NFIR
 		 */
-		phb_nest_write(phb, PHB_NFIR_REG, 0);
+		phb_nest_write(chip, phb, PHB_NFIR_REG, 0);
 
 		/*
 		 * Phase2 init step 8
@@ -339,28 +347,28 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 * 0x00000000_00000000
 		 * Clear any spurious WOF bits (NFIRWOF)
 		 */
-		phb_nest_write(phb, PHB_NFIRWOF_REG, 0);
+		phb_nest_write(chip, phb, PHB_NFIRWOF_REG, 0);
 
 		/*
 		 * Phase2 init step 9
 		 * NestBase + StackBase + 0x6
 		 * Set the per FIR Bit Action 0 register
 		 */
-		phb_nest_write(phb, PHB_NFIRACTION0_REG, PCI_NFIR_ACTION0_REG);
+		phb_nest_write(chip, phb, PHB_NFIRACTION0_REG, PCI_NFIR_ACTION0_REG);
 
 		/*
 		 * Phase2 init step 10
 		 * NestBase + StackBase + 0x7
 		 * Set the per FIR Bit Action 1 register
 		 */
-		phb_nest_write(phb, PHB_NFIRACTION1_REG, PCI_NFIR_ACTION1_REG);
+		phb_nest_write(chip, phb, PHB_NFIRACTION1_REG, PCI_NFIR_ACTION1_REG);
 
 		/*
 		 * Phase2 init step 11
 		 * NestBase + StackBase + 0x3
 		 * Set FIR Mask Bits to allow errors (NFIRMask)
 		 */
-		phb_nest_write(phb, PHB_NFIRMASK_REG, PCI_NFIR_MASK_REG);
+		phb_nest_write(chip, phb, PHB_NFIRMASK_REG, PCI_NFIR_MASK_REG);
 
 		/*
 		 * Phase2 init step 12
@@ -368,7 +376,7 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 * 0x00000000_00000000
 		 * Set Data Freeze Type Register for SUE handling (DFREEZE)
 		 */
-		phb_nest_write(phb, PHB_PE_DFREEZE_REG, 0);
+		phb_nest_write(chip, phb, PHB_PE_DFREEZE_REG, 0);
 
 		/*
 		 * Phase2 init step 13_a
@@ -376,7 +384,7 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 * 0x00000000_00000000
 		 * Clear any spurious pbaib_cerr_rpt bits
 		 */
-		phb_write(phb, PHB_PBAIB_CERR_RPT_REG, 0);
+		phb_write(chip, phb, PHB_PBAIB_CERR_RPT_REG, 0);
 
 		/*
 		 * Phase2 init step 13_b
@@ -385,7 +393,7 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 * Clear any spurious FIR
 		 * bits (PFIR)PFIR
 		 */
-		phb_write(phb, PHB_PFIR_REG, 0);
+		phb_write(chip, phb, PHB_PFIR_REG, 0);
 
 		/*
 		 * Phase2 init step 14
@@ -393,28 +401,28 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 * 0x00000000_00000000
 		 * Clear any spurious WOF bits (PFIRWOF)
 		 */
-		phb_write(phb, PHB_PFIRWOF_REG, 0);
+		phb_write(chip, phb, PHB_PFIRWOF_REG, 0);
 
 		/*
 		 * Phase2 init step 15
 		 * PCIBase + StackBase + 0x6
 		 * Set the per FIR Bit Action 0 register
 		 */
-		phb_write(phb, PHB_PFIRACTION0_REG, PCI_PFIR_ACTION0_REG);
+		phb_write(chip, phb, PHB_PFIRACTION0_REG, PCI_PFIR_ACTION0_REG);
 
 		/*
 		 * Phase2 init step 16
 		 * PCIBase + StackBase + 0x7
 		 * Set the per FIR Bit Action 1 register
 		 */
-		phb_write(phb, PHB_PFIRACTION1_REG, PCI_PFIR_ACTION1_REG);
+		phb_write(chip, phb, PHB_PFIRACTION1_REG, PCI_PFIR_ACTION1_REG);
 
 		/*
 		 * Phase2 init step 17
 		 * PCIBase + StackBase + 0x3
 		 * Set FIR Mask Bits to allow errors (PFIRMask)
 		 */
-		phb_write(phb, PHB_PFIRMASK_REG, PCI_PFIR_MASK_REG);
+		phb_write(chip, phb, PHB_PFIRMASK_REG, PCI_PFIR_MASK_REG);
 
 		/*
 		 * Phase2 init step 18
@@ -423,14 +431,14 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 */
 		mmio0_bar += mmio_bar0_offsets[phb];
 		mmio0_bar <<= P9_PCIE_CONFIG_BAR_SHIFT;
-		phb_nest_write(phb, PHB_MMIOBAR0_REG, mmio0_bar);
+		phb_nest_write(chip, phb, PHB_MMIOBAR0_REG, mmio0_bar);
 
 		/*
 		 * Phase2 init step 19
 		 * NestBase + StackBase + 0xF
 		 * Set MMIO BASE Address Register Mask 0 (MMIOBAR0_MASK)
 		 */
-		phb_nest_write(phb, PHB_MMIOBAR0_MASK_REG, bar_sizes[0]);
+		phb_nest_write(chip, phb, PHB_MMIOBAR0_MASK_REG, bar_sizes[0]);
 
 		/*
 		 * Phase2 init step 20
@@ -440,14 +448,14 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 */
 		mmio1_bar += mmio_bar1_offsets[phb];
 		mmio1_bar <<= P9_PCIE_CONFIG_BAR_SHIFT;
-		phb_nest_write(phb, PHB_MMIOBAR1_REG, mmio1_bar);
+		phb_nest_write(chip, phb, PHB_MMIOBAR1_REG, mmio1_bar);
 
 		/*
 		 * Phase2 init step 21
 		 * NestBase + StackBase + 0x11
 		 * Set MMIO Base Address Register Mask 1 (MMIOBAR1_MASK)
 		 */
-		phb_nest_write(phb, PHB_MMIOBAR1_MASK_REG, bar_sizes[1]);
+		phb_nest_write(chip, phb, PHB_MMIOBAR1_MASK_REG, bar_sizes[1]);
 
 		/*
 		 * Phase2 init step 22
@@ -456,7 +464,7 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 */
 		register_bar += register_bar_offsets[phb];
 		register_bar <<= P9_PCIE_CONFIG_BAR_SHIFT;
-		phb_nest_write(phb, PHB_PHBBAR_REG, register_bar);
+		phb_nest_write(chip, phb, PHB_PHBBAR_REG, register_bar);
 
 		/*
 		 * Phase2 init step 23
@@ -473,7 +481,7 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		if (bar_enables[2])
 			val |= PPC_BIT(2); // PHB_BARE_REG_PE_PHB_BAR_EN, bit 2 for PHB
 
-		phb_nest_write(phb, PHB_BARE_REG, val);
+		phb_nest_write(chip, phb, PHB_BARE_REG, val);
 
 		/*
 		 * Phase2 init step 24
@@ -481,21 +489,26 @@ static void init_phbs(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
 		 * 0x00000000_00000000
 		 * Remove ETU/AIB bus from reset (PHBReset)
 		 */
-		phb_write(phb, PHB_PHBRESET_REG, 0);
+		phb_write(chip, phb, PHB_PHBRESET_REG, 0);
 		/* Configure ETU FIR (all masked) */
-		phb_write(phb, PHB_ACT0_REG, 0);
-		phb_write(phb, PHB_ACTION1_REG, 0);
-		phb_write(phb, PHB_MASK_REG, PPC_BITMASK(0, 63));
+		phb_write(chip, phb, PHB_ACT0_REG, 0);
+		phb_write(chip, phb, PHB_ACTION1_REG, 0);
+		phb_write(chip, phb, PHB_MASK_REG, PPC_BITMASK(0, 63));
 	}
 }
 
-void istep_14_3(uint8_t phb_active_mask, const uint8_t *iovalid_enable)
+void istep_14_3(uint8_t chips, const struct pci_info *pci_info)
 {
 	printk(BIOS_EMERG, "starting istep 14.3\n");
 	report_istep(14,3);
 
-	init_pecs(iovalid_enable);
-	init_phbs(phb_active_mask, iovalid_enable);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (!(chips & (1 << chip)))
+			continue;
+
+		init_pecs(chip, pci_info[chip].iovalid_enable);
+		init_phbs(chip, pci_info[chip].phb_active_mask, pci_info[chip].iovalid_enable);
+	}
 
 	printk(BIOS_EMERG, "ending istep 14.3\n");
 }

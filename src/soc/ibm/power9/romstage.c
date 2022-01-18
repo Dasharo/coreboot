@@ -404,7 +404,7 @@ void main(void)
 
 	istep_14_1();
 	istep_14_2();
-	istep_14_3(pci_info[0].phb_active_mask, pci_info[0].iovalid_enable);
+	istep_14_3(chips, pci_info);
 	report_istep(14,4);	// no-op
 	istep_14_5();
 
