@@ -294,7 +294,7 @@ static void copy_cbmem_spd_data_to_save_variable(struct amd_s3_persistent_data *
 	persistent_data->nvram_checksum = calculate_nvram_mct_hash();
 
 	if (restored) {
-		if (mem_info->mct_stat.GStatus & (1 << GSB_ConfigRestored))
+		if (mem_info->mct_stat.g_status & (1 << GSB_ConfigRestored))
 			*restored = 1;
 		else
 			*restored = 0;

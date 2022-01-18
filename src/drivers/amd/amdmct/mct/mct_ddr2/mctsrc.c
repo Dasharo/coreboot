@@ -138,7 +138,7 @@ static void dqsTrainRcvrEn_SW(struct MCTStatStruc *p_mct_stat,
 		val = get_nb32(dev, reg);
 		val &= ~(0x3ff << 22);
 		val |= (0x0c8 << 22);		/* Max Rd Lat */
-		Set_NB32(dev, reg, val);
+		set_nb32(dev, reg, val);
 	}
 
 	Final_Value = 1;
@@ -520,7 +520,7 @@ static void mct_DisableDQSRcvEn_D(struct DCTStatStruc *p_dct_stat)
 		reg = 0x78 + 0x100 * ch;
 		val = get_nb32(dev, reg);
 		val &= ~(1 << DQS_RCV_EN_TRAIN);
-		Set_NB32(dev, reg, val);
+		set_nb32(dev, reg, val);
 	}
 }
 
@@ -563,7 +563,7 @@ void mct_SetRcvrEnDly_D(struct DCTStatStruc *p_dct_stat, u8 RcvrEnDly,
 		/* get the register index from table */
 		index = Table_DQSRcvEn_Offset[i >> 1];
 		index += Addl_Index;	/* DIMMx DqsRcvEn byte0 */
-		val = Get_NB32_index_wait(dev, index_reg, index);
+		val = get_nb32_index_wait(dev, index_reg, index);
 		if (i & 1) {
 			/* odd byte lane */
 			val &= ~(0xFF << 16);
@@ -573,7 +573,7 @@ void mct_SetRcvrEnDly_D(struct DCTStatStruc *p_dct_stat, u8 RcvrEnDly,
 			val &= ~0xFF;
 			val |= RcvrEnDly;
 		}
-		Set_NB32_index_wait(dev, index_reg, index, val);
+		set_nb32_index_wait(dev, index_reg, index, val);
 	}
 
 }
@@ -610,7 +610,7 @@ static void mct_SetMaxLatency_D(struct DCTStatStruc *p_dct_stat, u8 Channel, u8 
 	 *  add 1, else add 2 to the sub-total.
 	 *  if (AddrCmdSetup || CsOdtSetup || CkeSetup) then K := K + 2;
 	 */
-	val = Get_NB32_index_wait(dev, index_reg, 0x04);
+	val = get_nb32_index_wait(dev, index_reg, 0x04);
 	if (!(val & 0x00202020))
 		SubTotal += 1;
 	else
@@ -679,7 +679,7 @@ static void mct_SetMaxLatency_D(struct DCTStatStruc *p_dct_stat, u8 Channel, u8 
 	val |= (SubTotal & 0x3ff) << 22;
 
 	/* program MaxRdLatency to correspond with current delay */
-	Set_NB32(dev, reg, val);
+	set_nb32(dev, reg, val);
 }
 
 
@@ -861,7 +861,7 @@ static void InitDQSPos4RcvrEn_D(struct MCTStatStruc *p_mct_stat,
 		for (j = 0; j < dn; j++)
 			/* DIMM0 Write Data Timing Low */
 			/* DIMM0 Write ECC Timing */
-			Set_NB32_index_wait(dev, index_reg, i + 0x100 * j, dword);
+			set_nb32_index_wait(dev, index_reg, i + 0x100 * j, dword);
 	}
 
 	/* errata #180 */
@@ -869,13 +869,13 @@ static void InitDQSPos4RcvrEn_D(struct MCTStatStruc *p_mct_stat,
 	for (i = 5; i <= 6; i++) {
 		for (j = 0; j < dn; j++)
 			/* DIMM0 Read DQS Timing Control Low */
-			Set_NB32_index_wait(dev, index_reg, i + 0x100 * j, dword);
+			set_nb32_index_wait(dev, index_reg, i + 0x100 * j, dword);
 	}
 
 	dword = 0x0000002f;
 	for (j = 0; j < dn; j++)
 		/* DIMM0 Read DQS ECC Timing Control */
-		Set_NB32_index_wait(dev, index_reg, 7 + 0x100 * j, dword);
+		set_nb32_index_wait(dev, index_reg, 7 + 0x100 * j, dword);
 }
 
 
@@ -895,7 +895,7 @@ void SetEccDQSRcvrEn_D(struct DCTStatStruc *p_dct_stat, u8 Channel)
 	print_debug_dqs("\t\tSetEccDQSRcvrPos: Channel ", Channel,  2);
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 		val = p[ChipSel >> 1];
-		Set_NB32_index_wait(dev, index_reg, index, val);
+		set_nb32_index_wait(dev, index_reg, index, val);
 		print_debug_dqs_pair("\t\tSetEccDQSRcvrPos: ChipSel ",
 					ChipSel, " rcvr_delay ",  val, 2);
 		index += 3;
@@ -1007,28 +1007,28 @@ static void fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
 		if (index != 0x52) {
 			val |= val << 8 | val << 16 | val << 24;
 		}
-		Set_NB32_index_wait(dev, index_reg, index, val);
+		set_nb32_index_wait(dev, index_reg, index, val);
 	}
 
 
 	/* Set F2x[1,0]9C_x08[PhyFenceTrEn]=1. */
-	val = Get_NB32_index_wait(dev, index_reg, 0x08);
+	val = get_nb32_index_wait(dev, index_reg, 0x08);
 	val |= 1 << PhyFenceTrEn;
-	Set_NB32_index_wait(dev, index_reg, 0x08, val);
+	set_nb32_index_wait(dev, index_reg, 0x08, val);
 
 	/* Wait 200 MEMCLKs. */
 	mct_Wait(50000);		/* wait 200us */
 
 	/* Clear F2x[1,0]9C_x08[PhyFenceTrEn]=0. */
-	val = Get_NB32_index_wait(dev, index_reg, 0x08);
+	val = get_nb32_index_wait(dev, index_reg, 0x08);
 	val &= ~(1 << PhyFenceTrEn);
-	Set_NB32_index_wait(dev, index_reg, 0x08, val);
+	set_nb32_index_wait(dev, index_reg, 0x08, val);
 
 	/* BIOS reads the phase recovery engine registers
 	 * F2x[1,0]9C_x[51:50] and F2x[1,0]9C_x52. */
 	avRecValue = 0;
 	for (index = 0x50; index <= 0x52; index ++) {
-		val = Get_NB32_index_wait(dev, index_reg, index);
+		val = get_nb32_index_wait(dev, index_reg, index);
 		avRecValue += val & 0x7F;
 		if (index != 0x52) {
 			avRecValue += (val >> 8) & 0x7F;
@@ -1044,15 +1044,15 @@ static void fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
 
 	/* Write the (averaged value -8) to F2x[1,0]9C_x0C[PhyFence]. */
 	avRecValue -= 8;
-	val = Get_NB32_index_wait(dev, index_reg, 0x0C);
+	val = get_nb32_index_wait(dev, index_reg, 0x0C);
 	val &= ~(0x1F << 16);
 	val |= (avRecValue & 0x1F) << 16;
-	Set_NB32_index_wait(dev, index_reg, 0x0C, val);
+	set_nb32_index_wait(dev, index_reg, 0x0C, val);
 
 	/* Rewrite F2x[1,0]9C_x04-DRAM Address/Command Timing Control Register
 	 * delays (both channels). */
-	val = Get_NB32_index_wait(dev, index_reg, 0x04);
-	Set_NB32_index_wait(dev, index_reg, 0x04, val);
+	val = get_nb32_index_wait(dev, index_reg, 0x04);
+	set_nb32_index_wait(dev, index_reg, 0x04, val);
 }
 
 

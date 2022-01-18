@@ -216,7 +216,7 @@ static void mct_setMaxRdLatTrnVal_D(struct DCTStatStruc *p_dct_stat,
 	val &= ~(0x3ff << 22);
 	val |= MaxRdLatVal << 22;
 	/* program MaxRdLatency to correspond with current delay */
-	Set_NB32(dev, reg, val);
+	set_nb32(dev, reg, val);
 
 }
 
@@ -339,7 +339,7 @@ u8 mct_GetStartMaxRdLat_D(struct MCTStatStruc *p_mct_stat,
 	/*If the address prelaunch is setup for 1/2 MEMCLKs then add 1,
 	 *  else add 2 to the sub-total. if (AddrCmdSetup || CsOdtSetup
 	 *  || CkeSetup) then K := K + 2; */
-	val = Get_NB32_index_wait(dev, index_reg, 0x04);
+	val = get_nb32_index_wait(dev, index_reg, 0x04);
 	if (!(val & 0x00202020))
 		SubTotal += 1;
 	else

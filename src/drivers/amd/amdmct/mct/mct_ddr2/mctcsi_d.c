@@ -24,7 +24,7 @@ void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat,
 	u32 val;
 	u32 val_lo, val_hi;
 
-	DoIntlv = mctGet_NVbits(NV_BANK_INTLV);
+	DoIntlv = mct_get_nv_bits(NV_BANK_INTLV);
 	_CsIntCap = 0;
 	EnChipSels = 0;
 
@@ -99,7 +99,7 @@ void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat,
 				val_hi >>= BitDelta;
 				val |= val_lo;
 				val |= val_hi;
-				Set_NB32(dev, reg, val);
+				set_nb32(dev, reg, val);
 
 				if (ChipSel & 1)
 					continue;
@@ -114,7 +114,7 @@ void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat,
 				val_hi >>= BitDelta;
 				val |= val_lo;
 				val |= val_hi;
-				Set_NB32(dev, reg, val);
+				set_nb32(dev, reg, val);
 			}
 		}
 		print_t("InterleaveBanks_D: Banks Interleaved ");

@@ -55,12 +55,12 @@ void mct_ForceAutoPrecharge_D(struct DCTStatStruc *p_dct_stat, u32 dct)
 			val |= 1 << ForceAutoPchg;
 			if (!p_dct_stat->ganged_mode)
 				val |= 1 << BURST_LENGTH_32;
-			Set_NB32(dev, reg, val);
+			set_nb32(dev, reg, val);
 
 			reg = 0x88 + reg_off;	/* cx = Dram Timing Lo */
 			val = get_nb32(dev, reg);
 			val |= 0x000F0000;	/* Trc = 0Fh */
-			Set_NB32(dev, reg, val);
+			set_nb32(dev, reg, val);
 		}
 	}
 }
@@ -99,7 +99,7 @@ void mct_EndDQSTraining_D(struct MCTStatStruc *p_mct_stat,
 			reg = 0x11c;
 			val = get_nb32(dev, reg);
 			val &= ~(1 << PrefDramTrainMode);
-			Set_NB32(dev, reg, val);
+			set_nb32(dev, reg, val);
 		}
 	}
 }
@@ -139,9 +139,9 @@ void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *p_mct_stat,
 
 		for (Channel = 0; Channel < 2; Channel++) {
 			index_reg = 0x98 + 0x100 * Channel;
-			val = Get_NB32_index_wait(dev, index_reg, 0x0d004007);
+			val = get_nb32_index_wait(dev, index_reg, 0x0d004007);
 			val |= 0x3ff;
-			Set_NB32_index_wait(dev, index_reg, 0x0d0f4f07, val);
+			set_nb32_index_wait(dev, index_reg, 0x0d0f4f07, val);
 		}
 
 		for (Channel = 0; Channel < 2; Channel++) {
@@ -152,7 +152,7 @@ void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *p_mct_stat,
 			val = get_nb32(dev, reg);
 			val &= ~(0x07);
 			val |= 5;
-			Set_NB32(dev, reg, val);
+			set_nb32(dev, reg, val);
 		}
 
 		for (Channel = 0; Channel < 2; Channel++) {
@@ -160,7 +160,7 @@ void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *p_mct_stat,
 			val = 0;
 			index_reg = 0x98 + reg_off;
 			for (index = 0x30; index < (0x45 + 1); index++) {
-				Set_NB32_index_wait(dev, index_reg, index, val);
+				set_nb32_index_wait(dev, index_reg, index, val);
 			}
 		}
 
@@ -197,7 +197,7 @@ u32 Modify_D3CMP(struct DCTStatStruc *p_dct_stat, u32 dct, u32 value)
 		dev = p_dct_stat->dev_dct;
 		index_reg = 0x98 + 0x100 * dct;
 		index = 0x0D004201;
-		val = Get_NB32_index_wait(dev, index_reg, index);
+		val = get_nb32_index_wait(dev, index_reg, index);
 		value &= ~(1 << 27);
 		value |= ((val >> 10) & 1) << 27;
 	}
@@ -285,10 +285,10 @@ void mct_BeforeDramInit_D(struct DCTStatStruc *p_dct_stat, u32 dct)
 
 			for (ch = ch_start; ch < ch_end; ch++) {
 				index_reg = 0x98 + 0x100 * ch;
-				val = Get_NB32_index(dev, index_reg, 0x0D00E001);
+				val = get_nb32_index(dev, index_reg, 0x0D00E001);
 				val &= ~(0xf0);
 				val |= 0x80;
-				Set_NB32_index(dev, index_reg, 0x0D01E001, val);
+				set_nb32_index(dev, index_reg, 0x0D01E001, val);
 			}
 		}
 

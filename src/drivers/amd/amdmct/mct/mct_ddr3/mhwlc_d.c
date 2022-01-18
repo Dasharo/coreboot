@@ -424,7 +424,7 @@ static u16 unbuffered_dimm_nominal_termination_emrs(u8 number_of_dimms, u8 frequ
 {
 	u16 term;
 
-	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	if (number_of_dimms == 1) {
 		if (MaxDimmsInstallable < 3) {
@@ -453,7 +453,7 @@ static u16 unbuffered_dimm_dynamic_termination_emrs(u8 number_of_dimms, u8 frequ
 {
 	u16 term;
 
-	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	if (number_of_dimms == 1) {
 		if (MaxDimmsInstallable < 3) {
@@ -487,7 +487,7 @@ void prepareDimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 	u8 rank, currDimm, MemClkFreq;
 	sMCTStruct *pMCTData = p_dct_stat->c_mct_ptr;
 	sDCTStruct *pDCTData = p_dct_stat->c_dct_ptr[dct];
-	u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+	u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
 	u8 number_of_dimms = pDCTData->MaxDimmsInstalled;
 
 	if (is_fam15h()) {
@@ -1061,7 +1061,7 @@ void procConfig(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat
 		/* Pass 1 */
 		if (is_fam15h()) {
 			u8 AddrCmdPrelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
-			u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+			u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
 			u16 Seed_Total = 0;
 			pDCTData->WrDqsGrossDlyBaseOffset = 0x0;
 			if (package_type == PT_GR) {
@@ -1100,7 +1100,7 @@ void procConfig(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat
 
 			/* Adjust seed for the minimum platform supported frequency */
 			Seed_Total = (int32_t) (((((int64_t) Seed_Total) *
-				fam15h_freq_tab[MemClkFreq] * 100) / (mctGet_NVbits(NV_MIN_MEMCLK) * 100)));
+				fam15h_freq_tab[MemClkFreq] * 100) / (mct_get_nv_bits(NV_MIN_MEMCLK) * 100)));
 
 			Seed_Gross = (Seed_Total >> 5) & 0x1f;
 			Seed_Fine = Seed_Total & 0x1f;

@@ -345,7 +345,7 @@ void SetTargetFreq(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat_a, u8 Node)
 {
 	u32 dword;
-	u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+	u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 

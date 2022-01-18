@@ -26,15 +26,15 @@ void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
 	/* call back to wrapper not needed ManualChannelInterleave_D(); */
 	/* call back - DctSelIntLvAddr = mctGet_NVbits(NV_ChannelIntlv);*/	/* override interleave */
 	/* Manually set: typ = 5, otherwise typ = 7. */
-	DctSelIntLvAddr = mctGet_NVbits(NV_ChannelIntlv); /* typ = 5: Hash*: exclusive OR of address bits[20:16, 6]. */
+	DctSelIntLvAddr = mct_get_nv_bits(NV_ChannelIntlv); /* typ = 5: Hash*: exclusive OR of address bits[20:16, 6]. */
 
 	if (DctSelIntLvAddr & 1) {
 		DctSelIntLvAddr >>= 1;
 		HoleSize = 0;
-		if ((p_mct_stat->GStatus & (1 << GSB_SOFT_HOLE)) ||
-		     (p_mct_stat->GStatus & (1 << GSB_HW_HOLE))) {
-			if (p_mct_stat->HoleBase) {
-				HoleBase = p_mct_stat->HoleBase >> 8;
+		if ((p_mct_stat->g_status & (1 << GSB_SOFT_HOLE)) ||
+		     (p_mct_stat->g_status & (1 << GSB_HW_HOLE))) {
+			if (p_mct_stat->hole_base) {
+				HoleBase = p_mct_stat->hole_base >> 8;
 				HoleSize = HoleBase & 0xFFFF0000;
 				HoleSize |= ((~HoleBase) + 1) & 0xFFFF;
 			}
@@ -73,7 +73,7 @@ void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
 				if (dct1_size == 0)
 					dct0_size = 0;
 				dct0_size -= dct1_size;		/* DctSelBaseOffset = DctSelBaseAddr - Interleaved region */
-				Set_NB32(p_dct_stat->dev_dct, 0x114, dct0_size);
+				set_nb32(p_dct_stat->dev_dct, 0x114, dct0_size);
 
 				if (dct1_size == 0)
 					dct1_size = DctSelBase;
@@ -82,7 +82,7 @@ void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
 				val |= dct1_size;
 				val |= DctSelHi;
 				val |= (DctSelIntLvAddr << 6) & 0xFF;
-				Set_NB32(p_dct_stat->dev_dct, 0x110, val);
+				set_nb32(p_dct_stat->dev_dct, 0x110, val);
 
 				if (HoleValid) {
 					tmp = DramBase;
@@ -96,7 +96,7 @@ void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
 					val = get_nb32(p_dct_stat->dev_map, 0xF0);	/* DramHoleOffset */
 					val &= 0xFFFF007F;
 					val |= (tmp & ~0xFFFF007F);
-					Set_NB32(p_dct_stat->dev_map, 0xF0, val);
+					set_nb32(p_dct_stat->dev_map, 0xF0, val);
 				}
 			}
 			printk(BIOS_DEBUG, "InterleaveChannels_D: Node %x\n", Node);

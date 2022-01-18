@@ -28,10 +28,10 @@
 //core_range = 0 : all cores
 //core range = 1 : core 0 only
 //core range = 2 : cores other than core0
-void for_each_ap(u32 bsp_apicid, u32 core_range, s8 node,
+void for_each_ap(u32 bsp_apic_id, u32 core_range, s8 node,
 		 process_ap_t process_ap, void *gp)
 {
-	// here assume the OS don't change our apicid
+	// here assume the OS don't change our apic_id
 	u32 ap_apicid;
 
 	u32 nodes;
@@ -78,7 +78,7 @@ void for_each_ap(u32 bsp_apicid, u32 core_range, s8 node,
 					ap_apicid += CONFIG_APIC_ID_OFFSET;
 			}
 
-			if (ap_apicid == bsp_apicid)
+			if (ap_apicid == bsp_apic_id)
 				continue;
 
 			process_ap(ap_apicid, gp);
@@ -88,21 +88,21 @@ void for_each_ap(u32 bsp_apicid, u32 core_range, s8 node,
 }
 
 static __always_inline
-void print_apicid_nodeid_coreid(u32 apicid, struct node_core_id id,
+void print_apicid_nodeid_coreid(u32 apic_id, struct node_core_id id,
 				const char *str)
 {
 	printk(BIOS_DEBUG,
-		"%s --- { APICID = %02x NODEID = %02x COREID = %02x} ---\n", str,
-		apicid, id.nodeid, id.coreid);
+		"%s --- { APICID = %02x NODEID = %02x COREID = %02x} ---\n",
+		str, apic_id, id.node_id, id.coreid);
 }
 
-static u32 wait_cpu_state(u32 apicid, u32 state, u32 state2)
+static u32 wait_cpu_state(u32 apic_id, u32 state, u32 state2)
 {
 	u32 readback = 0;
 	u32 timeout = 1;
 	int loop = 4000000;
 	while (--loop > 0) {
-		if (lapic_remote_read(apicid, LAPIC_MSG_REG, &readback) != 0)
+		if (lapic_remote_read(apic_id, LAPIC_MSG_REG, &readback) != 0)
 			continue;
 		if ((readback & 0x3f) == state || (readback & 0x3f) == state2
 				|| (readback & 0x3f) == F10_APSTATE_RESET) {
@@ -129,11 +129,11 @@ static void wait_ap_started(u32 ap_apicid, void *gp)
 	}
 }
 
-static void wait_all_other_cores_started(u32 bsp_apicid)
+static void wait_all_other_cores_started(u32 bsp_apic_id)
 {
 	// all aps other than core0
-	printk(BIOS_DEBUG, "started ap apicid: ");
-	for_each_ap(bsp_apicid, 2, -1, wait_ap_started, (void *)0);
+	printk(BIOS_DEBUG, "started ap apic_id: ");
+	for_each_ap(bsp_apic_id, 2, -1, wait_ap_started, (void *)0);
 	printk(BIOS_DEBUG, "\n");
 }
 
@@ -149,11 +149,11 @@ static void wait_ap_stopped(u32 ap_apicid, void *gp)
 	}
 }
 
-void wait_all_other_cores_stopped(u32 bsp_apicid)
+void wait_all_other_cores_stopped(u32 bsp_apic_id)
 {
 	// all aps other than core0
-	printk(BIOS_DEBUG, "stopped ap apicid: ");
-	for_each_ap(bsp_apicid, 2, -1, wait_ap_stopped, (void *)0);
+	printk(BIOS_DEBUG, "stopped ap apic_id: ");
+	for_each_ap(bsp_apic_id, 2, -1, wait_ap_stopped, (void *)0);
 	printk(BIOS_DEBUG, "\n");
 }
 
@@ -237,7 +237,7 @@ void disable_cache_as_ram(u8 skip_sharedc_config)
 }
 
 
-static void stop_car_and_cpu(u8 skip_sharedc_config, u32 apicid)
+static void stop_car_and_cpu(u8 skip_sharedc_config, u32 apic_id)
 {
 	msr_t msr;
 	u32 family;
@@ -275,13 +275,13 @@ static void stop_car_and_cpu(u8 skip_sharedc_config, u32 apicid)
 	disable_cache_as_ram(skip_sharedc_config);	// inline
 
 	/* Mark the core as sleeping */
-	lapic_write(LAPIC_MSG_REG, (apicid << 24) | F10_APSTATE_ASLEEP);
+	lapic_write(LAPIC_MSG_REG, (apic_id << 24) | F10_APSTATE_ASLEEP);
 
 	/* stop all cores except node0/core0 the bsp */
 	stop_this_cpu();
 }
 
-static void configure_fidvid(u32 apicid, struct node_core_id id)
+static void configure_fidvid(u32 apic_id, struct node_core_id id)
 {
 	if (CONFIG(LOGICAL_CPUS) && CONFIG(SET_FIDVID_CORE0_ONLY)) {
 		if (id.coreid != 0)	// only need set fid for core0
@@ -290,24 +290,24 @@ static void configure_fidvid(u32 apicid, struct node_core_id id)
 
 	// Run on all AP for proper FID/VID setup.
 	// check warm(bios) reset to call stage2 otherwise do stage1
-	if (warm_reset_detect(id.nodeid)) {
+	if (warm_reset_detect(id.node_id)) {
 		printk(BIOS_DEBUG,
-			"init_fidvid_stage2 apicid: %02x\n",
-			apicid);
-		init_fidvid_stage2(apicid, id.nodeid);
+			"init_fidvid_stage2 apic_id: %02x\n",
+			apic_id);
+		init_fidvid_stage2(apic_id, id.node_id);
 	} else {
 		printk(BIOS_DEBUG,
-			"init_fidvid_ap(stage1) apicid: %02x\n",
-			apicid);
-		init_fidvid_ap(apicid, id.nodeid, id.coreid);
+			"init_fidvid_ap(stage1) apic_id: %02x\n",
+			apic_id);
+		init_fidvid_ap(apic_id, id.node_id, id.coreid);
 	}
 
 }
 
-static u32 is_core0_started(u32 nodeid)
+static u32 is_core0_started(u32 node_id)
 {
 	u32 htic;
-	htic = pci_read_config32(NODE_PCI(nodeid, 0), HT_INIT_CONTROL);
+	htic = pci_read_config32(NODE_PCI(node_id, 0), HT_INIT_CONTROL);
 	htic &= HTIC_COLDR_DETECT;
 	return htic;
 }
@@ -329,15 +329,15 @@ static void wait_all_core0_started(void)
 
 static u32 init_cpus(struct sys_info *sysinfo)
 {
-	u32 bsp_apicid = 0;
-	u32 apicid;
+	u32 bsp_apic_id = 0;
+	u32 apic_id;
 	u32 dword;
 	u8 set_mtrrs;
 	u8 node_count;
-	u8 fam15_bsp_core1_apicid;
+	u8 fam15_bsp_core1_apic_id;
 	struct node_core_id id;
 
-	/* That is from initial apicid, we need nodeid and coreid
+	/* That is from initial apic_id, we need node_id and coreid
 	 * later.
 	 */
 	id = get_node_core_id_x();
@@ -351,7 +351,7 @@ static u32 init_cpus(struct sys_info *sysinfo)
 			set_apicid_cpuid_lo();
 		set_EnableCf8ExtCfg();
 		if (CONFIG(ENABLE_APIC_EXT_ID))
-			enable_apic_ext_id(id.nodeid);
+			enable_apic_ext_id(id.node_id);
 	}
 
 	enable_lapic();
@@ -360,7 +360,7 @@ static u32 init_cpus(struct sys_info *sysinfo)
 		u32 initial_apicid = get_initial_apicid();
 
 		if (CONFIG(LIFT_BSP_APIC_ID)) {
-			bsp_apicid += CONFIG_APIC_ID_OFFSET;
+			bsp_apic_id += CONFIG_APIC_ID_OFFSET;
 		} else if (initial_apicid != 0) { // other than bsp
 			/* use initial APIC id to lift it */
 			dword = lapic_read(LAPIC_ID);
@@ -370,21 +370,21 @@ static u32 init_cpus(struct sys_info *sysinfo)
 		}
 	}
 
-	/* get the apicid, it may be lifted already */
-	apicid = lapicid();
+	/* get the apic_id, it may be lifted already */
+	apic_id = lapicid();
 
-	// show our apicid, nodeid, and coreid
+	// show our apic_id, node_id, and coreid
 	if (id.coreid == 0) {
-		if (id.nodeid != 0)	//all core0 except bsp
-			print_apicid_nodeid_coreid(apicid, id, " core0: ");
+		if (id.node_id != 0)	//all core0 except bsp
+			print_apicid_nodeid_coreid(apic_id, id, " core0: ");
 	} else {		//all other cores
-		print_apicid_nodeid_coreid(apicid, id, " corex: ");
+		print_apicid_nodeid_coreid(apic_id, id, " corex: ");
 	}
 
 	printk(BIOS_DEBUG, "CPU INIT detect %08x\n", pci_read_config32(PCI_DEV(0,0,0), 0x80));
 
-	if (pci_read_config32(PCI_DEV(0,0,0), 0x80) & (1 << apicid)) {
-		print_apicid_nodeid_coreid(apicid, id,
+	if (pci_read_config32(PCI_DEV(0,0,0), 0x80) & (1 << apic_id)) {
+		print_apicid_nodeid_coreid(apic_id, id,
 					   "\n\n\nINIT detected from ");
 		printk(BIOS_DEBUG, "\nIssuing SOFT_RESET...\n");
 		soft_reset();
@@ -392,28 +392,28 @@ static u32 init_cpus(struct sys_info *sysinfo)
 
 	if (id.coreid == 0) {
 		//FIXME: INIT is checked above but check for more resets?
-		if (!(warm_reset_detect(id.nodeid))) {
-			printk(BIOS_DEBUG, "Warm reset not detected, node %02d\n", id.nodeid);
-			distinguish_cpu_resets(id.nodeid); // Also indicates we are started
+		if (!(warm_reset_detect(id.node_id))) {
+			printk(BIOS_DEBUG, "Warm reset not detected, node %02d\n", id.node_id);
+			distinguish_cpu_resets(id.node_id); // Also indicates we are started
 		}
 	}
 
 	// Mark the core as started.
-	printk(BIOS_DEBUG, "CPU APICID %02x start flag set\n", apicid);
-	lapic_write(LAPIC_MSG_REG, (apicid << 24) | F10_APSTATE_STARTED);
+	printk(BIOS_DEBUG, "CPU APICID %02x start flag set\n", apic_id);
+	lapic_write(LAPIC_MSG_REG, (apic_id << 24) | F10_APSTATE_STARTED);
 
-	if (apicid != bsp_apicid) {
+	if (apic_id != bsp_apic_id) {
 		/* Setup each AP's cores MSRs.
 		 * This happens after HTinit.
 		 * The BSP runs this code in it's own path.
 		 */
 		amd_update_microcode_from_cbfs();
 
-		cpuSetAMDMSR((u8)id.nodeid);
+		cpu_set_amd_msr((u8)id.node_id);
 
 		/* Set up HyperTransport probe filter support */
 		if (is_gt_rev_d()) {
-			dword = pci_read_config32(NODE_PCI(id.nodeid, 0), 0x60);
+			dword = pci_read_config32(NODE_PCI(id.node_id, 0), 0x60);
 			node_count = ((dword >> 4) & 0x7) + 1;
 
 			if (node_count > 1) {
@@ -424,19 +424,19 @@ static u32 init_cpus(struct sys_info *sysinfo)
 		}
 
 		if (CONFIG(SET_FIDVID))
-			configure_fidvid(apicid, id);
+			configure_fidvid(apic_id, id);
 
 		if (is_fam15h()) {
 			/* core 1 on node 0 is special; to avoid corrupting the
 			 * BSP do not alter MTRRs on that core */
-			fam15_bsp_core1_apicid = 1;
+			fam15_bsp_core1_apic_id = 1;
 			if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
-				fam15_bsp_core1_apicid += CONFIG_APIC_ID_OFFSET;
+				fam15_bsp_core1_apic_id += CONFIG_APIC_ID_OFFSET;
 
-			if (apicid == fam15_bsp_core1_apicid)
+			if (apic_id == fam15_bsp_core1_apic_id)
 				set_mtrrs = 0;
 			else
-				set_mtrrs = !!(apicid & 0x1);
+				set_mtrrs = !!(apic_id & 0x1);
 		} else {
 			set_mtrrs = 1;
 		}
@@ -446,22 +446,22 @@ static u32 init_cpus(struct sys_info *sysinfo)
 			set_var_mtrr(0, 0x00000000, CONFIG_MMCONF_BASE_ADDRESS,
 				     MTRR_TYPE_WRBACK);
 
-		printk(BIOS_DEBUG, "Disabling CAR on AP %02x\n", apicid);
+		printk(BIOS_DEBUG, "Disabling CAR on AP %02x\n", apic_id);
 		if (is_fam15h()) {
 			/* Only modify the MSRs on the odd cores
 			 * (the last cores to finish booting)
 			 */
-			stop_car_and_cpu(!set_mtrrs, apicid);
+			stop_car_and_cpu(!set_mtrrs, apic_id);
 		} else {
 			/* Modify MSRs on all cores */
-			stop_car_and_cpu(0, apicid);
+			stop_car_and_cpu(0, apic_id);
 		}
 
 		printk(BIOS_DEBUG, "\nAP %02x should be halted but you are reading this....\n",
-		       apicid);
+		       apic_id);
 	}
 
-	return bsp_apicid;
+	return bsp_apic_id;
 }
 
 /**
@@ -532,28 +532,28 @@ static void setup_remote_node(u8 node)
 	printk(BIOS_DEBUG, " done\n");
 }
 
-static void real_start_other_core(u32 nodeid, u32 cores)
+static void real_start_other_core(u32 node_id, u32 cores)
 {
 	ssize_t i;
 	u32 dword;
 
 	printk(BIOS_DEBUG,
-		"Start other core - nodeid: %02x  cores: %02x\n", nodeid, cores);
+		"Start other core - node_id: %02x  cores: %02x\n", node_id, cores);
 
-	/* set PCI_DEV(0, 0x18+nodeid, 3), 0x44 bit 27 to redirect all MC4
+	/* set PCI_DEV(0, 0x18+node_id, 3), 0x44 bit 27 to redirect all MC4
 	   accesses and error logging to core0 */
-	dword = pci_read_config32(NODE_PCI(nodeid, 3), 0x44);
+	dword = pci_read_config32(NODE_PCI(node_id, 3), 0x44);
 	dword |= 1 << 30;	/* SyncFloodOnDramAdrParErr=1 */
 	dword |= 1 << 27;	/* NbMcaToMstCpuEn=1 */
 	dword |= 1 << 21;	/* SyncFloodOnAnyUcErr=1 */
 	dword |= 1 << 20;	/* SyncFloodOnWDT=1 */
 	dword |= 1 << 2;	/* SyncFloodOnDramUcEcc=1 */
-	pci_write_config32(NODE_PCI(nodeid, 3), 0x44, dword);
+	pci_write_config32(NODE_PCI(node_id, 3), 0x44, dword);
 	if (is_fam15h()) {
 		u32 core_activation_flags = 0;
 		u32 active_cores = 0;
 
-		/* Set PCI_DEV(0, 0x18+nodeid, 0),
+		/* Set PCI_DEV(0, 0x18+node_id, 0),
 		 * 0x1dc bits 7:1 to start cores
 		 */
 		for (i = 1; i < cores + 1; i++)
@@ -568,45 +568,45 @@ static void real_start_other_core(u32 nodeid, u32 cores)
 
 		/* Start the first core of each compute unit sequentially */
 		for (i = 2; i < cores + 1; i += 2) {
-			dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x1dc);
+			dword = pci_read_config32(NODE_PCI(node_id, 0), 0x1dc);
 			active_cores |= (dword | (core_activation_flags & (1 << i)));
-			pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, active_cores);
+			pci_write_config32(NODE_PCI(node_id, 0), 0x1dc, active_cores);
 			/* Wait for the first core of each compute unit to start... */
-			u32 ap_apicid =	get_boot_apic_id(nodeid, i);
+			u32 ap_apicid =	get_boot_apic_id(node_id, i);
 			/* Timeout */
 			wait_cpu_state(ap_apicid, F10_APSTATE_ASLEEP, F10_APSTATE_ASLEEP);
 		}
 
 		for (i = 1; i < cores + 1; i += 2) {
 			/* Start the first core of each compute unit sequentially */
-			dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x1dc);
+			dword = pci_read_config32(NODE_PCI(node_id, 0), 0x1dc);
 			active_cores |= (dword | (core_activation_flags & (1 << i)));
-			pci_write_config32(NODE_PCI(nodeid, 0), 0x1dc, active_cores);
+			pci_write_config32(NODE_PCI(node_id, 0), 0x1dc, active_cores);
 			/* Wait for the first core of each compute unit to start... */
-			u32 ap_apicid =	get_boot_apic_id(nodeid, i);
+			u32 ap_apicid =	get_boot_apic_id(node_id, i);
 			/* Timeout */
 			wait_cpu_state(ap_apicid, F10_APSTATE_ASLEEP, F10_APSTATE_ASLEEP);
 		}
 	} else {
-		// set PCI_DEV(0, 0x18+nodeid, 0), 0x68 bit 5 to start core1
-		dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x68);
+		// set PCI_DEV(0, 0x18+node_id, 0), 0x68 bit 5 to start core1
+		dword = pci_read_config32(NODE_PCI(node_id, 0), 0x68);
 		dword |= 1 << 5;
-		pci_write_config32(NODE_PCI(nodeid, 0), 0x68, dword);
+		pci_write_config32(NODE_PCI(node_id, 0), 0x68, dword);
 
 		if (cores > 1) {
-			dword = pci_read_config32(NODE_PCI(nodeid, 0), 0x168);
+			dword = pci_read_config32(NODE_PCI(node_id, 0), 0x168);
 			for (i = 0; i < cores - 1; i++)
 				dword |= 1 << i;
-			pci_write_config32(NODE_PCI(nodeid, 0), 0x168, dword);
+			pci_write_config32(NODE_PCI(node_id, 0), 0x168, dword);
 		}
 	}
 }
 
 //it is running on core0 of node0
-static void start_other_cores(u32 bsp_apicid)
+static void start_other_cores(u32 bsp_apic_id)
 {
 	u32 nodes;
-	u32 nodeid;
+	u32 node_id;
 
 	if (get_uint_option("multi_core", 1) == 0)  {
 		printk(BIOS_DEBUG, "Skip additional core init\n");
@@ -615,11 +615,11 @@ static void start_other_cores(u32 bsp_apicid)
 
 	nodes = get_nodes();
 
-	for (nodeid = 0; nodeid < nodes; nodeid++) {
-		u32 cores = get_core_num_in_bsp(nodeid);
-		printk(BIOS_DEBUG, "init node: %02x  cores: %02x pass 1\n", nodeid, cores);
+	for (node_id = 0; node_id < nodes; node_id++) {
+		u32 cores = get_core_num_in_bsp(node_id);
+		printk(BIOS_DEBUG, "init node: %02x  cores: %02x pass 1\n", node_id, cores);
 		if (cores > 0)
-			real_start_other_core(nodeid, cores);
+			real_start_other_core(node_id, cores);
 	}
 }
 
@@ -643,7 +643,7 @@ static void finalize_node_setup(struct sys_info *sysinfo)
 	sysinfo->sbdn = get_sbdn(sysinfo->sbbusn);
 
 	for (i = 0; i < nodes; i++) {
-		cpuSetAMDPCI(i);
+		cpu_set_amd_pci(i);
 	}
 
 	// Prep each node for FID/VID setup.
@@ -667,7 +667,7 @@ void setup_bsp(struct sys_info *sysinfo, u8 power_on_reset)
 
 	post_code(0x33);
 
-	cpuSetAMDMSR(0);
+	cpu_set_amd_msr(0);
 	post_code(0x34);
 
 	amd_ht_init(sysinfo);
@@ -690,26 +690,26 @@ void setup_bsp(struct sys_info *sysinfo, u8 power_on_reset)
 
 u32 initialize_cores(struct sys_info *sysinfo)
 {
-	u32 bsp_apicid = 0;
+	u32 bsp_apic_id = 0;
 
 	post_code(0x30);
 
-	bsp_apicid = init_cpus(sysinfo);
+	bsp_apic_id = init_cpus(sysinfo);
 
 	post_code(0x32);
 	/* APs will not reach here*/
 
-	return bsp_apicid;
+	return bsp_apic_id;
 }
 
-void early_cpu_finalize(struct sys_info *sysinfo, u32 bsp_apicid)
+void early_cpu_finalize(struct sys_info *sysinfo, u32 bsp_apic_id)
 {
 	if (CONFIG(LOGICAL_CPUS)) {
 		/* Core0 on each node is configured. Now setup any additional cores. */
 		printk(BIOS_DEBUG, "start_other_cores()\n");
-		start_other_cores(bsp_apicid);
+		start_other_cores(bsp_apic_id);
 		post_code(0x37);
-		wait_all_other_cores_started(bsp_apicid);
+		wait_all_other_cores_started(bsp_apic_id);
 	}
 
 	if (CONFIG(SET_FIDVID)) {
@@ -726,9 +726,9 @@ void early_cpu_finalize(struct sys_info *sysinfo, u32 bsp_apicid)
 		post_code(0x39);
 
 		if (!warm_reset_detect(0)) {			// BSP is node 0
-			init_fidvid_bsp(bsp_apicid, sysinfo->nodes);
+			init_fidvid_bsp(bsp_apic_id, sysinfo->nodes);
 		} else {
-			init_fidvid_stage2(bsp_apicid, 0);	// BSP is node 0
+			init_fidvid_stage2(bsp_apic_id, 0);	// BSP is node 0
 		}
 
 		post_code(0x3A);

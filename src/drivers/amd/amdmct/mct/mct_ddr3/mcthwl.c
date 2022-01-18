@@ -206,7 +206,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *p_mct_stat,
 	}
 
 	if (Pass == SECOND_PASS) {
-		if (p_dct_stat->target_freq > mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+		if (p_dct_stat->target_freq > mhz_to_memclk_config(mct_get_nv_bits(NV_MIN_MEMCLK))) {
 			/* 8.Prepare the memory subsystem for the target MEMCLK frequency.
 			 * NOTE: BIOS must program both DCTs to the same frequency.
 			 * NOTE: Fam15h steps the frequency, Fam10h slams the frequency.

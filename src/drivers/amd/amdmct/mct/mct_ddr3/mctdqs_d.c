@@ -2396,7 +2396,7 @@ u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *p_mct_stat,
 exitGetAddrWNoError:
 
 	/* Skip if Address is in UMA region */
-	dword = p_mct_stat->Sub4GCacheTop;
+	dword = p_mct_stat->sub_4G_cache_top;
 	dword >>= 8;
 	if (dword != 0) {
 		if ((val >= dword) && (val < _4GB_RJ8)) {
@@ -2413,7 +2413,7 @@ exitGetAddrWNoError:
 	print_debug_dqs("mct_GetMCTSysAddr_D: status ", p_dct_stat->status, 2);
 	print_debug_dqs("mct_GetMCTSysAddr_D: SysBase ", p_dct_stat->dct_sys_base, 2);
 	print_debug_dqs("mct_GetMCTSysAddr_D: HoleBase ", p_dct_stat->dct_hole_base, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: Cachetop ", p_mct_stat->Sub4GCacheTop, 2);
+	print_debug_dqs("mct_GetMCTSysAddr_D: Cachetop ", p_mct_stat->sub_4G_cache_top, 2);
 
 exitGetAddr:
 	return val;

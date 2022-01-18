@@ -2306,7 +2306,7 @@ static void fam10BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
  ******************************************************************************/
 static void fam15BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 {
-	/* Buffer count setup on Family 15h is currently handled in cpuSetAMDPCI */
+	/* Buffer count setup on Family 15h is currently handled in cpu_set_amd_pci */
 }
 
 /*

@@ -92,7 +92,7 @@ static u16 fam15_receiver_enable_training_seed(struct DCTStatStruc *p_dct_stat, 
 	u32 dword;
 	u16 seed = 0;
 
-	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	u8 channel = dct;
 	if (package_type == PT_GR) {
@@ -1178,7 +1178,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	u16 seed_fine[MAX_BYTE_LANES];
 	u16 seed_pre_gross[MAX_BYTE_LANES];
 
-	u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+	u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
 	u16 fam15h_freq_tab[] = {0, 0, 0, 0, 333, 0, 400, 0, 0, 0, 533, 0, 0, 0, 667, 0, 0, 0, 800, 0, 0, 0, 933};
 
 	u8 lane_count;
@@ -1187,7 +1187,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	print_debug_dqs("\nTrainRcvEn: Node", p_dct_stat->node_id, 0);
 	print_debug_dqs("TrainRcvEn: Pass", Pass, 0);
 
-	min_mem_clk = mctGet_NVbits(NV_MIN_MEMCLK);
+	min_mem_clk = mct_get_nv_bits(NV_MIN_MEMCLK);
 
 	train_both_nibbles = 0;
 	if (p_dct_stat->dimm_x4_present)
@@ -1825,7 +1825,7 @@ static void mct_SetMaxLatency_D(struct DCTStatStruc *p_dct_stat, u8 Channel, u16
 		cpu_val_p = 29;
 	} else if (p_dct_stat->logical_cpuid & AMD_DR_Cx) {
 		/* Revision C */
-		u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+		u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
 		if ((package_type == PT_L1)		/* Socket F (1207) */
 			|| (package_type == PT_M2)	/* Socket AM3 */
 			|| (package_type == PT_S1)) {	/* Socket S1g <x> */

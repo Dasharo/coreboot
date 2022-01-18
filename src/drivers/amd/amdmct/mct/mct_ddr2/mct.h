@@ -124,7 +124,7 @@
 #define SPD_COLSZ	4
 #define SPD_LBANKS	17		/* number of [logical] banks on each device*/
 #define SPD_DMBANKS	5		/* number of physical banks on dimm*/
-    #define SPDPLBit	4		/* Dram package bit*/
+    #define SPD_PLBIT	4		/* Dram package bit*/
 #define SPD_BANKSZ	31		/* capacity of physical bank*/
 #define SPD_DEVWIDTH	13
 #define SPD_CASLAT	18
@@ -163,16 +163,16 @@
 	Global MCT Status Structure
 =============================================================================*/
 struct MCTStatStruc {
-	u32 GStatus;	/* Global Status bitfield*/
-	u32 HoleBase;	/* If not zero, BASE[39:8] (system address)
+	u32 g_status;	/* Global Status bitfield*/
+	u32 hole_base;	/* If not zero, BASE[39:8] (system address)
 				   of sub 4GB dram hole for HW remapping.*/
-	u32 Sub4GCacheTop;	/* If not zero, the 32-bit top of cacheable memory.*/
-	u32 SysLimit;	/* LIMIT[39:8] (system address)*/
+	u32 sub_4G_cache_top;	/* If not zero, the 32-bit top of cacheable memory.*/
+	u32 sys_limit;	/* LIMIT[39:8] (system address)*/
 };
 /*=============================================================================
-	Global MCT Configuration Status Word (GStatus)
+	Global MCT Configuration Status Word (g_status)
 =============================================================================*/
-/*These should begin at bit 0 of GStatus[31:0]*/
+/*These should begin at bit 0 of g_status[31:0]*/
 /* Ran out of MTRRs while mapping memory*/
 #define GSB_MTRR_SHORT	0
 /* All banks of all Nodes are ECC capable*/
@@ -664,7 +664,7 @@ struct DCTStatStruc {
 
 
 /* global function */
-u32 node_present(u32 Node);
+u32 node_present(u32 node);
 u32 get_nb32n(struct DCTStatStruc *p_dct_stat, u32 addrx);
 u32 get_nb32(u32 addr); /* NOTE: extend addr to 32 bit for bus > 0 */
 
@@ -673,12 +673,12 @@ void k8f_interleave_banks(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *
 void mct_init_with_write_to_cs(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
 void mct_get_ps_cfg(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
-void get_channel_ps_cfg_0(unsigned int maa_dimms, unsigned int Speed, unsigned int MAAload,
-		unsigned int DATAAload, unsigned int *addr_tmg_ctl, unsigned int *ODC_CTL);
-void get_channel_ps_cfg_1(unsigned int maa_dimms, unsigned int Speed, unsigned int MAAload,
-		unsigned int *addr_tmg_ctl, unsigned int *ODC_CTL, unsigned int *val);
-void get_channel_ps_cfg_2(unsigned int maa_dimms, unsigned int Speed, unsigned int MAAload,
-		unsigned int *addr_tmg_ctl, unsigned int *ODC_CTL, unsigned int *val);
+void get_channel_ps_cfg_0(unsigned int maa_dimms, unsigned int speed, unsigned int maa_load,
+		unsigned int DATAAload, unsigned int *addr_tmg_ctl, unsigned int *odc_ctl);
+void get_channel_ps_cfg_1(unsigned int maa_dimms, unsigned int speed, unsigned int maa_load,
+		unsigned int *addr_tmg_ctl, unsigned int *odc_ctl, unsigned int *val);
+void get_channel_ps_cfg_2(unsigned int maa_dimms, unsigned int speed, unsigned int maa_load,
+		unsigned int *addr_tmg_ctl, unsigned int *odc_ctl, unsigned int *val);
 
 u8 mct_def_reset(void);
 

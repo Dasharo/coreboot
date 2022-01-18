@@ -431,7 +431,7 @@ static void TrainDQSPos_D(struct MCTStatStruc *p_mct_stat,
 
 	if (p_dct_stat->direction == DQS_READDIR) {
 		dqsDelay_end = 64;
-		mct_AdjustDelayRange_D(p_mct_stat, p_dct_stat, &dqsDelay_end);
+		mct_adjust_delay_range_d(p_mct_stat, p_dct_stat, &dqsDelay_end);
 	} else {
 		dqsDelay_end = 32;
 	}
@@ -867,8 +867,8 @@ void ResetDCTWrPtr_D(u32 dev, u32 index_reg, u32 index)
 {
 	u32 val;
 
-	val = Get_NB32_index_wait(dev, index_reg, index);
-	Set_NB32_index_wait(dev, index_reg, index, val);
+	val = get_nb32_index_wait(dev, index_reg, index);
+	set_nb32_index_wait(dev, index_reg, index, val);
 }
 
 
@@ -921,7 +921,7 @@ u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
 	if (val & (1 << DIMM_EC_EN)) {
 		_DisableDramECC |= 0x01;
 		val &= ~(1 << DIMM_EC_EN);
-		Set_NB32(dev, reg, val);
+		set_nb32(dev, reg, val);
 	}
 	if (!p_dct_stat->ganged_mode) {
 		reg = 0x190;
@@ -929,7 +929,7 @@ u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
 		if (val & (1 << DIMM_EC_EN)) {
 			_DisableDramECC |= 0x02;
 			val &= ~(1 << DIMM_EC_EN);
-			Set_NB32(dev, reg, val);
+			set_nb32(dev, reg, val);
 		}
 	}
 	return _DisableDramECC;
@@ -953,13 +953,13 @@ void mct_EnableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
 		reg = 0x90;
 		val = get_nb32(dev, reg);
 		val |= (1 << DIMM_EC_EN);
-		Set_NB32(dev, reg, val);
+		set_nb32(dev, reg, val);
 	}
 	if ((_DisableDramECC & 0x02) == 0x02) {
 		reg = 0x190;
 		val = get_nb32(dev, reg);
 		val |= (1 << DIMM_EC_EN);
-		Set_NB32(dev, reg, val);
+		set_nb32(dev, reg, val);
 	}
 }
 
@@ -998,10 +998,10 @@ static void mct_SetDQSDelayCSR_D(struct MCTStatStruc *p_mct_stat,
 		index += (ChipSel >> 1) * 0x100;	/* if logical DIMM1/DIMM3 */
 	}
 
-	val = Get_NB32_index_wait(dev, index_reg, index);
+	val = get_nb32_index_wait(dev, index_reg, index);
 	val &= ~(0x7f << shift);
 	val |= (dqs_delay << shift);
-	Set_NB32_index_wait(dev, index_reg, index, val);
+	set_nb32_index_wait(dev, index_reg, index, val);
 }
 
 
@@ -1130,7 +1130,7 @@ u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *p_mct_stat,
 exitGetAddrWNoError:
 
 	/* Skip if Address is in UMA region */
-	dword = p_mct_stat->Sub4GCacheTop;
+	dword = p_mct_stat->sub_4G_cache_top;
 	dword >>= 8;
 	if (dword != 0) {
 		if ((val >= dword) && (val < _4GB_RJ8)) {
@@ -1146,7 +1146,7 @@ exitGetAddrWNoError:
 	print_debug_dqs("mct_GetMCTSysAddr_D: valid ", *valid, 2);
 	print_debug_dqs("mct_GetMCTSysAddr_D: status ", p_dct_stat->status, 2);
 	print_debug_dqs("mct_GetMCTSysAddr_D: HoleBase ", p_dct_stat->dct_hole_base, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: Cachetop ", p_mct_stat->Sub4GCacheTop, 2);
+	print_debug_dqs("mct_GetMCTSysAddr_D: Cachetop ", p_mct_stat->sub_4G_cache_top, 2);
 
 exitGetAddr:
 	return val;

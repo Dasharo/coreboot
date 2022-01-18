@@ -28,7 +28,7 @@ void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat,
 	u32 val;
 	u32 val_lo, val_hi;
 
-	DoIntlv = mctGet_NVbits(NV_BANK_INTLV);
+	DoIntlv = mct_get_nv_bits(NV_BANK_INTLV);
 	_CsIntCap = 0;
 	EnChipSels = 0;
 

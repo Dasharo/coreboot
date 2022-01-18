@@ -15,7 +15,7 @@ void mct_ExtMCTConfig_Dx(struct DCTStatStruc *p_dct_stat)
 			dword |= 0x18 << 2;	/* MctWrLimit = 0x18 for unganged mode */
 		else
 			dword |= 0x10 << 2;	/* MctWrLimit = 0x10 for ganged mode */
-		Set_NB32(p_dct_stat->dev_dct, 0x11c, dword);
+		set_nb32(p_dct_stat->dev_dct, 0x11c, dword);
 
 		dword = get_nb32(p_dct_stat->dev_dct, 0x1b0);
 		dword &= ~0x3;			/* AdapPrefMissRatio = 0x1 */
@@ -47,6 +47,6 @@ void mct_ExtMCTConfig_Dx(struct DCTStatStruc *p_dct_stat)
 			dword |= (0x9 << 28);	/* ...9 for DDR1600 */
 			break;
 		}
-		Set_NB32(p_dct_stat->dev_dct, 0x1b0, dword);
+		set_nb32(p_dct_stat->dev_dct, 0x1b0, dword);
 	}
 }

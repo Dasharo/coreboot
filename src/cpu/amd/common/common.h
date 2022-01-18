@@ -25,7 +25,7 @@ struct node_core_id {
 };
 
 u32 read_nb_cfg_54(void);
-u64 get_logical_CPUID(u32 node);
+u64 get_logical_cpuid(u32 node);
 u32 get_initial_apicid(void);
 u32 get_core_num_in_bsp(u32 nodeid);
 u8 set_apicid_cpuid_lo(void);

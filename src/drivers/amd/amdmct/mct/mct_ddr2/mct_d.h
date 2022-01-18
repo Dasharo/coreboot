@@ -208,7 +208,7 @@ extern const u32 TestPattern2_D[];
 #define SPD_COLSZ	4
 #define SPD_LBANKS	17		/*number of [logical] banks on each device*/
 #define SPD_DMBANKS	5		/*number of physical banks on dimm*/
-	#define SPDPLBit	4	/* Dram package bit*/
+	#define SPD_PLBIT	4	/* Dram package bit*/
 #define SPD_BANKSZ	31		/*capacity of physical bank*/
 #define SPD_DEVWIDTH	13
 #define SPD_CASLAT	18
@@ -254,17 +254,17 @@ extern const u32 TestPattern2_D[];
 	Global MCT Status Structure
 =============================================================================*/
 struct MCTStatStruc {
-	u32 GStatus;		/* Global Status bitfield*/
-	u32 HoleBase;		/* If not zero, BASE[39:8] (system address)
+	u32 g_status;		/* Global Status bitfield*/
+	u32 hole_base;		/* If not zero, BASE[39:8] (system address)
 				      of sub 4GB dram hole for HW remapping.*/
-	u32 Sub4GCacheTop;	/* If not zero, the 32-bit top of cacheable memory.*/
-	u32 SysLimit;		/* LIMIT[39:8] (system address)*/
+	u32 sub_4G_cache_top;	/* If not zero, the 32-bit top of cacheable memory.*/
+	u32 sys_limit;		/* LIMIT[39:8] (system address)*/
 } __packed;
 
 /*=============================================================================
-	Global MCT Configuration Status Word (GStatus)
+	Global MCT Configuration Status Word (g_status)
 =============================================================================*/
-/*These should begin at bit 0 of GStatus[31:0]*/
+/*These should begin at bit 0 of g_status[31:0]*/
 #define GSB_MTRR_SHORT	0		/* Ran out of MTRRs while mapping memory*/
 #define GSB_ECCDIMMS	1		/* All banks of all Nodes are ECC capable*/
 #define GSB_DRAM_ECCDIS	2		/* Dram ECC requested but not enabled.*/
@@ -706,11 +706,11 @@ struct amdmct_memory_info {
 } __packed;
 
 u32 get_nb32(u32 dev, u32 reg);
-void Set_NB32(u32 dev, u32 reg, u32 val);
-u32 Get_NB32_index(u32 dev, u32 index_reg, u32 index);
-void Set_NB32_index(u32 dev, u32 index_reg, u32 index, u32 data);
-u32 Get_NB32_index_wait(u32 dev, u32 index_reg, u32 index);
-void Set_NB32_index_wait(u32 dev, u32 index_reg, u32 index, u32 data);
+void set_nb32(u32 dev, u32 reg, u32 val);
+u32 get_nb32_index(u32 dev, u32 index_reg, u32 index);
+void set_nb32_index(u32 dev, u32 index_reg, u32 index, u32 data);
+u32 get_nb32_index_wait(u32 dev, u32 index_reg, u32 index);
+void set_nb32_index_wait(u32 dev, u32 index_reg, u32 index, u32 data);
 u32 OtherTiming_A_D(struct DCTStatStruc *p_dct_stat, u32 val);
 void mct_ForceAutoPrecharge_D(struct DCTStatStruc *p_dct_stat, u32 dct);
 u32 Modify_D3CMP(struct DCTStatStruc *p_dct_stat, u32 dct, u32 value);
@@ -734,8 +734,8 @@ void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_d
 void mct_SetDramConfigHi_D(struct DCTStatStruc *p_dct_stat, u32 dct, u32 DramConfigHi);
 void mct_DramInit_Hw_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
 void SyncSetting(struct DCTStatStruc *p_dct_stat);
-void mct_SetClToNB_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
-void mct_SetWbEnhWsbDis_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_set_cl_to_nb_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_set_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void mct_TrainRcvrEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 Pass);
 void mct_EnableDimmEccEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 _DisableDramECC);
 u32 procOdtWorkaround(struct DCTStatStruc *p_dct_stat, u32 dct, u32 val);
@@ -756,10 +756,10 @@ u32 mct_GetRcvrSysAddr_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p
 void mct_Read1LTestPattern_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 addr);
 void EarlySampleSupport_D(void);
 
-void mctAutoInitMCT_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void mct_AdjustDelayRange_D(struct MCTStatStruc *p_mct_stat,
+void mct_auto_init_mct_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_adjust_delay_range_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 *dqs_pos);
-void mct_EnableDatIntlv_D(struct MCTStatStruc *p_mct_stat,
+void mct_enable_dat_intlv_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat);
 void MCTMemClrSync_D(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a);

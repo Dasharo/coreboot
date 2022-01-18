@@ -9,12 +9,12 @@
 
 static u8 fam15h_rdimm_rc2_ibt_code(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
-	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	u8 package_type;
 	u8 control_code = 0;
 
-	package_type = mctGet_NVbits(NV_PACK_TYPE);
+	package_type = mct_get_nv_bits(NV_PACK_TYPE);
 	u16 MemClkFreq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
 	/* Obtain number of DIMMs on channel */
@@ -175,8 +175,8 @@ static u32 mct_ControlRC(struct MCTStatStruc *p_mct_stat,
 	u32 val;
 	u8 ddr_voltage_index;
 	u16 mem_freq;
-	u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
-	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
+	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	DimmNum = (MrsChipSel >> rc_word_chip_select_lower_bit()) & 0x7;
 

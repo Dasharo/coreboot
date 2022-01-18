@@ -18,7 +18,7 @@
 
 #include "defaults.h"
 
-static void AMD_Errata281(u8 node, u64 revision, u32 platform)
+static void amd_errata281(u8 node, u64 revision, u32 platform)
 {
 	/* Workaround for Transaction Scheduling Conflict in
 	 * Northbridge Cross Bar. Implement XCS Token adjustment
@@ -37,7 +37,7 @@ static void AMD_Errata281(u8 node, u64 revision, u32 platform)
 	/* For each node we need to check for a "broken" node */
 	if (!(revision & (AMD_DR_B0 | AMD_DR_B1))) {
 		for (i = 0; i < nodes; i++) {
-			if (get_logical_CPUID(i) & (AMD_DR_B0 | AMD_DR_B1)) {
+			if (get_logical_cpuid(i) & (AMD_DR_B0 | AMD_DR_B1)) {
 				mixed = 1;
 				break;
 			}
@@ -85,15 +85,15 @@ static void AMD_Errata281(u8 node, u64 revision, u32 platform)
  */
 static void amd_set_ht_phy_register(u8 node, u8 link, u8 entry)
 {
-	u32 phyReg;
-	u32 phyBase;
+	u32 phy_reg;
+	u32 phy_base;
 	u32 val;
 
 	/* Determine this link's portal */
 	if (link > 3)
 		link -= 4;
 
-	phyBase = ((u32) link << 3) | 0x180;
+	phy_base = ((u32) link << 3) | 0x180;
 
 	/* Determine if link is connected and abort if not */
 	if (!(pci_read_config32(NODE_PCI(node, 0), 0x98 + (link * 0x20)) & 0x1))
@@ -102,39 +102,39 @@ static void amd_set_ht_phy_register(u8 node, u8 link, u8 entry)
 	/* Get the portal control register's initial value
 	 * and update it to access the desired phy register
 	 */
-	phyReg = pci_read_config32(NODE_PCI(node, 4), phyBase);
+	phy_reg = pci_read_config32(NODE_PCI(node, 4), phy_base);
 
 	if (fam10_htphy_default[entry].htreg > 0x1FF) {
-		phyReg &= ~HTPHY_DIRECT_OFFSET_MASK;
-		phyReg |= HTPHY_DIRECT_MAP;
+		phy_reg &= ~HTPHY_DIRECT_OFFSET_MASK;
+		phy_reg |= HTPHY_DIRECT_MAP;
 	} else {
-		phyReg &= ~HTPHY_OFFSET_MASK;
+		phy_reg &= ~HTPHY_OFFSET_MASK;
 	}
 
 	/* Now get the current phy register data
 	 * LinkPhyDone = 0, LinkPhyWrite = 0 is a read
 	 */
-	phyReg |= fam10_htphy_default[entry].htreg;
-	pci_write_config32(NODE_PCI(node, 4), phyBase, phyReg);
+	phy_reg |= fam10_htphy_default[entry].htreg;
+	pci_write_config32(NODE_PCI(node, 4), phy_base, phy_reg);
 
 	do {
-		val = pci_read_config32(NODE_PCI(node, 4), phyBase);
+		val = pci_read_config32(NODE_PCI(node, 4), phy_base);
 	} while (!(val & HTPHY_IS_COMPLETE_MASK));
 
 	/* Now we have the phy register data, apply the change */
-	val = pci_read_config32(NODE_PCI(node, 4), phyBase + 4);
+	val = pci_read_config32(NODE_PCI(node, 4), phy_base + 4);
 	val &= ~fam10_htphy_default[entry].mask;
 	val |= fam10_htphy_default[entry].data;
-	pci_write_config32(NODE_PCI(node, 4), phyBase + 4, val);
+	pci_write_config32(NODE_PCI(node, 4), phy_base + 4, val);
 
 	/* write it through the portal to the phy
 	 * LinkPhyDone = 0, LinkPhyWrite = 1 is a write
 	 */
-	phyReg |= HTPHY_WRITE_CMD;
-	pci_write_config32(NODE_PCI(node, 4), phyBase, phyReg);
+	phy_reg |= HTPHY_WRITE_CMD;
+	pci_write_config32(NODE_PCI(node, 4), phy_base, phy_reg);
 
 	do {
-		val = pci_read_config32(NODE_PCI(node, 4), phyBase);
+		val = pci_read_config32(NODE_PCI(node, 4), phy_base);
 	} while (!(val & HTPHY_IS_COMPLETE_MASK));
 }
 
@@ -143,7 +143,7 @@ static void set_ht_phy_defaults(u8 node)
 	u8 i;
 	u8 j;
 	u8 offset;
-	u64 revision = get_logical_CPUID(node);
+	u64 revision = get_logical_cpuid(node);
 	u32 platform = get_platform_type();
 
 	for (i = 0; i < ARRAY_SIZE(fam10_htphy_default); i++) {
@@ -205,7 +205,7 @@ static void configure_ht_stop_tristate(u8 node)
 static void configure_pci_defaults(u8 node)
 {
 	u32 val;
-	u64 revision = get_logical_CPUID(node);
+	u64 revision = get_logical_cpuid(node);
 	u32 platform = get_platform_type();
 
 	for (u8 i = 0; i < ARRAY_SIZE(fam10_pci_default); i++) {
@@ -223,7 +223,7 @@ static void configure_pci_defaults(u8 node)
 
 static void configure_message_triggered_c1e(u8 node)
 {
-	u64 revision = get_logical_CPUID(node);
+	u64 revision = get_logical_cpuid(node);
 
 	if (revision & (AMD_DR_GT_D0 | AMD_FAM15_ALL)) {
 		/* Set up message triggered C1E */
@@ -701,7 +701,7 @@ static void amd_setup_psivid_d(u32 platform_type, u8 node)
 	}
 }
 
-void cpuSetAMDPCI(u8 node)
+void cpu_set_amd_pci(u8 node)
 {
 	/* This routine loads the CPU with default settings in fam10_pci_default
 	 * table . It must be run after Cache-As-RAM has been enabled, and
@@ -711,9 +711,9 @@ void cpuSetAMDPCI(u8 node)
 	u32 platform;
 	u64 revision;
 
-	printk(BIOS_DEBUG, "cpuSetAMDPCI %02d", node);
+	printk(BIOS_DEBUG, "cpu_set_amd_pci %02d", node);
 
-	revision = get_logical_CPUID(node);
+	revision = get_logical_cpuid(node);
 	platform = get_platform_type();
 
 	/* Set PSIVID offset which is not table driven */
@@ -724,7 +724,7 @@ void cpuSetAMDPCI(u8 node)
 
 	/* FIXME: add UMA support and programXbarToSriReg(); */
 
-	AMD_Errata281(node, revision, platform);
+	amd_errata281(node, revision, platform);
 
 	/* FIXME: if the dct phy doesn't init correct it needs to reset.
 	 * if (revision & (AMD_DR_B2 | AMD_DR_B3))
@@ -813,7 +813,7 @@ static void cpb_enable_disable(void)
 	}
 }
 
-static void AMD_Errata298(void)
+static void amd_errata_298(void)
 {
 	/* Workaround for L2 Eviction May Occur during operation to
 	 * set Accessed or dirty bit.
@@ -826,7 +826,7 @@ static void AMD_Errata298(void)
 
 	/* For each core we need to check for a "broken" node */
 	for (i = 0; i < nodes; i++) {
-		if (get_logical_CPUID(i) & (AMD_DR_B0 | AMD_DR_B1 | AMD_DR_B2)) {
+		if (get_logical_cpuid(i) & (AMD_DR_B0 | AMD_DR_B1 | AMD_DR_B2)) {
 			affectedRev = 1;
 			break;
 		}
@@ -850,7 +850,7 @@ static void AMD_Errata298(void)
 		wrmsr(OSVW_Status, msr);
 	}
 
-	if (!affectedRev && (get_logical_CPUID(0xFF) & AMD_DR_B3)) {
+	if (!affectedRev && (get_logical_cpuid(0xFF) & AMD_DR_B3)) {
 		msr = rdmsr(OSVW_ID_Length);
 		msr.lo |= 0x01;	/* OS Visible Workaround - MSR */
 		wrmsr(OSVW_ID_Length, msr);
@@ -858,7 +858,7 @@ static void AMD_Errata298(void)
 	}
 }
 
-void cpuSetAMDMSR(u8 node_id)
+void cpu_set_amd_msr(u8 node_id)
 {
 	/* This routine loads the CPU with default settings in fam10_msr_default
 	 * table . It must be run after Cache-As-RAM has been enabled, and
@@ -871,9 +871,9 @@ void cpuSetAMDMSR(u8 node_id)
 	u32 platform;
 	u64 revision;
 
-	printk(BIOS_DEBUG, "cpuSetAMDMSR ");
+	printk(BIOS_DEBUG, "cpu_set_amd_msr ");
 
-	revision = get_logical_CPUID(0xff);
+	revision = get_logical_cpuid(0xff);
 	platform = get_platform_type();
 
 	for (i = 0; i < ARRAY_SIZE(fam10_msr_default); i++) {
@@ -887,7 +887,7 @@ void cpuSetAMDMSR(u8 node_id)
 			wrmsr(fam10_msr_default[i].msr, msr);
 		}
 	}
-	AMD_Errata298();
+	amd_errata_298();
 
 	/* Revision C0 and above */
 	if (revision & AMD_OR_C0)

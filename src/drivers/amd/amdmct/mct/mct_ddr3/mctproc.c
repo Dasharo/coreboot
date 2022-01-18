@@ -11,7 +11,7 @@ u32 mct_SetDramConfigMisc2(struct DCTStatStruc *p_dct_stat,
 {
 	u32 val;
 
-	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	if (p_dct_stat->logical_cpuid & AMD_FAM15_ALL) {
 		u8 cs_mux_45;
@@ -60,7 +60,7 @@ u32 mct_SetDramConfigMisc2(struct DCTStatStruc *p_dct_stat,
 	} else if (p_dct_stat->logical_cpuid & (AMD_DR_Dx | AMD_DR_Cx)) {
 		if (p_dct_stat->Status & (1 << SB_REGISTERED)) {
 			misc2 |= 1 << SUB_MEM_CLK_REG_DLY;
-			if (mctGet_NVbits(NV_MAX_DIMMS) == 8)
+			if (mct_get_nv_bits(NV_MAX_DIMMS) == 8)
 				misc2 |= 1 << DDR3_FOUR_SOCKET_CH;
 			else
 				misc2 &= ~(1 << DDR3_FOUR_SOCKET_CH);
@@ -88,12 +88,12 @@ void mct_ExtMCTConfig_Cx(struct DCTStatStruc *p_dct_stat)
 
 	if (p_dct_stat->logical_cpuid & (AMD_DR_Cx)) {
 		/* Revision C */
-		Set_NB32(p_dct_stat->dev_dct, 0x11c, 0x0ce00fc0 | 1 << 29/* FlushWrOnStpGnt */);
+		set_nb32(p_dct_stat->dev_dct, 0x11c, 0x0ce00fc0 | 1 << 29/* FlushWrOnStpGnt */);
 
 		val = get_nb32(p_dct_stat->dev_dct, 0x1b0);
 		val &= ~0x73f;
 		val |= 0x101;	/* BKDG recommended settings */
 
-		Set_NB32(p_dct_stat->dev_dct, 0x1b0, val);
+		set_nb32(p_dct_stat->dev_dct, 0x1b0, val);
 	}
 }

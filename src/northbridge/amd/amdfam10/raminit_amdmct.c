@@ -93,9 +93,9 @@ u32 Get_NB32_index_wait_DCT(u32 dev, u8 dct, u32 index_reg, u32 index)
 		/* Obtain address of function 0x1 */
 		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
-		return Get_NB32_index_wait(dev, index_reg, index);
+		return get_nb32_index_wait(dev, index_reg, index);
 	} else {
-		return Get_NB32_index_wait(dev, (0x100 * dct) + index_reg, index);
+		return get_nb32_index_wait(dev, (0x100 * dct) + index_reg, index);
 	}
 }
 
@@ -105,9 +105,9 @@ void Set_NB32_index_wait_DCT(u32 dev, u8 dct, u32 index_reg, u32 index, u32 data
 		/* Obtain address of function 0x1 */
 		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
-		Set_NB32_index_wait(dev, index_reg, index, data);
+		set_nb32_index_wait(dev, index_reg, index, data);
 	} else {
-		Set_NB32_index_wait(dev, (0x100 * dct) + index_reg, index, data);
+		set_nb32_index_wait(dev, (0x100 * dct) + index_reg, index, data);
 	}
 }
 
@@ -523,7 +523,7 @@ void raminit_amdmct(struct sys_info *sysinfo)
 	printk(BIOS_DEBUG, "raminit_amdmct begin:\n");
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
-	mctAutoInitMCT_D(p_mct_stat, p_dct_stat_a);
+	mct_auto_init_mct_d(p_mct_stat, p_dct_stat_a);
 
 	timestamp_add_now(TS_AFTER_INITRAM);
 	printk(BIOS_DEBUG, "raminit_amdmct end:\n");
@@ -558,8 +558,8 @@ void amdmct_cbmem_store_info(struct sys_info *sysinfo)
 			p_dct_stat_a = sysinfo->DCTstatA + i;
 			memcpy(&mem_info->dct_stat[i], p_dct_stat_a, sizeof(struct DCTStatStruc));
 		}
-		mem_info->ecc_enabled = mctGet_NVbits(NV_ECC_CAP);
-		mem_info->ecc_scrub_rate = mctGet_NVbits(NV_DRAM_BK_SCRUB);
+		mem_info->ecc_enabled = mct_get_nv_bits(NV_ECC_CAP);
+		mem_info->ecc_scrub_rate = mct_get_nv_bits(NV_DRAM_BK_SCRUB);
 
 		/* Zero out invalid/unused pointers */
 		if (CONFIG(DIMM_DDR3)) {

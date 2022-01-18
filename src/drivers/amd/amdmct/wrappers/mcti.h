@@ -109,31 +109,31 @@ void mctSaveDQSSigTmg_D(void);
 void mctGetDQSSigTmg_D(void);
 u8 mctSetNodeBoundary_D(void);
 #endif
-u16 mctGet_NVbits(u8 index);
-void mctHookAfterDIMMpre(void);
-void mctGet_MaxLoadFreq(struct DCTStatStruc *p_dct_stat);
-void mctAdjustAutoCycTmg_D(void);
-void mctHookAfterAutoCycTmg(void);
-void mctGetCS_ExcludeMap(void);
-void mctHookBeforeECC(void);
-void mctHookAfterECC(void);
-void mctHookAfterAutoCfg(void);
-void mctHookAfterPSCfg(void);
-void mctHookAfterHTMap(void);
-void mctHookAfterCPU(void);
-void mctInitMemGPIOs_A_D(void);
-void mctNodeIDDebugPort_D(void);
-void mctWarmReset_D(void);
-void mctHookBeforeDramInit(void);
-void mctHookAfterDramInit(void);
-void mctHookBeforeAnyTraining(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void mctHookAfterAnyTraining(void);
-void mctGet_DIMMAddr(struct DCTStatStruc *p_dct_stat, u32 node);
+u16 mct_get_nv_bits(u8 index);
+void mct_hook_after_dimm_pre(void);
+void mct_get_max_load_freq(struct DCTStatStruc *p_dct_stat);
+void mct_adjust_auto_cyc_tmg_d(void);
+void mct_hook_after_auto_cyc_tmg(void);
+void mct_get_cs_exclude_map(void);
+void mct_hook_before_ecc(void);
+void mct_hook_after_ecc(void);
+void mct_hook_after_auto_cfg(void);
+void mct_hook_after_ps_cfg(void);
+void mct_hook_after_ht_map(void);
+void mct_hook_after_cpu(void);
+void mct_init_mem_gpios_a_d(void);
+void mct_node_id_debug_port_d(void);
+void mct_warm_reset_d(void);
+void mct_hook_before_dram_init(void);
+void mct_hook_after_dram_init(void);
+void mct_hook_before_any_training(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_hook_after_any_training(void);
+void mct_get_dimm_addr(struct DCTStatStruc *p_dct_stat, u32 node);
 
 #if CONFIG(DIMM_DDR3)
-void vErratum372(struct DCTStatStruc *p_dct_stat);
-void vErratum414(struct DCTStatStruc *p_dct_stat);
-u32 mct_AdjustSPDTimings(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u32 val);
+void v_erratum_372(struct DCTStatStruc *p_dct_stat);
+void v_erratum_414(struct DCTStatStruc *p_dct_stat);
+u32 mct_adjust_spd_timings(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u32 val);
 #endif
 
 #endif

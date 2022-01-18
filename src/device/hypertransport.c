@@ -440,8 +440,7 @@ end_of_chain:
 		for (left = old_devices; left; left = left->sibling)
 			printk(BIOS_DEBUG, "%s\n", dev_path(left));
 
-		printk(BIOS_ERR, "HT: Leftover static devices. "
-		       "Check your devicetree.cb\n");
+		printk(BIOS_ERR, "HT: Leftover static devices. Check your devicetree.cb\n");
 
 		/*
 		 * Put back the leftover static device, and let pci_scan_bus()

@@ -40,7 +40,7 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat,
 
 	/* 1) QRx4 needs to adjust CS/ODT setup time */
 	// FIXME: Add Ax support?
-	if (mctGet_NVbits(NV_MAX_DIMMS) == 4) {
+	if (mct_get_nv_bits(NV_MAX_DIMMS) == 4) {
 		if (p_dct_stat->dimm_qr_present != 0) {
 			p_dct_stat->ch_addr_tmg[dct] &= 0xFF00FFFF;
 			p_dct_stat->ch_addr_tmg[dct] |= 0x00000000;
@@ -79,7 +79,7 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat,
 			}
 			val &= valx;
 			if (val != 0) {
-				if (mctGet_NVbits(NV_MAX_DIMMS) == 8 ||
+				if (mct_get_nv_bits(NV_MAX_DIMMS) == 8 ||
 						p_dct_stat->speed == 3) {
 					p_dct_stat->ch_addr_tmg[dct] &= 0xFFFF00FF;
 					p_dct_stat->ch_addr_tmg[dct] |= 0x00002F00;
@@ -141,7 +141,7 @@ static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
 	*addr_tmg_ctl = 0;
 	*ODC_CTL = 0;
 
-	if (mctGet_NVbits(NV_MAX_DIMMS) == 8) {
+	if (mct_get_nv_bits(NV_MAX_DIMMS) == 8) {
 		/* 8 DIMM Table */
 		p = Table_ATC_ODC_8D_D;
 		//FIXME Add Ax support

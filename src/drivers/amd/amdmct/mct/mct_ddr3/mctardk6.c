@@ -44,7 +44,7 @@ static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 speed, u8 maa_load,
 	*odc_ctl = 0;
 	*cmd_mode = 1;
 
-	if (mctGet_NVbits(NV_MAX_DIMMS) == 4) {
+	if (mct_get_nv_bits(NV_MAX_DIMMS) == 4) {
 		if (speed == 4) {
 			*addr_tmg_ctl = 0x00000000;
 		} else if (speed == 5) {

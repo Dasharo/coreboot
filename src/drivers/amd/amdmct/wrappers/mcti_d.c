@@ -47,7 +47,7 @@ static inline u8 isfam15h(void)
  */
 #define MINIMUM_DRAM_BELOW_4G 0x1000000
 
-u16 mctGet_NVbits(u8 index)
+u16 mct_get_nv_bits(u8 index)
 {
 	u16 val = 0;
 
@@ -295,14 +295,14 @@ u16 mctGet_NVbits(u8 index)
 }
 
 
-void mctHookAfterDIMMpre(void)
+void mct_hook_after_dimm_pre(void)
 {
 }
 
 
-void mctGet_MaxLoadFreq(struct DCTStatStruc *p_dct_stat)
+void mct_get_max_load_freq(struct DCTStatStruc *p_dct_stat)
 {
-	p_dct_stat->preset_max_freq = mctGet_NVbits(NV_MAX_MEMCLK);
+	p_dct_stat->preset_max_freq = mct_get_nv_bits(NV_MAX_MEMCLK);
 
 	/* Determine the number of installed DIMMs */
 	int ch1_count = 0;
@@ -327,8 +327,8 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *p_dct_stat)
 			ch2_registered = 1;
 	}
 	if (CONFIG(DEBUG_RAM_SETUP)) {
-		printk(BIOS_DEBUG, "mctGet_MaxLoadFreq: Channel 1: %d DIMM(s) detected\n", ch1_count);
-		printk(BIOS_DEBUG, "mctGet_MaxLoadFreq: Channel 2: %d DIMM(s) detected\n", ch2_count);
+		printk(BIOS_DEBUG, "mct_get_max_load_freq: Channel 1: %d DIMM(s) detected\n", ch1_count);
+		printk(BIOS_DEBUG, "mct_get_max_load_freq: Channel 2: %d DIMM(s) detected\n", ch2_count);
 	}
 
 #if CONFIG(DIMM_DDR3)
@@ -355,7 +355,7 @@ void mctGet_MaxLoadFreq(struct DCTStatStruc *p_dct_stat)
 					(ch1_voltage | ch2_voltage), p_dct_stat->preset_max_freq);
 }
 
-void mctGet_DIMMAddr(struct DCTStatStruc *p_dct_stat, u32 node)
+void mct_get_dimm_addr(struct DCTStatStruc *p_dct_stat, u32 node)
 {
 	int j;
 	struct sys_info *sysinfo = get_sysinfo();
@@ -368,37 +368,37 @@ void mctGet_DIMMAddr(struct DCTStatStruc *p_dct_stat, u32 node)
 
 }
 
-void mctAdjustAutoCycTmg_D(void)
+void mct_adjust_auto_cyc_tmg_d(void)
 {
 }
 
 
-void mctHookAfterAutoCycTmg(void)
+void mct_hook_after_auto_cyc_tmg(void)
 {
 }
 
 
-void mctGetCS_ExcludeMap(void)
+void mct_get_cs_exclude_map(void)
 {
 }
 
 
-void mctHookAfterAutoCfg(void)
+void mct_hook_after_auto_cfg(void)
 {
 }
 
 
-void mctHookAfterPSCfg(void)
+void mct_hook_after_ps_cfg(void)
 {
 }
 
 
-void mctHookAfterHTMap(void)
+void mct_hook_after_ht_map(void)
 {
 }
 
 
-void mctHookAfterCPU(void)
+void mct_hook_after_cpu(void)
 {
 }
 
@@ -413,11 +413,11 @@ void mctGetDQSSigTmg_D(void)
 }
 #endif
 
-void mctHookBeforeECC(void)
+void mct_hook_before_ecc(void)
 {
 }
 
-void mctHookAfterECC(void)
+void mct_hook_after_ecc(void)
 {
 }
 
@@ -428,32 +428,32 @@ void mctInitMemGPIOs_A(void)
 #endif
 
 
-void mctInitMemGPIOs_A_D(void)
+void mct_init_mem_gpios_a_d(void)
 {
 }
 
 
-void mctNodeIDDebugPort_D(void)
+void mct_node_id_debug_port_d(void)
 {
 }
 
 
-void mctWarmReset_D(void)
+void mct_warm_reset_d(void)
 {
 }
 
 
-void mctHookBeforeDramInit(void)
+void mct_hook_before_dram_init(void)
 {
 }
 
 
-void mctHookAfterDramInit(void)
+void mct_hook_after_dram_init(void)
 {
 }
 
 #if CONFIG(DIMM_DDR3)
-void vErratum372(struct DCTStatStruc *p_dct_stat)
+void v_erratum_372(struct DCTStatStruc *p_dct_stat)
 {
 	msr_t msr = rdmsr(NB_CFG_MSR);
 
@@ -468,7 +468,7 @@ void vErratum372(struct DCTStatStruc *p_dct_stat)
 	}
 }
 
-void vErratum414(struct DCTStatStruc *p_dct_stat)
+void v_erratum_414(struct DCTStatStruc *p_dct_stat)
 {
 	int dct = 0;
 	for (; dct < 2 ; dct++) {
@@ -478,25 +478,25 @@ void vErratum414(struct DCTStatStruc *p_dct_stat)
 		int dRAMMRS = get_nb32(p_dct_stat->dev_dct,0x84 + (0x100 * dct));
 		int pchgPDModeSel = dRAMMRS & (1 << PCHG_PD_MODE_SEL);
 		if (powerDown && ddr3 && pchgPDModeSel)
-			Set_NB32(p_dct_stat->dev_dct,0x84 + (0x100 * dct), dRAMMRS & ~(1 << PCHG_PD_MODE_SEL));
+			set_nb32(p_dct_stat->dev_dct,0x84 + (0x100 * dct), dRAMMRS & ~(1 << PCHG_PD_MODE_SEL));
 	}
 }
 #endif
 
 
-void mctHookBeforeAnyTraining(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
+void mct_hook_before_any_training(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 {
 #if CONFIG(DIMM_DDR3)
 	/* FIXME :  as of 25.6.2010 errata 350 and 372 should apply to  ((RB|BL|DA)-C[23])|(HY-D[01])|(PH-E0) but I don't find constants for all of them */
 	if (p_dct_stat_a->logical_cpuid & (AMD_DRBH_Cx | AMD_DR_Dx)) {
-		vErratum372(p_dct_stat_a);
-		vErratum414(p_dct_stat_a);
+		v_erratum_372(p_dct_stat_a);
+		v_erratum_414(p_dct_stat_a);
 	}
 #endif
 }
 
 #if CONFIG(DIMM_DDR3)
-u32 mct_AdjustSPDTimings(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u32 val)
+u32 mct_adjust_spd_timings(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u32 val)
 {
 	if (p_dct_stat_a->logical_cpuid & AMD_DR_Bx) {
 		if (p_dct_stat_a->status & (1 << SB_REGISTERED)) {
@@ -507,7 +507,7 @@ u32 mct_AdjustSPDTimings(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p
 }
 #endif
 
-void mctHookAfterAnyTraining(void)
+void mct_hook_after_any_training(void)
 {
 }
 

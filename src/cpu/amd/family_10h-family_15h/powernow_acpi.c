@@ -47,7 +47,7 @@ static void write_pstates_for_core(u8 pstate_num, u16 *pstate_feq, u32 *pstate_p
 	acpigen_write_PPC(pstate_num);
 
 	/* Write PSD indicating coordination type */
-	if ((single_link) && (get_logical_CPUID(0) & AMD_DR_GT_Bx)) {
+	if ((single_link) && (get_logical_cpuid(0) & AMD_DR_GT_Bx)) {
 		/* Revision C or greater single-link processor */
 		cpuid1 = cpuid(0x80000008);
 		acpigen_write_PSD_package(0, (cpuid1.ecx & 0xff) + 1, SW_ALL);
@@ -147,12 +147,12 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 	u32 *v;
 	struct cpuid_result cpuid1;
 
-	u16 Pstate_feq[10];
-	u32 Pstate_power[10];
-	u32 Pstate_latency[10];
-	u32 Pstate_control[10];
-	u32 Pstate_status[10];
-	u8 Pstate_num;
+	u16 pstate_feq[10];
+	u32 pstate_power[10];
+	u32 pstate_latency[10];
+	u32 pstate_control[10];
+	u32 pstate_status[10];
+	u8 pstate_num;
 	u8 cmp_cap;
 	u8 index;
 	msr_t msr;
@@ -207,14 +207,14 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 	 *     0x5 HexCore
 	 */
 	printk(BIOS_INFO, "Pstates algorithm ...\n");
-	fam15h = !!(get_logical_CPUID(0) & AMD_FAM15_ALL);
+	fam15h = !!(get_logical_cpuid(0) & AMD_FAM15_ALL);
 	/* Get number of cores */
 	if (fam15h) {
 		cmp_cap = pci_read_config32(pcidev_on_root(0x18, 5), 0x84) & 0xff;
 	} else {
 		dtemp = pci_read_config32(pcidev_on_root(0x18, 3), 0xe8);
 		cmp_cap = (dtemp & 0x3000) >> 12;
-		if (get_logical_CPUID(0) & (AMD_FAM10_REV_D | AMD_FAM15_ALL))
+		if (get_logical_cpuid(0) & (AMD_FAM10_REV_D | AMD_FAM15_ALL))
 			/* revision D or higher */
 			cmp_cap |= (dtemp & 0x8000) >> 13;
 	}
@@ -232,7 +232,7 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 	dtemp = pci_read_config32(pcidev_on_root(0x18, 4), 0x15c);
 	if (fam10h_rev_e)
 		boost_count = (dtemp >> 2) & 0x1;
-	else if (get_logical_CPUID(0) & AMD_FAM15_ALL)
+	else if (get_logical_cpuid(0) & AMD_FAM15_ALL)
 		boost_count = (dtemp >> 2) & 0x7;
 
 	/* See if the CPUID(0x80000007) returned EDX[7]==1b */
@@ -293,9 +293,9 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 		Pstate_max++;
 
 	/* Populate tables with all Pstate information */
-	for (Pstate_num = 0; Pstate_num < Pstate_max; Pstate_num++) {
+	for (pstate_num = 0; pstate_num < Pstate_max; pstate_num++) {
 		/* Get power state information */
-		msr = rdmsr(PSTATE_0_MSR + Pstate_num + boost_count);
+		msr = rdmsr(PSTATE_0_MSR + pstate_num + boost_count);
 		cpufid = (msr.lo & 0x3f);
 		cpudid = (msr.lo & 0x1c0) >> 6;
 		cpuvid = (msr.lo & 0xfe00) >> 9;
@@ -348,21 +348,21 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 			core_latency = (12 * (power_step_down + power_step_up) / 1000)
 						 + pll_lock_time;
 
-		Pstate_feq[Pstate_num] = core_frequency;
-		Pstate_power[Pstate_num] = core_power;
-		Pstate_latency[Pstate_num] = core_latency;
-		Pstate_control[Pstate_num] = Pstate_num;
-		Pstate_status[Pstate_num] = Pstate_num;
+		pstate_feq[pstate_num] = core_frequency;
+		pstate_power[pstate_num] = core_power;
+		pstate_latency[pstate_num] = core_latency;
+		pstate_control[pstate_num] = pstate_num;
+		pstate_status[pstate_num] = pstate_num;
 	}
 
 	/* Print Pstate frequency, power, and latency */
-	for (index = 0; index < Pstate_num; index++) {
+	for (index = 0; index < pstate_num; index++) {
 		printk(BIOS_INFO, "Pstate_freq[%d] = %dMHz\t", index,
-			    Pstate_feq[index]);
-		printk(BIOS_INFO, "Pstate_power[%d] = %dmw\n", index,
-			    Pstate_power[index]);
-		printk(BIOS_INFO, "Pstate_latency[%d] = %dus\n", index,
-			    Pstate_latency[index]);
+			    pstate_feq[index]);
+		printk(BIOS_INFO, "pstate_power[%d] = %dmw\n", index,
+			    pstate_power[index]);
+		printk(BIOS_INFO, "pstate_latency[%d] = %dus\n", index,
+			    pstate_latency[index]);
 	}
 
 	/* Enter processor block scope */
@@ -385,8 +385,8 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 		acpigen_write_processor(index, pcontrol_blk_cur, plen_cur);
 
 		/* Write P-state status and dependency objects */
-		write_pstates_for_core(Pstate_num, Pstate_feq, Pstate_power,
-				Pstate_latency, Pstate_control, Pstate_status,
+		write_pstates_for_core(pstate_num, pstate_feq, pstate_power,
+				pstate_latency, pstate_control, pstate_status,
 				index, single_link);
 
 		/* Write C-state status and dependency objects */

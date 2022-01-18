@@ -25,7 +25,7 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 	u8 i;
 	struct DCTStatStruc *p_dct_stat;
 
-	DoIntlv = mctGet_NVbits(NV_NODE_INTLV);
+	DoIntlv = mct_get_nv_bits(NV_NODE_INTLV);
 
 	_NdIntCap = 0;
 	HWHoleSz = 0;	/*For HW remapping, NOT Node hoisting. */
@@ -43,8 +43,8 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 
 	while (DoIntlv && (Node < Nodes)) {
 		p_dct_stat = p_dct_stat_a + Node;
-		if (p_mct_stat->GStatus & (1 << GSB_SP_INTLV_REMAP_HOLE)) {
-			p_mct_stat->GStatus |= 1 << GSB_HW_HOLE;
+		if (p_mct_stat->g_status & (1 << GSB_SP_INTLV_REMAP_HOLE)) {
+			p_mct_stat->g_status |= 1 << GSB_HW_HOLE;
 			_SWHole = 0;
 		} else if (p_dct_stat->status & (1 << SB_SW_NODE_HOLE)) {
 			_SWHole = 1;
@@ -118,10 +118,10 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 		DoIntlv = 0;
 
 
-	if (p_mct_stat->GStatus & 1 << (GSB_SP_INTLV_REMAP_HOLE)) {
-		HWHoleSz = p_mct_stat->HoleBase;
+	if (p_mct_stat->g_status & 1 << (GSB_SP_INTLV_REMAP_HOLE)) {
+		HWHoleSz = p_mct_stat->hole_base;
 		if (HWHoleSz == 0) {
-			HWHoleSz = mctGet_NVbits(NV_BOTTOM_IO) & 0xFF;
+			HWHoleSz = mct_get_nv_bits(NV_BOTTOM_IO) & 0xFF;
 			HWHoleSz <<= 24-8;
 		}
 		HWHoleSz = ((~HWHoleSz) + 1) & 0x00FF0000;
@@ -137,13 +137,13 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 		reg0 = 0x40;
 		Node = 0;
 		while (Node < Nodes) {
-			Set_NB32(dev0, reg0, Base);
+			set_nb32(dev0, reg0, Base);
 			MemSize = MemSize0;
 			MemSize--;
 			MemSize &= 0xFFFF0000;
 			MemSize |= Node << 8;	/* set IntlvSel[2:0] field */
 			MemSize |= Node;	/* set DstNode[2:0] field */
-			Set_NB32(dev0, reg0 + 4, MemSize0);
+			set_nb32(dev0, reg0 + 4, MemSize0);
 			reg0 += 8;
 			Node++;
 		}
@@ -157,7 +157,7 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 			MemSize -= HWHoleSz;
 			MemSize--;
 			p_dct_stat->node_sys_limit = MemSize;
-			Set_NB32(p_dct_stat->dev_map, 0x120, Node << 21);
+			set_nb32(p_dct_stat->dev_map, 0x120, Node << 21);
 			MemSize = MemSize0;
 			MemSize--;
 			MemSize >>= 19;
@@ -165,10 +165,10 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 			val &= 0x700;
 			val <<= 13;
 			val |= MemSize;
-			Set_NB32(p_dct_stat->dev_map, 0x124, val);
+			set_nb32(p_dct_stat->dev_map, 0x124, val);
 
-			if (p_mct_stat->GStatus & (1 << GSB_HW_HOLE)) {
-				HoleBase = p_mct_stat->HoleBase;
+			if (p_mct_stat->g_status & (1 << GSB_HW_HOLE)) {
+				HoleBase = p_mct_stat->hole_base;
 				if (Dct0MemSize >= HoleBase) {
 					val = HWHoleSz;
 					if (Node == 0) {
@@ -183,15 +183,15 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 				val |= HoleBase;
 				val |= 1 << DRAM_MEM_HOIST_VALID;
 				val |= 1 << DRAM_HOLE_VALID;
-				Set_NB32(p_dct_stat->dev_map, 0xF0, val);
+				set_nb32(p_dct_stat->dev_map, 0xF0, val);
 			}
 
 
-			Set_NB32(p_dct_stat->dev_dct, 0x114, Dct0MemSize >> 8);	/* DctSelBaseOffset */
+			set_nb32(p_dct_stat->dev_dct, 0x114, Dct0MemSize >> 8);	/* DctSelBaseOffset */
 			val = get_nb32(p_dct_stat->dev_dct, 0x110);
 			val &= 0x7FF;
 			val |= Dct0MemSize >> 8;
-			Set_NB32(p_dct_stat->dev_dct, 0x110, val);	/* DctSelBaseAddr */
+			set_nb32(p_dct_stat->dev_dct, 0x110, val);	/* DctSelBaseAddr */
 			print_tx("InterleaveNodes: DRAM Controller Select Low Register = ", val);
 			Node++;
 		}
@@ -204,14 +204,14 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 
 			for (i = 0x40; i <= 0x80; i++) {
 				val = get_nb32(dev0, i);
-				Set_NB32(p_dct_stat->dev_map, i, val);
+				set_nb32(p_dct_stat->dev_map, i, val);
 			}
 
 			val = get_nb32(dev0, 0xF0);
-			Set_NB32(p_dct_stat->dev_map, 0xF0, val);
+			set_nb32(p_dct_stat->dev_map, 0xF0, val);
 			Node++;
 		}
-		p_mct_stat->GStatus = (1 << GSB_Node_INTLV);
+		p_mct_stat->g_status = (1 << GSB_Node_INTLV);
 	}
 	print_tx("InterleaveNodes_D: status ", p_dct_stat->status);
 	print_tx("InterleaveNodes_D: err_status ", p_dct_stat->err_status);

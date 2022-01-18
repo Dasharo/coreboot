@@ -18,7 +18,7 @@ u32 mct_MR1Odt_RDimm(struct MCTStatStruc *p_mct_stat,
 		DimmNum ++;
 	ret = 0;
 
-	if (mctGet_NVbits(NV_MAX_DIMMS) == 4) {
+	if (mct_get_nv_bits(NV_MAX_DIMMS) == 4) {
 		if (DimmsInstalled == 1)
 			ret |= 1 << 2;
 		else {
@@ -53,7 +53,7 @@ u32 mct_DramTermDyn_RDimm(struct MCTStatStruc *p_mct_stat,
 	u32 DramTermDyn = 0;
 	u8 Speed = p_dct_stat->speed;
 
-	if (mctGet_NVbits(NV_MAX_DIMMS) == 4) {
+	if (mct_get_nv_bits(NV_MAX_DIMMS) == 4) {
 		if (p_dct_stat->cs_present & 0xF0) {
 			if (DimmsInstalled == 1)
 				if (Speed == 7)

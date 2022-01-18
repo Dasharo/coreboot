@@ -73,25 +73,25 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 	u32 val;
 	u16 nvbits;
 
-	mctHookBeforeECC();
+	mct_hook_before_ecc();
 
 	/* Construct these booleans, based on setup options, for easy handling
 	later in this procedure */
-	OB_NBECC = mctGet_NVbits(NV_NBECC);	/* MCA ECC (MCE) enable bit */
+	OB_NBECC = mct_get_nv_bits(NV_NBECC);	/* MCA ECC (MCE) enable bit */
 
-	OB_ECCRedir =  mctGet_NVbits(NV_ECC_REDIR);	/* ECC Redirection */
+	OB_ECCRedir =  mct_get_nv_bits(NV_ECC_REDIR);	/* ECC Redirection */
 
-	mctGet_NVbits(NV_CHIP_KILL);	/* ECC Chip-kill mode */
+	mct_get_nv_bits(NV_CHIP_KILL);	/* ECC Chip-kill mode */
 
 	OF_ScrubCTL = 0;		/* Scrub CTL for Dcache, L2, and dram */
-	nvbits = mctGet_NVbits(NV_DC_BK_SCRUB);
+	nvbits = mct_get_nv_bits(NV_DC_BK_SCRUB);
 	mct_AdjustScrub_D(p_dct_stat_a, &nvbits);
 	OF_ScrubCTL |= (u32) nvbits << 16;
 
-	nvbits = mctGet_NVbits(NV_L2_BK_SCRUB);
+	nvbits = mct_get_nv_bits(NV_L2_BK_SCRUB);
 	OF_ScrubCTL |= (u32) nvbits << 8;
 
-	nvbits = mctGet_NVbits(NV_DRAM_BK_SCRUB);
+	nvbits = mct_get_nv_bits(NV_DRAM_BK_SCRUB);
 	OF_ScrubCTL |= nvbits;
 
 	AllECC = 1;
@@ -124,12 +124,12 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 				}
 				if (LDramECC) {	/* if ECC is enabled on this dram */
 					if (OB_NBECC) {
-						mct_EnableDatIntlv_D(p_mct_stat, p_dct_stat);
+						mct_enable_dat_intlv_d(p_mct_stat, p_dct_stat);
 						dev = p_dct_stat->dev_nbmisc;
 						reg =0x44;	/* MCA NB Configuration */
 						val = get_nb32(dev, reg);
 						val |= 1 << 22;	/* EccEn */
-						Set_NB32(dev, reg, val);
+						set_nb32(dev, reg, val);
 						DCTMemClr_Init_D(p_mct_stat, p_dct_stat);
 						MemClrECC = 1;
 						print_tx("  ECC enabled on node: ", Node);
@@ -146,9 +146,9 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 	}
 
 	if (AllECC)
-		p_mct_stat->GStatus |= 1 << GSB_ECCDIMMS;
+		p_mct_stat->g_status |= 1 << GSB_ECCDIMMS;
 	else
-		p_mct_stat->GStatus &= ~(1 << GSB_ECCDIMMS);
+		p_mct_stat->g_status &= ~(1 << GSB_ECCDIMMS);
 
 	/* Program the Dram BKScrub CTL to the proper (user selected) value.*/
 	/* Reset MC4_STS. */
@@ -168,10 +168,10 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 					if (OB_ECCRedir) {
 						val |= (1 << 0); /* enable redirection */
 					}
-					Set_NB32(dev, 0x5C, val); /* Dram Scrub Addr Low */
+					set_nb32(dev, 0x5C, val); /* Dram Scrub Addr Low */
 					val = curBase >> 24;
-					Set_NB32(dev, 0x60, val); /* Dram Scrub Addr High */
-					Set_NB32(dev, 0x58, OF_ScrubCTL);	/*Scrub Control */
+					set_nb32(dev, 0x60, val); /* Dram Scrub Addr High */
+					set_nb32(dev, 0x58, OF_ScrubCTL);	/*Scrub Control */
 
 					/* Divisor should not be set deeper than
 					 * divide by 16 when Dcache scrubber or
@@ -182,7 +182,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 						if ((val & 0xE0000000) > 0x80000000) {	/* Get F3x84h[31:29]ClkDivisor for C1 */
 							val &= 0x1FFFFFFF;	/* If ClkDivisor is deeper than divide-by-16 */
 							val |= 0x80000000;	/* set it to divide-by-16 */
-							Set_NB32(dev, 0x84, val);
+							set_nb32(dev, 0x84, val);
 						}
 					}
 				}	/* this node has ECC enabled dram */
@@ -190,10 +190,10 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 		}	/*if Node present */
 	}
 
-	if (mctGet_NVbits(NV_SYNC_ON_UN_ECC_EN))
+	if (mct_get_nv_bits(NV_SYNC_ON_UN_ECC_EN))
 		setSyncOnUnEccEn_D(p_mct_stat, p_dct_stat_a);
 
-	mctHookAfterECC();
+	mct_hook_after_ecc();
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
@@ -231,7 +231,7 @@ static void setSyncOnUnEccEn_D(struct MCTStatStruc *p_mct_stat,
 					reg = 0x44;	/* MCA NB Configuration*/
 					val = get_nb32(dev, reg);
 					val |= (1 << SYNC_ON_UC_ECC_EN);
-					Set_NB32(dev, reg, val);
+					set_nb32(dev, reg, val);
 				}
 			}	/* Node has Dram*/
 		}	/* if Node present*/

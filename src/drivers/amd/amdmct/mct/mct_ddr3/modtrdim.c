@@ -27,7 +27,7 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
 	u32 tempW1;
 	tempW1 = 0;
 	if (wl) {
-		switch (mctGet_NVbits(NV_MAX_DIMMS_PER_CH)) {
+		switch (mct_get_nv_bits(NV_MAX_DIMMS_PER_CH)) {
 		case 2:
 			/* 2 dimms per channel */
 			if (pDCTData->MaxDimmsInstalled == 1) {
@@ -81,7 +81,7 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
 			die("modtrdim.c: Wrong maximum value of DIMM's per channel.");
 		}
 	} else {
-		switch (mctGet_NVbits(NV_MAX_DIMMS_PER_CH)) {
+		switch (mct_get_nv_bits(NV_MAX_DIMMS_PER_CH)) {
 		case 2:
 			/* 2 dimms per channel */
 			if ((pDCTData->dimm_ranks[dimm] == 4) && (rank == 1)) {
@@ -137,7 +137,7 @@ u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bo
  */
 u32 RttNomNonTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank)
 {
-	if ((wl) && (mctGet_NVbits(NV_MAX_DIMMS_PER_CH) == 2) && (pDCTData->dimm_ranks[dimm] == 2) && (rank == 1)) {
+	if ((wl) && (mct_get_nv_bits(NV_MAX_DIMMS_PER_CH) == 2) && (pDCTData->dimm_ranks[dimm] == 2) && (rank == 1)) {
 		return 0x00;	/* for non-target dimm during WL, the second rank of a DR dimm need to have Rtt_Nom = OFF */
 	} else {
 		return RttNomTargetRegDimm (pMCTData, pDCTData, dimm, FALSE, MemClkFreq, rank);	/* otherwise, the same as target dimm in normal mode. */
@@ -167,7 +167,7 @@ u32 RttWrRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, 
 	if (wl) {
 		tempW1 = 0x00;	/* Rtt_WR = OFF */
 	} else {
-		switch (mctGet_NVbits(NV_MAX_DIMMS_PER_CH)) {
+		switch (mct_get_nv_bits(NV_MAX_DIMMS_PER_CH)) {
 		case 2:
 			if (pDCTData->MaxDimmsInstalled == 1) {
 				if (pDCTData->dimm_ranks[dimm] != 4) {
@@ -232,7 +232,7 @@ u8 WrLvOdtRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm)
 		}
 		i += 2;
 	}
-	if (mctGet_NVbits(NV_MAX_DIMMS_PER_CH) == 2) {
+	if (mct_get_nv_bits(NV_MAX_DIMMS_PER_CH) == 2) {
 		if ((pDCTData->dimm_ranks[dimm] == 4) && (pDCTData->MaxDimmsInstalled != 1)) {
 			if (dimm >= 2) {
 				WrLvOdt1 = (u8)bitTestReset (WrLvOdt1, (dimm - 2));

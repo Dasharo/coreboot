@@ -882,5 +882,5 @@ static const struct {
 						 */
 };
 
-void cpuSetAMDMSR(u8 node_id);
-void cpuSetAMDPCI(u8 node);
+void cpu_set_amd_msr(u8 node_id);
+void cpu_set_amd_pci(u8 node);

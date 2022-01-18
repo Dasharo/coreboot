@@ -40,7 +40,7 @@ u8 fam15_rttwr(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 pac
 	else
 		frequency_index = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x7;
 
-	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	if (is_fam15h()) {
 		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
@@ -272,7 +272,7 @@ u8 fam15_rttnom(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 pa
 	else
 		frequency_index = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x7;
 
-	u8 MaxDimmsInstallable = mctGet_NVbits(NV_MAX_DIMMS_PER_CH);
+	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	if (is_fam15h()) {
 		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
@@ -737,7 +737,7 @@ u32 mct_MR2(struct MCTStatStruc *p_mct_stat,
 	u8 rank = MrsChipSel % 2;
 
 	if (is_fam15h()) {
-		u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+		u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
 
 		/* FIXME: These parameters should be configurable
 		 * For now, err on the side of caution and enable automatic 2x refresh
@@ -767,7 +767,7 @@ u32 mct_MR2(struct MCTStatStruc *p_mct_stat,
 		/* program MrsAddress[5:3]=CAS write latency (CWL):
 		 * based on F2x[1,0]84[Tcwl] */
 		dword = Get_NB32_DCT(dev, dct, 0x84);
-		dword = mct_AdjustSPDTimings(p_mct_stat, p_dct_stat, dword);
+		dword = mct_adjust_spd_timings(p_mct_stat, p_dct_stat, dword);
 
 		ret |= ((dword >> 20) & 7) << 3;
 
@@ -835,7 +835,7 @@ u32 mct_MR1(struct MCTStatStruc *p_mct_stat,
 	u8 rank = MrsChipSel % 2;
 
 	if (is_fam15h()) {
-		u8 package_type = mctGet_NVbits(NV_PACK_TYPE);
+		u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
 
 		/* Set defaults */
 		u8 qoff = 0;	/* Enable output buffers */
@@ -1081,7 +1081,7 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
-	if (p_dct_stat->dimm_auto_speed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+	if (p_dct_stat->dimm_auto_speed == mhz_to_memclk_config(mct_get_nv_bits(NV_MIN_MEMCLK))) {
 		/* 3.Program F2x[1,0]7C[EN_DRAM_INIT]=1 */
 		dword = Get_NB32_DCT(dev, dct, 0x7c);
 		dword |= 1 << EN_DRAM_INIT;
@@ -1156,7 +1156,7 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 			EMRS = swapAddrBits(p_dct_stat, EMRS, MrsChipSel, dct);
 			mct_SendMrsCmd(p_dct_stat, dct, EMRS);
 
-			if (p_dct_stat->dimm_auto_speed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK)))
+			if (p_dct_stat->dimm_auto_speed == mhz_to_memclk_config(mct_get_nv_bits(NV_MIN_MEMCLK)))
 				if (!(p_dct_stat->status & (1 << SB_REGISTERED)))
 					break; /* For UDIMM, only send MR commands once per channel */
 		}
@@ -1165,7 +1165,7 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 				MrsChipSel ++;
 	}
 
-	if (p_dct_stat->dimm_auto_speed == mhz_to_memclk_config(mctGet_NVbits(NV_MIN_MEMCLK))) {
+	if (p_dct_stat->dimm_auto_speed == mhz_to_memclk_config(mct_get_nv_bits(NV_MIN_MEMCLK))) {
 		/* 17.Send two ZQCL commands */
 		mct_SendZQCmd(p_dct_stat, dct);
 		mct_SendZQCmd(p_dct_stat, dct);

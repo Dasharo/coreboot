@@ -17,7 +17,7 @@ u32 mct_AdjustMemClkDis_GR(struct DCTStatStruc *p_dct_stat, u32 dct,
 	DramTimingLo = val;
 	/* Dram Timing Low (owns Clock Enable bits) */
 	NewDramTimingLo = get_nb32(dev, 0x88 + reg_off);
-	if (mctGet_NVbits(NV_ALL_MEM_CLKS) == 0) {
+	if (mct_get_nv_bits(NV_ALL_MEM_CLKS) == 0) {
 		/*Special Jedec SPD diagnostic bit - "enable all clocks"*/
 		if (!(p_dct_stat->Status & (1 << SB_DIAG_CLKS))) {
 			for (i = 0; i < MAX_DIMMS_SUPPORTED; i++) {
@@ -65,6 +65,6 @@ void mct_AdjustMemHoist_GR(struct DCTStatStruc *p_dct_stat, u32 base, u32 HoleSi
 		val = get_nb32(dev, 0x110);
 		val &= ~(0xfff << 11);
 		val |= (base & 0xfff) << 11;
-		Set_NB32(dev, 0x110, val);
+		set_nb32(dev, 0x110, val);
 	}
 }
