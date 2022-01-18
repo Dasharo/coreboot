@@ -16,6 +16,7 @@
 #include <timestamp.h>
 
 #include "fsi.h"
+#include "homer.h"
 #include "pci.h"
 
 /* DIMM SPD addresses */
@@ -340,8 +341,7 @@ void main(void)
 {
 	uint8_t chips;
 
-	uint8_t phb_active_mask = 0;
-	uint8_t iovalid_enable[MAX_PEC_PER_PROC] = { 0 };
+	struct pci_info pci_info[MAX_CHIPS] = { 0 };
 
 	init_timer();
 
@@ -378,7 +378,7 @@ void main(void)
 	istep_9_7(chips);
 
 	istep_10_1(chips);
-	istep_10_10(&phb_active_mask, iovalid_enable);
+	istep_10_10(chips, pci_info);
 	istep_10_12();
 	istep_10_13();
 
@@ -403,7 +403,7 @@ void main(void)
 
 	istep_14_1();
 	istep_14_2();
-	istep_14_3(phb_active_mask, iovalid_enable);
+	istep_14_3(pci_info[0].phb_active_mask, pci_info[0].iovalid_enable);
 	report_istep(14, 4);	// no-op
 	istep_14_5();
 
