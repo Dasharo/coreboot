@@ -17,4 +17,17 @@ enum phb_active_mask {
 	PHB5_MASK   = 0x04, // PHB5 enabled
 };
 
+struct pci_info {
+	/* Combination of values from phb_active_mask enumeration */
+	uint8_t phb_active_mask;
+
+	/*
+	 * Mask of functional PHBs for each PEC, corresponds to
+	 * ATTR_PROC_PCIE_IOVALID_ENABLE in Hostboot.
+	 *
+	 * LSB is the PHB with the highest number for the given PEC.
+	 */
+	uint8_t iovalid_enable[MAX_PEC_PER_PROC];
+};
+
 #endif /* __SOC_IBM_POWER9_PCI_H  */
