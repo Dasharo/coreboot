@@ -357,7 +357,7 @@ static void prepare_dimm_data(uint8_t chips)
 
 void main(void)
 {
-	uint32_t chips;
+	uint8_t chips;
 
 	struct pci_info pci_info[MAX_CHIPS] = { 0 };
 
@@ -378,8 +378,9 @@ void main(void)
 	(void)ipmi_init_and_start_bmc_wdt(CONFIG_BMC_BT_BASE, 120, TIMEOUT_HARD_RESET);
 
 	printk(BIOS_EMERG, "Initializing FSI...\n");
-	chips = fsi_init();
-	printk(BIOS_EMERG, "Initialized FSI\n");
+	fsi_init();
+	chips = fsi_get_present_chips();
+	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
 
 	istep_8_1(chips);
 	istep_8_2(chips);

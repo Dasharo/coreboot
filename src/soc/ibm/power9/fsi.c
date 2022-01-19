@@ -161,14 +161,12 @@ static void init_fsi_port(uint8_t port)
 	cleanup_port_maeb_error(port);
 }
 
-/* Returns bitmask of present slaves (active ports) */
-static uint8_t basic_master_init(void)
+static void basic_master_init(void)
 {
 	const uint8_t chip = 0;
 	const uint32_t ctrl_reg = MFSI_CONTROL_REG;
 
 	uint64_t tmp;
-	uint8_t present_slaves;
 
 	/* Cleanup any initial error states */
 	fsi_reset_pib2opb(chip);
@@ -238,9 +236,6 @@ static uint8_t basic_master_init(void)
 	 */
 	tmp |= 0x00000010; // 26:27= Timeout (b01) = 0.9ms
 	write_fsi(chip, ctrl_reg | FSI_MMODE_000, tmp);
-
-	present_slaves = (read_fsi(chip, ctrl_reg | FSI_MLEVP0_018) >> 24);
-	return present_slaves;
 }
 
 static void basic_slave_init(void)
@@ -286,25 +281,34 @@ static void basic_slave_init(void)
 	write_fsi(chip, ctrl_reg | FSI_MMODE_000, tmp);
 }
 
-uint8_t fsi_init(void)
+void fsi_init(void)
 {
+	uint8_t chips;
+
+	basic_master_init();
+	basic_slave_init();
+
+	chips = fsi_get_present_chips();
+	if (chips & 0x2)
+		init_fsi_port(/*port=*/1);
+
+	fsi_i2c_init(chips);
+}
+
+uint8_t fsi_get_present_chips(void)
+{
+	const uint8_t chip = 0;
+	const uint32_t ctrl_reg = MFSI_CONTROL_REG;
+
 	uint8_t chips;
 	uint8_t present_slaves;
 
-	present_slaves = basic_master_init();
-	basic_slave_init();
-
-	for (uint8_t port = 0; port < MAX_SLAVE_PORTS; port++) {
-		if (present_slaves & (0x80 >> port))
-			init_fsi_port(port);
-	}
+	present_slaves = (read_fsi(chip, ctrl_reg | FSI_MLEVP0_018) >> 24);
 
 	/* First CPU is always there (it executes this code) */
 	chips = 0x01;
-	/* Status of the second CPU */
+	/* Status of the second CPU (connected to port #1) */
 	chips |= ((present_slaves & 0x40) >> 5);
-
-	fsi_i2c_init(chips);
 
 	return chips;
 }
