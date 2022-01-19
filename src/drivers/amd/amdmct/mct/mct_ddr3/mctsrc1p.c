@@ -39,7 +39,7 @@ static u16 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *p_dct_stat, u8 Chann
 	u16 val;
 
 	MaxValue = 0;
-	p = p_dct_stat->CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+	p = p_dct_stat->ch_d_b_rcvr_dly[Channel][Receiver >> 1];
 
 	for (i = 0; i < 8; i++) {
 		/* get left value from DCTStatStruc.CHA_D0_B0_RCVRDLY*/

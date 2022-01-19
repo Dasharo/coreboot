@@ -459,12 +459,12 @@ static void dqsTrainRcvrEn_SW(struct MCTStatStruc *p_mct_stat,
 		u8 i;
 		u8 *p;
 
-		printk(BIOS_DEBUG, "TrainRcvrEn: CH_D_B_RCVRDLY:\n");
+		printk(BIOS_DEBUG, "TrainRcvrEn: ch_d_b_rcvr_dly:\n");
 		for (Channel = 0; Channel < 2; Channel++) {
 			printk(BIOS_DEBUG, "Channel: %02x\n", Channel);
 			for (Receiver = 0; Receiver < 8; Receiver+=2) {
 				printk(BIOS_DEBUG, "\t\tReceiver: %02x: ", Receiver);
-				p = p_dct_stat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+				p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[Channel][Receiver >> 1];
 				for (i = 0; i < 8; i++) {
 					val  = p[i];
 					printk(BIOS_DEBUG, "%02x ", val);
@@ -546,16 +546,16 @@ void mct_SetRcvrEnDly_D(struct DCTStatStruc *p_dct_stat, u8 RcvrEnDly,
 
 	if (RcvrEnDly == 0xFE) {
 		/*set the boudary flag */
-		p_dct_stat->status |= 1 << SB_DQSRcvLimit;
+		p_dct_stat->status |= 1 << SB_DQS_RCV_LIMIT;
 	}
 
-	/* DimmOffset not needed for CH_D_B_RCVRDLY array */
+	/* DimmOffset not needed for ch_d_b_rcvr_dly array */
 
 
 	for (i = 0; i < 8; i++) {
 		if (FinalValue) {
 			/*calculate dimm offset */
-			p = p_dct_stat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+			p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[Channel][Receiver >> 1];
 			RcvrEnDly = p[i];
 		}
 
@@ -692,7 +692,7 @@ static u8 mct_SavePassRcvEnDly_D(struct DCTStatStruc *p_dct_stat,
 	u8 *p;
 
 	/* calculate dimm offset
-	 * not needed for CH_D_B_RCVRDLY array
+	 * not needed for ch_d_b_rcvr_dly array
 	 */
 
 	/* cmp if there has new DqsRcvEnDly to be recorded */
@@ -711,7 +711,7 @@ static u8 mct_SavePassRcvEnDly_D(struct DCTStatStruc *p_dct_stat,
 			p = 0; // Keep the compiler happy.
 		} else {
 			mask_Saved &= mask_Pass;
-			p = p_dct_stat->persistentData.CH_D_B_RCVRDLY[Channel][receiver >> 1];
+			p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[Channel][receiver >> 1];
 		}
 		for (i = 0; i < 8; i++) {
 			/* cmp per byte lane */
@@ -802,7 +802,7 @@ static u8 mct_CompareTestPatternQW0_D(struct MCTStatStruc *p_mct_stat,
 	/* if second pass, we can't find the fail until FFh,
 	 * then let it fail to save the final delay
 	 */
-	if ((Pass == SECOND_PASS) && (p_dct_stat->status & (1 << SB_DQSRcvLimit))) {
+	if ((Pass == SECOND_PASS) && (p_dct_stat->status & (1 << SB_DQS_RCV_LIMIT))) {
 		result = DQS_FAIL;
 		p_dct_stat->dqs_rcv_en_pass = 0;
 	}
@@ -891,7 +891,7 @@ void SetEccDQSRcvrEn_D(struct DCTStatStruc *p_dct_stat, u8 Channel)
 	dev = p_dct_stat->dev_dct;
 	index_reg = 0x98 + Channel * 0x100;
 	index = 0x12;
-	p = p_dct_stat->persistentData.CH_D_BC_RCVRDLY[Channel];
+	p = p_dct_stat->persistentData.ch_d_bc_rcvr_dly[Channel];
 	print_debug_dqs("\t\tSetEccDQSRcvrPos: Channel ", Channel,  2);
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 		val = p[ChipSel >> 1];
@@ -917,7 +917,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 		if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, ChipSel)) {
 			u8 *p;
-			p = p_dct_stat->persistentData.CH_D_B_RCVRDLY[Channel][ChipSel >> 1];
+			p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[Channel][ChipSel >> 1];
 
 			/* DQS Delay Value of Data Bytelane
 			 * most like ECC byte lane */
@@ -941,7 +941,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
 				val += val0;
 			}
 
-			p_dct_stat->persistentData.CH_D_BC_RCVRDLY[Channel][ChipSel >> 1] = val;
+			p_dct_stat->persistentData.ch_d_bc_rcvr_dly[Channel][ChipSel >> 1] = val;
 		}
 	}
 	SetEccDQSRcvrEn_D(p_dct_stat, Channel);
@@ -1011,17 +1011,17 @@ static void fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
 	}
 
 
-	/* Set F2x[1,0]9C_x08[PhyFenceTrEn]=1. */
+	/* Set F2x[1,0]9C_x08[PHY_FENCE_TR_EN]=1. */
 	val = get_nb32_index_wait(dev, index_reg, 0x08);
-	val |= 1 << PhyFenceTrEn;
+	val |= 1 << PHY_FENCE_TR_EN;
 	set_nb32_index_wait(dev, index_reg, 0x08, val);
 
 	/* Wait 200 MEMCLKs. */
 	mct_Wait(50000);		/* wait 200us */
 
-	/* Clear F2x[1,0]9C_x08[PhyFenceTrEn]=0. */
+	/* Clear F2x[1,0]9C_x08[PHY_FENCE_TR_EN]=0. */
 	val = get_nb32_index_wait(dev, index_reg, 0x08);
-	val &= ~(1 << PhyFenceTrEn);
+	val &= ~(1 << PHY_FENCE_TR_EN);
 	set_nb32_index_wait(dev, index_reg, 0x08, val);
 
 	/* BIOS reads the phase recovery engine registers

@@ -922,7 +922,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 			 */
 			for (lane = 0; lane < 8; lane++) {
 				if (trained[lane]) {
-					p_dct_stat->CH_D_B_RCVRDLY[Channel][Receiver >> 1][lane] = current_total_delay[lane];
+					p_dct_stat->ch_d_b_rcvr_dly[Channel][Receiver >> 1][lane] = current_total_delay[lane];
 				} else {
 					printk(BIOS_WARNING, "TrainRcvrEn: WARNING: Lane %d of receiver %d on channel %d failed training!\n", lane, Receiver, Channel);
 
@@ -997,12 +997,12 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 		u8 i;
 		u16 *p;
 
-		printk(BIOS_DEBUG, "TrainRcvrEn: CH_D_B_RCVRDLY:\n");
+		printk(BIOS_DEBUG, "TrainRcvrEn: ch_d_b_rcvr_dly:\n");
 		for (ChannelDTD = 0; ChannelDTD < 2; ChannelDTD++) {
 			printk(BIOS_DEBUG, "Channel:%x\n", ChannelDTD);
 			for (ReceiverDTD = 0; ReceiverDTD < 8; ReceiverDTD+=2) {
 				printk(BIOS_DEBUG, "\t\tReceiver:%x:", ReceiverDTD);
-				p = p_dct_stat->CH_D_B_RCVRDLY[ChannelDTD][ReceiverDTD >> 1];
+				p = p_dct_stat->ch_d_b_rcvr_dly[ChannelDTD][ReceiverDTD >> 1];
 				for (i = 0; i < 8; i++) {
 					valDTD = p[i];
 					printk(BIOS_DEBUG, " %03x", valDTD);
@@ -1366,7 +1366,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 					write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
 
 					/* 2.10.5.8.2 (3)
-					 * Program DqsRcvTrEn = 1
+					 * Program DQS_RCV_TR_EN = 1
 					 */
 					dword = Get_NB32_index_wait_DCT(dev, Channel, index_reg, 0x00000008);
 					dword |= (0x1 << 13);
@@ -1378,7 +1378,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 					generate_dram_receiver_enable_training_pattern_fam15(p_mct_stat, p_dct_stat, Channel, Receiver + (rank & 0x1));
 
 					/* 2.10.5.8.2 (5)
-					 * Program DqsRcvTrEn = 0
+					 * Program DQS_RCV_TR_EN = 0
 					 */
 					dword = Get_NB32_index_wait_DCT(dev, Channel, index_reg, 0x00000008);
 					dword &= ~(0x1 << 13);
@@ -1405,8 +1405,8 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 
 #if DQS_TRAIN_DEBUG > 1
 					for (lane = 0; lane < 8; lane++)
-						printk(BIOS_DEBUG, "\t\tTrainRcvEn55: Channel: %d dimm: %d nibble: %d lane %d current_total_delay: %04x CH_D_B_RCVRDLY: %04x\n",
-							Channel, dimm, nibble, lane, current_total_delay[lane], p_dct_stat->CH_D_B_RCVRDLY[Channel][dimm][lane]);
+						printk(BIOS_DEBUG, "\t\tTrainRcvEn55: Channel: %d dimm: %d nibble: %d lane %d current_total_delay: %04x ch_d_b_rcvr_dly: %04x\n",
+							Channel, dimm, nibble, lane, current_total_delay[lane], p_dct_stat->ch_d_b_rcvr_dly[Channel][dimm][lane]);
 #endif
 					write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
 
@@ -1433,9 +1433,9 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 						for (lane = 0; lane < lane_count; lane++) {
 							current_total_delay[lane] = (rank0_current_total_delay[lane] + current_total_delay[lane]) / 2;
 							if (lane == 8)
-								p_dct_stat->CH_D_BC_RCVRDLY[Channel][dimm] = current_total_delay[lane];
+								p_dct_stat->ch_d_bc_rcvr_dly[Channel][dimm] = current_total_delay[lane];
 							else
-								p_dct_stat->CH_D_B_RCVRDLY[Channel][dimm][lane] = current_total_delay[lane];
+								p_dct_stat->ch_d_b_rcvr_dly[Channel][dimm][lane] = current_total_delay[lane];
 						}
 						write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
 					}
@@ -1443,9 +1443,9 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 					/* Save the current delay for later use by other routines */
 					for (lane = 0; lane < lane_count; lane++) {
 						if (lane == 8)
-							p_dct_stat->CH_D_BC_RCVRDLY[Channel][dimm] = current_total_delay[lane];
+							p_dct_stat->ch_d_bc_rcvr_dly[Channel][dimm] = current_total_delay[lane];
 						else
-							p_dct_stat->CH_D_B_RCVRDLY[Channel][dimm][lane] = current_total_delay[lane];
+							p_dct_stat->ch_d_b_rcvr_dly[Channel][dimm][lane] = current_total_delay[lane];
 					}
 				}
 			}
@@ -1500,12 +1500,12 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 		u8 i;
 		u16 *p;
 
-		printk(BIOS_DEBUG, "TrainRcvrEn: CH_D_B_RCVRDLY:\n");
+		printk(BIOS_DEBUG, "TrainRcvrEn: ch_d_b_rcvr_dly:\n");
 		for (ChannelDTD = 0; ChannelDTD < 2; ChannelDTD++) {
 			printk(BIOS_DEBUG, "Channel:%x\n", ChannelDTD);
 			for (ReceiverDTD = 0; ReceiverDTD < 8; ReceiverDTD+=2) {
 				printk(BIOS_DEBUG, "\t\tReceiver:%x:", ReceiverDTD);
-				p = p_dct_stat->CH_D_B_RCVRDLY[ChannelDTD][ReceiverDTD >> 1];
+				p = p_dct_stat->ch_d_b_rcvr_dly[ChannelDTD][ReceiverDTD >> 1];
 				for (i = 0; i < 8; i++) {
 					valDTD = p[i];
 					printk(BIOS_DEBUG, " %03x", valDTD);
@@ -1772,14 +1772,14 @@ void mct_SetRcvrEnDly_D(struct DCTStatStruc *p_dct_stat, u16 RcvrEnDly,
 
 	if (RcvrEnDly == 0x1fe) {
 		/*set the boundary flag */
-		p_dct_stat->status |= 1 << SB_DQSRcvLimit;
+		p_dct_stat->status |= 1 << SB_DQS_RCV_LIMIT;
 	}
 
-	/* DimmOffset not needed for CH_D_B_RCVRDLY array */
+	/* DimmOffset not needed for ch_d_b_rcvr_dly array */
 	for (i = 0; i < 8; i++) {
 		if (FinalValue) {
 			/*calculate dimm offset */
-			p = p_dct_stat->CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+			p = p_dct_stat->ch_d_b_rcvr_dly[Channel][Receiver >> 1];
 			RcvrEnDly = p[i];
 		}
 
@@ -1981,7 +1981,7 @@ void SetEccDQSRcvrEn_D(struct DCTStatStruc *p_dct_stat, u8 Channel)
 	dev = p_dct_stat->dev_dct;
 	index_reg = 0x98;
 	index = 0x12;
-	p = p_dct_stat->CH_D_BC_RCVRDLY[Channel];
+	p = p_dct_stat->ch_d_bc_rcvr_dly[Channel];
 	print_debug_dqs("\t\tSetEccDQSRcvrPos: Channel ", Channel,  2);
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 		val = p[ChipSel >> 1];
@@ -2007,7 +2007,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 		if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, ChipSel)) {
 			u16 *p;
-			p = p_dct_stat->CH_D_B_RCVRDLY[Channel][ChipSel >> 1];
+			p = p_dct_stat->ch_d_b_rcvr_dly[Channel][ChipSel >> 1];
 
 			if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 				val0 = p[0x2];
@@ -2041,7 +2041,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
 				}
 			}
 
-			p_dct_stat->CH_D_BC_RCVRDLY[Channel][ChipSel >> 1] = val;
+			p_dct_stat->ch_d_bc_rcvr_dly[Channel][ChipSel >> 1] = val;
 		}
 	}
 	SetEccDQSRcvrEn_D(p_dct_stat, Channel);
@@ -2275,17 +2275,17 @@ u32 fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
 	dev = p_dct_stat->dev_dct;
 
 	if (is_fam15h()) {
-		/* Set F2x[1,0]9C_x08[PhyFenceTrEn] */
+		/* Set F2x[1,0]9C_x08[PHY_FENCE_TR_EN] */
 		val = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x08);
-		val |= 1 << PhyFenceTrEn;
+		val |= 1 << PHY_FENCE_TR_EN;
 		Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x08, val);
 
 		/* Wait 2000 MEMCLKs */
 		precise_memclk_delay_fam15(p_mct_stat, p_dct_stat, dct, 2000);
 
-		/* Clear F2x[1,0]9C_x08[PhyFenceTrEn] */
+		/* Clear F2x[1,0]9C_x08[PHY_FENCE_TR_EN] */
 		val = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x08);
-		val &= ~(1 << PhyFenceTrEn);
+		val &= ~(1 << PHY_FENCE_TR_EN);
 		Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x08, val);
 
 		/* BIOS reads the phase recovery engine registers
@@ -2328,17 +2328,17 @@ u32 fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
 			Set_NB32_index_wait_DCT(dev, dct, index_reg, index, val);
 		}
 
-		/* Set F2x[1,0]9C_x08[PhyFenceTrEn]=1. */
+		/* Set F2x[1,0]9C_x08[PHY_FENCE_TR_EN]=1. */
 		val = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x08);
-		val |= 1 << PhyFenceTrEn;
+		val |= 1 << PHY_FENCE_TR_EN;
 		Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x08, val);
 
 		/* Wait 200 MEMCLKs. */
 		mct_Wait(50000);		/* wait 200us */
 
-		/* Clear F2x[1,0]9C_x08[PhyFenceTrEn]=0. */
+		/* Clear F2x[1,0]9C_x08[PHY_FENCE_TR_EN]=0. */
 		val = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x08);
-		val &= ~(1 << PhyFenceTrEn);
+		val &= ~(1 << PHY_FENCE_TR_EN);
 		Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x08, val);
 
 		/* BIOS reads the phase recovery engine registers

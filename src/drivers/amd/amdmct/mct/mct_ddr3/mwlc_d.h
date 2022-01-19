@@ -84,7 +84,7 @@ typedef u32 SBDFO;
 #define WrLvOdtEn 12
 #define WrLvErrStart 0
 #define WrLvErrEnd 8
-#define SendMrsCmd 26
+#define SEND_MRS_CMD 26
 #define Qoff 12
 #define MRS_Level 7
 #define MrsAddressStartFam10 0
@@ -112,7 +112,7 @@ typedef u32 SBDFO;
 #define DrvImpCtrlEnd 3
 #define DramTermNbStart 7
 #define DramTermNbEnd 9
-#define onDimmMirror 3
+#define ON_DIMM_MIRROR 3
 
 typedef struct _sMCTStruct
 {

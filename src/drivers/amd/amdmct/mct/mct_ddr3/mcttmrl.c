@@ -279,7 +279,7 @@ static u32 GetMaxRdLatTestAddr_D(struct MCTStatStruc *p_mct_stat,
 		for (d = 0; d < 4; d++) {
 			for (Byte = 0; Byte < bn; Byte++) {
 				u8 tmp;
-				tmp = p_dct_stat->CH_D_B_RCVRDLY[ch][d][Byte];
+				tmp = p_dct_stat->ch_d_b_rcvr_dly[ch][d][Byte];
 				if (tmp > Max) {
 					Max = tmp;
 					Channel_Max = Channel;

@@ -88,10 +88,10 @@ static u8 PhyWLPass1(struct MCTStatStruc *p_mct_stat,
 
 	DCTPtr = (void *)(p_dct_stat->c_dct_ptr[dct]);
 	p_dct_stat->dimm_valid = p_dct_stat->dimm_valid_dct[dct];
-	p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[dct];
+	p_dct_stat->cs_present = p_dct_stat->cs_present_dct[dct];
 
 	if (p_dct_stat->ganged_mode & 1)
-		p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[0];
+		p_dct_stat->cs_present = p_dct_stat->cs_present_dct[0];
 
 	if (p_dct_stat->dimm_valid) {
 		dimm_valid = p_dct_stat->dimm_valid;
@@ -120,10 +120,10 @@ static u8 PhyWLPass2(struct MCTStatStruc *p_mct_stat,
 
 	DCTPtr = (void *)&(p_dct_stat->c_dct_ptr[dct]); /* todo: */
 	p_dct_stat->dimm_valid = p_dct_stat->dimm_valid_dct[dct];
-	p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[dct];
+	p_dct_stat->cs_present = p_dct_stat->cs_present_dct[dct];
 
 	if (p_dct_stat->ganged_mode & 1)
-		p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[0];
+		p_dct_stat->cs_present = p_dct_stat->cs_present_dct[0];
 
 	if (p_dct_stat->dimm_valid) {
 		dimm_valid = p_dct_stat->dimm_valid;

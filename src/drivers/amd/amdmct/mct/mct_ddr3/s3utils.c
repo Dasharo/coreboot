@@ -294,7 +294,7 @@ static void copy_cbmem_spd_data_to_save_variable(struct amd_s3_persistent_data *
 	persistent_data->nvram_checksum = calculate_nvram_mct_hash();
 
 	if (restored) {
-		if (mem_info->mct_stat.g_status & (1 << GSB_ConfigRestored))
+		if (mem_info->mct_stat.g_status & (1 << GSB_CONFIG_RESTORED))
 			*restored = 1;
 		else
 			*restored = 0;
@@ -922,7 +922,7 @@ void restore_mct_data_from_save_variable(struct amd_s3_persistent_data *persiste
 					continue;
 
 				dword = read_amd_dct_index_register_dct(PCI_DEV(0, 0x18 + node, 2), node, channel, 0x98, 0x0d0fe003);
-				dword |= (0x3 << 13);			/* DisAutoComp, DisablePredriverCal = 1 */
+				dword |= (0x3 << 13);			/* DIS_AUTO_COMP, DisablePredriverCal = 1 */
 				write_amd_dct_index_register_dct(PCI_DEV(0, 0x18 + node, 2), node, channel, 0x98, 0x0d0fe003, dword);
 
 				for (i = 0; i < 9; i++)

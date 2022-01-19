@@ -313,12 +313,12 @@ static u8 reconfigure_dimm_spare_d(struct MCTStatStruc *p_mct_stat,
 	if (mct_get_nv_bits(NV_CS_SPARE_CTL)) {
 		if (MCT_DIMM_SPARE_NO_WARM) {
 			/* Do no warm-reset dimm spare */
-			if (p_mct_stat->g_status & (1 << GSB_EnDIMMSpareNW)) {
+			if (p_mct_stat->g_status & (1 << GSB_EN_DIMM_SPARE_NW)) {
 				load_dqs_sig_tmg_regs_d(p_mct_stat, p_dct_stat_a);
 				ret = 0;
 			} else {
 				mct_reset_data_struct_d(p_mct_stat, p_dct_stat_a);
-				p_mct_stat->g_status |= 1 << GSB_EnDIMMSpareNW;
+				p_mct_stat->g_status |= 1 << GSB_EN_DIMM_SPARE_NW;
 				ret = 1;
 			}
 		} else {
@@ -342,7 +342,7 @@ static void rqs_timing_d(struct MCTStatStruc *p_mct_stat,
 {
 	u8 nv_dqs_train_ctl;
 
-	if (p_mct_stat->g_status & (1 << GSB_EnDIMMSpareNW)) {
+	if (p_mct_stat->g_status & (1 << GSB_EN_DIMM_SPARE_NW)) {
 		return;
 	}
 	nv_dqs_train_ctl = mct_get_nv_bits(NV_DQS_TRAIN_CTL);
@@ -450,7 +450,7 @@ static void load_dqs_sig_tmg_regs_d(struct MCTStatStruc *p_mct_stat,
 						}
 					}
 					for (dir = 0; dir < 2; dir++) {//RD/WR
-						p = p_dct_stat->persistentData.CH_D_DIR_B_DQS[channel][dimm][dir];
+						p = p_dct_stat->persistentData.ch_d_dir_b_dqs[channel][dimm][dir];
 						val = stream_to_int(p); /* CHA Read Data Timing High */
 						set_nb32_index_wait(dev, index_reg, index + 1, val);
 						val = stream_to_int(p + 4); /* CHA Write Data Timing High */
@@ -697,7 +697,7 @@ void DCTMemClr_Init_D(struct MCTStatStruc *p_mct_stat,
 			val = get_nb32(dev, reg);
 		} while (val & (1 << MEM_CLR_BUSY));
 
-		val |= (1 << MemClrInit);
+		val |= (1 << MEM_CLR_INIT);
 		set_nb32(dev, reg, val);
 
 	}
@@ -809,7 +809,7 @@ static void DCTInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 					if (platform_spec_d(p_mct_stat, p_dct_stat, dct) < SC_STOP_ERR) {
 						print_t("\t\tDCTInit_D: platform_spec_d Done\n");
 						stop_dct_flag = 0;
-						if (!(p_mct_stat->g_status & (1 << GSB_EnDIMMSpareNW))) {
+						if (!(p_mct_stat->g_status & (1 << GSB_EN_DIMM_SPARE_NW))) {
 							print_t("\t\tDCTInit_D: startup_dct_d\n");
 							startup_dct_d(p_mct_stat, p_dct_stat, dct);   /*yeaahhh! */
 						}
@@ -907,7 +907,7 @@ static void clear_dct_d(struct MCTStatStruc *p_mct_stat,
 	u32 reg = 0x40 + 0x100 * dct;
 	u32 val = 0;
 
-	if (p_mct_stat->g_status & (1 << GSB_EnDIMMSpareNW)) {
+	if (p_mct_stat->g_status & (1 << GSB_EN_DIMM_SPARE_NW)) {
 		reg_end = 0x78 + 0x100 * dct;
 	} else {
 		reg_end = 0xA4 + 0x100 * dct;
@@ -1560,11 +1560,11 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 	// FIXME: Skip for Ax versions
 	/* callback not required - if (!mctParityControl_D()) */
 	if (status & (1 << SB_PAR_DIMMS)) {
-		dram_config_lo |= 1 << ParEn;
-		dram_config_misc2 |= 1 << ActiveCmdAtRst;
+		dram_config_lo |= 1 << PAR_EN;
+		dram_config_misc2 |= 1 << ACTIVE_CMD_AT_RST;
 	} else {
-		dram_config_lo  &= ~(1 << ParEn);
-		dram_config_misc2 &= ~(1 << ActiveCmdAtRst);
+		dram_config_lo  &= ~(1 << PAR_EN);
+		dram_config_misc2 &= ~(1 << ACTIVE_CMD_AT_RST);
 	}
 
 	if (mct_get_nv_bits(NV_BURST_LEN_32)) {
@@ -1614,9 +1614,9 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 
 	/* Control Bank Swizzle */
 	if (0) /* call back not needed mctBankSwizzleControl_D()) */
-		dram_config_hi &= ~(1 << BankSwizzleMode);
+		dram_config_hi &= ~(1 << BANK_SWIZZLE_MODE);
 	else
-		dram_config_hi |= 1 << BankSwizzleMode; /* recommended setting (default) */
+		dram_config_hi |= 1 << BANK_SWIZZLE_MODE; /* recommended setting (default) */
 
 	/* Check for Quadrank dimm presence */
 	if (p_dct_stat->dimm_qr_present != 0) {
@@ -1649,12 +1649,12 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 	if (p_dct_stat->speed == 5)
 		val >>= 1;
 
-	val -= Bias_TfawT;
+	val -= Bias_TFAW_T;
 	val <<= 28;
 	dram_config_hi |= val;	/* Tfaw for 1K or 2K paged drams */
 
 	// FIXME: Skip for Ax versions
-	dram_config_hi |= 1 << DcqArbBypassEn;
+	dram_config_hi |= 1 << DCQ_ARB_BYPASS_EN;
 
 
 	/* Build MemClkDis Value from Dram Timing Lo and
@@ -1937,7 +1937,7 @@ static void stitch_memory_d(struct MCTStatStruc *p_mct_stat,
 	if (mct_get_nv_bits(NV_CS_SPARE_CTL) & 1) {
 		if (MCT_DIMM_SPARE_NO_WARM) {
 			/* Do no warm-reset dimm spare */
-			if (p_mct_stat->g_status & 1 << GSB_EnDIMMSpareNW) {
+			if (p_mct_stat->g_status & 1 << GSB_EN_DIMM_SPARE_NW) {
 				word = p_dct_stat->cs_present;
 				val = bsf(word);
 				word &= ~(1 << val);
@@ -2483,7 +2483,7 @@ static u8 mct_setMode(struct MCTStatStruc *p_mct_stat,
 			p_dct_stat->status |= 1 << SB_128_BIT_MODE;
 			reg = 0x110;
 			val = get_nb32(p_dct_stat->dev_dct, reg);
-			val |= 1 << DctGangEn;
+			val |= 1 << DCT_GANG_EN;
 			set_nb32(p_dct_stat->dev_dct, reg, val);
 			print_tx("setMode: DRAM Controller Select Low Register = ", val);
 		}
@@ -3241,7 +3241,7 @@ static void mct_init(struct MCTStatStruc *p_mct_stat,
 	addr = NB_CFG_MSR;
 	_RDMSR(addr, &lo, &hi);
 	if (hi & (1 << (46-32))) {
-		p_dct_stat->status |= 1 << SB_ExtConfig;
+		p_dct_stat->status |= 1 << SB_EXT_CONFIG;
 	} else {
 		hi |= 1 << (46-32);
 		_WRMSR(addr, lo, hi);
@@ -3259,7 +3259,7 @@ static void clear_legacy_Mode(struct MCTStatStruc *p_mct_stat,
 	/* Clear Legacy BIOS Mode bit */
 	reg = 0x94;
 	val = get_nb32(dev, reg);
-	val &= ~(1 << LegacyBiosMode);
+	val &= ~(1 << LEGACY_BIOS_MODE);
 	set_nb32(dev, reg, val);
 }
 
@@ -3706,7 +3706,7 @@ void mct_set_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat,
 
 	msr = BU_CFG_MSR;
 	_RDMSR(msr, &lo, &hi);
-	hi |= (1 << WbEnhWsbDis_D);
+	hi |= (1 << WB_ENH_WSB_DIS_D);
 	_WRMSR(msr, lo, hi);
 }
 
@@ -3722,7 +3722,7 @@ void mct_clr_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat,
 
 	msr = BU_CFG_MSR;
 	_RDMSR(msr, &lo, &hi);
-	hi &= ~(1 << WbEnhWsbDis_D);
+	hi &= ~(1 << WB_ENH_WSB_DIS_D);
 	_WRMSR(msr, lo, hi);
 }
 
@@ -3765,7 +3765,7 @@ void mct_SetDramConfigHi_D(struct DCTStatStruc *p_dct_stat, u32 dct,
 
 	index = 0x08;
 	val = get_nb32_index_wait(dev, index_reg, index);
-	set_nb32_index_wait(dev, index_reg, index, val | (1 << DisAutoComp));
+	set_nb32_index_wait(dev, index_reg, index, val | (1 << DIS_AUTO_COMP));
 
 	//FIXME: check for Bx Cx CPU
 	// if Ax mct_SetDramConfigHi_Samp_D
@@ -3780,7 +3780,7 @@ void mct_SetDramConfigHi_D(struct DCTStatStruc *p_dct_stat, u32 dct,
 
 	index = 0x08;
 	val = get_nb32_index_wait(dev, index_reg, index);
-	set_nb32_index_wait(dev, index_reg, index, val & (~(1 << DisAutoComp)));
+	set_nb32_index_wait(dev, index_reg, index, val & (~(1 << DIS_AUTO_COMP)));
 }
 
 static void mct_before_dqs_train_d(struct MCTStatStruc *p_mct_stat,
@@ -3894,7 +3894,7 @@ void mct_enable_dat_intlv_d(struct MCTStatStruc *p_mct_stat,
 static void mct_setup_sync_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat)
 {
-	/* set F2x78[ChSetupSync] when F2x[1, 0]9C_x04[AddrCmdSetup, CsOdtSetup,
+	/* set F2x78[CH_SETUP_SYNC] when F2x[1, 0]9C_x04[AddrCmdSetup, CsOdtSetup,
 	 * CkeSetup] setups for one DCT are all 0s and at least one of the setups,
 	 * F2x[1, 0]9C_x04[AddrCmdSetup, CsOdtSetup, CkeSetup], of the other
 	 * controller is 1
@@ -3908,7 +3908,7 @@ static void mct_setup_sync_d(struct MCTStatStruc *p_mct_stat,
 
 	if ((cha != chb) && ((cha == 0) || (chb == 0))) {
 		val = get_nb32(dev, 0x78);
-		val |= ChSetupSync;
+		val |= CH_SETUP_SYNC;
 		set_nb32(dev, 0x78, val);
 	}
 }

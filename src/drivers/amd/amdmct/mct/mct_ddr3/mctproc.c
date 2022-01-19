@@ -67,7 +67,7 @@ u32 mct_SetDramConfigMisc2(struct DCTStatStruc *p_dct_stat,
 		}
 
 		if (p_dct_stat->logical_cpuid & AMD_DR_Cx)
-			misc2 |= 1 << OdtSwizzle;
+			misc2 |= 1 << ODT_SWIZZLE;
 
 		val = DramControl;
 		val &= 7;
@@ -88,7 +88,7 @@ void mct_ExtMCTConfig_Cx(struct DCTStatStruc *p_dct_stat)
 
 	if (p_dct_stat->logical_cpuid & (AMD_DR_Cx)) {
 		/* Revision C */
-		set_nb32(p_dct_stat->dev_dct, 0x11c, 0x0ce00fc0 | 1 << 29/* FlushWrOnStpGnt */);
+		set_nb32(p_dct_stat->dev_dct, 0x11c, 0x0ce00fc0 | 1 << 29/* FLUSH_WR_ON_STP_GNT */);
 
 		val = get_nb32(p_dct_stat->dev_dct, 0x1b0);
 		val &= ~0x73f;

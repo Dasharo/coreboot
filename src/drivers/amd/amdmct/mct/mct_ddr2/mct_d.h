@@ -68,7 +68,7 @@ extern const u32 TestPattern2_D[];
 //#define PA_NBDEVOP	(((00 << 3)+3) << 8)  /*Node 0 Misc PCI Address bits [15:0]*/
 
 #define DCC_EN		1		/* X:2:0x94[19]*/
-#define ILD_Lmt	3		/* X:2:0x94[18:16]*/
+#define ILD_LMT	3		/* X:2:0x94[18:16]*/
 
 #define ENCODED_T_SPD	0x00191709	/* encodes which SPD byte to get T from*/
 					/* versus CL X, CL X-.5, and CL X-1*/
@@ -81,7 +81,7 @@ extern const u32 TestPattern2_D[];
 #define BIAS_TRTPT	2
 #define BIAS_TWRT	3
 #define BIAS_TWTRT	0
-#define Bias_TfawT	7
+#define BIAS_TFAW_T	7
 
 #define MIN_TRPT	3		/* min programmable value in busclocks*/
 #define MAX_TRPT	6		/* max programmable value in busclocks*/
@@ -148,34 +148,34 @@ extern const u32 TestPattern2_D[];
 #define PWR_SAVINGS_EN		10	/* func 2, offset A0h, bit 10*/
 #define MOD_64_BIT_MUX		4	/* func 2, offset A0h, bit 4*/
 #define DISABLE_JITTER		1	/* func 2, offset A0h, bit 1*/
-#define MemClrDis		1	/* func 3, offset F8h, FNC 4, bit 1*/
+#define MEM_CLR_DIS		1	/* func 3, offset F8h, FNC 4, bit 1*/
 #define SYNC_ON_UC_ECC_EN		2	/* func 3, offset 44h, bit 2*/
 #define DR_MEM_CLR_STATUS	10	/* func 3, offset 110h, bit 10*/
 #define MEM_CLR_BUSY		9	/* func 3, offset 110h, bit 9*/
-#define DctGangEn		4	/* func 3, offset 110h, bit 4*/
-#define MemClrInit		3	/* func 3, offset 110h, bit 3*/
-#define AssertCke		28	/* func 2, offset 7Ch, bit 28*/
-#define DeassertMemRstX	27	/* func 2, offset 7Ch, bit 27*/
-#define SendMrsCmd		26	/* func 2, offset 7Ch, bit 26*/
-#define SendAutoRefresh	25	/* func 2, offset 7Ch, bit 25*/
-#define SendPchgAll		24	/* func 2, offset 7Ch, bit 24*/
-#define DisDqsBar		6	/* func 2, offset 90h, bit 6*/
+#define DCT_GANG_EN		4	/* func 3, offset 110h, bit 4*/
+#define MEM_CLR_INIT		3	/* func 3, offset 110h, bit 3*/
+#define ASSERT_CKE		28	/* func 2, offset 7Ch, bit 28*/
+#define DEASSERT_MEM_RST_X	27	/* func 2, offset 7Ch, bit 27*/
+#define SEND_MRS_CMD		26	/* func 2, offset 7Ch, bit 26*/
+#define SEND_AUTO_REFRESH	25	/* func 2, offset 7Ch, bit 25*/
+#define SEND_PCHG_ALL		24	/* func 2, offset 7Ch, bit 24*/
+#define DIS_DQS_BAR		6	/* func 2, offset 90h, bit 6*/
 #define DRAM_ENABLED		8	/* func 2, offset 110h, bit 8*/
-#define LegacyBiosMode		9	/* func 2, offset 94h, bit 9*/
-#define PrefDramTrainMode	28	/* func 2, offset 11Ch, bit 28*/
-#define FlushWr		30	/* func 2, offset 11Ch, bit 30*/
-#define DisAutoComp		30	/* func 2, offset 9Ch, Index 8, bit 30*/
-#define DqsRcvTrEn		13	/* func 2, offset 9Ch, Index 8, bit 13*/
-#define ForceAutoPchg		23	/* func 2, offset 90h, bit 23*/
+#define LEGACY_BIOS_MODE		9	/* func 2, offset 94h, bit 9*/
+#define PREF_DRAM_TRAIN_MODE	28	/* func 2, offset 11Ch, bit 28*/
+#define FLUSH_WR		30	/* func 2, offset 11Ch, bit 30*/
+#define DIS_AUTO_COMP		30	/* func 2, offset 9Ch, Index 8, bit 30*/
+#define DQS_RCV_TR_EN		13	/* func 2, offset 9Ch, Index 8, bit 13*/
+#define FORCE_AUTO_PCHG		23	/* func 2, offset 90h, bit 23*/
 #define CL_LINES_TO_NB_DIS	15	/* Bu_CFG2, bit 15*/
-#define WbEnhWsbDis_D		(48-32)
-#define PhyFenceTrEn		3	/* func 2, offset 9Ch, Index 8, bit 3 */
-#define ParEn			8	/* func 2, offset 90h, bit 8 */
-#define DcqArbBypassEn		19	/* func 2, offset 94h, bit 19 */
-#define ActiveCmdAtRst		1	/* func 2, offset A8H, bit 1 */
-#define FlushWrOnStpGnt	29	/* func 2, offset 11Ch, bit 29 */
-#define BankSwizzleMode	22	/* func 2, offset 94h, bit 22 */
-#define ChSetupSync		15	/* func 2, offset 78h, bit 15 */
+#define WB_ENH_WSB_DIS_D		(48-32)
+#define PHY_FENCE_TR_EN		3	/* func 2, offset 9Ch, Index 8, bit 3 */
+#define PAR_EN			8	/* func 2, offset 90h, bit 8 */
+#define DCQ_ARB_BYPASS_EN		19	/* func 2, offset 94h, bit 19 */
+#define ACTIVE_CMD_AT_RST		1	/* func 2, offset A8H, bit 1 */
+#define FLUSH_WR_ON_STP_GNT	29	/* func 2, offset 11Ch, bit 29 */
+#define BANK_SWIZZLE_MODE	22	/* func 2, offset 94h, bit 22 */
+#define CH_SETUP_SYNC		15	/* func 2, offset 78h, bit 15 */
 
 
 
@@ -272,7 +272,7 @@ struct MCTStatStruc {
 #define GSB_HW_HOLE	4		/* A HW dram remap was created*/
 #define GSB_Node_INTLV	5		/* Node Memory interleaving was enabled*/
 #define GSB_SP_INTLV_REMAP_HOLE	16	/* Special condition for Node Interleave and HW remapping*/
-#define GSB_EnDIMMSpareNW	17	/* Indicates that DIMM spare can be used without a warm reset */
+#define GSB_EN_DIMM_SPARE_NW	17	/* Indicates that DIMM spare can be used without a warm reset */
 					/* NOTE: This is a local bit used by memory code */
 
 
@@ -281,7 +281,7 @@ struct MCTStatStruc {
 ===============================================================================*/
 
 struct DCTPersistentStatStruc {
-	u8 CH_D_DIR_B_DQS[2][4][2][9];	/* [A/B] [DIMM1-4] [R/W] [DQS] */
+	u8 ch_d_dir_b_dqs[2][4][2][9];	/* [A/B] [DIMM1-4] [R/W] [DQS] */
 		/* CHA DIMM0 Byte 0 - 7 and Check Write DQS Delay*/
 		/* CHA DIMM0 Byte 0 - 7 and Check Read DQS Delay*/
 		/* CHA DIMM1 Byte 0 - 7 and Check Write DQS Delay*/
@@ -290,7 +290,7 @@ struct DCTPersistentStatStruc {
 		/* CHB DIMM0 Byte 0 - 7 and Check Read DQS Delay*/
 		/* CHB DIMM1 Byte 0 - 7 and Check Write DQS Delay*/
 		/* CHB DIMM1 Byte 0 - 7 and Check  Read DQS Delay*/
-	u8 CH_D_B_RCVRDLY[2][4][8];	/* [A/B] [DIMM0-3] [DQS] */
+	u8 ch_d_b_rcvr_dly[2][4][8];	/* [A/B] [DIMM0-3] [DQS] */
 		/* CHA DIMM 0 Receiver Enable Delay*/
 		/* CHA DIMM 1 Receiver Enable Delay*/
 		/* CHA DIMM 2 Receiver Enable Delay*/
@@ -300,7 +300,7 @@ struct DCTPersistentStatStruc {
 		/* CHB DIMM 1 Receiver Enable Delay*/
 		/* CHB DIMM 2 Receiver Enable Delay*/
 		/* CHB DIMM 3 Receiver Enable Delay*/
-	u8 CH_D_BC_RCVRDLY[2][4];
+	u8 ch_d_bc_rcvr_dly[2][4];
 		/* CHA DIMM 0 - 4 Check Byte Receiver Enable Delay*/
 		/* CHB DIMM 0 - 4 Check Byte Receiver Enable Delay*/
 	u16 host_bios_srvc_1;	/* Word sized general purpose field for use by host BIOS.  Scratch space.*/
@@ -576,10 +576,10 @@ struct DCTStatStruc {		/* A per Node structure*/
 #define SB_2T_MODE		6	/* 2T CMD timing mode is enabled.*/
 #define SB_SW_NODE_HOLE		7	/* Remapping of Node Base on this Node to create a gap.*/
 #define SB_HW_HOLE		8	/* Memory Hole created on this Node using HW remapping.*/
-#define SB_Over400MHz		9	/* DCT freq >= 400MHz flag*/
-#define SB_DQSPos_Pass2	10	/* Using for TrainDQSPos DIMM0/1, when freq >= 400MHz*/
-#define SB_DQSRcvLimit		11	/* Using for DQSRcvEnTrain to know we have reached to upper bound.*/
-#define SB_ExtConfig		12	/* Indicator the default setting for extend PCI configuration support*/
+#define SB_OVER_400MHZ		9	/* DCT freq >= 400MHz flag*/
+#define SB_DQS_POS_PASS_2	10	/* Using for TrainDQSPos DIMM0/1, when freq >= 400MHz*/
+#define SB_DQS_RCV_LIMIT		11	/* Using for DQSRcvEnTrain to know we have reached to upper bound.*/
+#define SB_EXT_CONFIG		12	/* Indicator the default setting for extend PCI configuration support*/
 
 
 

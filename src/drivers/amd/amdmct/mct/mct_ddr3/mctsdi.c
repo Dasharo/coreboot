@@ -675,7 +675,7 @@ static u32 swapAddrBits(struct DCTStatStruc *p_dct_stat, u32 MR_register_setting
 	u32 ret;
 
 	if (!(p_dct_stat->status & (1 << SB_REGISTERED))) {
-		word = p_dct_stat->MirrPresU_NumRegR;
+		word = p_dct_stat->mirr_pres_u_num_reg_r;
 		if (dct == 0) {
 			word &= 0x55;
 			word <<= 1;
@@ -716,12 +716,12 @@ static void mct_SendMrsCmd(struct DCTStatStruc *p_dct_stat, u8 dct, u32 EMRS)
 	val = Get_NB32_DCT(dev, dct, 0x7c);
 	val &= ~0x00ffffff;
 	val |= EMRS;
-	val |= 1 << SendMrsCmd;
+	val |= 1 << SEND_MRS_CMD;
 	Set_NB32_DCT(dev, dct, 0x7c, val);
 
 	do {
 		val = Get_NB32_DCT(dev, dct, 0x7c);
-	} while (val & (1 << SendMrsCmd));
+	} while (val & (1 << SEND_MRS_CMD));
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
@@ -1053,18 +1053,18 @@ static void mct_SendZQCmd(struct DCTStatStruc *p_dct_stat, u8 dct)
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
 	/*1.Program MrsAddress[10]=1
-	  2.Set SendZQCmd = 1
+	  2.Set SEND_ZQ_CMD = 1
 	 */
 	dword = Get_NB32_DCT(dev, dct, 0x7C);
 	dword &= ~0xFFFFFF;
 	dword |= 1 << 10;
-	dword |= 1 << SendZQCmd;
+	dword |= 1 << SEND_ZQ_CMD;
 	Set_NB32_DCT(dev, dct, 0x7C, dword);
 
-	/* Wait for SendZQCmd = 0 */
+	/* Wait for SEND_ZQ_CMD = 0 */
 	do {
 		dword = Get_NB32_DCT(dev, dct, 0x7C);
-	} while (dword & (1 << SendZQCmd));
+	} while (dword & (1 << SEND_ZQ_CMD));
 
 	/* 4.Wait 512 MEMCLKs */
 	mct_Wait(300);
@@ -1091,17 +1091,17 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 		/* 4.wait 200us */
 		mct_Wait(40000);
 
-		/* 5.Program F2x[1, 0]7C[DeassertMemRstX] = 1. */
+		/* 5.Program F2x[1, 0]7C[DEASSERT_MEM_RST_X] = 1. */
 		dword = Get_NB32_DCT(dev, dct, 0x7c);
-		dword |= 1 << DeassertMemRstX;
+		dword |= 1 << DEASSERT_MEM_RST_X;
 		Set_NB32_DCT(dev, dct, 0x7c, dword);
 
 		/* 6.wait 500us */
 		mct_Wait(200000);
 
-		/* 7.Program F2x[1,0]7C[AssertCke]=1 */
+		/* 7.Program F2x[1,0]7C[ASSERT_CKE]=1 */
 		dword = Get_NB32_DCT(dev, dct, 0x7c);
-		dword |= 1 << AssertCke;
+		dword |= 1 << ASSERT_CKE;
 		Set_NB32_DCT(dev, dct, 0x7c, dword);
 
 		/* 8.wait 360ns */
@@ -1112,7 +1112,7 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 			|| (p_dct_stat->status & (1 << SB_LoadReduced))) {
 			if (is_fam15h()) {
 				dword = Get_NB32_DCT(dev, dct, 0x90);
-				dword |= 1 << ParEn;
+				dword |= 1 << PAR_EN;
 				Set_NB32_DCT(dev, dct, 0x90, dword);
 			}
 		}
@@ -1130,9 +1130,9 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 			 */
 	}
 
-	p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[dct];
+	p_dct_stat->cs_present = p_dct_stat->cs_present_dct[dct];
 	if (p_dct_stat->ganged_mode & 1)
-		p_dct_stat->cs_present = p_dct_stat->CSPresent_DCT[0];
+		p_dct_stat->cs_present = p_dct_stat->cs_present_dct[0];
 
 	/* The following steps are performed once for unbuffered DIMMs and once for each
 	 * chip select on registered DIMMs: */

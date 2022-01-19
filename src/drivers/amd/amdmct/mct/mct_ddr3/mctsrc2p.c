@@ -39,7 +39,7 @@ u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
 		u8 max = 0;
 		u8 val;
 		u8 i;
-		u8 *p = p_dct_stat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+		u8 *p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[Channel][Receiver >> 1];
 		u8 bn;
 		bn = 8;
 
@@ -70,7 +70,7 @@ u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
 
 	bn = 8;
 
-	p = p_dct_stat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+	p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[Channel][Receiver >> 1];
 
 	if (Pass == SECOND_PASS) { /* second pass must average values */
 		/* FIXME: which byte? */

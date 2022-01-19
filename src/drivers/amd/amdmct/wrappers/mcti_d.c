@@ -474,7 +474,7 @@ void v_erratum_414(struct DCTStatStruc *p_dct_stat)
 	for (; dct < 2 ; dct++) {
 		int dRAMConfigHi = get_nb32(p_dct_stat->dev_dct,0x94 + (0x100 * dct));
 		int powerDown =  dRAMConfigHi & (1 << POWER_DOWN_EN);
-		int ddr3 = dRAMConfigHi & (1 << Ddr3Mode);
+		int ddr3 = dRAMConfigHi & (1 << DDR3_MODE);
 		int dRAMMRS = get_nb32(p_dct_stat->dev_dct,0x84 + (0x100 * dct));
 		int pchgPDModeSel = dRAMMRS & (1 << PCHG_PD_MODE_SEL);
 		if (powerDown && ddr3 && pchgPDModeSel)

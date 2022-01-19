@@ -26,6 +26,6 @@ void mct_BeforeDQSTrainSamp(struct DCTStatStruc *p_dct_stat)
 void mct_ExtMCTConfig_Bx(struct DCTStatStruc *p_dct_stat)
 {
 	if (p_dct_stat->logical_cpuid & (AMD_DR_Bx)) {
-		set_nb32(p_dct_stat->dev_dct, 0x11C, 0x0FE40FC0 | 1 << 29/* FlushWrOnStpGnt */);
+		set_nb32(p_dct_stat->dev_dct, 0x11C, 0x0FE40FC0 | 1 << 29/* FLUSH_WR_ON_STP_GNT */);
 	}
 }

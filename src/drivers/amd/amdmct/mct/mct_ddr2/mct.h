@@ -48,7 +48,7 @@
 #define PA_NBDEVOP	(((00 << 3)+3) << 8)
 
 #define DCC_EN		1	/* X:2:0x94[19]*/
-#define ILD_Lmt		3	/* X:2:0x94[18:16]*/
+#define ILD_LMT		3	/* X:2:0x94[18:16]*/
 
 #define ENCODED_T_SPD	0x00191709	/* encodes which SPD byte to get T from*/
 					/* versus CL X, CL X-.5, and CL X-1*/

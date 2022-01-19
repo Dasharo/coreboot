@@ -10,7 +10,7 @@ void mct_ExtMCTConfig_Dx(struct DCTStatStruc *p_dct_stat)
 	u32 dword;
 
 	if (p_dct_stat->logical_cpuid & AMD_DR_Dx) {
-		dword = 0x0ce00f00 | 0x1 << 29;	/* FlushWrOnStpGnt */
+		dword = 0x0ce00f00 | 0x1 << 29;	/* FLUSH_WR_ON_STP_GNT */
 		if (!(p_dct_stat->ganged_mode))
 			dword |= 0x18 << 2;	/* MctWrLimit = 0x18 for unganged mode */
 		else

@@ -333,15 +333,15 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *p_mct_stat,
 
 		for (Dir = 0; Dir < 2; Dir++) {
 			if (Dir == 0) {
-				printk(BIOS_DEBUG, "TrainDQSRdWrPos: CH_D_DIR_B_DQS WR:\n");
+				printk(BIOS_DEBUG, "TrainDQSRdWrPos: ch_d_dir_b_dqs WR:\n");
 			} else {
-				printk(BIOS_DEBUG, "TrainDQSRdWrPos: CH_D_DIR_B_DQS RD:\n");
+				printk(BIOS_DEBUG, "TrainDQSRdWrPos: ch_d_dir_b_dqs RD:\n");
 			}
 			for (Channel = 0; Channel < 2; Channel++) {
 				printk(BIOS_DEBUG, "Channel: %02x\n", Channel);
 				for (Receiver = cs_start; Receiver < (cs_start + 2); Receiver += 2) {
 					printk(BIOS_DEBUG, "\t\tReceiver: %02x: ", Receiver);
-					p = p_dct_stat->persistentData.CH_D_DIR_B_DQS[Channel][Receiver >> 1][Dir];
+					p = p_dct_stat->persistentData.ch_d_dir_b_dqs[Channel][Receiver >> 1][Dir];
 					for (i = 0; i < 8; i++) {
 						val  = p[i];
 						printk(BIOS_DEBUG, "%02x ", val);
@@ -570,10 +570,10 @@ void StoreDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat,
 	/* FindDQSDatDimmVal_D is not required since we use an array */
 	u8 dn = 0;
 
-	if (p_dct_stat->status & (1 << SB_Over400MHz))
+	if (p_dct_stat->status & (1 << SB_OVER_400MHZ))
 		dn = ChipSel >> 1; /* if odd or even logical DIMM */
 
-	p_dct_stat->persistentData.CH_D_DIR_B_DQS[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane] =
+	p_dct_stat->persistentData.ch_d_dir_b_dqs[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane] =
 					p_dct_stat->dqs_delay;
 }
 
@@ -592,11 +592,11 @@ static void GetDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat,
 	 */
 
 	/* FindDQSDatDimmVal_D is not required since we use an array */
-	if (p_dct_stat->status & (1 << SB_Over400MHz))
+	if (p_dct_stat->status & (1 << SB_OVER_400MHZ))
 		dn = ChipSel >> 1; /*if odd or even logical DIMM */
 
 	p_dct_stat->dqs_delay =
-		p_dct_stat->persistentData.CH_D_DIR_B_DQS[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane];
+		p_dct_stat->persistentData.ch_d_dir_b_dqs[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane];
 }
 
 
@@ -890,7 +890,7 @@ void mct_TrainDQSPos_D(struct MCTStatStruc *p_mct_stat,
 			 * here we must traning DQSRd/WrPos for DIMM0 and DIMM1
 			 */
 			if (p_dct_stat->speed >= 4) {
-				p_dct_stat->status |= (1 << SB_Over400MHz);
+				p_dct_stat->status |= (1 << SB_OVER_400MHZ);
 			}
 			for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
 				TrainDQSRdWrPos_D(p_mct_stat, p_dct_stat, ChipSel);
@@ -994,7 +994,7 @@ static void mct_SetDQSDelayCSR_D(struct MCTStatStruc *p_mct_stat,
 	shift = ByteLane % 4;
 	shift <<= 3; /* get bit position of bytelane, 8 bit */
 
-	if (p_dct_stat->status & (1 << SB_Over400MHz)) {
+	if (p_dct_stat->status & (1 << SB_OVER_400MHZ)) {
 		index += (ChipSel >> 1) * 0x100;	/* if logical DIMM1/DIMM3 */
 	}
 
@@ -1161,7 +1161,7 @@ void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
 	u8 *buf;
 
 	/* Issue the stream of writes. When F2x11C[MctWrLimit] is reached
-	 * (or when F2x11C[FlushWr] is set again), all the writes are written
+	 * (or when F2x11C[FLUSH_WR] is set again), all the writes are written
 	 * to DRAM.
 	 */
 
@@ -1180,7 +1180,7 @@ void mct_Read1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u32 addr)
 {
 	/* BIOS issues the remaining (Ntrain - 2) reads after checking that
-	 * F2x11C[PrefDramTrainMode] is cleared. These reads must be to
+	 * F2x11C[PREF_DRAM_TRAIN_MODE] is cleared. These reads must be to
 	 * consecutive cache lines (i.e., 64 bytes apart) and must not cross
 	 * a naturally aligned 4KB boundary. These reads hit the prefetches and
 	 * read the data from the prefetch buffer.

@@ -52,7 +52,7 @@ void mct_ForceAutoPrecharge_D(struct DCTStatStruc *p_dct_stat, u32 dct)
 			reg_off = 0x100 * dct;
 			reg = 0x90 + reg_off;	/* Dram Configuration Lo */
 			val = get_nb32(dev, reg);
-			val |= 1 << ForceAutoPchg;
+			val |= 1 << FORCE_AUTO_PCHG;
 			if (!p_dct_stat->ganged_mode)
 				val |= 1 << BURST_LENGTH_32;
 			set_nb32(dev, reg, val);
@@ -70,8 +70,8 @@ void mct_EndDQSTraining_D(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a)
 {
 	/* Bug#13341: Prefetch is getting killed when the limit is reached in
-	 * PrefDramTrainMode
-	 * Solution: Explicitly clear the PrefDramTrainMode bit after training
+	 * PREF_DRAM_TRAIN_MODE
+	 * Solution: Explicitly clear the PREF_DRAM_TRAIN_MODE bit after training
 	 * sequence in order to ensure resumption of normal HW prefetch
 	 * behavior.
 	 * NOTE -- this has been documented with a note at the end of this
@@ -98,7 +98,7 @@ void mct_EndDQSTraining_D(struct MCTStatStruc *p_mct_stat,
 			dev = p_dct_stat->dev_dct;
 			reg = 0x11c;
 			val = get_nb32(dev, reg);
-			val &= ~(1 << PrefDramTrainMode);
+			val &= ~(1 << PREF_DRAM_TRAIN_MODE);
 			set_nb32(dev, reg, val);
 		}
 	}

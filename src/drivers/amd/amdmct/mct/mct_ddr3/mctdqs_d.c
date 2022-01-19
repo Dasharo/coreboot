@@ -711,7 +711,7 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 						write_dqs_read_data_timing_registers(current_read_dqs_delay, dev, Channel, (Receiver >> 1), index_reg);
 
 						/* Save the final Read DQS Timing Control settings for later use */
-						p_dct_stat->CH_D_DIR_B_DQS[Channel][Receiver >> 1][DQS_READDIR][lane] = current_read_dqs_delay[lane];
+						p_dct_stat->ch_d_dir_b_dqs[Channel][Receiver >> 1][DQS_READDIR][lane] = current_read_dqs_delay[lane];
 					} else {
 						print_debug_dqs("\t\t\t\tTrainDQSRdWrPos: 122 Unable to find read passing region for lane ", lane, 2);
 
@@ -754,7 +754,7 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 						write_dqs_write_data_timing_registers(current_write_dqs_delay, dev, Channel, (Receiver >> 1), index_reg);
 
 						/* Save the final Write Data Timing settings for later use */
-						p_dct_stat->CH_D_DIR_B_DQS[Channel][Receiver >> 1][DQS_WRITEDIR][lane] = current_write_dqs_delay[lane];
+						p_dct_stat->ch_d_dir_b_dqs[Channel][Receiver >> 1][DQS_WRITEDIR][lane] = current_write_dqs_delay[lane];
 					} else {
 						print_debug_dqs("\t\t\t\tTrainDQSRdWrPos: 123 Unable to find write passing region for lane ", lane, 2);
 
@@ -779,15 +779,15 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 
 		for (Dir = 0; Dir < 2; Dir++) {
 			if (Dir == 1) {
-				printk(BIOS_DEBUG, "TrainDQSRdWrPos: CH_D_DIR_B_DQS WR:\n");
+				printk(BIOS_DEBUG, "TrainDQSRdWrPos: ch_d_dir_b_dqs WR:\n");
 			} else {
-				printk(BIOS_DEBUG, "TrainDQSRdWrPos: CH_D_DIR_B_DQS RD:\n");
+				printk(BIOS_DEBUG, "TrainDQSRdWrPos: ch_d_dir_b_dqs RD:\n");
 			}
 			for (ChannelDTD = 0; ChannelDTD < 2; ChannelDTD++) {
 				printk(BIOS_DEBUG, "Channel: %02x\n", ChannelDTD);
 				for (ReceiverDTD = 0; ReceiverDTD < MAX_CS_SUPPORTED; ReceiverDTD += 2) {
 					printk(BIOS_DEBUG, "\t\tReceiver: %02x:", ReceiverDTD);
-					p = p_dct_stat->CH_D_DIR_B_DQS[ChannelDTD][ReceiverDTD >> 1][Dir];
+					p = p_dct_stat->ch_d_dir_b_dqs[ChannelDTD][ReceiverDTD >> 1][Dir];
 					for (i = 0; i < 8; i++) {
 						val  = p[i];
 						printk(BIOS_DEBUG, " %02x", val);
@@ -1446,7 +1446,7 @@ static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *p_mct_stat,
 				write_dqs_read_data_timing_registers(current_read_dqs_delay, dev, dct, dimm, index_reg);
 
 				/* Save the final Read DQS Timing Control settings for later use */
-				p_dct_stat->CH_D_DIR_B_DQS[dct][Receiver >> 1][DQS_READDIR][lane] = current_read_dqs_delay[lane];
+				p_dct_stat->ch_d_dir_b_dqs[dct][Receiver >> 1][DQS_READDIR][lane] = current_read_dqs_delay[lane];
 
 				print_debug_dqs("\t\t\t\tTrainDQSRdWrPos: 142 largest read passing region ", best_count, 4);
 				print_debug_dqs("\t\t\t\tTrainDQSRdWrPos: 143 largest read passing region start ", best_pos, 4);
@@ -1499,7 +1499,7 @@ static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *p_mct_stat,
 				write_dqs_write_data_timing_registers(current_write_dqs_delay, dev, dct, dimm, index_reg);
 
 				/* Save the final Write Data Timing settings for later use */
-				p_dct_stat->CH_D_DIR_B_DQS[dct][Receiver >> 1][DQS_WRITEDIR][lane] = current_write_dqs_delay[lane];
+				p_dct_stat->ch_d_dir_b_dqs[dct][Receiver >> 1][DQS_WRITEDIR][lane] = current_write_dqs_delay[lane];
 
 				print_debug_dqs("\t\t\t\tTrainDQSRdWrPos: 145 largest write passing region ", best_count, 4);
 				print_debug_dqs("\t\t\t\tTrainDQSRdWrPos: 146 largest write passing region start ", best_pos, 4);
@@ -1556,15 +1556,15 @@ static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *p_mct_stat,
 
 			for (Dir = 0; Dir < 2; Dir++) {
 				if (Dir == 1) {
-					printk(BIOS_DEBUG, "TrainDQSRdWrPos: CH_D_DIR_B_DQS WR:\n");
+					printk(BIOS_DEBUG, "TrainDQSRdWrPos: ch_d_dir_b_dqs WR:\n");
 				} else {
-					printk(BIOS_DEBUG, "TrainDQSRdWrPos: CH_D_DIR_B_DQS RD:\n");
+					printk(BIOS_DEBUG, "TrainDQSRdWrPos: ch_d_dir_b_dqs RD:\n");
 				}
 				for (ChannelDTD = 0; ChannelDTD < 2; ChannelDTD++) {
 					printk(BIOS_DEBUG, "Channel: %02x\n", ChannelDTD);
 					for (ReceiverDTD = 0; ReceiverDTD < MAX_CS_SUPPORTED; ReceiverDTD += 2) {
 						printk(BIOS_DEBUG, "\t\tReceiver: %02x:", ReceiverDTD);
-						p = p_dct_stat->CH_D_DIR_B_DQS[ChannelDTD][ReceiverDTD >> 1][Dir];
+						p = p_dct_stat->ch_d_dir_b_dqs[ChannelDTD][ReceiverDTD >> 1][Dir];
 						for (i = 0; i < 8; i++) {
 							val  = p[i];
 							printk(BIOS_DEBUG, " %02x", val);
@@ -1641,7 +1641,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 	Errors = 0;
 
 	for (dct = 0; dct < 2; dct++) {
-		/* Program D18F2x9C_x0D0F_E003_dct[1:0][DisAutoComp, DisablePredriverCal] */
+		/* Program D18F2x9C_x0D0F_E003_dct[1:0][DIS_AUTO_COMP, DisablePredriverCal] */
 		/* NOTE: DisablePredriverCal only takes effect when set on DCT 0 */
 		dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0fe003);
 		dword &= ~(0x3 << 13);
@@ -1820,15 +1820,15 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 
 		for (Dir = 0; Dir < 2; Dir++) {
 			if (Dir == 1) {
-				printk(BIOS_DEBUG, "TrainDQSRdWrPos: CH_D_DIR_B_DQS WR:\n");
+				printk(BIOS_DEBUG, "TrainDQSRdWrPos: ch_d_dir_b_dqs WR:\n");
 			} else {
-				printk(BIOS_DEBUG, "TrainDQSRdWrPos: CH_D_DIR_B_DQS RD:\n");
+				printk(BIOS_DEBUG, "TrainDQSRdWrPos: ch_d_dir_b_dqs RD:\n");
 			}
 			for (ChannelDTD = 0; ChannelDTD < 2; ChannelDTD++) {
 				printk(BIOS_DEBUG, "Channel: %02x\n", ChannelDTD);
 				for (ReceiverDTD = 0; ReceiverDTD < MAX_CS_SUPPORTED; ReceiverDTD += 2) {
 					printk(BIOS_DEBUG, "\t\tReceiver: %02x:", ReceiverDTD);
-					p = p_dct_stat->CH_D_DIR_B_DQS[ChannelDTD][ReceiverDTD >> 1][Dir];
+					p = p_dct_stat->ch_d_dir_b_dqs[ChannelDTD][ReceiverDTD >> 1][Dir];
 					for (i = 0; i < 8; i++) {
 						val  = p[i];
 						printk(BIOS_DEBUG, " %02x", val);
@@ -1905,7 +1905,7 @@ static void StoreDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat,
 
 	dn = ChipSel >> 1; /* if odd or even logical DIMM */
 
-	p_dct_stat->CH_D_DIR_B_DQS[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane] =
+	p_dct_stat->ch_d_dir_b_dqs[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane] =
 					p_dct_stat->dqs_delay;
 }
 
@@ -1925,7 +1925,7 @@ static void GetDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat,
 	dn = ChipSel >> 1; /*if odd or even logical DIMM */
 
 	p_dct_stat->dqs_delay =
-		p_dct_stat->CH_D_DIR_B_DQS[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane];
+		p_dct_stat->ch_d_dir_b_dqs[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane];
 }
 
 /* FindDQSDatDimmVal_D is not required since we use an array */
@@ -2427,7 +2427,7 @@ void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
 	u8 *buf;
 
 	/* Issue the stream of writes. When F2x11C[MctWrLimit] is reached
-	 * (or when F2x11C[FlushWr] is set again), all the writes are written
+	 * (or when F2x11C[FLUSH_WR] is set again), all the writes are written
 	 * to DRAM.
 	 */
 
@@ -2447,7 +2447,7 @@ void mct_Read1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
 	u32 value;
 
 	/* BIOS issues the remaining (Ntrain - 2) reads after checking that
-	 * F2x11C[PrefDramTrainMode] is cleared. These reads must be to
+	 * F2x11C[PREF_DRAM_TRAIN_MODE] is cleared. These reads must be to
 	 * consecutive cache lines (i.e., 64 bytes apart) and must not cross
 	 * a naturally aligned 4KB boundary. These reads hit the prefetches and
 	 * read the data from the prefetch buffer.

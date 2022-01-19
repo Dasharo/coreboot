@@ -637,14 +637,14 @@ void prepareDimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 			set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
 				DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, tempW);
 
-		/* Program F2x[1, 0]7C[SendMrsCmd]=1 to initiate the command to
+		/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command to
 		 * the specified DIMM.
 		 */
 		set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
-			DRAM_INIT, SendMrsCmd, SendMrsCmd, 1);
-		/* Wait for F2x[1, 0]7C[SendMrsCmd] to be cleared by hardware. */
+			DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
+		/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
 		while ((get_Bits(pDCTData, dct, pDCTData->NodeId,
-				FUN_DCT, DRAM_INIT, SendMrsCmd, SendMrsCmd)) == 0x1)
+				FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD)) == 0x1)
 		{
 		}
 
@@ -704,14 +704,14 @@ void prepareDimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 			set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
 				DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, tempW);
 
-		/* Program F2x[1, 0]7C[SendMrsCmd]=1 to initiate the command to
+		/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command to
 		   the specified DIMM.*/
 		set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
-			DRAM_INIT, SendMrsCmd, SendMrsCmd, 1);
+			DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 
-		/* Wait for F2x[1, 0]7C[SendMrsCmd] to be cleared by hardware. */
+		/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
 		while ((get_Bits(pDCTData, dct, pDCTData->NodeId,
-				FUN_DCT, DRAM_INIT, SendMrsCmd, SendMrsCmd)) == 0x1)
+				FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD)) == 0x1)
 		{
 		}
 
@@ -812,16 +812,16 @@ void prepareDimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 						set_Bits(pDCTData, dct, pDCTData->NodeId,
 							FUN_DCT, DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, tempW);
 
-					/* Program F2x[1, 0]7C[SendMrsCmd]=1 to initiate the command
+					/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command
 					 * to the specified DIMM.
 					 */
 					set_Bits(pDCTData, dct, pDCTData->NodeId,
-						FUN_DCT, DRAM_INIT, SendMrsCmd, SendMrsCmd, 1);
+						FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 
-					/* Wait for F2x[1, 0]7C[SendMrsCmd] to be cleared by hardware. */
+					/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
 					while ((get_Bits(pDCTData, dct,
 							pDCTData->NodeId, FUN_DCT, DRAM_INIT,
-							SendMrsCmd, SendMrsCmd)) == 1);
+							SEND_MRS_CMD, SEND_MRS_CMD)) == 1);
 
 					/* Program F2x[1, 0]7C[MrsBank[2:0]] for the appropriate internal DRAM
 					 * register that defines the required DDR3-defined function for Rtt_WR.
@@ -879,14 +879,14 @@ void prepareDimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 						set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
 							DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, tempW);
 
-					/* Program F2x[1, 0]7C[SendMrsCmd]=1 to initiate the command to
+					/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command to
 					   the specified DIMM.*/
 					set_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
-						DRAM_INIT, SendMrsCmd, SendMrsCmd, 1);
+						DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 
-					/* Wait for F2x[1, 0]7C[SendMrsCmd] to be cleared by hardware. */
+					/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
 					while ((get_Bits(pDCTData, dct, pDCTData->NodeId,
-							FUN_DCT, DRAM_INIT, SendMrsCmd, SendMrsCmd)) == 0x1)
+							FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD)) == 0x1)
 					{
 					}
 					rank++;
