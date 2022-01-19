@@ -19,9 +19,12 @@
 /* Base FSI address for registers of a FSI I2C master */
 #define I2C_FSI_MASTER_BASE_ADDR 0x01800
 
-/* Returns mask of available CPU chips (either 0x01 or 0x03) */
-uint8_t fsi_init(void);
+void fsi_init(void);
 
+/* Returns mask of available CPU chips (either 0x01 or 0x03) */
+uint8_t fsi_get_present_chips(void);
+
+/* Defined here, but implemented in i2c.c */
 void fsi_i2c_init(uint8_t chips);
 
 void fsi_reset_pib2opb(uint8_t chip);
