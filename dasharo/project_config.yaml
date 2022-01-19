@@ -1,11 +1,27 @@
 # Dasharo project configuration data
 
+dasharo:
+        platform: clevo_nv41mz
+        newsletter:
+                url:  https://newsletter.3mdeb.com/subscription/T61MyO2sP
+
 client:
         name: NovaCustom
 
 framework:
         name: coreboot
         version: ae9a8447
+        url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
+
+components:
+        - name: edk2
+          version: 2020.03.17
+          path: payloads/external/tianocore/tianocore
+          url_template: https://github.com/Dasharo/edk2/tree/COMMIT_HASH
+        - name: Blobs
+          version: v1.0
+          path: 3rdparty/dasharo-blobs
+          url_template: https://gitlab.com/novacustom/blobs/-/tree/COMMIT_HASH
 
 documentation:
         name: Dasharo Compatibility
