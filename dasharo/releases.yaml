@@ -127,3 +127,5 @@ releases:
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
                 - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+                - description: SD card reader driver cannot be detected after Windows 10 installation
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
