@@ -3183,11 +3183,7 @@ static void update_headers(struct homer_st *homer, uint64_t cores)
 	pgpe_hdr->magic               = 0x504750455f312e30;	// PGPE_1.0
 }
 
-
-/*
- * This logic is for SMF disabled only!
- */
-uint64_t build_homer_image(void *homer_bar)
+static void layout_rings(struct homer_st *homer, uint8_t dd, uint64_t cores)
 {
 	static uint8_t rings_buf[300 * KiB];
 
@@ -3201,51 +3197,9 @@ uint64_t build_homer_image(void *homer_bar)
 		.work_buf2 = work_buf2, .work_buf2_size = sizeof(work_buf2),
 		.work_buf3 = work_buf3, .work_buf3_size = sizeof(work_buf3),
 	};
-	uint8_t ring_variant;
 
-	struct mmap_helper_region_device mdev = {0};
-	struct homer_st *homer = homer_bar;
-	struct xip_hw_header *hw = homer_bar;
-	uint8_t dd = get_dd();
-	int this_core = -1;
-	uint64_t cores = get_available_cores(&this_core);
-
-	if (this_core == -1)
-		die("Couldn't found active core\n");
-
-	printk(BIOS_ERR, "DD%2.2x, boot core: %d\n", dd, this_core);
-
-	/* HOMER must be aligned to 4M because CME HRMOR has bit for 2M set */
-	if (!IS_ALIGNED((uint64_t) homer_bar, 4 * MiB))
-		die("HOMER (%p) is not aligned to 4MB\n", homer_bar);
-
-	memset(homer_bar, 0, 4 * MiB);
-
-	/*
-	 * This will work as long as we don't call mmap(). mmap() calls
-	 * mem_poll_alloc() which doesn't check if mdev->pool is valid or at least
-	 * not NULL.
-	 */
-	mount_part_from_pnor("HCODE", &mdev);
-	/* First MB of HOMER is unused, we can write OCC image from PNOR there. */
-	rdev_readat(&mdev.rdev, hw, 0, 1 * MiB);
-
-	assert(hw->magic == XIP_MAGIC_HW);
-	assert(hw->image_size <= 1 * MiB);
-
-	build_sgpe(homer, (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
-	           dd);
-
-	build_self_restore(homer,
-	                   (struct xip_restore_header *)(homer_bar + hw->restore.offset),
-	                   dd, cores);
-
-	build_cme(homer, (struct xip_cme_header *)(homer_bar + hw->cme.offset), dd);
-
-	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
-	           dd);
-
-	ring_variant = (dd < 0x23 ? RV_BASE : RV_RL4);
+	struct xip_hw_header *hw = (void *)homer;
+	uint8_t ring_variant = (dd < 0x23 ? RV_BASE : RV_RL4);
 
 	get_ppe_scan_rings(hw, dd, PT_CME, &ring_data);
 	layout_rings_for_cme(homer, &ring_data, cores, ring_variant);
@@ -3257,32 +3211,12 @@ uint64_t build_homer_image(void *homer_bar)
 	ring_data.work_buf3_size = sizeof(work_buf3);
 	get_ppe_scan_rings(hw, dd, PT_SGPE, &ring_data);
 	layout_rings_for_sgpe(homer, &ring_data,
-			      (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
+			      (struct xip_sgpe_header *)((uint8_t *)homer + hw->sgpe.offset),
 			      cores, ring_variant);
+}
 
-	build_parameter_blocks(homer, cores);
-
-	update_headers(homer, cores);
-
-	populate_epsilon_l2_scom_reg(homer);
-	populate_epsilon_l3_scom_reg(homer);
-
-	/* Update L3 Refresh Timer Control SCOM Registers */
-	populate_l3_refresh_scom_reg(homer, dd);
-
-	/* Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register */
-	populate_ncu_rng_bar_scom_reg(homer);
-
-	/* Update flag fields in image headers */
-	((struct sgpe_img_header *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE])->reserve_flags = 0x04000000;
-	((struct cme_img_header *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE])->qm_mode_flags = 0xf100;
-	((struct pgpe_img_header *)&homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE])->flags = 0xf032;
-
-	// Set the Fabric IDs
-	// setFabricIds( pChipHomer, i_procTgt );
-	//	- doesn't modify anything?
-
-	/* Set up wakeup mode */
+static void setup_wakeup_mode(uint64_t cores)
+{
 	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
 		if (!IS_EC_FUNCTIONAL(i, cores))
 			continue;
@@ -3297,16 +3231,20 @@ uint64_t build_homer_image(void *homer_bar)
 		write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F0108,
 		                       PPC_BIT(3) | PPC_BIT(4));
 	}
+}
 
-	/* 15.2 set HOMER BAR */
-	report_istep(15,2);
+/* 15.2 set HOMER BAR */
+static void istep_15_2(struct homer_st *homer)
+{
 	write_scom(0x05012B00, (uint64_t)homer);
 	write_scom(0x05012B04, (4 * MiB - 1) & ~((uint64_t)MiB - 1));
 	write_scom(0x05012B02, (uint64_t)homer + 8 * 4 * MiB);		// FIXME
 	write_scom(0x05012B06, (8 * MiB - 1) & ~((uint64_t)MiB - 1));
+}
 
-	/* 15.3 establish EX chiplet */
-	report_istep(15,3);
+/* 15.3 establish EX chiplet */
+static void istep_15_3(uint64_t cores)
+{
 	/* Multicast groups for cores were assigned in get_available_cores() */
 	for (int i = 0; i < MAX_QUADS_PER_CHIP; i++) {
 		if (IS_EQ_FUNCTIONAL(i, cores) &&
@@ -3327,10 +3265,16 @@ uint64_t build_homer_image(void *homer_bar)
 			qcsr |= PPC_BIT(i);
 	}
 	write_scom(0x0006C094, qcsr);
+}
 
-	/* 15.4 start STOP engine */
-	report_istep(15,4);
-
+/*
+ * 15.4 start STOP engine
+ *
+ * SGPE startup is actually done as part of istep 21.1 after all
+ * preparations here to not have to restart it there.
+ */
+static void istep_15_4(uint64_t cores)
+{
 	/* Initialize the PFET controllers */
 	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
 		if (IS_EC_FUNCTIONAL(i, cores)) {
@@ -3422,6 +3366,83 @@ uint64_t build_homer_image(void *homer_bar)
 		[30]  1       // OCCFLG2_SGPE_HCODE_STOP_REQ_ERR_INJ
 	*/
 	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(30));
+}
+
+/*
+ * This logic is for SMF disabled only!
+ */
+uint64_t build_homer_image(void *homer_bar)
+{
+	struct mmap_helper_region_device mdev = {0};
+	struct homer_st *homer = homer_bar;
+	struct xip_hw_header *hw = homer_bar;
+	uint8_t dd = get_dd();
+	int this_core = -1;
+	uint64_t cores = get_available_cores(&this_core);
+
+	if (this_core == -1)
+		die("Couldn't found active core\n");
+
+	printk(BIOS_ERR, "DD%2.2x, boot core: %d\n", dd, this_core);
+
+	/* HOMER must be aligned to 4M because CME HRMOR has bit for 2M set */
+	if (!IS_ALIGNED((uint64_t) homer_bar, 4 * MiB))
+		die("HOMER (%p) is not aligned to 4MB\n", homer_bar);
+
+	memset(homer_bar, 0, 4 * MiB);
+
+	/*
+	 * This will work as long as we don't call mmap(). mmap() calls
+	 * mem_poll_alloc() which doesn't check if mdev->pool is valid or at least
+	 * not NULL.
+	 */
+	mount_part_from_pnor("HCODE", &mdev);
+	/* First MB of HOMER is unused, we can write OCC image from PNOR there. */
+	rdev_readat(&mdev.rdev, hw, 0, 1 * MiB);
+
+	assert(hw->magic == XIP_MAGIC_HW);
+	assert(hw->image_size <= 1 * MiB);
+
+	build_sgpe(homer, (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
+	           dd);
+
+	build_self_restore(homer,
+	                   (struct xip_restore_header *)(homer_bar + hw->restore.offset),
+	                   dd, cores);
+
+	build_cme(homer, (struct xip_cme_header *)(homer_bar + hw->cme.offset), dd);
+
+	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
+	           dd);
+
+	layout_rings(homer, dd, cores);
+	build_parameter_blocks(homer, cores);
+	update_headers(homer, cores);
+
+	populate_epsilon_l2_scom_reg(homer);
+	populate_epsilon_l3_scom_reg(homer);
+	/* Update L3 Refresh Timer Control SCOM Registers */
+	populate_l3_refresh_scom_reg(homer, dd);
+	/* Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register */
+	populate_ncu_rng_bar_scom_reg(homer);
+
+	/* Update flag fields in image headers */
+	((struct sgpe_img_header *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE])->reserve_flags = 0x04000000;
+	((struct cme_img_header *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE])->qm_mode_flags = 0xf100;
+	((struct pgpe_img_header *)&homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE])->flags = 0xf032;
+
+	// Set the Fabric IDs
+	// setFabricIds( pChipHomer, i_procTgt );
+	//	- doesn't modify anything?
+
+	setup_wakeup_mode(cores);
+
+	report_istep(15,2);
+	istep_15_2(homer);
+	report_istep(15,3);
+	istep_15_3(cores);
+	report_istep(15,4);
+	istep_15_4(cores);
 
 	/* Boot OCC here and activate SGPE at the same time */
 	istep_21_1(homer, cores);
