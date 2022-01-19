@@ -477,6 +477,37 @@ const struct voltage_kwd *mvpd_get_voltage_data(uint8_t chip, int lrp)
 	return voltage;
 }
 
+uint64_t mvpd_get_available_cores(uint8_t chip)
+{
+	enum {
+		VPD_CP00_PG_HDR_LENGTH   = 1,
+		VPD_CP00_PG_DATA_LENGTH  = 128,
+		VPD_CP00_PG_DATA_ENTRIES = VPD_CP00_PG_DATA_LENGTH / 2,
+
+		ALL_ON_PG_MASK = 0xFFFF,
+		EC_AG_MASK     = 0xE1FF,
+	};
+
+	uint64_t cores = 0;
+
+	uint8_t raw_pg_data[VPD_CP00_PG_HDR_LENGTH + VPD_CP00_PG_DATA_LENGTH];
+	uint16_t pg_data[VPD_CP00_PG_DATA_ENTRIES];
+	uint32_t size = sizeof(raw_pg_data);
+
+	if (!mvpd_extract_keyword(chip, "CP00", "PG", raw_pg_data, &size))
+		die("Failed to read CPU%d/MVPD/CP00/PG", chip);
+
+	memcpy(pg_data, raw_pg_data + VPD_CP00_PG_HDR_LENGTH, sizeof(pg_data));
+
+	for (int core = 0; core < MAX_CORES_PER_CHIP; core++) {
+		chiplet_id_t core_chiplet = EC00_CHIPLET_ID + core;
+		if ((pg_data[core_chiplet] & ALL_ON_PG_MASK) == EC_AG_MASK)
+			cores |= PPC_BIT(core);
+	}
+
+	return cores;
+}
+
 /* Finds a specific ring in MVPD partition and extracts it */
 bool mvpd_extract_ring(uint8_t chip, const char *record_name,
 		       const char *kwd_name, uint8_t chiplet_id,
