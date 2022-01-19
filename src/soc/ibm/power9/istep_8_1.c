@@ -21,43 +21,10 @@
 /* Used to read SBE Boot Side from processor */
 const uint64_t SBE_BOOT_SELECT_MASK = 0x0000400000000000;
 
-/* Builds bitmask of functional cores based on Partial Good vector stored in PG
- * keyword of CP00 record in CPU-specific MVPD partition */
-static uint64_t get_available_cores(uint8_t chip)
-{
-	enum {
-		VPD_CP00_PG_HDR_LENGTH   = 1,
-		VPD_CP00_PG_DATA_LENGTH  = 128,
-		VPD_CP00_PG_DATA_ENTRIES = VPD_CP00_PG_DATA_LENGTH / 2,
-
-		ALL_ON_PG_MASK = 0xFFFF,
-		EC_AG_MASK     = 0xE1FF,
-	};
-
-	uint64_t cores = 0;
-
-	uint8_t raw_pg_data[VPD_CP00_PG_HDR_LENGTH + VPD_CP00_PG_DATA_LENGTH];
-	uint16_t pg_data[VPD_CP00_PG_DATA_ENTRIES];
-	uint32_t size = sizeof(raw_pg_data);
-
-	if (!mvpd_extract_keyword(chip, "CP00", "PG", raw_pg_data, &size))
-		die("Failed to read CPU%d/MVPD/CP00/PG", chip);
-
-	memcpy(pg_data, raw_pg_data + VPD_CP00_PG_HDR_LENGTH, sizeof(pg_data));
-
-	for (int core = 0; core < MAX_CORES_PER_CHIP; core++) {
-		chiplet_id_t core_chiplet = EC00_CHIPLET_ID + core;
-		if ((pg_data[core_chiplet] & ALL_ON_PG_MASK) == EC_AG_MASK)
-			cores |= PPC_BIT(core);
-	}
-
-	return cores;
-}
-
 static void compute_chip_gards(uint8_t chip,
 			       uint8_t *eq_gard, uint32_t *ec_gard)
 {
-	const uint64_t cores = get_available_cores(chip);
+	const uint64_t cores = mvpd_get_available_cores(chip);
 
 	*eq_gard = 0xFF;
 	*ec_gard = 0xFFFFFFFF;
