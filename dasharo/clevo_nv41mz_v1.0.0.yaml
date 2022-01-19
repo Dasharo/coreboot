@@ -1,0 +1,78 @@
+client:
+  name: NovaCustom
+dasharo:
+  documentation:
+    building_url: https://novacustom.gitlab.io/dasharo-compatibility/hardware/clevo-nv41/building/
+    flashing_url: https://novacustom.gitlab.io/dasharo-compatibility/hardware/clevo-nv41/flashing_internal/
+    name: Dasharo Compatibility
+    url: https://novacustom.gitlab.io/dasharo-compatibility/
+  framework:
+    name: coreboot
+    version: ae9a8447
+  newsletter:
+    url: https://newsletter.3mdeb.com/subscription/T61MyO2sP
+  platform:
+    model: NV41MZ
+    name: clevo_nv41mz
+    vendor: Clevo
+release:
+  artifacts:
+  - file_url: https://3mdeb.com/open-source-firmware/Dasharo/clevo_nv41mz/clevo_nv41mz_v1.0.0.rom
+    hash: sha256
+    hash_url: https://3mdeb.com/open-source-firmware/Dasharo/clevo_nv41mz/clevo_nv41mz_v1.0.0.rom.sha256
+    name: clevo_nv41mz_v1.0.0.rom
+    signature: sha256.sig
+    signature_url: https://3mdeb.com/open-source-firmware/Dasharo/clevo_nv41mz/clevo_nv41mz_v1.0.0.rom.sha256.sig
+  asciinema:
+    signature_verification: https://asciinema.org/a/433461
+  changelog:
+    added:
+    - Documentation for touchpad hotkey enablement on Linux
+    fixed:
+    - The touchpad ON/OFF switch Fn key is not functional
+    - Charging indicator displays wrong state if power adapter was unplugged while
+      in sleep mode
+    - Bluetooth does not work under Windows
+    known_issues:
+    - description: Unable to download the system by using iPXE
+      url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
+    - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+      url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+    - description: Windows 10 SD card reader driver needs manual installation on NV41MB
+      url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
+    removed:
+    - Removed proprietary blobs from built coreboot images
+  date:
+    day: 19
+    month: 1
+    year: 2022
+  diffstat:
+    deletions: 102
+    files_changed: 78
+    insertions: 4011
+  sbom:
+  - name: coreboot
+    revision: e995fc1c
+    url: https://github.com/Dasharo/coreboot/commit/e995fc1c
+    version: ae9a8447
+  - name: edk2
+    revision: 59ae285f
+    url: https://github.com/Dasharo/edk2/tree/59ae285f
+    version: 2020.03.17
+  - name: Blobs
+    revision: 39d95913
+    url: https://gitlab.com/novacustom/blobs/-/tree/39d95913
+    version: v1.0
+  tag: clevo_nv41mz_v1.0.0
+  tests:
+    hardware_matrix:
+      url: https://novacustom.gitlab.io/dasharo-compatibility/hardware/clevo-nv41/testing_configuration/
+    results:
+      failed: 7
+      not_tested: 5
+      passed: 198
+      passed_percent: 96.59
+      url: https://docs.google.com/spreadsheets/d/1LOXY9HCu-fMitkYwX08iLsQdSNenzyU0LnMdVbZB5Do/edit#gid=0
+    specification:
+      url: https://novacustom.gitlab.io/dasharo-compatibility/dasharo-compatibility/
+  version: v1.0.0
