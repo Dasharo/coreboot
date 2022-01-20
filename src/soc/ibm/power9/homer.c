@@ -3215,6 +3215,33 @@ static void layout_rings(struct homer_st *homer, uint8_t dd, uint64_t cores)
 			      cores, ring_variant);
 }
 
+/* Set the Fabric System, Group and Chip IDs into SGPE and CME headers */
+static void set_fabric_ids(uint8_t chip, struct homer_st *homer)
+{
+	struct cme_img_header *cme_hdr = (void *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE];
+	struct sgpe_img_header *sgpe_hdr = (void *)
+		&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE];
+
+	/*
+	 * Location Ids has the form of:
+	 *    0:3    Group ID (loaded from ATTR_PROC_FABRIC_GROUP_ID)
+	 *    4:6    Chip ID (loaded from ATTR_PROC_FABRIC_CHIP_ID)
+	 *    7      0
+	 *    8:12   System ID (loaded from ATTR_PROC_FABRIC_SYSTEM_ID)
+	 *    13:15  00
+	 *
+	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
+	 * when chip ID is actually a group ID and "chip ID" field is zero.
+	 */
+	uint16_t location_id = chip << 12;
+
+	cme_hdr->location_id = location_id;
+	sgpe_hdr->location_id = location_id;
+
+	/* Extended addressing is supported, but it's all zeros for both chips */
+	sgpe_hdr->addr_extension = 0;
+}
+
 static void setup_wakeup_mode(uint64_t cores)
 {
 	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
@@ -3431,9 +3458,7 @@ uint64_t build_homer_image(void *homer_bar)
 	((struct cme_img_header *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE])->qm_mode_flags = 0xf100;
 	((struct pgpe_img_header *)&homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE])->flags = 0xf032;
 
-	// Set the Fabric IDs
-	// setFabricIds( pChipHomer, i_procTgt );
-	//	- doesn't modify anything?
+	set_fabric_ids(/*chip=*/0, homer);
 
 	setup_wakeup_mode(cores);
 
