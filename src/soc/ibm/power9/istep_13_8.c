@@ -33,7 +33,8 @@
  */
 static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 {
-	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+	/* FIXME: don't hard-code chip number. */
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg(/*chip=*/0);
 
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
