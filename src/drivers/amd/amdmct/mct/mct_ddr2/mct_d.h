@@ -32,7 +32,7 @@ extern const u32 TestPattern2_D[];
 #define CL_DEF		2		/* Default value for failsafe operation. 2 = CL 4.0 T*/
 #define T_DEF		1		/* Default value for failsafe operation. 1 = 5ns (cycle time)*/
 
-#define BSCRate	1		/* reg bit field = rate of dram scrubber for ecc*/
+#define BCS_RATE	1		/* reg bit field = rate of dram scrubber for ecc*/
 					/* memory initialization (ecc and check-bits).*/
 					/* 1 = 40 ns/64 bytes.*/
 #define FIRST_PASS	1		/* First pass through RcvEn training*/
@@ -270,7 +270,7 @@ struct MCTStatStruc {
 #define GSB_DRAM_ECCDIS	2		/* Dram ECC requested but not enabled.*/
 #define GSB_SOFT_HOLE	3		/* A Node Base gap was created*/
 #define GSB_HW_HOLE	4		/* A HW dram remap was created*/
-#define GSB_Node_INTLV	5		/* Node Memory interleaving was enabled*/
+#define GSB_NODE_INTLV	5		/* Node Memory interleaving was enabled*/
 #define GSB_SP_INTLV_REMAP_HOLE	16	/* Special condition for Node Interleave and HW remapping*/
 #define GSB_EN_DIMM_SPARE_NW	17	/* Indicates that DIMM spare can be used without a warm reset */
 					/* NOTE: This is a local bit used by memory code */
@@ -558,11 +558,11 @@ struct DCTStatStruc {		/* A per Node structure*/
 #define SB_SPARE_DIS		9	/* Online spare requested but not enabled*/
 #define SB_MINIMUM_MODE		10	/* Running in Minimum Mode*/
 #define SB_NO_RCVR_EN		11	/* No DQS Receiver Enable pass window found*/
-#define SB_CH_A2B_RCVR_EN		12	/* DQS Rcvr En pass window CHA to CH B too large*/
+#define SB_CH_A2B_RCVR_EN	12	/* DQS Rcvr En pass window CHA to CH B too large*/
 #define SB_SMALL_RCVR		13	/* DQS Rcvr En pass window too small (far right of dynamic range)*/
 #define SB_NO_DQS_POS		14	/* No DQS-DQ passing positions*/
 #define SB_SMALL_DQS		15	/* DQS-DQ passing window too small*/
-#define SB_DCBKScrubDis	16	/* DCache scrub requested but not enabled */
+#define SB_DCBK_SCRUB_DIS	16	/* DCache scrub requested but not enabled */
 
 /*===============================================================================
 	Local Configuration Status (DCTStatStruc.Status[31:0])
@@ -673,7 +673,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 #define NV_ECC_REDIR		54	/* Dram ECC Redirection enable*/
 #define NV_DRAM_BK_SCRUB		55	/* Dram ECC Background Scrubber CTL*/
 #define NV_L2_BK_SCRUB		56	/* L2 ECC Background Scrubber CTL*/
-#define NV_L3BKScrub		57	/* L3 ECC Background Scrubber CTL*/
+#define NV_L3_BK_SCRUB		57	/* L3 ECC Background Scrubber CTL*/
 #define NV_DC_BK_SCRUB		58	/* DCache ECC Background Scrubber CTL*/
 #define NV_CS_SPARE_CTL		59	/* Chip Select spare Control bit 0:
 					       0 = disable spare
@@ -683,9 +683,9 @@ struct DCTStatStruc {		/* A per Node structure*/
 #define NV_SYNC_ON_UN_ECC_EN	61	/* SyncOnUnEccEn control
 					   0 = disable
 					   1 = enable*/
-#define NV_Unganged		62
+#define NV_UNGANGED		62
 
-#define NV_ChannelIntlv	63	/* Channel Interleaving (3-bits)
+#define NV_CHANNEL_INTLV	63	/* Channel Interleaving (3-bits)
 					xx0b = disable
 					yy1b = enable with DctSelIntLvAddr set to yyb */
 

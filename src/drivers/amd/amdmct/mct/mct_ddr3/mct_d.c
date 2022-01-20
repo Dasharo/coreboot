@@ -2428,7 +2428,7 @@ static void set_up_cc6_storage_fam15(struct MCTStatStruc *p_mct_stat,
 	u64 qword;
 
 	interleaved = 0;
-	if (p_mct_stat->g_status & (1 << GSB_Node_INTLV))
+	if (p_mct_stat->g_status & (1 << GSB_NODE_INTLV))
 		interleaved = 1;
 
 	printk(BIOS_INFO,
@@ -3062,7 +3062,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *p_mct_stat,
 			x8_present = 1;
 		memclk_index = Get_NB32_DCT(dev, dct, 0x94) & 0x1f;
 
-		if (p_dct_stat->dimm_valid_dct[0] && p_dct_stat->dimm_valid_dct[1] && mct_get_nv_bits(NV_Unganged))
+		if (p_dct_stat->dimm_valid_dct[0] && p_dct_stat->dimm_valid_dct[1] && mct_get_nv_bits(NV_UNGANGED))
 			interleave_channels = 1;
 
 		dword = Get_NB32_DCT(dev, dct, 0x240);
@@ -5908,7 +5908,7 @@ static u8 mct_set_mode(struct MCTStatStruc *p_mct_stat,
 	if (byte != bytex) {
 		p_dct_stat->err_status &= ~(1 << SB_DIMM_MISMATCH_O);
 	} else {
-		byte = mct_get_nv_bits(NV_Unganged);
+		byte = mct_get_nv_bits(NV_UNGANGED);
 		if (byte)
 			p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O); /* Set temp. to avoid setting of ganged mode */
 
@@ -5922,7 +5922,7 @@ static u8 mct_set_mode(struct MCTStatStruc *p_mct_stat,
 			val |= 1 << DCT_GANG_EN;
 			set_nb32(p_dct_stat->dev_dct, reg, val);
 		}
-		if (byte)	/* NV_Unganged */
+		if (byte)	/* NV_UNGANGED */
 			p_dct_stat->err_status &= ~(1 << SB_DIMM_MISMATCH_O); /* Clear so that there is no DIMM mismatch error */
 	}
 

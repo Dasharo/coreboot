@@ -372,7 +372,7 @@ void mct_AdjustScrub_D(struct DCTStatStruc *p_dct_stat, u16 *scrub_request) {
 
 	if (p_dct_stat->logical_cpuid & (AMD_DR_Ax)) {
 		*scrub_request = 0;
-		p_dct_stat->err_status |= 1 << SB_DCBKScrubDis;
+		p_dct_stat->err_status |= 1 << SB_DCBK_SCRUB_DIS;
 	}
 }
 

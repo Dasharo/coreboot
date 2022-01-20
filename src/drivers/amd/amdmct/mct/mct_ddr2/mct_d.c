@@ -747,7 +747,7 @@ static void dct_mem_clr_sync_d(struct MCTStatStruc *p_mct_stat,
 
 	/* Implement BKDG Rev 3.62 recommendations */
 	val = 0x0FE40F80;
-	if (!(get_logical_cpuid(0) & AMD_FAM10_LT_D) && mct_get_nv_bits(NV_Unganged))
+	if (!(get_logical_cpuid(0) & AMD_FAM10_LT_D) && mct_get_nv_bits(NV_UNGANGED))
 		val |= (0x18 << 2);
 	else
 		val |= (0x10 << 2);
@@ -2474,7 +2474,7 @@ static u8 mct_set_mode(struct MCTStatStruc *p_mct_stat,
 	if (byte != bytex) {
 		p_dct_stat->err_status &= ~(1 << SB_DIMM_MISMATCH_O);
 	} else {
-		if (mct_get_nv_bits(NV_Unganged))
+		if (mct_get_nv_bits(NV_UNGANGED))
 			p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 
 		if (!(p_dct_stat->err_status & (1 << SB_DIMM_MISMATCH_O))) {

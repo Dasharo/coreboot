@@ -261,7 +261,7 @@ u16 mct_get_nv_bits(u8 index)
 	case NV_L2_BK_SCRUB:
 		val = 0;	/* Disabled - See L2Scrub in BKDG */
 		break;
-	case NV_L3BKScrub:
+	case NV_L3_BK_SCRUB:
 		val = 0;	/* Disabled - See L3Scrub in BKDG */
 		break;
 	case NV_DC_BK_SCRUB:
@@ -275,11 +275,11 @@ u16 mct_get_nv_bits(u8 index)
 		val = 0;	/* Disabled */
 		//val = 1;	/* Enabled */
 		break;
-	case NV_Unganged:
+	case NV_UNGANGED:
 		/* channel interleave is better performance than ganged mode at this time */
 		val = get_uint_option("interleave_memory_channels", 1);
 		break;
-	case NV_ChannelIntlv:
+	case NV_CHANNEL_INTLV:
 		val = 5;	/* Not currently checked in mctchi_d.c */
 	/* Bit 0 =     0 - Disable
 	 *             1 - Enable

@@ -210,7 +210,7 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 			set_nb32(p_dct_stat->dev_map, 0xF0, val);
 			Node++;
 		}
-		p_mct_stat->g_status = (1 << GSB_Node_INTLV);
+		p_mct_stat->g_status = (1 << GSB_NODE_INTLV);
 	}
 	printk(BIOS_DEBUG, "InterleaveNodes_D: status %x\n", p_dct_stat->status);
 	printk(BIOS_DEBUG, "InterleaveNodes_D: err_status %x\n", p_dct_stat->err_status);

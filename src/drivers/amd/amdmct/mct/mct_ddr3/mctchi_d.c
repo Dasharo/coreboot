@@ -24,9 +24,9 @@ void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
 	 */
 
 	/* call back to wrapper not needed ManualChannelInterleave_D(); */
-	/* call back - DctSelIntLvAddr = mctGet_NVbits(NV_ChannelIntlv);*/	/* override interleave */
+	/* call back - DctSelIntLvAddr = mctGet_NVbits(NV_CHANNEL_INTLV);*/	/* override interleave */
 	/* Manually set: typ = 5, otherwise typ = 7. */
-	DctSelIntLvAddr = mct_get_nv_bits(NV_ChannelIntlv); /* typ = 5: Hash*: exclusive OR of address bits[20:16, 6]. */
+	DctSelIntLvAddr = mct_get_nv_bits(NV_CHANNEL_INTLV); /* typ = 5: Hash*: exclusive OR of address bits[20:16, 6]. */
 
 	if (DctSelIntLvAddr & 1) {
 		DctSelIntLvAddr >>= 1;

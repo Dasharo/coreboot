@@ -99,8 +99,8 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 		OF_ScrubCTL |= (u32) nvbits << 8;
 	}
 
-	nvbits = mct_get_nv_bits(NV_L3BKScrub);
-	OF_ScrubCTL |= (nvbits & 0x1f) << 24;			/* L3Scrub = NV_L3BKScrub */
+	nvbits = mct_get_nv_bits(NV_L3_BK_SCRUB);
+	OF_ScrubCTL |= (nvbits & 0x1f) << 24;			/* L3Scrub = NV_L3_BK_SCRUB */
 
 	nvbits = mct_get_nv_bits(NV_DRAM_BK_SCRUB);
 	OF_ScrubCTL |= nvbits;					/* DramScrub = NV_DRAM_BK_SCRUB */

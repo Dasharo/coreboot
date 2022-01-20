@@ -19,7 +19,7 @@
 #define CL_DEF		2		/* Default value for failsafe operation. 2 = CL 4.0 T*/
 #define T_DEF		1		/* Default value for failsafe operation. 1 = 5ns (cycle time)*/
 
-#define BSCRate	1		/* reg bit field = rate of dram scrubber for ecc*/
+#define BCS_RATE	1		/* reg bit field = rate of dram scrubber for ecc*/
 					/* memory initialization (ecc and check-bits).*/
 					/* 1 = 40 ns/64 bytes.*/
 #define FIRST_PASS	1		/* First pass through RcvEn training*/
@@ -184,7 +184,7 @@ struct MCTStatStruc {
 /* A HW dram remap was created*/
 #define GSB_HW_HOLE	4
 /* Node Memory interleaving was enabled*/
-#define GSB_Node_INTLV	5
+#define GSB_NODE_INTLV	5
 /* Special condition for Node Interleave and HW remapping*/
 #define GSB_SP_INTLV_REMAP_HOLE	16
 
