@@ -584,7 +584,8 @@ static void get_freq_point_msg_data(struct homer_st *homer, uint8_t *data, uint1
 	enum { OCC_CFGDATA_FREQ_POINT_VERSION = 0x20 };
 	OCCPstateParmBlock *oppb = (void *)homer->ppmr.occ_parm_block;
 
-	const struct voltage_bucket_data *bucket = get_voltage_data();
+	/* TODO: don't hard-code chip number here */
+	const struct voltage_bucket_data *bucket = get_voltage_data(/*chip=*/0);
 
 	uint16_t index = 0;
 	uint16_t min_freq = 0;
@@ -938,7 +939,8 @@ static void get_avs_bus_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint
 
 static void get_power_data(struct homer_st *homer, uint16_t *power_max, uint16_t *power_drop)
 {
-	const struct voltage_bucket_data *bucket = get_voltage_data();
+	/* TODO: don't hard-code chip number here */
+	const struct voltage_bucket_data *bucket = get_voltage_data(/*chip=*/0);
 
 	/* All processor chips (do not have to be functional) */
 	const uint8_t num_procs = 2; // from Hostboot log
