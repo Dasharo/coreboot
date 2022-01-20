@@ -17,6 +17,7 @@
 
 #include "chip.h"
 #include "homer.h"
+#include "fsi.h"
 #include "ops.h"
 #include "tor.h"
 #include "xip.h"
@@ -951,11 +952,11 @@ static void stop_gpe_init(struct homer_st *homer)
 		die("Timeout while waiting for SGPE activation\n");
 }
 
-static uint64_t get_available_cores(int *me)
+static uint64_t get_available_cores(uint8_t chip, int *me)
 {
 	uint64_t ret = 0;
 	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
-		uint64_t val = read_scom_for_chiplet(EC00_CHIPLET_ID + i, 0xF0040);
+		uint64_t val = read_rscom_for_chiplet(chip, EC00_CHIPLET_ID + i, 0xF0040);
 		if (val & PPC_BIT(0)) {
 			printk(BIOS_SPEW, "Core %d is functional%s\n", i,
 			       (val & PPC_BIT(1)) ? "" : " and running");
@@ -3230,6 +3231,28 @@ static void set_fabric_ids(uint8_t chip, struct homer_st *homer)
 	sgpe_hdr->addr_extension = 0;
 }
 
+static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, uint8_t dd,
+				uint64_t cores)
+{
+	layout_rings(homer, dd, cores);
+	build_parameter_blocks(homer, cores);
+	update_headers(homer, cores);
+
+	populate_epsilon_l2_scom_reg(homer);
+	populate_epsilon_l3_scom_reg(homer);
+	/* Update L3 Refresh Timer Control SCOM Registers */
+	populate_l3_refresh_scom_reg(homer, dd);
+	/* Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register */
+	populate_ncu_rng_bar_scom_reg(homer);
+
+	/* Update flag fields in image headers */
+	((struct sgpe_img_header *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE])->reserve_flags = 0x04000000;
+	((struct cme_img_header *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE])->qm_mode_flags = 0xf100;
+	((struct pgpe_img_header *)&homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE])->flags = 0xf032;
+
+	set_fabric_ids(chip, homer);
+}
+
 static void setup_wakeup_mode(uint64_t cores)
 {
 	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
@@ -3410,12 +3433,17 @@ static void istep_15_4(uint64_t cores)
  */
 uint64_t build_homer_image(void *homer_bar)
 {
+	const uint8_t chips = fsi_get_present_chips();
+
 	struct mmap_helper_region_device mdev = {0};
 	struct homer_st *homer = homer_bar;
 	struct xip_hw_header *hw = homer_bar;
-	uint8_t dd = get_dd();
+	uint8_t dd = get_dd(); // XXX: does this need to be chip-specific?
 	int this_core = -1;
-	uint64_t cores = get_available_cores(&this_core);
+	uint64_t cores[MAX_CHIPS] = {
+		get_available_cores(0, &this_core),
+		(chips & 0x02) ? get_available_cores(1, NULL) : 0,
+	};
 
 	if (this_core == -1)
 		die("Couldn't found active core\n");
@@ -3445,44 +3473,56 @@ uint64_t build_homer_image(void *homer_bar)
 
 	build_self_restore(homer,
 	                   (struct xip_restore_header *)(homer_bar + hw->restore.offset),
-	                   dd, cores);
+	                   dd, cores[0]);
 
 	build_cme(homer, (struct xip_cme_header *)(homer_bar + hw->cme.offset), dd);
 
 	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
 	           dd);
 
-	layout_rings(homer, dd, cores);
-	build_parameter_blocks(homer, cores);
-	update_headers(homer, cores);
+	/*
+	 * Until this point, only self restore part is CPU specific, use current
+	 * state of the first HOMER image as a base for the second one.
+	 */
+	if (chips & 0x02) {
+		uint8_t *homer_bar2 = (void *)&homer[1];
+		struct cme_img_header *hdr;
 
-	populate_epsilon_l2_scom_reg(homer);
-	populate_epsilon_l3_scom_reg(homer);
-	/* Update L3 Refresh Timer Control SCOM Registers */
-	populate_l3_refresh_scom_reg(homer, dd);
-	/* Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register */
-	populate_ncu_rng_bar_scom_reg(homer);
+		memcpy(&homer[1], &homer[0], sizeof(*homer));
 
-	/* Update flag fields in image headers */
-	((struct sgpe_img_header *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE])->reserve_flags = 0x04000000;
-	((struct cme_img_header *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE])->qm_mode_flags = 0xf100;
-	((struct pgpe_img_header *)&homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE])->flags = 0xf032;
+		/* Patch part of data initialized by build_cme() */
+		hdr = (struct cme_img_header *)&homer[1].cpmr.cme_sram_region[INT_VECTOR_SIZE];
+		hdr->cpmr_phy_addr = (uint64_t)&homer[1] | 2 * MiB;
+		hdr->unsec_cpmr_phy_addr = hdr->cpmr_phy_addr;
 
-	set_fabric_ids(/*chip=*/0, homer);
+		/* Override data from the other CPU */
+		build_self_restore(&homer[1],
+				   (struct xip_restore_header *)(homer_bar2 + hw->restore.offset),
+				   dd, cores[1]);
+	}
 
-	setup_wakeup_mode(cores);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (!(chips & (1 << chip)))
+			continue;
+
+		fill_homer_for_chip(chip, &homer[chip], dd, cores[chip]);
+	}
+
+	setup_wakeup_mode(cores[0]);
 
 	report_istep(15,2);
-	istep_15_2(homer);
+	istep_15_2(&homer[0]);
 	report_istep(15,3);
-	istep_15_3(cores);
+	istep_15_3(cores[0]);
 	report_istep(15,4);
-	istep_15_4(cores);
+	istep_15_4(cores[0]);
 
 	/* Boot OCC here and activate SGPE at the same time */
-	istep_21_1(homer, cores);
+	/* TODO: initialize OCC for the second CPU when it's present */
+	istep_21_1(homer, cores[0]);
 
 	istep_16_1(this_core);
 
+	/* TODO: this should probably be chip-specific, need output parameter instead */
 	return (uint64_t)get_voltage_data()->nominal.freq * MHz;
 }
