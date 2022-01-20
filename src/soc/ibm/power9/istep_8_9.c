@@ -169,7 +169,7 @@ static void p9_fbc_ioe_tl_scom(uint8_t chip)
 	 * Should we determine link number dynamically?
 	 */
 
-	const uint64_t pb_freq_mhz = powerbus_cfg()->fabric_freq;
+	const uint64_t pb_freq_mhz = powerbus_cfg(chip)->fabric_freq;
 
 	const uint64_t dd2_lo_limit_n = pb_freq_mhz * 82;
 
