@@ -621,7 +621,8 @@ static void tor_append_ring(struct tor_hdr *ring_section,
  * applying overlay if necessary.  All buffers must be be at least
  * MAX_RING_BUF_SIZE bytes in length.  Indicates result by setting *ring_status.
  */
-static void tor_fetch_and_insert_vpd_ring(struct tor_hdr *ring_section,
+static void tor_fetch_and_insert_vpd_ring(uint8_t chip,
+					  struct tor_hdr *ring_section,
 					  uint32_t *ring_section_size,
 					  const struct ring_query *query,
 					  uint32_t max_ring_section_size,
@@ -639,8 +640,7 @@ static void tor_fetch_and_insert_vpd_ring(struct tor_hdr *ring_section,
 	uint8_t instance_id = 0;
 	struct ring_hdr *ring = NULL;
 
-	/* TODO: don't hard-code chip if values are not the same among them */
-	success = mvpd_extract_ring(/*chip=*/0, "CP00", query->kwd_name,
+	success = mvpd_extract_ring(chip, "CP00", query->kwd_name,
 				    chiplet_id, even_odd,
 				    query->ring_id, buf1, MAX_RING_BUF_SIZE);
 	if (!success) {
@@ -680,7 +680,8 @@ static void tor_fetch_and_insert_vpd_ring(struct tor_hdr *ring_section,
 	*ring_status = RING_FOUND;
 }
 
-void tor_fetch_and_insert_vpd_rings(struct tor_hdr *ring_section,
+void tor_fetch_and_insert_vpd_rings(uint8_t chip,
+				    struct tor_hdr *ring_section,
 				    uint32_t *ring_section_size,
 				    uint32_t max_ring_section_size,
 				    struct tor_hdr *overlays_section,
@@ -739,7 +740,8 @@ void tor_fetch_and_insert_vpd_rings(struct tor_hdr *ring_section,
 		     instance <= max_instance_id;
 		     ++instance) {
 			enum ring_status ring_status;
-			tor_fetch_and_insert_vpd_ring(ring_section,
+			tor_fetch_and_insert_vpd_ring(chip,
+						      ring_section,
 						      ring_section_size,
 						      query,
 						      max_ring_section_size,
@@ -777,7 +779,8 @@ void tor_fetch_and_insert_vpd_rings(struct tor_hdr *ring_section,
 
 			enum ring_status ring_status;
 
-			tor_fetch_and_insert_vpd_ring(ring_section,
+			tor_fetch_and_insert_vpd_ring(chip,
+						      ring_section,
 						      ring_section_size,
 						      eq_query,
 						      max_ring_section_size,
@@ -801,7 +804,8 @@ void tor_fetch_and_insert_vpd_rings(struct tor_hdr *ring_section,
 
 					enum ring_status ring_status;
 
-					tor_fetch_and_insert_vpd_ring(ring_section,
+					tor_fetch_and_insert_vpd_ring(chip,
+								      ring_section,
 								      ring_section_size,
 								      ex_queries[i],
 								      max_ring_section_size,
@@ -826,7 +830,8 @@ void tor_fetch_and_insert_vpd_rings(struct tor_hdr *ring_section,
 
 				enum ring_status ring_status;
 
-				tor_fetch_and_insert_vpd_ring(ring_section,
+				tor_fetch_and_insert_vpd_ring(chip,
+							      ring_section,
 							      ring_section_size,
 							      ec_query,
 							      max_ring_section_size,
