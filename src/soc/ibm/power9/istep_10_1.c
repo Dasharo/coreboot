@@ -161,7 +161,7 @@ static const uint64_t PB_HPA_MODE_NEXT_SHADOWS[P9_BUILD_SMP_NUM_SHADOWS] = {
  */
 static void p9_fbc_cd_hp1_scom(uint8_t chip)
 {
-	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg(chip);
 	const uint32_t pb_freq_mhz = pb_cfg->fabric_freq;
 
 	/* Frequency of XBus for Nimbus DD2 */
@@ -578,7 +578,7 @@ static void p9_build_smp_sequence_adu(enum build_smp_adu_action action)
 
 static void p9_fbc_ab_hp_scom(uint8_t chip)
 {
-	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg(chip);
 	const uint32_t pb_freq_mhz = pb_cfg->fabric_freq;
 
 	/* Frequency of XBus for Nimbus DD2 */

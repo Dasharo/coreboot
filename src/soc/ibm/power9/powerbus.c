@@ -3,6 +3,7 @@
 #include <cpu/power/powerbus.h>
 
 #include <cpu/power/mvpd.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 #include <console/console.h>
 #include <stdint.h>
@@ -23,7 +24,7 @@ static const uint32_t EPSILON_W_T1_LE[] = {   15,   16,   17,   19,   21,   33 }
 
 /* See get_first_valid_pdV_pbFreq() in Hostboot */
 
-static bool read_voltage_data(struct powerbus_cfg *cfg)
+static bool read_voltage_data(uint8_t chip, struct powerbus_cfg *cfg)
 {
 	int i = 0;
 	const struct voltage_kwd *voltage = NULL;
@@ -36,8 +37,7 @@ static bool read_voltage_data(struct powerbus_cfg *cfg)
 	uint32_t freq_floor = 0;
 
 	/* Using LRP0 because frequencies are the same in all LRP records */
-	/* TODO: don't hard-code chip if values are not the same among them */
-	voltage = mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
+	voltage = mvpd_get_voltage_data(chip, /*lrp=*/0);
 
 	for (i = 0; i < VOLTAGE_BUCKET_COUNT; ++i) {
 		const struct voltage_bucket_data *bucket = &voltage->buckets[i];
@@ -223,22 +223,25 @@ static void calculate_epsilons(struct powerbus_cfg *cfg)
 		printk(BIOS_WARNING, "Invalid relationship between base epsilon values\n");
 }
 
-const struct powerbus_cfg *powerbus_cfg(void)
+const struct powerbus_cfg *powerbus_cfg(uint8_t chip)
 {
-	static struct powerbus_cfg cfg;
+	static struct powerbus_cfg cfg[2];
+	static bool init_done[2];
 
-	static bool init_done;
-	if (init_done)
-		return &cfg;
+	if (chip >= MAX_CHIPS)
+		die("Unsupported CPU number for powerbus config query: %d.\n", chip);
 
-	if (!read_voltage_data(&cfg))
+	if (init_done[chip])
+		return &cfg[chip];
+
+	if (!read_voltage_data(chip, &cfg[chip]))
 		die("Failed to read voltage data");
 
-	if (!calculate_frequencies(&cfg))
+	if (!calculate_frequencies(&cfg[chip]))
 		die("Incorrect core or PowerBus frequency");
 
-	calculate_epsilons(&cfg);
+	calculate_epsilons(&cfg[chip]);
 
-	init_done = true;
-	return &cfg;
+	init_done[chip] = true;
+	return &cfg[chip];
 }
