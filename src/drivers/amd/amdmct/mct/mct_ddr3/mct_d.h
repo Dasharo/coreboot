@@ -1001,7 +1001,7 @@ void mct_SetRcvrEnDly_D(struct DCTStatStruc *p_dct_stat, u16 rcvr_en_dly, u8 fin
 void SetEccDQSRcvrEn_D(struct DCTStatStruc *p_dct_stat, u8 channel);
 void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 dct);
 void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
-void mct_SetDramConfigHi_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 dct, u32 dram_config_hi);
+void mct_set_dram_config_hi_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 dct, u32 dram_config_hi);
 void mct_DramInit_Hw_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
 void mct_set_cl_to_nb_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void mct_set_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
@@ -1056,8 +1056,8 @@ u8 ChipSelPresent_D(struct MCTStatStruc *p_mct_stat,
 void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u32 test_addr, u8 pattern);
-u8 NodePresent_D(u8 node);
-void DCTMemClr_Init_D(struct MCTStatStruc *p_mct_stat,
+u8 node_present_d(u8 node);
+void dct_mem_clr_init_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
 void dct_mem_clr_sync_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
@@ -1086,7 +1086,7 @@ void PrepareC_MCT(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 void PrepareC_DCT(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
 void Restore_OnDimmMirror(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void Clear_OnDimmMirror(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
-void MCTMemClr_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_mem_clr_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 void mct_BeforeDQSTrainSamp(struct DCTStatStruc *p_dct_stat);
 void mct_ExtMCTConfig_Bx(struct DCTStatStruc *p_dct_stat);
 void mct_ExtMCTConfig_Cx(struct DCTStatStruc *p_dct_stat);

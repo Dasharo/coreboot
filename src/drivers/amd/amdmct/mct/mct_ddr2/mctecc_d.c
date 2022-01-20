@@ -100,7 +100,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
 		LDramECC = 0;
-		if (NodePresent_D(Node)) {	/*If Node is present */
+		if (node_present_d(Node)) {	/*If Node is present */
 			dev = p_dct_stat->dev_map;
 			reg = 0x40+(Node << 3);	/* Dram Base Node 0 + index */
 			val = get_nb32(dev, reg);
@@ -130,7 +130,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 						val = get_nb32(dev, reg);
 						val |= 1 << 22;	/* EccEn */
 						set_nb32(dev, reg, val);
-						DCTMemClr_Init_D(p_mct_stat, p_dct_stat);
+						dct_mem_clr_init_d(p_mct_stat, p_dct_stat);
 						MemClrECC = 1;
 						print_tx("  ECC enabled on node: ", Node);
 					}
@@ -140,7 +140,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 			}	/* Node has Dram */
 
 			if (MemClrECC) {
-				MCTMemClrSync_D(p_mct_stat, p_dct_stat_a);
+				mct_mem_clr_sync_d(p_mct_stat, p_dct_stat_a);
 			}
 		}	/* if Node present */
 	}
@@ -156,7 +156,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
 		LDramECC = 0;
-		if (NodePresent_D(Node)) {	/* If Node is present */
+		if (node_present_d(Node)) {	/* If Node is present */
 			reg = 0x40+(Node << 3);	/* Dram Base Node 0 + index */
 			val = get_nb32(p_dct_stat->dev_map, reg);
 			curBase = val & 0xffff0000;
@@ -197,7 +197,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
-		if (NodePresent_D(Node)) {
+		if (node_present_d(Node)) {
 			print_tx("ECCInit: Node ", Node);
 			print_tx("ECCInit: status ", p_dct_stat->status);
 			print_tx("ECCInit: err_status ", p_dct_stat->err_status);
@@ -220,7 +220,7 @@ static void setSyncOnUnEccEn_D(struct MCTStatStruc *p_mct_stat,
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
-		if (NodePresent_D(Node)) {	/* If Node is present*/
+		if (node_present_d(Node)) {	/* If Node is present*/
 			reg = 0x40+(Node << 3);	/* Dram Base Node 0 + index*/
 			val = get_nb32(p_dct_stat->dev_map, reg);
 			/*WE/RE is checked because memory config may have been*/

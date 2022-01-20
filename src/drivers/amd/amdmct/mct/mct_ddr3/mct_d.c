@@ -106,13 +106,13 @@ static void mct_initial_mct_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
 static void mct_init(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat);
-static void clear_legacy_Mode(struct MCTStatStruc *p_mct_stat,
+static void clear_legacy_mode(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
 static void mct_ht_mem_map_ext(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a);
 static void set_cs_tristate(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct);
-static void SetCKETriState(struct MCTStatStruc *p_mct_stat,
+static void set_cke_tristate(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct);
 static void set_odt_tristate(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct);
@@ -2659,7 +2659,7 @@ restartinit:
 			printk(BIOS_DEBUG, "%s: mct_init Node %d\n", __func__, Node);
 			mct_init(p_mct_stat, p_dct_stat);
 			mct_node_id_debug_port_d();
-			p_dct_stat->node_present = NodePresent_D(Node);
+			p_dct_stat->node_present = node_present_d(Node);
 			if (p_dct_stat->node_present) {
 				p_dct_stat->logical_cpuid = get_logical_cpuid(Node);
 
@@ -2797,8 +2797,8 @@ restartinit:
 			if (!ECCInit_D(p_mct_stat, p_dct_stat_a)) {			/* Setup ECC control and ECC check-bits*/
 				/* Memory was not cleared during ECC setup */
 				/* mctDoWarmResetMemClr_D(); */
-				printk(BIOS_DEBUG, "mct_auto_init_mct_d: MCTMemClr_D\n");
-				MCTMemClr_D(p_mct_stat,p_dct_stat_a);
+				printk(BIOS_DEBUG, "mct_auto_init_mct_d: mct_mem_clr_d\n");
+				mct_mem_clr_d(p_mct_stat,p_dct_stat_a);
 			}
 		}
 
@@ -3905,7 +3905,7 @@ static void ht_mem_map_init_d(struct MCTStatStruc *p_mct_stat,
 	mct_ht_mem_map_ext(p_mct_stat, p_dct_stat_a);
 }
 
-void MCTMemClr_D(struct MCTStatStruc *p_mct_stat,
+void mct_mem_clr_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a)
 {
 
@@ -3924,7 +3924,7 @@ void MCTMemClr_D(struct MCTStatStruc *p_mct_stat,
 			p_dct_stat = p_dct_stat_a + Node;
 
 			if (p_dct_stat->node_present) {
-				DCTMemClr_Init_D(p_mct_stat, p_dct_stat);
+				dct_mem_clr_init_d(p_mct_stat, p_dct_stat);
 			}
 		}
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
@@ -3947,7 +3947,7 @@ void MCTMemClr_D(struct MCTStatStruc *p_mct_stat,
 	}
 }
 
-void DCTMemClr_Init_D(struct MCTStatStruc *p_mct_stat,
+void dct_mem_clr_init_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	u32 val;
@@ -4018,7 +4018,7 @@ void dct_mem_clr_sync_d(struct MCTStatStruc *p_mct_stat,
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-u8 NodePresent_D(u8 Node)
+u8 node_present_d(u8 Node)
 {
 	/*
 	 * Determine if a single Hammer Node exists within the network.
@@ -4069,7 +4069,7 @@ static void DCTPreInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p
 	}
 }
 
-static void DCTInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct)
+static void dct_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	/*
 	 * Initialize DRAM on single Athlon 64/Opteron Node.
@@ -4089,7 +4089,7 @@ static void DCTInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 			printk(BIOS_DEBUG, "\t\tDCTInit_D: auto_cyc_timing Done\n");
 
 			/* SkewMemClk must be set before MEM_CLK_FREQ_VAL is set
-			 * This relies on DCTInit_D being called for DCT 1 after
+			 * This relies on dct_init_d being called for DCT 1 after
 			 * it has already been called for DCT 0...
 			 */
 			if (is_fam15h()) {
@@ -5202,7 +5202,7 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 	/* Write the DRAM Configuration High register, including memory frequency change */
 	dword = Get_NB32_DCT(dev, dct, 0x94);
 	DramConfigHi |= dword;
-	mct_SetDramConfigHi_D(p_mct_stat, p_dct_stat, dct, DramConfigHi);
+	mct_set_dram_config_hi_d(p_mct_stat, p_dct_stat, dct, DramConfigHi);
 	mct_early_arb_en_d(p_mct_stat, p_dct_stat, dct);
 	mct_hook_after_auto_cfg();
 
@@ -5308,12 +5308,12 @@ static void spd_set_banks_d(struct MCTStatStruc *p_mct_stat,
 	}	/* while ChipSel*/
 
 	set_cs_tristate(p_mct_stat, p_dct_stat, dct);
-	SetCKETriState(p_mct_stat, p_dct_stat, dct);
+	set_cke_tristate(p_mct_stat, p_dct_stat, dct);
 	set_odt_tristate(p_mct_stat, p_dct_stat, dct);
 
 	if (p_dct_stat->status & (1 << SB_128_BIT_MODE)) {
 		set_cs_tristate(p_mct_stat, p_dct_stat, 1); /* force dct1) */
-		SetCKETriState(p_mct_stat, p_dct_stat, 1); /* force dct1) */
+		set_cke_tristate(p_mct_stat, p_dct_stat, 1); /* force dct1) */
 		set_odt_tristate(p_mct_stat, p_dct_stat, 1); /* force dct1) */
 	}
 
@@ -5850,7 +5850,7 @@ static void mct_init_dct(struct MCTStatStruc *p_mct_stat,
 	u8 err_code;
 
 	/* Config. DCT0 for Ganged or unganged mode */
-	DCTInit_D(p_mct_stat, p_dct_stat, 0);
+	dct_init_d(p_mct_stat, p_dct_stat, 0);
 	DCTFinalInit_D(p_mct_stat, p_dct_stat, 0);
 	if (p_dct_stat->err_code == SC_FATAL_ERR) {
 		/* Do nothing goto exitDCTInit; any fatal errors? */
@@ -5860,7 +5860,7 @@ static void mct_init_dct(struct MCTStatStruc *p_mct_stat,
 			if (p_dct_stat->dimm_valid_dct[1] > 0) {
 				err_code = p_dct_stat->err_code;		/* save DCT0 errors */
 				p_dct_stat->err_code = 0;
-				DCTInit_D(p_mct_stat, p_dct_stat, 1);
+				dct_init_d(p_mct_stat, p_dct_stat, 1);
 				DCTFinalInit_D(p_mct_stat, p_dct_stat, 1);
 				if (p_dct_stat->err_code == 2)		/* DCT1 is not Running */
 					p_dct_stat->err_code = err_code;	/* Using DCT0 Error code to update p_dct_stat.err_code */
@@ -5889,7 +5889,7 @@ static void mct_dram_init(struct MCTStatStruc *p_mct_stat,
 	/* mct_DramInit_Hw_D(p_mct_stat, p_dct_stat, dct); */
 }
 
-static u8 mct_setMode(struct MCTStatStruc *p_mct_stat,
+static u8 mct_set_mode(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	u8 byte;
@@ -6085,7 +6085,7 @@ static u8 mct_spd_calc_width(struct MCTStatStruc *p_mct_stat,
 
 	if (dct == 0) {
 		spd_calc_width_d(p_mct_stat, p_dct_stat);
-		ret = mct_setMode(p_mct_stat, p_dct_stat);
+		ret = mct_set_mode(p_mct_stat, p_dct_stat);
 	} else {
 		ret = p_dct_stat->err_code;
 	}
@@ -6778,8 +6778,8 @@ static void mct_initial_mct_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStr
 		mct_ForceNBPState0_En_Fam15(p_mct_stat, p_dct_stat);
 	} else {
 		/* K10 BKDG v3.62 section 2.8.9.2 */
-		printk(BIOS_DEBUG, "mct_initial_mct_d: clear_legacy_Mode\n");
-		clear_legacy_Mode(p_mct_stat, p_dct_stat);
+		printk(BIOS_DEBUG, "mct_initial_mct_d: clear_legacy_mode\n");
+		clear_legacy_mode(p_mct_stat, p_dct_stat);
 
 		/* Northbridge configuration */
 		mct_set_cl_to_nb_d(p_mct_stat, p_dct_stat);
@@ -6822,7 +6822,7 @@ static void mct_init(struct MCTStatStruc *p_mct_stat,
 	}
 }
 
-static void clear_legacy_Mode(struct MCTStatStruc *p_mct_stat,
+static void clear_legacy_mode(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	u32 reg;
@@ -6928,7 +6928,7 @@ static void set_cs_tristate(struct MCTStatStruc *p_mct_stat,
 	Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0000000c, val);
 }
 
-static void SetCKETriState(struct MCTStatStruc *p_mct_stat,
+static void set_cke_tristate(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 val;
@@ -7878,7 +7878,7 @@ void ProgDramMRSReg_D(struct MCTStatStruc *p_mct_stat,
 	Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0x84, dword);
 }
 
-void mct_SetDramConfigHi_D(struct MCTStatStruc *p_mct_stat,
+void mct_set_dram_config_hi_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u32 dct, u32 DramConfigHi)
 {
 	/* Bug#15114: Comp. update interrupted by Freq. change can cause
@@ -7948,7 +7948,7 @@ void mct_SetDramConfigHi_D(struct MCTStatStruc *p_mct_stat,
 		mct_Wait(100);
 	}
 
-	printk(BIOS_DEBUG, "mct_SetDramConfigHi_D: DramConfigHi:    %08x\n", DramConfigHi);
+	printk(BIOS_DEBUG, "mct_set_dram_config_hi_d: DramConfigHi:    %08x\n", DramConfigHi);
 
 	/* Program the DRAM Configuration High register */
 	Set_NB32_DCT(dev, dct, 0x94, DramConfigHi);

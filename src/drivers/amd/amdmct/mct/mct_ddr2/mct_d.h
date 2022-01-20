@@ -731,7 +731,7 @@ void mct_SetRcvrEnDly_D(struct DCTStatStruc *p_dct_stat, u8 RcvrEnDly, u8 FinalV
 void SetEccDQSRcvrEn_D(struct DCTStatStruc *p_dct_stat, u8 Channel);
 void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 dct);
 void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
-void mct_SetDramConfigHi_D(struct DCTStatStruc *p_dct_stat, u32 dct, u32 DramConfigHi);
+void mct_set_dram_config_hi_d(struct DCTStatStruc *p_dct_stat, u32 dct, u32 DramConfigHi);
 void mct_DramInit_Hw_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
 void SyncSetting(struct DCTStatStruc *p_dct_stat);
 void mct_set_cl_to_nb_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
@@ -761,7 +761,7 @@ void mct_adjust_delay_range_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 *dqs_pos);
 void mct_enable_dat_intlv_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat);
-void MCTMemClrSync_D(struct MCTStatStruc *p_mct_stat,
+void mct_mem_clr_sync_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a);
 void beforeInterleaveChannels_D(struct DCTStatStruc *p_dct_stat_a, u8 *enabled);
 u8 mct_checkFenceHoleAdjust_D(struct MCTStatStruc *p_mct_stat,
@@ -771,10 +771,10 @@ void proc_IOCLFLUSH_D(u32 addr_hi);
 void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u32 TestAddr, u8 pattern);
-u8 NodePresent_D(u8 Node);
-void DCTMemClr_Init_D(struct MCTStatStruc *p_mct_stat,
+u8 node_present_d(u8 Node);
+void dct_mem_clr_init_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
-void MCTMemClr_D(struct MCTStatStruc *p_mct_stat,
+void mct_mem_clr_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a);
 void print_debug_dqs(const char *str, u32 val, u8 level);
 void print_debug_dqs_pair(const char *str, u32 val, const char *str2, u32 val2, u8 level);

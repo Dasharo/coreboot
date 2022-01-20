@@ -129,7 +129,7 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 	}
 
 	if (DoIntlv) {
-		MCTMemClr_D(p_mct_stat, p_dct_stat_a);
+		mct_mem_clr_d(p_mct_stat, p_dct_stat_a);
 		/* Program Interleaving enabled on Node 0 map only.*/
 		MemSize0 <<= bsf(Nodes);	/* MemSize = MemSize*2 (or 4, or 8) */
 		Dct0MemSize <<= bsf(Nodes);

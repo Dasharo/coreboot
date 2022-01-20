@@ -110,7 +110,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
 
-		if (NodePresent_D(Node)) {
+		if (node_present_d(Node)) {
 			dword = get_nb32(p_dct_stat->dev_nbmisc, 0x44);
 			sync_flood_on_dram_err[Node] = (dword >> 30) & 0x1;
 			sync_flood_on_any_uc_err[Node] = (dword >> 21) & 0x1;
@@ -137,7 +137,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
 		LDramECC = 0;
-		if (NodePresent_D(Node)) {	/*If Node is present */
+		if (node_present_d(Node)) {	/*If Node is present */
 			dev = p_dct_stat->dev_map;
 			reg = 0x40+(Node << 3);	/* Dram Base Node 0 + index */
 			val = get_nb32(dev, reg);
@@ -170,7 +170,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 						val = get_nb32(dev, reg);
 						val |= 1 << 22;	/* EccEn */
 						set_nb32(dev, reg, val);
-						DCTMemClr_Init_D(p_mct_stat, p_dct_stat);
+						dct_mem_clr_init_d(p_mct_stat, p_dct_stat);
 						MemClrECC = 1;
 						printk(BIOS_DEBUG, "  ECC enabled on node: %02x\n", Node);
 					}
@@ -196,7 +196,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
 		LDramECC = 0;
-		if (NodePresent_D(Node)) {	/* If Node is present */
+		if (node_present_d(Node)) {	/* If Node is present */
 			reg = 0x40+(Node << 3);	/* Dram Base Node 0 + index */
 			val = get_nb32(p_dct_stat->dev_map, reg);
 			curBase = val & 0xffff0000;
@@ -256,7 +256,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
 
-		if (NodePresent_D(Node)) {
+		if (node_present_d(Node)) {
 			dev = p_dct_stat->dev_map;
 			reg = 0x40 + (Node << 3);	/* Dram Base Node 0 + index */
 			val = get_nb32(dev, reg);
@@ -290,7 +290,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
-		if (NodePresent_D(Node)) {
+		if (node_present_d(Node)) {
 			printk(BIOS_DEBUG, "ECCInit: Node %02x\n", Node);
 			printk(BIOS_DEBUG, "ECCInit: status %x\n", p_dct_stat->status);
 			printk(BIOS_DEBUG, "ECCInit: err_status %x\n", p_dct_stat->err_status);
@@ -312,7 +312,7 @@ static void setSyncOnUnEccEn_D(struct MCTStatStruc *p_mct_stat,
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
 		struct DCTStatStruc *p_dct_stat;
 		p_dct_stat = p_dct_stat_a + Node;
-		if (NodePresent_D(Node)) {	/* If Node is present*/
+		if (node_present_d(Node)) {	/* If Node is present*/
 			reg = 0x40+(Node << 3);	/* Dram Base Node 0 + index*/
 			val = get_nb32(p_dct_stat->dev_map, reg);
 			/*WE/RE is checked because memory config may have been*/
