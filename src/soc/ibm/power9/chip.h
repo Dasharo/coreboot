@@ -6,6 +6,6 @@
 struct soc_ibm_power9_config {
 };
 
-uint64_t build_homer_image(void *homer_bar);
+void build_homer_image(void *homer_bar, uint64_t nominal_freq[]);
 
 #endif /* __SOC_CAVIUM_CN81XX_CHIP_H */

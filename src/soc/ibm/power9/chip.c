@@ -15,7 +15,7 @@
 #include "chip.h"
 #include "fsi.h"
 
-static uint64_t nominal_freq;
+static uint64_t nominal_freq[MAX_CHIPS];
 
 /*
  * These are various definitions of the page sizes and segment sizes supported
@@ -207,14 +207,15 @@ static void fill_cpu_node(struct device_tree *tree,
 	 * Old-style core clock frequency. Only create this property if the
 	 * frequency fits in a 32-bit number. Do not create it if it doesn't.
 	 */
-	if ((nominal_freq >> 32) == 0)
-		dt_add_u32_prop(node, "clock-frequency", nominal_freq);
+	/* TODO: update these 3 uses of nominal_freq to be chip-specific */
+	if ((nominal_freq[0] >> 32) == 0)
+		dt_add_u32_prop(node, "clock-frequency", nominal_freq[0]);
 
 	/*
 	 * Mandatory: 64-bit version of the core clock frequency, always create
 	 * this property.
 	 */
-	dt_add_u64_prop(node, "ibm,extended-clock-frequency", nominal_freq);
+	dt_add_u64_prop(node, "ibm,extended-clock-frequency", nominal_freq[0]);
 
 	/* Timebase freq has a fixed value, always use that */
 	dt_add_u32_prop(node, "timebase-frequency", 512 * MHz);
@@ -536,7 +537,7 @@ static void enable_soc_dev(struct device *dev)
 	 * Assumption: OCC boots successfully or coreboot die()s, booting in safe
 	 * mode without runtime power management is not supported.
 	 */
-	nominal_freq = build_homer_image((void *)(top * 1024));
+	build_homer_image((void *)(top * 1024), nominal_freq);
 
 	if (CONFIG(PAYLOAD_FIT_SUPPORT)) {
 		struct device_tree_fixup *dt_fixup;

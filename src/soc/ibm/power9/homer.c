@@ -1930,7 +1930,7 @@ static void set_occ_state(struct homer_st *homer, uint8_t state)
 		    poll_response.state, state);
 }
 
-static const struct voltage_bucket_data * get_voltage_data(void)
+static const struct voltage_bucket_data * get_voltage_data(uint8_t chip)
 {
 	const struct voltage_kwd *voltage = NULL;
 	const struct voltage_bucket_data *bucket = NULL;
@@ -1938,8 +1938,7 @@ static const struct voltage_bucket_data * get_voltage_data(void)
 	uint8_t i = 0;
 
 	/* Using LRP0 because frequencies are the same in all LRP records */
-	/* TODO: don't hard-code chip if values are not the same among them */
-	voltage = mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
+	voltage = mvpd_get_voltage_data(chip, /*lrp=*/0);
 
 	for (i = 0; i < VOLTAGE_BUCKET_COUNT; ++i) {
 		bucket = &voltage->buckets[i];
@@ -1958,7 +1957,8 @@ static void get_freq_point_msg_data(struct homer_st *homer, uint8_t *data, uint1
 	enum { OCC_CFGDATA_FREQ_POINT_VERSION = 0x20 };
 	OCCPstateParmBlock *oppb = (void *)homer->ppmr.occ_parm_block;
 
-	const struct voltage_bucket_data *bucket = get_voltage_data();
+	/* TODO: don't hard-code chip number here */
+	const struct voltage_bucket_data *bucket = get_voltage_data(/*chip=*/0);
 
 	uint16_t index = 0;
 	uint16_t min_freq = 0;
@@ -2298,7 +2298,8 @@ static void get_avs_bus_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint
 
 static void get_power_data(struct homer_st *homer, uint16_t *power_max, uint16_t *power_drop)
 {
-	const struct voltage_bucket_data *bucket = get_voltage_data();
+	/* TODO: don't hard-code chip number here */
+	const struct voltage_bucket_data *bucket = get_voltage_data(/*chip=*/0);
 
 	/* All processor chips (do not have to be functional) */
 	const uint8_t num_procs = 2; // from Hostboot log
@@ -3432,7 +3433,7 @@ static void istep_15_4(uint8_t chip, uint64_t cores)
 /*
  * This logic is for SMF disabled only!
  */
-uint64_t build_homer_image(void *homer_bar)
+void build_homer_image(void *homer_bar, uint64_t nominal_freq[])
 {
 	const uint8_t chips = fsi_get_present_chips();
 
@@ -3510,6 +3511,7 @@ uint64_t build_homer_image(void *homer_bar)
 			continue;
 
 		fill_homer_for_chip(chip, &homer[chip], dd, cores[chip]);
+		nominal_freq[chip] = get_voltage_data(chip)->nominal.freq * MHz;
 	}
 
 	setup_wakeup_mode(/*chip=*/0, cores[0]);
@@ -3526,7 +3528,4 @@ uint64_t build_homer_image(void *homer_bar)
 	istep_21_1(/*chip=*/0, homer, cores[0]);
 
 	istep_16_1(this_core);
-
-	/* TODO: this should probably be chip-specific, need output parameter instead */
-	return (uint64_t)get_voltage_data()->nominal.freq * MHz;
 }
