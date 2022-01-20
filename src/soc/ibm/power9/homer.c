@@ -2480,7 +2480,7 @@ static void istep_21_1(struct homer_st *homer, uint64_t cores)
 	printk(BIOS_ERR, "Done activating OCC\n");
 }
 
-static void get_ppe_scan_rings(struct xip_hw_header *hw, uint8_t dd,
+static void get_ppe_scan_rings(uint8_t chip, struct xip_hw_header *hw, uint8_t dd,
 			       enum ppe_type ppe, struct ring_data *ring_data)
 {
 	const uint32_t max_rings_buf_size = ring_data->rings_buf_size;
@@ -2505,7 +2505,8 @@ static void get_ppe_scan_rings(struct xip_hw_header *hw, uint8_t dd,
 	assert(ring_data->work_buf2_size == MAX_RING_BUF_SIZE);
 	assert(ring_data->work_buf3_size == MAX_RING_BUF_SIZE);
 
-	tor_fetch_and_insert_vpd_rings((struct tor_hdr *)ring_data->rings_buf,
+	tor_fetch_and_insert_vpd_rings(chip,
+				       (struct tor_hdr *)ring_data->rings_buf,
 				       &ring_data->rings_buf_size, max_rings_buf_size,
 				       overlays, ppe,
 				       ring_data->work_buf1,
@@ -3172,7 +3173,7 @@ static void update_headers(struct homer_st *homer, uint64_t cores)
 	pgpe_hdr->magic               = 0x504750455f312e30;	// PGPE_1.0
 }
 
-static void layout_rings(struct homer_st *homer, uint8_t dd, uint64_t cores)
+static void layout_rings(uint8_t chip, struct homer_st *homer, uint8_t dd, uint64_t cores)
 {
 	static uint8_t rings_buf[300 * KiB];
 
@@ -3190,7 +3191,7 @@ static void layout_rings(struct homer_st *homer, uint8_t dd, uint64_t cores)
 	struct xip_hw_header *hw = (void *)homer;
 	uint8_t ring_variant = (dd < 0x23 ? RV_BASE : RV_RL4);
 
-	get_ppe_scan_rings(hw, dd, PT_CME, &ring_data);
+	get_ppe_scan_rings(chip, hw, dd, PT_CME, &ring_data);
 	layout_rings_for_cme(homer, &ring_data, cores, ring_variant);
 
 	/* Reset buffer sizes to maximum values before reusing the structure */
@@ -3198,7 +3199,7 @@ static void layout_rings(struct homer_st *homer, uint8_t dd, uint64_t cores)
 	ring_data.work_buf1_size = sizeof(work_buf1);
 	ring_data.work_buf2_size = sizeof(work_buf2);
 	ring_data.work_buf3_size = sizeof(work_buf3);
-	get_ppe_scan_rings(hw, dd, PT_SGPE, &ring_data);
+	get_ppe_scan_rings(chip, hw, dd, PT_SGPE, &ring_data);
 	layout_rings_for_sgpe(homer, &ring_data,
 			      (struct xip_sgpe_header *)((uint8_t *)homer + hw->sgpe.offset),
 			      cores, ring_variant);
@@ -3234,7 +3235,7 @@ static void set_fabric_ids(uint8_t chip, struct homer_st *homer)
 static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, uint8_t dd,
 				uint64_t cores)
 {
-	layout_rings(homer, dd, cores);
+	layout_rings(chip, homer, dd, cores);
 	build_parameter_blocks(homer, cores);
 	update_headers(homer, cores);
 
