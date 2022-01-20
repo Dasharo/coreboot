@@ -1123,7 +1123,7 @@ static void load_occ_image_to_homer(struct homer_st *homer)
 }
 
 /* Writes information about the host to be read by OCC */
-static void load_host_data_to_homer(struct homer_st *homer)
+static void load_host_data_to_homer(uint8_t chip, struct homer_st *homer)
 {
 	enum {
 		OCC_HOST_DATA_VERSION = 0x00000090,
@@ -1134,13 +1134,13 @@ static void load_host_data_to_homer(struct homer_st *homer)
 		(void *)&homer->occ_host_area[HOMER_OFFSET_TO_OCC_HOST_DATA];
 
 	config_data->version = OCC_HOST_DATA_VERSION;
-	config_data->nest_freq = powerbus_cfg()->fabric_freq;
+	config_data->nest_freq = powerbus_cfg(chip)->fabric_freq;
 	config_data->interrupt_type = USE_PSIHB_COMPLEX;
 	config_data->is_fir_master = false;
 	config_data->is_smf_mode = false;
 }
 
-static void load_pm_complex(struct homer_st *homer)
+static void load_pm_complex(uint8_t chip, struct homer_st *homer)
 {
 	/*
 	 * Hostboot resets OCC here, but we haven't started it yet, so reset
@@ -1148,7 +1148,7 @@ static void load_pm_complex(struct homer_st *homer)
 	 */
 
 	load_occ_image_to_homer(homer);
-	load_host_data_to_homer(homer);
+	load_host_data_to_homer(chip, homer);
 }
 
 static void pm_corequad_init(uint64_t cores)
@@ -1428,7 +1428,7 @@ static void check_proc_config(struct homer_st *homer)
 	*conf_vector = vector_value;
 }
 
-static void pm_pss_init(void)
+static void pm_pss_init(uint8_t chip)
 {
 	enum {
 		PU_SPIPSS_ADC_CTRL_REG0 = 0x00070000,
@@ -1498,16 +1498,16 @@ static void pm_pss_init(void)
 	 */
 	scom_and_or(PU_SPIPSS_100NS_REG,
 		    PPC_BITMASK(0, 31),
-		    PPC_PLACE(powerbus_cfg()->fabric_freq / 40, 0, 32));
+		    PPC_PLACE(powerbus_cfg(chip)->fabric_freq / 40, 0, 32));
 }
 
 /* Initializes power-management and starts OCC */
-static void start_pm_complex(struct homer_st *homer, uint64_t cores)
+static void start_pm_complex(uint8_t chip, struct homer_st *homer, uint64_t cores)
 {
 	enum { STOP_RECOVERY_TRIGGER_ENABLE = 29 };
 
 	pm_corequad_init(cores);
-	pm_pss_init();
+	pm_pss_init(chip);
 	pm_occ_fir_init();
 	pm_pba_fir_init();
 	stop_gpe_init(homer);
@@ -1521,12 +1521,12 @@ static void start_pm_complex(struct homer_st *homer, uint64_t cores)
 	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(STOP_RECOVERY_TRIGGER_ENABLE));
 }
 
-static void istep_21_1(struct homer_st *homer, uint64_t cores)
+static void istep_21_1(uint8_t chip, struct homer_st *homer, uint64_t cores)
 {
-	load_pm_complex(homer);
+	load_pm_complex(chip, homer);
 
 	printk(BIOS_ERR, "Starting PM complex...\n");
-	start_pm_complex(homer, cores);
+	start_pm_complex(chip, homer, cores);
 	printk(BIOS_ERR, "Done starting PM complex\n");
 
 	printk(BIOS_ERR, "Activating OCC...\n");
@@ -1717,9 +1717,9 @@ static void layout_rings_for_cme(struct homer_st *homer,
 	}
 }
 
-static enum ring_id resolve_eq_inex_bucket(void)
+static enum ring_id resolve_eq_inex_bucket(uint8_t chip)
 {
-	switch (powerbus_cfg()->core_floor_ratio) {
+	switch (powerbus_cfg(chip)->core_floor_ratio) {
 	case FABRIC_CORE_FLOOR_RATIO_RATIO_8_8:
 		return EQ_INEX_BUCKET_4;
 
@@ -1736,7 +1736,8 @@ static enum ring_id resolve_eq_inex_bucket(void)
 	die("Failed to resolve EQ_INEX_BUCKET_*!\n");
 }
 
-static void layout_cmn_rings_for_sgpe(struct homer_st *homer,
+static void layout_cmn_rings_for_sgpe(uint8_t chip,
+				      struct homer_st *homer,
 				      struct ring_data *ring_data,
 				      enum ring_variant ring_variant)
 {
@@ -1761,7 +1762,7 @@ static void layout_cmn_rings_for_sgpe(struct homer_st *homer,
 		EQ_ANA_BNDY_BUCKET_39, EQ_ANA_BNDY_BUCKET_40, EQ_ANA_BNDY_BUCKET_41
 	};
 
-	const enum ring_id eq_index_bucket_id = resolve_eq_inex_bucket();
+	const enum ring_id eq_index_bucket_id = resolve_eq_inex_bucket(chip);
 
 	struct qpmr_header *qpmr_hdr = &homer->qpmr.sgpe.header;
 	struct sgpe_cmn_ring_list *tmp =
@@ -1867,7 +1868,7 @@ static void layout_inst_rings_for_sgpe(struct homer_st *homer,
 	qpmr_hdr->spec_ring_len = payload - start;
 }
 
-static void layout_rings_for_sgpe(struct homer_st *homer,
+static void layout_rings_for_sgpe(uint8_t chip, struct homer_st *homer,
 				  struct ring_data *ring_data,
 				  struct xip_sgpe_header *sgpe,
 				  uint64_t cores,
@@ -1877,7 +1878,7 @@ static void layout_rings_for_sgpe(struct homer_st *homer,
 	struct sgpe_img_header *sgpe_img_hdr =
 		(void *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE];
 
-	layout_cmn_rings_for_sgpe(homer, ring_data, ring_variant);
+	layout_cmn_rings_for_sgpe(chip, homer, ring_data, ring_variant);
 	layout_inst_rings_for_sgpe(homer, ring_data, cores, RV_BASE);
 
 	if (qpmr_hdr->common_ring_len == 0) {
@@ -1980,9 +1981,9 @@ static void stop_save_scom(struct homer_st *homer, uint32_t scom_address,
 	entry->data = scom_data;
 }
 
-static void populate_epsilon_l2_scom_reg(struct homer_st *homer)
+static void populate_epsilon_l2_scom_reg(uint8_t chip, struct homer_st *homer)
 {
-	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg(chip);
 
 	uint32_t eps_r_t0 = pb_cfg->eps_r[0] / 8 / L2_EPS_DIVIDER + 1;
 	uint32_t eps_r_t1 = pb_cfg->eps_r[1] / 8 / L2_EPS_DIVIDER + 1;
@@ -2026,9 +2027,9 @@ static void populate_epsilon_l2_scom_reg(struct homer_st *homer)
 	}
 }
 
-static void populate_epsilon_l3_scom_reg(struct homer_st *homer)
+static void populate_epsilon_l3_scom_reg(uint8_t chip, struct homer_st *homer)
 {
-	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
+	const struct powerbus_cfg *pb_cfg = powerbus_cfg(chip);
 
 	uint32_t eps_r_t0 = pb_cfg->eps_r[0] / 8 / L3_EPS_DIVIDER + 1;
 	uint32_t eps_r_t1 = pb_cfg->eps_r[1] / 8 / L3_EPS_DIVIDER + 1;
@@ -2072,14 +2073,14 @@ static void populate_epsilon_l3_scom_reg(struct homer_st *homer)
 	}
 }
 
-static void populate_l3_refresh_scom_reg(struct homer_st *homer, uint8_t dd)
+static void populate_l3_refresh_scom_reg(uint8_t chip, struct homer_st *homer, uint8_t dd)
 {
 	uint64_t refresh_val = 0x2000000000000000ULL;
 
 	uint8_t quad = 0;
 
 	/* ATTR_CHIP_EC_FEATURE_HW408892 === (DD <= 0x20) */
-	if (powerbus_cfg()->fabric_freq >= 2000 && dd > 0x20)
+	if (powerbus_cfg(chip)->fabric_freq >= 2000 && dd > 0x20)
 		refresh_val |= PPC_PLACE(0x2, 8, 4);
 
 	for (quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
@@ -2117,7 +2118,7 @@ static void populate_ncu_rng_bar_scom_reg(struct homer_st *homer)
 	}
 }
 
-static void update_headers(struct homer_st *homer, uint64_t cores)
+static void update_headers(uint8_t chip, struct homer_st *homer, uint64_t cores)
 {
 	/*
 	 * Update CPMR Header with Scan Ring details
@@ -2182,7 +2183,7 @@ static void update_headers(struct homer_st *homer, uint64_t cores)
 	cme_hdr->scom_len = 512;
 
 	/* Timebase frequency */
-	cme_hdr->timebase_hz = powerbus_cfg()->fabric_freq * MHz / 64;
+	cme_hdr->timebase_hz = powerbus_cfg(chip)->fabric_freq * MHz / 64;
 
 	/*
 	 * Update QPMR Header area in HOMER
@@ -2288,7 +2289,7 @@ static void layout_rings(uint8_t chip, struct homer_st *homer, uint8_t dd, uint6
 	ring_data.work_buf2_size = sizeof(work_buf2);
 	ring_data.work_buf3_size = sizeof(work_buf3);
 	get_ppe_scan_rings(chip, hw, dd, PT_SGPE, &ring_data);
-	layout_rings_for_sgpe(homer, &ring_data,
+	layout_rings_for_sgpe(chip, homer, &ring_data,
 			      (struct xip_sgpe_header *)((uint8_t *)homer + hw->sgpe.offset),
 			      cores, ring_variant);
 }
@@ -2334,12 +2335,12 @@ static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, uint8_t dd
 
 	layout_rings(chip, homer, dd, cores);
 	build_parameter_blocks(chip, homer, cores);
-	update_headers(homer, cores);
+	update_headers(chip, homer, cores);
 
-	populate_epsilon_l2_scom_reg(homer);
-	populate_epsilon_l3_scom_reg(homer);
+	populate_epsilon_l2_scom_reg(chip, homer);
+	populate_epsilon_l3_scom_reg(chip, homer);
 	/* Update L3 Refresh Timer Control SCOM Registers */
-	populate_l3_refresh_scom_reg(homer, dd);
+	populate_l3_refresh_scom_reg(chip, homer, dd);
 	/* Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register */
 	populate_ncu_rng_bar_scom_reg(homer);
 
@@ -2626,7 +2627,7 @@ uint64_t build_homer_image(void *homer_bar)
 
 	/* Boot OCC here and activate SGPE at the same time */
 	/* TODO: initialize OCC for the second CPU when it's present */
-	istep_21_1(homer, cores[0]);
+	istep_21_1(/*chip=*/0, homer, cores[0]);
 
 	istep_16_1(this_core);
 
