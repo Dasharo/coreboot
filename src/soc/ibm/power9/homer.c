@@ -2333,7 +2333,7 @@ static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, uint8_t dd
 	uint16_t pgpe_flags;
 
 	layout_rings(chip, homer, dd, cores);
-	build_parameter_blocks(homer, cores);
+	build_parameter_blocks(chip, homer, cores);
 	update_headers(homer, cores);
 
 	populate_epsilon_l2_scom_reg(homer);
