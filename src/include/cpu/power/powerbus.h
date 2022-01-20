@@ -47,6 +47,6 @@ struct powerbus_cfg
 	uint32_t eps_w[NUM_EPSILON_WRITE_TIERS];
 };
 
-const struct powerbus_cfg *powerbus_cfg(void);
+const struct powerbus_cfg *powerbus_cfg(uint8_t chip);
 
 #endif // CPU_PPC64_POWERBUS_H
