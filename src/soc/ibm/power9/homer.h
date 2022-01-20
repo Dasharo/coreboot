@@ -328,6 +328,6 @@ struct voltage_bucket_data;
 
 void build_parameter_blocks(uint8_t chip, struct homer_st *homer, uint64_t functional_cores);
 void configure_xive(int tgt_core);
-const struct voltage_bucket_data * get_voltage_data(void);
+const struct voltage_bucket_data * get_voltage_data(uint8_t chip);
 
 #endif /* __SOC_IBM_POWER9_HOMER_H */
