@@ -443,7 +443,8 @@ bool tor_access_ring(struct tor_hdr *ring_section, uint16_t ring_id,
  * applying overlay if necessary.  All buffers must be be at least
  * MAX_RING_BUF_SIZE bytes in length.
  */
-void tor_fetch_and_insert_vpd_rings(struct tor_hdr *ring_section,
+void tor_fetch_and_insert_vpd_rings(uint8_t chip,
+				    struct tor_hdr *ring_section,
 				    uint32_t *ring_section_size,
 				    uint32_t max_ring_section_size,
 				    struct tor_hdr *overlays_section,
