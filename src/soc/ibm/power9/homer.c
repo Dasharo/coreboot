@@ -674,7 +674,7 @@ static void build_pgpe(struct homer_st *homer, struct xip_pgpe_header *pgpe,
 	hdr->aux_controls = 1 << 24;
 }
 
-static void pba_slave_setup_runtime_phase(void)
+static void pba_slave_setup_runtime_phase(uint8_t chip)
 {
 	enum {
 		OCI_MASTER_ID_GPE2     = 0x2,
@@ -720,7 +720,7 @@ static void pba_slave_setup_runtime_phase(void)
 	data |= PPC_BIT(27);                                        // en_slv_fairness
 	data |= PPC_BIT(10);                                        // en_second_wrbuf
 
-	write_scom(PU_PBAMODE_SCOM, data);
+	write_rscom(chip, PU_PBAMODE_SCOM, data);
 
 	/*
 	 * Slave 0 (SGPE STOP).  This is a read/write slave in the event that
@@ -740,7 +740,7 @@ static void pba_slave_setup_runtime_phase(void)
 	data |= PPC_BIT(22);                                         // buf_alloc_c
 	data |= PPC_BIT(19);                                         // buf_alloc_w
 
-	write_scom(PU_PBASLVCTL0_SCOM, data);
+	write_rscom(chip, PU_PBASLVCTL0_SCOM, data);
 
 	/*
 	 * Slave 1 (GPE 1, PPC405 booting).  This is a read/write slave.  Write gathering is
@@ -760,7 +760,7 @@ static void pba_slave_setup_runtime_phase(void)
 	data |= PPC_BIT(22);                                         // buf_alloc_c
 	data |= PPC_BIT(19);                                         // buf_alloc_w
 
-	write_scom(PU_PBASLVCTL1_SCOM, data);
+	write_rscom(chip, PU_PBASLVCTL1_SCOM, data);
 
 	/*
 	 * Slave 2 (PGPE Boot, Pstates/WOF).  This is a read/write slave.  Write gethering is
@@ -781,12 +781,12 @@ static void pba_slave_setup_runtime_phase(void)
 	data |= PPC_BIT(22);                                         // buf_alloc_c
 	data |= PPC_BIT(19);                                         // buf_alloc_w
 
-	write_scom(PU_PBASLVCTL2_SCOM, data);
+	write_rscom(chip, PU_PBASLVCTL2_SCOM, data);
 
 	/* Slave 3 is not modified by this function, because it is owned by SBE */
 }
 
-static void pba_reset(void)
+static void pba_reset(uint8_t chip)
 {
 	long time;
 	/* Stopping Block Copy Download Engine
@@ -794,14 +794,14 @@ static void pba_reset(void)
 		[all] 0
 		[0]   1
 	*/
-	write_scom(0x00068010, PPC_BIT(0));
+	write_rscom(chip, 0x00068010, PPC_BIT(0));
 
 	/* Stopping Block Copy Upload Engine
 	*0x00068015                   // undocumented, PU_BCUE_CTL_SCOM
 		[all] 0
 		[0]   1
 	*/
-	write_scom(0x00068015, PPC_BIT(0));
+	write_rscom(chip, 0x00068015, PPC_BIT(0));
 
 	/* Polling on, to verify that BCDE & BCUE are indeed stopped
 	timeout(256*256us):
@@ -812,15 +812,15 @@ static void pba_reset(void)
 		if both bits are clear: break
 	*/
 	time = wait_us(256*256,
-	               (((read_scom(0x00068012) & PPC_BIT(0)) == 0) &&
-	                ((read_scom(0x00068017) & PPC_BIT(0)) == 0)));
+	               (((read_rscom(chip, 0x00068012) & PPC_BIT(0)) == 0) &&
+	                ((read_rscom(chip, 0x00068017) & PPC_BIT(0)) == 0)));
 
 	if (!time)
 		die("Timed out waiting for stopping of BCDE/BCUE\n");
 
 	/* Clear the BCDE and BCUE stop bits */
-	write_scom(0x00068010, 0);
-	write_scom(0x00068015, 0);
+	write_rscom(chip, 0x00068010, 0);
+	write_rscom(chip, 0x00068015, 0);
 
 	/* Reset each slave and wait for completion
 	timeout(16*1us):
@@ -835,10 +835,10 @@ static void pba_reset(void)
 	*/
 	for (int sl = 0; sl < 3; sl++) {	// Fourth is owned by SBE, do not reset
 		time = wait_us(16,
-		               (write_scom(0x00068001, PPC_BIT(0) | PPC_PLACE(sl, 1, 2)),
-		                (read_scom(0x00068001) & PPC_BIT(4 + sl)) == 0));
+		               (write_rscom(chip, 0x00068001, PPC_BIT(0) | PPC_PLACE(sl, 1, 2)),
+		                (read_rscom(chip, 0x00068001) & PPC_BIT(4 + sl)) == 0));
 
-		if (!time || read_scom(0x00068001) & PPC_BIT(8 + sl))
+		if (!time || read_rscom(chip, 0x00068001) & PPC_BIT(8 + sl))
 			die("Timed out waiting for slave %d reset\n", sl);
 	}
 
@@ -860,28 +860,28 @@ static void pba_reset(void)
 	BRIDGE.PBA.PBAERRRPT0             // 0x0501284C
 	  [all] 0
 	*/
-	write_scom(0x00068013, 0);
-	write_scom(0x00068014, 0);
-	write_scom(0x00068015, 0);
-	write_scom(0x00068016, 0);
-	write_scom(0x00068018, 0);
-	write_scom(0x00068019, 0);
-	write_scom(0x00068026, 0);
-	write_scom(0x0006802A, 0);
-	write_scom(0x00068027, 0);
-	write_scom(0x0006802B, 0);
-	write_scom(0x00068004, 0);
-	write_scom(0x00068005, 0);
-	write_scom(0x00068006, 0);
-	write_scom(0x05012840, 0);
-	write_scom(0x0501284C, 0);
+	write_rscom(chip, 0x00068013, 0);
+	write_rscom(chip, 0x00068014, 0);
+	write_rscom(chip, 0x00068015, 0);
+	write_rscom(chip, 0x00068016, 0);
+	write_rscom(chip, 0x00068018, 0);
+	write_rscom(chip, 0x00068019, 0);
+	write_rscom(chip, 0x00068026, 0);
+	write_rscom(chip, 0x0006802A, 0);
+	write_rscom(chip, 0x00068027, 0);
+	write_rscom(chip, 0x0006802B, 0);
+	write_rscom(chip, 0x00068004, 0);
+	write_rscom(chip, 0x00068005, 0);
+	write_rscom(chip, 0x00068006, 0);
+	write_rscom(chip, 0x05012840, 0);
+	write_rscom(chip, 0x0501284C, 0);
 
 	/* Perform non-zero reset operations
 	BRIDGE.PBA.PBACFG                 // 0x0501284B
 	  [all] 0
 	  [38]  PBACFG_CHSW_DIS_GROUP_SCOPE = 1
 	*/
-	write_scom(0x0501284B, PPC_BIT(38));
+	write_rscom(chip, 0x0501284B, PPC_BIT(38));
 
 	/*
 	*0x00068021                       // Undocumented, PU_PBAXCFG_SCOM
@@ -889,9 +889,9 @@ static void pba_reset(void)
 	  [2]   1   // PBAXCFG_SND_RESET?
 	  [3]   1   // PBAXCFG_RCV_RESET?
 	*/
-	write_scom(PU_PBAXCFG_SCOM, PPC_BIT(2) | PPC_BIT(3));
+	write_rscom(chip, PU_PBAXCFG_SCOM, PPC_BIT(2) | PPC_BIT(3));
 
-	pba_slave_setup_runtime_phase();
+	pba_slave_setup_runtime_phase(chip);
 }
 
 static void stop_gpe_init(struct homer_st *homer)
@@ -1169,8 +1169,8 @@ static void load_occ_image_to_homer(struct homer_st *homer)
 	 */
 	mount_part_from_pnor("OCC", &mdev);
 	/*
-	 * Common OCC area is located right after HOMER image. 0x120000 is the
-	 * size of OCC partition in PNOR, last 0x2000 bytes aren't important?
+	 * 0x120000 is the size of OCC partition in PNOR, last 0x20000 bytes aren't
+	 * important?
 	 */
 	rdev_readat(&mdev.rdev, &homer->occ_host_area, 0, 1 * MiB);
 }
@@ -1408,7 +1408,7 @@ static void pstate_gpe_init(struct homer_st *homer, uint64_t cores)
 	}
 }
 
-static void pm_pba_init(void)
+static void pm_pba_init(uint8_t chip)
 {
 	enum {
 		PU_PBACFG = 0x0501284B,
@@ -1424,9 +1424,9 @@ static void pm_pba_init(void)
 	};
 
 	uint64_t data = 0;
-	/* Assuming all these attributes have zero values */
+	/* These group and chip IDs aren't affected by pump mode */
 	uint8_t attr_pbax_groupid = 0;
-	uint8_t attr_pbax_chipid = 0;
+	uint8_t attr_pbax_chipid = chip;
 	uint8_t attr_pbax_broadcast_vector = 0;
 
 	/* Assuming ATTR_CHIP_EC_FEATURE_HW423589_OPTION1 == true */
@@ -1444,10 +1444,10 @@ static void pm_pba_init(void)
 	write_scom(PU_PBAXCFG_SCOM, data);
 }
 
-static void pm_pstate_gpe_init(struct homer_st *homer, uint64_t cores)
+static void pm_pstate_gpe_init(uint8_t chip, struct homer_st *homer, uint64_t cores)
 {
 	pstate_gpe_init(homer, cores);
-	pm_pba_init();
+	pm_pba_init(chip);
 }
 
 /* Generates host configuration vector and updates the value in HOMER */
@@ -1562,7 +1562,7 @@ static void start_pm_complex(uint8_t chip, struct homer_st *homer, uint64_t core
 	pm_occ_fir_init();
 	pm_pba_fir_init();
 	stop_gpe_init(homer);
-	pm_pstate_gpe_init(homer, cores);
+	pm_pstate_gpe_init(chip, homer, cores);
 
 	check_proc_config(homer);
 	clear_occ_special_wakeups(cores);
@@ -3031,15 +3031,13 @@ static void populate_l3_refresh_scom_reg(uint8_t chip, struct homer_st *homer, u
 	}
 }
 
-static void populate_ncu_rng_bar_scom_reg(struct homer_st *homer)
+static void populate_ncu_rng_bar_scom_reg(uint8_t chip, struct homer_st *homer)
 {
 	enum { NX_RANGE_BAR_ADDR_OFFSET = 0x00000302031D0000 };
 
 	uint8_t ex = 0;
 
-	uint64_t regNcuRngBarData = PROC_BASE_ADDR(/*chip=*/0, /*msel=*/0x3);
-
-	regNcuRngBarData += NX_RANGE_BAR_ADDR_OFFSET;
+	uint64_t data = PROC_BASE_ADDR(chip, /*msel=*/0x3) + NX_RANGE_BAR_ADDR_OFFSET;
 
 	for (ex = 0; ex < MAX_CMES_PER_CHIP; ++ex) {
 		/* Create restore entry for NCU RNG register */
@@ -3048,8 +3046,7 @@ static void populate_ncu_rng_bar_scom_reg(struct homer_st *homer)
 				   | ((ex / 2) << 24)
 				   | ((ex % 2) ? 0x0400 : 0x0000);
 
-		stop_save_scom(homer, scom_addr, regNcuRngBarData,
-			       STOP_SECTION_EQ_SCOM, SCOM_REPLACE);
+		stop_save_scom(homer, scom_addr, data, STOP_SECTION_EQ_SCOM, SCOM_REPLACE);
 	}
 }
 
@@ -3245,7 +3242,7 @@ static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, uint8_t dd
 	/* Update L3 Refresh Timer Control SCOM Registers */
 	populate_l3_refresh_scom_reg(chip, homer, dd);
 	/* Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register */
-	populate_ncu_rng_bar_scom_reg(homer);
+	populate_ncu_rng_bar_scom_reg(chip, homer);
 
 	/* Update flag fields in image headers */
 	((struct sgpe_img_header *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE])->reserve_flags = 0x04000000;
@@ -3255,7 +3252,7 @@ static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, uint8_t dd
 	set_fabric_ids(chip, homer);
 }
 
-static void setup_wakeup_mode(uint64_t cores)
+static void setup_wakeup_mode(uint8_t chip, uint64_t cores)
 {
 	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
 		if (!IS_EC_FUNCTIONAL(i, cores))
@@ -3268,22 +3265,23 @@ static void setup_wakeup_mode(uint64_t cores)
 			[4]	CPPM_CPMMR_RESERVED_2_9	= 1
 		*/
 		/* SCOM2 - OR, 0x200F0108 */
-		write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F0108,
-		                       PPC_BIT(3) | PPC_BIT(4));
+		write_rscom_for_chiplet(chip, EC00_CHIPLET_ID + i, 0x200F0108,
+					PPC_BIT(3) | PPC_BIT(4));
 	}
 }
 
 /* 15.2 set HOMER BAR */
-static void istep_15_2(struct homer_st *homer)
+static void istep_15_2(uint8_t chip, struct homer_st *homer)
 {
-	write_scom(0x05012B00, (uint64_t)homer);
-	write_scom(0x05012B04, (4 * MiB - 1) & ~((uint64_t)MiB - 1));
-	write_scom(0x05012B02, (uint64_t)homer + 8 * 4 * MiB);		// FIXME
-	write_scom(0x05012B06, (8 * MiB - 1) & ~((uint64_t)MiB - 1));
+	write_rscom(chip, 0x05012B00, (uint64_t)homer);
+	write_rscom(chip, 0x05012B04, (4 * MiB - 1) & ~((uint64_t)MiB - 1));
+
+	write_rscom(chip, 0x05012B02, (uint64_t)homer + (8 - chip) * 4 * MiB);		// FIXME
+	write_rscom(chip, 0x05012B06, (8 * MiB - 1) & ~((uint64_t)MiB - 1));
 }
 
 /* 15.3 establish EX chiplet */
-static void istep_15_3(uint64_t cores)
+static void istep_15_3(uint8_t chip, uint64_t cores)
 {
 	const uint64_t group_mask = PPC_BITMASK(3,5);
 
@@ -3311,14 +3309,14 @@ static void istep_15_3(uint64_t cores)
 		if (!IS_EQ_FUNCTIONAL(i, cores))
 			continue;
 
-		if ((read_scom_for_chiplet(chiplet, 0xF0001) & group_mask) == group_mask)
-			scom_and_or_for_chiplet(chiplet, 0xF0001,
-			                        ~(group_mask | PPC_BITMASK(16,23)),
-			                        PPC_BITMASK(19,21));
+		if ((read_rscom_for_chiplet(chip, chiplet, 0xF0001) & group_mask) == group_mask)
+			rscom_and_or_for_chiplet(chip, chiplet, 0xF0001,
+			                         ~(group_mask | PPC_BITMASK(16,23)),
+			                          PPC_BITMASK(19,21));
 	}
 
 	/*  Writing OCC CCSR */
-	write_scom(0x0006C090, cores);
+	write_rscom(chip, 0x0006C090, cores);
 
 	/* Writing OCC QCSR */
 	uint64_t qcsr = 0;
@@ -3326,7 +3324,7 @@ static void istep_15_3(uint64_t cores)
 		if (IS_EX_FUNCTIONAL(i, cores))
 			qcsr |= PPC_BIT(i);
 	}
-	write_scom(0x0006C094, qcsr);
+	write_rscom(chip, 0x0006C094, qcsr);
 }
 
 /*
@@ -3335,7 +3333,7 @@ static void istep_15_3(uint64_t cores)
  * SGPE startup is actually done as part of istep 21.1 after all
  * preparations here to not have to restart it there.
  */
-static void istep_15_4(uint64_t cores)
+static void istep_15_4(uint8_t chip, uint64_t cores)
 {
 	/* Initialize the PFET controllers */
 	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
@@ -3346,7 +3344,8 @@ static void istep_15_4(uint64_t cores)
 				[all] 0
 				[2]   CPPM_CPMMR_RESERVED_2 = 1
 			*/
-			write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F0108, PPC_BIT(2));
+			write_rscom_for_chiplet(chip, EC00_CHIPLET_ID + i, 0x200F0108,
+						PPC_BIT(2));
 
 			/*
 			TP.TPCHIP.NET.PCBSLEC14.PPMC.PPM_COMMON_REGS.PPM_PFDLY        // 0x200F011B
@@ -3354,16 +3353,16 @@ static void istep_15_4(uint64_t cores)
 				[0-3] PPM_PFDLY_POWDN_DLY = 0x9     // 250ns, converted and encoded
 				[4-7] PPM_PFDLY_POWUP_DLY = 0x9
 			*/
-			write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F011B,
-					       PPC_PLACE(0x9, 0, 4) | PPC_PLACE(0x9, 4, 4));
+			write_rscom_for_chiplet(chip, EC00_CHIPLET_ID + i, 0x200F011B,
+						PPC_PLACE(0x9, 0, 4) | PPC_PLACE(0x9, 4, 4));
 			/*
 			TP.TPCHIP.NET.PCBSLEC14.PPMC.PPM_COMMON_REGS.PPM_PFOF         // 0x200F011D
 				[all] 0
 				[0-3] PPM_PFOFF_VDD_VOFF_SEL =  0x8
 				[4-7] PPM_PFOFF_VCS_VOFF_SEL =  0x8
 			*/
-			write_scom_for_chiplet(EC00_CHIPLET_ID + i, 0x200F011D,
-					       PPC_PLACE(0x8, 0, 4) | PPC_PLACE(0x8, 4, 4));
+			write_rscom_for_chiplet(chip, EC00_CHIPLET_ID + i, 0x200F011D,
+						PPC_PLACE(0x8, 0, 4) | PPC_PLACE(0x8, 4, 4));
 		}
 
 		if ((i % 4) == 0 && IS_EQ_FUNCTIONAL(i/4, cores)) {
@@ -3373,21 +3372,21 @@ static void istep_15_4(uint64_t cores)
 				[0-3] PPM_PFDLY_POWDN_DLY = 0x9     // 250ns, converted and encoded
 				[4-7] PPM_PFDLY_POWUP_DLY = 0x9
 			*/
-			write_scom_for_chiplet(EP00_CHIPLET_ID + i/4, 0x100F011B,
-			                       PPC_PLACE(0x9, 0, 4) | PPC_PLACE(0x9, 4, 4));
+			write_rscom_for_chiplet(chip, EP00_CHIPLET_ID + i/4, 0x100F011B,
+						PPC_PLACE(0x9, 0, 4) | PPC_PLACE(0x9, 4, 4));
 			/*
 			TP.TPCHIP.NET.PCBSLEP03.PPMQ.PPM_COMMON_REGS.PPM_PFOF         // 0x100F011D
 				[all] 0
 				[0-3] PPM_PFOFF_VDD_VOFF_SEL =  0x8
 				[4-7] PPM_PFOFF_VCS_VOFF_SEL =  0x8
 			*/
-			write_scom_for_chiplet(EP00_CHIPLET_ID + i/4, 0x100F011D,
-			                       PPC_PLACE(0x8, 0, 4) | PPC_PLACE(0x8, 4, 4));
+			write_rscom_for_chiplet(chip, EP00_CHIPLET_ID + i/4, 0x100F011D,
+						PPC_PLACE(0x8, 0, 4) | PPC_PLACE(0x8, 4, 4));
 		}
 	}
 
 	/* Condition the PBA back to the base boot configuration */
-	pba_reset();
+	pba_reset(chip);
 
 	/*
 	 * TODO: this is tested only if (ATTR_VDM_ENABLED || ATTR_IVRM_ENABLED),
@@ -3397,7 +3396,7 @@ static void istep_15_4(uint64_t cores)
 	/* TP.TPCHIP.TPC.ITR.FMU.KVREF_AND_VMEAS_MODE_STATUS_REG     // 0x01020007
 		if ([16] == 0): die()
 	*/
-	if (!(read_scom(0x01020007) & PPC_BIT(16)))
+	if (!(read_rscom(chip, 0x01020007) & PPC_BIT(16)))
 		die("VDMs/IVRM are enabled but necessary VREF calibration failed\n");
 
 	/* First mask bit 7 in OIMR and then clear bit 7 in OISR
@@ -3408,8 +3407,8 @@ static void istep_15_4(uint64_t cores)
 		[all] 0
 		[7]   OCB_OCI_OISR0_GPE2_ERROR =  1
 	*/
-	write_scom(0x0006C006, PPC_BIT(7));
-	write_scom(0x0006C001, PPC_BIT(7));
+	write_rscom(chip, 0x0006C006, PPC_BIT(7));
+	write_rscom(chip, 0x0006C001, PPC_BIT(7));
 
 	/*
 	 * Setup the SGPE Timer Selects
@@ -3420,14 +3419,14 @@ static void istep_15_4(uint64_t cores)
 		[0-3] GPETSEL_FIT_SEL =       0x1     // FIT - fixed interval timer
 		[4-7] GPETSEL_WATCHDOG_SEL =  0xA
 	 */
-	write_scom(0x00066000, PPC_PLACE(0x1, 0, 4) | PPC_PLACE(0xA, 4, 4));
+	write_rscom(chip, 0x00066000, PPC_PLACE(0x1, 0, 4) | PPC_PLACE(0xA, 4, 4));
 
 	/* Clear error injection bits
 	  *0x0006C18B                         // Undocumented, PU_OCB_OCI_OCCFLG2_CLEAR
 		[all] 0
 		[30]  1       // OCCFLG2_SGPE_HCODE_STOP_REQ_ERR_INJ
 	*/
-	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(30));
+	write_rscom(chip, PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(30));
 }
 
 /*
@@ -3464,7 +3463,10 @@ uint64_t build_homer_image(void *homer_bar)
 	 * not NULL.
 	 */
 	mount_part_from_pnor("HCODE", &mdev);
-	/* First MB of HOMER is unused, we can write OCC image from PNOR there. */
+	/*
+	 * First MB of HOMER is unused at first, we can write OCC image from PNOR there.
+	 * TODO: try putting HCODE somewhere else and load OCC host area right here.
+	 */
 	rdev_readat(&mdev.rdev, hw, 0, 1 * MiB);
 
 	assert(hw->magic == XIP_MAGIC_HW);
@@ -3510,14 +3512,14 @@ uint64_t build_homer_image(void *homer_bar)
 		fill_homer_for_chip(chip, &homer[chip], dd, cores[chip]);
 	}
 
-	setup_wakeup_mode(cores[0]);
+	setup_wakeup_mode(/*chip=*/0, cores[0]);
 
 	report_istep(15,2);
-	istep_15_2(&homer[0]);
+	istep_15_2(/*chip=*/0, &homer[0]);
 	report_istep(15,3);
-	istep_15_3(cores[0]);
+	istep_15_3(/*chip=*/0, cores[0]);
 	report_istep(15,4);
-	istep_15_4(cores[0]);
+	istep_15_4(/*chip=*/0, cores[0]);
 
 	/* Boot OCC here and activate SGPE at the same time */
 	/* TODO: initialize OCC for the second CPU when it's present */
