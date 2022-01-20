@@ -73,8 +73,8 @@ static void SetupRcvrPattern(struct MCTStatStruc *p_mct_stat,
 
 	buf_a = (u32 *)(((u32)buffer + 0x10) & (0xfffffff0));
 	buf_b = buf_a + 32; //??
-	p_A = (u32 *)SetupDqsPattern_1PassB(pass);
-	p_B = (u32 *)SetupDqsPattern_1PassA(pass);
+	p_A = (u32 *)setup_dqs_pattern_1_pass_b(pass);
+	p_B = (u32 *)setup_dqs_pattern_1_pass_a(pass);
 
 	for (i = 0; i < 16; i++) {
 		buf_a[i] = p_A[i];
@@ -89,7 +89,7 @@ static void SetupRcvrPattern(struct MCTStatStruc *p_mct_stat,
 void mct_TrainRcvrEn_D(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 Pass)
 {
-	if (mct_checkNumberOfDqsRcvEn_1Pass(Pass))
+	if (mct_check_number_of_dqs_rcv_en_1_pass(Pass))
 		dqsTrainRcvrEn_SW(p_mct_stat, p_dct_stat, Pass);
 }
 

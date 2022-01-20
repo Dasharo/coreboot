@@ -1705,7 +1705,7 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 	set_nb32(dev, 0xA8 + reg_off, dram_config_misc2);
 	set_nb32(dev, 0x90 + reg_off, dram_config_lo);
 	mct_set_dram_config_hi_d(p_dct_stat, dct, dram_config_hi);
-	mct_ForceAutoPrecharge_D(p_dct_stat, dct);
+	mct_force_auto_precharge_d(p_dct_stat, dct);
 	mct_early_arb_en_d(p_mct_stat, p_dct_stat);
 	mct_hook_after_auto_cfg();
 
@@ -2788,7 +2788,7 @@ static void set_other_timing(struct MCTStatStruc *p_mct_stat,
 	val |= dword << 14;
 	dword = p_dct_stat->trwt_wb; //0x07
 	val |= dword;
-	val = OtherTiming_A_D(p_dct_stat, val);
+	val = other_timing_a_d(p_dct_stat, val);
 	set_nb32(dev, reg, val);
 
 }

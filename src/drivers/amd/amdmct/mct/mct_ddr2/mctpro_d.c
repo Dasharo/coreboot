@@ -20,7 +20,7 @@ u32 procOdtWorkaround(struct DCTStatStruc *p_dct_stat, u32 dct, u32 val)
 }
 
 
-u32 OtherTiming_A_D(struct DCTStatStruc *p_dct_stat, u32 val)
+u32 other_timing_a_d(struct DCTStatStruc *p_dct_stat, u32 val)
 {
 	/* Bug#10695:One MEMCLK Bubble Writes Don't Do X4 X8 Switching Correctly
 	 * Solution: BIOS should set DRAM Timing High[Twrwr] > 00b
@@ -37,7 +37,7 @@ u32 OtherTiming_A_D(struct DCTStatStruc *p_dct_stat, u32 val)
 }
 
 
-void mct_ForceAutoPrecharge_D(struct DCTStatStruc *p_dct_stat, u32 dct)
+void mct_force_auto_precharge_d(struct DCTStatStruc *p_dct_stat, u32 dct)
 {
 	u64 tmp;
 	u32 reg;
@@ -168,7 +168,7 @@ void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *p_mct_stat,
 }
 
 
-u32 Modify_D3CMP(struct DCTStatStruc *p_dct_stat, u32 dct, u32 value)
+u32 modify_d3_cmp(struct DCTStatStruc *p_dct_stat, u32 dct, u32 value)
 {
 	/* Errata#189: Reads To Phy Driver Calibration Register and Phy
 	 *  Predriver Calibration Register Do Not Return Bit 27.

@@ -6,7 +6,7 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-u8 mct_checkNumberOfDqsRcvEn_1Pass(u8 pass)
+u8 mct_check_number_of_dqs_rcv_en_1_pass(u8 pass)
 {
 	u8 ret = 1;
 
@@ -21,12 +21,12 @@ u8 mct_checkNumberOfDqsRcvEn_1Pass(u8 pass)
 	return ret;
 }
 
-u32 SetupDqsPattern_1PassA(u8 pass)
+u32 setup_dqs_pattern_1_pass_a(u8 pass)
 {
 	return (u32) TestPattern1_D;
 }
 
-u32 SetupDqsPattern_1PassB(u8 pass)
+u32 setup_dqs_pattern_1_pass_b(u8 pass)
 {
 	return (u32) TestPattern0_D;
 }
