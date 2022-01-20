@@ -322,7 +322,7 @@ check_member(homer_st, qpmr, 1 * MiB);
 check_member(homer_st, cpmr, 2 * MiB);
 check_member(homer_st, ppmr, 3 * MiB);
 
-void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores);
+void build_parameter_blocks(uint8_t chip, struct homer_st *homer, uint64_t functional_cores);
 void configure_xive(int tgt_core);
 
 #endif /* __SOC_IBM_POWER9_HOMER_H */
