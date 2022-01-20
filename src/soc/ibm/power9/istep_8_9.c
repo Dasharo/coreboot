@@ -151,7 +151,7 @@ static void p9_fbc_ioe_tl_scom(bool is_xbus_active, uint8_t chip)
 	 * Meaning that X1 is present and X0 and X2 aren't.
 	 */
 
-	const uint64_t pb_freq_mhz = powerbus_cfg()->fabric_freq;
+	const uint64_t pb_freq_mhz = powerbus_cfg(chip)->fabric_freq;
 
 	const uint64_t dd2_lo_limit_d = (FREQ_X_MHZ * 10);
 	const uint64_t dd2_lo_limit_n = pb_freq_mhz * 82;
