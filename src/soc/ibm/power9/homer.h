@@ -326,7 +326,7 @@ check_member(homer_st, ppmr, 3 * MiB);
 
 struct voltage_bucket_data;
 
-void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores);
+void build_parameter_blocks(uint8_t chip, struct homer_st *homer, uint64_t functional_cores);
 void configure_xive(int tgt_core);
 const struct voltage_bucket_data * get_voltage_data(void);
 
