@@ -587,8 +587,6 @@ static void wof_init(uint8_t *buf, uint32_t core_count,
 
 	if (rdev_munmap(wof_device, entries))
 		die("Failed to unmap section table of WOF!\n");
-
-	wof_device_unmount();
 }
 
 /* Assumption: no bias is applied to operating points */
