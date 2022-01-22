@@ -1,10 +1,22 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/proc.h>
 #include <console/console.h>
 #include <timer.h>
 
 #include "istep_13_scom.h"
+
+/*
+ * 13.9 mss_ddr_phy_reset: Soft reset of DDR PHY macros
+ *
+ * - Lock DDR DLLs
+ *   - Already configured DDR DLL in scaninit
+ * - Sends Soft DDR Phy reset
+ * - Kick off internal ZQ Cal
+ * - Perform any config that wasn't scanned in (TBD)
+ *   - Nothing known here
+ */
 
 static int test_dll_calib_done(uint8_t chip, int mcs_i, int mca_i, bool *do_workaround)
 {
@@ -206,21 +218,21 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 		[13]  MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE =  0   // recoverable_error (0,1,0)
 		[14]  MCBISTFIRQ_SCOM_FATAL_REG_PE =        0   // checkstop (0,0,0)
 	*/
-	scom_and_or_for_chiplet(id, MCBISTFIRACT0,
-	                        ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
-	                          PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
-	                          PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
-	                        0);
-	scom_and_or_for_chiplet(id, MCBISTFIRACT1,
-	                        ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
-	                          PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
-	                          PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
-	                        PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE));
-	scom_and_or_for_chiplet(id, MCBISTFIRMASK,
-	                        ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
-	                          PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
-	                          PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
-	                        0);
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT0,
+	                         ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
+	                           PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
+	                           PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
+	                         0);
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
+	                         ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
+	                           PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
+	                           PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
+	                         PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE));
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRMASK,
+	                         ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
+	                           PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
+	                           PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
+	                         0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
@@ -314,25 +326,11 @@ if ((dp_mca_read(chip, mcs_ids[mcs_i], dp, mca_i, scom) & PPC_BITMASK(56, 62)) =
 	break; \
 }
 
-/*
- * 13.9 mss_ddr_phy_reset: Soft reset of DDR PHY macros
- *
- * - Lock DDR DLLs
- *   - Already configured DDR DLL in scaninit
- * - Sends Soft DDR Phy reset
- * - Kick off internal ZQ Cal
- * - Perform any config that wasn't scanned in (TBD)
- *   - Nothing known here
- */
-void istep_13_9(void)
+static void mss_ddr_phy_reset(uint8_t chip)
 {
-	printk(BIOS_EMERG, "starting istep 13.9\n");
 	int mcs_i, mca_i, dp;
-	uint8_t chip = 0; // TODO: support second CPU
 	long time;
 	bool need_dll_workaround;
-
-	report_istep(13,9);
 
 	/*
 	 * Most of this istep consists of:
@@ -800,6 +798,19 @@ void istep_13_9(void)
 		/* FIR */
 		check_during_phy_reset(chip, mcs_i);
 		fir_unmask(chip, mcs_i);
+	}
+}
+
+void istep_13_9(uint8_t chips)
+{
+	uint8_t chip;
+
+	printk(BIOS_EMERG, "starting istep 13.9\n");
+	report_istep(13,9);
+
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			mss_ddr_phy_reset(chip);
 	}
 
 	printk(BIOS_EMERG, "ending istep 13.9\n");
