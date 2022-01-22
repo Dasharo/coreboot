@@ -7,6 +7,16 @@
 
 #include "istep_13_scom.h"
 
+/*
+ * 13.6 mem_startclocks: Start clocks on MBA/MCAs
+ *
+ * a) p9_mem_startclocks.C (proc chip)
+ *    - This step is a no-op on cumulus
+ *    - This step is a no-op if memory is running in synchronous mode since the
+ *      MCAs are using the nest PLL, HWP detect and exits
+ *    - Drop fences and tholds on MBA/MCAs to start the functional clocks
+ */
+
 static inline void p9_mem_startclocks_cplt_ctrl_action_function(chiplet_id_t id, uint64_t pg)
 {
 	// Drop partial good fences
@@ -228,24 +238,10 @@ static void p9_sbe_common_configure_chiplet_FIR(chiplet_id_t id)
 	write_scom_for_chiplet(id, MCSLOW_FIR_MASK, 0);
 }
 
-/*
- * 13.6 mem_startclocks: Start clocks on MBA/MCAs
- *
- * a) p9_mem_startclocks.C (proc chip)
- *    - This step is a no-op on cumulus
- *    - This step is a no-op if memory is running in synchronous mode since the
- *      MCAs are using the nest PLL, HWP detect and exits
- *    - Drop fences and tholds on MBA/MCAs to start the functional clocks
- */
-void istep_13_6(void)
+static void mem_startclocks(void)
 {
-	printk(BIOS_EMERG, "starting istep 13.6\n");
 	int i;
 	uint16_t pg[MCS_PER_PROC];
-
-	report_istep(13,6);
-
-	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
 
 	/* TODO: update for second CPU */
 	mvpd_get_mcs_pg(/*chip=*/0, pg);
@@ -318,6 +314,17 @@ void istep_13_6(void)
 			                        ~(PPC_BITMASK(3,5) | PPC_BITMASK(16,23)),
 			                        PPC_BIT(4) | PPC_BITMASK(19,21));
 	}
+
+}
+
+void istep_13_6(void)
+{
+	printk(BIOS_EMERG, "starting istep 13.6\n");
+	report_istep(13,6);
+
+	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
+
+	mem_startclocks();
 
 	printk(BIOS_EMERG, "ending istep 13.6\n");
 }
