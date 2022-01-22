@@ -402,7 +402,7 @@ void main(void)
 	report_istep(13,12);	// optional, not yet implemented
 	istep_13_13(chips);
 
-	istep_14_1();
+	istep_14_1(chips);
 	istep_14_2();
 	istep_14_3(chips, pci_info);
 	report_istep(14,4);	// no-op

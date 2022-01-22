@@ -1,12 +1,41 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/spr.h>
 #include <console/console.h>
 #include <timer.h>
 
 #include "istep_13_scom.h"
 #include "mcbist.h"
+
+/*
+ * 14.1 mss_memdiag: Mainstore Pattern Testing
+ *
+ * - The following step documents the generalities of this step
+ *   - In FW PRD will control mem diags via interrupts. It doesn't use
+ *     mss_memdiags.C directly but the HWP subroutines
+ *   - In cronus it will execute mss_memdiags.C directly
+ * b) p9_mss_memdiags.C (mcbist)--Nimbus
+ * c) p9_mss_memdiags.C (mba) -- Cumulus
+ *    - Prior to running this procedure will apply known DQ bad bits to prevent
+ *      them from participating in training. This information is extracted from
+ *      the bad DQ attribute and applied to Hardware
+ *    - Nimbus uses the mcbist engine
+ *      - Still supports superfast read/init/scrub
+ *    - Cumulus/Centaur uses the scrub engine
+ *    - Modes:
+ *      - Minimal: Write-only with 0's
+ *      - Standard: Write of 0's followed by a Read
+ *      - Medium: Write-followed by Read, 4 patterns, last of 0's
+ *      - Max: Write-followed by Read, 9 patterns, last of 0's
+ *    - Run on the host
+ *    - This procedure will update the bad DQ attribute for each dimm based on
+ *      its findings
+ *    - At the end of this procedure sets FIR masks correctly for runtime
+ *      analysis
+ *    - All subsequent repairs are considered runtime issues
+ */
 
 static void fir_unmask(uint8_t chip, int mcs_i)
 {
@@ -17,8 +46,8 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	MC01.MCBIST.MBA_SCOMFIR.MCBISTFIRACT1
 		  [3]   MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC =  0 // checkstop (0,0,0)
 	*/
-	scom_and_or_for_chiplet(id, MCBISTFIRACT1,
-	                        ~PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC), 0);
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
+	                         ~PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC), 0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		uint64_t val;
@@ -252,11 +281,11 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBSA0Q
 	 * [0-37] MCBSA0Q_CFG_START_ADDR_0
 	 */
-	write_scom_for_chiplet(id, MCBSA0Q, 0);
+	write_rscom_for_chiplet(chip, id, MCBSA0Q, 0);
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBEA0Q
 	 * [0-37] MCBSA0Q_CFG_END_ADDR_0
 	 */
-	write_scom_for_chiplet(id, MCBEA0Q, PPC_BITMASK(3, 37));
+	write_rscom_for_chiplet(chip, id, MCBEA0Q, PPC_BITMASK(3, 37));
 
 	/* Hostboot stops MCBIST engine, die() if it is already started instead */
 	/* TODO: check all bits (MCBIST was ever started) or just "in progress"? */
@@ -265,7 +294,7 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * [1] MCB_CNTLSTATQ_MCB_DONE
 	 * [2] MCB_CNTLSTATQ_MCB_FAIL
 	 */
-	if ((val = read_scom_for_chiplet(id, MCB_CNTLSTATQ)) != 0)
+	if ((val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ)) != 0)
 		die("MCBIST started already (%#16.16llx), this shouldn't happen\n", val);
 
 	/*
@@ -275,10 +304,10 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * - MBS Memory Scrub/Read Error Count Register 1 - MC01.MCBIST.MBA_SCOMFIR.MBSEC1Q
 	 * - MCBIST Fault Isolation Register - MC01.MCBIST.MBA_SCOMFIR.MCBISTFIRQ
 	 */
-	write_scom_for_chiplet(id, MCBSTATQ, 0);
-	write_scom_for_chiplet(id, MBSEC0Q, 0);
-	write_scom_for_chiplet(id, MBSEC1Q, 0);
-	write_scom_for_chiplet(id, MCBISTFIR, 0);
+	write_rscom_for_chiplet(chip, id, MCBSTATQ, 0);
+	write_rscom_for_chiplet(chip, id, MBSEC0Q, 0);
+	write_rscom_for_chiplet(chip, id, MBSEC1Q, 0);
+	write_rscom_for_chiplet(chip, id, MCBISTFIR, 0);
 
 	/* Enable FIFO mode */
 	set_fifo_mode(chip, mcs_i, 1);
@@ -296,9 +325,9 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * [10]  MCBAGRAQ_CFG_MAINT_ADDR_MODE_EN =            1
 	 * [12]  MCBAGRAQ_CFG_MAINT_DETECT_SRANK_BOUNDARIES = 1
 	 */
-	write_scom_for_chiplet(id, MCBAGRAQ,
-	                       PPC_BIT(MCBAGRAQ_CFG_MAINT_ADDR_MODE_EN) |
-	                       PPC_BIT(MCBAGRAQ_CFG_MAINT_DETECT_SRANK_BOUNDARIES));
+	write_rscom_for_chiplet(chip, id, MCBAGRAQ,
+	                        PPC_BIT(MCBAGRAQ_CFG_MAINT_ADDR_MODE_EN) |
+	                        PPC_BIT(MCBAGRAQ_CFG_MAINT_DETECT_SRANK_BOUNDARIES));
 
 	/*
 	 * Configure MCBIST
@@ -321,16 +350,16 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * [57-58] MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE = 0 for patterns, 0b10 for scrub
 	 * [63]    MCBCFGQ_CFG_ENABLE_HOST_ATTN =    see above
 	 */
-	write_scom_for_chiplet(id, MCBCFGQ,
-	                       PPC_PLACE(0x2, MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE,
-	                                 MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE_LEN));
+	write_rscom_for_chiplet(chip, id, MCBCFGQ,
+	                        PPC_PLACE(0x2, MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE,
+	                                  MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE_LEN));
 
 	/*
 	 * This sets up memory parameters, mostly gaps between commands. For as fast
 	 * as possible, gaps of 0 are configured here.
 	 */
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBPARMQ */
-	write_scom_for_chiplet(id, MCBPARMQ, 0);
+	write_rscom_for_chiplet(chip, id, MCBPARMQ, 0);
 
 	/*
 	 * Steps done from this point should be moved out of this function, they
@@ -341,7 +370,7 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	/* Data pattern: 8 data registers + 1 ECC register */
 	/* TODO: different patterns can be used */
 	for (i = 0; i < 9; i++) {
-		write_scom_for_chiplet(id, MCBFD0Q + i, patterns[0][i]);
+		write_rscom_for_chiplet(chip, id, MCBFD0Q + i, patterns[0][i]);
 	}
 
 	/* TODO: random seeds */
@@ -364,9 +393,9 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * inverting.
 	 */
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBDRCRQ */
-	write_scom_for_chiplet(id, MCBDRCRQ, 0);
+	write_rscom_for_chiplet(chip, id, MCBDRCRQ, 0);
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBDRSRQ */
-	write_scom_for_chiplet(id, MCBDRSRQ, 0);
+	write_rscom_for_chiplet(chip, id, MCBDRSRQ, 0);
 
 	/*
 	 * The following step may be done just once, as long as the same set of
@@ -394,48 +423,18 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * [56]   MBSTRQ_CFG_NCE_INTER_SYMBOL_COUNT_ENABLE  } counts all NCE
 	 * [57]   MBSTRQ_CFG_NCE_HARD_SYMBOL_COUNT_ENABLE  /
 	 */
-	write_scom_for_chiplet(id, MBSTRQ, PPC_BITMASK(0, 31) |
-	                       PPC_BIT(MBSTRQ_CFG_PAUSE_ON_MPE) |
-	                       PPC_BIT(MBSTRQ_CFG_PAUSE_ON_UE) |
-	                       PPC_BIT(MBSTRQ_CFG_PAUSE_ON_AUE) |
-	                       PPC_BIT(MBSTRQ_CFG_NCE_SOFT_SYMBOL_COUNT_ENABLE) |
-	                       PPC_BIT(MBSTRQ_CFG_NCE_INTER_SYMBOL_COUNT_ENABLE) |
-	                       PPC_BIT(MBSTRQ_CFG_NCE_HARD_SYMBOL_COUNT_ENABLE));
+	write_rscom_for_chiplet(chip, id, MBSTRQ, PPC_BITMASK(0, 31) |
+	                        PPC_BIT(MBSTRQ_CFG_PAUSE_ON_MPE) |
+	                        PPC_BIT(MBSTRQ_CFG_PAUSE_ON_UE) |
+	                        PPC_BIT(MBSTRQ_CFG_PAUSE_ON_AUE) |
+	                        PPC_BIT(MBSTRQ_CFG_NCE_SOFT_SYMBOL_COUNT_ENABLE) |
+	                        PPC_BIT(MBSTRQ_CFG_NCE_INTER_SYMBOL_COUNT_ENABLE) |
+	                        PPC_BIT(MBSTRQ_CFG_NCE_HARD_SYMBOL_COUNT_ENABLE));
 }
 
-/*
- * 14.1 mss_memdiag: Mainstore Pattern Testing
- *
- * - The following step documents the generalities of this step
- *   - In FW PRD will control mem diags via interrupts. It doesn't use
- *     mss_memdiags.C directly but the HWP subroutines
- *   - In cronus it will execute mss_memdiags.C directly
- * b) p9_mss_memdiags.C (mcbist)--Nimbus
- * c) p9_mss_memdiags.C (mba) -- Cumulus
- *    - Prior to running this procedure will apply known DQ bad bits to prevent
- *      them from participating in training. This information is extracted from
- *      the bad DQ attribute and applied to Hardware
- *    - Nimbus uses the mcbist engine
- *      - Still supports superfast read/init/scrub
- *    - Cumulus/Centaur uses the scrub engine
- *    - Modes:
- *      - Minimal: Write-only with 0's
- *      - Standard: Write of 0's followed by a Read
- *      - Medium: Write-followed by Read, 4 patterns, last of 0's
- *      - Max: Write-followed by Read, 9 patterns, last of 0's
- *    - Run on the host
- *    - This procedure will update the bad DQ attribute for each dimm based on
- *      its findings
- *    - At the end of this procedure sets FIR masks correctly for runtime
- *      analysis
- *    - All subsequent repairs are considered runtime issues
- */
-void istep_14_1(void)
+static void mss_memdiag(uint8_t chip)
 {
 	int mcs_i, mca_i;
-	uint8_t chip = 0; // TODO: support second CPU
-	printk(BIOS_EMERG, "starting istep 14.1\n");
-	report_istep(14,1);
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		if (!mem_data.mcs[mcs_i].functional)
@@ -526,7 +525,7 @@ void istep_14_1(void)
 		/* TODO: dump error/status registers on failure */
 		if (!time)
 			die("MCBIST%d times out (%#16.16llx)\n", mcs_i,
-			    read_scom_for_chiplet(mcs_ids[mcs_i], MCB_CNTLSTATQ));
+			    read_rscom_for_chiplet(chip, mcs_ids[mcs_i], MCB_CNTLSTATQ));
 
 		total_time += time;
 		printk(BIOS_ERR, "MCBIST%d took %ld us\n", mcs_i, total_time);
@@ -536,6 +535,19 @@ void istep_14_1(void)
 
 		/* Turn off FIFO mode to improve performance. */
 		set_fifo_mode(chip, mcs_i, 0);
+	}
+}
+
+void istep_14_1(uint8_t chips)
+{
+	uint8_t chip;
+
+	printk(BIOS_EMERG, "starting istep 14.1\n");
+	report_istep(14,1);
+
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			mss_memdiag(chip);
 	}
 
 	printk(BIOS_EMERG, "ending istep 14.1\n");
