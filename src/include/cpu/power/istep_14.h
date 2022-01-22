@@ -7,7 +7,7 @@
 
 struct pci_info;
 
-void istep_14_2(void);
+void istep_14_2(uint8_t chips);
 void istep_14_3(uint8_t chips, const struct pci_info *pci_info);
 
 #endif /* CPU_PPC64_ISTEP14_H */
