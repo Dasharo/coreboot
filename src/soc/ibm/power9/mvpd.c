@@ -402,6 +402,27 @@ static const uint8_t *mvpd_get_keyword(uint8_t cpu, const char *record_name,
 	return kwd;
 }
 
+void mvpd_get_mcs_pg(uint8_t chip, uint16_t *pg)
+{
+	enum {
+		VPD_CP00_PG_HDR_LENGTH   = 1,
+		VPD_CP00_PG_DATA_LENGTH  = 128,
+		VPD_CP00_PG_DATA_ENTRIES = VPD_CP00_PG_DATA_LENGTH / 2,
+	};
+
+	uint8_t raw_pg_data[VPD_CP00_PG_HDR_LENGTH + VPD_CP00_PG_DATA_LENGTH];
+	uint16_t pg_data[VPD_CP00_PG_DATA_ENTRIES];
+	uint32_t size = sizeof(raw_pg_data);
+
+	if (!mvpd_extract_keyword(chip, "CP00", "PG", raw_pg_data, &size))
+		die("Failed to read CPU%d/MVPD/CP00/PG", chip);
+
+	memcpy(pg_data, raw_pg_data + VPD_CP00_PG_HDR_LENGTH, sizeof(pg_data));
+
+	pg[0] = pg_data[MC01_CHIPLET_ID];
+	pg[1] = pg_data[MC23_CHIPLET_ID];
+}
+
 bool mvpd_extract_keyword(uint8_t chip, const char *record_name,
 			  const char *kwd_name, uint8_t *buf, uint32_t *size)
 {
