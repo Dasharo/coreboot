@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/proc.h>
 #include <console/console.h>
 
 #include "istep_13_scom.h"
@@ -17,7 +18,7 @@
  *    - Performs PLL checking
  */
 
-static void mem_pll_setup(void)
+static void mem_pll_setup(uint8_t chip)
 {
 	int i;
 
@@ -28,8 +29,8 @@ static void mem_pll_setup(void)
 		  [all] 1
 		  [2]   CLK_PDLY_BYPASS_EN =  0
 		*/
-		write_scom_for_chiplet(mcs_ids[i], PCBSLMC01_NET_CTRL1_WAND,
-		                       ~PPC_BIT(PCBSLMC01_NET_CTRL1_CLK_PDLY_BYPASS_EN));
+		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL1_WAND,
+		                        ~PPC_BIT(PCBSLMC01_NET_CTRL1_CLK_PDLY_BYPASS_EN));
 
 		// Drop DCC bypass of DCC logic
 		/*
@@ -37,8 +38,8 @@ static void mem_pll_setup(void)
 		  [all] 1
 		  [1]   CLK_DCC_BYPASS_EN =   0
 		*/
-		write_scom_for_chiplet(mcs_ids[i], PCBSLMC01_NET_CTRL1_WAND,
-		                       ~PPC_BIT(PCBSLMC01_NET_CTRL1_CLK_DCC_BYPASS_EN));
+		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL1_WAND,
+		                        ~PPC_BIT(PCBSLMC01_NET_CTRL1_CLK_DCC_BYPASS_EN));
 
 		// ATTR_NEST_MEM_X_O_PCI_BYPASS is set to 0 in talos.xml.
 		// > if (ATTR_NEST_MEM_X_O_PCI_BYPASS == 0)
@@ -49,8 +50,8 @@ static void mem_pll_setup(void)
 		  [all] 1
 		  [3]   PLL_TEST_EN = 0
 		*/
-		write_scom_for_chiplet(mcs_ids[i], PCBSLMC01_NET_CTRL0_WAND,
-		                       ~PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_TEST_EN));
+		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WAND,
+		                        ~PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_TEST_EN));
 
 		// Drop PLL reset
 		/*
@@ -58,8 +59,8 @@ static void mem_pll_setup(void)
 		  [all] 1
 		  [4]   PLL_RESET =   0
 		*/
-		write_scom_for_chiplet(mcs_ids[i], PCBSLMC01_NET_CTRL0_WAND,
-		                       ~PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_RESET));
+		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WAND,
+		                        ~PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_RESET));
 
 		/*
 		 * TODO: This is how Hosboot does it, maybe it would be better to use
@@ -74,7 +75,8 @@ static void mem_pll_setup(void)
 		TP.TPCHIP.NET.PCBSLMC01.PLL_LOCK_REG
 		assert([0] (reserved) == 1)
 		*/
-		if (!(read_scom_for_chiplet(mcs_ids[i], PCBSLMC01_PLL_LOCK_REG) & PPC_BIT(0)))
+		if (!(read_rscom_for_chiplet(chip, mcs_ids[i],
+		                             PCBSLMC01_PLL_LOCK_REG) & PPC_BIT(0)))
 			die("MCS%d PLL not locked\n", i);
 
 		// Drop PLL Bypass
@@ -83,7 +85,7 @@ static void mem_pll_setup(void)
 		  [all] 1
 		  [5]   PLL_BYPASS =  0
 		*/
-		write_scom_for_chiplet(mcs_ids[i], PCBSLMC01_NET_CTRL0_WAND,
+		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WAND,
 		                       ~PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_BYPASS));
 
 		// Set scan ratio to 4:1
@@ -91,9 +93,10 @@ static void mem_pll_setup(void)
 		TP.TCMC01.MCSLOW.OPCG_ALIGN
 		  [47-51] SCAN_RATIO =  3           // 4:1
 		*/
-		scom_and_or_for_chiplet(mcs_ids[i], MCSLOW_OPCG_ALIGN, ~PPC_BITMASK(47,51),
-		                        PPC_PLACE(3, MCSLOW_OPCG_ALIGN_SCAN_RATIO,
-		                                  MCSLOW_OPCG_ALIGN_SCAN_RATIO_LEN));
+		rscom_and_or_for_chiplet(chip, mcs_ids[i], MCSLOW_OPCG_ALIGN,
+		                         ~PPC_BITMASK(47,51),
+		                         PPC_PLACE(3, MCSLOW_OPCG_ALIGN_SCAN_RATIO,
+		                                   MCSLOW_OPCG_ALIGN_SCAN_RATIO_LEN));
 
 		// > end if
 
@@ -102,26 +105,31 @@ static void mem_pll_setup(void)
 		TP.TPCHIP.NET.PCBSLMC01.ERROR_REG
 		  [all] 1                 // Write 1 to clear
 		*/
-		write_scom_for_chiplet(mcs_ids[i], PCBSLMC01_ERROR_REG, ~0);
+		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_ERROR_REG, ~0);
 
 		// Unmask PLL unlock error in PCB slave
 		/*
 		TP.TPCHIP.NET.PCBSLMC01.SLAVE_CONFIG_REG
 		  [12]  (part of) ERROR_MASK =  0
 		*/
-		scom_and_for_chiplet(mcs_ids[i], PCBSLMC01_SLAVE_CONFIG_REG, ~PPC_BIT(12));
+		rscom_and_for_chiplet(chip, mcs_ids[i], PCBSLMC01_SLAVE_CONFIG_REG,
+		                      ~PPC_BIT(12));
 	}
 }
 
-void istep_13_4(void)
+void istep_13_4(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 13.4\n");
+	uint8_t chip;
 
+	printk(BIOS_EMERG, "starting istep 13.4\n");
 	report_istep(13,4);
 
 	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
 
-	mem_pll_setup();
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			mem_pll_setup(chip);
+	}
 
 	printk(BIOS_EMERG, "ending istep 13.4\n");
 }

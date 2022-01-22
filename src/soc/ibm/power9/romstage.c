@@ -391,7 +391,7 @@ void main(void)
 	report_istep(13,1);	// no-op
 	istep_13_2(chips);
 	istep_13_3(chips);
-	istep_13_4();
+	istep_13_4(chips);
 	report_istep(13,5);	// no-op
 	istep_13_6();
 	report_istep(13,7);	// no-op
