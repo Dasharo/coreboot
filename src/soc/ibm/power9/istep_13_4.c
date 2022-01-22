@@ -16,14 +16,10 @@
  *      - Moved PLL out of bypass (just DDR)
  *    - Performs PLL checking
  */
-void istep_13_4(void)
+
+static void mem_pll_setup(void)
 {
-	printk(BIOS_EMERG, "starting istep 13.4\n");
 	int i;
-
-	report_istep(13,4);
-
-	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
 
 	for (i = 0; i < MCS_PER_PROC; i++) {
 		// Drop PLDY bypass of Progdelay logic
@@ -115,6 +111,17 @@ void istep_13_4(void)
 		*/
 		scom_and_for_chiplet(mcs_ids[i], PCBSLMC01_SLAVE_CONFIG_REG, ~PPC_BIT(12));
 	}
+}
+
+void istep_13_4(void)
+{
+	printk(BIOS_EMERG, "starting istep 13.4\n");
+
+	report_istep(13,4);
+
+	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
+
+	mem_pll_setup();
 
 	printk(BIOS_EMERG, "ending istep 13.4\n");
 }
