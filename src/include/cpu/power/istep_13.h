@@ -301,7 +301,7 @@ void istep_13_3(uint8_t chips);
 void istep_13_4(uint8_t chips);
 void istep_13_6(uint8_t chips);
 void istep_13_8(uint8_t chips);	// TODO: takes MSS data from 7.4
-void istep_13_9(void);
+void istep_13_9(uint8_t chips);
 void istep_13_10(void);
 void istep_13_11(void);
 void istep_13_13(void);
