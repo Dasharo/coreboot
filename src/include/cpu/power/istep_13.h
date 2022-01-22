@@ -305,5 +305,5 @@ void istep_13_9(uint8_t chips);
 void istep_13_10(uint8_t chips);
 void istep_13_11(uint8_t chips);
 void istep_13_13(uint8_t chips);
-void istep_14_1(void);
+void istep_14_1(uint8_t chips);
 void istep_14_5(void);
