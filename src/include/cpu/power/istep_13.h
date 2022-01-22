@@ -157,9 +157,8 @@ static inline void delay_nck(uint64_t nck)
 	udelay(nck_to_us(nck));
 }
 
-/* TODO: discover which MCAs are used on second MCS (0,1,6,7? 0,1,4,5?) */
 /* TODO: consider non-RMW variants */
-static inline void mca_and_or(chiplet_id_t mcs, int mca, uint64_t scom,
+static inline void mca_and_or(uint8_t chip, chiplet_id_t mcs, int mca, uint64_t scom,
                               uint64_t and, uint64_t or)
 {
 	/*
@@ -168,35 +167,37 @@ static inline void mca_and_or(chiplet_id_t mcs, int mca, uint64_t scom,
 	 */
 	unsigned mul = (scom & PPC_BIT(0) ||
 	                (scom & 0xFFFFF000) == 0x07011000) ? 0x400 : 0x40;
-	scom_and_or_for_chiplet(mcs, scom + mca * mul, and, or);
+	rscom_and_or_for_chiplet(chip, mcs, scom + mca * mul, and, or);
 }
 
-static inline void dp_mca_and_or(chiplet_id_t mcs, int dp, int mca,
+static inline void dp_mca_and_or(uint8_t chip, chiplet_id_t mcs, int dp, int mca,
                                  uint64_t scom, uint64_t and, uint64_t or)
 {
-	mca_and_or(mcs, mca, scom + dp * 0x40000000000, and, or);
+	mca_and_or(chip, mcs, mca, scom + dp * 0x40000000000, and, or);
 }
 
-static inline uint64_t mca_read(chiplet_id_t mcs, int mca, uint64_t scom)
+static inline uint64_t mca_read(uint8_t chip, chiplet_id_t mcs, int mca, uint64_t scom)
 {
 	/* Indirect registers have different stride than the direct ones in
 	 * general, except for (only?) direct PHY registers. */
 	unsigned mul = (scom & PPC_BIT(0) ||
 	                (scom & 0xFFFFF000) == 0x07011000) ? 0x400 : 0x40;
-	return read_scom_for_chiplet(mcs, scom + mca * mul);
+	return read_rscom_for_chiplet(chip, mcs, scom + mca * mul);
 }
 
-static inline void mca_write(chiplet_id_t mcs, int mca, uint64_t scom, uint64_t val)
+static inline void mca_write(uint8_t chip, chiplet_id_t mcs, int mca, uint64_t scom,
+			     uint64_t val)
 {
 	/* Indirect registers have different stride than the direct ones in
 	 * general, except for (only?) direct PHY registers. */
 	unsigned mul = (scom & PPC_BIT(0) ||
 	                (scom & 0xFFFFF000) == 0x07011000) ? 0x400 : 0x40;
-	write_scom_for_chiplet(mcs, scom + mca * mul, val);
+	write_rscom_for_chiplet(chip, mcs, scom + mca * mul, val);
 }
-static inline uint64_t dp_mca_read(chiplet_id_t mcs, int dp, int mca, uint64_t scom)
+static inline uint64_t dp_mca_read(uint8_t chip, chiplet_id_t mcs, int dp, int mca,
+				   uint64_t scom)
 {
-	return mca_read(mcs, mca, scom + dp * 0x40000000000);
+	return mca_read(chip, mcs, mca, scom + dp * 0x40000000000);
 }
 
 enum rank_selection {
@@ -224,13 +225,13 @@ enum cal_config {
 	CAL_CUSTOM_WR =		PPC_BIT(57)
 };
 
-void ccs_add_instruction(chiplet_id_t id, mrs_cmd_t mrs, uint8_t csn,
+void ccs_add_instruction(uint8_t chip, chiplet_id_t id, mrs_cmd_t mrs, uint8_t csn,
                          uint8_t cke, uint16_t idles);
-void ccs_add_mrs(chiplet_id_t id, mrs_cmd_t mrs, enum rank_selection ranks,
+void ccs_add_mrs(uint8_t chip, chiplet_id_t id, mrs_cmd_t mrs, enum rank_selection ranks,
                  int mirror, uint16_t idles);
-void ccs_phy_hw_step(chiplet_id_t id, int mca_i, int rp, enum cal_config conf,
+void ccs_phy_hw_step(uint8_t chip, chiplet_id_t id, int mca_i, int rp, enum cal_config conf,
                      uint64_t step_cycles);
-void ccs_execute(chiplet_id_t id, int mca_i);
+void ccs_execute(uint8_t chip, chiplet_id_t id, int mca_i);
 
 static inline enum ddr4_mr5_rtt_park vpd_to_rtt_park(uint8_t vpd)
 {
@@ -299,7 +300,7 @@ void istep_13_2(uint8_t chips);
 void istep_13_3(uint8_t chips);
 void istep_13_4(uint8_t chips);
 void istep_13_6(uint8_t chips);
-void istep_13_8(void);	// TODO: takes epsilon values from 8.6 and MSS data from 7.4
+void istep_13_8(uint8_t chips);	// TODO: takes MSS data from 7.4
 void istep_13_9(void);
 void istep_13_10(void);
 void istep_13_11(void);
