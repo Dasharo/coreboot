@@ -406,7 +406,7 @@ static void setup_xlate_map(int mcs_i, int mca_i)
 
 }
 
-static void enable_pm(int mcs_i, int mca_i)
+static void enable_pm(uint8_t chip, int mcs_i, int mca_i)
 {
 	const int ATTR_MSS_MRW_POWER_CONTROL_REQUESTED = 0;
 	/*
@@ -431,11 +431,11 @@ static void enable_pm(int mcs_i, int mca_i)
 		[2] MBARPC0Q_CFG_MIN_MAX_DOMAINS_ENABLE = 1
 	*/
 	if (ATTR_MSS_MRW_POWER_CONTROL_REQUESTED)
-		mca_and_or(mcs_ids[mcs_i], mca_i, MBARPC0Q, ~0,
+		mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBARPC0Q, ~0,
 		           PPC_BIT(MBARPC0Q_CFG_MIN_MAX_DOMAINS_ENABLE));
 }
 
-static void apply_mark_store(int mcs_i, int mca_i)
+static void apply_mark_store(uint8_t chip, int mcs_i, int mca_i)
 {
 	/*
 	 * FIXME: where do the values written to MVPD come from? They are all 0s in
@@ -452,12 +452,12 @@ static void apply_mark_store(int mcs_i, int mca_i)
 		  [all]   0
 		  [0-22]  from ATTR_MSS_MVPD_FWMS
 		*/
-		mca_and_or(mcs_ids[mcs_i], mca_i, FWMS0 + i,
+		mca_and_or(chip, mcs_ids[mcs_i], mca_i, FWMS0 + i,
 		           0, ATTR_MSS_MVPD_FWMS[i]);
 	}
 }
 
-static void fir_unmask(int mcs_i)
+static void fir_unmask(uint8_t chip, int mcs_i)
 {
 
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -502,7 +502,7 @@ static void fir_unmask(int mcs_i)
 		MC01.PORT0.ECC64.SCOM.RECR
 			[26]  MBSECCQ_ENABLE_UE_NOISE_WINDOW =  0
 		*/
-		mca_and_or(id, mca_i, RECR, ~PPC_BIT(MBSECCQ_ENABLE_UE_NOISE_WINDOW), 0);
+		mca_and_or(chip, id, mca_i, RECR, ~PPC_BIT(MBSECCQ_ENABLE_UE_NOISE_WINDOW), 0);
 
 		/*
 		MC01.PORT0.ECC64.SCOM.ACTION0
@@ -569,13 +569,13 @@ static void fir_unmask(int mcs_i)
 		  [58]  FIR_READ_ASYNC_INTERFACE_PARITY_ERROR =   0   // checkstop (0,0,0)
 		  [59]  FIR_READ_ASYNC_INTERFACE_SEQUENCE_ERROR = 0   // checkstop (0,0,0)
 		*/
-		mca_and_or(id, mca_i, ECC_FIR_ACTION0,
+		mca_and_or(chip, id, mca_i, ECC_FIR_ACTION0,
 		           ~(PPC_BIT(ECC_FIR_MAINTENANCE_AUE) |
 		             PPC_BIT(ECC_FIR_MAINTENANCE_IAUE) |
 		             PPC_BITMASK(41, 46) | PPC_BITMASK(48, 59)),
 		           0);
 
-		mca_and_or(id, mca_i, ECC_FIR_ACTION1,
+		mca_and_or(chip, id, mca_i, ECC_FIR_ACTION1,
 		           ~(PPC_BIT(ECC_FIR_MAINTENANCE_AUE) |
 		             PPC_BIT(ECC_FIR_MAINTENANCE_IAUE) |
 		             PPC_BITMASK(41, 46) | PPC_BITMASK(48, 59)),
@@ -585,7 +585,7 @@ static void fir_unmask(int mcs_i)
 		           PPC_BIT(ECC_FIR_SCOM_PARITY_CLASS_RECOVERABLE) |
 		           PPC_BIT(ECC_FIR_WRITE_RMW_CE));
 
-		mca_and_or(id, mca_i, ECC_FIR_MASK,
+		mca_and_or(chip, id, mca_i, ECC_FIR_MASK,
 		           ~(PPC_BIT(ECC_FIR_MAINTENANCE_AUE) |
 		             PPC_BIT(ECC_FIR_MAINTENANCE_IAUE) |
 		             PPC_BITMASK(41, 46) | PPC_BITMASK(48, 59)),
@@ -608,6 +608,7 @@ void istep_13_13(void)
 {
 	printk(BIOS_EMERG, "starting istep 13.13\n");
 	int mcs_i, mca_i;
+	uint8_t chip = 0; // TODO: support second CPU
 
 	report_istep(13,13);
 
@@ -631,12 +632,12 @@ void istep_13_13(void)
 				  // Not sure where this attr comes from or what is its default value. Assume !0 = 1 -> TCE correction enabled
 				  [27]  MBSECCQ_ENABLE_TCE_CORRECTION = !ATTR_MNFG_FLAGS.MNFG_REPAIRS_DISABLED_ATTR
 			*/
-			mca_and_or(id, mca_i, RECR,
+			mca_and_or(chip, id, mca_i, RECR,
 			           ~(PPC_BITMASK(6, 8) | PPC_BIT(MBSECCQ_ENABLE_TCE_CORRECTION)),
 			           PPC_PLACE(1, MBSECCQ_READ_POINTER_DELAY, MBSECCQ_READ_POINTER_DELAY_LEN) |
 			           PPC_BIT(MBSECCQ_ENABLE_TCE_CORRECTION));
 
-			enable_pm(mcs_i, mca_i);
+			enable_pm(chip, mcs_i, mca_i);
 
 			/*
 			 * This was already done after draminit_cke_helper, search for "Per
@@ -647,13 +648,13 @@ void istep_13_13(void)
 			 * MC01.PORT0.SRQ.MBA_FARB5Q
 			 *	  [5]   MBA_FARB5Q_CFG_CCS_ADDR_MUX_SEL = 0
 			 */
-			mca_and_or(id, mca_i, MBA_FARB5Q,
+			mca_and_or(chip, id, mca_i, MBA_FARB5Q,
 			           ~PPC_BIT(MBA_FARB5Q_CFG_CCS_ADDR_MUX_SEL), 0);
 
 			/* MC01.PORT0.SRQ.MBA_FARB0Q
 				  [57]  MBA_FARB0Q_CFG_PORT_FAIL_DISABLE = 0
 			*/
-			mca_and_or(id, mca_i, MBA_FARB0Q,
+			mca_and_or(chip, id, mca_i, MBA_FARB0Q,
 			           ~PPC_BIT(MBA_FARB0Q_CFG_PORT_FAIL_DISABLE), 0);
 
 			/*
@@ -668,13 +669,14 @@ void istep_13_13(void)
 			 * MC01.PORT0.SRQ.MBA_FARB0Q
 			 *	  [55]  MBA_FARB0Q_CFG_OE_ALWAYS_ON = 1
 			 */
-			mca_and_or(id, mca_i, MBA_FARB0Q, ~0,
+			mca_and_or(chip, id, mca_i, MBA_FARB0Q, ~0,
 			           PPC_BIT(MBA_FARB0Q_CFG_OE_ALWAYS_ON));
 
 			/* MC01.PORT0.SRQ.PC.MBAREF0Q
 				  [0] MBAREF0Q_CFG_REFRESH_ENABLE = 1
 			*/
-			mca_and_or(id, mca_i, MBAREF0Q, ~0, PPC_BIT(MBAREF0Q_CFG_REFRESH_ENABLE));
+			mca_and_or(chip, id, mca_i, MBAREF0Q,
+				   ~0, PPC_BIT(MBAREF0Q_CFG_REFRESH_ENABLE));
 
 			/* Enable periodic calibration */
 			/*
@@ -697,7 +699,7 @@ void istep_13_13(void)
 				  [52-59] MBA_CAL3Q_CFG_ALL_PERIODIC_LENGTH =   0xff
 				  // Or simpler: 0xfffffffffffffff0
 			*/
-			mca_and_or(id, mca_i, MBA_CAL3Q, 0, PPC_BITMASK(0, 59));
+			mca_and_or(chip, id, mca_i, MBA_CAL3Q, 0, PPC_BITMASK(0, 59));
 
 			/* Enable read ECC
 			  MC01.PORT0.ECC64.SCOM.RECR                    // 0x07010A0A
@@ -707,15 +709,15 @@ void istep_13_13(void)
 				  // Docs don't describe the encoding, code suggests this inverts data, toggles checks
 				  [30-31] MBSECCQ_DATA_INVERSION =                    3
 			*/
-			mca_and_or(id, mca_i, RECR,
+			mca_and_or(chip, id, mca_i, RECR,
 			           ~(PPC_BITMASK(0, 1) | PPC_BITMASK(29, 31)),
 			           PPC_BIT(MBSECCQ_USE_ADDRESS_HASH) |
 			           PPC_PLACE(3, MBSECCQ_DATA_INVERSION, MBSECCQ_DATA_INVERSION_LEN));
 
-			apply_mark_store(mcs_i, mca_i);
+			apply_mark_store(chip, mcs_i, mca_i);
 		}
 
-		fir_unmask(mcs_i);
+		fir_unmask(chip, mcs_i);
 	}
 
 	printk(BIOS_EMERG, "ending istep 13.13\n");

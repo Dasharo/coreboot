@@ -7,7 +7,7 @@
 
 #include "istep_13_scom.h"
 
-static void setup_and_execute_zqcal(int mcs_i, int mca_i, int d)
+static void setup_and_execute_zqcal(uint8_t chip, int mcs_i, int mca_i, int d)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -41,11 +41,11 @@ static void setup_and_execute_zqcal(int mcs_i, int mca_i, int d)
 	 * CCS and we don't have a timer with enough precision to make it worth the
 	 * effort.
 	 */
-	ccs_add_mrs(id, cmd, ranks, mirrored, tZQinit);
-	ccs_execute(id, mca_i);
+	ccs_add_mrs(chip, id, cmd, ranks, mirrored, tZQinit);
+	ccs_execute(chip, id, mca_i);
 }
 
-static void clear_initial_cal_errors(int mcs_i, int mca_i)
+static void clear_initial_cal_errors(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -61,55 +61,55 @@ static void clear_initial_cal_errors(int mcs_i, int mca_i)
 		IOM0.DDRPHY_DP16_WR_VREF_ERROR1_P0_{0-4},
 			[all] 0
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0, 0, 0);
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_ERROR0_P0_0, 0, 0);
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_STATUS0_P0_0, 0, 0);
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS2_P0_0, 0, 0);
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS0_P0_0, 0, 0);
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0, 0, 0);
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_ERROR0_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_STATUS0_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS2_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS0_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0, 0, 0);
 	}
 
 	/* IOM0.DDRPHY_APB_CONFIG0_P0 =
 		[49]  RESET_ERR_RPT = 1, then 0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_APB_CONFIG0_P0, ~0, PPC_BIT(RESET_ERR_RPT));
-	mca_and_or(id, mca_i, DDRPHY_APB_CONFIG0_P0, ~PPC_BIT(RESET_ERR_RPT), 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_APB_CONFIG0_P0, ~0, PPC_BIT(RESET_ERR_RPT));
+	mca_and_or(chip, id, mca_i, DDRPHY_APB_CONFIG0_P0, ~PPC_BIT(RESET_ERR_RPT), 0);
 
 	/* IOM0.DDRPHY_APB_ERROR_STATUS0_P0 =
 		[all] 0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_APB_ERROR_STATUS0_P0, 0, 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_APB_ERROR_STATUS0_P0, 0, 0);
 
 	/* IOM0.DDRPHY_RC_ERROR_STATUS0_P0 =
 		[all] 0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_RC_ERROR_STATUS0_P0, 0, 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_RC_ERROR_STATUS0_P0, 0, 0);
 
 	/* IOM0.DDRPHY_SEQ_ERROR_STATUS0_P0 =
 		[all] 0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_SEQ_ERROR_STATUS0_P0, 0, 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ERROR_STATUS0_P0, 0, 0);
 
 	/* IOM0.DDRPHY_WC_ERROR_STATUS0_P0 =
 		[all] 0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_WC_ERROR_STATUS0_P0, 0, 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_WC_ERROR_STATUS0_P0, 0, 0);
 
 	/* IOM0.DDRPHY_PC_ERROR_STATUS0_P0 =
 		[all] 0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_ERROR_STATUS0_P0, 0, 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_ERROR_STATUS0_P0, 0, 0);
 
 	/* IOM0.DDRPHY_PC_INIT_CAL_ERROR_P0 =
 		[all] 0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0, 0, 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0, 0, 0);
 
 	/* IOM0.IOM_PHY0_DDRPHY_FIR_REG =
 		[56]  IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2 = 0
 	*/
-	mca_and_or(id, mca_i, IOM_PHY0_DDRPHY_FIR_REG,
+	mca_and_or(chip, id, mca_i, IOM_PHY0_DDRPHY_FIR_REG,
 	           ~PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2), 0);
 }
 
@@ -128,57 +128,58 @@ static void dump_cal_errors(int mcs_i, int mca_i)
 	for (dp = 0; dp < 5; dp++) {
 		printk(BIOS_ERR, "DP %d\n", dp);
 		printk(BIOS_ERR, "\t%#16.16llx - RD_VREF_CAL_ERROR\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0));
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - DQ_BIT_DISABLE_RP0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0));
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - DQS_BIT_DISABLE_RP0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_DQS_BIT_DISABLE_RP0_P0_0));
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_DQS_BIT_DISABLE_RP0_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - WR_ERROR0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_ERROR0_P0_0));
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_WR_ERROR0_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - RD_STATUS0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_RD_STATUS0_P0_0));
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_STATUS0_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - RD_LVL_STATUS2\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS2_P0_0));
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS2_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - RD_LVL_STATUS0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS0_P0_0));
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS0_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - WR_VREF_ERROR0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0));
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - WR_VREF_ERROR1\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0));
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0));
 	}
 
 	printk(BIOS_ERR, "%#16.16llx - APB_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_APB_ERROR_STATUS0_P0));
+	       mca_read(chip, id, mca_i, DDRPHY_APB_ERROR_STATUS0_P0));
 
 	printk(BIOS_ERR, "%#16.16llx - RC_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_RC_ERROR_STATUS0_P0));
+	       mca_read(chip, id, mca_i, DDRPHY_RC_ERROR_STATUS0_P0));
 
 	printk(BIOS_ERR, "%#16.16llx - SEQ_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_SEQ_ERROR_STATUS0_P0));
+	       mca_read(chip, id, mca_i, DDRPHY_SEQ_ERROR_STATUS0_P0));
 
 	printk(BIOS_ERR, "%#16.16llx - WC_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_WC_ERROR_STATUS0_P0));
+	       mca_read(chip, id, mca_i, DDRPHY_WC_ERROR_STATUS0_P0));
 
 	printk(BIOS_ERR, "%#16.16llx - PC_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_PC_ERROR_STATUS0_P0));
+	       mca_read(chip, id, mca_i, DDRPHY_PC_ERROR_STATUS0_P0));
 
 	printk(BIOS_ERR, "%#16.16llx - PC_INIT_CAL_ERROR\n",
-	       mca_read(id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0));
+	       mca_read(chip, id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0));
 
 	/* 0x8000 on success for first rank, 0x4000 for second */
 	printk(BIOS_ERR, "%#16.16llx - PC_INIT_CAL_STATUS\n",
-	       mca_read(id, mca_i, DDRPHY_PC_INIT_CAL_STATUS_P0));
+	       mca_read(chip, id, mca_i, DDRPHY_PC_INIT_CAL_STATUS_P0));
 
 	printk(BIOS_ERR, "%#16.16llx - IOM_PHY0_DDRPHY_FIR_REG\n",
-	       mca_read(id, mca_i, IOM_PHY0_DDRPHY_FIR_REG));
+	       mca_read(chip, id, mca_i, IOM_PHY0_DDRPHY_FIR_REG));
 
 	printk(BIOS_ERR, "%#16.16llx - MBACALFIRQ\n",
-	       mca_read(id, mca_i, MBACALFIR));
+	       mca_read(chip, id, mca_i, MBACALFIR));
 #endif
 }
 
 /* Based on ATTR_MSS_MRW_RESET_DELAY_BEFORE_CAL, by default do it. */
-static void dp16_reset_delay_values(int mcs_i, int mca_i, enum rank_selection ranks_present)
+static void dp16_reset_delay_values(uint8_t chip, int mcs_i, int mca_i,
+				    enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -190,20 +191,24 @@ static void dp16_reset_delay_values(int mcs_i, int mca_i, enum rank_selection ra
 	for (dp = 0; dp < 5; dp++) {
 		/* IOM0.DDRPHY_DP16_DQS_GATE_DELAY_RP0_P0_{0-4} = 0 */
 		if (ranks_present & DIMM0_RANK0)
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DQS_GATE_DELAY_RP0_P0_0, 0, 0);
+			dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DQS_GATE_DELAY_RP0_P0_0,
+			              0, 0);
 		/* IOM0.DDRPHY_DP16_DQS_GATE_DELAY_RP1_P0_{0-4} = 0 */
 		if (ranks_present & DIMM0_RANK1)
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DQS_GATE_DELAY_RP1_P0_0, 0, 0);
+			dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DQS_GATE_DELAY_RP1_P0_0,
+			              0, 0);
 		/* IOM0.DDRPHY_DP16_DQS_GATE_DELAY_RP2_P0_{0-4} = 0 */
 		if (ranks_present & DIMM1_RANK0)
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DQS_GATE_DELAY_RP2_P0_0, 0, 0);
+			dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DQS_GATE_DELAY_RP2_P0_0,
+			              0, 0);
 		/* IOM0.DDRPHY_DP16_DQS_GATE_DELAY_RP3_P0_{0-4} = 0 */
 		if (ranks_present & DIMM1_RANK1)
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DQS_GATE_DELAY_RP3_P0_0, 0, 0);
+			dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DQS_GATE_DELAY_RP3_P0_0,
+			              0, 0);
 	}
 }
 
-static void dqs_align_turn_on_refresh(int mcs_i, int mca_i)
+static void dqs_align_turn_on_refresh(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 
@@ -213,7 +218,7 @@ static void dqs_align_turn_on_refresh(int mcs_i, int mca_i)
 	    [60-63] TRFC_CYCLES = 9             // tRFC = 2^9 = 512 memcycles
 	*/
 	/* See note in seq_reset() in 13.8. This may not be necessary. */
-	mca_and_or(id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM0_P0, ~PPC_BITMASK(60, 63),
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM0_P0, ~PPC_BITMASK(60, 63),
 	           PPC_PLACE(9, TRFC_CYCLES, TRFC_CYCLES_LEN));
 
 	/* IOM0.DDRPHY_PC_INIT_CAL_CONFIG1_P0
@@ -226,7 +231,7 @@ static void dqs_align_turn_on_refresh(int mcs_i, int mca_i)
 	    [55]    CMD_SNOOP_DIS =     0
 	    [57-63] REFRESH_INTERVAL =  0x13    // Worst case: 6.08us for 1866 (max tCK). Must be not more than 7.8us
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_INIT_CAL_CONFIG1_P0,
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_INIT_CAL_CONFIG1_P0,
 	           ~(PPC_BITMASK(48, 55) | PPC_BITMASK(57, 63)),
 	           PPC_PLACE(0xF, REFRESH_COUNT, REFRESH_COUNT_LEN) |
 	           PPC_PLACE(0x3, REFRESH_CONTROL, REFRESH_CONTROL_LEN) |
@@ -234,7 +239,7 @@ static void dqs_align_turn_on_refresh(int mcs_i, int mca_i)
 	           PPC_PLACE(0x13, REFRESH_INTERVAL, REFRESH_INTERVAL_LEN));
 }
 
-static void wr_level_pre(int mcs_i, int mca_i, int rp,
+static void wr_level_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
                          enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -258,7 +263,7 @@ static void wr_level_pre(int mcs_i, int mca_i, int rp,
                            vpd_to_rtt_wr(0),
                            DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
                            mem_data.cwl);
-		ccs_add_mrs(id, mrs, rank, mirrored, tMRD);
+		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMRD);
 
 		/* MR1 =               // redo the rest of the bits
 		  // Write properly encoded RTT_WR value as RTT_NOM
@@ -279,7 +284,7 @@ static void wr_level_pre(int mcs_i, int mca_i, int rp,
 		 * can subtract those. On the other hand, with microsecond precision for
 		 * delays in ccs_execute(), this probably doesn't matter anyway.
 		 */
-		ccs_add_mrs(id, mrs, rank, mirrored, tMOD);
+		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMOD);
 
 		/*
 		 * This block is done after MRS commands in Hostboot, but we do not call
@@ -291,25 +296,29 @@ static void wr_level_pre(int mcs_i, int mca_i, int rp,
 			/* IOM0.DDRPHY_SEQ_ODT_WR_CONFIG0_P0 =
 			  [48] = 1
 			*/
-			mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, ~0, PPC_BIT(48));
+			mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0,
+			           ~0, PPC_BIT(48));
 			break;
 		case 1:
 			/* IOM0.DDRPHY_SEQ_ODT_WR_CONFIG0_P0 =
 			  [57] = 1
 			*/
-			mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, ~0, PPC_BIT(57));
+			mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0,
+			           ~0, PPC_BIT(57));
 			break;
 		case 2:
 			/* IOM0.DDRPHY_SEQ_ODT_WR_CONFIG1_P0 =
 			  [50] = 1
 			*/
-			mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, ~0, PPC_BIT(50));
+			mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0,
+			           ~0, PPC_BIT(50));
 			break;
 		case 3:
 			/* IOM0.DDRPHY_SEQ_ODT_WR_CONFIG1_P0 =
 			  [59] = 1
 			*/
-			mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, ~0, PPC_BIT(59));
+			mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0,
+			           ~0, PPC_BIT(59));
 			break;
 		}
 
@@ -349,7 +358,7 @@ static void wr_level_pre(int mcs_i, int mca_i, int rp,
 		 * ranks. Can we get away with 0 delay? Is it worth it? Remember that
 		 * the same delay is currently used between sides of RCD.
 		 */
-		ccs_add_mrs(id, mrs, rank, mirrored, tMRD);
+		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMRD);
 	}
 
 	/* TODO: maybe drop it, next ccs_phy_hw_step() would call it anyway. */
@@ -380,7 +389,7 @@ static uint64_t wr_level_time(mca_data_t *mca)
 }
 
 /* Undo the pre-workaround, basically */
-static void wr_level_post(int mcs_i, int mca_i, int rp,
+static void wr_level_post(uint8_t chip, int mcs_i, int mca_i, int rp,
                           enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -415,7 +424,7 @@ static void wr_level_post(int mcs_i, int mca_i, int rp,
 			val = PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][0]), ODT_RD_VALUES0, ODT_RD_VALUES0_LEN)
 			    | PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][1]), ODT_RD_VALUES1, ODT_RD_VALUES1_LEN);
 
-		mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_RD_CONFIG1_P0, 0, val);
+		mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_RD_CONFIG1_P0, 0, val);
 
 
 		/* IOM0.DDRPHY_SEQ_ODT_WR_CONFIG0_P0 =
@@ -424,7 +433,7 @@ static void wr_level_post(int mcs_i, int mca_i, int rp,
 			  [48-51] ODT_WR_VALUES0 = F(ATTR_MSS_VPD_MT_ODT_WR[index(MCA)][0][0])
 			  [56-59] ODT_WR_VALUES1 = F(ATTR_MSS_VPD_MT_ODT_WR[index(MCA)][0][1])
 		*/
-		mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, 0,
+		mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, 0,
 			   PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][0]), ODT_RD_VALUES0, ODT_RD_VALUES0_LEN) |
 			   PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][1]), ODT_RD_VALUES1, ODT_RD_VALUES1_LEN));
 		#undef F
@@ -436,7 +445,7 @@ static void wr_level_post(int mcs_i, int mca_i, int rp,
                            vpd_to_rtt_wr(ATTR_MSS_VPD_MT_DRAM_RTT_WR[vpd_idx]),
                            DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
                            mem_data.cwl);
-		ccs_add_mrs(id, mrs, rank, mirrored, tMRD);
+		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMRD);
 
 		/* MR1 =               // redo the rest of the bits
 		  // Write properly encoded RTT_NOM value
@@ -454,7 +463,7 @@ static void wr_level_post(int mcs_i, int mca_i, int rp,
 		 * Next command for this rank should be REF before Initial Pattern Write,
 		 * done by PHY hardware, so use tMOD.
 		 */
-		ccs_add_mrs(id, mrs, rank, mirrored, tMOD);
+		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMOD);
 
 		// mss::workarounds::seq::odt_config();		// Not needed on DD2
 	}
@@ -491,7 +500,7 @@ static void wr_level_post(int mcs_i, int mca_i, int rp,
 		 * ranks. Can we get away with 0 delay? Is it worth it? Remember that
 		 * the same delay is currently used between sides of RCD.
 		 */
-		ccs_add_mrs(id, mrs, rank, mirrored, tMRD);
+		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMRD);
 	}
 
 	/* TODO: maybe drop it, next ccs_phy_hw_step() would call it anyway. */
@@ -553,7 +562,7 @@ static uint64_t dqs_align_time(mca_data_t *mca)
 	return 6 * 600 * 4;
 }
 
-static void rdclk_align_pre(int mcs_i, int mca_i, int rp,
+static void rdclk_align_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
                             enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -568,7 +577,7 @@ static void rdclk_align_pre(int mcs_i, int mca_i, int rp,
 	IOM0.DDRPHY_PC_INIT_CAL_CONFIG1_P0
 		[52-53] REFRESH_CONTROL =   0       // refresh commands are only sent at start of initial calibration
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_INIT_CAL_CONFIG1_P0, ~PPC_BITMASK(52, 53), 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_INIT_CAL_CONFIG1_P0, ~PPC_BITMASK(52, 53), 0);
 }
 
 static uint64_t rdclk_align_time(mca_data_t *mca)
@@ -586,7 +595,7 @@ static uint64_t rdclk_align_time(mca_data_t *mca)
 	return 24 * ((1024/coarse_cal_step_size + 4*coarse_cal_step_size) * 4 + 32);
 }
 
-static void rdclk_align_post(int mcs_i, int mca_i, int rp,
+static void rdclk_align_post(uint8_t chip, int mcs_i, int mca_i, int rp,
                              enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -608,33 +617,33 @@ static void rdclk_align_post(int mcs_i, int mca_i, int rp,
 	    // Can't change non-existing quads
 	*/
 	for (dp = 0; dp < 4; dp++) {
-		val = dp_mca_read(id, dp, mca_i,
+		val = dp_mca_read(chip, id, dp, mca_i,
 		                  DDRPHY_DP16_DQS_RD_PHASE_SELECT_RANK_PAIR0_P0_0 + rp * mul);
 		val += PPC_BIT(49) | PPC_BIT(53) | PPC_BIT(57) | PPC_BIT(61);
 		val &= PPC_BITMASK(48, 49) | PPC_BITMASK(52, 53) | PPC_BITMASK(56, 57) |
 		       PPC_BITMASK(60, 61);
 		/* TODO: this can be done with just one read */
-		dp_mca_and_or(id, dp, mca_i,
+		dp_mca_and_or(chip, id, dp, mca_i,
 		              DDRPHY_DP16_DQS_RD_PHASE_SELECT_RANK_PAIR0_P0_0 + rp * mul,
 		              ~(PPC_BITMASK(48, 49) | PPC_BITMASK(52, 53) |
 		                PPC_BITMASK(56, 57) | PPC_BITMASK(60, 61)),
 		              val);
 	}
 
-	val = dp_mca_read(id, 4, mca_i,
+	val = dp_mca_read(chip, id, 4, mca_i,
 	                  DDRPHY_DP16_DQS_RD_PHASE_SELECT_RANK_PAIR0_P0_0 + rp * mul);
 	val += PPC_BIT(49) | PPC_BIT(53);
 	val &= PPC_BITMASK(48, 49) | PPC_BITMASK(52, 53);
-	dp_mca_and_or(id, dp, mca_i,
+	dp_mca_and_or(chip, id, dp, mca_i,
 	              DDRPHY_DP16_DQS_RD_PHASE_SELECT_RANK_PAIR0_P0_0 + rp * mul,
 				  ~(PPC_BITMASK(48, 49) | PPC_BITMASK(52, 53)),
 				  val);
 
 	/* Turn on refresh */
-	dqs_align_turn_on_refresh(mcs_i, mca_i);
+	dqs_align_turn_on_refresh(chip, mcs_i, mca_i);
 }
 
-static void read_ctr_pre(int mcs_i, int mca_i, int rp,
+static void read_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
                          enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -644,14 +653,14 @@ static void read_ctr_pre(int mcs_i, int mca_i, int rp,
 	IOM0.DDRPHY_PC_INIT_CAL_CONFIG1_P0
 		[52-53] REFRESH_CONTROL =   0       // refresh commands are only sent at start of initial calibration
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_INIT_CAL_CONFIG1_P0, ~PPC_BITMASK(52, 53), 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_INIT_CAL_CONFIG1_P0, ~PPC_BITMASK(52, 53), 0);
 
 	for (dp = 0; dp < 5; dp++) {
 		/*
 		IOM0.DDRPHY_DP16_CONFIG0_P0_{0-4}
 			[62]  1         // part of ATESTSEL_0_4 field
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_CONFIG0_P0_0, ~0, PPC_BIT(62));
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_CONFIG0_P0_0, ~0, PPC_BIT(62));
 
 		/*
 		 * This was a part of main calibration in Hostboot, not pre-workaround,
@@ -660,7 +669,7 @@ static void read_ctr_pre(int mcs_i, int mca_i, int rp,
 			[all] 0
 			[48-63] VREF_CAL_EN = 0xffff    // We already did this in reset_rd_vref() in 13.8
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_EN_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_EN_P0_0, 0,
 		              PPC_PLACE(0xFFFF, 48, 16));
 	}
 
@@ -669,7 +678,7 @@ static void read_ctr_pre(int mcs_i, int mca_i, int rp,
 		[60]  CALIBRATION_ENABLE =  1
 		[61]  SKIP_RDCENTERING =    0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_RC_RDVREF_CONFIG1_P0,
+	mca_and_or(chip, id, mca_i, DDRPHY_RC_RDVREF_CONFIG1_P0,
 	           ~PPC_BIT(SKIP_RDCENTERING),
 	           PPC_BIT(CALIBRATION_ENABLE));
 }
@@ -693,7 +702,7 @@ static uint64_t read_ctr_time(mca_data_t *mca)
 	       * 24;
 }
 
-static void read_ctr_post(int mcs_i, int mca_i, int rp,
+static void read_ctr_post(uint8_t chip, int mcs_i, int mca_i, int rp,
                           enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -703,21 +712,21 @@ static void read_ctr_post(int mcs_i, int mca_i, int rp,
 	// workarounds::dp16::rd_dq::fix_delay_values();
 
 	/* Turn on refresh */
-	dqs_align_turn_on_refresh(mcs_i, mca_i);
+	dqs_align_turn_on_refresh(chip, mcs_i, mca_i);
 
 	for (dp = 0; dp < 5; dp++) {
 		/*
 		IOM0.DDRPHY_DP16_CONFIG0_P0_{0-4}
 			[62]  0         // part of ATESTSEL_0_4 field
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_CONFIG0_P0_0, ~PPC_BIT(62), 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_CONFIG0_P0_0, ~PPC_BIT(62), 0);
 	}
 }
 
 /* Assume 18 DRAMs per DIMM ((8 data + 1 ECC) * 2), even for x8 */
 static uint16_t write_delays[18];
 
-static void write_ctr_pre(int mcs_i, int mca_i, int rp,
+static void write_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
                           enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -752,14 +761,14 @@ static void write_ctr_pre(int mcs_i, int mca_i, int rp,
                        ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx] & 0x3F);
 
 	/* Step 1 - enter VREFDQ training mode */
-	ccs_add_mrs(id, mrs, rank, mirrored, tVREFDQ_E_X);
+	ccs_add_mrs(chip, id, mrs, rank, mirrored, tVREFDQ_E_X);
 
 	/* Step 2 - latch VREFDQ value, command exactly the same as step 1 */
-	ccs_add_mrs(id, mrs, rank, mirrored, tVREFDQ_E_X);
+	ccs_add_mrs(chip, id, mrs, rank, mirrored, tVREFDQ_E_X);
 
 	/* Step 3 - exit VREFDQ training mode */
 	mrs ^= 1 << 7;		// A7 - VREFDQ Training Enable
-	ccs_add_mrs(id, mrs, rank, mirrored, tVREFDQ_E_X);
+	ccs_add_mrs(chip, id, mrs, rank, mirrored, tVREFDQ_E_X);
 
 	/* TODO: maybe drop it, next ccs_phy_hw_step() would call it anyway. */
 	//ccs_execute(id, mca_i);
@@ -778,7 +787,7 @@ static void write_ctr_pre(int mcs_i, int mca_i, int rp,
 		const uint64_t rp_mul =  0x0000010000000000;
 		const uint64_t val_mul = 0x0000000100000000;
 		/* IOM0.DDRPHY_DP16_WR_DELAY_VALUE_<val_idx>_RP<rp>_REG_P0_<dp> */
-		uint64_t val = dp_mca_read(id, dp, mca_i,
+		uint64_t val = dp_mca_read(chip, id, dp, mca_i,
 		                           DDRPHY_DP16_WR_DELAY_VALUE_0_RP0_REG_P0_0 +
 		                           rp * rp_mul + val_idx * val_mul);
 		write_delays[dram] = (uint16_t) val;
@@ -827,7 +836,7 @@ static uint64_t write_ctr_time(mca_data_t *mca)
 	               2 * (big_step + 1)/(small_step + 1)) * 24;
 }
 
-static void write_ctr_post(int mcs_i, int mca_i, int rp,
+static void write_ctr_post(uint8_t chip, int mcs_i, int mca_i, int rp,
                            enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -839,7 +848,8 @@ static void write_ctr_post(int mcs_i, int mca_i, int rp,
 	 * yet implemented.
 	 */
 	for (dp = 0; dp < 5; dp++) {
-		bad_bits |= dp_mca_read(id, dp, mca_i, DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0);
+		bad_bits |= dp_mca_read(chip, id, dp, mca_i,
+					DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0);
 	}
 
 	if (!bad_bits)
@@ -875,7 +885,7 @@ static uint64_t coarse_wr_rd_time(mca_data_t *mca)
 	return 40 + 32 + 15 * 512;
 }
 
-typedef void (phy_workaround_t) (int mcs_i, int mca_i, int rp,
+typedef void (phy_workaround_t) (uint8_t chip, int mcs_i, int mca_i, int rp,
                                  enum rank_selection ranks_present);
 
 struct phy_step {
@@ -944,30 +954,30 @@ static struct phy_step steps[] = {
 */
 };
 
-static void dispatch_step(struct phy_step *step, int mcs_i, int mca_i, int rp,
+static void dispatch_step(uint8_t chip, struct phy_step *step, int mcs_i, int mca_i, int rp,
                           enum rank_selection ranks_present)
 {
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
 	printk(BIOS_DEBUG, "%s starting\n", step->name);
 
 	if (step->pre)
-		step->pre(mcs_i, mca_i, rp, ranks_present);
+		step->pre(chip, mcs_i, mca_i, rp, ranks_present);
 
-	ccs_phy_hw_step(mcs_ids[mcs_i], mca_i, rp, step->cfg, step->time(mca));
+	ccs_phy_hw_step(chip, mcs_ids[mcs_i], mca_i, rp, step->cfg, step->time(mca));
 
 	if (step->post)
-		step->post(mcs_i, mca_i, rp, ranks_present);
+		step->post(chip, mcs_i, mca_i, rp, ranks_present);
 
 	dump_cal_errors(mcs_i, mca_i);
 
-	if (mca_read(mcs_ids[mcs_i], mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0) != 0)
+	if (mca_read(chip, mcs_ids[mcs_i], mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0) != 0)
 		die("%s failed, aborting\n", step->name);
 
 	printk(BIOS_DEBUG, "%s done\n", step->name);
 }
 
 /* Can we modify dump_cal_errors() for this? */
-static int process_initial_cal_errors(int mcs_i, int mca_i)
+static int process_initial_cal_errors(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -975,22 +985,24 @@ static int process_initial_cal_errors(int mcs_i, int mca_i)
 
 	for (dp = 0; dp < 5; dp++) {
 		/* IOM0.DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_n */
-		err |= dp_mca_read(id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0);
+		err |= dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0);
 
 		/* Both ERROR_MASK registers were set to 0xFFFF in 13.8 */
 		/* IOM0.DDRPHY_DP16_WR_VREF_ERROR0_P0_n &
 		 * ~IOM0.DDRPHY_DP16_WR_VREF_ERROR_MASK0_P0_n */
-		err |= (dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0) &
-		        ~dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR_MASK0_P0_0));
+		err |= (dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0) &
+		        ~dp_mca_read(chip, id, dp, mca_i,
+		                     DDRPHY_DP16_WR_VREF_ERROR_MASK0_P0_0));
 
 		/* IOM0.DDRPHY_DP16_WR_VREF_ERROR1_P0_n &
 		 * ~IOM0.DDRPHY_DP16_WR_VREF_ERROR_MASK1_P0_n */
-		err |= (dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0) &
-		        ~dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR_MASK1_P0_0));
+		err |= (dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0) &
+		        ~dp_mca_read(chip, id, dp, mca_i,
+		                     DDRPHY_DP16_WR_VREF_ERROR_MASK1_P0_0));
 	}
 
 	/* IOM0.DDRPHY_PC_INIT_CAL_ERROR_P0 */
-	err |= mca_read(id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0);
+	err |= mca_read(chip, id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0);
 
 	if (err)
 		return 1;
@@ -1016,7 +1028,7 @@ static int process_initial_cal_errors(int mcs_i, int mca_i)
 	return 0;
 }
 
-static int can_recover(int mcs_i, int mca_i, int rp)
+static int can_recover(uint8_t chip, int mcs_i, int mca_i, int rp)
 {
 	/*
 	 * We can recover from 1 nibble + 1 bit (or less) bad lines. Anything more
@@ -1051,7 +1063,7 @@ static int can_recover(int mcs_i, int mca_i, int rp)
 		  if total_bad_nibbles > 1: DIMM is FUBAR, return error
 		*/
 		const uint64_t rp_mul = 0x0000010000000000;
-		reg = dp_mca_read(id, dp, mca_i,
+		reg = dp_mca_read(chip, id, dp, mca_i,
 		                  DDRPHY_DP16_DQS_BIT_DISABLE_RP0_P0_0 + rp * rp_mul);
 
 		/* One bad DQS on x8 is already bad 2 nibbles, can't recover from that. */
@@ -1079,7 +1091,7 @@ static int can_recover(int mcs_i, int mca_i, int rp)
 			if total_bad_bits    >  1: total_bad_nibbles += 1, total_bad_bits -= 1
 			if total_bad_nibbles >  1: DIMM is FUBAR, return error?
 		*/
-		reg = dp_mca_read(id, dp, mca_i,
+		reg = dp_mca_read(chip, id, dp, mca_i,
 		                  DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0 + rp * rp_mul);
 
 		/* Exclude nibbles corresponding to a bad DQS, it won't get worse. */
@@ -1122,7 +1134,7 @@ static int can_recover(int mcs_i, int mca_i, int rp)
 	return 1;
 }
 
-static void fir_unmask(int mcs_i)
+static void fir_unmask(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int mca_i;
@@ -1176,7 +1188,7 @@ static void fir_unmask(int mcs_i)
 			[12]  MBACALFIR_MASK_CMD_PARITY_ERROR =       0   // checkstop (0,0,0)
 			[14]  MBACALFIR_MASK_RCD_CAL_PARITY_ERROR =   0   // recoverable_error (0,1,0)
 		*/
-		mca_and_or(id, mca_i, MBACALFIR_ACTION0,
+		mca_and_or(chip, id, mca_i, MBACALFIR_ACTION0,
 		           ~(PPC_BIT(MBACALFIR_REFRESH_OVERRUN) |
 		             PPC_BIT(MBACALFIR_DDR_CAL_TIMEOUT_ERR) |
 		             PPC_BIT(MBACALFIR_DDR_CAL_RESET_TIMEOUT) |
@@ -1185,7 +1197,7 @@ static void fir_unmask(int mcs_i)
 		             PPC_BIT(MBACALFIR_CMD_PARITY_ERROR) |
 		             PPC_BIT(MBACALFIR_RCD_CAL_PARITY_ERROR)),
 		           0);
-		mca_and_or(id, mca_i, MBACALFIR_ACTION1,
+		mca_and_or(chip, id, mca_i, MBACALFIR_ACTION1,
 		           ~(PPC_BIT(MBACALFIR_REFRESH_OVERRUN) |
 		             PPC_BIT(MBACALFIR_DDR_CAL_TIMEOUT_ERR) |
 		             PPC_BIT(MBACALFIR_DDR_CAL_RESET_TIMEOUT) |
@@ -1198,7 +1210,7 @@ static void fir_unmask(int mcs_i)
 		           PPC_BIT(MBACALFIR_DDR_CAL_RESET_TIMEOUT) |
 		           PPC_BIT(MBACALFIR_WRQ_RRQ_HANG_ERR) |
 		           PPC_BIT(MBACALFIR_RCD_CAL_PARITY_ERROR));
-		mca_and_or(id, mca_i, MBACALFIR_MASK,
+		mca_and_or(chip, id, mca_i, MBACALFIR_MASK,
 		           ~(PPC_BIT(MBACALFIR_REFRESH_OVERRUN) |
 		             PPC_BIT(MBACALFIR_DDR_CAL_TIMEOUT_ERR) |
 		             PPC_BIT(MBACALFIR_DDR_CAL_RESET_TIMEOUT) |
@@ -1229,6 +1241,7 @@ void istep_13_11(void)
 	printk(BIOS_EMERG, "starting istep 13.11\n");
 	int mcs_i, mca_i, dimm, rp;
 	enum rank_selection ranks_present;
+	uint8_t chip = 0; // TODO: support second CPU
 
 	report_istep(13,11);
 
@@ -1252,11 +1265,13 @@ void istep_13_11(void)
 				else
 					ranks_present |= DIMM0_RANK0 << (2 * dimm);
 
-				setup_and_execute_zqcal(mcs_i, mca_i, dimm);
+				setup_and_execute_zqcal(chip, mcs_i, mca_i, dimm);
 			}
 
 			/* IOM0.DDRPHY_PC_INIT_CAL_CONFIG0_P0 = 0 */
-			mca_and_or(mcs_ids[mcs_i], mca_i, DDRPHY_PC_INIT_CAL_CONFIG0_P0, 0, 0);
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i,
+				   DDRPHY_PC_INIT_CAL_CONFIG0_P0,
+				   0, 0);
 
 			/*
 			 * > Disable port fails as it doesn't appear the MC handles initial
@@ -1265,7 +1280,7 @@ void istep_13_11(void)
 			MC01.PORT0.SRQ.MBA_FARB0Q =
 				  [57]  MBA_FARB0Q_CFG_PORT_FAIL_DISABLE = 1
 			*/
-			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_FARB0Q, ~0,
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_FARB0Q, ~0,
 			           PPC_BIT(MBA_FARB0Q_CFG_PORT_FAIL_DISABLE));
 
 			/*
@@ -1281,9 +1296,9 @@ void istep_13_11(void)
 			 * least know what it is about...
 			 */
 
-			clear_initial_cal_errors(mcs_i, mca_i);
-			dp16_reset_delay_values(mcs_i, mca_i, ranks_present);
-			dqs_align_turn_on_refresh(mcs_i, mca_i);
+			clear_initial_cal_errors(chip, mcs_i, mca_i);
+			dp16_reset_delay_values(chip, mcs_i, mca_i, ranks_present);
+			dqs_align_turn_on_refresh(chip, mcs_i, mca_i);
 
 			/*
 			 * List of calibration steps for RDIMM, in execution order:
@@ -1320,10 +1335,11 @@ void istep_13_11(void)
 				dump_cal_errors(mcs_i, mca_i);
 
 				for (int i = 0; i < ARRAY_SIZE(steps); i++)
-					dispatch_step(&steps[i], mcs_i, mca_i, rp, ranks_present);
+					dispatch_step(chip, &steps[i], mcs_i, mca_i, rp,
+						      ranks_present);
 
-				if (process_initial_cal_errors(mcs_i, mca_i) &&
-				    !can_recover(mcs_i, mca_i, rp)) {
+				if (process_initial_cal_errors(chip, mcs_i, mca_i) &&
+				    !can_recover(chip, mcs_i, mca_i, rp)) {
 					die("Calibration failed for MCS%d MCA%d DIMM%d\n", mcs_i, mca_i, rp/2);
 				}
 			}
@@ -1343,7 +1359,7 @@ void istep_13_11(void)
 		 * instruction.
 		 */
 
-		fir_unmask(mcs_i);
+		fir_unmask(chip, mcs_i);
 	}
 
 	printk(BIOS_EMERG, "ending istep 13.11\n");
