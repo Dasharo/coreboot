@@ -10,7 +10,7 @@
 
 #define SPD_I2C_BUS		3
 
-static void draminit_cke_helper(chiplet_id_t id, int mca_i)
+static void draminit_cke_helper(uint8_t chip, chiplet_id_t id, int mca_i)
 {
 	/*
 	 * Hostboot stops CCS before sending new programs. I'm not sure it is wise
@@ -23,8 +23,8 @@ static void draminit_cke_helper(chiplet_id_t id, int mca_i)
 	    delay(10ns)
 	*/
 
-	ccs_add_instruction(id, 0, 0xF, 0xF, 400);
-	ccs_execute(id, mca_i);
+	ccs_add_instruction(chip, id, 0, 0xF, 0xF, 400);
+	ccs_execute(chip, id, mca_i);
 }
 
 static void rcd_load(mca_data_t *mca, int d)
@@ -279,7 +279,7 @@ static void rcd_load(mca_data_t *mca, int d)
  * counted in different places, i.e. before and after RCD, and thanks to Encoded
  * QuadCS 4R DIMMs are visible to the PHY as 2R devices?
  */
-static void mrs_load(int mcs_i, int mca_i, int d)
+static void mrs_load(uint8_t chip, int mcs_i, int mca_i, int d)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -314,13 +314,13 @@ static void mrs_load(int mcs_i, int mca_i, int d)
                        DDR4_MR3_GEARDOWN_1_2_RATE,
                        DDR4_MR3_MPR_NORMAL,
                        0);
-	ccs_add_mrs(id, mrs, ranks, mirrored, tMRD);
+	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr6(mca->nccd_l,
                        DDR4_MR6_VREFDQ_TRAINING_DISABLE,
                        DDR4_MR6_VREFDQ_TRAINING_RANGE_1, /* Don't care when disabled */
                        0);
-	ccs_add_mrs(id, mrs, ranks, mirrored, tMRD);
+	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr5(DDR4_MR5_RD_DBI_DISABLE,
                        DDR4_MR5_WR_DBI_DISABLE,
@@ -328,7 +328,7 @@ static void mrs_load(int mcs_i, int mca_i, int d)
                        vpd_to_rtt_park(ATTR_MSS_VPD_MT_DRAM_RTT_PARK[vpd_idx]),
                        DDR4_MR5_ODT_PD_ACTIVADED,
                        DDR4_MR5_CA_PARITY_LAT_DISABLE);
-	ccs_add_mrs(id, mrs, ranks, mirrored, tMRD);
+	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr4(DDR4_MR4_HPPR_DISABLE,
                        DDR4_MR4_WR_PREAMBLE_1, /* ATTR_MSS_VPD_MT_PREAMBLE - always 0 */
@@ -340,7 +340,7 @@ static void mrs_load(int mcs_i, int mca_i, int d)
                        DDR4_MR4_INTERNAL_VREF_MON_DISABLE,
                        DDR4_MR4_TEMP_CONTROLLED_REFR_DISABLE,
                        DDR4_MR4_MAX_PD_MODE_DISABLE);
-	ccs_add_mrs(id, mrs, ranks, mirrored, tMRD);
+	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	/*
 	 * Regarding RTT_WR: OFF seems to be the safest option, but it is not always
@@ -354,7 +354,7 @@ static void mrs_load(int mcs_i, int mca_i, int d)
                         * Do we need to half tREFI as well? */
                        DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
                        mem_data.cwl);
-	ccs_add_mrs(id, mrs, ranks, mirrored, tMRD);
+	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr1(DDR4_MR1_QOFF_ENABLE,
                        mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TQDS_ENABLE : DDR4_MR1_TQDS_DISABLE,
@@ -363,7 +363,7 @@ static void mrs_load(int mcs_i, int mca_i, int d)
                        DDR4_MR1_ODIMP_RZQ_7, /* ATTR_MSS_VPD_MT_DRAM_DRV_IMP_DQ_DQS, always 34 Ohms */
                        DDR4_MR1_AL_DISABLE,
                        DDR4_MR1_DLL_ENABLE);
-	ccs_add_mrs(id, mrs, ranks, mirrored, tMRD);
+	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr0(mca->nwr,
                        DDR4_MR0_DLL_RESET_YES,
@@ -371,9 +371,9 @@ static void mrs_load(int mcs_i, int mca_i, int d)
                        mca->cl,
                        DDR4_MR0_BURST_TYPE_SEQUENTIAL,
                        DDR4_MR0_BURST_LENGTH_FIXED_8);
-	ccs_add_mrs(id, mrs, ranks, mirrored, tMOD);
+	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMOD);
 
-	ccs_execute(id, mca_i);
+	ccs_execute(chip, id, mca_i);
 }
 
 /*
@@ -401,6 +401,7 @@ void istep_13_10(void)
 {
 	printk(BIOS_EMERG, "starting istep 13.10\n");
 	int mcs_i, mca_i, dimm;
+	uint8_t chip = 0; // TODO: support second CPU
 
 	report_istep(13,10);
 
@@ -445,13 +446,13 @@ void istep_13_10(void)
 				  [5]   MBA_FARB5Q_CFG_CCS_ADDR_MUX_SEL =       1                   // 1st RMW (optional, only if changes)
 				  [6]   MBA_FARB5Q_CFG_CCS_INST_RESET_ENABLE =  0                   // 1st RMW (optional, only if changes)
 			*/
-			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_FARB5Q,
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_FARB5Q,
 			           ~PPC_BIT(MBA_FARB5Q_CFG_CCS_INST_RESET_ENABLE),
 			           PPC_BIT(MBA_FARB5Q_CFG_CCS_ADDR_MUX_SEL));
-			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~PPC_BITMASK(0, 3),
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~PPC_BITMASK(0, 3),
 			           PPC_PLACE(0x1, MBA_FARB5Q_CFG_DDR_DPHY_NCLK, MBA_FARB5Q_CFG_DDR_DPHY_NCLK_LEN) |
 			           PPC_PLACE(0x2, MBA_FARB5Q_CFG_DDR_DPHY_PCLK, MBA_FARB5Q_CFG_DDR_DPHY_PCLK_LEN));
-			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~0,
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~0,
 			           PPC_BIT(MBA_FARB5Q_CFG_DDR_RESETN));
 
 			udelay(500);  /* part of 3rd RMW, but delay is unconditional */
@@ -479,7 +480,7 @@ void istep_13_10(void)
 			if (mem_data.mcs[mcs_i].mca[mca_i].functional)
 				break;
 		}
-		draminit_cke_helper(mcs_ids[mcs_i], mca_i);
+		draminit_cke_helper(chip, mcs_ids[mcs_i], mca_i);
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -496,7 +497,7 @@ void istep_13_10(void)
 			MC01.PORT0.SRQ.MBA_FARB5Q
 			      [5]   MBA_FARB5Q_CFG_CCS_ADDR_MUX_SEL = 0
 			 */
-			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_FARB5Q,
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_FARB5Q,
 			           ~PPC_BIT(MBA_FARB5Q_CFG_CCS_ADDR_MUX_SEL), 0);
 		}
 
@@ -512,7 +513,7 @@ void istep_13_10(void)
 
 				rcd_load(mca, dimm);
 				// bcw_load();		/* LRDIMM only */
-				mrs_load(mcs_i, mca_i, dimm);
+				mrs_load(chip, mcs_i, mca_i, dimm);
 				dump_rcd(SPD_I2C_BUS, mca->dimm[dimm].rcd_i2c_addr);
 			}
 		}

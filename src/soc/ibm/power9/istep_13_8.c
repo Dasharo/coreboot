@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/powerbus.h>
 #include <cpu/power/vpd_data.h>
 #include <console/console.h>
@@ -30,7 +31,7 @@
  *
  * Undocumented registers are marked with (?) in the comments.
  */
-static void p9n_mca_scom(int mcs_i, int mca_i)
+static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 {
 	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
 
@@ -58,8 +59,8 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	/* P9N2_MCS_PORT02_MCPERF0 (?)
 	    [22-27] = 0x20                              // AMO_LIMIT
 	*/
-	scom_and_or_for_chiplet(nest, 0x05010823 + mca_i * mca_mul,
-	                        ~PPC_BITMASK(22,27), PPC_PLACE(0x20, 22, 6));
+	rscom_and_or_for_chiplet(chip, nest, 0x05010823 + mca_i * mca_mul,
+	                         ~PPC_BITMASK(22,27), PPC_PLACE(0x20, 22, 6));
 
 	/* P9N2_MCS_PORT02_MCPERF2 (?)
 	    [0-2]   = 1                                 // PF_DROP_VALUE0
@@ -91,24 +92,24 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	uint64_t en_ref_blk = (log_ranks <= 1 || log_ranks > 8) ? 0 :
 	                      (n_dimms == 1 && mranks == 4 && log_ranks == 8) ? 0 : 3;
 
-	scom_and_or_for_chiplet(nest, 0x05010824 + mca_i * mca_mul,
-	                        /* and */
-	                        ~(PPC_BITMASK(0,11) | PPC_BITMASK(13,18) | PPC_BITMASK(28,31)
-	                          | PPC_BITMASK(28,31) | PPC_BITMASK(50,54) | PPC_BIT(61)),
-	                        /* or */
-	                        PPC_PLACE(1, 0, 3) | PPC_PLACE(3, 3, 3) | PPC_PLACE(5, 6, 3)
-	                        | PPC_PLACE(7, 9, 3) /* PF_DROP_VALUEs */
-	                        | PPC_PLACE(ref_blk_cfg, 13, 3) | PPC_PLACE(en_ref_blk, 16, 2)
-	                        | PPC_PLACE(0x4, 28, 4) | PPC_PLACE(0x1C, 50, 5));
+	rscom_and_or_for_chiplet(chip, nest, 0x05010824 + mca_i * mca_mul,
+	                         /* and */
+	                         ~(PPC_BITMASK(0,11) | PPC_BITMASK(13,18) | PPC_BITMASK(28,31)
+	                           | PPC_BITMASK(28,31) | PPC_BITMASK(50,54) | PPC_BIT(61)),
+	                         /* or */
+	                         PPC_PLACE(1, 0, 3) | PPC_PLACE(3, 3, 3) | PPC_PLACE(5, 6, 3)
+	                         | PPC_PLACE(7, 9, 3) /* PF_DROP_VALUEs */
+	                         | PPC_PLACE(ref_blk_cfg, 13, 3) | PPC_PLACE(en_ref_blk, 16, 2)
+	                         | PPC_PLACE(0x4, 28, 4) | PPC_PLACE(0x1C, 50, 5));
 
 	/* P9N2_MCS_PORT02_MCAMOC (?)
 	    [1]     = 0                                 // FORCE_PF_DROP0
 	    [4-28]  = 0x19fffff                         // WRTO_AMO_COLLISION_RULES
 	    [29-31] = 1                                 // AMO_SIZE_SELECT, 128B_RW_64B_DATA
 	*/
-	scom_and_or_for_chiplet(nest, 0x05010825 + mca_i * mca_mul,
-	                        ~(PPC_BIT(1) | PPC_BITMASK(4,31)),
-	                        PPC_PLACE(0x19FFFFF, 4, 25) | PPC_PLACE(1, 29, 3));
+	rscom_and_or_for_chiplet(chip, nest, 0x05010825 + mca_i * mca_mul,
+	                         ~(PPC_BIT(1) | PPC_BITMASK(4,31)),
+	                         PPC_PLACE(0x19FFFFF, 4, 25) | PPC_PLACE(1, 29, 3));
 
 	/* P9N2_MCS_PORT02_MCEPSQ (?)
 	    [0-7]   = 1                                 // JITTER_EPSILON
@@ -121,13 +122,13 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [40-47] = (ATTR_PROC_EPS_READ_CYCLES_T2 + 6) / 4        // VECTOR_GROUP_EPSILON
 	 */
 	#define F(X)	(((X) + 6) / 4)
-	scom_and_or_for_chiplet(nest, 0x05010826 + mca_i * mca_mul, ~PPC_BITMASK(0,47),
-	                        PPC_PLACE(1, 0, 8)
-	                        | PPC_PLACE(F(pb_cfg->eps_r[0]), 8, 8)
-	                        | PPC_PLACE(F(pb_cfg->eps_r[1]), 16, 8)
-	                        | PPC_PLACE(F(pb_cfg->eps_r[1]), 24, 8)
-	                        | PPC_PLACE(F(pb_cfg->eps_r[2]), 32, 8)
-	                        | PPC_PLACE(F(pb_cfg->eps_r[2]), 40, 8));
+	rscom_and_or_for_chiplet(chip, nest, 0x05010826 + mca_i * mca_mul, ~PPC_BITMASK(0,47),
+	                         PPC_PLACE(1, 0, 8)
+	                         | PPC_PLACE(F(pb_cfg->eps_r[0]), 8, 8)
+	                         | PPC_PLACE(F(pb_cfg->eps_r[1]), 16, 8)
+	                         | PPC_PLACE(F(pb_cfg->eps_r[1]), 24, 8)
+	                         | PPC_PLACE(F(pb_cfg->eps_r[2]), 32, 8)
+	                         | PPC_PLACE(F(pb_cfg->eps_r[2]), 40, 8));
 	#undef F
 //~ static const uint32_t EPSILON_R_T0_LE[] = {    7,    7,    8,    8,   10,   22 };  // T0, T1
 //~ static const uint32_t EPSILON_R_T2_LE[] = {   67,   69,   71,   74,   79,  103 };  // T2
@@ -139,9 +140,9 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [14-23] = 51                                // BUSY_COUNTER_THRESHOLD1
 	    [24-33] = 64                                // BUSY_COUNTER_THRESHOLD2
 	*/
-	scom_and_or_for_chiplet(nest, 0x05010827 + mca_i * mca_mul, ~PPC_BITMASK(0,33),
-	                        PPC_BIT(0) | PPC_PLACE(1, 1, 3) | PPC_PLACE(38, 4, 10)
-	                        | PPC_PLACE(51, 14, 10) | PPC_PLACE(64, 24, 10));
+	rscom_and_or_for_chiplet(chip, nest, 0x05010827 + mca_i * mca_mul, ~PPC_BITMASK(0,33),
+	                         PPC_BIT(0) | PPC_PLACE(1, 1, 3) | PPC_PLACE(38, 4, 10)
+	                         | PPC_PLACE(51, 14, 10) | PPC_PLACE(64, 24, 10));
 
 	/* P9N2_MCS_PORT02_MCPERF3 (?)
 	    [31] = 1                                    // ENABLE_CL0
@@ -150,8 +151,8 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [44] = 1                                    // DISABLE_WRTO_IG
 	    [45] = 1                                    // AMO_LIMIT_SEL
 	*/
-	scom_and_or_for_chiplet(nest, 0x0501082B + mca_i * mca_mul, ~PPC_BIT(43),
-	                        PPC_BIT(31) | PPC_BIT(41) | PPC_BIT(44) | PPC_BIT(45));
+	rscom_and_or_for_chiplet(chip, nest, 0x0501082B + mca_i * mca_mul, ~PPC_BIT(43),
+	                         PPC_BIT(31) | PPC_BIT(41) | PPC_BIT(44) | PPC_BIT(45));
 
 	/* MC01.PORT0.SRQ.MBA_DSM0Q =
 	    // These are set per port so all latencies should be calculated from both DIMMs (if present)
@@ -171,7 +172,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	/* ATTR_MSS_EFF_DPHY_WLO = 1 from VPD, 3 from dump? */
 	uint64_t rdtag_dly = mem_data.speed == 2666 ? 9 :
 	                     mem_data.speed == 2400 ? 8 : 7;
-	mca_and_or(id, mca_i, MBA_DSM0Q, ~PPC_BITMASK(0,41),
+	mca_and_or(chip, id, mca_i, MBA_DSM0Q, ~PPC_BITMASK(0,41),
 	           PPC_PLACE(mca->cl - mem_data.cwl, MBA_DSM0Q_CFG_RODT_START_DLY,
 	                     MBA_DSM0Q_CFG_RODT_START_DLY_LEN) |
 	           PPC_PLACE(mca->cl - mem_data.cwl + 5, MBA_DSM0Q_CFG_RODT_END_DLY,
@@ -220,7 +221,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	uint64_t var_dly = mem_data.speed == 2666 ? 11 :
 	                   mem_data.speed == 2400 ? 10 :
 	                   mem_data.speed == 2133 ? 9 : 8;
-	mca_and_or(id, mca_i, MBA_TMR0Q, PPC_BIT(63),
+	mca_and_or(chip, id, mca_i, MBA_TMR0Q, PPC_BIT(63),
 	           PPC_PLACE(var_dly, MBA_TMR0Q_RRDM_DLY, MBA_TMR0Q_RRDM_DLY_LEN) |
 	           PPC_PLACE(4, MBA_TMR0Q_RRSMSR_DLY, MBA_TMR0Q_RRSMSR_DLY_LEN) |
 	           PPC_PLACE(4, MBA_TMR0Q_RRSMDR_DLY, MBA_TMR0Q_RRSMDR_DLY_LEN) |
@@ -259,7 +260,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 		MSS_FREQ_EQ_2400:           10
 		MSS_FREQ_EQ_2666:           11
 	*/
-	mca_and_or(id, mca_i, MBA_TMR1Q, 0,
+	mca_and_or(chip, id, mca_i, MBA_TMR1Q, 0,
 	           PPC_PLACE(mca->nccd_l, MBA_TMR1Q_RRSBG_DLY, MBA_TMR1Q_RRSBG_DLY_LEN) |
 	           PPC_PLACE(mem_data.cwl + mca->nwtr_l + 4, MBA_TMR1Q_WRSBG_DLY,
 	                     MBA_TMR1Q_WRSBG_DLY_LEN) |
@@ -280,7 +281,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [6]     MBA_WRQ0Q_CFG_DISABLE_WR_PG_MODE =          1
 	    [55-58] MBA_WRQ0Q_CFG_WRQ_ACT_NUM_WRITES_PENDING =  8
 	*/
-	mca_and_or(id, mca_i, MBA_WRQ0Q,
+	mca_and_or(chip, id, mca_i, MBA_WRQ0Q,
 	           ~(PPC_BIT(MBA_WRQ0Q_CFG_WRQ_FIFO_MODE) |
 	             PPC_BIT(MBA_WRQ0Q_CFG_DISABLE_WR_PG_MODE) |
 	             PPC_BITMASK(55, 58)),
@@ -292,7 +293,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [6]     MBA_RRQ0Q_CFG_RRQ_FIFO_MODE =               0   // ATTR_MSS_REORDER_QUEUE_SETTING
 	    [57-60] MBA_RRQ0Q_CFG_RRQ_ACT_NUM_READS_PENDING =   8
 	*/
-	mca_and_or(id, mca_i, MBA_RRQ0Q,
+	mca_and_or(chip, id, mca_i, MBA_RRQ0Q,
 	           ~(PPC_BIT(MBA_RRQ0Q_CFG_RRQ_FIFO_MODE) | PPC_BITMASK(57, 60)),
 	           PPC_PLACE(8, MBA_RRQ0Q_CFG_RRQ_ACT_NUM_READS_PENDING,
 	                     MBA_RRQ0Q_CFG_RRQ_ACT_NUM_READS_PENDING_LEN));
@@ -303,7 +304,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [38] MBA_FARB0Q_CFG_PARITY_AFTER_CMD =  1
 	    [61-63] MBA_FARB0Q_CFG_OPT_RD_SIZE =    3
 	*/
-	mca_and_or(id, mca_i, MBA_FARB0Q,
+	mca_and_or(chip, id, mca_i, MBA_FARB0Q,
 	           ~(PPC_BIT(MBA_FARB0Q_CFG_2N_ADDR) |
 	             PPC_BIT(MBA_FARB0Q_CFG_PARITY_AFTER_CMD) |
 	             PPC_BITMASK(61, 63)),
@@ -352,7 +353,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	if (mranks == 4)
 		cids_4_7 = (cids_4_7 & ~(7ull << 9)) | (4 << 9);
 
-	mca_and_or(id, mca_i, MBA_FARB1Q, ~PPC_BITMASK(0, 47),
+	mca_and_or(chip, id, mca_i, MBA_FARB1Q, ~PPC_BITMASK(0, 47),
 	           PPC_PLACE(cids_even, MBA_FARB1Q_CFG_SLOT0_S0_CID, 12) |
 	           PPC_PLACE(cids_4_7, MBA_FARB1Q_CFG_SLOT0_S4_CID, 12) |
 	           PPC_PLACE(cids_even, MBA_FARB1Q_CFG_SLOT1_S0_CID, 12) |
@@ -378,7 +379,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [60-63] MBA_FARB2Q_CFG_RANK7_WR_ODT = F(ATTR_MSS_VPD_MT_ODT_WR[l_def_PORT_INDEX][1][3])  // always 0
 	*/
 	#define F(X)	((((X) >> 4) & 0xc) | (((X) >> 2) & 0x3))
-	mca_and_or(id, mca_i, MBA_FARB2Q, 0,
+	mca_and_or(chip, id, mca_i, MBA_FARB2Q, 0,
 	           PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][0][0]),
 	                     MBA_FARB2Q_CFG_RANK0_RD_ODT, MBA_FARB2Q_CFG_RANK0_RD_ODT_LEN) |
 	           PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][0][1]),
@@ -410,7 +411,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	 * issues we can do the same, but for now let's try to avoid floating point
 	 * arithmetic.
 	 */
-	mca_and_or(id, mca_i, MBAREF0Q, ~(PPC_BITMASK(5, 18) | PPC_BITMASK(30, 60)),
+	mca_and_or(chip, id, mca_i, MBAREF0Q, ~(PPC_BITMASK(5, 18) | PPC_BITMASK(30, 60)),
 	           PPC_PLACE(3,
 	                     MBAREF0Q_CFG_REFRESH_PRIORITY_THRESHOLD,
 	                     MBAREF0Q_CFG_REFRESH_PRIORITY_THRESHOLD_LEN) |
@@ -453,7 +454,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	                     mem_data.speed == 2400 ? 8 : 9;
 	uint64_t p_up_dn =   mem_data.speed == 1866 ? 5 :
 	                     mem_data.speed == 2666 ? 7 : 6;
-	mca_and_or(id, mca_i, MBARPC0Q, ~PPC_BITMASK(6, 21),
+	mca_and_or(chip, id, mca_i, MBARPC0Q, ~PPC_BITMASK(6, 21),
 	           PPC_PLACE(pup_avail, MBARPC0Q_CFG_PUP_AVAIL, MBARPC0Q_CFG_PUP_AVAIL_LEN) |
 	           PPC_PLACE(p_up_dn, MBARPC0Q_CFG_PDN_PUP, MBARPC0Q_CFG_PDN_PUP_LEN) |
 	           PPC_PLACE(p_up_dn, MBARPC0Q_CFG_PUP_PDN, MBARPC0Q_CFG_PUP_PDN_LEN) |
@@ -483,7 +484,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	                    mem_data.speed == 2400 ? 12 : 14;
 	uint64_t txsdll = mem_data.speed == 1866 ? 597 :
 	                  mem_data.speed == 2666 ? 939 : 768;
-	mca_and_or(id, mca_i, MBASTR0Q, ~(PPC_BITMASK(12, 37) | PPC_BITMASK(46, 56)),
+	mca_and_or(chip, id, mca_i, MBASTR0Q, ~(PPC_BITMASK(12, 37) | PPC_BITMASK(46, 56)),
 	           PPC_PLACE(5, MBASTR0Q_CFG_TCKESR, MBASTR0Q_CFG_TCKESR_LEN) |
 	           PPC_PLACE(tcksr_ex, MBASTR0Q_CFG_TCKSRE, MBASTR0Q_CFG_TCKSRE_LEN) |
 	           PPC_PLACE(tcksr_ex, MBASTR0Q_CFG_TCKSRX, MBASTR0Q_CFG_TCKSRX_LEN) |
@@ -533,7 +534,7 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	                            mn_freq_ratio < 1215 ? 1 :
 	                            mn_freq_ratio < 1300 ? 0 :
 	                            mn_freq_ratio < 1400 ? 1 : 0;
-	mca_and_or(id, mca_i, RECR, ~(PPC_BITMASK(16, 22) | PPC_BIT(MBSECCQ_RESERVED_40)),
+	mca_and_or(chip, id, mca_i, RECR, ~(PPC_BITMASK(16, 22) | PPC_BIT(MBSECCQ_RESERVED_40)),
 	           PPC_PLACE(val_to_data, MBSECCQ_VAL_TO_DATA_DELAY,
 	                     MBSECCQ_VAL_TO_DATA_DELAY_LEN) |
 	           PPC_PLACE(nest_val_to_data, MBSECCQ_NEST_VAL_TO_DATA_DELAY,
@@ -545,15 +546,15 @@ static void p9n_mca_scom(int mcs_i, int mca_i)
 	    [9]     DBGR_ECC_WAT_ACTION_SELECT =  0
 	    [10-11] DBGR_ECC_WAT_SOURCE =         0
 	*/
-	mca_and_or(id, mca_i, DBGR, ~PPC_BITMASK(9, 11), 0);
+	mca_and_or(chip, id, mca_i, DBGR, ~PPC_BITMASK(9, 11), 0);
 
 	/* MC01.PORT0.WRITE.WRTCFG =
 	    [9] = 1     // MCP_PORT0_WRITE_NEW_WRITE_64B_MODE   this is marked as RO const 0 for bits 8-63 in docs!
 	*/
-	mca_and_or(id, mca_i, WRTCFG, ~0ull, PPC_BIT(9));
+	mca_and_or(chip, id, mca_i, WRTCFG, ~0ull, PPC_BIT(9));
 }
 
-static void thermal_throttle_scominit(int mcs_i, int mca_i)
+static void thermal_throttle_scominit(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	/* Set power control register */
@@ -564,7 +565,7 @@ static void thermal_throttle_scominit(int mcs_i, int mca_i)
 	      else:                                                         1
 	    [23-32] MBARPC0Q_CFG_MIN_DOMAIN_REDUCTION_TIME =                959
 	*/
-	mca_and_or(id, mca_i, MBARPC0Q, ~(PPC_BITMASK(3, 5) | PPC_BITMASK(22, 32)),
+	mca_and_or(chip, id, mca_i, MBARPC0Q, ~(PPC_BITMASK(3, 5) | PPC_BITMASK(22, 32)),
 	           PPC_PLACE(959, MBARPC0Q_CFG_MIN_DOMAIN_REDUCTION_TIME,
 	                     MBARPC0Q_CFG_MIN_DOMAIN_REDUCTION_TIME_LEN	));
 
@@ -577,7 +578,7 @@ static void thermal_throttle_scominit(int mcs_i, int mca_i)
 	      ATTR_MSS_MRW_POWER_CONTROL_REQUESTED == PD_AND_STR_OFF:       0     // default
 	    [2-11]  MBASTR0Q_CFG_ENTER_STR_TIME =                           1023
 	*/
-	mca_and_or(id, mca_i, MBASTR0Q, ~(PPC_BIT(0) | PPC_BITMASK(2, 11)),
+	mca_and_or(chip, id, mca_i, MBASTR0Q, ~(PPC_BIT(0) | PPC_BITMASK(2, 11)),
 	           PPC_PLACE(1023, MBASTR0Q_CFG_ENTER_STR_TIME,
 	                     MBASTR0Q_CFG_ENTER_STR_TIME_LEN));
 
@@ -596,7 +597,7 @@ static void thermal_throttle_scominit(int mcs_i, int mca_i)
 	/* Values dumped after Hostboot's calculations, may be different for other DIMMs */
 	uint64_t nm_n_per_slot = 0x80;
 	uint64_t nm_n_per_port = 0x80;
-	mca_and_or(id, mca_i, MBA_FARB3Q, ~(PPC_BITMASK(0, 50) | PPC_BIT(53)),
+	mca_and_or(chip, id, mca_i, MBA_FARB3Q, ~(PPC_BITMASK(0, 50) | PPC_BIT(53)),
 	           PPC_PLACE(nm_n_per_slot, MBA_FARB3Q_CFG_NM_N_PER_SLOT,
 	                     MBA_FARB3Q_CFG_NM_N_PER_SLOT_LEN) |
 	           PPC_PLACE(nm_n_per_port, MBA_FARB3Q_CFG_NM_N_PER_PORT,
@@ -608,10 +609,10 @@ static void thermal_throttle_scominit(int mcs_i, int mca_i)
 
 	/* Set safemode throttles */
 	/* MC01.PORT0.SRQ.MBA_FARB4Q =
-	    [27-41] MBA_FARB4Q_EMERGENCY_N = ATTR_MSS_RUNTIME_MEM_THROTTLED_N_COMMANDS_PER_PORT[mss::index(MCA)]  // BUG? var name says per_slot...
+	    [27-41] MBA_FARB4Q_EMERGENCY_N = ATTR_MSS_MRW_SAFEMODE_MEM_THROTTLED_N_COMMANDS_PER_PORT[mss::index(MCA)]  // BUG? var name says per_slot...
 	    [42-55] MBA_FARB4Q_EMERGENCY_M = ATTR_MSS_MRW_MEM_M_DRAM_CLOCKS
 	*/
-	mca_and_or(id, mca_i, MBA_FARB4Q, ~PPC_BITMASK(27, 55),
+	mca_and_or(chip, id, mca_i, MBA_FARB4Q, ~PPC_BITMASK(27, 55),
 	           PPC_PLACE(nm_n_per_port, MBA_FARB4Q_EMERGENCY_N,
 	                     MBA_FARB4Q_EMERGENCY_N_LEN) |
 	           PPC_PLACE(0x200, MBA_FARB4Q_EMERGENCY_M,
@@ -624,7 +625,7 @@ static void thermal_throttle_scominit(int mcs_i, int mca_i)
  * for functional MCAs, maybe this can be called just for magic, non-functional
  * ones to save time, but for now do it in a way the Hostboot does it.
  */
-static void p9n_ddrphy_scom(int mcs_i, int mca_i)
+static void p9n_ddrphy_scom(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -647,7 +648,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 			  [63] DLL_CAL_CKTS_ACTIVE =  After VREG calibration, some analog circuits are powered down
 		*/
 		/* Same as default value after reset? */
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DLL_VREG_CONTROL0_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DLL_VREG_CONTROL0_P0_0,
 		              ~(PPC_BITMASK(48, 50) | PPC_BITMASK(52, 59) | PPC_BITMASK(62, 63)),
 		              PPC_PLACE(3, RXREG_VREG_COMPCON_DC, RXREG_VREG_COMPCON_DC_LEN) |
 		              PPC_PLACE(7, RXREG_VREG_DRVCON_DC, RXREG_VREG_DRVCON_DC_LEN) |
@@ -663,7 +664,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 			  [63] DLL_CAL_CKTS_ACTIVE =  After VREG calibration, some analog circuits are powered down
 		*/
 		/* Same as default value after reset? */
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DLL_VREG_CONTROL1_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DLL_VREG_CONTROL1_P0_0,
 		              ~(PPC_BITMASK(48, 50) | PPC_BITMASK(52, 59) | PPC_BITMASK(62, 63)),
 		              PPC_PLACE(3, RXREG_VREG_COMPCON_DC, RXREG_VREG_COMPCON_DC_LEN) |
 		              PPC_PLACE(7, RXREG_VREG_DRVCON_DC, RXREG_VREG_DRVCON_DC_LEN) |
@@ -674,7 +675,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  // set this field to 60h
 		  [49-55] TSYS_WRCLK = 0x60
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WRCLK_PR_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WRCLK_PR_P0_0,
 		              ~PPC_BITMASK(49, 55),
 		              PPC_PLACE(0x60, TSYS_WRCLK, TSYS_WRCLK_LEN));
 
@@ -683,7 +684,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  [52]    DD2_RESET_READ_FIX_DISABLE =  0   // Enable the DD2 function to remove the register reset on read feature
 							    // on status registers
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_IO_TX_CONFIG0_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_IO_TX_CONFIG0_P0_0,
 		              ~PPC_BITMASK(48, 52),
 		              PPC_PLACE(strength, DDRPHY_DP16_IO_TX_CONFIG0_STRENGTH,
 		                        DDRPHY_DP16_IO_TX_CONFIG0_STRENGTH_LEN));
@@ -695,7 +696,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 			  [61]    S0INSDLYTAP =         1 // For proper functional operation, this bit must be 0b
 			  [62]    S1INSDLYTAP =         1 // For proper functional operation, this bit must be 0b
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DLL_CONFIG1_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DLL_CONFIG1_P0_0,
 		              ~(PPC_BITMASK(48, 63)),
 		              PPC_BIT(S0INSDLYTAP) | PPC_BIT(S1INSDLYTAP));
 
@@ -704,7 +705,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 			  [49-55] EN_SLICE_N_WR = 0x7f
 			  [57-63] EN_SLICE_P_WR = 0x7f
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_IO_TX_FET_SLICE_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_IO_TX_FET_SLICE_P0_0,
 		              ~PPC_BITMASK(48, 63),
 		              PPC_PLACE(0x7F, EN_SLICE_N_WR, EN_SLICE_N_WR_LEN) |
 		              PPC_PLACE(0x7F, EN_SLICE_P_WR, EN_SLICE_P_WR_LEN));
@@ -714,7 +715,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		/* IOM0.DDRPHY_ADR_BIT_ENABLE_P0_ADR{0,1,2,3} =
 		  [48-63] = 0xffff
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_BIT_ENABLE_P0_ADR0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_ADR_BIT_ENABLE_P0_ADR0,
 		              ~PPC_BITMASK(48, 63), PPC_PLACE(0xFFFF, 48, 16));
 	}
 
@@ -723,7 +724,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  [49] DI_ADR2_ADR3: 1 = Lanes 2 and 3 are a differential clock pair
 		  [51] DI_ADR6_ADR7: 1 = Lanes 6 and 7 are a differential clock pair
 	*/
-	dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_DIFFPAIR_ENABLE_P0_ADR1,
+	dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_ADR_DIFFPAIR_ENABLE_P0_ADR1,
 	              ~PPC_BITMASK(48, 63), PPC_PLACE(0x5000, 48, 16));
 
 	/* IOM0.DDRPHY_ADR_DELAY1_P0_ADR1 =
@@ -731,7 +732,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  [49-55] ADR_DELAY2 = 0x40
 		  [57-63] ADR_DELAY3 = 0x40
 	*/
-	dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_DELAY1_P0_ADR1,
+	dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_ADR_DELAY1_P0_ADR1,
 	              ~PPC_BITMASK(48, 63), PPC_PLACE(0x4040, 48, 16));
 
 	/* IOM0.DDRPHY_ADR_DELAY3_P0_ADR1 =
@@ -739,7 +740,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  [49-55] ADR_DELAY6 = 0x40
 		  [57-63] ADR_DELAY7 = 0x40
 	*/
-	dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_DELAY3_P0_ADR1,
+	dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_ADR_DELAY3_P0_ADR1,
 	              ~PPC_BITMASK(48, 63), PPC_PLACE(0x4040, 48, 16));
 
 	for (dp = 0; dp < 2; dp ++) {
@@ -748,7 +749,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 			  [48-51] HS_DLLMUX_SEL_0_3 = 0
 			  [59-62] STRENGTH =          4 // 2400 MT/s
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_DLL_VREG_CONFIG_1_P0_ADR32S0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_ADR_DLL_VREG_CONFIG_1_P0_ADR32S0,
 		              ~PPC_BITMASK(48, 63),
 		              PPC_PLACE(strength, DDRPHY_ADR_DLL_VREG_CONFIG_1_STRENGTH,
 		                        DDRPHY_ADR_DLL_VREG_CONFIG_1_STRENGTH_LEN));
@@ -759,7 +760,8 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		      // SysClk tree and the WrClk tree are equal, set this field to 60h
 		      [49-55] TSYS_WRCLK = 0x60
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S0,
+		dp_mca_and_or(chip, id, dp, mca_i,
+			      DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S0,
 		              ~PPC_BITMASK(48, 63),
 		              PPC_PLACE(0x60, TSYS_WRCLK, TSYS_WRCLK_LEN));
 
@@ -770,7 +772,7 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 			  [56-58] RXREG_VREG_REF_SEL_DC = 0x2
 		  [63] DLL_CAL_CKTS_ACTIVE =  0   // After VREG calibration, some analog circuits are powered down
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_ADR_DLL_VREG_CONTROL_P0_ADR32S0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_ADR_DLL_VREG_CONTROL_P0_ADR32S0,
 		              ~PPC_BITMASK(48, 63),
 		              PPC_PLACE(3, RXREG_VREG_COMPCON_DC, RXREG_VREG_COMPCON_DC_LEN) |
 		              PPC_PLACE(7, RXREG_VREG_DRVCON_DC, RXREG_VREG_DRVCON_DC_LEN) |
@@ -791,99 +793,100 @@ static void p9n_ddrphy_scom(int mcs_i, int mca_i)
 		  [62]    DDR4_VLEVEL_BANK_GROUP =  1
 		  [63]    VPROTH_PSEL_MODE =        0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_CONFIG0_P0, ~PPC_BITMASK(48, 63),
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_CONFIG0_P0, ~PPC_BITMASK(48, 63),
 	           PPC_BIT(DDR4_CMD_SIG_REDUCTION) |
 	           PPC_BIT(DDR4_VLEVEL_BANK_GROUP));
 }
 
-static void p9n_mcbist_scom(int mcs_i)
+static void p9n_mcbist_scom(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG0AQ =
 	    [0-47]  WATCFG0AQ_CFG_WAT_EVENT_SEL =  0x400000000000
 	*/
-	scom_and_or_for_chiplet(id, WATCFG0AQ, ~PPC_BITMASK(0, 47),
-	                        PPC_PLACE(0x400000000000, WATCFG0AQ_CFG_WAT_EVENT_SEL,
-	                                  WATCFG0AQ_CFG_WAT_EVENT_SEL_LEN));
+	rscom_and_or_for_chiplet(chip, id, WATCFG0AQ, ~PPC_BITMASK(0, 47),
+	                         PPC_PLACE(0x400000000000, WATCFG0AQ_CFG_WAT_EVENT_SEL,
+	                                   WATCFG0AQ_CFG_WAT_EVENT_SEL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG0BQ =
 	    [0-43]  WATCFG0BQ_CFG_WAT_MSKA =  0x3fbfff
 	    [44-60] WATCFG0BQ_CFG_WAT_CNTL =  0x10000
 	*/
-	scom_and_or_for_chiplet(id, WATCFG0BQ, ~PPC_BITMASK(0, 60),
-	                        PPC_PLACE(0x3fbfff, WATCFG0BQ_CFG_WAT_MSKA,
-	                                  WATCFG0BQ_CFG_WAT_MSKA_LEN) |
-	                        PPC_PLACE(0x10000, WATCFG0BQ_CFG_WAT_CNTL,
-	                                  WATCFG0BQ_CFG_WAT_CNTL_LEN));
+	rscom_and_or_for_chiplet(chip, id, WATCFG0BQ, ~PPC_BITMASK(0, 60),
+	                         PPC_PLACE(0x3fbfff, WATCFG0BQ_CFG_WAT_MSKA,
+	                                   WATCFG0BQ_CFG_WAT_MSKA_LEN) |
+	                         PPC_PLACE(0x10000, WATCFG0BQ_CFG_WAT_CNTL,
+	                                   WATCFG0BQ_CFG_WAT_CNTL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG0DQ =
 	    [0-43]  WATCFG0DQ_CFG_WAT_PATA =  0x80200004000
 	*/
-	scom_and_or_for_chiplet(id, WATCFG0DQ, ~PPC_BITMASK(0, 43),
-	                        PPC_PLACE(0x80200004000, WATCFG0DQ_CFG_WAT_PATA,
-	                                  WATCFG0DQ_CFG_WAT_PATA_LEN));
+	rscom_and_or_for_chiplet(chip, id, WATCFG0DQ, ~PPC_BITMASK(0, 43),
+	                         PPC_PLACE(0x80200004000, WATCFG0DQ_CFG_WAT_PATA,
+	                                   WATCFG0DQ_CFG_WAT_PATA_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG3AQ =
 	    [0-47]  WATCFG3AQ_CFG_WAT_EVENT_SEL = 0x800000000000
 	*/
-	scom_and_or_for_chiplet(id, WATCFG3AQ, ~PPC_BITMASK(0, 47),
-	                        PPC_PLACE(0x800000000000, WATCFG3AQ_CFG_WAT_EVENT_SEL,
-	                                  WATCFG3AQ_CFG_WAT_EVENT_SEL_LEN));
+	rscom_and_or_for_chiplet(chip, id, WATCFG3AQ, ~PPC_BITMASK(0, 47),
+	                         PPC_PLACE(0x800000000000, WATCFG3AQ_CFG_WAT_EVENT_SEL,
+	                                   WATCFG3AQ_CFG_WAT_EVENT_SEL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG3BQ =
 	    [0-43]  WATCFG3BQ_CFG_WAT_MSKA =  0xfffffffffff
 	    [44-60] WATCFG3BQ_CFG_WAT_CNTL =  0x10400
 	*/
-	scom_and_or_for_chiplet(id, WATCFG3BQ, ~PPC_BITMASK(0, 60),
-	                        PPC_PLACE(0xfffffffffff, WATCFG3BQ_CFG_WAT_MSKA,
-	                                  WATCFG3BQ_CFG_WAT_MSKA_LEN) |
-	                        PPC_PLACE(0x10400, WATCFG3BQ_CFG_WAT_CNTL,
-	                                  WATCFG3BQ_CFG_WAT_CNTL_LEN));
+	rscom_and_or_for_chiplet(chip, id, WATCFG3BQ, ~PPC_BITMASK(0, 60),
+	                         PPC_PLACE(0xfffffffffff, WATCFG3BQ_CFG_WAT_MSKA,
+	                                   WATCFG3BQ_CFG_WAT_MSKA_LEN) |
+	                         PPC_PLACE(0x10400, WATCFG3BQ_CFG_WAT_CNTL,
+	                                   WATCFG3BQ_CFG_WAT_CNTL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBCFGQ =
 	    [36]    MCBCFGQ_CFG_LOG_COUNTS_IN_TRACE = 0
 	*/
-	scom_and_for_chiplet(id, MCBCFGQ, ~PPC_BIT(MCBCFGQ_CFG_LOG_COUNTS_IN_TRACE));
+	rscom_and_for_chiplet(chip, id, MCBCFGQ, ~PPC_BIT(MCBCFGQ_CFG_LOG_COUNTS_IN_TRACE));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.DBGCFG0Q =
 	    [0]     DBGCFG0Q_CFG_DBG_ENABLE =         1
 	    [23-33] DBGCFG0Q_CFG_DBG_PICK_MCBIST01 =  0x780
 	*/
-	scom_and_or_for_chiplet(id, DBGCFG0Q, ~PPC_BITMASK(23, 33),
-	                        PPC_BIT(DBGCFG0Q_CFG_DBG_ENABLE) |
-	                        PPC_PLACE(0x780, DBGCFG0Q_CFG_DBG_PICK_MCBIST01,
-	                                  DBGCFG0Q_CFG_DBG_PICK_MCBIST01_LEN));
+	rscom_and_or_for_chiplet(chip, id, DBGCFG0Q, ~PPC_BITMASK(23, 33),
+	                         PPC_BIT(DBGCFG0Q_CFG_DBG_ENABLE) |
+	                         PPC_PLACE(0x780, DBGCFG0Q_CFG_DBG_PICK_MCBIST01,
+	                                   DBGCFG0Q_CFG_DBG_PICK_MCBIST01_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.DBGCFG1Q =
 	    [0]     DBGCFG1Q_CFG_WAT_ENABLE = 1
 	*/
-	scom_or_for_chiplet(id, DBGCFG1Q, PPC_BIT(DBGCFG1Q_CFG_WAT_ENABLE));
+	rscom_or_for_chiplet(chip, id, DBGCFG1Q, PPC_BIT(DBGCFG1Q_CFG_WAT_ENABLE));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.DBGCFG2Q =
 	    [0-19]  DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL = 0x10000
 	    [20-39] DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL = 0x08000
 	*/
-	scom_and_or_for_chiplet(id, DBGCFG2Q, ~PPC_BITMASK(0, 39),
-	                        PPC_PLACE(0x10000, DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL,
-	                                  DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL_LEN) |
-	                        PPC_PLACE(0x08000, DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL,
-	                                  DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL_LEN));
+	rscom_and_or_for_chiplet(chip, id, DBGCFG2Q, ~PPC_BITMASK(0, 39),
+	                         PPC_PLACE(0x10000, DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL,
+	                                   DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL_LEN) |
+	                         PPC_PLACE(0x08000, DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL,
+	                                   DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.DBGCFG3Q =
 	    [20-22] DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL =      0x4
 	    [23-25] DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL =      0x4
 	    [37-40] DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE = 0x4
 	*/
-	scom_and_or_for_chiplet(id, DBGCFG3Q, ~(PPC_BITMASK(20, 25) | PPC_BITMASK(37, 40)),
-	                        PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL,
-	                                  DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL_LEN) |
-	                        PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL,
-	                                  DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL_LEN) |
-	                        PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE,
-	                                  DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE_LEN));
+	rscom_and_or_for_chiplet(chip, id, DBGCFG3Q,
+	                         ~(PPC_BITMASK(20, 25) | PPC_BITMASK(37, 40)),
+	                         PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL,
+	                                   DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL_LEN) |
+	                         PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL,
+	                                   DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL_LEN) |
+	                         PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE,
+	                                   DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE_LEN));
 }
 
-static void set_rank_pairs(int mcs_i, int mca_i)
+static void set_rank_pairs(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -916,7 +919,7 @@ static void set_rank_pairs(int mcs_i, int mca_i)
 		[60-62] RANK_PAIR1_SEC = 3
 		[63]    RANK_PAIR1_SEC_V = 1: if (rank_count0 == 4)
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_RANK_PAIR0_P0, ~PPC_BITMASK(48, 63),
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_RANK_PAIR0_P0, ~PPC_BITMASK(48, 63),
 	           PPC_PLACE(0x1537 & F[mca->dimm[0].mranks], 48, 16));
 
 	/* IOM0.DDRPHY_PC_RANK_PAIR1_P0 =
@@ -930,18 +933,18 @@ static void set_rank_pairs(int mcs_i, int mca_i)
 		[60-62] RANK_PAIR3_SEC = 3
 		[63]    RANK_PAIR3_SEC_V = 1: if (rank_count1 == 4)
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_RANK_PAIR1_P0, ~PPC_BITMASK(48, 63),
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_RANK_PAIR1_P0, ~PPC_BITMASK(48, 63),
 	           PPC_PLACE(0x1537 & F[mca->dimm[1].mranks], 48, 16));
 
 	/* IOM0.DDRPHY_PC_RANK_PAIR2_P0 =
 	    [48-63] = 0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_RANK_PAIR2_P0, ~PPC_BITMASK(48, 63), 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_RANK_PAIR2_P0, ~PPC_BITMASK(48, 63), 0);
 
 	/* IOM0.DDRPHY_PC_RANK_PAIR3_P0 =
 	    [48-63] = 0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_RANK_PAIR3_P0, ~PPC_BITMASK(48, 63), 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_RANK_PAIR3_P0, ~PPC_BITMASK(48, 63), 0);
 
 	/* IOM0.DDRPHY_PC_CSID_CFG_P0 =
 	    [0-63]  0xf000:
@@ -950,7 +953,7 @@ static void set_rank_pairs(int mcs_i, int mca_i)
 		[50]  CS2_INIT_CAL_VALUE = 1
 		[51]  CS3_INIT_CAL_VALUE = 1
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_CSID_CFG_P0, ~PPC_BITMASK(48, 63),
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_CSID_CFG_P0, ~PPC_BITMASK(48, 63),
 	           PPC_PLACE(0xF000, 48, 16));
 
 	/* IOM0.DDRPHY_PC_MIRROR_CONFIG_P0 =
@@ -987,7 +990,7 @@ static void set_rank_pairs(int mcs_i, int mca_i)
 	 */
 	uint64_t mirr = mca->dimm[0].present ? mca->dimm[0].spd[136] :
 	                                       mca->dimm[1].spd[136];
-	mca_and_or(id, mca_i, DDRPHY_PC_MIRROR_CONFIG_P0, ~PPC_BITMASK(48, 63),
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_MIRROR_CONFIG_P0, ~PPC_BITMASK(48, 63),
 	           PPC_PLACE(mirr, ADDR_MIRROR_RP1_PRI, 1) |
 	           PPC_PLACE(mirr, ADDR_MIRROR_RP1_SEC, 1) |
 	           PPC_PLACE(mirr, ADDR_MIRROR_RP3_PRI, 1) |
@@ -1004,7 +1007,7 @@ static void set_rank_pairs(int mcs_i, int mca_i)
 	/* These are not valid anyway, so don't bother setting anything. */
 }
 
-static void reset_data_bit_enable(int mcs_i, int mca_i)
+static void reset_data_bit_enable(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -1014,14 +1017,14 @@ static void reset_data_bit_enable(int mcs_i, int mca_i)
 		    [all] = 0
 		    [48-63] DATA_BIT_ENABLE_0_15 = 0xffff
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DQ_BIT_ENABLE0_P0_0, 0, 0xFFFF);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DQ_BIT_ENABLE0_P0_0, 0, 0xFFFF);
 	}
 
 	/* IOM0.DDRPHY_DP16_DQ_BIT_ENABLE0_P0_4 =
 	    [all] = 0
 	    [48-63] DATA_BIT_ENABLE_0_15 = 0xff00
 	*/
-	dp_mca_and_or(id, 4, mca_i, DDRPHY_DP16_DQ_BIT_ENABLE0_P0_0, 0, 0xFF00);
+	dp_mca_and_or(chip, id, 4, mca_i, DDRPHY_DP16_DQ_BIT_ENABLE0_P0_0, 0, 0xFF00);
 
 	/* IOM0.DDRPHY_DP16_DFT_PDA_CONTROL_P0_{0,1,2,3,4} =
 	    // This reg is named MCA_DDRPHY_DP16_DATA_BIT_ENABLE1_P0_n in the code.
@@ -1029,7 +1032,7 @@ static void reset_data_bit_enable(int mcs_i, int mca_i)
 	    [all] = 0
 	*/
 	for (dp = 0; dp < 5; dp++) {
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DFT_PDA_CONTROL_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DFT_PDA_CONTROL_P0_0, 0, 0);
 	}
 }
 
@@ -1057,7 +1060,7 @@ static const uint16_t x8_clk[8][5] = {
 //	{0x0CC0, 0xC0C0, 0x0F00, 0xC300, 0xC000}, /* Port 7 */
 };
 
-static void reset_clock_enable(int mcs_i, int mca_i)
+static void reset_clock_enable(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -1081,36 +1084,36 @@ static void reset_clock_enable(int mcs_i, int mca_i)
 	for (dp = 0; dp < 5; dp++) {
 		/* Note that these correspond to valid rank pairs */
 		if (mranks[0] > 0) {
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WRCLK_EN_RP0_P0_0,
-			              0, clk[dp]);
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_READ_CLOCK_RANK_PAIR0_P0_0,
-			              0, clk[dp]);
+			dp_mca_and_or(chip, id, dp, mca_i,
+				      DDRPHY_DP16_WRCLK_EN_RP0_P0_0, 0, clk[dp]);
+			dp_mca_and_or(chip, id, dp, mca_i,
+				      DDRPHY_DP16_READ_CLOCK_RANK_PAIR0_P0_0, 0, clk[dp]);
 		}
 
 		if (mranks[0] > 1) {
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WRCLK_EN_RP1_P0_0,
-			              0, clk[dp]);
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_READ_CLOCK_RANK_PAIR1_P0_0,
-			              0, clk[dp]);
+			dp_mca_and_or(chip, id, dp, mca_i,
+				      DDRPHY_DP16_WRCLK_EN_RP1_P0_0, 0, clk[dp]);
+			dp_mca_and_or(chip, id, dp, mca_i,
+				      DDRPHY_DP16_READ_CLOCK_RANK_PAIR1_P0_0, 0, clk[dp]);
 		}
 
 		if (mranks[1] > 0) {
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WRCLK_EN_RP2_P0_0,
-			              0, clk[dp]);
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_READ_CLOCK_RANK_PAIR2_P0_0,
-			              0, clk[dp]);
+			dp_mca_and_or(chip, id, dp, mca_i,
+				      DDRPHY_DP16_WRCLK_EN_RP2_P0_0, 0, clk[dp]);
+			dp_mca_and_or(chip, id, dp, mca_i,
+				      DDRPHY_DP16_READ_CLOCK_RANK_PAIR2_P0_0, 0, clk[dp]);
 		}
 
 		if (mranks[1] > 1) {
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WRCLK_EN_RP3_P0_0,
-			              0, clk[dp]);
-			dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_READ_CLOCK_RANK_PAIR3_P0_0,
-			              0, clk[dp]);
+			dp_mca_and_or(chip, id, dp, mca_i,
+				      DDRPHY_DP16_WRCLK_EN_RP3_P0_0, 0, clk[dp]);
+			dp_mca_and_or(chip, id, dp, mca_i,
+				      DDRPHY_DP16_READ_CLOCK_RANK_PAIR3_P0_0, 0, clk[dp]);
 		}
 	}
 }
 
-static void reset_rd_vref(int mcs_i, int mca_i)
+static void reset_rd_vref(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -1132,44 +1135,44 @@ static void reset_rd_vref(int mcs_i, int mca_i)
 	for (dp = 0; dp < 5; dp++) {
 
 		/* SCOM addresses are not regular for DAC, so no inner loop. */
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_0_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_0_P0_0,
 		              ~(PPC_BITMASK(49, 55) | PPC_BITMASK(57, 63)),
 		              PPC_PLACE(vref_bf, BIT0_VREF_DAC, BIT0_VREF_DAC_LEN) |
 		              PPC_PLACE(vref_bf, BIT1_VREF_DAC, BIT1_VREF_DAC_LEN));
 
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_1_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_1_P0_0,
 		              ~(PPC_BITMASK(49, 55) | PPC_BITMASK(57, 63)),
 		              PPC_PLACE(vref_bf, BIT0_VREF_DAC, BIT0_VREF_DAC_LEN) |
 		              PPC_PLACE(vref_bf, BIT1_VREF_DAC, BIT1_VREF_DAC_LEN));
 
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_2_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_2_P0_0,
 		              ~(PPC_BITMASK(49, 55) | PPC_BITMASK(57, 63)),
 		              PPC_PLACE(vref_bf, BIT0_VREF_DAC, BIT0_VREF_DAC_LEN) |
 		              PPC_PLACE(vref_bf, BIT1_VREF_DAC, BIT1_VREF_DAC_LEN));
 
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_3_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_3_P0_0,
 		              ~(PPC_BITMASK(49, 55) | PPC_BITMASK(57, 63)),
 		              PPC_PLACE(vref_bf, BIT0_VREF_DAC, BIT0_VREF_DAC_LEN) |
 		              PPC_PLACE(vref_bf, BIT1_VREF_DAC, BIT1_VREF_DAC_LEN));
 
 		if (dp == 4) break;
 
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_4_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_4_P0_0,
 		              ~(PPC_BITMASK(49, 55) | PPC_BITMASK(57, 63)),
 		              PPC_PLACE(vref_bf, BIT0_VREF_DAC, BIT0_VREF_DAC_LEN) |
 		              PPC_PLACE(vref_bf, BIT1_VREF_DAC, BIT1_VREF_DAC_LEN));
 
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_5_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_5_P0_0,
 		              ~(PPC_BITMASK(49, 55) | PPC_BITMASK(57, 63)),
 		              PPC_PLACE(vref_bf, BIT0_VREF_DAC, BIT0_VREF_DAC_LEN) |
 		              PPC_PLACE(vref_bf, BIT1_VREF_DAC, BIT1_VREF_DAC_LEN));
 
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_6_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_6_P0_0,
 		              ~(PPC_BITMASK(49, 55) | PPC_BITMASK(57, 63)),
 		              PPC_PLACE(vref_bf, BIT0_VREF_DAC, BIT0_VREF_DAC_LEN) |
 		              PPC_PLACE(vref_bf, BIT1_VREF_DAC, BIT1_VREF_DAC_LEN));
 
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_7_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_DAC_7_P0_0,
 		              ~(PPC_BITMASK(49, 55) | PPC_BITMASK(57, 63)),
 		              PPC_PLACE(vref_bf, BIT0_VREF_DAC, BIT0_VREF_DAC_LEN) |
 		              PPC_PLACE(vref_bf, BIT1_VREF_DAC, BIT1_VREF_DAC_LEN));
@@ -1180,12 +1183,12 @@ static void reset_rd_vref(int mcs_i, int mca_i)
 	*/
 	for (dp = 0; dp < 5; dp++) {
 		/* Is it safe to set this before VREF_DAC? If yes, may use one loop for both */
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_EN_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_EN_P0_0,
 		              0, PPC_BITMASK(48, 63));
 	}
 }
 
-static void pc_reset(int mcs_i, int mca_i)
+static void pc_reset(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	/* These are from VPD */
@@ -1216,7 +1219,7 @@ static void pc_reset(int mcs_i, int mca_i)
 	 *                                  mem_data.speed == 2133 ? 5 :
 	 *                                  mem_data.speed == 2400 ? 6 : 7;
 	 */
-	mca_and_or(id, mca_i, DDRPHY_PC_CONFIG1_P0,
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_CONFIG1_P0,
 	           ~(PPC_BITMASK(48, 55) | PPC_BITMASK(59, 62)),
 	           PPC_PLACE(/* ATTR_MSS_EFF_DPHY_WLO */ 3, WRITE_LATENCY_OFFSET,
 	                     WRITE_LATENCY_OFFSET_LEN) |
@@ -1228,15 +1231,15 @@ static void pc_reset(int mcs_i, int mca_i)
 	/* IOM0.DDRPHY_PC_ERROR_STATUS0_P0 =
 	      [all]   0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_ERROR_STATUS0_P0, 0, 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_ERROR_STATUS0_P0, 0, 0);
 
 	/* IOM0.DDRPHY_PC_INIT_CAL_ERROR_P0 =
 	      [all]   0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0, 0, 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0, 0, 0);
 }
 
-static void wc_reset(int mcs_i, int mca_i)
+static void wc_reset(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -1280,7 +1283,7 @@ static void wc_reset(int mcs_i, int mca_i)
 	 * JEDEC way of doing it so it _should_ work.
 	 */
 	uint64_t tWLO_tWLOE = 12 + MAX((tWLDQSEN + tMOD), (tWLO + tWLOE)) + 1 + 1;
-	mca_and_or(id, mca_i, DDRPHY_WC_CONFIG0_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_WC_CONFIG0_P0, 0,
 	           PPC_PLACE(tWLO_tWLOE, TWLO_TWLOE, TWLO_TWLOE_LEN) |
 	           PPC_BIT(WL_ONE_DQS_PULSE) |
 	           PPC_PLACE(0x20, FW_WR_RD, FW_WR_RD_LEN) |
@@ -1292,7 +1295,7 @@ static void wc_reset(int mcs_i, int mca_i)
 	      [52-54] SMALL_STEP =        0
 	      [55-60] WR_PRE_DLY =        0x2a (42)
 	*/
-	mca_and_or(id, mca_i, DDRPHY_WC_CONFIG1_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_WC_CONFIG1_P0, 0,
 	           PPC_PLACE(7, BIG_STEP, BIG_STEP_LEN) |
 	           PPC_PLACE(0x2A, WR_PRE_DLY, WR_PRE_DLY_LEN));
 
@@ -1303,7 +1306,7 @@ static void wc_reset(int mcs_i, int mca_i)
 	      [58-61] IPW_WR_WR =         5     // results in 24 clock cycles
 	*/
 	/* There is no Additive Latency. */
-	mca_and_or(id, mca_i, DDRPHY_WC_CONFIG2_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_WC_CONFIG2_P0, 0,
 	           PPC_PLACE(5, NUM_VALID_SAMPLES, NUM_VALID_SAMPLES_LEN) |
 	           PPC_PLACE(MAX(mca->nwtr_s + 11, mem_data.nrtp + 3), FW_RD_WR, FW_RD_WR_LEN) |
 	           PPC_PLACE(5, IPW_WR_WR, IPW_WR_WR_LEN));
@@ -1312,7 +1315,7 @@ static void wc_reset(int mcs_i, int mca_i)
 	      [all]   0
 	      [55-60] MRS_CMD_DQ_OFF =    0x3f
 	*/
-	mca_and_or(id, mca_i, DDRPHY_WC_CONFIG3_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_WC_CONFIG3_P0, 0,
 	           PPC_PLACE(0x3F, MRS_CMD_DQ_OFF, MRS_CMD_DQ_OFF_LEN));
 
 	/* IOM0.DDRPHY_WC_RTT_WR_SWAP_ENABLE_P0
@@ -1320,12 +1323,12 @@ static void wc_reset(int mcs_i, int mca_i)
 	      [49]    WR_CTR_ENABLE_RTT_SWAP =        0
 	      [50-59] WR_CTR_VREF_COUNTER_RESET_VAL = 150ns in clock cycles  // JESD79-4C Table 67
 	*/
-	mca_and_or(id, mca_i, DDRPHY_WC_RTT_WR_SWAP_ENABLE_P0, ~PPC_BITMASK(48, 59),
+	mca_and_or(chip, id, mca_i, DDRPHY_WC_RTT_WR_SWAP_ENABLE_P0, ~PPC_BITMASK(48, 59),
 	           PPC_PLACE(ns_to_nck(150), WR_CTR_VREF_COUNTER_RESET_VAL,
 	                     WR_CTR_VREF_COUNTER_RESET_VAL_LEN));
 }
 
-static void rc_reset(int mcs_i, int mca_i)
+static void rc_reset(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -1335,21 +1338,21 @@ static void rc_reset(int mcs_i, int mca_i)
 	      [48-51] GLOBAL_PHY_OFFSET = 0x5      // ATTR_MSS_VPD_MR_DPHY_GPO
 	      [62]    PERFORM_RDCLK_ALIGN = 1
 	*/
-	mca_and_or(id, mca_i, DDRPHY_RC_CONFIG0_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_RC_CONFIG0_P0, 0,
 	           PPC_PLACE(0x5, GLOBAL_PHY_OFFSET, GLOBAL_PHY_OFFSET_LEN) |
 	           PPC_BIT(PERFORM_RDCLK_ALIGN));
 
 	/* IOM0.DDRPHY_RC_CONFIG1_P0
 	      [all]   0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_RC_CONFIG1_P0, 0, 0);
+	mca_and_or(chip, id, mca_i, DDRPHY_RC_CONFIG1_P0, 0, 0);
 
 	/* IOM0.DDRPHY_RC_CONFIG2_P0
 	      [all]   0
 	      [48-52] CONSEC_PASS = 8
 	      [57-58] 3                   // not documented, BURST_WINDOW?
 	*/
-	mca_and_or(id, mca_i, DDRPHY_RC_CONFIG2_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_RC_CONFIG2_P0, 0,
 	           PPC_PLACE(8, CONSEC_PASS, CONSEC_PASS_LEN) |
 	           PPC_PLACE(3, 57, 2));
 
@@ -1357,7 +1360,7 @@ static void rc_reset(int mcs_i, int mca_i)
 	      [all]   0
 	      [51-54] COARSE_CAL_STEP_SIZE = 4  // 5/128
 	*/
-	mca_and_or(id, mca_i, DDRPHY_RC_CONFIG3_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_RC_CONFIG3_P0, 0,
 	           PPC_PLACE(4, COARSE_CAL_STEP_SIZE, COARSE_CAL_STEP_SIZE_LEN));
 
 	/* IOM0.DDRPHY_RC_RDVREF_CONFIG0_P0 =
@@ -1372,14 +1375,15 @@ static void rc_reset(int mcs_i, int mca_i)
 	uint64_t wait_time = mem_data.speed == 1866 ? 0x0804 :
 	                     mem_data.speed == 2133 ? 0x092A :
 	                     mem_data.speed == 2400 ? 0x0A50 : 0x0B74;
-	mca_and_or(id, mca_i, DDRPHY_RC_RDVREF_CONFIG0_P0, 0, PPC_PLACE(wait_time, 48, 16));
+	mca_and_or(chip, id, mca_i, DDRPHY_RC_RDVREF_CONFIG0_P0,
+	           0, PPC_PLACE(wait_time, 48, 16));
 
 	/* IOM0.DDRPHY_RC_RDVREF_CONFIG1_P0 =
 	      [all]   0
 	      [48-55] CMD_PRECEDE_TIME =  (AL + CL + 15)
 	      [56-59] MPR_LOCATION =      4     // "From R. King."
 	*/
-	mca_and_or(id, mca_i, DDRPHY_RC_RDVREF_CONFIG1_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_RC_RDVREF_CONFIG1_P0, 0,
 	           PPC_PLACE(mca->cl + 15, CMD_PRECEDE_TIME, CMD_PRECEDE_TIME_LEN) |
 	           PPC_PLACE(4, MPR_LOCATION, MPR_LOCATION_LEN));
 }
@@ -1391,7 +1395,7 @@ static inline int log2_up(uint32_t x)
 	return 63 - lz;
 }
 
-static void seq_reset(int mcs_i, int mca_i)
+static void seq_reset(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -1415,7 +1419,7 @@ static void seq_reset(int mcs_i, int mca_i)
 	    (mca->dimm[1].width == WIDTH_x4 && mca->dimm[1].density == DENSITY_16Gb))
 		par_a17_mask = 0;
 
-	mca_and_or(id, mca_i, DDRPHY_SEQ_CONFIG0_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_CONFIG0_P0, 0,
 	           PPC_BIT(DELAYED_PAR) | par_a17_mask);
 
 	/* All log2 values in timing registers are rounded up. */
@@ -1435,7 +1439,7 @@ static void seq_reset(int mcs_i, int mca_i)
 	 *
 	 * https://github.com/open-power/hostboot/blob/master/src/import/chips/p9/procedures/hwp/memory/lib/phy/seq.C#L142
 	 */
-	mca_and_or(id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM0_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM0_P0, 0,
 	           PPC_PLACE(5, TMOD_CYCLES, TMOD_CYCLES_LEN) |
 	           PPC_PLACE(log2_up(mca->nrcd), TRCD_CYCLES, TRCD_CYCLES_LEN) |
 	           PPC_PLACE(log2_up(mca->nrp), TRP_CYCLES, TRP_CYCLES_LEN) |
@@ -1448,7 +1452,7 @@ static void seq_reset(int mcs_i, int mca_i)
 	      [56-59] TWLDQSEN_CYCLES = 6       // log2(37) rounded up, JEDEC tables 169 and 170
 	      [60-63] TWRMRD_CYCLES =   6       // log2(40) rounded up, JEDEC tables 169 and 170
 	*/
-	mca_and_or(id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM1_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM1_P0, 0,
 	           PPC_PLACE(10, TZQINIT_CYCLES, TZQINIT_CYCLES_LEN) |
 	           PPC_PLACE(7, TZQCS_CYCLES, TZQCS_CYCLES_LEN) |
 	           PPC_PLACE(6, TWLDQSEN_CYCLES, TWLDQSEN_CYCLES_LEN) |
@@ -1460,7 +1464,7 @@ static void seq_reset(int mcs_i, int mca_i)
 	      [52-63] reserved =            0x777     // "Reset value of SEQ_TIMING2 is lucky 7's"
 	*/
 	/* AL and PL are disabled (0) */
-	mca_and_or(id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM2_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM2_P0, 0,
 	           PPC_PLACE(log2_up(mem_data.cwl - 2), TODTLON_OFF_CYCLES,
 	                     TODTLON_OFF_CYCLES_LEN) |
 	           PPC_PLACE(0x777, 52, 12));
@@ -1469,14 +1473,14 @@ static void seq_reset(int mcs_i, int mca_i)
 	      [all]   0
 	      [48-63] RD_RW_DATA_REG0 = 0xaa00
 	*/
-	mca_and_or(id, mca_i, DDRPHY_SEQ_RD_WR_DATA0_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_RD_WR_DATA0_P0, 0,
 	           PPC_PLACE(0xAA00, RD_RW_DATA_REG0, RD_RW_DATA_REG0_LEN));
 
 	/* IOM0.DDRPHY_SEQ_RD_WR_DATA1_P0 =
 	      [all]   0
 	      [48-63] RD_RW_DATA_REG1 = 0x00aa
 	*/
-	mca_and_or(id, mca_i, DDRPHY_SEQ_RD_WR_DATA1_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_RD_WR_DATA1_P0, 0,
 	           PPC_PLACE(0x00AA, RD_RW_DATA_REG1, RD_RW_DATA_REG1_LEN));
 
 	/*
@@ -1493,7 +1497,7 @@ static void seq_reset(int mcs_i, int mca_i)
 	      [48-51] ODT_RD_VALUES0 = F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][0][0])
 	      [56-59] ODT_RD_VALUES1 = F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][0][1])
 	*/
-	mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_RD_CONFIG0_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_RD_CONFIG0_P0, 0,
 	           PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][0][0]), ODT_RD_VALUES0,
 	                     ODT_RD_VALUES0_LEN) |
 	           PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][0][1]), ODT_RD_VALUES1,
@@ -1517,7 +1521,7 @@ static void seq_reset(int mcs_i, int mca_i)
 		      PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][1]), ODT_RD_VALUES3,
 		                ODT_RD_VALUES3_LEN);
 
-	mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_RD_CONFIG1_P0, 0, val);
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_RD_CONFIG1_P0, 0, val);
 
 
 	/* IOM0.DDRPHY_SEQ_ODT_WR_CONFIG0_P0 =
@@ -1526,7 +1530,7 @@ static void seq_reset(int mcs_i, int mca_i)
 	      [48-51] ODT_WR_VALUES0 = F(ATTR_MSS_VPD_MT_ODT_WR[index(MCA)][0][0])
 	      [56-59] ODT_WR_VALUES1 = F(ATTR_MSS_VPD_MT_ODT_WR[index(MCA)][0][1])
 	*/
-	mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, 0,
 	           PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][0]), ODT_WR_VALUES0,
 	                     ODT_WR_VALUES0_LEN) |
 	           PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][1]), ODT_WR_VALUES1,
@@ -1549,11 +1553,11 @@ static void seq_reset(int mcs_i, int mca_i)
 		      PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][1][1]), ODT_WR_VALUES3,
 		                ODT_WR_VALUES3_LEN);
 
-	mca_and_or(id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG1_P0, 0, val);
+	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG1_P0, 0, val);
 #undef F
 }
 
-static void reset_ac_boost_cntl(int mcs_i, int mca_i)
+static void reset_ac_boost_cntl(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -1586,18 +1590,18 @@ static void reset_ac_boost_cntl(int mcs_i, int mca_i)
 	 * readability.
 	 */
 	for (dp = 0; dp < 5; dp++) {
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_ACBOOST_CTL_BYTE0_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_ACBOOST_CTL_BYTE0_P0_0,
 		              ~PPC_BITMASK(48, 56),
 		              PPC_PLACE(1, S0ACENSLICENDRV_DC, S0ACENSLICENDRV_DC_LEN) |
 		              PPC_PLACE(1, S0ACENSLICEPDRV_DC, S0ACENSLICEPDRV_DC_LEN));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_ACBOOST_CTL_BYTE1_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_ACBOOST_CTL_BYTE1_P0_0,
 		              ~PPC_BITMASK(48, 56),
 		              PPC_PLACE(1, S1ACENSLICENDRV_DC, S1ACENSLICENDRV_DC_LEN) |
 		              PPC_PLACE(1, S1ACENSLICEPDRV_DC, S1ACENSLICEPDRV_DC_LEN));
 	}
 }
 
-static void reset_ctle_cntl(int mcs_i, int mca_i)
+static void reset_ctle_cntl(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -1625,13 +1629,13 @@ static void reset_ctle_cntl(int mcs_i, int mca_i)
 	 * 0xb6db6db6db6db6d0 (every 3b field is 0b101 = 5).
 	 */
 	for (dp = 0; dp < 5; dp++) {
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_CTLE_CTL_BYTE0_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_CTLE_CTL_BYTE0_P0_0,
 		              ~(PPC_BITMASK(48, 49) | PPC_BITMASK(53, 57) | PPC_BITMASK(61, 63)),
 		              PPC_PLACE(1, NIB_0_DQSEL_CAP, NIB_0_DQSEL_CAP_LEN) |
 		              PPC_PLACE(5, NIB_0_DQSEL_RES, NIB_0_DQSEL_RES_LEN) |
 		              PPC_PLACE(1, NIB_1_DQSEL_CAP, NIB_1_DQSEL_CAP_LEN) |
 		              PPC_PLACE(5, NIB_1_DQSEL_RES, NIB_1_DQSEL_RES_LEN));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_CTLE_CTL_BYTE1_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_CTLE_CTL_BYTE1_P0_0,
 		              ~(PPC_BITMASK(48, 49) | PPC_BITMASK(53, 57) | PPC_BITMASK(61, 63)),
 		              PPC_PLACE(1, NIB_2_DQSEL_CAP, NIB_2_DQSEL_CAP_LEN) |
 		              PPC_PLACE(5, NIB_2_DQSEL_RES, NIB_2_DQSEL_RES_LEN) |
@@ -1640,7 +1644,7 @@ static void reset_ctle_cntl(int mcs_i, int mca_i)
 	}
 }
 
-static void reset_delay(int mcs_i, int mca_i)
+static void reset_delay(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -1665,7 +1669,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY0 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_CSN0
 	    [57-63] ADR_DELAY1 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_ADDR_WEN_A14
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY0_P0_ADR0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY0_P0_ADR0, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_CSN0[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_ADDR_WEN_A14[vpd_idx][mca_i],
@@ -1676,7 +1680,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY2 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_ODT1
 	    [57-63] ADR_DELAY3 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_C0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY1_P0_ADR0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY1_P0_ADR0, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_ODT1[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_C0[vpd_idx][mca_i],
@@ -1687,7 +1691,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY4 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_BA1
 	    [57-63] ADR_DELAY5 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A10
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY2_P0_ADR0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY2_P0_ADR0, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_BA1[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A10[vpd_idx][mca_i],
@@ -1698,7 +1702,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY6 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_ODT1
 	    [57-63] ADR_DELAY7 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_BA0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY3_P0_ADR0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY3_P0_ADR0, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_ODT1[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_BA0[vpd_idx][mca_i],
@@ -1709,7 +1713,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY8 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A00
 	    [57-63] ADR_DELAY9 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_ODT0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY4_P0_ADR0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY4_P0_ADR0, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A00[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_ODT0[vpd_idx][mca_i],
@@ -1720,7 +1724,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY10 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_ODT0
 	    [57-63] ADR_DELAY11 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_ADDR_CASN_A15
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY5_P0_ADR0, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY5_P0_ADR0, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_ODT0[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_ADDR_CASN_A15[vpd_idx][mca_i],
@@ -1732,7 +1736,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY0 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A13
 	    [57-63] ADR_DELAY1 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_CSN1
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY0_P0_ADR1, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY0_P0_ADR1, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A13[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_CSN1[vpd_idx][mca_i],
@@ -1743,7 +1747,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY2 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_D0_CLKN
 	    [57-63] ADR_DELAY3 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_D0_CLKP
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY1_P0_ADR1, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY1_P0_ADR1, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_D0_CLKN[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_D0_CLKP[vpd_idx][mca_i],
@@ -1754,7 +1758,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY4 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A17
 	    [57-63] ADR_DELAY5 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_C1
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY2_P0_ADR1, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY2_P0_ADR1, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A17[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_C1[vpd_idx][mca_i],
@@ -1765,7 +1769,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY6 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_D1_CLKN
 	    [57-63] ADR_DELAY7 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_D1_CLKP
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY3_P0_ADR1, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY3_P0_ADR1, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_D1_CLKN[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_D1_CLKP[vpd_idx][mca_i],
@@ -1776,7 +1780,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY8 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_C2
 	    [57-63] ADR_DELAY9 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_CSN1
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY4_P0_ADR1, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY4_P0_ADR1, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_C2[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_CSN1[vpd_idx][mca_i],
@@ -1787,7 +1791,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY10 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A02
 	    [57-63] ADR_DELAY11 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_PAR
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY5_P0_ADR1, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY5_P0_ADR1, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A02[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_PAR[vpd_idx][mca_i],
@@ -1799,7 +1803,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY0 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_CSN0
 	    [57-63] ADR_DELAY1 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_ADDR_RASN_A16
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY0_P0_ADR2, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY0_P0_ADR2, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_CSN0[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_ADDR_RASN_A16[vpd_idx][mca_i],
@@ -1810,7 +1814,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY2 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A08
 	    [57-63] ADR_DELAY3 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A05
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY1_P0_ADR2, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY1_P0_ADR2, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A08[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A05[vpd_idx][mca_i],
@@ -1821,7 +1825,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY4 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A03
 	    [57-63] ADR_DELAY5 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A01
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY2_P0_ADR2, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY2_P0_ADR2, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A03[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A01[vpd_idx][mca_i],
@@ -1832,7 +1836,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY6 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A04
 	    [57-63] ADR_DELAY7 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A07
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY3_P0_ADR2, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY3_P0_ADR2, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A04[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A07[vpd_idx][mca_i],
@@ -1843,7 +1847,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY8 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A09
 	    [57-63] ADR_DELAY9 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A06
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY4_P0_ADR2, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY4_P0_ADR2, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A09[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A06[vpd_idx][mca_i],
@@ -1854,7 +1858,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY10 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_CKE1
 	    [57-63] ADR_DELAY11 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A12
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY5_P0_ADR2, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY5_P0_ADR2, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_CKE1[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A12[vpd_idx][mca_i],
@@ -1866,7 +1870,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY0 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_ACTN
 	    [57-63] ADR_DELAY1 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A11
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY0_P0_ADR3, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY0_P0_ADR3, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CMD_ACTN[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_A11[vpd_idx][mca_i],
@@ -1877,7 +1881,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY2 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_BG0
 	    [57-63] ADR_DELAY3 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_CKE0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY1_P0_ADR3, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY1_P0_ADR3, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_BG0[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_CKE0[vpd_idx][mca_i],
@@ -1888,7 +1892,7 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [49-55] ADR_DELAY4 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_CKE1
 	    [57-63] ADR_DELAY5 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_BG1
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY2_P0_ADR3, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY2_P0_ADR3, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_CKE1[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN) |
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_ADDR_BG1[vpd_idx][mca_i],
@@ -1898,13 +1902,13 @@ static void reset_delay(int mcs_i, int mca_i)
 	    [all]   0
 	    [49-55] ADR_DELAY6 = ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_CKE0
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_DELAY3_P0_ADR3, 0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY3_P0_ADR3, 0,
 	           PPC_PLACE(ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D1_CKE0[vpd_idx][mca_i],
 	                     ADR_DELAY_EVEN, ADR_DELAY_EVEN_LEN));
 
 }
 
-static void reset_tsys_adr(int mcs_i, int mca_i)
+static void reset_tsys_adr(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int i = mem_data.speed == 1866 ? 0 :
@@ -1921,13 +1925,13 @@ static void reset_tsys_adr(int mcs_i, int mca_i)
 		  // Set to '12'h for 1866 MT/s.
 	*/
 	/* Has the same stride as DP16. */
-	dp_mca_and_or(id, 0, mca_i, DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S0,
+	dp_mca_and_or(chip, id, 0, mca_i, DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S0,
 	              0, PPC_PLACE(ATTR_MSS_VPD_MR_TSYS_ADR[i], TSYS_WRCLK, TSYS_WRCLK_LEN));
-	dp_mca_and_or(id, 1, mca_i, DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S0,
+	dp_mca_and_or(chip, id, 1, mca_i, DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S0,
 	              0, PPC_PLACE(ATTR_MSS_VPD_MR_TSYS_ADR[i], TSYS_WRCLK, TSYS_WRCLK_LEN));
 }
 
-static void reset_tsys_data(int mcs_i, int mca_i)
+static void reset_tsys_data(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int i = mem_data.speed == 1866 ? 0 :
@@ -1945,13 +1949,13 @@ static void reset_tsys_data(int mcs_i, int mca_i)
 		  // Set to '0D'h for 1866 MT/s.
 	*/
 	for (dp = 0; dp < 5; dp++) {
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WRCLK_PR_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WRCLK_PR_P0_0, 0,
 		              PPC_PLACE(ATTR_MSS_VPD_MR_TSYS_DATA[i], TSYS_WRCLK,
 		                        TSYS_WRCLK_LEN));
 	}
 }
 
-static void reset_io_impedances(int mcs_i, int mca_i)
+static void reset_io_impedances(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -1968,7 +1972,7 @@ static void reset_io_impedances(int mcs_i, int mca_i)
 		 * is 34 Ohms. 240/34 = 7 bits set. According to documentation this is the
 		 * default value, but set it just to be safe.
 		 */
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_IO_TX_FET_SLICE_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_IO_TX_FET_SLICE_P0_0, 0,
 		              PPC_PLACE(0x7F, EN_SLICE_N_WR, EN_SLICE_N_WR_LEN) |
 		              PPC_PLACE(0x7F, EN_SLICE_P_WR, EN_SLICE_P_WR_LEN));
 
@@ -1978,7 +1982,7 @@ static void reset_io_impedances(int mcs_i, int mca_i)
 		    [49-55] EN_SLICE_N_WR = ATTR_MSS_VPD_MT_MC_RCV_IMP_DQ_DQS[{0,1,2,3,4}]
 		*/
 		/* 60 Ohms for all configurations, 240/60 = 4 bits set. */
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_IO_TX_PFET_TERM_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_IO_TX_PFET_TERM_P0_0, 0,
 		              PPC_PLACE(0x0F, EN_SLICE_N_WR, EN_SLICE_N_WR_LEN));
 	}
 
@@ -1990,7 +1994,7 @@ static void reset_io_impedances(int mcs_i, int mca_i)
 	      [54,52,62,60] = 0
 	*/
 	/* 30 Ohms for all configurations. */
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR1, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR1, ~0,
 	           PPC_BIT(SLICE_SEL2) | PPC_BIT(SLICE_SEL3) |
 	           PPC_BIT(SLICE_SEL6) | PPC_BIT(SLICE_SEL7));
 
@@ -2014,22 +2018,22 @@ static void reset_io_impedances(int mcs_i, int mca_i)
 	IOM0.DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR3 =
 	    [48,50,52,58] =           val       // ACT_N, ADDR11, BG0, BG1
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR0, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR0, ~0,
 	           PPC_BIT(SLICE_SEL1) | PPC_BIT(SLICE_SEL4) | PPC_BIT(SLICE_SEL5) |
 	           PPC_BIT(SLICE_SEL7));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR0, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR0, ~0,
 	           PPC_BIT(SLICE_SEL0) | PPC_BIT(SLICE_SEL3));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR1, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR1, ~0,
 	           PPC_BIT(SLICE_SEL0) | PPC_BIT(SLICE_SEL4));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR1, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR1, ~0,
 	           PPC_BIT(SLICE_SEL2));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR2, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR2, ~0,
 	           PPC_BIT(SLICE_SEL1) | PPC_BIT(SLICE_SEL2) | PPC_BIT(SLICE_SEL3) |
 	           PPC_BIT(SLICE_SEL4) | PPC_BIT(SLICE_SEL5) | PPC_BIT(SLICE_SEL6) |
 	           PPC_BIT(SLICE_SEL7));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR2, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR2, ~0,
 	           PPC_BIT(SLICE_SEL0) | PPC_BIT(SLICE_SEL1) | PPC_BIT(SLICE_SEL3));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR3, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR3, ~0,
 	           PPC_BIT(SLICE_SEL0) | PPC_BIT(SLICE_SEL1) | PPC_BIT(SLICE_SEL2) |
 	           PPC_BIT(SLICE_SEL5));
 
@@ -2049,15 +2053,15 @@ static void reset_io_impedances(int mcs_i, int mca_i)
 	IOM0.DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR3 =        // same as CMD/ADDR, however it uses different VPD
 	    [54,56,60,62] =           val       // CKE0, CKE3, CKE2, RESET_N
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR0, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR0, ~0,
 	           PPC_BIT(SLICE_SEL2) | PPC_BIT(SLICE_SEL6));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR0, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR0, ~0,
 	           PPC_BIT(SLICE_SEL1) | PPC_BIT(SLICE_SEL2));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR1, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR1, ~0,
 	           PPC_BIT(SLICE_SEL3));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR2, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR2, ~0,
 	           PPC_BIT(SLICE_SEL2));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR3, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR3, ~0,
 	           PPC_BIT(SLICE_SEL3) | PPC_BIT(SLICE_SEL4) | PPC_BIT(SLICE_SEL6) |
 	           PPC_BIT(SLICE_SEL7));
 
@@ -2075,13 +2079,13 @@ static void reset_io_impedances(int mcs_i, int mca_i)
 	IOM0.DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR2 =        // same as CMD/ADDR, however it uses different VPD
 	    [48] =                    val       // CS2
 	*/
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR0, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR0, ~0,
 	           PPC_BIT(SLICE_SEL0) | PPC_BIT(SLICE_SEL3));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR1, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR1, ~0,
 	           PPC_BIT(SLICE_SEL1) | PPC_BIT(SLICE_SEL5));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR1, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP1_P0_ADR1, ~0,
 	           PPC_BIT(SLICE_SEL0) | PPC_BIT(SLICE_SEL1));
-	mca_and_or(id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR2, ~0,
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_IO_FET_SLICE_EN_MAP0_P0_ADR2, ~0,
 	           PPC_BIT(SLICE_SEL0));
 
 	/*
@@ -2094,7 +2098,7 @@ static void reset_io_impedances(int mcs_i, int mca_i)
 	 */
 }
 
-static void reset_wr_vref_registers(int mcs_i, int mca_i)
+static void reset_wr_vref_registers(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -2114,7 +2118,7 @@ static void reset_wr_vref_registers(int mcs_i, int mca_i)
 		    [57-59] WR_CTR_NUM_BITS_TO_SKIP =     0     // skip nothing
 		    [60-62] WR_CTR_NUM_NO_INC_VREF_COMP = 7
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_CONFIG0_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_CONFIG0_P0_0, 0,
 		              PPC_BIT(WR_CTR_RUN_FULL_1D) |
 		              PPC_PLACE(1, WR_CTR_2D_BIG_STEP_VAL,
 		                        WR_CTR_2D_BIG_STEP_VAL_LEN) |
@@ -2127,7 +2131,7 @@ static void reset_wr_vref_registers(int mcs_i, int mca_i)
 		    [49-55] WR_CTR_VREF_RANGE_CROSSOVER =   0x18    // JEDEC table 34
 		    [56-62] WR_CTR_VREF_SINGLE_RANGE_MAX =  0x32    // JEDEC table 34
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_CONFIG1_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_CONFIG1_P0_0, 0,
 		              PPC_PLACE(0x18, WR_CTR_VREF_RANGE_CROSSOVER,
 		                        WR_CTR_VREF_RANGE_CROSSOVER_LEN) |
 		              PPC_PLACE(0x32, WR_CTR_VREF_SINGLE_RANGE_MAX,
@@ -2136,27 +2140,27 @@ static void reset_wr_vref_registers(int mcs_i, int mca_i)
 		/* IOM0.DDRPHY_DP16_WR_VREF_STATUS0_P0_{0,1,2,3,4} =
 		    [all]   0
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_STATUS0_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_STATUS0_P0_0, 0, 0);
 
 		/* IOM0.DDRPHY_DP16_WR_VREF_STATUS1_P0_{0,1,2,3,4} =
 		    [all]   0
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_STATUS1_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_STATUS1_P0_0, 0, 0);
 
 		/* IOM0.DDRPHY_DP16_WR_VREF_ERROR_MASK{0,1}_P0_{0,1,2,3,4} =
 		    [all]   0
 		    [48-63] 0xffff
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR_MASK0_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR_MASK0_P0_0, 0,
 		              PPC_BITMASK(48, 63));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR_MASK1_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR_MASK1_P0_0, 0,
 		              PPC_BITMASK(48, 63));
 
 		/* IOM0.DDRPHY_DP16_WR_VREF_ERROR{0,1}_P0_{0,1,2,3,4} =
 		    [all]   0
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0, 0, 0);
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0, 0, 0);
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0, 0, 0);
 
 		/* Assume RDIMM
 		IOM0.DDRPHY_DP16_WR_VREF_VALUE{0,1}_RANK_PAIR0_P0_{0,1,2,3,4} =
@@ -2169,42 +2173,50 @@ static void reset_wr_vref_registers(int mcs_i, int mca_i)
 		    [57]    WR_VREF_RANGE_DRAM{1,3} = ATTR_MSS_VPD_MT_VREF_DRAM_WR & 0x40
 		    [58-63] WR_VREF_VALUE_DRAM{1,3} = ATTR_MSS_VPD_MT_VREF_DRAM_WR & 0x3f
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE0_RANK_PAIR0_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE0_RANK_PAIR0_P0_0,
+			      0,
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM0, WR_VREF_VALUE_DRAM0_LEN) |
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM1, WR_VREF_VALUE_DRAM1_LEN));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE1_RANK_PAIR0_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE1_RANK_PAIR0_P0_0,
+			      0,
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM2, WR_VREF_VALUE_DRAM2_LEN) |
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM3, WR_VREF_VALUE_DRAM3_LEN));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE0_RANK_PAIR1_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE0_RANK_PAIR1_P0_0,
+			      0,
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM0, WR_VREF_VALUE_DRAM0_LEN) |
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM1, WR_VREF_VALUE_DRAM1_LEN));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE1_RANK_PAIR1_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE1_RANK_PAIR1_P0_0,
+			      0,
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM2, WR_VREF_VALUE_DRAM2_LEN) |
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM3, WR_VREF_VALUE_DRAM3_LEN));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE0_RANK_PAIR2_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE0_RANK_PAIR2_P0_0,
+			      0,
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM0, WR_VREF_VALUE_DRAM0_LEN) |
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM1, WR_VREF_VALUE_DRAM1_LEN));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE1_RANK_PAIR2_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE1_RANK_PAIR2_P0_0,
+			      0,
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM2, WR_VREF_VALUE_DRAM2_LEN) |
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM3, WR_VREF_VALUE_DRAM3_LEN));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE0_RANK_PAIR3_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE0_RANK_PAIR3_P0_0,
+			      0,
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM0, WR_VREF_VALUE_DRAM0_LEN) |
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM1, WR_VREF_VALUE_DRAM1_LEN));
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE1_RANK_PAIR3_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_VALUE1_RANK_PAIR3_P0_0,
+			      0,
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
 		                        WR_VREF_VALUE_DRAM2, WR_VREF_VALUE_DRAM2_LEN) |
 		              PPC_PLACE(ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx],
@@ -2212,7 +2224,7 @@ static void reset_wr_vref_registers(int mcs_i, int mca_i)
 	}
 }
 
-static void reset_drift_limits(int mcs_i, int mca_i)
+static void reset_drift_limits(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -2221,14 +2233,14 @@ static void reset_drift_limits(int mcs_i, int mca_i)
 		/* IOM0.DDRPHY_DP16_DRIFT_LIMITS_P0_{0,1,2,3,4} =
 		    [48-49] DD2_BLUE_EXTEND_RANGE = 1         // always ONE_TO_FOUR due to red waterfall workaround
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DRIFT_LIMITS_P0_0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DRIFT_LIMITS_P0_0,
 		              ~PPC_BITMASK(48, 49),
 		              PPC_PLACE(1, DD2_BLUE_EXTEND_RANGE,
 		                        DD2_BLUE_EXTEND_RANGE_LEN));
 	}
 }
 
-static void rd_dia_config5(int mcs_i, int mca_i)
+static void rd_dia_config5(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -2241,14 +2253,14 @@ static void rd_dia_config5(int mcs_i, int mca_i)
 		    [52]    PER_CAL_UPDATE_DISABLE =  1     // "This bit must be set to 0 for normal operation"
 		    [59]    PERCAL_PWR_DIS =          1
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_RD_DIA_CONFIG5_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_RD_DIA_CONFIG5_P0_0, 0,
 		              PPC_BIT(DYN_MCTERM_CNTL_EN) |
 		              PPC_BIT(PER_CAL_UPDATE_DISABLE) |
 		              PPC_BIT(PERCAL_PWR_DIS));
 	}
 }
 
-static void dqsclk_offset(int mcs_i, int mca_i)
+static void dqsclk_offset(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -2259,58 +2271,58 @@ static void dqsclk_offset(int mcs_i, int mca_i)
 		    [all]   0
 		    [49-55] DQS_OFFSET = 0x08       // Config provided by S. Wyatt 9/13
 		*/
-		dp_mca_and_or(id, dp, mca_i, DDRPHY_DP16_DQSCLK_OFFSET_P0_0, 0,
+		dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_DP16_DQSCLK_OFFSET_P0_0, 0,
 		              PPC_PLACE(0x08, DQS_OFFSET, DQS_OFFSET_LEN));
 	}
 }
 
-static void phy_scominit(int mcs_i, int mca_i)
+static void phy_scominit(uint8_t chip, int mcs_i, int mca_i)
 {
 	/* Hostboot here sets strength, we did it in p9n_ddrphy_scom(). */
-	set_rank_pairs(mcs_i, mca_i);
+	set_rank_pairs(chip, mcs_i, mca_i);
 
-	reset_data_bit_enable(mcs_i, mca_i);
+	reset_data_bit_enable(chip, mcs_i, mca_i);
 
 	/* Assume there are no bad bits (disabled DQ/DQS lines) for now */
 	// reset_bad_bits();
 
-	reset_clock_enable(mcs_i, mca_i);
-	reset_rd_vref(mcs_i, mca_i);
+	reset_clock_enable(chip, mcs_i, mca_i);
+	reset_rd_vref(chip, mcs_i, mca_i);
 
-	pc_reset(mcs_i, mca_i);
-	wc_reset(mcs_i, mca_i);
-	rc_reset(mcs_i, mca_i);
-	seq_reset(mcs_i, mca_i);
+	pc_reset(chip, mcs_i, mca_i);
+	wc_reset(chip, mcs_i, mca_i);
+	rc_reset(chip, mcs_i, mca_i);
+	seq_reset(chip, mcs_i, mca_i);
 
-	reset_ac_boost_cntl(mcs_i, mca_i);
-	reset_ctle_cntl(mcs_i, mca_i);
-	reset_delay(mcs_i, mca_i);
-	reset_tsys_adr(mcs_i, mca_i);
-	reset_tsys_data(mcs_i, mca_i);
-	reset_io_impedances(mcs_i, mca_i);
-	reset_wr_vref_registers(mcs_i, mca_i);
-	reset_drift_limits(mcs_i, mca_i);
+	reset_ac_boost_cntl(chip, mcs_i, mca_i);
+	reset_ctle_cntl(chip, mcs_i, mca_i);
+	reset_delay(chip, mcs_i, mca_i);
+	reset_tsys_adr(chip, mcs_i, mca_i);
+	reset_tsys_data(chip, mcs_i, mca_i);
+	reset_io_impedances(chip, mcs_i, mca_i);
+	reset_wr_vref_registers(chip, mcs_i, mca_i);
+	reset_drift_limits(chip, mcs_i, mca_i);
 
 	/* Workarounds */
 
 	/* Doesn't apply to DD2 */
 	// dqs_polarity();
 
-	rd_dia_config5(mcs_i, mca_i);
-	dqsclk_offset(mcs_i, mca_i);
+	rd_dia_config5(chip, mcs_i, mca_i);
+	dqsclk_offset(chip, mcs_i, mca_i);
 
 	/* Doesn't apply to DD2 */
 	// odt_config();
 }
 
-static void fir_unmask(int mcs_i, int mca_i)
+static void fir_unmask(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	/* IOM0.IOM_PHY0_DDRPHY_FIR_REG =
 	  [56]  IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2 = 0   // calibration errors
 	  [58]  IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_4 = 0   // DLL errors
 	*/
-	mca_and_or(id, mca_i, IOM_PHY0_DDRPHY_FIR_REG,
+	mca_and_or(chip, id, mca_i, IOM_PHY0_DDRPHY_FIR_REG,
 	           ~(PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2) |
 	             PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_4)),
 	           0);
@@ -2319,13 +2331,13 @@ static void fir_unmask(int mcs_i, int mca_i)
 	  [4]   MBACALFIR_RCD_PARITY_ERROR = 0
 	  [8]   MBACALFIR_DDR_MBA_EVENT_N =  0
 	*/
-	mca_and_or(id, mca_i, MBACALFIR,
+	mca_and_or(chip, id, mca_i, MBACALFIR,
 	           ~(PPC_BIT(MBACALFIR_RCD_PARITY_ERROR) |
 	             PPC_BIT(MBACALFIR_DDR_MBA_EVENT_N)),
 	           0);
 }
 
-static void mss_scominit(void)
+static void mss_scominit(uint8_t chip)
 {
 	int mcs_i, mca_i;
 
@@ -2347,14 +2359,14 @@ static void mss_scominit(void)
 			/* Some registers cannot be initialized without data from SPD */
 			if (mca->functional) {
 				/* Assume DIMM mixing rules are followed - same rank config on both DIMMs*/
-				p9n_mca_scom(mcs_i, mca_i);
-				thermal_throttle_scominit(mcs_i, mca_i);
+				p9n_mca_scom(chip, mcs_i, mca_i);
+				thermal_throttle_scominit(chip, mcs_i, mca_i);
 			}
 
 			/* The rest can and should be initialized also on magic port */
-			p9n_ddrphy_scom(mcs_i, mca_i);
+			p9n_ddrphy_scom(chip, mcs_i, mca_i);
 		}
-		p9n_mcbist_scom(mcs_i);
+		p9n_mcbist_scom(chip, mcs_i);
 	}
 
 	/* This double loop is a part of phy_scominit() in Hostboot, but this is simpler. */
@@ -2366,24 +2378,25 @@ static void mss_scominit(void)
 			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
 			/* No magic for phy_scominit(). */
 			if (mca->functional)
-				phy_scominit(mcs_i, mca_i);
+				phy_scominit(chip, mcs_i, mca_i);
 
-			/*
-			 * TODO: test this with DIMMs on both MCS. Maybe this has to be done
-			 * in a separate loop, after phy_scominit()'s are done on both MCSs.
-			 */
 			if (mca_i == 0 || mca->functional)
-				fir_unmask(mcs_i, mca_i);
+				fir_unmask(chip, mcs_i, mca_i);
 		}
 	}
 }
 
-void istep_13_8(void)
+void istep_13_8(uint8_t chips)
 {
+	uint8_t chip;
+
 	printk(BIOS_EMERG, "starting istep 13.8\n");
 	report_istep(13,8);
 
-	mss_scominit();
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			mss_scominit(chip);
+	}
 
 	printk(BIOS_EMERG, "ending istep 13.8\n");
 }

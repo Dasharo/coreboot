@@ -14,14 +14,13 @@
 #define MCS_MCMODE0_DISABLE_MC_SYNC (27)
 #define MCS_MCMODE0_DISABLE_MC_PAIR_SYNC (28)
 
-static void thermalInit(void)
+static void thermalInit(uint8_t chip)
 {
 	for (size_t MCSIndex = 0; MCSIndex < MCS_PER_PROC; ++MCSIndex) {
 		for (size_t MCAIndex = 0; MCAIndex < MCA_PER_MCS; ++MCAIndex) {
-				mca_and_or(
-					mcs_ids[MCSIndex], MCAIndex, MCA_MBA_FARB3Q,
-					~PPC_BITMASK(0, 45),
-					PPC_BIT(10) | PPC_BIT(25) | PPC_BIT(37));
+				mca_and_or(chip, mcs_ids[MCSIndex], MCAIndex, MCA_MBA_FARB3Q,
+					   ~PPC_BITMASK(0, 45),
+					   PPC_BIT(10) | PPC_BIT(25) | PPC_BIT(37));
 		}
 		scom_and_for_chiplet(mcs_to_nest[mcs_ids[MCSIndex]], MCS_MCMODE0 + 0x80 * MCSIndex, PPC_BIT(21));
 	}
@@ -53,7 +52,8 @@ static void throttleSync(void)
 
 void istep_14_2(void)
 {
+	uint8_t chip = 0; // TODO: support second CPU
 	report_istep(14, 2);
-	thermalInit();
+	thermalInit(chip);
 	throttleSync();
 }
