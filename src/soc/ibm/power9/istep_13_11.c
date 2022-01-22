@@ -1,11 +1,27 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/vpd_data.h>
 #include <console/console.h>
 #include <timer.h>
 
 #include "istep_13_scom.h"
+
+/*
+ * 13.11 mss_draminit_training: Dram training
+ *
+ * a) p9_mss_draminit_training.C (mcbist) -- Nimbus
+ * b) p9c_mss_draminit_training.C (mba) -- Cumulus
+ *    - Prior to running this procedure will apply known DQ bad bits to prevent
+ *      them from participating in training. This information is extracted from
+ *      the bad DQ attribute and applied to Hardware
+ *      - Marks the calibration fail array
+ *    - External ZQ Calibration
+ *    - Execute initial dram calibration (7 step - handled by HW)
+ *    - This procedure will update the bad DQ attribute for each dimm based on
+ *      its findings
+ */
 
 static void setup_and_execute_zqcal(uint8_t chip, int mcs_i, int mca_i, int d)
 {
@@ -113,7 +129,7 @@ static void clear_initial_cal_errors(uint8_t chip, int mcs_i, int mca_i)
 	           ~PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2), 0);
 }
 
-static void dump_cal_errors(int mcs_i, int mca_i)
+static void dump_cal_errors(uint8_t chip, int mcs_i, int mca_i)
 {
 #if CONFIG(DEBUG_RAM_SETUP)
 	chiplet_id_t id = mcs_ids[mcs_i];
@@ -968,7 +984,7 @@ static void dispatch_step(uint8_t chip, struct phy_step *step, int mcs_i, int mc
 	if (step->post)
 		step->post(chip, mcs_i, mca_i, rp, ranks_present);
 
-	dump_cal_errors(mcs_i, mca_i);
+	dump_cal_errors(chip, mcs_i, mca_i);
 
 	if (mca_read(chip, mcs_ids[mcs_i], mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0) != 0)
 		die("%s failed, aborting\n", step->name);
@@ -1012,15 +1028,15 @@ static int process_initial_cal_errors(uint8_t chip, int mcs_i, int mca_i)
 	 * calibration engine itself. Check for latter.
 	 */
 	/* IOM0.IOM_PHY0_DDRPHY_FIR_REG */
-	if (read_scom_for_chiplet(id, IOM_PHY0_DDRPHY_FIR_REG) &
+	if (read_rscom_for_chiplet(chip, id, IOM_PHY0_DDRPHY_FIR_REG) &
 	    PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2)) {
 		/*
 		 * "Clear the PHY FIR ERROR 2 bit so we don't keep failing training and
 		 * training advance on this port"
 		 */
-		scom_and_or_for_chiplet(id, IOM_PHY0_DDRPHY_FIR_REG,
-		                        ~PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2),
-		                        0);
+		rscom_and_or_for_chiplet(chip, id, IOM_PHY0_DDRPHY_FIR_REG,
+		                         ~PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2),
+		                         0);
 
 		return 1;
 	}
@@ -1148,15 +1164,15 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	MC01.MCBIST.MBA_SCOMFIR.MCBISTFIRMASK
 		  [1] MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT =  0     //recoverable_error (0,1,0)
 	 */
-	scom_and_or_for_chiplet(id, MCBISTFIRACT0,
-	                        ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
-	                        0);
-	scom_and_or_for_chiplet(id, MCBISTFIRACT1,
-	                        ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
-	                        PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT));
-	scom_and_or_for_chiplet(id, MCBISTFIRMASK,
-	                        ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
-	                        0);
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT0,
+	                         ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
+	                         0);
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
+	                         ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
+	                         PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT));
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRMASK,
+	                         ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
+	                         0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
@@ -1222,28 +1238,10 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	}
 }
 
-/*
- * 13.11 mss_draminit_training: Dram training
- *
- * a) p9_mss_draminit_training.C (mcbist) -- Nimbus
- * b) p9c_mss_draminit_training.C (mba) -- Cumulus
- *    - Prior to running this procedure will apply known DQ bad bits to prevent
- *      them from participating in training. This information is extracted from
- *      the bad DQ attribute and applied to Hardware
- *      - Marks the calibration fail array
- *    - External ZQ Calibration
- *    - Execute initial dram calibration (7 step - handled by HW)
- *    - This procedure will update the bad DQ attribute for each dimm based on
- *      its findings
- */
-void istep_13_11(void)
+static void mss_draminit_training(uint8_t chip)
 {
-	printk(BIOS_EMERG, "starting istep 13.11\n");
 	int mcs_i, mca_i, dimm, rp;
 	enum rank_selection ranks_present;
-	uint8_t chip = 0; // TODO: support second CPU
-
-	report_istep(13,11);
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		if (!mem_data.mcs[mcs_i].functional)
@@ -1332,7 +1330,7 @@ void istep_13_11(void)
 				if (!(ranks_present & (1 << rp)))
 					continue;
 
-				dump_cal_errors(mcs_i, mca_i);
+				dump_cal_errors(chip, mcs_i, mca_i);
 
 				for (int i = 0; i < ARRAY_SIZE(steps); i++)
 					dispatch_step(chip, &steps[i], mcs_i, mca_i, rp,
@@ -1360,6 +1358,19 @@ void istep_13_11(void)
 		 */
 
 		fir_unmask(chip, mcs_i);
+	}
+}
+
+void istep_13_11(uint8_t chips)
+{
+	uint8_t chip;
+
+	printk(BIOS_EMERG, "starting istep 13.11\n");
+	report_istep(13,11);
+
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			mss_draminit_training(chip);
 	}
 
 	printk(BIOS_EMERG, "ending istep 13.11\n");
