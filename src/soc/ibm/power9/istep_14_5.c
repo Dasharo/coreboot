@@ -3,8 +3,42 @@
 #include <cpu/power/istep_14.h>
 #include <cpu/power/istep_13.h>
 #include <console/console.h>
+#include <string.h>
 
 #include "istep_13_scom.h"
+
+/*
+ * 14.5 proc_setup_bars: Setup Memory BARs
+ *
+ * a) p9_mss_setup_bars.C (proc chip) -- Nimbus
+ * b) p9c_mss_setup_bars.C (proc chip) -- Cumulus
+ *    - Same HWP interface for both Nimbus and Cumulus, input target is
+ *      TARGET_TYPE_PROC_CHIP; HWP is to figure out if target is a Nimbus (MCS)
+ *      or Cumulus (MI) internally.
+ *    - Prior to setting the memory bars on each processor chip, this procedure
+ *      needs to set the centaur security protection bit
+ *      - TCM_CHIP_PROTECTION_EN_DC is SCOM Addr 0x03030000
+ *      - TCN_CHIP_PROTECTION_EN_DC is SCOM Addr 0x02030000
+ *      - Both must be set to protect Nest and Mem domains
+ *    - Based on system memory map
+ *      - Each MCS has its mirroring and non mirrored BARs
+ *      - Set the correct checkerboard configs. Note that chip flushes to
+ *        checkerboard
+ *      - need to disable memory bar on slave otherwise base flush values will
+ *        ack all memory accesses
+ * c) p9_setup_bars.C
+ *    - Sets up Powerbus/MCD, L3 BARs on running core
+ *      - Other cores are setup via winkle images
+ *    - Setup dSMP and PCIe Bars
+ *      - Setup PCIe outbound BARS (doing stores/loads from host core)
+ *        - Addresses that PCIE responds to on powerbus (PCI init 1-7)
+ *      - Informing PCIe of the memory map (inbound)
+ *        - PCI Init 8-15
+ *    - Set up Powerbus Epsilon settings
+ *      - Code is still running out of L3 cache
+ *      - Use this procedure to setup runtime epsilon values
+ *      - Must be done before memory is viable
+ */
 
 /*
  * Reset memory controller configuration written by SBE.
@@ -18,7 +52,7 @@
  * All register and field names come from code and comments only, except for the
  * first one.
  */
-static void revert_mc_hb_dcbz_config(void)
+static void revert_mc_hb_dcbz_config(uint8_t chip)
 {
 	int mcs_i, i;
 	uint64_t val;
@@ -32,7 +66,7 @@ static void revert_mc_hb_dcbz_config(void)
 		 * Hostboot uses - bit 10 for MCS0/1 and bit 9 for MCS2/3.
 		 */
 		/* TP.TCNx.Nx.CPLT_CTRL1, x = {1,3} */
-		val = read_scom_for_chiplet(nest, NEST_CPLT_CTRL1);
+		val = read_rscom_for_chiplet(chip, nest, NEST_CPLT_CTRL1);
 		if ((mcs_i == 0 && val & PPC_BIT(10)) ||
 		    (mcs_i == 1 && val & PPC_BIT(9)))
 			continue;
@@ -45,9 +79,9 @@ static void revert_mc_hb_dcbz_config(void)
 				[5-7]   CHANNEL_0_GROUP_MEMBER_IDENTIFICATION = 0   // CHANNEL_1_GROUP_MEMBER_IDENTIFICATION not cleared?
 				[13-23] GROUP_SIZE =                            0
 			*/
-			scom_and_or_for_chiplet(nest, 0x0501080A + i * mul,
-			                        ~(PPC_BITMASK(0, 7) | PPC_BITMASK(13, 23)),
-			                        0);
+			rscom_and_or_for_chiplet(chip, nest, 0x0501080A + i * mul,
+			                         ~(PPC_BITMASK(0, 7) | PPC_BITMASK(13, 23)),
+			                         0);
 
 			/* MCMODE1 -- enable speculation, cmd bypass, fp command bypass
 			MCS_n_MCMODE1  // undocumented, 0x05010812, 0x05010892, 0x03010812, 0x03010892
@@ -56,24 +90,24 @@ static void revert_mc_hb_dcbz_config(void)
 				[54-60] DISABLE_COMMAND_BYPASS =    0
 				[61]    DISABLE_FP_COMMAND_BYPASS = 0
 			*/
-			scom_and_or_for_chiplet(nest, 0x05010812 + i * mul,
-			                        ~(PPC_BITMASK(32, 51) | PPC_BITMASK(54, 61)),
-			                        PPC_PLACE(0x40, 33, 19));
+			rscom_and_or_for_chiplet(chip, nest, 0x05010812 + i * mul,
+			                         ~(PPC_BITMASK(32, 51) | PPC_BITMASK(54, 61)),
+			                         PPC_PLACE(0x40, 33, 19));
 
 			/* MCS_MCPERF1 -- enable fast path
 			MCS_n_MCPERF1  // undocumented, 0x05010810, 0x05010890, 0x03010810, 0x03010890
 				[0]     DISABLE_FASTPATH =  0
 			*/
-			scom_and_or_for_chiplet(nest, 0x05010810 + i * mul,
-			                        ~PPC_BIT(0),
-			                        0);
+			rscom_and_or_for_chiplet(chip, nest, 0x05010810 + i * mul,
+			                         ~PPC_BIT(0),
+			                         0);
 
 			/* Re-mask MCFIR. We want to ensure all MCSs are masked until the
 			 * BARs are opened later during IPL.
 			MCS_n_MCFIRMASK_OR  // undocumented, 0x05010805, 0x05010885, 0x03010805, 0x03010885
 				[all]   1
 			*/
-			write_scom_for_chiplet(nest, 0x05010805 + i * mul, ~0);
+			write_rscom_for_chiplet(chip, nest, 0x05010805 + i * mul, ~0);
 		}
 	}
 }
@@ -156,12 +190,23 @@ static void add_group(struct mc_group groups[MCA_PER_PROC], int size, uint8_t ma
 }
 
 /* TODO: make groups with > 1 MCA possible */
-static void fill_groups(void)
+static void fill_groups(uint8_t chip)
 {
+	/*
+	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
+	 * when chip ID is actually a group ID and "chip ID" field is zero.
+	 */
+	uint64_t proc_base_addr = PPC_PLACE(0x0, 8, 5)   // system ID
+				| PPC_PLACE(0x0, 13, 2)  // msel
+				| PPC_PLACE(chip, 15, 4) // group ID
+				| PPC_PLACE(0x0, 19, 3); // chip ID
+
 	int mcs_i, mca_i, i;
 	struct mc_group groups[MCA_PER_PROC] = {0};
 	/* This is in 4GB units, as expected by registers. */
-	uint32_t cur_ba = 0;
+	uint32_t cur_ba = proc_base_addr >> 32;
+
+	memset(mcfgp_regs, 0, sizeof(mcfgp_regs));
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		if (!mem_data.mcs[mcs_i].functional)
@@ -235,7 +280,7 @@ static void fill_groups(void)
  * discarding the old one. As these registers are not documented, I can't even
  * tell whether it sets checkstop, recoverable error or something else.
  */
-static void fir_unmask(int mcs_i)
+static void fir_unmask(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t nest = mcs_to_nest[mcs_ids[mcs_i]];
 	/* Stride discovered by trial and error due to lack of documentation. */
@@ -246,8 +291,8 @@ static void fir_unmask(int mcs_i)
 		[0]     MC_INTERNAL_RECOVERABLE_ERROR = 1
 		[8]     COMMAND_LIST_TIMEOUT =          1
 	*/
-	write_scom_for_chiplet(nest, 0x05010807 + mcs_i * mul,
-	                       PPC_BIT(0) | PPC_BIT(8));
+	write_rscom_for_chiplet(chip, nest, 0x05010807 + mcs_i * mul,
+	                        PPC_BIT(0) | PPC_BIT(8));
 
 	/* MCS_MCFIRMASK (AND)             // undocumented, 0x05010804
 		[all]   1
@@ -258,60 +303,23 @@ static void fir_unmask(int mcs_i)
 		[5]     INVALID_ADDRESS =                   0
 		[8]     COMMAND_LIST_TIMEOUT =              0
 	*/
-	write_scom_for_chiplet(nest, 0x05010804 + mcs_i * mul,
-	                       ~(PPC_BIT(0) | PPC_BIT(1) | PPC_BIT(2) |
-	                         PPC_BIT(4) | PPC_BIT(5) | PPC_BIT(8)));
+	write_rscom_for_chiplet(chip, nest, 0x05010804 + mcs_i * mul,
+	                        ~(PPC_BIT(0) | PPC_BIT(1) | PPC_BIT(2) |
+	                          PPC_BIT(4) | PPC_BIT(5) | PPC_BIT(8)));
 }
 
-static void mcd_fir_mask(void)
+static void mcd_fir_mask(uint8_t chip)
 {
 	/* These are set always for N1 chiplet only. */
-	write_scom_for_chiplet(N1_CHIPLET_ID, MCD1_FIR_MASK_REG, ~0);
-	write_scom_for_chiplet(N1_CHIPLET_ID, MCD0_FIR_MASK_REG, ~0);
+	write_rscom_for_chiplet(chip, N1_CHIPLET_ID, MCD1_FIR_MASK_REG, ~0);
+	write_rscom_for_chiplet(chip, N1_CHIPLET_ID, MCD0_FIR_MASK_REG, ~0);
 }
 
-/*
- * 14.5 proc_setup_bars: Setup Memory BARs
- *
- * a) p9_mss_setup_bars.C (proc chip) -- Nimbus
- * b) p9c_mss_setup_bars.C (proc chip) -- Cumulus
- *    - Same HWP interface for both Nimbus and Cumulus, input target is
- *      TARGET_TYPE_PROC_CHIP; HWP is to figure out if target is a Nimbus (MCS)
- *      or Cumulus (MI) internally.
- *    - Prior to setting the memory bars on each processor chip, this procedure
- *      needs to set the centaur security protection bit
- *      - TCM_CHIP_PROTECTION_EN_DC is SCOM Addr 0x03030000
- *      - TCN_CHIP_PROTECTION_EN_DC is SCOM Addr 0x02030000
- *      - Both must be set to protect Nest and Mem domains
- *    - Based on system memory map
- *      - Each MCS has its mirroring and non mirrored BARs
- *      - Set the correct checkerboard configs. Note that chip flushes to
- *        checkerboard
- *      - need to disable memory bar on slave otherwise base flush values will
- *        ack all memory accesses
- * c) p9_setup_bars.C
- *    - Sets up Powerbus/MCD, L3 BARs on running core
- *      - Other cores are setup via winkle images
- *    - Setup dSMP and PCIe Bars
- *      - Setup PCIe outbound BARS (doing stores/loads from host core)
- *        - Addresses that PCIE responds to on powerbus (PCI init 1-7)
- *      - Informing PCIe of the memory map (inbound)
- *        - PCI Init 8-15
- *    - Set up Powerbus Epsilon settings
- *      - Code is still running out of L3 cache
- *      - Use this procedure to setup runtime epsilon values
- *      - Must be done before memory is viable
- */
-void istep_14_5(void)
+static void proc_setup_bars(uint8_t chip)
 {
 	int mcs_i;
-	printk(BIOS_EMERG, "starting istep 14.5\n");
-	report_istep(14, 5);
 
-	/* Start MCS reset */
-	revert_mc_hb_dcbz_config();
-
-	fill_groups();
+	fill_groups(chip);
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		chiplet_id_t nest = mcs_to_nest[mcs_ids[mcs_i]];
@@ -319,20 +327,36 @@ void istep_14_5(void)
 		if (!mem_data.mcs[mcs_i].functional)
 			continue;
 
-		fir_unmask(mcs_i);
+		fir_unmask(chip, mcs_i);
 
 		/*
 		 * More undocumented registers. First two are described before
 		 * 'mcfgp_regs', last two are for setting up memory hole and SMF, they
 		 * are unused now.
 		 */
-		write_scom_for_chiplet(nest, 0x0501080A, mcfgp_regs[mcs_i][0]);
-		write_scom_for_chiplet(nest, 0x0501080C, mcfgp_regs[mcs_i][1]);
-		write_scom_for_chiplet(nest, 0x0501080B, 0);
-		write_scom_for_chiplet(nest, 0x0501080D, 0);
+		write_rscom_for_chiplet(chip, nest, 0x0501080A, mcfgp_regs[mcs_i][0]);
+		write_rscom_for_chiplet(chip, nest, 0x0501080C, mcfgp_regs[mcs_i][1]);
+		write_rscom_for_chiplet(chip, nest, 0x0501080B, 0);
+		write_rscom_for_chiplet(chip, nest, 0x0501080D, 0);
 	}
 
-	mcd_fir_mask();
+	mcd_fir_mask(chip);
+}
+
+void istep_14_5(uint8_t chips)
+{
+	uint8_t chip;
+
+	printk(BIOS_EMERG, "starting istep 14.5\n");
+	report_istep(14, 5);
+
+	/* Start MCS reset */
+	revert_mc_hb_dcbz_config(/*chip=*/0);
+
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			proc_setup_bars(chip);
+	}
 
 	printk(BIOS_EMERG, "ending istep 14.5\n");
 }
