@@ -403,7 +403,7 @@ void main(void)
 	istep_13_13(chips);
 
 	istep_14_1(chips);
-	istep_14_2();
+	istep_14_2(chips);
 	istep_14_3(chips, pci_info);
 	report_istep(14,4);	// no-op
 	istep_14_5();
