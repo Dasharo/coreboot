@@ -18,15 +18,11 @@
  *    - Disable listen_to_sync for MEM chiplet, whenever MEM is not in sync to
  *      NEST
  */
-void istep_13_2(void)
+
+static void mem_pll_reset(void)
 {
-	printk(BIOS_EMERG, "starting istep 13.2\n");
 	int i;
 	long time_elapsed = 0;
-
-	report_istep(13,2);
-
-	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
 
 	for (i = 0; i < MCS_PER_PROC; i++) {
 		// Assert endpoint reset
@@ -169,6 +165,17 @@ void istep_13_2(void)
 		write_scom_for_chiplet(mcs_ids[i], MCSLOW_CLK_REGION, 0);
 		write_scom_for_chiplet(mcs_ids[i], MCSLOW_SCAN_REGION_TYPE, 0);
 	}
+}
+
+void istep_13_2(void)
+{
+	printk(BIOS_EMERG, "starting istep 13.2\n");
+
+	report_istep(13,2);
+
+	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
+
+	mem_pll_reset();
 
 	printk(BIOS_EMERG, "ending istep 13.2\n");
 }
