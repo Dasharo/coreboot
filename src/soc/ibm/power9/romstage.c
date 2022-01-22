@@ -400,7 +400,7 @@ void main(void)
 	istep_13_10(chips);
 	istep_13_11(chips);
 	report_istep(13,12);	// optional, not yet implemented
-	istep_13_13();
+	istep_13_13(chips);
 
 	istep_14_1();
 	istep_14_2();

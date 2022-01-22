@@ -1,9 +1,22 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/proc.h>
 #include <console/console.h>
 
 #include "istep_13_scom.h"
+
+/*
+ * 13.13 mss_draminit_mc: Hand off control to MC
+ *
+ * a) p9_mss_draminit_mc.C  (mcbist) - Nimbus
+ * b) p9c_mss_draminit_mc.C  (membuf) -Cumulus
+ *    - P9 Cumulus -- Set IML complete bit in centaur
+ *    - Start main refresh engine
+ *    - Refresh, periodic calibration, power controls
+ *    - Turn on ECC checking on memory accesses
+ *    - Note at this point memory FIRs can be monitored by PRD
+ */
 
 /*
  * Set up the MC port <-> DIMM address translation registers.
@@ -343,7 +356,7 @@ static const uint64_t xlt_tables[][3] = {
 	/* TODO: 3DS */
 };
 
-static void setup_xlate_map(int mcs_i, int mca_i)
+static void setup_xlate_map(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -393,16 +406,16 @@ static void setup_xlate_map(int mcs_i, int mca_i)
 	}
 
 	/* MCS_PORT02_MCP0XLT0 (?) */
-	write_scom_for_chiplet(nest, 0x05010820 + mca_i * mca_mul,
-	                       dimms_rank_config(mca, xlt_tables[cfg][0], update_d));
+	write_rscom_for_chiplet(chip, nest, 0x05010820 + mca_i * mca_mul,
+	                        dimms_rank_config(mca, xlt_tables[cfg][0], update_d));
 
 	/* MCS_PORT02_MCP0XLT1 (?) */
-	write_scom_for_chiplet(nest, 0x05010821 + mca_i * mca_mul,
-	                       xlt_tables[cfg][1]);
+	write_rscom_for_chiplet(chip, nest, 0x05010821 + mca_i * mca_mul,
+	                        xlt_tables[cfg][1]);
 
 	/* MCS_PORT02_MCP0XLT2 (?) */
-	write_scom_for_chiplet(nest, 0x05010822 + mca_i * mca_mul,
-	                       xlt_tables[cfg][2]);
+	write_rscom_for_chiplet(chip, nest, 0x05010822 + mca_i * mca_mul,
+	                        xlt_tables[cfg][2]);
 
 }
 
@@ -481,18 +494,18 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	 * TODO: check if this works with bootblock in SEEPROM too. We don't have
 	 * interrupt handlers set up in that case.
 	 */
-	scom_and_or_for_chiplet(id, MCBISTFIRACT0,
-	                        ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
-	                          PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
-	                        PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE));
-	scom_and_or_for_chiplet(id, MCBISTFIRACT1,
-	                        ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
-	                          PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
-	                        PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC));
-	scom_and_or_for_chiplet(id, MCBISTFIRMASK,
-	                        ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
-	                          PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
-	                        0);
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT0,
+	                         ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
+	                           PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
+	                         PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE));
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
+	                         ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
+	                           PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
+	                         PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC));
+	rscom_and_or_for_chiplet(chip, id, MCBISTFIRMASK,
+	                         ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
+	                           PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
+	                         0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
@@ -593,24 +606,9 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	}
 }
 
-/*
- * 13.13 mss_draminit_mc: Hand off control to MC
- *
- * a) p9_mss_draminit_mc.C  (mcbist) - Nimbus
- * b) p9c_mss_draminit_mc.C  (membuf) -Cumulus
- *    - P9 Cumulus -- Set IML complete bit in centaur
- *    - Start main refresh engine
- *    - Refresh, periodic calibration, power controls
- *    - Turn on ECC checking on memory accesses
- *    - Note at this point memory FIRs can be monitored by PRD
- */
-void istep_13_13(void)
+static void mss_draminit_mc(uint8_t chip)
 {
-	printk(BIOS_EMERG, "starting istep 13.13\n");
 	int mcs_i, mca_i;
-	uint8_t chip = 0; // TODO: support second CPU
-
-	report_istep(13,13);
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		/* No need to initialize a non-functional MCS */
@@ -624,7 +622,7 @@ void istep_13_13(void)
 			if (!mca->functional)
 				continue;
 
-			setup_xlate_map(mcs_i, mca_i);
+			setup_xlate_map(chip, mcs_i, mca_i);
 
 			/* Set up read pointer delay */
 			/* MC01.PORT0.ECC64.SCOM.RECR
@@ -718,6 +716,19 @@ void istep_13_13(void)
 		}
 
 		fir_unmask(chip, mcs_i);
+	}
+}
+
+void istep_13_13(uint8_t chips)
+{
+	uint8_t chip;
+
+	printk(BIOS_EMERG, "starting istep 13.13\n");
+	report_istep(13,13);
+
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			mss_draminit_mc(chip);
 	}
 
 	printk(BIOS_EMERG, "ending istep 13.13\n");
