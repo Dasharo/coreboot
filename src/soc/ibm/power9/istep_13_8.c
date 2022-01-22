@@ -7,7 +7,17 @@
 
 #include "istep_13_scom.h"
 
-#define ATTR_PG			0xE000000000000000ull
+/*
+ * 13.8 mss_scominit: Perform scom inits to MC and PHY
+ *
+ * - HW units included are MCBIST, MCA/PHY (Nimbus) or membuf, L4, MBAs (Cumulus)
+ * - Does not use initfiles, coded into HWP
+ * - Uses attributes from previous step
+ * - Pushes memory extent configuration into the MBA/MCAs
+ *   - Addresses are pulled from attributes, set previously by mss_eff_config
+ *   - MBA/MCAs always start at address 0, address map controlled by
+ *     proc_setup_bars below
+ */
 
 /*
  * This function was generated from initfiles. Some of the registers used here
@@ -2315,23 +2325,9 @@ static void fir_unmask(int mcs_i, int mca_i)
 	           0);
 }
 
-/*
- * 13.8 mss_scominit: Perform scom inits to MC and PHY
- *
- * - HW units included are MCBIST, MCA/PHY (Nimbus) or membuf, L4, MBAs (Cumulus)
- * - Does not use initfiles, coded into HWP
- * - Uses attributes from previous step
- * - Pushes memory extent configuration into the MBA/MCAs
- *   - Addresses are pulled from attributes, set previously by mss_eff_config
- *   - MBA/MCAs always start at address 0, address map controlled by
- *     proc_setup_bars below
- */
-void istep_13_8(void)
+static void mss_scominit(void)
 {
-	printk(BIOS_EMERG, "starting istep 13.8\n");
 	int mcs_i, mca_i;
-
-	report_istep(13,8);
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		/* No need to initialize a non-functional MCS */
@@ -2380,6 +2376,14 @@ void istep_13_8(void)
 				fir_unmask(mcs_i, mca_i);
 		}
 	}
+}
+
+void istep_13_8(void)
+{
+	printk(BIOS_EMERG, "starting istep 13.8\n");
+	report_istep(13,8);
+
+	mss_scominit();
 
 	printk(BIOS_EMERG, "ending istep 13.8\n");
 }
