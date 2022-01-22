@@ -6,6 +6,39 @@
 #include "istep_13_scom.h"
 
 /*
+ * 14.5 proc_setup_bars: Setup Memory BARs
+ *
+ * a) p9_mss_setup_bars.C (proc chip) -- Nimbus
+ * b) p9c_mss_setup_bars.C (proc chip) -- Cumulus
+ *    - Same HWP interface for both Nimbus and Cumulus, input target is
+ *      TARGET_TYPE_PROC_CHIP; HWP is to figure out if target is a Nimbus (MCS)
+ *      or Cumulus (MI) internally.
+ *    - Prior to setting the memory bars on each processor chip, this procedure
+ *      needs to set the centaur security protection bit
+ *      - TCM_CHIP_PROTECTION_EN_DC is SCOM Addr 0x03030000
+ *      - TCN_CHIP_PROTECTION_EN_DC is SCOM Addr 0x02030000
+ *      - Both must be set to protect Nest and Mem domains
+ *    - Based on system memory map
+ *      - Each MCS has its mirroring and non mirrored BARs
+ *      - Set the correct checkerboard configs. Note that chip flushes to
+ *        checkerboard
+ *      - need to disable memory bar on slave otherwise base flush values will
+ *        ack all memory accesses
+ * c) p9_setup_bars.C
+ *    - Sets up Powerbus/MCD, L3 BARs on running core
+ *      - Other cores are setup via winkle images
+ *    - Setup dSMP and PCIe Bars
+ *      - Setup PCIe outbound BARS (doing stores/loads from host core)
+ *        - Addresses that PCIE responds to on powerbus (PCI init 1-7)
+ *      - Informing PCIe of the memory map (inbound)
+ *        - PCI Init 8-15
+ *    - Set up Powerbus Epsilon settings
+ *      - Code is still running out of L3 cache
+ *      - Use this procedure to setup runtime epsilon values
+ *      - Must be done before memory is viable
+ */
+
+/*
  * Reset memory controller configuration written by SBE.
  * Close the MCS acker before enabling the real memory bars.
  *
@@ -269,43 +302,9 @@ static void mcd_fir_mask(void)
 	write_scom_for_chiplet(N1_CHIPLET_ID, MCD0_FIR_MASK_REG, ~0);
 }
 
-/*
- * 14.5 proc_setup_bars: Setup Memory BARs
- *
- * a) p9_mss_setup_bars.C (proc chip) -- Nimbus
- * b) p9c_mss_setup_bars.C (proc chip) -- Cumulus
- *    - Same HWP interface for both Nimbus and Cumulus, input target is
- *      TARGET_TYPE_PROC_CHIP; HWP is to figure out if target is a Nimbus (MCS)
- *      or Cumulus (MI) internally.
- *    - Prior to setting the memory bars on each processor chip, this procedure
- *      needs to set the centaur security protection bit
- *      - TCM_CHIP_PROTECTION_EN_DC is SCOM Addr 0x03030000
- *      - TCN_CHIP_PROTECTION_EN_DC is SCOM Addr 0x02030000
- *      - Both must be set to protect Nest and Mem domains
- *    - Based on system memory map
- *      - Each MCS has its mirroring and non mirrored BARs
- *      - Set the correct checkerboard configs. Note that chip flushes to
- *        checkerboard
- *      - need to disable memory bar on slave otherwise base flush values will
- *        ack all memory accesses
- * c) p9_setup_bars.C
- *    - Sets up Powerbus/MCD, L3 BARs on running core
- *      - Other cores are setup via winkle images
- *    - Setup dSMP and PCIe Bars
- *      - Setup PCIe outbound BARS (doing stores/loads from host core)
- *        - Addresses that PCIE responds to on powerbus (PCI init 1-7)
- *      - Informing PCIe of the memory map (inbound)
- *        - PCI Init 8-15
- *    - Set up Powerbus Epsilon settings
- *      - Code is still running out of L3 cache
- *      - Use this procedure to setup runtime epsilon values
- *      - Must be done before memory is viable
- */
-void istep_14_5(void)
+static void proc_setup_bars(void)
 {
 	int mcs_i;
-	printk(BIOS_EMERG, "starting istep 14.5\n");
-	report_istep(14,5);
 
 	/* Start MCS reset */
 	revert_mc_hb_dcbz_config();
@@ -332,6 +331,14 @@ void istep_14_5(void)
 	}
 
 	mcd_fir_mask();
+}
+
+void istep_14_5(void)
+{
+	printk(BIOS_EMERG, "starting istep 14.5\n");
+	report_istep(14,5);
+
+	proc_setup_bars();
 
 	printk(BIOS_EMERG, "ending istep 14.5\n");
 }
