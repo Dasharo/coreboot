@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/proc.h>
 #include <console/console.h>
 #include <timer.h>
 
@@ -26,13 +27,11 @@
  *        - Data is stored as a ring image in the SBE that is frequency specific
  *        - 5 different frequencies (1866, 2133, 2400, 2667, EXP)
  */
-void istep_13_3(void)
+
+static void mem_pll_initf(uint8_t chip)
 {
-	printk(BIOS_EMERG, "starting istep 13.3\n");
 	uint64_t ring_id;
 	int mcs_i;
-
-	report_istep(13, 3);
 
 	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
 
@@ -66,7 +65,7 @@ void istep_13_3(void)
 	 * making a function from this.
 	 */
 	// TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG
-	if (read_scom(PSU_SBE_DOORBELL_REG) & PPC_BIT(0))
+	if (read_rscom(chip, PSU_SBE_DOORBELL_REG) & PPC_BIT(0))
 		die("MBOX to SBE busy, this should not happen\n");
 
 
@@ -86,17 +85,17 @@ void istep_13_3(void)
 		 * variable for it, which probably implies wrapping this into a function and
 		 * moving it to separate file.
 		 */
-		write_scom(PSU_HOST_SBE_MBOX0_REG, 0x000001000000D301);
+		write_rscom(chip, PSU_HOST_SBE_MBOX0_REG, 0x000001000000D301);
 
 		// TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG
 		/* TARGET_TYPE_PERV, chiplet ID = 0x07, ring ID, RING_MODE_SET_PULSE_NSL */
-		write_scom(PSU_HOST_SBE_MBOX1_REG, 0x0002000000000004 |
-		           PPC_PLACE(ring_id, 32, 16) |
-		           PPC_PLACE(mcs_ids[mcs_i], 24, 8));
+		write_rscom(chip, PSU_HOST_SBE_MBOX1_REG, 0x0002000000000004 |
+		            PPC_PLACE(ring_id, 32, 16) |
+		            PPC_PLACE(mcs_ids[mcs_i], 24, 8));
 
 		// Ring the host->SBE doorbell
 		// TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG_OR
-		write_scom(PSU_SBE_DOORBELL_REG_WOR, PPC_BIT(0));
+		write_rscom(chip, PSU_SBE_DOORBELL_REG_WOR, PPC_BIT(0));
 
 		// Wait for response
 		/*
@@ -108,7 +107,8 @@ void istep_13_3(void)
 		 * thorough testing we probably should trim it.
 		 */
 		// TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG
-		time = wait_ms(90 * MSECS_PER_SEC, read_scom(PSU_HOST_DOORBELL_REG) & PPC_BIT(0));
+		time = wait_ms(90 * MSECS_PER_SEC,
+		               read_rscom(chip, PSU_HOST_DOORBELL_REG) & PPC_BIT(0));
 
 		if (!time)
 			die("Timed out while waiting for SBE response\n");
@@ -119,7 +119,20 @@ void istep_13_3(void)
 
 		// Clear SBE->host doorbell
 		// TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG_AND
-		write_scom(PSU_HOST_DOORBELL_REG_WAND, ~PPC_BIT(0));
+		write_rscom(chip, PSU_HOST_DOORBELL_REG_WAND, ~PPC_BIT(0));
+	}
+}
+
+void istep_13_3(uint8_t chips)
+{
+	uint8_t chip;
+
+	printk(BIOS_EMERG, "starting istep 13.3\n");
+	report_istep(13, 3);
+
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			mem_pll_initf(chip);
 	}
 
 	printk(BIOS_EMERG, "ending istep 13.3\n");
