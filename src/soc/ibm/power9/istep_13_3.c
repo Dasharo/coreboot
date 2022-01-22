@@ -26,13 +26,11 @@
  *        - Data is stored as a ring image in the SBE that is frequency specific
  *        - 5 different frequencies (1866, 2133, 2400, 2667, EXP)
  */
-void istep_13_3(void)
+
+static void mem_pll_initf(void)
 {
-	printk(BIOS_EMERG, "starting istep 13.3\n");
 	uint64_t ring_id;
 	int mcs_i;
-
-	report_istep(13,3);
 
 	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
 
@@ -121,6 +119,14 @@ void istep_13_3(void)
 		// TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG_AND
 		write_scom(PSU_HOST_DOORBELL_REG_WAND, ~PPC_BIT(0));
 	}
+}
+
+void istep_13_3(void)
+{
+	printk(BIOS_EMERG, "starting istep 13.3\n");
+	report_istep(13,3);
+
+	mem_pll_initf();
 
 	printk(BIOS_EMERG, "ending istep 13.3\n");
 }
