@@ -57,6 +57,10 @@ const struct region_device *mvpd_device_ro(void);
 /* Reads #V of one of LRP records (mind that there is only one buffer) */
 const struct voltage_kwd *mvpd_get_voltage_data(uint8_t chip, int lrp);
 
+/* Sets pg[0] and pg[1] to partial good values for MC01_CHIPLET_ID and
+ * MC23_CHIPLET_ID respectively */
+void mvpd_get_mcs_pg(uint8_t chip, uint16_t *pg);
+
 /* Finds a specific keyword in MVPD partition and extracts it. *size is updated
  * to reflect needed or used space in the buffer. */
 bool mvpd_extract_keyword(uint8_t chip, const char *record_name,
