@@ -1,29 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/mvpd.h>
 #include <console/console.h>
 #include <timer.h>
 
 #include "istep_13_scom.h"
 
-/*
- * FIXME: ATTR_PG value should come from MEMD partition, but it is empty after
- * build. Default value from talos.xml (5 for all chiplets) probably never makes
- * sense. Value read from already booted MVPD is 0xE0 (?) for both MCSs. We can
- * either add functions to read and parse MVPD or just hardcode the values. So
- * far I haven't found the code that writes to MVPD in Hostboot, other than for
- * PDI keyword (PG keyword should be used here).
- *
- * Value below comes from a log of booting Hostboot. It isn't even remotely
- * similar to values mentioned above. It touches bits marked as reserved in the
- * documentation, so we can't rely on specification to be up to date.
- *
- * As this describes whether clocks on second MCS should be started or not, this
- * definitely will be different when more DIMMs are installed.
- */
-#define ATTR_PG			0xE1FC000000000000ull
-
-static inline void p9_mem_startclocks_cplt_ctrl_action_function(chiplet_id_t id)
+static inline void p9_mem_startclocks_cplt_ctrl_action_function(chiplet_id_t id, uint64_t pg)
 {
 	// Drop partial good fences
 	/*
@@ -32,7 +16,7 @@ static inline void p9_mem_startclocks_cplt_ctrl_action_function(chiplet_id_t id)
 	  [3]     TC_VITL_REGION_FENCE =                  ~ATTR_PG[3]
 	  [4-14]  TC_REGION{1-3}_FENCE, UNUSED_{8-14}B =  ~ATTR_PG[4-14]
 	*/
-	write_scom_for_chiplet(id, MCSLOW_CPLT_CTRL1_WCLEAR, ~ATTR_PG & PPC_BITMASK(3,14));
+	write_scom_for_chiplet(id, MCSLOW_CPLT_CTRL1_WCLEAR, ~pg & PPC_BITMASK(3,14));
 
 	// Reset abistclk_muxsel and syncclk_muxsel
 	/*
@@ -106,7 +90,7 @@ static inline void p9_sbe_common_align_chiplets(chiplet_id_t id)
 	                       PPC_BIT(MCSLOW_CPLT_CTRL0_CTRL_CC_FORCE_ALIGN_DC));
 }
 
-static void p9_sbe_common_clock_start_stop(chiplet_id_t id)
+static void p9_sbe_common_clock_start_stop(chiplet_id_t id, uint64_t pg)
 {
 	// Chiplet exit flush
 	/*
@@ -144,7 +128,7 @@ static void p9_sbe_common_clock_start_stop(chiplet_id_t id)
 	                        PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_SL) |
 	                        PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_NSL) |
 	                        PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_ARY) |
-	                        (~ATTR_PG & PPC_BITMASK(4, 13)));
+	                        (~pg & PPC_BITMASK(4, 13)));
 
 	// Poll OPCG done bit to check for completeness
 	/*
@@ -169,7 +153,7 @@ static void p9_sbe_common_clock_start_stop(chiplet_id_t id)
 	TP.TCMC01.MCSLOW.CLOCK_STAT_ARY
 	  assert(([4-14] & ATTR_PG[4-14]) == ATTR_PG[4-14])
 	*/
-	uint64_t mask = ATTR_PG & PPC_BITMASK(4, 13);
+	uint64_t mask = pg & PPC_BITMASK(4, 13);
 	if ((read_scom_for_chiplet(id, MCSLOW_CLOCK_STAT_SL) & PPC_BITMASK(4, 13)) != mask ||
 	    (read_scom_for_chiplet(id, MCSLOW_CLOCK_STAT_NSL) & PPC_BITMASK(4, 13)) != mask ||
 	    (read_scom_for_chiplet(id, MCSLOW_CLOCK_STAT_ARY) & PPC_BITMASK(4, 13)) != mask)
@@ -257,24 +241,30 @@ void istep_13_6(void)
 {
 	printk(BIOS_EMERG, "starting istep 13.6\n");
 	int i;
+	uint16_t pg[MCS_PER_PROC];
 
 	report_istep(13,6);
 
 	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
 
+	/* TODO: update for second CPU */
+	mvpd_get_mcs_pg(/*chip=*/0, pg);
+
 	for (i = 0; i < MCS_PER_PROC; i++) {
+		const uint64_t mcs_pg = PPC_PLACE(pg[i], 0, 16);
+
 		/* According to logs, Hostboot does it also for the second MCS */
 		//~ if (!mem_data.mcs[i].functional)
 			//~ continue;
 
 		// Call p9_mem_startclocks_cplt_ctrl_action_function for Mc chiplets
-		p9_mem_startclocks_cplt_ctrl_action_function(mcs_ids[i]);
+		p9_mem_startclocks_cplt_ctrl_action_function(mcs_ids[i], mcs_pg);
 
 		// Call module align chiplets for Mc chiplets
 		p9_sbe_common_align_chiplets(mcs_ids[i]);
 
 		// Call module clock start stop for MC01, MC23
-		p9_sbe_common_clock_start_stop(mcs_ids[i]);
+		p9_sbe_common_clock_start_stop(mcs_ids[i], mcs_pg);
 
 		// Call p9_mem_startclocks_fence_setup_function for Mc chiplets
 		p9_mem_startclocks_fence_setup_function(mcs_ids[i]);
