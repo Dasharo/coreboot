@@ -6,10 +6,10 @@
 
 #include "istep_13_scom.h"
 
-static int test_dll_calib_done(int mcs_i, int mca_i, bool *do_workaround)
+static int test_dll_calib_done(uint8_t chip, int mcs_i, int mca_i, bool *do_workaround)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	uint64_t status = mca_read(id, mca_i, DDRPHY_PC_DLL_ZCAL_CAL_STATUS_P0);
+	uint64_t status = mca_read(chip, id, mca_i, DDRPHY_PC_DLL_ZCAL_CAL_STATUS_P0);
 	/*
 	if (IOM0.DDRPHY_PC_DLL_ZCAL_CAL_STATUS_P0
 			[48]  DP_DLL_CAL_GOOD ==        1
@@ -41,7 +41,7 @@ static int test_dll_calib_done(int mcs_i, int mca_i, bool *do_workaround)
 	return 0;
 }
 
-static int test_bb_lock(int mcs_i)
+static int test_bb_lock(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	uint64_t res = PPC_BIT(BB_LOCK0) | PPC_BIT(BB_LOCK1);
@@ -63,18 +63,19 @@ static int test_bb_lock(int mcs_i)
 		*/
 
 		/* ADR_SYSCLK_PR_VALUE_RO_P0_ADR32S{0,1}, BB_LOCK0 doesn't matter */
-		res &= dp_mca_read(id, 0, mca_i, ADR_SYSCLK_PR_VALUE_RO_P0_ADR32S0) |
+		res &= dp_mca_read(chip, id, 0, mca_i, ADR_SYSCLK_PR_VALUE_RO_P0_ADR32S0) |
 		       PPC_BIT(BB_LOCK0);
-		res &= dp_mca_read(id, 1, mca_i, ADR_SYSCLK_PR_VALUE_RO_P0_ADR32S0) |
+		res &= dp_mca_read(chip, id, 1, mca_i, ADR_SYSCLK_PR_VALUE_RO_P0_ADR32S0) |
 		       PPC_BIT(BB_LOCK0);
 
 		/* IOM0.DDRPHY_DP16_SYSCLK_PR_VALUE_P0_{0,1,2,3} */
 		for (dp = 0; dp < 4; dp++) {
-			res &= dp_mca_read(id, dp, mca_i, DDRPHY_DP16_SYSCLK_PR_VALUE_P0_0);
+			res &= dp_mca_read(chip, id, dp, mca_i,
+					   DDRPHY_DP16_SYSCLK_PR_VALUE_P0_0);
 		}
 
 		/* IOM0.DDRPHY_DP16_SYSCLK_PR_VALUE_P0_4, BB_LOCK1 doesn't matter */
-		res &= dp_mca_read(id, dp, mca_i, DDRPHY_DP16_SYSCLK_PR_VALUE_P0_0) |
+		res &= dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_SYSCLK_PR_VALUE_P0_0) |
 		       PPC_BIT(BB_LOCK1);
 
 		/* Do we want early return here? */
@@ -128,7 +129,7 @@ static void fix_bad_voltage_settings(int mcs_i)
 */
 }
 
-static void check_during_phy_reset(int mcs_i)
+static void check_during_phy_reset(uint8_t chip, int mcs_i)
 {
 	/*
 	 * Mostly FFDC, which to my current knowledge is just the error logging. If
@@ -148,7 +149,7 @@ static void check_during_phy_reset(int mcs_i)
 			  [1]   MBACALFIR_MBA_NONRECOVERABLE_ERROR
 			  [10]  MBACALFIR_SM_1HOT_ERR
 		*/
-		val = mca_read(id, mca_i, MBACALFIR);
+		val = mca_read(chip, id, mca_i, MBACALFIR);
 		if (val & (PPC_BIT(MBACALFIR_MBA_RECOVERABLE_ERROR) |
 		           PPC_BIT(MBACALFIR_MBA_NONRECOVERABLE_ERROR) |
 		           PPC_BIT(MBACALFIR_SM_1HOT_ERR))) {
@@ -157,7 +158,7 @@ static void check_during_phy_reset(int mcs_i)
 			       mca_i, val);
 		}
 
-		mca_and_or(id, mca_i, MBACALFIR,
+		mca_and_or(chip, id, mca_i, MBACALFIR,
 		           ~(PPC_BIT(MBACALFIR_MBA_RECOVERABLE_ERROR) |
 		             PPC_BIT(MBACALFIR_MBA_NONRECOVERABLE_ERROR) |
 		             PPC_BIT(MBACALFIR_SM_1HOT_ERR)),
@@ -173,18 +174,18 @@ static void check_during_phy_reset(int mcs_i)
 			  [60]  IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_6
 			  [61]  IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_7
 		*/
-		val = mca_read(id, mca_i, IOM_PHY0_DDRPHY_FIR_REG);
+		val = mca_read(chip, id, mca_i, IOM_PHY0_DDRPHY_FIR_REG);
 		if (val & PPC_BITMASK(54, 61)) {
 			/* No idea how severe that error is... */
 			printk(BIOS_ERR, "Error detected in IOM_PHY%d_DDRPHY_FIR_REG: %#llx\n",
 				   mca_i , val);
 		}
 
-		mca_and_or(id, mca_i, IOM_PHY0_DDRPHY_FIR_REG, ~(PPC_BITMASK(54, 61)), 0);
+		mca_and_or(chip, id, mca_i, IOM_PHY0_DDRPHY_FIR_REG, ~(PPC_BITMASK(54, 61)), 0);
 	}
 }
 
-static void fir_unmask(int mcs_i)
+static void fir_unmask(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int mca_i;
@@ -242,20 +243,20 @@ static void fir_unmask(int mcs_i)
 			  [4]   MBACALFIR_RCD_PARITY_ERROR =         0   // recoverable_error (0,1,0)
 			  [10]  MBACALFIR_SM_1HOT_ERR =              0   // checkstop (0,0,0)
 		*/
-		mca_and_or(id, mca_i, MBACALFIR_ACTION0,
+		mca_and_or(chip, id, mca_i, MBACALFIR_ACTION0,
 		           ~(PPC_BIT(MBACALFIR_MBA_RECOVERABLE_ERROR) |
 		             PPC_BIT(MBACALFIR_MBA_NONRECOVERABLE_ERROR) |
 		             PPC_BIT(MBACALFIR_RCD_PARITY_ERROR) |
 		             PPC_BIT(MBACALFIR_SM_1HOT_ERR)),
 		           0);
-		mca_and_or(id, mca_i, MBACALFIR_ACTION1,
+		mca_and_or(chip, id, mca_i, MBACALFIR_ACTION1,
 		           ~(PPC_BIT(MBACALFIR_MBA_RECOVERABLE_ERROR) |
 		             PPC_BIT(MBACALFIR_MBA_NONRECOVERABLE_ERROR) |
 		             PPC_BIT(MBACALFIR_RCD_PARITY_ERROR) |
 		             PPC_BIT(MBACALFIR_SM_1HOT_ERR)),
 		           PPC_BIT(MBACALFIR_MBA_RECOVERABLE_ERROR) |
 		           PPC_BIT(MBACALFIR_RCD_PARITY_ERROR));
-		mca_and_or(id, mca_i, MBACALFIR_MASK,
+		mca_and_or(chip, id, mca_i, MBACALFIR_MASK,
 		           ~(PPC_BIT(MBACALFIR_MBA_RECOVERABLE_ERROR) |
 		             PPC_BIT(MBACALFIR_MBA_NONRECOVERABLE_ERROR) |
 		             PPC_BIT(MBACALFIR_RCD_PARITY_ERROR) |
@@ -288,13 +289,13 @@ static void fir_unmask(int mcs_i)
 			  [60]  IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_6 = 0   // recoverable_error (0,1,0)
 			  [61]  IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_7 = 0   // recoverable_error (0,1,0)
 		*/
-		mca_and_or(id, mca_i, IOM_PHY0_DDRPHY_FIR_ACTION0_REG,
+		mca_and_or(chip, id, mca_i, IOM_PHY0_DDRPHY_FIR_ACTION0_REG,
 		           ~(PPC_BITMASK(54, 55) | PPC_BITMASK(57, 61)),
 		           0);
-		mca_and_or(id, mca_i, IOM_PHY0_DDRPHY_FIR_ACTION1_REG,
+		mca_and_or(chip, id, mca_i, IOM_PHY0_DDRPHY_FIR_ACTION1_REG,
 		           ~(PPC_BITMASK(54, 55) | PPC_BITMASK(57, 61)),
 		           PPC_BITMASK(54, 55) | PPC_BITMASK(57, 61));
-		mca_and_or(id, mca_i, IOM_PHY0_DDRPHY_FIR_MASK_REG,
+		mca_and_or(chip, id, mca_i, IOM_PHY0_DDRPHY_FIR_MASK_REG,
 		           ~(PPC_BITMASK(54, 55) | PPC_BITMASK(57, 61)),
 		           0);
 	}
@@ -307,7 +308,7 @@ static void fir_unmask(int mcs_i)
  * "I want to break free" - Freddie Mercury
  */
 #define TEST_VREF(dp, scom) \
-if ((dp_mca_read(mcs_ids[mcs_i], dp, mca_i, scom) & PPC_BITMASK(56, 62)) == \
+if ((dp_mca_read(chip, mcs_ids[mcs_i], dp, mca_i, scom) & PPC_BITMASK(56, 62)) == \
              PPC_PLACE(1, 56, 7)) { \
 	need_dll_workaround = true; \
 	break; \
@@ -327,6 +328,7 @@ void istep_13_9(void)
 {
 	printk(BIOS_EMERG, "starting istep 13.9\n");
 	int mcs_i, mca_i, dp;
+	uint8_t chip = 0; // TODO: support second CPU
 	long time;
 	bool need_dll_workaround;
 
@@ -356,7 +358,7 @@ void istep_13_9(void)
 			/* MC01.PORT0.SRQ.MBA_FARB5Q =
 				[8]     MBA_FARB5Q_CFG_FORCE_MCLK_LOW_N = 0
 			*/
-			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_FARB5Q,
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_FARB5Q,
 			           ~PPC_BIT(MBA_FARB5Q_CFG_FORCE_MCLK_LOW_N), 0);
 
 			/* Drive all control signals to their inactive/idle state, or
@@ -367,9 +369,11 @@ void istep_13_9(void)
 				[48]    reserved = 1            // MCA_DDRPHY_DP16_SYSCLK_PR0_P0_0_01_ENABLE
 			*/
 			for (dp = 0; dp < 5; dp++) {
-				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i, DDRPHY_DP16_SYSCLK_PR0_P0_0,
-				              0, PPC_BIT(48));
-				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i, DDRPHY_DP16_SYSCLK_PR1_P0_0,
+				dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i,
+				              DDRPHY_DP16_SYSCLK_PR0_P0_0,
+					      0, PPC_BIT(48));
+				dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i,
+				              DDRPHY_DP16_SYSCLK_PR1_P0_0,
 				              0, PPC_BIT(48));
 			}
 
@@ -377,7 +381,7 @@ void istep_13_9(void)
 			MC01.PORT0.SRQ.MBA_CAL0Q =
 				[57]    MBA_CAL0Q_RESET_RECOVER = 1
 			*/
-			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_CAL0Q, ~0,
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_CAL0Q, ~0,
 			           PPC_BIT(MBA_CAL0Q_RESET_RECOVER));
 		}
 
@@ -393,7 +397,7 @@ void istep_13_9(void)
 			MC01.PORT0.SRQ.MBA_CAL0Q =
 					[57]    MBA_CAL0Q_RESET_RECOVER = 0
 			*/
-			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_CAL0Q,
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_CAL0Q,
 			           ~PPC_BIT(MBA_CAL0Q_RESET_RECOVER), 0);
 
 			/* Flush output drivers
@@ -403,10 +407,10 @@ void istep_13_9(void)
 					[50]    INIT_IO = 1
 			*/
 			/* Has the same stride as DP16 */
-			dp_mca_and_or(mcs_ids[mcs_i], 0, mca_i,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 0, mca_i,
 			              DDRPHY_ADR_OUTPUT_FORCE_ATEST_CNTL_P0_ADR32S0, 0,
 			              PPC_BIT(FLUSH) | PPC_BIT(INIT_IO));
-			dp_mca_and_or(mcs_ids[mcs_i], 1, mca_i,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 1, mca_i,
 			              DDRPHY_ADR_OUTPUT_FORCE_ATEST_CNTL_P0_ADR32S0, 0,
 			              PPC_BIT(FLUSH) | PPC_BIT(INIT_IO));
 
@@ -418,7 +422,8 @@ void istep_13_9(void)
 					[58]    DELAY_PING_PONG_HALF =  1
 			*/
 			for (dp = 0; dp < 5; dp++) {
-				dp_mca_and_or(mcs_ids[mcs_i], 0, mca_i, DDRPHY_DP16_CONFIG0_P0_0, 0,
+				dp_mca_and_or(chip, mcs_ids[mcs_i], 0, mca_i,
+				              DDRPHY_DP16_CONFIG0_P0_0, 0,
 				              PPC_BIT(DP16_CONFIG0_FLUSH) |
 				              PPC_BIT(DP16_CONFIG0_INIT_IO) |
 				              PPC_BIT(DP16_CONFIG0_ADVANCE_PING_PONG) |
@@ -440,9 +445,9 @@ void istep_13_9(void)
 					[50]    INIT_IO = 0
 			*/
 			/* Has the same stride as DP16 */
-			dp_mca_and_or(mcs_ids[mcs_i], 0, mca_i,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 0, mca_i,
 			              DDRPHY_ADR_OUTPUT_FORCE_ATEST_CNTL_P0_ADR32S0, 0, 0);
-			dp_mca_and_or(mcs_ids[mcs_i], 1, mca_i,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 1, mca_i,
 			              DDRPHY_ADR_OUTPUT_FORCE_ATEST_CNTL_P0_ADR32S0, 0, 0);
 
 			/* IOM0.DDRPHY_DP16_CONFIG0_P0_{0,1,2,3,4} =
@@ -453,7 +458,8 @@ void istep_13_9(void)
 					[58]    DELAY_PING_PONG_HALF =  1
 			*/
 			for (dp = 0; dp < 5; dp++) {
-				dp_mca_and_or(mcs_ids[mcs_i], 0, mca_i, DDRPHY_DP16_CONFIG0_P0_0, 0,
+				dp_mca_and_or(chip, mcs_ids[mcs_i], 0, mca_i,
+				              DDRPHY_DP16_CONFIG0_P0_0, 0,
 				              PPC_BIT(DP16_CONFIG0_ADVANCE_PING_PONG) |
 				              PPC_BIT(DP16_CONFIG0_DELAY_PING_PONG_HALF));
 			}
@@ -467,14 +473,15 @@ void istep_13_9(void)
 			// Yet another documentation error: all bits in this register are marked as read-only
 			[51]    ENABLE_ZCAL = 1
 		 */
-		mca_and_or(mcs_ids[mcs_i], 0, DDRPHY_PC_RESETS_P0, ~0, PPC_BIT(ENABLE_ZCAL));
+		mca_and_or(chip, mcs_ids[mcs_i], 0, DDRPHY_PC_RESETS_P0,
+		           ~0, PPC_BIT(ENABLE_ZCAL));
 
 		/* Maybe it would be better to add another 1us later instead of this. */
 		delay_nck(1024);
 
 		/* for each magic MCA */
 		/* 50*10ns, but we don't have such precision. */
-		time = wait_us(1, mca_read(mcs_ids[mcs_i], 0,
+		time = wait_us(1, mca_read(chip, mcs_ids[mcs_i], 0,
 		               DDRPHY_PC_DLL_ZCAL_CAL_STATUS_P0) & PPC_BIT(ZCAL_DONE));
 
 		if (!time)
@@ -495,18 +502,21 @@ void istep_13_9(void)
 				[48]    INIT_RXDLL_CAL_RESET = 0
 			*/
 			/* Has the same stride as DP16 */
-			dp_mca_and_or(mcs_ids[mcs_i], 0, mca_i, DDRPHY_ADR_DLL_CNTL_P0_ADR32S0,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 0, mca_i,
+			              DDRPHY_ADR_DLL_CNTL_P0_ADR32S0,
 			              ~PPC_BIT(INIT_RXDLL_CAL_RESET), 0);
-			dp_mca_and_or(mcs_ids[mcs_i], 1, mca_i, DDRPHY_ADR_DLL_CNTL_P0_ADR32S0,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 1, mca_i,
+			              DDRPHY_ADR_DLL_CNTL_P0_ADR32S0,
 			              ~PPC_BIT(INIT_RXDLL_CAL_RESET), 0);
 
 			for (dp = 0; dp < 4; dp++) {
 				/* IOM0.DDRPHY_DP16_DLL_CNTL{0,1}_P0_{0,1,2,3} =
 					[48]    INIT_RXDLL_CAL_RESET = 0
 				*/
-				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i, DDRPHY_DP16_DLL_CNTL0_P0_0,
+				dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i,
+				              DDRPHY_DP16_DLL_CNTL0_P0_0,
 				              ~PPC_BIT(INIT_RXDLL_CAL_RESET), 0);
-				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i, DDRPHY_DP16_DLL_CNTL1_P0_0,
+				dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i, DDRPHY_DP16_DLL_CNTL1_P0_0,
 				              ~PPC_BIT(INIT_RXDLL_CAL_RESET), 0);
 			}
 			/* Last DP16 is different
@@ -515,10 +525,12 @@ void istep_13_9(void)
 			IOM0.DDRPHY_DP16_DLL_CNTL1_P0_4
 				[48]    INIT_RXDLL_CAL_RESET = 1
 			*/
-			dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i, DDRPHY_DP16_DLL_CNTL0_P0_0,
-				              ~PPC_BIT(INIT_RXDLL_CAL_RESET), 0);
-			dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i, DDRPHY_DP16_DLL_CNTL1_P0_0,
-				              ~0, PPC_BIT(INIT_RXDLL_CAL_RESET));
+			dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i,
+			              DDRPHY_DP16_DLL_CNTL0_P0_0,
+			              ~PPC_BIT(INIT_RXDLL_CAL_RESET), 0);
+			dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i,
+			              DDRPHY_DP16_DLL_CNTL1_P0_0,
+			              ~0, PPC_BIT(INIT_RXDLL_CAL_RESET));
 		}
 
 		/* From Hostboot's comments:
@@ -561,7 +573,8 @@ void istep_13_9(void)
 				break;
 		}
 		/* 50*10ns, but we don't have such precision. */
-		time = wait_us(1, test_dll_calib_done(mcs_i, mca_i, &need_dll_workaround));
+		time = wait_us(1, test_dll_calib_done(chip, mcs_i, mca_i,
+		                                      &need_dll_workaround));
 		if (!time)
 			die("DLL calibration timeout\n");
 
@@ -590,7 +603,7 @@ void istep_13_9(void)
 			 * This is not safe if DLL calibration takes more time for other MCAs,
 			 * but this is the way Hostboot does it.
 			 */
-			test_dll_calib_done(mcs_i, mca_i, &need_dll_workaround);
+			test_dll_calib_done(chip, mcs_i, mca_i, &need_dll_workaround);
 
 			/*
 			if (IOM0.DDRPHY_ADR_DLL_VREG_COARSE_P0_ADR32S0        |
@@ -626,24 +639,24 @@ void istep_13_9(void)
 					[48-63] 0x8024      // From the DDR PHY workbook
 			*/
 			/* Has the same stride as DP16 */
-			dp_mca_and_or(mcs_ids[mcs_i], 0, mca_i,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 0, mca_i,
 			              ADR_SYSCLK_CNTRL_PR_P0_ADR32S0,
 			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
-			dp_mca_and_or(mcs_ids[mcs_i], 1, mca_i,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 1, mca_i,
 			              ADR_SYSCLK_CNTRL_PR_P0_ADR32S0,
 			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
 
 			for (dp = 0; dp < 4; dp++) {
-				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i,
+				dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i,
 				              DDRPHY_DP16_SYSCLK_PR0_P0_0,
 				              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
-				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i,
+				dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i,
 				              DDRPHY_DP16_SYSCLK_PR1_P0_0,
 				              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
 			}
-			dp_mca_and_or(mcs_ids[mcs_i], 4, mca_i,
-						  DDRPHY_DP16_SYSCLK_PR0_P0_0,
-						  ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 4, mca_i,
+			              DDRPHY_DP16_SYSCLK_PR0_P0_0,
+			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8024, 48, 16));
 		}
 
 		/*
@@ -665,7 +678,7 @@ void istep_13_9(void)
 		 * Increasing the timeout helps (maybe that's just luck), but
 		 * this probably isn't a proper way to do this.
 		 */
-		time = wait_ms(1000, test_bb_lock(mcs_i));
+		time = wait_ms(1000, test_bb_lock(chip, mcs_i));
 		if (!time)
 			die("BB lock timeout\n");
 
@@ -679,7 +692,7 @@ void istep_13_9(void)
 			IOM0.DDRPHY_PC_RESETS_P0 =
 				  [49]  SYSCLK_RESET = 0
 			*/
-			mca_and_or(mcs_ids[mcs_i], mca_i, DDRPHY_PC_RESETS_P0,
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, DDRPHY_PC_RESETS_P0,
 			           ~PPC_BIT(SYSCLK_RESET), 0);
 
 			/* Reset the windage registers */
@@ -725,24 +738,24 @@ void istep_13_9(void)
 				  [48-63] 0x8020      // From the DDR PHY workbook
 			*/
 			/* Has the same stride as DP16 */
-			dp_mca_and_or(mcs_ids[mcs_i], 0, mca_i,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 0, mca_i,
 			              ADR_SYSCLK_CNTRL_PR_P0_ADR32S0,
 			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
-			dp_mca_and_or(mcs_ids[mcs_i], 1, mca_i,
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 1, mca_i,
 			              ADR_SYSCLK_CNTRL_PR_P0_ADR32S0,
 			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
 
 			for (dp = 0; dp < 4; dp++) {
-				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i,
+				dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i,
 				              DDRPHY_DP16_SYSCLK_PR0_P0_0,
 				              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
-				dp_mca_and_or(mcs_ids[mcs_i], dp, mca_i,
+				dp_mca_and_or(chip, mcs_ids[mcs_i], dp, mca_i,
 				              DDRPHY_DP16_SYSCLK_PR1_P0_0,
 				              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
 			}
-			dp_mca_and_or(mcs_ids[mcs_i], 4, mca_i,
-						  DDRPHY_DP16_SYSCLK_PR0_P0_0,
-						  ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
+			dp_mca_and_or(chip, mcs_ids[mcs_i], 4, mca_i,
+			              DDRPHY_DP16_SYSCLK_PR0_P0_0,
+			              ~PPC_BITMASK(48, 63), PPC_PLACE(0x8020, 48, 16));
 		}
 
 		/* Wait at least 32 dphy_nclk clock cycles */
@@ -759,7 +772,7 @@ void istep_13_9(void)
 			/* MC01.PORT0.SRQ.MBA_FARB5Q =
 					[8]     MBA_FARB5Q_CFG_FORCE_MCLK_LOW_N = 1
 			*/
-			mca_and_or(mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~0,
+			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~0,
 			           PPC_BIT(MBA_FARB5Q_CFG_FORCE_MCLK_LOW_N));
 
 		}
@@ -785,8 +798,8 @@ void istep_13_9(void)
 		// mss::adr32s::duty_cycle_distortion_calibration();
 
 		/* FIR */
-		check_during_phy_reset(mcs_i);
-		fir_unmask(mcs_i);
+		check_during_phy_reset(chip, mcs_i);
+		fir_unmask(chip, mcs_i);
 	}
 
 	printk(BIOS_EMERG, "ending istep 13.9\n");
