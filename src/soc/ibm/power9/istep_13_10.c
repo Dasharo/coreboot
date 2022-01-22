@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/power/istep_13.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/vpd_data.h>
 #include <console/console.h>
 #include <timer.h>
@@ -9,6 +10,28 @@
 #include "istep_13_scom.h"
 
 #define SPD_I2C_BUS		3
+
+/*
+ * 13.10 mss_draminit: Dram initialize
+ *
+ * a) p9_mss_draminit.C (mcbist) -- Nimbus
+ * b) p9c_mss_draminit.C (mba) -- Cumulus
+ *    - RCD parity errors are checked before logging other errors - HWP will
+ *      exit with RC
+ *    - De-assert dram reset
+ *    - De-assert bit (Scom) that forces mem clock low - dram clocks start
+ *    - Raise CKE
+ *    - Load RCD Control Words
+ *    - Load MRS - for each dimm pair/ports/rank
+ *      - ODT Values
+ *      - MR0-MR6
+ * c) Check for attentions (even if HWP has error)
+ *    - FW
+ *      - Call PRD
+ *        - If finds and error, commit HWP RC as informational
+ *        - Else commit HWP RC as normal
+ *      - Trigger reconfig loop is anything was deconfigured
+ */
 
 static void draminit_cke_helper(uint8_t chip, chiplet_id_t id, int mca_i)
 {
@@ -27,11 +50,12 @@ static void draminit_cke_helper(uint8_t chip, chiplet_id_t id, int mca_i)
 	ccs_execute(chip, id, mca_i);
 }
 
-static void rcd_load(mca_data_t *mca, int d)
+static void rcd_load(uint8_t chip, mca_data_t *mca, int d)
 {
 	uint8_t val;
 	rdimm_data_t *dimm = &mca->dimm[d];
 	uint8_t *spd = dimm->spd;
+	unsigned int spd_bus = SPD_I2C_BUS + chip * 4;
 
 	/* Raw card specifications are JEDEC documents MODULE4.20.28.x, where x is A-E */
 
@@ -50,7 +74,7 @@ static void rcd_load(mca_data_t *mca, int d)
 	 * (spd[131] & 0x1F) is 0x02 for C and 0x03 for D, this line tests for both
 	 */
 	val = ((spd[131] & 0x1E) == 0x02) ? 0xC2 : 0x02;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC00_01, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC00_01, val);
 
 	/*
 	F0RC02  =
@@ -64,7 +88,7 @@ static void rcd_load(mca_data_t *mca, int d)
 	val = spd[137] & 0xF0;	// F0RC03
 	if (dimm->density != DENSITY_16Gb || dimm->width != WIDTH_x4)
 		val |= 1;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC02_03, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC02_03, val);
 
 	/*
 	F0RC04  =
@@ -80,7 +104,7 @@ static void rcd_load(mca_data_t *mca, int d)
 	/* First read both nibbles as they are in SPD, then swap pairs of bit fields */
 	val = (spd[137] & 0x0F) | ((spd[138] & 0x0F) << 4);
 	val = ((val & 0x33) << 2) | ((val & 0xCC) >> 2);
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC04_05, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC04_05, val);
 
 	/*
 	F0RC06  = 0xf   // This is a command register, either don't touch it or use NOP (F)
@@ -110,7 +134,7 @@ static void rcd_load(mca_data_t *mca, int d)
 	if (dimm->density != DENSITY_16Gb || dimm->width != WIDTH_x4)
 		val |= 8;
 	val |= 0xC0;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC08_09, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC08_09, val);
 
 	/*
 	F0RC0A  =
@@ -125,7 +149,7 @@ static void rcd_load(mca_data_t *mca, int d)
 	      mem_data.speed == 2133 ? 2 :
 	      mem_data.speed == 2400 ? 3 : 4;
 	val |= 0xE0;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC0A_0B, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC0A_0B, val);
 
 	/*
 	F0RC0C  = 0     // Normal operating mode
@@ -140,14 +164,14 @@ static void rcd_load(mca_data_t *mca, int d)
 	val = 0x40;
 	if (spd[136])
 		val |= 0x80;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC0C_0D, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC0C_0D, val);
 
 	/*
 	F0RC0E  = 0xd     // Parity enable, ALERT_n assertion and re-enable
 	F0RC0F  = 0       // Normal mode
 	*/
 	val = 0x0D;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC0E_0F, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC0E_0F, val);
 
 	/*
 	F0RC1x  = 0       // Normal mode, VDD/2
@@ -164,7 +188,7 @@ static void rcd_load(mca_data_t *mca, int d)
 	val = mem_data.speed == 1866 ? 0x1F :
 	      mem_data.speed == 2133 ? 0x2C :
 	      mem_data.speed == 2400 ? 0x39 : 0x47;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC3x, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC3x, val);
 
 	/*
 	F0RC4x  = 0       // Should not be touched at all, it is used to access different function spaces
@@ -189,7 +213,7 @@ static void rcd_load(mca_data_t *mca, int d)
 	val = (dimm->mranks == dimm->log_ranks) ? 7 :
 	      (dimm->log_ranks / dimm->mranks) == 2 ? 6 :
 	      (dimm->log_ranks / dimm->mranks) == 4 ? 4 : 0;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RCBx, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RCBx, val);
 
 	/*
 	 * After all RCWs are set, DRAM gets reset "to ensure it is reset properly".
@@ -206,10 +230,10 @@ static void rcd_load(mca_data_t *mca, int d)
 	delay(8000 memclocks)
 	*/
 	val = 0x2;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC06_07, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC06_07, val);
 	delay_nck(8000);
 	val = 0x3;
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC06_07, val);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC06_07, val);
 	delay_nck(8000);
 
 	/*
@@ -223,10 +247,10 @@ static void rcd_load(mca_data_t *mca, int d)
 	 * register is changed to NOP (was "Clear DRAM Reset" in dump).
 	 */
 	/*
-	rcd_write_32b(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC00_01, 0x0201000f);
-	rcd_write_32b(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC08_09, 0xcbe4400d);
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RC3x, 0x47);
-	rcd_write_reg(SPD_I2C_BUS, mca->dimm[d].rcd_i2c_addr, F0RCBx, 0x07);
+	rcd_write_32b(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC00_01, 0x0201000f);
+	rcd_write_32b(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC08_09, 0xcbe4400d);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC3x, 0x47);
+	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RCBx, 0x07);
 	*/
 }
 
@@ -376,34 +400,10 @@ static void mrs_load(uint8_t chip, int mcs_i, int mca_i, int d)
 	ccs_execute(chip, id, mca_i);
 }
 
-/*
- * 13.10 mss_draminit: Dram initialize
- *
- * a) p9_mss_draminit.C (mcbist) -- Nimbus
- * b) p9c_mss_draminit.C (mba) -- Cumulus
- *    - RCD parity errors are checked before logging other errors - HWP will
- *      exit with RC
- *    - De-assert dram reset
- *    - De-assert bit (Scom) that forces mem clock low - dram clocks start
- *    - Raise CKE
- *    - Load RCD Control Words
- *    - Load MRS - for each dimm pair/ports/rank
- *      - ODT Values
- *      - MR0-MR6
- * c) Check for attentions (even if HWP has error)
- *    - FW
- *      - Call PRD
- *        - If finds and error, commit HWP RC as informational
- *        - Else commit HWP RC as normal
- *      - Trigger reconfig loop is anything was deconfigured
- */
-void istep_13_10(void)
+static void mss_draminit(uint8_t chip)
 {
-	printk(BIOS_EMERG, "starting istep 13.10\n");
+	unsigned int spd_bus = SPD_I2C_BUS + chip * 4;
 	int mcs_i, mca_i, dimm;
-	uint8_t chip = 0; // TODO: support second CPU
-
-	report_istep(13,10);
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		if (!mem_data.mcs[mcs_i].functional)
@@ -422,13 +422,17 @@ void istep_13_10(void)
 			[8-23]  CCS_MODEQ_DDR_CAL_TIMEOUT_CNT =       0xffff
 			[30-31] CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT =  3
 		*/
-		scom_and_or_for_chiplet(mcs_ids[mcs_i], CCS_MODEQ,
-		                        ~(PPC_BIT(CCS_MODEQ_CCS_STOP_ON_ERR) |
-		                          PPC_BIT(CCS_MODEQ_CCS_UE_DISABLE)),
-		                        PPC_BIT(CCS_MODEQ_CFG_CCS_PARITY_AFTER_CMD) |
-		                        PPC_BIT(CCS_MODEQ_COPY_CKE_TO_SPARE_CKE) |
-		                        PPC_PLACE(0xFFFF, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_LEN) |
-		                        PPC_PLACE(0x3, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT, CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT_LEN));
+		rscom_and_or_for_chiplet(chip, mcs_ids[mcs_i], CCS_MODEQ,
+		                         ~(PPC_BIT(CCS_MODEQ_CCS_STOP_ON_ERR) |
+		                           PPC_BIT(CCS_MODEQ_CCS_UE_DISABLE)),
+		                         PPC_BIT(CCS_MODEQ_CFG_CCS_PARITY_AFTER_CMD) |
+		                         PPC_BIT(CCS_MODEQ_COPY_CKE_TO_SPARE_CKE) |
+		                         PPC_PLACE(0xFFFF,
+		                                   CCS_MODEQ_DDR_CAL_TIMEOUT_CNT,
+		                                   CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_LEN) |
+		                         PPC_PLACE(0x3,
+		                                   CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT,
+		                                   CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT_LEN));
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
@@ -450,8 +454,12 @@ void istep_13_10(void)
 			           ~PPC_BIT(MBA_FARB5Q_CFG_CCS_INST_RESET_ENABLE),
 			           PPC_BIT(MBA_FARB5Q_CFG_CCS_ADDR_MUX_SEL));
 			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~PPC_BITMASK(0, 3),
-			           PPC_PLACE(0x1, MBA_FARB5Q_CFG_DDR_DPHY_NCLK, MBA_FARB5Q_CFG_DDR_DPHY_NCLK_LEN) |
-			           PPC_PLACE(0x2, MBA_FARB5Q_CFG_DDR_DPHY_PCLK, MBA_FARB5Q_CFG_DDR_DPHY_PCLK_LEN));
+			           PPC_PLACE(0x1,
+			                     MBA_FARB5Q_CFG_DDR_DPHY_NCLK,
+			                     MBA_FARB5Q_CFG_DDR_DPHY_NCLK_LEN) |
+			           PPC_PLACE(0x2,
+			                     MBA_FARB5Q_CFG_DDR_DPHY_PCLK,
+			                     MBA_FARB5Q_CFG_DDR_DPHY_PCLK_LEN));
 			mca_and_or(chip, mcs_ids[mcs_i], mca_i, MBA_FARB5Q, ~0,
 			           PPC_BIT(MBA_FARB5Q_CFG_DDR_RESETN));
 
@@ -511,12 +519,25 @@ void istep_13_10(void)
 				if (!mca->dimm[dimm].present)
 					continue;
 
-				rcd_load(mca, dimm);
+				rcd_load(chip, mca, dimm);
 				// bcw_load();		/* LRDIMM only */
 				mrs_load(chip, mcs_i, mca_i, dimm);
-				dump_rcd(SPD_I2C_BUS, mca->dimm[dimm].rcd_i2c_addr);
+				dump_rcd(spd_bus, mca->dimm[dimm].rcd_i2c_addr);
 			}
 		}
+	}
+}
+
+void istep_13_10(uint8_t chips)
+{
+	uint8_t chip;
+
+	printk(BIOS_EMERG, "starting istep 13.10\n");
+	report_istep(13,10);
+
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			mss_draminit(chip);
 	}
 
 	printk(BIOS_EMERG, "ending istep 13.10\n");
