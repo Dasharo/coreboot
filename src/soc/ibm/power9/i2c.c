@@ -5,6 +5,7 @@
 
 #include <device/i2c_simple.h>
 #include <console/console.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 #include <spd_bin.h>
 
@@ -39,11 +40,11 @@
 #define UNRECOVERABLE		0xFC80000000000000
 
 #define I2C_MAX_FIFO_CAPACITY	8
-#define SPD_I2C_BUS		3
 
 enum i2c_type {
-	HOST_I2C, // I2C via XSCOM (first CPU)
-	FSI_I2C,  // I2C via FSI (second CPU)
+	HOST_I2C_CPU0, // I2C via XSCOM (first CPU)
+	HOST_I2C_CPU1, // I2C via XSCOM (second CPU)
+	FSI_I2C,       // I2C via FSI (second CPU)
 };
 
 /* return -1 if SMBus errors otherwise return 0 */
@@ -99,59 +100,61 @@ void get_spd_smbus(struct spd_block *blk)
 
 static void write_i2c(enum i2c_type type, uint64_t addr, uint64_t data)
 {
-	if (type == HOST_I2C)
-		write_scom(addr, data);
+	if (type != FSI_I2C)
+		write_rscom(type == HOST_I2C_CPU0 ? 0 : 1, addr, data);
 	else
 		write_fsi_i2c(/*chip=*/1, addr, data >> 32, /*size=*/4);
 }
 
 static uint64_t read_i2c(enum i2c_type type, uint64_t addr)
 {
-	if (type == HOST_I2C)
-		return read_scom(addr);
+	if (type != FSI_I2C)
+		return read_rscom(type == HOST_I2C_CPU0 ? 0 : 1, addr);
 	else
 		return (uint64_t)read_fsi_i2c(/*chip=*/1, addr, /*size=*/4) << 32;
 }
 
 static void write_i2c_byte(enum i2c_type type, uint64_t addr, uint8_t data)
 {
-	if (type == HOST_I2C)
-		write_scom(addr, (uint64_t)data << 56);
+	if (type != FSI_I2C)
+		write_rscom(type == HOST_I2C_CPU0 ? 0 : 1, addr, (uint64_t)data << 56);
 	else
 		write_fsi_i2c(/*chip=*/1, addr, (uint32_t)data << 24, /*size=*/1);
 }
 
 static uint8_t read_i2c_byte(enum i2c_type type, uint64_t addr)
 {
-	if (type == HOST_I2C)
-		return read_scom(addr) >> 56;
+	if (type != FSI_I2C)
+		return read_rscom(type == HOST_I2C_CPU0 ? 0 : 1, addr) >> 56;
 	else
 		return read_fsi_i2c(/*chip=*/1, addr, /*size=*/1) >> 24;
 }
 
 /*
- * There are 4 buses/engines, but the function accepts bus [0-7] in order to
- * allow specifying bus of the second CPU while still following coreboot's
- * prototype for this function. [0-3] are buses of the first CPU and [4-7] of
- * the second one (0-3 correspondingly). However, looks like only one bus is
- * available through FSI, because its number is never set.
+ * There are 4 buses/engines, but the function accepts bus [0-8] in order to
+ * allow specifying buses of the second CPU and I2C FSI bus while still
+ * following coreboot's prototype for this function. [0-3] are buses of the
+ * first CPU, [4-7] of the second one (0-3 correspondingly) and 8 is FSI I2C of
+ * the second CPU.
  */
 int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 			  int seg_count)
 {
-	enum { BUSES_PER_CPU = 4 };
-
 	int bytes_transfered = 0;
 	int i;
 	uint64_t r;
 
-	enum i2c_type type = HOST_I2C;
-	if (bus >= BUSES_PER_CPU) {
-		bus -= BUSES_PER_CPU;
+	enum i2c_type type = HOST_I2C_CPU0;
+	if (bus >= I2C_BUSES_PER_CPU) {
+		bus -= I2C_BUSES_PER_CPU;
+		type = HOST_I2C_CPU1;
+	}
+	if (bus >= I2C_BUSES_PER_CPU) {
+		bus -= I2C_BUSES_PER_CPU;
 		type = FSI_I2C;
 	}
 
-	if (bus >= BUSES_PER_CPU) {
+	if (bus >= I2C_BUSES_PER_CPU) {
 		printk(BIOS_ERR, "I2C bus out of range (%d)\n", bus);
 		return -1;
 	}
@@ -165,7 +168,7 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 	uint32_t status_reg = base + STATUS_REG;
 	uint32_t res_err_reg = base + RES_ERR_REG;
 
-	uint64_t clear_err = (type == HOST_I2C ? PPC_BIT(0) : 0);
+	uint64_t clear_err = (type != FSI_I2C ? PPC_BIT(0) : 0);
 
 	write_i2c(type, res_err_reg, clear_err);
 
