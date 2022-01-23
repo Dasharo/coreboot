@@ -18,6 +18,10 @@
 #define DIMMS_PER_MCA			2
 #define DIMMS_PER_MCS			(DIMMS_PER_MCA * MCA_PER_MCS)
 
+#define I2C_BUSES_PER_CPU		4
+#define SPD_I2C_BUS			3
+#define FSI_I2C_BUS			8	// one bus to the second CPU
+
 /* cores is a 64-bit map of functional cores of a single chip */
 #define IS_EC_FUNCTIONAL(ec, cores)	(!!((cores) & PPC_BIT(ec)))
 #define IS_EX_FUNCTIONAL(ex, cores)	(!!((cores) & PPC_BITMASK(2 * (ex), 2 * (ex) + 1)))
