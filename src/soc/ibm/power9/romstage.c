@@ -140,7 +140,7 @@ static void prepare_dimm_data(void)
 		              DIMM4 | 0x80, DIMM5 | 0x80, DIMM6 | 0x80, DIMM7 | 0x80},
 	};
 
-	get_spd_smbus(&blk);
+	get_spd_i2c(SPD_I2C_BUS, &blk);
 	dump_spd_info(&blk);
 
 	/*
