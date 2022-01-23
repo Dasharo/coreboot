@@ -35,7 +35,7 @@ static void mem_pll_initf(uint8_t chip)
 
 	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
 
-	switch (mem_data.speed) {
+	switch (mem_data[chip].speed) {
 		case 2666:
 			ring_id = RING_ID_2666;
 			break;
@@ -49,7 +49,7 @@ static void mem_pll_initf(uint8_t chip)
 			ring_id = RING_ID_1866;
 			break;
 		default:
-			die("Unsupported memory speed (%d MT/s)\n", mem_data.speed);
+			die("Unsupported memory speed (%d MT/s)\n", mem_data[chip].speed);
 	}
 
 	/*
@@ -72,7 +72,7 @@ static void mem_pll_initf(uint8_t chip)
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		long time;
 
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		/* https://github.com/open-power/hostboot/blob/master/src/include/usr/sbeio/sbe_psudd.H#L418 */

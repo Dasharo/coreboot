@@ -143,9 +143,9 @@ static void rcd_load(uint8_t chip, mca_data_t *mca, int d)
 	      4 if 2666 MT/s
 	F0RC0B  = 0xe   // External VrefCA connected to QVrefCA and BVrefCA
 	*/
-	val = mem_data.speed == 1866 ? 1 :
-	      mem_data.speed == 2133 ? 2 :
-	      mem_data.speed == 2400 ? 3 : 4;
+	val = mem_data[chip].speed == 1866 ? 1 :
+	      mem_data[chip].speed == 2133 ? 2 :
+	      mem_data[chip].speed == 2400 ? 3 : 4;
 	val |= 0xE0;
 	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC0A_0B, val);
 
@@ -183,9 +183,9 @@ static void rcd_load(uint8_t chip, mca_data_t *mca, int d)
 	      0x39 if 2400 MT/s
 	      0x47 if 2666 MT/s
 	*/
-	val = mem_data.speed == 1866 ? 0x1F :
-	      mem_data.speed == 2133 ? 0x2C :
-	      mem_data.speed == 2400 ? 0x39 : 0x47;
+	val = mem_data[chip].speed == 1866 ? 0x1F :
+	      mem_data[chip].speed == 2133 ? 0x2C :
+	      mem_data[chip].speed == 2400 ? 0x39 : 0x47;
 	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC3x, val);
 
 	/*
@@ -229,10 +229,10 @@ static void rcd_load(uint8_t chip, mca_data_t *mca, int d)
 	*/
 	val = 0x2;
 	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC06_07, val);
-	delay_nck(8000);
+	delay_nck(chip, 8000);
 	val = 0x3;
 	rcd_write_reg(spd_bus, mca->dimm[d].rcd_i2c_addr, F0RC06_07, val);
-	delay_nck(8000);
+	delay_nck(chip, 8000);
 
 	/*
 	 * Dumped values from currently installed DIMM, from Petitboot:
@@ -304,7 +304,7 @@ static void rcd_load(uint8_t chip, mca_data_t *mca, int d)
 static void mrs_load(uint8_t chip, int mcs_i, int mca_i, int d)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	int mirrored = mca->dimm[d].spd[136] & 1;
 	mrs_cmd_t mrs;
 	int vpd_idx = (mca->dimm[d].mranks - 1) * 2 + (!!mca->dimm[d ^ 1].present);
@@ -375,7 +375,7 @@ static void mrs_load(uint8_t chip, int mcs_i, int mca_i, int d)
                        /* ATTR_MSS_MRW_REFRESH_RATE_REQUEST, default DOUBLE.
                         * Do we need to half tREFI as well? */
                        DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
-                       mem_data.cwl);
+                       mem_data[chip].cwl);
 	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr1(DDR4_MR1_QOFF_ENABLE,
@@ -404,7 +404,7 @@ static void mss_draminit(uint8_t chip)
 	int mcs_i, mca_i, dimm;
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		/* MC01.MCBIST.MBA_SCOMFIR.CCS_MODEQ
@@ -433,7 +433,7 @@ static void mss_draminit(uint8_t chip)
 		                                   CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT_LEN));
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;
@@ -483,13 +483,13 @@ static void mss_draminit(uint8_t chip)
 		 * because CCS_ADDR_MUX_SEL is set.
 		 */
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			if (mem_data.mcs[mcs_i].mca[mca_i].functional)
+			if (mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 				break;
 		}
 		draminit_cke_helper(chip, mcs_ids[mcs_i], mca_i);
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;
@@ -508,7 +508,7 @@ static void mss_draminit(uint8_t chip)
 		}
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;

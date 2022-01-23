@@ -36,7 +36,7 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	const struct powerbus_cfg *pb_cfg = powerbus_cfg();
 
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	const int mca_mul = 0x10;
 	/*
 	 * Mixing rules:
@@ -170,18 +170,18 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 		MSS_FREQ_EQ_2666:                   ATTR_EFF_DRAM_CL + 9
 	*/
 	/* ATTR_MSS_EFF_DPHY_WLO = 1 from VPD, 3 from dump? */
-	uint64_t rdtag_dly = mem_data.speed == 2666 ? 9 :
-	                     mem_data.speed == 2400 ? 8 : 7;
+	uint64_t rdtag_dly = mem_data[chip].speed == 2666 ? 9 :
+	                     mem_data[chip].speed == 2400 ? 8 : 7;
 	mca_and_or(chip, id, mca_i, MBA_DSM0Q, ~PPC_BITMASK(0,41),
-	           PPC_PLACE(mca->cl - mem_data.cwl, MBA_DSM0Q_CFG_RODT_START_DLY,
+	           PPC_PLACE(mca->cl - mem_data[chip].cwl, MBA_DSM0Q_CFG_RODT_START_DLY,
 	                     MBA_DSM0Q_CFG_RODT_START_DLY_LEN) |
-	           PPC_PLACE(mca->cl - mem_data.cwl + 5, MBA_DSM0Q_CFG_RODT_END_DLY,
+	           PPC_PLACE(mca->cl - mem_data[chip].cwl + 5, MBA_DSM0Q_CFG_RODT_END_DLY,
 	                     MBA_DSM0Q_CFG_RODT_END_DLY_LEN) |
 	           PPC_PLACE(5, MBA_DSM0Q_CFG_WODT_END_DLY,
 	                     MBA_DSM0Q_CFG_WODT_END_DLY_LEN) |
 	           PPC_PLACE(24, MBA_DSM0Q_CFG_WRDONE_DLY,
 	                     MBA_DSM0Q_CFG_WRDONE_DLY_LEN) |
-	           PPC_PLACE(mem_data.cwl + /* 1 */ 3 - 8, MBA_DSM0Q_CFG_WRDATA_DLY,
+	           PPC_PLACE(mem_data[chip].cwl + /* 1 */ 3 - 8, MBA_DSM0Q_CFG_WRDATA_DLY,
 	                     MBA_DSM0Q_CFG_WRDATA_DLY_LEN) |
 	           PPC_PLACE(mca->cl + rdtag_dly, MBA_DSM0Q_CFG_RDTAG_DLY,
 	                     MBA_DSM0Q_CFG_RDTAG_DLY_LEN));
@@ -218,9 +218,9 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	    [51-56] MBA_TMR0Q_WRSMSR_DLY =      // same as below
 	    [57-62] MBA_TMR0Q_WRSMDR_DLY =    ATTR_EFF_DRAM_CWL + ATTR_EFF_DRAM_TWTR_S + 4
 	*/
-	uint64_t var_dly = mem_data.speed == 2666 ? 11 :
-	                   mem_data.speed == 2400 ? 10 :
-	                   mem_data.speed == 2133 ? 9 : 8;
+	uint64_t var_dly = mem_data[chip].speed == 2666 ? 11 :
+	                   mem_data[chip].speed == 2400 ? 10 :
+	                   mem_data[chip].speed == 2133 ? 9 : 8;
 	mca_and_or(chip, id, mca_i, MBA_TMR0Q, PPC_BIT(63),
 	           PPC_PLACE(var_dly, MBA_TMR0Q_RRDM_DLY, MBA_TMR0Q_RRDM_DLY_LEN) |
 	           PPC_PLACE(4, MBA_TMR0Q_RRSMSR_DLY, MBA_TMR0Q_RRSMSR_DLY_LEN) |
@@ -230,17 +230,17 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	           PPC_PLACE(4, MBA_TMR0Q_WWSMSR_DLY, MBA_TMR0Q_WWSMSR_DLY_LEN) |
 	           PPC_PLACE(4, MBA_TMR0Q_WWSMDR_DLY, MBA_TMR0Q_WWSMDR_DLY_LEN) |
 	           PPC_PLACE(mca->nccd_l, MBA_TMR0Q_WWOP_DLY, MBA_TMR0Q_WWOP_DLY_LEN) |
-	           PPC_PLACE(mca->cl - mem_data.cwl + var_dly, MBA_TMR0Q_RWDM_DLY,
+	           PPC_PLACE(mca->cl - mem_data[chip].cwl + var_dly, MBA_TMR0Q_RWDM_DLY,
 	                     MBA_TMR0Q_RWDM_DLY_LEN) |
-	           PPC_PLACE(mca->cl - mem_data.cwl + var_dly, MBA_TMR0Q_RWSMSR_DLY,
+	           PPC_PLACE(mca->cl - mem_data[chip].cwl + var_dly, MBA_TMR0Q_RWSMSR_DLY,
 	                     MBA_TMR0Q_RWSMSR_DLY_LEN) |
-	           PPC_PLACE(mca->cl - mem_data.cwl + var_dly, MBA_TMR0Q_RWSMDR_DLY,
+	           PPC_PLACE(mca->cl - mem_data[chip].cwl + var_dly, MBA_TMR0Q_RWSMDR_DLY,
 	                     MBA_TMR0Q_RWSMDR_DLY_LEN) |
-	           PPC_PLACE(mem_data.cwl - mca->cl + var_dly, MBA_TMR0Q_WRDM_DLY,
+	           PPC_PLACE(mem_data[chip].cwl - mca->cl + var_dly, MBA_TMR0Q_WRDM_DLY,
 	                     MBA_TMR0Q_WRDM_DLY_LEN) |
-	           PPC_PLACE(mem_data.cwl + mca->nwtr_s + 4, MBA_TMR0Q_WRSMSR_DLY,
+	           PPC_PLACE(mem_data[chip].cwl + mca->nwtr_s + 4, MBA_TMR0Q_WRSMSR_DLY,
 	                     MBA_TMR0Q_WRSMSR_DLY_LEN) |
-	           PPC_PLACE(mem_data.cwl + mca->nwtr_s + 4, MBA_TMR0Q_WRSMDR_DLY,
+	           PPC_PLACE(mem_data[chip].cwl + mca->nwtr_s + 4, MBA_TMR0Q_WRSMDR_DLY,
 	                     MBA_TMR0Q_WRSMDR_DLY_LEN));
 
 	/* MC01.PORT0.SRQ.MBA_TMR1Q =
@@ -262,15 +262,17 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	*/
 	mca_and_or(chip, id, mca_i, MBA_TMR1Q, 0,
 	           PPC_PLACE(mca->nccd_l, MBA_TMR1Q_RRSBG_DLY, MBA_TMR1Q_RRSBG_DLY_LEN) |
-	           PPC_PLACE(mem_data.cwl + mca->nwtr_l + 4, MBA_TMR1Q_WRSBG_DLY,
+	           PPC_PLACE(mem_data[chip].cwl + mca->nwtr_l + 4, MBA_TMR1Q_WRSBG_DLY,
 	                     MBA_TMR1Q_WRSBG_DLY_LEN) |
 	           PPC_PLACE(mca->nfaw, MBA_TMR1Q_CFG_TFAW, MBA_TMR1Q_CFG_TFAW_LEN) |
 	           PPC_PLACE(mca->nrcd, MBA_TMR1Q_CFG_TRCD, MBA_TMR1Q_CFG_TRCD_LEN) |
 	           PPC_PLACE(mca->nrp, MBA_TMR1Q_CFG_TRP, MBA_TMR1Q_CFG_TRP_LEN) |
 	           PPC_PLACE(mca->nras, MBA_TMR1Q_CFG_TRAS, MBA_TMR1Q_CFG_TRAS_LEN) |
-	           PPC_PLACE(mem_data.cwl + mca->nwr + 4, MBA_TMR1Q_CFG_WR2PRE,
+	           PPC_PLACE(mem_data[chip].cwl + mca->nwr + 4, MBA_TMR1Q_CFG_WR2PRE,
 	                     MBA_TMR1Q_CFG_WR2PRE_LEN) |
-	           PPC_PLACE(mem_data.nrtp, MBA_TMR1Q_CFG_RD2PRE, MBA_TMR1Q_CFG_RD2PRE_LEN) |
+	           PPC_PLACE(mem_data[chip].nrtp,
+	                     MBA_TMR1Q_CFG_RD2PRE,
+	                     MBA_TMR1Q_CFG_RD2PRE_LEN) |
 	           PPC_PLACE(mca->nrrd_s, MBA_TMR1Q_TRRD, MBA_TMR1Q_TRRD_LEN) |
 	           PPC_PLACE(mca->nrrd_l, MBA_TMR1Q_TRRD_SBG, MBA_TMR1Q_TRRD_SBG_LEN) |
 	           PPC_PLACE(var_dly, MBA_TMR1Q_CFG_ACT_TO_DIFF_RANK_DLY,
@@ -415,7 +417,7 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	           PPC_PLACE(3,
 	                     MBAREF0Q_CFG_REFRESH_PRIORITY_THRESHOLD,
 	                     MBAREF0Q_CFG_REFRESH_PRIORITY_THRESHOLD_LEN) |
-	           PPC_PLACE(mem_data.nrefi / (8 * 2 * log_ranks),
+	           PPC_PLACE(mem_data[chip].nrefi / (8 * 2 * log_ranks),
 	                     MBAREF0Q_CFG_REFRESH_INTERVAL,
 	                     MBAREF0Q_CFG_REFRESH_INTERVAL_LEN) |
 	           PPC_PLACE(mca->nrfc,
@@ -424,7 +426,7 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	           PPC_PLACE(mca->nrfc_dlr,
 	                     MBAREF0Q_CFG_REFR_TSV_STACK,
 	                     MBAREF0Q_CFG_REFR_TSV_STACK_LEN) |
-	           PPC_PLACE(((mem_data.nrefi / 8) * 6) / 5,
+	           PPC_PLACE(((mem_data[chip].nrefi / 8) * 6) / 5,
 	                     MBAREF0Q_CFG_REFR_CHECK_INTERVAL,
 	                     MBAREF0Q_CFG_REFR_CHECK_INTERVAL_LEN));
 
@@ -449,11 +451,11 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	      (l_def_MASTER_RANKS_DIMM0 != 4): 0
 	*/
 	/* Perhaps these can be done by ns_to_nck(), but Hostboot used a forest of ifs */
-	uint64_t pup_avail = mem_data.speed == 1866 ? 6 :
-	                     mem_data.speed == 2133 ? 7 :
-	                     mem_data.speed == 2400 ? 8 : 9;
-	uint64_t p_up_dn =   mem_data.speed == 1866 ? 5 :
-	                     mem_data.speed == 2666 ? 7 : 6;
+	uint64_t pup_avail = mem_data[chip].speed == 1866 ? 6 :
+	                     mem_data[chip].speed == 2133 ? 7 :
+	                     mem_data[chip].speed == 2400 ? 8 : 9;
+	uint64_t p_up_dn =   mem_data[chip].speed == 1866 ? 5 :
+	                     mem_data[chip].speed == 2666 ? 7 : 6;
 	mca_and_or(chip, id, mca_i, MBARPC0Q, ~PPC_BITMASK(6, 21),
 	           PPC_PLACE(pup_avail, MBARPC0Q_CFG_PUP_AVAIL, MBARPC0Q_CFG_PUP_AVAIL_LEN) |
 	           PPC_PLACE(p_up_dn, MBARPC0Q_CFG_PDN_PUP, MBARPC0Q_CFG_PDN_PUP_LEN) |
@@ -479,17 +481,17 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	      MSS_FREQ_EQ_2666: 939
 	    [46-56] MBASTR0Q_CFG_SAFE_REFRESH_INTERVAL = ATTR_EFF_DRAM_TREFI / (8 * (DIMM0 + DIMM1 logical ranks))
 	*/
-	uint64_t tcksr_ex = mem_data.speed == 1866 ? 10 :
-	                    mem_data.speed == 2133 ? 11 :
-	                    mem_data.speed == 2400 ? 12 : 14;
-	uint64_t txsdll = mem_data.speed == 1866 ? 597 :
-	                  mem_data.speed == 2666 ? 939 : 768;
+	uint64_t tcksr_ex = mem_data[chip].speed == 1866 ? 10 :
+	                    mem_data[chip].speed == 2133 ? 11 :
+	                    mem_data[chip].speed == 2400 ? 12 : 14;
+	uint64_t txsdll = mem_data[chip].speed == 1866 ? 597 :
+	                  mem_data[chip].speed == 2666 ? 939 : 768;
 	mca_and_or(chip, id, mca_i, MBASTR0Q, ~(PPC_BITMASK(12, 37) | PPC_BITMASK(46, 56)),
 	           PPC_PLACE(5, MBASTR0Q_CFG_TCKESR, MBASTR0Q_CFG_TCKESR_LEN) |
 	           PPC_PLACE(tcksr_ex, MBASTR0Q_CFG_TCKSRE, MBASTR0Q_CFG_TCKSRE_LEN) |
 	           PPC_PLACE(tcksr_ex, MBASTR0Q_CFG_TCKSRX, MBASTR0Q_CFG_TCKSRX_LEN) |
 	           PPC_PLACE(txsdll, MBASTR0Q_CFG_TXSDLL, MBASTR0Q_CFG_TXSDLL_LEN) |
-	           PPC_PLACE(mem_data.nrefi /
+	           PPC_PLACE(mem_data[chip].nrefi /
 	                     (8 * (mca->dimm[0].log_ranks + mca->dimm[1].log_ranks)),
 	                     MBASTR0Q_CFG_SAFE_REFRESH_INTERVAL,
 	                     MBASTR0Q_CFG_SAFE_REFRESH_INTERVAL_LEN));
@@ -525,7 +527,7 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	 * ATTR_MSS_FREQ is in MT/s (sigh).
 	 */
 	uint32_t pb_freq = pb_cfg->fabric_freq;
-	uint64_t mn_freq_ratio = 1000 * mem_data.speed / pb_freq;
+	uint64_t mn_freq_ratio = 1000 * mem_data[chip].speed / pb_freq;
 	uint64_t val_to_data = mn_freq_ratio < 915 ? 3 :
 	                       mn_freq_ratio < 1150 ? 4 :
 	                       mn_freq_ratio < 1300 ? 5 : 6;
@@ -633,9 +635,9 @@ static void p9n_ddrphy_scom(uint8_t chip, int mcs_i, int mca_i)
 	 * Hostboot sets this to proper value in phy_scominit(), but I don't see
 	 * why. Speed is the same for whole MCBIST anyway.
 	 */
-	uint64_t strength = mem_data.speed == 1866 ? 1 :
-			    mem_data.speed == 2133 ? 2 :
-			    mem_data.speed == 2400 ? 4 : 8;
+	uint64_t strength = mem_data[chip].speed == 1866 ? 1 :
+			    mem_data[chip].speed == 2133 ? 2 :
+			    mem_data[chip].speed == 2400 ? 4 : 8;
 
 	for (dp = 0; dp < 5; dp++) {
 		/* IOM0.DDRPHY_DP16_DLL_VREG_CONTROL0_P0_{0,1,2,3,4} =
@@ -889,7 +891,7 @@ static void p9n_mcbist_scom(uint8_t chip, int mcs_i)
 static void set_rank_pairs(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	/*
 	 * Assumptions:
 	 * - non-LR DIMMs (platform wiki),
@@ -1063,7 +1065,7 @@ static const uint16_t x8_clk[8][5] = {
 static void reset_clock_enable(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	/* Assume the same rank configuration for both DIMMs */
 	int dp;
 	int width = mca->dimm[0].present ? mca->dimm[0].width :
@@ -1116,7 +1118,7 @@ static void reset_clock_enable(uint8_t chip, int mcs_i, int mca_i)
 static void reset_rd_vref(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 	int dp;
 	int vpd_idx = mca->dimm[0].present ? (mca->dimm[0].mranks == 2 ? 2 : 0) :
@@ -1193,10 +1195,10 @@ static void pc_reset(uint8_t chip, int mcs_i, int mca_i)
 	chiplet_id_t id = mcs_ids[mcs_i];
 	/* These are from VPD */
 	/*
-	uint64_t ATTR_MSS_EFF_DPHY_WLO = mem_data.speed == 1866 ? 1 : 2;
-	uint64_t ATTR_MSS_EFF_DPHY_RLO = mem_data.speed == 1866 ? 4 :
-	                                 mem_data.speed == 2133 ? 5 :
-	                                 mem_data.speed == 2400 ? 6 : 7;
+	uint64_t ATTR_MSS_EFF_DPHY_WLO = mem_data[chip].speed == 1866 ? 1 : 2;
+	uint64_t ATTR_MSS_EFF_DPHY_RLO = mem_data[chip].speed == 1866 ? 4 :
+	                                 mem_data[chip].speed == 2133 ? 5 :
+	                                 mem_data[chip].speed == 2400 ? 6 : 7;
 	*/
 
 	/* IOM0.DDRPHY_PC_CONFIG0_P0 has been reset in p9n_ddrphy_scom() */
@@ -1214,10 +1216,10 @@ static void pc_reset(uint8_t chip, int mcs_i, int mca_i)
 	 * be the same as in VPD, yet WLO is 3 and RLO is 5 when written to SCOM...
 	 *
 	 * These are from VPD:
-	 * uint64_t ATTR_MSS_EFF_DPHY_WLO = mem_data.speed == 1866 ? 1 : 2;
-	 * uint64_t ATTR_MSS_EFF_DPHY_RLO = mem_data.speed == 1866 ? 4 :
-	 *                                  mem_data.speed == 2133 ? 5 :
-	 *                                  mem_data.speed == 2400 ? 6 : 7;
+	 * uint64_t ATTR_MSS_EFF_DPHY_WLO = mem_data[chip].speed == 1866 ? 1 : 2;
+	 * uint64_t ATTR_MSS_EFF_DPHY_RLO = mem_data[chip].speed == 1866 ? 4 :
+	 *                                  mem_data[chip].speed == 2133 ? 5 :
+	 *                                  mem_data[chip].speed == 2400 ? 6 : 7;
 	 */
 	mca_and_or(chip, id, mca_i, DDRPHY_PC_CONFIG1_P0,
 	           ~(PPC_BITMASK(48, 55) | PPC_BITMASK(59, 62)),
@@ -1242,7 +1244,7 @@ static void pc_reset(uint8_t chip, int mcs_i, int mca_i)
 static void wc_reset(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 	/* IOM0.DDRPHY_WC_CONFIG0_P0 =
 	      [all]   0
@@ -1268,9 +1270,9 @@ static void wc_reset(uint8_t chip, int mcs_i, int mca_i)
 	 * FIXME: again, tWLO = 3 in Hostboot. Why?
 	 * This is still much smaller than tWLDQSEN so leave it, for now.
 	 */
-	uint64_t tWLO = mem_data.speed == 1866 ? 1 : 2;
-	uint64_t tWLOE = ns_to_nck(2);
-	uint64_t tWLDQSEN = MAX(25, tMOD + (mem_data.cwl - 2) + 1);
+	uint64_t tWLO = mem_data[chip].speed == 1866 ? 1 : 2;
+	uint64_t tWLOE = ns_to_nck(chip, 2);
+	uint64_t tWLDQSEN = MAX(25, tMOD + (mem_data[chip].cwl - 2) + 1);
 	/*
 	 * Use the version from the code, it may be longer than necessary but it
 	 * works. Note that MAX() always expands to CWL + 23 + 24 = 47 + CWL, which
@@ -1308,7 +1310,9 @@ static void wc_reset(uint8_t chip, int mcs_i, int mca_i)
 	/* There is no Additive Latency. */
 	mca_and_or(chip, id, mca_i, DDRPHY_WC_CONFIG2_P0, 0,
 	           PPC_PLACE(5, NUM_VALID_SAMPLES, NUM_VALID_SAMPLES_LEN) |
-	           PPC_PLACE(MAX(mca->nwtr_s + 11, mem_data.nrtp + 3), FW_RD_WR, FW_RD_WR_LEN) |
+	           PPC_PLACE(MAX(mca->nwtr_s + 11, mem_data[chip].nrtp + 3),
+	                     FW_RD_WR,
+	                     FW_RD_WR_LEN) |
 	           PPC_PLACE(5, IPW_WR_WR, IPW_WR_WR_LEN));
 
 	/* IOM0.DDRPHY_WC_CONFIG3_P0 =
@@ -1324,14 +1328,14 @@ static void wc_reset(uint8_t chip, int mcs_i, int mca_i)
 	      [50-59] WR_CTR_VREF_COUNTER_RESET_VAL = 150ns in clock cycles  // JESD79-4C Table 67
 	*/
 	mca_and_or(chip, id, mca_i, DDRPHY_WC_RTT_WR_SWAP_ENABLE_P0, ~PPC_BITMASK(48, 59),
-	           PPC_PLACE(ns_to_nck(150), WR_CTR_VREF_COUNTER_RESET_VAL,
+	           PPC_PLACE(ns_to_nck(chip, 150), WR_CTR_VREF_COUNTER_RESET_VAL,
 	                     WR_CTR_VREF_COUNTER_RESET_VAL_LEN));
 }
 
 static void rc_reset(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 	/* IOM0.DDRPHY_RC_CONFIG0_P0
 	      [all]   0
@@ -1372,9 +1376,9 @@ static void rc_reset(uint8_t chip, int mcs_i, int mca_i)
 			  MSS_FREQ_EQ_2400: 0x0a50
 			  MSS_FREQ_EQ_2666: 0x0b74    // use this value for all freqs maybe?
 	*/
-	uint64_t wait_time = mem_data.speed == 1866 ? 0x0804 :
-	                     mem_data.speed == 2133 ? 0x092A :
-	                     mem_data.speed == 2400 ? 0x0A50 : 0x0B74;
+	uint64_t wait_time = mem_data[chip].speed == 1866 ? 0x0804 :
+	                     mem_data[chip].speed == 2133 ? 0x092A :
+	                     mem_data[chip].speed == 2400 ? 0x0A50 : 0x0B74;
 	mca_and_or(chip, id, mca_i, DDRPHY_RC_RDVREF_CONFIG0_P0,
 	           0, PPC_PLACE(wait_time, 48, 16));
 
@@ -1398,7 +1402,7 @@ static inline int log2_up(uint32_t x)
 static void seq_reset(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	int vpd_idx = mca->dimm[0].present ? (mca->dimm[0].mranks == 2 ? 2 : 0) :
 	                                     (mca->dimm[1].mranks == 2 ? 2 : 0);
 	if (mca->dimm[0].present && mca->dimm[1].present)
@@ -1465,7 +1469,7 @@ static void seq_reset(uint8_t chip, int mcs_i, int mca_i)
 	*/
 	/* AL and PL are disabled (0) */
 	mca_and_or(chip, id, mca_i, DDRPHY_SEQ_MEM_TIMING_PARAM2_P0, 0,
-	           PPC_PLACE(log2_up(mem_data.cwl - 2), TODTLON_OFF_CYCLES,
+	           PPC_PLACE(log2_up(mem_data[chip].cwl - 2), TODTLON_OFF_CYCLES,
 	                     TODTLON_OFF_CYCLES_LEN) |
 	           PPC_PLACE(0x777, 52, 12));
 
@@ -1647,12 +1651,12 @@ static void reset_ctle_cntl(uint8_t chip, int mcs_i, int mca_i)
 static void reset_delay(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 	/* See comments in ATTR_MSS_VPD_MR_MC_PHASE_ROT_CNTL_D0_CSN0 for layout */
-	int speed_idx = mem_data.speed == 1866 ? 0 :
-	                mem_data.speed == 2133 ? 8 :
-	                mem_data.speed == 2400 ? 16 : 24;
+	int speed_idx = mem_data[chip].speed == 1866 ? 0 :
+	                mem_data[chip].speed == 2133 ? 8 :
+	                mem_data[chip].speed == 2400 ? 16 : 24;
 	int dimm_idx = (mca->dimm[0].present && mca->dimm[1].present) ? 4 : 0;
 	/* TODO: second CPU not supported */
 	int vpd_idx = speed_idx + dimm_idx + mcs_i;
@@ -1911,9 +1915,9 @@ static void reset_delay(uint8_t chip, int mcs_i, int mca_i)
 static void reset_tsys_adr(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	int i = mem_data.speed == 1866 ? 0 :
-	        mem_data.speed == 2133 ? 1 :
-	        mem_data.speed == 2400 ? 2 : 3;
+	int i = mem_data[chip].speed == 1866 ? 0 :
+	        mem_data[chip].speed == 2133 ? 1 :
+	        mem_data[chip].speed == 2400 ? 2 : 3;
 
 	/* IOM0.DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S{0,1} =
 	    [all]   0
@@ -1934,9 +1938,9 @@ static void reset_tsys_adr(uint8_t chip, int mcs_i, int mca_i)
 static void reset_tsys_data(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	int i = mem_data.speed == 1866 ? 0 :
-	        mem_data.speed == 2133 ? 1 :
-	        mem_data.speed == 2400 ? 2 : 3;
+	int i = mem_data[chip].speed == 1866 ? 0 :
+	        mem_data[chip].speed == 2133 ? 1 :
+	        mem_data[chip].speed == 2400 ? 2 : 3;
 	int dp;
 
 	/* IOM0.DDRPHY_DP16_WRCLK_PR_P0_{0,1,2,3,4} =
@@ -2101,7 +2105,7 @@ static void reset_io_impedances(uint8_t chip, int mcs_i, int mca_i)
 static void reset_wr_vref_registers(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	int dp;
 	int vpd_idx = mca->dimm[0].present ? (mca->dimm[0].mranks == 2 ? 2 : 0) :
 	                                     (mca->dimm[1].mranks == 2 ? 2 : 0);
@@ -2343,11 +2347,11 @@ static void mss_scominit(uint8_t chip)
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		/* No need to initialize a non-functional MCS */
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 			/*
 			 * 0th MCA is 'magic' - it has a logic PHY block that is not contained
 			 * in other MCA. The magic MCA must be always initialized, even when it
@@ -2371,11 +2375,11 @@ static void mss_scominit(uint8_t chip)
 
 	/* This double loop is a part of phy_scominit() in Hostboot, but this is simpler. */
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 			/* No magic for phy_scominit(). */
 			if (mca->functional)
 				phy_scominit(chip, mcs_i, mca_i);
