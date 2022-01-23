@@ -9,8 +9,6 @@
 
 #include "istep_13_scom.h"
 
-#define SPD_I2C_BUS		3
-
 /*
  * 13.10 mss_draminit: Dram initialize
  *
@@ -55,7 +53,7 @@ static void rcd_load(uint8_t chip, mca_data_t *mca, int d)
 	uint8_t val;
 	rdimm_data_t *dimm = &mca->dimm[d];
 	uint8_t *spd = dimm->spd;
-	unsigned int spd_bus = SPD_I2C_BUS + chip * 4;
+	unsigned int spd_bus = SPD_I2C_BUS + chip * I2C_BUSES_PER_CPU;
 
 	/* Raw card specifications are JEDEC documents MODULE4.20.28.x, where x is A-E */
 
@@ -402,7 +400,7 @@ static void mrs_load(uint8_t chip, int mcs_i, int mca_i, int d)
 
 static void mss_draminit(uint8_t chip)
 {
-	unsigned int spd_bus = SPD_I2C_BUS + chip * 4;
+	unsigned int spd_bus = SPD_I2C_BUS + chip * I2C_BUSES_PER_CPU;
 	int mcs_i, mca_i, dimm;
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
