@@ -97,7 +97,7 @@ typedef struct {
 	uint8_t nrtp;	// max(4 nCK, 7.5 ns) = 7.5 ns for every supported speed
 } mcbist_data_t;
 
-extern mcbist_data_t mem_data;
+extern mcbist_data_t mem_data[MAX_CHIPS];
 static const chiplet_id_t mcs_ids[MCS_PER_PROC] = {MC01_CHIPLET_ID, MC23_CHIPLET_ID};
 
 /*
@@ -108,36 +108,36 @@ static const chiplet_id_t mcs_ids[MCS_PER_PROC] = {MC01_CHIPLET_ID, MC23_CHIPLET
  * These functions should not be used before setting mem_data.speed to a valid
  * non-0 value.
  */
-static inline uint64_t tck_in_ps(void)
+static inline uint64_t tck_in_ps(uint8_t chip)
 {
 	/*
 	 * Speed is in MT/s, we need to divide it by 2 to get MHz.
 	 * tCK(avg) should be rounded down to the next valid speed bin, which
 	 * corresponds to value obtained by using standardized MT/s values.
 	 */
-	return 1000000 / (mem_data.speed / 2);
+	return 1000000 / (mem_data[chip].speed / 2);
 }
 
-static inline uint64_t ps_to_nck(uint64_t ps)
+static inline uint64_t ps_to_nck(uint8_t chip, uint64_t ps)
 {
 	/* Algorithm taken from JEDEC Standard No. 21-C */
-	return ((ps * 1000 / tck_in_ps()) + 974) / 1000;
+	return ((ps * 1000 / tck_in_ps(chip)) + 974) / 1000;
 }
 
-static inline uint64_t mtb_ftb_to_nck(uint64_t mtb, int8_t ftb)
+static inline uint64_t mtb_ftb_to_nck(uint8_t chip, uint64_t mtb, int8_t ftb)
 {
 	/* ftb is signed (always byte?) */
-	return ps_to_nck(mtb * 125 + ftb);
+	return ps_to_nck(chip, mtb * 125 + ftb);
 }
 
-static inline uint64_t ns_to_nck(uint64_t ns)
+static inline uint64_t ns_to_nck(uint8_t chip, uint64_t ns)
 {
-	return ps_to_nck(ns * PSEC_PER_NSEC);
+	return ps_to_nck(chip, ns * PSEC_PER_NSEC);
 }
 
-static inline uint64_t nck_to_ps(uint64_t nck)
+static inline uint64_t nck_to_ps(uint8_t chip, uint64_t nck)
 {
-	return nck * tck_in_ps();
+	return nck * tck_in_ps(chip);
 }
 
 /*
@@ -147,14 +147,14 @@ static inline uint64_t nck_to_ps(uint64_t nck)
  * around 1 ns, so most smaller delays will be rounded up to 1 us. For better
  * resolution we would have to read TBR (Time Base Register) directly.
  */
-static inline uint64_t nck_to_us(uint64_t nck)
+static inline uint64_t nck_to_us(uint8_t chip, uint64_t nck)
 {
-	return (nck_to_ps(nck) + PSEC_PER_USEC - 1) / PSEC_PER_USEC;
+	return (nck_to_ps(chip, nck) + PSEC_PER_USEC - 1) / PSEC_PER_USEC;
 }
 
-static inline void delay_nck(uint64_t nck)
+static inline void delay_nck(uint8_t chip, uint64_t nck)
 {
-	udelay(nck_to_us(nck));
+	udelay(nck_to_us(chip, nck));
 }
 
 /* TODO: consider non-RMW variants */
