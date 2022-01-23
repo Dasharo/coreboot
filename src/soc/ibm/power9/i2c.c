@@ -48,7 +48,7 @@ enum i2c_type {
 };
 
 /* return -1 if SMBus errors otherwise return 0 */
-static int get_spd(u8 *spd, u8 addr)
+static int get_spd(uint8_t bus, u8 *spd, u8 addr)
 {
 	/*
 	 * Second half of DIMMs is on the second I2C port. platform_i2c_transfer()
@@ -57,27 +57,28 @@ static int get_spd(u8 *spd, u8 addr)
 	 */
 	uint8_t fix = addr & 0x80;
 
-	if (i2c_read_bytes(SPD_I2C_BUS, addr, 0, spd, SPD_PAGE_LEN) < 0) {
+	if (i2c_read_bytes(bus, addr, 0, spd, SPD_PAGE_LEN) < 0) {
 		printk(BIOS_INFO, "No memory DIMM at address %02X\n", addr);
 		return -1;
 	}
 
 	/* DDR4 spd is 512 byte. Switch to page 1 */
-	i2c_writeb(SPD_I2C_BUS, SPD_PAGE_1 | fix, 0, 0);
+	i2c_writeb(bus, SPD_PAGE_1 | fix, 0, 0);
 
 	/* No need to check again if DIMM is present */
-	i2c_read_bytes(SPD_I2C_BUS, addr, 0, spd + SPD_PAGE_LEN, SPD_PAGE_LEN);
+	i2c_read_bytes(bus, addr, 0, spd + SPD_PAGE_LEN, SPD_PAGE_LEN);
 	/* Restore to page 0 */
-	i2c_writeb(SPD_I2C_BUS, SPD_PAGE_0 | fix, 0, 0);
+	i2c_writeb(bus, SPD_PAGE_0 | fix, 0, 0);
 
 	return 0;
 }
 
-static u8 spd_data[CONFIG_DIMM_MAX * CONFIG_DIMM_SPD_SIZE];
+static u8 spd_data[MAX_CHIPS][CONFIG_DIMM_MAX][CONFIG_DIMM_SPD_SIZE];
 
-void get_spd_smbus(struct spd_block *blk)
+void get_spd_i2c(uint8_t bus, struct spd_block *blk)
 {
 	u8 i;
+	u8 chip = bus / I2C_BUSES_PER_CPU;
 
 	for (i = 0 ; i < CONFIG_DIMM_MAX; i++) {
 		if (blk->addr_map[i] == 0) {
@@ -85,8 +86,8 @@ void get_spd_smbus(struct spd_block *blk)
 			continue;
 		}
 
-		if (get_spd(&spd_data[i * CONFIG_DIMM_SPD_SIZE], blk->addr_map[i]) == 0)
-			blk->spd_array[i] = &spd_data[i * CONFIG_DIMM_SPD_SIZE];
+		if (get_spd(bus, spd_data[chip][i], blk->addr_map[i]) == 0)
+			blk->spd_array[i] = spd_data[chip][i];
 		else
 			blk->spd_array[i] = NULL;
 	}
