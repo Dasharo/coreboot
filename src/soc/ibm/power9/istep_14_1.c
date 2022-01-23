@@ -51,7 +51,7 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		uint64_t val;
-		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 			continue;
 
 		/* From broadcast_out_of_sync() workaround:
@@ -176,7 +176,7 @@ static void set_fifo_mode(uint8_t chip, int mcs_i, int fifo)
 	 *   [5] MBA_WRQ0Q_CFG_WRQ_FIFO_MODE = fifo
 	 */
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 			continue;
 
 		mca_and_or(chip, id, mca_i, MBA_RRQ0Q, ~PPC_BIT(MBA_RRQ0Q_CFG_RRQ_FIFO_MODE),
@@ -203,7 +203,7 @@ static void load_maint_pattern(uint8_t chip, int mcs_i, const uint64_t pat[16])
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		int i;
-		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 			continue;
 
 		/* MC01.PORT0.ECC64.SCOM.AACR
@@ -437,7 +437,7 @@ static void mss_memdiag(uint8_t chip)
 	int mcs_i, mca_i;
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		/*
@@ -461,7 +461,7 @@ static void mss_memdiag(uint8_t chip)
 		 * maintenance pattern write can succeed for the same configuration.
 		 */
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 			int dimm;
 			if (!mca->functional)
 				continue;
@@ -505,7 +505,7 @@ static void mss_memdiag(uint8_t chip)
 	long total_time = 0;
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		/*

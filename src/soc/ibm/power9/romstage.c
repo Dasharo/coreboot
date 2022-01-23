@@ -20,7 +20,7 @@
 #include "fsi.h"
 #include "pci.h"
 
-mcbist_data_t mem_data;
+mcbist_data_t mem_data[MAX_CHIPS];
 
 static void dump_mca_data(mca_data_t *mca)
 {
@@ -76,31 +76,32 @@ static inline bool is_proper_dimm(spd_raw_data spd, int slot)
 	return true;
 }
 
-static void mark_nonfunctional(int mcs, int mca)
+static void mark_nonfunctional(uint8_t chip, int mcs, int mca)
 {
-	mem_data.mcs[mcs].mca[mca].functional = false;
+	mem_data[chip].mcs[mcs].mca[mca].functional = false;
 
 	/* Propagate upwards */
-	if (mem_data.mcs[mcs].mca[mca ^ 1].functional == false) {
-		mem_data.mcs[mcs].functional = false;
-		if (mem_data.mcs[mcs ^ 1].functional == false)
-			die("No functional MCS left");
+	if (mem_data[chip].mcs[mcs].mca[mca ^ 1].functional == false) {
+		mem_data[chip].mcs[mcs].functional = false;
+		if (mem_data[chip].mcs[mcs ^ 1].functional == false)
+			printk(BIOS_INFO, "No functional MCS left on chip %d\n", chip);
 	}
 }
 
-static uint64_t find_min_mtb_ftb(rdimm_data_t *dimm, int mtb_idx, int ftb_idx)
+static uint64_t find_min_mtb_ftb(uint8_t chip, rdimm_data_t *dimm, int mtb_idx, int ftb_idx)
 {
 	uint64_t val0 = 0, val1 = 0;
 
 	if (dimm[0].present)
-		val0 = mtb_ftb_to_nck(dimm[0].spd[mtb_idx], (int8_t)dimm[0].spd[ftb_idx]);
+		val0 = mtb_ftb_to_nck(chip, dimm[0].spd[mtb_idx], (int8_t)dimm[0].spd[ftb_idx]);
 	if (dimm[1].present)
-		val1 = mtb_ftb_to_nck(dimm[1].spd[mtb_idx], (int8_t)dimm[1].spd[ftb_idx]);
+		val1 = mtb_ftb_to_nck(chip, dimm[1].spd[mtb_idx], (int8_t)dimm[1].spd[ftb_idx]);
 
 	return (val0 < val1) ? val1 : val0;
 }
 
-static uint64_t find_min_multi_mtb(rdimm_data_t *dimm, int mtb_l, int mtb_h, uint8_t mask, int shift)
+static uint64_t find_min_multi_mtb(uint8_t chip, rdimm_data_t *dimm, int mtb_l, int mtb_h,
+				   uint8_t mask, int shift)
 {
 	uint64_t val0 = 0, val1 = 0;
 
@@ -109,7 +110,7 @@ static uint64_t find_min_multi_mtb(rdimm_data_t *dimm, int mtb_l, int mtb_h, uin
 	if (dimm[1].present)
 		val1 = dimm[1].spd[mtb_l] | ((dimm[1].spd[mtb_h] & mask) << shift);
 
-	return (val0 < val1) ? mtb_ftb_to_nck(val1, 0) : mtb_ftb_to_nck(val0, 0);
+	return (val0 < val1) ? mtb_ftb_to_nck(chip, val1, 0) : mtb_ftb_to_nck(chip, val0, 0);
 }
 
 /* https://review.coreboot.org/c/coreboot/+/52061 */
@@ -124,10 +125,11 @@ static uint64_t find_min_multi_mtb(rdimm_data_t *dimm, int mtb_l, int mtb_h, uin
 #define DIMM7                            0x57
 
 /* This is most of step 7 condensed into one function */
-static void prepare_dimm_data(void)
+static void prepare_cpu_dimm_data(uint8_t chip)
 {
 	int i, mcs, mca;
 	int tckmin = 0x06;		// Platform limit
+	unsigned int spd_bus = I2C_BUSES_PER_CPU * chip + SPD_I2C_BUS;
 
 	/*
 	 * DIMMs 4-7 are under a different port. This is not the same as bus, but we
@@ -140,7 +142,7 @@ static void prepare_dimm_data(void)
 		              DIMM4 | 0x80, DIMM5 | 0x80, DIMM6 | 0x80, DIMM7 | 0x80},
 	};
 
-	get_spd_i2c(SPD_I2C_BUS, &blk);
+	get_spd_i2c(spd_bus, &blk);
 	dump_spd_info(&blk);
 
 	/*
@@ -159,13 +161,13 @@ static void prepare_dimm_data(void)
 
 
 			/* Maximum for 2 DIMMs on one port (channel, MCA) is 2400 MT/s */
-			if (tckmin < 0x07 && mem_data.mcs[mcs].mca[mca].functional)
+			if (tckmin < 0x07 && mem_data[chip].mcs[mcs].mca[mca].functional)
 				tckmin = 0x07;
 
-			mem_data.mcs[mcs].functional = true;
-			mem_data.mcs[mcs].mca[mca].functional = true;
+			mem_data[chip].mcs[mcs].functional = true;
+			mem_data[chip].mcs[mcs].mca[mca].functional = true;
 
-			rdimm_data_t *dimm = &mem_data.mcs[mcs].mca[mca].dimm[dimm_idx];
+			rdimm_data_t *dimm = &mem_data[chip].mcs[mcs].mca[mca].dimm[dimm_idx];
 
 			dimm->present = true;
 			dimm->spd = blk.spd_array[i];
@@ -193,54 +195,45 @@ static void prepare_dimm_data(void)
 		}
 	}
 
-	/*
-	 * There is one (?) MCBIST per CPU. Fail if there are no supported DIMMs
-	 * connected, otherwise assume it is functional. There is no reason to redo
-	 * this test in the rest of isteps.
-	 *
-	 * TODO: 2 CPUs with one DIMM (in total) will not work with this code.
-	 */
-	if (mem_data.mcs[0].functional == false && mem_data.mcs[1].functional == false)
-		die("No DIMMs detected, aborting\n");
-
 	switch (tckmin) {
 		/* For CWL assume 1tCK write preamble */
 		case 0x06:
-			mem_data.speed = 2666;
-			mem_data.cwl = 14;
+			mem_data[chip].speed = 2666;
+			mem_data[chip].cwl = 14;
 			break;
 		case 0x07:
-			mem_data.speed = 2400;
-			mem_data.cwl = 12;
+			mem_data[chip].speed = 2400;
+			mem_data[chip].cwl = 12;
 			break;
 		case 0x08:
-			mem_data.speed = 2133;
-			mem_data.cwl = 11;
+			mem_data[chip].speed = 2133;
+			mem_data[chip].cwl = 11;
 			break;
 		case 0x09:
-			mem_data.speed = 1866;
-			mem_data.cwl = 10;
+			mem_data[chip].speed = 1866;
+			mem_data[chip].cwl = 10;
 			break;
 		default:
 			die("Unsupported tCKmin: %d ps (+/- 125)\n", tckmin * 125);
 	}
 
 	/* Now that we know our speed, we can calculate the rest of the data */
-	mem_data.nrefi = ns_to_nck(7800);
-	mem_data.nrtp = ps_to_nck(7500);
+	mem_data[chip].nrefi = ns_to_nck(chip, 7800);
+	mem_data[chip].nrtp = ps_to_nck(chip, 7500);
 	printk(BIOS_SPEW, "Common memory parameters:\n"
 	                  "\tspeed =\t%d MT/s\n"
 	                  "\tREFI =\t%d clock cycles\n"
 	                  "\tCWL =\t%d clock cycles\n"
 	                  "\tRTP =\t%d clock cycles\n",
-	                  mem_data.speed, mem_data.nrefi, mem_data.cwl, mem_data.nrtp);
+	                  mem_data[chip].speed, mem_data[chip].nrefi,
+	                  mem_data[chip].cwl, mem_data[chip].nrtp);
 
 	for (mcs = 0; mcs < MCS_PER_PROC; mcs++) {
-		if (!mem_data.mcs[mcs].functional) continue;
+		if (!mem_data[chip].mcs[mcs].functional) continue;
 		for (mca = 0; mca < MCA_PER_MCS; mca++) {
-			if (!mem_data.mcs[mcs].mca[mca].functional) continue;
+			if (!mem_data[chip].mcs[mcs].mca[mca].functional) continue;
 
-			rdimm_data_t *dimm = mem_data.mcs[mcs].mca[mca].dimm;
+			rdimm_data_t *dimm = mem_data[chip].mcs[mcs].mca[mca].dimm;
 			uint32_t val0, val1, common;
 			int min;	/* Minimum compatible with both DIMMs is the bigger value */
 
@@ -251,7 +244,7 @@ static void prepare_dimm_data(void)
 			common = val0 & val1;
 
 			/* tAAmin - minimum CAS latency time */
-			min = find_min_mtb_ftb(dimm, 24, 123);
+			min = find_min_mtb_ftb(chip, dimm, 24, 123);
 			while (min <= 36 && ((common >> (min - 7)) & 1) == 0)
 				min++;
 
@@ -259,11 +252,11 @@ static void prepare_dimm_data(void)
 				/* Maybe just die() instead? */
 				printk(BIOS_WARNING, "Cannot find CL supported by all DIMMs under MCS%d, MCA%d."
 				       " Marking as nonfunctional.\n", mcs, mca);
-				mark_nonfunctional(mcs, mca);
+				mark_nonfunctional(chip, mcs, mca);
 				continue;
 			}
 
-			mem_data.mcs[mcs].mca[mca].cl = min;
+			mem_data[chip].mcs[mcs].mca[mca].cl = min;
 
 			/*
 			 * There are also minimal values in Table 170 of JEDEC Standard No. 79-4C which
@@ -274,38 +267,38 @@ static void prepare_dimm_data(void)
 			 */
 
 			/* Minimum CAS to CAS Delay Time, Same Bank Group */
-			mem_data.mcs[mcs].mca[mca].nccd_l = find_min_mtb_ftb(dimm, 40, 117);
+			mem_data[chip].mcs[mcs].mca[mca].nccd_l = find_min_mtb_ftb(chip, dimm, 40, 117);
 
 			/* Minimum Write to Read Time, Different Bank Group */
-			mem_data.mcs[mcs].mca[mca].nwtr_s = find_min_multi_mtb(dimm, 44, 43, 0x0F, 8);
+			mem_data[chip].mcs[mcs].mca[mca].nwtr_s = find_min_multi_mtb(chip, dimm, 44, 43, 0x0F, 8);
 
 			/* Minimum Write to Read Time, Same Bank Group */
-			mem_data.mcs[mcs].mca[mca].nwtr_l = find_min_multi_mtb(dimm, 45, 43, 0xF0, 4);
+			mem_data[chip].mcs[mcs].mca[mca].nwtr_l = find_min_multi_mtb(chip, dimm, 45, 43, 0xF0, 4);
 
 			/* Minimum Four Activate Window Delay Time */
-			mem_data.mcs[mcs].mca[mca].nfaw = find_min_multi_mtb(dimm, 37, 36, 0x0F, 8);
+			mem_data[chip].mcs[mcs].mca[mca].nfaw = find_min_multi_mtb(chip, dimm, 37, 36, 0x0F, 8);
 
 			/* Minimum RAS to CAS Delay Time */
-			mem_data.mcs[mcs].mca[mca].nrcd = find_min_mtb_ftb(dimm, 25, 122);
+			mem_data[chip].mcs[mcs].mca[mca].nrcd = find_min_mtb_ftb(chip, dimm, 25, 122);
 
 			/* Minimum Row Precharge Delay Time */
-			mem_data.mcs[mcs].mca[mca].nrp = find_min_mtb_ftb(dimm, 26, 121);
+			mem_data[chip].mcs[mcs].mca[mca].nrp = find_min_mtb_ftb(chip, dimm, 26, 121);
 
 			/* Minimum Active to Precharge Delay Time */
-			mem_data.mcs[mcs].mca[mca].nras = find_min_multi_mtb(dimm, 28, 27, 0x0F, 8);
+			mem_data[chip].mcs[mcs].mca[mca].nras = find_min_multi_mtb(chip, dimm, 28, 27, 0x0F, 8);
 
 			/* Minimum Write Recovery Time */
-			mem_data.mcs[mcs].mca[mca].nwr = find_min_multi_mtb(dimm, 42, 41, 0x0F, 8);
+			mem_data[chip].mcs[mcs].mca[mca].nwr = find_min_multi_mtb(chip, dimm, 42, 41, 0x0F, 8);
 
 			/* Minimum Activate to Activate Delay Time, Different Bank Group */
-			mem_data.mcs[mcs].mca[mca].nrrd_s = find_min_mtb_ftb(dimm, 38, 119);
+			mem_data[chip].mcs[mcs].mca[mca].nrrd_s = find_min_mtb_ftb(chip, dimm, 38, 119);
 
 			/* Minimum Activate to Activate Delay Time, Same Bank Group */
-			mem_data.mcs[mcs].mca[mca].nrrd_l = find_min_mtb_ftb(dimm, 39, 118);
+			mem_data[chip].mcs[mcs].mca[mca].nrrd_l = find_min_mtb_ftb(chip, dimm, 39, 118);
 
 			/* Minimum Refresh Recovery Delay Time */
 			/* Assuming no fine refresh mode. */
-			mem_data.mcs[mcs].mca[mca].nrfc = find_min_multi_mtb(dimm, 30, 31, 0xFF, 8);
+			mem_data[chip].mcs[mcs].mca[mca].nrfc = find_min_multi_mtb(chip, dimm, 30, 31, 0xFF, 8);
 
 			/* Minimum Refresh Recovery Delay Time for Different Logical Rank (3DS only) */
 			/*
@@ -321,22 +314,47 @@ static void prepare_dimm_data(void)
 
 			switch (min) {
 				case 0x4:
-					mem_data.mcs[mcs].mca[mca].nrfc_dlr = ns_to_nck(90);
+					mem_data[chip].mcs[mcs].mca[mca].nrfc_dlr = ns_to_nck(chip, 90);
 					break;
 				case 0x5:
-					mem_data.mcs[mcs].mca[mca].nrfc_dlr = ns_to_nck(120);
+					mem_data[chip].mcs[mcs].mca[mca].nrfc_dlr = ns_to_nck(chip, 120);
 					break;
 				case 0x6:
-					mem_data.mcs[mcs].mca[mca].nrfc_dlr = ns_to_nck(185);
+					mem_data[chip].mcs[mcs].mca[mca].nrfc_dlr = ns_to_nck(chip, 185);
 					break;
 				default:
 					die("Unsupported DRAM density\n");
 			}
 
 			printk(BIOS_SPEW, "MCS%d, MCA%d times (in clock cycles):\n", mcs, mca);
-			dump_mca_data(&mem_data.mcs[mcs].mca[mca]);
+			dump_mca_data(&mem_data[chip].mcs[mcs].mca[mca]);
 		}
 	}
+}
+
+/* This is most of step 7 condensed into one function */
+static void prepare_dimm_data(uint8_t chips)
+{
+	bool have_dimms = false;
+
+	uint8_t chip;
+
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		int mcs;
+
+		prepare_cpu_dimm_data(chip);
+
+		for (mcs = 0; mcs < MCS_PER_PROC; mcs++)
+			have_dimms |= mem_data[chip].mcs[mcs].functional;
+	}
+
+	/*
+	 * There is one (?) MCBIST per CPU. Fail if there are no supported DIMMs
+	 * connected, otherwise assume it is functional. There is no reason to redo
+	 * this test in the rest of isteps.
+	 */
+	if (!have_dimms)
+		die("No DIMMs detected, aborting\n");
 }
 
 void main(void)
@@ -386,7 +404,7 @@ void main(void)
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
 	vpd_pnor_main();
-	prepare_dimm_data();
+	prepare_dimm_data(chips);
 
 	report_istep(13,1);	// no-op
 	istep_13_2(chips);

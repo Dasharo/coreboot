@@ -208,11 +208,11 @@ static void fill_groups(uint8_t chip)
 	memset(mcfgp_regs, 0, sizeof(mcfgp_regs));
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;
@@ -323,7 +323,7 @@ static void proc_setup_bars(uint8_t chip)
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		chiplet_id_t nest = mcs_to_nest[mcs_ids[mcs_i]];
 
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		fir_unmask(chip, mcs_i);

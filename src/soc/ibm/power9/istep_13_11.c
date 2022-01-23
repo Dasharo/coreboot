@@ -26,7 +26,7 @@
 static void setup_and_execute_zqcal(uint8_t chip, int mcs_i, int mca_i, int d)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	int mirrored = mca->dimm[d].spd[136] & 1; /* Maybe add this to mca_data_t? */
 	mrs_cmd_t cmd = ddr4_get_zqcal_cmd(DDR4_ZQCAL_LONG);
 	enum rank_selection ranks;
@@ -259,7 +259,7 @@ static void wr_level_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
                          enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	int d = rp / 2;
 	int vpd_idx = (mca->dimm[d].mranks - 1) * 2 + (!!mca->dimm[d ^ 1].present);
 	int mirrored = mca->dimm[d].spd[136] & 1;
@@ -278,7 +278,7 @@ static void wr_level_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 		mrs = ddr4_get_mr2(DDR4_MR2_WR_CRC_DISABLE,
                            vpd_to_rtt_wr(0),
                            DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
-                           mem_data.cwl);
+                           mem_data[chip].cwl);
 		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMRD);
 
 		/* MR1 =               // redo the rest of the bits
@@ -381,7 +381,7 @@ static void wr_level_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 	//ccs_execute(id, mca_i);
 }
 
-static uint64_t wr_level_time(mca_data_t *mca)
+static uint64_t wr_level_time(uint8_t chip, mca_data_t *mca)
 {
 	/*
 	 * "Note: the following equation is taken from the PHY workbook - leaving
@@ -398,7 +398,7 @@ static uint64_t wr_level_time(mca_data_t *mca)
 	const int big_step = 7;
 	const int small_step = 0;
 	const int num_valid_samples = 5;
-	const int twlo_twloe = ps_to_nck(11500);
+	const int twlo_twloe = ps_to_nck(chip, 11500);
 
 	return (80 + twlo_twloe) * num_valid_samples * (384 / (big_step + 1) +
 	       (2 * (big_step + 1)) / (small_step + 1)) + 20;
@@ -409,7 +409,7 @@ static void wr_level_post(uint8_t chip, int mcs_i, int mca_i, int rp,
                           enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	int d = rp / 2;
 	int vpd_idx = (mca->dimm[d].mranks - 1) * 2 + (!!mca->dimm[d ^ 1].present);
 	int mirrored = mca->dimm[d].spd[136] & 1;
@@ -460,7 +460,7 @@ static void wr_level_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 		mrs = ddr4_get_mr2(DDR4_MR2_WR_CRC_DISABLE,
                            vpd_to_rtt_wr(ATTR_MSS_VPD_MT_DRAM_RTT_WR[vpd_idx]),
                            DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
-                           mem_data.cwl);
+                           mem_data[chip].cwl);
 		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMRD);
 
 		/* MR1 =               // redo the rest of the bits
@@ -523,7 +523,7 @@ static void wr_level_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 	//ccs_execute(id, mca_i);
 }
 
-static uint64_t initial_pat_wr_time(mca_data_t *mca)
+static uint64_t initial_pat_wr_time(uint8_t chip, mca_data_t *mca)
 {
 	/*
 	 * "Not sure how long this should take, so we're gonna use 1 to make sure we
@@ -564,10 +564,10 @@ static uint64_t initial_pat_wr_time(mca_data_t *mca)
 	 *
 	 * From the lack of better ideas, return 10 us.
 	 */
-	return ns_to_nck(10 * 1000);
+	return ns_to_nck(chip, 10 * 1000);
 }
 
-static uint64_t dqs_align_time(mca_data_t *mca)
+static uint64_t dqs_align_time(uint8_t chip, mca_data_t *mca)
 {
 	/*
 	 * "This step runs for approximately 6 x 600 x 4 DRAM clocks per rank pair."
@@ -596,7 +596,7 @@ static void rdclk_align_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 	mca_and_or(chip, id, mca_i, DDRPHY_PC_INIT_CAL_CONFIG1_P0, ~PPC_BITMASK(52, 53), 0);
 }
 
-static uint64_t rdclk_align_time(mca_data_t *mca)
+static uint64_t rdclk_align_time(uint8_t chip, mca_data_t *mca)
 {
 	/*
 	 * "This step runs for approximately 24 x ((1024/COARSE_CAL_STEP_SIZE +
@@ -699,7 +699,7 @@ static void read_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 	           PPC_BIT(CALIBRATION_ENABLE));
 }
 
-static uint64_t read_ctr_time(mca_data_t *mca)
+static uint64_t read_ctr_time(uint8_t chip, mca_data_t *mca)
 {
 	/*
 	 * "This step runs for approximately 6 x (512/COARSE_CAL_STEP_SIZE + 4 x
@@ -746,7 +746,7 @@ static void write_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
                           enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	int mirrored = mca->dimm[rp/2].spd[136] & 1;
 	mrs_cmd_t mrs;
 	enum rank_selection rank = 1 << rp;
@@ -768,7 +768,7 @@ static void write_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 	 * Each step is followed by a 150ns (tVREFDQE or tVREFDQX) stream of DES
 	 * commands before next one.
 	 */
-	uint64_t tVREFDQ_E_X = ns_to_nck(150);
+	uint64_t tVREFDQ_E_X = ns_to_nck(chip, 150);
 
 	/* Fill MRS command once, then flip VREFDQ training mode bit as needed */
 	mrs = ddr4_get_mr6(mca->nccd_l,
@@ -810,7 +810,7 @@ static void write_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 	}
 }
 
-static uint64_t write_ctr_time(mca_data_t *mca)
+static uint64_t write_ctr_time(uint8_t chip, mca_data_t *mca)
 {
 	/*
 	 * "1000 + (NUM_VALID_SAMPLES * (FW_WR_RD + FW_RD_WR + 16) *
@@ -846,7 +846,7 @@ static uint64_t write_ctr_time(mca_data_t *mca)
 	const int big_step = 7;
 	const int small_step = 0;
 	const int num_valid_samples = 5;
-	int fw_rd_wr = MAX(mca->nwtr_s + 11, ps_to_nck(7500) + 3);
+	int fw_rd_wr = MAX(mca->nwtr_s + 11, ps_to_nck(chip, 7500) + 3);
 	return 1000 + (num_valid_samples * (fw_rd_wr + 16) *
 	               (1024/(small_step + 1) + 128/(big_step + 1)) +
 	               2 * (big_step + 1)/(small_step + 1)) * 24;
@@ -890,7 +890,7 @@ static void write_ctr_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 	die("Write Centering post-workaround required, but not yet implemented\n");
 }
 
-static uint64_t coarse_wr_rd_time(mca_data_t *mca)
+static uint64_t coarse_wr_rd_time(uint8_t chip, mca_data_t *mca)
 {
 	/*
 	 * "40 cycles for WR, 32 for RD"
@@ -908,7 +908,7 @@ struct phy_step {
 	const char *name;
 	enum cal_config cfg;
 	phy_workaround_t *pre;
-	uint64_t (*time)(mca_data_t *mca);
+	uint64_t (*time)(uint8_t chip, mca_data_t *mca);
 	phy_workaround_t *post;
 };
 
@@ -973,13 +973,13 @@ static struct phy_step steps[] = {
 static void dispatch_step(uint8_t chip, struct phy_step *step, int mcs_i, int mca_i, int rp,
                           enum rank_selection ranks_present)
 {
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	printk(BIOS_DEBUG, "%s starting\n", step->name);
 
 	if (step->pre)
 		step->pre(chip, mcs_i, mca_i, rp, ranks_present);
 
-	ccs_phy_hw_step(chip, mcs_ids[mcs_i], mca_i, rp, step->cfg, step->time(mca));
+	ccs_phy_hw_step(chip, mcs_ids[mcs_i], mca_i, rp, step->cfg, step->time(chip, mca));
 
 	if (step->post)
 		step->post(chip, mcs_i, mca_i, rp, ranks_present);
@@ -1063,7 +1063,7 @@ static int can_recover(uint8_t chip, int mcs_i, int mca_i, int rp)
 	int bad_bits = 0;
 	int dp;
 	chiplet_id_t id = mcs_ids[mcs_i];
-	uint8_t width = mem_data.mcs[mcs_i].mca[mca_i].dimm[rp/2].width;
+	uint8_t width = mem_data[chip].mcs[mcs_i].mca[mca_i].dimm[rp/2].width;
 
 	for (dp = 0; dp < 5; dp++) {
 		uint64_t reg;
@@ -1175,7 +1175,7 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	                         0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 			continue;
 
 		/*
@@ -1244,11 +1244,11 @@ static void mss_draminit_training(uint8_t chip)
 	enum rank_selection ranks_present;
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;

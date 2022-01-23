@@ -60,7 +60,7 @@ static int test_bb_lock(uint8_t chip, int mcs_i)
 	int mca_i, dp;
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 			continue;
 
 		/*
@@ -153,7 +153,7 @@ static void check_during_phy_reset(uint8_t chip, int mcs_i)
 
 	/* If any of these bits is set, report error. Clear them unconditionally. */
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-		if (mca_i != 0 && !mem_data.mcs[mcs_i].mca[mca_i].functional)
+		if (mca_i != 0 && !mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 			continue;
 
 		/* MC01.PORT0.SRQ.MBACALFIR
@@ -235,7 +235,7 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	                         0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 			continue;
 
 		/*
@@ -344,11 +344,11 @@ static void mss_ddr_phy_reset(uint8_t chip)
 	 * loop, unclear if we can break it into pieces too.
 	 */
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (mca_i != 0 && !mca->functional)
 				continue;
@@ -383,10 +383,10 @@ static void mss_ddr_phy_reset(uint8_t chip)
 			           PPC_BIT(MBA_CAL0Q_RESET_RECOVER));
 		}
 
-		delay_nck(32);
+		delay_nck(chip, 32);
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (mca_i != 0 && !mca->functional)
 				continue;
@@ -429,10 +429,10 @@ static void mss_ddr_phy_reset(uint8_t chip)
 			}
 		}
 
-		delay_nck(32);
+		delay_nck(chip, 32);
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (mca_i != 0 && !mca->functional)
 				continue;
@@ -475,7 +475,7 @@ static void mss_ddr_phy_reset(uint8_t chip)
 		           ~0, PPC_BIT(ENABLE_ZCAL));
 
 		/* Maybe it would be better to add another 1us later instead of this. */
-		delay_nck(1024);
+		delay_nck(chip, 1024);
 
 		/* for each magic MCA */
 		/* 50*10ns, but we don't have such precision. */
@@ -491,7 +491,7 @@ static void mss_ddr_phy_reset(uint8_t chip)
 		 * that make whole MCBIST non-functional?
 		 */
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;
@@ -537,7 +537,7 @@ static void mss_ddr_phy_reset(uint8_t chip)
 		 *
 		 * Why assume worst case instead of making the next timeout bigger?
 		 */
-		delay_nck(37382);
+		delay_nck(chip, 37382);
 
 		/*
 		 * The comment before poll says:
@@ -567,7 +567,7 @@ static void mss_ddr_phy_reset(uint8_t chip)
 		*/
 		need_dll_workaround = false;
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			if (mem_data.mcs[mcs_i].mca[mca_i].functional)
+			if (mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 				break;
 		}
 		/* 50*10ns, but we don't have such precision. */
@@ -584,7 +584,7 @@ static void mss_ddr_phy_reset(uint8_t chip)
 		 * be written to while hardware calibration is in progress.
 		 */
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (need_dll_workaround)
 				break;
@@ -623,7 +623,7 @@ static void mss_ddr_phy_reset(uint8_t chip)
 
 		/* Start bang-bang-lock */
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;
@@ -661,7 +661,7 @@ static void mss_ddr_phy_reset(uint8_t chip)
 		 * Wait at least 5932 dphy_nclk clock cycles to allow the dphy_nclk/SysClk
 		 * alignment circuit to perform initial alignment.
 		 */
-		delay_nck(5932);
+		delay_nck(chip, 5932);
 
 		/* Check for LOCK in {DP16,ADR}_SYSCLK_PR_VALUE */
 		/* 50*10ns, but we don't have such precision. */
@@ -681,7 +681,7 @@ static void mss_ddr_phy_reset(uint8_t chip)
 			die("BB lock timeout\n");
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;
@@ -757,12 +757,12 @@ static void mss_ddr_phy_reset(uint8_t chip)
 		}
 
 		/* Wait at least 32 dphy_nclk clock cycles */
-		delay_nck(32);
+		delay_nck(chip, 32);
 		/* Done bang-bang-lock */
 
 		/* Per J. Bialas, force_mclk_low can be dasserted */
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;

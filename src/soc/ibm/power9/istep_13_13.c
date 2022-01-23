@@ -359,7 +359,7 @@ static const uint64_t xlt_tables[][3] = {
 static void setup_xlate_map(uint8_t chip, int mcs_i, int mca_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	const int mca_mul = 0x10;
 	/*
 	 * Mixing rules:
@@ -508,7 +508,7 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	                         0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-		if (!mem_data.mcs[mcs_i].mca[mca_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)
 			continue;
 
 		/* From broadcast_out_of_sync() workaround:
@@ -612,12 +612,12 @@ static void mss_draminit_mc(uint8_t chip)
 
 	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
 		/* No need to initialize a non-functional MCS */
-		if (!mem_data.mcs[mcs_i].functional)
+		if (!mem_data[chip].mcs[mcs_i].functional)
 			continue;
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 			chiplet_id_t id = mcs_ids[mcs_i];
-			mca_data_t *mca = &mem_data.mcs[mcs_i].mca[mca_i];
+			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 
 			if (!mca->functional)
 				continue;
