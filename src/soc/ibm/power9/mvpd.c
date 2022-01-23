@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <commonlib/region.h>
 #include <console/console.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 #include <cpu/power/vpd.h>
 #include <device/i2c_simple.h>
@@ -66,7 +67,7 @@ struct pt_record {
  * of bytes read. */
 static int read_eeprom_chip(uint8_t cpu, uint32_t offset, void *data, uint16_t len)
 {
-	const unsigned int bus = 1 + 4 * cpu; // four I2C buses per CPU
+	const unsigned int bus = (cpu == 0 ? 1 : FSI_I2C_BUS);
 	uint16_t addr = 0xA0;
 	uint16_t slave = 0;
 	uint16_t actual_offset = 0;
