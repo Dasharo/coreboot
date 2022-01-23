@@ -169,7 +169,7 @@ void ccs_execute(uint8_t chip, chiplet_id_t id, int mca_i)
 	 */
 	if (total_cycles < 8)
 		total_cycles = 8;
-	poll_timeout = nck_to_us((total_cycles * 7 * 4) / 8);
+	poll_timeout = nck_to_us(chip, (total_cycles * 7 * 4) / 8);
 
 	write_rscom_for_chiplet(chip, id, CCS_CNTLQ, PPC_BIT(CCS_CNTLQ_CCS_STOP));
 	time = wait_us(1, !(read_rscom_for_chiplet(chip, id, CCS_STATQ) &
@@ -211,7 +211,7 @@ void ccs_execute(uint8_t chip, chiplet_id_t id, int mca_i)
 	write_rscom_for_chiplet(chip, id, CCS_CNTLQ, PPC_BIT(CCS_CNTLQ_CCS_START));
 
 	/* With microsecond resolution we are probably wasting a lot of time here. */
-	delay_nck(total_cycles/8);
+	delay_nck(chip, total_cycles / 8);
 
 	/* timeout(50*10ns):
 	  if MC01.MCBIST.MBA_SCOMFIR.CCS_STATQ[0] (CCS_STATQ_CCS_IP) != 1: break
@@ -226,8 +226,8 @@ void ccs_execute(uint8_t chip, chiplet_id_t id, int mca_i)
 		dump_cal_errors(chip, id, mca_i);
 
 	printk(BIOS_DEBUG, "CCS took %lld us (%lld us timeout), %d instruction(s)\n",
-	       time + nck_to_us(total_cycles/8),
-	       poll_timeout + nck_to_us(total_cycles/8), instr);
+	       time + nck_to_us(chip, total_cycles / 8),
+	       poll_timeout + nck_to_us(chip, total_cycles / 8), instr);
 
 	if (read_rscom_for_chiplet(chip, id, CCS_STATQ) != PPC_BIT(CCS_STATQ_CCS_DONE))
 		die("(%#16.16llx) CCS execution error\n",
