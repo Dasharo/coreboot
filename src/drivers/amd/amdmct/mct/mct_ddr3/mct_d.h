@@ -969,9 +969,9 @@ struct amdmct_memory_info {
 } __attribute__((packed, aligned(4)));
 
 extern const u8 Table_DQSRcvEn_Offset[];
-extern const u32 TestPattern0_D[];
-extern const u32 TestPattern1_D[];
-extern const u32 TestPattern2_D[];
+extern const u32 test_pattern_0_d[];
+extern const u32 test_pattern_1_d[];
+extern const u32 test_pattern_2_d[];
 
 u32 get_nb32(u32 dev, u32 reg);
 void set_nb32(u32 dev, u32 reg, u32 val);
@@ -1119,7 +1119,7 @@ void read_dram_dqs_training_pattern_fam15(struct MCTStatStruc *p_mct_stat,
 	u8 receiver, u8 lane, u8 stop_on_error);
 void write_dqs_receiver_enable_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg);
 
-u32 fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
+u32 fence_dyn_training_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct);
 s32 abs(s32 val);
 void set_target_wtio_d(u32 test_addr);

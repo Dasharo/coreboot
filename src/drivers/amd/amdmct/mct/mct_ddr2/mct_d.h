@@ -13,9 +13,9 @@
 #include "mct_d_gcc.h"
 
 extern const u8 Table_DQSRcvEn_Offset[];
-extern const u32 TestPattern0_D[];
-extern const u32 TestPattern1_D[];
-extern const u32 TestPattern2_D[];
+extern const u32 test_pattern_0_d[];
+extern const u32 test_pattern_1_d[];
+extern const u32 test_pattern_2_d[];
 
 /*===========================================================================
 	CPU - K8/FAM10

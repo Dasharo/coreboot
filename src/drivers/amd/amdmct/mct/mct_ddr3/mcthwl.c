@@ -134,7 +134,7 @@ static u8 PhyWLPass2(struct MCTStatStruc *p_mct_stat,
 		if (!is_fam15h()) {
 			ProgDramMRSReg_D(p_mct_stat, p_dct_stat, dct);
 			PlatformSpec_D(p_mct_stat, p_dct_stat, dct);
-			fenceDynTraining_D(p_mct_stat, p_dct_stat, dct);
+			fence_dyn_training_d(p_mct_stat, p_dct_stat, dct);
 		}
 		Restore_OnDimmMirror(p_mct_stat, p_dct_stat);
 		startup_dct_d(p_mct_stat, p_dct_stat, dct);

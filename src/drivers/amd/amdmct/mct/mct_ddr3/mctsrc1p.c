@@ -23,12 +23,12 @@ u8 mct_check_number_of_dqs_rcv_en_1_pass(u8 pass)
 
 u32 setup_dqs_pattern_1_pass_a(u8 pass)
 {
-	return (u32) TestPattern1_D;
+	return (u32) test_pattern_1_d;
 }
 
 u32 setup_dqs_pattern_1_pass_b(u8 pass)
 {
-	return (u32) TestPattern0_D;
+	return (u32) test_pattern_0_d;
 }
 
 static u16 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *p_dct_stat, u8 Channel, u8 Receiver,

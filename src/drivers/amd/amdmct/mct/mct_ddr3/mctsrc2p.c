@@ -9,9 +9,9 @@ u32 SetupDqsPattern_PassA(u8 Pass)
 {
 	u32 ret;
 	if (Pass == FIRST_PASS)
-		ret = (u32) TestPattern1_D;
+		ret = (u32) test_pattern_1_d;
 	else
-		ret = (u32) TestPattern2_D;
+		ret = (u32) test_pattern_2_d;
 
 	return ret;
 }
@@ -20,9 +20,9 @@ u32 SetupDqsPattern_PassB(u8 Pass)
 {
 	u32 ret;
 	if (Pass == FIRST_PASS)
-		ret = (u32) TestPattern0_D;
+		ret = (u32) test_pattern_0_d;
 	else
-		ret = (u32) TestPattern2_D;
+		ret = (u32) test_pattern_2_d;
 
 	return ret;
 }

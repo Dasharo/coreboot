@@ -18,36 +18,36 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 Pass);
 static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 Pass);
-static void mct_InitDQSPos4RcvrEn_D(struct MCTStatStruc *p_mct_stat,
+static void mct_init_dqs_pos_4_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 					 struct DCTStatStruc *p_dct_stat);
-static void InitDQSPos4RcvrEn_D(struct MCTStatStruc *p_mct_stat,
+static void init_dqs_pos_4_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 Channel);
-static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
+static void calc_ecc_dqs_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 Channel);
-static void mct_SetMaxLatency_D(struct DCTStatStruc *p_dct_stat, u8 Channel, u16 DQSRcvEnDly);
-static void mct_DisableDQSRcvEn_D(struct DCTStatStruc *p_dct_stat);
+static void mct_set_max_latency_d(struct DCTStatStruc *p_dct_stat, u8 Channel, u16 DQSRcvEnDly);
+static void mct_disable_dqs_rcv_en_d(struct DCTStatStruc *p_dct_stat);
 
 /* Warning:  These must be located so they do not cross a logical 16-bit segment boundary! */
-const u32 TestPattern0_D[] = {
+const u32 test_pattern_0_d[] = {
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,
 	0x55555555, 0x55555555, 0x55555555, 0x55555555,
 };
-const u32 TestPattern1_D[] = {
+const u32 test_pattern_1_d[] = {
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,
 	0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa, 0xaaaaaaaa,
 };
-const u32 TestPattern2_D[] = {
+const u32 test_pattern_2_d[] = {
 	0x12345678, 0x87654321, 0x23456789, 0x98765432,
 	0x59385824, 0x30496724, 0x24490795, 0x99938733,
 	0x40385642, 0x38465245, 0x29432163, 0x05067894,
 	0x12349045, 0x98723467, 0x12387634, 0x34587623,
 };
 
-static void SetupRcvrPattern(struct MCTStatStruc *p_mct_stat,
+static void setup_rcvr_pattern(struct MCTStatStruc *p_mct_stat,
 		struct DCTStatStruc *p_dct_stat, u32 *buffer, u8 pass)
 {
 	/*
@@ -620,7 +620,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 	}
 
 	if (Pass == FIRST_PASS) {
-		mct_InitDQSPos4RcvrEn_D(p_mct_stat, p_dct_stat);
+		mct_init_dqs_pos_4_rcvr_en_d(p_mct_stat, p_dct_stat);
 	} else {
 		p_dct_stat->dimm_train_fail = 0;
 		p_dct_stat->cs_train_fail = ~p_dct_stat->cs_present;
@@ -645,7 +645,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 
 	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
-	SetupRcvrPattern(p_mct_stat, p_dct_stat, PatternBuffer, Pass);
+	setup_rcvr_pattern(p_mct_stat, p_dct_stat, PatternBuffer, Pass);
 
 	Errors = 0;
 	dev = p_dct_stat->dev_dct;
@@ -952,7 +952,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 		CTLRMaxDelay = MaxDelay_CH[1];
 
 	for (Channel = 0; Channel < 2; Channel++) {
-		mct_SetMaxLatency_D(p_dct_stat, Channel, CTLRMaxDelay); /* program Ch A/B max_async_lat to correspond with max delay */
+		mct_set_max_latency_d(p_dct_stat, Channel, CTLRMaxDelay); /* program Ch A/B max_async_lat to correspond with max delay */
 	}
 
 	for (Channel = 0; Channel < 2; Channel++) {
@@ -965,7 +965,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 
 	if (Pass == FIRST_PASS) {
 		/*Disable DQSRcvrEn training mode */
-		mct_DisableDQSRcvEn_D(p_dct_stat);
+		mct_disable_dqs_rcv_en_d(p_dct_stat);
 	}
 
 	if (!_Wrap32Dis) {
@@ -1467,7 +1467,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 
 	if (Pass == FIRST_PASS) {
 		/*Disable DQSRcvrEn training mode */
-		mct_DisableDQSRcvEn_D(p_dct_stat);
+		mct_disable_dqs_rcv_en_d(p_dct_stat);
 	}
 
 	if (!_Wrap32Dis) {
@@ -1728,7 +1728,7 @@ u8 mct_init_receiver_d(struct DCTStatStruc *p_dct_stat, u8 dct)
 	}
 }
 
-static void mct_DisableDQSRcvEn_D(struct DCTStatStruc *p_dct_stat)
+static void mct_disable_dqs_rcv_en_d(struct DCTStatStruc *p_dct_stat)
 {
 	u8 ch_end, ch;
 	u32 reg;
@@ -1805,7 +1805,7 @@ void mct_set_rcvr_en_dly_d(struct DCTStatStruc *p_dct_stat, u16 RcvrEnDly,
 /* Calculate MaxRdLatency
  * Algorithm detailed in the Fam10h BKDG Rev. 3.62 section 2.8.9.9.5
  */
-static void mct_SetMaxLatency_D(struct DCTStatStruc *p_dct_stat, u8 Channel, u16 DQSRcvEnDly)
+static void mct_set_max_latency_d(struct DCTStatStruc *p_dct_stat, u8 Channel, u16 DQSRcvEnDly)
 {
 	u32 dev;
 	u32 reg;
@@ -1917,7 +1917,7 @@ static void mct_SetMaxLatency_D(struct DCTStatStruc *p_dct_stat, u8 Channel, u16
 	Set_NB32_DCT(dev, Channel, reg, val);
 }
 
-static void mct_InitDQSPos4RcvrEn_D(struct MCTStatStruc *p_mct_stat,
+static void mct_init_dqs_pos_4_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	/* Initialize the DQS Positions in preparation for
@@ -1927,11 +1927,11 @@ static void mct_InitDQSPos4RcvrEn_D(struct MCTStatStruc *p_mct_stat,
 	 */
 	u8 i;
 	for (i = 0; i < 2; i++) {
-		InitDQSPos4RcvrEn_D(p_mct_stat, p_dct_stat, i);
+		init_dqs_pos_4_rcvr_en_d(p_mct_stat, p_dct_stat, i);
 	}
 }
 
-static void InitDQSPos4RcvrEn_D(struct MCTStatStruc *p_mct_stat,
+static void init_dqs_pos_4_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 Channel)
 {
 	/* Initialize the DQS Positions in preparation for
@@ -1992,7 +1992,7 @@ void set_ecc_dqs_rcvr_en_d(struct DCTStatStruc *p_dct_stat, u8 Channel)
 	}
 }
 
-static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
+static void calc_ecc_dqs_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 Channel)
 {
 	u8 ChipSel;
@@ -2064,7 +2064,7 @@ void mct_set_ecc_dqs_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 			break;
 		if (p_dct_stat->dct_sys_limit) {
 			for (i = 0; i < 2; i++)
-				CalcEccDQSRcvrEn_D(p_mct_stat, p_dct_stat, i);
+				calc_ecc_dqs_rcvr_en_d(p_mct_stat, p_dct_stat, i);
 		}
 	}
 }
@@ -2126,7 +2126,7 @@ void phy_assisted_mem_fence_training(struct MCTStatStruc *p_mct_stat,
 					Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000051, 0x13131313);
 					Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000052, 0x00000013);
 
-					training_dword = fenceDynTraining_D(p_mct_stat, p_dct_stat, dct);
+					training_dword = fence_dyn_training_d(p_mct_stat, p_dct_stat, dct);
 
 					/* Save calculated fence value to the TX DLL */
 					dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0000000c);
@@ -2153,7 +2153,7 @@ void phy_assisted_mem_fence_training(struct MCTStatStruc *p_mct_stat,
 					Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000051, 0x13131313);
 					Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000052, 0x00000013);
 
-					training_dword = fenceDynTraining_D(p_mct_stat, p_dct_stat, dct);
+					training_dword = fence_dyn_training_d(p_mct_stat, p_dct_stat, dct);
 
 					/* Save calculated fence value to the RX DLL */
 					dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0000000c);
@@ -2179,7 +2179,7 @@ void phy_assisted_mem_fence_training(struct MCTStatStruc *p_mct_stat,
 					Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000051, 0x13131313);
 					Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x00000052, 0x00000013);
 
-					fence_tx_pad_config_dword = fenceDynTraining_D(p_mct_stat, p_dct_stat, dct);
+					fence_tx_pad_config_dword = fence_dyn_training_d(p_mct_stat, p_dct_stat, dct);
 
 					/* Save calculated fence value to the TX Pad */
 					dword = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x0000000c);
@@ -2254,8 +2254,8 @@ void phy_assisted_mem_fence_training(struct MCTStatStruc *p_mct_stat,
 					printk(BIOS_SPEW, "%s: done training node %d DCT %d\n", __func__, Node, dct);
 				}
 			} else {
-				fenceDynTraining_D(p_mct_stat, p_dct_stat, 0);
-				fenceDynTraining_D(p_mct_stat, p_dct_stat, 1);
+				fence_dyn_training_d(p_mct_stat, p_dct_stat, 0);
+				fence_dyn_training_d(p_mct_stat, p_dct_stat, 1);
 			}
 		}
 	}
@@ -2263,7 +2263,7 @@ void phy_assisted_mem_fence_training(struct MCTStatStruc *p_mct_stat,
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-u32 fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
+u32 fence_dyn_training_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u16 avRecValue;
