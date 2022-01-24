@@ -25,7 +25,7 @@ void interleave_channels_d(struct MCTStatStruc *p_mct_stat,
 	/* call back - dct_sel_int_lv_addr = mct_get_nv_bits(NV_CHANNEL_INTLV);*/	/* override interleave */
 	// FIXME: Check for Cx
 	dct_sel_int_lv_addr = mct_get_nv_bits(NV_CHANNEL_INTLV); /* typ = 5: Hash*: exclusive OR of address bits[20:16, 6]. */
-	beforeInterleaveChannels_D(p_dct_stat_a, &enabled);
+	before_interleave_channels_d(p_dct_stat_a, &enabled);
 
 	if (dct_sel_int_lv_addr & 1) {
 		dct_sel_int_lv_addr >>= 1;

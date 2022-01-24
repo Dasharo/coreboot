@@ -260,7 +260,7 @@ static void dqsTrainRcvrEn_SW(struct MCTStatStruc *p_mct_stat,
 				print_debug_dqs("\t\t\tTrainRcvEn541: RcvrEnDly ", RcvrEnDly, 3);
 
 				/* callback not required
-				if (mct_AdjustDelay_D(p_dct_stat, RcvrEnDly))
+				if (mct_adjust_delay_d(p_dct_stat, RcvrEnDly))
 					goto skipDly;
 				*/
 

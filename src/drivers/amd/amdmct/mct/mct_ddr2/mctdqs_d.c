@@ -484,7 +484,7 @@ static void train_dqs_pos_d(struct MCTStatStruc *p_mct_stat,
 			/* print_debug_dqs("\t\t\t\t\tTrainDQSPos: 145 mutual_cs_pass_w ", mutual_cs_pass_w[dqs_delay], 5); */
 			tmp = compare_dqs_test_pattern_d(p_mct_stat, p_dct_stat, test_addr << 8); /* 0 = fail, 1 = pass */
 
-			if (mct_checkFenceHoleAdjust_D(p_mct_stat, p_dct_stat, dqs_delay, chip_sel, &tmp)) {
+			if (mct_check_fence_hole_adjust_d(p_mct_stat, p_dct_stat, dqs_delay, chip_sel, &tmp)) {
 				goto skipLocMiddle;
 			}
 

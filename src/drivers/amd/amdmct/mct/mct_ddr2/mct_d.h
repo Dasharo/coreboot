@@ -763,8 +763,8 @@ void mct_enable_dat_intlv_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat);
 void mct_mem_clr_sync_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a);
-void beforeInterleaveChannels_D(struct DCTStatStruc *p_dct_stat_a, u8 *enabled);
-u8 mct_checkFenceHoleAdjust_D(struct MCTStatStruc *p_mct_stat,
+void before_interleave_channels_d(struct DCTStatStruc *p_dct_stat_a, u8 *enabled);
+u8 mct_check_fence_hole_adjust_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 DQSDelay,
 				u8 chip_sel,  u8 *result);
 void proc_iocl_flush_d(u32 addr_hi);
