@@ -195,7 +195,7 @@ u8 wr_lv_odt_reg_dimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm);
 u32 get_ADD_DCT_Bits(sDCTStruct *pDCTData,
 		u8 dct, u8 node, u8 func,
 		u16 offset, u8 low, u8 high);
-void AmdMemPCIRead(SBDFO loc, u32 *Value);
-void AmdMemPCIWrite(SBDFO loc, u32 *Value);
+void amd_mem_pci_read(SBDFO loc, u32 *Value);
+void amd_mem_cpi_write(SBDFO loc, u32 *Value);
 
 #endif
