@@ -55,7 +55,7 @@ void CALLCONV amd_pci_write_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *p_value)
  *   To start a new search from the beginning of head of the list, specify a
  *   SBDFO with a offset of zero.
  */
-void CALLCONV AmdPCIFindNextCap(SBDFO *pCurrent)
+void CALLCONV amd_pci_find_next_cap(SBDFO *pCurrent)
 {
 	SBDFO base;
 	u32 offset;
@@ -105,7 +105,7 @@ void CALLCONV AmdPCIFindNextCap(SBDFO *pCurrent)
 }
 
 
-void CALLCONV Amdmemcpy(void *pDst, const void *pSrc, u32 length)
+void CALLCONV amd_memcpy(void *pDst, const void *pSrc, u32 length)
 {
 	ASSERT(length <= 32768);
 	ASSERT(pDst != NULL);
@@ -120,7 +120,7 @@ void CALLCONV Amdmemcpy(void *pDst, const void *pSrc, u32 length)
 }
 
 
-void CALLCONV Amdmemset(void *pBuf, u8 val, u32 length)
+void CALLCONV amd_memset(void *pBuf, u8 val, u32 length)
 {
 	ASSERT(length <= 32768);
 	ASSERT(pBuf != NULL);
@@ -133,7 +133,7 @@ void CALLCONV Amdmemset(void *pBuf, u8 val, u32 length)
 }
 
 
-u8 CALLCONV AmdBitScanReverse(u32 value)
+u8 CALLCONV amd_bit_scan_reverse(u32 value)
 {
 	u8 i;
 
@@ -147,7 +147,7 @@ u8 CALLCONV AmdBitScanReverse(u32 value)
 }
 
 
-u32 CALLCONV AmdRotateRight(u32 value, u8 size, u32 count)
+u32 CALLCONV amd_rotate_right(u32 value, u8 size, u32 count)
 {
 	u32 msb, mask;
 	ASSERT(size > 0 && size <= 32);
@@ -169,7 +169,7 @@ u32 CALLCONV AmdRotateRight(u32 value, u8 size, u32 count)
 }
 
 
-u32 CALLCONV AmdRotateLeft(u32 value, u8 size, u32 count)
+u32 CALLCONV amd_rotate_left(u32 value, u8 size, u32 count)
 {
 	u32 msb, mask;
 	ASSERT(size > 0 && size <= 32);

@@ -1068,7 +1068,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 
 			do
 			{
-				AmdPCIFindNextCap(&currentPtr);
+				amd_pci_find_next_cap(&currentPtr);
 				ASSERT(currentPtr != ILLEGAL_SBDFO);
 				AmdPCIRead(currentPtr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
@@ -1106,7 +1106,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 			currentPtr = MAKE_SBDFO(0, secBus, (*pSwapPtr & 0x3F), 0, 0);
 			do
 			{
-				AmdPCIFindNextCap(&currentPtr);
+				amd_pci_find_next_cap(&currentPtr);
 				ASSERT(currentPtr != ILLEGAL_SBDFO);
 				AmdPCIRead(currentPtr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
@@ -1197,7 +1197,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 
 			do
 			{
-				AmdPCIFindNextCap(&currentPtr);
+				amd_pci_find_next_cap(&currentPtr);
 				ASSERT(currentPtr != ILLEGAL_SBDFO);
 				AmdPCIRead(currentPtr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
@@ -1386,11 +1386,11 @@ static void regangLinks(sMainData *pDat)
 
 			/*  Delete PortList[j, j+1], slow but easy to debug implementation */
 			pDat->TotalLinks--;
-			Amdmemcpy(&(pDat->PortList[j]), &(pDat->PortList[j + 2]), sizeof(sPortDescriptor)*(pDat->TotalLinks * 2 - j));
-			Amdmemset(&(pDat->PortList[pDat->TotalLinks * 2]), INVALID_LINK, sizeof(sPortDescriptor) * 2);
+			amd_memcpy(&(pDat->PortList[j]), &(pDat->PortList[j + 2]), sizeof(sPortDescriptor)*(pDat->TotalLinks * 2 - j));
+			amd_memset(&(pDat->PortList[pDat->TotalLinks * 2]), INVALID_LINK, sizeof(sPortDescriptor) * 2);
 
 			/* //High performance, but would make debuging harder due to 'shuffling' of the records */
-			/* //Amdmemcpy(PortList[TotalPorts-2], PortList[j], SIZEOF(sPortDescriptor)*2); */
+			/* //amd_memcpy(PortList[TotalPorts-2], PortList[j], SIZEOF(sPortDescriptor)*2); */
 			/* //TotalPorts -=2; */
 
 			break; /*  Exit loop, advance to PortList[i+2] */

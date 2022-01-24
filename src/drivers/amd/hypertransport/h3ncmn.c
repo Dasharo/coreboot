@@ -1671,7 +1671,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 			currentPtr = linkBase & (u32)0xFFFFF000; /* Set PCI Offset to 0 */
 			do
 			{
-				AmdPCIFindNextCap(&currentPtr);
+				amd_pci_find_next_cap(&currentPtr);
 				if (currentPtr != ILLEGAL_SBDFO)
 				{
 					AmdPCIRead(currentPtr, &temp);
@@ -1717,7 +1717,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 			currentPtr = linkBase & (u32)0xFFFFF000; /* Set PCI Offset to 0 */
 			do
 			{
-				AmdPCIFindNextCap(&currentPtr);
+				amd_pci_find_next_cap(&currentPtr);
 				if (currentPtr != ILLEGAL_SBDFO)
 				{
 					AmdPCIRead(currentPtr, &temp);
@@ -1950,11 +1950,11 @@ static void ht1WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 	 * Find the response link numbers.
 	*/
 	ASSERT((route01 & 0xE) && (route10 & 0xE));    /* no route! error! */
-	req0 = (u8)AmdBitScanReverse((route01 & 0xE)) - 1;
-	req1 = (u8)AmdBitScanReverse((route10 & 0xE)) - 1;
+	req0 = (u8)amd_bit_scan_reverse((route01 & 0xE)) - 1;
+	req1 = (u8)amd_bit_scan_reverse((route10 & 0xE)) - 1;
 	/* Now, find the other link for the responses */
-	rsp0 = (u8)AmdBitScanReverse((links01 & ~((u32)1 << req0)));
-	rsp1 = (u8)AmdBitScanReverse((links10 & ~((u32)1 << req1)));
+	rsp0 = (u8)amd_bit_scan_reverse((links01 & ~((u32)1 << req0)));
+	rsp1 = (u8)amd_bit_scan_reverse((links10 & ~((u32)1 << req1)));
 
 	/* ht1 nb restriction, must have exactly two links */
 	ASSERT(((((links01 & ~((u32)1 << req0)) & ~((u32)1 << rsp0))) == 0)
@@ -1996,14 +1996,14 @@ static void ht1WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 	fam0fWriteHTLinkDatBufferAlloc(1, rsp1, 1, 1, 6);
 
 	/* Node 0, is the third link non-coherent? */
-	nclink = (u8)AmdBitScanReverse(((u8)0x07 & ~((u32)1 << req0) & ~((u32)1 << rsp0)));
+	nclink = (u8)amd_bit_scan_reverse(((u8)0x07 & ~((u32)1 << req0) & ~((u32)1 << rsp0)));
 	if (nb->verifyLinkIsNonCoherent(0, nclink, nb))
 	{
 		fam0fWriteHTLinkCmdBufferAlloc(0, nclink, 6, 5, 2, 0);
 	}
 
 	/* Node 1, is the third link non-coherent? */
-	nclink = (u8)AmdBitScanReverse(((u8)0x07 & ~((u32)1 << req1) & ~((u32)1 << rsp1)));
+	nclink = (u8)amd_bit_scan_reverse(((u8)0x07 & ~((u32)1 << req1) & ~((u32)1 << rsp1)));
 	if (nb->verifyLinkIsNonCoherent(1, nclink, nb))
 	{
 		fam0fWriteHTLinkCmdBufferAlloc(1, nclink, 6, 5, 2, 0);
@@ -2490,17 +2490,17 @@ void newNorthBridge(u8 node, cNorthBridge *nb)
 	 */
 	if (match == fam15.compatibleKey)
 	{
-		Amdmemcpy((void *)nb, (const void *)&fam15, (u32) sizeof(cNorthBridge));
+		amd_memcpy((void *)nb, (const void *)&fam15, (u32) sizeof(cNorthBridge));
 	}
 	else if (match == fam10.compatibleKey)
 	{
-		Amdmemcpy((void *)nb, (const void *)&fam10, (u32) sizeof(cNorthBridge));
+		amd_memcpy((void *)nb, (const void *)&fam10, (u32) sizeof(cNorthBridge));
 	}
 	else
 	{
 		if (match == fam0f.compatibleKey)
 		{
-			Amdmemcpy((void *)nb, (const void *)&fam0f, (u32) sizeof(cNorthBridge));
+			amd_memcpy((void *)nb, (const void *)&fam0f, (u32) sizeof(cNorthBridge));
 		}
 		else
 		{

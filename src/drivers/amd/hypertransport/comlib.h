@@ -17,13 +17,13 @@
 
 void CALLCONV amd_pci_read_bits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
 void CALLCONV amd_pci_write_bits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
-void CALLCONV AmdPCIFindNextCap(SBDFO *current);
+void CALLCONV amd_pci_find_next_cap(SBDFO *current);
 
-void CALLCONV Amdmemcpy(void *dst, const void *src, uint32 length);
-void CALLCONV Amdmemset(void *buf, uint8 val, uint32 length);
+void CALLCONV amd_memcpy(void *dst, const void *src, uint32 length);
+void CALLCONV amd_memset(void *buf, uint8 val, uint32 length);
 
-uint8 CALLCONV AmdBitScanReverse(uint32 value);
-uint32 CALLCONV AmdRotateRight(uint32 value, uint8 size, uint32 count);
-uint32 CALLCONV AmdRotateLeft(uint32 value, uint8 size, uint32 count);
+uint8 CALLCONV amd_bit_scan_reverse(uint32 value);
+uint32 CALLCONV amd_rotate_right(uint32 value, uint8 size, uint32 count);
+uint32 CALLCONV amd_rotate_left(uint32 value, uint8 size, uint32 count);
 
 #endif
