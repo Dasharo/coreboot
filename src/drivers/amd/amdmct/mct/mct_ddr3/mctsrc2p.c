@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-u8 mct_checkNumberOfDqsRcvEn_Pass(u8 pass)
+u8 mct_check_number_of_dqs_rcv_en_pass(u8 pass)
 {
 	return 1;
 }
 
-u32 SetupDqsPattern_PassA(u8 Pass)
+u32 setup_dqs_pattern_pass_a(u8 Pass)
 {
 	u32 ret;
 	if (Pass == FIRST_PASS)
@@ -16,7 +16,7 @@ u32 SetupDqsPattern_PassA(u8 Pass)
 	return ret;
 }
 
-u32 SetupDqsPattern_PassB(u8 Pass)
+u32 setup_dqs_pattern_pass_b(u8 Pass)
 {
 	u32 ret;
 	if (Pass == FIRST_PASS)
@@ -27,7 +27,7 @@ u32 SetupDqsPattern_PassB(u8 Pass)
 	return ret;
 }
 
-u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
+u8 mct_get_start_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
 					u8 Channel, u8 Receiver,
 					u8 Pass)
 {
