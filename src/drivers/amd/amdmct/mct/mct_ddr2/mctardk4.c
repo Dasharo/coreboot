@@ -3,16 +3,16 @@
 #include <stdint.h>
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 Speed, u8 MAAload,
-				u8 DATAAload, u32 *addr_tmg_ctl, u32 *ODC_CTL,
-				u8 *CMDmode);
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 speed, u8 ma_a_load,
+				u8 data_a_load, u32 *addr_tmg_ctl, u32 *odc_ctl,
+				u8 *cmd_mode);
 
 
 void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 			 struct DCTStatStruc *p_dct_stat, u32 dct)
 {
 	print_tx("dct: ", dct);
-	print_tx("Speed: ", p_dct_stat->speed);
+	print_tx("speed: ", p_dct_stat->speed);
 
 	get_channel_ps_cfg_0_d(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
 				p_dct_stat->ma_load[dct], p_dct_stat->data_load[dct],
@@ -38,7 +38,7 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
  * Vendor is responsible for correct settings.
  * M2/Unbuffered 4 Slot - AMD Design Guideline.
  *=============================================================================
- * #1, BYTE, Speed (DCTStatstruc.speed)
+ * #1, BYTE, speed (DCTStatstruc.speed)
  * #2, BYTE, number of Address bus loads on the Channel.
  *     These must be listed in ascending order.
  *     FFh (-1) has special meaning of 'any', and must be listed first for
@@ -47,7 +47,7 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
  * #4, DWORD, Output Driver Compensation Control Register Value
  */
 
-static const u8 Table_ATC_ODC_D_Bx[] = {
+static const u8 table_atc_odc_d_bx[] = {
 	1, 0xFF, 0x00, 0x2F, 0x2F, 0x0, 0x22, 0x13, 0x11, 0x0,
 	2,   12, 0x00, 0x2F, 0x2F, 0x0, 0x22, 0x13, 0x11, 0x0,
 	2,   16, 0x00, 0x2F, 0x00, 0x0, 0x22, 0x13, 0x11, 0x0,
@@ -65,68 +65,68 @@ static const u8 Table_ATC_ODC_D_Bx[] = {
 };
 
 
-static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 Speed, u8 MAAload,
-				u8 DATAAload, u32 *addr_tmg_ctl, u32 *ODC_CTL,
-				u8 *CMDmode)
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 speed, u8 ma_a_load,
+				u8 data_a_load, u32 *addr_tmg_ctl, u32 *odc_ctl,
+				u8 *cmd_mode)
 {
 	u8 const *p;
 
 	*addr_tmg_ctl = 0;
-	*ODC_CTL = 0;
-	*CMDmode = 1;
+	*odc_ctl = 0;
+	*cmd_mode = 1;
 
 	// FIXME: add Ax support
 	if (maa_dimms == 0) {
-		*ODC_CTL = 0x00111222;
-		if (Speed == 3)
+		*odc_ctl = 0x00111222;
+		if (speed == 3)
 			*addr_tmg_ctl = 0x00202220;
-		else if (Speed == 2)
+		else if (speed == 2)
 			*addr_tmg_ctl = 0x002F2F00;
-		else if (Speed == 1)
+		else if (speed == 1)
 			*addr_tmg_ctl = 0x002F2F00;
-		else if (Speed == 4)
+		else if (speed == 4)
 			*addr_tmg_ctl = 0x00202520;
-		else if (Speed == 5)
+		else if (speed == 5)
 			*addr_tmg_ctl = 0x002F2020;
 		else
 			*addr_tmg_ctl = 0x002F2F2F;
 	} else if (maa_dimms == 1) {
-		if (Speed == 4) {
-			*CMDmode = 2;
+		if (speed == 4) {
+			*cmd_mode = 2;
 			*addr_tmg_ctl = 0x00202520;
-			*ODC_CTL = 0x00113222;
-		} else if (Speed == 5) {
-			*CMDmode = 2;
+			*odc_ctl = 0x00113222;
+		} else if (speed == 5) {
+			*cmd_mode = 2;
 			*addr_tmg_ctl = 0x002F2020;
-			*ODC_CTL = 0x00113222;
+			*odc_ctl = 0x00113222;
 		} else {
-			*CMDmode = 1;
-			*ODC_CTL = 0x00111222;
-			if (Speed == 3) {
+			*cmd_mode = 1;
+			*odc_ctl = 0x00111222;
+			if (speed == 3) {
 				*addr_tmg_ctl = 0x00202220;
-			} else if (Speed == 2) {
-				if (MAAload == 4)
+			} else if (speed == 2) {
+				if (ma_a_load == 4)
 					*addr_tmg_ctl = 0x002B2F00;
-				else if (MAAload == 16)
+				else if (ma_a_load == 16)
 					*addr_tmg_ctl = 0x002B2F00;
-				else if (MAAload == 8)
+				else if (ma_a_load == 8)
 					*addr_tmg_ctl = 0x002F2F00;
 				else
 					*addr_tmg_ctl = 0x002F2F00;
-			} else if (Speed == 1) {
+			} else if (speed == 1) {
 				*addr_tmg_ctl = 0x002F2F00;
 			} else {
 				*addr_tmg_ctl = 0x002F2F2F;
 			}
 		}
 	} else {
-		*CMDmode = 2;
-		p = Table_ATC_ODC_D_Bx;
+		*cmd_mode = 2;
+		p = table_atc_odc_d_bx;
 	do {
-		if (Speed == *p) {
-			if (MAAload <= *(p + 1)) {
+		if (speed == *p) {
+			if (ma_a_load <= *(p + 1)) {
 				*addr_tmg_ctl = stream_to_int(p + 2);
-				*ODC_CTL = stream_to_int(p + 6);
+				*odc_ctl = stream_to_int(p + 6);
 				break;
 			}
 		}
