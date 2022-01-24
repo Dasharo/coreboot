@@ -8,8 +8,8 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-static void SetMTRRrangeWB_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr);
-static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType);
+static void set_mtrr_range_wb_d(u32 Base, u32 *pLimit, u32 *pMtrrAddr);
+static void set_mtrr_range_d(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType);
 
 void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
 			 struct DCTStatStruc *p_dct_stat_a)
@@ -77,7 +77,7 @@ void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
 			/* Limit = TOP_MEM|TOM2*/
 			/* Base = 0*/
 	printk(BIOS_DEBUG, "\t CPUMemTyping: Cache32bTOP:%x\n", Cache32bTOP);
-	SetMTRRrangeWB_D(0, &Cache32bTOP, &addr);
+	set_mtrr_range_wb_d(0, &Cache32bTOP, &addr);
 				/* Base */
 				/* Limit */
 				/* MtrrAddr */
@@ -113,13 +113,13 @@ void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
 	_wrmsr(addr, lo, hi);
 }
 
-static void SetMTRRrangeWB_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr)
+static void set_mtrr_range_wb_d(u32 Base, u32 *pLimit, u32 *pMtrrAddr)
 {
 	/*set WB type*/
-	SetMTRRrange_D(Base, pLimit, pMtrrAddr, 6);
+	set_mtrr_range_d(Base, pLimit, pMtrrAddr, 6);
 }
 
-static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType)
+static void set_mtrr_range_d(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType)
 {
 	/* Program MTRRs to describe given range as given cache type.
 	 * Use MTRR pairs starting with the given MTRRphys Base address,
@@ -235,7 +235,7 @@ void uma_mem_typing_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		 * Set variable MTRR values
 		 *======================================================================*/
 		printk(BIOS_DEBUG, "\t uma_mem_typing_d: Cache32bTOP:%x\n", Cache32bTOP);
-		SetMTRRrangeWB_D(0, &Cache32bTOP, &addr);
+		set_mtrr_range_wb_d(0, &Cache32bTOP, &addr);
 		if (addr == -1)		/* ran out of MTRRs?*/
 			p_mct_stat->g_status |= 1 << GSB_MTRR_SHORT;
 	}
