@@ -28,15 +28,15 @@ u8  mct_get_start_rcvr_en_dly_1_pass(u8 pass)
 	return 0;
 }
 
-static u8 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *p_dct_stat, u8 Channel, u8 Receiver,
-					u8 Pass)
+static u8 mct_average_rcvr_en_dly_1_pass(struct DCTStatStruc *p_dct_stat, u8 channel, u8 receiver,
+					u8 pass)
 {
-	u8 i, MaxValue;
+	u8 i, max_value;
 	u8 *p;
 	u8 val;
 
-	MaxValue = 0;
-	p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[Channel][Receiver >> 1];
+	max_value = 0;
+	p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[channel][receiver >> 1];
 
 	for (i = 0; i < 8; i++) {
 		/* get left value from DCTStatStruc.CHA_D0_B0_RCVRDLY*/
@@ -44,17 +44,17 @@ static u8 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *p_dct_stat, u8 Channe
 		/* get right value from DCTStatStruc.CHA_D0_B0_RCVRDLY_1*/
 		val += PASS_1_MEM_CLK_DLY;
 		/* write back the value to stack */
-		if (val > MaxValue)
-			MaxValue = val;
+		if (val > max_value)
+			max_value = val;
 
 		p[i] = val;
 	}
 
-	return MaxValue;
+	return max_value;
 }
 
 #ifdef UNUSED_CODE
-static u8 mct_AdjustFinalDQSRcvValue_1Pass(u8 val_1p, u8 val_2p)
+static u8 mct_adjust_final_dqs_rcv_value_1_pass(u8 val_1p, u8 val_2p)
 {
 	return (val_1p & 0xff) + ((val_2p & 0xff) << 8);
 }
@@ -70,9 +70,9 @@ u8 mct_save_rcv_en_dly_d_1_pass(struct DCTStatStruc *p_dct_stat, u8 pass)
 }
 
 u8 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
-				u8 RcvrEnDly, u8 RcvrEnDlyLimit,
-				u8 Channel, u8 Receiver, u8 Pass)
+				u8 rcvr_en_dly, u8 rcvr_en_dly_limit,
+				u8 channel, u8 receiver, u8 pass)
 
 {
-	return mct_Average_RcvrEnDly_1Pass(p_dct_stat, Channel, Receiver, Pass);
+	return mct_average_rcvr_en_dly_1_pass(p_dct_stat, channel, receiver, pass);
 }

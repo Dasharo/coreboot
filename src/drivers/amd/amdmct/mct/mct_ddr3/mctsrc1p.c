@@ -31,7 +31,7 @@ u32 setup_dqs_pattern_1_pass_b(u8 pass)
 	return (u32) test_pattern_0_d;
 }
 
-static u16 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *p_dct_stat, u8 Channel, u8 Receiver,
+static u16 mct_average_rcvr_en_dly_1_pass(struct DCTStatStruc *p_dct_stat, u8 Channel, u8 Receiver,
 					u8 Pass)
 {
 	u16 i, MaxValue;
@@ -71,5 +71,5 @@ u16 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
 				u8 Channel, u8 Receiver, u8 Pass)
 
 {
-	return mct_Average_RcvrEnDly_1Pass(p_dct_stat, Channel, Receiver, Pass);
+	return mct_average_rcvr_en_dly_1_pass(p_dct_stat, Channel, Receiver, Pass);
 }
