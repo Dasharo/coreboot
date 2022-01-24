@@ -7,11 +7,11 @@
 
 /* mct_SetDramConfigMisc2_Cx & mct_SetDramConfigMisc2_Dx */
 u32 mct_set_dram_config_misc_2(struct DCTStatStruc *p_dct_stat,
-				u8 dct, u32 misc2, u32 DramControl)
+				u8 dct, u32 misc2, u32 dram_control)
 {
 	u32 val;
 
-	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
+	u8 max_dimms_installable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	if (p_dct_stat->logical_cpuid & AMD_FAM15_ALL) {
 		u8 cs_mux_45;
@@ -19,7 +19,7 @@ u32 mct_set_dram_config_misc_2(struct DCTStatStruc *p_dct_stat,
 		u32 f2x80;
 
 		misc2 &= ~(0x1 << 28);			/* FastSelfRefEntryDis = 0x0 */
-		if (MaxDimmsInstallable == 3) {
+		if (max_dimms_installable == 3) {
 			/* FIXME 3 DIMMS per channel unimplemented */
 			cs_mux_45 = 0;
 		} else {
@@ -35,9 +35,9 @@ u32 mct_set_dram_config_misc_2(struct DCTStatStruc *p_dct_stat,
 				cs_mux_45 = 0;
 		}
 
-		if (MaxDimmsInstallable == 1) {
+		if (max_dimms_installable == 1) {
 			cs_mux_67 = 0;
-		} else if (MaxDimmsInstallable == 2) {
+		} else if (max_dimms_installable == 2) {
 			u32 f2x64 = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x64);
 			f2x80 = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x80);
 			if (((((f2x80 >> 4) & 0xf) == 0x7) || (((f2x80 >> 4) & 0xf) == 0x9))
@@ -69,7 +69,7 @@ u32 mct_set_dram_config_misc_2(struct DCTStatStruc *p_dct_stat,
 		if (p_dct_stat->logical_cpuid & AMD_DR_Cx)
 			misc2 |= 1 << ODT_SWIZZLE;
 
-		val = DramControl;
+		val = dram_control;
 		val &= 7;
 		val = ((~val) & 0xff) + 1;
 		val += 6;
