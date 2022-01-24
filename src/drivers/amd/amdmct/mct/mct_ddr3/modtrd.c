@@ -4,7 +4,7 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-u32 mct_MR1Odt_RDimm(struct MCTStatStruc *p_mct_stat,
+u32 mct_mr_1Odt_r_dimm(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct, u32 MrsChipSel)
 {
 	u8 Speed = p_dct_stat->speed;
@@ -46,7 +46,7 @@ u32 mct_MR1Odt_RDimm(struct MCTStatStruc *p_mct_stat,
 	return ret;
 }
 
-u32 mct_DramTermDyn_RDimm(struct MCTStatStruc *p_mct_stat,
+u32 mct_dram_term_dyn_r_dimm(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dimm)
 {
 	u8 DimmsInstalled = dimm;

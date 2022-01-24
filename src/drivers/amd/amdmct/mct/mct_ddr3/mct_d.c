@@ -229,7 +229,7 @@ u8 dct_ddr_voltage_index(struct DCTStatStruc *p_dct_stat, u8 dct)
 	/* Find current DDR supply voltage for this DCT */
 	for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
 		if (p_dct_stat->dimm_valid_dct[dct] & (1 << dimm))
-			ddr_voltage_index |= p_dct_stat->DimmConfiguredVoltage[dimm];
+			ddr_voltage_index |= p_dct_stat->dimm_configured_voltage[dimm];
 	}
 	if (ddr_voltage_index > 0x7) {
 		printk(BIOS_DEBUG, "%s: Insufficient DDR supply voltage indicated!  Configuring processor for 1.25V operation, but this attempt may fail...\n", __func__);
@@ -1042,7 +1042,7 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *p_dct_stat, u8 d
 				 * 3 dimm/channel support unimplemented
 				 */
 			}
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 			/* TODO
 			 * LRDIMM support unimplemented
@@ -1191,7 +1191,7 @@ u32 fam15h_output_driver_compensation_code(struct DCTStatStruc *p_dct_stat, u8 d
 				 * 3 dimm/channel support unimplemented
 				 */
 			}
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 			/* TODO
 			 * LRDIMM support unimplemented
@@ -1400,7 +1400,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *p_dct_stat, u8 
 				 * 3 dimm/channel support unimplemented
 				 */
 			}
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 			/* TODO
 			 * LRDIMM support unimplemented
@@ -1554,7 +1554,7 @@ u32 fam15h_address_timing_compensation_code(struct DCTStatStruc *p_dct_stat, u8 
 				 * 3 dimm/channel support unimplemented
 				 */
 			}
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 			/* TODO
 			 * LRDIMM support unimplemented
@@ -1739,7 +1739,7 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *p_dct_stat, u8 dct)
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 74 */
 			slow_access = 0;
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 75 */
 			slow_access = 0;
@@ -1802,7 +1802,7 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *p_dct_stat, u8 dct)
 			/* RDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 77 */
 			slow_access = 0;
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 			/* Fam15h BKDG Rev. 3.14 section 2.10.5.3.4 Table 78 */
 			slow_access = 0;
@@ -1975,7 +1975,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *p_dct_stat, u8 dc
 				 * 3 dimm/channel support unimplemented
 				 */
 			}
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -2061,7 +2061,7 @@ static u8 fam15h_odt_tristate_enable_code(struct DCTStatStruc *p_dct_stat, u8 dc
 				 * 3 dimm/channel support unimplemented
 				 */
 			}
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -2174,7 +2174,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *p_dct_stat, u8 dct
 				 * 3 dimm/channel support unimplemented
 				 */
 			}
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -2260,7 +2260,7 @@ static u8 fam15h_cs_tristate_enable_code(struct DCTStatStruc *p_dct_stat, u8 dct
 				 * 3 dimm/channel support unimplemented
 				 */
 			}
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -2352,7 +2352,7 @@ void set_2t_configuration(struct MCTStatStruc *p_mct_stat,
 
 void precise_ndelay_fam15(struct MCTStatStruc *p_mct_stat, u32 nanoseconds) {
 	msr_t tsc_msr;
-	u64 cycle_count = (((u64)p_mct_stat->TSCFreq) * nanoseconds) / 1000;
+	u64 cycle_count = (((u64)p_mct_stat->tsc_freq) * nanoseconds) / 1000;
 	u64 start_timestamp;
 	u64 current_timestamp;
 
@@ -2680,7 +2680,7 @@ restartinit:
 
 #if CONFIG(DIMM_VOLTAGE_SET_SUPPORT)
 		printk(BIOS_DEBUG, "%s: DIMMSetVoltage\n", __func__);
-		DIMMSetVoltages(p_mct_stat, p_dct_stat_a);	/* Set the dimm voltages (mainboard specific) */
+		dimm_set_voltages(p_mct_stat, p_dct_stat_a);	/* Set the dimm voltages (mainboard specific) */
 #endif
 		if (!CONFIG(DIMM_VOLTAGE_SET_SUPPORT)) {
 			/* Assume 1.5V operation */
@@ -2693,7 +2693,7 @@ restartinit:
 
 				for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
 					if (p_dct_stat->dimm_valid & (1 << dimm))
-						p_dct_stat->DimmConfiguredVoltage[dimm] = 0x1;
+						p_dct_stat->dimm_configured_voltage[dimm] = 0x1;
 				}
 			}
 		}
@@ -3084,7 +3084,7 @@ void fam_15_enable_training_mode(struct MCTStatStruc *p_mct_stat,
 		dword = Get_NB32_DCT(dev, dct, 0x20c) & 0x1f;
 		latency_difference -= dword;
 
-		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -3213,7 +3213,7 @@ void fam_15_enable_training_mode(struct MCTStatStruc *p_mct_stat,
 
 		/* Family 15h BKDG Table 214 */
 		if ((p_dct_stat->status & (1 << SB_REGISTERED))
-			|| (p_dct_stat->status & (1 << SB_LoadReduced))) {
+			|| (p_dct_stat->status & (1 << SB_LOAD_REDUCED))) {
 			if (memclk_index <= 0x6) {
 				if (ddr_voltage_index < 0x4)
 					/* 1.5 or 1.35V */
@@ -3370,7 +3370,7 @@ void fam_15_enable_training_mode(struct MCTStatStruc *p_mct_stat,
 		cdd_twrrd = (((cdd_twrrd + (1 << 6) - 1) >> 6) & 0xf);
 
 		/* Fam15h BKDG section 2.10.5.5.3 */
-		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* LRDIMM */
 
 			/* TODO
@@ -3557,14 +3557,14 @@ retry_dqs_training_and_levelization:
 	}
 
 	if (nv_dqs_train_ctl) {
-		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, FIRST_PASS);
+		mct_write_levelization_hw(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 
 		if (is_fam15h()) {
 			/* receiver Enable Training Pass 1 */
 			train_receiver_en_d(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 		}
 
-		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, SECOND_PASS);
+		mct_write_levelization_hw(p_mct_stat, p_dct_stat_a, SECOND_PASS);
 
 		if (is_fam15h()) {
 
@@ -3587,17 +3587,17 @@ retry_dqs_training_and_levelization:
 			p_dct_stat = p_dct_stat_a + node;
 
 			if (p_dct_stat->node_present) {
-				if (p_dct_stat->train_errors & (1 << SB_FatalError)) {
+				if (p_dct_stat->train_errors & (1 << SB_FATAL_ERROR)) {
 					printk(BIOS_ERR, "dimm training FAILED! Restarting system...");
 					soft_reset();
 				}
-				if (p_dct_stat->train_errors & (1 << SB_RetryConfigTrain)) {
+				if (p_dct_stat->train_errors & (1 << SB_RETRY_CONFIG_TRAIN)) {
 					retry_requested = 1;
 
 					/* Clear previous errors */
-					p_dct_stat->train_errors &= ~(1 << SB_RetryConfigTrain);
+					p_dct_stat->train_errors &= ~(1 << SB_RETRY_CONFIG_TRAIN);
 					p_dct_stat->train_errors &= ~(1 << SB_NO_DQS_POS);
-					p_dct_stat->err_status &= ~(1 << SB_RetryConfigTrain);
+					p_dct_stat->err_status &= ~(1 << SB_RETRY_CONFIG_TRAIN);
 					p_dct_stat->err_status &= ~(1 << SB_NO_DQS_POS);
 				}
 			}
@@ -3615,7 +3615,7 @@ retry_dqs_training_and_levelization:
 					u8 original_auto_speed = p_dct_stat->dimm_auto_speed;
 					p_dct_stat->target_freq = mhz_to_memclk_config(mct_get_nv_bits(NV_MIN_MEMCLK));
 					p_dct_stat->speed = p_dct_stat->dimm_auto_speed = p_dct_stat->target_freq;
-					SetTargetFreq(p_mct_stat, p_dct_stat_a, node);
+					set_target_freq(p_mct_stat, p_dct_stat_a, node);
 					p_dct_stat->target_freq = original_target_freq;
 					p_dct_stat->dimm_auto_speed = original_auto_speed;
 				}
@@ -3634,16 +3634,16 @@ retry_dqs_training_and_levelization:
 			goto retry_dqs_training_and_levelization;
 		}
 
-		TrainMaxRdLatency_En_D(p_mct_stat, p_dct_stat_a);
+		train_max_rd_latency_en_d(p_mct_stat, p_dct_stat_a);
 
 		if (is_fam15h())
 			exit_training_mode_fam15(p_mct_stat, p_dct_stat_a);
 		else
 			mct_set_ecc_dqs_rcvr_en_d(p_mct_stat, p_dct_stat_a);
 	} else {
-		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, FIRST_PASS);
+		mct_write_levelization_hw(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 
-		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, SECOND_PASS);
+		mct_write_levelization_hw(p_mct_stat, p_dct_stat_a, SECOND_PASS);
 
 #if CONFIG(HAVE_ACPI_RESUME)
 		printk(BIOS_DEBUG, "mct_auto_init_mct_d: Restoring dimm training configuration from NVRAM\n");
@@ -3707,7 +3707,7 @@ static void load_dqs_sig_tmg_regs_d(struct MCTStatStruc *p_mct_stat,
 						2); /* Pass Second Pass ? */
 					/* Restore Write levelization training data */
 					for (byte_lane = 0; byte_lane < 9; byte_lane ++) {
-						txdqs = p_dct_stat->persistentData.CH_D_B_TxDqs[channel][receiver >> 1][byte_lane];
+						txdqs = p_dct_stat->persistent_data.ch_d_b_tx_dqs[channel][receiver >> 1][byte_lane];
 						index = table_dqs_rcv_en_offset[byte_lane >> 1];
 						index += (receiver >> 1) * 3 + 0x10 + 0x20; /* Addl_Index */
 						val = Get_NB32_index_wait_DCT(dev, channel, 0x98, index);
@@ -4494,7 +4494,7 @@ void spd_2nd_timing(struct MCTStatStruc *p_mct_stat,
 		p_dct_stat->trfc[i] = trfc[i];
 
 	/* tfaw */
-	p_dct_stat->DIMMTfaw = tfaw;
+	p_dct_stat->dimm_tfaw = tfaw;
 	val = tfaw / tck_16x;
 	if (tfaw % tck_16x) {	/* round up number of busclocks */
 		val++;
@@ -5179,7 +5179,7 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 		}
 	}
 
-	dram_config_misc_2 = mct_SetDramConfigMisc2(p_dct_stat, dct, dram_config_misc_2, dram_control);
+	dram_config_misc_2 = mct_set_dram_config_misc_2(p_dct_stat, dct, dram_config_misc_2, dram_control);
 
 	printk(BIOS_DEBUG, "auto_config_d: dram_control:     %08x\n", dram_control);
 	printk(BIOS_DEBUG, "auto_config_d: dram_timing_lo:    %08x\n", dram_timing_lo);
@@ -5757,7 +5757,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 				p_dct_stat->err_code = SC_STOP_ERR;
 			} else{
 				/* all DIMMs are registered */
-				p_dct_stat->status |= 1 << SB_LoadReduced;
+				p_dct_stat->status |= 1 << SB_LOAD_REDUCED;
 			}
 		}
 		if (p_dct_stat->dimm_ecc_present != 0) {
@@ -5885,7 +5885,7 @@ static void mct_dram_init(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	mct_before_dram_init__prod_d(p_mct_stat, p_dct_stat, dct);
-	mct_DramInit_Sw_D(p_mct_stat, p_dct_stat, dct);
+	mct_dram_init_sw_d(p_mct_stat, p_dct_stat, dct);
 	/* mct_dram_init_hw_d(p_mct_stat, p_dct_stat, dct); */
 }
 
@@ -6610,9 +6610,9 @@ static void mct_final_mct_d(struct MCTStatStruc *p_mct_stat,
 
 			if (!is_fam15h()) {
 				/* Family 10h CPUs */
-				mct_ExtMCTConfig_Cx(p_dct_stat);
-				mct_ExtMCTConfig_Bx(p_dct_stat);
-				mct_ExtMCTConfig_Dx(p_dct_stat);
+				mct_ext_mct_config_cx(p_dct_stat);
+				mct_ext_mct_config_bx(p_dct_stat);
+				mct_ext_mct_config_dx(p_dct_stat);
 			} else {
 				/* Family 15h CPUs */
 				u8 enable_experimental_memory_speed_boost;
@@ -6772,7 +6772,7 @@ static void mct_initial_mct_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStr
 		cpu_fid = p0_state_msr.lo & 0x3f;
 		cpu_did = (p0_state_msr.lo >> 6) & 0x7;
 		cpu_divisor = (0x1 << cpu_did);
-		p_mct_stat->TSCFreq = (100 * (cpu_fid + 0x10)) / cpu_divisor;
+		p_mct_stat->tsc_freq = (100 * (cpu_fid + 0x10)) / cpu_divisor;
 
 		printk(BIOS_DEBUG, "mct_initial_mct_d: mct_force_nb_pstate_0_en_fam15\n");
 		mct_force_nb_pstate_0_en_fam15(p_mct_stat, p_dct_stat);
@@ -7358,7 +7358,7 @@ static void mct_reset_data_struct_d(struct MCTStatStruc *p_mct_stat,
 
 	for (node = 0; node < 8; node++) {
 		p_dct_stat = p_dct_stat_a + node;
-		memset(p_dct_stat, 0, sizeof(*p_dct_stat) - sizeof(p_dct_stat->persistentData));
+		memset(p_dct_stat, 0, sizeof(*p_dct_stat) - sizeof(p_dct_stat->persistent_data));
 	}
 }
 
@@ -7472,7 +7472,7 @@ static void mct_ProgramODT_D(struct MCTStatStruc *p_mct_stat,
 				odt_pattern_2 = 0x00000000;
 				odt_pattern_3 = 0x00000000;
 			}
-		} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* TODO
 			 * Load reduced dimms UNIMPLEMENTED
 			 */
@@ -7520,7 +7520,7 @@ static void mct_ProgramODT_D(struct MCTStatStruc *p_mct_stat,
 			}
 		}
 
-		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* TODO
 			 * Load reduced dimms UNIMPLEMENTED
 			 */
@@ -7852,7 +7852,7 @@ void prog_dram_mrs_reg_d(struct MCTStatStruc *p_mct_stat,
 					dram_mrs |= 1 << 11;
 			}
 		} else {
-			dram_mrs |= mct_DramTermDyn_RDimm(p_mct_stat, p_dct_stat, byte);
+			dram_mrs |= mct_dram_term_dyn_r_dimm(p_mct_stat, p_dct_stat, byte);
 		}
 
 		/* Qoff = 0, output buffers enabled */
@@ -7997,7 +7997,7 @@ static void mct_before_dqs_train_d(struct MCTStatStruc *p_mct_stat,
 			p_dct_stat = p_dct_stat_a + node;
 
 			if (p_dct_stat->node_present) {
-				mct_BeforeDQSTrainSamp(p_dct_stat); /* only Bx */
+				mct_before_dqs_train_samp(p_dct_stat); /* only Bx */
 				mct_reset_dll_d(p_mct_stat, p_dct_stat, 0);
 				mct_reset_dll_d(p_mct_stat, p_dct_stat, 1);
 			}

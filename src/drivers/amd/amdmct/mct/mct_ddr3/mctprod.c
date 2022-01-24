@@ -5,7 +5,7 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-void mct_ExtMCTConfig_Dx(struct DCTStatStruc *p_dct_stat)
+void mct_ext_mct_config_dx(struct DCTStatStruc *p_dct_stat)
 {
 	u32 dword;
 

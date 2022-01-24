@@ -334,9 +334,9 @@ void mct_get_max_load_freq(struct DCTStatStruc *p_dct_stat)
 #if CONFIG(DIMM_DDR3)
 	for (i = 0; i < MAX_DIMMS_SUPPORTED; i = i + 2) {
 		if (p_dct_stat->dimm_valid & (1 << i))
-			ch1_voltage |= p_dct_stat->DimmConfiguredVoltage[i];
+			ch1_voltage |= p_dct_stat->dimm_configured_voltage[i];
 		if (p_dct_stat->dimm_valid & (1 << (i + 1)))
-			ch2_voltage |= p_dct_stat->DimmConfiguredVoltage[i + 1];
+			ch2_voltage |= p_dct_stat->dimm_configured_voltage[i + 1];
 	}
 #endif
 

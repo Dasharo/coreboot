@@ -42,7 +42,7 @@ u8 mct_get_start_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
 		u8 max = 0;
 		u8 val;
 		u8 i;
-		u8 *p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[channel][receiver >> 1];
+		u8 *p = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[channel][receiver >> 1];
 		u8 bn;
 		bn = 8;
 
@@ -76,12 +76,12 @@ u8 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
 
 	bn = 8;
 
-	p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[channel][receiver >> 1];
+	p = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[channel][receiver >> 1];
 
 	if (pass == SECOND_PASS) { /* second pass must average values */
 		//FIXME: which byte?
 		p_1 = p_dct_stat->B_RCVRDLY_1;
-//		p_1 = p_dct_stat->persistentData.CH_D_B_RCVRDLY_1[channel][receiver>>1];
+//		p_1 = p_dct_stat->persistent_data.CH_D_B_RCVRDLY_1[channel][receiver>>1];
 		for (i = 0; i < bn; i++) {
 			val = p[i];
 			/* left edge */

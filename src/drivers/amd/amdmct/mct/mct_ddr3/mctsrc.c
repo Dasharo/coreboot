@@ -149,7 +149,7 @@ static u16 fam15_receiver_enable_training_seed(struct DCTStatStruc *p_dct_stat, 
 					seed = 0x38;
 			}
 		}
-	} else if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+	} else if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 		if (package_type == PT_GR) {
 			/* Socket G34: Fam15h BKDG v3.14 Table 99 */
 			if (MaxDimmsInstallable == 1) {
@@ -1319,7 +1319,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 								register_delay = 0x30;
 							else
 								register_delay = 0x20;
-						} else if ((p_dct_stat->status & (1 << SB_LoadReduced))) {
+						} else if ((p_dct_stat->status & (1 << SB_LOAD_REDUCED))) {
 							/* TODO
 							 * Load reduced DIMM support unimplemented
 							 */
@@ -1458,8 +1458,8 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	}
 
 	/* Calculate and program MaxRdLatency for both channels */
-	Calc_SetMaxRdLatency_D_Fam15(p_mct_stat, p_dct_stat, 0, 0);
-	Calc_SetMaxRdLatency_D_Fam15(p_mct_stat, p_dct_stat, 1, 0);
+	calc_set_max_rd_latency_d_fam15(p_mct_stat, p_dct_stat, 0, 0);
+	calc_set_max_rd_latency_d_fam15(p_mct_stat, p_dct_stat, 1, 0);
 
 	if (_DisableDramECC) {
 		mct_enable_dimm_ecc_en_d(p_mct_stat, p_dct_stat, _DisableDramECC);
@@ -1541,7 +1541,7 @@ static void write_max_read_latency_to_registers(struct MCTStatStruc *p_mct_stat,
  * The Fam15h BKDG Rev. 3.14 section 2.10.5.8.5.1
  * This algorithm runs at the highest supported MEMCLK.
  */
-void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
+void dqs_train_max_rd_latency_sw_fam15(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	u8 Channel;
@@ -1648,7 +1648,7 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 		}
 
 		/* 2.10.5.8.5.1.1 */
-		Calc_SetMaxRdLatency_D_Fam15(p_mct_stat, p_dct_stat, Channel, 1);
+		calc_set_max_rd_latency_d_fam15(p_mct_stat, p_dct_stat, Channel, 1);
 
 		/* 2.10.5.8.5.1.[2,3]
 		 * Write the DRAM training pattern to the test address

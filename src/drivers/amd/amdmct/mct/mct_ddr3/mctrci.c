@@ -284,7 +284,7 @@ static void mct_SendCtrlWrd(struct MCTStatStruc *p_mct_stat,
 	} while (val & (1 << SEND_CONTROL_WORD));
 }
 
-void mct_DramControlReg_Init_D(struct MCTStatStruc *p_mct_stat,
+void mct_dram_control_reg_init_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MrsChipSel;
@@ -350,7 +350,7 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *p_mct_stat,
 	printk(BIOS_SPEW, "%s: Done\n", __func__);
 }
 
-void FreqChgCtrlWrd(struct MCTStatStruc *p_mct_stat,
+void freq_chg_ctrl_wrd(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 SaveSpeed = p_dct_stat->dimm_auto_speed;

@@ -286,7 +286,7 @@ static u32 get_max_rd_lat_test_addr_d(struct MCTStatStruc *p_mct_stat,
 		for (d = 0; d < 4; d++) {
 			for (byte = 0; byte < bn; byte++) {
 				u8 tmp;
-				tmp = p_dct_stat->persistentData.ch_d_b_rcvr_dly[ch][d][byte];
+				tmp = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[ch][d][byte];
 				if (tmp > max) {
 					max = tmp;
 					channel_max = channel;

@@ -270,7 +270,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u16 dimm_trc;	/* Minimax Trc*40 (ns) of DIMMs*/
 	u16 dimm_twr;	/* Minimax Twr*40 (ns) of DIMMs*/
 	u16 dimm_trrd;	/* Minimax Trrd*40 (ns) of DIMMs*/
-	u16 dimm_twtr;	/* Minimax Twtr*40 (ns) of DIMMs*/
+	u16 dimm_twtr;	/* Minimax twtr*40 (ns) of DIMMs*/
 	u8 speed;		/* Bus Speed (to set Controller)
 				   1 = 200MHz
 				   2 = 266MHz
@@ -289,7 +289,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u8 trc;		/* DCT Trc (busclocks) */
 	u8 twr;		/* DCT Twr (busclocks) */
 	u8 trrd;		/* DCT Trrd (busclocks) */
-	u8 twtr;		/* DCT Twtr (busclocks) */
+	u8 twtr;		/* DCT twtr (busclocks) */
 	u8 trfc[4];	/* DCT Logical DIMM0 Trfc
 				   0 = 75ns (for 256Mb devs)
 				   1 = 105ns (for 512Mb devs)

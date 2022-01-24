@@ -194,7 +194,7 @@ void train_receiver_en_d(struct MCTStatStruc *p_mct_stat,
 	}
 }
 
-void TrainMaxRdLatency_En_D(struct MCTStatStruc *p_mct_stat,
+void train_max_rd_latency_en_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 node;
@@ -205,7 +205,7 @@ void TrainMaxRdLatency_En_D(struct MCTStatStruc *p_mct_stat,
 
 		if (p_dct_stat->dct_sys_limit) {
 			if (is_fam15h()) {
-				dqsTrainMaxRdLatency_SW_Fam15(p_mct_stat, p_dct_stat);
+				dqs_train_max_rd_latency_sw_fam15(p_mct_stat, p_dct_stat);
 			} else {
 				/* FIXME
 				 * Implement Family 10h MaxRdLatency training
@@ -824,7 +824,7 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 /* Calcuate and set MaxRdLatency
  * Algorithm detailed in the Fam15h BKDG Rev. 3.14 section 2.10.5.8.5
  */
-void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *p_mct_stat,
+void calc_set_max_rd_latency_d_fam15(struct MCTStatStruc *p_mct_stat,
 		struct DCTStatStruc *p_dct_stat, u8 dct, u8 calc_min)
 {
 	u8 dimm;
@@ -1267,7 +1267,7 @@ static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *p_mct_stat,
 	lane_count = get_available_lane_count(p_mct_stat, p_dct_stat);
 
 	/* Calculate and program MaxRdLatency */
-	Calc_SetMaxRdLatency_D_Fam15(p_mct_stat, p_dct_stat, dct, 0);
+	calc_set_max_rd_latency_d_fam15(p_mct_stat, p_dct_stat, dct, 0);
 
 	Errors = 0;
 	dual_rank = 0;
@@ -1489,7 +1489,7 @@ static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *p_mct_stat,
 				memcpy(current_write_dqs_delay, initial_write_data_timing, sizeof(current_write_data_delay));
 
 				/* Program the Write DQS Timing Control register with the optimal region within the passing window */
-				if (p_dct_stat->status & (1 << SB_LoadReduced))
+				if (p_dct_stat->status & (1 << SB_LOAD_REDUCED))
 					current_write_dqs_delay[lane] = ((best_pos + initial_write_dqs_delay[lane]) + (best_count / 3));
 				else
 					current_write_dqs_delay[lane] = ((best_pos + initial_write_dqs_delay[lane]) + (best_count / 2));
@@ -1707,7 +1707,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 					write_dqs_receiver_enable_control_registers(current_phy_phase_delay, dev, dct, dimm, index_reg);
 
 					/* Calculate and program MaxRdLatency */
-					Calc_SetMaxRdLatency_D_Fam15(p_mct_stat, p_dct_stat, dct, 0);
+					calc_set_max_rd_latency_d_fam15(p_mct_stat, p_dct_stat, dct, 0);
 
 					/* 2.10.5.8.3 (4 B) */
 					dqs_results_array[current_phy_phase_delay[lane]] =
@@ -1730,7 +1730,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 
 				if (!lane_training_success[lane]) {
 					if (p_dct_stat->tcwl_delay[dct] >= 1) {
-						Errors |= 1 << SB_FatalError;
+						Errors |= 1 << SB_FATAL_ERROR;
 						printk(BIOS_ERR, "%s: lane %d failed to train!  Training for receiver %d on DCT %d aborted\n",
 							__func__, lane, Receiver, dct);
 					}
@@ -1803,7 +1803,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 				/* Increase TCWL */
 				p_dct_stat->tcwl_delay[dct]++;
 				/* Request retraining */
-				Errors |= 1 << SB_RetryConfigTrain;
+				Errors |= 1 << SB_RETRY_CONFIG_TRAIN;
 			}
 		}
 	}
@@ -2281,7 +2281,7 @@ static void mct_set_dqs_delay_csr_d(struct MCTStatStruc *p_mct_stat,
 		val = Get_NB32_index_wait_DCT(dev, p_dct_stat->channel, index_reg, index);
 		if (ByteLane < 8) {
 			if (p_dct_stat->direction == DQS_WRITEDIR) {
-				dqs_delay += p_dct_stat->persistentData.CH_D_B_TxDqs[p_dct_stat->channel][ChipSel >> 1][ByteLane];
+				dqs_delay += p_dct_stat->persistent_data.ch_d_b_tx_dqs[p_dct_stat->channel][ChipSel >> 1][ByteLane];
 			} else {
 				dqs_delay <<= 1;
 			}

@@ -21,7 +21,7 @@ void getWLByteDelay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 ByteLane, u8 dim
 #define MAX_LANE_COUNT 9
 
 /*-----------------------------------------------------------------------------
- * u8 AgesaHwWlPhase1(SPDStruct *SPDData,MCTStruct *MCTData, DCTStruct *DCTData,
+ * u8 agesa_hw_wl_phase1(SPDStruct *SPDData,MCTStruct *MCTData, DCTStruct *DCTData,
  *                  u8 Dimm, u8 Pass)
  *
  *  Description:
@@ -38,7 +38,7 @@ void getWLByteDelay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 ByteLane, u8 dim
  *       OUT
  *-----------------------------------------------------------------------------
  */
-u8 AgesaHwWlPhase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat,
+u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat,
 		u8 dct, u8 dimm, u8 pass)
 {
 	u8 ByteLane;
@@ -66,7 +66,7 @@ u8 AgesaHwWlPhase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 			train_both_nibbles = 1;
 
 	for (nibble = 0; nibble < (train_both_nibbles + 1); nibble++) {
-		printk(BIOS_SPEW, "AgesaHwWlPhase1: training nibble %d\n", nibble);
+		printk(BIOS_SPEW, "agesa_hw_wl_phase1: training nibble %d\n", nibble);
 
 		if (is_fam15h()) {
 			/* Program F2x[1, 0]9C_x08[WrtLvTrEn]=0 */
@@ -164,7 +164,7 @@ u8 AgesaHwWlPhase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 	return 0;
 }
 
-u8 AgesaHwWlPhase2(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat,
+u8 agesa_hw_wl_phase2(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat,
 		u8 dct, u8 dimm, u8 pass)
 {
 	u8 ByteLane;
@@ -255,7 +255,7 @@ u8 AgesaHwWlPhase2(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 	return status;
 }
 
-u8 AgesaHwWlPhase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat,
+u8 agesa_hw_wl_phase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat,
 		u8 dct, u8 dimm, u8 pass)
 {
 	u8 ByteLane;

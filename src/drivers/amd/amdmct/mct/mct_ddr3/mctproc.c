@@ -6,7 +6,7 @@
 #include "mct_d_gcc.h"
 
 /* mct_SetDramConfigMisc2_Cx & mct_SetDramConfigMisc2_Dx */
-u32 mct_SetDramConfigMisc2(struct DCTStatStruc *p_dct_stat,
+u32 mct_set_dram_config_misc_2(struct DCTStatStruc *p_dct_stat,
 				u8 dct, u32 misc2, u32 DramControl)
 {
 	u32 val;
@@ -82,7 +82,7 @@ u32 mct_SetDramConfigMisc2(struct DCTStatStruc *p_dct_stat,
 	return misc2;
 }
 
-void mct_ExtMCTConfig_Cx(struct DCTStatStruc *p_dct_stat)
+void mct_ext_mct_config_cx(struct DCTStatStruc *p_dct_stat)
 {
 	u32 val;
 

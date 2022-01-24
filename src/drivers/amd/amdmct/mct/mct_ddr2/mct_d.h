@@ -373,7 +373,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u16 dimm_trc;		/* Minimax Trc*40 (ns) of DIMMs*/
 	u16 dimm_twr;		/* Minimax Twr*40 (ns) of DIMMs*/
 	u16 dimm_trrd;		/* Minimax Trrd*40 (ns) of DIMMs*/
-	u16 dimm_twtr;		/* Minimax Twtr*40 (ns) of DIMMs*/
+	u16 dimm_twtr;		/* Minimax twtr*40 (ns) of DIMMs*/
 	u8 speed;		/* Bus Speed (to set Controller)
 		1 = 200MHz
 		2 = 266MHz
@@ -392,7 +392,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u8 trc;			/* DCT Trc (busclocks) */
 	u8 twr;			/* DCT Twr (busclocks) */
 	u8 trrd;		/* DCT Trrd (busclocks) */
-	u8 twtr;		/* DCT Twtr (busclocks) */
+	u8 twtr;		/* DCT twtr (busclocks) */
 	u8 trfc[4];		/* DCT Logical DIMM0 Trfc
 		0 = 75ns (for 256Mb devs)
 		1 = 105ns (for 512Mb devs)
@@ -447,7 +447,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 
 	u32 amc_tsc_delta_lo;	/* Time Stamp Counter measurement of AMC, Low dword*/
 	u32 amc_tsc_delta_hi;	/* Time Stamp Counter measurement of AMC, High dword*/
-	// NOTE: Not used in Barcelona - u8 CH_D_DIR_MaxMin_B_Dly[2][4][2][2][8];
+	// NOTE: Not used in Barcelona - u8 ch_d_dir_max_min_b_dly[2][4][2][2][8];
 		/* CH A byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
 		/* CH A byte lane 0 - 7 maximum filtered window  passing DQS delay value*/
 		/* CH B byte lane 0 - 7 minimum filtered window  passing DQS delay value*/
@@ -532,7 +532,7 @@ struct DCTStatStruc {		/* A per Node structure*/
 	u32 dimm_serial_number[MAX_DIMMS_SUPPORTED];
 
 	/* NOTE: This must remain the last entry in this structure */
-	struct DCTPersistentStatStruc persistentData;
+	struct DCTPersistentStatStruc persistent_data;
 } __packed;
 
 /*===============================================================================

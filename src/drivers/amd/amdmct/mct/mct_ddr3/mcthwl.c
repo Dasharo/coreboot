@@ -38,7 +38,7 @@ static void SetEccWrDQS_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *
 				if (OddByte)
 					val >>= 16;
 				/* Save WrDqs to stack for later usage */
-				p_dct_stat->persistentData.CH_D_B_TxDqs[Channel][DimmNum][ByteLane] = val & 0xFF;
+				p_dct_stat->persistent_data.ch_d_b_tx_dqs[Channel][DimmNum][ByteLane] = val & 0xFF;
 				EccDQSScale = p_dct_stat->ch_ecc_dqs_scale[Channel];
 				word = p_dct_stat->ch_ecc_dqs_like[Channel];
 				if ((word & 0xFF) == ByteLane) EccRef1 = val & 0xFF;
@@ -95,12 +95,12 @@ static u8 PhyWLPass1(struct MCTStatStruc *p_mct_stat,
 
 	if (p_dct_stat->dimm_valid) {
 		dimm_valid = p_dct_stat->dimm_valid;
-		PrepareC_DCT(p_mct_stat, p_dct_stat, dct);
+		prepare_c_dct(p_mct_stat, p_dct_stat, dct);
 		for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm ++) {
 			if (dimm_valid & (1 << (dimm << 1))) {
-				status |= AgesaHwWlPhase1(p_mct_stat, p_dct_stat, dct, dimm, FIRST_PASS);
-				status |= AgesaHwWlPhase2(p_mct_stat, p_dct_stat, dct, dimm, FIRST_PASS);
-				status |= AgesaHwWlPhase3(p_mct_stat, p_dct_stat, dct, dimm, FIRST_PASS);
+				status |= agesa_hw_wl_phase1(p_mct_stat, p_dct_stat, dct, dimm, FIRST_PASS);
+				status |= agesa_hw_wl_phase2(p_mct_stat, p_dct_stat, dct, dimm, FIRST_PASS);
+				status |= agesa_hw_wl_phase3(p_mct_stat, p_dct_stat, dct, dimm, FIRST_PASS);
 			}
 		}
 	}
@@ -127,25 +127,25 @@ static u8 PhyWLPass2(struct MCTStatStruc *p_mct_stat,
 
 	if (p_dct_stat->dimm_valid) {
 		dimm_valid = p_dct_stat->dimm_valid;
-		PrepareC_DCT(p_mct_stat, p_dct_stat, dct);
+		prepare_c_dct(p_mct_stat, p_dct_stat, dct);
 		p_dct_stat->speed = p_dct_stat->dimm_auto_speed = p_dct_stat->target_freq;
 		p_dct_stat->cas_latency = p_dct_stat->dimm_casl = p_dct_stat->target_casl;
 		spd_2nd_timing(p_mct_stat, p_dct_stat, dct);
 		if (!is_fam15h()) {
 			prog_dram_mrs_reg_d(p_mct_stat, p_dct_stat, dct);
-			PlatformSpec_D(p_mct_stat, p_dct_stat, dct);
+			platform_spec_d(p_mct_stat, p_dct_stat, dct);
 			fence_dyn_training_d(p_mct_stat, p_dct_stat, dct);
 		}
-		Restore_OnDimmMirror(p_mct_stat, p_dct_stat);
+		restore_on_dimm_mirror(p_mct_stat, p_dct_stat);
 		startup_dct_d(p_mct_stat, p_dct_stat, dct);
-		Clear_OnDimmMirror(p_mct_stat, p_dct_stat);
+		clear_on_dimm_mirror(p_mct_stat, p_dct_stat);
 		set_dll_speed_up_d(p_mct_stat, p_dct_stat, dct);
 		DisableAutoRefresh_D(p_mct_stat, p_dct_stat);
 		for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm ++) {
 			if (dimm_valid & (1 << (dimm << 1))) {
-				status |= AgesaHwWlPhase1(p_mct_stat, p_dct_stat, dct, dimm, SECOND_PASS);
-				status |= AgesaHwWlPhase2(p_mct_stat, p_dct_stat, dct, dimm, SECOND_PASS);
-				status |= AgesaHwWlPhase3(p_mct_stat, p_dct_stat, dct, dimm, SECOND_PASS);
+				status |= agesa_hw_wl_phase1(p_mct_stat, p_dct_stat, dct, dimm, SECOND_PASS);
+				status |= agesa_hw_wl_phase2(p_mct_stat, p_dct_stat, dct, dimm, SECOND_PASS);
+				status |= agesa_hw_wl_phase3(p_mct_stat, p_dct_stat, dct, dimm, SECOND_PASS);
 			}
 		}
 	}
@@ -180,8 +180,8 @@ static void WriteLevelization_HW(struct MCTStatStruc *p_mct_stat,
 	DisableAutoRefresh_D(p_mct_stat, p_dct_stat);
 
 	/* Disable ZQ calibration short command by F2x[1,0]94[ZqcsInterval]=00b */
-	DisableZQcalibration(p_mct_stat, p_dct_stat);
-	PrepareC_MCT(p_mct_stat, p_dct_stat);
+	disable_zq_calibration(p_mct_stat, p_dct_stat);
+	prepare_c_mct(p_mct_stat, p_dct_stat);
 
 	if (p_dct_stat->ganged_mode & (1 << 0)) {
 		p_dct_stat->dimm_valid_dct[1] = p_dct_stat->dimm_valid_dct[0];
@@ -219,7 +219,7 @@ static void WriteLevelization_HW(struct MCTStatStruc *p_mct_stat,
 					p_dct_stat->target_freq = fam15h_next_highest_memclk_freq(p_dct_stat->speed);
 				else
 					p_dct_stat->target_freq = final_target_freq;
-				SetTargetFreq(p_mct_stat, p_dct_stat_a, Node);
+				set_target_freq(p_mct_stat, p_dct_stat_a, Node);
 				timeout = 0;
 				do {
 					status = 0;
@@ -253,10 +253,10 @@ static void WriteLevelization_HW(struct MCTStatStruc *p_mct_stat,
 
 	SetEccWrDQS_D(p_mct_stat, p_dct_stat);
 	EnableAutoRefresh_D(p_mct_stat, p_dct_stat);
-	EnableZQcalibration(p_mct_stat, p_dct_stat);
+	enable_zq_calibration(p_mct_stat, p_dct_stat);
 }
 
-void mct_WriteLevelization_HW(struct MCTStatStruc *p_mct_stat,
+void mct_write_levelization_hw(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat_a, u8 Pass)
 {
 	u8 Node;
@@ -267,9 +267,9 @@ void mct_WriteLevelization_HW(struct MCTStatStruc *p_mct_stat,
 
 		if (p_dct_stat->node_present) {
 			mctSMBhub_Init(Node);
-			Clear_OnDimmMirror(p_mct_stat, p_dct_stat);
+			clear_on_dimm_mirror(p_mct_stat, p_dct_stat);
 			WriteLevelization_HW(p_mct_stat, p_dct_stat_a, Node, Pass);
-			Restore_OnDimmMirror(p_mct_stat, p_dct_stat);
+			restore_on_dimm_mirror(p_mct_stat, p_dct_stat);
 		}
 	}
 }

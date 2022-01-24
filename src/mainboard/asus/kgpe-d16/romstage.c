@@ -200,7 +200,7 @@ static void set_ddr3_voltage(u8 node, u8 index) {
 	printk(BIOS_DEBUG, "Node %02d DIMM voltage set to index %02x\n", node, index);
 }
 
-void DIMMSetVoltages(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
+void dimm_set_voltages(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 {
 	/* This mainboard allows the DIMM voltage to be set per-socket.
 	 * Therefore, for each socket, iterate over all DIMMs to find the
@@ -264,13 +264,13 @@ void DIMMSetVoltages(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct
 			/* Save final DIMM voltages for MCT and SMBIOS use */
 			if (p_dct_stat->node_present) {
 				for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-					p_dct_stat->DimmConfiguredVoltage[dimm] = set_voltage;
+					p_dct_stat->dimm_configured_voltage[dimm] = set_voltage;
 				}
 			}
 			p_dct_stat = p_dct_stat_a + (node - 1);
 			if (p_dct_stat->node_present) {
 				for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-					p_dct_stat->DimmConfiguredVoltage[dimm] = set_voltage;
+					p_dct_stat->dimm_configured_voltage[dimm] = set_voltage;
 				}
 			}
 		}

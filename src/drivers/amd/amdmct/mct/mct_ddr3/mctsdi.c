@@ -12,7 +12,7 @@ u8 fam15_dimm_dic(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 
 	u8 dic;
 
 	/* Calculate DIC based on recommendations in MR1_dct[1:0] */
-	if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+	if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 		/* TODO
 		* LRDIMM unimplemented
 		*/
@@ -43,7 +43,7 @@ u8 fam15_rttwr(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 pac
 	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	if (is_fam15h()) {
-		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* TODO
 			 * LRDIMM unimplemented
 			 */
@@ -275,7 +275,7 @@ u8 fam15_rttnom(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 pa
 	u8 MaxDimmsInstallable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
 	if (is_fam15h()) {
-		if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+		if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 			/* TODO
 			 * LRDIMM unimplemented
 			 */
@@ -852,7 +852,7 @@ u32 mct_MR1(struct MCTStatStruc *p_mct_stat,
 		/* Determine if TQDS should be set */
 		if ((p_dct_stat->dimm_x8_present & (1 << dimm))
 			&& (((dimm & 0x1) ? (p_dct_stat->dimm_x4_present & 0x55) : (p_dct_stat->dimm_x4_present & 0xaa)) != 0x0)
-			&& (p_dct_stat->status & (1 << SB_LoadReduced)))
+			&& (p_dct_stat->status & (1 << SB_LOAD_REDUCED)))
 			tqds = 1;
 
 		/* Obtain RttNom */
@@ -896,7 +896,7 @@ u32 mct_MR1(struct MCTStatStruc *p_mct_stat,
 			if (dword & (1 << 7))
 				ret |= 1 << 2;
 		} else {
-			ret |= mct_MR1Odt_RDimm(p_mct_stat, p_dct_stat, dct, MrsChipSel);
+			ret |= mct_mr_1Odt_r_dimm(p_mct_stat, p_dct_stat, dct, MrsChipSel);
 		}
 
 		/* program MrsAddress[11]=TDQS: based on F2x[1,0]94[RDQS_EN] */
@@ -1072,7 +1072,7 @@ static void mct_SendZQCmd(struct DCTStatStruc *p_dct_stat, u8 dct)
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
 
-void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
+void mct_dram_init_sw_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 MrsChipSel;
@@ -1109,7 +1109,7 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 
 		/* Set up address parity */
 		if ((p_dct_stat->status & (1 << SB_REGISTERED))
-			|| (p_dct_stat->status & (1 << SB_LoadReduced))) {
+			|| (p_dct_stat->status & (1 << SB_LOAD_REDUCED))) {
 			if (is_fam15h()) {
 				dword = Get_NB32_DCT(dev, dct, 0x90);
 				dword |= 1 << PAR_EN;
@@ -1120,11 +1120,11 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 		/* The following steps are performed with registered DIMMs only and
 		 * must be done for each chip select pair */
 		if (p_dct_stat->status & (1 << SB_REGISTERED))
-			mct_DramControlReg_Init_D(p_mct_stat, p_dct_stat, dct);
+			mct_dram_control_reg_init_d(p_mct_stat, p_dct_stat, dct);
 
 		/* The following steps are performed with load reduced DIMMs only and
 		 * must be done for each DIMM */
-		// if (p_dct_stat->status & (1 << SB_LoadReduced))
+		// if (p_dct_stat->status & (1 << SB_LOAD_REDUCED))
 			/* TODO
 			 * Implement LRDIMM configuration
 			 */

@@ -450,7 +450,7 @@ static void load_dqs_sig_tmg_regs_d(struct MCTStatStruc *p_mct_stat,
 						}
 					}
 					for (dir = 0; dir < 2; dir++) {//RD/WR
-						p = p_dct_stat->persistentData.ch_d_dir_b_dqs[channel][dimm][dir];
+						p = p_dct_stat->persistent_data.ch_d_dir_b_dqs[channel][dimm][dir];
 						val = stream_to_int(p); /* CHA Read Data Timing High */
 						set_nb32_index_wait(dev, index_reg, index + 1, val);
 						val = stream_to_int(p + 4); /* CHA Write Data Timing High */
@@ -1651,7 +1651,7 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 
 	val -= Bias_TFAW_T;
 	val <<= 28;
-	dram_config_hi |= val;	/* Tfaw for 1K or 2K paged drams */
+	dram_config_hi |= val;	/* tfaw for 1K or 2K paged drams */
 
 	// FIXME: Skip for Ax versions
 	dram_config_hi |= 1 << DCQ_ARB_BYPASS_EN;
@@ -3590,8 +3590,8 @@ static void mct_reset_data_struct_d(struct MCTStatStruc *p_mct_stat,
 	for (node = 0; node < 8; node++) {
 		p_dct_stat = p_dct_stat_a + node;
 
-		/* Clear all entries except persistentData */
-		memset(p_dct_stat, 0x00, sizeof(*p_dct_stat) - sizeof(p_dct_stat->persistentData));
+		/* Clear all entries except persistent_data */
+		memset(p_dct_stat, 0x00, sizeof(*p_dct_stat) - sizeof(p_dct_stat->persistent_data));
 	}
 }
 

@@ -464,7 +464,7 @@ static void dqs_train_rcvr_en_sw(struct MCTStatStruc *p_mct_stat,
 			printk(BIOS_DEBUG, "channel: %02x\n", channel);
 			for (receiver = 0; receiver < 8; receiver+=2) {
 				printk(BIOS_DEBUG, "\t\tReceiver: %02x: ", receiver);
-				p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[channel][receiver >> 1];
+				p = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[channel][receiver >> 1];
 				for (i = 0; i < 8; i++) {
 					val  = p[i];
 					printk(BIOS_DEBUG, "%02x ", val);
@@ -555,7 +555,7 @@ void mct_set_rcvr_en_dly_d(struct DCTStatStruc *p_dct_stat, u8 rcvr_en_dly,
 	for (i = 0; i < 8; i++) {
 		if (final_value) {
 			/*calculate dimm offset */
-			p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[channel][receiver >> 1];
+			p = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[channel][receiver >> 1];
 			rcvr_en_dly = p[i];
 		}
 
@@ -707,11 +707,11 @@ static u8 mct_save_pass_rcv_en_dly_d(struct DCTStatStruc *p_dct_stat,
 
 		/* find desired stack offset according to channel/dimm/byte */
 		if (pass == SECOND_PASS) {
-			// FIXME: SECOND_PASS is never used for Barcelona p = p_dct_stat->persistentData.CH_D_B_RCVRDLY_1[channel][receiver>>1];
+			// FIXME: SECOND_PASS is never used for Barcelona p = p_dct_stat->persistent_data.CH_D_B_RCVRDLY_1[channel][receiver>>1];
 			p = 0; // Keep the compiler happy.
 		} else {
 			mask_Saved &= mask_Pass;
-			p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[channel][receiver >> 1];
+			p = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[channel][receiver >> 1];
 		}
 		for (i = 0; i < 8; i++) {
 			/* cmp per byte lane */
@@ -891,7 +891,7 @@ void set_ecc_dqs_rcvr_en_d(struct DCTStatStruc *p_dct_stat, u8 channel)
 	dev = p_dct_stat->dev_dct;
 	index_reg = 0x98 + channel * 0x100;
 	index = 0x12;
-	p = p_dct_stat->persistentData.ch_d_bc_rcvr_dly[channel];
+	p = p_dct_stat->persistent_data.ch_d_bc_rcvr_dly[channel];
 	print_debug_dqs("\t\tSetEccDQSRcvrPos: channel ", channel,  2);
 	for (chip_sel = 0; chip_sel < MAX_CS_SUPPORTED; chip_sel += 2) {
 		val = p[chip_sel >> 1];
@@ -917,7 +917,7 @@ static void calc_ecc_dqs_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 	for (chip_sel = 0; chip_sel < MAX_CS_SUPPORTED; chip_sel += 2) {
 		if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, channel, chip_sel)) {
 			u8 *p;
-			p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[channel][chip_sel >> 1];
+			p = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[channel][chip_sel >> 1];
 
 			/* DQS Delay Value of Data Bytelane
 			 * most like ECC byte lane */
@@ -941,7 +941,7 @@ static void calc_ecc_dqs_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 				val += val0;
 			}
 
-			p_dct_stat->persistentData.ch_d_bc_rcvr_dly[channel][chip_sel >> 1] = val;
+			p_dct_stat->persistent_data.ch_d_bc_rcvr_dly[channel][chip_sel >> 1] = val;
 		}
 	}
 	set_ecc_dqs_rcvr_en_d(p_dct_stat, channel);

@@ -36,7 +36,7 @@ static u8 mct_average_rcvr_en_dly_1_pass(struct DCTStatStruc *p_dct_stat, u8 cha
 	u8 val;
 
 	max_value = 0;
-	p = p_dct_stat->persistentData.ch_d_b_rcvr_dly[channel][receiver >> 1];
+	p = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[channel][receiver >> 1];
 
 	for (i = 0; i < 8; i++) {
 		/* get left value from DCTStatStruc.CHA_D0_B0_RCVRDLY*/

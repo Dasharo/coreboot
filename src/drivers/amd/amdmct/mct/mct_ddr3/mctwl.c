@@ -12,13 +12,13 @@ static void AgesaDelay(u32 msec)
 	mct_wait(msec*10);
 }
 
-void PrepareC_MCT(struct MCTStatStruc *p_mct_stat,
+void prepare_c_mct(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat)
 {
 	p_dct_stat->c_mct_ptr->AgesaDelay = AgesaDelay;
 }
 
-void PrepareC_DCT(struct MCTStatStruc *p_mct_stat,
+void prepare_c_dct(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 dimm;
@@ -66,7 +66,7 @@ void PrepareC_DCT(struct MCTStatStruc *p_mct_stat,
 		p_dct_stat->c_dct_ptr[dct]->status[DCT_STATUS_REGISTERED] = 0;
 	}
 
-	if (p_dct_stat->status & (1 << SB_LoadReduced)) {
+	if (p_dct_stat->status & (1 << SB_LOAD_REDUCED)) {
 		p_dct_stat->c_dct_ptr[dct]->status[DCT_STATUS_LOAD_REDUCED] = 1;
 	} else {
 		p_dct_stat->c_dct_ptr[dct]->status[DCT_STATUS_LOAD_REDUCED] = 0;
@@ -88,7 +88,7 @@ void PrepareC_DCT(struct MCTStatStruc *p_mct_stat,
 	}
 }
 
-void EnableZQcalibration(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat)
+void enable_zq_calibration(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat)
 {
 	u32 val;
 
@@ -101,7 +101,7 @@ void EnableZQcalibration(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p
 	Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x94, val);
 }
 
-void DisableZQcalibration(struct MCTStatStruc *p_mct_stat,
+void disable_zq_calibration(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat)
 {
 	u32 val;
@@ -341,7 +341,7 @@ static void ExitSelfRefresh(struct MCTStatStruc *p_mct_stat,
 		} while (val & (1 << EXIT_SELF_REF));
 }
 
-void SetTargetFreq(struct MCTStatStruc *p_mct_stat,
+void set_target_freq(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat_a, u8 Node)
 {
 	u32 dword;
@@ -435,10 +435,10 @@ void SetTargetFreq(struct MCTStatStruc *p_mct_stat,
 			p_dct_stat->cs_present = p_dct_stat->cs_present_dct[1];
 
 		if (p_dct_stat->dimm_valid_dct[0]) {
-			FreqChgCtrlWrd(p_mct_stat, p_dct_stat, 0);
+			freq_chg_ctrl_wrd(p_mct_stat, p_dct_stat, 0);
 		}
 		if (p_dct_stat->dimm_valid_dct[1]) {
-			FreqChgCtrlWrd(p_mct_stat, p_dct_stat, 1);
+			freq_chg_ctrl_wrd(p_mct_stat, p_dct_stat, 1);
 		}
 	}
 
@@ -458,7 +458,7 @@ static void Modify_OnDimmMirror(struct DCTStatStruc *p_dct_stat, u8 dct, u8 set)
 	}
 }
 
-void Restore_OnDimmMirror(struct MCTStatStruc *p_mct_stat,
+void restore_on_dimm_mirror(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	if (p_dct_stat->logical_cpuid & (AMD_DR_Bx /* | AMD_RB_C0 */)) { /* We dont support RB-C0 now */
@@ -468,7 +468,7 @@ void Restore_OnDimmMirror(struct MCTStatStruc *p_mct_stat,
 			Modify_OnDimmMirror(p_dct_stat, 1, 1); /* dct = 1, set */
 	}
 }
-void Clear_OnDimmMirror(struct MCTStatStruc *p_mct_stat,
+void clear_on_dimm_mirror(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	if (p_dct_stat->logical_cpuid & (AMD_DR_Bx /* | AMD_RB_C0 */)) { /* We dont support RB-C0 now */
