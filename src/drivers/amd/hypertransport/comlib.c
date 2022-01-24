@@ -15,20 +15,20 @@
  *---------------------------------------------------------------------------
  */
 
-void CALLCONV AmdPCIReadBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
+void CALLCONV amd_pci_read_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *p_value)
 {
 	ASSERT(highbit < 32 && lowbit < 32 && highbit >= lowbit && (loc & 3) == 0);
 
-	AmdPCIRead(loc, pValue);
-	*pValue = *pValue >> lowbit;  /* Shift */
+	AmdPCIRead(loc, p_value);
+	*p_value = *p_value >> lowbit;  /* Shift */
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
 	if ((highbit-lowbit) != 31)
-		*pValue &= (((u32)1 << (highbit - lowbit + 1)) - 1);
+		*p_value &= (((u32)1 << (highbit - lowbit + 1)) - 1);
 }
 
 
-void CALLCONV AmdPCIWriteBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
+void CALLCONV amd_pci_write_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *p_value)
 {
 	u32 temp, mask;
 
@@ -42,7 +42,7 @@ void CALLCONV AmdPCIWriteBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
 
 	AmdPCIRead(loc, &temp);
 	temp &= ~(mask << lowbit);
-	temp |= (*pValue & mask) << lowbit;
+	temp |= (*p_value & mask) << lowbit;
 	AmdPCIWrite(loc, &temp);
 }
 
@@ -74,19 +74,19 @@ void CALLCONV AmdPCIFindNextCap(SBDFO *pCurrent)
 		return; /* There is no device at this address */
 
 	/* Verify that the device supports a capability list */
-	AmdPCIReadBits(base + 0x04, 20, 20, &temp);
+	amd_pci_read_bits(base + 0x04, 20, 20, &temp);
 	if (temp == 0)
 		return; /* This PCI device does not support capability lists */
 
 	if (offset != 0)
 	{
 		/* If we are continuing on an existing list */
-		AmdPCIReadBits(base + offset, 15, 8, &temp);
+		amd_pci_read_bits(base + offset, 15, 8, &temp);
 	}
 	else
 	{
 		/* We are starting on a new list */
-		AmdPCIReadBits(base + 0x34, 7, 0, &temp);
+		amd_pci_read_bits(base + 0x34, 7, 0, &temp);
 	}
 
 	if (temp == 0)

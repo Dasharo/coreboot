@@ -15,8 +15,8 @@
 	#define STOP_HERE
 #endif
 
-void CALLCONV AmdPCIReadBits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
-void CALLCONV AmdPCIWriteBits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
+void CALLCONV amd_pci_read_bits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
+void CALLCONV amd_pci_write_bits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
 void CALLCONV AmdPCIFindNextCap(SBDFO *current);
 
 void CALLCONV Amdmemcpy(void *dst, const void *src, uint32 length);

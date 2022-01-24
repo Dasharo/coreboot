@@ -121,7 +121,7 @@ static SBDFO makeLinkBase(u8 node, u8 link)
  *  Description:
  *	Private to northbridge implementation. Provide a common routine for accessing the
  *	HT Link Control registers (84, a4, c4, e4), to enforce not clearing the
- *	HT CRC error bits.  Replaces direct use of AmdPCIWriteBits().
+ *	HT CRC error bits.  Replaces direct use of amd_pci_write_bits().
  *	NOTE: This routine is called for IO Devices as well as CPUs!
  *
  *  Parameters:
@@ -211,7 +211,7 @@ static void writeNodeID(u8 node, u8 nodeID, cNorthBridge *nb)
 	ASSERT((node < nb->maxNodes) && (nodeID < nb->maxNodes));
 	if (is_fam15h()) {
 		temp = 1;
-		AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+		amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 					makePCIBusFromNode(node),
 					makePCIDeviceFromNode(node),
 					CPU_NB_FUNC_03,
@@ -219,7 +219,7 @@ static void writeNodeID(u8 node, u8 nodeID, cNorthBridge *nb)
 					22, 22, &temp);
 	}
 	temp = nodeID;
-	AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_HTNB_FUNC_00,
@@ -259,8 +259,8 @@ static u8 readDefLnk(u8 node, cNorthBridge *nb)
 			REG_LINK_INIT_CONTROL_0X6C);
 
 	ASSERT((node < nb->maxNodes));
-	AmdPCIReadBits(licr, 3, 2, &deflink);
-	AmdPCIReadBits(licr, 8, 8, &temp);	/* on rev F, this bit is reserved == 0 */
+	amd_pci_read_bits(licr, 3, 2, &deflink);
+	amd_pci_read_bits(licr, 8, 8, &temp);	/* on rev F, this bit is reserved == 0 */
 	deflink |= temp << 2;
 	return (u8)deflink;
 }
@@ -283,7 +283,7 @@ static void enableRoutingTables(u8 node, cNorthBridge *nb)
 {
 	u32 temp = 0;
 	ASSERT((node < nb->maxNodes));
-	AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_HTNB_FUNC_00,
@@ -377,11 +377,11 @@ static BOOL readTrueLinkFailStatus(u8 node, u8 link, sMainData *pDat, cNorthBrid
 	 * FN0_84/A4/C4[4] = LinkFail bit
 	 * and the connection status, TransOff and EndOfChain
 	 */
-	AmdPCIReadBits(linkBase + HTHOST_LINK_CONTROL_REG, 9, 8, &crc);
-	AmdPCIReadBits(linkBase + HTHOST_LINK_CONTROL_REG, 4, 4, &before);
+	amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 9, 8, &crc);
+	amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 4, 4, &before);
 	setHtControlRegisterBits(linkBase + HTHOST_LINK_CONTROL_REG, 4, 4, &before);
-	AmdPCIReadBits(linkBase + HTHOST_LINK_CONTROL_REG, 4, 4, &after);
-	AmdPCIReadBits(linkBase + HTHOST_LINK_CONTROL_REG, 7, 6, &unconnected);
+	amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 4, 4, &after);
+	amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 7, 6, &unconnected);
 
 	if (before != after)
 	{
@@ -450,7 +450,7 @@ static u8 readToken(u8 node, cNorthBridge *nb)
 	ASSERT((node < nb->maxNodes));
 	/* Use CpuCnt as a scratch register */
 	/* Limiting use to 4 bits makes code GH to rev F compatible. */
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_HTNB_FUNC_00,
@@ -485,7 +485,7 @@ static void writeToken(u8 node, u8 value, cNorthBridge *nb)
 	ASSERT((node < nb->maxNodes));
 	/* Use CpuCnt as a scratch register */
 	/* Limiting use to 4 bits makes code GH to rev F compatible. */
-	AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 					makePCIBusFromNode(node),
 					makePCIDeviceFromNode(node),
 					CPU_HTNB_FUNC_00,
@@ -514,7 +514,7 @@ static u8 fam0FGetNumCoresOnNode(u8 node, cNorthBridge *nb)
 
 	ASSERT((node < nb->maxNodes));
 	/* Read CmpCap */
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 			makePCIBusFromNode(node),
 			makePCIDeviceFromNode(node),
 			CPU_NB_FUNC_03,
@@ -547,7 +547,7 @@ static u8 fam10GetNumCoresOnNode(u8 node, cNorthBridge *nb)
 
 	ASSERT((node < nb->maxNodes));
 	/* Read CmpCap [2][1:0] */
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_03,
@@ -559,7 +559,7 @@ static u8 fam10GetNumCoresOnNode(u8 node, cNorthBridge *nb)
 	cores = temp + 1;
 
 	/* Support Downcoring */
-	AmdPCIReadBits (MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits (MAKE_SBDFO(makePCISegmentFromNode(node),
 					makePCIBusFromNode(node),
 					makePCIDeviceFromNode(node),
 					CPU_NB_FUNC_03,
@@ -597,7 +597,7 @@ static u8 fam15GetNumCoresOnNode(u8 node, cNorthBridge *nb)
 
 	ASSERT((node < nb->maxNodes));
 	/* Read CmpCap [7:0] */
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_05,
@@ -609,7 +609,7 @@ static u8 fam15GetNumCoresOnNode(u8 node, cNorthBridge *nb)
 	cores = temp + 1;
 
 	/* Support Downcoring */
-	AmdPCIReadBits (MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits (MAKE_SBDFO(makePCISegmentFromNode(node),
 					makePCIBusFromNode(node),
 					makePCIDeviceFromNode(node),
 					CPU_NB_FUNC_03,
@@ -658,9 +658,9 @@ static void setTotalNodesAndCores(u8 node, u8 totalNodes, u8 totalCores, cNorthB
 	 * this code work, even though we write reserved bit 20 on rev F it will be
 	 * zero in that case.
 	 */
-	AmdPCIWriteBits(nodeIDReg, 20, 16, &temp);
+	amd_pci_write_bits(nodeIDReg, 20, 16, &temp);
 	temp = totalNodes-1;
-	AmdPCIWriteBits(nodeIDReg, 6,  4, &temp);
+	amd_pci_write_bits(nodeIDReg, 6,  4, &temp);
 }
 
 /***************************************************************************//**
@@ -681,7 +681,7 @@ static void limitNodes(u8 node, cNorthBridge *nb)
 {
 	u32 temp = 1;
 	ASSERT((node < nb->maxNodes));
-	AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_HTNB_FUNC_00,
@@ -758,13 +758,13 @@ static void writeFullRoutingTable(u8 node, u8 target, u8 reqLink, u8 rspLink, u3
 static u32 makeKey(u8 node)
 {
 	u32 extFam, baseFam;
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_03,
 				REG_NB_CPUID_3XFC),
 				27, 20, &extFam);
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_03,
@@ -822,7 +822,7 @@ static BOOL fam0fIsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 	ASSERT(node < nb->maxNodes);
 
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_03,
@@ -876,7 +876,7 @@ static BOOL fam10IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 	ASSERT(node < nb->maxNodes);
 
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_03,
@@ -929,7 +929,7 @@ static BOOL fam15IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 	ASSERT(node < nb->maxNodes);
 
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_03,
@@ -943,7 +943,7 @@ static BOOL fam15IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 	else
 	{
 		/* Check if CPU package is dual node */
-		AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+		amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 					makePCIBusFromNode(node),
 					makePCIDeviceFromNode(node),
 					CPU_NB_FUNC_03,
@@ -1053,7 +1053,7 @@ static BOOL commonReturnFalse(void)
 static u8 readSbLink(cNorthBridge *nb)
 {
 	u32 temp;
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(0),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(0),
 				makePCIBusFromNode(0),
 				makePCIDeviceFromNode(0),
 				CPU_HTNB_FUNC_00,
@@ -1129,7 +1129,7 @@ static void  ht3SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNod
 
 	ASSERT(secBus <= subBus);
 	temp = secBus;
-	AmdPCIWriteBits(linkBase + HTHOST_ISOC_REG, 15, 8, &temp);
+	amd_pci_write_bits(linkBase + HTHOST_ISOC_REG, 15, 8, &temp);
 
 	/* For target link, note that rev F uses bits 9:8 and only with GH is bit 10
 	 * set to indicate a sublink.  For node, we are currently not supporting Extended
@@ -1174,10 +1174,10 @@ static void ht1SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNode
 
 	ASSERT(secBus <= subBus);
 	temp = secBus;
-	AmdPCIWriteBits(linkBase + HTHOST_ISOC_REG, 15, 8, &temp);
+	amd_pci_write_bits(linkBase + HTHOST_ISOC_REG, 15, 8, &temp);
 
 	temp = subBus;
-	AmdPCIWriteBits(linkBase + HTHOST_ISOC_REG, 23, 16, &temp);
+	amd_pci_write_bits(linkBase + HTHOST_ISOC_REG, 23, 16, &temp);
 
 	/* For target link, note that rev F uses bits 9:8 and only with GH is bit 10
 	 * set to indicate a sublink.  For node, we are currently not supporting Extended
@@ -1438,22 +1438,22 @@ static void gatherLinkData(sMainData *pDat, cNorthBridge *nb)
 
 			pDat->PortList[i].Pointer = linkBase;
 
-			AmdPCIReadBits(linkBase + HTHOST_LINK_CONTROL_REG, 22, 20, &temp);
+			amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 22, 20, &temp);
 			pDat->PortList[i].PrvWidthOutCap = convertBitsToWidth((u8)temp, pDat->nb);
 
-			AmdPCIReadBits(linkBase + HTHOST_LINK_CONTROL_REG, 18, 16, &temp);
+			amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 18, 16, &temp);
 			pDat->PortList[i].PrvWidthInCap = convertBitsToWidth((u8)temp, pDat->nb);
 
-			AmdPCIReadBits(linkBase + HTHOST_FREQ_REV_REG, 31, 16, &temp);
+			amd_pci_read_bits(linkBase + HTHOST_FREQ_REV_REG, 31, 16, &temp);
 			pDat->PortList[i].PrvFrequencyCap = temp & 0x7FFF	/*  Mask off bit 15, reserved value */
 				& nb->northBridgeFreqMask(pDat->PortList[i].NodeID, pDat->nb);
 			if (is_gt_rev_d()) {
-				AmdPCIReadBits(linkBase + HTHOST_FREQ_REV_REG_2, 15, 1, &temp);
+				amd_pci_read_bits(linkBase + HTHOST_FREQ_REV_REG_2, 15, 1, &temp);
 				temp &= 0x7;	/* Mask off reserved values */
 				pDat->PortList[i].PrvFrequencyCap |= (temp << 17);
 			}
 
-			AmdPCIReadBits(linkBase + HTHOST_FEATURE_CAP_REG, 9, 0, &temp);
+			amd_pci_read_bits(linkBase + HTHOST_FEATURE_CAP_REG, 9, 0, &temp);
 			pDat->PortList[i].PrvFeatureCap = (u16)temp;
 		}
 		else
@@ -1462,16 +1462,16 @@ static void gatherLinkData(sMainData *pDat, cNorthBridge *nb)
 			if (pDat->PortList[i].Link == 1)
 				linkBase += HTSLAVE_LINK01_OFFSET;
 
-			AmdPCIReadBits(linkBase + HTSLAVE_LINK_CONTROL_0_REG, 22, 20, &temp);
+			amd_pci_read_bits(linkBase + HTSLAVE_LINK_CONTROL_0_REG, 22, 20, &temp);
 			pDat->PortList[i].PrvWidthOutCap = convertBitsToWidth((u8)temp, pDat->nb);
 
-			AmdPCIReadBits(linkBase + HTSLAVE_LINK_CONTROL_0_REG, 18, 16, &temp);
+			amd_pci_read_bits(linkBase + HTSLAVE_LINK_CONTROL_0_REG, 18, 16, &temp);
 			pDat->PortList[i].PrvWidthInCap = convertBitsToWidth((u8)temp, pDat->nb);
 
-			AmdPCIReadBits(linkBase + HTSLAVE_FREQ_REV_0_REG, 31, 16, &temp);
+			amd_pci_read_bits(linkBase + HTSLAVE_FREQ_REV_0_REG, 31, 16, &temp);
 			pDat->PortList[i].PrvFrequencyCap = (u16)temp;
 
-			AmdPCIReadBits(linkBase + HTSLAVE_FEATURE_CAP_REG, 7, 0, &temp);
+			amd_pci_read_bits(linkBase + HTSLAVE_FEATURE_CAP_REG, 7, 0, &temp);
 			pDat->PortList[i].PrvFeatureCap = (u16)temp;
 
 			if (pDat->HtBlock->AMD_CB_DeviceCapOverride)
@@ -1529,7 +1529,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 			ASSERT(pDat->PortList[i].Type == PORTLIST_TYPE_CPU);
 			ASSERT(pDat->PortList[i].Link < 4);
 			temp = 1;
-			AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(pDat->PortList[i].NodeID),
+			amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(pDat->PortList[i].NodeID),
 					makePCIBusFromNode(pDat->PortList[i].NodeID),
 					makePCIDeviceFromNode(pDat->PortList[i].NodeID),
 					CPU_HTNB_FUNC_00,
@@ -1590,8 +1590,8 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 			 * Freq[4] must be set before Freq[3:0], otherwise the register writes will be ignored!
 			 */
 			if (is_gt_rev_d())
-				AmdPCIWriteBits(linkBase + HTHOST_FREQ_REV_REG_2, 0, 0, &temp2);
-			AmdPCIWriteBits(linkBase + HTHOST_FREQ_REV_REG, 11, 8, &temp);
+				amd_pci_write_bits(linkBase + HTHOST_FREQ_REV_REG_2, 0, 0, &temp2);
+			amd_pci_write_bits(linkBase + HTHOST_FREQ_REV_REG, 11, 8, &temp);
 
 			/* Enable isochronous flow control mode if supported by chipset */
 			if (is_fam15h()) {
@@ -1613,7 +1613,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 				temp = 0;
 			}
 			/* HT3 retry mode enable / disable */
-			AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(pDat->PortList[i].NodeID),
+			amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(pDat->PortList[i].NodeID),
 						makePCIBusFromNode(pDat->PortList[i].NodeID),
 						makePCIDeviceFromNode(pDat->PortList[i].NodeID),
 						CPU_HTNB_FUNC_00,
@@ -1621,7 +1621,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 						0, 0, &temp);
 
 			/* and Scrambling enable / disable */
-			AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(pDat->PortList[i].NodeID),
+			amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(pDat->PortList[i].NodeID),
 					makePCIBusFromNode(pDat->PortList[i].NodeID),
 					makePCIDeviceFromNode(pDat->PortList[i].NodeID),
 					CPU_HTNB_FUNC_00,
@@ -1635,7 +1635,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 
 			ASSERT(temp <= HT_FREQUENCY_3200M);
 			/* Write the frequency setting */
-			AmdPCIWriteBits(linkBase + HTSLAVE_FREQ_REV_0_REG, 11, 8, &temp);
+			amd_pci_write_bits(linkBase + HTSLAVE_FREQ_REV_0_REG, 11, 8, &temp);
 
 			/* Handle additional HT3 frequency requirements, if needed,
 			 * or clear them if switching down to ht1 on a warm reset.
@@ -1679,7 +1679,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 					if (IS_HT_RETRY_CAPABILITY(temp))
 					{
 						ASSERT(pDat->PortList[i].Link < 2);
-						AmdPCIWriteBits(currentPtr + HTRETRY_CONTROL_REG,
+						amd_pci_write_bits(currentPtr + HTRETRY_CONTROL_REG,
 								pDat->PortList[i].Link*16,
 								pDat->PortList[i].Link*16,
 								&bits);
@@ -1725,7 +1725,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 					if (IS_HT_GEN3_CAPABILITY(temp))
 					{
 						ASSERT(pDat->PortList[i].Link < 2);
-						AmdPCIWriteBits((currentPtr +
+						amd_pci_write_bits((currentPtr +
 							HTGEN3_LINK_TRAINING_0_REG +
 							pDat->PortList[i].Link*HTGEN3_LINK01_OFFSET),
 							3, 3, &bits);
@@ -1792,19 +1792,19 @@ static void fam0fWriteHTLinkCmdBufferAlloc(u8 node, u8 link, u8 req, u8 preq, u8
 
 	/* non-posted Request Command Buffers */
 	temp = req;
-	AmdPCIWriteBits(currentPtr, 3, 0, &temp);
+	amd_pci_write_bits(currentPtr, 3, 0, &temp);
 	/* Posted Request Command Buffers */
 	temp = preq;
-	AmdPCIWriteBits(currentPtr, 7, 4, &temp);
+	amd_pci_write_bits(currentPtr, 7, 4, &temp);
 	/* Response Command Buffers */
 	temp = rsp;
-	AmdPCIWriteBits(currentPtr, 11, 8, &temp);
+	amd_pci_write_bits(currentPtr, 11, 8, &temp);
 	/* Probe Command Buffers */
 	temp = prb;
-	AmdPCIWriteBits(currentPtr, 15, 12, &temp);
+	amd_pci_write_bits(currentPtr, 15, 12, &temp);
 	/* LockBc */
 	temp = 1;
-	AmdPCIWriteBits(currentPtr, 31, 31, &temp);
+	amd_pci_write_bits(currentPtr, 31, 31, &temp);
 }
 #endif /* HT_BUILD_NC_ONLY */
 
@@ -1838,13 +1838,13 @@ static void fam0fWriteHTLinkDatBufferAlloc(u8 node, u8 link, u8 reqD, u8 preqD, 
 
 	/* Request Data Buffers */
 	temp = reqD;
-	AmdPCIWriteBits(currentPtr, 18, 16, &temp);
+	amd_pci_write_bits(currentPtr, 18, 16, &temp);
 	/* Posted Request Data Buffers */
 	temp = preqD;
-	AmdPCIWriteBits(currentPtr, 22, 20, &temp);
+	amd_pci_write_bits(currentPtr, 22, 20, &temp);
 	/* Response Data Buffers */
 	temp = rspD;
-	AmdPCIWriteBits(currentPtr, 26, 24, &temp);
+	amd_pci_write_bits(currentPtr, 26, 24, &temp);
 }
 #endif /* HT_BUILD_NC_ONLY */
 
@@ -1869,7 +1869,7 @@ static void ht3WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 
 	/* Node 0 */
 	/* DstLnk */
-	AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(0),
+	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(0),
 			makePCIBusFromNode(0),
 			makePCIDeviceFromNode(0),
 			CPU_HTNB_FUNC_00,
@@ -1877,7 +1877,7 @@ static void ht3WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 			23, 16, &links01);
 	/* DstNode = 1, cHTPrbDistEn = 1, cHTRspDistEn = 1, cHTReqDistEn = 1 */
 	temp = 0x0107;
-	AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(0),
+	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(0),
 			makePCIBusFromNode(0),
 			makePCIDeviceFromNode(0),
 			CPU_HTNB_FUNC_00,
@@ -1886,7 +1886,7 @@ static void ht3WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 
 	/* Node 1 */
 	/* DstLnk */
-	AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(1),
+	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(1),
 			makePCIBusFromNode(1),
 			makePCIDeviceFromNode(1),
 			CPU_HTNB_FUNC_00,
@@ -1894,7 +1894,7 @@ static void ht3WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 			23, 16, &links10);
 	/* DstNode = 0, cHTPrbDistEn = 1, cHTRspDistEn = 1, cHTReqDistEn = 1 */
 	temp = 0x0007;
-	AmdPCIWriteBits(MAKE_SBDFO(makePCISegmentFromNode(1),
+	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(1),
 			makePCIBusFromNode(1),
 			makePCIDeviceFromNode(1),
 			CPU_HTNB_FUNC_00,
@@ -2048,7 +2048,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 		{
 			temp = 0x26;
 			ASSERT(i < 3);
-			AmdPCIWriteBits(currentPtr, 8*i + 5, 8*i, &temp);
+			amd_pci_write_bits(currentPtr, 8*i + 5, 8*i, &temp);
 		}
 		else
 		{
@@ -2056,7 +2056,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 			{
 				temp = 0x25;
 				ASSERT(i < 3);
-				AmdPCIWriteBits(currentPtr, 8*i + 5, 8*i, &temp);
+				amd_pci_write_bits(currentPtr, 8*i + 5, 8*i, &temp);
 			}
 		}
 	}
@@ -2082,7 +2082,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 		isErrata153 = 0;
 
-		AmdPCIReadBits (MAKE_SBDFO(makePCISegmentFromNode(0),
+		amd_pci_read_bits (MAKE_SBDFO(makePCISegmentFromNode(0),
 					makePCIBusFromNode(0),
 					makePCIDeviceFromNode(0),
 					CPU_HTNB_FUNC_00,
@@ -2097,7 +2097,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 			 */
 			for (i = 0; i < (pDat->NodesDiscovered +1); i++)
 			{
-				AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(i),
+				amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(i),
 						makePCIBusFromNode(i),
 						makePCIDeviceFromNode(i),
 						CPU_NB_FUNC_03,
@@ -2122,12 +2122,12 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 						makePCIDeviceFromNode(0),
 						CPU_ADDR_FUNC_01,
 						REG_ADDR_CONFIG_MAP0_1XE0 + (4 * i));
-			AmdPCIReadBits (currentPtr, 1, 0, &temp);
+			amd_pci_read_bits (currentPtr, 1, 0, &temp);
 			/* Make sure this config map is valid, if it is it will be enabled for read/write */
 			if (temp == 3)
 			{
 				/* It's valid, get the node (that node is an outer node) */
-				AmdPCIReadBits (currentPtr, 6, 4, &temp);
+				amd_pci_read_bits (currentPtr, 6, 4, &temp);
 				/* Is the node we're working on now? */
 				if (node == (u8)temp)
 				{
@@ -2181,7 +2181,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 				}
 				/* SRI to XBAR Buffer Count for inner nodes, zero DReq and DPReq */
 				temp = 0;
-				AmdPCIWriteBits (MAKE_SBDFO(makePCISegmentFromNode(node),
+				amd_pci_write_bits (MAKE_SBDFO(makePCISegmentFromNode(node),
 							makePCIBusFromNode(node),
 							makePCIDeviceFromNode(node),
 							CPU_NB_FUNC_03,
@@ -2196,7 +2196,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 		if (isErrata153)
 		{
 			temp = 0x25;
-			AmdPCIWriteBits (MAKE_SBDFO(makePCISegmentFromNode(node),
+			amd_pci_write_bits (MAKE_SBDFO(makePCISegmentFromNode(node),
 						makePCIBusFromNode(node),
 						makePCIDeviceFromNode(node),
 						CPU_NB_FUNC_03,
@@ -2256,18 +2256,18 @@ static void fam10BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 					/* Sublink 0: [Probe0tok] = 2 [Rsp0tok] = 2 [PReq0tok] = 2 [Req0tok] = 2 */
 					temp = 0xAA;
-					AmdPCIWriteBits(currentPtr, 7, 0, &temp);
+					amd_pci_write_bits(currentPtr, 7, 0, &temp);
 					/* Sublink 1: [Probe1tok] = 0 [Rsp1tok] = 0 [PReq1tok] = 0 [Req1tok] = 0 */
 					temp = 0;
-					AmdPCIWriteBits(currentPtr, 23, 16, &temp);
+					amd_pci_write_bits(currentPtr, 23, 16, &temp);
 					/* [FreeTok] = 3 */
 					temp = 3;
-					AmdPCIWriteBits(currentPtr, 15, 14, &temp);
+					amd_pci_write_bits(currentPtr, 15, 14, &temp);
 				}
 				else
 				{
 					/* Read the regang bit in hardware */
-					AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(pDat->PortList[i].NodeID),
+					amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(pDat->PortList[i].NodeID),
 							makePCIBusFromNode(pDat->PortList[i].NodeID),
 							makePCIDeviceFromNode(pDat->PortList[i].NodeID),
 							CPU_HTNB_FUNC_00,
@@ -2281,7 +2281,7 @@ static void fam10BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 						/* [FreeTok] = 3 */
 						temp = 3;
-						AmdPCIWriteBits(currentPtr, 15, 14, &temp);
+						amd_pci_write_bits(currentPtr, 15, 14, &temp);
 					}
 				}
 			}
@@ -2465,19 +2465,19 @@ void newNorthBridge(u8 node, cNorthBridge *nb)
 	};
 
 	/* Start with enough of the key to identify the northbridge interface */
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 			makePCIBusFromNode(node),
 			makePCIDeviceFromNode(node),
 			CPU_NB_FUNC_03,
 			REG_NB_CPUID_3XFC),
 			27, 20, &extFam);
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 			makePCIBusFromNode(node),
 			makePCIDeviceFromNode(node),
 			CPU_NB_FUNC_03,
 			REG_NB_CPUID_3XFC),
 			11, 8, &baseFam);
-	AmdPCIReadBits(MAKE_SBDFO(makePCISegmentFromNode(node),
+	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 			makePCIBusFromNode(node),
 			makePCIDeviceFromNode(node),
 			CPU_NB_FUNC_03,

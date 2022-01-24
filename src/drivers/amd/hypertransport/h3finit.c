@@ -1075,7 +1075,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 
 			currentBUID = *pSwapPtr;
 			pSwapPtr++;
-			AmdPCIWriteBits(currentPtr, 20, 16, &currentBUID);
+			amd_pci_write_bits(currentPtr, 20, 16, &currentBUID);
 		}
 
 		/* Build chain of devices */
@@ -1126,7 +1126,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 			else
 			{
 				/* Detect the device's orientation */
-				AmdPCIReadBits(currentPtr, 26, 26, &temp);
+				amd_pci_read_bits(currentPtr, 26, 26, &temp);
 				lastLink = (u8)temp;
 			}
 			pDat->PortList[pDat->TotalLinks * 2 + 1].Link = lastLink;
@@ -1202,7 +1202,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 				AmdPCIRead(currentPtr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
 
-			AmdPCIReadBits(currentPtr, 25, 21, &unitIDcnt);
+			amd_pci_read_bits(currentPtr, 25, 21, &unitIDcnt);
 			if ((unitIDcnt + currentBUID > 31) || ((secBus == 0) && (unitIDcnt + currentBUID > 24)))
 			{
 				/* An error handler for the case where we run out of BUID's on a chain */
@@ -1221,11 +1221,11 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 				STOP_HERE;
 				break;
 			}
-			AmdPCIWriteBits(currentPtr, 20, 16, &currentBUID);
+			amd_pci_write_bits(currentPtr, 20, 16, &currentBUID);
 
 
 			currentPtr += MAKE_SBDFO(0, 0, currentBUID, 0, 0);
-			AmdPCIReadBits(currentPtr, 20, 16, &temp);
+			amd_pci_read_bits(currentPtr, 20, 16, &temp);
 			if (temp != currentBUID)
 			{
 				/* An error handler for this critical error */
@@ -1244,7 +1244,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 				break;
 			}
 
-			AmdPCIReadBits(currentPtr, 26, 26, &temp);
+			amd_pci_read_bits(currentPtr, 26, 26, &temp);
 			pDat->PortList[pDat->TotalLinks * 2 + 1].Link = (u8)temp;
 			pDat->PortList[pDat->TotalLinks * 2 + 1].Pointer = currentPtr;
 
