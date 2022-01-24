@@ -1135,9 +1135,9 @@ u8 mct_PlatformSpec(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 dct);
 void InitPhyCompensation(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 dct);
-u32 mct_MR1(struct MCTStatStruc *p_mct_stat,
+u32 mct_mr1(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct, u32 mrs_chip_sel);
-u32 mct_MR2(struct MCTStatStruc *p_mct_stat,
+u32 mct_mr2(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct, u32 mrs_chip_sel);
 u8 fam15_rttwr(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 package_type);
 u8 fam15_rttnom(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 package_type);

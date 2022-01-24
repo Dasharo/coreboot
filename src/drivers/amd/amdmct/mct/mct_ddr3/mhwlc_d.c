@@ -530,7 +530,7 @@ void prepareDimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 
 		/* Retrieve normal settings of the MRS control word and clear Rtt_Nom */
 		if (is_fam15h()) {
-			tempW = mct_MR1(p_mct_stat, p_dct_stat, dct, dimm * 2 + rank) & 0xffff;
+			tempW = mct_mr1(p_mct_stat, p_dct_stat, dct, dimm * 2 + rank) & 0xffff;
 			tempW &= ~(0x0244);
 		} else {
 			/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
@@ -666,7 +666,7 @@ void prepareDimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 
 		/* Retrieve normal settings of the MRS control word and clear Rtt_WR */
 		if (is_fam15h()) {
-			tempW = mct_MR2(p_mct_stat, p_dct_stat, dct, dimm * 2 + rank) & 0xffff;
+			tempW = mct_mr2(p_mct_stat, p_dct_stat, dct, dimm * 2 + rank) & 0xffff;
 			tempW &= ~(0x0600);
 		} else {
 			/* program MrsAddress[7,6,5:3]=SRT,ASR,CWL,
@@ -758,7 +758,7 @@ void prepareDimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 
 					/* Retrieve normal settings of the MRS control word and clear Rtt_Nom */
 					if (is_fam15h()) {
-						tempW = mct_MR1(p_mct_stat, p_dct_stat, dct, currDimm * 2 + rank) & 0xffff;
+						tempW = mct_mr1(p_mct_stat, p_dct_stat, dct, currDimm * 2 + rank) & 0xffff;
 						tempW &= ~(0x0244);
 					} else {
 						/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
@@ -841,7 +841,7 @@ void prepareDimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 
 					/* Retrieve normal settings of the MRS control word and clear Rtt_WR */
 					if (is_fam15h()) {
-						tempW = mct_MR2(p_mct_stat, p_dct_stat, dct, currDimm * 2 + rank) & 0xffff;
+						tempW = mct_mr2(p_mct_stat, p_dct_stat, dct, currDimm * 2 + rank) & 0xffff;
 						tempW &= ~(0x0600);
 					} else {
 						/* program MrsAddress[7,6,5:3]=SRT,ASR,CWL,
