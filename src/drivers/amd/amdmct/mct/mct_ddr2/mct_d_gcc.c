@@ -85,7 +85,7 @@ u32 bsf(u32 x)
 
 #include <cpu/x86/cr.h>
 
-void proc_CLFLUSH(u32 addr_hi)
+void proc_clflush(u32 addr_hi)
 {
 	set_upper_fs_base(addr_hi);
 

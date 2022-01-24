@@ -135,7 +135,7 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		}
 
 		if (is_fam15h())
-			proc_MFENCE();
+			proc_mfence();
 
 		/* Wait 200 MEMCLKs. If executing pass 2, wait 32 MEMCLKs. */
 		if (is_fam15h())
@@ -311,7 +311,7 @@ u8 agesa_hw_wl_phase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 			DRAM_ADD_DCT_PHY_CONTROL_REG, WrLvOdtEn, WrLvOdtEn, 0);
 
 	if (is_fam15h())
-		proc_MFENCE();
+		proc_mfence();
 
 	/* Wait 10 MEMCLKs to allow for ODT signal settling. */
 	if (is_fam15h())
@@ -1047,7 +1047,7 @@ void procConfig(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat
 	}
 
 	if (is_fam15h())
-		proc_MFENCE();
+		proc_mfence();
 
 	/* Wait 10 MEMCLKs to allow for ODT signal settling. */
 	if (is_fam15h())

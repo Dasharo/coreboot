@@ -1933,7 +1933,7 @@ static void get_dqs_dat_struc_val_d(struct MCTStatStruc *p_mct_stat,
 void proc_iocl_flush_d(u32 addr_hi)
 {
 	set_target_wtio_d(addr_hi);
-	proc_CLFLUSH(addr_hi);
+	proc_clflush(addr_hi);
 	reset_target_wtio_d();
 }
 

@@ -73,7 +73,7 @@ u32 bsf(u32 x)
 	return ret;
 }
 
-void proc_MFENCE(void)
+void proc_mfence(void)
 {
 	__asm__ volatile (
 		"outb %%al, $0xed\n\t"  /* _EXECFENCE */
@@ -82,7 +82,7 @@ void proc_MFENCE(void)
 	);
 }
 
-void proc_CLFLUSH(u32 addr_hi)
+void proc_clflush(u32 addr_hi)
 {
 	set_upper_fs_base(addr_hi);
 
@@ -275,7 +275,7 @@ u32 stream_to_int(u8 *p)
 	return val;
 }
 
-u8 oem_node_present_d(u8 Node, u8 *ret)
+u8 oem_node_present_d(u8 node, u8 *ret)
 {
 	*ret = 0;
 	return 0;

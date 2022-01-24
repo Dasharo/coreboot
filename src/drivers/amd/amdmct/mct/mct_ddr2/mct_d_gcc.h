@@ -19,7 +19,7 @@ u32 bsf(u32 x);
 #define _EXECFENCE asm volatile ("outb %al, $0xed")
 
 u32 set_upper_fs_base(u32 addr_hi);
-void proc_CLFLUSH(u32 addr_hi);
+void proc_clflush(u32 addr_hi);
 void write_ln_test_pattern(u32 addr_lo, u8 *buf_a, u32 line_num);
 u32 read32_fs(u32 addr_lo);
 void flush_dqs_test_pattern_l9(u32 addr_lo);
