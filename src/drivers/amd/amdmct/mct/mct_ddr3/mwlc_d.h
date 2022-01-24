@@ -116,7 +116,7 @@ typedef u32 SBDFO;
 
 typedef struct _sMCTStruct
 {
-	void (*AgesaDelay)(u32 delayval);	/* IBV defined Delay Function */
+	void (*agesa_delay)(u32 delayval);	/* IBV defined Delay Function */
 } __attribute__((packed, aligned(4))) sMCTStruct;
 
 /* DCT 0 and DCT 1 Data structure */

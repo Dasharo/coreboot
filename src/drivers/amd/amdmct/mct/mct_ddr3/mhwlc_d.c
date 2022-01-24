@@ -89,7 +89,7 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		if (is_fam15h())
 			precise_memclk_delay_fam15(p_mct_stat, p_dct_stat, dct, 40);
 		else
-			pMCTData->AgesaDelay(40);
+			pMCTData->agesa_delay(40);
 
 		/* 4. Configure the processor's DDR phy for write levelization training: */
 		procConfig(p_mct_stat, p_dct_stat, dct, dimm, pass, nibble);
@@ -141,7 +141,7 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		if (is_fam15h())
 			precise_memclk_delay_fam15(p_mct_stat, p_dct_stat, dct, 200);
 		else
-			pMCTData->AgesaDelay(140);
+			pMCTData->agesa_delay(140);
 
 		/* Program F2x[1, 0]9C_x08[WrtLevelTrEn]=0. */
 		set_DCT_ADDR_Bits(pDCTData, dct, pDCTData->NodeId, FUN_DCT,
@@ -317,7 +317,7 @@ u8 agesa_hw_wl_phase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 	if (is_fam15h())
 		precise_memclk_delay_fam15(p_mct_stat, p_dct_stat, dct, 10);
 	else
-		pMCTData->AgesaDelay(10);
+		pMCTData->agesa_delay(10);
 
 	/* 7. Program the target DIMM back to normal operation by configuring
 	 * the following (See section 2.8.5.4.1.1
@@ -1053,7 +1053,7 @@ void procConfig(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat
 	if (is_fam15h())
 		precise_memclk_delay_fam15(p_mct_stat, p_dct_stat, dct, 10);
 	else
-		pMCTData->AgesaDelay(10);
+		pMCTData->agesa_delay(10);
 
 	/* Program write levelling seed values */
 	if (pass == 1)
