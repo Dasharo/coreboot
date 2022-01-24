@@ -31,15 +31,15 @@ u32 setup_dqs_pattern_1_pass_b(u8 pass)
 	return (u32) test_pattern_0_d;
 }
 
-static u16 mct_average_rcvr_en_dly_1_pass(struct DCTStatStruc *p_dct_stat, u8 Channel, u8 Receiver,
-					u8 Pass)
+static u16 mct_average_rcvr_en_dly_1_pass(struct DCTStatStruc *p_dct_stat, u8 channel, u8 receiver,
+					u8 pass)
 {
-	u16 i, MaxValue;
+	u16 i, max_value;
 	u16 *p;
 	u16 val;
 
-	MaxValue = 0;
-	p = p_dct_stat->ch_d_b_rcvr_dly[Channel][Receiver >> 1];
+	max_value = 0;
+	p = p_dct_stat->ch_d_b_rcvr_dly[channel][receiver >> 1];
 
 	for (i = 0; i < 8; i++) {
 		/* get left value from DCTStatStruc.CHA_D0_B0_RCVRDLY*/
@@ -47,14 +47,14 @@ static u16 mct_average_rcvr_en_dly_1_pass(struct DCTStatStruc *p_dct_stat, u8 Ch
 		/* get right value from DCTStatStruc.CHA_D0_B0_RCVRDLY_1*/
 		val += PASS_1_MEM_CLK_DLY;
 		/* write back the value to stack */
-		if (val > MaxValue)
-			MaxValue = val;
+		if (val > max_value)
+			max_value = val;
 
 		p[i] = val;
 	}
-	/* p_dct_stat->DimmTrainFail &= ~(1<<Receiver+Channel); */
+	/* p_dct_stat->DimmTrainFail &= ~(1<<receiver+channel); */
 
-	return MaxValue;
+	return max_value;
 }
 
 u8 mct_save_rcv_en_dly_d_1_pass(struct DCTStatStruc *p_dct_stat, u8 pass)
@@ -67,9 +67,9 @@ u8 mct_save_rcv_en_dly_d_1_pass(struct DCTStatStruc *p_dct_stat, u8 pass)
 }
 
 u16 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
-				u16 RcvrEnDly, u16 RcvrEnDlyLimit,
-				u8 Channel, u8 Receiver, u8 Pass)
+				u16 rcvr_en_dly, u16 rcvr_en_dly_limit,
+				u8 channel, u8 receiver, u8 pass)
 
 {
-	return mct_average_rcvr_en_dly_1_pass(p_dct_stat, Channel, Receiver, Pass);
+	return mct_average_rcvr_en_dly_1_pass(p_dct_stat, channel, receiver, pass);
 }
