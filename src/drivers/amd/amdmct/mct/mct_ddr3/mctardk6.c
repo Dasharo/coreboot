@@ -3,7 +3,7 @@
 /* The socket type Fr2, G (1207) are not tested.
  */
 
-static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 speed, u8 maa_load,
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 speed, u8 maa_load,
 				u8 data_a_load, u32 *addr_tmg_ctl, u32 *odc_ctl,
 				u8 *cmd_mode);
 
@@ -11,13 +11,13 @@ static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 speed, u8 maa_load,
 void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 			 struct DCTStatStruc *p_dct_stat, u32 dct)
 {
-	Get_ChannelPS_Cfg0_D(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
+	get_channel_ps_cfg_0_d(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
 				p_dct_stat->ma_load[dct], p_dct_stat->data_load[dct],
 				&(p_dct_stat->ch_addr_tmg[dct]), &(p_dct_stat->ch_odc_ctl[dct]),
 				&p_dct_stat->_2t_mode);
 
 	if (p_dct_stat->ganged_mode == 1 && dct == 0)
-		Get_ChannelPS_Cfg0_D(p_dct_stat->ma_dimms[1], p_dct_stat->speed,
+		get_channel_ps_cfg_0_d(p_dct_stat->ma_dimms[1], p_dct_stat->speed,
 				     p_dct_stat->ma_load[1], p_dct_stat->data_load[1],
 				     &(p_dct_stat->ch_addr_tmg[1]), &(p_dct_stat->ch_odc_ctl[1]),
 				     &p_dct_stat->_2t_mode);
@@ -36,7 +36,7 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
  *    : odc_ctl    - Output Driver Compensation Control Register Value
  *    : cmd_mode    - CMD mode
  */
-static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 speed, u8 maa_load,
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 speed, u8 maa_load,
 				u8 data_a_load, u32 *addr_tmg_ctl, u32 *odc_ctl,
 				u8 *cmd_mode)
 {

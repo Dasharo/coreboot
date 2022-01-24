@@ -7,7 +7,7 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 Speed, u8 MAAload,
 				u32 *ODC_CTL,
 				u8 *CMDmode);
 
@@ -19,7 +19,7 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 		p_dct_stat->ch_odc_ctl[dct] = fam15h_output_driver_compensation_code(p_dct_stat, dct);
 		p_dct_stat->_2t_mode = fam15h_slow_access_mode(p_dct_stat, dct);
 	} else {
-		Get_ChannelPS_Cfg0_D(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
+		get_channel_ps_cfg_0_d(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
 					p_dct_stat->ma_load[dct],
 					&(p_dct_stat->ch_odc_ctl[dct]),
 					&p_dct_stat->_2t_mode);
@@ -46,7 +46,7 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
  *    : ODC_CTL    - Output Driver Compensation Control Register Value
  *    : CMDmode    - CMD mode
  */
-static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 Speed, u8 MAAload,
 				u32 *ODC_CTL,
 				u8 *CMDmode)
 {

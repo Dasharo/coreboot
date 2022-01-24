@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <arch/cpu.h>
 
-void _WRMSR(u32 addr, u32 lo, u32 hi)
+void _wrmsr(u32 addr, u32 lo, u32 hi)
 {
 	__asm__ volatile (
 		"wrmsr"
@@ -13,7 +13,7 @@ void _WRMSR(u32 addr, u32 lo, u32 hi)
 		);
 }
 
-void _RDMSR(u32 addr, u32 *lo, u32 *hi)
+void _rdmsr(u32 addr, u32 *lo, u32 *hi)
 {
 	__asm__ volatile (
 		"rdmsr"
@@ -22,7 +22,7 @@ void _RDMSR(u32 addr, u32 *lo, u32 *hi)
 		);
 }
 
-void _RDTSC(u32 *lo, u32 *hi)
+void _rdtsc(u32 *lo, u32 *hi)
 {
 	__asm__ volatile (
 		 "rdtsc"
@@ -30,7 +30,7 @@ void _RDTSC(u32 *lo, u32 *hi)
 		);
 }
 
-void _cpu_id(u32 addr, u32 *val)
+void _cpuid(u32 addr, u32 *val)
 {
 	__asm__ volatile(
 		 "cpuid"
@@ -96,7 +96,7 @@ void proc_CLFLUSH(u32 addr_hi)
 }
 
 
-void WriteLNTestPattern(u32 addr_lo, u8 *buf_a, u32 line_num)
+void write_ln_test_pattern(u32 addr_lo, u8 *buf_a, u32 line_num)
 {
 	u32 step = 16;
 	u32 count = line_num * 4;
@@ -147,7 +147,7 @@ u64 read64_fs(u32 addr_lo)
 	return value;
 }
 
-void FlushDQSTestPattern_L9(u32 addr_lo)
+void flush_dqs_test_pattern_l9(u32 addr_lo)
 {
 	__asm__ volatile (
 		"outb %%al, $0xed\n\t"	/* _EXECFENCE */
@@ -169,7 +169,7 @@ void FlushDQSTestPattern_L9(u32 addr_lo)
 
 }
 
-__attribute__((noinline)) void FlushDQSTestPattern_L18(u32 addr_lo)
+__attribute__((noinline)) void flush_dqs_test_pattern_l18(u32 addr_lo)
 {
 	__asm__ volatile (
 		"outb %%al, $0xed\n\t"	/* _EXECFENCE */
@@ -202,7 +202,7 @@ __attribute__((noinline)) void FlushDQSTestPattern_L18(u32 addr_lo)
 	);
 }
 
-void ReadMaxRdLat1CLTestPattern_D(u32 addr)
+void read_max_rd_lat_1_cl_test_pattern_d(u32 addr)
 {
 	set_upper_fs_base(addr);
 
@@ -217,7 +217,7 @@ void ReadMaxRdLat1CLTestPattern_D(u32 addr)
 
 }
 
-void WriteMaxRdLat1CLTestPattern_D(u32 buf, u32 addr)
+void write_max_rd_lat_1_cl_test_pattern_d(u32 buf, u32 addr)
 {
 	u32 addr_phys = addr << 8;
 	u32 step = 16;
@@ -239,7 +239,7 @@ void WriteMaxRdLat1CLTestPattern_D(u32 buf, u32 addr)
 	);
 }
 
-void FlushMaxRdLatTestPattern_D(u32 addr)
+void flush_max_rd_lat_test_pattern_d(u32 addr)
 {
 	/*  Flush a pattern of 72 bit times (per DQ) from cache.
 	 * This procedure is used to ensure cache miss on the next read training.
@@ -275,7 +275,7 @@ u32 stream_to_int(u8 *p)
 	return val;
 }
 
-u8 oemNodePresent_D(u8 Node, u8 *ret)
+u8 oem_node_present_d(u8 Node, u8 *ret)
 {
 	*ret = 0;
 	return 0;

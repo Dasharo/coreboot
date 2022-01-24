@@ -771,7 +771,7 @@ u8 node_present_d(u8 node)
 	val = get_nb32(dev, 0);
 	dword = mct_node_present_d();	/* FIXME: BOZO -11001022h rev for F */
 	if (val == dword) {		/* AMD Hammer Family CPU HT Configuration */
-		if (oemNodePresent_D(node, &ret))
+		if (oem_node_present_d(node, &ret))
 			goto finish;
 		/* node ID register */
 		val = get_nb32(dev, 0x60);
@@ -3239,12 +3239,12 @@ static void mct_init(struct MCTStatStruc *p_mct_stat,
 
 	/* enable extend PCI configuration access */
 	addr = NB_CFG_MSR;
-	_RDMSR(addr, &lo, &hi);
+	_rdmsr(addr, &lo, &hi);
 	if (hi & (1 << (46-32))) {
 		p_dct_stat->status |= 1 << SB_EXT_CONFIG;
 	} else {
 		hi |= 1 << (46-32);
-		_WRMSR(addr, lo, hi);
+		_wrmsr(addr, lo, hi);
 	}
 }
 
@@ -3539,7 +3539,7 @@ static u8 check_nb_cof_early_arb_en(struct MCTStatStruc *p_mct_stat,
 	 */
 
 	/* 3*(Fn2xD4[NBFid]+4)/(2^nb_did)/(3+Fn2x94[MemClkFreq]) */
-	_RDMSR(MSR_COFVID_STS, &lo, &hi);
+	_rdmsr(MSR_COFVID_STS, &lo, &hi);
 	if (lo & (1 << 22))
 		nb_did |= 1;
 
@@ -3670,9 +3670,9 @@ void mct_set_cl_to_nb_d(struct MCTStatStruc *p_mct_stat,
 	// p_dct_stat->logical_cpuid;
 
 	msr = BU_CFG2_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	lo |= 1 << CL_LINES_TO_NB_DIS;
-	_WRMSR(msr, lo, hi);
+	_wrmsr(msr, lo, hi);
 }
 
 
@@ -3687,10 +3687,10 @@ void mct_clr_cl_to_nb_d(struct MCTStatStruc *p_mct_stat,
 	// p_dct_stat->logical_cpuid;
 
 	msr = BU_CFG2_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	if (!p_dct_stat->cl_to_nb_tag)
 		lo &= ~(1 << CL_LINES_TO_NB_DIS);
-	_WRMSR(msr, lo, hi);
+	_wrmsr(msr, lo, hi);
 
 }
 
@@ -3705,9 +3705,9 @@ void mct_set_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat,
 	// p_dct_stat->logical_cpuid;
 
 	msr = BU_CFG_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	hi |= (1 << WB_ENH_WSB_DIS_D);
-	_WRMSR(msr, lo, hi);
+	_wrmsr(msr, lo, hi);
 }
 
 
@@ -3721,9 +3721,9 @@ void mct_clr_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat,
 	// p_dct_stat->logical_cpuid;
 
 	msr = BU_CFG_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	hi &= ~(1 << WB_ENH_WSB_DIS_D);
-	_WRMSR(msr, lo, hi);
+	_wrmsr(msr, lo, hi);
 }
 
 
@@ -3829,14 +3829,14 @@ static void mct_reset_dll_d(struct MCTStatStruc *p_mct_stat,
 	}
 
 	addr = HWCR_MSR;
-	_RDMSR(addr, &lo, &hi);
+	_rdmsr(addr, &lo, &hi);
 	if (lo & (1 << 17)) {		/* save the old value */
 		wrap32dis = 1;
 	}
 	lo |= (1 << 17);			/* HWCR.wrap32dis */
 	lo &= ~(1 << 15);			/* SSEDIS */
 	/* Setting wrap32dis allows 64-bit memory references in 32bit mode */
-	_WRMSR(addr, lo, hi);
+	_wrmsr(addr, lo, hi);
 
 
 	p_dct_stat->channel = dct;
@@ -3861,9 +3861,9 @@ static void mct_reset_dll_d(struct MCTStatStruc *p_mct_stat,
 	}
 	if (!wrap32dis) {
 		addr = HWCR_MSR;
-		_RDMSR(addr, &lo, &hi);
+		_rdmsr(addr, &lo, &hi);
 		lo &= ~(1 << 17);		/* restore HWCR.wrap32dis */
-		_WRMSR(addr, lo, hi);
+		_wrmsr(addr, lo, hi);
 	}
 }
 

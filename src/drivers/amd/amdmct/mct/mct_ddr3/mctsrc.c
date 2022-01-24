@@ -1228,14 +1228,14 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	write_cr4(cr4);
 
 	msr = HWCR_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	/* FIXME: Why use SSEDIS */
 	if (lo & (1 << 17)) {	/* save the old value */
 		_Wrap32Dis = 1;
 	}
 	lo |= (1 << 17);	/* HWCR.wrap32dis */
 	lo &= ~(1 << 15);	/* SSEDIS */
-	_WRMSR(msr, lo, hi);	/* Setting wrap32dis allows 64-bit memory references in real mode */
+	_wrmsr(msr, lo, hi);	/* Setting wrap32dis allows 64-bit memory references in real mode */
 
 	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
@@ -1472,9 +1472,9 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 
 	if (!_Wrap32Dis) {
 		msr = HWCR_MSR;
-		_RDMSR(msr, &lo, &hi);
+		_rdmsr(msr, &lo, &hi);
 		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
-		_WRMSR(msr, lo, hi);
+		_wrmsr(msr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
@@ -1587,14 +1587,14 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	write_cr4(cr4);
 
 	msr = HWCR_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	/* FIXME: Why use SSEDIS */
 	if (lo & (1 << 17)) {	/* save the old value */
 		_Wrap32Dis = 1;
 	}
 	lo |= (1 << 17);	/* HWCR.wrap32dis */
 	lo &= ~(1 << 15);	/* SSEDIS */
-	_WRMSR(msr, lo, hi);	/* Setting wrap32dis allows 64-bit memory references in real mode */
+	_wrmsr(msr, lo, hi);	/* Setting wrap32dis allows 64-bit memory references in real mode */
 
 	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
@@ -1692,9 +1692,9 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 
 	if (!_Wrap32Dis) {
 		msr = HWCR_MSR;
-		_RDMSR(msr, &lo, &hi);
+		_rdmsr(msr, &lo, &hi);
 		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
-		_WRMSR(msr, lo, hi);
+		_wrmsr(msr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
@@ -2399,9 +2399,9 @@ void mct_wait(u32 cycles)
 	cycles <<= 3;		/* x8 (number of 1.25ns ticks) */
 
 	msr = TSC_MSR;			/* TSC */
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	saved = lo;
 	do {
-		_RDMSR(msr, &lo, &hi);
+		_rdmsr(msr, &lo, &hi);
 	} while (lo - saved < cycles);
 }

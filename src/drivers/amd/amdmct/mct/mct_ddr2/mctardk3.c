@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
-				u8 DATAAload, u32 *addr_tmg_ctl, u32 *ODC_CTL);
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 speed, u8 maa_load,
+				u8 data_a_load, u32 *addr_tmg_ctl, u32 *odc_ctl);
 
 
 void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
@@ -13,9 +13,9 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 	u16 val, valx;
 
 	print_tx("dct: ", dct);
-	print_tx("Speed: ", p_dct_stat->speed);
+	print_tx("speed: ", p_dct_stat->speed);
 
-	Get_ChannelPS_Cfg0_D(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
+	get_channel_ps_cfg_0_d(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
 				p_dct_stat->ma_load[dct], p_dct_stat->data_load[dct],
 				&(p_dct_stat->ch_addr_tmg[dct]), &(p_dct_stat->ch_odc_ctl[dct]));
 
@@ -102,7 +102,7 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
  * Vendor is responsible for correct settings.
  * M2/Unbuffered 4 Slot - AMD Design Guideline.
  *===============================================================================
- * #1, BYTE, Speed (DCTStatstruc.speed) (Secondary Key)
+ * #1, BYTE, speed (DCTStatstruc.speed) (Secondary Key)
  * #2, BYTE, number of Address bus loads on the Channel. (Tershery Key)
  *           These must be listed in ascending order.
  *           FFh (0xFE) has special meaning of 'any', and must be listed first for each speed grade.
@@ -110,7 +110,7 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
  * #4, DWORD, Output Driver Compensation Control Register Value
  * #5, BYTE, Number of DIMMs (Primary Key)
  */
-static const u8 Table_ATC_ODC_8D_D[] = {
+static const u8 table_atc_odc_8d_d[] = {
 	0xFE, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x22, 0x12, 0x11, 0x00, 1,
 	0xFE, 0xFF, 0x00, 0x00, 0x37, 0x00, 0x22, 0x12, 0x11, 0x00, 2,
 	   1, 0xFF, 0x00, 0x00, 0x2F, 0x00, 0x22, 0x12, 0x11, 0x00, 3,
@@ -124,7 +124,7 @@ static const u8 Table_ATC_ODC_8D_D[] = {
 	0xFF
 };
 
-static const u8 Table_ATC_ODC_4D_D[] = {
+static const u8 table_atc_odc_4d_d[] = {
 	0xFE, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x22, 0x12, 0x11, 0x00, 1,
 	0xFE, 0xFF, 0x00, 0x00, 0x37, 0x00, 0x22, 0x12, 0x11, 0x00, 2,
 	0xFE, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x22, 0x12, 0x11, 0x00, 3,
@@ -133,30 +133,30 @@ static const u8 Table_ATC_ODC_4D_D[] = {
 };
 
 
-static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
-				u8 DATAAload, u32 *addr_tmg_ctl, u32 *ODC_CTL)
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 speed, u8 maa_load,
+				u8 data_a_load, u32 *addr_tmg_ctl, u32 *odc_ctl)
 {
 	const u8 *p;
 
 	*addr_tmg_ctl = 0;
-	*ODC_CTL = 0;
+	*odc_ctl = 0;
 
 	if (mct_get_nv_bits(NV_MAX_DIMMS) == 8) {
 		/* 8 DIMM Table */
-		p = Table_ATC_ODC_8D_D;
+		p = table_atc_odc_8d_d;
 		//FIXME Add Ax support
 	} else {
 		/* 4 DIMM Table*/
-		p = Table_ATC_ODC_4D_D;
+		p = table_atc_odc_4d_d;
 		//FIXME Add Ax support
 	}
 
 	while (*p != 0xFF) {
 		if ((maa_dimms == *(p + 10)) || (*(p + 10) == 0xFE)) {
-			if ((*p == Speed) || (*p == 0xFE)) {
-				if (MAAload <= *(p + 1)) {
+			if ((*p == speed) || (*p == 0xFE)) {
+				if (maa_load <= *(p + 1)) {
 					*addr_tmg_ctl = stream_to_int((u8*)(p + 2));
-					*ODC_CTL = stream_to_int((u8*)(p + 6));
+					*odc_ctl = stream_to_int((u8*)(p + 6));
 					break;
 				}
 			}

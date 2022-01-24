@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 Speed, u8 MAAload,
 				u8 DATAAload, u32 *addr_tmg_ctl, u32 *ODC_CTL,
 				u8 *CMDmode);
 
@@ -14,7 +14,7 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 	print_tx("dct: ", dct);
 	print_tx("Speed: ", p_dct_stat->speed);
 
-	Get_ChannelPS_Cfg0_D(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
+	get_channel_ps_cfg_0_d(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
 				p_dct_stat->ma_load[dct], p_dct_stat->data_load[dct],
 				&(p_dct_stat->ch_addr_tmg[dct]), &(p_dct_stat->ch_odc_ctl[dct]),
 				&p_dct_stat->_2t_mode);
@@ -65,7 +65,7 @@ static const u8 Table_ATC_ODC_D_Bx[] = {
 };
 
 
-static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 Speed, u8 MAAload,
 				u8 DATAAload, u32 *addr_tmg_ctl, u32 *ODC_CTL,
 				u8 *CMDmode)
 {

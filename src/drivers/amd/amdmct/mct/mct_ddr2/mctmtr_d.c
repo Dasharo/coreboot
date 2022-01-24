@@ -57,9 +57,9 @@ void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
 	addr = MTRR_FIX_64K_00000;
 	lo = 0x1E1E1E1E;
 	hi = lo;
-	_WRMSR(addr, lo, hi);		/* 0 - 512K = WB Mem */
+	_wrmsr(addr, lo, hi);		/* 0 - 512K = WB Mem */
 	addr = MTRR_FIX_16K_80000;
-	_WRMSR(addr, lo, hi);		/* 512K - 640K = WB Mem */
+	_wrmsr(addr, lo, hi);		/* 512K - 640K = WB Mem */
 
 	/*======================================================================
 	  Set variable MTRR values
@@ -88,7 +88,7 @@ void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
 	addr = TOP_MEM;
 	lo = Bottom32bIO << 8;
 	hi = Bottom32bIO >> 24;
-	_WRMSR(addr, lo, hi);
+	_wrmsr(addr, lo, hi);
 	print_tx("\t CPUMemTyping: Bottom32bIO:", Bottom32bIO);
 	print_tx("\t CPUMemTyping: Bottom40bIO:", Bottom40bIO);
 	if (Bottom40bIO) {
@@ -97,10 +97,10 @@ void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
 		if (mctSetNodeBoundary_D())
 			lo &= 0xC0000000;
 		addr += 3;		/* TOM2 */
-		_WRMSR(addr, lo, hi);
+		_wrmsr(addr, lo, hi);
 	}
 	addr = SYSCFG_MSR;		/* SYS_CFG */
-	_RDMSR(addr, &lo, &hi);
+	_rdmsr(addr, &lo, &hi);
 	if (Bottom40bIO) {
 		lo |= SYSCFG_MSR_TOM2En;	/* MtrrTom2En = 1 */
 		lo |= SYSCFG_MSR_TOM2WB;	/* Tom2ForceMemTypeWB */
@@ -108,7 +108,7 @@ void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
 		lo &= ~SYSCFG_MSR_TOM2En;	/* MtrrTom2En = 0 */
 		lo &= ~SYSCFG_MSR_TOM2WB;	/* Tom2ForceMemTypeWB */
 	}
-	_WRMSR(addr, lo, hi);
+	_wrmsr(addr, lo, hi);
 }
 
 
@@ -170,13 +170,13 @@ static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType)
 
 		/* now program the MTRR */
 		val |= MtrrType;		/* set cache type (UC or WB)*/
-		_WRMSR(addr, val, valx);	/* prog. MTRR with current region Base*/
+		_wrmsr(addr, val, valx);	/* prog. MTRR with current region Base*/
 		val = ((~(curSize - 1))+1) - 1;	/* Size-1*/ /*Mask = 2comp(Size-1)-1*/
 		valx = (val >> 24) | (0xff00);	/* GH have 48 bits addr */
 		val <<= 8;
 		val |= (1 << 11);			/* set MTRR valid*/
 		addr++;
-		_WRMSR(addr, val, valx);	/* prog. MTRR with current region Mask*/
+		_wrmsr(addr, val, valx);	/* prog. MTRR with current region Mask*/
 		val = curLimit;
 		curBase = val;			/* next Base = current Limit (loop exit)*/
 		addr++;				/* next MTRR pair addr */
@@ -226,7 +226,7 @@ void uma_mem_typing_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		lo = 0;
 		hi = lo;
 		while (addr < MTRR_PHYS_BASE(6)) {
-			_WRMSR(addr, lo, hi);		/* prog. MTRR with current region Mask */
+			_wrmsr(addr, lo, hi);		/* prog. MTRR with current region Mask */
 			addr++;						/* next MTRR pair addr */
 		}
 

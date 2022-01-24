@@ -122,7 +122,7 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 	write_cr4(cr4);
 
 	addr = HWCR_MSR;
-	_RDMSR(addr, &lo, &hi);
+	_rdmsr(addr, &lo, &hi);
 	if (lo & (1 << 17)) {		/* save the old value */
 		_Wrap32Dis = 1;
 	}
@@ -130,7 +130,7 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 	lo &= ~(1 << 15);		/* SSEDIS */
 	/* Setting wrap32dis allows 64-bit memory references in
 	   real mode */
-	_WRMSR(addr, lo, hi);
+	_wrmsr(addr, lo, hi);
 
 	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
@@ -147,18 +147,18 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 		if (!valid)	/* Address not supported on current CS */
 			continue;
 		/* rank 1 of DIMM, testpattern 0 */
-		WriteMaxRdLat1CLTestPattern_D(pattern_buf, TestAddr0);
+		write_max_rd_lat_1_cl_test_pattern_d(pattern_buf, TestAddr0);
 
 		MaxRdLatDly = mct_GetStartMaxRdLat_D(p_mct_stat, p_dct_stat, Channel, RcvrEnDly, &Margin);
 		print_debug_dqs("\tMaxRdLatencyTrain52:  MaxRdLatDly start ", MaxRdLatDly, 2);
 		print_debug_dqs("\tMaxRdLatencyTrain52:  MaxRdLatDly Margin ", Margin, 2);
 		while (MaxRdLatDly < MAX_RD_LAT) {	/* sweep Delay value here */
 			mct_setMaxRdLatTrnVal_D(p_dct_stat, Channel, MaxRdLatDly);
-			ReadMaxRdLat1CLTestPattern_D(TestAddr0);
+			read_max_rd_lat_1_cl_test_pattern_d(TestAddr0);
 			if (CompareMaxRdLatTestPattern_D(pattern_buf, TestAddr0) == DQS_PASS)
 				break;
 			set_target_wtio_d(TestAddr0);
-			FlushMaxRdLatTestPattern_D(TestAddr0);
+			flush_max_rd_lat_test_pattern_d(TestAddr0);
 			reset_target_wtio_d();
 			MaxRdLatDly++;
 		}
@@ -172,9 +172,9 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
-		_RDMSR(addr, &lo, &hi);
+		_rdmsr(addr, &lo, &hi);
 		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
-		_WRMSR(addr, lo, hi);
+		_wrmsr(addr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();

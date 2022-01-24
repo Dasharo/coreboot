@@ -3550,10 +3550,10 @@ retry_dqs_training_and_levelization:
 	mct_hook_before_any_training(p_mct_stat, p_dct_stat_a);
 	if (!is_fam15h()) {
 		/* TODO: should be in mct_hook_before_any_training */
-		_WRMSR(MTRR_FIX_4K_E0000, 0x04040404, 0x04040404);
-		_WRMSR(MTRR_FIX_4K_E8000, 0x04040404, 0x04040404);
-		_WRMSR(MTRR_FIX_4K_F0000, 0x04040404, 0x04040404);
-		_WRMSR(MTRR_FIX_4K_F8000, 0x04040404, 0x04040404);
+		_wrmsr(MTRR_FIX_4K_E0000, 0x04040404, 0x04040404);
+		_wrmsr(MTRR_FIX_4K_E8000, 0x04040404, 0x04040404);
+		_wrmsr(MTRR_FIX_4K_F0000, 0x04040404, 0x04040404);
+		_wrmsr(MTRR_FIX_4K_F8000, 0x04040404, 0x04040404);
 	}
 
 	if (nv_DQSTrainCTL) {
@@ -4032,7 +4032,7 @@ u8 node_present_d(u8 Node)
 	val = get_nb32(dev, 0);
 	dword = mct_node_present_d();	/* FIXME: BOZO -11001022h rev for F */
 	if (val == dword) {		/* AMD Hammer Family CPU HT Configuration */
-		if (oemNodePresent_D(Node, &ret))
+		if (oem_node_present_d(Node, &ret))
 			goto finish;
 		/* Node ID register */
 		val = get_nb32(dev, 0x60);
@@ -6813,12 +6813,12 @@ static void mct_init(struct MCTStatStruc *p_mct_stat,
 
 	/* enable extend PCI configuration access */
 	addr = NB_CFG_MSR;
-	_RDMSR(addr, &lo, &hi);
+	_rdmsr(addr, &lo, &hi);
 	if (hi & (1 << (46-32))) {
 		p_dct_stat->status |= 1 << SB_EXT_CONFIG;
 	} else {
 		hi |= 1 << (46-32);
-		_WRMSR(addr, lo, hi);
+		_wrmsr(addr, lo, hi);
 	}
 }
 
@@ -7310,7 +7310,7 @@ static u8 check_nb_cof_early_arb_en(struct MCTStatStruc *p_mct_stat,
 	 */
 
 	/* 3*(Fn2xD4[NBFid]+4)/(2^NbDid)/(3+Fn2x94[MemClkFreq]) */
-	_RDMSR(MSR_COFVID_STS, &lo, &hi);
+	_rdmsr(MSR_COFVID_STS, &lo, &hi);
 	if (lo & (1 << 22))
 		NbDid |= 1;
 
@@ -7749,9 +7749,9 @@ void mct_set_cl_to_nb_d(struct MCTStatStruc *p_mct_stat,
 	/* p_dct_stat->logical_cpuid; */
 
 	msr = BU_CFG2_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	lo |= 1 << CL_LINES_TO_NB_DIS;
-	_WRMSR(msr, lo, hi);
+	_wrmsr(msr, lo, hi);
 }
 
 void mct_clr_cl_to_nb_d(struct MCTStatStruc *p_mct_stat,
@@ -7765,10 +7765,10 @@ void mct_clr_cl_to_nb_d(struct MCTStatStruc *p_mct_stat,
 	/* p_dct_stat->logical_cpuid; */
 
 	msr = BU_CFG2_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	if (!p_dct_stat->cl_to_nb_tag)
 		lo &= ~(1 << CL_LINES_TO_NB_DIS);
-	_WRMSR(msr, lo, hi);
+	_wrmsr(msr, lo, hi);
 
 }
 
@@ -7782,9 +7782,9 @@ void mct_set_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat,
 	/* p_dct_stat->logical_cpuid; */
 
 	msr = BU_CFG_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	hi |= (1 << WB_ENH_WSB_DIS_D);
-	_WRMSR(msr, lo, hi);
+	_wrmsr(msr, lo, hi);
 }
 
 void mct_clr_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat,
@@ -7797,9 +7797,9 @@ void mct_clr_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat,
 	/* p_dct_stat->logical_cpuid; */
 
 	msr = BU_CFG_MSR;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	hi &= ~(1 << WB_ENH_WSB_DIS_D);
-	_WRMSR(msr, lo, hi);
+	_wrmsr(msr, lo, hi);
 }
 
 void ProgDramMRSReg_D(struct MCTStatStruc *p_mct_stat,
@@ -8027,13 +8027,13 @@ static void mct_reset_dll_d(struct MCTStatStruc *p_mct_stat,
 	}
 
 	addr = HWCR_MSR;
-	_RDMSR(addr, &lo, &hi);
+	_rdmsr(addr, &lo, &hi);
 	if (lo & (1 << 17)) {		/* save the old value */
 		wrap32dis = 1;
 	}
 	lo |= (1 << 17);		/* HWCR.wrap32dis */
 	/* Setting wrap32dis allows 64-bit memory references in 32bit mode */
-	_WRMSR(addr, lo, hi);
+	_wrmsr(addr, lo, hi);
 
 	p_dct_stat->channel = dct;
 	Receiver = mct_init_receiver_d(p_dct_stat, dct);
@@ -8058,9 +8058,9 @@ static void mct_reset_dll_d(struct MCTStatStruc *p_mct_stat,
 
 	if (!wrap32dis) {
 		addr = HWCR_MSR;
-		_RDMSR(addr, &lo, &hi);
+		_rdmsr(addr, &lo, &hi);
 		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
-		_WRMSR(addr, lo, hi);
+		_wrmsr(addr, lo, hi);
 	}
 }
 

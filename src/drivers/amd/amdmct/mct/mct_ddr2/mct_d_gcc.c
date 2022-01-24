@@ -2,7 +2,7 @@
 
 #include "mct_d_gcc.h"
 
-inline void _WRMSR(u32 addr, u32 lo, u32 hi)
+inline void _wrmsr(u32 addr, u32 lo, u32 hi)
 {
 	__asm__ volatile (
 		"wrmsr"
@@ -12,7 +12,7 @@ inline void _WRMSR(u32 addr, u32 lo, u32 hi)
 }
 
 
-inline void _RDMSR(u32 addr, u32 *lo, u32 *hi)
+inline void _rdmsr(u32 addr, u32 *lo, u32 *hi)
 {
 	__asm__ volatile (
 		"rdmsr"
@@ -22,7 +22,7 @@ inline void _RDMSR(u32 addr, u32 *lo, u32 *hi)
 }
 
 
-inline void _RDTSC(u32 *lo, u32 *hi)
+inline void _rdtsc(u32 *lo, u32 *hi)
 {
 	__asm__ volatile (
 		 "rdtsc"
@@ -31,7 +31,7 @@ inline void _RDTSC(u32 *lo, u32 *hi)
 }
 
 
-inline void _cpu_id(u32 addr, u32 *val)
+inline void _cpuid(u32 addr, u32 *val)
 {
 	__asm__ volatile(
 		 "cpuid"
@@ -99,7 +99,7 @@ void proc_CLFLUSH(u32 addr_hi)
 }
 
 
-void WriteLNTestPattern(u32 addr_lo, u8 *buf_a, u32 line_num)
+void write_ln_test_pattern(u32 addr_lo, u8 *buf_a, u32 line_num)
 {
 	__asm__ volatile (
 		/*prevent speculative execution of following instructions*/
@@ -144,7 +144,7 @@ static u8 read8_fs(u32 addr_lo)
 }
 #endif
 
-void FlushDQSTestPattern_L9(u32 addr_lo)
+void flush_dqs_test_pattern_l9(u32 addr_lo)
 {
 	__asm__ volatile (
 		"outb %%al, $0xed\n\t"	/* _EXECFENCE */
@@ -167,7 +167,7 @@ void FlushDQSTestPattern_L9(u32 addr_lo)
 }
 
 
-__attribute__((noinline)) void FlushDQSTestPattern_L18(u32 addr_lo)
+__attribute__((noinline)) void flush_dqs_test_pattern_l18(u32 addr_lo)
 {
 	__asm__ volatile (
 		"outb %%al, $0xed\n\t"	/* _EXECFENCE */
@@ -200,7 +200,7 @@ __attribute__((noinline)) void FlushDQSTestPattern_L18(u32 addr_lo)
 	);
 }
 
-void ReadL18TestPattern(u32 addr_lo)
+void read_l18_test_pattern(u32 addr_lo)
 {
 	// set fs and use fs prefix to access the mem
 	__asm__ volatile (
@@ -236,7 +236,7 @@ void ReadL18TestPattern(u32 addr_lo)
 
 }
 
-void ReadL9TestPattern(u32 addr_lo)
+void read_l9_test_pattern(u32 addr_lo)
 {
 
 	// set fs and use fs prefix to access the mem
@@ -262,7 +262,7 @@ void ReadL9TestPattern(u32 addr_lo)
 
 }
 
-void ReadMaxRdLat1CLTestPattern_D(u32 addr)
+void read_max_rd_lat_1_cl_test_pattern_d(u32 addr)
 {
 	set_upper_fs_base(addr);
 
@@ -277,7 +277,7 @@ void ReadMaxRdLat1CLTestPattern_D(u32 addr)
 
 }
 
-void WriteMaxRdLat1CLTestPattern_D(u32 buf, u32 addr)
+void write_max_rd_lat_1_cl_test_pattern_d(u32 buf, u32 addr)
 {
 	set_upper_fs_base(addr);
 
@@ -295,7 +295,7 @@ void WriteMaxRdLat1CLTestPattern_D(u32 buf, u32 addr)
 	);
 }
 
-void FlushMaxRdLatTestPattern_D(u32 addr)
+void flush_max_rd_lat_test_pattern_d(u32 addr)
 {
 	/*  Flush a pattern of 72 bit times (per DQ) from cache.
 	 * This procedure is used to ensure cache miss on the next read training.
@@ -331,7 +331,7 @@ u32 stream_to_int(u8 const *p)
 	return val;
 }
 
-u8 oemNodePresent_D(u8 Node, u8 *ret)
+u8 oem_node_present_d(u8 node, u8 *ret)
 {
 	*ret = 0;
 	return 0;

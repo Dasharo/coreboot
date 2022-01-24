@@ -241,7 +241,7 @@ u32 check_nb_cof_auto_prechg(struct DCTStatStruc *p_dct_stat, u32 dct)
 
 	/* 3 * (Fn2xD4[NBFid]+4)/(2^NbDid)/(3+Fn2x94[MemClkFreq]) */
 	msr = 0xC0010071;
-	_RDMSR(msr, &lo, &hi);
+	_rdmsr(msr, &lo, &hi);
 	NbDid = (lo >> 22) & 1;
 
 	val = get_nb32(p_dct_stat->dev_dct, 0x94 + 0x100 * dct);

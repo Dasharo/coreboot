@@ -405,12 +405,12 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 	write_cr4(cr4);
 
 	addr = HWCR_MSR;
-	_RDMSR(addr, &lo, &hi);
+	_rdmsr(addr, &lo, &hi);
 	if (lo & (1 << 17)) {
 		_Wrap32Dis = 1;
 	}
 	lo |= (1 << 17);	/* HWCR.wrap32dis */
-	_WRMSR(addr, lo, hi);	/* allow 64-bit memory references in real mode */
+	_wrmsr(addr, lo, hi);	/* allow 64-bit memory references in real mode */
 
 	/* Disable ECC correction of reads on the dram bus. */
 	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
@@ -804,9 +804,9 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 	}
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
-		_RDMSR(addr, &lo, &hi);
+		_rdmsr(addr, &lo, &hi);
 		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
-		_WRMSR(addr, lo, hi);
+		_wrmsr(addr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
@@ -1628,12 +1628,12 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 	write_cr4(cr4);
 
 	addr = HWCR_MSR;
-	_RDMSR(addr, &lo, &hi);
+	_rdmsr(addr, &lo, &hi);
 	if (lo & (1 << 17)) {
 		_Wrap32Dis = 1;
 	}
 	lo |= (1 << 17);	/* HWCR.wrap32dis */
-	_WRMSR(addr, lo, hi);	/* allow 64-bit memory references in real mode */
+	_wrmsr(addr, lo, hi);	/* allow 64-bit memory references in real mode */
 
 	/* Disable ECC correction of reads on the dram bus. */
 	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
@@ -1845,9 +1845,9 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 	}
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
-		_RDMSR(addr, &lo, &hi);
+		_rdmsr(addr, &lo, &hi);
 		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
-		_WRMSR(addr, lo, hi);
+		_wrmsr(addr, lo, hi);
 	}
 	if (!_SSE2) {
 		cr4 = read_cr4();
@@ -1993,7 +1993,7 @@ static void WriteL18TestPattern_D(struct DCTStatStruc *p_dct_stat,
 	u8 *buf;
 
 	buf = (u8 *)p_dct_stat->PtrPatternBufA;
-	WriteLNTestPattern(TestAddr_lo, buf, 18);
+	write_ln_test_pattern(TestAddr_lo, buf, 18);
 
 }
 
@@ -2003,7 +2003,7 @@ static void WriteL9TestPattern_D(struct DCTStatStruc *p_dct_stat,
 	u8 *buf;
 
 	buf = (u8 *)p_dct_stat->PtrPatternBufA;
-	WriteLNTestPattern(TestAddr_lo, buf, 9);
+	write_ln_test_pattern(TestAddr_lo, buf, 9);
 }
 
 static u16 CompareDQSTestPattern_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 addr_lo)
@@ -2119,9 +2119,9 @@ static void FlushDQSTestPattern_D(struct DCTStatStruc *p_dct_stat,
 {
 	/* Flush functions in mct_gcc.h */
 	if (p_dct_stat->pattern == 0) {
-		FlushDQSTestPattern_L9(addr_lo);
+		flush_dqs_test_pattern_l9(addr_lo);
 	} else {
-		FlushDQSTestPattern_L18(addr_lo);
+		flush_dqs_test_pattern_l18(addr_lo);
 	}
 }
 
@@ -2130,10 +2130,10 @@ void set_target_wtio_d(u32 TestAddr)
 	u32 lo, hi;
 	hi = TestAddr >> 24;
 	lo = TestAddr << 8;
-	_WRMSR(MTRR_IORR0_BASE, lo, hi);		/* IORR0 Base */
+	_wrmsr(MTRR_IORR0_BASE, lo, hi);		/* IORR0 Base */
 	hi = 0xFF;
 	lo = 0xFC000800;			/* 64MB Mask */
-	_WRMSR(MTRR_IORR0_MASK, lo, hi);		/* IORR0 Mask */
+	_wrmsr(MTRR_IORR0_MASK, lo, hi);		/* IORR0 Mask */
 }
 
 void reset_target_wtio_d(void)
@@ -2142,7 +2142,7 @@ void reset_target_wtio_d(void)
 
 	hi = 0;
 	lo = 0;
-	_WRMSR(MTRR_IORR0_MASK, lo, hi); /* IORR0 Mask */
+	_wrmsr(MTRR_IORR0_MASK, lo, hi); /* IORR0 Mask */
 }
 
 u32 set_upper_fs_base(u32 addr_hi)
@@ -2155,7 +2155,7 @@ u32 set_upper_fs_base(u32 addr_hi)
 	lo = 0;
 	hi = addr_hi >> 24;
 	addr = FS_Base;
-	_WRMSR(addr, lo, hi);
+	_wrmsr(addr, lo, hi);
 	return addr_hi << 8;
 }
 
@@ -2374,7 +2374,7 @@ u32 mct_get_mct_sys_addr_d(struct MCTStatStruc *p_mct_stat,
 		if (!(p_dct_stat->status & (1 << SB_SW_NODE_HOLE))) {
 			/* SW memhole disabled */
 			u32 lo, hi;
-			_RDMSR(TOP_MEM, &lo, &hi);
+			_rdmsr(TOP_MEM, &lo, &hi);
 			lo >>= 8;
 			if ((val >= lo) && (val < _4GB_RJ8)) {
 				val = 0;
@@ -2438,7 +2438,7 @@ void mct_write_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 	else
 		buf = (u8 *)p_dct_stat->PtrPatternBufA;
 
-	WriteLNTestPattern(TestAddr << 8, buf, 1);
+	write_ln_test_pattern(TestAddr << 8, buf, 1);
 }
 
 void mct_read_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat,
