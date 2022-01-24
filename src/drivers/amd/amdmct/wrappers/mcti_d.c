@@ -20,9 +20,9 @@
 #define NVRAM_DDR3_1066 2
 #define NVRAM_DDR3_800  3
 
-static inline u8 isfam15h(void)
+static inline u8 is_fam_15h(void)
 {
-	u8 fam15h = 0;
+	u8 fam_15h = 0;
 	u32 family;
 
 	family = cpuid_eax(0x80000001);
@@ -30,9 +30,9 @@ static inline u8 isfam15h(void)
 
 	if (family >= 0x6f)
 		/* Family 15h or later */
-		fam15h = 1;
+		fam_15h = 1;
 
-	return fam15h;
+	return fam_15h;
 }
 
 /* The recommended maximum GFX Upper Memory Area
@@ -98,7 +98,7 @@ u16 mct_get_nv_bits(u8 index)
 		break;
 	case NV_MIN_MEMCLK:
 		/* Minimum platform supported memclk */
-		if (isfam15h())
+		if (is_fam_15h())
 			val =  MEM_MIN_PLATFORM_FREQ_FAM15;
 		else
 			val =  MEM_MIN_PLATFORM_FREQ_FAM10;
@@ -422,7 +422,7 @@ void mct_hook_after_ecc(void)
 }
 
 #ifdef UNUSED_CODE
-void mctInitMemGPIOs_A(void)
+void mct_init_mem_gpios_a(void)
 {
 }
 #endif
