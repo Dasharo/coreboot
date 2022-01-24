@@ -52,13 +52,13 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 
 	lane_count = get_available_lane_count(p_mct_stat, p_dct_stat);
 
-	pdct_data->WLPass = pass;
+	pdct_data->wl_pass = pass;
 	/* 1. Specify the target DIMM that is to be trained by programming
 	 * F2x[1, 0]9C_x08[TrDimmSel].
 	 */
-	set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-			DRAM_ADD_DCT_PHY_CONTROL_REG, TrDimmSelStart,
-			TrDimmSelEnd, (u32)dimm);
+	set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+			DRAM_ADD_DCT_PHY_CONTROL_REG, TR_DIMM_SEL_START,
+			TR_DIMM_SEL_END, (u32)dimm);
 
 	train_both_nibbles = 0;
 	if (p_dct_stat->dimm_x4_present)
@@ -69,12 +69,12 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		printk(BIOS_SPEW, "agesa_hw_wl_phase1: training nibble %d\n", nibble);
 
 		if (is_fam15h()) {
-			/* Program F2x[1, 0]9C_x08[WrtLvTrEn]=0 */
-			set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-					DRAM_ADD_DCT_PHY_CONTROL_REG, WrtLvTrEn, WrtLvTrEn, 0);
+			/* Program F2x[1, 0]9C_x08[WRT_LV_TR_EN]=0 */
+			set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+					DRAM_ADD_DCT_PHY_CONTROL_REG, WRT_LV_TR_EN, WRT_LV_TR_EN, 0);
 
-			/* Set TrNibbleSel */
-			set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			/* Set TR_NIBBLE_SEL */
+			set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 					DRAM_ADD_DCT_PHY_CONTROL_REG, 2,
 					2, (u32)nibble);
 		}
@@ -95,11 +95,11 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		proc_config(p_mct_stat, p_dct_stat, dct, dimm, pass, nibble);
 
 		/* 5. Begin write levelization training:
-		 *  Program F2x[1, 0]9C_x08[WrtLvTrEn]=1. */
+		 *  Program F2x[1, 0]9C_x08[WRT_LV_TR_EN]=1. */
 		if (pdct_data->logical_cpuid & (AMD_DR_Cx | AMD_DR_Dx | AMD_FAM15_ALL))
 		{
-			set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-					DRAM_ADD_DCT_PHY_CONTROL_REG, WrtLvTrEn, WrtLvTrEn, 1);
+			set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+					DRAM_ADD_DCT_PHY_CONTROL_REG, WRT_LV_TR_EN, WRT_LV_TR_EN, 1);
 		}
 		else
 		{
@@ -120,17 +120,17 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 				addl_data_port = 0x9C;
 			}
 			addr = 0x0D00000C;
-			amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
-			while ((get_bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
+			amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->node_id),FUN_DCT,addl_data_offset), 31, 0, &addr);
+			while ((get_bits(pdct_data,FUN_DCT,pdct_data->node_id, FUN_DCT, addl_data_offset,
 					DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
-			amd_mem_pci_read_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
+			amd_mem_pci_read_bits(MAKE_SBDFO(0,0,24+(pdct_data->node_id),FUN_DCT,addl_data_port), 31, 0, &value);
 			value = bit_test_set(value, 0);	/* enable WL training */
 			value = bit_test_reset(value, 4); /* for x8 only */
 			value = bit_test_reset(value, 5); /* for hardware WL training */
-			amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
+			amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->node_id),FUN_DCT,addl_data_port), 31, 0, &value);
 			addr = 0x4D030F0C;
-			amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
-			while ((get_bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
+			amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->node_id),FUN_DCT,addl_data_offset), 31, 0, &addr);
+			while ((get_bits(pdct_data,FUN_DCT,pdct_data->node_id, FUN_DCT, addl_data_offset,
 					DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 		}
 
@@ -144,8 +144,8 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 			p_mct_data->agesa_delay(140);
 
 		/* Program F2x[1, 0]9C_x08[WrtLevelTrEn]=0. */
-		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_ADD_DCT_PHY_CONTROL_REG, WrtLvTrEn, WrtLvTrEn, 0);
+		set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_ADD_DCT_PHY_CONTROL_REG, WRT_LV_TR_EN, WRT_LV_TR_EN, 0);
 
 		/* Read from registers F2x[1, 0]9C_x[51:50] and F2x[1, 0]9C_x52
 		 * to get the gross and fine delay settings
@@ -154,7 +154,7 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 			getWLByteDelay(p_dct_stat, dct, byte_lane, dimm, pass, nibble, lane_count);
 		}
 
-		pdct_data->WLCriticalGrossDelayPrevPass = 0x0;
+		pdct_data->wl_critical_gross_delay_prev_pass = 0x0;
 
 		/* Exit nibble training if current DIMM is not x4 */
 		if ((p_dct_stat->dimm_x4_present & (1 << (dimm + dct))) == 0)
@@ -178,7 +178,7 @@ u8 agesa_hw_wl_phase2(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 
 	if (is_fam15h()) {
 		int32_t gross_diff[MAX_LANE_COUNT];
-		int32_t cgd = pdct_data->WLCriticalGrossDelayPrevPass;
+		int32_t cgd = pdct_data->wl_critical_gross_delay_prev_pass;
 		u8 index = (u8)(lane_count * dimm);
 
 		printk(BIOS_SPEW, "\toriginal critical gross delay: %d\n", cgd);
@@ -190,8 +190,8 @@ u8 agesa_hw_wl_phase2(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		/* Calculate the Critical Gross Delay */
 		for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
 			/* Calculate the gross delay differential for this lane */
-			gross_diff[byte_lane] = pdct_data->WLSeedGrossDelay[index + byte_lane] + pdct_data->WLGrossDelay[index + byte_lane];
-			gross_diff[byte_lane] -= pdct_data->WLSeedPreGrossDelay[index + byte_lane];
+			gross_diff[byte_lane] = pdct_data->wl_seed_gross_delay[index + byte_lane] + pdct_data->wl_gross_delay[index + byte_lane];
+			gross_diff[byte_lane] -= pdct_data->wl_seed_pre_gross_delay[index + byte_lane];
 
 			/* wr_dq_dqs_early values greater than 2 are reserved */
 			if (gross_diff[byte_lane] < -2)
@@ -204,7 +204,7 @@ u8 agesa_hw_wl_phase2(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 
 		printk(BIOS_SPEW, "\tnew critical gross delay: %d\n", cgd);
 
-		pdct_data->WLCriticalGrossDelayPrevPass = cgd;
+		pdct_data->wl_critical_gross_delay_prev_pass = cgd;
 
 		if (p_dct_stat->speed != p_dct_stat->target_freq) {
 			/* FIXME
@@ -215,8 +215,8 @@ u8 agesa_hw_wl_phase2(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 			 */
 			if (pass == FIRST_PASS) {
 				for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
-					pdct_data->WLGrossDelay[index + byte_lane] = pdct_data->WLSeedGrossDelay[index + byte_lane];
-					pdct_data->WLFineDelay[index + byte_lane] = pdct_data->WLSeedFineDelay[index + byte_lane];
+					pdct_data->wl_gross_delay[index + byte_lane] = pdct_data->wl_seed_gross_delay[index + byte_lane];
+					pdct_data->wl_fine_delay[index + byte_lane] = pdct_data->wl_seed_fine_delay[index + byte_lane];
 				}
 				return 0;
 			}
@@ -225,8 +225,8 @@ u8 agesa_hw_wl_phase2(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		/* Compensate for occasional noise/instability causing sporadic training failure */
 		for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
 			u8 faulty_value_detected = 0;
-			u16 total_delay_seed = ((pdct_data->WLSeedGrossDelay[index + byte_lane] & 0x1f) << 5) | (pdct_data->WLSeedFineDelay[index + byte_lane] & 0x1f);
-			u16 total_delay_phy = ((pdct_data->WLGrossDelay[index + byte_lane] & 0x1f) << 5) | (pdct_data->WLFineDelay[index + byte_lane] & 0x1f);
+			u16 total_delay_seed = ((pdct_data->wl_seed_gross_delay[index + byte_lane] & 0x1f) << 5) | (pdct_data->wl_seed_fine_delay[index + byte_lane] & 0x1f);
+			u16 total_delay_phy = ((pdct_data->wl_gross_delay[index + byte_lane] & 0x1f) << 5) | (pdct_data->wl_fine_delay[index + byte_lane] & 0x1f);
 			if (pass == FIRST_PASS) {
 				/* Allow a somewhat higher step threshold on the first pass
 				 * For the most part, as long as the phy isn't stepping
@@ -245,8 +245,8 @@ u8 agesa_hw_wl_phase2(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 			if (faulty_value_detected) {
 				printk(BIOS_INFO, "%s: overriding faulty phy value (seed: %04x phy: %04x step: %04x)\n", __func__,
 					total_delay_seed, total_delay_phy, abs(total_delay_phy - total_delay_seed));
-				pdct_data->WLGrossDelay[index + byte_lane] = pdct_data->WLSeedGrossDelay[index + byte_lane];
-				pdct_data->WLFineDelay[index + byte_lane] = pdct_data->WLSeedFineDelay[index + byte_lane];
+				pdct_data->wl_gross_delay[index + byte_lane] = pdct_data->wl_seed_gross_delay[index + byte_lane];
+				pdct_data->wl_fine_delay[index + byte_lane] = pdct_data->wl_seed_fine_delay[index + byte_lane];
 				status = 1;
 			}
 		}
@@ -270,7 +270,7 @@ u8 agesa_hw_wl_phase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 	if (is_fam15h()) {
 		u32 dword;
 		int32_t gross_diff[MAX_LANE_COUNT];
-		int32_t cgd = pdct_data->WLCriticalGrossDelayPrevPass;
+		int32_t cgd = pdct_data->wl_critical_gross_delay_prev_pass;
 		u8 index = (u8)(lane_count * dimm);
 
 		/* Apply offset(s) if needed */
@@ -282,19 +282,19 @@ u8 agesa_hw_wl_phase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 
 			for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
 				/* Calculate the gross delay differential for this lane */
-				gross_diff[byte_lane] = pdct_data->WLSeedGrossDelay[index + byte_lane] + pdct_data->WLGrossDelay[index + byte_lane];
-				gross_diff[byte_lane] -= pdct_data->WLSeedPreGrossDelay[index + byte_lane];
+				gross_diff[byte_lane] = pdct_data->wl_seed_gross_delay[index + byte_lane] + pdct_data->wl_gross_delay[index + byte_lane];
+				gross_diff[byte_lane] -= pdct_data->wl_seed_pre_gross_delay[index + byte_lane];
 
 				/* Prevent underflow in the presence of noise / instability */
 				if (gross_diff[byte_lane] < cgd)
 					gross_diff[byte_lane] = cgd;
 
-				pdct_data->WLGrossDelay[index + byte_lane] = (gross_diff[byte_lane] + (abs(cgd) & 0x3));
+				pdct_data->wl_gross_delay[index + byte_lane] = (gross_diff[byte_lane] + (abs(cgd) & 0x3));
 			}
 		} else {
 			dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0xa8);
-			dword &= ~(0x3 << 24);			/* wr_dq_dqs_early = pdct_data->WrDqsGrossDlyBaseOffset */
-			dword |= ((pdct_data->WrDqsGrossDlyBaseOffset & 0x3) << 24);
+			dword &= ~(0x3 << 24);			/* wr_dq_dqs_early = pdct_data->wr_dqs_gross_dly_base_offset */
+			dword |= ((pdct_data->wr_dqs_gross_dly_base_offset & 0x3) << 24);
 			Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0xa8, dword);
 		}
 	}
@@ -307,8 +307,8 @@ u8 agesa_hw_wl_phase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 
 	/* 6. Configure DRAM Phy Control Register so that the phy stops driving
 	 *    write levelization ODT. */
-	set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-			DRAM_ADD_DCT_PHY_CONTROL_REG, WrLvOdtEn, WrLvOdtEn, 0);
+	set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+			DRAM_ADD_DCT_PHY_CONTROL_REG, WR_LV_ODT_EN, WR_LV_ODT_EN, 0);
 
 	if (is_fam15h())
 		proc_mfence();
@@ -357,11 +357,11 @@ u32 swap_addr_bits_wl(struct DCTStatStruc *p_dct_stat, u8 dct, u32 mrs_value)
 	u32 temp_w, temp_w_1;
 
 	if (is_fam15h())
-		temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
-				FUN_DCT, DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15);
+		temp_w_1 = get_bits(pdct_data, dct, pdct_data->node_id,
+				FUN_DCT, DRAM_INIT, MRS_CHIP_SEL_START_FAM_15, MRS_CHIP_SEL_END_FAM_15);
 	else
-		temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
-			FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10);
+		temp_w_1 = get_bits(pdct_data, dct, pdct_data->node_id,
+			FUN_DCT, DRAM_INIT, MRS_CHIP_SEL_START_FAM_10, MRS_CHIP_SEL_END_FAM_10);
 	if (temp_w_1 & 1)
 	{
 		if ((pdct_data->status[DCT_STATUS_OnDimmMirror]))
@@ -398,11 +398,11 @@ u32 swap_bank_bits(struct DCTStatStruc *p_dct_stat, u8 dct, u32 mrs_value)
 	u32 temp_w, temp_w_1;
 
 	if (is_fam15h())
-		temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
-				FUN_DCT, DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15);
+		temp_w_1 = get_bits(pdct_data, dct, pdct_data->node_id,
+				FUN_DCT, DRAM_INIT, MRS_CHIP_SEL_START_FAM_15, MRS_CHIP_SEL_END_FAM_15);
 	else
-		temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
-				FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10);
+		temp_w_1 = get_bits(pdct_data, dct, pdct_data->node_id,
+				FUN_DCT, DRAM_INIT, MRS_CHIP_SEL_START_FAM_10, MRS_CHIP_SEL_END_FAM_10);
 	if (temp_w_1 & 1)
 	{
 		if ((pdct_data->status[DCT_STATUS_OnDimmMirror]))
@@ -488,13 +488,13 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 	sMCTStruct *p_mct_data = p_dct_stat->c_mct_ptr;
 	sDCTStruct *pdct_data = p_dct_stat->c_dct_ptr[dct];
 	u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
-	u8 number_of_dimms = pdct_data->MaxDimmsInstalled;
+	u8 number_of_dimms = pdct_data->max_dimms_installed;
 
 	if (is_fam15h()) {
-		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->NodeId,
+		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->node_id,
 			FUN_DCT, DRAM_CONFIG_HIGH, 0, 4);
 	} else {
-		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->NodeId,
+		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->node_id,
 			FUN_DCT, DRAM_CONFIG_HIGH, 0, 2);
 	}
 	/* Configure the DCT to send initialization MR commands to the target DIMM
@@ -505,11 +505,11 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 	{
 		/* Program F2x[1, 0]7C[MrsChipSel[2:0]] for the current rank to be trained. */
 		if (is_fam15h())
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15, dimm * 2 + rank);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_CHIP_SEL_START_FAM_15, MRS_CHIP_SEL_END_FAM_15, dimm * 2 + rank);
 		else
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10, dimm * 2 + rank);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_CHIP_SEL_START_FAM_10, MRS_CHIP_SEL_END_FAM_10, dimm * 2 + rank);
 
 		/* Program F2x[1, 0]7C[mrs_bank[2:0]] for the appropriate internal DRAM
 		 * register that defines the required DDR3-defined function for write
@@ -517,11 +517,11 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		 */
 		mrs_bank = swap_bank_bits(p_dct_stat, dct, 1);
 		if (is_fam15h())
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsBankStartFam15, MrsBankEndFam15, mrs_bank);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_BANK_START_FAM_15, MRS_BANK_END_FAM_15, mrs_bank);
 		else
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsBankStartFam10, MrsBankEndFam10, mrs_bank);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_BANK_START_FAM_10, MRS_BANK_END_FAM_10, mrs_bank);
 
 		/* Program F2x[1, 0]7C[MrsAddress[15:0]] to the required DDR3-defined function
 		 * for write levelization.
@@ -534,11 +534,11 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 			temp_w &= ~(0x0244);
 		} else {
 			/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
-			temp_w_2 = get_bits(pdct_data, dct, pdct_data->NodeId,
+			temp_w_2 = get_bits(pdct_data, dct, pdct_data->node_id,
 					FUN_DCT, DRAM_CONFIG_HIGH, RDQS_EN, RDQS_EN);
 			if (temp_w_2)
 			{
-				if (pdct_data->DimmX8Present[dimm])
+				if (pdct_data->dimm_x8_present[dimm])
 					temp_w |= 0x800;
 			}
 		}
@@ -571,7 +571,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					if (number_of_dimms > 1) {
 						if (rank == 0) {
 							/* Get Rtt_WR for the current DIMM and rank */
-							u16 dynamic_term = unbuffered_dimm_dynamic_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[dimm]);
+							u16 dynamic_term = unbuffered_dimm_dynamic_termination_emrs(pdct_data->max_dimms_installed, mem_clk_freq, pdct_data->dimm_ranks[dimm]);
 
 							/* Convert dynamic termination code to corresponding nominal termination code */
 							if (dynamic_term == 0x200)
@@ -581,13 +581,13 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 							else
 								temp_w_1 = 0x0;
 						} else {
-							temp_w_1 = unbuffered_dimm_nominal_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[dimm], rank);
+							temp_w_1 = unbuffered_dimm_nominal_termination_emrs(pdct_data->max_dimms_installed, mem_clk_freq, pdct_data->dimm_ranks[dimm], rank);
 						}
 					} else {
-						temp_w_1 = unbuffered_dimm_nominal_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[dimm], rank);
+						temp_w_1 = unbuffered_dimm_nominal_termination_emrs(pdct_data->max_dimms_installed, mem_clk_freq, pdct_data->dimm_ranks[dimm], rank);
 					}
 				} else {
-					temp_w_1 = unbuffered_dimm_nominal_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[dimm], rank);
+					temp_w_1 = unbuffered_dimm_nominal_termination_emrs(pdct_data->max_dimms_installed, mem_clk_freq, pdct_data->dimm_ranks[dimm], rank);
 				}
 			}
 		}
@@ -598,7 +598,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		/* All ranks of the target DIMM are set to write levelization mode. */
 		if (wl)
 		{
-			temp_w_1 = bit_test_set(temp_w, MRS_Level);
+			temp_w_1 = bit_test_set(temp_w, MRS_LEVEL);
 			if (rank == 0)
 			{
 				/* Enable the output driver of the first rank of the target DIMM. */
@@ -609,7 +609,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 				/* Disable the output drivers of all other ranks for
 				 * the target DIMM.
 				 */
-				temp_w = bit_test_set(temp_w_1, Qoff);
+				temp_w = bit_test_set(temp_w_1, QOFF);
 			}
 		}
 
@@ -618,8 +618,8 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 			temp_w_1 = fam15_dimm_dic(p_dct_stat, dct, dimm, rank, package_type);
 		} else {
 			/* Read DIC from F2x[1,0]84[DrvImpCtrl] */
-			temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
-					FUN_DCT, DRAM_MRS_REGISTER, DrvImpCtrlStart, DrvImpCtrlEnd);
+			temp_w_1 = get_bits(pdct_data, dct, pdct_data->node_id,
+					FUN_DCT, DRAM_MRS_REGISTER, DRV_IMP_CTRL_START, DRV_IMP_CTRL_END);
 		}
 
 		/* Apply DIC to the MRS control word */
@@ -631,19 +631,19 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		temp_w = swap_addr_bits_wl(p_dct_stat, dct, temp_w);
 
 		if (is_fam15h())
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsAddressStartFam15, MrsAddressEndFam15, temp_w);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_ADDRESS_START_FAM_15, MRS_ADDRESS_END_FAM_15, temp_w);
 		else
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, temp_w);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_ADDRESS_START_FAM_10, MRS_ADDRESS_END_FAM_10, temp_w);
 
 		/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command to
 		 * the specified DIMM.
 		 */
-		set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 			DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 		/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
-		while ((get_bits(pdct_data, dct, pdct_data->NodeId,
+		while ((get_bits(pdct_data, dct, pdct_data->node_id,
 				FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD)) == 0x1)
 		{
 		}
@@ -653,11 +653,11 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		 */
 		mrs_bank = swap_bank_bits(p_dct_stat, dct, 2);
 		if (is_fam15h())
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsBankStartFam15, MrsBankEndFam15, mrs_bank);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_BANK_START_FAM_15, MRS_BANK_END_FAM_15, mrs_bank);
 		else
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsBankStartFam10, MrsBankEndFam10, mrs_bank);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_BANK_START_FAM_10, MRS_BANK_END_FAM_10, mrs_bank);
 
 		/* Program F2x[1, 0]7C[MrsAddress[15:0]] to the required DDR3-defined function
 		 * for Rtt_WR (DRAMTermDyn).
@@ -671,7 +671,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		} else {
 			/* program MrsAddress[7,6,5:3]=SRT,ASR,CWL,
 			* based on F2x[1,0]84[19,18,22:20]=,SRT,ASR,Tcwl */
-			temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
+			temp_w_1 = get_bits(pdct_data, dct, pdct_data->node_id,
 					FUN_DCT, DRAM_MRS_REGISTER, PCI_MIN_LOW, PCI_MAX_HIGH);
 			if (bit_test(temp_w_1,19))
 			{temp_w = bit_test_set(temp_w, 7);}
@@ -691,26 +691,26 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 			if (pdct_data->status[DCT_STATUS_REGISTERED])
 				temp_w_1 = rtt_wr_reg_dimm(p_mct_data, pdct_data, dimm, wl, mem_clk_freq, rank);
 			else
-				temp_w_1 = unbuffered_dimm_dynamic_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[dimm]);
+				temp_w_1 = unbuffered_dimm_dynamic_termination_emrs(pdct_data->max_dimms_installed, mem_clk_freq, pdct_data->dimm_ranks[dimm]);
 		}
 
 		/* Apply Rtt_WR to the MRS control word */
 		temp_w = temp_w | temp_w_1;
 		temp_w = swap_addr_bits_wl(p_dct_stat, dct, temp_w);
 		if (is_fam15h())
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsAddressStartFam15, MrsAddressEndFam15, temp_w);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_ADDRESS_START_FAM_15, MRS_ADDRESS_END_FAM_15, temp_w);
 		else
-			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, temp_w);
+			set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_INIT, MRS_ADDRESS_START_FAM_10, MRS_ADDRESS_END_FAM_10, temp_w);
 
 		/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command to
 		   the specified DIMM.*/
-		set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 			DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 
 		/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
-		while ((get_bits(pdct_data, dct, pdct_data->NodeId,
+		while ((get_bits(pdct_data, dct, pdct_data->node_id,
 				FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD)) == 0x1)
 		{
 		}
@@ -722,7 +722,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 	curr_dimm = 0;
 	while (curr_dimm < MAX_LDIMMS)
 	{
-		if (pdct_data->DimmPresent[curr_dimm])
+		if (pdct_data->dimm_present[curr_dimm])
 		{
 			if (curr_dimm != dimm)
 			{
@@ -733,11 +733,11 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					 * to be trained.
 					 */
 					if (is_fam15h())
-						set_bits(pdct_data, dct, pdct_data->NodeId,
-							FUN_DCT, DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15, curr_dimm * 2 + rank);
+						set_bits(pdct_data, dct, pdct_data->node_id,
+							FUN_DCT, DRAM_INIT, MRS_CHIP_SEL_START_FAM_15, MRS_CHIP_SEL_END_FAM_15, curr_dimm * 2 + rank);
 					else
-						set_bits(pdct_data, dct, pdct_data->NodeId,
-							FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10, curr_dimm * 2 + rank);
+						set_bits(pdct_data, dct, pdct_data->node_id,
+							FUN_DCT, DRAM_INIT, MRS_CHIP_SEL_START_FAM_10, MRS_CHIP_SEL_END_FAM_10, curr_dimm * 2 + rank);
 
 					/* Program F2x[1, 0]7C[mrs_bank[2:0]] for the appropriate internal
 					 * DRAM register that defines the required DDR3-defined function
@@ -745,16 +745,16 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					 */
 					mrs_bank = swap_bank_bits(p_dct_stat, dct, 1);
 					if (is_fam15h())
-						set_bits(pdct_data, dct, pdct_data->NodeId,
-							FUN_DCT, DRAM_INIT, MrsBankStartFam15, MrsBankEndFam15, mrs_bank);
+						set_bits(pdct_data, dct, pdct_data->node_id,
+							FUN_DCT, DRAM_INIT, MRS_BANK_START_FAM_15, MRS_BANK_END_FAM_15, mrs_bank);
 					else
-						set_bits(pdct_data, dct, pdct_data->NodeId,
-							FUN_DCT, DRAM_INIT, MrsBankStartFam10, MrsBankEndFam10, mrs_bank);
+						set_bits(pdct_data, dct, pdct_data->node_id,
+							FUN_DCT, DRAM_INIT, MRS_BANK_START_FAM_10, MRS_BANK_END_FAM_10, mrs_bank);
 
 					/* Program F2x[1, 0]7C[MrsAddress[15:0]] to the required
 					 * DDR3-defined function for write levelization.
 					 */
-					temp_w = 0;/* DLL_DIS = 0, DIC = 0, AL = 0, TDQS = 0, Level = 0, Qoff = 0 */
+					temp_w = 0;/* DLL_DIS = 0, DIC = 0, AL = 0, TDQS = 0, Level = 0, QOFF = 0 */
 
 					/* Retrieve normal settings of the MRS control word and clear Rtt_Nom */
 					if (is_fam15h()) {
@@ -762,11 +762,11 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 						temp_w &= ~(0x0244);
 					} else {
 						/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
-						temp_w_2 = get_bits(pdct_data, dct, pdct_data->NodeId,
+						temp_w_2 = get_bits(pdct_data, dct, pdct_data->node_id,
 								FUN_DCT, DRAM_CONFIG_HIGH, RDQS_EN, RDQS_EN);
 						if (temp_w_2)
 						{
-							if (pdct_data->DimmX8Present[curr_dimm])
+							if (pdct_data->dimm_x8_present[curr_dimm])
 								temp_w |= 0x800;
 						}
 					}
@@ -782,7 +782,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 						if (pdct_data->status[DCT_STATUS_REGISTERED])
 							temp_w_1 = rtt_nom_non_target_reg_dimm(p_mct_data, pdct_data, curr_dimm, wl, mem_clk_freq, rank);
 						else
-							temp_w_1 = unbuffered_dimm_nominal_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[curr_dimm], rank);
+							temp_w_1 = unbuffered_dimm_nominal_termination_emrs(pdct_data->max_dimms_installed, mem_clk_freq, pdct_data->dimm_ranks[curr_dimm], rank);
 					}
 
 					/* Apply Rtt_Nom to the MRS control word */
@@ -793,8 +793,8 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 						temp_w_1 = fam15_dimm_dic(p_dct_stat, dct, dimm, rank, package_type);
 					} else {
 						/* Read DIC from F2x[1,0]84[DrvImpCtrl] */
-						temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
-								FUN_DCT, DRAM_MRS_REGISTER, DrvImpCtrlStart, DrvImpCtrlEnd);
+						temp_w_1 = get_bits(pdct_data, dct, pdct_data->node_id,
+								FUN_DCT, DRAM_MRS_REGISTER, DRV_IMP_CTRL_START, DRV_IMP_CTRL_END);
 					}
 
 					/* Apply DIC to the MRS control word */
@@ -806,21 +806,21 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					temp_w = swap_addr_bits_wl(p_dct_stat, dct, temp_w);
 
 					if (is_fam15h())
-						set_bits(pdct_data, dct, pdct_data->NodeId,
-							FUN_DCT, DRAM_INIT, MrsAddressStartFam15, MrsAddressEndFam15, temp_w);
+						set_bits(pdct_data, dct, pdct_data->node_id,
+							FUN_DCT, DRAM_INIT, MRS_ADDRESS_START_FAM_15, MRS_ADDRESS_END_FAM_15, temp_w);
 					else
-						set_bits(pdct_data, dct, pdct_data->NodeId,
-							FUN_DCT, DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, temp_w);
+						set_bits(pdct_data, dct, pdct_data->node_id,
+							FUN_DCT, DRAM_INIT, MRS_ADDRESS_START_FAM_10, MRS_ADDRESS_END_FAM_10, temp_w);
 
 					/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command
 					 * to the specified DIMM.
 					 */
-					set_bits(pdct_data, dct, pdct_data->NodeId,
+					set_bits(pdct_data, dct, pdct_data->node_id,
 						FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 
 					/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
 					while ((get_bits(pdct_data, dct,
-							pdct_data->NodeId, FUN_DCT, DRAM_INIT,
+							pdct_data->node_id, FUN_DCT, DRAM_INIT,
 							SEND_MRS_CMD, SEND_MRS_CMD)) == 1);
 
 					/* Program F2x[1, 0]7C[mrs_bank[2:0]] for the appropriate internal DRAM
@@ -828,11 +828,11 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					 */
 					mrs_bank = swap_bank_bits(p_dct_stat, dct, 2);
 					if (is_fam15h())
-						set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-							DRAM_INIT, MrsBankStartFam15, MrsBankEndFam15, mrs_bank);
+						set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+							DRAM_INIT, MRS_BANK_START_FAM_15, MRS_BANK_END_FAM_15, mrs_bank);
 					else
-						set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-							DRAM_INIT, MrsBankStartFam10, MrsBankEndFam10, mrs_bank);
+						set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+							DRAM_INIT, MRS_BANK_START_FAM_10, MRS_BANK_END_FAM_10, mrs_bank);
 
 					/* Program F2x[1, 0]7C[MrsAddress[15:0]] to the required DDR3-defined function
 					 * for Rtt_WR (DRAMTermDyn).
@@ -846,7 +846,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					} else {
 						/* program MrsAddress[7,6,5:3]=SRT,ASR,CWL,
 						* based on F2x[1,0]84[19,18,22:20]=,SRT,ASR,Tcwl */
-						temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
+						temp_w_1 = get_bits(pdct_data, dct, pdct_data->node_id,
 								FUN_DCT, DRAM_MRS_REGISTER, PCI_MIN_LOW, PCI_MAX_HIGH);
 						if (bit_test(temp_w_1,19))
 						{temp_w = bit_test_set(temp_w, 7);}
@@ -866,26 +866,26 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 						if (pdct_data->status[DCT_STATUS_REGISTERED])
 							temp_w_1 = rtt_wr_reg_dimm(p_mct_data, pdct_data, curr_dimm, wl, mem_clk_freq, rank);
 						else
-							temp_w_1 = unbuffered_dimm_dynamic_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[curr_dimm]);
+							temp_w_1 = unbuffered_dimm_dynamic_termination_emrs(pdct_data->max_dimms_installed, mem_clk_freq, pdct_data->dimm_ranks[curr_dimm]);
 					}
 
 					/* Apply Rtt_WR to the MRS control word */
 					temp_w = temp_w | temp_w_1;
 					temp_w = swap_addr_bits_wl(p_dct_stat, dct, temp_w);
 					if (is_fam15h())
-						set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-							DRAM_INIT, MrsAddressStartFam15, MrsAddressEndFam15, temp_w);
+						set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+							DRAM_INIT, MRS_ADDRESS_START_FAM_15, MRS_ADDRESS_END_FAM_15, temp_w);
 					else
-						set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-							DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, temp_w);
+						set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+							DRAM_INIT, MRS_ADDRESS_START_FAM_10, MRS_ADDRESS_END_FAM_10, temp_w);
 
 					/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command to
 					   the specified DIMM.*/
-					set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+					set_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 						DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 
 					/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
-					while ((get_bits(pdct_data, dct, pdct_data->NodeId,
+					while ((get_bits(pdct_data, dct, pdct_data->node_id,
 							FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD)) == 0x1)
 					{
 					}
@@ -942,9 +942,9 @@ void program_odt(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 		if (pdct_data->status[DCT_STATUS_REGISTERED]) {
 			wr_lv_odt_1 = wr_lv_odt_reg_dimm(p_mct_data, pdct_data, dimm);
 		} else {
-			if ((pdct_data->DctCSPresent & 0x05) == 0x05) {
+			if ((pdct_data->dct_cs_present & 0x05) == 0x05) {
 				wr_lv_odt_1 = 0x03;
-			} else if (bit_test((u32)pdct_data->DctCSPresent,(u8)(dimm * 2 + 1))) {
+			} else if (bit_test((u32)pdct_data->dct_cs_present,(u8)(dimm * 2 + 1))) {
 				wr_lv_odt_1 = (u8)bit_test_set(wr_lv_odt_1, dimm + 2);
 			} else {
 				wr_lv_odt_1 = (u8)bit_test_set(wr_lv_odt_1, dimm);
@@ -952,7 +952,7 @@ void program_odt(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 		}
 	}
 
-	set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+	set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 			DRAM_ADD_DCT_PHY_CONTROL_REG, 8, 11, (u32)wr_lv_odt_1);
 
 	printk(BIOS_SPEW, "Programmed DCT %d write levelling ODT pattern %08x from DIMM %d data\n", dct, wr_lv_odt_1, dimm);
@@ -1002,11 +1002,11 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 
 	if (is_fam15h()) {
 		/* mem_clk_freq: 0x4: 333MHz; 0x6: 400MHz; 0xa: 533MHz; 0xe: 667MHz; 0x12: 800MHz; 0x16: 933MHz */
-		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->NodeId,
+		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->node_id,
 					FUN_DCT, DRAM_CONFIG_HIGH, 0, 4);
 	} else {
 		/* mem_clk_freq: 3: 400MHz; 4: 533MHz; 5: 667MHz; 6: 800MHz */
-		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->NodeId,
+		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->node_id,
 					FUN_DCT, DRAM_CONFIG_HIGH, 0, 2);
 	}
 
@@ -1015,14 +1015,14 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 	 */
 	program_odt(p_mct_stat, p_dct_stat, dct, dimm);
 
-	/* Program F2x[1,0]9C_x08[WrLvOdtEn]=1 */
+	/* Program F2x[1,0]9C_x08[WR_LV_ODT_EN]=1 */
 	if (pdct_data->logical_cpuid & (AMD_DR_Cx | AMD_DR_Dx | AMD_FAM15_ALL)) {
-		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
-				DRAM_ADD_DCT_PHY_CONTROL_REG, WrLvOdtEn, WrLvOdtEn, (u32)1);
+		set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
+				DRAM_ADD_DCT_PHY_CONTROL_REG, WR_LV_ODT_EN, WR_LV_ODT_EN, (u32)1);
 	}
 	else
 	{
-		/* Program WrLvOdtEn = 1 through set bit 12 of D3CSODT reg offset 0 for Rev.B */
+		/* Program WR_LV_ODT_EN = 1 through set bit 12 of D3CSODT reg offset 0 for Rev.B */
 		if (dct)
 		{
 			addl_data_offset = 0x198;
@@ -1034,15 +1034,15 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 			addl_data_port = 0x9C;
 		}
 		addr = 0x0D008000;
-		amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
-		while ((get_bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
+		amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->node_id),FUN_DCT,addl_data_offset), 31, 0, &addr);
+		while ((get_bits(pdct_data,FUN_DCT,pdct_data->node_id, FUN_DCT, addl_data_offset,
 				DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
-		amd_mem_pci_read_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
+		amd_mem_pci_read_bits(MAKE_SBDFO(0,0,24+(pdct_data->node_id),FUN_DCT,addl_data_port), 31, 0, &value);
 		value = bit_test_set(value, 12);
-		amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
+		amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->node_id),FUN_DCT,addl_data_port), 31, 0, &value);
 		addr = 0x4D088F00;
-		amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
-		while ((get_bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
+		amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->node_id),FUN_DCT,addl_data_offset), 31, 0, &addr);
+		while ((get_bits(pdct_data,FUN_DCT,pdct_data->node_id, FUN_DCT, addl_data_offset,
 				DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 	}
 
@@ -1063,7 +1063,7 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 			u8 addr_cmd_prelaunch = 0;		/* TODO: Fetch the correct value from RC2[0] */
 			u8 package_type = mct_get_nv_bits(NV_PACK_TYPE);
 			u16 Seed_Total = 0;
-			pdct_data->WrDqsGrossDlyBaseOffset = 0x0;
+			pdct_data->wr_dqs_gross_dly_base_offset = 0x0;
 			if (package_type == PT_GR) {
 				/* Socket G34: Fam15h BKDG v3.14 Table 96 */
 				if (pdct_data->status[DCT_STATUS_REGISTERED]) {
@@ -1073,7 +1073,7 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 					 * 0x41 and 0x0 are the "stock" values
 					 */
 					Seed_Total = 0x41;
-					pdct_data->WrDqsGrossDlyBaseOffset = 0x2;
+					pdct_data->wr_dqs_gross_dly_base_offset = 0x2;
 				} else if (pdct_data->status[DCT_STATUS_LOAD_REDUCED]) {
 					Seed_Total = 0x0;
 				} else {
@@ -1107,8 +1107,8 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 
 			/* Save seed values for later use */
 			for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
-				pdct_data->WLSeedGrossDelay[lane_count * dimm + byte_lane] = seed_gross;
-				pdct_data->WLSeedFineDelay[lane_count * dimm + byte_lane] = seed_fine;
+				pdct_data->wl_seed_gross_delay[lane_count * dimm + byte_lane] = seed_gross;
+				pdct_data->wl_seed_fine_delay[lane_count * dimm + byte_lane] = seed_fine;
 
 				if (seed_gross == 0)
 					seed_pre_gross = 0;
@@ -1117,7 +1117,7 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 				else
 					seed_pre_gross = 2;
 
-				pdct_data->WLSeedPreGrossDelay[lane_count * dimm + byte_lane] = seed_pre_gross;
+				pdct_data->wl_seed_pre_gross_delay[lane_count * dimm + byte_lane] = seed_pre_gross;
 			}
 		} else {
 			if (pdct_data->status[DCT_STATUS_REGISTERED]) {
@@ -1153,8 +1153,8 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 			 * of 01Fh. This represents a 1UI (UI=.5MEMCLK) delay and is determined
 			 * by design.
 			 */
-			pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] = seed_gross;
-			pdct_data->WLFineDelay[lane_count * dimm + byte_lane] = seed_fine;
+			pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] = seed_gross;
+			pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] = seed_fine;
 			printk(BIOS_SPEW, "\tLane %02x initial seed: %04x\n", byte_lane, ((seed_gross & 0x1f) << 5) | (seed_fine & 0x1f));
 		}
 	} else {
@@ -1189,11 +1189,11 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 				/* Generate new seed values */
 				for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
 					/* Calculate adjusted seed values */
-					seed_total[byte_lane] = (pdct_data->WLFineDelayPrevPass[lane_count * dimm + byte_lane] & 0x1f) |
-						((pdct_data->WLGrossDelayPrevPass[lane_count * dimm + byte_lane] & 0x1f) << 5);
+					seed_total[byte_lane] = (pdct_data->wl_fine_delay_prev_pass[lane_count * dimm + byte_lane] & 0x1f) |
+						((pdct_data->wl_gross_delay_prev_pass[lane_count * dimm + byte_lane] & 0x1f) << 5);
 					seed_total_pre_scaling[byte_lane] = (seed_total[byte_lane] - register_delay - (0x20 * wr_dq_dqs_early));
 					seed_total[byte_lane] = (int32_t) (register_delay + ((((int64_t) seed_total_pre_scaling[byte_lane]) *
-						fam15h_freq_tab[mem_clk_freq] * 100) / (fam15h_freq_tab[pdct_data->WLPrevMemclkFreq[dimm]] * 100)));
+						fam15h_freq_tab[mem_clk_freq] * 100) / (fam15h_freq_tab[pdct_data->wl_prev_memclk_freq[dimm]] * 100)));
 				}
 
 				/* Generate register values from seeds */
@@ -1215,14 +1215,14 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 					seed_pre_gross = seed_gross;
 
 					/* Save seed values for later use */
-					pdct_data->WLSeedGrossDelay[lane_count * dimm + byte_lane] = seed_gross;
-					pdct_data->WLSeedFineDelay[lane_count * dimm + byte_lane] = seed_fine;
-					pdct_data->WLSeedPreGrossDelay[lane_count * dimm + byte_lane] = seed_pre_gross;
+					pdct_data->wl_seed_gross_delay[lane_count * dimm + byte_lane] = seed_gross;
+					pdct_data->wl_seed_fine_delay[lane_count * dimm + byte_lane] = seed_fine;
+					pdct_data->wl_seed_pre_gross_delay[lane_count * dimm + byte_lane] = seed_pre_gross;
 
-					pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] = seed_pre_gross;
-					pdct_data->WLFineDelay[lane_count * dimm + byte_lane] = seed_fine;
+					pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] = seed_pre_gross;
+					pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] = seed_fine;
 
-					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", byte_lane, ((pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] & 0x1f) << 5) | (pdct_data->WLFineDelay[lane_count * dimm + byte_lane] & 0x1f));
+					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", byte_lane, ((pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] & 0x1f) << 5) | (pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] & 0x1f));
 				}
 			} else {
 				u32 register_delay;
@@ -1239,8 +1239,8 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 					} else {
 						register_delay = 0;
 					}
-					seed_total_pre_scaling = ((pdct_data->WLFineDelay[lane_count * dimm + byte_lane] & 0x1f) |
-						(pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] << 5)) - register_delay;
+					seed_total_pre_scaling = ((pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] & 0x1f) |
+						(pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] << 5)) - register_delay;
 					/* seed_total_pre_scaling = (the total delay value in F2x[1, 0]9C_x[4A:30] from pass 1 of write levelization
 					training) - register_delay. */
 					seed_total = (u16) ((((u64) seed_total_pre_scaling) *
@@ -1263,44 +1263,44 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 					seed_gross = seed_total / 32;
 					seed_fine = seed_total & 0x1f;
 
-					pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] = seed_gross;
-					pdct_data->WLFineDelay[lane_count * dimm + byte_lane] = seed_fine;
+					pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] = seed_gross;
+					pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] = seed_fine;
 
-					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", byte_lane, ((pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] & 0x1f) << 5) | (pdct_data->WLFineDelay[lane_count * dimm + byte_lane] & 0x1f));
+					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", byte_lane, ((pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] & 0x1f) << 5) | (pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] & 0x1f));
 				}
 			}
 
 			/* Save initial seeds for upper nibble pass */
 			for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
-				pdct_data->WLSeedPreGrossPrevNibble[lane_count * dimm + byte_lane] = pdct_data->WLSeedPreGrossDelay[lane_count * dimm + byte_lane];
-				pdct_data->WLSeedGrossPrevNibble[lane_count * dimm + byte_lane] = pdct_data->WLGrossDelay[lane_count * dimm + byte_lane];
-				pdct_data->WLSeedFinePrevNibble[lane_count * dimm + byte_lane] = pdct_data->WLFineDelay[lane_count * dimm + byte_lane];
+				pdct_data->wl_seed_pre_gross_prev_nibble[lane_count * dimm + byte_lane] = pdct_data->wl_seed_pre_gross_delay[lane_count * dimm + byte_lane];
+				pdct_data->wl_seed_gross_prev_nibble[lane_count * dimm + byte_lane] = pdct_data->wl_gross_delay[lane_count * dimm + byte_lane];
+				pdct_data->wl_seed_fine_prev_nibble[lane_count * dimm + byte_lane] = pdct_data->wl_fine_delay[lane_count * dimm + byte_lane];
 			}
 		} else {
 			/* Restore seed values from lower nibble pass */
 			if (is_fam15h()) {
 				for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
-					pdct_data->WLSeedGrossDelay[lane_count * dimm + byte_lane] = pdct_data->WLSeedGrossPrevNibble[lane_count * dimm + byte_lane];
-					pdct_data->WLSeedFineDelay[lane_count * dimm + byte_lane] = pdct_data->WLSeedFinePrevNibble[lane_count * dimm + byte_lane];
-					pdct_data->WLSeedPreGrossDelay[lane_count * dimm + byte_lane] = pdct_data->WLSeedPreGrossPrevNibble[lane_count * dimm + byte_lane];
+					pdct_data->wl_seed_gross_delay[lane_count * dimm + byte_lane] = pdct_data->wl_seed_gross_prev_nibble[lane_count * dimm + byte_lane];
+					pdct_data->wl_seed_fine_delay[lane_count * dimm + byte_lane] = pdct_data->wl_seed_fine_prev_nibble[lane_count * dimm + byte_lane];
+					pdct_data->wl_seed_pre_gross_delay[lane_count * dimm + byte_lane] = pdct_data->wl_seed_pre_gross_prev_nibble[lane_count * dimm + byte_lane];
 
-					pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] = pdct_data->WLSeedPreGrossPrevNibble[lane_count * dimm + byte_lane];
-					pdct_data->WLFineDelay[lane_count * dimm + byte_lane] = pdct_data->WLSeedFinePrevNibble[lane_count * dimm + byte_lane];
+					pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] = pdct_data->wl_seed_pre_gross_prev_nibble[lane_count * dimm + byte_lane];
+					pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] = pdct_data->wl_seed_fine_prev_nibble[lane_count * dimm + byte_lane];
 
-					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", byte_lane, ((pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] & 0x1f) << 5) | (pdct_data->WLFineDelay[lane_count * dimm + byte_lane] & 0x1f));
+					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", byte_lane, ((pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] & 0x1f) << 5) | (pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] & 0x1f));
 				}
 			} else {
 				for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
-					pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] = pdct_data->WLSeedGrossPrevNibble[lane_count * dimm + byte_lane];
-					pdct_data->WLFineDelay[lane_count * dimm + byte_lane] = pdct_data->WLSeedFinePrevNibble[lane_count * dimm + byte_lane];
+					pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] = pdct_data->wl_seed_gross_prev_nibble[lane_count * dimm + byte_lane];
+					pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] = pdct_data->wl_seed_fine_prev_nibble[lane_count * dimm + byte_lane];
 
-					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", byte_lane, ((pdct_data->WLGrossDelay[lane_count * dimm + byte_lane] & 0x1f) << 5) | (pdct_data->WLFineDelay[lane_count * dimm + byte_lane] & 0x1f));
+					printk(BIOS_SPEW, "\tLane %02x new seed: %04x\n", byte_lane, ((pdct_data->wl_gross_delay[lane_count * dimm + byte_lane] & 0x1f) << 5) | (pdct_data->wl_fine_delay[lane_count * dimm + byte_lane] & 0x1f));
 				}
 			}
 		}
 	}
 
-	pdct_data->WLPrevMemclkFreq[dimm] = mem_clk_freq;
+	pdct_data->wl_prev_memclk_freq[dimm] = mem_clk_freq;
 	set_wl_byte_delay(p_dct_stat, dct, byte_lane, dimm, 0, pass, lane_count);
 }
 
@@ -1314,9 +1314,9 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
  *   Parameters:
  *       IN  OUT   *DCTData - Pointer to buffer with information about each DCT
  *       IN	Dimm - Dimm Number
- *		 DCTData->WLGrossDelay[index+byte_lane] - gross write delay for each
+ *		 DCTData->wl_gross_delay[index+byte_lane] - gross write delay for each
  *						     logical DIMM
- *		 DCTData->WLFineDelay[index+byte_lane] - fine write delay for each
+ *		 DCTData->wl_fine_delay[index+byte_lane] - fine write delay for each
  *						    logical DIMM
  *		 byte_lane - target byte lane to write
  *	  target_addr -    0: write to DRAM phase recovery control register
@@ -1341,20 +1341,20 @@ void set_wl_byte_delay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8
 		while (byte_lane < lane_count)
 		{
 			/* This subtract 0xC workaround might be temporary. */
-			if ((pdct_data->WLPass == 2) && (pdct_data->reg_man_1_present & (1 << (dimm * 2 + dct)))) {
-				temp_w = (pdct_data->WLGrossDelay[index + byte_lane] << 5) | pdct_data->WLFineDelay[index + byte_lane];
+			if ((pdct_data->wl_pass == 2) && (pdct_data->reg_man_1_present & (1 << (dimm * 2 + dct)))) {
+				temp_w = (pdct_data->wl_gross_delay[index + byte_lane] << 5) | pdct_data->wl_fine_delay[index + byte_lane];
 				temp_w -= 0xC;
-				pdct_data->WLGrossDelay[index + byte_lane] = (u8)(temp_w >> 5);
-				pdct_data->WLFineDelay[index + byte_lane] = (u8)(temp_w & 0x1F);
+				pdct_data->wl_gross_delay[index + byte_lane] = (u8)(temp_w >> 5);
+				pdct_data->wl_fine_delay[index + byte_lane] = (u8)(temp_w & 0x1F);
 			}
-			gross_delay_value = pdct_data->WLGrossDelay[index + byte_lane];
+			gross_delay_value = pdct_data->wl_gross_delay[index + byte_lane];
 			/* Adjust seed gross delay overflow (greater than 3):
 			 *      - Program seed gross delay as 2 (gross is 4 or 6) or 1 (gross is 5).
 			 *      - Keep original seed gross delay for later reference.
 			 */
 			if (gross_delay_value >= 3)
 				gross_delay_value = (gross_delay_value & 1) ? 1 : 2;
-			fine_delay_value = pdct_data->WLFineDelay[index + byte_lane];
+			fine_delay_value = pdct_data->wl_fine_delay[index + byte_lane];
 			if (byte_lane < 4)
 				value_low |= ((gross_delay_value << 5) | fine_delay_value) << 8 * byte_lane;
 			else if (byte_lane < 8)
@@ -1363,11 +1363,11 @@ void set_wl_byte_delay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8
 				ecc_value = ((gross_delay_value << 5) | fine_delay_value);
 			byte_lane++;
 		}
-		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 				DRAM_CONT_ADD_PHASE_REC_CTRL_LOW, 0, 31, (u32)value_low);
-		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 				DRAM_CONT_ADD_PHASE_REC_CTRL_HIGH, 0, 31, (u32)value_high);
-		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 				DRAM_CONT_ADD_ECC_PHASE_REC_CTRL, 0, 31, (u32)ecc_value);
 	}
 	else
@@ -1376,8 +1376,8 @@ void set_wl_byte_delay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8
 		 * Fam15h BKDG: Rev. 3.14 2.10.5.8.1
 		 */
 		index = (u8)(lane_count * dimm);
-		gross_delay_value = pdct_data->WLGrossDelay[index + byte_lane];
-		fine_delay_value = pdct_data->WLFineDelay[index + byte_lane];
+		gross_delay_value = pdct_data->wl_gross_delay[index + byte_lane];
+		fine_delay_value = pdct_data->wl_fine_delay[index + byte_lane];
 
 		temp_b = 0;
 		offset_addr = (u8)(3 * dimm);
@@ -1404,17 +1404,17 @@ void set_wl_byte_delay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8
 		gross_start_loc = (u8)(fine_end_loc + 1);
 		gross_end_loc = (u8)(gross_start_loc + 2);
 
-		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 				(u16)addr, fine_start_loc, fine_end_loc,(u32)fine_delay_value);
-		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->node_id, FUN_DCT,
 				(u16)addr, gross_start_loc, gross_end_loc, (u32)gross_delay_value);
 
-		pdct_data->WLFineDelayPrevPass[index + byte_lane] = fine_delay_value;
-		pdct_data->WLGrossDelayPrevPass[index + byte_lane] = gross_delay_value;
+		pdct_data->wl_fine_delay_prev_pass[index + byte_lane] = fine_delay_value;
+		pdct_data->wl_gross_delay_prev_pass[index + byte_lane] = gross_delay_value;
 		if (pass == FIRST_PASS) {
-			pdct_data->WLFineDelayFirstPass[index + byte_lane] = fine_delay_value;
-			pdct_data->WLGrossDelayFirstPass[index + byte_lane] = gross_delay_value;
-			pdct_data->WLCriticalGrossDelayFirstPass = pdct_data->WLCriticalGrossDelayPrevPass;
+			pdct_data->wl_fine_delay_first_pass[index + byte_lane] = fine_delay_value;
+			pdct_data->wl_gross_delay_first_pass[index + byte_lane] = gross_delay_value;
+			pdct_data->wl_critical_gross_delay_first_pass = pdct_data->wl_critical_gross_delay_prev_pass;
 		}
 	}
 
@@ -1432,9 +1432,9 @@ void set_wl_byte_delay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8
  *       IN	Dimm - Dimm Number
  *		 byte_lane - target byte lane to read
  *       OUT
- *		 DCTData->WLGrossDelay[index+byte_lane] - gross write delay for current
+ *		 DCTData->wl_gross_delay[index+byte_lane] - gross write delay for current
  *						     byte for logical DIMM
- *		 DCTData->WLFineDelay[index+byte_lane] - fine write delay for current
+ *		 DCTData->wl_fine_delay[index+byte_lane] - fine write delay for current
  *						    byte for logical DIMM
  *
  *-----------------------------------------------------------------------------
@@ -1462,9 +1462,9 @@ void getWLByteDelay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8 di
 	gross_start_loc = (u8)(fine_end_loc + 1);
 	gross_end_loc = (u8)(gross_start_loc + 1);
 
-	fine = get_add_dct_bits(pdct_data, dct, pdct_data->NodeId,
+	fine = get_add_dct_bits(pdct_data, dct, pdct_data->node_id,
 				FUN_DCT, (u16)addr, fine_start_loc, fine_end_loc);
-	gross = get_add_dct_bits(pdct_data, dct, pdct_data->NodeId,
+	gross = get_add_dct_bits(pdct_data, dct, pdct_data->node_id,
 				FUN_DCT, (u16)addr, gross_start_loc, gross_end_loc);
 
 	printk(BIOS_SPEW, "\tLane %02x nibble %01x raw readback: %04x\n", byte_lane, nibble, ((gross & 0x1f) << 5) | (fine & 0x1f));
@@ -1472,15 +1472,15 @@ void getWLByteDelay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8 di
 	/* Adjust seed gross delay overflow (greater than 3):
 	 * - Adjust the trained gross delay to the original seed gross delay.
 	 */
-	if (pdct_data->WLGrossDelay[index + byte_lane] >= 3)
+	if (pdct_data->wl_gross_delay[index + byte_lane] >= 3)
 	{
-		gross += pdct_data->WLGrossDelay[index + byte_lane];
-		if (pdct_data->WLGrossDelay[index + byte_lane] & 1)
+		gross += pdct_data->wl_gross_delay[index + byte_lane];
+		if (pdct_data->wl_gross_delay[index + byte_lane] & 1)
 			gross -= 1;
 		else
 			gross -= 2;
 	}
-	else if ((pdct_data->WLGrossDelay[index + byte_lane] == 0) && (gross == 3))
+	else if ((pdct_data->wl_gross_delay[index + byte_lane] == 0) && (gross == 3))
 	{
 		/* If seed gross delay is 0 but PRE result gross delay is 3, it is negative.
 		 * We will then round the negative number to 0.
@@ -1492,14 +1492,14 @@ void getWLByteDelay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8 di
 
 	/* Nibble adjustments */
 	if (nibble == 0) {
-		pdct_data->WLFineDelay[index + byte_lane] = (u8)fine;
-		pdct_data->WLGrossDelay[index + byte_lane] = (u8)gross;
+		pdct_data->wl_fine_delay[index + byte_lane] = (u8)fine;
+		pdct_data->wl_gross_delay[index + byte_lane] = (u8)gross;
 	} else {
-		u32 wl_total_delay = ((pdct_data->WLGrossDelay[index + byte_lane] & 0x1f) << 5) | (pdct_data->WLFineDelay[index + byte_lane] & 0x1f);
+		u32 wl_total_delay = ((pdct_data->wl_gross_delay[index + byte_lane] & 0x1f) << 5) | (pdct_data->wl_fine_delay[index + byte_lane] & 0x1f);
 		wl_total_delay += ((gross & 0x1f) << 5) | (fine & 0x1f);
 		wl_total_delay /= 2;
-		pdct_data->WLFineDelay[index + byte_lane] = (u8)(wl_total_delay & 0x1f);
-		pdct_data->WLGrossDelay[index + byte_lane] = (u8)((wl_total_delay >> 5) & 0x1f);
+		pdct_data->wl_fine_delay[index + byte_lane] = (u8)(wl_total_delay & 0x1f);
+		pdct_data->wl_gross_delay[index + byte_lane] = (u8)((wl_total_delay >> 5) & 0x1f);
 	}
-	printk(BIOS_SPEW, "\tLane %02x nibble %01x adjusted value (post nibble): %04x\n", byte_lane, nibble, ((pdct_data->WLGrossDelay[index + byte_lane] & 0x1f) << 5) | (pdct_data->WLFineDelay[index + byte_lane] & 0x1f));
+	printk(BIOS_SPEW, "\tLane %02x nibble %01x adjusted value (post nibble): %04x\n", byte_lane, nibble, ((pdct_data->wl_gross_delay[index + byte_lane] & 0x1f) << 5) | (pdct_data->wl_fine_delay[index + byte_lane] & 0x1f));
 }

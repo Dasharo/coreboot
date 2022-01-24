@@ -1283,7 +1283,7 @@ static void dqs_train_rcvr_en_sw_fam15(struct MCTStatStruc *p_mct_stat,
 					dword = Get_NB32_index_wait_DCT(dev, channel, index_reg, 0x00000008);
 					dword &= ~(0x3 << 4);		/* TrDimmSel = dimm */
 					dword |= ((dimm & 0x3) << 4);
-					dword &= ~(0x1 << 2);		/* TrNibbleSel = nibble */
+					dword &= ~(0x1 << 2);		/* TR_NIBBLE_SEL = nibble */
 					dword |= ((nibble & 0x1) << 2);
 					Set_NB32_index_wait_DCT(dev, channel, index_reg, 0x00000008, dword);
 

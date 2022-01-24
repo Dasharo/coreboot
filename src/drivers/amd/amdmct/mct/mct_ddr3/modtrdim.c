@@ -30,7 +30,7 @@ u32 rtt_nom_target_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 
 		switch (mct_get_nv_bits(NV_MAX_DIMMS_PER_CH)) {
 		case 2:
 			/* 2 dimms per channel */
-			if (p_dct_data->MaxDimmsInstalled == 1) {
+			if (p_dct_data->max_dimms_installed == 1) {
 				if ((p_dct_data->dimm_ranks[dimm] == 2) && (rank == 0)) {
 					temp_w1 = 0x00;	/* Rtt_Nom = OFF */
 				} else if (p_dct_data->dimm_ranks[dimm] == 4) {
@@ -46,10 +46,10 @@ u32 rtt_nom_target_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 
 				} else {
 					temp_w1 = 0x04;	/* Rtt_Nom = 60 ohms */
 				}
-			} else if (p_dct_data->MaxDimmsInstalled == 2) {
+			} else if (p_dct_data->max_dimms_installed == 2) {
 				if (((p_dct_data->dimm_ranks[dimm] == 2) || (p_dct_data->dimm_ranks[dimm] == 4)) && (rank == 1)) {
 					temp_w1 = 0x00;	/* Rtt_Nom = OFF */
-				} else if ((p_dct_data->dimm_ranks[dimm] == 4) || (p_dct_data->DctCSPresent & 0xF0)) {
+				} else if ((p_dct_data->dimm_ranks[dimm] == 4) || (p_dct_data->dct_cs_present & 0xF0)) {
 					if (mem_clk_freq == 3) {
 						temp_w1 = 0x40;	/* Rtt_Nom = 120 ohms */
 					} else {
@@ -67,7 +67,7 @@ u32 rtt_nom_target_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 
 		case 3:
 			/* 3 dimms per channel */
 			/* QR not supported in this case on L1 package. */
-			if (p_dct_data->MaxDimmsInstalled == 1) {
+			if (p_dct_data->max_dimms_installed == 1) {
 				if ((p_dct_data->dimm_ranks[dimm] == 2) && (rank == 1)) {
 					temp_w1 = 0x00;	/* Rtt_Nom = OFF */
 				} else {
@@ -86,10 +86,10 @@ u32 rtt_nom_target_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 
 			/* 2 dimms per channel */
 			if ((p_dct_data->dimm_ranks[dimm] == 4) && (rank == 1)) {
 				temp_w1 = 0x00;	/* Rtt_Nom = OFF */
-			} else if ((p_dct_data->MaxDimmsInstalled == 1) || (p_dct_data->dimm_ranks[dimm] == 4)) {
+			} else if ((p_dct_data->max_dimms_installed == 1) || (p_dct_data->dimm_ranks[dimm] == 4)) {
 				temp_w1 = 0x04;	/* Rtt_Nom = 60 ohms */
 			} else {
-				if (p_dct_data->DctCSPresent & 0xF0) {
+				if (p_dct_data->dct_cs_present & 0xF0) {
 					temp_w1 = 0x0204;	/* Rtt_Nom = 30 ohms */
 				} else {
 					if (mem_clk_freq < 5) {
@@ -105,9 +105,9 @@ u32 rtt_nom_target_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 
 			/* L1 package does not support QR dimms this case. */
 			if (rank == 1) {
 				temp_w1 = 0x00;	/* Rtt_Nom = OFF */
-			} else if (p_dct_data->MaxDimmsInstalled == 1) {
+			} else if (p_dct_data->max_dimms_installed == 1) {
 				temp_w1 = 0x04;	/* Rtt_Nom = 60 ohms */
-			} else if ((mem_clk_freq < 5) || (p_dct_data->MaxDimmsInstalled == 3)) {
+			} else if ((mem_clk_freq < 5) || (p_dct_data->max_dimms_installed == 3)) {
 				temp_w1 = 0x44;	/* Rtt_Nom = 40 ohms */
 			} else {
 				temp_w1 = 0x0204;	/* Rtt_Nom = 30 ohms */
@@ -169,7 +169,7 @@ u32 rtt_wr_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 dimm, bo
 	} else {
 		switch (mct_get_nv_bits(NV_MAX_DIMMS_PER_CH)) {
 		case 2:
-			if (p_dct_data->MaxDimmsInstalled == 1) {
+			if (p_dct_data->max_dimms_installed == 1) {
 				if (p_dct_data->dimm_ranks[dimm] != 4) {
 					temp_w1 = 0x00;
 				} else {
@@ -180,7 +180,7 @@ u32 rtt_wr_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 dimm, bo
 					}
 				}
 			} else {
-				if ((p_dct_data->dimm_ranks[dimm] == 4) || (p_dct_data->DctCSPresent & 0xF0)) {
+				if ((p_dct_data->dimm_ranks[dimm] == 4) || (p_dct_data->dct_cs_present & 0xF0)) {
 					if (mem_clk_freq == 3) {
 						temp_w1 = 0x400;	/* Rtt_WR = 120 ohms */
 					} else {
@@ -196,7 +196,7 @@ u32 rtt_wr_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 dimm, bo
 			}
 			break;
 		case 3:
-			if (p_dct_data->MaxDimmsInstalled == 1) {
+			if (p_dct_data->max_dimms_installed == 1) {
 				temp_w1 = 0x00;	/* Rtt_WR = OFF */
 			} else {
 				temp_w1 = 0x400;	/* Rtt_Nom = 120 ohms */
@@ -227,19 +227,19 @@ u8 wr_lv_odt_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 dimm)
 	wr_lv_odt_1 = 0;
 	i = 0;
 	while (i < 8) {
-		if (p_dct_data->DctCSPresent & (1 << i)) {
+		if (p_dct_data->dct_cs_present & (1 << i)) {
 			wr_lv_odt_1 = (u8)bit_test_set(wr_lv_odt_1, i/2);
 		}
 		i += 2;
 	}
 	if (mct_get_nv_bits(NV_MAX_DIMMS_PER_CH) == 2) {
-		if ((p_dct_data->dimm_ranks[dimm] == 4) && (p_dct_data->MaxDimmsInstalled != 1)) {
+		if ((p_dct_data->dimm_ranks[dimm] == 4) && (p_dct_data->max_dimms_installed != 1)) {
 			if (dimm >= 2) {
 				wr_lv_odt_1 = (u8)bit_test_reset (wr_lv_odt_1, (dimm - 2));
 			} else {
 				wr_lv_odt_1 = (u8)bit_test_reset (wr_lv_odt_1, (dimm + 2));
 			}
-		} else if ((p_dct_data->dimm_ranks[dimm] == 2) && (p_dct_data->MaxDimmsInstalled == 1)) {
+		} else if ((p_dct_data->dimm_ranks[dimm] == 2) && (p_dct_data->max_dimms_installed == 1)) {
 			/* the case for one DR on a 2 dimms per channel is special */
 			wr_lv_odt_1 = 0x8;
 		}

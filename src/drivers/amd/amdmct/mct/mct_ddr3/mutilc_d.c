@@ -309,7 +309,7 @@ void set_dct_addr_bits(sDCTStruct *p_dct_data,
 	temp_d = bit_test_set(temp_d,DCT_ACCESS_WRITE);
 	set_bits(p_dct_data, dct, node, FUN_DCT,DRAM_CONTROLLER_ADD_DATA_OFFSET_REG,
 		PCI_MIN_LOW, PCI_MAX_HIGH, temp_d);
-	while ((get_bits(p_dct_data, dct, p_dct_data->NodeId, FUN_DCT,
+	while ((get_bits(p_dct_data, dct, p_dct_data->node_id, FUN_DCT,
 			DRAM_CONTROLLER_ADD_DATA_OFFSET_REG, DCT_ACCESS_DONE,
 			DCT_ACCESS_DONE)) == 0);
 }

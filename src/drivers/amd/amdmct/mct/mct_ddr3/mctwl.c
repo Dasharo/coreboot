@@ -27,7 +27,7 @@ void prepare_c_dct(struct MCTStatStruc *p_mct_stat,
 
 	dct &= 1;
 
-	p_dct_stat->c_dct_ptr[dct]->DctTrain = dct;
+	p_dct_stat->c_dct_ptr[dct]->dct_train = dct;
 
 	if (dct == 1) {
 		dimm_x8_present = p_dct_stat->dimm_x8_present >> 1;
@@ -35,27 +35,27 @@ void prepare_c_dct(struct MCTStatStruc *p_mct_stat,
 		dimm_x8_present = p_dct_stat->dimm_x8_present;
 	dimm_x8_present &= 0x55;
 
-	p_dct_stat->c_dct_ptr[dct]->MaxDimmsInstalled = p_dct_stat->ma_dimms[dct];
+	p_dct_stat->c_dct_ptr[dct]->max_dimms_installed = p_dct_stat->ma_dimms[dct];
 	dimm_valid = p_dct_stat->dimm_valid_dct[dct];
 
-	p_dct_stat->c_dct_ptr[dct]->NodeId = p_dct_stat->node_id;
+	p_dct_stat->c_dct_ptr[dct]->node_id = p_dct_stat->node_id;
 	p_dct_stat->c_dct_ptr[dct]->logical_cpuid = p_dct_stat->logical_cpuid;
 
 	for (dimm = 0; dimm < MAX_DIMMS; dimm++) {
 		if (dimm_valid & (1 << (dimm << 1)))
-			p_dct_stat->c_dct_ptr[dct]->DimmPresent[dimm] = 1;
+			p_dct_stat->c_dct_ptr[dct]->dimm_present[dimm] = 1;
 		if (dimm_x8_present & (1 << (dimm << 1)))
-			p_dct_stat->c_dct_ptr[dct]->DimmX8Present[dimm] = 1;
+			p_dct_stat->c_dct_ptr[dct]->dimm_x8_present[dimm] = 1;
 	}
 
 	if (p_dct_stat->ganged_mode & (1 << 0))
-		p_dct_stat->c_dct_ptr[dct]->CurrDct = 0;
+		p_dct_stat->c_dct_ptr[dct]->curr_dct = 0;
 	else
-		p_dct_stat->c_dct_ptr[dct]->CurrDct = dct;
+		p_dct_stat->c_dct_ptr[dct]->curr_dct = dct;
 
-	p_dct_stat->c_dct_ptr[dct]->DctCSPresent = p_dct_stat->cs_present_dct[dct];
+	p_dct_stat->c_dct_ptr[dct]->dct_cs_present = p_dct_stat->cs_present_dct[dct];
 	if (!(p_dct_stat->ganged_mode & (1 << 0)) && (dct == 1))
-		p_dct_stat->c_dct_ptr[dct]->DctCSPresent = p_dct_stat->cs_present_dct[0];
+		p_dct_stat->c_dct_ptr[dct]->dct_cs_present = p_dct_stat->cs_present_dct[0];
 
 	if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 		p_dct_stat->c_dct_ptr[dct]->status[DCT_STATUS_REGISTERED] = 1;

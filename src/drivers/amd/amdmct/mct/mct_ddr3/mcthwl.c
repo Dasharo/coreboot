@@ -244,9 +244,9 @@ static void write_levelization_hw(struct MCTStatStruc *p_mct_stat,
 			u8 dct;
 			for (dct = 0; dct < 2; dct++) {
 				sDCTStruct *pDCTData = p_dct_stat->c_dct_ptr[dct];
-				memcpy(pDCTData->WLGrossDelayFinalPass, pDCTData->WLGrossDelayPrevPass, sizeof(pDCTData->WLGrossDelayPrevPass));
-				memcpy(pDCTData->WLFineDelayFinalPass, pDCTData->WLFineDelayPrevPass, sizeof(pDCTData->WLFineDelayPrevPass));
-				pDCTData->WLCriticalGrossDelayFinalPass = pDCTData->WLCriticalGrossDelayPrevPass;
+				memcpy(pDCTData->wl_gross_delay_final_pass, pDCTData->wl_gross_delay_prev_pass, sizeof(pDCTData->wl_gross_delay_prev_pass));
+				memcpy(pDCTData->wl_fine_delay_final_pass, pDCTData->wl_fine_delay_prev_pass, sizeof(pDCTData->wl_fine_delay_prev_pass));
+				pDCTData->wl__critical_gross_delay_final_pass = pDCTData->wl_critical_gross_delay_prev_pass;
 			}
 		}
 	}

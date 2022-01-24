@@ -910,7 +910,7 @@ u32 mct_mr1(struct MCTStatStruc *p_mct_stat,
 				ret |= 1 << 11;
 		}
 
-		/* program MrsAddress[12]=QOFF: based on F2x[1,0]84[Qoff] */
+		/* program MrsAddress[12]=QOFF: based on F2x[1,0]84[QOFF] */
 		if (dword & (1 << 13))
 			ret |= 1 << 12;
 	}

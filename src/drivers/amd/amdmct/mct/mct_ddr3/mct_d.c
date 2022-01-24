@@ -7855,7 +7855,7 @@ void prog_dram_mrs_reg_d(struct MCTStatStruc *p_mct_stat,
 			dram_mrs |= mct_dram_term_dyn_r_dimm(p_mct_stat, p_dct_stat, byte);
 		}
 
-		/* Qoff = 0, output buffers enabled */
+		/* QOFF = 0, output buffers enabled */
 		/* tcwl */
 		dram_mrs |= (p_dct_stat->speed - 4) << 20;
 		/* ASR = 1, auto self refresh */
