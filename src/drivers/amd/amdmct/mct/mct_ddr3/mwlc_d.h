@@ -188,10 +188,10 @@ void set_Bits(sDCTStruct *pDCTData,
 		u8 dct, u8 node, u8 func,
 		u16 offset, u8 low, u8 high, u32 value);
 bool bitTest(u32 value, u8 bitLoc);
-u32 RttNomNonTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank);
-u32 RttNomTargetRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank);
-u32 RttWrRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank);
-u8 WrLvOdtRegDimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm);
+u32 rtt_nom_non_target_reg_dimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank);
+u32 rtt_nom_target_reg_dimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank);
+u32 rtt_wr_reg_dimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank);
+u8 wr_lv_odt_reg_dimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm);
 u32 get_ADD_DCT_Bits(sDCTStruct *pDCTData,
 		u8 dct, u8 node, u8 func,
 		u16 offset, u8 low, u8 high);

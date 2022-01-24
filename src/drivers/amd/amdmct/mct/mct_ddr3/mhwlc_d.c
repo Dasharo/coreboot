@@ -565,7 +565,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 			temp_w_1 |= ((temp_w_2 & 0x1) >> 0) << 2;
 		} else {
 			if (pdct_data->status[DCT_STATUS_REGISTERED]) {
-				temp_w_1 = RttNomTargetRegDimm(p_mct_data, pdct_data, dimm, wl, mem_clk_freq, rank);
+				temp_w_1 = rtt_nom_target_reg_dimm(p_mct_data, pdct_data, dimm, wl, mem_clk_freq, rank);
 			} else {
 				if (wl) {
 					if (number_of_dimms > 1) {
@@ -689,7 +689,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 			temp_w_1 = (fam15_rttwr(p_dct_stat, dct, dimm, rank, package_type) << 9);
 		} else {
 			if (pdct_data->status[DCT_STATUS_REGISTERED])
-				temp_w_1 = RttWrRegDimm(p_mct_data, pdct_data, dimm, wl, mem_clk_freq, rank);
+				temp_w_1 = rtt_wr_reg_dimm(p_mct_data, pdct_data, dimm, wl, mem_clk_freq, rank);
 			else
 				temp_w_1 = unbuffered_dimm_dynamic_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[dimm]);
 		}
@@ -780,7 +780,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 						temp_w_1 |= ((temp_w_2 & 0x1) >> 0) << 2;
 					} else {
 						if (pdct_data->status[DCT_STATUS_REGISTERED])
-							temp_w_1 = RttNomNonTargetRegDimm(p_mct_data, pdct_data, curr_dimm, wl, mem_clk_freq, rank);
+							temp_w_1 = rtt_nom_non_target_reg_dimm(p_mct_data, pdct_data, curr_dimm, wl, mem_clk_freq, rank);
 						else
 							temp_w_1 = unbuffered_dimm_nominal_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[curr_dimm], rank);
 					}
@@ -864,7 +864,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 						temp_w_1 = (fam15_rttwr(p_dct_stat, dct, dimm, rank, package_type) << 9);
 					} else {
 						if (pdct_data->status[DCT_STATUS_REGISTERED])
-							temp_w_1 = RttWrRegDimm(p_mct_data, pdct_data, curr_dimm, wl, mem_clk_freq, rank);
+							temp_w_1 = rtt_wr_reg_dimm(p_mct_data, pdct_data, curr_dimm, wl, mem_clk_freq, rank);
 						else
 							temp_w_1 = unbuffered_dimm_dynamic_termination_emrs(pdct_data->MaxDimmsInstalled, mem_clk_freq, pdct_data->dimm_ranks[curr_dimm]);
 					}
@@ -940,7 +940,7 @@ void program_odt(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 			wr_lv_odt_1 = (dword & 0xf);
 	} else {
 		if (pdct_data->status[DCT_STATUS_REGISTERED]) {
-			wr_lv_odt_1 = WrLvOdtRegDimm(p_mct_data, pdct_data, dimm);
+			wr_lv_odt_1 = wr_lv_odt_reg_dimm(p_mct_data, pdct_data, dimm);
 		} else {
 			if ((pdct_data->DctCSPresent & 0x05) == 0x05) {
 				wr_lv_odt_1 = 0x03;
