@@ -561,7 +561,7 @@ void mct_set_rcvr_en_dly_d(struct DCTStatStruc *p_dct_stat, u8 rcvr_en_dly,
 
 		/* if flag = 0, set DqsRcvEn value to reg. */
 		/* get the register index from table */
-		index = Table_DQSRcvEn_Offset[i >> 1];
+		index = table_dqs_rcv_en_offset[i >> 1];
 		index += addl_index;	/* DIMMx DqsRcvEn byte0 */
 		val = get_nb32_index_wait(dev, index_reg, index);
 		if (i & 1) {

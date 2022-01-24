@@ -154,7 +154,7 @@ static void EnterSelfRefresh(struct MCTStatStruc *p_mct_stat,
 /*
  * Change memclk for write levelization pass 2
  */
-static void ChangeMemClk(struct MCTStatStruc *p_mct_stat,
+static void change_mem_clk(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat)
 {
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
@@ -238,13 +238,13 @@ static void ChangeMemClk(struct MCTStatStruc *p_mct_stat,
 		if (DCT0Present) {
 			mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, 0);
 			set_2t_configuration(p_mct_stat, p_dct_stat, 0);
-			mct_BeforePlatformSpec(p_mct_stat, p_dct_stat, 0);
+			mct_before_platform_spec(p_mct_stat, p_dct_stat, 0);
 			mct_PlatformSpec(p_mct_stat, p_dct_stat, 0);
 		}
 		if (DCT1Present) {
 			mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, 1);
 			set_2t_configuration(p_mct_stat, p_dct_stat, 1);
-			mct_BeforePlatformSpec(p_mct_stat, p_dct_stat, 1);
+			mct_before_platform_spec(p_mct_stat, p_dct_stat, 1);
 			mct_PlatformSpec(p_mct_stat, p_dct_stat, 1);
 		}
 	}
@@ -381,7 +381,7 @@ void SetTargetFreq(struct MCTStatStruc *p_mct_stat,
 	 * Wait until F2x[1,0]94[FREQ_CHG_IN_PROG]=0.
 	 * Program F2x[1,0]9C_x08[DIS_AUTO_COMP]=0
 	 */
-	ChangeMemClk(p_mct_stat, p_dct_stat);
+	change_mem_clk(p_mct_stat, p_dct_stat);
 
 	if (is_fam15h()) {
 		u8 dct;

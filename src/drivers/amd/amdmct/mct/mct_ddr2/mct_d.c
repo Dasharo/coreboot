@@ -161,7 +161,7 @@ static const u8 table_comp_rise_slew_15x[] = {7, 7, 3, 2, 0xFF};
 static const u8 table_comp_fall_slew_20x[] = {7, 5, 3, 2, 0xFF};
 static const u8 table_comp_fall_slew_15x[] = {7, 7, 5, 3, 0xFF};
 
-const u8 Table_DQSRcvEn_Offset[] = {0x00,0x01,0x10,0x11,0x2};
+const u8 table_dqs_rcv_en_offset[] = {0x00,0x01,0x10,0x11,0x2};
 
 void mct_auto_init_mct_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a)

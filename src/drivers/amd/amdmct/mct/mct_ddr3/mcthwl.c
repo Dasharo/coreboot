@@ -130,16 +130,16 @@ static u8 PhyWLPass2(struct MCTStatStruc *p_mct_stat,
 		PrepareC_DCT(p_mct_stat, p_dct_stat, dct);
 		p_dct_stat->speed = p_dct_stat->dimm_auto_speed = p_dct_stat->target_freq;
 		p_dct_stat->cas_latency = p_dct_stat->dimm_casl = p_dct_stat->target_casl;
-		SPD2ndTiming(p_mct_stat, p_dct_stat, dct);
+		spd_2nd_timing(p_mct_stat, p_dct_stat, dct);
 		if (!is_fam15h()) {
-			ProgDramMRSReg_D(p_mct_stat, p_dct_stat, dct);
+			prog_dram_mrs_reg_d(p_mct_stat, p_dct_stat, dct);
 			PlatformSpec_D(p_mct_stat, p_dct_stat, dct);
 			fence_dyn_training_d(p_mct_stat, p_dct_stat, dct);
 		}
 		Restore_OnDimmMirror(p_mct_stat, p_dct_stat);
 		startup_dct_d(p_mct_stat, p_dct_stat, dct);
 		Clear_OnDimmMirror(p_mct_stat, p_dct_stat);
-		SetDllSpeedUp_D(p_mct_stat, p_dct_stat, dct);
+		set_dll_speed_up_d(p_mct_stat, p_dct_stat, dct);
 		DisableAutoRefresh_D(p_mct_stat, p_dct_stat);
 		for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm ++) {
 			if (dimm_valid & (1 << (dimm << 1))) {

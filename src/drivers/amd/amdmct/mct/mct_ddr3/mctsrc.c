@@ -1204,7 +1204,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 		u8 p_state;
 
 		/* 2.10.5.6 */
-		fam15EnableTrainingMode(p_mct_stat, p_dct_stat, ch, 1);
+		fam_15_enable_training_mode(p_mct_stat, p_dct_stat, ch, 1);
 
 		/* 2.10.5.2 */
 		for (p_state = 0; p_state < 3; p_state++) {
@@ -1785,7 +1785,7 @@ void mct_set_rcvr_en_dly_d(struct DCTStatStruc *p_dct_stat, u16 RcvrEnDly,
 
 		/* if flag = 0, set DqsRcvEn value to reg. */
 		/* get the register index from table */
-		index = Table_DQSRcvEn_Offset[i >> 1];
+		index = table_dqs_rcv_en_offset[i >> 1];
 		index += Addl_Index;	/* DIMMx DqsRcvEn byte0 */
 		val = Get_NB32_index_wait_DCT(dev, Channel, index_reg, index);
 		if (i & 1) {
@@ -2094,7 +2094,7 @@ void phy_assisted_mem_fence_training(struct MCTStatStruc *p_mct_stat,
 		if (p_dct_stat->dct_sys_limit) {
 			if (is_fam15h()) {
 				/* Fam15h BKDG v3.14 section 2.10.5.3.3
-				 * This picks up where InitDDRPhy left off
+				 * This picks up where init_ddr_phy left off
 				 */
 				u8 dct;
 				u8 index;

@@ -968,7 +968,7 @@ struct amdmct_memory_info {
 	u16 ecc_scrub_rate;
 } __attribute__((packed, aligned(4)));
 
-extern const u8 Table_DQSRcvEn_Offset[];
+extern const u8 table_dqs_rcv_en_offset[];
 extern const u32 test_pattern_0_d[];
 extern const u32 test_pattern_1_d[];
 extern const u32 test_pattern_2_d[];
@@ -1005,8 +1005,8 @@ void mct_set_dram_config_hi_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStr
 void mct_dram_init_hw_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
 void mct_set_cl_to_nb_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void mct_set_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
-void mct_ForceNBPState0_En_Fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
-void mct_ForceNBPState0_Dis_Fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_force_nb_pstate_0_en_fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_force_nb_pstate_0_dis_fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void mct_train_rcvr_en_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 pass);
 void mct_enable_dimm_ecc_en_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 _disable_dram_ecc);
 u32 proc_odt_workaround(struct DCTStatStruc *p_dct_stat, u32 dct, u32 val);
@@ -1036,12 +1036,12 @@ u8 fam15h_slow_access_mode(struct DCTStatStruc *p_dct_stat, u8 dct);
 void precise_memclk_delay_fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct, u32 clocks);
 void mct_enable_dat_intlv_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat);
-void SetDllSpeedUp_D(struct MCTStatStruc *p_mct_stat,
+void set_dll_speed_up_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct);
 u8 get_available_lane_count(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void read_dqs_receiver_enable_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg);
 void read_dqs_write_timing_control_registers(u16 *current_total_delay, u32 dev, u8 dct, u8 dimm, u32 index_reg);
-void fam15EnableTrainingMode(struct MCTStatStruc *p_mct_stat,
+void fam_15_enable_training_mode(struct MCTStatStruc *p_mct_stat,
 		struct DCTStatStruc *p_dct_stat, u8 dct, u8 enable);
 void read_dqs_read_data_timing_registers(u16 *delay, u32 dev,
 			u8 dct, u8 dimm, u32 index_reg);
@@ -1061,9 +1061,9 @@ void dct_mem_clr_init_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
 void dct_mem_clr_sync_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
-void SPD2ndTiming(struct MCTStatStruc *p_mct_stat,
+void spd_2nd_timing(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct);
-void ProgDramMRSReg_D(struct MCTStatStruc *p_mct_stat,
+void prog_dram_mrs_reg_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct);
 u8 PlatformSpec_D(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct);
@@ -1129,7 +1129,7 @@ u32 mct_get_mct_sys_addr_d(struct MCTStatStruc *p_mct_stat,
 				u8 channel, u8 receiver, u8 *valid);
 void set_2t_configuration(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct);
-u8 mct_BeforePlatformSpec(struct MCTStatStruc *p_mct_stat,
+u8 mct_before_platform_spec(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 dct);
 u8 mct_PlatformSpec(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 dct);

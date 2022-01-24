@@ -12,7 +12,7 @@
 
 #include "mct_d_gcc.h"
 
-extern const u8 Table_DQSRcvEn_Offset[];
+extern const u8 table_dqs_rcv_en_offset[];
 extern const u32 test_pattern_0_d[];
 extern const u32 test_pattern_1_d[];
 extern const u32 test_pattern_2_d[];

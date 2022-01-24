@@ -1651,7 +1651,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 
 	for (dct = 0; dct < 2; dct++) {
 		/* 2.10.5.6 */
-		fam15EnableTrainingMode(p_mct_stat, p_dct_stat, dct, 1);
+		fam_15_enable_training_mode(p_mct_stat, p_dct_stat, dct, 1);
 
 		/* 2.10.5.8.3 */
 		Receiver = mct_init_receiver_d(p_dct_stat, dct);
