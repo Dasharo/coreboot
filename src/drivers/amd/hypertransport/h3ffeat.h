@@ -99,26 +99,26 @@ typedef struct cNorthBridge cNorthBridge;
 typedef struct
 {
 	/* This section is where the link is in the system and how to find it */
-	u8 Type; /* 0 = CPU, 1 = Device, all others reserved */
-	u8 Link; /* 0-1 for devices, 0-7 for CPUs */
-	u8 NodeID; /* The node, or a pointer to the devices parent node */
-	u8 HostLink, HostDepth; /* Link of parent node + depth in chain.  Only used by devices */
-	SBDFO Pointer; /* A pointer to the device's slave HT capability, so we don't have to keep searching */
+	u8 type; /* 0 = CPU, 1 = Device, all others reserved */
+	u8 link; /* 0-1 for devices, 0-7 for CPUs */
+	u8 node_id; /* The node, or a pointer to the devices parent node */
+	u8 host_link, host_depth; /* Link of parent node + depth in chain.  Only used by devices */
+	SBDFO pointer; /* A pointer to the device's slave HT capability, so we don't have to keep searching */
 
 	/* This section is for the final settings, which are written to hardware */
-	BOOL SelRegang; /* Only used for CPU->CPU links */
-	u8 SelWidthIn;
-	u8 SelWidthOut;
-	u8 SelFrequency;
+	BOOL sel_regang; /* Only used for CPU->CPU links */
+	u8 sel_width_in;
+	u8 sel_width_out;
+	u8 sel_frequency;
 	uint8_t enable_isochronous_mode;
 
 	/* This section is for keeping track of capabilities and possible configurations */
-	BOOL RegangCap;
-	uint32_t PrvFrequencyCap;
-	uint32_t PrvFeatureCap;
-	u8 PrvWidthInCap;
-	u8 PrvWidthOutCap;
-	uint32_t CompositeFrequencyCap;
+	BOOL regang_cap;
+	uint32_t prv_frequency_cap;
+	uint32_t prv_feature_cap;
+	u8 prv_width_in_cap;
+	u8 prv_width_out_cap;
+	uint32_t composite_frequency_cap;
 
 } sPortDescriptor;
 
@@ -127,36 +127,36 @@ typedef struct
  * Our global state data structure
  */
 typedef struct {
-	AMD_HTBLOCK *HtBlock;
+	AMD_HTBLOCK *ht_block;
 
-	u8 NodesDiscovered;	 /* One less than the number of nodes found in the system */
-	u8 TotalLinks;
-	u8 sysMpCap;		 /* The maximum number of nodes that all processors are capable of */
+	u8 nodes_discovered;	 /* One less than the number of nodes found in the system */
+	u8 total_links;
+	u8 sys_mp_cap;		 /* The maximum number of nodes that all processors are capable of */
 
 	/* Two ports for each link
 	 * Note: The Port pair 2*N and 2*N+1 are connected together to form a link
 	 * (e.g. 0,1 and 8,9 are ports on either end of an HT link) The lower number
 	 * port (2*N) is the source port.	The device that owns the source port is
 	 * always the device closer to the BSP. (i.e. nearer the CPU in a
-	 * non-coherent chain, or the CPU with the lower NodeID).
+	 * non-coherent chain, or the CPU with the lower node_id).
 	 */
-	sPortDescriptor PortList[MAX_PLATFORM_LINKS*2];
+	sPortDescriptor port_list[MAX_PLATFORM_LINKS*2];
 
 	/* The number of coherent links coming off of each node (i.e. the 'Degree' of the node) */
-	u8 sysDegree[MAX_NODES];
-	/* The systems adjency (sysMatrix[i][j] is true if Node_i has a link to Node_j) */
-	BOOL sysMatrix[MAX_NODES][MAX_NODES];
+	u8 sys_degree[MAX_NODES];
+	/* The systems adjency (sys_matrix[i][j] is true if Node_i has a link to Node_j) */
+	BOOL sys_matrix[MAX_NODES][MAX_NODES];
 
 	/* Same as above, but for the currently selected database entry */
-	u8 dbDegree[MAX_NODES];
-	BOOL dbMatrix[MAX_NODES][MAX_NODES];
+	u8 db_degree[MAX_NODES];
+	BOOL db_matrix[MAX_NODES][MAX_NODES];
 
-	u8 Perm[MAX_NODES];	 /* The node mapping from the database to the system */
-	u8 ReversePerm[MAX_NODES];	 /* The node mapping from the system to the database */
+	u8 perm[MAX_NODES];	 /* The node mapping from the database to the system */
+	u8 reverse_perm[MAX_NODES];	 /* The node mapping from the system to the database */
 
 	/* Data for non-coherent initialization */
-	u8 AutoBusCurrent;
-	u8 UsedCfgMapEntires;
+	u8 auto_bus_current;
+	u8 used_cfg_map_entires;
 
 	/* 'This' pointer for northbridge */
 	cNorthBridge *nb;

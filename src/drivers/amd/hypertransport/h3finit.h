@@ -113,7 +113,7 @@
 typedef struct {
 	u8 **topolist;
 	u8 AutoBusStart;
-	/* Note: This should always be the form AutoBusCurrent+N*AutoBusIncrement, also bus 253-255 are reserved */
+	/* Note: This should always be the form auto_bus_current+N*AutoBusIncrement, also bus 253-255 are reserved */
 	u8 AutoBusMax;
 	u8 AutoBusIncrement;
 
@@ -191,7 +191,7 @@ typedef struct {
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * AMD_CB_DeviceCapOverride(u8 HostNode, u8 HostLink, u8 Depth, u8 Segment,
+	 * AMD_CB_DeviceCapOverride(u8 HostNode, u8 host_link, u8 Depth, u8 Segment,
 	 *				  u8 Bus, u8 Dev, u32 DevVenID, u8 Link,
 	 *				  u8 *LinkWidthIn, u8 *LinkWidthOut, u16 *FreqCap)
 	 *
@@ -221,7 +221,7 @@ typedef struct {
 	 */
 	void (*AMD_CB_DeviceCapOverride)(
 		u8 HostNode,
-		u8 HostLink,
+		u8 host_link,
 		u8 Depth,
 		u8 Segment,
 		u8 Bus,
@@ -271,7 +271,7 @@ typedef struct {
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * AMD_CB_IOPCBLimits(u8 HostNode, u8 HostLink, u8 Depth, u8 *DownstreamLinkWidthLimit,
+	 * AMD_CB_IOPCBLimits(u8 HostNode, u8 host_link, u8 Depth, u8 *DownstreamLinkWidthLimit,
 	 *			    u8 *UpstreamLinkWidthLimit, u16 *PCBFreqCap)
 	 *
 	 * Description:
@@ -293,7 +293,7 @@ typedef struct {
 	 */
 	void (*AMD_CB_IOPCBLimits)(
 		u8 HostNode,
-		u8 HostLink,
+		u8 host_link,
 		u8 Depth,
 		u8 *DownstreamLinkWidthLimit,
 		u8 *UpstreamLinkWidthLimit,
@@ -372,7 +372,7 @@ typedef struct {
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * AMD_CB_OverrideDevicePort(u8 HostNode, u8 HostLink, u8 Depth, u8 *LinkWidthIn,
+	 * AMD_CB_OverrideDevicePort(u8 HostNode, u8 host_link, u8 Depth, u8 *LinkWidthIn,
 	 *				   u8 *LinkWidthOut, u16 *LinkFrequency)
 	 *
 	 * Description:
@@ -394,7 +394,7 @@ typedef struct {
 	 */
 	void (*AMD_CB_OverrideDevicePort)(
 		u8 HostNode,
-		u8 HostLink,
+		u8 host_link,
 		u8 Depth,
 		u8 Link,
 		u8 *LinkWidthIn,
@@ -591,7 +591,7 @@ typedef struct
 	u8 eSize;
 	u8 node;
 	u8 link;
-	u8 sysMpCap;
+	u8 sys_mp_cap;
 	u8 totalNodes;
 } sHtEventCohMpCapMismatch;
 
