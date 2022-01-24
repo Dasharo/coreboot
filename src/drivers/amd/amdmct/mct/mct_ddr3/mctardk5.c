@@ -7,9 +7,9 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 Speed, u8 MAAload,
-				u32 *ODC_CTL,
-				u8 *CMDmode);
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 speed, u8 maa_load,
+				u32 *odc_ctl,
+				u8 *cmd_mode);
 
 void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 			 struct DCTStatStruc *p_dct_stat, u32 dct)
@@ -40,32 +40,32 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 
 /*
  *  In: maa_dimms   - number of DIMMs on the channel
- *    : Speed      - Speed (see DCTStatstruc.speed for definition)
- *    : MAAload    - number of address bus loads on the channel
+ *    : speed      - speed (see DCTStatstruc.speed for definition)
+ *    : maa_load    - number of address bus loads on the channel
  * Out: addr_tmg_ctl - Address Timing Control Register Value
- *    : ODC_CTL    - Output Driver Compensation Control Register Value
- *    : CMDmode    - CMD mode
+ *    : odc_ctl    - Output Driver Compensation Control Register Value
+ *    : cmd_mode    - CMD mode
  */
-static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 Speed, u8 MAAload,
-				u32 *ODC_CTL,
-				u8 *CMDmode)
+static void get_channel_ps_cfg_0_d(u8 maa_dimms, u8 speed, u8 maa_load,
+				u32 *odc_ctl,
+				u8 *cmd_mode)
 {
-	*ODC_CTL = 0;
-	*CMDmode = 1;
+	*odc_ctl = 0;
+	*cmd_mode = 1;
 
 	if (maa_dimms == 1) {
-		*ODC_CTL = 0x00113222;
-		*CMDmode = 1;
+		*odc_ctl = 0x00113222;
+		*cmd_mode = 1;
 	} else /* if (maa_dimms == 0) */ {
-		if (Speed == 4) {
-			*CMDmode = 1;
-		} else if (Speed == 5) {
-			*CMDmode = 1;
-		} else if (Speed == 6) {
-			*CMDmode = 2;
+		if (speed == 4) {
+			*cmd_mode = 1;
+		} else if (speed == 5) {
+			*cmd_mode = 1;
+		} else if (speed == 6) {
+			*cmd_mode = 2;
 		} else {
-			*CMDmode = 2;
+			*cmd_mode = 2;
 		}
-		*ODC_CTL = 0x00223323;
+		*odc_ctl = 0x00223323;
 	}
 }
