@@ -105,9 +105,9 @@ static const u16 ddr3_limits[16] = {933, 800, 666, 533, 400, 333, 0, 0, 0, 0, 0,
 #include <northbridge/amd/amdfam10/raminit.h>
 
 #if CONFIG(DIMM_DDR2)
-void mctSaveDQSSigTmg_D(void);
-void mctGetDQSSigTmg_D(void);
-u8 mctSetNodeBoundary_D(void);
+void mct_save_dqs_sig_tmg_d(void);
+void mct_get_dqs_sig_tmg_d(void);
+u8 mct_set_node_boundary_d(void);
 #endif
 u16 mct_get_nv_bits(u8 index);
 void mct_hook_after_dimm_pre(void);

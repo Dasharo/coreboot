@@ -372,7 +372,7 @@ static void rqs_timing_d(struct MCTStatStruc *p_mct_stat,
 		print_t("rqs_timing_d: train_max_read_latency_d\n");
 //FIXME - currently uses calculated value		train_max_read_latency_d(p_mct_stat, p_dct_stat_a);
 		mct_hook_after_any_training();
-		mctSaveDQSSigTmg_D();
+		mct_save_dqs_sig_tmg_d();
 
 		print_t("rqs_timing_d: mct_end_dqs_training_d\n");
 		mct_end_dqs_training_d(p_mct_stat, p_dct_stat_a);
@@ -380,7 +380,7 @@ static void rqs_timing_d(struct MCTStatStruc *p_mct_stat,
 		print_t("rqs_timing_d: mct_mem_clr_d\n");
 		mct_mem_clr_d(p_mct_stat, p_dct_stat_a);
 	} else {
-		mctGetDQSSigTmg_D();	/* get values into data structure */
+		mct_get_dqs_sig_tmg_d();	/* get values into data structure */
 		load_dqs_sig_tmg_regs_d(p_mct_stat, p_dct_stat_a);	/* load values into registers.*/
 		//mctDoWarmResetMemClr_D();
 		mct_mem_clr_d(p_mct_stat, p_dct_stat_a);
@@ -605,7 +605,7 @@ static void ht_mem_map_init_d(struct MCTStatStruc *p_mct_stat,
 		set_nb32(dev, 0x40 + (node << 3), base); /* [node] + Dram Base 0 */
 
 		/* if node limit > 1GB then set it to 1GB boundary for each node */
-		if ((mctSetNodeBoundary_D()) && (limit > 0x00400000)) {
+		if ((mct_set_node_boundary_d()) && (limit > 0x00400000)) {
 			limit++;
 			limit &= 0xFFC00000;
 			limit--;
@@ -617,7 +617,7 @@ static void ht_mem_map_init_d(struct MCTStatStruc *p_mct_stat,
 		limit = p_dct_stat->dct_sys_limit;
 		if (limit) {
 			next_base = (limit & 0xFFFF0000) + 0x10000;
-			if ((mctSetNodeBoundary_D()) && (next_base > 0x00400000)) {
+			if ((mct_set_node_boundary_d()) && (next_base > 0x00400000)) {
 				next_base++;
 				next_base &= 0xFFC00000;
 				next_base--;

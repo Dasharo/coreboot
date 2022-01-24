@@ -94,7 +94,7 @@ void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
 	if (bottom_40b_io) {
 		hi = bottom_40b_io >> 24;
 		lo = bottom_40b_io << 8;
-		if (mctSetNodeBoundary_D())
+		if (mct_set_node_boundary_d())
 			lo &= 0xC0000000;
 		addr += 3;		/* TOM2 */
 		_wrmsr(addr, lo, hi);

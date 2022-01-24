@@ -404,11 +404,11 @@ void mct_hook_after_cpu(void)
 
 
 #if CONFIG(DIMM_DDR2)
-void mctSaveDQSSigTmg_D(void)
+void mct_save_dqs_sig_tmg_d(void)
 {
 }
 
-void mctGetDQSSigTmg_D(void)
+void mct_get_dqs_sig_tmg_d(void)
 {
 }
 #endif
@@ -512,7 +512,7 @@ void mct_hook_after_any_training(void)
 }
 
 #if CONFIG(DIMM_DDR2)
-u8 mctSetNodeBoundary_D(void)
+u8 mct_set_node_boundary_d(void)
 {
 	return 0;
 }
