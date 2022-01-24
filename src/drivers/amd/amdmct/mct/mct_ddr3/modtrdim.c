@@ -228,16 +228,16 @@ u8 wr_lv_odt_reg_dimm (sMCTStruct *p_mct_data, sDCTStruct *p_dct_data, u8 dimm)
 	i = 0;
 	while (i < 8) {
 		if (p_dct_data->DctCSPresent & (1 << i)) {
-			wr_lv_odt_1 = (u8)bitTestSet(wr_lv_odt_1, i/2);
+			wr_lv_odt_1 = (u8)bit_test_set(wr_lv_odt_1, i/2);
 		}
 		i += 2;
 	}
 	if (mct_get_nv_bits(NV_MAX_DIMMS_PER_CH) == 2) {
 		if ((p_dct_data->dimm_ranks[dimm] == 4) && (p_dct_data->MaxDimmsInstalled != 1)) {
 			if (dimm >= 2) {
-				wr_lv_odt_1 = (u8)bitTestReset (wr_lv_odt_1, (dimm - 2));
+				wr_lv_odt_1 = (u8)bit_test_reset (wr_lv_odt_1, (dimm - 2));
 			} else {
-				wr_lv_odt_1 = (u8)bitTestReset (wr_lv_odt_1, (dimm + 2));
+				wr_lv_odt_1 = (u8)bit_test_reset (wr_lv_odt_1, (dimm + 2));
 			}
 		} else if ((p_dct_data->dimm_ranks[dimm] == 2) && (p_dct_data->MaxDimmsInstalled == 1)) {
 			/* the case for one DR on a 2 dimms per channel is special */

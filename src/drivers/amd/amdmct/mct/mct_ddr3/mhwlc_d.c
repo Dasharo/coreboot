@@ -56,7 +56,7 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 	/* 1. Specify the target DIMM that is to be trained by programming
 	 * F2x[1, 0]9C_x08[TrDimmSel].
 	 */
-	set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+	set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 			DRAM_ADD_DCT_PHY_CONTROL_REG, TrDimmSelStart,
 			TrDimmSelEnd, (u32)dimm);
 
@@ -70,11 +70,11 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 
 		if (is_fam15h()) {
 			/* Program F2x[1, 0]9C_x08[WrtLvTrEn]=0 */
-			set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 					DRAM_ADD_DCT_PHY_CONTROL_REG, WrtLvTrEn, WrtLvTrEn, 0);
 
 			/* Set TrNibbleSel */
-			set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 					DRAM_ADD_DCT_PHY_CONTROL_REG, 2,
 					2, (u32)nibble);
 		}
@@ -98,7 +98,7 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		 *  Program F2x[1, 0]9C_x08[WrtLvTrEn]=1. */
 		if (pdct_data->logical_cpuid & (AMD_DR_Cx | AMD_DR_Dx | AMD_FAM15_ALL))
 		{
-			set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 					DRAM_ADD_DCT_PHY_CONTROL_REG, WrtLvTrEn, WrtLvTrEn, 1);
 		}
 		else
@@ -120,17 +120,17 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 				addl_data_port = 0x9C;
 			}
 			addr = 0x0D00000C;
-			AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
-			while ((get_Bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
+			amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
+			while ((get_bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
 					DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
-			AmdMemPCIReadBits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
-			value = bitTestSet(value, 0);	/* enable WL training */
-			value = bitTestReset(value, 4); /* for x8 only */
-			value = bitTestReset(value, 5); /* for hardware WL training */
-			AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
+			amd_mem_pci_read_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
+			value = bit_test_set(value, 0);	/* enable WL training */
+			value = bit_test_reset(value, 4); /* for x8 only */
+			value = bit_test_reset(value, 5); /* for hardware WL training */
+			amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
 			addr = 0x4D030F0C;
-			AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
-			while ((get_Bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
+			amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
+			while ((get_bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
 					DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 		}
 
@@ -144,7 +144,7 @@ u8 agesa_hw_wl_phase1(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 			p_mct_data->agesa_delay(140);
 
 		/* Program F2x[1, 0]9C_x08[WrtLevelTrEn]=0. */
-		set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_ADD_DCT_PHY_CONTROL_REG, WrtLvTrEn, WrtLvTrEn, 0);
 
 		/* Read from registers F2x[1, 0]9C_x[51:50] and F2x[1, 0]9C_x52
@@ -307,7 +307,7 @@ u8 agesa_hw_wl_phase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 
 	/* 6. Configure DRAM Phy Control Register so that the phy stops driving
 	 *    write levelization ODT. */
-	set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+	set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 			DRAM_ADD_DCT_PHY_CONTROL_REG, WrLvOdtEn, WrLvOdtEn, 0);
 
 	if (is_fam15h())
@@ -357,10 +357,10 @@ u32 swap_addr_bits_wl(struct DCTStatStruc *p_dct_stat, u8 dct, u32 mrs_value)
 	u32 temp_w, temp_w_1;
 
 	if (is_fam15h())
-		temp_w_1 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+		temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
 				FUN_DCT, DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15);
 	else
-		temp_w_1 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+		temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
 			FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10);
 	if (temp_w_1 & 1)
 	{
@@ -398,10 +398,10 @@ u32 swap_bank_bits(struct DCTStatStruc *p_dct_stat, u8 dct, u32 mrs_value)
 	u32 temp_w, temp_w_1;
 
 	if (is_fam15h())
-		temp_w_1 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+		temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
 				FUN_DCT, DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15);
 	else
-		temp_w_1 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+		temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
 				FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10);
 	if (temp_w_1 & 1)
 	{
@@ -491,10 +491,10 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 	u8 number_of_dimms = pdct_data->MaxDimmsInstalled;
 
 	if (is_fam15h()) {
-		mem_clk_freq = get_Bits(pdct_data, dct, pdct_data->NodeId,
+		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->NodeId,
 			FUN_DCT, DRAM_CONFIG_HIGH, 0, 4);
 	} else {
-		mem_clk_freq = get_Bits(pdct_data, dct, pdct_data->NodeId,
+		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->NodeId,
 			FUN_DCT, DRAM_CONFIG_HIGH, 0, 2);
 	}
 	/* Configure the DCT to send initialization MR commands to the target DIMM
@@ -505,10 +505,10 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 	{
 		/* Program F2x[1, 0]7C[MrsChipSel[2:0]] for the current rank to be trained. */
 		if (is_fam15h())
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15, dimm * 2 + rank);
 		else
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10, dimm * 2 + rank);
 
 		/* Program F2x[1, 0]7C[mrs_bank[2:0]] for the appropriate internal DRAM
@@ -517,10 +517,10 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		 */
 		mrs_bank = swap_bank_bits(p_dct_stat, dct, 1);
 		if (is_fam15h())
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsBankStartFam15, MrsBankEndFam15, mrs_bank);
 		else
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsBankStartFam10, MrsBankEndFam10, mrs_bank);
 
 		/* Program F2x[1, 0]7C[MrsAddress[15:0]] to the required DDR3-defined function
@@ -534,7 +534,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 			temp_w &= ~(0x0244);
 		} else {
 			/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
-			temp_w_2 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+			temp_w_2 = get_bits(pdct_data, dct, pdct_data->NodeId,
 					FUN_DCT, DRAM_CONFIG_HIGH, RDQS_EN, RDQS_EN);
 			if (temp_w_2)
 			{
@@ -598,7 +598,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		/* All ranks of the target DIMM are set to write levelization mode. */
 		if (wl)
 		{
-			temp_w_1 = bitTestSet(temp_w, MRS_Level);
+			temp_w_1 = bit_test_set(temp_w, MRS_Level);
 			if (rank == 0)
 			{
 				/* Enable the output driver of the first rank of the target DIMM. */
@@ -609,7 +609,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 				/* Disable the output drivers of all other ranks for
 				 * the target DIMM.
 				 */
-				temp_w = bitTestSet(temp_w_1, Qoff);
+				temp_w = bit_test_set(temp_w_1, Qoff);
 			}
 		}
 
@@ -618,32 +618,32 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 			temp_w_1 = fam15_dimm_dic(p_dct_stat, dct, dimm, rank, package_type);
 		} else {
 			/* Read DIC from F2x[1,0]84[DrvImpCtrl] */
-			temp_w_1 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+			temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
 					FUN_DCT, DRAM_MRS_REGISTER, DrvImpCtrlStart, DrvImpCtrlEnd);
 		}
 
 		/* Apply DIC to the MRS control word */
-		if (bitTest(temp_w_1, 1))
-			temp_w = bitTestSet(temp_w, 5);
-		if (bitTest(temp_w_1, 0))
-			temp_w = bitTestSet(temp_w, 1);
+		if (bit_test(temp_w_1, 1))
+			temp_w = bit_test_set(temp_w, 5);
+		if (bit_test(temp_w_1, 0))
+			temp_w = bit_test_set(temp_w, 1);
 
 		temp_w = swap_addr_bits_wl(p_dct_stat, dct, temp_w);
 
 		if (is_fam15h())
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsAddressStartFam15, MrsAddressEndFam15, temp_w);
 		else
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, temp_w);
 
 		/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command to
 		 * the specified DIMM.
 		 */
-		set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 			DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 		/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
-		while ((get_Bits(pdct_data, dct, pdct_data->NodeId,
+		while ((get_bits(pdct_data, dct, pdct_data->NodeId,
 				FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD)) == 0x1)
 		{
 		}
@@ -653,10 +653,10 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		 */
 		mrs_bank = swap_bank_bits(p_dct_stat, dct, 2);
 		if (is_fam15h())
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsBankStartFam15, MrsBankEndFam15, mrs_bank);
 		else
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsBankStartFam10, MrsBankEndFam10, mrs_bank);
 
 		/* Program F2x[1, 0]7C[MrsAddress[15:0]] to the required DDR3-defined function
@@ -671,12 +671,12 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		} else {
 			/* program MrsAddress[7,6,5:3]=SRT,ASR,CWL,
 			* based on F2x[1,0]84[19,18,22:20]=,SRT,ASR,Tcwl */
-			temp_w_1 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+			temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
 					FUN_DCT, DRAM_MRS_REGISTER, PCI_MIN_LOW, PCI_MAX_HIGH);
-			if (bitTest(temp_w_1,19))
-			{temp_w = bitTestSet(temp_w, 7);}
-			if (bitTest(temp_w_1,18))
-			{temp_w = bitTestSet(temp_w, 6);}
+			if (bit_test(temp_w_1,19))
+			{temp_w = bit_test_set(temp_w, 7);}
+			if (bit_test(temp_w_1,18))
+			{temp_w = bit_test_set(temp_w, 6);}
 			/* temp_w = temp_w|(((temp_w_1 >> 20) & 0x7)<< 3); */
 			temp_w = temp_w | ((temp_w_1 & 0x00700000) >> 17);
 			/* workaround for DR-B0 */
@@ -698,19 +698,19 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 		temp_w = temp_w | temp_w_1;
 		temp_w = swap_addr_bits_wl(p_dct_stat, dct, temp_w);
 		if (is_fam15h())
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsAddressStartFam15, MrsAddressEndFam15, temp_w);
 		else
-			set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+			set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, temp_w);
 
 		/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command to
 		   the specified DIMM.*/
-		set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 			DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 
 		/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
-		while ((get_Bits(pdct_data, dct, pdct_data->NodeId,
+		while ((get_bits(pdct_data, dct, pdct_data->NodeId,
 				FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD)) == 0x1)
 		{
 		}
@@ -733,10 +733,10 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					 * to be trained.
 					 */
 					if (is_fam15h())
-						set_Bits(pdct_data, dct, pdct_data->NodeId,
+						set_bits(pdct_data, dct, pdct_data->NodeId,
 							FUN_DCT, DRAM_INIT, MrsChipSelStartFam15, MrsChipSelEndFam15, curr_dimm * 2 + rank);
 					else
-						set_Bits(pdct_data, dct, pdct_data->NodeId,
+						set_bits(pdct_data, dct, pdct_data->NodeId,
 							FUN_DCT, DRAM_INIT, MrsChipSelStartFam10, MrsChipSelEndFam10, curr_dimm * 2 + rank);
 
 					/* Program F2x[1, 0]7C[mrs_bank[2:0]] for the appropriate internal
@@ -745,10 +745,10 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					 */
 					mrs_bank = swap_bank_bits(p_dct_stat, dct, 1);
 					if (is_fam15h())
-						set_Bits(pdct_data, dct, pdct_data->NodeId,
+						set_bits(pdct_data, dct, pdct_data->NodeId,
 							FUN_DCT, DRAM_INIT, MrsBankStartFam15, MrsBankEndFam15, mrs_bank);
 					else
-						set_Bits(pdct_data, dct, pdct_data->NodeId,
+						set_bits(pdct_data, dct, pdct_data->NodeId,
 							FUN_DCT, DRAM_INIT, MrsBankStartFam10, MrsBankEndFam10, mrs_bank);
 
 					/* Program F2x[1, 0]7C[MrsAddress[15:0]] to the required
@@ -762,7 +762,7 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 						temp_w &= ~(0x0244);
 					} else {
 						/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
-						temp_w_2 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+						temp_w_2 = get_bits(pdct_data, dct, pdct_data->NodeId,
 								FUN_DCT, DRAM_CONFIG_HIGH, RDQS_EN, RDQS_EN);
 						if (temp_w_2)
 						{
@@ -793,33 +793,33 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 						temp_w_1 = fam15_dimm_dic(p_dct_stat, dct, dimm, rank, package_type);
 					} else {
 						/* Read DIC from F2x[1,0]84[DrvImpCtrl] */
-						temp_w_1 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+						temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
 								FUN_DCT, DRAM_MRS_REGISTER, DrvImpCtrlStart, DrvImpCtrlEnd);
 					}
 
 					/* Apply DIC to the MRS control word */
-					if (bitTest(temp_w_1,1))
-					{temp_w = bitTestSet(temp_w, 5);}
-					if (bitTest(temp_w_1,0))
-					{temp_w = bitTestSet(temp_w, 1);}
+					if (bit_test(temp_w_1,1))
+					{temp_w = bit_test_set(temp_w, 5);}
+					if (bit_test(temp_w_1,0))
+					{temp_w = bit_test_set(temp_w, 1);}
 
 					temp_w = swap_addr_bits_wl(p_dct_stat, dct, temp_w);
 
 					if (is_fam15h())
-						set_Bits(pdct_data, dct, pdct_data->NodeId,
+						set_bits(pdct_data, dct, pdct_data->NodeId,
 							FUN_DCT, DRAM_INIT, MrsAddressStartFam15, MrsAddressEndFam15, temp_w);
 					else
-						set_Bits(pdct_data, dct, pdct_data->NodeId,
+						set_bits(pdct_data, dct, pdct_data->NodeId,
 							FUN_DCT, DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, temp_w);
 
 					/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command
 					 * to the specified DIMM.
 					 */
-					set_Bits(pdct_data, dct, pdct_data->NodeId,
+					set_bits(pdct_data, dct, pdct_data->NodeId,
 						FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 
 					/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
-					while ((get_Bits(pdct_data, dct,
+					while ((get_bits(pdct_data, dct,
 							pdct_data->NodeId, FUN_DCT, DRAM_INIT,
 							SEND_MRS_CMD, SEND_MRS_CMD)) == 1);
 
@@ -828,10 +828,10 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					 */
 					mrs_bank = swap_bank_bits(p_dct_stat, dct, 2);
 					if (is_fam15h())
-						set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+						set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 							DRAM_INIT, MrsBankStartFam15, MrsBankEndFam15, mrs_bank);
 					else
-						set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+						set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 							DRAM_INIT, MrsBankStartFam10, MrsBankEndFam10, mrs_bank);
 
 					/* Program F2x[1, 0]7C[MrsAddress[15:0]] to the required DDR3-defined function
@@ -846,12 +846,12 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					} else {
 						/* program MrsAddress[7,6,5:3]=SRT,ASR,CWL,
 						* based on F2x[1,0]84[19,18,22:20]=,SRT,ASR,Tcwl */
-						temp_w_1 = get_Bits(pdct_data, dct, pdct_data->NodeId,
+						temp_w_1 = get_bits(pdct_data, dct, pdct_data->NodeId,
 								FUN_DCT, DRAM_MRS_REGISTER, PCI_MIN_LOW, PCI_MAX_HIGH);
-						if (bitTest(temp_w_1,19))
-						{temp_w = bitTestSet(temp_w, 7);}
-						if (bitTest(temp_w_1,18))
-						{temp_w = bitTestSet(temp_w, 6);}
+						if (bit_test(temp_w_1,19))
+						{temp_w = bit_test_set(temp_w, 7);}
+						if (bit_test(temp_w_1,18))
+						{temp_w = bit_test_set(temp_w, 6);}
 						/* temp_w = temp_w|(((temp_w_1 >> 20) & 0x7) << 3); */
 						temp_w = temp_w | ((temp_w_1 & 0x00700000) >> 17);
 						/* workaround for DR-B0 */
@@ -873,19 +873,19 @@ void prepare_dimms(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_s
 					temp_w = temp_w | temp_w_1;
 					temp_w = swap_addr_bits_wl(p_dct_stat, dct, temp_w);
 					if (is_fam15h())
-						set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+						set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 							DRAM_INIT, MrsAddressStartFam15, MrsAddressEndFam15, temp_w);
 					else
-						set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+						set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 							DRAM_INIT, MrsAddressStartFam10, MrsAddressEndFam10, temp_w);
 
 					/* Program F2x[1, 0]7C[SEND_MRS_CMD]=1 to initiate the command to
 					   the specified DIMM.*/
-					set_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+					set_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 						DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD, 1);
 
 					/* Wait for F2x[1, 0]7C[SEND_MRS_CMD] to be cleared by hardware. */
-					while ((get_Bits(pdct_data, dct, pdct_data->NodeId,
+					while ((get_bits(pdct_data, dct, pdct_data->NodeId,
 							FUN_DCT, DRAM_INIT, SEND_MRS_CMD, SEND_MRS_CMD)) == 0x1)
 					{
 					}
@@ -944,15 +944,15 @@ void program_odt(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 		} else {
 			if ((pdct_data->DctCSPresent & 0x05) == 0x05) {
 				wr_lv_odt_1 = 0x03;
-			} else if (bitTest((u32)pdct_data->DctCSPresent,(u8)(dimm * 2 + 1))) {
-				wr_lv_odt_1 = (u8)bitTestSet(wr_lv_odt_1, dimm + 2);
+			} else if (bit_test((u32)pdct_data->DctCSPresent,(u8)(dimm * 2 + 1))) {
+				wr_lv_odt_1 = (u8)bit_test_set(wr_lv_odt_1, dimm + 2);
 			} else {
-				wr_lv_odt_1 = (u8)bitTestSet(wr_lv_odt_1, dimm);
+				wr_lv_odt_1 = (u8)bit_test_set(wr_lv_odt_1, dimm);
 			}
 		}
 	}
 
-	set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+	set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 			DRAM_ADD_DCT_PHY_CONTROL_REG, 8, 11, (u32)wr_lv_odt_1);
 
 	printk(BIOS_SPEW, "Programmed DCT %d write levelling ODT pattern %08x from DIMM %d data\n", dct, wr_lv_odt_1, dimm);
@@ -1002,11 +1002,11 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 
 	if (is_fam15h()) {
 		/* mem_clk_freq: 0x4: 333MHz; 0x6: 400MHz; 0xa: 533MHz; 0xe: 667MHz; 0x12: 800MHz; 0x16: 933MHz */
-		mem_clk_freq = get_Bits(pdct_data, dct, pdct_data->NodeId,
+		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->NodeId,
 					FUN_DCT, DRAM_CONFIG_HIGH, 0, 4);
 	} else {
 		/* mem_clk_freq: 3: 400MHz; 4: 533MHz; 5: 667MHz; 6: 800MHz */
-		mem_clk_freq = get_Bits(pdct_data, dct, pdct_data->NodeId,
+		mem_clk_freq = get_bits(pdct_data, dct, pdct_data->NodeId,
 					FUN_DCT, DRAM_CONFIG_HIGH, 0, 2);
 	}
 
@@ -1017,7 +1017,7 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 
 	/* Program F2x[1,0]9C_x08[WrLvOdtEn]=1 */
 	if (pdct_data->logical_cpuid & (AMD_DR_Cx | AMD_DR_Dx | AMD_FAM15_ALL)) {
-		set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_ADD_DCT_PHY_CONTROL_REG, WrLvOdtEn, WrLvOdtEn, (u32)1);
 	}
 	else
@@ -1034,15 +1034,15 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 			addl_data_port = 0x9C;
 		}
 		addr = 0x0D008000;
-		AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
-		while ((get_Bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
+		amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
+		while ((get_bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
 				DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
-		AmdMemPCIReadBits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
-		value = bitTestSet(value, 12);
-		AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
+		amd_mem_pci_read_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
+		value = bit_test_set(value, 12);
+		amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_port), 31, 0, &value);
 		addr = 0x4D088F00;
-		AmdMemPCIWriteBits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
-		while ((get_Bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
+		amd_mem_pci_write_bits(MAKE_SBDFO(0,0,24+(pdct_data->NodeId),FUN_DCT,addl_data_offset), 31, 0, &addr);
+		while ((get_bits(pdct_data,FUN_DCT,pdct_data->NodeId, FUN_DCT, addl_data_offset,
 				DCT_ACCESS_DONE, DCT_ACCESS_DONE)) == 0);
 	}
 
@@ -1363,11 +1363,11 @@ void set_wl_byte_delay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8
 				ecc_value = ((gross_delay_value << 5) | fine_delay_value);
 			byte_lane++;
 		}
-		set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_CONT_ADD_PHASE_REC_CTRL_LOW, 0, 31, (u32)value_low);
-		set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_CONT_ADD_PHASE_REC_CTRL_HIGH, 0, 31, (u32)value_high);
-		set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				DRAM_CONT_ADD_ECC_PHASE_REC_CTRL, 0, 31, (u32)ecc_value);
 	}
 	else
@@ -1404,9 +1404,9 @@ void set_wl_byte_delay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8
 		gross_start_loc = (u8)(fine_end_loc + 1);
 		gross_end_loc = (u8)(gross_start_loc + 2);
 
-		set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				(u16)addr, fine_start_loc, fine_end_loc,(u32)fine_delay_value);
-		set_DCT_ADDR_Bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
+		set_dct_addr_bits(pdct_data, dct, pdct_data->NodeId, FUN_DCT,
 				(u16)addr, gross_start_loc, gross_end_loc, (u32)gross_delay_value);
 
 		pdct_data->WLFineDelayPrevPass[index + byte_lane] = fine_delay_value;
@@ -1462,9 +1462,9 @@ void getWLByteDelay(struct DCTStatStruc *p_dct_stat, u8 dct, u8 byte_lane, u8 di
 	gross_start_loc = (u8)(fine_end_loc + 1);
 	gross_end_loc = (u8)(gross_start_loc + 1);
 
-	fine = get_ADD_DCT_Bits(pdct_data, dct, pdct_data->NodeId,
+	fine = get_add_dct_bits(pdct_data, dct, pdct_data->NodeId,
 				FUN_DCT, (u16)addr, fine_start_loc, fine_end_loc);
-	gross = get_ADD_DCT_Bits(pdct_data, dct, pdct_data->NodeId,
+	gross = get_add_dct_bits(pdct_data, dct, pdct_data->NodeId,
 				FUN_DCT, (u16)addr, gross_start_loc, gross_end_loc);
 
 	printk(BIOS_SPEW, "\tLane %02x nibble %01x raw readback: %04x\n", byte_lane, nibble, ((gross & 0x1f) << 5) | (fine & 0x1f));

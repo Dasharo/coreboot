@@ -174,25 +174,25 @@ typedef struct _sDCTStruct
 	u8 WLPass;
 } __attribute__((packed, aligned(4))) sDCTStruct;
 
-void set_DCT_ADDR_Bits(sDCTStruct *pDCTData,
+void set_dct_addr_bits(sDCTStruct *pDCTData,
 		u8 dct, u8 node, u8 func,
 		u16 offset, u8 low, u8 high, u32 value);
-void AmdMemPCIWriteBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue);
-u32 get_Bits(sDCTStruct *pDCTData,
+void amd_mem_pci_write_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue);
+u32 get_bits(sDCTStruct *pDCTData,
 		u8 dct, u8 node, u8 func,
 		u16 offset, u8 low, u8 high);
-void AmdMemPCIReadBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue);
-u32 bitTestSet(u32 csMask,u32 tempD);
-u32 bitTestReset(u32 csMask,u32 tempD);
-void set_Bits(sDCTStruct *pDCTData,
+void amd_mem_pci_read_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue);
+u32 bit_test_set(u32 csMask,u32 tempD);
+u32 bit_test_reset(u32 csMask,u32 tempD);
+void set_bits(sDCTStruct *pDCTData,
 		u8 dct, u8 node, u8 func,
 		u16 offset, u8 low, u8 high, u32 value);
-bool bitTest(u32 value, u8 bitLoc);
+bool bit_test(u32 value, u8 bitLoc);
 u32 rtt_nom_non_target_reg_dimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank);
 u32 rtt_nom_target_reg_dimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank);
 u32 rtt_wr_reg_dimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm, bool wl, u8 MemClkFreq, u8 rank);
 u8 wr_lv_odt_reg_dimm (sMCTStruct *pMCTData, sDCTStruct *pDCTData, u8 dimm);
-u32 get_ADD_DCT_Bits(sDCTStruct *pDCTData,
+u32 get_add_dct_bits(sDCTStruct *pDCTData,
 		u8 dct, u8 node, u8 func,
 		u16 offset, u8 low, u8 high);
 void amd_mem_pci_read(SBDFO loc, u32 *Value);
