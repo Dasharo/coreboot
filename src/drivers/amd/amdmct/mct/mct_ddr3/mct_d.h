@@ -1050,7 +1050,7 @@ void write_dqs_read_data_timing_registers(u16 *delay, u32 dev,
 void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
 void proc_iocl_flush_d(u32 addr_hi);
-u8 ChipSelPresent_D(struct MCTStatStruc *p_mct_stat,
+u8 chip_sel_present_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 channel, u8 chip_sel);
 void mct_write_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat,

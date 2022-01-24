@@ -7,16 +7,16 @@
  * ;(2 or 3) to the number of column address bits, plus 3 (the logical
  * ;page size), and subtract 8.
  */
-static const u8 Tab_int_D[] = { 6,7,7,8,8,8,8,8,9,9,8,9 };
+static const u8 tab_int_d[] = { 6,7,7,8,8,8,8,8,9,9,8,9 };
 
 void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
-	u8 ChipSel, EnChipSels;
-	u32 AddrLoMask, AddrHiMask;
-	u32 AddrLoMaskN, AddrHiMaskN, MemSize = 0;
-	u8 DoIntlv, _CsIntCap;
-	u32 BitDelta, BankEncd = 0;
+	u8 chip_sel, en_chip_sels;
+	u32 addr_lo_mask, addr_hi_mask;
+	u32 addr_lo_mask_n, addr_hi_mask_n, mem_size = 0;
+	u8 do_intlv, _cs_int_cap;
+	u32 bit_delta, bank_encd = 0;
 
 	u32 dev;
 	u32 reg;
@@ -24,101 +24,101 @@ void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 	u32 val;
 	u32 val_lo, val_hi;
 
-	DoIntlv = mct_get_nv_bits(NV_BANK_INTLV);
-	_CsIntCap = 0;
-	EnChipSels = 0;
+	do_intlv = mct_get_nv_bits(NV_BANK_INTLV);
+	_cs_int_cap = 0;
+	en_chip_sels = 0;
 
 	dev = p_dct_stat->dev_dct;
 	reg_off = 0x100 * dct;
 
-	ChipSel = 0;		/* Find out if current configuration is capable */
-	while (DoIntlv && (ChipSel < MAX_CS_SUPPORTED)) {
-		reg = 0x40+(ChipSel << 2) + reg_off;	/* Dram CS Base 0 */
+	chip_sel = 0;		/* Find out if current configuration is capable */
+	while (do_intlv && (chip_sel < MAX_CS_SUPPORTED)) {
+		reg = 0x40+(chip_sel << 2) + reg_off;	/* Dram CS Base 0 */
 		val = get_nb32(dev, reg);
 		if (val & (1 << CS_ENABLE)) {
-			EnChipSels++;
-			reg = 0x60+((ChipSel >> 1) << 2)+reg_off; /*Dram CS Mask 0 */
+			en_chip_sels++;
+			reg = 0x60+((chip_sel >> 1) << 2)+reg_off; /*Dram CS Mask 0 */
 			val = get_nb32(dev, reg);
 			val >>= 19;
 			val &= 0x3ff;
 			val++;
-			if (EnChipSels == 1)
-				MemSize = val;
+			if (en_chip_sels == 1)
+				mem_size = val;
 			else
 				/*If mask sizes not same then skip */
-				if (val != MemSize)
+				if (val != mem_size)
 					break;
 			reg = 0x80 + reg_off;		/*Dram Bank Addressing */
 			val = get_nb32(dev, reg);
-			val >>= (ChipSel >> 1) << 2;
+			val >>= (chip_sel >> 1) << 2;
 			val &= 0x0f;
-			if (EnChipSels == 1)
-				BankEncd = val;
+			if (en_chip_sels == 1)
+				bank_encd = val;
 			else
 				/*If number of Rows/Columns not equal, skip */
-				if (val != BankEncd)
+				if (val != bank_encd)
 					break;
 		}
-		ChipSel++;
+		chip_sel++;
 	}
-	if (ChipSel == MAX_CS_SUPPORTED) {
-		if ((EnChipSels == 2) || (EnChipSels == 4) || (EnChipSels == 8))
-			_CsIntCap = 1;
+	if (chip_sel == MAX_CS_SUPPORTED) {
+		if ((en_chip_sels == 2) || (en_chip_sels == 4) || (en_chip_sels == 8))
+			_cs_int_cap = 1;
 	}
 
-	if (DoIntlv) {
-		if (!_CsIntCap) {
+	if (do_intlv) {
+		if (!_cs_int_cap) {
 			p_dct_stat->err_status |= 1 << SB_BK_INT_DIS;
-			DoIntlv = 0;
+			do_intlv = 0;
 		}
 	}
 
-	if (DoIntlv) {
-		val = Tab_int_D[BankEncd];
+	if (do_intlv) {
+		val = tab_int_d[bank_encd];
 		if (p_dct_stat->status & (1 << SB_128_BIT_MODE))
 			val++;
 
-		AddrLoMask = (EnChipSels - 1)  << val;
-		AddrLoMaskN = ~AddrLoMask;
+		addr_lo_mask = (en_chip_sels - 1)  << val;
+		addr_lo_mask_n = ~addr_lo_mask;
 
-		val = bsf(MemSize) + 19;
-		AddrHiMask = (EnChipSels -1) << val;
-		AddrHiMaskN = ~AddrHiMask;
+		val = bsf(mem_size) + 19;
+		addr_hi_mask = (en_chip_sels -1) << val;
+		addr_hi_mask_n = ~addr_hi_mask;
 
-		BitDelta = bsf(AddrHiMask) - bsf(AddrLoMask);
+		bit_delta = bsf(addr_hi_mask) - bsf(addr_lo_mask);
 
-		for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel++) {
-			reg = 0x40+(ChipSel << 2) + reg_off;	/*Dram CS Base 0 */
+		for (chip_sel = 0; chip_sel < MAX_CS_SUPPORTED; chip_sel++) {
+			reg = 0x40+(chip_sel << 2) + reg_off;	/*Dram CS Base 0 */
 			val = get_nb32(dev, reg);
 			if (val & 3) {
-				val_lo = val & AddrLoMask;
-				val_hi = val & AddrHiMask;
-				val &= AddrLoMaskN;
-				val &= AddrHiMaskN;
-				val_lo <<= BitDelta;
-				val_hi >>= BitDelta;
+				val_lo = val & addr_lo_mask;
+				val_hi = val & addr_hi_mask;
+				val &= addr_lo_mask_n;
+				val &= addr_hi_mask_n;
+				val_lo <<= bit_delta;
+				val_hi >>= bit_delta;
 				val |= val_lo;
 				val |= val_hi;
 				set_nb32(dev, reg, val);
 
-				if (ChipSel & 1)
+				if (chip_sel & 1)
 					continue;
 
-				reg = 0x60 + ((ChipSel >> 1) << 2) + reg_off; /*Dram CS Mask 0 */
+				reg = 0x60 + ((chip_sel >> 1) << 2) + reg_off; /*Dram CS Mask 0 */
 				val = get_nb32(dev, reg);
-				val_lo = val & AddrLoMask;
-				val_hi = val & AddrHiMask;
-				val &= AddrLoMaskN;
-				val &= AddrHiMaskN;
-				val_lo <<= BitDelta;
-				val_hi >>= BitDelta;
+				val_lo = val & addr_lo_mask;
+				val_hi = val & addr_hi_mask;
+				val &= addr_lo_mask_n;
+				val &= addr_hi_mask_n;
+				val_lo <<= bit_delta;
+				val_hi >>= bit_delta;
 				val |= val_lo;
 				val |= val_hi;
 				set_nb32(dev, reg, val);
 			}
 		}
 		print_t("interleave_banks_d: Banks Interleaved ");
-	}	/* DoIntlv */
+	}	/* do_intlv */
 
 	print_tx("interleave_banks_d: status ", p_dct_stat->status);
 	print_tx("interleave_banks_d: err_status ", p_dct_stat->err_status);

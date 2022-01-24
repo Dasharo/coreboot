@@ -10,27 +10,27 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-static void CalcEccDQSPos_D(struct MCTStatStruc *p_mct_stat,
+static void calc_ecc_dqs_pos_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u16 like,
 				u8 scale, u8 ChipSel);
-static void GetDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat,
+static void get_dqs_dat_struc_val_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 ChipSel);
-static void WriteDQSTestPattern_D(struct MCTStatStruc *p_mct_stat,
+static void write_dqs_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat,
 					u32 TestAddr_lo);
-static void WriteL18TestPattern_D(struct DCTStatStruc *p_dct_stat,
+static void write_l18_test_pattern_d(struct DCTStatStruc *p_dct_stat,
 					u32 TestAddr_lo);
-static void WriteL9TestPattern_D(struct DCTStatStruc *p_dct_stat,
+static void write_l9_test_pattern_d(struct DCTStatStruc *p_dct_stat,
 					u32 TestAddr_lo);
-static u16 CompareDQSTestPattern_D(struct MCTStatStruc *p_mct_stat,
+static u16 compare_dqs_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat,
 					u32 addr_lo);
-static void FlushDQSTestPattern_D(struct DCTStatStruc *p_dct_stat,
+static void flush_dqs_test_pattern_d(struct DCTStatStruc *p_dct_stat,
 					u32 addr_lo);
-static void mct_SetDQSDelayCSR_D(struct MCTStatStruc *p_mct_stat,
+static void mct_set_dqs_delay_csr_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat,
 					u8 ChipSel);
-static void SetupDqsPattern_D(struct MCTStatStruc *p_mct_stat,
+static void setup_dqs_pattern_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u32 *buffer);
 
@@ -57,7 +57,7 @@ void print_debug_dqs_pair(const char *str, u32 val, const char *str2, u32 val2, 
 }
 
 /*Warning:  These must be located so they do not cross a logical 16-bit segment boundary!*/
-static const u32 TestPatternJD1a_D[] = {
+static const u32 test_pattern_jd1a_d[] = {
 	0x00000000,0x00000000,0xFFFFFFFF,0xFFFFFFFF, /* QW0-1, ALL-EVEN */
 	0x00000000,0x00000000,0x00000000,0x00000000, /* QW2-3, ALL-EVEN */
 	0x00000000,0x00000000,0xFFFFFFFF,0xFFFFFFFF, /* QW4-5, ALL-EVEN */
@@ -95,7 +95,7 @@ static const u32 TestPatternJD1a_D[] = {
 	0x80808080,0x80808080,0x7F7F7F7F,0x7F7F7F7F, /* QW4-5, DQ7-ODD */
 	0x80808080,0x80808080,0x80808080,0x80808080  /* QW6-7, DQ7-ODD */
 };
-static const u32 TestPatternJD1b_D[] = {
+static const u32 test_pattern_jd1b_d[] = {
 	0x00000000,0x00000000,0x00000000,0x00000000, /* QW0,CHA-B, ALL-EVEN */
 	0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF, /* QW1,CHA-B, ALL-EVEN */
 	0x00000000,0x00000000,0x00000000,0x00000000, /* QW2,CHA-B, ALL-EVEN */
@@ -225,16 +225,16 @@ static void SetEccDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 		for (direction = 0; direction < 2; direction++) {
 			p_dct_stat->channel = channel;	/* Channel A or B */
 			p_dct_stat->direction = direction; /* Read or write */
-			CalcEccDQSPos_D(p_mct_stat, p_dct_stat, p_dct_stat->ch_ecc_dqs_like[channel], p_dct_stat->ch_ecc_dqs_scale[channel], ChipSel);
+			calc_ecc_dqs_pos_d(p_mct_stat, p_dct_stat, p_dct_stat->ch_ecc_dqs_like[channel], p_dct_stat->ch_ecc_dqs_scale[channel], ChipSel);
 			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR ? " R dqs_delay":" W dqs_delay",	p_dct_stat->dqs_delay, 2);
 			p_dct_stat->byte_lane = 8;
 			store_dqs_dat_struct_val_d(p_mct_stat, p_dct_stat, ChipSel);
-			mct_SetDQSDelayCSR_D(p_mct_stat, p_dct_stat, ChipSel);
+			mct_set_dqs_delay_csr_d(p_mct_stat, p_dct_stat, ChipSel);
 		}
 	}
 }
 
-static void CalcEccDQSPos_D(struct MCTStatStruc *p_mct_stat,
+static void calc_ecc_dqs_pos_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u16 like, u8 scale, u8 ChipSel)
 {
@@ -244,11 +244,11 @@ static void CalcEccDQSPos_D(struct MCTStatStruc *p_mct_stat,
 
 	if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 		p_dct_stat->byte_lane = 0x2;
-		GetDQSDatStrucVal_D(p_mct_stat, p_dct_stat, ChipSel);
+		get_dqs_dat_struc_val_d(p_mct_stat, p_dct_stat, ChipSel);
 		DQSDelay0 = p_dct_stat->dqs_delay;
 
 		p_dct_stat->byte_lane = 0x3;
-		GetDQSDatStrucVal_D(p_mct_stat, p_dct_stat, ChipSel);
+		get_dqs_dat_struc_val_d(p_mct_stat, p_dct_stat, ChipSel);
 		DQSDelay1 = p_dct_stat->dqs_delay;
 
 		if (p_dct_stat->direction == DQS_READDIR) {
@@ -261,11 +261,11 @@ static void CalcEccDQSPos_D(struct MCTStatStruc *p_mct_stat,
 		}
 	} else {
 		p_dct_stat->byte_lane = like & 0xff;
-		GetDQSDatStrucVal_D(p_mct_stat, p_dct_stat, ChipSel);
+		get_dqs_dat_struc_val_d(p_mct_stat, p_dct_stat, ChipSel);
 		DQSDelay0 = p_dct_stat->dqs_delay;
 
 		p_dct_stat->byte_lane = (like >> 8) & 0xff;
-		GetDQSDatStrucVal_D(p_mct_stat, p_dct_stat, ChipSel);
+		get_dqs_dat_struc_val_d(p_mct_stat, p_dct_stat, ChipSel);
 		DQSDelay1 = p_dct_stat->dqs_delay;
 
 		if (DQSDelay0 > DQSDelay1) {
@@ -415,7 +415,7 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 	/* Disable ECC correction of reads on the dram bus. */
 	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
-	SetupDqsPattern_D(p_mct_stat, p_dct_stat, PatternBuffer);
+	setup_dqs_pattern_d(p_mct_stat, p_dct_stat, PatternBuffer);
 
 	/* mct_BeforeTrainDQSRdWrPos_D */
 
@@ -499,7 +499,7 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 				write_dqs_write_data_timing_registers(current_write_dqs_delay, dev, Channel, (Receiver >> 1), index_reg);
 
 				/* Write the DRAM training pattern to the base test address */
-				WriteDQSTestPattern_D(p_mct_stat, p_dct_stat, TestAddr << 8);
+				write_dqs_test_pattern_d(p_mct_stat, p_dct_stat, TestAddr << 8);
 
 				/* 2.8.9.9.3 (DRAM Read DQS Timing Control Loop)
 				 * Iterate over all possible DQS delay values (0x0 - 0x3f)
@@ -526,11 +526,11 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 					for (iter = 0; iter < 1; iter++) {
 						/* Flush caches */
 						set_target_wtio_d(TestAddr);
-						FlushDQSTestPattern_D(p_dct_stat, TestAddr << 8);
+						flush_dqs_test_pattern_d(p_dct_stat, TestAddr << 8);
 						reset_target_wtio_d();
 
 						/* Read and compare pattern */
-						bytelane_test_results &= (CompareDQSTestPattern_D(p_mct_stat, p_dct_stat, TestAddr << 8) & 0xff); /* [Lane 7 :: Lane 0] 0 = fail, 1 = pass */
+						bytelane_test_results &= (compare_dqs_test_pattern_d(p_mct_stat, p_dct_stat, TestAddr << 8) & 0xff); /* [Lane 7 :: Lane 0] 0 = fail, 1 = pass */
 
 						/* If all lanes have already failed testing bypass remaining re-read attempt(s) */
 						if (bytelane_test_results == 0x0)
@@ -616,15 +616,15 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 				write_dqs_write_data_timing_registers(current_write_dqs_delay, dev, Channel, (Receiver >> 1), index_reg);
 
 				/* Write the DRAM training pattern to the base test address */
-				WriteDQSTestPattern_D(p_mct_stat, p_dct_stat, TestAddr << 8);
+				write_dqs_test_pattern_d(p_mct_stat, p_dct_stat, TestAddr << 8);
 
 				/* Flush caches */
 				set_target_wtio_d(TestAddr);
-				FlushDQSTestPattern_D(p_dct_stat, TestAddr << 8);
+				flush_dqs_test_pattern_d(p_dct_stat, TestAddr << 8);
 				reset_target_wtio_d();
 
 				/* Read and compare pattern from the base test address */
-				bytelane_test_results = (CompareDQSTestPattern_D(p_mct_stat, p_dct_stat, TestAddr << 8) & 0xff); /* [Lane 7 :: Lane 0] 0 = fail, 1 = pass */
+				bytelane_test_results = (compare_dqs_test_pattern_d(p_mct_stat, p_dct_stat, TestAddr << 8) & 0xff); /* [Lane 7 :: Lane 0] 0 = fail, 1 = pass */
 
 				/* Store any lanes that passed testing for later use */
 				for (lane = 0; lane < 8; lane++)
@@ -1862,7 +1862,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 	printk(BIOS_DEBUG, "TrainDQSReceiverEnCyc: Done\n\n");
 }
 
-static void SetupDqsPattern_D(struct MCTStatStruc *p_mct_stat,
+static void setup_dqs_pattern_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u32 *buffer)
 {
 	/* 1. Set the Pattern type (0 or 1) in DCTStatstruc.Pattern
@@ -1877,11 +1877,11 @@ static void SetupDqsPattern_D(struct MCTStatStruc *p_mct_stat,
 	if (p_dct_stat->status & (1 << SB_128_BIT_MODE)) {
 		p_dct_stat->pattern = 1;	/* 18 cache lines, alternating qwords */
 		for (i = 0; i < 16 * 18; i++)
-			buf[i] = TestPatternJD1b_D[i];
+			buf[i] = test_pattern_jd1b_d[i];
 	} else {
 		p_dct_stat->pattern = 0;	/* 9 cache lines, sequential qwords */
 		for (i = 0; i < 16 * 9; i++)
-			buf[i] = TestPatternJD1a_D[i];
+			buf[i] = test_pattern_jd1a_d[i];
 	}
 	p_dct_stat->ptr_pattern_buf_a = (u32)buf;
 }
@@ -1909,7 +1909,7 @@ static void store_dqs_dat_struct_val_d(struct MCTStatStruc *p_mct_stat,
 					p_dct_stat->dqs_delay;
 }
 
-static void GetDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat,
+static void get_dqs_dat_struc_val_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 ChipSel)
 {
 	u8 dn = 0;
@@ -1937,7 +1937,7 @@ void proc_iocl_flush_d(u32 addr_hi)
 	reset_target_wtio_d();
 }
 
-u8 ChipSelPresent_D(struct MCTStatStruc *p_mct_stat,
+u8 chip_sel_present_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 Channel, u8 ChipSel)
 {
@@ -1964,7 +1964,7 @@ u8 ChipSelPresent_D(struct MCTStatStruc *p_mct_stat,
 
 /* proc_CLFLUSH_D located in mct_gcc.h */
 
-static void WriteDQSTestPattern_D(struct MCTStatStruc *p_mct_stat,
+static void write_dqs_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat,
 					u32 TestAddr_lo)
 {
@@ -1982,12 +1982,12 @@ static void WriteDQSTestPattern_D(struct MCTStatStruc *p_mct_stat,
 	 * 128	8	  N/A	-
 	 */
 	if (p_dct_stat->pattern == 0)
-		WriteL9TestPattern_D(p_dct_stat, TestAddr_lo);
+		write_l9_test_pattern_d(p_dct_stat, TestAddr_lo);
 	else
-		WriteL18TestPattern_D(p_dct_stat, TestAddr_lo);
+		write_l18_test_pattern_d(p_dct_stat, TestAddr_lo);
 }
 
-static void WriteL18TestPattern_D(struct DCTStatStruc *p_dct_stat,
+static void write_l18_test_pattern_d(struct DCTStatStruc *p_dct_stat,
 					u32 TestAddr_lo)
 {
 	u8 *buf;
@@ -1997,7 +1997,7 @@ static void WriteL18TestPattern_D(struct DCTStatStruc *p_dct_stat,
 
 }
 
-static void WriteL9TestPattern_D(struct DCTStatStruc *p_dct_stat,
+static void write_l9_test_pattern_d(struct DCTStatStruc *p_dct_stat,
 					u32 TestAddr_lo)
 {
 	u8 *buf;
@@ -2006,7 +2006,7 @@ static void WriteL9TestPattern_D(struct DCTStatStruc *p_dct_stat,
 	write_ln_test_pattern(TestAddr_lo, buf, 9);
 }
 
-static u16 CompareDQSTestPattern_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 addr_lo)
+static u16 compare_dqs_test_pattern_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 addr_lo)
 {
 	/* Compare a pattern of 72 bit times (per DQ), to test dram functionality.
 	 * The pattern is a stress pattern which exercises both ISI and
@@ -2114,7 +2114,7 @@ static u16 CompareDQSTestPattern_D(struct MCTStatStruc *p_mct_stat, struct DCTSt
 	return bitmap;
 }
 
-static void FlushDQSTestPattern_D(struct DCTStatStruc *p_dct_stat,
+static void flush_dqs_test_pattern_d(struct DCTStatStruc *p_dct_stat,
 					u32 addr_lo)
 {
 	/* Flush functions in mct_gcc.h */
@@ -2245,7 +2245,7 @@ void mct_enable_dimm_ecc_en_d(struct MCTStatStruc *p_mct_stat,
 /*
  * Set DQS delay value to related register
  */
-static void mct_SetDQSDelayCSR_D(struct MCTStatStruc *p_mct_stat,
+static void mct_set_dqs_delay_csr_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 ChipSel)
 {
 	u8 ByteLane;
@@ -2298,7 +2298,7 @@ u8 mct_rcvr_rank_enabled_d(struct MCTStatStruc *p_mct_stat,
 {
 	u8 ret;
 
-	ret = ChipSelPresent_D(p_mct_stat, p_dct_stat, Channel, ChipSel);
+	ret = chip_sel_present_d(p_mct_stat, p_dct_stat, Channel, ChipSel);
 	return ret;
 }
 

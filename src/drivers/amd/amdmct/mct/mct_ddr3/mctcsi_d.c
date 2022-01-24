@@ -12,7 +12,7 @@
 #include "mct_d_gcc.h"
 
 
-static const u8 Tab_int_D[] = {6,7,7,8,8,8,8,8,9,9,8,9};
+static const u8 tab_int_d[] = {6,7,7,8,8,8,8,8,9,9,8,9};
 
 void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct)
@@ -77,7 +77,7 @@ void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 	}
 
 	if (DoIntlv) {
-		val = Tab_int_D[BankEncd];
+		val = tab_int_d[BankEncd];
 		if (p_dct_stat->status & (1 << SB_128_BIT_MODE))
 			val++;
 
