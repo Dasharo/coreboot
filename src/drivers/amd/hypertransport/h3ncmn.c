@@ -1290,7 +1290,7 @@ static u32 fam10NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 	u8 nbCOF;
 	u32 supported;
 
-	nbCOF = getMinNbCOF();
+	nbCOF = get_min_nb_cof();
 	/*
 	 * nbCOF is minimum northbridge speed in hundreds of MHz.
 	 * HT can not go faster than the minimum speed of the northbridge.
@@ -1361,7 +1361,7 @@ static u32 fam15NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 	u8 nbCOF;
 	u32 supported;
 
-	nbCOF = getMinNbCOF();
+	nbCOF = get_min_nb_cof();
 	/*
 	 * nbCOF is minimum northbridge speed in hundreds of MHz.
 	 * HT can not go faster than the minimum speed of the northbridge.
