@@ -34,7 +34,7 @@ static void SetupDqsPattern_D(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u32 *buffer);
 
-static void StoreDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 ChipSel);
+static void store_dqs_dat_struct_val_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 ChipSel);
 
 #define PRINT_PASS_FAIL_BITMAPS CONFIG(DEBUG_RAM_SETUP)
 
@@ -170,7 +170,7 @@ static const u32 TestPatternJD1b_D[] = {
 	0x80808080,0x80808080,0x80808080,0x80808080  /* QW7,CHA-B, DQ7-ODD */
 };
 
-void TrainReceiverEn_D(struct MCTStatStruc *p_mct_stat,
+void train_receiver_en_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a, u8 Pass)
 {
 	u8 Node;
@@ -189,7 +189,7 @@ void TrainReceiverEn_D(struct MCTStatStruc *p_mct_stat,
 				val |= 1 <<DQS_RCV_EN_TRAIN;
 				Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x78, val);
 			}
-			mct_TrainRcvrEn_D(p_mct_stat, p_dct_stat, Pass);
+			mct_train_rcvr_en_d(p_mct_stat, p_dct_stat, Pass);
 		}
 	}
 }
@@ -228,7 +228,7 @@ static void SetEccDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 			CalcEccDQSPos_D(p_mct_stat, p_dct_stat, p_dct_stat->ch_ecc_dqs_like[channel], p_dct_stat->ch_ecc_dqs_scale[channel], ChipSel);
 			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR ? " R dqs_delay":" W dqs_delay",	p_dct_stat->dqs_delay, 2);
 			p_dct_stat->byte_lane = 8;
-			StoreDQSDatStrucVal_D(p_mct_stat, p_dct_stat, ChipSel);
+			store_dqs_dat_struct_val_d(p_mct_stat, p_dct_stat, ChipSel);
 			mct_SetDQSDelayCSR_D(p_mct_stat, p_dct_stat, ChipSel);
 		}
 	}
@@ -413,7 +413,7 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 	_WRMSR(addr, lo, hi);	/* allow 64-bit memory references in real mode */
 
 	/* Disable ECC correction of reads on the dram bus. */
-	_DisableDramECC = mct_DisableDimmEccEn_D(p_mct_stat, p_dct_stat);
+	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
 	SetupDqsPattern_D(p_mct_stat, p_dct_stat, PatternBuffer);
 
@@ -443,25 +443,25 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 		index_reg = 0x98;
 
 		dual_rank = 0;
-		Receiver = mct_InitReceiver_D(p_dct_stat, Channel);
+		Receiver = mct_init_receiver_d(p_dct_stat, Channel);
 		/* There are four receiver pairs, loosely associated with chipselects.
 		* This is essentially looping over each rank of each DIMM.
 		*/
 		for (; Receiver < 8; Receiver++) {
 			if ((Receiver & 0x1) == 0) {
 				/* Even rank of DIMM */
-				if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, Receiver + 1))
+				if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, Channel, Receiver + 1))
 					dual_rank = 1;
 				else
 					dual_rank = 0;
 			}
 
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, Receiver)) {
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, Channel, Receiver)) {
 				continue;
 			}
 
 			/* Select the base test address for the current rank */
-			TestAddr = mct_GetMCTSysAddr_D(p_mct_stat, p_dct_stat, Channel, Receiver, &valid);
+			TestAddr = mct_get_mct_sys_addr_d(p_mct_stat, p_dct_stat, Channel, Receiver, &valid);
 			if (!valid) {	/* Address not supported on current CS */
 				continue;
 			}
@@ -525,9 +525,9 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 					 */
 					for (iter = 0; iter < 1; iter++) {
 						/* Flush caches */
-						SetTargetWTIO_D(TestAddr);
+						set_target_wtio_d(TestAddr);
 						FlushDQSTestPattern_D(p_dct_stat, TestAddr << 8);
-						ResetTargetWTIO_D();
+						reset_target_wtio_d();
 
 						/* Read and compare pattern */
 						bytelane_test_results &= (CompareDQSTestPattern_D(p_mct_stat, p_dct_stat, TestAddr << 8) & 0xff); /* [Lane 7 :: Lane 0] 0 = fail, 1 = pass */
@@ -619,9 +619,9 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 				WriteDQSTestPattern_D(p_mct_stat, p_dct_stat, TestAddr << 8);
 
 				/* Flush caches */
-				SetTargetWTIO_D(TestAddr);
+				set_target_wtio_d(TestAddr);
 				FlushDQSTestPattern_D(p_dct_stat, TestAddr << 8);
-				ResetTargetWTIO_D();
+				reset_target_wtio_d();
 
 				/* Read and compare pattern from the base test address */
 				bytelane_test_results = (CompareDQSTestPattern_D(p_mct_stat, p_dct_stat, TestAddr << 8) & 0xff); /* [Lane 7 :: Lane 0] 0 = fail, 1 = pass */
@@ -800,7 +800,7 @@ static void TrainDQSRdWrPos_D_Fam10(struct MCTStatStruc *p_mct_stat,
 	}
 #endif
 	if (_DisableDramECC) {
-		mct_EnableDimmEccEn_D(p_mct_stat, p_dct_stat, _DisableDramECC);
+		mct_enable_dimm_ecc_en_d(p_mct_stat, p_dct_stat, _DisableDramECC);
 	}
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
@@ -889,7 +889,7 @@ void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *p_mct_stat,
 		/* 2.10.5.8.5 (7) */
 		max_delay = 0;
 		for (dimm = 0; dimm < 4; dimm++) {
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, dimm * 2))
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, dimm * 2))
 				continue;
 
 			read_dqs_receiver_enable_control_registers(current_phy_phase_delay, dev, dct, dimm, index_reg);
@@ -1279,13 +1279,13 @@ static u8 TrainDQSRdWrPos_D_Fam15(struct MCTStatStruc *p_mct_stat,
 		dimm = (Receiver >> 1);
 		if ((Receiver & 0x1) == 0) {
 			/* Even rank of DIMM */
-			if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, Receiver + 1))
+			if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, Receiver + 1))
 				dual_rank = 1;
 			else
 				dual_rank = 0;
 		}
 
-		if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, Receiver)) {
+		if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, Receiver)) {
 			continue;
 		}
 
@@ -1636,7 +1636,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 	_WRMSR(addr, lo, hi);	/* allow 64-bit memory references in real mode */
 
 	/* Disable ECC correction of reads on the dram bus. */
-	_DisableDramECC = mct_DisableDimmEccEn_D(p_mct_stat, p_dct_stat);
+	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
 	Errors = 0;
 
@@ -1654,7 +1654,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 		fam15EnableTrainingMode(p_mct_stat, p_dct_stat, dct, 1);
 
 		/* 2.10.5.8.3 */
-		Receiver = mct_InitReceiver_D(p_dct_stat, dct);
+		Receiver = mct_init_receiver_d(p_dct_stat, dct);
 
 		/* Indicate success unless training the DCT explicitly fails */
 		dct_training_success = 1;
@@ -1665,7 +1665,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 		for (; Receiver < 8; Receiver += 2) {
 			dimm = (Receiver >> 1);
 
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, Receiver)) {
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, Receiver)) {
 				continue;
 			}
 
@@ -1841,7 +1841,7 @@ static void TrainDQSReceiverEnCyc_D_Fam15(struct MCTStatStruc *p_mct_stat,
 	}
 #endif
 	if (_DisableDramECC) {
-		mct_EnableDimmEccEn_D(p_mct_stat, p_dct_stat, _DisableDramECC);
+		mct_enable_dimm_ecc_en_d(p_mct_stat, p_dct_stat, _DisableDramECC);
 	}
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
@@ -1886,7 +1886,7 @@ static void SetupDqsPattern_D(struct MCTStatStruc *p_mct_stat,
 	p_dct_stat->ptr_pattern_buf_a = (u32)buf;
 }
 
-static void StoreDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat,
+static void store_dqs_dat_struct_val_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 ChipSel)
 {
 	/* Store the DQSDelay value, found during a training sweep, into the DCT
@@ -1930,11 +1930,11 @@ static void GetDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat,
 
 /* FindDQSDatDimmVal_D is not required since we use an array */
 
-void proc_IOCLFLUSH_D(u32 addr_hi)
+void proc_iocl_flush_d(u32 addr_hi)
 {
-	SetTargetWTIO_D(addr_hi);
+	set_target_wtio_d(addr_hi);
 	proc_CLFLUSH(addr_hi);
-	ResetTargetWTIO_D();
+	reset_target_wtio_d();
 }
 
 u8 ChipSelPresent_D(struct MCTStatStruc *p_mct_stat,
@@ -2125,7 +2125,7 @@ static void FlushDQSTestPattern_D(struct DCTStatStruc *p_dct_stat,
 	}
 }
 
-void SetTargetWTIO_D(u32 TestAddr)
+void set_target_wtio_d(u32 TestAddr)
 {
 	u32 lo, hi;
 	hi = TestAddr >> 24;
@@ -2136,7 +2136,7 @@ void SetTargetWTIO_D(u32 TestAddr)
 	_WRMSR(MTRR_IORR0_MASK, lo, hi);		/* IORR0 Mask */
 }
 
-void ResetTargetWTIO_D(void)
+void reset_target_wtio_d(void)
 {
 	u32 lo, hi;
 
@@ -2159,7 +2159,7 @@ u32 set_upper_fs_base(u32 addr_hi)
 	return addr_hi << 8;
 }
 
-void ResetDCTWrPtr_D(u32 dev, u8 dct, u32 index_reg, u32 index)
+void reset_dct_wr_ptr_d(u32 dev, u8 dct, u32 index_reg, u32 index)
 {
 	u32 val;
 
@@ -2167,7 +2167,7 @@ void ResetDCTWrPtr_D(u32 dev, u8 dct, u32 index_reg, u32 index)
 	Set_NB32_index_wait_DCT(dev, dct, index_reg, index, val);
 }
 
-void mct_TrainDQSPos_D(struct MCTStatStruc *p_mct_stat,
+void mct_train_dqs_pos_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
@@ -2192,7 +2192,7 @@ void mct_TrainDQSPos_D(struct MCTStatStruc *p_mct_stat,
 /* mct_BeforeTrainDQSRdWrPos_D
  * Function is inline.
  */
-u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
+u8 mct_disable_dimm_ecc_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	u8 _DisableDramECC = 0;
@@ -2221,7 +2221,7 @@ u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
 	return _DisableDramECC;
 }
 
-void mct_EnableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
+void mct_enable_dimm_ecc_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 _DisableDramECC)
 {
 	u32 val;
@@ -2292,7 +2292,7 @@ static void mct_SetDQSDelayCSR_D(struct MCTStatStruc *p_mct_stat,
 	}
 }
 
-u8 mct_RcvrRankEnabled_D(struct MCTStatStruc *p_mct_stat,
+u8 mct_rcvr_rank_enabled_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 Channel, u8 ChipSel)
 {
@@ -2302,14 +2302,14 @@ u8 mct_RcvrRankEnabled_D(struct MCTStatStruc *p_mct_stat,
 	return ret;
 }
 
-u32 mct_GetRcvrSysAddr_D(struct MCTStatStruc *p_mct_stat,
+u32 mct_get_rcvr_sys_addr_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 channel, u8 receiver, u8 *valid)
 {
-	return mct_GetMCTSysAddr_D(p_mct_stat, p_dct_stat, channel, receiver, valid);
+	return mct_get_mct_sys_addr_d(p_mct_stat, p_dct_stat, channel, receiver, valid);
 }
 
-u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *p_mct_stat,
+u32 mct_get_mct_sys_addr_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 Channel, u8 receiver, u8 *valid)
 {
@@ -2406,20 +2406,20 @@ exitGetAddrWNoError:
 			*valid = 1;
 		}
 	}
-	print_debug_dqs("mct_GetMCTSysAddr_D: receiver ", receiver, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: Channel ", Channel, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: base_addr ", val, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: valid ", *valid, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: status ", p_dct_stat->status, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: SysBase ", p_dct_stat->dct_sys_base, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: HoleBase ", p_dct_stat->dct_hole_base, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: Cachetop ", p_mct_stat->sub_4G_cache_top, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: receiver ", receiver, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: Channel ", Channel, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: base_addr ", val, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: valid ", *valid, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: status ", p_dct_stat->status, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: SysBase ", p_dct_stat->dct_sys_base, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: HoleBase ", p_dct_stat->dct_hole_base, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: Cachetop ", p_mct_stat->sub_4G_cache_top, 2);
 
 exitGetAddr:
 	return val;
 }
 
-void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
+void mct_write_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u32 TestAddr, u8 pattern)
 {
@@ -2441,7 +2441,7 @@ void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
 	WriteLNTestPattern(TestAddr << 8, buf, 1);
 }
 
-void mct_Read1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
+void mct_read_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u32 addr)
 {
 	u32 value;

@@ -11,7 +11,7 @@ static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
 				u32 *ODC_CTL,
 				u8 *CMDmode);
 
-void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat,
+void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 			 struct DCTStatStruc *p_dct_stat, u32 dct)
 {
 	if (is_fam15h()) {

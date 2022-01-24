@@ -8,7 +8,7 @@ static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 speed, u8 maa_load,
 				u8 *cmd_mode);
 
 
-void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat,
+void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 			 struct DCTStatStruc *p_dct_stat, u32 dct)
 {
 	Get_ChannelPS_Cfg0_D(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,

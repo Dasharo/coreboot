@@ -57,7 +57,7 @@ static u8 isDramECCEn_D(struct DCTStatStruc *p_dct_stat);
  * original Limit is restored, the Scrub base is set to 4GB, and scrubber is
  * allowed to run until the Scrub Addr wraps around to zero.
  */
-u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
+u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
 	u8 AllECC;
@@ -85,7 +85,7 @@ u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 
 	OF_ScrubCTL = 0;		/* Scrub CTL for Dcache, L2, and dram */
 	nvbits = mct_get_nv_bits(NV_DC_BK_SCRUB);
-	mct_AdjustScrub_D(p_dct_stat_a, &nvbits);
+	mct_adjust_scrub_d(p_dct_stat_a, &nvbits);
 	OF_ScrubCTL |= (u32) nvbits << 16;
 
 	nvbits = mct_get_nv_bits(NV_L2_BK_SCRUB);

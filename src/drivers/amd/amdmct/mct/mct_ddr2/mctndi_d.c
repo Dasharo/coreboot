@@ -2,7 +2,7 @@
 
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
+void interleave_nodes_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a)
 {
 
@@ -213,8 +213,8 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 		}
 		p_mct_stat->g_status = (1 << GSB_NODE_INTLV);
 	}
-	print_tx("InterleaveNodes_D: status ", p_dct_stat->status);
-	print_tx("InterleaveNodes_D: err_status ", p_dct_stat->err_status);
-	print_tx("InterleaveNodes_D: err_code ", p_dct_stat->err_code);
-	print_t("InterleaveNodes_D: Done\n");
+	print_tx("interleave_nodes_d: status ", p_dct_stat->status);
+	print_tx("interleave_nodes_d: err_status ", p_dct_stat->err_status);
+	print_tx("interleave_nodes_d: err_code ", p_dct_stat->err_code);
+	print_t("interleave_nodes_d: Done\n");
 }

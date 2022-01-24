@@ -985,44 +985,44 @@ u32 modify_d3_cmp(struct DCTStatStruc *p_dct_stat, u32 dct, u32 value);
 u8 mct_check_number_of_dqs_rcv_en_1_pass(u8 pass);
 u32 setup_dqs_pattern_1_pass_a(u8 pass);
 u32 setup_dqs_pattern_1_pass_b(u8 pass);
-u8 mct_Get_Start_RcvrEnDly_1Pass(u8 pass);
-u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat, u16 rcvr_en_dly, u16 rcvr_en_dly_limit, u8 channel, u8 receiver, u8 pass);
+u8 mct_get_start_rcvr_en_dly_1_pass(u8 pass);
+u16 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat, u16 rcvr_en_dly, u16 rcvr_en_dly_limit, u8 channel, u8 receiver, u8 pass);
 void initialize_mca(u8 bsp, u8 suppress_errors);
-void CPUMemTyping_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void UMAMemTyping_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-u8 ECCInit_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void TrainReceiverEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u8 pass);
+void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void uma_mem_typing_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void train_receiver_en_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u8 pass);
 void TrainMaxRdLatency_En_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void mct_TrainDQSPos_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void mctSetEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void TrainMaxReadLatency_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void mct_EndDQSTraining_D(struct MCTStatStruc *p_mct_stat,struct DCTStatStruc *p_dct_stat_a);
-void mct_SetRcvrEnDly_D(struct DCTStatStruc *p_dct_stat, u16 rcvr_en_dly, u8 final_value, u8 channel, u8 receiver, u32 dev, u32 index_reg, u8 addl_index, u8 pass);
-void SetEccDQSRcvrEn_D(struct DCTStatStruc *p_dct_stat, u8 channel);
-void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 dct);
-void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
+void mct_train_dqs_pos_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_set_ecc_dqs_rcvr_en_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void train_max_read_latency_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_end_dqs_training_d(struct MCTStatStruc *p_mct_stat,struct DCTStatStruc *p_dct_stat_a);
+void mct_set_rcvr_en_dly_d(struct DCTStatStruc *p_dct_stat, u16 rcvr_en_dly, u8 final_value, u8 channel, u8 receiver, u32 dev, u32 index_reg, u8 addl_index, u8 pass);
+void set_ecc_dqs_rcvr_en_d(struct DCTStatStruc *p_dct_stat, u8 channel);
+void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 dct);
+void interleave_banks_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
 void mct_set_dram_config_hi_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 dct, u32 dram_config_hi);
-void mct_DramInit_Hw_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
+void mct_dram_init_hw_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 dct);
 void mct_set_cl_to_nb_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void mct_set_wb_enh_wsb_dis_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void mct_ForceNBPState0_En_Fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void mct_ForceNBPState0_Dis_Fam15(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
-void mct_TrainRcvrEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 pass);
-void mct_EnableDimmEccEn_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 _disable_dram_ecc);
-u32 procOdtWorkaround(struct DCTStatStruc *p_dct_stat, u32 dct, u32 val);
-void mct_BeforeDramInit_D(struct DCTStatStruc *p_dct_stat, u32 dct);
+void mct_train_rcvr_en_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 pass);
+void mct_enable_dimm_ecc_en_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 _disable_dram_ecc);
+u32 proc_odt_workaround(struct DCTStatStruc *p_dct_stat, u32 dct, u32 val);
+void mct_before_dram_init_d(struct DCTStatStruc *p_dct_stat, u32 dct);
 void DIMMSetVoltages(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void interleave_nodes_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void interleave_channels_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void mct_before_dqs_train_samp_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
-void phyAssistedMemFnceTraining(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, s16 node);
-u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *p_dct_stat, u8 pass);
-u8 mct_InitReceiver_D(struct DCTStatStruc *p_dct_stat, u8 dct);
-void mct_Wait(u32 cycles);
-u8 mct_RcvrRankEnabled_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 channel, u8 chip_sel);
-u32 mct_GetRcvrSysAddr_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 channel, u8 receiver, u8 *valid);
-void mct_Read1LTestPattern_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 addr);
+void phy_assisted_mem_fence_training(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, s16 node);
+u8 mct_save_rcv_en_dly_d_1_pass(struct DCTStatStruc *p_dct_stat, u8 pass);
+u8 mct_init_receiver_d(struct DCTStatStruc *p_dct_stat, u8 dct);
+void mct_wait(u32 cycles);
+u8 mct_rcvr_rank_enabled_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 channel, u8 chip_sel);
+u32 mct_get_rcvr_sys_addr_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 channel, u8 receiver, u8 *valid);
+void mct_read_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 addr);
 void mct_auto_init_mct_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 void calculate_spd_hash(u8 *spd_data, u64 *spd_hash);
 s8 load_spd_hashes_from_nvram(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
@@ -1049,11 +1049,11 @@ void write_dqs_read_data_timing_registers(u16 *delay, u32 dev,
 			u8 dct, u8 dimm, u32 index_reg);
 void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
-void proc_IOCLFLUSH_D(u32 addr_hi);
+void proc_iocl_flush_d(u32 addr_hi);
 u8 ChipSelPresent_D(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 channel, u8 chip_sel);
-void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
+void mct_write_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u32 test_addr, u8 pattern);
 u8 node_present_d(u8 node);
@@ -1106,9 +1106,9 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct);
 void print_debug_dqs(const char *str, u32 val, u8 level);
 void print_debug_dqs_pair(const char *str, u32 val, const char *str2, u32 val2, u8 level);
-u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
+u8 mct_disable_dimm_ecc_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
-void ResetDCTWrPtr_D(u32 dev, u8 dct, u32 index_reg, u32 index);
+void reset_dct_wr_ptr_d(u32 dev, u8 dct, u32 index_reg, u32 index);
 void Calc_SetMaxRdLatency_D_Fam15(struct MCTStatStruc *p_mct_stat,
 		struct DCTStatStruc *p_dct_stat, u8 dct, u8 calc_min);
 void write_dram_dqs_training_pattern_fam15(struct MCTStatStruc *p_mct_stat,
@@ -1122,9 +1122,9 @@ void write_dqs_receiver_enable_control_registers(u16 *current_total_delay, u32 d
 u32 fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct);
 s32 abs(s32 val);
-void SetTargetWTIO_D(u32 test_addr);
-void ResetTargetWTIO_D(void);
-u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *p_mct_stat,
+void set_target_wtio_d(u32 test_addr);
+void reset_target_wtio_d(void);
+u32 mct_get_mct_sys_addr_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 channel, u8 receiver, u8 *valid);
 void set_2t_configuration(struct MCTStatStruc *p_mct_stat,

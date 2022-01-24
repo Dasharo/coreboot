@@ -5,7 +5,7 @@
 #include "mct_d_gcc.h"
 #include <console/console.h>
 
-void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
+void interleave_channels_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a)
 {
 
@@ -99,12 +99,12 @@ void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
 					set_nb32(p_dct_stat->dev_map, 0xF0, val);
 				}
 			}
-			printk(BIOS_DEBUG, "InterleaveChannels_D: Node %x\n", Node);
-			printk(BIOS_DEBUG, "InterleaveChannels_D: status %x\n", p_dct_stat->status);
-			printk(BIOS_DEBUG, "InterleaveChannels_D: err_status %x\n", p_dct_stat->err_status);
-			printk(BIOS_DEBUG, "InterleaveChannels_D: err_code %x\n", p_dct_stat->err_code);
+			printk(BIOS_DEBUG, "interleave_channels_d: Node %x\n", Node);
+			printk(BIOS_DEBUG, "interleave_channels_d: status %x\n", p_dct_stat->status);
+			printk(BIOS_DEBUG, "interleave_channels_d: err_status %x\n", p_dct_stat->err_status);
+			printk(BIOS_DEBUG, "interleave_channels_d: err_code %x\n", p_dct_stat->err_code);
 			Node++;
 		}
 	}
-	printk(BIOS_DEBUG, "InterleaveChannels_D: Done\n\n");
+	printk(BIOS_DEBUG, "interleave_channels_d: Done\n\n");
 }

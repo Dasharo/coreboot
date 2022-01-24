@@ -2,7 +2,7 @@
 
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
+void interleave_channels_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a)
 {
 
@@ -101,12 +101,12 @@ void InterleaveChannels_D(struct MCTStatStruc *p_mct_stat,
 
 				}
 			}
-			print_tx("InterleaveChannels_D: Node ", Node);
-			print_tx("InterleaveChannels_D: status ", p_dct_stat->status);
-			print_tx("InterleaveChannels_D: err_status ", p_dct_stat->err_status);
-			print_tx("InterleaveChannels_D: err_code ", p_dct_stat->err_code);
+			print_tx("interleave_channels_d: Node ", Node);
+			print_tx("interleave_channels_d: status ", p_dct_stat->status);
+			print_tx("interleave_channels_d: err_status ", p_dct_stat->err_status);
+			print_tx("interleave_channels_d: err_code ", p_dct_stat->err_code);
 			Node++;
 		}
 	}
-	print_t("InterleaveChannels_D: Done\n");
+	print_t("interleave_channels_d: Done\n");
 }

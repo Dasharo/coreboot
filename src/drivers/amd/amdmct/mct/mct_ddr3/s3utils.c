@@ -847,7 +847,7 @@ void restore_mct_data_from_save_variable(struct amd_s3_persistent_data *persiste
 					write_amd_dct_index_register_dct(PCI_DEV(0, 0x18 + node, 2), node, channel, 0x98, 0x08, dword);
 
 					/* Wait for 5us */
-					mct_Wait(100);
+					mct_wait(100);
 				}
 			}
 
@@ -895,7 +895,7 @@ void restore_mct_data_from_save_variable(struct amd_s3_persistent_data *persiste
 	}
 
 	/* Wait for 750us */
-	mct_Wait(15000);
+	mct_wait(15000);
 
 	/* Stage 6 */
 	for (node = 0; node < MAX_NODES_SUPPORTED; node++) {

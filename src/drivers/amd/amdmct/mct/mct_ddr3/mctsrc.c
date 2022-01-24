@@ -76,7 +76,7 @@ static void SetupRcvrPattern(struct MCTStatStruc *p_mct_stat,
 	p_dct_stat->ptr_pattern_buf_b = (u32)buf_b;
 }
 
-void mct_TrainRcvrEn_D(struct MCTStatStruc *p_mct_stat,
+void mct_train_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 Pass)
 {
 	if (mct_check_number_of_dqs_rcv_en_1_pass(Pass)) {
@@ -643,7 +643,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 	wrmsr(HWCR_MSR, msr);	/* Setting wrap32dis allows 64-bit memory
 				   references in real mode */
 
-	_DisableDramECC = mct_DisableDimmEccEn_D(p_mct_stat, p_dct_stat);
+	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
 	SetupRcvrPattern(p_mct_stat, p_dct_stat, PatternBuffer, Pass);
 
@@ -659,7 +659,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 		MaxDelay_CH[Channel] = 0;
 		index_reg = 0x98;
 
-		Receiver = mct_InitReceiver_D(p_dct_stat, Channel);
+		Receiver = mct_init_receiver_d(p_dct_stat, Channel);
 		/* There are four receiver pairs, loosely associated with chipselects.
 		 * This is essentially looping over each DIMM.
 		 */
@@ -669,7 +669,7 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 
 			print_debug_dqs("\t\tTrainRcvEnd52: index ", Addl_Index, 2);
 
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, Receiver)) {
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, Channel, Receiver)) {
 				continue;
 			}
 
@@ -714,15 +714,15 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 			/* 2.8.9.9.2 (3)
 			 * Select two test addresses for each rank present
 			 */
-			TestAddr0 = mct_GetRcvrSysAddr_D(p_mct_stat, p_dct_stat, Channel, Receiver, &valid);
+			TestAddr0 = mct_get_rcvr_sys_addr_d(p_mct_stat, p_dct_stat, Channel, Receiver, &valid);
 			if (!valid) {	/* Address not supported on current CS */
 				continue;
 			}
 
 			TestAddr0B = TestAddr0 + (BIG_PAGE_X8_RJ8 << 3);
 
-			if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, Receiver + 1)) {
-				TestAddr1 = mct_GetRcvrSysAddr_D(p_mct_stat, p_dct_stat, Channel, Receiver + 1, &valid);
+			if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, Channel, Receiver + 1)) {
+				TestAddr1 = mct_get_rcvr_sys_addr_d(p_mct_stat, p_dct_stat, Channel, Receiver + 1, &valid);
 				if (!valid) {	/* Address not supported on current CS */
 					continue;
 				}
@@ -740,11 +740,11 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 			/* 2.8.9.9.2 (4, 5)
 			 * Write 1 cache line of the appropriate test pattern to each test address
 			 */
-			mct_Write1LTestPattern_D(p_mct_stat, p_dct_stat, TestAddr0, 0); /* rank 0 of DIMM, testpattern 0 */
-			mct_Write1LTestPattern_D(p_mct_stat, p_dct_stat, TestAddr0B, 1); /* rank 0 of DIMM, testpattern 1 */
+			mct_write_1l_test_pattern_d(p_mct_stat, p_dct_stat, TestAddr0, 0); /* rank 0 of DIMM, testpattern 0 */
+			mct_write_1l_test_pattern_d(p_mct_stat, p_dct_stat, TestAddr0B, 1); /* rank 0 of DIMM, testpattern 1 */
 			if (_2Ranks) {
-				mct_Write1LTestPattern_D(p_mct_stat, p_dct_stat, TestAddr1, 0); /*rank 1 of DIMM, testpattern 0 */
-				mct_Write1LTestPattern_D(p_mct_stat, p_dct_stat, TestAddr1B, 1); /*rank 1 of DIMM, testpattern 1 */
+				mct_write_1l_test_pattern_d(p_mct_stat, p_dct_stat, TestAddr1, 0); /*rank 1 of DIMM, testpattern 0 */
+				mct_write_1l_test_pattern_d(p_mct_stat, p_dct_stat, TestAddr1B, 1); /*rank 1 of DIMM, testpattern 1 */
 			}
 
 #if DQS_TRAIN_DEBUG > 0
@@ -799,17 +799,17 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 						/* 2.8.9.9.2 (7 D)
 						 * Invert read instructions to alternate data read order on the bus
 						 */
-						proc_IOCLFLUSH_D((rank == 0) ? TestAddr0B : TestAddr1B);
+						proc_iocl_flush_d((rank == 0) ? TestAddr0B : TestAddr1B);
 						result_qword2 = read64_fs(convert_testaddr_and_channel_to_address(p_dct_stat, (rank == 0) ? TestAddr0B : TestAddr1B, Channel));
 						write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
-						proc_IOCLFLUSH_D((rank == 0) ? TestAddr0 : TestAddr1);
+						proc_iocl_flush_d((rank == 0) ? TestAddr0 : TestAddr1);
 						result_qword1 = read64_fs(convert_testaddr_and_channel_to_address(p_dct_stat, (rank == 0) ? TestAddr0 : TestAddr1, Channel));
 						write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
 					} else {
-						proc_IOCLFLUSH_D((rank == 0) ? TestAddr0 : TestAddr1);
+						proc_iocl_flush_d((rank == 0) ? TestAddr0 : TestAddr1);
 						result_qword1 = read64_fs(convert_testaddr_and_channel_to_address(p_dct_stat, (rank == 0) ? TestAddr0 : TestAddr1, Channel));
 						write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
-						proc_IOCLFLUSH_D((rank == 0) ? TestAddr0B : TestAddr1B);
+						proc_iocl_flush_d((rank == 0) ? TestAddr0B : TestAddr1B);
 						result_qword2 = read64_fs(convert_testaddr_and_channel_to_address(p_dct_stat, (rank == 0) ? TestAddr0B : TestAddr1B, Channel));
 						write_dqs_receiver_enable_control_registers(current_total_delay, dev, Channel, dimm, index_reg);
 					}
@@ -956,11 +956,11 @@ static void dqsTrainRcvrEn_SW_Fam10(struct MCTStatStruc *p_mct_stat,
 	}
 
 	for (Channel = 0; Channel < 2; Channel++) {
-		ResetDCTWrPtr_D(dev, Channel, index_reg, Addl_Index);
+		reset_dct_wr_ptr_d(dev, Channel, index_reg, Addl_Index);
 	}
 
 	if (_DisableDramECC) {
-		mct_EnableDimmEccEn_D(p_mct_stat, p_dct_stat, _DisableDramECC);
+		mct_enable_dimm_ecc_en_d(p_mct_stat, p_dct_stat, _DisableDramECC);
 	}
 
 	if (Pass == FIRST_PASS) {
@@ -1237,7 +1237,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	lo &= ~(1 << 15);	/* SSEDIS */
 	_WRMSR(msr, lo, hi);	/* Setting wrap32dis allows 64-bit memory references in real mode */
 
-	_DisableDramECC = mct_DisableDimmEccEn_D(p_mct_stat, p_dct_stat);
+	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
 	Errors = 0;
 	dev = p_dct_stat->dev_dct;
@@ -1249,7 +1249,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 
 		mem_clk = Get_NB32_DCT(dev, Channel, 0x94) & 0x1f;
 
-		Receiver = mct_InitReceiver_D(p_dct_stat, Channel);
+		Receiver = mct_init_receiver_d(p_dct_stat, Channel);
 		/* There are four receiver pairs, loosely associated with chipselects.
 		 * This is essentially looping over each DIMM.
 		 */
@@ -1259,7 +1259,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 
 			print_debug_dqs("\t\tTrainRcvEnd52: index ", Addl_Index, 2);
 
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, Receiver)) {
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, Channel, Receiver)) {
 				continue;
 			}
 
@@ -1271,7 +1271,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 			/* 2.10.5.8.2
 			 * Loop over all ranks
 			 */
-			if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, Receiver + 1))
+			if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, Channel, Receiver + 1))
 				_2Ranks = 1;
 			else
 				_2Ranks = 0;
@@ -1462,7 +1462,7 @@ static void dqsTrainRcvrEn_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	Calc_SetMaxRdLatency_D_Fam15(p_mct_stat, p_dct_stat, 1, 0);
 
 	if (_DisableDramECC) {
-		mct_EnableDimmEccEn_D(p_mct_stat, p_dct_stat, _DisableDramECC);
+		mct_enable_dimm_ecc_en_d(p_mct_stat, p_dct_stat, _DisableDramECC);
 	}
 
 	if (Pass == FIRST_PASS) {
@@ -1596,7 +1596,7 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	lo &= ~(1 << 15);	/* SSEDIS */
 	_WRMSR(msr, lo, hi);	/* Setting wrap32dis allows 64-bit memory references in real mode */
 
-	_DisableDramECC = mct_DisableDimmEccEn_D(p_mct_stat, p_dct_stat);
+	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
 	Errors = 0;
 	dev = p_dct_stat->dev_dct;
@@ -1611,7 +1611,7 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 
 		mem_clk = Get_NB32_DCT(dev, Channel, 0x94) & 0x1f;
 
-		Receiver = mct_InitReceiver_D(p_dct_stat, Channel);
+		Receiver = mct_init_receiver_d(p_dct_stat, Channel);
 
 		/* Find DIMM with worst case receiver enable delays */
 		current_worst_case_total_delay_dimm = 0;
@@ -1625,7 +1625,7 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 
 			print_debug_dqs("\t\tTrainMaxRdLatency52: Receiver ", Receiver, 2);
 
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, Receiver)) {
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, Channel, Receiver)) {
 				continue;
 			}
 
@@ -1687,7 +1687,7 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	}
 
 	if (_DisableDramECC) {
-		mct_EnableDimmEccEn_D(p_mct_stat, p_dct_stat, _DisableDramECC);
+		mct_enable_dimm_ecc_en_d(p_mct_stat, p_dct_stat, _DisableDramECC);
 	}
 
 	if (!_Wrap32Dis) {
@@ -1719,7 +1719,7 @@ void dqsTrainMaxRdLatency_SW_Fam15(struct MCTStatStruc *p_mct_stat,
 	printk(BIOS_DEBUG, "TrainMaxRdLatency: Done\n\n");
 }
 
-u8 mct_InitReceiver_D(struct DCTStatStruc *p_dct_stat, u8 dct)
+u8 mct_init_receiver_d(struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	if (p_dct_stat->dimm_valid_dct[dct] == 0) {
 		return 8;
@@ -1761,7 +1761,7 @@ static void mct_DisableDQSRcvEn_D(struct DCTStatStruc *p_dct_stat)
 /* Set F2x[1, 0]9C_x[2B:10] DRAM DQS Receiver Enable Timing Control Registers
  * See BKDG Rev. 3.62 page 268 for more information
  */
-void mct_SetRcvrEnDly_D(struct DCTStatStruc *p_dct_stat, u16 RcvrEnDly,
+void mct_set_rcvr_en_dly_d(struct DCTStatStruc *p_dct_stat, u16 RcvrEnDly,
 			u8 FinalValue, u8 Channel, u8 Receiver, u32 dev,
 			u32 index_reg, u8 Addl_Index, u8 Pass)
 {
@@ -1969,7 +1969,7 @@ static void InitDQSPos4RcvrEn_D(struct MCTStatStruc *p_mct_stat,
 		Set_NB32_index_wait_DCT(dev, Channel, index_reg, 7 + 0x100 * j, dword);
 }
 
-void SetEccDQSRcvrEn_D(struct DCTStatStruc *p_dct_stat, u8 Channel)
+void set_ecc_dqs_rcvr_en_d(struct DCTStatStruc *p_dct_stat, u8 Channel)
 {
 	u32 dev;
 	u32 index_reg;
@@ -2005,7 +2005,7 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
 	EccDQSScale = p_dct_stat->ch_ecc_dqs_scale[Channel];
 
 	for (ChipSel = 0; ChipSel < MAX_CS_SUPPORTED; ChipSel += 2) {
-		if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel, ChipSel)) {
+		if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, Channel, ChipSel)) {
 			u16 *p;
 			p = p_dct_stat->ch_d_b_rcvr_dly[Channel][ChipSel >> 1];
 
@@ -2044,14 +2044,14 @@ static void CalcEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
 			p_dct_stat->ch_d_bc_rcvr_dly[Channel][ChipSel >> 1] = val;
 		}
 	}
-	SetEccDQSRcvrEn_D(p_dct_stat, Channel);
+	set_ecc_dqs_rcvr_en_d(p_dct_stat, Channel);
 }
 
 /* 2.8.9.9.4
  * ECC Byte Lane Training
  * DQS Receiver Enable Delay
  */
-void mctSetEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
+void mct_set_ecc_dqs_rcvr_en_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
@@ -2069,7 +2069,7 @@ void mctSetEccDQSRcvrEn_D(struct MCTStatStruc *p_mct_stat,
 	}
 }
 
-void phyAssistedMemFnceTraining(struct MCTStatStruc *p_mct_stat,
+void phy_assisted_mem_fence_training(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a, s16 single_node_number)
 {
 	u8 Node = 0;
@@ -2334,7 +2334,7 @@ u32 fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
 		Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x08, val);
 
 		/* Wait 200 MEMCLKs. */
-		mct_Wait(50000);		/* wait 200us */
+		mct_wait(50000);		/* wait 200us */
 
 		/* Clear F2x[1,0]9C_x08[PHY_FENCE_TR_EN]=0. */
 		val = Get_NB32_index_wait_DCT(dev, dct, index_reg, 0x08);
@@ -2388,7 +2388,7 @@ u32 fenceDynTraining_D(struct MCTStatStruc *p_mct_stat,
 	}
 }
 
-void mct_Wait(u32 cycles)
+void mct_wait(u32 cycles)
 {
 	u32 saved;
 	u32 hi, lo, msr;

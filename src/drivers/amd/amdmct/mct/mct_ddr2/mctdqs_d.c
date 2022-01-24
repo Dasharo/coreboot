@@ -176,7 +176,7 @@ static const u32 TestPatternJD1b_D[] = {
 	0x80808080,0x80808080,0x80808080,0x80808080  /* QW7,CHA-B, DQ7-ODD */
 };
 
-void TrainReceiverEn_D(struct MCTStatStruc *p_mct_stat,
+void train_receiver_en_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a, u8 Pass)
 {
 	u8 Node;
@@ -189,7 +189,7 @@ void TrainReceiverEn_D(struct MCTStatStruc *p_mct_stat,
 			break;
 */
 		if (p_dct_stat->dct_sys_limit) {
-			mct_TrainRcvrEn_D(p_mct_stat, p_dct_stat, Pass);
+			mct_train_rcvr_en_d(p_mct_stat, p_dct_stat, Pass);
 		}
 	}
 }
@@ -208,7 +208,7 @@ static void SetEccDQSRdWrPos_D(struct MCTStatStruc *p_mct_stat,
 			CalcEccDQSPos_D(p_mct_stat, p_dct_stat, p_dct_stat->ch_ecc_dqs_like[channel], p_dct_stat->ch_ecc_dqs_scale[channel], ChipSel);
 			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR ? " R dqs_delay":" W dqs_delay",	p_dct_stat->dqs_delay, 2);
 			p_dct_stat->byte_lane = 8;
-			StoreDQSDatStrucVal_D(p_mct_stat, p_dct_stat, ChipSel);
+			store_dqs_dat_struct_val_d(p_mct_stat, p_dct_stat, ChipSel);
 			mct_SetDQSDelayCSR_D(p_mct_stat, p_dct_stat, ChipSel);
 		}
 	}
@@ -285,7 +285,7 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *p_mct_stat,
 	_WRMSR(addr, lo, hi);	/* allow 64-bit memory references in real mode */
 
 	/* Disable ECC correction of reads on the dram bus. */
-	_DisableDramECC = mct_DisableDimmEccEn_D(p_mct_stat, p_dct_stat);
+	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
 	SetupDqsPattern_D(p_mct_stat, p_dct_stat, PatternBuffer);
 
@@ -355,7 +355,7 @@ static void TrainDQSRdWrPos_D(struct MCTStatStruc *p_mct_stat,
 #endif
 
 	if (_DisableDramECC) {
-		mct_EnableDimmEccEn_D(p_mct_stat, p_dct_stat, _DisableDramECC);
+		mct_enable_dimm_ecc_en_d(p_mct_stat, p_dct_stat, _DisableDramECC);
 	}
 	if (!_Wrap32Dis) {
 		addr = HWCR_MSR;
@@ -446,13 +446,13 @@ static void TrainDQSPos_D(struct MCTStatStruc *p_mct_stat,
 	for (ChipSel = cs_start; ChipSel < (cs_start + 2); ChipSel++) { /* logical register chipselects 0..7 */
 		print_debug_dqs("\t\t\t\tTrainDQSPos: 11 ChipSel ", ChipSel, 4);
 
-		if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, p_dct_stat->channel, ChipSel)) {
+		if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, p_dct_stat->channel, ChipSel)) {
 			print_debug_dqs("\t\t\t\tmct_RcvrRankEnabled_D CS not enabled ", ChipSel, 4);
 			continue;
 		}
 
 		BanksPresent = 1;	/* flag for at least one bank is present */
-		TestAddr = mct_GetMCTSysAddr_D(p_mct_stat, p_dct_stat, p_dct_stat->channel, ChipSel, &valid);
+		TestAddr = mct_get_mct_sys_addr_d(p_mct_stat, p_dct_stat, p_dct_stat->channel, ChipSel, &valid);
 		if (!valid) {
 			print_debug_dqs("\t\t\t\tAddress not supported on current CS ", TestAddr, 4);
 			continue;
@@ -491,9 +491,9 @@ static void TrainDQSPos_D(struct MCTStatStruc *p_mct_stat,
 			MutualCSPassW[DQSDelay] &= tmp;
 			print_debug_dqs("\t\t\t\t\tTrainDQSPos: 146\tMutualCSPassW ", MutualCSPassW[DQSDelay], 5);
 
-			SetTargetWTIO_D(TestAddr);
+			set_target_wtio_d(TestAddr);
 			FlushDQSTestPattern_D(p_dct_stat, TestAddr << 8);
-			ResetTargetWTIO_D();
+			reset_target_wtio_d();
 		}
 
 	}
@@ -538,7 +538,7 @@ static void TrainDQSPos_D(struct MCTStatStruc *p_mct_stat,
 					middle_dqs = MiddleDQS_D(RnkDlyFilterMin, RnkDlyFilterMax);
 					p_dct_stat->dqs_delay = middle_dqs;
 					mct_SetDQSDelayCSR_D(p_mct_stat, p_dct_stat, cs_start);  /* load the register with the value */
-					StoreDQSDatStrucVal_D(p_mct_stat, p_dct_stat, cs_start); /* store the value into the data structure */
+					store_dqs_dat_struct_val_d(p_mct_stat, p_dct_stat, cs_start); /* store the value into the data structure */
 					print_debug_dqs("\t\t\t\tTrainDQSPos: 42 middle_dqs : ",middle_dqs, 4);
 				}
 			}
@@ -552,7 +552,7 @@ skipLocMiddle:
 }
 
 
-void StoreDQSDatStrucVal_D(struct MCTStatStruc *p_mct_stat,
+void store_dqs_dat_struct_val_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 ChipSel)
 {
 	/* Store the DQSDelay value, found during a training sweep, into the DCT
@@ -633,11 +633,11 @@ static void TrainWriteDQS_D(struct MCTStatStruc *p_mct_stat,
 }
 
 
-void proc_IOCLFLUSH_D(u32 addr_hi)
+void proc_iocl_flush_d(u32 addr_hi)
 {
-	SetTargetWTIO_D(addr_hi);
+	set_target_wtio_d(addr_hi);
 	proc_CLFLUSH(addr_hi);
-	ResetTargetWTIO_D();
+	reset_target_wtio_d();
 }
 
 
@@ -800,7 +800,7 @@ static void FlushDQSTestPattern_D(struct DCTStatStruc *p_dct_stat,
 	}
 }
 
-void SetTargetWTIO_D(u32 TestAddr)
+void set_target_wtio_d(u32 TestAddr)
 {
 	u32 lo, hi;
 	hi = TestAddr >> 24;
@@ -812,7 +812,7 @@ void SetTargetWTIO_D(u32 TestAddr)
 }
 
 
-void ResetTargetWTIO_D(void)
+void reset_target_wtio_d(void)
 {
 	u32 lo, hi;
 
@@ -863,7 +863,7 @@ u32 set_upper_fs_base(u32 addr_hi)
 }
 
 
-void ResetDCTWrPtr_D(u32 dev, u32 index_reg, u32 index)
+void reset_dct_wr_ptr_d(u32 dev, u32 index_reg, u32 index)
 {
 	u32 val;
 
@@ -875,7 +875,7 @@ void ResetDCTWrPtr_D(u32 dev, u32 index_reg, u32 index)
 /* mctEngDQSwindow_Save_D not required with arrays */
 
 
-void mct_TrainDQSPos_D(struct MCTStatStruc *p_mct_stat,
+void mct_train_dqs_pos_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
@@ -905,7 +905,7 @@ void mct_TrainDQSPos_D(struct MCTStatStruc *p_mct_stat,
  * Function is inline.
  */
 
-u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
+u8 mct_disable_dimm_ecc_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	u8 _DisableDramECC = 0;
@@ -937,7 +937,7 @@ u8 mct_DisableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
 
 
 
-void mct_EnableDimmEccEn_D(struct MCTStatStruc *p_mct_stat,
+void mct_enable_dimm_ecc_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 _DisableDramECC)
 {
 
@@ -1014,7 +1014,7 @@ static void mct_SetDQSDelayAllCSR_D(struct MCTStatStruc *p_mct_stat,
 
 
 	for (ChipSel = cs_start; ChipSel < (cs_start + 2); ChipSel++) {
-		if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, p_dct_stat->channel, ChipSel)) {
+		if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, p_dct_stat->channel, ChipSel)) {
 			for (ByteLane = 0; ByteLane < 8; ByteLane++) {
 				p_dct_stat->byte_lane = ByteLane;
 				mct_SetDQSDelayCSR_D(p_mct_stat, p_dct_stat, ChipSel);
@@ -1024,7 +1024,7 @@ static void mct_SetDQSDelayAllCSR_D(struct MCTStatStruc *p_mct_stat,
 }
 
 
-u8 mct_RcvrRankEnabled_D(struct MCTStatStruc *p_mct_stat,
+u8 mct_rcvr_rank_enabled_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 Channel, u8 ChipSel)
 {
@@ -1035,15 +1035,15 @@ u8 mct_RcvrRankEnabled_D(struct MCTStatStruc *p_mct_stat,
 }
 
 
-u32 mct_GetRcvrSysAddr_D(struct MCTStatStruc *p_mct_stat,
+u32 mct_get_rcvr_sys_addr_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 channel, u8 receiver, u8 *valid)
 {
-	return mct_GetMCTSysAddr_D(p_mct_stat, p_dct_stat, channel, receiver, valid);
+	return mct_get_mct_sys_addr_d(p_mct_stat, p_dct_stat, channel, receiver, valid);
 }
 
 
-u32 mct_GetMCTSysAddr_D(struct MCTStatStruc *p_mct_stat,
+u32 mct_get_mct_sys_addr_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 Channel, u8 receiver, u8 *valid)
 {
@@ -1140,20 +1140,20 @@ exitGetAddrWNoError:
 			*valid = 1;
 		}
 	}
-	print_debug_dqs("mct_GetMCTSysAddr_D: receiver ", receiver, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: Channel ", Channel, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: base_addr ", val, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: valid ", *valid, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: status ", p_dct_stat->status, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: HoleBase ", p_dct_stat->dct_hole_base, 2);
-	print_debug_dqs("mct_GetMCTSysAddr_D: Cachetop ", p_mct_stat->sub_4G_cache_top, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: receiver ", receiver, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: Channel ", Channel, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: base_addr ", val, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: valid ", *valid, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: status ", p_dct_stat->status, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: HoleBase ", p_dct_stat->dct_hole_base, 2);
+	print_debug_dqs("mct_get_mct_sys_addr_d: Cachetop ", p_mct_stat->sub_4G_cache_top, 2);
 
 exitGetAddr:
 	return val;
 }
 
 
-void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
+void mct_write_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u32 TestAddr, u8 pattern)
 {
@@ -1176,7 +1176,7 @@ void mct_Write1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
 }
 
 
-void mct_Read1LTestPattern_D(struct MCTStatStruc *p_mct_stat,
+void mct_read_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u32 addr)
 {
 	/* BIOS issues the remaining (Ntrain - 2) reads after checking that

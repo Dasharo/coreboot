@@ -149,7 +149,7 @@ void ChangeMemClk(struct MCTStatStruc *p_mct_stat,
 
 static u8 Get_Latency_Diff(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 dct);
-static void SyncSetting(struct DCTStatStruc *p_dct_stat);
+static void sync_settings(struct DCTStatStruc *p_dct_stat);
 static u8 crcCheck(struct DCTStatStruc *p_dct_stat, u8 dimm);
 
 u8 is_ecc_enabled(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
@@ -2749,8 +2749,8 @@ restartinit:
 		mct_hook_after_ht_map();
 
 		if (!is_fam15h()) {
-			printk(BIOS_DEBUG, "mct_auto_init_mct_d: CPUMemTyping_D\n");
-			CPUMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Map dram into WB/UC CPU cacheability */
+			printk(BIOS_DEBUG, "mct_auto_init_mct_d: cpu_mem_typing_d\n");
+			cpu_mem_typing_d(p_mct_stat, p_dct_stat_a);	/* Map dram into WB/UC CPU cacheability */
 		}
 
 		printk(BIOS_DEBUG, "mct_auto_init_mct_d: mct_hook_after_cpu\n");
@@ -2766,8 +2766,8 @@ restartinit:
 		rqs_timing_d(p_mct_stat, p_dct_stat_a, allow_config_restore);	/* Get Receiver Enable and DQS signal timing*/
 
 		if (!is_fam15h()) {
-			printk(BIOS_DEBUG, "mct_auto_init_mct_d: UMAMemTyping_D\n");
-			UMAMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Fix up for UMA sizing */
+			printk(BIOS_DEBUG, "mct_auto_init_mct_d: uma_mem_typing_d\n");
+			uma_mem_typing_d(p_mct_stat, p_dct_stat_a);	/* Fix up for UMA sizing */
 		}
 
 		if (!allow_config_restore) {
@@ -2779,8 +2779,8 @@ restartinit:
 			goto restartinit;
 		}
 
-		InterleaveNodes_D(p_mct_stat, p_dct_stat_a);
-		InterleaveChannels_D(p_mct_stat, p_dct_stat_a);
+		interleave_nodes_d(p_mct_stat, p_dct_stat_a);
+		interleave_channels_d(p_mct_stat, p_dct_stat_a);
 
 		ecc_enabled = 1;
 		for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
@@ -2793,8 +2793,8 @@ restartinit:
 		}
 
 		if (ecc_enabled) {
-			printk(BIOS_DEBUG, "mct_auto_init_mct_d: ECCInit_D\n");
-			if (!ECCInit_D(p_mct_stat, p_dct_stat_a)) {			/* Setup ECC control and ECC check-bits*/
+			printk(BIOS_DEBUG, "mct_auto_init_mct_d: ecc_init_d\n");
+			if (!ecc_init_d(p_mct_stat, p_dct_stat_a)) {			/* Setup ECC control and ECC check-bits*/
 				/* Memory was not cleared during ECC setup */
 				/* mctDoWarmResetMemClr_D(); */
 				printk(BIOS_DEBUG, "mct_auto_init_mct_d: mct_mem_clr_d\n");
@@ -2803,11 +2803,11 @@ restartinit:
 		}
 
 		if (is_fam15h()) {
-			printk(BIOS_DEBUG, "mct_auto_init_mct_d: CPUMemTyping_D\n");
-			CPUMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Map dram into WB/UC CPU cacheability */
+			printk(BIOS_DEBUG, "mct_auto_init_mct_d: cpu_mem_typing_d\n");
+			cpu_mem_typing_d(p_mct_stat, p_dct_stat_a);	/* Map dram into WB/UC CPU cacheability */
 
-			printk(BIOS_DEBUG, "mct_auto_init_mct_d: UMAMemTyping_D\n");
-			UMAMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Fix up for UMA sizing */
+			printk(BIOS_DEBUG, "mct_auto_init_mct_d: uma_mem_typing_d\n");
+			uma_mem_typing_d(p_mct_stat, p_dct_stat_a);	/* Fix up for UMA sizing */
 
 			printk(BIOS_DEBUG, "mct_auto_init_mct_d: mct_ForceNBPState0_Dis_Fam15\n");
 			for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
@@ -3108,7 +3108,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *p_mct_stat,
 		for (receiver = 0; receiver < 8; receiver += 2) {
 			dimm = (receiver >> 1);
 
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, receiver))
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, receiver))
 				continue;
 
 			read_dqs_receiver_enable_control_registers(current_total_delay_2, dev, dct, dimm, index_reg);
@@ -3154,7 +3154,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *p_mct_stat,
 		for (receiver = 0; receiver < 8; receiver += 2) {
 			dimm = (receiver >> 1);
 
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, receiver))
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, receiver))
 				continue;
 
 			read_dqs_write_timing_control_registers(current_total_delay_2, dev, dct, dimm, index_reg);
@@ -3349,7 +3349,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *p_mct_stat,
 		for (receiver = 0; receiver < 8; receiver += 2) {
 			dimm = (receiver >> 1);
 
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, receiver))
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, receiver))
 				continue;
 
 			read_dqs_write_timing_control_registers(current_total_delay_1, dev, dct, dimm, index_reg);
@@ -3403,7 +3403,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *p_mct_stat,
 		for (receiver = 0; receiver < 8; receiver += 2) {
 			dimm = (receiver >> 1);
 
-			if (!mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, receiver))
+			if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, receiver))
 				continue;
 
 			read_dqs_receiver_enable_control_registers(current_total_delay_1, dev, dct, dimm, index_reg);
@@ -3450,7 +3450,7 @@ void fam15EnableTrainingMode(struct MCTStatStruc *p_mct_stat,
 		Set_NB32_DCT(dev, dct, 0x110, dword);			/* DRAM Controller Select Low */
 
 		/* NOTE
-		 * ECC-related setup is performed as part of ECCInit_D and must not be located here,
+		 * ECC-related setup is performed as part of ecc_init_d and must not be located here,
 		 * otherwise semi-random lockups will occur due to misconfigured scrubbing hardware!
 		 */
 
@@ -3532,7 +3532,7 @@ retry_dqs_training_and_levelization:
 	nv_DQSTrainCTL = !allow_config_restore;
 
 	mct_before_dqs_train_d(p_mct_stat, p_dct_stat_a);
-	phyAssistedMemFnceTraining(p_mct_stat, p_dct_stat_a, -1);
+	phy_assisted_mem_fence_training(p_mct_stat, p_dct_stat_a, -1);
 
 	if (is_fam15h()) {
 		struct DCTStatStruc *p_dct_stat;
@@ -3561,7 +3561,7 @@ retry_dqs_training_and_levelization:
 
 		if (is_fam15h()) {
 			/* Receiver Enable Training Pass 1 */
-			TrainReceiverEn_D(p_mct_stat, p_dct_stat_a, FIRST_PASS);
+			train_receiver_en_d(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 		}
 
 		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, SECOND_PASS);
@@ -3569,16 +3569,16 @@ retry_dqs_training_and_levelization:
 		if (is_fam15h()) {
 
 			/* TODO:
-			 * Determine why running TrainReceiverEn_D in SECOND_PASS
+			 * Determine why running train_receiver_en_d in SECOND_PASS
 			 * mode yields less stable training values than when run
 			 * in FIRST_PASS mode as in the HACK below.
 			 */
-			TrainReceiverEn_D(p_mct_stat, p_dct_stat_a, FIRST_PASS);
+			train_receiver_en_d(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 		} else {
-			TrainReceiverEn_D(p_mct_stat, p_dct_stat_a, FIRST_PASS);
+			train_receiver_en_d(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 		}
 
-		mct_TrainDQSPos_D(p_mct_stat, p_dct_stat_a);
+		mct_train_dqs_pos_d(p_mct_stat, p_dct_stat_a);
 
 		/* Determine if DQS training requested a retrain attempt */
 		retry_requested = 0;
@@ -3639,7 +3639,7 @@ retry_dqs_training_and_levelization:
 		if (is_fam15h())
 			exit_training_mode_fam15(p_mct_stat, p_dct_stat_a);
 		else
-			mctSetEccDQSRcvrEn_D(p_mct_stat, p_dct_stat_a);
+			mct_set_ecc_dqs_rcvr_en_d(p_mct_stat, p_dct_stat_a);
 	} else {
 		mct_WriteLevelization_HW(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 
@@ -3669,7 +3669,7 @@ retry_dqs_training_and_levelization:
 		}
 	}
 
-	/* FIXME - currently uses calculated value	TrainMaxReadLatency_D(p_mct_stat, p_dct_stat_a); */
+	/* FIXME - currently uses calculated value	train_max_read_latency_d(p_mct_stat, p_dct_stat_a); */
 	mct_hook_after_any_training();
 }
 
@@ -3697,7 +3697,7 @@ static void load_dqs_sig_tmg_regs_d(struct MCTStatStruc *p_mct_stat,
 				index_reg = 0x98;
 				for (Receiver = 0; Receiver < 8; Receiver += 2) {
 					/* Set Receiver Enable Values */
-					mct_SetRcvrEnDly_D(p_dct_stat,
+					mct_set_rcvr_en_dly_d(p_dct_stat,
 						0, /* RcvrEnDly */
 						1, /* FinalValue, From stack */
 						Channel,
@@ -3723,7 +3723,7 @@ static void load_dqs_sig_tmg_regs_d(struct MCTStatStruc *p_mct_stat,
 				}
 			}
 			for (Channel = 0; Channel < 2; Channel++) {
-				SetEccDQSRcvrEn_D(p_dct_stat, Channel);
+				set_ecc_dqs_rcvr_en_d(p_dct_stat, Channel);
 			}
 
 			for (Channel = 0; Channel < 2; Channel++) {
@@ -4183,7 +4183,7 @@ static void sync_dcts_ready_d(struct MCTStatStruc *p_mct_stat,
 	}
 
 	/* wait 750us before any memory access can be made. */
-	mct_Wait(15000);
+	mct_wait(15000);
 }
 
 void startup_dct_d(struct MCTStatStruc *p_mct_stat,
@@ -4984,10 +4984,10 @@ u8 platform_spec_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	if (!is_fam15h()) {
-		mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, dct);
+		mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, dct);
 
 		if (p_dct_stat->ganged_mode == 1) {
-			mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, 1);
+			mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, 1);
 			mct_BeforePlatformSpec(p_mct_stat, p_dct_stat, 1);
 		}
 
@@ -5027,7 +5027,7 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 
 	/* map chip-selects into local address space */
 	stitch_memory_d(p_mct_stat, p_dct_stat, dct);
-	InterleaveBanks_D(p_mct_stat, p_dct_stat, dct);
+	interleave_banks_d(p_mct_stat, p_dct_stat, dct);
 
 	/* temp image of status (for convenience). RO usage! */
 	status = p_dct_stat->status;
@@ -5886,7 +5886,7 @@ static void mct_dram_init(struct MCTStatStruc *p_mct_stat,
 {
 	mct_before_dram_init__prod_d(p_mct_stat, p_dct_stat, dct);
 	mct_DramInit_Sw_D(p_mct_stat, p_dct_stat, dct);
-	/* mct_DramInit_Hw_D(p_mct_stat, p_dct_stat, dct); */
+	/* mct_dram_init_hw_d(p_mct_stat, p_dct_stat, dct); */
 }
 
 static u8 mct_set_mode(struct MCTStatStruc *p_mct_stat,
@@ -6022,7 +6022,7 @@ u8 mct_platform_spec(struct MCTStatStruc *p_mct_stat,
 	u8 i, i_start, i_end;
 
 	if (p_dct_stat->ganged_mode) {
-		SyncSetting(p_dct_stat);
+		sync_settings(p_dct_stat);
 		/* mct_setup_sync_d */
 		i_start = 0;
 		i_end = 2;
@@ -7014,7 +7014,7 @@ static void InitDDRPhy(struct MCTStatStruc *p_mct_stat,
 	ddr_voltage_index = dct_ddr_voltage_index(p_dct_stat, dct);
 
 	/* Fam15h BKDG v3.14 section 2.10.5.3
-	 * The remainder of the Phy Initialization algorithm picks up in phyAssistedMemFnceTraining
+	 * The remainder of the Phy Initialization algorithm picks up in phy_assisted_mem_fence_training
 	 */
 	Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0000000b, 0x80000000);
 	Set_NB32_index_wait_DCT(dev, dct, index_reg, 0x0d0fe013, 0x00000118);
@@ -7935,7 +7935,7 @@ void mct_set_dram_config_hi_d(struct MCTStatStruc *p_mct_stat,
 		dword &= ~(1 << MEM_CLK_FREQ_VAL);
 		Set_NB32_DCT(dev, dct, 0x94, dword);
 
-		mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, dct);
+		mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, dct);
 		set_2t_configuration(p_mct_stat, p_dct_stat, dct);
 		mct_BeforePlatformSpec(p_mct_stat, p_dct_stat, dct);
 		mct_platform_spec(p_mct_stat, p_dct_stat, dct);
@@ -7945,7 +7945,7 @@ void mct_set_dram_config_hi_d(struct MCTStatStruc *p_mct_stat,
 		if (!(dword & (1 << DIS_AUTO_COMP)))
 			Set_NB32_index_wait_DCT(dev, dct, index_reg, index, dword | (1 << DIS_AUTO_COMP));
 
-		mct_Wait(100);
+		mct_wait(100);
 	}
 
 	printk(BIOS_DEBUG, "mct_set_dram_config_hi_d: DramConfigHi:    %08x\n", DramConfigHi);
@@ -8036,21 +8036,21 @@ static void mct_reset_dll_d(struct MCTStatStruc *p_mct_stat,
 	_WRMSR(addr, lo, hi);
 
 	p_dct_stat->channel = dct;
-	Receiver = mct_InitReceiver_D(p_dct_stat, dct);
+	Receiver = mct_init_receiver_d(p_dct_stat, dct);
 	/* there are four receiver pairs, loosely associated with chipselects.*/
 	for (; Receiver < 8; Receiver += 2) {
-		if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, Receiver)) {
-			addr = mct_GetRcvrSysAddr_D(p_mct_stat, p_dct_stat, dct, Receiver, &valid);
+		if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, Receiver)) {
+			addr = mct_get_rcvr_sys_addr_d(p_mct_stat, p_dct_stat, dct, Receiver, &valid);
 			if (valid) {
-				mct_Read1LTestPattern_D(p_mct_stat, p_dct_stat, addr);	/* cache fills */
+				mct_read_1l_test_pattern_d(p_mct_stat, p_dct_stat, addr);	/* cache fills */
 
 				/* Write 0000_8000h to register F2x[1,0]9C_xD080F0C */
 				Set_NB32_index_wait_DCT(dev, dct, 0x98, 0xD080F0C, 0x00008000);
-				mct_Wait(80); /* wait >= 300ns */
+				mct_wait(80); /* wait >= 300ns */
 
 				/* Write 0000_0000h to register F2x[1,0]9C_xD080F0C */
 				Set_NB32_index_wait_DCT(dev, dct, 0x98, 0xD080F0C, 0x00000000);
-				mct_Wait(800); /* wait >= 2us */
+				mct_wait(800); /* wait >= 2us */
 				break;
 			}
 		}
@@ -8125,7 +8125,7 @@ void SetDllSpeedUp_D(struct MCTStatStruc *p_mct_stat,
 	}
 }
 
-static void SyncSetting(struct DCTStatStruc *p_dct_stat)
+static void sync_settings(struct DCTStatStruc *p_dct_stat)
 {
 	/* set F2x78[CH_SETUP_SYNC] when F2x[1, 0]9C_x04[AddrCmdSetup, CsOdtSetup,
 	 * CkeSetup] setups for one DCT are all 0s and at least one of the setups,
@@ -8152,7 +8152,7 @@ static void after_dram_init_d(struct DCTStatStruc *p_dct_stat, u8 dct) {
 	u32 dev = p_dct_stat->dev_dct;
 
 	if (p_dct_stat->logical_cpuid & (AMD_DR_B2 | AMD_DR_B3)) {
-		mct_Wait(10000);	/* Wait 50 us*/
+		mct_wait(10000);	/* Wait 50 us*/
 		val = get_nb32(dev, 0x110);
 		if (!(val & (1 << DRAM_ENABLED))) {
 			/* If 50 us expires while DramEnable =0 then do the following */

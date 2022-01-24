@@ -294,8 +294,8 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *p_mct_stat,
 	printk(BIOS_SPEW, "%s: Start\n", __func__);
 
 	if (!is_fam15h()) {
-		mct_Wait(1600);
-		mct_Wait(1200);
+		mct_wait(1600);
+		mct_wait(1200);
 	}
 
 	p_dct_stat->cs_present = p_dct_stat->cs_present_dct[dct];
@@ -337,7 +337,7 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *p_mct_stat,
 				}
 			} else {
 				for (cw = 0; cw <=15; cw ++) {
-					mct_Wait(1600);
+					mct_wait(1600);
 					val = mct_ControlRC(p_mct_stat, p_dct_stat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), cw);
 					mct_SendCtrlWrd(p_mct_stat, p_dct_stat, dct, val);
 				}
@@ -345,7 +345,7 @@ void mct_DramControlReg_Init_D(struct MCTStatStruc *p_mct_stat,
 		}
 	}
 
-	mct_Wait(1200);
+	mct_wait(1200);
 
 	printk(BIOS_SPEW, "%s: Done\n", __func__);
 }
@@ -393,7 +393,7 @@ void FreqChgCtrlWrd(struct MCTStatStruc *p_mct_stat,
 
 			/* Resend control word 10 */
 			u8 freq_ctl_val = 0;
-			mct_Wait(1600);
+			mct_wait(1600);
 			switch (mem_freq) {
 				case 333:
 				case 400:
@@ -420,7 +420,7 @@ void FreqChgCtrlWrd(struct MCTStatStruc *p_mct_stat,
 			if (is_fam15h())
 				precise_ndelay_fam15(p_mct_stat, 6000);
 			else
-				mct_Wait(1600);
+				mct_wait(1600);
 
 			/* Resend control word 2 */
 			val = mct_ControlRC(p_mct_stat, p_dct_stat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), 2);
@@ -429,7 +429,7 @@ void FreqChgCtrlWrd(struct MCTStatStruc *p_mct_stat,
 			if (is_fam15h())
 				precise_ndelay_fam15(p_mct_stat, 6000);
 			else
-				mct_Wait(1600);
+				mct_wait(1600);
 
 			/* Resend control word 8 */
 			val = mct_ControlRC(p_mct_stat, p_dct_stat, dct, MrsChipSel << rc_word_chip_select_lower_bit(), 8);
@@ -438,7 +438,7 @@ void FreqChgCtrlWrd(struct MCTStatStruc *p_mct_stat,
 			if (is_fam15h())
 				precise_ndelay_fam15(p_mct_stat, 6000);
 			else
-				mct_Wait(1600);
+				mct_wait(1600);
 		}
 	}
 	p_dct_stat->dimm_auto_speed = SaveSpeed;

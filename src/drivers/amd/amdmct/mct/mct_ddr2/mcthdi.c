@@ -2,7 +2,7 @@
 
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-void mct_DramInit_Hw_D(struct MCTStatStruc *p_mct_stat,
+void mct_dram_init_hw_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u32 val;

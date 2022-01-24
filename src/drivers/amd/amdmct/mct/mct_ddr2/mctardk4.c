@@ -8,7 +8,7 @@ static void Get_ChannelPS_Cfg0_D(u8 maa_dimms, u8 Speed, u8 MAAload,
 				u8 *CMDmode);
 
 
-void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat,
+void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 			 struct DCTStatStruc *p_dct_stat, u32 dct)
 {
 	print_tx("dct: ", dct);
@@ -28,7 +28,7 @@ void mctGet_PS_Cfg_D(struct MCTStatStruc *p_mct_stat,
 	/*
 	 * Overrides and/or workarounds
 	 */
-	p_dct_stat->ch_odc_ctl[dct] = procOdtWorkaround(p_dct_stat, dct, p_dct_stat->ch_odc_ctl[dct]);
+	p_dct_stat->ch_odc_ctl[dct] = proc_odt_workaround(p_dct_stat, dct, p_dct_stat->ch_odc_ctl[dct]);
 
 	print_tx("4 ch_odc_ctl: ", p_dct_stat->ch_odc_ctl[dct]);
 	print_tx("4 ch_addr_tmg: ", p_dct_stat->ch_addr_tmg[dct]);

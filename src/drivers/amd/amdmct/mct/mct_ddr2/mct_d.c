@@ -270,15 +270,15 @@ restartinit:
 	ht_mem_map_init_d(p_mct_stat, p_dct_stat_a);	/* Map local memory into system address space.*/
 	mct_hook_after_ht_map();
 
-	print_t("mct_auto_init_mct_d: CPUMemTyping_D\n");
-	CPUMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Map dram into WB/UC CPU cacheability */
+	print_t("mct_auto_init_mct_d: cpu_mem_typing_d\n");
+	cpu_mem_typing_d(p_mct_stat, p_dct_stat_a);	/* Map dram into WB/UC CPU cacheability */
 	mct_hook_after_cpu();			/* Setup external northbridge(s) */
 
 	print_t("mct_auto_init_mct_d: rqs_timing_d\n");
 	rqs_timing_d(p_mct_stat, p_dct_stat_a);	/* Get receiver Enable and DQS signal timing*/
 
-	print_t("mct_auto_init_mct_d: UMAMemTyping_D\n");
-	UMAMemTyping_D(p_mct_stat, p_dct_stat_a);	/* Fix up for UMA sizing */
+	print_t("mct_auto_init_mct_d: uma_mem_typing_d\n");
+	uma_mem_typing_d(p_mct_stat, p_dct_stat_a);	/* Fix up for UMA sizing */
 
 	print_t("mct_auto_init_mct_d: :OtherTiming\n");
 	mct_other_timing(p_mct_stat, p_dct_stat_a);
@@ -287,11 +287,11 @@ restartinit:
 		goto restartinit;
 	}
 
-	InterleaveNodes_D(p_mct_stat, p_dct_stat_a);
-	InterleaveChannels_D(p_mct_stat, p_dct_stat_a);
+	interleave_nodes_d(p_mct_stat, p_dct_stat_a);
+	interleave_channels_d(p_mct_stat, p_dct_stat_a);
 
-	print_t("mct_auto_init_mct_d: ECCInit_D\n");
-	if (ECCInit_D(p_mct_stat, p_dct_stat_a)) {		/* Setup ECC control and ECC check-bits*/
+	print_t("mct_auto_init_mct_d: ecc_init_d\n");
+	if (ecc_init_d(p_mct_stat, p_dct_stat_a)) {		/* Setup ECC control and ECC check-bits*/
 		print_t("mct_auto_init_mct_d: mct_mem_clr_d\n");
 		mct_mem_clr_d(p_mct_stat,p_dct_stat_a);
 	}
@@ -351,31 +351,31 @@ static void rqs_timing_d(struct MCTStatStruc *p_mct_stat,
 
 	print_t("rqs_timing_d: mct_before_dqs_train_d:\n");
 	mct_before_dqs_train_d(p_mct_stat, p_dct_stat_a);
-	phyAssistedMemFnceTraining(p_mct_stat, p_dct_stat_a);
+	phy_assisted_mem_fence_training(p_mct_stat, p_dct_stat_a);
 
 	if (nv_dqs_train_ctl) {
 		mct_hook_before_any_training(p_mct_stat, p_dct_stat_a);
 
-		print_t("rqs_timing_d: TrainReceiverEn_D FIRST_PASS:\n");
-		TrainReceiverEn_D(p_mct_stat, p_dct_stat_a, FIRST_PASS);
+		print_t("rqs_timing_d: train_receiver_en_d FIRST_PASS:\n");
+		train_receiver_en_d(p_mct_stat, p_dct_stat_a, FIRST_PASS);
 
-		print_t("rqs_timing_d: mct_TrainDQSPos_D\n");
-		mct_TrainDQSPos_D(p_mct_stat, p_dct_stat_a);
+		print_t("rqs_timing_d: mct_train_dqs_pos_d\n");
+		mct_train_dqs_pos_d(p_mct_stat, p_dct_stat_a);
 
 		// Second Pass never used for Barcelona!
-		//print_t("rqs_timing_d: TrainReceiverEn_D SECOND_PASS:\n");
-		//TrainReceiverEn_D(p_mct_stat, p_dct_stat_a, SECOND_PASS);
+		//print_t("rqs_timing_d: train_receiver_en_d SECOND_PASS:\n");
+		//train_receiver_en_d(p_mct_stat, p_dct_stat_a, SECOND_PASS);
 
-		print_t("rqs_timing_d: mctSetEccDQSRcvrEn_D\n");
-		mctSetEccDQSRcvrEn_D(p_mct_stat, p_dct_stat_a);
+		print_t("rqs_timing_d: mct_set_ecc_dqs_rcvr_en_d\n");
+		mct_set_ecc_dqs_rcvr_en_d(p_mct_stat, p_dct_stat_a);
 
-		print_t("rqs_timing_d: TrainMaxReadLatency_D\n");
-//FIXME - currently uses calculated value		TrainMaxReadLatency_D(p_mct_stat, p_dct_stat_a);
+		print_t("rqs_timing_d: train_max_read_latency_d\n");
+//FIXME - currently uses calculated value		train_max_read_latency_d(p_mct_stat, p_dct_stat_a);
 		mct_hook_after_any_training();
 		mctSaveDQSSigTmg_D();
 
-		print_t("rqs_timing_d: mct_EndDQSTraining_D\n");
-		mct_EndDQSTraining_D(p_mct_stat, p_dct_stat_a);
+		print_t("rqs_timing_d: mct_end_dqs_training_d\n");
+		mct_end_dqs_training_d(p_mct_stat, p_dct_stat_a);
 
 		print_t("rqs_timing_d: mct_mem_clr_d\n");
 		mct_mem_clr_d(p_mct_stat, p_dct_stat_a);
@@ -411,7 +411,7 @@ static void load_dqs_sig_tmg_regs_d(struct MCTStatStruc *p_mct_stat,
 				index_reg = 0x98 + channel * 0x100;
 				for (receiver = 0; receiver < 8; receiver += 2) {
 					/* Set receiver Enable Values */
-					mct_SetRcvrEnDly_D(p_dct_stat,
+					mct_set_rcvr_en_dly_d(p_dct_stat,
 						0, /* RcvrEnDly */
 						1, /* FinalValue, From stack */
 						channel,
@@ -423,7 +423,7 @@ static void load_dqs_sig_tmg_regs_d(struct MCTStatStruc *p_mct_stat,
 				}
 			}
 			for (channel = 0; channel < 2; channel++) {
-				SetEccDQSRcvrEn_D(p_dct_stat, channel);
+				set_ecc_dqs_rcvr_en_d(p_dct_stat, channel);
 			}
 
 			for (channel = 0; channel < 2; channel++) {
@@ -1460,10 +1460,10 @@ static u8 platform_spec_d(struct MCTStatStruc *p_mct_stat,
 	u32 reg;
 	u32 val;
 
-	mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, dct);
+	mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, dct);
 
 	if (p_dct_stat->ganged_mode) {
-		mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, 1);
+		mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, 1);
 	}
 
 	if (p_dct_stat->_2t_mode == 2) {
@@ -1507,7 +1507,7 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 
 	/* map chip-selects into local address space */
 	stitch_memory_d(p_mct_stat, p_dct_stat, dct);
-	InterleaveBanks_D(p_mct_stat, p_dct_stat, dct);
+	interleave_banks_d(p_mct_stat, p_dct_stat, dct);
 
 	/* temp image of status (for convenience). RO usage! */
 	status = p_dct_stat->status;
@@ -2418,7 +2418,7 @@ static void mct_dram_init(struct MCTStatStruc *p_mct_stat,
 	u32 val;
 
 	mct_before_dram_init__prod_d(p_mct_stat, p_dct_stat);
-	// FIXME: for rev A: mct_BeforeDramInit_D(p_dct_stat, dct);
+	// FIXME: for rev A: mct_before_dram_init_d(p_dct_stat, dct);
 
 	/* Disable auto refresh before Dram init when in ganged mode (Erratum 278) */
 	if (p_dct_stat->logical_cpuid & (AMD_DR_B0 | AMD_DR_B1 | AMD_DR_BA)) {
@@ -2429,7 +2429,7 @@ static void mct_dram_init(struct MCTStatStruc *p_mct_stat,
 		}
 	}
 
-	mct_DramInit_Hw_D(p_mct_stat, p_dct_stat, dct);
+	mct_dram_init_hw_d(p_mct_stat, p_dct_stat, dct);
 
 	/* Re-enable auto refresh after Dram init when in ganged mode
 	 * to ensure both DCTs are in sync (Erratum 278)
@@ -2562,7 +2562,7 @@ static u8 mct_platform_spec(struct MCTStatStruc *p_mct_stat,
 	u8 i, i_start, i_end;
 
 	if (p_dct_stat->ganged_mode) {
-		SyncSetting(p_dct_stat);
+		sync_settings(p_dct_stat);
 		i_start = 0;
 		i_end = 2;
 	} else {
@@ -3805,7 +3805,7 @@ static void mct_before_dqs_train_d(struct MCTStatStruc *p_mct_stat,
 		p_dct_stat = p_dct_stat_a + node;
 
 		if (p_dct_stat->node_present) {
-			mct_BeforeDQSTrain_Samp_D(p_mct_stat, p_dct_stat);
+			mct_before_dqs_train_samp_d(p_mct_stat, p_dct_stat);
 			mct_reset_dll_d(p_mct_stat, p_dct_stat, 0);
 			mct_reset_dll_d(p_mct_stat, p_dct_stat, 1);
 		}
@@ -3840,21 +3840,21 @@ static void mct_reset_dll_d(struct MCTStatStruc *p_mct_stat,
 
 
 	p_dct_stat->channel = dct;
-	receiver = mct_InitReceiver_D(p_dct_stat, dct);
+	receiver = mct_init_receiver_d(p_dct_stat, dct);
 	/* there are four receiver pairs, loosely associated with chipselects.*/
 	for (; receiver < 8; receiver += 2) {
-		if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, dct, receiver)) {
-			addr = mct_GetRcvrSysAddr_D(p_mct_stat, p_dct_stat, dct, receiver, &valid);
+		if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, dct, receiver)) {
+			addr = mct_get_rcvr_sys_addr_d(p_mct_stat, p_dct_stat, dct, receiver, &valid);
 			if (valid) {
-				mct_Read1LTestPattern_D(p_mct_stat, p_dct_stat, addr);	/* cache fills */
+				mct_read_1l_test_pattern_d(p_mct_stat, p_dct_stat, addr);	/* cache fills */
 
 				/* Write 0000_8000h to register F2x[1,0]9C_xD080F0C */
 				set_nb32_index_wait(dev, 0x98 + reg_off, 0x4D080F0C, 0x00008000);
-				mct_Wait(80); /* wait >= 300ns */
+				mct_wait(80); /* wait >= 300ns */
 
 				/* Write 0000_0000h to register F2x[1,0]9C_xD080F0C */
 				set_nb32_index_wait(dev, 0x98 + reg_off, 0x4D080F0C, 0x00000000);
-				mct_Wait(800); /* wait >= 2us */
+				mct_wait(800); /* wait >= 2us */
 				break;
 			}
 		}
@@ -3921,7 +3921,7 @@ static void after_dram_init_d(struct DCTStatStruc *p_dct_stat, u8 dct) {
 	u32 dev = p_dct_stat->dev_dct;
 
 	if (p_dct_stat->logical_cpuid & (AMD_DR_B2 | AMD_DR_B3)) {
-		mct_Wait(10000);	/* Wait 50 us*/
+		mct_wait(10000);	/* Wait 50 us*/
 		val = get_nb32(dev, 0x110);
 		if (val & (1 << DRAM_ENABLED)) {
 			/* If 50 us expires while DramEnable =0 then do the following */

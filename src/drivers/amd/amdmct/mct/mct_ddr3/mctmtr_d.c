@@ -11,7 +11,7 @@
 static void SetMTRRrangeWB_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr);
 static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType);
 
-void CPUMemTyping_D(struct MCTStatStruc *p_mct_stat,
+void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
 			 struct DCTStatStruc *p_dct_stat_a)
 {
 	/* BSP only.  Set the fixed MTRRs for common legacy ranges.
@@ -188,7 +188,7 @@ static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType)
 	*pMtrrAddr = addr;
 }
 
-void UMAMemTyping_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
+void uma_mem_typing_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 {
 	/* UMA memory size may need splitting the MTRR configuration into two
 	 * Before training use NB_BottomIO or the physical memory size to set the MTRRs.
@@ -234,7 +234,7 @@ void UMAMemTyping_D(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_
 		/*======================================================================
 		 * Set variable MTRR values
 		 *======================================================================*/
-		printk(BIOS_DEBUG, "\t UMAMemTyping_D: Cache32bTOP:%x\n", Cache32bTOP);
+		printk(BIOS_DEBUG, "\t uma_mem_typing_d: Cache32bTOP:%x\n", Cache32bTOP);
 		SetMTRRrangeWB_D(0, &Cache32bTOP, &addr);
 		if (addr == -1)		/* ran out of MTRRs?*/
 			p_mct_stat->g_status |= 1 << GSB_MTRR_SHORT;

@@ -56,7 +56,7 @@ u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
 	return RcvrEnDly;
 }
 
-u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
+u16 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
 				u16 RcvrEnDly, u16 RcvrEnDlyLimit,
 				u8 Channel, u8 Receiver, u8 Pass)
 {

@@ -14,7 +14,7 @@
 
 static const u8 Tab_int_D[] = {6,7,7,8,8,8,8,8,9,9,8,9};
 
-void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat,
+void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct)
 {
 	u8 ChipSel, EnChipSels;
@@ -124,8 +124,8 @@ void InterleaveBanks_D(struct MCTStatStruc *p_mct_stat,
 
 	/* dump_pci_device(PCI_DEV(0, 0x18+p_dct_stat->node_id, 2)); */
 
-	printk(BIOS_DEBUG, "InterleaveBanks_D: status %x\n", p_dct_stat->status);
-	printk(BIOS_DEBUG, "InterleaveBanks_D: err_status %x\n", p_dct_stat->err_status);
-	printk(BIOS_DEBUG, "InterleaveBanks_D: err_code %x\n", p_dct_stat->err_code);
-	printk(BIOS_DEBUG, "InterleaveBanks_D: Done\n\n");
+	printk(BIOS_DEBUG, "interleave_banks_d: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "interleave_banks_d: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "interleave_banks_d: err_code %x\n", p_dct_stat->err_code);
+	printk(BIOS_DEBUG, "interleave_banks_d: Done\n\n");
 }

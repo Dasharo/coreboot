@@ -79,7 +79,7 @@ static u32 SetupMaxRdPattern(struct MCTStatStruc *p_mct_stat,
 }
 
 
-void TrainMaxReadLatency_D(struct MCTStatStruc *p_mct_stat,
+void train_max_read_latency_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a)
 {
 	u8 Node;
@@ -132,7 +132,7 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 	   real mode */
 	_WRMSR(addr, lo, hi);
 
-	_DisableDramECC = mct_DisableDimmEccEn_D(p_mct_stat, p_dct_stat);
+	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
 	pattern_buf = SetupMaxRdPattern(p_mct_stat, p_dct_stat, PatternBuffer);
 
@@ -157,9 +157,9 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 			ReadMaxRdLat1CLTestPattern_D(TestAddr0);
 			if (CompareMaxRdLatTestPattern_D(pattern_buf, TestAddr0) == DQS_PASS)
 				break;
-			SetTargetWTIO_D(TestAddr0);
+			set_target_wtio_d(TestAddr0);
 			FlushMaxRdLatTestPattern_D(TestAddr0);
-			ResetTargetWTIO_D();
+			reset_target_wtio_d();
 			MaxRdLatDly++;
 		}
 		print_debug_dqs("\tMaxRdLatencyTrain53:  MaxRdLatDly end ", MaxRdLatDly, 2);
@@ -167,7 +167,7 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 	}
 
 	if (_DisableDramECC) {
-		mct_EnableDimmEccEn_D(p_mct_stat, p_dct_stat, _DisableDramECC);
+		mct_enable_dimm_ecc_en_d(p_mct_stat, p_dct_stat, _DisableDramECC);
 	}
 
 	if (!_Wrap32Dis) {
@@ -296,8 +296,8 @@ static u32 GetMaxRdLatTestAddr_D(struct MCTStatStruc *p_mct_stat,
 		}
 	}
 
-	if (mct_RcvrRankEnabled_D(p_mct_stat, p_dct_stat, Channel_Max, d_Max << 1))  {
-		TestAddr0 = mct_GetMCTSysAddr_D(p_mct_stat, p_dct_stat, Channel_Max, d_Max << 1, valid);
+	if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, Channel_Max, d_Max << 1))  {
+		TestAddr0 = mct_get_mct_sys_addr_d(p_mct_stat, p_dct_stat, Channel_Max, d_Max << 1, valid);
 	}
 
 	if (*valid)

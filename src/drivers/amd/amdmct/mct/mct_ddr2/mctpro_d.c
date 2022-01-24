@@ -2,11 +2,11 @@
 
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-void EarlySampleSupport_D(void)
+void early_sample_support_d(void)
 {
 }
 
-u32 procOdtWorkaround(struct DCTStatStruc *p_dct_stat, u32 dct, u32 val)
+u32 proc_odt_workaround(struct DCTStatStruc *p_dct_stat, u32 dct, u32 val)
 {
 	u64 tmp;
 	tmp = p_dct_stat->logical_cpuid;
@@ -47,7 +47,7 @@ void mct_force_auto_precharge_d(struct DCTStatStruc *p_dct_stat, u32 dct)
 
 	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		if (CheckNBCOFAutoPrechg(p_dct_stat, dct)) {
+		if (check_nb_cof_auto_prechg(p_dct_stat, dct)) {
 			dev = p_dct_stat->dev_dct;
 			reg_off = 0x100 * dct;
 			reg = 0x90 + reg_off;	/* Dram Configuration Lo */
@@ -66,7 +66,7 @@ void mct_force_auto_precharge_d(struct DCTStatStruc *p_dct_stat, u32 dct)
 }
 
 
-void mct_EndDQSTraining_D(struct MCTStatStruc *p_mct_stat,
+void mct_end_dqs_training_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a)
 {
 	/* Bug#13341: Prefetch is getting killed when the limit is reached in
@@ -107,7 +107,7 @@ void mct_EndDQSTraining_D(struct MCTStatStruc *p_mct_stat,
 
 
 
-void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *p_mct_stat,
+void mct_before_dqs_train_samp_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat)
 {
 	/* Bug#15115: Uncertainty In The Sync Chain Leads To Setup Violations
@@ -205,7 +205,7 @@ u32 modify_d3_cmp(struct DCTStatStruc *p_dct_stat, u32 dct, u32 value)
 }
 
 
-void SyncSetting(struct DCTStatStruc *p_dct_stat)
+void sync_settings(struct DCTStatStruc *p_dct_stat)
 {
 	/* Errata#198: AddrCmdSetup, CsOdtSetup, and CkeSetup Require Identical
 	 * Programming For Both Channels in Ganged Mode
@@ -230,7 +230,7 @@ void SyncSetting(struct DCTStatStruc *p_dct_stat)
 }
 
 
-u32 CheckNBCOFAutoPrechg(struct DCTStatStruc *p_dct_stat, u32 dct)
+u32 check_nb_cof_auto_prechg(struct DCTStatStruc *p_dct_stat, u32 dct)
 {
 	u32 ret = 0;
 	u32 lo, hi;
@@ -260,7 +260,7 @@ u32 CheckNBCOFAutoPrechg(struct DCTStatStruc *p_dct_stat, u32 dct)
 }
 
 
-void mct_BeforeDramInit_D(struct DCTStatStruc *p_dct_stat, u32 dct)
+void mct_before_dram_init_d(struct DCTStatStruc *p_dct_stat, u32 dct)
 {
 	u64 tmp;
 	u32 Speed;
@@ -325,13 +325,13 @@ u8 mct_checkFenceHoleAdjust_D(struct MCTStatStruc *p_mct_stat,
 							p_dct_stat->dqs_delay = 13;
 							p_dct_stat->byte_lane = ByteLane;
 							/* store the value into the data structure */
-							StoreDQSDatStrucVal_D(p_mct_stat, p_dct_stat, ChipSel);
+							store_dqs_dat_struct_val_d(p_mct_stat, p_dct_stat, ChipSel);
 						}
 						return 1;
 					}
 				}
 			}
-			if (mct_AdjustDQSPosDelay_D(p_dct_stat, DQSDelay)) {
+			if (mct_adjust_dqs_pos_delay_d(p_dct_stat, DQSDelay)) {
 				*result = 0;
 			}
 		}
@@ -340,7 +340,7 @@ u8 mct_checkFenceHoleAdjust_D(struct MCTStatStruc *p_mct_stat,
 }
 
 
-u8 mct_AdjustDQSPosDelay_D(struct DCTStatStruc *p_dct_stat, u8 dly)
+u8 mct_adjust_dqs_pos_delay_d(struct DCTStatStruc *p_dct_stat, u8 dly)
 {
 	u8 skip = 0;
 
@@ -366,7 +366,7 @@ static u8 mctDoAxRdPtrInit_D(struct DCTStatStruc *p_dct_stat, u8 *Rdtr)
 }
 #endif
 
-void mct_AdjustScrub_D(struct DCTStatStruc *p_dct_stat, u16 *scrub_request) {
+void mct_adjust_scrub_d(struct DCTStatStruc *p_dct_stat, u16 *scrub_request) {
 
 	/* Erratum #202: disable DCache scrubber for Ax parts */
 

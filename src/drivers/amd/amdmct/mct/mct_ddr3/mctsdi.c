@@ -1067,7 +1067,7 @@ static void mct_SendZQCmd(struct DCTStatStruc *p_dct_stat, u8 dct)
 	} while (dword & (1 << SEND_ZQ_CMD));
 
 	/* 4.Wait 512 MEMCLKs */
-	mct_Wait(300);
+	mct_wait(300);
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
 }
@@ -1089,7 +1089,7 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 		mct_DCTAccessDone(p_dct_stat, dct);
 
 		/* 4.wait 200us */
-		mct_Wait(40000);
+		mct_wait(40000);
 
 		/* 5.Program F2x[1, 0]7C[DEASSERT_MEM_RST_X] = 1. */
 		dword = Get_NB32_DCT(dev, dct, 0x7c);
@@ -1097,7 +1097,7 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 		Set_NB32_DCT(dev, dct, 0x7c, dword);
 
 		/* 6.wait 500us */
-		mct_Wait(200000);
+		mct_wait(200000);
 
 		/* 7.Program F2x[1,0]7C[ASSERT_CKE]=1 */
 		dword = Get_NB32_DCT(dev, dct, 0x7c);
@@ -1105,7 +1105,7 @@ void mct_DramInit_Sw_D(struct MCTStatStruc *p_mct_stat,
 		Set_NB32_DCT(dev, dct, 0x7c, dword);
 
 		/* 8.wait 360ns */
-		mct_Wait(80);
+		mct_wait(80);
 
 		/* Set up address parity */
 		if ((p_dct_stat->status & (1 << SB_REGISTERED))

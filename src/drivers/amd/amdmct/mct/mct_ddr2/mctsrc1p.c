@@ -23,7 +23,7 @@ u32 setup_dqs_pattern_1_pass_b(u8 pass)
 	return (u32) TestPattern0_D;
 }
 
-u8  mct_Get_Start_RcvrEnDly_1Pass(u8 pass)
+u8  mct_get_start_rcvr_en_dly_1_pass(u8 pass)
 {
 	return 0;
 }
@@ -60,7 +60,7 @@ static u8 mct_AdjustFinalDQSRcvValue_1Pass(u8 val_1p, u8 val_2p)
 }
 #endif
 
-u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *p_dct_stat, u8 pass)
+u8 mct_save_rcv_en_dly_d_1_pass(struct DCTStatStruc *p_dct_stat, u8 pass)
 {
 	u8 ret;
 	ret = 0;
@@ -69,7 +69,7 @@ u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *p_dct_stat, u8 pass)
 	return ret;
 }
 
-u8 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
+u8 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
 				u8 RcvrEnDly, u8 RcvrEnDlyLimit,
 				u8 Channel, u8 Receiver, u8 Pass)
 

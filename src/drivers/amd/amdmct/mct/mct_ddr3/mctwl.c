@@ -9,7 +9,7 @@
 
 static void AgesaDelay(u32 msec)
 {
-	mct_Wait(msec*10);
+	mct_wait(msec*10);
 }
 
 void PrepareC_MCT(struct MCTStatStruc *p_mct_stat,
@@ -191,13 +191,13 @@ static void ChangeMemClk(struct MCTStatStruc *p_mct_stat,
 			dword = Get_NB32_index_wait_DCT(p_dct_stat->dev_dct, 0, 0x98, 8);
 			dword |= 1 << DIS_AUTO_COMP;
 			Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, 0, 0x98, 8, dword);
-			mct_Wait(100);	/* Wait for 5us */
+			mct_wait(100);	/* Wait for 5us */
 		}
 		if (DCT1Present) {
 			dword = Get_NB32_index_wait_DCT(p_dct_stat->dev_dct, 1, 0x98, 8);
 			dword |= 1 << DIS_AUTO_COMP;
 			Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, 1, 0x98, 8, dword);
-			mct_Wait(100);	/* Wait for 5us */
+			mct_wait(100);	/* Wait for 5us */
 		}
 	}
 
@@ -236,13 +236,13 @@ static void ChangeMemClk(struct MCTStatStruc *p_mct_stat,
 
 	if (is_fam15h()) {
 		if (DCT0Present) {
-			mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, 0);
+			mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, 0);
 			set_2t_configuration(p_mct_stat, p_dct_stat, 0);
 			mct_BeforePlatformSpec(p_mct_stat, p_dct_stat, 0);
 			mct_PlatformSpec(p_mct_stat, p_dct_stat, 0);
 		}
 		if (DCT1Present) {
-			mctGet_PS_Cfg_D(p_mct_stat, p_dct_stat, 1);
+			mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, 1);
 			set_2t_configuration(p_mct_stat, p_dct_stat, 1);
 			mct_BeforePlatformSpec(p_mct_stat, p_dct_stat, 1);
 			mct_PlatformSpec(p_mct_stat, p_dct_stat, 1);
@@ -291,13 +291,13 @@ static void ChangeMemClk(struct MCTStatStruc *p_mct_stat,
 			dword = Get_NB32_index_wait_DCT(p_dct_stat->dev_dct, 0, 0x98, 8);
 			dword &= ~(1 << DIS_AUTO_COMP);
 			Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, 0, 0x98, 8, dword);
-			mct_Wait(15000);	/* Wait for 750us */
+			mct_wait(15000);	/* Wait for 750us */
 		}
 		if (DCT1Present) {
 			dword = Get_NB32_index_wait_DCT(p_dct_stat->dev_dct, 1, 0x98, 8);
 			dword &= ~(1 << DIS_AUTO_COMP);
 			Set_NB32_index_wait_DCT(p_dct_stat->dev_dct, 1, 0x98, 8, dword);
-			mct_Wait(15000);	/* Wait for 750us */
+			mct_wait(15000);	/* Wait for 750us */
 		}
 	}
 
@@ -387,7 +387,7 @@ void SetTargetFreq(struct MCTStatStruc *p_mct_stat,
 		u8 dct;
 		for (dct = 0; dct < 2; dct++) {
 			if (p_dct_stat->dimm_valid_dct[dct]) {
-				phyAssistedMemFnceTraining(p_mct_stat, p_dct_stat_a, Node);
+				phy_assisted_mem_fence_training(p_mct_stat, p_dct_stat_a, Node);
 				InitPhyCompensation(p_mct_stat, p_dct_stat, dct);
 			}
 		}
@@ -416,7 +416,7 @@ void SetTargetFreq(struct MCTStatStruc *p_mct_stat,
 	}
 
 	/* wait for 500 MCLKs after EXIT_SELF_REF, 500*2.5ns = 1250ns */
-	mct_Wait(250);
+	mct_wait(250);
 
 	if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 		u8 DCT0Present, DCT1Present;

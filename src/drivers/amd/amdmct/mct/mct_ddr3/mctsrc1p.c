@@ -57,7 +57,7 @@ static u16 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *p_dct_stat, u8 Chann
 	return MaxValue;
 }
 
-u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *p_dct_stat, u8 pass)
+u8 mct_save_rcv_en_dly_d_1_pass(struct DCTStatStruc *p_dct_stat, u8 pass)
 {
 	u8 ret;
 	ret = 0;
@@ -66,7 +66,7 @@ u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *p_dct_stat, u8 pass)
 	return ret;
 }
 
-u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *p_dct_stat,
+u16 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
 				u16 RcvrEnDly, u16 RcvrEnDlyLimit,
 				u8 Channel, u8 Receiver, u8 Pass)
 

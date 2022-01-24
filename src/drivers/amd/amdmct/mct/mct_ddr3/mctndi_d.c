@@ -6,7 +6,7 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
+void interleave_nodes_d(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat_a)
 {
 	/* Applies Node memory interleaving if enabled and if all criteria are met. */
@@ -212,8 +212,8 @@ void InterleaveNodes_D(struct MCTStatStruc *p_mct_stat,
 		}
 		p_mct_stat->g_status = (1 << GSB_NODE_INTLV);
 	}
-	printk(BIOS_DEBUG, "InterleaveNodes_D: status %x\n", p_dct_stat->status);
-	printk(BIOS_DEBUG, "InterleaveNodes_D: err_status %x\n", p_dct_stat->err_status);
-	printk(BIOS_DEBUG, "InterleaveNodes_D: err_code %x\n", p_dct_stat->err_code);
-	printk(BIOS_DEBUG, "InterleaveNodes_D: Done\n\n");
+	printk(BIOS_DEBUG, "interleave_nodes_d: status %x\n", p_dct_stat->status);
+	printk(BIOS_DEBUG, "interleave_nodes_d: err_status %x\n", p_dct_stat->err_status);
+	printk(BIOS_DEBUG, "interleave_nodes_d: err_code %x\n", p_dct_stat->err_code);
+	printk(BIOS_DEBUG, "interleave_nodes_d: Done\n\n");
 }
