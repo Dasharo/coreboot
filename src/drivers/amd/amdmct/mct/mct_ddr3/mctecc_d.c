@@ -7,9 +7,9 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-static void setSyncOnUnEccEn_D(struct MCTStatStruc *p_mct_stat,
+static void set_sync_on_un_ecc_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a);
-static u8 isDramECCEn_D(struct DCTStatStruc *p_dct_stat);
+static u8 is_dram_ecc_en_d(struct DCTStatStruc *p_dct_stat);
 
 /* Initialize ECC modes of Integrated Dram+Memory Controllers of a network of
  * Hammer processors.  Use Dram background scrubber to fast initialize ECC bits
@@ -147,7 +147,7 @@ u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a
 				/* Negate 'all nodes/dimms ECC' flag if non ecc
 				   memory populated */
 				if (p_dct_stat->status & (1 << SB_ECC_DIMMS)) {
-					LDramECC = isDramECCEn_D(p_dct_stat);
+					LDramECC = is_dram_ecc_en_d(p_dct_stat);
 					if (p_dct_stat->err_code != SC_RUNNING_OK) {
 						p_dct_stat->status &=  ~(1 << SB_ECC_DIMMS);
 						if (!OB_NBECC) {
@@ -202,7 +202,7 @@ u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a
 			curBase = val & 0xffff0000;
 			/*WE/RE is checked because memory config may have been */
 			if ((val & 3) == 3) {	/* Node has dram populated */
-				if (isDramECCEn_D(p_dct_stat)) {	/* if ECC is enabled on this dram */
+				if (is_dram_ecc_en_d(p_dct_stat)) {	/* if ECC is enabled on this dram */
 					dev = p_dct_stat->dev_nbmisc;
 					val = curBase << 8;
 					if (OB_ECCRedir) {
@@ -284,7 +284,7 @@ u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a
 	}
 
 	if (mct_get_nv_bits(NV_SYNC_ON_UN_ECC_EN))
-		setSyncOnUnEccEn_D(p_mct_stat, p_dct_stat_a);
+		set_sync_on_un_ecc_en_d(p_mct_stat, p_dct_stat_a);
 
 	mct_hook_after_ecc();
 	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
@@ -301,7 +301,7 @@ u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a
 	return MemClrECC;
 }
 
-static void setSyncOnUnEccEn_D(struct MCTStatStruc *p_mct_stat,
+static void set_sync_on_un_ecc_en_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat_a)
 {
 	u32 Node;
@@ -317,7 +317,7 @@ static void setSyncOnUnEccEn_D(struct MCTStatStruc *p_mct_stat,
 			val = get_nb32(p_dct_stat->dev_map, reg);
 			/*WE/RE is checked because memory config may have been*/
 			if ((val & 3) == 3) {	/* Node has dram populated*/
-				if (isDramECCEn_D(p_dct_stat)) {
+				if (is_dram_ecc_en_d(p_dct_stat)) {
 					/*if ECC is enabled on this dram*/
 					dev = p_dct_stat->dev_nbmisc;
 					reg = 0x44;	/* MCA NB Configuration*/
@@ -330,7 +330,7 @@ static void setSyncOnUnEccEn_D(struct MCTStatStruc *p_mct_stat,
 	}
 }
 
-static u8 isDramECCEn_D(struct DCTStatStruc *p_dct_stat)
+static u8 is_dram_ecc_en_d(struct DCTStatStruc *p_dct_stat)
 {
 	u32 reg;
 	u32 val;
