@@ -11,20 +11,20 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-static u8 CompareMaxRdLatTestPattern_D(u32 pattern_buf, u32 addr);
-static u32 GetMaxRdLatTestAddr_D(struct MCTStatStruc *p_mct_stat,
+static u8 compare_max_rd_lat_test_pattern_d(u32 pattern_buf, u32 addr);
+static u32 get_max_rd_lat_test_addr_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 Channel,
 				u8 *MaxRcvrEnDly, u8 *valid);
-u8 mct_GetStartMaxRdLat_D(struct MCTStatStruc *p_mct_stat,
+u8 mct_get_start_max_rd_lat_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 Channel,
 				u8 DQSRcvEnDly, u32 *Margin);
-static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
+static void max_rd_latency_train_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat);
-static void mct_setMaxRdLatTrnVal_D(struct DCTStatStruc *p_dct_stat, u8 Channel,
+static void mct_set_max_rd_lat_trn_val_d(struct DCTStatStruc *p_dct_stat, u8 Channel,
 					u16 MaxRdLatVal);
 
 /*Warning:  These must be located so they do not cross a logical 16-bit segment boundary!*/
-static const u32 TestMaxRdLAtPattern_D[] = {
+static const u32 test_max_rd_lat_pattern_d[] = {
 	0x6E0E3FAC, 0x0C3CFF52,
 	0x4A688181, 0x49C5B613,
 	0x7C780BA6, 0x5C1650E3,
@@ -53,7 +53,7 @@ static const u32 TestMaxRdLAtPattern_D[] = {
 	0x82668268, 0x655C7783,
 };
 
-static u32 SetupMaxRdPattern(struct MCTStatStruc *p_mct_stat,
+static u32 setup_max_rd_pattern(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat,
 					u32 *buffer)
 {
@@ -70,7 +70,7 @@ static u32 SetupMaxRdPattern(struct MCTStatStruc *p_mct_stat,
 	buf = (u32 *)(((u32)buffer + 0x10) & (0xfffffff0));
 
 	for (i = 0; i < (16 * 3); i++) {
-		buf[i] = TestMaxRdLAtPattern_D[i];
+		buf[i] = test_max_rd_lat_pattern_d[i];
 	}
 
 	return (u32)buf;
@@ -89,11 +89,11 @@ void train_max_read_latency_d(struct MCTStatStruc *p_mct_stat,
 			break;
 
 		if (p_dct_stat->dct_sys_limit)
-			maxRdLatencyTrain_D(p_mct_stat, p_dct_stat);
+			max_rd_latency_train_d(p_mct_stat, p_dct_stat);
 	}
 }
 
-static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
+static void max_rd_latency_train_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat)
 {
 	u8 Channel;
@@ -130,7 +130,7 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 
 	_DisableDramECC = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
-	pattern_buf = SetupMaxRdPattern(p_mct_stat, p_dct_stat, PatternBuffer);
+	pattern_buf = setup_max_rd_pattern(p_mct_stat, p_dct_stat, PatternBuffer);
 
 	for (Channel = 0; Channel < 2; Channel++) {
 		print_debug_dqs("\tMaxRdLatencyTrain51: Channel ",Channel, 1);
@@ -139,19 +139,19 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 		if ((p_dct_stat->status & (1 << SB_128_BIT_MODE)) && Channel)
 			break;		/*if ganged mode, skip DCT 1 */
 
-		TestAddr0 = GetMaxRdLatTestAddr_D(p_mct_stat, p_dct_stat, Channel, &RcvrEnDly,	 &valid);
+		TestAddr0 = get_max_rd_lat_test_addr_d(p_mct_stat, p_dct_stat, Channel, &RcvrEnDly,	 &valid);
 		if (!valid)	/* Address not supported on current CS */
 			continue;
 		/* rank 1 of DIMM, testpattern 0 */
 		write_max_rd_lat_1_cl_test_pattern_d(pattern_buf, TestAddr0);
 
-		MaxRdLatDly = mct_GetStartMaxRdLat_D(p_mct_stat, p_dct_stat, Channel, RcvrEnDly, &Margin);
+		MaxRdLatDly = mct_get_start_max_rd_lat_d(p_mct_stat, p_dct_stat, Channel, RcvrEnDly, &Margin);
 		print_debug_dqs("\tMaxRdLatencyTrain52:  MaxRdLatDly start ", MaxRdLatDly, 2);
 		print_debug_dqs("\tMaxRdLatencyTrain52:  MaxRdLatDly Margin ", Margin, 2);
 		while (MaxRdLatDly < MAX_RD_LAT) {	/* sweep Delay value here */
-			mct_setMaxRdLatTrnVal_D(p_dct_stat, Channel, MaxRdLatDly);
+			mct_set_max_rd_lat_trn_val_d(p_dct_stat, Channel, MaxRdLatDly);
 			read_max_rd_lat_1_cl_test_pattern_d(TestAddr0);
-			if (CompareMaxRdLatTestPattern_D(pattern_buf, TestAddr0) == DQS_PASS)
+			if (compare_max_rd_lat_test_pattern_d(pattern_buf, TestAddr0) == DQS_PASS)
 				break;
 			set_target_wtio_d(TestAddr0);
 			flush_max_rd_lat_test_pattern_d(TestAddr0);
@@ -159,7 +159,7 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 			MaxRdLatDly++;
 		}
 		print_debug_dqs("\tMaxRdLatencyTrain53:  MaxRdLatDly end ", MaxRdLatDly, 2);
-		mct_setMaxRdLatTrnVal_D(p_dct_stat, Channel, MaxRdLatDly + Margin);
+		mct_set_max_rd_lat_trn_val_d(p_dct_stat, Channel, MaxRdLatDly + Margin);
 	}
 
 	if (_DisableDramECC) {
@@ -189,7 +189,7 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *p_mct_stat,
 #endif
 }
 
-static void mct_setMaxRdLatTrnVal_D(struct DCTStatStruc *p_dct_stat,
+static void mct_set_max_rd_lat_trn_val_d(struct DCTStatStruc *p_dct_stat,
 					u8 Channel, u16 MaxRdLatVal)
 {
 	u8 i;
@@ -214,7 +214,7 @@ static void mct_setMaxRdLatTrnVal_D(struct DCTStatStruc *p_dct_stat,
 	Set_NB32_DCT(dev, Channel, reg, val);
 }
 
-static u8 CompareMaxRdLatTestPattern_D(u32 pattern_buf, u32 addr)
+static u8 compare_max_rd_lat_test_pattern_d(u32 pattern_buf, u32 addr)
 {
 	/* Compare only the first beat of data.  Since target addrs are cache
 	 * line aligned, the Channel parameter is used to determine which cache
@@ -247,7 +247,7 @@ static u8 CompareMaxRdLatTestPattern_D(u32 pattern_buf, u32 addr)
 	return ret;
 }
 
-static u32 GetMaxRdLatTestAddr_D(struct MCTStatStruc *p_mct_stat,
+static u32 get_max_rd_lat_test_addr_d(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat,
 					u8 Channel, u8 *MaxRcvrEnDly,
 					u8 *valid)
@@ -299,7 +299,7 @@ static u32 GetMaxRdLatTestAddr_D(struct MCTStatStruc *p_mct_stat,
 	return TestAddr0;
 }
 
-u8 mct_GetStartMaxRdLat_D(struct MCTStatStruc *p_mct_stat,
+u8 mct_get_start_max_rd_lat_d(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat,
 				u8 Channel, u8 DQSRcvEnDly, u32 *Margin)
 {
