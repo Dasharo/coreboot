@@ -82,7 +82,7 @@
 /***************************************************************************//**
  *
  * SBDFO
- * makeLinkBase(u8 currentNode, u8 currentLink)
+ * makeLinkBase(u8 current_node, u8 current_link)
  *
  *  Description:
  *	Private to northbridge implementation. Return the HT Host capability base
@@ -741,7 +741,7 @@ static void writeFullRoutingTable(u8 node, u8 target, u8 reqLink, u8 rspLink, u3
 /***************************************************************************//**
  *
  * static u32
- * makeKey(u8 currentNode)
+ * makeKey(u8 current_node)
  *
  *  Description:
  *	Private routine to northbridge code.
@@ -777,7 +777,7 @@ static u32 makeKey(u8 node)
 /***************************************************************************//**
  *
  * static BOOL
- * isCompatible(u8 currentNode, cNorthBridge *nb)
+ * isCompatible(u8 current_node, cNorthBridge *nb)
  *
  *  Description:
  *	Determine whether a node is compatible with the discovered configuration so
@@ -969,7 +969,7 @@ static BOOL fam15IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * fam0fStopLink(u8 currentNode, u8 currentLink, cNorthBridge *nb)
+ * fam0fStopLink(u8 current_node, u8 current_link, cNorthBridge *nb)
  *
  *  Description:
  *	Disable a cHT link on node by setting F0x[E4, C4, A4, 84][TransOff, EndOfChain]=1
