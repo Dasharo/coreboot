@@ -280,7 +280,7 @@ static u8 graphGetBc(u8 *graph, u8 nodeA, u8 nodeB)
 
 /*----------------------------------------------------------------------------------------
  * void
- * routeFromBSP(u8 targetNode, u8 actualTarget, sMainData *pDat)
+ * routeFromBSP(u8 target_node, u8 actualTarget, sMainData *pDat)
  *
  *  Description:
  *	 Ensure a request / response route from target node to bsp.  Since target node is
@@ -289,21 +289,21 @@ static u8 graphGetBc(u8 *graph, u8 nodeA, u8 nodeB)
  *	 for config access during discovery, but NOT for coherency.
  *
  *  Parameters:
- *	@param[in]    u8    targetNode   = the path to actual target goes through target
+ *	@param[in]    u8    target_node   = the path to actual target goes through target
  *	@param[in]    u8    actualTarget = the ultimate target being routed to
  *	@param[in]    sMainData*  pDat   = our global state, port config info
  * ---------------------------------------------------------------------------------------
  */
-static void routeFromBSP(u8 targetNode, u8 actualTarget, sMainData *pDat)
+static void routeFromBSP(u8 target_node, u8 actualTarget, sMainData *pDat)
 {
 	u8 predecessorNode, predecessorLink, currentPair;
 
-	if (targetNode == 0)
+	if (target_node == 0)
 		return;  /*  BSP has no predecessor, stop */
 
-	/*  Search for the link that connects targetNode to its predecessor */
+	/*  Search for the link that connects target_node to its predecessor */
 	currentPair = 0;
-	while (pDat->port_list[currentPair * 2 + 1].node_id != targetNode)
+	while (pDat->port_list[currentPair * 2 + 1].node_id != target_node)
 	{
 		currentPair++;
 		ASSERT(currentPair < pDat->total_links);
@@ -323,31 +323,31 @@ static void routeFromBSP(u8 targetNode, u8 actualTarget, sMainData *pDat)
 
 /**
  *  u8
- * convertNodeToLink(u8 srcNode, u8 targetNode, sMainData *pDat)
+ * convertNodeToLink(u8 srcNode, u8 target_node, sMainData *pDat)
  *
  *  Description:
  *	 Return the link on source node which connects to target node
  *
  *  Parameters:
  *	@param[in]    srcNode    = the source node
- *	@param[in]    targetNode = the target node to find the link to
+ *	@param[in]    target_node = the target node to find the link to
  *	@param[in]    pDat = our global state
  *	@return       the link on source which connects to target
  *
  */
-static u8 convertNodeToLink(u8 srcNode, u8 targetNode, sMainData *pDat)
+static u8 convertNodeToLink(u8 srcNode, u8 target_node, sMainData *pDat)
 {
 	u8 targetlink = INVALID_LINK;
 	u8 k;
 
 	for (k = 0; k < pDat->total_links * 2; k += 2)
 	{
-		if ((pDat->port_list[k + 0].node_id == srcNode) && (pDat->port_list[k + 1].node_id == targetNode))
+		if ((pDat->port_list[k + 0].node_id == srcNode) && (pDat->port_list[k + 1].node_id == target_node))
 		{
 			targetlink = pDat->port_list[k + 0].Link;
 			break;
 		}
-		else if ((pDat->port_list[k + 1].node_id == srcNode) && (pDat->port_list[k + 0].node_id == targetNode))
+		else if ((pDat->port_list[k + 1].node_id == srcNode) && (pDat->port_list[k + 0].node_id == target_node))
 		{
 			targetlink = pDat->port_list[k + 1].Link;
 			break;
@@ -446,7 +446,7 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 		/* Enable routing tables on currentNode */
 		pDat->nb->enableRoutingTables(currentNode, pDat->nb);
 
-		for (currentLinkID = 0; currentLinkID < pDat->nb->maxLinks; currentLinkID++)
+		for (currentLinkID = 0; currentLinkID < pDat->nb->max_links; currentLinkID++)
 		{
 			BOOL linkfound;
 			u8 token;
@@ -464,7 +464,7 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 				currentLink = currentLinkID;
 			}
 
-			if (pDat->ht_block->AMD_CB_IgnoreLink && pDat->ht_block->AMD_CB_IgnoreLink(currentNode, currentLink))
+			if (pDat->ht_block->amd_cb_ignore_link && pDat->ht_block->amd_cb_ignore_link(currentNode, currentLink))
 				continue;
 
 			if (pDat->nb->readTrueLinkFailStatus(currentNode, currentLink, pDat, pDat->nb))
@@ -510,15 +510,15 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 				u8 nodeToKill;
 
 				/* Notify BIOS of event (while variables are still the same) */
-				if (pDat->ht_block->AMD_CB_EventNotify)
+				if (pDat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventCohFamilyFeud evt;
-					evt.eSize = sizeof(sHtEventCohFamilyFeud);
+					evt.e_size = sizeof(sHtEventCohFamilyFeud);
 					evt.node = currentNode;
 					evt.link = currentLink;
-					evt.totalNodes = pDat->nodes_discovered;
+					evt.total_nodes = pDat->nodes_discovered;
 
-					pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
+					pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
 									HT_EVENT_COH_FAMILY_FEUD,
 									(u8 *)&evt);
 				}
@@ -536,7 +536,7 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 				 * be coherent links on the BSP that are not yet in the portList, and
 				 * we have to turn them off anyway.  So depend on the hardware to tell us.
 				 */
-				for (currentLink = 0; currentLink < pDat->nb->maxLinks; currentLink++)
+				for (currentLink = 0; currentLink < pDat->nb->max_links; currentLink++)
 				{
 					/* Stop all links which are connected, coherent, and ready */
 					if (pDat->nb->verifyLinkIsCoherent(currentNode, currentLink, pDat->nb))
@@ -566,16 +566,16 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 					u8 nodeToKill;
 
 					/* Notify BIOS of event  */
-					if (pDat->ht_block->AMD_CB_EventNotify)
+					if (pDat->ht_block->amd_cb_event_notify)
 					{
 						sHtEventCohMpCapMismatch evt;
-						evt.eSize = sizeof(sHtEventCohMpCapMismatch);
+						evt.e_size = sizeof(sHtEventCohMpCapMismatch);
 						evt.node = currentNode;
 						evt.link = currentLink;
 						evt.sys_mp_cap = pDat->sys_mp_cap;
-						evt.totalNodes = pDat->nodes_discovered;
+						evt.total_nodes = pDat->nodes_discovered;
 
-						pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
+						pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
 									HT_EVENT_COH_MPCAP_MISMATCH,
 									(u8 *)&evt);
 					}
@@ -599,15 +599,15 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 				/* Inform that we have discovered a node, so that logical id to
 				 * socket mapping info can be recorded.
 				 */
-				if (pDat->ht_block->AMD_CB_EventNotify)
+				if (pDat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventCohNodeDiscovered evt;
-					evt.eSize = sizeof(sHtEventCohNodeDiscovered);
+					evt.e_size = sizeof(sHtEventCohNodeDiscovered);
 					evt.node = currentNode;
 					evt.link = currentLink;
 					evt.newNode = token;
 
-					pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_INFO,
+					pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_INFO,
 								HT_EVENT_COH_NODE_DISCOVERED,
 								(u8 *)&evt);
 				}
@@ -625,17 +625,17 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 				 * We cannot continue discovery, there may not be any way to route a new
 				 * node back to the BSP if we can't add links to our representation of the system.
 				 */
-				if (pDat->ht_block->AMD_CB_EventNotify)
+				if (pDat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventCohLinkExceed evt;
-					evt.eSize = sizeof(sHtEventCohLinkExceed);
+					evt.e_size = sizeof(sHtEventCohLinkExceed);
 					evt.node = currentNode;
 					evt.link = currentLink;
-					evt.targetNode = token;
-					evt.totalNodes = pDat->nodes_discovered;
-					evt.maxLinks = pDat->nb->maxLinks;
+					evt.target_node = token;
+					evt.total_nodes = pDat->nodes_discovered;
+					evt.max_links = pDat->nb->max_links;
 
-					pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
+					pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
 									HT_EVENT_COH_LINK_EXCEED,
 									(u8 *)&evt);
 				}
@@ -875,13 +875,13 @@ static void lookupComputeAndLoadRoutingTables(sMainData *pDat)
 		 * For reporting, logging, provide number of nodes
 		 * If not implemented or returns, boot as BSP uniprocessor.
 		 */
-		if (pDat->ht_block->AMD_CB_EventNotify)
+		if (pDat->ht_block->amd_cb_event_notify)
 		{
 			sHtEventCohNoTopology evt;
-			evt.eSize = sizeof(sHtEventCohNoTopology);
-			evt.totalNodes = pDat->nodes_discovered;
+			evt.e_size = sizeof(sHtEventCohNoTopology);
+			evt.total_nodes = pDat->nodes_discovered;
 
-			pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
+			pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
 						HT_EVENT_COH_NO_TOPOLOGY,
 						(u8 *)&evt);
 		}
@@ -991,7 +991,7 @@ static void coherentInit(sMainData *pDat)
 static void processLink(u8 node, u8 link, sMainData *pDat)
 {
 	u8 secBus, subBus;
-	u32 currentBUID;
+	u32 current_buid;
 	u32 temp;
 	u32 unitIDcnt;
 	SBDFO currentPtr;
@@ -1001,26 +1001,26 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 	SBDFO lastSBDFO = ILLEGAL_SBDFO;
 	u8 lastLink = 0;
 
-	ASSERT(node < pDat->nb->maxNodes && link < pDat->nb->maxLinks);
+	ASSERT(node < pDat->nb->maxNodes && link < pDat->nb->max_links);
 
-	if ((pDat->ht_block->AMD_CB_OverrideBusNumbers == NULL)
-	   || !pDat->ht_block->AMD_CB_OverrideBusNumbers(node, link, &secBus, &subBus))
+	if ((pDat->ht_block->amd_cb_override_bus_numbers == NULL)
+	   || !pDat->ht_block->amd_cb_override_bus_numbers(node, link, &secBus, &subBus))
 	{
 		/* Assign Bus numbers */
-		if (pDat->auto_bus_current >= pDat->ht_block->AutoBusMax)
+		if (pDat->auto_bus_current >= pDat->ht_block->auto_bus_max)
 		{
 			/* If we run out of Bus Numbers notify, if call back unimplemented or if it
 			 * returns, skip this chain
 			 */
-			if (pDat->ht_block->AMD_CB_EventNotify)
+			if (pDat->ht_block->amd_cb_event_notify)
 			{
 				sHTEventNcohBusMaxExceed evt;
-				evt.eSize = sizeof(sHTEventNcohBusMaxExceed);
+				evt.e_size = sizeof(sHTEventNcohBusMaxExceed);
 				evt.node = node;
 				evt.link = link;
 				evt.bus = pDat->auto_bus_current;
 
-				pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_BUS_MAX_EXCEED,(u8 *)&evt);
+				pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_BUS_MAX_EXCEED,(u8 *)&evt);
 			}
 			STOP_HERE;
 			return;
@@ -1031,14 +1031,14 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 			/* If we have used all the PCI Config maps we can't add another chain.
 			 * Notify and if call back is unimplemented or returns, skip this chain.
 			 */
-			if (pDat->ht_block->AMD_CB_EventNotify)
+			if (pDat->ht_block->amd_cb_event_notify)
 			{
 				sHtEventNcohCfgMapExceed evt;
-				evt.eSize = sizeof(sHtEventNcohCfgMapExceed);
+				evt.e_size = sizeof(sHtEventNcohCfgMapExceed);
 				evt.node = node;
 				evt.link = link;
 
-				pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
+				pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
 							HT_EVENT_NCOH_CFG_MAP_EXCEED,
 							(u8 *)&evt);
 			}
@@ -1047,18 +1047,18 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 		}
 
 		secBus = pDat->auto_bus_current;
-		subBus = secBus + pDat->ht_block->AutoBusIncrement-1;
-		pDat->auto_bus_current += pDat->ht_block->AutoBusIncrement;
+		subBus = secBus + pDat->ht_block->auto_bus_increment-1;
+		pDat->auto_bus_current += pDat->ht_block->auto_bus_increment;
 	}
 
 	pDat->nb->setCFGAddrMap(pDat->used_cfg_map_entires, secBus, subBus, node, link, pDat, pDat->nb);
 	pDat->used_cfg_map_entires++;
 
-	if ((pDat->ht_block->AMD_CB_ManualBUIDSwapList != NULL)
-	 && pDat->ht_block->AMD_CB_ManualBUIDSwapList(node, link, &pSwapPtr))
+	if ((pDat->ht_block->amd_cb_manual_buid_swap_list != NULL)
+	 && pDat->ht_block->amd_cb_manual_buid_swap_list(node, link, &pSwapPtr))
 	{
 		/* Manual non-coherent BUID assignment */
-		currentBUID = 1;
+		current_buid = 1;
 
 		/* Assign BUID's per manual override */
 		while (*pSwapPtr != 0xFF)
@@ -1073,9 +1073,9 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 				AmdPCIRead(currentPtr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
 
-			currentBUID = *pSwapPtr;
+			current_buid = *pSwapPtr;
 			pSwapPtr++;
-			amd_pci_write_bits(currentPtr, 20, 16, &currentBUID);
+			amd_pci_write_bits(currentPtr, 20, 16, &current_buid);
 		}
 
 		/* Build chain of devices */
@@ -1140,7 +1140,7 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 	{
 		/* Automatic non-coherent device detection */
 		depth = 0;
-		currentBUID = 1;
+		current_buid = 1;
 		while (1)
 		{
 			currentPtr = MAKE_SBDFO(0, secBus, 0, 0, 0);
@@ -1157,16 +1157,16 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 				 * Error strategy:
 				 * Auto recovery is not possible because data space is already all used.
 				 */
-				if (pDat->ht_block->AMD_CB_EventNotify)
+				if (pDat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventNcohLinkExceed evt;
-					evt.eSize = sizeof(sHtEventNcohLinkExceed);
+					evt.e_size = sizeof(sHtEventNcohLinkExceed);
 					evt.node = node;
 					evt.link = link;
 					evt.depth = depth;
-					evt.maxLinks = pDat->nb->maxLinks;
+					evt.max_links = pDat->nb->max_links;
 
-					pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
+					pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
 								HT_EVENT_NCOH_LINK_EXCEED,
 								(u8 *)&evt);
 				}
@@ -1203,42 +1203,42 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
 
 			amd_pci_read_bits(currentPtr, 25, 21, &unitIDcnt);
-			if ((unitIDcnt + currentBUID > 31) || ((secBus == 0) && (unitIDcnt + currentBUID > 24)))
+			if ((unitIDcnt + current_buid > 31) || ((secBus == 0) && (unitIDcnt + current_buid > 24)))
 			{
 				/* An error handler for the case where we run out of BUID's on a chain */
-				if (pDat->ht_block->AMD_CB_EventNotify)
+				if (pDat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventNcohBuidExceed evt;
-					evt.eSize = sizeof(sHtEventNcohBuidExceed);
+					evt.e_size = sizeof(sHtEventNcohBuidExceed);
 					evt.node = node;
 					evt.link = link;
 					evt.depth = depth;
-					evt.currentBUID = (uint8)currentBUID;
-					evt.unitCount = (uint8)unitIDcnt;
+					evt.current_buid = (uint8)current_buid;
+					evt.unit_count = (uint8)unitIDcnt;
 
-					pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_BUID_EXCEED,(u8 *)&evt);
+					pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_BUID_EXCEED,(u8 *)&evt);
 				}
 				STOP_HERE;
 				break;
 			}
-			amd_pci_write_bits(currentPtr, 20, 16, &currentBUID);
+			amd_pci_write_bits(currentPtr, 20, 16, &current_buid);
 
 
-			currentPtr += MAKE_SBDFO(0, 0, currentBUID, 0, 0);
+			currentPtr += MAKE_SBDFO(0, 0, current_buid, 0, 0);
 			amd_pci_read_bits(currentPtr, 20, 16, &temp);
-			if (temp != currentBUID)
+			if (temp != current_buid)
 			{
 				/* An error handler for this critical error */
-				if (pDat->ht_block->AMD_CB_EventNotify)
+				if (pDat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventNcohDeviceFailed evt;
-					evt.eSize = sizeof(sHtEventNcohDeviceFailed);
+					evt.e_size = sizeof(sHtEventNcohDeviceFailed);
 					evt.node = node;
 					evt.link = link;
 					evt.depth = depth;
-					evt.attemptedBUID = (uint8)currentBUID;
+					evt.attempted_buid = (uint8)current_buid;
 
-					pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_DEVICE_FAILED,(u8 *)&evt);
+					pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_DEVICE_FAILED,(u8 *)&evt);
 				}
 				STOP_HERE;
 				break;
@@ -1253,18 +1253,18 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 
 			depth++;
 			pDat->total_links++;
-			currentBUID += unitIDcnt;
+			current_buid += unitIDcnt;
 		}
-		if (pDat->ht_block->AMD_CB_EventNotify)
+		if (pDat->ht_block->amd_cb_event_notify)
 		{
 			/* Provide information on automatic device results */
 			sHtEventNcohAutoDepth evt;
-			evt.eSize = sizeof(sHtEventNcohAutoDepth);
+			evt.e_size = sizeof(sHtEventNcohAutoDepth);
 			evt.node = node;
 			evt.link = link;
 			evt.depth = (depth - 1);
 
-			pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_INFO,HT_EVENT_NCOH_AUTO_DEPTH,(u8 *)&evt);
+			pDat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_INFO,HT_EVENT_NCOH_AUTO_DEPTH,(u8 *)&evt);
 		}
 	}
 }
@@ -1292,9 +1292,9 @@ static void ncInit(sMainData *pDat)
 
 	for (node = 0; node <= pDat->nodes_discovered; node++)
 	{
-		for (link = 0; link < pDat->nb->maxLinks; link++)
+		for (link = 0; link < pDat->nb->max_links; link++)
 		{
-			if (pDat->ht_block->AMD_CB_IgnoreLink && pDat->ht_block->AMD_CB_IgnoreLink(node, link))
+			if (pDat->ht_block->amd_cb_ignore_link && pDat->ht_block->amd_cb_ignore_link(node, link))
 				continue;   /*  Skip the link */
 
 			if (node == 0 && link == compatLink)
@@ -1332,8 +1332,8 @@ static void regangLinks(sMainData *pDat)
 	u8 i, j;
 	for (i = 0; i < pDat->total_links * 2; i += 2)
 	{
-		ASSERT(pDat->port_list[i].Type < 2 && pDat->port_list[i].Link < pDat->nb->maxLinks);  /*  Data validation */
-		ASSERT(pDat->port_list[i + 1].Type < 2 && pDat->port_list[i + 1].Link < pDat->nb->maxLinks); /*  data validation */
+		ASSERT(pDat->port_list[i].Type < 2 && pDat->port_list[i].Link < pDat->nb->max_links);  /*  Data validation */
+		ASSERT(pDat->port_list[i + 1].Type < 2 && pDat->port_list[i + 1].Link < pDat->nb->max_links); /*  data validation */
 		ASSERT(!(pDat->port_list[i].Type == PORTLIST_TYPE_IO && pDat->port_list[i + 1].Type == PORTLIST_TYPE_CPU));  /*  ensure src is closer to the bsp than dst */
 
 		/* Regang is false unless we pass all conditions below */
@@ -1365,8 +1365,8 @@ static void regangLinks(sMainData *pDat)
 
 			ASSERT((pDat->port_list[j].Link & 4) == (pDat->port_list[j + 1].Link & 4)); /*  (therefore sublink1 routes to sublink1) */
 
-			if (pDat->ht_block->AMD_CB_SkipRegang &&
-				pDat->ht_block->AMD_CB_SkipRegang(pDat->port_list[i].node_id,
+			if (pDat->ht_block->amd_cb_skip_regang &&
+				pDat->ht_block->amd_cb_skip_regang(pDat->port_list[i].node_id,
 							pDat->port_list[i].Link & 0x03,
 							pDat->port_list[i + 1].node_id,
 							pDat->port_list[i + 1].Link & 0x03))
@@ -1490,9 +1490,9 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 
 		if ((pDat->port_list[i].Type == PORTLIST_TYPE_CPU) && (pDat->port_list[i + 1].Type == PORTLIST_TYPE_CPU))
 		{
-			if (pDat->ht_block->AMD_CB_Cpu2CpuPCBLimits)
+			if (pDat->ht_block->amd_cb_cpu_2_cpu_pcb_limits)
 			{
-				pDat->ht_block->AMD_CB_Cpu2CpuPCBLimits(
+				pDat->ht_block->amd_cb_cpu_2_cpu_pcb_limits(
 						pDat->port_list[i].node_id,
 						pDat->port_list[i].Link,
 						pDat->port_list[i + 1].node_id,
@@ -1504,9 +1504,9 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 		}
 		else
 		{
-			if (pDat->ht_block->AMD_CB_IOPCBLimits)
+			if (pDat->ht_block->amd_cb_iop_cb_limits)
 			{
-				pDat->ht_block->AMD_CB_IOPCBLimits(
+				pDat->ht_block->amd_cb_iop_cb_limits(
 						pDat->port_list[i + 1].node_id,
 						pDat->port_list[i + 1].host_link,
 						pDat->port_list[i + 1].host_depth,
@@ -1780,8 +1780,8 @@ static void tuning(sMainData *pDat)
 	/* See if traffic distribution can be done and do it if so
 	 * or allow system specific customization
 	 */
-	if ((pDat->ht_block->AMD_CB_CustomizeTrafficDistribution == NULL)
-		|| !pDat->ht_block->AMD_CB_CustomizeTrafficDistribution())
+	if ((pDat->ht_block->amd_cb_customize_traffic_distribution == NULL)
+		|| !pDat->ht_block->amd_cb_customize_traffic_distribution())
 	{
 		trafficDistribution(pDat);
 	}
@@ -1791,8 +1791,8 @@ static void tuning(sMainData *pDat)
 	 */
 	for (i = 0; i < pDat->nodes_discovered + 1; i++)
 	{
-		if ((pDat->ht_block->AMD_CB_CustomizeBuffers == NULL)
-		   || !pDat->ht_block->AMD_CB_CustomizeBuffers(i))
+		if ((pDat->ht_block->amd_cb_customize_buffers == NULL)
+		   || !pDat->ht_block->amd_cb_customize_buffers(i))
 		{
 			pDat->nb->bufferOptimizations(i, pDat, pDat->nb);
 		}
@@ -1841,7 +1841,7 @@ static BOOL isSanityCheckOk(void)
  *				  wrapper or OEM call back routines.
  * ---------------------------------------------------------------------------------------
  */
-void amdHtInitialize(AMD_HTBLOCK *pBlock)
+void amd_ht_initialize(AMD_HTBLOCK *pBlock)
 {
 	sMainData pDat;
 	cNorthBridge nb;
@@ -1856,7 +1856,7 @@ void amdHtInitialize(AMD_HTBLOCK *pBlock)
 		nb.isCapable(0, &pDat, pDat.nb);
 		coherentInit(&pDat);
 
-		pDat.auto_bus_current = pBlock->AutoBusStart;
+		pDat.auto_bus_current = pBlock->auto_bus_start;
 		pDat.used_cfg_map_entires = 0;
 		ncInit(&pDat);
 		linkOptimization(&pDat);

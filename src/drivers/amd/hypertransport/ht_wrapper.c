@@ -91,9 +91,9 @@ static const char *event_string_decode(u32 event)
 }
 
 /**
- * void AMD_CB_EventNotify (u8 evtClass, u16 event, const u8 *pEventData0)
+ * void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
  */
-static void AMD_CB_EventNotify (u8 evtClass, u16 event, const u8 *pEventData0)
+static void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
 {
 	u8 i;
 	u8 log_level;
@@ -147,8 +147,8 @@ static void AMD_CB_EventNotify (u8 evtClass, u16 event, const u8 *pEventData0)
 			{
 				printk(log_level, "%s", event_string_decode(event));
 				sHtEventNcohDeviceFailed *evt = (sHtEventNcohDeviceFailed*)pEventData0;
-				printk(log_level, ": node %d link %d depth: %d attemptedBUID: %d",
-					evt->node, evt->link, evt->depth, evt->attemptedBUID);
+				printk(log_level, ": node %d link %d depth: %d attempted_buid: %d",
+					evt->node, evt->link, evt->depth, evt->attempted_buid);
 				dump_event_detail = 0;
 				break;
 			}
@@ -197,7 +197,7 @@ void getAmdTopolist(u8 ***p)
 }
 
 /**
- * BOOL AMD_CB_IgnoreLink(u8 Node, u8 Link)
+ * BOOL amd_cb_ignore_link(u8 Node, u8 Link)
  * Description:
  *	This routine is used to ignore connected yet faulty HT links,
  *	such as those present in a G34 processor package.
@@ -206,7 +206,7 @@ void getAmdTopolist(u8 ***p)
  *	@param[in]  node   = The node on which this chain is located
  *	@param[in]  link   = The link on the host for this chain
  */
-static BOOL AMD_CB_IgnoreLink (u8 node, u8 link)
+static BOOL amd_cb_ignore_link (u8 node, u8 link)
 {
 	return 0;
 }
@@ -227,26 +227,26 @@ void amd_ht_init(struct sys_info *sysinfo)
 
 	AMD_HTBLOCK ht_wrapper = {
 		NULL,	// u8 **topolist;
-		0,	// u8 AutoBusStart;
-		32,	// u8 AutoBusMax;
-		6,	// u8 AutoBusIncrement;
-		AMD_CB_IgnoreLink,		// BOOL (*AMD_CB_IgnoreLink)();
-		NULL,	// BOOL (*AMD_CB_OverrideBusNumbers)();
-		AMD_CB_ManualBUIDSwapList,	// BOOL (*AMD_CB_ManualBUIDSwapList)();
-		NULL,	// void (*AMD_CB_DeviceCapOverride)();
-		NULL,	// void (*AMD_CB_Cpu2CpuPCBLimits)();
-		NULL,	// void (*AMD_CB_IOPCBLimits)();
-		NULL,	// BOOL (*AMD_CB_SkipRegang)();
-		NULL,	// BOOL (*AMD_CB_CustomizeTrafficDistribution)();
-		NULL,	// BOOL (*AMD_CB_CustomizeBuffers)();
-		NULL,	// void (*AMD_CB_OverrideDevicePort)();
-		NULL,	// void (*AMD_CB_OverrideCpuPort)();
-		AMD_CB_EventNotify,	// void (*AMD_CB_EventNotify) ();
+		0,	// u8 auto_bus_start;
+		32,	// u8 auto_bus_max;
+		6,	// u8 auto_bus_increment;
+		amd_cb_ignore_link,		// BOOL (*amd_cb_ignore_link)();
+		NULL,	// BOOL (*amd_cb_override_bus_numbers)();
+		amd_cb_manual_buid_swap_list,	// BOOL (*amd_cb_manual_buid_swap_list)();
+		NULL,	// void (*amd_cb_device_cap_override)();
+		NULL,	// void (*amd_cb_cpu_2_cpu_pcb_limits)();
+		NULL,	// void (*amd_cb_iop_cb_limits)();
+		NULL,	// BOOL (*amd_cb_skip_regang)();
+		NULL,	// BOOL (*amd_cb_customize_traffic_distribution)();
+		NULL,	// BOOL (*amd_cb_customize_buffers)();
+		NULL,	// void (*amd_cb_override_device_port)();
+		NULL,	// void (*amd_cb_override_cpu_port)();
+		amd_cb_event_notify,	// void (*amd_cb_event_notify) ();
 		&sysinfo->ht_link_cfg // struct ht_link_config*
 	};
 
 	printk(BIOS_DEBUG, "Enter %s\n", __func__);
-	amdHtInitialize(&ht_wrapper);
+	amd_ht_initialize(&ht_wrapper);
 	printk(BIOS_DEBUG, "Exit %s\n", __func__);
 }
 

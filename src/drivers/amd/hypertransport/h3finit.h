@@ -112,15 +112,15 @@
 
 typedef struct {
 	u8 **topolist;
-	u8 AutoBusStart;
-	/* Note: This should always be the form auto_bus_current+N*AutoBusIncrement, also bus 253-255 are reserved */
-	u8 AutoBusMax;
-	u8 AutoBusIncrement;
+	u8 auto_bus_start;
+	/* Note: This should always be the form auto_bus_current+N*auto_bus_increment, also bus 253-255 are reserved */
+	u8 auto_bus_max;
+	u8 auto_bus_increment;
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * BOOL
-	 * AMD_CB_IgnoreLink(u8 Node, u8 Link)
+	 * amd_cb_ignore_link(u8 node, u8 link)
 	 *
 	 * Description:
 	 *	This routine is called every time a coherent link is found and then every
@@ -137,35 +137,35 @@ typedef struct {
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	BOOL (*AMD_CB_IgnoreLink)(u8 Node, u8 Link);
+	BOOL (*amd_cb_ignore_link)(u8 node, u8 link);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * BOOL
-	 * AMD_CB_OverrideBusNumbers(u8 Node, u8 Link, u8 *SecBus, u8 *SubBus)
+	 * amd_cb_override_bus_numbers(u8 node, u8 link, u8 *sec_bus, u8 *sub_bus)
 	 *
 	 * Description:
 	 *	This routine is called every time a non-coherent chain is processed.
-	 *	If a system can not use the auto Bus numbering feature for non-coherent chain bus
+	 *	If a system can not use the auto bus numbering feature for non-coherent chain bus
 	 *	assignments, this routine can provide explicit control.  For each chain, provide
 	 *	the bus number range to use.
 	 *
 	 * Parameters:
 	 *	@param[in]  u8   node   = The node on which this chain is located
 	 *	@param[in]  u8   link   = The link on the host for this chain
-	 *	@param[out] u8   secBus = Secondary Bus number for this non-coherent chain
-	 *	@param[out] u8 *subBus = Subordinate Bus number
+	 *	@param[out] u8   secBus = Secondary bus number for this non-coherent chain
+	 *	@param[out] u8 *subBus = Subordinate bus number
 	 *	@param[out] BOOL result = true this routine is supplying the bus numbers
-	 *				  false use auto Bus numbering
+	 *				  false use auto bus numbering
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	BOOL (*AMD_CB_OverrideBusNumbers)(u8 Node, u8 Link, u8 *SecBus, u8 *SubBus);
+	BOOL (*amd_cb_override_bus_numbers)(u8 node, u8 link, u8 *sec_bus, u8 *sub_bus);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * BOOL
-	 * AMD_CB_ManualBUIDSwapList(u8 Node, u8 Link, u8 **List)
+	 * amd_cb_manual_buid_swap_list(u8 node, u8 link, u8 **list)
 	 *
 	 * Description:
 	 *	This routine is called every time a non-coherent chain is processed.
@@ -186,14 +186,14 @@ typedef struct {
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	BOOL (*AMD_CB_ManualBUIDSwapList)(u8 Node, u8 Link, const u8 **List);
+	BOOL (*amd_cb_manual_buid_swap_list)(u8 node, u8 link, const u8 **list);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * AMD_CB_DeviceCapOverride(u8 HostNode, u8 host_link, u8 Depth, u8 Segment,
-	 *				  u8 Bus, u8 Dev, u32 DevVenID, u8 Link,
-	 *				  u8 *LinkWidthIn, u8 *LinkWidthOut, u16 *FreqCap)
+	 * amd_cb_device_cap_override(u8 host_node, u8 host_link, u8 depth, u8 segment,
+	 *				  u8 bus, u8 dev, u32 dev_ven_id, u8 link,
+	 *				  u8 *link_width_in, u8 *link_width_out, u16 *freq_cap)
 	 *
 	 * Description:
 	 *	This routine is called once for every link on every IO device.
@@ -206,39 +206,39 @@ typedef struct {
 	 * Parameters:
 	 *	@param[in]  u8  hostNode  = The node on which this chain is located
 	 *	@param[in]  u8  hostLink  = The link on the host for this chain
-	 *	@param[in]  u8  Depth     = The depth in the I/O chain from the Host
-	 *	@param[in]  u8  Segment   = The Device's PCI Bus Segment number
-	 *	@param[in]  u8  Bus       = The Device's PCI Bus number
-	 *	@param[in]  u8  Dev       = The Device's PCI device Number
-	 *	@param[in]  u32 DevVenID  = The Device's PCI Vendor + Device ID (offset 0x00)
-	 *	@param[in]  u8  Link      = The Device's link number (0 or 1)
-	 *	@param[in,out] u8 *LinkWidthIn  = modify to change the Link Witdh In
-	 *	@param[in,out] u8 *LinkWidthOut  = modify to change the Link Witdh Out
-	 *	@param[in,out] u32 *FreqCap = modify to change the link's frequency capability
-	 *	@param[in,out] u32 *FeatureCap = modify to change the link's feature capability
+	 *	@param[in]  u8  depth     = The depth in the I/O chain from the Host
+	 *	@param[in]  u8  segment   = The Device's PCI bus segment number
+	 *	@param[in]  u8  bus       = The Device's PCI bus number
+	 *	@param[in]  u8  dev       = The Device's PCI device Number
+	 *	@param[in]  u32 dev_ven_id  = The Device's PCI Vendor + Device ID (offset 0x00)
+	 *	@param[in]  u8  link      = The Device's link number (0 or 1)
+	 *	@param[in,out] u8 *link_width_in  = modify to change the link Witdh In
+	 *	@param[in,out] u8 *link_width_out  = modify to change the link Witdh Out
+	 *	@param[in,out] u32 *freq_cap = modify to change the link's frequency capability
+	 *	@param[in,out] u32 *feature_cap = modify to change the link's feature capability
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	void (*AMD_CB_DeviceCapOverride)(
-		u8 HostNode,
+	void (*amd_cb_device_cap_override)(
+		u8 host_node,
 		u8 host_link,
-		u8 Depth,
-		u8 Segment,
-		u8 Bus,
-		u8 Dev,
-		u32 DevVenID,
-		u8 Link,
-		u8 *LinkWidthIn,
-		u8 *LinkWidthOut,
-		u32 *FreqCap,
-		u32 *FeatureCap
+		u8 depth,
+		u8 segment,
+		u8 bus,
+		u8 dev,
+		u32 dev_ven_id,
+		u8 link,
+		u8 *link_width_in,
+		u8 *link_width_out,
+		u32 *freq_cap,
+		u32 *feature_cap
 	);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * AMD_CB_Cpu2CpuPCBLimits(u8 NodeA, u8 LinkA, u8 NodeB, u8 LinkB,
-	 *				 u8 *ABLinkWidthLimit, u8 *BALinkWidthLimit, u16 *PCBFreqCap)
+	 * amd_cb_cpu_2_cpu_pcb_limits(u8 node_a, u8 link_a, u8 node_b, u8 link_b,
+	 *				 u8 *ab_link_width_limit, u8 *ba_link_width_limit, u16 *pcb_freq_cap)
 	 *
 	 * Description:
 	 *	For each coherent connection this routine is called once.
@@ -252,27 +252,27 @@ typedef struct {
 	 *	@param[in]  u8  linkA  = The link on this node
 	 *	@param[in]  u8  nodeB  = The other node on which this link is located
 	 *	@param[in]  u8  linkB  = The link on that node
-	 *	@param[in,out]  u8 *ABLinkWidthLimit = modify to change the Link Witdh In
-	 *	@param[in,out]  u8 *BALinkWidthLimit = modify to change the Link Witdh Out
-	 *	@param[in,out]  u32 *PCBFreqCap  = modify to change the link's frequency capability
+	 *	@param[in,out]  u8 *ab_link_width_limit = modify to change the link Witdh In
+	 *	@param[in,out]  u8 *ba_link_width_limit = modify to change the link Witdh Out
+	 *	@param[in,out]  u32 *pcb_freq_cap  = modify to change the link's frequency capability
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	void (*AMD_CB_Cpu2CpuPCBLimits)(
-		u8 NodeA,
-		u8 LinkA,
-		u8 NodeB,
-		u8 LinkB,
-		u8 *ABLinkWidthLimit,
-		u8 *BALinkWidthLimit,
-		u32 *PCBFreqCap
+	void (*amd_cb_cpu_2_cpu_pcb_limits)(
+		u8 node_a,
+		u8 link_a,
+		u8 node_b,
+		u8 link_b,
+		u8 *ab_link_width_limit,
+		u8 *ba_link_width_limit,
+		u32 *pcb_freq_cap
 	);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * AMD_CB_IOPCBLimits(u8 HostNode, u8 host_link, u8 Depth, u8 *DownstreamLinkWidthLimit,
-	 *			    u8 *UpstreamLinkWidthLimit, u16 *PCBFreqCap)
+	 * amd_cb_iop_cb_limits(u8 host_node, u8 host_link, u8 depth, u8 *downstream_link_width_limit,
+	 *			    u8 *upstream_link_width_limit, u16 *pcb_freq_cap)
 	 *
 	 * Description:
 	 *	For each non-coherent connection this routine is called once.
@@ -284,26 +284,26 @@ typedef struct {
 	 * Parameters:
 	 *	@param[in]  u8  hostNode  = The node on which this link is located
 	 *	@param[in]  u8  hostLink  = The link about to be initialized
-	 *	@param[in]  u8  Depth  = The depth in the I/O chain from the Host
-	 *	@param[in,out]  u8 *DownstreamLinkWidthLimit = modify to change the Link Witdh In
-	 *	@param[in,out]  u8 *UpstreamLinkWidthLimit  = modify to change the Link Witdh Out
-	 *	@param[in,out]  u32 *PCBFreqCap = modify to change the link's frequency capability
+	 *	@param[in]  u8  depth  = The depth in the I/O chain from the Host
+	 *	@param[in,out]  u8 *downstream_link_width_limit = modify to change the link Witdh In
+	 *	@param[in,out]  u8 *upstream_link_width_limit  = modify to change the link Witdh Out
+	 *	@param[in,out]  u32 *pcb_freq_cap = modify to change the link's frequency capability
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	void (*AMD_CB_IOPCBLimits)(
-		u8 HostNode,
+	void (*amd_cb_iop_cb_limits)(
+		u8 host_node,
 		u8 host_link,
-		u8 Depth,
-		u8 *DownstreamLinkWidthLimit,
-		u8 *UpstreamLinkWidthLimit,
-		u32 *PCBFreqCap
+		u8 depth,
+		u8 *downstream_link_width_limit,
+		u8 *upstream_link_width_limit,
+		u32 *pcb_freq_cap
 	);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * BOOL
-	 * AMD_CB_SkipRegang(u8 NodeA, u8 LinkA, u8 NodeB, u8 LinkB)
+	 * amd_cb_skip_regang(u8 node_a, u8 link_a, u8 node_b, u8 link_b)
 	 *
 	 * Description:
 	 *	This routine is called whenever two sublinks are both connected to the same CPUs.
@@ -320,17 +320,17 @@ typedef struct {
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	BOOL (*AMD_CB_SkipRegang)(
-		u8 NodeA,
-		u8 LinkA,
-		u8 NodeB,
-		u8 LinkB
+	BOOL (*amd_cb_skip_regang)(
+		u8 node_a,
+		u8 link_a,
+		u8 node_b,
+		u8 link_b
 	);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * BOOL
-	 * AMD_CB_CustomizeTrafficDistribution()
+	 * amd_cb_customize_traffic_distribution()
 	 *
 	 * Description:
 	 *	Near the end of HT initialization, this routine is called once.
@@ -346,13 +346,13 @@ typedef struct {
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	BOOL (*AMD_CB_CustomizeTrafficDistribution)(void);
+	BOOL (*amd_cb_customize_traffic_distribution)(void);
 
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * BOOL
-	 * AMD_CB_CustomizeBuffers(u8 Node)
+	 * amd_cb_customize_buffers(u8 node)
 	 *
 	 * Description:
 	 *	Near the end of HT initialization, this routine is called once per CPU node.
@@ -367,13 +367,13 @@ typedef struct {
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	BOOL (*AMD_CB_CustomizeBuffers)(u8 node);
+	BOOL (*amd_cb_customize_buffers)(u8 node);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * AMD_CB_OverrideDevicePort(u8 HostNode, u8 host_link, u8 Depth, u8 *LinkWidthIn,
-	 *				   u8 *LinkWidthOut, u16 *LinkFrequency)
+	 * amd_cb_override_device_port(u8 host_node, u8 host_link, u8 depth, u8 *link_width_in,
+	 *				   u8 *link_width_out, u16 *link_frequency)
 	 *
 	 * Description:
 	 *	Called once for each active link on each IO device.
@@ -384,29 +384,29 @@ typedef struct {
 	 * Parameters:
 	 *	@param[in]  u8   hostNode  = The node on which this link is located
 	 *	@param[in]  u8   hostLink  = The link about to be initialized
-	 *	@param[in]  u8   Depth     = The depth in the I/O chain from the Host
-	 *	@param[in]  u8   Link      = the link on the device (0 or 1)
-	 *	@param[in,out]  u8 *LinkWidthIn    = modify to change the Link Witdh In
-	 *	@param[in,out]  u8 *LinkWidthOut   = modify to change the Link Witdh Out
-	 *	@param[in,out]  u16 *LinkFrequency = modify to change the link's frequency capability
+	 *	@param[in]  u8   depth     = The depth in the I/O chain from the Host
+	 *	@param[in]  u8   link      = the link on the device (0 or 1)
+	 *	@param[in,out]  u8 *link_width_in    = modify to change the link Witdh In
+	 *	@param[in,out]  u8 *link_width_out   = modify to change the link Witdh Out
+	 *	@param[in,out]  u16 *link_frequency = modify to change the link's frequency capability
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	void (*AMD_CB_OverrideDevicePort)(
-		u8 HostNode,
+	void (*amd_cb_override_device_port)(
+		u8 host_node,
 		u8 host_link,
-		u8 Depth,
-		u8 Link,
-		u8 *LinkWidthIn,
-		u8 *LinkWidthOut,
-		u8 *LinkFrequency
+		u8 depth,
+		u8 link,
+		u8 *link_width_in,
+		u8 *link_width_out,
+		u8 *link_frequency
 	);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * AMD_CB_OverrideCpuPort(u8 Node, u8 Link, u8 *LinkWidthIn, u8 *LinkWidthOut,
-	 *				u16 *LinkFrequency)
+	 * amd_cb_override_cpu_port(u8 node, u8 link, u8 *link_width_in, u8 *link_width_out,
+	 *				u16 *link_frequency)
 	 *
 	 * Description:
 	 *	Called once for each active link on each CPU.
@@ -417,24 +417,24 @@ typedef struct {
 	 * Parameters:
 	 *	@param[in]  u8  node  = One node on which this link is located
 	 *	@param[in]  u8  link  = The link on this node
-	 *	@param[in,out]  u8 *LinkWidthIn = modify to change the Link Witdh In
-	 *	@param[in,out]  u8 *LinkWidthOut = modify to change the Link Witdh Out
-	 *	@param[in,out]  u16 *LinkFrequency  = modify to change the link's frequency capability
+	 *	@param[in,out]  u8 *link_width_in = modify to change the link Witdh In
+	 *	@param[in,out]  u8 *link_width_out = modify to change the link Witdh Out
+	 *	@param[in,out]  u16 *link_frequency  = modify to change the link's frequency capability
 	 *
 	 *---------------------------------------------------------------------------------------
 	 */
-	void (*AMD_CB_OverrideCpuPort)(
-		u8 Node,
-		u8 Link,
-		u8 *LinkWidthIn,
-		u8 *LinkWidthOut,
-		u8 *LinkFrequency
+	void (*amd_cb_override_cpu_port)(
+		u8 node,
+		u8 link,
+		u8 *link_width_in,
+		u8 *link_width_out,
+		u8 *link_frequency
 	);
 
 	/**----------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * AMD_CB_EventNotify(u8 evtClass, u16 event, const u8 *pEventData0)
+	 * amd_cb_event_notify(u8 evt_class, u16 event, const u8 *p_event_data_0)
 	 *
 	 * Description:
 	 *	Errors, events, faults, warnings, and useful information are provided by
@@ -443,16 +443,16 @@ typedef struct {
 	 *	See the documentation for more details.
 	 *
 	 * Parameters:
-	 *	@param[in]  u8  evtClass = What level event is this
+	 *	@param[in]  u8  evt_class = What level event is this
 	 *	@param[in]  u16 event = A unique ID of this event
-	 *	@param[in]  u8 *pEventData0 = useful data associated with the event.
+	 *	@param[in]  u8 *p_event_data_0 = useful data associated with the event.
 	 *
 	 * ---------------------------------------------------------------------------------------
 	 */
-	void (*AMD_CB_EventNotify) (
-		u8 evtClass,
+	void (*amd_cb_event_notify) (
+		u8 evt_class,
 		u16 event,
-		const u8 *pEventData0
+		const u8 *p_event_data_0
 	);
 
 	const struct ht_link_config *ht_link_configuration;
@@ -461,13 +461,13 @@ typedef struct {
 
 /*
  * Event Notification Structures
- * These structures are passed to AMD_CB_EventNotify as *pEventData0.
+ * These structures are passed to amd_cb_event_notify as *p_event_data_0.
  */
 
 /* For event HT_EVENT_HW_SYNCHFLOOD */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 } sHtEventHWSynchFlood;
@@ -475,16 +475,16 @@ typedef struct
 /* For event HT_EVENT_HW_HTCRC */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
-	u8 laneMask;
+	u8 lane_mask;
 } sHtEventHWHtCrc;
 
 /* For event HT_EVENT_NCOH_BUS_MAX_EXCEED */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 	u8 bus;
@@ -493,17 +493,17 @@ typedef struct
 /* For event HT_EVENT_NCOH_LINK_EXCEED */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 	u8 depth;
-	u8 maxLinks;
+	u8 max_links;
 } sHtEventNcohLinkExceed;
 
 /* For event HT_EVENT_NCOH_CFG_MAP_EXCEED */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 } sHtEventNcohCfgMapExceed;
@@ -511,28 +511,28 @@ typedef struct
 /* For event HT_EVENT_NCOH_BUID_EXCEED */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 	u8 depth;
-	u8 currentBUID;
-	u8 unitCount;
+	u8 current_buid;
+	u8 unit_count;
 } sHtEventNcohBuidExceed;
 
 /* For event HT_EVENT_NCOH_DEVICE_FAILED */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 	u8 depth;
-	u8 attemptedBUID;
+	u8 attempted_buid;
 } sHtEventNcohDeviceFailed;
 
 /* For event HT_EVENT_NCOH_AUTO_DEPTH */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 	u8 depth;
@@ -543,7 +543,7 @@ typedef struct
  */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 	u8 depth;
@@ -552,34 +552,34 @@ typedef struct
 /* For event HT_EVENT_COH_NO_TOPOLOGY */
 typedef struct
 {
-	u8 eSize;
-	u8 totalNodes;
+	u8 e_size;
+	u8 total_nodes;
 } sHtEventCohNoTopology;
 
 /* For event HT_EVENT_COH_LINK_EXCEED */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
-	u8 targetNode;
-	u8 totalNodes;
-	u8 maxLinks;
+	u8 target_node;
+	u8 total_nodes;
+	u8 max_links;
 } sHtEventCohLinkExceed;
 
 /* For event HT_EVENT_COH_FAMILY_FEUD */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
-	u8 totalNodes;
+	u8 total_nodes;
 } sHtEventCohFamilyFeud;
 
 /* For event HT_EVENT_COH_NODE_DISCOVERED */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 	u8 newNode;
@@ -588,11 +588,11 @@ typedef struct
 /* For event HT_EVENT_COH_MPCAP_MISMATCH */
 typedef struct
 {
-	u8 eSize;
+	u8 e_size;
 	u8 node;
 	u8 link;
 	u8 sys_mp_cap;
-	u8 totalNodes;
+	u8 total_nodes;
 } sHtEventCohMpCapMismatch;
 
 /*----------------------------------------------------------------------------
@@ -600,7 +600,7 @@ typedef struct
  *
  *----------------------------------------------------------------------------
  */
-void amdHtInitialize(AMD_HTBLOCK *pBlock);
+void amd_ht_initialize(AMD_HTBLOCK *p_block);
 
 
 #endif	 /* H3FINIT_H */
