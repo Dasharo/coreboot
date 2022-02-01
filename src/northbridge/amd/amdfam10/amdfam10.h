@@ -1011,7 +1011,7 @@ struct amdfam10_sysconf_t *get_sysconf(void);
 void set_pirq_router_bus(u8 bus);
 u8 get_pirq_router_bus(void);
 
-BOOL AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list);
+BOOL amd_cb_manual_buid_swap_list(u8 node, u8 link, const u8 **list);
 
 unsigned long northbridge_write_acpi_tables(const struct device *device,
 					    unsigned long start,

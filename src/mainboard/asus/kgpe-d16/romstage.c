@@ -418,7 +418,7 @@ void mainboard_after_raminit(struct sys_info *sysinfo)
 }
 
 /**
- * BOOL AMD_CB_ManualBUIDSwapList(u8 Node, u8 Link, u8 **List)
+ * BOOL amd_cb_manual_buid_swap_list(u8 Node, u8 Link, u8 **List)
  * Description:
  *	This routine is called every time a non-coherent chain is processed.
  *	BUID assignment may be controlled explicitly on a non-coherent chain. Provide a
@@ -434,13 +434,13 @@ void mainboard_after_raminit(struct sys_info *sysinfo)
  *	@param[in]  link   = The link on the host for this chain
  *	@param[out] List   = supply a pointer to a list
  */
-BOOL AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list)
+BOOL amd_cb_manual_buid_swap_list(u8 node, u8 link, const u8 **list)
 {
 	/* Force BUID to 0 */
-	static const u8 swaplist[] = {0, 0, 0xFF, 0, 0xFF};
+	static const u8 swap_list[] = {0, 0, 0xFF, 0, 0xFF};
 	if ((is_fam15h() && (node == 0) && (link == 1)) || /* Family 15h BSP SB link */
 	    (!is_fam15h() && (node == 0) && (link == 3))) { /* Family 10h BSP SB link */
-		*list = swaplist;
+		*list = swap_list;
 		return 1;
 	}
 
