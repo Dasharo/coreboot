@@ -91,9 +91,9 @@ static const char *event_string_decode(u32 event)
 }
 
 /**
- * void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
+ * void amd_cb_event_notify (u8 evt_class, u16 event, const u8 *p_event_data_0)
  */
-static void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
+static void amd_cb_event_notify (u8 evt_class, u16 event, const u8 *p_event_data_0)
 {
 	u8 i;
 	u8 log_level;
@@ -103,14 +103,14 @@ static void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
 
 	/* Decode event */
 	dump_event_detail = 1;
-	switch (evtClass) {
+	switch (evt_class) {
 		case HT_EVENT_CLASS_CRITICAL:
 		case HT_EVENT_CLASS_ERROR:
 		case HT_EVENT_CLASS_HW_FAULT:
 		case HT_EVENT_CLASS_WARNING:
 		case HT_EVENT_CLASS_INFO:
 			log_level = BIOS_DEBUG;
-			printk(log_level, "%s", event_class_string_decodes[evtClass]);
+			printk(log_level, "%s", event_class_string_decodes[evt_class]);
 			break;
 		default:
 			log_level = BIOS_DEBUG;
@@ -129,7 +129,7 @@ static void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
 		case HT_EVENT_COH_NODE_DISCOVERED:
 			{
 				printk(log_level, "HT_EVENT_COH_NODE_DISCOVERED");
-				sHtEventCohNodeDiscovered *evt = (sHtEventCohNodeDiscovered*)pEventData0;
+				sHtEventCohNodeDiscovered *evt = (sHtEventCohNodeDiscovered*)p_event_data_0;
 				printk(log_level, ": node %d link %d new node: %d",
 					evt->node, evt->link, evt->newNode);
 				dump_event_detail = 0;
@@ -146,7 +146,7 @@ static void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
 		case HT_EVENT_NCOH_DEVICE_FAILED:
 			{
 				printk(log_level, "%s", event_string_decode(event));
-				sHtEventNcohDeviceFailed *evt = (sHtEventNcohDeviceFailed*)pEventData0;
+				sHtEventNcohDeviceFailed *evt = (sHtEventNcohDeviceFailed*)p_event_data_0;
 				printk(log_level, ": node %d link %d depth: %d attempted_buid: %d",
 					evt->node, evt->link, evt->depth, evt->attempted_buid);
 				dump_event_detail = 0;
@@ -155,7 +155,7 @@ static void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
 		case HT_EVENT_NCOH_AUTO_DEPTH:
 			{
 				printk(log_level, "%s", event_string_decode(event));
-				sHtEventNcohAutoDepth *evt = (sHtEventNcohAutoDepth*)pEventData0;
+				sHtEventNcohAutoDepth *evt = (sHtEventNcohAutoDepth*)p_event_data_0;
 				printk(log_level, ": node %d link %d depth: %d",
 					evt->node, evt->link, evt->depth);
 				dump_event_detail = 0;
@@ -176,10 +176,10 @@ static void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
 	printk(log_level, "\n");
 
 	if (dump_event_detail) {
-		printk(BIOS_DEBUG, " event class: %02x\n event: %04x\n data: ", evtClass, event);
+		printk(BIOS_DEBUG, " event class: %02x\n event: %04x\n data: ", evt_class, event);
 
-		for (i = 0; i < *pEventData0; i++) {
-			printk(BIOS_DEBUG, " %02x ", *(pEventData0 + i));
+		for (i = 0; i < *p_event_data_0; i++) {
+			printk(BIOS_DEBUG, " %02x ", *(p_event_data_0 + i));
 		}
 		printk(BIOS_DEBUG, "\n");
 	}
@@ -412,28 +412,28 @@ bool amd_cpu_find_capability(u8 node, u8 cap_count, u8 *offset)
 }
 
 /**
- * AMD_checkLinkType - Compare desired link characteristics using a logical
+ * amd_check_link_type - Compare desired link characteristics using a logical
  *     link type mask.
  *
  * Returns the link characteristic mask.
  */
-u32 AMD_checkLinkType(u8 node, u8 regoff)
+u32 amd_check_link_type(u8 node, u8 regoff)
 {
 	u32 val;
 	u32 val2;
-	u32 linktype = 0;
+	u32 link_type = 0;
 
 	/* Check connect, init and coherency */
 	val = pci_read_config32(NODE_PCI(node, 0), regoff + 0x18);
 	val &= 0x1F;
 
 	if (val == 3)
-		linktype |= HTPHY_LINKTYPE_COHERENT;
+		link_type |= HTPHY_LINKTYPE_COHERENT;
 
 	if (val == 7)
-		linktype |= HTPHY_LINKTYPE_NONCOHERENT;
+		link_type |= HTPHY_LINKTYPE_NONCOHERENT;
 
-	if (linktype) {
+	if (link_type) {
 		/* Check gen3 */
 		val = pci_read_config32(NODE_PCI(node, 0), regoff + 0x08);
 		val = (val >> 8) & 0xf;
@@ -443,18 +443,18 @@ u32 AMD_checkLinkType(u8 node, u8 regoff)
 		}
 
 		if (val > 6)
-			linktype |= HTPHY_LINKTYPE_HT3;
+			link_type |= HTPHY_LINKTYPE_HT3;
 		else
-			linktype |= HTPHY_LINKTYPE_HT1;
+			link_type |= HTPHY_LINKTYPE_HT1;
 
 		/* Check ganged */
 		val = pci_read_config32(NODE_PCI(node, 0), (((regoff - 0x80) / 0x20) << 2) + 0x170);
 
 		if (val & 1)
-			linktype |= HTPHY_LINKTYPE_GANGED;
+			link_type |= HTPHY_LINKTYPE_GANGED;
 		else
-			linktype |= HTPHY_LINKTYPE_UNGANGED;
+			link_type |= HTPHY_LINKTYPE_UNGANGED;
 	}
 
-	return linktype;
+	return link_type;
 }
