@@ -17,22 +17,22 @@
 ------------------------------------------------*/
 PCIE_CFG ati_pcie_cfg = {
 	PCIE_ENABLE_STATIC_DEV_REMAP,	/* Config */
-	0,			/* ResetReleaseDelay */
-	0,			/* Gfx0Width */
-	0,			/* Gfx1Width */
-	0,			/* GfxPayload */
-	0,			/* GppPayload */
-	0,			/* PortDetect, filled by GppSbInit */
-	0,			/* PortHp */
-	0,			/* DbgConfig */
-	0,			/* DbgConfig2 */
-	0,			/* GfxLx */
-	0,			/* GppLx */
-	0,			/* NBSBLx */
-	0,			/* PortSlotInit */
-	0,			/* Gfx0Pwr */
-	0,			/* Gfx1Pwr */
-	0			/* GppPwr */
+	0,			/* reset_release_delay */
+	0,			/* gfx0_width */
+	0,			/* gfx1_width */
+	0,			/* gfx_payload */
+	0,			/* gpp_payload */
+	0,			/* port_detect, filled by GppSbInit */
+	0,			/* port_hp */
+	0,			/* dbg_config */
+	0,			/* dbg_config2 */
+	0,			/* gfx_lx */
+	0,			/* gpp_lx */
+	0,			/* nbsb_lx */
+	0,			/* port_slot_init */
+	0,			/* gfx0_pwr */
+	0,			/* gfx1_pwr */
+	0			/* gpp_pwr */
 };
 
 /*****************************************************************
@@ -49,14 +49,14 @@ static void pcie_power_off_gpp_ports(struct device *nb_dev, struct device *dev, 
 		(struct southbridge_amd_sr5650_config *)nb_dev->chip_info;
 	u32 state = cfg->port_enable;
 
-	if (!(ati_pcie_cfg.Config & PCIE_DISABLE_HIDE_UNUSED_PORTS))
-		state &= ati_pcie_cfg.PortDetect;
+	if (!(ati_pcie_cfg.config & PCIE_DISABLE_HIDE_UNUSED_PORTS))
+		state &= ati_pcie_cfg.port_detect;
 	state = ~state;
 	state &= (1 << 4) + (1 << 5) + (1 << 6) + (1 << 7);
 	state_save = state << 17;
 	/* Disable ports any that failed training */
 	for (i = 9; i <= 13; i++) {
-		if (!(ati_pcie_cfg.PortDetect & 1 << i)) {
+		if (!(ati_pcie_cfg.port_detect & 1 << i)) {
 			if ((port >= 9) && (port <= 13)) {
 				state |= (1 << (port + 7));
 			}
@@ -76,7 +76,7 @@ static void pcie_power_off_gpp_ports(struct device *nb_dev, struct device *dev, 
 			}
 		}
 	}
-	state &= !(ati_pcie_cfg.PortHp);
+	state &= !(ati_pcie_cfg.port_hp);
 	reg = nbmisc_read_index(nb_dev, 0x0c);
 	reg |= state;
 	nbmisc_write_index(nb_dev, 0x0c, reg);
@@ -85,9 +85,9 @@ static void pcie_power_off_gpp_ports(struct device *nb_dev, struct device *dev, 
 	reg |= state_save;
 	nbmisc_write_index(nb_dev, 0x08, reg);
 
-	if ((ati_pcie_cfg.Config & PCIE_OFF_UNUSED_GPP_LANES)
+	if ((ati_pcie_cfg.config & PCIE_OFF_UNUSED_GPP_LANES)
 	    && !(ati_pcie_cfg.
-		 Config & (PCIE_DISABLE_HIDE_UNUSED_PORTS +
+		 config & (PCIE_DISABLE_HIDE_UNUSED_PORTS +
 			   PCIE_GFX_COMPLIANCE))) {
 	}
 	/* step 3 Power Down Control for Southbridge */
@@ -753,12 +753,12 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 				return;
 			}
 			pcie_release_port_training(nb_dev, dev, hw_port);
-			if (!(ati_pcie_cfg.Config & PCIE_GPP_COMPLIANCE)) {
+			if (!(ati_pcie_cfg.config & PCIE_GPP_COMPLIANCE)) {
 				u8 res = pcie_train_port(nb_dev, dev, hw_port);
 				printk(BIOS_DEBUG, "%s: port=0x%x hw_port=0x%x result=%d\n",
 					__func__, port, hw_port, res);
 				if (res) {
-					ati_pcie_cfg.PortDetect |= 1 << port;
+					ati_pcie_cfg.port_detect |= 1 << port;
 				} else {
 					/* Even though nothing is attached to this port
 					 * the port needs to be "enabled" to obtain
@@ -857,7 +857,7 @@ void config_gpp_core(struct device *nb_dev, struct device *sb_dev)
 	u32 reg;
 
 	reg = nbmisc_read_index(nb_dev, 0x20);
-	if (ati_pcie_cfg.Config & PCIE_ENABLE_STATIC_DEV_REMAP)
+	if (ati_pcie_cfg.config & PCIE_ENABLE_STATIC_DEV_REMAP)
 		reg &= 0xfffffffd;	/* set bit1 = 0 */
 	else
 		reg |= 0x2;	/* set bit1 = 1 */
@@ -890,7 +890,7 @@ void pcie_config_misc_clk(struct device *nb_dev)
 	struct device *d0f1 = pcidev_on_root(0, 1);
 
 
-	if (ati_pcie_cfg.Config & PCIE_GFX_CLK_GATING) {
+	if (ati_pcie_cfg.config & PCIE_GFX_CLK_GATING) {
 		/* TXCLK Clock Gating */
 		set_nbmisc_enable_bits(nb_dev, 0x07, 3 << 0, 3 << 0);
 		set_nbmisc_enable_bits(nb_dev, 0x07, 1 << 22, 1 << 22);
@@ -903,7 +903,7 @@ void pcie_config_misc_clk(struct device *nb_dev)
 		pci_write_config32(d0f1, 0x94, reg);
 	}
 
-	if (ati_pcie_cfg.Config & PCIE_GPP_CLK_GATING) {
+	if (ati_pcie_cfg.config & PCIE_GPP_CLK_GATING) {
 		/* TXCLK Clock Gating */
 		set_nbmisc_enable_bits(nb_dev, 0x07, 3 << 4, 3 << 4);
 		set_nbmisc_enable_bits(nb_dev, 0x07, 1 << 22, 1 << 22);
