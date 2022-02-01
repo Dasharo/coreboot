@@ -492,7 +492,7 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 				continue;
 			}
 
-			if (p_dat->nb->handleSpecialLinkCase(current_node, current_link, p_dat, p_dat->nb))
+			if (p_dat->nb->handle_special_link_case(current_node, current_link, p_dat, p_dat->nb))
 			{
 				continue;
 			}
@@ -540,10 +540,10 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 				{
 					/* Stop all links which are connected, coherent, and ready */
 					if (p_dat->nb->verify_link_is_coherent(current_node, current_link, p_dat->nb))
-						p_dat->nb->stopLink(current_node, current_link, p_dat->nb);
+						p_dat->nb->is_link(current_node, current_link, p_dat->nb);
 				}
 
-				for (node_to_kill = 0; node_to_kill < p_dat->nb->maxNodes; node_to_kill++)
+				for (node_to_kill = 0; node_to_kill < p_dat->nb->max_nodes; node_to_kill++)
 				{
 					p_dat->nb->write_full_routing_table(0, node_to_kill, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
 				}
@@ -559,9 +559,9 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			if (token == 0)
 			{
 				p_dat->nodes_discovered++;
-				ASSERT(p_dat->nodes_discovered < p_dat->nb->maxNodes);
+				ASSERT(p_dat->nodes_discovered < p_dat->nb->max_nodes);
 				/* Check the capability of northbridges against the currently known configuration */
-				if (!p_dat->nb->isCapable(current_node + 1, p_dat, p_dat->nb))
+				if (!p_dat->nb->is_capable(current_node + 1, p_dat, p_dat->nb))
 				{
 					u8 node_to_kill;
 
@@ -584,7 +584,7 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 					current_node = 0;
 					p_dat->total_links = 0;
 
-					for (node_to_kill = 0; node_to_kill < p_dat->nb->maxNodes; node_to_kill++)
+					for (node_to_kill = 0; node_to_kill < p_dat->nb->max_nodes; node_to_kill++)
 					{
 						p_dat->nb->write_full_routing_table(0, node_to_kill, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
 					}
@@ -857,9 +857,9 @@ static void lookup_compute_and_load_routing_tables(sMainData *p_dat)
 			/* Clean up discovery 'footprint' that otherwise remains in the routing table.  It didn't hurt
 			 * anything, but might cause confusion during debug and validation.  Do this by setting the
 			 * route back to all self routes. Since it's the node that would be one more than actually installed,
-			 * this only applies if less than maxNodes were found.
+			 * this only applies if less than max_nodes were found.
 			 */
-			if (size < p_dat->nb->maxNodes)
+			if (size < p_dat->nb->max_nodes)
 			{
 				p_dat->nb->write_full_routing_table(i, size, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
 			}
@@ -914,7 +914,7 @@ static void finialize_coherent_init(sMainData *p_dat)
 	u8 total_cores = 0;
 	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
 	{
-		total_cores += p_dat->nb->getNumCoresOnNode(cur_node, p_dat->nb);
+		total_cores += p_dat->nb->get_num_cores_on_node(cur_node, p_dat->nb);
 	}
 
 	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
@@ -1001,7 +1001,7 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 	SBDFO last_sbdfo = ILLEGAL_SBDFO;
 	u8 last_link = 0;
 
-	ASSERT(node < p_dat->nb->maxNodes && link < p_dat->nb->max_links);
+	ASSERT(node < p_dat->nb->max_nodes && link < p_dat->nb->max_links);
 
 	if ((p_dat->ht_block->amd_cb_override_bus_numbers == NULL)
 	   || !p_dat->ht_block->amd_cb_override_bus_numbers(node, link, &sec_bus, &sub_bus))
@@ -1051,7 +1051,7 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 		p_dat->auto_bus_current += p_dat->ht_block->auto_bus_increment;
 	}
 
-	p_dat->nb->setCFGAddrMap(p_dat->used_cfg_map_entires, sec_bus, sub_bus, node, link, p_dat, p_dat->nb);
+	p_dat->nb->set_cfg_addr_map(p_dat->used_cfg_map_entires, sec_bus, sub_bus, node, link, p_dat, p_dat->nb);
 	p_dat->used_cfg_map_entires++;
 
 	if ((p_dat->ht_block->amd_cb_manual_buid_swap_list != NULL)
@@ -1757,7 +1757,7 @@ static void traffic_distribution(sMainData *p_dat)
 	if (link_count == 1)
 		return; /*  Don't setup Traffic Distribution if only one link is being used */
 
-	p_dat->nb->writeTrafficDistribution(links_01, links_10, p_dat->nb);
+	p_dat->nb->write_traffic_distribution(links_01, links_10, p_dat->nb);
 #endif /* HT_BUILD_NC_ONLY */
 }
 
@@ -1794,7 +1794,7 @@ static void tuning(sMainData *p_dat)
 		if ((p_dat->ht_block->amd_cb_customize_buffers == NULL)
 		   || !p_dat->ht_block->amd_cb_customize_buffers(i))
 		{
-			p_dat->nb->bufferOptimizations(i, p_dat, p_dat->nb);
+			p_dat->nb->buffer_optimizations(i, p_dat, p_dat->nb);
 		}
 	}
 }
@@ -1852,8 +1852,8 @@ void amd_ht_initialize(AMD_HTBLOCK *p_block)
 
 		p_dat.ht_block = p_block;
 		p_dat.nb = &nb;
-		p_dat.sys_mp_cap = nb.maxNodes;
-		nb.isCapable(0, &p_dat, p_dat.nb);
+		p_dat.sys_mp_cap = nb.max_nodes;
+		nb.is_capable(0, &p_dat, p_dat.nb);
 		coherent_init(&p_dat);
 
 		p_dat.auto_bus_current = p_block->auto_bus_start;
