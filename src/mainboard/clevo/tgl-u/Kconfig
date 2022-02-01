@@ -39,7 +39,7 @@ config MAINBOARD_PART_NUMBER
 
 config MAINBOARD_FAMILY
 	string
-	default "Clevo_tgl-u"
+	default "Not Applicable" # Match stock firmware
 
 config SUBSYSTEM_VENDOR_ID
 	hex
