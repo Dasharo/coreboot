@@ -778,7 +778,7 @@ static void lookup_compute_and_load_routing_tables(sMainData *p_dat)
 	p_topology_list = p_dat->ht_block->topolist;
 	if (p_topology_list == NULL)
 	{
-		getAmdTopolist(&p_topology_list);
+		get_amd_topolist(&p_topology_list);
 	}
 
 	p_selected = *p_topology_list;

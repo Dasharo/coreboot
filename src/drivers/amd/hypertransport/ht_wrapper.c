@@ -186,12 +186,12 @@ static void amd_cb_event_notify (u8 evtClass, u16 event, const u8 *pEventData0)
 }
 
 /**
- * void getAmdTopolist(u8 ***p)
+ * void get_amd_topolist(u8 ***p)
  *
  *  point to the stock topo list array
  *
  */
-void getAmdTopolist(u8 ***p)
+void get_amd_topolist(u8 ***p)
 {
 	*p = (u8 **)amd_topo_list;
 }
