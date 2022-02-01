@@ -153,21 +153,21 @@ static unsigned long acpi_fill_slit(unsigned long current)
 
 void update_ssdtx(void *ssdtx, int i)
 {
-	u8 *PCI;
-	u8 *HCIN;
-	u8 *UID;
+	u8 *pci;
+	u8 *hcin;
+	u8 *uid;
 
-	PCI = ssdtx + 0x32;
-	HCIN = ssdtx + 0x39;
-	UID = ssdtx + 0x40;
+	pci = ssdtx + 0x32;
+	hcin = ssdtx + 0x39;
+	uid = ssdtx + 0x40;
 
 	if (i < 7) {
-		*PCI = (u8) ('4' + i - 1);
+		*pci = (u8) ('4' + i - 1);
 	} else {
-		*PCI = (u8) ('A' + i - 1 - 6);
+		*pci = (u8) ('A' + i - 1 - 6);
 	}
-	*HCIN = (u8) i;
-	*UID = (u8) (i + 3);
+	*hcin = (u8) i;
+	*uid = (u8) (i + 3);
 
 	/* FIXME: need to update the GSI id in the ssdtx too */
 
