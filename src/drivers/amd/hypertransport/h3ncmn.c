@@ -144,11 +144,11 @@ static void set_ht_control_register_bits(SBDFO reg, u8 hi_bit, u8 lo_bit, u32 *p
 	else
 		mask = (u32)0xFFFFFFFF;
 
-	AmdPCIRead(reg, &temp);
+	amd_pci_read(reg, &temp);
 	temp &= ~(mask << lo_bit);
 	temp |= (*p_value & mask) << lo_bit;
 	temp &= (u32)HT_CONTROL_CLEAR_CRC;
-	AmdPCIWrite(reg, &temp);
+	amd_pci_write(reg, &temp);
 }
 
 /***************************************************************************//**
@@ -179,7 +179,7 @@ static void write_routing_table(u8 node, u8 target, u8 link, cNorthBridge *nb)
 #ifndef HT_BUILD_NC_ONLY
 	u32 temp = (nb->self_route_response_mask | nb->self_route_request_mask) << (link + 1);
 	ASSERT((node < nb->max_nodes) && (target < nb->max_nodes) && (link < nb->max_links));
-	AmdPCIWrite(MAKE_SBDFO(make_pci_segment_from_node(node),
+	amd_pci_write(MAKE_SBDFO(make_pci_segment_from_node(node),
 			make_pci_bus_from_node(node),
 			make_pci_device_from_node(node),
 			CPU_HTNB_FUNC_00,
@@ -326,7 +326,7 @@ static BOOL verify_link_is_coherent(u8 node, u8 link, cNorthBridge *nb)
 	link_base = make_link_base(node, link);
 
 	/*  FN0_98/A4/C4 = LDT Type Register */
-	AmdPCIRead(link_base + HTHOST_LINK_TYPE_REG, &link_type);
+	amd_pci_read(link_base + HTHOST_LINK_TYPE_REG, &link_type);
 
 	/*  Verify LinkCon = 1, INIT_COMPLETE = 1, NC = 0, UniP-cLDT = 0, LinkConPend = 0 */
 	return (link_type & HTHOST_TYPE_MASK) ==  HTHOST_TYPE_COHERENT;
@@ -397,7 +397,7 @@ static BOOL read_true_link_fail_status(u8 node, u8 link, sMainData *p_dat, cNort
 					evt.eSize = sizeof(sHtEventHWHtCrc);
 					evt.node = node;
 					evt.link = link;
-					evt.laneMask = (uint8)crc;
+					evt.laneMask = (u8)crc;
 
 					p_dat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_HW_FAULT,
 									HT_EVENT_HW_HTCRC,
@@ -728,7 +728,7 @@ static void write_full_routing_table(u8 node, u8 target, u8 req_link, u8 rsp_lin
 	value |= (u32)1 << nb->broadcast_self_bit;
 	value |= (u32)bc_links << (nb->broadcast_self_bit + 1);
 
-	AmdPCIWrite(MAKE_SBDFO(make_pci_segment_from_node(node),
+	amd_pci_write(MAKE_SBDFO(make_pci_segment_from_node(node),
 				make_pci_bus_from_node(node),
 				make_pci_device_from_node(node),
 				CPU_HTNB_FUNC_00,
@@ -1093,7 +1093,7 @@ static BOOL verify_link_is_non_coherent(u8 node, u8 link, cNorthBridge *nb)
 	link_base = make_link_base(node, link);
 
 	/* FN0_98/A4/C4 = LDT Type Register */
-	AmdPCIRead(link_base + HTHOST_LINK_TYPE_REG, &link_type);
+	amd_pci_read(link_base + HTHOST_LINK_TYPE_REG, &link_type);
 
 	/* Verify linkCon = 1, INIT_COMPLETE = 1, NC = 0, UniP-cLDT = 0, LinkConPend = 0 */
 	return (link_type & HTHOST_TYPE_MASK) ==  HTHOST_TYPE_NONCOHERENT;
@@ -1137,7 +1137,7 @@ static void  ht3_set_cfg_addr_map(u8 cfg_map_index, u8 sec_bus, u8 sub_bus, u8 t
 	temp = ((u32)sub_bus << 24) + ((u32)sec_bus << 16) + ((u32)target_link << 8)
 		+ ((u32)target_node << 4) + (u32)3;
 	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
-		AmdPCIWrite(MAKE_SBDFO(make_pci_segment_from_node(cur_node),
+		amd_pci_write(MAKE_SBDFO(make_pci_segment_from_node(cur_node),
 					make_pci_bus_from_node(cur_node),
 					make_pci_device_from_node(cur_node),
 					CPU_ADDR_FUNC_01,
@@ -1185,7 +1185,7 @@ static void ht1_set_cfg_addr_map(u8 cfg_map_index, u8 sec_bus, u8 sub_bus, u8 ta
 	temp = ((u32)sub_bus << 24) + ((u32)sec_bus << 16) + ((u32)target_link << 8)
 		+ ((u32)target_node << 4) + (u32)3;
 	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
-		 AmdPCIWrite(MAKE_SBDFO(make_pci_segment_from_node(cur_node),
+		 amd_pci_write(MAKE_SBDFO(make_pci_segment_from_node(cur_node),
 					make_pci_bus_from_node(cur_node),
 					make_pci_device_from_node(cur_node),
 					CPU_ADDR_FUNC_01,
@@ -1476,7 +1476,7 @@ static void gather_link_data(sMainData *p_dat, cNorthBridge *nb)
 			if (p_dat->ht_block->AMD_CB_DeviceCapOverride)
 			{
 				link_base &= 0xFFFFF000;
-				AmdPCIRead(link_base, &temp);
+				amd_pci_read(link_base, &temp);
 
 				p_dat->ht_block->AMD_CB_DeviceCapOverride(
 					p_dat->port_list[i].node_id,
@@ -1673,7 +1673,7 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 				amd_pci_find_next_cap(&current_ptr);
 				if (current_ptr != ILLEGAL_SBDFO)
 				{
-					AmdPCIRead(current_ptr, &temp);
+					amd_pci_read(current_ptr, &temp);
 					/* HyperTransport Retry Capability? */
 					if (IS_HT_RETRY_CAPABILITY(temp))
 					{
@@ -1719,7 +1719,7 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 				amd_pci_find_next_cap(&current_ptr);
 				if (current_ptr != ILLEGAL_SBDFO)
 				{
-					AmdPCIRead(current_ptr, &temp);
+					amd_pci_read(current_ptr, &temp);
 					/* HyperTransport Gen3 Capability? */
 					if (IS_HT_GEN3_CAPABILITY(temp))
 					{
@@ -1932,13 +1932,13 @@ static void ht1_write_traffic_distribution(u32 links01, u32 links10, cNorthBridg
 	 */
 
 	/* Get the routes, and hang on to them, we will write them back updated. */
-	AmdPCIRead(MAKE_SBDFO(make_pci_segment_from_node(0),
+	amd_pci_read(MAKE_SBDFO(make_pci_segment_from_node(0),
 				make_pci_bus_from_node(0),
 				make_pci_device_from_node(0),
 				CPU_HTNB_FUNC_00,
 				REG_ROUTE1_0X44),
 				&route01);
-	AmdPCIRead(MAKE_SBDFO(make_pci_segment_from_node(1),
+	amd_pci_read(MAKE_SBDFO(make_pci_segment_from_node(1),
 				make_pci_bus_from_node(1),
 				make_pci_device_from_node(1),
 				CPU_HTNB_FUNC_00,
@@ -1962,14 +1962,14 @@ static void ht1_write_traffic_distribution(u32 links01, u32 links10, cNorthBridg
 	route01 = (route01 & ~0x0E00) | ((u32)0x0100 << (rsp0 + 1));
 	route10 = (route10 & ~0x0E00) | ((u32)0x0100 << (rsp1 + 1));
 
-	AmdPCIWrite(MAKE_SBDFO(make_pci_segment_from_node(0),
+	amd_pci_write(MAKE_SBDFO(make_pci_segment_from_node(0),
 				make_pci_bus_from_node(0),
 				make_pci_device_from_node(0),
 				CPU_HTNB_FUNC_00,
 				REG_ROUTE1_0X44),
 				&route01);
 
-	AmdPCIWrite(MAKE_SBDFO(make_pci_segment_from_node(1),
+	amd_pci_write(MAKE_SBDFO(make_pci_segment_from_node(1),
 				make_pci_bus_from_node(1),
 				make_pci_device_from_node(1),
 				CPU_HTNB_FUNC_00,

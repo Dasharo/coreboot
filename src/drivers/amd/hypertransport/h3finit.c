@@ -1070,7 +1070,7 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			{
 				amd_pci_find_next_cap(&current_ptr);
 				ASSERT(current_ptr != ILLEGAL_SBDFO);
-				AmdPCIRead(current_ptr, &temp);
+				amd_pci_read(current_ptr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
 
 			current_buid = *p_swap_ptr;
@@ -1108,7 +1108,7 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			{
 				amd_pci_find_next_cap(&current_ptr);
 				ASSERT(current_ptr != ILLEGAL_SBDFO);
-				AmdPCIRead(current_ptr, &temp);
+				amd_pci_read(current_ptr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
 			p_dat->port_list[p_dat->total_links * 2 + 1].pointer = current_ptr;
 			last_sbdfo = current_ptr;
@@ -1145,7 +1145,7 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 		{
 			current_ptr = MAKE_SBDFO(0, sec_bus, 0, 0, 0);
 
-			AmdPCIRead(current_ptr, &temp);
+			amd_pci_read(current_ptr, &temp);
 			if (temp == 0xFFFFFFFF)
 				/* No device found at current_ptr */
 				break;
@@ -1199,7 +1199,7 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			{
 				amd_pci_find_next_cap(&current_ptr);
 				ASSERT(current_ptr != ILLEGAL_SBDFO);
-				AmdPCIRead(current_ptr, &temp);
+				amd_pci_read(current_ptr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
 
 			amd_pci_read_bits(current_ptr, 25, 21, &unit_id_cnt);
@@ -1213,8 +1213,8 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 					evt.node = node;
 					evt.link = link;
 					evt.depth = depth;
-					evt.current_buid = (uint8)current_buid;
-					evt.unit_count = (uint8)unit_id_cnt;
+					evt.current_buid = (u8)current_buid;
+					evt.unit_count = (u8)unit_id_cnt;
 
 					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_BUID_EXCEED,(u8 *)&evt);
 				}
@@ -1236,7 +1236,7 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 					evt.node = node;
 					evt.link = link;
 					evt.depth = depth;
-					evt.attempted_buid = (uint8)current_buid;
+					evt.attempted_buid = (u8)current_buid;
 
 					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_DEVICE_FAILED,(u8 *)&evt);
 				}
@@ -1668,7 +1668,7 @@ static void hammer_sublink_fixup(sMainData *p_dat)
 					temp = p_dat->port_list[hi_index].composite_frequency_cap;
 
 					/*  Remove hi_freq from the list of valid frequencies */
-					temp = temp & ~((uint32)1 << hi_freq);
+					temp = temp & ~((u32)1 << hi_freq);
 					ASSERT (temp != 0);
 					p_dat->port_list[hi_index].composite_frequency_cap = temp;
 					p_dat->port_list[hi_index + 1].composite_frequency_cap = temp;
@@ -1815,7 +1815,7 @@ static BOOL is_sanity_check_ok(void)
 {
 	uint64 q_value;
 
-	AmdMSRRead(LAPIC_BASE_MSR, &q_value);
+	amd_msr_read(LAPIC_BASE_MSR, &q_value);
 
 	return ((q_value.lo & LAPIC_BASE_MSR_BOOTSTRAP_PROCESSOR) != 0);
 }

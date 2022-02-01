@@ -19,7 +19,7 @@ void CALLCONV amd_pci_read_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *p_value)
 {
 	ASSERT(highbit < 32 && lowbit < 32 && highbit >= lowbit && (loc & 3) == 0);
 
-	AmdPCIRead(loc, p_value);
+	amd_pci_read(loc, p_value);
 	*p_value = *p_value >> lowbit;  /* Shift */
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
@@ -40,10 +40,10 @@ void CALLCONV amd_pci_write_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *p_value)
 	else
 		mask = (u32)0xFFFFFFFF;
 
-	AmdPCIRead(loc, &temp);
+	amd_pci_read(loc, &temp);
 	temp &= ~(mask << lowbit);
 	temp |= (*p_value & mask) << lowbit;
-	AmdPCIWrite(loc, &temp);
+	amd_pci_write(loc, &temp);
 }
 
 
@@ -69,7 +69,7 @@ void CALLCONV amd_pci_find_next_cap(SBDFO *pCurrent)
 	*pCurrent = ILLEGAL_SBDFO;
 
 	/* Verify that the SBDFO points to a valid PCI device SANITY CHECK */
-	AmdPCIRead(base, &temp);
+	amd_pci_read(base, &temp);
 	if (temp == 0xFFFFFFFF)
 		return; /* There is no device at this address */
 
@@ -191,21 +191,21 @@ u32 CALLCONV amd_rotate_left(u32 value, u8 size, u32 count)
 }
 
 
-void CALLCONV AmdPCIRead(SBDFO loc, u32 *Value)
+void CALLCONV amd_pci_read(SBDFO loc, u32 *Value)
 {
 	/* Use coreboot PCI functions */
 	*Value = pci_read_config32((loc & 0xFFFFF000), SBDFO_OFF(loc));
 }
 
 
-void CALLCONV AmdPCIWrite(SBDFO loc, u32 *Value)
+void CALLCONV amd_pci_write(SBDFO loc, u32 *Value)
 {
 	/* Use coreboot PCI functions */
 	pci_write_config32((loc & 0xFFFFF000), SBDFO_OFF(loc), *Value);
 }
 
 
-void CALLCONV AmdMSRRead(uint32 Address, uint64 *Value)
+void CALLCONV amd_msr_read(u32 Address, uint64 *Value)
 {
 	msr_t msr;
 
@@ -215,7 +215,7 @@ void CALLCONV AmdMSRRead(uint32 Address, uint64 *Value)
 }
 
 
-void CALLCONV AmdMSRWrite(uint32 Address, uint64 *Value)
+void CALLCONV amd_msr_write(u32 Address, uint64 *Value)
 {
 	msr_t msr;
 

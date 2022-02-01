@@ -15,15 +15,15 @@
 	#define STOP_HERE
 #endif
 
-void CALLCONV amd_pci_read_bits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
-void CALLCONV amd_pci_write_bits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
+void CALLCONV amd_pci_read_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *value);
+void CALLCONV amd_pci_write_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *value);
 void CALLCONV amd_pci_find_next_cap(SBDFO *current);
 
-void CALLCONV amd_memcpy(void *dst, const void *src, uint32 length);
-void CALLCONV amd_memset(void *buf, uint8 val, uint32 length);
+void CALLCONV amd_memcpy(void *dst, const void *src, u32 length);
+void CALLCONV amd_memset(void *buf, u8 val, u32 length);
 
-uint8 CALLCONV amd_bit_scan_reverse(uint32 value);
-uint32 CALLCONV amd_rotate_right(uint32 value, uint8 size, uint32 count);
-uint32 CALLCONV amd_rotate_left(uint32 value, uint8 size, uint32 count);
+u8 CALLCONV amd_bit_scan_reverse(u32 value);
+u32 CALLCONV amd_rotate_right(u32 value, u8 size, u32 count);
+u32 CALLCONV amd_rotate_left(u32 value, u8 size, u32 count);
 
 #endif
