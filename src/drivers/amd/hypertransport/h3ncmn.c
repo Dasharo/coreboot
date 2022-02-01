@@ -82,7 +82,7 @@
 /***************************************************************************//**
  *
  * SBDFO
- * makeLinkBase(u8 current_node, u8 current_link)
+ * make_link_base(u8 current_node, u8 current_link)
  *
  *  Description:
  *	Private to northbridge implementation. Return the HT Host capability base
@@ -93,30 +93,30 @@
  *	@param[in]  link    = the link
  *
  *****************************************************************************/
-static SBDFO makeLinkBase(u8 node, u8 link)
+static SBDFO make_link_base(u8 node, u8 link)
 {
-	SBDFO linkBase;
+	SBDFO link_base;
 
 	/* With rev F can not be called with a 4th link or with the sublinks */
 	if (link < 4)
-		linkBase = MAKE_SBDFO(makePCISegmentFromNode(node),
+		link_base = MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_HTNB_FUNC_00,
 				REG_HT_CAP_BASE_0X80 + link*HT_HOST_CAP_SIZE);
 	else
-		linkBase = MAKE_SBDFO(makePCISegmentFromNode(node),
+		link_base = MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_HTNB_FUNC_04,
 				REG_HT_CAP_BASE_0X80 + (link-4)*HT_HOST_CAP_SIZE);
-	return linkBase;
+	return link_base;
 }
 
 /***************************************************************************//**
  *
  * void
- * setHtControlRegisterBits(SBDFO reg, u8 hiBit, u8 loBit, u32 *pValue)
+ * set_ht_control_register_bits(SBDFO reg, u8 hi_bit, u8 lo_bit, u32 *p_value)
  *
  *  Description:
  *	Private to northbridge implementation. Provide a common routine for accessing the
@@ -126,27 +126,27 @@ static SBDFO makeLinkBase(u8 node, u8 link)
  *
  *  Parameters:
  *	@param[in]  reg    = the PCI config address the control register
- *	@param[in]  hiBit  = the high bit number
- *	@param[in]  loBit  = the low bit number
- *	@param[in]  pValue = the value to write to that bit range. Bit 0 => loBit.
+ *	@param[in]  hi_bit  = the high bit number
+ *	@param[in]  lo_bit  = the low bit number
+ *	@param[in]  p_value = the value to write to that bit range. Bit 0 => lo_bit.
  *
  *****************************************************************************/
-static void setHtControlRegisterBits(SBDFO reg, u8 hiBit, u8 loBit, u32 *pValue)
+static void set_ht_control_register_bits(SBDFO reg, u8 hi_bit, u8 lo_bit, u32 *p_value)
 {
 	u32 temp, mask;
 
-	ASSERT((hiBit < 32) && (loBit < 32) && (hiBit >= loBit) && ((reg & 0x3) == 0));
-	ASSERT((hiBit < 8) || (loBit > 9));
+	ASSERT((hi_bit < 32) && (lo_bit < 32) && (hi_bit >= lo_bit) && ((reg & 0x3) == 0));
+	ASSERT((hi_bit < 8) || (lo_bit > 9));
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
-	if ((hiBit-loBit) != 31)
-		mask = (((u32)1 << (hiBit - loBit + 1)) - 1);
+	if ((hi_bit-lo_bit) != 31)
+		mask = (((u32)1 << (hi_bit - lo_bit + 1)) - 1);
 	else
 		mask = (u32)0xFFFFFFFF;
 
 	AmdPCIRead(reg, &temp);
-	temp &= ~(mask << loBit);
-	temp |= (*pValue & mask) << loBit;
+	temp &= ~(mask << lo_bit);
+	temp |= (*p_value & mask) << lo_bit;
 	temp &= (u32)HT_CONTROL_CLEAR_CRC;
 	AmdPCIWrite(reg, &temp);
 }
@@ -154,12 +154,12 @@ static void setHtControlRegisterBits(SBDFO reg, u8 hiBit, u8 loBit, u32 *pValue)
 /***************************************************************************//**
  *
  * static void
- * writeRoutingTable(u8 node, u8 target, u8 Link, cNorthBridge *nb)
+ * write_routing_table(u8 node, u8 target, u8 Link, cNorthBridge *nb)
  *
  *  Description:
  *	 This routine will modify the routing tables on the
  *	 SourceNode to cause it to route both request and response traffic to the
- *	 targetNode through the specified Link.
+ *	 target_node through the specified Link.
  *
  *	 NOTE: This routine is to be used for early discovery and initialization.  The
  *	 final routing tables must be loaded some other way because this
@@ -174,16 +174,16 @@ static void setHtControlRegisterBits(SBDFO reg, u8 hiBit, u8 loBit, u32 *pValue)
  *
  *****************************************************************************/
 
-static void writeRoutingTable(u8 node, u8 target, u8 link, cNorthBridge *nb)
+static void write_routing_table(u8 node, u8 target, u8 link, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u32 temp = (nb->selfRouteResponseMask | nb->selfRouteRequestMask) << (link + 1);
-	ASSERT((node < nb->maxNodes) && (target < nb->maxNodes) && (link < nb->maxLinks));
+	ASSERT((node < nb->max_nodes) && (target < nb->max_nodes) && (link < nb->maxLinks));
 	AmdPCIWrite(MAKE_SBDFO(makePCISegmentFromNode(node),
 			makePCIBusFromNode(node),
 			makePCIDeviceFromNode(node),
 			CPU_HTNB_FUNC_00,
-			REG_ROUTE0_0X40 + target*4),
+			REG_ROUTE0_0X40 + target * 4),
 			&temp);
 #else
 	STOP_HERE;
@@ -193,22 +193,22 @@ static void writeRoutingTable(u8 node, u8 target, u8 link, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * writeNodeID(u8 node, u8 nodeID, cNorthBridge *nb)
+ * write_node_id(u8 node, u8 node_id, cNorthBridge *nb)
  *
  *  Description:
  *	Modifies the node_id register on the target node
  *
  *  Parameters:
  *	@param[in] node    = the node that will have its node_id altered.
- *	@param[in] nodeID  = the new value for node_id
+ *	@param[in] node_id  = the new value for node_id
  *	@param[in] *nb     = this northbridge
  *
  *****************************************************************************/
 
-static void writeNodeID(u8 node, u8 nodeID, cNorthBridge *nb)
+static void write_node_id(u8 node, u8 node_id, cNorthBridge *nb)
 {
 	u32 temp;
-	ASSERT((node < nb->maxNodes) && (nodeID < nb->maxNodes));
+	ASSERT((node < nb->max_nodes) && (node_id < nb->max_nodes));
 	if (is_fam15h()) {
 		temp = 1;
 		amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
@@ -218,7 +218,7 @@ static void writeNodeID(u8 node, u8 nodeID, cNorthBridge *nb)
 					REG_NORTHBRIDGE_CFG_3X8C),
 					22, 22, &temp);
 	}
-	temp = nodeID;
+	temp = node_id;
 	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
@@ -230,7 +230,7 @@ static void writeNodeID(u8 node, u8 nodeID, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * readDefLnk(u8 node, cNorthBridge *nb)
+ * read_def_lnk(u8 node, cNorthBridge *nb)
  *
  *  Description:
  *	 Read the DefLnk (the source link of the current packet)
@@ -246,7 +246,7 @@ static void writeNodeID(u8 node, u8 nodeID, cNorthBridge *nb)
  *
  *****************************************************************************/
 
-static u8 readDefLnk(u8 node, cNorthBridge *nb)
+static u8 read_def_lnk(u8 node, cNorthBridge *nb)
 {
 	u32 deflink = 0;
 	SBDFO licr;
@@ -258,7 +258,7 @@ static u8 readDefLnk(u8 node, cNorthBridge *nb)
 			CPU_HTNB_FUNC_00,
 			REG_LINK_INIT_CONTROL_0X6C);
 
-	ASSERT((node < nb->maxNodes));
+	ASSERT((node < nb->max_nodes));
 	amd_pci_read_bits(licr, 3, 2, &deflink);
 	amd_pci_read_bits(licr, 8, 8, &temp);	/* on rev F, this bit is reserved == 0 */
 	deflink |= temp << 2;
@@ -268,7 +268,7 @@ static u8 readDefLnk(u8 node, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * enableRoutingTables(u8 node, cNorthBridge *nb)
+ * enable_routing_tables(u8 node, cNorthBridge *nb)
  *
  *  Description:
  *	Turns routing tables on for a given node
@@ -279,10 +279,10 @@ static u8 readDefLnk(u8 node, cNorthBridge *nb)
  *
  *****************************************************************************/
 
-static void enableRoutingTables(u8 node, cNorthBridge *nb)
+static void enable_routing_tables(u8 node, cNorthBridge *nb)
 {
 	u32 temp = 0;
-	ASSERT((node < nb->maxNodes));
+	ASSERT((node < nb->max_nodes));
 	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
@@ -295,7 +295,7 @@ static void enableRoutingTables(u8 node, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static BOOL
- * verifyLinkIsCoherent(u8 node, u8 Link, cNorthBridge *nbk)
+ * verify_link_is_coherent(u8 node, u8 Link, cNorthBridge *nbk)
  *
  *  Description:
  *	Verify that the link is coherent, connected, and ready
@@ -314,22 +314,22 @@ static void enableRoutingTables(u8 node, cNorthBridge *nb)
  *
  *****************************************************************************/
 
-static BOOL verifyLinkIsCoherent(u8 node, u8 link, cNorthBridge *nb)
+static BOOL verify_link_is_coherent(u8 node, u8 link, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 
-	u32 linkType;
-	SBDFO linkBase;
+	u32 link_type;
+	SBDFO link_base;
 
-	ASSERT((node < nb->maxNodes) && (link < nb->maxLinks));
+	ASSERT((node < nb->max_nodes) && (link < nb->maxLinks));
 
-	linkBase = makeLinkBase(node, link);
+	link_base = make_link_base(node, link);
 
 	/*  FN0_98/A4/C4 = LDT Type Register */
-	AmdPCIRead(linkBase + HTHOST_LINK_TYPE_REG, &linkType);
+	AmdPCIRead(link_base + HTHOST_LINK_TYPE_REG, &link_type);
 
 	/*  Verify LinkCon = 1, INIT_COMPLETE = 1, NC = 0, UniP-cLDT = 0, LinkConPend = 0 */
-	return (linkType & HTHOST_TYPE_MASK) ==  HTHOST_TYPE_COHERENT;
+	return (link_type & HTHOST_TYPE_MASK) ==  HTHOST_TYPE_COHERENT;
 #else
 	return 0;
 #endif /* HT_BUILD_NC_ONLY */
@@ -338,7 +338,7 @@ static BOOL verifyLinkIsCoherent(u8 node, u8 link, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static bool
- * readTrueLinkFailStatus(u8 node, u8 link, sMainData *pDat, cNorthBridge *nb)
+ * read_true_link_fail_status(u8 node, u8 link, sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	Return the LinkFailed status AFTER an attempt is made to clear the bit.
@@ -356,32 +356,32 @@ static BOOL verifyLinkIsCoherent(u8 node, u8 link, cNorthBridge *nb)
  *  Parameters:
  *	@param[in]    node      = the node that will be examined
  *	@param[in]    link      = the link on that node to examine
- *	@param[in]    *pDat = access to call back routine
+ *	@param[in]    *p_dat = access to call back routine
  *	@param[in]    *nb       = this northbridge
  *	@return                   true - the link is not connected or has hard error
  *	                          false- if the link is connected
  *
  *****************************************************************************/
 
-static BOOL readTrueLinkFailStatus(u8 node, u8 link, sMainData *pDat, cNorthBridge *nb)
+static BOOL read_true_link_fail_status(u8 node, u8 link, sMainData *p_dat, cNorthBridge *nb)
 {
 	u32 before, after, unconnected, crc;
-	SBDFO linkBase;
+	SBDFO link_base;
 
-	ASSERT((node < nb->maxNodes) && (link < nb->maxLinks));
+	ASSERT((node < nb->max_nodes) && (link < nb->maxLinks));
 
-	linkBase = makeLinkBase(node, link);
+	link_base = make_link_base(node, link);
 
 	/* Save the CRC status before doing anything else.
 	 * Read, Clear, the Re-read the error bits in the Link Control Register
 	 * FN0_84/A4/C4[4] = LinkFail bit
 	 * and the connection status, TransOff and EndOfChain
 	 */
-	amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 9, 8, &crc);
-	amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 4, 4, &before);
-	setHtControlRegisterBits(linkBase + HTHOST_LINK_CONTROL_REG, 4, 4, &before);
-	amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 4, 4, &after);
-	amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 7, 6, &unconnected);
+	amd_pci_read_bits(link_base + HTHOST_LINK_CONTROL_REG, 9, 8, &crc);
+	amd_pci_read_bits(link_base + HTHOST_LINK_CONTROL_REG, 4, 4, &before);
+	set_ht_control_register_bits(link_base + HTHOST_LINK_CONTROL_REG, 4, 4, &before);
+	amd_pci_read_bits(link_base + HTHOST_LINK_CONTROL_REG, 4, 4, &after);
+	amd_pci_read_bits(link_base + HTHOST_LINK_CONTROL_REG, 7, 6, &unconnected);
 
 	if (before != after)
 	{
@@ -390,7 +390,7 @@ static BOOL readTrueLinkFailStatus(u8 node, u8 link, sMainData *pDat, cNorthBrid
 			if (crc != 0)
 			{
 				/* A synch flood occurred due to HT CRC */
-				if (pDat->ht_block->AMD_CB_EventNotify)
+				if (p_dat->ht_block->AMD_CB_EventNotify)
 				{
 					/* Pass the node and link on which the generic synch flood event occurred. */
 					sHtEventHWHtCrc evt;
@@ -399,7 +399,7 @@ static BOOL readTrueLinkFailStatus(u8 node, u8 link, sMainData *pDat, cNorthBrid
 					evt.link = link;
 					evt.laneMask = (uint8)crc;
 
-					pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_HW_FAULT,
+					p_dat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_HW_FAULT,
 									HT_EVENT_HW_HTCRC,
 									(u8 *)&evt);
 				}
@@ -407,7 +407,7 @@ static BOOL readTrueLinkFailStatus(u8 node, u8 link, sMainData *pDat, cNorthBrid
 			else
 			{
 				/* Some synch flood occurred */
-				if (pDat->ht_block->AMD_CB_EventNotify)
+				if (p_dat->ht_block->AMD_CB_EventNotify)
 				{
 					/* Pass the node and link on which the generic synch flood event occurred. */
 					sHtEventHWSynchFlood evt;
@@ -415,7 +415,7 @@ static BOOL readTrueLinkFailStatus(u8 node, u8 link, sMainData *pDat, cNorthBrid
 					evt.node = node;
 					evt.link = link;
 
-					pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_HW_FAULT,
+					p_dat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_HW_FAULT,
 									HT_EVENT_HW_SYNCHFLOOD,
 									(u8 *)&evt);
 				}
@@ -429,7 +429,7 @@ static BOOL readTrueLinkFailStatus(u8 node, u8 link, sMainData *pDat, cNorthBrid
 /***************************************************************************//**
  *
  * static u8
- * readToken(u8 node, cNorthBridge *nb)
+ * read_token(u8 node, cNorthBridge *nb)
  *
  *  Description:
  *	Read the token stored in the scratchpad register
@@ -443,11 +443,11 @@ static BOOL readTrueLinkFailStatus(u8 node, u8 link, sMainData *pDat, cNorthBrid
  *	@return                the Token read from the node
  *
  *****************************************************************************/
-static u8 readToken(u8 node, cNorthBridge *nb)
+static u8 read_token(u8 node, cNorthBridge *nb)
 {
 	u32 temp;
 
-	ASSERT((node < nb->maxNodes));
+	ASSERT((node < nb->max_nodes));
 	/* Use CpuCnt as a scratch register */
 	/* Limiting use to 4 bits makes code GH to rev F compatible. */
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
@@ -482,7 +482,7 @@ static u8 readToken(u8 node, cNorthBridge *nb)
 static void writeToken(u8 node, u8 value, cNorthBridge *nb)
 {
 	u32 temp = value;
-	ASSERT((node < nb->maxNodes));
+	ASSERT((node < nb->max_nodes));
 	/* Use CpuCnt as a scratch register */
 	/* Limiting use to 4 bits makes code GH to rev F compatible. */
 	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
@@ -496,7 +496,7 @@ static void writeToken(u8 node, u8 value, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static u8
- * fam0FGetNumCoresOnNode(u8 node, cNorthBridge *nb)
+ * fam_0f_get_num_cores_on_node(u8 node, cNorthBridge *nb)
  *
  *  Description:
  *	Return the number of cores (1 based count) on node.
@@ -508,11 +508,11 @@ static void writeToken(u8 node, u8 value, cNorthBridge *nb)
  *
  * ---------------------------------------------------------------------------------------
  */
-static u8 fam0FGetNumCoresOnNode(u8 node, cNorthBridge *nb)
+static u8 fam_0f_get_num_cores_on_node(u8 node, cNorthBridge *nb)
 {
 	u32 temp;
 
-	ASSERT((node < nb->maxNodes));
+	ASSERT((node < nb->max_nodes));
 	/* Read CmpCap */
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 			makePCIBusFromNode(node),
@@ -528,7 +528,7 @@ static u8 fam0FGetNumCoresOnNode(u8 node, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static u8
- * fam10GetNumCoresOnNode(u8 node, cNorthBridge *nb)
+ * fam_10_get_num_cores_on_node(u8 node, cNorthBridge *nb)
  *
  *  Description:
  *	Return the number of cores (1 based count) on node.
@@ -540,12 +540,12 @@ static u8 fam0FGetNumCoresOnNode(u8 node, cNorthBridge *nb)
  *
  *
  */
-static u8 fam10GetNumCoresOnNode(u8 node, cNorthBridge *nb)
+static u8 fam_10_get_num_cores_on_node(u8 node, cNorthBridge *nb)
 {
 	u32 temp, leveling, cores;
 	u8 i;
 
-	ASSERT((node < nb->maxNodes));
+	ASSERT((node < nb->max_nodes));
 	/* Read CmpCap [2][1:0] */
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
@@ -578,7 +578,7 @@ static u8 fam10GetNumCoresOnNode(u8 node, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static u8
- * fam15GetNumCoresOnNode(u8 node, cNorthBridge *nb)
+ * fam_15_get_num_cores_on_node(u8 node, cNorthBridge *nb)
  *
  *  Description:
  *	Return the number of cores (1 based count) on node.
@@ -590,12 +590,12 @@ static u8 fam10GetNumCoresOnNode(u8 node, cNorthBridge *nb)
  *
  *
  */
-static u8 fam15GetNumCoresOnNode(u8 node, cNorthBridge *nb)
+static u8 fam_15_get_num_cores_on_node(u8 node, cNorthBridge *nb)
 {
 	u32 temp, leveling, cores;
 	u8 i;
 
-	ASSERT((node < nb->maxNodes));
+	ASSERT((node < nb->max_nodes));
 	/* Read CmpCap [7:0] */
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
@@ -628,45 +628,45 @@ static u8 fam15GetNumCoresOnNode(u8 node, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * setTotalNodesAndCores(u8 node, u8 totalNodes, u8 totalCores, cNorthBridge *nb)
+ * set_total_nodes_and_cores(u8 node, u8 total_nodes, u8 total_cores, cNorthBridge *nb)
  *
  *  Description:
  *	Write the total number of cores and nodes to the node
  *
  *  Parameters:
  *	@param[in]  node   = the node that will be examined
- *	@param[in]  totalNodes  = the total number of nodes
- *	@param[in]  totalCores  = the total number of cores
+ *	@param[in]  total_nodes  = the total number of nodes
+ *	@param[in]  total_cores  = the total number of cores
  *	@param[in] *nb   = this northbridge
  *
  * ---------------------------------------------------------------------------------------
  */
-static void setTotalNodesAndCores(u8 node, u8 totalNodes, u8 totalCores, cNorthBridge *nb)
+static void set_total_nodes_and_cores(u8 node, u8 total_nodes, u8 total_cores, cNorthBridge *nb)
 {
-	SBDFO nodeIDReg;
+	SBDFO node_id_reg;
 	u32 temp;
 
-	ASSERT((node < nb->maxNodes) && (totalNodes <= nb->maxNodes));
-	nodeIDReg = MAKE_SBDFO(makePCISegmentFromNode(node),
+	ASSERT((node < nb->max_nodes) && (total_nodes <= nb->max_nodes));
+	node_id_reg = MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_HTNB_FUNC_00,
 				REG_NODE_ID_0X60);
 
-	temp = totalCores-1;
+	temp = total_cores-1;
 	/* Rely on max number of nodes:cores for rev F and GH to make
 	 * this code work, even though we write reserved bit 20 on rev F it will be
 	 * zero in that case.
 	 */
-	amd_pci_write_bits(nodeIDReg, 20, 16, &temp);
-	temp = totalNodes-1;
-	amd_pci_write_bits(nodeIDReg, 6,  4, &temp);
+	amd_pci_write_bits(node_id_reg, 20, 16, &temp);
+	temp = total_nodes-1;
+	amd_pci_write_bits(node_id_reg, 6,  4, &temp);
 }
 
 /***************************************************************************//**
  *
  * static void
- * limitNodes(u8 node, cNorthBridge *nb)
+ * limit_nodes(u8 node, cNorthBridge *nb)
  *
  *  Description:
  *	Limit coherent config accesses to cpus as indicated by nodecnt.
@@ -677,10 +677,10 @@ static void setTotalNodesAndCores(u8 node, u8 totalNodes, u8 totalCores, cNorthB
  *
  * ---------------------------------------------------------------------------------------
  */
-static void limitNodes(u8 node, cNorthBridge *nb)
+static void limit_nodes(u8 node, cNorthBridge *nb)
 {
 	u32 temp = 1;
-	ASSERT((node < nb->maxNodes));
+	ASSERT((node < nb->max_nodes));
 	amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
@@ -692,7 +692,7 @@ static void limitNodes(u8 node, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * writeFullRoutingTable(u8 node, u8 target, u8 reqLink, u8 rspLink, u32 BClinks, cNorthBridge *nb)
+ * write_full_routing_table(u8 node, u8 target, u8 req_link, u8 rsp_link, u32 BClinks, cNorthBridge *nb)
  *
  *  Description:
  *	Write the routing table entry for node to target, using the request link, response
@@ -701,32 +701,32 @@ static void limitNodes(u8 node, cNorthBridge *nb)
  *  Parameters:
  *	@param[in]  node   = the node that will be examined
  *	@param[in]  target   = the target node for these routes
- *	@param[in]  reqLink  = the link for requests to target
- *	@param[in]  rspLink  = the link for responses to target
- *	@param[in]  bClinks  = the broadcast links
+ *	@param[in]  req_link  = the link for requests to target
+ *	@param[in]  rsp_link  = the link for responses to target
+ *	@param[in]  bc_links  = the broadcast links
  *	@param[in] *nb  = this northbridge
  *
  * ---------------------------------------------------------------------------------------
  */
-static void writeFullRoutingTable(u8 node, u8 target, u8 reqLink, u8 rspLink, u32 bClinks, cNorthBridge *nb)
+static void write_full_routing_table(u8 node, u8 target, u8 req_link, u8 rsp_link, u32 bc_links, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u32 value = 0;
 
-	ASSERT((node < nb->maxNodes) && (target < nb->maxNodes));
-	if (reqLink == ROUTETOSELF)
+	ASSERT((node < nb->max_nodes) && (target < nb->max_nodes));
+	if (req_link == ROUTETOSELF)
 		value |= nb->selfRouteRequestMask;
 	else
-		value |= nb->selfRouteRequestMask << (reqLink + 1);
+		value |= nb->selfRouteRequestMask << (req_link + 1);
 
-	if (rspLink == ROUTETOSELF)
+	if (rsp_link == ROUTETOSELF)
 		value |= nb->selfRouteResponseMask;
 	else
-		value |= nb->selfRouteResponseMask << (rspLink + 1);
+		value |= nb->selfRouteResponseMask << (rsp_link + 1);
 
 	/* Allow us to accept a Broadcast ourselves, then set broadcasts for routes */
 	value |= (u32)1 << nb->broadcastSelfBit;
-	value |= (u32)bClinks << (nb->broadcastSelfBit + 1);
+	value |= (u32)bc_links << (nb->broadcastSelfBit + 1);
 
 	AmdPCIWrite(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
@@ -741,7 +741,7 @@ static void writeFullRoutingTable(u8 node, u8 target, u8 reqLink, u8 rspLink, u3
 /***************************************************************************//**
  *
  * static u32
- * makeKey(u8 current_node)
+ * make_key(u8 current_node)
  *
  *  Description:
  *	Private routine to northbridge code.
@@ -755,29 +755,29 @@ static void writeFullRoutingTable(u8 node, u8 target, u8 reqLink, u8 rspLink, u3
  *
  * ---------------------------------------------------------------------------------------
  */
-static u32 makeKey(u8 node)
+static u32 make_key(u8 node)
 {
-	u32 extFam, baseFam;
+	u32 ext_fam, base_fam;
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_03,
 				REG_NB_CPUID_3XFC),
-				27, 20, &extFam);
+				27, 20, &ext_fam);
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_03,
 				REG_NB_CPUID_3XFC),
-				11, 8, &baseFam);
-	return ((u32)(baseFam << 8) | extFam);
+				11, 8, &base_fam);
+	return ((u32)(base_fam << 8) | ext_fam);
 }
 
 
 /***************************************************************************//**
  *
  * static BOOL
- * isCompatible(u8 current_node, cNorthBridge *nb)
+ * is_compatible(u8 current_node, cNorthBridge *nb)
  *
  *  Description:
  *	Determine whether a node is compatible with the discovered configuration so
@@ -791,15 +791,15 @@ static u32 makeKey(u8 node)
  *
  * ---------------------------------------------------------------------------------------
  */
-static BOOL isCompatible(u8 node, cNorthBridge *nb)
+static BOOL is_compatible(u8 node, cNorthBridge *nb)
 {
-	return (makeKey(node) == nb->compatibleKey);
+	return (make_key(node) == nb->compatibleKey);
 }
 
 /***************************************************************************//**
  *
  * static BOOL
- * fam0fIsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
+ * fam_0f_is_capable(u8 node, sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	Get node capability and update the minimum supported system capability.
@@ -807,20 +807,20 @@ static BOOL isCompatible(u8 node, cNorthBridge *nb)
  *
  *  Parameters:
  *	@param[in]       node = the node
- *	@param[in,out]  *pDat = sys_mp_cap (updated) and nodes_discovered
+ *	@param[in,out]  *p_dat = sys_mp_cap (updated) and nodes_discovered
  *	@param[in]        *nb = this northbridge
  *	@return               true:  system is capable of current config.
  *			      false: system is not capable of current config.
  *
  * ---------------------------------------------------------------------------------------
  */
-static BOOL fam0fIsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
+static BOOL fam_0f_is_capable(u8 node, sMainData *p_dat, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u32 temp;
-	u8 maxNodes;
+	u8 max_nodes;
 
-	ASSERT(node < nb->maxNodes);
+	ASSERT(node < nb->max_nodes);
 
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
@@ -830,21 +830,20 @@ static BOOL fam0fIsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 				2, 1, &temp);
 	if (temp > 1)
 	{
-		maxNodes = 8;
-	} else {
-		if (temp == 1)
-		{
-			maxNodes = 2;
-		} else {
-			maxNodes = 1;
-		}
+		max_nodes = 8;
+	} else if (temp == 1) {
+		max_nodes = 2;
 	}
-	if (pDat->sys_mp_cap > maxNodes)
+	else {
+		max_nodes = 1;
+	}
+
+	if (p_dat->sys_mp_cap > max_nodes)
 	{
-		 pDat->sys_mp_cap = maxNodes;
+		 p_dat->sys_mp_cap = max_nodes;
 	}
 	/* Note since sys_mp_cap is one based and nodes_discovered is zero based, equal is false */
-	return (pDat->sys_mp_cap > pDat->nodes_discovered);
+	return (p_dat->sys_mp_cap > p_dat->nodes_discovered);
 #else
 	return 1;
 #endif
@@ -853,7 +852,7 @@ static BOOL fam0fIsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static BOOL
- * fam10IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
+ * fam_10_is_capable(u8 node, sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	Get node capability and update the minimum supported system capability.
@@ -861,20 +860,20 @@ static BOOL fam0fIsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
  *
  *  Parameters:
  *	@param[in]  node   = the node
- *	@param[in,out] *pDat = sys_mp_cap (updated) and nodes_discovered
+ *	@param[in,out] *p_dat = sys_mp_cap (updated) and nodes_discovered
  *	@param[in] *nb   = this northbridge
  *	@return             true: system is capable of current config.
  *			   false: system is not capable of current config.
  *
  * ---------------------------------------------------------------------------------------
  */
-static BOOL fam10IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
+static BOOL fam_10_is_capable(u8 node, sMainData *p_dat, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u32 temp;
-	u8 maxNodes;
+	u8 max_nodes;
 
-	ASSERT(node < nb->maxNodes);
+	ASSERT(node < nb->max_nodes);
 
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
@@ -885,19 +884,19 @@ static BOOL fam10IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 	if (temp != 0)
 	{
-		maxNodes = (1 << (~temp & 0x3));  /* That is, 1, 2, 4, or 8 */
+		max_nodes = (1 << (~temp & 0x3));  /* That is, 1, 2, 4, or 8 */
 	}
 	else
 	{
-		maxNodes = 8;
+		max_nodes = 8;
 	}
 
-	if (pDat->sys_mp_cap > maxNodes)
+	if (p_dat->sys_mp_cap > max_nodes)
 	{
-		pDat->sys_mp_cap = maxNodes;
+		p_dat->sys_mp_cap = max_nodes;
 	}
 	/* Note since sys_mp_cap is one based and nodes_discovered is zero based, equal is false */
-	return (pDat->sys_mp_cap > pDat->nodes_discovered);
+	return (p_dat->sys_mp_cap > p_dat->nodes_discovered);
 #else
 	return 1;
 #endif
@@ -906,7 +905,7 @@ static BOOL fam10IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static BOOL
- * fam15IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
+ * fam_15_is_capable(u8 node, sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	Get node capability and update the minimum supported system capability.
@@ -914,20 +913,20 @@ static BOOL fam10IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
  *
  *  Parameters:
  *	@param[in]  node   = the node
- *	@param[in,out] *pDat = sys_mp_cap (updated) and nodes_discovered
+ *	@param[in,out] *p_dat = sys_mp_cap (updated) and nodes_discovered
  *	@param[in] *nb   = this northbridge
  *	@return             true: system is capable of current config.
  *			   false: system is not capable of current config.
  *
  * ---------------------------------------------------------------------------------------
  */
-static BOOL fam15IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
+static BOOL fam_15_is_capable(u8 node, sMainData *p_dat, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u32 temp;
-	u8 maxNodes;
+	u8 max_nodes;
 
-	ASSERT(node < nb->maxNodes);
+	ASSERT(node < nb->max_nodes);
 
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
@@ -938,7 +937,7 @@ static BOOL fam15IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 	if (temp != 0)
 	{
-		maxNodes = (1 << (~temp & 0x3));  /* That is, 1, 2, 4, or 8 */
+		max_nodes = (1 << (~temp & 0x3));  /* That is, 1, 2, 4, or 8 */
 	}
 	else
 	{
@@ -950,17 +949,17 @@ static BOOL fam15IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 					REG_NB_CAPABILITY_3XE8),
 					29, 29, &temp);
 		if (temp)
-			maxNodes = 4;
+			max_nodes = 4;
 		else
-			maxNodes = 8;
+			max_nodes = 8;
 	}
 
-	if (pDat->sys_mp_cap > maxNodes)
+	if (p_dat->sys_mp_cap > max_nodes)
 	{
-		pDat->sys_mp_cap = maxNodes;
+		p_dat->sys_mp_cap = max_nodes;
 	}
 	/* Note since sys_mp_cap is one based and nodes_discovered is zero based, equal is false */
-	return (pDat->sys_mp_cap > pDat->nodes_discovered);
+	return (p_dat->sys_mp_cap > p_dat->nodes_discovered);
 #else
 	return 1;
 #endif
@@ -969,7 +968,7 @@ static BOOL fam15IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * fam0fStopLink(u8 current_node, u8 current_link, cNorthBridge *nb)
+ * fam_0f_stop_link(u8 current_node, u8 current_link, cNorthBridge *nb)
  *
  *  Description:
  *	Disable a cHT link on node by setting F0x[E4, C4, A4, 84][TransOff, EndOfChain]=1
@@ -981,26 +980,26 @@ static BOOL fam15IsCapable(u8 node, sMainData *pDat, cNorthBridge *nb)
  *
  * ---------------------------------------------------------------------------------------
  */
-static void fam0fStopLink(u8 node, u8 link, cNorthBridge *nb)
+static void fam_0f_stop_link(u8 node, u8 link, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u32 temp;
-	SBDFO linkBase;
+	SBDFO link_base;
 
-	ASSERT((node < nb->maxNodes) && (link < nb->maxLinks));
+	ASSERT((node < nb->max_nodes) && (link < nb->maxLinks));
 
-	linkBase = makeLinkBase(node, link);
+	link_base = make_link_base(node, link);
 
 	/* Set TransOff, EndOfChain */
 	temp = 3;
-	setHtControlRegisterBits(linkBase + HTHOST_LINK_CONTROL_REG, 7, 6, &temp);
+	set_ht_control_register_bits(link_base + HTHOST_LINK_CONTROL_REG, 7, 6, &temp);
 #endif
 }
 
 /***************************************************************************//**
  *
  * static void
- * commonVoid()
+ * common_void()
  *
  *  Description:
  *	Nothing.
@@ -1010,14 +1009,14 @@ static void fam0fStopLink(u8 node, u8 link, cNorthBridge *nb)
  *
  * ---------------------------------------------------------------------------------------
  */
-static void commonVoid(void)
+static void common_void(void)
 {
 }
 
 /***************************************************************************//**
  *
  * static BOOL
- * commonReturnFalse()
+ * common_return_false()
  *
  *  Description:
  *	Return False.
@@ -1026,7 +1025,7 @@ static void commonVoid(void)
  *	     @return	   = false
  *
  */
-static BOOL commonReturnFalse(void)
+static BOOL common_return_false(void)
 {
 	return 0;
 }
@@ -1039,7 +1038,7 @@ static BOOL commonReturnFalse(void)
 /***************************************************************************//**
  *
  * static u8
- * readSbLink(cNorthBridge *nb)
+ * read_sb_link(cNorthBridge *nb)
  *
  *  Description:
  *	 Return the link to the Southbridge
@@ -1050,7 +1049,7 @@ static BOOL commonReturnFalse(void)
  *
  * ---------------------------------------------------------------------------------------
  */
-static u8 readSbLink(cNorthBridge *nb)
+static u8 read_sb_link(cNorthBridge *nb)
 {
 	u32 temp;
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(0),
@@ -1065,7 +1064,7 @@ static u8 readSbLink(cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static BOOL
- * verifyLinkIsNonCoherent(u8 node, u8 link, cNorthBridge *nb)
+ * verify_link_is_non_coherent(u8 node, u8 link, cNorthBridge *nb)
  *
  *  Description:
  *	 Verify that the link is non-coherent, connected, and ready
@@ -1084,113 +1083,113 @@ static u8 readSbLink(cNorthBridge *nb)
  *
  * ---------------------------------------------------------------------------------------
  */
-static BOOL verifyLinkIsNonCoherent(u8 node, u8 link, cNorthBridge *nb)
+static BOOL verify_link_is_non_coherent(u8 node, u8 link, cNorthBridge *nb)
 {
-	u32 linkType;
-	SBDFO linkBase;
+	u32 link_type;
+	SBDFO link_base;
 
-	ASSERT((node < nb->maxNodes) && (link < nb->maxLinks));
+	ASSERT((node < nb->max_nodes) && (link < nb->maxLinks));
 
-	linkBase = makeLinkBase(node, link);
+	link_base = make_link_base(node, link);
 
 	/* FN0_98/A4/C4 = LDT Type Register */
-	AmdPCIRead(linkBase + HTHOST_LINK_TYPE_REG, &linkType);
+	AmdPCIRead(link_base + HTHOST_LINK_TYPE_REG, &link_type);
 
 	/* Verify linkCon = 1, INIT_COMPLETE = 1, NC = 0, UniP-cLDT = 0, LinkConPend = 0 */
-	return (linkType & HTHOST_TYPE_MASK) ==  HTHOST_TYPE_NONCOHERENT;
+	return (link_type & HTHOST_TYPE_MASK) ==  HTHOST_TYPE_NONCOHERENT;
 }
 
 /***************************************************************************//**
  *
  * static void
- * ht3SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNode, u8 targetLink, sMainData *pDat, cNorthBridge *nb)
+ * ht3_set_cfg_addr_map(u8 cfg_map_index, u8 sec_bus, u8 sub_bus, u8 target_node, u8 target_link, sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	 Configure and enable config access to a non-coherent chain for the given bus range.
  *
  *  Parameters:
- *	@param[in] cfgMapIndex = the map entry to set
- *	@param[in] secBus      = The secondary bus number to use
- *	@param[in] subBus      = The subordinate bus number to use
- *	@param[in] targetNode  = The node  that shall be the recipient of the traffic
- *	@param[in] targetLink  = The link that shall be the recipient of the traffic
- *	@param[in] pDat   = our global state
+ *	@param[in] cfg_map_index = the map entry to set
+ *	@param[in] sec_bus      = The secondary bus number to use
+ *	@param[in] sub_bus      = The subordinate bus number to use
+ *	@param[in] target_node  = The node  that shall be the recipient of the traffic
+ *	@param[in] target_link  = The link that shall be the recipient of the traffic
+ *	@param[in] p_dat   = our global state
  *	@param[in] *nb  = this northbridge
  *
  * ---------------------------------------------------------------------------------------
  */
-static void  ht3SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNode, u8 targetLink, sMainData *pDat, cNorthBridge *nb)
+static void  ht3_set_cfg_addr_map(u8 cfg_map_index, u8 sec_bus, u8 sub_bus, u8 target_node, u8 target_link, sMainData *p_dat, cNorthBridge *nb)
 {
-	u8 curNode;
-	SBDFO linkBase;
+	u8 cur_node;
+	SBDFO link_base;
 	u32 temp;
 
-	linkBase = makeLinkBase(targetNode, targetLink);
+	link_base = make_link_base(target_node, target_link);
 
-	ASSERT(secBus <= subBus);
-	temp = secBus;
-	amd_pci_write_bits(linkBase + HTHOST_ISOC_REG, 15, 8, &temp);
+	ASSERT(sec_bus <= sub_bus);
+	temp = sec_bus;
+	amd_pci_write_bits(link_base + HTHOST_ISOC_REG, 15, 8, &temp);
 
 	/* For target link, note that rev F uses bits 9:8 and only with GH is bit 10
 	 * set to indicate a sublink.  For node, we are currently not supporting Extended
 	 * routing tables.
 	 */
-	temp = ((u32)subBus << 24) + ((u32)secBus << 16) + ((u32)targetLink << 8)
-		+ ((u32)targetNode << 4) + (u32)3;
-	for (curNode = 0; curNode < pDat->nodes_discovered + 1; curNode++)
-		AmdPCIWrite(MAKE_SBDFO(makePCISegmentFromNode(curNode),
-					makePCIBusFromNode(curNode),
-					makePCIDeviceFromNode(curNode),
+	temp = ((u32)sub_bus << 24) + ((u32)sec_bus << 16) + ((u32)target_link << 8)
+		+ ((u32)target_node << 4) + (u32)3;
+	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
+		AmdPCIWrite(MAKE_SBDFO(makePCISegmentFromNode(cur_node),
+					makePCIBusFromNode(cur_node),
+					makePCIDeviceFromNode(cur_node),
 					CPU_ADDR_FUNC_01,
-					REG_ADDR_CONFIG_MAP0_1XE0 + 4 * cfgMapIndex),
+					REG_ADDR_CONFIG_MAP0_1XE0 + 4 * cfg_map_index),
 					&temp);
 }
 
 /***************************************************************************//**
  *
  * static void
- * ht1SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNode, u8 targetLink, sMainData *pDat, cNorthBridge *nb)
+ * ht1_set_cfg_addr_map(u8 cfg_map_index, u8 sec_bus, u8 sub_bus, u8 target_node, u8 target_link, sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	 Configure and enable config access to a non-coherent chain for the given bus range.
  *
  *  Parameters:
- *	@param[in]  cfgMapIndex = the map entry to set
- *	@param[in]  secBus      = The secondary bus number to use
- *	@param[in]  subBus      = The subordinate bus number to use
- *	@param[in]  targetNode  = The node  that shall be the recipient of the traffic
- *	@param[in]  targetLink  = The link that shall be the recipient of the traffic
- *	@param[in] pDat   = our global state
+ *	@param[in]  cfg_map_index = the map entry to set
+ *	@param[in]  sec_bus      = The secondary bus number to use
+ *	@param[in]  sub_bus      = The subordinate bus number to use
+ *	@param[in]  target_node  = The node  that shall be the recipient of the traffic
+ *	@param[in]  target_link  = The link that shall be the recipient of the traffic
+ *	@param[in] p_dat   = our global state
  *	@param[in] *nb   = this northbridge
  *
  ******************************************************************************/
-static void ht1SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNode, u8 targetLink, sMainData *pDat, cNorthBridge *nb)
+static void ht1_set_cfg_addr_map(u8 cfg_map_index, u8 sec_bus, u8 sub_bus, u8 target_node, u8 target_link, sMainData *p_dat, cNorthBridge *nb)
 {
-	u8 curNode;
-	SBDFO linkBase;
+	u8 cur_node;
+	SBDFO link_base;
 	u32 temp;
 
-	linkBase = makeLinkBase(targetNode, targetLink);
+	link_base = make_link_base(target_node, target_link);
 
-	ASSERT(secBus <= subBus);
-	temp = secBus;
-	amd_pci_write_bits(linkBase + HTHOST_ISOC_REG, 15, 8, &temp);
+	ASSERT(sec_bus <= sub_bus);
+	temp = sec_bus;
+	amd_pci_write_bits(link_base + HTHOST_ISOC_REG, 15, 8, &temp);
 
-	temp = subBus;
-	amd_pci_write_bits(linkBase + HTHOST_ISOC_REG, 23, 16, &temp);
+	temp = sub_bus;
+	amd_pci_write_bits(link_base + HTHOST_ISOC_REG, 23, 16, &temp);
 
 	/* For target link, note that rev F uses bits 9:8 and only with GH is bit 10
 	 * set to indicate a sublink.  For node, we are currently not supporting Extended
 	 * routing tables.
 	 */
-	temp = ((u32)subBus << 24) + ((u32)secBus << 16) + ((u32)targetLink << 8)
-		+ ((u32)targetNode << 4) + (u32)3;
-	for (curNode = 0; curNode < pDat->nodes_discovered + 1; curNode++)
-		 AmdPCIWrite(MAKE_SBDFO(makePCISegmentFromNode(curNode),
-					makePCIBusFromNode(curNode),
-					makePCIDeviceFromNode(curNode),
+	temp = ((u32)sub_bus << 24) + ((u32)sec_bus << 16) + ((u32)target_link << 8)
+		+ ((u32)target_node << 4) + (u32)3;
+	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
+		 AmdPCIWrite(MAKE_SBDFO(makePCISegmentFromNode(cur_node),
+					makePCIBusFromNode(cur_node),
+					makePCIDeviceFromNode(cur_node),
 					CPU_ADDR_FUNC_01,
-					REG_ADDR_CONFIG_MAP0_1XE0 + 4*cfgMapIndex),
+					REG_ADDR_CONFIG_MAP0_1XE0 + 4*cfg_map_index),
 					&temp);
 }
 
@@ -1200,7 +1199,7 @@ static void ht1SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNode
 
 /**
  * static u8
- * convertBitsToWidth(u8 value, cNorthBridge *nb)
+ * convert_bits_to_width(u8 value, cNorthBridge *nb)
  *
  *  Description:
  *	 Given the bits set in the register field, return the width it represents
@@ -1211,7 +1210,7 @@ static void ht1SetCFGAddrMap(u8 cfgMapIndex, u8 secBus, u8 subBus, u8 targetNode
  *	@return  The width
  *
  ******************************************************************************/
-static u8 convertBitsToWidth(u8 value, cNorthBridge *nb)
+static u8 convert_bits_to_width(u8 value, cNorthBridge *nb)
 {
 	switch (value) {
 	case 1: return 16;
@@ -1226,7 +1225,7 @@ static u8 convertBitsToWidth(u8 value, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static u8
- * convertWidthToBits(u8 value, cNorthBridge *nb)
+ * convert_width_to_bits(u8 value, cNorthBridge *nb)
  *
  *  Description:
  *	Translate a desired width setting to the bits to set in the register field
@@ -1237,7 +1236,7 @@ static u8 convertBitsToWidth(u8 value, cNorthBridge *nb)
  *	@return The bits for the register
  *
  ******************************************************************************/
-static u8 convertWidthToBits(u8 value, cNorthBridge *nb)
+static u8 convert_width_to_bits(u8 value, cNorthBridge *nb)
 {
 	switch (value) {
 	case 16: return 1;
@@ -1252,7 +1251,7 @@ static u8 convertWidthToBits(u8 value, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static u16
- * ht1NorthBridgeFreqMask(u8 node_id, cNorthBridge *nb)
+ * ht1_northbridge_freq_mask(u8 node_id, cNorthBridge *nb)
  *
  *  Description:
  *	Return a mask that eliminates HT frequencies that cannot be used due to a slow
@@ -1264,7 +1263,7 @@ static u8 convertWidthToBits(u8 value, cNorthBridge *nb)
  *	@return  Frequency mask
  *
  ******************************************************************************/
-static u32 ht1NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
+static u32 ht1_northbridge_freq_mask(u8 node, cNorthBridge *nb)
 {
 	/* only up to HT1 speeds */
 	return (HT_FREQUENCY_LIMIT_HT1_ONLY);
@@ -1273,7 +1272,7 @@ static u32 ht1NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static u16
- * fam10NorthBridgeFreqMask(u8 node_id, cNorthBridge *nb)
+ * fam_10_northbridge_freq_mask(u8 node_id, cNorthBridge *nb)
  *
  *  Description:
  *	Return a mask that eliminates HT frequencies that cannot be used due to a slow
@@ -1285,50 +1284,50 @@ static u32 ht1NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
  *	@return  = Frequency mask
  *
  ******************************************************************************/
-static u32 fam10NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
+static u32 fam_10_northbridge_freq_mask(u8 node, cNorthBridge *nb)
 {
-	u8 nbCOF;
+	u8 nb_cof;
 	u32 supported;
 
-	nbCOF = get_min_nb_cof();
+	nb_cof = get_min_nb_cof();
 	/*
-	 * nbCOF is minimum northbridge speed in hundreds of MHz.
+	 * nb_cof is minimum northbridge speed in hundreds of MHz.
 	 * HT can not go faster than the minimum speed of the northbridge.
 	 */
-	if ((nbCOF >= 6) && (nbCOF < 10))
+	if ((nb_cof >= 6) && (nb_cof < 10))
 	{
 		/* Generation 1 HT link frequency */
 		/* Convert frequency to bit and all less significant bits,
 		 * by setting next power of 2 and subtracting 1.
 		 */
-		supported = ((u32)1 << ((nbCOF >> 1) + 2)) - 1;
+		supported = ((u32)1 << ((nb_cof >> 1) + 2)) - 1;
 	}
-	else if ((nbCOF >= 10) && (nbCOF <= 32))
+	else if ((nb_cof >= 10) && (nb_cof <= 32))
 	{
 		/* Generation 3 HT link frequency
 		 * Assume error retry is enabled on all Gen 3 links
 		 */
 		if (is_gt_rev_d()) {
-			nbCOF *= 2;
-			if (nbCOF > 32)
-				nbCOF = 32;
+			nb_cof *= 2;
+			if (nb_cof > 32)
+				nb_cof = 32;
 		}
 
 		/* Convert frequency to bit and all less significant bits,
 		 * by setting next power of 2 and subtracting 1.
 		 */
-		supported = ((u32)1 << ((nbCOF >> 1) + 2)) - 1;
+		supported = ((u32)1 << ((nb_cof >> 1) + 2)) - 1;
 	}
-	else if (nbCOF > 32)
+	else if (nb_cof > 32)
 	{
 		supported = HT_FREQUENCY_LIMIT_3200M;
 	}
 	/* unlikely cases, but include as a defensive measure, also avoid trick above */
-	else if (nbCOF == 4)
+	else if (nb_cof == 4)
 	{
 		supported = HT_FREQUENCY_LIMIT_400M;
 	}
-	else if (nbCOF == 2)
+	else if (nb_cof == 2)
 	{
 		supported = HT_FREQUENCY_LIMIT_200M;
 	}
@@ -1344,7 +1343,7 @@ static u32 fam10NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static u16
- * fam15NorthBridgeFreqMask(u8 node_id, cNorthBridge *nb)
+ * fam_15_northbridge_freq_mask(u8 node_id, cNorthBridge *nb)
  *
  *  Description:
  *	Return a mask that eliminates HT frequencies that cannot be used due to a slow
@@ -1356,48 +1355,48 @@ static u32 fam10NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
  *	@return  = Frequency mask
  *
  ******************************************************************************/
-static u32 fam15NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
+static u32 fam_15_northbridge_freq_mask(u8 node, cNorthBridge *nb)
 {
-	u8 nbCOF;
+	u8 nb_cof;
 	u32 supported;
 
-	nbCOF = get_min_nb_cof();
+	nb_cof = get_min_nb_cof();
 	/*
-	 * nbCOF is minimum northbridge speed in hundreds of MHz.
+	 * nb_cof is minimum northbridge speed in hundreds of MHz.
 	 * HT can not go faster than the minimum speed of the northbridge.
 	 */
-	if ((nbCOF >= 6) && (nbCOF < 10))
+	if ((nb_cof >= 6) && (nb_cof < 10))
 	{
 		/* Generation 1 HT link frequency */
 		/* Convert frequency to bit and all less significant bits,
 		 * by setting next power of 2 and subtracting 1.
 		 */
-		supported = ((u32)1 << ((nbCOF >> 1) + 2)) - 1;
+		supported = ((u32)1 << ((nb_cof >> 1) + 2)) - 1;
 	}
-	else if ((nbCOF >= 10) && (nbCOF <= 32))
+	else if ((nb_cof >= 10) && (nb_cof <= 32))
 	{
 		/* Generation 3 HT link frequency
 		 * Assume error retry is enabled on all Gen 3 links
 		 */
-		nbCOF *= 2;
-		if (nbCOF > 32)
-			nbCOF = 32;
+		nb_cof *= 2;
+		if (nb_cof > 32)
+			nb_cof = 32;
 
 		/* Convert frequency to bit and all less significant bits,
 		 * by setting next power of 2 and subtracting 1.
 		 */
-		supported = ((u32)1 << ((nbCOF >> 1) + 2)) - 1;
+		supported = ((u32)1 << ((nb_cof >> 1) + 2)) - 1;
 	}
-	else if (nbCOF > 32)
+	else if (nb_cof > 32)
 	{
 		supported = HT_FREQUENCY_LIMIT_3200M;
 	}
 	/* unlikely cases, but include as a defensive measure, also avoid trick above */
-	else if (nbCOF == 4)
+	else if (nb_cof == 4)
 	{
 		supported = HT_FREQUENCY_LIMIT_400M;
 	}
-	else if (nbCOF == 2)
+	else if (nb_cof == 2)
 	{
 		supported = HT_FREQUENCY_LIMIT_200M;
 	}
@@ -1413,85 +1412,85 @@ static u32 fam15NorthBridgeFreqMask(u8 node, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * gatherLinkData(sMainData *pDat, cNorthBridge *nb)
+ * gather_link_data(sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	 For all discovered links, populate the port list with the frequency and width
  *	 capabilities.
  *
  *  Parameters:
- *	@param[in,out] pDat = our global state, port list
+ *	@param[in,out] p_dat = our global state, port list
  *	@param[in]     *nb = this northbridge
  *
  ******************************************************************************/
-static void gatherLinkData(sMainData *pDat, cNorthBridge *nb)
+static void gather_link_data(sMainData *p_dat, cNorthBridge *nb)
 {
 	u8 i;
-	SBDFO linkBase;
+	SBDFO link_base;
 	u32 temp;
 
-	for (i = 0; i < pDat->total_links*2; i++)
+	for (i = 0; i < p_dat->total_links*2; i++)
 	{
-		if (pDat->port_list[i].Type == PORTLIST_TYPE_CPU)
+		if (p_dat->port_list[i].Type == PORTLIST_TYPE_CPU)
 		{
-			linkBase = makeLinkBase(pDat->port_list[i].node_id, pDat->port_list[i].Link);
+			link_base = make_link_base(p_dat->port_list[i].node_id, p_dat->port_list[i].Link);
 
-			pDat->port_list[i].pointer = linkBase;
+			p_dat->port_list[i].pointer = link_base;
 
-			amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 22, 20, &temp);
-			pDat->port_list[i].prv_width_out_cap = convertBitsToWidth((u8)temp, pDat->nb);
+			amd_pci_read_bits(link_base + HTHOST_LINK_CONTROL_REG, 22, 20, &temp);
+			p_dat->port_list[i].prv_width_out_cap = convert_bits_to_width((u8)temp, p_dat->nb);
 
-			amd_pci_read_bits(linkBase + HTHOST_LINK_CONTROL_REG, 18, 16, &temp);
-			pDat->port_list[i].prv_width_in_cap = convertBitsToWidth((u8)temp, pDat->nb);
+			amd_pci_read_bits(link_base + HTHOST_LINK_CONTROL_REG, 18, 16, &temp);
+			p_dat->port_list[i].prv_width_in_cap = convert_bits_to_width((u8)temp, p_dat->nb);
 
-			amd_pci_read_bits(linkBase + HTHOST_FREQ_REV_REG, 31, 16, &temp);
-			pDat->port_list[i].prv_frequency_cap = temp & 0x7FFF	/*  Mask off bit 15, reserved value */
-				& nb->northBridgeFreqMask(pDat->port_list[i].node_id, pDat->nb);
+			amd_pci_read_bits(link_base + HTHOST_FREQ_REV_REG, 31, 16, &temp);
+			p_dat->port_list[i].prv_frequency_cap = temp & 0x7FFF	/*  Mask off bit 15, reserved value */
+				& nb->northBridgeFreqMask(p_dat->port_list[i].node_id, p_dat->nb);
 			if (is_gt_rev_d()) {
-				amd_pci_read_bits(linkBase + HTHOST_FREQ_REV_REG_2, 15, 1, &temp);
+				amd_pci_read_bits(link_base + HTHOST_FREQ_REV_REG_2, 15, 1, &temp);
 				temp &= 0x7;	/* Mask off reserved values */
-				pDat->port_list[i].prv_frequency_cap |= (temp << 17);
+				p_dat->port_list[i].prv_frequency_cap |= (temp << 17);
 			}
 
-			amd_pci_read_bits(linkBase + HTHOST_FEATURE_CAP_REG, 9, 0, &temp);
-			pDat->port_list[i].prv_feature_cap = (u16)temp;
+			amd_pci_read_bits(link_base + HTHOST_FEATURE_CAP_REG, 9, 0, &temp);
+			p_dat->port_list[i].prv_feature_cap = (u16)temp;
 		}
 		else
 		{
-			linkBase = pDat->port_list[i].pointer;
-			if (pDat->port_list[i].Link == 1)
-				linkBase += HTSLAVE_LINK01_OFFSET;
+			link_base = p_dat->port_list[i].pointer;
+			if (p_dat->port_list[i].Link == 1)
+				link_base += HTSLAVE_LINK01_OFFSET;
 
-			amd_pci_read_bits(linkBase + HTSLAVE_LINK_CONTROL_0_REG, 22, 20, &temp);
-			pDat->port_list[i].prv_width_out_cap = convertBitsToWidth((u8)temp, pDat->nb);
+			amd_pci_read_bits(link_base + HTSLAVE_LINK_CONTROL_0_REG, 22, 20, &temp);
+			p_dat->port_list[i].prv_width_out_cap = convert_bits_to_width((u8)temp, p_dat->nb);
 
-			amd_pci_read_bits(linkBase + HTSLAVE_LINK_CONTROL_0_REG, 18, 16, &temp);
-			pDat->port_list[i].prv_width_in_cap = convertBitsToWidth((u8)temp, pDat->nb);
+			amd_pci_read_bits(link_base + HTSLAVE_LINK_CONTROL_0_REG, 18, 16, &temp);
+			p_dat->port_list[i].prv_width_in_cap = convert_bits_to_width((u8)temp, p_dat->nb);
 
-			amd_pci_read_bits(linkBase + HTSLAVE_FREQ_REV_0_REG, 31, 16, &temp);
-			pDat->port_list[i].prv_frequency_cap = (u16)temp;
+			amd_pci_read_bits(link_base + HTSLAVE_FREQ_REV_0_REG, 31, 16, &temp);
+			p_dat->port_list[i].prv_frequency_cap = (u16)temp;
 
-			amd_pci_read_bits(linkBase + HTSLAVE_FEATURE_CAP_REG, 7, 0, &temp);
-			pDat->port_list[i].prv_feature_cap = (u16)temp;
+			amd_pci_read_bits(link_base + HTSLAVE_FEATURE_CAP_REG, 7, 0, &temp);
+			p_dat->port_list[i].prv_feature_cap = (u16)temp;
 
-			if (pDat->ht_block->AMD_CB_DeviceCapOverride)
+			if (p_dat->ht_block->AMD_CB_DeviceCapOverride)
 			{
-				linkBase &= 0xFFFFF000;
-				AmdPCIRead(linkBase, &temp);
+				link_base &= 0xFFFFF000;
+				AmdPCIRead(link_base, &temp);
 
-				pDat->ht_block->AMD_CB_DeviceCapOverride(
-					pDat->port_list[i].node_id,
-					pDat->port_list[i].host_link,
-					pDat->port_list[i].host_depth,
-					(u8)SBDFO_SEG(pDat->port_list[i].pointer),
-					(u8)SBDFO_BUS(pDat->port_list[i].pointer),
-					(u8)SBDFO_DEV(pDat->port_list[i].pointer),
+				p_dat->ht_block->AMD_CB_DeviceCapOverride(
+					p_dat->port_list[i].node_id,
+					p_dat->port_list[i].host_link,
+					p_dat->port_list[i].host_depth,
+					(u8)SBDFO_SEG(p_dat->port_list[i].pointer),
+					(u8)SBDFO_BUS(p_dat->port_list[i].pointer),
+					(u8)SBDFO_DEV(p_dat->port_list[i].pointer),
 					temp,
-					pDat->port_list[i].Link,
-					&(pDat->port_list[i].prv_width_in_cap),
-					&(pDat->port_list[i].prv_width_out_cap),
-					&(pDat->port_list[i].prv_frequency_cap),
-					&(pDat->port_list[i].prv_feature_cap));
+					p_dat->port_list[i].Link,
+					&(p_dat->port_list[i].prv_width_in_cap),
+					&(p_dat->port_list[i].prv_width_out_cap),
+					&(p_dat->port_list[i].prv_frequency_cap),
+					&(p_dat->port_list[i].prv_feature_cap));
 			}
 		}
 	}
@@ -1500,81 +1499,81 @@ static void gatherLinkData(sMainData *pDat, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * setLinkData(sMainData *pDat, cNorthBridge *nb)
+ * set_link_data(sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	 Change the hardware state for all links according to the now optimized data in the
  *	 port list data structure.
  *
  *  Parameters:
- *	  @param[in]  pDat = our global state, port list
+ *	  @param[in]  p_dat = our global state, port list
  *	  @param[in]  *nb   = this northbridge
  *
  ******************************************************************************/
-static void setLinkData(sMainData *pDat, cNorthBridge *nb)
+static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 {
 	u8 i;
-	SBDFO linkBase;
+	SBDFO link_base;
 	u32 temp, temp2, frequency_index, widthin, widthout, bits;
 
-	for (i = 0; i < pDat->total_links*2; i++)
+	for (i = 0; i < p_dat->total_links*2; i++)
 	{
 
-		ASSERT(pDat->port_list[i & 0xFE].sel_width_out == pDat->port_list[(i & 0xFE) + 1].sel_width_in);
-		ASSERT(pDat->port_list[i & 0xFE].sel_width_in == pDat->port_list[(i & 0xFE) + 1].sel_width_out);
-		ASSERT(pDat->port_list[i & 0xFE].sel_frequency == pDat->port_list[(i & 0xFE) + 1].sel_frequency);
+		ASSERT(p_dat->port_list[i & 0xFE].sel_width_out == p_dat->port_list[(i & 0xFE) + 1].sel_width_in);
+		ASSERT(p_dat->port_list[i & 0xFE].sel_width_in == p_dat->port_list[(i & 0xFE) + 1].sel_width_out);
+		ASSERT(p_dat->port_list[i & 0xFE].sel_frequency == p_dat->port_list[(i & 0xFE) + 1].sel_frequency);
 
-		if (pDat->port_list[i].sel_regang)
+		if (p_dat->port_list[i].sel_regang)
 		{
-			ASSERT(pDat->port_list[i].Type == PORTLIST_TYPE_CPU);
-			ASSERT(pDat->port_list[i].Link < 4);
+			ASSERT(p_dat->port_list[i].Type == PORTLIST_TYPE_CPU);
+			ASSERT(p_dat->port_list[i].Link < 4);
 			temp = 1;
-			amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(pDat->port_list[i].node_id),
-					makePCIBusFromNode(pDat->port_list[i].node_id),
-					makePCIDeviceFromNode(pDat->port_list[i].node_id),
+			amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(p_dat->port_list[i].node_id),
+					makePCIBusFromNode(p_dat->port_list[i].node_id),
+					makePCIDeviceFromNode(p_dat->port_list[i].node_id),
 					CPU_HTNB_FUNC_00,
-					REG_HT_LINK_EXT_CONTROL0_0X170 + 4 * pDat->port_list[i].Link),
+					REG_HT_LINK_EXT_CONTROL0_0X170 + 4 * p_dat->port_list[i].Link),
 					0, 0, &temp);
 		}
 
-		if (pDat->port_list[i].Type == PORTLIST_TYPE_CPU)
+		if (p_dat->port_list[i].Type == PORTLIST_TYPE_CPU)
 		{
-			if (pDat->ht_block->AMD_CB_OverrideCpuPort)
-				pDat->ht_block->AMD_CB_OverrideCpuPort(pDat->port_list[i].node_id,
-						pDat->port_list[i].Link,
-						&(pDat->port_list[i].sel_width_in),
-						&(pDat->port_list[i].sel_width_out),
-						&(pDat->port_list[i].sel_frequency));
+			if (p_dat->ht_block->AMD_CB_OverrideCpuPort)
+				p_dat->ht_block->AMD_CB_OverrideCpuPort(p_dat->port_list[i].node_id,
+						p_dat->port_list[i].Link,
+						&(p_dat->port_list[i].sel_width_in),
+						&(p_dat->port_list[i].sel_width_out),
+						&(p_dat->port_list[i].sel_frequency));
 		}
 		else
 		{
-			if (pDat->ht_block->AMD_CB_OverrideDevicePort)
-				pDat->ht_block->AMD_CB_OverrideDevicePort(pDat->port_list[i].node_id,
-							pDat->port_list[i].host_link,
-							pDat->port_list[i].host_depth,
-							pDat->port_list[i].Link,
-							&(pDat->port_list[i].sel_width_in),
-							&(pDat->port_list[i].sel_width_out),
-							&(pDat->port_list[i].sel_frequency));
+			if (p_dat->ht_block->AMD_CB_OverrideDevicePort)
+				p_dat->ht_block->AMD_CB_OverrideDevicePort(p_dat->port_list[i].node_id,
+							p_dat->port_list[i].host_link,
+							p_dat->port_list[i].host_depth,
+							p_dat->port_list[i].Link,
+							&(p_dat->port_list[i].sel_width_in),
+							&(p_dat->port_list[i].sel_width_out),
+							&(p_dat->port_list[i].sel_frequency));
 		}
 
-		linkBase = pDat->port_list[i].pointer;
-		if ((pDat->port_list[i].Type == PORTLIST_TYPE_IO) && (pDat->port_list[i].Link == 1))
-			linkBase += HTSLAVE_LINK01_OFFSET;
+		link_base = p_dat->port_list[i].pointer;
+		if ((p_dat->port_list[i].Type == PORTLIST_TYPE_IO) && (p_dat->port_list[i].Link == 1))
+			link_base += HTSLAVE_LINK01_OFFSET;
 
 		/* Some IO devices don't work properly when setting widths, so write them in a single operation,
 		 * rather than individually.
 		 */
-		widthout = convertWidthToBits(pDat->port_list[i].sel_width_out, pDat->nb);
+		widthout = convert_width_to_bits(p_dat->port_list[i].sel_width_out, p_dat->nb);
 		ASSERT(widthout == 1 || widthout == 0 || widthout == 5 || widthout == 4);
-		widthin = convertWidthToBits(pDat->port_list[i].sel_width_in, pDat->nb);
+		widthin = convert_width_to_bits(p_dat->port_list[i].sel_width_in, p_dat->nb);
 		ASSERT(widthin == 1 || widthin == 0 || widthin == 5 || widthin == 4);
 
 		temp = (widthin & 7) | ((widthout & 7) << 4);
-		setHtControlRegisterBits(linkBase + HTHOST_LINK_CONTROL_REG, 31, 24, &temp);
+		set_ht_control_register_bits(link_base + HTHOST_LINK_CONTROL_REG, 31, 24, &temp);
 
-		temp = pDat->port_list[i].sel_frequency;
-		if (pDat->port_list[i].Type == PORTLIST_TYPE_CPU)
+		temp = p_dat->port_list[i].sel_frequency;
+		if (p_dat->port_list[i].Type == PORTLIST_TYPE_CPU)
 		{
 			ASSERT((temp >= HT_FREQUENCY_600M && temp <= HT_FREQUENCY_3200M)
 				|| (temp == HT_FREQUENCY_200M) || (temp == HT_FREQUENCY_400M));
@@ -1590,16 +1589,16 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 			 * Freq[4] must be set before Freq[3:0], otherwise the register writes will be ignored!
 			 */
 			if (is_gt_rev_d())
-				amd_pci_write_bits(linkBase + HTHOST_FREQ_REV_REG_2, 0, 0, &temp2);
-			amd_pci_write_bits(linkBase + HTHOST_FREQ_REV_REG, 11, 8, &temp);
+				amd_pci_write_bits(link_base + HTHOST_FREQ_REV_REG_2, 0, 0, &temp2);
+			amd_pci_write_bits(link_base + HTHOST_FREQ_REV_REG, 11, 8, &temp);
 
 			/* Enable isochronous flow control mode if supported by chipset */
 			if (is_fam15h()) {
-				if (pDat->port_list[i].enable_isochronous_mode)
+				if (p_dat->port_list[i].enable_isochronous_mode)
 					temp = 1;
 				else
 					temp = 0;
-				setHtControlRegisterBits(linkBase + HTHOST_LINK_CONTROL_REG, 12, 12, &temp);
+				set_ht_control_register_bits(link_base + HTHOST_LINK_CONTROL_REG, 12, 12, &temp);
 			}
 
 			if (frequency_index > HT_FREQUENCY_1000M) /*  Gen1 = 200MHz -> 1000MHz, Gen3 = 1200MHz -> 3200MHz */
@@ -1613,29 +1612,29 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 				temp = 0;
 			}
 			/* HT3 retry mode enable / disable */
-			amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(pDat->port_list[i].node_id),
-						makePCIBusFromNode(pDat->port_list[i].node_id),
-						makePCIDeviceFromNode(pDat->port_list[i].node_id),
+			amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(p_dat->port_list[i].node_id),
+						makePCIBusFromNode(p_dat->port_list[i].node_id),
+						makePCIDeviceFromNode(p_dat->port_list[i].node_id),
 						CPU_HTNB_FUNC_00,
-						REG_HT_LINK_RETRY0_0X130 + 4*pDat->port_list[i].Link),
+						REG_HT_LINK_RETRY0_0X130 + 4*p_dat->port_list[i].Link),
 						0, 0, &temp);
 
 			/* and Scrambling enable / disable */
-			amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(pDat->port_list[i].node_id),
-					makePCIBusFromNode(pDat->port_list[i].node_id),
-					makePCIDeviceFromNode(pDat->port_list[i].node_id),
+			amd_pci_write_bits(MAKE_SBDFO(makePCISegmentFromNode(p_dat->port_list[i].node_id),
+					makePCIBusFromNode(p_dat->port_list[i].node_id),
+					makePCIDeviceFromNode(p_dat->port_list[i].node_id),
 					CPU_HTNB_FUNC_00,
-					REG_HT_LINK_EXT_CONTROL0_0X170 + 4*pDat->port_list[i].Link),
+					REG_HT_LINK_EXT_CONTROL0_0X170 + 4*p_dat->port_list[i].Link),
 					3, 3, &temp);
 		}
 		else
 		{
-			SBDFO currentPtr;
-			BOOL isFound;
+			SBDFO current_ptr;
+			BOOL is_found;
 
 			ASSERT(temp <= HT_FREQUENCY_3200M);
 			/* Write the frequency setting */
-			amd_pci_write_bits(linkBase + HTSLAVE_FREQ_REV_0_REG, 11, 8, &temp);
+			amd_pci_write_bits(link_base + HTSLAVE_FREQ_REV_0_REG, 11, 8, &temp);
 
 			/* Handle additional HT3 frequency requirements, if needed,
 			 * or clear them if switching down to ht1 on a warm reset.
@@ -1660,30 +1659,30 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 
 			/* Enable isochronous flow control mode if supported by chipset */
 			if (is_fam15h()) {
-				if (pDat->port_list[i].enable_isochronous_mode)
+				if (p_dat->port_list[i].enable_isochronous_mode)
 					temp = 1;
 				else
 					temp = 0;
 			}
 
 			/* Retry Enable */
-			isFound = FALSE;
-			currentPtr = linkBase & (u32)0xFFFFF000; /* Set PCI Offset to 0 */
+			is_found = FALSE;
+			current_ptr = link_base & (u32)0xFFFFF000; /* Set PCI Offset to 0 */
 			do
 			{
-				amd_pci_find_next_cap(&currentPtr);
-				if (currentPtr != ILLEGAL_SBDFO)
+				amd_pci_find_next_cap(&current_ptr);
+				if (current_ptr != ILLEGAL_SBDFO)
 				{
-					AmdPCIRead(currentPtr, &temp);
+					AmdPCIRead(current_ptr, &temp);
 					/* HyperTransport Retry Capability? */
 					if (IS_HT_RETRY_CAPABILITY(temp))
 					{
-						ASSERT(pDat->port_list[i].Link < 2);
-						amd_pci_write_bits(currentPtr + HTRETRY_CONTROL_REG,
-								pDat->port_list[i].Link*16,
-								pDat->port_list[i].Link*16,
+						ASSERT(p_dat->port_list[i].Link < 2);
+						amd_pci_write_bits(current_ptr + HTRETRY_CONTROL_REG,
+								p_dat->port_list[i].Link*16,
+								p_dat->port_list[i].Link*16,
 								&bits);
-						isFound = TRUE;
+						is_found = TRUE;
 					}
 				/* Some other capability, keep looking */
 				}
@@ -1694,42 +1693,42 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 					 */
 					if (bits != 0)
 					{
-						if (pDat->ht_block->AMD_CB_EventNotify)
+						if (p_dat->ht_block->AMD_CB_EventNotify)
 						{
 							sHtEventOptRequiredCap evt;
 							evt.eSize = sizeof(sHtEventOptRequiredCap);
-							evt.node = pDat->port_list[i].node_id;
-							evt.link = pDat->port_list[i].host_link;
-							evt.depth = pDat->port_list[i].host_depth;
+							evt.node = p_dat->port_list[i].node_id;
+							evt.link = p_dat->port_list[i].host_link;
+							evt.depth = p_dat->port_list[i].host_depth;
 
-							pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_WARNING,
+							p_dat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_WARNING,
 										HT_EVENT_OPT_REQUIRED_CAP_RETRY,
 										(u8 *)&evt);
 						}
 						STOP_HERE;
 					}
-					isFound = TRUE;
+					is_found = TRUE;
 				}
-			} while (!isFound);
+			} while (!is_found);
 
 			/* Scrambling enable */
-			isFound = FALSE;
-			currentPtr = linkBase & (u32)0xFFFFF000; /* Set PCI Offset to 0 */
+			is_found = FALSE;
+			current_ptr = link_base & (u32)0xFFFFF000; /* Set PCI Offset to 0 */
 			do
 			{
-				amd_pci_find_next_cap(&currentPtr);
-				if (currentPtr != ILLEGAL_SBDFO)
+				amd_pci_find_next_cap(&current_ptr);
+				if (current_ptr != ILLEGAL_SBDFO)
 				{
-					AmdPCIRead(currentPtr, &temp);
+					AmdPCIRead(current_ptr, &temp);
 					/* HyperTransport Gen3 Capability? */
 					if (IS_HT_GEN3_CAPABILITY(temp))
 					{
-						ASSERT(pDat->port_list[i].Link < 2);
-						amd_pci_write_bits((currentPtr +
+						ASSERT(p_dat->port_list[i].Link < 2);
+						amd_pci_write_bits((current_ptr +
 							HTGEN3_LINK_TRAINING_0_REG +
-							pDat->port_list[i].Link*HTGEN3_LINK01_OFFSET),
+							p_dat->port_list[i].Link*HTGEN3_LINK01_OFFSET),
 							3, 3, &bits);
-						isFound = TRUE;
+						is_found = TRUE;
 					}
 					/* Some other capability, keep looking */
 					}
@@ -1740,23 +1739,23 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 					 */
 					if (bits != 0)
 					{
-						if (pDat->ht_block->AMD_CB_EventNotify)
+						if (p_dat->ht_block->AMD_CB_EventNotify)
 						{
 							sHtEventOptRequiredCap evt;
 							evt.eSize = sizeof(sHtEventOptRequiredCap);
-							evt.node = pDat->port_list[i].node_id;
-							evt.link = pDat->port_list[i].host_link;
-							evt.depth = pDat->port_list[i].host_depth;
+							evt.node = p_dat->port_list[i].node_id;
+							evt.link = p_dat->port_list[i].host_link;
+							evt.depth = p_dat->port_list[i].host_depth;
 
-							pDat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_WARNING,
+							p_dat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_WARNING,
 										HT_EVENT_OPT_REQUIRED_CAP_GEN3,
 										(u8 *)&evt);
 						}
 						STOP_HERE;
 					}
-					isFound = TRUE;
+					is_found = TRUE;
 				}
-			} while (!isFound);
+			} while (!is_found);
 		}
 	}
 }
@@ -1764,7 +1763,7 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * void
- * fam0fWriteHTLinkCmdBufferAlloc(u8 node, u8 link, u8 req, u8 preq, u8 rsp, u8 prb)
+ * fam_0f_write_ht_link_cmd_buffer_alloc(u8 node, u8 link, u8 req, u8 preq, u8 rsp, u8 prb)
  *
  *  Description:
  *	Set the command buffer allocations in the buffer count register for the node and link.
@@ -1782,36 +1781,36 @@ static void setLinkData(sMainData *pDat, cNorthBridge *nb)
  ******************************************************************************/
 #ifndef HT_BUILD_NC_ONLY
 
-static void fam0fWriteHTLinkCmdBufferAlloc(u8 node, u8 link, u8 req, u8 preq, u8 rsp, u8 prb)
+static void fam_0f_write_ht_link_cmd_buffer_alloc(u8 node, u8 link, u8 req, u8 preq, u8 rsp, u8 prb)
 {
 	u32 temp;
-	SBDFO currentPtr;
+	SBDFO current_ptr;
 
-	currentPtr = makeLinkBase(node, link);
-	currentPtr += HTHOST_BUFFER_COUNT_REG;
+	current_ptr = make_link_base(node, link);
+	current_ptr += HTHOST_BUFFER_COUNT_REG;
 
 	/* non-posted Request Command Buffers */
 	temp = req;
-	amd_pci_write_bits(currentPtr, 3, 0, &temp);
+	amd_pci_write_bits(current_ptr, 3, 0, &temp);
 	/* Posted Request Command Buffers */
 	temp = preq;
-	amd_pci_write_bits(currentPtr, 7, 4, &temp);
+	amd_pci_write_bits(current_ptr, 7, 4, &temp);
 	/* Response Command Buffers */
 	temp = rsp;
-	amd_pci_write_bits(currentPtr, 11, 8, &temp);
+	amd_pci_write_bits(current_ptr, 11, 8, &temp);
 	/* Probe Command Buffers */
 	temp = prb;
-	amd_pci_write_bits(currentPtr, 15, 12, &temp);
+	amd_pci_write_bits(current_ptr, 15, 12, &temp);
 	/* LockBc */
 	temp = 1;
-	amd_pci_write_bits(currentPtr, 31, 31, &temp);
+	amd_pci_write_bits(current_ptr, 31, 31, &temp);
 }
 #endif /* HT_BUILD_NC_ONLY */
 
 /***************************************************************************//**
  *
  * void
- * fam0fWriteHTLinkDatBufferAlloc(u8 node, u8 link, u8 reqD, u8 preqD, u8 rspD)
+ * fam_0f_write_ht_link_dat_buffer_alloc(u8 node, u8 link, u8 req_d, u8 preq_d, u8 rsp_d)
  *
  *  Description:
  *	 Set the data buffer allocations in the buffer count register for the node and link.
@@ -1821,37 +1820,37 @@ static void fam0fWriteHTLinkCmdBufferAlloc(u8 node, u8 link, u8 req, u8 preq, u8
  *  Parameters:
  *	@param[in] node  = The node to set allocations on
  *	@param[in] link  = the link to set allocations on
- *	@param[in] reqD  = non-posted Request Data Buffers
- *	@param[in] preqD = Posted Request Data Buffers
- *	@param[in] rspD  = Response Data Buffers
+ *	@param[in] req_d  = non-posted Request Data Buffers
+ *	@param[in] preq_d = Posted Request Data Buffers
+ *	@param[in] rsp_d  = Response Data Buffers
  *
  ******************************************************************************/
 #ifndef HT_BUILD_NC_ONLY
 
-static void fam0fWriteHTLinkDatBufferAlloc(u8 node, u8 link, u8 reqD, u8 preqD, u8 rspD)
+static void fam_0f_write_ht_link_dat_buffer_alloc(u8 node, u8 link, u8 req_d, u8 preq_d, u8 rsp_d)
 {
 	u32 temp;
-	SBDFO currentPtr;
+	SBDFO current_ptr;
 
-	currentPtr = makeLinkBase(node, link);
-	currentPtr += HTHOST_BUFFER_COUNT_REG;
+	current_ptr = make_link_base(node, link);
+	current_ptr += HTHOST_BUFFER_COUNT_REG;
 
 	/* Request Data Buffers */
-	temp = reqD;
-	amd_pci_write_bits(currentPtr, 18, 16, &temp);
+	temp = req_d;
+	amd_pci_write_bits(current_ptr, 18, 16, &temp);
 	/* Posted Request Data Buffers */
-	temp = preqD;
-	amd_pci_write_bits(currentPtr, 22, 20, &temp);
+	temp = preq_d;
+	amd_pci_write_bits(current_ptr, 22, 20, &temp);
 	/* Response Data Buffers */
-	temp = rspD;
-	amd_pci_write_bits(currentPtr, 26, 24, &temp);
+	temp = rsp_d;
+	amd_pci_write_bits(current_ptr, 26, 24, &temp);
 }
 #endif /* HT_BUILD_NC_ONLY */
 
 /***************************************************************************//**
  *
  * static void
- * ht3WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *nb)
+ * ht3_write_traffic_distribution(u32 links01, u32 links10, cNorthBridge *nb)
  *
  *  Description:
  *	 Set the traffic distribution register for the links provided.
@@ -1862,7 +1861,7 @@ static void fam0fWriteHTLinkDatBufferAlloc(u8 node, u8 link, u8 reqD, u8 preqD, 
  *	@param[in]  nb = this northbridge
  *
  ******************************************************************************/
-static void ht3WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *nb)
+static void ht3_write_traffic_distribution(u32 links01, u32 links10, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u32 temp;
@@ -1906,7 +1905,7 @@ static void ht3WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 /***************************************************************************//**
  *
  * static void
- * ht1WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *nb)
+ * ht1_write_traffic_distribution(u32 links01, u32 links10, cNorthBridge *nb)
  *
  *  Description:
  *	 Traffic distribution is more complex in this case as the routing table must be
@@ -1919,7 +1918,7 @@ static void ht3WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
  *	@param[in]  nb = this northbridge
  *
  ******************************************************************************/
-static void ht1WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *nb)
+static void ht1_write_traffic_distribution(u32 links01, u32 links10, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u32 route01, route10;
@@ -1983,30 +1982,30 @@ static void ht1WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 	 */
 
 	/* Node 0, Request / Probe Link (note family F only has links < 4) */
-	fam0fWriteHTLinkCmdBufferAlloc(0, req0, 6, 3, 1, 6);
-	fam0fWriteHTLinkDatBufferAlloc(0, req0, 4, 3, 1);
+	fam_0f_write_ht_link_cmd_buffer_alloc(0, req0, 6, 3, 1, 6);
+	fam_0f_write_ht_link_dat_buffer_alloc(0, req0, 4, 3, 1);
 	/* Node 0, Response Link (note family F only has links < 4) */
-	fam0fWriteHTLinkCmdBufferAlloc(0, rsp0, 1, 0, 15, 0);
-	fam0fWriteHTLinkDatBufferAlloc(0, rsp0, 1, 1, 6);
+	fam_0f_write_ht_link_cmd_buffer_alloc(0, rsp0, 1, 0, 15, 0);
+	fam_0f_write_ht_link_dat_buffer_alloc(0, rsp0, 1, 1, 6);
 	/* Node 1, Request / Probe Link (note family F only has links < 4) */
-	fam0fWriteHTLinkCmdBufferAlloc(1, req1, 6, 3, 1, 6);
-	fam0fWriteHTLinkDatBufferAlloc(1, req1, 4, 3, 1);
+	fam_0f_write_ht_link_cmd_buffer_alloc(1, req1, 6, 3, 1, 6);
+	fam_0f_write_ht_link_dat_buffer_alloc(1, req1, 4, 3, 1);
 	/* Node 1, Response Link (note family F only has links < 4) */
-	fam0fWriteHTLinkCmdBufferAlloc(1, rsp1, 1, 0, 15, 0);
-	fam0fWriteHTLinkDatBufferAlloc(1, rsp1, 1, 1, 6);
+	fam_0f_write_ht_link_cmd_buffer_alloc(1, rsp1, 1, 0, 15, 0);
+	fam_0f_write_ht_link_dat_buffer_alloc(1, rsp1, 1, 1, 6);
 
 	/* Node 0, is the third link non-coherent? */
 	nclink = (u8)amd_bit_scan_reverse(((u8)0x07 & ~((u32)1 << req0) & ~((u32)1 << rsp0)));
-	if (nb->verifyLinkIsNonCoherent(0, nclink, nb))
+	if (nb->verify_link_is_non_coherent(0, nclink, nb))
 	{
-		fam0fWriteHTLinkCmdBufferAlloc(0, nclink, 6, 5, 2, 0);
+		fam_0f_write_ht_link_cmd_buffer_alloc(0, nclink, 6, 5, 2, 0);
 	}
 
 	/* Node 1, is the third link non-coherent? */
 	nclink = (u8)amd_bit_scan_reverse(((u8)0x07 & ~((u32)1 << req1) & ~((u32)1 << rsp1)));
-	if (nb->verifyLinkIsNonCoherent(1, nclink, nb))
+	if (nb->verify_link_is_non_coherent(1, nclink, nb))
 	{
-		fam0fWriteHTLinkCmdBufferAlloc(1, nclink, 6, 5, 2, 0);
+		fam_0f_write_ht_link_cmd_buffer_alloc(1, nclink, 6, 5, 2, 0);
 	}
 #endif /* HT_BUILD_NC_ONLY */
 }
@@ -2014,7 +2013,7 @@ static void ht1WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
 /***************************************************************************//**
  *
  * static void
- * fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
+ * fam_0f_buffer_optimizations(u8 node, sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	 Buffer tunings are inherently northbridge specific. Check for specific configs
@@ -2022,21 +2021,21 @@ static void ht1WriteTrafficDistribution(u32 links01, u32 links10, cNorthBridge *
  *
  *  Parameters:
  *	@param[in]  node      = the node to
- *	@param[in] *pDat  = coherent links from node 0 to 1
+ *	@param[in] *p_dat  = coherent links from node 0 to 1
  *	@param[in]  nb = this northbridge
  *
  ******************************************************************************/
-static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
+static void fam_0f_buffer_optimizations(u8 node, sMainData *p_dat, cNorthBridge *nb)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u8 i;
 	u32 temp;
-	SBDFO currentPtr;
+	SBDFO current_ptr;
 
-	ASSERT(node < nb->maxNodes);
+	ASSERT(node < nb->max_nodes);
 
 	/* Fix the FIFO pointer register before changing speeds */
-	currentPtr = MAKE_SBDFO(makePCISegmentFromNode(node),
+	current_ptr = MAKE_SBDFO(makePCISegmentFromNode(node),
 				makePCIBusFromNode(node),
 				makePCIDeviceFromNode(node),
 				CPU_NB_FUNC_03,
@@ -2044,19 +2043,19 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 	for (i = 0; i < nb->maxLinks; i++)
 	{
 		temp = 0;
-		if (nb->verifyLinkIsCoherent(node, i, nb))
+		if (nb->verify_link_is_coherent(node, i, nb))
 		{
 			temp = 0x26;
 			ASSERT(i < 3);
-			amd_pci_write_bits(currentPtr, 8*i + 5, 8*i, &temp);
+			amd_pci_write_bits(current_ptr, 8*i + 5, 8*i, &temp);
 		}
 		else
 		{
-			if (nb->verifyLinkIsNonCoherent(node, i, nb))
+			if (nb->verify_link_is_non_coherent(node, i, nb))
 			{
 				temp = 0x25;
 				ASSERT(i < 3);
-				amd_pci_write_bits(currentPtr, 8*i + 5, 8*i, &temp);
+				amd_pci_write_bits(current_ptr, 8*i + 5, 8*i, &temp);
 			}
 		}
 	}
@@ -2067,11 +2066,11 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 	 * If 8 nodes, Check this node for 'inner' or 'outer'.
 	 * Tune each link based on coherent or non-coherent
 	 */
-	if (pDat->nodes_discovered >= 6)
+	if (p_dat->nodes_discovered >= 6)
 	{
 		u8 j;
-		BOOL isOuter;
-		BOOL isErrata153;
+		BOOL is_outer;
+		BOOL is_errata_153;
 
 		/* This is for family 0Fh, so assuming dual core max then 7 or 8 nodes are required
 		 * to be in the situation of 14 or more cores.	 We checked nodes above, cross check
@@ -2080,7 +2079,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 		 * nodes use the BKDG tuning.
 		 */
 
-		isErrata153 = 0;
+		is_errata_153 = 0;
 
 		amd_pci_read_bits (MAKE_SBDFO(makePCISegmentFromNode(0),
 					makePCIBusFromNode(0),
@@ -2095,7 +2094,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 			 * Errata 153 applies to JH-1, JH-2 and older.  It is fixed in JH-3
 			 * (and, one assumes, from there on).
 			 */
-			for (i = 0; i < (pDat->nodes_discovered +1); i++)
+			for (i = 0; i < (p_dat->nodes_discovered +1); i++)
 			{
 				amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(i),
 						makePCIBusFromNode(i),
@@ -2105,7 +2104,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 						7, 0, &temp);
 				if (((u8)temp & ~0x40) < 0x13)
 				{
-					isErrata153 = 1;
+					is_errata_153 = 1;
 					break;
 				}
 			}
@@ -2113,69 +2112,69 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 		for (i = 0; i < CPU_ADDR_NUM_CONFIG_MAPS; i++)
 		{
-			isOuter = FALSE;
+			is_outer = FALSE;
 			/* Check for outer node by scanning the config maps on node 0 for one
 			 * which is assigned to this node.
 			 */
-			currentPtr = MAKE_SBDFO(makePCISegmentFromNode(0),
+			current_ptr = MAKE_SBDFO(makePCISegmentFromNode(0),
 						makePCIBusFromNode(0),
 						makePCIDeviceFromNode(0),
 						CPU_ADDR_FUNC_01,
 						REG_ADDR_CONFIG_MAP0_1XE0 + (4 * i));
-			amd_pci_read_bits (currentPtr, 1, 0, &temp);
+			amd_pci_read_bits (current_ptr, 1, 0, &temp);
 			/* Make sure this config map is valid, if it is it will be enabled for read/write */
 			if (temp == 3)
 			{
 				/* It's valid, get the node (that node is an outer node) */
-				amd_pci_read_bits (currentPtr, 6, 4, &temp);
+				amd_pci_read_bits (current_ptr, 6, 4, &temp);
 				/* Is the node we're working on now? */
 				if (node == (u8)temp)
 				{
 					/* This is an outer node.	Tune it appropriately. */
 					for (j = 0; j < nb->maxLinks; j++)
 					{
-						if (isErrata153)
+						if (is_errata_153)
 						{
-							if (nb->verifyLinkIsCoherent(node, j, nb))
+							if (nb->verify_link_is_coherent(node, j, nb))
 							{
-								fam0fWriteHTLinkCmdBufferAlloc(node, j, 1, 1, 6, 4);
+								fam_0f_write_ht_link_cmd_buffer_alloc(node, j, 1, 1, 6, 4);
 							}
 							else
 							{
-								if (nb->verifyLinkIsNonCoherent(node, j, nb))
+								if (nb->verify_link_is_non_coherent(node, j, nb))
 								{
-									fam0fWriteHTLinkCmdBufferAlloc(node, j, 5, 4, 1, 0);
+									fam_0f_write_ht_link_cmd_buffer_alloc(node, j, 5, 4, 1, 0);
 								}
 							}
 						}
 						else
 						{
-							if (nb->verifyLinkIsCoherent(node, j, nb))
+							if (nb->verify_link_is_coherent(node, j, nb))
 							{
-								fam0fWriteHTLinkCmdBufferAlloc(node, j, 1, 1, 8, 5);
+								fam_0f_write_ht_link_cmd_buffer_alloc(node, j, 1, 1, 8, 5);
 							}
 						}
 					}
 					/*
 					 * SRI to XBAR Buffer Counts are correct for outer node at power on defaults.
 					 */
-					isOuter = TRUE;
+					is_outer = TRUE;
 					break;
 				}
 			}
 			/* We fill config maps in ascending order, so if we didn't use this one, we're done. */
 			else break;
 		}
-		if (!isOuter)
+		if (!is_outer)
 		{
-			if (isErrata153)
+			if (is_errata_153)
 			{
 				/* Tuning for inner node coherent links */
 				for (j = 0; j < nb->maxLinks; j++)
 				{
-					if (nb->verifyLinkIsCoherent(node, j, nb))
+					if (nb->verify_link_is_coherent(node, j, nb))
 					{
-						fam0fWriteHTLinkCmdBufferAlloc(node, j, 2, 1, 5, 4);
+						fam_0f_write_ht_link_cmd_buffer_alloc(node, j, 2, 1, 5, 4);
 					}
 
 				}
@@ -2193,7 +2192,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 		/*
 		 * Tune MCT to XBAR Buffer Count the same an all nodes, 2 Probes, 5 Response
 		 */
-		if (isErrata153)
+		if (is_errata_153)
 		{
 			temp = 0x25;
 			amd_pci_write_bits (MAKE_SBDFO(makePCISegmentFromNode(node),
@@ -2210,7 +2209,7 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * fam10BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
+ * fam_10_buffer_optimizations(u8 node, sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	 Buffer tunings are inherently northbridge specific. Check for specific configs
@@ -2218,17 +2217,17 @@ static void fam0fBufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
  *
  *  Parameters:
  *	@param[in] node       = the node to tune
- *	@param[in] *pDat  = global state
+ *	@param[in] *p_dat  = global state
  *	@param[in] nb = this northbridge
  *
  ******************************************************************************/
-static void fam10BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
+static void fam_10_buffer_optimizations(u8 node, sMainData *p_dat, cNorthBridge *nb)
 {
 	u32 temp;
-	SBDFO currentPtr;
+	SBDFO current_ptr;
 	u8 i;
 
-	ASSERT(node < nb->maxNodes);
+	ASSERT(node < nb->max_nodes);
 
 	/*
 	 * Link to XCS Token Count Tuning
@@ -2238,40 +2237,40 @@ static void fam10BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 	 * We do this here for the non-uma case, which is to write the values that would have
 	 * been power on defaults if the link was ganged at cold reset.
 	 */
-	for (i = 0; i < pDat->total_links*2; i++)
+	for (i = 0; i < p_dat->total_links*2; i++)
 	{
-		if ((pDat->port_list[i].node_id == node) && (pDat->port_list[i].Type == PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].node_id == node) && (p_dat->port_list[i].Type == PORTLIST_TYPE_CPU))
 		{
 			/* If the link is greater than 4, this is a sublink 1, so it is not reganged. */
-			if (pDat->port_list[i].Link < 4)
+			if (p_dat->port_list[i].Link < 4)
 			{
-				currentPtr = MAKE_SBDFO(makePCISegmentFromNode(node),
+				current_ptr = MAKE_SBDFO(makePCISegmentFromNode(node),
 						makePCIBusFromNode(node),
 						makePCIDeviceFromNode(node),
 						CPU_NB_FUNC_03,
-						REG_NB_LINK_XCS_TOKEN0_3X148 + 4*pDat->port_list[i].Link);
-				if (pDat->port_list[i].sel_regang)
+						REG_NB_LINK_XCS_TOKEN0_3X148 + 4*p_dat->port_list[i].Link);
+				if (p_dat->port_list[i].sel_regang)
 				{
 					/* Handle all the regang Token count adjustments */
 
 					/* Sublink 0: [Probe0tok] = 2 [Rsp0tok] = 2 [PReq0tok] = 2 [Req0tok] = 2 */
 					temp = 0xAA;
-					amd_pci_write_bits(currentPtr, 7, 0, &temp);
+					amd_pci_write_bits(current_ptr, 7, 0, &temp);
 					/* Sublink 1: [Probe1tok] = 0 [Rsp1tok] = 0 [PReq1tok] = 0 [Req1tok] = 0 */
 					temp = 0;
-					amd_pci_write_bits(currentPtr, 23, 16, &temp);
+					amd_pci_write_bits(current_ptr, 23, 16, &temp);
 					/* [FreeTok] = 3 */
 					temp = 3;
-					amd_pci_write_bits(currentPtr, 15, 14, &temp);
+					amd_pci_write_bits(current_ptr, 15, 14, &temp);
 				}
 				else
 				{
 					/* Read the regang bit in hardware */
-					amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(pDat->port_list[i].node_id),
-							makePCIBusFromNode(pDat->port_list[i].node_id),
-							makePCIDeviceFromNode(pDat->port_list[i].node_id),
+					amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(p_dat->port_list[i].node_id),
+							makePCIBusFromNode(p_dat->port_list[i].node_id),
+							makePCIDeviceFromNode(p_dat->port_list[i].node_id),
 							CPU_HTNB_FUNC_00,
-							REG_HT_LINK_EXT_CONTROL0_0X170 + 4*pDat->port_list[i].Link),
+							REG_HT_LINK_EXT_CONTROL0_0X170 + 4*p_dat->port_list[i].Link),
 							0, 0, &temp);
 					if (temp == 1)
 					{
@@ -2281,7 +2280,7 @@ static void fam10BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 
 						/* [FreeTok] = 3 */
 						temp = 3;
-						amd_pci_write_bits(currentPtr, 15, 14, &temp);
+						amd_pci_write_bits(current_ptr, 15, 14, &temp);
 					}
 				}
 			}
@@ -2292,7 +2291,7 @@ static void fam10BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * static void
- * fam15BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
+ * fam_15_buffer_optimizations(u8 node, sMainData *p_dat, cNorthBridge *nb)
  *
  *  Description:
  *	 Buffer tunings are inherently northbridge specific. Check for specific configs
@@ -2300,11 +2299,11 @@ static void fam10BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
  *
  *  Parameters:
  *	@param[in] node       = the node to tune
- *	@param[in] *pDat  = global state
+ *	@param[in] *p_dat  = global state
  *	@param[in] nb = this northbridge
  *
  ******************************************************************************/
-static void fam15BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
+static void fam_15_buffer_optimizations(u8 node, sMainData *p_dat, cNorthBridge *nb)
 {
 	/* Buffer count setup on Family 15h is currently handled in cpu_set_amd_pci */
 }
@@ -2317,7 +2316,7 @@ static void fam15BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
 /***************************************************************************//**
  *
  * void
- * newNorthBridge(u8 node, cNorthBridge *nb)
+ * new_northbridge(u8 node, cNorthBridge *nb)
  *
  *  Description:
  *	 Construct a new northbridge.  This routine encapsulates knowledge of how to tell
@@ -2330,10 +2329,10 @@ static void fam15BufferOptimizations(u8 node, sMainData *pDat, cNorthBridge *nb)
  *	  @param[out]	    nb		 = the caller's northbridge structure to initialize.
  *
  ******************************************************************************/
-void newNorthBridge(u8 node, cNorthBridge *nb)
+void new_northbridge(u8 node, cNorthBridge *nb)
 {
 	u32 match;
-	u32 extFam, baseFam, model;
+	u32 ext_fam, base_fam, model;
 
 	cNorthBridge fam15 =
 	{
@@ -2346,32 +2345,32 @@ void newNorthBridge(u8 node, cNorthBridge *nb)
 		8,
 		64,
 #endif /* HT_BUILD_NC_ONLY*/
-		writeRoutingTable,
-		writeNodeID,
-		readDefLnk,
-		enableRoutingTables,
-		verifyLinkIsCoherent,
-		readTrueLinkFailStatus,
-		readToken,
+		write_routing_table,
+		write_node_id,
+		read_def_lnk,
+		enable_routing_tables,
+		verify_link_is_coherent,
+		read_true_link_fail_status,
+		read_token,
 		writeToken,
-		fam15GetNumCoresOnNode,
-		setTotalNodesAndCores,
-		limitNodes,
-		writeFullRoutingTable,
-		isCompatible,
-		fam15IsCapable,
-		(void (*)(u8, u8, cNorthBridge*))commonVoid,
-		(BOOL (*)(u8, u8, sMainData*, cNorthBridge*))commonReturnFalse,
-		readSbLink,
-		verifyLinkIsNonCoherent,
-		ht3SetCFGAddrMap,
-		convertBitsToWidth,
-		convertWidthToBits,
-		fam15NorthBridgeFreqMask,
-		gatherLinkData,
-		setLinkData,
-		ht3WriteTrafficDistribution,
-		fam15BufferOptimizations,
+		fam_15_get_num_cores_on_node,
+		set_total_nodes_and_cores,
+		limit_nodes,
+		write_full_routing_table,
+		is_compatible,
+		fam_15_is_capable,
+		(void (*)(u8, u8, cNorthBridge*))common_void,
+		(BOOL (*)(u8, u8, sMainData*, cNorthBridge*))common_return_false,
+		read_sb_link,
+		verify_link_is_non_coherent,
+		ht3_set_cfg_addr_map,
+		convert_bits_to_width,
+		convert_width_to_bits,
+		fam_15_northbridge_freq_mask,
+		gather_link_data,
+		set_link_data,
+		ht3_write_traffic_distribution,
+		fam_15_buffer_optimizations,
 		0x00000001,
 		0x00000200,
 		18,
@@ -2389,32 +2388,32 @@ void newNorthBridge(u8 node, cNorthBridge *nb)
 		8,
 		64,
 #endif /* HT_BUILD_NC_ONLY*/
-		writeRoutingTable,
-		writeNodeID,
-		readDefLnk,
-		enableRoutingTables,
-		verifyLinkIsCoherent,
-		readTrueLinkFailStatus,
-		readToken,
+		write_routing_table,
+		write_node_id,
+		read_def_lnk,
+		enable_routing_tables,
+		verify_link_is_coherent,
+		read_true_link_fail_status,
+		read_token,
 		writeToken,
-		fam10GetNumCoresOnNode,
-		setTotalNodesAndCores,
-		limitNodes,
-		writeFullRoutingTable,
-		isCompatible,
-		fam10IsCapable,
-		(void (*)(u8, u8, cNorthBridge*))commonVoid,
-		(BOOL (*)(u8, u8, sMainData*, cNorthBridge*))commonReturnFalse,
-		readSbLink,
-		verifyLinkIsNonCoherent,
-		ht3SetCFGAddrMap,
-		convertBitsToWidth,
-		convertWidthToBits,
-		fam10NorthBridgeFreqMask,
-		gatherLinkData,
-		setLinkData,
-		ht3WriteTrafficDistribution,
-		fam10BufferOptimizations,
+		fam_10_get_num_cores_on_node,
+		set_total_nodes_and_cores,
+		limit_nodes,
+		write_full_routing_table,
+		is_compatible,
+		fam_10_is_capable,
+		(void (*)(u8, u8, cNorthBridge*))common_void,
+		(BOOL (*)(u8, u8, sMainData*, cNorthBridge*))common_return_false,
+		read_sb_link,
+		verify_link_is_non_coherent,
+		ht3_set_cfg_addr_map,
+		convert_bits_to_width,
+		convert_width_to_bits,
+		fam_10_northbridge_freq_mask,
+		gather_link_data,
+		set_link_data,
+		ht3_write_traffic_distribution,
+		fam_10_buffer_optimizations,
 		0x00000001,
 		0x00000200,
 		18,
@@ -2432,32 +2431,32 @@ void newNorthBridge(u8 node, cNorthBridge *nb)
 		8,
 		32,
 #endif /* HT_BUILD_NC_ONLY*/
-		writeRoutingTable,
-		writeNodeID,
-		readDefLnk,
-		enableRoutingTables,
-		verifyLinkIsCoherent,
-		readTrueLinkFailStatus,
-		readToken,
+		write_routing_table,
+		write_node_id,
+		read_def_lnk,
+		enable_routing_tables,
+		verify_link_is_coherent,
+		read_true_link_fail_status,
+		read_token,
 		writeToken,
-		fam0FGetNumCoresOnNode,
-		setTotalNodesAndCores,
-		limitNodes,
-		writeFullRoutingTable,
-		isCompatible,
-		fam0fIsCapable,
-		fam0fStopLink,
-		(BOOL (*)(u8, u8, sMainData*, cNorthBridge*))commonReturnFalse,
-		readSbLink,
-		verifyLinkIsNonCoherent,
-		ht1SetCFGAddrMap,
-		convertBitsToWidth,
-		convertWidthToBits,
-		ht1NorthBridgeFreqMask,
-		gatherLinkData,
-		setLinkData,
-		ht1WriteTrafficDistribution,
-		fam0fBufferOptimizations,
+		fam_0f_get_num_cores_on_node,
+		set_total_nodes_and_cores,
+		limit_nodes,
+		write_full_routing_table,
+		is_compatible,
+		fam_0f_is_capable,
+		fam_0f_stop_link,
+		(BOOL (*)(u8, u8, sMainData*, cNorthBridge*))common_return_false,
+		read_sb_link,
+		verify_link_is_non_coherent,
+		ht1_set_cfg_addr_map,
+		convert_bits_to_width,
+		convert_width_to_bits,
+		ht1_northbridge_freq_mask,
+		gather_link_data,
+		set_link_data,
+		ht1_write_traffic_distribution,
+		fam_0f_buffer_optimizations,
 		0x00000001,
 		0x00000100,
 		16,
@@ -2470,20 +2469,20 @@ void newNorthBridge(u8 node, cNorthBridge *nb)
 			makePCIDeviceFromNode(node),
 			CPU_NB_FUNC_03,
 			REG_NB_CPUID_3XFC),
-			27, 20, &extFam);
+			27, 20, &ext_fam);
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 			makePCIBusFromNode(node),
 			makePCIDeviceFromNode(node),
 			CPU_NB_FUNC_03,
 			REG_NB_CPUID_3XFC),
-			11, 8, &baseFam);
+			11, 8, &base_fam);
 	amd_pci_read_bits(MAKE_SBDFO(makePCISegmentFromNode(node),
 			makePCIBusFromNode(node),
 			makePCIDeviceFromNode(node),
 			CPU_NB_FUNC_03,
 			REG_NB_CPUID_3XFC),
 			7, 4, &model);
-	match = (u32)((baseFam << 8) | extFam);
+	match = (u32)((base_fam << 8) | ext_fam);
 
 	/* Test each in turn looking for a match.
 	 * Initialize the struct if found.
@@ -2509,5 +2508,5 @@ void newNorthBridge(u8 node, cNorthBridge *nb)
 	}
 
 	/* Update the initial limited key to the real one, which may include other matching info */
-	nb->compatibleKey = makeKey(node);
+	nb->compatibleKey = make_key(node);
 }

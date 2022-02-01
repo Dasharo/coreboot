@@ -316,7 +316,7 @@ static void route_from_bsp(u8 target_node, u8 actual_target, sMainData *p_dat)
 	/*  Node is established */
 	route_from_bsp(predecessor_node, actual_target, p_dat);
 
-	p_dat->nb->writeRoutingTable(predecessor_node, actual_target, predecessor_link, p_dat->nb);
+	p_dat->nb->write_routing_table(predecessor_node, actual_target, predecessor_link, p_dat->nb);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -437,14 +437,14 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			/* Configure current_node to route traffic to the BSP through its
 			 * default link
 			 */
-			p_dat->nb->writeRoutingTable(current_node, 0, p_dat->nb->readDefLnk(current_node, p_dat->nb), p_dat->nb);
+			p_dat->nb->write_routing_table(current_node, 0, p_dat->nb->read_def_lnk(current_node, p_dat->nb), p_dat->nb);
 		}
 
 		/* Set current_node's node_id field to current_node */
-		p_dat->nb->writeNodeID(current_node, current_node, p_dat->nb);
+		p_dat->nb->write_node_id(current_node, current_node, p_dat->nb);
 
 		/* Enable routing tables on current_node */
-		p_dat->nb->enableRoutingTables(current_node, p_dat->nb);
+		p_dat->nb->enable_routing_tables(current_node, p_dat->nb);
 
 		for (current_link_id = 0; current_link_id < p_dat->nb->max_links; current_link_id++)
 		{
@@ -467,11 +467,11 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			if (p_dat->ht_block->amd_cb_ignore_link && p_dat->ht_block->amd_cb_ignore_link(current_node, current_link))
 				continue;
 
-			if (p_dat->nb->readTrueLinkFailStatus(current_node, current_link, p_dat, p_dat->nb))
+			if (p_dat->nb->read_true_link_fail_status(current_node, current_link, p_dat, p_dat->nb))
 				continue;
 
 			/* Make sure that the link is connected, coherent, and ready */
-			if (!p_dat->nb->verifyLinkIsCoherent(current_node, current_link, p_dat->nb))
+			if (!p_dat->nb->verify_link_is_coherent(current_node, current_link, p_dat->nb))
 				continue;
 
 
@@ -500,12 +500,12 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			/* Modify current_node's routing table to use current_link to send
 			 * traffic to current_node+1
 			 */
-			p_dat->nb->writeRoutingTable(current_node, current_node + 1, current_link, p_dat->nb);
+			p_dat->nb->write_routing_table(current_node, current_node + 1, current_link, p_dat->nb);
 
 			/* Check the northbridge of the node we just found, to make sure it is compatible
 			 * before doing anything else to it.
 			 */
-			if (!p_dat->nb->isCompatible(current_node + 1, p_dat->nb))
+			if (!p_dat->nb->is_compatible(current_node + 1, p_dat->nb))
 			{
 				u8 node_to_kill;
 
@@ -539,13 +539,13 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 				for (current_link = 0; current_link < p_dat->nb->max_links; current_link++)
 				{
 					/* Stop all links which are connected, coherent, and ready */
-					if (p_dat->nb->verifyLinkIsCoherent(current_node, current_link, p_dat->nb))
+					if (p_dat->nb->verify_link_is_coherent(current_node, current_link, p_dat->nb))
 						p_dat->nb->stopLink(current_node, current_link, p_dat->nb);
 				}
 
 				for (node_to_kill = 0; node_to_kill < p_dat->nb->maxNodes; node_to_kill++)
 				{
-					p_dat->nb->writeFullRoutingTable(0, node_to_kill, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
+					p_dat->nb->write_full_routing_table(0, node_to_kill, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
 				}
 
 				/* End Coherent Discovery */
@@ -554,7 +554,7 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			}
 
 			/* Read token from Current+1 */
-			token = p_dat->nb->readToken(current_node + 1, p_dat->nb);
+			token = p_dat->nb->read_token(current_node + 1, p_dat->nb);
 			ASSERT(token <= p_dat->nodes_discovered);
 			if (token == 0)
 			{
@@ -586,7 +586,7 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 
 					for (node_to_kill = 0; node_to_kill < p_dat->nb->maxNodes; node_to_kill++)
 					{
-						p_dat->nb->writeFullRoutingTable(0, node_to_kill, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
+						p_dat->nb->write_full_routing_table(0, node_to_kill, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
 					}
 
 					/* End Coherent Discovery */
@@ -650,7 +650,7 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			p_dat->port_list[p_dat->total_links * 2].node_id = current_node;
 
 			p_dat->port_list[p_dat->total_links * 2 + 1].Type = PORTLIST_TYPE_CPU;
-			p_dat->port_list[p_dat->total_links * 2 + 1].Link = p_dat->nb->readDefLnk(current_node + 1, p_dat->nb);
+			p_dat->port_list[p_dat->total_links * 2 + 1].Link = p_dat->nb->read_def_lnk(current_node + 1, p_dat->nb);
 			p_dat->port_list[p_dat->total_links * 2 + 1].node_id = token;
 
 			p_dat->total_links++;
@@ -852,7 +852,7 @@ static void lookup_compute_and_load_routing_tables(sMainData *p_dat)
 					rsp_target_link = convert_node_to_link(i, p_dat->reverse_perm[rsp_target_node], p_dat);
 				}
 
-				p_dat->nb->writeFullRoutingTable(i, j, req_target_link, rsp_target_link, bc_target_links, p_dat->nb);
+				p_dat->nb->write_full_routing_table(i, j, req_target_link, rsp_target_link, bc_target_links, p_dat->nb);
 			}
 			/* Clean up discovery 'footprint' that otherwise remains in the routing table.  It didn't hurt
 			 * anything, but might cause confusion during debug and validation.  Do this by setting the
@@ -861,7 +861,7 @@ static void lookup_compute_and_load_routing_tables(sMainData *p_dat)
 			 */
 			if (size < p_dat->nb->maxNodes)
 			{
-				p_dat->nb->writeFullRoutingTable(i, size, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
+				p_dat->nb->write_full_routing_table(i, size, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
 			}
 		}
 
@@ -889,7 +889,7 @@ static void lookup_compute_and_load_routing_tables(sMainData *p_dat)
 		/* Force 1P */
 		p_dat->nodes_discovered = 0;
 		p_dat->total_links = 0;
-		p_dat->nb->enableRoutingTables(0, p_dat->nb);
+		p_dat->nb->enable_routing_tables(0, p_dat->nb);
 	}
 }
 #endif /* HT_BUILD_NC_ONLY */
@@ -919,12 +919,12 @@ static void finialize_coherent_init(sMainData *p_dat)
 
 	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
 	{
-		p_dat->nb->setTotalNodesAndCores(cur_node, p_dat->nodes_discovered + 1, total_cores, p_dat->nb);
+		p_dat->nb->set_total_nodes_and_cores(cur_node, p_dat->nodes_discovered + 1, total_cores, p_dat->nb);
 	}
 
 	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
 	{
-		p_dat->nb->limitNodes(cur_node, p_dat->nb);
+		p_dat->nb->limit_nodes(cur_node, p_dat->nb);
 	}
 
 }
@@ -949,7 +949,7 @@ static void coherent_init(sMainData *p_dat)
 	 */
 	p_dat->nodes_discovered = 0;
 	p_dat->total_links = 0;
-	p_dat->nb->enableRoutingTables(0, p_dat->nb);
+	p_dat->nb->enable_routing_tables(0, p_dat->nb);
 #else
 	u8 i, j;
 
@@ -1287,7 +1287,7 @@ static void nc_init(sMainData *p_dat)
 	u8 node, link;
 	u8 compat_link;
 
-	compat_link = p_dat->nb->readSbLink(p_dat->nb);
+	compat_link = p_dat->nb->read_sb_link(p_dat->nb);
 	process_link(0, compat_link, p_dat);
 
 	for (node = 0; node <= p_dat->nodes_discovered; node++)
@@ -1300,10 +1300,10 @@ static void nc_init(sMainData *p_dat)
 			if (node == 0 && link == compat_link)
 				continue;
 
-			if (p_dat->nb->readTrueLinkFailStatus(node, link, p_dat, p_dat->nb))
+			if (p_dat->nb->read_true_link_fail_status(node, link, p_dat, p_dat->nb))
 				continue;
 
-			if (p_dat->nb->verifyLinkIsNonCoherent(node, link, p_dat->nb))
+			if (p_dat->nb->verify_link_is_non_coherent(node, link, p_dat->nb))
 				process_link(node, link, p_dat);
 		}
 	}
@@ -1708,13 +1708,13 @@ static void hammer_sublink_fixup(sMainData *p_dat)
  */
 static void link_optimization(sMainData *p_dat)
 {
-	p_dat->nb->gatherLinkData(p_dat, p_dat->nb);
+	p_dat->nb->gather_link_data(p_dat, p_dat->nb);
 	regang_links(p_dat);
 	if (is_fam_15h())
 		detect_io_link_isochronous_capable(p_dat);
 	select_optimal_width_and_frequency(p_dat);
 	hammer_sublink_fixup(p_dat);
-	p_dat->nb->setLinkData(p_dat, p_dat->nb);
+	p_dat->nb->set_link_data(p_dat, p_dat->nb);
 }
 
 
@@ -1848,7 +1848,7 @@ void amd_ht_initialize(AMD_HTBLOCK *p_block)
 
 	if (is_sanity_check_ok())
 	{
-		newNorthBridge(0, &nb);
+		new_northbridge(0, &nb);
 
 		p_dat.ht_block = p_block;
 		p_dat.nb = &nb;
