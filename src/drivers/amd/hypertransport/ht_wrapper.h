@@ -10,6 +10,6 @@ void amd_ht_fixup(struct sys_info *sysinfo);
 u32 get_nodes(void);
 void amd_ht_init(struct sys_info *sysinfo);
 bool amd_cpu_find_capability(u8 node, u8 cap_count, u8 *offset);
-u32 AMD_checkLinkType(u8 node, u8 regoff);
+u32 amd_check_link_type(u8 node, u8 regoff);
 
 #endif
