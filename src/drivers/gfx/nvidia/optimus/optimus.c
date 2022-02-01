@@ -60,16 +60,33 @@ static void nvidia_optimus_acpi_l23_entry(void)
 }
 
 /* Restore the subsystem ID after _ON to ensure the windows driver works */
-static void nvidia_optimus_acpi_subsystem_id_restore(void)
+static void nvidia_optimus_acpi_subsystem_id_restore(const struct device *dev)
 {
-	uint32_t dvid = CONFIG_SUBSYSTEM_DEVICE_ID << 16 | CONFIG_SUBSYSTEM_VENDOR_ID;
+	uint32_t did, vid, dvid;
+
+	if (CONFIG_SUBSYSTEM_VENDOR_ID)
+		vid = CONFIG_SUBSYSTEM_VENDOR_ID;
+	else if (dev->subsystem_vendor)
+		vid = dev->subsystem_vendor;
+	else
+		vid = 0x0000;
+
+	if (CONFIG_SUBSYSTEM_DEVICE_ID)
+		did = CONFIG_SUBSYSTEM_DEVICE_ID;
+	else if (dev->subsystem_device)
+		did = dev->subsystem_device;
+	else
+		did = 0x0000;
+
+	dvid = did << 16 | vid;
 	acpigen_write_store_int_to_namestr(dvid, ACPI_REG_PCI_SUBSYSTEM_ID);
 }
 
 static void
 nvidia_optimus_acpi_method_on(unsigned int pcie_rp,
-			 const struct drivers_gfx_nvidia_optimus_config *config)
+			      const struct device *dev)
 {
+	const struct drivers_gfx_nvidia_optimus_config *config = config_of(dev);
 	acpigen_write_method_serialized("_ON", 0);
 	acpigen_write_if_lequal_namestr_int("_STA", 0x5);
 
@@ -103,15 +120,16 @@ nvidia_optimus_acpi_method_on(unsigned int pcie_rp,
 
 	acpigen_pop_len(); /* If */
 
-	nvidia_optimus_acpi_subsystem_id_restore();
+	nvidia_optimus_acpi_subsystem_id_restore(dev);
 	acpigen_write_store_int_to_namestr(0xF, "_STA");
 	acpigen_pop_len(); /* Method */
 }
 
 static void
-nvidia_optimus_acpi_method_off(int pcie_rp,
-			  const struct drivers_gfx_nvidia_optimus_config *config)
+nvidia_optimus_acpi_method_off(unsigned int pcie_rp,
+			       const struct device *dev)
 {
+	const struct drivers_gfx_nvidia_optimus_config *config = config_of(dev);
 	acpigen_write_method_serialized("_OFF", 0);
 	acpigen_write_if_lequal_namestr_int("_STA", 0xF);
 
@@ -248,8 +266,8 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 
 	acpigen_write_name_integer("_STA", 0xF);
 
-	nvidia_optimus_acpi_method_on(pcie_rp, config);
-	nvidia_optimus_acpi_method_off(pcie_rp, config);
+	nvidia_optimus_acpi_method_on(pcie_rp, dev);
+	nvidia_optimus_acpi_method_off(pcie_rp, dev);
 
 	acpigen_pop_len(); /* PowerResource */
 	acpigen_pop_len(); /* Device */
