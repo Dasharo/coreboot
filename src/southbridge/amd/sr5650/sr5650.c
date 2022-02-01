@@ -87,7 +87,7 @@ static void l1cfg_ind_write_index(struct device *nb_dev, u32 index, u32 data)
 	nb_write_index((nb_dev), L1CFG_INDEX | (0x1 << 31), (index), (data));
 }
 
-void PcieReleasePortTraining(struct device *nb_dev, struct device *dev, u32 port)
+void pcie_release_port_training(struct device *nb_dev, struct device *dev, u32 port)
 {
 	switch (port) {
 	case 2:		/* GPP1, bit4-5 */
@@ -124,7 +124,7 @@ void PcieReleasePortTraining(struct device *nb_dev, struct device *dev, u32 port
 *	0: no device is present.
 *	1: device is present and is trained.
 ********************************************************************************************************/
-u8 PcieTrainPort(struct device *nb_dev, struct device *dev, u32 port)
+u8 pcie_train_port(struct device *nb_dev, struct device *dev, u32 port)
 {
 	u16 count = 5000;
 	u32 lc_state, reg, current_link_width, lane_mask;
@@ -196,7 +196,7 @@ u8 PcieTrainPort(struct device *nb_dev, struct device *dev, u32 port)
 			reg =
 			    pci_ext_read_config32(nb_dev, dev,
 						  PCIE_VC0_RESOURCE_STATUS);
-			printk(BIOS_DEBUG, "PcieTrainPort reg=0x%x\n", reg);
+			printk(BIOS_DEBUG, "pcie_train_port reg=0x%x\n", reg);
 			/* check bit1 */
 			if (reg & VC_NEGOTIATION_PENDING) {	/* bit1=1 means the link needs to be re-trained. */
 				/* set bit8=1, bit0-2=bit4-6 */

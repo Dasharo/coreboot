@@ -752,9 +752,9 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 				printk(BIOS_WARNING, "invalid gpp3a_configuration\n");
 				return;
 			}
-			PcieReleasePortTraining(nb_dev, dev, hw_port);
+			pcie_release_port_training(nb_dev, dev, hw_port);
 			if (!(ati_pcie_cfg.Config & PCIE_GPP_COMPLIANCE)) {
-				u8 res = PcieTrainPort(nb_dev, dev, hw_port);
+				u8 res = pcie_train_port(nb_dev, dev, hw_port);
 				printk(BIOS_DEBUG, "%s: port=0x%x hw_port=0x%x result=%d\n",
 					__func__, port, hw_port, res);
 				if (res) {

@@ -77,8 +77,8 @@ extern PCIE_CFG AtiPcieCfg;
 void sr5650_disable_pcie_bridge(void);
 void enable_sr5650_dev8(void);
 
-u8 PcieTrainPort(struct device *nb_dev, struct device *dev, u32 port);
-void PcieReleasePortTraining(struct device *nb_dev, struct device *dev, u32 port);
+u8 pcie_train_port(struct device *nb_dev, struct device *dev, u32 port);
+void pcie_release_port_training(struct device *nb_dev, struct device *dev, u32 port);
 
 u32 nbpcie_p_read_index(struct device *dev, u32 index);
 void nbpcie_p_write_index(struct device *dev, u32 index, u32 data);
