@@ -13,6 +13,11 @@ const char *smbios_system_sku(void)
 	return "Not Applicable";
 }
 
+smbios_enclosure_type smbios_mainboard_enclosure_type(void)
+{
+	return SMBIOS_ENCLOSURE_NOTEBOOK;
+}
+
 static void mainboard_init(void *chip_info)
 {
 	const struct pad_config *pads;
