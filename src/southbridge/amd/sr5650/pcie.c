@@ -15,7 +15,7 @@
 /*------------------------------------------------
 * Global variable
 ------------------------------------------------*/
-PCIE_CFG AtiPcieCfg = {
+PCIE_CFG ati_pcie_cfg = {
 	PCIE_ENABLE_STATIC_DEV_REMAP,	/* Config */
 	0,			/* ResetReleaseDelay */
 	0,			/* Gfx0Width */
@@ -39,9 +39,9 @@ PCIE_CFG AtiPcieCfg = {
 * Compliant with CIM_33's PCIEPowerOffGppPorts
 * Power off unused GPP lines
 *****************************************************************/
-static void PciePowerOffGppPorts(struct device *nb_dev, struct device *dev, u32 port)
+static void pcie_power_off_gpp_ports(struct device *nb_dev, struct device *dev, u32 port)
 {
-	printk(BIOS_DEBUG, "PciePowerOffGppPorts() port %d\n", port);
+	printk(BIOS_DEBUG, "pcie_power_off_gpp_ports() port %d\n", port);
 	u32 reg;
 	u32 state_save;
 	u8 i;
@@ -49,14 +49,14 @@ static void PciePowerOffGppPorts(struct device *nb_dev, struct device *dev, u32 
 		(struct southbridge_amd_sr5650_config *)nb_dev->chip_info;
 	u32 state = cfg->port_enable;
 
-	if (!(AtiPcieCfg.Config & PCIE_DISABLE_HIDE_UNUSED_PORTS))
-		state &= AtiPcieCfg.PortDetect;
+	if (!(ati_pcie_cfg.Config & PCIE_DISABLE_HIDE_UNUSED_PORTS))
+		state &= ati_pcie_cfg.PortDetect;
 	state = ~state;
 	state &= (1 << 4) + (1 << 5) + (1 << 6) + (1 << 7);
 	state_save = state << 17;
 	/* Disable ports any that failed training */
 	for (i = 9; i <= 13; i++) {
-		if (!(AtiPcieCfg.PortDetect & 1 << i)) {
+		if (!(ati_pcie_cfg.PortDetect & 1 << i)) {
 			if ((port >= 9) && (port <= 13)) {
 				state |= (1 << (port + 7));
 			}
@@ -76,7 +76,7 @@ static void PciePowerOffGppPorts(struct device *nb_dev, struct device *dev, u32 
 			}
 		}
 	}
-	state &= !(AtiPcieCfg.PortHp);
+	state &= !(ati_pcie_cfg.PortHp);
 	reg = nbmisc_read_index(nb_dev, 0x0c);
 	reg |= state;
 	nbmisc_write_index(nb_dev, 0x0c, reg);
@@ -85,8 +85,8 @@ static void PciePowerOffGppPorts(struct device *nb_dev, struct device *dev, u32 
 	reg |= state_save;
 	nbmisc_write_index(nb_dev, 0x08, reg);
 
-	if ((AtiPcieCfg.Config & PCIE_OFF_UNUSED_GPP_LANES)
-	    && !(AtiPcieCfg.
+	if ((ati_pcie_cfg.Config & PCIE_OFF_UNUSED_GPP_LANES)
+	    && !(ati_pcie_cfg.
 		 Config & (PCIE_DISABLE_HIDE_UNUSED_PORTS +
 			   PCIE_GFX_COMPLIANCE))) {
 	}
@@ -328,12 +328,12 @@ void init_gen2(struct device *nb_dev, struct device *dev, u8 port)
 
 
 /* Alternative to default CPL buffer count */
-const u8 pGpp420000[] = {0x38, 0x1C};
-const u8 pGpp411000[] = {0x38, 0x0E, 0x0E};
-const u8 pGpp222000[] = {0x1C, 0x1C, 0x1C};
-const u8 pGpp221100[] = {0x1C, 0x1C, 0x0E, 0x0E};
-const u8 pGpp211110[] = {0x1C, 0x0E, 0x0E, 0x0E, 0, 0x0E, 0x0E};
-const u8 pGpp111111[] = {0x0E, 0x0E, 0x0E, 0x0E, 0, 0x0E, 0x0E};
+const u8 p_gpp420000[] = {0x38, 0x1C};
+const u8 p_gpp411000[] = {0x38, 0x0E, 0x0E};
+const u8 p_gpp222000[] = {0x1C, 0x1C, 0x1C};
+const u8 p_gpp221100[] = {0x1C, 0x1C, 0x0E, 0x0E};
+const u8 p_gpp211110[] = {0x1C, 0x0E, 0x0E, 0x0E, 0, 0x0E, 0x0E};
+const u8 p_gpp111111[] = {0x0E, 0x0E, 0x0E, 0x0E, 0, 0x0E, 0x0E};
 
 /*
  * Enabling Dynamic Slave CPL Buffer Allocation Feature for PCIE-GPP3a Ports
@@ -355,34 +355,34 @@ static void gpp3a_cpl_buf_alloc(struct device *nb_dev, struct device *dev)
 
 	switch (cfg->gpp3a_configuration) {
 	case 0x1: /* 4:2:0:0:0:0 */
-		if (dev_index >= ARRAY_SIZE(pGpp420000))
+		if (dev_index >= ARRAY_SIZE(p_gpp420000))
 			return;
-		value = pGpp420000[dev_index];
+		value = p_gpp420000[dev_index];
 		break;
 	case 0x2: /* 4:1:1:0:0:0 */
-		if (dev_index >= ARRAY_SIZE(pGpp411000))
+		if (dev_index >= ARRAY_SIZE(p_gpp411000))
 			return;
-		value = pGpp411000[dev_index];
+		value = p_gpp411000[dev_index];
 		break;
 	case 0xC: /* 2:2:2:0:0:0 */
-		if (dev_index >= ARRAY_SIZE(pGpp222000))
+		if (dev_index >= ARRAY_SIZE(p_gpp222000))
 			return;
-		value = pGpp222000[dev_index];
+		value = p_gpp222000[dev_index];
 		break;
 	case 0xA: /* 2:2:1:1:0:0 */
-		if (dev_index >= ARRAY_SIZE(pGpp221100))
+		if (dev_index >= ARRAY_SIZE(p_gpp221100))
 			return;
-		value = pGpp221100[dev_index];
+		value = p_gpp221100[dev_index];
 		break;
 	case 0x4: /* 2:1:1:1:1:0 */
-		if (dev_index >= ARRAY_SIZE(pGpp211110))
+		if (dev_index >= ARRAY_SIZE(p_gpp211110))
 			return;
-		value = pGpp211110[dev_index];
+		value = p_gpp211110[dev_index];
 		break;
 	case 0xB: /* 1:1:1:1:1:1 */
-		if (dev_index >= ARRAY_SIZE(pGpp111111))
+		if (dev_index >= ARRAY_SIZE(p_gpp111111))
 			return;
-		value = pGpp111111[dev_index];
+		value = p_gpp111111[dev_index];
 		break;
 	default:  /* shouldn't be here. */
 		printk(BIOS_WARNING, "buggy gpp3a_configuration\n");
@@ -435,7 +435,7 @@ static void gpp12_cpl_buf_alloc(struct device *nb_dev, struct device *dev)
 /*
  * Enable LCLK clock gating
  */
-static void EnableLclkGating(struct device *dev)
+static void enable_lclk_gating(struct device *dev)
 {
 	u8 port;
 	u32 reg = 0;
@@ -753,12 +753,12 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 				return;
 			}
 			PcieReleasePortTraining(nb_dev, dev, hw_port);
-			if (!(AtiPcieCfg.Config & PCIE_GPP_COMPLIANCE)) {
+			if (!(ati_pcie_cfg.Config & PCIE_GPP_COMPLIANCE)) {
 				u8 res = PcieTrainPort(nb_dev, dev, hw_port);
 				printk(BIOS_DEBUG, "%s: port=0x%x hw_port=0x%x result=%d\n",
 					__func__, port, hw_port, res);
 				if (res) {
-					AtiPcieCfg.PortDetect |= 1 << port;
+					ati_pcie_cfg.PortDetect |= 1 << port;
 				} else {
 					/* Even though nothing is attached to this port
 					 * the port needs to be "enabled" to obtain
@@ -803,7 +803,7 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 	}
 
 	/* Step 27: LCLK Gating	*/
-	EnableLclkGating(dev);
+	enable_lclk_gating(dev);
 
 	/* Set Common Clock */
 	/* If dev present, set PcieCapPtr+0x10, BIT6);
@@ -814,7 +814,7 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 
 	if ((port == 8) || (!training_ok)) {
 		/* This is run for all ports that are not hotplug and don't detect devices */
-		PciePowerOffGppPorts(nb_dev, dev, port);
+		pcie_power_off_gpp_ports(nb_dev, dev, port);
 	}
 }
 
@@ -857,7 +857,7 @@ void config_gpp_core(struct device *nb_dev, struct device *sb_dev)
 	u32 reg;
 
 	reg = nbmisc_read_index(nb_dev, 0x20);
-	if (AtiPcieCfg.Config & PCIE_ENABLE_STATIC_DEV_REMAP)
+	if (ati_pcie_cfg.Config & PCIE_ENABLE_STATIC_DEV_REMAP)
 		reg &= 0xfffffffd;	/* set bit1 = 0 */
 	else
 		reg |= 0x2;	/* set bit1 = 1 */
@@ -890,7 +890,7 @@ void pcie_config_misc_clk(struct device *nb_dev)
 	struct device *d0f1 = pcidev_on_root(0, 1);
 
 
-	if (AtiPcieCfg.Config & PCIE_GFX_CLK_GATING) {
+	if (ati_pcie_cfg.Config & PCIE_GFX_CLK_GATING) {
 		/* TXCLK Clock Gating */
 		set_nbmisc_enable_bits(nb_dev, 0x07, 3 << 0, 3 << 0);
 		set_nbmisc_enable_bits(nb_dev, 0x07, 1 << 22, 1 << 22);
@@ -903,7 +903,7 @@ void pcie_config_misc_clk(struct device *nb_dev)
 		pci_write_config32(d0f1, 0x94, reg);
 	}
 
-	if (AtiPcieCfg.Config & PCIE_GPP_CLK_GATING) {
+	if (ati_pcie_cfg.Config & PCIE_GPP_CLK_GATING) {
 		/* TXCLK Clock Gating */
 		set_nbmisc_enable_bits(nb_dev, 0x07, 3 << 4, 3 << 4);
 		set_nbmisc_enable_bits(nb_dev, 0x07, 1 << 22, 1 << 22);
