@@ -244,8 +244,8 @@ restartinit:
 			print_t("mct_auto_init_mct_d: mct_initial_mct_d\n");
 			mct_initial_mct_d(p_mct_stat, p_dct_stat);
 
-			print_t("mct_auto_init_mct_d: mctSMBhub_Init\n");
-			mctSMBhub_Init(node);		/* Switch SMBUS crossbar to proper node*/
+			print_t("mct_auto_init_mct_d: mct_smb_hub_init\n");
+			mct_smb_hub_init(node);		/* Switch SMBUS crossbar to proper node*/
 
 			print_t("mct_auto_init_mct_d: mct_init_dct\n");
 			mct_init_dct(p_mct_stat, p_dct_stat);
@@ -1008,41 +1008,41 @@ static u8 auto_cyc_timing(struct MCTStatStruc *p_mct_stat,
 		l_dimm = i >> 1;
 		if (p_dct_stat->dimm_valid & (1 << i)) {
 			smb_addr = get_dimm_address_d(p_dct_stat, dct + i);
-			byte = mctRead_SPD(smb_addr, SPD_ROWSZ);
+			byte = mct_read_spd(smb_addr, SPD_ROWSZ);
 			if (rows < byte)
 				rows = byte;	/* keep track of largest row sz */
 
-			byte = mctRead_SPD(smb_addr, SPD_TRP);
+			byte = mct_read_spd(smb_addr, SPD_TRP);
 			if (trp < byte)
 				trp = byte;
 
-			byte = mctRead_SPD(smb_addr, SPD_TRRD);
+			byte = mct_read_spd(smb_addr, SPD_TRRD);
 			if (trrd < byte)
 				trrd = byte;
 
-			byte = mctRead_SPD(smb_addr, SPD_TRCD);
+			byte = mct_read_spd(smb_addr, SPD_TRCD);
 			if (trcd < byte)
 				trcd = byte;
 
-			byte = mctRead_SPD(smb_addr, SPD_TRTP);
+			byte = mct_read_spd(smb_addr, SPD_TRTP);
 			if (trtp < byte)
 				trtp = byte;
 
-			byte = mctRead_SPD(smb_addr, SPD_TWR);
+			byte = mct_read_spd(smb_addr, SPD_TWR);
 			if (twr < byte)
 				twr = byte;
 
-			byte = mctRead_SPD(smb_addr, SPD_TWTR);
+			byte = mct_read_spd(smb_addr, SPD_TWTR);
 			if (twtr < byte)
 				twtr = byte;
 
-			val = mctRead_SPD(smb_addr, SPD_TRC);
+			val = mct_read_spd(smb_addr, SPD_TRC);
 			if ((val == 0) || (val == 0xFF)) {
 				p_dct_stat->err_status |= 1 << SB_NO_TRC_TRFC;
 				p_dct_stat->err_code = SC_VARIANCE_ERR;
 				val = get_def_trc_k_d(p_dct_stat->speed);
 			} else {
-				byte = mctRead_SPD(smb_addr, SPD_TRCRFC);
+				byte = mct_read_spd(smb_addr, SPD_TRCRFC);
 				if (byte & 0xF0) {
 					val++;	/* round up in case fractional extension is non-zero.*/
 				}
@@ -1051,12 +1051,12 @@ static u8 auto_cyc_timing(struct MCTStatStruc *p_mct_stat,
 				trc = val;
 
 			/* dev density = rank size/#devs per rank */
-			byte = mctRead_SPD(smb_addr, SPD_BANKSZ);
+			byte = mct_read_spd(smb_addr, SPD_BANKSZ);
 
 			val = ((byte >> 5) | (byte << 3)) & 0xFF;
 			val <<= 2;
 
-			byte = mctRead_SPD(smb_addr, SPD_DEVWIDTH) & 0xFE;     /* dev density = 2^(rows+columns+banks) */
+			byte = mct_read_spd(smb_addr, SPD_DEVWIDTH) & 0xFE;     /* dev density = 2^(rows+columns+banks) */
 			if (byte == 4) {
 				val >>= 4;
 			} else if (byte == 8) {
@@ -1070,7 +1070,7 @@ static u8 auto_cyc_timing(struct MCTStatStruc *p_mct_stat,
 			if (trfc[l_dimm] < byte)
 				trfc[l_dimm] = byte;
 
-			byte = mctRead_SPD(smb_addr, SPD_TRAS);
+			byte = mct_read_spd(smb_addr, SPD_TRAS);
 			if (tras < byte)
 				tras = byte;
 		}	/* Dimm Present */
@@ -1750,17 +1750,17 @@ static void spd_set_banks_d(struct MCTStatStruc *p_mct_stat,
 		if (p_dct_stat->dimm_valid & (1 << byte)) {
 			smb_addr = get_dimm_address_d(p_dct_stat, (chip_sel + dct));
 
-			byte = mctRead_SPD(smb_addr, SPD_ROWSZ);
+			byte = mct_read_spd(smb_addr, SPD_ROWSZ);
 			rows = byte & 0x1f;
 
-			byte = mctRead_SPD(smb_addr, SPD_COLSZ);
+			byte = mct_read_spd(smb_addr, SPD_COLSZ);
 			cols = byte & 0x1f;
 
-			banks = mctRead_SPD(smb_addr, SPD_LBANKS);
+			banks = mct_read_spd(smb_addr, SPD_LBANKS);
 
-			byte = mctRead_SPD(smb_addr, SPD_DEVWIDTH);
+			byte = mct_read_spd(smb_addr, SPD_DEVWIDTH);
 
-			byte = mctRead_SPD(smb_addr, SPD_DMBANKS);
+			byte = mct_read_spd(smb_addr, SPD_DMBANKS);
 			ranks = (byte & 7) + 1;
 
 			/* Configure Bank encoding
@@ -1867,36 +1867,36 @@ static void spd_calc_width_d(struct MCTStatStruc *p_mct_stat,
 			smb_addr = get_dimm_address_d(p_dct_stat, i);
 			smbaddr1 = get_dimm_address_d(p_dct_stat, i + 1);
 
-			byte = mctRead_SPD(smb_addr, SPD_ROWSZ) & 0x1f;
-			byte1 = mctRead_SPD(smbaddr1, SPD_ROWSZ) & 0x1f;
+			byte = mct_read_spd(smb_addr, SPD_ROWSZ) & 0x1f;
+			byte1 = mct_read_spd(smbaddr1, SPD_ROWSZ) & 0x1f;
 			if (byte != byte1) {
 				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
 			}
 
-			byte =	 mctRead_SPD(smb_addr, SPD_COLSZ) & 0x1f;
-			byte1 =	 mctRead_SPD(smbaddr1, SPD_COLSZ) & 0x1f;
+			byte =	 mct_read_spd(smb_addr, SPD_COLSZ) & 0x1f;
+			byte1 =	 mct_read_spd(smbaddr1, SPD_COLSZ) & 0x1f;
 			if (byte != byte1) {
 				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
 			}
 
-			byte = mctRead_SPD(smb_addr, SPD_BANKSZ);
-			byte1 = mctRead_SPD(smbaddr1, SPD_BANKSZ);
+			byte = mct_read_spd(smb_addr, SPD_BANKSZ);
+			byte1 = mct_read_spd(smbaddr1, SPD_BANKSZ);
 			if (byte != byte1) {
 				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
 			}
 
-			byte = mctRead_SPD(smb_addr, SPD_DEVWIDTH) & 0x7f;
-			byte1 = mctRead_SPD(smbaddr1, SPD_DEVWIDTH) & 0x7f;
+			byte = mct_read_spd(smb_addr, SPD_DEVWIDTH) & 0x7f;
+			byte1 = mct_read_spd(smbaddr1, SPD_DEVWIDTH) & 0x7f;
 			if (byte != byte1) {
 				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
 			}
 
-			byte = mctRead_SPD(smb_addr, SPD_DMBANKS) & 7;	 /* #ranks-1 */
-			byte1 = mctRead_SPD(smbaddr1, SPD_DMBANKS) & 7;	  /* #ranks-1 */
+			byte = mct_read_spd(smb_addr, SPD_DMBANKS) & 7;	 /* #ranks-1 */
+			byte1 = mct_read_spd(smbaddr1, SPD_DMBANKS) & 7;	  /* #ranks-1 */
 			if (byte != byte1) {
 				p_dct_stat->err_status |= (1 << SB_DIMM_MISMATCH_O);
 				break;
@@ -2066,7 +2066,7 @@ static u8 dimm_supports_d(struct DCTStatStruc *p_dct_stat,
 	CLj = get_clj_d(j);
 
 	/* check if DIMMi supports CLj */
-	CL_i = mctRead_SPD(DIMMi, SPD_CASLAT);
+	CL_i = mct_read_spd(DIMMi, SPD_CASLAT);
 	byte = CL_i & CLj;
 	if (byte) {
 		/*find out if its CL X, CLX-1, or CLX-2 */
@@ -2077,7 +2077,7 @@ static u8 dimm_supports_d(struct DCTStatStruc *p_dct_stat,
 		/*get T from SPD byte 9, 23, 25*/
 		word = (ENCODED_T_SPD >> wordx) & 0xFF;
 		Tk = get_tk_d(k);
-		byte = mctRead_SPD(DIMMi, word);	/* DIMMi speed */
+		byte = mct_read_spd(DIMMi, word);	/* DIMMi speed */
 		if (Tk < byte) {
 			ret = 1;
 		} else if (byte == 0) {
@@ -2139,7 +2139,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 				checksum = 0;
 				for (index = 0; index < 64; index++) {
 					int status;
-					status = mctRead_SPD(smb_addr, index);
+					status = mct_read_spd(smb_addr, index);
 					if (status < 0)
 						break;
 					byte = status & 0xFF;
@@ -2150,7 +2150,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 				if (index == 64) {
 					p_dct_stat->dimm_present |= 1 << i;
 					if ((checksum & 0xFF) == byte) {
-						byte = mctRead_SPD(smb_addr, SPD_TYPE);
+						byte = mct_read_spd(smb_addr, SPD_TYPE);
 						if (byte == JED_DDR2SDRAM) {
 							/*Dimm is 'Present'*/
 							p_dct_stat->dimm_valid |= 1 << i;
@@ -2163,7 +2163,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 						} else {
 							/*if NV_SPDCHK_RESTRT is set to 1, ignore faulty SPD checksum*/
 							p_dct_stat->err_status |= 1 << SB_DIMM_CHKSUM;
-							byte = mctRead_SPD(smb_addr, SPD_TYPE);
+							byte = mct_read_spd(smb_addr, SPD_TYPE);
 							if (byte == JED_DDR2SDRAM)
 								p_dct_stat->dimm_valid |= 1 << i;
 						}
@@ -2172,24 +2172,24 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 					if (p_dct_stat->dimm_valid & (1 << i)) {
 						p_dct_stat->dimm_manufacturer_id[i] = 0;
 						for (k = 0; k < 8; k++)
-							p_dct_stat->dimm_manufacturer_id[i] |= ((u64)mctRead_SPD(smb_addr, SPD_MANID_START + k)) << (k * 8);
+							p_dct_stat->dimm_manufacturer_id[i] |= ((u64)mct_read_spd(smb_addr, SPD_MANID_START + k)) << (k * 8);
 						for (k = 0; k < SPD_PARTN_LENGTH; k++)
-							p_dct_stat->dimm_part_number[i][k] = mctRead_SPD(smb_addr, SPD_PARTN_START + k);
+							p_dct_stat->dimm_part_number[i][k] = mct_read_spd(smb_addr, SPD_PARTN_START + k);
 						p_dct_stat->dimm_part_number[i][SPD_PARTN_LENGTH] = 0;
 						p_dct_stat->dimm_revision_number[i] = 0;
 						for (k = 0; k < 2; k++)
-							p_dct_stat->dimm_revision_number[i] |= ((u16)mctRead_SPD(smb_addr, SPD_REVNO_START + k)) << (k * 8);
+							p_dct_stat->dimm_revision_number[i] |= ((u16)mct_read_spd(smb_addr, SPD_REVNO_START + k)) << (k * 8);
 						p_dct_stat->dimm_serial_number[i] = 0;
 						for (k = 0; k < 4; k++)
-							p_dct_stat->dimm_serial_number[i] |= ((u32)mctRead_SPD(smb_addr, SPD_SERIAL_START + k)) << (k * 8);
-						p_dct_stat->dimm_rows[i] = mctRead_SPD(smb_addr, SPD_ROWSZ) & 0xf;
-						p_dct_stat->dimm_cols[i] = mctRead_SPD(smb_addr, SPD_COLSZ) & 0xf;
-						p_dct_stat->dimm_ranks[i] = (mctRead_SPD(smb_addr, SPD_DMBANKS) & 0x7) + 1;
-						p_dct_stat->dimm_banks[i] = mctRead_SPD(smb_addr, SPD_LBANKS);
-						p_dct_stat->dimm_width[i] = mctRead_SPD(smb_addr, SPD_DEVWIDTH);
+							p_dct_stat->dimm_serial_number[i] |= ((u32)mct_read_spd(smb_addr, SPD_SERIAL_START + k)) << (k * 8);
+						p_dct_stat->dimm_rows[i] = mct_read_spd(smb_addr, SPD_ROWSZ) & 0xf;
+						p_dct_stat->dimm_cols[i] = mct_read_spd(smb_addr, SPD_COLSZ) & 0xf;
+						p_dct_stat->dimm_ranks[i] = (mct_read_spd(smb_addr, SPD_DMBANKS) & 0x7) + 1;
+						p_dct_stat->dimm_banks[i] = mct_read_spd(smb_addr, SPD_LBANKS);
+						p_dct_stat->dimm_width[i] = mct_read_spd(smb_addr, SPD_DEVWIDTH);
 					}
 					/* Check module type */
-					byte = mctRead_SPD(smb_addr, SPD_DIMMTYPE);
+					byte = mct_read_spd(smb_addr, SPD_DIMMTYPE);
 					if (byte & JED_REGADCMSK) {
 						reg_dimm_present |= 1 << i;
 						p_dct_stat->dimm_registered[i] = 1;
@@ -2197,7 +2197,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 						p_dct_stat->dimm_registered[i] = 0;
 					}
 					/* Check ECC capable */
-					byte = mctRead_SPD(smb_addr, SPD_EDCTYPE);
+					byte = mct_read_spd(smb_addr, SPD_EDCTYPE);
 					if (byte & JED_ECC) {
 						/* dimm is ECC capable */
 						p_dct_stat->dimm_ecc_present |= 1 << i;
@@ -2207,7 +2207,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 						p_dct_stat->dimm_parity_present |= 1 << i;
 					}
 					/* Check if x4 device */
-					devwidth = mctRead_SPD(smb_addr, SPD_DEVWIDTH) & 0xFE;
+					devwidth = mct_read_spd(smb_addr, SPD_DEVWIDTH) & 0xFE;
 					if (devwidth == 4) {
 						/* dimm is made with x4 or x16 drams */
 						p_dct_stat->dimm_x4_present |= 1 << i;
@@ -2217,7 +2217,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 						p_dct_stat->dimm_x16_present |= 1 << i;
 					}
 					/* check page size */
-					byte = mctRead_SPD(smb_addr, SPD_COLSZ);
+					byte = mct_read_spd(smb_addr, SPD_COLSZ);
 					byte &= 0x0F;
 					word = 1 << byte;
 					word >>= 3;
@@ -2227,11 +2227,11 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 						p_dct_stat->dimm_2k_page |= 1 << i;
 
 					/*Check if SPD diag bit 'analysis probe installed' is set */
-					byte = mctRead_SPD(smb_addr, SPD_ATTRIB);
+					byte = mct_read_spd(smb_addr, SPD_ATTRIB);
 					if (byte & JED_PROBEMSK)
 						p_dct_stat->status |= 1 << SB_DIAG_CLKS;
 
-					byte = mctRead_SPD(smb_addr, SPD_DMBANKS);
+					byte = mct_read_spd(smb_addr, SPD_DMBANKS);
 					if (!(byte & (1 << SPD_PLBIT)))
 						p_dct_stat->dimm_pl_present |= 1 << i;
 					byte &= 7;
@@ -2262,7 +2262,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 					p_dct_stat->ma_load[j] += bytex;	/*number of devices on CMD/ADDR bus*/
 					p_dct_stat->ma_dimms[j]++;		/*number of DIMMs on A bus */
 					/*check for DRAM package Year <= 06*/
-					byte = mctRead_SPD(smb_addr, SPD_MANDATEYR);
+					byte = mct_read_spd(smb_addr, SPD_MANDATEYR);
 					if (byte < MYEAR06) {
 						/*Year < 06 and hence Week < 24 of 06 */
 						p_dct_stat->dimm_yr_06 |= 1 << i;
@@ -2270,7 +2270,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 					} else if (byte == MYEAR06) {
 						/*Year = 06, check if Week <= 24 */
 						p_dct_stat->dimm_yr_06 |= 1 << i;
-						byte = mctRead_SPD(smb_addr, SPD_MANDATEWK);
+						byte = mct_read_spd(smb_addr, SPD_MANDATEWK);
 						if (byte <= MWEEK24)
 							p_dct_stat->dimm_wk_2406 |= 1 << i;
 					}

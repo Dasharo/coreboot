@@ -347,7 +347,7 @@ static u8 is_dram_ecc_en_d(struct DCTStatStruc *p_dct_stat)
 	for (i = 0; i < ch_end; i++) {
 		if (p_dct_stat->dimm_valid_dct[i] > 0) {
 			reg = 0x90;		/* Dram Config Low */
-			val = Get_NB32_DCT(dev, i, reg);
+			val = get_nb32_dct(dev, i, reg);
 			if (val & (1 << DIMM_EC_EN)) {
 				/* set local flag 'dram ecc capable' */
 				is_dimm_ecc_en = 1;

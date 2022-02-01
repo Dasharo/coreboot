@@ -15,7 +15,7 @@ static u8 fam15h_rdimm_rc2_ibt_code(struct DCTStatStruc *p_dct_stat, u8 dct)
 	u8 control_code = 0;
 
 	package_type = mct_get_nv_bits(NV_PACK_TYPE);
-	u16 mem_clk_freq = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
+	u16 mem_clk_freq = get_nb32_dct(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 
 	/* Obtain number of DIMMs on channel */
 	u8 dimm_count = p_dct_stat->ma_dimms[dct];
@@ -275,12 +275,12 @@ static void mct_send_ctrl_wrd(struct MCTStatStruc *p_mct_stat,
 {
 	u32 dev = p_dct_stat->dev_dct;
 
-	val |= Get_NB32_DCT(dev, dct, 0x7c) & ~0xffffff;
+	val |= get_nb32_dct(dev, dct, 0x7c) & ~0xffffff;
 	val |= 1 << SEND_CONTROL_WORD;
-	Set_NB32_DCT(dev, dct, 0x7c, val);
+	set_nb32_dct(dev, dct, 0x7c, val);
 
 	do {
-		val = Get_NB32_DCT(dev, dct, 0x7c);
+		val = get_nb32_dct(dev, dct, 0x7c);
 	} while (val & (1 << SEND_CONTROL_WORD));
 }
 
@@ -304,7 +304,7 @@ void mct_dram_control_reg_init_d(struct MCTStatStruc *p_mct_stat,
 
 	for (mrs_chip_sel = 0; mrs_chip_sel < 8; mrs_chip_sel += 2) {
 		if (p_dct_stat->cs_present & (1 << mrs_chip_sel)) {
-			val = Get_NB32_DCT(dev, dct, 0xa8);
+			val = get_nb32_dct(dev, dct, 0xa8);
 			val &= ~(0xff << 8);
 
 			switch (mrs_chip_sel) {
@@ -325,7 +325,7 @@ void mct_dram_control_reg_init_d(struct MCTStatStruc *p_mct_stat,
 					val |= (3 << 6) << 8;
 					break;
 			}
-			Set_NB32_DCT(dev, dct, 0xa8, val);
+			set_nb32_dct(dev, dct, 0xa8, val);
 			printk(BIOS_SPEW, "%s: F2xA8: %08x\n", __func__, val);
 
 			if (is_fam15h()) {
@@ -368,7 +368,7 @@ void freq_chg_ctrl_wrd(struct MCTStatStruc *p_mct_stat,
 	for (mrs_chip_sel = 0; mrs_chip_sel < 8; mrs_chip_sel += 2) {
 		if (p_dct_stat->cs_present & (1 << mrs_chip_sel)) {
 			/* 2. Program F2x[1, 0]A8[CtrlWordCS]=bit mask for target chip selects. */
-			val = Get_NB32_DCT(dev, dct, 0xa8);
+			val = get_nb32_dct(dev, dct, 0xa8);
 			val &= ~(0xff << 8);
 
 			switch (mrs_chip_sel) {
@@ -389,7 +389,7 @@ void freq_chg_ctrl_wrd(struct MCTStatStruc *p_mct_stat,
 					val |= (3 << 6) << 8;
 					break;
 			}
-			Set_NB32_DCT(dev, dct, 0xa8, val);
+			set_nb32_dct(dev, dct, 0xa8, val);
 
 			/* Resend control word 10 */
 			u8 freq_ctl_val = 0;

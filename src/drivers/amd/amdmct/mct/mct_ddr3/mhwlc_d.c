@@ -275,10 +275,10 @@ u8 agesa_hw_wl_phase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 
 		/* Apply offset(s) if needed */
 		if (cgd < 0) {
-			dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0xa8);
+			dword = get_nb32_dct(p_dct_stat->dev_dct, dct, 0xa8);
 			dword &= ~(0x3 << 24);			/* wr_dq_dqs_early = abs(cgd) */
 			dword |= ((abs(cgd) & 0x3) << 24);
-			Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0xa8, dword);
+			set_nb32_dct(p_dct_stat->dev_dct, dct, 0xa8, dword);
 
 			for (byte_lane = 0; byte_lane < lane_count; byte_lane++) {
 				/* Calculate the gross delay differential for this lane */
@@ -292,10 +292,10 @@ u8 agesa_hw_wl_phase3(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 				pdct_data->wl_gross_delay[index + byte_lane] = (gross_diff[byte_lane] + (abs(cgd) & 0x3));
 			}
 		} else {
-			dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0xa8);
+			dword = get_nb32_dct(p_dct_stat->dev_dct, dct, 0xa8);
 			dword &= ~(0x3 << 24);			/* wr_dq_dqs_early = pdct_data->wr_dqs_gross_dly_base_offset */
 			dword |= ((pdct_data->wr_dqs_gross_dly_base_offset & 0x3) << 24);
-			Set_NB32_DCT(p_dct_stat->dev_dct, dct, 0xa8, dword);
+			set_nb32_dct(p_dct_stat->dev_dct, dct, 0xa8, dword);
 		}
 	}
 
@@ -929,7 +929,7 @@ void program_odt(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 		cs = (dimm * 2) + rank;
 
 		/* Fetch preprogammed ODT pattern from configuration registers */
-		dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, ((cs > 3) ? 0x23c : 0x238));
+		dword = get_nb32_dct(p_dct_stat->dev_dct, dct, ((cs > 3) ? 0x23c : 0x238));
 		if ((cs == 7) || (cs == 3))
 			wr_lv_odt_1 = ((dword >> 24) & 0xf);
 		else if ((cs == 6) || (cs == 2))
@@ -1178,7 +1178,7 @@ void proc_config(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_sta
 				}
 
 				/* Retrieve wr_dq_dqs_early */
-				dword = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0xa8);
+				dword = get_nb32_dct(p_dct_stat->dev_dct, dct, 0xa8);
 				wr_dq_dqs_early = (dword >> 24) & 0x3;
 
 				/* FIXME

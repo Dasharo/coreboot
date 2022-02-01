@@ -25,19 +25,19 @@ void set_sysinfo_in_ram(u32 val);
 
 void activate_spd_rom(const struct mem_controller *ctrl);
 
-int mctRead_SPD(u32 smaddr, u32 reg);
+int mct_read_spd(u32 smaddr, u32 reg);
 int spd_read_byte(unsigned int device, unsigned int address);
-void mctSMBhub_Init(u32 node);
+void mct_smb_hub_init(u32 node);
 void raminit_amdmct(struct sys_info *sysinfo);
 void amdmct_cbmem_store_info(struct sys_info *sysinfo);
 
 u16 mct_MaxLoadFreq(u8 count, u8 highest_rank_count, u8 registered, u8 voltage, u16 freq);
-void Set_NB32_DCT(u32 dev, u8 dct, u32 reg, u32 val);
-u32 Get_NB32_DCT(u32 dev, u8 dct, u32 reg);
-u32 Get_NB32_index_wait_DCT(u32 dev, u8 dct, u32 index_reg, u32 index);
-void Set_NB32_index_wait_DCT(u32 dev, u8 dct, u32 index_reg, u32 index, u32 data);
+void set_nb32_dct(u32 dev, u8 dct, u32 reg, u32 val);
+u32 get_nb32_dct(u32 dev, u8 dct, u32 reg);
+u32 get_nb32_index_wait_dct(u32 dev, u8 dct, u32 index_reg, u32 index);
+void set_nb32_index_wait_dct(u32 dev, u8 dct, u32 index_reg, u32 index, u32 data);
 void fam15h_switch_dct(u32 dev, u8 dct);
-u32 Get_NB32_DCT_NBPstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg);
-void Set_NB32_DCT_NBPstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg, u32 val);
+u32 get_nb32_dct_nb_pstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg);
+void set_nb32_dct_nb_pstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg, u32 val);
 
 #endif

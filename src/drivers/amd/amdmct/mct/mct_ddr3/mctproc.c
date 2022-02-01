@@ -23,8 +23,8 @@ u32 mct_set_dram_config_misc_2(struct DCTStatStruc *p_dct_stat,
 			/* FIXME 3 DIMMS per channel unimplemented */
 			cs_mux_45 = 0;
 		} else {
-			u32 f2x60 = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x60);
-			f2x80 = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x80);
+			u32 f2x60 = get_nb32_dct(p_dct_stat->dev_dct, dct, 0x60);
+			f2x80 = get_nb32_dct(p_dct_stat->dev_dct, dct, 0x80);
 			if ((((f2x80 & 0xf) == 0x7) || ((f2x80 & 0xf) == 0x9))
 				&& ((f2x60 & 0x3) == 0x3))
 				cs_mux_45 = 1;
@@ -38,8 +38,8 @@ u32 mct_set_dram_config_misc_2(struct DCTStatStruc *p_dct_stat,
 		if (max_dimms_installable == 1) {
 			cs_mux_67 = 0;
 		} else if (max_dimms_installable == 2) {
-			u32 f2x64 = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x64);
-			f2x80 = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x80);
+			u32 f2x64 = get_nb32_dct(p_dct_stat->dev_dct, dct, 0x64);
+			f2x80 = get_nb32_dct(p_dct_stat->dev_dct, dct, 0x80);
 			if (((((f2x80 >> 4) & 0xf) == 0x7) || (((f2x80 >> 4) & 0xf) == 0x9))
 				&& ((f2x64 & 0x3) == 0x3))
 				cs_mux_67 = 1;

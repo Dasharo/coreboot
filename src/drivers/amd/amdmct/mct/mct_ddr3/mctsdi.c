@@ -36,9 +36,9 @@ u8 fam15_rttwr(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 pac
 	u8 rank_count_dimm2;
 
 	if (is_fam15h())
-		frequency_index = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
+		frequency_index = get_nb32_dct(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 	else
-		frequency_index = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x7;
+		frequency_index = get_nb32_dct(p_dct_stat->dev_dct, dct, 0x94) & 0x7;
 
 	u8 max_dimms_installable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
@@ -268,9 +268,9 @@ u8 fam15_rttnom(struct DCTStatStruc *p_dct_stat, u8 dct, u8 dimm, u8 rank, u8 pa
 	u8 rank_count_dimm1;
 
 	if (is_fam15h())
-		frequency_index = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
+		frequency_index = get_nb32_dct(p_dct_stat->dev_dct, dct, 0x94) & 0x1f;
 	else
-		frequency_index = Get_NB32_DCT(p_dct_stat->dev_dct, dct, 0x94) & 0x7;
+		frequency_index = get_nb32_dct(p_dct_stat->dev_dct, dct, 0x94) & 0x7;
 
 	u8 max_dimms_installable = mct_get_nv_bits(NV_MAX_DIMMS_PER_CH);
 
@@ -663,7 +663,7 @@ static void mct_dct_access_done(struct DCTStatStruc *p_dct_stat, u8 dct)
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
 	do {
-		val = Get_NB32_DCT(dev, dct, 0x98);
+		val = get_nb32_dct(dev, dct, 0x98);
 	} while (!(val & (1 << DCT_ACCESS_DONE)));
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
@@ -713,14 +713,14 @@ static void mct_send_mrs_cmd(struct DCTStatStruc *p_dct_stat, u8 dct, u32 emrs)
 
 	printk(BIOS_DEBUG, "%s: Start\n", __func__);
 
-	val = Get_NB32_DCT(dev, dct, 0x7c);
+	val = get_nb32_dct(dev, dct, 0x7c);
 	val &= ~0x00ffffff;
 	val |= emrs;
 	val |= 1 << SEND_MRS_CMD;
-	Set_NB32_DCT(dev, dct, 0x7c, val);
+	set_nb32_dct(dev, dct, 0x7c, val);
 
 	do {
-		val = Get_NB32_DCT(dev, dct, 0x7c);
+		val = get_nb32_dct(dev, dct, 0x7c);
 	} while (val & (1 << SEND_MRS_CMD));
 
 	printk(BIOS_DEBUG, "%s: Done\n", __func__);
@@ -754,7 +754,7 @@ u32 mct_mr2(struct MCTStatStruc *p_mct_stat,
 		ret |= (auto_2x_self_refresh << 7);
 
 		/* Obtain Tcwl, adjust, and set CWL with the adjusted value */
-		dword = Get_NB32_DCT(dev, dct, 0x20c) & 0x1f;
+		dword = get_nb32_dct(dev, dct, 0x20c) & 0x1f;
 		dword -= p_dct_stat->tcwl_delay[dct];
 		ret |= ((dword - 5) << 3);
 
@@ -766,7 +766,7 @@ u32 mct_mr2(struct MCTStatStruc *p_mct_stat,
 
 		/* program MrsAddress[5:3]=CAS write latency (CWL):
 		 * based on F2x[1,0]84[Tcwl] */
-		dword = Get_NB32_DCT(dev, dct, 0x84);
+		dword = get_nb32_dct(dev, dct, 0x84);
 		dword = mct_adjust_spd_timings(p_mct_stat, p_dct_stat, dword);
 
 		ret |= ((dword >> 20) & 7) << 3;
@@ -815,7 +815,7 @@ static u32 mct_mr3(struct MCTStatStruc *p_mct_stat,
 		 * program MrsAddress[2]=multi purpose register
 		 * (MPR):based on F2x[1,0]84[MprEn]
 		 */
-		dword = Get_NB32_DCT(dev, dct, 0x84);
+		dword = get_nb32_dct(dev, dct, 0x84);
 		ret |= (dword >> 24) & 7;
 	}
 
@@ -879,7 +879,7 @@ u32 mct_mr1(struct MCTStatStruc *p_mct_stat,
 		/* program MrsAddress[5,1]=output driver impedance control (DIC):
 		 * based on F2x[1,0]84[DrvImpCtrl]
 		 */
-		dword = Get_NB32_DCT(dev, dct, 0x84);
+		dword = get_nb32_dct(dev, dct, 0x84);
 		if (dword & (1 << 3))
 			ret |= 1 << 5;
 		if (dword & (1 << 2))
@@ -900,7 +900,7 @@ u32 mct_mr1(struct MCTStatStruc *p_mct_stat,
 		}
 
 		/* program MrsAddress[11]=TDQS: based on F2x[1,0]94[RDQS_EN] */
-		if (Get_NB32_DCT(dev, dct, 0x94) & (1 << RDQS_EN)) {
+		if (get_nb32_dct(dev, dct, 0x94) & (1 << RDQS_EN)) {
 			u8 bit;
 			/* Set TDQS = 1b for x8 DIMM, TDQS = 0b for x4 DIMM, when mixed x8 & x4 */
 			bit = (ret >> 21) << 1;
@@ -944,11 +944,11 @@ static u32 mct_mr0(struct MCTStatStruc *p_mct_stat,
 		u8 burst_length = 0;
 
 		/* Obtain PCHG_PD_MODE_SEL */
-		dword = Get_NB32_DCT(dev, dct, 0x84);
+		dword = get_nb32_dct(dev, dct, 0x84);
 		ppd = (dword >> 23) & 0x1;
 
 		/* Obtain Twr */
-		dword = Get_NB32_DCT(dev, dct, 0x22c) & 0x1f;
+		dword = get_nb32_dct(dev, dct, 0x22c) & 0x1f;
 
 		/* Calculate wr_ap (Fam15h BKDG v3.14 Table 82) */
 		if (dword == 0x10)
@@ -969,7 +969,7 @@ static u32 mct_mr0(struct MCTStatStruc *p_mct_stat,
 			wr_ap = 0x7;
 
 		/* Obtain Tcl */
-		dword = Get_NB32_DCT(dev, dct, 0x200) & 0x1f;
+		dword = get_nb32_dct(dev, dct, 0x200) & 0x1f;
 
 		/* Calculate cas_latency (Fam15h BKDG v3.14 Table 83) */
 		if (dword == 0x5)
@@ -998,7 +998,7 @@ static u32 mct_mr0(struct MCTStatStruc *p_mct_stat,
 			cas_latency = 0x9;
 
 		/* Obtain BurstCtrl */
-		burst_length = Get_NB32_DCT(dev, dct, 0x84) & 0x3;
+		burst_length = get_nb32_dct(dev, dct, 0x84) & 0x3;
 
 		/* Load data into MRS word */
 		ret |= (ppd & 0x1) << 12;
@@ -1015,7 +1015,7 @@ static u32 mct_mr0(struct MCTStatStruc *p_mct_stat,
 
 		/* program MrsAddress[1:0]=burst length and control method
 		(BL):based on F2x[1,0]84[BurstCtrl] */
-		dword = Get_NB32_DCT(dev, dct, 0x84);
+		dword = get_nb32_dct(dev, dct, 0x84);
 		ret |= dword & 3;
 
 		/* program MrsAddress[3]=1 (BT):interleaved */
@@ -1023,7 +1023,7 @@ static u32 mct_mr0(struct MCTStatStruc *p_mct_stat,
 
 		/* program MrsAddress[6:4,2]=read CAS latency
 		(CL):based on F2x[1,0]88[Tcl] */
-		dword2 = Get_NB32_DCT(dev, dct, 0x88);
+		dword2 = get_nb32_dct(dev, dct, 0x88);
 		ret |= (dword2 & 0x7) << 4;		/* F2x88[2:0] to MrsAddress[6:4] */
 		ret |= ((dword2 & 0x8) >> 3) << 2;	/* F2x88[3] to MrsAddress[2] */
 
@@ -1055,15 +1055,15 @@ static void mct_send_zq_cmd(struct DCTStatStruc *p_dct_stat, u8 dct)
 	/*1.Program MrsAddress[10]=1
 	  2.Set SEND_ZQ_CMD = 1
 	 */
-	dword = Get_NB32_DCT(dev, dct, 0x7C);
+	dword = get_nb32_dct(dev, dct, 0x7C);
 	dword &= ~0xFFFFFF;
 	dword |= 1 << 10;
 	dword |= 1 << SEND_ZQ_CMD;
-	Set_NB32_DCT(dev, dct, 0x7C, dword);
+	set_nb32_dct(dev, dct, 0x7C, dword);
 
 	/* Wait for SEND_ZQ_CMD = 0 */
 	do {
-		dword = Get_NB32_DCT(dev, dct, 0x7C);
+		dword = get_nb32_dct(dev, dct, 0x7C);
 	} while (dword & (1 << SEND_ZQ_CMD));
 
 	/* 4.Wait 512 MEMCLKs */
@@ -1083,26 +1083,26 @@ void mct_dram_init_sw_d(struct MCTStatStruc *p_mct_stat,
 
 	if (p_dct_stat->dimm_auto_speed == mhz_to_memclk_config(mct_get_nv_bits(NV_MIN_MEMCLK))) {
 		/* 3.Program F2x[1,0]7C[EN_DRAM_INIT]=1 */
-		dword = Get_NB32_DCT(dev, dct, 0x7c);
+		dword = get_nb32_dct(dev, dct, 0x7c);
 		dword |= 1 << EN_DRAM_INIT;
-		Set_NB32_DCT(dev, dct, 0x7c, dword);
+		set_nb32_dct(dev, dct, 0x7c, dword);
 		mct_dct_access_done(p_dct_stat, dct);
 
 		/* 4.wait 200us */
 		mct_wait(40000);
 
 		/* 5.Program F2x[1, 0]7C[DEASSERT_MEM_RST_X] = 1. */
-		dword = Get_NB32_DCT(dev, dct, 0x7c);
+		dword = get_nb32_dct(dev, dct, 0x7c);
 		dword |= 1 << DEASSERT_MEM_RST_X;
-		Set_NB32_DCT(dev, dct, 0x7c, dword);
+		set_nb32_dct(dev, dct, 0x7c, dword);
 
 		/* 6.wait 500us */
 		mct_wait(200000);
 
 		/* 7.Program F2x[1,0]7C[ASSERT_CKE]=1 */
-		dword = Get_NB32_DCT(dev, dct, 0x7c);
+		dword = get_nb32_dct(dev, dct, 0x7c);
 		dword |= 1 << ASSERT_CKE;
-		Set_NB32_DCT(dev, dct, 0x7c, dword);
+		set_nb32_dct(dev, dct, 0x7c, dword);
 
 		/* 8.wait 360ns */
 		mct_wait(80);
@@ -1111,9 +1111,9 @@ void mct_dram_init_sw_d(struct MCTStatStruc *p_mct_stat,
 		if ((p_dct_stat->status & (1 << SB_REGISTERED))
 			|| (p_dct_stat->status & (1 << SB_LOAD_REDUCED))) {
 			if (is_fam15h()) {
-				dword = Get_NB32_DCT(dev, dct, 0x90);
+				dword = get_nb32_dct(dev, dct, 0x90);
 				dword |= 1 << PAR_EN;
-				Set_NB32_DCT(dev, dct, 0x90, dword);
+				set_nb32_dct(dev, dct, 0x90, dword);
 			}
 		}
 
@@ -1171,9 +1171,9 @@ void mct_dram_init_sw_d(struct MCTStatStruc *p_mct_stat,
 		mct_send_zq_cmd(p_dct_stat, dct);
 
 		/* 18.Program F2x[1,0]7C[EN_DRAM_INIT]=0 */
-		dword = Get_NB32_DCT(dev, dct, 0x7C);
+		dword = get_nb32_dct(dev, dct, 0x7C);
 		dword &= ~(1 << EN_DRAM_INIT);
-		Set_NB32_DCT(dev, dct, 0x7C, dword);
+		set_nb32_dct(dev, dct, 0x7C, dword);
 		mct_dct_access_done(p_dct_stat, dct);
 	}
 

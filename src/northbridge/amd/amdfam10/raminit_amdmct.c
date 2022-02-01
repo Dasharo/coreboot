@@ -37,7 +37,7 @@ static inline void fam15h_switch_nb_pstate_config_reg(u32 dev, u8 nb_pstate)
 	pci_write_config32(dev, 0x10c, dword);
 }
 
-u32 Get_NB32_DCT(u32 dev, u8 dct, u32 reg)
+u32 get_nb32_dct(u32 dev, u8 dct, u32 reg)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
@@ -49,7 +49,7 @@ u32 Get_NB32_DCT(u32 dev, u8 dct, u32 reg)
 	}
 }
 
-void Set_NB32_DCT(u32 dev, u8 dct, u32 reg, u32 val)
+void set_nb32_dct(u32 dev, u8 dct, u32 reg, u32 val)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
@@ -61,7 +61,7 @@ void Set_NB32_DCT(u32 dev, u8 dct, u32 reg, u32 val)
 	}
 }
 
-u32 Get_NB32_DCT_NBPstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg)
+u32 get_nb32_dct_nb_pstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
@@ -74,7 +74,7 @@ u32 Get_NB32_DCT_NBPstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg)
 	}
 }
 
-void Set_NB32_DCT_NBPstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg, u32 val)
+void set_nb32_dct_nb_pstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg, u32 val)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
@@ -87,7 +87,7 @@ void Set_NB32_DCT_NBPstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg, u32 val)
 	}
 }
 
-u32 Get_NB32_index_wait_DCT(u32 dev, u8 dct, u32 index_reg, u32 index)
+u32 get_nb32_index_wait_dct(u32 dev, u8 dct, u32 index_reg, u32 index)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
@@ -99,7 +99,7 @@ u32 Get_NB32_index_wait_DCT(u32 dev, u8 dct, u32 index_reg, u32 index)
 	}
 }
 
-void Set_NB32_index_wait_DCT(u32 dev, u8 dct, u32 index_reg, u32 index, u32 data)
+void set_nb32_index_wait_dct(u32 dev, u8 dct, u32 index_reg, u32 index, u32 data)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
@@ -503,12 +503,12 @@ u16 mct_MaxLoadFreq(u8 count, u8 highest_rank_count, u8 registered, u8 voltage, 
 	return freq;
 }
 
-int mctRead_SPD(u32 smaddr, u32 reg)
+int mct_read_spd(u32 smaddr, u32 reg)
 {
 	return spd_read_byte(smaddr, reg);
 }
 
-void mctSMBhub_Init(u32 node)
+void mct_smb_hub_init(u32 node)
 {
 	struct sys_info *sysinfo = get_sysinfo();
 	struct mem_controller *ctrl = &(sysinfo->ctrl[node]);

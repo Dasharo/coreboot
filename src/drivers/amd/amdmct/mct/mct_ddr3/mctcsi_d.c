@@ -37,11 +37,11 @@ void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 	chip_sel = 0;		/* Find out if current configuration is capable */
 	while (do_intlv && (chip_sel < MAX_CS_SUPPORTED)) {
 		reg = 0x40 + (chip_sel << 2);	/* Dram CS Base 0 */
-		val = Get_NB32_DCT(dev, dct, reg);
+		val = get_nb32_dct(dev, dct, reg);
 		if (val & (1 << CS_ENABLE)) {
 			en_chip_sels++;
 			reg = 0x60 + ((chip_sel >> 1) << 2); /*Dram CS Mask 0 */
-			val = Get_NB32_DCT(dev, dct, reg);
+			val = get_nb32_dct(dev, dct, reg);
 			val >>= 19;
 			val &= 0x3ff;
 			val++;
@@ -52,7 +52,7 @@ void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 				if (val != mem_size)
 					break;
 			reg = 0x80;		/*Dram Bank Addressing */
-			val = Get_NB32_DCT(dev, dct, reg);
+			val = get_nb32_dct(dev, dct, reg);
 			val >>= (chip_sel >> 1) << 2;
 			val &= 0x0f;
 			if (en_chip_sels == 1)
@@ -92,7 +92,7 @@ void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 
 		for (chip_sel = 0; chip_sel < MAX_CS_SUPPORTED; chip_sel++) {
 			reg = 0x40 + (chip_sel << 2);	/* Dram CS Base 0 */
-			val = Get_NB32_DCT(dev, dct, reg);
+			val = get_nb32_dct(dev, dct, reg);
 			if (val & 3) {
 				val_lo = val & addr_lo_mask;
 				val_hi = val & addr_hi_mask;
@@ -102,13 +102,13 @@ void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 				val_hi >>= bit_delta;
 				val |= val_lo;
 				val |= val_hi;
-				Set_NB32_DCT(dev, dct, reg, val);
+				set_nb32_dct(dev, dct, reg, val);
 
 				if (chip_sel & 1)
 					continue;
 
 				reg = 0x60 + ((chip_sel >> 1) << 2); /* Dram CS Mask 0 */
-				val = Get_NB32_DCT(dev, dct, reg);
+				val = get_nb32_dct(dev, dct, reg);
 				val_lo = val & addr_lo_mask;
 				val_hi = val & addr_hi_mask;
 				val &= addr_lo_mask_n;
@@ -117,7 +117,7 @@ void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 				val_hi >>= bit_delta;
 				val |= val_lo;
 				val |= val_hi;
-				Set_NB32_DCT(dev, dct, reg, val);
+				set_nb32_dct(dev, dct, reg, val);
 			}
 		}
 	}	/* do_intlv */

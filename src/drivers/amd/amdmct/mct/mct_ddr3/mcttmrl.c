@@ -207,11 +207,11 @@ static void mct_set_max_rd_lat_trn_val_d(struct DCTStatStruc *p_dct_stat,
 
 	dev = p_dct_stat->dev_dct;
 	reg = 0x78;
-	val = Get_NB32_DCT(dev, channel, reg);
+	val = get_nb32_dct(dev, channel, reg);
 	val &= ~(0x3ff << 22);
 	val |= max_rd_lat_val << 22;
 	/* program MaxRdLatency to correspond with current delay */
-	Set_NB32_DCT(dev, channel, reg, val);
+	set_nb32_dct(dev, channel, reg, val);
 }
 
 static u8 compare_max_rd_lat_test_pattern_d(u32 pattern_buf, u32 addr)
@@ -318,18 +318,18 @@ u8 mct_get_start_max_rd_lat_d(struct MCTStatStruc *p_mct_stat,
 	dev = p_dct_stat->dev_dct;
 
 	/* Multiply the CAS Latency by two to get a number of 1/2 MEMCLKs units.*/
-	val = Get_NB32_DCT(dev, channel, 0x88);
+	val = get_nb32_dct(dev, channel, 0x88);
 	sub_total = ((val & 0x0f) + 1) << 1;	/* sub_total is 1/2 Memclk unit */
 
 	/* If registered DIMMs are being used then add 1 MEMCLK to the sub-total*/
-	val = Get_NB32_DCT(dev, channel, 0x90);
+	val = get_nb32_dct(dev, channel, 0x90);
 	if (!(val & (1 << UN_BUFF_DIMM)))
 		sub_total += 2;
 
 	/*If the address prelaunch is setup for 1/2 MEMCLKs then add 1,
 	 *  else add 2 to the sub-total. if (AddrCmdSetup || CsOdtSetup
 	 *  || CkeSetup) then K := K + 2; */
-	val = Get_NB32_index_wait_DCT(dev, channel, index_reg, 0x04);
+	val = get_nb32_index_wait_dct(dev, channel, index_reg, 0x04);
 	if (!(val & 0x00202020))
 		sub_total += 1;
 	else
@@ -337,7 +337,7 @@ u8 mct_get_start_max_rd_lat_d(struct MCTStatStruc *p_mct_stat,
 
 	/* If the F2x[1, 0]78[RdPtrInit] field is 4, 5, 6 or 7 MEMCLKs,
 	 *  then add 4, 3, 2, or 1 MEMCLKs, respectively to the sub-total. */
-	val = Get_NB32_DCT(dev, channel, 0x78);
+	val = get_nb32_dct(dev, channel, 0x78);
 	sub_total += 8 - (val & 0x0f);
 
 	/* Convert bits 7-5 (also referred to as the course delay) of the current
@@ -353,7 +353,7 @@ u8 mct_get_start_max_rd_lat_d(struct MCTStatStruc *p_mct_stat,
 
 	/*New formula:
 	sub_total *= 3*(Fn2xD4[NBFid]+4)/(3+Fn2x94[MemClkFreq])/2 */
-	val = Get_NB32_DCT(dev, channel, 0x94);
+	val = get_nb32_dct(dev, channel, 0x94);
 	/* sub_total div 4 to scale 1/4 MemClk back to MemClk */
 	val &= 7;
 	if (val >= 3) {

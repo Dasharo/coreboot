@@ -34,7 +34,7 @@ static void set_ecc_wr_dqs_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStru
 					addl_index = 0x32;
 				addl_index += dimm_num * 3;
 
-				val = Get_NB32_index_wait_DCT(p_dct_stat->dev_dct, channel, 0x98, addl_index);
+				val = get_nb32_index_wait_dct(p_dct_stat->dev_dct, channel, 0x98, addl_index);
 				if (odd_byte)
 					val >>= 16;
 				/* Save WrDqs to stack for later usage */
@@ -52,13 +52,13 @@ static void enable_auto_refresh_d(struct MCTStatStruc *p_mct_stat, struct DCTSta
 {
 	u32 val;
 
-	val = Get_NB32_DCT(p_dct_stat->dev_dct, 0, 0x8C);
+	val = get_nb32_dct(p_dct_stat->dev_dct, 0, 0x8C);
 	val &= ~(1 << DIS_AUTO_REFRESH);
-	Set_NB32_DCT(p_dct_stat->dev_dct, 0, 0x8C, val);
+	set_nb32_dct(p_dct_stat->dev_dct, 0, 0x8C, val);
 
-	val = Get_NB32_DCT(p_dct_stat->dev_dct, 1, 0x8C);
+	val = get_nb32_dct(p_dct_stat->dev_dct, 1, 0x8C);
 	val &= ~(1 << DIS_AUTO_REFRESH);
-	Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x8C, val);
+	set_nb32_dct(p_dct_stat->dev_dct, 1, 0x8C, val);
 }
 
 static void disable_auto_refresh_d(struct MCTStatStruc *p_mct_stat,
@@ -66,13 +66,13 @@ static void disable_auto_refresh_d(struct MCTStatStruc *p_mct_stat,
 {
 	u32 val;
 
-	val = Get_NB32_DCT(p_dct_stat->dev_dct, 0, 0x8C);
+	val = get_nb32_dct(p_dct_stat->dev_dct, 0, 0x8C);
 	val |= 1 << DIS_AUTO_REFRESH;
-	Set_NB32_DCT(p_dct_stat->dev_dct, 0, 0x8C, val);
+	set_nb32_dct(p_dct_stat->dev_dct, 0, 0x8C, val);
 
-	val = Get_NB32_DCT(p_dct_stat->dev_dct, 1, 0x8C);
+	val = get_nb32_dct(p_dct_stat->dev_dct, 1, 0x8C);
 	val |= 1 << DIS_AUTO_REFRESH;
-	Set_NB32_DCT(p_dct_stat->dev_dct, 1, 0x8C, val);
+	set_nb32_dct(p_dct_stat->dev_dct, 1, 0x8C, val);
 }
 
 
@@ -266,7 +266,7 @@ void mct_write_levelization_hw(struct MCTStatStruc *p_mct_stat,
 		p_dct_stat = p_dct_stat_a + node;
 
 		if (p_dct_stat->node_present) {
-			mctSMBhub_Init(node);
+			mct_smb_hub_init(node);
 			clear_on_dimm_mirror(p_mct_stat, p_dct_stat);
 			write_levelization_hw(p_mct_stat, p_dct_stat_a, node, pass);
 			restore_on_dimm_mirror(p_mct_stat, p_dct_stat);
