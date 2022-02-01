@@ -129,7 +129,7 @@ u16 mct_MaxLoadFreq(u8 count, u8 highest_rank_count, u8 registered, u8 voltage, 
 	 * Mainboards need to be able to specify the maximum number of DIMMs installable per channel
 	 * For now assume a maximum of 2 DIMMs per channel can be installed
 	 */
-	u8 MaxDimmsInstallable = 2;
+	u8 max_dimms_installable = 2;
 
 	/* Return limited maximum RAM frequency */
 	if (CONFIG(DIMM_DDR2)) {
@@ -244,7 +244,7 @@ u16 mct_MaxLoadFreq(u8 count, u8 highest_rank_count, u8 registered, u8 voltage, 
 						}
 					} else if (voltage & 0x2) {
 						/* 1.35V */
-						if (MaxDimmsInstallable > 1) {
+						if (max_dimms_installable > 1) {
 							/* Limit to DDR3-1333 */
 							if (freq > 666) {
 								freq = 666;
@@ -258,7 +258,7 @@ u16 mct_MaxLoadFreq(u8 count, u8 highest_rank_count, u8 registered, u8 voltage, 
 							}
 						}
 					} else if (voltage & 0x1) {
-						if (MaxDimmsInstallable == 1) {
+						if (max_dimms_installable == 1) {
 							if (count > 1) {
 								/* Limit to DDR3-1600 */
 								if (freq > 800) {
@@ -431,7 +431,7 @@ u16 mct_MaxLoadFreq(u8 count, u8 highest_rank_count, u8 registered, u8 voltage, 
 							}
 						}
 					} else if (voltage & 0x1) {
-						if (MaxDimmsInstallable == 1) {
+						if (max_dimms_installable == 1) {
 							/* Limit to DDR3-1600 */
 							if (freq > 800) {
 								freq = 800;
@@ -503,9 +503,9 @@ u16 mct_MaxLoadFreq(u8 count, u8 highest_rank_count, u8 registered, u8 voltage, 
 	return freq;
 }
 
-int mct_read_spd(u32 smaddr, u32 reg)
+int mct_read_spd(u32 sm_addr, u32 reg)
 {
-	return spd_read_byte(smaddr, reg);
+	return spd_read_byte(sm_addr, reg);
 }
 
 void mct_smb_hub_init(u32 node)
