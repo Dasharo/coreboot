@@ -5,7 +5,7 @@
 #include <device/pci_ops.h>
 
 /* For SB HT chain only, mmconf is not ready yet */
-static void set_bsp_node_CHtExtNodeCfgEn(void)
+static void set_bsp_node_ch_t_ext_node_cfg_en(void)
 {
 	u32 dword;
 
@@ -29,5 +29,5 @@ void bootblock_early_northbridge_init(void) {
 	/* Nothing special needs to be done to find bus 0 */
 	/* Allow the HT devices to be found */
 	/* mov bsp to bus 0xff when > 8 nodes */
-	set_bsp_node_CHtExtNodeCfgEn();
+	set_bsp_node_ch_t_ext_node_cfg_en();
 }
