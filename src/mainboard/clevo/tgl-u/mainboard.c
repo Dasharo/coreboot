@@ -8,6 +8,11 @@
 #include <smbios.h>
 #include <string.h>
 
+const char *smbios_system_sku(void)
+{
+	return "Not Applicable";
+}
+
 static void mainboard_init(void *chip_info)
 {
 	const struct pad_config *pads;
