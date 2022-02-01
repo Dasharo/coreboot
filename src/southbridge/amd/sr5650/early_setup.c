@@ -141,11 +141,11 @@ static void sr5650_htinit(void)
 	 */
 	pci_devfn_t cpu_f0, sr5650_f0, clk_f1;
 	u32 reg;
-	u8 cpu_ht_freq, cpu_htfreq_max, ibias;
-	u8 sbnode;
-	u8 sblink;
-	u16 linkfreq_reg;
-	u16 linkfreqext_reg;
+	u8 cpu_ht_freq, cpu_ht_freq_max, ibias;
+	u8 sb_node;
+	u8 sb_link;
+	u16 link_freq_reg;
+	u16 link_freqext_reg;
 	u8 index;
 	u8 ls2en_set = 0;
 
@@ -164,30 +164,30 @@ static void sr5650_htinit(void)
 	/* Find out the node ID and the Link ID that
 	 * connects to the Southbridge (system IO hub).
 	 */
-	sbnode = (pci_read_config32(PCI_DEV(0, 0x18, 0), 0x60) >> 8) & 7;
-	sblink = (pci_read_config32(PCI_DEV(0, 0x18, 0), 0x64) >> 8) & 3; /* bit[10] sublink, bit[9,8] link. */
-	cpu_f0 = PCI_DEV(0, (0x18 + sbnode), 0);
+	sb_node = (pci_read_config32(PCI_DEV(0, 0x18, 0), 0x60) >> 8) & 7;
+	sb_link = (pci_read_config32(PCI_DEV(0, 0x18, 0), 0x64) >> 8) & 3; /* bit[10] sublink, bit[9,8] link. */
+	cpu_f0 = PCI_DEV(0, (0x18 + sb_node), 0);
 
 	/*
 	 * link freq reg of Link0, 1, 2, 3 is 0x88, 0xA8, 0xC8, 0xE8 respectively
 	 * link freq ext reg of Link0, 1, 2, 3 is 0x9C, 0xBC, 0xDC, 0xFC respectively
 	 */
-	linkfreq_reg = 0x88 + (sblink << 5);
-	linkfreqext_reg = 0x9C + (sblink << 5);
-	reg = pci_read_config32(cpu_f0, linkfreq_reg);
+	link_freq_reg = 0x88 + (sb_link << 5);
+	link_freqext_reg = 0x9C + (sb_link << 5);
+	reg = pci_read_config32(cpu_f0, link_freq_reg);
 
 	cpu_ht_freq = (reg & 0xf00) >> 8;
 
 	/* Freq[4] is only valid for revision D and later processors */
 	if (cpuid_eax(1) >= 0x100F80) {
-		cpu_htfreq_max = 0x14;
-		cpu_ht_freq |= ((pci_read_config32(cpu_f0, linkfreqext_reg) & 0x01) << 4);
+		cpu_ht_freq_max = 0x14;
+		cpu_ht_freq |= ((pci_read_config32(cpu_f0, link_freqext_reg) & 0x01) << 4);
 	} else {
-		cpu_htfreq_max = 0x0F;
+		cpu_ht_freq_max = 0x0F;
 	}
 
 	printk(BIOS_INFO, "sr5650_htinit: Node %x Link %x, HT freq=%x.\n",
-			sbnode, sblink, cpu_ht_freq);
+			sb_node, sb_link, cpu_ht_freq);
 	sr5650_f0 = PCI_DEV(0, 0, 0);
 
 	clk_f1 = PCI_DEV(0, 0, 1); /* We need to make sure the F1 is accessible. */
@@ -207,7 +207,7 @@ static void sr5650_htinit(void)
 		set_nbcfg_enable_bits(clk_f1, 0xD8, 0x3FF, ibias);
 		/* Optimizes chipset HT transmitter drive strength */
 		set_htiu_enable_bits(sr5650_f0, 0x2A, 0x3, 0x3);
-	} else if ((cpu_ht_freq > 0x6) && (cpu_ht_freq < cpu_htfreq_max)) {
+	} else if ((cpu_ht_freq > 0x6) && (cpu_ht_freq < cpu_ht_freq_max)) {
 		printk(BIOS_INFO, "sr5650_htinit: HT3 mode\n");
 
 		/* Enable Protocol checker */
@@ -240,10 +240,10 @@ static void sr5650_htinit(void)
 			/* HyperTransport 3 Processor register settings to be done in northbridge */
 
 			/* Enables error-retry mode */
-			set_fam10_ext_cfg_enable_bits(cpu_f0, 0x130 + (sblink << 2), 1 << 0, 1 << 0);
+			set_fam10_ext_cfg_enable_bits(cpu_f0, 0x130 + (sb_link << 2), 1 << 0, 1 << 0);
 
 			/* Enables scrambling */
-			set_fam10_ext_cfg_enable_bits(cpu_f0, 0x170 + (sblink << 2), 1 << 3, 1 << 3);
+			set_fam10_ext_cfg_enable_bits(cpu_f0, 0x170 + (sb_link << 2), 1 << 3, 1 << 3);
 
 			/* Enables transmitter de-emphasis
 			* This depends on the PCB design and the trace
