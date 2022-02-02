@@ -10,6 +10,7 @@
 #include <endian.h>
 #include <stdint.h>
 #include <string.h>
+#include <symbols.h>
 
 #include "tor.h"
 #include "rs4.h"
@@ -205,11 +206,7 @@ static bool eeprom_extract_kwd(uint8_t cpu, uint64_t offset, uint8_t index,
  * already built one */
 static const uint8_t *mvpd_get(uint8_t cpu)
 {
-	/* Actual size of MVPD is a bit less than 42 KiB while maximum is 64
-	 * KiB, save some memory */
-	enum { MVPD_SIZE = 42 * KiB };
-
-	static uint8_t mvpd_bufs[2][MVPD_SIZE];
+	enum { MAX_MVPD_SIZE = 64 * KiB };
 
 	const char *mvpd_records[] = {
 		"CRP0", "CP00", "VINI",
@@ -218,7 +215,7 @@ static const uint8_t *mvpd_get(uint8_t cpu)
 		"VRML", "VWML", "VER0", "MER0", "VMSC",
 	};
 
-	uint8_t *mvpd_buf = mvpd_bufs[cpu];
+	uint8_t *mvpd_buf = &_mvpd_cache[cpu * MAX_MVPD_SIZE];
 
 	struct mvpd_toc_entry *toc = (void *)mvpd_buf;
 	uint16_t mvpd_offset = MVPD_TOC_SIZE;
@@ -281,7 +278,7 @@ static const uint8_t *mvpd_get(uint8_t cpu)
 			if (k == ARRAY_SIZE(mvpd_records))
 				continue;
 
-			if (mvpd_offset + record_size > MVPD_SIZE)
+			if (mvpd_offset + record_size > MAX_MVPD_SIZE)
 				die("MVPD section doesn't have space for %.4s record of size %d\n",
 				    record_name, record_size);
 

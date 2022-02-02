@@ -66,12 +66,14 @@ SECTIONS
 
 	ROMSTAGE(            0xF8240000, 256K)
 
+	REGION(mvpd_cache,   0xF8280000, 128K, 8)
+
 	/*
 	 * bootblock_crt0.S assumes this is the last part of L3, leaving for
 	 * interrupt vectors at least 0.5M because of cache associativity. If
 	 * more CBFS_CACHE is needed, split this into pre-/postram caches.
 	 */
-	CBFS_CACHE(          0xF8280000, 7M)
+	CBFS_CACHE(          0xF8380000, 6M)
 
 	RAMSTAGE(            0xF9000000, 2M)
 
