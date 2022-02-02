@@ -61,7 +61,7 @@ static DEVTREE_CONST struct device *dev_find_slot(unsigned int bus, unsigned int
 	return result;
 }
 
-static u32 amdfam10_set_resources(struct device *dev)
+static u32 amdfam10_node_id(struct device *dev)
 {
 #if NODE_NUMS == 64
 	unsigned int busn;
@@ -183,7 +183,7 @@ static void set_vga_enable_reg(u32 node_id, u32 linkn)
 
 static u32 ht_c_key(struct bus *link)
 {
-	u32 node_id = amdfam10_set_resources(link->dev);
+	u32 node_id = amdfam10_node_id(link->dev);
 	u32 linkn = link->link_num & 0x0f;
 	u32 val = (linkn << 8) | ((node_id & 0x3f) << 2) | 3;
 	return val;
@@ -221,7 +221,7 @@ static void set_config_map_reg(struct bus *link)
 	u32 linkn = link->link_num & 0x0f;
 	u32 busn_min = (link->secondary >> sysconf.segbit) & 0xff;
 	u32 busn_max = (link->subordinate >> sysconf.segbit) & 0xff;
-	u32 node_id = amdfam10_set_resources(link->dev);
+	u32 node_id = amdfam10_node_id(link->dev);
 
 	temp_reg = ((node_id & 0x30) << (12-4)) | ((node_id & 0xf) << 4) | 3;
 	temp_reg |= (busn_max << 24) | (busn_min << 16) | (linkn << 8);
@@ -292,7 +292,7 @@ static void ht_route_link(struct bus *link, scan_state mode)
 
 static void amd_g34_fixup(struct bus *link, struct device *dev)
 {
-	u32 node_id = amdfam10_set_resources(dev);
+	u32 node_id = amdfam10_node_id(dev);
 	u32 f3xe8;
 
 	printk(BIOS_SPEW, "%s\n", __func__);
@@ -405,7 +405,7 @@ static void trim_ht_chain(struct device *dev)
 static void amdfam10_scan_chains(struct device *dev)
 {
 	struct bus *link;
-	u32 node_id = amdfam10_set_resources(dev);
+	u32 node_id = amdfam10_node_id(dev);
 
 	printk(BIOS_SPEW, "%s\n", __func__);
 
@@ -545,7 +545,7 @@ static void amdfam10_read_resources(struct device *dev)
 	u32 node_id;
 	struct bus *link;
 
-	node_id = amdfam10_set_resources(dev);
+	node_id = amdfam10_node_id(dev);
 
 	amdfam10_create_vga_resource(dev, node_id);
 
@@ -618,7 +618,7 @@ static void amdfam10_set_resources(struct device *dev)
 	struct resource *res;
 
 	/* Find the node_id */
-	node_id = amdfam10_set_resources(dev);
+	node_id = amdfam10_node_id(dev);
 
 	/* Set each resource we have found */
 	for (res = dev->resource_list; res; res = res->next) {

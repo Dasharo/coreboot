@@ -35,16 +35,16 @@ u8 get_min_nb_cof(void)
 		/* read all P-state spec registers for NbDid = 1 */
 		for (j = 0; j < 5; j++)
 		{
-			AmdPCIRead(MAKE_SBDFO(0,0,device_id,FN_4,PS_SPEC_REG+(j*PCI_REG_LEN)), &dtemp); /*F4x1E0 + j*4 */
+			amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_4,PS_SPEC_REG+(j*PCI_REG_LEN)), &dtemp); /*F4x1E0 + j*4 */
 			/* get NbDid */
 			if (dtemp & NB_DID_MASK)
 				nb_did = 1;
 		}
 		/* if F3x1FC[NbCofVidUpdate]=0, NbFid =  default value */
-		AmdPCIRead(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp); /*F3x1FC*/
+		amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp); /*F3x1FC*/
 		if (!(dtemp & NB_CV_UPDATE)) /* F3x1FC[NbCofVidUpdated]=0, use default VID */
 		{
-			AmdPCIRead(MAKE_SBDFO(0,0,device_id,FN_3,CPTC0), &dtemp); /*F3xD4*/
+			amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,CPTC0), &dtemp); /*F3xD4*/
 			next_nb_fid = (u8) (dtemp & BIT_MASK_5);
 			if (nb_did)
 				next_nb_fid = (u8) (next_nb_fid >> 1);
@@ -52,10 +52,10 @@ u8 get_min_nb_cof(void)
 		else
 		{
 			/* check PVI/SPI */
-			AmdPCIRead(MAKE_SBDFO(0,0,device_id,FN_3,PW_CTL_MISC), &dtemp); /*F3xA0*/
+			amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PW_CTL_MISC), &dtemp); /*F3xA0*/
 			if (dtemp & PVI_MODE) /* PVI */
 			{
-				AmdPCIRead(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp); /*F3x1FC*/
+				amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp); /*F3x1FC*/
 				next_nb_fid = (u8) (dtemp >> UNI_NB_FID_BIT);
 				next_nb_fid &= BIT_MASK_5;
 				/* if (nb_did)
@@ -63,7 +63,7 @@ u8 get_min_nb_cof(void)
 			}
 			else /* SVI */
 			{
-				AmdPCIRead(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp); /*F3x1FC*/
+				amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp); /*F3x1FC*/
 				next_nb_fid = (u8) ((dtemp >> UNI_NB_FID_BIT) & BIT_MASK_5);
 				next_nb_fid = (u8) (next_nb_fid + ((dtemp >> SPLT_NB_FID_OFFSET) & BIT_MASK_3));
 				/* if (nb_did)
@@ -88,7 +88,7 @@ u8 get_num_of_node_nb(void)
 {
 	u32 dtemp;
 
-	AmdPCIRead(MAKE_SBDFO(0,0,24,0,0x60), &dtemp);
+	amd_pci_read(MAKE_SBDFO(0,0,24,0,0x60), &dtemp);
 	dtemp = (dtemp >> 4) & BIT_MASK_3;
 	dtemp++;
 	return (u8)dtemp;

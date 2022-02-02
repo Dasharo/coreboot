@@ -129,7 +129,7 @@ static void apply_boost_fid_offset(u32 node_id)
 	// Fam10h revision E only, but E is apparently not supported yet, therefore untested
 	// Check if CPB capable and num cores -1 is 5
 	if ((cpuid_edx(0x80000007) & CPB_MASK) && ((cpuid_ecx(0x80000008) & NC_MASK) == 5)) {
-		u32 core = get_node_core_id_x().core_id;
+		u32 core = get_node_core_id_x().coreid;
 		u32 asymetric_boost_this_core = pci_read_config32(NODE_PCI(node_id, 3), 0x10C);
 		asymetric_boost_this_core = (asymetric_boost_this_core >> (core * 2)) & 3;
 		msr_t msr = rdmsr(PSTATE_0_MSR);
@@ -374,7 +374,7 @@ static u32 nb_clk_did(u8 node, u64 cpu_rev, u8 proc_pkg)
 	u8 offset;
 
 	if (amd_cpu_find_capability(node, 0, &offset)) {
-		link_0_is_gen_3 = (AMD_checkLinkType(node, offset) & HTPHY_LINKTYPE_HT3);
+		link_0_is_gen_3 = (amd_check_link_type(node, offset) & HTPHY_LINKTYPE_HT3);
 	}
 	/* FIXME: NB_CLKDID should be 101b for AMD_DA_C2 in package
 	  S1g3 in link Gen3 mode, but I don't know how to tell

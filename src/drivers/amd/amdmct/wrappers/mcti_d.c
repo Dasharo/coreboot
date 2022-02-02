@@ -98,7 +98,7 @@ u16 mct_get_nv_bits(u8 index)
 		break;
 	case NV_MIN_MEMCLK:
 		/* Minimum platform supported memclk */
-		if (is_fam_15h())
+		if (is_fam15h())
 			val =  MEM_MIN_PLATFORM_FREQ_FAM15;
 		else
 			val =  MEM_MIN_PLATFORM_FREQ_FAM10;

@@ -310,7 +310,7 @@ static void route_from_bsp(u8 target_node, u8 actual_target, sMainData *p_dat)
 	}
 
 	predecessor_node = p_dat->port_list[current_pair * 2].node_id;
-	predecessor_link = p_dat->port_list[current_pair * 2].Link;
+	predecessor_link = p_dat->port_list[current_pair * 2].link;
 
 	/*  Recursively call self to ensure the route from the BSP to the Predecessor */
 	/*  Node is established */
@@ -344,12 +344,12 @@ static u8 convert_node_to_link(u8 src_node, u8 target_node, sMainData *p_dat)
 	{
 		if ((p_dat->port_list[k + 0].node_id == src_node) && (p_dat->port_list[k + 1].node_id == target_node))
 		{
-			target_link = p_dat->port_list[k + 0].Link;
+			target_link = p_dat->port_list[k + 0].link;
 			break;
 		}
 		else if ((p_dat->port_list[k + 1].node_id == src_node) && (p_dat->port_list[k + 0].node_id == target_node))
 		{
-			target_link = p_dat->port_list[k + 1].Link;
+			target_link = p_dat->port_list[k + 1].link;
 			break;
 		}
 	}
@@ -480,7 +480,7 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			for (temp = 0; temp < p_dat->total_links; temp++)
 			{
 				if ((p_dat->port_list[temp * 2 + 1].node_id == current_node) &&
-				   (p_dat->port_list[temp * 2 + 1].Link == current_link))
+				   (p_dat->port_list[temp * 2 + 1].link == current_link))
 				{
 					link_found = TRUE;
 					break;
@@ -645,12 +645,12 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 				break;
 			}
 
-			p_dat->port_list[p_dat->total_links * 2].Type = PORTLIST_TYPE_CPU;
-			p_dat->port_list[p_dat->total_links * 2].Link = current_link;
+			p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_CPU;
+			p_dat->port_list[p_dat->total_links * 2].link = current_link;
 			p_dat->port_list[p_dat->total_links * 2].node_id = current_node;
 
-			p_dat->port_list[p_dat->total_links * 2 + 1].Type = PORTLIST_TYPE_CPU;
-			p_dat->port_list[p_dat->total_links * 2 + 1].Link = p_dat->nb->read_def_lnk(current_node + 1, p_dat->nb);
+			p_dat->port_list[p_dat->total_links * 2 + 1].type = PORTLIST_TYPE_CPU;
+			p_dat->port_list[p_dat->total_links * 2 + 1].link = p_dat->nb->read_def_lnk(current_node + 1, p_dat->nb);
 			p_dat->port_list[p_dat->total_links * 2 + 1].node_id = token;
 
 			p_dat->total_links++;
@@ -1086,19 +1086,19 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			p_dat->port_list[p_dat->total_links * 2].node_id = node;
 			if (depth == 0)
 			{
-				p_dat->port_list[p_dat->total_links * 2].Type = PORTLIST_TYPE_CPU;
-				p_dat->port_list[p_dat->total_links * 2].Link = link;
+				p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_CPU;
+				p_dat->port_list[p_dat->total_links * 2].link = link;
 			}
 			else
 			{
-				p_dat->port_list[p_dat->total_links * 2].Type = PORTLIST_TYPE_IO;
-				p_dat->port_list[p_dat->total_links * 2].Link = 1 - last_link;
+				p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_IO;
+				p_dat->port_list[p_dat->total_links * 2].link = 1 - last_link;
 				p_dat->port_list[p_dat->total_links * 2].host_link = link;
 				p_dat->port_list[p_dat->total_links * 2].host_depth = depth - 1;
 				p_dat->port_list[p_dat->total_links * 2].pointer = last_sbdfo;
 			}
 
-			p_dat->port_list[p_dat->total_links * 2 + 1].Type = PORTLIST_TYPE_IO;
+			p_dat->port_list[p_dat->total_links * 2 + 1].type = PORTLIST_TYPE_IO;
 			p_dat->port_list[p_dat->total_links * 2 + 1].node_id = node;
 			p_dat->port_list[p_dat->total_links * 2 + 1].host_link = link;
 			p_dat->port_list[p_dat->total_links * 2 + 1].host_depth = depth;
@@ -1129,7 +1129,7 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 				amd_pci_read_bits(current_ptr, 26, 26, &temp);
 				last_link = (u8)temp;
 			}
-			p_dat->port_list[p_dat->total_links * 2 + 1].Link = last_link;
+			p_dat->port_list[p_dat->total_links * 2 + 1].link = last_link;
 
 			depth++;
 			p_dat->total_links++;
@@ -1178,19 +1178,19 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			p_dat->port_list[p_dat->total_links*2].node_id = node;
 			if (depth == 0)
 			{
-				p_dat->port_list[p_dat->total_links * 2].Type = PORTLIST_TYPE_CPU;
-				p_dat->port_list[p_dat->total_links * 2].Link = link;
+				p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_CPU;
+				p_dat->port_list[p_dat->total_links * 2].link = link;
 			}
 			else
 			{
-				p_dat->port_list[p_dat->total_links * 2].Type = PORTLIST_TYPE_IO;
-				p_dat->port_list[p_dat->total_links * 2].Link = 1 - last_link;
+				p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_IO;
+				p_dat->port_list[p_dat->total_links * 2].link = 1 - last_link;
 				p_dat->port_list[p_dat->total_links * 2].host_link = link;
 				p_dat->port_list[p_dat->total_links * 2].host_depth = depth - 1;
 				p_dat->port_list[p_dat->total_links * 2].pointer = last_sbdfo;
 			}
 
-			p_dat->port_list[p_dat->total_links * 2 + 1].Type = PORTLIST_TYPE_IO;
+			p_dat->port_list[p_dat->total_links * 2 + 1].type = PORTLIST_TYPE_IO;
 			p_dat->port_list[p_dat->total_links * 2 + 1].node_id = node;
 			p_dat->port_list[p_dat->total_links * 2 + 1].host_link = link;
 			p_dat->port_list[p_dat->total_links * 2 + 1].host_depth = depth;
@@ -1245,7 +1245,7 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			}
 
 			amd_pci_read_bits(current_ptr, 26, 26, &temp);
-			p_dat->port_list[p_dat->total_links * 2 + 1].Link = (u8)temp;
+			p_dat->port_list[p_dat->total_links * 2 + 1].link = (u8)temp;
 			p_dat->port_list[p_dat->total_links * 2 + 1].pointer = current_ptr;
 
 			last_link = (u8)temp;
@@ -1332,20 +1332,20 @@ static void regang_links(sMainData *p_dat)
 	u8 i, j;
 	for (i = 0; i < p_dat->total_links * 2; i += 2)
 	{
-		ASSERT(p_dat->port_list[i].Type < 2 && p_dat->port_list[i].Link < p_dat->nb->max_links);  /*  Data validation */
-		ASSERT(p_dat->port_list[i + 1].Type < 2 && p_dat->port_list[i + 1].Link < p_dat->nb->max_links); /*  data validation */
-		ASSERT(!(p_dat->port_list[i].Type == PORTLIST_TYPE_IO && p_dat->port_list[i + 1].Type == PORTLIST_TYPE_CPU));  /*  ensure src is closer to the bsp than dst */
+		ASSERT(p_dat->port_list[i].type < 2 && p_dat->port_list[i].link < p_dat->nb->max_links);  /*  Data validation */
+		ASSERT(p_dat->port_list[i + 1].type < 2 && p_dat->port_list[i + 1].link < p_dat->nb->max_links); /*  data validation */
+		ASSERT(!(p_dat->port_list[i].type == PORTLIST_TYPE_IO && p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU));  /*  ensure src is closer to the bsp than dst */
 
 		/* Regang is false unless we pass all conditions below */
 		p_dat->port_list[i].sel_regang = FALSE;
 		p_dat->port_list[i + 1].sel_regang = FALSE;
 
-		if ((p_dat->port_list[i].Type != PORTLIST_TYPE_CPU) || (p_dat->port_list[i + 1].Type != PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].type != PORTLIST_TYPE_CPU) || (p_dat->port_list[i + 1].type != PORTLIST_TYPE_CPU))
 			continue;   /*  Only process CPU to CPU links */
 
 		for (j = i + 2; j < p_dat->total_links * 2; j += 2)
 		{
-			if ((p_dat->port_list[j].Type != PORTLIST_TYPE_CPU) || (p_dat->port_list[j + 1].Type != PORTLIST_TYPE_CPU))
+			if ((p_dat->port_list[j].type != PORTLIST_TYPE_CPU) || (p_dat->port_list[j + 1].type != PORTLIST_TYPE_CPU))
 				continue;   /*  Only process CPU to CPU links */
 
 			if (p_dat->port_list[i].node_id != p_dat->port_list[j].node_id)
@@ -1354,29 +1354,29 @@ static void regang_links(sMainData *p_dat)
 			if (p_dat->port_list[i + 1].node_id != p_dat->port_list[j + 1].node_id)
 				continue;   /*  Link must be to the same target */
 
-			if ((p_dat->port_list[i].Link & 3) != (p_dat->port_list[j].Link & 3))
+			if ((p_dat->port_list[i].link & 3) != (p_dat->port_list[j].link & 3))
 				continue;   /*  Ensure same source base port */
 
-			if ((p_dat->port_list[i + 1].Link & 3) != (p_dat->port_list[j + 1].Link & 3))
+			if ((p_dat->port_list[i + 1].link & 3) != (p_dat->port_list[j + 1].link & 3))
 				continue;   /*  Ensure same destination base port */
 
-			if ((p_dat->port_list[i].Link & 4) != (p_dat->port_list[i + 1].Link & 4))
+			if ((p_dat->port_list[i].link & 4) != (p_dat->port_list[i + 1].link & 4))
 				continue;   /*  Ensure sublink0 routes to sublink0 */
 
-			ASSERT((p_dat->port_list[j].Link & 4) == (p_dat->port_list[j + 1].Link & 4)); /*  (therefore sublink1 routes to sublink1) */
+			ASSERT((p_dat->port_list[j].link & 4) == (p_dat->port_list[j + 1].link & 4)); /*  (therefore sublink1 routes to sublink1) */
 
 			if (p_dat->ht_block->amd_cb_skip_regang &&
 				p_dat->ht_block->amd_cb_skip_regang(p_dat->port_list[i].node_id,
-							p_dat->port_list[i].Link & 0x03,
+							p_dat->port_list[i].link & 0x03,
 							p_dat->port_list[i + 1].node_id,
-							p_dat->port_list[i + 1].Link & 0x03))
+							p_dat->port_list[i + 1].link & 0x03))
 			{
 				continue;   /*  Skip regang */
 			}
 
 
-			p_dat->port_list[i].Link &= 0x03; /*  Force to point to sublink0 */
-			p_dat->port_list[i + 1].Link &= 0x03;
+			p_dat->port_list[i].link &= 0x03; /*  Force to point to sublink0 */
+			p_dat->port_list[i + 1].link &= 0x03;
 			p_dat->port_list[i].sel_regang = TRUE; /*  Enable link reganging */
 			p_dat->port_list[i + 1].sel_regang = TRUE;
 			p_dat->port_list[i].prv_width_out_cap = HT_WIDTH_16_BITS;
@@ -1406,7 +1406,7 @@ static void detect_io_link_isochronous_capable(sMainData *p_dat)
 	u8 iommu = get_uint_option("iommu", 1);
 
 	for (i = 0; i < p_dat->total_links * 2; i += 2) {
-		if ((p_dat->port_list[i].Type == PORTLIST_TYPE_CPU) && (p_dat->port_list[i + 1].Type == PORTLIST_TYPE_IO)) {
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU) && (p_dat->port_list[i + 1].type == PORTLIST_TYPE_IO)) {
 			if ((p_dat->port_list[i].prv_feature_cap & 0x1) && (p_dat->port_list[i + 1].prv_feature_cap & 0x1)) {
 				p_dat->port_list[i].enable_isochronous_mode = 1;
 				p_dat->port_list[i + 1].enable_isochronous_mode = 1;
@@ -1458,7 +1458,7 @@ static void select_optimal_width_and_frequency(sMainData *p_dat)
 
 	cb_pcb_freq_limit_nvram = ht_speed_limit[temp & 0xf];
 
-	if (!is_fam_15h()) {
+	if (!is_fam15h()) {
 		/* FIXME
 		 * By default limit frequency to 2.6 GHz as there are residual
 		 * problems with HT v3.1 implementation on at least some Socket G34
@@ -1488,15 +1488,15 @@ static void select_optimal_width_and_frequency(sMainData *p_dat)
 		cb_pcb_ba_upstream_width = 16;
 #endif
 
-		if ((p_dat->port_list[i].Type == PORTLIST_TYPE_CPU) && (p_dat->port_list[i + 1].Type == PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU) && (p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU))
 		{
 			if (p_dat->ht_block->amd_cb_cpu_2_cpu_pcb_limits)
 			{
 				p_dat->ht_block->amd_cb_cpu_2_cpu_pcb_limits(
 						p_dat->port_list[i].node_id,
-						p_dat->port_list[i].Link,
+						p_dat->port_list[i].link,
 						p_dat->port_list[i + 1].node_id,
-						p_dat->port_list[i + 1].Link,
+						p_dat->port_list[i + 1].link,
 						&cb_pcb_ab_downstream_width,
 						&cb_pcb_ba_upstream_width, &cb_pcb_freq_limit
 						);
@@ -1583,19 +1583,19 @@ static void hammer_sublink_fixup(sMainData *p_dat)
 		changes = FALSE;
 		for (i = 0; i < p_dat->total_links*2; i++)
 		{
-			if (p_dat->port_list[i].Type != PORTLIST_TYPE_CPU) /*  Must be a CPU link */
+			if (p_dat->port_list[i].type != PORTLIST_TYPE_CPU) /*  Must be a CPU link */
 				continue;
-			if (p_dat->port_list[i].Link < 4) /*  Only look for sublink1's */
+			if (p_dat->port_list[i].link < 4) /*  Only look for sublink1's */
 				continue;
 
 			for (j = 0; j < p_dat->total_links*2; j++)
 			{
 				/*  Step 1. Find the matching sublink0 */
-				if (p_dat->port_list[j].Type != PORTLIST_TYPE_CPU)
+				if (p_dat->port_list[j].type != PORTLIST_TYPE_CPU)
 					continue;
 				if (p_dat->port_list[j].node_id != p_dat->port_list[i].node_id)
 					continue;
-				if (p_dat->port_list[j].Link != (p_dat->port_list[i].Link & 0x03))
+				if (p_dat->port_list[j].link != (p_dat->port_list[i].link & 0x03))
 					continue;
 
 				/*  Step 2. Check for an illegal frequency ratio */
@@ -1710,7 +1710,7 @@ static void link_optimization(sMainData *p_dat)
 {
 	p_dat->nb->gather_link_data(p_dat, p_dat->nb);
 	regang_links(p_dat);
-	if (is_fam_15h())
+	if (is_fam15h())
 		detect_io_link_isochronous_capable(p_dat);
 	select_optimal_width_and_frequency(p_dat);
 	hammer_sublink_fixup(p_dat);
@@ -1746,10 +1746,10 @@ static void traffic_distribution(sMainData *p_dat)
 	link_count = 0;
 	for (i = 0; i < p_dat->total_links*2; i += 2)
 	{
-		if ((p_dat->port_list[i].Type == PORTLIST_TYPE_CPU) && (p_dat->port_list[i + 1].Type == PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU) && (p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU))
 		{
-			links_01 |= (u32)1 << p_dat->port_list[i].Link;
-			links_10 |= (u32)1 << p_dat->port_list[i + 1].Link;
+			links_01 |= (u32)1 << p_dat->port_list[i].link;
+			links_10 |= (u32)1 << p_dat->port_list[i + 1].link;
 			link_count++;
 		}
 	}

@@ -16,11 +16,11 @@
 #define SB_NAME "ATI SB700"
 #endif
 
-static struct device *find_sm_dev(struct device *dev, u32 dev_fn)
+static struct device *find_sm_dev(struct device *dev, u32 devfn)
 {
 	struct device *sm_dev;
 
-	sm_dev = pcidev_path_behind(dev->bus, dev_fn);
+	sm_dev = pcidev_path_behind(dev->bus, devfn);
 	if (!sm_dev)
 		return sm_dev;
 
@@ -69,7 +69,7 @@ void sb7xx_51xx_enable(struct device *dev)
 	u32 device_id;
 	u32 vendor_id;
 	int i;
-	u32 dev_fn;
+	u32 devfn;
 
 	printk(BIOS_DEBUG, "sb7xx_51xx_enable()\n");
 
@@ -100,30 +100,30 @@ void sb7xx_51xx_enable(struct device *dev)
 	bus_dev = dev->bus->dev;
 	if ((bus_dev->vendor == PCI_VENDOR_ID_ATI) &&
 	    (bus_dev->device == PCI_DEVICE_ID_ATI_SB700_PCI)) {
-		dev_fn = (bus_dev->path.pci.dev_fn) & ~7;
-		sm_dev = find_sm_dev(bus_dev, dev_fn);
+		devfn = (bus_dev->path.pci.devfn) & ~7;
+		sm_dev = find_sm_dev(bus_dev, devfn);
 		if (!sm_dev)
 			return;
 
 		/* something under 00:01.0 */
-		switch (dev->path.pci.dev_fn) {
+		switch (dev->path.pci.devfn) {
 		case 5 << 3:
 			;
 		}
 		return;
 	}
 
-	i = (dev->path.pci.dev_fn) & ~7;
+	i = (dev->path.pci.devfn) & ~7;
 	i += (3 << 3);
-	for (dev_fn = (0x14 << 3); dev_fn <= i; dev_fn += (1 << 3)) {
-		sm_dev = find_sm_dev(dev, dev_fn);
+	for (devfn = (0x14 << 3); devfn <= i; devfn += (1 << 3)) {
+		sm_dev = find_sm_dev(dev, devfn);
 		if (sm_dev)
 			break;
 	}
 	if (!sm_dev)
 		return;
 
-	switch (dev->path.pci.dev_fn - (dev_fn - (0x14 << 3))) {
+	switch (dev->path.pci.devfn - (devfn - (0x14 << 3))) {
 	case PCI_DEVFN(0x11, 0):
 		index = 8;
 		set_sm_enable_bits(sm_dev, 0xac, 1 << index,
@@ -132,14 +132,14 @@ void sb7xx_51xx_enable(struct device *dev)
 	case PCI_DEVFN(0x12, 0):
 	case PCI_DEVFN(0x12, 1):
 	case PCI_DEVFN(0x12, 2):
-		index = dev->path.pci.dev_fn & 3;
+		index = dev->path.pci.devfn & 3;
 		set_sm_enable_bits(sm_dev, 0x68, 1 << index,
 				   (dev->enabled ? 1 : 0) << index);
 		break;
 	case PCI_DEVFN(0x13, 0):
 	case PCI_DEVFN(0x13, 1):
 	case PCI_DEVFN(0x13, 2):
-		index = (dev->path.pci.dev_fn & 3) + 4;
+		index = (dev->path.pci.devfn & 3) + 4;
 		set_sm_enable_bits(sm_dev, 0x68, 1 << index,
 				   (dev->enabled ? 1 : 0) << index);
 		break;

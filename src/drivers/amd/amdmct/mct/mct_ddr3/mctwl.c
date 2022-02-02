@@ -15,7 +15,7 @@ static void agesa_delay(u32 msec)
 void prepare_c_mct(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat)
 {
-	p_dct_stat->c_mct_ptr->AgesaDelay = agesa_delay;
+	p_dct_stat->c_mct_ptr->agesa_delay = agesa_delay;
 }
 
 void prepare_c_dct(struct MCTStatStruc *p_mct_stat,
@@ -239,13 +239,13 @@ static void change_mem_clk(struct MCTStatStruc *p_mct_stat,
 			mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, 0);
 			set_2t_configuration(p_mct_stat, p_dct_stat, 0);
 			mct_before_platform_spec(p_mct_stat, p_dct_stat, 0);
-			mct_PlatformSpec(p_mct_stat, p_dct_stat, 0);
+			mct_platform_spec(p_mct_stat, p_dct_stat, 0);
 		}
 		if (dct_1_present) {
 			mct_get_ps_cfg_d(p_mct_stat, p_dct_stat, 1);
 			set_2t_configuration(p_mct_stat, p_dct_stat, 1);
 			mct_before_platform_spec(p_mct_stat, p_dct_stat, 1);
-			mct_PlatformSpec(p_mct_stat, p_dct_stat, 1);
+			mct_platform_spec(p_mct_stat, p_dct_stat, 1);
 		}
 	}
 
@@ -388,7 +388,7 @@ void set_target_freq(struct MCTStatStruc *p_mct_stat,
 		for (dct = 0; dct < 2; dct++) {
 			if (p_dct_stat->dimm_valid_dct[dct]) {
 				phy_assisted_mem_fence_training(p_mct_stat, p_dct_stat_a, node);
-				InitPhyCompensation(p_mct_stat, p_dct_stat, dct);
+				init_phy_compensation(p_mct_stat, p_dct_stat, dct);
 			}
 		}
 	}

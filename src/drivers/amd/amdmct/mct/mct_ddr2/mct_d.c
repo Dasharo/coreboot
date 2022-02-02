@@ -1649,7 +1649,7 @@ static u8 auto_config_d(struct MCTStatStruc *p_mct_stat,
 	if (p_dct_stat->speed == 5)
 		val >>= 1;
 
-	val -= Bias_TFAW_T;
+	val -= BIAS_TFAW_T;
 	val <<= 28;
 	dram_config_hi |= val;	/* tfaw for 1K or 2K paged drams */
 
@@ -2286,7 +2286,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 	print_tx("\t DIMMPresence: dimm_x4_present=", p_dct_stat->dimm_x4_present);
 	print_tx("\t DIMMPresence: dimm_x8_present=", p_dct_stat->dimm_x8_present);
 	print_tx("\t DIMMPresence: dimm_x16_present=", p_dct_stat->dimm_x16_present);
-	print_tx("\t DIMMPresence: DimmPlPresent=", p_dct_stat->dimm_pl_present);
+	print_tx("\t DIMMPresence: dimm_pl_present=", p_dct_stat->dimm_pl_present);
 	print_tx("\t DIMMPresence: DimmDRPresent=", p_dct_stat->dimm_dr_present);
 	print_tx("\t DIMMPresence: DimmQRPresent=", p_dct_stat->dimm_qr_present);
 	print_tx("\t DIMMPresence: data_load[0]=", p_dct_stat->data_load[0]);

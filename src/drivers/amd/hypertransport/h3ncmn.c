@@ -390,16 +390,16 @@ static BOOL read_true_link_fail_status(u8 node, u8 link, sMainData *p_dat, cNort
 			if (crc != 0)
 			{
 				/* A synch flood occurred due to HT CRC */
-				if (p_dat->ht_block->AMD_CB_EventNotify)
+				if (p_dat->ht_block->amd_cb_event_notify)
 				{
 					/* Pass the node and link on which the generic synch flood event occurred. */
 					sHtEventHWHtCrc evt;
-					evt.eSize = sizeof(sHtEventHWHtCrc);
+					evt.e_size = sizeof(sHtEventHWHtCrc);
 					evt.node = node;
 					evt.link = link;
-					evt.laneMask = (u8)crc;
+					evt.lane_mask = (u8)crc;
 
-					p_dat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_HW_FAULT,
+					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_HW_FAULT,
 									HT_EVENT_HW_HTCRC,
 									(u8 *)&evt);
 				}
@@ -407,15 +407,15 @@ static BOOL read_true_link_fail_status(u8 node, u8 link, sMainData *p_dat, cNort
 			else
 			{
 				/* Some synch flood occurred */
-				if (p_dat->ht_block->AMD_CB_EventNotify)
+				if (p_dat->ht_block->amd_cb_event_notify)
 				{
 					/* Pass the node and link on which the generic synch flood event occurred. */
 					sHtEventHWSynchFlood evt;
-					evt.eSize = sizeof(sHtEventHWSynchFlood);
+					evt.e_size = sizeof(sHtEventHWSynchFlood);
 					evt.node = node;
 					evt.link = link;
 
-					p_dat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_HW_FAULT,
+					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_HW_FAULT,
 									HT_EVENT_HW_SYNCHFLOOD,
 									(u8 *)&evt);
 				}
@@ -1431,9 +1431,9 @@ static void gather_link_data(sMainData *p_dat, cNorthBridge *nb)
 
 	for (i = 0; i < p_dat->total_links*2; i++)
 	{
-		if (p_dat->port_list[i].Type == PORTLIST_TYPE_CPU)
+		if (p_dat->port_list[i].type == PORTLIST_TYPE_CPU)
 		{
-			link_base = make_link_base(p_dat->port_list[i].node_id, p_dat->port_list[i].Link);
+			link_base = make_link_base(p_dat->port_list[i].node_id, p_dat->port_list[i].link);
 
 			p_dat->port_list[i].pointer = link_base;
 
@@ -1458,7 +1458,7 @@ static void gather_link_data(sMainData *p_dat, cNorthBridge *nb)
 		else
 		{
 			link_base = p_dat->port_list[i].pointer;
-			if (p_dat->port_list[i].Link == 1)
+			if (p_dat->port_list[i].link == 1)
 				link_base += HTSLAVE_LINK01_OFFSET;
 
 			amd_pci_read_bits(link_base + HTSLAVE_LINK_CONTROL_0_REG, 22, 20, &temp);
@@ -1473,12 +1473,12 @@ static void gather_link_data(sMainData *p_dat, cNorthBridge *nb)
 			amd_pci_read_bits(link_base + HTSLAVE_FEATURE_CAP_REG, 7, 0, &temp);
 			p_dat->port_list[i].prv_feature_cap = (u16)temp;
 
-			if (p_dat->ht_block->AMD_CB_DeviceCapOverride)
+			if (p_dat->ht_block->amd_cb_device_cap_override)
 			{
 				link_base &= 0xFFFFF000;
 				amd_pci_read(link_base, &temp);
 
-				p_dat->ht_block->AMD_CB_DeviceCapOverride(
+				p_dat->ht_block->amd_cb_device_cap_override(
 					p_dat->port_list[i].node_id,
 					p_dat->port_list[i].host_link,
 					p_dat->port_list[i].host_depth,
@@ -1486,7 +1486,7 @@ static void gather_link_data(sMainData *p_dat, cNorthBridge *nb)
 					(u8)SBDFO_BUS(p_dat->port_list[i].pointer),
 					(u8)SBDFO_DEV(p_dat->port_list[i].pointer),
 					temp,
-					p_dat->port_list[i].Link,
+					p_dat->port_list[i].link,
 					&(p_dat->port_list[i].prv_width_in_cap),
 					&(p_dat->port_list[i].prv_width_out_cap),
 					&(p_dat->port_list[i].prv_frequency_cap),
@@ -1525,40 +1525,40 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 
 		if (p_dat->port_list[i].sel_regang)
 		{
-			ASSERT(p_dat->port_list[i].Type == PORTLIST_TYPE_CPU);
-			ASSERT(p_dat->port_list[i].Link < 4);
+			ASSERT(p_dat->port_list[i].type == PORTLIST_TYPE_CPU);
+			ASSERT(p_dat->port_list[i].link < 4);
 			temp = 1;
 			amd_pci_write_bits(MAKE_SBDFO(make_pci_segment_from_node(p_dat->port_list[i].node_id),
 					make_pci_bus_from_node(p_dat->port_list[i].node_id),
 					make_pci_device_from_node(p_dat->port_list[i].node_id),
 					CPU_HTNB_FUNC_00,
-					REG_HT_LINK_EXT_CONTROL0_0X170 + 4 * p_dat->port_list[i].Link),
+					REG_HT_LINK_EXT_CONTROL0_0X170 + 4 * p_dat->port_list[i].link),
 					0, 0, &temp);
 		}
 
-		if (p_dat->port_list[i].Type == PORTLIST_TYPE_CPU)
+		if (p_dat->port_list[i].type == PORTLIST_TYPE_CPU)
 		{
-			if (p_dat->ht_block->AMD_CB_OverrideCpuPort)
-				p_dat->ht_block->AMD_CB_OverrideCpuPort(p_dat->port_list[i].node_id,
-						p_dat->port_list[i].Link,
+			if (p_dat->ht_block->amd_cb_override_cpu_port)
+				p_dat->ht_block->amd_cb_override_cpu_port(p_dat->port_list[i].node_id,
+						p_dat->port_list[i].link,
 						&(p_dat->port_list[i].sel_width_in),
 						&(p_dat->port_list[i].sel_width_out),
 						&(p_dat->port_list[i].sel_frequency));
 		}
 		else
 		{
-			if (p_dat->ht_block->AMD_CB_OverrideDevicePort)
-				p_dat->ht_block->AMD_CB_OverrideDevicePort(p_dat->port_list[i].node_id,
+			if (p_dat->ht_block->amd_cb_override_device_port)
+				p_dat->ht_block->amd_cb_override_device_port(p_dat->port_list[i].node_id,
 							p_dat->port_list[i].host_link,
 							p_dat->port_list[i].host_depth,
-							p_dat->port_list[i].Link,
+							p_dat->port_list[i].link,
 							&(p_dat->port_list[i].sel_width_in),
 							&(p_dat->port_list[i].sel_width_out),
 							&(p_dat->port_list[i].sel_frequency));
 		}
 
 		link_base = p_dat->port_list[i].pointer;
-		if ((p_dat->port_list[i].Type == PORTLIST_TYPE_IO) && (p_dat->port_list[i].Link == 1))
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_IO) && (p_dat->port_list[i].link == 1))
 			link_base += HTSLAVE_LINK01_OFFSET;
 
 		/* Some IO devices don't work properly when setting widths, so write them in a single operation,
@@ -1573,7 +1573,7 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 		set_ht_control_register_bits(link_base + HTHOST_LINK_CONTROL_REG, 31, 24, &temp);
 
 		temp = p_dat->port_list[i].sel_frequency;
-		if (p_dat->port_list[i].Type == PORTLIST_TYPE_CPU)
+		if (p_dat->port_list[i].type == PORTLIST_TYPE_CPU)
 		{
 			ASSERT((temp >= HT_FREQUENCY_600M && temp <= HT_FREQUENCY_3200M)
 				|| (temp == HT_FREQUENCY_200M) || (temp == HT_FREQUENCY_400M));
@@ -1616,7 +1616,7 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 						make_pci_bus_from_node(p_dat->port_list[i].node_id),
 						make_pci_device_from_node(p_dat->port_list[i].node_id),
 						CPU_HTNB_FUNC_00,
-						REG_HT_LINK_RETRY0_0X130 + 4*p_dat->port_list[i].Link),
+						REG_HT_LINK_RETRY0_0X130 + 4*p_dat->port_list[i].link),
 						0, 0, &temp);
 
 			/* and Scrambling enable / disable */
@@ -1624,7 +1624,7 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 					make_pci_bus_from_node(p_dat->port_list[i].node_id),
 					make_pci_device_from_node(p_dat->port_list[i].node_id),
 					CPU_HTNB_FUNC_00,
-					REG_HT_LINK_EXT_CONTROL0_0X170 + 4*p_dat->port_list[i].Link),
+					REG_HT_LINK_EXT_CONTROL0_0X170 + 4*p_dat->port_list[i].link),
 					3, 3, &temp);
 		}
 		else
@@ -1677,10 +1677,10 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 					/* HyperTransport Retry Capability? */
 					if (IS_HT_RETRY_CAPABILITY(temp))
 					{
-						ASSERT(p_dat->port_list[i].Link < 2);
+						ASSERT(p_dat->port_list[i].link < 2);
 						amd_pci_write_bits(current_ptr + HTRETRY_CONTROL_REG,
-								p_dat->port_list[i].Link*16,
-								p_dat->port_list[i].Link*16,
+								p_dat->port_list[i].link*16,
+								p_dat->port_list[i].link*16,
 								&bits);
 						is_found = TRUE;
 					}
@@ -1693,15 +1693,15 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 					 */
 					if (bits != 0)
 					{
-						if (p_dat->ht_block->AMD_CB_EventNotify)
+						if (p_dat->ht_block->amd_cb_event_notify)
 						{
 							sHtEventOptRequiredCap evt;
-							evt.eSize = sizeof(sHtEventOptRequiredCap);
+							evt.e_size = sizeof(sHtEventOptRequiredCap);
 							evt.node = p_dat->port_list[i].node_id;
 							evt.link = p_dat->port_list[i].host_link;
 							evt.depth = p_dat->port_list[i].host_depth;
 
-							p_dat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_WARNING,
+							p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_WARNING,
 										HT_EVENT_OPT_REQUIRED_CAP_RETRY,
 										(u8 *)&evt);
 						}
@@ -1723,10 +1723,10 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 					/* HyperTransport Gen3 Capability? */
 					if (IS_HT_GEN3_CAPABILITY(temp))
 					{
-						ASSERT(p_dat->port_list[i].Link < 2);
+						ASSERT(p_dat->port_list[i].link < 2);
 						amd_pci_write_bits((current_ptr +
 							HTGEN3_LINK_TRAINING_0_REG +
-							p_dat->port_list[i].Link*HTGEN3_LINK01_OFFSET),
+							p_dat->port_list[i].link*HTGEN3_LINK01_OFFSET),
 							3, 3, &bits);
 						is_found = TRUE;
 					}
@@ -1739,15 +1739,15 @@ static void set_link_data(sMainData *p_dat, cNorthBridge *nb)
 					 */
 					if (bits != 0)
 					{
-						if (p_dat->ht_block->AMD_CB_EventNotify)
+						if (p_dat->ht_block->amd_cb_event_notify)
 						{
 							sHtEventOptRequiredCap evt;
-							evt.eSize = sizeof(sHtEventOptRequiredCap);
+							evt.e_size = sizeof(sHtEventOptRequiredCap);
 							evt.node = p_dat->port_list[i].node_id;
 							evt.link = p_dat->port_list[i].host_link;
 							evt.depth = p_dat->port_list[i].host_depth;
 
-							p_dat->ht_block->AMD_CB_EventNotify(HT_EVENT_CLASS_WARNING,
+							p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_WARNING,
 										HT_EVENT_OPT_REQUIRED_CAP_GEN3,
 										(u8 *)&evt);
 						}
@@ -2239,16 +2239,16 @@ static void fam_10_buffer_optimizations(u8 node, sMainData *p_dat, cNorthBridge 
 	 */
 	for (i = 0; i < p_dat->total_links*2; i++)
 	{
-		if ((p_dat->port_list[i].node_id == node) && (p_dat->port_list[i].Type == PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].node_id == node) && (p_dat->port_list[i].type == PORTLIST_TYPE_CPU))
 		{
 			/* If the link is greater than 4, this is a sublink 1, so it is not reganged. */
-			if (p_dat->port_list[i].Link < 4)
+			if (p_dat->port_list[i].link < 4)
 			{
 				current_ptr = MAKE_SBDFO(make_pci_segment_from_node(node),
 						make_pci_bus_from_node(node),
 						make_pci_device_from_node(node),
 						CPU_NB_FUNC_03,
-						REG_NB_LINK_XCS_TOKEN0_3X148 + 4*p_dat->port_list[i].Link);
+						REG_NB_LINK_XCS_TOKEN0_3X148 + 4*p_dat->port_list[i].link);
 				if (p_dat->port_list[i].sel_regang)
 				{
 					/* Handle all the regang Token count adjustments */
@@ -2270,7 +2270,7 @@ static void fam_10_buffer_optimizations(u8 node, sMainData *p_dat, cNorthBridge 
 							make_pci_bus_from_node(p_dat->port_list[i].node_id),
 							make_pci_device_from_node(p_dat->port_list[i].node_id),
 							CPU_HTNB_FUNC_00,
-							REG_HT_LINK_EXT_CONTROL0_0X170 + 4*p_dat->port_list[i].Link),
+							REG_HT_LINK_EXT_CONTROL0_0X170 + 4*p_dat->port_list[i].link),
 							0, 0, &temp);
 					if (temp == 1)
 					{

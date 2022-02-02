@@ -156,7 +156,7 @@ static void set_ht_phy_defaults(u8 node)
 			 */
 			for (j = 0; j < 4; j++) {
 				if (amd_cpu_find_capability(node, j, &offset)) {
-					if (AMD_checkLinkType(node, offset)
+					if (amd_check_link_type(node, offset)
 						& fam10_htphy_default[i].linktype) {
 						amd_set_ht_phy_register(node, j, i);
 					}
@@ -323,7 +323,7 @@ static u8 is_link_ganged(u8 node, u8 link_real)
 
 static u8 is_iolink(u8 node, u8 offset)
 {
-	return !!(AMD_checkLinkType(node, offset) & HTPHY_LINKTYPE_NONCOHERENT);
+	return !!(amd_check_link_type(node, offset) & HTPHY_LINKTYPE_NONCOHERENT);
 }
 
 static void write_ht_link_buf_counts(u8 node, struct ht_link_state *link_state)

@@ -58,7 +58,7 @@ u32 mct_set_dram_config_misc_2(struct DCTStatStruc *p_dct_stat,
 		misc2 &= ~(0x1 << 26);		/* CsMux45 = cs_mux_45 */
 		misc2 |= ((cs_mux_45 & 0x1) << 26);
 	} else if (p_dct_stat->logical_cpuid & (AMD_DR_Dx | AMD_DR_Cx)) {
-		if (p_dct_stat->Status & (1 << SB_REGISTERED)) {
+		if (p_dct_stat->status & (1 << SB_REGISTERED)) {
 			misc2 |= 1 << SUB_MEM_CLK_REG_DLY;
 			if (mct_get_nv_bits(NV_MAX_DIMMS) == 8)
 				misc2 |= 1 << DDR3_FOUR_SOCKET_CH;

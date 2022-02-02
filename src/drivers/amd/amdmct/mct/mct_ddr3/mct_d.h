@@ -211,9 +211,9 @@
 	#define JED_ADRCPAR	0x04
 
 #define SPD_TWR_MIN		17
-#define SPD_TRC_MIN		18
+#define SPD_TRCD_MIN		18
 #define SPD_TRRD_MIN		19
-#define SPD_TRRD_MIN		20
+#define SPD_TRPD_MIN		20
 #define SPD_UPPER_TRAS_TRC	21
 #define SPD_TRAS_MIN		22
 #define SPD_TRC_MIN		23
@@ -490,7 +490,7 @@ struct DCTStatStruc {		/* A per node structure*/
 	u16 dimm_yr_06;		/* Bitmap indicating which Dimms have a manufactur's year code <= 2006*/
 	u16 dimm_wk_2406;		/* Bitmap indicating which Dimms have a manufactur's week code <= 24 of 2006 (June)*/
 	u16 dimm_dr_present;	/* Bitmap indicating that Dual Rank Dimms are present*/
-	u16 DimmPlPresent;	/* Bitmap indicating that Planar (1) or Stacked (0) Dimms are present.*/
+	u16 dimm_pl_present;	/* Bitmap indicating that Planar (1) or Stacked (0) Dimms are present.*/
 	u16 channel_train_fail;	/* Bitmap showing the channel information about failed Chip Selects
 		0 in any bit field indicates channel 0
 		1 in any bit field indicates channel 1 */
@@ -1131,9 +1131,9 @@ void set_2t_configuration(struct MCTStatStruc *p_mct_stat,
 				struct DCTStatStruc *p_dct_stat, u8 dct);
 u8 mct_before_platform_spec(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 dct);
-u8 mct_PlatformSpec(struct MCTStatStruc *p_mct_stat,
+u8 mct_platform_spec(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 dct);
-void InitPhyCompensation(struct MCTStatStruc *p_mct_stat,
+void init_phy_compensation(struct MCTStatStruc *p_mct_stat,
 					struct DCTStatStruc *p_dct_stat, u8 dct);
 u32 mct_mr1(struct MCTStatStruc *p_mct_stat,
 			struct DCTStatStruc *p_dct_stat, u8 dct, u32 mrs_chip_sel);

@@ -1992,7 +1992,7 @@ static void write_l18_test_pattern_d(struct DCTStatStruc *p_dct_stat,
 {
 	u8 *buf;
 
-	buf = (u8 *)p_dct_stat->PtrPatternBufA;
+	buf = (u8 *)p_dct_stat->ptr_pattern_buf_a;
 	write_ln_test_pattern(test_addr_lo, buf, 18);
 
 }
@@ -2002,7 +2002,7 @@ static void write_l9_test_pattern_d(struct DCTStatStruc *p_dct_stat,
 {
 	u8 *buf;
 
-	buf = (u8 *)p_dct_stat->PtrPatternBufA;
+	buf = (u8 *)p_dct_stat->ptr_pattern_buf_a;
 	write_ln_test_pattern(test_addr_lo, buf, 9);
 }
 
@@ -2036,7 +2036,7 @@ static u16 compare_dqs_test_pattern_d(struct MCTStatStruc *p_mct_stat, struct DC
 	ptr_addr = p_dct_stat;
 	pattern = p_dct_stat->pattern;
 	channel = p_dct_stat->channel;
-	test_buf = (u32 *)p_dct_stat->PtrPatternBufA;
+	test_buf = (u32 *)p_dct_stat->ptr_pattern_buf_a;
 
 	if (pattern && channel) {
 		addr_lo += 8; /* second channel */
@@ -2434,9 +2434,9 @@ void mct_write_1l_test_pattern_d(struct MCTStatStruc *p_mct_stat,
 	set_upper_fs_base(test_addr);
 
 	if (pattern)
-		buf = (u8 *)p_dct_stat->PtrPatternBufB;
+		buf = (u8 *)p_dct_stat->ptr_pattern_buf_b;
 	else
-		buf = (u8 *)p_dct_stat->PtrPatternBufA;
+		buf = (u8 *)p_dct_stat->ptr_pattern_buf_a;
 
 	write_ln_test_pattern(test_addr << 8, buf, 1);
 }

@@ -4308,7 +4308,7 @@ void spd_2nd_timing(struct MCTStatStruc *p_mct_stat,
 			if (trrd < val)
 				trrd = val;
 
-			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_TRC_MIN];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_TRCD_MIN];
 			val = byte * mtb_16x;
 			if (trcd < val)
 				trcd = val;
@@ -4654,7 +4654,7 @@ void spd_2nd_timing(struct MCTStatStruc *p_mct_stat,
 		/* tfaw */
 		val = p_dct_stat->tfaw;
 		val = mct_adjust_spd_timings(p_mct_stat, p_dct_stat, val);
-		val -= Bias_TFAW_T;
+		val -= BIAS_TFAW_T;
 		val >>= 1;
 		val <<= 28;
 		dword = get_nb32_dct(dev, dct, 0x94);
@@ -5729,7 +5729,7 @@ static u8 dimm_presence_d(struct MCTStatStruc *p_mct_stat,
 	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_x4_present=%x\n", p_dct_stat->dimm_x4_present);
 	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_x8_present=%x\n", p_dct_stat->dimm_x8_present);
 	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_x16_present=%x\n", p_dct_stat->dimm_x16_present);
-	printk(BIOS_DEBUG, "\t DIMMPresence: DimmPlPresent=%x\n", p_dct_stat->dimm_pl_present);
+	printk(BIOS_DEBUG, "\t DIMMPresence: dimm_pl_present=%x\n", p_dct_stat->dimm_pl_present);
 	printk(BIOS_DEBUG, "\t DIMMPresence: DimmDRPresent=%x\n", p_dct_stat->dimm_dr_present);
 	printk(BIOS_DEBUG, "\t DIMMPresence: DimmQRPresent=%x\n", p_dct_stat->dimm_qr_present);
 	printk(BIOS_DEBUG, "\t DIMMPresence: data_load[0]=%x\n", p_dct_stat->data_load[0]);
@@ -6703,30 +6703,30 @@ void mct_force_nb_pstate_0_en_fam15(struct MCTStatStruc *p_mct_stat,
 	dword = get_nb32(p_dct_stat->dev_nbctl, 0x174);
 	if (!(dword & 0x1)) {
 		dword = get_nb32(p_dct_stat->dev_nbctl, 0x170);
-		p_dct_stat->SwNbPstateLoDis = (dword >> 14) & 0x1;
-		p_dct_stat->NbPstateDisOnP0 = (dword >> 13) & 0x1;
-		p_dct_stat->NbPstateThreshold = (dword >> 9) & 0x7;
-		p_dct_stat->NbPstateHi = (dword >> 6) & 0x3;
-		dword &= ~(0x1 << 14);		/* SwNbPstateLoDis = 0 */
-		dword &= ~(0x1 << 13);		/* NbPstateDisOnP0 = 0 */
-		dword &= ~(0x7 << 9);		/* NbPstateThreshold = 0 */
-		dword &= ~(0x3 << 3);		/* NbPstateLo = NbPstateMaxVal */
+		p_dct_stat->sw_nb_pstate_lo_dis = (dword >> 14) & 0x1;
+		p_dct_stat->nb_pstate_dis_on_p0 = (dword >> 13) & 0x1;
+		p_dct_stat->nb_pstate_threshold = (dword >> 9) & 0x7;
+		p_dct_stat->nb_pstate_hi = (dword >> 6) & 0x3;
+		dword &= ~(0x1 << 14);		/* sw_nb_pstate_lo_dis = 0 */
+		dword &= ~(0x1 << 13);		/* nb_pstate_dis_on_p0 = 0 */
+		dword &= ~(0x7 << 9);		/* nb_pstate_threshold = 0 */
+		dword &= ~(0x3 << 3);		/* nb_pstate_lo = nb_pstate_max_val */
 		dword |= ((dword & 0x3) << 3);
 		set_nb32(p_dct_stat->dev_nbctl, 0x170, dword);
 
 		if (!is_model10_1f()) {
-			/* Wait until CurNbPState == NbPstateLo */
+			/* Wait until cur_nb_pstate == nb_pstate_lo */
 			do {
 				dword2 = get_nb32(p_dct_stat->dev_nbctl, 0x174);
 			} while (((dword2 >> 19) & 0x7) != (dword & 0x3));
 		}
 		dword = get_nb32(p_dct_stat->dev_nbctl, 0x170);
-		dword &= ~(0x3 << 6);		/* NbPstateHi = 0 */
-		dword |= (0x3 << 14);		/* SwNbPstateLoDis = 1 */
+		dword &= ~(0x3 << 6);		/* nb_pstate_hi = 0 */
+		dword |= (0x3 << 14);		/* sw_nb_pstate_lo_dis = 1 */
 		set_nb32(p_dct_stat->dev_nbctl, 0x170, dword);
 
 		if (!is_model10_1f()) {
-			/* Wait until CurNbPState == 0 */
+			/* Wait until cur_nb_pstate == 0 */
 			do {
 				dword2 = get_nb32(p_dct_stat->dev_nbctl, 0x174);
 			} while (((dword2 >> 19) & 0x7) != 0);
@@ -6743,14 +6743,14 @@ void mct_force_nb_pstate_0_dis_fam15(struct MCTStatStruc *p_mct_stat,
 	dword = get_nb32(p_dct_stat->dev_nbctl, 0x174);
 	if (!(dword & 0x1)) {
 		dword = get_nb32(p_dct_stat->dev_nbctl, 0x170);
-		dword &= ~(0x1 << 14);					/* SwNbPstateLoDis*/
-		dword |= ((p_dct_stat->SwNbPstateLoDis & 0x1) << 14);
-		dword &= ~(0x1 << 13);					/* NbPstateDisOnP0 */
-		dword |= ((p_dct_stat->NbPstateDisOnP0 & 0x1) << 13);
-		dword &= ~(0x7 << 9);					/* NbPstateThreshold */
-		dword |= ((p_dct_stat->NbPstateThreshold & 0x7) << 9);
-		dword &= ~(0x3 << 6);					/* NbPstateHi */
-		dword |= ((p_dct_stat->NbPstateHi & 0x3) << 3);
+		dword &= ~(0x1 << 14);					/* sw_nb_pstate_lo_dis*/
+		dword |= ((p_dct_stat->sw_nb_pstate_lo_dis & 0x1) << 14);
+		dword &= ~(0x1 << 13);					/* nb_pstate_dis_on_p0 */
+		dword |= ((p_dct_stat->nb_pstate_dis_on_p0 & 0x1) << 13);
+		dword &= ~(0x7 << 9);					/* nb_pstate_threshold */
+		dword |= ((p_dct_stat->nb_pstate_threshold & 0x7) << 9);
+		dword &= ~(0x3 << 6);					/* nb_pstate_hi */
+		dword |= ((p_dct_stat->nb_pstate_hi & 0x3) << 3);
 		set_nb32(p_dct_stat->dev_nbctl, 0x170, dword);
 	}
 }

@@ -3,6 +3,14 @@
 #ifndef PORTING_H
 #define PORTING_H
 
+/* For AMD64 or 32-bit GCC */
+typedef int int32;
+typedef unsigned int uint32;
+typedef short int16;
+typedef unsigned short uint16;
+typedef char int8;
+typedef unsigned char  uint8;
+
 /* Create the Boolean type */
 #define TRUE  1
 #define FALSE 0
@@ -13,9 +21,9 @@ typedef unsigned char BOOL;
 
 typedef struct _uint64
 {
-	u32 lo;
-	u32 hi;
-} uint64;
+	uint32 lo;
+	uint32 hi;
+}uint64;
 
 
 /*
@@ -26,15 +34,15 @@ typedef struct _uint64
  *   14:12   Function(3-bits)
  *   11:00   Offset  (12-bits)
  */
-typedef u32 SBDFO;
+typedef uint32 SBDFO;
 
-#define MAKE_SBDFO(seg,bus,dev,fun,off) ((((u32)(seg)) << 28) | (((u32)(bus)) << 20) | \
-		    (((u32)(dev)) << 15) | (((u32)(fun)) << 12) | ((u32)(off)))
-#define SBDFO_SEG(x) (((u32)(x) >> 28) & 0x0F)
-#define SBDFO_BUS(x) (((u32)(x) >> 20) & 0xFF)
-#define SBDFO_DEV(x) (((u32)(x) >> 15) & 0x1F)
-#define SBDFO_FUN(x) (((u32)(x) >> 12) & 0x07)
-#define SBDFO_OFF(x) (((u32)(x)) & 0xFFF)
+#define MAKE_SBDFO(seg,bus,dev,fun,off) ((((uint32)(seg)) << 28) | (((uint32)(bus)) << 20) | \
+		    (((uint32)(dev)) << 15) | (((uint32)(fun)) << 12) | ((uint32)(off)))
+#define SBDFO_SEG(x) (((uint32)(x) >> 28) & 0x0F)
+#define SBDFO_BUS(x) (((uint32)(x) >> 20) & 0xFF)
+#define SBDFO_DEV(x) (((uint32)(x) >> 15) & 0x1F)
+#define SBDFO_FUN(x) (((uint32)(x) >> 12) & 0x07)
+#define SBDFO_OFF(x) (((uint32)(x)) & 0xFFF)
 #define ILLEGAL_SBDFO 0xFFFFFFFF
 
 void CALLCONV amd_msr_read(u32 address, uint64 *value);
