@@ -11,6 +11,7 @@
 #define DGPU_RST_N GPP_U4
 #define DGPU_PWR_EN GPP_U5
 
+#ifdef DRIVER_NVIDIA_OPTIMUS
 static void dgpu_power_enable(int onoff) {
 	printk(BIOS_DEBUG, "nvidia: DGPU power %d\n", onoff);
 	if (onoff) {
@@ -26,6 +27,7 @@ static void dgpu_power_enable(int onoff) {
 	}
 	mdelay(50);
 }
+#endif
 
 void bootblock_mainboard_early_init(void)
 {
@@ -34,5 +36,7 @@ void bootblock_mainboard_early_init(void)
 
 	pads = variant_early_gpio_table(&num);
 	gpio_configure_pads(pads, num);
+#ifdef DRIVER_NVIDIA_OPTIMUS
 	dgpu_power_enable(1);
+#endif
 }
