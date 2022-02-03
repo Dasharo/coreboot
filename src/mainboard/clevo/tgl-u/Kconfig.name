@@ -2,3 +2,9 @@ comment "Tiger Lake U"
 
 config BOARD_CLEVO_NV41MZ
 	bool "NV40MZ / NV41MZ"
+	select BOARD_CLEVO_TGL_U_COMMON
+	select DRIVER_NVIDIA_OPTIMUS
+
+config BOARD_CLEVO_NS50MU
+	bool "NS50MU / NS51MU"
+	select BOARD_CLEVO_TGL_U_COMMON
