@@ -123,9 +123,9 @@ chip soc/intel/tigerlake
 
 			chip soc/intel/common/block/pcie/rtd3
 				register "desc" = ""SSD1""
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D14)" # SSD1_PWR_DN#
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H0)" # GPP_H0_RTD3
-				register "srcclk_pin" = "0" # SSD1_CLKREQ#
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B16)"
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D13)"
+				register "srcclk_pin" = "0"
 				register "is_storage" = "1"
 				register "cpu_pcie_clk_usage" = "0x40"
 				device generic 0 on end
@@ -159,18 +159,16 @@ chip soc/intel/tigerlake
 
 		device ref south_xhci on
 			# USB2
-			register "usb2_ports[0]" = "USB2_PORT_MID(OC_SKIP)" 	# USB-A port1
-			register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC_SKIP)" 	# USB-C port2
-			register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)" 	# USB-A port3
-			register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)" 	# Finger
-			register "usb2_ports[5]" = "USB2_PORT_TYPE_C(OC_SKIP)" 	# TBT USB-C
-			register "usb2_ports[6]" = "USB2_PORT_MID(OC_SKIP)"	# CCD
+			register "usb2_ports[0]" = "USB2_PORT_LONG(OC_SKIP)" 	# USB-A daughterboard
+			register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC_SKIP)" 	# USB-C motherboard
+			register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)" 	# USB-A motherboard
+			register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)" 	# Fingerprint Reader
+			register "usb2_ports[5]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# TBT
 			register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# BT
 			# USB3
-			register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-A port1
-			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-C port2 (right port, lane 0)
-			register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-A port3
-			register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-C port4 (right port, lane 1)
+			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-C (lane 0)
+			register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-A
+			register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-C (lane 1)
 			# ACPI
 			chip drivers/usb/acpi
 				device ref xhci_root_hub on
@@ -274,55 +272,57 @@ chip soc/intel/tigerlake
 			# Debug console
 			register "SerialIoUartMode[PchSerialIoIndexUART2]" = "PchSerialIoSkipInit"
 		end
-		device ref pcie_rp5 on
-			# PCIe root port #5 x4, Clock 2 (NVIDIA GPU)
-			register "PcieRpEnable[4]" = "1"
-			register "PcieRpLtrEnable[4]" = "1"
-			register "PcieClkSrcUsage[2]" = "4"
+		device ref pcie_rp5 off end
+		device ref pcie_rp6 on
+			# PCIe root port #6 x1, Clock 2 (CARD)
+			register "PcieRpEnable[5]" = "1"
+			register "PcieRpLtrEnable[5]" = "1"
+			register "PcieClkSrcUsage[2]" = "5"
 			register "PcieClkSrcClkReq[2]" = "2"
-			chip drivers/gfx/nvidia/optimus
-				register "desc" = ""DGPU""
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_U5)" # DGPU_PWR_EN
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_U4)" # DGPU_RST#_PCH
-				register "enable_delay_ms" = "16"
-				register "enable_off_delay_ms" = "4"
-				register "reset_delay_ms" = "10"
-				register "reset_off_delay_ms" = "4"
-				register "srcclk_pin" = "2" # PEG_CLKREQ#
-				register "ec_notify_method" = ""\\_SB.PCI0.LPCB.EC0.DGPM""
-				device generic 0 on end
-			end
 		end
-		device ref pcie_rp9 on
-			# PCIe root port #9 x1, Clock 3 (CARD)
-			register "PcieRpEnable[8]" = "1"
-			register "PcieRpLtrEnable[8]" = "1"
-			register "PcieClkSrcUsage[3]" = "8"
+		device ref pcie_rp7 on
+			# PCIe root port #7 x1, Clock 3 (GLAN)
+			register "PcieRpEnable[6]" = "1"
+			register "PcieRpLtrEnable[6]" = "1"
+			register "PcieClkSrcUsage[3]" = "6"
 			register "PcieClkSrcClkReq[3]" = "3"
-		end
-		device ref pcie_rp10 on
-			# PCIe root port #10 x1, Clock 4 (GLAN)
-			register "PcieRpEnable[9]" = "1"
-			register "PcieRpLtrEnable[9]" = "1"
-			register "PcieClkSrcUsage[4]" = "9"
-			register "PcieClkSrcClkReq[4]" = "4"
 			chip soc/intel/common/block/pcie/rtd3
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_F9)" # GPIO_LAN_EN
 				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C22)" # LAN_PLT_RST
-				register "srcclk_pin" = "4" # LAN_CLKREQ#
+				register "srcclk_pin" = "3" # GLAN_CLKREQ#
 				device generic 0 on end
 			end
 		end
-		device ref pcie_rp11 on
-			# PCIe root port #11 x1, Clock 1 (WLAN)
-			register "PcieRpEnable[10]" = "1"
-			register "PcieRpLtrEnable[10]" = "1"
-			register "PcieClkSrcUsage[1]" = "10"
+		device ref pcie_rp8 on
+			# PCIe root port #8 x1, Clock 1 (WLAN)
+			register "PcieRpEnable[7]" = "1"
+			register "PcieRpLtrEnable[7]" = "1"
+			register "PcieClkSrcUsage[1]" = "7"
 			register "PcieClkSrcClkReq[1]" = "1"
 			chip drivers/wifi/generic
 				register "wake" = "GPE0_DW0_23" # GPP_C23
 				device pci 00.0 on end
 			end
+		end
+		device ref rp9 on
+			# PCIe root port #9 x4, Clock 4 (SSD0)
+			register "PcieRpEnable[8]" = "1"
+			register "PcieRpLtrEnable[8]" = "1"
+			register "PcieClkSrcUsage[4]" = "8"
+			register "PcieClkSrcClkReq[4]" = "4"
+
+			chip soc/intel/common/block/pcie/rtd3
+				register "desc" = ""SSD0""
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D14)"
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H0)"
+				register "srcclk_pin" = "4" # SSD0_CLKREQ#
+				register "is_storage" = "1"
+				register "cpu_pcie_clk_usage" = "8"
+				device generic 0 on end
+			end
+
+			# Disable Optane hybrid storage mode
+			register "HybridStorageMode" = "0"
 		end
 		device ref pch_espi on
 			chip ec/clevo/it5570
@@ -330,8 +330,6 @@ chip soc/intel/tigerlake
 				register "fan_mode" = "FAN_MODE_CUSTOM"
 				register "fans[0].curve.temperature" = "{ 40, 60, 70, 80 }"
 				register "fans[0].curve.speed" = "{ 16, 25, 50, 100 }"
-				register "fans[1].curve.temperature" = "{ 40, 60, 70, 80 }"
-				register "fans[1].curve.speed" = "{ 16, 25, 50, 100 }"
 			end
 			chip drivers/pc80/tpm
 				register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_C14)"
