@@ -98,7 +98,7 @@ chip soc/intel/tigerlake
 	end
 
 	device domain 0 on
-		subsystemid 0x1558 0x4018 inherit
+		subsystemid 0x1558 0x51a1 inherit
 
 		#From CPU EDS(575683)
 		device ref system_agent on end
@@ -342,15 +342,14 @@ chip soc/intel/tigerlake
 				device generic 0 on
 					chip drivers/intel/pmc_mux/conn
 						# TBT Type-C
-						register "usb2_port_number" = "6"
-						register "usb3_port_number" = "1"
+						register "usb2_port_number" = "6" # Should these be the TBT port, or the non TBT port?
+						register "usb3_port_number" = "1" # TODO check this
 						device generic 0 alias conn0 on end
 					end
 				end
 			end
 		end
 		device ref hda on
-			subsystemid 0x1558 0x4019
 			register "PchHdaAudioLinkHdaEnable" = "1"
 			register "PchHdaAudioLinkDmicEnable[0]" = "1"
 			register "PchHdaAudioLinkDmicEnable[1]" = "0"
