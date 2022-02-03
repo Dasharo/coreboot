@@ -3,6 +3,7 @@
 bootblock-y += bootblock.c
 
 romstage-y += memory.c
+romstage-y += romstage.c
 
 ramstage-y += mainboard.c
 
