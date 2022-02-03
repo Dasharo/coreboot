@@ -1,6 +1,4 @@
-if BOARD_CLEVO_NV41MZ
-
-config BOARD_SPECIFIC_OPTIONS
+config BOARD_CLEVO_TGL_U_COMMON
 	def_bool y
 	select BOARD_ROMSIZE_KB_16384
 	select DRIVERS_I2C_HID
@@ -22,8 +20,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select USE_OPTION_TABLE
 	select HAVE_SMI_HANDLER
 	select EC_CLEVO_IT5570
-	select DRIVER_NVIDIA_OPTIMUS
 	select TPM_MEASURED_BOOT
+
+if BOARD_CLEVO_TGL_U_COMMON
 
 config MAINBOARD_DIR
 	string
@@ -32,10 +31,12 @@ config MAINBOARD_DIR
 config VARIANT_DIR
 	string
 	default "nv41mz" if BOARD_CLEVO_NV41MZ
+	default "ns50mu" if BOARD_CLEVO_NS50MU
 
 config MAINBOARD_PART_NUMBER
 	string
 	default "nv41mz" if BOARD_CLEVO_NV41MZ
+	default "ns50mu" if BOARD_CLEVO_NS50MU
 
 config MAINBOARD_FAMILY
 	string
@@ -95,4 +96,4 @@ config TPM_PIRQ
 	hex
 	default 0x1C # GPP_C14
 
-endif # BOARD_CLEVO_NV41MZ
+endif # BOARD_CLEVO_TGL_U_COMMON
