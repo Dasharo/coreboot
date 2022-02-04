@@ -41,14 +41,14 @@ static u8 is_dram_ecc_en_d(struct DCTStatStruc *p_dct_stat);
  *
  * To allow the NB to scrub, we need to wait a time period long enough to
  * guarantee that the NB scrubs the entire dram on its node. Do do this, we
- * simply sample the scrub ADDR once, for an initial value, then we sample and poll until the polled value of scrub ADDR
- * has wrapped around at least once: Scrub ADDRi+1 < Scrub ADDRi. Since we let all
- * Nodes run in parallel, we need to guarantee that all nodes have wrapped. To do
- * this efficiently, we need only to sample one of the nodes, the node with the
- * largest ammount of dram populated is the one which will take the longest amount
- * of time (the scrub rate is set to max, the same rate, on all nodes).  So,
- * during setup of scrub Base, we determine how much memory and which node has
- * the largest memory installed.
+ * simply sample the scrub ADDR once, for an initial value, then we sample and
+ * poll until the polled value of scrub ADDR has wrapped around at least once:
+ * Scrub ADDRi+1 < Scrub ADDRi. Since we let all Nodes run in parallel, we need
+ * to guarantee that all nodes have wrapped. To do this efficiently, we need only
+ * to sample one of the nodes, the node with the largest ammount of dram
+ * populated is the one which will take the longest amount of time (the scrub
+ * rate is set to max, the same rate, on all nodes). So, during setup of scrub
+ * Base, we determine how much memory and which node has the largest memory installed.
  *
  * Scrubbing should not ordinarily be enabled on a node with a chip-select gap
  * (aka SW memhole, cs hoisting, etc..).To init ECC memory on this node, the
@@ -114,7 +114,8 @@ u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a
 					if (p_dct_stat->err_code != SC_RUNNING_OK) {
 						p_dct_stat->status &=  ~(1 << SB_ECC_DIMMS);
 						if (!ob_nb_ecc) {
-							p_dct_stat->err_status |= (1 << SB_DRAM_ECC_DIS);
+							p_dct_stat->err_status
+								|= (1 << SB_DRAM_ECC_DIS);
 						}
 						all_ecc = 0;
 						l_dram_ecc =0;
@@ -162,7 +163,8 @@ u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a
 			cur_base = val & 0xffff0000;
 			/*WE/RE is checked because memory config may have been */
 			if ((val & 3) == 3) {	/* node has dram populated */
-				if (is_dram_ecc_en_d(p_dct_stat)) {	/* if ECC is enabled on this dram */
+				/* if ECC is enabled on this dram */
+				if (is_dram_ecc_en_d(p_dct_stat)) {
 					dev = p_dct_stat->dev_nbmisc;
 					val = cur_base << 8;
 					if (ob_ecc_redir) {
@@ -171,7 +173,7 @@ u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a
 					set_nb32(dev, 0x5C, val); /* Dram Scrub Addr Low */
 					val = cur_base >> 24;
 					set_nb32(dev, 0x60, val); /* Dram Scrub Addr High */
-					set_nb32(dev, 0x58, of_scrub_ctl);	/*Scrub Control */
+					set_nb32(dev, 0x58, of_scrub_ctl);/*Scrub Control */
 
 					/* Divisor should not be set deeper than
 					 * divide by 16 when Dcache scrubber or
@@ -179,9 +181,14 @@ u8 ecc_init_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a
 					 */
 					if ((of_scrub_ctl & (0x1F << 16)) || (of_scrub_ctl & (0x1F << 8))) {
 						val = get_nb32(dev, 0x84);
-						if ((val & 0xE0000000) > 0x80000000) {	/* Get F3x84h[31:29]ClkDivisor for C1 */
-							val &= 0x1FFFFFFF;	/* If ClkDivisor is deeper than divide-by-16 */
-							val |= 0x80000000;	/* set it to divide-by-16 */
+						/* Get F3x84h[31:29]ClkDivisor for C1 */
+						if ((val & 0xE0000000) > 0x80000000) {
+							/* If ClkDivisor is deeper than
+							 * divide-by-16
+							 */
+							val &= 0x1FFFFFFF;
+							/* set it to divide-by-16 */
+							val |= 0x80000000;
 							set_nb32(dev, 0x84, val);
 						}
 					}

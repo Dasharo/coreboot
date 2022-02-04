@@ -22,9 +22,11 @@ void interleave_channels_d(struct MCTStatStruc *p_mct_stat,
 	 */
 
 	/* call back to wrapper not needed ManualChannelInterleave_D(); */
-	/* call back - dct_sel_int_lv_addr = mct_get_nv_bits(NV_CHANNEL_INTLV);*/	/* override interleave */
+	/* override interleave */
+	/* call back - dct_sel_int_lv_addr = mct_get_nv_bits(NV_CHANNEL_INTLV);*/
 	// FIXME: Check for Cx
-	dct_sel_int_lv_addr = mct_get_nv_bits(NV_CHANNEL_INTLV); /* typ = 5: Hash*: exclusive OR of address bits[20:16, 6]. */
+	/* typ = 5: Hash*: exclusive OR of address bits[20:16, 6]. */
+	dct_sel_int_lv_addr = mct_get_nv_bits(NV_CHANNEL_INTLV);
 	before_interleave_channels_d(p_dct_stat_a, &enabled);
 
 	if (dct_sel_int_lv_addr & 1) {
@@ -44,7 +46,8 @@ void interleave_channels_d(struct MCTStatStruc *p_mct_stat,
 			val = get_nb32(p_dct_stat->dev_map, 0xF0);
 			if (val & (1 << DRAM_HOLE_VALID))
 				hole_valid = 1;
-			if (!p_dct_stat->ganged_mode && p_dct_stat->dimm_valid_dct[0] && p_dct_stat->dimm_valid_dct[1]) {
+			if (!p_dct_stat->ganged_mode && p_dct_stat->dimm_valid_dct[0]
+			&& p_dct_stat->dimm_valid_dct[1]) {
 				dram_base = p_dct_stat->node_sys_base >> 8;
 				dct1_size = ((p_dct_stat->node_sys_limit) + 2) >> 8;
 				dct0_size = get_nb32(p_dct_stat->dev_dct, 0x114);
@@ -54,24 +57,29 @@ void interleave_channels_d(struct MCTStatStruc *p_mct_stat,
 
 				dct0_size -= dram_base;
 				dct1_size -= dct0_size;
-				dct_sel_hi = 0x05;		/* DctSelHiRngEn = 1, dct_sel_hi = 0 */
+				/* DctSelHiRngEn = 1, dct_sel_hi = 0 */
+				dct_sel_hi = 0x05;
 				if (dct1_size == dct0_size) {
 					dct1_size = 0;
-					dct_sel_hi = 0x04;	/* DctSelHiRngEn = 0 */
+					/* DctSelHiRngEn = 0 */
+					dct_sel_hi = 0x04;
 				} else if (dct1_size > dct0_size) {
 					dct1_size = dct0_size;
-					dct_sel_hi = 0x07;	/* DctSelHiRngEn = 1, dct_sel_hi = 1 */
+					/* DctSelHiRngEn = 1, dct_sel_hi = 1 */
+					dct_sel_hi = 0x07;
 				}
 				dct0_size = dct1_size;
 				dct0_size += dram_base;
 				dct0_size += dct1_size;
-				if (dct0_size >= hole_base)	/* if DctSelBaseAddr > hole_base */
+				/* if DctSelBaseAddr > hole_base */
+				if (dct0_size >= hole_base)
 					dct0_size += hole_size;
 				dct_sel_base = dct0_size;
 
 				if (dct1_size == 0)
 					dct0_size = 0;
-				dct0_size -= dct1_size;		/* DctSelBaseOffset = DctSelBaseAddr - Interleaved region */
+				/* DctSelBaseOffset = DctSelBaseAddr - Interleaved region */
+				dct0_size -= dct1_size;
 				set_nb32(p_dct_stat->dev_dct, 0x114, dct0_size);
 
 				if (dct1_size == 0)
@@ -82,22 +90,26 @@ void interleave_channels_d(struct MCTStatStruc *p_mct_stat,
 				val |= dct_sel_hi;
 				val |= (dct_sel_int_lv_addr << 6) & 0xFF;
 				set_nb32(p_dct_stat->dev_dct, 0x110, val);
-				print_tx("InterleaveChannels: F2x110 DRAM Controller Select Low Register = ", val);
+				print_tx("InterleaveChannels: F2x110 DRAM Controller Select Low Register = ",
+					val);
 
 				if (hole_valid) {
 					tmp = dram_base;
 					val = dct_sel_base;
-					if (val < hole_base) {	/* DctSelBaseAddr < DramHoleBase */
+					/* DctSelBaseAddr < DramHoleBase */
+					if (val < hole_base) {
 						val -= dram_base;
 						val >>= 1;
 						tmp += val;
 					}
 					tmp += hole_size;
-					val = get_nb32(p_dct_stat->dev_map, 0xF0);	/* DramHoleOffset */
+					/* DramHoleOffset */
+					val = get_nb32(p_dct_stat->dev_map, 0xF0);
 					val &= 0xFFFF007F;
 					val |= (tmp & ~0xFFFF007F);
 					set_nb32(p_dct_stat->dev_map, 0xF0, val);
-					print_tx("InterleaveChannels: F1xF0 DRAM Hole Address Register = ", val);
+					print_tx("InterleaveChannels: F1xF0 DRAM Hole Address Register = ",
+						val);
 
 				}
 			}

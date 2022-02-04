@@ -226,8 +226,8 @@ void uma_mem_typing_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dc
 		lo = 0;
 		hi = lo;
 		while (addr < MTRR_PHYS_BASE(6)) {
-			_wrmsr(addr, lo, hi);		/* prog. MTRR with current region Mask */
-			addr++;						/* next MTRR pair addr */
+			_wrmsr(addr, lo, hi);	/* prog. MTRR with current region Mask */
+			addr++;			/* next MTRR pair addr */
 		}
 
 		/*======================================================================

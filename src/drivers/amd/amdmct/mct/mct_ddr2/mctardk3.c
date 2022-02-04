@@ -17,7 +17,8 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 
 	get_channel_ps_cfg_0_d(p_dct_stat->ma_dimms[dct], p_dct_stat->speed,
 				p_dct_stat->ma_load[dct], p_dct_stat->data_load[dct],
-				&(p_dct_stat->ch_addr_tmg[dct]), &(p_dct_stat->ch_odc_ctl[dct]));
+				&(p_dct_stat->ch_addr_tmg[dct]),
+				&(p_dct_stat->ch_odc_ctl[dct]));
 
 
 	if (p_dct_stat->ma_dimms[dct] == 1)
@@ -89,7 +90,8 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 	}
 
 
-	p_dct_stat->ch_odc_ctl[dct] = proc_odt_workaround(p_dct_stat, dct, p_dct_stat->ch_odc_ctl[dct]);
+	p_dct_stat->ch_odc_ctl[dct] = proc_odt_workaround(
+						p_dct_stat, dct, p_dct_stat->ch_odc_ctl[dct]);
 
 	print_tx("ch_odc_ctl: ", p_dct_stat->ch_odc_ctl[dct]);
 	print_tx("ch_addr_tmg: ", p_dct_stat->ch_addr_tmg[dct]);
@@ -105,7 +107,8 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
  * #1, BYTE, speed (DCTStatstruc.speed) (Secondary Key)
  * #2, BYTE, number of Address bus loads on the Channel. (Tershery Key)
  *           These must be listed in ascending order.
- *           FFh (0xFE) has special meaning of 'any', and must be listed first for each speed grade.
+ *           FFh (0xFE) has special meaning of 'any', and must be listed first for each speed
+ *           grade.
  * #3, DWORD, Address Timing Control Register Value
  * #4, DWORD, Output Driver Compensation Control Register Value
  * #5, BYTE, Number of DIMMs (Primary Key)

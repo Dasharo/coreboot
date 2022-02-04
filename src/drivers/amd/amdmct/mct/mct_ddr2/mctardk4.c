@@ -28,7 +28,8 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 	/*
 	 * Overrides and/or workarounds
 	 */
-	p_dct_stat->ch_odc_ctl[dct] = proc_odt_workaround(p_dct_stat, dct, p_dct_stat->ch_odc_ctl[dct]);
+	p_dct_stat->ch_odc_ctl[dct] = proc_odt_workaround(
+						p_dct_stat, dct, p_dct_stat->ch_odc_ctl[dct]);
 
 	print_tx("4 ch_odc_ctl: ", p_dct_stat->ch_odc_ctl[dct]);
 	print_tx("4 ch_addr_tmg: ", p_dct_stat->ch_addr_tmg[dct]);

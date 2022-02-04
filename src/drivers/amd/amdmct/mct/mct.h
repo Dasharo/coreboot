@@ -25,15 +25,17 @@
 /* Default value for failsafe operation. 1 = 5ns (cycle time) */
 #define T_DEF		1
 
-#define BCS_RATE	1			/* reg bit field = rate of dram scrubber for ecc*/
+#define BCS_RATE	1		/* reg bit field = rate of dram scrubber for ecc*/
 					/* memory initialization (ecc and check-bits).*/
 					/* 1 = 40 ns/64 bytes.*/
 
 #define FIRST_PASS	1		/* First pass through RcvEn training*/
 #define SECOND_PASS	2		/* Second pass through Rcven training*/
 
-#define RCVR_EN_MARGIN	6		/* number of DLL taps to delay beyond first passing position*/
-#define MAX_ASYNC_LAT_CTL_3	60	/* Max Async Latency Control value (This value will be divided by 20)*/
+/* number of DLL taps to delay beyond first passing position*/
+#define RCVR_EN_MARGIN	6
+/* Max Async Latency Control value (This value will be divided by 20)*/
+#define MAX_ASYNC_LAT_CTL_3	60
 #define DQS_FAIL	1
 #define DQS_PASS	0
 #define DQS_WRITEDIR	0
@@ -502,7 +504,8 @@ struct DCTStatStruc {		/* A per Node structure*/
  * 2 = S4 (Unbuffered SO-DIMMs)
  */
 #define NV_4_RANK_TYPE		5
-/* Value to set DcqBypassMax field (See Function 2, Offset 94h, [27:24] of BKDG for field definition).
+/* Value to set DcqBypassMax field
+ * (See Function 2, Offset 94h, [27:24] of BKDG for field definition).
  * 4 = 4 times bypass (normal for non-UMA systems)
  * 7 = 7 times bypass (normal for UMA systems)
  */
@@ -633,7 +636,8 @@ u32 get_nb32(u32 addr); /* NOTE: extend addr to 32 bit for bus > 0 */
 
 void k8f_interleave_banks(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
-void mct_init_with_write_to_cs(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_init_with_write_to_cs(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
 
 void mct_get_ps_cfg(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void get_channel_ps_cfg_0(unsigned int maa_dimms, unsigned int speed, unsigned int maa_load,
@@ -660,12 +664,15 @@ void k8f_ecc_init(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 void amd_mct_init(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 
 void k8f_cpu_mem_typing(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void k8f_cpu_mem_typing_clear(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void k8f_cpu_mem_typing_clear(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a);
 
 void k8f_wait_mem_clr_delay(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 unsigned int k8f_calc_final_dqs_rcv_value(struct MCTStatStruc *p_mct_stat,
-					struct DCTStatStruc *p_dct_stat, unsigned int left_rcv_en,
-					unsigned int right_rcv_en, unsigned int *valid);
+					struct DCTStatStruc *p_dct_stat,
+					unsigned int left_rcv_en,
+					unsigned int right_rcv_en,
+					unsigned int *valid);
 
 void k8f_get_delta_tcs_part_1(struct DCTStatStruc *p_dct_stat);
 void k8f_get_delta_tcs_part_2(struct DCTStatStruc *p_dct_stat);

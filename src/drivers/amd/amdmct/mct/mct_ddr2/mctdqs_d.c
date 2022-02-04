@@ -205,8 +205,15 @@ static void set_ecc_dqs_rd_wr_pos_d(struct MCTStatStruc *p_mct_stat,
 		for (direction = 0; direction < 2; direction++) {
 			p_dct_stat->channel = channel;	/* channel A or B */
 			p_dct_stat->direction = direction; /* Read or write */
-			calc_ecc_dqs_pos_d(p_mct_stat, p_dct_stat, p_dct_stat->ch_ecc_dqs_like[channel], p_dct_stat->ch_ecc_dqs_scale[channel], chip_sel);
-			print_debug_dqs_pair("\t\tSetEccDQSRdWrPos: channel ", channel, direction == DQS_READDIR ? " R dqs_delay":" W dqs_delay",	p_dct_stat->dqs_delay, 2);
+			calc_ecc_dqs_pos_d(
+				p_mct_stat, p_dct_stat, p_dct_stat->ch_ecc_dqs_like[channel],
+				p_dct_stat->ch_ecc_dqs_scale[channel], chip_sel);
+			print_debug_dqs_pair(
+				"\t\tSetEccDQSRdWrPos: channel ",
+				channel,
+				direction == DQS_READDIR ? " R dqs_delay":" W dqs_delay",
+				p_dct_stat->dqs_delay,
+				2);
 			p_dct_stat->byte_lane = 8;
 			store_dqs_dat_struct_val_d(p_mct_stat, p_dct_stat, chip_sel);
 			mct_set_dqs_delay_csr_d(p_mct_stat, p_dct_stat, chip_sel);
@@ -297,7 +304,8 @@ static void train_dqs_rd_wr_pos_d(struct MCTStatStruc *p_mct_stat,
 		print_debug_dqs("\tTrainDQSRdWrPos: 1 channel ",channel, 1);
 		p_dct_stat->channel = channel;
 
-		if (p_dct_stat->dimm_valid_dct[channel] == 0)	/* mct_BeforeTrainDQSRdWrPos_D */
+		/* mct_BeforeTrainDQSRdWrPos_D */
+		if (p_dct_stat->dimm_valid_dct[channel] == 0)
 			continue;
 
 		for (dqs_wr_delay = 0; dqs_wr_delay < dqs_wr_delay_end; dqs_wr_delay++) {
@@ -305,19 +313,25 @@ static void train_dqs_rd_wr_pos_d(struct MCTStatStruc *p_mct_stat,
 			p_dct_stat->direction = DQS_WRITEDIR;
 			mct_set_dqs_delay_all_csr_d(p_mct_stat, p_dct_stat, cs_start);
 
-			print_debug_dqs("\t\tTrainDQSRdWrPos: 21 dqs_wr_delay ", dqs_wr_delay, 2);
+			print_debug_dqs(
+				"\t\tTrainDQSRdWrPos: 21 dqs_wr_delay ",
+				dqs_wr_delay, 2);
 			train_read_dqs_d(p_mct_stat, p_dct_stat, cs_start);
 
-			print_debug_dqs("\t\tTrainDQSRdWrPos: 22 train_errors ",p_dct_stat->train_errors, 2);
+			print_debug_dqs(
+				"\t\tTrainDQSRdWrPos: 22 train_errors ",
+				p_dct_stat->train_errors, 2);
 			if (p_dct_stat->train_errors == 0) {
-					break;
+				break;
 			}
 			errors |= p_dct_stat->train_errors;
 		}
 		if (dqs_wr_delay < dqs_wr_delay_end) {
 			errors = 0;
 
-			print_debug_dqs("\tTrainDQSRdWrPos: 231 dqs_wr_delay ", dqs_wr_delay, 1);
+			print_debug_dqs(
+				"\tTrainDQSRdWrPos: 231 dqs_wr_delay ",
+				dqs_wr_delay, 1);
 			train_write_dqs_d(p_mct_stat, p_dct_stat, cs_start);
 		}
 		print_debug_dqs("\tTrainDQSRdWrPos: 232 errors ", errors, 1);
@@ -339,9 +353,12 @@ static void train_dqs_rd_wr_pos_d(struct MCTStatStruc *p_mct_stat,
 			}
 			for (channel = 0; channel < 2; channel++) {
 				printk(BIOS_DEBUG, "channel: %02x\n", channel);
-				for (Receiver = cs_start; Receiver < (cs_start + 2); Receiver += 2) {
+				for (Receiver = cs_start;
+				Receiver < (cs_start + 2);
+				Receiver += 2) {
 					printk(BIOS_DEBUG, "\t\tReceiver: %02x: ", Receiver);
-					p = p_dct_stat->persistent_data.ch_d_dir_b_dqs[channel][Receiver >> 1][Dir];
+					p = p_dct_stat->persistent_data.ch_d_dir_b_dqs[channel]
+									[Receiver >> 1][Dir];
 					for (i = 0; i < 8; i++) {
 						val  = p[i];
 						printk(BIOS_DEBUG, "%02x ", val);
@@ -443,18 +460,23 @@ static void train_dqs_pos_d(struct MCTStatStruc *p_mct_stat,
 		mutual_cs_pass_w[dqs_delay] = 0xFF;
 	}
 
-	for (chip_sel = cs_start; chip_sel < (cs_start + 2); chip_sel++) { /* logical register chipselects 0..7 */
+	/* logical register chipselects 0..7 */
+	for (chip_sel = cs_start; chip_sel < (cs_start + 2); chip_sel++) {
 		print_debug_dqs("\t\t\t\tTrainDQSPos: 11 chip_sel ", chip_sel, 4);
 
-		if (!mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, p_dct_stat->channel, chip_sel)) {
-			print_debug_dqs("\t\t\t\tmct_RcvrRankEnabled_D CS not enabled ", chip_sel, 4);
+		if (!mct_rcvr_rank_enabled_d(
+				p_mct_stat, p_dct_stat, p_dct_stat->channel, chip_sel)) {
+			print_debug_dqs(
+				"\t\t\t\tmct_RcvrRankEnabled_D CS not enabled ", chip_sel, 4);
 			continue;
 		}
 
 		banks_present = 1;	/* flag for at least one bank is present */
-		test_addr = mct_get_mct_sys_addr_d(p_mct_stat, p_dct_stat, p_dct_stat->channel, chip_sel, &valid);
+		test_addr = mct_get_mct_sys_addr_d(
+				p_mct_stat, p_dct_stat, p_dct_stat->channel, chip_sel, &valid);
 		if (!valid) {
-			print_debug_dqs("\t\t\t\tAddress not supported on current CS ", test_addr, 4);
+			print_debug_dqs(
+				"\t\t\t\tAddress not supported on current CS ", test_addr, 4);
 			continue;
 		}
 
@@ -468,28 +490,43 @@ static void train_dqs_pos_d(struct MCTStatStruc *p_mct_stat,
 
 		for (dqs_delay = 0; dqs_delay < dqs_delay_end; dqs_delay++) {
 			print_debug_dqs("\t\t\t\t\tTrainDQSPos: 141 dqs_delay ", dqs_delay, 5);
-			if (mutual_cs_pass_w[dqs_delay] == 0)
-				continue; //skip current delay value if other chipselects have failed all 8 bytelanes
+			if (mutual_cs_pass_w[dqs_delay] == 0) {
+				// skip current delay value if other chipselects have failed all
+				// 8 bytelanes
+				continue;
+			}
 			p_dct_stat->dqs_delay = dqs_delay;
 			mct_set_dqs_delay_all_csr_d(p_mct_stat, p_dct_stat, cs_start);
-			print_debug_dqs("\t\t\t\t\tTrainDQSPos: 142 mutual_cs_pass_w ", mutual_cs_pass_w[dqs_delay], 5);
+			print_debug_dqs(
+				"\t\t\t\t\tTrainDQSPos: 142 mutual_cs_pass_w ",
+				mutual_cs_pass_w[dqs_delay], 5);
 
 			if (p_dct_stat->direction == DQS_WRITEDIR) {
 				print_debug_dqs("\t\t\t\t\tTrainDQSPos: 143 for write", 0, 5);
-				write_dqs_test_pattern_d(p_mct_stat, p_dct_stat, test_addr << 8);
+				write_dqs_test_pattern_d(
+					p_mct_stat, p_dct_stat, test_addr << 8);
 			}
 
-			print_debug_dqs("\t\t\t\t\tTrainDQSPos: 144 Pattern ", p_dct_stat->pattern, 5);
+			print_debug_dqs(
+				"\t\t\t\t\tTrainDQSPos: 144 Pattern ", p_dct_stat->pattern, 5);
 			read_dqs_test_pattern_d(p_mct_stat, p_dct_stat, test_addr << 8);
-			/* print_debug_dqs("\t\t\t\t\tTrainDQSPos: 145 mutual_cs_pass_w ", mutual_cs_pass_w[dqs_delay], 5); */
-			tmp = compare_dqs_test_pattern_d(p_mct_stat, p_dct_stat, test_addr << 8); /* 0 = fail, 1 = pass */
+			/* print_debug_dqs(
+			 *	"\t\t\t\t\tTrainDQSPos: 145 mutual_cs_pass_w ",
+			 *	mutual_cs_pass_w[dqs_delay], 5);
+			 */
+			/* 0 = fail, 1 = pass */
+			tmp = compare_dqs_test_pattern_d(
+				p_mct_stat, p_dct_stat, test_addr << 8);
 
-			if (mct_check_fence_hole_adjust_d(p_mct_stat, p_dct_stat, dqs_delay, chip_sel, &tmp)) {
+			if (mct_check_fence_hole_adjust_d(
+					p_mct_stat, p_dct_stat, dqs_delay, chip_sel, &tmp)) {
 				goto skipLocMiddle;
 			}
 
 			mutual_cs_pass_w[dqs_delay] &= tmp;
-			print_debug_dqs("\t\t\t\t\tTrainDQSPos: 146\tMutualCSPassW ", mutual_cs_pass_w[dqs_delay], 5);
+			print_debug_dqs(
+				"\t\t\t\t\tTrainDQSPos: 146\tMutualCSPassW ",
+				mutual_cs_pass_w[dqs_delay], 5);
 
 			set_target_wtio_d(test_addr);
 			flush_dqs_test_pattern_d(p_dct_stat, test_addr << 8);
@@ -509,14 +546,20 @@ static void train_dqs_pos_d(struct MCTStatStruc *p_mct_stat,
 			rnk_dly_filter_min = 0;
 			for (dqs_delay = 0; dqs_delay < dqs_delay_end; dqs_delay++) {
 				if (mutual_cs_pass_w[dqs_delay] & (1 << byte_lane)) {
-					print_debug_dqs("\t\t\t\t\tTrainDQSPos: 321 dqs_delay ", dqs_delay, 5);
-					print_debug_dqs("\t\t\t\t\tTrainDQSPos: 322 mutual_cs_pass_w ", mutual_cs_pass_w[dqs_delay], 5);
+					print_debug_dqs(
+						"\t\t\t\t\tTrainDQSPos: 321 dqs_delay ",
+						dqs_delay, 5);
+					print_debug_dqs(
+						"\t\t\t\t\tTrainDQSPos: 322 mutual_cs_pass_w ",
+						mutual_cs_pass_w[dqs_delay], 5);
 
 					rnk_dly_seq_pass_max = dqs_delay;
 					if (last_test == DQS_FAIL) {
-						rnk_dly_seq_pass_min = dqs_delay; //start sequential run
+						// start sequential run
+						rnk_dly_seq_pass_min = dqs_delay;
 					}
-					if ((rnk_dly_seq_pass_max - rnk_dly_seq_pass_min) > (rnk_dly_filter_max-rnk_dly_filter_min)) {
+					if ((rnk_dly_seq_pass_max - rnk_dly_seq_pass_min)
+					> (rnk_dly_filter_max-rnk_dly_filter_min)) {
 						rnk_dly_filter_min = rnk_dly_seq_pass_min;
 						rnk_dly_filter_max = rnk_dly_seq_pass_max;
 					}
@@ -525,21 +568,33 @@ static void train_dqs_pos_d(struct MCTStatStruc *p_mct_stat,
 					last_test = DQS_FAIL;
 				}
 			}
-			print_debug_dqs("\t\t\t\tTrainDQSPos: 33 rnk_dly_seq_pass_max ", rnk_dly_seq_pass_max, 4);
+			print_debug_dqs(
+				"\t\t\t\tTrainDQSPos: 33 rnk_dly_seq_pass_max ",
+				rnk_dly_seq_pass_max, 4);
 			if (rnk_dly_seq_pass_max == 0) {
 				errors |= 1 << SB_NO_DQS_POS; /* no passing window */
 			} else {
-				print_debug_dqs_pair("\t\t\t\tTrainDQSPos: 34 RnkDlyFilter: ", rnk_dly_filter_min, " ",  rnk_dly_filter_max, 4);
-				if (((rnk_dly_filter_max - rnk_dly_filter_min) < MIN_DQS_WNDW)) {
+				print_debug_dqs_pair(
+					"\t\t\t\tTrainDQSPos: 34 RnkDlyFilter: ",
+					rnk_dly_filter_min, " ",  rnk_dly_filter_max, 4);
+				if (((rnk_dly_filter_max - rnk_dly_filter_min)
+				< MIN_DQS_WNDW)) {
 					errors |= 1 << SB_SMALL_DQS;
 				} else {
 					u8 middle_dqs;
 					/* mctEngDQSwindow_Save_D Not required for arrays */
-					middle_dqs = middle_dqs_d(rnk_dly_filter_min, rnk_dly_filter_max);
+					middle_dqs = middle_dqs_d(
+						rnk_dly_filter_min, rnk_dly_filter_max);
 					p_dct_stat->dqs_delay = middle_dqs;
-					mct_set_dqs_delay_csr_d(p_mct_stat, p_dct_stat, cs_start);  /* load the register with the value */
-					store_dqs_dat_struct_val_d(p_mct_stat, p_dct_stat, cs_start); /* store the value into the data structure */
-					print_debug_dqs("\t\t\t\tTrainDQSPos: 42 middle_dqs : ",middle_dqs, 4);
+					/* load the register with the value */
+					mct_set_dqs_delay_csr_d(
+						p_mct_stat, p_dct_stat, cs_start);
+					/* store the value into the data structure */
+					store_dqs_dat_struct_val_d(
+						p_mct_stat, p_dct_stat, cs_start);
+					print_debug_dqs(
+						"\t\t\t\tTrainDQSPos: 42 middle_dqs : ",
+						middle_dqs, 4);
 				}
 			}
 		}
@@ -573,8 +628,9 @@ void store_dqs_dat_struct_val_d(struct MCTStatStruc *p_mct_stat,
 	if (p_dct_stat->status & (1 << SB_OVER_400MHZ))
 		dn = chip_sel >> 1; /* if odd or even logical DIMM */
 
-	p_dct_stat->persistent_data.ch_d_dir_b_dqs[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane] =
-					p_dct_stat->dqs_delay;
+	p_dct_stat->persistent_data.ch_d_dir_b_dqs[p_dct_stat->channel][dn]
+						[p_dct_stat->direction][p_dct_stat->byte_lane]
+					= p_dct_stat->dqs_delay;
 }
 
 
@@ -596,7 +652,8 @@ static void get_dqs_dat_struc_val_d(struct MCTStatStruc *p_mct_stat,
 		dn = chip_sel >> 1; /*if odd or even logical DIMM */
 
 	p_dct_stat->dqs_delay =
-		p_dct_stat->persistent_data.ch_d_dir_b_dqs[p_dct_stat->channel][dn][p_dct_stat->direction][p_dct_stat->byte_lane];
+		p_dct_stat->persistent_data.ch_d_dir_b_dqs[p_dct_stat->channel][dn]
+						[p_dct_stat->direction][p_dct_stat->byte_lane];
 }
 
 
@@ -718,7 +775,8 @@ static void write_l9_test_pattern_d(struct DCTStatStruc *p_dct_stat,
 
 
 
-static u8 compare_dqs_test_pattern_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u32 addr_lo)
+static u8 compare_dqs_test_pattern_d(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat, u32 addr_lo)
 {
 	/* Compare a pattern of 72 bit times (per DQ), to test dram functionality.
 	 * The pattern is a stress pattern which exercises both ISI and
@@ -758,10 +816,13 @@ static u8 compare_dqs_test_pattern_d(struct MCTStatStruc *p_mct_stat, struct DCT
 		value = read32_fs(addr_lo);
 		value_test = *test_buf;
 
-		print_debug_dqs_pair("\t\t\t\t\t\ttest_buf = ", (u32)test_buf, " value = ", value_test, 7);
-		print_debug_dqs_pair("\t\t\t\t\t\ttaddr_lo = ", addr_lo, " value = ", value, 7);
+		print_debug_dqs_pair(
+			"\t\t\t\t\t\ttest_buf = ", (u32)test_buf, " value = ", value_test, 7);
+		print_debug_dqs_pair(
+			"\t\t\t\t\t\ttaddr_lo = ", addr_lo, " value = ", value, 7);
 
-		for (j = 0; j < (4 * 8); j += 8) { /* go through a 32bit data, on 1 byte step. */
+		/* go through a 32bit data, on 1 byte step. */
+		for (j = 0; j < (4 * 8); j += 8) {
 			if (((value >> j) & 0xff) != ((value_test >> j) & 0xff)) {
 				bitmap &= ~(1 << bytelane);
 			}
@@ -789,8 +850,7 @@ static u8 compare_dqs_test_pattern_d(struct MCTStatStruc *p_mct_stat, struct DCT
 }
 
 
-static void flush_dqs_test_pattern_d(struct DCTStatStruc *p_dct_stat,
-					u32 addr_lo)
+static void flush_dqs_test_pattern_d(struct DCTStatStruc *p_dct_stat, u32 addr_lo)
 {
 	/* Flush functions in mct_gcc.h */
 	if (p_dct_stat->pattern == 0) {
@@ -805,10 +865,10 @@ void set_target_wtio_d(u32 test_addr)
 	u32 lo, hi;
 	hi = test_addr >> 24;
 	lo = test_addr << 8;
-	_wrmsr(MTRR_IORR0_BASE, lo, hi);		/* IORR0 Base */
+	_wrmsr(MTRR_IORR0_BASE, lo, hi);	/* IORR0 Base */
 	hi = 0xFF;
 	lo = 0xFC000800;			/* 64MB Mask */
-	_wrmsr(MTRR_IORR0_MASK, lo, hi);		/* IORR0 Mask */
+	_wrmsr(MTRR_IORR0_MASK, lo, hi);	/* IORR0 Mask */
 }
 
 
@@ -1014,7 +1074,8 @@ static void mct_set_dqs_delay_all_csr_d(struct MCTStatStruc *p_mct_stat,
 
 
 	for (chip_sel = cs_start; chip_sel < (cs_start + 2); chip_sel++) {
-		if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, p_dct_stat->channel, chip_sel)) {
+		if (mct_rcvr_rank_enabled_d(
+				p_mct_stat, p_dct_stat, p_dct_stat->channel, chip_sel)) {
 			for (byte_lane = 0; byte_lane < 8; byte_lane++) {
 				p_dct_stat->byte_lane = byte_lane;
 				mct_set_dqs_delay_csr_d(p_mct_stat, p_dct_stat, chip_sel);
@@ -1068,14 +1129,18 @@ u32 mct_get_mct_sys_addr_d(struct MCTStatStruc *p_mct_stat,
 
 	/* unganged mode DCT0+DCT1, sys addr of DCT1 = node
 	 * base+DctSelBaseAddr+local ca base*/
-	if ((channel) && (p_dct_stat->ganged_mode == 0) && (p_dct_stat->dimm_valid_dct[0] > 0)) {
+	if ((channel)
+	&& (p_dct_stat->ganged_mode == 0)
+	&& (p_dct_stat->dimm_valid_dct[0] > 0)) {
 		reg = 0x110;
 		dword = get_nb32(dev, reg);
 		dword &= 0xfffff800;
 		dword <<= 8;	/* scale [47:27] of F2x110[31:11] to [39:8]*/
 		val += dword;
 
-		/* if DCTSelBaseAddr < Hole, and eax > HoleBase, then add Hole size to test address */
+		/* if DCTSelBaseAddr < Hole, and eax > HoleBase,
+		 * then add Hole size to test address
+		 */
 		if ((val >= p_dct_stat->dct_hole_base) && (p_dct_stat->dct_hole_base > dword)) {
 			dword = (~(p_dct_stat->dct_hole_base >> (24 - 8)) + 1) & 0xFF;
 			dword <<= (24 - 8);
@@ -1101,7 +1166,8 @@ u32 mct_get_mct_sys_addr_d(struct MCTStatStruc *p_mct_stat,
 	}
 
 	/* Add a node seed */
-	val += (((1 * p_dct_stat->node_id) << 20) >> 8);	/* Add 1MB per node to avoid aliases */
+	/* Add 1MB per node to avoid aliases */
+	val += (((1 * p_dct_stat->node_id) << 20) >> 8);
 
 	/* HW remap disabled? */
 	if (!(p_dct_stat->status & (1 << SB_HW_HOLE))) {

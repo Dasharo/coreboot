@@ -324,8 +324,13 @@ u8 mct_check_fence_hole_adjust_d(struct MCTStatStruc *p_mct_stat,
 						for (byte_lane = 0; byte_lane < 8; byte_lane++) {
 							p_dct_stat->dqs_delay = 13;
 							p_dct_stat->byte_lane = byte_lane;
-							/* store the value into the data structure */
-							store_dqs_dat_struct_val_d(p_mct_stat, p_dct_stat, chip_sel);
+							/* store the value into the data
+							 * structure
+							 */
+							store_dqs_dat_struct_val_d(
+								p_mct_stat,
+								p_dct_stat,
+								chip_sel);
 						}
 						return 1;
 					}

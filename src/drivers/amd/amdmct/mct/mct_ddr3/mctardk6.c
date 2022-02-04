@@ -18,9 +18,10 @@ void mct_get_ps_cfg_d(struct MCTStatStruc *p_mct_stat,
 
 	if (p_dct_stat->ganged_mode == 1 && dct == 0)
 		get_channel_ps_cfg_0_d(p_dct_stat->ma_dimms[1], p_dct_stat->speed,
-				     p_dct_stat->ma_load[1], p_dct_stat->data_load[1],
-				     &(p_dct_stat->ch_addr_tmg[1]), &(p_dct_stat->ch_odc_ctl[1]),
-				     &p_dct_stat->_2t_mode);
+					p_dct_stat->ma_load[1], p_dct_stat->data_load[1],
+					&(p_dct_stat->ch_addr_tmg[1]),
+					&(p_dct_stat->ch_odc_ctl[1]),
+					&p_dct_stat->_2t_mode);
 
 	p_dct_stat->ch_ecc_dqs_like[0]  = 0x0302;
 	p_dct_stat->ch_ecc_dqs_like[1]  = 0x0302;

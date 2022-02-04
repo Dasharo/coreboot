@@ -17,7 +17,9 @@
 #define K_MIN		1		/* k loop constraint. 1 = 200 MHz*/
 #define K_MAX		4		/* k loop constraint. 9 = 400 MHz*/
 #define CL_DEF		2		/* Default value for failsafe operation. 2 = CL 4.0 T*/
-#define T_DEF		1		/* Default value for failsafe operation. 1 = 5ns (cycle time)*/
+#define T_DEF		1		/* Default value for failsafe operation. 1 = 5ns (cycle
+					 * time)
+					 */
 
 #define BCS_RATE	1		/* reg bit field = rate of dram scrubber for ecc*/
 					/* memory initialization (ecc and check-bits).*/
@@ -25,8 +27,12 @@
 #define FIRST_PASS	1		/* First pass through RcvEn training*/
 #define SECOND_PASS	2		/* Second pass through Rcven training*/
 
-#define RCVR_EN_MARGIN	6		/* number of DLL taps to delay beyond first passing position*/
-#define MAX_ASYNC_LAT_CTL_3	60	/* Max Async Latency Control value (This value will be divided by 20)*/
+#define RCVR_EN_MARGIN	6		/* number of DLL taps to delay beyond first passing
+					 * position
+					 */
+#define MAX_ASYNC_LAT_CTL_3	60	/* Max Async Latency Control value (This value will
+					 * be divided by 20)
+					 */
 #define DQS_FAIL	1
 #define DQS_PASS	0
 #define DQS_WRITEDIR	0
@@ -333,7 +339,9 @@ struct DCTStatStruc {
 	u16 cs_test_fail;
 	/* BASE[39:8] (system address) of this Node's DCTs. */
 	u32 dct_sys_base;
-	/* If not zero, BASE[39:8] (system address) of dram hole for HW remapping.  Dram hole exists on this Node's DCTs. */
+	/* If not zero, BASE[39:8] (system address) of dram hole for HW remapping.  Dram hole
+	 * exists on this Node's DCTs.
+	 */
 	u32 dct_hole_base;
 	/* LIMIT[39:8] (system address) of this Node's DCTs */
 	u32 dct_sys_limit;
@@ -547,7 +555,8 @@ struct DCTStatStruc {
  * 2 = S4 (Unbuffered SO-DIMMs)
  */
 #define NV_4_RANK_TYPE		5
-/* Value to set DcqBypassMax field (See Function 2, Offset 94h, [27:24] of BKDG for field definition).
+/* Value to set DcqBypassMax field (See Function 2, Offset 94h, [27:24] of BKDG for field
+ * definition).
  * 4 = 4 times bypass (normal for non-UMA systems)
  * 7 = 7 times bypass (normal for UMA systems)
  */
@@ -670,7 +679,8 @@ u32 get_nb32(u32 addr); /* NOTE: extend addr to 32 bit for bus > 0 */
 
 void k8f_interleave_banks(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 
-void mct_init_with_write_to_cs(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
+void mct_init_with_write_to_cs(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
 
 void mct_get_ps_cfg(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 void get_channel_ps_cfg_0(unsigned int maa_dimms, unsigned int speed, unsigned int maa_load,
@@ -682,11 +692,12 @@ void get_channel_ps_cfg_2(unsigned int maa_dimms, unsigned int speed, unsigned i
 
 u8 mct_def_reset(void);
 
-u32 get_rcvr_sys_addr(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 channel,
-			u8 receiver, u8 *valid);
-u32 get_mct_sys_addr(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat, u8 channel,
-			u8 chipsel, u8 *valid);
-void k8f_train_receiver_en(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a, u8 pass);
+u32 get_rcvr_sys_addr(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat
+			u8 channel, u8 receiver, u8 *valid);
+u32 get_mct_sys_addr(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat,
+			u8 channel, u8 chipsel, u8 *valid);
+void k8f_train_receiver_en(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a,
+			u8 pass);
 void k8f_train_dqs_pos(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 u32 set_upper_fs_base(u32 addr_hi);
 
@@ -696,7 +707,8 @@ void k8f_ecc_init(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_st
 void amd_mct_init(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
 
 void k8f_cpu_mem_typing(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
-void k8f_cpu_mem_typing_clear(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a);
+void k8f_cpu_mem_typing_clear(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a);
 
 void k8f_wait_mem_clr_delay(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat);
 unsigned int k8f_calc_final_dqs_rcv_value(struct MCTStatStruc *p_mct_stat,

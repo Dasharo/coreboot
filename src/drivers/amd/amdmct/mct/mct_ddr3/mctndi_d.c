@@ -64,7 +64,8 @@ void interleave_nodes_d(struct MCTStatStruc *p_mct_stat,
 
 					/* to get true amount of dram,
 					 * subtract out memory hole if HW dram remapping */
-					dram_hole_addr_reg = get_nb32(p_dct_stat->dev_map, 0xF0);
+					dram_hole_addr_reg = get_nb32(
+								p_dct_stat->dev_map, 0xF0);
 					hw_hole_sz = dram_hole_addr_reg >> 16;
 					hw_hole_sz = (((~hw_hole_sz) + 1) & 0xFF);
 					hw_hole_sz <<= 24-8;
@@ -187,12 +188,15 @@ void interleave_nodes_d(struct MCTStatStruc *p_mct_stat,
 				set_nb32(p_dct_stat->dev_map, 0xF0, val);
 			}
 
-			set_nb32(p_dct_stat->dev_dct, 0x114, dct_0_mem_size >> 8);	/* dct_sel_base_offset */
+			/* dct_sel_base_offset */
+			set_nb32(p_dct_stat->dev_dct, 0x114, dct_0_mem_size >> 8);
 			val = get_nb32(p_dct_stat->dev_dct, 0x110);
 			val &= 0x7FF;
 			val |= dct_0_mem_size >> 8;
 			set_nb32(p_dct_stat->dev_dct, 0x110, val);	/* DctSelBaseAddr */
-			printk(BIOS_DEBUG, "InterleaveNodes: DRAM Controller Select Low Register = %x\n", val);
+			printk(BIOS_DEBUG,
+				"InterleaveNodes: DRAM Controller Select Low Register = %x\n",
+				val);
 			node++;
 		}
 

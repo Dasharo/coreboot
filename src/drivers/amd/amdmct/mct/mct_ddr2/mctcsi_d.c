@@ -104,7 +104,8 @@ void interleave_banks_d(struct MCTStatStruc *p_mct_stat,
 				if (chip_sel & 1)
 					continue;
 
-				reg = 0x60 + ((chip_sel >> 1) << 2) + reg_off; /*Dram CS Mask 0 */
+				/*Dram CS Mask 0 */
+				reg = 0x60 + ((chip_sel >> 1) << 2) + reg_off;
 				val = get_nb32(dev, reg);
 				val_lo = val & addr_lo_mask;
 				val_hi = val & addr_hi_mask;

@@ -348,8 +348,9 @@ static void recalculate_vs_slam_time_setting_on_core_pre(pci_devfn_t dev)
 		low_voltage_vid = b_value;
 
 	u8 mobile_flag = get_platform_type() & AMD_PTYPE_MOB;
+	/* * 0.01 us */
 	minimum_slam_time = (mobile_flag ? 2 : 4)
-		* (vid_to_100uV(high_voltage_vid) - vid_to_100uV(low_voltage_vid)); /* * 0.01 us */
+		* (vid_to_100uV(high_voltage_vid) - vid_to_100uV(low_voltage_vid));
 
 
 	/* Now round up to nearest register setting.
