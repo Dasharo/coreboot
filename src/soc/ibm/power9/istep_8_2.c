@@ -6,6 +6,7 @@
 #include <cpu/power/istep_8.h>
 
 #include "fsi.h"
+#include "homer.h"
 
 static void set_fsi_gp_shadow(uint8_t chip)
 {
@@ -28,7 +29,7 @@ void istep_8_2(uint8_t chips)
 	report_istep(8,2);
 
 	/* Skipping master chip */
-	for (uint8_t chip = 1; chip < 8; chip++) {
+	for (uint8_t chip = 1; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
 			set_fsi_gp_shadow(chip);
 	}

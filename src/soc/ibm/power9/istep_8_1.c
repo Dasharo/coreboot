@@ -326,7 +326,7 @@ void istep_8_1(uint8_t chips)
 	boot_seeprom_side = get_master_sbe_boot_seeprom();
 
 	/* Skipping master chip */
-	for (uint8_t chip = 1; chip < 8; chip++) {
+	for (uint8_t chip = 1; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip)) {
 			setup_sbe_config(chip);
 			set_sbe_boot_seeprom(chip, boot_seeprom_side);

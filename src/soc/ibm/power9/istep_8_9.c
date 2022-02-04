@@ -7,6 +7,7 @@
 #include <cpu/power/scom.h>
 
 #include "fsi.h"
+#include "homer.h"
 #include "scratch.h"
 #include "xbus.h"
 
@@ -330,7 +331,7 @@ void istep_8_9(uint8_t chips)
 
 	if (chips != 0x01) {
 		/* Not skipping master chip */
-		for (uint8_t chip = 0; chip < 8; chip++) {
+		for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
 			if (chips & (1 << chip))
 				chiplet_fabric_scominit(chip);
 		}
