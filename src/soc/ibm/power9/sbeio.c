@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include "sbeio.h"
-
 #include <console/console.h>
 #include <delay.h>
 #include <stdbool.h>
@@ -202,6 +200,10 @@ static void read_response(uint8_t chip, void *response, uint32_t word_count)
 	    status_hdr->secondary_status != SBE_SEC_OPERATION_SUCCESSFUL)
 		die("Invalid status in SBE IO response\n");
 }
+
+/* Private API used only by SCOM dispatcher, no need to expose it */
+void write_sbe_scom(uint8_t chip, uint64_t addr, uint64_t data);
+uint64_t read_sbe_scom(uint8_t chip, uint64_t addr);
 
 void write_sbe_scom(uint8_t chip, uint64_t addr, uint64_t data)
 {

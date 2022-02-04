@@ -767,6 +767,8 @@ void istep_10_1(uint8_t chips)
 	p9_build_smp(chips);
 
 	if (chips & 0x02) {
+		switch_secondary_scom_to_xscom();
+
 		/* Sanity check that XSCOM works for the second CPU */
 		if (read_rscom(1, 0xF000F) == 0xFFFFFFFFFFFFFFFF)
 			die("XSCOM doesn't work for the second CPU\n");
