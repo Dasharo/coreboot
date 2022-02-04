@@ -243,8 +243,8 @@ chip soc/intel/tigerlake
 			# Touchpad I2C bus
 			register "SerialIoI2cMode[PchSerialIoIndexI2C0]" = "PchSerialIoPci"
 			chip drivers/i2c/hid
-				register "generic.hid" = ""FTCS1000""
-				register "generic.desc" = ""FocalTech Touchpad""
+				register "generic.hid" = ""ELAN0412""
+				register "generic.desc" = ""Elanech Touchpad""
 				register "generic.irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_B3)"
 				register "generic.probed" = "1"
 				register "hid_desc_reg_offset" = "0x01"
