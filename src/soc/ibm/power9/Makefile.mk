@@ -4,6 +4,7 @@ ifeq ($(CONFIG_SOC_IBM_POWER9),y)
 
 bootblock-y += bootblock.c
 bootblock-y += rom_media.c
+bootblock-y += xscom.c
 
 romstage-y += cbmem.c
 romstage-y += ccs.c
@@ -47,6 +48,7 @@ romstage-y += romstage.c
 romstage-y += timer.c
 romstage-y += vpd.c
 romstage-y += xbus.c
+romstage-y += xscom.c
 
 ramstage-y += cbmem.c
 ramstage-y += chip.c
@@ -65,6 +67,7 @@ ramstage-y += timer.c
 ramstage-y += tor.c
 ramstage-y += vpd.c
 ramstage-y += xive.c
+ramstage-y += xscom.c
 
 MB_DIR = src/mainboard/$(MAINBOARDDIR)
 ONECPU_DTB = 1-cpu.dtb
