@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+/* FSI is used to read MVPD, logging which takes too much time */
+#define SKIP_SCOM_DEBUG
+
 #include "fsi.h"
 
 #include <assert.h>
