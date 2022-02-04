@@ -258,6 +258,13 @@ chip soc/intel/tigerlake
 		device ref heci1 on
 			register "HeciEnabled" = "1"
 		end
+		device ref sata on
+			# SATA1 (SSD0)
+			register "SataPortsEnable[1]" = "1"
+			register "SataPortsDevSlp[1]" = "1"
+			register "SataPortsEnableDitoConfig[1]" = "1"
+			register "SataSalpSupport" = "1"
+		end
 		device ref uart2 on
 			# Debug console
 			register "SerialIoUartMode[PchSerialIoIndexUART2]" = "PchSerialIoSkipInit"
