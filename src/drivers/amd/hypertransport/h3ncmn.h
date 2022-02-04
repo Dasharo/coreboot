@@ -60,13 +60,16 @@ struct cNorthBridge
 	u8 (*read_def_lnk)(u8 node, cNorthBridge *nb);
 	void (*enable_routing_tables)(u8 node, cNorthBridge *nb);
 	BOOL (*verify_link_is_coherent)(u8 node, u8 link, cNorthBridge *nb);
-	BOOL (*read_true_link_fail_status)(u8 node, u8 link, sMainData *p_dat, cNorthBridge *nb);
+	BOOL (*read_true_link_fail_status)(u8 node, u8 link, sMainData *p_dat,
+					cNorthBridge *nb);
 	u8 (*read_token)(u8 node, cNorthBridge *nb);
 	void (*writeToken)(u8 node, u8 value, cNorthBridge *nb);
 	u8 (*get_num_cores_on_node)(u8 node, cNorthBridge *nb);
-	void (*set_total_nodes_and_cores)(u8 node, u8 total_nodes, u8 total_cores, cNorthBridge *nb);
+	void (*set_total_nodes_and_cores)(u8 node, u8 total_nodes, u8 total_cores,
+		cNorthBridge *nb);
 	void (*limit_nodes)(u8 node, cNorthBridge *nb);
-	void (*write_full_routing_table)(u8 node, u8 target, u8 req_link, u8 rsp_link, u32 bc_links, cNorthBridge *nb);
+	void (*write_full_routing_table)(u8 node, u8 target, u8 req_link, u8 rsp_link,
+					u32 bc_links, cNorthBridge *nb);
 	BOOL (*is_compatible)(u8 node, cNorthBridge *nb);
 	BOOL (*is_capable)(u8 node, sMainData *p_dat, cNorthBridge *nb);
 	void (*is_link)(u8 node, u8 link, cNorthBridge *nb);
@@ -75,7 +78,8 @@ struct cNorthBridge
 	/* Public Interfaces for northbridge clients, noncoherent init */
 	u8 (*read_sb_link)(cNorthBridge *nb);
 	BOOL (*verify_link_is_non_coherent)(u8 node, u8 link, cNorthBridge *nb);
-	void (*set_cfg_addr_map)(u8 cfg_map_index, u8 sec_bus, u8 sub_bus, u8 target_node, u8 target_link, sMainData *p_dat, cNorthBridge *nb);
+	void (*set_cfg_addr_map)(u8 cfg_map_index, u8 sec_bus, u8 sub_bus, u8 target_node,
+				u8 target_link, sMainData *p_dat, cNorthBridge *nb);
 
 	/* Public Interfaces for northbridge clients, Optimization */
 	u8 (*convert_bits_to_width)(u8 value, cNorthBridge *nb);

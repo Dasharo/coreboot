@@ -113,11 +113,13 @@
 typedef struct {
 	u8 **topolist;
 	u8 auto_bus_start;
-	/* Note: This should always be the form auto_bus_current+N*auto_bus_increment, also bus 253-255 are reserved */
+	/* Note: This should always be the form auto_bus_current+N*auto_bus_increment, also bus
+	 * 253-255 are reserved
+	 */
 	u8 auto_bus_max;
 	u8 auto_bus_increment;
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * BOOL
 	 * amd_cb_ignore_link(u8 node, u8 link)
@@ -135,20 +137,20 @@ typedef struct {
 	 *	@param[out]  BOOL result = true to ignore this link and skip it
 	 *				   false to initialize the link normally
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	BOOL (*amd_cb_ignore_link)(u8 node, u8 link);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * BOOL
 	 * amd_cb_override_bus_numbers(u8 node, u8 link, u8 *sec_bus, u8 *sub_bus)
 	 *
 	 * Description:
 	 *	This routine is called every time a non-coherent chain is processed.
-	 *	If a system can not use the auto bus numbering feature for non-coherent chain bus
-	 *	assignments, this routine can provide explicit control.  For each chain, provide
-	 *	the bus number range to use.
+	 *	If a system can not use the auto bus numbering feature for non-coherent chain
+	 *	bus assignments, this routine can provide explicit control. For each chain,
+	 *	provide the bus number range to use.
 	 *
 	 * Parameters:
 	 *	@param[in]  u8   node   = The node on which this chain is located
@@ -158,11 +160,11 @@ typedef struct {
 	 *	@param[out] BOOL result = true this routine is supplying the bus numbers
 	 *				  false use auto bus numbering
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	BOOL (*amd_cb_override_bus_numbers)(u8 node, u8 link, u8 *sec_bus, u8 *sub_bus);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * BOOL
 	 * amd_cb_manual_buid_swap_list(u8 node, u8 link, u8 **list)
@@ -171,11 +173,12 @@ typedef struct {
 	 *	This routine is called every time a non-coherent chain is processed.
 	 *	BUID assignment may be controlled explicitly on a non-coherent chain. Provide a
 	 *	swap list. The first part of the list controls the BUID assignment and the
-	 *	second part of the list provides the device to device linking.  Device orientation
-	 *	can be detected automatically, or explicitly.  See documentation for more details.
+	 *	second part of the list provides the device to device linking. Device
+	 *	orientation can be detected automatically, or explicitly.  See documentation for
+	 *	more details.
 	 *
-	 *	Automatic non-coherent init assigns BUIDs starting at 1 and incrementing sequentially
-	 *	based on each device's unit count.
+	 *	Automatic non-coherent init assigns BUIDs starting at 1 and incrementing
+	 *	sequentially based on each device's unit count.
 	 *
 	 * Parameters:
 	 *	@param[in]  u8  node    = The node on which this chain is located
@@ -184,11 +187,11 @@ typedef struct {
 	 *	@param[out] BOOL result = true to use a manual list
 	 *				  false to initialize the link automatically
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	BOOL (*amd_cb_manual_buid_swap_list)(u8 node, u8 link, const u8 **list);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * void
 	 * amd_cb_device_cap_override(u8 host_node, u8 host_link, u8 depth, u8 segment,
@@ -198,10 +201,10 @@ typedef struct {
 	 * Description:
 	 *	This routine is called once for every link on every IO device.
 	 *	Update the width and frequency capability if needed for this device.
-	 *	This is used along with device capabilities, the limit call backs, and northbridge
-	 *	limits to compute the default settings.  The components of the device's PCI config
-	 *	address are provided, so its settings can be consulted if need be. The input width
-	 *	and frequency are the reported device capabilities.
+	 *	This is used along with device capabilities, the limit call backs, and
+	 *	northbridge limits to compute the default settings.  The components of the
+	 *	device's PCI config address are provided, so its settings can be consulted if
+	 *	need be. The input width and frequency are the reported device capabilities.
 	 *
 	 * Parameters:
 	 *	@param[in]  u8  hostNode  = The node on which this chain is located
@@ -217,7 +220,7 @@ typedef struct {
 	 *	@param[in,out] u32 *freq_cap = modify to change the link's frequency capability
 	 *	@param[in,out] u32 *feature_cap = modify to change the link's feature capability
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	void (*amd_cb_device_cap_override)(
 		u8 host_node,
@@ -234,18 +237,19 @@ typedef struct {
 		u32 *feature_cap
 	);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * void
 	 * amd_cb_cpu_2_cpu_pcb_limits(u8 node_a, u8 link_a, u8 node_b, u8 link_b,
-	 *				 u8 *ab_link_width_limit, u8 *ba_link_width_limit, u16 *pcb_freq_cap)
+	 *				u8 *ab_link_width_limit, u8 *ba_link_width_limit,
+	 *				u16 *pcb_freq_cap)
 	 *
 	 * Description:
 	 *	For each coherent connection this routine is called once.
 	 *	Update the frequency and width if needed for this link (usually based on board
 	 *	restriction).  This is used with CPU device capabilities and northbridge limits
-	 *	to compute the default settings.  The input width and frequency are valid, but do
-	 *	not necessarily reflect the minimum setting that will be chosen.
+	 *	to compute the default settings.  The input width and frequency are valid, but
+	 *	do not necessarily reflect the minimum setting that will be chosen.
 	 *
 	 * Parameters:
 	 *	@param[in]  u8  nodeA  = One node on which this link is located
@@ -254,9 +258,10 @@ typedef struct {
 	 *	@param[in]  u8  linkB  = The link on that node
 	 *	@param[in,out]  u8 *ab_link_width_limit = modify to change the link Witdh In
 	 *	@param[in,out]  u8 *ba_link_width_limit = modify to change the link Witdh Out
-	 *	@param[in,out]  u32 *pcb_freq_cap  = modify to change the link's frequency capability
+	 *	@param[in,out]  u32 *pcb_freq_cap = modify to change the link's frequency
+	 *						capability
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	void (*amd_cb_cpu_2_cpu_pcb_limits)(
 		u8 node_a,
@@ -268,28 +273,33 @@ typedef struct {
 		u32 *pcb_freq_cap
 	);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * void
-	 * amd_cb_iop_cb_limits(u8 host_node, u8 host_link, u8 depth, u8 *downstream_link_width_limit,
-	 *			    u8 *upstream_link_width_limit, u16 *pcb_freq_cap)
+	 * amd_cb_iop_cb_limits(u8 host_node, u8 host_link, u8 depth,
+	 * 			u8 *downstream_link_width_limit,
+	 *			u8 *upstream_link_width_limit, u16 *pcb_freq_cap)
 	 *
 	 * Description:
 	 *	For each non-coherent connection this routine is called once.
 	 *	Update the frequency and width if needed for this link (usually based on board
-	 *	restriction).  This is used with device capabilities, device overrides, and northbridge limits
-	 *	to compute the default settings. The input width and frequency are valid, but do
-	 *	not necessarily reflect the minimum setting that will be chosen.
+	 *	restriction).  This is used with device capabilities, device overrides, and
+	 *	northbridge limits to compute the default settings. The input width and
+	 *	frequency are valid, but do not necessarily reflect the minimum setting that
+	 *	will be chosen.
 	 *
 	 * Parameters:
 	 *	@param[in]  u8  hostNode  = The node on which this link is located
 	 *	@param[in]  u8  hostLink  = The link about to be initialized
 	 *	@param[in]  u8  depth  = The depth in the I/O chain from the Host
-	 *	@param[in,out]  u8 *downstream_link_width_limit = modify to change the link Witdh In
-	 *	@param[in,out]  u8 *upstream_link_width_limit  = modify to change the link Witdh Out
-	 *	@param[in,out]  u32 *pcb_freq_cap = modify to change the link's frequency capability
+	 *	@param[in,out]  u8 *downstream_link_width_limit = modify to change the link
+	 *			Witdh In
+	 *	@param[in,out]  u8 *upstream_link_width_limit = modify to change the link Witdh
+	 *			Out
+	 *	@param[in,out]  u32 *pcb_freq_cap = modify to change the link's frequency
+	 *			capability
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	void (*amd_cb_iop_cb_limits)(
 		u8 host_node,
@@ -300,14 +310,14 @@ typedef struct {
 		u32 *pcb_freq_cap
 	);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * BOOL
 	 * amd_cb_skip_regang(u8 node_a, u8 link_a, u8 node_b, u8 link_b)
 	 *
 	 * Description:
-	 *	This routine is called whenever two sublinks are both connected to the same CPUs.
-	 *	Normally, unganged subsinks between the same two CPUs are reganged.
+	 *	This routine is called whenever two sublinks are both connected to the same
+	 *	CPUs. Normally, unganged subsinks between the same two CPUs are reganged.
 	 *	Return true from this routine to leave the links unganged.
 	 *
 	 * Parameters:
@@ -318,7 +328,7 @@ typedef struct {
 	 *	@param[out] BOOL result = true to leave link unganged
 	 *				  false to regang link automatically
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	BOOL (*amd_cb_skip_regang)(
 		u8 node_a,
@@ -327,7 +337,7 @@ typedef struct {
 		u8 link_b
 	);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * BOOL
 	 * amd_cb_customize_traffic_distribution()
@@ -344,32 +354,32 @@ typedef struct {
 	 *	@param[out]  BOOL result  = true skip traffic distribution
 	 *				    false do normal traffic distribution
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	BOOL (*amd_cb_customize_traffic_distribution)(void);
 
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * BOOL
 	 * amd_cb_customize_buffers(u8 node)
 	 *
 	 * Description:
 	 *	Near the end of HT initialization, this routine is called once per CPU node.
-	 *	Implement proprietary buffer tuning and return true, or return false for normal tuning.
-	 *	This routine can also be used to simply turn this feature off, or to pre-process
-	 *	the system before normal tuning.
+	 *	Implement proprietary buffer tuning and return true, or return false for normal
+	 *	tuning. This routine can also be used to simply turn this feature off, or to
+	 *	pre-process the system before normal tuning.
 	 *
 	 * Parameters:
 	 *	@param[in] u8 node  = buffer allocation may apply to this node
 	 *	@param[out] BOOL  result  = true skip buffer allocation on this node
 	 *				    false tune buffers normally
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	BOOL (*amd_cb_customize_buffers)(u8 node);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * void
 	 * amd_cb_override_device_port(u8 host_node, u8 host_link, u8 depth, u8 *link_width_in,
@@ -388,9 +398,10 @@ typedef struct {
 	 *	@param[in]  u8   link      = the link on the device (0 or 1)
 	 *	@param[in,out]  u8 *link_width_in    = modify to change the link Witdh In
 	 *	@param[in,out]  u8 *link_width_out   = modify to change the link Witdh Out
-	 *	@param[in,out]  u16 *link_frequency = modify to change the link's frequency capability
+	 *	@param[in,out]  u16 *link_frequency = modify to change the link's frequency
+	 *			capability
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	void (*amd_cb_override_device_port)(
 		u8 host_node,
@@ -402,7 +413,7 @@ typedef struct {
 		u8 *link_frequency
 	);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * void
 	 * amd_cb_override_cpu_port(u8 node, u8 link, u8 *link_width_in, u8 *link_width_out,
@@ -419,9 +430,10 @@ typedef struct {
 	 *	@param[in]  u8  link  = The link on this node
 	 *	@param[in,out]  u8 *link_width_in = modify to change the link Witdh In
 	 *	@param[in,out]  u8 *link_width_out = modify to change the link Witdh Out
-	 *	@param[in,out]  u16 *link_frequency  = modify to change the link's frequency capability
+	 *	@param[in,out]  u16 *link_frequency  = modify to change the link's frequency
+	 *			capability
 	 *
-	 *---------------------------------------------------------------------------------------
+	 *--------------------------------------------------------------------------------------
 	 */
 	void (*amd_cb_override_cpu_port)(
 		u8 node,
@@ -431,7 +443,7 @@ typedef struct {
 		u8 *link_frequency
 	);
 
-	/**----------------------------------------------------------------------------------------
+	/**-------------------------------------------------------------------------------------
 	 *
 	 * void
 	 * amd_cb_event_notify(u8 evt_class, u16 event, const u8 *p_event_data_0)
@@ -447,7 +459,7 @@ typedef struct {
 	 *	@param[in]  u16 event = A unique ID of this event
 	 *	@param[in]  u8 *p_event_data_0 = useful data associated with the event.
 	 *
-	 * ---------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
 	 */
 	void (*amd_cb_event_notify) (
 		u8 evt_class,

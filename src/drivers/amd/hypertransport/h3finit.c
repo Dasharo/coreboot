@@ -316,7 +316,8 @@ static void route_from_bsp(u8 target_node, u8 actual_target, sMainData *p_dat)
 	/*  Node is established */
 	route_from_bsp(predecessor_node, actual_target, p_dat);
 
-	p_dat->nb->write_routing_table(predecessor_node, actual_target, predecessor_link, p_dat->nb);
+	p_dat->nb->write_routing_table(
+		predecessor_node, actual_target, predecessor_link, p_dat->nb);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -342,12 +343,14 @@ static u8 convert_node_to_link(u8 src_node, u8 target_node, sMainData *p_dat)
 
 	for (k = 0; k < p_dat->total_links * 2; k += 2)
 	{
-		if ((p_dat->port_list[k + 0].node_id == src_node) && (p_dat->port_list[k + 1].node_id == target_node))
+		if ((p_dat->port_list[k + 0].node_id == src_node)
+		&& (p_dat->port_list[k + 1].node_id == target_node))
 		{
 			target_link = p_dat->port_list[k + 0].link;
 			break;
 		}
-		else if ((p_dat->port_list[k + 1].node_id == src_node) && (p_dat->port_list[k + 0].node_id == target_node))
+		else if ((p_dat->port_list[k + 1].node_id == src_node)
+		&& (p_dat->port_list[k + 0].node_id == target_node))
 		{
 			target_link = p_dat->port_list[k + 1].link;
 			break;
@@ -437,7 +440,10 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			/* Configure current_node to route traffic to the BSP through its
 			 * default link
 			 */
-			p_dat->nb->write_routing_table(current_node, 0, p_dat->nb->read_def_lnk(current_node, p_dat->nb), p_dat->nb);
+			p_dat->nb->write_routing_table(
+				current_node, 0,
+				p_dat->nb->read_def_lnk(current_node, p_dat->nb),
+				p_dat->nb);
 		}
 
 		/* Set current_node's node_id field to current_node */
@@ -446,7 +452,9 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 		/* Enable routing tables on current_node */
 		p_dat->nb->enable_routing_tables(current_node, p_dat->nb);
 
-		for (current_link_id = 0; current_link_id < p_dat->nb->max_links; current_link_id++)
+		for (current_link_id = 0;
+		current_link_id < p_dat->nb->max_links;
+		current_link_id++)
 		{
 			BOOL link_found;
 			u8 token;
@@ -454,24 +462,30 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			if (current_link_id < 8) {
 				if (dual_node) {
 					if (fam_15h)
-						current_link = current_link_scan_order_g34_fam15[current_link_id];
+						current_link = current_link_scan_order_g34_fam15
+									[current_link_id];
 					else
-						current_link = current_link_scan_order_g34_fam10[current_link_id];
+						current_link = current_link_scan_order_g34_fam10
+									[current_link_id];
 				} else {
-					current_link = current_link_scan_order_default[current_link_id];
+					current_link = current_link_scan_order_default
+									[current_link_id];
 				}
 			} else {
 				current_link = current_link_id;
 			}
 
-			if (p_dat->ht_block->amd_cb_ignore_link && p_dat->ht_block->amd_cb_ignore_link(current_node, current_link))
+			if (p_dat->ht_block->amd_cb_ignore_link
+			&& p_dat->ht_block->amd_cb_ignore_link(current_node, current_link))
 				continue;
 
-			if (p_dat->nb->read_true_link_fail_status(current_node, current_link, p_dat, p_dat->nb))
+			if (p_dat->nb->read_true_link_fail_status(
+						current_node, current_link, p_dat, p_dat->nb))
 				continue;
 
 			/* Make sure that the link is connected, coherent, and ready */
-			if (!p_dat->nb->verify_link_is_coherent(current_node, current_link, p_dat->nb))
+			if (!p_dat->nb->verify_link_is_coherent(
+						current_node, current_link, p_dat->nb))
 				continue;
 
 
@@ -492,7 +506,8 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 				continue;
 			}
 
-			if (p_dat->nb->handle_special_link_case(current_node, current_link, p_dat, p_dat->nb))
+			if (p_dat->nb->handle_special_link_case(
+						current_node, current_link, p_dat, p_dat->nb))
 			{
 				continue;
 			}
@@ -500,10 +515,12 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			/* Modify current_node's routing table to use current_link to send
 			 * traffic to current_node+1
 			 */
-			p_dat->nb->write_routing_table(current_node, current_node + 1, current_link, p_dat->nb);
+			p_dat->nb->write_routing_table(
+						current_node, current_node + 1,
+						current_link, p_dat->nb);
 
-			/* Check the northbridge of the node we just found, to make sure it is compatible
-			 * before doing anything else to it.
+			/* Check the northbridge of the node we just found, to make sure it is
+			 * compatible before doing anything else to it.
 			 */
 			if (!p_dat->nb->is_compatible(current_node + 1, p_dat->nb))
 			{
@@ -518,9 +535,10 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 					evt.link = current_link;
 					evt.total_nodes = p_dat->nodes_discovered;
 
-					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
-									HT_EVENT_COH_FAMILY_FEUD,
-									(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+								HT_EVENT_CLASS_ERROR,
+								HT_EVENT_COH_FAMILY_FEUD,
+								(u8 *)&evt);
 				}
 
 				/* If node is not compatible, force boot to 1P
@@ -532,20 +550,30 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 				p_dat->nodes_discovered = 0;
 				current_node = 0;
 				p_dat->total_links = 0;
-				/* Abandon our coherent link data structure.  At this point there may
-				 * be coherent links on the BSP that are not yet in the portList, and
-				 * we have to turn them off anyway.  So depend on the hardware to tell us.
+				/* Abandon our coherent link data structure. At this point
+				 * there may be coherent links on the BSP that are not yet in
+				 * the portList, and we have to turn them off anyway. So depend
+				 * on the hardware to tell us.
 				 */
-				for (current_link = 0; current_link < p_dat->nb->max_links; current_link++)
+				for (current_link = 0;
+				current_link < p_dat->nb->max_links;
+				current_link++)
 				{
 					/* Stop all links which are connected, coherent, and ready */
-					if (p_dat->nb->verify_link_is_coherent(current_node, current_link, p_dat->nb))
-						p_dat->nb->is_link(current_node, current_link, p_dat->nb);
+					if (p_dat->nb->verify_link_is_coherent(
+							current_node, current_link, p_dat->nb))
+						p_dat->nb->is_link(current_node, current_link,
+										p_dat->nb);
 				}
 
-				for (node_to_kill = 0; node_to_kill < p_dat->nb->max_nodes; node_to_kill++)
+				for (node_to_kill = 0;
+				node_to_kill < p_dat->nb->max_nodes;
+				node_to_kill++)
 				{
-					p_dat->nb->write_full_routing_table(0, node_to_kill, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
+					p_dat->nb->write_full_routing_table(
+							0, node_to_kill,
+							ROUTETOSELF, ROUTETOSELF,
+							0, p_dat->nb);
 				}
 
 				/* End Coherent Discovery */
@@ -560,7 +588,9 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			{
 				p_dat->nodes_discovered++;
 				ASSERT(p_dat->nodes_discovered < p_dat->nb->max_nodes);
-				/* Check the capability of northbridges against the currently known configuration */
+				/* Check the capability of northbridges against the currently
+				 * known configuration
+				 */
 				if (!p_dat->nb->is_capable(current_node + 1, p_dat, p_dat->nb))
 				{
 					u8 node_to_kill;
@@ -575,18 +605,24 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 						evt.sys_mp_cap = p_dat->sys_mp_cap;
 						evt.total_nodes = p_dat->nodes_discovered;
 
-						p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
-									HT_EVENT_COH_MPCAP_MISMATCH,
-									(u8 *)&evt);
+						p_dat->ht_block->amd_cb_event_notify(
+								HT_EVENT_CLASS_ERROR,
+								HT_EVENT_COH_MPCAP_MISMATCH,
+								(u8 *)&evt);
 					}
 
 					p_dat->nodes_discovered = 0;
 					current_node = 0;
 					p_dat->total_links = 0;
 
-					for (node_to_kill = 0; node_to_kill < p_dat->nb->max_nodes; node_to_kill++)
+					for (node_to_kill = 0;
+					node_to_kill < p_dat->nb->max_nodes;
+					node_to_kill++)
 					{
-						p_dat->nb->write_full_routing_table(0, node_to_kill, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
+						p_dat->nb->write_full_routing_table(
+							0, node_to_kill,
+							ROUTETOSELF, ROUTETOSELF,
+							0, p_dat->nb);
 					}
 
 					/* End Coherent Discovery */
@@ -607,23 +643,28 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 					evt.link = current_link;
 					evt.newNode = token;
 
-					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_INFO,
-								HT_EVENT_COH_NODE_DISCOVERED,
-								(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+							HT_EVENT_CLASS_INFO,
+							HT_EVENT_COH_NODE_DISCOVERED,
+							(u8 *)&evt);
 				}
 			}
 
 			if (p_dat->total_links == MAX_PLATFORM_LINKS)
 			{
 				/*
-				 * Exceeded our capacity to describe all coherent links found in the system.
+				 * Exceeded our capacity to describe all coherent links found in
+				 * the system.
+				 *
 				 * Error strategy:
-				 * Auto recovery is not possible because data space is already all used.
-				 * If the callback is not implemented or returns we will continue to initialize
-				 * the fabric we are capable of representing, adding no more nodes or links.
-				 * This should yield a bootable topology, but likely not the one intended.
-				 * We cannot continue discovery, there may not be any way to route a new
-				 * node back to the BSP if we can't add links to our representation of the system.
+				 * Auto recovery is not possible because data space is already
+				 * all used. If the callback is not implemented or returns we
+				 * will continue to initialize the fabric we are capable of
+				 * representing, adding no more nodes or links. This should
+				 * yield a bootable topology, but likely not the one intended.
+				 * We cannot continue discovery, there may not be any way to
+				 * route a new node back to the BSP if we can't add links to our
+				 * representation of the system.
 				 */
 				if (p_dat->ht_block->amd_cb_event_notify)
 				{
@@ -635,9 +676,10 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 					evt.total_nodes = p_dat->nodes_discovered;
 					evt.max_links = p_dat->nb->max_links;
 
-					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
-									HT_EVENT_COH_LINK_EXCEED,
-									(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+								HT_EVENT_CLASS_ERROR,
+								HT_EVENT_COH_LINK_EXCEED,
+								(u8 *)&evt);
 				}
 				/* Force link and node loops to halt */
 				STOP_HERE;
@@ -650,7 +692,8 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
 			p_dat->port_list[p_dat->total_links * 2].node_id = current_node;
 
 			p_dat->port_list[p_dat->total_links * 2 + 1].type = PORTLIST_TYPE_CPU;
-			p_dat->port_list[p_dat->total_links * 2 + 1].link = p_dat->nb->read_def_lnk(current_node + 1, p_dat->nb);
+			p_dat->port_list[p_dat->total_links * 2 + 1].link
+					= p_dat->nb->read_def_lnk(current_node + 1, p_dat->nb);
 			p_dat->port_list[p_dat->total_links * 2 + 1].node_id = token;
 
 			p_dat->total_links++;
@@ -687,7 +730,8 @@ static void ht_discovery_flood_fill(sMainData *p_dat)
  *  Parameters:
  *	@param[in] u8 i   = the discovered node which we are trying to match
  *		    with a permutation the topology
- *	@param[in]/@param[out] sMainData* p_dat  = our global state, degree and adjacency matrix,
+ *	@param[in]/@param[out] sMainData* p_dat  = our global state, degree and adjacency
+ *						   matrix,
  *				  output a permutation if successful
  *	@param[out] BOOL results = the graphs are (or are not) isomorphic
  * ---------------------------------------------------------------------------------------
@@ -746,11 +790,12 @@ static BOOL iso_morph(u8 i, sMainData *p_dat)
  *  Description:
  *	 Using the description of the fabric topology we discovered, try to find a match
  *	 among the supported topologies.  A supported topology description matches
- *	 the discovered fabric if the nodes can be matched in such a way that all the nodes connected
+ *	 the discovered fabric if the nodes can be matched in such a way that all the nodes
+ *	 connected
  *	 in one set are exactly the nodes connected in the other (formally, that the graphs are
  *	 isomorphic).  Which links are used is not really important to matching.  If the graphs
- *	 match, then there is a permutation of one that translates the node positions and linkages
- *	 to the other.
+ *	 match, then there is a permutation of one that translates the node positions and
+ *	 linkages to the other.
  *
  *	 In order to make the isomorphism test efficient, we test for matched number of nodes
  *	 (a 4 node fabric is not isomorphic to a 2 node topology), and provide degrees of nodes
@@ -827,14 +872,19 @@ static void lookup_compute_and_load_routing_tables(sMainData *p_dat)
 				u8 req_target_link, rsp_target_link;
 				u8 req_target_node, rsp_target_node;
 
-				u8 abstract_bc_target_nodes = graph_get_bc(p_selected, p_dat->perm[i], p_dat->perm[j]);
+				u8 abstract_bc_target_nodes = graph_get_bc(
+						p_selected, p_dat->perm[i], p_dat->perm[j]);
 				u32 bc_target_links = 0;
 
 				for (k = 0; k < MAX_NODES; k++)
 				{
 					if (abstract_bc_target_nodes & ((u32)1 << k))
 					{
-						bc_target_links |= (u32)1 << convert_node_to_link(i, p_dat->reverse_perm[k], p_dat);
+						bc_target_links |= (u32)1
+							<< convert_node_to_link(
+									i,
+									p_dat->reverse_perm[k],
+									p_dat);
 					}
 				}
 
@@ -845,23 +895,31 @@ static void lookup_compute_and_load_routing_tables(sMainData *p_dat)
 				}
 				else
 				{
-					req_target_node = graph_get_req(p_selected, p_dat->perm[i], p_dat->perm[j]);
-					req_target_link = convert_node_to_link(i, p_dat->reverse_perm[req_target_node], p_dat);
+					req_target_node = graph_get_req(
+						p_selected, p_dat->perm[i], p_dat->perm[j]);
+					req_target_link = convert_node_to_link(
+						i, p_dat->reverse_perm[req_target_node], p_dat);
 
-					rsp_target_node = graph_get_rsp(p_selected, p_dat->perm[i], p_dat->perm[j]);
-					rsp_target_link = convert_node_to_link(i, p_dat->reverse_perm[rsp_target_node], p_dat);
+					rsp_target_node = graph_get_rsp(
+						p_selected, p_dat->perm[i], p_dat->perm[j]);
+					rsp_target_link = convert_node_to_link(
+						i, p_dat->reverse_perm[rsp_target_node], p_dat);
 				}
 
-				p_dat->nb->write_full_routing_table(i, j, req_target_link, rsp_target_link, bc_target_links, p_dat->nb);
+				p_dat->nb->write_full_routing_table(
+					i, j, req_target_link, rsp_target_link,
+					bc_target_links, p_dat->nb);
 			}
-			/* Clean up discovery 'footprint' that otherwise remains in the routing table.  It didn't hurt
-			 * anything, but might cause confusion during debug and validation.  Do this by setting the
-			 * route back to all self routes. Since it's the node that would be one more than actually installed,
-			 * this only applies if less than max_nodes were found.
+			/* Clean up discovery 'footprint' that otherwise remains in the routing
+			 * table.  It didn't hurt anything, but might cause confusion during
+			 * debug and validation.  Do this by setting the route back to all self
+			 * routes. Since it's the node that would be one more than actually
+			 * installed, this only applies if less than max_nodes were found.
 			 */
 			if (size < p_dat->nb->max_nodes)
 			{
-				p_dat->nb->write_full_routing_table(i, size, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
+				p_dat->nb->write_full_routing_table(
+					i, size, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
 			}
 		}
 
@@ -919,7 +977,8 @@ static void finialize_coherent_init(sMainData *p_dat)
 
 	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
 	{
-		p_dat->nb->set_total_nodes_and_cores(cur_node, p_dat->nodes_discovered + 1, total_cores, p_dat->nb);
+		p_dat->nb->set_total_nodes_and_cores(
+			cur_node, p_dat->nodes_discovered + 1, total_cores, p_dat->nb);
 	}
 
 	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
@@ -1009,8 +1068,8 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 		/* Assign Bus numbers */
 		if (p_dat->auto_bus_current >= p_dat->ht_block->auto_bus_max)
 		{
-			/* If we run out of Bus Numbers notify, if call back unimplemented or if it
-			 * returns, skip this chain
+			/* If we run out of Bus Numbers notify, if call back unimplemented or if
+			 * it returns, skip this chain
 			 */
 			if (p_dat->ht_block->amd_cb_event_notify)
 			{
@@ -1020,7 +1079,10 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 				evt.link = link;
 				evt.bus = p_dat->auto_bus_current;
 
-				p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_BUS_MAX_EXCEED,(u8 *)&evt);
+				p_dat->ht_block->amd_cb_event_notify(
+					HT_EVENT_CLASS_ERROR,
+					HT_EVENT_NCOH_BUS_MAX_EXCEED,
+					(u8 *)&evt);
 			}
 			STOP_HERE;
 			return;
@@ -1051,7 +1113,8 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 		p_dat->auto_bus_current += p_dat->ht_block->auto_bus_increment;
 	}
 
-	p_dat->nb->set_cfg_addr_map(p_dat->used_cfg_map_entires, sec_bus, sub_bus, node, link, p_dat, p_dat->nb);
+	p_dat->nb->set_cfg_addr_map(
+		p_dat->used_cfg_map_entires, sec_bus, sub_bus, node, link, p_dat, p_dat->nb);
 	p_dat->used_cfg_map_entires++;
 
 	if ((p_dat->ht_block->amd_cb_manual_buid_swap_list != NULL)
@@ -1086,12 +1149,14 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			p_dat->port_list[p_dat->total_links * 2].node_id = node;
 			if (depth == 0)
 			{
-				p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_CPU;
+				p_dat->port_list[p_dat->total_links * 2].type
+						= PORTLIST_TYPE_CPU;
 				p_dat->port_list[p_dat->total_links * 2].link = link;
 			}
 			else
 			{
-				p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_IO;
+				p_dat->port_list[p_dat->total_links * 2].type
+						= PORTLIST_TYPE_IO;
 				p_dat->port_list[p_dat->total_links * 2].link = 1 - last_link;
 				p_dat->port_list[p_dat->total_links * 2].host_link = link;
 				p_dat->port_list[p_dat->total_links * 2].host_depth = depth - 1;
@@ -1153,9 +1218,12 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			if (p_dat->total_links == MAX_PLATFORM_LINKS)
 			{
 				/*
-				 * Exceeded our capacity to describe all non-coherent links found in the system.
+				 * Exceeded our capacity to describe all non-coherent links
+				 * found in the system.
+				 *
 				 * Error strategy:
-				 * Auto recovery is not possible because data space is already all used.
+				 * Auto recovery is not possible because data space is already
+				 * all used.
 				 */
 				if (p_dat->ht_block->amd_cb_event_notify)
 				{
@@ -1166,9 +1234,10 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 					evt.depth = depth;
 					evt.max_links = p_dat->nb->max_links;
 
-					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
-								HT_EVENT_NCOH_LINK_EXCEED,
-								(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+							HT_EVENT_CLASS_ERROR,
+							HT_EVENT_NCOH_LINK_EXCEED,
+							(u8 *)&evt);
 				}
 				/* Force link loop to halt */
 				STOP_HERE;
@@ -1178,12 +1247,14 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			p_dat->port_list[p_dat->total_links*2].node_id = node;
 			if (depth == 0)
 			{
-				p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_CPU;
+				p_dat->port_list[p_dat->total_links * 2].type
+							= PORTLIST_TYPE_CPU;
 				p_dat->port_list[p_dat->total_links * 2].link = link;
 			}
 			else
 			{
-				p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_IO;
+				p_dat->port_list[p_dat->total_links * 2].type
+							= PORTLIST_TYPE_IO;
 				p_dat->port_list[p_dat->total_links * 2].link = 1 - last_link;
 				p_dat->port_list[p_dat->total_links * 2].host_link = link;
 				p_dat->port_list[p_dat->total_links * 2].host_depth = depth - 1;
@@ -1203,9 +1274,12 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
 
 			amd_pci_read_bits(current_ptr, 25, 21, &unit_id_cnt);
-			if ((unit_id_cnt + current_buid > 31) || ((sec_bus == 0) && (unit_id_cnt + current_buid > 24)))
+			if ((unit_id_cnt + current_buid > 31)
+			|| ((sec_bus == 0) && (unit_id_cnt + current_buid > 24)))
 			{
-				/* An error handler for the case where we run out of BUID's on a chain */
+				/* An error handler for the case where we run out of BUID's on a
+				 * chain
+				 */
 				if (p_dat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventNcohBuidExceed evt;
@@ -1216,7 +1290,10 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 					evt.current_buid = (u8)current_buid;
 					evt.unit_count = (u8)unit_id_cnt;
 
-					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_BUID_EXCEED,(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+						HT_EVENT_CLASS_ERROR,
+						HT_EVENT_NCOH_BUID_EXCEED,
+						(u8 *)&evt);
 				}
 				STOP_HERE;
 				break;
@@ -1238,7 +1315,10 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 					evt.depth = depth;
 					evt.attempted_buid = (u8)current_buid;
 
-					p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_DEVICE_FAILED,(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+						HT_EVENT_CLASS_ERROR,
+						HT_EVENT_NCOH_DEVICE_FAILED,
+						(u8 *)&evt);
 				}
 				STOP_HERE;
 				break;
@@ -1264,7 +1344,10 @@ static void process_link(u8 node, u8 link, sMainData *p_dat)
 			evt.link = link;
 			evt.depth = (depth - 1);
 
-			p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_INFO,HT_EVENT_NCOH_AUTO_DEPTH,(u8 *)&evt);
+			p_dat->ht_block->amd_cb_event_notify(
+				HT_EVENT_CLASS_INFO,
+				HT_EVENT_NCOH_AUTO_DEPTH,
+				(u8 *)&evt);
 		}
 	}
 }
@@ -1294,7 +1377,8 @@ static void nc_init(sMainData *p_dat)
 	{
 		for (link = 0; link < p_dat->nb->max_links; link++)
 		{
-			if (p_dat->ht_block->amd_cb_ignore_link && p_dat->ht_block->amd_cb_ignore_link(node, link))
+			if (p_dat->ht_block->amd_cb_ignore_link
+			&& p_dat->ht_block->amd_cb_ignore_link(node, link))
 				continue;   /*  Skip the link */
 
 			if (node == 0 && link == compat_link)
@@ -1332,20 +1416,28 @@ static void regang_links(sMainData *p_dat)
 	u8 i, j;
 	for (i = 0; i < p_dat->total_links * 2; i += 2)
 	{
-		ASSERT(p_dat->port_list[i].type < 2 && p_dat->port_list[i].link < p_dat->nb->max_links);  /*  Data validation */
-		ASSERT(p_dat->port_list[i + 1].type < 2 && p_dat->port_list[i + 1].link < p_dat->nb->max_links); /*  data validation */
-		ASSERT(!(p_dat->port_list[i].type == PORTLIST_TYPE_IO && p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU));  /*  ensure src is closer to the bsp than dst */
+		/* Data validation */
+		ASSERT(p_dat->port_list[i].type < 2
+			&& p_dat->port_list[i].link < p_dat->nb->max_links);
+		/* data validation */
+		ASSERT(p_dat->port_list[i + 1].type < 2
+			&& p_dat->port_list[i + 1].link < p_dat->nb->max_links);
+		/* ensure src is closer to the bsp than dst */
+		ASSERT(!(p_dat->port_list[i].type == PORTLIST_TYPE_IO
+			&& p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU));
 
 		/* Regang is false unless we pass all conditions below */
 		p_dat->port_list[i].sel_regang = FALSE;
 		p_dat->port_list[i + 1].sel_regang = FALSE;
 
-		if ((p_dat->port_list[i].type != PORTLIST_TYPE_CPU) || (p_dat->port_list[i + 1].type != PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].type != PORTLIST_TYPE_CPU)
+		|| (p_dat->port_list[i + 1].type != PORTLIST_TYPE_CPU))
 			continue;   /*  Only process CPU to CPU links */
 
 		for (j = i + 2; j < p_dat->total_links * 2; j += 2)
 		{
-			if ((p_dat->port_list[j].type != PORTLIST_TYPE_CPU) || (p_dat->port_list[j + 1].type != PORTLIST_TYPE_CPU))
+			if ((p_dat->port_list[j].type != PORTLIST_TYPE_CPU)
+			|| (p_dat->port_list[j + 1].type != PORTLIST_TYPE_CPU))
 				continue;   /*  Only process CPU to CPU links */
 
 			if (p_dat->port_list[i].node_id != p_dat->port_list[j].node_id)
@@ -1357,13 +1449,17 @@ static void regang_links(sMainData *p_dat)
 			if ((p_dat->port_list[i].link & 3) != (p_dat->port_list[j].link & 3))
 				continue;   /*  Ensure same source base port */
 
-			if ((p_dat->port_list[i + 1].link & 3) != (p_dat->port_list[j + 1].link & 3))
+			if ((p_dat->port_list[i + 1].link & 3)
+			!= (p_dat->port_list[j + 1].link & 3))
 				continue;   /*  Ensure same destination base port */
 
-			if ((p_dat->port_list[i].link & 4) != (p_dat->port_list[i + 1].link & 4))
+			if ((p_dat->port_list[i].link & 4)
+			!= (p_dat->port_list[i + 1].link & 4))
 				continue;   /*  Ensure sublink0 routes to sublink0 */
 
-			ASSERT((p_dat->port_list[j].link & 4) == (p_dat->port_list[j + 1].link & 4)); /*  (therefore sublink1 routes to sublink1) */
+			/* (therefore sublink1 routes to sublink1) */
+			ASSERT((p_dat->port_list[j].link & 4)
+			== (p_dat->port_list[j + 1].link & 4));
 
 			if (p_dat->ht_block->amd_cb_skip_regang &&
 				p_dat->ht_block->amd_cb_skip_regang(p_dat->port_list[i].node_id,
@@ -1386,11 +1482,20 @@ static void regang_links(sMainData *p_dat)
 
 			/*  Delete port_list[j, j+1], slow but easy to debug implementation */
 			p_dat->total_links--;
-			amd_memcpy(&(p_dat->port_list[j]), &(p_dat->port_list[j + 2]), sizeof(sPortDescriptor)*(p_dat->total_links * 2 - j));
-			amd_memset(&(p_dat->port_list[p_dat->total_links * 2]), INVALID_LINK, sizeof(sPortDescriptor) * 2);
+			amd_memcpy(
+				&(p_dat->port_list[j]),
+				&(p_dat->port_list[j + 2]),
+				sizeof(sPortDescriptor)*(p_dat->total_links * 2 - j));
+			amd_memset(
+				&(p_dat->port_list[p_dat->total_links * 2]),
+				INVALID_LINK, sizeof(sPortDescriptor) * 2);
 
-			/* //High performance, but would make debuging harder due to 'shuffling' of the records */
-			/* //amd_memcpy(port_list[TotalPorts-2], port_list[j], SIZEOF(sPortDescriptor)*2); */
+			/* //High performance, but would make debuging harder due to 'shuffling'
+			 * of the records
+			 */
+			/* //amd_memcpy(port_list[TotalPorts-2], port_list[j],
+			 * 				SIZEOF(sPortDescriptor)*2);
+			 */
 			/* //TotalPorts -=2; */
 
 			break; /*  Exit loop, advance to port_list[i+2] */
@@ -1406,8 +1511,10 @@ static void detect_io_link_isochronous_capable(sMainData *p_dat)
 	u8 iommu = get_uint_option("iommu", 1);
 
 	for (i = 0; i < p_dat->total_links * 2; i += 2) {
-		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU) && (p_dat->port_list[i + 1].type == PORTLIST_TYPE_IO)) {
-			if ((p_dat->port_list[i].prv_feature_cap & 0x1) && (p_dat->port_list[i + 1].prv_feature_cap & 0x1)) {
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU)
+		&& (p_dat->port_list[i + 1].type == PORTLIST_TYPE_IO)) {
+			if ((p_dat->port_list[i].prv_feature_cap & 0x1)
+			&& (p_dat->port_list[i + 1].prv_feature_cap & 0x1)) {
 				p_dat->port_list[i].enable_isochronous_mode = 1;
 				p_dat->port_list[i + 1].enable_isochronous_mode = 1;
 				isochronous_capable = 1;
@@ -1419,7 +1526,8 @@ static void detect_io_link_isochronous_capable(sMainData *p_dat)
 	}
 
 	if (isochronous_capable && iommu) {
-		printk(BIOS_DEBUG, "Forcing HT links to isochronous mode due to enabled IOMMU\n");
+		printk(BIOS_DEBUG,
+			"Forcing HT links to isochronous mode due to enabled IOMMU\n");
 		/* Isochronous mode must be set on all links if the IOMMU is enabled */
 		for (i = 0; i < p_dat->total_links * 2; i += 2) {
 			p_dat->port_list[i].enable_isochronous_mode = 1;
@@ -1473,7 +1581,8 @@ static void select_optimal_width_and_frequency(sMainData *p_dat)
 	{
 		cb_pcb_freq_limit = 0xfffff;		// Maximum allowed by autoconfiguration
 		if (p_dat->ht_block->ht_link_configuration)
-			cb_pcb_freq_limit = ht_speed_mhz_to_hw(p_dat->ht_block->ht_link_configuration->ht_speed_limit);
+			cb_pcb_freq_limit = ht_speed_mhz_to_hw(
+					p_dat->ht_block->ht_link_configuration->ht_speed_limit);
 		cb_pcb_freq_limit = MIN(cb_pcb_freq_limit, cb_pcb_freq_limit_nvram);
 
 #if CONFIG(LIMIT_HT_DOWN_WIDTH_8)
@@ -1488,7 +1597,8 @@ static void select_optimal_width_and_frequency(sMainData *p_dat)
 		cb_pcb_ba_upstream_width = 16;
 #endif
 
-		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU) && (p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU)
+		&& (p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU))
 		{
 			if (p_dat->ht_block->amd_cb_cpu_2_cpu_pcb_limits)
 			{
@@ -1583,9 +1693,11 @@ static void hammer_sublink_fixup(sMainData *p_dat)
 		changes = FALSE;
 		for (i = 0; i < p_dat->total_links*2; i++)
 		{
-			if (p_dat->port_list[i].type != PORTLIST_TYPE_CPU) /*  Must be a CPU link */
+			/* Must be a CPU link */
+			if (p_dat->port_list[i].type != PORTLIST_TYPE_CPU)
 				continue;
-			if (p_dat->port_list[i].link < 4) /*  Only look for sublink1's */
+			/* Only look for sublink1's */
+			if (p_dat->port_list[i].link < 4)
 				continue;
 
 			for (j = 0; j < p_dat->total_links*2; j++)
@@ -1595,11 +1707,13 @@ static void hammer_sublink_fixup(sMainData *p_dat)
 					continue;
 				if (p_dat->port_list[j].node_id != p_dat->port_list[i].node_id)
 					continue;
-				if (p_dat->port_list[j].link != (p_dat->port_list[i].link & 0x03))
+				if (p_dat->port_list[j].link
+				!= (p_dat->port_list[i].link & 0x03))
 					continue;
 
 				/*  Step 2. Check for an illegal frequency ratio */
-				if (p_dat->port_list[i].sel_frequency >= p_dat->port_list[j].sel_frequency)
+				if (p_dat->port_list[i].sel_frequency
+				>= p_dat->port_list[j].sel_frequency)
 				{
 					hi_index = i;
 					hi_freq = p_dat->port_list[i].sel_frequency;
@@ -1612,66 +1726,89 @@ static void hammer_sublink_fixup(sMainData *p_dat)
 					lo_freq = p_dat->port_list[i].sel_frequency;
 				}
 
-				if (hi_freq == lo_freq)
-					break; /*  The frequencies are 1:1, no need to do anything */
+				if (hi_freq == lo_freq) {
+					/*  The frequencies are 1:1, no need to do anything */
+					break;
+				}
 
 				downgrade = FALSE;
 
 				if (hi_freq == 13)
 				{
-					if ((lo_freq != 7) &&  /* {13, 7} 2400MHz / 1200MHz 2:1 */
-						(lo_freq != 4) &&  /* {13, 4} 2400MHz /  600MHz 4:1 */
-						(lo_freq != 2))   /* {13, 2} 2400MHz /  400MHz 6:1 */
+					/* {13, 7} 2400MHz / 1200MHz 2:1 */
+					/* {13, 4} 2400MHz /  600MHz 4:1 */
+					/* {13, 2} 2400MHz /  400MHz 6:1 */
+					if ((lo_freq != 7) &&
+						(lo_freq != 4) &&
+						(lo_freq != 2))
 						downgrade = TRUE;
 				}
 				else if (hi_freq == 11)
 				{
-					if ((lo_freq != 6))    /* {11, 6} 2000MHz / 1000MHz 2:1 */
+					/* {11, 6} 2000MHz / 1000MHz 2:1 */
+					if ((lo_freq != 6))
 						downgrade = TRUE;
 				}
 				else if (hi_freq == 9)
 				{
-					if ((lo_freq != 5) &&  /* { 9, 5} 1600MHz /  800MHz 2:1 */
-						(lo_freq != 2) &&  /* { 9, 2} 1600MHz /  400MHz 4:1 */
-						(lo_freq != 0))   /* { 9, 0} 1600MHz /  200MHz 8:1 */
+					/* { 9, 5} 1600MHz /  800MHz 2:1 */
+					/* { 9, 2} 1600MHz /  400MHz 4:1 */
+					/* { 9, 0} 1600MHz /  200MHz 8:1 */
+					if ((lo_freq != 5) &&
+						(lo_freq != 2) &&
+						(lo_freq != 0))
 						downgrade = TRUE;
 				}
 				else if (hi_freq == 7)
 				{
-					if ((lo_freq != 4) &&  /* { 7, 4} 1200MHz /  600MHz 2:1 */
-						(lo_freq != 0))   /* { 7, 0} 1200MHz /  200MHz 6:1 */
+					/* { 7, 4} 1200MHz /  600MHz 2:1 */
+					/* { 7, 0} 1200MHz /  200MHz 6:1 */
+					if ((lo_freq != 4) &&
+						(lo_freq != 0))
 						downgrade = TRUE;
 				}
 				else if (hi_freq == 5)
 				{
-					if ((lo_freq != 2) &&  /* { 5, 2}  800MHz /  400MHz 2:1 */
-						(lo_freq != 0))   /* { 5, 0}  800MHz /  200MHz 4:1 */
+					/* { 5, 2}  800MHz /  400MHz 2:1 */
+					/* { 5, 0}  800MHz /  200MHz 4:1 */
+					if ((lo_freq != 2) &&
+						(lo_freq != 0))
 						downgrade = TRUE;
 				}
 				else if (hi_freq == 2)
 				{
-					if ((lo_freq != 0))    /* { 2, 0}  400MHz /  200MHz 2:1 */
+					/* { 2, 0}  400MHz /  200MHz 2:1 */
+					if ((lo_freq != 0))
 						downgrade = TRUE;
 				}
 				else
 				{
-					downgrade = TRUE; /*  no legal ratios for hi_freq */
+					/*  no legal ratios for hi_freq */
+					downgrade = TRUE;
 				}
 
-				/*  Step 3. Downgrade the higher of the two frequencies, and set nochanges to FALSE */
+				/*  Step 3. Downgrade the higher of the two frequencies, and set
+				 * nochanges to FALSE
+				 */
 				if (downgrade)
 				{
-					/*  Although the problem was with the port specified by hi_index, we need to */
-					/*  downgrade both ends of the link. */
-					hi_index = hi_index & 0xFE; /*  Select the 'upstream' (i.e. even) port */
+					/*  Although the problem was with the port specified by
+					 * hi_index, we need to downgrade both ends of the link.
+					 */
 
-					temp = p_dat->port_list[hi_index].composite_frequency_cap;
+					/*  Select the 'upstream' (i.e. even) port */
+					hi_index = hi_index & 0xFE;
+
+					temp = p_dat->port_list[hi_index]
+								.composite_frequency_cap;
 
 					/*  Remove hi_freq from the list of valid frequencies */
 					temp = temp & ~((u32)1 << hi_freq);
 					ASSERT (temp != 0);
-					p_dat->port_list[hi_index].composite_frequency_cap = temp;
-					p_dat->port_list[hi_index + 1].composite_frequency_cap = temp;
+					p_dat->port_list[hi_index].composite_frequency_cap
+										= temp;
+					p_dat->port_list[hi_index + 1].composite_frequency_cap
+										= temp;
 
 					for (k = 19;; k--)
 					{
@@ -1746,7 +1883,8 @@ static void traffic_distribution(sMainData *p_dat)
 	link_count = 0;
 	for (i = 0; i < p_dat->total_links*2; i += 2)
 	{
-		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU) && (p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU)
+		&& (p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU))
 		{
 			links_01 |= (u32)1 << p_dat->port_list[i].link;
 			links_10 |= (u32)1 << p_dat->port_list[i + 1].link;

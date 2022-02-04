@@ -35,7 +35,11 @@ u8 get_min_nb_cof(void)
 		/* read all P-state spec registers for NbDid = 1 */
 		for (j = 0; j < 5; j++)
 		{
-			amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_4,PS_SPEC_REG+(j*PCI_REG_LEN)), &dtemp); /*F4x1E0 + j*4 */
+			amd_pci_read(MAKE_SBDFO(
+					0, 0,
+					device_id, FN_4,
+					PS_SPEC_REG + (j * PCI_REG_LEN)),
+					&dtemp); /* F4x1E0 + j * 4 */
 			/* get NbDid */
 			if (dtemp & NB_DID_MASK)
 				nb_did = 1;
@@ -52,10 +56,12 @@ u8 get_min_nb_cof(void)
 		else
 		{
 			/* check PVI/SPI */
-			amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PW_CTL_MISC), &dtemp); /*F3xA0*/
+			/* F3xA0 */
+			amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PW_CTL_MISC), &dtemp);
 			if (dtemp & PVI_MODE) /* PVI */
 			{
-				amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp); /*F3x1FC*/
+				/* F3x1FC */
+				amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp);
 				next_nb_fid = (u8) (dtemp >> UNI_NB_FID_BIT);
 				next_nb_fid &= BIT_MASK_5;
 				/* if (nb_did)
@@ -63,7 +69,8 @@ u8 get_min_nb_cof(void)
 			}
 			else /* SVI */
 			{
-				amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp); /*F3x1FC*/
+				/*F3x1FC*/
+				amd_pci_read(MAKE_SBDFO(0,0,device_id,FN_3,PRCT_INFO), &dtemp);
 				next_nb_fid = (u8) ((dtemp >> UNI_NB_FID_BIT) & BIT_MASK_5);
 				next_nb_fid = (u8) (next_nb_fid + ((dtemp >> SPLT_NB_FID_OFFSET) & BIT_MASK_3));
 				/* if (nb_did)

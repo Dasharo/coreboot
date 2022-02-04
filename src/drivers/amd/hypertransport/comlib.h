@@ -9,7 +9,9 @@
 #include "porting.h"
 
 #ifdef AMD_DEBUG_ERROR_STOP
-	/* Macro to aid debugging, causes program to halt and display the line number of the halt */
+	/* Macro to aid debugging, causes program to halt and display the line number of the
+	 * halt
+	 */
 	#define STOP_HERE ASSERT(0)
 #else
 	#define STOP_HERE

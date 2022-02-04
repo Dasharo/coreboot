@@ -129,7 +129,8 @@ static void amd_cb_event_notify (u8 evt_class, u16 event, const u8 *p_event_data
 		case HT_EVENT_COH_NODE_DISCOVERED:
 			{
 				printk(log_level, "HT_EVENT_COH_NODE_DISCOVERED");
-				sHtEventCohNodeDiscovered *evt = (sHtEventCohNodeDiscovered*)p_event_data_0;
+				sHtEventCohNodeDiscovered *evt
+						= (sHtEventCohNodeDiscovered*)p_event_data_0;
 				printk(log_level, ": node %d link %d new node: %d",
 					evt->node, evt->link, evt->newNode);
 				dump_event_detail = 0;
@@ -146,8 +147,10 @@ static void amd_cb_event_notify (u8 evt_class, u16 event, const u8 *p_event_data
 		case HT_EVENT_NCOH_DEVICE_FAILED:
 			{
 				printk(log_level, "%s", event_string_decode(event));
-				sHtEventNcohDeviceFailed *evt = (sHtEventNcohDeviceFailed*)p_event_data_0;
-				printk(log_level, ": node %d link %d depth: %d attempted_buid: %d",
+				sHtEventNcohDeviceFailed *evt
+						= (sHtEventNcohDeviceFailed*)p_event_data_0;
+				printk(log_level,
+					": node %d link %d depth: %d attempted_buid: %d",
 					evt->node, evt->link, evt->depth, evt->attempted_buid);
 				dump_event_detail = 0;
 				break;
@@ -155,7 +158,8 @@ static void amd_cb_event_notify (u8 evt_class, u16 event, const u8 *p_event_data
 		case HT_EVENT_NCOH_AUTO_DEPTH:
 			{
 				printk(log_level, "%s", event_string_decode(event));
-				sHtEventNcohAutoDepth *evt = (sHtEventNcohAutoDepth*)p_event_data_0;
+				sHtEventNcohAutoDepth *evt
+						= (sHtEventNcohAutoDepth*)p_event_data_0;
 				printk(log_level, ": node %d link %d depth: %d",
 					evt->node, evt->link, evt->depth);
 				dump_event_detail = 0;
@@ -176,7 +180,9 @@ static void amd_cb_event_notify (u8 evt_class, u16 event, const u8 *p_event_data
 	printk(log_level, "\n");
 
 	if (dump_event_detail) {
-		printk(BIOS_DEBUG, " event class: %02x\n event: %04x\n data: ", evt_class, event);
+		printk(BIOS_DEBUG,
+			" event class: %02x\n event: %04x\n data: ",
+			evt_class, event);
 
 		for (i = 0; i < *p_event_data_0; i++) {
 			printk(BIOS_DEBUG, " %02x ", *(p_event_data_0 + i));
@@ -287,9 +293,10 @@ void amd_ht_fixup(struct sys_info *sysinfo) {
 
 			if (dual_node) {
 				/* Each G34 processor contains a defective HT link.
-				* See the Family 10h BKDG Rev 3.62 section 2.7.1.5 for details
-				* For Family 15h see the BKDG Rev. 3.14 section 2.12.1.5 for details.
-				*/
+				 * See the Family 10h BKDG Rev 3.62 section 2.7.1.5 for details
+				 * For Family 15h see the BKDG Rev. 3.14 section 2.12.1.5 for
+				 * details.
+				 */
 				u8 node;
 				u8 node_count = get_nodes();
 				u32 dword;
@@ -300,53 +307,105 @@ void amd_ht_fixup(struct sys_info *sysinfo) {
 						"%s: node %d (internal node ID %d): disabling defective HT link",
 						__func__, node, internal_node_number);
 					if (internal_node_number == 0) {
-						u8 package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0x98 : 0xd8) & 0x1;
-						printk(BIOS_DEBUG, " (L3 connected: %d)\n", package_link_3_connected);
+						u8 package_link_3_connected = pci_read_config32(
+							NODE_PCI(node, 0),
+							(fam15h) ? 0x98 : 0xd8) & 0x1;
+						printk(BIOS_DEBUG,
+							" (L3 connected: %d)\n",
+							package_link_3_connected);
 						if (package_link_3_connected) {
 							/* Set WidthIn and WidthOut to 0 */
-							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0x84 : 0xc4);
+							dword = pci_read_config32(
+								NODE_PCI(node, 0),
+								(fam15h) ? 0x84 : 0xc4);
 							dword &= ~0x77000000;
-							pci_write_config32(NODE_PCI(node, 0), (fam15h) ? 0x84 : 0xc4, dword);
+							pci_write_config32(
+								NODE_PCI(node, 0),
+								(fam15h) ? 0x84 : 0xc4,
+								dword);
 							/* Set Ganged to 1 */
-							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0x170 : 0x178);
+							dword = pci_read_config32(
+								NODE_PCI(node, 0),
+								(fam15h) ? 0x170 : 0x178);
 							dword |= 0x00000001;
-							pci_write_config32(NODE_PCI(node, 0), (fam15h) ? 0x170 : 0x178, dword);
+							pci_write_config32(
+								NODE_PCI(node, 0),
+								(fam15h) ? 0x170 : 0x178,
+								dword);
 						} else {
 							/* Set ConnDly to 1 */
-							dword = pci_read_config32(NODE_PCI(node, 0), 0x16c);
+							dword = pci_read_config32(
+								NODE_PCI(node, 0),
+								0x16c);
 							dword |= 0x00000100;
-							pci_write_config32(NODE_PCI(node, 0), 0x16c, dword);
+							pci_write_config32(
+								NODE_PCI(node, 0),
+								0x16c,
+								dword);
 							/* Set TransOff and EndOfChain to 1 */
-							dword = pci_read_config32(NODE_PCI(node, 4), (fam15h) ? 0x84 : 0xc4);
+							dword = pci_read_config32(
+								NODE_PCI(node, 4),
+								(fam15h) ? 0x84 : 0xc4);
 							dword |= 0x000000c0;
-							pci_write_config32(NODE_PCI(node, 4), (fam15h) ? 0x84 : 0xc4, dword);
+							pci_write_config32(
+								NODE_PCI(node, 4),
+								(fam15h) ? 0x84 : 0xc4,
+								dword);
 						}
 					} else if (internal_node_number == 1) {
-						u8 package_link_3_connected = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0xf8 : 0xb8) & 0x1;
-						printk(BIOS_DEBUG, " (L3 connected: %d)\n", package_link_3_connected);
+						u8 package_link_3_connected
+							= pci_read_config32(
+								NODE_PCI(node, 0),
+								(fam15h) ? 0xf8 : 0xb8) & 0x1;
+						printk(BIOS_DEBUG,
+							" (L3 connected: %d)\n",
+							package_link_3_connected);
 						if (package_link_3_connected) {
 							/* Set WidthIn and WidthOut to 0 */
-							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0xe4 : 0xa4);
+							dword = pci_read_config32(
+									NODE_PCI(node, 0),
+									(fam15h) ? 0xe4 : 0xa4);
 							dword &= ~0x77000000;
-							pci_write_config32(NODE_PCI(node, 0), (fam15h) ? 0xe4 : 0xa4, dword);
+							pci_write_config32(
+								NODE_PCI(node, 0),
+								(fam15h) ? 0xe4 : 0xa4,
+								dword);
 							/* Set Ganged to 1 */
 							/* WARNING
-							 * The Family 15h BKDG states that 0x18c should be set,
-							 * however this is in error.  0x17c is the correct control
-							 * register (sublink 0) for these processors...
+							 * The Family 15h BKDG states that 0x18c
+							 * should be set, however this is in
+							 * error. 0x17c is the correct control
+							 * register (sublink 0) for these
+							 * processors...
 							 */
-							dword = pci_read_config32(NODE_PCI(node, 0), (fam15h) ? 0x17c : 0x174);
+							dword = pci_read_config32(
+									NODE_PCI(node, 0),
+									(fam15h) ?
+										0x17c :
+										0x174);
 							dword |= 0x00000001;
-							pci_write_config32(NODE_PCI(node, 0), (fam15h) ? 0x17c : 0x174, dword);
+							pci_write_config32(
+								NODE_PCI(node, 0),
+								(fam15h) ? 0x17c : 0x174,
+								dword);
 						} else {
 							/* Set ConnDly to 1 */
-							dword = pci_read_config32(NODE_PCI(node, 0), 0x16c);
+							dword = pci_read_config32(
+								NODE_PCI(node, 0),
+								0x16c);
 							dword |= 0x00000100;
-							pci_write_config32(NODE_PCI(node, 0), 0x16c, dword);
+							pci_write_config32(
+								NODE_PCI(node, 0),
+								0x16c,
+								dword);
 							/* Set TransOff and EndOfChain to 1 */
-							dword = pci_read_config32(NODE_PCI(node, 4), (fam15h) ? 0xe4 : 0xa4);
+							dword = pci_read_config32(
+									NODE_PCI(node, 4),
+									(fam15h) ? 0xe4 : 0xa4);
 							dword |= 0x000000c0;
-							pci_write_config32(NODE_PCI(node, 4), (fam15h) ? 0xe4 : 0xa4, dword);
+							pci_write_config32(
+								NODE_PCI(node, 4),
+								(fam15h) ? 0xe4 : 0xa4, dword);
 						}
 					}
 				}
@@ -448,7 +507,8 @@ u32 amd_check_link_type(u8 node, u8 regoff)
 			link_type |= HTPHY_LINKTYPE_HT1;
 
 		/* Check ganged */
-		val = pci_read_config32(NODE_PCI(node, 0), (((regoff - 0x80) / 0x20) << 2) + 0x170);
+		val = pci_read_config32(
+				NODE_PCI(node, 0), (((regoff - 0x80) / 0x20) << 2) + 0x170);
 
 		if (val & 1)
 			link_type |= HTPHY_LINKTYPE_GANGED;

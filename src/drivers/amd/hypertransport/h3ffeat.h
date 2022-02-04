@@ -99,11 +99,16 @@ typedef struct cNorthBridge cNorthBridge;
 typedef struct
 {
 	/* This section is where the link is in the system and how to find it */
-	u8 type; /* 0 = CPU, 1 = Device, all others reserved */
-	u8 link; /* 0-1 for devices, 0-7 for CPUs */
-	u8 node_id; /* The node, or a pointer to the devices parent node */
-	u8 host_link, host_depth; /* Link of parent node + depth in chain.  Only used by devices */
-	SBDFO pointer; /* A pointer to the device's slave HT capability, so we don't have to keep searching */
+	/* 0 = CPU, 1 = Device, all others reserved */
+	u8 type;
+	/* 0-1 for devices, 0-7 for CPUs */
+	u8 link;
+	/* The node, or a pointer to the devices parent node */
+	u8 node_id;
+	/* Link of parent node + depth in chain.  Only used by devices */
+	u8 host_link, host_depth;
+	/* A pointer to the device's slave HT capability, so we don't have to keep searching */
+	SBDFO pointer;
 
 	/* This section is for the final settings, which are written to hardware */
 	BOOL sel_regang; /* Only used for CPU->CPU links */
@@ -131,7 +136,7 @@ typedef struct {
 
 	u8 nodes_discovered;	 /* One less than the number of nodes found in the system */
 	u8 total_links;
-	u8 sys_mp_cap;		 /* The maximum number of nodes that all processors are capable of */
+	u8 sys_mp_cap;	/* The maximum number of nodes that all processors are capable of */
 
 	/* Two ports for each link
 	 * Note: The Port pair 2*N and 2*N+1 are connected together to form a link
@@ -142,7 +147,9 @@ typedef struct {
 	 */
 	sPortDescriptor port_list[MAX_PLATFORM_LINKS*2];
 
-	/* The number of coherent links coming off of each node (i.e. the 'Degree' of the node) */
+	/* The number of coherent links coming off of each node
+	 * (i.e. the 'Degree' of the node)
+	 */
 	u8 sys_degree[MAX_NODES];
 	/* The systems adjency (sys_matrix[i][j] is true if Node_i has a link to Node_j) */
 	BOOL sys_matrix[MAX_NODES][MAX_NODES];
