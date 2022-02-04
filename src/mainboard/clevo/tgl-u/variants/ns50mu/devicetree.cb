@@ -81,7 +81,7 @@ chip soc/intel/tigerlake
 	"
 
 	# Thermal
-	register "tcc_offset" = "13"
+	register "tcc_offset" = "2"
 
 	# Enable CNVi BT
 	register "CnviBtCore" = "true"
@@ -164,6 +164,7 @@ chip soc/intel/tigerlake
 			register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)" 	# USB-A motherboard
 			register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)" 	# Fingerprint Reader
 			register "usb2_ports[5]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# TBT
+			register "usb2_ports[6]" = "USB2_PORT_MID(OC_SKIP)"	# CCD
 			register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# BT
 			# USB3
 			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-C (lane 0)
@@ -173,21 +174,20 @@ chip soc/intel/tigerlake
 			chip drivers/usb/acpi
 				device ref xhci_root_hub on
 					chip drivers/usb/acpi
-						register "desc" = ""USB2 Type-A Port 1""
+						register "desc" = ""USB2 Type-A""
 						register "type" = "UPC_TYPE_A"
-						register "group" = "ACPI_PLD_GROUP(1, 2)"
 						device ref usb2_port1 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB2 Type-C Port 2""
+						register "desc" = ""USB2 Type-C""
 						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
-						register "group" = "ACPI_PLD_GROUP(2, 1)"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
 						device ref usb2_port2 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB2 Type-A Port 3""
+						register "desc" = ""USB2 Type-A""
 						register "type" = "UPC_TYPE_A"
-						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						register "group" = "ACPI_PLD_GROUP(1, 3)"
 						device ref usb2_port3 on end
 					end
 					chip drivers/usb/acpi
@@ -212,27 +212,21 @@ chip soc/intel/tigerlake
 						device ref usb2_port10 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB3 Type-A Port 1""
-						register "type" = "UPC_TYPE_A"
-						register "group" = "ACPI_PLD_GROUP(1, 2)"
-						device ref usb3_port1 on end
-					end
-					chip drivers/usb/acpi
-						register "desc" = ""USB3 Type-C Port 2""
+						register "desc" = ""USB3 Type-C (Lane 0)""
 						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
-						register "group" = "ACPI_PLD_GROUP(2, 1)"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
 						device ref usb3_port2 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB3 Type-A Port 3""
+						register "desc" = ""USB3 Type-A""
 						register "type" = "UPC_TYPE_A"
-						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						register "group" = "ACPI_PLD_GROUP(1, 3)"
 						device ref usb3_port3 on end
 					end
 					chip drivers/usb/acpi
-						register "desc" = ""USB3 Type-C Port 4""
+						register "desc" = ""USB3 Type-C (Lane 1)""
 						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
-						register "group" = "ACPI_PLD_GROUP(2, 1)"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
 						device ref usb3_port4 on end
 					end
 				end
@@ -256,7 +250,7 @@ chip soc/intel/tigerlake
 				register "hid_desc_reg_offset" = "0x01"
 				device i2c 38 on end
 			end
-		end
+		en6
 		device ref i2c1 on
 			# USB-PD
 			register "SerialIoI2cMode[PchSerialIoIndexI2C1]" = "PchSerialIoPci"
