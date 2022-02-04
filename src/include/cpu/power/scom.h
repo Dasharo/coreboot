@@ -26,8 +26,6 @@
 // F - Sat Offset (6 bits) [58:63]
 // Higher bits specify indirect address
 
-#define XSCOM_ADDR_IND_FLAG		PPC_BIT(0)
-
 #ifndef __ASSEMBLER__
 #include <types.h>
 #include <arch/io.h>
@@ -89,33 +87,34 @@ static const chiplet_id_t mcs_to_nest[] =
 	[MC23_CHIPLET_ID] = N1_CHIPLET_ID,
 };
 
-/* These are implementation functions that do all the work. The interface
- * functions in sections below are calling these. */
+/*
+ * Usage of SCOM engines:
+ * - CPU0:
+ *   - always XSCOM
+ * - CPU1++:
+ *   - FSI SCOM before and during 8.4 (not needed, not implemented)
+ *   - SBEIO SCOM after 8.4, before XSCOM is enabled in 10.1
+ *   - XSCOM after 10.1
+ *
+ * Only romstage has to ever use anything else than XSCOM - bootblock doesn't
+ * access secondary CPUs at all and ramstage can use XSCOM from the beginning.
+ * SCOM dispatcher code is thus not compiled for stages other than romstage and
+ * assembly label is used to alias high-level functions directly to XSCOM engine
+ * implementation.
+ */
 
-uint64_t read_scom_direct(uint8_t chip, uint64_t reg_address);
-void write_scom_direct(uint8_t chip, uint64_t reg_address, uint64_t data);
+#if ENV_ROMSTAGE
+void switch_secondary_scom_to_xscom(void);
 
-uint64_t read_scom_indirect(uint8_t chip, uint64_t reg_address);
-void write_scom_indirect(uint8_t chip, uint64_t reg_address, uint64_t data);
+void write_rscom(uint8_t chip, uint64_t addr, uint64_t data);
+uint64_t read_rscom(uint8_t chip, uint64_t addr);
+#else
+void write_rscom(uint8_t chip, uint64_t addr, uint64_t data) asm("write_xscom");
+uint64_t read_rscom(uint8_t chip, uint64_t addr) asm("read_xscom");
+#endif
 
-/* "rscom" are generic ("r" is for remote) XSCOM functions, other functions are
+/* "rscom" are generic ("r" is for remote) SCOM functions, other functions are
  * equivalent to rscom calls for chip #0 */
-
-static inline void write_rscom(uint8_t chip, uint64_t addr, uint64_t data)
-{
-	if (addr & XSCOM_ADDR_IND_FLAG)
-		write_scom_indirect(chip, addr, data);
-	else
-		write_scom_direct(chip, addr, data);
-}
-
-static inline uint64_t read_rscom(uint8_t chip, uint64_t addr)
-{
-	if (addr & XSCOM_ADDR_IND_FLAG)
-		return read_scom_indirect(chip, addr);
-	else
-		return read_scom_direct(chip, addr);
-}
 
 static inline void rscom_and_or(uint8_t chip, uint64_t addr, uint64_t and, uint64_t or)
 {
@@ -179,9 +178,6 @@ static inline uint64_t read_scom(uint64_t addr)
 
 #if CONFIG(DEBUG_SCOM) && !defined(SKIP_SCOM_DEBUG)
 #include <console/console.h>
-
-#define write_scom(x, y) write_rscom(0, x, y)
-#define read_scom(x) read_rscom(0, x)
 
 #define write_rscom(c, x, y)                                                  \
 ({                                                                            \
