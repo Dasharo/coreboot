@@ -314,9 +314,6 @@ chip soc/intel/tigerlake
 		device ref pch_espi on
 			chip ec/clevo/it5570
 				device pnp 0c09.0 on end
-				register "fan_mode" = "FAN_MODE_CUSTOM"
-				#register "fans[0].curve.temperature" = "{ 40, 60, 70, 80 }"
-				#register "fans[0].curve.speed" = "{ 16, 25, 50, 100 }"
 			end
 			chip drivers/pc80/tpm
 				register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_C14)"
