@@ -7,6 +7,7 @@
 #include <delay.h>
 
 #include "fsi.h"
+#include "homer.h"
 
 /* As long as we're not using SBE FIFO, we might not actually need this, but
  * it's trivial to implement */
@@ -122,7 +123,7 @@ void istep_8_3(uint8_t chips)
 	report_istep(8,3);
 
 	/* Skipping master chip */
-	for (uint8_t chip = 1; chip < 8; chip++) {
+	for (uint8_t chip = 1; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip)) {
 			/*
 			 * Before starting the CBS (and thus the SBE) on slave

@@ -7,6 +7,7 @@
 #include <delay.h>
 
 #include "fsi.h"
+#include "homer.h"
 
 static bool sbe_run_extract_msg_reg(uint8_t chip)
 {
@@ -86,7 +87,7 @@ void istep_8_4(uint8_t chips)
 	report_istep(8,4);
 
 	/* Skipping master chip */
-	for (uint8_t chip = 1; chip < 8; chip++) {
+	for (uint8_t chip = 1; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip)) {
 			if (!sbe_run_extract_msg_reg(chip))
 				die("SBE for chip #%d did not boot properly.\n", chip);
