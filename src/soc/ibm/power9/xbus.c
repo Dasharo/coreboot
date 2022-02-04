@@ -5,8 +5,6 @@
 #include <cpu/power/scom.h>
 #include <stdint.h>
 
-#include "sbeio.h"
-
 /* Updates address that targets XBus chiplet to use specified XBus link number.
  * Does nothing to non-XBus addresses. */
 static uint64_t xbus_addr(uint8_t xbus, uint64_t addr)
@@ -38,18 +36,12 @@ void put_scom(uint8_t chip, uint64_t addr, uint64_t data)
 {
 	addr = xbus_addr(/*xbus=*/1, addr);
 
-	if (chip == 0)
-		write_scom(addr, data);
-	else
-		write_sbe_scom(chip, addr, data);
+	write_rscom(chip, addr, data);
 }
 
 uint64_t get_scom(uint8_t chip, uint64_t addr)
 {
 	addr = xbus_addr(/*xbus=*/1, addr);
 
-	if (chip == 0)
-		return read_scom(addr);
-	else
-		return read_sbe_scom(chip, addr);
+	return read_rscom(chip, addr);
 }
