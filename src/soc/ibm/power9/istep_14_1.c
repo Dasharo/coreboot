@@ -470,14 +470,14 @@ static void mss_memdiag(uint8_t chip)
 				if (!mca->dimm[dimm].present)
 					continue;
 
-				add_fixed_pattern_write(mcs_i, mca_i*2 + dimm);
+				add_fixed_pattern_write(chip, mcs_i, mca_i*2 + dimm);
 				/*
 				 * Hostboot uses separate program for scrub due to different
 				 * pausing conditions. Having it in the same program seems to
 				 * be working.
 				 */
 				if (!CONFIG(SKIP_INITIAL_ECC_SCRUB))
-					add_scrub(mcs_i, mca_i*2 + dimm);
+					add_scrub(chip, mcs_i, mca_i*2 + dimm);
 			}
 		}
 
@@ -499,7 +499,7 @@ static void mss_memdiag(uint8_t chip)
 		 *        requirements)
 		 *      - module family (but we don't support anything but RDIMM anyway)
 		 */
-		mcbist_execute(mcs_i);
+		mcbist_execute(chip, mcs_i);
 	}
 
 	long total_time = 0;
@@ -520,7 +520,7 @@ static void mss_memdiag(uint8_t chip)
 		 * (mcbist_is_done(0) || mcbist_is_done(1)) instead? Maybe even unmask
 		 * FIRs and set FIFO mode off inside mcbist_is_done()?
 		 */
-		long time = wait_us(1000*1000*60, (udelay(1), mcbist_is_done(mcs_i)));
+		long time = wait_us(1000*1000*60, (udelay(1), mcbist_is_done(chip, mcs_i)));
 
 		/* TODO: dump error/status registers on failure */
 		if (!time)

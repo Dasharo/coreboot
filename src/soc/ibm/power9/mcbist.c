@@ -59,7 +59,7 @@ enum op_type
 	GOTO_SUBTEST_N   = 0x7000,
 };
 
-static void commit_mcbist_memreg_cache(int mcs_i)
+static void commit_mcbist_memreg_cache(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int reg = (tests - 1) / MCBIST_TESTS_PER_REG;
@@ -71,15 +71,15 @@ static void commit_mcbist_memreg_cache(int mcs_i)
 		die("Too many MCBIST instructions added\n");
 
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBMR<reg>Q */
-	write_scom_for_chiplet(id, MCBMR0Q + reg, mcbist_memreg_cache);
+	write_rscom_for_chiplet(chip, id, MCBMR0Q + reg, mcbist_memreg_cache);
 	mcbist_memreg_cache = 0;
 }
 
-static void add_mcbist_test(int mcs_i, uint16_t test)
+static void add_mcbist_test(uint8_t chip, int mcs_i, uint16_t test)
 {
 	int test_i = tests % MCBIST_TESTS_PER_REG;
 	if (test_i == 0 && tests != 0)
-		commit_mcbist_memreg_cache(mcs_i);
+		commit_mcbist_memreg_cache(chip, mcs_i);
 
 	/* This assumes cache is properly cleared. */
 	mcbist_memreg_cache |= PPC_PLACE(test, test_i*16, 16);
@@ -122,29 +122,29 @@ static void add_mcbist_test(int mcs_i, uint16_t test)
  *
  * TL;DR: ECC scrub is read operation with discarded results.
  */
-void add_scrub(int mcs_i, int port_dimm)
+void add_scrub(uint8_t chip, int mcs_i, int port_dimm)
 {
 	uint16_t test = READ | ECC_MODE | (port_dimm << 9);
-	add_mcbist_test(mcs_i, test);
+	add_mcbist_test(chip, mcs_i, test);
 }
 
-void add_fixed_pattern_write(int mcs_i, int port_dimm)
+void add_fixed_pattern_write(uint8_t chip, int mcs_i, int port_dimm)
 {
 	/* Use ALTER instead of WRITE to use maintenance pattern. ALTER is slow. */
 	uint16_t test = WRITE | FIXED_DATA_MODE | ECC_MODE | (port_dimm << 9);
-	add_mcbist_test(mcs_i, test);
+	add_mcbist_test(chip, mcs_i, test);
 }
 
 /*
-static void add_random_pattern_write(int port_dimm)
+static void add_random_pattern_write(uint8_t chip, int port_dimm)
 {
 	uint16_t test = WRITE | RAND_FWD_MAINT | ECC_MODE | (port_dimm << 9);
-	add_mcbist_test(test);
+	add_mcbist_test(chip, test);
 }
 */
 
 /* TODO: calculate initial delays and timeouts */
-void mcbist_execute(int mcs_i)
+void mcbist_execute(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	/* This is index of last instruction, not the new one. */
@@ -164,7 +164,8 @@ void mcbist_execute(int mcs_i)
 
 	/* Check if in progress */
 	/* TODO: we could force it to stop, but dying will help with debugging */
-	if ((val = read_scom_for_chiplet(id, MCB_CNTLSTATQ)) & PPC_BIT(MCB_CNTLSTATQ_MCB_IP))
+	if ((val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ)) &
+	    PPC_BIT(MCB_CNTLSTATQ_MCB_IP))
 		die("MCBIST in progress already (%#16.16llx), this shouldn't happen\n", val);
 
 	/*
@@ -174,22 +175,22 @@ void mcbist_execute(int mcs_i)
 	 * named in the documentation.
 	 */
 	mcbist_memreg_cache |= PPC_BIT(13 + test_i*16);
-	commit_mcbist_memreg_cache(mcs_i);
+	commit_mcbist_memreg_cache(chip, mcs_i);
 
 	/* MC01.MCBIST.MBA_SCOMFIR.MCB_CNTLQ
 	 * [0] MCB_CNTLQ_MCB_START
 	 */
-	scom_and_or_for_chiplet(id, MCB_CNTLQ, ~0, PPC_BIT(MCB_CNTLQ_MCB_START));
+	rscom_and_or_for_chiplet(chip, id, MCB_CNTLQ, ~0, PPC_BIT(MCB_CNTLQ_MCB_START));
 
 	/* Wait for MCBIST to start. Test for IP and DONE, it may finish early. */
-	if (((val = read_scom_for_chiplet(id, MCB_CNTLSTATQ)) &
+	if (((val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ)) &
 	     (PPC_BIT(MCB_CNTLSTATQ_MCB_IP) | PPC_BIT(MCB_CNTLSTATQ_MCB_DONE))) == 0) {
 		/*
 		 * TODO: how long do we want to wait? Hostboot uses 10*100us polling,
 		 * but so far it seems to always be already started on the first read.
 		 */
 		udelay(1);
-		if (((val = read_scom_for_chiplet(id, MCB_CNTLSTATQ)) &
+		if (((val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ)) &
 		     (PPC_BIT(MCB_CNTLSTATQ_MCB_IP) | PPC_BIT(MCB_CNTLSTATQ_MCB_DONE))) == 0)
 			die("MCBIST failed (%#16.16llx) to start twice\n", val);
 
@@ -205,10 +206,10 @@ void mcbist_execute(int mcs_i)
  * gets set when MCBIST is paused, while 0x070123DC[0] IP stays on in that case.
  * This may become a problem for 3DS DIMMs.
  */
-int mcbist_is_done(int mcs_i)
+int mcbist_is_done(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	uint64_t val = val = read_scom_for_chiplet(id, MCB_CNTLSTATQ);
+	uint64_t val = val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ);
 
 	/* Still in progress */
 	if (val & PPC_BIT(MCB_CNTLSTATQ_MCB_IP))
