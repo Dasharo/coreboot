@@ -60,6 +60,9 @@ Device (EC0)
 			// Apply custom fan curve
 			\_SB.PCI0.LPCB.EC0.SFCV ()
 
+			// Set default keyboard mode
+			KBUP ()
+
 			// EC is now available
 			ECOK = Arg1
 		}
@@ -342,6 +345,7 @@ Device (EC0)
 			Debug = "EC: White Keyboard Backlight"
 		} ElseIf (Local0 == 0x9F) {
 			Debug = "EC: Color Keyboard Toggle"
+			KBTG ()
 		} ElseIf (Local0 == 0x81) {
 			Debug = "EC: Color Keyboard Down"
 		} ElseIf (Local0 == 0x82) {
@@ -356,6 +360,62 @@ Device (EC0)
 		} Else {
 			Debug = Concatenate("EC: Other: ", ToHexString(Local0))
 		}
+	}
+
+	/*
+		Backlight Color
+			FDAT = 0x03 (OR 0x04 OR 0x05 if 3 zone keyboard)
+			FBUF = Blue
+			FBF0 = Green
+			FBF1 = Red
+			FCMD = 0xCA
+
+		Backlight Brightness
+			FDAT = 0x06
+			FBUF = Brightness
+			FCMD = 0xCA
+
+		Backlight ON/OFF
+			FDAT = 0x0C
+			FBUF = 0x20 OFF, 0x3F ON
+			FCMD = 0xC4
+	*/
+
+	Method (DEC, 1, NotSerialized) // Decode keyboard command
+	{
+		Local2 = ((Arg0 >> 0x0C) & 0x0F)
+		If ((Local2 >= 0x0A))
+		{
+			Local2 = Zero
+		}
+		Else
+		{
+			Local2 *= 0x19
+			Local2 = (0xFF - Local2)
+		}
+
+		Local1 = ((Arg0 >> 0x0E) & 0x1F)
+		If ((Arg0 & 0x2000))
+		{
+		    Local1 |= 0x20
+		}
+		Local3 = ((Arg0 >> 0x10) & 0xFF)
+		Local4 = ((Arg0 >> 0x18) & 0x0F)
+		Local7 = ((Arg0 >> 0x1C) & 0x0F)
+		Debug = Concatenate("EC: CMD: Local1: ", ToHexString(Local1))
+		Debug = Concatenate("EC: CMD: Local2: ", ToHexString(Local2))
+		Debug = Concatenate("EC: CMD: Local3: ", ToHexString(Local3))
+		Debug = Concatenate("EC: CMD: Local4: ", ToHexString(Local4))
+		Debug = Concatenate("EC: CMD: Local7: ", ToHexString(Local7))
+	}
+
+	Method (CMD, 5, NotSerialized) // Send raw EC command
+	{
+		FDAT = Arg0
+		FBUF = Arg1
+		FBF1 = Arg2
+		FBF2 = Arg3
+		FCMD = Arg4
 	}
 
 	Method (_Q62, 0, NotSerialized)  // UCSI event
@@ -386,4 +446,5 @@ Device (EC0)
 
 	#include "hid.asl"
 	#include "ucsi.asl"
+	#include "rgb_kb.asl"
 }
