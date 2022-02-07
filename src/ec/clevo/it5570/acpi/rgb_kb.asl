@@ -3,6 +3,7 @@ Name (KBBR, 0xFF) // Keyboard Brightness
 Name (KBCR, 0xFF) // Keyboard Color Red
 Name (KBCG, 0xFF) // Keyboard Color Green
 Name (KBCB, 0xFF) // Keyboard Color Blue
+Name (KBPS, 0x00) // Keyboard Preset
 
 Method (KBTG, 0, NotSerialized) // Keyboard Toggle
 {
@@ -20,7 +21,7 @@ Method (KBBU, 0, NotSerialized) // Keyboard Brightness Up
 
 Method (KBBD, 0, NotSerialized) // Keyboard Brightness Down
 {
-	If (KBBR >= 0x1f) {
+	If (KBBR >= 0x1F) {
 		KBBR -= 0x10
 	}
 	KBUP()
@@ -28,7 +29,37 @@ Method (KBBD, 0, NotSerialized) // Keyboard Brightness Down
 
 Method (KBPN, 0, NotSerialized) // Keyboard Preset Next
 {
-	// TODO
+	If (KBPS == 0x00) { // White
+		KBCR = 0xFF
+		KBCG = 0xFF
+		KBCG = 0xFF
+	} ElseIf (KBPS == 0x01) { // Red
+		KBCR = 0xFF
+		KBCG = 0x00
+		KBCB = 0x00
+	} ElseIf (KBPS == 0x02) { // Green
+		KBCR = 0x00
+		KBCG = 0xFF
+		KBCB = 0x00
+	} ElseIf (KBPS == 0x03) { // Blue
+		KBCR = 0x00
+		KBCG = 0x00
+		KBCB = 0xFF
+	} ElseIf (KBPS == 0x04) { // Yellow
+		KBCR = 0xFF
+		KBCG = 0xFF
+		KBCB = 0x00
+	} ElseIf (KBPS == 0x05) { // Magenta
+		KBCR = 0xFF
+		KBCG = 0x00
+		KBCB = 0xFF
+	} ElseIf (KBPS == 0x06) { // Cyan
+		KBCR = 0x00
+		KBCG = 0xFF
+		KBCB = 0xFF
+	}
+
+	KBPS = (KBPS + 1) % 7
 	KBUP ()
 }
 
