@@ -348,8 +348,10 @@ Device (EC0)
 			KBTG ()
 		} ElseIf (Local0 == 0x81) {
 			Debug = "EC: Color Keyboard Down"
+			KBBD ()
 		} ElseIf (Local0 == 0x82) {
 			Debug = "EC: Color Keyboard Up"
+			KBBU ()
 		} ElseIf (Local0 == 0x80) {
 			Debug = "EC: Color Keyboard Color Change"
 		} ElseIf (Local0 == 0xF3) {
