@@ -63,7 +63,11 @@ config PCIEXP_HOTPLUG_PREFETCH_MEM
 
 config DEVICETREE
 	string
-	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
+	default "variants/baseboard/devicetree.cb"
+
+config OVERRIDE_DEVICETREE
+	string
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config DIMM_MAX
 	int
