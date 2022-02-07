@@ -10,6 +10,28 @@ Method (KBTG, 0, NotSerialized) // Keyboard Toggle
 	KBUP ()
 }
 
+Method (KBBU, 0, NotSerialized) // Keyboard Brightness Up
+{
+	If (KBBR <= 0xEF) {
+		KBBR += 0x10
+	}
+	KBUP()
+}
+
+Method (KBBD, 0, NotSerialized) // Keyboard Brightness Down
+{
+	If (KBBR >= 0x1f) {
+		KBBR -= 0x10
+	}
+	KBUP()
+}
+
+Method (KBPN, 0, NotSerialized) // Keyboard Preset Next
+{
+	// TODO
+	KBUP ()
+}
+
 Method (KBUP, 0, NotSerialized) // Keyboard Update
 {
 	// Left zone colors
