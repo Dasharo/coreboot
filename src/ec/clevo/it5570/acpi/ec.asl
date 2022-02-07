@@ -355,6 +355,7 @@ Device (EC0)
 			KBBU ()
 		} ElseIf (Local0 == 0x80) {
 			Debug = "EC: Color Keyboard Color Change"
+			KBPN ()
 		} ElseIf (Local0 == 0xF3) {
 			Debug = "EC: Fan Cooling Mode Enable"
 		} ElseIf (Local0 == 0x6C) {
