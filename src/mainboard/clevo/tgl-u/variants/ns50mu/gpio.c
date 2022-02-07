@@ -544,8 +544,8 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_E4 - GPIO */
 	PAD_NC(GPP_E4, NONE),
 
-	/* GPP_E5 - GPIO */
-	PAD_NC(GPP_E5, NONE),
+	/* GPP_E5 - DEVSLP1 */
+	PAD_CFG_NF(GPP_E5, NONE, DEEP, NF1),
 
 	/* GPP_E6 - GPIO */
 	PAD_NC(GPP_E6, NONE),
