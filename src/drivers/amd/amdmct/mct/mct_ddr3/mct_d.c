@@ -4627,7 +4627,7 @@ void spd_2nd_timing(struct MCTStatStruc *p_mct_stat,
 			/* transfer to MTB*16 */
 			mtb_16x /= val;
 
-			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_TRRD_MIN];
+			byte = p_dct_stat->spd_data.spd_bytes[dct + i][SPD_TRPD_MIN];
 			val = byte * mtb_16x;
 			if (trp < val)
 				trp = val;
