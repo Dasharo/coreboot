@@ -7,24 +7,23 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
 /*
- * Description: Max Read Latency Training feature for DDR 2 MCT
+ * Description: max Read Latency Training feature for DDR 2 MCT
  */
 
-static u8 CompareMaxRdLatTestPattern_D(u32 pattern_buf, u32 addr);
-static u32 GetMaxRdLatTestAddr_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 Channel,
-				u8 *MaxRcvrEnDly, u8 *valid);
-u8 mct_GetStartMaxRdLat_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 Channel,
-				u8 DQSRcvEnDly, u32 *Margin);
-static void maxRdLatencyTrain_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat);
-static void mct_setMaxRdLatTrnVal_D(struct DCTStatStruc *pDCTstat, u8 Channel,
-					u16 MaxRdLatVal);
+static u8 compare_max_rd_lat_test_pattern_d(u32 pattern_buf, u32 addr);
+static u32 get_max_rd_lat_test_addr_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 channel,
+				u8 *max_rcvr_en_dly, u8 *valid);
+u8 mct_get_start_max_rd_lat_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 channel,
+				u8 dqs_rcv_en_dly, u32 *margin);
+static void max_rd_latency_train_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat);
+static void mct_set_max_rd_lat_trn_val_d(struct DCTStatStruc *p_dct_stat, u8 channel,
+					u16 max_rd_lat_val);
 
-/*Warning:  These must be located so they do not cross a logical 16-bit
-   segment boundary!*/
-static const u32 TestMaxRdLAtPattern_D[] = {
+/*Warning:  These must be located so they do not cross a logical 16-bit segment boundary!*/
+static const u32 test_max_rd_lat_pattern_d[] = {
 	0x6E0E3FAC, 0x0C3CFF52,
 	0x4A688181, 0x49C5B613,
 	0x7C780BA6, 0x5C1650E3,
@@ -54,8 +53,8 @@ static const u32 TestMaxRdLAtPattern_D[] = {
 };
 
 
-static u32 SetupMaxRdPattern(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat,
+static u32 setup_max_rd_pattern(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat,
 					u32 *buffer)
 {
 	/* 1. Copy the alpha and Beta patterns from ROM to Cache,
@@ -72,7 +71,7 @@ static u32 SetupMaxRdPattern(struct MCTStatStruc *pMCTstat,
 	buf = (u32 *)(((u32)buffer + 0x10) & (0xfffffff0));
 
 	for (i = 0; i < (16 * 3); i++) {
-		buf[i] = TestMaxRdLAtPattern_D[i];
+		buf[i] = test_max_rd_lat_pattern_d[i];
 	}
 
 	return (u32)buf;
@@ -80,34 +79,34 @@ static u32 SetupMaxRdPattern(struct MCTStatStruc *pMCTstat,
 }
 
 
-void TrainMaxReadLatency_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA)
+void train_max_read_latency_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a)
 {
-	u8 Node;
+	u8 node;
 
-	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + Node;
+	for (node = 0; node < MAX_NODES_SUPPORTED; node++) {
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + node;
 
-		if (!pDCTstat->NodePresent)
+		if (!p_dct_stat->node_present)
 			break;
 
-		if (pDCTstat->DCTSysLimit)
-			maxRdLatencyTrain_D(pMCTstat, pDCTstat);
+		if (p_dct_stat->dct_sys_limit)
+			max_rd_latency_train_d(p_mct_stat, p_dct_stat);
 	}
 }
 
 
-static void maxRdLatencyTrain_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat)
+static void max_rd_latency_train_d(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat)
 {
-	u8 Channel;
-	u32 TestAddr0;
-	u8 _DisableDramECC = 0, _Wrap32Dis = 0, _SSE2 = 0;
-	u16 MaxRdLatDly;
-	u8 RcvrEnDly = 0;
-	u32 PatternBuffer[60];	// FIXME: why not 48 + 4
-	u32 Margin;
+	u8 channel;
+	u32 test_addr_0;
+	u8 _disable_dram_ecc = 0, _wrap_32_dis = 0, _sse2 = 0;
+	u16 max_rd_lat_dly;
+	u8 rcvr_en_dly = 0;
+	u32 pattern_buffer[60];	// FIXME: why not 48 + 4
+	u32 margin;
 	u32 addr;
 	CRx_TYPE cr4;
 	u32 lo, hi;
@@ -116,116 +115,116 @@ static void maxRdLatencyTrain_D(struct MCTStatStruc *pMCTstat,
 	u32 pattern_buf;
 
 	cr4 = read_cr4();
-	if (cr4 & (1<<9)) {		/* save the old value */
-		_SSE2 = 1;
+	if (cr4 & (1 << 9)) {		/* save the old value */
+		_sse2 = 1;
 	}
-	cr4 |= (1<<9);			/* OSFXSR enable SSE2 */
+	cr4 |= (1 << 9);		/* OSFXSR enable SSE2 */
 	write_cr4(cr4);
 
 	addr = HWCR_MSR;
-	_RDMSR(addr, &lo, &hi);
-	if (lo & (1<<17)) {		/* save the old value */
-		_Wrap32Dis = 1;
+	_rdmsr(addr, &lo, &hi);
+	if (lo & (1 << 17)) {		/* save the old value */
+		_wrap_32_dis = 1;
 	}
-	lo |= (1<<17);			/* HWCR.wrap32dis */
-	lo &= ~(1<<15);			/* SSEDIS */
+	lo |= (1 << 17);		/* HWCR.wrap32dis */
+	lo &= ~(1 << 15);		/* SSEDIS */
 	/* Setting wrap32dis allows 64-bit memory references in
 	   real mode */
-	_WRMSR(addr, lo, hi);
+	_wrmsr(addr, lo, hi);
 
-	_DisableDramECC = mct_DisableDimmEccEn_D(pMCTstat, pDCTstat);
+	_disable_dram_ecc = mct_disable_dimm_ecc_en_d(p_mct_stat, p_dct_stat);
 
-	pattern_buf = SetupMaxRdPattern(pMCTstat, pDCTstat, PatternBuffer);
+	pattern_buf = setup_max_rd_pattern(p_mct_stat, p_dct_stat, pattern_buffer);
 
-	for (Channel = 0; Channel < 2; Channel++) {
-		print_debug_dqs("\tMaxRdLatencyTrain51: Channel ",Channel, 1);
-		pDCTstat->Channel = Channel;
+	for (channel = 0; channel < 2; channel++) {
+		print_debug_dqs("\tMaxRdLatencyTrain51: channel ",channel, 1);
+		p_dct_stat->channel = channel;
 
-		if ((pDCTstat->Status & (1 << SB_128bitmode)) && Channel)
+		if ((p_dct_stat->status & (1 << SB_128_BIT_MODE)) && channel)
 			break;		/*if ganged mode, skip DCT 1 */
 
-		TestAddr0 = GetMaxRdLatTestAddr_D(pMCTstat, pDCTstat, Channel, &RcvrEnDly,	 &valid);
+		test_addr_0 = get_max_rd_lat_test_addr_d(p_mct_stat, p_dct_stat, channel, &rcvr_en_dly,	 &valid);
 		if (!valid)	/* Address not supported on current CS */
 			continue;
 		/* rank 1 of DIMM, testpattern 0 */
-		WriteMaxRdLat1CLTestPattern_D(pattern_buf, TestAddr0);
+		write_max_rd_lat_1_cl_test_pattern_d(pattern_buf, test_addr_0);
 
-		MaxRdLatDly = mct_GetStartMaxRdLat_D(pMCTstat, pDCTstat, Channel, RcvrEnDly, &Margin);
-		print_debug_dqs("\tMaxRdLatencyTrain52:  MaxRdLatDly start ", MaxRdLatDly, 2);
-		print_debug_dqs("\tMaxRdLatencyTrain52:  MaxRdLatDly Margin ", Margin, 2);
-		while (MaxRdLatDly < MAX_RD_LAT) {	/* sweep Delay value here */
-			mct_setMaxRdLatTrnVal_D(pDCTstat, Channel, MaxRdLatDly);
-			ReadMaxRdLat1CLTestPattern_D(TestAddr0);
-			if (CompareMaxRdLatTestPattern_D(pattern_buf, TestAddr0) == DQS_PASS)
+		max_rd_lat_dly = mct_get_start_max_rd_lat_d(p_mct_stat, p_dct_stat, channel, rcvr_en_dly, &margin);
+		print_debug_dqs("\tMaxRdLatencyTrain52:  max_rd_lat_dly start ", max_rd_lat_dly, 2);
+		print_debug_dqs("\tMaxRdLatencyTrain52:  max_rd_lat_dly margin ", margin, 2);
+		while (max_rd_lat_dly < MAX_RD_LAT) {	/* sweep Delay value here */
+			mct_set_max_rd_lat_trn_val_d(p_dct_stat, channel, max_rd_lat_dly);
+			read_max_rd_lat_1_cl_test_pattern_d(test_addr_0);
+			if (compare_max_rd_lat_test_pattern_d(pattern_buf, test_addr_0) == DQS_PASS)
 				break;
-			SetTargetWTIO_D(TestAddr0);
-			FlushMaxRdLatTestPattern_D(TestAddr0);
-			ResetTargetWTIO_D();
-			MaxRdLatDly++;
+			set_target_wtio_d(test_addr_0);
+			flush_max_rd_lat_test_pattern_d(test_addr_0);
+			reset_target_wtio_d();
+			max_rd_lat_dly++;
 		}
-		print_debug_dqs("\tMaxRdLatencyTrain53:  MaxRdLatDly end ", MaxRdLatDly, 2);
-		mct_setMaxRdLatTrnVal_D(pDCTstat, Channel, MaxRdLatDly + Margin);
+		print_debug_dqs("\tMaxRdLatencyTrain53:  max_rd_lat_dly end ", max_rd_lat_dly, 2);
+		mct_set_max_rd_lat_trn_val_d(p_dct_stat, channel, max_rd_lat_dly + margin);
 	}
 
-	if (_DisableDramECC) {
-		mct_EnableDimmEccEn_D(pMCTstat, pDCTstat, _DisableDramECC);
+	if (_disable_dram_ecc) {
+		mct_enable_dimm_ecc_en_d(p_mct_stat, p_dct_stat, _disable_dram_ecc);
 	}
 
-	if (!_Wrap32Dis) {
+	if (!_wrap_32_dis) {
 		addr = HWCR_MSR;
-		_RDMSR(addr, &lo, &hi);
-		lo &= ~(1<<17);	/* restore HWCR.wrap32dis */
-		_WRMSR(addr, lo, hi);
+		_rdmsr(addr, &lo, &hi);
+		lo &= ~(1 << 17);	/* restore HWCR.wrap32dis */
+		_wrmsr(addr, lo, hi);
 	}
-	if (!_SSE2) {
+	if (!_sse2) {
 		cr4 = read_cr4();
-		cr4 &= ~(1<<9);	/* restore cr4.OSFXSR */
+		cr4 &= ~(1 << 9);	/* restore cr4.OSFXSR */
 		write_cr4(cr4);
 	}
 
 #if DQS_TRAIN_DEBUG > 0
 	{
-		u8 Channel;
-		printk(BIOS_DEBUG, "maxRdLatencyTrain: CH_MaxRdLat:\n");
-		for (Channel = 0; Channel < 2; Channel++) {
-			printk(BIOS_DEBUG, "Channel: %02x: %02x\n", Channel, pDCTstat->CH_MaxRdLat[Channel]);
+		u8 channel;
+		printk(BIOS_DEBUG, "maxRdLatencyTrain: ch_max_rd_lat:\n");
+		for (channel = 0; channel < 2; channel++) {
+			printk(BIOS_DEBUG, "channel: %02x: %02x\n", channel, p_dct_stat->ch_max_rd_lat[channel]);
 		}
 	}
 #endif
 
 }
 
-static void mct_setMaxRdLatTrnVal_D(struct DCTStatStruc *pDCTstat,
-					u8 Channel, u16 MaxRdLatVal)
+static void mct_set_max_rd_lat_trn_val_d(struct DCTStatStruc *p_dct_stat,
+					u8 channel, u16 max_rd_lat_val)
 {
 	u8 i;
 	u32 reg;
 	u32 dev;
 	u32 val;
 
-	if (pDCTstat->GangedMode) {
-		Channel = 0; // for safe
+	if (p_dct_stat->ganged_mode) {
+		channel = 0; // for safe
 		for (i = 0; i < 2; i++)
-			pDCTstat->CH_MaxRdLat[i] = MaxRdLatVal;
+			p_dct_stat->ch_max_rd_lat[i] = max_rd_lat_val;
 	} else {
-		pDCTstat->CH_MaxRdLat[Channel] = MaxRdLatVal;
+		p_dct_stat->ch_max_rd_lat[channel] = max_rd_lat_val;
 	}
 
-	dev = pDCTstat->dev_dct;
-	reg = 0x78 + Channel * 0x100;
-	val = Get_NB32(dev, reg);
-	val &= ~(0x3ff<<22);
-	val |= MaxRdLatVal << 22;
+	dev = p_dct_stat->dev_dct;
+	reg = 0x78 + channel * 0x100;
+	val = get_nb32(dev, reg);
+	val &= ~(0x3ff << 22);
+	val |= max_rd_lat_val << 22;
 	/* program MaxRdLatency to correspond with current delay */
-	Set_NB32(dev, reg, val);
+	set_nb32(dev, reg, val);
 
 }
 
 
-static u8 CompareMaxRdLatTestPattern_D(u32 pattern_buf, u32 addr)
+static u8 compare_max_rd_lat_test_pattern_d(u32 pattern_buf, u32 addr)
 {
 	/* Compare only the first beat of data.  Since target addrs are cache
-	 * line aligned, the Channel parameter is used to determine which cache
+	 * line aligned, the channel parameter is used to determine which cache
 	 * QW to compare.
 	 */
 
@@ -235,7 +234,7 @@ static u8 CompareMaxRdLatTestPattern_D(u32 pattern_buf, u32 addr)
 	int i;
 	u8 ret = DQS_PASS;
 
-	SetUpperFSbase(addr);
+	set_upper_fs_base(addr);
 	addr_lo = addr << 8;
 
 	_EXECFENCE;
@@ -255,64 +254,64 @@ static u8 CompareMaxRdLatTestPattern_D(u32 pattern_buf, u32 addr)
 	return ret;
 }
 
-static u32 GetMaxRdLatTestAddr_D(struct MCTStatStruc *pMCTstat,
-					struct DCTStatStruc *pDCTstat,
-					u8 Channel, u8 *MaxRcvrEnDly,
+static u32 get_max_rd_lat_test_addr_d(struct MCTStatStruc *p_mct_stat,
+					struct DCTStatStruc *p_dct_stat,
+					u8 channel, u8 *max_rcvr_en_dly,
 					u8 *valid)
 {
-	u8 Max = 0;
+	u8 max = 0;
 
-	u8 Channel_Max = 0;
+	u8 channel_max = 0;
 	u8 d;
 	u8 d_Max = 0;
 
-	u8 Byte;
-	u32 TestAddr0 = 0;
+	u8 byte;
+	u32 test_addr_0 = 0;
 	u8 ch, ch_start, ch_end;
 	u8 bn;
 
 	bn = 8;
 
-	if (pDCTstat->Status & (1 << SB_128bitmode)) {
+	if (p_dct_stat->status & (1 << SB_128_BIT_MODE)) {
 		ch_start = 0;
 		ch_end = 2;
 	} else {
-		ch_start = Channel;
-		ch_end = Channel + 1;
+		ch_start = channel;
+		ch_end = channel + 1;
 	}
 
 	*valid = 0;
 
 	for (ch = ch_start; ch < ch_end; ch++) {
 		for (d = 0; d < 4; d++) {
-			for (Byte = 0; Byte < bn; Byte++) {
+			for (byte = 0; byte < bn; byte++) {
 				u8 tmp;
-				tmp = pDCTstat->persistentData.CH_D_B_RCVRDLY[ch][d][Byte];
-				if (tmp > Max) {
-					Max = tmp;
-					Channel_Max = Channel;
+				tmp = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[ch][d][byte];
+				if (tmp > max) {
+					max = tmp;
+					channel_max = channel;
 					d_Max = d;
 				}
 			}
 		}
 	}
 
-	if (mct_RcvrRankEnabled_D(pMCTstat, pDCTstat, Channel_Max, d_Max << 1))  {
-		TestAddr0 = mct_GetMCTSysAddr_D(pMCTstat, pDCTstat, Channel_Max, d_Max << 1, valid);
+	if (mct_rcvr_rank_enabled_d(p_mct_stat, p_dct_stat, channel_max, d_Max << 1))  {
+		test_addr_0 = mct_get_mct_sys_addr_d(p_mct_stat, p_dct_stat, channel_max, d_Max << 1, valid);
 	}
 
 	if (*valid)
-		*MaxRcvrEnDly = Max;
+		*max_rcvr_en_dly = max;
 
-	return TestAddr0;
+	return test_addr_0;
 
 }
 
-u8 mct_GetStartMaxRdLat_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat,
-				u8 Channel, u8 DQSRcvEnDly, u32 *Margin)
+u8 mct_get_start_max_rd_lat_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat,
+				u8 channel, u8 dqs_rcv_en_dly, u32 *margin)
 {
-	u32 SubTotal;
+	u32 sub_total;
 	u32 val;
 	u32 valx;
 	u32 valxx;
@@ -320,60 +319,60 @@ u8 mct_GetStartMaxRdLat_D(struct MCTStatStruc *pMCTstat,
 	u32 reg_off;
 	u32 dev;
 
-	if (pDCTstat->GangedMode)
-		Channel =  0;
+	if (p_dct_stat->ganged_mode)
+		channel =  0;
 
-	index_reg = 0x98 + 0x100 * Channel;
+	index_reg = 0x98 + 0x100 * channel;
 
-	reg_off = 0x100 * Channel;
-	dev = pDCTstat->dev_dct;
+	reg_off = 0x100 * channel;
+	dev = p_dct_stat->dev_dct;
 
 	/* Multiply the CAS Latency by two to get a number of 1/2 MEMCLKs units.*/
-	val = Get_NB32(dev, 0x88 + reg_off);
-	SubTotal = ((val & 0x0f) + 1) << 1;	/* SubTotal is 1/2 Memclk unit */
+	val = get_nb32(dev, 0x88 + reg_off);
+	sub_total = ((val & 0x0f) + 1) << 1;	/* sub_total is 1/2 Memclk unit */
 
 	/* If registered DIMMs are being used then add 1 MEMCLK to the sub-total*/
-	val = Get_NB32(dev, 0x90 + reg_off);
-	if (!(val & (1 << UnBuffDimm)))
-		SubTotal += 2;
+	val = get_nb32(dev, 0x90 + reg_off);
+	if (!(val & (1 << UN_BUFF_DIMM)))
+		sub_total += 2;
 
 	/*If the address prelaunch is setup for 1/2 MEMCLKs then add 1,
 	 *  else add 2 to the sub-total. if (AddrCmdSetup || CsOdtSetup
 	 *  || CkeSetup) then K := K + 2; */
-	val = Get_NB32_index_wait(dev, index_reg, 0x04);
+	val = get_nb32_index_wait(dev, index_reg, 0x04);
 	if (!(val & 0x00202020))
-		SubTotal += 1;
+		sub_total += 1;
 	else
-		SubTotal += 2;
+		sub_total += 2;
 
 	/* If the F2x[1, 0]78[RdPtrInit] field is 4, 5, 6 or 7 MEMCLKs,
 	 *  then add 4, 3, 2, or 1 MEMCLKs, respectively to the sub-total. */
-	val = Get_NB32(dev, 0x78 + reg_off);
-	SubTotal += 8 - (val & 0x0f);
+	val = get_nb32(dev, 0x78 + reg_off);
+	sub_total += 8 - (val & 0x0f);
 
 	/* Convert bits 7-5 (also referred to as the course delay) of the current
 	 * (or worst case) DQS receiver enable delay to 1/2 MEMCLKs units,
 	 * rounding up, and add this to the sub-total. */
-	SubTotal += DQSRcvEnDly >> 5;	/*BOZO-no rounding up */
+	sub_total += dqs_rcv_en_dly >> 5;	/*BOZO-no rounding up */
 
-	SubTotal <<= 1;			/*scale 1/2 MemClk to 1/4 MemClk */
+	sub_total <<= 1;			/*scale 1/2 MemClk to 1/4 MemClk */
 
 	/* Convert the sub-total (in 1/2 MEMCLKs) to northbridge clocks (NCLKs)
 	 * as follows (assuming DDR400 and assuming that no P-state or link speed
 	 * changes have occurred). */
 
 	/*New formula:
-	SubTotal *= 3*(Fn2xD4[NBFid]+4)/(3+Fn2x94[MemClkFreq])/2 */
-	val = Get_NB32(dev, 0x94 + reg_off);
-	/* SubTotal div 4 to scale 1/4 MemClk back to MemClk */
+	sub_total *= 3*(Fn2xD4[NBFid]+4)/(3+Fn2x94[MemClkFreq])/2 */
+	val = get_nb32(dev, 0x94 + reg_off);
+	/* sub_total div 4 to scale 1/4 MemClk back to MemClk */
 	val &= 7;
 	if (val == 4) {
 		val++;		/* adjust for DDR2-1066 */
 	}
-	valx = (val + 3) << 2;	/* SubTotal div 4 to scale 1/4 MemClk back to MemClk */
+	valx = (val + 3) << 2;	/* sub_total div 4 to scale 1/4 MemClk back to MemClk */
 
 
-	val = Get_NB32(pDCTstat->dev_nbmisc, 0xD4);
+	val = get_nb32(p_dct_stat->dev_nbmisc, 0xD4);
 	val = ((val & 0x1f) + 4) * 3;
 
 	/* Calculate 1 MemClk + 1 NCLK delay in NCLKs for margin */
@@ -382,15 +381,13 @@ u8 mct_GetStartMaxRdLat_D(struct MCTStatStruc *pMCTstat,
 	if (valxx % valx)
 		valxx++;	/* round up */
 	valxx++;		/* add 1NCLK */
-	*Margin = valxx;	/* one MemClk delay in NCLKs and one additional NCLK */
+	*margin = valxx;	/* one MemClk delay in NCLKs and one additional NCLK */
 
-	val *= SubTotal;
+	val *= sub_total;
 
 	val /= valx;
 	if (val % valx)
 		val++;		/* round up */
-
-
 
 	return val;
 }

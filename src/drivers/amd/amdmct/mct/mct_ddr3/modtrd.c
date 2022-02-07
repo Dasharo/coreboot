@@ -4,40 +4,40 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-u32 mct_MR1Odt_RDimm(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dct, u32 MrsChipSel)
+u32 mct_mr_1Odt_r_dimm(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dct, u32 mrs_chip_sel)
 {
-	u8 Speed = pDCTstat->Speed;
+	u8 speed = p_dct_stat->speed;
 	u32 ret;
-	u8 DimmsInstalled, DimmNum, ChipSelect;
+	u8 dimms_installed, dimm_num, chip_select;
 
-	ChipSelect = (MrsChipSel >> 20) & 0xF;
-	DimmNum = ChipSelect & 0xFE;
-	DimmsInstalled = pDCTstat->MAdimms[dct];
+	chip_select = (mrs_chip_sel >> 20) & 0xF;
+	dimm_num = chip_select & 0xFE;
+	dimms_installed = p_dct_stat->ma_dimms[dct];
 	if (dct == 1)
-		DimmNum ++;
+		dimm_num ++;
 	ret = 0;
 
-	if (mctGet_NVbits(NV_MAX_DIMMS) == 4) {
-		if (DimmsInstalled == 1)
+	if (mct_get_nv_bits(NV_MAX_DIMMS) == 4) {
+		if (dimms_installed == 1)
 			ret |= 1 << 2;
 		else {
-			if (pDCTstat->CSPresent & 0xF0) {
-				if (pDCTstat->DimmQRPresent & (1 << DimmNum)) {
-					if (!(ChipSelect & 1))
+			if (p_dct_stat->cs_present & 0xF0) {
+				if (p_dct_stat->dimm_qr_present & (1 << dimm_num)) {
+					if (!(chip_select & 1))
 						ret |= 1 << 2;
 				} else
 					ret |= 0x204;
 			} else {
-				if (Speed < 6)
+				if (speed < 6)
 					ret |= 0x44;
 				else
 					ret |= 0x204;
 			}
 		}
-	} else if (DimmsInstalled == 1)
+	} else if (dimms_installed == 1)
 		ret |= 1 << 2;
-	else if (Speed < 6)
+	else if (speed < 6)
 		ret |= 0x44;
 	else
 		ret |= 0x204;
@@ -46,36 +46,36 @@ u32 mct_MR1Odt_RDimm(struct MCTStatStruc *pMCTstat,
 	return ret;
 }
 
-u32 mct_DramTermDyn_RDimm(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 dimm)
+u32 mct_dram_term_dyn_r_dimm(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dimm)
 {
-	u8 DimmsInstalled = dimm;
-	u32 DramTermDyn = 0;
-	u8 Speed = pDCTstat->Speed;
+	u8 dimms_installed = dimm;
+	u32 dram_term_dyn = 0;
+	u8 speed = p_dct_stat->speed;
 
-	if (mctGet_NVbits(NV_MAX_DIMMS) == 4) {
-		if (pDCTstat->CSPresent & 0xF0) {
-			if (DimmsInstalled == 1)
-				if (Speed == 7)
-					DramTermDyn |= 1 << 10;
+	if (mct_get_nv_bits(NV_MAX_DIMMS) == 4) {
+		if (p_dct_stat->cs_present & 0xF0) {
+			if (dimms_installed == 1)
+				if (speed == 7)
+					dram_term_dyn |= 1 << 10;
 				else
-					DramTermDyn |= 1 << 11;
+					dram_term_dyn |= 1 << 11;
 			else
-				if (Speed == 4)
-					DramTermDyn |= 1 << 11;
+				if (speed == 4)
+					dram_term_dyn |= 1 << 11;
 				else
-					DramTermDyn |= 1 << 10;
+					dram_term_dyn |= 1 << 10;
 		} else {
-			if (DimmsInstalled != 1) {
-				if (Speed == 7)
-					DramTermDyn |= 1 << 10;
+			if (dimms_installed != 1) {
+				if (speed == 7)
+					dram_term_dyn |= 1 << 10;
 				else
-					DramTermDyn |= 1 << 11;
+					dram_term_dyn |= 1 << 11;
 			}
 		}
 	} else {
-		if (DimmsInstalled != 1)
-			DramTermDyn |= 1 << 11;
+		if (dimms_installed != 1)
+			dram_term_dyn |= 1 << 11;
 	}
-	return DramTermDyn;
+	return dram_term_dyn;
 }

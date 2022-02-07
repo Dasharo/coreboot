@@ -17,7 +17,7 @@
 	alink_ax_indx(0, (reg), (mask), (val))
 
 #define AB_INDX   0xCD8
-#define AB_DATA   (AB_INDX+4)
+#define AB_DATA   (AB_INDX + 4)
 
 #if ENV_PCI_SIMPLE_DEVICE
 static inline u32 nb_read_index(pci_devfn_t dev, u32 index_reg, u32 index)

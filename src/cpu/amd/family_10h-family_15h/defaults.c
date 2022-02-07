@@ -18,11 +18,11 @@
 
 #include "defaults.h"
 
-static void AMD_Errata281(u8 node, uint64_t revision, u32 platform)
+static void amd_errata281(u8 node, u64 revision, u32 platform)
 {
 	/* Workaround for Transaction Scheduling Conflict in
-	 * Northbridge Cross Bar.  Implement XCS Token adjustment
-	 * for ganged links.  Also, perform fix up for the mixed
+	 * Northbridge Cross Bar. Implement XCS Token adjustment
+	 * for ganged links. Also, perform fix up for the mixed
 	 * revision case.
 	 */
 
@@ -31,70 +31,69 @@ static void AMD_Errata281(u8 node, uint64_t revision, u32 platform)
 	u8 mixed = 0;
 	u8 nodes = get_nodes();
 
-	if (platform & AMD_PTYPE_SVR) {
-		/* For each node we need to check for a "broken" node */
-		if (!(revision & (AMD_DR_B0 | AMD_DR_B1))) {
-			for (i = 0; i < nodes; i++) {
-				if (get_logical_CPUID(i) &
-				    (AMD_DR_B0 | AMD_DR_B1)) {
-					mixed = 1;
-					break;
-				}
+	if (!(platform & AMD_PTYPE_SVR)) {
+		return;
+	}
+	/* For each node we need to check for a "broken" node */
+	if (!(revision & (AMD_DR_B0 | AMD_DR_B1))) {
+		for (i = 0; i < nodes; i++) {
+			if (get_logical_cpuid(i) & (AMD_DR_B0 | AMD_DR_B1)) {
+				mixed = 1;
+				break;
 			}
 		}
+	}
 
-		if ((revision & (AMD_DR_B0 | AMD_DR_B1)) || mixed) {
+	if ((revision & (AMD_DR_B0 | AMD_DR_B1)) || mixed) {
+		/* F0X68[22:21] DsNpReqLmt0 = 01b */
+		val = pci_read_config32(NODE_PCI(node, 0), 0x68);
+		val &= ~0x00600000;
+		val |= 0x00200000;
+		pci_write_config32(NODE_PCI(node, 0), 0x68, val);
 
-			/* F0X68[22:21] DsNpReqLmt0 = 01b */
-			val = pci_read_config32(NODE_PCI(node, 0), 0x68);
-			val &= ~0x00600000;
-			val |= 0x00200000;
-			pci_write_config32(NODE_PCI(node, 0), 0x68, val);
+		/* F3X6C */
+		val = pci_read_config32(NODE_PCI(node, 3), 0x6C);
+		val &= ~0x700780F7;
+		val |= 0x00010094;
+		pci_write_config32(NODE_PCI(node, 3), 0x6C, val);
 
-			/* F3X6C */
-			val = pci_read_config32(NODE_PCI(node, 3), 0x6C);
-			val &= ~0x700780F7;
-			val |= 0x00010094;
-			pci_write_config32(NODE_PCI(node, 3), 0x6C, val);
+		/* F3X7C */
+		val = pci_read_config32(NODE_PCI(node, 3), 0x7C);
+		val &= ~0x707FFF1F;
+		val |= 0x00144514;
+		pci_write_config32(NODE_PCI(node, 3), 0x7C, val);
 
-			/* F3X7C */
-			val = pci_read_config32(NODE_PCI(node, 3), 0x7C);
-			val &= ~0x707FFF1F;
-			val |= 0x00144514;
-			pci_write_config32(NODE_PCI(node, 3), 0x7C, val);
+		/* F3X144[3:0] RspTok = 0001b */
+		val = pci_read_config32(NODE_PCI(node, 3), 0x144);
+		val &= ~0x0000000F;
+		val |= 0x00000001;
+		pci_write_config32(NODE_PCI(node, 3), 0x144, val);
 
-			/* F3X144[3:0] RspTok = 0001b */
-			val = pci_read_config32(NODE_PCI(node, 3), 0x144);
-			val &= ~0x0000000F;
-			val |= 0x00000001;
-			pci_write_config32(NODE_PCI(node, 3), 0x144, val);
-
-			for (i = 0; i < 3; i++) {
-				reg = 0x148 + (i * 4);
-				val = pci_read_config32(NODE_PCI(node, 3), reg);
-				val &= ~0x000000FF;
-				val |= 0x000000DB;
-				pci_write_config32(NODE_PCI(node, 3), reg, val);
-			}
+		for (i = 0; i < 3; i++) {
+			reg = 0x148 + (i * 4);
+			val = pci_read_config32(NODE_PCI(node, 3), reg);
+			val &= ~0x000000FF;
+			val |= 0x000000DB;
+			pci_write_config32(NODE_PCI(node, 3), reg, val);
 		}
 	}
 }
 
 /**
- * AMD_SetHtPhyRegister - Use the HT link's HT Phy portal registers to update
- *   a phy setting for that link.
+ * amd_set_ht_phy_register - Use the HT link's HT Phy portal registers to update
+ * a phy setting for that link.
  */
-static void AMD_SetHtPhyRegister(u8 node, u8 link, u8 entry)
+static void amd_set_ht_phy_register(u8 node, u8 link, u8 entry)
 {
-	u32 phyReg;
-	u32 phyBase;
+	u32 phy_reg;
+	u32 phy_base;
 	u32 val;
 
 	/* Determine this link's portal */
 	if (link > 3)
 		link -= 4;
 
-	phyBase = ((u32) link << 3) | 0x180;
+	phy_base = ((u32) link << 3) | 0x180;
 
 	/* Determine if link is connected and abort if not */
 	if (!(pci_read_config32(NODE_PCI(node, 0), 0x98 + (link * 0x20)) & 0x1))
@@ -103,39 +102,39 @@ static void AMD_SetHtPhyRegister(u8 node, u8 link, u8 entry)
 	/* Get the portal control register's initial value
 	 * and update it to access the desired phy register
 	 */
-	phyReg = pci_read_config32(NODE_PCI(node, 4), phyBase);
+	phy_reg = pci_read_config32(NODE_PCI(node, 4), phy_base);
 
 	if (fam10_htphy_default[entry].htreg > 0x1FF) {
-		phyReg &= ~HTPHY_DIRECT_OFFSET_MASK;
-		phyReg |= HTPHY_DIRECT_MAP;
+		phy_reg &= ~HTPHY_DIRECT_OFFSET_MASK;
+		phy_reg |= HTPHY_DIRECT_MAP;
 	} else {
-		phyReg &= ~HTPHY_OFFSET_MASK;
+		phy_reg &= ~HTPHY_OFFSET_MASK;
 	}
 
 	/* Now get the current phy register data
 	 * LinkPhyDone = 0, LinkPhyWrite = 0 is a read
 	 */
-	phyReg |= fam10_htphy_default[entry].htreg;
-	pci_write_config32(NODE_PCI(node, 4), phyBase, phyReg);
+	phy_reg |= fam10_htphy_default[entry].htreg;
+	pci_write_config32(NODE_PCI(node, 4), phy_base, phy_reg);
 
 	do {
-		val = pci_read_config32(NODE_PCI(node, 4), phyBase);
+		val = pci_read_config32(NODE_PCI(node, 4), phy_base);
 	} while (!(val & HTPHY_IS_COMPLETE_MASK));
 
 	/* Now we have the phy register data, apply the change */
-	val = pci_read_config32(NODE_PCI(node, 4), phyBase + 4);
+	val = pci_read_config32(NODE_PCI(node, 4), phy_base + 4);
 	val &= ~fam10_htphy_default[entry].mask;
 	val |= fam10_htphy_default[entry].data;
-	pci_write_config32(NODE_PCI(node, 4), phyBase + 4, val);
+	pci_write_config32(NODE_PCI(node, 4), phy_base + 4, val);
 
 	/* write it through the portal to the phy
 	 * LinkPhyDone = 0, LinkPhyWrite = 1 is a write
 	 */
-	phyReg |= HTPHY_WRITE_CMD;
-	pci_write_config32(NODE_PCI(node, 4), phyBase, phyReg);
+	phy_reg |= HTPHY_WRITE_CMD;
+	pci_write_config32(NODE_PCI(node, 4), phy_base, phy_reg);
 
 	do {
-		val = pci_read_config32(NODE_PCI(node, 4), phyBase);
+		val = pci_read_config32(NODE_PCI(node, 4), phy_base);
 	} while (!(val & HTPHY_IS_COMPLETE_MASK));
 }
 
@@ -144,22 +143,22 @@ static void set_ht_phy_defaults(u8 node)
 	u8 i;
 	u8 j;
 	u8 offset;
-	u64 revision = get_logical_CPUID(node);
+	u64 revision = get_logical_cpuid(node);
 	u32 platform = get_platform_type();
 
 	for (i = 0; i < ARRAY_SIZE(fam10_htphy_default); i++) {
-		if ((fam10_htphy_default[i].revision & revision) &&
-		    (fam10_htphy_default[i].platform & platform)) {
+		if ((fam10_htphy_default[i].revision & revision)
+			&& (fam10_htphy_default[i].platform & platform)) {
 			/* HT Phy settings either apply to both sublinks or have
 			 * separate registers for sublink zero and one, so there
 			 * will be two table entries. So, here we only loop
 			 * through the sublink zeros in function zero.
 			 */
 			for (j = 0; j < 4; j++) {
-				if (AMD_CpuFindCapability(node, j, &offset)) {
-					if (AMD_checkLinkType(node, offset)
-					    & fam10_htphy_default[i].linktype) {
-						AMD_SetHtPhyRegister(node, j, i);
+				if (amd_cpu_find_capability(node, j, &offset)) {
+					if (amd_check_link_type(node, offset)
+						& fam10_htphy_default[i].linktype) {
+						amd_set_ht_phy_register(node, j, i);
 					}
 				} else {
 					/* No more capabilities,
@@ -205,33 +204,31 @@ static void configure_ht_stop_tristate(u8 node)
 
 static void configure_pci_defaults(u8 node)
 {
-	u8 i;
 	u32 val;
-	u64 revision = get_logical_CPUID(node);
+	u64 revision = get_logical_cpuid(node);
 	u32 platform = get_platform_type();
 
-	for (i = 0; i < ARRAY_SIZE(fam10_pci_default); i++) {
-		if ((fam10_pci_default[i].revision & revision) &&
-		    (fam10_pci_default[i].platform & platform)) {
+	for (u8 i = 0; i < ARRAY_SIZE(fam10_pci_default); i++) {
+		if ((fam10_pci_default[i].revision & revision)
+				&& (fam10_pci_default[i].platform & platform)) {
 			val = pci_read_config32(NODE_PCI(node, fam10_pci_default[i].function),
 						fam10_pci_default[i].offset);
 			val &= ~fam10_pci_default[i].mask;
 			val |= fam10_pci_default[i].data;
 			pci_write_config32(NODE_PCI(node, fam10_pci_default[i].function),
-					   fam10_pci_default[i].offset, val);
+						fam10_pci_default[i].offset, val);
 		}
 	}
 }
 
 static void configure_message_triggered_c1e(u8 node)
 {
-	u64 revision = get_logical_CPUID(node);
+	u64 revision = get_logical_cpuid(node);
 
 	if (revision & (AMD_DR_GT_D0 | AMD_FAM15_ALL)) {
 		/* Set up message triggered C1E */
 		/* CacheFlushImmOnAllHalt = !is_fam15h() */
-		set_pci_node_reg(NODE_PCI(node, 3), 0xd4, ~BIT(14),
-				     is_fam15h() ? 0 : BIT(14));
+		set_pci_node_reg(NODE_PCI(node, 3), 0xd4, ~BIT(14), is_fam15h() ? 0 : BIT(14));
 
 		/* IgnCpuPrbEn = 1 */
 		/* CacheFlushOnHaltTmr = 0x28 */
@@ -290,7 +287,7 @@ struct ht_link_state {
 	u8 req_tok_0;
 };
 
-static void set_L3FreeListCBC(u8 node)
+static void set_l3_free_list_mbc(u8 node)
 {
 	u8 cu_enabled;
 	u8 compute_unit_buffer_count;
@@ -326,7 +323,7 @@ static u8 is_link_ganged(u8 node, u8 link_real)
 
 static u8 is_iolink(u8 node, u8 offset)
 {
-	return !!(AMD_checkLinkType(node, offset) & HTPHY_LINKTYPE_NONCOHERENT);
+	return !!(amd_check_link_type(node, offset) & HTPHY_LINKTYPE_NONCOHERENT);
 }
 
 static void write_ht_link_buf_counts(u8 node, struct ht_link_state *link_state)
@@ -348,7 +345,7 @@ static void write_ht_link_buf_counts(u8 node, struct ht_link_state *link_state)
 
 	dword = pci_read_config32(NODE_PCI(node, 0), (link_state->link_real * 0x20) + 0x90);
 	dword &= ~(0x1 << 31);			/* LockBc = 0x1 */
-	dword |=  (0x1 << 31);
+	dword |= (0x1 << 31);
 	dword &= ~(0x7 << 25);			/* FreeData = free_data */
 	dword |= ((link_state->free_data & 0x7) << 25);
 	dword &= ~(0x1f << 20);			/* FreeCmd = free_cmd */
@@ -372,7 +369,7 @@ static void set_ht_link_buf_counts(u8 node, u8 link, struct ht_link_state *link_
 {
 	u8 offset;
 
-	if (!AMD_CpuFindCapability(node, link, &offset))
+	if (!amd_cpu_find_capability(node, link, &offset))
 		return;
 
 	link_state->link_real = (offset - 0x80) / 0x20;
@@ -473,7 +470,7 @@ static void set_ht_link_to_xcs_token_counts(u8 node, u8 link, struct ht_link_sta
 	u8 sockets = 2;
 	u8 sockets_populated = 2;
 
-	if (!AMD_CpuFindCapability(node, link, &offset))
+	if (!amd_cpu_find_capability(node, link, &offset))
 		return;
 
 	/* Set defaults */
@@ -490,35 +487,35 @@ static void set_ht_link_to_xcs_token_counts(u8 node, u8 link, struct ht_link_sta
 	link_state->probe_tok_0 = ((link_state->ganged) ? 2 : 1);
 	link_state->rsp_tok_0 = ((link_state->ganged) ? 2 : 1);
 	link_state->preq_tok_0 = ((link_state->ganged) ? 2 : 1);
-	link_state->req_tok_0= ((link_state->ganged) ? 2 : 1);
+	link_state->req_tok_0 = ((link_state->ganged) ? 2 : 1);
 	link_state->free_tokens = 0;
 
-	if (link_state->iolink && link_state->ganged &&
-	    sockets == 4 && sockets_populated == 4) {
+	if (link_state->iolink && link_state->ganged
+				&& sockets == 4 && sockets_populated == 4) {
 		link_state->isoc_req_tok_0 = 2;
 	}
 
-	if (!link_state->iolink && !link_state->ganged &&
-	    sockets >= 2 && sockets_populated >= 2) {
+	if (!link_state->iolink && !link_state->ganged
+				&& sockets >= 2 && sockets_populated >= 2) {
 		link_state->isoc_req_tok_1 = 1;
 	}
 
 	if (link_state->iolink && link_state->ganged) {
 		if (!is_dual_node(node)) {
 			link_state->probe_tok_0 = 0;
-		} else if ((sockets == 1) || (sockets == 2) ||
-			   ((sockets == 4) && (sockets_populated == 2))) {
+		} else if ((sockets == 1) || (sockets == 2)
+				|| ((sockets == 4) && (sockets_populated == 2))) {
 			link_state->probe_tok_0 = 0;
 		}
 	}
 
-	if (!link_state->iolink && link_state->ganged &&
-	    ((sockets_populated == 2) && (sockets >= 2))) {
+	if (!link_state->iolink && link_state->ganged
+				&& ((sockets_populated == 2) && (sockets >= 2))) {
 		link_state->probe_tok_0 = 1;
 	}
 
-	if (!link_state->iolink && link_state->ganged && is_dual_node(node) &&
-	    (sockets == 4) && (sockets_populated == 4)) {
+	if (!link_state->iolink && link_state->ganged && is_dual_node(node)
+			&& (sockets == 4) && (sockets_populated == 4)) {
 		link_state->rsp_tok_0 = 1;
 		link_state->preq_tok_0 = 1;
 	}
@@ -560,13 +557,11 @@ static void set_sri_to_xcs_token_counts(u8 node)
 		up_rsp_tok = 0x3;
 	} else {
 		if ((sockets == 1) || ((sockets == 2) && (sockets_populated == 1))) {
-			if (probe_filter_enabled) {
+			if (probe_filter_enabled)
 				free_tok = 0x9;
-				up_rsp_tok = 0x3;
-			} else {
+			else
 				free_tok = 0xa;
-				up_rsp_tok = 0x3;
-			}
+			up_rsp_tok = 0x3;
 		} else if ((sockets == 2) && (sockets_populated == 2)) {
 			free_tok = 0xb;
 			up_rsp_tok = 0x1;
@@ -597,7 +592,7 @@ static u8 check_if_isochronous_link_present(u8 node)
 	isochronous_link_present = 0;
 
 	for (link = 0; link < 4; link++) {
-		if (AMD_CpuFindCapability(node, link, &offset)) {
+		if (amd_cpu_find_capability(node, link, &offset)) {
 			isochronous = pci_read_config32(NODE_PCI(node, 0), offset + 4);
 			isochronous = (isochronous >> 12) & 0x1;
 
@@ -624,23 +619,23 @@ static void setup_isochronous_ht_link(u8 node)
 	up_rsp_cbc = (dword >> 16) & 0x7;
 	up_rsp_cbc--;
 	isoc_preq_cbc++;
-	dword &= ~(0x7 << 24);			/* IsocPreqCBC = isoc_preq_cbc */
+	dword &= ~(0x7 << 24);		/* IsocPreqCBC = isoc_preq_cbc */
 	dword |= ((isoc_preq_cbc & 0x7) << 24);
-	dword &= ~(0x7 << 16);			/* UpRspCBC = up_rsp_cbc */
+	dword &= ~(0x7 << 16);		/* UpRspCBC = up_rsp_cbc */
 	dword |= ((up_rsp_cbc & 0x7) << 16);
 	pci_write_config32(NODE_PCI(node, 3), 0x70, dword);
 
 	dword = pci_read_config32(NODE_PCI(node, 3), 0x74);
 	isoc_preq_cbc = (dword >> 24) & 0x7;
 	isoc_preq_cbc++;
-	dword &= ~(0x7 << 24);			/* IsocPreqCBC = isoc_preq_cbc */
+	dword &= ~(0x7 << 24);		/* IsocPreqCBC = isoc_preq_cbc */
 	dword |= (isoc_preq_cbc & 0x7) << 24;
 	pci_write_config32(NODE_PCI(node, 3), 0x74, dword);
 
 	dword = pci_read_config32(NODE_PCI(node, 3), 0x7c);
 	xbar_to_sri_free_list_cbc = dword & 0x1f;
 	xbar_to_sri_free_list_cbc--;
-	dword &= ~0x1f;				/* Xbar2SriFreeListCBC = xbar_to_sri_free_list_cbc */
+	dword &= ~0x1f;			/* Xbar2SriFreeListCBC = xbar_to_sri_free_list_cbc */
 	dword |= xbar_to_sri_free_list_cbc & 0x1f;
 	pci_write_config32(NODE_PCI(node, 3), 0x7c, dword);
 
@@ -649,9 +644,9 @@ static void setup_isochronous_ht_link(u8 node)
 	isoc_preq_tok = (dword >> 14) & 0x3;
 	free_tok--;
 	isoc_preq_tok++;
-	dword &= ~(0xf << 20);			/* FreeTok = free_tok */
+	dword &= ~(0xf << 20);		/* FreeTok = free_tok */
 	dword |= ((free_tok & 0xf) << 20);
-	dword &= ~(0x3 << 14);			/* IsocPreqTok = isoc_preq_tok */
+	dword &= ~(0x3 << 14);		/* IsocPreqTok = isoc_preq_tok */
 	dword |= ((isoc_preq_tok & 0x3) << 14);
 	pci_write_config32(NODE_PCI(node, 3), 0x140, dword);
 }
@@ -661,7 +656,7 @@ static void setup_ht_buffer_allocation(u8 node)
 	struct ht_link_state link_state[4];
 	u8 link;
 
-	set_L3FreeListCBC(node);
+	set_l3_free_list_mbc(node);
 
 	for (link = 0; link < 4; link++) {
 		set_ht_link_buf_counts(node, link, &link_state[link]);
@@ -678,7 +673,7 @@ static void setup_ht_buffer_allocation(u8 node)
 
 }
 
-static void AMD_SetupPSIVID_d(u32 platform_type, u8 node)
+static void amd_setup_psivid_d(u32 platform_type, u8 node)
 {
 	u32 dword;
 	int i;
@@ -694,7 +689,7 @@ static void AMD_SetupPSIVID_d(u32 platform_type, u8 node)
 
 		for (i = 4; i >= 0; i--) {
 			msr = rdmsr(PSTATE_0_MSR + i);
-			/*  Pstate valid? */
+			/* Pstate valid? */
 			if (msr.hi & BIT(31)) {
 				dword = pci_read_config32(NODE_PCI(i, 3), 0xA0);
 				dword &= ~0x7F;
@@ -706,34 +701,35 @@ static void AMD_SetupPSIVID_d(u32 platform_type, u8 node)
 	}
 }
 
-void cpuSetAMDPCI(u8 node)
+void cpu_set_amd_pci(u8 node)
 {
 	/* This routine loads the CPU with default settings in fam10_pci_default
 	 * table . It must be run after Cache-As-RAM has been enabled, and
-	 * Hypertransport initialization has taken place.  Also note
+	 * Hypertransport initialization has taken place. Also note
 	 * that it is run for the first core on each node
 	 */
 	u32 platform;
 	u64 revision;
 
-	printk(BIOS_DEBUG, "cpuSetAMDPCI %02d", node);
+	printk(BIOS_DEBUG, "cpu_set_amd_pci %02d", node);
 
-	revision = get_logical_CPUID(node);
+	revision = get_logical_cpuid(node);
 	platform = get_platform_type();
 
 	/* Set PSIVID offset which is not table driven */
-	AMD_SetupPSIVID_d(platform, node);
+	amd_setup_psivid_d(platform, node);
 	configure_pci_defaults(node);
 	configure_ht_stop_tristate(node);
 	set_ht_phy_defaults(node);
 
 	/* FIXME: add UMA support and programXbarToSriReg(); */
 
-	AMD_Errata281(node, revision, platform);
+	amd_errata281(node, revision, platform);
 
 	/* FIXME: if the dct phy doesn't init correct it needs to reset.
-	   if (revision & (AMD_DR_B2 | AMD_DR_B3))
-	   dctPhyDiag(); */
+	 * if (revision & (AMD_DR_B2 | AMD_DR_B3))
+	 * dctPhyDiag();
+	 */
 
 	configure_message_triggered_c1e(node);
 
@@ -746,7 +742,7 @@ void cpuSetAMDPCI(u8 node)
 static void enable_memory_speed_boost(u8 node_id)
 {
 	msr_t msr;
-	uint32_t f3x1fc = pci_read_config32(NODE_PCI(node_id, 3), 0x1fc);
+	u32 f3x1fc = pci_read_config32(NODE_PCI(node_id, 3), 0x1fc);
 	msr = rdmsr(FP_CFG_MSR);
 	msr.hi &= ~(0x7 << (42-32));			/* DiDtCfg4 */
 	msr.hi |= (((f3x1fc >> 17) & 0x7) << (42-32));
@@ -773,7 +769,7 @@ static void enable_memory_speed_boost(u8 node_id)
 	}
 }
 
-static void enable_message_triggered_c1e(uint64_t revision)
+static void enable_message_triggered_c1e(u64 revision)
 {
 	msr_t msr;
 	/* Set up message triggered C1E */
@@ -817,7 +813,7 @@ static void cpb_enable_disable(void)
 	}
 }
 
-static void AMD_Errata298(void)
+static void amd_errata_298(void)
 {
 	/* Workaround for L2 Eviction May Occur during operation to
 	 * set Accessed or dirty bit.
@@ -830,7 +826,7 @@ static void AMD_Errata298(void)
 
 	/* For each core we need to check for a "broken" node */
 	for (i = 0; i < nodes; i++) {
-		if (get_logical_CPUID(i) & (AMD_DR_B0 | AMD_DR_B1 | AMD_DR_B2)) {
+		if (get_logical_cpuid(i) & (AMD_DR_B0 | AMD_DR_B1 | AMD_DR_B2)) {
 			affectedRev = 1;
 			break;
 		}
@@ -854,7 +850,7 @@ static void AMD_Errata298(void)
 		wrmsr(OSVW_Status, msr);
 	}
 
-	if (!affectedRev && (get_logical_CPUID(0xFF) & AMD_DR_B3)) {
+	if (!affectedRev && (get_logical_cpuid(0xFF) & AMD_DR_B3)) {
 		msr = rdmsr(OSVW_ID_Length);
 		msr.lo |= 0x01;	/* OS Visible Workaround - MSR */
 		wrmsr(OSVW_ID_Length, msr);
@@ -862,27 +858,27 @@ static void AMD_Errata298(void)
 	}
 }
 
-void cpuSetAMDMSR(u8 node_id)
+void cpu_set_amd_msr(u8 node_id)
 {
 	/* This routine loads the CPU with default settings in fam10_msr_default
 	 * table . It must be run after Cache-As-RAM has been enabled, and
-	 * Hypertransport initialization has taken place.  Also note
+	 * Hypertransport initialization has taken place. Also note
 	 * that it is run on the current processor only, and only for the current
 	 * processor core.
 	 */
 	msr_t msr;
 	u8 i;
 	u32 platform;
-	uint64_t revision;
+	u64 revision;
 
-	printk(BIOS_DEBUG, "cpuSetAMDMSR ");
+	printk(BIOS_DEBUG, "cpu_set_amd_msr ");
 
-	revision = get_logical_CPUID(0xff);
+	revision = get_logical_cpuid(0xff);
 	platform = get_platform_type();
 
 	for (i = 0; i < ARRAY_SIZE(fam10_msr_default); i++) {
-		if ((fam10_msr_default[i].revision & revision) &&
-		    (fam10_msr_default[i].platform & platform)) {
+		if ((fam10_msr_default[i].revision & revision)
+				&& (fam10_msr_default[i].platform & platform)) {
 			msr = rdmsr(fam10_msr_default[i].msr);
 			msr.hi &= ~fam10_msr_default[i].mask_hi;
 			msr.hi |= fam10_msr_default[i].data_hi;
@@ -891,7 +887,7 @@ void cpuSetAMDMSR(u8 node_id)
 			wrmsr(fam10_msr_default[i].msr, msr);
 		}
 	}
-	AMD_Errata298();
+	amd_errata_298();
 
 	/* Revision C0 and above */
 	if (revision & AMD_OR_C0)

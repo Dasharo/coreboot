@@ -36,9 +36,9 @@
 /* Relevant GPIO register information is available in the
  * AMD SP5100 Register Reference Guide rev. 3.03, page 130
  */
-static void switch_spd_mux(uint8_t channel)
+static void switch_spd_mux(u8 channel)
 {
-	uint8_t byte;
+	u8 byte;
 
 	byte = pci_read_config8(PCI_DEV(0, 0x14, 0), 0x54);
 	byte &= ~0xc;			/* Clear SPD mux GPIOs */
@@ -47,20 +47,20 @@ static void switch_spd_mux(uint8_t channel)
 	pci_write_config8(PCI_DEV(0, 0x14, 0), 0x54, byte);
 
 	/* Temporary AST PCI mapping */
-	const uint32_t memory_base = 0xfc000000;
-	const uint32_t memory_limit = 0xfc800000;
+	const u32 memory_base = 0xfc000000;
+	const u32 memory_limit = 0xfc800000;
 
 #define TEMP_PCI_BUS 0x2
 	/* Save S100 PCI bridge settings */
-	uint16_t prev_sec_cfg = pci_read_config16(PCI_DEV(0, 0x14, 4),
+	u16 prev_sec_cfg = pci_read_config16(PCI_DEV(0, 0x14, 4),
 						PCI_COMMAND);
-	uint8_t prev_sec_bus = pci_read_config8(PCI_DEV(0, 0x14, 4),
+	u8 prev_sec_bus = pci_read_config8(PCI_DEV(0, 0x14, 4),
 						PCI_SECONDARY_BUS);
-	uint8_t prev_sec_sub_bus = pci_read_config8(PCI_DEV(0, 0x14, 4),
+	u8 prev_sec_sub_bus = pci_read_config8(PCI_DEV(0, 0x14, 4),
 						PCI_SUBORDINATE_BUS);
-	uint16_t prev_sec_mem_base = pci_read_config16(PCI_DEV(0, 0x14, 4),
+	u16 prev_sec_mem_base = pci_read_config16(PCI_DEV(0, 0x14, 4),
 						PCI_MEMORY_BASE);
-	uint16_t prev_sec_mem_limit = pci_read_config16(PCI_DEV(0, 0x14, 4),
+	u16 prev_sec_mem_limit = pci_read_config16(PCI_DEV(0, 0x14, 4),
 							PCI_MEMORY_LIMIT);
 	/* Temporarily enable the SP5100 PCI bridge */
 	pci_write_config8(PCI_DEV(0, 0x14, 4), PCI_SECONDARY_BUS, TEMP_PCI_BUS);
@@ -73,11 +73,11 @@ static void switch_spd_mux(uint8_t channel)
 			PCI_COMMAND_MEMORY);
 
 	/* Temporarily enable AST BAR1 */
-	uint16_t prev_ast_cmd = pci_read_config16(PCI_DEV(TEMP_PCI_BUS, 0x1, 0),
+	u16 prev_ast_cmd = pci_read_config16(PCI_DEV(TEMP_PCI_BUS, 0x1, 0),
 						PCI_COMMAND);
-	uint16_t prev_ast_sts = pci_read_config16(PCI_DEV(TEMP_PCI_BUS, 0x1, 0),
+	u16 prev_ast_sts = pci_read_config16(PCI_DEV(TEMP_PCI_BUS, 0x1, 0),
 						PCI_STATUS);
-	uint32_t prev_ast_bar1 = pci_read_config32(
+	u32 prev_ast_bar1 = pci_read_config32(
 		PCI_DEV(TEMP_PCI_BUS, 0x1, 0), PCI_BASE_ADDRESS_1);
 	pci_write_config32(PCI_DEV(TEMP_PCI_BUS, 0x1, 0), PCI_BASE_ADDRESS_1,
 			memory_base);
@@ -142,7 +142,7 @@ void mainboard_sysinfo_hook(struct sys_info *sysinfo)
 }
 
 static void set_peripheral_control_lines(void) {
-	uint8_t byte;
+	u8 byte;
 
 	if (get_uint_option("ieee1394_controller", 0)) {
 		/* Enable PCICLK5 (onboard FireWire device) */
@@ -168,9 +168,9 @@ static void set_peripheral_control_lines(void) {
  * 2: 1.25V
  * 3: 1.15V
  */
-static void set_ddr3_voltage(uint8_t node, uint8_t index) {
-	uint8_t byte;
-	uint8_t value = 0;
+static void set_ddr3_voltage(u8 node, u8 index) {
+	u8 byte;
+	u8 value = 0;
 
 	if (index == 0)
 		value = 0x0;
@@ -200,19 +200,19 @@ static void set_ddr3_voltage(uint8_t node, uint8_t index) {
 	printk(BIOS_DEBUG, "Node %02d DIMM voltage set to index %02x\n", node, index);
 }
 
-void DIMMSetVoltages(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
+void dimm_set_voltages(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 {
 	/* This mainboard allows the DIMM voltage to be set per-socket.
 	 * Therefore, for each socket, iterate over all DIMMs to find the
 	 * lowest supported voltage common to all DIMMs on that socket.
 	 */
-	uint8_t dimm;
-	uint8_t node;
-	uint8_t socket;
-	uint8_t allowed_voltages = 0xf;	/* The mainboard VRMs allow 1.15V, 1.25V, 1.35V, and 1.5V */
-	uint8_t socket_allowed_voltages = allowed_voltages;
-	uint32_t set_voltage = 0;
-	uint8_t min_voltage = get_uint_option("minimum_memory_voltage", 0);
+	u8 dimm;
+	u8 node;
+	u8 socket;
+	u8 allowed_voltages = 0xf;	/* The mainboard VRMs allow 1.15V, 1.25V, 1.35V, and 1.5V */
+	u8 socket_allowed_voltages = allowed_voltages;
+	u32 set_voltage = 0;
+	u8 min_voltage = get_uint_option("minimum_memory_voltage", 0);
 
 	switch (min_voltage) {
 		case 2:
@@ -229,23 +229,23 @@ void DIMMSetVoltages(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTsta
 
 	for (node = 0; node < MAX_NODES_SUPPORTED; node++) {
 		socket = node / 2;
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + node;
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + node;
 
 		/* reset socket_allowed_voltages before processing each socket */
 		if (!(node % 2))
 			socket_allowed_voltages = allowed_voltages;
 
-		if (pDCTstat->NodePresent) {
+		if (p_dct_stat->node_present) {
 			for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-				if (pDCTstat->DIMMValid & (1 << dimm)) {
-					socket_allowed_voltages &= pDCTstat->DimmSupportedVoltages[dimm];
+				if (p_dct_stat->dimm_valid & (1 << dimm)) {
+					socket_allowed_voltages &= p_dct_stat->dimm_supported_voltages[dimm];
 				}
 			}
 		}
 
 		/* set voltage per socket after processing last contained node */
-		if (pDCTstat->NodePresent && (node % 2)) {
+		if (p_dct_stat->node_present && (node % 2)) {
 			/* Set voltages */
 			if (socket_allowed_voltages & 0x8) {
 				set_voltage = 0x8;
@@ -262,15 +262,15 @@ void DIMMSetVoltages(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTsta
 			}
 
 			/* Save final DIMM voltages for MCT and SMBIOS use */
-			if (pDCTstat->NodePresent) {
+			if (p_dct_stat->node_present) {
 				for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-					pDCTstat->DimmConfiguredVoltage[dimm] = set_voltage;
+					p_dct_stat->dimm_configured_voltage[dimm] = set_voltage;
 				}
 			}
-			pDCTstat = pDCTstatA + (node - 1);
-			if (pDCTstat->NodePresent) {
+			p_dct_stat = p_dct_stat_a + (node - 1);
+			if (p_dct_stat->node_present) {
 				for (dimm = 0; dimm < MAX_DIMMS_SUPPORTED; dimm++) {
-					pDCTstat->DimmConfiguredVoltage[dimm] = set_voltage;
+					p_dct_stat->dimm_configured_voltage[dimm] = set_voltage;
 				}
 			}
 		}
@@ -301,7 +301,7 @@ void mainboard_early_init(int s3_resume)
 	}
 }
 
-static const uint8_t spd_addr_fam15[] = {
+static const u8 spd_addr_fam15[] = {
 	// Socket 0 Node 0 ("Node 0")
 	0, DIMM0, DIMM1, 0, 0, DIMM2, DIMM3, 0, 0,
 	// Socket 0 Node 1 ("Node 1")
@@ -312,7 +312,7 @@ static const uint8_t spd_addr_fam15[] = {
 	1, DIMM4, DIMM5, 0, 0, DIMM6, DIMM7, 0, 0,
 };
 
-static const uint8_t spd_addr_fam10[] = {
+static const u8 spd_addr_fam10[] = {
 	// Socket 0 Node 0 ("Node 0")
 	0, DIMM0, DIMM1, 0, 0, DIMM2, DIMM3, 0, 0,
 	// Socket 0 Node 1 ("Node 1")
@@ -337,15 +337,15 @@ void mainboard_spd_info(struct sys_info *sysinfo)
 static void execute_memory_test(void)
 {
 	/* Test DRAM functionality */
-	uint32_t i;
-	uint32_t v;
-	uint32_t w;
-	uint32_t x;
-	uint32_t y;
-	uint32_t z;
-	uint32_t *dataptr;
-	uint32_t readback;
-	uint32_t start = 0x300000;
+	u32 i;
+	u32 v;
+	u32 w;
+	u32 x;
+	u32 y;
+	u32 z;
+	u32 *dataptr;
+	u32 readback;
+	u32 start = 0x300000;
 	printk(BIOS_DEBUG, "Writing test pattern 1 to memory...\n");
 	for (i = 0; i < 0x1000000; i = i + 8) {
 		dataptr = (void *)(start + i);
@@ -418,7 +418,7 @@ void mainboard_after_raminit(struct sys_info *sysinfo)
 }
 
 /**
- * BOOL AMD_CB_ManualBUIDSwapList(u8 Node, u8 Link, u8 **List)
+ * BOOL amd_cb_manual_buid_swap_list(u8 Node, u8 Link, u8 **List)
  * Description:
  *	This routine is called every time a non-coherent chain is processed.
  *	BUID assignment may be controlled explicitly on a non-coherent chain. Provide a
@@ -434,13 +434,13 @@ void mainboard_after_raminit(struct sys_info *sysinfo)
  *	@param[in]  link   = The link on the host for this chain
  *	@param[out] List   = supply a pointer to a list
  */
-BOOL AMD_CB_ManualBUIDSwapList(u8 node, u8 link, const u8 **list)
+BOOL amd_cb_manual_buid_swap_list(u8 node, u8 link, const u8 **list)
 {
 	/* Force BUID to 0 */
-	static const u8 swaplist[] = {0, 0, 0xFF, 0, 0xFF};
+	static const u8 swap_list[] = {0, 0, 0xFF, 0, 0xFF};
 	if ((is_fam15h() && (node == 0) && (link == 1)) || /* Family 15h BSP SB link */
 	    (!is_fam15h() && (node == 0) && (link == 3))) { /* Family 10h BSP SB link */
-		*list = swaplist;
+		*list = swap_list;
 		return 1;
 	}
 

@@ -21,7 +21,7 @@
 static void write_pstates_for_core(u8 pstate_num, u16 *pstate_feq, u32 *pstate_power,
 				u32 *pstate_latency, u32 *pstate_control,
 				u32 *pstate_status, int coreID,
-				uint8_t single_link)
+				u8 single_link)
 {
 	int i;
 	struct cpuid_result cpuid1;
@@ -47,7 +47,7 @@ static void write_pstates_for_core(u8 pstate_num, u16 *pstate_feq, u32 *pstate_p
 	acpigen_write_PPC(pstate_num);
 
 	/* Write PSD indicating coordination type */
-	if ((single_link) && (get_logical_CPUID(0) & AMD_DR_GT_Bx)) {
+	if ((single_link) && (get_logical_cpuid(0) & AMD_DR_GT_Bx)) {
 		/* Revision C or greater single-link processor */
 		cpuid1 = cpuid(0x80000008);
 		acpigen_write_PSD_package(0, (cpuid1.ecx & 0xff) + 1, SW_ALL);
@@ -74,7 +74,7 @@ static void write_pstates_for_core(u8 pstate_num, u16 *pstate_feq, u32 *pstate_p
 static void write_cstates_for_core(int coreID)
 {
 	/* Generate C state entries */
-	uint8_t cstate_count = 1;
+	u8 cstate_count = 1;
 	acpi_cstate_t cstate;
 
 	if (is_fam15h()) {
@@ -118,11 +118,13 @@ static void write_cstates_for_core(int coreID)
 
 		if (cpu) {
 			/* TODO
-			 * Detect dual core status and skip CSD generation if dual core is disabled
+			 * Detect dual core status and skip CSD generation
+			 * if dual core is disabled
 			 */
 
 			/* Generate C state dependency entries */
-			acpigen_write_CSD_package((cpu->path.apic.apic_id >> 1) & 0x7f, 2, CSD_HW_ALL, 0);
+			acpigen_write_CSD_package((cpu->path.apic.apic_id >> 1) & 0x7f,
+						2, CSD_HW_ALL, 0);
 		}
 	}
 }
@@ -145,17 +147,17 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 	u32 *v;
 	struct cpuid_result cpuid1;
 
-	u16 Pstate_feq[10];
-	u32 Pstate_power[10];
-	u32 Pstate_latency[10];
-	u32 Pstate_control[10];
-	u32 Pstate_status[10];
-	u8 Pstate_num;
+	u16 pstate_feq[10];
+	u32 pstate_power[10];
+	u32 pstate_latency[10];
+	u32 pstate_control[10];
+	u32 pstate_status[10];
+	u8 pstate_num;
 	u8 cmp_cap;
 	u8 index;
 	msr_t msr;
 
-	uint8_t enable_c_states = get_uint_option("cpu_c_states", 1);
+	u8 enable_c_states = get_uint_option("cpu_c_states", 1);
 
 	/* Get the Processor Brand String using cpuid(0x8000000x) command x=2,3,4 */
 	cpuid1 = cpuid(0x80000002);
@@ -177,13 +179,13 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 	processor_brand[48] = 0;
 	printk(BIOS_INFO, "processor_brand=%s\n", processor_brand);
 
-	uint32_t dtemp;
-	uint8_t node_index;
-	uint8_t node_count;
-	uint8_t cores_per_node;
-	uint8_t total_core_count;
-	uint8_t fam15h;
-	uint8_t fam10h_rev_e = 0;
+	u32 dtemp;
+	u8 node_index;
+	u8 node_count;
+	u8 cores_per_node;
+	u8 total_core_count;
+	u8 fam15h;
+	u8 fam10h_rev_e = 0;
 
 	/* Detect Revision E processors via method used in fidvid.c */
 	if ((cpuid_edx(0x80000007) & CPB_MASK)
@@ -192,19 +194,28 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 
 	/*
 	 * Based on the CPU socket type, cmp_cap and pwr_lmt, get the power limit.
-	 * socket_type : 0x10 SocketF; 0x11 AM2/ASB1; 0x12 S1G1
-	 * cmp_cap : 0x0 SingleCore; 0x1 DualCore; 0x2 TripleCore; 0x3 QuadCore; 0x4 QuintupleCore; 0x5 HexCore
+	 * socket_type :
+	 *     0x10 SocketF;
+	 *     0x11 AM2/ASB1;
+	 *     0x12 S1G1
+	 * cmp_cap :
+	 *     0x0 SingleCore;
+	 *     0x1 DualCore;
+	 *     0x2 TripleCore;
+	 *     0x3 QuadCore;
+	 *     0x4 QuintupleCore;
+	 *     0x5 HexCore
 	 */
 	printk(BIOS_INFO, "Pstates algorithm ...\n");
-	fam15h = !!(get_logical_CPUID(0) & AMD_FAM15_ALL);
+	fam15h = !!(get_logical_cpuid(0) & AMD_FAM15_ALL);
 	/* Get number of cores */
 	if (fam15h) {
-		cmp_cap = pci_read_config32(pcidev_on_root(0x18, 5), 0x84) &
-									  0xff;
+		cmp_cap = pci_read_config32(pcidev_on_root(0x18, 5), 0x84) & 0xff;
 	} else {
 		dtemp = pci_read_config32(pcidev_on_root(0x18, 3), 0xe8);
 		cmp_cap = (dtemp & 0x3000) >> 12;
-		if (get_logical_CPUID(0) & (AMD_FAM10_REV_D | AMD_FAM15_ALL))	/* revision D or higher */
+		if (get_logical_cpuid(0) & (AMD_FAM10_REV_D | AMD_FAM15_ALL))
+			/* revision D or higher */
 			cmp_cap |= (dtemp & 0x8000) >> 13;
 	}
 
@@ -217,11 +228,11 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 	total_core_count = cores_per_node * node_count;
 
 	/* Get number of boost states */
-	uint8_t boost_count = 0;
+	u8 boost_count = 0;
 	dtemp = pci_read_config32(pcidev_on_root(0x18, 4), 0x15c);
 	if (fam10h_rev_e)
 		boost_count = (dtemp >> 2) & 0x1;
-	else if (get_logical_CPUID(0) & AMD_FAM15_ALL)
+	else if (get_logical_cpuid(0) & AMD_FAM15_ALL)
 		boost_count = (dtemp >> 2) & 0x7;
 
 	/* See if the CPUID(0x80000007) returned EDX[7]==1b */
@@ -233,25 +244,25 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 
 	if (fam15h)
 		/* Set P_LVL2 P_BLK entry */
-		*(((uint8_t *)pcontrol_blk) + 0x04) =
+		*(((u8 *)pcontrol_blk) + 0x04) =
 			(rdmsr(MSR_CSTATE_ADDRESS).lo + 1) & 0xff;
 
-	uint8_t pviModeFlag;
-	uint8_t Pstate_max;
-	uint8_t cpufid;
-	uint8_t cpudid;
-	uint8_t cpuvid;
-	uint8_t cpuidd;
-	uint8_t cpuidv;
-	uint8_t power_step_up;
-	uint8_t power_step_down;
-	uint8_t pll_lock_time;
-	uint32_t expanded_cpuidv;
-	uint32_t core_frequency;
-	uint32_t core_power;
-	uint32_t core_latency;
-	uint32_t core_voltage;	/* multiplied by 10000 */
-	uint8_t single_link;
+	u8 pviModeFlag;
+	u8 Pstate_max;
+	u8 cpufid;
+	u8 cpudid;
+	u8 cpuvid;
+	u8 cpuidd;
+	u8 cpuidv;
+	u8 power_step_up;
+	u8 power_step_down;
+	u8 pll_lock_time;
+	u32 expanded_cpuidv;
+	u32 core_frequency;
+	u32 core_power;
+	u32 core_latency;
+	u32 core_voltage;	/* multiplied by 10000 */
+	u8 single_link;
 
 	/* Determine if this is a PVI or SVI system */
 	dtemp = pci_read_config32(pcidev_on_root(0x18, 3), 0xA0);
@@ -263,12 +274,12 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 
 	/* Get PSmax's index */
 	msr = rdmsr(PS_LIM_REG);
-	Pstate_max = (uint8_t) ((msr.lo >> PS_MAX_VAL_SHFT) & ((fam15h)?BIT_MASK_7:BIT_MASK_3));
+	Pstate_max = (u8) ((msr.lo >> PS_MAX_VAL_SHFT) & ((fam15h) ? BIT_MASK_7 : BIT_MASK_3));
 
 	/* Determine if all enabled Pstates have the same fidvid */
-	uint8_t i;
-	uint8_t cpufid_prev = (rdmsr(PSTATE_0_MSR).lo & 0x3f);
-	uint8_t all_enabled_cores_have_same_cpufid = 1;
+	u8 i;
+	u8 cpufid_prev = (rdmsr(PSTATE_0_MSR).lo & 0x3f);
+	u8 all_enabled_cores_have_same_cpufid = 1;
 	for (i = 1; i < Pstate_max; i++) {
 		cpufid = rdmsr(PSTATE_0_MSR + i).lo & 0x3f;
 		if (cpufid != cpufid_prev) {
@@ -282,9 +293,9 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 		Pstate_max++;
 
 	/* Populate tables with all Pstate information */
-	for (Pstate_num = 0; Pstate_num < Pstate_max; Pstate_num++) {
+	for (pstate_num = 0; pstate_num < Pstate_max; pstate_num++) {
 		/* Get power state information */
-		msr = rdmsr(PSTATE_0_MSR + Pstate_num + boost_count);
+		msr = rdmsr(PSTATE_0_MSR + pstate_num + boost_count);
 		cpufid = (msr.lo & 0x3f);
 		cpudid = (msr.lo & 0x1c0) >> 6;
 		cpuvid = (msr.lo & 0xfe00) >> 9;
@@ -337,21 +348,21 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 			core_latency = (12 * (power_step_down + power_step_up) / 1000)
 						 + pll_lock_time;
 
-		Pstate_feq[Pstate_num] = core_frequency;
-		Pstate_power[Pstate_num] = core_power;
-		Pstate_latency[Pstate_num] = core_latency;
-		Pstate_control[Pstate_num] = Pstate_num;
-		Pstate_status[Pstate_num] = Pstate_num;
+		pstate_feq[pstate_num] = core_frequency;
+		pstate_power[pstate_num] = core_power;
+		pstate_latency[pstate_num] = core_latency;
+		pstate_control[pstate_num] = pstate_num;
+		pstate_status[pstate_num] = pstate_num;
 	}
 
 	/* Print Pstate frequency, power, and latency */
-	for (index = 0; index < Pstate_num; index++) {
+	for (index = 0; index < pstate_num; index++) {
 		printk(BIOS_INFO, "Pstate_freq[%d] = %dMHz\t", index,
-			    Pstate_feq[index]);
-		printk(BIOS_INFO, "Pstate_power[%d] = %dmw\n", index,
-			    Pstate_power[index]);
-		printk(BIOS_INFO, "Pstate_latency[%d] = %dus\n", index,
-			    Pstate_latency[index]);
+			    pstate_feq[index]);
+		printk(BIOS_INFO, "pstate_power[%d] = %dmw\n", index,
+			    pstate_power[index]);
+		printk(BIOS_INFO, "pstate_latency[%d] = %dus\n", index,
+			    pstate_latency[index]);
 	}
 
 	/* Enter processor block scope */
@@ -365,8 +376,8 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 		single_link = !!(((dtemp & 0xff00) >> 8) == 0);
 
 		/* Enter processor core scope */
-		uint8_t plen_cur = plen;
-		uint32_t pcontrol_blk_cur = pcontrol_blk;
+		u8 plen_cur = plen;
+		u32 pcontrol_blk_cur = pcontrol_blk;
 		if ((onlyBSP) && (index != 0)) {
 			plen_cur = 0;
 			pcontrol_blk_cur = 0;
@@ -374,8 +385,8 @@ void amd_generate_powernow(u32 pcontrol_blk, u8 plen, u8 onlyBSP)
 		acpigen_write_processor(index, pcontrol_blk_cur, plen_cur);
 
 		/* Write P-state status and dependency objects */
-		write_pstates_for_core(Pstate_num, Pstate_feq, Pstate_power,
-				Pstate_latency, Pstate_control, Pstate_status,
+		write_pstates_for_core(pstate_num, pstate_feq, pstate_power,
+				pstate_latency, pstate_control, pstate_status,
 				index, single_link);
 
 		/* Write C-state status and dependency objects */

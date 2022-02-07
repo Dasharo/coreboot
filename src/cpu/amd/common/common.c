@@ -20,15 +20,15 @@ u32 get_initial_apicid(void)
 	return (cpuid_ebx(1) >> 24) & 0xff;
 }
 
-u32 get_core_num_in_bsp(u32 nodeid)
+u32 get_core_num_in_bsp(u32 node_id)
 {
 	u32 dword;
 	if (is_fam15h()) {
 		/* Family 15h moved CmpCap to F5x84 [7:0] */
-		dword = pci_read_config32(NODE_PCI(nodeid, 5), 0x84);
+		dword = pci_read_config32(NODE_PCI(node_id, 5), 0x84);
 		dword &= 0xff;
 	} else {
-		dword = pci_read_config32(NODE_PCI(nodeid, 3), 0xe8);
+		dword = pci_read_config32(NODE_PCI(node_id, 3), 0xe8);
 		dword >>= 12;
 		/* Bit 15 is CmpCap[2] since Revision D. */
 		if ((cpuid_ecx(0x80000008) & 0xff) > 3)
@@ -44,7 +44,7 @@ u8 set_apicid_cpuid_lo(void)
 	// set the NB_CFG[54]=1; why the OS will be happy with that ???
 	msr_t msr;
 	msr = rdmsr(NB_CFG_MSR);
-	msr.hi |= (1<<(54-32)); // InitApicIdCpuIdLo
+	msr.hi |= (1 << (54 - 32)); // InitApicIdCpuIdLo
 	wrmsr(NB_CFG_MSR, msr);
 
 	return 1;
@@ -63,7 +63,7 @@ void set_EnableCf8ExtCfg(void)
 	wrmsr(NB_CFG_MSR, msr);
 }
 
-u64 get_logical_CPUID(u32 node)
+u64 get_logical_cpuid(u32 node)
 {
 	/* Converts the CPUID to a logical ID MASK that is used to check
 	 CPU version support versions */
@@ -145,8 +145,8 @@ u64 get_logical_CPUID(u32 node)
 
 u8 get_processor_package_type(void)
 {
-	u32 BrandId = cpuid_ebx(0x80000001);
-	return (u8)((BrandId >> 28) & 0x0f);
+	u32 brand_id = cpuid_ebx(0x80000001);
+	return (u8)((brand_id >> 28) & 0x0f);
 }
 
 u32 get_platform_type(void)

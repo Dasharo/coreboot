@@ -140,8 +140,7 @@ static void sb700_lpc_enable_childrens_resources(struct device *dev)
 					continue;
 				base = res->base;
 				end = resource_end(res);
-				printk(BIOS_DEBUG, "sb700 lpc decode:%s,"
-					" base=0x%08x, end=0x%08x\n",
+				printk(BIOS_DEBUG, "sb700 lpc decode:%s, base=0x%08x, end=0x%08x\n",
 					dev_path(child), base, end);
 				if (end >= 0x1000)
 					die("IO ports outside of 0-0x1000 range enabled in LPC ISA bridge\n");

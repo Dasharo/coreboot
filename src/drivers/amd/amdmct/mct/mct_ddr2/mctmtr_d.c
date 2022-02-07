@@ -4,48 +4,48 @@
 #include <cpu/amd/mtrr.h>
 #include <cpu/x86/mtrr.h>
 
-static void SetMTRRrangeWB_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr);
-static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType);
+static void set_mtrr_range_wb_d(u32 base, u32 *p_limit, u32 *p_mtrr_addr);
+static void set_mtrr_range_d(u32 base, u32 *p_limit, u32 *p_mtrr_addr, u16 mtrr_type);
 
-void CPUMemTyping_D(struct MCTStatStruc *pMCTstat,
-			 struct DCTStatStruc *pDCTstatA)
+void cpu_mem_typing_d(struct MCTStatStruc *p_mct_stat,
+			 struct DCTStatStruc *p_dct_stat_a)
 {
 	/* BSP only.  Set the fixed MTRRs for common legacy ranges.
 	 * Set TOP_MEM and TOM2.
 	 * Set some variable MTRRs with WB Uncacheable type.
 	 */
 
-	u32 Bottom32bIO, Bottom40bIO, Cache32bTOP;
+	u32 bottom_32b_io, bottom_40b_io, cache_32b_top;
 	u32 val;
 	u32 addr;
 	u32 lo, hi;
 
 	/* Set temporary top of memory from Node structure data.
 	 * Adjust temp top of memory down to accommodate 32-bit IO space.
-	 * Bottom40bIO = top of memory, right justified 8 bits
+	 * bottom_40b_io = top of memory, right justified 8 bits
 	 *	(defines dram versus IO space type)
-	 * Bottom32bIO = sub 4GB top of memory, right justified 8 bits
+	 * bottom_32b_io = sub 4GB top of memory, right justified 8 bits
 	 *	(defines dram versus IO space type)
-	 * Cache32bTOP = sub 4GB top of WB cacheable memory,
+	 * cache_32b_top = sub 4GB top of WB cacheable memory,
 	 *	right justified 8 bits
 	 */
 
-	val = mctGet_NVbits(NV_BottomIO);
+	val = mct_get_nv_bits(NV_BOTTOM_IO);
 	if (val == 0)
 		val++;
 
-	Bottom32bIO = val << (24-8);
+	bottom_32b_io = val << (24-8);
 
-	val = pMCTstat->SysLimit + 1;
+	val = p_mct_stat->sys_limit + 1;
 	if (val <= _4GB_RJ8) {
-		Bottom40bIO = 0;
-		if (Bottom32bIO >= val)
-			Bottom32bIO = val;
+		bottom_40b_io = 0;
+		if (bottom_32b_io >= val)
+			bottom_32b_io = val;
 	} else {
-		Bottom40bIO = val;
+		bottom_40b_io = val;
 	}
 
-	Cache32bTOP = Bottom32bIO;
+	cache_32b_top = bottom_32b_io;
 
 	/*======================================================================
 	 Set default values for CPU registers
@@ -57,9 +57,9 @@ void CPUMemTyping_D(struct MCTStatStruc *pMCTstat,
 	addr = MTRR_FIX_64K_00000;
 	lo = 0x1E1E1E1E;
 	hi = lo;
-	_WRMSR(addr, lo, hi);		/* 0 - 512K = WB Mem */
+	_wrmsr(addr, lo, hi);		/* 0 - 512K = WB Mem */
 	addr = MTRR_FIX_16K_80000;
-	_WRMSR(addr, lo, hi);		/* 512K - 640K = WB Mem */
+	_wrmsr(addr, lo, hi);		/* 512K - 640K = WB Mem */
 
 	/*======================================================================
 	  Set variable MTRR values
@@ -71,132 +71,132 @@ void CPUMemTyping_D(struct MCTStatStruc *pMCTstat,
 	addr = MTRR_PHYS_BASE(2);	/* MTRR phys base 2*/
 			/* use TOP_MEM as limit*/
 			/* Limit = TOP_MEM|TOM2*/
-			/* Base = 0*/
-	print_tx("\t CPUMemTyping: Cache32bTOP:", Cache32bTOP);
-	SetMTRRrangeWB_D(0, &Cache32bTOP, &addr);
-				/* Base */
+			/* base = 0*/
+	print_tx("\t CPUMemTyping: cache_32b_top:", cache_32b_top);
+	set_mtrr_range_wb_d(0, &cache_32b_top, &addr);
+				/* base */
 				/* Limit */
 				/* MtrrAddr */
 	if (addr == -1)		/* ran out of MTRRs?*/
-		pMCTstat->GStatus |= 1<<GSB_MTRRshort;
+		p_mct_stat->g_status |= 1 << GSB_MTRR_SHORT;
 
-	pMCTstat->Sub4GCacheTop = Cache32bTOP<<8;
+	p_mct_stat->sub_4G_cache_top = cache_32b_top << 8;
 
 	/*======================================================================
 	 Set TOP_MEM and TOM2 CPU registers
 	======================================================================*/
 	addr = TOP_MEM;
-	lo = Bottom32bIO<<8;
-	hi = Bottom32bIO>>24;
-	_WRMSR(addr, lo, hi);
-	print_tx("\t CPUMemTyping: Bottom32bIO:", Bottom32bIO);
-	print_tx("\t CPUMemTyping: Bottom40bIO:", Bottom40bIO);
-	if (Bottom40bIO) {
-		hi = Bottom40bIO >> 24;
-		lo = Bottom40bIO << 8;
-		if (mctSetNodeBoundary_D())
+	lo = bottom_32b_io << 8;
+	hi = bottom_32b_io >> 24;
+	_wrmsr(addr, lo, hi);
+	print_tx("\t CPUMemTyping: bottom_32b_io:", bottom_32b_io);
+	print_tx("\t CPUMemTyping: bottom_40b_io:", bottom_40b_io);
+	if (bottom_40b_io) {
+		hi = bottom_40b_io >> 24;
+		lo = bottom_40b_io << 8;
+		if (mct_set_node_boundary_d())
 			lo &= 0xC0000000;
 		addr += 3;		/* TOM2 */
-		_WRMSR(addr, lo, hi);
+		_wrmsr(addr, lo, hi);
 	}
 	addr = SYSCFG_MSR;		/* SYS_CFG */
-	_RDMSR(addr, &lo, &hi);
-	if (Bottom40bIO) {
+	_rdmsr(addr, &lo, &hi);
+	if (bottom_40b_io) {
 		lo |= SYSCFG_MSR_TOM2En;	/* MtrrTom2En = 1 */
 		lo |= SYSCFG_MSR_TOM2WB;	/* Tom2ForceMemTypeWB */
 	} else {
 		lo &= ~SYSCFG_MSR_TOM2En;	/* MtrrTom2En = 0 */
 		lo &= ~SYSCFG_MSR_TOM2WB;	/* Tom2ForceMemTypeWB */
 	}
-	_WRMSR(addr, lo, hi);
+	_wrmsr(addr, lo, hi);
 }
 
 
-static void SetMTRRrangeWB_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr)
+static void set_mtrr_range_wb_d(u32 base, u32 *p_limit, u32 *p_mtrr_addr)
 {
 	/*set WB type*/
-	SetMTRRrange_D(Base, pLimit, pMtrrAddr, 6);
+	set_mtrr_range_d(base, p_limit, p_mtrr_addr, 6);
 }
 
 
-static void SetMTRRrange_D(u32 Base, u32 *pLimit, u32 *pMtrrAddr, u16 MtrrType)
+static void set_mtrr_range_d(u32 base, u32 *p_limit, u32 *p_mtrr_addr, u16 mtrr_type)
 {
 	/* Program MTRRs to describe given range as given cache type.
-	 * Use MTRR pairs starting with the given MTRRphys Base address,
+	 * Use MTRR pairs starting with the given MTRRphys base address,
 	 * and use as many as is required up to (excluding) MSR 020C, which
 	 * is reserved for OS.
 	 *
 	 * "Limit" in the context of this procedure is not the numerically
 	 * correct limit, but rather the Last address+1, for purposes of coding
-	 * efficiency and readability.  Size of a region is then Limit-Base.
+	 * efficiency and readability.  Size of a region is then Limit-base.
 	 *
 	 * 1. Size of each range must be a power of two
-	 * 2. Each range must be naturally aligned (Base is same as size)
+	 * 2. Each range must be naturally aligned (base is same as size)
 	 *
 	 * There are two code paths: the ascending path and descending path
 	 * (analogous to bsf and bsr), where the next limit is a function of the
 	 * next set bit in a forward or backward sequence of bits (as a function
 	 * of the Limit). We start with the ascending path, to ensure that
 	 * regions are naturally aligned, then we switch to the descending path
-	 * to maximize MTRR usage efficiency. Base = 0 is a special case where we
+	 * to maximize MTRR usage efficiency. base = 0 is a special case where we
 	 * start with the descending path. Correct Mask for region is
-	 * 2comp(Size-1)-1, which is 2comp(Limit-Base-1)-1
+	 * 2comp(Size-1)-1, which is 2comp(Limit-base-1)-1
 	 */
 
-	u32 curBase, curLimit, curSize;
+	u32 cur_base, cur_limit, cur_size;
 	u32 val, valx;
 	u32 addr;
 
-	val = curBase = Base;
-	curLimit = *pLimit;
-	addr = *pMtrrAddr;
-	while ((addr >= 0x200) && (addr < 0x20C) && (val < *pLimit)) {
+	val = cur_base = base;
+	cur_limit = *p_limit;
+	addr = *p_mtrr_addr;
+	while ((addr >= 0x200) && (addr < 0x20C) && (val < *p_limit)) {
 		/* start with "ascending" code path */
 		/* alignment (largest block size)*/
-		valx = 1 << bsf(curBase);
-		curSize = valx;
+		valx = 1 << bsf(cur_base);
+		cur_size = valx;
 
-		/* largest legal limit, given current non-zero range Base*/
-		valx += curBase;
-		if ((curBase == 0) || (*pLimit < valx)) {
+		/* largest legal limit, given current non-zero range base*/
+		valx += cur_base;
+		if ((cur_base == 0) || (*p_limit < valx)) {
 			/* flop direction to "descending" code path*/
-			valx = 1<<bsr(*pLimit - curBase);
-			curSize = valx;
-			valx += curBase;
+			valx = 1 << bsr(*p_limit - cur_base);
+			cur_size = valx;
+			valx += cur_base;
 		}
-		curLimit = valx;		/*eax = curBase, edx = curLimit*/
-		valx = val>>24;
+		cur_limit = valx;		/*eax = cur_base, edx = cur_limit*/
+		valx = val >> 24;
 		val <<= 8;
 
 		/* now program the MTRR */
-		val |= MtrrType;		/* set cache type (UC or WB)*/
-		_WRMSR(addr, val, valx);	/* prog. MTRR with current region Base*/
-		val = ((~(curSize - 1))+1) - 1;	/* Size-1*/ /*Mask = 2comp(Size-1)-1*/
+		val |= mtrr_type;		/* set cache type (UC or WB)*/
+		_wrmsr(addr, val, valx);	/* prog. MTRR with current region base*/
+		val = ((~(cur_size - 1))+1) - 1;	/* Size-1*/ /*Mask = 2comp(Size-1)-1*/
 		valx = (val >> 24) | (0xff00);	/* GH have 48 bits addr */
 		val <<= 8;
 		val |= (1 << 11);			/* set MTRR valid*/
 		addr++;
-		_WRMSR(addr, val, valx);	/* prog. MTRR with current region Mask*/
-		val = curLimit;
-		curBase = val;			/* next Base = current Limit (loop exit)*/
+		_wrmsr(addr, val, valx);	/* prog. MTRR with current region Mask*/
+		val = cur_limit;
+		cur_base = val;			/* next base = current Limit (loop exit)*/
 		addr++;				/* next MTRR pair addr */
 	}
-	if (val < *pLimit) {
-		*pLimit = val;
+	if (val < *p_limit) {
+		*p_limit = val;
 		addr = -1;
 	}
-	*pMtrrAddr = addr;
+	*p_mtrr_addr = addr;
 }
 
-void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstatA)
+void uma_mem_typing_d(struct MCTStatStruc *p_mct_stat, struct DCTStatStruc *p_dct_stat_a)
 {
 /* UMA memory size may need splitting the MTRR configuration into two
-  Before training use NB_BottomIO or the physical memory size to set the MTRRs.
-  After training, add UMAMemTyping function to reconfigure the MTRRs based on
-  NV_BottomUMA (for UMA systems only).
-  This two-step process allows all memory to be cached for training
-*/
-	u32 Bottom32bIO, Cache32bTOP;
+ * Before training use NB_BottomIO or the physical memory size to set the MTRRs.
+ * After training, add UMAMemTyping function to reconfigure the MTRRs based on
+ * NV_BOTTOM_UMA (for UMA systems only).
+ * This two-step process allows all memory to be cached for training
+ */
+	u32 bottom_32b_io, cache_32b_top;
 	u32 val;
 	u32 addr;
 	u32 lo, hi;
@@ -204,20 +204,20 @@ void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat
 	/*======================================================================
 	 * Adjust temp top of memory down to accommodate UMA memory start
 	 *======================================================================*/
-	/* Bottom32bIO = sub 4GB top of memory, right justified 8 bits
+	/* bottom_32b_io = sub 4GB top of memory, right justified 8 bits
 	 * (defines dram versus IO space type)
-	 * Cache32bTOP = sub 4GB top of WB cacheable memory, right justified 8 bits */
+	 * cache_32b_top = sub 4GB top of WB cacheable memory, right justified 8 bits */
 
-	Bottom32bIO = pMCTstat->Sub4GCacheTop >> 8;
+	bottom_32b_io = p_mct_stat->sub_4G_cache_top >> 8;
 
-	val = mctGet_NVbits(NV_BottomUMA);
+	val = mct_get_nv_bits(NV_BOTTOM_UMA);
 	if (val == 0)
 		val++;
 
 	val <<= (24-8);
-	if (val < Bottom32bIO) {
-		Cache32bTOP = val;
-		pMCTstat->Sub4GCacheTop = val;
+	if (val < bottom_32b_io) {
+		cache_32b_top = val;
+		p_mct_stat->sub_4G_cache_top = val;
 
 	/*======================================================================
 	 * Clear variable MTRR values
@@ -226,16 +226,16 @@ void UMAMemTyping_D(struct MCTStatStruc *pMCTstat, struct DCTStatStruc *pDCTstat
 		lo = 0;
 		hi = lo;
 		while (addr < MTRR_PHYS_BASE(6)) {
-			_WRMSR(addr, lo, hi);		/* prog. MTRR with current region Mask */
-			addr++;						/* next MTRR pair addr */
+			_wrmsr(addr, lo, hi);	/* prog. MTRR with current region Mask */
+			addr++;			/* next MTRR pair addr */
 		}
 
 		/*======================================================================
 		 * Set variable MTRR values
 		 *======================================================================*/
-		print_tx("\t UMAMemTyping_D: Cache32bTOP:", Cache32bTOP);
-		SetMTRRrangeWB_D(0, &Cache32bTOP, &addr);
+		print_tx("\t uma_mem_typing_d: cache_32b_top:", cache_32b_top);
+		set_mtrr_range_wb_d(0, &cache_32b_top, &addr);
 		if (addr == -1)		/* ran out of MTRRs?*/
-			pMCTstat->GStatus |= 1<<GSB_MTRRshort;
+			p_mct_stat->g_status |= 1 << GSB_MTRR_SHORT;
 	}
 }

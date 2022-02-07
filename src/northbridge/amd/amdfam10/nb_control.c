@@ -14,10 +14,10 @@
 
 static void nb_control_init(struct device *dev)
 {
-	uint32_t dword;
-	uint32_t f5x80;
-	uint8_t cu_enabled;
-	uint8_t compute_unit_count = 0;
+	u32 dword;
+	u32 f5x80;
+	u8 cu_enabled;
+	u8 compute_unit_count = 0;
 
 	printk(BIOS_DEBUG, "NB: Function 5 Northbridge Control.. ");
 

@@ -65,7 +65,7 @@ static void update_bridge_resource(const struct device *bridge, struct resource 
 	const unsigned long type_mask = IORESOURCE_TYPE_MASK | IORESOURCE_PREFETCH;
 	struct bus *bus = bridge->link_list;
 
-	while(bus && bus->children == NULL)
+	while (bus && bus->children == NULL)
 		bus = bus->next;
 
 	child_res = NULL;
@@ -167,7 +167,7 @@ static void compute_bridge_resources(const struct device *bridge, unsigned long 
 	struct bus *bus = bridge->link_list;
 	const unsigned long type_mask = IORESOURCE_TYPE_MASK | IORESOURCE_PREFETCH;
 
-	while(bus && bus->children == NULL)
+	while (bus && bus->children == NULL)
 		bus = bus->next;
 
 	for (res = bridge->resource_list; res; res = res->next) {
@@ -217,7 +217,7 @@ static void compute_domain_resources(const struct device *domain)
 	if (domain->link_list == NULL)
 		return;
 
-	while(bus && bus->children == NULL)
+	while (bus && bus->children == NULL)
 		bus = bus->next;
 
 	for (child = bus->children; child; child = child->sibling) {
@@ -449,7 +449,7 @@ static void avoid_fixed_resources(struct memranges *ranges, const struct device 
 
 	bus = dev->link_list;
 
-	while(bus && bus->children == NULL)
+	while (bus && bus->children == NULL)
 		bus = bus->next;
 
 	if (bus == NULL)
@@ -541,7 +541,7 @@ static void allocate_bridge_resources(const struct device *bridge)
 	struct device *child;
 	const unsigned long type_mask = IORESOURCE_TYPE_MASK | IORESOURCE_PREFETCH;
 
-	while(bus && bus->children == NULL)
+	while (bus && bus->children == NULL)
 		bus = bus->next;
 
 	for (res = bridge->resource_list; res; res = res->next) {
@@ -599,7 +599,7 @@ static void allocate_domain_resources(const struct device *domain)
 	struct device *child;
 	const struct resource *res;
 	struct bus *bus = domain->link_list;
-	while(bus && bus->children == NULL)
+	while (bus && bus->children == NULL)
 		bus = bus->next;
 
 	/* Resource type I/O */
@@ -689,7 +689,7 @@ void allocate_resources(const struct device *root)
 {
 	const struct device *child;
 	struct bus *bus = root->link_list;
-	while(bus && bus->children == NULL)
+	while (bus && bus->children == NULL)
 		bus = bus->next;
 
 	if ((root == NULL) || (bus == NULL))

@@ -1,45 +1,45 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-u8 mct_checkNumberOfDqsRcvEn_Pass(u8 pass)
+u8 mct_check_number_of_dqs_rcv_en_pass(u8 pass)
 {
 	return 1;
 }
 
-u32 SetupDqsPattern_PassA(u8 Pass)
+u32 setup_dqs_pattern_pass_a(u8 pass)
 {
 	u32 ret;
-	if (Pass == FirstPass)
-		ret = (u32) TestPattern1_D;
+	if (pass == FIRST_PASS)
+		ret = (u32) test_pattern_1_d;
 	else
-		ret = (u32) TestPattern2_D;
+		ret = (u32) test_pattern_2_d;
 
 	return ret;
 }
 
-u32 SetupDqsPattern_PassB(u8 Pass)
+u32 setup_dqs_pattern_pass_b(u8 pass)
 {
 	u32 ret;
-	if (Pass == FirstPass)
-		ret = (u32) TestPattern0_D;
+	if (pass == FIRST_PASS)
+		ret = (u32) test_pattern_0_d;
 	else
-		ret = (u32) TestPattern2_D;
+		ret = (u32) test_pattern_2_d;
 
 	return ret;
 }
 
-u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
-					u8 Channel, u8 Receiver,
-					u8 Pass)
+u8 mct_get_start_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
+					u8 channel, u8 receiver,
+					u8 pass)
 {
-	u8 RcvrEnDly;
+	u8 rcvr_en_dly;
 
-	if (Pass == FirstPass)
-		RcvrEnDly = 0;
+	if (pass == FIRST_PASS)
+		rcvr_en_dly = 0;
 	else {
 		u8 max = 0;
 		u8 val;
 		u8 i;
-		u8 *p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver>>1];
+		u8 *p = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[channel][receiver >> 1];
 		u8 bn;
 		bn = 8;
 
@@ -50,15 +50,15 @@ u8 mct_Get_Start_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 				max = val;
 			}
 		}
-		RcvrEnDly = max;
+		rcvr_en_dly = max;
 	}
 
-	return RcvrEnDly;
+	return rcvr_en_dly;
 }
 
-u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
-				u16 RcvrEnDly, u16 RcvrEnDlyLimit,
-				u8 Channel, u8 Receiver, u8 Pass)
+u16 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
+				u16 rcvr_en_dly, u16 rcvr_en_dly_limit,
+				u8 channel, u8 receiver, u8 pass)
 {
 	u8 i;
 	u16 *p;
@@ -70,17 +70,17 @@ u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 
 	bn = 8;
 
-	p = pDCTstat->persistentData.CH_D_B_RCVRDLY[Channel][Receiver>>1];
+	p = p_dct_stat->persistent_data.ch_d_b_rcvr_dly[channel][receiver >> 1];
 
-	if (Pass == SecondPass) { /* second pass must average values */
+	if (pass == SECOND_PASS) { /* second pass must average values */
 		/* FIXME: which byte? */
-		p_1 = pDCTstat->B_RCVRDLY_1;
-		/* p_1 = pDCTstat->persistentData.CH_D_B_RCVRDLY_1[Channel][Receiver>>1]; */
+		p_1 = p_dct_stat->B_RCVRDLY_1;
+		/* p_1 = p_dct_stat->persistent_data.CH_D_B_RCVRDLY_1[channel][receiver>>1]; */
 		for (i = 0; i < bn; i++) {
 			val = p[i];
 			/* left edge */
-			if (val != (RcvrEnDlyLimit - 1)) {
-				val -= Pass1MemClkDly;
+			if (val != (rcvr_en_dly_limit - 1)) {
+				val -= PASS_1_MEM_CLK_DLY;
 				val_1 = p_1[i];
 				val += val_1;
 				val >>= 1;
@@ -91,21 +91,21 @@ u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
 			}
 		}
 		if (!valid) {
-			pDCTstat->ErrStatus |= 1<<SB_NORCVREN;
+			p_dct_stat->err_status |= 1 << SB_NO_RCVR_EN;
 		} else {
-			pDCTstat->DimmTrainFail &= ~(1<<(Receiver + Channel));
+			p_dct_stat->DimmTrainFail &= ~(1 << (receiver + channel));
 		}
 	} else {
 		for (i = 0; i < bn; i++) {
 			val = p[i];
 			/* Add 1/2 Memlock delay */
-			/* val += Pass1MemClkDly; */
+			/* val += PASS_1_MEM_CLK_DLY; */
 			val += 0x5; /* NOTE: middle value with DQSRCVEN_SAVED_GOOD_TIMES */
 			/* val += 0x02; */
 			p[i] = val;
-			pDCTstat->DimmTrainFail &= ~(1<<(Receiver + Channel));
+			p_dct_stat->DimmTrainFail &= ~(1 << (receiver + channel));
 		}
 	}
 
-	return RcvrEnDly;
+	return rcvr_en_dly;
 }

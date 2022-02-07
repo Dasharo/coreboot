@@ -6,7 +6,7 @@
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 #include "mct_d_gcc.h"
 
-u8 mct_checkNumberOfDqsRcvEn_1Pass(u8 pass)
+u8 mct_check_number_of_dqs_rcv_en_1_pass(u8 pass)
 {
 	u8 ret = 1;
 
@@ -14,62 +14,62 @@ u8 mct_checkNumberOfDqsRcvEn_1Pass(u8 pass)
 		/* Fam15h needs two passes */
 		ret = 1;
 	} else {
-		if (pass == SecondPass)
+		if (pass == SECOND_PASS)
 			ret = 0;
 	}
 
 	return ret;
 }
 
-u32 SetupDqsPattern_1PassA(u8 pass)
+u32 setup_dqs_pattern_1_pass_a(u8 pass)
 {
-	return (u32) TestPattern1_D;
+	return (u32) test_pattern_1_d;
 }
 
-u32 SetupDqsPattern_1PassB(u8 pass)
+u32 setup_dqs_pattern_1_pass_b(u8 pass)
 {
-	return (u32) TestPattern0_D;
+	return (u32) test_pattern_0_d;
 }
 
-static u16 mct_Average_RcvrEnDly_1Pass(struct DCTStatStruc *pDCTstat, u8 Channel, u8 Receiver,
-					u8 Pass)
+static u16 mct_average_rcvr_en_dly_1_pass(struct DCTStatStruc *p_dct_stat, u8 channel, u8 receiver,
+					u8 pass)
 {
-	u16 i, MaxValue;
+	u16 i, max_value;
 	u16 *p;
 	u16 val;
 
-	MaxValue = 0;
-	p = pDCTstat->CH_D_B_RCVRDLY[Channel][Receiver >> 1];
+	max_value = 0;
+	p = p_dct_stat->ch_d_b_rcvr_dly[channel][receiver >> 1];
 
 	for (i = 0; i < 8; i++) {
 		/* get left value from DCTStatStruc.CHA_D0_B0_RCVRDLY*/
 		val = p[i];
 		/* get right value from DCTStatStruc.CHA_D0_B0_RCVRDLY_1*/
-		val += Pass1MemClkDly;
+		val += PASS_1_MEM_CLK_DLY;
 		/* write back the value to stack */
-		if (val > MaxValue)
-			MaxValue = val;
+		if (val > max_value)
+			max_value = val;
 
 		p[i] = val;
 	}
-	/* pDCTstat->DimmTrainFail &= ~(1<<Receiver+Channel); */
+	/* p_dct_stat->DimmTrainFail &= ~(1<<receiver+channel); */
 
-	return MaxValue;
+	return max_value;
 }
 
-u8 mct_SaveRcvEnDly_D_1Pass(struct DCTStatStruc *pDCTstat, u8 pass)
+u8 mct_save_rcv_en_dly_d_1_pass(struct DCTStatStruc *p_dct_stat, u8 pass)
 {
 	u8 ret;
 	ret = 0;
-	if ((pDCTstat->DqsRcvEn_Pass == 0xff) && (pass== FirstPass))
+	if ((p_dct_stat->dqs_rcv_en_pass == 0xff) && (pass == FIRST_PASS))
 		ret = 2;
 	return ret;
 }
 
-u16 mct_Average_RcvrEnDly_Pass(struct DCTStatStruc *pDCTstat,
-				u16 RcvrEnDly, u16 RcvrEnDlyLimit,
-				u8 Channel, u8 Receiver, u8 Pass)
+u16 mct_average_rcvr_en_dly_pass(struct DCTStatStruc *p_dct_stat,
+				u16 rcvr_en_dly, u16 rcvr_en_dly_limit,
+				u8 channel, u8 receiver, u8 pass)
 
 {
-	return mct_Average_RcvrEnDly_1Pass(pDCTstat, Channel, Receiver, Pass);
+	return mct_average_rcvr_en_dly_1_pass(p_dct_stat, channel, receiver, pass);
 }

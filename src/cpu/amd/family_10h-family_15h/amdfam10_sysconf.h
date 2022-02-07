@@ -41,7 +41,6 @@ struct amdfam10_sysconf_t {
 	int apicid_offset;
 
 	void *mb; // pointer for mb related struct
-
 };
 
 void get_bus_conf(void);

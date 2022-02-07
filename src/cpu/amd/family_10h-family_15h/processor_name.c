@@ -23,14 +23,14 @@
  */
 
 struct str_s {
-	u8 Pg;
-	u8 NC;
-	u8 String;
+	u8 pg;
+	u8 nc;
+	u8 string;
 	char const *value;
 };
 
 
-static const struct str_s String1_socket_F[] = {
+static const struct str_s string1_socket_f[] = {
 	{0x00, 0x01, 0x00, "Dual-Core AMD Opteron(tm) Processor 83"},
 	{0x00, 0x01, 0x01, "Dual-Core AMD Opteron(tm) Processor 23"},
 	{0x00, 0x03, 0x00, "Quad-Core AMD Opteron(tm) Processor 83"},
@@ -45,7 +45,7 @@ static const struct str_s String1_socket_F[] = {
 	{0, 0, 0, NULL}
 };
 
-static const struct str_s String2_socket_F[] = {
+static const struct str_s string2_socket_f[] = {
 	{0x00, 0xFF, 0x02, " EE"},
 	{0x00, 0xFF, 0x0A, " SE"},
 	{0x00, 0xFF, 0x0B, " HE"},
@@ -57,7 +57,7 @@ static const struct str_s String2_socket_F[] = {
 };
 
 
-static const struct str_s String1_socket_AM2[] = {
+static const struct str_s string1_socket_am2[] = {
 	{0x00, 0x00, 0x00, "AMD Athlon(tm) Processor LE-"},
 	{0x00, 0x00, 0x01, "AMD Sempron(tm) Processor LE-"},
 	{0x00, 0x00, 0x02, "AMD Sempron(tm) 1"},
@@ -88,7 +88,7 @@ static const struct str_s String1_socket_AM2[] = {
 	{0, 0, 0, NULL}
 };
 
-static const struct str_s String2_socket_AM2[] = {
+static const struct str_s string2_socket_am2[] = {
 	{0x00, 0x00, 0x00, "00"},
 	{0x00, 0x00, 0x01, "10"},
 	{0x00, 0x00, 0x02, "20"},
@@ -140,14 +140,14 @@ static const struct str_s String2_socket_AM2[] = {
 	{0, 0, 0, NULL}
 };
 
-static const struct str_s String1_socket_G34[] = {
+static const struct str_s string1_socket_g34[] = {
 	{0x00, 0x07, 0x00, "AMD Opteron(tm) Processor 61"},
 	{0x00, 0x0B, 0x00, "AMD Opteron(tm) Processor 61"},
 	{0x01, 0x07, 0x01, "Embedded AMD Opteron(tm) Processor "},
 	{0, 0, 0, NULL}
 };
 
-static const struct str_s String2_socket_G34[] = {
+static const struct str_s string2_socket_g34[] = {
 	{0x00, 0x07, 0x00, " HE"},
 	{0x00, 0x07, 0x01, " SE"},
 	{0x00, 0x0B, 0x00, " HE"},
@@ -158,7 +158,7 @@ static const struct str_s String2_socket_G34[] = {
 	{0, 0, 0, NULL}
 };
 
-static const struct str_s String1_socket_C32[] = {
+static const struct str_s string1_socket_c32[] = {
 	{0x00, 0x03, 0x00, "AMD Opteron(tm) Processor 41"},
 	{0x00, 0x05, 0x00, "AMD Opteron(tm) Processor 41"},
 	{0x01, 0x03, 0x01, "Embedded AMD Opteron(tm) Processor "},
@@ -166,7 +166,7 @@ static const struct str_s String1_socket_C32[] = {
 	{0, 0, 0, NULL}
 };
 
-static const struct str_s String2_socket_C32[] = {
+static const struct str_s string2_socket_c32[] = {
 	{0x00, 0x03, 0x00, " HE"},
 	{0x00, 0x03, 0x01, " EE"},
 	{0x00, 0x05, 0x00, " HE"},
@@ -203,14 +203,14 @@ int init_processor_name(void)
 	ssize_t i;
 	char program_string[NAME_STRING_MAXLEN];
 	u32 *p_program_string = (u32 *)program_string;
-	uint8_t fam15h = is_fam15h();
+	u8 fam15h = is_fam15h();
 
 	/* null the string */
 	memset(program_string, 0, sizeof(program_string));
 
 	if (fam15h) {
 		/* Family 15h or later */
-		uint32_t dword;
+		u32 dword;
 		struct device *cpu_fn5_dev = pcidev_on_root(0x18, 5);
 		pci_write_config32(cpu_fn5_dev, 0x194, 0);
 		dword = pci_read_config32(cpu_fn5_dev, 0x198);
@@ -232,59 +232,59 @@ int init_processor_name(void)
 		}
 	} else {
 		/* variable names taken from fam10 revision guide for clarity */
-		u32 BrandId;	/* CPUID Fn8000_0001_EBX */
-		u8 String1;	/* BrandID[14:11] */
-		u8 String2;	/* BrandID[3:0] */
-		u8 Model;	/* BrandID[10:4] */
-		u8 Pg;		/* BrandID[15] */
-		u8 PkgTyp;	/* BrandID[31:28] */
-		u8 NC;		/* CPUID Fn8000_0008_ECX */
+		u32 brand_id;	/* CPUID Fn8000_0001_EBX */
+		u8 string1;	/* BrandID[14:11] */
+		u8 string2;	/* BrandID[3:0] */
+		u8 model;	/* BrandID[10:4] */
+		u8 pg;		/* BrandID[15] */
+		u8 pkg_typ;	/* BrandID[31:28] */
+		u8 nc;		/* CPUID Fn8000_0008_ECX */
 		const char *processor_name_string = unknown;
-		int j = 0, str2_checkNC = 1;
+		int j = 0, str2_check_nc = 1;
 		const struct str_s *str, *str2;
 
 		/* Find out which CPU brand it is */
-		BrandId = cpuid_ebx(0x80000001);
-		String1 = (u8)((BrandId >> 11) & 0x0F);
-		String2 = (u8)((BrandId >> 0) & 0x0F);
-		Model = (u8)((BrandId >> 4) & 0x7F);
-		Pg = (u8)((BrandId >> 15) & 0x01);
-		PkgTyp = (u8)((BrandId >> 28) & 0x0F);
-		NC = (u8)(cpuid_ecx(0x80000008) & 0xFF);
+		brand_id = cpuid_ebx(0x80000001);
+		string1 = (u8)((brand_id >> 11) & 0x0F);
+		string2 = (u8)((brand_id >> 0) & 0x0F);
+		model = (u8)((brand_id >> 4) & 0x7F);
+		pg = (u8)((brand_id >> 15) & 0x01);
+		pkg_typ = (u8)((brand_id >> 28) & 0x0F);
+		nc = (u8)(cpuid_ecx(0x80000008) & 0xFF);
 
-		if (!Model) {
-			processor_name_string = Pg ? thermal : sample;
+		if (!model) {
+			processor_name_string = pg ? thermal : sample;
 			goto done;
 		}
 
-		switch (PkgTyp) {
+		switch (pkg_typ) {
 		case 0:		/* F1207 */
-			str = String1_socket_F;
-			str2 = String2_socket_F;
-			str2_checkNC = 0;
+			str = string1_socket_f;
+			str2 = string2_socket_f;
+			str2_check_nc = 0;
 			break;
 		case 1:		/* AM2 */
-			str = String1_socket_AM2;
-			str2 = String2_socket_AM2;
+			str = string1_socket_am2;
+			str2 = string2_socket_am2;
 			break;
 		case 3:		/* G34 */
-			str = String1_socket_G34;
-			str2 = String2_socket_G34;
-			str2_checkNC = 0;
+			str = string1_socket_g34;
+			str2 = string2_socket_g34;
+			str2_check_nc = 0;
 			break;
 		case 5:		/* C32 */
-			str = String1_socket_C32;
-			str2 = String2_socket_C32;
+			str = string1_socket_c32;
+			str2 = string2_socket_c32;
 			break;
 		default:
 			goto done;
 		}
 
-		/* String1 */
+		/* string1 */
 		for (i = 0; str[i].value; i++) {
-			if ((str[i].Pg == Pg) &&
-			(str[i].NC == NC) &&
-			(str[i].String == String1)) {
+			if ((str[i].pg == pg) &&
+			(str[i].nc == nc) &&
+			(str[i].string == string1)) {
 				processor_name_string = str[i].value;
 				break;
 			}
@@ -296,20 +296,20 @@ int init_processor_name(void)
 		j = strcpymax(program_string, processor_name_string,
 			sizeof(program_string));
 
-		/* Translate Model from 01-99 to ASCII and put it on the end.
+		/* Translate model from 01-99 to ASCII and put it on the end.
 		* Numbers less than 10 should include a leading zero, e.g., 09.*/
-		if (Model < 100 && j < sizeof(program_string) - 2) {
-			program_string[j++] = (Model / 10) + '0';
-			program_string[j++] = (Model % 10) + '0';
+		if (model < 100 && j < sizeof(program_string) - 2) {
+			program_string[j++] = (model / 10) + '0';
+			program_string[j++] = (model % 10) + '0';
 		}
 
 		processor_name_string = unknown2;
 
-		/* String 2 */
+		/* string 2 */
 		for (i = 0; str2[i].value; i++) {
-			if ((str2[i].Pg == Pg) &&
-			((str2[i].NC == NC) || !str2_checkNC) &&
-			(str2[i].String == String2)) {
+			if ((str2[i].pg == pg) &&
+			((str2[i].nc == nc) || !str2_check_nc) &&
+			(str2[i].string == string2)) {
 				processor_name_string = str2[i].value;
 				break;
 			}

@@ -3,6 +3,6 @@
 #ifndef ASPSNB_H
 #define ASPSNB_H
 
-u8 getMinNbCOF(void);
+u8 get_min_nb_cof(void);
 
 #endif

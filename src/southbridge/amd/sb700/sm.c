@@ -24,7 +24,7 @@
 #define AUXILIARY_SMBUS_RESOURCE_NUMBER 0x58
 #define HPET_RESOURCE_NUMBER 0xb4
 
-uint8_t amd_sb700_aux_smbus = 0;
+u8 amd_sb700_aux_smbus = 0;
 
 enum power_mode {
 	POWER_MODE_OFF = 0,
@@ -39,12 +39,12 @@ static const char *power_mode_names[] = {
 };
 
 
-void smbus_switch_to_channel(uint8_t channel_number)
+void smbus_switch_to_channel(u8 channel_number)
 {
 	amd_sb700_aux_smbus = !!channel_number;
 }
 
-uint8_t smbus_get_current_channel(void)
+u8 smbus_get_current_channel(void)
 {
 	return amd_sb700_aux_smbus;
 }
@@ -60,8 +60,8 @@ static void sm_init(struct device *dev)
 	u8 rev;
 	u32 dword;
 	void *ioapic_base;
-	uint32_t power_state;
-	uint32_t enable_legacy_usb;
+	u32 power_state;
+	u32 enable_legacy_usb;
 	u32 nmi_option;
 	u8 io_apicid;
 
@@ -252,7 +252,7 @@ static void sm_init(struct device *dev)
 	abcfg_reg(0x10064, 9 << 17, 9 << 17);
 
 	/* 4.5 Enabling OHCI Prefetch for Performance Enhancement, A12 */
-	abcfg_reg(0x80, 1 << 0, 1<< 0);
+	abcfg_reg(0x80, 1 << 0, 1 << 0);
 
 	/* 4.6 B-Link Client's Credit Variable Settings for the Downstream Arbitration Equation */
 	/* 4.7 Enabling Additional Address Bits Checking in Downstream */

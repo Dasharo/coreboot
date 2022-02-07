@@ -392,7 +392,7 @@ static unsigned int do_hypertransport_scan_chain(struct bus *bus, unsigned int m
 
 		printk(BIOS_DEBUG, "%s [%04x/%04x] %s next_unitid: %04x\n",
 		       dev_path(dev), dev->vendor, dev->device,
-		       (dev->enabled? "enabled" : "disabled"), next_unitid);
+		       (dev->enabled ? "enabled" : "disabled"), next_unitid);
 
 	} while (last_unitid != next_unitid);
 
@@ -440,8 +440,7 @@ end_of_chain:
 		for (left = old_devices; left; left = left->sibling)
 			printk(BIOS_DEBUG, "%s\n", dev_path(left));
 
-		printk(BIOS_ERR, "HT: Leftover static devices. "
-		       "Check your devicetree.cb\n");
+		printk(BIOS_ERR, "HT: Leftover static devices. Check your devicetree.cb\n");
 
 		/*
 		 * Put back the leftover static device, and let pci_scan_bus()
@@ -513,16 +512,16 @@ bool ht_is_non_coherent_link(struct bus *link)
 	u32 link_type;
 	do {
 		link_type = pci_read_config32(link->dev, link->cap + 0x18);
-	} while (link_type & ConnectionPending);
+	} while (link_type & CONNECTION_PENDING);
 
-	if (!(link_type & LinkConnected))
+	if (!(link_type & LINK_CONNECTED))
 		return false;
 
 	do {
 		link_type = pci_read_config32(link->dev, link->cap + 0x18);
-	} while (!(link_type & InitComplete));
+	} while (!(link_type & INIT_COMPLETE));
 
-	return !!(link_type & NonCoherent);
+	return !!(link_type & NON_COHERENT);
 }
 
 /** Default device operations for hypertransport bridges */

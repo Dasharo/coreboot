@@ -30,12 +30,12 @@
 #define ABCFG     3
 
 #define AB_INDX   0xCD8
-#define AB_DATA   (AB_INDX+4)
+#define AB_DATA   (AB_INDX + 4)
 
 /* Between 1-10 seconds, We should never timeout normally
  * Longer than this is just painful when a timeout condition occurs.
  */
-#define SMBUS_TIMEOUT (100*1000*10)
+#define SMBUS_TIMEOUT (100 * 1000 * 10)
 
 #define abcfg_reg(reg, mask, val)	\
 	alink_ab_indx((ABCFG), (reg), (mask), (val))

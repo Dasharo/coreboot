@@ -4,7 +4,7 @@
 
 typedef void (*process_ap_t) (u32 apicid, void *gp);
 
-void for_each_ap(uint32_t bsp_apicid, uint32_t core_range, int8_t node,
+void for_each_ap(u32 bsp_apicid, u32 core_range, s8 node,
 		 process_ap_t process_ap, void *gp);
 
 u32 initialize_cores(struct sys_info *sysinfo);

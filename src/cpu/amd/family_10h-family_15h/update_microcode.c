@@ -150,7 +150,6 @@ static u32 get_equivalent_processor_rev_id(u32 orig_id) {
 	}
 
 	return new_id;
-
 }
 
 static void apply_microcode_patch(const struct microcode *m)
@@ -158,7 +157,7 @@ static void apply_microcode_patch(const struct microcode *m)
 	u32 new_patch_id;
 	msr_t msr;
 
-	msr.hi = (uint64_t)(uintptr_t)m >> 32;
+	msr.hi = (u64)(uintptr_t)m >> 32;
 	msr.lo = (uintptr_t)m & 0xffffffff;
 
 	wrmsr(MSR_PATCH_LOADER, msr);
@@ -229,11 +228,11 @@ void amd_update_microcode_from_cbfs(void)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(microcode_cbfs_file); i++) {
-			ucode = cbfs_map(microcode_cbfs_file[i], &ucode_len);
-			if (!ucode)
-				continue;
+		ucode = cbfs_map(microcode_cbfs_file[i], &ucode_len);
+		if (!ucode)
+			continue;
 
-			amd_update_microcode(ucode, ucode_len, equivalent_processor_rev_id);
+		amd_update_microcode(ucode, ucode_len, equivalent_processor_rev_id);
 
 	}
 }

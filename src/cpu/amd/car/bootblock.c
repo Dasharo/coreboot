@@ -12,7 +12,7 @@
 #include <southbridge/amd/sb700/sb700.h>
 #include <smp/node.h>
 
-static uint32_t saved_bist;
+static u32 saved_bist;
 
 static void enable_pci_mmconf(void)
 {
@@ -31,7 +31,7 @@ static void *get_ap_entry_ptr(void)
 	return (void *)entry;
 }
 
-asmlinkage void bootblock_c_entry_bist(uint64_t base_timestamp, uint32_t bist)
+asmlinkage void bootblock_c_entry_bist(u64 base_timestamp, u32 bist)
 {
 	saved_bist = bist;
 

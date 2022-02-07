@@ -9,21 +9,23 @@
 #include "porting.h"
 
 #ifdef AMD_DEBUG_ERROR_STOP
-    /* Macro to aid debugging, causes program to halt and display the line number of the halt */
-    #define STOP_HERE ASSERT(0)
+	/* Macro to aid debugging, causes program to halt and display the line number of the
+	 * halt
+	 */
+	#define STOP_HERE ASSERT(0)
 #else
-    #define STOP_HERE
+	#define STOP_HERE
 #endif
 
-void CALLCONV AmdPCIReadBits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
-void CALLCONV AmdPCIWriteBits(SBDFO loc, uint8 highbit, uint8 lowbit, uint32 *value);
-void CALLCONV AmdPCIFindNextCap(SBDFO *current);
+void CALLCONV amd_pci_read_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *value);
+void CALLCONV amd_pci_write_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *value);
+void CALLCONV amd_pci_find_next_cap(SBDFO *current);
 
-void CALLCONV Amdmemcpy(void *dst, const void *src, uint32 length);
-void CALLCONV Amdmemset(void *buf, uint8 val, uint32 length);
+void CALLCONV amd_memcpy(void *dst, const void *src, u32 length);
+void CALLCONV amd_memset(void *buf, u8 val, u32 length);
 
-uint8 CALLCONV AmdBitScanReverse(uint32 value);
-uint32 CALLCONV AmdRotateRight(uint32 value, uint8 size, uint32 count);
-uint32 CALLCONV AmdRotateLeft(uint32 value, uint8 size, uint32 count);
+u8 CALLCONV amd_bit_scan_reverse(u32 value);
+u32 CALLCONV amd_rotate_right(u32 value, u8 size, u32 count);
+u32 CALLCONV amd_rotate_left(u32 value, u8 size, u32 count);
 
 #endif

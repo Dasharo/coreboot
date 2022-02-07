@@ -13,11 +13,11 @@
 unsigned long tsc_freq_mhz(void)
 {
 	msr_t msr;
-	uint8_t cpufid;
-	uint8_t cpudid;
-	uint8_t model;
-	uint32_t cpuid_fms;
-	uint8_t boost_capable = 0;
+	u8 cpufid;
+	u8 cpudid;
+	u8 model;
+	u32 cpuid_fms;
+	u8 boost_capable = 0;
 
 	/* Get CPU model */
 	cpuid_fms = cpuid_eax(0x80000001);

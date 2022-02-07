@@ -17,9 +17,9 @@ void __weak activate_spd_rom(const struct mem_controller *ctrl)
 {
 }
 
-void fam15h_switch_dct(uint32_t dev, uint8_t dct)
+void fam15h_switch_dct(u32 dev, u8 dct)
 {
-	uint32_t dword;
+	u32 dword;
 
 	dword = pci_read_config32(dev, 0x10c);
 	dword &= ~0x1;
@@ -27,9 +27,9 @@ void fam15h_switch_dct(uint32_t dev, uint8_t dct)
 	pci_write_config32(dev, 0x10c, dword);
 }
 
-static inline void fam15h_switch_nb_pstate_config_reg(uint32_t dev, uint8_t nb_pstate)
+static inline void fam15h_switch_nb_pstate_config_reg(u32 dev, u8 nb_pstate)
 {
-	uint32_t dword;
+	u32 dword;
 
 	dword = pci_read_config32(dev, 0x10c);
 	dword &= ~(0x3 << 4);
@@ -37,11 +37,11 @@ static inline void fam15h_switch_nb_pstate_config_reg(uint32_t dev, uint8_t nb_p
 	pci_write_config32(dev, 0x10c, dword);
 }
 
-uint32_t Get_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg)
+u32 get_nb32_dct(u32 dev, u8 dct, u32 reg)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		return pci_read_config32(dev, reg);
 	} else {
@@ -49,11 +49,11 @@ uint32_t Get_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg)
 	}
 }
 
-void Set_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg, uint32_t val)
+void set_nb32_dct(u32 dev, u8 dct, u32 reg, u32 val)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		pci_write_config32(dev, reg, val);
 	} else {
@@ -61,11 +61,11 @@ void Set_NB32_DCT(uint32_t dev, uint8_t dct, uint32_t reg, uint32_t val)
 	}
 }
 
-uint32_t Get_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uint32_t reg)
+u32 get_nb32_dct_nb_pstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		fam15h_switch_nb_pstate_config_reg(dev_map, nb_pstate);
 		return pci_read_config32(dev, reg);
@@ -74,11 +74,11 @@ uint32_t Get_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uin
 	}
 }
 
-void Set_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uint32_t reg, uint32_t val)
+void set_nb32_dct_nb_pstate(u32 dev, u8 dct, u8 nb_pstate, u32 reg, u32 val)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
 		fam15h_switch_nb_pstate_config_reg(dev_map, nb_pstate);
 		pci_write_config32(dev, reg, val);
@@ -87,31 +87,31 @@ void Set_NB32_DCT_NBPstate(uint32_t dev, uint8_t dct, uint8_t nb_pstate, uint32_
 	}
 }
 
-uint32_t Get_NB32_index_wait_DCT(uint32_t dev, uint8_t dct, uint32_t index_reg, uint32_t index)
+u32 get_nb32_index_wait_dct(u32 dev, u8 dct, u32 index_reg, u32 index)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
-		return Get_NB32_index_wait(dev, index_reg, index);
+		return get_nb32_index_wait(dev, index_reg, index);
 	} else {
-		return Get_NB32_index_wait(dev, (0x100 * dct) + index_reg, index);
+		return get_nb32_index_wait(dev, (0x100 * dct) + index_reg, index);
 	}
 }
 
-void Set_NB32_index_wait_DCT(uint32_t dev, uint8_t dct, uint32_t index_reg, uint32_t index, uint32_t data)
+void set_nb32_index_wait_dct(u32 dev, u8 dct, u32 index_reg, u32 index, u32 data)
 {
 	if (is_fam15h()) {
 		/* Obtain address of function 0x1 */
-		uint32_t dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
+		u32 dev_map = (dev & (~(0x7 << 12))) | (0x1 << 12);
 		fam15h_switch_dct(dev_map, dct);
-		Set_NB32_index_wait(dev, index_reg, index, data);
+		set_nb32_index_wait(dev, index_reg, index, data);
 	} else {
-		Set_NB32_index_wait(dev, (0x100 * dct) + index_reg, index, data);
+		set_nb32_index_wait(dev, (0x100 * dct) + index_reg, index, data);
 	}
 }
 
-static uint16_t voltage_index_to_mv(uint8_t index)
+static u16 voltage_index_to_mv(u8 index)
 {
 	if (index & 0x8)
 		return 1150;
@@ -123,13 +123,13 @@ static uint16_t voltage_index_to_mv(uint8_t index)
 		return 1500;
 }
 
-uint16_t mct_MaxLoadFreq(uint8_t count, uint8_t highest_rank_count, uint8_t registered, uint8_t voltage, uint16_t freq)
+u16 mct_MaxLoadFreq(u8 count, u8 highest_rank_count, u8 registered, u8 voltage, u16 freq)
 {
 	/* FIXME
 	 * Mainboards need to be able to specify the maximum number of DIMMs installable per channel
 	 * For now assume a maximum of 2 DIMMs per channel can be installed
 	 */
-	uint8_t MaxDimmsInstallable = 2;
+	u8 max_dimms_installable = 2;
 
 	/* Return limited maximum RAM frequency */
 	if (CONFIG(DIMM_DDR2)) {
@@ -244,7 +244,7 @@ uint16_t mct_MaxLoadFreq(uint8_t count, uint8_t highest_rank_count, uint8_t regi
 						}
 					} else if (voltage & 0x2) {
 						/* 1.35V */
-						if (MaxDimmsInstallable > 1) {
+						if (max_dimms_installable > 1) {
 							/* Limit to DDR3-1333 */
 							if (freq > 666) {
 								freq = 666;
@@ -258,7 +258,7 @@ uint16_t mct_MaxLoadFreq(uint8_t count, uint8_t highest_rank_count, uint8_t regi
 							}
 						}
 					} else if (voltage & 0x1) {
-						if (MaxDimmsInstallable == 1) {
+						if (max_dimms_installable == 1) {
 							if (count > 1) {
 								/* Limit to DDR3-1600 */
 								if (freq > 800) {
@@ -431,7 +431,7 @@ uint16_t mct_MaxLoadFreq(uint8_t count, uint8_t highest_rank_count, uint8_t regi
 							}
 						}
 					} else if (voltage & 0x1) {
-						if (MaxDimmsInstallable == 1) {
+						if (max_dimms_installable == 1) {
 							/* Limit to DDR3-1600 */
 							if (freq > 800) {
 								freq = 800;
@@ -503,12 +503,12 @@ uint16_t mct_MaxLoadFreq(uint8_t count, uint8_t highest_rank_count, uint8_t regi
 	return freq;
 }
 
-int mctRead_SPD(u32 smaddr, u32 reg)
+int mct_read_spd(u32 sm_addr, u32 reg)
 {
-	return spd_read_byte(smaddr, reg);
+	return spd_read_byte(sm_addr, reg);
 }
 
-void mctSMBhub_Init(u32 node)
+void mct_smb_hub_init(u32 node)
 {
 	struct sys_info *sysinfo = get_sysinfo();
 	struct mem_controller *ctrl = &(sysinfo->ctrl[node]);
@@ -517,13 +517,13 @@ void mctSMBhub_Init(u32 node)
 
 void raminit_amdmct(struct sys_info *sysinfo)
 {
-	struct MCTStatStruc *pMCTstat = &(sysinfo->MCTstat);
-	struct DCTStatStruc *pDCTstatA = sysinfo->DCTstatA;
+	struct MCTStatStruc *p_mct_stat = &(sysinfo->MCTstat);
+	struct DCTStatStruc *p_dct_stat_a = sysinfo->DCTstatA;
 
 	printk(BIOS_DEBUG, "raminit_amdmct begin:\n");
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
-	mctAutoInitMCT_D(pMCTstat, pDCTstatA);
+	mct_auto_init_mct_d(p_mct_stat, p_dct_stat_a);
 
 	timestamp_add_now(TS_AFTER_INITRAM);
 	printk(BIOS_DEBUG, "raminit_amdmct end:\n");
@@ -536,7 +536,7 @@ void amdmct_cbmem_store_info(struct sys_info *sysinfo)
 
 	/* Save memory info structures for use in ramstage */
 	size_t i;
-	struct DCTStatStruc *pDCTstatA = NULL;
+	struct DCTStatStruc *p_dct_stat_a = NULL;
 
 	if (!acpi_is_wakeup_s3()) {
 		/* Allocate memory */
@@ -555,18 +555,18 @@ void amdmct_cbmem_store_info(struct sys_info *sysinfo)
 		/* Copy data */
 		memcpy(&mem_info->mct_stat, &sysinfo->MCTstat, sizeof(struct MCTStatStruc));
 		for (i = 0; i < MAX_NODES_SUPPORTED; i++) {
-			pDCTstatA = sysinfo->DCTstatA + i;
-			memcpy(&mem_info->dct_stat[i], pDCTstatA, sizeof(struct DCTStatStruc));
+			p_dct_stat_a = sysinfo->DCTstatA + i;
+			memcpy(&mem_info->dct_stat[i], p_dct_stat_a, sizeof(struct DCTStatStruc));
 		}
-		mem_info->ecc_enabled = mctGet_NVbits(NV_ECC_CAP);
-		mem_info->ecc_scrub_rate = mctGet_NVbits(NV_DramBKScrub);
+		mem_info->ecc_enabled = mct_get_nv_bits(NV_ECC_CAP);
+		mem_info->ecc_scrub_rate = mct_get_nv_bits(NV_DRAM_BK_SCRUB);
 
 		/* Zero out invalid/unused pointers */
 		if (CONFIG(DIMM_DDR3)) {
 			for (i = 0; i < MAX_NODES_SUPPORTED; i++) {
-				mem_info->dct_stat[i].C_MCTPtr = NULL;
-				mem_info->dct_stat[i].C_DCTPtr[0] = NULL;
-				mem_info->dct_stat[i].C_DCTPtr[1] = NULL;
+				mem_info->dct_stat[i].c_mct_ptr = NULL;
+				mem_info->dct_stat[i].c_dct_ptr[0] = NULL;
+				mem_info->dct_stat[i].c_dct_ptr[1] = NULL;
 			}
 		}
 	}

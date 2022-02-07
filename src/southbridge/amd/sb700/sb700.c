@@ -66,8 +66,8 @@ void sb7xx_51xx_enable(struct device *dev)
 	struct device *sm_dev = NULL;
 	struct device *bus_dev = NULL;
 	int index;
-	u32 deviceid;
-	u32 vendorid;
+	u32 device_id;
+	u32 vendor_id;
 	int i;
 	u32 devfn;
 
@@ -89,12 +89,12 @@ void sb7xx_51xx_enable(struct device *dev)
 	 * 0:14.4  PCI							4
 	 */
 	if (dev->device == 0x0000) {
-		vendorid = pci_read_config32(dev, PCI_VENDOR_ID);
-		deviceid = (vendorid >> 16) & 0xffff;
-		vendorid &= 0xffff;
+		vendor_id = pci_read_config32(dev, PCI_VENDOR_ID);
+		device_id = (vendor_id >> 16) & 0xffff;
+		vendor_id &= 0xffff;
 	} else {
-		vendorid = dev->vendor;
-		deviceid = dev->device;
+		vendor_id = dev->vendor;
+		device_id = dev->device;
 	}
 
 	bus_dev = dev->bus->dev;
@@ -165,8 +165,8 @@ void sb7xx_51xx_enable(struct device *dev)
 	case PCI_DEVFN(0x14, 4):
 		break;
 	default:
-		printk(BIOS_DEBUG, "unknown dev: %s deviceid=%4x\n", dev_path(dev),
-			     deviceid);
+		printk(BIOS_DEBUG, "unknown dev: %s device_id=%4x\n", dev_path(dev),
+			     device_id);
 	}
 }
 

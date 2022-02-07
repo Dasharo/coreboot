@@ -54,7 +54,7 @@ static void mcf3_read_resources(struct device *dev)
 
 static void mcf3_set_resources(struct device *dev)
 {
-	uint32_t dword, pci_id;
+	u32 dword, pci_id;
 	struct resource *resource;
 
 	/* Set the gart aperture */
@@ -68,7 +68,7 @@ static void mcf3_set_resources(struct device *dev)
 		resource->flags |= IORESOURCE_STORED;
 
 		/* Find the size of the GART aperture */
-		gart_acr = (0<<6)|(0<<5)|(0<<4)|((resource->gran - 25) << 1)|(0<<0);
+		gart_acr = (0 << 6) | (0 << 5) | (0 << 4) | ((resource->gran - 25) << 1) | (0 << 0);
 
 		/* Get the base address */
 		gart_base = ((resource->base) >> 25) & 0x00007fff;
@@ -101,16 +101,16 @@ static void mcf3_set_resources(struct device *dev)
 
 static void misc_control_init(struct device *dev)
 {
-	uint32_t dword;
-	uint8_t boost_limit;
-	uint8_t current_boost;
+	u32 dword;
+	u8 boost_limit;
+	u8 current_boost;
 
 	printk(BIOS_DEBUG, "NB: Function 3 Misc Control.. ");
 
 #if CONFIG(DIMM_DDR3) && !CONFIG(NORTHBRIDGE_AMD_AGESA)
-	uint8_t node;
-	uint8_t slot;
-	uint8_t dimm_present;
+	u8 node;
+	u8 slot;
+	u8 dimm_present;
 
 	/* Restore DRAM MCA registers */
 	struct amdmct_memory_info *mem_info;
@@ -123,15 +123,15 @@ static void misc_control_init(struct device *dev)
 
 		/* Check all slots for installed DIMMs */
 		for (slot = 0; slot < MAX_DIMMS_SUPPORTED; slot++) {
-			if (mem_info->dct_stat[node].DIMMPresent & (1 << slot)) {
+			if (mem_info->dct_stat[node].dimm_present & (1 << slot)) {
 				dimm_present = 1;
 				break;
 			}
 		}
 
 		if (dimm_present) {
-			uint32_t mc4_status_high = pci_read_config32(dev, 0x4c);
-			uint32_t mc4_status_low = pci_read_config32(dev, 0x48);
+			u32 mc4_status_high = pci_read_config32(dev, 0x4c);
+			u32 mc4_status_low = pci_read_config32(dev, 0x48);
 			if ((mc4_status_high & (0x1 << 31)) && (mc4_status_high != 0xffffffff)) {
 				printk(BIOS_WARNING, "\nWARNING: MC4 Machine Check Exception detected on node %d!\n"
 					"Signature: %08x%08x\n", node, mc4_status_high, mc4_status_low);
@@ -149,7 +149,7 @@ static void misc_control_init(struct device *dev)
 	 * This is needed for PC backwards compatibility.
 	 */
 	dword = pci_read_config32(dev, 0x44);
-	dword |= (1<<6) | (1<<25);
+	dword |= (1 << 6) | (1 << 25);
 	pci_write_config32(dev, 0x44, dword);
 
 	boost_limit = get_uint_option("maximum_p_state_limit", 0xf);
@@ -175,7 +175,7 @@ static struct device_operations mcf3_ops  = {
 	.ops_pci          = 0,
 };
 
-static const uint16_t mcf3_ids[] = {0x1203, 0x1403, 0x1603, 0};
+static const u16 mcf3_ids[] = {0x1203, 0x1403, 0x1603, 0};
 
 static const struct pci_driver mcf3_driver __pci_driver = {
 	.ops     = &mcf3_ops,

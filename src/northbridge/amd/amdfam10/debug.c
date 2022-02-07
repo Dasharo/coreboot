@@ -16,7 +16,7 @@ void print_debug_addr(const char *str, void *val)
 
 void print_debug_pci_dev(u32 dev)
 {
-	printk(BIOS_DEBUG, "PCI: %02x:%02x.%02x", (dev>>20) & 0xff, (dev>>15) & 0x1f, (dev>>12) & 0x7);
+	printk(BIOS_DEBUG, "PCI: %02x:%02x.%02x", (dev >> 20) & 0xff, (dev >> 15) & 0x1f, (dev >> 12) & 0x7);
 }
 
 void print_pci_devices(void)
@@ -34,7 +34,7 @@ void print_pci_devices(void)
 		}
 		print_debug_pci_dev(dev);
 		printk(BIOS_DEBUG, " %04x:%04x\n", (id & 0xffff), (id>>16));
-		if (((dev>>12) & 0x07) == 0) {
+		if (((dev >> 12) & 0x07) == 0) {
 			u8 hdr_type;
 			hdr_type = pci_read_config8(dev, PCI_HEADER_TYPE);
 			if ((hdr_type & 0x80) != 0x80) {
@@ -59,7 +59,7 @@ void print_pci_devices_on_bus(u32 busn)
 		}
 		print_debug_pci_dev(dev);
 		printk(BIOS_DEBUG, " %04x:%04x\n", (id & 0xffff), (id>>16));
-		if (((dev>>12) & 0x07) == 0) {
+		if (((dev >> 12) & 0x07) == 0) {
 			u8 hdr_type;
 			hdr_type = pci_read_config8(dev, PCI_HEADER_TYPE);
 			if ((hdr_type & 0x80) != 0x80) {
@@ -130,14 +130,14 @@ void dump_pci_device_index(u32 dev, u32 index_reg, u32 type, u32 length)
 
 	printk(BIOS_DEBUG, " index reg: %04x type: %02x", index_reg, type);
 
-	type<<=28;
+	type <<= 28;
 
 	for (i = 0; i < length; i++) {
 		u32 val;
 		if ((i & 0x0f) == 0) {
 			printk(BIOS_DEBUG, "\n%02x:",i);
 		}
-		val = pci_read_config32_index(dev, index_reg, i|type);
+		val = pci_read_config32_index(dev, index_reg, i | type);
 		printk(BIOS_DEBUG, " %08x", val);
 	}
 	printk(BIOS_DEBUG, "\n");
@@ -158,7 +158,7 @@ void dump_pci_devices(void)
 		}
 		dump_pci_device(dev);
 
-		if (((dev>>12) & 0x07) == 0) {
+		if (((dev >> 12) & 0x07) == 0) {
 			u8 hdr_type;
 			hdr_type = pci_read_config8(dev, PCI_HEADER_TYPE);
 			if ((hdr_type & 0x80) != 0x80) {
@@ -183,7 +183,7 @@ void dump_pci_devices_on_bus(u32 busn)
 		}
 		dump_pci_device(dev);
 
-		if (((dev>>12) & 0x07) == 0) {
+		if (((dev >> 12) & 0x07) == 0) {
 			u8 hdr_type;
 			hdr_type = pci_read_config8(dev, PCI_HEADER_TYPE);
 			if ((hdr_type & 0x80) != 0x80) {
@@ -219,7 +219,7 @@ void dump_spd_registers(const struct mem_controller *ctrl)
 			}
 			printk(BIOS_DEBUG, "\n");
 		}
-		device = ctrl->spd_addr[i+DIMM_SOCKETS];
+		device = ctrl->spd_addr[i + DIMM_SOCKETS];
 		if (device) {
 			int j;
 			printk(BIOS_DEBUG, "dimm: %02x.1: %02x", i, device);

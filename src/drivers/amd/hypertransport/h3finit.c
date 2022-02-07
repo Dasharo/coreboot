@@ -52,7 +52,7 @@
 #define NVRAM_LIMIT_HT_SPEED_3200 0x1
 #define NVRAM_LIMIT_HT_SPEED_AUTO 0x0
 
-static const uint32_t ht_speed_limit[20] =
+static const u32 ht_speed_limit[20] =
 	{0xFFFFF, 0xFFFFF, 0x7FFFF, 0x3FFFF,
 	 0x0FFFF, 0x07FFF, 0x03FFF, 0x01FFF,
 	 0x00FFF, 0x007FF, 0x003FF, 0x001FF,
@@ -60,8 +60,8 @@ static const uint32_t ht_speed_limit[20] =
 	 0x0000F, 0x00007, 0x00003, 0x00001};
 
 static const struct ht_speed_limit_map_t {
-	uint16_t mhz;
-	uint8_t nvram;
+	u16 mhz;
+	u8 nvram;
 } ht_speed_limit_map[] = {
 	{0, NVRAM_LIMIT_HT_SPEED_AUTO},
 	{200, NVRAM_LIMIT_HT_SPEED_200},
@@ -84,7 +84,7 @@ static const struct ht_speed_limit_map_t {
 	{3200, NVRAM_LIMIT_HT_SPEED_3200},
 };
 
-static const uint32_t ht_speed_mhz_to_hw(uint16_t mhz)
+static const u32 ht_speed_mhz_to_hw(u16 mhz)
 {
 	size_t i;
 	for (i = 0; i < ARRAY_SIZE(ht_speed_limit_map); i++)
@@ -159,7 +159,7 @@ static const uint32_t ht_speed_mhz_to_hw(uint16_t mhz)
 
 /*----------------------------------------------------------------------------------------
  * u8
- * graphHowManyNodes(u8 *graph)
+ * graph_how_many_nodes(u8 *graph)
  *
  *  Description:
  *	 Returns the number of nodes in the compressed graph
@@ -169,14 +169,14 @@ static const uint32_t ht_speed_mhz_to_hw(uint16_t mhz)
  *	@param[out] results = the number of nodes in the graph
  * ---------------------------------------------------------------------------------------
  */
-static u8 graphHowManyNodes(u8 *graph)
+static u8 graph_how_many_nodes(u8 *graph)
 {
 	return graph[0];
 }
 
 /*----------------------------------------------------------------------------------------
  * BOOL
- * graphIsAdjacent(u8 *graph, u8 nodeA, u8 nodeB)
+ * graph_is_adjacent(u8 *graph, u8 node_a, u8 node_b)
  *
  *  Description:
  * Returns true if NodeA is directly connected to NodeB, false otherwise
@@ -185,92 +185,92 @@ static u8 graphHowManyNodes(u8 *graph)
  *
  *  Parameters:
  *	@param[in]   graph   = the graph to examine
- *	@param[in]   nodeA   = the node number of the first node
- *	@param[in]   nodeB   = the node number of the second node
- *	@param[out]    results  = true if nodeA connects to nodeB false if not
+ *	@param[in]   node_a   = the node number of the first node
+ *	@param[in]   node_b   = the node number of the second node
+ *	@param[out]    results  = true if node_a connects to node_b false if not
  * ---------------------------------------------------------------------------------------
  */
-static BOOL graphIsAdjacent(u8 *graph, u8 nodeA, u8 nodeB)
+static BOOL graph_is_adjacent(u8 *graph, u8 node_a, u8 node_b)
 {
 	u8 size = graph[0];
 	ASSERT(size <= MAX_NODES);
-	ASSERT((nodeA < size) && (nodeB < size));
-	return (graph[1+(nodeA*size+nodeB)*2+1] & 0x0F) == nodeB;
+	ASSERT((node_a < size) && (node_b < size));
+	return (graph[1 + (node_a * size + node_b) * 2 + 1] & 0x0F) == node_b;
 }
 
 /*----------------------------------------------------------------------------------------
  * u8
- * graphGetRsp(u8 *graph, u8 nodeA, u8 nodeB)
+ * graph_get_rsp(u8 *graph, u8 node_a, u8 node_b)
  *
  *  Description:
- *	Returns the graph node used by nodeA to route responses targeted at nodeB.
- *	This will be a node directly connected to nodeA (possibly nodeB itself),
- *	or "Route to Self" if nodeA and nodeB are the same node.
+ *	Returns the graph node used by node_a to route responses targeted at node_b.
+ *	This will be a node directly connected to node_a (possibly node_b itself),
+ *	or "Route to Self" if node_a and node_b are the same node.
  *	Note that all node numbers are abstract node numbers of the topology graph,
  *	it is the responsibility of the caller to apply any permutation needed.
  *
  *  Parameters:
  *	@param[in]    u8    graph   = the graph to examine
- *	@param[in]    u8    nodeA   = the node number of the first node
- *	@param[in]    u8    nodeB   = the node number of the second node
+ *	@param[in]    u8    node_a   = the node number of the first node
+ *	@param[in]    u8    node_b   = the node number of the second node
  *	@param[out]   u8    results = The response route node
  * ---------------------------------------------------------------------------------------
  */
-static u8 graphGetRsp(u8 *graph, u8 nodeA, u8 nodeB)
+static u8 graph_get_rsp(u8 *graph, u8 node_a, u8 node_b)
 {
 	u8 size = graph[0];
 	ASSERT(size <= MAX_NODES);
-	ASSERT((nodeA < size) && (nodeB < size));
-	return (graph[1+(nodeA*size+nodeB)*2+1] & 0xF0)>>4;
+	ASSERT((node_a < size) && (node_b < size));
+	return (graph[1 + (node_a * size + node_b) * 2 + 1] & 0xF0) >> 4;
 }
 
 /*----------------------------------------------------------------------------------------
  * u8
- * graphGetReq(u8 *graph, u8 nodeA, u8 nodeB)
+ * graph_get_req(u8 *graph, u8 node_a, u8 node_b)
  *
  *  Description:
- *	 Returns the graph node used by nodeA to route requests targeted at nodeB.
- *	This will be a node directly connected to nodeA (possibly nodeB itself),
- *	or "Route to Self" if nodeA and nodeB are the same node.
+ *	 Returns the graph node used by node_a to route requests targeted at node_b.
+ *	This will be a node directly connected to node_a (possibly node_b itself),
+ *	or "Route to Self" if node_a and node_b are the same node.
  *	Note that all node numbers are abstract node numbers of the topology graph,
  *	it is the responsibility of the caller to apply any permutation needed.
  *
  *  Parameters:
  *	@param[in]   graph   = the graph to examine
- *	@param[in]   nodeA   = the node number of the first node
- *	@param[in]   nodeB   = the node number of the second node
+ *	@param[in]   node_a   = the node number of the first node
+ *	@param[in]   node_b   = the node number of the second node
  *	@param[out]  results = The request route node
  * ---------------------------------------------------------------------------------------
  */
-static u8 graphGetReq(u8 *graph, u8 nodeA, u8 nodeB)
+static u8 graph_get_req(u8 *graph, u8 node_a, u8 node_b)
 {
 	u8 size = graph[0];
 	ASSERT(size <= MAX_NODES);
-	ASSERT((nodeA < size) && (nodeB < size));
-	return (graph[1+(nodeA*size+nodeB)*2+1] & 0x0F);
+	ASSERT((node_a < size) && (node_b < size));
+	return (graph[1 + (node_a * size + node_b) * 2 + 1] & 0x0F);
 }
 
 /*----------------------------------------------------------------------------------------
  * u8
- * graphGetBc(u8 *graph, u8 nodeA, u8 nodeB)
+ * graph_get_bc(u8 *graph, u8 node_a, u8 node_b)
  *
  *  Description:
- *	 Returns a bit vector of nodes that nodeA should forward a broadcast from
- *	 nodeB towards
+ *	 Returns a bit vector of nodes that node_a should forward a broadcast from
+ *	 node_b towards
  *
  *  Parameters:
  *	@param[in]    graph   = the graph to examine
- *	@param[in]    nodeA   = the node number of the first node
- *	@param[in]    nodeB   = the node number of the second node
- *	OU    results = the broadcast routes for nodeA from nodeB
+ *	@param[in]    node_a   = the node number of the first node
+ *	@param[in]    node_b   = the node number of the second node
+ *	OU    results = the broadcast routes for node_a from node_b
  * ---------------------------------------------------------------------------------------
  */
-static u8 graphGetBc(u8 *graph, u8 nodeA, u8 nodeB)
+static u8 graph_get_bc(u8 *graph, u8 node_a, u8 node_b)
 {
 	u8 size = graph[0];
 	ASSERT(size <= MAX_NODES);
-	ASSERT((nodeA < size) && (nodeB < size));
-	return graph[1+(nodeA*size+nodeB)*2];
+	ASSERT((node_a < size) && (node_b < size));
+	return graph[1 + (node_a * size + node_b) * 2];
 }
 
 
@@ -280,7 +280,7 @@ static u8 graphGetBc(u8 *graph, u8 nodeA, u8 nodeB)
 
 /*----------------------------------------------------------------------------------------
  * void
- * routeFromBSP(u8 targetNode, u8 actualTarget, sMainData *pDat)
+ * route_from_bsp(u8 target_node, u8 actual_target, sMainData *p_dat)
  *
  *  Description:
  *	 Ensure a request / response route from target node to bsp.  Since target node is
@@ -289,79 +289,82 @@ static u8 graphGetBc(u8 *graph, u8 nodeA, u8 nodeB)
  *	 for config access during discovery, but NOT for coherency.
  *
  *  Parameters:
- *	@param[in]    u8    targetNode   = the path to actual target goes through target
- *	@param[in]    u8    actualTarget = the ultimate target being routed to
- *	@param[in]    sMainData*  pDat   = our global state, port config info
+ *	@param[in]    u8    target_node   = the path to actual target goes through target
+ *	@param[in]    u8    actual_target = the ultimate target being routed to
+ *	@param[in]    sMainData*  p_dat   = our global state, port config info
  * ---------------------------------------------------------------------------------------
  */
-static void routeFromBSP(u8 targetNode, u8 actualTarget, sMainData *pDat)
+static void route_from_bsp(u8 target_node, u8 actual_target, sMainData *p_dat)
 {
-	u8 predecessorNode, predecessorLink, currentPair;
+	u8 predecessor_node, predecessor_link, current_pair;
 
-	if (targetNode == 0)
+	if (target_node == 0)
 		return;  /*  BSP has no predecessor, stop */
 
-	/*  Search for the link that connects targetNode to its predecessor */
-	currentPair = 0;
-	while (pDat->PortList[currentPair*2+1].NodeID != targetNode)
+	/*  Search for the link that connects target_node to its predecessor */
+	current_pair = 0;
+	while (p_dat->port_list[current_pair * 2 + 1].node_id != target_node)
 	{
-		currentPair++;
-		ASSERT(currentPair < pDat->TotalLinks);
+		current_pair++;
+		ASSERT(current_pair < p_dat->total_links);
 	}
 
-	predecessorNode = pDat->PortList[currentPair*2].NodeID;
-	predecessorLink = pDat->PortList[currentPair*2].Link;
+	predecessor_node = p_dat->port_list[current_pair * 2].node_id;
+	predecessor_link = p_dat->port_list[current_pair * 2].link;
 
 	/*  Recursively call self to ensure the route from the BSP to the Predecessor */
 	/*  Node is established */
-	routeFromBSP(predecessorNode, actualTarget, pDat);
+	route_from_bsp(predecessor_node, actual_target, p_dat);
 
-	pDat->nb->writeRoutingTable(predecessorNode, actualTarget, predecessorLink, pDat->nb);
+	p_dat->nb->write_routing_table(
+		predecessor_node, actual_target, predecessor_link, p_dat->nb);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /**
  *  u8
- * convertNodeToLink(u8 srcNode, u8 targetNode, sMainData *pDat)
+ * convert_node_to_link(u8 src_node, u8 target_node, sMainData *p_dat)
  *
  *  Description:
  *	 Return the link on source node which connects to target node
  *
  *  Parameters:
- *	@param[in]    srcNode    = the source node
- *	@param[in]    targetNode = the target node to find the link to
- *	@param[in]    pDat = our global state
+ *	@param[in]    src_node    = the source node
+ *	@param[in]    target_node = the target node to find the link to
+ *	@param[in]    p_dat = our global state
  *	@return       the link on source which connects to target
  *
  */
-static u8 convertNodeToLink(u8 srcNode, u8 targetNode, sMainData *pDat)
+static u8 convert_node_to_link(u8 src_node, u8 target_node, sMainData *p_dat)
 {
-	u8 targetlink = INVALID_LINK;
+	u8 target_link = INVALID_LINK;
 	u8 k;
 
-	for (k = 0; k < pDat->TotalLinks*2; k += 2)
+	for (k = 0; k < p_dat->total_links * 2; k += 2)
 	{
-		if ((pDat->PortList[k+0].NodeID == srcNode) && (pDat->PortList[k+1].NodeID == targetNode))
+		if ((p_dat->port_list[k + 0].node_id == src_node)
+		&& (p_dat->port_list[k + 1].node_id == target_node))
 		{
-			targetlink = pDat->PortList[k+0].Link;
+			target_link = p_dat->port_list[k + 0].link;
 			break;
 		}
-		else if ((pDat->PortList[k+1].NodeID == srcNode) && (pDat->PortList[k+0].NodeID == targetNode))
+		else if ((p_dat->port_list[k + 1].node_id == src_node)
+		&& (p_dat->port_list[k + 0].node_id == target_node))
 		{
-			targetlink = pDat->PortList[k+1].Link;
+			target_link = p_dat->port_list[k + 1].link;
 			break;
 		}
 	}
-	ASSERT(targetlink != INVALID_LINK);
+	ASSERT(target_link != INVALID_LINK);
 
-	return targetlink;
+	return target_link;
 }
 
 
 /*----------------------------------------------------------------------------------------
  * void
- * htDiscoveryFloodFill(sMainData *pDat)
+ * ht_discovery_flood_fill(sMainData *p_dat)
  *
  *  Description:
  *	 Discover all coherent devices in the system, initializing some basics like node IDs
@@ -371,30 +374,30 @@ static u8 convertNodeToLink(u8 srcNode, u8 targetNode, sMainData *pDat)
  *	 was discovered on (no coherency is active yet).
  *
  *  Parameters:
- *	@param[in]    sMainData*  pDat = our global state
+ *	@param[in]    sMainData*  p_dat = our global state
  * ---------------------------------------------------------------------------------------
  */
-static void htDiscoveryFloodFill(sMainData *pDat)
+static void ht_discovery_flood_fill(sMainData *p_dat)
 {
-	uint8_t currentNode = 0;
-	uint8_t currentLink;
-	uint8_t currentLinkID;
+	u8 current_node = 0;
+	u8 current_link;
+	u8 current_link_id;
 
 	/* NOTE
 	 * Each node inside a dual node (socket G34) processor must share
 	 * an adjacent node ID.  Alter the link scan order such that the
 	 * other internal node is always scanned first...
 	 */
-	uint8_t currentLinkScanOrder_Default[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-	uint8_t currentLinkScanOrder_G34_Fam10[8] = {1, 0, 2, 3, 4, 5, 6, 7};
-	uint8_t currentLinkScanOrder_G34_Fam15[8] = {2, 0, 1, 3, 4, 5, 6, 7};
+	u8 current_link_scan_order_default[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+	u8 current_link_scan_order_g34_fam10[8] = {1, 0, 2, 3, 4, 5, 6, 7};
+	u8 current_link_scan_order_g34_fam15[8] = {2, 0, 1, 3, 4, 5, 6, 7};
 
-	uint8_t fam15h = 0;
-	uint8_t rev_gte_d = 0;
-	uint8_t dual_node = 0;
-	uint32_t f3xe8;
-	uint32_t family;
-	uint32_t model;
+	u8 fam_15h = 0;
+	u8 rev_gte_d = 0;
+	u8 dual_node = 0;
+	u32 f3xe8;
+	u32 family;
+	u32 model;
 
 	f3xe8 = pci_read_config32(NODE_PCI(0, 3), 0xe8);
 
@@ -404,10 +407,10 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 
 	if (family >= 0x6f) {
 		/* Family 15h or later */
-		fam15h = 1;
+		fam_15h = 1;
 	}
 
-	if ((model >= 0x8) || fam15h)
+	if ((model >= 0x8) || fam_15h)
 		/* Revision D or later */
 		rev_gte_d = 1;
 
@@ -419,108 +422,123 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 	/* Entries are always added in pairs, the even indices are the 'source'
 	 * side closest to the BSP, the odd indices are the 'destination' side
 	 */
-	while (currentNode <= pDat->NodesDiscovered)
+	while (current_node <= p_dat->nodes_discovered)
 	{
 		u32 temp;
 
-		if (currentNode != 0)
+		if (current_node != 0)
 		{
-			/* Set path from BSP to currentNode */
-			routeFromBSP(currentNode, currentNode, pDat);
+			/* Set path from BSP to current_node */
+			route_from_bsp(current_node, current_node, p_dat);
 
-			/* Set path from BSP to currentNode for currentNode+1 if
-			 * currentNode+1 != MAX_NODES
+			/* Set path from BSP to current_node for current_node+1 if
+			 * current_node+1 != MAX_NODES
 			 */
-			if (currentNode+1 != MAX_NODES)
-				routeFromBSP(currentNode, currentNode+1, pDat);
+			if (current_node + 1 != MAX_NODES)
+				route_from_bsp(current_node, current_node + 1, p_dat);
 
-			/* Configure currentNode to route traffic to the BSP through its
+			/* Configure current_node to route traffic to the BSP through its
 			 * default link
 			 */
-			pDat->nb->writeRoutingTable(currentNode, 0, pDat->nb->readDefLnk(currentNode, pDat->nb), pDat->nb);
+			p_dat->nb->write_routing_table(
+				current_node, 0,
+				p_dat->nb->read_def_lnk(current_node, p_dat->nb),
+				p_dat->nb);
 		}
 
-		/* Set currentNode's NodeID field to currentNode */
-		pDat->nb->writeNodeID(currentNode, currentNode, pDat->nb);
+		/* Set current_node's node_id field to current_node */
+		p_dat->nb->write_node_id(current_node, current_node, p_dat->nb);
 
-		/* Enable routing tables on currentNode */
-		pDat->nb->enableRoutingTables(currentNode, pDat->nb);
+		/* Enable routing tables on current_node */
+		p_dat->nb->enable_routing_tables(current_node, p_dat->nb);
 
-		for (currentLinkID = 0; currentLinkID < pDat->nb->maxLinks; currentLinkID++)
+		for (current_link_id = 0;
+		current_link_id < p_dat->nb->max_links;
+		current_link_id++)
 		{
-			BOOL linkfound;
+			BOOL link_found;
 			u8 token;
 
-			if (currentLinkID < 8) {
+			if (current_link_id < 8) {
 				if (dual_node) {
-					if (fam15h)
-						currentLink = currentLinkScanOrder_G34_Fam15[currentLinkID];
+					if (fam_15h)
+						current_link = current_link_scan_order_g34_fam15
+									[current_link_id];
 					else
-						currentLink = currentLinkScanOrder_G34_Fam10[currentLinkID];
+						current_link = current_link_scan_order_g34_fam10
+									[current_link_id];
 				} else {
-					currentLink = currentLinkScanOrder_Default[currentLinkID];
+					current_link = current_link_scan_order_default
+									[current_link_id];
 				}
 			} else {
-				currentLink = currentLinkID;
+				current_link = current_link_id;
 			}
 
-			if (pDat->HtBlock->AMD_CB_IgnoreLink && pDat->HtBlock->AMD_CB_IgnoreLink(currentNode, currentLink))
+			if (p_dat->ht_block->amd_cb_ignore_link
+			&& p_dat->ht_block->amd_cb_ignore_link(current_node, current_link))
 				continue;
 
-			if (pDat->nb->readTrueLinkFailStatus(currentNode, currentLink, pDat, pDat->nb))
+			if (p_dat->nb->read_true_link_fail_status(
+						current_node, current_link, p_dat, p_dat->nb))
 				continue;
 
 			/* Make sure that the link is connected, coherent, and ready */
-			if (!pDat->nb->verifyLinkIsCoherent(currentNode, currentLink, pDat->nb))
+			if (!p_dat->nb->verify_link_is_coherent(
+						current_node, current_link, p_dat->nb))
 				continue;
 
 
-			/* Test to see if the currentLink has already been explored */
-			linkfound = FALSE;
-			for (temp = 0; temp < pDat->TotalLinks; temp++)
+			/* Test to see if the current_link has already been explored */
+			link_found = FALSE;
+			for (temp = 0; temp < p_dat->total_links; temp++)
 			{
-				if ((pDat->PortList[temp*2+1].NodeID == currentNode) &&
-				   (pDat->PortList[temp*2+1].Link == currentLink))
+				if ((p_dat->port_list[temp * 2 + 1].node_id == current_node) &&
+				   (p_dat->port_list[temp * 2 + 1].link == current_link))
 				{
-					linkfound = TRUE;
+					link_found = TRUE;
 					break;
 				}
 			}
-			if (linkfound)
+			if (link_found)
 			{
 				/* We had already expored this link */
 				continue;
 			}
 
-			if (pDat->nb->handleSpecialLinkCase(currentNode, currentLink, pDat, pDat->nb))
+			if (p_dat->nb->handle_special_link_case(
+						current_node, current_link, p_dat, p_dat->nb))
 			{
 				continue;
 			}
 
-			/* Modify currentNode's routing table to use currentLink to send
-			 * traffic to currentNode+1
+			/* Modify current_node's routing table to use current_link to send
+			 * traffic to current_node+1
 			 */
-			pDat->nb->writeRoutingTable(currentNode, currentNode+1, currentLink, pDat->nb);
+			p_dat->nb->write_routing_table(
+						current_node, current_node + 1,
+						current_link, p_dat->nb);
 
-			/* Check the northbridge of the node we just found, to make sure it is compatible
-			 * before doing anything else to it.
+			/* Check the northbridge of the node we just found, to make sure it is
+			 * compatible before doing anything else to it.
 			 */
-			if (!pDat->nb->isCompatible(currentNode+1, pDat->nb))
+			if (!p_dat->nb->is_compatible(current_node + 1, p_dat->nb))
 			{
-				u8 nodeToKill;
+				u8 node_to_kill;
 
 				/* Notify BIOS of event (while variables are still the same) */
-				if (pDat->HtBlock->AMD_CB_EventNotify)
+				if (p_dat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventCohFamilyFeud evt;
-					evt.eSize = sizeof(sHtEventCohFamilyFeud);
-					evt.node = currentNode;
-					evt.link = currentLink;
-					evt.totalNodes = pDat->NodesDiscovered;
+					evt.e_size = sizeof(sHtEventCohFamilyFeud);
+					evt.node = current_node;
+					evt.link = current_link;
+					evt.total_nodes = p_dat->nodes_discovered;
 
-					pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
-									HT_EVENT_COH_FAMILY_FEUD,
-									(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+								HT_EVENT_CLASS_ERROR,
+								HT_EVENT_COH_FAMILY_FEUD,
+								(u8 *)&evt);
 				}
 
 				/* If node is not compatible, force boot to 1P
@@ -529,23 +547,33 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 				 *	2. Configure the BSP routing tables as a UP.
 				 *	3. Notify main BIOS.
 				 */
-				pDat->NodesDiscovered = 0;
-				currentNode = 0;
-				pDat->TotalLinks = 0;
-				/* Abandon our coherent link data structure.  At this point there may
-				 * be coherent links on the BSP that are not yet in the portList, and
-				 * we have to turn them off anyway.  So depend on the hardware to tell us.
+				p_dat->nodes_discovered = 0;
+				current_node = 0;
+				p_dat->total_links = 0;
+				/* Abandon our coherent link data structure. At this point
+				 * there may be coherent links on the BSP that are not yet in
+				 * the portList, and we have to turn them off anyway. So depend
+				 * on the hardware to tell us.
 				 */
-				for (currentLink = 0; currentLink < pDat->nb->maxLinks; currentLink++)
+				for (current_link = 0;
+				current_link < p_dat->nb->max_links;
+				current_link++)
 				{
 					/* Stop all links which are connected, coherent, and ready */
-					if (pDat->nb->verifyLinkIsCoherent(currentNode, currentLink, pDat->nb))
-						pDat->nb->stopLink(currentNode, currentLink, pDat->nb);
+					if (p_dat->nb->verify_link_is_coherent(
+							current_node, current_link, p_dat->nb))
+						p_dat->nb->is_link(current_node, current_link,
+										p_dat->nb);
 				}
 
-				for (nodeToKill = 0; nodeToKill < pDat->nb->maxNodes; nodeToKill++)
+				for (node_to_kill = 0;
+				node_to_kill < p_dat->nb->max_nodes;
+				node_to_kill++)
 				{
-					pDat->nb->writeFullRoutingTable(0, nodeToKill, ROUTETOSELF, ROUTETOSELF, 0, pDat->nb);
+					p_dat->nb->write_full_routing_table(
+							0, node_to_kill,
+							ROUTETOSELF, ROUTETOSELF,
+							0, p_dat->nb);
 				}
 
 				/* End Coherent Discovery */
@@ -554,39 +582,47 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 			}
 
 			/* Read token from Current+1 */
-			token = pDat->nb->readToken(currentNode+1, pDat->nb);
-			ASSERT(token <= pDat->NodesDiscovered);
+			token = p_dat->nb->read_token(current_node + 1, p_dat->nb);
+			ASSERT(token <= p_dat->nodes_discovered);
 			if (token == 0)
 			{
-				pDat->NodesDiscovered++;
-				ASSERT(pDat->NodesDiscovered < pDat->nb->maxNodes);
-				/* Check the capability of northbridges against the currently known configuration */
-				if (!pDat->nb->isCapable(currentNode+1, pDat, pDat->nb))
+				p_dat->nodes_discovered++;
+				ASSERT(p_dat->nodes_discovered < p_dat->nb->max_nodes);
+				/* Check the capability of northbridges against the currently
+				 * known configuration
+				 */
+				if (!p_dat->nb->is_capable(current_node + 1, p_dat, p_dat->nb))
 				{
-					u8 nodeToKill;
+					u8 node_to_kill;
 
 					/* Notify BIOS of event  */
-					if (pDat->HtBlock->AMD_CB_EventNotify)
+					if (p_dat->ht_block->amd_cb_event_notify)
 					{
 						sHtEventCohMpCapMismatch evt;
-						evt.eSize = sizeof(sHtEventCohMpCapMismatch);
-						evt.node = currentNode;
-						evt.link = currentLink;
-						evt.sysMpCap = pDat->sysMpCap;
-						evt.totalNodes = pDat->NodesDiscovered;
+						evt.e_size = sizeof(sHtEventCohMpCapMismatch);
+						evt.node = current_node;
+						evt.link = current_link;
+						evt.sys_mp_cap = p_dat->sys_mp_cap;
+						evt.total_nodes = p_dat->nodes_discovered;
 
-						pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
-									HT_EVENT_COH_MPCAP_MISMATCH,
-									(u8 *)&evt);
+						p_dat->ht_block->amd_cb_event_notify(
+								HT_EVENT_CLASS_ERROR,
+								HT_EVENT_COH_MPCAP_MISMATCH,
+								(u8 *)&evt);
 					}
 
-					pDat->NodesDiscovered = 0;
-					currentNode = 0;
-					pDat->TotalLinks = 0;
+					p_dat->nodes_discovered = 0;
+					current_node = 0;
+					p_dat->total_links = 0;
 
-					for (nodeToKill = 0; nodeToKill < pDat->nb->maxNodes; nodeToKill++)
+					for (node_to_kill = 0;
+					node_to_kill < p_dat->nb->max_nodes;
+					node_to_kill++)
 					{
-						pDat->nb->writeFullRoutingTable(0, nodeToKill, ROUTETOSELF, ROUTETOSELF, 0, pDat->nb);
+						p_dat->nb->write_full_routing_table(
+							0, node_to_kill,
+							ROUTETOSELF, ROUTETOSELF,
+							0, p_dat->nb);
 					}
 
 					/* End Coherent Discovery */
@@ -594,76 +630,83 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 					break;
 				}
 
-				token = pDat->NodesDiscovered;
-				pDat->nb->writeToken(currentNode+1, token, pDat->nb);
+				token = p_dat->nodes_discovered;
+				p_dat->nb->writeToken(current_node + 1, token, p_dat->nb);
 				/* Inform that we have discovered a node, so that logical id to
 				 * socket mapping info can be recorded.
 				 */
-				if (pDat->HtBlock->AMD_CB_EventNotify)
+				if (p_dat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventCohNodeDiscovered evt;
-					evt.eSize = sizeof(sHtEventCohNodeDiscovered);
-					evt.node = currentNode;
-					evt.link = currentLink;
+					evt.e_size = sizeof(sHtEventCohNodeDiscovered);
+					evt.node = current_node;
+					evt.link = current_link;
 					evt.newNode = token;
 
-					pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_INFO,
-								HT_EVENT_COH_NODE_DISCOVERED,
-								(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+							HT_EVENT_CLASS_INFO,
+							HT_EVENT_COH_NODE_DISCOVERED,
+							(u8 *)&evt);
 				}
 			}
 
-			if (pDat->TotalLinks == MAX_PLATFORM_LINKS)
+			if (p_dat->total_links == MAX_PLATFORM_LINKS)
 			{
 				/*
-				 * Exceeded our capacity to describe all coherent links found in the system.
+				 * Exceeded our capacity to describe all coherent links found in
+				 * the system.
+				 *
 				 * Error strategy:
-				 * Auto recovery is not possible because data space is already all used.
-				 * If the callback is not implemented or returns we will continue to initialize
-				 * the fabric we are capable of representing, adding no more nodes or links.
-				 * This should yield a bootable topology, but likely not the one intended.
-				 * We cannot continue discovery, there may not be any way to route a new
-				 * node back to the BSP if we can't add links to our representation of the system.
+				 * Auto recovery is not possible because data space is already
+				 * all used. If the callback is not implemented or returns we
+				 * will continue to initialize the fabric we are capable of
+				 * representing, adding no more nodes or links. This should
+				 * yield a bootable topology, but likely not the one intended.
+				 * We cannot continue discovery, there may not be any way to
+				 * route a new node back to the BSP if we can't add links to our
+				 * representation of the system.
 				 */
-				if (pDat->HtBlock->AMD_CB_EventNotify)
+				if (p_dat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventCohLinkExceed evt;
-					evt.eSize = sizeof(sHtEventCohLinkExceed);
-					evt.node = currentNode;
-					evt.link = currentLink;
-					evt.targetNode = token;
-					evt.totalNodes = pDat->NodesDiscovered;
-					evt.maxLinks = pDat->nb->maxLinks;
+					evt.e_size = sizeof(sHtEventCohLinkExceed);
+					evt.node = current_node;
+					evt.link = current_link;
+					evt.target_node = token;
+					evt.total_nodes = p_dat->nodes_discovered;
+					evt.max_links = p_dat->nb->max_links;
 
-					pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
-									HT_EVENT_COH_LINK_EXCEED,
-									(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+								HT_EVENT_CLASS_ERROR,
+								HT_EVENT_COH_LINK_EXCEED,
+								(u8 *)&evt);
 				}
 				/* Force link and node loops to halt */
 				STOP_HERE;
-				currentNode = pDat->NodesDiscovered;
+				current_node = p_dat->nodes_discovered;
 				break;
 			}
 
-			pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_CPU;
-			pDat->PortList[pDat->TotalLinks*2].Link = currentLink;
-			pDat->PortList[pDat->TotalLinks*2].NodeID = currentNode;
+			p_dat->port_list[p_dat->total_links * 2].type = PORTLIST_TYPE_CPU;
+			p_dat->port_list[p_dat->total_links * 2].link = current_link;
+			p_dat->port_list[p_dat->total_links * 2].node_id = current_node;
 
-			pDat->PortList[pDat->TotalLinks*2+1].Type = PORTLIST_TYPE_CPU;
-			pDat->PortList[pDat->TotalLinks*2+1].Link = pDat->nb->readDefLnk(currentNode+1, pDat->nb);
-			pDat->PortList[pDat->TotalLinks*2+1].NodeID = token;
+			p_dat->port_list[p_dat->total_links * 2 + 1].type = PORTLIST_TYPE_CPU;
+			p_dat->port_list[p_dat->total_links * 2 + 1].link
+					= p_dat->nb->read_def_lnk(current_node + 1, p_dat->nb);
+			p_dat->port_list[p_dat->total_links * 2 + 1].node_id = token;
 
-			pDat->TotalLinks++;
+			p_dat->total_links++;
 
-			if (!pDat->sysMatrix[currentNode][token])
+			if (!p_dat->sys_matrix[current_node][token])
 			{
-				pDat->sysDegree[currentNode]++;
-				pDat->sysDegree[token]++;
-				pDat->sysMatrix[currentNode][token] = TRUE;
-				pDat->sysMatrix[token][currentNode] = TRUE;
+				p_dat->sys_degree[current_node]++;
+				p_dat->sys_degree[token]++;
+				p_dat->sys_matrix[current_node][token] = TRUE;
+				p_dat->sys_matrix[token][current_node] = TRUE;
 			}
 		}
-		currentNode++;
+		current_node++;
 	}
 }
 
@@ -674,11 +717,11 @@ static void htDiscoveryFloodFill(sMainData *pDat)
 
 /*----------------------------------------------------------------------------------------
  * BOOL
- * isoMorph(u8 i, sMainData *pDat)
+ * iso_morph(u8 i, sMainData *p_dat)
  *
  *  Description:
  *	 Is graphA isomorphic to graphB?
- *	 if this function returns true, then Perm will contain the permutation
+ *	 if this function returns true, then perm will contain the permutation
  *	 required to transform graphB into graphA.
  *	 We also use the degree of each node, that is the number of connections it has, to
  *	 speed up rejection of non-isomorphic graphs (if there is a node in graphA with n
@@ -687,18 +730,19 @@ static void htDiscoveryFloodFill(sMainData *pDat)
  *  Parameters:
  *	@param[in] u8 i   = the discovered node which we are trying to match
  *		    with a permutation the topology
- *	@param[in]/@param[out] sMainData* pDat  = our global state, degree and adjacency matrix,
+ *	@param[in]/@param[out] sMainData* p_dat  = our global state, degree and adjacency
+ *						   matrix,
  *				  output a permutation if successful
  *	@param[out] BOOL results = the graphs are (or are not) isomorphic
  * ---------------------------------------------------------------------------------------
  */
-static BOOL isoMorph(u8 i, sMainData *pDat)
+static BOOL iso_morph(u8 i, sMainData *p_dat)
 {
 	u8 j, k;
 	u8 nodecnt;
 
-	/* We have only been called if nodecnt == pSelected->size ! */
-	nodecnt = pDat->NodesDiscovered+1;
+	/* We have only been called if nodecnt == p_selected->size ! */
+	nodecnt = p_dat->nodes_discovered + 1;
 
 	if (i != nodecnt)
 	{
@@ -706,20 +750,20 @@ static BOOL isoMorph(u8 i, sMainData *pDat)
 		for (j = 0; j < nodecnt; j++)
 		{
 			/*  Make sure the degree matches */
-			if (pDat->sysDegree[i] != pDat->dbDegree[j])
+			if (p_dat->sys_degree[i] != p_dat->db_degree[j])
 				continue;
 
 			/*  Make sure that j hasn't been used yet (ought to use a "used" */
 			/*  array instead, might be faster) */
 			for (k = 0; k < i; k++)
 			{
-				if (pDat->Perm[k] == j)
+				if (p_dat->perm[k] == j)
 					break;
 			}
 			if (k != i)
 				continue;
-			pDat->Perm[i] = j;
-			if (isoMorph(i+1, pDat))
+			p_dat->perm[i] = j;
+			if (iso_morph(i + 1, p_dat))
 				return TRUE;
 		}
 		return FALSE;
@@ -729,8 +773,8 @@ static BOOL isoMorph(u8 i, sMainData *pDat)
 		{
 			for (k = 0; k < nodecnt; k++)
 			{
-				if (pDat->sysMatrix[j][k] !=
-				   pDat->dbMatrix[pDat->Perm[j]][pDat->Perm[k]])
+				if (p_dat->sys_matrix[j][k] !=
+				   p_dat->db_matrix[p_dat->perm[j]][p_dat->perm[k]])
 					return FALSE;
 			}
 		}
@@ -741,16 +785,17 @@ static BOOL isoMorph(u8 i, sMainData *pDat)
 
 /*----------------------------------------------------------------------------------------
  * void
- * lookupComputeAndLoadRoutingTables(sMainData *pDat)
+ * lookup_compute_and_load_routing_tables(sMainData *p_dat)
  *
  *  Description:
  *	 Using the description of the fabric topology we discovered, try to find a match
  *	 among the supported topologies.  A supported topology description matches
- *	 the discovered fabric if the nodes can be matched in such a way that all the nodes connected
+ *	 the discovered fabric if the nodes can be matched in such a way that all the nodes
+ *	 connected
  *	 in one set are exactly the nodes connected in the other (formally, that the graphs are
  *	 isomorphic).  Which links are used is not really important to matching.  If the graphs
- *	 match, then there is a permutation of one that translates the node positions and linkages
- *	 to the other.
+ *	 match, then there is a permutation of one that translates the node positions and
+ *	 linkages to the other.
  *
  *	 In order to make the isomorphism test efficient, we test for matched number of nodes
  *	 (a 4 node fabric is not isomorphic to a 2 node topology), and provide degrees of nodes
@@ -762,61 +807,61 @@ static BOOL isoMorph(u8 i, sMainData *pDat)
  *	 node discovered to the BSP, writing the routing tables as we go.
  *
  *  Parameters:
- *	@param[in]    sMainData* pDat = our global state, the discovered fabric,
+ *	@param[in]    sMainData* p_dat = our global state, the discovered fabric,
  *	@param[out]			degree matrix, permutation
  * ---------------------------------------------------------------------------------------
  */
-static void lookupComputeAndLoadRoutingTables(sMainData *pDat)
+static void lookup_compute_and_load_routing_tables(sMainData *p_dat)
 {
-	u8 **pTopologyList;
-	u8 *pSelected;
+	u8 **p_topology_list;
+	u8 *p_selected;
 
 	int i, j, k, size;
 
-	size = pDat->NodesDiscovered + 1;
+	size = p_dat->nodes_discovered + 1;
 	/* Use the provided topology list or the internal, default one. */
-	pTopologyList = pDat->HtBlock->topolist;
-	if (pTopologyList == NULL)
+	p_topology_list = p_dat->ht_block->topolist;
+	if (p_topology_list == NULL)
 	{
-		getAmdTopolist(&pTopologyList);
+		get_amd_topolist(&p_topology_list);
 	}
 
-	pSelected = *pTopologyList;
-	while (pSelected != NULL)
+	p_selected = *p_topology_list;
+	while (p_selected != NULL)
 	{
-		if (graphHowManyNodes(pSelected) == size)
+		if (graph_how_many_nodes(p_selected) == size)
 		{
 			/*  Build Degree vector and Adjency Matrix for this entry */
 			for (i = 0; i < size; i++)
 			{
-				pDat->dbDegree[i] = 0;
+				p_dat->db_degree[i] = 0;
 				for (j = 0; j < size; j++)
 				{
-					if (graphIsAdjacent(pSelected, i, j))
+					if (graph_is_adjacent(p_selected, i, j))
 					{
-						pDat->dbMatrix[i][j] = 1;
-						pDat->dbDegree[i]++;
+						p_dat->db_matrix[i][j] = 1;
+						p_dat->db_degree[i]++;
 					}
 					else
 					{
-						pDat->dbMatrix[i][j] = 0;
+						p_dat->db_matrix[i][j] = 0;
 					}
 				}
 			}
-			if (isoMorph(0, pDat))
+			if (iso_morph(0, p_dat))
 				break;  /*  A matching topology was found */
 		}
 
-		pTopologyList++;
-		pSelected = *pTopologyList;
+		p_topology_list++;
+		p_selected = *p_topology_list;
 	}
 
-	if (pSelected != NULL)
+	if (p_selected != NULL)
 	{
 		/*  Compute the reverse Permutation */
 		for (i = 0; i < size; i++)
 		{
-			pDat->ReversePerm[pDat->Perm[i]] = i;
+			p_dat->reverse_perm[p_dat->perm[i]] = i;
 		}
 
 		/*  Start with the last discovered node, and move towards the BSP */
@@ -824,44 +869,57 @@ static void lookupComputeAndLoadRoutingTables(sMainData *pDat)
 		{
 			for (j = 0; j < size; j++)
 			{
-				u8 ReqTargetLink, RspTargetLink;
-				u8 ReqTargetNode, RspTargetNode;
+				u8 req_target_link, rsp_target_link;
+				u8 req_target_node, rsp_target_node;
 
-				u8 AbstractBcTargetNodes = graphGetBc(pSelected, pDat->Perm[i], pDat->Perm[j]);
-				u32 BcTargetLinks = 0;
+				u8 abstract_bc_target_nodes = graph_get_bc(
+						p_selected, p_dat->perm[i], p_dat->perm[j]);
+				u32 bc_target_links = 0;
 
 				for (k = 0; k < MAX_NODES; k++)
 				{
-					if (AbstractBcTargetNodes & ((u32)1<<k))
+					if (abstract_bc_target_nodes & ((u32)1 << k))
 					{
-						BcTargetLinks |= (u32)1 << convertNodeToLink(i, pDat->ReversePerm[k], pDat);
+						bc_target_links |= (u32)1
+							<< convert_node_to_link(
+									i,
+									p_dat->reverse_perm[k],
+									p_dat);
 					}
 				}
 
 				if (i == j)
 				{
-					ReqTargetLink = ROUTETOSELF;
-					RspTargetLink = ROUTETOSELF;
+					req_target_link = ROUTETOSELF;
+					rsp_target_link = ROUTETOSELF;
 				}
 				else
 				{
-					ReqTargetNode = graphGetReq(pSelected, pDat->Perm[i], pDat->Perm[j]);
-					ReqTargetLink = convertNodeToLink(i, pDat->ReversePerm[ReqTargetNode], pDat);
+					req_target_node = graph_get_req(
+						p_selected, p_dat->perm[i], p_dat->perm[j]);
+					req_target_link = convert_node_to_link(
+						i, p_dat->reverse_perm[req_target_node], p_dat);
 
-					RspTargetNode = graphGetRsp(pSelected, pDat->Perm[i], pDat->Perm[j]);
-					RspTargetLink = convertNodeToLink(i, pDat->ReversePerm[RspTargetNode], pDat);
+					rsp_target_node = graph_get_rsp(
+						p_selected, p_dat->perm[i], p_dat->perm[j]);
+					rsp_target_link = convert_node_to_link(
+						i, p_dat->reverse_perm[rsp_target_node], p_dat);
 				}
 
-				pDat->nb->writeFullRoutingTable(i, j, ReqTargetLink, RspTargetLink, BcTargetLinks, pDat->nb);
+				p_dat->nb->write_full_routing_table(
+					i, j, req_target_link, rsp_target_link,
+					bc_target_links, p_dat->nb);
 			}
-			/* Clean up discovery 'footprint' that otherwise remains in the routing table.  It didn't hurt
-			 * anything, but might cause confusion during debug and validation.  Do this by setting the
-			 * route back to all self routes. Since it's the node that would be one more than actually installed,
-			 * this only applies if less than maxNodes were found.
+			/* Clean up discovery 'footprint' that otherwise remains in the routing
+			 * table.  It didn't hurt anything, but might cause confusion during
+			 * debug and validation.  Do this by setting the route back to all self
+			 * routes. Since it's the node that would be one more than actually
+			 * installed, this only applies if less than max_nodes were found.
 			 */
-			if (size < pDat->nb->maxNodes)
+			if (size < p_dat->nb->max_nodes)
 			{
-				pDat->nb->writeFullRoutingTable(i, size, ROUTETOSELF, ROUTETOSELF, 0, pDat->nb);
+				p_dat->nb->write_full_routing_table(
+					i, size, ROUTETOSELF, ROUTETOSELF, 0, p_dat->nb);
 			}
 		}
 
@@ -875,21 +933,21 @@ static void lookupComputeAndLoadRoutingTables(sMainData *pDat)
 		 * For reporting, logging, provide number of nodes
 		 * If not implemented or returns, boot as BSP uniprocessor.
 		 */
-		if (pDat->HtBlock->AMD_CB_EventNotify)
+		if (p_dat->ht_block->amd_cb_event_notify)
 		{
 			sHtEventCohNoTopology evt;
-			evt.eSize = sizeof(sHtEventCohNoTopology);
-			evt.totalNodes = pDat->NodesDiscovered;
+			evt.e_size = sizeof(sHtEventCohNoTopology);
+			evt.total_nodes = p_dat->nodes_discovered;
 
-			pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
+			p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
 						HT_EVENT_COH_NO_TOPOLOGY,
 						(u8 *)&evt);
 		}
 		STOP_HERE;
 		/* Force 1P */
-		pDat->NodesDiscovered = 0;
-		pDat->TotalLinks = 0;
-		pDat->nb->enableRoutingTables(0, pDat->nb);
+		p_dat->nodes_discovered = 0;
+		p_dat->total_links = 0;
+		p_dat->nb->enable_routing_tables(0, p_dat->nb);
 	}
 }
 #endif /* HT_BUILD_NC_ONLY */
@@ -897,77 +955,78 @@ static void lookupComputeAndLoadRoutingTables(sMainData *pDat)
 
 /*----------------------------------------------------------------------------------------
  * void
- * finializeCoherentInit(sMainData *pDat)
+ * finialize_coherent_init(sMainData *p_dat)
  *
  *  Description:
  *	 Find the total number of cores and update the number of nodes and cores in all cpus.
  *	 Limit CPU config access to installed cpus.
  *
  *  Parameters:
- *	@param[in] sMainData* pDat = our global state, number of nodes discovered.
+ *	@param[in] sMainData* p_dat = our global state, number of nodes discovered.
  * ---------------------------------------------------------------------------------------
  */
-static void finializeCoherentInit(sMainData *pDat)
+static void finialize_coherent_init(sMainData *p_dat)
 {
-	u8 curNode;
+	u8 cur_node;
 
-	u8 totalCores = 0;
-	for (curNode = 0; curNode < pDat->NodesDiscovered+1; curNode++)
+	u8 total_cores = 0;
+	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
 	{
-		totalCores += pDat->nb->getNumCoresOnNode(curNode, pDat->nb);
+		total_cores += p_dat->nb->get_num_cores_on_node(cur_node, p_dat->nb);
 	}
 
-	for (curNode = 0; curNode < pDat->NodesDiscovered+1; curNode++)
+	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
 	{
-		pDat->nb->setTotalNodesAndCores(curNode, pDat->NodesDiscovered+1, totalCores, pDat->nb);
+		p_dat->nb->set_total_nodes_and_cores(
+			cur_node, p_dat->nodes_discovered + 1, total_cores, p_dat->nb);
 	}
 
-	for (curNode = 0; curNode < pDat->NodesDiscovered+1; curNode++)
+	for (cur_node = 0; cur_node < p_dat->nodes_discovered + 1; cur_node++)
 	{
-		pDat->nb->limitNodes(curNode, pDat->nb);
+		p_dat->nb->limit_nodes(cur_node, p_dat->nb);
 	}
 
 }
 
 /*----------------------------------------------------------------------------------------
  * void
- * coherentInit(sMainData *pDat)
+ * coherent_init(sMainData *p_dat)
  *
  *  Description:
  *	 Perform discovery and initialization of the coherent fabric.
  *
  *  Parameters:
- *	@param[in] sMainData* pDat = our global state
+ *	@param[in] sMainData* p_dat = our global state
  * ---------------------------------------------------------------------------------------
  */
-static void coherentInit(sMainData *pDat)
+static void coherent_init(sMainData *p_dat)
 {
 #ifdef HT_BUILD_NC_ONLY
 	/* Replace discovery process with:
 	 * No other nodes, no coherent links
-	 * Enable routing tables on currentNode, for power on self route
+	 * Enable routing tables on current_node, for power on self route
 	 */
-	pDat->NodesDiscovered = 0;
-	pDat->TotalLinks = 0;
-	pDat->nb->enableRoutingTables(0, pDat->nb);
+	p_dat->nodes_discovered = 0;
+	p_dat->total_links = 0;
+	p_dat->nb->enable_routing_tables(0, p_dat->nb);
 #else
 	u8 i, j;
 
-	pDat->NodesDiscovered = 0;
-	pDat->TotalLinks = 0;
+	p_dat->nodes_discovered = 0;
+	p_dat->total_links = 0;
 	for (i = 0; i < MAX_NODES; i++)
 	{
-		pDat->sysDegree[i] = 0;
+		p_dat->sys_degree[i] = 0;
 		for (j = 0; j < MAX_NODES; j++)
 		{
-			pDat->sysMatrix[i][j] = 0;
+			p_dat->sys_matrix[i][j] = 0;
 		}
 	}
 
-	htDiscoveryFloodFill(pDat);
-	lookupComputeAndLoadRoutingTables(pDat);
+	ht_discovery_flood_fill(p_dat);
+	lookup_compute_and_load_routing_tables(p_dat);
 #endif
-	finializeCoherentInit(pDat);
+	finialize_coherent_init(p_dat);
 }
 
 /***************************************************************************
@@ -976,7 +1035,7 @@ static void coherentInit(sMainData *pDat)
  ***************************************************************************/
 /*----------------------------------------------------------------------------------------
  * void
- * processLink(u8 node, u8 link, sMainData *pDat)
+ * process_link(u8 node, u8 link, sMainData *p_dat)
  *
  *  Description:
  *	 Process a non-coherent link, enabling a range of bus numbers, and setting the device
@@ -985,60 +1044,63 @@ static void coherentInit(sMainData *pDat)
  *  Parameters:
  *	@param[in] u8 node = Node on which to process nc init
  *	@param[in] u8 link = The non-coherent link on that node
- *	@param[in] sMainData* pDat = our global state
+ *	@param[in] sMainData* p_dat = our global state
  * ---------------------------------------------------------------------------------------
  */
-static void processLink(u8 node, u8 link, sMainData *pDat)
+static void process_link(u8 node, u8 link, sMainData *p_dat)
 {
-	u8 secBus, subBus;
-	u32 currentBUID;
+	u8 sec_bus, sub_bus;
+	u32 current_buid;
 	u32 temp;
-	u32 unitIDcnt;
-	SBDFO currentPtr;
+	u32 unit_id_cnt;
+	SBDFO current_ptr;
 	u8 depth;
-	const u8 *pSwapPtr;
+	const u8 *p_swap_ptr;
 
-	SBDFO lastSBDFO = ILLEGAL_SBDFO;
-	u8 lastLink = 0;
+	SBDFO last_sbdfo = ILLEGAL_SBDFO;
+	u8 last_link = 0;
 
-	ASSERT(node < pDat->nb->maxNodes && link < pDat->nb->maxLinks);
+	ASSERT(node < p_dat->nb->max_nodes && link < p_dat->nb->max_links);
 
-	if ((pDat->HtBlock->AMD_CB_OverrideBusNumbers == NULL)
-	   || !pDat->HtBlock->AMD_CB_OverrideBusNumbers(node, link, &secBus, &subBus))
+	if ((p_dat->ht_block->amd_cb_override_bus_numbers == NULL)
+	   || !p_dat->ht_block->amd_cb_override_bus_numbers(node, link, &sec_bus, &sub_bus))
 	{
 		/* Assign Bus numbers */
-		if (pDat->AutoBusCurrent >= pDat->HtBlock->AutoBusMax)
+		if (p_dat->auto_bus_current >= p_dat->ht_block->auto_bus_max)
 		{
-			/* If we run out of Bus Numbers notify, if call back unimplemented or if it
-			 * returns, skip this chain
+			/* If we run out of Bus Numbers notify, if call back unimplemented or if
+			 * it returns, skip this chain
 			 */
-			if (pDat->HtBlock->AMD_CB_EventNotify)
+			if (p_dat->ht_block->amd_cb_event_notify)
 			{
 				sHTEventNcohBusMaxExceed evt;
-				evt.eSize = sizeof(sHTEventNcohBusMaxExceed);
+				evt.e_size = sizeof(sHTEventNcohBusMaxExceed);
 				evt.node = node;
 				evt.link = link;
-				evt.bus = pDat->AutoBusCurrent;
+				evt.bus = p_dat->auto_bus_current;
 
-				pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_BUS_MAX_EXCEED,(u8 *)&evt);
+				p_dat->ht_block->amd_cb_event_notify(
+					HT_EVENT_CLASS_ERROR,
+					HT_EVENT_NCOH_BUS_MAX_EXCEED,
+					(u8 *)&evt);
 			}
 			STOP_HERE;
 			return;
 		}
 
-		if (pDat->UsedCfgMapEntires >= 4)
+		if (p_dat->used_cfg_map_entires >= 4)
 		{
 			/* If we have used all the PCI Config maps we can't add another chain.
 			 * Notify and if call back is unimplemented or returns, skip this chain.
 			 */
-			if (pDat->HtBlock->AMD_CB_EventNotify)
+			if (p_dat->ht_block->amd_cb_event_notify)
 			{
 				sHtEventNcohCfgMapExceed evt;
-				evt.eSize = sizeof(sHtEventNcohCfgMapExceed);
+				evt.e_size = sizeof(sHtEventNcohCfgMapExceed);
 				evt.node = node;
 				evt.link = link;
 
-				pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
+				p_dat->ht_block->amd_cb_event_notify(HT_EVENT_CLASS_ERROR,
 							HT_EVENT_NCOH_CFG_MAP_EXCEED,
 							(u8 *)&evt);
 			}
@@ -1046,225 +1108,246 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 			return;
 		}
 
-		secBus = pDat->AutoBusCurrent;
-		subBus = secBus + pDat->HtBlock->AutoBusIncrement-1;
-		pDat->AutoBusCurrent += pDat->HtBlock->AutoBusIncrement;
+		sec_bus = p_dat->auto_bus_current;
+		sub_bus = sec_bus + p_dat->ht_block->auto_bus_increment-1;
+		p_dat->auto_bus_current += p_dat->ht_block->auto_bus_increment;
 	}
 
-	pDat->nb->setCFGAddrMap(pDat->UsedCfgMapEntires, secBus, subBus, node, link, pDat, pDat->nb);
-	pDat->UsedCfgMapEntires++;
+	p_dat->nb->set_cfg_addr_map(
+		p_dat->used_cfg_map_entires, sec_bus, sub_bus, node, link, p_dat, p_dat->nb);
+	p_dat->used_cfg_map_entires++;
 
-	if ((pDat->HtBlock->AMD_CB_ManualBUIDSwapList != NULL)
-	 && pDat->HtBlock->AMD_CB_ManualBUIDSwapList(node, link, &pSwapPtr))
+	if ((p_dat->ht_block->amd_cb_manual_buid_swap_list != NULL)
+	 && p_dat->ht_block->amd_cb_manual_buid_swap_list(node, link, &p_swap_ptr))
 	{
 		/* Manual non-coherent BUID assignment */
-		currentBUID = 1;
+		current_buid = 1;
 
 		/* Assign BUID's per manual override */
-		while (*pSwapPtr != 0xFF)
+		while (*p_swap_ptr != 0xFF)
 		{
-			currentPtr = MAKE_SBDFO(0, secBus, *pSwapPtr, 0, 0);
-			pSwapPtr++;
+			current_ptr = MAKE_SBDFO(0, sec_bus, *p_swap_ptr, 0, 0);
+			p_swap_ptr++;
 
 			do
 			{
-				AmdPCIFindNextCap(&currentPtr);
-				ASSERT(currentPtr != ILLEGAL_SBDFO);
-				AmdPCIRead(currentPtr, &temp);
+				amd_pci_find_next_cap(&current_ptr);
+				ASSERT(current_ptr != ILLEGAL_SBDFO);
+				amd_pci_read(current_ptr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
 
-			currentBUID = *pSwapPtr;
-			pSwapPtr++;
-			AmdPCIWriteBits(currentPtr, 20, 16, &currentBUID);
+			current_buid = *p_swap_ptr;
+			p_swap_ptr++;
+			amd_pci_write_bits(current_ptr, 20, 16, &current_buid);
 		}
 
 		/* Build chain of devices */
 		depth = 0;
-		pSwapPtr++;
-		while (*pSwapPtr != 0xFF)
+		p_swap_ptr++;
+		while (*p_swap_ptr != 0xFF)
 		{
-			pDat->PortList[pDat->TotalLinks*2].NodeID = node;
+			p_dat->port_list[p_dat->total_links * 2].node_id = node;
 			if (depth == 0)
 			{
-				pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_CPU;
-				pDat->PortList[pDat->TotalLinks*2].Link = link;
+				p_dat->port_list[p_dat->total_links * 2].type
+						= PORTLIST_TYPE_CPU;
+				p_dat->port_list[p_dat->total_links * 2].link = link;
 			}
 			else
 			{
-				pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_IO;
-				pDat->PortList[pDat->TotalLinks*2].Link = 1-lastLink;
-				pDat->PortList[pDat->TotalLinks*2].HostLink = link;
-				pDat->PortList[pDat->TotalLinks*2].HostDepth = depth-1;
-				pDat->PortList[pDat->TotalLinks*2].Pointer = lastSBDFO;
+				p_dat->port_list[p_dat->total_links * 2].type
+						= PORTLIST_TYPE_IO;
+				p_dat->port_list[p_dat->total_links * 2].link = 1 - last_link;
+				p_dat->port_list[p_dat->total_links * 2].host_link = link;
+				p_dat->port_list[p_dat->total_links * 2].host_depth = depth - 1;
+				p_dat->port_list[p_dat->total_links * 2].pointer = last_sbdfo;
 			}
 
-			pDat->PortList[pDat->TotalLinks*2+1].Type = PORTLIST_TYPE_IO;
-			pDat->PortList[pDat->TotalLinks*2+1].NodeID = node;
-			pDat->PortList[pDat->TotalLinks*2+1].HostLink = link;
-			pDat->PortList[pDat->TotalLinks*2+1].HostDepth = depth;
+			p_dat->port_list[p_dat->total_links * 2 + 1].type = PORTLIST_TYPE_IO;
+			p_dat->port_list[p_dat->total_links * 2 + 1].node_id = node;
+			p_dat->port_list[p_dat->total_links * 2 + 1].host_link = link;
+			p_dat->port_list[p_dat->total_links * 2 + 1].host_depth = depth;
 
-			currentPtr = MAKE_SBDFO(0, secBus, (*pSwapPtr & 0x3F), 0, 0);
+			current_ptr = MAKE_SBDFO(0, sec_bus, (*p_swap_ptr & 0x3F), 0, 0);
 			do
 			{
-				AmdPCIFindNextCap(&currentPtr);
-				ASSERT(currentPtr != ILLEGAL_SBDFO);
-				AmdPCIRead(currentPtr, &temp);
+				amd_pci_find_next_cap(&current_ptr);
+				ASSERT(current_ptr != ILLEGAL_SBDFO);
+				amd_pci_read(current_ptr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
-			pDat->PortList[pDat->TotalLinks*2+1].Pointer = currentPtr;
-			lastSBDFO = currentPtr;
+			p_dat->port_list[p_dat->total_links * 2 + 1].pointer = current_ptr;
+			last_sbdfo = current_ptr;
 
 			/* Bit 6 indicates whether orientation override is desired.
 			 * Bit 7 indicates the upstream link if overriding.
 			 */
 			/* assert catches at least the one known incorrect setting */
-			ASSERT ((*pSwapPtr & 0x40) || (!(*pSwapPtr & 0x80)));
-			if (*pSwapPtr & 0x40)
+			ASSERT ((*p_swap_ptr & 0x40) || (!(*p_swap_ptr & 0x80)));
+			if (*p_swap_ptr & 0x40)
 			{
 				/* Override the device's orientation */
-				lastLink = *pSwapPtr >> 7;
+				last_link = *p_swap_ptr >> 7;
 			}
 			else
 			{
 				/* Detect the device's orientation */
-				AmdPCIReadBits(currentPtr, 26, 26, &temp);
-				lastLink = (u8)temp;
+				amd_pci_read_bits(current_ptr, 26, 26, &temp);
+				last_link = (u8)temp;
 			}
-			pDat->PortList[pDat->TotalLinks*2+1].Link = lastLink;
+			p_dat->port_list[p_dat->total_links * 2 + 1].link = last_link;
 
 			depth++;
-			pDat->TotalLinks++;
-			pSwapPtr++;
+			p_dat->total_links++;
+			p_swap_ptr++;
 		}
 	}
 	else
 	{
 		/* Automatic non-coherent device detection */
 		depth = 0;
-		currentBUID = 1;
+		current_buid = 1;
 		while (1)
 		{
-			currentPtr = MAKE_SBDFO(0, secBus, 0, 0, 0);
+			current_ptr = MAKE_SBDFO(0, sec_bus, 0, 0, 0);
 
-			AmdPCIRead(currentPtr, &temp);
+			amd_pci_read(current_ptr, &temp);
 			if (temp == 0xFFFFFFFF)
-				/* No device found at currentPtr */
+				/* No device found at current_ptr */
 				break;
 
-			if (pDat->TotalLinks == MAX_PLATFORM_LINKS)
+			if (p_dat->total_links == MAX_PLATFORM_LINKS)
 			{
 				/*
-				 * Exceeded our capacity to describe all non-coherent links found in the system.
+				 * Exceeded our capacity to describe all non-coherent links
+				 * found in the system.
+				 *
 				 * Error strategy:
-				 * Auto recovery is not possible because data space is already all used.
+				 * Auto recovery is not possible because data space is already
+				 * all used.
 				 */
-				if (pDat->HtBlock->AMD_CB_EventNotify)
+				if (p_dat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventNcohLinkExceed evt;
-					evt.eSize = sizeof(sHtEventNcohLinkExceed);
+					evt.e_size = sizeof(sHtEventNcohLinkExceed);
 					evt.node = node;
 					evt.link = link;
 					evt.depth = depth;
-					evt.maxLinks = pDat->nb->maxLinks;
+					evt.max_links = p_dat->nb->max_links;
 
-					pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,
-								HT_EVENT_NCOH_LINK_EXCEED,
-								(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+							HT_EVENT_CLASS_ERROR,
+							HT_EVENT_NCOH_LINK_EXCEED,
+							(u8 *)&evt);
 				}
 				/* Force link loop to halt */
 				STOP_HERE;
 				break;
 			}
 
-			pDat->PortList[pDat->TotalLinks*2].NodeID = node;
+			p_dat->port_list[p_dat->total_links*2].node_id = node;
 			if (depth == 0)
 			{
-				pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_CPU;
-				pDat->PortList[pDat->TotalLinks*2].Link = link;
+				p_dat->port_list[p_dat->total_links * 2].type
+							= PORTLIST_TYPE_CPU;
+				p_dat->port_list[p_dat->total_links * 2].link = link;
 			}
 			else
 			{
-				pDat->PortList[pDat->TotalLinks*2].Type = PORTLIST_TYPE_IO;
-				pDat->PortList[pDat->TotalLinks*2].Link = 1-lastLink;
-				pDat->PortList[pDat->TotalLinks*2].HostLink = link;
-				pDat->PortList[pDat->TotalLinks*2].HostDepth = depth-1;
-				pDat->PortList[pDat->TotalLinks*2].Pointer = lastSBDFO;
+				p_dat->port_list[p_dat->total_links * 2].type
+							= PORTLIST_TYPE_IO;
+				p_dat->port_list[p_dat->total_links * 2].link = 1 - last_link;
+				p_dat->port_list[p_dat->total_links * 2].host_link = link;
+				p_dat->port_list[p_dat->total_links * 2].host_depth = depth - 1;
+				p_dat->port_list[p_dat->total_links * 2].pointer = last_sbdfo;
 			}
 
-			pDat->PortList[pDat->TotalLinks*2+1].Type = PORTLIST_TYPE_IO;
-			pDat->PortList[pDat->TotalLinks*2+1].NodeID = node;
-			pDat->PortList[pDat->TotalLinks*2+1].HostLink = link;
-			pDat->PortList[pDat->TotalLinks*2+1].HostDepth = depth;
+			p_dat->port_list[p_dat->total_links * 2 + 1].type = PORTLIST_TYPE_IO;
+			p_dat->port_list[p_dat->total_links * 2 + 1].node_id = node;
+			p_dat->port_list[p_dat->total_links * 2 + 1].host_link = link;
+			p_dat->port_list[p_dat->total_links * 2 + 1].host_depth = depth;
 
 			do
 			{
-				AmdPCIFindNextCap(&currentPtr);
-				ASSERT(currentPtr != ILLEGAL_SBDFO);
-				AmdPCIRead(currentPtr, &temp);
+				amd_pci_find_next_cap(&current_ptr);
+				ASSERT(current_ptr != ILLEGAL_SBDFO);
+				amd_pci_read(current_ptr, &temp);
 			} while (!IS_HT_SLAVE_CAPABILITY(temp));
 
-			AmdPCIReadBits(currentPtr, 25, 21, &unitIDcnt);
-			if ((unitIDcnt + currentBUID > 31) || ((secBus == 0) && (unitIDcnt + currentBUID > 24)))
+			amd_pci_read_bits(current_ptr, 25, 21, &unit_id_cnt);
+			if ((unit_id_cnt + current_buid > 31)
+			|| ((sec_bus == 0) && (unit_id_cnt + current_buid > 24)))
 			{
-				/* An error handler for the case where we run out of BUID's on a chain */
-				if (pDat->HtBlock->AMD_CB_EventNotify)
+				/* An error handler for the case where we run out of BUID's on a
+				 * chain
+				 */
+				if (p_dat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventNcohBuidExceed evt;
-					evt.eSize = sizeof(sHtEventNcohBuidExceed);
+					evt.e_size = sizeof(sHtEventNcohBuidExceed);
 					evt.node = node;
 					evt.link = link;
 					evt.depth = depth;
-					evt.currentBUID = (uint8)currentBUID;
-					evt.unitCount = (uint8)unitIDcnt;
+					evt.current_buid = (u8)current_buid;
+					evt.unit_count = (u8)unit_id_cnt;
 
-					pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_BUID_EXCEED,(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+						HT_EVENT_CLASS_ERROR,
+						HT_EVENT_NCOH_BUID_EXCEED,
+						(u8 *)&evt);
 				}
 				STOP_HERE;
 				break;
 			}
-			AmdPCIWriteBits(currentPtr, 20, 16, &currentBUID);
+			amd_pci_write_bits(current_ptr, 20, 16, &current_buid);
 
 
-			currentPtr += MAKE_SBDFO(0, 0, currentBUID, 0, 0);
-			AmdPCIReadBits(currentPtr, 20, 16, &temp);
-			if (temp != currentBUID)
+			current_ptr += MAKE_SBDFO(0, 0, current_buid, 0, 0);
+			amd_pci_read_bits(current_ptr, 20, 16, &temp);
+			if (temp != current_buid)
 			{
 				/* An error handler for this critical error */
-				if (pDat->HtBlock->AMD_CB_EventNotify)
+				if (p_dat->ht_block->amd_cb_event_notify)
 				{
 					sHtEventNcohDeviceFailed evt;
-					evt.eSize = sizeof(sHtEventNcohDeviceFailed);
+					evt.e_size = sizeof(sHtEventNcohDeviceFailed);
 					evt.node = node;
 					evt.link = link;
 					evt.depth = depth;
-					evt.attemptedBUID = (uint8)currentBUID;
+					evt.attempted_buid = (u8)current_buid;
 
-					pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_ERROR,HT_EVENT_NCOH_DEVICE_FAILED,(u8 *)&evt);
+					p_dat->ht_block->amd_cb_event_notify(
+						HT_EVENT_CLASS_ERROR,
+						HT_EVENT_NCOH_DEVICE_FAILED,
+						(u8 *)&evt);
 				}
 				STOP_HERE;
 				break;
 			}
 
-			AmdPCIReadBits(currentPtr, 26, 26, &temp);
-			pDat->PortList[pDat->TotalLinks*2+1].Link = (u8)temp;
-			pDat->PortList[pDat->TotalLinks*2+1].Pointer = currentPtr;
+			amd_pci_read_bits(current_ptr, 26, 26, &temp);
+			p_dat->port_list[p_dat->total_links * 2 + 1].link = (u8)temp;
+			p_dat->port_list[p_dat->total_links * 2 + 1].pointer = current_ptr;
 
-			lastLink = (u8)temp;
-			lastSBDFO = currentPtr;
+			last_link = (u8)temp;
+			last_sbdfo = current_ptr;
 
 			depth++;
-			pDat->TotalLinks++;
-			currentBUID += unitIDcnt;
+			p_dat->total_links++;
+			current_buid += unit_id_cnt;
 		}
-		if (pDat->HtBlock->AMD_CB_EventNotify)
+		if (p_dat->ht_block->amd_cb_event_notify)
 		{
 			/* Provide information on automatic device results */
 			sHtEventNcohAutoDepth evt;
-			evt.eSize = sizeof(sHtEventNcohAutoDepth);
+			evt.e_size = sizeof(sHtEventNcohAutoDepth);
 			evt.node = node;
 			evt.link = link;
 			evt.depth = (depth - 1);
 
-			pDat->HtBlock->AMD_CB_EventNotify(HT_EVENT_CLASS_INFO,HT_EVENT_NCOH_AUTO_DEPTH,(u8 *)&evt);
+			p_dat->ht_block->amd_cb_event_notify(
+				HT_EVENT_CLASS_INFO,
+				HT_EVENT_NCOH_AUTO_DEPTH,
+				(u8 *)&evt);
 		}
 	}
 }
@@ -1272,39 +1355,40 @@ static void processLink(u8 node, u8 link, sMainData *pDat)
 
 /*----------------------------------------------------------------------------------------
  * void
- * ncInit(sMainData *pDat)
+ * nc_init(sMainData *p_dat)
  *
  *  Description:
  *	 Initialize the non-coherent fabric. Begin with the compat link on the BSP, then
  *	 find and initialize all other non-coherent chains.
  *
  *  Parameters:
- *	@param[in]  sMainData*  pDat = our global state
+ *	@param[in]  sMainData*  p_dat = our global state
  * ---------------------------------------------------------------------------------------
  */
-static void ncInit(sMainData *pDat)
+static void nc_init(sMainData *p_dat)
 {
 	u8 node, link;
-	u8 compatLink;
+	u8 compat_link;
 
-	compatLink = pDat->nb->readSbLink(pDat->nb);
-	processLink(0, compatLink, pDat);
+	compat_link = p_dat->nb->read_sb_link(p_dat->nb);
+	process_link(0, compat_link, p_dat);
 
-	for (node = 0; node <= pDat->NodesDiscovered; node++)
+	for (node = 0; node <= p_dat->nodes_discovered; node++)
 	{
-		for (link = 0; link < pDat->nb->maxLinks; link++)
+		for (link = 0; link < p_dat->nb->max_links; link++)
 		{
-			if (pDat->HtBlock->AMD_CB_IgnoreLink && pDat->HtBlock->AMD_CB_IgnoreLink(node, link))
+			if (p_dat->ht_block->amd_cb_ignore_link
+			&& p_dat->ht_block->amd_cb_ignore_link(node, link))
 				continue;   /*  Skip the link */
 
-			if (node == 0 && link == compatLink)
+			if (node == 0 && link == compat_link)
 				continue;
 
-			if (pDat->nb->readTrueLinkFailStatus(node, link, pDat, pDat->nb))
+			if (p_dat->nb->read_true_link_fail_status(node, link, p_dat, p_dat->nb))
 				continue;
 
-			if (pDat->nb->verifyLinkIsNonCoherent(node, link, pDat->nb))
-				processLink(node, link, pDat);
+			if (p_dat->nb->verify_link_is_non_coherent(node, link, p_dat->nb))
+				process_link(node, link, p_dat);
 		}
 	}
 }
@@ -1315,7 +1399,7 @@ static void ncInit(sMainData *pDat)
 
 /*----------------------------------------------------------------------------------------
  * void
- * regangLinks(sMainData *pDat)
+ * regang_links(sMainData *p_dat)
  *
  *  Description:
  *	 Test the sublinks of a link to see if they qualify to be reganged.  If they do,
@@ -1323,114 +1407,138 @@ static void ncInit(sMainData *pDat)
  *	 actual hardware state is changed in this routine.
  *
  *  Parameters:
- *	@param[in,out] sMainData*  pDat = our global state
+ *	@param[in,out] sMainData*  p_dat = our global state
  * ---------------------------------------------------------------------------------------
  */
-static void regangLinks(sMainData *pDat)
+static void regang_links(sMainData *p_dat)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u8 i, j;
-	for (i = 0; i < pDat->TotalLinks*2; i += 2)
+	for (i = 0; i < p_dat->total_links * 2; i += 2)
 	{
-		ASSERT(pDat->PortList[i].Type < 2 && pDat->PortList[i].Link < pDat->nb->maxLinks);  /*  Data validation */
-		ASSERT(pDat->PortList[i+1].Type < 2 && pDat->PortList[i+1].Link < pDat->nb->maxLinks); /*  data validation */
-		ASSERT(!(pDat->PortList[i].Type == PORTLIST_TYPE_IO && pDat->PortList[i+1].Type == PORTLIST_TYPE_CPU));  /*  ensure src is closer to the bsp than dst */
+		/* Data validation */
+		ASSERT(p_dat->port_list[i].type < 2
+			&& p_dat->port_list[i].link < p_dat->nb->max_links);
+		/* data validation */
+		ASSERT(p_dat->port_list[i + 1].type < 2
+			&& p_dat->port_list[i + 1].link < p_dat->nb->max_links);
+		/* ensure src is closer to the bsp than dst */
+		ASSERT(!(p_dat->port_list[i].type == PORTLIST_TYPE_IO
+			&& p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU));
 
 		/* Regang is false unless we pass all conditions below */
-		pDat->PortList[i].SelRegang = FALSE;
-		pDat->PortList[i+1].SelRegang = FALSE;
+		p_dat->port_list[i].sel_regang = FALSE;
+		p_dat->port_list[i + 1].sel_regang = FALSE;
 
-		if ((pDat->PortList[i].Type != PORTLIST_TYPE_CPU) || (pDat->PortList[i+1].Type != PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].type != PORTLIST_TYPE_CPU)
+		|| (p_dat->port_list[i + 1].type != PORTLIST_TYPE_CPU))
 			continue;   /*  Only process CPU to CPU links */
 
-		for (j = i+2; j < pDat->TotalLinks*2; j += 2)
+		for (j = i + 2; j < p_dat->total_links * 2; j += 2)
 		{
-			if ((pDat->PortList[j].Type != PORTLIST_TYPE_CPU) || (pDat->PortList[j+1].Type != PORTLIST_TYPE_CPU))
+			if ((p_dat->port_list[j].type != PORTLIST_TYPE_CPU)
+			|| (p_dat->port_list[j + 1].type != PORTLIST_TYPE_CPU))
 				continue;   /*  Only process CPU to CPU links */
 
-			if (pDat->PortList[i].NodeID != pDat->PortList[j].NodeID)
+			if (p_dat->port_list[i].node_id != p_dat->port_list[j].node_id)
 				continue;   /*  Links must be from the same source */
 
-			if (pDat->PortList[i+1].NodeID != pDat->PortList[j+1].NodeID)
+			if (p_dat->port_list[i + 1].node_id != p_dat->port_list[j + 1].node_id)
 				continue;   /*  Link must be to the same target */
 
-			if ((pDat->PortList[i].Link & 3) != (pDat->PortList[j].Link & 3))
+			if ((p_dat->port_list[i].link & 3) != (p_dat->port_list[j].link & 3))
 				continue;   /*  Ensure same source base port */
 
-			if ((pDat->PortList[i+1].Link & 3) != (pDat->PortList[j+1].Link & 3))
+			if ((p_dat->port_list[i + 1].link & 3)
+			!= (p_dat->port_list[j + 1].link & 3))
 				continue;   /*  Ensure same destination base port */
 
-			if ((pDat->PortList[i].Link & 4) != (pDat->PortList[i+1].Link & 4))
+			if ((p_dat->port_list[i].link & 4)
+			!= (p_dat->port_list[i + 1].link & 4))
 				continue;   /*  Ensure sublink0 routes to sublink0 */
 
-			ASSERT((pDat->PortList[j].Link & 4) == (pDat->PortList[j+1].Link & 4)); /*  (therefore sublink1 routes to sublink1) */
+			/* (therefore sublink1 routes to sublink1) */
+			ASSERT((p_dat->port_list[j].link & 4)
+			== (p_dat->port_list[j + 1].link & 4));
 
-			if (pDat->HtBlock->AMD_CB_SkipRegang &&
-				pDat->HtBlock->AMD_CB_SkipRegang(pDat->PortList[i].NodeID,
-							pDat->PortList[i].Link & 0x03,
-							pDat->PortList[i+1].NodeID,
-							pDat->PortList[i+1].Link & 0x03))
+			if (p_dat->ht_block->amd_cb_skip_regang &&
+				p_dat->ht_block->amd_cb_skip_regang(p_dat->port_list[i].node_id,
+							p_dat->port_list[i].link & 0x03,
+							p_dat->port_list[i + 1].node_id,
+							p_dat->port_list[i + 1].link & 0x03))
 			{
 				continue;   /*  Skip regang */
 			}
 
 
-			pDat->PortList[i].Link &= 0x03; /*  Force to point to sublink0 */
-			pDat->PortList[i+1].Link &= 0x03;
-			pDat->PortList[i].SelRegang = TRUE; /*  Enable link reganging */
-			pDat->PortList[i+1].SelRegang = TRUE;
-			pDat->PortList[i].PrvWidthOutCap = HT_WIDTH_16_BITS;
-			pDat->PortList[i+1].PrvWidthOutCap = HT_WIDTH_16_BITS;
-			pDat->PortList[i].PrvWidthInCap = HT_WIDTH_16_BITS;
-			pDat->PortList[i+1].PrvWidthInCap = HT_WIDTH_16_BITS;
+			p_dat->port_list[i].link &= 0x03; /*  Force to point to sublink0 */
+			p_dat->port_list[i + 1].link &= 0x03;
+			p_dat->port_list[i].sel_regang = TRUE; /*  Enable link reganging */
+			p_dat->port_list[i + 1].sel_regang = TRUE;
+			p_dat->port_list[i].prv_width_out_cap = HT_WIDTH_16_BITS;
+			p_dat->port_list[i + 1].prv_width_out_cap = HT_WIDTH_16_BITS;
+			p_dat->port_list[i].prv_width_in_cap = HT_WIDTH_16_BITS;
+			p_dat->port_list[i + 1].prv_width_in_cap = HT_WIDTH_16_BITS;
 
-			/*  Delete PortList[j, j+1], slow but easy to debug implementation */
-			pDat->TotalLinks--;
-			Amdmemcpy(&(pDat->PortList[j]), &(pDat->PortList[j+2]), sizeof(sPortDescriptor)*(pDat->TotalLinks*2-j));
-			Amdmemset(&(pDat->PortList[pDat->TotalLinks*2]), INVALID_LINK, sizeof(sPortDescriptor)*2);
+			/*  Delete port_list[j, j+1], slow but easy to debug implementation */
+			p_dat->total_links--;
+			amd_memcpy(
+				&(p_dat->port_list[j]),
+				&(p_dat->port_list[j + 2]),
+				sizeof(sPortDescriptor)*(p_dat->total_links * 2 - j));
+			amd_memset(
+				&(p_dat->port_list[p_dat->total_links * 2]),
+				INVALID_LINK, sizeof(sPortDescriptor) * 2);
 
-			/* //High performance, but would make debuging harder due to 'shuffling' of the records */
-			/* //Amdmemcpy(PortList[TotalPorts-2], PortList[j], SIZEOF(sPortDescriptor)*2); */
+			/* //High performance, but would make debuging harder due to 'shuffling'
+			 * of the records
+			 */
+			/* //amd_memcpy(port_list[TotalPorts-2], port_list[j],
+			 * 				SIZEOF(sPortDescriptor)*2);
+			 */
 			/* //TotalPorts -=2; */
 
-			break; /*  Exit loop, advance to PortList[i+2] */
+			break; /*  Exit loop, advance to port_list[i+2] */
 		}
 	}
 #endif /* HT_BUILD_NC_ONLY */
 }
 
-static void detectIoLinkIsochronousCapable(sMainData *pDat)
+static void detect_io_link_isochronous_capable(sMainData *p_dat)
 {
-	uint8_t i;
-	uint8_t isochronous_capable = 0;
-	uint8_t iommu = get_uint_option("iommu", 1);
+	u8 i;
+	u8 isochronous_capable = 0;
+	u8 iommu = get_uint_option("iommu", 1);
 
-	for (i = 0; i < pDat->TotalLinks*2; i += 2) {
-		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i+1].Type == PORTLIST_TYPE_IO)) {
-			if ((pDat->PortList[i].PrvFeatureCap & 0x1) && (pDat->PortList[i+1].PrvFeatureCap & 0x1)) {
-				pDat->PortList[i].enable_isochronous_mode = 1;
-				pDat->PortList[i+1].enable_isochronous_mode = 1;
+	for (i = 0; i < p_dat->total_links * 2; i += 2) {
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU)
+		&& (p_dat->port_list[i + 1].type == PORTLIST_TYPE_IO)) {
+			if ((p_dat->port_list[i].prv_feature_cap & 0x1)
+			&& (p_dat->port_list[i + 1].prv_feature_cap & 0x1)) {
+				p_dat->port_list[i].enable_isochronous_mode = 1;
+				p_dat->port_list[i + 1].enable_isochronous_mode = 1;
 				isochronous_capable = 1;
 			} else {
-				pDat->PortList[i].enable_isochronous_mode = 0;
-				pDat->PortList[i+1].enable_isochronous_mode = 0;
+				p_dat->port_list[i].enable_isochronous_mode = 0;
+				p_dat->port_list[i + 1].enable_isochronous_mode = 0;
 			}
 		}
 	}
 
 	if (isochronous_capable && iommu) {
-		printk(BIOS_DEBUG, "Forcing HT links to isochronous mode due to enabled IOMMU\n");
+		printk(BIOS_DEBUG,
+			"Forcing HT links to isochronous mode due to enabled IOMMU\n");
 		/* Isochronous mode must be set on all links if the IOMMU is enabled */
-		for (i = 0; i < pDat->TotalLinks*2; i += 2) {
-			pDat->PortList[i].enable_isochronous_mode = 1;
-			pDat->PortList[i+1].enable_isochronous_mode = 1;
+		for (i = 0; i < p_dat->total_links * 2; i += 2) {
+			p_dat->port_list[i].enable_isochronous_mode = 1;
+			p_dat->port_list[i + 1].enable_isochronous_mode = 1;
 		}
 	}
 }
 
 /*----------------------------------------------------------------------------------------
  * void
- * selectOptimalWidthAndFrequency(sMainData *pDat)
+ * select_optimal_width_and_frequency(sMainData *p_dat)
  *
  *  Description:
  *	 For all links:
@@ -1441,22 +1549,22 @@ static void detectIoLinkIsochronousCapable(sMainData *pDat)
  *	 Note no hardware state changes in this routine.
  *
  *  Parameters:
- *	@param[in,out]  sMainData*  pDat = our global state, port list data
+ *	@param[in,out]  sMainData*  p_dat = our global state, port list data
  * ---------------------------------------------------------------------------------------
  */
-static void selectOptimalWidthAndFrequency(sMainData *pDat)
+static void select_optimal_width_and_frequency(sMainData *p_dat)
 {
 	u8 i, j;
-	uint32_t temp;
-	uint32_t cbPCBFreqLimit;
-	uint32_t cbPCBFreqLimit_NVRAM;
-	u8 cbPCBABDownstreamWidth;
-	u8 cbPCBBAUpstreamWidth;
+	u32 temp;
+	u32 cb_pcb_freq_limit;
+	u32 cb_pcb_freq_limit_nvram;
+	u8 cb_pcb_ab_downstream_width;
+	u8 cb_pcb_ba_upstream_width;
 
-	cbPCBFreqLimit_NVRAM = 0xfffff;
+	cb_pcb_freq_limit_nvram = 0xfffff;
 	temp = get_uint_option("hypertransport_speed_limit", 0);
 
-	cbPCBFreqLimit_NVRAM = ht_speed_limit[temp & 0xf];
+	cb_pcb_freq_limit_nvram = ht_speed_limit[temp & 0xf];
 
 	if (!is_fam15h()) {
 		/* FIXME
@@ -1465,96 +1573,98 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
 		 * mainboards / Fam10h CPUs.
 		 * Debug the issues and reenable this...
 		 */
-		if (cbPCBFreqLimit_NVRAM > 0xffff)
-			cbPCBFreqLimit_NVRAM = 0xffff;
+		if (cb_pcb_freq_limit_nvram > 0xffff)
+			cb_pcb_freq_limit_nvram = 0xffff;
 	}
 
-	for (i = 0; i < pDat->TotalLinks*2; i += 2)
+	for (i = 0; i < p_dat->total_links*2; i += 2)
 	{
-		cbPCBFreqLimit = 0xfffff;		// Maximum allowed by autoconfiguration
-		if (pDat->HtBlock->ht_link_configuration)
-			cbPCBFreqLimit = ht_speed_mhz_to_hw(pDat->HtBlock->ht_link_configuration->ht_speed_limit);
-		cbPCBFreqLimit = MIN(cbPCBFreqLimit, cbPCBFreqLimit_NVRAM);
+		cb_pcb_freq_limit = 0xfffff;		// Maximum allowed by autoconfiguration
+		if (p_dat->ht_block->ht_link_configuration)
+			cb_pcb_freq_limit = ht_speed_mhz_to_hw(
+					p_dat->ht_block->ht_link_configuration->ht_speed_limit);
+		cb_pcb_freq_limit = MIN(cb_pcb_freq_limit, cb_pcb_freq_limit_nvram);
 
 #if CONFIG(LIMIT_HT_DOWN_WIDTH_8)
-		cbPCBABDownstreamWidth = 8;
+		cb_pcb_ab_downstream_width = 8;
 #else
-		cbPCBABDownstreamWidth = 16;
+		cb_pcb_ab_downstream_width = 16;
 #endif
 
 #if CONFIG(LIMIT_HT_UP_WIDTH_8)
-		cbPCBBAUpstreamWidth = 8;
+		cb_pcb_ba_upstream_width = 8;
 #else
-		cbPCBBAUpstreamWidth = 16;
+		cb_pcb_ba_upstream_width = 16;
 #endif
 
-		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i+1].Type == PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU)
+		&& (p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU))
 		{
-			if (pDat->HtBlock->AMD_CB_Cpu2CpuPCBLimits)
+			if (p_dat->ht_block->amd_cb_cpu_2_cpu_pcb_limits)
 			{
-				pDat->HtBlock->AMD_CB_Cpu2CpuPCBLimits(
-						pDat->PortList[i].NodeID,
-						pDat->PortList[i].Link,
-						pDat->PortList[i+1].NodeID,
-						pDat->PortList[i+1].Link,
-						&cbPCBABDownstreamWidth,
-						&cbPCBBAUpstreamWidth, &cbPCBFreqLimit
+				p_dat->ht_block->amd_cb_cpu_2_cpu_pcb_limits(
+						p_dat->port_list[i].node_id,
+						p_dat->port_list[i].link,
+						p_dat->port_list[i + 1].node_id,
+						p_dat->port_list[i + 1].link,
+						&cb_pcb_ab_downstream_width,
+						&cb_pcb_ba_upstream_width, &cb_pcb_freq_limit
 						);
 			}
 		}
 		else
 		{
-			if (pDat->HtBlock->AMD_CB_IOPCBLimits)
+			if (p_dat->ht_block->amd_cb_iop_cb_limits)
 			{
-				pDat->HtBlock->AMD_CB_IOPCBLimits(
-						pDat->PortList[i+1].NodeID,
-						pDat->PortList[i+1].HostLink,
-						pDat->PortList[i+1].HostDepth,
-						&cbPCBABDownstreamWidth,
-						 &cbPCBBAUpstreamWidth, &cbPCBFreqLimit
+				p_dat->ht_block->amd_cb_iop_cb_limits(
+						p_dat->port_list[i + 1].node_id,
+						p_dat->port_list[i + 1].host_link,
+						p_dat->port_list[i + 1].host_depth,
+						&cb_pcb_ab_downstream_width,
+						 &cb_pcb_ba_upstream_width, &cb_pcb_freq_limit
 						);
 			}
 		}
 
-		temp = pDat->PortList[i].PrvFrequencyCap;
-		temp &= pDat->PortList[i+1].PrvFrequencyCap;
-		temp &= cbPCBFreqLimit;
-		pDat->PortList[i].CompositeFrequencyCap = temp;
-		pDat->PortList[i+1].CompositeFrequencyCap = temp;
+		temp = p_dat->port_list[i].prv_frequency_cap;
+		temp &= p_dat->port_list[i + 1].prv_frequency_cap;
+		temp &= cb_pcb_freq_limit;
+		p_dat->port_list[i].composite_frequency_cap = temp;
+		p_dat->port_list[i + 1].composite_frequency_cap = temp;
 
 		ASSERT (temp != 0);
 		for (j = 19;; j--)
 		{
 			if ((j == 16) || (j == 15))
 				continue;
-			if (temp & ((uint32_t)1 << j))
+			if (temp & ((u32)1 << j))
 				break;
 		}
 
-		pDat->PortList[i].SelFrequency = j;
-		pDat->PortList[i+1].SelFrequency = j;
+		p_dat->port_list[i].sel_frequency = j;
+		p_dat->port_list[i + 1].sel_frequency = j;
 
-		temp = pDat->PortList[i].PrvWidthOutCap;
-		if (pDat->PortList[i+1].PrvWidthInCap < temp)
-			temp = pDat->PortList[i+1].PrvWidthInCap;
-		if (cbPCBABDownstreamWidth < temp)
-			temp = cbPCBABDownstreamWidth;
-		pDat->PortList[i].SelWidthOut = (u8)temp;
-		pDat->PortList[i+1].SelWidthIn = (u8)temp;
+		temp = p_dat->port_list[i].prv_width_out_cap;
+		if (p_dat->port_list[i + 1].prv_width_in_cap < temp)
+			temp = p_dat->port_list[i + 1].prv_width_in_cap;
+		if (cb_pcb_ab_downstream_width < temp)
+			temp = cb_pcb_ab_downstream_width;
+		p_dat->port_list[i].sel_width_out = (u8)temp;
+		p_dat->port_list[i + 1].sel_width_in = (u8)temp;
 
-		temp = pDat->PortList[i].PrvWidthInCap;
-		if (pDat->PortList[i+1].PrvWidthOutCap < temp)
-			temp = pDat->PortList[i+1].PrvWidthOutCap;
-		if (cbPCBBAUpstreamWidth < temp)
-			temp = cbPCBBAUpstreamWidth;
-		pDat->PortList[i].SelWidthIn = (u8)temp;
-		pDat->PortList[i+1].SelWidthOut = (u8)temp;
+		temp = p_dat->port_list[i].prv_width_in_cap;
+		if (p_dat->port_list[i + 1].prv_width_out_cap < temp)
+			temp = p_dat->port_list[i + 1].prv_width_out_cap;
+		if (cb_pcb_ba_upstream_width < temp)
+			temp = cb_pcb_ba_upstream_width;
+		p_dat->port_list[i].sel_width_in = (u8)temp;
+		p_dat->port_list[i + 1].sel_width_out = (u8)temp;
 	}
 }
 
 /*----------------------------------------------------------------------------------------
  * void
- * hammerSublinkFixup(sMainData *pDat)
+ * hammer_sublink_fixup(sMainData *p_dat)
  *
  *  Description:
  *	 Iterate through all links, checking the frequency of each sublink pair.  Make the
@@ -1564,125 +1674,152 @@ static void selectOptimalWidthAndFrequency(sMainData *pDat)
  *	 Note no hardware state changes in this routine.
  *
  *  Parameters:
- *	@param[in,out] sMainData* pDat = our global state, link state and port list
+ *	@param[in,out] sMainData* p_dat = our global state, link state and port list
  * ---------------------------------------------------------------------------------------
  */
-static void hammerSublinkFixup(sMainData *pDat)
+static void hammer_sublink_fixup(sMainData *p_dat)
 {
 #ifndef HT_BUILD_NC_ONLY
 	u8 i, j, k;
 	BOOL changes, downgrade;
 
-	u8 hiIndex;
-	u8 hiFreq, loFreq;
+	u8 hi_index;
+	u8 hi_freq, lo_freq;
 
 	u32 temp;
 
 	do
 	{
 		changes = FALSE;
-		for (i = 0; i < pDat->TotalLinks*2; i++)
+		for (i = 0; i < p_dat->total_links*2; i++)
 		{
-			if (pDat->PortList[i].Type != PORTLIST_TYPE_CPU) /*  Must be a CPU link */
+			/* Must be a CPU link */
+			if (p_dat->port_list[i].type != PORTLIST_TYPE_CPU)
 				continue;
-			if (pDat->PortList[i].Link < 4) /*  Only look for sublink1's */
+			/* Only look for sublink1's */
+			if (p_dat->port_list[i].link < 4)
 				continue;
 
-			for (j = 0; j < pDat->TotalLinks*2; j++)
+			for (j = 0; j < p_dat->total_links*2; j++)
 			{
 				/*  Step 1. Find the matching sublink0 */
-				if (pDat->PortList[j].Type != PORTLIST_TYPE_CPU)
+				if (p_dat->port_list[j].type != PORTLIST_TYPE_CPU)
 					continue;
-				if (pDat->PortList[j].NodeID != pDat->PortList[i].NodeID)
+				if (p_dat->port_list[j].node_id != p_dat->port_list[i].node_id)
 					continue;
-				if (pDat->PortList[j].Link != (pDat->PortList[i].Link & 0x03))
+				if (p_dat->port_list[j].link
+				!= (p_dat->port_list[i].link & 0x03))
 					continue;
 
 				/*  Step 2. Check for an illegal frequency ratio */
-				if (pDat->PortList[i].SelFrequency >= pDat->PortList[j].SelFrequency)
+				if (p_dat->port_list[i].sel_frequency
+				>= p_dat->port_list[j].sel_frequency)
 				{
-					hiIndex = i;
-					hiFreq = pDat->PortList[i].SelFrequency;
-					loFreq = pDat->PortList[j].SelFrequency;
+					hi_index = i;
+					hi_freq = p_dat->port_list[i].sel_frequency;
+					lo_freq = p_dat->port_list[j].sel_frequency;
 				}
 				else
 				{
-					hiIndex = j;
-					hiFreq = pDat->PortList[j].SelFrequency;
-					loFreq = pDat->PortList[i].SelFrequency;
+					hi_index = j;
+					hi_freq = p_dat->port_list[j].sel_frequency;
+					lo_freq = p_dat->port_list[i].sel_frequency;
 				}
 
-				if (hiFreq == loFreq)
-					break; /*  The frequencies are 1:1, no need to do anything */
+				if (hi_freq == lo_freq) {
+					/*  The frequencies are 1:1, no need to do anything */
+					break;
+				}
 
 				downgrade = FALSE;
 
-				if (hiFreq == 13)
+				if (hi_freq == 13)
 				{
-					if ((loFreq != 7) &&  /* {13, 7} 2400MHz / 1200MHz 2:1 */
-						(loFreq != 4) &&  /* {13, 4} 2400MHz /  600MHz 4:1 */
-						(loFreq != 2))   /* {13, 2} 2400MHz /  400MHz 6:1 */
+					/* {13, 7} 2400MHz / 1200MHz 2:1 */
+					/* {13, 4} 2400MHz /  600MHz 4:1 */
+					/* {13, 2} 2400MHz /  400MHz 6:1 */
+					if ((lo_freq != 7) &&
+						(lo_freq != 4) &&
+						(lo_freq != 2))
 						downgrade = TRUE;
 				}
-				else if (hiFreq == 11)
+				else if (hi_freq == 11)
 				{
-					if ((loFreq != 6))    /* {11, 6} 2000MHz / 1000MHz 2:1 */
+					/* {11, 6} 2000MHz / 1000MHz 2:1 */
+					if ((lo_freq != 6))
 						downgrade = TRUE;
 				}
-				else if (hiFreq == 9)
+				else if (hi_freq == 9)
 				{
-					if ((loFreq != 5) &&  /* { 9, 5} 1600MHz /  800MHz 2:1 */
-						(loFreq != 2) &&  /* { 9, 2} 1600MHz /  400MHz 4:1 */
-						(loFreq != 0))   /* { 9, 0} 1600MHz /  200MHz 8:1 */
+					/* { 9, 5} 1600MHz /  800MHz 2:1 */
+					/* { 9, 2} 1600MHz /  400MHz 4:1 */
+					/* { 9, 0} 1600MHz /  200MHz 8:1 */
+					if ((lo_freq != 5) &&
+						(lo_freq != 2) &&
+						(lo_freq != 0))
 						downgrade = TRUE;
 				}
-				else if (hiFreq == 7)
+				else if (hi_freq == 7)
 				{
-					if ((loFreq != 4) &&  /* { 7, 4} 1200MHz /  600MHz 2:1 */
-						(loFreq != 0))   /* { 7, 0} 1200MHz /  200MHz 6:1 */
+					/* { 7, 4} 1200MHz /  600MHz 2:1 */
+					/* { 7, 0} 1200MHz /  200MHz 6:1 */
+					if ((lo_freq != 4) &&
+						(lo_freq != 0))
 						downgrade = TRUE;
 				}
-				else if (hiFreq == 5)
+				else if (hi_freq == 5)
 				{
-					if ((loFreq != 2) &&  /* { 5, 2}  800MHz /  400MHz 2:1 */
-						(loFreq != 0))   /* { 5, 0}  800MHz /  200MHz 4:1 */
+					/* { 5, 2}  800MHz /  400MHz 2:1 */
+					/* { 5, 0}  800MHz /  200MHz 4:1 */
+					if ((lo_freq != 2) &&
+						(lo_freq != 0))
 						downgrade = TRUE;
 				}
-				else if (hiFreq == 2)
+				else if (hi_freq == 2)
 				{
-					if ((loFreq != 0))    /* { 2, 0}  400MHz /  200MHz 2:1 */
+					/* { 2, 0}  400MHz /  200MHz 2:1 */
+					if ((lo_freq != 0))
 						downgrade = TRUE;
 				}
 				else
 				{
-					downgrade = TRUE; /*  no legal ratios for hiFreq */
+					/*  no legal ratios for hi_freq */
+					downgrade = TRUE;
 				}
 
-				/*  Step 3. Downgrade the higher of the two frequencies, and set nochanges to FALSE */
+				/*  Step 3. Downgrade the higher of the two frequencies, and set
+				 * nochanges to FALSE
+				 */
 				if (downgrade)
 				{
-					/*  Although the problem was with the port specified by hiIndex, we need to */
-					/*  downgrade both ends of the link. */
-					hiIndex = hiIndex & 0xFE; /*  Select the 'upstream' (i.e. even) port */
+					/*  Although the problem was with the port specified by
+					 * hi_index, we need to downgrade both ends of the link.
+					 */
 
-					temp = pDat->PortList[hiIndex].CompositeFrequencyCap;
+					/*  Select the 'upstream' (i.e. even) port */
+					hi_index = hi_index & 0xFE;
 
-					/*  Remove hiFreq from the list of valid frequencies */
-					temp = temp & ~((uint32)1 << hiFreq);
+					temp = p_dat->port_list[hi_index]
+								.composite_frequency_cap;
+
+					/*  Remove hi_freq from the list of valid frequencies */
+					temp = temp & ~((u32)1 << hi_freq);
 					ASSERT (temp != 0);
-					pDat->PortList[hiIndex].CompositeFrequencyCap = temp;
-					pDat->PortList[hiIndex+1].CompositeFrequencyCap = temp;
+					p_dat->port_list[hi_index].composite_frequency_cap
+										= temp;
+					p_dat->port_list[hi_index + 1].composite_frequency_cap
+										= temp;
 
 					for (k = 19;; k--)
 					{
 						if ((j == 16) || (j == 15))
 							continue;
-						if (temp & ((uint32_t)1 << k))
+						if (temp & ((u32)1 << k))
 							break;
 					}
 
-					pDat->PortList[hiIndex].SelFrequency = k;
-					pDat->PortList[hiIndex+1].SelFrequency = k;
+					p_dat->port_list[hi_index].sel_frequency = k;
+					p_dat->port_list[hi_index + 1].sel_frequency = k;
 
 					changes = TRUE;
 				}
@@ -1694,7 +1831,7 @@ static void hammerSublinkFixup(sMainData *pDat)
 
 /*----------------------------------------------------------------------------------------
  * void
- * linkOptimization(sMainData *pDat)
+ * link_optimization(sMainData *p_dat)
  *
  *  Description:
  *	 Based on link capabilities, apply optimization rules to come up with the real best
@@ -1703,105 +1840,106 @@ static void hammerSublinkFixup(sMainData *pDat)
  *	 state for all links.
  *
  *  Parameters:
- *	@param[in]  sMainData* pDat = our global state
+ *	@param[in]  sMainData* p_dat = our global state
  * ---------------------------------------------------------------------------------------
  */
-static void linkOptimization(sMainData *pDat)
+static void link_optimization(sMainData *p_dat)
 {
-	pDat->nb->gatherLinkData(pDat, pDat->nb);
-	regangLinks(pDat);
+	p_dat->nb->gather_link_data(p_dat, p_dat->nb);
+	regang_links(p_dat);
 	if (is_fam15h())
-		detectIoLinkIsochronousCapable(pDat);
-	selectOptimalWidthAndFrequency(pDat);
-	hammerSublinkFixup(pDat);
-	pDat->nb->setLinkData(pDat, pDat->nb);
+		detect_io_link_isochronous_capable(p_dat);
+	select_optimal_width_and_frequency(p_dat);
+	hammer_sublink_fixup(p_dat);
+	p_dat->nb->set_link_data(p_dat, p_dat->nb);
 }
 
 
 /*----------------------------------------------------------------------------------------
  * void
- * trafficDistribution(sMainData *pDat)
+ * traffic_distribution(sMainData *p_dat)
  *
  *  Description:
  *	 In the case of a two node system with both sublinks used, enable the traffic
  *	 distribution feature.
  *
  *  Parameters:
- *	  @param[in]	    sMainData*	  pDat		 = our global state, port list data
+ *	  @param[in]	    sMainData*	  p_dat		 = our global state, port list data
  * ---------------------------------------------------------------------------------------
  */
-static void trafficDistribution(sMainData *pDat)
+static void traffic_distribution(sMainData *p_dat)
 {
 #ifndef HT_BUILD_NC_ONLY
-	u32 links01, links10;
-	u8 linkCount;
+	u32 links_01, links_10;
+	u8 link_count;
 	u8 i;
 
 	/*  Traffic Distribution is only used when there are exactly two nodes in the system */
-	if (pDat->NodesDiscovered+1 != 2)
+	if (p_dat->nodes_discovered + 1 != 2)
 		return;
 
-	links01 = 0;
-	links10 = 0;
-	linkCount = 0;
-	for (i = 0; i < pDat->TotalLinks*2; i += 2)
+	links_01 = 0;
+	links_10 = 0;
+	link_count = 0;
+	for (i = 0; i < p_dat->total_links*2; i += 2)
 	{
-		if ((pDat->PortList[i].Type == PORTLIST_TYPE_CPU) && (pDat->PortList[i+1].Type == PORTLIST_TYPE_CPU))
+		if ((p_dat->port_list[i].type == PORTLIST_TYPE_CPU)
+		&& (p_dat->port_list[i + 1].type == PORTLIST_TYPE_CPU))
 		{
-			links01 |= (u32)1 << pDat->PortList[i].Link;
-			links10 |= (u32)1 << pDat->PortList[i+1].Link;
-			linkCount++;
+			links_01 |= (u32)1 << p_dat->port_list[i].link;
+			links_10 |= (u32)1 << p_dat->port_list[i + 1].link;
+			link_count++;
 		}
 	}
-	ASSERT(linkCount != 0);
-	if (linkCount == 1)
+	ASSERT(link_count != 0);
+	if (link_count == 1)
 		return; /*  Don't setup Traffic Distribution if only one link is being used */
 
-	pDat->nb->writeTrafficDistribution(links01, links10, pDat->nb);
+	p_dat->nb->write_traffic_distribution(links_01, links_10, p_dat->nb);
 #endif /* HT_BUILD_NC_ONLY */
 }
 
 /*----------------------------------------------------------------------------------------
  * void
- * tuning(sMainData *pDat)
+ * tuning(sMainData *p_dat)
  *
  *  Description:
  *	 Handle system and performance tunings, such as traffic distribution, fifo and
  *	 buffer tuning, and special config tunings.
  *
  *  Parameters:
- *	@param[in] sMainData* pDat = our global state, port list data
+ *	@param[in] sMainData* p_dat = our global state, port list data
  * ---------------------------------------------------------------------------------------
  */
-static void tuning(sMainData *pDat)
+static void tuning(sMainData *p_dat)
 {
 	u8 i;
 
 	/* See if traffic distribution can be done and do it if so
 	 * or allow system specific customization
 	 */
-	if ((pDat->HtBlock->AMD_CB_CustomizeTrafficDistribution == NULL)
-		|| !pDat->HtBlock->AMD_CB_CustomizeTrafficDistribution())
+	if ((p_dat->ht_block->amd_cb_customize_traffic_distribution == NULL)
+		|| !p_dat->ht_block->amd_cb_customize_traffic_distribution())
 	{
-		trafficDistribution(pDat);
+		traffic_distribution(p_dat);
 	}
 
 	/* For each node, invoke northbridge specific buffer tunings or
 	 * system specific customizations.
 	 */
-	for (i = 0; i < pDat->NodesDiscovered + 1; i++)
+	for (i = 0; i < p_dat->nodes_discovered + 1; i++)
 	{
-		if ((pDat->HtBlock->AMD_CB_CustomizeBuffers == NULL)
-		   || !pDat->HtBlock->AMD_CB_CustomizeBuffers(i))
+		if ((p_dat->ht_block->amd_cb_customize_buffers == NULL)
+		   || !p_dat->ht_block->amd_cb_customize_buffers(i))
 		{
-			pDat->nb->bufferOptimizations(i, pDat, pDat->nb);
+			p_dat->nb->buffer_optimizations(i, p_dat, p_dat->nb);
 		}
 	}
 }
 
 /*----------------------------------------------------------------------------------------
  * BOOL
- * isSanityCheckOk()
+ * is_sanity_check_ok()
  *
  *  Description:
  *	 Perform any general sanity checks which should prevent HT from running if they fail.
@@ -1811,13 +1949,13 @@ static void tuning(sMainData *pDat)
  *	@param[out] result BOOL  = true if check is ok, false if it failed
  * ---------------------------------------------------------------------------------------
  */
-static BOOL isSanityCheckOk(void)
+static BOOL is_sanity_check_ok(void)
 {
-	uint64 qValue;
+	uint64 q_value;
 
-	AmdMSRRead(LAPIC_BASE_MSR, &qValue);
+	amd_msr_read(LAPIC_BASE_MSR, &q_value);
 
-	return ((qValue.lo & LAPIC_BASE_MSR_BOOTSTRAP_PROCESSOR) != 0);
+	return ((q_value.lo & LAPIC_BASE_MSR_BOOTSTRAP_PROCESSOR) != 0);
 }
 
 /***************************************************************************
@@ -1826,7 +1964,7 @@ static BOOL isSanityCheckOk(void)
 
 /*----------------------------------------------------------------------------------------
  * void
- * htInitialize(AMD_HTBLOCK *pBlock)
+ * htInitialize(AMD_HTBLOCK *p_block)
  *
  *  Description:
  *	 This is the top level external interface for Hypertransport Initialization.
@@ -1835,31 +1973,31 @@ static BOOL isSanityCheckOk(void)
  *	 optimization.
  *
  *  Parameters:
- *	@param[in] AMD_HTBLOCK*  pBlock = Our Initial State including possible
+ *	@param[in] AMD_HTBLOCK*  p_block = Our Initial State including possible
  *				  topologies and routings, non coherent bus
  *				  assignment info, and actual
  *				  wrapper or OEM call back routines.
  * ---------------------------------------------------------------------------------------
  */
-void amdHtInitialize(AMD_HTBLOCK *pBlock)
+void amd_ht_initialize(AMD_HTBLOCK *p_block)
 {
-	sMainData pDat;
+	sMainData p_dat;
 	cNorthBridge nb;
 
-	if (isSanityCheckOk())
+	if (is_sanity_check_ok())
 	{
-		newNorthBridge(0, &nb);
+		new_northbridge(0, &nb);
 
-		pDat.HtBlock = pBlock;
-		pDat.nb = &nb;
-		pDat.sysMpCap = nb.maxNodes;
-		nb.isCapable(0, &pDat, pDat.nb);
-		coherentInit(&pDat);
+		p_dat.ht_block = p_block;
+		p_dat.nb = &nb;
+		p_dat.sys_mp_cap = nb.max_nodes;
+		nb.is_capable(0, &p_dat, p_dat.nb);
+		coherent_init(&p_dat);
 
-		pDat.AutoBusCurrent = pBlock->AutoBusStart;
-		pDat.UsedCfgMapEntires = 0;
-		ncInit(&pDat);
-		linkOptimization(&pDat);
-		tuning(&pDat);
+		p_dat.auto_bus_current = p_block->auto_bus_start;
+		p_dat.used_cfg_map_entires = 0;
+		nc_init(&p_dat);
+		link_optimization(&p_dat);
+		tuning(&p_dat);
 	}
 }

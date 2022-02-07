@@ -6,10 +6,10 @@
 #include <device/hypertransport_def.h>
 
 /* TODO: Check HT specs for better names for these. */
-#define LinkConnected		(1 << 0)
-#define InitComplete		(1 << 1)
-#define NonCoherent			(1 << 2)
-#define ConnectionPending	(1 << 4)
+#define LINK_CONNECTED		(1 << 0)
+#define INIT_COMPLETE		(1 << 1)
+#define NON_COHERENT			(1 << 2)
+#define CONNECTION_PENDING	(1 << 4)
 bool ht_is_non_coherent_link(struct bus *link);
 
 unsigned int hypertransport_scan_chain(struct bus *bus);

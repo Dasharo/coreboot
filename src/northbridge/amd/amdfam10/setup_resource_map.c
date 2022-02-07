@@ -21,8 +21,8 @@ void setup_resource_map(const u32 *register_values, u32 max)
 		dev = register_values[i] & ~0xfff;
 		where = register_values[i] & 0xfff;
 		reg = pci_read_config32(dev, where);
-		reg &= register_values[i+1];
-		reg |= register_values[i+2];
+		reg &= register_values[i + 1];
+		reg |= register_values[i + 2];
 		pci_write_config32(dev, where, reg);
 	}
 }
@@ -39,8 +39,8 @@ void setup_resource_map_offset(const u32 *register_values, u32 max, u32 offset_p
 		dev = (register_values[i] & ~0xfff) + offset_pci_dev;
 		where = register_values[i] & 0xfff;
 		reg = pci_read_config32(dev, where);
-		reg &= register_values[i+1];
-		reg |= register_values[i+2] + offset_io_base;
+		reg &= register_values[i + 1];
+		reg |= register_values[i + 2] + offset_io_base;
 		pci_write_config32(dev, where, reg);
 	}
 }
@@ -56,9 +56,9 @@ void setup_resource_map_x_offset(const u32 *register_values, u32 max, u32 offset
 		if (RES_DEBUG)
 			printk(BIOS_DEBUG, "%04x: %02x %08x <- & %08x | %08x\n",
 				i/4, register_values[i],
-				register_values[i+1] + ((register_values[i]==RES_PCI_IO) ? offset_pci_dev : 0),
-				register_values[i+2],
-				register_values[i+3] + (((register_values[i] & RES_PORT_IO_32) == RES_PORT_IO_32) ? offset_io_base : 0)
+				register_values[i + 1] + ((register_values[i] == RES_PCI_IO) ? offset_pci_dev : 0),
+				register_values[i + 2],
+				register_values[i + 3] + (((register_values[i] & RES_PORT_IO_32) == RES_PORT_IO_32) ? offset_io_base : 0)
 				);
 		switch (register_values[i]) {
 		case RES_PCI_IO: //PCI
@@ -66,13 +66,13 @@ void setup_resource_map_x_offset(const u32 *register_values, u32 max, u32 offset
 			pci_devfn_t dev;
 			u32 where;
 			u32 reg;
-			dev = (register_values[i+1] & ~0xfff) + offset_pci_dev;
-			where = register_values[i+1] & 0xfff;
+			dev = (register_values[i + 1] & ~0xfff) + offset_pci_dev;
+			where = register_values[i + 1] & 0xfff;
 			reg = pci_read_config32(dev, where);
 			if (RES_DEBUG)
 				printk(BIOS_SPEW, "WAS: %08x\n", reg);
-			reg &= register_values[i+2];
-			reg |= register_values[i+3];
+			reg &= register_values[i + 2];
+			reg |= register_values[i + 3];
 			pci_write_config32(dev, where, reg);
 			if (RES_DEBUG)
 				printk(BIOS_SPEW, "NOW: %08x\n", reg);
@@ -82,12 +82,12 @@ void setup_resource_map_x_offset(const u32 *register_values, u32 max, u32 offset
 			{
 			u32 where;
 			u32 reg;
-			where = register_values[i+1] + offset_io_base;
+			where = register_values[i + 1] + offset_io_base;
 			reg = inb(where);
 			if (RES_DEBUG)
 				printk(BIOS_SPEW, "WAS: %08x\n", reg);
-			reg &= register_values[i+2];
-			reg |= register_values[i+3];
+			reg &= register_values[i + 2];
+			reg |= register_values[i + 3];
 			outb(reg, where);
 			if (RES_DEBUG)
 				printk(BIOS_SPEW, "NOW: %08x\n", reg);
@@ -97,12 +97,12 @@ void setup_resource_map_x_offset(const u32 *register_values, u32 max, u32 offset
 			{
 			u32 where;
 			u32 reg;
-			where = register_values[i+1] + offset_io_base;
+			where = register_values[i + 1] + offset_io_base;
 			reg = inl(where);
 			if (RES_DEBUG)
 				printk(BIOS_SPEW, "WAS: %08x\n", reg);
-			reg &= register_values[i+2];
-			reg |= register_values[i+3];
+			reg &= register_values[i + 2];
+			reg |= register_values[i + 3];
 			outl(reg, where);
 			if (RES_DEBUG)
 				printk(BIOS_SPEW, "NOW: %08x\n", reg);
@@ -125,18 +125,18 @@ void setup_resource_map_x(const u32 *register_values, u32 max)
 	for (i = 0; i < max; i += 4) {
 		if (RES_DEBUG)
 			printk(BIOS_DEBUG, "%04x: %02x %08x <- & %08x | %08x\n",
-				i/4, register_values[i],register_values[i+1], register_values[i+2], register_values[i+3]);
+				i/4, register_values[i],register_values[i + 1], register_values[i + 2], register_values[i + 3]);
 		switch (register_values[i]) {
 		case RES_PCI_IO: //PCI
 			{
 			pci_devfn_t dev;
 			u32 where;
 			u32 reg;
-			dev = register_values[i+1] & ~0xfff;
-			where = register_values[i+1] & 0xfff;
+			dev = register_values[i + 1] & ~0xfff;
+			where = register_values[i + 1] & 0xfff;
 			reg = pci_read_config32(dev, where);
-			reg &= register_values[i+2];
-			reg |= register_values[i+3];
+			reg &= register_values[i + 2];
+			reg |= register_values[i + 3];
 			pci_write_config32(dev, where, reg);
 			}
 			break;
@@ -144,10 +144,10 @@ void setup_resource_map_x(const u32 *register_values, u32 max)
 			{
 			u32 where;
 			u32 reg;
-			where = register_values[i+1];
+			where = register_values[i + 1];
 			reg = inb(where);
-			reg &= register_values[i+2];
-			reg |= register_values[i+3];
+			reg &= register_values[i + 2];
+			reg |= register_values[i + 3];
 			outb(reg, where);
 			}
 			break;
@@ -155,10 +155,10 @@ void setup_resource_map_x(const u32 *register_values, u32 max)
 			{
 			u32 where;
 			u32 reg;
-			where = register_values[i+1];
+			where = register_values[i + 1];
 			reg = inl(where);
-			reg &= register_values[i+2];
-			reg |= register_values[i+3];
+			reg &= register_values[i + 2];
+			reg |= register_values[i + 3];
 			outl(reg, where);
 			}
 			break;

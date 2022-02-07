@@ -2,17 +2,17 @@
 
 #include <drivers/amd/amdmct/wrappers/mcti.h>
 
-void EarlySampleSupport_D(void)
+void early_sample_support_d(void)
 {
 }
 
-u32 procOdtWorkaround(struct DCTStatStruc *pDCTstat, u32 dct, u32 val)
+u32 proc_odt_workaround(struct DCTStatStruc *p_dct_stat, u32 dct, u32 val)
 {
-	uint64_t tmp;
-	tmp = pDCTstat->LogicalCPUID;
+	u64 tmp;
+	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 		val &= 0x0FFFFFFF;
-		if (pDCTstat->MAdimms[dct] > 1)
+		if (p_dct_stat->ma_dimms[dct] > 1)
 			val |= 0x10000000;
 	}
 
@@ -20,58 +20,58 @@ u32 procOdtWorkaround(struct DCTStatStruc *pDCTstat, u32 dct, u32 val)
 }
 
 
-u32 OtherTiming_A_D(struct DCTStatStruc *pDCTstat, u32 val)
+u32 other_timing_a_d(struct DCTStatStruc *p_dct_stat, u32 val)
 {
 	/* Bug#10695:One MEMCLK Bubble Writes Don't Do X4 X8 Switching Correctly
 	 * Solution: BIOS should set DRAM Timing High[Twrwr] > 00b
 	 * (F2x[1, 0]8C[1:0] > 00b).  Silicon Status: Fixed in Rev B
 	 * FIXME: check if this is still required.
 	 */
-	uint64_t tmp;
-	tmp = pDCTstat->LogicalCPUID;
+	u64 tmp;
+	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		if (!(val & (3<<12)))
-			val |= 1<<12;
+		if (!(val & (3 << 12)))
+			val |= 1 << 12;
 	}
 	return val;
 }
 
 
-void mct_ForceAutoPrecharge_D(struct DCTStatStruc *pDCTstat, u32 dct)
+void mct_force_auto_precharge_d(struct DCTStatStruc *p_dct_stat, u32 dct)
 {
-	uint64_t tmp;
+	u64 tmp;
 	u32 reg;
 	u32 reg_off;
 	u32 dev;
 	u32 val;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		if (CheckNBCOFAutoPrechg(pDCTstat, dct)) {
-			dev = pDCTstat->dev_dct;
+		if (check_nb_cof_auto_prechg(p_dct_stat, dct)) {
+			dev = p_dct_stat->dev_dct;
 			reg_off = 0x100 * dct;
 			reg = 0x90 + reg_off;	/* Dram Configuration Lo */
-			val = Get_NB32(dev, reg);
-			val |= 1<<ForceAutoPchg;
-			if (!pDCTstat->GangedMode)
-				val |= 1<<BurstLength32;
-			Set_NB32(dev, reg, val);
+			val = get_nb32(dev, reg);
+			val |= 1 << FORCE_AUTO_PCHG;
+			if (!p_dct_stat->ganged_mode)
+				val |= 1 << BURST_LENGTH_32;
+			set_nb32(dev, reg, val);
 
 			reg = 0x88 + reg_off;	/* cx = Dram Timing Lo */
-			val = Get_NB32(dev, reg);
+			val = get_nb32(dev, reg);
 			val |= 0x000F0000;	/* Trc = 0Fh */
-			Set_NB32(dev, reg, val);
+			set_nb32(dev, reg, val);
 		}
 	}
 }
 
 
-void mct_EndDQSTraining_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstatA)
+void mct_end_dqs_training_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat_a)
 {
 	/* Bug#13341: Prefetch is getting killed when the limit is reached in
-	 * PrefDramTrainMode
-	 * Solution: Explicitly clear the PrefDramTrainMode bit after training
+	 * PREF_DRAM_TRAIN_MODE
+	 * Solution: Explicitly clear the PREF_DRAM_TRAIN_MODE bit after training
 	 * sequence in order to ensure resumption of normal HW prefetch
 	 * behavior.
 	 * NOTE -- this has been documented with a note at the end of this
@@ -81,25 +81,25 @@ void mct_EndDQSTraining_D(struct MCTStatStruc *pMCTstat,
 	 * FIXME: check this.
 	 */
 
-	uint64_t tmp;
+	u64 tmp;
 	u32 dev;
 	u32 reg;
 	u32 val;
-	u32 Node;
+	u32 node;
 
-	for (Node = 0; Node < MAX_NODES_SUPPORTED; Node++) {
-		struct DCTStatStruc *pDCTstat;
-		pDCTstat = pDCTstatA + Node;
+	for (node = 0; node < MAX_NODES_SUPPORTED; node++) {
+		struct DCTStatStruc *p_dct_stat;
+		p_dct_stat = p_dct_stat_a + node;
 
-		if (!pDCTstat->NodePresent) break;
+		if (!p_dct_stat->node_present) break;
 
-		tmp = pDCTstat->LogicalCPUID;
+		tmp = p_dct_stat->logical_cpuid;
 		if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-			dev = pDCTstat->dev_dct;
+			dev = p_dct_stat->dev_dct;
 			reg = 0x11c;
-			val = Get_NB32(dev, reg);
-			val &= ~(1<<PrefDramTrainMode);
-			Set_NB32(dev, reg, val);
+			val = get_nb32(dev, reg);
+			val &= ~(1 << PREF_DRAM_TRAIN_MODE);
+			set_nb32(dev, reg, val);
 		}
 	}
 }
@@ -107,8 +107,8 @@ void mct_EndDQSTraining_D(struct MCTStatStruc *pMCTstat,
 
 
 
-void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat)
+void mct_before_dqs_train_samp_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat)
 {
 	/* Bug#15115: Uncertainty In The Sync Chain Leads To Setup Violations
 	 *  In TX FIFO
@@ -128,39 +128,39 @@ void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *pMCTstat,
 	u32 index;
 	u32 reg;
 	u32 val;
-	uint64_t tmp;
-	u32 Channel;
+	u64 tmp;
+	u32 channel;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 
-		dev = pDCTstat->dev_dct;
+		dev = p_dct_stat->dev_dct;
 		index = 0;
 
-		for (Channel = 0; Channel < 2; Channel++) {
-			index_reg = 0x98 + 0x100 * Channel;
-			val = Get_NB32_index_wait(dev, index_reg, 0x0d004007);
+		for (channel = 0; channel < 2; channel++) {
+			index_reg = 0x98 + 0x100 * channel;
+			val = get_nb32_index_wait(dev, index_reg, 0x0d004007);
 			val |= 0x3ff;
-			Set_NB32_index_wait(dev, index_reg, 0x0d0f4f07, val);
+			set_nb32_index_wait(dev, index_reg, 0x0d0f4f07, val);
 		}
 
-		for (Channel = 0; Channel < 2; Channel++) {
-			if (pDCTstat->GangedMode && Channel)
+		for (channel = 0; channel < 2; channel++) {
+			if (p_dct_stat->ganged_mode && channel)
 				break;
-			reg_off = 0x100 * Channel;
+			reg_off = 0x100 * channel;
 			reg = 0x78 + reg_off;
-			val = Get_NB32(dev, reg);
+			val = get_nb32(dev, reg);
 			val &= ~(0x07);
 			val |= 5;
-			Set_NB32(dev, reg, val);
+			set_nb32(dev, reg, val);
 		}
 
-		for (Channel = 0; Channel < 2; Channel++) {
-			reg_off = 0x100 * Channel;
+		for (channel = 0; channel < 2; channel++) {
+			reg_off = 0x100 * channel;
 			val = 0;
 			index_reg = 0x98 + reg_off;
 			for (index = 0x30; index < (0x45 + 1); index++) {
-				Set_NB32_index_wait(dev, index_reg, index, val);
+				set_nb32_index_wait(dev, index_reg, index, val);
 			}
 		}
 
@@ -168,7 +168,7 @@ void mct_BeforeDQSTrain_Samp_D(struct MCTStatStruc *pMCTstat,
 }
 
 
-u32 Modify_D3CMP(struct DCTStatStruc *pDCTstat, u32 dct, u32 value)
+u32 modify_d3_cmp(struct DCTStatStruc *p_dct_stat, u32 dct, u32 value)
 {
 	/* Errata#189: Reads To Phy Driver Calibration Register and Phy
 	 *  Predriver Calibration Register Do Not Return Bit 27.
@@ -190,22 +190,22 @@ u32 Modify_D3CMP(struct DCTStatStruc *pDCTstat, u32 dct, u32 value)
 	u32 index_reg;
 	u32 index;
 	u32 val;
-	uint64_t tmp;
+	u64 tmp;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		dev = pDCTstat->dev_dct;
+		dev = p_dct_stat->dev_dct;
 		index_reg = 0x98 + 0x100 * dct;
 		index = 0x0D004201;
-		val = Get_NB32_index_wait(dev, index_reg, index);
-		value &= ~(1<<27);
+		val = get_nb32_index_wait(dev, index_reg, index);
+		value &= ~(1 << 27);
 		value |= ((val >> 10) & 1) << 27;
 	}
 	return value;
 }
 
 
-void SyncSetting(struct DCTStatStruc *pDCTstat)
+void sync_settings(struct DCTStatStruc *p_dct_stat)
 {
 	/* Errata#198: AddrCmdSetup, CsOdtSetup, and CkeSetup Require Identical
 	 * Programming For Both Channels in Ganged Mode
@@ -221,36 +221,36 @@ void SyncSetting(struct DCTStatStruc *pDCTstat)
 	 * Silicon Status: Fix TBD
 	 */
 
-	uint64_t tmp;
-	tmp = pDCTstat->LogicalCPUID;
+	u64 tmp;
+	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		pDCTstat->CH_ODC_CTL[1] = pDCTstat->CH_ODC_CTL[0];
-		pDCTstat->CH_ADDR_TMG[1] = pDCTstat->CH_ADDR_TMG[0];
+		p_dct_stat->ch_odc_ctl[1] = p_dct_stat->ch_odc_ctl[0];
+		p_dct_stat->ch_addr_tmg[1] = p_dct_stat->ch_addr_tmg[0];
 	}
 }
 
 
-u32 CheckNBCOFAutoPrechg(struct DCTStatStruc *pDCTstat, u32 dct)
+u32 check_nb_cof_auto_prechg(struct DCTStatStruc *p_dct_stat, u32 dct)
 {
 	u32 ret = 0;
 	u32 lo, hi;
 	u32 msr;
 	u32 val;
 	u32 valx, valy;
-	u32 NbDid;
+	u32 nb_did;
 
-	/* 3 * (Fn2xD4[NBFid]+4)/(2^NbDid)/(3+Fn2x94[MemClkFreq]) */
+	/* 3 * (Fn2xD4[NBFid]+4)/(2^nb_did)/(3+Fn2x94[MemClkFreq]) */
 	msr = 0xC0010071;
-	_RDMSR(msr, &lo, &hi);
-	NbDid = (lo >> 22) & 1;
+	_rdmsr(msr, &lo, &hi);
+	nb_did = (lo >> 22) & 1;
 
-	val = Get_NB32(pDCTstat->dev_dct, 0x94 + 0x100 * dct);
-	valx = ((val & 0x07) + 3) << NbDid;
-	print_tx("MemClk:", valx >> NbDid);
+	val = get_nb32(p_dct_stat->dev_dct, 0x94 + 0x100 * dct);
+	valx = ((val & 0x07) + 3) << nb_did;
+	print_tx("MemClk:", valx >> nb_did);
 
-	val = Get_NB32(pDCTstat->dev_nbmisc, 0xd4);
+	val = get_nb32(p_dct_stat->dev_nbmisc, 0xd4);
 	valy = ((val & 0x1f) + 4) * 3;
-	print_tx("NB COF:", valy >> NbDid);
+	print_tx("NB COF:", valy >> nb_did);
 
 	val = valy/valx;
 	if ((val == 3) && (valy % valx))  /* 3 < NClk/MemClk < 4 */
@@ -260,35 +260,35 @@ u32 CheckNBCOFAutoPrechg(struct DCTStatStruc *pDCTstat, u32 dct)
 }
 
 
-void mct_BeforeDramInit_D(struct DCTStatStruc *pDCTstat, u32 dct)
+void mct_before_dram_init_d(struct DCTStatStruc *p_dct_stat, u32 dct)
 {
-	uint64_t tmp;
-	u32 Speed;
+	u64 tmp;
+	u32 speed;
 	u32 ch, ch_start, ch_end;
 	u32 index_reg;
 	u32 dev;
 	u32 val;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		Speed = pDCTstat->Speed;
+		speed = p_dct_stat->speed;
 		/* MemClkFreq = 333MHz or 533MHz */
-		if ((Speed == 3) || (Speed == 2)) {
-			if (pDCTstat->GangedMode) {
+		if ((speed == 3) || (speed == 2)) {
+			if (p_dct_stat->ganged_mode) {
 				ch_start = 0;
 				ch_end = 2;
 			} else {
 				ch_start = dct;
-				ch_end = dct+1;
+				ch_end = dct + 1;
 			}
-			dev = pDCTstat->dev_dct;
+			dev = p_dct_stat->dev_dct;
 
 			for (ch = ch_start; ch < ch_end; ch++) {
 				index_reg = 0x98 + 0x100 * ch;
-				val = Get_NB32_index(dev, index_reg, 0x0D00E001);
+				val = get_nb32_index(dev, index_reg, 0x0D00E001);
 				val &= ~(0xf0);
 				val |= 0x80;
-				Set_NB32_index(dev, index_reg, 0x0D01E001, val);
+				set_nb32_index(dev, index_reg, 0x0D01E001, val);
 			}
 		}
 
@@ -297,7 +297,7 @@ void mct_BeforeDramInit_D(struct DCTStatStruc *pDCTstat, u32 dct)
 
 #ifdef UNUSED_CODE
 /* Callback not required */
-static u8 mct_AdjustDelay_D(struct DCTStatStruc *pDCTstat, u8 dly)
+static u8 mct_adjust_delay_d(struct DCTStatStruc *p_dct_stat, u8 dly)
 {
 	u8 skip = 0;
 	dly &= 0x1f;
@@ -308,30 +308,35 @@ static u8 mct_AdjustDelay_D(struct DCTStatStruc *pDCTstat, u8 dly)
 }
 #endif
 
-u8 mct_checkFenceHoleAdjust_D(struct MCTStatStruc *pMCTstat,
-				struct DCTStatStruc *pDCTstat, u8 DQSDelay,
-				u8 ChipSel,  u8 *result)
+u8 mct_check_fence_hole_adjust_d(struct MCTStatStruc *p_mct_stat,
+				struct DCTStatStruc *p_dct_stat, u8 dqs_delay,
+				u8 chip_sel,  u8 *result)
 {
-	u8 ByteLane;
-	uint64_t tmp;
+	u8 byte_lane;
+	u64 tmp;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
-		if (pDCTstat->Direction == DQS_WRITEDIR) {
-			if ((pDCTstat->Speed == 2) || (pDCTstat->Speed == 3)) {
-				if (DQSDelay == 13) {
+		if (p_dct_stat->direction == DQS_WRITEDIR) {
+			if ((p_dct_stat->speed == 2) || (p_dct_stat->speed == 3)) {
+				if (dqs_delay == 13) {
 					if (*result == 0xFF) {
-						for (ByteLane = 0; ByteLane < 8; ByteLane++) {
-							pDCTstat->DQSDelay = 13;
-							pDCTstat->ByteLane = ByteLane;
-							/* store the value into the data structure */
-							StoreDQSDatStrucVal_D(pMCTstat, pDCTstat, ChipSel);
+						for (byte_lane = 0; byte_lane < 8; byte_lane++) {
+							p_dct_stat->dqs_delay = 13;
+							p_dct_stat->byte_lane = byte_lane;
+							/* store the value into the data
+							 * structure
+							 */
+							store_dqs_dat_struct_val_d(
+								p_mct_stat,
+								p_dct_stat,
+								chip_sel);
 						}
 						return 1;
 					}
 				}
 			}
-			if (mct_AdjustDQSPosDelay_D(pDCTstat, DQSDelay)) {
+			if (mct_adjust_dqs_pos_delay_d(p_dct_stat, dqs_delay)) {
 				*result = 0;
 			}
 		}
@@ -340,7 +345,7 @@ u8 mct_checkFenceHoleAdjust_D(struct MCTStatStruc *pMCTstat,
 }
 
 
-u8 mct_AdjustDQSPosDelay_D(struct DCTStatStruc *pDCTstat, u8 dly)
+u8 mct_adjust_dqs_pos_delay_d(struct DCTStatStruc *p_dct_stat, u8 dly)
 {
 	u8 skip = 0;
 
@@ -353,11 +358,11 @@ u8 mct_AdjustDQSPosDelay_D(struct DCTStatStruc *pDCTstat, u8 dly)
 }
 
 #ifdef UNUSED_CODE
-static u8 mctDoAxRdPtrInit_D(struct DCTStatStruc *pDCTstat, u8 *Rdtr)
+static u8 mct_do_ax_rd_ptr_init_d(struct DCTStatStruc *p_dct_stat, u8 *Rdtr)
 {
 	u32 tmp;
 
-	tmp = pDCTstat->LogicalCPUID;
+	tmp = p_dct_stat->logical_cpuid;
 	if ((tmp == AMD_DR_A0A) || (tmp == AMD_DR_A1B) || (tmp == AMD_DR_A2)) {
 		*Rdtr = 5;
 		return 1;
@@ -366,17 +371,17 @@ static u8 mctDoAxRdPtrInit_D(struct DCTStatStruc *pDCTstat, u8 *Rdtr)
 }
 #endif
 
-void mct_AdjustScrub_D(struct DCTStatStruc *pDCTstat, u16 *scrub_request) {
+void mct_adjust_scrub_d(struct DCTStatStruc *p_dct_stat, u16 *scrub_request) {
 
 	/* Erratum #202: disable DCache scrubber for Ax parts */
 
-	if (pDCTstat->LogicalCPUID & (AMD_DR_Ax)) {
+	if (p_dct_stat->logical_cpuid & (AMD_DR_Ax)) {
 		*scrub_request = 0;
-		pDCTstat->ErrStatus |= 1 << SB_DCBKScrubDis;
+		p_dct_stat->err_status |= 1 << SB_DCBK_SCRUB_DIS;
 	}
 }
 
-void beforeInterleaveChannels_D(struct DCTStatStruc *pDCTstatA, u8 *enabled) {
-	if (pDCTstatA->LogicalCPUID & (AMD_DR_Ax))
+void before_interleave_channels_d(struct DCTStatStruc *p_dct_stat_a, u8 *enabled) {
+	if (p_dct_stat_a->logical_cpuid & (AMD_DR_Ax))
 		*enabled = 0;
 }

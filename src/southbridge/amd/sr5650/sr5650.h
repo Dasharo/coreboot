@@ -9,23 +9,23 @@
 #include "rev.h"
 
 typedef struct __PCIE_CFG__ {
-	u16 Config;
-	u8 ResetReleaseDelay;
-	u8 Gfx0Width;
-	u8 Gfx1Width;
-	u8 GfxPayload;
-	u8 GppPayload;
-	u16 PortDetect;
-	u8 PortHp;		/* hot plug */
-	u16 DbgConfig;
-	u32 DbgConfig2;
-	u8 GfxLx;
-	u8 GppLx;
-	u8 NBSBLx;
-	u8 PortSlotInit;
-	u8 Gfx0Pwr;
-	u8 Gfx1Pwr;
-	u8 GppPwr;
+	u16 config;
+	u8 reset_release_delay;
+	u8 gfx0_width;
+	u8 gfx1_width;
+	u8 gfx_payload;
+	u8 gpp_payload;
+	u16 port_detect;
+	u8 port_hp;		/* hot plug */
+	u16 dbg_config;
+	u32 dbg_config2;
+	u8 gfx_lx;
+	u8 gpp_lx;
+	u8 nbsb_lx;
+	u8 port_slot_init;
+	u8 gfx0_pwr;
+	u8 gfx1_pwr;
+	u8 gpp_pwr;
 } PCIE_CFG;
 
 /* PCIE config flags */
@@ -77,8 +77,8 @@ extern PCIE_CFG AtiPcieCfg;
 void sr5650_disable_pcie_bridge(void);
 void enable_sr5650_dev8(void);
 
-u8 PcieTrainPort(struct device *nb_dev, struct device *dev, u32 port);
-void PcieReleasePortTraining(struct device *nb_dev, struct device *dev, u32 port);
+u8 pcie_train_port(struct device *nb_dev, struct device *dev, u32 port);
+void pcie_release_port_training(struct device *nb_dev, struct device *dev, u32 port);
 
 u32 nbpcie_p_read_index(struct device *dev, u32 index);
 void nbpcie_p_write_index(struct device *dev, u32 index, u32 data);

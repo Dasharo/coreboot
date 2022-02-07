@@ -15,20 +15,20 @@
  *---------------------------------------------------------------------------
  */
 
-void CALLCONV AmdPCIReadBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
+void CALLCONV amd_pci_read_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *p_value)
 {
 	ASSERT(highbit < 32 && lowbit < 32 && highbit >= lowbit && (loc & 3) == 0);
 
-	AmdPCIRead(loc, pValue);
-	*pValue = *pValue >> lowbit;  /* Shift */
+	amd_pci_read(loc, p_value);
+	*p_value = *p_value >> lowbit;  /* Shift */
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
 	if ((highbit-lowbit) != 31)
-		*pValue &= (((u32)1 << (highbit-lowbit+1))-1);
+		*p_value &= (((u32)1 << (highbit - lowbit + 1)) - 1);
 }
 
 
-void CALLCONV AmdPCIWriteBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
+void CALLCONV amd_pci_write_bits(SBDFO loc, u8 highbit, u8 lowbit, u32 *p_value)
 {
 	u32 temp, mask;
 
@@ -36,14 +36,14 @@ void CALLCONV AmdPCIWriteBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
 
 	/* A 1<<32 == 1<<0 due to x86 SHL instruction, so skip if that is the case */
 	if ((highbit-lowbit) != 31)
-		mask = (((u32)1 << (highbit-lowbit+1))-1);
+		mask = (((u32)1 << (highbit - lowbit + 1)) - 1);
 	else
 		mask = (u32)0xFFFFFFFF;
 
-	AmdPCIRead(loc, &temp);
+	amd_pci_read(loc, &temp);
 	temp &= ~(mask << lowbit);
-	temp |= (*pValue & mask) << lowbit;
-	AmdPCIWrite(loc, &temp);
+	temp |= (*p_value & mask) << lowbit;
+	amd_pci_write(loc, &temp);
 }
 
 
@@ -55,7 +55,7 @@ void CALLCONV AmdPCIWriteBits(SBDFO loc, u8 highbit, u8 lowbit, u32 *pValue)
  *   To start a new search from the beginning of head of the list, specify a
  *   SBDFO with a offset of zero.
  */
-void CALLCONV AmdPCIFindNextCap(SBDFO *pCurrent)
+void CALLCONV amd_pci_find_next_cap(SBDFO *pCurrent)
 {
 	SBDFO base;
 	u32 offset;
@@ -69,24 +69,24 @@ void CALLCONV AmdPCIFindNextCap(SBDFO *pCurrent)
 	*pCurrent = ILLEGAL_SBDFO;
 
 	/* Verify that the SBDFO points to a valid PCI device SANITY CHECK */
-	AmdPCIRead(base, &temp);
+	amd_pci_read(base, &temp);
 	if (temp == 0xFFFFFFFF)
 		return; /* There is no device at this address */
 
 	/* Verify that the device supports a capability list */
-	AmdPCIReadBits(base + 0x04, 20, 20, &temp);
+	amd_pci_read_bits(base + 0x04, 20, 20, &temp);
 	if (temp == 0)
 		return; /* This PCI device does not support capability lists */
 
 	if (offset != 0)
 	{
 		/* If we are continuing on an existing list */
-		AmdPCIReadBits(base + offset, 15, 8, &temp);
+		amd_pci_read_bits(base + offset, 15, 8, &temp);
 	}
 	else
 	{
 		/* We are starting on a new list */
-		AmdPCIReadBits(base + 0x34, 7, 0, &temp);
+		amd_pci_read_bits(base + 0x34, 7, 0, &temp);
 	}
 
 	if (temp == 0)
@@ -105,7 +105,7 @@ void CALLCONV AmdPCIFindNextCap(SBDFO *pCurrent)
 }
 
 
-void CALLCONV Amdmemcpy(void *pDst, const void *pSrc, u32 length)
+void CALLCONV amd_memcpy(void *pDst, const void *pSrc, u32 length)
 {
 	ASSERT(length <= 32768);
 	ASSERT(pDst != NULL);
@@ -120,7 +120,7 @@ void CALLCONV Amdmemcpy(void *pDst, const void *pSrc, u32 length)
 }
 
 
-void CALLCONV Amdmemset(void *pBuf, u8 val, u32 length)
+void CALLCONV amd_memset(void *pBuf, u8 val, u32 length)
 {
 	ASSERT(length <= 32768);
 	ASSERT(pBuf != NULL);
@@ -133,7 +133,7 @@ void CALLCONV Amdmemset(void *pBuf, u8 val, u32 length)
 }
 
 
-u8 CALLCONV AmdBitScanReverse(u32 value)
+u8 CALLCONV amd_bit_scan_reverse(u32 value)
 {
 	u8 i;
 
@@ -147,7 +147,7 @@ u8 CALLCONV AmdBitScanReverse(u32 value)
 }
 
 
-u32 CALLCONV AmdRotateRight(u32 value, u8 size, u32 count)
+u32 CALLCONV amd_rotate_right(u32 value, u8 size, u32 count)
 {
 	u32 msb, mask;
 	ASSERT(size > 0 && size <= 32);
@@ -169,7 +169,7 @@ u32 CALLCONV AmdRotateRight(u32 value, u8 size, u32 count)
 }
 
 
-u32 CALLCONV AmdRotateLeft(u32 value, u8 size, u32 count)
+u32 CALLCONV amd_rotate_left(u32 value, u8 size, u32 count)
 {
 	u32 msb, mask;
 	ASSERT(size > 0 && size <= 32);
@@ -191,21 +191,21 @@ u32 CALLCONV AmdRotateLeft(u32 value, u8 size, u32 count)
 }
 
 
-void CALLCONV AmdPCIRead(SBDFO loc, u32 *Value)
+void CALLCONV amd_pci_read(SBDFO loc, u32 *Value)
 {
 	/* Use coreboot PCI functions */
 	*Value = pci_read_config32((loc & 0xFFFFF000), SBDFO_OFF(loc));
 }
 
 
-void CALLCONV AmdPCIWrite(SBDFO loc, u32 *Value)
+void CALLCONV amd_pci_write(SBDFO loc, u32 *Value)
 {
 	/* Use coreboot PCI functions */
 	pci_write_config32((loc & 0xFFFFF000), SBDFO_OFF(loc), *Value);
 }
 
 
-void CALLCONV AmdMSRRead(uint32 Address, uint64 *Value)
+void CALLCONV amd_msr_read(u32 Address, uint64 *Value)
 {
 	msr_t msr;
 
@@ -215,7 +215,7 @@ void CALLCONV AmdMSRRead(uint32 Address, uint64 *Value)
 }
 
 
-void CALLCONV AmdMSRWrite(uint32 Address, uint64 *Value)
+void CALLCONV amd_msr_write(u32 Address, uint64 *Value)
 {
 	msr_t msr;
 

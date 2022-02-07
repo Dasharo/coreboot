@@ -8,9 +8,9 @@
 
 static struct monotonic_counter {
 	int initialized;
-	uint32_t core_frequency;
+	u32 core_frequency;
 	struct mono_time time;
-	uint64_t last_value;
+	u64 last_value;
 } mono_counter;
 
 static void init_tsc_timer(void)
@@ -27,15 +27,16 @@ static void init_tsc_timer(void)
 
 void timer_monotonic_get(struct mono_time *mt)
 {
-	uint64_t current_tick;
-	uint32_t usecs_elapsed = 0;
+	u64 current_tick;
+	u32 usecs_elapsed = 0;
 
 	if (!mono_counter.initialized)
 		init_tsc_timer();
 
 	current_tick = rdtscll();
 	if (mono_counter.core_frequency != 0)
-		usecs_elapsed = (current_tick - mono_counter.last_value) / mono_counter.core_frequency;
+		usecs_elapsed = (current_tick - mono_counter.last_value)
+			/ mono_counter.core_frequency;
 
 	/* Update current time and tick values only if a full tick occurred. */
 	if (usecs_elapsed) {

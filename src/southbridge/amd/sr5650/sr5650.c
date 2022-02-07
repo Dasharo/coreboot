@@ -67,27 +67,27 @@ void nbpcie_ind_write_index(struct device *nb_dev, u32 index, u32 data)
 	nb_write_index((nb_dev), NBPCIE_INDEX, (index), (data));
 }
 
-static uint32_t l2cfg_ind_read_index(struct device *nb_dev, uint32_t index)
+static u32 l2cfg_ind_read_index(struct device *nb_dev, u32 index)
 {
 	return nb_read_index((nb_dev), L2CFG_INDEX, (index));
 }
 
-static void l2cfg_ind_write_index(struct device *nb_dev, uint32_t index, uint32_t data)
+static void l2cfg_ind_write_index(struct device *nb_dev, u32 index, u32 data)
 {
 	nb_write_index((nb_dev), L2CFG_INDEX | (0x1 << 8), (index), (data));
 }
 
-static uint32_t l1cfg_ind_read_index(struct device *nb_dev, uint32_t index)
+static u32 l1cfg_ind_read_index(struct device *nb_dev, u32 index)
 {
 	return nb_read_index((nb_dev), L1CFG_INDEX, (index));
 }
 
-static void l1cfg_ind_write_index(struct device *nb_dev, uint32_t index, uint32_t data)
+static void l1cfg_ind_write_index(struct device *nb_dev, u32 index, u32 data)
 {
 	nb_write_index((nb_dev), L1CFG_INDEX | (0x1 << 31), (index), (data));
 }
 
-void PcieReleasePortTraining(struct device *nb_dev, struct device *dev, u32 port)
+void pcie_release_port_training(struct device *nb_dev, struct device *dev, u32 port)
 {
 	switch (port) {
 	case 2:		/* GPP1, bit4-5 */
@@ -124,7 +124,7 @@ void PcieReleasePortTraining(struct device *nb_dev, struct device *dev, u32 port
 *	0: no device is present.
 *	1: device is present and is trained.
 ********************************************************************************************************/
-u8 PcieTrainPort(struct device *nb_dev, struct device *dev, u32 port)
+u8 pcie_train_port(struct device *nb_dev, struct device *dev, u32 port)
 {
 	u16 count = 5000;
 	u32 lc_state, reg, current_link_width, lane_mask;
@@ -196,7 +196,7 @@ u8 PcieTrainPort(struct device *nb_dev, struct device *dev, u32 port)
 			reg =
 			    pci_ext_read_config32(nb_dev, dev,
 						  PCIE_VC0_RESOURCE_STATUS);
-			printk(BIOS_DEBUG, "PcieTrainPort reg=0x%x\n", reg);
+			printk(BIOS_DEBUG, "pcie_train_port reg=0x%x\n", reg);
 			/* check bit1 */
 			if (reg & VC_NEGOTIATION_PENDING) {	/* bit1=1 means the link needs to be re-trained. */
 				/* set bit8=1, bit0-2=bit4-6 */
@@ -264,8 +264,8 @@ static void sr5650_set_tom(struct device *nb_dev)
 
 static void detect_and_enable_iommu(struct device *iommu_dev)
 {
-	uint32_t dword;
-	uint8_t l1_target;
+	u32 dword;
+	u8 l1_target;
 	unsigned char iommu;
 	void *mmio_base;
 
@@ -516,7 +516,7 @@ static void sr5650_nb_pci_table(struct device *nb_dev)
 
 	/* disable GFX debug. */
 	temp8 = pci_read_config8(nb_dev, 0x8d);
-	temp8 &= ~(1<<1);
+	temp8 &= ~(1 << 1);
 	pci_write_config8(nb_dev, 0x8d, temp8);
 
 	/* The system top memory in SR56X0. */
@@ -526,12 +526,12 @@ static void sr5650_nb_pci_table(struct device *nb_dev)
 	//set_htiu_enable_bits(nb_dev, 0x05, 1<<10 | 1<<9, 1<<10|1<<9);
 	set_htiu_enable_bits(nb_dev, 0x06, 1, 0x4203a202);
 	//set_htiu_enable_bits(nb_dev, 0x07, 1<<1 | 1<<2, 0x8001);
-	set_htiu_enable_bits(nb_dev, 0x15, 0, 1<<31 | 1<<30 | 1<<27);
+	set_htiu_enable_bits(nb_dev, 0x15, 0, 1 << 31 | 1 << 30 | 1 << 27);
 	set_htiu_enable_bits(nb_dev, 0x1c, 0, 0xfffe0000);
-	set_htiu_enable_bits(nb_dev, 0x0c, 0x3f, 1 | 1<<3);
-	set_htiu_enable_bits(nb_dev, 0x19, 0xfffff+(1<<31), 0x186a0+(1<<31));
-	set_htiu_enable_bits(nb_dev, 0x16, 0x3f<<10, 0x7<<10);
-	set_htiu_enable_bits(nb_dev, 0x23, 0, 1<<28);
+	set_htiu_enable_bits(nb_dev, 0x0c, 0x3f, 1 | 1 << 3);
+	set_htiu_enable_bits(nb_dev, 0x19, 0xfffff + (1 << 31), 0x186a0 + (1 << 31));
+	set_htiu_enable_bits(nb_dev, 0x16, 0x3f << 10, 0x7 << 10);
+	set_htiu_enable_bits(nb_dev, 0x23, 0, 1 << 28);
 }
 
 /***********************************************
@@ -659,10 +659,10 @@ static void sr5650_enable(struct device *dev)
 #if CONFIG(HAVE_ACPI_TABLES)
 unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long current)
 {
-	uint8_t *p;
+	u8 *p;
 
-	uint32_t apicid_sp5100;
-	uint32_t apicid_sr5650;
+	u32 apicid_sp5100;
+	u32 apicid_sr5650;
 
 	if (CONFIG(ENABLE_APIC_EXT_ID) && (CONFIG_APIC_ID_OFFSET > 0))
 		apicid_sp5100 = 0x0;
@@ -671,7 +671,7 @@ unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long current)
 	apicid_sr5650 = apicid_sp5100 + 1;
 
 	/* Describe NB IOAPIC */
-	p = (uint8_t *)current;
+	p = (u8 *)current;
 	p[0] = 0x48;			/* Entry type */
 	p[1] = 0;			/* Device */
 	p[2] = 0;			/* Bus */
@@ -683,7 +683,7 @@ unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long current)
 	current += 8;
 
 	/* Describe SB IOAPIC */
-	p = (uint8_t *)current;
+	p = (u8 *)current;
 	p[0] = 0x48;			/* Entry type */
 	p[1] = 0;			/* Device */
 	p[2] = 0;			/* Bus */
@@ -698,10 +698,10 @@ unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long current)
 }
 
 static void add_ivrs_device_entries(struct device *parent, struct device *dev,
-		int depth, int linknum, int8_t *root_level,
-		unsigned long *current, uint16_t *length)
+		int depth, int linknum, s8 *root_level,
+		unsigned long *current, u16 *length)
 {
-	uint8_t *p = (uint8_t *) *current;
+	u8 *p = (u8 *) *current;
 
 	struct device *sibling;
 	struct bus *link;
@@ -776,19 +776,17 @@ static void add_ivrs_device_entries(struct device *parent, struct device *dev,
 
 static unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current)
 {
-	uint8_t *p;
+	u8 *p;
 
 	struct device *nb_dev = pcidev_on_root(0, 0);
 	if (!nb_dev) {
-		printk(BIOS_WARNING, "acpi_fill_ivrs: Unable to locate SR5650 "
-				"device!  IVRS table not generated...\n");
+		printk(BIOS_WARNING, "acpi_fill_ivrs: Unable to locate SR5650 device!  IVRS table not generated...\n");
 		return (unsigned long)ivrs;
 	}
 
 	struct device *iommu_dev = pcidev_on_root(0, 2);
 	if (!iommu_dev) {
-		printk(BIOS_WARNING, "acpi_fill_ivrs: Unable to locate SR5650 "
-				"IOMMU device!  IVRS table not generated...\n");
+		printk(BIOS_WARNING, "acpi_fill_ivrs: Unable to locate SR5650 IOMMU device!  IVRS table not generated...\n");
 		return (unsigned long)ivrs;
 	}
 
@@ -816,7 +814,7 @@ static unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current)
 	ivrs->ivhd.iommu_feature_info = 0x0;
 
 	/* Describe HPET */
-	p = (uint8_t *)current;
+	p = (u8 *)current;
 	p[0] = IVHD_DEV_8_BYTE_EXT_SPECIAL_DEV;	/* Entry type */
 	p[1] = 0;				/* Device */
 	p[2] = 0;				/* Bus */
@@ -834,7 +832,7 @@ static unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current)
 	current += 8;
 
 	/* Describe PCI devices */
-	int8_t root_level = -1;
+	s8 root_level = -1;
 	add_ivrs_device_entries(NULL, all_devices, 0, -1, &root_level, &current,
 			&ivrs->ivhd.length);
 

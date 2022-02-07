@@ -54,7 +54,7 @@ unsigned long acpi_create_srat_lapics(unsigned long current)
 	return current;
 }
 
-static unsigned long resk(uint64_t value)
+static unsigned long resk(u64 value)
 {
 	unsigned long resultk;
 	if (value < (1ULL << 42)) {
@@ -76,8 +76,7 @@ static void set_srat_mem(void *gp, struct device *dev, struct resource *res)
 	basek = resk(res->base);
 	sizek = resk(res->size);
 
-	printk(BIOS_DEBUG, "set_srat_mem: dev %s, res->index=%04lx "
-	       "startk=%08lx, sizek=%08lx\n",
+	printk(BIOS_DEBUG, "set_srat_mem: dev %s, res->index=%04lx startk=%08lx, sizek=%08lx\n",
 	       dev_path(dev), res->index, basek, sizek);
 
 	if (res->index < 0xf)	/* Exclude MMIO resources */
@@ -135,40 +134,40 @@ static unsigned long acpi_fill_slit(unsigned long current)
 	int nodes = get_sysconf()->nodes;
 	int i,j;
 
-	memset(p, 0, 8+nodes*nodes);
+	memset(p, 0, 8 + nodes * nodes);
 	*p = (u8) nodes;
 	p += 8;
 
 	for (i = 0; i < nodes; i++) {
 		for (j = 0; j < nodes; j++) {
 			if (i == j)
-				p[i*nodes+j] = 10;
+				p[i * nodes + j] = 10;
 			else
-				p[i*nodes+j] = 16;
+				p[i * nodes + j] = 16;
 		}
 	}
 
-	current += 8+nodes*nodes;
+	current += 8 + nodes * nodes;
 	return current;
 }
 
 void update_ssdtx(void *ssdtx, int i)
 {
-	u8 *PCI;
-	u8 *HCIN;
-	u8 *UID;
+	u8 *pci;
+	u8 *hcin;
+	u8 *uid;
 
-	PCI = ssdtx + 0x32;
-	HCIN = ssdtx + 0x39;
-	UID = ssdtx + 0x40;
+	pci = ssdtx + 0x32;
+	hcin = ssdtx + 0x39;
+	uid = ssdtx + 0x40;
 
 	if (i < 7) {
-		*PCI = (u8) ('4' + i - 1);
+		*pci = (u8) ('4' + i - 1);
 	} else {
-		*PCI = (u8) ('A' + i - 1 - 6);
+		*pci = (u8) ('A' + i - 1 - 6);
 	}
-	*HCIN = (u8) i;
-	*UID = (u8) (i + 3);
+	*hcin = (u8) i;
+	*uid = (u8) (i + 3);
 
 	/* FIXME: need to update the GSI id in the ssdtx too */
 
@@ -187,7 +186,7 @@ void northbridge_acpi_write_vars(const struct device *device)
 	 * resource entries are used.
 	 * This routine prevents the SSDT table from being corrupted.
 	 */
-	static uint8_t ssdt_generated = 0;
+	static u8 ssdt_generated = 0;
 	if (ssdt_generated)
 		return;
 	ssdt_generated = 1;
