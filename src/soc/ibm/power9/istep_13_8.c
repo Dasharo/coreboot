@@ -151,8 +151,9 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	    [44] = 1                                    // DISABLE_WRTO_IG
 	    [45] = 1                                    // AMO_LIMIT_SEL
 	*/
-	rscom_and_or_for_chiplet(chip, nest, 0x0501082B + mca_i * mca_mul, ~PPC_BIT(43),
-	                         PPC_BIT(31) | PPC_BIT(41) | PPC_BIT(44) | PPC_BIT(45));
+	rscom_or_for_chiplet(chip, nest, 0x0501082B + mca_i * mca_mul,
+	                     PPC_BIT(31) | PPC_BIT(41) | PPC_BIT(43) | PPC_BIT(44)
+	                     | PPC_BIT(45));
 
 	/* MC01.PORT0.SRQ.MBA_DSM0Q =
 	    // These are set per port so all latencies should be calculated from both DIMMs (if present)
@@ -615,7 +616,7 @@ static void thermal_throttle_scominit(uint8_t chip, int mcs_i, int mca_i)
 	    [42-55] MBA_FARB4Q_EMERGENCY_M = ATTR_MSS_MRW_MEM_M_DRAM_CLOCKS
 	*/
 	mca_and_or(chip, id, mca_i, MBA_FARB4Q, ~PPC_BITMASK(27, 55),
-	           PPC_PLACE(nm_n_per_port, MBA_FARB4Q_EMERGENCY_N,
+	           PPC_PLACE(0x20, MBA_FARB4Q_EMERGENCY_N,
 	                     MBA_FARB4Q_EMERGENCY_N_LEN) |
 	           PPC_PLACE(0x200, MBA_FARB4Q_EMERGENCY_M,
 	                     MBA_FARB4Q_EMERGENCY_M_LEN));
@@ -726,24 +727,24 @@ static void p9n_ddrphy_scom(uint8_t chip, int mcs_i, int mca_i)
 		  [49] DI_ADR2_ADR3: 1 = Lanes 2 and 3 are a differential clock pair
 		  [51] DI_ADR6_ADR7: 1 = Lanes 6 and 7 are a differential clock pair
 	*/
-	dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_ADR_DIFFPAIR_ENABLE_P0_ADR1,
-	              ~PPC_BITMASK(48, 63), PPC_PLACE(0x5000, 48, 16));
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DIFFPAIR_ENABLE_P0_ADR1,
+	           ~PPC_BITMASK(48, 63), PPC_PLACE(0x5000, 48, 16));
 
 	/* IOM0.DDRPHY_ADR_DELAY1_P0_ADR1 =
 	  [48-63] = 0x4040:
 		  [49-55] ADR_DELAY2 = 0x40
 		  [57-63] ADR_DELAY3 = 0x40
 	*/
-	dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_ADR_DELAY1_P0_ADR1,
-	              ~PPC_BITMASK(48, 63), PPC_PLACE(0x4040, 48, 16));
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY1_P0_ADR1,
+	           ~PPC_BITMASK(48, 63), PPC_PLACE(0x4040, 48, 16));
 
 	/* IOM0.DDRPHY_ADR_DELAY3_P0_ADR1 =
 	  [48-63] = 0x4040:
 		  [49-55] ADR_DELAY6 = 0x40
 		  [57-63] ADR_DELAY7 = 0x40
 	*/
-	dp_mca_and_or(chip, id, dp, mca_i, DDRPHY_ADR_DELAY3_P0_ADR1,
-	              ~PPC_BITMASK(48, 63), PPC_PLACE(0x4040, 48, 16));
+	mca_and_or(chip, id, mca_i, DDRPHY_ADR_DELAY3_P0_ADR1,
+	           ~PPC_BITMASK(48, 63), PPC_PLACE(0x4040, 48, 16));
 
 	for (dp = 0; dp < 2; dp ++) {
 		/* IOM0.DDRPHY_ADR_DLL_VREG_CONFIG_1_P0_ADR32S{0,1} =
@@ -763,7 +764,7 @@ static void p9n_ddrphy_scom(uint8_t chip, int mcs_i, int mca_i)
 		      [49-55] TSYS_WRCLK = 0x60
 		*/
 		dp_mca_and_or(chip, id, dp, mca_i,
-			      DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S0,
+		              DDRPHY_ADR_MCCLK_WRCLK_PR_STATIC_OFFSET_P0_ADR32S0,
 		              ~PPC_BITMASK(48, 63),
 		              PPC_PLACE(0x60, TSYS_WRCLK, TSYS_WRCLK_LEN));
 
