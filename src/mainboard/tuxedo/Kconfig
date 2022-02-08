@@ -1,0 +1,15 @@
+if VENDOR_TUXEDO
+
+choice
+	prompt "Mainboard model"
+
+source "src/mainboard/tuxedo/*/Kconfig.name"
+endchoice
+
+source "src/mainboard/tuxedo/*/Kconfig"
+source "src/mainboard/clevo/*/Kconfig"
+
+config MAINBOARD_VENDOR
+	default "TUXEDO"
+
+endif # VENDOR_TUXEDO
