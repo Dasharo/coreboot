@@ -3,9 +3,9 @@
 #include <cpu/power/istep_14.h>
 
 #include <console/console.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 
-#include "homer.h"
 #include "pci.h"
 #include "scratch.h"
 

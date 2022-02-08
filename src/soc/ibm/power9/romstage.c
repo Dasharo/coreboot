@@ -7,6 +7,7 @@
 #include <cpu/power/istep_10.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
+#include <cpu/power/proc.h>
 #include <drivers/ipmi/ipmi_if.h>
 #include <drivers/ipmi/ipmi_ops.h>
 #include <program_loading.h>
@@ -17,7 +18,6 @@
 #include <timestamp.h>
 
 #include "fsi.h"
-#include "homer.h"
 #include "pci.h"
 
 mcbist_data_t mem_data;

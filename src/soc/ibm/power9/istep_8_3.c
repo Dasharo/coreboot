@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <console/console.h>
 #include <cpu/power/istep_8.h>
+#include <cpu/power/proc.h>
 #include <delay.h>
 
 #include "fsi.h"
-#include "homer.h"
 
 /* As long as we're not using SBE FIFO, we might not actually need this, but
  * it's trivial to implement */

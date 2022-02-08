@@ -3,8 +3,9 @@
 #ifndef __SOC_IBM_POWER9_HOMER_H
 #define __SOC_IBM_POWER9_HOMER_H
 
-#include <arch/byteorder.h>	// PPC_BIT(), PPC_BITMASK()
 #include <commonlib/bsd/helpers.h>
+
+#include <cpu/power/proc.h>
 
 /* All fields are big-endian */
 
@@ -52,12 +53,6 @@
 #define QUAD_SCOM_RESTORE_SIZE_PER_QUAD	(SCOM_RESTORE_ENTRY_SIZE*QUAD_SCOM_RESTORE_REGS_PER_QUAD)
 #define CORE_SCOM_RESTORE_REGS_PER_CORE	16
 #define CORE_SCOM_RESTORE_SIZE_PER_CORE	(SCOM_RESTORE_ENTRY_SIZE*CORE_SCOM_RESTORE_REGS_PER_CORE)
-
-#define MAX_CHIPS			2
-#define MAX_CORES_PER_CHIP		24
-#define MAX_CORES_PER_EX		2
-#define MAX_QUADS_PER_CHIP		(MAX_CORES_PER_CHIP/4)
-#define MAX_CMES_PER_CHIP		(MAX_CORES_PER_CHIP/MAX_CORES_PER_EX)
 
 /* Offset from HOMER to OCC Host Data Area */
 #define HOMER_OFFSET_TO_OCC_HOST_DATA (768 * KiB)
@@ -326,10 +321,6 @@ struct homer_st {
 check_member(homer_st, qpmr, 1 * MiB);
 check_member(homer_st, cpmr, 2 * MiB);
 check_member(homer_st, ppmr, 3 * MiB);
-
-#define IS_EC_FUNCTIONAL(ec, cores)		(!!((cores) & PPC_BIT(ec)))
-#define IS_EX_FUNCTIONAL(ex, cores)		(!!((cores) & PPC_BITMASK(2*(ex), 2*(ex) + 1)))
-#define IS_EQ_FUNCTIONAL(eq, cores)		(!!((cores) & PPC_BITMASK(4*(eq), 4*(eq) + 3)))
 
 void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores);
 void configure_xive(int tgt_core);

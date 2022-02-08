@@ -4,6 +4,7 @@
 #include "wof.h"
 #include <commonlib/region.h>
 #include <cpu/power/mvpd.h>
+#include <cpu/power/proc.h>
 #include <assert.h>
 #include <endian.h>
 #include <lib.h>

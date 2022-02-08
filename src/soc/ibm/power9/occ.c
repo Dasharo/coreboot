@@ -3,8 +3,8 @@
 #include <console/console.h>
 #include <cpu/power/scom.h>
 #include <cpu/power/occ.h>
+#include <cpu/power/proc.h>
 
-#include "homer.h"
 #include "ops.h"
 
 #define OCB_PIB_OCBCSR0_OCB_STREAM_MODE (4)
