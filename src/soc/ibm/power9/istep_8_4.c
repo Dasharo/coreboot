@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <console/console.h>
 #include <cpu/power/istep_8.h>
+#include <cpu/power/proc.h>
 #include <delay.h>
 
 #include "fsi.h"
-#include "homer.h"
 
 /*
  * 8.4 proc_check_slave_sbe_seeprom_complete : Check Slave SBE Complete
