@@ -7,7 +7,6 @@
 #include <delay.h>
 #include <timer.h>
 
-#include "fsi.h"
 #include "xbus.h"
 
 struct edip_data_t {
