@@ -1,0 +1,3 @@
+config MAINBOARD_PART_NUMBER
+	string
+	default "InfinityBook S 15 Gen 6" if BOARD_INFINITYBOOK_S_15_GEN6

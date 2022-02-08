@@ -1,0 +1,5 @@
+comment "Generation 6"
+
+config BOARD_INFINITYBOOK_S_15_GEN6
+	bool "InfinityBook S 15 Gen6"
+	select BOARD_CLEVO_NS50MU_BASE
