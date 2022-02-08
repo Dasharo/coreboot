@@ -1,3 +1,12 @@
+config BOARD_CLEVO_NV41MZ_BASE
+	def_bool y
+	select BOARD_CLEVO_TGL_U_COMMON
+	select DRIVER_NVIDIA_OPTIMUS
+
+config BOARD_CLEVO_NS50MU_BASE
+	def_bool y
+	select BOARD_CLEVO_TGL_U_COMMON
+
 config BOARD_CLEVO_TGL_U_COMMON
 	def_bool y
 	select BOARD_ROMSIZE_KB_16384
@@ -30,8 +39,8 @@ config MAINBOARD_DIR
 
 config VARIANT_DIR
 	string
-	default "nv41mz" if BOARD_CLEVO_NV41MZ
-	default "ns50mu" if BOARD_CLEVO_NS50MU
+	default "nv41mz" if BOARD_CLEVO_NV41MZ_BASE
+	default "ns50mu" if BOARD_CLEVO_NS50MU_BASE
 
 config MAINBOARD_PART_NUMBER
 	string
