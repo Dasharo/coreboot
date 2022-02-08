@@ -3,6 +3,7 @@
 #include <cpu/power/istep_18.h>
 
 #include <console/console.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 #include <stdint.h>
 

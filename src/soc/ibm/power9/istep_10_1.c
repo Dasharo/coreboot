@@ -4,11 +4,11 @@
 
 #include <console/console.h>
 #include <cpu/power/powerbus.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 #include <delay.h>
 
 #include "fsi.h"
-#include "homer.h"
 #include "xbus.h"
 
 enum build_smp_adu_action {
