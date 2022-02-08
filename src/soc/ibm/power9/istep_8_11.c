@@ -3,9 +3,9 @@
 #include <cpu/power/istep_8.h>
 
 #include <console/console.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 
-#include "homer.h"
 #include "xbus.h"
 
 static void xbus_enable_ridi(uint8_t chip)

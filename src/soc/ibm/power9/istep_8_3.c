@@ -5,10 +5,10 @@
 #include <stdint.h>
 #include <console/console.h>
 #include <cpu/power/istep_8.h>
+#include <cpu/power/proc.h>
 #include <delay.h>
 
 #include "fsi.h"
-#include "homer.h"
 
 /*
  * 8.3 host_cbs_start

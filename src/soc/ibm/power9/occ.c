@@ -10,6 +10,8 @@
 #include <timer.h>
 #include <vendorcode/ibm/power9/pstates/p9_pstates_occ.h>
 
+#include <cpu/power/proc.h>
+
 #include "homer.h"
 #include "ops.h"
 
