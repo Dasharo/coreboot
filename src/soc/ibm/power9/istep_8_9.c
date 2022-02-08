@@ -7,7 +7,6 @@
 #include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 
-#include "fsi.h"
 #include "scratch.h"
 #include "xbus.h"
 
