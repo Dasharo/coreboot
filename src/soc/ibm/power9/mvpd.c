@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <commonlib/region.h>
 #include <console/console.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 #include <cpu/power/vpd.h>
 #include <device/i2c_simple.h>
@@ -14,7 +15,6 @@
 #include <symbols.h>
 #include <vendorcode/ibm/power9/rs4.h>
 
-#include "homer.h"
 #include "tor.h"
 
 #define MVPD_TOC_ENTRIES 32

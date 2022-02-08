@@ -5,9 +5,9 @@
 #include <stdint.h>
 #include <console/console.h>
 #include <cpu/power/istep_8.h>
+#include <cpu/power/proc.h>
 
 #include "fsi.h"
-#include "homer.h"
 
 /*
  * 8.2 host_setup_sbe

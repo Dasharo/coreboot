@@ -3,9 +3,9 @@
 #include <cpu/power/istep_10.h>
 
 #include <console/console.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 
-#include "homer.h"
 #include "pci.h"
 
 /* PCIe only at the moment, Hostboot also updates MC and OBus chiplets too */
