@@ -1,0 +1,8 @@
+Vendor name:
+Board name:
+Category: laptop
+Release year:
+ROM package:
+ROM protocol:
+ROM socketed:
+Flashrom support:
