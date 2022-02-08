@@ -1,14 +1,14 @@
 config BOARD_CLEVO_NV41MZ_BASE
-	def_bool y
+	def_bool n
 	select BOARD_CLEVO_TGL_U_COMMON
 	select DRIVER_NVIDIA_OPTIMUS
 
 config BOARD_CLEVO_NS50MU_BASE
-	def_bool y
+	def_bool n
 	select BOARD_CLEVO_TGL_U_COMMON
 
 config BOARD_CLEVO_TGL_U_COMMON
-	def_bool y
+	def_bool n
 	select BOARD_ROMSIZE_KB_16384
 	select DRIVERS_I2C_HID
 	select DRIVERS_INTEL_PMC
