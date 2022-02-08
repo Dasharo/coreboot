@@ -4,13 +4,8 @@
 #include <device/dram/ddr4.h>
 #include <spd_bin.h>
 #include <delay.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
-
-#define MCS_PER_PROC		2
-#define MCA_PER_MCS		2
-#define MCA_PER_PROC		(MCA_PER_MCS * MCS_PER_PROC)
-#define DIMMS_PER_MCA		2
-#define DIMMS_PER_MCS		(DIMMS_PER_MCA * MCA_PER_MCS)
 
 /* These should be in one of the SPD headers. */
 /*

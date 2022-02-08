@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <console/console.h>
 #include <cpu/power/istep_8.h>
+#include <cpu/power/proc.h>
 #include <delay.h>
 
 #include "fsi.h"
-#include "homer.h"
 
 static bool sbe_run_extract_msg_reg(uint8_t chip)
 {

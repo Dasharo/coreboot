@@ -6,10 +6,10 @@
 #include <console/console.h>
 #include <cpu/power/istep_8.h>
 #include <cpu/power/mvpd.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 
 #include "fsi.h"
-#include "homer.h"
 #include "scratch.h"
 
 /*

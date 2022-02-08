@@ -4,9 +4,9 @@
 #include <stdint.h>
 #include <console/console.h>
 #include <cpu/power/istep_8.h>
+#include <cpu/power/proc.h>
 
 #include "fsi.h"
-#include "homer.h"
 
 static void set_fsi_gp_shadow(uint8_t chip)
 {

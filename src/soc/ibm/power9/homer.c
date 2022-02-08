@@ -8,6 +8,7 @@
 #include <cpu/power/mvpd.h>
 #include <cpu/power/occ.h>
 #include <cpu/power/powerbus.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/rom_media.h>
 #include <cpu/power/scom.h>
 #include <cpu/power/spr.h>
