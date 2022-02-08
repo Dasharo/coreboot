@@ -3,13 +3,13 @@
 #include <cpu/power/istep_10.h>
 
 #include <console/console.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
 #include <delay.h>
 #include <stdint.h>
 #include <string.h>
 #include <timer.h>
 
-#include "homer.h"
 #include "pci.h"
 
 #define MAX_LANE_GROUPS_PER_PEC 4
