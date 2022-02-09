@@ -7,11 +7,9 @@ source "src/mainboard/novacustom/*/Kconfig.name"
 endchoice
 
 source "src/mainboard/novacustom/*/Kconfig"
+source "src/mainboard/clevo/*/Kconfig"
 
 config MAINBOARD_VENDOR
 	default "Notebook"
-
-config MAINBOARD_PART_NUMBER
-	default "ns50mu"
 
 endif # VENDOR_NOVACUSTOM
