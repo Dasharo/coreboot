@@ -433,8 +433,6 @@ static unsigned long long int strtoull(const char *ptr, char **endptr, int base)
 	return ret;
 }
 
-#define ULONG_MAX	((unsigned long int)~0UL)
-
 static unsigned long int strtoul(const char *ptr, char **endptr, int base)
 {
 	unsigned long long val = strtoull(ptr, endptr, base);
