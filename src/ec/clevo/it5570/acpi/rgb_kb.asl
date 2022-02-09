@@ -13,22 +13,24 @@ Method (KBTG, 0, NotSerialized) // Keyboard Toggle
 
 Method (KBBU, 0, NotSerialized) // Keyboard Brightness Up
 {
-	If (KBBR <= 0xEF) {
-		KBBR += 0x10
+	If (KBBR <= 0xDF) {
+		KBBR += 0x20
 	}
 	KBUP()
 }
 
 Method (KBBD, 0, NotSerialized) // Keyboard Brightness Down
 {
-	If (KBBR >= 0x1F) {
-		KBBR -= 0x10
+	If (KBBR >= 0x2F) {
+		KBBR -= 0x20
 	}
 	KBUP()
 }
 
 Method (KBPN, 0, NotSerialized) // Keyboard Preset Next
 {
+	KBPS = (KBPS + 1) % 7
+
 	If (KBPS == 0x00) { // White
 		KBCR = 0xFF
 		KBCG = 0xFF
@@ -59,7 +61,6 @@ Method (KBPN, 0, NotSerialized) // Keyboard Preset Next
 		KBCB = 0xFF
 	}
 
-	KBPS = (KBPS + 1) % 7
 	KBUP ()
 }
 
