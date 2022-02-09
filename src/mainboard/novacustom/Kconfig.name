@@ -1,2 +1,2 @@
 config VENDOR_NOVACUSTOM
-	bool "NOVACUSTOM"
+	bool "NovaCustom"

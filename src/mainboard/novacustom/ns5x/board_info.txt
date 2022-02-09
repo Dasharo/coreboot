@@ -1,8 +1,8 @@
-Vendor name:
-Board name:
+Vendor name: Novacustom
+Board name: NS5X
 Category: laptop
-Release year:
-ROM package:
-ROM protocol:
-ROM socketed:
-Flashrom support:
+Release year: 2021
+ROM package: SOIC-8
+ROM protocol: SPI
+ROM socketed: n
+Flashrom support: y
