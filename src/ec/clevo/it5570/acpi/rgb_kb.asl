@@ -68,22 +68,22 @@ Method (KBUP, 0, NotSerialized) // Keyboard Update
 	// Left zone colors
 	FDAT = 0x03
 	FBUF = KBCB
-	FBF1 = KBCG
-	FBF2 = KBCR
+	FBF1 = KBCR
+	FBF2 = KBCG
 	FCMD = 0xCA
 
 	// Middle zone colors
 	FDAT = 0x04
 	FBUF = KBCB
-	FBF1 = KBCG
-	FBF2 = KBCR
+	FBF1 = KBCR
+	FBF2 = KBCG
 	FCMD = 0xCA
 
 	// Right zone colors
 	FDAT = 0x05
 	FBUF = KBCB
-	FBF1 = KBCG
-	FBF2 = KBCR
+	FBF1 = KBCR
+	FBF2 = KBCG
 	FCMD = 0xCA
 
 	// Brightness
