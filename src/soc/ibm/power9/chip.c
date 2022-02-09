@@ -13,6 +13,7 @@
 
 #include "istep_13_scom.h"
 #include "chip.h"
+#include "fsi.h"
 
 static uint64_t nominal_freq;
 
@@ -487,28 +488,38 @@ static inline unsigned long size_k(uint64_t reg)
 
 static void enable_soc_dev(struct device *dev)
 {
-	int mcs_i, idx = 0;
+	int chip, idx = 0;
 	unsigned long reserved_size, top = 0;
+	uint8_t chips = fsi_get_present_chips();
 
-	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		uint64_t reg;
-		chiplet_id_t nest = mcs_to_nest[mcs_ids[mcs_i]];
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		int mcs_i;
 
-		/* These registers are undocumented, see istep 14.5. */
-		/* MCS_MCFGP */
-		reg = read_scom_for_chiplet(nest, 0x0501080A);
-		if (reg & PPC_BIT(0)) {
-			ram_resource(dev, idx++, base_k(reg), size_k(reg));
-			if (base_k(reg) + size_k(reg) > top)
-				top = base_k(reg) + size_k(reg);
-		}
+		if (!(chips & (1 << chip)))
+			continue;
 
-		/* MCS_MCFGPM */
-		reg = read_scom_for_chiplet(nest, 0x0501080C);
-		if (reg & PPC_BIT(0)) {
-			ram_resource(dev, idx++, base_k(reg), size_k(reg));
-			if (base_k(reg) + size_k(reg) > top)
-				top = base_k(reg) + size_k(reg);
+		for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
+			uint64_t reg;
+			chiplet_id_t nest = mcs_to_nest[mcs_ids[mcs_i]];
+
+			/* These registers are undocumented, see istep 14.5. */
+			/* MCS_MCFGP */
+			reg = read_rscom_for_chiplet(chip, nest, 0x0501080A);
+			if (reg & PPC_BIT(0)) {
+				uint64_t end = base_k(reg) + size_k(reg);
+				ram_resource(dev, idx++, base_k(reg), size_k(reg));
+				if (end > top)
+					top = end;
+			}
+
+			/* MCS_MCFGPM */
+			reg = read_rscom_for_chiplet(chip, nest, 0x0501080C);
+			if (reg & PPC_BIT(0)) {
+				uint64_t end = base_k(reg) + size_k(reg);
+				ram_resource(dev, idx++, base_k(reg), size_k(reg));
+				if (end > top)
+					top = end;
+			}
 		}
 	}
 
