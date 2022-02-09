@@ -3046,10 +3046,7 @@ static void populate_ncu_rng_bar_scom_reg(struct homer_st *homer)
 
 	uint8_t ex = 0;
 
-	uint64_t regNcuRngBarData = PPC_PLACE(0x0, 8, 5)   // system ID
-				  | PPC_PLACE(0x3, 13, 2)  // msel
-				  | PPC_PLACE(0x0, 15, 4)  // group ID
-				  | PPC_PLACE(0x0, 19, 3); // chip ID
+	uint64_t regNcuRngBarData = PROC_BASE_ADDR(/*chip=*/0, /*msel=*/0x3);
 
 	regNcuRngBarData += NX_RANGE_BAR_ADDR_OFFSET;
 
