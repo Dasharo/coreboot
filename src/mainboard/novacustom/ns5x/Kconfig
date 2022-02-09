@@ -1,3 +1,0 @@
-config BOARD_NOVACUSTOM_NV5X
-	def_bool n
-	select BOARD_CLEVO_NS50MU_BASE
