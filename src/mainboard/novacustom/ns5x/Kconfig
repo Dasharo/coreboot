@@ -1,0 +1,6 @@
+if BOARD_NOVACUSTOM_NS5X
+
+config MAINBOARD_PART_NUMBER
+	default "ns50mu"
+
+endif # BOARD_NOVACUSTOM_NS5X
