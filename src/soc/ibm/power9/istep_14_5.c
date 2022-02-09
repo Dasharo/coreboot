@@ -191,19 +191,10 @@ static void add_group(struct mc_group groups[MCA_PER_PROC], int size, uint8_t ma
 /* TODO: make groups with > 1 MCA possible */
 static void fill_groups(uint8_t chip)
 {
-	/*
-	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
-	 * when chip ID is actually a group ID and "chip ID" field is zero.
-	 */
-	uint64_t proc_base_addr = PPC_PLACE(0x0, 8, 5)   // system ID
-				| PPC_PLACE(0x0, 13, 2)  // msel
-				| PPC_PLACE(chip, 15, 4) // group ID
-				| PPC_PLACE(0x0, 19, 3); // chip ID
-
 	int mcs_i, mca_i, i;
 	struct mc_group groups[MCA_PER_PROC] = {0};
 	/* This is in 4GB units, as expected by registers. */
-	uint32_t cur_ba = proc_base_addr >> 32;
+	uint32_t cur_ba = PROC_BASE_ADDR(chip, /*msel=*/0x0) >> 32;
 
 	memset(mcfgp_regs, 0, sizeof(mcfgp_regs));
 

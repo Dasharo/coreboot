@@ -27,4 +27,17 @@
 #define IS_EX_FUNCTIONAL(ex, cores)	(!!((cores) & PPC_BITMASK(2 * (ex), 2 * (ex) + 1)))
 #define IS_EQ_FUNCTIONAL(eq, cores)	(!!((cores) & PPC_BITMASK(4 * (eq), 4 * (eq) + 3)))
 
+/*
+ * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
+ * when chip ID is actually a group ID and "chip ID" field is zero.
+ *
+ * "nm" means non-mirrored.
+ */
+#define PROC_BASE_ADDR(chip, msel) (                                                      \
+		PPC_PLACE(0x0, 8, 5)   | /* system ID */                                  \
+		PPC_PLACE(msel, 13, 2) | /* msel (nm = 0b00/01, m = 0b10, mmio = 0b11) */ \
+		PPC_PLACE(chip, 15, 4) | /* group ID */                                   \
+		PPC_PLACE(0x0, 19, 3)    /* chip ID */                                    \
+	)
+
 #endif /* __SOC_IBM_POWER9_PROC_H */

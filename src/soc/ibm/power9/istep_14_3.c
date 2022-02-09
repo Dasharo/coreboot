@@ -289,17 +289,8 @@ static void init_phbs(uint8_t chip, uint8_t phb_active_mask, const uint8_t *iova
 	/* ATTR_PROC_PCIE_BAR_SIZE */
 	const uint64_t bar_sizes[3] = { 0 };
 
-	/*
-	 * Determine base address of chip MMIO range.
-	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
-	 * when chip ID is actually a group ID and "chip ID" field is zero.
-	 */
-	uint64_t base_addr_mmio = 0;
-	base_addr_mmio |= PPC_PLACE(0, 8, 5);     // ATTR_PROC_FABRIC_SYSTEM_ID
-	base_addr_mmio |= PPC_PLACE(chip, 15, 4); // ATTR_PROC_EFF_FABRIC_GROUP_ID
-	base_addr_mmio |= PPC_PLACE(0, 19, 3);    // ATTR_PROC_EFF_FABRIC_CHIP_ID
-	base_addr_mmio |= PPC_PLACE(3, 13, 2);    // FABRIC_ADDR_MSEL
-	                                          // nm = 0b00/01, m = 0b10, mmio = 0b11
+	/* Base address of chip MMIO range */
+	const uint64_t base_addr_mmio = PROC_BASE_ADDR(chip, /*msel=*/0x3);
 
 	uint8_t phb = 0;
 	for (phb = 0; phb < MAX_PHB_PER_PROC; ++phb) {
