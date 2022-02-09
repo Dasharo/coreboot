@@ -163,8 +163,8 @@ Device (EC0)
 		} Else {
 			Debug = "EC: S0IX Exit"
 			UPB ()
-			KBUP ()
 			\_SB.PCI0.LPCB.EC0.SFCV ()
+			KBUP ()
 		}
 
 		FDAT = 0xC2
