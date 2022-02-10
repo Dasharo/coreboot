@@ -131,7 +131,6 @@ chip soc/intel/tigerlake
 		end
 		device ref pch_espi on
 			chip drivers/pc80/tpm
-				register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_C14)"
 				device pnp 0c31.0 on end
 			end
 		end
