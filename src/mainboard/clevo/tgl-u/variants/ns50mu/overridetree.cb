@@ -217,5 +217,10 @@ chip soc/intel/tigerlake
 				register "fans[0].curve.speed" = "{ 16, 25, 50, 100 }"
 			end
 		end
+		device ref hda on
+			register "PchHdaAudioLinkHdaEnable" = "1"
+			register "PchHdaAudioLinkDmicEnable[0]" = "1"
+			register "PchHdaAudioLinkDmicEnable[1]" = "0"
+		end
 	end
 end
