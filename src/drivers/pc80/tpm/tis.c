@@ -782,10 +782,7 @@ static void lpc_tpm_fill_ssdt(const struct device *dev)
 	const char *path = acpi_device_path(dev->bus->dev);
 	tpm_config_t *config = (tpm_config_t *)dev->chip_info;
 
-	if (!path) {
-		path = "\\_SB_.PCI0.LPCB";
-		printk(BIOS_DEBUG, "Using default TPM ACPI path: '%s'\n", path);
-	}
+	path = "\\_SB_.PCI0";
 
 	/* Device */
 	acpigen_write_scope(path);
