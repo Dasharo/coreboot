@@ -124,11 +124,6 @@ chip soc/intel/tigerlake
 				end
 			end
 		end
-		device ref hda on
-			register "PchHdaAudioLinkHdaEnable" = "1"
-			register "PchHdaAudioLinkDmicEnable[0]" = "1"
-			register "PchHdaAudioLinkDmicEnable[1]" = "0"
-		end
 		device ref pch_espi on
 			chip drivers/pc80/tpm
 				device pnp 0c31.0 on end
