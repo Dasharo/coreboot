@@ -959,22 +959,10 @@ static uint64_t get_available_cores(int *me)
 		if (val & PPC_BIT(0)) {
 			printk(BIOS_SPEW, "Core %d is functional%s\n", i,
 			       (val & PPC_BIT(1)) ? "" : " and running");
+
 			ret |= PPC_BIT(i);
 			if (((val & PPC_BIT(1)) == 0) && me != NULL)
 				*me = i;
-
-			/* Might as well set multicast groups for cores */
-			if ((read_scom_for_chiplet(EC00_CHIPLET_ID + i, 0xF0001) & PPC_BITMASK(3,5))
-				== PPC_BITMASK(3,5))
-				scom_and_or_for_chiplet(EC00_CHIPLET_ID + i, 0xF0001,
-				                        ~(PPC_BITMASK(3,5) | PPC_BITMASK(16,23)),
-				                        PPC_BITMASK(19,21));
-
-			if ((read_scom_for_chiplet(EC00_CHIPLET_ID + i, 0xF0002) & PPC_BITMASK(3,5))
-				== PPC_BITMASK(3,5))
-				scom_and_or_for_chiplet(EC00_CHIPLET_ID + i, 0xF0002,
-				                        ~(PPC_BITMASK(3,5) | PPC_BITMASK(16,23)),
-				                        PPC_BIT(5) | PPC_BITMASK(19,21));
 		}
 	}
 	return ret;
@@ -3272,13 +3260,35 @@ static void istep_15_2(struct homer_st *homer)
 /* 15.3 establish EX chiplet */
 static void istep_15_3(uint64_t cores)
 {
-	/* Multicast groups for cores were assigned in get_available_cores() */
+	const uint64_t group_mask = PPC_BITMASK(3,5);
+
+	/* Assign multicast groups for cores */
+	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
+		const chiplet_id_t chiplet = EC00_CHIPLET_ID + i;
+
+		if (!IS_EC_FUNCTIONAL(i, cores))
+			continue;
+
+		if ((read_scom_for_chiplet(chiplet, 0xF0001) & group_mask) == group_mask)
+			scom_and_or_for_chiplet(chiplet, 0xF0001,
+			                        ~(group_mask | PPC_BITMASK(16,23)),
+			                        PPC_BITMASK(19,21));
+
+		if ((read_scom_for_chiplet(chiplet, 0xF0002) & group_mask) == group_mask)
+			scom_and_or_for_chiplet(chiplet, 0xF0002,
+			                        ~(group_mask | PPC_BITMASK(16,23)),
+			                        PPC_BIT(5) | PPC_BITMASK(19,21));
+	}
+
 	for (int i = 0; i < MAX_QUADS_PER_CHIP; i++) {
-		if (IS_EQ_FUNCTIONAL(i, cores) &&
-		    (read_scom_for_chiplet(EP00_CHIPLET_ID + i, 0xF0001) & PPC_BITMASK(3,5))
-		    == PPC_BITMASK(3,5))
-			scom_and_or_for_chiplet(EP00_CHIPLET_ID + i, 0xF0001,
-			                        ~(PPC_BITMASK(3,5) | PPC_BITMASK(16,23)),
+		const chiplet_id_t chiplet = EP00_CHIPLET_ID + i;
+
+		if (!IS_EQ_FUNCTIONAL(i, cores))
+			continue;
+
+		if ((read_scom_for_chiplet(chiplet, 0xF0001) & group_mask) == group_mask)
+			scom_and_or_for_chiplet(chiplet, 0xF0001,
+			                        ~(group_mask | PPC_BITMASK(16,23)),
 			                        PPC_BITMASK(19,21));
 	}
 
