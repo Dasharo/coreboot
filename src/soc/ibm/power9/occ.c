@@ -1173,33 +1173,37 @@ static void set_occ_active_state(uint8_t chip, struct homer_st *homer)
 	set_occ_state(chip, homer, OCC_STATE_ACTIVE);
 }
 
-void activate_occ(uint8_t chip, struct homer_st *homer)
+void activate_occ(uint8_t chips, struct homer_st *homers)
 {
-	/* TODO: Hostboot performs some steps below for every OCC before moving
-	 *       to the next step (looks like performing it for master OCC
-	 *       first), so will need to loop over OCCs for some steps.
-	 *       All this after starting PM complex for every chip outside
-	 *       of this function. */
-
-	struct occ_poll_response poll_response;
-
 	/* Make sure OCCs are ready for communication */
-	wait_for_occ_checkpoint(chip);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			wait_for_occ_checkpoint(chip);
+	}
 
 	/* Send initial poll to all OCCs to establish communication */
-	poll_occ(chip, homer, /*flush_all_errors=*/false, &poll_response);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip)) {
+			struct occ_poll_response poll_response;
+			poll_occ(chip, &homers[chip], /*flush_all_errors=*/false,
+				 &poll_response);
+		}
+	}
 
 	/* Send OCC's config data */
-	send_occ_config_data(chip, homer);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			send_occ_config_data(chip, &homers[chip]);
+	}
 
-	/* Set the User PCAP */
-	send_occ_user_power_cap(chip, homer);
+	/* Set the User PCAP (sent only to master OCC) */
+	send_occ_user_power_cap(/*chip=*/0, &homers[0]);
 
-	/* Switch for OCC to active state */
-	set_occ_active_state(chip, homer);
+	/* Switch for OCC to active state (sent only to master OCC) */
+	set_occ_active_state(/*chip=*/0, &homers[0]);
 
-	/* Hostboot sets active sensors for all OCCs here, so BMC can start
-	 * communication with OCCs. */
+	/* TODO: Hostboot sets active sensors for all OCCs here, so BMC can start
+	   communication with OCCs. */
 }
 
 void pm_occ_fir_init(uint8_t chip)
