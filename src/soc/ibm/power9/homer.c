@@ -3366,6 +3366,15 @@ static void istep_15_3(uint8_t chip, uint64_t cores)
 			qcsr |= PPC_BIT(i);
 	}
 	write_rscom(chip, 0x0006C094, qcsr);
+
+	if (chip != 0) {
+		/*
+		 * PU_OCB_OCI_QSSR_SCOM2 (OR)
+		 * Start no CMEs on slave CPUs (set bit implies stop state).
+		 */
+		write_rscom(chip, 0x0006C09A, PPC_BITMASK(0, 11) | /* CMEs */
+					      PPC_BITMASK(14, 19)  /* EQs */);
+	}
 }
 
 /*
