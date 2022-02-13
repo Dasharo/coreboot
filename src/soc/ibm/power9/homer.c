@@ -1499,7 +1499,7 @@ static void pm_pss_init(uint8_t chip)
 	 */
 	rscom_and_or(chip, PU_SPIPSS_ADC_CTRL_REG0,
 		     ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
-		     PPC_PLACE(8, 0, 6));
+		     PPC_PLACE(0x20, 0, 6));
 
 	/*
 	 *  0     adc_fsm_enable    = 1
@@ -1527,7 +1527,7 @@ static void pm_pss_init(uint8_t chip)
 	 */
 	rscom_and_or(chip, PU_SPIPSS_P2S_CTRL_REG0,
 		     ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
-		     PPC_PLACE(8, 0, 6));
+		     PPC_PLACE(0x20, 0, 6));
 
 	/*
 	 *  0     p2s_fsm_enable    = 1
