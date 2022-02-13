@@ -3566,14 +3566,28 @@ void build_homer_image(void *homer_bar, uint64_t nominal_freq[])
 		nominal_freq[chip] = get_voltage_data(chip)->nominal.freq * MHz;
 	}
 
-	setup_wakeup_mode(/*chip=*/0, cores[0]);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			setup_wakeup_mode(chip, cores[chip]);
+	}
 
 	report_istep(15,2);
-	istep_15_2(/*chip=*/0, &homer[0]);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			istep_15_2(chip, &homer[chip]);
+	}
+
 	report_istep(15,3);
-	istep_15_3(/*chip=*/0, cores[0]);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			istep_15_3(chip, cores[chip]);
+	}
+
 	report_istep(15,4);
-	istep_15_4(/*chip=*/0, cores[0]);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			istep_15_4(chip, cores[chip]);
+	}
 
 	/* Boot OCC here and activate SGPE at the same time */
 	/* TODO: initialize OCC for the second CPU when it's present */
