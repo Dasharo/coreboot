@@ -1520,16 +1520,22 @@ static void start_pm_complex(uint8_t chip, struct homer_st *homer, uint64_t core
 	write_rscom(chip, PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(STOP_RECOVERY_TRIGGER_ENABLE));
 }
 
-static void istep_21_1(uint8_t chip, struct homer_st *homer, uint64_t cores)
+static void istep_21_1(uint8_t chips, struct homer_st *homers, const uint64_t *cores)
 {
-	load_pm_complex(chip, homer);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			load_pm_complex(chip, &homers[chip]);
+	}
 
 	printk(BIOS_ERR, "Starting PM complex...\n");
-	start_pm_complex(chip, homer, cores);
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			start_pm_complex(chip, &homers[chip], cores[chip]);
+	}
 	printk(BIOS_ERR, "Done starting PM complex\n");
 
 	printk(BIOS_ERR, "Activating OCC...\n");
-	activate_occ(chip, homer);
+	activate_occ(chips, homers);
 	printk(BIOS_ERR, "Done activating OCC\n");
 }
 
@@ -2650,8 +2656,7 @@ void build_homer_image(void *homer_bar, void *common_occ_area, uint64_t nominal_
 	}
 
 	/* Boot OCC here and activate SGPE at the same time */
-	/* TODO: initialize OCC for the second CPU when it's present */
-	istep_21_1(/*chip=*/0, homer, cores[0]);
+	istep_21_1(chips, homer, cores);
 
 	istep_16_1(this_core);
 }
