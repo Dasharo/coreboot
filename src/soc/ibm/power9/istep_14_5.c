@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <cpu/power/istep_14.h>
 #include <cpu/power/istep_13.h>
 #include <console/console.h>
 #include <string.h>
