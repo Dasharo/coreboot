@@ -129,3 +129,24 @@ releases:
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
                 - description: Windows 10 SD card reader driver needs manual installation on NV41MB
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
+
+        - version: v1.0.1
+          added:
+                - Change DMI fields to match previous Insyde firmware
+                - Hide unknown ACPI devices
+                - Set correct Realtek HD Audio subsystem ID
+                - Set correct ACPI path for the TPM
+                - Set TPM IRQ in a manner understood by Windows
+          fixed:
+                - Updating firmware using fwupd
+                - MIC-in phone jack not working
+                - This PC can't run Windows 11 error while installing Windows 11 from a USB pen drive
+          removed:
+                - Removed proprietary blobs from built coreboot images
+          known_issues:
+                - description: Windows 10 SD card reader driver needs manual installation on NV41MB
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
+                - description: Low level interfering crackling/popping of the speakers while playing no sound
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/13
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
