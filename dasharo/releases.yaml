@@ -144,6 +144,10 @@ releases:
           removed:
                 - Removed proprietary blobs from built coreboot images
           known_issues:
+                - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
+                - description: USB4 Root Device Router device displays an error in Windows 11 Device Manager
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/18
                 - description: Windows 10 SD card reader driver needs manual installation on NV41MB
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
                 - description: Low level interfering crackling/popping of the speakers while playing no sound
