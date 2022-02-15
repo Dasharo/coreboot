@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-void istep_18_11(uint8_t chips);
-void istep_18_12(void);
+void istep_18_11(uint8_t chips, uint8_t *mdmt);
+void istep_18_12(uint8_t chips, uint8_t mdmt);
 
 #endif /* CPU_PPC64_ISTEP18_H */
