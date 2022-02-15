@@ -6,7 +6,7 @@ Device (UCSI)
 	Name (_CID, EisaId ("PNP0CA0"))
 	Name (_UID, One)
 	Name (_DDN, "USB Type-C")
-	Name (_STA, 0xf)
+	Name (_STA, 0x0)
 
 	/* Shared memory fields are defined in the SSDT */
 	External (\_SB.PCI0.LPCB.EC0.UCSI.VER0, FieldUnitObj)
