@@ -550,7 +550,7 @@ static void enable_soc_dev(struct device *dev)
 		}
 	}
 	rng_init();
-	istep_18_11();
+	istep_18_11(chips);
 	istep_18_12();
 }
 
