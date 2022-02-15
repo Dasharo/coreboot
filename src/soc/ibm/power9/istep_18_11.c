@@ -325,7 +325,7 @@ static int core_count(uint8_t chip)
 	return __builtin_popcount((uint32_t)cores) + __builtin_popcount(cores >> 32);
 }
 
-void istep_18_11(uint8_t chips)
+void istep_18_11(uint8_t chips, uint8_t *mdmt)
 {
 	uint8_t pri_mdmt;
 	uint8_t sec_mdmt;
@@ -346,6 +346,8 @@ void istep_18_11(uint8_t chips)
 		/* The other one will be secondary MDMT */
 		sec_mdmt = (cores[0] <= cores[1] ? 1 : 0);
 	}
+
+	*mdmt = pri_mdmt;
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
