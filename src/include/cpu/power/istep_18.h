@@ -6,8 +6,8 @@
 #include <cpu/power/scom.h>
 #include <stdint.h>
 
-void istep_18_11(uint8_t chips);
-void istep_18_12(void);
+void istep_18_11(uint8_t chips, uint8_t *mdmt);
+void istep_18_12(uint8_t chips, uint8_t mdmt);
 
 /* TODO: everything is used internally only, don't define it in public header */
 /* TODO: check again if all bits are using PPC_BIT numbering */

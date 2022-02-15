@@ -492,6 +492,7 @@ static void enable_soc_dev(struct device *dev)
 	int chip, idx = 0;
 	unsigned long reserved_size, homers_size, occ_area, top = 0;
 	uint8_t chips = fsi_get_present_chips();
+	uint8_t tod_mdmt;
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		int mcs_i;
@@ -552,8 +553,8 @@ static void enable_soc_dev(struct device *dev)
 		}
 	}
 	rng_init();
-	istep_18_11(chips);
-	istep_18_12();
+	istep_18_11(chips, &tod_mdmt);
+	istep_18_12(chips, tod_mdmt);
 }
 
 static void activate_slave_cores(void)
