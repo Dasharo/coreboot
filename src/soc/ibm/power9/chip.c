@@ -445,7 +445,7 @@ static void enable_soc_dev(struct device *dev)
 	build_homer_image((void *)(top * 1024), (void *)(occ_area * 1024), nominal_freq);
 
 	rng_init();
-	istep_18_11();
+	istep_18_11(chips);
 	istep_18_12();
 }
 
