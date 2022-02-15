@@ -1,6 +1,12 @@
-#include <cpu/power/scom.h>
+/* SPDX-License-Identifier: GPL-2.0-only */
 
-void istep_18_11(void);
+#ifndef CPU_PPC64_ISTEP18_H
+#define CPU_PPC64_ISTEP18_H
+
+#include <cpu/power/scom.h>
+#include <stdint.h>
+
+void istep_18_11(uint8_t chips);
 void istep_18_12(void);
 
 /* TODO: everything is used internally only, don't define it in public header */
@@ -16,7 +22,7 @@ void istep_18_12(void);
 #define PERV_TOD_TX_TTYPE_REG_TRIGGER (0)
 
 #define MDMT_TOD_GRID_CYCLE_STAGING_DELAY (6)
-#define FREQ_X_MHZ (1800)
+#define FREQ_X_MHZ (2000)
 #define TOD_GRID_PS (400)
 
 /* FIXME: P9A?! */
@@ -163,3 +169,5 @@ void istep_18_12(void);
 // [28:31] RW S_PATH_REMOTE_SYNC_CHECK_CPS_DEVIATION: Slave path-01: remote sync: sync-step check: CPS deviation.
 // [32:39] RW S_PATH_REMOTE_SYNC_MISS_COUNT_MAX: Slave path-01: remote sync: maximum of SYNC miss counts: 0 - 255 syncs.
 #define PERV_TOD_S_PATH_CTRL_REG (0x00040005)
+
+#endif /* CPU_PPC64_ISTEP18_H */
