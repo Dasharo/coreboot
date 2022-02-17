@@ -24,6 +24,7 @@ FLASH@0xff000000 0x1000000 {
 	}
 
 	CONSOLE 0x20000
+	BOOTSPLASH(CBFS) 1M
 
 	# align this with a WP region?
 	WP_RO 0x400000 {
