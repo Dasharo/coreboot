@@ -396,6 +396,7 @@ void main(void)
 	istep_9_7(chips);
 
 	istep_10_1(chips);
+	istep_10_6(chips);
 	istep_10_10(chips, pci_info);
 	istep_10_12(chips);
 	istep_10_13();
