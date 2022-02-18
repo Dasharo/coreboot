@@ -21,6 +21,7 @@ romstage-y += istep_9_4.c
 romstage-y += istep_9_6.c
 romstage-y += istep_9_7.c
 romstage-y += istep_10_1.c
+romstage-y += istep_10_6.c
 romstage-y += istep_10_10.c
 romstage-y += istep_10_12.c
 romstage-y += istep_10_13.c
