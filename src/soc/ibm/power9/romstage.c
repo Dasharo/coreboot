@@ -400,7 +400,7 @@ void main(void)
 	istep_10_1(chips);
 	istep_10_10(chips, pci_info);
 	istep_10_12(chips);
-	istep_10_13();
+	istep_10_13(chips);
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
