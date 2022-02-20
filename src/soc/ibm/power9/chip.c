@@ -596,14 +596,20 @@ static void enable_soc_dev(struct device *dev)
 	istep_18_12(chips, tod_mdmt);
 }
 
-static void activate_slave_cores(void)
+static void activate_slave_cores(uint8_t chip)
 {
 	enum { DOORBELL_MSG_TYPE = 0x0000000028000000 };
 
 	uint8_t i;
 
 	/* Read OCC CCSR written by the code earlier */
-	const uint64_t functional_cores = read_scom(0x0006C090);
+	const uint64_t functional_cores = read_rscom(chip, 0x0006C090);
+
+	/*
+	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
+	 * when chip ID is actually a group ID and "chip ID" field is zero.
+	 */
+	const uint64_t chip_msg = DOORBELL_MSG_TYPE | PPC_PLACE(chip, 49, 4);
 
 	/* Find and process the first core in a separate loop to slightly
 	 * simplify processing of all the other cores by removing a conditional */
@@ -615,10 +621,10 @@ static void activate_slave_cores(void)
 			continue;
 
 		/* Message value for thread 0 of the current core */
-		core_msg = DOORBELL_MSG_TYPE | (i << 2);
+		core_msg = chip_msg | (i << 2);
 
 		/* Skip sending doorbell to the current thread of the current core */
-		for (thread = 1; thread < 4; ++thread) {
+		for (thread = (chip == 0 ? 1 : 0); thread < 4; ++thread) {
 			register uint64_t msg = core_msg | thread;
 			asm volatile("msgsnd %0" :: "r" (msg));
 		}
@@ -634,7 +640,7 @@ static void activate_slave_cores(void)
 			continue;
 
 		/* Message value for thread 0 of the i-th core */
-		core_msg = DOORBELL_MSG_TYPE | (i << 2);
+		core_msg = chip_msg | (i << 2);
 
 		for (thread = 0; thread < 4; ++thread) {
 			register uint64_t msg = core_msg | thread;
@@ -645,6 +651,8 @@ static void activate_slave_cores(void)
 
 void platform_prog_run(struct prog *prog)
 {
+	uint8_t chips = fsi_get_present_chips();
+
 	/*
 	 * Clear SMS_ATN aka EVT_ATN in BT_CTRL - Block Transfer IPMI protocol
 	 *
@@ -667,7 +675,10 @@ void platform_prog_run(struct prog *prog)
 	 * activated threads start execution before current thread jumps into
 	 * the payload.
 	 */
-	activate_slave_cores();
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			activate_slave_cores(chip);
+	}
 }
 
 struct chip_operations soc_ibm_power9_ops = {
