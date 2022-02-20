@@ -1583,9 +1583,9 @@ static void start_pm_complex(uint8_t chip, struct homer_st *homer, uint64_t core
 static void wait_for_occ_checkpoint(uint8_t chip)
 {
 	enum {
-		/* Wait up to 15 seconds for OCC to be ready (150 * 100ms = 15s) */
-		MS_BETWEEN_READ  = 100,
-		READ_RETRY_LIMIT = 150,
+		/* Wait up to 15 seconds for OCC to be ready (1500 * 10ms = 15s) */
+		US_BETWEEN_READ  = 10000,
+		READ_RETRY_LIMIT = 1500,
 
 		OCC_COMM_INIT_COMPLETE = 0x0EFF,
 		OCC_INIT_FAILURE       = 0xE000,
@@ -1593,14 +1593,14 @@ static void wait_for_occ_checkpoint(uint8_t chip)
 		OCC_RSP_SRAM_ADDR = 0xFFFBF000,
 	};
 
-	uint8_t retry_count = 0;
+	int retry_count = 0;
 
 	while (retry_count++ < READ_RETRY_LIMIT) {
 		uint8_t response[8] = { 0x0 };
 		uint8_t status;
 		uint16_t checkpoint;
 
-		wait_ms(MS_BETWEEN_READ, false);
+		udelay(US_BETWEEN_READ);
 
 		/* Read SRAM response buffer to check for OCC checkpoint */
 		readOCCSRAM(chip, OCC_RSP_SRAM_ADDR, (uint64_t *)response, sizeof(response));
@@ -1660,15 +1660,17 @@ static void wait_for_occ_response(struct homer_st *homer, uint32_t timeout_sec,
 				  uint8_t seq_num)
 {
 	enum {
-		OCC_RSP_SAMPLE_TIME_MS = 100,
+		OCC_RSP_SAMPLE_TIME_US = 10,
 		OCC_COMMAND_IN_PROGRESS = 0xFF,
 	};
 
 	const uint8_t *rsp_buf = &homer->occ_host_area[OCC_RSP_ADDR];
 
-	int32_t timeout_ms = (timeout_sec == 0 ? OCC_RSP_SAMPLE_TIME_MS : timeout_sec * 1000);
+	long timeout_us = timeout_sec * 1000000;
+	if (timeout_sec == 0)
+		timeout_us = OCC_RSP_SAMPLE_TIME_US;
 
-	while (timeout_ms >= 0) {
+	while (timeout_us >= 0) {
 		/*
 		 * 1. When OCC receives the command, it will set the status to
 		 *    COMMAND_IN_PROGRESS.
@@ -1694,14 +1696,14 @@ static void wait_for_occ_response(struct homer_st *homer, uint32_t timeout_sec,
 			break;
 		}
 
-		if (timeout_ms > 0) {
+		if (timeout_us > 0) {
 			/* Delay before the next check */
-			int32_t sleep_ms = OCC_RSP_SAMPLE_TIME_MS;
-			if (timeout_ms < sleep_ms)
-				sleep_ms = timeout_ms;
+			long sleep_us = OCC_RSP_SAMPLE_TIME_US;
+			if (timeout_us < sleep_us)
+				sleep_us = timeout_us;
 
-			wait_ms(sleep_ms, false);
-			timeout_ms -= sleep_ms;
+			udelay(sleep_us);
+			timeout_us -= sleep_us;
 		} else {
 			/* Time expired */
 			die("Timed out while waiting for OCC response\n");
@@ -1891,8 +1893,8 @@ static void poll_occ(uint8_t chip, struct homer_st *homer,
 static void wait_for_occ_status(uint8_t chip, struct homer_st *homer, uint8_t status_bit)
 {
 	enum {
-		MAX_POLLS = 40,
-		DELAY_BETWEEN_POLLS_MS = 250,
+		MAX_POLLS = 200,
+		DELAY_BETWEEN_POLLS_US = 50000,
 	};
 
 	uint8_t num_polls = 0;
@@ -1908,7 +1910,7 @@ static void wait_for_occ_status(uint8_t chip, struct homer_st *homer, uint8_t st
 			    poll_response.requested_cfg);
 
 		if (num_polls < MAX_POLLS)
-			wait_ms(DELAY_BETWEEN_POLLS_MS, false);
+			udelay(DELAY_BETWEEN_POLLS_US);
 	}
 
 	if (num_polls == MAX_POLLS)
