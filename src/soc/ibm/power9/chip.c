@@ -126,7 +126,7 @@ static void fill_l2_node(struct device_tree *tree,
 }
 
 static void fill_cpu_node(struct device_tree *tree,
-                          struct device_tree_node *node, uint32_t pir,
+                          struct device_tree_node *node, uint8_t chip, uint32_t pir,
                           uint32_t next_lvl_phandle)
 {
 	/* Mandatory/standard properties */
@@ -152,8 +152,8 @@ static void fill_cpu_node(struct device_tree *tree,
 	dt_add_u32_prop(node, "reg", pir);
 	dt_add_u32_prop(node, "ibm,pir", pir);
 
-	/* Chip ID of this core */
-	dt_add_u32_prop(node, "ibm,chip-id", 0); /* FIXME for second CPU */
+	/* Chip ID of this core, not sure why it's shifted (group id + chip id?) */
+	dt_add_u32_prop(node, "ibm,chip-id", chip << 3);
 
 	/*
 	 * Interrupt server numbers (aka HW processor numbers) of all threads
@@ -207,15 +207,14 @@ static void fill_cpu_node(struct device_tree *tree,
 	 * Old-style core clock frequency. Only create this property if the
 	 * frequency fits in a 32-bit number. Do not create it if it doesn't.
 	 */
-	/* TODO: update these 3 uses of nominal_freq to be chip-specific */
-	if ((nominal_freq[0] >> 32) == 0)
-		dt_add_u32_prop(node, "clock-frequency", nominal_freq[0]);
+	if ((nominal_freq[chip] >> 32) == 0)
+		dt_add_u32_prop(node, "clock-frequency", nominal_freq[chip]);
 
 	/*
 	 * Mandatory: 64-bit version of the core clock frequency, always create
 	 * this property.
 	 */
-	dt_add_u64_prop(node, "ibm,extended-clock-frequency", nominal_freq[0]);
+	dt_add_u64_prop(node, "ibm,extended-clock-frequency", nominal_freq[chip]);
 
 	/* Timebase freq has a fixed value, always use that */
 	dt_add_u32_prop(node, "timebase-frequency", 512 * MHz);
@@ -269,23 +268,44 @@ static inline unsigned long size_k(uint64_t reg)
  */
 static int dt_platform_update(struct device_tree *tree)
 {
+	uint8_t chips = fsi_get_present_chips();
+
 	struct device_tree_node *cpus, *xscom;
-	uint64_t cores = read_scom(0x0006C090);
-	assert(cores != 0);
 
 	/* Find xscom node, halt if not found */
 	/* TODO: is the address always the same? */
 	xscom = dt_find_node_by_path(tree, "/xscom@603fc00000000", NULL, NULL, 0);
 	if (xscom == NULL)
-		die("No 'xscom' node in device tree!\n");
+		die("No 'xscom' node for chip#0 in device tree!\n");
+
+	/* Check for xscom node of the second CPU (assuming group pump mode) */
+	xscom = dt_find_node_by_path(tree, "/xscom@623fc00000000", NULL, NULL, 0);
+	if (chips & 0x2) {
+		if (xscom == NULL)
+			die("No 'xscom' node for chip#1 in device tree!\n");
+	} else {
+		if (xscom != NULL)
+			die("Found 'xscom' node for missing chip#1 in device tree!\n");
+	}
 
 	/* Find "cpus" node */
 	cpus = dt_find_node_by_path(tree, "/cpus", NULL, NULL, 0);
 	if (cpus == NULL)
 		die("No 'cpus' node in device tree!\n");
 
-	for (int core_id = 0; core_id <= 24; core_id++) {
-		if (IS_EC_FUNCTIONAL(core_id, cores)) {
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		uint64_t cores;
+
+		if (!(chips & (1 << chip)))
+			continue;
+
+		cores = read_rscom(chip, 0x0006C090);
+		assert(cores != 0);
+
+		for (int core_id = 0; core_id < MAX_CORES_PER_CHIP; core_id++) {
+			if (!IS_EC_FUNCTIONAL(core_id, cores))
+				continue;
+
 			/*
 			 * Not sure who is the original author of this comment, it is
 			 * duplicated in Hostboot and Skiboot, and now also here. It
@@ -293,12 +313,12 @@ static int dt_platform_update(struct device_tree *tree)
 			 * of thread 0 of _first_ core in pair, both for L2 and L3.
 			 */
 			/*
-			 * Cache nodes. Those are siblings of the processor nodes under /cpus and
-			 * represent the various level of caches.
+			 * Cache nodes. Those are siblings of the processor nodes under /cpus
+			 * and represent the various level of caches.
 			 *
 			 * The unit address (and reg property) is mostly free-for-all as long as
-			 * there is no collisions. On HDAT machines we use the following encoding
-			 * which I encourage you to also follow to limit surprises:
+			 * there is no collisions. On HDAT machines we use the following
+			 * encoding which I encourage you to also follow to limit surprises:
 			 *
 			 * L2   :  (0x20 << 24) | PIR (PIR is PIR value of thread 0 of core)
 			 * L3   :  (0x30 << 24) | PIR
@@ -308,7 +328,11 @@ static int dt_platform_update(struct device_tree *tree)
 			 * own "l2-cache" (or "next-level-cache") property, so the core node
 			 * points to the L2, the L2 points to the L3 etc...
 			 */
-			uint32_t pir = core_id * 4;
+			/*
+			 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
+			 * when chip ID is actually a group ID and "chip ID" field is zero.
+			 */
+			uint32_t pir = PPC_PLACE(chip, 49, 4) | PPC_PLACE(core_id, 57, 5);
 			uint32_t l2_pir = (0x20 << 24) | (pir & ~7);
 			uint32_t l3_pir = (0x30 << 24) | (pir & ~7);
 			/* "/cpus/l?-cache@12345678" -> 23 characters + terminator */
@@ -341,7 +365,7 @@ static int dt_platform_update(struct device_tree *tree)
 				fill_l2_node(tree, l2_node, l2_pir, l3_node->phandle);
 			}
 
-			fill_cpu_node(tree, cpu_node, pir, l2_node->phandle);
+			fill_cpu_node(tree, cpu_node, chip, pir, l2_node->phandle);
 		}
 	}
 
