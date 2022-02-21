@@ -1,0 +1,39 @@
+# Dasharo project configuration data
+file_version: v0.0.1
+
+dasharo:
+  platform: clevo_ns50mu
+  newsletter:
+    url:
+
+client:
+  name: Clevo
+
+framework:
+  name: coreboot
+  version:
+  url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
+
+components:
+  name: tianocore
+  version:
+  url_template: https://github.com/tianocore/edk2/commit/COMMIT_HASH
+  path:
+
+documentation:
+  name: Dasharo Compatibility
+  url: https://docs.dasharo.com/
+  building_url:
+  flashing_url:
+
+platform:
+  vendor: Tuxedo
+  model: NS50
+
+tests:
+  hardware_matrix:
+  results:
+  specification:
+
+asciinema:
+  signature_verification:
