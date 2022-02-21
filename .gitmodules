@@ -60,3 +60,6 @@
 	path = 3rdparty/stm
 	url = ../STM
 	branch = stmpe
+[submodule "dasharo-templates"]
+	path = dasharo-templates
+	url = git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
