@@ -1,0 +1,6 @@
+comment "Tiger Lake U"
+
+config BOARD_CLEVO_NV4X
+	bool "NV4x"
+	select BOARD_CLEVO_NV4X_BASE
+

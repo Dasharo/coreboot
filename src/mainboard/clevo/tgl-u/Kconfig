@@ -1,0 +1,111 @@
+config BOARD_CLEVO_TGL_U_COMMON
+	def_bool n
+	select BOARD_ROMSIZE_KB_16384
+	select DRIVERS_I2C_HID
+	select DRIVERS_INTEL_PMC
+	select DRIVERS_INTEL_USB4_RETIMER
+	select HAVE_ACPI_TABLES
+	select HAVE_CMOS_DEFAULT
+	select HAVE_OPTION_TABLE
+	select INTEL_GMA_HAVE_VBT
+	select INTEL_LPSS_UART_FOR_CONSOLE
+	select MAINBOARD_HAS_TPM2
+	select MAINBOARD_HAS_LPC_TPM
+	select NO_UART_ON_SUPERIO
+	select PCIEXP_HOTPLUG
+	select SOC_INTEL_TIGERLAKE
+	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
+	select SPD_READ_BY_WORD
+	select SYSTEM_TYPE_LAPTOP
+	select HAVE_SMI_HANDLER
+	select EC_CLEVO_IT5570
+	select TPM_MEASURED_BOOT
+
+config BOARD_CLEVO_NV4X_BASE
+	bool "NV4x"
+	select BOARD_CLEVO_TGL_U_COMMON
+	select DRIVER_NVIDIA_OPTIMUS
+
+if BOARD_CLEVO_TGL_U_COMMON
+
+config MAINBOARD_DIR
+	string
+	default "clevo/tgl-u"
+
+config VARIANT_DIR
+	string
+	default "nv4x" if BOARD_CLEVO_NV4X_BASE
+
+config MAINBOARD_PART_NUMBER
+	string
+	default "nv4x" if BOARD_CLEVO_NV4X
+
+config MAX_CPUS
+	int
+	default 8
+
+config PCIEXP_HOTPLUG
+	default y
+
+config PCIEXP_HOTPLUG_BUSES
+	int
+	default 42
+
+config PCIEXP_HOTPLUG_MEM
+	hex
+	default 0xc200000 # 194 MiB
+
+config PCIEXP_HOTPLUG_PREFETCH_MEM
+	hex
+	default 0x1c00000 # 448 MiB
+
+config DEVICETREE
+	string
+	default "variants/baseboard/devicetree.cb"
+
+config OVERRIDE_DEVICETREE
+	string
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
+
+config DIMM_MAX
+	int
+	default 4 # Hack to make soc code work
+
+config DIMM_SPD_SIZE
+	int
+	default 512
+
+config VBOOT
+	select VBOOT_NO_BOARD_SUPPORT
+	select VBOOT_ALWAYS_ENABLE_DISPLAY
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+
+config VBOOT_SLOTS_RW_A
+	default y
+
+config FMDFILE
+	string
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+
+config UART_FOR_CONSOLE
+	int
+	default 2
+
+config TPM_PIRQ
+	hex
+	default 0x1C # GPP_C14
+
+# PM Timer Disabled, saves power
+config USE_PM_ACPI_TIMER
+	default n
+
+# Getting the console output requires soldering the wires to the mainboard.
+# Disable the serial output by default as it won't be commonly used and will
+# only make the boot time longer.
+config CONSOLE_SERIAL
+	default n
+
+endif # BOARD_CLEVO_TGL_U_COMMON
