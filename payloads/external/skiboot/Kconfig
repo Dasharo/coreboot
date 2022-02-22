@@ -3,7 +3,7 @@
 if PAYLOAD_SKIBOOT
 
 config PAYLOAD_FILE
-	default "payloads/external/skiboot/build/skiboot.uimage"
+	default "payloads/external/skiboot/build/skiboot.elf"
 
 config SKIBOOT_REVISION
 	string "Revision of skiboot payload"
@@ -11,11 +11,5 @@ config SKIBOOT_REVISION
 	help
 	  Revision, that skiboot repository will be checked out to, before building
 	  an image.
-
-config SKIBOOT_DEVICE_TREE
-	string "skiboot device-tree"
-	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/devicetree.dts"
-	help
-	  Filename of device-tree passed to the skiboot.
 
 endif #PAYLOAD_SKIBOOT
