@@ -60,6 +60,3 @@
 [submodule "3rdparty/dasharo-blobs"]
 	path = 3rdparty/dasharo-blobs
 	url = https://github.com/Dasharo/dasharo-blobs.git
-[submodule "dasharo-templates"]
-	path = dasharo-templates
-	url = git@gitlab.com:3mdeb/dasharo/dasharo-templates.git
