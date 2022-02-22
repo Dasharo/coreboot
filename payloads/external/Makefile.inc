@@ -327,7 +327,6 @@ payloads/external/BOOTBOOT/bootboot/dist/bootbootcb.elf:
 
 # skiboot
 
-payloads/external/skiboot/build/skiboot.uimage:
+payloads/external/skiboot/build/skiboot.elf:
 	$(MAKE) -C payloads/external/skiboot all \
-		CONFIG_SKIBOOT_DEVICE_TREE=$(CONFIG_SKIBOOT_DEVICE_TREE) \
 		CONFIG_SKIBOOT_REVISION=$(CONFIG_SKIBOOT_REVISION)
