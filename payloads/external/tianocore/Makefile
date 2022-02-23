@@ -82,6 +82,12 @@ endif
 
 bootloader = $(word 8,$(subst /, ,$(BUILD_STR)))
 
+ifeq ($(CONFIG_TIANOCORE_CUSTOM),y)
+ifneq ($(CONFIG_TIANOCORE_CUSTOM_BUILD_PARAMS),)
+BUILD_STR += $(CONFIG_TIANOCORE_CUSTOM_BUILD_PARAMS)
+endif
+endif
+
 export EDK_TOOLS_PATH=$(project_dir)/BaseTools
 
 all: clean build
@@ -124,6 +130,7 @@ checktools:
 build: update checktools
 	unset CC; $(MAKE) -C $(project_dir)/BaseTools 2>&1
 	echo " build $(project_name) $(CONFIG_TIANOCORE_TAG_OR_REV)"
+	echo " build $(BUILD_STR)"
 	if [ -n "$(CONFIG_TIANOCORE_BOOTSPLASH_FILE)" ]; then \
 		echo "    Copying custom bootsplash image"; \
 		case "$(CONFIG_TIANOCORE_BOOTSPLASH_FILE)" in \
