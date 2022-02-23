@@ -1,0 +1,40 @@
+# Dasharo project configuration data
+file_version: v0.0.1
+
+dasharo:
+  platform: clevo_ns50
+  newsletter:
+    url: https://newsletter.3mdeb.com/subscription/T61MyO2sP
+
+client:
+  name: Tuxedo
+
+framework:
+  name: coreboot
+  version: 4.14
+  url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
+
+components:
+- name: tianocore
+  version: 59ae285f1fd5cfc9ed599561077b03241eb7212d
+  url_template: https://github.com/3mdeb/edk2/commit/COMMIT_HASH
+  path: payloads/external/tianocore/tianocore
+
+
+documentation:
+  name: Dasharo Compatibility
+  url: https://docs.dasharo.com/
+  building_url: https://docs.dasharo.com/variants/clevo_ns50/building/
+  flashing_url: https://docs.dasharo.com/variants/clevo_ns50/flashing_internal/
+
+platform:
+  vendor: Novacustom
+  model: NS5X
+
+tests:
+  hardware_matrix: https://docs.dasharo.com/variants/clevo_ns50/testing_configuration/
+  results: https://newsletter.3mdeb.com/links/FL5Sko3lq/T61MyO2sP/76cRKV_aG/eCnTztI3pO
+  specification: https://novacustom.gitlab.io/dasharo-compatibility/dasharo-compatibility/
+
+asciinema:
+  signature_verification: https://asciinema.org/a/433461
