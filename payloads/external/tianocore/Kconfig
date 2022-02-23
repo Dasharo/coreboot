@@ -186,47 +186,15 @@ config TIANOCORE_USE_8254_TIMER
 
 endif
 
-config TIANOCORE_ENABLE_IPXE
-	bool "Include iPXE in Tianocore payload"
-	default y
-	help
-	  Includes a prebuilt iPXE for EFI to the TianoCore payload.
+if TIANOCORE_CUSTOM
 
-config TIANOCORE_SECURE_BOOT
-	bool "Enable TianoCore Secure Boot"
-	depends on SMMSTORE_V2
-	default n
+config TIANOCORE_CUSTOM_BUILD_PARAMS
+	string "TianoCore custom build parameters"
 	help
-	  Enables UEFI Secure Boot image verification in TianoCore Payload.
+	  Custom TianoCore forks may have different sets of parameters passed
+	  to build command. You may specify additional parameters to the custom
+	  TianoCore build
 
-config TIANOCORE_SATA_PASSWORD
-	bool "Enable TianoCore SATA disk password"
-	default n
-	help
-	  Enable SATA disk password suupport in the TianoCore payload.
-
-config TIANOCORE_OPAL_PASSWORD
-	bool "Enable TianoCore TCG OPAL password"
-	default n
-	help
-	  Enables TCG OPAL disk password in the TianoCore Payload.
-
-config TIANOCORE_BOOT_MENU_KEY
-	hex "TianoCore boot menu key"
-	default 0x0016
-	help
-	  Select the TianoCore payload boot menu key:
-	  F1         0x000B
-	  F2         0x000C
-	  F3         0x000D
-	  F4         0x000E
-	  F5         0x000F
-	  F6         0x0010
-	  F7         0x0011
-	  F8         0x0012
-	  F9         0x0013
-	  F10        0x0014
-	  F11        0x0015
-	  F12        0x0016
+endif
 
 endif
