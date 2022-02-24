@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <arch/cbconfig.h>
+#include <commonlib/cbfs.h>
 #include <console/console.h>
 #include <console/uart.h>
 #include <ip_checksum.h>
@@ -252,6 +253,7 @@ static void add_cbmem_pointers(struct lb_header *header)
 		{CBMEM_ID_TCPA_LOG, LB_TAG_TCPA_LOG},
 		{CBMEM_ID_FMAP, LB_TAG_FMAP},
 		{CBMEM_ID_VBOOT_WORKBUF, LB_TAG_VBOOT_WORKBUF},
+		{CBMEM_ID_TIANOCORE_LOGO, LB_TAG_LOGO},
 	};
 	int i;
 
@@ -387,6 +389,50 @@ void __weak lb_board(struct lb_header *header) { /* NOOP */ }
  * not known.
  */
 void __weak lb_spi_flash(struct lb_header *header) { /* NOOP */ }
+
+
+/*
+ * Loads the logo bitmap file from the BOOTSPLASH fmap region into CBMEM
+ */
+static void tianocore_logo_load(void)
+{
+	const struct cbmem_entry *logo_entry;
+	struct region_device rdev;
+	struct bootlogo_header header;
+	void *logo_buffer;
+
+	struct cbfsf logo_file;
+	uint32_t compression;
+	uint32_t cbfs_type = CBFS_TYPE_RAW;
+	size_t logo_size;
+
+	logo_entry = cbmem_entry_add(CBMEM_ID_TIANOCORE_LOGO, 4 * MiB);
+	if (!logo_entry)
+		return;
+
+	logo_buffer = cbmem_entry_start(logo_entry);
+	if (!logo_buffer)
+		return;
+
+	if (cbfs_locate_file_in_region(&logo_file, "BOOTSPLASH",
+				       "logo.bmp", &cbfs_type) < 0)
+		return;
+
+	if (cbfsf_decompression_info(&logo_file, &compression, &logo_size) < 0)
+		return;
+
+	if (logo_size + sizeof(header) > 4 * MiB)
+		return;
+
+	/* Header of the CBMEM region, describes size of the bitmap */
+	header.size = logo_size;
+	memcpy(logo_buffer, &header, sizeof(header));
+
+	/* Load and decompress the actual bitmap */
+	cbfs_file_data(&rdev, &logo_file);
+	cbfs_load_and_decompress(&rdev, logo_buffer + sizeof(header),
+				 logo_size, compression, NULL);
+}
 
 static struct lb_forward *lb_forward(struct lb_header *header,
 	struct lb_header *next_header)
@@ -532,6 +578,8 @@ void *write_tables(void)
 	uintptr_t cbtable_end;
 	size_t cbtable_size;
 	const size_t max_table_size = COREBOOT_TABLE_SIZE;
+
+	tianocore_logo_load(); // wrong place for this
 
 	cbtable_start = (uintptr_t)cbmem_add(CBMEM_ID_CBTABLE, max_table_size);
 
