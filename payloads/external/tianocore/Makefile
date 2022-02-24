@@ -46,30 +46,6 @@ ifeq ($(CONFIG_TIANOCORE_SECURE_BOOT),y)
 build_flavor+= -D SECURE_BOOT_ENABLE=TRUE
 endif
 
-ifeq ($(CONFIG_TIANOCORE_ENABLE_IPXE),y)
-build_flavor+= -D NETWORK_IPXE=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_SERIAL),y)
-build_flavor+= -D SERIAL_TERMINAL=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_SECURE_BOOT),y)
-build_flavor+= -D SECURE_BOOT_ENABLE=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_ENABLE_IPXE),y)
-build_flavor+= -D NETWORK_IPXE=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_SERIAL),y)
-build_flavor+= -D SERIAL_TERMINAL=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_SECURE_BOOT),y)
-build_flavor+= -D SECURE_BOOT_ENABLE=TRUE
-endif
-
 ifeq ($(CONFIG_TIANOCORE_SATA_PASSWORD),y)
 build_flavor+= -D SATA_PASSWORD_ENABLE=TRUE
 endif
