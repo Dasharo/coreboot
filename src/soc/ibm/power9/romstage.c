@@ -355,6 +355,53 @@ static void prepare_dimm_data(uint8_t chips)
 		die("No DIMMs detected, aborting\n");
 }
 
+extern uint8_t sys_reset_thread_int[];
+extern uint8_t sys_reset_thread_int_end[];
+
+void second_thread(void);
+
+void second_thread(void)
+{
+	printk(BIOS_EMERG, "Hello from second thread\n");
+	for(;;);
+}
+
+static inline void sync_icache(void)
+{
+	asm volatile("sync; icbi 0,%0; sync; isync" : : "r" (0) : "memory");
+}
+
+static void start_second_thread(void)
+{
+#define CODE_SIZE(x) ((x ## _end) - (x))
+
+	printk(BIOS_EMERG, "%d\n", __LINE__);
+	memcpy((void *)0x100, sys_reset_thread_int, CODE_SIZE(sys_reset_thread_int));
+	printk(BIOS_EMERG, "%d\n", __LINE__);
+	sync_icache();
+
+	printk(BIOS_EMERG, "%d\n", __LINE__);
+
+	// No Precondition for Sreset; power management is handled by platform
+	// Clear blocking interrupts
+
+        // SW375288: Reads to C_RAS_MODEREG causes SPR corruption.
+	// For now, the code will assume no other bits are set and only
+	// set/clear mr_fence_interrupts
+	/* printk(BIOS_EMERG, "0x20010A9D = 0x%llx\n\n\n\n\n\n", read_rscom(0, 0x20010A9D)); */
+	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9D, 0);
+	printk(BIOS_EMERG, "%d\n\n\n\n\n\n", __LINE__);
+
+	// Setup & Initiate SReset Command
+	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
+	printk(BIOS_EMERG, "%d\n\n\n\n\n\n", __LINE__);
+
+	printk(BIOS_EMERG, "Waiting for second thread:\n");
+	for(;;);
+
+#undef CODE_SIZE
+}
+
 void main(void)
 {
 	uint8_t chips;
@@ -381,6 +428,8 @@ void main(void)
 	fsi_init();
 	chips = fsi_get_present_chips();
 	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
+
+	start_second_thread();
 
 	istep_8_1(chips);
 	istep_8_2(chips);

@@ -45,6 +45,7 @@ romstage-y += timer.c
 romstage-y += fsi.c
 romstage-y += sbeio.c
 romstage-y += xbus.c
+romstage-y += rom_int_vectors.S
 ramstage-y += chip.c
 ramstage-y += homer.c
 ramstage-y += rom_media.c
