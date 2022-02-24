@@ -201,7 +201,7 @@ static inline bool cbfs_file_hash_mismatch(const void *buffer, size_t size,
 	return true;
 }
 
-static size_t cbfs_load_and_decompress(const struct region_device *rdev, void *buffer,
+size_t cbfs_load_and_decompress(const struct region_device *rdev, void *buffer,
 				       size_t buffer_size, uint32_t compression,
 				       const struct vb2_hash *file_hash)
 {

@@ -101,6 +101,10 @@ static inline void *cbfs_ro_type_cbmem_alloc(const char *name, uint32_t cbmem_id
    order where possible, since mapping backends often don't support more complicated cases. */
 void cbfs_unmap(void *mapping);
 
+size_t cbfs_load_and_decompress(const struct region_device *rdev, void *buffer,
+				       size_t buffer_size, uint32_t compression,
+				       const struct vb2_hash *file_hash);
+
 /* Load stage into memory filling in prog. Return 0 on success. < 0 on error. */
 int cbfs_prog_stage_load(struct prog *prog);
 
