@@ -2,15 +2,14 @@ name: Build coreboot for the NV4x target
 on:
   push:
     branches:
-      - clevo_nv41mz/develop
-      - clevo_nv41mz/release
-      - clevo_nv41mz/ci
+      - tuxedo_ibs15/develop
+      - tuxedo_ibs15/release
   pull_request:
     branches:
-      - clevo_nv41mz/develop
-      - clevo_nv41mz/release
+      - tuxedo_ibs15/develop
+      - tuxedo_ibs15/release
     tags:
-      - 'clevo_nv41mz*'
+      - 'tuxedo_ibs15*'
 
 jobs:
   build:
@@ -55,17 +54,17 @@ jobs:
     - name: Checkout all submodules
       run: git submodule update --init --recursive --checkout
 
-    - name: Build NV4x target
+    - name: Build IBS15 target
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
         ./build.sh build
         EOF
 
-    - name: Save NV4x artifacts
+    - name: Save IBS15 artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: "dasharo-novacustom-nv41mz-$GITHUB_REF_NAME"
+        name: "dasharo-tuxedo-ibs15-$GITHUB_REF_NAME"
         path: |
           artifacts/
         retention-days: 7
