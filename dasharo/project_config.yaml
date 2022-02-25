@@ -4,10 +4,10 @@ file_version: v0.0.1
 dasharo:
   platform: clevo_ns50mu
   newsletter:
-    url: https://newsletter.3mdeb.com/subscription/T61MyO2sP
+    url: https://newsletter.3mdeb.com/subscription/T61MyO2sP # FIXME
 
 client:
-  name: Clevo
+  name: TUXEDO
 
 framework:
   name: coreboot
@@ -16,8 +16,8 @@ framework:
 
 components:
 - name: tianocore
-  version: 59ae285f1fd5cfc9ed599561077b03241eb7212d
-  url_template: https://github.com/3mdeb/edk2/commit/COMMIT_HASH
+  version: 9522071f7497a1a0b1077d2b0d5fcc97a126cfd0
+  url_template: https://github.com/Dasharo/edk2/commit/COMMIT_HASH
   path: payloads/external/tianocore/tianocore
 
 
@@ -29,7 +29,7 @@ documentation:
 
 platform:
   vendor: Tuxedo
-  model: IBS15
+  model: IBS15 Gen6
 
 tests:
   hardware_matrix: https://docs.dasharo.com/variants/clevo_ns50/testing_configuration/
@@ -37,4 +37,4 @@ tests:
   specification: https://novacustom.gitlab.io/dasharo-compatibility/dasharo-compatibility/
 
 asciinema:
-  signature_verification: https://asciinema.org/a/433461
+  signature_verification: https://asciinema.org/a/433461 # FIXME
