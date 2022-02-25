@@ -32,6 +32,7 @@ HASH_FILE="${FW_FILE%.*}.SHA256"
 SIG_FILE="${HASH_FILE}.sig"
 ARTIFACTS_DIR="artifacts"
 LOGO=""
+SDKVER="0ad5fbd48d"
 
 [ -z "$FW_VERSION" ] && errorExit "Failed to get FW_VERSION - CONFIG_LOCALVERSION is probably not set"
 
@@ -53,6 +54,25 @@ replace_logo() {
 }
 
 build() {
+  cp "${DEFCONFIG}" .config
+  make olddefconfig
+  if [[ -n $LOGO ]]; then
+    echo "Building with custom logo $LOGO"
+    replace_logo $LOGO
+  else
+    echo "Building with default logo"
+  fi
+  make clean
+  docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
+	  coreboot/coreboot-sdk:$SDKVER make -j "$(nproc)"
+  mkdir -p "${ARTIFACTS_DIR}"
+  cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
+  cd "${ARTIFACTS_DIR}"
+  sha256sum "${FW_FILE}" > "${HASH_FILE}"
+  cd -
+}
+
+build-CI() {
   cp "${DEFCONFIG}" .config
   make olddefconfig
   if [[ -n $LOGO ]]; then
@@ -114,6 +134,9 @@ done
 case "$CMD" in
     "build")
         build
+        ;;
+    "build-CI")
+        build-CI
         ;;
     "sign")
         sign
