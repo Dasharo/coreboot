@@ -362,6 +362,7 @@ void second_thread(void);
 
 void second_thread(void)
 {
+	/* write_rscom(1, 0x20010A9D, 0); */
 	printk(BIOS_EMERG, "Hello from second thread\n");
 	for(;;);
 }
@@ -394,6 +395,8 @@ static void start_second_thread(void)
 
 	// Setup & Initiate SReset Command
 	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
+
+	udelay(1000000);
 	printk(BIOS_EMERG, "%d\n\n\n\n\n\n", __LINE__);
 
 	printk(BIOS_EMERG, "Waiting for second thread:\n");
