@@ -358,12 +358,75 @@ static void prepare_dimm_data(uint8_t chips)
 extern uint8_t sys_reset_thread_int[];
 extern uint8_t sys_reset_thread_int_end[];
 
+static int lock = 0;
+volatile int value;
+
+static void a_barrier(void)
+{
+	__asm__ __volatile__ ("sync" : : : "memory");
+}
+
+static inline int a_ll(volatile int *p)
+{
+	int v;
+	__asm__ __volatile__ ("lwarx %0, 0, %2" : "=r"(v) : "m"(*p), "r"(p));
+	return v;
+}
+
+static inline int a_sc(volatile int *p, int v)
+{
+	int r;
+	__asm__ __volatile__ (
+		"stwcx. %2, 0, %3 ; mfcr %0"
+		: "=r"(r), "=m"(*p) : "r"(v), "r"(p) : "memory", "cc");
+	return r & 0x20000000; /* "bit 2" of "cr0" (backwards bit order) */
+}
+
+static inline void a_post_llsc(void)
+{
+	__asm__ __volatile__ ("isync" : : : "memory");
+}
+
+static inline int a_cas(volatile int *p, int v)
+{
+	int old;
+	a_barrier();
+	do
+		old = a_ll(p);
+	while (old == 0 && !a_sc(p, v));
+	a_post_llsc();
+	return old;
+}
+
+static inline void a_store(volatile int *p, int v)
+{
+	a_barrier();
+	*p = v;
+	a_barrier();
+}
+
+static int spin_lock(int *s)
+{
+	while (*(volatile int *)s || a_cas(s, 1) != 0)
+		a_barrier();
+	return 0;
+}
+
+static void spin_unlock(int *s)
+{
+	a_store(s, 0);
+}
+
 void second_thread(void);
 
 void second_thread(void)
 {
-	/* write_rscom(1, 0x20010A9D, 0); */
-	printk(BIOS_EMERG, "Hello from second thread\n");
+	// This should checkstop
+	*(int *)0x800623FC000F000F += 1;
+	write_rscom(1, 0x20010A9D, 0);
+	/* printk(BIOS_EMERG, "Hello from second thread\n"); */
+	value = 1234;
+	spin_unlock(&lock);
 	for(;;);
 }
 
@@ -382,6 +445,7 @@ static void start_second_thread(void)
 	sync_icache();
 
 	printk(BIOS_EMERG, "%d\n", __LINE__);
+	spin_lock(&lock);
 
 	// No Precondition for Sreset; power management is handled by platform
 	// Clear blocking interrupts
@@ -395,9 +459,13 @@ static void start_second_thread(void)
 
 	// Setup & Initiate SReset Command
 	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
-
-	udelay(1000000);
 	printk(BIOS_EMERG, "%d\n\n\n\n\n\n", __LINE__);
+
+	// Was there a race?
+
+	spin_lock(&lock);
+	printk(BIOS_EMERG, "%d\n\n\n\n\n\n", __LINE__);
+	printk(BIOS_EMERG, "%d: value = %d\n\n\n\n\n\n", __LINE__, *(volatile int *)&value);
 
 	printk(BIOS_EMERG, "Waiting for second thread:\n");
 	for(;;);
