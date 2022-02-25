@@ -22,7 +22,7 @@ usage() {
 
 # FIXME
 # Novacustom Open Source Firmware Release 0.x Signing Key
-GPG_FINGERPRINT="28D4793ADC3A588C"
+GPG_FINGERPRINT="FECB8B01334874A0"
 
 BOARD="tuxedo_ibs15"
 DEFCONFIG="configs/config.${BOARD}"
