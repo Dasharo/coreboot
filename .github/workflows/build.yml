@@ -1,4 +1,4 @@
-name: Build coreboot for the NV4x target
+name: Build coreboot for the IBS15 target
 on:
   push:
     branches:
