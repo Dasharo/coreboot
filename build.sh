@@ -20,10 +20,11 @@ usage() {
   exit 0
 }
 
+# FIXME
 # Novacustom Open Source Firmware Release 0.x Signing Key
-GPG_FINGERPRINT="FECB8B01334874A0"
+GPG_FINGERPRINT="28D4793ADC3A588C"
 
-BOARD="clevo_nv41mz"
+BOARD="tuxedo_ibs15"
 DEFCONFIG="configs/config.${BOARD}"
 FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 FW_FILE="dasharo_${BOARD}_${FW_VERSION}.rom"
@@ -74,7 +75,7 @@ sign() {
 upload() {
   if (git describe --exact-match --tags)
   then
-    REMOTE_DIR="/projects/novacustom/releases/${FW_VERSION}"
+    REMOTE_DIR="/projects/Tuxedo/releases/ibs15/${FW_VERSION}"
     FILES="${ARTIFACTS_DIR}/*"
     curl --fail -s -u $UPLOADER_USERNAME:$UPLOADER_PASSWORD -X MKCOL "${UPLOADER_URL}${REMOTE_DIR}"
     rm share_urls.txt && touch share_urls.txt
