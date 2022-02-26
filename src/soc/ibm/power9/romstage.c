@@ -358,7 +358,7 @@ static void prepare_dimm_data(uint8_t chips)
 extern uint8_t sys_reset_thread_int[];
 extern uint8_t sys_reset_thread_int_end[];
 
-static int lock = 0;
+int lock = 0;
 volatile int value;
 
 static void a_barrier(void)

@@ -57,6 +57,17 @@ sys_reset_thread_int:
 	/* TODO: Stack */
 	LOAD_IMM64(%r1, _esecond_stack)
 
+	// TODO next: try unlocking spinlock right here with and w/o C
+	LOAD_IMM64(%r3, value)
+	li      %r9,123
+	stw     %r9,0(%r3)
+
+	LOAD_IMM64(%r3, lock)
+	sync
+	li      %r9,0
+	stw     %r9,0(%r3)
+	sync
+
 	/* WARNING: this assumes that ramstage is not relocatable */
 	bl second_thread
 	b .
