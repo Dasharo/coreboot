@@ -102,6 +102,13 @@ jump:
 	;// Raise priority to high.
 	or 2,2,2
 
+	/* Load official procedure descriptor address for main() */
+	lis	%r12, main@ha
+	addi	%r12, %r12, main@l
+
+	/* Load TOC pointer */
+	ld		%r2, 8(%r12)
+
 	/* Stack */
 	LOAD_IMM64(%r1, _esecond_stack)
 	// subi	%r1, %r1, 16
