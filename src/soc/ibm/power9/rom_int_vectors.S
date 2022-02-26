@@ -27,11 +27,23 @@
 
 .section ".text", "ax", %progbits
 
+	. = 0x100
+sreset_vector:
+
 /*
  *
  */
 .globl sys_reset_thread_int
 sys_reset_thread_int:
+	LOAD_IMM32(%r0, jump)
+	// LOAD_IMM32(%r3, sys_reset_thread_int)
+	// subi %r3, %r3, 0x100
+	// add %r0, %r0, %r3
+	mtlr %r0
+	blr
+
+	b	jump + (sys_reset_thread_int - sreset_vector)
+
 	;// Raise priority to high.
 	or 2,2,2
 
@@ -56,26 +68,52 @@ sys_reset_thread_int:
 
 	/* TODO: Stack */
 	LOAD_IMM64(%r1, _esecond_stack)
+	subi	%r1, %r1, 16
+
+	stw     %r9,0(%r1)
+	lwz     %r9,0(%r1)
 
 	// TODO next: try unlocking spinlock right here with and w/o C
-	LOAD_IMM64(%r3, value)
-	li      %r9,123
-	stw     %r9,0(%r3)
+	// bl set_val
+	// LOAD_IMM64(%r3, lock)
+	// sync
+	// li      %r9,0
+	// stw     %r9,0(%r3)
+	// sync
 
-	LOAD_IMM64(%r3, lock)
-	sync
-	li      %r9,0
-	stw     %r9,0(%r3)
-	sync
+	/* WARNING: this assumes that romstage is not relocatable */
 
-	/* WARNING: this assumes that ramstage is not relocatable */
-	bl second_thread
-	b .
+	// LOAD_IMM32(%r0, second_thread)
+	// mtlr %r0
+	// blr
+
+	LOAD_IMM32(%r0, second_thread)
+	LOAD_IMM32(%r3, sys_reset_thread_int)
+	subi %r3, %r3, 0x100
+	add %r0, %r0, %r3
+	mtlr %r0
+	blr
 .globl sys_reset_thread_int_end
 sys_reset_thread_int_end:
 
 int_vector_check_size sys_reset_thread_int 0x100
 
+jump:
+	;// Raise priority to high.
+	or 2,2,2
+
+	/* Stack */
+	LOAD_IMM64(%r1, _esecond_stack)
+	// subi	%r1, %r1, 16
+
+	bl second_thread
+	b .
+
+set_val:
+	LOAD_IMM64(%r3, value)
+	li      %r9,123
+	stw     %r9,0(%r3)
+	blr
 
 // /*
 //  *

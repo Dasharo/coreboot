@@ -421,12 +421,23 @@ void second_thread(void);
 
 void second_thread(void)
 {
+	/* value = 1234; */
+	asm volatile(
+	"li   %%r3, 0\n"
+	"oris %%r3, %%r3, lock@h\n"
+	"ori  %%r3, %%r3, lock@l\n"
+	"sync\n"
+	"li   %%r9,0\n"
+	"stw  %%r9,0(%%r3)\n"
+	"sync\n"
+	::: "r3", "r9", "memory");
+
 	// This should checkstop
-	*(int *)0x800623FC000F000F += 1;
-	write_rscom(1, 0x20010A9D, 0);
+	/* *(int *)0x800623FC000F000F += 1; */
+	/* write_rscom(1, 0x20010A9D, 0); */
 	/* printk(BIOS_EMERG, "Hello from second thread\n"); */
-	value = 1234;
-	spin_unlock(&lock);
+	/* spin_unlock(&lock); */
+	(void)spin_unlock;
 	for(;;);
 }
 
