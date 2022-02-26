@@ -422,22 +422,7 @@ void second_thread(void);
 void second_thread(void)
 {
 	value = 1234;
-	/* asm volatile( */
-	/* "li   %%r3, 0\n" */
-	/* "oris %%r3, %%r3, lock@h\n" */
-	/* "ori  %%r3, %%r3, lock@l\n" */
-	/* "sync\n" */
-	/* "li   %%r9,0\n" */
-	/* "stw  %%r9,0(%%r3)\n" */
-	/* "sync\n" */
-	/* ::: "r3", "r9", "memory"); */
-
-	// This should checkstop
-	/* *(int *)0x800623FC000F000F += 1; */
-	/* write_rscom(1, 0x20010A9D, 0); */
-	/* printk(BIOS_EMERG, "Hello from second thread\n"); */
 	spin_unlock(&lock);
-	/* (void)spin_unlock; */
 }
 
 static inline void sync_icache(void)
@@ -449,36 +434,28 @@ static void start_second_thread(void)
 {
 #define CODE_SIZE(x) ((x ## _end) - (x))
 
-	printk(BIOS_EMERG, "%d\n", __LINE__);
 	memcpy((void *)0x100, sys_reset_thread_int, CODE_SIZE(sys_reset_thread_int));
-	printk(BIOS_EMERG, "%d\n", __LINE__);
 	sync_icache();
 
-	printk(BIOS_EMERG, "%d\n", __LINE__);
 	spin_lock(&lock);
 
-	// No Precondition for Sreset; power management is handled by platform
-	// Clear blocking interrupts
-
-        // SW375288: Reads to C_RAS_MODEREG causes SPR corruption.
-	// For now, the code will assume no other bits are set and only
-	// set/clear mr_fence_interrupts
-	/* printk(BIOS_EMERG, "0x20010A9D = 0x%llx\n\n\n\n\n\n", read_rscom(0, 0x20010A9D)); */
+	/*
+	 * No Precondition for Sreset; power management is handled by platform
+	 * Clear blocking interrupts
+	 */
+	/*
+	 * SW375288: Reads to C_RAS_MODEREG causes SPR corruption.
+	 * For now, the code will assume no other bits are set and only
+	 * set/clear mr_fence_interrupts
+	 */
 	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9D, 0);
-	printk(BIOS_EMERG, "%d\n\n\n\n\n\n", __LINE__);
 
-	// Setup & Initiate SReset Command
+	/* Setup & initiate SReset command for the second thread*/
 	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
-	printk(BIOS_EMERG, "%d\n\n\n\n\n\n", __LINE__);
-
-	// Was there a race?
 
 	spin_lock(&lock);
-	printk(BIOS_EMERG, "%d\n\n\n\n\n\n", __LINE__);
-	printk(BIOS_EMERG, "%d: value = %d\n\n\n\n\n\n", __LINE__, *(volatile int *)&value);
 
-	printk(BIOS_EMERG, "Waiting for second thread:\n");
-	for(;;);
+	printk(BIOS_EMERG, "value set by second thread = %d\n\t\t\t\t\t\n", value);
 
 #undef CODE_SIZE
 }
