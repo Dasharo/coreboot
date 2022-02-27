@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <console/console.h>
+#include <cpu/power/mvpd.h>
 #include <cpu/power/vpd.h>
 #include <cpu/power/istep_8.h>
 #include <cpu/power/istep_9.h>
@@ -16,6 +17,7 @@
 #include <spd_bin.h>
 #include <endian.h>
 #include <cbmem.h>
+#include <timer.h>
 #include <timestamp.h>
 
 #include "fsi.h"
@@ -425,9 +427,9 @@ static void spin_unlock(int *s)
 
 void second_thread(void);
 
-static void set_val(void *arg)
+static void load_voltage_data(void *arg)
 {
-	*(int *)arg = 1234;
+	mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
 }
 
 void second_thread(void)
@@ -473,13 +475,9 @@ static inline void sync_icache(void)
 
 static void start_second_thread(void)
 {
-#define CODE_SIZE(x) ((x ## _end) - (x))
-
-	memcpy((void *)0x100, sys_reset_thread_int, CODE_SIZE(sys_reset_thread_int));
+	memcpy((void *)0x100, sys_reset_thread_int,
+	       sys_reset_thread_int_end - sys_reset_thread_int);
 	sync_icache();
-
-	volatile int value;
-	on_second_thread(&set_val, (void *)&value);
 
 	/*
 	 * No Precondition for Sreset; power management is handled by platform
@@ -494,12 +492,46 @@ static void start_second_thread(void)
 
 	/* Setup & initiate SReset command for the second thread*/
 	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
+}
 
+static void stop_second_thread(void)
+{
+	enum {
+		C_RAS_MODEREG_MR_FENCE_INTERRUPTS = 57,
+	};
+
+	// Block interrupts while stopped
+	// SW375288: Reads to C_RAS_MODEREG causes SPR corruption.  For now,
+	// the code will assume no other bits are set and only set/clear
+	// mr_fence_interrupts.
+	// FAPI_TRY(fapi2::getScom(i_target, C_RAS_MODEREG, l_mode_data),
+	//         "p9_thread_control_step: getScom error when reading "
+	//         "ras_modreg for threads 0x%x", i_threads);
+	/* write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9D, PPC_BIT(57)); */
+
+	// Stop the threads
+	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 7);
+}
+
+static void build_mvpds(void)
+{
+	printk(BIOS_EMERG, "Building MVPDs...\n");
+
+	on_second_thread(&load_voltage_data, NULL);
+
+	struct mono_time before_sample;
+	timer_monotonic_get(&before_sample);
+
+	mvpd_get_voltage_data(/*chip=*/1, /*lrp=*/0);
 	wait_second_thread();
 
-	printk(BIOS_EMERG, "value set by second thread = %d\n\t\t\t\t\t\n", value);
+	struct mono_time after_sample;
+	timer_monotonic_get(&after_sample);
 
-#undef CODE_SIZE
+	long execution = mono_time_diff_microseconds(&before_sample, &after_sample);
+
+	printk(BIOS_EMERG, "Built MVPDs in %ld ms\n",
+	       DIV_ROUND_CLOSEST(execution, USECS_PER_MSEC));
 }
 
 void main(void)
@@ -530,6 +562,8 @@ void main(void)
 	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
 
 	start_second_thread();
+	build_mvpds();
+	stop_second_thread();
 
 	istep_8_1(chips);
 	istep_8_2(chips);
