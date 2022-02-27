@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
 #include <console/console.h>
 #include <cpu/power/vpd.h>
 #include <cpu/power/istep_8.h>
@@ -358,8 +359,9 @@ static void prepare_dimm_data(uint8_t chips)
 extern uint8_t sys_reset_thread_int[];
 extern uint8_t sys_reset_thread_int_end[];
 
-int lock = 0;
-volatile int value;
+static int job_lock;
+static void *job_arg;
+static void (*job_func)(void *arg);
 
 static void a_barrier(void)
 {
@@ -407,8 +409,12 @@ static inline void a_store(volatile int *p, int v)
 
 static int spin_lock(int *s)
 {
+	asm volatile("or 31,31,31");	// Lower priority
+
 	while (*(volatile int *)s || a_cas(s, 1) != 0)
 		a_barrier();
+
+	asm volatile("or 2,2,2");	// Back to normal priority
 	return 0;
 }
 
@@ -419,10 +425,45 @@ static void spin_unlock(int *s)
 
 void second_thread(void);
 
+static void set_val(void *arg)
+{
+	*(int *)arg = 1234;
+}
+
 void second_thread(void)
 {
-	value = 1234;
-	spin_unlock(&lock);
+	while (true) {
+		spin_lock(&job_lock);
+		if (job_func != NULL) {
+			job_func(job_arg);
+
+			job_func = NULL;
+			job_arg = NULL;
+		}
+		spin_unlock(&job_lock);
+	}
+}
+
+static void wait_second_thread(void)
+{
+	bool done = false;
+
+	while (!done) {
+		spin_lock(&job_lock);
+		done = (job_func == NULL);
+		spin_unlock(&job_lock);
+	}
+}
+
+static void on_second_thread(void (*func)(void *arg), void *arg)
+{
+	wait_second_thread();
+
+	spin_lock(&job_lock);
+	assert(job_func == NULL);
+	job_func = func;
+	job_arg = arg;
+	spin_unlock(&job_lock);
 }
 
 static inline void sync_icache(void)
@@ -437,7 +478,8 @@ static void start_second_thread(void)
 	memcpy((void *)0x100, sys_reset_thread_int, CODE_SIZE(sys_reset_thread_int));
 	sync_icache();
 
-	spin_lock(&lock);
+	volatile int value;
+	on_second_thread(&set_val, (void *)&value);
 
 	/*
 	 * No Precondition for Sreset; power management is handled by platform
@@ -453,7 +495,7 @@ static void start_second_thread(void)
 	/* Setup & initiate SReset command for the second thread*/
 	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
 
-	spin_lock(&lock);
+	wait_second_thread();
 
 	printk(BIOS_EMERG, "value set by second thread = %d\n\t\t\t\t\t\n", value);
 
