@@ -6,9 +6,11 @@
 #include <cpu/power/spr.h>
 #include <console/console.h>
 #include <timer.h>
+#include <timestamp.h>
 
 #include "istep_13_scom.h"
 #include "mcbist.h"
+#include "thread.h"
 
 /*
  * 14.1 mss_memdiag: Mainstore Pattern Testing
@@ -539,17 +541,32 @@ static void mss_memdiag(uint8_t chip)
 	}
 }
 
+static void mss_memdiag_bg(void *arg)
+{
+	mss_memdiag(1);
+}
+
 void istep_14_1(uint8_t chips)
 {
-	uint8_t chip;
+	/* uint8_t chip; */ 
 
 	printk(BIOS_EMERG, "starting istep 14.1\n");
 	report_istep(14,1);
 
-	for (chip = 0; chip < MAX_CHIPS; chip++) {
-		if (chips & (1 << chip))
-			mss_memdiag(chip);
-	}
+	struct mono_time before_sample;
+	timer_monotonic_get(&before_sample);
+
+	on_second_thread(&mss_memdiag_bg, NULL);
+	mss_memdiag(0);
+	wait_second_thread();
+
+	struct mono_time after_sample;
+	timer_monotonic_get(&after_sample);
+
+	long execution = mono_time_diff_microseconds(&before_sample, &after_sample);
+
+	printk(BIOS_EMERG, "memdiag took %ld ms\n",
+	       DIV_ROUND_CLOSEST(execution, USECS_PER_MSEC));
 
 	printk(BIOS_EMERG, "ending istep 14.1\n");
 }

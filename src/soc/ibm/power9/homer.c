@@ -1661,7 +1661,7 @@ static void wait_for_occ_response(struct homer_st *homer, uint32_t timeout_sec,
 {
 	enum {
 		// FIXME: this might be too small, OCC polls started to fail, might be related 
-		OCC_RSP_SAMPLE_TIME_US = 20,
+		OCC_RSP_SAMPLE_TIME_US = 30,
 		OCC_COMMAND_IN_PROGRESS = 0xFF,
 	};
 

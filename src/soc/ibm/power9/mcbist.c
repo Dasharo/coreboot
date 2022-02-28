@@ -19,8 +19,8 @@
  * TODO: if we were to run both MCBISTs in parallel, we would need separate
  * instances of those...
  */
-static uint64_t mcbist_memreg_cache;
-static unsigned tests;
+static uint64_t mcbist_memreg_cache[MAX_CHIPS];
+static unsigned tests[MAX_CHIPS];
 
 #define ECC_MODE	0x0008
 #define DONE		0x0004
@@ -62,7 +62,7 @@ enum op_type
 static void commit_mcbist_memreg_cache(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	int reg = (tests - 1) / MCBIST_TESTS_PER_REG;
+	int reg = (tests[chip] - 1) / MCBIST_TESTS_PER_REG;
 
 	if (reg < 0)
 		die("commit_mcbist_memreg_cache() called without adding tests first!\n");
@@ -71,19 +71,19 @@ static void commit_mcbist_memreg_cache(uint8_t chip, int mcs_i)
 		die("Too many MCBIST instructions added\n");
 
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBMR<reg>Q */
-	write_rscom_for_chiplet(chip, id, MCBMR0Q + reg, mcbist_memreg_cache);
-	mcbist_memreg_cache = 0;
+	write_rscom_for_chiplet(chip, id, MCBMR0Q + reg, mcbist_memreg_cache[chip]);
+	mcbist_memreg_cache[chip] = 0;
 }
 
 static void add_mcbist_test(uint8_t chip, int mcs_i, uint16_t test)
 {
-	int test_i = tests % MCBIST_TESTS_PER_REG;
-	if (test_i == 0 && tests != 0)
+	int test_i = tests[chip] % MCBIST_TESTS_PER_REG;
+	if (test_i == 0 && tests[chip] != 0)
 		commit_mcbist_memreg_cache(chip, mcs_i);
 
 	/* This assumes cache is properly cleared. */
-	mcbist_memreg_cache |= PPC_PLACE(test, test_i*16, 16);
-	tests++;
+	mcbist_memreg_cache[chip] |= PPC_PLACE(test, test_i*16, 16);
+	tests[chip]++;
 }
 
 /*
@@ -148,7 +148,7 @@ void mcbist_execute(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	/* This is index of last instruction, not the new one. */
-	int test_i = (tests - 1) % MCBIST_TESTS_PER_REG;
+	int test_i = (tests[chip] - 1) % MCBIST_TESTS_PER_REG;
 	uint64_t val;
 
 	/*
@@ -159,7 +159,7 @@ void mcbist_execute(uint8_t chip, int mcs_i)
 	 * Another possibility would be to start MCBIST with single no-op test (goto
 	 * with DONE bit set), but this may unnecessarily make things slower.
 	 */
-	if (tests == 0)
+	if (tests[chip] == 0)
 		return;
 
 	/* Check if in progress */
@@ -174,7 +174,7 @@ void mcbist_execute(uint8_t chip, int mcs_i)
 	 * is tells that MCBIST should stop after this test, but this is how it is
 	 * named in the documentation.
 	 */
-	mcbist_memreg_cache |= PPC_BIT(13 + test_i*16);
+	mcbist_memreg_cache[chip] |= PPC_BIT(13 + test_i*16);
 	commit_mcbist_memreg_cache(chip, mcs_i);
 
 	/* MC01.MCBIST.MBA_SCOMFIR.MCB_CNTLQ
@@ -198,7 +198,7 @@ void mcbist_execute(uint8_t chip, int mcs_i)
 		printk(BIOS_INFO, "MCBIST started after delay\n");
 	}
 
-	tests = 0;
+	tests[chip] = 0;
 }
 
 /*

@@ -412,8 +412,8 @@ void main(void)
 	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
 
 	start_second_thread();
+
 	build_mvpds();
-	stop_second_thread();
 
 	istep_8_1(chips);
 	istep_8_2(chips);
@@ -458,6 +458,8 @@ void main(void)
 	istep_14_3(chips, pci_info);
 	report_istep(14,4);	// no-op
 	istep_14_5(chips);
+
+	stop_second_thread();
 
 	timestamp_add_now(TS_AFTER_INITRAM);
 
