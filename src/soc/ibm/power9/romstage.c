@@ -362,6 +362,7 @@ extern uint8_t sys_reset_thread_int[];
 extern uint8_t sys_reset_thread_int_end[];
 
 static int job_lock;
+static int job_done;
 static void *job_arg;
 static void (*job_func)(void *arg);
 
@@ -432,18 +433,31 @@ static void load_voltage_data(void *arg)
 	mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
 }
 
+static void setPSSCR(uint64_t _psscr)
+{
+    register uint64_t psscr = _psscr;
+    asm volatile("mtspr 855, %0; isync; stop" :: "r" (psscr));
+}
+
 void second_thread(void)
 {
-	while (true) {
+	bool done = false;
+	while (!done) {
 		spin_lock(&job_lock);
+
 		if (job_func != NULL) {
 			job_func(job_arg);
 
 			job_func = NULL;
 			job_arg = NULL;
 		}
+
+		done = job_done;
 		spin_unlock(&job_lock);
 	}
+	// Set register to indicate we want a 'stop 15' to ocur (state loss)
+	setPSSCR( 0x00000000003F00FF );
+	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 7);
 }
 
 static void wait_second_thread(void)
@@ -509,8 +523,12 @@ static void stop_second_thread(void)
 	//         "ras_modreg for threads 0x%x", i_threads);
 	/* write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9D, PPC_BIT(57)); */
 
+	spin_lock(&job_lock);
+	job_done = 1;
+	spin_unlock(&job_lock);
+
 	// Stop the threads
-	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 7);
+	/* write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 7); */
 }
 
 static void build_mvpds(void)
