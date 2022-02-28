@@ -361,10 +361,13 @@ static void prepare_dimm_data(uint8_t chips)
 extern uint8_t sys_reset_thread_int[];
 extern uint8_t sys_reset_thread_int_end[];
 
-static int job_lock;
-static int job_done;
-static void *job_arg;
-static void (*job_func)(void *arg);
+static struct {
+	int lock;
+	bool exit_requested;
+
+	void *task_arg;
+	void (*task_func)(void *arg);
+} job_thread;
 
 static void a_barrier(void)
 {
@@ -433,31 +436,30 @@ static void load_voltage_data(void *arg)
 	mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
 }
 
-static void setPSSCR(uint64_t _psscr)
+static void stop_15_thread(void)
 {
-    register uint64_t psscr = _psscr;
-    asm volatile("mtspr 855, %0; isync; stop" :: "r" (psscr));
+	/* Set register to indicate we want a 'stop 15' to ocur (state loss) and perform
+	 * the STOP */
+	asm volatile("mtspr 855, %0; isync; stop" :: "r" (0x00000000003F00FF));
 }
 
 void second_thread(void)
 {
 	bool done = false;
 	while (!done) {
-		spin_lock(&job_lock);
+		spin_lock(&job_thread.lock);
 
-		if (job_func != NULL) {
-			job_func(job_arg);
+		if (job_thread.task_func != NULL) {
+			job_thread.task_func(job_thread.task_arg);
 
-			job_func = NULL;
-			job_arg = NULL;
+			job_thread.task_func = NULL;
+			job_thread.task_arg = NULL;
 		}
 
-		done = job_done;
-		spin_unlock(&job_lock);
+		done = job_thread.exit_requested;
+		spin_unlock(&job_thread.lock);
 	}
-	// Set register to indicate we want a 'stop 15' to ocur (state loss)
-	setPSSCR( 0x00000000003F00FF );
-	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 7);
+	stop_15_thread();
 }
 
 static void wait_second_thread(void)
@@ -465,9 +467,9 @@ static void wait_second_thread(void)
 	bool done = false;
 
 	while (!done) {
-		spin_lock(&job_lock);
-		done = (job_func == NULL);
-		spin_unlock(&job_lock);
+		spin_lock(&job_thread.lock);
+		done = (job_thread.task_func == NULL);
+		spin_unlock(&job_thread.lock);
 	}
 }
 
@@ -475,11 +477,11 @@ static void on_second_thread(void (*func)(void *arg), void *arg)
 {
 	wait_second_thread();
 
-	spin_lock(&job_lock);
-	assert(job_func == NULL);
-	job_func = func;
-	job_arg = arg;
-	spin_unlock(&job_lock);
+	spin_lock(&job_thread.lock);
+	assert(job_thread.task_func == NULL);
+	job_thread.task_func = func;
+	job_thread.task_arg = arg;
+	spin_unlock(&job_thread.lock);
 }
 
 static inline void sync_icache(void)
@@ -510,25 +512,9 @@ static void start_second_thread(void)
 
 static void stop_second_thread(void)
 {
-	enum {
-		C_RAS_MODEREG_MR_FENCE_INTERRUPTS = 57,
-	};
-
-	// Block interrupts while stopped
-	// SW375288: Reads to C_RAS_MODEREG causes SPR corruption.  For now,
-	// the code will assume no other bits are set and only set/clear
-	// mr_fence_interrupts.
-	// FAPI_TRY(fapi2::getScom(i_target, C_RAS_MODEREG, l_mode_data),
-	//         "p9_thread_control_step: getScom error when reading "
-	//         "ras_modreg for threads 0x%x", i_threads);
-	/* write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9D, PPC_BIT(57)); */
-
-	spin_lock(&job_lock);
-	job_done = 1;
-	spin_unlock(&job_lock);
-
-	// Stop the threads
-	/* write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 7); */
+	spin_lock(&job_thread.lock);
+	job_thread.exit_requested = 1;
+	spin_unlock(&job_thread.lock);
 }
 
 static void build_mvpds(void)
