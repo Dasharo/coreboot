@@ -361,72 +361,72 @@ static void prepare_dimm_data(uint8_t chips)
 extern uint8_t sys_reset_thread_int[];
 extern uint8_t sys_reset_thread_int_end[];
 
+struct spin_lock_t {
+	volatile int value;
+};
+
 static struct {
-	int lock;
+	struct spin_lock_t lock;
 	bool exit_requested;
 
 	void *task_arg;
 	void (*task_func)(void *arg);
 } job_thread;
 
-static void a_barrier(void)
+static void sync(void)
 {
-	__asm__ __volatile__ ("sync" : : : "memory");
+	asm volatile("sync" ::: "memory");
 }
 
-static inline int a_ll(volatile int *p)
+static inline int load_and_reserve(volatile int *p)
 {
 	int v;
-	__asm__ __volatile__ ("lwarx %0, 0, %2" : "=r"(v) : "m"(*p), "r"(p));
+	asm volatile ("lwarx %0, 0, %2" : "=r"(v) : "m"(*p), "r"(p));
 	return v;
 }
 
-static inline int a_sc(volatile int *p, int v)
+static inline int store_if_reserved(volatile int *p, int v)
 {
 	int r;
-	__asm__ __volatile__ (
-		"stwcx. %2, 0, %3 ; mfcr %0"
-		: "=r"(r), "=m"(*p) : "r"(v), "r"(p) : "memory", "cc");
-	return r & 0x20000000; /* "bit 2" of "cr0" (backwards bit order) */
+	asm volatile ("stwcx. %2, 0, %3 ; mfcr %0" :
+		      "=r"(r), "=m"(*p) : "r"(v), "r"(p) : "memory", "cc");
+	return r & 0x20000000;
 }
 
-static inline void a_post_llsc(void)
-{
-	__asm__ __volatile__ ("isync" : : : "memory");
-}
-
-static inline int a_cas(volatile int *p, int v)
+static inline int compare_and_swap(volatile int *p, int v)
 {
 	int old;
-	a_barrier();
+	sync();
+
 	do
-		old = a_ll(p);
-	while (old == 0 && !a_sc(p, v));
-	a_post_llsc();
+		old = load_and_reserve(p);
+	while (old == 0 && store_if_reserved(p, v) == 0);
+
+	asm volatile ("isync" ::: "memory");
 	return old;
 }
 
-static inline void a_store(volatile int *p, int v)
+static inline void atomic_store(volatile int *p, int v)
 {
-	a_barrier();
+	sync();
 	*p = v;
-	a_barrier();
+	sync();
 }
 
-static int spin_lock(int *s)
+static int spin_lock(struct spin_lock_t *s)
 {
 	asm volatile("or 31,31,31");	// Lower priority
 
-	while (*(volatile int *)s || a_cas(s, 1) != 0)
-		a_barrier();
+	while (s->value || compare_and_swap(&s->value, 1) != 0)
+		sync();
 
 	asm volatile("or 2,2,2");	// Back to normal priority
 	return 0;
 }
 
-static void spin_unlock(int *s)
+static void spin_unlock(struct spin_lock_t *s)
 {
-	a_store(s, 0);
+	atomic_store(&s->value, 0);
 }
 
 void second_thread(void);
