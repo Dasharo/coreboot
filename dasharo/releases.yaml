@@ -144,6 +144,8 @@ releases:
           removed:
                 - Removed proprietary blobs from built coreboot images
           known_issues:
+                - description: Custom fan curve is not functional after suspend
+                  url: https://github.com/Dasharo/dasharo-issues/issues/45
                 - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
                 - description: USB4 Root Device Router device displays an error in Windows 11 Device Manager
