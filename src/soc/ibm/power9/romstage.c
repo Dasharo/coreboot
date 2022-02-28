@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <assert.h>
 #include <console/console.h>
 #include <cpu/power/mvpd.h>
 #include <cpu/power/vpd.h>
@@ -21,6 +20,7 @@
 #include <timestamp.h>
 
 #include "fsi.h"
+#include "thread.h"
 #include "pci.h"
 
 mcbist_data_t mem_data[MAX_CHIPS];
@@ -358,163 +358,9 @@ static void prepare_dimm_data(uint8_t chips)
 		die("No DIMMs detected, aborting\n");
 }
 
-extern uint8_t sys_reset_thread_int[];
-extern uint8_t sys_reset_thread_int_end[];
-
-struct spin_lock_t {
-	volatile int value;
-};
-
-static struct {
-	struct spin_lock_t lock;
-	bool exit_requested;
-
-	void *task_arg;
-	void (*task_func)(void *arg);
-} job_thread;
-
-static void sync(void)
-{
-	asm volatile("sync" ::: "memory");
-}
-
-static inline int load_and_reserve(volatile int *p)
-{
-	int v;
-	asm volatile ("lwarx %0, 0, %2" : "=r"(v) : "m"(*p), "r"(p));
-	return v;
-}
-
-static inline int store_if_reserved(volatile int *p, int v)
-{
-	int r;
-	asm volatile ("stwcx. %2, 0, %3 ; mfcr %0" :
-		      "=r"(r), "=m"(*p) : "r"(v), "r"(p) : "memory", "cc");
-	return r & 0x20000000;
-}
-
-static inline int compare_and_swap(volatile int *p, int v)
-{
-	int old;
-	sync();
-
-	do
-		old = load_and_reserve(p);
-	while (old == 0 && store_if_reserved(p, v) == 0);
-
-	asm volatile ("isync" ::: "memory");
-	return old;
-}
-
-static inline void atomic_store(volatile int *p, int v)
-{
-	sync();
-	*p = v;
-	sync();
-}
-
-static int spin_lock(struct spin_lock_t *s)
-{
-	asm volatile("or 31,31,31");	// Lower priority
-
-	while (s->value || compare_and_swap(&s->value, 1) != 0)
-		sync();
-
-	asm volatile("or 2,2,2");	// Back to normal priority
-	return 0;
-}
-
-static void spin_unlock(struct spin_lock_t *s)
-{
-	atomic_store(&s->value, 0);
-}
-
-void second_thread(void);
-
 static void load_voltage_data(void *arg)
 {
 	mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
-}
-
-static void stop_15_thread(void)
-{
-	/* Set register to indicate we want a 'stop 15' to ocur (state loss) and perform
-	 * the STOP */
-	asm volatile("mtspr 855, %0; isync; stop" :: "r" (0x00000000003F00FF));
-}
-
-void second_thread(void)
-{
-	bool done = false;
-	while (!done) {
-		spin_lock(&job_thread.lock);
-
-		if (job_thread.task_func != NULL) {
-			job_thread.task_func(job_thread.task_arg);
-
-			job_thread.task_func = NULL;
-			job_thread.task_arg = NULL;
-		}
-
-		done = job_thread.exit_requested;
-		spin_unlock(&job_thread.lock);
-	}
-	stop_15_thread();
-}
-
-static void wait_second_thread(void)
-{
-	bool done = false;
-
-	while (!done) {
-		spin_lock(&job_thread.lock);
-		done = (job_thread.task_func == NULL);
-		spin_unlock(&job_thread.lock);
-	}
-}
-
-static void on_second_thread(void (*func)(void *arg), void *arg)
-{
-	wait_second_thread();
-
-	spin_lock(&job_thread.lock);
-	assert(job_thread.task_func == NULL);
-	job_thread.task_func = func;
-	job_thread.task_arg = arg;
-	spin_unlock(&job_thread.lock);
-}
-
-static inline void sync_icache(void)
-{
-	asm volatile("sync; icbi 0,%0; sync; isync" : : "r" (0) : "memory");
-}
-
-static void start_second_thread(void)
-{
-	memcpy((void *)0x100, sys_reset_thread_int,
-	       sys_reset_thread_int_end - sys_reset_thread_int);
-	sync_icache();
-
-	/*
-	 * No Precondition for Sreset; power management is handled by platform
-	 * Clear blocking interrupts
-	 */
-	/*
-	 * SW375288: Reads to C_RAS_MODEREG causes SPR corruption.
-	 * For now, the code will assume no other bits are set and only
-	 * set/clear mr_fence_interrupts
-	 */
-	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9D, 0);
-
-	/* Setup & initiate SReset command for the second thread*/
-	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
-}
-
-static void stop_second_thread(void)
-{
-	spin_lock(&job_thread.lock);
-	job_thread.exit_requested = 1;
-	spin_unlock(&job_thread.lock);
 }
 
 static void build_mvpds(void)
