@@ -4,3 +4,7 @@ config BOARD_CLEVO_NV4X
 	bool "NV4x"
 	select BOARD_CLEVO_NV4X_BASE
 
+config BOARD_CLEVO_NS5X
+	bool "NS5x"
+	select BOARD_CLEVO_NS5X_BASE
+

@@ -26,6 +26,10 @@ config BOARD_CLEVO_NV4X_BASE
 	select BOARD_CLEVO_TGL_U_COMMON
 	select DRIVER_NVIDIA_OPTIMUS
 
+config BOARD_CLEVO_NS5X_BASE
+	bool "NS5x"
+	select BOARD_CLEVO_TGL_U_COMMON
+
 if BOARD_CLEVO_TGL_U_COMMON
 
 config MAINBOARD_DIR
@@ -35,10 +39,12 @@ config MAINBOARD_DIR
 config VARIANT_DIR
 	string
 	default "nv4x" if BOARD_CLEVO_NV4X_BASE
+	default "ns5x" if BOARD_CLEVO_NS5X_BASE
 
 config MAINBOARD_PART_NUMBER
 	string
 	default "nv4x" if BOARD_CLEVO_NV4X
+	default "ns5x" if BOARD_CLEVO_NS5X
 
 config MAX_CPUS
 	int
