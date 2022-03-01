@@ -360,28 +360,29 @@ static void prepare_dimm_data(uint8_t chips)
 
 static void load_voltage_data(void *arg)
 {
-	mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
+	(void)mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
 }
 
 static void build_mvpds(void)
 {
+	struct mono_time before_sample;
+	struct mono_time after_sample;
+	long duration_us;
+
 	printk(BIOS_EMERG, "Building MVPDs...\n");
 
-	on_second_thread(&load_voltage_data, NULL);
-
-	struct mono_time before_sample;
 	timer_monotonic_get(&before_sample);
 
-	mvpd_get_voltage_data(/*chip=*/1, /*lrp=*/0);
+	on_second_thread(&load_voltage_data, NULL);
+	(void)mvpd_get_voltage_data(/*chip=*/1, /*lrp=*/0);
 	wait_second_thread();
 
-	struct mono_time after_sample;
 	timer_monotonic_get(&after_sample);
 
-	long execution = mono_time_diff_microseconds(&before_sample, &after_sample);
+	duration_us = mono_time_diff_microseconds(&before_sample, &after_sample);
 
 	printk(BIOS_EMERG, "Built MVPDs in %ld ms\n",
-	       DIV_ROUND_CLOSEST(execution, USECS_PER_MSEC));
+	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
 }
 
 void main(void)
@@ -418,7 +419,17 @@ void main(void)
 	istep_8_1(chips);
 	istep_8_2(chips);
 	istep_8_3(chips);
+
+	struct mono_time before_sample;
+	timer_monotonic_get(&before_sample);
+	// It takes SBE about 5s to boot.
 	istep_8_4(chips);
+	struct mono_time after_sample;
+	timer_monotonic_get(&after_sample);
+	long duration_us = mono_time_diff_microseconds(&before_sample, &after_sample);
+	printk(BIOS_EMERG, "TIME is %ld ms\n",
+	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
+
 	istep_8_9(chips);
 	istep_8_10(chips);
 	istep_8_11(chips);
@@ -436,9 +447,11 @@ void main(void)
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
+	// these two take 0.35s
 	vpd_pnor_main();
 	prepare_dimm_data(chips);
 
+	// isteps 13.* take 0.3s in total 
 	report_istep(13,1);	// no-op
 	istep_13_2(chips);
 	istep_13_3(chips);
@@ -453,6 +466,8 @@ void main(void)
 	report_istep(13,12);	// optional, not yet implemented
 	istep_13_13(chips);
 
+	// only 14.1 takes noticeable amount of time:
+	// 3.5s (after small optimization without threads)
 	istep_14_1(chips);
 	istep_14_2(chips);
 	istep_14_3(chips, pci_info);

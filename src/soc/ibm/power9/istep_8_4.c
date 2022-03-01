@@ -22,7 +22,7 @@ static bool sbe_run_extract_msg_reg(uint8_t chip)
 	};
 
 	/* Each sbe gets 60s to respond with the fact that it's booted and at
-	 * runtime (stable state). Sleep time should be 1 second on HW. */
+	 * runtime (stable state). */
 	uint64_t SBE_WAIT_SLEEP_SEC = (SBE_RETRY_TIMEOUT_HW_SEC / SBE_RETRY_NUM_LOOPS);
 
 	/*
