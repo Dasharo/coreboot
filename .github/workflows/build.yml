@@ -4,6 +4,7 @@ on:
     branches:
       - tuxedo_ibs15/develop
       - tuxedo_ibs15/release
+      - 'tuxedo_ibs15/rel_*'
   pull_request:
     branches:
       - tuxedo_ibs15/develop
