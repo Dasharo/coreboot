@@ -290,12 +290,12 @@ Field (ERAM, ByteAcc, Lock, Preserve)
 OperationRegion (EC81, EmbeddedControl, Zero, 0xFF)
 Field (EC81, ByteAcc, Lock, Preserve)
 {
-	Offset (0xF8), 
-	FCMD,   8, 
-	FDAT,   8, 
-	FBUF,   8, 
-	FBF1,   8, 
-	FBF2,   8, 
+	Offset (0xF8),
+	FCMD,   8,
+	FDAT,   8,
+	FBUF,   8,
+	FBF1,   8,
+	FBF2,   8,
 	FBF3,   8
 }
 

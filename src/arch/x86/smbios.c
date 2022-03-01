@@ -285,9 +285,6 @@ static const char *get_bios_framework_string(void)
 	if (CONFIG(PAYLOAD_TIANOCORE))
 		return "coreboot+UEFI";
 
-	if (CONFIG(PAYLOAD_HEADS))
-		return "coreboot+Heads";
-
 	return "coreboot";
 }
 
@@ -332,7 +329,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 		BIOS_CHARACTERISTICS_UPGRADEABLE;
 
 	t->bios_characteristics_ext1 = BIOS_EXT1_CHARACTERISTICS_USB_LEGACY;
-	
+
 	t->bios_characteristics_ext2 = BIOS_EXT2_CHARACTERISTICS_TARGET;
 
 	if (CONFIG(CARDBUS_PLUGIN_SUPPORT))
