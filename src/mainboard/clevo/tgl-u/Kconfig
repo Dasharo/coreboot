@@ -109,4 +109,14 @@ config TPM_PIRQ
 	hex
 	default 0x1C # GPP_C14
 
+# PM Timer Disabled, saves power
+config USE_PM_ACPI_TIMER
+	default n
+
+# Getting the console output requires soldering the wires to the mainboard.
+# Disable the serial output by default as it won't be commonly used and will
+# only make the boot time longer.
+config CONSOLE_SERIAL
+	default n
+
 endif # BOARD_CLEVO_TGL_U_COMMON
