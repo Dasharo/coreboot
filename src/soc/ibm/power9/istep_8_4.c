@@ -17,13 +17,18 @@ static bool sbe_run_extract_msg_reg(uint8_t chip)
 		/* SBE is in its operational (runtime) state */
 		SBE_STATE_RUNTIME = 0x4,
 
-		SBE_RETRY_TIMEOUT_HW_SEC = 60,
-		SBE_RETRY_NUM_LOOPS = 60,
+		/*
+		 * Much higher frequency of polling buys us about 333ms here.
+		 * Can also wait with second precision at first (4 seconds) as SBE boots in
+		 * 4.7s every time.
+		 */
+		SBE_RETRY_TIMEOUT_HW_MS = 60 * 1000,
+		SBE_RETRY_NUM_LOOPS = 60 * 100, // 100 times per second
 	};
 
 	/* Each sbe gets 60s to respond with the fact that it's booted and at
 	 * runtime (stable state). */
-	uint64_t SBE_WAIT_SLEEP_SEC = (SBE_RETRY_TIMEOUT_HW_SEC / SBE_RETRY_NUM_LOOPS);
+	uint64_t SBE_WAIT_SLEEP_MS = (SBE_RETRY_TIMEOUT_HW_MS / SBE_RETRY_NUM_LOOPS);
 
 	/*
 	 * Layout of the register:
@@ -51,11 +56,12 @@ static bool sbe_run_extract_msg_reg(uint8_t chip)
 		if (msg_reg & (1 << 30))
 			break;
 
-		printk(BIOS_EMERG, "SBE for chip #%d is booting...\n", chip);
+		if ((i * SBE_WAIT_SLEEP_MS) % 1000 == 0)
+			printk(BIOS_EMERG, "SBE for chip #%d is booting...\n", chip);
 
 		/* Hostboot resets watchdog before sleeping, we might want to
 		 * do it too or just increase timer after experimenting. */
-		delay(SBE_WAIT_SLEEP_SEC);
+		mdelay(SBE_WAIT_SLEEP_MS);
 	}
 
 	/* We reach this line only if something is wrong with SBE */
