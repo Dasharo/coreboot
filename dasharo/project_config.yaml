@@ -1,4 +1,5 @@
 # Dasharo project configuration data
+file_version: 1.0.0
 
 dasharo:
         platform: clevo_nv41mz
@@ -11,7 +12,7 @@ client:
 framework:
         name: coreboot
         version: ae9a8447
-        url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
+        url_template: https://github.com/Dasharo/coreboot/tree/COMMIT_HASH
 
 components:
         - name: edk2
@@ -24,10 +25,10 @@ components:
           url_template: https://gitlab.com/novacustom/blobs/-/tree/COMMIT_HASH
 
 documentation:
-        name: Dasharo Compatibility
-        url: https://novacustom.gitlab.io/dasharo-compatibility/
-        building_url: https://novacustom.gitlab.io/dasharo-compatibility/hardware/clevo-nv41/building/
-        flashing_url: https://novacustom.gitlab.io/dasharo-compatibility/hardware/clevo-nv41/flashing_internal/
+        name: Dasharo Documentation
+        url: https://docs.dasharo.com/
+        building_url: https://docs.dasharo.com/variants/clevo_nv41/building/
+        flashing_url: https://docs.dasharo.com/variants/clevo_nv41/flashing_internal/
 
 platform:
         vendor: Clevo
