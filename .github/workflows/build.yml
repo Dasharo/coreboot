@@ -64,7 +64,7 @@ jobs:
     - name: Save IBS15 artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: "dasharo-tuxedo-ibs15-$GITHUB_REF_NAME"
+        name: "dasharo-tuxedo-ibs15"
         path: |
           artifacts/
         retention-days: 7
