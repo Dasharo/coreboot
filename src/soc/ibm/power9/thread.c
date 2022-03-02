@@ -45,8 +45,32 @@ static inline void sync_icache(void)
 	asm volatile("sync; icbi 0,%0; sync; isync" :: "r" (0) : "memory");
 }
 
+/*
+ * Need to:
+ * 1. Start ignoring HRMOR
+ * 2. Store current value of HRMOR
+ * 3. Set HRMOR to non-zero value
+ * 4. Stop ignoring HRMOR
+ * 5. Start a new thread
+ * 6. Start ignoring HRMOR
+ * 7. Restore previous value of HRMOR
+ * 8. Stop ignoring HRMOR
+ */
+
+uint64_t reset_hrmor(uint64_t mask);
+void set_hrmor(uint64_t hrmor);
+
 void start_second_thread(void)
 {
+	// this is basically value of HRMOR, should need to pass it  
+#if CONFIG(BOOTBLOCK_IN_SEEPROM)
+	uint64_t mask = ~0xF8000000ULL;
+#else
+	uint64_t mask = ~0xF8200000ULL;
+#endif
+
+	uint64_t hrmor = reset_hrmor(mask);
+
 	memcpy((void *)0x100, sys_reset_thread_int,
 	       sys_reset_thread_int_end - sys_reset_thread_int);
 	sync_icache();
@@ -64,6 +88,8 @@ void start_second_thread(void)
 
 	/* Setup & initiate SReset command for the second thread*/
 	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
+
+	set_hrmor(hrmor);
 }
 
 void stop_second_thread(void)

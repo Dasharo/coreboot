@@ -1,16 +1,12 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 
+#include <cpu/power/spr.h>
+
 /* Load an immediate 64-bit value into a register */
 #define LOAD_IMM64(r, e)			\
 	lis     r,(e)@highest;			\
 	ori     r,r,(e)@higher;			\
 	rldicr  r,r, 32, 31;			\
-	oris    r,r, (e)@h;			\
-	ori     r,r, (e)@l;
-
-/* Load an immediate 32-bit value into a register */
-#define LOAD_IMM32(r, e)			\
-	li      r, 0;				\
 	oris    r,r, (e)@h;			\
 	ori     r,r, (e)@l;
 
@@ -28,11 +24,11 @@
 .section ".text", "ax", %progbits
 
 /*
- *
+ * 
  */
 .globl sys_reset_thread_int
 sys_reset_thread_int:
-	LOAD_IMM32(%r0, jump)
+	LOAD_IMM64(%r0, jump)
 	mtlr %r0
 	blr
 .globl sys_reset_thread_int_end
@@ -55,3 +51,56 @@ jump:
 
 	bl second_thread
 	b .
+
+.globl reset_hrmor
+reset_hrmor:
+	mflr	%r8
+
+	li	%r10, 1
+	rotldi	%r10, %r10, 63		/* MSB is "ignore HRMOR" */
+
+	LOAD_IMM64(%r7, ignoreHRMOR_reset)
+	or	%r9, %r7, %r10
+
+	mtlr %r9
+	blr
+
+ignoreHRMOR_reset:
+	li	%r10, 0
+	mfspr	%r6, SPR_HRMOR
+	mtspr	SPR_HRMOR, %r10
+	/* We can't just "b stopIgnoringHRMOR", it would use relative offset */
+	addi	%r9, %r7, stopIgnoringHRMOR_reset - ignoreHRMOR_reset
+	mtlr	%r9
+	blr
+
+stopIgnoringHRMOR_reset:
+	and	%r2, %r2, %r3
+	or	%r3, %r6, %r6
+	mtlr	%r8
+	blr
+
+.globl set_hrmor
+set_hrmor:
+	mflr	%r8
+
+	li	%r10, 1
+	rotldi	%r10, %r10, 63		/* MSB is "ignore HRMOR" */
+
+	LOAD_IMM64(%r7, ignoreHRMOR)
+	or	%r9, %r7, %r10
+
+	mtlr %r9
+	blr
+
+ignoreHRMOR:
+	mtspr	SPR_HRMOR, %r3
+	/* We can't just "b stopIgnoringHRMOR", it would use relative offset */
+	addi	%r9, %r7, stopIgnoringHRMOR - ignoreHRMOR
+	mtlr	%r9
+	blr
+
+stopIgnoringHRMOR:
+	or	%r2, %r2, %r3
+	mtlr	%r8
+	blr
