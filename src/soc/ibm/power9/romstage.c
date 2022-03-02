@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
 #include <console/console.h>
 #include <cpu/power/mvpd.h>
 #include <cpu/power/vpd.h>
@@ -361,11 +362,14 @@ static void prepare_dimm_data(uint8_t chips)
 	struct mono_time local_sample;
 	timer_monotonic_get(&local_sample);
 
+	/* Update this function if more than two CPU chips will be supported */
+	assert(MAX_CHIPS == 2);
+
 	if (chips & 0x02)
 		on_second_thread(&prepare_cpu_dimm_data_bg, (void *)1);
-
 	prepare_cpu_dimm_data(/*chip=*/0);
-	wait_second_thread();
+	if (chips & 0x02)
+		wait_second_thread();
 
 	measure("prepare_cpu_dimm_data(both)", &local_sample);
 
@@ -388,7 +392,7 @@ static void load_voltage_data(void *arg)
 	(void)mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
 }
 
-static void build_mvpds(void)
+static void build_mvpds(uint8_t chips)
 {
 	struct mono_time before_sample;
 	struct mono_time after_sample;
@@ -398,9 +402,15 @@ static void build_mvpds(void)
 
 	timer_monotonic_get(&before_sample);
 
-	on_second_thread(&load_voltage_data, NULL);
+	/* Update this function if more than two CPU chips will be supported */
+	assert(MAX_CHIPS == 2);
+
+	/* Calling mvpd_get_voltage_data() triggers building and caching of MVPD */
+	if (chips & 0x02)
+		on_second_thread(&load_voltage_data, NULL);
 	(void)mvpd_get_voltage_data(/*chip=*/1, /*lrp=*/0);
-	wait_second_thread();
+	if (chips & 0x02)
+		wait_second_thread();
 
 	timer_monotonic_get(&after_sample);
 
@@ -441,7 +451,8 @@ void main(void)
 	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
 
 	start_second_thread();
-	build_mvpds(); // 9s
+
+	build_mvpds(chips); // 9s
 
 	istep_8_1(chips);
 	istep_8_2(chips);
