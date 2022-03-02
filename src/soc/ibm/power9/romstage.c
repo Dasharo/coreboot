@@ -330,9 +330,27 @@ static void prepare_cpu_dimm_data(uint8_t chip)
 			}
 
 			printk(BIOS_SPEW, "MCS%d, MCA%d times (in clock cycles):\n", mcs, mca);
-			dump_mca_data(&mem_data[chip].mcs[mcs].mca[mca]);
+				dump_mca_data(&mem_data[chip].mcs[mcs].mca[mca]);
 		}
 	}
+}
+
+static void measure(const char *msg, struct mono_time *t)
+{
+	struct mono_time sample;
+	timer_monotonic_get(&sample);
+	long duration_us = mono_time_diff_microseconds(t, &sample);
+
+	printk(BIOS_EMERG, "DURATION >>> %s >>> %ld ms\n", msg,
+	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
+
+	*t = sample;
+}
+
+static void prepare_cpu_dimm_data_bg(void *arg)
+{
+	uint8_t chip = /*chip=*/(uintptr_t)arg;
+	prepare_cpu_dimm_data(chip);
 }
 
 /* This is most of step 7 condensed into one function */
@@ -340,9 +358,16 @@ static void prepare_dimm_data(uint8_t chips)
 {
 	bool have_dimms;
 
-	prepare_cpu_dimm_data(/*chip=*/0);
+	struct mono_time local_sample;
+	timer_monotonic_get(&local_sample);
+
 	if (chips & 0x02)
-		prepare_cpu_dimm_data(/*chip=*/1);
+		on_second_thread(&prepare_cpu_dimm_data_bg, (void *)1);
+
+	prepare_cpu_dimm_data(/*chip=*/0);
+	wait_second_thread();
+
+	measure("prepare_cpu_dimm_data(both)", &local_sample);
 
 	/*
 	 * There is one (?) MCBIST per CPU. Fail if there are no supported DIMMs
@@ -385,18 +410,6 @@ static void build_mvpds(void)
 	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
 }
 
-static void measure(const char *msg, struct mono_time *t)
-{
-	struct mono_time sample;
-	timer_monotonic_get(&sample);
-	long duration_us = mono_time_diff_microseconds(t, &sample);
-
-	printk(BIOS_EMERG, "DURATION >>> %s >>> %ld ms\n", msg,
-	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
-
-	*t = sample;
-}
-
 void main(void)
 {
 	uint8_t chips;
@@ -429,7 +442,6 @@ void main(void)
 
 	start_second_thread();
 	build_mvpds(); // 9s
-	stop_second_thread();
 
 	istep_8_1(chips);
 	istep_8_2(chips);
@@ -440,15 +452,13 @@ void main(void)
 	istep_8_10(chips);
 	istep_8_11(chips);
 
-	struct mono_time local_sample;
-	timer_monotonic_get(&local_sample);
+	// 0.338s
 	istep_9_2(chips); // 0.2s (was 0.5s)
-	measure("istep_9_2", &local_sample);
-
 	istep_9_4(chips); // 0.037s
 	istep_9_6(chips); // 0.001s
 	istep_9_7(chips); // 0.1s (was 0.2s)
 
+	// 0.037s
 	istep_10_1(chips); // 0.035ms
 	istep_10_6(chips); // 0s
 	istep_10_10(chips, pci_info); // 0.002s
@@ -457,9 +467,12 @@ void main(void)
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
-	// these two take 0.35s
-	vpd_pnor_main();
-	prepare_dimm_data(chips);
+	// 0.357s
+	vpd_pnor_main(); // 0.010s
+	// performing this one in parallel saves 150s, but makes a mess out of console
+	prepare_dimm_data(chips); // 0.347s
+
+	stop_second_thread();
 
 	// isteps 13.* take 0.3s in total 
 	report_istep(13,1);	// no-op

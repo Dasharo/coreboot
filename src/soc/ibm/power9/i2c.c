@@ -73,7 +73,7 @@ static int get_spd(uint8_t bus, u8 *spd, u8 addr)
 	return 0;
 }
 
-static u8 spd_data[CONFIG_DIMM_MAX * CONFIG_DIMM_SPD_SIZE];
+static u8 spd_data[MAX_CHIPS * I2C_BUSES_PER_CPU][CONFIG_DIMM_MAX * CONFIG_DIMM_SPD_SIZE];
 
 void get_spd_i2c(uint8_t bus, struct spd_block *blk)
 {
@@ -85,8 +85,9 @@ void get_spd_i2c(uint8_t bus, struct spd_block *blk)
 			continue;
 		}
 
-		if (get_spd(bus, &spd_data[i * CONFIG_DIMM_SPD_SIZE], blk->addr_map[i]) == 0)
-			blk->spd_array[i] = &spd_data[i * CONFIG_DIMM_SPD_SIZE];
+		if (get_spd(bus, &spd_data[bus][i * CONFIG_DIMM_SPD_SIZE],
+			    blk->addr_map[i]) == 0)
+			blk->spd_array[i] = &spd_data[bus][i * CONFIG_DIMM_SPD_SIZE];
 		else
 			blk->spd_array[i] = NULL;
 	}
