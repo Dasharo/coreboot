@@ -385,6 +385,18 @@ static void build_mvpds(void)
 	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
 }
 
+static void measure(const char *msg, struct mono_time *t)
+{
+	struct mono_time sample;
+	timer_monotonic_get(&sample);
+	long duration_us = mono_time_diff_microseconds(t, &sample);
+
+	printk(BIOS_EMERG, "DURATION >>> %s >>> %ld ms\n", msg,
+	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
+
+	*t = sample;
+}
+
 void main(void)
 {
 	uint8_t chips;
@@ -396,6 +408,9 @@ void main(void)
 	console_init();
 
 	init_timer();
+
+	struct mono_time start_sample;
+	timer_monotonic_get(&start_sample);
 
 	if (ipmi_premem_init(CONFIG_BMC_BT_BASE, 0) != CB_SUCCESS)
 		die("Failed to initialize IPMI\n");
@@ -413,37 +428,31 @@ void main(void)
 	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
 
 	start_second_thread();
-
-	build_mvpds();
+	build_mvpds(); // 9s
+	stop_second_thread();
 
 	istep_8_1(chips);
 	istep_8_2(chips);
 	istep_8_3(chips);
-
-	struct mono_time before_sample;
-	timer_monotonic_get(&before_sample);
-	// It takes SBE about 5s to boot.
+	// It takes SBE about 4.7s to boot.
 	istep_8_4(chips);
-	struct mono_time after_sample;
-	timer_monotonic_get(&after_sample);
-	long duration_us = mono_time_diff_microseconds(&before_sample, &after_sample);
-	printk(BIOS_EMERG, "TIME is %ld ms\n",
-	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
-
 	istep_8_9(chips);
 	istep_8_10(chips);
 	istep_8_11(chips);
 
-	istep_9_2(chips);
-	istep_9_4(chips);
-	istep_9_6(chips);
-	istep_9_7(chips);
+	istep_9_2(chips); // 0.5s
+	istep_9_4(chips); // 0.037s
+	istep_9_6(chips); // 0.001s
+	istep_9_7(chips); // 0.2s
 
-	istep_10_1(chips);
-	istep_10_6(chips);
-	istep_10_10(chips, pci_info);
-	istep_10_12(chips);
-	istep_10_13(chips);
+	struct mono_time local_sample;
+	timer_monotonic_get(&local_sample);
+
+	istep_10_1(chips); // 0.035ms
+	istep_10_6(chips); // 0s
+	istep_10_10(chips, pci_info); // 0.002s
+	istep_10_12(chips); // 0s
+	istep_10_13(chips); // 0s
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
@@ -474,8 +483,6 @@ void main(void)
 	report_istep(14,4);	// no-op
 	istep_14_5(chips);
 
-	stop_second_thread();
-
 	timestamp_add_now(TS_AFTER_INITRAM);
 
 	/* Test if SCOM still works. Maybe should check also indirect access? */
@@ -489,5 +496,7 @@ void main(void)
 		die("SCOM stopped working, check FIRs, halting now\n");
 
 	cbmem_initialize_empty();
+	measure("ROMSTAGE TOTAL (almost)", &start_sample);
 	run_ramstage();
+	// 19s in total
 }

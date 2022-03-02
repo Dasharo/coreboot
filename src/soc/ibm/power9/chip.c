@@ -11,6 +11,8 @@
 #include <cpu/power/proc.h>
 #include <cpu/power/spr.h>
 #include <commonlib/stdlib.h>		// xzalloc
+#include <timer.h>
+#include <timestamp.h>
 
 #include "istep_13_scom.h"
 #include "chip.h"
@@ -466,12 +468,30 @@ static void rng_init(uint8_t chips)
 	}
 }
 
+static void measure(const char *msg, struct mono_time *t)
+{
+	struct mono_time sample;
+	timer_monotonic_get(&sample);
+	long duration_us = mono_time_diff_microseconds(t, &sample);
+
+	printk(BIOS_EMERG, "DURATION >>> %s >>> %ld ms\n", msg,
+	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
+
+	*t = sample;
+}
+
 static void enable_soc_dev(struct device *dev)
 {
+	struct mono_time start_sample;
+	timer_monotonic_get(&start_sample);
+
 	int chip, idx = 0;
 	unsigned long reserved_size, top = 0;
 	uint8_t chips = fsi_get_present_chips();
 	uint8_t tod_mdmt;
+
+	struct mono_time local_sample;
+	timer_monotonic_get(&local_sample);
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		int mcs_i;
@@ -504,6 +524,8 @@ static void enable_soc_dev(struct device *dev)
 		}
 	}
 
+	measure("RAM enum", &local_sample);
+
 	/*
 	 * Reserve top 8M (OCC common area) + 4M (HOMER).
 	 *
@@ -513,15 +535,24 @@ static void enable_soc_dev(struct device *dev)
 	top -= reserved_size;
 	reserved_ram_resource(dev, idx++, top, reserved_size);
 
+	measure("RAM reservation", &local_sample);
+
 	/*
 	 * Assumption: OCC boots successfully or coreboot die()s, booting in safe
 	 * mode without runtime power management is not supported.
 	 */
-	build_homer_image((void *)(top * 1024), nominal_freq);
+	build_homer_image((void *)(top * 1024), nominal_freq); // 2270ms
 
-	rng_init(chips);
-	istep_18_11(chips, &tod_mdmt);
-	istep_18_12(chips, tod_mdmt);
+	measure("HOMER building", &local_sample);
+
+	rng_init(chips); // 0ms
+	measure("rng_init", &local_sample);
+	istep_18_11(chips, &tod_mdmt); // 1ms
+	measure("istep 18.11", &local_sample);
+	istep_18_12(chips, tod_mdmt); // 1ms
+	measure("istep 18.12", &local_sample);
+
+	measure("RAMSTAGE TOTAL (almost)", &start_sample);
 }
 
 static void activate_slave_cores(uint8_t chip)
