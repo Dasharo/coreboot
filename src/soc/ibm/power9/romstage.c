@@ -387,7 +387,7 @@ static void prepare_dimm_data(uint8_t chips)
 		die("No DIMMs detected, aborting\n");
 }
 
-static void load_voltage_data(void *arg)
+static void load_voltage_data_bg(void *arg)
 {
 	(void)mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
 }
@@ -406,16 +406,27 @@ static void build_mvpds(uint8_t chips)
 	assert(MAX_CHIPS == 2);
 
 	/* Calling mvpd_get_voltage_data() triggers building and caching of MVPD */
-	if (chips & 0x02)
-		on_second_thread(&load_voltage_data, NULL);
-	(void)mvpd_get_voltage_data(/*chip=*/1, /*lrp=*/0);
-	if (chips & 0x02)
+	if (chips & 0x02) {
+		/*
+		 * There is some kind of issue with FSI I2C on the second thread,
+		 * but MVPD for the second CPU is that istep 8.1 needs, so build
+		 * it on the first thread and construct MVPD for the first CPU
+		 * in background.
+		 *
+		 * Building MVPD of the first chip is faster so we're not making
+		 * startup slower by waiting for it.  It will be used in
+		 * istep 8.9.
+		 */
+		on_second_thread(&load_voltage_data_bg, NULL);
+		(void)mvpd_get_voltage_data(/*chip=*/1, /*lrp=*/0);
 		wait_second_thread();
+	} else {
+		(void)mvpd_get_voltage_data(/*chip=*/0, /*lrp=*/0);
+	}
 
 	timer_monotonic_get(&after_sample);
 
 	duration_us = mono_time_diff_microseconds(&before_sample, &after_sample);
-
 	printk(BIOS_EMERG, "Built MVPDs in %ld ms\n",
 	       DIV_ROUND_CLOSEST(duration_us, USECS_PER_MSEC));
 }
