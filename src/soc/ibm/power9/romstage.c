@@ -440,13 +440,14 @@ void main(void)
 	istep_8_10(chips);
 	istep_8_11(chips);
 
-	istep_9_2(chips); // 0.5s
-	istep_9_4(chips); // 0.037s
-	istep_9_6(chips); // 0.001s
-	istep_9_7(chips); // 0.2s
-
 	struct mono_time local_sample;
 	timer_monotonic_get(&local_sample);
+	istep_9_2(chips); // 0.2s (was 0.5s)
+	measure("istep_9_2", &local_sample);
+
+	istep_9_4(chips); // 0.037s
+	istep_9_6(chips); // 0.001s
+	istep_9_7(chips); // 0.1s (was 0.2s)
 
 	istep_10_1(chips); // 0.035ms
 	istep_10_6(chips); // 0s
@@ -498,5 +499,5 @@ void main(void)
 	cbmem_initialize_empty();
 	measure("ROMSTAGE TOTAL (almost)", &start_sample);
 	run_ramstage();
-	// 19s in total
+	// 18649ms in total (was 19s)
 }
