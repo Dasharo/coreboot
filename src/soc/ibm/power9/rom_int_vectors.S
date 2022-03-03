@@ -67,7 +67,6 @@ reset_hrmor:
 
 ignoreHRMOR_reset:
 	li	%r10, 0
-	mfspr	%r6, SPR_HRMOR
 	mtspr	SPR_HRMOR, %r10
 	/* We can't just "b stopIgnoringHRMOR", it would use relative offset */
 	addi	%r9, %r7, stopIgnoringHRMOR_reset - ignoreHRMOR_reset
@@ -75,8 +74,9 @@ ignoreHRMOR_reset:
 	blr
 
 stopIgnoringHRMOR_reset:
-	and	%r2, %r2, %r3
-	or	%r3, %r6, %r6
+	or	%r1, %r1, %r3
+	or	%r2, %r2, %r3
+	or	%r8, %r8, %r3
 	mtlr	%r8
 	blr
 
@@ -101,6 +101,8 @@ ignoreHRMOR:
 	blr
 
 stopIgnoringHRMOR:
-	or	%r2, %r2, %r3
+	andc	%r1, %r1, %r3
+	andc	%r2, %r2, %r3
+	andc	%r8, %r8, %r3
 	mtlr	%r8
 	blr

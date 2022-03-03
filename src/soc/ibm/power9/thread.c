@@ -1,5 +1,6 @@
 #include "thread.h"
 
+#include <console/console.h>
 #include <cpu/power/scom.h>
 #include <assert.h>
 #include <stdbool.h>
@@ -57,19 +58,20 @@ static inline void sync_icache(void)
  * 8. Stop ignoring HRMOR
  */
 
-uint64_t reset_hrmor(uint64_t mask);
 void set_hrmor(uint64_t hrmor);
+void reset_hrmor(uint64_t mask);
 
 void start_second_thread(void)
 {
-	// this is basically value of HRMOR, should need to pass it  
-#if CONFIG(BOOTBLOCK_IN_SEEPROM)
-	uint64_t mask = ~0xF8000000ULL;
+#if !CONFIG(BOOTBLOCK_IN_SEEPROM)
+	uint64_t hrmor = 0xF8000000ULL;
 #else
-	uint64_t mask = ~0xF8200000ULL;
+	uint64_t hrmor = 0xF8200000ULL;
 #endif
 
-	uint64_t hrmor = reset_hrmor(mask);
+	printk(BIOS_EMERG, "before set_hrmor\n");
+	set_hrmor(hrmor);
+	printk(BIOS_EMERG, "after set_hrmor\n");
 
 	memcpy((void *)0x100, sys_reset_thread_int,
 	       sys_reset_thread_int_end - sys_reset_thread_int);
@@ -89,7 +91,9 @@ void start_second_thread(void)
 	/* Setup & initiate SReset command for the second thread*/
 	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
 
-	set_hrmor(hrmor);
+	printk(BIOS_EMERG, "before reset_hrmor\n");
+	reset_hrmor(hrmor);
+	printk(BIOS_EMERG, "after reset_hrmor\n");
 }
 
 void stop_second_thread(void)
