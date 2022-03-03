@@ -1,16 +1,16 @@
-name: Build coreboot for the IBS15 target
+name: Build coreboot for the NS5X target
 on:
   push:
     branches:
-      - tuxedo_ibs15/develop
-      - tuxedo_ibs15/release
-      - 'tuxedo_ibs15/rel_*'
+      - novacustom_ns5x/develop
+      - novacustom_ns5x/release
+      - 'novacustom_ns5x/rel_*'
   pull_request:
     branches:
-      - tuxedo_ibs15/develop
-      - tuxedo_ibs15/release
+      - novacustom_ns5x/develop
+      - novacustom_ns5x/release
     tags:
-      - 'tuxedo_ibs15*'
+      - 'novacustom_ns5x*'
 
 jobs:
   build:
@@ -55,17 +55,17 @@ jobs:
     - name: Checkout all submodules
       run: git submodule update --init --recursive --checkout
 
-    - name: Build IBS15 target
+    - name: Build NS5X target
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
         ./build.sh build-CI
         EOF
 
-    - name: Save IBS15 artifacts
+    - name: Save NS5X artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: "dasharo-tuxedo-ibs15"
+        name: "dasharo-novacustom-ns5x"
         path: |
           artifacts/
         retention-days: 7
