@@ -4,6 +4,7 @@
 #define __SOC_IBM_POWER9_THREAD_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 struct spin_lock_t {
 	volatile int value;
@@ -69,6 +70,6 @@ void start_second_thread(void);
 void stop_second_thread(void);
 void wait_second_thread(void);
 void on_second_thread(void (*func)(void *arg), void *arg);
-void second_thread(void);
+void second_thread(uint64_t hrmor);
 
 #endif /* __SOC_IBM_POWER9_THREAD_H */

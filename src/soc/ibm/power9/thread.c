@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <delay.h>
 
 static struct {
 	struct spin_lock_t lock;
@@ -59,7 +60,7 @@ static inline void sync_icache(void)
  */
 
 void set_hrmor(uint64_t hrmor);
-void reset_hrmor(uint64_t mask);
+void reset_hrmor(void);
 
 void start_second_thread(void)
 {
@@ -91,8 +92,10 @@ void start_second_thread(void)
 	/* Setup & initiate SReset command for the second thread*/
 	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + 1, 0x20010A9C, 0x0080000000000000 >> 4);
 
+	delay(1);
+
 	printk(BIOS_EMERG, "before reset_hrmor\n");
-	reset_hrmor(hrmor);
+	reset_hrmor();
 	printk(BIOS_EMERG, "after reset_hrmor\n");
 }
 
@@ -110,9 +113,10 @@ static void stop_15_thread(void)
 	asm volatile("mtspr 855, %0; isync; stop" :: "r" (0x00000000003F00FF));
 }
 
-void second_thread(void)
+void second_thread(uint64_t hrmor)
 {
 	bool done = false;
+	printk(BIOS_EMERG, "HRMOR: 0x%016llx\n", hrmor);
 	while (!done) {
 		spin_lock(&job_thread.lock);
 

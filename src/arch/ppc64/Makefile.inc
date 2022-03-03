@@ -51,7 +51,7 @@ $(objcbfs)/romstage.debug: $$(romstage-objs)
 	$(LD_romstage) $(LDFLAGS_romstage) -o $@ -L$(obj) -T $(call src-to-obj,romstage,$(CONFIG_MEMLAYOUT_LD_FILE)) --whole-archive --start-group $(filter-out %.ld,$(romstage-objs)) --end-group $(COMPILER_RT_romstage)
 
 romstage-c-ccopts += $(ppc64_flags)
-romstage-S-ccopts += $(ppc64_asm_flags)
+romstage-S-ccopts += $(ppc64_flags) $(ppc64_asm_flags)
 
 endif
 

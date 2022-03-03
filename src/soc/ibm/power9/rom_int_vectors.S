@@ -23,22 +23,20 @@
 
 .section ".text", "ax", %progbits
 
-/*
- * 
- */
+/* System reset handler for starting a new thread */
 .globl sys_reset_thread_int
 sys_reset_thread_int:
-	LOAD_IMM64(%r0, jump)
-	mtlr %r0
+	LOAD_IMM64(%r0, sys_reset_thread_body)
+	mtlr	%r0
 	blr
 .globl sys_reset_thread_int_end
 sys_reset_thread_int_end:
 
 int_vector_check_size sys_reset_thread_int 0x100
 
-jump:
-	;// Raise priority to high.
-	or 2,2,2
+sys_reset_thread_body:
+	/* Raise priority to high */
+	or	2,2,2
 
 	/* Load official procedure descriptor address for main() */
 	LOAD_IMM64(%r12, main)
@@ -49,60 +47,83 @@ jump:
 	/* Stack */
 	LOAD_IMM64(%r1, _esecond_stack)
 
-	bl second_thread
-	b .
+	bl	reset_hrmor
+	// b	.
+
+	mfspr	%r3, SPR_HRMOR
+	bl	second_thread
+	b	.
 
 .globl reset_hrmor
 reset_hrmor:
+	/* Save return address */
 	mflr	%r8
 
 	li	%r10, 1
 	rotldi	%r10, %r10, 63		/* MSB is "ignore HRMOR" */
 
-	LOAD_IMM64(%r7, ignoreHRMOR_reset)
+	LOAD_IMM64(%r7, 1f)
 	or	%r9, %r7, %r10
 
-	mtlr %r9
-	blr
-
-ignoreHRMOR_reset:
-	li	%r10, 0
-	mtspr	SPR_HRMOR, %r10
-	/* We can't just "b stopIgnoringHRMOR", it would use relative offset */
-	addi	%r9, %r7, stopIgnoringHRMOR_reset - ignoreHRMOR_reset
 	mtlr	%r9
 	blr
 
-stopIgnoringHRMOR_reset:
+	/* This code block ignores HRMOR */
+1:
+	/* Reset HRMOR to 0 */
+	li	%r10, 0
+	mfspr	%r3, SPR_HRMOR
+	mtspr	SPR_HRMOR, %r10
+	isync
+	/* We can't just "b 2f", it would use relative offset */
+	addi	%r9, %r7, 2f - 1b
+	mtlr	%r9
+	blr
+
+2:
+	/* asdf */
+	slbia	7
+	sync
+	isync
+	/* Update stack, TOC and return pointers */
 	or	%r1, %r1, %r3
 	or	%r2, %r2, %r3
 	or	%r8, %r8, %r3
+	/* Restore return address and return */
 	mtlr	%r8
 	blr
 
 .globl set_hrmor
 set_hrmor:
+	/* Save return address */
 	mflr	%r8
 
 	li	%r10, 1
 	rotldi	%r10, %r10, 63		/* MSB is "ignore HRMOR" */
 
-	LOAD_IMM64(%r7, ignoreHRMOR)
+	LOAD_IMM64(%r7, 1f)
 	or	%r9, %r7, %r10
 
-	mtlr %r9
-	blr
-
-ignoreHRMOR:
-	mtspr	SPR_HRMOR, %r3
-	/* We can't just "b stopIgnoringHRMOR", it would use relative offset */
-	addi	%r9, %r7, stopIgnoringHRMOR - ignoreHRMOR
 	mtlr	%r9
 	blr
 
-stopIgnoringHRMOR:
+	/* This code block ignores HRMOR */
+1:
+	mtspr	SPR_HRMOR, %r3
+	isync
+	/* We can't just "b 2f", it would use relative offset */
+	addi	%r9, %r7, 2f - 1b
+	mtlr	%r9
+	blr
+
+2:
+	// slbia 7
+	sync
+	isync
+	/* Update stack, TOC and return pointers */
 	andc	%r1, %r1, %r3
 	andc	%r2, %r2, %r3
 	andc	%r8, %r8, %r3
+	/* Restore return address and return */
 	mtlr	%r8
 	blr
