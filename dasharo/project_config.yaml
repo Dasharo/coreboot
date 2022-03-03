@@ -1,40 +1,40 @@
 # Dasharo project configuration data
-file_version: v0.0.1
+file_version: 0.0.1
 
 dasharo:
   platform: clevo_ns50mu
   newsletter:
-    url: https://newsletter.3mdeb.com/subscription/T61MyO2sP # FIXME
+    url:  https://newsletter.3mdeb.com/subscription/T61MyO2sP
 
 client:
-  name: TUXEDO
+  name: NovaCustom
 
 framework:
   name: coreboot
-  version: 4.14
-  url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
+  version: 4.16
+  url_template: https://github.com/Dasharo/coreboot/tree/COMMIT_HASH
 
 components:
 - name: tianocore
-  version: 9522071f7497a1a0b1077d2b0d5fcc97a126cfd0
-  url_template: https://github.com/Dasharo/edk2/commit/COMMIT_HASH
+  version: e0334c228ce4ba51f47ff79a118f214031d4650f
+  url_template: https://github.com/Dasharo/edk2/tree/COMMIT_HASH
   path: payloads/external/tianocore/tianocore
 
 
 documentation:
-  name: Dasharo Compatibility
+  name: Dasharo Documentation
   url: https://docs.dasharo.com/
-  building_url: https://docs.dasharo.com/variants/clevo_ns50/building/
-  flashing_url: https://docs.dasharo.com/variants/clevo_ns50/flashing_internal/
+  building_url: https://docs.dasharo.com/variants/tuxedo_ibs15/building/
+  flashing_url: https://docs.dasharo.com/variants/tuxedo_ibs15/flashing_internal/
 
 platform:
-  vendor: Tuxedo
-  model: IBS15 Gen6
+  vendor: Clevo
+  model: NS5x
 
 tests:
   hardware_matrix: https://docs.dasharo.com/variants/clevo_ns50/testing_configuration/
-  results: https://newsletter.3mdeb.com/links/FL5Sko3lq/T61MyO2sP/76cRKV_aG/eCnTztI3pO # FIXME
-  specification: https://novacustom.gitlab.io/dasharo-compatibility/dasharo-compatibility/ # FIXME
+  results: https://docs.google.com/spreadsheets/d/126oG3VLk51sTIz-uVIAOTVPxA0qpH9wQ4P-ue2fJLtI/
+  specification: https://novacustom.gitlab.io/dasharo-compatibility/dasharo-compatibility/
 
 asciinema:
-  signature_verification: https://asciinema.org/a/433461 # FIXME
+  signature_verification: https://asciinema.org/a/433461
