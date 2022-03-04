@@ -378,11 +378,10 @@ void main(void)
 
 	struct pci_info pci_info[MAX_CHIPS] = { 0 };
 
-	timestamp_add_now(TS_START_ROMSTAGE);
-
 	console_init();
 
 	init_timer();
+	timestamp_add_now(TS_START_ROMSTAGE);
 
 	if (ipmi_premem_init(CONFIG_BMC_BT_BASE, 0) != CB_SUCCESS)
 		die("Failed to initialize IPMI\n");
