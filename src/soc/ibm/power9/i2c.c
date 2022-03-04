@@ -154,12 +154,12 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 		type = FSI_I2C;
 	}
 
-	if (bus >= I2C_BUSES_PER_CPU) {
+	/* There seems to be only one engine on FSI I2C */
+	if (bus != 0) {
 		printk(BIOS_ERR, "I2C bus out of range (%d)\n", bus);
 		return -1;
 	}
 
-	/* There seems to be only one engine on FSI I2C */
 	uint32_t base = (type == FSI_I2C ? 0 : I2C_HOST_MASTER_BASE_ADDR | (bus << 12));
 	/* Addition is fine, because there will be no carry in bus number bits */
 	uint32_t fifo_reg = base + FIFO_REG;
