@@ -433,123 +433,116 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	                        PPC_BIT(MBSTRQ_CFG_NCE_HARD_SYMBOL_COUNT_ENABLE));
 }
 
-static void mss_memdiag(uint8_t chip)
+static void mss_memdiag(uint8_t chips)
 {
+	uint8_t chip;
 	int mcs_i, mca_i;
 
-	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		if (!mem_data[chip].mcs[mcs_i].functional)
-			continue;
-
-		/*
-		 * FIXME: add testing for chipkill
-		 *
-		 * Testing touches bad DQ registers. This step also configures MC to
-		 * deal with bad nibbles/DQs - see can_recover() in 13.11. It repeats,
-		 * to some extent, training done in 13.12 which is TODO. Following the
-		 * assumptions made in previous isteps, skip this for now.
-		 */
-		init_mcbist(chip, mcs_i);
-
-		/*
-		 * Add subtests.
-		 *
-		 * At the very minimum one pattern write is required, otherwise RAM will
-		 * have random data, which most likely will throw unrecoverable errors
-		 * because ECC is also random.
-		 *
-		 * Scrubbing may throw errors when address mapping is wrong even when
-		 * maintenance pattern write can succeed for the same configuration.
-		 */
-		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
-			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
-			int dimm;
-			if (!mca->functional)
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
+			if (!mem_data[chip].mcs[mcs_i].functional)
 				continue;
 
-			for (dimm = 0; dimm < DIMMS_PER_MCA; dimm++) {
-				if (!mca->dimm[dimm].present)
+			/*
+			 * FIXME: add testing for chipkill
+			 *
+			 * Testing touches bad DQ registers. This step also configures MC to
+			 * deal with bad nibbles/DQs - see can_recover() in 13.11. It repeats,
+			 * to some extent, training done in 13.12 which is TODO. Following the
+			 * assumptions made in previous isteps, skip this for now.
+			 */
+			init_mcbist(chip, mcs_i);
+
+			/*
+			 * Add subtests.
+			 *
+			 * At the very minimum one pattern write is required, otherwise RAM will
+			 * have random data, which most likely will throw unrecoverable errors
+			 * because ECC is also random.
+			 *
+			 * Scrubbing may throw errors when address mapping is wrong even when
+			 * maintenance pattern write can succeed for the same configuration.
+			 */
+			for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
+				mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
+				int dimm;
+				if (!mca->functional)
 					continue;
 
-				add_fixed_pattern_write(chip, mcs_i, mca_i*2 + dimm);
-				/*
-				 * Hostboot uses separate program for scrub due to different
-				 * pausing conditions. Having it in the same program seems to
-				 * be working.
-				 */
-				if (!CONFIG(SKIP_INITIAL_ECC_SCRUB))
-					add_scrub(chip, mcs_i, mca_i*2 + dimm);
-			}
-		}
+				for (dimm = 0; dimm < DIMMS_PER_MCA; dimm++) {
+					if (!mca->dimm[dimm].present)
+						continue;
 
-		/*
-		 * TODO: it writes whole RAM, this will take loooooong time. We can
-		 * easily start second MCBIST while this is running. This would get more
-		 * complicated for more patterns, but it still should be doable without
-		 * interrupts reporting completion.
-		 *
-		 * Also, under right circumstances*, it should be possible to use
-		 * broadcast mode for writing to all DIMMs simultaneously.
-		 *
-		 * *) Proper circumstances are:
-		 *    - every port has the same number of DIMMs (or no DIMMs at all)
-		 *    - every DIMM has the same:
-		 *      - rank configuration
-		 *      - number of row and column bits
-		 *      - width (and density, but this is implied by previous
-		 *        requirements)
-		 *      - module family (but we don't support anything but RDIMM anyway)
-		 */
-		mcbist_execute(chip, mcs_i);
+					add_fixed_pattern_write(chip, mcs_i, mca_i*2 + dimm);
+					/*
+					 * Hostboot uses separate program for scrub due to
+					 * different pausing conditions. Having it in the same
+					 * program seems to be working.
+					 */
+					if (!CONFIG(SKIP_INITIAL_ECC_SCRUB))
+						add_scrub(chip, mcs_i, mca_i*2 + dimm);
+				}
+			}
+
+			/*
+			 * TODO: it writes whole RAM, this will take loooooong time. We can
+			 * easily start second MCBIST while this is running. This would get more
+			 * complicated for more patterns, but it still should be doable without
+			 * interrupts reporting completion.
+			 *
+			 * Also, under right circumstances*, it should be possible to use
+			 * broadcast mode for writing to all DIMMs simultaneously.
+			 *
+			 * *) Proper circumstances are:
+			 *    - every port has the same number of DIMMs (or no DIMMs at all)
+			 *    - every DIMM has the same:
+			 *      - rank configuration
+			 *      - number of row and column bits
+			 *      - width (and density, but this is implied by previous
+			 *        requirements)
+			 *      - module family (but we don't support anything but RDIMM anyway)
+			 */
+			mcbist_execute(chip, mcs_i);
+		}
 	}
 
-	long total_time = 0;
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
+			if (!mem_data[chip].mcs[mcs_i].functional)
+				continue;
 
-	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-		if (!mem_data[chip].mcs[mcs_i].functional)
-			continue;
+			/*
+			 * When there is no other activity on the bus, this should take roughly
+			 * (total RAM size under MCS / transfer rate) * number of subtests.
+			 *
+			 * Not measuring time it takes individual MCBISTs to complete as they
+			 * all work in parallel.
+			 */
+			long time = wait_us(1000*1000*60,
+					    (udelay(1), mcbist_is_done(chip, mcs_i)));
 
-		/*
-		 * When there is no other activity on the bus, this should take roughly
-		 * (total RAM size under MCS / transfer rate) * number of subtests.
-		 *
-		 * TODO: for the second MCS we should account for the time the first MCS
-		 * took to finish it's tasks. If the second MCS has less RAM (counted in
-		 * address bits used) it is possible that it finishes before the first
-		 * one does. In that case the amount of time required for second MCS
-		 * would be lost. Maybe we could get fancy and in wait_us() check for
-		 * (mcbist_is_done(0) || mcbist_is_done(1)) instead? Maybe even unmask
-		 * FIRs and set FIFO mode off inside mcbist_is_done()?
-		 */
-		long time = wait_us(1000*1000*60, (udelay(1), mcbist_is_done(chip, mcs_i)));
+			/* TODO: dump error/status registers on failure */
+			if (!time) {
+				die("MCBIST%d of chip %d times out (%#16.16llx)\n", mcs_i, chip,
+				    read_rscom_for_chiplet(chip, mcs_ids[mcs_i],
+							   MCB_CNTLSTATQ));
+			}
 
-		/* TODO: dump error/status registers on failure */
-		if (!time)
-			die("MCBIST%d times out (%#16.16llx)\n", mcs_i,
-			    read_rscom_for_chiplet(chip, mcs_ids[mcs_i], MCB_CNTLSTATQ));
+			/* Unmask mainline FIRs. */
+			fir_unmask(chip, mcs_i);
 
-		total_time += time;
-		printk(BIOS_ERR, "MCBIST%d took %ld us\n", mcs_i, total_time);
-
-		/* Unmask mainline FIRs. */
-		fir_unmask(chip, mcs_i);
-
-		/* Turn off FIFO mode to improve performance. */
-		set_fifo_mode(chip, mcs_i, 0);
+			/* Turn off FIFO mode to improve performance. */
+			set_fifo_mode(chip, mcs_i, 0);
+		}
 	}
 }
 
 void istep_14_1(uint8_t chips)
 {
-	uint8_t chip;
-
 	printk(BIOS_EMERG, "starting istep 14.1\n");
 	report_istep(14,1);
 
-	for (chip = 0; chip < MAX_CHIPS; chip++) {
-		if (chips & (1 << chip))
-			mss_memdiag(chip);
-	}
+	mss_memdiag(chips);
 
 	printk(BIOS_EMERG, "ending istep 14.1\n");
 }
