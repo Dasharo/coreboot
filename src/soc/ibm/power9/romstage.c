@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <cpu/power/mvpd.h>
 #include <cpu/power/vpd.h>
 #include <cpu/power/istep_8.h>
 #include <cpu/power/istep_9.h>
@@ -358,6 +359,19 @@ static void prepare_dimm_data(uint8_t chips)
 		die("No DIMMs detected, aborting\n");
 }
 
+static void build_mvpds(uint8_t chips)
+{
+	uint8_t chip;
+
+	printk(BIOS_EMERG, "Building MVPDs...\n");
+
+	/* Calling mvpd_get_available_cores() triggers building and caching of MVPD */
+	for (chip = 0; chip < MAX_CHIPS; ++chip) {
+		if (chips & (1 << chip))
+			(void)mvpd_get_available_cores(chip);
+	}
+}
+
 void main(void)
 {
 	uint8_t chips;
@@ -384,6 +398,8 @@ void main(void)
 	fsi_init();
 	chips = fsi_get_present_chips();
 	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
+
+	build_mvpds(chips);
 
 	istep_8_1(chips);
 	istep_8_2(chips);
