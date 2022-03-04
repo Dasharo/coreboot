@@ -30,7 +30,7 @@ static void p9_fab_iovalid_link_validate(uint8_t chip)
 		if (dl_trained)
 			break;
 
-		udelay(1 * 1000); // 1ms
+		mdelay(1);
 	}
 
 	if (i == 100)
@@ -53,10 +53,6 @@ static void p9_fab_iovalid(uint8_t chip)
 	};
 
 	uint64_t fbc_cent_fir_data;
-
-	/* Add delay for DD1.1+ procedure to compensate for lack of lane lock
-	 * polls */
-	udelay(100 * 1000); // 100ms
 
 	p9_fab_iovalid_link_validate(chip);
 
@@ -86,6 +82,15 @@ void istep_9_7(uint8_t chips)
 	report_istep(9,7);
 
 	if (chips != 0x01) {
+		/*
+		 * Add delay for DD1.1+ procedure to compensate for lack of lane
+		 * lock polls.
+		 *
+		 * HB does this inside p9_fab_iovalid(), which doubles the
+		 * delay, which is probably unnecessary.
+		 */
+		mdelay(100);
+
 		p9_fab_iovalid(/*chip=*/0);
 		p9_fab_iovalid(/*chip=*/1);
 	}
