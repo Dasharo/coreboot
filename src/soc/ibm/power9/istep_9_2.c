@@ -177,7 +177,7 @@ static void config_run_bus_mode(uint8_t chip)
 
 	/* Set EDIP_TX_ZCAL_REQ to start Tx Impedance Calibration */
 	or_scom(chip, P9A_XBUS_TX_IMPCAL_PB, PPC_BIT(49));
-	udelay(20 * 1000); // 20ms
+	mdelay(20);
 
 	time = wait_us(200 * 10, get_scom(chip, P9A_XBUS_TX_IMPCAL_PB) &
 		       (PPC_BIT(EDIP_TX_ZCAL_DONE) | PPC_BIT(EDIP_TX_ZCAL_ERROR)));
@@ -243,8 +243,6 @@ static void rx_dc_calibration_poll(uint8_t chip, int group)
 
 	long time;
 
-	udelay(100 * 1000); // 100ms
-
 	/*
 	 * EDIP_RX_DC_CALIBRATE_DONE
 	 * (when this bit is read as a 1, the dc calibration steps have been completed)
@@ -286,6 +284,10 @@ static void config_bus_mode(void)
 	rx_dc_calibration_start(/*chip=*/1, /*group=*/0);
 	rx_dc_calibration_start(/*chip=*/0, /*group=*/1);
 	rx_dc_calibration_start(/*chip=*/1, /*group=*/1);
+
+	/* HB does this delay inside rx_dc_calibration_poll(), but doing it
+	 * once instead of four times should be enough */
+	mdelay(100);
 
 	/* Then wait for each combination of chip and group */
 	rx_dc_calibration_poll(/*chip=*/0, /*group=*/0);
