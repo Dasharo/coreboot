@@ -5,12 +5,12 @@ on:
       - novacustom_ns5x/develop
       - novacustom_ns5x/release
       - 'novacustom_ns5x/rel_*'
+    tags:
+      - 'novacustom_ns5x*'
   pull_request:
     branches:
       - novacustom_ns5x/develop
       - novacustom_ns5x/release
-    tags:
-      - 'novacustom_ns5x*'
 
 jobs:
   build:
