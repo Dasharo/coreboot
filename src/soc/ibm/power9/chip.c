@@ -393,7 +393,7 @@ static void rng_init(void)
 static void enable_soc_dev(struct device *dev)
 {
 	int chip, idx = 0;
-	unsigned long reserved_size, top = 0;
+	unsigned long reserved_size, homers_size, occ_area, top = 0;
 	uint8_t chips = fsi_get_present_chips();
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
@@ -430,9 +430,10 @@ static void enable_soc_dev(struct device *dev)
 	/*
 	 * Reserve top 8M (OCC common area) + 4M (HOMER).
 	 *
-	 * TODO: 8M + (4M per CPU), hostboot reserves always 8M + 8 * 4M.
+	 * 8M + (4M per CPU), hostboot always reserves 8M + 8 * 4M.
 	 */
-	reserved_size = 8*1024 + 4*1024 *8 /* * num_of_cpus */;
+	homers_size = 4*1024 * __builtin_popcount(chips);
+	reserved_size = 8*1024 + homers_size;
 	top -= reserved_size;
 	reserved_ram_resource_kb(dev, idx++, top, reserved_size);
 
@@ -440,7 +441,8 @@ static void enable_soc_dev(struct device *dev)
 	 * Assumption: OCC boots successfully or coreboot die()s, booting in safe
 	 * mode without runtime power management is not supported.
 	 */
-	build_homer_image((void *)(top * 1024), nominal_freq);
+	occ_area = top + homers_size;
+	build_homer_image((void *)(top * 1024), (void *)(occ_area * 1024), nominal_freq);
 
 	rng_init();
 	istep_18_11();
