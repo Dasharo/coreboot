@@ -406,14 +406,6 @@ static void tianocore_logo_load(void)
 	uint32_t cbfs_type = CBFS_TYPE_RAW;
 	size_t logo_size;
 
-	logo_entry = cbmem_entry_add(CBMEM_ID_TIANOCORE_LOGO, 4 * MiB);
-	if (!logo_entry)
-		return;
-
-	logo_buffer = cbmem_entry_start(logo_entry);
-	if (!logo_buffer)
-		return;
-
 	if (cbfs_locate_file_in_region(&logo_file, "BOOTSPLASH",
 				       "logo.bmp", &cbfs_type) < 0)
 		return;
@@ -422,6 +414,14 @@ static void tianocore_logo_load(void)
 		return;
 
 	if (logo_size + sizeof(header) > 4 * MiB)
+		return;
+
+	logo_entry = cbmem_entry_add(CBMEM_ID_TIANOCORE_LOGO, logo_size + sizeof(header));
+	if (!logo_entry)
+		return;
+
+	logo_buffer = cbmem_entry_start(logo_entry);
+	if (!logo_buffer)
 		return;
 
 	/* Header of the CBMEM region, describes size of the bitmap */
