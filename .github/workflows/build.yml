@@ -5,12 +5,12 @@ on:
       - tuxedo_ibs15/develop
       - tuxedo_ibs15/release
       - 'tuxedo_ibs15/rel_*'
+    tags:
+      - 'tuxedo_ibs15*'
   pull_request:
     branches:
       - tuxedo_ibs15/develop
       - tuxedo_ibs15/release
-    tags:
-      - 'tuxedo_ibs15*'
 
 jobs:
   build:
