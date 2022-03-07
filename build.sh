@@ -30,38 +30,18 @@ FW_FILE="dasharo_${BOARD}_${FW_VERSION}.rom"
 HASH_FILE="${FW_FILE}.SHA256"
 SIG_FILE="${HASH_FILE}.sig"
 ARTIFACTS_DIR="artifacts"
-LOGO=""
+LOGO="3rdparty/dasharo-blobs/novacustom/bootsplash.bmp"
 
 [ -z "$FW_VERSION" ] && errorExit "Failed to get FW_VERSION - CONFIG_LOCALVERSION is probably not set"
-
-replace_logo() {
-  path=custom_bootsplash.bmp
-  cp $1 $path
-
-  if [[ $(grep "CONFIG_TIANOCORE_BOOTSPLASH_IMAGE" .config; echo $?) == 1 ]]; then
-    echo "CONFIG_TIANOCORE_BOOTSPLASH_IMAGE=y" >> .config
-  else
-    sed -i "/CONFIG_TIANOCORE_BOOTSPLASH_IMAGE/c\CONFIG_TIANOCORE_BOOTSPLASH_IMAGE=y" .config
-  fi
-
-  if [[ $(grep "CONFIG_TIANOCORE_BOOTSPLASH_FILE" .config; echo $?) == 1 ]]; then
-    echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"$path\"" >> .config
-  else
-    sed -i "/CONFIG_TIANOCORE_BOOTSPLASH_FILE/c\CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"$path\"" .config
-  fi
-}
 
 build() {
   cp "${DEFCONFIG}" .config
   make olddefconfig
-  if [[ -n $LOGO ]]; then
-    echo "Building with custom logo $LOGO"
-    replace_logo $LOGO
-  else
-    echo "Building with default logo"
-  fi
+  echo "Building with logo $LOGO"
   make clean
   make -j "$(nproc)"
+  make -C util/cbfstool
+  util/cbfstool/cbfstool build/coreboot.rom add -r BOOTSPLASH -f $LOGO -n logo.bmp -t raw -c lzma
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
   cd "${ARTIFACTS_DIR}"
