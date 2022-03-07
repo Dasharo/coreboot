@@ -551,6 +551,11 @@ static void fam16_finalize(void *chip_info)
 	if (dev != NULL) {
 		pci_and_config32(dev, 0x60, ~(1 << 11));
 	}
+
+	/* Enable access to PSP MMIO BARs. This is needed for CCP. */
+	dev = pcidev_on_root(8, 0);
+	if (dev != NULL)
+		pci_update_config8(dev, 0x48, 0xff, 0x3d);
 }
 
 struct hw_mem_hole_info {
