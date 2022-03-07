@@ -152,10 +152,15 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 	if (bus >= I2C_BUSES_PER_CPU) {
 		bus -= I2C_BUSES_PER_CPU;
 		type = FSI_I2C;
+
+		/* There seems to be only one engine on FSI I2C */
+		if (bus != 0) {
+			printk(BIOS_ERR, "FSI I2C bus out of range (%d)\n", bus);
+			return -1;
+		}
 	}
 
-	/* There seems to be only one engine on FSI I2C */
-	if (bus != 0) {
+	if (bus >= I2C_BUSES_PER_CPU) {
 		printk(BIOS_ERR, "I2C bus out of range (%d)\n", bus);
 		return -1;
 	}
