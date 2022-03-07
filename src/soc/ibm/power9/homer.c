@@ -3269,12 +3269,12 @@ static void setup_wakeup_mode(uint8_t chip, uint64_t cores)
 }
 
 /* 15.2 set HOMER BAR */
-static void istep_15_2(uint8_t chip, struct homer_st *homer)
+static void istep_15_2(uint8_t chip, struct homer_st *homer, void *common_occ_area)
 {
 	write_rscom(chip, 0x05012B00, (uint64_t)homer);
 	write_rscom(chip, 0x05012B04, (4 * MiB - 1) & ~((uint64_t)MiB - 1));
 
-	write_rscom(chip, 0x05012B02, (uint64_t)homer + (8 - chip) * 4 * MiB);		// FIXME
+	write_rscom(chip, 0x05012B02, (uint64_t)common_occ_area);
 	write_rscom(chip, 0x05012B06, (8 * MiB - 1) & ~((uint64_t)MiB - 1));
 }
 
@@ -3430,7 +3430,7 @@ static void istep_15_4(uint8_t chip, uint64_t cores)
 /*
  * This logic is for SMF disabled only!
  */
-void build_homer_image(void *homer_bar, uint64_t nominal_freq[])
+void build_homer_image(void *homer_bar, void *common_occ_area, uint64_t nominal_freq[])
 {
 	const uint8_t chips = fsi_get_present_chips();
 
@@ -3514,7 +3514,7 @@ void build_homer_image(void *homer_bar, uint64_t nominal_freq[])
 	setup_wakeup_mode(/*chip=*/0, cores[0]);
 
 	report_istep(15,2);
-	istep_15_2(/*chip=*/0, &homer[0]);
+	istep_15_2(/*chip=*/0, &homer[0], common_occ_area);
 	report_istep(15,3);
 	istep_15_3(/*chip=*/0, cores[0]);
 	report_istep(15,4);
