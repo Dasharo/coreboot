@@ -75,5 +75,5 @@ SECTIONS
 	 */
 	CBFS_CACHE(          0xF8380000, 6M)
 
-	RAMSTAGE(            0xF9000000, 2M)
+	RAMSTAGE(            0xF9000000, 3M)
 }
