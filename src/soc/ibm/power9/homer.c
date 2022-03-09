@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <cbfs.h>
 #include <commonlib/region.h>
+#include <commonlib/stdlib.h>
 #include <console/console.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/mvpd.h>
@@ -1204,7 +1205,8 @@ static void load_pm_complex(uint8_t chip, struct homer_st *homer)
 	 * shouldn't be necessary.
 	 */
 
-	load_occ_image_to_homer(homer);
+	/* OCC image is pre-loaded for us earlier */
+
 	load_host_data_to_homer(chip, homer);
 }
 
@@ -3224,7 +3226,8 @@ static void update_headers(uint8_t chip, struct homer_st *homer, uint64_t cores)
 	pgpe_hdr->magic               = 0x504750455f312e30;	// PGPE_1.0
 }
 
-static void layout_rings(uint8_t chip, struct homer_st *homer, uint8_t dd, uint64_t cores)
+static void layout_rings(uint8_t chip, struct homer_st *homer, struct xip_hw_header *hw,
+			 uint8_t dd, uint64_t cores)
 {
 	static uint8_t rings_buf[300 * KiB];
 
@@ -3239,7 +3242,6 @@ static void layout_rings(uint8_t chip, struct homer_st *homer, uint8_t dd, uint6
 		.work_buf3 = work_buf3, .work_buf3_size = sizeof(work_buf3),
 	};
 
-	struct xip_hw_header *hw = (void *)homer;
 	uint8_t ring_variant = (dd < 0x23 ? RV_BASE : RV_RL4);
 
 	get_ppe_scan_rings(chip, hw, dd, PT_CME, &ring_data);
@@ -3252,7 +3254,7 @@ static void layout_rings(uint8_t chip, struct homer_st *homer, uint8_t dd, uint6
 	ring_data.work_buf3_size = sizeof(work_buf3);
 	get_ppe_scan_rings(chip, hw, dd, PT_SGPE, &ring_data);
 	layout_rings_for_sgpe(chip, homer, &ring_data,
-			      (struct xip_sgpe_header *)((uint8_t *)homer + hw->sgpe.offset),
+			      (struct xip_sgpe_header *)((uint8_t *)hw + hw->sgpe.offset),
 			      cores, ring_variant);
 }
 
@@ -3283,10 +3285,10 @@ static void set_fabric_ids(uint8_t chip, struct homer_st *homer)
 	sgpe_hdr->addr_extension = 0;
 }
 
-static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, uint8_t dd,
-				uint64_t cores)
+static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, struct xip_hw_header *hw,
+				uint8_t dd, uint64_t cores)
 {
-	layout_rings(chip, homer, dd, cores);
+	layout_rings(chip, homer, hw, dd, cores);
 	build_parameter_blocks(chip, homer, cores);
 	update_headers(chip, homer, cores);
 
@@ -3500,13 +3502,14 @@ void build_homer_image(void *homer_bar, void *common_occ_area, uint64_t nominal_
 
 	struct mmap_helper_region_device mdev = {0};
 	struct homer_st *homer = homer_bar;
-	struct xip_hw_header *hw = homer_bar;
 	uint8_t dd = get_dd(); // XXX: does this need to be chip-specific?
 	int this_core = -1;
 	uint64_t cores[MAX_CHIPS] = {
 		get_available_cores(0, &this_core),
 		(chips & 0x02) ? get_available_cores(1, NULL) : 0,
 	};
+	struct xip_hw_header *hw = xmalloc(1 * MiB);
+	uint8_t *hw_addr = (void *)hw;
 
 	if (this_core == -1)
 		die("Couldn't found active core\n");
@@ -3525,33 +3528,24 @@ void build_homer_image(void *homer_bar, void *common_occ_area, uint64_t nominal_
 	 * not NULL.
 	 */
 	mount_part_from_pnor("HCODE", &mdev);
-	/*
-	 * First MB of HOMER is unused at first, we can write OCC image from PNOR there.
-	 * TODO: try putting HCODE somewhere else and load OCC host area right here.
-	 */
 	rdev_readat(&mdev.rdev, hw, 0, 1 * MiB);
 
 	assert(hw->magic == XIP_MAGIC_HW);
 	assert(hw->image_size <= 1 * MiB);
 
-	build_sgpe(homer, (struct xip_sgpe_header *)(homer_bar + hw->sgpe.offset),
-	           dd);
-
-	build_self_restore(homer,
-	                   (struct xip_restore_header *)(homer_bar + hw->restore.offset),
+	build_sgpe(homer, (struct xip_sgpe_header *)(hw_addr + hw->sgpe.offset), dd);
+	build_self_restore(homer, (struct xip_restore_header *)(hw_addr + hw->restore.offset),
 	                   dd, cores[0]);
+	build_cme(homer, (struct xip_cme_header *)(hw_addr + hw->cme.offset), dd);
+	build_pgpe(homer, (struct xip_pgpe_header *)(hw_addr + hw->pgpe.offset), dd);
 
-	build_cme(homer, (struct xip_cme_header *)(homer_bar + hw->cme.offset), dd);
-
-	build_pgpe(homer, (struct xip_pgpe_header *)(homer_bar + hw->pgpe.offset),
-	           dd);
+	load_occ_image_to_homer(homer);
 
 	/*
 	 * Until this point, only self restore part is CPU specific, use current
 	 * state of the first HOMER image as a base for the second one.
 	 */
 	if (chips & 0x02) {
-		uint8_t *homer_bar2 = (void *)&homer[1];
 		struct cme_img_header *hdr;
 
 		memcpy(&homer[1], &homer[0], sizeof(*homer));
@@ -3563,7 +3557,7 @@ void build_homer_image(void *homer_bar, void *common_occ_area, uint64_t nominal_
 
 		/* Override data from the other CPU */
 		build_self_restore(&homer[1],
-				   (struct xip_restore_header *)(homer_bar2 + hw->restore.offset),
+				   (struct xip_restore_header *)(hw_addr + hw->restore.offset),
 				   dd, cores[1]);
 	}
 
@@ -3571,9 +3565,11 @@ void build_homer_image(void *homer_bar, void *common_occ_area, uint64_t nominal_
 		if (!(chips & (1 << chip)))
 			continue;
 
-		fill_homer_for_chip(chip, &homer[chip], dd, cores[chip]);
+		fill_homer_for_chip(chip, &homer[chip], hw, dd, cores[chip]);
 		nominal_freq[chip] = get_voltage_data(chip)->nominal.freq * MHz;
 	}
+
+	free(hw);
 
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
