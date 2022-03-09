@@ -34,6 +34,10 @@ config FMDFILE
 config MAINBOARD_DIR
 	default "raptor-cs/talos-2"
 
+config HEAP_SIZE
+	hex
+	default 0x200000
+
 config MAINBOARD_PART_NUMBER
 	default "Talos II"
 
