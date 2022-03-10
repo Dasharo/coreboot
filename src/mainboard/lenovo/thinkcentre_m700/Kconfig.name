@@ -1,0 +1,2 @@
+config BOARD_LENOVO_THINKCENTRE_M700
+	bool "ThinkCentre M700"

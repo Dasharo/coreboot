@@ -1,0 +1,236 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+chip soc/intel/skylake
+
+	register "deep_sx_config" = "DSX_EN_WAKE_PIN"
+
+	register "eist_enable" = "1"
+
+	# GPE configuration
+	# Note that GPE events called out in ASL code rely on this
+	# route. i.e. If this route changes then the affected GPE
+	# offset bits also need to be changed.
+	register "gpe0_dw0" = "GPD"
+	register "gpe0_dw1" = "GPP_D"
+	register "gpe0_dw2" = "GPP_E"
+
+	# Enable DPTF
+	register "dptf_enable" = "1"
+
+	# FSP Configuration
+	register "PrimaryDisplay" = "Display_iGFX"
+
+	# Enabling SLP_S3#, SLP_S4#, SLP_SUS and SLP_A Stretch
+	# SLP_S3 Minimum Assertion Width. Values 0: 60us, 1: 1ms, 2: 50ms, 3: 2s
+	register "PmConfigSlpS3MinAssert" = "0x02"
+
+	# SLP_S4 Minimum Assertion Width. Values 0: default, 1: 1s, 2: 2s, 3: 3s, 4: 4s
+	register "PmConfigSlpS4MinAssert" = "0x04"
+
+	# SLP_SUS Minimum Assertion Width. Values 0: 0ms, 1: 500ms, 2: 1s, 3: 4s
+	register "PmConfigSlpSusMinAssert" = "0x03"
+
+	# SLP_A Minimum Assertion Width. Values 0: 0ms, 1: 4s, 2: 98ms, 3: 2s
+	register "PmConfigSlpAMinAssert" = "0x03"
+
+	# PL2 override 91W
+	register "power_limits_config" = "{
+		.tdp_pl2_override = 91,
+	}"
+
+	# Send an extra VR mailbox command for the PS4 exit issue
+	register "SendVrMbxCmd" = "2"
+
+	device cpu_cluster 0 on
+		device lapic 0 on end
+	end
+	device domain 0 on
+		device pci 00.0 on # Host Bridge
+		end
+		device pci 01.0 on # PEG
+			register "Peg0MaxLinkWidth" = "Peg0_x16"
+
+			# Configure PCIe clockgen in PCH
+			register "PcieRpClkReqSupport[0]"	= "1"
+			register "PcieRpClkReqNumber[0]"	= "0"
+			register "PcieRpClkSrcNumber[0]"	= "0"
+		end
+		device pci 02.0 on # Integrated Graphics Device
+		end
+		device pci 04.0 on  end # Thermal Subsystem
+		device pci 08.0 off end # Gaussian Mixture Model
+		device pci 14.0 on # USB xHCI
+
+			register "usb2_ports[0]" = "USB2_PORT_MID(OC0)"
+			register "usb2_ports[1]" = "USB2_PORT_MID(OC0)"
+			register "usb2_ports[2]" = "USB2_PORT_MID(OC4)"
+			register "usb2_ports[3]" = "USB2_PORT_MID(OC4)"
+			register "usb2_ports[4]" = "USB2_PORT_MID(OC2)"
+			register "usb2_ports[5]" = "USB2_PORT_MID(OC2)"
+			register "usb2_ports[6]" = "USB2_PORT_MID(OC0)"
+			register "usb2_ports[7]" = "USB2_PORT_MID(OC0)"
+			register "usb2_ports[8]" = "USB2_PORT_MID(OC0)"
+			register "usb2_ports[9]" = "USB2_PORT_MID(OC0)"
+			register "usb2_ports[10]" = "USB2_PORT_MID(OC1)"
+			register "usb2_ports[11]" = "USB2_PORT_MID(OC1)"
+			register "usb2_ports[12]" = "USB2_PORT_MID(OC_SKIP)"
+			register "usb2_ports[13]" = "USB2_PORT_MID(OC_SKIP)"
+
+			register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC0)"
+			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC0)"
+			register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC3)"
+			register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC3)"
+			register "usb3_ports[4]" = "USB3_PORT_DEFAULT(OC1)"
+			register "usb3_ports[5]" = "USB3_PORT_DEFAULT(OC1)"
+			register "usb3_ports[6]" = "USB3_PORT_DEFAULT(OC_SKIP)"
+			register "usb3_ports[7]" = "USB3_PORT_DEFAULT(OC_SKIP)"
+			register "usb3_ports[8]" = "USB3_PORT_DEFAULT(OC_SKIP)"
+			register "usb3_ports[9]" = "USB3_PORT_DEFAULT(OC_SKIP)"
+		end
+		device pci 14.1 off end # USB xDCI (OTG)
+		device pci 14.2 on # Thermal Subsystem
+		end
+		device pci 15.0 off end # I2C #0
+		device pci 15.1 off end # I2C #1
+		device pci 15.2 off end # I2C #2
+		device pci 15.3 off end # I2C #3
+		device pci 16.0 on      # Management Engine Interface 1
+		end
+		device pci 16.1 off end # Management Engine Interface 2
+		device pci 16.2 off end # Management Engine IDE-R
+		device pci 16.3 off end # Management Engine KT Redirection
+		device pci 16.4 off end # Management Engine Interface 3
+		device pci 17.0 on # SATA
+			register "SataSalpSupport" = "1"
+			# SATA4 and is not enabled on this board
+			register "SataPortsEnable" = "{ \
+				[0]     = 1, \
+				[1]     = 1, \
+				[2]     = 1, \
+				[3]     = 1, \
+			}"
+		end
+		device pci 19.0 off end # UART #2
+		device pci 19.1 off end # I2C #5
+		device pci 19.2 off end # I2C #4
+		device pci 1c.0 on  end # PCI Express Port 1
+		device pci 1c.1 off end # PCI Express Port 2
+		device pci 1c.2 off end # PCI Express Port 3
+		device pci 1c.3 off end # PCI Express Port 4
+		device pci 1c.4 on      # PCI Express Port 5 - PCIE slot
+			register "PcieRpEnable[4]"			= "1"
+			register "PcieRpClkReqSupport[4]"		= "1"
+			register "PcieRpClkReqNumber[4]"		= "2"
+			register "PcieRpAdvancedErrorReporting[4]"	= "1"
+			register "PcieRpLtrEnable[4]"			= "1"
+			register "PcieRpClkSrcNumber[4]"		= "2"
+			register "PcieRpHotPlug[4]"			= "1"
+		end
+		device pci 1c.5 on      # PCI Express Port 6 - Onboard LAN
+			register "PcieRpEnable[5]"			= "1"
+
+			# Disable CLKREQ#, since onboard LAN is always present
+			register "PcieRpClkReqSupport[5]"		= "0"
+			register "PcieRpAdvancedErrorReporting[5]"	= "1"
+			register "PcieRpLtrEnable[5]"			= "1"
+			register "PcieRpClkSrcNumber[5]"		= "1"
+		end
+		device pci 1c.6 on      # PCI Express Port 7 - PCIE slot
+			register "PcieRpEnable[6]"			= "1"
+			register "PcieRpClkReqSupport[6]"		= "1"
+			register "PcieRpClkReqNumber[6]"		= "3"
+			register "PcieRpAdvancedErrorReporting[6]"	= "1"
+			register "PcieRpLtrEnable[6]"			= "1"
+			register "PcieRpClkSrcNumber[6]"		= "3"
+			register "PcieRpHotPlug[6]"			= "1"
+		end
+		device pci 1c.7 off end # PCI Express Port 8
+		device pci 1d.0 off end # PCI Express Port 9
+		device pci 1d.1 off end # PCI Express Port 10
+		device pci 1d.2 off end # PCI Express Port 11
+		device pci 1d.3 off end # PCI Express Port 12
+		device pci 1e.0 off end # UART #0
+		device pci 1e.1 off end # UART #1
+		device pci 1e.2 off end # GSPI #0
+		device pci 1e.3 off end # GSPI #1
+		device pci 1e.4 off end # eMMC
+		device pci 1e.5 off end # SDIO
+		device pci 1e.6 off end # SDCard
+		device pci 1f.0 on      # LPC bridge
+			register "gen1_dec" = "0x00fc0201"
+			register "gen2_dec" = "0x003c0a01"
+			register "gen3_dec" = "0x000c0081"
+
+			# Set LPC Serial IRQ mode
+			register "serirq_mode" = "SERIRQ_CONTINUOUS"
+			chip superio/ite/it8625e
+					register "ec.smbus_en"		= "1"
+					register "ec.smbus_24mhz"	= "1"
+					register "TMPIN1.mode"		= "THERMAL_DIODE" # EXT_SYS_TEMP
+					register "TMPIN2.mode"		= "THERMAL_DIODE"
+					register "TMPIN3.mode"		= "THERMAL_DIODE" # VR_TEMP_DA
+
+					register "FAN1.mode" = "FAN_MODE_OFF"
+					register "FAN2.mode" = "FAN_SMART_AUTOMATIC"
+					register "FAN2.smart.tmpin"	= "2"
+					register "FAN2.smart.tmp_off"	= "0"
+					register "FAN2.smart.tmp_start"	= "40"
+					register "FAN2.smart.tmp_full"	= "90"
+					register "FAN2.smart.tmp_delta"	= "2"
+					register "FAN2.smart.full_lmt"	= "0"
+					register "FAN2.smart.smoothing"	= "0"
+					register "FAN2.smart.pwm_start"	= "48"
+					register "FAN2.smart.slope"	= "0x20"
+					register "FAN3.mode" = "FAN_SMART_AUTOMATIC"
+					register "FAN3.smart.tmpin"	= "2"
+					register "FAN3.smart.tmp_off"	= "0"
+					register "FAN3.smart.tmp_start"	= "40"
+					register "FAN3.smart.tmp_full"	= "90"
+					register "FAN3.smart.tmp_delta"	= "2"
+					register "FAN3.smart.full_lmt"	= "0"
+					register "FAN3.smart.smoothing"	= "0"
+					register "FAN3.smart.pwm_start"	= "48"
+					register "FAN3.smart.slope"	= "0x20"
+
+					register "ec.vin_mask" = "VIN_ALL"
+				device pnp 2e.1 off end	# COM1 (internal header)
+				device pnp 2e.2 on		# COM2 (rear port)
+					io 0x60 = 0x3f8
+					irq 0x70 = 4
+				end
+				device pnp 2e.3 off end		# Parallel port
+				device pnp 2e.3 on		# Parallel port
+					io 0x60 = 0x378
+					io 0x62 = 0x000		# for ECP mode
+					irq 0x70 = 5
+					drq 0x74 = 4
+				end
+				device pnp 2e.4 on		# EC
+					io 0x60 = 0xa20
+					io 0x62 = 0x230
+					irq 0x70 = 9
+				end
+				device pnp 2e.5 on		# PS/2 keyboard
+					io 0x60 = 0x60
+					io 0x62 = 0x64
+					irq 0x70 = 1
+				end
+				device pnp 2e.6 on		# PS/2 mouse
+					irq 0x70 = 12
+				end
+				device pnp 2e.7 on end		# GPIO
+			end	#superio/ite/it8625e
+			chip drivers/pc80/tpm
+				device pnp 4e.0 on end  # TPM module
+			end
+		end # LPC Interface
+		device pci 1f.1 on  end # P2SB
+		device pci 1f.2 on  end # Power Management Controller
+		device pci 1f.3 on      # Intel HDA
+			register "PchHdaVcType" = "Vc1"
+		end
+		device pci 1f.4 on  end # SMBus
+		device pci 1f.5 off end # PCH SPI
+		device pci 1f.6 off end # GbE
+	end
+end
