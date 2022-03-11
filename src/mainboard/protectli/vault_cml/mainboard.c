@@ -38,14 +38,6 @@ static void mainboard_final(void *unused)
 
 void mainboard_silicon_init_params(FSPS_UPD *supd)
 {
-	const struct pad_config *pads;
-	size_t num;
-
-	pads = board_gpio_table(&num);
-	/* Configure pads prior to SiliconInit() in case there's any
-	 * dependencies during hardware initialization. */
-	cnl_configure_pads(pads, num);
-
 	/* FIXME: disable GFX PM and RC6 causing global resets initiated by PMC
 	 * when the screen goes blank/inactive/idle in the OS */
 	supd->FspsTestConfig.RenderStandby = 0;
